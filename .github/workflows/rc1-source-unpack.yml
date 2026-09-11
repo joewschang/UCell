@@ -1,0 +1,70 @@
+name: RC1 Source Publisher
+
+on:
+  push:
+    branches: [rc1-production]
+    paths:
+      - 'release-source/UCell_R1_0B_Production_RC1_2026-09-10.zip'
+
+permissions:
+  contents: write
+
+jobs:
+  publish-source:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout RC1 branch
+        uses: actions/checkout@v4
+        with:
+          ref: rc1-production
+          fetch-depth: 0
+
+      - name: Expand reviewed RC1 source package
+        shell: bash
+        run: |
+          set -euo pipefail
+          ARCHIVE='release-source/UCell_R1_0B_Production_RC1_2026-09-10.zip'
+          STAGE='.rc1_unpack'
+          ROOT="$STAGE/UCell_R1_0B_Production_RC1_2026-09-10"
+          test -f "$ARCHIVE"
+          rm -rf "$STAGE"
+          mkdir -p "$STAGE"
+          unzip -q "$ARCHIVE" -d "$STAGE"
+          test -f "$ROOT/README.md"
+          test -d "$ROOT/backend"
+          test -d "$ROOT/admin"
+          test -d "$ROOT/deployment"
+          test -d "$ROOT/governance"
+          cp -a "$ROOT/." ./
+          rm -rf "$STAGE"
+          rm -f "$ARCHIVE"
+          rmdir release-source 2>/dev/null || true
+
+      - name: Verify RC1 source footprint
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f RELEASE_MANIFEST.json
+          test -f backend/package.json
+          test -f backend/packages/database/prisma/schema.prisma
+          test -f admin/package.json
+          test -f governance/SA_System_Function_Matrix.xlsx
+          test -f .github/workflows/ci.yml
+          test -f .github/workflows/rc-promotion.yml
+          FILES=$(find . -type f -not -path './.git/*' | wc -l)
+          echo "RC1 source files: $FILES"
+          test "$FILES" -ge 360
+
+      - name: Commit complete RC1 source tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          if git diff --cached --quiet; then
+            echo 'No source changes to commit.'
+            exit 0
+          fi
+          git commit -m 'release(rc1): publish complete UCell R1.0B source tree'
+          git push origin HEAD:rc1-production
