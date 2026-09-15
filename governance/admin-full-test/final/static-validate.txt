@@ -1,0 +1,5 @@
+cwd: C:\UCell\UCell\backend
+command: node scripts/static-validate.mjs
+started: 2026-09-15T10:12:20.742Z
+exit: 0
+STATIC_VALIDATE_PASS

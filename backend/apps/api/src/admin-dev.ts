@@ -1,10 +1,10 @@
 import 'reflect-metadata';
-import { Module, CanActivate, ExecutionContext, Injectable, MethodNotAllowedException, ValidationPipe } from '@nestjs/common';
+import { Module, CanActivate, ExecutionContext, Injectable, MethodNotAllowedException, UnauthorizedException, ValidationPipe } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
-import { DatabaseModule } from '@ucell/database';
+import { DatabaseModule, PrismaService } from '@ucell/database';
 import { AuditModule } from './common/audit/audit.module';
 import { IdempotencyModule } from './common/idempotency/idempotency.module';
 import { OutboxModule } from './common/outbox/outbox.module';
@@ -39,9 +39,19 @@ import { RequestContextInterceptor } from './common/interceptors/request-context
 
 @Injectable()
 export class AdminDevReadOnlyGuard implements CanActivate {
-  constructor(private readonly config: ConfigService) {}
-  canActivate(context: ExecutionContext) {
-    if (this.config.get('UCELL_ADMIN_DEV_FULL_ACCESS') === 'true') return true;
+  constructor(private readonly config: ConfigService, private readonly prisma: PrismaService) {}
+  async canActivate(context: ExecutionContext) {
+    if (this.config.get('UCELL_ADMIN_DEV_FULL_ACCESS') === 'true') {
+      const req=context.switchToHttp().getRequest();
+      const id=req.headers['x-ucell-dev-actor-id'];
+      if(id && (typeof id!=='string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)))
+        throw new UnauthorizedException('ADMIN_TEST_ACTOR_INVALID');
+      const actor=id ? await this.prisma.person.findUnique({where:{personId:id}})
+        : await this.prisma.person.findFirst({where:{legalName:'ADMIN TEST ROOT FIXTURE'}});
+      if(!actor) throw new UnauthorizedException('ADMIN_TEST_ACTOR_REQUIRED: provision a test Person first');
+      req.user={sessionId:'ISOLATED_DEV_TEST',personId:actor.personId,provider:'ADMIN_LOCAL',subject:'isolated-dev-test',role:'SUPER_ADMIN'};
+      return true;
+    }
     const method = context.switchToHttp().getRequest().method;
     if (!['GET', 'HEAD', 'OPTIONS'].includes(method)) {
       throw new MethodNotAllowedException('ADMIN_DEV_READ_ONLY: write operations are unavailable');

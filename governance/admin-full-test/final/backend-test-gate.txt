@@ -1,0 +1,47 @@
+cwd: C:\UCell\UCell\backend
+command: pnpm test
+started: 2026-09-15T10:12:47.534Z
+exit: 1
+Scope: 5 of 6 workspace projects
+packages/contracts test$ echo no-tests
+packages/shared test$ jest --config jest.config.cjs
+packages/database test$ echo no-tests
+packages/contracts test: no-tests
+packages/contracts test: Done
+packages/database test: no-tests
+packages/database test: Done
+apps/worker test$ echo no-tests
+apps/worker test: no-tests
+apps/worker test: Done
+packages/shared test: Test Suites: 1 passed, 1 total
+packages/shared test: Tests:       6 passed, 6 total
+packages/shared test: Snapshots:   0 total
+packages/shared test: Time:        1.294 s, estimated 2 s
+packages/shared test: Ran all test suites.
+packages/shared test: Done
+apps/api test$ jest --config ./test/jest-e2e.json
+apps/api test: 
+apps/api test: Test Suites: 14 passed, 14 total
+apps/api test: Tests:       148 todo, 3 passed, 151 total
+apps/api test: Snapshots:   0 total
+apps/api test: Time:        11.246 s
+apps/api test: Ran all test suites.
+apps/api test: Done
+$ pnpm -r test && pnpm test:todo:gate
+$ node scripts/test-todo-gate.mjs
+TEST_TODO_GATE_FAIL: 148 unresolved executable test placeholders
+- apps\api\test\bonus-engine-v04.e2e-spec.ts: 26
+- apps\api\test\epv-global-v05.e2e-spec.ts: 12
+- apps\api\test\idempotency.e2e-spec.ts: 4
+- apps\api\test\negative-flow-v05.e2e-spec.ts: 12
+- apps\api\test\organization.e2e-spec.ts: 5
+- apps\api\test\qualification-isolation.e2e-spec.ts: 4
+- apps\api\test\v060-adjustment-lifecycle.e2e-spec.ts: 10
+- apps\api\test\v061-replay.e2e-spec.ts: 18
+- apps\api\test\v062-carry-chain.e2e-spec.ts: 13
+- apps\api\test\v063-golden-path.e2e-spec.ts: 8
+- apps\api\test\v064-golden-dataset.e2e-spec.ts: 11
+- apps\api\test\vertical-slice-02.e2e-spec.ts: 16
+- apps\api\test\vertical-slice.e2e-spec.ts: 9
+[ELIFECYCLE] Command failed with exit code 1.
+[ELIFECYCLE] Test failed. See above for more details.

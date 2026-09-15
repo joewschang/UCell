@@ -20,7 +20,7 @@ export class PersonController {
     @Headers('idempotency-key') key: string,
     @Req() req: any,
   ) {
-    const result = await this.service.create(dto, key, req.requestId, req.user?.userId);
+    const result = await this.service.create(dto, key, req.requestId, req.user?.personId);
     return { data: result.value, meta: { replayed: result.replayed } };
   }
 

@@ -1,0 +1,14 @@
+command: node dist-admin-dev/admin-dev.js
+started: 2026-09-15T10:15:05.866Z
+exit: 1
+expected: 1
+Error: ADMIN_DEV_START_BLOCKED: full access requires isolated ucell_admin_test database
+    at bootstrap (C:\UCell\UCell\backend\apps\api\dist-admin-dev\admin-dev.js:111:15)
+    at Object.<anonymous> (C:\UCell\UCell\backend\apps\api\dist-admin-dev\admin-dev.js:122:5)
+    at Module._compile (node:internal/modules/cjs/loader:1929:14)
+    at Object..js (node:internal/modules/cjs/loader:2060:10)
+    at Module.load (node:internal/modules/cjs/loader:1651:32)
+    at Module._load (node:internal/modules/cjs/loader:1443:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:261:19)
+    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+    at node:internal/main/run_main_module:33:47

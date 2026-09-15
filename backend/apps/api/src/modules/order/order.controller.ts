@@ -38,7 +38,7 @@ export class OrderController {
     @Headers('idempotency-key') key: string,
     @Req() req: any,
   ) {
-    const result = await this.service.create(dto, key, req.requestId, req.user?.userId);
+    const result = await this.service.create(dto, key, req.requestId, req.user?.personId);
     return { data: result.value, meta: { replayed: result.replayed } };
   }
 
@@ -51,7 +51,7 @@ export class OrderController {
     @Headers('idempotency-key') key: string,
     @Req() req: any,
   ) {
-    const result = await this.service.confirmPayment(orderId, dto, key, req.requestId, req.user?.userId);
+    const result = await this.service.confirmPayment(orderId, dto, key, req.requestId, req.user?.personId);
     return { data: result.value, meta: { replayed: result.replayed } };
   }
 

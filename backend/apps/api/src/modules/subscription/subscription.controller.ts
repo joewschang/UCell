@@ -24,7 +24,7 @@ export class SubscriptionController {
   @UseGuards(IdempotencyGuard)
   @ApiOperation({operationId:'adminCreateSubscription',summary:'建立季/半年/年重銷訂閱與逐月排程'})
   async create(@Body() dto:CreateSubscriptionDto,@Headers('idempotency-key') key:string,@Req() req:any){
-    const r=await this.service.create(dto,key,req.requestId,req.user?.userId);
+    const r=await this.service.create(dto,key,req.requestId,req.user?.personId);
     return {data:r.value,meta:{replayed:r.replayed}};
   }
 

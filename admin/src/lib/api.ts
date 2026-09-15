@@ -25,6 +25,10 @@ export async function api<T>(path:string,init:RequestOptions={}):Promise<T>{
     throw new ApiError(405,null,'本機 Admin DEV 只讀模式：此寫入操作尚未開放。');
   }
   const headers=new Headers(init.headers);
+  if(import.meta.env.DEV && import.meta.env.VITE_ADMIN_DEV_FULL_ACCESS==='true'){
+    const actor=sessionStorage.getItem('ucell_dev_actor_id');
+    if(actor) headers.set('x-ucell-dev-actor-id',actor);
+  }
   if(typeof init.body==='string' && !headers.has('Content-Type')) headers.set('Content-Type','application/json');
   headers.set('x-request-id',crypto.randomUUID());
   const t=adminToken(); if(t) headers.set('Authorization',`Bearer ${t}`);

@@ -21,6 +21,6 @@ export class ActiveController {
   @Post('periods')
   @ApiOperation({operationId:'adminOpenActivePeriod',summary:'建立Active有效期間'})
   async open(@Param('qualificationId') id:string,@Body() dto:OpenActivePeriodDto,@Req() req:any){
-    return {data:await this.service.openPeriod(id,dto,req.requestId,req.user?.userId)};
+    return {data:await this.service.openPeriod(id,dto,req.requestId,req.user?.personId)};
   }
 }

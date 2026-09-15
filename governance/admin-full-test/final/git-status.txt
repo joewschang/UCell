@@ -1,0 +1,20 @@
+cwd: C:\UCell\UCell
+command: git status --short --branch
+started: 2026-09-15T10:12:16.073Z
+exit: 0
+## rc1-recovered...origin/rc1-recovered [ahead 21]
+ M admin/src/app/AppShell.tsx
+ M admin/src/lib/api.ts
+ M backend/apps/api/src/admin-dev.ts
+ M backend/apps/api/src/modules/active/active.controller.ts
+ M backend/apps/api/src/modules/application/membership-application.controller.ts
+ M backend/apps/api/src/modules/order/order.controller.ts
+ M backend/apps/api/src/modules/person/person.controller.ts
+ M backend/apps/api/src/modules/qualification/qualification.controller.ts
+ M backend/apps/api/src/modules/return/return.controller.ts
+ M backend/apps/api/src/modules/subscription/subscription.controller.ts
+ M backend/scripts/admin-full-test.mjs
+?? governance/admin-full-test/final/
+?? governance/admin-full-test/run-2026-09-15T10-11-31.735Z.json
+?? governance/admin-full-test/run-2026-09-15T10-12-04.552Z.json
+?? governance/admin-full-test/run-verification.mjs

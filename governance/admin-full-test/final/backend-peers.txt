@@ -1,0 +1,5 @@
+cwd: C:\UCell\UCell\backend
+command: pnpm peers check
+started: 2026-09-15T10:12:20.667Z
+exit: 0
+No peer dependency issues found

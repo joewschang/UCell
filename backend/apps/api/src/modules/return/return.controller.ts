@@ -20,7 +20,7 @@ export class ReturnController {
     @Param('orderId') orderId:string,@Body() dto:CreateReturnDto,
     @Headers('idempotency-key') key:string,@Req() req:any
   ){
-    const r=await this.service.post(orderId,dto,key,req.requestId,req.user?.userId);
+    const r=await this.service.post(orderId,dto,key,req.requestId,req.user?.personId);
     return {data:r.value,meta:{replayed:r.replayed}};
   }
 

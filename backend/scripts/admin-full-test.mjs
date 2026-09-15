@@ -10,9 +10,10 @@ assert.ok(['localhost','127.0.0.1'].includes(database.hostname));
 const prisma = new PrismaClient();
 const startedAt = new Date().toISOString();
 const results = [];
+let devActor;
 async function request(method, route, body, key=randomUUID(), expected=method==='POST'?201:200) {
   const response = await fetch('http://127.0.0.1:3001/api/v1'+route, {method,
-    headers:{...(body===undefined?{}:{'Content-Type':'application/json'}),'Idempotency-Key':key,'x-request-id':randomUUID()},
+    headers:{...(body===undefined?{}:{'Content-Type':'application/json'}),...(devActor?{'x-ucell-dev-actor-id':devActor}:{}),'Idempotency-Key':key,'x-request-id':randomUUID()},
     ...(body===undefined?{}:{body:JSON.stringify(body)})});
   const json = await response.json();
   results.push({method,route,status:response.status,expected,result:response.status===expected?'PASS':'FAIL',
@@ -35,6 +36,8 @@ try {
   const key=randomUUID();
   const payload={legalName:'ADMIN TEST MEMBER '+key.slice(0,8),birthDate:'1990-01-01'};
   const person=await request('POST','/admin/persons',payload,key);
+  const personAudit=await prisma.auditEvent.findFirstOrThrow({where:{entityId:person.data.personId,action:'PERSON_CREATED'}});
+  assert.equal(personAudit.actorId,rootPerson.personId); assert.equal(personAudit.actorType,'USER');
   const duplicate=await request('POST','/admin/persons',payload,key);
   assert.equal(duplicate.data.personId,person.data.personId); assert.equal(duplicate.meta.replayed,true);
   await request('POST','/admin/persons',{...payload,legalName:'different'},key,409);
@@ -64,6 +67,9 @@ try {
   await request('POST',`/admin/orders/${order.data.orderId}/payment-confirmations`,payment,paymentKey);
   assert.equal(await prisma.paymentEvent.count({where:{orderId:order.data.orderId}}),1);
   await request('GET',`/admin/orders/${order.data.orderId}`);
+  const subscription=await request('POST','/admin/subscriptions',{qualificationId:q.qualificationId,planCode:'QUARTER',startMonth:'2026-10-01'});
+  await request('GET',`/admin/subscriptions/${subscription.data.subscriptionId}`);
+  await request('POST',`/admin/subscriptions/${subscription.data.subscriptionId}/cancel`,{effectiveAt:new Date().toISOString(),reasonCode:'ISOLATED TEST FUTURE MONTHS',refundAmount:'0'});
   const returnKey=randomUUID();
   const returnBody={reasonCode:'ADMIN_TEST_ONLY',occurredAt:new Date().toISOString(),lines:[{orderLineId:order.data.lines[0].orderLineId,quantity:'1'}]};
   const returned=await request('POST',`/admin/orders/${order.data.orderId}/returns`,returnBody,returnKey);
@@ -81,6 +87,14 @@ try {
   await request('POST','/admin/payouts/batches',{periodStart:'2026-09-01',periodEnd:'2026-09-01'},undefined,400);
   const batch=await request('POST','/admin/payouts/batches',{periodStart:'2026-09-01T00:00:00Z',periodEnd:new Date().toISOString()});
   await request('GET',`/admin/operations/payout-batches/${batch.data.payoutBatchId}`);
+  await request('POST',`/admin/operations/payout-batches/${batch.data.payoutBatchId}/approvals/FINANCE_REVIEW`,{note:'ISOLATED ADMIN TEST'});
+  await request('POST',`/admin/operations/payout-batches/${batch.data.payoutBatchId}/approvals/COMPLIANCE_REVIEW`,{note:'SAME ACTOR MUST BE REJECTED'},undefined,422);
+  devActor=person.data.personId;
+  await request('POST',`/admin/operations/payout-batches/${batch.data.payoutBatchId}/approvals/COMPLIANCE_REVIEW`,{note:'ISOLATED SECOND ACTOR'});
+  await request('POST',`/admin/operations/payout-batches/${batch.data.payoutBatchId}/export`,{exportReference:'ISOLATED TEST NO BANK EXPORT'});
+  await request('POST',`/admin/operations/payout-batches/${batch.data.payoutBatchId}/mark-paid`,{paymentReference:'ISOLATED TEST NO TRANSFER',paymentMethod:'TEST_ONLY',paidAt:new Date().toISOString()});
+  devActor=undefined;
+  devActor=randomUUID(); await request('GET','/admin/persons',undefined,undefined,401); devActor=undefined;
   await request('GET','/admin/ops-ready/exports/ORDERS');
   await request('GET','/admin/ops-ready/integrity-alerts');
   console.log(`ADMIN_FULL_TEST_PASS: ${results.length} requests; fixture root ${root.qualificationId}`);

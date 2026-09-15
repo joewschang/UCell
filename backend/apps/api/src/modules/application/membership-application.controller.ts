@@ -31,7 +31,7 @@ export class MembershipApplicationController {
   @UseGuards(IdempotencyGuard)
   @ApiOperation({operationId:'adminCreateMembershipApplication',summary:'建立會員申請草稿'})
   async create(@Body() dto:CreateMembershipApplicationDto,@Headers('idempotency-key') key:string,@Req() req:any){
-    const r=await this.service.create(dto,key,req.requestId,req.user?.userId);
+    const r=await this.service.create(dto,key,req.requestId,req.user?.personId);
     return {data:r.value,meta:{replayed:r.replayed}};
   }
 
@@ -39,7 +39,7 @@ export class MembershipApplicationController {
   @UseGuards(IdempotencyGuard)
   @ApiOperation({operationId:'adminSubmitMembershipApplication',summary:'提交會員申請'})
   async submit(@Param('id') id:string,@Headers('idempotency-key') key:string,@Req() req:any){
-    const r=await this.service.submit(id,key,req.requestId,req.user?.userId);
+    const r=await this.service.submit(id,key,req.requestId,req.user?.personId);
     return {data:r.value,meta:{replayed:r.replayed}};
   }
 
@@ -47,7 +47,7 @@ export class MembershipApplicationController {
   @UseGuards(IdempotencyGuard)
   @ApiOperation({operationId:'adminApproveMembershipApplication',summary:'核准並使會員資格生效'})
   async approve(@Param('id') id:string,@Headers('idempotency-key') key:string,@Req() req:any){
-    const r=await this.service.approve(id,key,req.requestId,req.user?.userId);
+    const r=await this.service.approve(id,key,req.requestId,req.user?.personId);
     return {data:r.value,meta:{replayed:r.replayed}};
   }
 
