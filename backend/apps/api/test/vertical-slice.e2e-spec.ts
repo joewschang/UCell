@@ -23,8 +23,8 @@ function fixture() {
     paymentEvent: { create: jest.fn(async ({data}: any) => ({paymentEventId: 'payment', ...data})) },
     outboxEvent: { create: jest.fn(async ({data}: any) => ({outboxEventId: 'outbox', ...data})) },
   };
-  const prisma = {idempotencyRecord: tx.idempotencyRecord, $transaction: jest.fn(async (work: any) => work(tx))};
-  const audit = {write: jest.fn(async () => undefined)};
+  const prisma = {idempotencyRecord: tx.idempotencyRecord, $transaction: jest.fn(async (work: any, _options: any) => work(tx))};
+  const audit = {write: jest.fn(async (_tx: any, _event: any) => undefined)};
   const idempotency = new IdempotencyService(prisma as any);
   return {tx, prisma, audit, person: new PersonService(prisma as any, idempotency, audit as any), orders: new OrderService(prisma as any, idempotency, audit as any, new OutboxService())};
 }

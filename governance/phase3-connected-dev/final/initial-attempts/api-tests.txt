@@ -1,10 +1,29 @@
 command: pnpm --filter @ucell/api test:e2e --runInBand
-started: 2026-09-15T17:37:50.327Z
-exit: 0
+started: 2026-09-15T17:43:18.582Z
+exit: 1
 $ jest --config ./test/jest-e2e.json "--runInBand"
+FAIL test/vertical-slice.e2e-spec.ts
+  ● Test suite failed to run
 
-Test Suites: 16 passed, 16 total
-Tests:       87 todo, 91 passed, 178 total
+    [96mtest/vertical-slice.e2e-spec.ts[0m:[93m41[0m:[93m40[0m - [91merror[0m[90m TS2493: [0mTuple type '[]' of length '0' has no element at index '0'.
+
+    [7m41[0m     expect(f.audit.write.mock.calls[0][0]).toBe(f.tx);
+    [7m  [0m [91m                                       ~[0m
+    [96mtest/vertical-slice.e2e-spec.ts[0m:[93m63[0m:[93m48[0m - [91merror[0m[90m TS2493: [0mTuple type '[work: any]' of length '1' has no element at index '1'.
+
+    [7m63[0m     expect(f.prisma.$transaction.mock.calls[0][1]).toEqual({isolationLevel: 'Serializable'});
+    [7m  [0m [91m                                               ~[0m
+    [96mtest/vertical-slice.e2e-spec.ts[0m:[93m64[0m:[93m40[0m - [91merror[0m[90m TS2493: [0mTuple type '[]' of length '0' has no element at index '0'.
+
+    [7m64[0m     expect(f.audit.write.mock.calls[0][0]).toBe(f.tx);
+    [7m  [0m [91m                                       ~[0m
+
+Test Suites: 1 failed, 15 passed, 16 total
+Tests:       78 todo, 91 passed, 169 total
 Snapshots:   0 total
-Time:        20 s, estimated 177 s
+Time:        20.179 s, estimated 177 s
 Ran all test suites.
+[ELIFECYCLE] Command failed with exit code 1.
+Error: ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL
+
+  × "pnpm recursive run" failed in C:\UCell\UCell\backend\apps\api

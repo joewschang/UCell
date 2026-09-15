@@ -1,8 +1,8 @@
 command: pnpm rc:gate
-started: 2026-09-15T17:38:21.495Z
+started: 2026-09-15T17:45:07.306Z
 exit: 1
 $ node scripts/run-bash-gate.mjs rc-gate.sh
-TEST_TODO_GATE_FAIL: 87 unresolved executable test placeholders
+TEST_TODO_GATE_FAIL: 84 unresolved executable test placeholders
 - apps\api\test\bonus-engine-v04.e2e-spec.ts: 22
 - apps\api\test\epv-global-v05.e2e-spec.ts: 8
 - apps\api\test\negative-flow-v05.e2e-spec.ts: 6
@@ -13,5 +13,5 @@ TEST_TODO_GATE_FAIL: 87 unresolved executable test placeholders
 - apps\api\test\v063-golden-path.e2e-spec.ts: 1
 - apps\api\test\v064-golden-dataset.e2e-spec.ts: 10
 - apps\api\test\vertical-slice-02.e2e-spec.ts: 10
-- apps\api\test\vertical-slice.e2e-spec.ts: 9
+- apps\api\test\vertical-slice.e2e-spec.ts: 6
 [ELIFECYCLE] Command failed with exit code 1.

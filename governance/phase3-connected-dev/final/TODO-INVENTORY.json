@@ -1,7 +1,7 @@
 {
   "originalBaseline": 148,
-  "currentExecutableTodo": 87,
-  "netPlaceholderReduction": 61,
+  "currentExecutableTodo": 84,
+  "netPlaceholderReduction": 64,
   "audit": "Previous 52 TODO claim invalidated: missing cases and unrelated/constant assertions restored. Net reduction alone is not Release approval.",
   "items": [
     {
@@ -474,55 +474,37 @@
     },
     {
       "file": "backend/apps/api/test/vertical-slice.e2e-spec.ts",
-      "line": 7,
-      "case": "creates Person with idempotent command",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
-    },
-    {
-      "file": "backend/apps/api/test/vertical-slice.e2e-spec.ts",
-      "line": 8,
+      "line": 43,
       "case": "creates Qualification with permanent sponsor sequence",
       "classification": "Test implementation; SSOT/evidence review before conversion"
     },
     {
       "file": "backend/apps/api/test/vertical-slice.e2e-spec.ts",
-      "line": 9,
+      "line": 44,
       "case": "rejects 1st direct placed on RIGHT",
       "classification": "Test implementation; SSOT/evidence review before conversion"
     },
     {
       "file": "backend/apps/api/test/vertical-slice.e2e-spec.ts",
-      "line": 10,
+      "line": 45,
       "case": "creates order using server-side Product Rule Profile snapshot",
       "classification": "Test implementation; SSOT/evidence review before conversion"
     },
     {
       "file": "backend/apps/api/test/vertical-slice.e2e-spec.ts",
-      "line": 11,
-      "case": "confirms payment exactly once",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
-    },
-    {
-      "file": "backend/apps/api/test/vertical-slice.e2e-spec.ts",
-      "line": 12,
-      "case": "writes SALE_CONFIRMED to transactional outbox",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
-    },
-    {
-      "file": "backend/apps/api/test/vertical-slice.e2e-spec.ts",
-      "line": 13,
+      "line": 68,
       "case": "worker converts SALE_CONFIRMED to GPV_CREATED per order line",
       "classification": "Test implementation; SSOT/evidence review before conversion"
     },
     {
       "file": "backend/apps/api/test/vertical-slice.e2e-spec.ts",
-      "line": 14,
+      "line": 69,
       "case": "reprocessing same outbox event does not duplicate GPV",
       "classification": "Test implementation; SSOT/evidence review before conversion"
     },
     {
       "file": "backend/apps/api/test/vertical-slice.e2e-spec.ts",
-      "line": 15,
+      "line": 70,
       "case": "PV ledger cannot be UPDATEd or DELETEd",
       "classification": "Test implementation; SSOT/evidence review before conversion"
     }
