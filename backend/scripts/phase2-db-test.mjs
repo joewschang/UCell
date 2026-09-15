@@ -33,6 +33,21 @@ try{await prisma.$transaction(async tx=>{
  check('original EPV 4800 => 1680',(await service.recognizeOrder(order.orderId,version)).epv,'1680');
  const originalAwards=await tx.bonusAward.findMany({where:{sourceQualificationId:self.qualificationId,awardType:'EPV'}}),originalJson=JSON.stringify(originalAwards);
  const selfAward=originalAwards.find(a=>a.recipientQualificationId===self.qualificationId);
+ check('original Active EPV self entitlement',selfAward.payableAmount.toString(),'840');
+ check('original inactive EPV Sponsor generation stays zero',originalAwards.find(a=>a.recipientQualificationId===inactive.qualificationId).payableAmount.toString(),'0');
+ const epvActiveSelf=await qualification(),epvBinaryOnly=await qualification(),epvChain=[];
+ for(let i=0;i<5;i++)epvChain.push(await qualification());
+ for(let i=0;i<5;i++){
+   await tx.sponsorRelationship.create({data:{childQualificationId:i===0?epvActiveSelf.qualificationId:epvChain[i-1].qualificationId,sponsorQualificationId:epvChain[i].qualificationId,sponsorSequenceNo:1,effectiveFrom:new Date('2020-01-01')}});
+   if(i>0)await tx.binaryPlacement.create({data:{childQualificationId:epvChain[i-1].qualificationId,parentQualificationId:epvChain[i].qualificationId,side:'LEFT',effectiveFrom:new Date('2020-01-01')}});
+ }
+ await tx.binaryPlacement.create({data:{childQualificationId:epvBinaryOnly.qualificationId,parentQualificationId:epvChain[0].qualificationId,side:'LEFT',effectiveFrom:new Date('2020-01-01')}});
+ await tx.binaryPlacement.create({data:{childQualificationId:epvActiveSelf.qualificationId,parentQualificationId:epvBinaryOnly.qualificationId,side:'LEFT',effectiveFrom:new Date('2020-01-01')}});
+ const epvActiveOrder=await tx.order.create({data:{qualificationId:epvActiveSelf.qualificationId,purpose:'REPURCHASE',status:'PAID',grossAmount:4800,netAmount:4800,ruleVersionCode:version,paidAt:new Date('2020-01-05'),lines:{create:{productId:product.productId,skuSnapshot:product.sku,productNameSnapshot:'TEST_ONLY EPV RECIPIENT ISOLATION',quantity:3,unitPrice:1600,lineAmount:4800,gpvRateSnapshot:0,gpvAmountSnapshot:0,ruleProfileSnapshot:{testOnly:true,pendingFormalPVMapping:true}}}}});
+ await service.recognizeOrder(epvActiveOrder.orderId,version);
+ const epvActiveAwards=await tx.bonusAward.findMany({where:{sourceQualificationId:epvActiveSelf.qualificationId,awardType:'EPV'}});
+ for(let generation=1;generation<=5;generation++)check('Active historical EPV Sponsor G'+generation,epvActiveAwards.find(a=>a.recipientQualificationId===epvChain[generation-1].qualificationId&&a.generationNo===generation).payableAmount.toString(),'100.8');
+ check('Binary-only historical EPV ancestor gets no award',epvActiveAwards.filter(a=>a.recipientQualificationId===epvBinaryOnly.qualificationId).length,0);
  await tx.bonusAwardLifecycleEvent.create({data:{bonusAwardId:selfAward.bonusAwardId,status:'PAID',occurredAt:new Date('2020-01-09'),reasonCode:'PHASE2_TEST_PAID'}});
  const paid=JSON.stringify(await tx.bonusAwardLifecycleEvent.findMany({where:{bonusAwardId:selfAward.bonusAwardId}}));
  await tx.sponsorRelationship.update({where:{sponsorRelationshipId:relationship.sponsorRelationshipId},data:{effectiveTo:new Date('2020-01-06')}});
