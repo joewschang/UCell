@@ -1,0 +1,5 @@
+cwd: C:\UCell\UCell\backend
+command: node scripts/prisma-relation-preflight.mjs
+started: 2026-09-15T09:37:55.186Z
+exit: 0
+PRISMA_RELATION_PREFLIGHT_PASS

@@ -1,0 +1,8 @@
+cwd: C:\UCell\UCell
+command: git status --short --branch
+started: 2026-09-15T09:37:50.369Z
+exit: 0
+## rc1-recovered...origin/rc1-recovered [ahead 13]
+ M backend/package.json
+?? backend/scripts/run-bash-gate.mjs
+?? governance/connected-dev-final-review/

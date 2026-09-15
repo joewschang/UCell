@@ -1,0 +1,5 @@
+cwd: C:\UCell\UCell
+command: node --version
+started: 2026-09-15T09:37:50.283Z
+exit: 0
+v24.21.0

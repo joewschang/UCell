@@ -1,0 +1,17 @@
+{
+  "classification": "Legacy Test Drift",
+  "originalCommit": "df13581",
+  "originalSource": "backend/scripts/golden-domain-test.mjs",
+  "originalSHA256": "1c33894e442b2cac14c93662d4c9c228492b74bd3ea6ca5fe9e9c32911aa72ab",
+  "evidence": "golden-domain-test.legacy.mjs.txt",
+  "drift": [
+    "EPV amount * 0.70 / EPV(2400)=1680",
+    "Pools 42/36/12/5/5"
+  ],
+  "ssotReferences": [
+    "../local-ssot-review/source-manifest.json",
+    "S02 P0035/P0422/P0567",
+    "S06 P0026"
+  ],
+  "history": "d3e0764 corrected only the test to existing shared constants before the latest instruction; production monetary rules were not modified. The original is preserved here and in Git history. No further semantic changes in this phase."
+}
