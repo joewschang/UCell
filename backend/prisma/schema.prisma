@@ -1,0 +1,42 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// Natural person / KYC owner. Economic and organization state MUST NOT be stored here.
+model Person {
+  id             String          @id @default(uuid()) @db.Uuid
+  displayName    String          @map("display_name")
+  email          String?         @unique
+  phone          String?
+  createdAt      DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+  qualifications Qualification[]
+
+  @@map("persons")
+}
+
+/// Independent UCell qualification (ball). Every organization/PV/Active/bonus operation must bind this ID.
+model Qualification {
+  id              String              @id @default(uuid()) @db.Uuid
+  currentHolderId String              @map("current_holder_id") @db.Uuid
+  status          QualificationStatus @default(DRAFT)
+  activeFlag      Boolean             @default(false) @map("active_flag")
+  createdAt       DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+  currentHolder   Person              @relation(fields: [currentHolderId], references: [id], onDelete: Restrict)
+
+  @@index([currentHolderId])
+  @@map("qualifications")
+}
+
+enum QualificationStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  EFFECTIVE
+  SUSPENDED
+  EXITED
+}
