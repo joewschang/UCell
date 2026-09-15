@@ -1,7 +1,7 @@
 import { SettlementCalendarService } from '../settlement/settlement-calendar.service';
 import { snapshotDecimal, verifySnapshot, captureParameters } from '../rules/parameter-snapshot';
 import { Injectable } from '@nestjs/common';
-import { Prisma, PrismaService } from '@ucell/database';
+import { Prisma, PrismaService, sealSettlement, capturedSideGpv, verifyReplayEnvelope, effectiveGpv, pending } from '@ucell/database';
 import { createHash } from 'crypto';
 import { RuntimeRuleService } from '../rules/runtime-rule.service';
 import { BonusQueryService } from './bonus-query.service';
@@ -27,32 +27,9 @@ export class BinaryBonusService {
     tx:Prisma.TransactionClient,
     rootQualificationId:string,
     side:'LEFT'|'RIGHT',
-    start:Date,end:Date
+    start:Date,end:Date,ruleVersionCode='R1.0B'
   ){
-    const rows=await tx.$queryRaw<Array<{amount:string}>>`
-      WITH RECURSIVE first_child AS (
-        SELECT child_qualification_id AS qualification_id
-        FROM organization.binary_placement
-        WHERE parent_qualification_id=${rootQualificationId}::uuid
-          AND side=${side}::organization."SideCode"
-          AND effective_to IS NULL
-      ),
-      subtree AS (
-        SELECT qualification_id FROM first_child
-        UNION ALL
-        SELECT bp.child_qualification_id
-        FROM organization.binary_placement bp
-        JOIN subtree s ON bp.parent_qualification_id=s.qualification_id
-        WHERE bp.effective_to IS NULL
-      )
-      SELECT COALESCE(SUM(p.amount),0)::text AS amount
-      FROM ledger.pv_ledger p
-      JOIN subtree s ON p.qualification_id=s.qualification_id
-      WHERE p.pv_type='GPV'::ledger."PvType"
-        AND p.occurred_at >= ${start}
-        AND p.occurred_at < ${end}
-    `;
-    return new Prisma.Decimal(rows[0]?.amount ?? '0');
+    return capturedSideGpv(tx,rootQualificationId,side,start,end,ruleVersionCode);
   }
 
   async settleBinary(periodStart:Date,periodEnd:Date,ruleVersionCode='R1.0B'){
@@ -74,7 +51,10 @@ export class BinaryBonusService {
       const pendingDays=Number(snapshotDecimal(parameterSnapshot,'award.pending.days').toString());
       const poolRate=snapshotDecimal(parameterSnapshot,'pool.binary.rate','*');
       const pairRate=snapshotDecimal(parameterSnapshot,'binary.pair.rate','*');
-      const totalGpv=await this.query.totalGpv(tx,periodStart,periodEnd);
+      const originals=await tx.pvLedger.findMany({where:{pvType:'GPV',eventType:'GPV_CREATED',ruleVersionCode,occurredAt:{gte:periodStart,lt:periodEnd}}});
+      const sourceSnapshots=[];for(const event of originals)sourceSnapshots.push(verifyReplayEnvelope(await tx.historicalReplaySnapshot.findUnique({where:{kind_sourceId:{kind:'GPV',sourceId:event.eventId}}})));
+      const effective=await effectiveGpv(tx,sourceSnapshots);
+      const totalGpv=[...effective.values()].reduce((sum,value)=>sum.add(value),new Prisma.Decimal(0));
 
       const qualifications=await tx.qualification.findMany({
         where:{effectiveAt:{lt:periodEnd}},
@@ -88,14 +68,17 @@ export class BinaryBonusService {
         const active=await this.query.isActiveAt(tx,q.qualificationId,periodEnd);
         const planLevelCode=await this.query.qualificationPlanAt(tx,q.qualificationId,periodEnd);
         const previous=await tx.binaryCarry.findFirst({
-          where:{qualificationId:q.qualificationId,periodEnd:{lt:periodEnd}},
+          where:{qualificationId:q.qualificationId,periodEnd:{lt:periodEnd},ruleVersionCode},
           orderBy:{periodEnd:'desc'}
         });
 
-        const leftIn=previous?.leftCarryOut ?? new Prisma.Decimal(0);
-        const rightIn=previous?.rightCarryOut ?? new Prisma.Decimal(0);
-        const leftPeriod=await this.sideGpv(tx,q.qualificationId,'LEFT',periodStart,periodEnd);
-        const rightPeriod=await this.sideGpv(tx,q.qualificationId,'RIGHT',periodStart,periodEnd);
+        const projection=previous?await tx.replayCarryProjection.findFirst({where:{periodEnd:previous.periodEnd,ruleVersionCode},orderBy:{sequence:'desc'}}):null;
+        const corrected=(projection?.carry as any)?.[q.qualificationId];
+        if(projection&&!corrected) pending('HISTORICAL_SNAPSHOT_MISSING','Carry projection does not contain original recipient');
+        const leftIn=corrected?new Prisma.Decimal(corrected.left):(previous?.leftCarryOut ?? new Prisma.Decimal(0));
+        const rightIn=corrected?new Prisma.Decimal(corrected.right):(previous?.rightCarryOut ?? new Prisma.Decimal(0));
+        const leftPeriod=await this.sideGpv(tx,q.qualificationId,'LEFT',periodStart,periodEnd,ruleVersionCode);
+        const rightPeriod=await this.sideGpv(tx,q.qualificationId,'RIGHT',periodStart,periodEnd,ruleVersionCode);
         const leftAvailable=leftIn.add(leftPeriod);
         const rightAvailable=rightIn.add(rightPeriod);
 
@@ -116,11 +99,11 @@ export class BinaryBonusService {
         });
 
         const theory=active?paired.mul(pairRate):new Prisma.Decimal(0);
-        if(theory.gt(0)){
+        {
           theoryRows.push({
             recipientQualificationId:q.qualificationId,
             theoryAmount:theory,
-            activeSnapshot:true,
+            activeSnapshot:active,
             planLevelSnapshot:planLevelCode,
             occurredAt:periodEnd,
             pendingUntil:this.query.pendingUntil(periodEnd,pendingDays),
@@ -147,7 +130,7 @@ export class BinaryBonusService {
             awardType:'BINARY',
             recipientQualificationId:row.recipientQualificationId,
             theoryAmount:row.theoryAmount,kFactor:k,payableAmount:row.theoryAmount.mul(k),
-            activeSnapshot:true,planLevelSnapshot:row.planLevelSnapshot,
+            activeSnapshot:row.activeSnapshot,planLevelSnapshot:row.planLevelSnapshot,
             ruleVersionCode,parameterSnapshotHash:parameterSnapshot.hash,occurredAt:periodEnd,pendingUntil:row.pendingUntil,
             calculationDetail:row.calculationDetail
           }
@@ -166,13 +149,15 @@ export class BinaryBonusService {
           poolRate:poolRate.toString(),totalTheory:totalTheory.toString(),k:k.toString()
         })).digest('hex');
 
-      return tx.settlementBatch.update({
+      const finalized=await tx.settlementBatch.update({
         where:{settlementBatchId:batch.settlementBatchId},
         data:{
           status:'FINALIZED',totalGpv,poolRate,poolAvailable,totalTheory,kFactor:k,
           calculationHash:hash,finalizedAt:new Date()
         }
       });
+      await sealSettlement(tx,finalized);
+      return finalized;
     },{isolationLevel:Prisma.TransactionIsolationLevel.Serializable});
   }
 
@@ -204,10 +189,13 @@ export class BinaryBonusService {
 
       const pendingDays=Number(snapshotDecimal(parameterSnapshot,'award.pending.days').toString());
       const poolRate=snapshotDecimal(parameterSnapshot,'pool.matching.rate','*');
-      const totalGpv=await this.query.totalGpv(tx,periodStart,periodEnd);
+      const originals=await tx.pvLedger.findMany({where:{pvType:'GPV',eventType:'GPV_CREATED',ruleVersionCode,occurredAt:{gte:periodStart,lt:periodEnd}}});
+      const sourceSnapshots=[];for(const event of originals)sourceSnapshots.push(verifyReplayEnvelope(await tx.historicalReplaySnapshot.findUnique({where:{kind_sourceId:{kind:'GPV',sourceId:event.eventId}}})));
+      const effective=await effectiveGpv(tx,sourceSnapshots);
+      const totalGpv=[...effective.values()].reduce((sum,value)=>sum.add(value),new Prisma.Decimal(0));
 
       const binaryAwards=await tx.bonusAward.findMany({
-        where:{settlementBatchId:binaryBatch.settlementBatchId,awardType:'BINARY',payableAmount:{gt:0}}
+        where:{settlementBatchId:binaryBatch.settlementBatchId,awardType:'BINARY'}
       });
 
       const rows:Array<any>=[];
@@ -217,11 +205,11 @@ export class BinaryBonusService {
           const directCount=await this.query.effectiveDirectCountAt(tx,u.qualification_id,periodEnd);
           const unlock=this.matchingUnlockDepth(directCount);
           const active=await this.query.isActiveAt(tx,u.qualification_id,periodEnd);
-          if(!active || u.generation>unlock) continue;
+
 
           const rate=snapshotDecimal(parameterSnapshot,'matching.rate',String(u.generation));
-          const theory=source.payableAmount.mul(rate); // actual Binary Paid after K1
-          if(theory.lte(0)) continue;
+          const theory=active&&u.generation<=unlock?source.payableAmount.mul(rate):new Prisma.Decimal(0); // actual Binary Paid after K1
+
 
           rows.push({
             recipientQualificationId:u.qualification_id,
@@ -229,7 +217,7 @@ export class BinaryBonusService {
             sourceAwardId:source.bonusAwardId,
             generationNo:u.generation,
             theoryAmount:theory,
-            activeSnapshot:true,
+            activeSnapshot:active,
             effectiveDirectCountSnapshot:directCount,
             planLevelSnapshot:await this.query.qualificationPlanAt(tx,u.qualification_id,periodEnd),
             occurredAt:periodEnd,
@@ -257,7 +245,7 @@ export class BinaryBonusService {
             sourceQualificationId:row.sourceQualificationId,
             sourceAwardId:row.sourceAwardId,generationNo:row.generationNo,
             theoryAmount:row.theoryAmount,kFactor:k,payableAmount:row.theoryAmount.mul(k),
-            activeSnapshot:true,effectiveDirectCountSnapshot:row.effectiveDirectCountSnapshot,
+            activeSnapshot:row.activeSnapshot,effectiveDirectCountSnapshot:row.effectiveDirectCountSnapshot,
             planLevelSnapshot:row.planLevelSnapshot,ruleVersionCode,parameterSnapshotHash:parameterSnapshot.hash,
             occurredAt:periodEnd,pendingUntil:row.pendingUntil,
             calculationDetail:row.calculationDetail
@@ -277,13 +265,15 @@ export class BinaryBonusService {
           poolRate:poolRate.toString(),totalTheory:totalTheory.toString(),k:k.toString()
         })).digest('hex');
 
-      return tx.settlementBatch.update({
+      const finalized=await tx.settlementBatch.update({
         where:{settlementBatchId:batch.settlementBatchId},
         data:{
           status:'FINALIZED',totalGpv,poolRate,poolAvailable,totalTheory,kFactor:k,
           calculationHash:hash,finalizedAt:new Date()
         }
       });
+      await sealSettlement(tx,finalized);
+      return finalized;
     },{isolationLevel:Prisma.TransactionIsolationLevel.Serializable});
   }
 }

@@ -1,5 +1,7 @@
 export * from './prisma.service';
 export * from './database.module';
+export * from './parameter-snapshot';
+export * from './historical-replay';
 export {
   Prisma,
   SideCode,

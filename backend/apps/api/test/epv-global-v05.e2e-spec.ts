@@ -1,5 +1,7 @@
+import { historicalMonthlyEntitlements } from '@ucell/database';
+import { epv,d } from './phase2-fixtures';
 describe('v0.5 EPV', () => {
-  it.todo('REPURCHASE 4800 => excess 2800 x 60% = 1680 EPV');
+  it('REPURCHASE 4800 => excess 2800 x 60% = 1680 EPV',()=>{expect(historicalMonthlyEntitlements([epv()],new Map([['order',d(4800)]])).get('order')!.toString()).toBe('1680');});
   it.todo('EPV self share = 50% = 840 when Active');
   it.todo('EPV Sponsor G1-G5 each 6% when Active');
   it.todo('EPV does not use Binary tree');

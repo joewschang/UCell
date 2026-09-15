@@ -1309,6 +1309,65 @@ enum AdminAccessStatus {
   @@schema("identity")
 }
 
+model HistoricalReplaySnapshot {
+  snapshotId String @id @default(uuid()) @map("snapshot_id") @db.Uuid
+  kind String
+  sourceId String @map("source_id") @db.Uuid
+  ruleVersionCode String @map("rule_version_code")
+  content Json
+  hash String
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  postings EntitlementReplayPosting[]
+  @@unique([kind,sourceId])
+  @@map("historical_replay_snapshot")
+  @@schema("ledger")
+}
+
+model EntitlementReplayPosting {
+  postingId String @id @default(uuid()) @map("posting_id") @db.Uuid
+  sequence BigInt @unique @default(autoincrement())
+  actionKey String @map("action_key")
+  snapshotId String @map("snapshot_id") @db.Uuid
+  entitlementKey String @map("entitlement_key")
+  recipientQualificationId String @map("recipient_qualification_id") @db.Uuid
+  originallyPosted Decimal @map("originally_posted") @db.Decimal(18,4)
+  recalculatedEntitlement Decimal @map("recalculated_entitlement") @db.Decimal(18,4)
+  delta Decimal @db.Decimal(18,4)
+  stateHash String @map("state_hash")
+  correctionAwardId String? @map("correction_award_id") @db.Uuid
+  recoveryId String? @map("recovery_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  snapshot HistoricalReplaySnapshot @relation(fields:[snapshotId],references:[snapshotId])
+  @@unique([actionKey,snapshotId,entitlementKey])
+  @@index([snapshotId,entitlementKey])
+  @@map("entitlement_replay_posting")
+  @@schema("ledger")
+}
+
+model ReplayAction {
+  actionKey String @id @map("action_key")
+  stateHash String @map("state_hash")
+  result Json
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  @@map("replay_action")
+  @@schema("ledger")
+}
+
+model ReplayCarryProjection {
+  sequence BigInt @id @default(autoincrement())
+  actionKey String @map("action_key")
+  settlementBatchId String @map("settlement_batch_id") @db.Uuid
+  periodEnd DateTime @map("period_end") @db.Timestamptz(6)
+  ruleVersionCode String @map("rule_version_code")
+  carry Json
+  stateHash String @map("state_hash")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  @@unique([actionKey,settlementBatchId])
+  @@index([periodEnd,ruleVersionCode])
+  @@map("replay_carry_projection")
+  @@schema("ledger")
+}
+
 model AdminAccessGrant {
   adminAccessGrantId String            @id @default(uuid()) @map("admin_access_grant_id") @db.Uuid
   personId          String            @map("person_id") @db.Uuid

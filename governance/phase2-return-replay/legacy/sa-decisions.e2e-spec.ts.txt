@@ -1,5 +1,3 @@
-import { periodBinary,periodMatching } from '@ucell/database';
-import { binary,recipient } from './phase2-fixtures';
 import { Prisma } from '@ucell/database';
 import { captureParameters, verifySnapshot, snapshotDecimal } from '../src/modules/rules/parameter-snapshot';
 import { monthlyEpv, monthlyReturnDelta } from '../src/modules/epv/monthly-epv';
@@ -73,28 +71,40 @@ describe('SA-20260915-03 parameter snapshot and calendar',()=>{
 });
 
 describe('SA-20260915-01 period-wide replay',()=>{
-  test('inactive zero-award qualification retains re-derived nonzero carry without activation',()=>{
-    const e=binary();e.recipients[0].active=false;e.recipients[0].eligible=false;e.evidence.carryRecipients[0].active=false;
-    const result=periodBinary(e,new Map([['left',d(3000)],['right',d(1000)]]),new Map([['root',{left:d(100),right:d(200)}]]));
-    expect(result.carryOut.get('root')!.left.toString()).toBe('2900');expect(result.carryOut.get('root')!.right.toString()).toBe('1000');expect(result.payables.get('award')!.toString()).toBe('0');
+  test('inactive zero-award qualification retains re-derived nonzero carry without activation',async()=>{
+    const snapshot=await capture({'binary.pair.rate':'.1','pool.binary.rate':'.36'});
+    const tx={settlementBatch:{findFirst:async({where}:any)=>where.settlementType==='BINARY_K1'?{settlementBatchId:'b',parameterSnapshot:snapshot,kFactor:d(1)}:null},bonusAward:{findMany:async()=>[]},binaryCarry:{findFirst:async()=>({weeklyCapSnapshot:d(500),leftCarryOut:d(4000),rightCarryOut:d(700)})},$queryRaw:async()=>[{amount:'4000'}]};
+    const replay=new SettlementReplayService({} as any);
+    jest.spyOn(replay,'subtreeEconomicGpv').mockImplementation(async(_tx,_qid,side)=>d(side==='LEFT'?3000:1000));
+    const result=await replay.replayPeriod(tx as any,{periodStart:at,periodEnd:new Date('2026-09-08'),ruleVersionCode:'R1.0B',carryOverrides:new Map([['q',{left:d(100),right:d(200)}]])});
+    expect(result.binary[0].recomputedCarryOutLeft?.toString()).toBe('2600');
+    expect(result.binary[0].recomputedCarryOutRight?.toString()).toBe('700');
+    expect(result.binary[0].recomputedTheory.toString()).toBe('0');
   });
-  test('missing K0 evidence blocks atomic run before posting partial K1/K2',async()=>{
-    const create=jest.fn();const tx={replayAction:{findUnique:async()=>null,create},returnCase:{findUnique:async()=>({status:'POSTED',orderId:'o',order:{ruleVersionCode:'R1.0B'}})},pvLedger:{findMany:async()=>[{eventId:'source',occurredAt:at}]},historicalReplaySnapshot:{findUnique:async()=>null}};
+  test('unimplemented K0 dependency blocks the atomic run before posting partial K1/K2',async()=>{
+    const snapshot=await capture({'binary.pair.rate':'.1'});
+    const create=jest.fn();
+    const tx={returnCase:{findUnique:async()=>({status:'POSTED',orderId:'o',order:{ruleVersionCode:'R1.0B',purpose:'ENTRY'}})},subscription:{findFirst:async()=>null},pvLedger:{findMany:async()=>[{occurredAt:at}]},settlementBatch:{findFirst:async({where}:any)=>where.settlementType==='BINARY_K1'?{periodStart:at,periodEnd:new Date('2026-09-08'),parameterSnapshot:snapshot}:{settlementBatchId:'k0'}},settlementReplayRun:{create}};
     const service=new CarryChainReplayService({$transaction:async(fn:any)=>fn(tx)} as any,{} as any);
-    await expect(service.runForReturn('r')).rejects.toMatchObject({response:{code:'HISTORICAL_SNAPSHOT_MISSING'}});expect(create).not.toHaveBeenCalled();
+    await expect(service.runForReturn('r')).rejects.toMatchObject({response:{code:'K0_REPLAY_IMPLEMENTATION_PENDING'}});
+    expect(create).not.toHaveBeenCalled();
   });
-  test('return shrinks pool for all recipients and recomputes K1 then K2 from exact Binary sources',()=>{
-    const e=binary();e.evidence.carryRecipients[0].weeklyCapSnapshot='10000';e.evidence.carryRecipients[0].leftCarryIn='0';e.recipients=[recipient({key:'b1'}),recipient({key:'b2',qualificationId:'root2'})];
-    e.evidence.carryRecipients.push({...e.evidence.carryRecipients[0],qualificationId:'root2'});
-    for(const source of e.evidence.sources)source.evidence.binary.push({childQualificationId:'root',parentQualificationId:'root2',side:'LEFT'});
-    // Distinct recipient ancestry: source routing through the first branch keeps root2 on its historical side.
-    e.evidence.carryRecipients[1].leftCarryIn='500';e.evidence.carryRecipients[1].rightCarryIn='500';
-    const result=periodBinary(e,new Map([['left',d(500)],['right',d(500)]]),new Map());
-    expect(result.k.toString()).toBe('0.72');expect([...result.payables.values()].map(String)).toEqual(['180','180']);
-    const m=binary();m.recipients=[recipient({awardType:'MATCHING',sourceAwardId:'b1',rate:'.5'})];const matching=periodMatching(m,result.payables,result.total);expect(matching.payables.get('award')!.toString()).toBe('90');
+  test('return shrinks pool for all recipients and recomputes K1 then K2 from exact Binary sources',async()=>{
+    const snapshot=await capture({'binary.pair.rate':'.1','pool.binary.rate':'.36','pool.matching.rate':'.15'});
+    const awards=[{bonusAwardId:'b1',recipientQualificationId:'q1',theoryAmount:d(400),payableAmount:d(360),activeSnapshot:true},{bonusAwardId:'b2',recipientQualificationId:'q2',theoryAmount:d(400),payableAmount:d(360),activeSnapshot:true}];
+    const matching=[{bonusAwardId:'m1',recipientQualificationId:'m',sourceAwardId:'b1',theoryAmount:d(180),payableAmount:d(150),calculationDetail:{rate:'.5'}}];
+    const tx={settlementBatch:{findFirst:async({where}:any)=>({settlementBatchId:where.settlementType==='BINARY_K1'?'binary':'matching',parameterSnapshot:snapshot,kFactor:d('.9'),poolAvailable:d(999999)})},bonusAward:{findMany:async({where}:any)=>where.awardType==='BINARY'?awards:matching},$queryRaw:async()=>[{amount:'1000'}]};
+    const result=await new SettlementReplayService({} as any).replayPeriod(tx as any,{periodStart:at,periodEnd:new Date('2026-09-08'),ruleVersionCode:'R1.0B',carryOverrides:new Map()});
+    expect(result.recomputedK1.toString()).toBe('0.45');
+    expect(result.binary.map(b=>b.recomputedPayable.toString())).toEqual(['180','180']);
+    expect(result.matching[0].recomputedPayable.toString()).toBe('90');
+    expect(result.recomputedK2?.toString()).toBe('1');
+    expect(awards.map(a=>a.payableAmount.toString())).toEqual(['360','360']);
   });
   test('missing historical snapshot fails before economic replay',async()=>{
-    const raw=jest.fn();const tx={settlementBatch:{findFirst:async()=>({settlementBatchId:'b'})},historicalReplaySnapshot:{findUnique:async()=>null},$queryRaw:raw};
-    await expect(new SettlementReplayService({} as any).replayPeriod(tx as any,{periodStart:at,periodEnd:new Date('2026-09-08'),ruleVersionCode:'R1.0B',carryOverrides:new Map()})).rejects.toMatchObject({response:{code:'HISTORICAL_SNAPSHOT_MISSING'}});expect(raw).not.toHaveBeenCalled();
+    const raw=jest.fn();
+    const tx={settlementBatch:{findFirst:async()=>({settlementBatchId:'b',parameterSnapshot:null})},bonusAward:{findMany:async()=>[]},$queryRaw:raw};
+    await expect(new SettlementReplayService({} as any).replayPeriod(tx as any,{periodStart:at,periodEnd:new Date('2026-09-08'),ruleVersionCode:'R1.0B',carryOverrides:new Map()})).rejects.toMatchObject({response:{code:'HISTORICAL_SNAPSHOT_MISSING'}});
+    expect(raw).not.toHaveBeenCalled();
   });
 });

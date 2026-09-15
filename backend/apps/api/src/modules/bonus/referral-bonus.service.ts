@@ -1,7 +1,7 @@
 import { SettlementCalendarService } from '../settlement/settlement-calendar.service';
 import { snapshotDecimal, verifySnapshot, captureParameters } from '../rules/parameter-snapshot';
 import { Injectable } from '@nestjs/common';
-import { Prisma, PrismaService } from '@ucell/database';
+import { Prisma, PrismaService, sealSettlement, effectiveGpv, verifyReplayEnvelope, historicalSponsorAncestors, historicalRecipientState } from '@ucell/database';
 import { createHash } from 'crypto';
 import { RuntimeRuleService } from '../rules/runtime-rule.service';
 import { BonusQueryService } from './bonus-query.service';
@@ -52,25 +52,29 @@ export class ReferralBonusService {
 
       const pendingDays=Number(snapshotDecimal(parameterSnapshot,'award.pending.days').toString());
       const poolRate=snapshotDecimal(parameterSnapshot,'pool.referral.rate','*');
-      const totalGpv=await this.query.totalGpv(tx,periodStart,periodEnd);
 
       const gpvEvents=await tx.pvLedger.findMany({
-        where:{pvType:'GPV',eventType:'GPV_CREATED',occurredAt:{gte:periodStart,lt:periodEnd}},
+        where:{pvType:'GPV',eventType:'GPV_CREATED',ruleVersionCode,occurredAt:{gte:periodStart,lt:periodEnd}},
         orderBy:{occurredAt:'asc'}
       });
 
+      const sources=[];
+      for(const event of gpvEvents) sources.push(verifyReplayEnvelope(await tx.historicalReplaySnapshot.findUnique({where:{kind_sourceId:{kind:'GPV',sourceId:event.eventId}}})));
+      const effective=await effectiveGpv(tx,sources);
+      const totalGpv=[...effective.values()].reduce((sum,value)=>sum.add(value),new Prisma.Decimal(0));
       const theoryRows:Array<any>=[];
 
       for(const event of gpvEvents){
-        const sourceSnapshot=await captureParameters(tx,event.occurredAt,ruleVersionCode);
-        const ancestors=await this.query.sponsorAncestors(tx,event.qualificationId,event.occurredAt,7);
+        const source=verifyReplayEnvelope(await tx.historicalReplaySnapshot.findUnique({where:{kind_sourceId:{kind:'GPV',sourceId:event.eventId}}}));
+        const sourceSnapshot=source.parameters;
+        const ancestors=historicalSponsorAncestors(source.evidence,event.qualificationId,7);
         const g1=ancestors.find(a=>a.generation===1);
         if(!g1) continue;
 
-        const g1Active=await this.query.isActiveAt(tx,g1.qualification_id,event.occurredAt);
-        const g1Plan=await this.query.qualificationPlanAt(tx,g1.qualification_id,event.occurredAt);
+        const g1Active=historicalRecipientState(source.evidence,g1.qualification_id).active;
+        const g1Plan=historicalRecipientState(source.evidence,g1.qualification_id).plan;
         const g1Rate=snapshotDecimal(sourceSnapshot,'referral.g1.rate',g1Plan);
-        const g1Theory=g1Active?event.amount.mul(g1Rate):new Prisma.Decimal(0);
+        const g1Theory=g1Active?effective.get(event.eventId)!.mul(g1Rate):new Prisma.Decimal(0);
 
         if(g1Theory.gt(0)){
           theoryRows.push({
@@ -87,7 +91,8 @@ export class ReferralBonusService {
             pendingUntil:this.query.pendingUntil(event.occurredAt,pendingDays),
             calculationDetail:{
               parameterSnapshot:sourceSnapshot,
-              sourceGpv:event.amount.toString(),
+              sourceGpv:effective.get(event.eventId)!.toString(),
+              originalCalculationSourceVolume:effective.get(event.eventId)!.toString(),
               rate:g1Rate.toString(),
               generation:1
             }
@@ -98,19 +103,14 @@ export class ReferralBonusService {
         if(g1Theory.lte(0)) continue;
 
         for(const anc of ancestors.filter(a=>a.generation>=2)){
-          const plan=await this.query.qualificationPlanAt(tx,anc.qualification_id,event.occurredAt);
-          const directCount=await this.query.effectiveDirectCountAt(tx,anc.qualification_id,event.occurredAt);
+          const plan=historicalRecipientState(source.evidence,anc.qualification_id).plan;
+          const directCount=historicalRecipientState(source.evidence,anc.qualification_id).directs;
           const unlock=this.equalizationUnlockDepth(plan,directCount);
-          const active=await this.query.isActiveAt(tx,anc.qualification_id,event.occurredAt);
+          const active=historicalRecipientState(source.evidence,anc.qualification_id).active;
 
           if(!active || anc.generation>unlock) continue;
 
-          let rate:Prisma.Decimal;
-          try{
-            rate=snapshotDecimal(sourceSnapshot,'equalization.rate',`${plan}:G${anc.generation}`);
-          }catch{
-            continue;
-          }
+          const rate=snapshotDecimal(sourceSnapshot,'equalization.rate',`${plan}:G${anc.generation}`);
 
           const theory=g1Theory.mul(rate);
           if(theory.lte(0)) continue;
@@ -130,6 +130,7 @@ export class ReferralBonusService {
             calculationDetail:{
               parameterSnapshot:sourceSnapshot,
               baseG1ReferralTheory:g1Theory.toString(),
+              originalCalculationSourceVolume:effective.get(event.eventId)!.toString(),
               rate:rate.toString(),
               generation:anc.generation,
               unlockDepth:unlock,
@@ -181,13 +182,15 @@ export class ReferralBonusService {
           poolRate:poolRate.toString(),totalTheory:totalTheory.toString(),k:k.toString()
         })).digest('hex');
 
-      return tx.settlementBatch.update({
+      const finalized=await tx.settlementBatch.update({
         where:{settlementBatchId:batch.settlementBatchId},
         data:{
           status:'FINALIZED',totalGpv,poolRate,poolAvailable,totalTheory,kFactor:k,
           calculationHash:hash,finalizedAt:new Date()
         }
       });
+      await sealSettlement(tx,finalized);
+      return finalized;
     },{isolationLevel:Prisma.TransactionIsolationLevel.Serializable});
   }
 }

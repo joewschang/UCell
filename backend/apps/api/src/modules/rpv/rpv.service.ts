@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma, PrismaService } from '@ucell/database';
+import { Prisma, PrismaService, sealRpvEvent } from '@ucell/database';
 import { randomUUID } from 'crypto';
 import { ActiveService } from '../active/active.service';
 
@@ -44,7 +44,7 @@ export class RpvService {
         include:{subscription:true}
       });
       if(!schedule) return {skipped:'NOT_FOUND'};
-      if(schedule.status==='RECOGNIZED') return {skipped:'ALREADY_RECOGNIZED'};
+      if(!['SCHEDULED','DUE'].includes(schedule.status)) return {skipped:'ALREADY_RECOGNIZED'};
 
       const now=new Date();
       if(schedule.dueAt>now) return {skipped:'NOT_DUE'};
@@ -127,6 +127,7 @@ export class RpvService {
         });
       }
 
+      await sealRpvEvent(tx,pvEvent,schedule);
       await tx.monthlyRecognitionSchedule.update({
         where:{recognitionId},
         data:{status:'RECOGNIZED',recognizedAt:now,pvLedgerEventId:pvEvent.eventId}

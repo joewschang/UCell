@@ -29,7 +29,7 @@ describe('A Decision return safeguards',()=>{
   });
   test('missing EPV recognition snapshot fails closed before processed marker',async()=>{
     const audit=jest.fn();const outbox=jest.fn();
-    const tx={returnCase:{findUnique:async()=>({status:'POSTED',orderId:'o',lines:[],order:{purpose:'REPURCHASE'}})},auditEvent:{findFirst:async()=>null,create:audit},pvLedger:{findFirst:async()=>null},outboxEvent:{create:outbox}};
+    const tx={replayAction:{findUnique:async()=>null},returnCase:{findUnique:async()=>({status:'POSTED',orderId:'o',lines:[],order:{purpose:'REPURCHASE'}})},auditEvent:{findFirst:async()=>null,create:audit},pvLedger:{findFirst:async()=>null,findMany:async()=>[]},outboxEvent:{create:outbox}};
     const service=new ReversalService({$transaction:async(work:any)=>work(tx)} as any,{} as any,{} as any);
     await expect(service.processReturn('r')).rejects.toMatchObject({response:{code:'HISTORICAL_SNAPSHOT_MISSING'}});
     expect(audit).not.toHaveBeenCalled();expect(outbox).not.toHaveBeenCalled();

@@ -1,4 +1,4 @@
-import { PrismaService, Prisma } from '@ucell/database';
+import { PrismaService, Prisma, sealGpvEvent, sealRpvEvent, consumeReplayOutbox, verifyReplayEnvelope, pending } from '@ucell/database';
 import * as crypto from 'node:crypto';
 
 const prisma = new PrismaService();
@@ -39,10 +39,12 @@ async function processSaleConfirmed(outboxEventId:string){
 
     const payload=event.payload as any;
     const order=await tx.order.findUnique({where:{orderId:payload.orderId},include:{lines:true}});
-    if(!order || order.status!=='PAID') throw new Error(`SALE_CONFIRMED order ${payload.orderId} is not PAID`);
+    if(!order || !['PAID','FULFILLED','PARTIAL_RETURN','RETURNED'].includes(order.status)) throw new Error(`SALE_CONFIRMED order ${payload.orderId} is not PAID`);
 
+    if(!order.paidAt) pending('HISTORICAL_SNAPSHOT_MISSING','Original sale recognition timestamp is missing');
     for(const line of order.lines){
-      await tx.pvLedger.upsert({
+      const original=await tx.pvLedger.findFirst({where:{sourceType:'ORDER',sourceId:order.orderId,sourceLineId:line.orderLineId,eventType:'GPV_CREATED',pvType:'GPV'}});
+      const ledger=await tx.pvLedger.upsert({
         where:{
           eventType_sourceType_sourceId_sourceLineId_pvType:{
             eventType:'GPV_CREATED',sourceType:'ORDER',sourceId:order.orderId,
@@ -55,9 +57,11 @@ async function processSaleConfirmed(outboxEventId:string){
           sourceType:'ORDER',sourceId:order.orderId,sourceLineId:line.orderLineId,
           eventType:'GPV_CREATED',ruleVersionCode:order.ruleVersionCode,
           parameterSnapshotHash:order.parameterSnapshotHash,
-          occurredAt:new Date(payload.occurredAt),correlationId:event.correlationId
+          occurredAt:order.paidAt,correlationId:event.correlationId
         }
       });
+      if(!original) await sealGpvEvent(tx,ledger);
+      else verifyReplayEnvelope(await tx.historicalReplaySnapshot.findUnique({where:{kind_sourceId:{kind:'GPV',sourceId:original.eventId}}}));
     }
 
     await tx.outboxEvent.update({
@@ -72,7 +76,7 @@ async function processRecognition(recognitionId:string){
     const schedule=await tx.monthlyRecognitionSchedule.findUnique({
       where:{recognitionId},include:{subscription:true}
     });
-    if(!schedule || schedule.status==='RECOGNIZED' || schedule.dueAt>new Date()) return;
+    if(!schedule || !['SCHEDULED','DUE'].includes(schedule.status) || schedule.dueAt>new Date()) return;
 
     const correlationId=crypto.randomUUID();
     const pvEvent=await tx.pvLedger.upsert({
@@ -147,6 +151,7 @@ async function processRecognition(recognitionId:string){
       });
     }
 
+    await sealRpvEvent(tx,pvEvent,schedule);
     await tx.monthlyRecognitionSchedule.update({
       where:{recognitionId},
       data:{status:'RECOGNIZED',recognizedAt:new Date(),pvLedgerEventId:pvEvent.eventId}
@@ -155,198 +160,31 @@ async function processRecognition(recognitionId:string){
 }
 
 
-async function processReturnConfirmed(outboxEventId:string){
+export async function processReplayEvent(outboxEventId:string) {
   return prisma.$transaction(async tx=>{
-    const event=await tx.outboxEvent.findUnique({where:{outboxEventId}});
-    if(!event || event.processStatus==='PROCESSED') return;
-    const payload=event.payload as any;
-    const ret=await tx.returnCase.findUnique({
-      where:{returnCaseId:payload.returnCaseId},
-      include:{lines:true,order:true}
-    });
-    if(!ret || ret.status!=='POSTED') throw new Error('Return not posted');
-    const processed=await tx.auditEvent.findFirst({where:{action:'RETURN_REVERSAL_PROCESSED',entityId:ret.returnCaseId}});
-    if(processed){
-      await tx.outboxEvent.update({where:{outboxEventId},data:{processStatus:'PROCESSED',processedAt:new Date()}});
-      return;
-    }
-
-    for(const line of ret.lines){
-      const original=await tx.pvLedger.findFirst({
-        where:{
-          sourceType:'ORDER',sourceId:ret.orderId,
-          sourceLineId:line.orderLineId,pvType:'GPV',eventType:'GPV_CREATED'
-        }
-      });
-      if(!original) continue;
-      const reverse=await tx.pvLedger.upsert({
-        where:{
-          eventType_sourceType_sourceId_sourceLineId_pvType:{
-            eventType:'GPV_REVERSAL',sourceType:'RETURN',sourceId:ret.returnCaseId,
-            sourceLineId:line.returnLineId,pvType:'GPV'
-          }
-        },
-        update:{},
-        create:{
-          qualificationId:ret.order.qualificationId,pvType:'GPV',
-          amount:line.gpvReversalAmount.negated(),
-          sourceType:'RETURN',sourceId:ret.returnCaseId,sourceLineId:line.returnLineId,
-          eventType:'GPV_REVERSAL',ruleVersionCode:ret.order.ruleVersionCode,
-          parameterSnapshotHash:ret.order.parameterSnapshotHash,
-          occurredAt:ret.occurredAt,reversalOfEventId:original.eventId,
-          correlationId:ret.correlationId
-        }
-      });
-
-      // Defer monetary award effects to complete dependency replay (SA-20260915-01).
-
-    }
-
-    const firstOriginal=await tx.pvLedger.findFirst({
-      where:{sourceType:'ORDER',sourceId:ret.orderId,pvType:'GPV',eventType:'GPV_CREATED'},
-      orderBy:{occurredAt:'asc'}
-    });
-    if(firstOriginal){
-      const historicalPeriods=await tx.settlementBatch.findMany({where:{status:'FINALIZED',ruleVersionCode:ret.order.ruleVersionCode,periodStart:{lte:firstOriginal.occurredAt},periodEnd:{gt:firstOriginal.occurredAt},settlementType:{in:['REFERRAL_K0','BINARY_K1','MATCHING_K2']}}});
-      const ancestors=await tx.$queryRaw<Array<{qualification_id:string}>>`
-        WITH RECURSIVE up AS (
-          SELECT bp.parent_qualification_id AS qualification_id
-          FROM organization.binary_placement bp
-          WHERE bp.child_qualification_id=${ret.order.qualificationId}::uuid
-            AND bp.effective_from <= ${firstOriginal.occurredAt}
-            AND (bp.effective_to IS NULL OR bp.effective_to > ${firstOriginal.occurredAt})
-          UNION ALL
-          SELECT bp.parent_qualification_id
-          FROM organization.binary_placement bp
-          JOIN up ON bp.child_qualification_id=up.qualification_id
-          WHERE bp.effective_from <= ${firstOriginal.occurredAt}
-            AND (bp.effective_to IS NULL OR bp.effective_to > ${firstOriginal.occurredAt})
-        )
-        SELECT DISTINCT qualification_id::text FROM up
-      `;
-      for(const a of ancestors){
-        for(const historical of historicalPeriods){
-          await tx.settlementRecalculationRequest.create({
-            data:{sourceReturnCaseId:ret.returnCaseId,settlementType:historical.settlementType,
-              periodStart:historical.periodStart,periodEnd:historical.periodEnd,impactedQualificationId:a.qualification_id,status:'PENDING'}
-          });
-        }
-      }
-    }
-
-    await tx.outboxEvent.create({data:{eventType:'RETURN_DEPENDENCY_REPLAY_REQUIRED',aggregateType:'RETURN',aggregateId:ret.returnCaseId,correlationId:ret.correlationId,payload:{returnCaseId:ret.returnCaseId,status:'PENDING',dependencies:['K0','K1','K2','RPV','EPV']}}});
-    if(ret.order.purpose==='REPURCHASE') await tx.outboxEvent.create({data:{eventType:'EPV_MONTH_RECALCULATION_REQUIRED',aggregateType:'RETURN',aggregateId:ret.returnCaseId,correlationId:ret.correlationId,payload:{returnCaseId:ret.returnCaseId,status:'EPV_RETURN_ALLOCATION_PENDING'}}});
-    await tx.auditEvent.create({data:{actorType:'SYSTEM',action:'RETURN_REVERSAL_PROCESSED',entityType:'RETURN',entityId:ret.returnCaseId,requestId:outboxEventId,correlationId:ret.correlationId,afterData:{dependencyReplayStatus:'PENDING',epvStatus:ret.order.purpose==='REPURCHASE'?'EPV_RETURN_ALLOCATION_PENDING':'NOT_REPURCHASE'}}});
-    await tx.outboxEvent.update({
-      where:{outboxEventId},data:{processStatus:'PROCESSED',processedAt:new Date()}
-    });
-  },{isolationLevel:Prisma.TransactionIsolationLevel.Serializable});
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${outboxEventId},0))`;
+    return consumeReplayOutbox(tx,outboxEventId);
+  },{isolationLevel:Prisma.TransactionIsolationLevel.Serializable,timeout:60000});
 }
 
-
-async function processRpvReversalRequired(outboxEventId:string){
-  return prisma.$transaction(async tx=>{
-    const event=await tx.outboxEvent.findUnique({where:{outboxEventId}});
-    if(!event || event.processStatus==='PROCESSED') return;
-    const payload=event.payload as any;
-    const schedule=await tx.monthlyRecognitionSchedule.findUnique({
-      where:{recognitionId:payload.recognitionId},
-      include:{subscription:true}
-    });
-    if(!schedule || schedule.status!=='RECOGNIZED'){
-      await tx.outboxEvent.update({
-        where:{outboxEventId},data:{processStatus:'PROCESSED',processedAt:new Date()}
-      });
-      return;
-    }
-
-    const original=await tx.pvLedger.findFirst({
-      where:{
-        sourceType:'MONTHLY_RECOGNITION',
-        sourceId:schedule.subscriptionId,
-        sourceLineId:schedule.recognitionId,
-        pvType:'RPV',eventType:'RPV_CREATED'
-      }
-    });
-    if(original){
-      await tx.pvLedger.upsert({
-        where:{
-          eventType_sourceType_sourceId_sourceLineId_pvType:{
-            eventType:'RPV_REVERSAL',
-            sourceType:'MONTHLY_RECOGNITION_REVERSAL',
-            sourceId:schedule.subscriptionId,
-            sourceLineId:schedule.recognitionId,
-            pvType:'RPV'
-          }
-        },
-        update:{},
-        create:{
-          qualificationId:schedule.subscription.qualificationId,
-          pvType:'RPV',amount:original.amount.negated(),
-          sourceType:'MONTHLY_RECOGNITION_REVERSAL',
-          sourceId:schedule.subscriptionId,sourceLineId:schedule.recognitionId,
-          eventType:'RPV_REVERSAL',ruleVersionCode:schedule.ruleVersionCode,
-          parameterSnapshotHash:schedule.parameterSnapshotHash,
-          occurredAt:new Date(),reversalOfEventId:original.eventId,
-          correlationId:event.correlationId
-        }
-      });
-
-      const awards=await tx.rpvUplineAwardEvent.findMany({
-        where:{recognitionId:schedule.recognitionId}
-      });
-      for(const a of awards){
-        if(a.payableAmount.lte(0)) continue;
-        const anchor=await tx.bonusAward.create({
-          data:{
-            awardType:'RPV',
-            recipientQualificationId:a.recipientQualificationId,
-            sourceQualificationId:a.sourceQualificationId,
-            sourceEventId:original.eventId,
-            generationNo:a.binaryGeneration,
-            theoryAmount:new Prisma.Decimal(0),payableAmount:new Prisma.Decimal(0),
-            kFactor:new Prisma.Decimal(1),activeSnapshot:a.activeSnapshot,
-            effectiveDirectCountSnapshot:a.effectiveDirectCountSnapshot,
-            ruleVersionCode:a.ruleVersionCode,occurredAt:new Date(),pendingUntil:new Date(),
-            calculationDetail:{subtype:'RPV_REVERSAL_ANCHOR',recognitionId:schedule.recognitionId}
-          }
-        });
-        await tx.bonusRecoveryEvent.create({
-          data:{
-            bonusAwardId:anchor.bonusAwardId,recoveryAmount:a.payableAmount,
-            status:'OPEN',reasonCode:'RPV_RECOGNITION_REVERSED',occurredAt:new Date()
-          }
-        });
-      }
-    }
-
-    await tx.monthlyRecognitionSchedule.update({
-      where:{recognitionId:schedule.recognitionId},data:{status:'REVERSED'}
-    });
-    await tx.outboxEvent.update({
-      where:{outboxEventId},data:{processStatus:'PROCESSED',processedAt:new Date()}
-    });
-  },{isolationLevel:Prisma.TransactionIsolationLevel.Serializable});
-}
-
-async function pollOutbox(){
+export async function pollOutbox(){
   const events=await prisma.outboxEvent.findMany({
-    where:{eventType:{in:['SALE_CONFIRMED','RETURN_CONFIRMED','RPV_REVERSAL_REQUIRED']},processStatus:'PENDING',availableAt:{lte:new Date()}},
+    where:{eventType:{in:['SALE_CONFIRMED','RETURN_CONFIRMED','RETURN_DEPENDENCY_REPLAY_REQUIRED','EPV_MONTH_RECALCULATION_REQUIRED','RPV_REVERSAL_REQUIRED']},processStatus:{in:['PENDING','PROCESSING']},availableAt:{lte:new Date()}},
     orderBy:{createdAt:'asc'},take:20
   });
   for(const event of events){
     try{
-      await prisma.outboxEvent.update({
-        where:{outboxEventId:event.outboxEventId},
-        data:{processStatus:'PROCESSING',attemptCount:{increment:1}}
+      const claim=await prisma.outboxEvent.updateMany({
+        where:{outboxEventId:event.outboxEventId,processStatus:event.processStatus,attemptCount:event.attemptCount,availableAt:event.availableAt},
+        data:{processStatus:'PROCESSING',attemptCount:{increment:1},availableAt:new Date(Date.now()+120000)}
       });
+      if(claim.count!==1) continue;
       if(event.eventType==='SALE_CONFIRMED') await processSaleConfirmed(event.outboxEventId);
-      else if(event.eventType==='RETURN_CONFIRMED') await processReturnConfirmed(event.outboxEventId);
-      else if(event.eventType==='RPV_REVERSAL_REQUIRED') await processRpvReversalRequired(event.outboxEventId);
+      else await processReplayEvent(event.outboxEventId);
     }catch(e){
-      const message=e instanceof Error?e.message:String(e);
-      await prisma.outboxEvent.update({
-        where:{outboxEventId:event.outboxEventId},
+      const message=(e as any)?.getResponse?JSON.stringify((e as any).getResponse()):(e instanceof Error?e.message:String(e));
+      await prisma.outboxEvent.updateMany({
+        where:{outboxEventId:event.outboxEventId,processStatus:'PROCESSING',attemptCount:event.attemptCount+1},
         data:{
           processStatus:event.attemptCount>=9?'DEAD':'PENDING',
           lastError:message.slice(0,4000),
@@ -394,9 +232,10 @@ async function tick(){
 
 async function main(){
   console.log('UCell worker v0.5.0 started');
-  setInterval(()=>void tick(),2000);
-  await tick();
+  let running=true;
+  setInterval(()=>{if(running) return;running=true;void tick().catch(console.error).finally(()=>{running=false;});},2000);
+  try{await tick();}finally{running=false;}
 }
-main().catch(async e=>{
+if(require.main===module) main().catch(async e=>{
   console.error(e);await prisma.$disconnect();process.exit(1);
 });

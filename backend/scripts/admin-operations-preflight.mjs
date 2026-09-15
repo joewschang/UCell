@@ -16,17 +16,17 @@ for(const x of ['operations/returns','operations/workflows','operations/recoveri
 for(const x of ['FINANCE_REVIEW','COMPLIANCE_REVIEW','markPaid','exportPayout']){
   if(!svc.includes(x))failures.push(`payout operational rule missing ${x}`);
 }
-// SA-20260915-01: recovery moved from the obsolete per-source shortcut to atomic replay.
-// Keep balance, idempotency and calendar requirements; inspect their current owners.
-for(const source of [reversal,worker]){
-  if(!source.includes('historicalPeriods') || !source.includes('historical.periodStart') || !source.includes('historical.periodEnd'))failures.push('Return must reference finalized historical periods');
-  if(!source.includes('RETURN_REVERSAL_PROCESSED') || !source.includes('if(processed)'))failures.push('Return source reversal is not idempotent');
-  if(!source.includes('RETURN_DEPENDENCY_REPLAY_REQUIRED'))failures.push('Return dependency replay outbox missing');
-  if(source.includes("start.getUTCDate()-start.getUTCDay()"))failures.push('Hardcoded return calendar remains');
+// Phase 2: inspect the shared production/API owner and its durable DB guards.
+const replay=fs.readFileSync('packages/database/src/historical-replay.ts','utf8');
+const replayMigration=fs.readFileSync('packages/database/prisma/migrations/20260915120000_phase2_historical_replay/migration.sql','utf8');
+for(const x of ['verifyReplayEnvelope','HISTORICAL_SNAPSHOT_MISSING','periodK0','periodBinary','periodMatching','historicalMonthlyEntitlements','replayRpvCancellation','entitlementReplayPosting','replayCarryProjection','originallyPosted:original','outstandingAmount:delta.abs()']){
+  if(!replay.includes(x)) failures.push(`Historical replay safeguard missing ${x}`);
 }
-if(!carryReplay.includes('recoveryAmount:delta.abs(),outstandingAmount:delta.abs()'))failures.push('Replay recovery creation does not initialize outstanding balance');
-if(!carryReplay.includes('K0_REPLAY_IMPLEMENTATION_PENDING') || !carryReplay.includes('REPLAY_EFFECTIVE_BASELINE_PENDING'))failures.push('Incomplete or repeated dependency replay must block before posting');
-if(reversal.includes('bonusRecoveryEvent.create'))failures.push('Per-source return recovery bypasses dependency-wide normalization');
+for(const x of ['APPEND_ONLY_REPLAY_EVIDENCE','REPLAY_DELTA_BASELINE_MISMATCH','pg_advisory_xact_lock']) if(!replayMigration.includes(x)) failures.push(`Replay DB guard missing ${x}`);
+if(!reversal.includes('processHistoricalReturn')) failures.push('API does not use atomic historical owner');
+if(!carryReplay.includes('replayReturnDependencies')) failures.push('Carry continuation bypasses historical owner');
+for(const x of ['consumeReplayOutbox','attemptCount','availableAt','PROCESSING']) if(!worker.includes(x)) failures.push(`Worker claim/replay infrastructure missing ${x}`);
+if(reversal.includes('bonusRecoveryEvent.create')) failures.push('Per-source recovery bypasses normalization');
 if(!svc.includes('different actors'))failures.push('Dual payout approval does not enforce distinct actors');
 if(!svc.includes("['FINANCE','SUPER_ADMIN']"))failures.push('Payout export/paid role enforcement missing');
 if(!schema.includes('model PayoutApproval'))failures.push('PayoutApproval model missing');

@@ -46,8 +46,13 @@ describe('Connected DEV implementation regressions', () => {
     const tx = {
       order: { findUnique: jest.fn().mockResolvedValue({ orderId: 'order', status: 'PAID',
         purpose: 'REPURCHASE', ruleVersionCode:'R1.0B', qualificationId: 'self', paidAt: at, netAmount: new Prisma.Decimal(4800) }) },
-      pvLedger: { findFirst: jest.fn().mockResolvedValue(null), create: jest.fn().mockResolvedValue({ eventId: 'event' }) },
-      bonusAward: { create: jest.fn().mockResolvedValue({ bonusAwardId: 'award' }) },
+      pvLedger: { findFirst: jest.fn().mockResolvedValue(null), create: jest.fn().mockResolvedValue({ eventId: 'event',occurredAt:at,qualificationId:'self',amount:new Prisma.Decimal(1680),ruleVersionCode:'R1.0B' }) },
+      bonusAward: { create: jest.fn().mockResolvedValue({ bonusAwardId: 'award' }),findMany:jest.fn().mockResolvedValue([]) },
+      qualificationPlanHistory:{findMany:jest.fn().mockResolvedValue([{planCode:'STARTER'}])},
+      qualificationStatusHistory:{findMany:jest.fn().mockResolvedValue([{status:'EFFECTIVE'}])},
+      activePeriod:{findMany:jest.fn().mockResolvedValue([{activeFrom:at,activeTo:null}])},
+      sponsorRelationship:{findMany:jest.fn().mockResolvedValue([])},binaryPlacement:{findMany:jest.fn().mockResolvedValue([])},
+      historicalReplaySnapshot:{findUnique:jest.fn().mockResolvedValue(null),create:jest.fn().mockImplementation(({data})=>data)},
       bonusAwardLifecycleEvent: { createMany: jest.fn().mockResolvedValue({ count: 2 }) },
       auditEvent:{create:jest.fn().mockResolvedValue({})},
       runtimeRuleParameter:{findMany:jest.fn().mockResolvedValue([
