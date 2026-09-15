@@ -97,3 +97,13 @@ Interactive Cloud Browser was available but rejected the loopback URL with
 ERR_BLOCKED_BY_CLIENT. No alternate route or protection bypass was attempted.
 Real LINE login/device UAT, backend integration and production promotion remain
 pending. This QA increment does not claim a new member-facing functional release.
+
+### Observed CI result
+
+Commit b5cee113f98c81e41456cda5661497d7d6af435b passed GitHub Actions run
+34999776718, including 54 tests, typecheck/build and isolated Chromium smoke.
+Job 104485007674 logged PASS for routes, ball isolation, checkout, 320/390/768px
+overflow and no page errors. Evidence artifact 10408094880 contains the screenshot
+and server log (seven-day retention). Manual visual review was not performed.
+This supersedes the pending browser-CI status for that commit only, not real LINE
+UAT or server authorization/payment tests. No production promotion is authorized.
