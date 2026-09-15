@@ -1,10 +1,10 @@
 # Dependency Lock Policy
 
-The current source packages do not yet contain a generated `pnpm-lock.yaml`.
-That is acceptable for this offline source-generation stage, but **not acceptable for an RC or production release**.
+Connected DEV now contains a generated `pnpm-lock.yaml`. Generation and installation
+do not constitute production approval; review and all connected gates remain required.
 
 In a connected DEV environment:
-1. install the approved pnpm 9.x toolchain,
+1. use Node.js 24.x and pnpm 12.4.1,
 2. run dependency resolution once,
 3. review `jose` and all transitive dependency versions,
 4. generate `pnpm-lock.yaml`,

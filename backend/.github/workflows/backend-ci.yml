@@ -8,6 +8,9 @@ on:
 jobs:
   backend:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
     services:
       postgres:
         image: postgres:16
@@ -33,15 +36,15 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
 
       - name: Enable pnpm
         run: |
           corepack enable
-          corepack prepare pnpm@9.15.0 --activate
+          corepack prepare pnpm@12.4.1 --activate
 
       - name: Install
-        run: pnpm install --frozen-lockfile=false
+        run: pnpm install --frozen-lockfile
 
       - name: Offline preflight
         run: bash scripts/ci-gate.sh
