@@ -1,10 +1,24 @@
 command: pnpm --filter @ucell/api test:e2e --runInBand
-started: 2026-09-15T15:57:02.562Z
-exit: 0
+started: 2026-09-15T16:46:22.565Z
+exit: 1
 $ jest --config ./test/jest-e2e.json "--runInBand"
+FAIL test/vertical-slice-02.e2e-spec.ts
+  ● Test suite failed to run
 
-Test Suites: 16 passed, 16 total
-Tests:       119 todo, 59 passed, 178 total
+    [96mtest/vertical-slice-02.e2e-spec.ts[0m:[93m25[0m:[93m41[0m - [91merror[0m[90m TS2345: [0mArgument of type '{ personId: string; requestedPlanLevelCode: string; sponsorQualificationId: string; binaryParentQualificationId: string; binarySide: "LEFT"; }' is not assignable to parameter of type 'CreateMembershipApplicationDto'.
+      Types of property 'requestedPlanLevelCode' are incompatible.
+        Type 'string' is not assignable to type '"STARTER" | "ELITE" | "LEADER"'.
+
+    [7m25[0m     const result = await service.create(dto, 'create-key', 'request-A', 'admin-A');
+    [7m  [0m [91m                                        ~~~[0m
+
+
+Test Suites: 1 failed, 15 passed, 16 total
+Tests:       97 todo, 65 passed, 162 total
 Snapshots:   0 total
-Time:        7.764 s, estimated 163 s
+Time:        12.019 s
 Ran all test suites.
+[ELIFECYCLE] Command failed with exit code 1.
+Error: ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL
+
+  × "pnpm recursive run" failed in C:\UCell\UCell\backend\apps\api

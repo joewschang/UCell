@@ -12,13 +12,17 @@ Idempotency now checks a transaction-visible unfinished record's request hash be
 
 The earlier report of 52 remaining TODOs / 96 completed cases is withdrawn. Several original cases were removed instead of converted, and assertions against constants or unrelated scenarios were incorrectly counted. The commits remain in history, with checkpoint `e232c92` before correction. Unverified cases were restored from `89bfed6`.
 
-Current inventory: **113 executable TODOs** from original baseline 148. This is a net reduction of 35 placeholders, not a claim that all 35 have completed release-level review. This audited Phase 3 batch converted 19 original TODOs with corresponding service/guard or direct DB assertions: idempotency (4), organization (4), qualification isolation (3), unlock-depth behavior (2), negative return/payout invariants (6). Two additional idempotency defect/rollback regression tests were added. Earlier Phase 2 conversions remain subject to continued coverage review.
+Current inventory: **109 executable TODOs** from original baseline 148. This is a net reduction of 39 placeholders, not a claim that all 39 have completed release-level review. The preceding audited Phase 3 batch converted 19 original TODOs with corresponding service/guard or direct DB assertions: idempotency (4), organization (4), qualification isolation (3), unlock-depth behavior (2), negative return/payout invariants (6). Two additional idempotency defect/rollback regression tests were added. Earlier Phase 2 conversions remain subject to continued coverage review.
 
-The API Jest run passed 16 suites / 65 actual tests, with 113 TODOs. The DB regression passed 94 assertions with fixture rollback. [TODO inventory](C:/UCell/UCell/governance/phase3-connected-dev/final/TODO-INVENTORY.md) records each unresolved name/file/line and its engineering or Pending Decision classification. No skip was added and original unresolved cases are retained.
+The next batch, checkpoint `27789de`, converts four Vertical Slice 02 cases: DRAFT creation using the real service/idempotency callback; SUBMIT rejection for each missing Sponsor/Binary field plus successful submission; Active overlap rejection without mutation; historical Active half-open boundaries independent of the current flag. These are service tests with mocked persistence and do not claim database atomicity or concurrent Active exclusion. All other original cases remain TODO.
+
+The latest API Jest run passed 16 suites / 69 actual tests, with 109 TODOs. The DB regression passed 94 assertions with fixture rollback; the fresh Golden runner additionally passes 20 monetary Return/outbox assertions. [TODO inventory](C:/UCell/UCell/governance/phase3-connected-dev/final/TODO-INVENTORY.md) records each unresolved name/file/line and its engineering or Pending Decision classification. No skip was added and original unresolved cases are retained.
 
 ## Verification
 
 See [PASS/FAIL Matrix](C:/UCell/UCell/governance/phase3-connected-dev/final/PASS-FAIL-MATRIX.md) and `final/gate-results.json` for exact commands, exit codes and raw logs. Prisma validate/generate/deploy, Backend/Admin build, API/shared/Admin tests, static/offline preflights, default isolated DB Golden, timezone/concurrency tests and replay DB regression passed. The first Prisma generate attempt hit a Windows DLL lock from the existing DEV API/worker; after stopping those identified local DEV processes, generate and dependency-backed preflight passed.
+
+The latest service test's first run failed TypeScript literal inference and was corrected using the DTO's literal type. Offline preflight also exposed Legacy Static Check Drift after the outbox owner extraction: `admin-operations-preflight.mjs` now verifies worker wiring plus safeguards in the shared lease module rather than requiring those implementation tokens in the worker entrypoint. Real DB lease/return assertions remain enabled. These repairs change no monetary/business rule.
 
 The new timezone migration was deployed to default local `ucell` and isolated `ucell_admin_test`, and also replayed from zero in fresh Golden databases. No historical snapshot, original monetary ledger or PAID lifecycle was changed by the migration.
 
@@ -26,8 +30,8 @@ The identified local DEV API/worker were restored after Prisma generation, using
 
 ## Remaining blockers and next work
 
-- 113 TODOs: continue SSOT/evidence audit and real implementation tests, especially vertical slice and bonus-engine settlement integration.
-- Concurrent monetary Return replay and lease-expiry/retry ownership need stronger integration coverage; sequential claim/duplicate assertions are not proof of full concurrency handling.
+- 109 TODOs: continue SSOT/evidence audit and real implementation tests, especially vertical slice and bonus-engine settlement integration.
+- Commit `83e5b39` adds lease-safe production consumer processing and 20 isolated real DB assertions for concurrent partial returns, rollback/retry, PAID clawback, stale ownership, expired lease and duplicate delivery. This closes the previously missing focused concurrency coverage; broader production workload verification remains outstanding.
 - RPV historical data predating required snapshots cannot be reconstructed from current state; missing allocation/period/timezone evidence remains fail-closed.
 - Formal partial-refund RPV month allocation requires original allocation evidence; no proportional fixed-award assumption is made.
 - Security HTTP is BLOCKED: formal API port 3000 is unavailable and formal Entra role tokens are not provided. The script now emits a clear infrastructure blocker rather than an unhandled fetch exception. DEV full-access success is not Production RBAC PASS.

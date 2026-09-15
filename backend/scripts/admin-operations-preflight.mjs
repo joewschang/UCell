@@ -6,6 +6,7 @@ const svc=fs.readFileSync('apps/api/src/modules/admin-operations/admin-operation
 const reversal=fs.readFileSync('apps/api/src/modules/return/reversal.service.ts','utf8');
 const carryReplay=fs.readFileSync('apps/api/src/modules/adjustment/carry-chain-replay.service.ts','utf8');
 const worker=fs.readFileSync('apps/worker/src/main.ts','utf8');
+const outboxLease=fs.readFileSync('packages/database/src/outbox-lease.ts','utf8');
 const schema=fs.readFileSync('packages/database/prisma/schema.prisma','utf8');
 const mig=fs.readFileSync('packages/database/prisma/migrations/0014_r4_payout_approval_recovery_integrity/migration.sql','utf8');
 
@@ -25,7 +26,8 @@ for(const x of ['verifyReplayEnvelope','HISTORICAL_SNAPSHOT_MISSING','periodK0',
 for(const x of ['APPEND_ONLY_REPLAY_EVIDENCE','REPLAY_DELTA_BASELINE_MISMATCH','pg_advisory_xact_lock']) if(!replayMigration.includes(x)) failures.push(`Replay DB guard missing ${x}`);
 if(!reversal.includes('processHistoricalReturn')) failures.push('API does not use atomic historical owner');
 if(!carryReplay.includes('replayReturnDependencies')) failures.push('Carry continuation bypasses historical owner');
-for(const x of ['consumeReplayOutbox','attemptCount','availableAt','PROCESSING']) if(!worker.includes(x)) failures.push(`Worker claim/replay infrastructure missing ${x}`);
+for(const x of ['claimOutboxLease','withOutboxLease','processLeasedReplay','releaseFailedOutboxLease']) if(!worker.includes(x)) failures.push(`Worker lease owner wiring missing ${x}`);
+for(const x of ['consumeReplayOutbox','attemptCount','availableAt','PROCESSING','FOR UPDATE','lostLease','Serializable']) if(!outboxLease.includes(x)) failures.push(`Shared outbox lease safeguard missing ${x}`);
 if(reversal.includes('bonusRecoveryEvent.create')) failures.push('Per-source recovery bypasses normalization');
 if(!svc.includes('different actors'))failures.push('Dual payout approval does not enforce distinct actors');
 if(!svc.includes("['FINANCE','SUPER_ADMIN']"))failures.push('Payout export/paid role enforcement missing');

@@ -1,14 +1,14 @@
 command: pnpm build
-started: 2026-09-15T15:53:49.642Z
+started: 2026-09-15T15:56:52.169Z
 exit: 0
 packages/shared build$ tsc -p tsconfig.json
-packages/contracts build$ tsc -p tsconfig.json
 packages/database build$ tsc -p tsconfig.json
+packages/contracts build$ tsc -p tsconfig.json
 packages/contracts build: Done
 packages/shared build: Done
 packages/database build: Done
-apps/api build$ nest build
 apps/worker build$ tsc -p tsconfig.json
+apps/api build$ nest build
 apps/worker build: Done
 apps/api build: Done
 $ pnpm -r build

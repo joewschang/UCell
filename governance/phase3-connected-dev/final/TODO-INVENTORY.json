@@ -1,7 +1,7 @@
 {
   "originalBaseline": 148,
-  "currentExecutableTodo": 113,
-  "netPlaceholderReduction": 35,
+  "currentExecutableTodo": 109,
+  "netPlaceholderReduction": 39,
   "audit": "Previous 52 TODO claim invalidated: missing cases and unrelated/constant assertions restored. Net reduction alone is not Release approval.",
   "items": [
     {
@@ -534,97 +534,73 @@
     },
     {
       "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
-      "line": 2,
-      "case": "creates DRAFT membership application",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
-    },
-    {
-      "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
-      "line": 3,
-      "case": "SUBMIT requires sponsor and binary placement data",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
-    },
-    {
-      "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
-      "line": 4,
+      "line": 45,
       "case": "APPROVE creates Qualification + Holder + Sponsor + Binary atomically",
       "classification": "Test implementation; SSOT/evidence review before conversion"
     },
     {
       "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
-      "line": 5,
+      "line": 46,
       "case": "1st and 3rd direct-left rule is enforced during approval",
       "classification": "Test implementation; SSOT/evidence review before conversion"
     },
     {
       "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
-      "line": 6,
-      "case": "Active periods cannot overlap",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
-    },
-    {
-      "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
-      "line": 7,
-      "case": "historical Active query uses event time, not current flag",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
-    },
-    {
-      "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
-      "line": 8,
+      "line": 74,
       "case": "QUARTER creates exactly 3 recognition rows",
       "classification": "Test implementation; SSOT/evidence review before conversion"
     },
     {
       "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
-      "line": 9,
+      "line": 75,
       "case": "HALF_YEAR creates exactly 6 recognition rows",
       "classification": "Test implementation; SSOT/evidence review before conversion"
     },
     {
       "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
-      "line": 10,
+      "line": 76,
       "case": "YEAR creates exactly 12 recognition rows",
       "classification": "Test implementation; SSOT/evidence review before conversion"
     },
     {
       "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
-      "line": 11,
+      "line": 77,
       "case": "each due recognition creates exactly 1,200 RPV once",
       "classification": "Test implementation; SSOT/evidence review before conversion"
     },
     {
       "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
-      "line": 12,
+      "line": 78,
       "case": "0 direct unlocks 5 binary generations",
       "classification": "Test implementation; SSOT/evidence review before conversion"
     },
     {
       "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
-      "line": 13,
+      "line": 79,
       "case": "1 direct unlocks 8 binary generations",
       "classification": "Test implementation; SSOT/evidence review before conversion"
     },
     {
       "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
-      "line": 14,
+      "line": 80,
       "case": "2+ directs unlocks 12 binary generations",
       "classification": "Test implementation; SSOT/evidence review before conversion"
     },
     {
       "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
-      "line": 15,
+      "line": 81,
       "case": "inactive upline receives 0 and is not compressed",
       "classification": "Test implementation; SSOT/evidence review before conversion"
     },
     {
       "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
-      "line": 16,
+      "line": 82,
       "case": "higher generation remains independently evaluated",
       "classification": "Test implementation; SSOT/evidence review before conversion"
     },
     {
       "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
-      "line": 17,
+      "line": 83,
       "case": "re-running a recognition cannot duplicate RPV or awards",
       "classification": "Test implementation; SSOT/evidence review before conversion"
     },
