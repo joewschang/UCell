@@ -16,7 +16,11 @@ function fixture() {
       update: jest.fn(async ({where, data}: any) => records.set(identity(where), {...records.get(identity(where)), ...data})),
     },
     person: { create: jest.fn(async ({data}: any) => ({personId: 'person', ...data})) },
+    qualification: {findUnique: jest.fn(async (_query: any): Promise<any> => ({qualificationId: 'ball', status: 'EFFECTIVE'}))},
+    productReference: {findMany: jest.fn(async (_query: any) => [{productId: 'product', sku: 'TEST_ONLY_SKU', displayName: 'TEST_ONLY Product', currentPrice: new Prisma.Decimal('123.45')}])},
+    productRuleProfile: {findFirst: jest.fn(async (_query: any): Promise<any> => ({productRuleProfileId: 'profile', gpvRate: new Prisma.Decimal('.4'), pvRate: new Prisma.Decimal('.2'), rpvEligible: false, epvEligible: true, ruleVersionCode: 'TEST_ONLY', parameterSnapshotHash: 'sealed-hash'}))},
     order: {
+      create: jest.fn(async ({data}: any) => ({...data, orderId: 'created-order', lines: data.lines.create})),
       findUnique: jest.fn(async () => order),
       update: jest.fn(async ({data}: any) => { order = {...order, ...data}; return order; }),
     },
@@ -42,7 +46,38 @@ describe('UCell first vertical slice', () => {
   });
   it.todo('creates Qualification with permanent sponsor sequence');
   it.todo('rejects 1st direct placed on RIGHT');
-  it.todo('creates order using server-side Product Rule Profile snapshot');
+  it('creates order using server-side Product Rule Profile snapshot', async () => {
+    const f = fixture();
+    const dto = {qualificationId: 'ball', items: [{productId: 'product', quantity: '2.5'}], clientReference: 'TEST_ONLY'};
+    const result = await f.orders.create(dto, 'order-key', 'request');
+    const data = f.tx.order.create.mock.calls[0][0].data, line = data.lines.create[0];
+    expect(data).toMatchObject({qualificationId: 'ball', ruleVersionCode: 'TEST_ONLY', parameterSnapshotHash: 'sealed-hash', status: 'CONFIRMED'});
+    expect([data.grossAmount.toString(), data.netAmount.toString(), data.discountAmount.toString()]).toEqual(['308.625', '308.625', '0']);
+    expect([line.unitPrice.toString(), line.quantity.toString(), line.lineAmount.toString(), line.gpvRateSnapshot.toString(), line.gpvAmountSnapshot.toString(), line.pvRateSnapshot.toString()]).toEqual(['123.45', '2.5', '308.625', '0.4', '123.45', '0.2']);
+    expect(line).toMatchObject({productId: 'product', skuSnapshot: 'TEST_ONLY_SKU', productNameSnapshot: 'TEST_ONLY Product'});
+    expect(line.ruleProfileSnapshot).toEqual({profileId: 'profile', gpvRate: '0.4', pvRate: '0.2', rpvEligible: false, epvEligible: true, ruleVersionCode: 'TEST_ONLY', parameterSnapshotHash: 'sealed-hash'});
+    expect(f.tx.productReference.findMany).toHaveBeenCalledWith({where: {productId: {in: ['product']}, isActive: true}});
+    expect(f.tx.productRuleProfile.findFirst).toHaveBeenCalledWith({where: {productId: 'product', effectiveFrom: {lte: data.confirmedAt}, OR: [{effectiveTo: null}, {effectiveTo: {gt: data.confirmedAt}}]}, orderBy: {effectiveFrom: 'desc'}});
+    f.tx.productRuleProfile.findFirst.mockResolvedValue(null);
+    const duplicate = await f.orders.create(dto, 'order-key', 'retry');
+    expect(duplicate.replayed).toBe(true);
+    expect(duplicate.value.orderId).toBe(result.value.orderId);
+    expect((duplicate.value.lines[0] as any).ruleProfileSnapshot).toEqual(line.ruleProfileSnapshot);
+    expect(f.tx.order.create).toHaveBeenCalledTimes(1);
+    expect(f.tx.productRuleProfile.findFirst).toHaveBeenCalledTimes(1);
+    expect(f.audit.write.mock.calls[0][0]).toBe(f.tx);
+    expect(f.tx.outboxEvent.create).not.toHaveBeenCalled();
+  });
+  it('rejects an order without an effective server-side profile before any order or outbox write', async () => {
+    const f = fixture();
+    f.tx.productRuleProfile.findFirst.mockResolvedValue(null);
+    await expect(f.orders.create({qualificationId: 'ball', items: [{productId: 'product', quantity: '1'}]}, 'missing-profile', 'request')).rejects.toMatchObject({response: {code: 'DOMAIN_RULE_VIOLATION'}});
+    expect(f.tx.order.create).not.toHaveBeenCalled();
+    expect(f.tx.paymentEvent.create).not.toHaveBeenCalled();
+    expect(f.tx.outboxEvent.create).not.toHaveBeenCalled();
+    expect(f.audit.write).not.toHaveBeenCalled();
+    expect(f.tx.idempotencyRecord.update).not.toHaveBeenCalled();
+  });
   it('confirms payment exactly once', async () => {
     const f = fixture(), first = await f.orders.confirmPayment('order', payment, 'payment-key', 'request');
     expect(first.value).toMatchObject({orderId: 'order', status: 'PAID', paymentEventId: 'payment'});

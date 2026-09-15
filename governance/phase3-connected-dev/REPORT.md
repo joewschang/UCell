@@ -8,6 +8,14 @@ RPV sealing includes original recognition period UTC bounds plus its historical 
 
 Idempotency now checks a transaction-visible unfinished record's request hash before executing work. Regression covers the prior conflict hole. Real parallel transactions in the isolated Golden DB prove one committed entity/idempotency record; serialization/uniqueness conflicts require external redelivery and then return the original result. Injected partial failure rolls back entity/outbox/idempotency together, followed by successful retry and duplicate-delivery verification. This evidence does not claim automatic retry inside the service or complete concurrent monetary Return replay coverage.
 
+## Latest order profile batch
+
+Checkpoint `17bc149` precedes conversion of the server-side Product Rule Profile TODO and one additional missing-profile negative test. Actual OrderService and IdempotencyService use stateful persistence mocks. Assertions cover server product price and Decimal quantity arithmetic, exact per-line profile/rates/eligibility/version/hash, active-product filter, half-open effective profile lookup at the order timestamp, duplicate response retaining its original profile after profile availability changes, one order write and transaction-local audit. Missing profile rejects before any order/payment/outbox/audit write or successful idempotency response. These are service tests, not DB rollback/concurrency or approved monetary/event-mapping policy evidence; all fixture values are TEST_ONLY.
+
+Current TODO inventory is **83** (preceding batch 84, original baseline 148, net placeholder reduction 65). Build/Prisma/offline/formal Security/UAT/release-preparation and isolated Golden entries retain preceding timestamps for this test-only batch; the matrix records exact current reruns.
+
+Order profile batch verification: 16 suites / 96 Jest tests PASS / 83 TODOs; 109 DB assertions PASS; Security Policy Preflight PASS; Admin DEV full flow 43 HTTP requests PASS. Backend/TODO/RC gates remain BLOCKED by TODOs; formal Security/UAT and Production Promotion remain BLOCKED. No migration or production source change was introduced. Exact commands and raw logs are recorded in `final/gate-results.json`.
+
 ## Latest vertical slice batch
 
 Checkpoint `a6fd20a` precedes three conversions in `vertical-slice.e2e-spec.ts`: idempotent Person creation, exactly-once sequential payment confirmation and SALE_CONFIRMED outbox insertion. Tests invoke actual PersonService, OrderService, IdempotencyService and OutboxService against stateful persistence mocks. They verify unchanged duplicate response, conflicting Person payload rejection, one Person/audit, one payment/order update/outbox, another payment key rejected after PAID, exact sealed event payload/correlation and transaction-local audit. This is service-level evidence only; no concurrent DB payment or rollback guarantee is claimed. No eligible scope, monetary calculation or event mapping policy is changed.
@@ -20,7 +28,7 @@ Latest batch results: 16 Jest suites / 94 tests PASS / 84 TODOs; 109 DB regressi
 
 The earlier report of 52 remaining TODOs / 96 completed cases is withdrawn. Several original cases were removed instead of converted, and assertions against constants or unrelated scenarios were incorrectly counted. The commits remain in history, with checkpoint `e232c92` before correction. Unverified cases were restored from `89bfed6`.
 
-Current inventory: **84 executable TODOs** from original baseline 148. This is a net reduction of 64 placeholders, not a claim that all 64 have completed release-level review. The preceding audited Phase 3 batch converted 19 original TODOs with corresponding service/guard or direct DB assertions: idempotency (4), organization (4), qualification isolation (3), unlock-depth behavior (2), negative return/payout invariants (6). Two additional idempotency defect/rollback regression tests were added. Earlier Phase 2 conversions remain subject to continued coverage review.
+Current inventory: **83 executable TODOs** from original baseline 148. This is a net reduction of 65 placeholders, not a claim that all 65 have completed release-level review. The preceding audited Phase 3 batch converted 19 original TODOs with corresponding service/guard or direct DB assertions: idempotency (4), organization (4), qualification isolation (3), unlock-depth behavior (2), negative return/payout invariants (6). Two additional idempotency defect/rollback regression tests were added. Earlier Phase 2 conversions remain subject to continued coverage review.
 
 The next batch, checkpoint `27789de`, converts four Vertical Slice 02 cases: DRAFT creation using the real service/idempotency callback; SUBMIT rejection for each missing Sponsor/Binary field plus successful submission; Active overlap rejection without mutation; historical Active half-open boundaries independent of the current flag. These are service tests with mocked persistence and do not claim database atomicity or concurrent Active exclusion. All other original cases remain TODO.
 
@@ -60,7 +68,7 @@ The identified local DEV API/worker were restored after Prisma generation, using
 
 ## Remaining blockers and next work
 
-- 84 TODOs: continue SSOT/evidence audit and real implementation tests, especially vertical slice and bonus-engine settlement integration.
+- 83 TODOs: continue SSOT/evidence audit and real implementation tests, especially vertical slice and bonus-engine settlement integration.
 - Commit `83e5b39` adds lease-safe production consumer processing and 20 isolated real DB assertions for concurrent partial returns, rollback/retry, PAID clawback, stale ownership, expired lease and duplicate delivery. This closes the previously missing focused concurrency coverage; broader production workload verification remains outstanding.
 - RPV historical data predating required snapshots cannot be reconstructed from current state; missing allocation/period/timezone evidence remains fail-closed.
 - Formal partial-refund RPV month allocation requires original allocation evidence; no proportional fixed-award assumption is made.

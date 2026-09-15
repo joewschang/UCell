@@ -208,14 +208,6 @@
     "result": "PASS"
   },
   {
-    "label": "api-tests",
-    "command": "pnpm --filter @ucell/api test:e2e --runInBand",
-    "cwd": "C:\\UCell\\UCell\\backend",
-    "started": "2026-09-15T17:44:09.004Z",
-    "exitCode": 0,
-    "result": "PASS"
-  },
-  {
     "label": "default-db-golden",
     "command": "pnpm db:golden",
     "cwd": "C:\\UCell\\UCell\\backend",
@@ -232,10 +224,18 @@
     "result": "PASS"
   },
   {
+    "label": "api-tests",
+    "command": "pnpm --filter @ucell/api test:e2e --runInBand",
+    "cwd": "C:\\UCell\\UCell\\backend",
+    "started": "2026-09-15T17:47:02.204Z",
+    "exitCode": 0,
+    "result": "PASS"
+  },
+  {
     "label": "db-regression",
     "command": "node scripts/phase2-db-test.mjs",
     "cwd": "C:\\UCell\\UCell\\backend",
-    "started": "2026-09-15T17:44:46.788Z",
+    "started": "2026-09-15T17:47:23.653Z",
     "exitCode": 0,
     "result": "PASS"
   },
@@ -243,7 +243,7 @@
     "label": "security-policy-preflight",
     "command": "node scripts/security-policy-preflight.mjs",
     "cwd": "C:\\UCell\\UCell\\backend",
-    "started": "2026-09-15T17:44:49.199Z",
+    "started": "2026-09-15T17:47:26.094Z",
     "exitCode": 0,
     "result": "PASS"
   },
@@ -251,7 +251,7 @@
     "label": "todo",
     "command": "pnpm test:todo:gate",
     "cwd": "C:\\UCell\\UCell\\backend",
-    "started": "2026-09-15T17:44:49.276Z",
+    "started": "2026-09-15T17:47:26.174Z",
     "exitCode": 1,
     "result": "BLOCKED"
   },
@@ -259,7 +259,7 @@
     "label": "backend-test-gate",
     "command": "pnpm test",
     "cwd": "C:\\UCell\\UCell\\backend",
-    "started": "2026-09-15T17:44:49.416Z",
+    "started": "2026-09-15T17:47:26.317Z",
     "exitCode": 1,
     "result": "BLOCKED"
   },
@@ -267,7 +267,7 @@
     "label": "rc",
     "command": "pnpm rc:gate",
     "cwd": "C:\\UCell\\UCell\\backend",
-    "started": "2026-09-15T17:45:07.306Z",
+    "started": "2026-09-15T17:47:44.345Z",
     "exitCode": 1,
     "result": "BLOCKED"
   },
@@ -275,7 +275,7 @@
     "label": "diff-check",
     "command": "git diff --check",
     "cwd": "C:\\UCell\\UCell",
-    "started": "2026-09-15T17:45:07.631Z",
+    "started": "2026-09-15T17:47:44.599Z",
     "exitCode": 0,
     "result": "PASS"
   },
@@ -283,7 +283,7 @@
     "label": "admin-dev-full-test",
     "command": "node backend/scripts/admin-full-test.mjs",
     "cwd": "C:\\UCell\\UCell",
-    "started": "2026-09-15T17:45:07.707Z",
+    "started": "2026-09-15T17:47:44.665Z",
     "exitCode": 0,
     "result": "PASS"
   }

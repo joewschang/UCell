@@ -1,4 +1,4 @@
-Original baseline: 148. Current TODO: 84. Net placeholder reduction: 64.
+Original baseline: 148. Current TODO: 83. Net placeholder reduction: 65.
 
 The previous 52 TODO claim is invalid. Full behavioral coverage must be reviewed independently.
 
@@ -82,9 +82,8 @@ The previous 52 TODO claim is invalid. Full behavioral coverage must be reviewed
 | backend/apps/api/test/vertical-slice-02.e2e-spec.ts | 120 | inactive upline receives 0 and is not compressed | Test implementation; SSOT/evidence review before conversion |
 | backend/apps/api/test/vertical-slice-02.e2e-spec.ts | 121 | higher generation remains independently evaluated | Test implementation; SSOT/evidence review before conversion |
 | backend/apps/api/test/vertical-slice-02.e2e-spec.ts | 122 | re-running a recognition cannot duplicate RPV or awards | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/vertical-slice.e2e-spec.ts | 43 | creates Qualification with permanent sponsor sequence | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/vertical-slice.e2e-spec.ts | 44 | rejects 1st direct placed on RIGHT | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/vertical-slice.e2e-spec.ts | 45 | creates order using server-side Product Rule Profile snapshot | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/vertical-slice.e2e-spec.ts | 68 | worker converts SALE_CONFIRMED to GPV_CREATED per order line | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/vertical-slice.e2e-spec.ts | 69 | reprocessing same outbox event does not duplicate GPV | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/vertical-slice.e2e-spec.ts | 70 | PV ledger cannot be UPDATEd or DELETEd | Test implementation; SSOT/evidence review before conversion |
+| backend/apps/api/test/vertical-slice.e2e-spec.ts | 47 | creates Qualification with permanent sponsor sequence | Test implementation; SSOT/evidence review before conversion |
+| backend/apps/api/test/vertical-slice.e2e-spec.ts | 48 | rejects 1st direct placed on RIGHT | Test implementation; SSOT/evidence review before conversion |
+| backend/apps/api/test/vertical-slice.e2e-spec.ts | 103 | worker converts SALE_CONFIRMED to GPV_CREATED per order line | Test implementation; SSOT/evidence review before conversion |
+| backend/apps/api/test/vertical-slice.e2e-spec.ts | 104 | reprocessing same outbox event does not duplicate GPV | Test implementation; SSOT/evidence review before conversion |
+| backend/apps/api/test/vertical-slice.e2e-spec.ts | 105 | PV ledger cannot be UPDATEd or DELETEd | Test implementation; SSOT/evidence review before conversion |
