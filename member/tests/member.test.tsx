@@ -101,3 +101,11 @@ it('renders a useful not-found page', async () => {
     await mount('/unknown');
     expect(JSON.stringify(renderer.toJSON())).toContain('找不到頁面');
 });
+it('keeps real checkout unavailable even when the server lists available products', async () => {
+    const fetch = vi.fn(async (input: string) => new Response(JSON.stringify(input.includes('/qualifications') ? [q] : [{ id: 'live-product', name: 'Real catalog', price: 4800, pv: 2880, available: true }])));
+    vi.stubGlobal('fetch', fetch);
+    await mount('/shop');
+    expect(renderer.root.findAllByType('button').find(b => b.children.join('') === '購買功能準備中')?.props.disabled).toBe(true);
+    expect(renderer.root.findAllByType('form')).toHaveLength(0);
+    expect(fetch.mock.calls).toHaveLength(2);
+});

@@ -40,3 +40,22 @@ Baseline: `461de2b`; pre-edit checkpoint: `cb44543`.
 
 Backend code, economic rules, ledger and existing TODO gates unchanged.
 No main merge, force push, RC2 designation or production promotion.
+
+## v0.4 increment — demo checkout
+
+Implemented: cart per qualification, quantity/remove, shipping validation, review,
+explicit qualification confirmation, in-memory demo order creation, scoped order
+listing, duplicate-submit protection. Real purchase stays unavailable. No shipping
+PII persistence and no payment/PV/award posting. Refresh discards demo state.
+
+Validation: 29 executable tests PASS (16 retained + 13 new), TypeScript/Vite build
+PASS. New tests cover isolated carts, duplicate confirmation, real-mode rejection,
+invalid quantities/SKUs, shipping errors and completed review interaction.
+Browser smoke updated for checkout and 320/390/768px checks but remains BLOCKED:
+Chromium/headless-shell executable is absent; installation did not complete.
+These browser scenarios and real-device LIFF UAT have NOT been marked PASS.
+See docs/CHECKOUT_INTEGRATION_v0.4.md for the backend handoff boundary.
+
+Current blockers: Member session exchange, approved quote/create contract, payment,
+server-side authorization/idempotency, browser and device UAT. Production remains
+BLOCKED. No main merge, RC2 promotion or production deployment.

@@ -54,3 +54,10 @@ QA environment, start the mock Vite dev server on port 5174, then run
 `node tests/mobile-smoke.cjs` with Playwright available on Node's module path.
 The script checks 390px layout, navigation, ball persistence and read-only flows.
 Hosting must rewrite SPA routes to index.html; no hosting was published here.
+
+## v0.4 demo checkout
+With explicit `VITE_ENABLE_MOCK=true`, the catalog supports carts per ball,
+shipping review and demo orders. Use fictitious contact details. No network writes,
+real payment or PV recognition occurs. Cart/order state is in-memory and disappears
+on refresh; shipping fields reset on qualification change. Real mode stays read-only.
+See `docs/CHECKOUT_INTEGRATION_v0.4.md` for integration requirements and limitations.

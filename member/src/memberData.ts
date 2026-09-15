@@ -1,3 +1,4 @@
+import { demoProducts } from './commerce';
 import { api, type Dashboard, type Qualification, type Scoped, type Person, type Organization, type Binary, type Performance, type Bonus, type Ledger, type Product, type Orders } from './api';
 export const isMock = import.meta.env.VITE_ENABLE_MOCK === 'true';
 const qualifications: Qualification[] = [
@@ -36,5 +37,5 @@ export const getBinary = (q: Qualification, s: AbortSignal) => scoped<Binary>('o
 export const getPerformance = (q: Qualification, p: string, s: AbortSignal) => scoped<Performance>('performance', q, { qualificationId: q.id, period: p, pv: null, rpv: null, epv: null, left: null, right: null, asOf: null }, s, p);
 export const getBonuses = (q: Qualification, p: string, s: AbortSignal) => scoped<Bonus>('bonuses', q, { qualificationId: q.id, period: p, awards: ['推薦獎金', '對碰獎金', '對等獎金', '全球獎金'].map((name, i) => ({ id: `${q.id}-${i}`, name, status: 'PENDING', amount: null })) }, s, p);
 export const getLedger = (q: Qualification, p: string, s: AbortSignal) => scoped<Ledger>('bonuses/ledger', q, { qualificationId: q.id, period: p, entries: [] }, s, p);
-export const getProducts = (signal: AbortSignal) => isMock ? Promise.resolve<Product[]>([{ id: 'DEMO-TIP580', name: 'TIP-580（示範商品）', price: 4800, pv: 2880, available: false }, { id: 'DEMO-TIP636', name: 'TIP-636（示範商品）', price: 4800, pv: 2880, available: false }]) : api<Product[]>('/member/products', { signal });
+export const getProducts = (signal: AbortSignal) => isMock ? Promise.resolve<Product[]>(demoProducts) : api<Product[]>('/member/products', { signal });
 export const getOrders = (q: Qualification, s: AbortSignal) => scoped<Orders>('orders', q, { qualificationId: q.id, orders: q.id === 'q1' ? [{ id: 'DEMO-ORDER-001', createdAt: '2026-09-15', total: 4800, status: '處理中', paymentStatus: '待付款', shipmentStatus: '未出貨' }] : [] }, s);
