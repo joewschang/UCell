@@ -1,6 +1,7 @@
 import { sessionGuard, type SessionGuard } from './session';
 const base = import.meta.env.VITE_API_BASE_URL || '/api/v1';
 const expiredMessage = '登入已失效，請重新登入';
+export const REQUEST_TIMEOUT_MS = 15_000;
 export function createApiClient(guard: SessionGuard) {
     return async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
         if (guard.getSnapshot()) throw new Error(expiredMessage);
@@ -12,6 +13,8 @@ export function createApiClient(guard: SessionGuard) {
         const controller = new AbortController();
         const abort = () => controller.abort();
         const unregister = guard.register(controller);
+        let timedOut = false;
+        const timer = setTimeout(() => { timedOut = true; controller.abort(); }, REQUEST_TIMEOUT_MS);
         init.signal?.addEventListener('abort', abort, { once: true });
         if (init.signal?.aborted) controller.abort();
         try {
@@ -32,7 +35,14 @@ export function createApiClient(guard: SessionGuard) {
             if (guard.getSnapshot()) throw new Error(expiredMessage);
             if (controller.signal.aborted) throw new DOMException('Aborted', 'AbortError');
             return result;
+        } catch (error) {
+            // Session expiry and caller cancellation take precedence over timeout.
+            if (guard.getSnapshot()) throw new Error(expiredMessage);
+            if (init.signal?.aborted) throw new DOMException('Aborted', 'AbortError');
+            if (timedOut) throw new Error('連線逾時，請檢查網路後重新載入');
+            throw error;
         } finally {
+            clearTimeout(timer);
             unregister();
             init.signal?.removeEventListener('abort', abort);
         }
