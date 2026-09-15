@@ -15,3 +15,9 @@ Authority: user's unified Integrated MVP instruction; no new business decision.
 | Pending operational scope/calendar decisions | TEST_ONLY consumption/events do not approve scope/mapping/calendar; ERP inventory unknown means purchase unavailable |
 
 Legacy Test Drift remains governed by preceding SA decisions. No monetary history, original award or PAID lifecycle is changed by these read/auth adapters. Tests do not prove formal LINE/Entra/UAT/Production credentials or complete Phase 3 replay/carry functionality.
+
+## Member continuation traceability
+
+Pre-change checkpoint bdac653. Profile API authorization derives Person only from the authenticated LINE principal; audited contact/display changes do not alter identity, legal name or monetary facts. Notification queries require temporal Qualification ownership and filter both Person audience and selected ball, never global notices inferred from other Persons. Schema migration adds station notification storage only; no LINE push or publication policy is assumed. Repurchase display reads actual recognition state and does not choose an operational cut-off. Client period default uses current approved Asia/Taipei; future parameter changes remain prospective.
+
+Checkout is explicitly unimplemented financially: protected POST returns PENDING_DECISION after authentication/ownership/input validation, rejecting frontend monetary input. It never delegates Member requests to Admin CONFIRMED order creation. Formal mapping/checkout configuration remains a blocker. Additional 111-assertion journey proves notification/profile/checkout negative paths and missing historical evidence; TODO remains 74.

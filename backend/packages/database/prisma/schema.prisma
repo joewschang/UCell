@@ -263,6 +263,7 @@ model Person {
   identityLinks IdentityLink[]
   authSessions AuthSession[]
   adminAccessGrants AdminAccessGrant[]
+  memberNotifications MemberNotification[]
 
   @@index([legalName])
   @@index([mobile])
@@ -271,6 +272,7 @@ model Person {
 }
 
 model Qualification {
+  memberNotifications MemberNotification[]
   qualificationId       String       @id @default(uuid()) @map("qualification_id") @db.Uuid
   qualificationNo       BigInt       @unique @default(autoincrement()) @map("qualification_no")
   currentHolderPersonId String       @map("current_holder_person_id") @db.Uuid
@@ -304,6 +306,21 @@ model Qualification {
   @@index([status, effectiveAt])
   @@map("qualification")
   @@schema("membership")
+}
+
+model MemberNotification {
+  notificationId String @id @default(uuid()) @map("notification_id") @db.Uuid
+  personId String @map("person_id") @db.Uuid
+  qualificationId String? @map("qualification_id") @db.Uuid
+  category String
+  title String
+  body String
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  person Person @relation(fields: [personId], references: [personId])
+  qualification Qualification? @relation(fields: [qualificationId], references: [qualificationId])
+  @@index([personId, qualificationId, createdAt])
+  @@map("member_notification")
+  @@schema("integration")
 }
 
 model QualificationHolderHistory {

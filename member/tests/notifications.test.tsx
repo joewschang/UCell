@@ -62,9 +62,14 @@ it('does not perform network or storage writes in demo mode', async () => {
   await mount(); act(() => state.markRead('q1', ['demo-welcome'])); expect(write).not.toHaveBeenCalled();
 });
 it('does not show mock unread counts or allow mutations in real mode', async () => {
+  const fetch=vi.fn().mockResolvedValue({ok:true,status:200,json:async()=>({data:{qualificationId:'q1',notices:[{id:'real-notice',qualificationId:'q1',category:'SERVICE',title:'伺服器通知',body:'CONNECTED',timeLabel:'2026-09-16T00:00:00Z'}]},meta:{api_version:'v1',request_id:'notice-test',timestamp:'2026-09-16T00:00:00Z'}})});
+  vi.stubGlobal('fetch',fetch);vi.stubGlobal('sessionStorage',{getItem:()=>null});
   await mount('q1', false);
   expect(state.notices).toEqual([]);
   expect(() => state.markRead('q1', ['demo-welcome'])).toThrow('尚未串接');
-  expect(JSON.stringify(tree.toJSON())).toContain('尚無法確認未讀數量');
+  expect(JSON.stringify(tree.toJSON())).toContain('伺服器通知');
+  expect(JSON.stringify(tree.toJSON())).toContain('LINE 推播與已讀同步尚未啟用');
+  expect(fetch).toHaveBeenCalledWith('/api/v1/member/notifications?qualificationId=q1',expect.objectContaining({cache:'no-store'}));
+  expect(fetch).toHaveBeenCalledTimes(1);
   expect(tree.root.findAllByType('button')).toHaveLength(0);
 });

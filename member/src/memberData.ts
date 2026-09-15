@@ -11,6 +11,20 @@ const rankNames: Record<string, string> = { STARTER: '啟航', ELITE: '菁英', 
 export const displayRank = (rank: string) => rankNames[rank] ?? rank;
 export const getQualifications = (signal?: AbortSignal) => isMock ? Promise.resolve(qualifications) : api<unknown>('/member/qualifications', { signal }).then(validate.parseQualifications);
 export const getPerson = (signal: AbortSignal) => isMock ? Promise.resolve<Person>({ name: '示範會員', memberNo: 'DEMO-000001', email: null, phone: null }) : api<unknown>('/member/me', { signal }).then(validate.parsePerson);
+export async function updateProfile(input:{name?:string;email?:string;phone?:string}) {
+ if(isMock)throw new Error('示範模式不修改會員資料');
+ return validate.parsePerson(await api('/member/profile',{method:'PATCH',body:JSON.stringify(input)}));
+}
+export async function getNotifications(q:Qualification,signal:AbortSignal){
+ const result=await api<{qualificationId:string;notices:unknown[]}>('/member/notifications?'+new URLSearchParams({qualificationId:q.id}),{signal});
+ if(result.qualificationId!==q.id||!Array.isArray(result.notices))throw new Error('通知資格或資料格式不符');
+ const ids=new Set<string>();
+ return result.notices.map(value=>{
+  const row=value as import('./NotificationContext').Notice;
+  if(!row||typeof row.id!=='string'||!row.id||ids.has(row.id)||![null,q.id].includes(row.qualificationId)||!['SERVICE','ORDER','ACCOUNT'].includes(row.category)||![row.title,row.body,row.timeLabel].every(v=>typeof v==='string'))throw new Error('通知格式異常，已停止顯示');
+  ids.add(row.id);return row;
+ });
+}
 async function scoped<T extends Scoped>(path: string, q: Qualification, sample: T, signal: AbortSignal, parse: (value: unknown) => T, period?: string): Promise<T> {
     if (isMock)
         return sample;

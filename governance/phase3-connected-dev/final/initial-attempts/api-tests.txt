@@ -1,10 +1,10 @@
 command: pnpm --filter @ucell/api test:e2e --runInBand
-started: 2026-09-15T18:29:31.177Z
+started: 2026-09-15T19:01:54.521Z
 exit: 0
 $ jest --config ./test/jest-e2e.json "--runInBand"
 
 Test Suites: 16 passed, 16 total
 Tests:       74 todo, 105 passed, 179 total
 Snapshots:   0 total
-Time:        24.088 s, estimated 193 s
+Time:        24.484 s, estimated 202 s
 Ran all test suites.

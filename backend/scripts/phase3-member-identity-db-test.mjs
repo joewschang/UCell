@@ -71,7 +71,7 @@ try{
   return {subject:token==='UNBOUND_TEST_ONLY'?'TEST_ONLY_UNBOUND':subject,expiresAt:Math.floor(Date.now()/1000)+3600};
  };
  await app.init();const server=app.getHttpAdapter().getInstance();await server.ready();
- const call=(method,path,token,body)=>server.inject({method,url:'/api/v1/'+path,headers:token?{authorization:'Bearer '+token}:{},...(body?{payload:body}:{})});
+ const call=(method,path,token,body)=>server.inject({method,url:'/api/v1/'+path,headers:{...(token?{authorization:'Bearer '+token}:{}),...(method==='POST'&&path==='member/orders'?{'idempotency-key':'TEST_ONLY_ORDER_REQUEST'}:{})},...(body?{payload:body}:{})});
  let res=await call('POST','auth/member/line/exchange',null,{idToken:'VALID_TEST_ONLY'});equal(res.statusCode,201,'synthetic verified LINE exchange');
  const token=res.json().data.accessToken;
  equal((await call('POST','auth/member/line/exchange',null,{idToken:'VALID_TEST_ONLY'})).statusCode,409,'ID token replay denied');
@@ -98,6 +98,7 @@ try{
  }
  equal(balls.map(ball=>ball.organization.data.referrals.length),[2,0],'Sponsor trees independent by ball');
  equal(balls.map(ball=>ball.binary.data.left.count),[1,2],'Binary trees independent and distinct from Sponsor');
+ equal(balls.map(ball=>ball.dashboard.data.monthlyRepurchaseStatus),['ACTIVE','ACTIVE'],'dashboard uses original month recognized Core schedules');
  const again=await call('GET','member/performance?qualificationId='+ids[0]+'&period=2026-09',token);
  equal([again.json().data.pv,again.json().data.rpv,again.json().data.epv],[11,2400,1680],'switch back restores deterministic Ball 1 volumes');
  equal((await call('GET','member/dashboard',token)).statusCode,422,'missing scoped GET context fails closed');
@@ -111,6 +112,44 @@ try{
  const emptySubject='TEST_ONLY_EMPTY_'+randomUUID();await db.identityLink.create({data:{provider:'LINE',providerSubject:emptySubject,personId:empty.personId}});
  const emptySession=await new IdentityTokenService(db).issue({provider:'LINE',subject:emptySubject,personId:empty.personId});
  equal((await call('GET','member/qualifications',emptySession.accessToken)).json().data,[],'Person without Qualification returns empty list');
+ await db.memberNotification.createMany({data:[
+  {personId:person.personId,category:'SERVICE',title:'TEST_ONLY PERSON NOTICE',body:'PERSON'},
+  {personId:person.personId,qualificationId:ids[0],category:'ORDER',title:'TEST_ONLY BALL1',body:'BALL1'},
+  {personId:person.personId,qualificationId:ids[1],category:'ACCOUNT',title:'TEST_ONLY BALL2',body:'BALL2'},
+  {personId:other.personId,qualificationId:ids[2],category:'SERVICE',title:'TEST_ONLY FOREIGN',body:'FOREIGN'}
+ ]});
+ const notices1=(await call('GET','member/notifications?qualificationId='+ids[0],token)).json().data;
+ const notices2=(await call('GET','member/notifications?qualificationId='+ids[1],token)).json().data;
+ equal(notices1.notices.map(n=>n.body).sort(),['BALL1','PERSON'],'notice audience Ball1');
+ equal(notices2.notices.map(n=>n.body).sort(),['BALL2','PERSON'],'notice audience Ball2');
+ equal((await call('GET','member/notifications?qualificationId='+ids[2],token)).statusCode,403,'foreign notice scope denied');
+ equal((await call('GET','member/notifications',token)).statusCode,422,'notice context required');
+ const monetaryBeforeProfile=[await db.pvLedger.count(),await db.bonusAward.count(),await db.bonusRecoveryEvent.count()];
+ const profile=await call('PATCH','member/profile',token,{name:'MEMBER DISPLAY TEST',email:'member-test@example.invalid',phone:'0912345678'});
+ equal(profile.statusCode,200,'own profile update');
+ equal(profile.json().data.name,'MEMBER DISPLAY TEST','profile returns persisted display name');
+ equal((await db.person.findUnique({where:{personId:person.personId}})).legalName,'MEMBER A TEST ONLY','legal name not changed');
+ equal((await call('PATCH','member/profile',token,{personId:other.personId,name:'FORGED'})).statusCode,400,'profile person tampering denied');
+ equal((await call('PATCH','member/profile',token,{status:'SUSPENDED'})).statusCode,400,'profile status tampering denied');
+ equal((await call('PATCH','member/profile',token,{})).statusCode,422,'empty profile rejected');
+ equal((await call('PATCH','member/profile',token,{name:null})).statusCode,400,'null profile field rejected');
+ equal((await call('PATCH','member/profile',token,{email:'invalid'})).statusCode,400,'invalid contact rejected');
+ equal([await db.pvLedger.count(),await db.bonusAward.count(),await db.bonusRecoveryEvent.count()],monetaryBeforeProfile,'profile does not mutate monetary facts');
+ equal(await db.auditEvent.count({where:{actorId:person.personId,action:'MEMBER_PROFILE_UPDATED'}}),1,'successful profile update audited once; rejected writes leave no audit');
+ await db.pvLedger.create({data:{qualificationId:ids[0],pvType:'RPV',amount:7,sourceType:'TEST_ONLY',sourceId:randomUUID(),sourceLineId:randomUUID(),eventType:'TEST_ONLY_MISSING_EVIDENCE',ruleVersionCode:'R1.0B',occurredAt:new Date('2026-10-01T00:00:00Z'),correlationId:randomUUID()}});
+ const missingEvidence=await call('GET','member/performance?qualificationId='+ids[0]+'&period=2026-10',token);
+ equal(missingEvidence.statusCode,422,'historical volume missing evidence fails closed');
+ equal(missingEvidence.json().code,'HISTORICAL_SNAPSHOT_MISSING','missing evidence domain code remains explicit');
+ const orderCount=await db.order.count();
+ const checkoutBody={qualificationId:ids[0],items:[{productId:product.productId,quantity:'1'}]};
+ const checkout=await call('POST','member/orders',token,checkoutBody);
+ equal(checkout.statusCode,422,'owned checkout fails closed pending formal mapping');
+ equal(checkout.json().code,'PENDING_DECISION','checkout pending decision explicit');
+ equal((await call('POST','member/orders',token,{...checkoutBody,qualificationId:ids[2]})).statusCode,403,'direct foreign checkout denied');
+ equal((await call('POST','member/orders',token,{...checkoutBody,amount:0})).statusCode,400,'client monetary input rejected');
+ equal((await call('POST','member/orders',null,checkoutBody)).statusCode,401,'checkout requires Member session');
+ equal((await call('POST','member/orders',token,checkoutBody)).statusCode,422,'duplicate disabled checkout remains closed');
+ equal(await db.order.count(),orderCount,'disabled checkout creates no official order');
  const before=[await db.pvLedger.count(),await db.bonusAward.count(),await db.bonusRecoveryEvent.count()];
  for(let i=0;i<3;i++)await call('GET','member/qualifications',token);
  equal([await db.pvLedger.count(),await db.bonusAward.count(),await db.bonusRecoveryEvent.count()],before,'repeated GET has no monetary side effect');

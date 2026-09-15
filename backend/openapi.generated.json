@@ -67,6 +67,99 @@
         ]
       }
     },
+    "/api/v1/member/profile": {
+      "patch": {
+        "description": "Own display/contact fields only. No legal identity, status, qualification or monetary mutation. Audited transaction.",
+        "operationId": "memberUpdateProfile",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MemberProfileDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "401": {
+            "description": "Member LINE session required, expired/disabled sessions denied"
+          },
+          "403": {
+            "description": "Qualification not owned"
+          },
+          "404": {
+            "description": "Resource unavailable"
+          },
+          "409": {
+            "description": "Conflicting operation"
+          },
+          "422": {
+            "description": "Invalid input or pending domain decision"
+          }
+        },
+        "security": [
+          {
+            "memberBearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "Member"
+        ]
+      }
+    },
+    "/api/v1/member/notifications": {
+      "get": {
+        "description": "Person-addressed notices plus selected owned Qualification notices, newest first, bounded 100. No LINE push or server read-state mutation.",
+        "operationId": "memberNotifications",
+        "parameters": [
+          {
+            "name": "qualificationId",
+            "required": true,
+            "in": "query",
+            "description": "Selected Qualification; server checks authenticated Person ownership on every request",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "401": {
+            "description": "Member LINE session required, expired/disabled sessions denied"
+          },
+          "403": {
+            "description": "Qualification not owned"
+          },
+          "404": {
+            "description": "Resource unavailable"
+          },
+          "409": {
+            "description": "Conflicting operation"
+          },
+          "422": {
+            "description": "Invalid input or pending domain decision"
+          }
+        },
+        "security": [
+          {
+            "memberBearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "Member"
+        ]
+      }
+    },
     "/api/v1/member/qualifications": {
       "get": {
         "description": "Owned temporal holder evidence only; empty array for Person without Qualification. Ordered by immutable qualification number.",
@@ -673,6 +766,59 @@
             "memberBearer": []
           }
         ],
+        "tags": [
+          "Member"
+        ]
+      },
+      "post": {
+        "description": "Authenticated ownership and input validation; currently fail closed PENDING_DECISION until formal product/PV-BV mapping and checkout configuration are approved. Never accepts client monetary results.",
+        "operationId": "memberCreateOrder",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateOrderDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          },
+          "401": {
+            "description": "Member LINE session required, expired/disabled sessions denied"
+          },
+          "403": {
+            "description": "Qualification not owned"
+          },
+          "404": {
+            "description": "Resource unavailable"
+          },
+          "409": {
+            "description": "Conflicting operation"
+          },
+          "422": {
+            "description": "Invalid input or pending domain decision"
+          }
+        },
+        "security": [
+          {
+            "memberBearer": []
+          }
+        ],
+        "summary": "",
         "tags": [
           "Member"
         ]
@@ -3118,6 +3264,26 @@
           "idToken"
         ]
       },
+      "MemberProfileDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 80,
+            "description": "Display name only; legal identity is immutable through Member API"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "maxLength": 254
+          },
+          "phone": {
+            "type": "string",
+            "maxLength": 32,
+            "description": "Contact data only; does not bind or authenticate an identity"
+          }
+        }
+      },
       "MemberContextDto": {
         "type": "object",
         "properties": {
@@ -3129,6 +3295,60 @@
         },
         "required": [
           "qualificationId"
+        ]
+      },
+      "CreateOrderItemDto": {
+        "type": "object",
+        "properties": {
+          "productId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "quantity": {
+            "type": "string",
+            "example": "1"
+          }
+        },
+        "required": [
+          "productId",
+          "quantity"
+        ]
+      },
+      "CreateOrderDto": {
+        "type": "object",
+        "properties": {
+          "purpose": {
+            "type": "string",
+            "enum": [
+              "ENTRY",
+              "RETAIL",
+              "REPURCHASE",
+              "SUBSCRIPTION_PREPAY",
+              "UPGRADE"
+            ]
+          },
+          "qualificationId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "訂單歸屬 Qualification"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreateOrderItemDto"
+            }
+          },
+          "sourceReferralToken": {
+            "type": "string",
+            "description": "分享歸因Token，Server只存Hash/解析結果"
+          },
+          "clientReference": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "qualificationId",
+          "items"
         ]
       },
       "CreatePersonDto": {
@@ -3204,60 +3424,6 @@
           "sponsorQualificationId",
           "binaryParentQualificationId",
           "binarySide"
-        ]
-      },
-      "CreateOrderItemDto": {
-        "type": "object",
-        "properties": {
-          "productId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "quantity": {
-            "type": "string",
-            "example": "1"
-          }
-        },
-        "required": [
-          "productId",
-          "quantity"
-        ]
-      },
-      "CreateOrderDto": {
-        "type": "object",
-        "properties": {
-          "purpose": {
-            "type": "string",
-            "enum": [
-              "ENTRY",
-              "RETAIL",
-              "REPURCHASE",
-              "SUBSCRIPTION_PREPAY",
-              "UPGRADE"
-            ]
-          },
-          "qualificationId": {
-            "type": "string",
-            "format": "uuid",
-            "description": "訂單歸屬 Qualification"
-          },
-          "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/CreateOrderItemDto"
-            }
-          },
-          "sourceReferralToken": {
-            "type": "string",
-            "description": "分享歸因Token，Server只存Hash/解析結果"
-          },
-          "clientReference": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "qualificationId",
-          "items"
         ]
       },
       "PaymentConfirmationDto": {

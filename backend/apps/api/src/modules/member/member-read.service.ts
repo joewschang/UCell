@@ -16,6 +16,10 @@ export class MemberReadService {
    if(!/^\d{4}-(0[1-9]|1[0-2])$/.test(month))throw new UnprocessableEntityException({code:'INVALID_PERIOD'});
    const [bounds]=await tx.$queryRaw<Array<{start:Date;end:Date}>>`SELECT (${month+'-01'}::date::timestamp AT TIME ZONE ${timezone}) AS start, ((${month+'-01'}::date+interval '1 month')::timestamp AT TIME ZONE ${timezone}) AS end`;
    const at={gte:bounds.start,lt:bounds.end};
+   const repurchase=async()=>{
+    const rows=await tx.monthlyRecognitionSchedule.findMany({where:{subscription:{qualificationId:id},recognitionMonth:new Date(month+'-01')},orderBy:{installmentNo:'asc'}});
+    return {qualificationId:id,period:month,status:rows.some(row=>row.status==='RECOGNIZED')?'ACTIVE':rows.some(row=>['SCHEDULED','DUE'].includes(row.status))?'PENDING':'INACTIVE',recognitions:rows.map(row=>({id:row.recognitionId,status:row.status,dueAt:row.dueAt}))};
+   };
    const volumes=async()=>{
     const totals:Record<string,number|null>={};
     for(const pvType of ['PV','RPV','EPV'] as const){
@@ -45,8 +49,7 @@ export class MemberReadService {
     return {qualificationId:id,left:{count:Number(counts.find(row=>row.side==='LEFT')?.count??0),volume:null},right:{count:Number(counts.find(row=>row.side==='RIGHT')?.count??0),volume:null},volumeStatus:'PENDING',volumeReason:'SETTLEMENT_NOT_FINALIZED'};
    }
    if(kind==='repurchase'){
-    const rows=await tx.monthlyRecognitionSchedule.findMany({where:{subscription:{qualificationId:id},recognitionMonth:new Date(month+'-01')},orderBy:{installmentNo:'asc'}});
-    return {qualificationId:id,period:month,status:rows.some(row=>row.status==='RECOGNIZED')?'ACTIVE':rows.some(row=>['SCHEDULED','DUE'].includes(row.status))?'PENDING':'INACTIVE',recognitions:rows.map(row=>({id:row.recognitionId,status:row.status,dueAt:row.dueAt}))};
+    return repurchase();
    }
    if(kind==='bonuses'||kind==='ledger'){
     const awards=await tx.bonusAward.findMany({where:{recipientQualificationId:id,occurredAt:at},include:{settlementBatch:true,lifecycleEvents:{orderBy:[{occurredAt:'desc'},{createdAt:'desc'},{lifecycleEventId:'desc'}],take:1}},orderBy:[{occurredAt:'asc'},{bonusAwardId:'asc'}],take:100});
@@ -61,7 +64,7 @@ export class MemberReadService {
    if(kind==='dashboard'){
     const qualification=(await this.identity.qualifications(personId)).find(row=>row.id===id)!;
     const person=await this.identity.me(personId);
-    return {qualificationId:id,qualification,memberName:person.name,memberNo:person.memberNo,monthlyRepurchaseStatus:'PENDING',...await volumes(),bonusAmount:null,bonusStatus:'PENDING',status:'PENDING',reason:'SETTLEMENT_NOT_FINALIZED',view:'EFFECTIVE_ORIGINAL_EVENT_MONTH'};
+    return {qualificationId:id,qualification,memberName:person.name,memberNo:person.memberNo,monthlyRepurchaseStatus:(await repurchase()).status,...await volumes(),bonusAmount:null,bonusStatus:'PENDING',status:'PENDING',reason:'SETTLEMENT_NOT_FINALIZED',view:'EFFECTIVE_ORIGINAL_EVENT_MONTH'};
    }
    if(kind==='orders'){
     const rows=await tx.order.findMany({where:{qualificationId:id},orderBy:[{createdAt:'desc'},{orderId:'desc'}],take:100});

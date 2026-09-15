@@ -1,3 +1,36 @@
+# Member continuation checkpoint — 2026-09-16
+
+Branch: integration/member-backend-mvp. Pre-change checkpoint: bdac653. This stage completes Connected station-notification reads and own profile/contact editing; full LINE OA/LIFF rollout, checkout and Backend Phase 3 remain incomplete. Production Promotion = BLOCKED. No main merge or force push.
+
+## Changes / APIs / UI
+
+- GET /api/v1/member/notifications: persisted Person-addressed notices plus selected owned ball notices, maximum 100, newest-first, explicit pagination limit/truncated. Foreign/forged/missing context fails closed. This is station notification storage/read only; no LINE push, publisher workflow or synchronized read status is claimed.
+- PATCH /api/v1/member/profile: own display name, Email and phone only; server rejects Person/status/qualification/monetary fields, nulls, blank/invalid input. Person update and audit append share a Serializable transaction. Legal name, identity mapping and monetary facts remain unchanged. Contact data does not authorize login or bind LINE identity.
+- POST /api/v1/member/orders: Member auth, ownership, Idempotency-Key and DTO validation are implemented, but checkout fails closed 422 PENDING_DECISION. Existing Admin OrderService CONFIRMS an order and seals rule mappings; it is not exposed to Members without formal mapping/checkout configuration. No purchase success, order creation, payment or award mutation is fabricated.
+- Member notification center consumes true Backend envelopes in real mode. Profile form saves real contact/display edits, preserves values on failure, refreshes own data and clears submitted fields on success. Mock mode does not update real profiles.
+- Member default displayed query month uses Asia/Taipei. Dashboard repurchase status reads the selected business month's Core recognition schedules instead of a fixed PENDING placeholder. This does not construct or approve a production operational calendar.
+
+## Migration / tests / evidence
+
+Migration 20260916030000_member_notification adds integration.member_notification with Person/Qualification foreign keys, category CHECK and audience/date index. Total migrations: 21. No ledger/award/PAID schema mutation. Local Prisma validate/generate and DEV/default regression DB deploy PASS; isolated Golden deploys migrations independently into fresh disposable databases.
+
+Member tests: 12 files / 91 tests PASS. Isolated Member journey: 111 HTTP/DB assertions, including the preceding identity/two-ball/BOLA journey plus notification audience isolation, profile tampering/null/invalid input rejection, persisted legal-name invariance, one successful audit, no monetary mutation, explicit missing-snapshot 422/code and disabled checkout repeat/no-order evidence. LINE provider boundary remains synthetic only in the test application; formal credentials NOT VERIFIED. Two independent Golden runs PASS at 111 Member assertions each and are recorded in final gate logs. Fresh Admin HTTP rerun PASS (43 operations); four actual Local DEV Member HTTP operations without Member bearer all return 401. Release/TODO/RC/UAT/formal Security remain BLOCKED; latest matrix has no unresolved FAIL gates.
+
+Backend build includes Worker; Admin/Member/DEV builds, API 105 Jest tests, replay 128 assertions, frontend contract bundles, OpenAPI export/preflight and policy/static/domain gates are recorded in final/PASS-FAIL-MATRIX.md. Initial Member test failure asserted the superseded real-mode placeholder; it was changed into an actual API-response/scoped-request/no-mutation assertion, preserving the test. Initial Prisma Windows DLL lock failures remain archived; generation/release checks must run without live DEV engine holders or concurrent DB tests.
+
+Commands: git status; git checkpoint commit; Prisma validate/generate/migrate deploy via run-gates; pnpm Backend/Admin/Member build; pnpm Member test; API Jest; isolated DB Golden twice; replay regression; contract verification for both balls; OpenAPI export/preflight; static/schema/migration/source/security/domain/preflight/TODO/RC/UAT/release commands. Exact commands, timestamps and raw output are in final/gate-results.json and per-gate .txt logs. No deployment to production.
+
+## Security / TODO / blockers / next stage
+
+TODO trajectory remains 148 → 74 → 74. The new Member tests are additional coverage, not renamed/removed TODO conversions. K1/K2 complete period-wide replay, carry convergence/maxWeeks/resume and remaining audited Phase 3 TODO batches are still required.
+
+Security evidence proves Member ownership at Backend, notification audience isolation, own profile-only mutation and client monetary input rejection. Formal LINE/Entra, provider/session/browser E2E, UAT/signoff, backup/restore, production workload and complete non-empty payout/return/clawback release evidence remain BLOCKED or incomplete. Local synthetic-boundary evidence must not be presented as formal LINE/Production PASS.
+
+Pending Decisions: eligible-consumption complete scope, formal PV/BV event mapping, production operational calendar/cut-off. Checkout remains blocked by its unresolved formal configuration; unaffected reads/profile/notification work continues. Next work: richer OpenAPI DTO/pagination, notification publication/read-state policy, authenticated browser Golden Journey with real LINE credentials, approved checkout configuration, and ordered Backend replay/carry/TODO completion. Unified Member takeover remains active; do not assign another agent to modify member/.
+
+Prior sections below record preceding checkpoints and are superseded only where this continuation explicitly replaces their unfinished items.
+
+---
 # Integrated MVP checkpoint — 2026-09-16
 
 Active branch: integration/member-backend-mvp. Production Promotion remains BLOCKED. This is an integration foundation checkpoint, not completion of Phase 3 or RC2.

@@ -44,3 +44,4 @@ run('','"C:\\Program Files\\Git\\bin\\bash.exe" scripts/release-gate.sh','releas
 run('','git diff --check','diff-check');
 run('backend','pnpm --filter @ucell/api build:admin-dev','admin-dev-build');
 run('','node backend/scripts/admin-full-test.mjs','admin-dev-full-test',{DATABASE_URL:'postgresql://ucell:ucell_dev@localhost:5432/ucell_admin_test?schema=public'});
+run('backend','node scripts/member-local-auth-preflight.mjs','member-local-auth');

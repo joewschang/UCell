@@ -1,10 +1,10 @@
 command: pnpm db:golden
-started: 2026-09-15T18:48:46.188Z
+started: 2026-09-15T19:03:34.132Z
 exit: 0
 Prisma schema loaded from packages\database\prisma\schema.prisma
-Datasource "db": PostgreSQL database "ucell_dev_golden_9d25cec5971c4382a5eed7df8c5faa65", schemas "audit, commerce, identity, integration, ledger, membership, organization, rules, subscription" at "localhost:5432"
+Datasource "db": PostgreSQL database "ucell_dev_golden_872fd1971d8748bab9af1fd50f48a099", schemas "audit, commerce, identity, integration, ledger, membership, organization, rules, subscription" at "localhost:5432"
 
-20 migrations found in prisma/migrations
+21 migrations found in prisma/migrations
 
 Applying migration `0001_vertical_slice`
 Applying migration `0002_membership_active_subscription_rpv`
@@ -26,6 +26,7 @@ Applying migration `20260915110000_sa_parameter_snapshots`
 Applying migration `20260915120000_phase2_historical_replay`
 Applying migration `20260915150000_replay_entitlement_baseline_guards`
 Applying migration `20260915160000_sa_phase3_business_timezone`
+Applying migration `20260916030000_member_notification`
 
 The following migration(s) have been applied:
 
@@ -70,6 +71,8 @@ migrations/
     └─ migration.sql
   └─ 20260915160000_sa_phase3_business_timezone/
     └─ migration.sql
+  └─ 20260916030000_member_notification/
+    └─ migration.sql
 
 All migrations have been successfully applied.
 DB_GOLDEN_FIXTURES_PASS: frozen manifest loaded into isolated test database; no monetary postings
@@ -79,11 +82,11 @@ PHASE3_CONCURRENCY_DB_PASS: concurrent unique commit, external redelivery, rollb
 PHASE3_RETURN_OUTBOX_DB_PASS: 20 assertions; concurrent partial returns, PAID clawback, rollback/retry, stale ownership, expired lease and duplicate delivery
 PHASE3_MEMBERSHIP_DB_PASS: 81 assertions; approval, isolation, rollback/retry, temporal access, payout grouping, concurrent maturity and direct qualification
 PHASE3_RPV_CONCURRENCY_DB_PASS: 20 assertions; controlled parallel reads, Serializable conflict, external redelivery, original identity and immutable evidence
-MEMBER_IDENTITY_DB_PASS: 87 HTTP/DB assertions; synthetic LINE boundary, two owned balls, BOLA, replay, expiry, disabled Person and OpenAPI; formal LINE NOT VERIFIED
+MEMBER_IDENTITY_DB_PASS: 104 HTTP/DB assertions; synthetic LINE boundary, two owned balls, BOLA, replay, expiry, disabled Person and OpenAPI; formal LINE NOT VERIFIED
 DB_GOLDEN_ISOLATED_PASS: fresh database, deployed migrations, deterministic fixtures
 DB_GOLDEN_ISOLATED_CLEANUP_PASS
 $ node scripts/db-golden-isolated.mjs
-(node:35916) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///C:/UCell/UCell/backend/packages/shared/src/r1-0b-golden.ts is not specified and it doesn't parse as CommonJS.
+(node:35368) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///C:/UCell/UCell/backend/packages/shared/src/r1-0b-golden.ts is not specified and it doesn't parse as CommonJS.
 Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
 To eliminate this warning, add "type": "module" to \\?\C:\UCell\UCell\backend\packages\shared\package.json.
 (Use `node --trace-warnings ...` to show where the warning was created)

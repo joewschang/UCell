@@ -1,6 +1,7 @@
 import { ConflictException, ForbiddenException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from '@ucell/database';
-import { createHash } from 'crypto';
+import { createHash, randomUUID } from 'crypto';
+import { AuditService } from '../../common/audit/audit.service';
 import { IdentityTokenService } from '../auth/identity-token.service';
 import { LineTokenVerifierService } from '../auth/line-token-verifier.service';
 import { QualificationAccessService } from '../auth/qualification-access.service';
@@ -23,6 +24,23 @@ export class MemberService {
  async me(personId:string){
   const person=await this.db.person.findUniqueOrThrow({where:{personId}});
   return {name:person.preferredName??person.legalName,memberNo:person.personId,email:person.email,phone:person.mobile};
+ }
+ async profile(personId:string,input:{name?:string;email?:string;phone?:string},requestId:string){
+  return this.db.$transaction(async tx=>{
+   const before=await tx.person.findUniqueOrThrow({where:{personId}});
+   if(before.status!=='EFFECTIVE')throw new UnauthorizedException({code:'MEMBER_PERSON_DISABLED'});
+   const after=await tx.person.update({where:{personId},data:{preferredName:input.name,email:input.email,mobile:input.phone}});
+   await new AuditService().write(tx,{actorType:'MEMBER',actorId:personId,action:'MEMBER_PROFILE_UPDATED',entityType:'Person',entityId:personId,beforeData:{name:before.preferredName,email:before.email,phone:before.mobile},afterData:{name:after.preferredName,email:after.email,phone:after.mobile},requestId,correlationId:randomUUID()});
+   return {name:after.preferredName??after.legalName,memberNo:after.personId,email:after.email,phone:after.mobile};
+  },{isolationLevel:'Serializable'});
+ }
+ async notifications(personId:string,qualificationId:string){
+  await this.context(personId,qualificationId);
+  return this.db.$transaction(async tx=>{
+   await new QualificationAccessService(tx as any).assertHolder(personId,qualificationId);
+   const rows=await tx.memberNotification.findMany({where:{personId,OR:[{qualificationId:null},{qualificationId}]},orderBy:[{createdAt:'desc'},{notificationId:'desc'}],take:100});
+   return {qualificationId,notices:rows.map(row=>({id:row.notificationId,qualificationId:row.qualificationId,category:row.category,title:row.title,body:row.body,timeLabel:row.createdAt.toISOString()})),pagination:{limit:100,truncated:rows.length===100}};
+  },{isolationLevel:'RepeatableRead'});
  }
  async qualifications(personId:string){
   const now=new Date();

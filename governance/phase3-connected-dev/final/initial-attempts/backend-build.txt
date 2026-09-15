@@ -1,9 +1,9 @@
 command: pnpm build
-started: 2026-09-15T18:48:05.286Z
+started: 2026-09-15T19:03:22.940Z
 exit: 0
-packages/shared build$ tsc -p tsconfig.json
 packages/database build$ tsc -p tsconfig.json
 packages/contracts build$ tsc -p tsconfig.json
+packages/shared build$ tsc -p tsconfig.json
 packages/contracts build: Done
 packages/shared build: Done
 packages/database build: Done
