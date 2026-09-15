@@ -4,6 +4,7 @@ import { monthlyEpv, monthlyReturnDelta } from '../src/modules/epv/monthly-epv';
 import { SettlementCalendarService } from '../src/modules/settlement/settlement-calendar.service';
 import { SettlementReplayService } from '../src/modules/adjustment/settlement-replay.service';
 import { EpvMonthService } from '../src/modules/epv/epv-month.service';
+import { CarryChainReplayService } from '../src/modules/adjustment/carry-chain-replay.service';
 
 const d=(value:string|number)=>new Prisma.Decimal(value);
 const at=new Date('2026-09-01T00:00:00Z');
@@ -70,6 +71,24 @@ describe('SA-20260915-03 parameter snapshot and calendar',()=>{
 });
 
 describe('SA-20260915-01 period-wide replay',()=>{
+  test('inactive zero-award qualification retains re-derived nonzero carry without activation',async()=>{
+    const snapshot=await capture({'binary.pair.rate':'.1','pool.binary.rate':'.36'});
+    const tx={settlementBatch:{findFirst:async({where}:any)=>where.settlementType==='BINARY_K1'?{settlementBatchId:'b',parameterSnapshot:snapshot,kFactor:d(1)}:null},bonusAward:{findMany:async()=>[]},binaryCarry:{findFirst:async()=>({weeklyCapSnapshot:d(500),leftCarryOut:d(4000),rightCarryOut:d(700)})},$queryRaw:async()=>[{amount:'4000'}]};
+    const replay=new SettlementReplayService({} as any);
+    jest.spyOn(replay,'subtreeEconomicGpv').mockImplementation(async(_tx,_qid,side)=>d(side==='LEFT'?3000:1000));
+    const result=await replay.replayPeriod(tx as any,{periodStart:at,periodEnd:new Date('2026-09-08'),ruleVersionCode:'R1.0B',carryOverrides:new Map([['q',{left:d(100),right:d(200)}]])});
+    expect(result.binary[0].recomputedCarryOutLeft?.toString()).toBe('2600');
+    expect(result.binary[0].recomputedCarryOutRight?.toString()).toBe('700');
+    expect(result.binary[0].recomputedTheory.toString()).toBe('0');
+  });
+  test('unimplemented K0 dependency blocks the atomic run before posting partial K1/K2',async()=>{
+    const snapshot=await capture({'binary.pair.rate':'.1'});
+    const create=jest.fn();
+    const tx={returnCase:{findUnique:async()=>({status:'POSTED',orderId:'o',order:{ruleVersionCode:'R1.0B',purpose:'ENTRY'}})},subscription:{findFirst:async()=>null},pvLedger:{findMany:async()=>[{occurredAt:at}]},settlementBatch:{findFirst:async({where}:any)=>where.settlementType==='BINARY_K1'?{periodStart:at,periodEnd:new Date('2026-09-08'),parameterSnapshot:snapshot}:{settlementBatchId:'k0'}},settlementReplayRun:{create}};
+    const service=new CarryChainReplayService({$transaction:async(fn:any)=>fn(tx)} as any,{} as any);
+    await expect(service.runForReturn('r')).rejects.toMatchObject({response:{code:'K0_REPLAY_IMPLEMENTATION_PENDING'}});
+    expect(create).not.toHaveBeenCalled();
+  });
   test('return shrinks pool for all recipients and recomputes K1 then K2 from exact Binary sources',async()=>{
     const snapshot=await capture({'binary.pair.rate':'.1','pool.binary.rate':'.36','pool.matching.rate':'.15'});
     const awards=[{bonusAwardId:'b1',recipientQualificationId:'q1',theoryAmount:d(400),payableAmount:d(360),activeSnapshot:true},{bonusAwardId:'b2',recipientQualificationId:'q2',theoryAmount:d(400),payableAmount:d(360),activeSnapshot:true}];
