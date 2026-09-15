@@ -1,3 +1,44 @@
+# Integrated MVP checkpoint — 2026-09-16
+
+Active branch: integration/member-backend-mvp. Production Promotion remains BLOCKED. This is an integration foundation checkpoint, not completion of Phase 3 or RC2.
+
+## Preservation and authority
+
+Fetched origin before integration. Remote Member HEAD was 2d5f6067077f74b51f86ea3a8057a25e159ad8d7 (v0.6.0), newer than the supplied v0.2 checkpoint 461de2b78e65f71e1497b4fb7e56850417663884. Both that checkpoint and verified Backend e8fee4f2ac21855fab1a2720818f0383c0537676 remain ancestors of integration merge 7915d1af21f3c50964de6cdc9c2b40a3c4f16d6e. Checkpoint 73bb928 was pushed before integration. Subsequent implementation checkpoints are recorded in git history. rc1-recovered remains the shared baseline. No main merge, force push or verified-work reset.
+
+Latest unified takeover supersedes previous member/ edit restriction. No other agent is assigned Member changes. R1.0B business semantics remain frozen. SSOT: reported documents > officially approved documents > formal R1.0/R1.0B specifications > SA decisions > legacy records/tests.
+
+## Implementation
+
+Added MemberModule to production and Local Admin DEV entrypoints. Member requests bypass only the Admin DEV actor assignment and still require their own LINE-backed opaque session and temporal Qualification ownership. Suspended Persons and Admin credentials are denied. Server-side LINE verification precedes identity mapping; no client profile/userId trust or automatic account binding. Token exchange is single-use by SHA-256 idempotency evidence, with Serializable conflict handling. Raw LINE tokens are not stored in browser storage; only the opaque UCell session is retained.
+
+Added auth/member/line/exchange; member/me, qualifications, context/qualification, dashboard, organization/sponsor, organization/binary, referrals, performance, bonuses, bonuses/ledger, repurchase/status, products, orders and orders/:id. All scoped reads validate Person ownership on the server. Missing context returns 422 QUALIFICATION_CONTEXT_REQUIRED; foreign/forged context returns 403 QUALIFICATION_NOT_OWNED; foreign order detail returns 404. Swagger export includes the new routes and exchange DTO/authentication.
+
+Reads use Core persisted facts. Sponsor and Binary representations are independent. RPV/EPV require sealed historical evidence. Effective volume attributes later reversal events to original event month. CALCULATED or unfinalized awards remain PENDING/null and are not exposed as posted ledger entries. Dashboard unsettled bonus remains null. Unknown Binary volume remains null. Product inventory is closed pending ERP evidence. No formal eligible scope or PV/BV event mapping is inferred from TEST_ONLY fixtures.
+
+Member LIFF bootstrap now exchanges the ID token with Backend and validates cached UCell sessions. Vite DEV proxies /api to the local API. Existing pages use real adapters when VITE_ENABLE_MOCK=false. Notifications/profile writes/order creation and complete real-browser journey remain unfinished; mock UI tests are not UAT evidence.
+
+## Verification and evidence
+
+Backend build (including Worker), Admin build, Admin DEV build, Member build PASS. API 105 Jest tests PASS; 74 executable TODO remain. Member 89 tests PASS. LINE verifier core 7 and Member authentication core 8 tests PASS. Two fresh isolated DB Golden runs each include 87 new Member HTTP/DB assertions, 20 historical RPV concurrency, 81 membership and 20 Return/outbox assertions. Replay regression 128 assertions PASS. Actual Ball 1/Ball 2 HTTP bundles pass Member runtime contract validation.
+
+Golden journey uses a synthetic LINE verification boundary in an isolated test application, actual opaque sessions, actual Prisma DB and actual Core services. Ball 1 PV/RPV/EPV = 11/2400/1680; Ball 2 = 23/1200/480. Sponsor counts = 2/0; Binary left counts = 1/2. Switching back restores original results. Foreign-ball direct API, forged context, missing context, expired session, Admin session and suspended Person are denied. Repeated reads leave monetary counts unchanged. Formal LINE provider credentials are NOT verified.
+
+Prisma validate/generate/migrate deploy PASS on local DEV databases; fresh Golden independently deploys all 20 migrations. No new migration in this checkpoint. Initial preflight failed because live DEV processes held Prisma DLL; stopping those exact processes restored preflight PASS. Initial failures are retained under final/initial-attempts. Never interpret retained older gate timestamps as a new run.
+
+Executed commands and exact timestamps/results are in final/gate-results.json and per-gate logs. OpenAPI export/preflight also PASS. Fresh Admin DEV HTTP rerun PASS (43 operations); direct Member me without a Member bearer returns 401 even in Admin full DEV mode. Consult final/PASS-FAIL-MATRIX.md and MEMBER-INTEGRATION-MATRIX.md. Source changes are under Backend auth/member modules, admin-dev/AppModule wiring, isolated DB Golden script, Member LIFF/tests/Vite, OpenAPI export and governance runner/evidence. git diff/stat and commit history are authoritative for the complete file list.
+
+## Remaining blockers and next work
+
+TODO progression: 148 → 74 → 74. This batch adds tests; it does not claim TODO conversion. RPV historical concurrency coverage is established; K1/K2 complete period-wide replay, carry convergence/maxWeeks/resume, remaining Qualification/subscription/golden-flow TODOs and production consumer workload still need completion. Subscription scheduling must use versioned Asia/Taipei configuration without inventing an operational calendar.
+
+Member order writes/profile/notifications, richer OpenAPI response schemas/pagination, cross-period return UI evidence, full Member browser E2E and full integrated Golden flow are incomplete. Dashboard repurchase status currently remains conservative PENDING and needs actual schedule-derived integration. Formal Entra/RBAC, LINE credentials, Security E2E, operational UAT/signoff, backup/restore drill and non-empty payout/full clawback evidence remain blockers. Security Policy Preflight PASS is not Production security PASS. Release/TODO/RC gates remain BLOCKED.
+
+Pending Decisions remain eligible-consumption complete scope, PV/BV formal event mapping, production operational calendar and cut-off. Continue engineering work independently; fail closed only affected features. Next ordered Backend stage: K1/K2 period-wide replay, carry convergence/maxWeeks/resume, then audited TODO batches, alongside Member write/read completion. Commit and push each stable checkpoint to origin integration/member-backend-mvp.
+
+Previous chronological reports below are historical evidence; their earlier branch/member coordination instructions are superseded by this unified integration section.
+
+---
 # Phase 3 Connected DEV progress report
 
 Date: 2026-09-15–16 (Asia/Taipei). Active Backend branch: `codex/backend-phase3`. Production Promotion remains BLOCKED; no RC2, merge, force push or production promotion.

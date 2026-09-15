@@ -1,8 +1,8 @@
 command: node scripts/golden-domain-test.mjs
-started: 2026-09-15T17:32:48.514Z
+started: 2026-09-15T18:50:30.891Z
 exit: 0
 GOLDEN_DOMAIN_PASS
-(node:27428) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///C:/UCell/UCell/backend/packages/shared/src/r1-0b-golden.ts is not specified and it doesn't parse as CommonJS.
+(node:20936) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///C:/UCell/UCell/backend/packages/shared/src/r1-0b-golden.ts is not specified and it doesn't parse as CommonJS.
 Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
 To eliminate this warning, add "type": "module" to \\?\C:\UCell\UCell\backend\packages\shared\package.json.
 (Use `node --trace-warnings ...` to show where the warning was created)

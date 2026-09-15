@@ -1,21 +1,21 @@
 command: pnpm test
-started: 2026-09-15T18:30:15.262Z
+started: 2026-09-15T18:50:35.766Z
 exit: 1
 Scope: 5 of 6 workspace projects
+packages/contracts test$ echo no-tests
 packages/shared test$ jest --config jest.config.cjs
 packages/database test$ echo no-tests
-packages/contracts test$ echo no-tests
-packages/database test: no-tests
-packages/database test: Done
 packages/contracts test: no-tests
 packages/contracts test: Done
+packages/database test: no-tests
+packages/database test: Done
 apps/worker test$ echo no-tests
 apps/worker test: no-tests
 apps/worker test: Done
 packages/shared test: Test Suites: 1 passed, 1 total
 packages/shared test: Tests:       6 passed, 6 total
 packages/shared test: Snapshots:   0 total
-packages/shared test: Time:        1.371 s, estimated 2 s
+packages/shared test: Time:        1.303 s, estimated 2 s
 packages/shared test: Ran all test suites.
 packages/shared test: Done
 apps/api test$ jest --config ./test/jest-e2e.json
@@ -23,7 +23,7 @@ apps/api test:
 apps/api test: Test Suites: 16 passed, 16 total
 apps/api test: Tests:       74 todo, 105 passed, 179 total
 apps/api test: Snapshots:   0 total
-apps/api test: Time:        16.058 s
+apps/api test: Time:        16.876 s
 apps/api test: Ran all test suites.
 apps/api test: Done
 $ pnpm -r test && pnpm test:todo:gate

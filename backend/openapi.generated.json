@@ -1,6 +1,801 @@
 {
   "openapi": "3.0.0",
   "paths": {
+    "/api/v1/auth/member/line/exchange": {
+      "post": {
+        "operationId": "memberLineExchange",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LineExchangeDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "401": {
+            "description": "Invalid/expired token, unbound identity or disabled Person"
+          },
+          "409": {
+            "description": "LINE_TOKEN_REPLAYED"
+          },
+          "503": {
+            "description": "LINE configuration/provider unavailable; fail closed"
+          }
+        },
+        "summary": "",
+        "tags": [
+          "Member - Authentication"
+        ]
+      }
+    },
+    "/api/v1/member/me": {
+      "get": {
+        "operationId": "memberMe",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "401": {
+            "description": "Member LINE session required, expired/disabled sessions denied"
+          },
+          "403": {
+            "description": "Qualification not owned"
+          },
+          "404": {
+            "description": "Resource unavailable"
+          },
+          "409": {
+            "description": "Conflicting operation"
+          },
+          "422": {
+            "description": "Invalid input or pending domain decision"
+          }
+        },
+        "security": [
+          {
+            "memberBearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "Member"
+        ]
+      }
+    },
+    "/api/v1/member/qualifications": {
+      "get": {
+        "description": "Owned temporal holder evidence only; empty array for Person without Qualification. Ordered by immutable qualification number.",
+        "operationId": "memberQualifications",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "401": {
+            "description": "Member LINE session required, expired/disabled sessions denied"
+          },
+          "403": {
+            "description": "Qualification not owned"
+          },
+          "404": {
+            "description": "Resource unavailable"
+          },
+          "409": {
+            "description": "Conflicting operation"
+          },
+          "422": {
+            "description": "Invalid input or pending domain decision"
+          }
+        },
+        "security": [
+          {
+            "memberBearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "Member"
+        ]
+      }
+    },
+    "/api/v1/member/context/qualification": {
+      "post": {
+        "description": "Validate selected ball; all scoped reads must repeat server ownership authorization. No monetary mutation.",
+        "operationId": "memberQualificationContext",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MemberContextDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          },
+          "401": {
+            "description": "Member LINE session required, expired/disabled sessions denied"
+          },
+          "403": {
+            "description": "Qualification not owned"
+          },
+          "404": {
+            "description": "Resource unavailable"
+          },
+          "409": {
+            "description": "Conflicting operation"
+          },
+          "422": {
+            "description": "Invalid input or pending domain decision"
+          }
+        },
+        "security": [
+          {
+            "memberBearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "Member"
+        ]
+      }
+    },
+    "/api/v1/member/dashboard": {
+      "get": {
+        "operationId": "MemberController_dashboard",
+        "parameters": [
+          {
+            "name": "qualificationId",
+            "required": true,
+            "in": "query",
+            "description": "Selected Qualification; server checks authenticated Person ownership on every request",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "period",
+            "required": false,
+            "in": "query",
+            "description": "Posted-event month filter using versioned accounting timezone; not an operational settlement cut-off",
+            "schema": {
+              "pattern": "^\\d{4}-(0[1-9]|1[0-2])$",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "401": {
+            "description": "Member LINE session required, expired/disabled sessions denied"
+          },
+          "403": {
+            "description": "Qualification not owned"
+          },
+          "404": {
+            "description": "Resource unavailable"
+          },
+          "409": {
+            "description": "Conflicting operation"
+          },
+          "422": {
+            "description": "Invalid input or pending domain decision"
+          }
+        },
+        "security": [
+          {
+            "memberBearer": []
+          }
+        ],
+        "tags": [
+          "Member"
+        ]
+      }
+    },
+    "/api/v1/member/organization/sponsor": {
+      "get": {
+        "operationId": "MemberController_sponsor",
+        "parameters": [
+          {
+            "name": "qualificationId",
+            "required": true,
+            "in": "query",
+            "description": "Selected Qualification; server checks authenticated Person ownership on every request",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "period",
+            "required": false,
+            "in": "query",
+            "description": "Posted-event month filter using versioned accounting timezone; not an operational settlement cut-off",
+            "schema": {
+              "pattern": "^\\d{4}-(0[1-9]|1[0-2])$",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "401": {
+            "description": "Member LINE session required, expired/disabled sessions denied"
+          },
+          "403": {
+            "description": "Qualification not owned"
+          },
+          "404": {
+            "description": "Resource unavailable"
+          },
+          "409": {
+            "description": "Conflicting operation"
+          },
+          "422": {
+            "description": "Invalid input or pending domain decision"
+          }
+        },
+        "security": [
+          {
+            "memberBearer": []
+          }
+        ],
+        "tags": [
+          "Member"
+        ]
+      }
+    },
+    "/api/v1/member/organization/binary": {
+      "get": {
+        "operationId": "MemberController_binary",
+        "parameters": [
+          {
+            "name": "qualificationId",
+            "required": true,
+            "in": "query",
+            "description": "Selected Qualification; server checks authenticated Person ownership on every request",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "period",
+            "required": false,
+            "in": "query",
+            "description": "Posted-event month filter using versioned accounting timezone; not an operational settlement cut-off",
+            "schema": {
+              "pattern": "^\\d{4}-(0[1-9]|1[0-2])$",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "401": {
+            "description": "Member LINE session required, expired/disabled sessions denied"
+          },
+          "403": {
+            "description": "Qualification not owned"
+          },
+          "404": {
+            "description": "Resource unavailable"
+          },
+          "409": {
+            "description": "Conflicting operation"
+          },
+          "422": {
+            "description": "Invalid input or pending domain decision"
+          }
+        },
+        "security": [
+          {
+            "memberBearer": []
+          }
+        ],
+        "tags": [
+          "Member"
+        ]
+      }
+    },
+    "/api/v1/member/referrals": {
+      "get": {
+        "operationId": "MemberController_referrals",
+        "parameters": [
+          {
+            "name": "qualificationId",
+            "required": true,
+            "in": "query",
+            "description": "Selected Qualification; server checks authenticated Person ownership on every request",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "period",
+            "required": false,
+            "in": "query",
+            "description": "Posted-event month filter using versioned accounting timezone; not an operational settlement cut-off",
+            "schema": {
+              "pattern": "^\\d{4}-(0[1-9]|1[0-2])$",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "401": {
+            "description": "Member LINE session required, expired/disabled sessions denied"
+          },
+          "403": {
+            "description": "Qualification not owned"
+          },
+          "404": {
+            "description": "Resource unavailable"
+          },
+          "409": {
+            "description": "Conflicting operation"
+          },
+          "422": {
+            "description": "Invalid input or pending domain decision"
+          }
+        },
+        "security": [
+          {
+            "memberBearer": []
+          }
+        ],
+        "tags": [
+          "Member"
+        ]
+      }
+    },
+    "/api/v1/member/performance": {
+      "get": {
+        "operationId": "MemberController_performance",
+        "parameters": [
+          {
+            "name": "qualificationId",
+            "required": true,
+            "in": "query",
+            "description": "Selected Qualification; server checks authenticated Person ownership on every request",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "period",
+            "required": false,
+            "in": "query",
+            "description": "Posted-event month filter using versioned accounting timezone; not an operational settlement cut-off",
+            "schema": {
+              "pattern": "^\\d{4}-(0[1-9]|1[0-2])$",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "401": {
+            "description": "Member LINE session required, expired/disabled sessions denied"
+          },
+          "403": {
+            "description": "Qualification not owned"
+          },
+          "404": {
+            "description": "Resource unavailable"
+          },
+          "409": {
+            "description": "Conflicting operation"
+          },
+          "422": {
+            "description": "Invalid input or pending domain decision"
+          }
+        },
+        "security": [
+          {
+            "memberBearer": []
+          }
+        ],
+        "tags": [
+          "Member"
+        ]
+      }
+    },
+    "/api/v1/member/bonuses": {
+      "get": {
+        "operationId": "MemberController_bonuses",
+        "parameters": [
+          {
+            "name": "qualificationId",
+            "required": true,
+            "in": "query",
+            "description": "Selected Qualification; server checks authenticated Person ownership on every request",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "period",
+            "required": false,
+            "in": "query",
+            "description": "Posted-event month filter using versioned accounting timezone; not an operational settlement cut-off",
+            "schema": {
+              "pattern": "^\\d{4}-(0[1-9]|1[0-2])$",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "401": {
+            "description": "Member LINE session required, expired/disabled sessions denied"
+          },
+          "403": {
+            "description": "Qualification not owned"
+          },
+          "404": {
+            "description": "Resource unavailable"
+          },
+          "409": {
+            "description": "Conflicting operation"
+          },
+          "422": {
+            "description": "Invalid input or pending domain decision"
+          }
+        },
+        "security": [
+          {
+            "memberBearer": []
+          }
+        ],
+        "tags": [
+          "Member"
+        ]
+      }
+    },
+    "/api/v1/member/bonuses/ledger": {
+      "get": {
+        "operationId": "MemberController_ledger",
+        "parameters": [
+          {
+            "name": "qualificationId",
+            "required": true,
+            "in": "query",
+            "description": "Selected Qualification; server checks authenticated Person ownership on every request",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "period",
+            "required": false,
+            "in": "query",
+            "description": "Posted-event month filter using versioned accounting timezone; not an operational settlement cut-off",
+            "schema": {
+              "pattern": "^\\d{4}-(0[1-9]|1[0-2])$",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "401": {
+            "description": "Member LINE session required, expired/disabled sessions denied"
+          },
+          "403": {
+            "description": "Qualification not owned"
+          },
+          "404": {
+            "description": "Resource unavailable"
+          },
+          "409": {
+            "description": "Conflicting operation"
+          },
+          "422": {
+            "description": "Invalid input or pending domain decision"
+          }
+        },
+        "security": [
+          {
+            "memberBearer": []
+          }
+        ],
+        "tags": [
+          "Member"
+        ]
+      }
+    },
+    "/api/v1/member/repurchase/status": {
+      "get": {
+        "operationId": "MemberController_repurchase",
+        "parameters": [
+          {
+            "name": "qualificationId",
+            "required": true,
+            "in": "query",
+            "description": "Selected Qualification; server checks authenticated Person ownership on every request",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "period",
+            "required": false,
+            "in": "query",
+            "description": "Posted-event month filter using versioned accounting timezone; not an operational settlement cut-off",
+            "schema": {
+              "pattern": "^\\d{4}-(0[1-9]|1[0-2])$",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "401": {
+            "description": "Member LINE session required, expired/disabled sessions denied"
+          },
+          "403": {
+            "description": "Qualification not owned"
+          },
+          "404": {
+            "description": "Resource unavailable"
+          },
+          "409": {
+            "description": "Conflicting operation"
+          },
+          "422": {
+            "description": "Invalid input or pending domain decision"
+          }
+        },
+        "security": [
+          {
+            "memberBearer": []
+          }
+        ],
+        "tags": [
+          "Member"
+        ]
+      }
+    },
+    "/api/v1/member/products": {
+      "get": {
+        "operationId": "MemberController_products",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "401": {
+            "description": "Member LINE session required, expired/disabled sessions denied"
+          },
+          "403": {
+            "description": "Qualification not owned"
+          },
+          "404": {
+            "description": "Resource unavailable"
+          },
+          "409": {
+            "description": "Conflicting operation"
+          },
+          "422": {
+            "description": "Invalid input or pending domain decision"
+          }
+        },
+        "security": [
+          {
+            "memberBearer": []
+          }
+        ],
+        "tags": [
+          "Member"
+        ]
+      }
+    },
+    "/api/v1/member/orders": {
+      "get": {
+        "operationId": "MemberController_orders",
+        "parameters": [
+          {
+            "name": "qualificationId",
+            "required": true,
+            "in": "query",
+            "description": "Selected Qualification; server checks authenticated Person ownership on every request",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "period",
+            "required": false,
+            "in": "query",
+            "description": "Posted-event month filter using versioned accounting timezone; not an operational settlement cut-off",
+            "schema": {
+              "pattern": "^\\d{4}-(0[1-9]|1[0-2])$",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "401": {
+            "description": "Member LINE session required, expired/disabled sessions denied"
+          },
+          "403": {
+            "description": "Qualification not owned"
+          },
+          "404": {
+            "description": "Resource unavailable"
+          },
+          "409": {
+            "description": "Conflicting operation"
+          },
+          "422": {
+            "description": "Invalid input or pending domain decision"
+          }
+        },
+        "security": [
+          {
+            "memberBearer": []
+          }
+        ],
+        "tags": [
+          "Member"
+        ]
+      }
+    },
+    "/api/v1/member/orders/{id}": {
+      "get": {
+        "operationId": "MemberController_order",
+        "parameters": [
+          {
+            "name": "qualificationId",
+            "required": true,
+            "in": "query",
+            "description": "Selected Qualification; server checks authenticated Person ownership on every request",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "period",
+            "required": false,
+            "in": "query",
+            "description": "Posted-event month filter using versioned accounting timezone; not an operational settlement cut-off",
+            "schema": {
+              "pattern": "^\\d{4}-(0[1-9]|1[0-2])$",
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "401": {
+            "description": "Member LINE session required, expired/disabled sessions denied"
+          },
+          "403": {
+            "description": "Qualification not owned"
+          },
+          "404": {
+            "description": "Resource unavailable"
+          },
+          "409": {
+            "description": "Conflicting operation"
+          },
+          "422": {
+            "description": "Invalid input or pending domain decision"
+          }
+        },
+        "security": [
+          {
+            "memberBearer": []
+          }
+        ],
+        "tags": [
+          "Member"
+        ]
+      }
+    },
+    "/api/v1/auth/admin/entra/exchange": {
+      "post": {
+        "operationId": "adminEntraExchange",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "summary": "驗證Microsoft Entra ID Token並交換UCell短效Backend Session",
+        "tags": [
+          "Admin - Authentication"
+        ]
+      }
+    },
+    "/api/v1/auth/admin/me": {
+      "get": {
+        "operationId": "adminMe",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "目前Admin Session",
+        "tags": [
+          "Admin - Authentication"
+        ]
+      }
+    },
+    "/api/v1/auth/admin/logout": {
+      "post": {
+        "operationId": "adminLogout",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "撤銷目前Admin Session",
+        "tags": [
+          "Admin - Authentication"
+        ]
+      }
+    },
     "/api/v1/health": {
       "get": {
         "operationId": "HealthController_health",
@@ -2201,61 +2996,6 @@
         ]
       }
     },
-    "/api/v1/auth/admin/entra/exchange": {
-      "post": {
-        "operationId": "adminEntraExchange",
-        "parameters": [],
-        "responses": {
-          "201": {
-            "description": ""
-          }
-        },
-        "summary": "驗證Microsoft Entra ID Token並交換UCell短效Backend Session",
-        "tags": [
-          "Admin - Authentication"
-        ]
-      }
-    },
-    "/api/v1/auth/admin/me": {
-      "get": {
-        "operationId": "adminMe",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "adminBearer": []
-          }
-        ],
-        "summary": "目前Admin Session",
-        "tags": [
-          "Admin - Authentication"
-        ]
-      }
-    },
-    "/api/v1/auth/admin/logout": {
-      "post": {
-        "operationId": "adminLogout",
-        "parameters": [],
-        "responses": {
-          "201": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "adminBearer": []
-          }
-        ],
-        "summary": "撤銷目前Admin Session",
-        "tags": [
-          "Admin - Authentication"
-        ]
-      }
-    },
     "/api/v1/admin/settlement-adjustments/requests/{id}/prepare": {
       "post": {
         "operationId": "SettlementAdjustmentController_prepare",
@@ -2366,6 +3106,31 @@
       }
     },
     "schemas": {
+      "LineExchangeDto": {
+        "type": "object",
+        "properties": {
+          "idToken": {
+            "type": "string",
+            "description": "LINE ID token; verified server-side, never logged or persisted raw"
+          }
+        },
+        "required": [
+          "idToken"
+        ]
+      },
+      "MemberContextDto": {
+        "type": "object",
+        "properties": {
+          "qualificationId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Selected Qualification; server checks authenticated Person ownership on every request"
+          }
+        },
+        "required": [
+          "qualificationId"
+        ]
+      },
       "CreatePersonDto": {
         "type": "object",
         "properties": {

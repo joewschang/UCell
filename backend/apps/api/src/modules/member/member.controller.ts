@@ -2,6 +2,7 @@ import { Body, Controller, Get, Post, Req, UseGuards, Query, Param, ParseUUIDPip
 import { ApiBearerAuth, ApiOperation, ApiProperty, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { IsString, IsUUID, MaxLength, MinLength, IsOptional, Matches } from 'class-validator';
 import { MemberReadService } from './member-read.service';
+import { MemberContextGuard } from './member-context.guard';
 import { MemberAuthenticationGuard } from '../auth/member-authentication.guard';
 import { MemberService } from './member.service';
 export class LineExchangeDto {
@@ -22,7 +23,7 @@ export class MemberAuthController {
  @ApiResponse({status:409,description:'LINE_TOKEN_REPLAYED'}) @ApiResponse({status:503,description:'LINE configuration/provider unavailable; fail closed'})
  exchange(@Body() body:LineExchangeDto){return this.service.exchange(body.idToken);}
 }
-@ApiTags('Member') @ApiBearerAuth('memberBearer') @UseGuards(MemberAuthenticationGuard)
+@ApiTags('Member') @ApiBearerAuth('memberBearer') @UseGuards(MemberAuthenticationGuard,MemberContextGuard)
 @ApiResponse({status:401,description:'Member LINE session required, expired/disabled sessions denied'})
 @ApiResponse({status:403,description:'Qualification not owned'}) @ApiResponse({status:404,description:'Resource unavailable'})
 @ApiResponse({status:409,description:'Conflicting operation'}) @ApiResponse({status:422,description:'Invalid input or pending domain decision'})

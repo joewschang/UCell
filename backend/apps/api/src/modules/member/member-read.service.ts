@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException, UnprocessableEntityException } from '@nestjs/common';
-import { PrismaService, captureParameters, snapshotValue, pending } from '@ucell/database';
+import { PrismaService, captureParameters, snapshotValue, pending, verifyReplayEnvelope } from '@ucell/database';
 import { QualificationAccessService } from '../auth/qualification-access.service';
 import { MemberService } from './member.service';
 @Injectable()
@@ -16,6 +16,24 @@ export class MemberReadService {
    if(!/^\d{4}-(0[1-9]|1[0-2])$/.test(month))throw new UnprocessableEntityException({code:'INVALID_PERIOD'});
    const [bounds]=await tx.$queryRaw<Array<{start:Date;end:Date}>>`SELECT (${month+'-01'}::date::timestamp AT TIME ZONE ${timezone}) AS start, ((${month+'-01'}::date+interval '1 month')::timestamp AT TIME ZONE ${timezone}) AS end`;
    const at={gte:bounds.start,lt:bounds.end};
+   const volumes=async()=>{
+    const totals:Record<string,number|null>={};
+    for(const pvType of ['PV','RPV','EPV'] as const){
+     const events=await tx.pvLedger.findMany({where:{qualificationId:id,pvType,occurredAt:at,reversalOfEventId:null}});
+     if(!events.length){totals[pvType.toLowerCase()]=null;continue;}
+     if(pvType!=='PV')for(const event of events){
+      const sourceId=pvType==='RPV'?event.sourceLineId:event.eventId;
+      if(!sourceId)pending('HISTORICAL_SNAPSHOT_MISSING','Original event evidence required');
+      const row=await tx.historicalReplaySnapshot.findUnique({where:{kind_sourceId:{kind:pvType,sourceId}}});
+      const evidence=verifyReplayEnvelope(row);
+      if(snapshotValue(evidence.parameters,'accounting.timezone')!==timezone)pending('HISTORICAL_SNAPSHOT_MISSING','Historical month timezone does not match query configuration');
+     }
+     const originalIds=events.map(event=>event.eventId);
+     const sum=await tx.pvLedger.aggregate({where:{qualificationId:id,pvType,OR:[{eventId:{in:originalIds}},{reversalOfEventId:{in:originalIds}}]},_sum:{amount:true}});
+     totals[pvType.toLowerCase()]=sum._sum.amount?.toNumber()??null;
+    }
+    return totals;
+   };
    if(kind==='sponsor'||kind==='referrals'){
     const links=await tx.sponsorRelationship.findMany({where:{sponsorQualificationId:id,effectiveFrom:{lte:now},OR:[{effectiveTo:null},{effectiveTo:{gt:now}}]},include:{child:{include:{currentHolder:true}}},orderBy:{sponsorSequenceNo:'asc'},take:100});
     const parent=await tx.sponsorRelationship.findFirst({where:{childQualificationId:id,effectiveFrom:{lte:now},OR:[{effectiveTo:null},{effectiveTo:{gt:now}}]},include:{sponsor:{include:{currentHolder:true}}}});
@@ -31,23 +49,19 @@ export class MemberReadService {
     return {qualificationId:id,period:month,status:rows.some(row=>row.status==='RECOGNIZED')?'ACTIVE':rows.some(row=>['SCHEDULED','DUE'].includes(row.status))?'PENDING':'INACTIVE',recognitions:rows.map(row=>({id:row.recognitionId,status:row.status,dueAt:row.dueAt}))};
    }
    if(kind==='bonuses'||kind==='ledger'){
-    const awards=await tx.bonusAward.findMany({where:{recipientQualificationId:id,occurredAt:at},include:{lifecycleEvents:{orderBy:[{occurredAt:'desc'},{createdAt:'desc'},{lifecycleEventId:'desc'}],take:1}},orderBy:[{occurredAt:'asc'},{bonusAwardId:'asc'}],take:100});
-    if(kind==='bonuses')return {qualificationId:id,period:month,awards:awards.length?awards.map(row=>({id:row.bonusAwardId,name:row.awardType,status:row.lifecycleEvents[0]?.status==='PENDING_45D'?'PENDING45D':row.lifecycleEvents[0]?.status??'PENDING',amount:row.lifecycleEvents.length?row.payableAmount.toNumber():null,ruleVersion:row.ruleVersionCode,parameterSnapshotHash:row.parameterSnapshotHash})):[{id:'settlement-pending',name:'獎金結算',status:'PENDING',amount:null}],pagination:{limit:100,truncated:awards.length===100}};
+    const awards=await tx.bonusAward.findMany({where:{recipientQualificationId:id,occurredAt:at},include:{settlementBatch:true,lifecycleEvents:{orderBy:[{occurredAt:'desc'},{createdAt:'desc'},{lifecycleEventId:'desc'}],take:1}},orderBy:[{occurredAt:'asc'},{bonusAwardId:'asc'}],take:100});
+    const disclosed=(row:typeof awards[number])=>!!row.lifecycleEvents.length&&row.lifecycleEvents[0].status!=='CALCULATED'&&(!row.settlementBatchId||row.settlementBatch?.status==='FINALIZED');
+    if(kind==='bonuses')return {qualificationId:id,period:month,awards:awards.length?awards.map(row=>({id:row.bonusAwardId,name:row.awardType,status:!disclosed(row)?'PENDING':row.lifecycleEvents[0]?.status==='PENDING_45D'?'PENDING45D':row.lifecycleEvents[0].status,amount:disclosed(row)?row.payableAmount.toNumber():null,ruleVersion:row.ruleVersionCode,parameterSnapshotHash:row.parameterSnapshotHash})):[{id:'settlement-pending',name:'獎金結算',status:'PENDING',amount:null}],pagination:{limit:100,truncated:awards.length===100}};
     const recoveries=await tx.bonusRecoveryEvent.findMany({where:{bonusAward:{recipientQualificationId:id},occurredAt:at},orderBy:[{occurredAt:'asc'},{bonusRecoveryEventId:'asc'}],take:100});
-    return {qualificationId:id,period:month,entries:[...awards.map(row=>({id:row.bonusAwardId,label:row.awardType,amount:row.payableAmount.toNumber(),postedAt:row.createdAt.toISOString(),sourceId:row.sourceEventId??row.bonusAwardId})),...recoveries.map(row=>({id:row.bonusRecoveryEventId,label:'CLAWBACK',amount:row.recoveryAmount.negated().toNumber(),postedAt:row.occurredAt.toISOString(),sourceId:row.bonusAwardId}))],pagination:{limit:100,truncated:awards.length===100||recoveries.length===100}};
+    return {qualificationId:id,period:month,entries:[...awards.filter(disclosed).map(row=>({id:row.bonusAwardId,label:row.awardType,amount:row.payableAmount.toNumber(),postedAt:row.createdAt.toISOString(),sourceId:row.sourceEventId??row.bonusAwardId})),...recoveries.map(row=>({id:row.bonusRecoveryEventId,label:'CLAWBACK',amount:row.recoveryAmount.negated().toNumber(),postedAt:row.occurredAt.toISOString(),sourceId:row.bonusAwardId}))],pagination:{limit:100,truncated:awards.length===100||recoveries.length===100}};
    }
    if(kind==='performance'){
-    // Read committed original/reversal ledger facts; never derive PV/BV from sales or current trees.
-    const totals:Record<string,number|null>={};
-    for(const pvType of ['PV','RPV','EPV'] as const){const sum=await tx.pvLedger.aggregate({where:{qualificationId:id,pvType,occurredAt:at},_sum:{amount:true}});totals[pvType.toLowerCase()]=sum._sum.amount?.toNumber()??null;}
-    return {qualificationId:id,period:month,...totals,left:null,right:null,asOf:now.toISOString(),timezone,parameterSnapshotHash:snapshot.hash,view:'POSTED_EVENT_DATE_FILTER',settlementStatus:'PENDING'};
+    return {qualificationId:id,period:month,...await volumes(),left:null,right:null,asOf:now.toISOString(),timezone,parameterSnapshotHash:snapshot.hash,view:'EFFECTIVE_ORIGINAL_EVENT_MONTH',settlementStatus:'PENDING'};
    }
    if(kind==='dashboard'){
     const qualification=(await this.identity.qualifications(personId)).find(row=>row.id===id)!;
     const person=await this.identity.me(personId);
-    const totals:Record<string,number|null>={};
-    for(const pvType of ['PV','RPV','EPV'] as const){const sum=await tx.pvLedger.aggregate({where:{qualificationId:id,pvType,occurredAt:at},_sum:{amount:true}});totals[pvType.toLowerCase()]=sum._sum.amount?.toNumber()??null;}
-    return {qualificationId:id,qualification,memberName:person.name,memberNo:person.memberNo,monthlyRepurchaseStatus:'PENDING',...totals,bonusAmount:null,bonusStatus:'PENDING',status:'PENDING',reason:'SETTLEMENT_NOT_FINALIZED',view:'POSTED_EVENT_DATE_FILTER'};
+    return {qualificationId:id,qualification,memberName:person.name,memberNo:person.memberNo,monthlyRepurchaseStatus:'PENDING',...await volumes(),bonusAmount:null,bonusStatus:'PENDING',status:'PENDING',reason:'SETTLEMENT_NOT_FINALIZED',view:'EFFECTIVE_ORIGINAL_EVENT_MONTH'};
    }
    if(kind==='orders'){
     const rows=await tx.order.findMany({where:{qualificationId:id},orderBy:[{createdAt:'desc'},{orderId:'desc'}],take:100});
