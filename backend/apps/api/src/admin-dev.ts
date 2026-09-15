@@ -1,4 +1,5 @@
 import 'reflect-metadata';
+import { MemberModule } from './modules/member/member.module';
 import { Module, CanActivate, ExecutionContext, Injectable, MethodNotAllowedException, UnauthorizedException, ValidationPipe } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -42,6 +43,8 @@ import { RequestContextInterceptor } from './common/interceptors/request-context
 export class AdminDevReadOnlyGuard implements CanActivate {
   constructor(private readonly config: ConfigService, private readonly prisma: PrismaService) {}
   async canActivate(context: ExecutionContext) {
+    const path=context.switchToHttp().getRequest().url?.split('?')[0]??'';
+    if(path==='/api/v1/member'||path.startsWith('/api/v1/member/')||path.startsWith('/api/v1/auth/member/'))return true;
     if (this.config.get('UCELL_ADMIN_DEV_FULL_ACCESS') === 'true') {
       const req=context.switchToHttp().getRequest();
       const id=req.headers['x-ucell-dev-actor-id'];
@@ -64,7 +67,7 @@ export class AdminDevReadOnlyGuard implements CanActivate {
 // Separate DEV entrypoint; the production AppModule/build/release gates are unchanged.
 @Module({
   imports: [ConfigModule.forRoot({ isGlobal: true, ignoreEnvFile: true }), DatabaseModule,
-    AuditModule, IdempotencyModule, OutboxModule, AuthModule, HealthModule,
+    AuditModule, IdempotencyModule, OutboxModule, AuthModule, HealthModule, MemberModule,
     PersonModule, ProductModule, OrganizationModule, QualificationModule, OrderModule,
     LedgerModule, ActiveModule, RpvModule, RuntimeRuleModule, BonusModule, ReturnModule,
     EpvModule, GlobalPoolModule, PayoutModule, SettlementModule, AdjustmentModule,

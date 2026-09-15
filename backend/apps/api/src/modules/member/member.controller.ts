@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Req, UseGuards, Query, Param } from '@nestjs/common';
+import { Body, Controller, Get, Post, Req, UseGuards, Query, Param, ParseUUIDPipe } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiProperty, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { IsString, IsUUID, MaxLength, MinLength, IsOptional, Matches } from 'class-validator';
 import { MemberReadService } from './member-read.service';
@@ -42,5 +42,5 @@ export class MemberController {
  @Get('repurchase/status') repurchase(@Req() req:any,@Query() q:MemberQueryDto){return this.reads.read(req.user.personId,q.qualificationId,'repurchase',q.period);}
  @Get('products') products(){return this.reads.products();}
  @Get('orders') orders(@Req() req:any,@Query() q:MemberQueryDto){return this.reads.read(req.user.personId,q.qualificationId,'orders',q.period);}
- @Get('orders/:id') order(@Req() req:any,@Query() q:MemberQueryDto,@Param('id') id:string){return this.reads.order(req.user.personId,q.qualificationId,id);}
+ @Get('orders/:id') order(@Req() req:any,@Query() q:MemberQueryDto,@Param('id',new ParseUUIDPipe()) id:string){return this.reads.order(req.user.personId,q.qualificationId,id);}
 }

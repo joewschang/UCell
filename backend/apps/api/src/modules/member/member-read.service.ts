@@ -45,7 +45,9 @@ export class MemberReadService {
    if(kind==='dashboard'){
     const qualification=(await this.identity.qualifications(personId)).find(row=>row.id===id)!;
     const person=await this.identity.me(personId);
-    return {qualificationId:id,qualification,memberName:person.name,memberNo:person.memberNo,monthlyRepurchaseStatus:'PENDING',pv:null,rpv:null,epv:null,bonusAmount:null,bonusStatus:'PENDING',status:'PENDING',reason:'SETTLEMENT_NOT_FINALIZED'};
+    const totals:Record<string,number|null>={};
+    for(const pvType of ['PV','RPV','EPV'] as const){const sum=await tx.pvLedger.aggregate({where:{qualificationId:id,pvType,occurredAt:at},_sum:{amount:true}});totals[pvType.toLowerCase()]=sum._sum.amount?.toNumber()??null;}
+    return {qualificationId:id,qualification,memberName:person.name,memberNo:person.memberNo,monthlyRepurchaseStatus:'PENDING',...totals,bonusAmount:null,bonusStatus:'PENDING',status:'PENDING',reason:'SETTLEMENT_NOT_FINALIZED',view:'POSTED_EVENT_DATE_FILTER'};
    }
    if(kind==='orders'){
     const rows=await tx.order.findMany({where:{qualificationId:id},orderBy:[{createdAt:'desc'},{orderId:'desc'}],take:100});
