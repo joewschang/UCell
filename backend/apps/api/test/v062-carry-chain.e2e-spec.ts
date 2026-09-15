@@ -41,6 +41,11 @@ describe('v0.6.2 economic attribution and carry-chain replay',()=>{
 
 describe('v0.6.2 schema convergence',()=>{
   it.todo('migration 0005 references subscription.subscription, not commerce.subscription');
-  it.todo('Prisma schema contains adjustment/workflow/replay models');
+  it('Prisma schema contains adjustment/workflow/replay models',()=>{
+    for(const model of ['SettlementAdjustmentBatch','SettlementAdjustmentLine','QualificationWorkflow','SettlementReplayRun','SettlementReplayPeriod']){
+      const columns=actual('Prisma DB column convergence '+model);
+      expect(columns.length).toBeGreaterThan(0);
+    }
+  });
   it.todo('RPV reversal anchor uses BonusAwardType.RPV, not EPV');
 });

@@ -1,4 +1,4 @@
-Original baseline: 148. Current TODO: 83. Net placeholder reduction: 65.
+Original baseline: 148. Current TODO: 81. Net placeholder reduction: 67.
 
 The previous 52 TODO claim is invalid. Full behavioral coverage must be reviewed independently.
 
@@ -58,9 +58,8 @@ The previous 52 TODO claim is invalid. Full behavioral coverage must be reviewed
 | backend/apps/api/test/v062-carry-chain.e2e-spec.ts | 32 | propagation respects maxWeeks safety horizon | Test implementation; SSOT/evidence review before conversion |
 | backend/apps/api/test/v062-carry-chain.e2e-spec.ts | 33 | each replay period is append-only and replay run is resumable | Test implementation; SSOT/evidence review before conversion |
 | backend/apps/api/test/v062-carry-chain.e2e-spec.ts | 34 | positive deltas post compensating awards and negative deltas post recovery | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/v062-carry-chain.e2e-spec.ts | 43 | migration 0005 references subscription.subscription, not commerce.subscription | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/v062-carry-chain.e2e-spec.ts | 44 | Prisma schema contains adjustment/workflow/replay models | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/v062-carry-chain.e2e-spec.ts | 45 | RPV reversal anchor uses BonusAwardType.RPV, not EPV | Test implementation; SSOT/evidence review before conversion |
+| backend/apps/api/test/v062-carry-chain.e2e-spec.ts | 43 | migration 0005 references subscription.subscription, not commerce.subscription | Legacy Test Drift: cancellation table moved to canonical subscription schema in 0006; retained pending coverage |
+| backend/apps/api/test/v062-carry-chain.e2e-spec.ts | 50 | RPV reversal anchor uses BonusAwardType.RPV, not EPV | Test implementation; SSOT/evidence review before conversion |
 | backend/apps/api/test/v063-golden-path.e2e-spec.ts | 45 | Taiwan local time maps to configured settlement week | Test implementation; SSOT/evidence review before conversion |
 | backend/apps/api/test/v064-golden-dataset.e2e-spec.ts | 5 | keeps Person and Qualification distinct | Test implementation; SSOT/evidence review before conversion |
 | backend/apps/api/test/v064-golden-dataset.e2e-spec.ts | 6 | keeps Sponsor and Binary trees distinct | Test implementation; SSOT/evidence review before conversion |
@@ -82,8 +81,7 @@ The previous 52 TODO claim is invalid. Full behavioral coverage must be reviewed
 | backend/apps/api/test/vertical-slice-02.e2e-spec.ts | 120 | inactive upline receives 0 and is not compressed | Test implementation; SSOT/evidence review before conversion |
 | backend/apps/api/test/vertical-slice-02.e2e-spec.ts | 121 | higher generation remains independently evaluated | Test implementation; SSOT/evidence review before conversion |
 | backend/apps/api/test/vertical-slice-02.e2e-spec.ts | 122 | re-running a recognition cannot duplicate RPV or awards | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/vertical-slice.e2e-spec.ts | 47 | creates Qualification with permanent sponsor sequence | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/vertical-slice.e2e-spec.ts | 48 | rejects 1st direct placed on RIGHT | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/vertical-slice.e2e-spec.ts | 103 | worker converts SALE_CONFIRMED to GPV_CREATED per order line | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/vertical-slice.e2e-spec.ts | 104 | reprocessing same outbox event does not duplicate GPV | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/vertical-slice.e2e-spec.ts | 105 | PV ledger cannot be UPDATEd or DELETEd | Test implementation; SSOT/evidence review before conversion |
+| backend/apps/api/test/vertical-slice.e2e-spec.ts | 51 | creates Qualification with permanent sponsor sequence | Test implementation; SSOT/evidence review before conversion |
+| backend/apps/api/test/vertical-slice.e2e-spec.ts | 52 | rejects 1st direct placed on RIGHT | Test implementation; SSOT/evidence review before conversion |
+| backend/apps/api/test/vertical-slice.e2e-spec.ts | 107 | worker converts SALE_CONFIRMED to GPV_CREATED per order line | Test implementation; SSOT/evidence review before conversion |
+| backend/apps/api/test/vertical-slice.e2e-spec.ts | 108 | reprocessing same outbox event does not duplicate GPV | Test implementation; SSOT/evidence review before conversion |

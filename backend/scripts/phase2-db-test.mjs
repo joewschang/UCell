@@ -14,6 +14,11 @@ const prisma=new PrismaClient(),results=[],version='PHASE2_TEST_'+randomUUID(),r
 function check(label,actual,expected){assert.deepEqual(actual,expected,label);results.push({label,result:'PASS',actual,expected});}
 let failure;
 try{await prisma.$transaction(async tx=>{
+ for(const [name,schema,table] of [['SettlementAdjustmentBatch','ledger','settlement_adjustment_batch'],['SettlementAdjustmentLine','ledger','settlement_adjustment_line'],['QualificationWorkflow','membership','qualification_workflow'],['SettlementReplayRun','ledger','settlement_replay_run'],['SettlementReplayPeriod','ledger','settlement_replay_period']]){
+  const model=Prisma.dmmf.datamodel.models.find(model=>model.name===name);assert.ok(model,'generated Prisma model '+name);
+  const columns=await tx.$queryRaw`SELECT column_name FROM information_schema.columns WHERE table_schema=${schema} AND table_name=${table} ORDER BY column_name`;
+  check('Prisma DB column convergence '+name,columns.map(row=>row.column_name).sort(),model.fields.filter(field=>field.kind!=='object').map(field=>field.dbName??field.name).sort());
+ }
  const person=await tx.person.findFirstOrThrow(),product=await tx.productReference.findFirstOrThrow();
  const parameters=await tx.runtimeRuleParameter.findMany({where:{ruleVersionCode:'R1.0B'}});
  for(const row of new Map(parameters.map(r=>[JSON.stringify([r.parameterCode,r.scopeKey]),r])).values()){
@@ -76,6 +81,10 @@ try{await prisma.$transaction(async tx=>{
  check('effective EPV ledger after two returns',(await tx.pvLedger.aggregate({where:{qualificationId:self.qualificationId,pvType:'EPV'},_sum:{amount:true}}))._sum.amount.toString(),'0');
  check('outstanding recovery tracks PAID clawback',(await tx.bonusRecoveryEvent.aggregate({where:{bonusAwardId:selfAward.bonusAwardId},_sum:{outstandingAmount:true}}))._sum.outstandingAmount.toString(),'840');
  async function rejected(label,operation,code){await tx.$executeRawUnsafe('SAVEPOINT phase2_expected_failure');let caught;try{await operation();}catch(error){caught=error;}await tx.$executeRawUnsafe('ROLLBACK TO SAVEPOINT phase2_expected_failure');assert.ok(caught,label);check(label,String(caught.message).includes(code)||String(caught.getResponse?.().code).includes(code),true);}
+ const originalPv=await tx.pvLedger.findUniqueOrThrow({where:{eventId:gpv.eventId}});
+ await rejected('PV Ledger UPDATE rejected by DB',()=>tx.pvLedger.update({where:{eventId:gpv.eventId},data:{amount:999}}),'UCell append-only table pv_ledger does not allow UPDATE/DELETE');
+ await rejected('PV Ledger DELETE rejected by DB',()=>tx.pvLedger.delete({where:{eventId:gpv.eventId}}),'UCell append-only table pv_ledger does not allow UPDATE/DELETE');
+ check('PV Ledger entire original row survives rejected mutations',await tx.pvLedger.findUniqueOrThrow({where:{eventId:gpv.eventId}}),originalPv);
  const snapshot=await tx.historicalReplaySnapshot.findFirstOrThrow({where:{kind:'EPV',sourceId:{in:originalAwards.map(a=>a.sourceEventId)}}});
  await rejected('snapshot UPDATE rejected by DB',()=>tx.historicalReplaySnapshot.update({where:{snapshotId:snapshot.snapshotId},data:{hash:'invalid'}}),'APPEND_ONLY_REPLAY_EVIDENCE');
  await rejected('posting DELETE rejected by DB',()=>tx.entitlementReplayPosting.delete({where:{postingId:firstPost.postingId}}),'APPEND_ONLY_REPLAY_EVIDENCE');

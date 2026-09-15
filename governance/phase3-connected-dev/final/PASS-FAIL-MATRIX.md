@@ -26,9 +26,9 @@
 | release-prep | BLOCKED | 1 |
 | release-gate | BLOCKED | 1 |
 | admin-dev-build | PASS | 0 |
+| api-tests | PASS | 0 |
 | default-db-golden | PASS | 0 |
 | default-db-golden-repeat | PASS | 0 |
-| api-tests | PASS | 0 |
 | db-regression | PASS | 0 |
 | security-policy-preflight | PASS | 0 |
 | todo | BLOCKED | 1 |

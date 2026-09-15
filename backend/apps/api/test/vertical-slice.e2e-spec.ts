@@ -3,6 +3,10 @@ import { IdempotencyService } from '../src/common/idempotency/idempotency.servic
 import { OutboxService } from '../src/common/outbox/outbox.service';
 import { PersonService } from '../src/modules/person/person.service';
 import { OrderService } from '../src/modules/order/order.service';
+import { execFileSync } from 'node:child_process';
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { resolve, join } from 'node:path';
 
 // Stateful persistence mocks: service-level evidence, not DB concurrency evidence.
 function fixture() {
@@ -102,5 +106,16 @@ describe('UCell first vertical slice', () => {
   });
   it.todo('worker converts SALE_CONFIRMED to GPV_CREATED per order line');
   it.todo('reprocessing same outbox event does not duplicate GPV');
-  it.todo('PV ledger cannot be UPDATEd or DELETEd');
+  it('PV ledger cannot be UPDATEd or DELETEd', () => {
+    const root=resolve(__dirname,'../../../..'), directory=mkdtempSync(join(tmpdir(),'ucell-pv-'));
+    try {
+      const file=join(directory,'evidence.json');
+      execFileSync(process.execPath,[resolve(root,'backend/scripts/phase2-db-test.mjs')],{cwd:root,env:{...process.env,DATABASE_URL:process.env.PHASE2_TEST_DATABASE_URL??'postgresql://ucell:ucell_dev@localhost:5432/ucell_admin_test?schema=public',PHASE2_DB_EVIDENCE_PATH:file},timeout:30000});
+      const run=JSON.parse(readFileSync(file,'utf8'));expect(run.result).toBe('PASS');
+      for(const label of ['PV Ledger UPDATE rejected by DB','PV Ledger DELETE rejected by DB','PV Ledger entire original row survives rejected mutations']){
+        const row=run.results.find((item:any)=>item.label===label);
+        expect(row).toBeDefined();expect(row.result).toBe('PASS');expect(row.actual).toEqual(row.expected);
+      }
+    } finally {rmSync(directory,{recursive:true,force:true});}
+  },30000);
 });

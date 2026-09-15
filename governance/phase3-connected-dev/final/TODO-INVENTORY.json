@@ -1,7 +1,7 @@
 {
   "originalBaseline": 148,
-  "currentExecutableTodo": 83,
-  "netPlaceholderReduction": 65,
+  "currentExecutableTodo": 81,
+  "netPlaceholderReduction": 67,
   "audit": "Previous 52 TODO claim invalidated: missing cases and unrelated/constant assertions restored. Net reduction alone is not Release approval.",
   "items": [
     {
@@ -332,17 +332,11 @@
       "file": "backend/apps/api/test/v062-carry-chain.e2e-spec.ts",
       "line": 43,
       "case": "migration 0005 references subscription.subscription, not commerce.subscription",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
+      "classification": "Legacy Test Drift: cancellation table moved to canonical subscription schema in 0006; retained pending coverage"
     },
     {
       "file": "backend/apps/api/test/v062-carry-chain.e2e-spec.ts",
-      "line": 44,
-      "case": "Prisma schema contains adjustment/workflow/replay models",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
-    },
-    {
-      "file": "backend/apps/api/test/v062-carry-chain.e2e-spec.ts",
-      "line": 45,
+      "line": 50,
       "case": "RPV reversal anchor uses BonusAwardType.RPV, not EPV",
       "classification": "Test implementation; SSOT/evidence review before conversion"
     },
@@ -474,32 +468,26 @@
     },
     {
       "file": "backend/apps/api/test/vertical-slice.e2e-spec.ts",
-      "line": 47,
+      "line": 51,
       "case": "creates Qualification with permanent sponsor sequence",
       "classification": "Test implementation; SSOT/evidence review before conversion"
     },
     {
       "file": "backend/apps/api/test/vertical-slice.e2e-spec.ts",
-      "line": 48,
+      "line": 52,
       "case": "rejects 1st direct placed on RIGHT",
       "classification": "Test implementation; SSOT/evidence review before conversion"
     },
     {
       "file": "backend/apps/api/test/vertical-slice.e2e-spec.ts",
-      "line": 103,
+      "line": 107,
       "case": "worker converts SALE_CONFIRMED to GPV_CREATED per order line",
       "classification": "Test implementation; SSOT/evidence review before conversion"
     },
     {
       "file": "backend/apps/api/test/vertical-slice.e2e-spec.ts",
-      "line": 104,
+      "line": 108,
       "case": "reprocessing same outbox event does not duplicate GPV",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
-    },
-    {
-      "file": "backend/apps/api/test/vertical-slice.e2e-spec.ts",
-      "line": 105,
-      "case": "PV ledger cannot be UPDATEd or DELETEd",
       "classification": "Test implementation; SSOT/evidence review before conversion"
     }
   ]

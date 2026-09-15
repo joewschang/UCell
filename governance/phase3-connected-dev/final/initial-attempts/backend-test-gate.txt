@@ -1,34 +1,34 @@
 command: pnpm test
-started: 2026-09-15T17:44:49.416Z
+started: 2026-09-15T17:47:26.317Z
 exit: 1
 Scope: 5 of 6 workspace projects
 packages/shared test$ jest --config jest.config.cjs
-packages/database test$ echo no-tests
 packages/contracts test$ echo no-tests
-packages/database test: no-tests
-packages/database test: Done
+packages/database test$ echo no-tests
 packages/contracts test: no-tests
 packages/contracts test: Done
+packages/database test: no-tests
+packages/database test: Done
 apps/worker test$ echo no-tests
 apps/worker test: no-tests
 apps/worker test: Done
 packages/shared test: Test Suites: 1 passed, 1 total
 packages/shared test: Tests:       6 passed, 6 total
 packages/shared test: Snapshots:   0 total
-packages/shared test: Time:        1.429 s, estimated 2 s
+packages/shared test: Time:        1.402 s, estimated 2 s
 packages/shared test: Ran all test suites.
 packages/shared test: Done
 apps/api test$ jest --config ./test/jest-e2e.json
 apps/api test:
 apps/api test: Test Suites: 16 passed, 16 total
-apps/api test: Tests:       84 todo, 94 passed, 178 total
+apps/api test: Tests:       83 todo, 96 passed, 179 total
 apps/api test: Snapshots:   0 total
-apps/api test: Time:        15.336 s
+apps/api test: Time:        15.503 s
 apps/api test: Ran all test suites.
 apps/api test: Done
 $ pnpm -r test && pnpm test:todo:gate
 $ node scripts/test-todo-gate.mjs
-TEST_TODO_GATE_FAIL: 84 unresolved executable test placeholders
+TEST_TODO_GATE_FAIL: 83 unresolved executable test placeholders
 - apps\api\test\bonus-engine-v04.e2e-spec.ts: 22
 - apps\api\test\epv-global-v05.e2e-spec.ts: 8
 - apps\api\test\negative-flow-v05.e2e-spec.ts: 6
@@ -39,6 +39,6 @@ TEST_TODO_GATE_FAIL: 84 unresolved executable test placeholders
 - apps\api\test\v063-golden-path.e2e-spec.ts: 1
 - apps\api\test\v064-golden-dataset.e2e-spec.ts: 10
 - apps\api\test\vertical-slice-02.e2e-spec.ts: 10
-- apps\api\test\vertical-slice.e2e-spec.ts: 6
+- apps\api\test\vertical-slice.e2e-spec.ts: 5
 [ELIFECYCLE] Command failed with exit code 1.
 [ELIFECYCLE] Test failed. See above for more details.
