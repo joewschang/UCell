@@ -22,6 +22,7 @@ try{
   run(['scripts/db-golden-fixtures.mjs']);
   run(['-r','ts-node/register','scripts/db-golden-e2e.ts']);
   run(['scripts/phase3-concurrency-db-test.mjs']);
+  run(['scripts/phase3-return-outbox-db-test.mjs']);
   console.log('DB_GOLDEN_ISOLATED_PASS: fresh database, deployed migrations, deterministic fixtures');
 }finally{
   // Only this successfully-created random test database is removed.

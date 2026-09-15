@@ -1,4 +1,4 @@
-import { PrismaService, Prisma, sealGpvEvent, sealRpvEvent, consumeReplayOutbox, verifyReplayEnvelope, pending } from '@ucell/database';
+import { PrismaService, Prisma, sealGpvEvent, sealRpvEvent, verifyReplayEnvelope, pending, claimOutboxLease, withOutboxLease, processLeasedReplay, releaseFailedOutboxLease, OutboxLease } from '@ucell/database';
 import * as crypto from 'node:crypto';
 
 const prisma = new PrismaService();
@@ -32,8 +32,9 @@ async function effectiveDirectCountAt(
   return Number(rows[0]?.count ?? '0');
 }
 
-async function processSaleConfirmed(outboxEventId:string){
-  return prisma.$transaction(async tx=>{
+async function processSaleConfirmed(lease:OutboxLease){
+  const outboxEventId=lease.outboxEventId;
+  return withOutboxLease(prisma,lease,async tx=>{
     const event=await tx.outboxEvent.findUnique({where:{outboxEventId}});
     if(!event || event.processStatus==='PROCESSED') return;
 
@@ -68,7 +69,7 @@ async function processSaleConfirmed(outboxEventId:string){
       where:{outboxEventId},
       data:{processStatus:'PROCESSED',processedAt:new Date()}
     });
-  },{isolationLevel:Prisma.TransactionIsolationLevel.Serializable});
+  });
 }
 
 async function processRecognition(recognitionId:string){
@@ -160,11 +161,8 @@ async function processRecognition(recognitionId:string){
 }
 
 
-export async function processReplayEvent(outboxEventId:string) {
-  return prisma.$transaction(async tx=>{
-    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${outboxEventId},0))`;
-    return consumeReplayOutbox(tx,outboxEventId);
-  },{isolationLevel:Prisma.TransactionIsolationLevel.Serializable,timeout:60000});
+export async function processReplayEvent(lease:OutboxLease) {
+  return processLeasedReplay(prisma,lease);
 }
 
 export async function pollOutbox(){
@@ -173,24 +171,14 @@ export async function pollOutbox(){
     orderBy:{createdAt:'asc'},take:20
   });
   for(const event of events){
+    let lease:OutboxLease|null=null;
     try{
-      const claim=await prisma.outboxEvent.updateMany({
-        where:{outboxEventId:event.outboxEventId,processStatus:event.processStatus,attemptCount:event.attemptCount,availableAt:event.availableAt},
-        data:{processStatus:'PROCESSING',attemptCount:{increment:1},availableAt:new Date(Date.now()+120000)}
-      });
-      if(claim.count!==1) continue;
-      if(event.eventType==='SALE_CONFIRMED') await processSaleConfirmed(event.outboxEventId);
-      else await processReplayEvent(event.outboxEventId);
+      lease=await claimOutboxLease(prisma,event);
+      if(!lease)continue;
+      if(event.eventType==='SALE_CONFIRMED') await processSaleConfirmed(lease);
+      else await processReplayEvent(lease);
     }catch(e){
-      const message=(e as any)?.getResponse?JSON.stringify((e as any).getResponse()):(e instanceof Error?e.message:String(e));
-      await prisma.outboxEvent.updateMany({
-        where:{outboxEventId:event.outboxEventId,processStatus:'PROCESSING',attemptCount:event.attemptCount+1},
-        data:{
-          processStatus:event.attemptCount>=9?'DEAD':'PENDING',
-          lastError:message.slice(0,4000),
-          availableAt:new Date(Date.now()+30000)
-        }
-      });
+      if(lease)await releaseFailedOutboxLease(prisma,lease,e);
     }
   }
 }
