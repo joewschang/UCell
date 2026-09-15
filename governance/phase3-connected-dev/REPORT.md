@@ -12,7 +12,7 @@ Idempotency now checks a transaction-visible unfinished record's request hash be
 
 The earlier report of 52 remaining TODOs / 96 completed cases is withdrawn. Several original cases were removed instead of converted, and assertions against constants or unrelated scenarios were incorrectly counted. The commits remain in history, with checkpoint `e232c92` before correction. Unverified cases were restored from `89bfed6`.
 
-Current inventory: **104 executable TODOs** from original baseline 148. This is a net reduction of 44 placeholders, not a claim that all 44 have completed release-level review. The preceding audited Phase 3 batch converted 19 original TODOs with corresponding service/guard or direct DB assertions: idempotency (4), organization (4), qualification isolation (3), unlock-depth behavior (2), negative return/payout invariants (6). Two additional idempotency defect/rollback regression tests were added. Earlier Phase 2 conversions remain subject to continued coverage review.
+Current inventory: **102 executable TODOs** from original baseline 148. This is a net reduction of 46 placeholders, not a claim that all 46 have completed release-level review. The preceding audited Phase 3 batch converted 19 original TODOs with corresponding service/guard or direct DB assertions: idempotency (4), organization (4), qualification isolation (3), unlock-depth behavior (2), negative return/payout invariants (6). Two additional idempotency defect/rollback regression tests were added. Earlier Phase 2 conversions remain subject to continued coverage review.
 
 The next batch, checkpoint `27789de`, converts four Vertical Slice 02 cases: DRAFT creation using the real service/idempotency callback; SUBMIT rejection for each missing Sponsor/Binary field plus successful submission; Active overlap rejection without mutation; historical Active half-open boundaries independent of the current flag. These are service tests with mocked persistence and do not claim database atomicity or concurrent Active exclusion. All other original cases remain TODO.
 
@@ -20,7 +20,9 @@ The following batch, checkpoint `8b44716`, converts three cases: application app
 
 Checkpoint `b72e304` precedes two additional conversions: temporal holder authorization across the transfer boundary, and AdminRoleGuard denial for missing session, disallowed/missing role and absent endpoint policy. The isolated membership DB suite adds five temporal authorization assertions using explicit TEST_ONLY intervals; it does not infer workflow fee policy or claim Entra HTTP verification. This batch changes tests only; Prisma/offline/release-preparation results in the matrix retain their preceding run timestamps.
 
-The latest Jest run passes 16 suites / 74 tests with 104 TODOs. The DB regression passed 94 assertions with fixture rollback; the fresh Golden runner additionally exercises 20 monetary Return/outbox assertions and 53 focused membership/temporal assertions. [TODO inventory](C:/UCell/UCell/governance/phase3-connected-dev/final/TODO-INVENTORY.md) records each unresolved name/file/line and its engineering or Pending Decision classification. No skip was added and original unresolved cases are retained. Exact newest Jest evidence is in `final/api-tests.txt`.
+Checkpoint `1736321` precedes two payable idempotency conversions. Real `UnifiedPayableService.materialize` executes against stateful mocked transaction delegates; repeated BonusAward/RPV inputs create exactly one payable with the original source, recipient Qualification and amount. This is service-level idempotency evidence, not a concurrent database materialization test or approval of historical lifecycle eligibility. No production implementation changed; build/Prisma/offline/release-preparation results retain their preceding timestamps.
+
+The latest Jest run passes 16 suites / 76 tests with 102 TODOs. The DB regression passed 94 assertions with fixture rollback; the fresh Golden runner additionally exercises 20 monetary Return/outbox assertions and 53 focused membership/temporal assertions. [TODO inventory](C:/UCell/UCell/governance/phase3-connected-dev/final/TODO-INVENTORY.md) records each unresolved name/file/line and its engineering or Pending Decision classification. No skip was added and original unresolved cases are retained. Exact newest Jest evidence is in `final/api-tests.txt`.
 
 ## Verification
 
@@ -34,7 +36,7 @@ The identified local DEV API/worker were restored after Prisma generation, using
 
 ## Remaining blockers and next work
 
-- 104 TODOs: continue SSOT/evidence audit and real implementation tests, especially vertical slice and bonus-engine settlement integration.
+- 102 TODOs: continue SSOT/evidence audit and real implementation tests, especially vertical slice and bonus-engine settlement integration.
 - Commit `83e5b39` adds lease-safe production consumer processing and 20 isolated real DB assertions for concurrent partial returns, rollback/retry, PAID clawback, stale ownership, expired lease and duplicate delivery. This closes the previously missing focused concurrency coverage; broader production workload verification remains outstanding.
 - RPV historical data predating required snapshots cannot be reconstructed from current state; missing allocation/period/timezone evidence remains fail-closed.
 - Formal partial-refund RPV month allocation requires original allocation evidence; no proportional fixed-award assumption is made.

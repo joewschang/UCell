@@ -1,10 +1,45 @@
 import { QualificationAccessService } from '../src/modules/auth/qualification-access.service';
 import { AdminRoleGuard } from '../src/modules/auth/admin-role.guard';
+import { UnifiedPayableService } from '../src/modules/payout/unified-payable.service';
+import { Prisma } from '@ucell/database';
+
+function materializationHarness(kind: 'BONUS_AWARD' | 'RPV_UPLINE_AWARD') {
+  const entries = new Map<string, any>();
+  const award = kind === 'BONUS_AWARD'
+    ? { bonusAwardId: 'award-A', recipientQualificationId: 'ball-A', awardType: 'REFERRAL', payableAmount: new Prisma.Decimal(100) }
+    : { rpvAwardEventId: 'rpv-A', recipientQualificationId: 'ball-B', payableAmount: new Prisma.Decimal(80), ruleVersionCode: 'TEST_ONLY' };
+  const tx = {
+    bonusAward: { findMany: jest.fn(async () => kind === 'BONUS_AWARD' ? [award] : []) },
+    globalPoolAward: { findMany: jest.fn(async () => []) },
+    rpvUplineAwardEvent: { findMany: jest.fn(async () => kind === 'RPV_UPLINE_AWARD' ? [award] : []) },
+    payableEntry: {
+      findUnique: jest.fn(async ({ where }: any) => entries.get(JSON.stringify(where.sourceType_sourceId)) ?? null),
+      create: jest.fn(async ({ data }: any) => { entries.set(JSON.stringify({ sourceType: data.sourceType, sourceId: data.sourceId }), data); return data; }),
+    },
+  };
+  const service = new UnifiedPayableService({ $transaction: async (work: any) => work(tx) } as any, {} as any);
+  return { service, tx, entries };
+}
 
 describe('R1.0B v0.6.3',()=>{
   it.todo('Taiwan local time maps to configured settlement week');
-  it.todo('effective BonusAward materializes once');
-  it.todo('RPV award materializes once');
+  it('effective BonusAward materializes once', async () => {
+    const { service, tx, entries } = materializationHarness('BONUS_AWARD');
+    const cutoff = new Date('2020-04-01T00:00:00Z');
+    expect(await service.materialize(cutoff, 'TEST_ONLY')).toEqual({ created: 1 });
+    expect(await service.materialize(cutoff, 'TEST_ONLY')).toEqual({ created: 0 });
+    expect(tx.bonusAward.findMany).toHaveBeenCalledWith({ where: { ruleVersionCode: 'TEST_ONLY', pendingUntil: { lte: cutoff }, lifecycleEvents: { some: { status: 'EFFECTIVE' } } } });
+    expect(tx.payableEntry.create).toHaveBeenCalledTimes(1);
+    expect([...entries.values()]).toEqual([expect.objectContaining({ qualificationId: 'ball-A', sourceType: 'BONUS_AWARD', sourceId: 'award-A', awardType: 'REFERRAL', grossAmount: new Prisma.Decimal(100), status: 'OPEN' })]);
+  });
+  it('RPV award materializes once', async () => {
+    const { service, tx, entries } = materializationHarness('RPV_UPLINE_AWARD');
+    const cutoff = new Date('2020-04-01T00:00:00Z');
+    expect(await service.materialize(cutoff, 'TEST_ONLY')).toEqual({ created: 1 });
+    expect(await service.materialize(cutoff, 'TEST_ONLY')).toEqual({ created: 0 });
+    expect(tx.payableEntry.create).toHaveBeenCalledTimes(1);
+    expect([...entries.values()]).toEqual([expect.objectContaining({ qualificationId: 'ball-B', sourceType: 'RPV_UPLINE_AWARD', sourceId: 'rpv-A', awardType: 'RPV', grossAmount: new Prisma.Decimal(80), ruleVersionCode: 'TEST_ONLY' })]);
+  });
   it.todo('payout groups by Qualification rather than Person');
   it.todo('Recovery offsets Gross without changing source Award');
   it.todo('Net payout never becomes negative');

@@ -1,4 +1,4 @@
 command: node backend/scripts/admin-full-test.mjs
-started: 2026-09-15T17:08:18.137Z
+started: 2026-09-15T17:10:39.021Z
 exit: 0
-ADMIN_FULL_TEST_PASS: 43 requests; fixture root 27588b0e-b09c-4a34-87c9-11001af76490
+ADMIN_FULL_TEST_PASS: 43 requests; fixture root dc103628-e7e6-4a4a-8932-84e2a7bea10f
