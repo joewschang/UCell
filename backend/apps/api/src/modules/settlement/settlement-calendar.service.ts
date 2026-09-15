@@ -39,7 +39,13 @@ export class SettlementCalendarService {
     const {timezone,cutoff}=this.validate(snapshot,type);
     const [row]=await tx.$queryRaw<Array<{at:Date}>>`SELECT (((${end}::timestamptz AT TIME ZONE ${timezone})::date + ${cutoff.daysAfterPeriodEnd}::int + ${cutoff.localTime}::time) AT TIME ZONE ${timezone}) AS at`;
     if(new Date()<row.at) pending('SETTLEMENT_CUTOFF_NOT_REACHED','Approved cut-off has not been reached');
-    return snapshot;
+    // Monetary parameters are locked at the configured settlement cut-off, not at
+    // the request's later wall clock or an assumed period-end timestamp.
+    const locked=await captureParameters(tx,row.at,version);
+    const next=this.validate(locked,type),previous=this.validate(snapshot,type);
+    if(next.timezone!==previous.timezone || next.period.unit!==previous.period.unit || next.period.count!==previous.period.count || next.period.anchorLocal!==previous.period.anchorLocal || next.cutoff.localTime!==previous.cutoff.localTime || next.cutoff.daysAfterPeriodEnd!==previous.cutoff.daysAfterPeriodEnd || next.cutoff.approvalReference!==previous.cutoff.approvalReference)
+      pending('CALENDAR_VERSION_DECISION_PENDING','Calendar changed between period end and cut-off; explicit migration policy is required');
+    return locked;
   }
 
   async weeklyPeriodFor(eventAt:Date,version='R1.0B',tx?:Prisma.TransactionClient) {

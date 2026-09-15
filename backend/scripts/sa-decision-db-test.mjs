@@ -13,6 +13,7 @@ const {EpvMonthService}=require('../backend/apps/api/dist/modules/epv/epv-month.
 const {BonusQueryService}=require('../backend/apps/api/dist/modules/bonus/bonus-query.service.js');
 const {RuntimeRuleService}=require('../backend/apps/api/dist/modules/rules/runtime-rule.service.js');
 const {captureParameters}=require('../backend/apps/api/dist/modules/rules/parameter-snapshot.js');
+const {snapshotDecimal}=require('../backend/apps/api/dist/modules/rules/parameter-snapshot.js');
 const {SettlementCalendarService}=require('../backend/apps/api/dist/modules/settlement/settlement-calendar.service.js');
 const {SettlementReplayService}=require('../backend/apps/api/dist/modules/adjustment/settlement-replay.service.js');
 const {ReversalService}=require('../backend/apps/api/dist/modules/return/reversal.service.js');
@@ -57,7 +58,11 @@ try{
   const configured=await captureParameters(tx,new Date('2020-01-05'),version);
   const period=await calendar.periodFor(tx,new Date('2020-01-05'),configured,'BINARY_K1');
   check('configured biweekly period uses explicit Wednesday anchor',[period.start.toISOString(),period.end.toISOString()],['2019-12-31T16:00:00.000Z','2020-01-14T16:00:00.000Z']);
+  await tx.runtimeRuleParameter.updateMany({where:{ruleVersionCode:version,parameterCode:'binary.pair.rate',scopeKey:'*'},data:{effectiveTo:new Date('2020-01-16T05:15:00Z')}});
+  await tx.runtimeRuleParameter.create({data:{ruleVersionCode:version,parameterCode:'binary.pair.rate',scopeKey:'*',valueJson:'.2',effectiveFrom:new Date('2020-01-16T05:15:00Z')}});
   const historical=await calendar.captureForPeriod(tx,period.start,period.end,'BINARY_K1',version);check('configuration snapshot is persisted representation',historical.format,'UCELL_PARAMETER_SNAPSHOT_V1');
+  check('monetary snapshot is locked at approved configured cut-off',historical.effectiveAt,'2020-01-16T05:15:00.000Z');
+  check('parameter version effective exactly at cut-off is selected',snapshotDecimal(historical,'binary.pair.rate').toString(),'0.2');
   // A placement beginning mid-month must not include pre-placement sales.
   await tx.binaryPlacement.create({data:{parentQualificationId:q.qualificationId,childQualificationId:q2.qualificationId,side:'LEFT',effectiveFrom:new Date('2020-01-05')}});
   await tx.pvLedger.create({data:{qualificationId:q2.qualificationId,pvType:'GPV',amount:1000,sourceType:'ORDER',sourceId:randomUUID(),eventType:'GPV_CREATED',ruleVersionCode:version,occurredAt:new Date('2020-01-03'),correlationId:randomUUID()}});

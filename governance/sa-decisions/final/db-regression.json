@@ -88,6 +88,16 @@
       "actual": "UCELL_PARAMETER_SNAPSHOT_V1"
     },
     {
+      "label": "monetary snapshot is locked at approved configured cut-off",
+      "result": "PASS",
+      "actual": "2020-01-16T05:15:00.000Z"
+    },
+    {
+      "label": "parameter version effective exactly at cut-off is selected",
+      "result": "PASS",
+      "actual": "0.2"
+    },
+    {
       "label": "event-time subtree excludes pre-placement sale and includes later linked reversal",
       "result": "PASS",
       "actual": "1600"
