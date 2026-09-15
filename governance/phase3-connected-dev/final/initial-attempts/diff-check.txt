@@ -1,7 +1,6 @@
 command: git diff --check
-started: 2026-09-15T18:54:40.144Z
-exit: 2
-governance/phase3-connected-dev/REPORT.md:187: new blank line at EOF.
+started: 2026-09-15T18:54:59.059Z
+exit: 0
 warning: in the working copy of 'backend/apps/api/src/modules/member/member-read.service.ts', LF will be replaced by CRLF the next time Git touches it
 warning: in the working copy of 'backend/apps/api/src/modules/member/member.controller.ts', LF will be replaced by CRLF the next time Git touches it
 warning: in the working copy of 'backend/apps/api/src/modules/member/member.module.ts', LF will be replaced by CRLF the next time Git touches it
@@ -12,6 +11,7 @@ warning: in the working copy of 'governance/phase3-connected-dev/REPORT.md', LF 
 warning: in the working copy of 'governance/phase3-connected-dev/final/PASS-FAIL-MATRIX.md', LF will be replaced by CRLF the next time Git touches it
 warning: in the working copy of 'governance/phase3-connected-dev/final/admin-build.txt', LF will be replaced by CRLF the next time Git touches it
 warning: in the working copy of 'governance/phase3-connected-dev/final/admin-dev-build.txt', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'governance/phase3-connected-dev/final/admin-dev-full-test.txt', LF will be replaced by CRLF the next time Git touches it
 warning: in the working copy of 'governance/phase3-connected-dev/final/admin-tests.txt', LF will be replaced by CRLF the next time Git touches it
 warning: in the working copy of 'governance/phase3-connected-dev/final/api-tests.txt', LF will be replaced by CRLF the next time Git touches it
 warning: in the working copy of 'governance/phase3-connected-dev/final/backend-build.txt', LF will be replaced by CRLF the next time Git touches it
@@ -27,6 +27,7 @@ warning: in the working copy of 'governance/phase3-connected-dev/final/golden-ec
 warning: in the working copy of 'governance/phase3-connected-dev/final/golden-r1b-regression.txt', LF will be replaced by CRLF the next time Git touches it
 warning: in the working copy of 'governance/phase3-connected-dev/final/initial-attempts/admin-build.txt', LF will be replaced by CRLF the next time Git touches it
 warning: in the working copy of 'governance/phase3-connected-dev/final/initial-attempts/admin-dev-build.txt', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'governance/phase3-connected-dev/final/initial-attempts/admin-dev-full-test.txt', LF will be replaced by CRLF the next time Git touches it
 warning: in the working copy of 'governance/phase3-connected-dev/final/initial-attempts/admin-tests.txt', LF will be replaced by CRLF the next time Git touches it
 warning: in the working copy of 'governance/phase3-connected-dev/final/initial-attempts/api-tests.txt', LF will be replaced by CRLF the next time Git touches it
 warning: in the working copy of 'governance/phase3-connected-dev/final/initial-attempts/backend-build.txt', LF will be replaced by CRLF the next time Git touches it
