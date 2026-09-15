@@ -4,6 +4,7 @@ import { AdminObservabilityService } from '../src/modules/admin-observability/ad
 import { EpvService } from '../src/modules/epv/epv.service';
 import { BonusQueryService } from '../src/modules/bonus/bonus-query.service';
 import { RuntimeRuleService } from '../src/modules/rules/runtime-rule.service';
+import { EpvMonthService } from '../src/modules/epv/epv-month.service';
 
 // Isolated engineering regression tests. No connection to a monetary ledger.
 describe('Connected DEV implementation regressions', () => {
@@ -44,10 +45,14 @@ describe('Connected DEV implementation regressions', () => {
     const at = new Date('2026-09-01T00:00:00Z');
     const tx = {
       order: { findUnique: jest.fn().mockResolvedValue({ orderId: 'order', status: 'PAID',
-        purpose: 'REPURCHASE', qualificationId: 'self', paidAt: at, netAmount: new Prisma.Decimal(4800) }) },
+        purpose: 'REPURCHASE', ruleVersionCode:'R1.0B', qualificationId: 'self', paidAt: at, netAmount: new Prisma.Decimal(4800) }) },
       pvLedger: { findFirst: jest.fn().mockResolvedValue(null), create: jest.fn().mockResolvedValue({ eventId: 'event' }) },
       bonusAward: { create: jest.fn().mockResolvedValue({ bonusAwardId: 'award' }) },
       bonusAwardLifecycleEvent: { createMany: jest.fn().mockResolvedValue({ count: 2 }) },
+      auditEvent:{create:jest.fn().mockResolvedValue({})},
+      runtimeRuleParameter:{findMany:jest.fn().mockResolvedValue([
+        ['epv.base_amount','*',2000],['epv.rate','*','.6'],['epv.self.rate','*','.5'],['epv.upline.rate','1','.06'],['award.pending.days','*',45]
+      ].map(([parameterCode,scopeKey,valueJson],i)=>({runtimeRuleParameterId:String(i),parameterCode,scopeKey,valueJson,effectiveFrom:at,effectiveTo:null})))},
     };
     const prisma = { $transaction: async (fn: (client: unknown) => unknown) => fn(tx) };
     const rules = { decimal: jest.fn().mockResolvedValue(new Prisma.Decimal(1)), integer: jest.fn().mockResolvedValue(45) };
@@ -56,8 +61,9 @@ describe('Connected DEV implementation regressions', () => {
       pendingUntil: jest.fn().mockReturnValue(at), effectiveDirectCountAt: jest.fn().mockResolvedValue(1),
       sponsorAncestors: jest.fn().mockResolvedValue([{ qualification_id: 'upline', generation: 1 }]),
     };
+    const month={recognition:jest.fn().mockResolvedValue({start:at,end:new Date('2026-10-01'),timezone:'Asia/Taipei',base:new Prisma.Decimal(2000),rate:new Prisma.Decimal('.6'),cumulative:new Prisma.Decimal(4800),epv:new Prisma.Decimal(1680)})};
     await new EpvService(prisma as unknown as PrismaService, rules as unknown as RuntimeRuleService,
-      query as unknown as BonusQueryService).recognizeOrder('order');
+      query as unknown as BonusQueryService,month as unknown as EpvMonthService).recognizeOrder('order');
     expect(query.qualificationPlanAt.mock.calls).toEqual([[tx, 'self', at], [tx, 'upline', at]]);
   });
 });

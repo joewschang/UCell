@@ -165,6 +165,11 @@ async function processReturnConfirmed(outboxEventId:string){
       include:{lines:true,order:true}
     });
     if(!ret || ret.status!=='POSTED') throw new Error('Return not posted');
+    const processed=await tx.auditEvent.findFirst({where:{action:'RETURN_REVERSAL_PROCESSED',entityId:ret.returnCaseId}});
+    if(processed){
+      await tx.outboxEvent.update({where:{outboxEventId},data:{processStatus:'PROCESSED',processedAt:new Date()}});
+      return;
+    }
 
     for(const line of ret.lines){
       const original=await tx.pvLedger.findFirst({
@@ -193,35 +198,8 @@ async function processReturnConfirmed(outboxEventId:string){
         }
       });
 
-      const directAwards=await tx.bonusAward.findMany({
-        where:{sourceEventId:original.eventId,awardType:{in:['REFERRAL','EQUALIZATION']}}
-      });
-      const ratio=original.amount.abs().gt(0)
-        ? line.gpvReversalAmount.abs().div(original.amount.abs())
-        : new Prisma.Decimal(0);
+      // Defer monetary award effects to complete dependency replay (SA-20260915-01).
 
-      for(const award of directAwards){
-        const latest=await tx.bonusAwardLifecycleEvent.findFirst({
-          where:{bonusAwardId:award.bonusAwardId},orderBy:{occurredAt:'desc'}
-        });
-        const recovery=Prisma.Decimal.min(award.payableAmount,award.payableAmount.mul(ratio));
-        if(latest?.status==='PENDING_45D'){
-          await tx.bonusAwardLifecycleEvent.create({
-            data:{bonusAwardId:award.bonusAwardId,status:'REVERSED',
-              occurredAt:ret.occurredAt,reasonCode:'SOURCE_GPV_RETURNED',sourceEventId:reverse.eventId}
-          });
-        }else if(['EFFECTIVE','PAYABLE','PAID'].includes(latest?.status ?? '')){
-          await tx.bonusAwardLifecycleEvent.create({
-            data:{bonusAwardId:award.bonusAwardId,status:'CLAWBACK',
-              occurredAt:ret.occurredAt,reasonCode:'SOURCE_GPV_RETURNED',sourceEventId:reverse.eventId}
-          });
-          await tx.bonusRecoveryEvent.create({
-            data:{bonusAwardId:award.bonusAwardId,returnCaseId:ret.returnCaseId,
-              recoveryAmount:recovery,status:'OPEN',reasonCode:'SOURCE_GPV_RETURNED',
-              occurredAt:ret.occurredAt}
-          });
-        }
-      }
     }
 
     const firstOriginal=await tx.pvLedger.findFirst({
@@ -229,9 +207,7 @@ async function processReturnConfirmed(outboxEventId:string){
       orderBy:{occurredAt:'asc'}
     });
     if(firstOriginal){
-      const start=new Date(firstOriginal.occurredAt);
-      start.setUTCHours(0,0,0,0); start.setUTCDate(start.getUTCDate()-start.getUTCDay());
-      const end=new Date(start.getTime()+7*86400000);
+      const historicalPeriods=await tx.settlementBatch.findMany({where:{status:'FINALIZED',ruleVersionCode:ret.order.ruleVersionCode,periodStart:{lte:firstOriginal.occurredAt},periodEnd:{gt:firstOriginal.occurredAt},settlementType:{in:['REFERRAL_K0','BINARY_K1','MATCHING_K2']}}});
       const ancestors=await tx.$queryRaw<Array<{qualification_id:string}>>`
         WITH RECURSIVE up AS (
           SELECT bp.parent_qualification_id AS qualification_id
@@ -249,15 +225,18 @@ async function processReturnConfirmed(outboxEventId:string){
         SELECT DISTINCT qualification_id::text FROM up
       `;
       for(const a of ancestors){
-        for(const type of ['BINARY_K1','MATCHING_K2']){
+        for(const historical of historicalPeriods){
           await tx.settlementRecalculationRequest.create({
-            data:{sourceReturnCaseId:ret.returnCaseId,settlementType:type,
-              periodStart:start,periodEnd:end,impactedQualificationId:a.qualification_id,status:'PENDING'}
+            data:{sourceReturnCaseId:ret.returnCaseId,settlementType:historical.settlementType,
+              periodStart:historical.periodStart,periodEnd:historical.periodEnd,impactedQualificationId:a.qualification_id,status:'PENDING'}
           });
         }
       }
     }
 
+    await tx.outboxEvent.create({data:{eventType:'RETURN_DEPENDENCY_REPLAY_REQUIRED',aggregateType:'RETURN',aggregateId:ret.returnCaseId,correlationId:ret.correlationId,payload:{returnCaseId:ret.returnCaseId,status:'PENDING',dependencies:['K0','K1','K2','RPV','EPV']}}});
+    if(ret.order.purpose==='REPURCHASE') await tx.outboxEvent.create({data:{eventType:'EPV_MONTH_RECALCULATION_REQUIRED',aggregateType:'RETURN',aggregateId:ret.returnCaseId,correlationId:ret.correlationId,payload:{returnCaseId:ret.returnCaseId,status:'EPV_RETURN_ALLOCATION_PENDING'}}});
+    await tx.auditEvent.create({data:{actorType:'SYSTEM',action:'RETURN_REVERSAL_PROCESSED',entityType:'RETURN',entityId:ret.returnCaseId,requestId:outboxEventId,correlationId:ret.correlationId,afterData:{dependencyReplayStatus:'PENDING',epvStatus:ret.order.purpose==='REPURCHASE'?'EPV_RETURN_ALLOCATION_PENDING':'NOT_REPURCHASE'}}});
     await tx.outboxEvent.update({
       where:{outboxEventId},data:{processStatus:'PROCESSED',processedAt:new Date()}
     });

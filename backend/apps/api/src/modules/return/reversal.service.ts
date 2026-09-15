@@ -52,56 +52,10 @@ export class ReversalService {
         });
         createdReversalEvents.push(reverse.eventId);
 
-        // Direct-source awards (Referral / Equalization) can be linked exactly to original GPV event.
-        const directAwards=await tx.bonusAward.findMany({
-          where:{sourceEventId:original.eventId,awardType:{in:['REFERRAL','EQUALIZATION']}}
-        });
+        // SA-20260915-01: source-volume reversal is posted here.
+        // Award monetary effects belong to dependency-wide K0/K1/K2 replay, not a
+        // per-source proportional shortcut that ignores changed pool denominators.
 
-        const ratio=original.amount.abs().gt(0)
-          ? line.gpvReversalAmount.abs().div(original.amount.abs())
-          : new Prisma.Decimal(0);
-
-        for(const award of directAwards){
-          const latest=await tx.bonusAwardLifecycleEvent.findFirst({
-            where:{bonusAwardId:award.bonusAwardId},orderBy:{occurredAt:'desc'}
-          });
-          const recovery=Prisma.Decimal.min(award.payableAmount,award.payableAmount.mul(ratio));
-
-          if(latest?.status==='PENDING_45D'){
-            await tx.bonusAwardLifecycleEvent.create({
-              data:{
-                bonusAwardId:award.bonusAwardId,status:'REVERSED',
-                occurredAt:ret.occurredAt,reasonCode:'SOURCE_GPV_RETURNED',
-                sourceEventId:reverse.eventId
-              }
-            });
-          }else if(['EFFECTIVE','PAYABLE','PAID'].includes(latest?.status ?? '')){
-            await tx.bonusAwardLifecycleEvent.create({
-              data:{
-                bonusAwardId:award.bonusAwardId,status:'CLAWBACK',
-                occurredAt:ret.occurredAt,reasonCode:'SOURCE_GPV_RETURNED',
-                sourceEventId:reverse.eventId
-              }
-            });
-            const existingRecovery=await tx.bonusRecoveryEvent.findFirst({
-              where:{
-                bonusAwardId:award.bonusAwardId,
-                returnCaseId:ret.returnCaseId,
-                reasonCode:'SOURCE_GPV_RETURNED'
-              }
-            });
-            if(!existingRecovery){
-              await tx.bonusRecoveryEvent.create({
-                data:{
-                  bonusAwardId:award.bonusAwardId,returnCaseId:ret.returnCaseId,
-                  recoveryAmount:recovery,recoveredAmount:new Prisma.Decimal(0),
-                  outstandingAmount:recovery,status:'OPEN',
-                  reasonCode:'SOURCE_GPV_RETURNED',occurredAt:ret.occurredAt
-                }
-              });
-            }
-          }
-        }
       }
 
       // Binary/Matching impact every Binary ancestor whose subtree contains the returned qualification.
