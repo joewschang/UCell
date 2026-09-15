@@ -1,3 +1,4 @@
+import { pending, verifySnapshot } from '../rules/parameter-snapshot';
 import { Injectable } from '@nestjs/common';
 import { Prisma, PrismaService } from '@ucell/database';
 import { SettlementReplayService, CarryInput, PeriodReplayResult } from './settlement-replay.service';
@@ -94,7 +95,7 @@ export class CarryChainReplayService {
         });
         await tx.bonusRecoveryEvent.create({
           data:{
-            bonusAwardId:anchor.bonusAwardId,recoveryAmount:delta.abs(),status:'OPEN',
+            bonusAwardId:anchor.bonusAwardId,recoveryAmount:delta.abs(),outstandingAmount:delta.abs(),status:'OPEN',
             reasonCode:'CARRY_CHAIN_ADJUSTMENT',occurredAt:new Date()
           }
         });
@@ -119,11 +120,16 @@ export class CarryChainReplayService {
       if(originals.length===0) return {skipped:'NO_ORIGINAL_GPV'};
 
       const eventAt=originals[0].occurredAt;
-      const periodStart=new Date(eventAt);
-      periodStart.setUTCHours(0,0,0,0);
-      periodStart.setUTCDate(periodStart.getUTCDate()-periodStart.getUTCDay());
-      const periodEnd=new Date(periodStart.getTime()+7*86400000);
+      if(!Number.isInteger(maxWeeks)||maxWeeks<1||maxWeeks>260) pending('INVALID_REPLAY_HORIZON','Replay horizon must be integer 1..260');
+      const historical=await tx.settlementBatch.findFirst({where:{settlementType:'BINARY_K1',status:'FINALIZED',ruleVersionCode,periodStart:{lte:eventAt},periodEnd:{gt:eventAt}}});
+      if(!historical) pending('HISTORICAL_SETTLEMENT_MISSING','No finalized historical period contains original sale; no weekday assumed');
+      verifySnapshot(historical.parameterSnapshot);
+      const periodStart=historical.periodStart,periodEnd=historical.periodEnd;
+      const k0=await tx.settlementBatch.findFirst({where:{settlementType:'REFERRAL_K0',status:'FINALIZED',periodStart:{lte:eventAt},periodEnd:{gt:eventAt},ruleVersionCode}});
+      if(k0) pending('K0_REPLAY_IMPLEMENTATION_PENDING','K0 dependency replay is not implemented; block before posting K1/K2 deltas');
 
+      const priorRun=await tx.settlementReplayRun.findFirst({where:{sourceReturnCaseId:{not:returnCaseId},initialPeriodEnd:periodEnd}});
+      if(priorRun) pending('REPLAY_EFFECTIVE_BASELINE_PENDING','Another return already replayed this period; reconcile prior append-only deltas before posting again');
       let run=await tx.settlementReplayRun.findUnique({where:{sourceReturnCaseId:returnCaseId}});
       if(!run){
         run=await tx.settlementReplayRun.create({
@@ -137,12 +143,11 @@ export class CarryChainReplayService {
             }
           }
         });
-      }else if(run.status==='CONVERGED' || run.status==='MAX_HORIZON'){
+      }else if(run.status==='CONVERGED'){
         return run;
       }else{
-        await tx.settlementReplayRun.update({
-          where:{settlementReplayRunId:run.settlementReplayRunId},data:{status:'RUNNING'}
-        });
+        pending('REPLAY_CONTINUATION_PENDING','Incomplete run requires reviewed continuation; no double-post');
+
       }
 
       let impacted=await this.binaryAncestorsAt(tx,ret.order.qualificationId,eventAt);
@@ -153,14 +158,15 @@ export class CarryChainReplayService {
         const carry=await tx.binaryCarry.findFirst({
           where:{qualificationId:qid,periodEnd,ruleVersionCode}
         });
-        if(carry) carryOverrides.set(qid,{left:carry.leftCarryIn,right:carry.rightCarryIn});
+        if(!carry) pending('HISTORICAL_CARRY_MISSING','Ancestor missing original carry snapshot');
+        carryOverrides.set(qid,{left:carry.leftCarryIn,right:carry.rightCarryIn});
       }
 
       let currentStart=periodStart,currentEnd=periodEnd;
       let processed=0;
       let converged=false;
 
-      while(processed<maxWeeks && carryOverrides.size>0){
+      while(processed<maxWeeks && (processed===0 || carryOverrides.size>0)){
         const existingPeriod=await tx.settlementReplayPeriod.findUnique({
           where:{
             settlementReplayRunId_periodEnd:{
@@ -227,8 +233,10 @@ export class CarryChainReplayService {
         }
 
         // Advance exactly one historical Binary period; only qualifications whose carry differs propagate.
-        currentStart=currentEnd;
-        currentEnd=new Date(currentEnd.getTime()+7*86400000);
+        const nextPeriod=await tx.settlementBatch.findFirst({where:{settlementType:'BINARY_K1',status:'FINALIZED',ruleVersionCode,periodStart:currentEnd},orderBy:{periodEnd:'asc'}});
+        if(!nextPeriod) pending('CARRY_CONTINUATION_PENDING','Carry not converged; contiguous finalized historical period missing');
+        verifySnapshot(nextPeriod.parameterSnapshot);
+        currentStart=nextPeriod.periodStart;currentEnd=nextPeriod.periodEnd;
 
         // Keep only qualifications that actually have a finalized carry snapshot in the next period.
         const filtered=new Map<string,CarryInput>();
@@ -236,15 +244,17 @@ export class CarryChainReplayService {
           const next=await tx.binaryCarry.findFirst({
             where:{qualificationId:qid,periodEnd:currentEnd,ruleVersionCode}
           });
-          if(next) filtered.set(qid,ci);
+          if(!next) pending('HISTORICAL_CARRY_MISSING','Affected qualification missing next historical carry');
+          filtered.set(qid,ci);
         }
         carryOverrides=filtered;
         if(carryOverrides.size===0) converged=true;
       }
 
-      // Mark sibling recalculation requests for same return as processed.
+      if(!converged && carryOverrides.size>0) pending('REPLAY_HORIZON_EXHAUSTED','Carry unresolved; rollback rather than mark complete');
+      // Mark only replayed dependencies.
       await tx.settlementRecalculationRequest.updateMany({
-        where:{sourceReturnCaseId:returnCaseId,status:'PENDING'},
+        where:{sourceReturnCaseId:returnCaseId,status:'PENDING',settlementType:{in:['BINARY_K1','MATCHING_K2']}},
         data:{status:'PROCESSED',processedAt:new Date()}
       });
 

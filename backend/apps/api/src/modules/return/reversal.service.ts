@@ -1,10 +1,12 @@
-import { Injectable } from '@nestjs/common';
+import { captureParameters } from '../rules/parameter-snapshot';
+import { EpvMonthService } from '../epv/epv-month.service';
+import { Injectable, UnprocessableEntityException } from '@nestjs/common';
 import { Prisma, PrismaService } from '@ucell/database';
 import { SettlementCalendarService } from '../settlement/settlement-calendar.service';
 
 @Injectable()
 export class ReversalService {
-  constructor(private readonly prisma:PrismaService,private readonly calendar:SettlementCalendarService){}
+  constructor(private readonly prisma:PrismaService,private readonly calendar:SettlementCalendarService,private readonly epvMonths:EpvMonthService){}
 
   async processReturn(returnCaseId:string){
     return this.prisma.$transaction(async tx=>{
@@ -14,6 +16,8 @@ export class ReversalService {
       });
       if(!ret || ret.status!=='POSTED') return {skipped:'NOT_POSTED'};
 
+      const processed=await tx.auditEvent.findFirst({where:{action:'RETURN_REVERSAL_PROCESSED',entityId:returnCaseId}});
+      if(processed) return {returnCaseId,replayed:true,...processed.afterData as object};
       const createdReversalEvents:string[]=[];
       for(const line of ret.lines){
         const original=await tx.pvLedger.findFirst({
@@ -107,13 +111,8 @@ export class ReversalService {
         orderBy:{occurredAt:'asc'}
       });
       if(firstOriginal){
-        const resolved=await this.calendar.weeklyPeriodFor(
-          firstOriginal.occurredAt,
-          ret.order.ruleVersionCode
-        );
-        const periodStart=resolved.start;
-        const periodEnd=resolved.end;
-
+        // Existing finalized periods are historical evidence. Never derive a calendar default.
+        const historicalPeriods=await tx.settlementBatch.findMany({where:{status:'FINALIZED',ruleVersionCode:ret.order.ruleVersionCode,periodStart:{lte:firstOriginal.occurredAt},periodEnd:{gt:firstOriginal.occurredAt},settlementType:{in:['REFERRAL_K0','BINARY_K1','MATCHING_K2']}}});
         const ancestors=await tx.$queryRaw<Array<{qualification_id:string}>>`
           WITH RECURSIVE up AS (
             SELECT bp.parent_qualification_id AS qualification_id
@@ -132,18 +131,34 @@ export class ReversalService {
         `;
 
         for(const a of ancestors){
-          for(const settlementType of ['BINARY_K1','MATCHING_K2']){
+          for(const historical of historicalPeriods){
             await tx.settlementRecalculationRequest.create({
               data:{
-                sourceReturnCaseId:ret.returnCaseId,settlementType,
-                periodStart,periodEnd,impactedQualificationId:a.qualification_id,status:'PENDING'
+                sourceReturnCaseId:ret.returnCaseId,settlementType:historical.settlementType,
+                periodStart:historical.periodStart,periodEnd:historical.periodEnd,impactedQualificationId:a.qualification_id,status:'PENDING'
               }
             });
           }
         }
       }
 
-      return {returnCaseId,createdReversalEvents};
+      let epvStatus='NOT_REPURCHASE';
+      if(ret.order.purpose==='REPURCHASE') {
+        try {
+          const snapshot=await captureParameters(tx,ret.order.paidAt??ret.occurredAt,ret.order.ruleVersionCode);
+          const projection=await this.epvMonths.returnProjection(tx,returnCaseId,snapshot);
+          epvStatus='EPV_RETURN_ALLOCATION_PENDING';
+          await tx.outboxEvent.create({data:{eventType:'EPV_MONTH_RECALCULATION_REQUIRED',aggregateType:'RETURN',aggregateId:returnCaseId,correlationId:ret.correlationId,payload:{decisionId:'SA-20260915-02',status:epvStatus,qualificationId:projection.qualificationId,monthStart:projection.start.toISOString(),monthEnd:projection.end.toISOString(),timezone:projection.timezone,before:projection.before.toString(),after:projection.after.toString(),originalEpv:projection.original.toString(),recomputedEpv:projection.recomputed.toString(),delta:projection.delta.toString(),sourceOrderIds:projection.sourceOrderIds,parameterSnapshot:snapshot as unknown as Prisma.InputJsonValue}}});
+        } catch(error) {
+          if(!(error instanceof UnprocessableEntityException)) throw error;
+          epvStatus='EPV_CONFIGURATION_OR_DECISION_PENDING';
+          await tx.outboxEvent.create({data:{eventType:'EPV_MONTH_RECALCULATION_REQUIRED',aggregateType:'RETURN',aggregateId:returnCaseId,correlationId:ret.correlationId,payload:{status:epvStatus,blocker:error.getResponse() as Prisma.InputJsonValue}}});
+        }
+      }
+      const result={createdReversalEvents,epvStatus,dependencyReplayStatus:'PENDING'};
+      await tx.outboxEvent.create({data:{eventType:'RETURN_DEPENDENCY_REPLAY_REQUIRED',aggregateType:'RETURN',aggregateId:returnCaseId,correlationId:ret.correlationId,payload:{returnCaseId,ruleVersionCode:ret.order.ruleVersionCode,status:'PENDING',dependencies:['K0','K1','K2','RPV','EPV']}}});
+      await tx.auditEvent.create({data:{actorType:'SYSTEM',action:'RETURN_REVERSAL_PROCESSED',entityType:'RETURN',entityId:returnCaseId,requestId:returnCaseId,correlationId:ret.correlationId,afterData:result}});
+      return {returnCaseId,...result};
     },{isolationLevel:Prisma.TransactionIsolationLevel.Serializable});
   }
 }

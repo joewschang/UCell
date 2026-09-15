@@ -1,0 +1,91 @@
+{
+  "result": "PASS",
+  "fixturesRolledBack": true,
+  "results": [
+    {
+      "label": "three split orders => 0/720/960",
+      "result": "PASS",
+      "actual": [
+        "0",
+        "720",
+        "960"
+      ]
+    },
+    {
+      "label": "repeat recognition is idempotent",
+      "result": "PASS",
+      "actual": "ALREADY_RECOGNIZED"
+    },
+    {
+      "label": "one ledger marker per paid order",
+      "result": "PASS",
+      "actual": 3
+    },
+    {
+      "label": "independent qualification threshold",
+      "result": "PASS",
+      "actual": "0"
+    },
+    {
+      "label": "independent calendar month threshold",
+      "result": "PASS",
+      "actual": "0"
+    },
+    {
+      "label": "Taipei month boundary",
+      "result": "PASS",
+      "actual": "2020-01-31T16:00:00.000Z"
+    },
+    {
+      "label": "first monthly return threshold",
+      "result": "PASS",
+      "actual": [
+        "1680",
+        "720",
+        "-960"
+      ]
+    },
+    {
+      "label": "second return crossing threshold",
+      "result": "PASS",
+      "actual": [
+        "720",
+        "0",
+        "-720"
+      ]
+    },
+    {
+      "label": "repeat reversal is idempotent",
+      "result": "PASS",
+      "actual": true
+    },
+    {
+      "label": "transactional monthly replay outbox once",
+      "result": "PASS",
+      "actual": 1
+    },
+    {
+      "label": "original monetary ledger is unchanged",
+      "result": "PASS",
+      "actual": "1680"
+    },
+    {
+      "label": "pending allocation never creates an EPV return monetary event",
+      "result": "PASS",
+      "actual": 0
+    },
+    {
+      "label": "configured biweekly period uses explicit Wednesday anchor",
+      "result": "PASS",
+      "actual": [
+        "2019-12-31T16:00:00.000Z",
+        "2020-01-14T16:00:00.000Z"
+      ]
+    },
+    {
+      "label": "configuration snapshot is persisted representation",
+      "result": "PASS",
+      "actual": "UCELL_PARAMETER_SNAPSHOT_V1"
+    }
+  ]
+}

@@ -1,3 +1,4 @@
+import { pending, verifySnapshot, snapshotDecimal } from '../rules/parameter-snapshot';
 import { Injectable } from '@nestjs/common';
 import { Prisma, PrismaService } from '@ucell/database';
 
@@ -115,22 +116,21 @@ export class SettlementReplayService {
       newLeft:Prisma.Decimal;newRight:Prisma.Decimal;
     }>();
 
-    const pairRateRow=await tx.runtimeRuleParameter.findFirst({
-      where:{
-        ruleVersionCode:input.ruleVersionCode,parameterCode:'binary.pair.rate',scopeKey:'*',
-        effectiveFrom:{lte:input.periodEnd},
-        OR:[{effectiveTo:null},{effectiveTo:{gt:input.periodEnd}}]
-      },
-      orderBy:{effectiveFrom:'desc'}
-    });
-    if(!pairRateRow) throw new Error('binary.pair.rate missing');
-    const pairRate=new Prisma.Decimal(String(pairRateRow.valueJson));
+    const historicalParameters=verifySnapshot(binaryBatch.parameterSnapshot);
+    const pairRate=snapshotDecimal(historicalParameters,'binary.pair.rate');
+    const economicTotal=await tx.$queryRaw<Array<{amount:string}>>`
+      WITH originals AS (SELECT event_id,amount FROM ledger.pv_ledger WHERE pv_type='GPV'::ledger."PvType" AND event_type='GPV_CREATED' AND occurred_at>=${input.periodStart} AND occurred_at<${input.periodEnd}),
+      reversals AS (SELECT reversal_of_event_id AS event_id,SUM(amount) AS amount FROM ledger.pv_ledger WHERE event_type='GPV_REVERSAL' AND pv_type='GPV'::ledger."PvType" GROUP BY reversal_of_event_id)
+      SELECT COALESCE(SUM(o.amount+COALESCE(r.amount,0)),0)::text AS amount FROM originals o LEFT JOIN reversals r USING(event_id)`;
+    const totalGpv=new Prisma.Decimal(economicTotal[0]?.amount??'0');
+    if(totalGpv.lt(0)) pending('NEGATIVE_ECONOMIC_GPV','Linked reversals exceed original volume');
+    const binaryPool=totalGpv.mul(snapshotDecimal(historicalParameters,'pool.binary.rate'));
 
     for(const [qid,carryIn] of input.carryOverrides){
       const carry=await tx.binaryCarry.findFirst({
         where:{qualificationId:qid,periodEnd:input.periodEnd,ruleVersionCode:input.ruleVersionCode}
       });
-      if(!carry) continue;
+      if(!carry) pending('HISTORICAL_CARRY_MISSING','Affected qualification missing historical carry');
 
       const leftPeriod=await this.subtreeEconomicGpv(tx,qid,'LEFT',input.periodStart,input.periodEnd);
       const rightPeriod=await this.subtreeEconomicGpv(tx,qid,'RIGHT',input.periodStart,input.periodEnd);
@@ -140,7 +140,7 @@ export class SettlementReplayService {
         Prisma.Decimal.min(leftAvailable,rightAvailable),
         carry.weeklyCapSnapshot
       );
-      theoryOverride.set(qid,paired.mul(pairRate));
+      theoryOverride.set(qid,originalByQ.get(qid)?.activeSnapshot?paired.mul(pairRate):new Prisma.Decimal(0));
       carryResult.set(qid,{
         originalLeft:carry.leftCarryOut,originalRight:carry.rightCarryOut,
         newLeft:leftAvailable.sub(paired),newRight:rightAvailable.sub(paired)
@@ -152,7 +152,7 @@ export class SettlementReplayService {
       totalTheory=totalTheory.add(theoryOverride.get(a.recipientQualificationId) ?? a.theoryAmount);
     }
     const k1=totalTheory.gt(0)
-      ? Prisma.Decimal.min(new Prisma.Decimal(1),binaryBatch.poolAvailable.div(totalTheory))
+      ? Prisma.Decimal.min(new Prisma.Decimal(1),binaryPool.div(totalTheory))
       : new Prisma.Decimal(1);
 
     const binary:BinaryRecipientReplay[]=binaryAwards.map(a=>{
@@ -167,6 +167,10 @@ export class SettlementReplayService {
       };
     });
 
+    for(const [qid,cr] of carryResult) {
+      if(binary.some(r=>r.qualificationId===qid)) continue;
+      binary.push({qualificationId:qid,originalTheory:new Prisma.Decimal(0),recomputedTheory:new Prisma.Decimal(0),originalPayable:new Prisma.Decimal(0),recomputedPayable:new Prisma.Decimal(0),originalCarryOutLeft:cr.originalLeft,originalCarryOutRight:cr.originalRight,recomputedCarryOutLeft:cr.newLeft,recomputedCarryOutRight:cr.newRight});
+    }
     const matchingBatch=await tx.settlementBatch.findFirst({
       where:{
         settlementType:'MATCHING_K2',
@@ -181,6 +185,8 @@ export class SettlementReplayService {
       };
     }
 
+    const matchingParameters=verifySnapshot(matchingBatch.parameterSnapshot);
+    const matchingPool=totalGpv.mul(snapshotDecimal(matchingParameters,'pool.matching.rate'));
     const matchingAwards=await tx.bonusAward.findMany({
       where:{settlementBatchId:matchingBatch.settlementBatchId,awardType:'MATCHING'}
     });
@@ -194,7 +200,8 @@ export class SettlementReplayService {
     let totalMatchingTheory=new Prisma.Decimal(0);
     for(const a of matchingAwards){
       const detail=a.calculationDetail as any;
-      const rate=new Prisma.Decimal(String(detail?.rate ?? '0'));
+      if(detail?.rate==null || !a.sourceAwardId || !recomputedBinaryPaidByAwardId.has(a.sourceAwardId)) pending('MATCHING_SOURCE_SNAPSHOT_MISSING','Original rate and exact source Binary award required');
+      const rate=new Prisma.Decimal(String(detail.rate));
       const sourcePaid=a.sourceAwardId
         ? (recomputedBinaryPaidByAwardId.get(a.sourceAwardId) ?? new Prisma.Decimal(String(detail?.sourceBinaryPaid ?? '0')))
         : new Prisma.Decimal(String(detail?.sourceBinaryPaid ?? '0'));
@@ -203,7 +210,7 @@ export class SettlementReplayService {
       totalMatchingTheory=totalMatchingTheory.add(theory);
     }
     const k2=totalMatchingTheory.gt(0)
-      ? Prisma.Decimal.min(new Prisma.Decimal(1),matchingBatch.poolAvailable.div(totalMatchingTheory))
+      ? Prisma.Decimal.min(new Prisma.Decimal(1),matchingPool.div(totalMatchingTheory))
       : new Prisma.Decimal(1);
 
     return {
