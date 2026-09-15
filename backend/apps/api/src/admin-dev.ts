@@ -95,7 +95,7 @@ async function bootstrap() {
   app.useGlobalFilters(new ApiExceptionFilter());
   app.useGlobalInterceptors(new RequestContextInterceptor(), new EnvelopeInterceptor());
   await app.listen(3001, '127.0.0.1');
-  console.log(`${fullAccess?'ADMIN_DEV_FULL_TEST':'ADMIN_DEV_READ_ONLY'}: http://127.0.0.1:3001/api/v1 — ${fullAccess?'isolated DB; legacy adjustment unavailable':'all writes blocked'}`);
+  console.log(`${fullAccess?'ADMIN_DEV_FULL_TEST':'ADMIN_DEV_READ_ONLY'}: http://127.0.0.1:3001/api/v1 — ${fullAccess?'isolated DB; dependency replay guarded by configuration and decisions':'all writes blocked'}`);
 }
 
 if (require.main === module) bootstrap().catch(error => { console.error(error); process.exitCode = 1; });

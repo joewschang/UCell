@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
 import { randomUUID } from 'node:crypto';
+import { fileURLToPath } from 'node:url';
 const require = createRequire(new URL('../package.json', import.meta.url));
 const { PrismaClient } = require('@prisma/client');
 const database = new URL(process.env.DATABASE_URL ?? '');
@@ -111,7 +112,7 @@ try {
   console.log(`ADMIN_FULL_TEST_PASS: ${results.length} requests; fixture root ${root.qualificationId}`);
 } catch(error) {failure=error?.stack??String(error);console.error(error); process.exitCode=1;}
 finally {
-  const out='../governance/admin-full-test'; fs.mkdirSync(out,{recursive:true});
+  const out=fileURLToPath(new URL('../../governance/admin-full-test/',import.meta.url)); fs.mkdirSync(out,{recursive:true});
   fs.writeFileSync(`${out}/run-${startedAt.replaceAll(':','-')}.json`,JSON.stringify({startedAt,result:failure?'FAIL':'PASS',failure,results,
     scope:'Isolated ucell_admin_test; existing application calculates test facts; no official monetary result; not frozen five-ball golden or release/UAT signoff'},null,2)+'\n');
   await prisma.$disconnect();

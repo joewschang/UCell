@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {createRequire} from 'node:module';
 import {randomUUID} from 'node:crypto';
+import {fileURLToPath} from 'node:url';
 const require=createRequire(new URL('../package.json',import.meta.url));
 const {PrismaClient,Prisma}=require('@prisma/client');
 const url=new URL(process.env.DATABASE_URL??'');
@@ -69,6 +70,7 @@ try{
  },{timeout:60000,isolationLevel:Prisma.TransactionIsolationLevel.Serializable});
 }catch(error){if(error!==rollback) failure=error;}
 finally{await prisma.$disconnect();}
-fs.mkdirSync('governance/sa-decisions/final',{recursive:true});
-fs.writeFileSync('governance/sa-decisions/final/db-regression.json',JSON.stringify({result:failure?'FAIL':'PASS',fixturesRolledBack:true,results,...(failure?{error:failure.stack}:{})},null,2)+'\n');
+const out=fileURLToPath(new URL('../../governance/sa-decisions/final/',import.meta.url));
+fs.mkdirSync(out,{recursive:true});
+fs.writeFileSync(out+'db-regression.json',JSON.stringify({result:failure?'FAIL':'PASS',fixturesRolledBack:true,results,...(failure?{error:failure.stack}:{})},null,2)+'\n');
 if(failure){console.error(failure);process.exitCode=1;}else console.log(`PASS ${results.length} real DB assertions; all fixtures rolled back`);
