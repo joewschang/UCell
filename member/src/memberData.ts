@@ -9,7 +9,7 @@ const qualifications: Qualification[] = [
 ];
 const rankNames: Record<string, string> = { STARTER: '啟航', ELITE: '菁英', LEADER: '領袖' };
 export const displayRank = (rank: string) => rankNames[rank] ?? rank;
-export const getQualifications = () => isMock ? Promise.resolve(qualifications) : api<unknown>('/member/qualifications').then(validate.parseQualifications);
+export const getQualifications = (signal?: AbortSignal) => isMock ? Promise.resolve(qualifications) : api<unknown>('/member/qualifications', { signal }).then(validate.parseQualifications);
 export const getPerson = (signal: AbortSignal) => isMock ? Promise.resolve<Person>({ name: '示範會員', memberNo: 'DEMO-000001', email: null, phone: null }) : api<unknown>('/member/me', { signal }).then(validate.parsePerson);
 async function scoped<T extends Scoped>(path: string, q: Qualification, sample: T, signal: AbortSignal, parse: (value: unknown) => T, period?: string): Promise<T> {
     if (isMock)
