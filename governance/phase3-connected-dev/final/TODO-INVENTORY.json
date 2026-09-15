@@ -1,7 +1,7 @@
 {
   "originalBaseline": 148,
-  "currentExecutableTodo": 81,
-  "netPlaceholderReduction": 67,
+  "currentExecutableTodo": 78,
+  "netPlaceholderReduction": 70,
   "audit": "Previous 52 TODO claim invalidated: missing cases and unrelated/constant assertions restored. Net reduction alone is not Release approval.",
   "items": [
     {
@@ -228,37 +228,19 @@
     },
     {
       "file": "backend/apps/api/test/v060-adjustment-lifecycle.e2e-spec.ts",
-      "line": 18,
-      "case": "replay uses original carry-in and reversal PV events",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
-    },
-    {
-      "file": "backend/apps/api/test/v060-adjustment-lifecycle.e2e-spec.ts",
-      "line": 19,
-      "case": "positive delta creates compensating award",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
-    },
-    {
-      "file": "backend/apps/api/test/v060-adjustment-lifecycle.e2e-spec.ts",
-      "line": 20,
-      "case": "negative delta creates recovery",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
-    },
-    {
-      "file": "backend/apps/api/test/v060-adjustment-lifecycle.e2e-spec.ts",
-      "line": 23,
+      "line": 40,
       "case": "upgrade has no retroactive bonus effect",
       "classification": "Test implementation; SSOT/evidence review before conversion"
     },
     {
       "file": "backend/apps/api/test/v060-adjustment-lifecycle.e2e-spec.ts",
-      "line": 24,
+      "line": 41,
       "case": "transfer preserves qualificationId and tree positions",
       "classification": "Test implementation; SSOT/evidence review before conversion"
     },
     {
       "file": "backend/apps/api/test/v060-adjustment-lifecycle.e2e-spec.ts",
-      "line": 25,
+      "line": 42,
       "case": "exit preserves qualification for company-held re-transfer",
       "classification": "Test implementation; SSOT/evidence review before conversion"
     },

@@ -129,6 +129,18 @@ try{await prisma.$transaction(async tx=>{
  check('K0 complete period posts every original entitlement',postings.length,2);
  check('K0 cumulative effective source replay',postings.map(p=>p.recalculatedEntitlement.toNumber()).sort((a,b)=>a-b),[100,500]);
  check('unaffected K0 entitlement receives positive pool normalization delta',postings.find(p=>p.entitlementKey===originals[1].bonusAwardId).delta.toString(),'23.6364');
+ const positive=postings.find(p=>p.entitlementKey===originals[1].bonusAwardId),negative=postings.find(p=>p.entitlementKey===originals[0].bonusAwardId);
+ assert.ok(positive.correctionAwardId);assert.ok(negative.recoveryId);
+ const correction=await tx.bonusAward.findUniqueOrThrow({where:{bonusAwardId:positive.correctionAwardId}});
+ check('positive replay delta creates exact compensating award',[correction.sourceAwardId,correction.recipientQualificationId,correction.awardType,correction.theoryAmount.toString(),correction.payableAmount.toString()],[originals[1].bonusAwardId,self.qualificationId,'REFERRAL','23.6364','23.6364']);
+ check('positive replay compensating award retains historical evidence',[correction.parameterSnapshotHash,correction.ruleVersionCode,correction.pendingUntil.toISOString(),correction.calculationDetail.snapshotId,correction.calculationDetail.actionKey],[historical.hash,version,originals[1].pendingUntil.toISOString(),positive.snapshotId,'RETURN:'+refund.returnCaseId]);
+ check('positive replay compensating award has one historical replay lifecycle',await tx.bonusAwardLifecycleEvent.count({where:{bonusAwardId:correction.bonusAwardId,reasonCode:'HISTORICAL_REPLAY'}}),1);
+ const recoveryRow=await tx.bonusRecoveryEvent.findUniqueOrThrow({where:{bonusRecoveryEventId:negative.recoveryId}});
+ check('negative replay delta creates exact original award recovery',[negative.delta.toString(),recoveryRow.bonusAwardId,recoveryRow.returnCaseId,recoveryRow.recoveryAmount.toString(),recoveryRow.outstandingAmount.toString(),recoveryRow.status],['-263.6364',originals[0].bonusAwardId,refund.returnCaseId,'263.6364','263.6364','OPEN']);
+ check('replay delta uses exactly one correction direction',[positive.recoveryId,negative.correctionAwardId],[null,null]);
+ const beforeReplay=[await tx.entitlementReplayPosting.count(),await tx.bonusAward.count(),await tx.bonusRecoveryEvent.count()];
+ await replay.processHistoricalReturn(tx,refund.returnCaseId);
+ check('duplicate return creates no second posting compensating award or recovery',[await tx.entitlementReplayPosting.count(),await tx.bonusAward.count(),await tx.bonusRecoveryEvent.count()],beforeReplay);
  check('K0 original award baseline preserved',JSON.stringify(await tx.bonusAward.findMany({where:{bonusAwardId:{in:originals.map(a=>a.bonusAwardId)}},orderBy:{bonusAwardId:'asc'}})),saved);
  const envelope={format:'UCELL_HISTORICAL_REPLAY_V1',kind:'BINARY_K1',sourceId:randomUUID(),ruleVersionCode:version,at:'2020-01-08T00:00:00.000Z',parameters:historical,recipients:[],evidence:{sources:economic.map(e=>e.envelope),carryRecipients:[{qualificationId:self.qualificationId,leftCarryIn:'200',rightCarryIn:'0',leftCarryOut:'0',rightCarryOut:'0',weeklyCapSnapshot:'200',active:true,qualification:{plan:{planCode:'LEADER'},status:{status:'EFFECTIVE'}}}]},inputs:{}};
  const effective=await replay.effectiveGpv(tx,envelope.evidence.sources);

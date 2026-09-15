@@ -8,6 +8,14 @@ RPV sealing includes original recognition period UTC bounds plus its historical 
 
 Idempotency now checks a transaction-visible unfinished record's request hash before executing work. Regression covers the prior conflict hole. Real parallel transactions in the isolated Golden DB prove one committed entity/idempotency record; serialization/uniqueness conflicts require external redelivery and then return the original result. Injected partial failure rolls back entity/outbox/idempotency together, followed by successful retry and duplicate-delivery verification. This evidence does not claim automatic retry inside the service or complete concurrent monetary Return replay coverage.
 
+## Latest replay correction/recovery batch
+
+Checkpoint `1c03647` precedes three v060 TODO conversions: original carry-in plus historical reversal, positive compensating award and negative recovery. Six direct DB assertions extend the real cumulative K0 return fixture: exact positive award amount/source/recipient/type; captured parameter/version/pendingUntil/snapshot/action metadata; one replay lifecycle; exact negative delta/original-award recovery/remaining balance; mutually exclusive correction directions; and duplicate return preserving all posting/award/recovery counts. Both correction paths also retain the original K0 award baseline. The carry case uses historical event attribution, effective volume and original nonzero carry assertions. Fixture inputs remain TEST_ONLY, with no new rule/mapping assumption or production source change.
+
+Current TODO inventory is **78** (prior 81, original baseline 148, net reduction 70); real DB regression has 123 assertions. Build/Prisma/offline/formal Security/UAT/release-preparation and isolated Golden entries retain preceding timestamps for this test-only batch; exact reruns are recorded in the matrix.
+
+Replay correction/recovery batch verification: 16 suites / 101 Jest tests PASS / 78 TODOs; 123 DB regression assertions PASS; Security Policy Preflight PASS; Admin DEV 43 HTTP requests PASS; diff check PASS. Backend/TODO/RC gates remain BLOCKED by TODOs. Formal Security/UAT and Production Promotion remain BLOCKED. Exact commands, timestamps and raw output are in `final/gate-results.json`.
+
 ## Latest DB schema and ledger batch
 
 Checkpoint `bed3413` precedes two TODO conversions: Prisma adjustment/workflow/replay model convergence and PV Ledger immutability. Five direct DB assertions compare actual information_schema columns with every scalar field mapping in generated Prisma metadata for SettlementAdjustmentBatch/Line, QualificationWorkflow and SettlementReplayRun/Period. Three direct assertions attempt UPDATE and DELETE through Prisma, require the append-only DB trigger error, roll back each rejected statement to a savepoint and compare the entire retained original ledger row. Jest uses private evidence output files; no production source, schema or monetary rule is changed. Regression now has 117 assertions and TODO inventory is 81 (prior 83, baseline 148, net reduction 67).
@@ -36,7 +44,7 @@ Latest batch results: 16 Jest suites / 94 tests PASS / 84 TODOs; 109 DB regressi
 
 The earlier report of 52 remaining TODOs / 96 completed cases is withdrawn. Several original cases were removed instead of converted, and assertions against constants or unrelated scenarios were incorrectly counted. The commits remain in history, with checkpoint `e232c92` before correction. Unverified cases were restored from `89bfed6`.
 
-Current inventory: **81 executable TODOs** from original baseline 148. This is a net reduction of 67 placeholders, not a claim that all 67 have completed release-level review. The preceding audited Phase 3 batch converted 19 original TODOs with corresponding service/guard or direct DB assertions: idempotency (4), organization (4), qualification isolation (3), unlock-depth behavior (2), negative return/payout invariants (6). Two additional idempotency defect/rollback regression tests were added. Earlier Phase 2 conversions remain subject to continued coverage review.
+Current inventory: **78 executable TODOs** from original baseline 148. This is a net reduction of 70 placeholders, not a claim that all 70 have completed release-level review. The preceding audited Phase 3 batch converted 19 original TODOs with corresponding service/guard or direct DB assertions: idempotency (4), organization (4), qualification isolation (3), unlock-depth behavior (2), negative return/payout invariants (6). Two additional idempotency defect/rollback regression tests were added. Earlier Phase 2 conversions remain subject to continued coverage review.
 
 The next batch, checkpoint `27789de`, converts four Vertical Slice 02 cases: DRAFT creation using the real service/idempotency callback; SUBMIT rejection for each missing Sponsor/Binary field plus successful submission; Active overlap rejection without mutation; historical Active half-open boundaries independent of the current flag. These are service tests with mocked persistence and do not claim database atomicity or concurrent Active exclusion. All other original cases remain TODO.
 
@@ -76,7 +84,7 @@ The identified local DEV API/worker were restored after Prisma generation, using
 
 ## Remaining blockers and next work
 
-- 81 TODOs: continue SSOT/evidence audit and real implementation tests, especially vertical slice and bonus-engine settlement integration.
+- 78 TODOs: continue SSOT/evidence audit and real implementation tests, especially vertical slice and bonus-engine settlement integration.
 - Commit `83e5b39` adds lease-safe production consumer processing and 20 isolated real DB assertions for concurrent partial returns, rollback/retry, PAID clawback, stale ownership, expired lease and duplicate delivery. This closes the previously missing focused concurrency coverage; broader production workload verification remains outstanding.
 - RPV historical data predating required snapshots cannot be reconstructed from current state; missing allocation/period/timezone evidence remains fail-closed.
 - Formal partial-refund RPV month allocation requires original allocation evidence; no proportional fixed-award assumption is made.

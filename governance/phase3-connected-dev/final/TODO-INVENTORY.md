@@ -1,4 +1,4 @@
-Original baseline: 148. Current TODO: 81. Net placeholder reduction: 67.
+Original baseline: 148. Current TODO: 78. Net placeholder reduction: 70.
 
 The previous 52 TODO claim is invalid. Full behavioral coverage must be reviewed independently.
 
@@ -41,12 +41,9 @@ The previous 52 TODO claim is invalid. Full behavioral coverage must be reviewed
 | backend/apps/api/test/negative-flow-v05.e2e-spec.ts | 21 | EFFECTIVE awards become PAYABLE via payout batch | Test implementation; SSOT/evidence review before conversion |
 | backend/apps/api/test/negative-flow-v05.e2e-spec.ts | 24 | mark-paid writes PAID lifecycle events | Test implementation; SSOT/evidence review before conversion |
 | backend/apps/api/test/qualification-isolation.e2e-spec.ts | 21 | member share link is bound to selected qualification | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/v060-adjustment-lifecycle.e2e-spec.ts | 18 | replay uses original carry-in and reversal PV events | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/v060-adjustment-lifecycle.e2e-spec.ts | 19 | positive delta creates compensating award | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/v060-adjustment-lifecycle.e2e-spec.ts | 20 | negative delta creates recovery | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/v060-adjustment-lifecycle.e2e-spec.ts | 23 | upgrade has no retroactive bonus effect | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/v060-adjustment-lifecycle.e2e-spec.ts | 24 | transfer preserves qualificationId and tree positions | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/v060-adjustment-lifecycle.e2e-spec.ts | 25 | exit preserves qualification for company-held re-transfer | Test implementation; SSOT/evidence review before conversion |
+| backend/apps/api/test/v060-adjustment-lifecycle.e2e-spec.ts | 40 | upgrade has no retroactive bonus effect | Test implementation; SSOT/evidence review before conversion |
+| backend/apps/api/test/v060-adjustment-lifecycle.e2e-spec.ts | 41 | transfer preserves qualificationId and tree positions | Test implementation; SSOT/evidence review before conversion |
+| backend/apps/api/test/v060-adjustment-lifecycle.e2e-spec.ts | 42 | exit preserves qualification for company-held re-transfer | Test implementation; SSOT/evidence review before conversion |
 | backend/apps/api/test/v061-replay.e2e-spec.ts | 47 | upgrade creates future plan history and does not alter past awards | Test implementation; SSOT/evidence review before conversion |
 | backend/apps/api/test/v061-replay.e2e-spec.ts | 48 | transfer preserves qualificationId and sponsor/binary positions | Test implementation; SSOT/evidence review before conversion |
 | backend/apps/api/test/v061-replay.e2e-spec.ts | 49 | exit closes holder interval and status becomes EXITED | Test implementation; SSOT/evidence review before conversion |
