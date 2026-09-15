@@ -1,6 +1,6 @@
 # UCell Member MVP Development Status
 
-Latest checkpoint: v0.5 (v0.3/v0.4 history retained below)
+Latest checkpoint: v0.6 (prior checkpoint history retained below)
 Branch: `feature/member-liff-mvp`
 Baseline: `461de2b`; pre-edit checkpoint: `cb44543`.
 
@@ -107,3 +107,22 @@ overflow and no page errors. Evidence artifact 10408094880 contains the screensh
 and server log (seven-day retention). Manual visual review was not performed.
 This supersedes the pending browser-CI status for that commit only, not real LINE
 UAT or server authorization/payment tests. No production promotion is authorized.
+
+## v0.6 — demo notification center
+
+Added header unread indicator, /notifications route, category/unread filters,
+details expansion and explicit mark-read actions. Person-wide announcements and
+qualification-specific notices have separate scopes. Read state is in memory;
+refresh/session unmount clears it. Bulk mark-read validates the entire requested
+batch before applying and cannot mark another qualification's private notice.
+Opening details does not automatically mark read. Content is text, not HTML.
+
+Real mode shows an integration-pending message and does not invent unread counts,
+load demo messages, call a guessed API, or change LINE subscription/push settings.
+No notifications are sent. These are illustrative fixtures, not actual announcements.
+See docs/NOTIFICATIONS_HANDOFF_v0.6.md for pending server contract decisions.
+
+Local validation: 63 executable tests PASS (54 retained + 9 new); source typecheck,
+build, smoke syntax and diff checks PASS. CI smoke extended to notifications,
+scope/filter/read/reset behavior and 320/390/768px overflow. The new commit's CI
+result must be verified separately; the prior passing run does not cover v0.6.

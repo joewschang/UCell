@@ -6,6 +6,8 @@ import type { AwardStatus, Qualification } from './api';
 import { useResource } from './useResource';
 import Shop from './Shop';
 import { CommerceProvider, useCommerce } from './commerce';
+import Notifications from './Notifications';
+import { NotificationProvider, useNotifications } from './NotificationContext';
 export const number = (n: number | null) => n === null ? '待提供' : n.toLocaleString('zh-TW');
 export const money = (n: number | null) => n === null ? '待確認' : `NT$ ${number(n)}`;
 const statusNames: Record<AwardStatus, string> = { PENDING: '結算中', CALCULATED: '已計算', PENDING45D: '等待生效', EFFECTIVE: '已生效', PAYABLE: '可支付', PAID: '已支付', REVERSED: '已沖回', CLAWBACK: '追扣調整' };
@@ -71,11 +73,12 @@ function Orders({ q }: {
 function Me() { const state = useResource('person', data.getPerson); const { qualifications } = useQualification(); return <><h2>我的帳戶</h2><Result state={state}>{p => <section className="card"><h3>{p.name}</h3><p>{p.memberNo}</p><p>電子郵件：{p.email ?? '未提供'}</p><p>電話：{p.phone ?? '未提供'}</p></section>}</Result><h3>我的資格</h3>{qualifications.map(q => <article key={q.id} className="card"><strong>{q.code} · {q.ballLabel}</strong><p>{data.displayRank(q.rank)} · {q.active ? '活躍' : '未活躍'}</p></article>)}</>; }
 function MemberApp() {
     const { loading, error, retry, current } = useQualification();
+    const { unread } = useNotifications(current?.id);
     if (loading)
         return <main className="loading" role="status">資格資料載入中…</main>;
     if (error)
         return <main role="alert"><p>{error}</p><button onClick={retry}>重試</button></main>;
-    return <div className="app"><header><div><b>UCell</b><small>會員中心</small></div><span className="badge">{data.isMock ? '示範模式' : '會員服務'}</span></header>{data.isMock && <aside className="demo-banner">目前為示範資料，不代表真實業績、獎金或訂單。</aside>}<main>{current ? <><ContextBar /><div key={current.id}><Routes><Route path="/" element={<Home q={current}/>}/><Route path="/organization" element={<Organization q={current}/>}/><Route path="/performance" element={<Performance q={current}/>}/><Route path="/bonuses" element={<Bonuses q={current}/>}/><Route path="/shop" element={<Shop q={current}/>}/><Route path="/orders" element={<Orders q={current}/>}/><Route path="/me" element={<Me />}/><Route path="*" element={<section className="card"><h2>找不到頁面</h2><Link to="/">返回首頁</Link></section>}/></Routes></div></> : <section className="card"><h2>尚未取得會員資格</h2><p>請聯絡客服確認會員綁定與資格狀態。</p><button onClick={retry}>重新查詢</button></section>}</main><nav aria-label="主要功能"><NavLink end to="/">首頁</NavLink><NavLink to="/organization">組織</NavLink><NavLink to="/shop">商城</NavLink><NavLink to="/bonuses">獎金</NavLink><NavLink to="/me">我的</NavLink></nav></div>;
+    return <div className="app"><header><div><b>UCell</b><small>會員中心</small></div><span className="badge">{data.isMock ? '示範模式' : '會員服務'}</span>{current && <Link className="notification-link" to="/notifications" aria-label={data.isMock ? `通知中心，${unread} 則未讀` : '通知中心'}>通知{data.isMock ? ` ${unread}` : ''}</Link>}</header>{data.isMock && <aside className="demo-banner">目前為示範資料，不代表真實業績、獎金或訂單。</aside>}<main>{current ? <><ContextBar /><div key={current.id}><Routes><Route path="/" element={<Home q={current}/>}/><Route path="/organization" element={<Organization q={current}/>}/><Route path="/performance" element={<Performance q={current}/>}/><Route path="/bonuses" element={<Bonuses q={current}/>}/><Route path="/shop" element={<Shop q={current}/>}/><Route path="/orders" element={<Orders q={current}/>}/><Route path="/me" element={<Me />}/><Route path="/notifications" element={<Notifications q={current}/>}/><Route path="*" element={<section className="card"><h2>找不到頁面</h2><Link to="/">返回首頁</Link></section>}/></Routes></div></> : <section className="card"><h2>尚未取得會員資格</h2><p>請聯絡客服確認會員綁定與資格狀態。</p><button onClick={retry}>重新查詢</button></section>}</main><nav aria-label="主要功能"><NavLink end to="/">首頁</NavLink><NavLink to="/organization">組織</NavLink><NavLink to="/shop">商城</NavLink><NavLink to="/bonuses">獎金</NavLink><NavLink to="/me">我的</NavLink></nav></div>;
 }
 
-export default function App() { return <CommerceProvider enabled={data.isMock}><MemberApp /></CommerceProvider>; }
+export default function App() { return <NotificationProvider enabled={data.isMock}><CommerceProvider enabled={data.isMock}><MemberApp /></CommerceProvider></NotificationProvider>; }

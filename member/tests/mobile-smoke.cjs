@@ -20,7 +20,7 @@ const assert=require('node:assert/strict');
   await page.getByText('目前為示範資料，不代表真實業績、獎金或訂單。',{exact:true}).waitFor();
   await page.getByLabel('目前資格').selectOption('q2');
   await page.getByText('未完成',{exact:true}).waitFor();
-  for(const route of ['organization','performance','bonuses','shop','orders','me']) {
+  for(const route of ['organization','performance','bonuses','shop','orders','me','notifications']) {
    await page.goto(`http://127.0.0.1:5174/${route}`);
    await page.getByLabel('目前資格').waitFor();
    assert.equal(await page.getByLabel('目前資格').inputValue(),'q2');
@@ -69,12 +69,35 @@ const assert=require('node:assert/strict');
    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,width+' cart overflow');
   }
   await page.setViewportSize({width:390,height:844});
+  await page.goto('http://127.0.0.1:5174/notifications');
+  await page.getByLabel('目前資格').selectOption('q1');
+  await page.getByText('2 則未讀示範通知',{exact:true}).waitFor();
+  await page.getByRole('button',{name:'查看通知',exact:true}).first().click();
+  await page.getByText('這是介面操作示範，不是公司正式公告。',{exact:false}).waitFor();
+  await page.getByRole('button',{name:'標為已讀（示範）',exact:true}).first().click();
+  await page.getByText('1 則未讀示範通知',{exact:true}).waitFor();
+  await page.getByLabel('目前資格').selectOption('q2');
+  await page.getByText('1 則未讀示範通知',{exact:true}).waitFor();
+  assert.equal(await page.getByText('訂單狀態查看提醒（示範）',{exact:true}).count(),0);
+  await page.getByLabel('通知分類').selectOption('ORDER');
+  await page.getByText('目前篩選條件下沒有通知',{exact:true}).waitFor();
+  await page.getByLabel('通知分類').selectOption('ALL');
+  await page.getByRole('button',{name:'只看未讀',exact:true}).click();
+  await page.getByRole('button',{name:'目前範圍全部標為已讀（示範）',exact:true}).click();
+  await page.getByText('0 則未讀示範通知',{exact:true}).waitFor();
+  for(const width of [320,390,768]) {
+   await page.setViewportSize({width,height:844});
+   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,width+' notifications overflow');
+  }
+  await page.reload();
+  await page.getByText('2 則未讀示範通知',{exact:true}).waitFor();
+  await page.setViewportSize({width:390,height:844});
   await page.goto('http://127.0.0.1:5174/');
   await page.getByRole('heading',{name:'您好，示範會員'}).waitFor();
   await page.screenshot({path:process.env.SMOKE_SCREENSHOT||'/tmp/ucell-member-mobile.png',fullPage:true});
   assert.deepEqual(errors,[]);
   assert.deepEqual(writes,[],'Demo must never create network writes');
-  console.log('PASS: six routes, persisted ball selection, separate trees, order expansion, month filter, cart, shipping, confirmation, qualification isolation, null awards, 320/390/768px overflow, no page errors');
+  console.log('PASS: seven routes, persisted ball selection, separate trees, order expansion, month filter, cart, shipping, confirmation, qualification isolation, notification filters/read/reset, null awards, 320/390/768px overflow, no page errors');
  } catch(error) {
   if(page && process.env.SMOKE_SCREENSHOT) await page.screenshot({path:process.env.SMOKE_SCREENSHOT.replace(/\.png$/,'.failure.png'),fullPage:true}).catch(()=>{});
   throw error;
