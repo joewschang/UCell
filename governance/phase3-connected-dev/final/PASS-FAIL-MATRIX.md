@@ -26,13 +26,13 @@
 | admin-build | PASS | 0 |
 | security-http | BLOCKED | 2 |
 | uat | BLOCKED | 1 |
-| default-db-golden-repeat | PASS | 0 |
-| api-tests | PASS | 0 |
 | default-db-golden | PASS | 0 |
 | db-regression | PASS | 0 |
 | security-policy-preflight | PASS | 0 |
-| todo | BLOCKED | 1 |
-| rc | BLOCKED | 1 |
 | admin-dev-full-test | PASS | 0 |
+| api-tests | PASS | 0 |
+| default-db-golden-repeat | PASS | 0 |
+| todo | BLOCKED | 1 |
 | backend-test-gate | BLOCKED | 1 |
+| rc | BLOCKED | 1 |
 | diff-check | PASS | 0 |

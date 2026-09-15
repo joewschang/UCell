@@ -2,6 +2,26 @@ import { QualificationAccessService } from '../src/modules/auth/qualification-ac
 import { AdminRoleGuard } from '../src/modules/auth/admin-role.guard';
 import { UnifiedPayableService } from '../src/modules/payout/unified-payable.service';
 import { Prisma } from '@ucell/database';
+import { RecoveryBalanceService } from '../src/modules/payout/recovery-balance.service';
+
+function recoveryHarness(outstanding: number) {
+  const award = { bonusAwardId: 'source-award', recipientQualificationId: 'ball-A', payableAmount: new Prisma.Decimal(outstanding) };
+  const recovery = { bonusRecoveryEventId: 'recovery-A', recoveredAmount: new Prisma.Decimal(0), outstandingAmount: new Prisma.Decimal(outstanding), bonusAward: award };
+  const applications: any[] = [];
+  const tx = {
+    $executeRaw: jest.fn(async () => 1),
+    payoutLine: { findUnique: jest.fn(async () => ({ recipientQualificationId: 'ball-A', grossAmount: new Prisma.Decimal(100) })) },
+    recoveryApplication: {
+      aggregate: jest.fn(async () => ({ _sum: { amount: applications.length ? applications.reduce((sum, row) => sum.add(row.amount), new Prisma.Decimal(0)) : null } })),
+      create: jest.fn(async ({ data }: any) => { applications.push(data); return data; }),
+    },
+    bonusRecoveryEvent: { findMany: jest.fn(async () => [recovery]), update: jest.fn(async ({ data }: any) => Object.assign(recovery, data)) },
+    bonusAward: { update: jest.fn() },
+  };
+  const service = new RecoveryBalanceService({} as any);
+  const input = { qualificationId: 'ball-A', payoutLineId: 'line-A', maxAmount: new Prisma.Decimal(100) };
+  return { service, tx, input, award, recovery, applications };
+}
 
 function materializationHarness(kind: 'BONUS_AWARD' | 'RPV_UPLINE_AWARD') {
   const entries = new Map<string, any>();
@@ -40,9 +60,61 @@ describe('R1.0B v0.6.3',()=>{
     expect(tx.payableEntry.create).toHaveBeenCalledTimes(1);
     expect([...entries.values()]).toEqual([expect.objectContaining({ qualificationId: 'ball-B', sourceType: 'RPV_UPLINE_AWARD', sourceId: 'rpv-A', awardType: 'RPV', grossAmount: new Prisma.Decimal(80), ruleVersionCode: 'TEST_ONLY' })]);
   });
-  it.todo('payout groups by Qualification rather than Person');
-  it.todo('Recovery offsets Gross without changing source Award');
-  it.todo('Net payout never becomes negative');
+  it('payout groups by Qualification rather than Person', async () => {
+    const entries = [
+      { payableEntryId: 'entry-A1', qualificationId: 'ball-A', personId: 'same-person', grossAmount: new Prisma.Decimal(11) },
+      { payableEntryId: 'entry-B', qualificationId: 'ball-B', personId: 'same-person', grossAmount: new Prisma.Decimal(23) },
+      { payableEntryId: 'entry-A2', qualificationId: 'ball-A', personId: 'same-person', grossAmount: new Prisma.Decimal(7) },
+    ];
+    const lines: any[] = [];
+    const tx = {
+      payableEntry: { findMany: jest.fn(async () => entries), update: jest.fn(async () => undefined) },
+      payoutBatch: { create: jest.fn(async () => ({ payoutBatchId: 'batch-A' })), update: jest.fn(async ({ data }: any) => data) },
+      payoutLine: {
+        create: jest.fn(async ({ data }: any) => { const line = { payoutLineId: 'line-' + lines.length, ...data }; lines.push(line); return line; }),
+        update: jest.fn(async () => undefined),
+      },
+    };
+    const apply = jest.fn(async () => ({ applied: new Prisma.Decimal(0) }));
+    const transaction = jest.fn(async (work: any) => work(tx));
+    const service = new UnifiedPayableService({ $transaction: transaction } as any, { apply } as any);
+    const start = new Date('2020-01-01'), end = new Date('2020-02-01');
+    const batch = await service.createPayoutBatch(start, end, 'TEST_ONLY');
+    expect(lines.map(line => [line.recipientQualificationId, line.grossAmount.toString(), line.detailJson.payableEntryIds])).toEqual([
+      ['ball-A', '18', ['entry-A1', 'entry-A2']], ['ball-B', '23', ['entry-B']],
+    ]);
+    expect(apply).toHaveBeenCalledWith(tx, { qualificationId: 'ball-A', payoutLineId: 'line-0', maxAmount: new Prisma.Decimal(18) });
+    expect(apply).toHaveBeenCalledWith(tx, { qualificationId: 'ball-B', payoutLineId: 'line-1', maxAmount: new Prisma.Decimal(23) });
+    expect(tx.payableEntry.update).toHaveBeenCalledWith({ where: { payableEntryId: 'entry-A2' }, data: { status: 'ALLOCATED', payoutLineId: 'line-0' } });
+    expect(tx.payableEntry.update).toHaveBeenCalledWith({ where: { payableEntryId: 'entry-B' }, data: { status: 'ALLOCATED', payoutLineId: 'line-1' } });
+    expect(batch).toMatchObject({ status: 'READY', totalGross: new Prisma.Decimal(41), totalNet: new Prisma.Decimal(41) });
+    expect(transaction).toHaveBeenCalledWith(expect.any(Function), { isolationLevel: 'Serializable' });
+  });
+  it('Recovery offsets Gross without changing source Award', async () => {
+    const { service, tx, input, award, recovery, applications } = recoveryHarness(30);
+    const original = JSON.stringify(award);
+    const result = await service.apply(tx as any, input);
+    expect(result.applied.toString()).toBe('30');
+    expect(result.remaining.toString()).toBe('70');
+    expect(applications).toEqual([{ payoutLineId: 'line-A', bonusRecoveryEventId: 'recovery-A', amount: new Prisma.Decimal(30) }]);
+    expect(recovery.outstandingAmount.toString()).toBe('0');
+    expect(JSON.stringify(award)).toBe(original);
+    expect(tx.bonusAward.update).not.toHaveBeenCalled();
+    expect(tx.bonusRecoveryEvent.findMany).toHaveBeenCalledWith({ where: { status: { in: ['OPEN', 'OFFSETTING'] }, outstandingAmount: { gt: 0 }, bonusAward: { recipientQualificationId: 'ball-A' } }, orderBy: [{ occurredAt: 'asc' }, { createdAt: 'asc' }] });
+    expect((await service.apply(tx as any, input)).applied.toString()).toBe('30');
+    expect(tx.recoveryApplication.create).toHaveBeenCalledTimes(1);
+  });
+  it('Net payout never becomes negative', async () => {
+    const { service, tx, input, recovery } = recoveryHarness(120);
+    const result = await service.apply(tx as any, input);
+    expect(result.applied.toString()).toBe('100');
+    expect(input.maxAmount.sub(result.applied).toString()).toBe('0');
+    expect(result.remaining.toString()).toBe('0');
+    expect(recovery.outstandingAmount.toString()).toBe('20');
+    expect(recovery.recoveredAmount.toString()).toBe('100');
+    expect((await service.apply(tx as any, input)).applied.toString()).toBe('100');
+    expect(tx.bonusRecoveryEvent.update).toHaveBeenCalledTimes(1);
+  });
   it('temporal holder check denies former holder after transfer', async () => {
     const boundary = new Date('2020-02-01T00:00:00Z');
     const findFirst = jest.fn(async ({ where }: any) => {

@@ -8,6 +8,8 @@ const {OrganizationService}=require('./apps/api/dist/modules/organization/organi
 const {IdempotencyService}=require('./apps/api/dist/common/idempotency/idempotency.service.js');
 const {AuditService}=require('./apps/api/dist/common/audit/audit.service.js');
 const {QualificationAccessService}=require('./apps/api/dist/modules/auth/qualification-access.service.js');
+const {UnifiedPayableService}=require('./apps/api/dist/modules/payout/unified-payable.service.js');
+const {RecoveryBalanceService}=require('./apps/api/dist/modules/payout/recovery-balance.service.js');
 const url=new URL(process.env.DATABASE_URL??'');
 assert.ok(['localhost','127.0.0.1'].includes(url.hostname));
 assert.match(process.env.GOLDEN_ISOLATION_DATABASE??'',/^ucell_dev_golden_[a-f0-9]{32}$/);
@@ -94,5 +96,24 @@ try{
   await access.assertHolder(receiver.personId,q,boundary);assertions++;
   await assert.rejects(access.assertHolder(receiver.personId,q,beforeBoundary),error=>error.getStatus?.()===403);assertions++;
   await assert.rejects(access.assertHolder(receiver.personId,secondQ,boundary),error=>error.getStatus?.()===403);assertions++;
-  console.log(`PHASE3_MEMBERSHIP_DB_PASS: ${assertions} assertions; approval atomicity, tree isolation, first/third rule, duplicate, rollback/retry and temporal access`);
+  const version='TEST_ONLY_GROUPING',end=new Date('2020-02-01');
+  const inputs=[];
+  for(const [qualificationId,grossAmount] of [[sponsor,11],[parent,23],[sponsor,7]])inputs.push(await db.payableEntry.create({data:{qualificationId,grossAmount,sourceType:'TEST_ONLY',sourceId:randomUUID(),awardType:'REFERRAL',availableAt:new Date('2020-01-01'),ruleVersionCode:version}}));
+  equal((await db.qualification.findUniqueOrThrow({where:{qualificationId:sponsor}})).currentHolderPersonId,owner.personId,'grouping ball A common person');
+  equal((await db.qualification.findUniqueOrThrow({where:{qualificationId:parent}})).currentHolderPersonId,owner.personId,'grouping ball B common person');
+  const payable=new UnifiedPayableService(db,new RecoveryBalanceService(db));
+  const payout=await payable.createPayoutBatch(new Date('2020-01-01'),end,version);
+  const lines=await db.payoutLine.findMany({where:{payoutBatchId:payout.payoutBatchId}});
+  equal(lines.length,2,'same person has two qualification payout lines');
+  for(const [qualificationId,gross,expectedEntries] of [[sponsor,'18',[inputs[0],inputs[2]]],[parent,'23',[inputs[1]]]]){
+    const line=lines.find(row=>row.recipientQualificationId===qualificationId);
+    equal(line.grossAmount.toString(),gross,'qualification gross remains isolated');
+    equal(line.netAmount.toString(),gross,'no recovery net preserves qualification gross');
+    equal([...line.detailJson.payableEntryIds].sort(),expectedEntries.map(e=>e.payableEntryId).sort(),'line contains only selected qualification entries');
+    equal(await db.payableEntry.count({where:{payoutLineId:line.payoutLineId,qualificationId,status:'ALLOCATED'}}),expectedEntries.length,'allocation retains qualification');
+  }
+  equal(payout.totalGross.toString(),'41','batch sums qualification gross');
+  equal(payout.totalNet.toString(),'41','batch sums qualification net');
+  equal(await db.recoveryApplication.count({where:{payoutLine:{payoutBatchId:payout.payoutBatchId}}}),0,'no cross-qualification recovery applied');
+  console.log(`PHASE3_MEMBERSHIP_DB_PASS: ${assertions} assertions; approval atomicity, tree isolation, first/third rule, duplicate, rollback/retry, temporal access and qualification payout grouping`);
 }finally{await db.$disconnect();}

@@ -1,7 +1,7 @@
 {
   "originalBaseline": 148,
-  "currentExecutableTodo": 102,
-  "netPlaceholderReduction": 46,
+  "currentExecutableTodo": 99,
+  "netPlaceholderReduction": 49,
   "audit": "Previous 52 TODO claim invalidated: missing cases and unrelated/constant assertions restored. Net reduction alone is not Release approval.",
   "items": [
     {
@@ -420,26 +420,8 @@
     },
     {
       "file": "backend/apps/api/test/v063-golden-path.e2e-spec.ts",
-      "line": 25,
-      "case": "Taiwan local time maps to configured settlement week",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
-    },
-    {
-      "file": "backend/apps/api/test/v063-golden-path.e2e-spec.ts",
-      "line": 43,
-      "case": "payout groups by Qualification rather than Person",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
-    },
-    {
-      "file": "backend/apps/api/test/v063-golden-path.e2e-spec.ts",
-      "line": 44,
-      "case": "Recovery offsets Gross without changing source Award",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
-    },
-    {
-      "file": "backend/apps/api/test/v063-golden-path.e2e-spec.ts",
       "line": 45,
-      "case": "Net payout never becomes negative",
+      "case": "Taiwan local time maps to configured settlement week",
       "classification": "Test implementation; SSOT/evidence review before conversion"
     },
     {
