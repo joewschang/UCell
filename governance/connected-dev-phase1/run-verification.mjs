@@ -3,8 +3,10 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 
-const out = path.dirname(fileURLToPath(import.meta.url));
-const root = path.resolve(out, '../..');
+const scriptDir = path.dirname(fileURLToPath(import.meta.url));
+const out = path.join(scriptDir, 'final');
+fs.mkdirSync(out, { recursive: true });
+const root = path.resolve(scriptDir, '../..');
 const env = { ...process.env, DATABASE_URL: 'postgresql://ucell:ucell_dev@localhost:5432/ucell?schema=public',
   NODE_ENV: 'test', ADMIN_AUTH_BYPASS: 'false', VITE_ENABLE_DEMO_LOGIN: 'false' };
 const results = [];
