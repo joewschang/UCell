@@ -10,6 +10,7 @@ permissions:
 jobs:
   member:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     defaults:
       run:
         working-directory: member
@@ -24,3 +25,32 @@ jobs:
       - run: corepack pnpm run typecheck
       - run: corepack pnpm test
       - run: corepack pnpm run build
+      - name: Install test browser
+        run: corepack pnpm exec playwright install --with-deps chromium
+      - name: Run isolated mock browser smoke
+        env:
+          VITE_ENABLE_MOCK: 'true'
+          SMOKE_SCREENSHOT: test-artifacts/member-mobile.png
+        run: |
+          mkdir -p test-artifacts
+          corepack pnpm dev --host 127.0.0.1 --port 5174 --strictPort > test-artifacts/dev-server.log 2>&1 &
+          member_server_pid=$!
+          trap 'kill "$member_server_pid" 2>/dev/null || true' EXIT
+          for attempt in $(seq 1 30); do
+            if ! kill -0 "$member_server_pid" 2>/dev/null; then
+              cat test-artifacts/dev-server.log
+              exit 1
+            fi
+            if curl --fail --silent http://127.0.0.1:5174/ > /dev/null; then break; fi
+            sleep 1
+          done
+          curl --fail --silent http://127.0.0.1:5174/ > /dev/null
+          timeout 180s corepack pnpm run test:browser
+      - name: Preserve mock browser evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: member-browser-evidence
+          path: member/test-artifacts/
+          if-no-files-found: warn
+          retention-days: 7

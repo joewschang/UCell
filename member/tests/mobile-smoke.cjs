@@ -1,13 +1,23 @@
-// Run with NODE_PATH pointing to a Playwright installation, with mock dev server running.
+// Run only against the isolated local mock server. No LINE or production API access.
 const {chromium}=require('playwright');
 const assert=require('node:assert/strict');
 (async()=>{
  const browser=await chromium.launch({headless:true});
+ let page;
  try {
-  const page=await browser.newPage({viewport:{width:390,height:844}});
+  page=await browser.newPage({viewport:{width:390,height:844}});
+  page.setDefaultTimeout(10000);
+  const writes=[];
+  await page.route('**/*',route=>{
+   const req=route.request(); const url=new URL(req.url());
+   if(!['GET','HEAD'].includes(req.method())) {writes.push(req.method()+' '+url.pathname);return route.abort();}
+   if(url.origin!=='http://127.0.0.1:5174') return route.abort();
+   return route.continue();
+  });
   const errors=[];page.on('pageerror',e=>errors.push(e.message));
   await page.goto('http://127.0.0.1:5174/');
   await page.getByRole('heading',{name:'您好，示範會員'}).waitFor();
+  await page.getByText('目前為示範資料，不代表真實業績、獎金或訂單。',{exact:true}).waitFor();
   await page.getByLabel('目前資格').selectOption('q2');
   await page.getByText('未完成',{exact:true}).waitFor();
   for(const route of ['organization','performance','bonuses','shop','orders','me']) {
@@ -63,6 +73,10 @@ const assert=require('node:assert/strict');
   await page.getByRole('heading',{name:'您好，示範會員'}).waitFor();
   await page.screenshot({path:process.env.SMOKE_SCREENSHOT||'/tmp/ucell-member-mobile.png',fullPage:true});
   assert.deepEqual(errors,[]);
+  assert.deepEqual(writes,[],'Demo must never create network writes');
   console.log('PASS: six routes, persisted ball selection, separate trees, order expansion, month filter, cart, shipping, confirmation, qualification isolation, null awards, 320/390/768px overflow, no page errors');
+ } catch(error) {
+  if(page && process.env.SMOKE_SCREENSHOT) await page.screenshot({path:process.env.SMOKE_SCREENSHOT.replace(/\.png$/,'.failure.png'),fullPage:true}).catch(()=>{});
+  throw error;
  } finally {await browser.close()}
 })().catch(e=>{console.error(e);process.exit(1)});

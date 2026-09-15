@@ -81,3 +81,19 @@ BLOCKED. No main merge, RC2 promotion or production deployment.
 
 See docs/SESSION_DATA_BOUNDARY_v0.5.md. This does not implement LINE token exchange,
 server logout/revocation, checkout, or server BOLA/IDOR authorization.
+
+## v0.5 QA follow-up — browser smoke CI
+
+The original v0.5 Member CI passed on GitHub (run 34998893187); it did not yet
+include browser execution. Added locked Playwright 1.62.1, a browser test command,
+isolated loopback-only mock browser smoke and automatic CI evidence retention.
+CI includes browser/system dependency installation, server readiness/cleanup,
+timeouts, and success/failure screenshots. No deployment or secrets are used.
+Local frozen install, all 54 existing tests, typecheck/build, smoke syntax and
+diff checks pass. Browser execution result must be read from the new CI run;
+authoring the workflow alone does not mark the smoke suite as PASS.
+
+Interactive Cloud Browser was available but rejected the loopback URL with
+ERR_BLOCKED_BY_CLIENT. No alternate route or protection bypass was attempted.
+Real LINE login/device UAT, backend integration and production promotion remain
+pending. This QA increment does not claim a new member-facing functional release.

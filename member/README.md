@@ -49,10 +49,13 @@ Run `corepack pnpm install --frozen-lockfile`, `corepack pnpm test`,
 `pnpm-workspace.yaml` permits only the required esbuild installation script.
 The Member-only CI does not replace Backend security/release gates.
 
-For optional local browser smoke checks: install Playwright and Chromium in your
-QA environment, start the mock Vite dev server on port 5174, then run
-`node tests/mobile-smoke.cjs` with Playwright available on Node's module path.
-The script checks 390px layout, navigation, ball persistence and read-only flows.
+For browser smoke checks in a permitted QA environment: install locked dependencies,
+run `corepack pnpm exec playwright install chromium`, start the mock Vite dev server
+with `VITE_ENABLE_MOCK=true corepack pnpm dev --host 127.0.0.1 --port 5174 --strictPort`,
+then run `corepack pnpm run test:browser`. The Member CI installs Chromium and runs
+this suite automatically. It checks routes, ball isolation, checkout and 320/390/768px
+overflow. Network writes and non-local requests are blocked by the test harness.
+CI evidence is retained for seven days; this is not real-device LINE UAT.
 Hosting must rewrite SPA routes to index.html; no hosting was published here.
 
 ## v0.4 demo checkout
