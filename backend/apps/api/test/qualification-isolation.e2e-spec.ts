@@ -1,6 +1,8 @@
-describe('Qualification isolation (P0)', () => {
-  it.todo('Person A cannot read Person B qualification');
-  it.todo('same person Ball A active does not make Ball B active');
-  it.todo('missing qualification context returns AMBIGUOUS_QUALIFICATION');
-  it.todo('member share link is bound to selected qualification');
+import { QualificationGuard } from '../src/common/guards/qualification.guard';
+const context=(req:any)=>({switchToHttp:()=>({getRequest:()=>req})}) as any;
+describe('Qualification isolation (P0)',()=>{
+  it('Person A cannot read Person B qualification',async()=>{const guard=new QualificationGuard({qualification:{findFirst:jest.fn().mockResolvedValue(null)}} as any);await expect(guard.canActivate(context({user:{personId:'A'},headers:{'x-qualification-id':'qB'}}))).rejects.toMatchObject({response:{code:'QUALIFICATION_NOT_OWNED'}});});
+  it('same person Ball A active does not make Ball B active',async()=>{const find=jest.fn().mockResolvedValue(null);const guard=new QualificationGuard({qualification:{findFirst:find}} as any);await expect(guard.canActivate(context({user:{personId:'A'},headers:{'x-qualification-id':'ballB'}}))).rejects.toMatchObject({response:{code:'QUALIFICATION_NOT_OWNED'}});expect(find).toHaveBeenCalledWith(expect.objectContaining({where:{qualificationId:'ballB',currentHolderPersonId:'A'}}));});
+  it('missing qualification context returns AMBIGUOUS_QUALIFICATION',async()=>{const guard=new QualificationGuard({qualification:{findFirst:jest.fn()}} as any);await expect(guard.canActivate(context({user:{personId:'A'},headers:{}}))).rejects.toMatchObject({response:{code:'AMBIGUOUS_QUALIFICATION'}});});
+  it('member share link is bound to selected qualification',async()=>{const guard=new QualificationGuard({qualification:{findFirst:jest.fn().mockResolvedValue({qualificationId:'qA'})}} as any);const req:any={user:{personId:'A'},headers:{'x-qualification-id':'qA'}};await expect(guard.canActivate(context(req))).resolves.toBe(true);expect(req.qualificationId).toBe('qA');});
 });
