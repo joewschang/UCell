@@ -1,0 +1,15 @@
+{
+  "verifiedAt": "2026-09-15",
+  "method": "cua_repl visible UI verification; not automated UAT signoff",
+  "devOrigin": "http://127.0.0.1:4173",
+  "checks": [
+    { "name": "DEV logout returns login page", "result": "PASS" },
+    { "name": "DEV Super Admin login displays real DB dashboard", "result": "PASS" },
+    { "name": "16 navigation pages display expected main heading", "result": "PASS", "limitation": "Empty lists/detail without fixture; no completed business workflows claimed" },
+    { "name": "Subscription plan query displays existing QUARTER/HALF_YEAR/YEAR rows", "result": "PASS" },
+    { "name": "Subscription create/cancel buttons disabled in read-only mode", "result": "PASS" },
+    { "name": "Production preview has no DEV demo login buttons", "result": "PASS", "origin": "http://127.0.0.1:4174", "limitation": "Entra login remains disabled because tenant/client are not configured" },
+    { "name": "Dashboard restored after Prisma generate and API restart", "result": "PASS" }
+  ],
+  "release": "BLOCKED; original 148 TODO and full Backend replay compile blocker retained"
+}

@@ -37,7 +37,7 @@ AppShell 顯示只讀限制與 Production/RC blocked banner，api helper 拒絕 
 
 smoke-results.json：24 項 HTTP checks PASS（18合法 GET、3無效報表 GET、3寫入拒絕）；獨立 Prisma count 與 dashboard 相符，before/after Person、Order、BonusAward、PvLedger、PayableEntry counts 不變。不是 monetary golden fixture，不宣稱計算驗收。
 
-瀏覽器實測 DEV logout/login PASS；16個導航頁的主標題可見，沒有在觀測中看到 API error；包括 Person、申請、Qualification、商品、訂單、組織、重銷、獎金、退貨、Workflow、付款、文件、Audit、報表、UAT、System。總覽真實計數為0；Audit 顯示實際 HTTP audit records。組織樹/Qualification/award/entity detail 仍缺 fixture，僅验证空清單/未選擇狀態，未捏造五球資料；附件查詢與重銷查詢另由 API checks／頁面操作核對。不把頁面顯示視為所有行為已驗收，也没有替UAT30案例填PASS。
+瀏覽器實測 DEV logout/login PASS；16個導航頁的主標題可見，沒有在觀測中看到 API error；包括 Person、申請、Qualification、商品、訂單、組織、重銷、獎金、退貨、Workflow、付款、文件、Audit、報表、UAT、System。總覽真實計數為0；Audit 顯示實際 HTTP audit records。組織樹/Qualification/award/entity detail 仍缺 fixture，僅验证空清單/未選擇狀態，未捏造五球資料；附件明細仍待資料；重銷方案查詢由 API checks 核對。不把頁面顯示視為所有行為已驗收，也没有替UAT30案例填PASS。
 
 完整本輪 commands、PASS/FAIL 與退出碼見 final/PASS-FAIL-MATRIX.md 和 gate-results.json；raw logs 逐檔保存。完整 Backend Build 仍缺 replayBinary/replayMatching；148TODO 未改；DB Golden 缺 fixture；OpenAPI/正式API HTTP Security/UAT/Release仍 FAIL。Admin Build、現有13實際測試、offline/static/security-policy、audits、Prisma validate/migrations 維持通過。
 
@@ -46,3 +46,5 @@ Prisma generate 首次因運行中 API 占用 Windows query_engine DLL 產生 EP
 ## 後續未完成
 
 完整 Admin 新增、申請核准、收款、退貨、結算、付款仍需正式 Backend/replay 契約與完整fixture；目前只讀操作模式不能完成這些工作。需以核准來源確認受影響球、K1/K2 pool scope及跨期carry，才能修復全Backend並驗收寫入。148 executable TODO、正式Entra/RBAC/runtime security、UAT及Release evidence繼續阻塞。没有 merge main、force push、push 或升 RC2。
+
+補充工程修正：6748bc8 checkpoint 後發現繼承 NODE_ENV=development 可令 Vite build 輸出 DEV 行為；新增 admin/scripts/build.mjs 強制 production 並關閉 demo/read-only flags。以父環境 development/demo=true 重跑 build、tests 與 Production preview，確認產物不提供 demo 登入。修正前 build 輸出保留 admin-build-before-hardening.txt。

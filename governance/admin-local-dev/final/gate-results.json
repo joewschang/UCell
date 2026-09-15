@@ -547,5 +547,68 @@
     "exitCode": 1,
     "expectedExit": 1,
     "result": "PASS"
+  },
+  {
+    "label": "prisma-generate-after-stop",
+    "cwd": "C:\\UCell\\UCell\\backend",
+    "command": "pnpm --filter @ucell/database exec prisma generate",
+    "start": "2026-09-15T09:55:16.705Z",
+    "exitCode": 0,
+    "expectedExit": 0,
+    "result": "PASS"
+  },
+  {
+    "label": "admin-dev-build",
+    "cwd": "C:\\UCell\\UCell\\backend",
+    "command": "pnpm --filter @ucell/api build:admin-dev",
+    "start": "2026-09-15T09:55:18.194Z",
+    "exitCode": 0,
+    "expectedExit": 0,
+    "result": "PASS"
+  },
+  {
+    "label": "admin-build-final",
+    "cwd": "C:\\UCell\\UCell\\admin",
+    "command": "pnpm build",
+    "start": "2026-09-15T09:55:21.333Z",
+    "exitCode": 0,
+    "expectedExit": 0,
+    "result": "PASS"
+  },
+  {
+    "label": "admin-tests-final",
+    "cwd": "C:\\UCell\\UCell\\admin",
+    "command": "pnpm test",
+    "start": "2026-09-15T09:55:26.072Z",
+    "exitCode": 0,
+    "expectedExit": 0,
+    "result": "PASS"
+  },
+  {
+    "label": "production-start-rejected",
+    "cwd": "C:\\UCell\\UCell\\backend\\apps\\api",
+    "command": "node dist-admin-dev/admin-dev.js",
+    "start": "2026-09-15T09:55:26.973Z",
+    "exitCode": 1,
+    "expectedExit": 1,
+    "result": "PASS"
+  },
+  {
+    "label": "missing-demo-start-rejected",
+    "cwd": "C:\\UCell\\UCell\\backend\\apps\\api",
+    "command": "node dist-admin-dev/admin-dev.js",
+    "start": "2026-09-15T09:55:28.028Z",
+    "exitCode": 1,
+    "expectedExit": 1,
+    "result": "PASS"
+  },
+  {
+    "label": "remote-db-start-rejected",
+    "cwd": "C:\\UCell\\UCell\\backend\\apps\\api",
+    "command": "node dist-admin-dev/admin-dev.js",
+    "start": "2026-09-15T09:55:29.033Z",
+    "exitCode": 1,
+    "expectedExit": 1,
+    "result": "PASS"
   }
 ]

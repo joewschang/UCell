@@ -61,3 +61,10 @@
 | production-start-rejected | PASS | 1 | 1 | node dist-admin-dev/admin-dev.js |
 | missing-demo-start-rejected | PASS | 1 | 1 | node dist-admin-dev/admin-dev.js |
 | remote-db-start-rejected | PASS | 1 | 1 | node dist-admin-dev/admin-dev.js |
+| prisma-generate-after-stop | PASS | 0 | 0 | pnpm --filter @ucell/database exec prisma generate |
+| admin-dev-build | PASS | 0 | 0 | pnpm --filter @ucell/api build:admin-dev |
+| admin-build-final | PASS | 0 | 0 | pnpm build |
+| admin-tests-final | PASS | 0 | 0 | pnpm test |
+| production-start-rejected | PASS | 1 | 1 | node dist-admin-dev/admin-dev.js |
+| missing-demo-start-rejected | PASS | 1 | 1 | node dist-admin-dev/admin-dev.js |
+| remote-db-start-rejected | PASS | 1 | 1 | node dist-admin-dev/admin-dev.js |
