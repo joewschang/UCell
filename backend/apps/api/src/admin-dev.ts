@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import { Module, CanActivate, ExecutionContext, Injectable, MethodNotAllowedException, ValidationPipe } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
 import { DatabaseModule } from '@ucell/database';
@@ -15,6 +15,16 @@ import { QualificationModule } from './modules/qualification/qualification.modul
 import { OrganizationModule } from './modules/organization/organization.module';
 import { OrderModule } from './modules/order/order.module';
 import { SubscriptionModule } from './modules/subscription/subscription.module';
+import { LedgerModule } from './modules/ledger/ledger.module';
+import { ActiveModule } from './modules/active/active.module';
+import { RpvModule } from './modules/rpv/rpv.module';
+import { RuntimeRuleModule } from './modules/rules/runtime-rule.module';
+import { BonusModule } from './modules/bonus/bonus.module';
+import { ReturnModule } from './modules/return/return.module';
+import { EpvModule } from './modules/epv/epv.module';
+import { GlobalPoolModule } from './modules/global-pool/global-pool.module';
+import { PayoutModule } from './modules/payout/payout.module';
+import { SettlementModule } from './modules/settlement/settlement.module';
 import { MembershipApplicationModule } from './modules/application/membership-application.module';
 import { AdminDashboardModule } from './modules/admin-dashboard/admin-dashboard.module';
 import { AdminObservabilityModule } from './modules/admin-observability/admin-observability.module';
@@ -29,7 +39,9 @@ import { RequestContextInterceptor } from './common/interceptors/request-context
 
 @Injectable()
 export class AdminDevReadOnlyGuard implements CanActivate {
+  constructor(private readonly config: ConfigService) {}
   canActivate(context: ExecutionContext) {
+    if (this.config.get('UCELL_ADMIN_DEV_FULL_ACCESS') === 'true') return true;
     const method = context.switchToHttp().getRequest().method;
     if (!['GET', 'HEAD', 'OPTIONS'].includes(method)) {
       throw new MethodNotAllowedException('ADMIN_DEV_READ_ONLY: write operations are unavailable');
@@ -43,6 +55,8 @@ export class AdminDevReadOnlyGuard implements CanActivate {
   imports: [ConfigModule.forRoot({ isGlobal: true, ignoreEnvFile: true }), DatabaseModule,
     AuditModule, IdempotencyModule, OutboxModule, AuthModule, HealthModule,
     PersonModule, ProductModule, OrganizationModule, QualificationModule, OrderModule,
+    LedgerModule, ActiveModule, RpvModule, RuntimeRuleModule, BonusModule, ReturnModule,
+    EpvModule, GlobalPoolModule, PayoutModule, SettlementModule,
     SubscriptionModule, MembershipApplicationModule, AdminDashboardModule, AdminObservabilityModule,
     AdminOperationsModule, AdminOpsReadyModule],
   providers: [{ provide: APP_GUARD, useClass: AdminDevReadOnlyGuard },
@@ -52,13 +66,17 @@ export class AdminDevReadOnlyGuard implements CanActivate {
 class AdminDevModule {}
 
 async function bootstrap() {
+  const fullAccess = process.env.UCELL_ADMIN_DEV_FULL_ACCESS === 'true';
   if (process.env.NODE_ENV !== 'development' || process.env.ADMIN_AUTH_BYPASS !== 'true'
-      || process.env.UCELL_ADMIN_DEV_READ_ONLY !== 'true') {
+      || (!fullAccess && process.env.UCELL_ADMIN_DEV_READ_ONLY !== 'true')) {
     throw new Error('ADMIN_DEV_START_BLOCKED: explicit development/read-only/demo configuration required');
   }
   const url = new URL(process.env.DATABASE_URL ?? '');
   if (!['localhost', '127.0.0.1', '[::1]'].includes(url.hostname)) {
     throw new Error('ADMIN_DEV_START_BLOCKED: local DEV database required');
+  }
+  if (fullAccess && url.pathname !== '/ucell_admin_test') {
+    throw new Error('ADMIN_DEV_START_BLOCKED: full access requires isolated ucell_admin_test database');
   }
   const app = await NestFactory.create<NestFastifyApplication>(AdminDevModule, new FastifyAdapter());
   app.setGlobalPrefix('api/v1');
@@ -66,7 +84,7 @@ async function bootstrap() {
   app.useGlobalFilters(new ApiExceptionFilter());
   app.useGlobalInterceptors(new RequestContextInterceptor(), new EnvelopeInterceptor());
   await app.listen(3001, '127.0.0.1');
-  console.log('ADMIN_DEV_READ_ONLY: http://127.0.0.1:3001/api/v1 — all writes blocked');
+  console.log(`${fullAccess?'ADMIN_DEV_FULL_TEST':'ADMIN_DEV_READ_ONLY'}: http://127.0.0.1:3001/api/v1 — ${fullAccess?'isolated DB; legacy adjustment unavailable':'all writes blocked'}`);
 }
 
 if (require.main === module) bootstrap().catch(error => { console.error(error); process.exitCode = 1; });
