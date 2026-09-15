@@ -1,4 +1,4 @@
-Original baseline: 148. Current TODO: 106. Net placeholder reduction: 42.
+Original baseline: 148. Current TODO: 104. Net placeholder reduction: 44.
 
 The previous 52 TODO claim is invalid. Full behavioral coverage must be reviewed independently.
 
@@ -73,14 +73,12 @@ The previous 52 TODO claim is invalid. Full behavioral coverage must be reviewed
 | backend/apps/api/test/v062-carry-chain.e2e-spec.ts | 15 | migration 0005 references subscription.subscription, not commerce.subscription | Test implementation; SSOT/evidence review before conversion |
 | backend/apps/api/test/v062-carry-chain.e2e-spec.ts | 16 | Prisma schema contains adjustment/workflow/replay models | Test implementation; SSOT/evidence review before conversion |
 | backend/apps/api/test/v062-carry-chain.e2e-spec.ts | 17 | RPV reversal anchor uses BonusAwardType.RPV, not EPV | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/v063-golden-path.e2e-spec.ts | 2 | Taiwan local time maps to configured settlement week | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/v063-golden-path.e2e-spec.ts | 3 | effective BonusAward materializes once | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/v063-golden-path.e2e-spec.ts | 4 | RPV award materializes once | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/v063-golden-path.e2e-spec.ts | 5 | payout groups by Qualification rather than Person | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/v063-golden-path.e2e-spec.ts | 6 | Recovery offsets Gross without changing source Award | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/v063-golden-path.e2e-spec.ts | 7 | Net payout never becomes negative | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/v063-golden-path.e2e-spec.ts | 8 | temporal holder check denies former holder after transfer | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/v063-golden-path.e2e-spec.ts | 9 | RBAC denies unauthorized admin operation | Test implementation; SSOT/evidence review before conversion |
+| backend/apps/api/test/v063-golden-path.e2e-spec.ts | 5 | Taiwan local time maps to configured settlement week | Test implementation; SSOT/evidence review before conversion |
+| backend/apps/api/test/v063-golden-path.e2e-spec.ts | 6 | effective BonusAward materializes once | Test implementation; SSOT/evidence review before conversion |
+| backend/apps/api/test/v063-golden-path.e2e-spec.ts | 7 | RPV award materializes once | Test implementation; SSOT/evidence review before conversion |
+| backend/apps/api/test/v063-golden-path.e2e-spec.ts | 8 | payout groups by Qualification rather than Person | Test implementation; SSOT/evidence review before conversion |
+| backend/apps/api/test/v063-golden-path.e2e-spec.ts | 9 | Recovery offsets Gross without changing source Award | Test implementation; SSOT/evidence review before conversion |
+| backend/apps/api/test/v063-golden-path.e2e-spec.ts | 10 | Net payout never becomes negative | Test implementation; SSOT/evidence review before conversion |
 | backend/apps/api/test/v064-golden-dataset.e2e-spec.ts | 5 | keeps Person and Qualification distinct | Test implementation; SSOT/evidence review before conversion |
 | backend/apps/api/test/v064-golden-dataset.e2e-spec.ts | 6 | keeps Sponsor and Binary trees distinct | Test implementation; SSOT/evidence review before conversion |
 | backend/apps/api/test/v064-golden-dataset.e2e-spec.ts | 7 | validates Referral 15/20/25 | Test implementation; SSOT/evidence review before conversion |

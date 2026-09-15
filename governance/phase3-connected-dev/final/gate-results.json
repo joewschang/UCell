@@ -96,102 +96,6 @@
     "result": "PASS"
   },
   {
-    "label": "backend-build",
-    "command": "pnpm build",
-    "cwd": "C:\\UCell\\UCell\\backend",
-    "started": "2026-09-15T16:57:18.914Z",
-    "exitCode": 0,
-    "result": "PASS"
-  },
-  {
-    "label": "admin-build",
-    "command": "pnpm build",
-    "cwd": "C:\\UCell\\UCell\\admin",
-    "started": "2026-09-15T16:57:30.194Z",
-    "exitCode": 0,
-    "result": "PASS"
-  },
-  {
-    "label": "default-db-golden",
-    "command": "pnpm db:golden",
-    "cwd": "C:\\UCell\\UCell\\backend",
-    "started": "2026-09-15T16:57:47.312Z",
-    "exitCode": 0,
-    "result": "PASS"
-  },
-  {
-    "label": "db-regression",
-    "command": "node scripts/phase2-db-test.mjs",
-    "cwd": "C:\\UCell\\UCell\\backend",
-    "started": "2026-09-15T16:57:54.906Z",
-    "exitCode": 0,
-    "result": "PASS"
-  },
-  {
-    "label": "security-policy-preflight",
-    "command": "node scripts/security-policy-preflight.mjs",
-    "cwd": "C:\\UCell\\UCell\\backend",
-    "started": "2026-09-15T16:57:56.932Z",
-    "exitCode": 0,
-    "result": "PASS"
-  },
-  {
-    "label": "api-tests",
-    "command": "pnpm --filter @ucell/api test:e2e --runInBand",
-    "cwd": "C:\\UCell\\UCell\\backend",
-    "started": "2026-09-15T16:58:36.400Z",
-    "exitCode": 0,
-    "result": "PASS"
-  },
-  {
-    "label": "default-db-golden-repeat",
-    "command": "pnpm db:golden",
-    "cwd": "C:\\UCell\\UCell\\backend",
-    "started": "2026-09-15T16:58:48.815Z",
-    "exitCode": 0,
-    "result": "PASS"
-  },
-  {
-    "label": "security-http",
-    "command": "pnpm security:e2e",
-    "cwd": "C:\\UCell\\UCell\\backend",
-    "started": "2026-09-15T16:58:56.640Z",
-    "exitCode": 2,
-    "result": "BLOCKED"
-  },
-  {
-    "label": "uat",
-    "command": "pnpm uat:gate",
-    "cwd": "C:\\UCell\\UCell\\backend",
-    "started": "2026-09-15T16:58:56.797Z",
-    "exitCode": 1,
-    "result": "BLOCKED"
-  },
-  {
-    "label": "todo",
-    "command": "pnpm test:todo:gate",
-    "cwd": "C:\\UCell\\UCell\\backend",
-    "started": "2026-09-15T16:58:56.919Z",
-    "exitCode": 1,
-    "result": "BLOCKED"
-  },
-  {
-    "label": "backend-test-gate",
-    "command": "pnpm test",
-    "cwd": "C:\\UCell\\UCell\\backend",
-    "started": "2026-09-15T16:58:57.069Z",
-    "exitCode": 1,
-    "result": "BLOCKED"
-  },
-  {
-    "label": "rc",
-    "command": "pnpm rc:gate",
-    "cwd": "C:\\UCell\\UCell\\backend",
-    "started": "2026-09-15T16:59:14.757Z",
-    "exitCode": 1,
-    "result": "BLOCKED"
-  },
-  {
     "label": "prisma-validate",
     "command": "pnpm --filter @ucell/database exec prisma validate",
     "cwd": "C:\\UCell\\UCell\\backend",
@@ -272,10 +176,106 @@
     "result": "PASS"
   },
   {
+    "label": "backend-build",
+    "command": "pnpm build",
+    "cwd": "C:\\UCell\\UCell\\backend",
+    "started": "2026-09-15T17:07:01.684Z",
+    "exitCode": 0,
+    "result": "PASS"
+  },
+  {
+    "label": "admin-build",
+    "command": "pnpm build",
+    "cwd": "C:\\UCell\\UCell\\admin",
+    "started": "2026-09-15T17:07:13.041Z",
+    "exitCode": 0,
+    "result": "PASS"
+  },
+  {
+    "label": "api-tests",
+    "command": "pnpm --filter @ucell/api test:e2e --runInBand",
+    "cwd": "C:\\UCell\\UCell\\backend",
+    "started": "2026-09-15T17:07:18.003Z",
+    "exitCode": 0,
+    "result": "PASS"
+  },
+  {
+    "label": "default-db-golden",
+    "command": "pnpm db:golden",
+    "cwd": "C:\\UCell\\UCell\\backend",
+    "started": "2026-09-15T17:07:30.603Z",
+    "exitCode": 0,
+    "result": "PASS"
+  },
+  {
+    "label": "db-regression",
+    "command": "node scripts/phase2-db-test.mjs",
+    "cwd": "C:\\UCell\\UCell\\backend",
+    "started": "2026-09-15T17:07:38.335Z",
+    "exitCode": 0,
+    "result": "PASS"
+  },
+  {
+    "label": "security-policy-preflight",
+    "command": "node scripts/security-policy-preflight.mjs",
+    "cwd": "C:\\UCell\\UCell\\backend",
+    "started": "2026-09-15T17:07:40.529Z",
+    "exitCode": 0,
+    "result": "PASS"
+  },
+  {
+    "label": "security-http",
+    "command": "pnpm security:e2e",
+    "cwd": "C:\\UCell\\UCell\\backend",
+    "started": "2026-09-15T17:07:40.611Z",
+    "exitCode": 2,
+    "result": "BLOCKED"
+  },
+  {
+    "label": "uat",
+    "command": "pnpm uat:gate",
+    "cwd": "C:\\UCell\\UCell\\backend",
+    "started": "2026-09-15T17:07:40.764Z",
+    "exitCode": 1,
+    "result": "BLOCKED"
+  },
+  {
+    "label": "todo",
+    "command": "pnpm test:todo:gate",
+    "cwd": "C:\\UCell\\UCell\\backend",
+    "started": "2026-09-15T17:07:40.887Z",
+    "exitCode": 1,
+    "result": "BLOCKED"
+  },
+  {
+    "label": "backend-test-gate",
+    "command": "pnpm test",
+    "cwd": "C:\\UCell\\UCell\\backend",
+    "started": "2026-09-15T17:07:41.040Z",
+    "exitCode": 1,
+    "result": "BLOCKED"
+  },
+  {
+    "label": "rc",
+    "command": "pnpm rc:gate",
+    "cwd": "C:\\UCell\\UCell\\backend",
+    "started": "2026-09-15T17:07:58.120Z",
+    "exitCode": 1,
+    "result": "BLOCKED"
+  },
+  {
+    "label": "default-db-golden-repeat",
+    "command": "pnpm db:golden",
+    "cwd": "C:\\UCell\\UCell\\backend",
+    "started": "2026-09-15T17:08:10.434Z",
+    "exitCode": 0,
+    "result": "PASS"
+  },
+  {
     "label": "diff-check",
     "command": "git diff --check",
     "cwd": "C:\\UCell\\UCell",
-    "started": "2026-09-15T17:01:27.000Z",
+    "started": "2026-09-15T17:08:18.058Z",
     "exitCode": 0,
     "result": "PASS"
   },
@@ -283,7 +283,7 @@
     "label": "admin-dev-full-test",
     "command": "node backend/scripts/admin-full-test.mjs",
     "cwd": "C:\\UCell\\UCell",
-    "started": "2026-09-15T17:01:27.095Z",
+    "started": "2026-09-15T17:08:18.137Z",
     "exitCode": 0,
     "result": "PASS"
   }

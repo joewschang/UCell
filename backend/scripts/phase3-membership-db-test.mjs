@@ -7,6 +7,7 @@ const {MembershipApplicationService}=require('./apps/api/dist/modules/applicatio
 const {OrganizationService}=require('./apps/api/dist/modules/organization/organization.service.js');
 const {IdempotencyService}=require('./apps/api/dist/common/idempotency/idempotency.service.js');
 const {AuditService}=require('./apps/api/dist/common/audit/audit.service.js');
+const {QualificationAccessService}=require('./apps/api/dist/modules/auth/qualification-access.service.js');
 const url=new URL(process.env.DATABASE_URL??'');
 assert.ok(['localhost','127.0.0.1'].includes(url.hostname));
 assert.match(process.env.GOLDEN_ISOLATION_DATABASE??'',/^ucell_dev_golden_[a-f0-9]{32}$/);
@@ -78,5 +79,20 @@ try{
   equal((await db.sponsorRelationship.findUniqueOrThrow({where:{childQualificationId:retry}})).sponsorSequenceNo,3,'retry allocates original third sequence');
   equal((await db.binaryPlacement.findUniqueOrThrow({where:{childQualificationId:retry}})).parentQualificationId,q,'third in sponsor left descendant');
   equal(await db.sponsorRelationship.count({where:{sponsorQualificationId:sponsor}}),3,'retry creates one sponsor relationship');
-  console.log(`PHASE3_MEMBERSHIP_DB_PASS: ${assertions} assertions; approval atomicity, tree isolation, first/third rule, duplicate and late rollback/retry`);
+  // Explicit TEST_ONLY holder intervals exercise temporal authorization, not workflow fees or policy.
+  const receiver=await db.person.create({data:{legalName:'TEMPORAL ACCESS TEST ONLY'}});
+  const boundary=new Date(Date.now()+60000),beforeBoundary=new Date(boundary.getTime()-1);
+  const holder=await db.qualificationHolderHistory.findFirstOrThrow({where:{qualificationId:q,effectiveTo:null}});
+  await db.$transaction(async tx=>{
+    await tx.qualificationHolderHistory.update({where:{holderHistoryId:holder.holderHistoryId},data:{effectiveTo:boundary}});
+    await tx.qualificationHolderHistory.create({data:{qualificationId:q,holderPersonId:receiver.personId,effectiveFrom:boundary,sourceType:'TEST_ONLY'}});
+    await tx.qualification.update({where:{qualificationId:q},data:{currentHolderPersonId:receiver.personId}});
+  });
+  const access=new QualificationAccessService(db);
+  await access.assertHolder(owner.personId,q,beforeBoundary);assertions++;
+  await assert.rejects(access.assertHolder(owner.personId,q,boundary),error=>error.getStatus?.()===403);assertions++;
+  await access.assertHolder(receiver.personId,q,boundary);assertions++;
+  await assert.rejects(access.assertHolder(receiver.personId,q,beforeBoundary),error=>error.getStatus?.()===403);assertions++;
+  await assert.rejects(access.assertHolder(receiver.personId,secondQ,boundary),error=>error.getStatus?.()===403);assertions++;
+  console.log(`PHASE3_MEMBERSHIP_DB_PASS: ${assertions} assertions; approval atomicity, tree isolation, first/third rule, duplicate, rollback/retry and temporal access`);
 }finally{await db.$disconnect();}

@@ -1,5 +1,5 @@
 command: pnpm build
-started: 2026-09-15T16:57:30.194Z
+started: 2026-09-15T17:07:13.041Z
 exit: 0
 vite v6.4.3 building for production...
 transforming...
@@ -9,7 +9,7 @@ computing gzip size...
 dist/index.html                   0.36 kB │ gzip:   0.26 kB
 dist/assets/index-Czs_Soi9.css    8.61 kB │ gzip:   2.59 kB
 dist/assets/index-CIE7v_3r.js   620.96 kB │ gzip: 174.45 kB
-✓ built in 1.74s
+✓ built in 1.82s
 $ node scripts/build.mjs
 
 (!) Some chunks are larger than 500 kB after minification. Consider:
