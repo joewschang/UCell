@@ -1,5 +1,5 @@
 command: node dist-admin-dev/admin-dev.js
-started: 2026-09-15T10:15:05.866Z
+started: 2026-09-15T10:17:00.508Z
 exit: 1
 expected: 1
 Error: ADMIN_DEV_START_BLOCKED: full access requires isolated ucell_admin_test database

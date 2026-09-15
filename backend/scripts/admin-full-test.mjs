@@ -10,6 +10,7 @@ assert.ok(['localhost','127.0.0.1'].includes(database.hostname));
 const prisma = new PrismaClient();
 const startedAt = new Date().toISOString();
 const results = [];
+let failure;
 let devActor;
 async function request(method, route, body, key=randomUUID(), expected=method==='POST'?201:200) {
   const response = await fetch('http://127.0.0.1:3001/api/v1'+route, {method,
@@ -34,6 +35,16 @@ try {
     return q;
   });
   const key=randomUUID();
+  const {PersonService}=require('./apps/api/dist-admin-dev/modules/person/person.service.js');
+  const {IdempotencyService}=require('./apps/api/dist-admin-dev/common/idempotency/idempotency.service.js');
+  const {AuditService}=require('./apps/api/dist-admin-dev/common/audit/audit.service.js');
+  const {CreatePersonDto}=require('./apps/api/dist-admin-dev/modules/person/dto/create-person.dto.js');
+  const legacyKey=randomUUID(); const legacyPayload={legalName:'LEGACY SCOPE COMPATIBILITY '+legacyKey.slice(0,8)};
+  const legacy=await new PersonService(prisma,new IdempotencyService(prisma),new AuditService()).create(Object.assign(new CreatePersonDto(),legacyPayload),legacyKey,randomUUID());
+  const legacyReplay=await request('POST','/admin/persons',legacyPayload,legacyKey);
+  assert.equal(legacyReplay.data.personId,legacy.value.personId); assert.equal(legacyReplay.meta.replayed,true);
+  assert.equal(await prisma.person.count({where:{legalName:legacyPayload.legalName}}),1);
+  await request('POST','/admin/persons',{legalName:'CHANGED LEGACY PAYLOAD'},legacyKey,409);
   const payload={legalName:'ADMIN TEST MEMBER '+key.slice(0,8),birthDate:'1990-01-01'};
   const person=await request('POST','/admin/persons',payload,key);
   const personAudit=await prisma.auditEvent.findFirstOrThrow({where:{entityId:person.data.personId,action:'PERSON_CREATED'}});
@@ -98,10 +109,10 @@ try {
   await request('GET','/admin/ops-ready/exports/ORDERS');
   await request('GET','/admin/ops-ready/integrity-alerts');
   console.log(`ADMIN_FULL_TEST_PASS: ${results.length} requests; fixture root ${root.qualificationId}`);
-} catch(error) {console.error(error); process.exitCode=1;}
+} catch(error) {failure=error?.stack??String(error);console.error(error); process.exitCode=1;}
 finally {
   const out='../governance/admin-full-test'; fs.mkdirSync(out,{recursive:true});
-  fs.writeFileSync(`${out}/run-${startedAt.replaceAll(':','-')}.json`,JSON.stringify({startedAt,results,
+  fs.writeFileSync(`${out}/run-${startedAt.replaceAll(':','-')}.json`,JSON.stringify({startedAt,result:failure?'FAIL':'PASS',failure,results,
     scope:'Isolated ucell_admin_test; existing application calculates test facts; no official monetary result; not frozen five-ball golden or release/UAT signoff'},null,2)+'\n');
   await prisma.$disconnect();
 }

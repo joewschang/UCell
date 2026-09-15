@@ -1,0 +1,12 @@
+{
+  "date": "2026-09-15",
+  "method": "Actual cua_repl UI operations in isolated local DEV",
+  "checks": [
+    { "name": "Person optional DOB/email left empty initially failed validation", "result": "REPRODUCED" },
+    { "name": "After payload correction, same UI Person submission created visible row", "result": "PASS" },
+    { "name": "DEV full access banner and actor selector visible", "result": "PASS" },
+    { "name": "Draft Submit with no request body changed UI status to SUBMITTED", "result": "PASS" },
+    { "name": "Approval of stale draft with occupied Binary slot refused with specified slot occupied message", "result": "PASS — expected business rejection" }
+  ],
+  "limitation": "Not formal UAT signoff; no real bank execution or production promotion"
+}

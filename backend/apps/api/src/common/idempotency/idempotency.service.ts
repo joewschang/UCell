@@ -15,9 +15,21 @@ export class IdempotencyService {
   ): Promise<{ value: T; replayed: boolean }> {
     const hash = requestHash(request);
 
-    const existing = await this.prisma.idempotencyRecord.findUnique({
-      where: { actorScope_idempotencyKey: { actorScope, idempotencyKey: key } },
-    });
+    // Controllers historically passed an absent userId, producing :system scopes.
+    // Preserve those committed responses when the corrected personId is supplied.
+    const legacyMatch = actorScope.match(/^(admin:(?:person|qualification|membership-application|subscription):create):[0-9a-f-]{36}$/i);
+    const scopes = legacyMatch ? [actorScope, `${legacyMatch[1]}:system`] : [actorScope];
+    const lookup = async (client: Prisma.TransactionClient | PrismaService) => {
+      for (const scope of scopes) {
+        const record = await client.idempotencyRecord.findUnique({
+          where: { actorScope_idempotencyKey: { actorScope: scope, idempotencyKey: key } },
+        });
+        if (record) return record;
+      }
+      return null;
+    };
+
+    const existing = await lookup(this.prisma);
 
     if (existing) {
       if (existing.requestHash !== hash) {
@@ -32,9 +44,7 @@ export class IdempotencyService {
     }
 
     const result = await this.prisma.$transaction(async (tx) => {
-      const locked = await tx.idempotencyRecord.findUnique({
-        where: { actorScope_idempotencyKey: { actorScope, idempotencyKey: key } },
-      });
+      const locked = await lookup(tx);
 
       if (locked?.responseBody !== null && locked?.responseBody !== undefined) {
         if (locked.requestHash !== hash) {
@@ -44,6 +54,9 @@ export class IdempotencyService {
           });
         }
         return { value: locked.responseBody as T, replayed: true };
+      }
+      if (locked && locked.actorScope !== actorScope) {
+        throw new ConflictException({ code: 'IDEMPOTENCY_CONFLICT', message: 'Legacy idempotency operation has no committed response; reconcile before retry.' });
       }
 
       if (!locked) {

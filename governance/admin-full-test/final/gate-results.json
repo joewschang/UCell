@@ -538,5 +538,95 @@
     "exitCode": 1,
     "expectedExit": 1,
     "result": "PASS"
+  },
+  {
+    "label": "full-admin-dev-build",
+    "cwd": "C:\\UCell\\UCell\\backend",
+    "command": "pnpm --filter @ucell/api build:admin-dev",
+    "start": "2026-09-15T10:16:26.510Z",
+    "exitCode": 0,
+    "expectedExit": 0,
+    "result": "PASS"
+  },
+  {
+    "label": "backend-build-after-idempotency",
+    "cwd": "C:\\UCell\\UCell\\backend",
+    "command": "pnpm -r build",
+    "start": "2026-09-15T10:16:29.987Z",
+    "exitCode": 1,
+    "expectedExit": 0,
+    "result": "FAIL"
+  },
+  {
+    "label": "tests-after-idempotency",
+    "cwd": "C:\\UCell\\UCell\\backend",
+    "command": "pnpm test",
+    "start": "2026-09-15T10:16:39.995Z",
+    "exitCode": 1,
+    "expectedExit": 0,
+    "result": "FAIL"
+  },
+  {
+    "label": "security-after-idempotency",
+    "cwd": "C:\\UCell\\UCell\\backend",
+    "command": "node scripts/security-policy-preflight.mjs",
+    "start": "2026-09-15T10:16:53.953Z",
+    "exitCode": 0,
+    "expectedExit": 0,
+    "result": "PASS"
+  },
+  {
+    "label": "todo-after-idempotency",
+    "cwd": "C:\\UCell\\UCell\\backend",
+    "command": "node scripts/test-todo-gate.mjs",
+    "start": "2026-09-15T10:16:54.039Z",
+    "exitCode": 1,
+    "expectedExit": 0,
+    "result": "FAIL"
+  },
+  {
+    "label": "hardened-admin-build",
+    "cwd": "C:\\UCell\\UCell\\admin",
+    "command": "pnpm build",
+    "start": "2026-09-15T10:16:54.147Z",
+    "exitCode": 0,
+    "expectedExit": 0,
+    "result": "PASS"
+  },
+  {
+    "label": "production-full-start-rejected",
+    "cwd": "C:\\UCell\\UCell\\backend\\apps\\api",
+    "command": "node dist-admin-dev/admin-dev.js",
+    "start": "2026-09-15T10:16:59.389Z",
+    "exitCode": 1,
+    "expectedExit": 1,
+    "result": "PASS"
+  },
+  {
+    "label": "original-dev-db-full-start-rejected",
+    "cwd": "C:\\UCell\\UCell\\backend\\apps\\api",
+    "command": "node dist-admin-dev/admin-dev.js",
+    "start": "2026-09-15T10:17:00.508Z",
+    "exitCode": 1,
+    "expectedExit": 1,
+    "result": "PASS"
+  },
+  {
+    "label": "remote-db-full-start-rejected",
+    "cwd": "C:\\UCell\\UCell\\backend\\apps\\api",
+    "command": "node dist-admin-dev/admin-dev.js",
+    "start": "2026-09-15T10:17:01.582Z",
+    "exitCode": 1,
+    "expectedExit": 1,
+    "result": "PASS"
+  },
+  {
+    "label": "bypass-disabled-full-start-rejected",
+    "cwd": "C:\\UCell\\UCell\\backend\\apps\\api",
+    "command": "node dist-admin-dev/admin-dev.js",
+    "start": "2026-09-15T10:17:02.611Z",
+    "exitCode": 1,
+    "expectedExit": 1,
+    "result": "PASS"
   }
 ]

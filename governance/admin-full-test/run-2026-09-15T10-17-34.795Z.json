@@ -1,0 +1,19 @@
+{
+  "startedAt": "2026-09-15T10:17:34.795Z",
+  "results": [
+    {
+      "method": "POST",
+      "route": "/admin/persons",
+      "status": 409,
+      "expected": 201,
+      "result": "FAIL",
+      "error": {
+        "code": "IDEMPOTENCY_CONFLICT",
+        "message": "相同 Idempotency-Key 已被不同內容使用。",
+        "request_id": "d5565aec-daa7-4891-ba96-b3c94f6101c2",
+        "timestamp": "2026-09-15T10:17:35.151Z"
+      }
+    }
+  ],
+  "scope": "Isolated ucell_admin_test; existing application calculates test facts; no official monetary result; not frozen five-ball golden or release/UAT signoff"
+}

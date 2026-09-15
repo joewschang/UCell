@@ -1,0 +1,38 @@
+command: pnpm -r build
+started: 2026-09-15T10:16:29.987Z
+exit: 1
+expected: 0
+packages/contracts build$ tsc -p tsconfig.json
+packages/shared build$ tsc -p tsconfig.json
+packages/database build$ tsc -p tsconfig.json
+packages/contracts build: Done
+packages/shared build: Done
+packages/database build: Done
+apps/api build$ nest build
+apps/worker build$ tsc -p tsconfig.json
+apps/worker build: Done
+apps/api build: [96msrc/modules/adjustment/settlement-adjustment.service.ts[0m:[93m64[0m:[93m38[0m - [91merror[0m[90m TS2339: [0mProperty 'replayBinary' does not exist on type 'SettlementReplayService'.
+apps/api build: 
+apps/api build: [7m64[0m       const binary=await this.replay.replayBinary(tx,{
+apps/api build: [7m  [0m [91m                                     ~~~~~~~~~~~~[0m
+apps/api build: [96msrc/modules/adjustment/settlement-adjustment.service.ts[0m:[93m90[0m:[93m40[0m - [91merror[0m[90m TS2339: [0mProperty 'replayMatching' does not exist on type 'SettlementReplayService'.
+apps/api build: 
+apps/api build: [7m90[0m       const matching=await this.replay.replayMatching(tx,{
+apps/api build: [7m  [0m [91m                                       ~~~~~~~~~~~~~~[0m
+apps/api build: [96msrc/modules/adjustment/settlement-adjustment.service.ts[0m:[93m64[0m:[93m38[0m - [91merror[0m[90m TS2339: [0mProperty 'replayBinary' does not exist on type 'SettlementReplayService'.
+apps/api build: 
+apps/api build: [7m64[0m       const binary=await this.replay.replayBinary(tx,{
+apps/api build: [7m  [0m [91m                                     ~~~~~~~~~~~~[0m
+apps/api build: [96msrc/modules/adjustment/settlement-adjustment.service.ts[0m:[93m90[0m:[93m40[0m - [91merror[0m[90m TS2339: [0mProperty 'replayMatching' does not exist on type 'SettlementReplayService'.
+apps/api build: 
+apps/api build: [7m90[0m       const matching=await this.replay.replayMatching(tx,{
+apps/api build: [7m  [0m [91m                                       ~~~~~~~~~~~~~~[0m
+apps/api build: 
+apps/api build: Found 4 error(s).
+apps/api build: 
+apps/api build: Failed
+[ELIFECYCLE] Command failed with exit code 1.
+Error: ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL
+
+  × "pnpm recursive run" failed in C:\UCell\UCell\backend\apps\api
+

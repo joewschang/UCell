@@ -17,6 +17,10 @@ function run(area,command,label,overrides={},expected=0){
   results.push({label,cwd,command,start,exitCode:r.status,expectedExit:expected,result:r.status===expected?'PASS':'FAIL'});
 }
 run('backend','pnpm --filter @ucell/api build:admin-dev','full-admin-dev-build');
+run('backend','pnpm -r build','backend-build-after-idempotency');
+run('backend','pnpm test','tests-after-idempotency');
+run('backend','node scripts/security-policy-preflight.mjs','security-after-idempotency');
+run('backend','node scripts/test-todo-gate.mjs','todo-after-idempotency');
 run('admin','pnpm build','hardened-admin-build',{VITE_ENABLE_DEMO_LOGIN:'true',VITE_ADMIN_DEV_FULL_ACCESS:'true'});
 for(const [label,config] of [
  ['production-full-start-rejected',{NODE_ENV:'production'}],

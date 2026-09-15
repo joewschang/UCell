@@ -1,5 +1,5 @@
 command: node dist-admin-dev/admin-dev.js
-started: 2026-09-15T10:15:06.879Z
+started: 2026-09-15T10:17:01.582Z
 exit: 1
 expected: 1
 Error: ADMIN_DEV_START_BLOCKED: local DEV database required

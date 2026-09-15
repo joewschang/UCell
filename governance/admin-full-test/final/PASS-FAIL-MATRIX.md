@@ -60,3 +60,13 @@
 | original-dev-db-full-start-rejected | PASS | 1 | 1 | node dist-admin-dev/admin-dev.js |
 | remote-db-full-start-rejected | PASS | 1 | 1 | node dist-admin-dev/admin-dev.js |
 | bypass-disabled-full-start-rejected | PASS | 1 | 1 | node dist-admin-dev/admin-dev.js |
+| full-admin-dev-build | PASS | 0 | 0 | pnpm --filter @ucell/api build:admin-dev |
+| backend-build-after-idempotency | FAIL | 1 | 0 | pnpm -r build |
+| tests-after-idempotency | FAIL | 1 | 0 | pnpm test |
+| security-after-idempotency | PASS | 0 | 0 | node scripts/security-policy-preflight.mjs |
+| todo-after-idempotency | FAIL | 1 | 0 | node scripts/test-todo-gate.mjs |
+| hardened-admin-build | PASS | 0 | 0 | pnpm build |
+| production-full-start-rejected | PASS | 1 | 1 | node dist-admin-dev/admin-dev.js |
+| original-dev-db-full-start-rejected | PASS | 1 | 1 | node dist-admin-dev/admin-dev.js |
+| remote-db-full-start-rejected | PASS | 1 | 1 | node dist-admin-dev/admin-dev.js |
+| bypass-disabled-full-start-rejected | PASS | 1 | 1 | node dist-admin-dev/admin-dev.js |
