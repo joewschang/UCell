@@ -1,0 +1,18 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ucell
+      POSTGRES_PASSWORD: ucell_dev_only
+      POSTGRES_DB: ucell
+    ports:
+      - '5432:5432'
+    volumes:
+      - ucell_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ucell -d ucell']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+volumes:
+  ucell_pgdata:
