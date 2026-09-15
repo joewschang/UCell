@@ -1,4 +1,4 @@
-Original baseline: 148. Current TODO: 95. Net placeholder reduction: 53.
+Original baseline: 148. Current TODO: 92. Net placeholder reduction: 56.
 
 The previous 52 TODO claim is invalid. Full behavioral coverage must be reviewed independently.
 
@@ -56,19 +56,16 @@ The previous 52 TODO claim is invalid. Full behavioral coverage must be reviewed
 | backend/apps/api/test/v061-replay.e2e-spec.ts | 48 | transfer preserves qualificationId and sponsor/binary positions | Test implementation; SSOT/evidence review before conversion |
 | backend/apps/api/test/v061-replay.e2e-spec.ts | 49 | exit closes holder interval and status becomes EXITED | Test implementation; SSOT/evidence review before conversion |
 | backend/apps/api/test/v061-replay.e2e-spec.ts | 50 | company retransfer opens a new holder interval | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/v062-carry-chain.e2e-spec.ts | 2 | historical week includes later GPV_REVERSAL linked to original event | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/v062-carry-chain.e2e-spec.ts | 3 | return discovers every Binary ancestor impacted by descendant GPV | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/v062-carry-chain.e2e-spec.ts | 4 | period replay recomputes all Binary payable amounts when K1 changes | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/v062-carry-chain.e2e-spec.ts | 5 | period replay recomputes all Matching payable amounts when K2 changes | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/v062-carry-chain.e2e-spec.ts | 6 | next week carry-in uses prior recomputed carry-out | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/v062-carry-chain.e2e-spec.ts | 7 | propagation stops when left/right carry match original snapshots | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/v062-carry-chain.e2e-spec.ts | 8 | propagation respects maxWeeks safety horizon | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/v062-carry-chain.e2e-spec.ts | 9 | each replay period is append-only and replay run is resumable | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/v062-carry-chain.e2e-spec.ts | 10 | positive deltas post compensating awards and negative deltas post recovery | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/v062-carry-chain.e2e-spec.ts | 11 | original BinaryCarry, SettlementBatch and BonusAward remain untouched | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/v062-carry-chain.e2e-spec.ts | 15 | migration 0005 references subscription.subscription, not commerce.subscription | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/v062-carry-chain.e2e-spec.ts | 16 | Prisma schema contains adjustment/workflow/replay models | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/v062-carry-chain.e2e-spec.ts | 17 | RPV reversal anchor uses BonusAwardType.RPV, not EPV | Test implementation; SSOT/evidence review before conversion |
+| backend/apps/api/test/v062-carry-chain.e2e-spec.ts | 21 | return discovers every Binary ancestor impacted by descendant GPV | Test implementation; SSOT/evidence review before conversion |
+| backend/apps/api/test/v062-carry-chain.e2e-spec.ts | 22 | period replay recomputes all Binary payable amounts when K1 changes | Test implementation; SSOT/evidence review before conversion |
+| backend/apps/api/test/v062-carry-chain.e2e-spec.ts | 23 | period replay recomputes all Matching payable amounts when K2 changes | Test implementation; SSOT/evidence review before conversion |
+| backend/apps/api/test/v062-carry-chain.e2e-spec.ts | 31 | propagation stops when left/right carry match original snapshots | Test implementation; SSOT/evidence review before conversion |
+| backend/apps/api/test/v062-carry-chain.e2e-spec.ts | 32 | propagation respects maxWeeks safety horizon | Test implementation; SSOT/evidence review before conversion |
+| backend/apps/api/test/v062-carry-chain.e2e-spec.ts | 33 | each replay period is append-only and replay run is resumable | Test implementation; SSOT/evidence review before conversion |
+| backend/apps/api/test/v062-carry-chain.e2e-spec.ts | 34 | positive deltas post compensating awards and negative deltas post recovery | Test implementation; SSOT/evidence review before conversion |
+| backend/apps/api/test/v062-carry-chain.e2e-spec.ts | 43 | migration 0005 references subscription.subscription, not commerce.subscription | Test implementation; SSOT/evidence review before conversion |
+| backend/apps/api/test/v062-carry-chain.e2e-spec.ts | 44 | Prisma schema contains adjustment/workflow/replay models | Test implementation; SSOT/evidence review before conversion |
+| backend/apps/api/test/v062-carry-chain.e2e-spec.ts | 45 | RPV reversal anchor uses BonusAwardType.RPV, not EPV | Test implementation; SSOT/evidence review before conversion |
 | backend/apps/api/test/v063-golden-path.e2e-spec.ts | 45 | Taiwan local time maps to configured settlement week | Test implementation; SSOT/evidence review before conversion |
 | backend/apps/api/test/v064-golden-dataset.e2e-spec.ts | 5 | keeps Person and Qualification distinct | Test implementation; SSOT/evidence review before conversion |
 | backend/apps/api/test/v064-golden-dataset.e2e-spec.ts | 6 | keeps Sponsor and Binary trees distinct | Test implementation; SSOT/evidence review before conversion |

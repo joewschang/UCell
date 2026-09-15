@@ -1,7 +1,7 @@
 {
   "originalBaseline": 148,
-  "currentExecutableTodo": 95,
-  "netPlaceholderReduction": 53,
+  "currentExecutableTodo": 92,
+  "netPlaceholderReduction": 56,
   "audit": "Previous 52 TODO claim invalidated: missing cases and unrelated/constant assertions restored. Net reduction alone is not Release approval.",
   "items": [
     {
@@ -318,79 +318,61 @@
     },
     {
       "file": "backend/apps/api/test/v062-carry-chain.e2e-spec.ts",
-      "line": 2,
-      "case": "historical week includes later GPV_REVERSAL linked to original event",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
-    },
-    {
-      "file": "backend/apps/api/test/v062-carry-chain.e2e-spec.ts",
-      "line": 3,
+      "line": 21,
       "case": "return discovers every Binary ancestor impacted by descendant GPV",
       "classification": "Test implementation; SSOT/evidence review before conversion"
     },
     {
       "file": "backend/apps/api/test/v062-carry-chain.e2e-spec.ts",
-      "line": 4,
+      "line": 22,
       "case": "period replay recomputes all Binary payable amounts when K1 changes",
       "classification": "Test implementation; SSOT/evidence review before conversion"
     },
     {
       "file": "backend/apps/api/test/v062-carry-chain.e2e-spec.ts",
-      "line": 5,
+      "line": 23,
       "case": "period replay recomputes all Matching payable amounts when K2 changes",
       "classification": "Test implementation; SSOT/evidence review before conversion"
     },
     {
       "file": "backend/apps/api/test/v062-carry-chain.e2e-spec.ts",
-      "line": 6,
-      "case": "next week carry-in uses prior recomputed carry-out",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
-    },
-    {
-      "file": "backend/apps/api/test/v062-carry-chain.e2e-spec.ts",
-      "line": 7,
+      "line": 31,
       "case": "propagation stops when left/right carry match original snapshots",
       "classification": "Test implementation; SSOT/evidence review before conversion"
     },
     {
       "file": "backend/apps/api/test/v062-carry-chain.e2e-spec.ts",
-      "line": 8,
+      "line": 32,
       "case": "propagation respects maxWeeks safety horizon",
       "classification": "Test implementation; SSOT/evidence review before conversion"
     },
     {
       "file": "backend/apps/api/test/v062-carry-chain.e2e-spec.ts",
-      "line": 9,
+      "line": 33,
       "case": "each replay period is append-only and replay run is resumable",
       "classification": "Test implementation; SSOT/evidence review before conversion"
     },
     {
       "file": "backend/apps/api/test/v062-carry-chain.e2e-spec.ts",
-      "line": 10,
+      "line": 34,
       "case": "positive deltas post compensating awards and negative deltas post recovery",
       "classification": "Test implementation; SSOT/evidence review before conversion"
     },
     {
       "file": "backend/apps/api/test/v062-carry-chain.e2e-spec.ts",
-      "line": 11,
-      "case": "original BinaryCarry, SettlementBatch and BonusAward remain untouched",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
-    },
-    {
-      "file": "backend/apps/api/test/v062-carry-chain.e2e-spec.ts",
-      "line": 15,
+      "line": 43,
       "case": "migration 0005 references subscription.subscription, not commerce.subscription",
       "classification": "Test implementation; SSOT/evidence review before conversion"
     },
     {
       "file": "backend/apps/api/test/v062-carry-chain.e2e-spec.ts",
-      "line": 16,
+      "line": 44,
       "case": "Prisma schema contains adjustment/workflow/replay models",
       "classification": "Test implementation; SSOT/evidence review before conversion"
     },
     {
       "file": "backend/apps/api/test/v062-carry-chain.e2e-spec.ts",
-      "line": 17,
+      "line": 45,
       "case": "RPV reversal anchor uses BonusAwardType.RPV, not EPV",
       "classification": "Test implementation; SSOT/evidence review before conversion"
     },
