@@ -1,5 +1,10 @@
 # UCell Member MVP v0.1
 
+Current implementation and integration status: see [DEV_STATUS.md](DEV_STATUS.md),
+[backend handoff](docs/BACKEND_INTEGRATION_HANDOFF.md), and
+[offline contract runner](docs/CONTRACT_RUNNER.md). Historical version sections
+below do not imply real LINE login or production readiness.
+
 LINE OA + LIFF member frontend. This app is a presentation/channel layer only: it MUST NOT calculate official monetary awards, write ledgers, or read PostgreSQL directly.
 
 ## Core invariants

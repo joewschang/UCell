@@ -1,6 +1,12 @@
 # UCell Member MVP Development Status
 
 Latest checkpoint: v0.6 (prior checkpoint history retained below)
+Current integration handoff: [BACKEND_INTEGRATION_HANDOFF.md](docs/BACKEND_INTEGRATION_HANDOFF.md).
+Latest verified implementation: `3cb85a6d` — 87 tests, build and browser CI PASS
+(run `35005058000`, synthetic data only). Backend reviewed at `df13581c`:
+LINE identity lookup/session/holder services exist, but Member exchange and explicit
+Member route guards remain required. The historical verification sections below
+are checkpoint records, not the latest release status. Production stays blocked.
 Branch: `feature/member-liff-mvp`
 Baseline: `461de2b`; pre-edit checkpoint: `cb44543`.
 
