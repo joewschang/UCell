@@ -1,0 +1,5 @@
+cwd: C:\UCell\UCell\backend
+command: node scripts/golden-domain-test.mjs
+started: 2026-09-15T09:21:34.934Z
+exit: 0
+GOLDEN_DOMAIN_PASS

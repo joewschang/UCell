@@ -6,7 +6,7 @@ function walk(dir){
   const out=[];
   for(const e of fs.readdirSync(dir,{withFileTypes:true})){
     const p=path.join(dir,e.name);
-    if(e.isDirectory()) out.push(...walk(p));
+    if(e.isDirectory() && !['node_modules','dist','.git'].includes(e.name)) out.push(...walk(p));
     else if(e.isFile() && p.endsWith('.ts')) out.push(p);
   }
   return out;

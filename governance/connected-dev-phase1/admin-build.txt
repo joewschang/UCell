@@ -1,0 +1,19 @@
+cwd: C:\UCell\UCell\admin
+command: pnpm build
+started: 2026-09-15T09:21:49.204Z
+exit: 0
+vite v5.4.21 building for production...
+transforming...
+✓ 251 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                   0.36 kB │ gzip:   0.27 kB
+dist/assets/index-COhj61A6.css    8.61 kB │ gzip:   2.59 kB
+dist/assets/index-CMAXVo4k.js   956.82 kB │ gzip: 240.88 kB
+✓ built in 2.41s
+$ tsc -b && vite build
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.

@@ -1,0 +1,6 @@
+cwd: C:\UCell\UCell\admin
+command: pnpm preflight
+started: 2026-09-15T09:21:36.229Z
+exit: 0
+ADMIN_PREFLIGHT_PASS
+$ node scripts/preflight.mjs

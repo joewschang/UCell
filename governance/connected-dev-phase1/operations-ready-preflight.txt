@@ -1,0 +1,5 @@
+cwd: C:\UCell\UCell\backend
+command: node scripts/operations-ready-preflight.mjs
+started: 2026-09-15T09:21:35.824Z
+exit: 0
+OPERATIONS_READY_PREFLIGHT_PASS

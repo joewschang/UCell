@@ -1,0 +1,20 @@
+cwd: C:\UCell\UCell\backend
+command: node scripts/security-http-e2e.mjs
+started: 2026-09-15T09:22:18.235Z
+exit: 1
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+[TypeError: fetch failed] {
+  [cause]: Error: connect ECONNREFUSED 127.0.0.1:3000
+      at TCPConnectWrap.afterConnect [as oncomplete] (node:net:2021:16) {
+    errno: -4078,
+    code: 'ECONNREFUSED',
+    syscall: 'connect',
+    address: '127.0.0.1',
+    port: 3000
+  }
+}
+
+Node.js v24.21.0

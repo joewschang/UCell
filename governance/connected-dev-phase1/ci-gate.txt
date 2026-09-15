@@ -1,0 +1,6 @@
+cwd: C:\UCell\UCell\backend
+command: "C:\Program Files\Git\bin\bash.exe" scripts/ci-gate.sh
+started: 2026-09-15T09:22:21.784Z
+exit: 1
+'\"C:\Program Files\Git\bin\bash.exe\"' is not recognized as an internal or external command,
+operable program or batch file.

@@ -1,0 +1,18 @@
+cwd: C:\UCell\UCell\backend
+command: node scripts/test-todo-gate.mjs
+started: 2026-09-15T09:22:12.091Z
+exit: 1
+TEST_TODO_GATE_FAIL: 148 unresolved executable test placeholders
+- apps\api\test\bonus-engine-v04.e2e-spec.ts: 26
+- apps\api\test\epv-global-v05.e2e-spec.ts: 12
+- apps\api\test\idempotency.e2e-spec.ts: 4
+- apps\api\test\negative-flow-v05.e2e-spec.ts: 12
+- apps\api\test\organization.e2e-spec.ts: 5
+- apps\api\test\qualification-isolation.e2e-spec.ts: 4
+- apps\api\test\v060-adjustment-lifecycle.e2e-spec.ts: 10
+- apps\api\test\v061-replay.e2e-spec.ts: 18
+- apps\api\test\v062-carry-chain.e2e-spec.ts: 13
+- apps\api\test\v063-golden-path.e2e-spec.ts: 8
+- apps\api\test\v064-golden-dataset.e2e-spec.ts: 11
+- apps\api\test\vertical-slice-02.e2e-spec.ts: 16
+- apps\api\test\vertical-slice.e2e-spec.ts: 9

@@ -1,0 +1,31 @@
+cwd: C:\UCell\UCell\backend
+command: pnpm openapi
+started: 2026-09-15T09:22:13.736Z
+exit: 1
+$ pnpm --filter @ucell/api openapi:export
+$ ts-node src/openapi-export.ts
+C:\UCell\UCell\backend\node_modules\.pnpm\ts-node@10.9.2_@types+node@24.13.4_typescript@5.9.3\node_modules\ts-node\src\index.ts:859
+    return new TSError(diagnosticText, diagnosticCodes, diagnostics);
+           ^
+TSError: ⨯ Unable to compile TypeScript:
+src/modules/adjustment/settlement-adjustment.service.ts(64,38): error TS2339: Property 'replayBinary' does not exist on type 'SettlementReplayService'.
+src/modules/adjustment/settlement-adjustment.service.ts(90,40): error TS2339: Property 'replayMatching' does not exist on type 'SettlementReplayService'.
+
+    at createTSError (C:\UCell\UCell\backend\node_modules\.pnpm\ts-node@10.9.2_@types+node@24.13.4_typescript@5.9.3\node_modules\ts-node\src\index.ts:859:12)
+    at reportTSError (C:\UCell\UCell\backend\node_modules\.pnpm\ts-node@10.9.2_@types+node@24.13.4_typescript@5.9.3\node_modules\ts-node\src\index.ts:863:19)
+    at getOutput (C:\UCell\UCell\backend\node_modules\.pnpm\ts-node@10.9.2_@types+node@24.13.4_typescript@5.9.3\node_modules\ts-node\src\index.ts:1077:36)
+    at Object.compile (C:\UCell\UCell\backend\node_modules\.pnpm\ts-node@10.9.2_@types+node@24.13.4_typescript@5.9.3\node_modules\ts-node\src\index.ts:1433:41)
+    at Module.m._compile (C:\UCell\UCell\backend\node_modules\.pnpm\ts-node@10.9.2_@types+node@24.13.4_typescript@5.9.3\node_modules\ts-node\src\index.ts:1617:30)
+    at node:internal/modules/cjs/loader:2060:10
+    at Object.require.extensions.<computed> [as .ts] (C:\UCell\UCell\backend\node_modules\.pnpm\ts-node@10.9.2_@types+node@24.13.4_typescript@5.9.3\node_modules\ts-node\src\index.ts:1621:12)
+    at Module.load (node:internal/modules/cjs/loader:1651:32)
+    at Module._load (node:internal/modules/cjs/loader:1443:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:261:19) {
+  diagnosticCodes: [ 2339, 2339 ]
+}
+[ELIFECYCLE] Command failed with exit code 1.
+Error: ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL
+
+  × "pnpm recursive run" failed in C:\UCell\UCell\backend\apps\api
+
+[ELIFECYCLE] Command failed with exit code 1.

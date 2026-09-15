@@ -1,0 +1,18 @@
+cwd: C:\UCell\UCell\backend
+command: node scripts/import-module-preflight.mjs
+started: 2026-09-15T09:21:35.439Z
+exit: 1
+IMPORT_MODULE_PREFLIGHT_FAIL
+- apps\api\dist\src\modules\active\active.controller.d.ts: missing import ./active.service
+- apps\api\dist\src\modules\active\active.controller.d.ts: missing import ./dto/open-active-period.dto
+- apps\api\dist\src\modules\active\active.service.d.ts: missing import ../../common/audit/audit.service
+- apps\api\dist\src\modules\admin-dashboard\admin-dashboard.controller.d.ts: missing import ./admin-dashboard.service
+- apps\api\dist\src\modules\auth\admin-authentication.guard.d.ts: missing import ./identity-token.service
+- apps\api\dist\src\modules\auth\authentication.guard.d.ts: missing import ./identity-token.service
+- apps\api\dist\src\modules\epv\epv.controller.d.ts: missing import ./epv.service
+- apps\api\dist\src\modules\epv\epv.service.d.ts: missing import ../rules/runtime-rule.service
+- apps\api\dist\src\modules\epv\epv.service.d.ts: missing import ../bonus/bonus-query.service
+- apps\api\dist\src\modules\global-pool\global-pool.service.d.ts: missing import ../rules/runtime-rule.service
+- apps\api\dist\src\modules\global-pool\global-pool.service.d.ts: missing import ../bonus/bonus-query.service
+- apps\api\dist\src\modules\return\reversal.service.d.ts: missing import ../settlement/settlement-calendar.service
+- apps\api\dist\src\modules\rpv\rpv.service.d.ts: missing import ../active/active.service
