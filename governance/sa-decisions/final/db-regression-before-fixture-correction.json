@@ -1,5 +1,5 @@
 {
-  "result": "PASS",
+  "result": "FAIL",
   "fixturesRolledBack": true,
   "results": [
     {
@@ -86,16 +86,7 @@
       "label": "configuration snapshot is persisted representation",
       "result": "PASS",
       "actual": "UCELL_PARAMETER_SNAPSHOT_V1"
-    },
-    {
-      "label": "event-time subtree excludes pre-placement sale and includes later linked reversal",
-      "result": "PASS",
-      "actual": "1600"
-    },
-    {
-      "label": "other side excludes sales outside its tree",
-      "result": "PASS",
-      "actual": "0"
     }
-  ]
+  ],
+  "error": "PrismaClientKnownRequestError: \nInvalid `prisma.binaryPlacement.create()` invocation:\n\n\nUnique constraint failed on the fields: (`child_qualification_id`)\n    at ei.handleRequestError (C:\\UCell\\UCell\\backend\\node_modules\\.pnpm\\@prisma+client@6.19.3_prism_1d040ab5215f59f0e27ddee7f0cf082e\\node_modules\\@prisma\\client\\runtime\\library.js:121:7268)\n    at ei.handleAndLogRequestError (C:\\UCell\\UCell\\backend\\node_modules\\.pnpm\\@prisma+client@6.19.3_prism_1d040ab5215f59f0e27ddee7f0cf082e\\node_modules\\@prisma\\client\\runtime\\library.js:121:6593)\n    at ei.request (C:\\UCell\\UCell\\backend\\node_modules\\.pnpm\\@prisma+client@6.19.3_prism_1d040ab5215f59f0e27ddee7f0cf082e\\node_modules\\@prisma\\client\\runtime\\library.js:121:6300)\n    at async a (C:\\UCell\\UCell\\backend\\node_modules\\.pnpm\\@prisma+client@6.19.3_prism_1d040ab5215f59f0e27ddee7f0cf082e\\node_modules\\@prisma\\client\\runtime\\library.js:130:9551)\n    at async prisma.$transaction.timeout (file:///C:/UCell/UCell/backend/scripts/sa-decision-db-test.mjs:62:3)\n    at async Proxy._transactionWithCallback (C:\\UCell\\UCell\\backend\\node_modules\\.pnpm\\@prisma+client@6.19.3_prism_1d040ab5215f59f0e27ddee7f0cf082e\\node_modules\\@prisma\\client\\runtime\\library.js:130:8120)\n    at async file:///C:/UCell/UCell/backend/scripts/sa-decision-db-test.mjs:23:2"
 }

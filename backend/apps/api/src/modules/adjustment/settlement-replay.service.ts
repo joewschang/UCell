@@ -48,43 +48,36 @@ export class SettlementReplayService {
     start:Date,end:Date
   ){
     const rows=await tx.$queryRaw<Array<{amount:string}>>`
-      WITH RECURSIVE first_child AS (
-        SELECT child_qualification_id AS qualification_id
-        FROM organization.binary_placement
-        WHERE parent_qualification_id=${rootQualificationId}::uuid
-          AND side=${side}::organization."SideCode"
-          AND effective_from < ${end}
-          AND (effective_to IS NULL OR effective_to > ${start})
+      WITH RECURSIVE originals AS (
+        SELECT event_id,qualification_id,amount,occurred_at
+        FROM ledger.pv_ledger
+        WHERE pv_type='GPV'::ledger."PvType" AND event_type='GPV_CREATED'
+          AND occurred_at>=${start} AND occurred_at<${end}
       ),
       subtree AS (
-        SELECT qualification_id FROM first_child
+        SELECT o.event_id,o.occurred_at,bp.child_qualification_id AS qualification_id
+        FROM originals o JOIN organization.binary_placement bp
+          ON bp.parent_qualification_id=${rootQualificationId}::uuid
+          AND bp.side=${side}::organization."SideCode"
+          AND bp.effective_from<=o.occurred_at
+          AND (bp.effective_to IS NULL OR bp.effective_to>o.occurred_at)
         UNION ALL
-        SELECT bp.child_qualification_id
-        FROM organization.binary_placement bp
-        JOIN subtree s ON bp.parent_qualification_id=s.qualification_id
-        WHERE bp.effective_from < ${end}
-          AND (bp.effective_to IS NULL OR bp.effective_to > ${start})
+        SELECT s.event_id,s.occurred_at,bp.child_qualification_id
+        FROM subtree s JOIN organization.binary_placement bp ON bp.parent_qualification_id=s.qualification_id
+          AND bp.effective_from<=s.occurred_at
+          AND (bp.effective_to IS NULL OR bp.effective_to>s.occurred_at)
       ),
-      originals AS (
-        SELECT p.event_id,p.amount
-        FROM ledger.pv_ledger p
-        JOIN subtree s ON s.qualification_id=p.qualification_id
-        WHERE p.pv_type='GPV'::ledger."PvType"
-          AND p.event_type='GPV_CREATED'
-          AND p.occurred_at >= ${start}
-          AND p.occurred_at < ${end}
+      members AS (
+        SELECT DISTINCT o.event_id FROM originals o JOIN subtree s
+          ON s.event_id=o.event_id AND s.qualification_id=o.qualification_id
       ),
       reversals AS (
-        SELECT r.reversal_of_event_id AS event_id, SUM(r.amount) AS amount
-        FROM ledger.pv_ledger r
-        WHERE r.pv_type='GPV'::ledger."PvType"
-          AND r.event_type='GPV_REVERSAL'
-          AND r.reversal_of_event_id IN (SELECT event_id FROM originals)
-        GROUP BY r.reversal_of_event_id
+        SELECT reversal_of_event_id AS event_id,SUM(amount) AS amount
+        FROM ledger.pv_ledger WHERE pv_type='GPV'::ledger."PvType" AND event_type='GPV_REVERSAL'
+        GROUP BY reversal_of_event_id
       )
-      SELECT COALESCE(SUM(o.amount + COALESCE(r.amount,0)),0)::text AS amount
-      FROM originals o
-      LEFT JOIN reversals r ON r.event_id=o.event_id
+      SELECT COALESCE(SUM(o.amount+COALESCE(r.amount,0)),0)::text AS amount
+      FROM originals o JOIN members m USING(event_id) LEFT JOIN reversals r USING(event_id)
     `;
     return new Prisma.Decimal(rows[0]?.amount ?? '0');
   }
@@ -117,6 +110,7 @@ export class SettlementReplayService {
     }>();
 
     const historicalParameters=verifySnapshot(binaryBatch.parameterSnapshot);
+    if(historicalParameters.ruleVersionCode!==input.ruleVersionCode) pending('RULE_VERSION_MISMATCH','Historical snapshot belongs to another rule version');
     const pairRate=snapshotDecimal(historicalParameters,'binary.pair.rate');
     const economicTotal=await tx.$queryRaw<Array<{amount:string}>>`
       WITH originals AS (SELECT event_id,amount FROM ledger.pv_ledger WHERE pv_type='GPV'::ledger."PvType" AND event_type='GPV_CREATED' AND occurred_at>=${input.periodStart} AND occurred_at<${input.periodEnd}),
@@ -136,6 +130,7 @@ export class SettlementReplayService {
       const rightPeriod=await this.subtreeEconomicGpv(tx,qid,'RIGHT',input.periodStart,input.periodEnd);
       const leftAvailable=carryIn.left.add(leftPeriod);
       const rightAvailable=carryIn.right.add(rightPeriod);
+      if(leftAvailable.lt(0)||rightAvailable.lt(0)) pending('NEGATIVE_ECONOMIC_GPV','Linked reversals exceed effective subtree volume');
       const paired=Prisma.Decimal.min(
         Prisma.Decimal.min(leftAvailable,rightAvailable),
         carry.weeklyCapSnapshot

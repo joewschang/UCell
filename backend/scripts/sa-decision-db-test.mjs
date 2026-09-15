@@ -13,6 +13,7 @@ const {BonusQueryService}=require('../backend/apps/api/dist/modules/bonus/bonus-
 const {RuntimeRuleService}=require('../backend/apps/api/dist/modules/rules/runtime-rule.service.js');
 const {captureParameters}=require('../backend/apps/api/dist/modules/rules/parameter-snapshot.js');
 const {SettlementCalendarService}=require('../backend/apps/api/dist/modules/settlement/settlement-calendar.service.js');
+const {SettlementReplayService}=require('../backend/apps/api/dist/modules/adjustment/settlement-replay.service.js');
 const {ReversalService}=require('../backend/apps/api/dist/modules/return/reversal.service.js');
 const prisma=new PrismaClient();
 const results=[];const version='SA_TEST_'+randomUUID();const rollback=new Error('ROLLBACK_TEST_FIXTURES');
@@ -56,6 +57,14 @@ try{
   const period=await calendar.periodFor(tx,new Date('2020-01-05'),configured,'BINARY_K1');
   check('configured biweekly period uses explicit Wednesday anchor',[period.start.toISOString(),period.end.toISOString()],['2019-12-31T16:00:00.000Z','2020-01-14T16:00:00.000Z']);
   const historical=await calendar.captureForPeriod(tx,period.start,period.end,'BINARY_K1',version);check('configuration snapshot is persisted representation',historical.format,'UCELL_PARAMETER_SNAPSHOT_V1');
+  // A placement beginning mid-month must not include pre-placement sales.
+  await tx.binaryPlacement.create({data:{parentQualificationId:q.qualificationId,childQualificationId:q2.qualificationId,side:'LEFT',effectiveFrom:new Date('2020-01-05')}});
+  await tx.pvLedger.create({data:{qualificationId:q2.qualificationId,pvType:'GPV',amount:1000,sourceType:'ORDER',sourceId:randomUUID(),eventType:'GPV_CREATED',ruleVersionCode:version,occurredAt:new Date('2020-01-03'),correlationId:randomUUID()}});
+  const original=await tx.pvLedger.create({data:{qualificationId:q2.qualificationId,pvType:'GPV',amount:2000,sourceType:'ORDER',sourceId:randomUUID(),eventType:'GPV_CREATED',ruleVersionCode:version,occurredAt:new Date('2020-01-06'),correlationId:randomUUID()}});
+  await tx.pvLedger.create({data:{qualificationId:q2.qualificationId,pvType:'GPV',amount:-400,sourceType:'RETURN',sourceId:randomUUID(),eventType:'GPV_REVERSAL',ruleVersionCode:version,occurredAt:new Date('2020-02-10'),reversalOfEventId:original.eventId,correlationId:randomUUID()}});
+  const replay=new SettlementReplayService(facade);
+  check('event-time subtree excludes pre-placement sale and includes later linked reversal',(await replay.subtreeEconomicGpv(tx,q.qualificationId,'LEFT',new Date('2020-01-01'),new Date('2020-02-01'))).toString(),'1600');
+  check('other side excludes sales outside its tree',(await replay.subtreeEconomicGpv(tx,q.qualificationId,'RIGHT',new Date('2020-01-01'),new Date('2020-02-01'))).toString(),'0');
   throw rollback;
  },{timeout:60000,isolationLevel:Prisma.TransactionIsolationLevel.Serializable});
 }catch(error){if(error!==rollback) failure=error;}
