@@ -1,7 +1,7 @@
 {
   "originalBaseline": 148,
-  "currentExecutableTodo": 74,
-  "netPlaceholderReduction": 74,
+  "currentExecutableTodo": 73,
+  "netPlaceholderReduction": 75,
   "audit": "Previous 52 TODO claim invalidated: missing cases and unrelated/constant assertions restored. Net reduction alone is not Release approval.",
   "items": [
     {
@@ -315,12 +315,6 @@
       "line": 43,
       "case": "migration 0005 references subscription.subscription, not commerce.subscription",
       "classification": "Legacy Test Drift: cancellation table moved to canonical subscription schema in 0006; retained pending coverage"
-    },
-    {
-      "file": "backend/apps/api/test/v062-carry-chain.e2e-spec.ts",
-      "line": 50,
-      "case": "RPV reversal anchor uses BonusAwardType.RPV, not EPV",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
     },
     {
       "file": "backend/apps/api/test/v063-golden-path.e2e-spec.ts",

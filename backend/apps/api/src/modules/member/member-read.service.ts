@@ -52,9 +52,18 @@ export class MemberReadService {
     return repurchase();
    }
    if(kind==='bonuses'||kind==='ledger'){
-    const awards=await tx.bonusAward.findMany({where:{recipientQualificationId:id,occurredAt:at},include:{settlementBatch:true,lifecycleEvents:{orderBy:[{occurredAt:'desc'},{createdAt:'desc'},{lifecycleEventId:'desc'}],take:1}},orderBy:[{occurredAt:'asc'},{bonusAwardId:'asc'}],take:100});
-    const disclosed=(row:typeof awards[number])=>!!row.lifecycleEvents.length&&row.lifecycleEvents[0].status!=='CALCULATED'&&(!row.settlementBatchId||row.settlementBatch?.status==='FINALIZED');
-    if(kind==='bonuses')return {qualificationId:id,period:month,awards:awards.length?awards.map(row=>({id:row.bonusAwardId,name:row.awardType,status:!disclosed(row)?'PENDING':row.lifecycleEvents[0]?.status==='PENDING_45D'?'PENDING45D':row.lifecycleEvents[0].status,amount:disclosed(row)?row.payableAmount.toNumber():null,ruleVersion:row.ruleVersionCode,parameterSnapshotHash:row.parameterSnapshotHash})):[{id:'settlement-pending',name:'獎金結算',status:'PENDING',amount:null}],pagination:{limit:100,truncated:awards.length===100}};
+    const awards=await tx.bonusAward.findMany({where:{recipientQualificationId:id,occurredAt:at},include:{settlementBatch:true,lifecycleEvents:{orderBy:[{occurredAt:'desc'},{createdAt:'desc'},{lifecycleEventId:'desc'}]}},orderBy:[{occurredAt:'asc'},{bonusAwardId:'asc'}],take:100});
+    const state=(row:typeof awards[number])=>{
+     const first=row.lifecycleEvents[0];if(!first)return null;
+     const statuses=new Set(row.lifecycleEvents.filter(event=>event.occurredAt.getTime()===first.occurredAt.getTime()&&event.createdAt.getTime()===first.createdAt.getTime()).map(event=>event.status));
+     if(statuses.size===1)return first.status;
+     // Core emits this confirmed initial transition in one createMany batch.
+     // Random UUID order cannot reverse CALCULATED -> PENDING_45D.
+     if([...statuses].every(status=>['CALCULATED','PENDING_45D'].includes(status)))return 'PENDING_45D' as const;
+     return pending('LIFECYCLE_EVIDENCE_AMBIGUOUS','Conflicting lifecycle timestamps require explicit chronology evidence');
+    };
+    const disclosed=(row:typeof awards[number])=>!!state(row)&&state(row)!=='CALCULATED'&&(!row.settlementBatchId||row.settlementBatch?.status==='FINALIZED');
+    if(kind==='bonuses')return {qualificationId:id,period:month,awards:awards.length?awards.map(row=>({id:row.bonusAwardId,name:row.awardType,status:!disclosed(row)?'PENDING':state(row)==='PENDING_45D'?'PENDING45D':state(row),amount:disclosed(row)?row.payableAmount.toNumber():null,ruleVersion:row.ruleVersionCode,parameterSnapshotHash:row.parameterSnapshotHash})):[{id:'settlement-pending',name:'獎金結算',status:'PENDING',amount:null}],pagination:{limit:100,truncated:awards.length===100}};
     const recoveries=await tx.bonusRecoveryEvent.findMany({where:{bonusAward:{recipientQualificationId:id},occurredAt:at},orderBy:[{occurredAt:'asc'},{bonusRecoveryEventId:'asc'}],take:100});
     return {qualificationId:id,period:month,entries:[...awards.filter(disclosed).map(row=>({id:row.bonusAwardId,label:row.awardType,amount:row.payableAmount.toNumber(),postedAt:row.createdAt.toISOString(),sourceId:row.sourceEventId??row.bonusAwardId})),...recoveries.map(row=>({id:row.bonusRecoveryEventId,label:'CLAWBACK',amount:row.recoveryAmount.negated().toNumber(),postedAt:row.occurredAt.toISOString(),sourceId:row.bonusAwardId}))],pagination:{limit:100,truncated:awards.length===100||recoveries.length===100}};
    }

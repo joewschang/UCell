@@ -1,19 +1,12 @@
 command: pnpm --filter @ucell/database exec prisma migrate deploy
-started: 2026-09-15T19:00:52.958Z
+started: 2026-09-15T19:40:43.441Z
 exit: 0
 Prisma schema loaded from prisma\schema.prisma
 Datasource "db": PostgreSQL database "ucell_admin_test", schemas "audit, commerce, identity, integration, ledger, membership, organization, rules, subscription" at "localhost:5432"
 
-21 migrations found in prisma/migrations
+22 migrations found in prisma/migrations
 
-Applying migration `20260916030000_member_notification`
 
-The following migration(s) have been applied:
-
-migrations/
-  └─ 20260916030000_member_notification/
-    └─ migration.sql
-
-All migrations have been successfully applied.
+No pending migrations to apply.
 warn The configuration property `package.json#prisma` is deprecated and will be removed in Prisma 7. Please migrate to a Prisma config file (e.g., `prisma.config.ts`).
 For more information, see: https://pris.ly/prisma-config

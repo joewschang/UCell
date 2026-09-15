@@ -1,10 +1,10 @@
 command: pnpm --filter @ucell/database exec prisma migrate deploy
-started: 2026-09-15T18:51:27.506Z
+started: 2026-09-15T19:32:47.075Z
 exit: 0
 Prisma schema loaded from prisma\schema.prisma
 Datasource "db": PostgreSQL database "ucell_admin_test", schemas "audit, commerce, identity, integration, ledger, membership, organization, rules, subscription" at "localhost:5432"
 
-20 migrations found in prisma/migrations
+22 migrations found in prisma/migrations
 
 
 No pending migrations to apply.

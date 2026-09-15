@@ -1,33 +1,38 @@
 command: pnpm test
-started: 2026-09-15T19:02:42.294Z
+started: 2026-09-15T19:38:45.804Z
 exit: 0
 
  RUN  v2.1.9 C:/UCell/UCell/member
 
- ✓ tests/envelope.test.ts (4 tests) 6ms
  ✓ tests/validation.test.ts (17 tests) 11ms
- ✓ tests/auth.test.ts (5 tests) 16ms
- ✓ tests/timeout.test.ts (5 tests) 19ms
+ ✓ tests/envelope.test.ts (4 tests) 6ms
+ ✓ tests/timeout.test.ts (5 tests) 23ms
+ ✓ tests/auth.test.ts (6 tests) 21ms
  ✓ tests/contract.test.ts (5 tests) 9ms
- ✓ tests/profile.test.tsx (2 tests) 29ms
- ✓ tests/qualification-lifecycle.test.tsx (3 tests) 31ms
- ✓ tests/error-boundary.test.tsx (3 tests) 29ms
- ✓ tests/session.test.tsx (11 tests) 44ms
- ✓ tests/commerce.test.tsx (12 tests) 77ms
- ✓ tests/notifications.test.tsx (9 tests) 56ms
+ ✓ tests/qualification-lifecycle.test.tsx (3 tests) 27ms
+ ✓ tests/profile.test.tsx (3 tests) 37ms
+ ✓ tests/error-boundary.test.tsx (3 tests) 36ms
+ ✓ tests/session.test.tsx (11 tests) 50ms
+ ✓ tests/commerce.test.tsx (12 tests) 82ms
+ ✓ tests/notifications.test.tsx (10 tests) 59ms
+ ✓ tests/connected-shop.test.tsx (5 tests) 79ms
  ✓ tests/member.test.tsx (15 tests) 84ms
 
- Test Files  12 passed (12)
-      Tests  91 passed (91)
-   Start at  03:02:42
-   Duration  1.02s (transform 1.24s, setup 0ms, collect 2.80s, tests 409ms, environment 3ms, prepare 2.32s)
+ Test Files  13 passed (13)
+      Tests  99 passed (99)
+   Start at  03:38:46
+   Duration  1.12s (transform 1.08s, setup 0ms, collect 3.34s, tests 526ms, environment 3ms, prepare 2.79s)
 
 $ vitest run
-stderr | tests/commerce.test.tsx > completes the shop review flow and clears shipping after success
+stderr | tests/notifications.test.tsx > marks one notification once without changing another
 ⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
 ⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.
 
-stderr | tests/notifications.test.tsx > marks one notification once without changing another
+stderr | tests/connected-shop.test.tsx > uses Core order amount and requests authorized detail; submits no price or PV
+⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
+⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.
+
+stderr | tests/commerce.test.tsx > completes the shop review flow and clears shipping after success
 ⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
 ⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.
 

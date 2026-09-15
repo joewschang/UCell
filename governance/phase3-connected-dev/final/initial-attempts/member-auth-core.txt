@@ -1,0 +1,23 @@
+command: node scripts/member-authentication.test.mjs
+started: 2026-09-15T19:34:03.119Z
+exit: 0
+✔ uses the server token and current binding, exposes only the verified principal (1.4401ms)
+✔ rejects missing, duplicate, oversized and malformed credentials before services run (0.6637ms)
+✔ invalid, expired or revoked service results fail closed without identity lookup (0.1928ms)
+✔ rejects Admin providers, roles and incomplete sessions (0.3757ms)
+✔ rejects missing or changed LINE bindings and unrelated provider results (0.7886ms)
+✔ binding service failure is sanitized and never falls back to the session Person (0.172ms)
+✔ clears the old principal synchronously and only assigns after binding resolves (0.1729ms)
+✔ rechecks the binding on subsequent requests instead of caching a previous success (0.1789ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 8
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 8.5855
+(node:27852) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///C:/UCell/UCell/backend/apps/api/src/modules/auth/member-authentication.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to \\?\C:\UCell\UCell\backend\apps\api\package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)

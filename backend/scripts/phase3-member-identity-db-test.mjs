@@ -112,6 +112,17 @@ try{
  }
  equal(balls.map(ball=>ball.organization.data.referrals.length),[2,0],'Sponsor trees independent by ball');
  equal(balls.map(ball=>ball.binary.data.left.count),[1,2],'Binary trees independent and distinct from Sponsor');
+ equal(balls.map(ball=>ball.bonuses.data.awards.map(award=>[award.name,award.status,award.amount])),[[['EPV','PENDING45D',840]],[['EPV','PENDING45D',240]]],'nonempty Bonus entitlement isolated by ball');
+ equal(balls.map(ball=>ball.ledger.data.entries.map(entry=>entry.amount)),[[840],[240]],'nonempty Ledger facts isolated by ball');
+ // Synthetic display record, not a grant-policy test. Insert only new facts:
+ // reverse UUID order must not reverse the confirmed initial transition.
+ const tieAt=new Date('2026-12-01T00:00:00Z');
+ const tieAward=await db.bonusAward.create({data:{recipientQualificationId:ids[0],awardType:'EPV',sourceEventId:randomUUID(),theoryAmount:17,payableAmount:17,activeSnapshot:true,ruleVersionCode:'R1.0B',parameterSnapshotHash:(await captureParameters(db,new Date(),'R1.0B')).hash,occurredAt:tieAt,pendingUntil:new Date('2026-12-31'),calculationDetail:{kind:'TEST_ONLY_DISPLAY_RECORD_NOT_GRANT_POLICY'}}});
+ await db.bonusAwardLifecycleEvent.createMany({data:[
+  {lifecycleEventId:'ffffffff-ffff-4fff-bfff-fffffffffff1',bonusAwardId:tieAward.bonusAwardId,status:'CALCULATED',occurredAt:tieAt,createdAt:tieAt},
+  {lifecycleEventId:'00000000-0000-4000-8000-000000000001',bonusAwardId:tieAward.bonusAwardId,status:'PENDING_45D',occurredAt:tieAt,createdAt:tieAt}
+ ]});
+ equal((await call('GET','member/bonuses?qualificationId='+ids[0]+'&period=2026-12',token)).json().data.awards.map(a=>[a.status,a.amount]),[['PENDING45D',17]],'equal timestamp initial lifecycle ignores reverse UUID order');
  equal(balls.map(ball=>ball.dashboard.data.monthlyRepurchaseStatus),['ACTIVE','ACTIVE'],'dashboard uses original month recognized Core schedules');
  const again=await call('GET','member/performance?qualificationId='+ids[0]+'&period=2026-09',token);
  equal([again.json().data.pv,again.json().data.rpv,again.json().data.epv],[11,2400,1680],'switch back restores deterministic Ball 1 volumes');

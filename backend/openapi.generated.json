@@ -16,6 +16,48 @@
           }
         },
         "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/LineSessionView"
+                    },
+                    "meta": {
+                      "type": "object",
+                      "required": [
+                        "request_id",
+                        "timestamp",
+                        "api_version"
+                      ],
+                      "properties": {
+                        "request_id": {
+                          "type": "string"
+                        },
+                        "timestamp": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "api_version": {
+                          "type": "string",
+                          "enum": [
+                            "v1"
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
           "401": {
             "description": "Invalid/expired token, unbound identity or disabled Person"
           },
@@ -38,7 +80,49 @@
         "parameters": [],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/PersonView"
+                    },
+                    "meta": {
+                      "type": "object",
+                      "required": [
+                        "request_id",
+                        "timestamp",
+                        "api_version"
+                      ],
+                      "properties": {
+                        "request_id": {
+                          "type": "string"
+                        },
+                        "timestamp": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "api_version": {
+                          "type": "string",
+                          "enum": [
+                            "v1"
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failure; unknown identity/qualification/monetary fields rejected"
           },
           "401": {
             "description": "Member LINE session required, expired/disabled sessions denied"
@@ -69,9 +153,26 @@
     },
     "/api/v1/member/profile": {
       "patch": {
-        "description": "Own display/contact fields only. No legal identity, status, qualification or monetary mutation. Audited transaction.",
+        "description": "Own display/contact fields only. No legal identity, status, qualification or monetary mutation. Audited idempotent transaction.",
         "operationId": "memberUpdateProfile",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -84,7 +185,49 @@
         },
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/PersonView"
+                    },
+                    "meta": {
+                      "type": "object",
+                      "required": [
+                        "request_id",
+                        "timestamp",
+                        "api_version"
+                      ],
+                      "properties": {
+                        "request_id": {
+                          "type": "string"
+                        },
+                        "timestamp": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "api_version": {
+                          "type": "string",
+                          "enum": [
+                            "v1"
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failure; unknown identity/qualification/monetary fields rejected"
           },
           "401": {
             "description": "Member LINE session required, expired/disabled sessions denied"
@@ -131,7 +274,162 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/NoticesView"
+                    },
+                    "meta": {
+                      "type": "object",
+                      "required": [
+                        "request_id",
+                        "timestamp",
+                        "api_version"
+                      ],
+                      "properties": {
+                        "request_id": {
+                          "type": "string"
+                        },
+                        "timestamp": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "api_version": {
+                          "type": "string",
+                          "enum": [
+                            "v1"
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failure; unknown identity/qualification/monetary fields rejected"
+          },
+          "401": {
+            "description": "Member LINE session required, expired/disabled sessions denied"
+          },
+          "403": {
+            "description": "Qualification not owned"
+          },
+          "404": {
+            "description": "Resource unavailable"
+          },
+          "409": {
+            "description": "Conflicting operation"
+          },
+          "422": {
+            "description": "Invalid input or pending domain decision"
+          }
+        },
+        "security": [
+          {
+            "memberBearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "Member"
+        ]
+      }
+    },
+    "/api/v1/member/notifications/{id}/read": {
+      "patch": {
+        "description": "Append first Person read evidence; retry and repeated reads preserve original readAt. Owned Qualification audience required. No LINE push.",
+        "operationId": "memberReadNotification",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MemberContextDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/NoticeReadView"
+                    },
+                    "meta": {
+                      "type": "object",
+                      "required": [
+                        "request_id",
+                        "timestamp",
+                        "api_version"
+                      ],
+                      "properties": {
+                        "request_id": {
+                          "type": "string"
+                        },
+                        "timestamp": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "api_version": {
+                          "type": "string",
+                          "enum": [
+                            "v1"
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failure; unknown identity/qualification/monetary fields rejected"
           },
           "401": {
             "description": "Member LINE session required, expired/disabled sessions denied"
@@ -167,7 +465,52 @@
         "parameters": [],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/QualificationView"
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "required": [
+                        "request_id",
+                        "timestamp",
+                        "api_version"
+                      ],
+                      "properties": {
+                        "request_id": {
+                          "type": "string"
+                        },
+                        "timestamp": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "api_version": {
+                          "type": "string",
+                          "enum": [
+                            "v1"
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failure; unknown identity/qualification/monetary fields rejected"
           },
           "401": {
             "description": "Member LINE session required, expired/disabled sessions denied"
@@ -213,7 +556,49 @@
         },
         "responses": {
           "201": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/ContextView"
+                    },
+                    "meta": {
+                      "type": "object",
+                      "required": [
+                        "request_id",
+                        "timestamp",
+                        "api_version"
+                      ],
+                      "properties": {
+                        "request_id": {
+                          "type": "string"
+                        },
+                        "timestamp": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "api_version": {
+                          "type": "string",
+                          "enum": [
+                            "v1"
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failure; unknown identity/qualification/monetary fields rejected"
           },
           "401": {
             "description": "Member LINE session required, expired/disabled sessions denied"
@@ -269,7 +654,49 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/DashboardView"
+                    },
+                    "meta": {
+                      "type": "object",
+                      "required": [
+                        "request_id",
+                        "timestamp",
+                        "api_version"
+                      ],
+                      "properties": {
+                        "request_id": {
+                          "type": "string"
+                        },
+                        "timestamp": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "api_version": {
+                          "type": "string",
+                          "enum": [
+                            "v1"
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failure; unknown identity/qualification/monetary fields rejected"
           },
           "401": {
             "description": "Member LINE session required, expired/disabled sessions denied"
@@ -324,7 +751,49 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/SponsorView"
+                    },
+                    "meta": {
+                      "type": "object",
+                      "required": [
+                        "request_id",
+                        "timestamp",
+                        "api_version"
+                      ],
+                      "properties": {
+                        "request_id": {
+                          "type": "string"
+                        },
+                        "timestamp": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "api_version": {
+                          "type": "string",
+                          "enum": [
+                            "v1"
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failure; unknown identity/qualification/monetary fields rejected"
           },
           "401": {
             "description": "Member LINE session required, expired/disabled sessions denied"
@@ -379,7 +848,49 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/BinaryView"
+                    },
+                    "meta": {
+                      "type": "object",
+                      "required": [
+                        "request_id",
+                        "timestamp",
+                        "api_version"
+                      ],
+                      "properties": {
+                        "request_id": {
+                          "type": "string"
+                        },
+                        "timestamp": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "api_version": {
+                          "type": "string",
+                          "enum": [
+                            "v1"
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failure; unknown identity/qualification/monetary fields rejected"
           },
           "401": {
             "description": "Member LINE session required, expired/disabled sessions denied"
@@ -434,7 +945,49 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/SponsorView"
+                    },
+                    "meta": {
+                      "type": "object",
+                      "required": [
+                        "request_id",
+                        "timestamp",
+                        "api_version"
+                      ],
+                      "properties": {
+                        "request_id": {
+                          "type": "string"
+                        },
+                        "timestamp": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "api_version": {
+                          "type": "string",
+                          "enum": [
+                            "v1"
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failure; unknown identity/qualification/monetary fields rejected"
           },
           "401": {
             "description": "Member LINE session required, expired/disabled sessions denied"
@@ -489,7 +1042,49 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/PerformanceView"
+                    },
+                    "meta": {
+                      "type": "object",
+                      "required": [
+                        "request_id",
+                        "timestamp",
+                        "api_version"
+                      ],
+                      "properties": {
+                        "request_id": {
+                          "type": "string"
+                        },
+                        "timestamp": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "api_version": {
+                          "type": "string",
+                          "enum": [
+                            "v1"
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failure; unknown identity/qualification/monetary fields rejected"
           },
           "401": {
             "description": "Member LINE session required, expired/disabled sessions denied"
@@ -544,7 +1139,49 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/BonusesView"
+                    },
+                    "meta": {
+                      "type": "object",
+                      "required": [
+                        "request_id",
+                        "timestamp",
+                        "api_version"
+                      ],
+                      "properties": {
+                        "request_id": {
+                          "type": "string"
+                        },
+                        "timestamp": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "api_version": {
+                          "type": "string",
+                          "enum": [
+                            "v1"
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failure; unknown identity/qualification/monetary fields rejected"
           },
           "401": {
             "description": "Member LINE session required, expired/disabled sessions denied"
@@ -599,7 +1236,49 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/LedgerView"
+                    },
+                    "meta": {
+                      "type": "object",
+                      "required": [
+                        "request_id",
+                        "timestamp",
+                        "api_version"
+                      ],
+                      "properties": {
+                        "request_id": {
+                          "type": "string"
+                        },
+                        "timestamp": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "api_version": {
+                          "type": "string",
+                          "enum": [
+                            "v1"
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failure; unknown identity/qualification/monetary fields rejected"
           },
           "401": {
             "description": "Member LINE session required, expired/disabled sessions denied"
@@ -654,7 +1333,49 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/RepurchaseView"
+                    },
+                    "meta": {
+                      "type": "object",
+                      "required": [
+                        "request_id",
+                        "timestamp",
+                        "api_version"
+                      ],
+                      "properties": {
+                        "request_id": {
+                          "type": "string"
+                        },
+                        "timestamp": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "api_version": {
+                          "type": "string",
+                          "enum": [
+                            "v1"
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failure; unknown identity/qualification/monetary fields rejected"
           },
           "401": {
             "description": "Member LINE session required, expired/disabled sessions denied"
@@ -688,7 +1409,52 @@
         "parameters": [],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ProductView"
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "required": [
+                        "request_id",
+                        "timestamp",
+                        "api_version"
+                      ],
+                      "properties": {
+                        "request_id": {
+                          "type": "string"
+                        },
+                        "timestamp": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "api_version": {
+                          "type": "string",
+                          "enum": [
+                            "v1"
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failure; unknown identity/qualification/monetary fields rejected"
           },
           "401": {
             "description": "Member LINE session required, expired/disabled sessions denied"
@@ -743,7 +1509,49 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/OrdersView"
+                    },
+                    "meta": {
+                      "type": "object",
+                      "required": [
+                        "request_id",
+                        "timestamp",
+                        "api_version"
+                      ],
+                      "properties": {
+                        "request_id": {
+                          "type": "string"
+                        },
+                        "timestamp": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "api_version": {
+                          "type": "string",
+                          "enum": [
+                            "v1"
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failure; unknown identity/qualification/monetary fields rejected"
           },
           "401": {
             "description": "Member LINE session required, expired/disabled sessions denied"
@@ -771,9 +1579,17 @@
         ]
       },
       "post": {
-        "description": "Authenticated ownership and input validation; currently fail closed PENDING_DECISION until formal product/PV-BV mapping and checkout configuration are approved. Never accepts client monetary results.",
+        "description": "Core-authoritative RETAIL order, pending payment/fulfillment; no PV/BV recognition. Missing/overlapping product profile fails closed 422. Retry conflicts with identical key/body. Reject client monetary results.",
         "operationId": "memberCreateOrder",
         "parameters": [
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
           {
             "name": "Idempotency-Key",
             "in": "header",
@@ -788,14 +1604,56 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/CreateOrderDto"
+                "$ref": "#/components/schemas/MemberCreateOrderDto"
               }
             }
           }
         },
         "responses": {
           "201": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/OrderView"
+                    },
+                    "meta": {
+                      "type": "object",
+                      "required": [
+                        "request_id",
+                        "timestamp",
+                        "api_version"
+                      ],
+                      "properties": {
+                        "request_id": {
+                          "type": "string"
+                        },
+                        "timestamp": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "api_version": {
+                          "type": "string",
+                          "enum": [
+                            "v1"
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failure; unknown identity/qualification/monetary fields rejected"
           },
           "401": {
             "description": "Member LINE session required, expired/disabled sessions denied"
@@ -859,7 +1717,49 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/OrderView"
+                    },
+                    "meta": {
+                      "type": "object",
+                      "required": [
+                        "request_id",
+                        "timestamp",
+                        "api_version"
+                      ],
+                      "properties": {
+                        "request_id": {
+                          "type": "string"
+                        },
+                        "timestamp": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "api_version": {
+                          "type": "string",
+                          "enum": [
+                            "v1"
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failure; unknown identity/qualification/monetary fields rejected"
           },
           "401": {
             "description": "Member LINE session required, expired/disabled sessions denied"
@@ -939,6 +1839,172 @@
         "summary": "撤銷目前Admin Session",
         "tags": [
           "Admin - Authentication"
+        ]
+      }
+    },
+    "/api/v1/admin/orders": {
+      "get": {
+        "operationId": "adminSearchOrders",
+        "parameters": [
+          {
+            "name": "status",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "qualificationId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "q",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "take",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "搜尋／列出訂單",
+        "tags": [
+          "Admin - Commerce"
+        ]
+      },
+      "post": {
+        "operationId": "adminCreateOrder",
+        "parameters": [
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateOrderDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "建立並確認會員訂單",
+        "tags": [
+          "Admin - Commerce"
+        ]
+      }
+    },
+    "/api/v1/admin/orders/{orderId}/payment-confirmations": {
+      "post": {
+        "operationId": "adminConfirmPayment",
+        "parameters": [
+          {
+            "name": "orderId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PaymentConfirmationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "Pre-ERP人工確認付款",
+        "tags": [
+          "Admin - Commerce"
+        ]
+      }
+    },
+    "/api/v1/admin/orders/{orderId}": {
+      "get": {
+        "operationId": "adminGetOrder",
+        "parameters": [
+          {
+            "name": "orderId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "取得訂單與付款事件",
+        "tags": [
+          "Admin - Commerce"
         ]
       }
     },
@@ -2172,172 +3238,6 @@
         ]
       }
     },
-    "/api/v1/admin/orders": {
-      "get": {
-        "operationId": "adminSearchOrders",
-        "parameters": [
-          {
-            "name": "status",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "qualificationId",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "q",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "take",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "adminBearer": []
-          }
-        ],
-        "summary": "搜尋／列出訂單",
-        "tags": [
-          "Admin - Commerce"
-        ]
-      },
-      "post": {
-        "operationId": "adminCreateOrder",
-        "parameters": [
-          {
-            "name": "idempotency-key",
-            "required": true,
-            "in": "header",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateOrderDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "adminBearer": []
-          }
-        ],
-        "summary": "建立並確認會員訂單",
-        "tags": [
-          "Admin - Commerce"
-        ]
-      }
-    },
-    "/api/v1/admin/orders/{orderId}/payment-confirmations": {
-      "post": {
-        "operationId": "adminConfirmPayment",
-        "parameters": [
-          {
-            "name": "orderId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "idempotency-key",
-            "required": true,
-            "in": "header",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/PaymentConfirmationDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "adminBearer": []
-          }
-        ],
-        "summary": "Pre-ERP人工確認付款",
-        "tags": [
-          "Admin - Commerce"
-        ]
-      }
-    },
-    "/api/v1/admin/orders/{orderId}": {
-      "get": {
-        "operationId": "adminGetOrder",
-        "parameters": [
-          {
-            "name": "orderId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "adminBearer": []
-          }
-        ],
-        "summary": "取得訂單與付款事件",
-        "tags": [
-          "Admin - Commerce"
-        ]
-      }
-    },
     "/api/v1/admin/qualifications/{qualificationId}/ledger/pv": {
       "get": {
         "operationId": "adminListQualificationPv",
@@ -3252,6 +4152,759 @@
       }
     },
     "schemas": {
+      "QualificationView": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "code": {
+            "type": "string"
+          },
+          "rank": {
+            "type": "string"
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "ballLabel": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "code",
+          "rank",
+          "active",
+          "ballLabel"
+        ]
+      },
+      "PersonView": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "memberNo": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "email": {
+            "type": "string",
+            "nullable": true
+          },
+          "phone": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "name",
+          "memberNo",
+          "email",
+          "phone"
+        ]
+      },
+      "PaginationView": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "type": "number",
+            "example": 100
+          },
+          "truncated": {
+            "type": "boolean",
+            "description": "True means bounded response; further pagination is not yet available."
+          }
+        },
+        "required": [
+          "limit",
+          "truncated"
+        ]
+      },
+      "NoticeView": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "qualificationId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "SERVICE",
+              "ORDER",
+              "ACCOUNT"
+            ]
+          },
+          "title": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          },
+          "timeLabel": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "readAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "First persisted Person read evidence; not LINE read state."
+          }
+        },
+        "required": [
+          "id",
+          "qualificationId",
+          "category",
+          "title",
+          "body",
+          "timeLabel",
+          "readAt"
+        ]
+      },
+      "NoticesView": {
+        "type": "object",
+        "properties": {
+          "qualificationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "notices": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NoticeView"
+            }
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/PaginationView"
+          }
+        },
+        "required": [
+          "qualificationId",
+          "notices",
+          "pagination"
+        ]
+      },
+      "NoticeReadView": {
+        "type": "object",
+        "properties": {
+          "qualificationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "notificationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "readAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "qualificationId",
+          "notificationId",
+          "readAt"
+        ]
+      },
+      "OrderLineView": {
+        "type": "object",
+        "properties": {
+          "productId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "string",
+            "pattern": "^\\d+(\\.\\d+)?$"
+          },
+          "unitPrice": {
+            "type": "string",
+            "pattern": "^\\d+(\\.\\d+)?$"
+          },
+          "amount": {
+            "type": "string",
+            "pattern": "^\\d+(\\.\\d+)?$"
+          },
+          "pv": {
+            "type": "number",
+            "nullable": true,
+            "description": "Checkout does not recognize PV; null."
+          }
+        },
+        "required": [
+          "productId",
+          "name",
+          "quantity",
+          "amount"
+        ]
+      },
+      "OrderView": {
+        "type": "object",
+        "properties": {
+          "qualificationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string"
+          },
+          "total": {
+            "type": "string",
+            "description": "Core authoritative decimal-string TWD product amount; never client-computed.",
+            "pattern": "^\\d+(\\.\\d+)?$"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderLineView"
+            }
+          },
+          "paymentStatus": {
+            "type": "string"
+          },
+          "shipmentStatus": {
+            "type": "string"
+          },
+          "replayed": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "qualificationId",
+          "id",
+          "status",
+          "total",
+          "createdAt",
+          "lines"
+        ]
+      },
+      "ProductView": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "price": {
+            "type": "number",
+            "nullable": true,
+            "description": "Display only; Create Order revalidates Core price."
+          },
+          "pv": {
+            "type": "number",
+            "nullable": true
+          },
+          "available": {
+            "type": "boolean",
+            "description": "Orderable by effective traceable product profile; does not confirm ERP stock."
+          },
+          "reason": {
+            "type": "string",
+            "nullable": true
+          },
+          "fulfillmentStatus": {
+            "type": "string"
+          },
+          "availabilityMeaning": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "price",
+          "pv",
+          "available",
+          "reason",
+          "fulfillmentStatus",
+          "availabilityMeaning"
+        ]
+      },
+      "PerformanceView": {
+        "type": "object",
+        "properties": {
+          "qualificationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "period": {
+            "type": "string",
+            "pattern": "^\\d{4}-(0[1-9]|1[0-2])$"
+          },
+          "pv": {
+            "type": "number",
+            "nullable": true
+          },
+          "rpv": {
+            "type": "number",
+            "nullable": true
+          },
+          "epv": {
+            "type": "number",
+            "nullable": true
+          },
+          "left": {
+            "type": "number",
+            "nullable": true
+          },
+          "right": {
+            "type": "number",
+            "nullable": true
+          },
+          "asOf": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "required": [
+          "qualificationId",
+          "period",
+          "pv",
+          "rpv",
+          "epv",
+          "left",
+          "right",
+          "asOf"
+        ]
+      },
+      "DashboardView": {
+        "type": "object",
+        "properties": {
+          "qualificationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "qualification": {
+            "$ref": "#/components/schemas/QualificationView"
+          },
+          "memberName": {
+            "type": "string"
+          },
+          "memberNo": {
+            "type": "string"
+          },
+          "monthlyRepurchaseStatus": {
+            "type": "string",
+            "enum": [
+              "ACTIVE",
+              "PENDING",
+              "INACTIVE"
+            ],
+            "description": "Core recognition schedule status; frontend cannot derive Active entitlement."
+          },
+          "pv": {
+            "type": "number",
+            "nullable": true
+          },
+          "rpv": {
+            "type": "number",
+            "nullable": true
+          },
+          "epv": {
+            "type": "number",
+            "nullable": true
+          },
+          "bonusAmount": {
+            "type": "number",
+            "nullable": true,
+            "description": "Unfinalized settlement is null, not zero."
+          },
+          "bonusStatus": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "qualificationId",
+          "qualification",
+          "memberName",
+          "memberNo",
+          "monthlyRepurchaseStatus",
+          "pv",
+          "rpv",
+          "epv",
+          "bonusAmount",
+          "bonusStatus"
+        ]
+      },
+      "TreeNodeView": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string",
+            "description": "Masked name"
+          }
+        },
+        "required": [
+          "code",
+          "name"
+        ]
+      },
+      "SponsorView": {
+        "type": "object",
+        "properties": {
+          "qualificationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "sponsor": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TreeNodeView"
+              }
+            ]
+          },
+          "referrals": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TreeNodeView"
+            }
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/PaginationView"
+          }
+        },
+        "required": [
+          "qualificationId",
+          "sponsor",
+          "referrals",
+          "pagination"
+        ]
+      },
+      "SideView": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "number",
+            "nullable": true
+          },
+          "volume": {
+            "type": "number",
+            "nullable": true
+          }
+        },
+        "required": [
+          "count",
+          "volume"
+        ]
+      },
+      "BinaryView": {
+        "type": "object",
+        "properties": {
+          "qualificationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "left": {
+            "$ref": "#/components/schemas/SideView"
+          },
+          "right": {
+            "$ref": "#/components/schemas/SideView"
+          }
+        },
+        "required": [
+          "qualificationId",
+          "left",
+          "right"
+        ]
+      },
+      "AwardView": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "CALCULATED",
+              "PENDING45D",
+              "EFFECTIVE",
+              "PAYABLE",
+              "PAID",
+              "REVERSED",
+              "CLAWBACK"
+            ]
+          },
+          "amount": {
+            "type": "number",
+            "nullable": true,
+            "description": "Null for unfinalized or absent lifecycle evidence."
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "status",
+          "amount"
+        ]
+      },
+      "BonusesView": {
+        "type": "object",
+        "properties": {
+          "qualificationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "period": {
+            "type": "string",
+            "pattern": "^\\d{4}-(0[1-9]|1[0-2])$"
+          },
+          "awards": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AwardView"
+            }
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/PaginationView"
+          }
+        },
+        "required": [
+          "qualificationId",
+          "period",
+          "awards",
+          "pagination"
+        ]
+      },
+      "LedgerEntryView": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "number",
+            "nullable": true
+          },
+          "postedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "sourceId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "label",
+          "amount",
+          "postedAt",
+          "sourceId"
+        ]
+      },
+      "LedgerView": {
+        "type": "object",
+        "properties": {
+          "qualificationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "period": {
+            "type": "string",
+            "pattern": "^\\d{4}-(0[1-9]|1[0-2])$"
+          },
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LedgerEntryView"
+            }
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/PaginationView"
+          }
+        },
+        "required": [
+          "qualificationId",
+          "period",
+          "entries",
+          "pagination"
+        ]
+      },
+      "RecognitionView": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string"
+          },
+          "dueAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "dueAt"
+        ]
+      },
+      "RepurchaseView": {
+        "type": "object",
+        "properties": {
+          "qualificationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "period": {
+            "type": "string",
+            "pattern": "^\\d{4}-(0[1-9]|1[0-2])$"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ACTIVE",
+              "PENDING",
+              "INACTIVE"
+            ]
+          },
+          "recognitions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RecognitionView"
+            }
+          }
+        },
+        "required": [
+          "qualificationId",
+          "period",
+          "status",
+          "recognitions"
+        ]
+      },
+      "OrderListEntryView": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "total": {
+            "type": "number",
+            "nullable": true,
+            "description": "Display DTO only; not input to mutation."
+          },
+          "status": {
+            "type": "string"
+          },
+          "paymentStatus": {
+            "type": "string"
+          },
+          "shipmentStatus": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "createdAt",
+          "total",
+          "status",
+          "paymentStatus",
+          "shipmentStatus"
+        ]
+      },
+      "OrdersView": {
+        "type": "object",
+        "properties": {
+          "qualificationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "orders": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderListEntryView"
+            }
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/PaginationView"
+          }
+        },
+        "required": [
+          "qualificationId",
+          "orders",
+          "pagination"
+        ]
+      },
+      "ContextView": {
+        "type": "object",
+        "properties": {
+          "qualificationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "qualification": {
+            "$ref": "#/components/schemas/QualificationView"
+          }
+        },
+        "required": [
+          "qualificationId",
+          "qualification"
+        ]
+      },
+      "LineSessionView": {
+        "type": "object",
+        "properties": {
+          "accessToken": {
+            "type": "string",
+            "description": "Opaque UCell bearer, not LINE token."
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "sessionId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "accessToken",
+          "expiresAt",
+          "sessionId"
+        ]
+      },
       "LineExchangeDto": {
         "type": "object",
         "properties": {
@@ -3262,7 +4915,8 @@
         },
         "required": [
           "idToken"
-        ]
+        ],
+        "additionalProperties": false
       },
       "MemberProfileDto": {
         "type": "object",
@@ -3282,7 +4936,8 @@
             "maxLength": 32,
             "description": "Contact data only; does not bind or authenticate an identity"
           }
-        }
+        },
+        "additionalProperties": false
       },
       "MemberContextDto": {
         "type": "object",
@@ -3295,7 +4950,8 @@
         },
         "required": [
           "qualificationId"
-        ]
+        ],
+        "additionalProperties": false
       },
       "CreateOrderItemDto": {
         "type": "object",
@@ -3312,7 +4968,30 @@
         "required": [
           "productId",
           "quantity"
-        ]
+        ],
+        "additionalProperties": false
+      },
+      "MemberCreateOrderDto": {
+        "type": "object",
+        "properties": {
+          "qualificationId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Selected Qualification; server checks authenticated Person ownership on every request"
+          },
+          "items": {
+            "description": "Product IDs and quantities only; Core determines price/rule snapshots. RETAIL purpose only.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreateOrderItemDto"
+            }
+          }
+        },
+        "required": [
+          "qualificationId",
+          "items"
+        ],
+        "additionalProperties": false
       },
       "CreateOrderDto": {
         "type": "object",
@@ -3349,6 +5028,35 @@
         "required": [
           "qualificationId",
           "items"
+        ]
+      },
+      "PaymentConfirmationDto": {
+        "type": "object",
+        "properties": {
+          "amount": {
+            "type": "string",
+            "example": "14400.00"
+          },
+          "paymentMethod": {
+            "type": "string",
+            "example": "BANK_TRANSFER"
+          },
+          "referenceNo": {
+            "type": "string"
+          },
+          "occurredAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "note": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "amount",
+          "paymentMethod",
+          "referenceNo",
+          "occurredAt"
         ]
       },
       "CreatePersonDto": {
@@ -3424,35 +5132,6 @@
           "sponsorQualificationId",
           "binaryParentQualificationId",
           "binarySide"
-        ]
-      },
-      "PaymentConfirmationDto": {
-        "type": "object",
-        "properties": {
-          "amount": {
-            "type": "string",
-            "example": "14400.00"
-          },
-          "paymentMethod": {
-            "type": "string",
-            "example": "BANK_TRANSFER"
-          },
-          "referenceNo": {
-            "type": "string"
-          },
-          "occurredAt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "note": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "amount",
-          "paymentMethod",
-          "referenceNo",
-          "occurredAt"
         ]
       },
       "CreateMembershipApplicationDto": {

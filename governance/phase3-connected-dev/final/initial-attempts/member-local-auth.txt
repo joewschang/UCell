@@ -1,4 +1,4 @@
 command: node scripts/member-local-auth-preflight.mjs
-started: 2026-09-15T19:40:28.109Z
+started: 2026-09-15T19:40:00.837Z
 exit: 0
 MEMBER_LOCAL_AUTH_PASS: 4 actual HTTP operations denied without Member session; formal LINE NOT VERIFIED

@@ -1,0 +1,1298 @@
+{
+  "kind": "CONNECTED_DEV_TEST_ONLY_SYNTHETIC_LINE",
+  "result": "PASS",
+  "operationalCredentialsVerified": false,
+  "assertions": 183,
+  "results": [
+    {
+      "label": "synthetic verified LINE exchange",
+      "actual": 201,
+      "expected": 201,
+      "result": "PASS"
+    },
+    {
+      "label": "ID token replay denied",
+      "actual": 409,
+      "expected": 409,
+      "result": "PASS"
+    },
+    {
+      "label": "invalid LINE token denied",
+      "actual": 401,
+      "expected": 401,
+      "result": "PASS"
+    },
+    {
+      "label": "unbound LINE denied",
+      "actual": 401,
+      "expected": 401,
+      "result": "PASS"
+    },
+    {
+      "label": "concurrent LINE exchange single use",
+      "actual": [
+        201,
+        409
+      ],
+      "expected": [
+        201,
+        409
+      ],
+      "result": "PASS"
+    },
+    {
+      "label": "one concurrent LINE session",
+      "actual": 2,
+      "expected": 2,
+      "result": "PASS"
+    },
+    {
+      "label": "one concurrent LINE consumption record",
+      "actual": 2,
+      "expected": 2,
+      "result": "PASS"
+    },
+    {
+      "label": "LINE session issuance injected failure",
+      "actual": 500,
+      "expected": 500,
+      "result": "PASS"
+    },
+    {
+      "label": "failed session issue rolls back token consumption",
+      "actual": 2,
+      "expected": 2,
+      "result": "PASS"
+    },
+    {
+      "label": "LINE exchange retry after rolled back issuance",
+      "actual": 201,
+      "expected": 201,
+      "result": "PASS"
+    },
+    {
+      "label": "missing session denied",
+      "actual": 401,
+      "expected": 401,
+      "result": "PASS"
+    },
+    {
+      "label": "member me authenticated",
+      "actual": 200,
+      "expected": 200,
+      "result": "PASS"
+    },
+    {
+      "label": "client Person tampering ignored",
+      "actual": "MEMBER A TEST ONLY",
+      "expected": "MEMBER A TEST ONLY",
+      "result": "PASS"
+    },
+    {
+      "label": "owned qualifications fetched",
+      "actual": 200,
+      "expected": 200,
+      "result": "PASS"
+    },
+    {
+      "label": "only both owned balls returned",
+      "actual": [
+        "734f9202-b6a6-40fb-ac12-c5d7c0a0f122",
+        "a27ce48a-a8b6-4e69-88bd-93b17313b4c4"
+      ],
+      "expected": [
+        "734f9202-b6a6-40fb-ac12-c5d7c0a0f122",
+        "a27ce48a-a8b6-4e69-88bd-93b17313b4c4"
+      ],
+      "result": "PASS"
+    },
+    {
+      "label": "owned ball context allowed",
+      "actual": 201,
+      "expected": 201,
+      "result": "PASS"
+    },
+    {
+      "label": "ball context echoes verified id",
+      "actual": "734f9202-b6a6-40fb-ac12-c5d7c0a0f122",
+      "expected": "734f9202-b6a6-40fb-ac12-c5d7c0a0f122",
+      "result": "PASS"
+    },
+    {
+      "label": "owned ball context allowed",
+      "actual": 201,
+      "expected": 201,
+      "result": "PASS"
+    },
+    {
+      "label": "ball context echoes verified id",
+      "actual": "a27ce48a-a8b6-4e69-88bd-93b17313b4c4",
+      "expected": "a27ce48a-a8b6-4e69-88bd-93b17313b4c4",
+      "result": "PASS"
+    },
+    {
+      "label": "Connected read dashboard Ball 1",
+      "actual": 200,
+      "expected": 200,
+      "result": "PASS"
+    },
+    {
+      "label": "no cross-ball dashboard",
+      "actual": "734f9202-b6a6-40fb-ac12-c5d7c0a0f122",
+      "expected": "734f9202-b6a6-40fb-ac12-c5d7c0a0f122",
+      "result": "PASS"
+    },
+    {
+      "label": "direct API foreign-ball dashboard denied",
+      "actual": 403,
+      "expected": 403,
+      "result": "PASS"
+    },
+    {
+      "label": "Connected read organization Ball 1",
+      "actual": 200,
+      "expected": 200,
+      "result": "PASS"
+    },
+    {
+      "label": "no cross-ball organization",
+      "actual": "734f9202-b6a6-40fb-ac12-c5d7c0a0f122",
+      "expected": "734f9202-b6a6-40fb-ac12-c5d7c0a0f122",
+      "result": "PASS"
+    },
+    {
+      "label": "direct API foreign-ball organization denied",
+      "actual": 403,
+      "expected": 403,
+      "result": "PASS"
+    },
+    {
+      "label": "Connected read binary Ball 1",
+      "actual": 200,
+      "expected": 200,
+      "result": "PASS"
+    },
+    {
+      "label": "no cross-ball binary",
+      "actual": "734f9202-b6a6-40fb-ac12-c5d7c0a0f122",
+      "expected": "734f9202-b6a6-40fb-ac12-c5d7c0a0f122",
+      "result": "PASS"
+    },
+    {
+      "label": "direct API foreign-ball binary denied",
+      "actual": 403,
+      "expected": 403,
+      "result": "PASS"
+    },
+    {
+      "label": "Connected read performance Ball 1",
+      "actual": 200,
+      "expected": 200,
+      "result": "PASS"
+    },
+    {
+      "label": "no cross-ball performance",
+      "actual": "734f9202-b6a6-40fb-ac12-c5d7c0a0f122",
+      "expected": "734f9202-b6a6-40fb-ac12-c5d7c0a0f122",
+      "result": "PASS"
+    },
+    {
+      "label": "direct API foreign-ball performance denied",
+      "actual": 403,
+      "expected": 403,
+      "result": "PASS"
+    },
+    {
+      "label": "Connected read bonuses Ball 1",
+      "actual": 200,
+      "expected": 200,
+      "result": "PASS"
+    },
+    {
+      "label": "no cross-ball bonuses",
+      "actual": "734f9202-b6a6-40fb-ac12-c5d7c0a0f122",
+      "expected": "734f9202-b6a6-40fb-ac12-c5d7c0a0f122",
+      "result": "PASS"
+    },
+    {
+      "label": "direct API foreign-ball bonuses denied",
+      "actual": 403,
+      "expected": 403,
+      "result": "PASS"
+    },
+    {
+      "label": "Connected read ledger Ball 1",
+      "actual": 200,
+      "expected": 200,
+      "result": "PASS"
+    },
+    {
+      "label": "no cross-ball ledger",
+      "actual": "734f9202-b6a6-40fb-ac12-c5d7c0a0f122",
+      "expected": "734f9202-b6a6-40fb-ac12-c5d7c0a0f122",
+      "result": "PASS"
+    },
+    {
+      "label": "direct API foreign-ball ledger denied",
+      "actual": 403,
+      "expected": 403,
+      "result": "PASS"
+    },
+    {
+      "label": "Connected read repurchase Ball 1",
+      "actual": 200,
+      "expected": 200,
+      "result": "PASS"
+    },
+    {
+      "label": "no cross-ball repurchase",
+      "actual": "734f9202-b6a6-40fb-ac12-c5d7c0a0f122",
+      "expected": "734f9202-b6a6-40fb-ac12-c5d7c0a0f122",
+      "result": "PASS"
+    },
+    {
+      "label": "direct API foreign-ball repurchase denied",
+      "actual": 403,
+      "expected": 403,
+      "result": "PASS"
+    },
+    {
+      "label": "Connected read referrals Ball 1",
+      "actual": 200,
+      "expected": 200,
+      "result": "PASS"
+    },
+    {
+      "label": "no cross-ball referrals",
+      "actual": "734f9202-b6a6-40fb-ac12-c5d7c0a0f122",
+      "expected": "734f9202-b6a6-40fb-ac12-c5d7c0a0f122",
+      "result": "PASS"
+    },
+    {
+      "label": "direct API foreign-ball referrals denied",
+      "actual": 403,
+      "expected": 403,
+      "result": "PASS"
+    },
+    {
+      "label": "Connected read orders Ball 1",
+      "actual": 200,
+      "expected": 200,
+      "result": "PASS"
+    },
+    {
+      "label": "no cross-ball orders",
+      "actual": "734f9202-b6a6-40fb-ac12-c5d7c0a0f122",
+      "expected": "734f9202-b6a6-40fb-ac12-c5d7c0a0f122",
+      "result": "PASS"
+    },
+    {
+      "label": "direct API foreign-ball orders denied",
+      "actual": 403,
+      "expected": 403,
+      "result": "PASS"
+    },
+    {
+      "label": "independent original ledger volumes",
+      "actual": [
+        11,
+        2400,
+        1680
+      ],
+      "expected": [
+        11,
+        2400,
+        1680
+      ],
+      "result": "PASS"
+    },
+    {
+      "label": "unfinalized dashboard money remains pending null",
+      "actual": [
+        "PENDING",
+        null
+      ],
+      "expected": [
+        "PENDING",
+        null
+      ],
+      "result": "PASS"
+    },
+    {
+      "label": "order URL tampering denied",
+      "actual": 404,
+      "expected": 404,
+      "result": "PASS"
+    },
+    {
+      "label": "Connected read dashboard Ball 2",
+      "actual": 200,
+      "expected": 200,
+      "result": "PASS"
+    },
+    {
+      "label": "no cross-ball dashboard",
+      "actual": "a27ce48a-a8b6-4e69-88bd-93b17313b4c4",
+      "expected": "a27ce48a-a8b6-4e69-88bd-93b17313b4c4",
+      "result": "PASS"
+    },
+    {
+      "label": "direct API foreign-ball dashboard denied",
+      "actual": 403,
+      "expected": 403,
+      "result": "PASS"
+    },
+    {
+      "label": "Connected read organization Ball 2",
+      "actual": 200,
+      "expected": 200,
+      "result": "PASS"
+    },
+    {
+      "label": "no cross-ball organization",
+      "actual": "a27ce48a-a8b6-4e69-88bd-93b17313b4c4",
+      "expected": "a27ce48a-a8b6-4e69-88bd-93b17313b4c4",
+      "result": "PASS"
+    },
+    {
+      "label": "direct API foreign-ball organization denied",
+      "actual": 403,
+      "expected": 403,
+      "result": "PASS"
+    },
+    {
+      "label": "Connected read binary Ball 2",
+      "actual": 200,
+      "expected": 200,
+      "result": "PASS"
+    },
+    {
+      "label": "no cross-ball binary",
+      "actual": "a27ce48a-a8b6-4e69-88bd-93b17313b4c4",
+      "expected": "a27ce48a-a8b6-4e69-88bd-93b17313b4c4",
+      "result": "PASS"
+    },
+    {
+      "label": "direct API foreign-ball binary denied",
+      "actual": 403,
+      "expected": 403,
+      "result": "PASS"
+    },
+    {
+      "label": "Connected read performance Ball 2",
+      "actual": 200,
+      "expected": 200,
+      "result": "PASS"
+    },
+    {
+      "label": "no cross-ball performance",
+      "actual": "a27ce48a-a8b6-4e69-88bd-93b17313b4c4",
+      "expected": "a27ce48a-a8b6-4e69-88bd-93b17313b4c4",
+      "result": "PASS"
+    },
+    {
+      "label": "direct API foreign-ball performance denied",
+      "actual": 403,
+      "expected": 403,
+      "result": "PASS"
+    },
+    {
+      "label": "Connected read bonuses Ball 2",
+      "actual": 200,
+      "expected": 200,
+      "result": "PASS"
+    },
+    {
+      "label": "no cross-ball bonuses",
+      "actual": "a27ce48a-a8b6-4e69-88bd-93b17313b4c4",
+      "expected": "a27ce48a-a8b6-4e69-88bd-93b17313b4c4",
+      "result": "PASS"
+    },
+    {
+      "label": "direct API foreign-ball bonuses denied",
+      "actual": 403,
+      "expected": 403,
+      "result": "PASS"
+    },
+    {
+      "label": "Connected read ledger Ball 2",
+      "actual": 200,
+      "expected": 200,
+      "result": "PASS"
+    },
+    {
+      "label": "no cross-ball ledger",
+      "actual": "a27ce48a-a8b6-4e69-88bd-93b17313b4c4",
+      "expected": "a27ce48a-a8b6-4e69-88bd-93b17313b4c4",
+      "result": "PASS"
+    },
+    {
+      "label": "direct API foreign-ball ledger denied",
+      "actual": 403,
+      "expected": 403,
+      "result": "PASS"
+    },
+    {
+      "label": "Connected read repurchase Ball 2",
+      "actual": 200,
+      "expected": 200,
+      "result": "PASS"
+    },
+    {
+      "label": "no cross-ball repurchase",
+      "actual": "a27ce48a-a8b6-4e69-88bd-93b17313b4c4",
+      "expected": "a27ce48a-a8b6-4e69-88bd-93b17313b4c4",
+      "result": "PASS"
+    },
+    {
+      "label": "direct API foreign-ball repurchase denied",
+      "actual": 403,
+      "expected": 403,
+      "result": "PASS"
+    },
+    {
+      "label": "Connected read referrals Ball 2",
+      "actual": 200,
+      "expected": 200,
+      "result": "PASS"
+    },
+    {
+      "label": "no cross-ball referrals",
+      "actual": "a27ce48a-a8b6-4e69-88bd-93b17313b4c4",
+      "expected": "a27ce48a-a8b6-4e69-88bd-93b17313b4c4",
+      "result": "PASS"
+    },
+    {
+      "label": "direct API foreign-ball referrals denied",
+      "actual": 403,
+      "expected": 403,
+      "result": "PASS"
+    },
+    {
+      "label": "Connected read orders Ball 2",
+      "actual": 200,
+      "expected": 200,
+      "result": "PASS"
+    },
+    {
+      "label": "no cross-ball orders",
+      "actual": "a27ce48a-a8b6-4e69-88bd-93b17313b4c4",
+      "expected": "a27ce48a-a8b6-4e69-88bd-93b17313b4c4",
+      "result": "PASS"
+    },
+    {
+      "label": "direct API foreign-ball orders denied",
+      "actual": 403,
+      "expected": 403,
+      "result": "PASS"
+    },
+    {
+      "label": "independent original ledger volumes",
+      "actual": [
+        23,
+        1200,
+        480
+      ],
+      "expected": [
+        23,
+        1200,
+        480
+      ],
+      "result": "PASS"
+    },
+    {
+      "label": "unfinalized dashboard money remains pending null",
+      "actual": [
+        "PENDING",
+        null
+      ],
+      "expected": [
+        "PENDING",
+        null
+      ],
+      "result": "PASS"
+    },
+    {
+      "label": "order URL tampering denied",
+      "actual": 404,
+      "expected": 404,
+      "result": "PASS"
+    },
+    {
+      "label": "Sponsor trees independent by ball",
+      "actual": [
+        2,
+        0
+      ],
+      "expected": [
+        2,
+        0
+      ],
+      "result": "PASS"
+    },
+    {
+      "label": "Binary trees independent and distinct from Sponsor",
+      "actual": [
+        1,
+        2
+      ],
+      "expected": [
+        1,
+        2
+      ],
+      "result": "PASS"
+    },
+    {
+      "label": "nonempty Bonus entitlement isolated by ball",
+      "actual": [
+        [
+          [
+            "EPV",
+            "PENDING45D",
+            840
+          ]
+        ],
+        [
+          [
+            "EPV",
+            "PENDING45D",
+            240
+          ]
+        ]
+      ],
+      "expected": [
+        [
+          [
+            "EPV",
+            "PENDING45D",
+            840
+          ]
+        ],
+        [
+          [
+            "EPV",
+            "PENDING45D",
+            240
+          ]
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "label": "nonempty Ledger facts isolated by ball",
+      "actual": [
+        [
+          840
+        ],
+        [
+          240
+        ]
+      ],
+      "expected": [
+        [
+          840
+        ],
+        [
+          240
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "label": "equal timestamp initial lifecycle ignores reverse UUID order",
+      "actual": [
+        [
+          "PENDING45D",
+          17
+        ]
+      ],
+      "expected": [
+        [
+          "PENDING45D",
+          17
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "label": "dashboard uses original month recognized Core schedules",
+      "actual": [
+        "ACTIVE",
+        "ACTIVE"
+      ],
+      "expected": [
+        "ACTIVE",
+        "ACTIVE"
+      ],
+      "result": "PASS"
+    },
+    {
+      "label": "switch back restores deterministic Ball 1 volumes",
+      "actual": [
+        11,
+        2400,
+        1680
+      ],
+      "expected": [
+        11,
+        2400,
+        1680
+      ],
+      "result": "PASS"
+    },
+    {
+      "label": "missing scoped GET context fails closed",
+      "actual": 422,
+      "expected": 422,
+      "result": "PASS"
+    },
+    {
+      "label": "foreign ball BOLA denied",
+      "actual": 403,
+      "expected": 403,
+      "result": "PASS"
+    },
+    {
+      "label": "forged ball denied",
+      "actual": 403,
+      "expected": 403,
+      "result": "PASS"
+    },
+    {
+      "label": "missing ball fails validation",
+      "actual": 422,
+      "expected": 422,
+      "result": "PASS"
+    },
+    {
+      "label": "expired session denied",
+      "actual": 401,
+      "expected": 401,
+      "result": "PASS"
+    },
+    {
+      "label": "Admin credential rejected on Member route",
+      "actual": 401,
+      "expected": 401,
+      "result": "PASS"
+    },
+    {
+      "label": "Person without Qualification returns empty list",
+      "actual": [],
+      "expected": [],
+      "result": "PASS"
+    },
+    {
+      "label": "notice audience Ball1",
+      "actual": [
+        "BALL1",
+        "PERSON"
+      ],
+      "expected": [
+        "BALL1",
+        "PERSON"
+      ],
+      "result": "PASS"
+    },
+    {
+      "label": "notice audience Ball2",
+      "actual": [
+        "BALL2",
+        "PERSON"
+      ],
+      "expected": [
+        "BALL2",
+        "PERSON"
+      ],
+      "result": "PASS"
+    },
+    {
+      "label": "foreign notice scope denied",
+      "actual": 403,
+      "expected": 403,
+      "result": "PASS"
+    },
+    {
+      "label": "notice context required",
+      "actual": 422,
+      "expected": 422,
+      "result": "PASS"
+    },
+    {
+      "label": "own profile update",
+      "actual": 200,
+      "expected": 200,
+      "result": "PASS"
+    },
+    {
+      "label": "profile returns persisted display name",
+      "actual": "MEMBER DISPLAY TEST",
+      "expected": "MEMBER DISPLAY TEST",
+      "result": "PASS"
+    },
+    {
+      "label": "legal name not changed",
+      "actual": "MEMBER A TEST ONLY",
+      "expected": "MEMBER A TEST ONLY",
+      "result": "PASS"
+    },
+    {
+      "label": "profile person tampering denied",
+      "actual": 400,
+      "expected": 400,
+      "result": "PASS"
+    },
+    {
+      "label": "profile status tampering denied",
+      "actual": 400,
+      "expected": 400,
+      "result": "PASS"
+    },
+    {
+      "label": "empty profile rejected",
+      "actual": 422,
+      "expected": 422,
+      "result": "PASS"
+    },
+    {
+      "label": "null profile field rejected",
+      "actual": 400,
+      "expected": 400,
+      "result": "PASS"
+    },
+    {
+      "label": "invalid contact rejected",
+      "actual": 400,
+      "expected": 400,
+      "result": "PASS"
+    },
+    {
+      "label": "profile does not mutate monetary facts",
+      "actual": [
+        16,
+        6,
+        2
+      ],
+      "expected": [
+        16,
+        6,
+        2
+      ],
+      "result": "PASS"
+    },
+    {
+      "label": "successful profile update audited once; rejected writes leave no audit",
+      "actual": 1,
+      "expected": 1,
+      "result": "PASS"
+    },
+    {
+      "label": "historical volume missing evidence fails closed",
+      "actual": 422,
+      "expected": 422,
+      "result": "PASS"
+    },
+    {
+      "label": "missing evidence domain code remains explicit",
+      "actual": "HISTORICAL_SNAPSHOT_MISSING",
+      "expected": "HISTORICAL_SNAPSHOT_MISSING",
+      "result": "PASS"
+    },
+    {
+      "label": "owned checkout fails closed missing product profile",
+      "actual": 422,
+      "expected": 422,
+      "result": "PASS"
+    },
+    {
+      "label": "missing profile configuration explicit",
+      "actual": "RULE_PROFILE_CONFIGURATION_PENDING",
+      "expected": "RULE_PROFILE_CONFIGURATION_PENDING",
+      "result": "PASS"
+    },
+    {
+      "label": "direct foreign checkout denied",
+      "actual": 403,
+      "expected": 403,
+      "result": "PASS"
+    },
+    {
+      "label": "client monetary input rejected",
+      "actual": 400,
+      "expected": 400,
+      "result": "PASS"
+    },
+    {
+      "label": "checkout requires Member session",
+      "actual": 401,
+      "expected": 401,
+      "result": "PASS"
+    },
+    {
+      "label": "duplicate unconfigured checkout remains closed",
+      "actual": 422,
+      "expected": 422,
+      "result": "PASS"
+    },
+    {
+      "label": "unconfigured checkout creates no official order",
+      "actual": 3,
+      "expected": 3,
+      "result": "PASS"
+    },
+    {
+      "label": "Golden Journey reads authoritative product price",
+      "actual": 399,
+      "expected": 399,
+      "result": "PASS"
+    },
+    {
+      "label": "configured product orderable; not stock confirmation",
+      "actual": true,
+      "expected": true,
+      "result": "PASS"
+    },
+    {
+      "label": "Golden Journey creates Core order",
+      "actual": 201,
+      "expected": 201,
+      "result": "PASS"
+    },
+    {
+      "label": "Core authoritative price and quantity",
+      "actual": [
+        "798",
+        "399",
+        "2"
+      ],
+      "expected": [
+        "798",
+        "399",
+        "2"
+      ],
+      "result": "PASS"
+    },
+    {
+      "label": "checkout does not infer PV mapping",
+      "actual": null,
+      "expected": null,
+      "result": "PASS"
+    },
+    {
+      "label": "Core snapshot sealed; no payment",
+      "actual": [
+        "CONFIRMED",
+        null,
+        "478.8"
+      ],
+      "expected": [
+        "CONFIRMED",
+        null,
+        "478.8"
+      ],
+      "result": "PASS"
+    },
+    {
+      "label": "retry returns identical order",
+      "actual": "049467e7-d226-4257-874b-e76590790fba",
+      "expected": "049467e7-d226-4257-874b-e76590790fba",
+      "result": "PASS"
+    },
+    {
+      "label": "order conflicting payload key denied",
+      "actual": 409,
+      "expected": 409,
+      "result": "PASS"
+    },
+    {
+      "label": "Golden Journey owned order detail",
+      "actual": "798",
+      "expected": "798",
+      "result": "PASS"
+    },
+    {
+      "label": "other owned ball cannot access order detail",
+      "actual": 404,
+      "expected": 404,
+      "result": "PASS"
+    },
+    {
+      "label": "zero quantity rejected",
+      "actual": 422,
+      "expected": 422,
+      "result": "PASS"
+    },
+    {
+      "label": "Member cannot select qualification workflow purpose",
+      "actual": 400,
+      "expected": 400,
+      "result": "PASS"
+    },
+    {
+      "label": "client product price rejected",
+      "actual": 400,
+      "expected": 400,
+      "result": "PASS"
+    },
+    {
+      "label": "client PV rejected",
+      "actual": 400,
+      "expected": 400,
+      "result": "PASS"
+    },
+    {
+      "label": "order notification transactional outbox",
+      "actual": true,
+      "expected": true,
+      "result": "PASS"
+    },
+    {
+      "label": "production notification consumer acknowledges",
+      "actual": "PROCESSED",
+      "expected": "PROCESSED",
+      "result": "PASS"
+    },
+    {
+      "label": "duplicate outbox delivery does not duplicate notice",
+      "actual": 1,
+      "expected": 1,
+      "result": "PASS"
+    },
+    {
+      "label": "Golden Journey sees order notice",
+      "actual": true,
+      "expected": true,
+      "result": "PASS"
+    },
+    {
+      "label": "Golden Journey marks notice read",
+      "actual": 200,
+      "expected": 200,
+      "result": "PASS"
+    },
+    {
+      "label": "duplicate read preserves original timestamp",
+      "actual": "2026-09-15T19:38:45.130Z",
+      "expected": "2026-09-15T19:38:45.130Z",
+      "result": "PASS"
+    },
+    {
+      "label": "different key does not overwrite read timestamp",
+      "actual": "2026-09-15T19:38:45.130Z",
+      "expected": "2026-09-15T19:38:45.130Z",
+      "result": "PASS"
+    },
+    {
+      "label": "notice audience forbids other owned ball",
+      "actual": 404,
+      "expected": 404,
+      "result": "PASS"
+    },
+    {
+      "label": "read state persists on reload",
+      "actual": "2026-09-15T19:38:45.130Z",
+      "expected": "2026-09-15T19:38:45.130Z",
+      "result": "PASS"
+    },
+    {
+      "label": "order injected failure",
+      "actual": 500,
+      "expected": 500,
+      "result": "PASS"
+    },
+    {
+      "label": "order and outbox rollback",
+      "actual": [
+        4,
+        5
+      ],
+      "expected": [
+        4,
+        5
+      ],
+      "result": "PASS"
+    },
+    {
+      "label": "failed order idempotency rollback",
+      "actual": 0,
+      "expected": 0,
+      "result": "PASS"
+    },
+    {
+      "label": "order partial failure retry succeeds",
+      "actual": 201,
+      "expected": 201,
+      "result": "PASS"
+    },
+    {
+      "label": "profile injected failure",
+      "actual": 500,
+      "expected": 500,
+      "result": "PASS"
+    },
+    {
+      "label": "profile rollback preserves original fields",
+      "actual": "MEMBER DISPLAY TEST",
+      "expected": "MEMBER DISPLAY TEST",
+      "result": "PASS"
+    },
+    {
+      "label": "profile failure key rollback",
+      "actual": 0,
+      "expected": 0,
+      "result": "PASS"
+    },
+    {
+      "label": "profile retry succeeds",
+      "actual": 200,
+      "expected": 200,
+      "result": "PASS"
+    },
+    {
+      "label": "profile duplicate succeeds",
+      "actual": 200,
+      "expected": 200,
+      "result": "PASS"
+    },
+    {
+      "label": "profile retry does not duplicate audit",
+      "actual": 2,
+      "expected": 2,
+      "result": "PASS"
+    },
+    {
+      "label": "profile conflicting key denied",
+      "actual": 409,
+      "expected": 409,
+      "result": "PASS"
+    },
+    {
+      "label": "read injected failure",
+      "actual": 500,
+      "expected": 500,
+      "result": "PASS"
+    },
+    {
+      "label": "read rollback",
+      "actual": 0,
+      "expected": 0,
+      "result": "PASS"
+    },
+    {
+      "label": "read retry succeeds",
+      "actual": 200,
+      "expected": 200,
+      "result": "PASS"
+    },
+    {
+      "label": "concurrent order commit/retryable conflict",
+      "actual": true,
+      "expected": true,
+      "result": "PASS"
+    },
+    {
+      "label": "concurrent order has one committed result",
+      "actual": 1,
+      "expected": 1,
+      "result": "PASS"
+    },
+    {
+      "label": "concurrent order has one notification event",
+      "actual": 1,
+      "expected": 1,
+      "result": "PASS"
+    },
+    {
+      "label": "production consumer injected acknowledgement failure",
+      "actual": "TEST_ONLY_ACK_FAILURE",
+      "expected": "TEST_ONLY_ACK_FAILURE",
+      "result": "PASS"
+    },
+    {
+      "label": "consumer notice rollback on acknowledgement failure",
+      "actual": 0,
+      "expected": 0,
+      "result": "PASS"
+    },
+    {
+      "label": "failed consumer does not acknowledge",
+      "actual": "PROCESSING",
+      "expected": "PROCESSING",
+      "result": "PASS"
+    },
+    {
+      "label": "consumer failure schedules redelivery",
+      "actual": "PENDING",
+      "expected": "PENDING",
+      "result": "PASS"
+    },
+    {
+      "label": "consumer retry creates one notice",
+      "actual": 1,
+      "expected": 1,
+      "result": "PASS"
+    },
+    {
+      "label": "consumer retry acknowledges atomically",
+      "actual": "PROCESSED",
+      "expected": "PROCESSED",
+      "result": "PASS"
+    },
+    {
+      "label": "concurrent profile commit/retryable conflict",
+      "actual": true,
+      "expected": true,
+      "result": "PASS"
+    },
+    {
+      "label": "concurrent profile external retry",
+      "actual": 200,
+      "expected": 200,
+      "result": "PASS"
+    },
+    {
+      "label": "concurrent read commit/retryable conflict",
+      "actual": true,
+      "expected": true,
+      "result": "PASS"
+    },
+    {
+      "label": "concurrent read retry",
+      "actual": 200,
+      "expected": 200,
+      "result": "PASS"
+    },
+    {
+      "label": "concurrent read retry",
+      "actual": 200,
+      "expected": 200,
+      "result": "PASS"
+    },
+    {
+      "label": "one Person read evidence despite different concurrent keys",
+      "actual": 1,
+      "expected": 1,
+      "result": "PASS"
+    },
+    {
+      "label": "Person notice read state shared across owned balls",
+      "actual": true,
+      "expected": true,
+      "result": "PASS"
+    },
+    {
+      "label": "Person profile fields shared; ball volumes remain independent",
+      "actual": [
+        "CONCURRENT DISPLAY",
+        "CONCURRENT DISPLAY"
+      ],
+      "expected": [
+        "CONCURRENT DISPLAY",
+        "CONCURRENT DISPLAY"
+      ],
+      "result": "PASS"
+    },
+    {
+      "label": "Member mutation requires explicit idempotency key: member/orders",
+      "actual": 400,
+      "expected": 400,
+      "result": "PASS"
+    },
+    {
+      "label": "Member mutation requires explicit idempotency key: member/profile",
+      "actual": 400,
+      "expected": 400,
+      "result": "PASS"
+    },
+    {
+      "label": "Member mutation requires explicit idempotency key: member/notifications/72004ec0-6fe8-481f-9974-8efb2e517074/read",
+      "actual": 400,
+      "expected": 400,
+      "result": "PASS"
+    },
+    {
+      "label": "Core uses authoritative current price on new order",
+      "actual": "998",
+      "expected": "998",
+      "result": "PASS"
+    },
+    {
+      "label": "idempotent retry preserves original confirmed price",
+      "actual": "798",
+      "expected": "798",
+      "result": "PASS"
+    },
+    {
+      "label": "inactive product rejected",
+      "actual": 409,
+      "expected": 409,
+      "result": "PASS"
+    },
+    {
+      "label": "product validation failure rolls back key",
+      "actual": 0,
+      "expected": 0,
+      "result": "PASS"
+    },
+    {
+      "label": "checkout/read/profile preserve all original monetary facts",
+      "actual": "[[{\"eventId\":\"0e2c3756-e64f-4a07-b346-6ccf7984f5b9\",\"qualificationId\":\"48e82a75-ecdf-45b2-aafd-972f306f3df9\",\"pvType\":\"EPV\",\"amount\":\"1680\",\"sourceType\":\"ORDER\",\"sourceId\":\"719666ac-4c90-4168-b483-c1a3ce037a9f\",\"sourceLineId\":null,\"eventType\":\"EPV_CREATED\",\"ruleVersionCode\":\"R1.0B\",\"parameterSnapshotHash\":\"b474c4209eac1e9e6266d6ebddec01629ba11f424d0d17a62df69509e5dce8f7\",\"occurredAt\":\"2026-09-15T16:00:00.000Z\",\"recordedAt\":\"2026-09-15T19:38:40.375Z\",\"reversalOfEventId\":null,\"correlationId\":\"88a69bae-2665-4664-b6c6-933bc219151e\"},{\"eventId\":\"14d2b0d7-c4e5-4d52-9727-3e75915ba50f\",\"qualificationId\":\"734f9202-b6a6-40fb-ac12-c5d7c0a0f122\",\"pvType\":\"EPV\",\"amount\":\"1680\",\"sourceType\":\"ORDER\",\"sourceId\":\"8557f2d4-5e04-4b75-bbce-238c524a53b6\",\"sourceLineId\":null,\"eventType\":\"EPV_CREATED\",\"ruleVersionCode\":\"R1.0B\",\"parameterSnapshotHash\":\"b474c4209eac1e9e6266d6ebddec01629ba11f424d0d17a62df69509e5dce8f7\",\"occurredAt\":\"2026-09-15T16:00:00.000Z\",\"recordedAt\":\"2026-09-15T19:38:43.556Z\",\"reversalOfEventId\":null,\"correlationId\":\"6be3292e-54eb-45d7-9d16-678a91e8bf35\"},{\"eventId\":\"26ce2976-60bf-4d37-b7ec-8e395d64bc3f\",\"qualificationId\":\"35f177b1-a025-4e23-9550-a7fef1542a02\",\"pvType\":\"RPV\",\"amount\":\"-1200\",\"sourceType\":\"MONTHLY_RECOGNITION_REVERSAL\",\"sourceId\":\"f1adc32c-14f8-486d-ad4a-9435d6e39aae\",\"sourceLineId\":\"9e8e9754-72b4-49cb-9cc2-91b9c08b9b95\",\"eventType\":\"RPV_REVERSAL\",\"ruleVersionCode\":\"R1.0B\",\"parameterSnapshotHash\":\"b474c4209eac1e9e6266d6ebddec01629ba11f424d0d17a62df69509e5dce8f7\",\"occurredAt\":\"2026-09-15T16:00:00.000Z\",\"recordedAt\":\"2026-09-15T19:38:42.211Z\",\"reversalOfEventId\":\"7310cb4e-c51a-4f9f-9285-ec3e30ea7c7d\",\"correlationId\":\"63714bf8-ecd3-4869-b1e6-07aea6a8b5d3\"},{\"eventId\":\"2ae31eee-13af-4770-a614-d0399ce1cda2\",\"qualificationId\":\"48e82a75-ecdf-45b2-aafd-972f306f3df9\",\"pvType\":\"GPV\",\"amount\":\"0\",\"sourceType\":\"RETURN\",\"sourceId\":\"6454ca67-3311-484e-9494-878c97a77057\",\"sourceLineId\":\"f257dc21-4dd5-4b12-8f52-bfe5d0150cea\",\"eventType\":\"GPV_REVERSAL\",\"ruleVersionCode\":\"R1.0B\",\"parameterSnapshotHash\":\"b474c4209eac1e9e6266d6ebddec01629ba11f424d0d17a62df69509e5dce8f7\",\"occurredAt\":\"2026-09-15T16:00:00.000Z\",\"recordedAt\":\"2026-09-15T19:38:40.661Z\",\"reversalOfEventId\":\"5df63bc2-54f3-4408-9a38-69793c2a4a8f\",\"correlationId\":\"4d2faea4-b0a3-40cb-82f9-126b08323be6\"},{\"eventId\":\"32c66877-a167-49fc-97a1-23cf0b7a90ec\",\"qualificationId\":\"734f9202-b6a6-40fb-ac12-c5d7c0a0f122\",\"pvType\":\"RPV\",\"amount\":\"1200\",\"sourceType\":\"MONTHLY_RECOGNITION\",\"sourceId\":\"7d09a92d-9f4e-4ce9-a7ac-449b1abceb53\",\"sourceLineId\":\"cdcb6a34-1a32-4441-8b44-70d7cc50c599\",\"eventType\":\"RPV_CREATED\",\"ruleVersionCode\":\"R1.0B\",\"parameterSnapshotHash\":null,\"occurredAt\":\"2026-09-15T16:00:00.000Z\",\"recordedAt\":\"2026-09-15T19:38:43.661Z\",\"reversalOfEventId\":null,\"correlationId\":\"d9828de3-77c5-4421-88bd-1f770cb4f9a4\"},{\"eventId\":\"39ef2074-65e9-4d26-b41b-de62c57ba2c2\",\"qualificationId\":\"a27ce48a-a8b6-4e69-88bd-93b17313b4c4\",\"pvType\":\"PV\",\"amount\":\"23\",\"sourceType\":\"TEST_ONLY\",\"sourceId\":\"abca1366-765e-4ad1-85c2-be924c854a6b\",\"sourceLineId\":null,\"eventType\":\"TEST_ONLY_PV_FACT\",\"ruleVersionCode\":\"R1.0B\",\"parameterSnapshotHash\":null,\"occurredAt\":\"2026-09-15T16:00:00.000Z\",\"recordedAt\":\"2026-09-15T19:38:43.832Z\",\"reversalOfEventId\":null,\"correlationId\":\"914c9b2c-53cd-4aeb-8199-7b24f74faab5\"},{\"eventId\":\"3b4b809c-17e4-4791-873d-b15e0edfd45a\",\"qualificationId\":\"a27ce48a-a8b6-4e69-88bd-93b17313b4c4\",\"pvType\":\"EPV\",\"amount\":\"480\",\"sourceType\":\"ORDER\",\"sourceId\":\"d9d5319f-e8dd-4eb2-8e69-175b4806a58f\",\"sourceLineId\":null,\"eventType\":\"EPV_CREATED\",\"ruleVersionCode\":\"R1.0B\",\"parameterSnapshotHash\":\"b474c4209eac1e9e6266d6ebddec01629ba11f424d0d17a62df69509e5dce8f7\",\"occurredAt\":\"2026-09-15T16:00:00.000Z\",\"recordedAt\":\"2026-09-15T19:38:43.761Z\",\"reversalOfEventId\":null,\"correlationId\":\"0ebdca3c-ad6e-416c-9cad-59dd6b95004f\"},{\"eventId\":\"50da1b5e-ea9e-4c2d-8a53-1b9e1b6ef3ed\",\"qualificationId\":\"48e82a75-ecdf-45b2-aafd-972f306f3df9\",\"pvType\":\"EPV\",\"amount\":\"-1680\",\"sourceType\":\"RETURN\",\"sourceId\":\"31b9d237-3fda-4f05-8c66-b2c49450c14d\",\"sourceLineId\":\"0e2c3756-e64f-4a07-b346-6ccf7984f5b9\",\"eventType\":\"EPV_REPLAY_ADJUSTMENT\",\"ruleVersionCode\":\"R1.0B\",\"parameterSnapshotHash\":\"b474c4209eac1e9e6266d6ebddec01629ba11f424d0d17a62df69509e5dce8f7\",\"occurredAt\":\"2026-09-15T19:38:40.590Z\",\"recordedAt\":\"2026-09-15T19:38:40.591Z\",\"reversalOfEventId\":\"0e2c3756-e64f-4a07-b346-6ccf7984f5b9\",\"correlationId\":\"31b9d237-3fda-4f05-8c66-b2c49450c14d\"},{\"eventId\":\"5df63bc2-54f3-4408-9a38-69793c2a4a8f\",\"qualificationId\":\"48e82a75-ecdf-45b2-aafd-972f306f3df9\",\"pvType\":\"GPV\",\"amount\":\"0\",\"sourceType\":\"ORDER\",\"sourceId\":\"719666ac-4c90-4168-b483-c1a3ce037a9f\",\"sourceLineId\":\"9bd6d666-ee07-46a2-a2f0-6b7c8bb1b33d\",\"eventType\":\"GPV_CREATED\",\"ruleVersionCode\":\"R1.0B\",\"parameterSnapshotHash\":null,\"occurredAt\":\"2026-09-15T16:00:00.000Z\",\"recordedAt\":\"2026-09-15T19:38:40.330Z\",\"reversalOfEventId\":null,\"correlationId\":\"567fb6a3-2545-4653-9488-7683601d16d6\"},{\"eventId\":\"668b7889-5ce3-45dc-9c8d-4d3041c2291f\",\"qualificationId\":\"734f9202-b6a6-40fb-ac12-c5d7c0a0f122\",\"pvType\":\"GPV\",\"amount\":\"0\",\"sourceType\":\"ORDER\",\"sourceId\":\"8557f2d4-5e04-4b75-bbce-238c524a53b6\",\"sourceLineId\":\"d682a7d1-3cd6-4618-b8a7-70a7e1927fe7\",\"eventType\":\"GPV_CREATED\",\"ruleVersionCode\":\"R1.0B\",\"parameterSnapshotHash\":null,\"occurredAt\":\"2026-09-15T16:00:00.000Z\",\"recordedAt\":\"2026-09-15T19:38:43.511Z\",\"reversalOfEventId\":null,\"correlationId\":\"2d1ece27-01ff-4334-a9ef-1b46e04294c1\"},{\"eventId\":\"68e9caa5-de8e-4e31-9c2a-6fa831eb2268\",\"qualificationId\":\"734f9202-b6a6-40fb-ac12-c5d7c0a0f122\",\"pvType\":\"PV\",\"amount\":\"11\",\"sourceType\":\"TEST_ONLY\",\"sourceId\":\"64e72961-d7f5-40bc-b5ac-debeef2225af\",\"sourceLineId\":null,\"eventType\":\"TEST_ONLY_PV_FACT\",\"ruleVersionCode\":\"R1.0B\",\"parameterSnapshotHash\":null,\"occurredAt\":\"2026-09-15T16:00:00.000Z\",\"recordedAt\":\"2026-09-15T19:38:43.640Z\",\"reversalOfEventId\":null,\"correlationId\":\"4497675d-ea48-4eb2-a8f0-33d122dee8e4\"},{\"eventId\":\"7310cb4e-c51a-4f9f-9285-ec3e30ea7c7d\",\"qualificationId\":\"35f177b1-a025-4e23-9550-a7fef1542a02\",\"pvType\":\"RPV\",\"amount\":\"1200\",\"sourceType\":\"MONTHLY_RECOGNITION\",\"sourceId\":\"f1adc32c-14f8-486d-ad4a-9435d6e39aae\",\"sourceLineId\":\"9e8e9754-72b4-49cb-9cc2-91b9c08b9b95\",\"eventType\":\"RPV_CREATED\",\"ruleVersionCode\":\"R1.0B\",\"parameterSnapshotHash\":null,\"occurredAt\":\"2026-09-15T16:00:00.000Z\",\"recordedAt\":\"2026-09-15T19:38:42.041Z\",\"reversalOfEventId\":null,\"correlationId\":\"9bf350e9-aff5-46fb-bcf1-c55063cd25c2\"},{\"eventId\":\"c877af3e-d3b3-496b-bb19-c0d3dce2a90c\",\"qualificationId\":\"a27ce48a-a8b6-4e69-88bd-93b17313b4c4\",\"pvType\":\"GPV\",\"amount\":\"0\",\"sourceType\":\"ORDER\",\"sourceId\":\"d9d5319f-e8dd-4eb2-8e69-175b4806a58f\",\"sourceLineId\":\"fa1b78d4-666c-4c71-9ceb-f1e2b4201f2e\",\"eventType\":\"GPV_CREATED\",\"ruleVersionCode\":\"R1.0B\",\"parameterSnapshotHash\":null,\"occurredAt\":\"2026-09-15T16:00:00.000Z\",\"recordedAt\":\"2026-09-15T19:38:43.735Z\",\"reversalOfEventId\":null,\"correlationId\":\"e8d1e8c3-d068-4103-950f-1f7d298ea97d\"},{\"eventId\":\"cea6aa3c-2db0-4bb1-8033-d970cf555568\",\"qualificationId\":\"734f9202-b6a6-40fb-ac12-c5d7c0a0f122\",\"pvType\":\"RPV\",\"amount\":\"1200\",\"sourceType\":\"MONTHLY_RECOGNITION\",\"sourceId\":\"806123b7-f6e3-4da3-b59e-d65d61b4072f\",\"sourceLineId\":\"24e20088-0abd-41bb-8c67-c4ee28b9c6cc\",\"eventType\":\"RPV_CREATED\",\"ruleVersionCode\":\"R1.0B\",\"parameterSnapshotHash\":null,\"occurredAt\":\"2026-09-15T16:00:00.000Z\",\"recordedAt\":\"2026-09-15T19:38:43.699Z\",\"reversalOfEventId\":null,\"correlationId\":\"2cca240e-9b3e-49b8-b470-4b47ed3f8e20\"},{\"eventId\":\"d171ec96-2fae-4a77-adab-8d33a8bf3b6e\",\"qualificationId\":\"734f9202-b6a6-40fb-ac12-c5d7c0a0f122\",\"pvType\":\"RPV\",\"amount\":\"7\",\"sourceType\":\"TEST_ONLY\",\"sourceId\":\"88827e7b-eceb-44c5-be6e-f0509f03df41\",\"sourceLineId\":\"7cfdf79d-9ce0-45f7-82ef-8a341a4d1ed9\",\"eventType\":\"TEST_ONLY_MISSING_EVIDENCE\",\"ruleVersionCode\":\"R1.0B\",\"parameterSnapshotHash\":null,\"occurredAt\":\"2026-10-01T00:00:00.000Z\",\"recordedAt\":\"2026-09-15T19:38:44.893Z\",\"reversalOfEventId\":null,\"correlationId\":\"d9783c66-0989-44f9-b6a4-a571d334ca4d\"},{\"eventId\":\"d9bb5aa4-7ccd-471a-a276-aa6a9ef6d00a\",\"qualificationId\":\"48e82a75-ecdf-45b2-aafd-972f306f3df9\",\"pvType\":\"GPV\",\"amount\":\"0\",\"sourceType\":\"RETURN\",\"sourceId\":\"31b9d237-3fda-4f05-8c66-b2c49450c14d\",\"sourceLineId\":\"b5bcdf23-9a02-4646-a10d-f4dc61f54648\",\"eventType\":\"GPV_REVERSAL\",\"ruleVersionCode\":\"R1.0B\",\"parameterSnapshotHash\":\"b474c4209eac1e9e6266d6ebddec01629ba11f424d0d17a62df69509e5dce8f7\",\"occurredAt\":\"2026-09-15T16:00:00.000Z\",\"recordedAt\":\"2026-09-15T19:38:40.601Z\",\"reversalOfEventId\":\"5df63bc2-54f3-4408-9a38-69793c2a4a8f\",\"correlationId\":\"31eb098b-1c03-4eca-b305-5b57e7f845cc\"},{\"eventId\":\"fa4942ce-6cdd-4611-9096-21b27ed2d150\",\"qualificationId\":\"a27ce48a-a8b6-4e69-88bd-93b17313b4c4\",\"pvType\":\"RPV\",\"amount\":\"1200\",\"sourceType\":\"MONTHLY_RECOGNITION\",\"sourceId\":\"83c7a3bd-f1ea-4179-90eb-8a4645c80bf2\",\"sourceLineId\":\"2267c57d-c2a3-4ad1-8323-81f8650c257d\",\"eventType\":\"RPV_CREATED\",\"ruleVersionCode\":\"R1.0B\",\"parameterSnapshotHash\":null,\"occurredAt\":\"2026-09-15T16:00:00.000Z\",\"recordedAt\":\"2026-09-15T19:38:43.848Z\",\"reversalOfEventId\":null,\"correlationId\":\"06f95348-31c7-4f15-b7f7-d732c0579cfe\"}],[{\"bonusAwardId\":\"12315f5c-9449-4e4e-9e95-e53a72242b72\",\"settlementBatchId\":null,\"awardType\":\"RPV\",\"recipientQualificationId\":\"a993be9a-d968-49fa-a1db-6961d913fe50\",\"sourceQualificationId\":null,\"sourceEventId\":\"03bf0ff9-3601-45b5-96c8-11b8e076312e\",\"sourceAwardId\":null,\"generationNo\":2,\"theoryAmount\":\"0\",\"kFactor\":\"1\",\"payableAmount\":\"0\",\"activeSnapshot\":true,\"effectiveDirectCountSnapshot\":null,\"planLevelSnapshot\":null,\"ruleVersionCode\":\"R1.0B\",\"parameterSnapshotHash\":\"b474c4209eac1e9e6266d6ebddec01629ba11f424d0d17a62df69509e5dce8f7\",\"occurredAt\":\"2026-09-15T19:38:42.225Z\",\"pendingUntil\":\"2026-09-15T16:00:00.000Z\",\"calculationDetail\":{\"subtype\":\"HISTORICAL_RPV_RECOVERY_ANCHOR\",\"actionKey\":\"RPV:9e8e9754-72b4-49cb-9cc2-91b9c08b9b95:b6f816be-ab77-44e5-a55a-ab7f714d462c\",\"originalRpvAwardId\":\"bcb44968-f8ed-4443-8725-0a3e8476b052\"},\"createdAt\":\"2026-09-15T19:38:42.227Z\"},{\"bonusAwardId\":\"38b9999d-6dff-4244-bdd2-1138066e110d\",\"settlementBatchId\":null,\"awardType\":\"EPV\",\"recipientQualificationId\":\"734f9202-b6a6-40fb-ac12-c5d7c0a0f122\",\"sourceQualificationId\":\"734f9202-b6a6-40fb-ac12-c5d7c0a0f122\",\"sourceEventId\":\"14d2b0d7-c4e5-4d52-9727-3e75915ba50f\",\"sourceAwardId\":null,\"generationNo\":0,\"theoryAmount\":\"840\",\"kFactor\":\"1\",\"payableAmount\":\"840\",\"activeSnapshot\":true,\"effectiveDirectCountSnapshot\":null,\"planLevelSnapshot\":\"STARTER\",\"ruleVersionCode\":\"R1.0B\",\"parameterSnapshotHash\":\"b474c4209eac1e9e6266d6ebddec01629ba11f424d0d17a62df69509e5dce8f7\",\"occurredAt\":\"2026-09-15T16:00:00.000Z\",\"pendingUntil\":\"2026-10-30T16:00:00.000Z\",\"calculationDetail\":{\"epv\":\"1680\",\"rate\":\"0.5\",\"subtype\":\"EPV_SELF\"},\"createdAt\":\"2026-09-15T19:38:43.564Z\"},{\"bonusAwardId\":\"a093513c-bf9c-4c1f-b09a-87b734589765\",\"settlementBatchId\":null,\"awardType\":\"EPV\",\"recipientQualificationId\":\"734f9202-b6a6-40fb-ac12-c5d7c0a0f122\",\"sourceQualificationId\":null,\"sourceEventId\":\"e7b0b782-6e19-490e-847e-f1853a38696b\",\"sourceAwardId\":null,\"generationNo\":null,\"theoryAmount\":\"17\",\"kFactor\":\"1\",\"payableAmount\":\"17\",\"activeSnapshot\":true,\"effectiveDirectCountSnapshot\":null,\"planLevelSnapshot\":null,\"ruleVersionCode\":\"R1.0B\",\"parameterSnapshotHash\":\"bd0eb346faac1dcb65fdc33b52abe7402100fb008346c49a8e83d87e9991c59b\",\"occurredAt\":\"2026-12-01T00:00:00.000Z\",\"pendingUntil\":\"2026-12-31T00:00:00.000Z\",\"calculationDetail\":{\"kind\":\"TEST_ONLY_DISPLAY_RECORD_NOT_GRANT_POLICY\"},\"createdAt\":\"2026-09-15T19:38:44.711Z\"},{\"bonusAwardId\":\"e1d2bf3e-3146-4f70-afae-0304c97ee94d\",\"settlementBatchId\":null,\"awardType\":\"REFERRAL\",\"recipientQualificationId\":\"110be75b-c9c0-48a7-a600-80a311c648eb\",\"sourceQualificationId\":null,\"sourceEventId\":null,\"sourceAwardId\":null,\"generationNo\":null,\"theoryAmount\":\"100\",\"kFactor\":\"1\",\"payableAmount\":\"100\",\"activeSnapshot\":true,\"effectiveDirectCountSnapshot\":null,\"planLevelSnapshot\":null,\"ruleVersionCode\":\"TEST_ONLY_LIFECYCLE\",\"parameterSnapshotHash\":null,\"occurredAt\":\"2020-01-01T00:00:00.000Z\",\"pendingUntil\":\"2020-02-01T00:00:00.000Z\",\"calculationDetail\":{\"testOnly\":true},\"createdAt\":\"2026-09-15T19:38:41.466Z\"},{\"bonusAwardId\":\"f90cfc10-46c0-4626-984d-cdbb4f15e2b3\",\"settlementBatchId\":null,\"awardType\":\"EPV\",\"recipientQualificationId\":\"48e82a75-ecdf-45b2-aafd-972f306f3df9\",\"sourceQualificationId\":\"48e82a75-ecdf-45b2-aafd-972f306f3df9\",\"sourceEventId\":\"0e2c3756-e64f-4a07-b346-6ccf7984f5b9\",\"sourceAwardId\":null,\"generationNo\":0,\"theoryAmount\":\"840\",\"kFactor\":\"1\",\"payableAmount\":\"840\",\"activeSnapshot\":true,\"effectiveDirectCountSnapshot\":null,\"planLevelSnapshot\":\"LEADER\",\"ruleVersionCode\":\"R1.0B\",\"parameterSnapshotHash\":\"b474c4209eac1e9e6266d6ebddec01629ba11f424d0d17a62df69509e5dce8f7\",\"occurredAt\":\"2026-09-15T16:00:00.000Z\",\"pendingUntil\":\"2026-10-30T16:00:00.000Z\",\"calculationDetail\":{\"epv\":\"1680\",\"rate\":\"0.5\",\"subtype\":\"EPV_SELF\"},\"createdAt\":\"2026-09-15T19:38:40.384Z\"},{\"bonusAwardId\":\"fcda2e46-0d8f-42bc-9c8a-d8f0a5a47abd\",\"settlementBatchId\":null,\"awardType\":\"EPV\",\"recipientQualificationId\":\"a27ce48a-a8b6-4e69-88bd-93b17313b4c4\",\"sourceQualificationId\":\"a27ce48a-a8b6-4e69-88bd-93b17313b4c4\",\"sourceEventId\":\"3b4b809c-17e4-4791-873d-b15e0edfd45a\",\"sourceAwardId\":null,\"generationNo\":0,\"theoryAmount\":\"240\",\"kFactor\":\"1\",\"payableAmount\":\"240\",\"activeSnapshot\":true,\"effectiveDirectCountSnapshot\":null,\"planLevelSnapshot\":\"STARTER\",\"ruleVersionCode\":\"R1.0B\",\"parameterSnapshotHash\":\"b474c4209eac1e9e6266d6ebddec01629ba11f424d0d17a62df69509e5dce8f7\",\"occurredAt\":\"2026-09-15T16:00:00.000Z\",\"pendingUntil\":\"2026-10-30T16:00:00.000Z\",\"calculationDetail\":{\"epv\":\"480\",\"rate\":\"0.5\",\"subtype\":\"EPV_SELF\"},\"createdAt\":\"2026-09-15T19:38:43.768Z\"}]]",
+      "expected": "[[{\"eventId\":\"0e2c3756-e64f-4a07-b346-6ccf7984f5b9\",\"qualificationId\":\"48e82a75-ecdf-45b2-aafd-972f306f3df9\",\"pvType\":\"EPV\",\"amount\":\"1680\",\"sourceType\":\"ORDER\",\"sourceId\":\"719666ac-4c90-4168-b483-c1a3ce037a9f\",\"sourceLineId\":null,\"eventType\":\"EPV_CREATED\",\"ruleVersionCode\":\"R1.0B\",\"parameterSnapshotHash\":\"b474c4209eac1e9e6266d6ebddec01629ba11f424d0d17a62df69509e5dce8f7\",\"occurredAt\":\"2026-09-15T16:00:00.000Z\",\"recordedAt\":\"2026-09-15T19:38:40.375Z\",\"reversalOfEventId\":null,\"correlationId\":\"88a69bae-2665-4664-b6c6-933bc219151e\"},{\"eventId\":\"14d2b0d7-c4e5-4d52-9727-3e75915ba50f\",\"qualificationId\":\"734f9202-b6a6-40fb-ac12-c5d7c0a0f122\",\"pvType\":\"EPV\",\"amount\":\"1680\",\"sourceType\":\"ORDER\",\"sourceId\":\"8557f2d4-5e04-4b75-bbce-238c524a53b6\",\"sourceLineId\":null,\"eventType\":\"EPV_CREATED\",\"ruleVersionCode\":\"R1.0B\",\"parameterSnapshotHash\":\"b474c4209eac1e9e6266d6ebddec01629ba11f424d0d17a62df69509e5dce8f7\",\"occurredAt\":\"2026-09-15T16:00:00.000Z\",\"recordedAt\":\"2026-09-15T19:38:43.556Z\",\"reversalOfEventId\":null,\"correlationId\":\"6be3292e-54eb-45d7-9d16-678a91e8bf35\"},{\"eventId\":\"26ce2976-60bf-4d37-b7ec-8e395d64bc3f\",\"qualificationId\":\"35f177b1-a025-4e23-9550-a7fef1542a02\",\"pvType\":\"RPV\",\"amount\":\"-1200\",\"sourceType\":\"MONTHLY_RECOGNITION_REVERSAL\",\"sourceId\":\"f1adc32c-14f8-486d-ad4a-9435d6e39aae\",\"sourceLineId\":\"9e8e9754-72b4-49cb-9cc2-91b9c08b9b95\",\"eventType\":\"RPV_REVERSAL\",\"ruleVersionCode\":\"R1.0B\",\"parameterSnapshotHash\":\"b474c4209eac1e9e6266d6ebddec01629ba11f424d0d17a62df69509e5dce8f7\",\"occurredAt\":\"2026-09-15T16:00:00.000Z\",\"recordedAt\":\"2026-09-15T19:38:42.211Z\",\"reversalOfEventId\":\"7310cb4e-c51a-4f9f-9285-ec3e30ea7c7d\",\"correlationId\":\"63714bf8-ecd3-4869-b1e6-07aea6a8b5d3\"},{\"eventId\":\"2ae31eee-13af-4770-a614-d0399ce1cda2\",\"qualificationId\":\"48e82a75-ecdf-45b2-aafd-972f306f3df9\",\"pvType\":\"GPV\",\"amount\":\"0\",\"sourceType\":\"RETURN\",\"sourceId\":\"6454ca67-3311-484e-9494-878c97a77057\",\"sourceLineId\":\"f257dc21-4dd5-4b12-8f52-bfe5d0150cea\",\"eventType\":\"GPV_REVERSAL\",\"ruleVersionCode\":\"R1.0B\",\"parameterSnapshotHash\":\"b474c4209eac1e9e6266d6ebddec01629ba11f424d0d17a62df69509e5dce8f7\",\"occurredAt\":\"2026-09-15T16:00:00.000Z\",\"recordedAt\":\"2026-09-15T19:38:40.661Z\",\"reversalOfEventId\":\"5df63bc2-54f3-4408-9a38-69793c2a4a8f\",\"correlationId\":\"4d2faea4-b0a3-40cb-82f9-126b08323be6\"},{\"eventId\":\"32c66877-a167-49fc-97a1-23cf0b7a90ec\",\"qualificationId\":\"734f9202-b6a6-40fb-ac12-c5d7c0a0f122\",\"pvType\":\"RPV\",\"amount\":\"1200\",\"sourceType\":\"MONTHLY_RECOGNITION\",\"sourceId\":\"7d09a92d-9f4e-4ce9-a7ac-449b1abceb53\",\"sourceLineId\":\"cdcb6a34-1a32-4441-8b44-70d7cc50c599\",\"eventType\":\"RPV_CREATED\",\"ruleVersionCode\":\"R1.0B\",\"parameterSnapshotHash\":null,\"occurredAt\":\"2026-09-15T16:00:00.000Z\",\"recordedAt\":\"2026-09-15T19:38:43.661Z\",\"reversalOfEventId\":null,\"correlationId\":\"d9828de3-77c5-4421-88bd-1f770cb4f9a4\"},{\"eventId\":\"39ef2074-65e9-4d26-b41b-de62c57ba2c2\",\"qualificationId\":\"a27ce48a-a8b6-4e69-88bd-93b17313b4c4\",\"pvType\":\"PV\",\"amount\":\"23\",\"sourceType\":\"TEST_ONLY\",\"sourceId\":\"abca1366-765e-4ad1-85c2-be924c854a6b\",\"sourceLineId\":null,\"eventType\":\"TEST_ONLY_PV_FACT\",\"ruleVersionCode\":\"R1.0B\",\"parameterSnapshotHash\":null,\"occurredAt\":\"2026-09-15T16:00:00.000Z\",\"recordedAt\":\"2026-09-15T19:38:43.832Z\",\"reversalOfEventId\":null,\"correlationId\":\"914c9b2c-53cd-4aeb-8199-7b24f74faab5\"},{\"eventId\":\"3b4b809c-17e4-4791-873d-b15e0edfd45a\",\"qualificationId\":\"a27ce48a-a8b6-4e69-88bd-93b17313b4c4\",\"pvType\":\"EPV\",\"amount\":\"480\",\"sourceType\":\"ORDER\",\"sourceId\":\"d9d5319f-e8dd-4eb2-8e69-175b4806a58f\",\"sourceLineId\":null,\"eventType\":\"EPV_CREATED\",\"ruleVersionCode\":\"R1.0B\",\"parameterSnapshotHash\":\"b474c4209eac1e9e6266d6ebddec01629ba11f424d0d17a62df69509e5dce8f7\",\"occurredAt\":\"2026-09-15T16:00:00.000Z\",\"recordedAt\":\"2026-09-15T19:38:43.761Z\",\"reversalOfEventId\":null,\"correlationId\":\"0ebdca3c-ad6e-416c-9cad-59dd6b95004f\"},{\"eventId\":\"50da1b5e-ea9e-4c2d-8a53-1b9e1b6ef3ed\",\"qualificationId\":\"48e82a75-ecdf-45b2-aafd-972f306f3df9\",\"pvType\":\"EPV\",\"amount\":\"-1680\",\"sourceType\":\"RETURN\",\"sourceId\":\"31b9d237-3fda-4f05-8c66-b2c49450c14d\",\"sourceLineId\":\"0e2c3756-e64f-4a07-b346-6ccf7984f5b9\",\"eventType\":\"EPV_REPLAY_ADJUSTMENT\",\"ruleVersionCode\":\"R1.0B\",\"parameterSnapshotHash\":\"b474c4209eac1e9e6266d6ebddec01629ba11f424d0d17a62df69509e5dce8f7\",\"occurredAt\":\"2026-09-15T19:38:40.590Z\",\"recordedAt\":\"2026-09-15T19:38:40.591Z\",\"reversalOfEventId\":\"0e2c3756-e64f-4a07-b346-6ccf7984f5b9\",\"correlationId\":\"31b9d237-3fda-4f05-8c66-b2c49450c14d\"},{\"eventId\":\"5df63bc2-54f3-4408-9a38-69793c2a4a8f\",\"qualificationId\":\"48e82a75-ecdf-45b2-aafd-972f306f3df9\",\"pvType\":\"GPV\",\"amount\":\"0\",\"sourceType\":\"ORDER\",\"sourceId\":\"719666ac-4c90-4168-b483-c1a3ce037a9f\",\"sourceLineId\":\"9bd6d666-ee07-46a2-a2f0-6b7c8bb1b33d\",\"eventType\":\"GPV_CREATED\",\"ruleVersionCode\":\"R1.0B\",\"parameterSnapshotHash\":null,\"occurredAt\":\"2026-09-15T16:00:00.000Z\",\"recordedAt\":\"2026-09-15T19:38:40.330Z\",\"reversalOfEventId\":null,\"correlationId\":\"567fb6a3-2545-4653-9488-7683601d16d6\"},{\"eventId\":\"668b7889-5ce3-45dc-9c8d-4d3041c2291f\",\"qualificationId\":\"734f9202-b6a6-40fb-ac12-c5d7c0a0f122\",\"pvType\":\"GPV\",\"amount\":\"0\",\"sourceType\":\"ORDER\",\"sourceId\":\"8557f2d4-5e04-4b75-bbce-238c524a53b6\",\"sourceLineId\":\"d682a7d1-3cd6-4618-b8a7-70a7e1927fe7\",\"eventType\":\"GPV_CREATED\",\"ruleVersionCode\":\"R1.0B\",\"parameterSnapshotHash\":null,\"occurredAt\":\"2026-09-15T16:00:00.000Z\",\"recordedAt\":\"2026-09-15T19:38:43.511Z\",\"reversalOfEventId\":null,\"correlationId\":\"2d1ece27-01ff-4334-a9ef-1b46e04294c1\"},{\"eventId\":\"68e9caa5-de8e-4e31-9c2a-6fa831eb2268\",\"qualificationId\":\"734f9202-b6a6-40fb-ac12-c5d7c0a0f122\",\"pvType\":\"PV\",\"amount\":\"11\",\"sourceType\":\"TEST_ONLY\",\"sourceId\":\"64e72961-d7f5-40bc-b5ac-debeef2225af\",\"sourceLineId\":null,\"eventType\":\"TEST_ONLY_PV_FACT\",\"ruleVersionCode\":\"R1.0B\",\"parameterSnapshotHash\":null,\"occurredAt\":\"2026-09-15T16:00:00.000Z\",\"recordedAt\":\"2026-09-15T19:38:43.640Z\",\"reversalOfEventId\":null,\"correlationId\":\"4497675d-ea48-4eb2-a8f0-33d122dee8e4\"},{\"eventId\":\"7310cb4e-c51a-4f9f-9285-ec3e30ea7c7d\",\"qualificationId\":\"35f177b1-a025-4e23-9550-a7fef1542a02\",\"pvType\":\"RPV\",\"amount\":\"1200\",\"sourceType\":\"MONTHLY_RECOGNITION\",\"sourceId\":\"f1adc32c-14f8-486d-ad4a-9435d6e39aae\",\"sourceLineId\":\"9e8e9754-72b4-49cb-9cc2-91b9c08b9b95\",\"eventType\":\"RPV_CREATED\",\"ruleVersionCode\":\"R1.0B\",\"parameterSnapshotHash\":null,\"occurredAt\":\"2026-09-15T16:00:00.000Z\",\"recordedAt\":\"2026-09-15T19:38:42.041Z\",\"reversalOfEventId\":null,\"correlationId\":\"9bf350e9-aff5-46fb-bcf1-c55063cd25c2\"},{\"eventId\":\"c877af3e-d3b3-496b-bb19-c0d3dce2a90c\",\"qualificationId\":\"a27ce48a-a8b6-4e69-88bd-93b17313b4c4\",\"pvType\":\"GPV\",\"amount\":\"0\",\"sourceType\":\"ORDER\",\"sourceId\":\"d9d5319f-e8dd-4eb2-8e69-175b4806a58f\",\"sourceLineId\":\"fa1b78d4-666c-4c71-9ceb-f1e2b4201f2e\",\"eventType\":\"GPV_CREATED\",\"ruleVersionCode\":\"R1.0B\",\"parameterSnapshotHash\":null,\"occurredAt\":\"2026-09-15T16:00:00.000Z\",\"recordedAt\":\"2026-09-15T19:38:43.735Z\",\"reversalOfEventId\":null,\"correlationId\":\"e8d1e8c3-d068-4103-950f-1f7d298ea97d\"},{\"eventId\":\"cea6aa3c-2db0-4bb1-8033-d970cf555568\",\"qualificationId\":\"734f9202-b6a6-40fb-ac12-c5d7c0a0f122\",\"pvType\":\"RPV\",\"amount\":\"1200\",\"sourceType\":\"MONTHLY_RECOGNITION\",\"sourceId\":\"806123b7-f6e3-4da3-b59e-d65d61b4072f\",\"sourceLineId\":\"24e20088-0abd-41bb-8c67-c4ee28b9c6cc\",\"eventType\":\"RPV_CREATED\",\"ruleVersionCode\":\"R1.0B\",\"parameterSnapshotHash\":null,\"occurredAt\":\"2026-09-15T16:00:00.000Z\",\"recordedAt\":\"2026-09-15T19:38:43.699Z\",\"reversalOfEventId\":null,\"correlationId\":\"2cca240e-9b3e-49b8-b470-4b47ed3f8e20\"},{\"eventId\":\"d171ec96-2fae-4a77-adab-8d33a8bf3b6e\",\"qualificationId\":\"734f9202-b6a6-40fb-ac12-c5d7c0a0f122\",\"pvType\":\"RPV\",\"amount\":\"7\",\"sourceType\":\"TEST_ONLY\",\"sourceId\":\"88827e7b-eceb-44c5-be6e-f0509f03df41\",\"sourceLineId\":\"7cfdf79d-9ce0-45f7-82ef-8a341a4d1ed9\",\"eventType\":\"TEST_ONLY_MISSING_EVIDENCE\",\"ruleVersionCode\":\"R1.0B\",\"parameterSnapshotHash\":null,\"occurredAt\":\"2026-10-01T00:00:00.000Z\",\"recordedAt\":\"2026-09-15T19:38:44.893Z\",\"reversalOfEventId\":null,\"correlationId\":\"d9783c66-0989-44f9-b6a4-a571d334ca4d\"},{\"eventId\":\"d9bb5aa4-7ccd-471a-a276-aa6a9ef6d00a\",\"qualificationId\":\"48e82a75-ecdf-45b2-aafd-972f306f3df9\",\"pvType\":\"GPV\",\"amount\":\"0\",\"sourceType\":\"RETURN\",\"sourceId\":\"31b9d237-3fda-4f05-8c66-b2c49450c14d\",\"sourceLineId\":\"b5bcdf23-9a02-4646-a10d-f4dc61f54648\",\"eventType\":\"GPV_REVERSAL\",\"ruleVersionCode\":\"R1.0B\",\"parameterSnapshotHash\":\"b474c4209eac1e9e6266d6ebddec01629ba11f424d0d17a62df69509e5dce8f7\",\"occurredAt\":\"2026-09-15T16:00:00.000Z\",\"recordedAt\":\"2026-09-15T19:38:40.601Z\",\"reversalOfEventId\":\"5df63bc2-54f3-4408-9a38-69793c2a4a8f\",\"correlationId\":\"31eb098b-1c03-4eca-b305-5b57e7f845cc\"},{\"eventId\":\"fa4942ce-6cdd-4611-9096-21b27ed2d150\",\"qualificationId\":\"a27ce48a-a8b6-4e69-88bd-93b17313b4c4\",\"pvType\":\"RPV\",\"amount\":\"1200\",\"sourceType\":\"MONTHLY_RECOGNITION\",\"sourceId\":\"83c7a3bd-f1ea-4179-90eb-8a4645c80bf2\",\"sourceLineId\":\"2267c57d-c2a3-4ad1-8323-81f8650c257d\",\"eventType\":\"RPV_CREATED\",\"ruleVersionCode\":\"R1.0B\",\"parameterSnapshotHash\":null,\"occurredAt\":\"2026-09-15T16:00:00.000Z\",\"recordedAt\":\"2026-09-15T19:38:43.848Z\",\"reversalOfEventId\":null,\"correlationId\":\"06f95348-31c7-4f15-b7f7-d732c0579cfe\"}],[{\"bonusAwardId\":\"12315f5c-9449-4e4e-9e95-e53a72242b72\",\"settlementBatchId\":null,\"awardType\":\"RPV\",\"recipientQualificationId\":\"a993be9a-d968-49fa-a1db-6961d913fe50\",\"sourceQualificationId\":null,\"sourceEventId\":\"03bf0ff9-3601-45b5-96c8-11b8e076312e\",\"sourceAwardId\":null,\"generationNo\":2,\"theoryAmount\":\"0\",\"kFactor\":\"1\",\"payableAmount\":\"0\",\"activeSnapshot\":true,\"effectiveDirectCountSnapshot\":null,\"planLevelSnapshot\":null,\"ruleVersionCode\":\"R1.0B\",\"parameterSnapshotHash\":\"b474c4209eac1e9e6266d6ebddec01629ba11f424d0d17a62df69509e5dce8f7\",\"occurredAt\":\"2026-09-15T19:38:42.225Z\",\"pendingUntil\":\"2026-09-15T16:00:00.000Z\",\"calculationDetail\":{\"subtype\":\"HISTORICAL_RPV_RECOVERY_ANCHOR\",\"actionKey\":\"RPV:9e8e9754-72b4-49cb-9cc2-91b9c08b9b95:b6f816be-ab77-44e5-a55a-ab7f714d462c\",\"originalRpvAwardId\":\"bcb44968-f8ed-4443-8725-0a3e8476b052\"},\"createdAt\":\"2026-09-15T19:38:42.227Z\"},{\"bonusAwardId\":\"38b9999d-6dff-4244-bdd2-1138066e110d\",\"settlementBatchId\":null,\"awardType\":\"EPV\",\"recipientQualificationId\":\"734f9202-b6a6-40fb-ac12-c5d7c0a0f122\",\"sourceQualificationId\":\"734f9202-b6a6-40fb-ac12-c5d7c0a0f122\",\"sourceEventId\":\"14d2b0d7-c4e5-4d52-9727-3e75915ba50f\",\"sourceAwardId\":null,\"generationNo\":0,\"theoryAmount\":\"840\",\"kFactor\":\"1\",\"payableAmount\":\"840\",\"activeSnapshot\":true,\"effectiveDirectCountSnapshot\":null,\"planLevelSnapshot\":\"STARTER\",\"ruleVersionCode\":\"R1.0B\",\"parameterSnapshotHash\":\"b474c4209eac1e9e6266d6ebddec01629ba11f424d0d17a62df69509e5dce8f7\",\"occurredAt\":\"2026-09-15T16:00:00.000Z\",\"pendingUntil\":\"2026-10-30T16:00:00.000Z\",\"calculationDetail\":{\"epv\":\"1680\",\"rate\":\"0.5\",\"subtype\":\"EPV_SELF\"},\"createdAt\":\"2026-09-15T19:38:43.564Z\"},{\"bonusAwardId\":\"a093513c-bf9c-4c1f-b09a-87b734589765\",\"settlementBatchId\":null,\"awardType\":\"EPV\",\"recipientQualificationId\":\"734f9202-b6a6-40fb-ac12-c5d7c0a0f122\",\"sourceQualificationId\":null,\"sourceEventId\":\"e7b0b782-6e19-490e-847e-f1853a38696b\",\"sourceAwardId\":null,\"generationNo\":null,\"theoryAmount\":\"17\",\"kFactor\":\"1\",\"payableAmount\":\"17\",\"activeSnapshot\":true,\"effectiveDirectCountSnapshot\":null,\"planLevelSnapshot\":null,\"ruleVersionCode\":\"R1.0B\",\"parameterSnapshotHash\":\"bd0eb346faac1dcb65fdc33b52abe7402100fb008346c49a8e83d87e9991c59b\",\"occurredAt\":\"2026-12-01T00:00:00.000Z\",\"pendingUntil\":\"2026-12-31T00:00:00.000Z\",\"calculationDetail\":{\"kind\":\"TEST_ONLY_DISPLAY_RECORD_NOT_GRANT_POLICY\"},\"createdAt\":\"2026-09-15T19:38:44.711Z\"},{\"bonusAwardId\":\"e1d2bf3e-3146-4f70-afae-0304c97ee94d\",\"settlementBatchId\":null,\"awardType\":\"REFERRAL\",\"recipientQualificationId\":\"110be75b-c9c0-48a7-a600-80a311c648eb\",\"sourceQualificationId\":null,\"sourceEventId\":null,\"sourceAwardId\":null,\"generationNo\":null,\"theoryAmount\":\"100\",\"kFactor\":\"1\",\"payableAmount\":\"100\",\"activeSnapshot\":true,\"effectiveDirectCountSnapshot\":null,\"planLevelSnapshot\":null,\"ruleVersionCode\":\"TEST_ONLY_LIFECYCLE\",\"parameterSnapshotHash\":null,\"occurredAt\":\"2020-01-01T00:00:00.000Z\",\"pendingUntil\":\"2020-02-01T00:00:00.000Z\",\"calculationDetail\":{\"testOnly\":true},\"createdAt\":\"2026-09-15T19:38:41.466Z\"},{\"bonusAwardId\":\"f90cfc10-46c0-4626-984d-cdbb4f15e2b3\",\"settlementBatchId\":null,\"awardType\":\"EPV\",\"recipientQualificationId\":\"48e82a75-ecdf-45b2-aafd-972f306f3df9\",\"sourceQualificationId\":\"48e82a75-ecdf-45b2-aafd-972f306f3df9\",\"sourceEventId\":\"0e2c3756-e64f-4a07-b346-6ccf7984f5b9\",\"sourceAwardId\":null,\"generationNo\":0,\"theoryAmount\":\"840\",\"kFactor\":\"1\",\"payableAmount\":\"840\",\"activeSnapshot\":true,\"effectiveDirectCountSnapshot\":null,\"planLevelSnapshot\":\"LEADER\",\"ruleVersionCode\":\"R1.0B\",\"parameterSnapshotHash\":\"b474c4209eac1e9e6266d6ebddec01629ba11f424d0d17a62df69509e5dce8f7\",\"occurredAt\":\"2026-09-15T16:00:00.000Z\",\"pendingUntil\":\"2026-10-30T16:00:00.000Z\",\"calculationDetail\":{\"epv\":\"1680\",\"rate\":\"0.5\",\"subtype\":\"EPV_SELF\"},\"createdAt\":\"2026-09-15T19:38:40.384Z\"},{\"bonusAwardId\":\"fcda2e46-0d8f-42bc-9c8a-d8f0a5a47abd\",\"settlementBatchId\":null,\"awardType\":\"EPV\",\"recipientQualificationId\":\"a27ce48a-a8b6-4e69-88bd-93b17313b4c4\",\"sourceQualificationId\":\"a27ce48a-a8b6-4e69-88bd-93b17313b4c4\",\"sourceEventId\":\"3b4b809c-17e4-4791-873d-b15e0edfd45a\",\"sourceAwardId\":null,\"generationNo\":0,\"theoryAmount\":\"240\",\"kFactor\":\"1\",\"payableAmount\":\"240\",\"activeSnapshot\":true,\"effectiveDirectCountSnapshot\":null,\"planLevelSnapshot\":\"STARTER\",\"ruleVersionCode\":\"R1.0B\",\"parameterSnapshotHash\":\"b474c4209eac1e9e6266d6ebddec01629ba11f424d0d17a62df69509e5dce8f7\",\"occurredAt\":\"2026-09-15T16:00:00.000Z\",\"pendingUntil\":\"2026-10-30T16:00:00.000Z\",\"calculationDetail\":{\"epv\":\"480\",\"rate\":\"0.5\",\"subtype\":\"EPV_SELF\"},\"createdAt\":\"2026-09-15T19:38:43.768Z\"}]]",
+      "result": "PASS"
+    },
+    {
+      "label": "Golden Journey back to Ball1 remains deterministic",
+      "actual": [
+        11,
+        2400,
+        1680
+      ],
+      "expected": [
+        11,
+        2400,
+        1680
+      ],
+      "result": "PASS"
+    },
+    {
+      "label": "repeated GET has no monetary side effect",
+      "actual": [
+        17,
+        6,
+        2
+      ],
+      "expected": [
+        17,
+        6,
+        2
+      ],
+      "result": "PASS"
+    },
+    {
+      "label": "disabled Person denied despite valid session",
+      "actual": 401,
+      "expected": 401,
+      "result": "PASS"
+    },
+    {
+      "label": "Member OpenAPI declares auth",
+      "actual": [
+        {
+          "memberBearer": []
+        }
+      ],
+      "expected": [
+        {
+          "memberBearer": []
+        }
+      ],
+      "result": "PASS"
+    },
+    {
+      "label": "LINE exchange DTO exported",
+      "actual": true,
+      "expected": true,
+      "result": "PASS"
+    }
+  ]
+}

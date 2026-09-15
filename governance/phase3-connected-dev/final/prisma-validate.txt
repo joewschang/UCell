@@ -1,5 +1,5 @@
 command: pnpm --filter @ucell/database exec prisma validate
-started: 2026-09-15T19:00:49.105Z
+started: 2026-09-15T19:40:39.634Z
 exit: 0
 Prisma schema loaded from prisma\schema.prisma
 The schema at prisma\schema.prisma is valid 🚀

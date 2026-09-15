@@ -1,4 +1,4 @@
 command: node scripts/phase2-db-test.mjs
-started: 2026-09-15T19:02:51.620Z
+started: 2026-09-15T19:40:56.072Z
 exit: 0
-PASS 128 real DB assertions; fixtures rolled back
+PASS 129 real DB assertions; fixtures rolled back

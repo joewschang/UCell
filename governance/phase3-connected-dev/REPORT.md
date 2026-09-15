@@ -1,3 +1,46 @@
+# Connected Member MVP closure checkpoint — 2026-09-16
+
+Branch: integration/member-backend-mvp. Pre-change checkpoint b64a31a; preserved implementation checkpoint 1639bd5. This section supersedes older incomplete Member entries below. Production Promotion remains BLOCKED; no main merge, force push or RC2 promotion.
+
+## Status classification
+
+- CODE COMPLETE: Connected Member MVP API/UI infrastructure for Core-priced order creation/detail, station notification read-state, own Person contact/profile, Core repurchase Dashboard, scoped views and error/session states. Backend Phase 3 is NOT complete.
+- CONNECTED DEV PASS: Backend/Worker/Admin/Member builds; Prisma validate/generate/deploy; fresh isolated Golden twice; Member tests and actual API/DB journey; BOLA/IDOR; OpenAPI response/authorization/input schemas; policy/static and replay checks. Exact final counts/results are authoritative in final/PASS-FAIL-MATRIX.md and raw logs.
+- OPERATIONAL CREDENTIAL PENDING: formal LINE channel/LIFF credentials and real-device verification; formal Entra/RBAC verification. Synthetic provider boundary is test-only, never a Production PASS.
+- UAT PENDING: authenticated LIFF browser/real-device Golden Journey and operational signoff/configuration remain unavailable. API journey does not substitute for browser UAT.
+- PRODUCTION BLOCKED: 73 executable TODO plus formal Security/UAT, backup/restore, operational configuration and complete release evidence. RC/release gates remain blocked.
+
+## Changes / migration / APIs / UI
+
+POST /api/v1/member/orders now delegates to authoritative Core OrderService in a Member-specific Serializable/idempotent path. Server revalidates temporal ownership, active product and a single effective traceable R1.0B rule profile. Client supplies only Qualification and item IDs/quantities; price, PV and purpose fields are rejected. Order confirmation means recorded order, not payment, fulfillment or PV recognition. Missing configuration fails closed; pending formal PV/BV event mapping remains unresolved. Decimal order prices come from Backend; frontend does not sum monetary results. Duplicate payload/key returns original order even after product-price changes; conflicting payload returns 409. No original Ledger/award/PAID mutation occurs.
+
+PATCH /api/v1/member/notifications/:id/read adds first-read evidence scoped to authenticated Person and owned ball. PATCH /api/v1/member/profile is idempotent and audited in the same transaction; only preferred name/email/mobile are writable, strictly Person-level. Both require Idempotency-Key. GET notifications returns persisted readAt. MEMBER_ORDER_CREATED transactional outbox consumer appends station notification and acknowledges its lease atomically; duplicate delivery preserves the original notice. No LINE push or ERP fulfillment scope is introduced.
+
+Migration 20260916040000_member_notification_reads (22nd migration) adds composite owner-bound read evidence and unique source-event notification identity. No monetary schema/lifecycle rewrite.
+
+Member Shop uses Core product/order API; order detail is fetched after success. Failed submission retains cart and key for retry; duplicate clicks are guarded. Profile and notifications use real PATCH/read-state. Dashboard repurchase is Core status. Loading/empty/error/403/409/422/expired-session states are covered; mock mode stays UI-only. OpenAPI includes request/response envelopes, nullable pending amounts, pagination, bearer/context errors and required mutation keys.
+
+Read adapter correction: same-time Core CALCULATED → PENDING_45D events no longer use random UUID ordering to hide a held award. Only this established initial transition is resolved; other conflicting chronology fails closed LIFECYCLE_EVIDENCE_AMBIGUOUS. No amounts or historical lifecycle are modified. Added non-empty Bonus/Ledger isolation and forced-timestamp-tie assertions.
+
+## Validation / commands / security
+
+Final verified counts: Member 99 tests; isolated Member HTTP/DB 183 assertions ×2; Backend API 106 passed / 73 TODO; replay DB 129 assertions; live Admin 43 HTTP operations and Member unauthenticated denial 4 operations. Admin first rerun lacked a running Worker and correctly failed missing historical evidence; restoring the Worker made the complete rerun PASS. Both runs remain archived.
+
+Executed commands and exit codes: final/gate-results.json and per-gate logs. Runner: node governance/phase3-connected-dev/run-gates.mjs (selected reruns after the latest correction). Commands include Node/pnpm/git checks, Prisma validate/generate/migrate deploy, all builds, Jest/Vitest, db:golden twice, phase2-db-test, LINE verifier/session tests, contracts, OpenAPI, Security/preflight, TODO/RC/UAT/release gates and live Admin/Member auth checks.
+
+Golden journey uses actual Nest/Prisma/Core with isolated TEST_ONLY fixtures and synthetic LINE boundary: Person login, Ball1 views, Ball2 distinct volumes/trees/bonus/ledger, foreign ownership denial, products/order/detail, notification/read, profile, return to deterministic Ball1. Mutation regressions prove same-key retry, conflict/concurrent delivery, audit failure rollback and subsequent retry. Outbox ack failure rolls back notice and schedules retry; LINE session creation failure rolls back token consumption. Raw result evidence is final/member-contracts/member-journey.json; no tokens are recorded.
+
+Security findings resolved: authoritative server prices/ownership, forbidden monetary inputs, notification audience isolation, profile identity/Qualification field rejection, real Member guard even on Admin DEV. Formal Security E2E remains blocked, not passed with fabricated principals.
+
+TODO burn-down: 148 → 74 → 73. One existing RPV anchor-type TODO became a real regression backed by DB recovery evidence; replay assertions increased 128 → 129. No TODO deletion/skip/fake assertion. Detailed remaining cases: final/TODO-INVENTORY.md.
+
+Pending Decisions remain eligible-consumption complete scope, PV/BV formal event mapping, production operational calendar/cut-off. Asia/Taipei and historical snapshot fail-closed are settled.
+
+Next stage: ordered RPV concurrency and K1/K2 period-wide replay, carry convergence/maxWeeks/resume, qualification/subscription/Golden workload TODO batches. Formal LINE device/UAT testing requires operational credentials. This checkpoint is Member engineering closure, not Backend Phase 3 or Production completion.
+
+Changed-file and diff evidence: git checkpoint diff; source includes Member services/controllers/DTOs, OrderService/module, notification consumer/Worker, Prisma migration/schema, Member Connected UI/auth/data adapters, actual regression tests, OpenAPI and governance evidence. rc1-recovered remains the shared baseline.
+
+---
 # Member continuation checkpoint — 2026-09-16
 
 Branch: integration/member-backend-mvp. Pre-change checkpoint: bdac653. This stage completes Connected station-notification reads and own profile/contact editing; full LINE OA/LIFF rollout, checkout and Backend Phase 3 remain incomplete. Production Promotion = BLOCKED. No main merge or force push.

@@ -1,5 +1,5 @@
 command: pnpm preflight
-started: 2026-09-15T18:51:28.599Z
+started: 2026-09-15T19:34:12.122Z
 exit: 0
 == UCell R1.0B offline preflight ==
 STATIC_VALIDATE_PASS
@@ -33,7 +33,7 @@ Prisma schema loaded from prisma\schema.prisma
 
 Start by importing your Prisma Client (See: https://pris.ly/d/importing-client)
 
-Tip: Interested in query caching in just a few lines of code? Try Accelerate today! https://pris.ly/tip-3-accelerate
+Tip: Need your database queries to be 1000x faster? Accelerate offers you that and more: https://pris.ly/tip-2-accelerate
 
 packages/shared build$ tsc -p tsconfig.json
 packages/database build$ tsc -p tsconfig.json
@@ -41,13 +41,13 @@ packages/contracts build$ tsc -p tsconfig.json
 packages/contracts build: Done
 packages/shared build: Done
 packages/database build: Done
-apps/api build$ nest build
 apps/worker build$ tsc -p tsconfig.json
+apps/api build$ nest build
 apps/worker build: Done
 apps/api build: Done
 DEPENDENCY_GATE_PASS
 $ node scripts/run-bash-gate.mjs ci-gate.sh
-(node:4088) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///C:/UCell/UCell/backend/packages/shared/src/r1-0b-golden.ts is not specified and it doesn't parse as CommonJS.
+(node:25192) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///C:/UCell/UCell/backend/packages/shared/src/r1-0b-golden.ts is not specified and it doesn't parse as CommonJS.
 Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
 To eliminate this warning, add "type": "module" to \\?\C:\UCell\UCell\backend\packages\shared\package.json.
 (Use `node --trace-warnings ...` to show where the warning was created)

@@ -1,41 +1,41 @@
 command: pnpm test
-started: 2026-09-15T18:50:35.766Z
+started: 2026-09-15T19:34:29.134Z
 exit: 1
 Scope: 5 of 6 workspace projects
-packages/contracts test$ echo no-tests
 packages/shared test$ jest --config jest.config.cjs
 packages/database test$ echo no-tests
-packages/contracts test: no-tests
-packages/contracts test: Done
+packages/contracts test$ echo no-tests
 packages/database test: no-tests
+packages/contracts test: no-tests
 packages/database test: Done
+packages/contracts test: Done
 apps/worker test$ echo no-tests
 apps/worker test: no-tests
 apps/worker test: Done
 packages/shared test: Test Suites: 1 passed, 1 total
 packages/shared test: Tests:       6 passed, 6 total
 packages/shared test: Snapshots:   0 total
-packages/shared test: Time:        1.303 s, estimated 2 s
+packages/shared test: Time:        1.376 s, estimated 2 s
 packages/shared test: Ran all test suites.
 packages/shared test: Done
 apps/api test$ jest --config ./test/jest-e2e.json
 apps/api test:
 apps/api test: Test Suites: 16 passed, 16 total
-apps/api test: Tests:       74 todo, 105 passed, 179 total
+apps/api test: Tests:       73 todo, 106 passed, 179 total
 apps/api test: Snapshots:   0 total
-apps/api test: Time:        16.876 s
+apps/api test: Time:        17.405 s
 apps/api test: Ran all test suites.
 apps/api test: Done
 $ pnpm -r test && pnpm test:todo:gate
 $ node scripts/test-todo-gate.mjs
-TEST_TODO_GATE_FAIL: 74 unresolved executable test placeholders
+TEST_TODO_GATE_FAIL: 73 unresolved executable test placeholders
 - apps\api\test\bonus-engine-v04.e2e-spec.ts: 22
 - apps\api\test\epv-global-v05.e2e-spec.ts: 8
 - apps\api\test\negative-flow-v05.e2e-spec.ts: 6
 - apps\api\test\qualification-isolation.e2e-spec.ts: 1
 - apps\api\test\v060-adjustment-lifecycle.e2e-spec.ts: 3
 - apps\api\test\v061-replay.e2e-spec.ts: 4
-- apps\api\test\v062-carry-chain.e2e-spec.ts: 9
+- apps\api\test\v062-carry-chain.e2e-spec.ts: 8
 - apps\api\test\v063-golden-path.e2e-spec.ts: 1
 - apps\api\test\v064-golden-dataset.e2e-spec.ts: 10
 - apps\api\test\vertical-slice-02.e2e-spec.ts: 8
