@@ -2,7 +2,11 @@
   "name": "ucell-platform",
   "private": true,
   "version": "0.6.10",
-  "packageManager": "pnpm@9",
+  "packageManager": "pnpm@12.4.1",
+  "engines": {
+    "node": ">=24 <25",
+    "pnpm": ">=12.4.1 <13"
+  },
   "scripts": {
     "dev": "pnpm --filter @ucell/api start:dev",
     "build": "pnpm -r build",
