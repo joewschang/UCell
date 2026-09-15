@@ -11,6 +11,7 @@ const {QualificationAccessService}=require('./apps/api/dist/modules/auth/qualifi
 const {UnifiedPayableService}=require('./apps/api/dist/modules/payout/unified-payable.service.js');
 const {RecoveryBalanceService}=require('./apps/api/dist/modules/payout/recovery-balance.service.js');
 const {BonusLifecycleService}=require('./apps/api/dist/modules/bonus/bonus-lifecycle.service.js');
+const {QualificationService}=require('./apps/api/dist/modules/qualification/qualification.service.js');
 const url=new URL(process.env.DATABASE_URL??'');
 assert.ok(['localhost','127.0.0.1'].includes(url.hostname));
 assert.match(process.env.GOLDEN_ISOLATION_DATABASE??'',/^ucell_dev_golden_[a-f0-9]{32}$/);
@@ -134,5 +135,25 @@ try{
   // Direct production service on a narrowed fixture facade; no monetary calculation is mocked.
   const serial=new BonusLifecycleService({...scoped,bonusAwardLifecycleEvent:db.bonusAwardLifecycleEvent});
   equal((await serial.matureDueAwards(end)).matured,0,'maturity duplicate delivery is a no-op');
-  console.log(`PHASE3_MEMBERSHIP_DB_PASS: ${assertions} assertions; approval, isolation, rollback/retry, temporal access, payout grouping and concurrent maturity`);
+  const direct=new QualificationService(db,idempotency,audit,organization);
+  const directRoot=await db.qualification.create({data:{currentHolderPersonId:owner.personId,planLevelCode:'STARTER',status:'EFFECTIVE',effectiveAt:new Date('2020-01-01')}});
+  const directDto={personId:owner.personId,planLevelCode:'STARTER',sponsorQualificationId:directRoot.qualificationId,binaryParentQualificationId:directRoot.qualificationId,binarySide:'LEFT',effectiveAt:'2020-01-01T00:00:00.000Z'};
+  const directCount=await db.qualification.count();
+  await rejected(direct.create({...directDto,binarySide:'RIGHT'},'direct-invalid',randomUUID()),'BINARY_LEFT_SUBTREE_REQUIRED');
+  equal(await db.qualification.count(),directCount,'direct invalid first RIGHT creates no qualification');
+  const directFirst=await direct.create(directDto,'direct-first',randomUUID()),firstId=directFirst.value.qualification.qualificationId;
+  equal(directFirst.value.sponsor.sponsorSequenceNo,1,'direct first sequence one');
+  const repeated=await direct.create(directDto,'direct-first',randomUUID());
+  equal(repeated.replayed,true,'direct duplicate replays');
+  equal(repeated.value.qualification.qualificationId,firstId,'direct duplicate retains qualification');
+  equal(await db.sponsorRelationship.count({where:{childQualificationId:firstId}}),1,'direct duplicate retains one sponsor relationship');
+  const directSecond=await direct.create({...directDto,binaryParentQualificationId:firstId},'direct-second',randomUUID());
+  equal(directSecond.value.sponsor.sponsorSequenceNo,2,'direct second sequence two');
+  equal((await db.binaryPlacement.findUniqueOrThrow({where:{childQualificationId:directSecond.value.qualification.qualificationId}})).parentQualificationId,firstId,'direct second Binary differs from Sponsor');
+  const closed=await db.sponsorRelationship.findUniqueOrThrow({where:{childQualificationId:directSecond.value.qualification.qualificationId}});
+  await db.sponsorRelationship.update({where:{sponsorRelationshipId:closed.sponsorRelationshipId},data:{effectiveTo:new Date('2020-02-01')}}); // Explicit TEST_ONLY history, not an exit workflow.
+  const directThird=await direct.create({...directDto,binaryParentQualificationId:firstId,binarySide:'RIGHT'},'direct-third',randomUUID());
+  equal(directThird.value.sponsor.sponsorSequenceNo,3,'closed direct relationship does not reuse sequence');
+  equal((await db.sponsorRelationship.findUniqueOrThrow({where:{childQualificationId:directSecond.value.qualification.qualificationId}})).sponsorSequenceNo,2,'closed second relationship preserves original sequence');
+  console.log(`PHASE3_MEMBERSHIP_DB_PASS: ${assertions} assertions; approval, isolation, rollback/retry, temporal access, payout grouping, concurrent maturity and direct qualification`);
 }finally{await db.$disconnect();}

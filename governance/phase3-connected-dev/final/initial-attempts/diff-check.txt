@@ -1,8 +1,7 @@
 command: git diff --check
-started: 2026-09-15T17:51:38.945Z
+started: 2026-09-15T18:00:48.386Z
 exit: 0
-warning: in the working copy of 'backend/apps/api/test/v062-carry-chain.e2e-spec.ts', LF will be replaced by CRLF the next time Git touches it
-warning: in the working copy of 'backend/apps/api/test/vertical-slice.e2e-spec.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'backend/apps/api/test/v060-adjustment-lifecycle.e2e-spec.ts', LF will be replaced by CRLF the next time Git touches it
 warning: in the working copy of 'backend/scripts/phase2-db-test.mjs', LF will be replaced by CRLF the next time Git touches it
 warning: in the working copy of 'governance/phase2-return-replay/final/db-regression.json', LF will be replaced by CRLF the next time Git touches it
 warning: in the working copy of 'governance/phase3-connected-dev/DECISION.md', LF will be replaced by CRLF the next time Git touches it
@@ -13,14 +12,10 @@ warning: in the working copy of 'governance/phase3-connected-dev/final/TODO-INVE
 warning: in the working copy of 'governance/phase3-connected-dev/final/api-tests.txt', LF will be replaced by CRLF the next time Git touches it
 warning: in the working copy of 'governance/phase3-connected-dev/final/backend-test-gate.txt', LF will be replaced by CRLF the next time Git touches it
 warning: in the working copy of 'governance/phase3-connected-dev/final/db-regression.txt', LF will be replaced by CRLF the next time Git touches it
-warning: in the working copy of 'governance/phase3-connected-dev/final/default-db-golden-repeat.txt', LF will be replaced by CRLF the next time Git touches it
-warning: in the working copy of 'governance/phase3-connected-dev/final/default-db-golden.txt', LF will be replaced by CRLF the next time Git touches it
 warning: in the working copy of 'governance/phase3-connected-dev/final/gate-results.json', LF will be replaced by CRLF the next time Git touches it
 warning: in the working copy of 'governance/phase3-connected-dev/final/initial-attempts/api-tests.txt', LF will be replaced by CRLF the next time Git touches it
 warning: in the working copy of 'governance/phase3-connected-dev/final/initial-attempts/backend-test-gate.txt', LF will be replaced by CRLF the next time Git touches it
 warning: in the working copy of 'governance/phase3-connected-dev/final/initial-attempts/db-regression.txt', LF will be replaced by CRLF the next time Git touches it
-warning: in the working copy of 'governance/phase3-connected-dev/final/initial-attempts/default-db-golden-repeat.txt', LF will be replaced by CRLF the next time Git touches it
-warning: in the working copy of 'governance/phase3-connected-dev/final/initial-attempts/default-db-golden.txt', LF will be replaced by CRLF the next time Git touches it
 warning: in the working copy of 'governance/phase3-connected-dev/final/initial-attempts/diff-check.txt', LF will be replaced by CRLF the next time Git touches it
 warning: in the working copy of 'governance/phase3-connected-dev/final/initial-attempts/rc.txt', LF will be replaced by CRLF the next time Git touches it
 warning: in the working copy of 'governance/phase3-connected-dev/final/initial-attempts/security-policy-preflight.txt', LF will be replaced by CRLF the next time Git touches it
@@ -28,4 +23,3 @@ warning: in the working copy of 'governance/phase3-connected-dev/final/initial-a
 warning: in the working copy of 'governance/phase3-connected-dev/final/rc.txt', LF will be replaced by CRLF the next time Git touches it
 warning: in the working copy of 'governance/phase3-connected-dev/final/security-policy-preflight.txt', LF will be replaced by CRLF the next time Git touches it
 warning: in the working copy of 'governance/phase3-connected-dev/final/todo.txt', LF will be replaced by CRLF the next time Git touches it
-warning: in the working copy of 'governance/phase3-connected-dev/todo-inventory.mjs', LF will be replaced by CRLF the next time Git touches it

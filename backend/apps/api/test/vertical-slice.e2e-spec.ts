@@ -3,6 +3,8 @@ import { IdempotencyService } from '../src/common/idempotency/idempotency.servic
 import { OutboxService } from '../src/common/outbox/outbox.service';
 import { PersonService } from '../src/modules/person/person.service';
 import { OrderService } from '../src/modules/order/order.service';
+import { QualificationService } from '../src/modules/qualification/qualification.service';
+import { OrganizationService } from '../src/modules/organization/organization.service';
 import { execFileSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -37,6 +39,19 @@ function fixture() {
   return {tx, prisma, audit, person: new PersonService(prisma as any, idempotency, audit as any), orders: new OrderService(prisma as any, idempotency, audit as any, new OutboxService())};
 }
 const payment = {amount: '2400', paymentMethod: 'TEST_ONLY', referenceNo: 'fixture', occurredAt: '2026-01-02T03:04:05.000Z'};
+function qualificationFixture(){
+ const f=fixture(),relationships:any[]=[];let sequence=0;
+ const tx={...f.tx,
+  $queryRaw:jest.fn(async()=>[]),
+  person:{findUnique:jest.fn(async()=>({personId:'person'}))},
+  qualification:{findUnique:jest.fn(async({where}:any)=>({qualificationId:where.qualificationId})),create:jest.fn(async({data}:any)=>({...data,qualificationId:'created-'+(++sequence)}))},
+  qualificationHolderHistory:{create:jest.fn(async({data}:any)=>data)},qualificationPlanHistory:{create:jest.fn(async({data}:any)=>data)},
+  sponsorRelationship:{aggregate:jest.fn(async(_query:any)=>({_max:{sponsorSequenceNo:relationships.length?Math.max(...relationships.map(row=>row.sponsorSequenceNo)):null}})),create:jest.fn(async({data}:any)=>{relationships.push({...data});return data;})},
+  binaryPlacement:{findFirst:jest.fn(async()=>null),create:jest.fn(async({data}:any)=>data)}
+ };
+ const prisma={idempotencyRecord:tx.idempotencyRecord,$transaction:jest.fn(async(work:any,_options:any)=>work(tx))};
+ return {tx,relationships,audit:f.audit,service:new QualificationService(prisma as any,new IdempotencyService(prisma as any),f.audit as any,new OrganizationService(prisma as any))};
+}
 describe('UCell first vertical slice', () => {
   it('creates Person with idempotent command', async () => {
     const f = fixture(), dto = {legalName: 'TEST_ONLY Person', mobile: 'fixture-mobile'};
@@ -48,8 +63,29 @@ describe('UCell first vertical slice', () => {
     expect(f.audit.write).toHaveBeenCalledTimes(1);
     expect(f.audit.write.mock.calls[0][0]).toBe(f.tx);
   });
-  it.todo('creates Qualification with permanent sponsor sequence');
-  it.todo('rejects 1st direct placed on RIGHT');
+  it('creates Qualification with permanent sponsor sequence', async () => {
+    const f=qualificationFixture(), dto={personId:'person',planLevelCode:'STARTER' as const,sponsorQualificationId:'sponsor',binaryParentQualificationId:'sponsor',binarySide:'LEFT' as const,effectiveAt:'2020-01-01T00:00:00.000Z'};
+    const first=await f.service.create(dto,'first','request');
+    expect(first.value.sponsor).toEqual({sponsorQualificationId:'sponsor',sponsorSequenceNo:1});
+    expect(await f.service.create(dto,'first','retry')).toMatchObject({replayed:true,value:{qualification:{qualificationId:first.value.qualification.qualificationId}}});
+    const second=await f.service.create({...dto,binaryParentQualificationId:'separate-parent'},'second','request');
+    expect(second.value).toMatchObject({sponsor:{sponsorQualificationId:'sponsor',sponsorSequenceNo:2},binary:{parentQualificationId:'separate-parent',side:'LEFT'}});
+    f.relationships[1].effectiveTo=new Date('2020-02-01'); // TEST_ONLY interval closure, not an exit workflow.
+    expect((await f.service.create(dto,'third','request')).value.sponsor.sponsorSequenceNo).toBe(3);
+    expect(f.relationships.map(row=>row.sponsorSequenceNo)).toEqual([1,2,3]);
+    expect(f.tx.qualification.create).toHaveBeenCalledTimes(3);
+    expect(f.tx.sponsorRelationship.aggregate).toHaveBeenCalledWith({where:{sponsorQualificationId:'sponsor'},_max:{sponsorSequenceNo:true}});
+    expect(f.tx.qualificationHolderHistory.create.mock.calls[0][0].data).toMatchObject({qualificationId:first.value.qualification.qualificationId,holderPersonId:'person',effectiveFrom:new Date(dto.effectiveAt)});
+    expect(f.tx.qualificationPlanHistory.create.mock.calls[0][0].data).toMatchObject({qualificationId:first.value.qualification.qualificationId,planCode:'STARTER',effectiveFrom:new Date(dto.effectiveAt)});
+    expect(f.audit.write.mock.calls[0][0]).toBe(f.tx);
+  });
+  it('rejects 1st direct placed on RIGHT', async () => {
+    const f=qualificationFixture();
+    await expect(f.service.create({personId:'person',planLevelCode:'STARTER',sponsorQualificationId:'sponsor',binaryParentQualificationId:'sponsor',binarySide:'RIGHT'},'invalid','request')).rejects.toMatchObject({response:{code:'BINARY_LEFT_SUBTREE_REQUIRED'}});
+    for(const model of [f.tx.qualification,f.tx.qualificationHolderHistory,f.tx.qualificationPlanHistory,f.tx.sponsorRelationship,f.tx.binaryPlacement])expect(model.create).not.toHaveBeenCalled();
+    expect(f.audit.write).not.toHaveBeenCalled();
+    expect(f.tx.idempotencyRecord.update).not.toHaveBeenCalled();
+  });
   it('creates order using server-side Product Rule Profile snapshot', async () => {
     const f = fixture();
     const dto = {qualificationId: 'ball', items: [{productId: 'product', quantity: '2.5'}], clientReference: 'TEST_ONLY'};

@@ -1,4 +1,4 @@
-Original baseline: 148. Current TODO: 78. Net placeholder reduction: 70.
+Original baseline: 148. Current TODO: 76. Net placeholder reduction: 72.
 
 The previous 52 TODO claim is invalid. Full behavioral coverage must be reviewed independently.
 
@@ -78,7 +78,5 @@ The previous 52 TODO claim is invalid. Full behavioral coverage must be reviewed
 | backend/apps/api/test/vertical-slice-02.e2e-spec.ts | 120 | inactive upline receives 0 and is not compressed | Test implementation; SSOT/evidence review before conversion |
 | backend/apps/api/test/vertical-slice-02.e2e-spec.ts | 121 | higher generation remains independently evaluated | Test implementation; SSOT/evidence review before conversion |
 | backend/apps/api/test/vertical-slice-02.e2e-spec.ts | 122 | re-running a recognition cannot duplicate RPV or awards | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/vertical-slice.e2e-spec.ts | 51 | creates Qualification with permanent sponsor sequence | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/vertical-slice.e2e-spec.ts | 52 | rejects 1st direct placed on RIGHT | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/vertical-slice.e2e-spec.ts | 107 | worker converts SALE_CONFIRMED to GPV_CREATED per order line | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/vertical-slice.e2e-spec.ts | 108 | reprocessing same outbox event does not duplicate GPV | Test implementation; SSOT/evidence review before conversion |
+| backend/apps/api/test/vertical-slice.e2e-spec.ts | 143 | worker converts SALE_CONFIRMED to GPV_CREATED per order line | Test implementation; SSOT/evidence review before conversion |
+| backend/apps/api/test/vertical-slice.e2e-spec.ts | 144 | reprocessing same outbox event does not duplicate GPV | Test implementation; SSOT/evidence review before conversion |

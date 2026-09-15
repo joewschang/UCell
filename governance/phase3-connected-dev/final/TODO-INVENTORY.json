@@ -1,7 +1,7 @@
 {
   "originalBaseline": 148,
-  "currentExecutableTodo": 78,
-  "netPlaceholderReduction": 70,
+  "currentExecutableTodo": 76,
+  "netPlaceholderReduction": 72,
   "audit": "Previous 52 TODO claim invalidated: missing cases and unrelated/constant assertions restored. Net reduction alone is not Release approval.",
   "items": [
     {
@@ -450,25 +450,13 @@
     },
     {
       "file": "backend/apps/api/test/vertical-slice.e2e-spec.ts",
-      "line": 51,
-      "case": "creates Qualification with permanent sponsor sequence",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
-    },
-    {
-      "file": "backend/apps/api/test/vertical-slice.e2e-spec.ts",
-      "line": 52,
-      "case": "rejects 1st direct placed on RIGHT",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
-    },
-    {
-      "file": "backend/apps/api/test/vertical-slice.e2e-spec.ts",
-      "line": 107,
+      "line": 143,
       "case": "worker converts SALE_CONFIRMED to GPV_CREATED per order line",
       "classification": "Test implementation; SSOT/evidence review before conversion"
     },
     {
       "file": "backend/apps/api/test/vertical-slice.e2e-spec.ts",
-      "line": 108,
+      "line": 144,
       "case": "reprocessing same outbox event does not duplicate GPV",
       "classification": "Test implementation; SSOT/evidence review before conversion"
     }
