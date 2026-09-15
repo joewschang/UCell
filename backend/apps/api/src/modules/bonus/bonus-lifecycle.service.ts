@@ -13,20 +13,25 @@ export class BonusLifecycleService {
 
     let matured=0;
     for(const award of awards){
-      const latest=await this.prisma.bonusAwardLifecycleEvent.findFirst({
+      const appended=await this.prisma.$transaction(async tx=>{
+      // Serialize delivery per immutable award; append and latest-state check share ownership.
+      await tx.$queryRaw`SELECT bonus_award_id FROM ledger.bonus_award WHERE bonus_award_id=${award.bonusAwardId}::uuid FOR UPDATE`;
+      const latest=await tx.bonusAwardLifecycleEvent.findFirst({
         where:{bonusAwardId:award.bonusAwardId},
         orderBy:{occurredAt:'desc'}
       });
-      if(latest?.status!=='PENDING_45D') continue;
+      if(latest?.status!=='PENDING_45D') return false;
 
-      await this.prisma.bonusAwardLifecycleEvent.create({
+      await tx.bonusAwardLifecycleEvent.create({
         data:{
           bonusAwardId:award.bonusAwardId,
           status:'EFFECTIVE',
           occurredAt:now
         }
       });
-      matured++;
+      return true;
+      });
+      if(appended) matured++;
     }
     return {matured};
   }
