@@ -1,6 +1,7 @@
 import { demoProducts } from './commerce';
 import * as validate from './validation';
-import { api, type Dashboard, type Qualification, type Scoped, type Person, type Organization, type Binary, type Performance, type Bonus, type Ledger, type Product, type Orders } from './api';
+import { type Dashboard, type Qualification, type Scoped, type Person, type Organization, type Binary, type Performance, type Bonus, type Ledger, type Product, type Orders } from './api';
+import { memberApi as api } from './memberApi';
 export const isMock = import.meta.env.VITE_ENABLE_MOCK === 'true';
 const qualifications: Qualification[] = [
     { id: 'q1', code: 'Q-000123', rank: 'LEADER', active: true, ballLabel: '球 1' },

@@ -14,6 +14,7 @@ const storage = { getItem: (k: string) => memory.get(k) ?? null, setItem: (k: st
 beforeEach(() => { memory.clear(); vi.stubGlobal('sessionStorage', storage); });
 afterEach(() => { if (renderer)
     act(() => renderer.unmount()); vi.unstubAllGlobals(); vi.restoreAllMocks(); });
+const response = (data: unknown) => new Response(JSON.stringify({ data, meta: { request_id: 'test-request', timestamp: '2026-09-15T00:00:00.000Z', api_version: 'v1' } }));
 const q = { id: 'q1', code: 'Q1', rank: 'ELITE', active: true, ballLabel: '球1' };
 function Probe({ id, load }: {
     id: string;
@@ -51,11 +52,11 @@ it('rejects forbidden access without substituting mock data', async () => {
     await expect(api('/member/me')).rejects.toThrow('無權');
 });
 it('rejects a dashboard belonging to another qualification', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({ qualification: { id: 'q2' } }))));
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(response({ qualification: { id: 'q2' } })));
     await expect(getDashboard(q, new AbortController().signal)).rejects.toThrow('資格不符');
 });
 it('rejects a performance response for another period', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({ qualificationId: 'q1', period: '2026-08' }))));
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(response({ qualificationId: 'q1', period: '2026-08' })));
     await expect(getPerformance(q, '2026-09', new AbortController().signal)).rejects.toThrow('期間不符');
 });
 async function mount(path = '/') {
@@ -64,10 +65,10 @@ async function mount(path = '/') {
 function fakeAPI() {
     vi.stubGlobal('fetch', vi.fn(async (input: string) => {
         if (input.includes('/qualifications'))
-            return new Response(JSON.stringify([q, { ...q, id: 'q2', code: 'Q2' }]));
+            return response([q, { ...q, id: 'q2', code: 'Q2' }]);
         if (input.includes('/dashboard'))
-            return new Response(JSON.stringify({ memberName: 'Member', memberNo: 'M1', qualification: q, monthlyRepurchaseStatus: 'PENDING', pv: null, rpv: null, epv: null, bonusAmount: null, bonusStatus: 'PENDING' }));
-        return new Response('[]');
+            return response({ memberName: 'Member', memberNo: 'M1', qualification: q, monthlyRepurchaseStatus: 'PENDING', pv: null, rpv: null, epv: null, bonusAmount: null, bonusStatus: 'PENDING' });
+        return response([]);
     }));
 }
 it('replaces a saved qualification no longer owned by the member', async () => {
@@ -91,7 +92,7 @@ it('shows pending values without inventing zero awards', async () => {
     expect(text).not.toContain('NT$ 0');
 });
 it('handles members with no qualifications without loading scoped data', async () => {
-    const fetch = vi.fn().mockResolvedValue(new Response('[]'));
+    const fetch = vi.fn().mockResolvedValue(response([]));
     vi.stubGlobal('fetch', fetch);
     await mount();
     expect(JSON.stringify(renderer.toJSON())).toContain('尚未取得會員資格');
@@ -103,7 +104,7 @@ it('renders a useful not-found page', async () => {
     expect(JSON.stringify(renderer.toJSON())).toContain('找不到頁面');
 });
 it('keeps real checkout unavailable even when the server lists available products', async () => {
-    const fetch = vi.fn(async (input: string) => new Response(JSON.stringify(input.includes('/qualifications') ? [q] : [{ id: 'live-product', name: 'Real catalog', price: 4800, pv: 2880, available: true }])));
+    const fetch = vi.fn(async (input: string) => response(input.includes('/qualifications') ? [q] : [{ id: 'live-product', name: 'Real catalog', price: 4800, pv: 2880, available: true }]));
     vi.stubGlobal('fetch', fetch);
     await mount('/shop');
     expect(renderer.root.findAllByType('button').find(b => b.children.join('') === '購買功能準備中')?.props.disabled).toBe(true);
@@ -111,7 +112,7 @@ it('keeps real checkout unavailable even when the server lists available product
     expect(fetch.mock.calls).toHaveLength(2);
 });
 it('renders a recoverable catalog error for malformed API data instead of crashing', async () => {
-    vi.stubGlobal('fetch', vi.fn(async (input: string) => new Response(JSON.stringify(input.includes('/qualifications') ? [q] : [{ id: 'p1', name: 'Invalid', price: '4800', pv: 2880, available: true }]))));
+    vi.stubGlobal('fetch', vi.fn(async (input: string) => response(input.includes('/qualifications') ? [q] : [{ id: 'p1', name: 'Invalid', price: '4800', pv: 2880, available: true }])));
     await mount('/shop');
     expect(JSON.stringify(renderer.toJSON())).toContain('資料格式異常');
     expect(renderer.root.findAllByType('button').some(b => b.children.join('') === '重新載入商品')).toBe(true);
