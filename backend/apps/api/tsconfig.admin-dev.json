@@ -1,0 +1,7 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": { "outDir": "./dist-admin-dev", "rootDir": "./src", "incremental": false, "noEmitOnError": true },
+  "files": ["src/admin-dev.ts"],
+  "include": [],
+  "exclude": ["test", "dist", "dist-admin-dev", "node_modules"]
+}

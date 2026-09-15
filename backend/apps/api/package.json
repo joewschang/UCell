@@ -3,6 +3,8 @@
   "version": "0.6.10",
   "private": true,
   "scripts": {
+    "build:admin-dev": "tsc -p tsconfig.admin-dev.json",
+    "start:admin-dev": "node dist-admin-dev/admin-dev.js",
     "start:dev": "nest start --watch",
     "start:prod": "node dist/main.js",
     "build": "nest build",
