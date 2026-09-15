@@ -6,11 +6,12 @@ import { AdminRoleGuard } from './admin-role.guard';
 import { IdentityTokenService } from './identity-token.service';
 import { LineIdentityService } from './line-identity.service';
 import { AuthenticationGuard } from './authentication.guard';
+import { MemberAuthenticationGuard } from './member-authentication.guard';
 import { Module } from '@nestjs/common';
 import { AdminAuthenticationGuard } from './admin-authentication.guard';
 @Module({
   controllers:[AdminAuthController],
-  providers:[QualificationAccessService,AdminRoleGuard,IdentityTokenService,LineIdentityService,AuthenticationGuard,AdminAuthenticationGuard,EntraTokenVerifierService,AdminAuthService],
-  exports:[QualificationAccessService,AdminRoleGuard,IdentityTokenService,LineIdentityService,AuthenticationGuard,AdminAuthenticationGuard,EntraTokenVerifierService,AdminAuthService]
+  providers:[QualificationAccessService,AdminRoleGuard,IdentityTokenService,LineIdentityService,AuthenticationGuard,MemberAuthenticationGuard,AdminAuthenticationGuard,EntraTokenVerifierService,AdminAuthService],
+  exports:[QualificationAccessService,AdminRoleGuard,IdentityTokenService,LineIdentityService,AuthenticationGuard,MemberAuthenticationGuard,AdminAuthenticationGuard,EntraTokenVerifierService,AdminAuthService]
 })
 export class AuthModule {}

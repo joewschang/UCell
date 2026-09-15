@@ -1,0 +1,38 @@
+{
+  "name": "ucell-member-mvp",
+  "private": true,
+  "version": "0.6.0",
+  "type": "module",
+  "packageManager": "pnpm@12.4.1",
+  "engines": {
+    "node": ">=24 <25",
+    "pnpm": ">=12.4.1 <13"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:contract": "vitest run tests/contract.test.ts",
+    "test:browser": "node tests/mobile-smoke.cjs"
+  },
+  "dependencies": {
+    "@line/liff": "^2.27.2",
+    "@tanstack/react-query": "^5.56.2",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.26.2"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.5",
+    "@types/react-dom": "^18.3.0",
+    "@types/react-test-renderer": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "playwright": "1.62.1",
+    "react-test-renderer": "18.3.1",
+    "typescript": "^5.6.2",
+    "vite": "^5.4.8",
+    "vitest": "^2.1.9"
+  }
+}
