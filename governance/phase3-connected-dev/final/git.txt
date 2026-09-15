@@ -1,25 +1,17 @@
 command: git status --short --branch
-started: 2026-09-15T15:53:44.425Z
+started: 2026-09-15T17:20:24.829Z
 exit: 0
-## rc1-recovered...origin/rc1-recovered [ahead 56]
- M backend/apps/api/src/common/idempotency/idempotency.service.ts
- M backend/apps/api/test/bonus-engine-v04.e2e-spec.ts
- M backend/apps/api/test/epv-global-v05.e2e-spec.ts
- M backend/apps/api/test/idempotency.e2e-spec.ts
- M backend/apps/api/test/negative-flow-v05.e2e-spec.ts
- M backend/apps/api/test/organization.e2e-spec.ts
- M backend/apps/api/test/qualification-isolation.e2e-spec.ts
- M backend/apps/api/test/v062-carry-chain.e2e-spec.ts
- M backend/apps/api/test/v063-golden-path.e2e-spec.ts
- M backend/apps/api/test/v064-golden-dataset.e2e-spec.ts
- M backend/package.json
- M backend/packages/database/src/historical-replay.ts
- M backend/scripts/db-golden-e2e.ts
- M backend/scripts/db-golden-fixtures.mjs
+## rc1-recovered...origin/rc1-recovered [ahead 72]
+ M backend/apps/api/test/v060-adjustment-lifecycle.e2e-spec.ts
  M backend/scripts/phase2-db-test.mjs
- M backend/scripts/security-http-e2e.mjs
- M governance/phase2-return-replay/REPORT.md
  M governance/phase2-return-replay/final/db-regression.json
-?? backend/packages/database/prisma/migrations/20260915160000_sa_phase3_business_timezone/
-?? backend/scripts/db-golden-isolated.mjs
-?? governance/phase3-connected-dev/
+ M governance/phase3-connected-dev/final/PASS-FAIL-MATRIX.md
+ M governance/phase3-connected-dev/final/TODO-INVENTORY.json
+ M governance/phase3-connected-dev/final/TODO-INVENTORY.md
+ M governance/phase3-connected-dev/final/api-tests.txt
+ M governance/phase3-connected-dev/final/db-regression.txt
+ M governance/phase3-connected-dev/final/gate-results.json
+ M governance/phase3-connected-dev/final/initial-attempts/api-tests.txt
+ M governance/phase3-connected-dev/final/initial-attempts/db-regression.txt
+ M governance/phase3-connected-dev/final/node.txt
+ M governance/phase3-connected-dev/final/pnpm.txt

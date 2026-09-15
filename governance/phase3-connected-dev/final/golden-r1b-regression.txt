@@ -1,4 +1,4 @@
 command: node scripts/golden-r1b-regression.mjs
-started: 2026-09-15T15:54:31.221Z
+started: 2026-09-15T17:21:18.949Z
 exit: 0
 GOLDEN_R1B_REGRESSION_PASS
