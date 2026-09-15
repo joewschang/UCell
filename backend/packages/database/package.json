@@ -16,6 +16,7 @@
     "prisma": "*"
   },
   "devDependencies": {
+    "@types/node": "^24.0.0",
     "typescript": "*",
     "ts-node": "*"
   },

@@ -7,10 +7,16 @@
     "node": ">=24 <25",
     "pnpm": ">=12.4.1 <13"
   },
+  "devDependencies": {
+    "@prisma/client": "6.19.3",
+    "@types/node": "^24.0.0",
+    "ts-node": "^10.9.2",
+    "typescript": "5.9.3"
+  },
   "scripts": {
     "dev": "pnpm --filter @ucell/api start:dev",
     "build": "pnpm -r build",
-    "test": "pnpm -r test",
+    "test": "pnpm -r test && pnpm test:todo:gate",
     "lint": "pnpm -r lint",
     "db:generate": "pnpm --filter @ucell/database prisma generate",
     "db:migrate": "pnpm --filter @ucell/database prisma migrate dev",

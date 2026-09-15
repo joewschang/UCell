@@ -6,7 +6,7 @@
     "start:dev": "nest start --watch",
     "start:prod": "node dist/main.js",
     "build": "nest build",
-    "test": "jest",
+    "test": "jest --config ./test/jest-e2e.json",
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "lint": "eslint 'src/**/*.ts'",
     "openapi:export": "ts-node src/openapi-export.ts"
@@ -31,6 +31,7 @@
     "jose": "^5.9.6"
   },
   "devDependencies": {
+    "@types/jest": "^30.0.0",
     "@nestjs/cli": "*",
     "@nestjs/testing": "*",
     "@types/node": "*",
