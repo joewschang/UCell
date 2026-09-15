@@ -1,0 +1,49 @@
+P0001 [] UCell R 1.0B獎金引擎與核心邏輯規格書
+P0002 [] Core Logic v4.0｜Event-Sourced / Version-Locked / Active First
+P0003 [Heading1] 1. 核心治理原則
+P0004 [] 報備文件優先：已報備制度 > 公司正式核准文件 > 本核心規格 > 海報／討論稿。規則版本發布後不可原地修改，任何變更建立新Rule_Version與Effective_At。
+P0005 [] 事件溯源：交易、Active、組織、PV、獎金、退貨、轉讓、升級均以不可覆寫事件帳本保存；歷史重算必須使用事件當時版本。
+P0006 [] Active First：所有獎金先判斷受獎人在該獎項資格事件時點是否Active；不符合者不建立該筆Award，不遞延、不回補。
+P0007 [Heading1] 2. 組織雙樹
+P0008 [] Sponsor Tree：推薦獎金、推薦對等、對碰對等與EPV上線分配使用。
+P0009 [] Binary Tree：左右PV、二元對碰、R 1.0B重銷RPV向上路由與全球獎金弱區PV使用。
+P0010 [] 永久直推序號與有效直推數分離：第1、第3位直推會員必須安置於推薦人Binary Tree左區子樹；退費失效不重新編排歷史Sponsor_Sequence_No。
+P0011 [Heading1] 3. 推薦與推薦對等
+P0012 [] G1推薦率依G1會員商品方案：啟航15%、菁英20%、領袖25%；推薦獎金與推薦對等共用42%推薦池並受K0控制。
+P0013 [] 推薦對等母數固定為同來源交易之G1推薦獎金，不得直接以GPV為母數。
+P0014 [] 已報備比例：啟航G2/G3/G4=10%/10%/10%（30%）；菁英G2-G6=20%/10%/10%/5%/5%（50%）；領袖G2-G7=20%/15%/10%/10%/10%/5%（70%）。
+P0015 [Heading1] 4. 二元對碰與對碰對等
+P0016 [] Binary：弱區Pair PV ×12%，每週結算；左右配對後扣除等量PV，強區未配對Carry保留；36% Binary Pool受K1控制。
+P0017 [] Binary Matching：母數為下線實際Binary Paid（K1後），Sponsor Tree向上G1-G5比例15%/10%/5%/5%/5%，理論上限40%；15% Matching Pool受K2控制。
+P0018 [Heading1] 5. 全球獎金
+P0019 [] Global Pool為一般GPV的5%。依當月Binary弱區PV跨過之門檻取得各層一份權利，並須於月度資格事件Active。歷史勳章／聘階與當月可領子池資格分離。
+P0020 [Heading1] 6. R 1.0B重銷與預繳方案
+P0021 [] 單月合格重銷：NT$2,000 → 1,200 RPV；沿Binary Tree向上最多12代，每代NT$100。
+P0022 [] 受獎上線有效直推0／1／2人以上，分別解鎖來源距離最多5／8／12代；每代另需Active。
+P0023 [] 預繳方案：季NT$6,000／3個月／2盒；半年NT$12,000／6個月／4盒；年度NT$24,000／12個月／8盒。每盒商品標示價NT$4,800。
+P0024 [] 付款事件只建立Subscription與履約排程；每月履約事件才認列NT$2,000並生成1,200 RPV。禁止預先生成未來月份RPV或獎金。
+P0025 [Heading1] 7. EPV超額獎金
+P0026 [] 單次消費超過當月NT$2,000重銷基準之超額部分 ×60% = EPV。EPV本人50%；Sponsor Tree G1-G5各6%。每位受獎人獨立Active Gate；不中斷更高代，但未發額不遞補。
+P0027 [Heading1] 8. 會員升級
+P0028 [] 會員可補商品方案差額並繳NT$600審核費申請升級；公司核准之Effective_At起生效，不溯及既往。差額商品依方案盒數寄發並可依公司提供品項選擇。
+P0029 [] 啟航→菁英差額NT$28,800／6盒；菁英→領袖NT$28,800／6盒；啟航→領袖NT$57,600／12盒。
+P0030 [Heading1] 9. 會員資格轉讓／退出
+P0031 [] 資格轉讓由雙方申請、NT$600審核費、公司核准後生效；節點不動、Holder變更，附隨權利義務一併承受，但歷史已完成交易與已支付獎金不倒溯改寫。
+P0032 [] 會員退出後資格節點由公司承接；公司得依正式規則再轉讓予符合資格者。
+P0033 [Heading1] 10. 預繳重銷資料模型與狀態機
+P0034 [] Subscription：CREATED → PAID → ACTIVE → COMPLETED；必要時CANCELLED／REFUNDED。
+P0035 [] Monthly Fulfillment：SCHEDULED → DUE → FULFILLED → RPV_GENERATED → AWARDS_CALCULATED；取消／退貨以REVERSAL事件沖回，不刪除歷史。
+P0036 [] 必要快照：Active_Snapshot、Effective_Direct_Count_Snapshot、Sponsor_Path_Snapshot、Binary_Path_Snapshot、Rule_Version。
+P0037 [Heading1] 11. 驗證與防呆
+P0038 [] 年度方案付款當日若出現14,400 RPV即Fail；正確為12個月各1,200 RPV。
+P0039 [] 季／半年／年度方案每月只允許一個有效Monthly Recognition事件；Idempotency_Key防止重複生成。
+P0040 [] 任何獎金計算不得讀取『現在』的Active或直推數去覆蓋歷史事件快照。
+P0041 [Heading1] 12. Multi-Qualification / Independent Ball Architecture
+P0042 [] 12.1 Aggregate Root：Person不是獎金計算Aggregate Root。Qualification（Ball）才是組織、PV、Active與Bonus Ledger的主要Aggregate Root；一個成年Person可持有多個Qualification。
+P0043 [] 12.2 Primary Key：所有Bonus Source、Award、PV Ledger、RPV Schedule、EPV、Carry、Global Qualification Snapshot及Sponsor/Binary Edge必須帶Qualification_ID。Person_ID僅用於Holder/KYC/稅務彙總，不得取代Qualification_ID。
+P0044 [] 12.3 Isolation：Effective_Direct_Count、Active、Sponsor_Sequence、Binary Left/Right PV、Carry、K-related theory/paid awards、RPV 5/8/12 unlock與Global weak-side snapshot均以Qualification_ID隔離。禁止跨球借用資格或合併計算。
+P0045 [] 12.4 Ownership：Qualification(Current_Holder_ID)允許多個Qualification指向同一Person。轉讓事件只改變指定Qualification之Holder；Sponsor/Binary node identity及歷史帳本保持不變。
+P0046 [] 12.5 Subscription Binding：所有月／季／半年／年度重銷Subscription建立時必須指定Qualification_ID。每月Recognition、1,200 RPV及100元/代Award均沿該Qualification之Binary ancestry計算。
+P0047 [] 12.6 Guardrails：API若只傳Person_ID而未指定Qualification_ID，涉及組織、PV、Active、獎金、重銷、升級或轉讓的寫入操作必須Reject/AmbiguousQualification，不得自動選第一球。
+P0048 [] 12.7 Suggested Tables：person、membership_qualification、qualification_holder_history、sponsor_edge、binary_edge、qualification_status_snapshot、pv_ledger、bonus_event、subscription、monthly_recognition。
+P0049 [] 12.8 Test Cases：同一Person持有A/B兩球時，A球Active不得使B球Active；A球2有效直推不得使B球取得12代；A球Carry不得與B球Carry相加；B球轉讓不得改變A球Holder或帳本。

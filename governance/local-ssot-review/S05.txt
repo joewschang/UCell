@@ -1,0 +1,1447 @@
+P0001 [] 
+P0002 [] UCell R 1.0B 後台MVP細部系統規格書
+P0003 [] 會員申請・多資格／球管理・訂購單・組織雙樹・事件帳本・獎金引擎預備架構
+P0004 [] 版本 v1.0｜2026-09-03
+P0005 [] 開發基準：R 1.0 v1.5 多資格獨立經營版＋R 1.0B Core Logic v4.1
+P0006 [] 
+P0007 [] MVP範圍｜本規格書聚焦第一階段公司內勤後台：由內勤依會員申請表與訂購單手動建檔。系統先確保資料、組織、交易與稽核正確，再逐步導入完整自動獎金結算、會員前台、LINE OA、ERP與AI。
+P0008 [] 
+P0009 [] 
+P0010 [Heading1] 0. 文件控制、開發基準與治理
+P0011 [Heading2] 0.1 文件目的
+P0012 [] 本文件把目前已鎖定之R 1.0／R 1.0B制度轉換成可直接供產品經理、系統分析師、UI/UX、後端工程師、資料庫工程師、QA、財務與內勤人員共同使用的後台MVP細部規格。重點不是重新解釋或修改制度，而是定義『系統要如何正確記錄、檢核、追溯與操作』。
+P0013 [Heading2] 0.2 Single Source of Truth（優先序）
+P0014 [] 優先序
+P0015 [] 依據
+P0016 [] 系統處理原則
+P0017 [] 1
+P0018 [] 已完成報備且有效之正式制度／法定文件
+P0019 [] 如與其他文件衝突，以此為準；涉及制度變更不得由程式自行推定。
+P0020 [] 2
+P0021 [] UCell R 1.0會員制度與獎金計算說明手冊 v1.5－多資格獨立經營版
+P0022 [] 本MVP主要業務規則來源。
+P0023 [] 3
+P0024 [] UCell R 1.0B獎金引擎與核心邏輯規格書 v4.1－多資格獨立經營
+P0025 [] 核心事件、雙樹、Active First、獎金路由與資料鍵來源。
+P0026 [] 4
+P0027 [] 本後台MVP細部系統規格書
+P0028 [] 把前述規則轉成畫面、資料、流程與驗收。
+P0029 [] 5
+P0030 [] 海報、會議紀錄、歷史討論稿
+P0031 [] 只作參考；不得覆蓋正式規則。
+P0032 [] 
+P0033 [Heading2] 0.3 重要名詞
+P0034 [] 名詞
+P0035 [] 定義／本系統用途
+P0036 [] Person
+P0037 [] 成年自然人／實名主體；保存KYC、聯絡、銀行、稅務等個人層資料。
+P0038 [] Qualification / Ball
+P0039 [] 會員資格／球；每一球是獨立經營、組織、Active、PV與獎金核算單位。
+P0040 [] Holder
+P0041 [] 某一時間點持有該Qualification的人或公司。
+P0042 [] Sponsor Tree
+P0043 [] 推薦樹；推薦獎金、推薦對等、對碰對等、EPV上線追溯使用。
+P0044 [] Binary Tree
+P0045 [] 二元樹；左右PV、Carry、Binary、R1.0B RPV、全球弱區PV使用。
+P0046 [] Active
+P0047 [] 獎金資格第一道Gate；依球、事件時點判定。
+P0048 [] Rule Version
+P0049 [] 計算規則版本；歷史事件必須固定使用事件當時版本。
+P0050 [] Ledger Event
+P0051 [] 不可覆寫的交易／PV／獎金／沖銷事件紀錄。
+P0052 [] Effective Direct
+P0053 [] 事件時點仍有效之直接推薦資格數；與永久Sponsor Sequence不同。
+P0054 [] 
+P0055 [Heading2] 0.4 版本與變更控制
+P0056 [ListBullet] 任何已生效的核心制度欄位與演算法不得在資料庫中『直接改舊值』；新增Rule_Version與Effective_At。
+P0057 [ListBullet] 正式生效資料禁止Hard Delete；更正採Correction／Reversal／Superseding Event。
+P0058 [ListBullet] MVP可先由人工建立、人工審核與人工確認付款，但所有操作均須留下Operator、時間、前後值與原因。
+P0059 [ListBullet] 新增功能若牽涉已報備制度內容，產品上線前須先由公司法遵確認，不由工程端自行判定法規結論。
+P0060 [Heading1] 1. MVP目標、邊界與成功條件
+P0061 [Heading2] 1.1 第一階段業務目標
+P0062 [] 目標
+P0063 [] MVP應達成
+P0064 [] 快速收件
+P0065 [] 公司收到紙本／PDF會員申請表與訂購單後，可由內勤手動輸入。
+P0066 [] 一人多球
+P0067 [] 一個Person可建立多個Qualification；每球資料與計算不可串球。
+P0068 [] 雙樹正確
+P0069 [] 可獨立建立Sponsor Tree與Binary Tree，並執行第1／第3直推左區檢核。
+P0070 [] 訂單可追溯
+P0071 [] 每張訂單綁定特定Qualification、付款、商品、PV事件與附件。
+P0072 [] 預繳重銷
+P0073 [] 季／半年／年方案只建立未來月度履約排程，不提前產生未來RPV。
+P0074 [] 稽核可回放
+P0075 [] 能回答『誰、何時、為何、依哪份申請表／訂單建了這筆資料』。
+P0076 [] 為獎金引擎打底
+P0077 [] 即使MVP前期獎金可先人工覆核，資料模型不可阻礙後續自動化。
+P0078 [] 
+P0079 [Heading2] 1.2 明確不納入第一版的項目
+P0080 [ListBullet] 會員自行線上申請、電子簽章與自助KYC。
+P0081 [ListBullet] 線上金流自動對帳；第一版可人工登錄付款狀態與付款資訊。
+P0082 [ListBullet] 完整會員前台／App；先以公司內勤管理後台為主。
+P0083 [ListBullet] ERP（Dynamics 365 BC）雙向整合；第一版保留Integration ID與Event接口。
+P0084 [ListBullet] AI自動審核／自動改資料；AI未來僅可輔助查詢、異常偵測與建議，正式寫入仍需權限與稽核。
+P0085 [] 設計原則｜MVP應『功能少、資料真』。若資料層先做錯，後續Bonus Engine、ERP與AI都會放大錯誤。
+P0086 [] 
+P0087 [Heading1] 2. 使用者角色、權限與責任分離
+P0088 [] 角色
+P0089 [] 可做
+P0090 [] 不可做／限制
+P0091 [] System Admin
+P0092 [] 帳號、角色、系統參數、環境設定
+P0093 [] 不得直接改寫已生效獎金Ledger；敏感操作須另有授權。
+P0094 [] Membership Admin
+P0095 [] 建立Person、會員申請、Qualification、附件
+P0096 [] 不得自行核准本人建立的高風險更正。
+P0097 [] Organization Admin
+P0098 [] Sponsor／Binary安置、組織查詢
+P0099 [] 已生效Binary位置不得直接拖拉改寫。
+P0100 [] Order Admin
+P0101 [] 訂單、商品、付款、出貨、重銷方案
+P0102 [] 不得直接刪除已Paid訂單。
+P0103 [] Reviewer / Approver
+P0104 [] 審核會員、升級、轉讓、重要更正
+P0105 [] 採Maker-Checker；應可拒絕並填理由。
+P0106 [] Finance
+P0107 [] 付款確認、獎金批次檢視、付款狀態
+P0108 [] 不得更改組織關係。
+P0109 [] Customer Service
+P0110 [] 唯讀查詢＋建立客服案件
+P0111 [] 不得改核心組織與帳本。
+P0112 [] Auditor
+P0113 [] 唯讀全域＋Audit Log匯出
+P0114 [] 不得寫入業務資料。
+P0115 [] 
+P0116 [Heading2] 2.1 Maker-Checker最低要求
+P0117 [ListBullet] 會員資格生效、組織安置生效、資格轉讓、重大歷史更正至少應支援建立者與核准者分離。
+P0118 [ListBullet] 若MVP初期人力不足，可由同一人具多角色，但系統仍保存Created_By與Approved_By，並顯示Same-Person Approval警示供日後稽核。
+P0119 [ListBullet] 最高風險操作：回溯更正組織、撤銷已生效資格、退貨沖銷、獎金手動調整，必須填Reason Code與文字說明。
+P0120 [] 
+P0121 [Heading1] 3. 資訊架構與後台導覽
+P0122 [] 主選單
+P0123 [] 子功能
+P0124 [] MVP優先
+P0125 [] 儀表板
+P0126 [] 待審會員、今日訂單、待確認付款、異常提醒
+P0127 [] P0
+P0128 [] 會員／自然人
+P0129 [] Person搜尋、建立、詳細頁、附件
+P0130 [] P0
+P0131 [] 會員資格／球
+P0132 [] Qualification建立、級別、Holder、狀態、Active
+P0133 [] P0
+P0134 [] 會員申請
+P0135 [] 申請單Draft/Submitted/Approved/Effective
+P0136 [] P0
+P0137 [] 組織管理
+P0138 [] Sponsor Tree、Binary Tree、安置驗證
+P0139 [] P0
+P0140 [] 訂單管理
+P0141 [] 訂單、商品、付款、出貨、退貨
+P0142 [] P0
+P0143 [] 重銷方案
+P0144 [] 月／季／半年／年、Monthly Fulfillment排程
+P0145 [] P0
+P0146 [] PV／事件帳本
+P0147 [] GPV/RPV/EPV事件查詢
+P0148 [] P1
+P0149 [] 獎金／結算
+P0150 [] Theory、K、Pending45D等
+P0151 [] P1（先查詢/預備）
+P0152 [] 升級／轉讓
+P0153 [] 申請、審核、生效
+P0154 [] P1
+P0155 [] 稽核中心
+P0156 [] Audit Log、變更歷史、附件追溯
+P0157 [] P0
+P0158 [] 系統管理
+P0159 [] 帳號、角色、Rule Version、Reason Codes
+P0160 [] P0
+P0161 [] 
+P0162 [Heading1] 4. 全域UI/UX規範
+P0163 [Heading2] 4.1 後台共通版型
+P0164 [ListBullet] 左側固定主選單；上方顯示環境（TEST／PROD）、目前登入者、角色與公司日期時間。
+P0165 [ListBullet] 每個詳細頁頂部顯示：核心ID、狀態Badge、持有人、Qualification、關鍵警示、最後更新時間。
+P0166 [ListBullet] 所有資料表支援：搜尋、欄位篩選、日期區間、排序、分頁、CSV匯出（受權限控制）。
+P0167 [ListBullet] 所有生效資料的『編輯』按鈕應改成『提出更正』，避免使用者誤以為可直接覆寫歷史。
+P0168 [Heading2] 4.2 狀態顏色建議
+P0169 [] 狀態
+P0170 [] 顏色語意
+P0171 [] 例
+P0172 [] Draft
+P0173 [] 灰
+P0174 [] 尚可修改、未提交
+P0175 [] Pending / Submitted
+P0176 [] 黃／金
+P0177 [] 等待審核／等待付款
+P0178 [] Approved / Effective / Active
+P0179 [] 綠
+P0180 [] 已核准／有效
+P0181 [] Rejected / Cancelled
+P0182 [] 紅
+P0183 [] 拒絕／取消
+P0184 [] Reversed
+P0185 [] 紫／紅
+P0186 [] 已由反向事件沖銷
+P0187 [] Company-Held
+P0188 [] 藍
+P0189 [] 資格由公司承接
+P0190 [] 
+P0191 [Heading2] 4.3 錯誤訊息原則
+P0192 [ListBullet] 顯示『哪個欄位、違反哪條規則、可如何處理』，不可只顯示Error 500。
+P0193 [ListBullet] 組織安置錯誤例：『此Qualification為該推薦人的第3位永久直推，依R1.0必須安置於推薦人左區子樹；目前選定位置位於右區，請重新選擇。』
+P0194 [ListBullet] 一人多球歧義例：『此自然人持有3個會員資格，請先指定本訂單歸屬的Qualification_ID。』
+P0195 [Heading1] 5. 模組A－Person自然人管理
+P0196 [Heading2] 5.1 Person建立畫面
+P0197 [] 欄位
+P0198 [] 型別
+P0199 [] 必填
+P0200 [] 驗證／說明
+P0201 [] Person_ID
+P0202 [] UUID/系統產生
+P0203 [] 是
+P0204 [] 不可人工修改。
+P0205 [] 中文姓名
+P0206 [] 文字
+P0207 [] 是
+P0208 [] 保留原始輸入；不得因資格轉讓改寫歷史Holder紀錄。
+P0209 [] 身分證／居留證號
+P0210 [] 加密文字
+P0211 [] 是
+P0212 [] 唯一性檢查需依公司政策；畫面遮罩。
+P0213 [] 出生日期
+P0214 [] 日期
+P0215 [] 是
+P0216 [] 建立會員資格前須驗證成年；門檻由可設定規則決定。
+P0217 [] 手機
+P0218 [] 文字
+P0219 [] 是
+P0220 [] 格式檢核；可作搜尋鍵。
+P0221 [] Email
+P0222 [] 文字
+P0223 [] 否
+P0224 [] 格式檢核。
+P0225 [] 戶籍／通訊地址
+P0226 [] 結構化地址
+P0227 [] 依申請表
+P0228 [] 支援縣市、區、郵遞區號、地址。
+P0229 [] 銀行資料
+P0230 [] 加密欄位
+P0231 [] 後續
+P0232 [] 銀行代碼、帳號、戶名；權限遮罩。
+P0233 [] 稅務資料
+P0234 [] 結構化
+P0235 [] 後續
+P0236 [] 所得類型／必要稅務欄位；依公司財會要求。
+P0237 [] KYC狀態
+P0238 [] Enum
+P0239 [] 是
+P0240 [] UNVERIFIED / VERIFIED / REJECTED。
+P0241 [] 資料來源
+P0242 [] Enum
+P0243 [] 是
+P0244 [] PAPER_FORM / PDF / ADMIN_ENTRY / MIGRATION。
+P0245 [] 
+P0246 [Heading2] 5.2 重複Person偵測
+P0247 [ListBullet] 完全相同身分識別碼：優先提示『可能已存在Person』，不得直接再建。
+P0248 [ListBullet] 姓名＋生日＋手機高度相似：提示人工覆核，不直接阻擋。
+P0249 [ListBullet] 同一Person可擁有多個Qualification，因此『已有會員資格』不是禁止新增Qualification的理由。
+P0250 [Heading2] 5.3 Person詳細頁
+P0251 [ListBullet] Tab：基本資料｜持有資格／球｜申請紀錄｜訂單｜附件｜Audit Log。
+P0252 [ListBullet] 持有資格清單至少顯示Qualification_ID、級別、狀態、Sponsor、Binary位置、Active、取得日、是否公司承接。
+P0253 [ListBullet] 個資欄位依角色遮罩；Auditor可視需求允許唯讀完整資料。
+P0254 [Heading1] 6. 模組B－會員申請與Qualification／球建立
+P0255 [Heading2] 6.1 申請狀態機
+P0256 [] 狀態
+P0257 [] 可做
+P0258 [] 轉移條件
+P0259 [] DRAFT
+P0260 [] 自由修改、上傳附件
+P0261 [] 內勤建立。
+P0262 [] SUBMITTED
+P0263 [] 鎖主要欄位、待審
+P0264 [] 必填完整＋基本驗證通過。
+P0265 [] APPROVED
+P0266 [] 審核通過、尚待生效
+P0267 [] 核准者確認。
+P0268 [] EFFECTIVE
+P0269 [] 建立有效Qualification與組織事件
+P0270 [] 生效時間到達／人工生效。
+P0271 [] REJECTED
+P0272 [] 保留申請歷史
+P0273 [] 需拒絕原因。
+P0274 [] CANCELLED
+P0275 [] 取消未生效申請
+P0276 [] 需原因；不可刪除。
+P0277 [] 
+P0278 [Heading2] 6.2 申請表欄位
+P0279 [] 區塊
+P0280 [] 欄位
+P0281 [] Person
+P0282 [] 申請人、身分識別、生日、聯絡資料
+P0283 [] Qualification
+P0284 [] 申請級別：啟航／菁英／領袖；申請日期；預定生效日
+P0285 [] Sponsor
+P0286 [] Sponsor Qualification_ID（不是Person_ID）
+P0287 [] Binary Placement
+P0288 [] Binary Parent Qualification_ID、Side L/R、Placement Path
+P0289 [] 商品方案
+P0290 [] 方案、盒數、金額、GPV
+P0291 [] 文件
+P0292 [] 會員申請書、契約、身分證明、其他附件
+P0293 [] 聲明／備註
+P0294 [] 內勤備註、特殊案件註記
+P0295 [] 
+P0296 [Heading2] 6.3 Qualification資料模型
+P0297 [] 欄位
+P0298 [] 說明
+P0299 [] Qualification_ID
+P0300 [] 全域唯一；所有訂單、樹、Active、PV、獎金必須指向此ID。
+P0301 [] Current_Holder_ID
+P0302 [] 目前Person或Company Entity。
+P0303 [] Level
+P0304 [] 啟航／菁英／領袖；須有Effective_From。
+P0305 [] Status
+P0306 [] PENDING / EFFECTIVE / SUSPENDED / EXITED / COMPANY_HELD / TRANSFER_PENDING。
+P0307 [] Sponsor_Qualification_ID
+P0308 [] 直接推薦球。
+P0309 [] Sponsor_Sequence_No
+P0310 [] 對該Sponsor永久序號；一旦建立不因退費重排。
+P0311 [] Binary_Parent_Qualification_ID
+P0312 [] 二元樹父節點。
+P0313 [] Binary_Side
+P0314 [] L/R。
+P0315 [] Rule_Version
+P0316 [] 建立／生效時綁定。
+P0317 [] Effective_At
+P0318 [] 資格正式生效時間。
+P0319 [] 
+P0320 [Heading2] 6.4 一人多球規則
+P0321 [] 核心防呆｜所有與組織、Active、PV、獎金、重銷、升級、轉讓相關的寫入API，都必須明確帶Qualification_ID。只帶Person_ID時應拒絕執行並回傳AmbiguousQualification。
+P0322 [] 
+P0323 [ListBullet] 不同球不得共享Active。
+P0324 [ListBullet] 不同球不得共享有效直推數。
+P0325 [ListBullet] 不同球不得共享Carry PV、Pair PV、RPV深度或獎金帳本。
+P0326 [ListBullet] 同一Person的球可以存在不同Sponsor／Binary位置；每一球完整獨立。
+P0327 [Heading1] 7. 模組C－Sponsor Tree推薦樹
+P0328 [Heading2] 7.1 建立Sponsor關係
+P0329 [ListNumber] 先指定新Qualification的Sponsor_Qualification_ID。
+P0330 [ListNumber] 系統取得該Sponsor下一個永久Sponsor_Sequence_No。
+P0331 [ListNumber] 寫入SponsorRelationship Event與Sequence。
+P0332 [ListNumber] 再進入Binary Placement驗證；不可先放Binary再補Sponsor。
+P0333 [Heading2] 7.2 有效直推與永久序號
+P0334 [] 項目
+P0335 [] 永久序號 Sponsor Sequence
+P0336 [] 有效直推 Effective Direct
+P0337 [] 目的
+P0338 [] 判斷第1／第3位左區安置等歷史順序
+P0339 [] 推薦對等、R1.0B 5/8/12代等資格解鎖
+P0340 [] 退費退出後
+P0341 [] 不重排、不刪除
+P0342 [] 自失效時點起不再計入
+P0343 [] 計算方式
+P0344 [] 建立時一次產生
+P0345 [] 事件時點Snapshot
+P0346 [] 
+P0347 [Heading2] 7.3 Sponsor Tree查詢
+P0348 [ListBullet] 支援以Qualification為根節點向上G1-Gn、向下直推與指定深度展開。
+P0349 [ListBullet] 節點顯示：Qualification_ID、Holder、級別、Active、有效／失效、永久直推序號。
+P0350 [ListBullet] 若同一Person多球，節點顯示球ID，避免只顯示姓名造成誤判。
+P0351 [Heading1] 8. 模組D－Binary Tree二元樹與安置
+P0352 [Heading2] 8.1 安置資料
+P0353 [] 欄位
+P0354 [] 說明
+P0355 [] Qualification_ID
+P0356 [] 被安置的新球
+P0357 [] Binary_Parent_ID
+P0358 [] 直接二元父節點
+P0359 [] Side
+P0360 [] LEFT / RIGHT
+P0361 [] Placement_Root_Sponsor_ID
+P0362 [] 用於驗證是否在Sponsor本人子樹範圍
+P0363 [] Path / Materialized Path
+P0364 [] 建議保存或可計算，用於快速祖先／子樹查詢
+P0365 [] Effective_At
+P0366 [] 安置正式生效時間
+P0367 [] 
+P0368 [Heading2] 8.2 安置核心規則
+P0369 [ListBullet] 新Qualification須位於直接推薦人的Binary子樹範圍內。
+P0370 [ListBullet] 同一Sponsor之永久第1位與第3位直推，必須位於Sponsor左區子樹；『左區』不限左直下。
+P0371 [ListBullet] 第2位與第4位以後，可在Sponsor Binary子樹內選擇合法空位。
+P0372 [ListBullet] 每一Binary Parent最多一個左子節點與一個右子節點。
+P0373 [ListBullet] 已生效位置不得一般編輯；如確有公司核准的資料更正，必須走特殊Correction流程並完整稽核。
+P0374 [Heading2] 8.3 安置驗證順序
+P0375 [] Step
+P0376 [] 檢核
+P0377 [] 失敗處理
+P0378 [] 1
+P0379 [] Sponsor存在且有效
+P0380 [] 拒絕
+P0381 [] 2
+P0382 [] 新球已取得永久Sponsor Sequence
+P0383 [] 拒絕
+P0384 [] 3
+P0385 [] Binary Parent存在且可被使用
+P0386 [] 拒絕
+P0387 [] 4
+P0388 [] 選定Side尚未被占用
+P0389 [] 拒絕
+P0390 [] 5
+P0391 [] Binary Parent位於Sponsor自己的Binary子樹
+P0392 [] 拒絕
+P0393 [] 6
+P0394 [] 若Sequence=1或3，最終位置必須屬Sponsor Left Subtree
+P0395 [] 拒絕並說明
+P0396 [] 7
+P0397 [] 防止Cycle：新節點不可成為自己的祖先
+P0398 [] 拒絕
+P0399 [] 
+P0400 [Heading2] 8.4 Binary Tree UI
+P0401 [ListBullet] 第一版提供樹狀／階層列表兩種模式；可搜尋Qualification_ID或Holder。
+P0402 [ListBullet] 安置時只顯示合法可選空位；違規位置最好在UI層即不提供選取，後端仍須再次驗證。
+P0403 [ListBullet] 顯示左／右區標示、直接Sponsor與Binary Parent差異、節點狀態。
+P0404 [] 
+P0405 [Heading1] 9. 模組E－商品、SKU與訂購單
+P0406 [Heading2] 9.1 Product/SKU主檔
+P0407 [] 欄位
+P0408 [] 說明
+P0409 [] Product_ID / SKU
+P0410 [] 唯一商品識別
+P0411 [] Product_Name
+P0412 [] 商品名稱
+P0413 [] List_Price
+P0414 [] 例如NT$4,800；實際依公司商品主檔
+P0415 [] GPV
+P0416 [] 商品交易建立的GPV參數
+P0417 [] PV/BV/RPV/EPV Profile
+P0418 [] 各自獨立欄位，不硬編碼固定比例
+P0419 [] Active_Eligible
+P0420 [] 是否屬合格重銷商品
+P0421 [] Effective_From/To
+P0422 [] 產品參數版本有效期間
+P0423 [] Status
+P0424 [] ACTIVE / INACTIVE
+P0425 [] 
+P0426 [Heading2] 9.2 訂單狀態機
+P0427 [] 狀態
+P0428 [] 定義
+P0429 [] 可否修改核心欄位
+P0430 [] DRAFT
+P0431 [] 內勤輸入中
+P0432 [] 可
+P0433 [] CONFIRMED
+P0434 [] 訂單已確認
+P0435 [] 有限
+P0436 [] PAID
+P0437 [] 付款已確認
+P0438 [] 不可直接改；須更正事件
+P0439 [] FULFILLED
+P0440 [] 完成商品履約／出貨
+P0441 [] 不可直接改
+P0442 [] PARTIALLY_RETURNED
+P0443 [] 部分退貨
+P0444 [] 由Return事件衍生
+P0445 [] RETURNED
+P0446 [] 全退
+P0447 [] 由Return事件衍生
+P0448 [] CANCELLED
+P0449 [] 未成立／取消
+P0450 [] 依原因保留
+P0451 [] 
+P0452 [Heading2] 9.3 訂單輸入畫面
+P0453 [] 欄位
+P0454 [] 必填
+P0455 [] 規則
+P0456 [] Order_No
+P0457 [] 系統
+P0458 [] 唯一
+P0459 [] Qualification_ID
+P0460 [] 是
+P0461 [] 必須指定球；Person多球時不可省略
+P0462 [] Order_Date
+P0463 [] 是
+P0464 [] 事件時間來源之一
+P0465 [] Order_Type
+P0466 [] 是
+P0467 [] JOIN / RETAIL / REPURCHASE / PREPAID_REPURCHASE / UPGRADE / OTHER
+P0468 [] SKU/Qty
+P0469 [] 是
+P0470 [] 從有效商品主檔選擇
+P0471 [] Unit Price/Amount
+P0472 [] 是
+P0473 [] 依權限可覆核折扣；保留原價
+P0474 [] Payment Status
+P0475 [] 是
+P0476 [] MANUAL_PENDING / PAID / REFUNDED等
+P0477 [] Payment Ref
+P0478 [] 否
+P0479 [] 匯款後五碼／收據號等
+P0480 [] Fulfillment Status
+P0481 [] 是
+P0482 [] 待出貨／已出貨／領取等
+P0483 [] Source Document
+P0484 [] 建議
+P0485 [] 上傳原訂購單／付款證明
+P0486 [] Operator Note
+P0487 [] 否
+P0488 [] 內勤備註
+P0489 [] 
+P0490 [Heading2] 9.4 初次加入商品方案
+P0491 [] 級別
+P0492 [] 盒數
+P0493 [] 金額
+P0494 [] GPV
+P0495 [] 啟航
+P0496 [] 3
+P0497 [] NT$14,400
+P0498 [] 8,640
+P0499 [] 菁英
+P0500 [] 9
+P0501 [] NT$43,200
+P0502 [] 25,920
+P0503 [] 領袖
+P0504 [] 15
+P0505 [] NT$72,000
+P0506 [] 43,200
+P0507 [] 
+P0508 [] 上述表格係目前v1.5制度基準。實際SKU與商品名稱由商品主檔及已報備附件管理；系統不得把『級別』硬編碼成固定商品SKU，應以Product Plan／Order Line參數驅動。
+P0509 [Heading1] 10. 模組F－月／季／半年／年度重銷方案
+P0510 [Heading2] 10.1 方案
+P0511 [] 方案
+P0512 [] 一次繳交
+P0513 [] 期間
+P0514 [] 每月認列
+P0515 [] 商品權益
+P0516 [] 月
+P0517 [] NT$2,000
+P0518 [] 1個月
+P0519 [] NT$2,000 → 1,200 RPV
+P0520 [] 依當期商品
+P0521 [] 季
+P0522 [] NT$6,000
+P0523 [] 3個月
+P0524 [] 每月NT$2,000 → 1,200 RPV
+P0525 [] 2盒×NT$4,800商品
+P0526 [] 半年
+P0527 [] NT$12,000
+P0528 [] 6個月
+P0529 [] 每月NT$2,000 → 1,200 RPV
+P0530 [] 4盒×NT$4,800商品
+P0531 [] 年
+P0532 [] NT$24,000
+P0533 [] 12個月
+P0534 [] 每月NT$2,000 → 1,200 RPV
+P0535 [] 8盒×NT$4,800商品
+P0536 [] 
+P0537 [Heading2] 10.2 Subscription狀態
+P0538 [] 狀態
+P0539 [] 說明
+P0540 [] CREATED
+P0541 [] 方案已建立未付款
+P0542 [] PAID
+P0543 [] 預繳付款確認
+P0544 [] ACTIVE
+P0545 [] 方案已開始履約
+P0546 [] COMPLETED
+P0547 [] 所有月度履約完成
+P0548 [] CANCELLED
+P0549 [] 未履約部分取消；保留歷史
+P0550 [] REFUNDED
+P0551 [] 依適用流程退款；以事件記錄
+P0552 [] 
+P0553 [Heading2] 10.3 Monthly Fulfillment
+P0554 [] 欄位
+P0555 [] 說明
+P0556 [] Monthly_Fulfillment_ID
+P0557 [] 每個月唯一事件
+P0558 [] Subscription_ID
+P0559 [] 所屬方案
+P0560 [] Qualification_ID
+P0561 [] 固定綁定特定球
+P0562 [] Installment_No
+P0563 [] 1..3／6／12
+P0564 [] Due_Date
+P0565 [] 月度認列日期
+P0566 [] Recognition_Amount
+P0567 [] NT$2,000
+P0568 [] RPV_Amount
+P0569 [] 1,200
+P0570 [] Status
+P0571 [] SCHEDULED/DUE/FULFILLED/RPV_GENERATED/AWARDS_CALCULATED/REVERSED
+P0572 [] Idempotency_Key
+P0573 [] 防重複生成
+P0574 [] 
+P0575 [Heading2] 10.4 關鍵禁止事項
+P0576 [ListBullet] 季方案付款日不得一次生成3,600 RPV。
+P0577 [ListBullet] 半年方案付款日不得一次生成7,200 RPV。
+P0578 [ListBullet] 年度方案付款日不得一次生成14,400 RPV。
+P0579 [ListBullet] 不得因同一Person另一球已Active，而自動讓本球Active。
+P0580 [ListBullet] 未到期月份不得先產生可領獎金。
+P0581 [Heading2] 10.5 月度排程Job
+P0582 [ListNumber] 找出今日Due且Subscription有效的Monthly Fulfillment。
+P0583 [ListNumber] 鎖定Idempotency Key避免重跑。
+P0584 [ListNumber] 以Qualification_ID取得本球資料與Rule_Version。
+P0585 [ListNumber] 建立NT$2,000月度認列事件及1,200 RPV Event。
+P0586 [ListNumber] 建立Active Snapshot／有效直推Snapshot／Binary Path Snapshot。
+P0587 [ListNumber] 後續由R1.0B Award Engine依5／8／12代規則產生Theory Award。
+P0588 [ListNumber] 完成後標記RPV_GENERATED／AWARDS_CALCULATED；失敗進Retry Queue並告警。
+P0589 [Heading1] 11. 模組G－Active資格
+P0590 [Heading2] 11.1 Active資料模型
+P0591 [] 欄位
+P0592 [] 說明
+P0593 [] Qualification_ID
+P0594 [] Active按球計
+P0595 [] Active_From
+P0596 [] 開始時間
+P0597 [] Active_To
+P0598 [] 結束時間／可空
+P0599 [] Source_Event_ID
+P0600 [] 哪筆重銷／履約事件造成
+P0601 [] Rule_Version
+P0602 [] 當時Active規則
+P0603 [] Status
+P0604 [] ACTIVE / EXPIRED / REVERSED
+P0605 [] 
+P0606 [Heading2] 11.2 判定原則
+P0607 [ListBullet] Active First：每筆獎金都先看受獎球在該獎項資格事件時點是否Active。
+P0608 [ListBullet] 不可使用『現在Active』去回補歷史Inactive事件。
+P0609 [ListBullet] MVP後台需能查詢任一日期時間點的Active狀態，而非只顯示Today。
+P0610 [Heading2] 11.3 畫面
+P0611 [ListBullet] Qualification詳細頁置頂顯示Active Badge、有效期間、來源訂單／Subscription。
+P0612 [ListBullet] 點擊可展開Active歷史，不直接編輯；更正由Reversal／Correction事件處理。
+P0613 [Heading1] 12. 模組H－PV／RPV／EPV事件帳本
+P0614 [Heading2] 12.1 Ledger通則
+P0615 [] 設計原則｜帳本採Append-Only。原事件永不刪除；退貨、取消、拒付、資料更正以反向Event連回Source_Event_ID。
+P0616 [] 
+P0617 [] 欄位
+P0618 [] 說明
+P0619 [] Ledger_Event_ID
+P0620 [] 唯一
+P0621 [] Event_Type
+P0622 [] GPV_CREATED / RPV_CREATED / EPV_CREATED / REVERSAL等
+P0623 [] Qualification_ID
+P0624 [] 來源／受影響球
+P0625 [] Order_ID / Fulfillment_ID
+P0626 [] 來源業務文件
+P0627 [] Amount
+P0628 [] 正負值
+P0629 [] Occurred_At
+P0630 [] 業務事件時間
+P0631 [] Recorded_At
+P0632 [] 系統寫入時間
+P0633 [] Rule_Version
+P0634 [] 事件規則版本
+P0635 [] Source_Event_ID
+P0636 [] 反向／衍生關聯
+P0637 [] Created_By
+P0638 [] SYSTEM或Operator
+P0639 [] 
+P0640 [Heading2] 12.2 GPV
+P0641 [ListBullet] 合格商品交易依商品主檔參數產生GPV。
+P0642 [ListBullet] GPV可能向Sponsor/Binary等後續引擎提供來源，但MVP應先保留事件，不必把所有結果塞在Order欄位。
+P0643 [Heading2] 12.3 RPV
+P0644 [ListBullet] R1.0B月度合格重銷每月1,200 RPV；沿Binary Tree向上。
+P0645 [ListBullet] 受獎球有效直推0／1／2+決定最多5／8／12代；每代100元且逐球Active。
+P0646 [Heading2] 12.4 EPV
+P0647 [ListBullet] 超過當月NT$2,000基準之超額部分×60%=EPV。
+P0648 [ListBullet] EPV本人50%；Sponsor Tree G1-G5各6%；逐代Active、不中斷更高代、未發不遞補。
+P0649 [Heading1] 13. 模組I－獎金引擎預備層（MVP可分階段啟用）
+P0650 [Heading2] 13.1 一般GPV五大獎池
+P0651 [] 獎池
+P0652 [] 比例
+P0653 [] 安全係數／用途
+P0654 [] 推薦池
+P0655 [] 42%
+P0656 [] K0；G1推薦＋推薦對等
+P0657 [] 二元對碰池
+P0658 [] 36%
+P0659 [] K1
+P0660 [] 對碰對等池
+P0661 [] 15%
+P0662 [] K2
+P0663 [] 全球池
+P0664 [] 5%
+P0665 [] 依月度全球分紅規則
+P0666 [] 福利池
+P0667 [] 2%
+P0668 [] 公司依法公告用途；非固定個人收益
+P0669 [] 
+P0670 [Heading2] 13.2 G1推薦
+P0671 [] G1自身級別
+P0672 [] 推薦率
+P0673 [] 啟航
+P0674 [] 15%
+P0675 [] 菁英
+P0676 [] 20%
+P0677 [] 領袖
+P0678 [] 25%
+P0679 [] 
+P0680 [] Theory = Source GPV × G1自身級別推薦率；G1須在來源事件時點Active。與推薦對等共同進42%推薦池並受K0。
+P0681 [Heading2] 13.3 推薦對等－已報備比例
+P0682 [] 級別
+P0683 [] G2
+P0684 [] G3
+P0685 [] G4
+P0686 [] G5
+P0687 [] G6
+P0688 [] G7
+P0689 [] 合計
+P0690 [] 啟航
+P0691 [] 10%
+P0692 [] 10%
+P0693 [] 10%
+P0694 [] —
+P0695 [] —
+P0696 [] —
+P0697 [] 30%
+P0698 [] 菁英
+P0699 [] 20%
+P0700 [] 10%
+P0701 [] 10%
+P0702 [] 5%
+P0703 [] 5%
+P0704 [] —
+P0705 [] 50%
+P0706 [] 領袖
+P0707 [] 20%
+P0708 [] 15%
+P0709 [] 10%
+P0710 [] 10%
+P0711 [] 10%
+P0712 [] 5%
+P0713 [] 70%
+P0714 [] 
+P0715 [] 母數必須是同來源交易所產生的G1推薦獎金，不是直接拿GPV乘上述比例。有效直推解鎖與Active另行判斷。
+P0716 [Heading2] 13.4 Binary
+P0717 [ListBullet] 弱區Pair PV×12%；週結。左右都扣除等量Pair PV，強區剩餘Carry保留。
+P0718 [ListBullet] 週封頂、K1及其他正式參數須由Rule Version配置，不硬編碼散落程式。
+P0719 [Heading2] 13.5 對碰對等
+P0720 [] 代數
+P0721 [] 比例
+P0722 [] G1
+P0723 [] 15%
+P0724 [] G2
+P0725 [] 10%
+P0726 [] G3
+P0727 [] 5%
+P0728 [] G4
+P0729 [] 5%
+P0730 [] G5
+P0731 [] 5%
+P0732 [] 
+P0733 [] 母數為下線實際Binary Paid（K1後）；Sponsor Tree向上。直推1/2/3/4+分別解鎖G1-G2/G1-G3/G1-G4/G1-G5；每位受獎球仍須Active。
+P0734 [Heading2] 13.6 K0/K1/K2
+P0735 [] 通式：K = min(1, Pool_Available / Total_Theory)。系統應保存每一Settlement Batch的Pool Base、Total Theory、K值與每筆Paid，讓稽核能重現。
+P0736 [Heading2] 13.7 獎金狀態
+P0737 [] 狀態
+P0738 [] 說明
+P0739 [] CALCULATED
+P0740 [] 理論／壓縮後已算出
+P0741 [] PENDING_45D
+P0742 [] 進45日風控生效期
+P0743 [] EFFECTIVE
+P0744 [] 已生效
+P0745 [] PAYABLE
+P0746 [] 可排入付款
+P0747 [] PAID
+P0748 [] 已付款
+P0749 [] REVERSED
+P0750 [] 來源交易被合法沖銷
+P0751 [] 
+P0752 [] 45日屬獎金生效與風控，不取代或限制依法解除、終止、退貨與買回權利。
+P0753 [] 
+P0754 [Heading1] 14. 模組J－會員等級升級
+P0755 [Heading2] 14.1 升級方案
+P0756 [] 升級
+P0757 [] 原方案
+P0758 [] 新方案
+P0759 [] 補差額
+P0760 [] 審核費
+P0761 [] 差別商品
+P0762 [] 啟航→菁英
+P0763 [] 3盒/14,400
+P0764 [] 9盒/43,200
+P0765 [] 28,800
+P0766 [] 600
+P0767 [] 6盒
+P0768 [] 菁英→領袖
+P0769 [] 9盒/43,200
+P0770 [] 15盒/72,000
+P0771 [] 28,800
+P0772 [] 600
+P0773 [] 6盒
+P0774 [] 啟航→領袖
+P0775 [] 3盒/14,400
+P0776 [] 15盒/72,000
+P0777 [] 57,600
+P0778 [] 600
+P0779 [] 12盒
+P0780 [] 
+P0781 [Heading2] 14.2 升級狀態機
+P0782 [] DRAFT → SUBMITTED → FEE_CONFIRMED → APPROVED → EFFECTIVE；另有REJECTED／CANCELLED。
+P0783 [Heading2] 14.3 核心規則
+P0784 [ListBullet] 公司核准Effective_At起才適用新級別；不溯及既往。
+P0785 [ListBullet] 生效前事件仍使用舊Level Snapshot與Rule Version。
+P0786 [ListBullet] 差別盒數商品可依公司提供品項選擇；商品履約與級別生效事件分開保存。
+P0787 [ListBullet] 升級不自動補發升級前已發生獎金差額。
+P0788 [Heading1] 15. 模組K－資格轉讓與退出／公司承接
+P0789 [Heading2] 15.1 資格轉讓
+P0790 [] 欄位
+P0791 [] 規格
+P0792 [] Transfer_Application_ID
+P0793 [] 唯一
+P0794 [] Qualification_ID
+P0795 [] 被轉讓的球
+P0796 [] Transferor_Holder_ID
+P0797 [] 原Holder
+P0798 [] Transferee_Person_ID
+P0799 [] 新Holder
+P0800 [] Review_Fee
+P0801 [] NT$600
+P0802 [] Signed_Documents
+P0803 [] 雙方簽署文件附件
+P0804 [] Review_Status
+P0805 [] SUBMITTED/APPROVED/REJECTED
+P0806 [] Effective_At
+P0807 [] 公司核准生效時間
+P0808 [] 
+P0809 [ListBullet] 節點不動、Holder改變：Sponsor/Binary位置與Qualification_ID均不重建。
+P0810 [ListBullet] 歷史已完成交易、已付款獎金、稅務事實不倒溯改寫。
+P0811 [ListBullet] 未來獎金依新Holder下的該Qualification在未來事件重新判定Active等條件。
+P0812 [Heading2] 15.2 退出
+P0813 [ListBullet] 退出完成後，原Holder不再享有該Qualification未來權益；Qualification由公司承接並標示COMPANY_HELD。
+P0814 [ListBullet] 原樹、歷史交易、獎金、退貨與稽核紀錄完整保留。
+P0815 [ListBullet] 公司日後再移轉予符合資格者時，建立新的Holder History，不覆寫舊Holder。
+P0816 [Heading1] 16. 模組L－退貨、取消、退款與沖銷
+P0817 [Heading2] 16.1 Return Case
+P0818 [] 欄位
+P0819 [] 說明
+P0820 [] Return_ID
+P0821 [] 唯一
+P0822 [] Order_ID
+P0823 [] 來源訂單
+P0824 [] Qualification_ID
+P0825 [] 來源球
+P0826 [] Return_Type
+P0827 [] FULL/PARTIAL/CANCEL/CHARGEBACK
+P0828 [] Requested_At
+P0829 [] 申請時間
+P0830 [] Approved_At
+P0831 [] 核准時間
+P0832 [] Amount
+P0833 [] 退款金額
+P0834 [] Reason_Code
+P0835 [] 公司定義
+P0836 [] Source_Document
+P0837 [] 退貨／退款證明
+P0838 [] 
+P0839 [Heading2] 16.2 系統行為
+P0840 [ListNumber] 建立Return事件，不直接改寫原Order歷史。
+P0841 [ListNumber] 計算受影響之GPV/RPV/EPV來源Event。
+P0842 [ListNumber] 對尚未生效／已生效獎金依正式規則產生Reversal／Clawback事件。
+P0843 [ListNumber] 不影響與該退貨無關的其他獎金。
+P0844 [ListNumber] 保留完整Source_Event_ID鏈結，供會員查詢與稽核。
+P0845 [Heading1] 17. 模組M－附件與原始單據
+P0846 [Heading2] 17.1 支援附件類型
+P0847 [ListBullet] 會員申請表、參加契約、身分證明、訂購單、付款證明、升級申請、轉讓申請、退貨文件、其他公司核准文件。
+P0848 [Heading2] 17.2 文件欄位
+P0849 [] 欄位
+P0850 [] 說明
+P0851 [] Document_ID
+P0852 [] 唯一
+P0853 [] Entity_Type/Entity_ID
+P0854 [] Person/Application/Order/Transfer等
+P0855 [] Document_Type
+P0856 [] 文件分類
+P0857 [] File_Name
+P0858 [] 原檔名
+P0859 [] Storage_URI
+P0860 [] 物件儲存位置
+P0861 [] SHA256
+P0862 [] 完整性Hash
+P0863 [] Uploaded_By/At
+P0864 [] 上傳者與時間
+P0865 [] Version_No
+P0866 [] 同文件重傳版本
+P0867 [] Visibility
+P0868 [] 角色可見性
+P0869 [] 
+P0870 [Heading2] 17.3 安全
+P0871 [ListBullet] 附件不得公開URL長期裸露；採授權下載或短時效簽名URL。
+P0872 [ListBullet] 含個資文件應加密儲存並限制下載權限。
+P0873 [ListBullet] 不得用新附件覆蓋舊附件而失去稽核；新增版本即可。
+P0874 [Heading1] 18. 稽核、操作日誌與歷史重現
+P0875 [Heading2] 18.1 Audit Log最低欄位
+P0876 [] 欄位
+P0877 [] 說明
+P0878 [] Audit_ID
+P0879 [] 唯一
+P0880 [] Actor_User_ID
+P0881 [] 操作者
+P0882 [] Actor_Role
+P0883 [] 當時角色
+P0884 [] Action
+P0885 [] CREATE/UPDATE_REQUEST/APPROVE/REJECT/REVERSE/EXPORT等
+P0886 [] Entity_Type/ID
+P0887 [] 被操作對象
+P0888 [] Before_JSON
+P0889 [] 必要時保存前值
+P0890 [] After_JSON
+P0891 [] 必要時保存後值
+P0892 [] Reason_Code/Comment
+P0893 [] 高風險操作必填
+P0894 [] Occurred_At
+P0895 [] 時間
+P0896 [] IP/Session_ID
+P0897 [] 安全追蹤
+P0898 [] 
+P0899 [Heading2] 18.2 必須可回答的稽核問題
+P0900 [ListBullet] 這顆球是由誰、依哪份申請表、在什麼時間建立？
+P0901 [ListBullet] Sponsor與Binary Parent是誰決定、何時核准？
+P0902 [ListBullet] 為何第3位直推能／不能放在某位置？
+P0903 [ListBullet] 某筆訂單由誰輸入、何時確認付款、產生多少GPV/RPV？
+P0904 [ListBullet] 某筆歷史資料若被更正，原值、改後值、原因與核准者是誰？
+P0905 [ListBullet] 某筆獎金採哪個Rule Version、Active Snapshot、有效直推Snapshot與K值？
+P0906 [Heading1] 19. 搜尋、報表與營運儀表板
+P0907 [Heading2] 19.1 全域搜尋
+P0908 [ListBullet] 支援Person姓名、手機、身分識別末碼、Qualification_ID、Order_No、Sponsor Qualification、付款參考號。
+P0909 [ListBullet] 搜尋結果必須區分『人』與『球』，不可只顯示姓名。
+P0910 [Heading2] 19.2 儀表板P0卡片
+P0911 [] 卡片
+P0912 [] 內容
+P0913 [] 待審會員申請
+P0914 [] SUBMITTED數量＋逾期
+P0915 [] 今日新生效資格
+P0916 [] EFFECTIVE today
+P0917 [] 待確認付款
+P0918 [] MANUAL_PENDING
+P0919 [] 今日訂單／金額
+P0920 [] 依Order Type分
+P0921 [] 安置異常
+P0922 [] 無Sponsor、Binary空位衝突、Sequence規則失敗
+P0923 [] 重銷排程異常
+P0924 [] Due未生成、Job Failed、Idempotency衝突
+P0925 [] 高風險操作
+P0926 [] 24小時內歷史更正／退貨／轉讓
+P0927 [] 
+P0928 [Heading2] 19.3 P1報表
+P0929 [ListBullet] 會員／球新增、有效／退出、公司承接。
+P0930 [ListBullet] 商品銷售與GPV。
+P0931 [ListBullet] 月／季／半年／年重銷方案數與未來履約。
+P0932 [ListBullet] Sponsor新增與有效直推分布。
+P0933 [ListBullet] Binary左右區PV與Carry（Bonus Engine上線後）。
+P0934 [ListBullet] 各獎項Theory/Paid/K0/K1/K2（Bonus Engine上線後）。
+P0935 [Heading1] 20. 資料庫邏輯模型
+P0936 [Heading2] 20.1 核心Entity清單
+P0937 [] 資料表
+P0938 [] 用途
+P0939 [] persons
+P0940 [] 自然人主檔
+P0941 [] person_addresses
+P0942 [] 地址歷史
+P0943 [] qualifications
+P0944 [] 會員資格／球
+P0945 [] qualification_holder_history
+P0946 [] 持有人歷史
+P0947 [] membership_applications
+P0948 [] 會員申請
+P0949 [] sponsor_relationships
+P0950 [] 推薦樹關係＋永久序號
+P0951 [] binary_placements
+P0952 [] 二元樹位置
+P0953 [] products
+P0954 [] SKU主檔
+P0955 [] product_rule_profiles
+P0956 [] PV/BV/RPV/EPV參數版本
+P0957 [] orders
+P0958 [] 訂單
+P0959 [] order_lines
+P0960 [] 訂單明細
+P0961 [] payments
+P0962 [] 人工付款紀錄
+P0963 [] fulfillments
+P0964 [] 商品履約
+P0965 [] subscriptions
+P0966 [] 預繳重銷方案
+P0967 [] monthly_fulfillments
+P0968 [] 月度認列排程
+P0969 [] active_periods
+P0970 [] Active事件／期間
+P0971 [] ledger_events
+P0972 [] GPV/RPV/EPV等事件
+P0973 [] award_events
+P0974 [] 獎金事件
+P0975 [] settlement_batches
+P0976 [] 結算批次
+P0977 [] pool_snapshots
+P0978 [] 獎池與K值
+P0979 [] upgrade_applications
+P0980 [] 會員升級
+P0981 [] transfer_applications
+P0982 [] 資格轉讓
+P0983 [] return_cases
+P0984 [] 退貨退款
+P0985 [] documents
+P0986 [] 附件
+P0987 [] audit_logs
+P0988 [] 稽核日誌
+P0989 [] rule_versions
+P0990 [] 規則版本
+P0991 [] 
+P0992 [Heading2] 20.2 關聯基準
+P0993 [ListBullet] persons 1:N qualifications（透過Current Holder與holder history）。
+P0994 [ListBullet] qualification 1:1 current sponsor relation；歷史可由事件／effective interval保存。
+P0995 [ListBullet] qualification 1:1 current binary placement；歷史更正需保存。
+P0996 [ListBullet] qualification 1:N orders / subscriptions / active_periods / ledger_events / award_events。
+P0997 [ListBullet] order 1:N order_lines / payments / return_cases / source ledger events。
+P0998 [ListBullet] subscription 1:N monthly_fulfillments。
+P0999 [Heading1] 21. 建議PostgreSQL約束與索引
+P1000 [] 類型
+P1001 [] 規格
+P1002 [] Unique
+P1003 [] qualifications.qualification_id；orders.order_no；monthly_fulfillments.idempotency_key
+P1004 [] Binary child
+P1005 [] UNIQUE(binary_parent_id, side) WHERE current=true
+P1006 [] Sponsor Sequence
+P1007 [] UNIQUE(sponsor_qualification_id, sponsor_sequence_no)
+P1008 [] Active查詢
+P1009 [] INDEX(qualification_id, active_from, active_to)
+P1010 [] Ledger
+P1011 [] INDEX(qualification_id, occurred_at); INDEX(source_event_id)
+P1012 [] Order
+P1013 [] INDEX(qualification_id, order_date); INDEX(payment_status)
+P1014 [] PII
+P1015 [] 身分識別碼存Encrypted Value＋可選HMAC Lookup Token，不以明文索引
+P1016 [] Audit
+P1017 [] INDEX(entity_type, entity_id, occurred_at)
+P1018 [] 
+P1019 [] 工程建議｜若要大量查Binary祖先／子樹，可評估ltree、closure table或materialized path。第一版可先用closure table以換取查詢穩定與防Cycle。
+P1020 [] 
+P1021 [Heading1] 22. API規格邊界（第一版）
+P1022 [] Method
+P1023 [] Endpoint
+P1024 [] 用途
+P1025 [] POST
+P1026 [] /api/persons
+P1027 [] 建立Person
+P1028 [] GET
+P1029 [] /api/persons/{id}
+P1030 [] Person詳細
+P1031 [] POST
+P1032 [] /api/membership-applications
+P1033 [] 建立會員申請
+P1034 [] POST
+P1035 [] /api/membership-applications/{id}/submit
+P1036 [] 提交
+P1037 [] POST
+P1038 [] /api/membership-applications/{id}/approve
+P1039 [] 核准
+P1040 [] POST
+P1041 [] /api/qualifications/{id}/activate
+P1042 [] 生效
+P1043 [] GET
+P1044 [] /api/qualifications/{id}
+P1045 [] 球詳細
+P1046 [] POST
+P1047 [] /api/qualifications/{id}/placement/validate
+P1048 [] 安置預檢
+P1049 [] POST
+P1050 [] /api/qualifications/{id}/placement
+P1051 [] 正式安置
+P1052 [] POST
+P1053 [] /api/orders
+P1054 [] 建立訂單
+P1055 [] POST
+P1056 [] /api/orders/{id}/confirm-payment
+P1057 [] 人工確認付款
+P1058 [] POST
+P1059 [] /api/subscriptions
+P1060 [] 建立重銷方案
+P1061 [] GET
+P1062 [] /api/subscriptions/{id}/schedule
+P1063 [] 月度履約排程
+P1064 [] POST
+P1065 [] /api/returns
+P1066 [] 建立退貨案件
+P1067 [] GET
+P1068 [] /api/audit
+P1069 [] 稽核查詢
+P1070 [] 
+P1071 [Heading2] 22.1 API通則
+P1072 [ListBullet] 所有寫入帶X-Request-ID／Idempotency-Key（需要時）。
+P1073 [ListBullet] 錯誤回傳Machine Code＋Human Message，例如BINARY_LEFT_SUBTREE_REQUIRED。
+P1074 [ListBullet] 涉及球的API必須傳Qualification_ID；Person_ID不足以推定。
+P1075 [ListBullet] 所有時間使用UTC儲存＋Asia/Taipei顯示；Occurred_At與Recorded_At分開。
+P1076 [Heading1] 23. 背景作業、事件與可靠性
+P1077 [] Job/Event
+P1078 [] 頻率
+P1079 [] 失敗策略
+P1080 [] Monthly Fulfillment Due
+P1081 [] 每日／小時
+P1082 [] 重試＋Dead Letter＋告警；Idempotent
+P1083 [] Active Expiry
+P1084 [] 每日／事件式
+P1085 [] 依來源事件計算；保留歷史
+P1086 [] Document Virus Scan
+P1087 [] 上傳後
+P1088 [] 失敗隔離
+P1089 [] Audit Export
+P1090 [] 按需
+P1091 [] 異步產出＋下載時效
+P1092 [] Future Bonus Settlement
+P1093 [] 週／雙週／月
+P1094 [] Batch lock＋可重跑但不可重複發獎
+P1095 [] 
+P1096 [Heading2] 23.1 Outbox建議
+P1097 [] 交易資料寫入與後續事件發布建議採Transactional Outbox：同一DB Transaction內保存業務資料與待發布Event，再由Worker發布，避免『訂單已Paid但PV事件沒有發出』的雙寫不一致。
+P1098 [Heading1] 24. 安全、個資與營運控制
+P1099 [Heading2] 24.1 Authentication
+P1100 [ListBullet] 第一版採公司帳號Email＋密碼＋MFA；後續可接Microsoft Entra ID。
+P1101 [ListBullet] 閒置逾時、強制登出、登入失敗鎖定、裝置／IP稽核。
+P1102 [Heading2] 24.2 Authorization
+P1103 [ListBullet] RBAC為基礎；高風險操作另加Permission，例如qualification.transfer.approve。
+P1104 [ListBullet] 資料匯出、完整身分證號／銀行帳號檢視須額外權限並記Audit。
+P1105 [Heading2] 24.3 Data Protection
+P1106 [ListBullet] TLS傳輸；DB/Blob at-rest encryption。
+P1107 [ListBullet] 身分證、銀行帳號等敏感資料應欄位級加密或使用受控Secrets/KMS。
+P1108 [ListBullet] 正式環境不得在Application Log輸出完整個資、銀行帳號、附件內容。
+P1109 [Heading2] 24.4 Backup/DR
+P1110 [ListBullet] 至少每日備份＋Point-in-Time Recovery；正式上線前完成還原演練。
+P1111 [ListBullet] Audit/Ledger資料不得因一般清理Job被刪除；保存年限由公司法遵另行確認並配置。
+P1112 [Heading1] 25. 技術架構建議
+P1113 [] 層
+P1114 [] MVP建議
+P1115 [] Frontend
+P1116 [] Next.js / React 管理後台
+P1117 [] Backend
+P1118 [] NestJS + TypeScript Modular Monolith
+P1119 [] Database
+P1120 [] PostgreSQL
+P1121 [] Object Storage
+P1122 [] Azure Blob Storage
+P1123 [] Auth
+P1124 [] MVP內建RBAC＋MFA；可演進Entra ID
+P1125 [] Hosting
+P1126 [] Azure App Service或Container Apps
+P1127 [] Secrets
+P1128 [] Azure Key Vault
+P1129 [] Monitoring
+P1130 [] Application Insights / Log Analytics
+P1131 [] CI/CD
+P1132 [] GitHub Actions或Azure DevOps
+P1133 [] 
+P1134 [Heading2] 25.1 模組邊界
+P1135 [ListBullet] Identity & Access
+P1136 [ListBullet] Person & Qualification
+P1137 [ListBullet] Organization
+P1138 [ListBullet] Commerce
+P1139 [ListBullet] Subscription & Fulfillment
+P1140 [ListBullet] Ledger
+P1141 [ListBullet] Bonus
+P1142 [ListBullet] Case Management（Upgrade/Transfer/Return）
+P1143 [ListBullet] Documents
+P1144 [ListBullet] Audit & Reporting
+P1145 [] 設計原則｜先做Modular Monolith，不急著拆Microservices；用清楚Domain Boundary與Event Contract保留未來拆分可能。
+P1146 [] 
+P1147 [Heading1] 26. 畫面細部規格與主要操作流程
+P1148 [Heading2] 26.1 新會員建檔Wizard
+P1149 [] 步驟
+P1150 [] 畫面
+P1151 [] 系統行為
+P1152 [] 1
+P1153 [] 搜尋／建立Person
+P1154 [] 先查重；若已有Person直接選取
+P1155 [] 2
+P1156 [] 新增Qualification申請
+P1157 [] 選啟航/菁英/領袖；產生Application ID
+P1158 [] 3
+P1159 [] 指定Sponsor球
+P1160 [] 顯示Sponsor Holder、球ID、有效狀態
+P1161 [] 4
+P1162 [] 預檢Binary位置
+P1163 [] 系統計算永久Sponsor Sequence並只顯示合法空位
+P1164 [] 5
+P1165 [] 輸入加入商品訂單
+P1166 [] 帶入方案盒數／金額／GPV供覆核
+P1167 [] 6
+P1168 [] 上傳申請與訂購單
+P1169 [] 附件Hash、版本
+P1170 [] 7
+P1171 [] 提交審核
+P1172 [] 跑完整Validation
+P1173 [] 8
+P1174 [] 核准＋生效
+P1175 [] 建立Qualification、樹關係、Order／GPV事件
+P1176 [] 
+P1177 [Heading2] 26.2 訂單人工輸入
+P1178 [ListNumber] 搜尋Qualification（不可只搜尋Person後直接下單，若多球需明確選球）。
+P1179 [ListNumber] 選Order Type與SKU。
+P1180 [ListNumber] 系統帶入商品規則版本、價格與PV參數。
+P1181 [ListNumber] 輸入／核對數量、付款資料、附件。
+P1182 [ListNumber] CONFIRM後進待付款；Finance確認後轉PAID。
+P1183 [ListNumber] PAID事件觸發相應Ledger／Subscription流程。
+P1184 [Heading2] 26.3 預繳重銷
+P1185 [ListNumber] 選Qualification。
+P1186 [ListNumber] 選季／半年／年。
+P1187 [ListNumber] 系統顯示總付款、月份數、每月認列2,000、每月1,200 RPV、商品盒數。
+P1188 [ListNumber] 付款確認後建立Subscription與全部SCHEDULED Monthly Fulfillments，但RPV=0直到各月Due。
+P1189 [ListNumber] 內勤可查看未來排程，不可手動提前點『產生RPV』；若要特殊處理需高權限Case。
+P1190 [Heading1] 27. 驗證規則目錄（Validation Catalog）
+P1191 [] Code
+P1192 [] 情境
+P1193 [] 結果
+P1194 [] 訊息／規則
+P1195 [] VAL-PER-001
+P1196 [] Person未成年
+P1197 [] BLOCK
+P1198 [] 不得建立有效會員資格；實際成年判斷依公司法遵設定。
+P1199 [] VAL-QUAL-001
+P1200 [] 缺Qualification_ID
+P1201 [] BLOCK
+P1202 [] 涉及組織／訂單／Active／PV寫入皆拒絕。
+P1203 [] VAL-SP-001
+P1204 [] Sponsor不存在
+P1205 [] BLOCK
+P1206 [] 拒絕提交。
+P1207 [] VAL-SP-002
+P1208 [] Sponsor Sequence重複
+P1209 [] BLOCK
+P1210 [] DB unique＋重試。
+P1211 [] VAL-BIN-001
+P1212 [] Binary Parent指定側已占用
+P1213 [] BLOCK
+P1214 [] 提示現有子節點。
+P1215 [] VAL-BIN-002
+P1216 [] Binary Parent不在Sponsor子樹
+P1217 [] BLOCK
+P1218 [] 不得安置。
+P1219 [] VAL-BIN-003
+P1220 [] 第1或第3直推未在左區
+P1221 [] BLOCK
+P1222 [] 明示規則。
+P1223 [] VAL-BIN-004
+P1224 [] 形成Cycle
+P1225 [] BLOCK
+P1226 [] 不得寫入。
+P1227 [] VAL-ORD-001
+P1228 [] Person多球但未選球
+P1229 [] BLOCK
+P1230 [] 要求選Qualification。
+P1231 [] VAL-ORD-002
+P1232 [] Paid訂單直接修改金額
+P1233 [] BLOCK
+P1234 [] 改走Correction/Return。
+P1235 [] VAL-SUB-001
+P1236 [] 年度付款即生成14,400 RPV
+P1237 [] BLOCK/TEST FAIL
+P1238 [] 只能逐月1,200。
+P1239 [] VAL-SUB-002
+P1240 [] 同月重複Monthly Recognition
+P1241 [] BLOCK
+P1242 [] Idempotency Key。
+P1243 [] VAL-ACT-001
+P1244 [] 跨球借用Active
+P1245 [] BLOCK/TEST FAIL
+P1246 [] 每球獨立。
+P1247 [] VAL-DIR-001
+P1248 [] 跨球借用有效直推數
+P1249 [] BLOCK/TEST FAIL
+P1250 [] 每球獨立。
+P1251 [] VAL-AUD-001
+P1252 [] 高風險操作無理由
+P1253 [] BLOCK
+P1254 [] Reason必填。
+P1255 [] 
+P1256 [Heading1] 28. 測試策略與關鍵測試案例
+P1257 [Heading2] 28.1 測試層級
+P1258 [ListBullet] Unit Test：Sponsor Sequence、左區安置、Active Snapshot、5/8/12代等純規則。
+P1259 [ListBullet] Integration Test：Order→Ledger、Subscription→Monthly RPV、Return→Reversal。
+P1260 [ListBullet] E2E：內勤從會員申請到Qualification生效及訂單Paid。
+P1261 [ListBullet] Regression：每次Rule Version／程式改版必跑固定制度案例。
+P1262 [Heading2] 28.2 P0關鍵案例
+P1263 [] Case
+P1264 [] 情境
+P1265 [] 預期
+P1266 [] T01
+P1267 [] 同一Person建立A/B兩球
+P1268 [] 兩個Qualification_ID；資料獨立
+P1269 [] T02
+P1270 [] A球Active、B球Inactive
+P1271 [] B球不可因同Person而領獎
+P1272 [] T03
+P1273 [] A球有效直推2、B球0
+P1274 [] R1.0B分別12代與5代
+P1275 [] T04
+P1276 [] Sponsor第1位直推放右區
+P1277 [] 拒絕
+P1278 [] T05
+P1279 [] Sponsor第3位直推放左子樹深層
+P1280 [] 允許
+P1281 [] T06
+P1282 [] 第1位退出後新增第4位
+P1283 [] 永久序號仍4；不重排
+P1284 [] T07
+P1285 [] Binary Parent側已有人
+P1286 [] 拒絕
+P1287 [] T08
+P1288 [] 季方案付款
+P1289 [] 建立3筆Schedule；當日不產生3,600 RPV
+P1290 [] T09
+P1291 [] 年方案付款
+P1292 [] 建立12筆Schedule；每月各1,200
+P1293 [] T10
+P1294 [] Monthly Job重跑
+P1295 [] 同Idempotency不重複RPV
+P1296 [] T11
+P1297 [] 升級核准
+P1298 [] Effective_At前舊級、後新級；不回溯
+P1299 [] T12
+P1300 [] 資格轉讓
+P1301 [] 球ID與樹不動、Holder改變、歷史不改
+P1302 [] T13
+P1303 [] 退貨
+P1304 [] 原Ledger保留＋建立反向Event
+P1305 [] T14
+P1306 [] 推薦對等領袖表
+P1307 [] G2 20/G3 15/G4 10/G5 10/G6 10/G7 5
+P1308 [] T15
+P1309 [] 只傳Person_ID建立訂單
+P1310 [] 多球時拒絕
+P1311 [] 
+P1312 [Heading1] 29. UAT驗收標準
+P1313 [] 領域
+P1314 [] UAT通過條件
+P1315 [] 會員
+P1316 [] 可依紙本建Person與多球；重複Person有警示。
+P1317 [] 申請
+P1318 [] Draft→Submit→Approve→Effective完整；附件可追溯。
+P1319 [] Sponsor
+P1320 [] 永久序號正確且退費不重排。
+P1321 [] Binary
+P1322 [] 第1/3直推左區強制；位置不衝突、不成Cycle。
+P1323 [] 訂單
+P1324 [] 人工輸入、付款確認、附件、狀態歷史完整。
+P1325 [] 重銷
+P1326 [] 季/半年/年只排程，逐月1,200 RPV，不提前。
+P1327 [] Active
+P1328 [] 以球與事件時點判斷，可查歷史。
+P1329 [] Ledger
+P1330 [] 原事件不刪除；沖銷有Source鏈。
+P1331 [] 多球
+P1332 [] A/B球所有核心帳本完全獨立。
+P1333 [] Audit
+P1334 [] 高風險操作可還原誰、何時、改什麼、為什麼。
+P1335 [] 安全
+P1336 [] 角色越權測試失敗；個資遮罩與附件授權正常。
+P1337 [] 恢復
+P1338 [] 備份還原測試完成後才能正式上線。
+P1339 [] 
+P1340 [Heading1] 30. MVP開發拆分與里程碑
+P1341 [] Sprint
+P1342 [] 內容
+P1343 [] 可展示成果
+P1344 [] S0
+P1345 [] 專案骨架、Auth/RBAC、DB Migration、Audit基礎
+P1346 [] 可登入、角色可用、環境與版號可見
+P1347 [] S1
+P1348 [] Person＋Qualification＋Application
+P1349 [] 可手動建會員與多球
+P1350 [] S2
+P1351 [] Sponsor＋Binary Placement
+P1352 [] 可安置、規則防呆、樹查詢
+P1353 [] S3
+P1354 [] Product＋Order＋Payment＋Document
+P1355 [] 可輸入訂購單與附件
+P1356 [] S4
+P1357 [] Subscription＋Monthly Fulfillment＋Active
+P1358 [] 季/半年/年排程正確
+P1359 [] S5
+P1360 [] Ledger Event＋Return/Reversal
+P1361 [] PV事件與沖銷可追溯
+P1362 [] S6
+P1363 [] Upgrade＋Transfer＋Company Held
+P1364 [] 完整資格生命週期
+P1365 [] S7
+P1366 [] Dashboard＋Report＋Hardening＋UAT
+P1367 [] 內勤可正式試營運
+P1368 [] Phase 2
+P1369 [] 完整Bonus Engine／會員端／LINE／BC／AI
+P1370 [] 在MVP正確資料上擴展
+P1371 [] 
+P1372 [Heading1] 31. 上線、資料移轉與營運SOP
+P1373 [Heading2] 31.1 上線前
+P1374 [ListBullet] 確認Production Rule Version、商品主檔、公司時間、角色權限。
+P1375 [ListBullet] 匯入既有會員時，必須同時取得Person、Qualification、Sponsor、Binary、級別、生效日；資料缺失不得靠工程師猜測。
+P1376 [ListBullet] 既有歷史訂單若不完整，標示MIGRATION_SOURCE與資料可信度，不虛構交易細節。
+P1377 [Heading2] 31.2 內勤每日操作
+P1378 [ListBullet] Morning：檢查待審申請、待付款、重銷Job異常。
+P1379 [ListBullet] During Day：輸入申請／訂購單、上傳原始附件、完成Maker操作。
+P1380 [ListBullet] Reviewer：批次核准會員、升級／轉讓與高風險更正。
+P1381 [ListBullet] End of Day：核對當日新會員、訂單金額、異常與Audit摘要。
+P1382 [Heading2] 31.3 事故處理
+P1383 [ListBullet] 禁止直接進DB手改正式資料。
+P1384 [ListBullet] Production Bug先停止相關Job／功能，保留原事件與Log，再以Correction Script或管理流程修復。
+P1385 [ListBullet] 每次資料修復需Issue ID、範圍、SQL/Script版本、審核者與前後核對報告。
+P1386 [Heading1] 32. 自我審查（設計完整性、制度一致性與風險）
+P1387 [] 審查項
+P1388 [] 結果
+P1389 [] 結論／待辦
+P1390 [] 制度來源優先序
+P1391 [] PASS
+P1392 [] 已明確以已報備文件／v1.5／v4.1為上位依據；本規格不自行改制度。
+P1393 [] 一人多球
+P1394 [] PASS
+P1395 [] Person與Qualification分離；所有核心寫入要求Qualification_ID；各球獨立Active/直推/Carry/獎金。
+P1396 [] Sponsor/Binary分離
+P1397 [] PASS
+P1398 [] 建立順序與用途分開；第1/3永久序號左區規則已納入Validation。
+P1399 [] 推薦對等比例
+P1400 [] PASS
+P1401 [] 領袖G5 10%已列入；矩陣合計30/50/70正確。
+P1402 [] R1.0B預繳重銷
+P1403 [] PASS
+P1404 [] 季/半年/年逐月1,200 RPV；禁止付款日提前全額認列。
+P1405 [] Active First
+P1406 [] PASS
+P1407 [] 以事件時點＋Qualification Snapshot處理，不用現在狀態回補。
+P1408 [] 升級
+P1409 [] PASS
+P1410 [] 補差額＋600審核費；核准後生效、不回溯、差別商品履約分開。
+P1411 [] 轉讓／退出
+P1412 [] PASS
+P1413 [] 節點不動Holder變更；退出公司承接；歷史不倒溯。
+P1414 [] 事件帳本
+P1415 [] PASS
+P1416 [] Append-only＋Reversal；避免Hard Delete。
+P1417 [] MVP邊界
+P1418 [] PASS
+P1419 [] 聚焦內勤手動收申請表與訂購單，未把會員前台／ERP混入P0。
+P1420 [] 安全
+P1421 [] PASS with action
+P1422 [] 已定RBAC/MFA/加密/稽核；實作時仍需公司確認個資保存與角色名單。
+P1423 [] 法遵變更
+P1424 [] ACTION
+P1425 [] 季/半年/年預繳方案、多資格持有等若屬報備變更事項，上線前須由公司法遵確認完成必要程序。
+P1426 [] 歷史資料移轉
+P1427 [] ACTION
+P1428 [] 正式開發前需盤點現有會員／球／Sponsor／Binary／訂單資料品質。
+P1429 [] 完整Bonus Engine
+P1430 [] DEFER
+P1431 [] 本MVP保留完整資料與事件接口；正式獎金自動結算可於Phase 2啟用並以固定測試案例驗證。
+P1432 [] 
+P1433 [Heading2] 32.1 仍需公司決策／確認的事項
+P1434 [ListBullet] MVP實際操作角色名單、是否強制雙人核准。
+P1435 [ListBullet] Person身分識別唯一性政策、外籍／法人等特殊參加者是否另規格；本規格目前聚焦成年自然人。
+P1436 [ListBullet] 既有會員資料來源、目前已存在幾顆球、歷史Sponsor/Binary資料是否完整。
+P1437 [ListBullet] 商品SKU清單與每SKU實際GPV/BV/RPV/EPV參數。
+P1438 [ListBullet] 季／半年／年方案之商品選擇、出貨節奏、取消／未履約月份處理細節。
+P1439 [ListBullet] 正式環境使用Azure App Service或Container Apps、網域、Email/MFA方案。
+P1440 [Heading1] 33. 開發團隊Definition of Done
+P1441 [ListBullet] 程式碼有PR Review、Unit/Integration Test。
+P1442 [ListBullet] DB Migration可重複部署，不手改Schema。
+P1443 [ListBullet] 所有P0寫入有Audit Log。
+P1444 [ListBullet] 所有涉及Qualification的核心服務禁止從Person自動猜球。
+P1445 [ListBullet] 所有時間與Rule Version可重現歷史。
+P1446 [ListBullet] P0測試案例全部通過。
+P1447 [ListBullet] 正式上線前完成安全掃描、備份還原、UAT簽核與操作SOP。

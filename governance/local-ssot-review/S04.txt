@@ -1,0 +1,2051 @@
+L0001 -- =============================================================================
+L0002 -- UCell R1.0B PostgreSQL Full Database Definition v1.0
+L0003 -- Date: 2026-09-04
+L0004 -- Purpose:
+L0005 --   Database baseline for UCell Core / Admin MVP / LINE OA / Pre-ERP Bridge.
+L0006 --   Design principles:
+L0007 --     Parameter-driven + Event-driven + Append-only + Versioned + Traceable
+L0008 --     Qualification-first, Sponsor/Binary separation, no physical delete
+L0009 --     Pre-ERP operational bridge only; do NOT recreate WMS/AR/AP/GL.
+L0010 --
+L0011 -- IMPORTANT SOURCE-OF-TRUTH:
+L0012 --   Filed documents / formally approved rules override this technical schema.
+L0013 --   This SQL structures the current engineering baseline and MUST NOT be treated
+L0014 --   as a replacement for legal filing documents.
+L0015 --
+L0016 -- Target PostgreSQL: 16+ recommended.
+L0017 -- =============================================================================
+L0018 
+L0019 BEGIN;
+L0020 
+L0021 -- -----------------------------------------------------------------------------
+L0022 -- 00. Extensions
+L0023 -- -----------------------------------------------------------------------------
+L0024 CREATE EXTENSION IF NOT EXISTS pgcrypto;
+L0025 
+L0026 -- -----------------------------------------------------------------------------
+L0027 -- 01. Schemas
+L0028 -- -----------------------------------------------------------------------------
+L0029 CREATE SCHEMA IF NOT EXISTS identity;
+L0030 CREATE SCHEMA IF NOT EXISTS membership;
+L0031 CREATE SCHEMA IF NOT EXISTS organization;
+L0032 CREATE SCHEMA IF NOT EXISTS rules;
+L0033 CREATE SCHEMA IF NOT EXISTS commerce;
+L0034 CREATE SCHEMA IF NOT EXISTS subscription;
+L0035 CREATE SCHEMA IF NOT EXISTS ledger;
+L0036 CREATE SCHEMA IF NOT EXISTS attribution;
+L0037 CREATE SCHEMA IF NOT EXISTS audit;
+L0038 CREATE SCHEMA IF NOT EXISTS integration;
+L0039 CREATE SCHEMA IF NOT EXISTS reporting;
+L0040 
+L0041 -- -----------------------------------------------------------------------------
+L0042 -- 02. Generic utility functions
+L0043 -- -----------------------------------------------------------------------------
+L0044 CREATE OR REPLACE FUNCTION public.utc_now()
+L0045 RETURNS timestamptz
+L0046 LANGUAGE sql
+L0047 STABLE
+L0048 AS $$ SELECT clock_timestamp(); $$;
+L0049 
+L0050 CREATE OR REPLACE FUNCTION public.gen_uuid()
+L0051 RETURNS uuid
+L0052 LANGUAGE sql
+L0053 VOLATILE
+L0054 AS $$ SELECT gen_random_uuid(); $$;
+L0055 
+L0056 CREATE OR REPLACE FUNCTION public.sha256_text(p_text text)
+L0057 RETURNS text
+L0058 LANGUAGE sql
+L0059 IMMUTABLE
+L0060 AS $$ SELECT encode(digest(coalesce(p_text,''), 'sha256'), 'hex'); $$;
+L0061 
+L0062 CREATE OR REPLACE FUNCTION public.set_updated_at()
+L0063 RETURNS trigger
+L0064 LANGUAGE plpgsql
+L0065 AS $$
+L0066 BEGIN
+L0067   NEW.updated_at := clock_timestamp();
+L0068   RETURN NEW;
+L0069 END;
+L0070 $$;
+L0071 
+L0072 CREATE OR REPLACE FUNCTION public.prevent_physical_delete()
+L0073 RETURNS trigger
+L0074 LANGUAGE plpgsql
+L0075 AS $$
+L0076 BEGIN
+L0077   RAISE EXCEPTION 'Physical DELETE is prohibited on %. Use VOID/REVERSAL/SUPERSEDE workflow.', TG_TABLE_SCHEMA || '.' || TG_TABLE_NAME
+L0078     USING ERRCODE = '55000';
+L0079 END;
+L0080 $$;
+L0081 
+L0082 CREATE OR REPLACE FUNCTION public.prevent_mutation()
+L0083 RETURNS trigger
+L0084 LANGUAGE plpgsql
+L0085 AS $$
+L0086 BEGIN
+L0087   RAISE EXCEPTION 'Mutation is prohibited on append-only table %. Use reversal/correction event.', TG_TABLE_SCHEMA || '.' || TG_TABLE_NAME
+L0088     USING ERRCODE = '55000';
+L0089 END;
+L0090 $$;
+L0091 
+L0092 -- -----------------------------------------------------------------------------
+L0093 -- 03. Shared enum-like domains/types
+L0094 -- -----------------------------------------------------------------------------
+L0095 DO $$
+L0096 BEGIN
+L0097   IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'record_status') THEN
+L0098     CREATE TYPE public.record_status AS ENUM ('DRAFT','PENDING','APPROVED','EFFECTIVE','SUSPENDED','VOIDED','CLOSED');
+L0099   END IF;
+L0100   IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'side_code') THEN
+L0101     CREATE TYPE public.side_code AS ENUM ('LEFT','RIGHT');
+L0102   END IF;
+L0103   IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'actor_type') THEN
+L0104     CREATE TYPE public.actor_type AS ENUM ('USER','SYSTEM','JOB','INTEGRATION');
+L0105   END IF;
+L0106   IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'rule_status') THEN
+L0107     CREATE TYPE public.rule_status AS ENUM ('DRAFT','REVIEW','APPROVED','PUBLISHED','RETIRED');
+L0108   END IF;
+L0109   IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'order_status') THEN
+L0110     CREATE TYPE public.order_status AS ENUM ('DRAFT','CONFIRMED','PAID','FULFILLED','PARTIAL_RETURN','RETURNED','VOIDED');
+L0111   END IF;
+L0112   IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'award_status') THEN
+L0113     CREATE TYPE public.award_status AS ENUM ('CALCULATED','PENDING_45D','EFFECTIVE','PAYABLE','PAID','REVERSED','CLAWBACK');
+L0114   END IF;
+L0115   IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'parameter_data_type') THEN
+L0116     CREATE TYPE public.parameter_data_type AS ENUM ('INTEGER','DECIMAL','BOOLEAN','TEXT','ENUM','DATE','TIMESTAMP','JSON');
+L0117   END IF;
+L0118 END$$;
+L0119 
+L0120 -- -----------------------------------------------------------------------------
+L0121 -- 04. AUDIT / CHANGE GOVERNANCE
+L0122 -- -----------------------------------------------------------------------------
+L0123 CREATE TABLE IF NOT EXISTS audit.change_request (
+L0124   change_request_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+L0125   entity_type text NOT NULL,
+L0126   entity_id uuid,
+L0127   change_type text NOT NULL,
+L0128   reason_code text NOT NULL,
+L0129   reason_text text,
+L0130   requested_payload jsonb,
+L0131   status public.record_status NOT NULL DEFAULT 'DRAFT',
+L0132   requested_by uuid,
+L0133   requested_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+L0134   approved_by uuid,
+L0135   approved_at timestamptz,
+L0136   executed_at timestamptz,
+L0137   correlation_id uuid NOT NULL DEFAULT gen_random_uuid()
+L0138 );
+L0139 
+L0140 CREATE TABLE IF NOT EXISTS audit.approval_record (
+L0141   approval_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+L0142   change_request_id uuid NOT NULL REFERENCES audit.change_request(change_request_id),
+L0143   approval_stage text NOT NULL,
+L0144   decision text NOT NULL CHECK (decision IN ('APPROVE','REJECT','RETURN')),
+L0145   decided_by uuid,
+L0146   decided_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+L0147   note text
+L0148 );
+L0149 
+L0150 CREATE TABLE IF NOT EXISTS audit.audit_event (
+L0151   audit_event_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+L0152   actor_type public.actor_type NOT NULL,
+L0153   actor_id uuid,
+L0154   action_code text NOT NULL,
+L0155   entity_type text NOT NULL,
+L0156   entity_id uuid,
+L0157   before_snapshot jsonb,
+L0158   after_snapshot jsonb,
+L0159   reason_code text,
+L0160   reason_text text,
+L0161   request_id text,
+L0162   trace_id text,
+L0163   correlation_id uuid NOT NULL DEFAULT gen_random_uuid(),
+L0164   ip_address inet,
+L0165   user_agent text,
+L0166   occurred_at timestamptz NOT NULL DEFAULT clock_timestamp()
+L0167 );
+L0168 
+L0169 CREATE INDEX IF NOT EXISTS ix_audit_entity_time
+L0170   ON audit.audit_event(entity_type, entity_id, occurred_at DESC);
+L0171 CREATE INDEX IF NOT EXISTS ix_audit_actor_time
+L0172   ON audit.audit_event(actor_id, occurred_at DESC);
+L0173 
+L0174 CREATE OR REPLACE FUNCTION audit.fn_write_audit_event(
+L0175   p_actor_type public.actor_type,
+L0176   p_actor_id uuid,
+L0177   p_action_code text,
+L0178   p_entity_type text,
+L0179   p_entity_id uuid,
+L0180   p_before jsonb,
+L0181   p_after jsonb,
+L0182   p_reason_code text DEFAULT NULL,
+L0183   p_reason_text text DEFAULT NULL,
+L0184   p_correlation_id uuid DEFAULT NULL
+L0185 )
+L0186 RETURNS uuid
+L0187 LANGUAGE plpgsql
+L0188 AS $$
+L0189 DECLARE
+L0190   v_id uuid := gen_random_uuid();
+L0191 BEGIN
+L0192   INSERT INTO audit.audit_event(
+L0193     audit_event_id, actor_type, actor_id, action_code, entity_type, entity_id,
+L0194     before_snapshot, after_snapshot, reason_code, reason_text, correlation_id
+L0195   )
+L0196   VALUES(
+L0197     v_id, p_actor_type, p_actor_id, p_action_code, p_entity_type, p_entity_id,
+L0198     p_before, p_after, p_reason_code, p_reason_text, coalesce(p_correlation_id, gen_random_uuid())
+L0199   );
+L0200   RETURN v_id;
+L0201 END;
+L0202 $$;
+L0203 
+L0204 -- -----------------------------------------------------------------------------
+L0205 -- 05. IDENTITY
+L0206 -- -----------------------------------------------------------------------------
+L0207 CREATE TABLE IF NOT EXISTS identity.person (
+L0208   person_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+L0209   person_no bigint GENERATED ALWAYS AS IDENTITY UNIQUE,
+L0210   legal_name text NOT NULL,
+L0211   preferred_name text,
+L0212   national_id_hash text,
+L0213   national_id_ciphertext bytea,
+L0214   birth_date date,
+L0215   adulthood_verified boolean NOT NULL DEFAULT false,
+L0216   mobile text,
+L0217   email text,
+L0218   line_user_id_hash text,
+L0219   line_user_id_ciphertext bytea,
+L0220   status public.record_status NOT NULL DEFAULT 'DRAFT',
+L0221   created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+L0222   created_by uuid,
+L0223   updated_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+L0224   updated_by uuid,
+L0225   CONSTRAINT uq_person_national_id_hash UNIQUE NULLS NOT DISTINCT (national_id_hash)
+L0226 );
+L0227 
+L0228 CREATE INDEX IF NOT EXISTS ix_person_name ON identity.person(legal_name);
+L0229 CREATE INDEX IF NOT EXISTS ix_person_mobile ON identity.person(mobile);
+L0230 
+L0231 CREATE TRIGGER trg_person_updated_at
+L0232 BEFORE UPDATE ON identity.person
+L0233 FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+L0234 
+L0235 CREATE TRIGGER trg_person_no_delete
+L0236 BEFORE DELETE ON identity.person
+L0237 FOR EACH ROW EXECUTE FUNCTION public.prevent_physical_delete();
+L0238 
+L0239 CREATE TABLE IF NOT EXISTS identity.person_bank_profile (
+L0240   bank_profile_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+L0241   person_id uuid NOT NULL REFERENCES identity.person(person_id),
+L0242   bank_code text NOT NULL,
+L0243   branch_code text,
+L0244   account_name text NOT NULL,
+L0245   account_no_hash text NOT NULL,
+L0246   account_no_ciphertext bytea NOT NULL,
+L0247   is_primary boolean NOT NULL DEFAULT false,
+L0248   valid_from timestamptz NOT NULL DEFAULT clock_timestamp(),
+L0249   valid_to timestamptz,
+L0250   created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+L0251   created_by uuid
+L0252 );
+L0253 
+L0254 CREATE UNIQUE INDEX IF NOT EXISTS uq_person_primary_bank
+L0255   ON identity.person_bank_profile(person_id)
+L0256   WHERE is_primary AND valid_to IS NULL;
+L0257 
+L0258 CREATE TABLE IF NOT EXISTS identity.consent_record (
+L0259   consent_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+L0260   person_id uuid REFERENCES identity.person(person_id),
+L0261   consent_type text NOT NULL,
+L0262   consent_version text NOT NULL,
+L0263   consented boolean NOT NULL,
+L0264   consented_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+L0265   source_channel text,
+L0266   ip_address inet,
+L0267   evidence jsonb
+L0268 );
+L0269 
+L0270 CREATE TRIGGER trg_consent_no_delete
+L0271 BEFORE DELETE ON identity.consent_record
+L0272 FOR EACH ROW EXECUTE FUNCTION public.prevent_physical_delete();
+L0273 
+L0274 -- -----------------------------------------------------------------------------
+L0275 -- 06. MEMBERSHIP / QUALIFICATION
+L0276 -- -----------------------------------------------------------------------------
+L0277 CREATE TABLE IF NOT EXISTS membership.plan_level (
+L0278   plan_level_code text PRIMARY KEY,
+L0279   display_name text NOT NULL,
+L0280   sort_order integer NOT NULL,
+L0281   active boolean NOT NULL DEFAULT true
+L0282 );
+L0283 
+L0284 INSERT INTO membership.plan_level(plan_level_code, display_name, sort_order)
+L0285 VALUES
+L0286   ('STARTER','啟航',10),
+L0287   ('ELITE','菁英',20),
+L0288   ('LEADER','領袖',30)
+L0289 ON CONFLICT (plan_level_code) DO NOTHING;
+L0290 
+L0291 CREATE TABLE IF NOT EXISTS membership.qualification (
+L0292   qualification_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+L0293   qualification_no bigint GENERATED ALWAYS AS IDENTITY UNIQUE,
+L0294   current_holder_person_id uuid NOT NULL REFERENCES identity.person(person_id),
+L0295   plan_level_code text NOT NULL REFERENCES membership.plan_level(plan_level_code),
+L0296   status public.record_status NOT NULL DEFAULT 'DRAFT',
+L0297   active_flag boolean NOT NULL DEFAULT false,
+L0298   effective_at timestamptz,
+L0299   closed_at timestamptz,
+L0300   source_application_id uuid,
+L0301   created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+L0302   created_by uuid,
+L0303   updated_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+L0304   updated_by uuid
+L0305 );
+L0306 
+L0307 CREATE INDEX IF NOT EXISTS ix_qualification_holder
+L0308   ON membership.qualification(current_holder_person_id, status);
+L0309 
+L0310 CREATE TRIGGER trg_qualification_updated_at
+L0311 BEFORE UPDATE ON membership.qualification
+L0312 FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+L0313 
+L0314 CREATE TRIGGER trg_qualification_no_delete
+L0315 BEFORE DELETE ON membership.qualification
+L0316 FOR EACH ROW EXECUTE FUNCTION public.prevent_physical_delete();
+L0317 
+L0318 CREATE TABLE IF NOT EXISTS membership.qualification_holder_history (
+L0319   holder_history_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+L0320   qualification_id uuid NOT NULL REFERENCES membership.qualification(qualification_id),
+L0321   holder_person_id uuid NOT NULL REFERENCES identity.person(person_id),
+L0322   valid_from timestamptz NOT NULL,
+L0323   valid_to timestamptz,
+L0324   source_case_id uuid,
+L0325   created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+L0326   created_by uuid,
+L0327   CHECK (valid_to IS NULL OR valid_to > valid_from)
+L0328 );
+L0329 
+L0330 CREATE UNIQUE INDEX IF NOT EXISTS uq_current_holder_per_qualification
+L0331   ON membership.qualification_holder_history(qualification_id)
+L0332   WHERE valid_to IS NULL;
+L0333 
+L0334 CREATE TABLE IF NOT EXISTS membership.qualification_status_history (
+L0335   status_history_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+L0336   qualification_id uuid NOT NULL REFERENCES membership.qualification(qualification_id),
+L0337   status public.record_status NOT NULL,
+L0338   effective_from timestamptz NOT NULL,
+L0339   effective_to timestamptz,
+L0340   source_event_id uuid,
+L0341   reason_code text,
+L0342   created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+L0343   CHECK (effective_to IS NULL OR effective_to > effective_from)
+L0344 );
+L0345 
+L0346 CREATE TABLE IF NOT EXISTS membership.active_period (
+L0347   active_period_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+L0348   qualification_id uuid NOT NULL REFERENCES membership.qualification(qualification_id),
+L0349   active_from timestamptz NOT NULL,
+L0350   active_to timestamptz,
+L0351   active_source text NOT NULL,
+L0352   source_event_id uuid,
+L0353   created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+L0354   CHECK (active_to IS NULL OR active_to > active_from)
+L0355 );
+L0356 
+L0357 CREATE INDEX IF NOT EXISTS ix_active_period_lookup
+L0358   ON membership.active_period(qualification_id, active_from, active_to);
+L0359 
+L0360 CREATE OR REPLACE FUNCTION membership.fn_is_active_at(
+L0361   p_qualification_id uuid,
+L0362   p_at timestamptz
+L0363 )
+L0364 RETURNS boolean
+L0365 LANGUAGE sql
+L0366 STABLE
+L0367 AS $$
+L0368 SELECT EXISTS (
+L0369   SELECT 1
+L0370   FROM membership.active_period ap
+L0371   WHERE ap.qualification_id = p_qualification_id
+L0372     AND ap.active_from <= p_at
+L0373     AND (ap.active_to IS NULL OR ap.active_to > p_at)
+L0374 );
+L0375 $$;
+L0376 
+L0377 -- -----------------------------------------------------------------------------
+L0378 -- 07. ORGANIZATION - Sponsor Tree
+L0379 -- -----------------------------------------------------------------------------
+L0380 CREATE TABLE IF NOT EXISTS organization.sponsor_relationship (
+L0381   sponsor_relationship_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+L0382   child_qualification_id uuid NOT NULL REFERENCES membership.qualification(qualification_id),
+L0383   sponsor_qualification_id uuid NOT NULL REFERENCES membership.qualification(qualification_id),
+L0384   sponsor_sequence_no integer NOT NULL CHECK (sponsor_sequence_no > 0),
+L0385   effective_from timestamptz NOT NULL,
+L0386   effective_to timestamptz,
+L0387   source_application_id uuid,
+L0388   source_event_id uuid,
+L0389   created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+L0390   created_by uuid,
+L0391   CHECK (child_qualification_id <> sponsor_qualification_id),
+L0392   CHECK (effective_to IS NULL OR effective_to > effective_from)
+L0393 );
+L0394 
+L0395 CREATE UNIQUE INDEX IF NOT EXISTS uq_sponsor_sequence_per_sponsor
+L0396   ON organization.sponsor_relationship(sponsor_qualification_id, sponsor_sequence_no);
+L0397 
+L0398 CREATE UNIQUE INDEX IF NOT EXISTS uq_current_sponsor_per_child
+L0399   ON organization.sponsor_relationship(child_qualification_id)
+L0400   WHERE effective_to IS NULL;
+L0401 
+L0402 CREATE INDEX IF NOT EXISTS ix_sponsor_children
+L0403   ON organization.sponsor_relationship(sponsor_qualification_id, effective_from);
+L0404 
+L0405 CREATE TRIGGER trg_sponsor_no_delete
+L0406 BEFORE DELETE ON organization.sponsor_relationship
+L0407 FOR EACH ROW EXECUTE FUNCTION public.prevent_physical_delete();
+L0408 
+L0409 CREATE OR REPLACE FUNCTION organization.fn_current_sponsor(p_child_qualification_id uuid)
+L0410 RETURNS uuid
+L0411 LANGUAGE sql
+L0412 STABLE
+L0413 AS $$
+L0414 SELECT sr.sponsor_qualification_id
+L0415 FROM organization.sponsor_relationship sr
+L0416 WHERE sr.child_qualification_id = p_child_qualification_id
+L0417   AND sr.effective_to IS NULL
+L0418 ORDER BY sr.effective_from DESC
+L0419 LIMIT 1;
+L0420 $$;
+L0421 
+L0422 CREATE OR REPLACE FUNCTION organization.fn_sponsor_ancestor(
+L0423   p_qualification_id uuid,
+L0424   p_generation integer
+L0425 )
+L0426 RETURNS uuid
+L0427 LANGUAGE sql
+L0428 STABLE
+L0429 AS $$
+L0430 WITH RECURSIVE chain AS (
+L0431   SELECT
+L0432     p_qualification_id AS child_id,
+L0433     organization.fn_current_sponsor(p_qualification_id) AS sponsor_id,
+L0434     1 AS generation
+L0435   UNION ALL
+L0436   SELECT
+L0437     c.sponsor_id,
+L0438     organization.fn_current_sponsor(c.sponsor_id),
+L0439     c.generation + 1
+L0440   FROM chain c
+L0441   WHERE c.sponsor_id IS NOT NULL
+L0442     AND c.generation < p_generation
+L0443 )
+L0444 SELECT sponsor_id
+L0445 FROM chain
+L0446 WHERE generation = p_generation
+L0447 LIMIT 1;
+L0448 $$;
+L0449 
+L0450 CREATE OR REPLACE FUNCTION organization.fn_effective_direct_count_at(
+L0451   p_sponsor_qualification_id uuid,
+L0452   p_at timestamptz
+L0453 )
+L0454 RETURNS integer
+L0455 LANGUAGE sql
+L0456 STABLE
+L0457 AS $$
+L0458 SELECT count(*)::integer
+L0459 FROM organization.sponsor_relationship sr
+L0460 JOIN membership.qualification q
+L0461   ON q.qualification_id = sr.child_qualification_id
+L0462 WHERE sr.sponsor_qualification_id = p_sponsor_qualification_id
+L0463   AND sr.effective_from <= p_at
+L0464   AND (sr.effective_to IS NULL OR sr.effective_to > p_at)
+L0465   AND q.status NOT IN ('VOIDED','CLOSED');
+L0466 $$;
+L0467 
+L0468 -- -----------------------------------------------------------------------------
+L0469 -- 08. ORGANIZATION - Binary Tree
+L0470 -- -----------------------------------------------------------------------------
+L0471 CREATE TABLE IF NOT EXISTS organization.binary_placement (
+L0472   binary_placement_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+L0473   qualification_id uuid NOT NULL REFERENCES membership.qualification(qualification_id),
+L0474   parent_qualification_id uuid NOT NULL REFERENCES membership.qualification(qualification_id),
+L0475   side public.side_code NOT NULL,
+L0476   effective_from timestamptz NOT NULL,
+L0477   effective_to timestamptz,
+L0478   source_event_id uuid,
+L0479   created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+L0480   created_by uuid,
+L0481   CHECK (qualification_id <> parent_qualification_id),
+L0482   CHECK (effective_to IS NULL OR effective_to > effective_from)
+L0483 );
+L0484 
+L0485 CREATE UNIQUE INDEX IF NOT EXISTS uq_current_binary_position_for_child
+L0486   ON organization.binary_placement(qualification_id)
+L0487   WHERE effective_to IS NULL;
+L0488 
+L0489 CREATE UNIQUE INDEX IF NOT EXISTS uq_current_binary_slot
+L0490   ON organization.binary_placement(parent_qualification_id, side)
+L0491   WHERE effective_to IS NULL;
+L0492 
+L0493 CREATE INDEX IF NOT EXISTS ix_binary_parent
+L0494   ON organization.binary_placement(parent_qualification_id, effective_from);
+L0495 
+L0496 CREATE TRIGGER trg_binary_no_delete
+L0497 BEFORE DELETE ON organization.binary_placement
+L0498 FOR EACH ROW EXECUTE FUNCTION public.prevent_physical_delete();
+L0499 
+L0500 CREATE OR REPLACE FUNCTION organization.fn_binary_parent(p_qualification_id uuid)
+L0501 RETURNS uuid
+L0502 LANGUAGE sql
+L0503 STABLE
+L0504 AS $$
+L0505 SELECT bp.parent_qualification_id
+L0506 FROM organization.binary_placement bp
+L0507 WHERE bp.qualification_id = p_qualification_id
+L0508   AND bp.effective_to IS NULL
+L0509 ORDER BY bp.effective_from DESC
+L0510 LIMIT 1;
+L0511 $$;
+L0512 
+L0513 CREATE OR REPLACE FUNCTION organization.fn_binary_ancestor(
+L0514   p_qualification_id uuid,
+L0515   p_generation integer
+L0516 )
+L0517 RETURNS uuid
+L0518 LANGUAGE sql
+L0519 STABLE
+L0520 AS $$
+L0521 WITH RECURSIVE chain AS (
+L0522   SELECT
+L0523     p_qualification_id AS child_id,
+L0524     organization.fn_binary_parent(p_qualification_id) AS parent_id,
+L0525     1 AS generation
+L0526   UNION ALL
+L0527   SELECT
+L0528     c.parent_id,
+L0529     organization.fn_binary_parent(c.parent_id),
+L0530     c.generation + 1
+L0531   FROM chain c
+L0532   WHERE c.parent_id IS NOT NULL
+L0533     AND c.generation < p_generation
+L0534 )
+L0535 SELECT parent_id
+L0536 FROM chain
+L0537 WHERE generation = p_generation
+L0538 LIMIT 1;
+L0539 $$;
+L0540 
+L0541 CREATE OR REPLACE FUNCTION organization.fn_is_in_binary_subtree(
+L0542   p_root_qualification_id uuid,
+L0543   p_candidate_qualification_id uuid,
+L0544   p_side public.side_code
+L0545 )
+L0546 RETURNS boolean
+L0547 LANGUAGE sql
+L0548 STABLE
+L0549 AS $$
+L0550 WITH RECURSIVE descendants AS (
+L0551   SELECT bp.qualification_id
+L0552   FROM organization.binary_placement bp
+L0553   WHERE bp.parent_qualification_id = p_root_qualification_id
+L0554     AND bp.side = p_side
+L0555     AND bp.effective_to IS NULL
+L0556   UNION ALL
+L0557   SELECT bp2.qualification_id
+L0558   FROM organization.binary_placement bp2
+L0559   JOIN descendants d ON bp2.parent_qualification_id = d.qualification_id
+L0560   WHERE bp2.effective_to IS NULL
+L0561 )
+L0562 SELECT EXISTS(SELECT 1 FROM descendants WHERE qualification_id = p_candidate_qualification_id);
+L0563 $$;
+L0564 
+L0565 CREATE OR REPLACE FUNCTION organization.fn_validate_binary_cycle()
+L0566 RETURNS trigger
+L0567 LANGUAGE plpgsql
+L0568 AS $$
+L0569 DECLARE
+L0570   v_has_cycle boolean;
+L0571 BEGIN
+L0572   WITH RECURSIVE ancestors AS (
+L0573     SELECT NEW.parent_qualification_id AS qid
+L0574     UNION ALL
+L0575     SELECT bp.parent_qualification_id
+L0576     FROM organization.binary_placement bp
+L0577     JOIN ancestors a ON bp.qualification_id = a.qid
+L0578     WHERE bp.effective_to IS NULL
+L0579   )
+L0580   SELECT EXISTS(SELECT 1 FROM ancestors WHERE qid = NEW.qualification_id)
+L0581   INTO v_has_cycle;
+L0582 
+L0583   IF v_has_cycle THEN
+L0584     RAISE EXCEPTION 'Binary placement would create a cycle.'
+L0585       USING ERRCODE = '23514';
+L0586   END IF;
+L0587   RETURN NEW;
+L0588 END;
+L0589 $$;
+L0590 
+L0591 DROP TRIGGER IF EXISTS trg_binary_cycle_guard ON organization.binary_placement;
+L0592 CREATE TRIGGER trg_binary_cycle_guard
+L0593 BEFORE INSERT OR UPDATE OF parent_qualification_id ON organization.binary_placement
+L0594 FOR EACH ROW EXECUTE FUNCTION organization.fn_validate_binary_cycle();
+L0595 
+L0596 -- -----------------------------------------------------------------------------
+L0597 -- 09. RULE ENGINE / HIERARCHICAL PARAMETER REGISTRY
+L0598 -- -----------------------------------------------------------------------------
+L0599 CREATE TABLE IF NOT EXISTS rules.rule_set (
+L0600   rule_set_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+L0601   rule_set_code text NOT NULL UNIQUE,
+L0602   display_name text NOT NULL,
+L0603   description text,
+L0604   status public.rule_status NOT NULL DEFAULT 'DRAFT',
+L0605   created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+L0606   created_by uuid
+L0607 );
+L0608 
+L0609 CREATE TABLE IF NOT EXISTS rules.rule_group (
+L0610   rule_group_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+L0611   rule_set_id uuid NOT NULL REFERENCES rules.rule_set(rule_set_id),
+L0612   parent_rule_group_id uuid REFERENCES rules.rule_group(rule_group_id),
+L0613   rule_group_code text NOT NULL,
+L0614   display_name text NOT NULL,
+L0615   sort_order integer NOT NULL DEFAULT 0,
+L0616   UNIQUE(rule_set_id, rule_group_code)
+L0617 );
+L0618 
+L0619 CREATE TABLE IF NOT EXISTS rules.rule_definition (
+L0620   rule_definition_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+L0621   rule_group_id uuid NOT NULL REFERENCES rules.rule_group(rule_group_id),
+L0622   rule_code text NOT NULL UNIQUE,
+L0623   display_name text NOT NULL,
+L0624   algorithm_code text NOT NULL,
+L0625   description text,
+L0626   is_system_invariant boolean NOT NULL DEFAULT false
+L0627 );
+L0628 
+L0629 CREATE TABLE IF NOT EXISTS rules.rule_version (
+L0630   rule_version_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+L0631   rule_set_id uuid NOT NULL REFERENCES rules.rule_set(rule_set_id),
+L0632   version_code text NOT NULL,
+L0633   status public.rule_status NOT NULL DEFAULT 'DRAFT',
+L0634   effective_from timestamptz,
+L0635   effective_to timestamptz,
+L0636   approved_by uuid,
+L0637   approved_at timestamptz,
+L0638   published_at timestamptz,
+L0639   parameter_snapshot_hash text,
+L0640   created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+L0641   created_by uuid,
+L0642   UNIQUE(rule_set_id, version_code),
+L0643   CHECK (effective_to IS NULL OR effective_to > effective_from)
+L0644 );
+L0645 
+L0646 CREATE TABLE IF NOT EXISTS rules.parameter_definition (
+L0647   parameter_definition_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+L0648   parameter_code text NOT NULL UNIQUE,
+L0649   display_name text NOT NULL,
+L0650   data_type public.parameter_data_type NOT NULL,
+L0651   unit_code text,
+L0652   default_value jsonb,
+L0653   validation_schema jsonb,
+L0654   allowed_scope_types text[] NOT NULL DEFAULT ARRAY['RULE_SET'],
+L0655   runtime_editable boolean NOT NULL DEFAULT false,
+L0656   requires_approval boolean NOT NULL DEFAULT true,
+L0657   description text
+L0658 );
+L0659 
+L0660 CREATE TABLE IF NOT EXISTS rules.parameter_set (
+L0661   parameter_set_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+L0662   rule_version_id uuid NOT NULL REFERENCES rules.rule_version(rule_version_id),
+L0663   parameter_set_code text NOT NULL,
+L0664   scope_type text NOT NULL,
+L0665   scope_key text,
+L0666   priority integer NOT NULL DEFAULT 0,
+L0667   effective_from timestamptz NOT NULL,
+L0668   effective_to timestamptz,
+L0669   status public.rule_status NOT NULL DEFAULT 'DRAFT',
+L0670   created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+L0671   created_by uuid,
+L0672   UNIQUE(rule_version_id, parameter_set_code),
+L0673   CHECK (effective_to IS NULL OR effective_to > effective_from)
+L0674 );
+L0675 
+L0676 CREATE TABLE IF NOT EXISTS rules.parameter_value (
+L0677   parameter_value_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+L0678   parameter_set_id uuid NOT NULL REFERENCES rules.parameter_set(parameter_set_id),
+L0679   parameter_definition_id uuid NOT NULL REFERENCES rules.parameter_definition(parameter_definition_id),
+L0680   value_json jsonb NOT NULL,
+L0681   created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+L0682   created_by uuid,
+L0683   UNIQUE(parameter_set_id, parameter_definition_id)
+L0684 );
+L0685 
+L0686 CREATE TABLE IF NOT EXISTS rules.decision_table (
+L0687   decision_table_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+L0688   rule_version_id uuid NOT NULL REFERENCES rules.rule_version(rule_version_id),
+L0689   table_code text NOT NULL,
+L0690   display_name text NOT NULL,
+L0691   description text,
+L0692   status public.rule_status NOT NULL DEFAULT 'DRAFT',
+L0693   UNIQUE(rule_version_id, table_code)
+L0694 );
+L0695 
+L0696 CREATE TABLE IF NOT EXISTS rules.decision_row (
+L0697   decision_row_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+L0698   decision_table_id uuid NOT NULL REFERENCES rules.decision_table(decision_table_id),
+L0699   sort_order integer NOT NULL,
+L0700   conditions jsonb NOT NULL,
+L0701   result jsonb NOT NULL,
+L0702   effective_from timestamptz,
+L0703   effective_to timestamptz,
+L0704   UNIQUE(decision_table_id, sort_order)
+L0705 );
+L0706 
+L0707 CREATE INDEX IF NOT EXISTS ix_parameter_scope
+L0708   ON rules.parameter_set(rule_version_id, scope_type, scope_key, priority DESC);
+L0709 
+L0710 CREATE TRIGGER trg_rule_version_no_delete
+L0711 BEFORE DELETE ON rules.rule_version
+L0712 FOR EACH ROW EXECUTE FUNCTION public.prevent_physical_delete();
+L0713 
+L0714 CREATE TRIGGER trg_parameter_value_no_delete
+L0715 BEFORE DELETE ON rules.parameter_value
+L0716 FOR EACH ROW EXECUTE FUNCTION public.prevent_physical_delete();
+L0717 
+L0718 CREATE OR REPLACE FUNCTION rules.fn_guard_published_mutation()
+L0719 RETURNS trigger
+L0720 LANGUAGE plpgsql
+L0721 AS $$
+L0722 DECLARE
+L0723   v_status public.rule_status;
+L0724 BEGIN
+L0725   IF TG_TABLE_NAME = 'rule_version' THEN
+L0726     v_status := OLD.status;
+L0727   ELSE
+L0728     SELECT rv.status INTO v_status
+L0729     FROM rules.parameter_set ps
+L0730     JOIN rules.rule_version rv ON rv.rule_version_id = ps.rule_version_id
+L0731     WHERE ps.parameter_set_id = COALESCE(NEW.parameter_set_id, OLD.parameter_set_id);
+L0732   END IF;
+L0733 
+L0734   IF v_status = 'PUBLISHED' THEN
+L0735     RAISE EXCEPTION 'Published rule data is immutable. Create a new rule version.'
+L0736       USING ERRCODE = '55000';
+L0737   END IF;
+L0738   RETURN NEW;
+L0739 END;
+L0740 $$;
+L0741 
+L0742 DROP TRIGGER IF EXISTS trg_rule_version_immutable ON rules.rule_version;
+L0743 CREATE TRIGGER trg_rule_version_immutable
+L0744 BEFORE UPDATE ON rules.rule_version
+L0745 FOR EACH ROW
+L0746 WHEN (OLD.status = 'PUBLISHED')
+L0747 EXECUTE FUNCTION rules.fn_guard_published_mutation();
+L0748 
+L0749 DROP TRIGGER IF EXISTS trg_parameter_value_immutable ON rules.parameter_value;
+L0750 CREATE TRIGGER trg_parameter_value_immutable
+L0751 BEFORE UPDATE ON rules.parameter_value
+L0752 FOR EACH ROW EXECUTE FUNCTION rules.fn_guard_published_mutation();
+L0753 
+L0754 CREATE OR REPLACE FUNCTION rules.fn_active_rule_version(
+L0755   p_rule_set_code text,
+L0756   p_at timestamptz DEFAULT clock_timestamp()
+L0757 )
+L0758 RETURNS uuid
+L0759 LANGUAGE sql
+L0760 STABLE
+L0761 AS $$
+L0762 SELECT rv.rule_version_id
+L0763 FROM rules.rule_version rv
+L0764 JOIN rules.rule_set rs ON rs.rule_set_id = rv.rule_set_id
+L0765 WHERE rs.rule_set_code = p_rule_set_code
+L0766   AND rv.status = 'PUBLISHED'
+L0767   AND rv.effective_from <= p_at
+L0768   AND (rv.effective_to IS NULL OR rv.effective_to > p_at)
+L0769 ORDER BY rv.effective_from DESC
+L0770 LIMIT 1;
+L0771 $$;
+L0772 
+L0773 CREATE OR REPLACE FUNCTION rules.fn_resolve_parameter(
+L0774   p_rule_version_id uuid,
+L0775   p_parameter_code text,
+L0776   p_at timestamptz,
+L0777   p_scope_candidates jsonb DEFAULT '{}'::jsonb
+L0778 )
+L0779 RETURNS jsonb
+L0780 LANGUAGE plpgsql
+L0781 STABLE
+L0782 AS $$
+L0783 DECLARE
+L0784   v_value jsonb;
+L0785 BEGIN
+L0786   -- Priority-driven lookup. Caller passes scope candidates, e.g.
+L0787   -- {"SKU":"TIP580","PLAN":"LEADER","RULE_SET":"UCELL_R1_0B"}
+L0788   SELECT pv.value_json
+L0789   INTO v_value
+L0790   FROM rules.parameter_value pv
+L0791   JOIN rules.parameter_definition pd
+L0792     ON pd.parameter_definition_id = pv.parameter_definition_id
+L0793   JOIN rules.parameter_set ps
+L0794     ON ps.parameter_set_id = pv.parameter_set_id
+L0795   WHERE ps.rule_version_id = p_rule_version_id
+L0796     AND pd.parameter_code = p_parameter_code
+L0797     AND ps.status = 'PUBLISHED'
+L0798     AND ps.effective_from <= p_at
+L0799     AND (ps.effective_to IS NULL OR ps.effective_to > p_at)
+L0800     AND (
+L0801       ps.scope_key IS NULL
+L0802       OR p_scope_candidates ->> ps.scope_type = ps.scope_key
+L0803     )
+L0804   ORDER BY ps.priority DESC
+L0805   LIMIT 1;
+L0806 
+L0807   IF v_value IS NULL THEN
+L0808     SELECT default_value INTO v_value
+L0809     FROM rules.parameter_definition
+L0810     WHERE parameter_code = p_parameter_code;
+L0811   END IF;
+L0812 
+L0813   RETURN v_value;
+L0814 END;
+L0815 $$;
+L0816 
+L0817 CREATE OR REPLACE PROCEDURE rules.sp_publish_rule_version(
+L0818   p_rule_version_id uuid,
+L0819   p_effective_from timestamptz,
+L0820   p_approved_by uuid
+L0821 )
+L0822 LANGUAGE plpgsql
+L0823 AS $$
+L0824 DECLARE
+L0825   v_hash text;
+L0826 BEGIN
+L0827   IF EXISTS (
+L0828     SELECT 1 FROM rules.rule_version
+L0829     WHERE rule_version_id = p_rule_version_id
+L0830       AND status = 'PUBLISHED'
+L0831   ) THEN
+L0832     RAISE EXCEPTION 'Rule version already published.';
+L0833   END IF;
+L0834 
+L0835   SELECT encode(
+L0836            digest(
+L0837              coalesce(string_agg(
+L0838                pd.parameter_code || '=' || pv.value_json::text,
+L0839                '|' ORDER BY pd.parameter_code, ps.parameter_set_code
+L0840              ), ''),
+L0841              'sha256'
+L0842            ),
+L0843            'hex'
+L0844          )
+L0845   INTO v_hash
+L0846   FROM rules.parameter_set ps
+L0847   JOIN rules.parameter_value pv ON pv.parameter_set_id = ps.parameter_set_id
+L0848   JOIN rules.parameter_definition pd ON pd.parameter_definition_id = pv.parameter_definition_id
+L0849   WHERE ps.rule_version_id = p_rule_version_id;
+L0850 
+L0851   UPDATE rules.rule_version
+L0852   SET status = 'PUBLISHED',
+L0853       effective_from = p_effective_from,
+L0854       approved_by = p_approved_by,
+L0855       approved_at = clock_timestamp(),
+L0856       published_at = clock_timestamp(),
+L0857       parameter_snapshot_hash = v_hash
+L0858   WHERE rule_version_id = p_rule_version_id;
+L0859 
+L0860   UPDATE rules.parameter_set
+L0861   SET status = 'PUBLISHED'
+L0862   WHERE rule_version_id = p_rule_version_id;
+L0863 END;
+L0864 $$;
+L0865 
+L0866 -- -----------------------------------------------------------------------------
+L0867 -- 10. RULE CONSTANTS / CURRENT R1.0B SEED
+L0868 -- -----------------------------------------------------------------------------
+L0869 INSERT INTO rules.rule_set(rule_set_code, display_name, description, status)
+L0870 VALUES ('UCELL_R1_0B','UCell R1.0B','Current engineering baseline', 'APPROVED')
+L0871 ON CONFLICT (rule_set_code) DO NOTHING;
+L0872 
+L0873 INSERT INTO rules.parameter_definition(parameter_code, display_name, data_type, unit_code, default_value, allowed_scope_types, runtime_editable, requires_approval, description)
+L0874 VALUES
+L0875 ('gpv.rate','GPV conversion rate','DECIMAL','PERCENT','0.60'::jsonb,ARRAY['RULE_SET','SKU'],false,true,'Qualifying sales to GPV conversion'),
+L0876 ('referral.pool.rate','Referral pool rate','DECIMAL','PERCENT','0.42'::jsonb,ARRAY['RULE_SET'],false,true,'Referral + referral equalization pool'),
+L0877 ('binary.pool.rate','Binary pool rate','DECIMAL','PERCENT','0.36'::jsonb,ARRAY['RULE_SET'],false,true,'Binary pairing pool'),
+L0878 ('matching.pool.rate','Binary matching pool rate','DECIMAL','PERCENT','0.15'::jsonb,ARRAY['RULE_SET'],false,true,'Binary matching pool'),
+L0879 ('global.pool.rate','Global pool rate','DECIMAL','PERCENT','0.05'::jsonb,ARRAY['RULE_SET'],false,true,'Global pool'),
+L0880 ('welfare.pool.rate','Welfare pool rate','DECIMAL','PERCENT','0.02'::jsonb,ARRAY['RULE_SET'],false,true,'Welfare pool'),
+L0881 ('binary.pairing.rate','Binary pairing rate','DECIMAL','PERCENT','0.12'::jsonb,ARRAY['RULE_SET'],false,true,'Weak-side pairing rate'),
+L0882 ('award.pending.days','Award pending days','INTEGER','DAY','45'::jsonb,ARRAY['RULE_SET'],true,true,'Pending period due to return risk'),
+L0883 ('repurchase.monthly.amount','Monthly repurchase amount','DECIMAL','NTD','2000'::jsonb,ARRAY['RULE_SET'],false,true,'Monthly qualifying repurchase'),
+L0884 ('repurchase.monthly.rpv','Monthly RPV','DECIMAL','RPV','1200'::jsonb,ARRAY['RULE_SET'],false,true,'RPV generated monthly'),
+L0885 ('repurchase.generation.reward','Repurchase generation reward','DECIMAL','NTD','100'::jsonb,ARRAY['RULE_SET'],false,true,'R1.0B per-generation reward')
+L0886 ON CONFLICT (parameter_code) DO NOTHING;
+L0887 
+L0888 -- -----------------------------------------------------------------------------
+L0889 -- 11. COMMERCE - PRE-ERP BRIDGE
+L0890 -- -----------------------------------------------------------------------------
+L0891 CREATE TABLE IF NOT EXISTS commerce.product_reference (
+L0892   product_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+L0893   sku_code text NOT NULL UNIQUE,
+L0894   display_name text NOT NULL,
+L0895   product_type text,
+L0896   status public.record_status NOT NULL DEFAULT 'EFFECTIVE',
+L0897   external_system_code text,
+L0898   external_item_id text,
+L0899   created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+L0900   updated_at timestamptz NOT NULL DEFAULT clock_timestamp()
+L0901 );
+L0902 
+L0903 CREATE TRIGGER trg_product_updated_at
+L0904 BEFORE UPDATE ON commerce.product_reference
+L0905 FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+L0906 
+L0907 CREATE TABLE IF NOT EXISTS commerce.product_rule_profile (
+L0908   product_rule_profile_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+L0909   product_id uuid NOT NULL REFERENCES commerce.product_reference(product_id),
+L0910   rule_version_id uuid REFERENCES rules.rule_version(rule_version_id),
+L0911   gpv_rate numeric(18,8),
+L0912   pv_rate numeric(18,8),
+L0913   rpv_eligible boolean NOT NULL DEFAULT false,
+L0914   epv_eligible boolean NOT NULL DEFAULT false,
+L0915   bonus_eligible boolean NOT NULL DEFAULT true,
+L0916   effective_from timestamptz NOT NULL,
+L0917   effective_to timestamptz,
+L0918   config jsonb NOT NULL DEFAULT '{}'::jsonb,
+L0919   CHECK (effective_to IS NULL OR effective_to > effective_from)
+L0920 );
+L0921 
+L0922 CREATE TABLE IF NOT EXISTS commerce."order" (
+L0923   order_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+L0924   order_no bigint GENERATED ALWAYS AS IDENTITY UNIQUE,
+L0925   person_id uuid NOT NULL REFERENCES identity.person(person_id),
+L0926   qualification_id uuid NOT NULL REFERENCES membership.qualification(qualification_id),
+L0927   source_referral_token text,
+L0928   source_qualification_id uuid REFERENCES membership.qualification(qualification_id),
+L0929   campaign_id text,
+L0930   rule_version_id uuid REFERENCES rules.rule_version(rule_version_id),
+L0931   parameter_snapshot_hash text,
+L0932   status public.order_status NOT NULL DEFAULT 'DRAFT',
+L0933   currency_code char(3) NOT NULL DEFAULT 'TWD',
+L0934   gross_amount numeric(18,2) NOT NULL DEFAULT 0 CHECK (gross_amount >= 0),
+L0935   discount_amount numeric(18,2) NOT NULL DEFAULT 0 CHECK (discount_amount >= 0),
+L0936   net_amount numeric(18,2) NOT NULL DEFAULT 0 CHECK (net_amount >= 0),
+L0937   external_system_code text NOT NULL DEFAULT 'MANUAL',
+L0938   external_order_id text,
+L0939   external_order_no text,
+L0940   sync_status text,
+L0941   confirmed_at timestamptz,
+L0942   paid_at timestamptz,
+L0943   fulfilled_at timestamptz,
+L0944   voided_at timestamptz,
+L0945   created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+L0946   created_by uuid,
+L0947   updated_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+L0948   updated_by uuid
+L0949 );
+L0950 
+L0951 CREATE INDEX IF NOT EXISTS ix_order_qualification_time
+L0952   ON commerce."order"(qualification_id, created_at DESC);
+L0953 CREATE INDEX IF NOT EXISTS ix_order_status_time
+L0954   ON commerce."order"(status, created_at DESC);
+L0955 
+L0956 CREATE TRIGGER trg_order_updated_at
+L0957 BEFORE UPDATE ON commerce."order"
+L0958 FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+L0959 
+L0960 CREATE TRIGGER trg_order_no_delete
+L0961 BEFORE DELETE ON commerce."order"
+L0962 FOR EACH ROW EXECUTE FUNCTION public.prevent_physical_delete();
+L0963 
+L0964 CREATE TABLE IF NOT EXISTS commerce.order_line (
+L0965   order_line_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+L0966   order_id uuid NOT NULL REFERENCES commerce."order"(order_id),
+L0967   line_no integer NOT NULL,
+L0968   product_id uuid NOT NULL REFERENCES commerce.product_reference(product_id),
+L0969   sku_code_snapshot text NOT NULL,
+L0970   product_name_snapshot text NOT NULL,
+L0971   quantity numeric(18,4) NOT NULL CHECK (quantity > 0),
+L0972   unit_price numeric(18,2) NOT NULL CHECK (unit_price >= 0),
+L0973   line_amount numeric(18,2) NOT NULL CHECK (line_amount >= 0),
+L0974   gpv_rate_snapshot numeric(18,8),
+L0975   gpv_amount_snapshot numeric(18,4),
+L0976   pv_rate_snapshot numeric(18,8),
+L0977   rule_profile_snapshot jsonb,
+L0978   UNIQUE(order_id, line_no)
+L0979 );
+L0980 
+L0981 CREATE TABLE IF NOT EXISTS commerce.payment_event (
+L0982   payment_event_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+L0983   order_id uuid NOT NULL REFERENCES commerce."order"(order_id),
+L0984   event_type text NOT NULL CHECK (event_type IN ('PAYMENT_CONFIRMED','PAYMENT_REVERSED','REFUND_CONFIRMED')),
+L0985   amount numeric(18,2) NOT NULL CHECK (amount >= 0),
+L0986   payment_method text,
+L0987   reference_no text,
+L0988   occurred_at timestamptz NOT NULL,
+L0989   recorded_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+L0990   actor_type public.actor_type NOT NULL,
+L0991   actor_id uuid,
+L0992   source_system text NOT NULL DEFAULT 'MANUAL',
+L0993   external_event_id text,
+L0994   correlation_id uuid NOT NULL DEFAULT gen_random_uuid(),
+L0995   reversal_of_event_id uuid REFERENCES commerce.payment_event(payment_event_id),
+L0996   evidence_attachment_id uuid
+L0997 );
+L0998 
+L0999 CREATE UNIQUE INDEX IF NOT EXISTS uq_payment_external_event
+L1000   ON commerce.payment_event(source_system, external_event_id)
+L1001   WHERE external_event_id IS NOT NULL;
+L1002 
+L1003 CREATE TRIGGER trg_payment_append_only_update
+L1004 BEFORE UPDATE OR DELETE ON commerce.payment_event
+L1005 FOR EACH ROW EXECUTE FUNCTION public.prevent_mutation();
+L1006 
+L1007 CREATE TABLE IF NOT EXISTS commerce.fulfillment_event (
+L1008   fulfillment_event_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+L1009   order_id uuid NOT NULL REFERENCES commerce."order"(order_id),
+L1010   event_type text NOT NULL CHECK (event_type IN ('FULFILLMENT_CONFIRMED','FULFILLMENT_REVERSED')),
+L1011   carrier text,
+L1012   tracking_no text,
+L1013   occurred_at timestamptz NOT NULL,
+L1014   recorded_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+L1015   actor_type public.actor_type NOT NULL,
+L1016   actor_id uuid,
+L1017   source_system text NOT NULL DEFAULT 'MANUAL',
+L1018   external_event_id text,
+L1019   correlation_id uuid NOT NULL DEFAULT gen_random_uuid(),
+L1020   reversal_of_event_id uuid REFERENCES commerce.fulfillment_event(fulfillment_event_id)
+L1021 );
+L1022 
+L1023 CREATE TRIGGER trg_fulfillment_append_only_update
+L1024 BEFORE UPDATE OR DELETE ON commerce.fulfillment_event
+L1025 FOR EACH ROW EXECUTE FUNCTION public.prevent_mutation();
+L1026 
+L1027 CREATE TABLE IF NOT EXISTS commerce.return_event (
+L1028   return_event_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+L1029   order_id uuid NOT NULL REFERENCES commerce."order"(order_id),
+L1030   order_line_id uuid REFERENCES commerce.order_line(order_line_id),
+L1031   event_type text NOT NULL CHECK (event_type IN ('RETURN_REQUESTED','RETURN_CONFIRMED','RETURN_REVERSED')),
+L1032   quantity numeric(18,4),
+L1033   amount numeric(18,2),
+L1034   reason_code text,
+L1035   occurred_at timestamptz NOT NULL,
+L1036   recorded_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+L1037   actor_type public.actor_type NOT NULL,
+L1038   actor_id uuid,
+L1039   source_system text NOT NULL DEFAULT 'MANUAL',
+L1040   external_event_id text,
+L1041   correlation_id uuid NOT NULL DEFAULT gen_random_uuid(),
+L1042   reversal_of_event_id uuid REFERENCES commerce.return_event(return_event_id)
+L1043 );
+L1044 
+L1045 CREATE TRIGGER trg_return_append_only_update
+L1046 BEFORE UPDATE OR DELETE ON commerce.return_event
+L1047 FOR EACH ROW EXECUTE FUNCTION public.prevent_mutation();
+L1048 
+L1049 -- Lightweight trace only; NOT a WMS inventory ledger.
+L1050 CREATE TABLE IF NOT EXISTS commerce.lot_trace (
+L1051   lot_trace_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+L1052   product_id uuid NOT NULL REFERENCES commerce.product_reference(product_id),
+L1053   lot_no text NOT NULL,
+L1054   manufactured_at date,
+L1055   expiry_at date,
+L1056   external_lot_id text,
+L1057   UNIQUE(product_id, lot_no)
+L1058 );
+L1059 
+L1060 CREATE TABLE IF NOT EXISTS commerce.serial_trace (
+L1061   serial_trace_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+L1062   product_id uuid NOT NULL REFERENCES commerce.product_reference(product_id),
+L1063   lot_trace_id uuid REFERENCES commerce.lot_trace(lot_trace_id),
+L1064   serial_no text NOT NULL,
+L1065   external_serial_id text,
+L1066   UNIQUE(product_id, serial_no)
+L1067 );
+L1068 
+L1069 CREATE TABLE IF NOT EXISTS commerce.shipment_trace (
+L1070   shipment_trace_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+L1071   fulfillment_event_id uuid NOT NULL REFERENCES commerce.fulfillment_event(fulfillment_event_id),
+L1072   order_line_id uuid NOT NULL REFERENCES commerce.order_line(order_line_id),
+L1073   lot_trace_id uuid REFERENCES commerce.lot_trace(lot_trace_id),
+L1074   serial_trace_id uuid REFERENCES commerce.serial_trace(serial_trace_id),
+L1075   quantity numeric(18,4) NOT NULL CHECK (quantity > 0),
+L1076   recorded_at timestamptz NOT NULL DEFAULT clock_timestamp()
+L1077 );
+L1078 
+L1079 -- -----------------------------------------------------------------------------
+L1080 -- 12. SUBSCRIPTION / REPURCHASE
+L1081 -- -----------------------------------------------------------------------------
+L1082 CREATE TABLE IF NOT EXISTS subscription.subscription_plan (
+L1083   subscription_plan_code text PRIMARY KEY,
+L1084   display_name text NOT NULL,
+L1085   months integer NOT NULL CHECK (months > 0),
+L1086   paid_amount numeric(18,2) NOT NULL CHECK (paid_amount > 0),
+L1087   product_box_count integer NOT NULL CHECK (product_box_count >= 0),
+L1088   monthly_recognized_amount numeric(18,2) NOT NULL CHECK (monthly_recognized_amount > 0),
+L1089   monthly_rpv numeric(18,4) NOT NULL CHECK (monthly_rpv >= 0),
+L1090   active boolean NOT NULL DEFAULT true
+L1091 );
+L1092 
+L1093 INSERT INTO subscription.subscription_plan(subscription_plan_code, display_name, months, paid_amount, product_box_count, monthly_recognized_amount, monthly_rpv)
+L1094 VALUES
+L1095   ('QUARTER','季方案',3,6000,2,2000,1200),
+L1096   ('HALF_YEAR','半年方案',6,12000,4,2000,1200),
+L1097   ('YEAR','一年方案',12,24000,8,2000,1200)
+L1098 ON CONFLICT (subscription_plan_code) DO NOTHING;
+L1099 
+L1100 CREATE TABLE IF NOT EXISTS subscription.subscription (
+L1101   subscription_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+L1102   qualification_id uuid NOT NULL REFERENCES membership.qualification(qualification_id),
+L1103   subscription_plan_code text NOT NULL REFERENCES subscription.subscription_plan(subscription_plan_code),
+L1104   order_id uuid REFERENCES commerce."order"(order_id),
+L1105   start_date date NOT NULL,
+L1106   end_date date NOT NULL,
+L1107   status public.record_status NOT NULL DEFAULT 'PENDING',
+L1108   created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+L1109   created_by uuid,
+L1110   CHECK (end_date >= start_date)
+L1111 );
+L1112 
+L1113 CREATE TABLE IF NOT EXISTS subscription.monthly_recognition_schedule (
+L1114   recognition_schedule_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+L1115   subscription_id uuid NOT NULL REFERENCES subscription.subscription(subscription_id),
+L1116   installment_no integer NOT NULL CHECK (installment_no > 0),
+L1117   due_date date NOT NULL,
+L1118   recognized_amount numeric(18,2) NOT NULL,
+L1119   rpv_amount numeric(18,4) NOT NULL,
+L1120   status text NOT NULL DEFAULT 'PENDING' CHECK (status IN ('PENDING','RECOGNIZED','CANCELLED','REVERSED')),
+L1121   recognized_event_id uuid,
+L1122   created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+L1123   UNIQUE(subscription_id, installment_no)
+L1124 );
+L1125 
+L1126 CREATE OR REPLACE PROCEDURE subscription.sp_create_schedule(
+L1127   p_subscription_id uuid
+L1128 )
+L1129 LANGUAGE plpgsql
+L1130 AS $$
+L1131 DECLARE
+L1132   v_sub subscription.subscription%ROWTYPE;
+L1133   v_plan subscription.subscription_plan%ROWTYPE;
+L1134   i integer;
+L1135 BEGIN
+L1136   SELECT * INTO v_sub FROM subscription.subscription WHERE subscription_id = p_subscription_id FOR UPDATE;
+L1137   IF NOT FOUND THEN RAISE EXCEPTION 'Subscription not found'; END IF;
+L1138 
+L1139   SELECT * INTO v_plan FROM subscription.subscription_plan WHERE subscription_plan_code = v_sub.subscription_plan_code;
+L1140 
+L1141   FOR i IN 1..v_plan.months LOOP
+L1142     INSERT INTO subscription.monthly_recognition_schedule(
+L1143       subscription_id, installment_no, due_date, recognized_amount, rpv_amount
+L1144     )
+L1145     VALUES(
+L1146       p_subscription_id,
+L1147       i,
+L1148       (v_sub.start_date + ((i - 1) || ' month')::interval)::date,
+L1149       v_plan.monthly_recognized_amount,
+L1150       v_plan.monthly_rpv
+L1151     )
+L1152     ON CONFLICT (subscription_id, installment_no) DO NOTHING;
+L1153   END LOOP;
+L1154 END;
+L1155 $$;
+L1156 
+L1157 -- -----------------------------------------------------------------------------
+L1158 -- 13. LEDGER / PV
+L1159 -- -----------------------------------------------------------------------------
+L1160 CREATE TABLE IF NOT EXISTS ledger.pv_ledger (
+L1161   pv_event_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+L1162   qualification_id uuid NOT NULL REFERENCES membership.qualification(qualification_id),
+L1163   pv_type text NOT NULL CHECK (pv_type IN ('GPV','PV','RPV','EPV')),
+L1164   event_type text NOT NULL,
+L1165   amount numeric(20,6) NOT NULL,
+L1166   source_type text NOT NULL,
+L1167   source_id uuid,
+L1168   source_line_id uuid,
+L1169   occurred_at timestamptz NOT NULL,
+L1170   recorded_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+L1171   rule_version_id uuid REFERENCES rules.rule_version(rule_version_id),
+L1172   parameter_snapshot_hash text,
+L1173   active_snapshot boolean,
+L1174   effective_direct_count_snapshot integer,
+L1175   correlation_id uuid NOT NULL DEFAULT gen_random_uuid(),
+L1176   causation_id uuid,
+L1177   reversal_of_event_id uuid REFERENCES ledger.pv_ledger(pv_event_id),
+L1178   payload_hash text
+L1179 );
+L1180 
+L1181 CREATE INDEX IF NOT EXISTS ix_pv_qualification_time
+L1182   ON ledger.pv_ledger(qualification_id, occurred_at DESC);
+L1183 CREATE INDEX IF NOT EXISTS ix_pv_source
+L1184   ON ledger.pv_ledger(source_type, source_id);
+L1185 CREATE INDEX IF NOT EXISTS ix_pv_type_time
+L1186   ON ledger.pv_ledger(pv_type, occurred_at DESC);
+L1187 
+L1188 CREATE TRIGGER trg_pv_append_only
+L1189 BEFORE UPDATE OR DELETE ON ledger.pv_ledger
+L1190 FOR EACH ROW EXECUTE FUNCTION public.prevent_mutation();
+L1191 
+L1192 CREATE OR REPLACE FUNCTION ledger.fn_pv_balance(
+L1193   p_qualification_id uuid,
+L1194   p_pv_type text,
+L1195   p_as_of timestamptz DEFAULT clock_timestamp()
+L1196 )
+L1197 RETURNS numeric
+L1198 LANGUAGE sql
+L1199 STABLE
+L1200 AS $$
+L1201 SELECT coalesce(sum(amount),0)
+L1202 FROM ledger.pv_ledger
+L1203 WHERE qualification_id = p_qualification_id
+L1204   AND pv_type = p_pv_type
+L1205   AND occurred_at <= p_as_of;
+L1206 $$;
+L1207 
+L1208 CREATE TABLE IF NOT EXISTS ledger.award_event (
+L1209   award_event_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+L1210   recipient_qualification_id uuid NOT NULL REFERENCES membership.qualification(qualification_id),
+L1211   award_type text NOT NULL,
+L1212   source_qualification_id uuid REFERENCES membership.qualification(qualification_id),
+L1213   source_event_id uuid,
+L1214   settlement_batch_id uuid,
+L1215   theory_amount numeric(20,6) NOT NULL DEFAULT 0,
+L1216   k_factor numeric(20,10),
+L1217   payable_amount numeric(20,6) NOT NULL DEFAULT 0,
+L1218   status public.award_status NOT NULL DEFAULT 'CALCULATED',
+L1219   occurred_at timestamptz NOT NULL,
+L1220   recorded_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+L1221   pending_until timestamptz,
+L1222   rule_version_id uuid REFERENCES rules.rule_version(rule_version_id),
+L1223   parameter_snapshot_hash text,
+L1224   active_snapshot boolean NOT NULL,
+L1225   effective_direct_count_snapshot integer,
+L1226   calculation_detail jsonb NOT NULL DEFAULT '{}'::jsonb,
+L1227   correlation_id uuid NOT NULL DEFAULT gen_random_uuid(),
+L1228   reversal_of_award_event_id uuid REFERENCES ledger.award_event(award_event_id)
+L1229 );
+L1230 
+L1231 CREATE INDEX IF NOT EXISTS ix_award_recipient_status
+L1232   ON ledger.award_event(recipient_qualification_id, status, occurred_at DESC);
+L1233 CREATE INDEX IF NOT EXISTS ix_award_source
+L1234   ON ledger.award_event(source_event_id);
+L1235 
+L1236 CREATE TRIGGER trg_award_append_only_delete
+L1237 BEFORE DELETE ON ledger.award_event
+L1238 FOR EACH ROW EXECUTE FUNCTION public.prevent_physical_delete();
+L1239 
+L1240 CREATE TABLE IF NOT EXISTS ledger.pool_snapshot (
+L1241   pool_snapshot_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+L1242   pool_code text NOT NULL,
+L1243   period_start timestamptz NOT NULL,
+L1244   period_end timestamptz NOT NULL,
+L1245   pool_available numeric(20,6) NOT NULL,
+L1246   total_theory numeric(20,6) NOT NULL,
+L1247   k_factor numeric(20,10) NOT NULL,
+L1248   rule_version_id uuid REFERENCES rules.rule_version(rule_version_id),
+L1249   created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+L1250   UNIQUE(pool_code, period_start, period_end, rule_version_id),
+L1251   CHECK (period_end > period_start),
+L1252   CHECK (k_factor >= 0 AND k_factor <= 1)
+L1253 );
+L1254 
+L1255 CREATE TABLE IF NOT EXISTS ledger.settlement_batch (
+L1256   settlement_batch_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+L1257   batch_code text NOT NULL UNIQUE,
+L1258   settlement_type text NOT NULL,
+L1259   period_start timestamptz NOT NULL,
+L1260   period_end timestamptz NOT NULL,
+L1261   rule_version_id uuid REFERENCES rules.rule_version(rule_version_id),
+L1262   status text NOT NULL DEFAULT 'OPEN' CHECK (status IN ('OPEN','CALCULATED','APPROVED','CLOSED','VOIDED')),
+L1263   calculation_fingerprint text,
+L1264   created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+L1265   approved_at timestamptz,
+L1266   closed_at timestamptz,
+L1267   CHECK (period_end > period_start)
+L1268 );
+L1269 
+L1270 ALTER TABLE ledger.award_event
+L1271   DROP CONSTRAINT IF EXISTS fk_award_settlement;
+L1272 ALTER TABLE ledger.award_event
+L1273   ADD CONSTRAINT fk_award_settlement
+L1274   FOREIGN KEY (settlement_batch_id)
+L1275   REFERENCES ledger.settlement_batch(settlement_batch_id);
+L1276 
+L1277 CREATE OR REPLACE FUNCTION ledger.fn_compute_k_factor(
+L1278   p_pool_available numeric,
+L1279   p_total_theory numeric
+L1280 )
+L1281 RETURNS numeric
+L1282 LANGUAGE sql
+L1283 IMMUTABLE
+L1284 AS $$
+L1285 SELECT CASE
+L1286   WHEN coalesce(p_total_theory,0) <= 0 THEN 1
+L1287   ELSE LEAST(1::numeric, p_pool_available / p_total_theory)
+L1288 END;
+L1289 $$;
+L1290 
+L1291 CREATE OR REPLACE FUNCTION ledger.fn_rpv_depth(
+L1292   p_effective_direct_count integer
+L1293 )
+L1294 RETURNS integer
+L1295 LANGUAGE sql
+L1296 IMMUTABLE
+L1297 AS $$
+L1298 SELECT CASE
+L1299   WHEN p_effective_direct_count <= 0 THEN 5
+L1300   WHEN p_effective_direct_count = 1 THEN 8
+L1301   ELSE 12
+L1302 END;
+L1303 $$;
+L1304 
+L1305 CREATE OR REPLACE PROCEDURE ledger.sp_reverse_pv_event(
+L1306   p_original_event_id uuid,
+L1307   p_actor_id uuid,
+L1308   p_reason_code text
+L1309 )
+L1310 LANGUAGE plpgsql
+L1311 AS $$
+L1312 DECLARE
+L1313   v ledger.pv_ledger%ROWTYPE;
+L1314 BEGIN
+L1315   SELECT * INTO v FROM ledger.pv_ledger WHERE pv_event_id = p_original_event_id;
+L1316   IF NOT FOUND THEN RAISE EXCEPTION 'PV event not found'; END IF;
+L1317 
+L1318   IF EXISTS (SELECT 1 FROM ledger.pv_ledger WHERE reversal_of_event_id = p_original_event_id) THEN
+L1319     RAISE EXCEPTION 'PV event already reversed';
+L1320   END IF;
+L1321 
+L1322   INSERT INTO ledger.pv_ledger(
+L1323     qualification_id,pv_type,event_type,amount,source_type,source_id,source_line_id,
+L1324     occurred_at,rule_version_id,parameter_snapshot_hash,active_snapshot,
+L1325     effective_direct_count_snapshot,correlation_id,causation_id,reversal_of_event_id,payload_hash
+L1326   )
+L1327   VALUES(
+L1328     v.qualification_id,v.pv_type,'REVERSAL',-v.amount,v.source_type,v.source_id,v.source_line_id,
+L1329     clock_timestamp(),v.rule_version_id,v.parameter_snapshot_hash,v.active_snapshot,
+L1330     v.effective_direct_count_snapshot,v.correlation_id,p_original_event_id,p_original_event_id,
+L1331     public.sha256_text(p_original_event_id::text || ':' || p_reason_code || ':' || clock_timestamp()::text)
+L1332   );
+L1333 
+L1334   PERFORM audit.fn_write_audit_event(
+L1335     'USER',p_actor_id,'PV_REVERSED','ledger.pv_ledger',p_original_event_id,
+L1336     to_jsonb(v),NULL,p_reason_code,NULL,v.correlation_id
+L1337   );
+L1338 END;
+L1339 $$;
+L1340 
+L1341 -- -----------------------------------------------------------------------------
+L1342 -- 14. MONTHLY REPURCHASE RECOGNITION
+L1343 -- -----------------------------------------------------------------------------
+L1344 CREATE OR REPLACE PROCEDURE subscription.sp_recognize_monthly_rpv(
+L1345   p_recognition_schedule_id uuid,
+L1346   p_actor_type public.actor_type DEFAULT 'JOB',
+L1347   p_actor_id uuid DEFAULT NULL
+L1348 )
+L1349 LANGUAGE plpgsql
+L1350 AS $$
+L1351 DECLARE
+L1352   v_sched subscription.monthly_recognition_schedule%ROWTYPE;
+L1353   v_sub subscription.subscription%ROWTYPE;
+L1354   v_event_id uuid := gen_random_uuid();
+L1355   v_at timestamptz := clock_timestamp();
+L1356   v_active boolean;
+L1357   v_direct_count integer;
+L1358 BEGIN
+L1359   SELECT * INTO v_sched
+L1360   FROM subscription.monthly_recognition_schedule
+L1361   WHERE recognition_schedule_id = p_recognition_schedule_id
+L1362   FOR UPDATE;
+L1363 
+L1364   IF NOT FOUND THEN RAISE EXCEPTION 'Recognition schedule not found'; END IF;
+L1365   IF v_sched.status = 'RECOGNIZED' THEN RETURN; END IF;
+L1366   IF v_sched.status <> 'PENDING' THEN
+L1367     RAISE EXCEPTION 'Recognition schedule status is %, expected PENDING', v_sched.status;
+L1368   END IF;
+L1369 
+L1370   SELECT * INTO v_sub
+L1371   FROM subscription.subscription
+L1372   WHERE subscription_id = v_sched.subscription_id;
+L1373 
+L1374   v_active := membership.fn_is_active_at(v_sub.qualification_id, v_at);
+L1375   v_direct_count := organization.fn_effective_direct_count_at(v_sub.qualification_id, v_at);
+L1376 
+L1377   INSERT INTO ledger.pv_ledger(
+L1378     pv_event_id, qualification_id, pv_type, event_type, amount, source_type, source_id,
+L1379     occurred_at, active_snapshot, effective_direct_count_snapshot, payload_hash
+L1380   )
+L1381   VALUES(
+L1382     v_event_id, v_sub.qualification_id, 'RPV', 'MONTHLY_RECOGNITION',
+L1383     v_sched.rpv_amount, 'SUBSCRIPTION_RECOGNITION', p_recognition_schedule_id,
+L1384     v_at, v_active, v_direct_count,
+L1385     public.sha256_text(v_sub.subscription_id::text || ':' || v_sched.installment_no::text || ':' || v_sched.rpv_amount::text)
+L1386   );
+L1387 
+L1388   UPDATE subscription.monthly_recognition_schedule
+L1389   SET status='RECOGNIZED', recognized_event_id=v_event_id
+L1390   WHERE recognition_schedule_id=p_recognition_schedule_id;
+L1391 END;
+L1392 $$;
+L1393 
+L1394 -- -----------------------------------------------------------------------------
+L1395 -- 15. ATTRIBUTION / REFERRAL
+L1396 -- -----------------------------------------------------------------------------
+L1397 CREATE TABLE IF NOT EXISTS attribution.referral_code (
+L1398   referral_code_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+L1399   qualification_id uuid NOT NULL REFERENCES membership.qualification(qualification_id),
+L1400   referral_code text NOT NULL UNIQUE,
+L1401   status public.record_status NOT NULL DEFAULT 'EFFECTIVE',
+L1402   created_at timestamptz NOT NULL DEFAULT clock_timestamp()
+L1403 );
+L1404 
+L1405 CREATE TABLE IF NOT EXISTS attribution.referral_link (
+L1406   referral_link_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+L1407   qualification_id uuid NOT NULL REFERENCES membership.qualification(qualification_id),
+L1408   token_hash text NOT NULL UNIQUE,
+L1409   campaign_id text,
+L1410   asset_id text,
+L1411   channel_code text,
+L1412   valid_from timestamptz NOT NULL DEFAULT clock_timestamp(),
+L1413   valid_to timestamptz,
+L1414   status public.record_status NOT NULL DEFAULT 'EFFECTIVE',
+L1415   created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+L1416   created_by uuid
+L1417 );
+L1418 
+L1419 CREATE TABLE IF NOT EXISTS attribution.referral_session (
+L1420   referral_session_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+L1421   referral_link_id uuid NOT NULL REFERENCES attribution.referral_link(referral_link_id),
+L1422   first_seen_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+L1423   last_seen_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+L1424   anonymous_visitor_id_hash text,
+L1425   landing_path text,
+L1426   user_agent text,
+L1427   ip_hash text
+L1428 );
+L1429 
+L1430 CREATE TABLE IF NOT EXISTS attribution.attribution_event (
+L1431   attribution_event_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+L1432   referral_session_id uuid REFERENCES attribution.referral_session(referral_session_id),
+L1433   qualification_id uuid REFERENCES membership.qualification(qualification_id),
+L1434   event_type text NOT NULL,
+L1435   entity_type text,
+L1436   entity_id uuid,
+L1437   campaign_id text,
+L1438   occurred_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+L1439   metadata jsonb NOT NULL DEFAULT '{}'::jsonb,
+L1440   correlation_id uuid NOT NULL DEFAULT gen_random_uuid()
+L1441 );
+L1442 
+L1443 CREATE TRIGGER trg_attribution_append_only
+L1444 BEFORE UPDATE OR DELETE ON attribution.attribution_event
+L1445 FOR EACH ROW EXECUTE FUNCTION public.prevent_mutation();
+L1446 
+L1447 CREATE TABLE IF NOT EXISTS attribution.lead (
+L1448   lead_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+L1449   referral_session_id uuid REFERENCES attribution.referral_session(referral_session_id),
+L1450   source_qualification_id uuid REFERENCES membership.qualification(qualification_id),
+L1451   lead_status text NOT NULL DEFAULT 'NEW',
+L1452   contact_name text,
+L1453   mobile_ciphertext bytea,
+L1454   mobile_hash text,
+L1455   email text,
+L1456   consent_id uuid REFERENCES identity.consent_record(consent_id),
+L1457   created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+L1458   converted_person_id uuid REFERENCES identity.person(person_id),
+L1459   converted_qualification_id uuid REFERENCES membership.qualification(qualification_id)
+L1460 );
+L1461 
+L1462 CREATE TABLE IF NOT EXISTS attribution.referral_lock (
+L1463   referral_lock_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+L1464   child_qualification_id uuid NOT NULL UNIQUE REFERENCES membership.qualification(qualification_id),
+L1465   sponsor_qualification_id uuid NOT NULL REFERENCES membership.qualification(qualification_id),
+L1466   source_referral_link_id uuid REFERENCES attribution.referral_link(referral_link_id),
+L1467   locked_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+L1468   locked_by uuid,
+L1469   source_application_id uuid,
+L1470   lock_reason text NOT NULL DEFAULT 'FORMAL_SPONSOR_APPROVED'
+L1471 );
+L1472 
+L1473 CREATE TABLE IF NOT EXISTS attribution.referral_dispute (
+L1474   referral_dispute_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+L1475   child_qualification_id uuid REFERENCES membership.qualification(qualification_id),
+L1476   claimed_sponsor_qualification_id uuid REFERENCES membership.qualification(qualification_id),
+L1477   current_sponsor_qualification_id uuid REFERENCES membership.qualification(qualification_id),
+L1478   status public.record_status NOT NULL DEFAULT 'PENDING',
+L1479   reason_text text,
+L1480   opened_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+L1481   opened_by uuid,
+L1482   resolved_at timestamptz,
+L1483   resolved_by uuid
+L1484 );
+L1485 
+L1486 -- -----------------------------------------------------------------------------
+L1487 -- 16. INTEGRATION / OUTBOX / INBOX
+L1488 -- -----------------------------------------------------------------------------
+L1489 CREATE TABLE IF NOT EXISTS integration.external_system (
+L1490   external_system_code text PRIMARY KEY,
+L1491   display_name text NOT NULL,
+L1492   active boolean NOT NULL DEFAULT true
+L1493 );
+L1494 
+L1495 INSERT INTO integration.external_system(external_system_code, display_name)
+L1496 VALUES
+L1497   ('MANUAL','Pre-ERP Manual Operations'),
+L1498   ('D365_BC','Microsoft Dynamics 365 Business Central'),
+L1499   ('LINE','LINE OA/LIFF'),
+L1500   ('PAYMENT','Payment Gateway'),
+L1501   ('LOGISTICS','Logistics Provider')
+L1502 ON CONFLICT (external_system_code) DO NOTHING;
+L1503 
+L1504 CREATE TABLE IF NOT EXISTS integration.external_reference (
+L1505   external_reference_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+L1506   external_system_code text NOT NULL REFERENCES integration.external_system(external_system_code),
+L1507   entity_type text NOT NULL,
+L1508   internal_entity_id uuid NOT NULL,
+L1509   external_entity_id text,
+L1510   external_document_no text,
+L1511   version_etag text,
+L1512   sync_status text NOT NULL DEFAULT 'PENDING',
+L1513   last_synced_at timestamptz,
+L1514   UNIQUE(external_system_code, entity_type, internal_entity_id)
+L1515 );
+L1516 
+L1517 CREATE TABLE IF NOT EXISTS integration.outbox_event (
+L1518   outbox_event_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+L1519   aggregate_type text NOT NULL,
+L1520   aggregate_id uuid NOT NULL,
+L1521   event_type text NOT NULL,
+L1522   payload jsonb NOT NULL,
+L1523   occurred_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+L1524   published_at timestamptz,
+L1525   retry_count integer NOT NULL DEFAULT 0,
+L1526   last_error text,
+L1527   correlation_id uuid NOT NULL DEFAULT gen_random_uuid()
+L1528 );
+L1529 
+L1530 CREATE INDEX IF NOT EXISTS ix_outbox_unpublished
+L1531   ON integration.outbox_event(occurred_at)
+L1532   WHERE published_at IS NULL;
+L1533 
+L1534 CREATE TABLE IF NOT EXISTS integration.inbox_event (
+L1535   inbox_event_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+L1536   external_system_code text NOT NULL REFERENCES integration.external_system(external_system_code),
+L1537   external_event_id text NOT NULL,
+L1538   event_type text NOT NULL,
+L1539   payload jsonb NOT NULL,
+L1540   received_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+L1541   processed_at timestamptz,
+L1542   process_status text NOT NULL DEFAULT 'RECEIVED',
+L1543   last_error text,
+L1544   UNIQUE(external_system_code, external_event_id)
+L1545 );
+L1546 
+L1547 CREATE TRIGGER trg_outbox_no_delete
+L1548 BEFORE DELETE ON integration.outbox_event
+L1549 FOR EACH ROW EXECUTE FUNCTION public.prevent_physical_delete();
+L1550 
+L1551 CREATE TRIGGER trg_inbox_no_delete
+L1552 BEFORE DELETE ON integration.inbox_event
+L1553 FOR EACH ROW EXECUTE FUNCTION public.prevent_physical_delete();
+L1554 
+L1555 -- -----------------------------------------------------------------------------
+L1556 -- 17. PRE-ERP OPERATION PROCEDURES
+L1557 -- -----------------------------------------------------------------------------
+L1558 CREATE OR REPLACE PROCEDURE commerce.sp_confirm_payment(
+L1559   p_order_id uuid,
+L1560   p_amount numeric,
+L1561   p_payment_method text,
+L1562   p_reference_no text,
+L1563   p_occurred_at timestamptz,
+L1564   p_actor_id uuid,
+L1565   p_correlation_id uuid DEFAULT NULL
+L1566 )
+L1567 LANGUAGE plpgsql
+L1568 AS $$
+L1569 DECLARE
+L1570   v_order commerce."order"%ROWTYPE;
+L1571   v_event_id uuid := gen_random_uuid();
+L1572   v_corr uuid := coalesce(p_correlation_id, gen_random_uuid());
+L1573 BEGIN
+L1574   SELECT * INTO v_order FROM commerce."order" WHERE order_id=p_order_id FOR UPDATE;
+L1575   IF NOT FOUND THEN RAISE EXCEPTION 'Order not found'; END IF;
+L1576   IF v_order.status IN ('VOIDED','RETURNED') THEN
+L1577     RAISE EXCEPTION 'Cannot pay order in status %', v_order.status;
+L1578   END IF;
+L1579 
+L1580   INSERT INTO commerce.payment_event(
+L1581     payment_event_id,order_id,event_type,amount,payment_method,reference_no,
+L1582     occurred_at,actor_type,actor_id,source_system,correlation_id
+L1583   )
+L1584   VALUES(
+L1585     v_event_id,p_order_id,'PAYMENT_CONFIRMED',p_amount,p_payment_method,p_reference_no,
+L1586     p_occurred_at,'USER',p_actor_id,'MANUAL',v_corr
+L1587   );
+L1588 
+L1589   UPDATE commerce."order"
+L1590   SET status='PAID', paid_at=p_occurred_at, updated_by=p_actor_id
+L1591   WHERE order_id=p_order_id;
+L1592 
+L1593   INSERT INTO integration.outbox_event(
+L1594     aggregate_type,aggregate_id,event_type,payload,correlation_id
+L1595   )
+L1596   VALUES(
+L1597     'ORDER',p_order_id,'SALE_CONFIRMED',
+L1598     jsonb_build_object(
+L1599       'order_id',p_order_id,
+L1600       'qualification_id',v_order.qualification_id,
+L1601       'payment_event_id',v_event_id,
+L1602       'amount',p_amount,
+L1603       'occurred_at',p_occurred_at
+L1604     ),
+L1605     v_corr
+L1606   );
+L1607 
+L1608   PERFORM audit.fn_write_audit_event(
+L1609     'USER',p_actor_id,'PAYMENT_CONFIRMED','commerce.order',p_order_id,
+L1610     to_jsonb(v_order),
+L1611     (SELECT to_jsonb(o) FROM commerce."order" o WHERE o.order_id=p_order_id),
+L1612     'MANUAL_CONFIRM',NULL,v_corr
+L1613   );
+L1614 END;
+L1615 $$;
+L1616 
+L1617 CREATE OR REPLACE PROCEDURE commerce.sp_confirm_fulfillment(
+L1618   p_order_id uuid,
+L1619   p_carrier text,
+L1620   p_tracking_no text,
+L1621   p_occurred_at timestamptz,
+L1622   p_actor_id uuid,
+L1623   p_correlation_id uuid DEFAULT NULL
+L1624 )
+L1625 LANGUAGE plpgsql
+L1626 AS $$
+L1627 DECLARE
+L1628   v_order commerce."order"%ROWTYPE;
+L1629   v_event_id uuid := gen_random_uuid();
+L1630   v_corr uuid := coalesce(p_correlation_id, gen_random_uuid());
+L1631 BEGIN
+L1632   SELECT * INTO v_order FROM commerce."order" WHERE order_id=p_order_id FOR UPDATE;
+L1633   IF NOT FOUND THEN RAISE EXCEPTION 'Order not found'; END IF;
+L1634   IF v_order.status NOT IN ('PAID','FULFILLED') THEN
+L1635     RAISE EXCEPTION 'Order must be PAID before fulfillment. Current=%', v_order.status;
+L1636   END IF;
+L1637 
+L1638   INSERT INTO commerce.fulfillment_event(
+L1639     fulfillment_event_id,order_id,event_type,carrier,tracking_no,occurred_at,
+L1640     actor_type,actor_id,source_system,correlation_id
+L1641   )
+L1642   VALUES(
+L1643     v_event_id,p_order_id,'FULFILLMENT_CONFIRMED',p_carrier,p_tracking_no,p_occurred_at,
+L1644     'USER',p_actor_id,'MANUAL',v_corr
+L1645   );
+L1646 
+L1647   UPDATE commerce."order"
+L1648   SET status='FULFILLED', fulfilled_at=p_occurred_at, updated_by=p_actor_id
+L1649   WHERE order_id=p_order_id;
+L1650 
+L1651   INSERT INTO integration.outbox_event(
+L1652     aggregate_type,aggregate_id,event_type,payload,correlation_id
+L1653   )
+L1654   VALUES(
+L1655     'ORDER',p_order_id,'FULFILLMENT_CONFIRMED',
+L1656     jsonb_build_object(
+L1657       'order_id',p_order_id,
+L1658       'fulfillment_event_id',v_event_id,
+L1659       'carrier',p_carrier,
+L1660       'tracking_no',p_tracking_no
+L1661     ),
+L1662     v_corr
+L1663   );
+L1664 END;
+L1665 $$;
+L1666 
+L1667 -- -----------------------------------------------------------------------------
+L1668 -- 18. VIEWS
+L1669 -- -----------------------------------------------------------------------------
+L1670 CREATE OR REPLACE VIEW reporting.v_person_qualifications AS
+L1671 SELECT
+L1672   p.person_id,
+L1673   p.person_no,
+L1674   p.legal_name,
+L1675   q.qualification_id,
+L1676   q.qualification_no,
+L1677   q.plan_level_code,
+L1678   pl.display_name AS plan_level_name,
+L1679   q.status AS qualification_status,
+L1680   q.active_flag,
+L1681   q.effective_at
+L1682 FROM identity.person p
+L1683 JOIN membership.qualification q ON q.current_holder_person_id = p.person_id
+L1684 JOIN membership.plan_level pl ON pl.plan_level_code = q.plan_level_code;
+L1685 
+L1686 CREATE OR REPLACE VIEW reporting.v_current_sponsor_tree AS
+L1687 SELECT
+L1688   sr.child_qualification_id,
+L1689   sr.sponsor_qualification_id,
+L1690   sr.sponsor_sequence_no,
+L1691   sr.effective_from
+L1692 FROM organization.sponsor_relationship sr
+L1693 WHERE sr.effective_to IS NULL;
+L1694 
+L1695 CREATE OR REPLACE VIEW reporting.v_current_binary_tree AS
+L1696 SELECT
+L1697   bp.qualification_id,
+L1698   bp.parent_qualification_id,
+L1699   bp.side,
+L1700   bp.effective_from
+L1701 FROM organization.binary_placement bp
+L1702 WHERE bp.effective_to IS NULL;
+L1703 
+L1704 CREATE OR REPLACE VIEW reporting.v_pv_balance AS
+L1705 SELECT
+L1706   qualification_id,
+L1707   pv_type,
+L1708   sum(amount) AS balance
+L1709 FROM ledger.pv_ledger
+L1710 GROUP BY qualification_id, pv_type;
+L1711 
+L1712 CREATE OR REPLACE VIEW reporting.v_award_summary AS
+L1713 SELECT
+L1714   recipient_qualification_id,
+L1715   award_type,
+L1716   status,
+L1717   sum(payable_amount) AS payable_amount,
+L1718   count(*) AS event_count
+L1719 FROM ledger.award_event
+L1720 GROUP BY recipient_qualification_id, award_type, status;
+L1721 
+L1722 CREATE OR REPLACE VIEW reporting.v_order_status AS
+L1723 SELECT
+L1724   o.order_id,
+L1725   o.order_no,
+L1726   o.person_id,
+L1727   o.qualification_id,
+L1728   o.status,
+L1729   o.net_amount,
+L1730   o.paid_at,
+L1731   o.fulfilled_at,
+L1732   o.external_system_code,
+L1733   o.external_order_no,
+L1734   max(pe.occurred_at) FILTER (WHERE pe.event_type='PAYMENT_CONFIRMED') AS last_payment_confirmed_at,
+L1735   max(fe.occurred_at) FILTER (WHERE fe.event_type='FULFILLMENT_CONFIRMED') AS last_fulfilled_at
+L1736 FROM commerce."order" o
+L1737 LEFT JOIN commerce.payment_event pe ON pe.order_id=o.order_id
+L1738 LEFT JOIN commerce.fulfillment_event fe ON fe.order_id=o.order_id
+L1739 GROUP BY o.order_id;
+L1740 
+L1741 CREATE OR REPLACE VIEW reporting.v_referral_performance AS
+L1742 SELECT
+L1743   rl.qualification_id,
+L1744   count(DISTINCT rs.referral_session_id) AS sessions,
+L1745   count(DISTINCT l.lead_id) AS leads,
+L1746   count(DISTINCT l.converted_qualification_id) FILTER (WHERE l.converted_qualification_id IS NOT NULL) AS converted_qualifications
+L1747 FROM attribution.referral_link rl
+L1748 LEFT JOIN attribution.referral_session rs ON rs.referral_link_id=rl.referral_link_id
+L1749 LEFT JOIN attribution.lead l ON l.referral_session_id=rs.referral_session_id
+L1750 GROUP BY rl.qualification_id;
+L1751 
+L1752 CREATE OR REPLACE VIEW reporting.v_subscription_schedule AS
+L1753 SELECT
+L1754   s.subscription_id,
+L1755   s.qualification_id,
+L1756   s.subscription_plan_code,
+L1757   s.status AS subscription_status,
+L1758   m.installment_no,
+L1759   m.due_date,
+L1760   m.recognized_amount,
+L1761   m.rpv_amount,
+L1762   m.status AS recognition_status,
+L1763   m.recognized_event_id
+L1764 FROM subscription.subscription s
+L1765 JOIN subscription.monthly_recognition_schedule m ON m.subscription_id=s.subscription_id;
+L1766 
+L1767 -- -----------------------------------------------------------------------------
+L1768 -- 19. Helpful functions for current rule matrices
+L1769 -- -----------------------------------------------------------------------------
+L1770 CREATE OR REPLACE FUNCTION rules.fn_referral_rate_by_plan(p_plan_level_code text)
+L1771 RETURNS numeric
+L1772 LANGUAGE sql
+L1773 IMMUTABLE
+L1774 AS $$
+L1775 SELECT CASE p_plan_level_code
+L1776   WHEN 'STARTER' THEN 0.15
+L1777   WHEN 'ELITE' THEN 0.20
+L1778   WHEN 'LEADER' THEN 0.25
+L1779   ELSE 0
+L1780 END;
+L1781 $$;
+L1782 
+L1783 CREATE OR REPLACE FUNCTION rules.fn_matching_rate_by_generation(p_generation integer)
+L1784 RETURNS numeric
+L1785 LANGUAGE sql
+L1786 IMMUTABLE
+L1787 AS $$
+L1788 SELECT CASE p_generation
+L1789   WHEN 1 THEN 0.15
+L1790   WHEN 2 THEN 0.10
+L1791   WHEN 3 THEN 0.05
+L1792   WHEN 4 THEN 0.05
+L1793   WHEN 5 THEN 0.05
+L1794   ELSE 0
+L1795 END;
+L1796 $$;
+L1797 
+L1798 CREATE OR REPLACE FUNCTION rules.fn_matching_unlock_depth(p_effective_direct_count integer)
+L1799 RETURNS integer
+L1800 LANGUAGE sql
+L1801 IMMUTABLE
+L1802 AS $$
+L1803 SELECT CASE
+L1804   WHEN p_effective_direct_count <= 0 THEN 0
+L1805   WHEN p_effective_direct_count = 1 THEN 2
+L1806   WHEN p_effective_direct_count = 2 THEN 3
+L1807   WHEN p_effective_direct_count = 3 THEN 4
+L1808   ELSE 5
+L1809 END;
+L1810 $$;
+L1811 
+L1812 CREATE OR REPLACE FUNCTION rules.fn_equalization_rate(
+L1813   p_plan_level_code text,
+L1814   p_generation integer
+L1815 )
+L1816 RETURNS numeric
+L1817 LANGUAGE sql
+L1818 IMMUTABLE
+L1819 AS $$
+L1820 SELECT CASE p_plan_level_code
+L1821   WHEN 'STARTER' THEN CASE p_generation WHEN 2 THEN 0.10 WHEN 3 THEN 0.10 WHEN 4 THEN 0.10 ELSE 0 END
+L1822   WHEN 'ELITE' THEN CASE p_generation WHEN 2 THEN 0.20 WHEN 3 THEN 0.10 WHEN 4 THEN 0.10 WHEN 5 THEN 0.05 WHEN 6 THEN 0.05 ELSE 0 END
+L1823   WHEN 'LEADER' THEN CASE p_generation WHEN 2 THEN 0.20 WHEN 3 THEN 0.15 WHEN 4 THEN 0.10 WHEN 5 THEN 0.10 WHEN 6 THEN 0.10 WHEN 7 THEN 0.05 ELSE 0 END
+L1824   ELSE 0
+L1825 END;
+L1826 $$;
+L1827 
+L1828 CREATE OR REPLACE FUNCTION rules.fn_equalization_unlock_depth(
+L1829   p_plan_level_code text,
+L1830   p_effective_direct_count integer
+L1831 )
+L1832 RETURNS integer
+L1833 LANGUAGE sql
+L1834 IMMUTABLE
+L1835 AS $$
+L1836 SELECT CASE p_plan_level_code
+L1837   WHEN 'STARTER' THEN CASE WHEN p_effective_direct_count >= 2 THEN 4 WHEN p_effective_direct_count >= 1 THEN 3 ELSE 0 END
+L1838   WHEN 'ELITE' THEN CASE WHEN p_effective_direct_count >= 4 THEN 6 WHEN p_effective_direct_count = 3 THEN 5 WHEN p_effective_direct_count = 2 THEN 4 WHEN p_effective_direct_count = 1 THEN 3 ELSE 0 END
+L1839   WHEN 'LEADER' THEN CASE WHEN p_effective_direct_count >= 4 THEN 7 WHEN p_effective_direct_count = 3 THEN 5 WHEN p_effective_direct_count = 2 THEN 4 WHEN p_effective_direct_count = 1 THEN 3 ELSE 0 END
+L1840   ELSE 0
+L1841 END;
+L1842 $$;
+L1843 
+L1844 CREATE OR REPLACE FUNCTION rules.fn_binary_weekly_cap(p_plan_level_code text)
+L1845 RETURNS numeric
+L1846 LANGUAGE sql
+L1847 IMMUTABLE
+L1848 AS $$
+L1849 SELECT CASE p_plan_level_code
+L1850   WHEN 'STARTER' THEN 450000
+L1851   WHEN 'ELITE' THEN 900000
+L1852   WHEN 'LEADER' THEN 1500000
+L1853   ELSE 0
+L1854 END;
+L1855 $$;
+L1856 
+L1857 -- -----------------------------------------------------------------------------
+L1858 -- 20. Trigger to validate sponsor 1st/3rd direct-left rule at placement time
+L1859 -- -----------------------------------------------------------------------------
+L1860 CREATE OR REPLACE FUNCTION organization.fn_validate_first_third_left_rule()
+L1861 RETURNS trigger
+L1862 LANGUAGE plpgsql
+L1863 AS $$
+L1864 DECLARE
+L1865   v_sponsor uuid;
+L1866   v_seq integer;
+L1867   v_requires_left boolean;
+L1868   v_ok boolean;
+L1869 BEGIN
+L1870   SELECT sponsor_qualification_id, sponsor_sequence_no
+L1871   INTO v_sponsor, v_seq
+L1872   FROM organization.sponsor_relationship
+L1873   WHERE child_qualification_id = NEW.qualification_id
+L1874     AND effective_to IS NULL
+L1875   ORDER BY effective_from DESC
+L1876   LIMIT 1;
+L1877 
+L1878   IF v_sponsor IS NULL THEN
+L1879     RETURN NEW;
+L1880   END IF;
+L1881 
+L1882   v_requires_left := v_seq IN (1,3);
+L1883 
+L1884   IF v_requires_left THEN
+L1885     -- Candidate is valid if its parent is sponsor's LEFT child or anywhere below it.
+L1886     IF NEW.parent_qualification_id = v_sponsor AND NEW.side = 'LEFT' THEN
+L1887       v_ok := true;
+L1888     ELSE
+L1889       v_ok := organization.fn_is_in_binary_subtree(v_sponsor, NEW.parent_qualification_id, 'LEFT');
+L1890     END IF;
+L1891 
+L1892     IF NOT coalesce(v_ok,false) THEN
+L1893       RAISE EXCEPTION 'BINARY_LEFT_SUBTREE_REQUIRED: sponsor sequence % must be placed in sponsor left subtree', v_seq
+L1894         USING ERRCODE='23514';
+L1895     END IF;
+L1896   END IF;
+L1897 
+L1898   RETURN NEW;
+L1899 END;
+L1900 $$;
+L1901 
+L1902 DROP TRIGGER IF EXISTS trg_binary_first_third_left ON organization.binary_placement;
+L1903 CREATE TRIGGER trg_binary_first_third_left
+L1904 BEFORE INSERT ON organization.binary_placement
+L1905 FOR EACH ROW EXECUTE FUNCTION organization.fn_validate_first_third_left_rule();
+L1906 
+L1907 -- -----------------------------------------------------------------------------
+L1908 -- 21. Trigger to prohibit direct mutation of locked sponsor relationship
+L1909 -- -----------------------------------------------------------------------------
+L1910 CREATE OR REPLACE FUNCTION organization.fn_guard_sponsor_update()
+L1911 RETURNS trigger
+L1912 LANGUAGE plpgsql
+L1913 AS $$
+L1914 BEGIN
+L1915   IF OLD.effective_to IS NULL AND
+L1916      (NEW.sponsor_qualification_id IS DISTINCT FROM OLD.sponsor_qualification_id
+L1917       OR NEW.sponsor_sequence_no IS DISTINCT FROM OLD.sponsor_sequence_no) THEN
+L1918     RAISE EXCEPTION 'Current sponsor relationship cannot be directly overwritten. Use supervised supersede procedure.'
+L1919       USING ERRCODE='55000';
+L1920   END IF;
+L1921   RETURN NEW;
+L1922 END;
+L1923 $$;
+L1924 
+L1925 DROP TRIGGER IF EXISTS trg_sponsor_update_guard ON organization.sponsor_relationship;
+L1926 CREATE TRIGGER trg_sponsor_update_guard
+L1927 BEFORE UPDATE ON organization.sponsor_relationship
+L1928 FOR EACH ROW EXECUTE FUNCTION organization.fn_guard_sponsor_update();
+L1929 
+L1930 -- -----------------------------------------------------------------------------
+L1931 -- 22. Supervised relationship supersede procedure
+L1932 -- -----------------------------------------------------------------------------
+L1933 CREATE OR REPLACE PROCEDURE organization.sp_supersede_sponsor(
+L1934   p_child_qualification_id uuid,
+L1935   p_new_sponsor_qualification_id uuid,
+L1936   p_new_sequence_no integer,
+L1937   p_effective_at timestamptz,
+L1938   p_change_request_id uuid,
+L1939   p_actor_id uuid
+L1940 )
+L1941 LANGUAGE plpgsql
+L1942 AS $$
+L1943 DECLARE
+L1944   v_old organization.sponsor_relationship%ROWTYPE;
+L1945   v_new_id uuid := gen_random_uuid();
+L1946 BEGIN
+L1947   IF NOT EXISTS (
+L1948     SELECT 1 FROM audit.change_request
+L1949     WHERE change_request_id=p_change_request_id
+L1950       AND status='APPROVED'
+L1951   ) THEN
+L1952     RAISE EXCEPTION 'Approved change request required.';
+L1953   END IF;
+L1954 
+L1955   SELECT * INTO v_old
+L1956   FROM organization.sponsor_relationship
+L1957   WHERE child_qualification_id=p_child_qualification_id
+L1958     AND effective_to IS NULL
+L1959   FOR UPDATE;
+L1960 
+L1961   IF FOUND THEN
+L1962     UPDATE organization.sponsor_relationship
+L1963     SET effective_to=p_effective_at
+L1964     WHERE sponsor_relationship_id=v_old.sponsor_relationship_id;
+L1965   END IF;
+L1966 
+L1967   INSERT INTO organization.sponsor_relationship(
+L1968     sponsor_relationship_id,child_qualification_id,sponsor_qualification_id,
+L1969     sponsor_sequence_no,effective_from,source_event_id,created_by
+L1970   )
+L1971   VALUES(
+L1972     v_new_id,p_child_qualification_id,p_new_sponsor_qualification_id,
+L1973     p_new_sequence_no,p_effective_at,p_change_request_id,p_actor_id
+L1974   );
+L1975 
+L1976   PERFORM audit.fn_write_audit_event(
+L1977     'USER',p_actor_id,'SPONSOR_SUPERSEDED','organization.sponsor_relationship',v_new_id,
+L1978     CASE WHEN v_old.sponsor_relationship_id IS NULL THEN NULL ELSE to_jsonb(v_old) END,
+L1979     (SELECT to_jsonb(x) FROM organization.sponsor_relationship x WHERE x.sponsor_relationship_id=v_new_id),
+L1980     'APPROVED_CORRECTION',NULL,p_change_request_id
+L1981   );
+L1982 END;
+L1983 $$;
+L1984 
+L1985 -- -----------------------------------------------------------------------------
+L1986 -- 23. Optional data integrity view
+L1987 -- -----------------------------------------------------------------------------
+L1988 CREATE OR REPLACE VIEW reporting.v_data_integrity_alerts AS
+L1989 SELECT
+L1990   'QUALIFICATION_WITHOUT_CURRENT_HOLDER_HISTORY' AS alert_type,
+L1991   q.qualification_id::text AS entity_id,
+L1992   'Qualification has no current holder history' AS detail
+L1993 FROM membership.qualification q
+L1994 LEFT JOIN membership.qualification_holder_history h
+L1995   ON h.qualification_id=q.qualification_id AND h.valid_to IS NULL
+L1996 WHERE h.holder_history_id IS NULL
+L1997 
+L1998 UNION ALL
+L1999 
+L2000 SELECT
+L2001   'EFFECTIVE_QUALIFICATION_WITHOUT_SPONSOR',
+L2002   q.qualification_id::text,
+L2003   'Effective qualification has no current sponsor'
+L2004 FROM membership.qualification q
+L2005 LEFT JOIN organization.sponsor_relationship s
+L2006   ON s.child_qualification_id=q.qualification_id AND s.effective_to IS NULL
+L2007 WHERE q.status='EFFECTIVE'
+L2008   AND s.sponsor_relationship_id IS NULL
+L2009 
+L2010 UNION ALL
+L2011 
+L2012 SELECT
+L2013   'PAID_ORDER_WITHOUT_PAYMENT_EVENT',
+L2014   o.order_id::text,
+L2015   'Order status is PAID but no payment confirmation event exists'
+L2016 FROM commerce."order" o
+L2017 LEFT JOIN commerce.payment_event pe
+L2018   ON pe.order_id=o.order_id AND pe.event_type='PAYMENT_CONFIRMED'
+L2019 WHERE o.status IN ('PAID','FULFILLED')
+L2020 GROUP BY o.order_id
+L2021 HAVING count(pe.payment_event_id)=0;
+L2022 
+L2023 -- -----------------------------------------------------------------------------
+L2024 -- 24. Security notes / grants placeholders
+L2025 -- -----------------------------------------------------------------------------
+L2026 -- Create separate roles outside this migration in deployment:
+L2027 --   ucell_app_rw, ucell_app_ro, ucell_admin_migration, ucell_reporting_ro
+L2028 -- Recommended:
+L2029 --   REVOKE DELETE ON ALL TABLES IN SCHEMA ledger, audit, organization, attribution FROM ucell_app_rw;
+L2030 --   GRANT SELECT, INSERT ON append-only event tables only;
+L2031 --   Permit UPDATE only on mutable current-state tables and via procedures where possible.
+L2032 
+L2033 -- -----------------------------------------------------------------------------
+L2034 -- 25. Comments for architectural boundary
+L2035 -- -----------------------------------------------------------------------------
+L2036 COMMENT ON SCHEMA commerce IS
+L2037 'Pre-ERP commerce bridge only. Do not evolve into WMS/procurement/AR/AP/GL.';
+L2038 COMMENT ON TABLE commerce.lot_trace IS
+L2039 'Lightweight outbound trace only. ERP/WMS becomes SoR after D365 BC introduction.';
+L2040 COMMENT ON TABLE ledger.pv_ledger IS
+L2041 'Append-only institutional value ledger for GPV/PV/RPV/EPV.';
+L2042 COMMENT ON TABLE ledger.award_event IS
+L2043 'Award lifecycle/event table. Source facts must remain traceable.';
+L2044 COMMENT ON TABLE rules.parameter_value IS
+L2045 'Versioned parameter value. Published data must not be mutated.';
+L2046 
+L2047 COMMIT;
+L2048 
+L2049 -- =============================================================================
+L2050 -- END OF UCell R1.0B PostgreSQL Full Database Definition v1.0
+L2051 -- =============================================================================

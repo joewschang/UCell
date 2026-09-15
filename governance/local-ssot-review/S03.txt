@@ -1,0 +1,2871 @@
+L0001 -- =============================================================================
+L0002 -- UCell R1.0B PostgreSQL Full Database Definition v1.0
+L0003 -- Date: 2026-09-04
+L0004 -- Purpose:
+L0005 --   Database baseline for UCell Core / Admin MVP / LINE OA / Pre-ERP Bridge.
+L0006 --   Design principles:
+L0007 --     Parameter-driven + Event-driven + Append-only + Versioned + Traceable
+L0008 --     Qualification-first, Sponsor/Binary separation, no physical delete
+L0009 --     Pre-ERP operational bridge only; do NOT recreate WMS/AR/AP/GL.
+L0010 --
+L0011 -- IMPORTANT SOURCE-OF-TRUTH:
+L0012 --   Filed documents / formally approved rules override this technical schema.
+L0013 --   This SQL structures the current engineering baseline and MUST NOT be treated
+L0014 --   as a replacement for legal filing documents.
+L0015 --
+L0016 -- Target PostgreSQL: 16+ recommended.
+L0017 -- =============================================================================
+L0018 
+L0019 BEGIN;
+L0020 
+L0021 -- -----------------------------------------------------------------------------
+L0022 -- 00. Extensions
+L0023 -- -----------------------------------------------------------------------------
+L0024 CREATE EXTENSION IF NOT EXISTS pgcrypto;
+L0025 
+L0026 -- -----------------------------------------------------------------------------
+L0027 -- 01. Schemas
+L0028 -- -----------------------------------------------------------------------------
+L0029 CREATE SCHEMA IF NOT EXISTS identity;
+L0030 CREATE SCHEMA IF NOT EXISTS membership;
+L0031 CREATE SCHEMA IF NOT EXISTS organization;
+L0032 CREATE SCHEMA IF NOT EXISTS rules;
+L0033 CREATE SCHEMA IF NOT EXISTS commerce;
+L0034 CREATE SCHEMA IF NOT EXISTS subscription;
+L0035 CREATE SCHEMA IF NOT EXISTS ledger;
+L0036 CREATE SCHEMA IF NOT EXISTS attribution;
+L0037 CREATE SCHEMA IF NOT EXISTS audit;
+L0038 CREATE SCHEMA IF NOT EXISTS integration;
+L0039 CREATE SCHEMA IF NOT EXISTS reporting;
+L0040 
+L0041 -- -----------------------------------------------------------------------------
+L0042 -- 02. Generic utility functions
+L0043 -- -----------------------------------------------------------------------------
+L0044 CREATE OR REPLACE FUNCTION public.utc_now()
+L0045 RETURNS timestamptz
+L0046 LANGUAGE sql
+L0047 STABLE
+L0048 AS $$ SELECT clock_timestamp(); $$;
+L0049 
+L0050 CREATE OR REPLACE FUNCTION public.gen_uuid()
+L0051 RETURNS uuid
+L0052 LANGUAGE sql
+L0053 VOLATILE
+L0054 AS $$ SELECT gen_random_uuid(); $$;
+L0055 
+L0056 CREATE OR REPLACE FUNCTION public.sha256_text(p_text text)
+L0057 RETURNS text
+L0058 LANGUAGE sql
+L0059 IMMUTABLE
+L0060 AS $$ SELECT encode(digest(coalesce(p_text,''), 'sha256'), 'hex'); $$;
+L0061 
+L0062 CREATE OR REPLACE FUNCTION public.set_updated_at()
+L0063 RETURNS trigger
+L0064 LANGUAGE plpgsql
+L0065 AS $$
+L0066 BEGIN
+L0067   NEW.updated_at := clock_timestamp();
+L0068   RETURN NEW;
+L0069 END;
+L0070 $$;
+L0071 
+L0072 CREATE OR REPLACE FUNCTION public.prevent_physical_delete()
+L0073 RETURNS trigger
+L0074 LANGUAGE plpgsql
+L0075 AS $$
+L0076 BEGIN
+L0077   RAISE EXCEPTION 'Physical DELETE is prohibited on %. Use VOID/REVERSAL/SUPERSEDE workflow.', TG_TABLE_SCHEMA || '.' || TG_TABLE_NAME
+L0078     USING ERRCODE = '55000';
+L0079 END;
+L0080 $$;
+L0081 
+L0082 CREATE OR REPLACE FUNCTION public.prevent_mutation()
+L0083 RETURNS trigger
+L0084 LANGUAGE plpgsql
+L0085 AS $$
+L0086 BEGIN
+L0087   RAISE EXCEPTION 'Mutation is prohibited on append-only table %. Use reversal/correction event.', TG_TABLE_SCHEMA || '.' || TG_TABLE_NAME
+L0088     USING ERRCODE = '55000';
+L0089 END;
+L0090 $$;
+L0091 
+L0092 -- -----------------------------------------------------------------------------
+L0093 -- 03. Shared enum-like domains/types
+L0094 -- -----------------------------------------------------------------------------
+L0095 DO $$
+L0096 BEGIN
+L0097   IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'record_status') THEN
+L0098     CREATE TYPE public.record_status AS ENUM ('DRAFT','PENDING','APPROVED','EFFECTIVE','SUSPENDED','VOIDED','CLOSED');
+L0099   END IF;
+L0100   IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'side_code') THEN
+L0101     CREATE TYPE public.side_code AS ENUM ('LEFT','RIGHT');
+L0102   END IF;
+L0103   IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'actor_type') THEN
+L0104     CREATE TYPE public.actor_type AS ENUM ('USER','SYSTEM','JOB','INTEGRATION');
+L0105   END IF;
+L0106   IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'rule_status') THEN
+L0107     CREATE TYPE public.rule_status AS ENUM ('DRAFT','REVIEW','APPROVED','PUBLISHED','RETIRED');
+L0108   END IF;
+L0109   IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'order_status') THEN
+L0110     CREATE TYPE public.order_status AS ENUM ('DRAFT','CONFIRMED','PAID','FULFILLED','PARTIAL_RETURN','RETURNED','VOIDED');
+L0111   END IF;
+L0112   IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'award_status') THEN
+L0113     CREATE TYPE public.award_status AS ENUM ('CALCULATED','PENDING_45D','EFFECTIVE','PAYABLE','PAID','REVERSED','CLAWBACK');
+L0114   END IF;
+L0115   IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'parameter_data_type') THEN
+L0116     CREATE TYPE public.parameter_data_type AS ENUM ('INTEGER','DECIMAL','BOOLEAN','TEXT','ENUM','DATE','TIMESTAMP','JSON');
+L0117   END IF;
+L0118 END$$;
+L0119 
+L0120 -- -----------------------------------------------------------------------------
+L0121 -- 04. AUDIT / CHANGE GOVERNANCE
+L0122 -- -----------------------------------------------------------------------------
+L0123 CREATE TABLE IF NOT EXISTS audit.change_request (
+L0124   change_request_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+L0125   entity_type text NOT NULL,
+L0126   entity_id uuid,
+L0127   change_type text NOT NULL,
+L0128   reason_code text NOT NULL,
+L0129   reason_text text,
+L0130   requested_payload jsonb,
+L0131   status public.record_status NOT NULL DEFAULT 'DRAFT',
+L0132   requested_by uuid,
+L0133   requested_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+L0134   approved_by uuid,
+L0135   approved_at timestamptz,
+L0136   executed_at timestamptz,
+L0137   correlation_id uuid NOT NULL DEFAULT gen_random_uuid()
+L0138 );
+L0139 
+L0140 CREATE TABLE IF NOT EXISTS audit.approval_record (
+L0141   approval_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+L0142   change_request_id uuid NOT NULL REFERENCES audit.change_request(change_request_id),
+L0143   approval_stage text NOT NULL,
+L0144   decision text NOT NULL CHECK (decision IN ('APPROVE','REJECT','RETURN')),
+L0145   decided_by uuid,
+L0146   decided_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+L0147   note text
+L0148 );
+L0149 
+L0150 CREATE TABLE IF NOT EXISTS audit.audit_event (
+L0151   audit_event_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+L0152   actor_type public.actor_type NOT NULL,
+L0153   actor_id uuid,
+L0154   action_code text NOT NULL,
+L0155   entity_type text NOT NULL,
+L0156   entity_id uuid,
+L0157   before_snapshot jsonb,
+L0158   after_snapshot jsonb,
+L0159   reason_code text,
+L0160   reason_text text,
+L0161   request_id text,
+L0162   trace_id text,
+L0163   correlation_id uuid NOT NULL DEFAULT gen_random_uuid(),
+L0164   ip_address inet,
+L0165   user_agent text,
+L0166   occurred_at timestamptz NOT NULL DEFAULT clock_timestamp()
+L0167 );
+L0168 
+L0169 CREATE INDEX IF NOT EXISTS ix_audit_entity_time
+L0170   ON audit.audit_event(entity_type, entity_id, occurred_at DESC);
+L0171 CREATE INDEX IF NOT EXISTS ix_audit_actor_time
+L0172   ON audit.audit_event(actor_id, occurred_at DESC);
+L0173 
+L0174 CREATE OR REPLACE FUNCTION audit.fn_write_audit_event(
+L0175   p_actor_type public.actor_type,
+L0176   p_actor_id uuid,
+L0177   p_action_code text,
+L0178   p_entity_type text,
+L0179   p_entity_id uuid,
+L0180   p_before jsonb,
+L0181   p_after jsonb,
+L0182   p_reason_code text DEFAULT NULL,
+L0183   p_reason_text text DEFAULT NULL,
+L0184   p_correlation_id uuid DEFAULT NULL
+L0185 )
+L0186 RETURNS uuid
+L0187 LANGUAGE plpgsql
+L0188 AS $$
+L0189 DECLARE
+L0190   v_id uuid := gen_random_uuid();
+L0191 BEGIN
+L0192   INSERT INTO audit.audit_event(
+L0193     audit_event_id, actor_type, actor_id, action_code, entity_type, entity_id,
+L0194     before_snapshot, after_snapshot, reason_code, reason_text, correlation_id
+L0195   )
+L0196   VALUES(
+L0197     v_id, p_actor_type, p_actor_id, p_action_code, p_entity_type, p_entity_id,
+L0198     p_before, p_after, p_reason_code, p_reason_text, coalesce(p_correlation_id, gen_random_uuid())
+L0199   );
+L0200   RETURN v_id;
+L0201 END;
+L0202 $$;
+L0203 
+L0204 -- -----------------------------------------------------------------------------
+L0205 -- 05. IDENTITY
+L0206 -- -----------------------------------------------------------------------------
+L0207 CREATE TABLE IF NOT EXISTS identity.person (
+L0208   person_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+L0209   person_no bigint GENERATED ALWAYS AS IDENTITY UNIQUE,
+L0210   legal_name text NOT NULL,
+L0211   preferred_name text,
+L0212   national_id_hash text,
+L0213   national_id_ciphertext bytea,
+L0214   birth_date date,
+L0215   adulthood_verified boolean NOT NULL DEFAULT false,
+L0216   mobile text,
+L0217   email text,
+L0218   line_user_id_hash text,
+L0219   line_user_id_ciphertext bytea,
+L0220   status public.record_status NOT NULL DEFAULT 'DRAFT',
+L0221   created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+L0222   created_by uuid,
+L0223   updated_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+L0224   updated_by uuid,
+L0225   CONSTRAINT uq_person_national_id_hash UNIQUE NULLS NOT DISTINCT (national_id_hash)
+L0226 );
+L0227 
+L0228 CREATE INDEX IF NOT EXISTS ix_person_name ON identity.person(legal_name);
+L0229 CREATE INDEX IF NOT EXISTS ix_person_mobile ON identity.person(mobile);
+L0230 
+L0231 CREATE TRIGGER trg_person_updated_at
+L0232 BEFORE UPDATE ON identity.person
+L0233 FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+L0234 
+L0235 CREATE TRIGGER trg_person_no_delete
+L0236 BEFORE DELETE ON identity.person
+L0237 FOR EACH ROW EXECUTE FUNCTION public.prevent_physical_delete();
+L0238 
+L0239 CREATE TABLE IF NOT EXISTS identity.person_bank_profile (
+L0240   bank_profile_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+L0241   person_id uuid NOT NULL REFERENCES identity.person(person_id),
+L0242   bank_code text NOT NULL,
+L0243   branch_code text,
+L0244   account_name text NOT NULL,
+L0245   account_no_hash text NOT NULL,
+L0246   account_no_ciphertext bytea NOT NULL,
+L0247   is_primary boolean NOT NULL DEFAULT false,
+L0248   valid_from timestamptz NOT NULL DEFAULT clock_timestamp(),
+L0249   valid_to timestamptz,
+L0250   created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+L0251   created_by uuid
+L0252 );
+L0253 
+L0254 CREATE UNIQUE INDEX IF NOT EXISTS uq_person_primary_bank
+L0255   ON identity.person_bank_profile(person_id)
+L0256   WHERE is_primary AND valid_to IS NULL;
+L0257 
+L0258 CREATE TABLE IF NOT EXISTS identity.consent_record (
+L0259   consent_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+L0260   person_id uuid REFERENCES identity.person(person_id),
+L0261   consent_type text NOT NULL,
+L0262   consent_version text NOT NULL,
+L0263   consented boolean NOT NULL,
+L0264   consented_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+L0265   source_channel text,
+L0266   ip_address inet,
+L0267   evidence jsonb
+L0268 );
+L0269 
+L0270 CREATE TRIGGER trg_consent_no_delete
+L0271 BEFORE DELETE ON identity.consent_record
+L0272 FOR EACH ROW EXECUTE FUNCTION public.prevent_physical_delete();
+L0273 
+L0274 -- -----------------------------------------------------------------------------
+L0275 -- 06. MEMBERSHIP / QUALIFICATION
+L0276 -- -----------------------------------------------------------------------------
+L0277 CREATE TABLE IF NOT EXISTS membership.plan_level (
+L0278   plan_level_code text PRIMARY KEY,
+L0279   display_name text NOT NULL,
+L0280   sort_order integer NOT NULL,
+L0281   active boolean NOT NULL DEFAULT true
+L0282 );
+L0283 
+L0284 INSERT INTO membership.plan_level(plan_level_code, display_name, sort_order)
+L0285 VALUES
+L0286   ('STARTER','啟航',10),
+L0287   ('ELITE','菁英',20),
+L0288   ('LEADER','領袖',30)
+L0289 ON CONFLICT (plan_level_code) DO NOTHING;
+L0290 
+L0291 CREATE TABLE IF NOT EXISTS membership.qualification (
+L0292   qualification_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+L0293   qualification_no bigint GENERATED ALWAYS AS IDENTITY UNIQUE,
+L0294   current_holder_person_id uuid NOT NULL REFERENCES identity.person(person_id),
+L0295   plan_level_code text NOT NULL REFERENCES membership.plan_level(plan_level_code),
+L0296   status public.record_status NOT NULL DEFAULT 'DRAFT',
+L0297   active_flag boolean NOT NULL DEFAULT false,
+L0298   effective_at timestamptz,
+L0299   closed_at timestamptz,
+L0300   source_application_id uuid,
+L0301   created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+L0302   created_by uuid,
+L0303   updated_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+L0304   updated_by uuid
+L0305 );
+L0306 
+L0307 CREATE INDEX IF NOT EXISTS ix_qualification_holder
+L0308   ON membership.qualification(current_holder_person_id, status);
+L0309 
+L0310 CREATE TRIGGER trg_qualification_updated_at
+L0311 BEFORE UPDATE ON membership.qualification
+L0312 FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+L0313 
+L0314 CREATE TRIGGER trg_qualification_no_delete
+L0315 BEFORE DELETE ON membership.qualification
+L0316 FOR EACH ROW EXECUTE FUNCTION public.prevent_physical_delete();
+L0317 
+L0318 CREATE TABLE IF NOT EXISTS membership.qualification_holder_history (
+L0319   holder_history_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+L0320   qualification_id uuid NOT NULL REFERENCES membership.qualification(qualification_id),
+L0321   holder_person_id uuid NOT NULL REFERENCES identity.person(person_id),
+L0322   valid_from timestamptz NOT NULL,
+L0323   valid_to timestamptz,
+L0324   source_case_id uuid,
+L0325   created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+L0326   created_by uuid,
+L0327   CHECK (valid_to IS NULL OR valid_to > valid_from)
+L0328 );
+L0329 
+L0330 CREATE UNIQUE INDEX IF NOT EXISTS uq_current_holder_per_qualification
+L0331   ON membership.qualification_holder_history(qualification_id)
+L0332   WHERE valid_to IS NULL;
+L0333 
+L0334 CREATE TABLE IF NOT EXISTS membership.qualification_status_history (
+L0335   status_history_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+L0336   qualification_id uuid NOT NULL REFERENCES membership.qualification(qualification_id),
+L0337   status public.record_status NOT NULL,
+L0338   effective_from timestamptz NOT NULL,
+L0339   effective_to timestamptz,
+L0340   source_event_id uuid,
+L0341   reason_code text,
+L0342   created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+L0343   CHECK (effective_to IS NULL OR effective_to > effective_from)
+L0344 );
+L0345 
+L0346 CREATE TABLE IF NOT EXISTS membership.active_period (
+L0347   active_period_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+L0348   qualification_id uuid NOT NULL REFERENCES membership.qualification(qualification_id),
+L0349   active_from timestamptz NOT NULL,
+L0350   active_to timestamptz,
+L0351   active_source text NOT NULL,
+L0352   source_event_id uuid,
+L0353   created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+L0354   CHECK (active_to IS NULL OR active_to > active_from)
+L0355 );
+L0356 
+L0357 CREATE INDEX IF NOT EXISTS ix_active_period_lookup
+L0358   ON membership.active_period(qualification_id, active_from, active_to);
+L0359 
+L0360 CREATE OR REPLACE FUNCTION membership.fn_is_active_at(
+L0361   p_qualification_id uuid,
+L0362   p_at timestamptz
+L0363 )
+L0364 RETURNS boolean
+L0365 LANGUAGE sql
+L0366 STABLE
+L0367 AS $$
+L0368 SELECT EXISTS (
+L0369   SELECT 1
+L0370   FROM membership.active_period ap
+L0371   WHERE ap.qualification_id = p_qualification_id
+L0372     AND ap.active_from <= p_at
+L0373     AND (ap.active_to IS NULL OR ap.active_to > p_at)
+L0374 );
+L0375 $$;
+L0376 
+L0377 -- -----------------------------------------------------------------------------
+L0378 -- 07. ORGANIZATION - Sponsor Tree
+L0379 -- -----------------------------------------------------------------------------
+L0380 CREATE TABLE IF NOT EXISTS organization.sponsor_relationship (
+L0381   sponsor_relationship_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+L0382   child_qualification_id uuid NOT NULL REFERENCES membership.qualification(qualification_id),
+L0383   sponsor_qualification_id uuid NOT NULL REFERENCES membership.qualification(qualification_id),
+L0384   sponsor_sequence_no integer NOT NULL CHECK (sponsor_sequence_no > 0),
+L0385   effective_from timestamptz NOT NULL,
+L0386   effective_to timestamptz,
+L0387   source_application_id uuid,
+L0388   source_event_id uuid,
+L0389   created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+L0390   created_by uuid,
+L0391   CHECK (child_qualification_id <> sponsor_qualification_id),
+L0392   CHECK (effective_to IS NULL OR effective_to > effective_from)
+L0393 );
+L0394 
+L0395 CREATE UNIQUE INDEX IF NOT EXISTS uq_sponsor_sequence_per_sponsor
+L0396   ON organization.sponsor_relationship(sponsor_qualification_id, sponsor_sequence_no);
+L0397 
+L0398 CREATE UNIQUE INDEX IF NOT EXISTS uq_current_sponsor_per_child
+L0399   ON organization.sponsor_relationship(child_qualification_id)
+L0400   WHERE effective_to IS NULL;
+L0401 
+L0402 CREATE INDEX IF NOT EXISTS ix_sponsor_children
+L0403   ON organization.sponsor_relationship(sponsor_qualification_id, effective_from);
+L0404 
+L0405 CREATE TRIGGER trg_sponsor_no_delete
+L0406 BEFORE DELETE ON organization.sponsor_relationship
+L0407 FOR EACH ROW EXECUTE FUNCTION public.prevent_physical_delete();
+L0408 
+L0409 CREATE OR REPLACE FUNCTION organization.fn_current_sponsor(p_child_qualification_id uuid)
+L0410 RETURNS uuid
+L0411 LANGUAGE sql
+L0412 STABLE
+L0413 AS $$
+L0414 SELECT sr.sponsor_qualification_id
+L0415 FROM organization.sponsor_relationship sr
+L0416 WHERE sr.child_qualification_id = p_child_qualification_id
+L0417   AND sr.effective_to IS NULL
+L0418 ORDER BY sr.effective_from DESC
+L0419 LIMIT 1;
+L0420 $$;
+L0421 
+L0422 CREATE OR REPLACE FUNCTION organization.fn_sponsor_ancestor(
+L0423   p_qualification_id uuid,
+L0424   p_generation integer
+L0425 )
+L0426 RETURNS uuid
+L0427 LANGUAGE sql
+L0428 STABLE
+L0429 AS $$
+L0430 WITH RECURSIVE chain AS (
+L0431   SELECT
+L0432     p_qualification_id AS child_id,
+L0433     organization.fn_current_sponsor(p_qualification_id) AS sponsor_id,
+L0434     1 AS generation
+L0435   UNION ALL
+L0436   SELECT
+L0437     c.sponsor_id,
+L0438     organization.fn_current_sponsor(c.sponsor_id),
+L0439     c.generation + 1
+L0440   FROM chain c
+L0441   WHERE c.sponsor_id IS NOT NULL
+L0442     AND c.generation < p_generation
+L0443 )
+L0444 SELECT sponsor_id
+L0445 FROM chain
+L0446 WHERE generation = p_generation
+L0447 LIMIT 1;
+L0448 $$;
+L0449 
+L0450 CREATE OR REPLACE FUNCTION organization.fn_effective_direct_count_at(
+L0451   p_sponsor_qualification_id uuid,
+L0452   p_at timestamptz
+L0453 )
+L0454 RETURNS integer
+L0455 LANGUAGE sql
+L0456 STABLE
+L0457 AS $$
+L0458 SELECT count(*)::integer
+L0459 FROM organization.sponsor_relationship sr
+L0460 JOIN membership.qualification q
+L0461   ON q.qualification_id = sr.child_qualification_id
+L0462 WHERE sr.sponsor_qualification_id = p_sponsor_qualification_id
+L0463   AND sr.effective_from <= p_at
+L0464   AND (sr.effective_to IS NULL OR sr.effective_to > p_at)
+L0465   AND q.status NOT IN ('VOIDED','CLOSED');
+L0466 $$;
+L0467 
+L0468 -- -----------------------------------------------------------------------------
+L0469 -- 08. ORGANIZATION - Binary Tree
+L0470 -- -----------------------------------------------------------------------------
+L0471 CREATE TABLE IF NOT EXISTS organization.binary_placement (
+L0472   binary_placement_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+L0473   qualification_id uuid NOT NULL REFERENCES membership.qualification(qualification_id),
+L0474   parent_qualification_id uuid NOT NULL REFERENCES membership.qualification(qualification_id),
+L0475   side public.side_code NOT NULL,
+L0476   effective_from timestamptz NOT NULL,
+L0477   effective_to timestamptz,
+L0478   source_event_id uuid,
+L0479   created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+L0480   created_by uuid,
+L0481   CHECK (qualification_id <> parent_qualification_id),
+L0482   CHECK (effective_to IS NULL OR effective_to > effective_from)
+L0483 );
+L0484 
+L0485 CREATE UNIQUE INDEX IF NOT EXISTS uq_current_binary_position_for_child
+L0486   ON organization.binary_placement(qualification_id)
+L0487   WHERE effective_to IS NULL;
+L0488 
+L0489 CREATE UNIQUE INDEX IF NOT EXISTS uq_current_binary_slot
+L0490   ON organization.binary_placement(parent_qualification_id, side)
+L0491   WHERE effective_to IS NULL;
+L0492 
+L0493 CREATE INDEX IF NOT EXISTS ix_binary_parent
+L0494   ON organization.binary_placement(parent_qualification_id, effective_from);
+L0495 
+L0496 CREATE TRIGGER trg_binary_no_delete
+L0497 BEFORE DELETE ON organization.binary_placement
+L0498 FOR EACH ROW EXECUTE FUNCTION public.prevent_physical_delete();
+L0499 
+L0500 CREATE OR REPLACE FUNCTION organization.fn_binary_parent(p_qualification_id uuid)
+L0501 RETURNS uuid
+L0502 LANGUAGE sql
+L0503 STABLE
+L0504 AS $$
+L0505 SELECT bp.parent_qualification_id
+L0506 FROM organization.binary_placement bp
+L0507 WHERE bp.qualification_id = p_qualification_id
+L0508   AND bp.effective_to IS NULL
+L0509 ORDER BY bp.effective_from DESC
+L0510 LIMIT 1;
+L0511 $$;
+L0512 
+L0513 CREATE OR REPLACE FUNCTION organization.fn_binary_ancestor(
+L0514   p_qualification_id uuid,
+L0515   p_generation integer
+L0516 )
+L0517 RETURNS uuid
+L0518 LANGUAGE sql
+L0519 STABLE
+L0520 AS $$
+L0521 WITH RECURSIVE chain AS (
+L0522   SELECT
+L0523     p_qualification_id AS child_id,
+L0524     organization.fn_binary_parent(p_qualification_id) AS parent_id,
+L0525     1 AS generation
+L0526   UNION ALL
+L0527   SELECT
+L0528     c.parent_id,
+L0529     organization.fn_binary_parent(c.parent_id),
+L0530     c.generation + 1
+L0531   FROM chain c
+L0532   WHERE c.parent_id IS NOT NULL
+L0533     AND c.generation < p_generation
+L0534 )
+L0535 SELECT parent_id
+L0536 FROM chain
+L0537 WHERE generation = p_generation
+L0538 LIMIT 1;
+L0539 $$;
+L0540 
+L0541 CREATE OR REPLACE FUNCTION organization.fn_is_in_binary_subtree(
+L0542   p_root_qualification_id uuid,
+L0543   p_candidate_qualification_id uuid,
+L0544   p_side public.side_code
+L0545 )
+L0546 RETURNS boolean
+L0547 LANGUAGE sql
+L0548 STABLE
+L0549 AS $$
+L0550 WITH RECURSIVE descendants AS (
+L0551   SELECT bp.qualification_id
+L0552   FROM organization.binary_placement bp
+L0553   WHERE bp.parent_qualification_id = p_root_qualification_id
+L0554     AND bp.side = p_side
+L0555     AND bp.effective_to IS NULL
+L0556   UNION ALL
+L0557   SELECT bp2.qualification_id
+L0558   FROM organization.binary_placement bp2
+L0559   JOIN descendants d ON bp2.parent_qualification_id = d.qualification_id
+L0560   WHERE bp2.effective_to IS NULL
+L0561 )
+L0562 SELECT EXISTS(SELECT 1 FROM descendants WHERE qualification_id = p_candidate_qualification_id);
+L0563 $$;
+L0564 
+L0565 CREATE OR REPLACE FUNCTION organization.fn_validate_binary_cycle()
+L0566 RETURNS trigger
+L0567 LANGUAGE plpgsql
+L0568 AS $$
+L0569 DECLARE
+L0570   v_has_cycle boolean;
+L0571 BEGIN
+L0572   WITH RECURSIVE ancestors AS (
+L0573     SELECT NEW.parent_qualification_id AS qid
+L0574     UNION ALL
+L0575     SELECT bp.parent_qualification_id
+L0576     FROM organization.binary_placement bp
+L0577     JOIN ancestors a ON bp.qualification_id = a.qid
+L0578     WHERE bp.effective_to IS NULL
+L0579   )
+L0580   SELECT EXISTS(SELECT 1 FROM ancestors WHERE qid = NEW.qualification_id)
+L0581   INTO v_has_cycle;
+L0582 
+L0583   IF v_has_cycle THEN
+L0584     RAISE EXCEPTION 'Binary placement would create a cycle.'
+L0585       USING ERRCODE = '23514';
+L0586   END IF;
+L0587   RETURN NEW;
+L0588 END;
+L0589 $$;
+L0590 
+L0591 DROP TRIGGER IF EXISTS trg_binary_cycle_guard ON organization.binary_placement;
+L0592 CREATE TRIGGER trg_binary_cycle_guard
+L0593 BEFORE INSERT OR UPDATE OF parent_qualification_id ON organization.binary_placement
+L0594 FOR EACH ROW EXECUTE FUNCTION organization.fn_validate_binary_cycle();
+L0595 
+L0596 -- -----------------------------------------------------------------------------
+L0597 -- 09. RULE ENGINE / HIERARCHICAL PARAMETER REGISTRY
+L0598 -- -----------------------------------------------------------------------------
+L0599 CREATE TABLE IF NOT EXISTS rules.rule_set (
+L0600   rule_set_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+L0601   rule_set_code text NOT NULL UNIQUE,
+L0602   display_name text NOT NULL,
+L0603   description text,
+L0604   status public.rule_status NOT NULL DEFAULT 'DRAFT',
+L0605   created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+L0606   created_by uuid
+L0607 );
+L0608 
+L0609 CREATE TABLE IF NOT EXISTS rules.rule_group (
+L0610   rule_group_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+L0611   rule_set_id uuid NOT NULL REFERENCES rules.rule_set(rule_set_id),
+L0612   parent_rule_group_id uuid REFERENCES rules.rule_group(rule_group_id),
+L0613   rule_group_code text NOT NULL,
+L0614   display_name text NOT NULL,
+L0615   sort_order integer NOT NULL DEFAULT 0,
+L0616   UNIQUE(rule_set_id, rule_group_code)
+L0617 );
+L0618 
+L0619 CREATE TABLE IF NOT EXISTS rules.rule_definition (
+L0620   rule_definition_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+L0621   rule_group_id uuid NOT NULL REFERENCES rules.rule_group(rule_group_id),
+L0622   rule_code text NOT NULL UNIQUE,
+L0623   display_name text NOT NULL,
+L0624   algorithm_code text NOT NULL,
+L0625   description text,
+L0626   is_system_invariant boolean NOT NULL DEFAULT false
+L0627 );
+L0628 
+L0629 CREATE TABLE IF NOT EXISTS rules.rule_version (
+L0630   rule_version_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+L0631   rule_set_id uuid NOT NULL REFERENCES rules.rule_set(rule_set_id),
+L0632   version_code text NOT NULL,
+L0633   status public.rule_status NOT NULL DEFAULT 'DRAFT',
+L0634   effective_from timestamptz,
+L0635   effective_to timestamptz,
+L0636   approved_by uuid,
+L0637   approved_at timestamptz,
+L0638   published_at timestamptz,
+L0639   parameter_snapshot_hash text,
+L0640   created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+L0641   created_by uuid,
+L0642   UNIQUE(rule_set_id, version_code),
+L0643   CHECK (effective_to IS NULL OR effective_to > effective_from)
+L0644 );
+L0645 
+L0646 CREATE TABLE IF NOT EXISTS rules.parameter_definition (
+L0647   parameter_definition_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+L0648   parameter_code text NOT NULL UNIQUE,
+L0649   display_name text NOT NULL,
+L0650   data_type public.parameter_data_type NOT NULL,
+L0651   unit_code text,
+L0652   default_value jsonb,
+L0653   validation_schema jsonb,
+L0654   allowed_scope_types text[] NOT NULL DEFAULT ARRAY['RULE_SET'],
+L0655   runtime_editable boolean NOT NULL DEFAULT false,
+L0656   requires_approval boolean NOT NULL DEFAULT true,
+L0657   description text
+L0658 );
+L0659 
+L0660 CREATE TABLE IF NOT EXISTS rules.parameter_set (
+L0661   parameter_set_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+L0662   rule_version_id uuid NOT NULL REFERENCES rules.rule_version(rule_version_id),
+L0663   parameter_set_code text NOT NULL,
+L0664   scope_type text NOT NULL,
+L0665   scope_key text,
+L0666   priority integer NOT NULL DEFAULT 0,
+L0667   effective_from timestamptz NOT NULL,
+L0668   effective_to timestamptz,
+L0669   status public.rule_status NOT NULL DEFAULT 'DRAFT',
+L0670   created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+L0671   created_by uuid,
+L0672   UNIQUE(rule_version_id, parameter_set_code),
+L0673   CHECK (effective_to IS NULL OR effective_to > effective_from)
+L0674 );
+L0675 
+L0676 CREATE TABLE IF NOT EXISTS rules.parameter_value (
+L0677   parameter_value_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+L0678   parameter_set_id uuid NOT NULL REFERENCES rules.parameter_set(parameter_set_id),
+L0679   parameter_definition_id uuid NOT NULL REFERENCES rules.parameter_definition(parameter_definition_id),
+L0680   value_json jsonb NOT NULL,
+L0681   created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+L0682   created_by uuid,
+L0683   UNIQUE(parameter_set_id, parameter_definition_id)
+L0684 );
+L0685 
+L0686 CREATE TABLE IF NOT EXISTS rules.decision_table (
+L0687   decision_table_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+L0688   rule_version_id uuid NOT NULL REFERENCES rules.rule_version(rule_version_id),
+L0689   table_code text NOT NULL,
+L0690   display_name text NOT NULL,
+L0691   description text,
+L0692   status public.rule_status NOT NULL DEFAULT 'DRAFT',
+L0693   UNIQUE(rule_version_id, table_code)
+L0694 );
+L0695 
+L0696 CREATE TABLE IF NOT EXISTS rules.decision_row (
+L0697   decision_row_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+L0698   decision_table_id uuid NOT NULL REFERENCES rules.decision_table(decision_table_id),
+L0699   sort_order integer NOT NULL,
+L0700   conditions jsonb NOT NULL,
+L0701   result jsonb NOT NULL,
+L0702   effective_from timestamptz,
+L0703   effective_to timestamptz,
+L0704   UNIQUE(decision_table_id, sort_order)
+L0705 );
+L0706 
+L0707 CREATE INDEX IF NOT EXISTS ix_parameter_scope
+L0708   ON rules.parameter_set(rule_version_id, scope_type, scope_key, priority DESC);
+L0709 
+L0710 CREATE TRIGGER trg_rule_version_no_delete
+L0711 BEFORE DELETE ON rules.rule_version
+L0712 FOR EACH ROW EXECUTE FUNCTION public.prevent_physical_delete();
+L0713 
+L0714 CREATE TRIGGER trg_parameter_value_no_delete
+L0715 BEFORE DELETE ON rules.parameter_value
+L0716 FOR EACH ROW EXECUTE FUNCTION public.prevent_physical_delete();
+L0717 
+L0718 CREATE OR REPLACE FUNCTION rules.fn_guard_published_mutation()
+L0719 RETURNS trigger
+L0720 LANGUAGE plpgsql
+L0721 AS $$
+L0722 DECLARE
+L0723   v_status public.rule_status;
+L0724 BEGIN
+L0725   IF TG_TABLE_NAME = 'rule_version' THEN
+L0726     v_status := OLD.status;
+L0727   ELSE
+L0728     SELECT rv.status INTO v_status
+L0729     FROM rules.parameter_set ps
+L0730     JOIN rules.rule_version rv ON rv.rule_version_id = ps.rule_version_id
+L0731     WHERE ps.parameter_set_id = COALESCE(NEW.parameter_set_id, OLD.parameter_set_id);
+L0732   END IF;
+L0733 
+L0734   IF v_status = 'PUBLISHED' THEN
+L0735     RAISE EXCEPTION 'Published rule data is immutable. Create a new rule version.'
+L0736       USING ERRCODE = '55000';
+L0737   END IF;
+L0738   RETURN NEW;
+L0739 END;
+L0740 $$;
+L0741 
+L0742 DROP TRIGGER IF EXISTS trg_rule_version_immutable ON rules.rule_version;
+L0743 CREATE TRIGGER trg_rule_version_immutable
+L0744 BEFORE UPDATE ON rules.rule_version
+L0745 FOR EACH ROW
+L0746 WHEN (OLD.status = 'PUBLISHED')
+L0747 EXECUTE FUNCTION rules.fn_guard_published_mutation();
+L0748 
+L0749 DROP TRIGGER IF EXISTS trg_parameter_value_immutable ON rules.parameter_value;
+L0750 CREATE TRIGGER trg_parameter_value_immutable
+L0751 BEFORE UPDATE ON rules.parameter_value
+L0752 FOR EACH ROW EXECUTE FUNCTION rules.fn_guard_published_mutation();
+L0753 
+L0754 CREATE OR REPLACE FUNCTION rules.fn_active_rule_version(
+L0755   p_rule_set_code text,
+L0756   p_at timestamptz DEFAULT clock_timestamp()
+L0757 )
+L0758 RETURNS uuid
+L0759 LANGUAGE sql
+L0760 STABLE
+L0761 AS $$
+L0762 SELECT rv.rule_version_id
+L0763 FROM rules.rule_version rv
+L0764 JOIN rules.rule_set rs ON rs.rule_set_id = rv.rule_set_id
+L0765 WHERE rs.rule_set_code = p_rule_set_code
+L0766   AND rv.status = 'PUBLISHED'
+L0767   AND rv.effective_from <= p_at
+L0768   AND (rv.effective_to IS NULL OR rv.effective_to > p_at)
+L0769 ORDER BY rv.effective_from DESC
+L0770 LIMIT 1;
+L0771 $$;
+L0772 
+L0773 CREATE OR REPLACE FUNCTION rules.fn_resolve_parameter(
+L0774   p_rule_version_id uuid,
+L0775   p_parameter_code text,
+L0776   p_at timestamptz,
+L0777   p_scope_candidates jsonb DEFAULT '{}'::jsonb
+L0778 )
+L0779 RETURNS jsonb
+L0780 LANGUAGE plpgsql
+L0781 STABLE
+L0782 AS $$
+L0783 DECLARE
+L0784   v_value jsonb;
+L0785 BEGIN
+L0786   -- Priority-driven lookup. Caller passes scope candidates, e.g.
+L0787   -- {"SKU":"TIP580","PLAN":"LEADER","RULE_SET":"UCELL_R1_0B"}
+L0788   SELECT pv.value_json
+L0789   INTO v_value
+L0790   FROM rules.parameter_value pv
+L0791   JOIN rules.parameter_definition pd
+L0792     ON pd.parameter_definition_id = pv.parameter_definition_id
+L0793   JOIN rules.parameter_set ps
+L0794     ON ps.parameter_set_id = pv.parameter_set_id
+L0795   WHERE ps.rule_version_id = p_rule_version_id
+L0796     AND pd.parameter_code = p_parameter_code
+L0797     AND ps.status = 'PUBLISHED'
+L0798     AND ps.effective_from <= p_at
+L0799     AND (ps.effective_to IS NULL OR ps.effective_to > p_at)
+L0800     AND (
+L0801       ps.scope_key IS NULL
+L0802       OR p_scope_candidates ->> ps.scope_type = ps.scope_key
+L0803     )
+L0804   ORDER BY ps.priority DESC
+L0805   LIMIT 1;
+L0806 
+L0807   IF v_value IS NULL THEN
+L0808     SELECT default_value INTO v_value
+L0809     FROM rules.parameter_definition
+L0810     WHERE parameter_code = p_parameter_code;
+L0811   END IF;
+L0812 
+L0813   RETURN v_value;
+L0814 END;
+L0815 $$;
+L0816 
+L0817 CREATE OR REPLACE PROCEDURE rules.sp_publish_rule_version(
+L0818   p_rule_version_id uuid,
+L0819   p_effective_from timestamptz,
+L0820   p_approved_by uuid
+L0821 )
+L0822 LANGUAGE plpgsql
+L0823 AS $$
+L0824 DECLARE
+L0825   v_hash text;
+L0826 BEGIN
+L0827   IF EXISTS (
+L0828     SELECT 1 FROM rules.rule_version
+L0829     WHERE rule_version_id = p_rule_version_id
+L0830       AND status = 'PUBLISHED'
+L0831   ) THEN
+L0832     RAISE EXCEPTION 'Rule version already published.';
+L0833   END IF;
+L0834 
+L0835   SELECT encode(
+L0836            digest(
+L0837              coalesce(string_agg(
+L0838                pd.parameter_code || '=' || pv.value_json::text,
+L0839                '|' ORDER BY pd.parameter_code, ps.parameter_set_code
+L0840              ), ''),
+L0841              'sha256'
+L0842            ),
+L0843            'hex'
+L0844          )
+L0845   INTO v_hash
+L0846   FROM rules.parameter_set ps
+L0847   JOIN rules.parameter_value pv ON pv.parameter_set_id = ps.parameter_set_id
+L0848   JOIN rules.parameter_definition pd ON pd.parameter_definition_id = pv.parameter_definition_id
+L0849   WHERE ps.rule_version_id = p_rule_version_id;
+L0850 
+L0851   UPDATE rules.rule_version
+L0852   SET status = 'PUBLISHED',
+L0853       effective_from = p_effective_from,
+L0854       approved_by = p_approved_by,
+L0855       approved_at = clock_timestamp(),
+L0856       published_at = clock_timestamp(),
+L0857       parameter_snapshot_hash = v_hash
+L0858   WHERE rule_version_id = p_rule_version_id;
+L0859 
+L0860   UPDATE rules.parameter_set
+L0861   SET status = 'PUBLISHED'
+L0862   WHERE rule_version_id = p_rule_version_id;
+L0863 END;
+L0864 $$;
+L0865 
+L0866 -- -----------------------------------------------------------------------------
+L0867 -- 10. RULE CONSTANTS / CURRENT R1.0B SEED
+L0868 -- -----------------------------------------------------------------------------
+L0869 INSERT INTO rules.rule_set(rule_set_code, display_name, description, status)
+L0870 VALUES ('UCELL_R1_0B','UCell R1.0B','Current engineering baseline', 'APPROVED')
+L0871 ON CONFLICT (rule_set_code) DO NOTHING;
+L0872 
+L0873 INSERT INTO rules.parameter_definition(parameter_code, display_name, data_type, unit_code, default_value, allowed_scope_types, runtime_editable, requires_approval, description)
+L0874 VALUES
+L0875 ('gpv.rate','GPV conversion rate','DECIMAL','PERCENT','0.60'::jsonb,ARRAY['RULE_SET','SKU'],false,true,'Qualifying sales to GPV conversion'),
+L0876 ('referral.pool.rate','Referral pool rate','DECIMAL','PERCENT','0.42'::jsonb,ARRAY['RULE_SET'],false,true,'Referral + referral equalization pool'),
+L0877 ('binary.pool.rate','Binary pool rate','DECIMAL','PERCENT','0.36'::jsonb,ARRAY['RULE_SET'],false,true,'Binary pairing pool'),
+L0878 ('matching.pool.rate','Binary matching pool rate','DECIMAL','PERCENT','0.15'::jsonb,ARRAY['RULE_SET'],false,true,'Binary matching pool'),
+L0879 ('global.pool.rate','Global pool rate','DECIMAL','PERCENT','0.05'::jsonb,ARRAY['RULE_SET'],false,true,'Global pool'),
+L0880 ('welfare.pool.rate','Welfare pool rate','DECIMAL','PERCENT','0.02'::jsonb,ARRAY['RULE_SET'],false,true,'Welfare pool'),
+L0881 ('binary.pairing.rate','Binary pairing rate','DECIMAL','PERCENT','0.12'::jsonb,ARRAY['RULE_SET'],false,true,'Weak-side pairing rate'),
+L0882 ('award.pending.days','Award pending days','INTEGER','DAY','45'::jsonb,ARRAY['RULE_SET'],true,true,'Pending period due to return risk'),
+L0883 ('repurchase.monthly.amount','Monthly repurchase amount','DECIMAL','NTD','2000'::jsonb,ARRAY['RULE_SET'],false,true,'Monthly qualifying repurchase'),
+L0884 ('repurchase.monthly.rpv','Monthly RPV','DECIMAL','RPV','1200'::jsonb,ARRAY['RULE_SET'],false,true,'RPV generated monthly'),
+L0885 ('repurchase.generation.reward','Repurchase generation reward','DECIMAL','NTD','100'::jsonb,ARRAY['RULE_SET'],false,true,'R1.0B per-generation reward')
+L0886 ON CONFLICT (parameter_code) DO NOTHING;
+L0887 
+L0888 -- -----------------------------------------------------------------------------
+L0889 -- 11. COMMERCE - PRE-ERP BRIDGE
+L0890 -- -----------------------------------------------------------------------------
+L0891 CREATE TABLE IF NOT EXISTS commerce.product_reference (
+L0892   product_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+L0893   sku_code text NOT NULL UNIQUE,
+L0894   display_name text NOT NULL,
+L0895   product_type text,
+L0896   status public.record_status NOT NULL DEFAULT 'EFFECTIVE',
+L0897   external_system_code text,
+L0898   external_item_id text,
+L0899   created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+L0900   updated_at timestamptz NOT NULL DEFAULT clock_timestamp()
+L0901 );
+L0902 
+L0903 CREATE TRIGGER trg_product_updated_at
+L0904 BEFORE UPDATE ON commerce.product_reference
+L0905 FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+L0906 
+L0907 CREATE TABLE IF NOT EXISTS commerce.product_rule_profile (
+L0908   product_rule_profile_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+L0909   product_id uuid NOT NULL REFERENCES commerce.product_reference(product_id),
+L0910   rule_version_id uuid REFERENCES rules.rule_version(rule_version_id),
+L0911   gpv_rate numeric(18,8),
+L0912   pv_rate numeric(18,8),
+L0913   rpv_eligible boolean NOT NULL DEFAULT false,
+L0914   epv_eligible boolean NOT NULL DEFAULT false,
+L0915   bonus_eligible boolean NOT NULL DEFAULT true,
+L0916   effective_from timestamptz NOT NULL,
+L0917   effective_to timestamptz,
+L0918   config jsonb NOT NULL DEFAULT '{}'::jsonb,
+L0919   CHECK (effective_to IS NULL OR effective_to > effective_from)
+L0920 );
+L0921 
+L0922 CREATE TABLE IF NOT EXISTS commerce."order" (
+L0923   order_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+L0924   order_no bigint GENERATED ALWAYS AS IDENTITY UNIQUE,
+L0925   person_id uuid NOT NULL REFERENCES identity.person(person_id),
+L0926   qualification_id uuid NOT NULL REFERENCES membership.qualification(qualification_id),
+L0927   source_referral_token text,
+L0928   source_qualification_id uuid REFERENCES membership.qualification(qualification_id),
+L0929   campaign_id text,
+L0930   rule_version_id uuid REFERENCES rules.rule_version(rule_version_id),
+L0931   parameter_snapshot_hash text,
+L0932   status public.order_status NOT NULL DEFAULT 'DRAFT',
+L0933   currency_code char(3) NOT NULL DEFAULT 'TWD',
+L0934   gross_amount numeric(18,2) NOT NULL DEFAULT 0 CHECK (gross_amount >= 0),
+L0935   discount_amount numeric(18,2) NOT NULL DEFAULT 0 CHECK (discount_amount >= 0),
+L0936   net_amount numeric(18,2) NOT NULL DEFAULT 0 CHECK (net_amount >= 0),
+L0937   external_system_code text NOT NULL DEFAULT 'MANUAL',
+L0938   external_order_id text,
+L0939   external_order_no text,
+L0940   sync_status text,
+L0941   confirmed_at timestamptz,
+L0942   paid_at timestamptz,
+L0943   fulfilled_at timestamptz,
+L0944   voided_at timestamptz,
+L0945   created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+L0946   created_by uuid,
+L0947   updated_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+L0948   updated_by uuid
+L0949 );
+L0950 
+L0951 CREATE INDEX IF NOT EXISTS ix_order_qualification_time
+L0952   ON commerce."order"(qualification_id, created_at DESC);
+L0953 CREATE INDEX IF NOT EXISTS ix_order_status_time
+L0954   ON commerce."order"(status, created_at DESC);
+L0955 
+L0956 CREATE TRIGGER trg_order_updated_at
+L0957 BEFORE UPDATE ON commerce."order"
+L0958 FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+L0959 
+L0960 CREATE TRIGGER trg_order_no_delete
+L0961 BEFORE DELETE ON commerce."order"
+L0962 FOR EACH ROW EXECUTE FUNCTION public.prevent_physical_delete();
+L0963 
+L0964 CREATE TABLE IF NOT EXISTS commerce.order_line (
+L0965   order_line_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+L0966   order_id uuid NOT NULL REFERENCES commerce."order"(order_id),
+L0967   line_no integer NOT NULL,
+L0968   product_id uuid NOT NULL REFERENCES commerce.product_reference(product_id),
+L0969   sku_code_snapshot text NOT NULL,
+L0970   product_name_snapshot text NOT NULL,
+L0971   quantity numeric(18,4) NOT NULL CHECK (quantity > 0),
+L0972   unit_price numeric(18,2) NOT NULL CHECK (unit_price >= 0),
+L0973   line_amount numeric(18,2) NOT NULL CHECK (line_amount >= 0),
+L0974   gpv_rate_snapshot numeric(18,8),
+L0975   gpv_amount_snapshot numeric(18,4),
+L0976   pv_rate_snapshot numeric(18,8),
+L0977   rule_profile_snapshot jsonb,
+L0978   UNIQUE(order_id, line_no)
+L0979 );
+L0980 
+L0981 CREATE TABLE IF NOT EXISTS commerce.payment_event (
+L0982   payment_event_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+L0983   order_id uuid NOT NULL REFERENCES commerce."order"(order_id),
+L0984   event_type text NOT NULL CHECK (event_type IN ('PAYMENT_CONFIRMED','PAYMENT_REVERSED','REFUND_CONFIRMED')),
+L0985   amount numeric(18,2) NOT NULL CHECK (amount >= 0),
+L0986   payment_method text,
+L0987   reference_no text,
+L0988   occurred_at timestamptz NOT NULL,
+L0989   recorded_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+L0990   actor_type public.actor_type NOT NULL,
+L0991   actor_id uuid,
+L0992   source_system text NOT NULL DEFAULT 'MANUAL',
+L0993   external_event_id text,
+L0994   correlation_id uuid NOT NULL DEFAULT gen_random_uuid(),
+L0995   reversal_of_event_id uuid REFERENCES commerce.payment_event(payment_event_id),
+L0996   evidence_attachment_id uuid
+L0997 );
+L0998 
+L0999 CREATE UNIQUE INDEX IF NOT EXISTS uq_payment_external_event
+L1000   ON commerce.payment_event(source_system, external_event_id)
+L1001   WHERE external_event_id IS NOT NULL;
+L1002 
+L1003 CREATE TRIGGER trg_payment_append_only_update
+L1004 BEFORE UPDATE OR DELETE ON commerce.payment_event
+L1005 FOR EACH ROW EXECUTE FUNCTION public.prevent_mutation();
+L1006 
+L1007 CREATE TABLE IF NOT EXISTS commerce.fulfillment_event (
+L1008   fulfillment_event_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+L1009   order_id uuid NOT NULL REFERENCES commerce."order"(order_id),
+L1010   event_type text NOT NULL CHECK (event_type IN ('FULFILLMENT_CONFIRMED','FULFILLMENT_REVERSED')),
+L1011   carrier text,
+L1012   tracking_no text,
+L1013   occurred_at timestamptz NOT NULL,
+L1014   recorded_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+L1015   actor_type public.actor_type NOT NULL,
+L1016   actor_id uuid,
+L1017   source_system text NOT NULL DEFAULT 'MANUAL',
+L1018   external_event_id text,
+L1019   correlation_id uuid NOT NULL DEFAULT gen_random_uuid(),
+L1020   reversal_of_event_id uuid REFERENCES commerce.fulfillment_event(fulfillment_event_id)
+L1021 );
+L1022 
+L1023 CREATE TRIGGER trg_fulfillment_append_only_update
+L1024 BEFORE UPDATE OR DELETE ON commerce.fulfillment_event
+L1025 FOR EACH ROW EXECUTE FUNCTION public.prevent_mutation();
+L1026 
+L1027 CREATE TABLE IF NOT EXISTS commerce.return_event (
+L1028   return_event_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+L1029   order_id uuid NOT NULL REFERENCES commerce."order"(order_id),
+L1030   order_line_id uuid REFERENCES commerce.order_line(order_line_id),
+L1031   event_type text NOT NULL CHECK (event_type IN ('RETURN_REQUESTED','RETURN_CONFIRMED','RETURN_REVERSED')),
+L1032   quantity numeric(18,4),
+L1033   amount numeric(18,2),
+L1034   reason_code text,
+L1035   occurred_at timestamptz NOT NULL,
+L1036   recorded_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+L1037   actor_type public.actor_type NOT NULL,
+L1038   actor_id uuid,
+L1039   source_system text NOT NULL DEFAULT 'MANUAL',
+L1040   external_event_id text,
+L1041   correlation_id uuid NOT NULL DEFAULT gen_random_uuid(),
+L1042   reversal_of_event_id uuid REFERENCES commerce.return_event(return_event_id)
+L1043 );
+L1044 
+L1045 CREATE TRIGGER trg_return_append_only_update
+L1046 BEFORE UPDATE OR DELETE ON commerce.return_event
+L1047 FOR EACH ROW EXECUTE FUNCTION public.prevent_mutation();
+L1048 
+L1049 -- Lightweight trace only; NOT a WMS inventory ledger.
+L1050 CREATE TABLE IF NOT EXISTS commerce.lot_trace (
+L1051   lot_trace_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+L1052   product_id uuid NOT NULL REFERENCES commerce.product_reference(product_id),
+L1053   lot_no text NOT NULL,
+L1054   manufactured_at date,
+L1055   expiry_at date,
+L1056   external_lot_id text,
+L1057   UNIQUE(product_id, lot_no)
+L1058 );
+L1059 
+L1060 CREATE TABLE IF NOT EXISTS commerce.serial_trace (
+L1061   serial_trace_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+L1062   product_id uuid NOT NULL REFERENCES commerce.product_reference(product_id),
+L1063   lot_trace_id uuid REFERENCES commerce.lot_trace(lot_trace_id),
+L1064   serial_no text NOT NULL,
+L1065   external_serial_id text,
+L1066   UNIQUE(product_id, serial_no)
+L1067 );
+L1068 
+L1069 CREATE TABLE IF NOT EXISTS commerce.shipment_trace (
+L1070   shipment_trace_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+L1071   fulfillment_event_id uuid NOT NULL REFERENCES commerce.fulfillment_event(fulfillment_event_id),
+L1072   order_line_id uuid NOT NULL REFERENCES commerce.order_line(order_line_id),
+L1073   lot_trace_id uuid REFERENCES commerce.lot_trace(lot_trace_id),
+L1074   serial_trace_id uuid REFERENCES commerce.serial_trace(serial_trace_id),
+L1075   quantity numeric(18,4) NOT NULL CHECK (quantity > 0),
+L1076   recorded_at timestamptz NOT NULL DEFAULT clock_timestamp()
+L1077 );
+L1078 
+L1079 -- -----------------------------------------------------------------------------
+L1080 -- 12. SUBSCRIPTION / REPURCHASE
+L1081 -- -----------------------------------------------------------------------------
+L1082 CREATE TABLE IF NOT EXISTS subscription.subscription_plan (
+L1083   subscription_plan_code text PRIMARY KEY,
+L1084   display_name text NOT NULL,
+L1085   months integer NOT NULL CHECK (months > 0),
+L1086   paid_amount numeric(18,2) NOT NULL CHECK (paid_amount > 0),
+L1087   product_box_count integer NOT NULL CHECK (product_box_count >= 0),
+L1088   monthly_recognized_amount numeric(18,2) NOT NULL CHECK (monthly_recognized_amount > 0),
+L1089   monthly_rpv numeric(18,4) NOT NULL CHECK (monthly_rpv >= 0),
+L1090   active boolean NOT NULL DEFAULT true
+L1091 );
+L1092 
+L1093 INSERT INTO subscription.subscription_plan(subscription_plan_code, display_name, months, paid_amount, product_box_count, monthly_recognized_amount, monthly_rpv)
+L1094 VALUES
+L1095   ('QUARTER','季方案',3,6000,2,2000,1200),
+L1096   ('HALF_YEAR','半年方案',6,12000,4,2000,1200),
+L1097   ('YEAR','一年方案',12,24000,8,2000,1200)
+L1098 ON CONFLICT (subscription_plan_code) DO NOTHING;
+L1099 
+L1100 CREATE TABLE IF NOT EXISTS subscription.subscription (
+L1101   subscription_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+L1102   qualification_id uuid NOT NULL REFERENCES membership.qualification(qualification_id),
+L1103   subscription_plan_code text NOT NULL REFERENCES subscription.subscription_plan(subscription_plan_code),
+L1104   order_id uuid REFERENCES commerce."order"(order_id),
+L1105   start_date date NOT NULL,
+L1106   end_date date NOT NULL,
+L1107   status public.record_status NOT NULL DEFAULT 'PENDING',
+L1108   created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+L1109   created_by uuid,
+L1110   CHECK (end_date >= start_date)
+L1111 );
+L1112 
+L1113 CREATE TABLE IF NOT EXISTS subscription.monthly_recognition_schedule (
+L1114   recognition_schedule_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+L1115   subscription_id uuid NOT NULL REFERENCES subscription.subscription(subscription_id),
+L1116   installment_no integer NOT NULL CHECK (installment_no > 0),
+L1117   due_date date NOT NULL,
+L1118   recognized_amount numeric(18,2) NOT NULL,
+L1119   rpv_amount numeric(18,4) NOT NULL,
+L1120   status text NOT NULL DEFAULT 'PENDING' CHECK (status IN ('PENDING','RECOGNIZED','CANCELLED','REVERSED')),
+L1121   recognized_event_id uuid,
+L1122   created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+L1123   UNIQUE(subscription_id, installment_no)
+L1124 );
+L1125 
+L1126 CREATE OR REPLACE PROCEDURE subscription.sp_create_schedule(
+L1127   p_subscription_id uuid
+L1128 )
+L1129 LANGUAGE plpgsql
+L1130 AS $$
+L1131 DECLARE
+L1132   v_sub subscription.subscription%ROWTYPE;
+L1133   v_plan subscription.subscription_plan%ROWTYPE;
+L1134   i integer;
+L1135 BEGIN
+L1136   SELECT * INTO v_sub FROM subscription.subscription WHERE subscription_id = p_subscription_id FOR UPDATE;
+L1137   IF NOT FOUND THEN RAISE EXCEPTION 'Subscription not found'; END IF;
+L1138 
+L1139   SELECT * INTO v_plan FROM subscription.subscription_plan WHERE subscription_plan_code = v_sub.subscription_plan_code;
+L1140 
+L1141   FOR i IN 1..v_plan.months LOOP
+L1142     INSERT INTO subscription.monthly_recognition_schedule(
+L1143       subscription_id, installment_no, due_date, recognized_amount, rpv_amount
+L1144     )
+L1145     VALUES(
+L1146       p_subscription_id,
+L1147       i,
+L1148       (v_sub.start_date + ((i - 1) || ' month')::interval)::date,
+L1149       v_plan.monthly_recognized_amount,
+L1150       v_plan.monthly_rpv
+L1151     )
+L1152     ON CONFLICT (subscription_id, installment_no) DO NOTHING;
+L1153   END LOOP;
+L1154 END;
+L1155 $$;
+L1156 
+L1157 -- -----------------------------------------------------------------------------
+L1158 -- 13. LEDGER / PV
+L1159 -- -----------------------------------------------------------------------------
+L1160 CREATE TABLE IF NOT EXISTS ledger.pv_ledger (
+L1161   pv_event_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+L1162   qualification_id uuid NOT NULL REFERENCES membership.qualification(qualification_id),
+L1163   pv_type text NOT NULL CHECK (pv_type IN ('GPV','PV','RPV','EPV')),
+L1164   event_type text NOT NULL,
+L1165   amount numeric(20,6) NOT NULL,
+L1166   source_type text NOT NULL,
+L1167   source_id uuid,
+L1168   source_line_id uuid,
+L1169   occurred_at timestamptz NOT NULL,
+L1170   recorded_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+L1171   rule_version_id uuid REFERENCES rules.rule_version(rule_version_id),
+L1172   parameter_snapshot_hash text,
+L1173   active_snapshot boolean,
+L1174   effective_direct_count_snapshot integer,
+L1175   correlation_id uuid NOT NULL DEFAULT gen_random_uuid(),
+L1176   causation_id uuid,
+L1177   reversal_of_event_id uuid REFERENCES ledger.pv_ledger(pv_event_id),
+L1178   payload_hash text
+L1179 );
+L1180 
+L1181 CREATE INDEX IF NOT EXISTS ix_pv_qualification_time
+L1182   ON ledger.pv_ledger(qualification_id, occurred_at DESC);
+L1183 CREATE INDEX IF NOT EXISTS ix_pv_source
+L1184   ON ledger.pv_ledger(source_type, source_id);
+L1185 CREATE INDEX IF NOT EXISTS ix_pv_type_time
+L1186   ON ledger.pv_ledger(pv_type, occurred_at DESC);
+L1187 
+L1188 CREATE TRIGGER trg_pv_append_only
+L1189 BEFORE UPDATE OR DELETE ON ledger.pv_ledger
+L1190 FOR EACH ROW EXECUTE FUNCTION public.prevent_mutation();
+L1191 
+L1192 CREATE OR REPLACE FUNCTION ledger.fn_pv_balance(
+L1193   p_qualification_id uuid,
+L1194   p_pv_type text,
+L1195   p_as_of timestamptz DEFAULT clock_timestamp()
+L1196 )
+L1197 RETURNS numeric
+L1198 LANGUAGE sql
+L1199 STABLE
+L1200 AS $$
+L1201 SELECT coalesce(sum(amount),0)
+L1202 FROM ledger.pv_ledger
+L1203 WHERE qualification_id = p_qualification_id
+L1204   AND pv_type = p_pv_type
+L1205   AND occurred_at <= p_as_of;
+L1206 $$;
+L1207 
+L1208 CREATE TABLE IF NOT EXISTS ledger.award_event (
+L1209   award_event_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+L1210   recipient_qualification_id uuid NOT NULL REFERENCES membership.qualification(qualification_id),
+L1211   award_type text NOT NULL,
+L1212   source_qualification_id uuid REFERENCES membership.qualification(qualification_id),
+L1213   source_event_id uuid,
+L1214   settlement_batch_id uuid,
+L1215   theory_amount numeric(20,6) NOT NULL DEFAULT 0,
+L1216   k_factor numeric(20,10),
+L1217   payable_amount numeric(20,6) NOT NULL DEFAULT 0,
+L1218   status public.award_status NOT NULL DEFAULT 'CALCULATED',
+L1219   occurred_at timestamptz NOT NULL,
+L1220   recorded_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+L1221   pending_until timestamptz,
+L1222   rule_version_id uuid REFERENCES rules.rule_version(rule_version_id),
+L1223   parameter_snapshot_hash text,
+L1224   active_snapshot boolean NOT NULL,
+L1225   effective_direct_count_snapshot integer,
+L1226   calculation_detail jsonb NOT NULL DEFAULT '{}'::jsonb,
+L1227   correlation_id uuid NOT NULL DEFAULT gen_random_uuid(),
+L1228   reversal_of_award_event_id uuid REFERENCES ledger.award_event(award_event_id)
+L1229 );
+L1230 
+L1231 CREATE INDEX IF NOT EXISTS ix_award_recipient_status
+L1232   ON ledger.award_event(recipient_qualification_id, status, occurred_at DESC);
+L1233 CREATE INDEX IF NOT EXISTS ix_award_source
+L1234   ON ledger.award_event(source_event_id);
+L1235 
+L1236 CREATE TRIGGER trg_award_append_only_delete
+L1237 BEFORE DELETE ON ledger.award_event
+L1238 FOR EACH ROW EXECUTE FUNCTION public.prevent_physical_delete();
+L1239 
+L1240 CREATE TABLE IF NOT EXISTS ledger.pool_snapshot (
+L1241   pool_snapshot_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+L1242   pool_code text NOT NULL,
+L1243   period_start timestamptz NOT NULL,
+L1244   period_end timestamptz NOT NULL,
+L1245   pool_available numeric(20,6) NOT NULL,
+L1246   total_theory numeric(20,6) NOT NULL,
+L1247   k_factor numeric(20,10) NOT NULL,
+L1248   rule_version_id uuid REFERENCES rules.rule_version(rule_version_id),
+L1249   created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+L1250   UNIQUE(pool_code, period_start, period_end, rule_version_id),
+L1251   CHECK (period_end > period_start),
+L1252   CHECK (k_factor >= 0 AND k_factor <= 1)
+L1253 );
+L1254 
+L1255 CREATE TABLE IF NOT EXISTS ledger.settlement_batch (
+L1256   settlement_batch_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+L1257   batch_code text NOT NULL UNIQUE,
+L1258   settlement_type text NOT NULL,
+L1259   period_start timestamptz NOT NULL,
+L1260   period_end timestamptz NOT NULL,
+L1261   rule_version_id uuid REFERENCES rules.rule_version(rule_version_id),
+L1262   status text NOT NULL DEFAULT 'OPEN' CHECK (status IN ('OPEN','CALCULATED','APPROVED','CLOSED','VOIDED')),
+L1263   calculation_fingerprint text,
+L1264   created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+L1265   approved_at timestamptz,
+L1266   closed_at timestamptz,
+L1267   CHECK (period_end > period_start)
+L1268 );
+L1269 
+L1270 ALTER TABLE ledger.award_event
+L1271   DROP CONSTRAINT IF EXISTS fk_award_settlement;
+L1272 ALTER TABLE ledger.award_event
+L1273   ADD CONSTRAINT fk_award_settlement
+L1274   FOREIGN KEY (settlement_batch_id)
+L1275   REFERENCES ledger.settlement_batch(settlement_batch_id);
+L1276 
+L1277 CREATE OR REPLACE FUNCTION ledger.fn_compute_k_factor(
+L1278   p_pool_available numeric,
+L1279   p_total_theory numeric
+L1280 )
+L1281 RETURNS numeric
+L1282 LANGUAGE sql
+L1283 IMMUTABLE
+L1284 AS $$
+L1285 SELECT CASE
+L1286   WHEN coalesce(p_total_theory,0) <= 0 THEN 1
+L1287   ELSE LEAST(1::numeric, p_pool_available / p_total_theory)
+L1288 END;
+L1289 $$;
+L1290 
+L1291 CREATE OR REPLACE FUNCTION ledger.fn_rpv_depth(
+L1292   p_effective_direct_count integer
+L1293 )
+L1294 RETURNS integer
+L1295 LANGUAGE sql
+L1296 IMMUTABLE
+L1297 AS $$
+L1298 SELECT CASE
+L1299   WHEN p_effective_direct_count <= 0 THEN 5
+L1300   WHEN p_effective_direct_count = 1 THEN 8
+L1301   ELSE 12
+L1302 END;
+L1303 $$;
+L1304 
+L1305 CREATE OR REPLACE PROCEDURE ledger.sp_reverse_pv_event(
+L1306   p_original_event_id uuid,
+L1307   p_actor_id uuid,
+L1308   p_reason_code text
+L1309 )
+L1310 LANGUAGE plpgsql
+L1311 AS $$
+L1312 DECLARE
+L1313   v ledger.pv_ledger%ROWTYPE;
+L1314 BEGIN
+L1315   SELECT * INTO v FROM ledger.pv_ledger WHERE pv_event_id = p_original_event_id;
+L1316   IF NOT FOUND THEN RAISE EXCEPTION 'PV event not found'; END IF;
+L1317 
+L1318   IF EXISTS (SELECT 1 FROM ledger.pv_ledger WHERE reversal_of_event_id = p_original_event_id) THEN
+L1319     RAISE EXCEPTION 'PV event already reversed';
+L1320   END IF;
+L1321 
+L1322   INSERT INTO ledger.pv_ledger(
+L1323     qualification_id,pv_type,event_type,amount,source_type,source_id,source_line_id,
+L1324     occurred_at,rule_version_id,parameter_snapshot_hash,active_snapshot,
+L1325     effective_direct_count_snapshot,correlation_id,causation_id,reversal_of_event_id,payload_hash
+L1326   )
+L1327   VALUES(
+L1328     v.qualification_id,v.pv_type,'REVERSAL',-v.amount,v.source_type,v.source_id,v.source_line_id,
+L1329     clock_timestamp(),v.rule_version_id,v.parameter_snapshot_hash,v.active_snapshot,
+L1330     v.effective_direct_count_snapshot,v.correlation_id,p_original_event_id,p_original_event_id,
+L1331     public.sha256_text(p_original_event_id::text || ':' || p_reason_code || ':' || clock_timestamp()::text)
+L1332   );
+L1333 
+L1334   PERFORM audit.fn_write_audit_event(
+L1335     'USER',p_actor_id,'PV_REVERSED','ledger.pv_ledger',p_original_event_id,
+L1336     to_jsonb(v),NULL,p_reason_code,NULL,v.correlation_id
+L1337   );
+L1338 END;
+L1339 $$;
+L1340 
+L1341 -- -----------------------------------------------------------------------------
+L1342 -- 14. MONTHLY REPURCHASE RECOGNITION
+L1343 -- -----------------------------------------------------------------------------
+L1344 CREATE OR REPLACE PROCEDURE subscription.sp_recognize_monthly_rpv(
+L1345   p_recognition_schedule_id uuid,
+L1346   p_actor_type public.actor_type DEFAULT 'JOB',
+L1347   p_actor_id uuid DEFAULT NULL
+L1348 )
+L1349 LANGUAGE plpgsql
+L1350 AS $$
+L1351 DECLARE
+L1352   v_sched subscription.monthly_recognition_schedule%ROWTYPE;
+L1353   v_sub subscription.subscription%ROWTYPE;
+L1354   v_event_id uuid := gen_random_uuid();
+L1355   v_at timestamptz := clock_timestamp();
+L1356   v_active boolean;
+L1357   v_direct_count integer;
+L1358 BEGIN
+L1359   SELECT * INTO v_sched
+L1360   FROM subscription.monthly_recognition_schedule
+L1361   WHERE recognition_schedule_id = p_recognition_schedule_id
+L1362   FOR UPDATE;
+L1363 
+L1364   IF NOT FOUND THEN RAISE EXCEPTION 'Recognition schedule not found'; END IF;
+L1365   IF v_sched.status = 'RECOGNIZED' THEN RETURN; END IF;
+L1366   IF v_sched.status <> 'PENDING' THEN
+L1367     RAISE EXCEPTION 'Recognition schedule status is %, expected PENDING', v_sched.status;
+L1368   END IF;
+L1369 
+L1370   SELECT * INTO v_sub
+L1371   FROM subscription.subscription
+L1372   WHERE subscription_id = v_sched.subscription_id;
+L1373 
+L1374   v_active := membership.fn_is_active_at(v_sub.qualification_id, v_at);
+L1375   v_direct_count := organization.fn_effective_direct_count_at(v_sub.qualification_id, v_at);
+L1376 
+L1377   INSERT INTO ledger.pv_ledger(
+L1378     pv_event_id, qualification_id, pv_type, event_type, amount, source_type, source_id,
+L1379     occurred_at, active_snapshot, effective_direct_count_snapshot, payload_hash
+L1380   )
+L1381   VALUES(
+L1382     v_event_id, v_sub.qualification_id, 'RPV', 'MONTHLY_RECOGNITION',
+L1383     v_sched.rpv_amount, 'SUBSCRIPTION_RECOGNITION', p_recognition_schedule_id,
+L1384     v_at, v_active, v_direct_count,
+L1385     public.sha256_text(v_sub.subscription_id::text || ':' || v_sched.installment_no::text || ':' || v_sched.rpv_amount::text)
+L1386   );
+L1387 
+L1388   UPDATE subscription.monthly_recognition_schedule
+L1389   SET status='RECOGNIZED', recognized_event_id=v_event_id
+L1390   WHERE recognition_schedule_id=p_recognition_schedule_id;
+L1391 END;
+L1392 $$;
+L1393 
+L1394 -- -----------------------------------------------------------------------------
+L1395 -- 15. ATTRIBUTION / REFERRAL
+L1396 -- -----------------------------------------------------------------------------
+L1397 CREATE TABLE IF NOT EXISTS attribution.referral_code (
+L1398   referral_code_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+L1399   qualification_id uuid NOT NULL REFERENCES membership.qualification(qualification_id),
+L1400   referral_code text NOT NULL UNIQUE,
+L1401   status public.record_status NOT NULL DEFAULT 'EFFECTIVE',
+L1402   created_at timestamptz NOT NULL DEFAULT clock_timestamp()
+L1403 );
+L1404 
+L1405 CREATE TABLE IF NOT EXISTS attribution.referral_link (
+L1406   referral_link_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+L1407   qualification_id uuid NOT NULL REFERENCES membership.qualification(qualification_id),
+L1408   token_hash text NOT NULL UNIQUE,
+L1409   campaign_id text,
+L1410   asset_id text,
+L1411   channel_code text,
+L1412   valid_from timestamptz NOT NULL DEFAULT clock_timestamp(),
+L1413   valid_to timestamptz,
+L1414   status public.record_status NOT NULL DEFAULT 'EFFECTIVE',
+L1415   created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+L1416   created_by uuid
+L1417 );
+L1418 
+L1419 CREATE TABLE IF NOT EXISTS attribution.referral_session (
+L1420   referral_session_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+L1421   referral_link_id uuid NOT NULL REFERENCES attribution.referral_link(referral_link_id),
+L1422   first_seen_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+L1423   last_seen_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+L1424   anonymous_visitor_id_hash text,
+L1425   landing_path text,
+L1426   user_agent text,
+L1427   ip_hash text
+L1428 );
+L1429 
+L1430 CREATE TABLE IF NOT EXISTS attribution.attribution_event (
+L1431   attribution_event_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+L1432   referral_session_id uuid REFERENCES attribution.referral_session(referral_session_id),
+L1433   qualification_id uuid REFERENCES membership.qualification(qualification_id),
+L1434   event_type text NOT NULL,
+L1435   entity_type text,
+L1436   entity_id uuid,
+L1437   campaign_id text,
+L1438   occurred_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+L1439   metadata jsonb NOT NULL DEFAULT '{}'::jsonb,
+L1440   correlation_id uuid NOT NULL DEFAULT gen_random_uuid()
+L1441 );
+L1442 
+L1443 CREATE TRIGGER trg_attribution_append_only
+L1444 BEFORE UPDATE OR DELETE ON attribution.attribution_event
+L1445 FOR EACH ROW EXECUTE FUNCTION public.prevent_mutation();
+L1446 
+L1447 CREATE TABLE IF NOT EXISTS attribution.lead (
+L1448   lead_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+L1449   referral_session_id uuid REFERENCES attribution.referral_session(referral_session_id),
+L1450   source_qualification_id uuid REFERENCES membership.qualification(qualification_id),
+L1451   lead_status text NOT NULL DEFAULT 'NEW',
+L1452   contact_name text,
+L1453   mobile_ciphertext bytea,
+L1454   mobile_hash text,
+L1455   email text,
+L1456   consent_id uuid REFERENCES identity.consent_record(consent_id),
+L1457   created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+L1458   converted_person_id uuid REFERENCES identity.person(person_id),
+L1459   converted_qualification_id uuid REFERENCES membership.qualification(qualification_id)
+L1460 );
+L1461 
+L1462 CREATE TABLE IF NOT EXISTS attribution.referral_lock (
+L1463   referral_lock_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+L1464   child_qualification_id uuid NOT NULL UNIQUE REFERENCES membership.qualification(qualification_id),
+L1465   sponsor_qualification_id uuid NOT NULL REFERENCES membership.qualification(qualification_id),
+L1466   source_referral_link_id uuid REFERENCES attribution.referral_link(referral_link_id),
+L1467   locked_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+L1468   locked_by uuid,
+L1469   source_application_id uuid,
+L1470   lock_reason text NOT NULL DEFAULT 'FORMAL_SPONSOR_APPROVED'
+L1471 );
+L1472 
+L1473 CREATE TABLE IF NOT EXISTS attribution.referral_dispute (
+L1474   referral_dispute_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+L1475   child_qualification_id uuid REFERENCES membership.qualification(qualification_id),
+L1476   claimed_sponsor_qualification_id uuid REFERENCES membership.qualification(qualification_id),
+L1477   current_sponsor_qualification_id uuid REFERENCES membership.qualification(qualification_id),
+L1478   status public.record_status NOT NULL DEFAULT 'PENDING',
+L1479   reason_text text,
+L1480   opened_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+L1481   opened_by uuid,
+L1482   resolved_at timestamptz,
+L1483   resolved_by uuid
+L1484 );
+L1485 
+L1486 -- -----------------------------------------------------------------------------
+L1487 -- 16. INTEGRATION / OUTBOX / INBOX
+L1488 -- -----------------------------------------------------------------------------
+L1489 CREATE TABLE IF NOT EXISTS integration.external_system (
+L1490   external_system_code text PRIMARY KEY,
+L1491   display_name text NOT NULL,
+L1492   active boolean NOT NULL DEFAULT true
+L1493 );
+L1494 
+L1495 INSERT INTO integration.external_system(external_system_code, display_name)
+L1496 VALUES
+L1497   ('MANUAL','Pre-ERP Manual Operations'),
+L1498   ('D365_BC','Microsoft Dynamics 365 Business Central'),
+L1499   ('LINE','LINE OA/LIFF'),
+L1500   ('PAYMENT','Payment Gateway'),
+L1501   ('LOGISTICS','Logistics Provider')
+L1502 ON CONFLICT (external_system_code) DO NOTHING;
+L1503 
+L1504 CREATE TABLE IF NOT EXISTS integration.external_reference (
+L1505   external_reference_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+L1506   external_system_code text NOT NULL REFERENCES integration.external_system(external_system_code),
+L1507   entity_type text NOT NULL,
+L1508   internal_entity_id uuid NOT NULL,
+L1509   external_entity_id text,
+L1510   external_document_no text,
+L1511   version_etag text,
+L1512   sync_status text NOT NULL DEFAULT 'PENDING',
+L1513   last_synced_at timestamptz,
+L1514   UNIQUE(external_system_code, entity_type, internal_entity_id)
+L1515 );
+L1516 
+L1517 CREATE TABLE IF NOT EXISTS integration.outbox_event (
+L1518   outbox_event_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+L1519   aggregate_type text NOT NULL,
+L1520   aggregate_id uuid NOT NULL,
+L1521   event_type text NOT NULL,
+L1522   payload jsonb NOT NULL,
+L1523   occurred_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+L1524   published_at timestamptz,
+L1525   retry_count integer NOT NULL DEFAULT 0,
+L1526   last_error text,
+L1527   correlation_id uuid NOT NULL DEFAULT gen_random_uuid()
+L1528 );
+L1529 
+L1530 CREATE INDEX IF NOT EXISTS ix_outbox_unpublished
+L1531   ON integration.outbox_event(occurred_at)
+L1532   WHERE published_at IS NULL;
+L1533 
+L1534 CREATE TABLE IF NOT EXISTS integration.inbox_event (
+L1535   inbox_event_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+L1536   external_system_code text NOT NULL REFERENCES integration.external_system(external_system_code),
+L1537   external_event_id text NOT NULL,
+L1538   event_type text NOT NULL,
+L1539   payload jsonb NOT NULL,
+L1540   received_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+L1541   processed_at timestamptz,
+L1542   process_status text NOT NULL DEFAULT 'RECEIVED',
+L1543   last_error text,
+L1544   UNIQUE(external_system_code, external_event_id)
+L1545 );
+L1546 
+L1547 CREATE TRIGGER trg_outbox_no_delete
+L1548 BEFORE DELETE ON integration.outbox_event
+L1549 FOR EACH ROW EXECUTE FUNCTION public.prevent_physical_delete();
+L1550 
+L1551 CREATE TRIGGER trg_inbox_no_delete
+L1552 BEFORE DELETE ON integration.inbox_event
+L1553 FOR EACH ROW EXECUTE FUNCTION public.prevent_physical_delete();
+L1554 
+L1555 -- -----------------------------------------------------------------------------
+L1556 -- 17. PRE-ERP OPERATION PROCEDURES
+L1557 -- -----------------------------------------------------------------------------
+L1558 CREATE OR REPLACE PROCEDURE commerce.sp_confirm_payment(
+L1559   p_order_id uuid,
+L1560   p_amount numeric,
+L1561   p_payment_method text,
+L1562   p_reference_no text,
+L1563   p_occurred_at timestamptz,
+L1564   p_actor_id uuid,
+L1565   p_correlation_id uuid DEFAULT NULL
+L1566 )
+L1567 LANGUAGE plpgsql
+L1568 AS $$
+L1569 DECLARE
+L1570   v_order commerce."order"%ROWTYPE;
+L1571   v_event_id uuid := gen_random_uuid();
+L1572   v_corr uuid := coalesce(p_correlation_id, gen_random_uuid());
+L1573 BEGIN
+L1574   SELECT * INTO v_order FROM commerce."order" WHERE order_id=p_order_id FOR UPDATE;
+L1575   IF NOT FOUND THEN RAISE EXCEPTION 'Order not found'; END IF;
+L1576   IF v_order.status IN ('VOIDED','RETURNED') THEN
+L1577     RAISE EXCEPTION 'Cannot pay order in status %', v_order.status;
+L1578   END IF;
+L1579 
+L1580   INSERT INTO commerce.payment_event(
+L1581     payment_event_id,order_id,event_type,amount,payment_method,reference_no,
+L1582     occurred_at,actor_type,actor_id,source_system,correlation_id
+L1583   )
+L1584   VALUES(
+L1585     v_event_id,p_order_id,'PAYMENT_CONFIRMED',p_amount,p_payment_method,p_reference_no,
+L1586     p_occurred_at,'USER',p_actor_id,'MANUAL',v_corr
+L1587   );
+L1588 
+L1589   UPDATE commerce."order"
+L1590   SET status='PAID', paid_at=p_occurred_at, updated_by=p_actor_id
+L1591   WHERE order_id=p_order_id;
+L1592 
+L1593   INSERT INTO integration.outbox_event(
+L1594     aggregate_type,aggregate_id,event_type,payload,correlation_id
+L1595   )
+L1596   VALUES(
+L1597     'ORDER',p_order_id,'SALE_CONFIRMED',
+L1598     jsonb_build_object(
+L1599       'order_id',p_order_id,
+L1600       'qualification_id',v_order.qualification_id,
+L1601       'payment_event_id',v_event_id,
+L1602       'amount',p_amount,
+L1603       'occurred_at',p_occurred_at
+L1604     ),
+L1605     v_corr
+L1606   );
+L1607 
+L1608   PERFORM audit.fn_write_audit_event(
+L1609     'USER',p_actor_id,'PAYMENT_CONFIRMED','commerce.order',p_order_id,
+L1610     to_jsonb(v_order),
+L1611     (SELECT to_jsonb(o) FROM commerce."order" o WHERE o.order_id=p_order_id),
+L1612     'MANUAL_CONFIRM',NULL,v_corr
+L1613   );
+L1614 END;
+L1615 $$;
+L1616 
+L1617 CREATE OR REPLACE PROCEDURE commerce.sp_confirm_fulfillment(
+L1618   p_order_id uuid,
+L1619   p_carrier text,
+L1620   p_tracking_no text,
+L1621   p_occurred_at timestamptz,
+L1622   p_actor_id uuid,
+L1623   p_correlation_id uuid DEFAULT NULL
+L1624 )
+L1625 LANGUAGE plpgsql
+L1626 AS $$
+L1627 DECLARE
+L1628   v_order commerce."order"%ROWTYPE;
+L1629   v_event_id uuid := gen_random_uuid();
+L1630   v_corr uuid := coalesce(p_correlation_id, gen_random_uuid());
+L1631 BEGIN
+L1632   SELECT * INTO v_order FROM commerce."order" WHERE order_id=p_order_id FOR UPDATE;
+L1633   IF NOT FOUND THEN RAISE EXCEPTION 'Order not found'; END IF;
+L1634   IF v_order.status NOT IN ('PAID','FULFILLED') THEN
+L1635     RAISE EXCEPTION 'Order must be PAID before fulfillment. Current=%', v_order.status;
+L1636   END IF;
+L1637 
+L1638   INSERT INTO commerce.fulfillment_event(
+L1639     fulfillment_event_id,order_id,event_type,carrier,tracking_no,occurred_at,
+L1640     actor_type,actor_id,source_system,correlation_id
+L1641   )
+L1642   VALUES(
+L1643     v_event_id,p_order_id,'FULFILLMENT_CONFIRMED',p_carrier,p_tracking_no,p_occurred_at,
+L1644     'USER',p_actor_id,'MANUAL',v_corr
+L1645   );
+L1646 
+L1647   UPDATE commerce."order"
+L1648   SET status='FULFILLED', fulfilled_at=p_occurred_at, updated_by=p_actor_id
+L1649   WHERE order_id=p_order_id;
+L1650 
+L1651   INSERT INTO integration.outbox_event(
+L1652     aggregate_type,aggregate_id,event_type,payload,correlation_id
+L1653   )
+L1654   VALUES(
+L1655     'ORDER',p_order_id,'FULFILLMENT_CONFIRMED',
+L1656     jsonb_build_object(
+L1657       'order_id',p_order_id,
+L1658       'fulfillment_event_id',v_event_id,
+L1659       'carrier',p_carrier,
+L1660       'tracking_no',p_tracking_no
+L1661     ),
+L1662     v_corr
+L1663   );
+L1664 END;
+L1665 $$;
+L1666 
+L1667 -- -----------------------------------------------------------------------------
+L1668 -- 18. VIEWS
+L1669 -- -----------------------------------------------------------------------------
+L1670 CREATE OR REPLACE VIEW reporting.v_person_qualifications AS
+L1671 SELECT
+L1672   p.person_id,
+L1673   p.person_no,
+L1674   p.legal_name,
+L1675   q.qualification_id,
+L1676   q.qualification_no,
+L1677   q.plan_level_code,
+L1678   pl.display_name AS plan_level_name,
+L1679   q.status AS qualification_status,
+L1680   q.active_flag,
+L1681   q.effective_at
+L1682 FROM identity.person p
+L1683 JOIN membership.qualification q ON q.current_holder_person_id = p.person_id
+L1684 JOIN membership.plan_level pl ON pl.plan_level_code = q.plan_level_code;
+L1685 
+L1686 CREATE OR REPLACE VIEW reporting.v_current_sponsor_tree AS
+L1687 SELECT
+L1688   sr.child_qualification_id,
+L1689   sr.sponsor_qualification_id,
+L1690   sr.sponsor_sequence_no,
+L1691   sr.effective_from
+L1692 FROM organization.sponsor_relationship sr
+L1693 WHERE sr.effective_to IS NULL;
+L1694 
+L1695 CREATE OR REPLACE VIEW reporting.v_current_binary_tree AS
+L1696 SELECT
+L1697   bp.qualification_id,
+L1698   bp.parent_qualification_id,
+L1699   bp.side,
+L1700   bp.effective_from
+L1701 FROM organization.binary_placement bp
+L1702 WHERE bp.effective_to IS NULL;
+L1703 
+L1704 CREATE OR REPLACE VIEW reporting.v_pv_balance AS
+L1705 SELECT
+L1706   qualification_id,
+L1707   pv_type,
+L1708   sum(amount) AS balance
+L1709 FROM ledger.pv_ledger
+L1710 GROUP BY qualification_id, pv_type;
+L1711 
+L1712 CREATE OR REPLACE VIEW reporting.v_award_summary AS
+L1713 SELECT
+L1714   recipient_qualification_id,
+L1715   award_type,
+L1716   status,
+L1717   sum(payable_amount) AS payable_amount,
+L1718   count(*) AS event_count
+L1719 FROM ledger.award_event
+L1720 GROUP BY recipient_qualification_id, award_type, status;
+L1721 
+L1722 CREATE OR REPLACE VIEW reporting.v_order_status AS
+L1723 SELECT
+L1724   o.order_id,
+L1725   o.order_no,
+L1726   o.person_id,
+L1727   o.qualification_id,
+L1728   o.status,
+L1729   o.net_amount,
+L1730   o.paid_at,
+L1731   o.fulfilled_at,
+L1732   o.external_system_code,
+L1733   o.external_order_no,
+L1734   max(pe.occurred_at) FILTER (WHERE pe.event_type='PAYMENT_CONFIRMED') AS last_payment_confirmed_at,
+L1735   max(fe.occurred_at) FILTER (WHERE fe.event_type='FULFILLMENT_CONFIRMED') AS last_fulfilled_at
+L1736 FROM commerce."order" o
+L1737 LEFT JOIN commerce.payment_event pe ON pe.order_id=o.order_id
+L1738 LEFT JOIN commerce.fulfillment_event fe ON fe.order_id=o.order_id
+L1739 GROUP BY o.order_id;
+L1740 
+L1741 CREATE OR REPLACE VIEW reporting.v_referral_performance AS
+L1742 SELECT
+L1743   rl.qualification_id,
+L1744   count(DISTINCT rs.referral_session_id) AS sessions,
+L1745   count(DISTINCT l.lead_id) AS leads,
+L1746   count(DISTINCT l.converted_qualification_id) FILTER (WHERE l.converted_qualification_id IS NOT NULL) AS converted_qualifications
+L1747 FROM attribution.referral_link rl
+L1748 LEFT JOIN attribution.referral_session rs ON rs.referral_link_id=rl.referral_link_id
+L1749 LEFT JOIN attribution.lead l ON l.referral_session_id=rs.referral_session_id
+L1750 GROUP BY rl.qualification_id;
+L1751 
+L1752 CREATE OR REPLACE VIEW reporting.v_subscription_schedule AS
+L1753 SELECT
+L1754   s.subscription_id,
+L1755   s.qualification_id,
+L1756   s.subscription_plan_code,
+L1757   s.status AS subscription_status,
+L1758   m.installment_no,
+L1759   m.due_date,
+L1760   m.recognized_amount,
+L1761   m.rpv_amount,
+L1762   m.status AS recognition_status,
+L1763   m.recognized_event_id
+L1764 FROM subscription.subscription s
+L1765 JOIN subscription.monthly_recognition_schedule m ON m.subscription_id=s.subscription_id;
+L1766 
+L1767 -- -----------------------------------------------------------------------------
+L1768 -- 19. Helpful functions for current rule matrices
+L1769 -- -----------------------------------------------------------------------------
+L1770 CREATE OR REPLACE FUNCTION rules.fn_referral_rate_by_plan(p_plan_level_code text)
+L1771 RETURNS numeric
+L1772 LANGUAGE sql
+L1773 IMMUTABLE
+L1774 AS $$
+L1775 SELECT CASE p_plan_level_code
+L1776   WHEN 'STARTER' THEN 0.15
+L1777   WHEN 'ELITE' THEN 0.20
+L1778   WHEN 'LEADER' THEN 0.25
+L1779   ELSE 0
+L1780 END;
+L1781 $$;
+L1782 
+L1783 CREATE OR REPLACE FUNCTION rules.fn_matching_rate_by_generation(p_generation integer)
+L1784 RETURNS numeric
+L1785 LANGUAGE sql
+L1786 IMMUTABLE
+L1787 AS $$
+L1788 SELECT CASE p_generation
+L1789   WHEN 1 THEN 0.15
+L1790   WHEN 2 THEN 0.10
+L1791   WHEN 3 THEN 0.05
+L1792   WHEN 4 THEN 0.05
+L1793   WHEN 5 THEN 0.05
+L1794   ELSE 0
+L1795 END;
+L1796 $$;
+L1797 
+L1798 CREATE OR REPLACE FUNCTION rules.fn_matching_unlock_depth(p_effective_direct_count integer)
+L1799 RETURNS integer
+L1800 LANGUAGE sql
+L1801 IMMUTABLE
+L1802 AS $$
+L1803 SELECT CASE
+L1804   WHEN p_effective_direct_count <= 0 THEN 0
+L1805   WHEN p_effective_direct_count = 1 THEN 2
+L1806   WHEN p_effective_direct_count = 2 THEN 3
+L1807   WHEN p_effective_direct_count = 3 THEN 4
+L1808   ELSE 5
+L1809 END;
+L1810 $$;
+L1811 
+L1812 CREATE OR REPLACE FUNCTION rules.fn_equalization_rate(
+L1813   p_plan_level_code text,
+L1814   p_generation integer
+L1815 )
+L1816 RETURNS numeric
+L1817 LANGUAGE sql
+L1818 IMMUTABLE
+L1819 AS $$
+L1820 SELECT CASE p_plan_level_code
+L1821   WHEN 'STARTER' THEN CASE p_generation WHEN 2 THEN 0.10 WHEN 3 THEN 0.10 WHEN 4 THEN 0.10 ELSE 0 END
+L1822   WHEN 'ELITE' THEN CASE p_generation WHEN 2 THEN 0.20 WHEN 3 THEN 0.10 WHEN 4 THEN 0.10 WHEN 5 THEN 0.05 WHEN 6 THEN 0.05 ELSE 0 END
+L1823   WHEN 'LEADER' THEN CASE p_generation WHEN 2 THEN 0.20 WHEN 3 THEN 0.15 WHEN 4 THEN 0.10 WHEN 5 THEN 0.10 WHEN 6 THEN 0.10 WHEN 7 THEN 0.05 ELSE 0 END
+L1824   ELSE 0
+L1825 END;
+L1826 $$;
+L1827 
+L1828 CREATE OR REPLACE FUNCTION rules.fn_equalization_unlock_depth(
+L1829   p_plan_level_code text,
+L1830   p_effective_direct_count integer
+L1831 )
+L1832 RETURNS integer
+L1833 LANGUAGE sql
+L1834 IMMUTABLE
+L1835 AS $$
+L1836 SELECT CASE p_plan_level_code
+L1837   WHEN 'STARTER' THEN CASE WHEN p_effective_direct_count >= 2 THEN 4 WHEN p_effective_direct_count >= 1 THEN 3 ELSE 0 END
+L1838   WHEN 'ELITE' THEN CASE WHEN p_effective_direct_count >= 4 THEN 6 WHEN p_effective_direct_count = 3 THEN 5 WHEN p_effective_direct_count = 2 THEN 4 WHEN p_effective_direct_count = 1 THEN 3 ELSE 0 END
+L1839   WHEN 'LEADER' THEN CASE WHEN p_effective_direct_count >= 4 THEN 7 WHEN p_effective_direct_count = 3 THEN 5 WHEN p_effective_direct_count = 2 THEN 4 WHEN p_effective_direct_count = 1 THEN 3 ELSE 0 END
+L1840   ELSE 0
+L1841 END;
+L1842 $$;
+L1843 
+L1844 CREATE OR REPLACE FUNCTION rules.fn_binary_weekly_cap(p_plan_level_code text)
+L1845 RETURNS numeric
+L1846 LANGUAGE sql
+L1847 IMMUTABLE
+L1848 AS $$
+L1849 SELECT CASE p_plan_level_code
+L1850   WHEN 'STARTER' THEN 450000
+L1851   WHEN 'ELITE' THEN 900000
+L1852   WHEN 'LEADER' THEN 1500000
+L1853   ELSE 0
+L1854 END;
+L1855 $$;
+L1856 
+L1857 -- -----------------------------------------------------------------------------
+L1858 -- 20. Trigger to validate sponsor 1st/3rd direct-left rule at placement time
+L1859 -- -----------------------------------------------------------------------------
+L1860 CREATE OR REPLACE FUNCTION organization.fn_validate_first_third_left_rule()
+L1861 RETURNS trigger
+L1862 LANGUAGE plpgsql
+L1863 AS $$
+L1864 DECLARE
+L1865   v_sponsor uuid;
+L1866   v_seq integer;
+L1867   v_requires_left boolean;
+L1868   v_ok boolean;
+L1869 BEGIN
+L1870   SELECT sponsor_qualification_id, sponsor_sequence_no
+L1871   INTO v_sponsor, v_seq
+L1872   FROM organization.sponsor_relationship
+L1873   WHERE child_qualification_id = NEW.qualification_id
+L1874     AND effective_to IS NULL
+L1875   ORDER BY effective_from DESC
+L1876   LIMIT 1;
+L1877 
+L1878   IF v_sponsor IS NULL THEN
+L1879     RETURN NEW;
+L1880   END IF;
+L1881 
+L1882   v_requires_left := v_seq IN (1,3);
+L1883 
+L1884   IF v_requires_left THEN
+L1885     -- Candidate is valid if its parent is sponsor's LEFT child or anywhere below it.
+L1886     IF NEW.parent_qualification_id = v_sponsor AND NEW.side = 'LEFT' THEN
+L1887       v_ok := true;
+L1888     ELSE
+L1889       v_ok := organization.fn_is_in_binary_subtree(v_sponsor, NEW.parent_qualification_id, 'LEFT');
+L1890     END IF;
+L1891 
+L1892     IF NOT coalesce(v_ok,false) THEN
+L1893       RAISE EXCEPTION 'BINARY_LEFT_SUBTREE_REQUIRED: sponsor sequence % must be placed in sponsor left subtree', v_seq
+L1894         USING ERRCODE='23514';
+L1895     END IF;
+L1896   END IF;
+L1897 
+L1898   RETURN NEW;
+L1899 END;
+L1900 $$;
+L1901 
+L1902 DROP TRIGGER IF EXISTS trg_binary_first_third_left ON organization.binary_placement;
+L1903 CREATE TRIGGER trg_binary_first_third_left
+L1904 BEFORE INSERT ON organization.binary_placement
+L1905 FOR EACH ROW EXECUTE FUNCTION organization.fn_validate_first_third_left_rule();
+L1906 
+L1907 -- -----------------------------------------------------------------------------
+L1908 -- 21. Trigger to prohibit direct mutation of locked sponsor relationship
+L1909 -- -----------------------------------------------------------------------------
+L1910 CREATE OR REPLACE FUNCTION organization.fn_guard_sponsor_update()
+L1911 RETURNS trigger
+L1912 LANGUAGE plpgsql
+L1913 AS $$
+L1914 BEGIN
+L1915   IF OLD.effective_to IS NULL AND
+L1916      (NEW.sponsor_qualification_id IS DISTINCT FROM OLD.sponsor_qualification_id
+L1917       OR NEW.sponsor_sequence_no IS DISTINCT FROM OLD.sponsor_sequence_no) THEN
+L1918     RAISE EXCEPTION 'Current sponsor relationship cannot be directly overwritten. Use supervised supersede procedure.'
+L1919       USING ERRCODE='55000';
+L1920   END IF;
+L1921   RETURN NEW;
+L1922 END;
+L1923 $$;
+L1924 
+L1925 DROP TRIGGER IF EXISTS trg_sponsor_update_guard ON organization.sponsor_relationship;
+L1926 CREATE TRIGGER trg_sponsor_update_guard
+L1927 BEFORE UPDATE ON organization.sponsor_relationship
+L1928 FOR EACH ROW EXECUTE FUNCTION organization.fn_guard_sponsor_update();
+L1929 
+L1930 -- -----------------------------------------------------------------------------
+L1931 -- 22. Supervised relationship supersede procedure
+L1932 -- -----------------------------------------------------------------------------
+L1933 CREATE OR REPLACE PROCEDURE organization.sp_supersede_sponsor(
+L1934   p_child_qualification_id uuid,
+L1935   p_new_sponsor_qualification_id uuid,
+L1936   p_new_sequence_no integer,
+L1937   p_effective_at timestamptz,
+L1938   p_change_request_id uuid,
+L1939   p_actor_id uuid
+L1940 )
+L1941 LANGUAGE plpgsql
+L1942 AS $$
+L1943 DECLARE
+L1944   v_old organization.sponsor_relationship%ROWTYPE;
+L1945   v_new_id uuid := gen_random_uuid();
+L1946 BEGIN
+L1947   IF NOT EXISTS (
+L1948     SELECT 1 FROM audit.change_request
+L1949     WHERE change_request_id=p_change_request_id
+L1950       AND status='APPROVED'
+L1951   ) THEN
+L1952     RAISE EXCEPTION 'Approved change request required.';
+L1953   END IF;
+L1954 
+L1955   SELECT * INTO v_old
+L1956   FROM organization.sponsor_relationship
+L1957   WHERE child_qualification_id=p_child_qualification_id
+L1958     AND effective_to IS NULL
+L1959   FOR UPDATE;
+L1960 
+L1961   IF FOUND THEN
+L1962     UPDATE organization.sponsor_relationship
+L1963     SET effective_to=p_effective_at
+L1964     WHERE sponsor_relationship_id=v_old.sponsor_relationship_id;
+L1965   END IF;
+L1966 
+L1967   INSERT INTO organization.sponsor_relationship(
+L1968     sponsor_relationship_id,child_qualification_id,sponsor_qualification_id,
+L1969     sponsor_sequence_no,effective_from,source_event_id,created_by
+L1970   )
+L1971   VALUES(
+L1972     v_new_id,p_child_qualification_id,p_new_sponsor_qualification_id,
+L1973     p_new_sequence_no,p_effective_at,p_change_request_id,p_actor_id
+L1974   );
+L1975 
+L1976   PERFORM audit.fn_write_audit_event(
+L1977     'USER',p_actor_id,'SPONSOR_SUPERSEDED','organization.sponsor_relationship',v_new_id,
+L1978     CASE WHEN v_old.sponsor_relationship_id IS NULL THEN NULL ELSE to_jsonb(v_old) END,
+L1979     (SELECT to_jsonb(x) FROM organization.sponsor_relationship x WHERE x.sponsor_relationship_id=v_new_id),
+L1980     'APPROVED_CORRECTION',NULL,p_change_request_id
+L1981   );
+L1982 END;
+L1983 $$;
+L1984 
+L1985 -- -----------------------------------------------------------------------------
+L1986 -- 23. Optional data integrity view
+L1987 -- -----------------------------------------------------------------------------
+L1988 CREATE OR REPLACE VIEW reporting.v_data_integrity_alerts AS
+L1989 SELECT
+L1990   'QUALIFICATION_WITHOUT_CURRENT_HOLDER_HISTORY' AS alert_type,
+L1991   q.qualification_id::text AS entity_id,
+L1992   'Qualification has no current holder history' AS detail
+L1993 FROM membership.qualification q
+L1994 LEFT JOIN membership.qualification_holder_history h
+L1995   ON h.qualification_id=q.qualification_id AND h.valid_to IS NULL
+L1996 WHERE h.holder_history_id IS NULL
+L1997 
+L1998 UNION ALL
+L1999 
+L2000 SELECT
+L2001   'EFFECTIVE_QUALIFICATION_WITHOUT_SPONSOR',
+L2002   q.qualification_id::text,
+L2003   'Effective qualification has no current sponsor'
+L2004 FROM membership.qualification q
+L2005 LEFT JOIN organization.sponsor_relationship s
+L2006   ON s.child_qualification_id=q.qualification_id AND s.effective_to IS NULL
+L2007 WHERE q.status='EFFECTIVE'
+L2008   AND s.sponsor_relationship_id IS NULL
+L2009 
+L2010 UNION ALL
+L2011 
+L2012 SELECT
+L2013   'PAID_ORDER_WITHOUT_PAYMENT_EVENT',
+L2014   o.order_id::text,
+L2015   'Order status is PAID but no payment confirmation event exists'
+L2016 FROM commerce."order" o
+L2017 LEFT JOIN commerce.payment_event pe
+L2018   ON pe.order_id=o.order_id AND pe.event_type='PAYMENT_CONFIRMED'
+L2019 WHERE o.status IN ('PAID','FULFILLED')
+L2020 GROUP BY o.order_id
+L2021 HAVING count(pe.payment_event_id)=0;
+L2022 
+L2023 -- -----------------------------------------------------------------------------
+L2024 -- 24. Security notes / grants placeholders
+L2025 -- -----------------------------------------------------------------------------
+L2026 -- Create separate roles outside this migration in deployment:
+L2027 --   ucell_app_rw, ucell_app_ro, ucell_admin_migration, ucell_reporting_ro
+L2028 -- Recommended:
+L2029 --   REVOKE DELETE ON ALL TABLES IN SCHEMA ledger, audit, organization, attribution FROM ucell_app_rw;
+L2030 --   GRANT SELECT, INSERT ON append-only event tables only;
+L2031 --   Permit UPDATE only on mutable current-state tables and via procedures where possible.
+L2032 
+L2033 -- -----------------------------------------------------------------------------
+L2034 -- 25. Comments for architectural boundary
+L2035 -- -----------------------------------------------------------------------------
+L2036 COMMENT ON SCHEMA commerce IS
+L2037 'Pre-ERP commerce bridge only. Do not evolve into WMS/procurement/AR/AP/GL.';
+L2038 COMMENT ON TABLE commerce.lot_trace IS
+L2039 'Lightweight outbound trace only. ERP/WMS becomes SoR after D365 BC introduction.';
+L2040 COMMENT ON TABLE ledger.pv_ledger IS
+L2041 'Append-only institutional value ledger for GPV/PV/RPV/EPV.';
+L2042 COMMENT ON TABLE ledger.award_event IS
+L2043 'Award lifecycle/event table. Source facts must remain traceable.';
+L2044 COMMENT ON TABLE rules.parameter_value IS
+L2045 'Versioned parameter value. Published data must not be mutated.';
+L2046 
+L2047 
+L2048 -- =============================================================================
+L2049 -- 26. Exhaustive database object descriptions (Data Dictionary embedded in DB)
+L2050 --     Every core schema/table/column/view/function/procedure/trigger/index is
+L2051 --     documented so tools such as pgAdmin/DBeaver can display the description.
+L2052 -- =============================================================================
+L2053 
+L2054 COMMENT ON SCHEMA identity IS '自然人身分、KYC、聯絡、銀行與同意紀錄。此Schema不承擔組織樹或獎金計算責任。';
+L2055 COMMENT ON SCHEMA membership IS '會員資格／球（Qualification）、持有人歷史、資格狀態與Active期間。';
+L2056 COMMENT ON SCHEMA organization IS 'Sponsor Tree、Binary Tree與其時間版本、序號、安置與組織查詢函數。';
+L2057 COMMENT ON SCHEMA rules IS '制度版本、規則群組、階層式參數、Decision Table與發布治理。';
+L2058 COMMENT ON SCHEMA commerce IS 'Pre-ERP會員交易橋接：商品Reference、會員訂單、付款/出貨/退貨事件與必要批號序號追溯；不作完整ERP/WMS。';
+L2059 COMMENT ON SCHEMA subscription IS '重銷訂閱方案、月度認列排程與逐月RPV認列。';
+L2060 COMMENT ON SCHEMA ledger IS 'GPV/PV/RPV/EPV不可變帳本、獎金事件、結算批次與獎池快照。';
+L2061 COMMENT ON SCHEMA attribution IS '推薦碼、分享連結、Referral Session、Touchpoint、Lead、正式推薦鎖定與爭議。';
+L2062 COMMENT ON SCHEMA audit IS 'Maker-Checker變更申請、核准紀錄及全系統稽核軌跡。';
+L2063 COMMENT ON SCHEMA integration IS '外部系統Reference、Transactional Outbox/Inbox與未來D365 BC/LINE/金流/物流整合。';
+L2064 COMMENT ON SCHEMA reporting IS '只讀查詢、營運投影與資料完整性檢查檢視表。';
+L2065 
+L2066 COMMENT ON TABLE audit.change_request IS '高風險資料或制度異動的變更申請主檔；保存原因、申請內容、核准及執行時間，支援Maker-Checker。';
+L2067 COMMENT ON COLUMN audit.change_request."change_request_id" IS 'change request之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2068 COMMENT ON COLUMN audit.change_request."entity_type" IS 'entity type欄位；資料型別與限制請以SQL Definition為準。';
+L2069 COMMENT ON COLUMN audit.change_request."entity_id" IS 'entity之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2070 COMMENT ON COLUMN audit.change_request."change_type" IS 'change type欄位；資料型別與限制請以SQL Definition為準。';
+L2071 COMMENT ON COLUMN audit.change_request."reason_code" IS 'reason的穩定代碼，供程式、報表與整合使用。';
+L2072 COMMENT ON COLUMN audit.change_request."reason_text" IS '人可讀說明文字，用於補充業務語意或稽核原因。';
+L2073 COMMENT ON COLUMN audit.change_request."requested_payload" IS 'requested payload欄位；資料型別與限制請以SQL Definition為準。';
+L2074 COMMENT ON COLUMN audit.change_request."status" IS '該Entity目前的業務狀態。';
+L2075 COMMENT ON COLUMN audit.change_request."requested_by" IS 'requested by欄位；資料型別與限制請以SQL Definition為準。';
+L2076 COMMENT ON COLUMN audit.change_request."requested_at" IS 'requested發生或記錄時間。';
+L2077 COMMENT ON COLUMN audit.change_request."approved_by" IS '核准人識別碼。';
+L2078 COMMENT ON COLUMN audit.change_request."approved_at" IS '核准時間。';
+L2079 COMMENT ON COLUMN audit.change_request."executed_at" IS 'executed發生或記錄時間。';
+L2080 COMMENT ON COLUMN audit.change_request."correlation_id" IS '串接同一業務流程的Correlation ID，供跨表/跨服務追查。';
+L2081 
+L2082 COMMENT ON TABLE audit.approval_record IS '變更申請各核准階段之決策紀錄；一筆Change Request可有多筆Approval。';
+L2083 COMMENT ON COLUMN audit.approval_record."approval_id" IS 'approval之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2084 COMMENT ON COLUMN audit.approval_record."change_request_id" IS 'change request之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2085 COMMENT ON COLUMN audit.approval_record."approval_stage" IS 'approval stage欄位；資料型別與限制請以SQL Definition為準。';
+L2086 COMMENT ON COLUMN audit.approval_record."decision" IS 'decision欄位；資料型別與限制請以SQL Definition為準。';
+L2087 COMMENT ON COLUMN audit.approval_record."decided_by" IS 'decided by欄位；資料型別與限制請以SQL Definition為準。';
+L2088 COMMENT ON COLUMN audit.approval_record."decided_at" IS 'decided發生或記錄時間。';
+L2089 COMMENT ON COLUMN audit.approval_record."note" IS '人可讀說明文字，用於補充業務語意或稽核原因。';
+L2090 
+L2091 COMMENT ON TABLE audit.audit_event IS '跨Domain稽核事件；回答誰在何時對何資料做何操作及前後差異。與Domain Event分工，不作業務餘額真相。';
+L2092 COMMENT ON COLUMN audit.audit_event."audit_event_id" IS 'audit event之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2093 COMMENT ON COLUMN audit.audit_event."actor_type" IS 'actor type欄位；資料型別與限制請以SQL Definition為準。';
+L2094 COMMENT ON COLUMN audit.audit_event."actor_id" IS 'actor之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2095 COMMENT ON COLUMN audit.audit_event."action_code" IS 'action的穩定代碼，供程式、報表與整合使用。';
+L2096 COMMENT ON COLUMN audit.audit_event."entity_type" IS 'entity type欄位；資料型別與限制請以SQL Definition為準。';
+L2097 COMMENT ON COLUMN audit.audit_event."entity_id" IS 'entity之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2098 COMMENT ON COLUMN audit.audit_event."before_snapshot" IS 'before在事件當下的快照，避免使用今日值回算歷史。';
+L2099 COMMENT ON COLUMN audit.audit_event."after_snapshot" IS 'after在事件當下的快照，避免使用今日值回算歷史。';
+L2100 COMMENT ON COLUMN audit.audit_event."reason_code" IS 'reason的穩定代碼，供程式、報表與整合使用。';
+L2101 COMMENT ON COLUMN audit.audit_event."reason_text" IS '人可讀說明文字，用於補充業務語意或稽核原因。';
+L2102 COMMENT ON COLUMN audit.audit_event."request_id" IS 'request之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2103 COMMENT ON COLUMN audit.audit_event."trace_id" IS 'trace之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2104 COMMENT ON COLUMN audit.audit_event."correlation_id" IS '串接同一業務流程的Correlation ID，供跨表/跨服務追查。';
+L2105 COMMENT ON COLUMN audit.audit_event."ip_address" IS 'ip address欄位；資料型別與限制請以SQL Definition為準。';
+L2106 COMMENT ON COLUMN audit.audit_event."user_agent" IS 'user agent業務資訊；敏感資訊需遵守資料最小化與存取控制。';
+L2107 COMMENT ON COLUMN audit.audit_event."occurred_at" IS '業務事實實際發生時間；不得與系統登錄時間混為一談。';
+L2108 
+L2109 COMMENT ON TABLE identity.person IS '自然人主檔。Person與Qualification分離；一個自然人可持有多個Qualification。';
+L2110 COMMENT ON COLUMN identity.person."person_id" IS '自然人唯一識別碼。';
+L2111 COMMENT ON COLUMN identity.person."person_no" IS 'person的人可讀/流水編號。';
+L2112 COMMENT ON COLUMN identity.person."legal_name" IS '人可讀名稱/顯示名稱。';
+L2113 COMMENT ON COLUMN identity.person."preferred_name" IS '人可讀名稱/顯示名稱。';
+L2114 COMMENT ON COLUMN identity.person."national_id_hash" IS '身分證/識別號不可逆Hash，用於唯一性/查找。';
+L2115 COMMENT ON COLUMN identity.person."national_id_ciphertext" IS '身分證/識別號加密密文，僅授權流程可解密。';
+L2116 COMMENT ON COLUMN identity.person."birth_date" IS 'birth日期。';
+L2117 COMMENT ON COLUMN identity.person."adulthood_verified" IS 'adulthood verified欄位；資料型別與限制請以SQL Definition為準。';
+L2118 COMMENT ON COLUMN identity.person."mobile" IS 'mobile業務資訊；敏感資訊需遵守資料最小化與存取控制。';
+L2119 COMMENT ON COLUMN identity.person."email" IS 'email業務資訊；敏感資訊需遵守資料最小化與存取控制。';
+L2120 COMMENT ON COLUMN identity.person."line_user_id_hash" IS 'LINE User ID Hash，用於比對。';
+L2121 COMMENT ON COLUMN identity.person."line_user_id_ciphertext" IS 'LINE User ID加密密文。';
+L2122 COMMENT ON COLUMN identity.person."status" IS '該Entity目前的業務狀態。';
+L2123 COMMENT ON COLUMN identity.person."created_at" IS '資料列建立時間。';
+L2124 COMMENT ON COLUMN identity.person."created_by" IS '建立此資料之使用者/系統Actor識別碼。';
+L2125 COMMENT ON COLUMN identity.person."updated_at" IS '可變投影/主檔最後更新時間。';
+L2126 COMMENT ON COLUMN identity.person."updated_by" IS '最後更新此可變資料之使用者/系統Actor識別碼。';
+L2127 
+L2128 COMMENT ON TABLE identity.person_bank_profile IS '自然人的銀行帳戶版本紀錄；帳號以Hash供比對、Ciphertext供授權使用。';
+L2129 COMMENT ON COLUMN identity.person_bank_profile."bank_profile_id" IS 'bank profile之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2130 COMMENT ON COLUMN identity.person_bank_profile."person_id" IS '自然人唯一識別碼。';
+L2131 COMMENT ON COLUMN identity.person_bank_profile."bank_code" IS 'bank的穩定代碼，供程式、報表與整合使用。';
+L2132 COMMENT ON COLUMN identity.person_bank_profile."branch_code" IS 'branch的穩定代碼，供程式、報表與整合使用。';
+L2133 COMMENT ON COLUMN identity.person_bank_profile."account_name" IS '人可讀名稱/顯示名稱。';
+L2134 COMMENT ON COLUMN identity.person_bank_profile."account_no_hash" IS '銀行帳號Hash，用於比對與唯一性控制。';
+L2135 COMMENT ON COLUMN identity.person_bank_profile."account_no_ciphertext" IS '銀行帳號加密密文。';
+L2136 COMMENT ON COLUMN identity.person_bank_profile."is_primary" IS '布林控制/資格旗標；True/False之業務意義依欄位名稱與所屬Entity定義。';
+L2137 COMMENT ON COLUMN identity.person_bank_profile."valid_from" IS 'valid from欄位；資料型別與限制請以SQL Definition為準。';
+L2138 COMMENT ON COLUMN identity.person_bank_profile."valid_to" IS 'valid to欄位；資料型別與限制請以SQL Definition為準。';
+L2139 COMMENT ON COLUMN identity.person_bank_profile."created_at" IS '資料列建立時間。';
+L2140 COMMENT ON COLUMN identity.person_bank_profile."created_by" IS '建立此資料之使用者/系統Actor識別碼。';
+L2141 
+L2142 COMMENT ON TABLE identity.consent_record IS '個資、行銷、電子契約等同意之版本化證據。';
+L2143 COMMENT ON COLUMN identity.consent_record."consent_id" IS 'consent之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2144 COMMENT ON COLUMN identity.consent_record."person_id" IS '自然人唯一識別碼。';
+L2145 COMMENT ON COLUMN identity.consent_record."consent_type" IS 'consent type欄位；資料型別與限制請以SQL Definition為準。';
+L2146 COMMENT ON COLUMN identity.consent_record."consent_version" IS 'consent version欄位；資料型別與限制請以SQL Definition為準。';
+L2147 COMMENT ON COLUMN identity.consent_record."consented" IS '布林控制/資格旗標；True/False之業務意義依欄位名稱與所屬Entity定義。';
+L2148 COMMENT ON COLUMN identity.consent_record."consented_at" IS 'consented發生或記錄時間。';
+L2149 COMMENT ON COLUMN identity.consent_record."source_channel" IS 'source channel欄位；資料型別與限制請以SQL Definition為準。';
+L2150 COMMENT ON COLUMN identity.consent_record."ip_address" IS 'ip address欄位；資料型別與限制請以SQL Definition為準。';
+L2151 COMMENT ON COLUMN identity.consent_record."evidence" IS 'evidence欄位；資料型別與限制請以SQL Definition為準。';
+L2152 
+L2153 COMMENT ON TABLE membership.plan_level IS '會員商品方案／制度級別代碼表；目前含啟航、菁英、領袖。';
+L2154 COMMENT ON COLUMN membership.plan_level."plan_level_code" IS '商品方案／制度級別代碼。';
+L2155 COMMENT ON COLUMN membership.plan_level."display_name" IS '人可讀名稱/顯示名稱。';
+L2156 COMMENT ON COLUMN membership.plan_level."sort_order" IS 'sort order欄位；資料型別與限制請以SQL Definition為準。';
+L2157 COMMENT ON COLUMN membership.plan_level."active" IS '布林控制/資格旗標；True/False之業務意義依欄位名稱與所屬Entity定義。';
+L2158 
+L2159 COMMENT ON TABLE membership.qualification IS '會員資格／球主檔；UCell組織、Active、PV、重銷、獎金及分享的主要Aggregate Root。';
+L2160 COMMENT ON COLUMN membership.qualification."qualification_id" IS '會員資格／球唯一識別碼；組織、PV、獎金等核心業務的主要關聯鍵。';
+L2161 COMMENT ON COLUMN membership.qualification."qualification_no" IS 'qualification的人可讀/流水編號。';
+L2162 COMMENT ON COLUMN membership.qualification."current_holder_person_id" IS '目前持有此Qualification的Person。';
+L2163 COMMENT ON COLUMN membership.qualification."plan_level_code" IS '商品方案／制度級別代碼。';
+L2164 COMMENT ON COLUMN membership.qualification."status" IS '該Entity目前的業務狀態。';
+L2165 COMMENT ON COLUMN membership.qualification."active_flag" IS '便於即時查詢的目前Active投影值；歷史判斷仍以active_period為準。';
+L2166 COMMENT ON COLUMN membership.qualification."effective_at" IS 'effective發生或記錄時間。';
+L2167 COMMENT ON COLUMN membership.qualification."closed_at" IS 'closed發生或記錄時間。';
+L2168 COMMENT ON COLUMN membership.qualification."source_application_id" IS 'source application之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2169 COMMENT ON COLUMN membership.qualification."created_at" IS '資料列建立時間。';
+L2170 COMMENT ON COLUMN membership.qualification."created_by" IS '建立此資料之使用者/系統Actor識別碼。';
+L2171 COMMENT ON COLUMN membership.qualification."updated_at" IS '可變投影/主檔最後更新時間。';
+L2172 COMMENT ON COLUMN membership.qualification."updated_by" IS '最後更新此可變資料之使用者/系統Actor識別碼。';
+L2173 
+L2174 COMMENT ON TABLE membership.qualification_holder_history IS 'Qualification持有人有效期間歷史；轉讓時更換Holder，不移動組織節點。';
+L2175 COMMENT ON COLUMN membership.qualification_holder_history."holder_history_id" IS 'holder history之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2176 COMMENT ON COLUMN membership.qualification_holder_history."qualification_id" IS '會員資格／球唯一識別碼；組織、PV、獎金等核心業務的主要關聯鍵。';
+L2177 COMMENT ON COLUMN membership.qualification_holder_history."holder_person_id" IS '該有效期間內的Qualification持有人。';
+L2178 COMMENT ON COLUMN membership.qualification_holder_history."valid_from" IS 'valid from欄位；資料型別與限制請以SQL Definition為準。';
+L2179 COMMENT ON COLUMN membership.qualification_holder_history."valid_to" IS 'valid to欄位；資料型別與限制請以SQL Definition為準。';
+L2180 COMMENT ON COLUMN membership.qualification_holder_history."source_case_id" IS 'source case之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2181 COMMENT ON COLUMN membership.qualification_holder_history."created_at" IS '資料列建立時間。';
+L2182 COMMENT ON COLUMN membership.qualification_holder_history."created_by" IS '建立此資料之使用者/系統Actor識別碼。';
+L2183 
+L2184 COMMENT ON TABLE membership.qualification_status_history IS 'Qualification狀態時間軸；保存每次狀態的有效期間與原因。';
+L2185 COMMENT ON COLUMN membership.qualification_status_history."status_history_id" IS 'status history之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2186 COMMENT ON COLUMN membership.qualification_status_history."qualification_id" IS '會員資格／球唯一識別碼；組織、PV、獎金等核心業務的主要關聯鍵。';
+L2187 COMMENT ON COLUMN membership.qualification_status_history."status" IS '該Entity目前的業務狀態。';
+L2188 COMMENT ON COLUMN membership.qualification_status_history."effective_from" IS '此資料版本/關係/參數的有效起始時間。';
+L2189 COMMENT ON COLUMN membership.qualification_status_history."effective_to" IS '有效結束時間；NULL表示目前有效。';
+L2190 COMMENT ON COLUMN membership.qualification_status_history."source_event_id" IS '造成本資料/關係的來源事件ID。';
+L2191 COMMENT ON COLUMN membership.qualification_status_history."reason_code" IS 'reason的穩定代碼，供程式、報表與整合使用。';
+L2192 COMMENT ON COLUMN membership.qualification_status_history."created_at" IS '資料列建立時間。';
+L2193 
+L2194 COMMENT ON TABLE membership.active_period IS 'Qualification Active有效期間；用於事件時點Active First判斷。';
+L2195 COMMENT ON COLUMN membership.active_period."active_period_id" IS 'active period之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2196 COMMENT ON COLUMN membership.active_period."qualification_id" IS '會員資格／球唯一識別碼；組織、PV、獎金等核心業務的主要關聯鍵。';
+L2197 COMMENT ON COLUMN membership.active_period."active_from" IS 'Active有效起始時間。';
+L2198 COMMENT ON COLUMN membership.active_period."active_to" IS 'Active有效結束時間；NULL表示尚有效。';
+L2199 COMMENT ON COLUMN membership.active_period."active_source" IS 'active source欄位；資料型別與限制請以SQL Definition為準。';
+L2200 COMMENT ON COLUMN membership.active_period."source_event_id" IS '造成本資料/關係的來源事件ID。';
+L2201 COMMENT ON COLUMN membership.active_period."created_at" IS '資料列建立時間。';
+L2202 
+L2203 COMMENT ON TABLE organization.sponsor_relationship IS 'Sponsor Tree推薦關係與永久Sponsor Sequence歷史。';
+L2204 COMMENT ON COLUMN organization.sponsor_relationship."sponsor_relationship_id" IS 'sponsor relationship之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2205 COMMENT ON COLUMN organization.sponsor_relationship."child_qualification_id" IS 'Sponsor Tree上的被推薦Qualification。';
+L2206 COMMENT ON COLUMN organization.sponsor_relationship."sponsor_qualification_id" IS 'Sponsor Tree上的推薦人Qualification。';
+L2207 COMMENT ON COLUMN organization.sponsor_relationship."sponsor_sequence_no" IS '該Sponsor的永久直推序號；退出/退貨不重新編號。';
+L2208 COMMENT ON COLUMN organization.sponsor_relationship."effective_from" IS '此資料版本/關係/參數的有效起始時間。';
+L2209 COMMENT ON COLUMN organization.sponsor_relationship."effective_to" IS '有效結束時間；NULL表示目前有效。';
+L2210 COMMENT ON COLUMN organization.sponsor_relationship."source_application_id" IS 'source application之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2211 COMMENT ON COLUMN organization.sponsor_relationship."source_event_id" IS '造成本資料/關係的來源事件ID。';
+L2212 COMMENT ON COLUMN organization.sponsor_relationship."created_at" IS '資料列建立時間。';
+L2213 COMMENT ON COLUMN organization.sponsor_relationship."created_by" IS '建立此資料之使用者/系統Actor識別碼。';
+L2214 
+L2215 COMMENT ON TABLE organization.binary_placement IS 'Binary Tree左右安置關係與有效期間歷史。';
+L2216 COMMENT ON COLUMN organization.binary_placement."binary_placement_id" IS 'binary placement之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2217 COMMENT ON COLUMN organization.binary_placement."qualification_id" IS '會員資格／球唯一識別碼；組織、PV、獎金等核心業務的主要關聯鍵。';
+L2218 COMMENT ON COLUMN organization.binary_placement."parent_qualification_id" IS 'Binary Tree直接上層Qualification。';
+L2219 COMMENT ON COLUMN organization.binary_placement."side" IS 'Binary安置方向：LEFT或RIGHT。';
+L2220 COMMENT ON COLUMN organization.binary_placement."effective_from" IS '此資料版本/關係/參數的有效起始時間。';
+L2221 COMMENT ON COLUMN organization.binary_placement."effective_to" IS '有效結束時間；NULL表示目前有效。';
+L2222 COMMENT ON COLUMN organization.binary_placement."source_event_id" IS '造成本資料/關係的來源事件ID。';
+L2223 COMMENT ON COLUMN organization.binary_placement."created_at" IS '資料列建立時間。';
+L2224 COMMENT ON COLUMN organization.binary_placement."created_by" IS '建立此資料之使用者/系統Actor識別碼。';
+L2225 
+L2226 COMMENT ON TABLE rules.rule_set IS '制度規則集主檔，例如UCELL_R1_0B。';
+L2227 COMMENT ON COLUMN rules.rule_set."rule_set_id" IS 'rule set之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2228 COMMENT ON COLUMN rules.rule_set."rule_set_code" IS 'rule set的穩定代碼，供程式、報表與整合使用。';
+L2229 COMMENT ON COLUMN rules.rule_set."display_name" IS '人可讀名稱/顯示名稱。';
+L2230 COMMENT ON COLUMN rules.rule_set."description" IS '人可讀說明文字，用於補充業務語意或稽核原因。';
+L2231 COMMENT ON COLUMN rules.rule_set."status" IS '該Entity目前的業務狀態。';
+L2232 COMMENT ON COLUMN rules.rule_set."created_at" IS '資料列建立時間。';
+L2233 COMMENT ON COLUMN rules.rule_set."created_by" IS '建立此資料之使用者/系統Actor識別碼。';
+L2234 
+L2235 COMMENT ON TABLE rules.rule_group IS 'Rule Set內的階層式規則群組，可建立父子結構。';
+L2236 COMMENT ON COLUMN rules.rule_group."rule_group_id" IS 'rule group之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2237 COMMENT ON COLUMN rules.rule_group."rule_set_id" IS 'rule set之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2238 COMMENT ON COLUMN rules.rule_group."parent_rule_group_id" IS 'parent rule group之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2239 COMMENT ON COLUMN rules.rule_group."rule_group_code" IS 'rule group的穩定代碼，供程式、報表與整合使用。';
+L2240 COMMENT ON COLUMN rules.rule_group."display_name" IS '人可讀名稱/顯示名稱。';
+L2241 COMMENT ON COLUMN rules.rule_group."sort_order" IS 'sort order欄位；資料型別與限制請以SQL Definition為準。';
+L2242 
+L2243 COMMENT ON TABLE rules.rule_definition IS '一個具穩定Rule Code的規則定義；描述演算法能力與是否屬系統不變量。';
+L2244 COMMENT ON COLUMN rules.rule_definition."rule_definition_id" IS 'rule definition之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2245 COMMENT ON COLUMN rules.rule_definition."rule_group_id" IS 'rule group之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2246 COMMENT ON COLUMN rules.rule_definition."rule_code" IS 'rule的穩定代碼，供程式、報表與整合使用。';
+L2247 COMMENT ON COLUMN rules.rule_definition."display_name" IS '人可讀名稱/顯示名稱。';
+L2248 COMMENT ON COLUMN rules.rule_definition."algorithm_code" IS 'algorithm的穩定代碼，供程式、報表與整合使用。';
+L2249 COMMENT ON COLUMN rules.rule_definition."description" IS '人可讀說明文字，用於補充業務語意或稽核原因。';
+L2250 COMMENT ON COLUMN rules.rule_definition."is_system_invariant" IS '布林控制/資格旗標；True/False之業務意義依欄位名稱與所屬Entity定義。';
+L2251 
+L2252 COMMENT ON TABLE rules.rule_version IS 'Rule Set的版本與生效期間；Published版本不可直接改寫。';
+L2253 COMMENT ON COLUMN rules.rule_version."rule_version_id" IS '本交易/事件採用的制度規則版本。';
+L2254 COMMENT ON COLUMN rules.rule_version."rule_set_id" IS 'rule set之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2255 COMMENT ON COLUMN rules.rule_version."version_code" IS 'version的穩定代碼，供程式、報表與整合使用。';
+L2256 COMMENT ON COLUMN rules.rule_version."status" IS '該Entity目前的業務狀態。';
+L2257 COMMENT ON COLUMN rules.rule_version."effective_from" IS '此資料版本/關係/參數的有效起始時間。';
+L2258 COMMENT ON COLUMN rules.rule_version."effective_to" IS '有效結束時間；NULL表示目前有效。';
+L2259 COMMENT ON COLUMN rules.rule_version."approved_by" IS '核准人識別碼。';
+L2260 COMMENT ON COLUMN rules.rule_version."approved_at" IS '核准時間。';
+L2261 COMMENT ON COLUMN rules.rule_version."published_at" IS 'published發生或記錄時間。';
+L2262 COMMENT ON COLUMN rules.rule_version."parameter_snapshot_hash" IS '已發布Rule Version所有參數的整體Hash。';
+L2263 COMMENT ON COLUMN rules.rule_version."created_at" IS '資料列建立時間。';
+L2264 COMMENT ON COLUMN rules.rule_version."created_by" IS '建立此資料之使用者/系統Actor識別碼。';
+L2265 
+L2266 COMMENT ON TABLE rules.parameter_definition IS '參數主檔；定義Parameter Code、資料型別、單位、驗證、Scope與是否可後台調整。';
+L2267 COMMENT ON COLUMN rules.parameter_definition."parameter_definition_id" IS 'parameter definition之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2268 COMMENT ON COLUMN rules.parameter_definition."parameter_code" IS '穩定且全系統唯一的參數代碼。';
+L2269 COMMENT ON COLUMN rules.parameter_definition."display_name" IS '人可讀名稱/顯示名稱。';
+L2270 COMMENT ON COLUMN rules.parameter_definition."data_type" IS '參數值資料型別。';
+L2271 COMMENT ON COLUMN rules.parameter_definition."unit_code" IS '參數單位，例如PERCENT、NTD、PV、DAY、GENERATION。';
+L2272 COMMENT ON COLUMN rules.parameter_definition."default_value" IS 'default value欄位；資料型別與限制請以SQL Definition為準。';
+L2273 COMMENT ON COLUMN rules.parameter_definition."validation_schema" IS '參數值合法範圍/格式驗證規則。';
+L2274 COMMENT ON COLUMN rules.parameter_definition."allowed_scope_types" IS '允許此參數套用的Scope種類。';
+L2275 COMMENT ON COLUMN rules.parameter_definition."runtime_editable" IS '是否允許透過受控後台修改，而不需程式部署。';
+L2276 COMMENT ON COLUMN rules.parameter_definition."requires_approval" IS '修改此參數是否必須走核准流程。';
+L2277 COMMENT ON COLUMN rules.parameter_definition."description" IS '人可讀說明文字，用於補充業務語意或稽核原因。';
+L2278 
+L2279 COMMENT ON TABLE rules.parameter_set IS '一組在特定Rule Version、Scope與有效期間下的參數集合。';
+L2280 COMMENT ON COLUMN rules.parameter_set."parameter_set_id" IS 'parameter set之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2281 COMMENT ON COLUMN rules.parameter_set."rule_version_id" IS '本交易/事件採用的制度規則版本。';
+L2282 COMMENT ON COLUMN rules.parameter_set."parameter_set_code" IS 'parameter set的穩定代碼，供程式、報表與整合使用。';
+L2283 COMMENT ON COLUMN rules.parameter_set."scope_type" IS '參數適用層級，例如RULE_SET、PLAN、SKU、CAMPAIGN。';
+L2284 COMMENT ON COLUMN rules.parameter_set."scope_key" IS '該Scope的實際識別值；NULL可代表通用預設。';
+L2285 COMMENT ON COLUMN rules.parameter_set."priority" IS '參數解析優先權；數字越高越優先。';
+L2286 COMMENT ON COLUMN rules.parameter_set."effective_from" IS '此資料版本/關係/參數的有效起始時間。';
+L2287 COMMENT ON COLUMN rules.parameter_set."effective_to" IS '有效結束時間；NULL表示目前有效。';
+L2288 COMMENT ON COLUMN rules.parameter_set."status" IS '該Entity目前的業務狀態。';
+L2289 COMMENT ON COLUMN rules.parameter_set."created_at" IS '資料列建立時間。';
+L2290 COMMENT ON COLUMN rules.parameter_set."created_by" IS '建立此資料之使用者/系統Actor識別碼。';
+L2291 
+L2292 COMMENT ON TABLE rules.parameter_value IS 'Parameter Set內的實際值；Published規則版本下不可直接修改。';
+L2293 COMMENT ON COLUMN rules.parameter_value."parameter_value_id" IS 'parameter value之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2294 COMMENT ON COLUMN rules.parameter_value."parameter_set_id" IS 'parameter set之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2295 COMMENT ON COLUMN rules.parameter_value."parameter_definition_id" IS 'parameter definition之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2296 COMMENT ON COLUMN rules.parameter_value."value_json" IS '實際參數值，使用JSONB以支援多種資料型別。';
+L2297 COMMENT ON COLUMN rules.parameter_value."created_at" IS '資料列建立時間。';
+L2298 COMMENT ON COLUMN rules.parameter_value."created_by" IS '建立此資料之使用者/系統Actor識別碼。';
+L2299 
+L2300 COMMENT ON TABLE rules.decision_table IS '可資料化的條件矩陣主檔，例如有效直推數對應可領代數。';
+L2301 COMMENT ON COLUMN rules.decision_table."decision_table_id" IS 'decision table之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2302 COMMENT ON COLUMN rules.decision_table."rule_version_id" IS '本交易/事件採用的制度規則版本。';
+L2303 COMMENT ON COLUMN rules.decision_table."table_code" IS 'table的穩定代碼，供程式、報表與整合使用。';
+L2304 COMMENT ON COLUMN rules.decision_table."display_name" IS '人可讀名稱/顯示名稱。';
+L2305 COMMENT ON COLUMN rules.decision_table."description" IS '人可讀說明文字，用於補充業務語意或稽核原因。';
+L2306 COMMENT ON COLUMN rules.decision_table."status" IS '該Entity目前的業務狀態。';
+L2307 
+L2308 COMMENT ON TABLE rules.decision_row IS 'Decision Table條件列；conditions與result以JSONB保存可擴充條件。';
+L2309 COMMENT ON COLUMN rules.decision_row."decision_row_id" IS 'decision row之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2310 COMMENT ON COLUMN rules.decision_row."decision_table_id" IS 'decision table之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2311 COMMENT ON COLUMN rules.decision_row."sort_order" IS 'sort order欄位；資料型別與限制請以SQL Definition為準。';
+L2312 COMMENT ON COLUMN rules.decision_row."conditions" IS 'Decision Row的條件集合JSON。';
+L2313 COMMENT ON COLUMN rules.decision_row."result" IS '符合條件後的結果JSON。';
+L2314 COMMENT ON COLUMN rules.decision_row."effective_from" IS '此資料版本/關係/參數的有效起始時間。';
+L2315 COMMENT ON COLUMN rules.decision_row."effective_to" IS '有效結束時間；NULL表示目前有效。';
+L2316 
+L2317 COMMENT ON TABLE commerce.product_reference IS 'UCell內的輕量商品/SKU Reference。ERP導入後由ERP作商品主檔SoR，本表保存對照與會員顯示資訊。';
+L2318 COMMENT ON COLUMN commerce.product_reference."product_id" IS 'product之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2319 COMMENT ON COLUMN commerce.product_reference."sku_code" IS 'sku的穩定代碼，供程式、報表與整合使用。';
+L2320 COMMENT ON COLUMN commerce.product_reference."display_name" IS '人可讀名稱/顯示名稱。';
+L2321 COMMENT ON COLUMN commerce.product_reference."product_type" IS 'product type欄位；資料型別與限制請以SQL Definition為準。';
+L2322 COMMENT ON COLUMN commerce.product_reference."status" IS '該Entity目前的業務狀態。';
+L2323 COMMENT ON COLUMN commerce.product_reference."external_system_code" IS '外部系統代碼，Pre-ERP通常為MANUAL，未來可為D365_BC等。';
+L2324 COMMENT ON COLUMN commerce.product_reference."external_item_id" IS 'external item之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2325 COMMENT ON COLUMN commerce.product_reference."created_at" IS '資料列建立時間。';
+L2326 COMMENT ON COLUMN commerce.product_reference."updated_at" IS '可變投影/主檔最後更新時間。';
+L2327 
+L2328 COMMENT ON TABLE commerce.product_rule_profile IS '商品在特定Rule Version下的制度屬性，例如GPV/PV比率、RPV/EPV與獎金資格。';
+L2329 COMMENT ON COLUMN commerce.product_rule_profile."product_rule_profile_id" IS 'product rule profile之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2330 COMMENT ON COLUMN commerce.product_rule_profile."product_id" IS 'product之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2331 COMMENT ON COLUMN commerce.product_rule_profile."rule_version_id" IS '本交易/事件採用的制度規則版本。';
+L2332 COMMENT ON COLUMN commerce.product_rule_profile."gpv_rate" IS 'gpv rate欄位；資料型別與限制請以SQL Definition為準。';
+L2333 COMMENT ON COLUMN commerce.product_rule_profile."pv_rate" IS 'pv rate欄位；資料型別與限制請以SQL Definition為準。';
+L2334 COMMENT ON COLUMN commerce.product_rule_profile."rpv_eligible" IS '布林控制/資格旗標；True/False之業務意義依欄位名稱與所屬Entity定義。';
+L2335 COMMENT ON COLUMN commerce.product_rule_profile."epv_eligible" IS '布林控制/資格旗標；True/False之業務意義依欄位名稱與所屬Entity定義。';
+L2336 COMMENT ON COLUMN commerce.product_rule_profile."bonus_eligible" IS '布林控制/資格旗標；True/False之業務意義依欄位名稱與所屬Entity定義。';
+L2337 COMMENT ON COLUMN commerce.product_rule_profile."effective_from" IS '此資料版本/關係/參數的有效起始時間。';
+L2338 COMMENT ON COLUMN commerce.product_rule_profile."effective_to" IS '有效結束時間；NULL表示目前有效。';
+L2339 COMMENT ON COLUMN commerce.product_rule_profile."config" IS 'config欄位；資料型別與限制請以SQL Definition為準。';
+L2340 
+L2341 COMMENT ON TABLE commerce."order" IS '會員訂購Context主檔；保存Person、Qualification、推薦歸因、Rule Snapshot與Pre-ERP/ERP對照。';
+L2342 COMMENT ON COLUMN commerce."order"."order_id" IS 'order之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2343 COMMENT ON COLUMN commerce."order"."order_no" IS 'order的人可讀/流水編號。';
+L2344 COMMENT ON COLUMN commerce."order"."person_id" IS '自然人唯一識別碼。';
+L2345 COMMENT ON COLUMN commerce."order"."qualification_id" IS '會員資格／球唯一識別碼；組織、PV、獎金等核心業務的主要關聯鍵。';
+L2346 COMMENT ON COLUMN commerce."order"."source_referral_token" IS 'source referral token欄位；資料型別與限制請以SQL Definition為準。';
+L2347 COMMENT ON COLUMN commerce."order"."source_qualification_id" IS 'source qualification之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2348 COMMENT ON COLUMN commerce."order"."campaign_id" IS 'campaign之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2349 COMMENT ON COLUMN commerce."order"."rule_version_id" IS '本交易/事件採用的制度規則版本。';
+L2350 COMMENT ON COLUMN commerce."order"."parameter_snapshot_hash" IS '已發布Rule Version所有參數的整體Hash。';
+L2351 COMMENT ON COLUMN commerce."order"."status" IS '該Entity目前的業務狀態。';
+L2352 COMMENT ON COLUMN commerce."order"."currency_code" IS 'currency的穩定代碼，供程式、報表與整合使用。';
+L2353 COMMENT ON COLUMN commerce."order"."gross_amount" IS '訂單折扣前總額。';
+L2354 COMMENT ON COLUMN commerce."order"."discount_amount" IS '訂單折扣總額。';
+L2355 COMMENT ON COLUMN commerce."order"."net_amount" IS '訂單折扣後應付金額。';
+L2356 COMMENT ON COLUMN commerce."order"."external_system_code" IS '外部系統代碼，Pre-ERP通常為MANUAL，未來可為D365_BC等。';
+L2357 COMMENT ON COLUMN commerce."order"."external_order_id" IS 'external order之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2358 COMMENT ON COLUMN commerce."order"."external_order_no" IS 'external order的人可讀/流水編號。';
+L2359 COMMENT ON COLUMN commerce."order"."sync_status" IS '與外部系統同步狀態。';
+L2360 COMMENT ON COLUMN commerce."order"."confirmed_at" IS 'confirmed發生或記錄時間。';
+L2361 COMMENT ON COLUMN commerce."order"."paid_at" IS 'paid發生或記錄時間。';
+L2362 COMMENT ON COLUMN commerce."order"."fulfilled_at" IS 'fulfilled發生或記錄時間。';
+L2363 COMMENT ON COLUMN commerce."order"."voided_at" IS 'voided發生或記錄時間。';
+L2364 COMMENT ON COLUMN commerce."order"."created_at" IS '資料列建立時間。';
+L2365 COMMENT ON COLUMN commerce."order"."created_by" IS '建立此資料之使用者/系統Actor識別碼。';
+L2366 COMMENT ON COLUMN commerce."order"."updated_at" IS '可變投影/主檔最後更新時間。';
+L2367 COMMENT ON COLUMN commerce."order"."updated_by" IS '最後更新此可變資料之使用者/系統Actor識別碼。';
+L2368 
+L2369 COMMENT ON TABLE commerce.order_line IS '訂單明細及交易當時商品、價格、GPV/PV與Rule Profile快照，避免未來主檔修改後回算錯誤。';
+L2370 COMMENT ON COLUMN commerce.order_line."order_line_id" IS 'order line之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2371 COMMENT ON COLUMN commerce.order_line."order_id" IS 'order之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2372 COMMENT ON COLUMN commerce.order_line."line_no" IS 'line的人可讀/流水編號。';
+L2373 COMMENT ON COLUMN commerce.order_line."product_id" IS 'product之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2374 COMMENT ON COLUMN commerce.order_line."sku_code_snapshot" IS 'sku code在事件當下的快照，避免使用今日值回算歷史。';
+L2375 COMMENT ON COLUMN commerce.order_line."product_name_snapshot" IS 'product name在事件當下的快照，避免使用今日值回算歷史。';
+L2376 COMMENT ON COLUMN commerce.order_line."quantity" IS '商品或事件數量。';
+L2377 COMMENT ON COLUMN commerce.order_line."unit_price" IS '交易當時單價快照。';
+L2378 COMMENT ON COLUMN commerce.order_line."line_amount" IS '該訂單明細金額。';
+L2379 COMMENT ON COLUMN commerce.order_line."gpv_rate_snapshot" IS '交易當時GPV轉換比例快照。';
+L2380 COMMENT ON COLUMN commerce.order_line."gpv_amount_snapshot" IS '交易當時由此明細產生的GPV快照。';
+L2381 COMMENT ON COLUMN commerce.order_line."pv_rate_snapshot" IS '交易當時PV轉換比例快照。';
+L2382 COMMENT ON COLUMN commerce.order_line."rule_profile_snapshot" IS '交易當時商品制度Profile快照。';
+L2383 
+L2384 COMMENT ON TABLE commerce.payment_event IS '付款確認、付款反轉、退款確認等Append-only事件。';
+L2385 COMMENT ON COLUMN commerce.payment_event."payment_event_id" IS 'payment event之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2386 COMMENT ON COLUMN commerce.payment_event."order_id" IS 'order之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2387 COMMENT ON COLUMN commerce.payment_event."event_type" IS '事件類型代碼；描述本筆Append-only事件代表的業務事實。';
+L2388 COMMENT ON COLUMN commerce.payment_event."amount" IS '本筆事件/帳本變動金額或數值。';
+L2389 COMMENT ON COLUMN commerce.payment_event."payment_method" IS 'payment method欄位；資料型別與限制請以SQL Definition為準。';
+L2390 COMMENT ON COLUMN commerce.payment_event."reference_no" IS 'reference的人可讀/流水編號。';
+L2391 COMMENT ON COLUMN commerce.payment_event."occurred_at" IS '業務事實實際發生時間；不得與系統登錄時間混為一談。';
+L2392 COMMENT ON COLUMN commerce.payment_event."recorded_at" IS '事件實際寫入UCell系統的時間。';
+L2393 COMMENT ON COLUMN commerce.payment_event."actor_type" IS 'actor type欄位；資料型別與限制請以SQL Definition為準。';
+L2394 COMMENT ON COLUMN commerce.payment_event."actor_id" IS 'actor之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2395 COMMENT ON COLUMN commerce.payment_event."source_system" IS 'source system欄位；資料型別與限制請以SQL Definition為準。';
+L2396 COMMENT ON COLUMN commerce.payment_event."external_event_id" IS '外部系統事件唯一碼，用於Idempotency。';
+L2397 COMMENT ON COLUMN commerce.payment_event."correlation_id" IS '串接同一業務流程的Correlation ID，供跨表/跨服務追查。';
+L2398 COMMENT ON COLUMN commerce.payment_event."reversal_of_event_id" IS '若本筆為反向事件，指向被反轉的原事件。';
+L2399 COMMENT ON COLUMN commerce.payment_event."evidence_attachment_id" IS 'evidence attachment之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2400 
+L2401 COMMENT ON TABLE commerce.fulfillment_event IS '出貨確認與反轉Append-only事件；MVP由人工建立，ERP導入後由Adapter建立。';
+L2402 COMMENT ON COLUMN commerce.fulfillment_event."fulfillment_event_id" IS 'fulfillment event之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2403 COMMENT ON COLUMN commerce.fulfillment_event."order_id" IS 'order之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2404 COMMENT ON COLUMN commerce.fulfillment_event."event_type" IS '事件類型代碼；描述本筆Append-only事件代表的業務事實。';
+L2405 COMMENT ON COLUMN commerce.fulfillment_event."carrier" IS 'carrier業務資訊；敏感資訊需遵守資料最小化與存取控制。';
+L2406 COMMENT ON COLUMN commerce.fulfillment_event."tracking_no" IS 'tracking的人可讀/流水編號。';
+L2407 COMMENT ON COLUMN commerce.fulfillment_event."occurred_at" IS '業務事實實際發生時間；不得與系統登錄時間混為一談。';
+L2408 COMMENT ON COLUMN commerce.fulfillment_event."recorded_at" IS '事件實際寫入UCell系統的時間。';
+L2409 COMMENT ON COLUMN commerce.fulfillment_event."actor_type" IS 'actor type欄位；資料型別與限制請以SQL Definition為準。';
+L2410 COMMENT ON COLUMN commerce.fulfillment_event."actor_id" IS 'actor之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2411 COMMENT ON COLUMN commerce.fulfillment_event."source_system" IS 'source system欄位；資料型別與限制請以SQL Definition為準。';
+L2412 COMMENT ON COLUMN commerce.fulfillment_event."external_event_id" IS '外部系統事件唯一碼，用於Idempotency。';
+L2413 COMMENT ON COLUMN commerce.fulfillment_event."correlation_id" IS '串接同一業務流程的Correlation ID，供跨表/跨服務追查。';
+L2414 COMMENT ON COLUMN commerce.fulfillment_event."reversal_of_event_id" IS '若本筆為反向事件，指向被反轉的原事件。';
+L2415 
+L2416 COMMENT ON TABLE commerce.return_event IS '退貨申請/確認/反轉Append-only事件；對應原訂單/明細。';
+L2417 COMMENT ON COLUMN commerce.return_event."return_event_id" IS 'return event之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2418 COMMENT ON COLUMN commerce.return_event."order_id" IS 'order之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2419 COMMENT ON COLUMN commerce.return_event."order_line_id" IS 'order line之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2420 COMMENT ON COLUMN commerce.return_event."event_type" IS '事件類型代碼；描述本筆Append-only事件代表的業務事實。';
+L2421 COMMENT ON COLUMN commerce.return_event."quantity" IS '商品或事件數量。';
+L2422 COMMENT ON COLUMN commerce.return_event."amount" IS '本筆事件/帳本變動金額或數值。';
+L2423 COMMENT ON COLUMN commerce.return_event."reason_code" IS 'reason的穩定代碼，供程式、報表與整合使用。';
+L2424 COMMENT ON COLUMN commerce.return_event."occurred_at" IS '業務事實實際發生時間；不得與系統登錄時間混為一談。';
+L2425 COMMENT ON COLUMN commerce.return_event."recorded_at" IS '事件實際寫入UCell系統的時間。';
+L2426 COMMENT ON COLUMN commerce.return_event."actor_type" IS 'actor type欄位；資料型別與限制請以SQL Definition為準。';
+L2427 COMMENT ON COLUMN commerce.return_event."actor_id" IS 'actor之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2428 COMMENT ON COLUMN commerce.return_event."source_system" IS 'source system欄位；資料型別與限制請以SQL Definition為準。';
+L2429 COMMENT ON COLUMN commerce.return_event."external_event_id" IS '外部系統事件唯一碼，用於Idempotency。';
+L2430 COMMENT ON COLUMN commerce.return_event."correlation_id" IS '串接同一業務流程的Correlation ID，供跨表/跨服務追查。';
+L2431 COMMENT ON COLUMN commerce.return_event."reversal_of_event_id" IS '若本筆為反向事件，指向被反轉的原事件。';
+L2432 
+L2433 COMMENT ON TABLE commerce.lot_trace IS 'Pre-ERP必要批號追溯主檔；僅作出貨追蹤，不作完整WMS庫存帳。';
+L2434 COMMENT ON COLUMN commerce.lot_trace."lot_trace_id" IS 'lot trace之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2435 COMMENT ON COLUMN commerce.lot_trace."product_id" IS 'product之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2436 COMMENT ON COLUMN commerce.lot_trace."lot_no" IS 'lot的人可讀/流水編號。';
+L2437 COMMENT ON COLUMN commerce.lot_trace."manufactured_at" IS 'manufactured發生或記錄時間。';
+L2438 COMMENT ON COLUMN commerce.lot_trace."expiry_at" IS 'expiry發生或記錄時間。';
+L2439 COMMENT ON COLUMN commerce.lot_trace."external_lot_id" IS 'external lot之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2440 
+L2441 COMMENT ON TABLE commerce.serial_trace IS 'Pre-ERP必要序號追溯主檔；僅高價/特殊SKU啟用。';
+L2442 COMMENT ON COLUMN commerce.serial_trace."serial_trace_id" IS 'serial trace之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2443 COMMENT ON COLUMN commerce.serial_trace."product_id" IS 'product之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2444 COMMENT ON COLUMN commerce.serial_trace."lot_trace_id" IS 'lot trace之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2445 COMMENT ON COLUMN commerce.serial_trace."serial_no" IS 'serial的人可讀/流水編號。';
+L2446 COMMENT ON COLUMN commerce.serial_trace."external_serial_id" IS 'external serial之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2447 
+L2448 COMMENT ON TABLE commerce.shipment_trace IS '訂單明細與批號/序號的實際出貨對應。';
+L2449 COMMENT ON COLUMN commerce.shipment_trace."shipment_trace_id" IS 'shipment trace之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2450 COMMENT ON COLUMN commerce.shipment_trace."fulfillment_event_id" IS 'fulfillment event之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2451 COMMENT ON COLUMN commerce.shipment_trace."order_line_id" IS 'order line之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2452 COMMENT ON COLUMN commerce.shipment_trace."lot_trace_id" IS 'lot trace之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2453 COMMENT ON COLUMN commerce.shipment_trace."serial_trace_id" IS 'serial trace之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2454 COMMENT ON COLUMN commerce.shipment_trace."quantity" IS '商品或事件數量。';
+L2455 COMMENT ON COLUMN commerce.shipment_trace."recorded_at" IS '事件實際寫入UCell系統的時間。';
+L2456 
+L2457 COMMENT ON TABLE subscription.subscription_plan IS '重銷預付方案參數，如季/半年/一年；保存月數、付款金額、盒數、月認列金額與月RPV。';
+L2458 COMMENT ON COLUMN subscription.subscription_plan."subscription_plan_code" IS 'subscription plan的穩定代碼，供程式、報表與整合使用。';
+L2459 COMMENT ON COLUMN subscription.subscription_plan."display_name" IS '人可讀名稱/顯示名稱。';
+L2460 COMMENT ON COLUMN subscription.subscription_plan."months" IS 'months欄位；資料型別與限制請以SQL Definition為準。';
+L2461 COMMENT ON COLUMN subscription.subscription_plan."paid_amount" IS 'paid amount欄位；資料型別與限制請以SQL Definition為準。';
+L2462 COMMENT ON COLUMN subscription.subscription_plan."product_box_count" IS 'product box count欄位；資料型別與限制請以SQL Definition為準。';
+L2463 COMMENT ON COLUMN subscription.subscription_plan."monthly_recognized_amount" IS 'monthly recognized amount欄位；資料型別與限制請以SQL Definition為準。';
+L2464 COMMENT ON COLUMN subscription.subscription_plan."monthly_rpv" IS 'monthly rpv欄位；資料型別與限制請以SQL Definition為準。';
+L2465 COMMENT ON COLUMN subscription.subscription_plan."active" IS '布林控制/資格旗標；True/False之業務意義依欄位名稱與所屬Entity定義。';
+L2466 
+L2467 COMMENT ON TABLE subscription.subscription IS '某一Qualification購買之重銷訂閱實例。';
+L2468 COMMENT ON COLUMN subscription.subscription."subscription_id" IS 'subscription之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2469 COMMENT ON COLUMN subscription.subscription."qualification_id" IS '會員資格／球唯一識別碼；組織、PV、獎金等核心業務的主要關聯鍵。';
+L2470 COMMENT ON COLUMN subscription.subscription."subscription_plan_code" IS 'subscription plan的穩定代碼，供程式、報表與整合使用。';
+L2471 COMMENT ON COLUMN subscription.subscription."order_id" IS 'order之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2472 COMMENT ON COLUMN subscription.subscription."start_date" IS 'start日期。';
+L2473 COMMENT ON COLUMN subscription.subscription."end_date" IS 'end日期。';
+L2474 COMMENT ON COLUMN subscription.subscription."status" IS '該Entity目前的業務狀態。';
+L2475 COMMENT ON COLUMN subscription.subscription."created_at" IS '資料列建立時間。';
+L2476 COMMENT ON COLUMN subscription.subscription."created_by" IS '建立此資料之使用者/系統Actor識別碼。';
+L2477 
+L2478 COMMENT ON TABLE subscription.monthly_recognition_schedule IS '預付重銷逐月認列排程；每月一列並以唯一鍵防止重複認列。';
+L2479 COMMENT ON COLUMN subscription.monthly_recognition_schedule."recognition_schedule_id" IS 'recognition schedule之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2480 COMMENT ON COLUMN subscription.monthly_recognition_schedule."subscription_id" IS 'subscription之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2481 COMMENT ON COLUMN subscription.monthly_recognition_schedule."installment_no" IS 'installment的人可讀/流水編號。';
+L2482 COMMENT ON COLUMN subscription.monthly_recognition_schedule."due_date" IS 'due日期。';
+L2483 COMMENT ON COLUMN subscription.monthly_recognition_schedule."recognized_amount" IS 'recognized amount欄位；資料型別與限制請以SQL Definition為準。';
+L2484 COMMENT ON COLUMN subscription.monthly_recognition_schedule."rpv_amount" IS 'rpv amount欄位；資料型別與限制請以SQL Definition為準。';
+L2485 COMMENT ON COLUMN subscription.monthly_recognition_schedule."status" IS '該Entity目前的業務狀態。';
+L2486 COMMENT ON COLUMN subscription.monthly_recognition_schedule."recognized_event_id" IS 'recognized event之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2487 COMMENT ON COLUMN subscription.monthly_recognition_schedule."created_at" IS '資料列建立時間。';
+L2488 
+L2489 COMMENT ON TABLE ledger.pv_ledger IS 'GPV/PV/RPV/EPV不可變帳本。所有更正以反向事件處理，不修改或刪除原事件。';
+L2490 COMMENT ON COLUMN ledger.pv_ledger."pv_event_id" IS 'pv event之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2491 COMMENT ON COLUMN ledger.pv_ledger."qualification_id" IS '會員資格／球唯一識別碼；組織、PV、獎金等核心業務的主要關聯鍵。';
+L2492 COMMENT ON COLUMN ledger.pv_ledger."pv_type" IS '制度價值類型：GPV/PV/RPV/EPV。';
+L2493 COMMENT ON COLUMN ledger.pv_ledger."event_type" IS '事件類型代碼；描述本筆Append-only事件代表的業務事實。';
+L2494 COMMENT ON COLUMN ledger.pv_ledger."amount" IS '本筆事件/帳本變動金額或數值。';
+L2495 COMMENT ON COLUMN ledger.pv_ledger."source_type" IS '來源Entity/單據類型。';
+L2496 COMMENT ON COLUMN ledger.pv_ledger."source_id" IS '原始來源Entity或單據ID。';
+L2497 COMMENT ON COLUMN ledger.pv_ledger."source_line_id" IS '原始來源明細ID。';
+L2498 COMMENT ON COLUMN ledger.pv_ledger."occurred_at" IS '業務事實實際發生時間；不得與系統登錄時間混為一談。';
+L2499 COMMENT ON COLUMN ledger.pv_ledger."recorded_at" IS '事件實際寫入UCell系統的時間。';
+L2500 COMMENT ON COLUMN ledger.pv_ledger."rule_version_id" IS '本交易/事件採用的制度規則版本。';
+L2501 COMMENT ON COLUMN ledger.pv_ledger."parameter_snapshot_hash" IS '已發布Rule Version所有參數的整體Hash。';
+L2502 COMMENT ON COLUMN ledger.pv_ledger."active_snapshot" IS '事件發生時收受者/Qualification的Active快照。';
+L2503 COMMENT ON COLUMN ledger.pv_ledger."effective_direct_count_snapshot" IS '事件發生時有效直推數快照。';
+L2504 COMMENT ON COLUMN ledger.pv_ledger."correlation_id" IS '串接同一業務流程的Correlation ID，供跨表/跨服務追查。';
+L2505 COMMENT ON COLUMN ledger.pv_ledger."causation_id" IS '直接造成本事件的上一個事件ID。';
+L2506 COMMENT ON COLUMN ledger.pv_ledger."reversal_of_event_id" IS '若本筆為反向事件，指向被反轉的原事件。';
+L2507 COMMENT ON COLUMN ledger.pv_ledger."payload_hash" IS '事件Payload完整性Hash；可用於Tamper-evident驗證。';
+L2508 
+L2509 COMMENT ON TABLE ledger.award_event IS '獎金事件與生命週期資料；保存Theory、K、Payable、Active/直推快照、Rule Version與計算細節。';
+L2510 COMMENT ON COLUMN ledger.award_event."award_event_id" IS 'award event之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2511 COMMENT ON COLUMN ledger.award_event."recipient_qualification_id" IS 'recipient qualification之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2512 COMMENT ON COLUMN ledger.award_event."award_type" IS 'award type欄位；資料型別與限制請以SQL Definition為準。';
+L2513 COMMENT ON COLUMN ledger.award_event."source_qualification_id" IS 'source qualification之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2514 COMMENT ON COLUMN ledger.award_event."source_event_id" IS '造成本資料/關係的來源事件ID。';
+L2515 COMMENT ON COLUMN ledger.award_event."settlement_batch_id" IS 'settlement batch之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2516 COMMENT ON COLUMN ledger.award_event."theory_amount" IS '獎金依規則計算的理論金額，尚未套用K值。';
+L2517 COMMENT ON COLUMN ledger.award_event."k_factor" IS '該獎池結算批次的K縮減係數，範圍0~1。';
+L2518 COMMENT ON COLUMN ledger.award_event."payable_amount" IS '套用K值及相關限制後的應付獎金金額。';
+L2519 COMMENT ON COLUMN ledger.award_event."status" IS '該Entity目前的業務狀態。';
+L2520 COMMENT ON COLUMN ledger.award_event."occurred_at" IS '業務事實實際發生時間；不得與系統登錄時間混為一談。';
+L2521 COMMENT ON COLUMN ledger.award_event."recorded_at" IS '事件實際寫入UCell系統的時間。';
+L2522 COMMENT ON COLUMN ledger.award_event."pending_until" IS 'pending until欄位；資料型別與限制請以SQL Definition為準。';
+L2523 COMMENT ON COLUMN ledger.award_event."rule_version_id" IS '本交易/事件採用的制度規則版本。';
+L2524 COMMENT ON COLUMN ledger.award_event."parameter_snapshot_hash" IS '已發布Rule Version所有參數的整體Hash。';
+L2525 COMMENT ON COLUMN ledger.award_event."active_snapshot" IS '事件發生時收受者/Qualification的Active快照。';
+L2526 COMMENT ON COLUMN ledger.award_event."effective_direct_count_snapshot" IS '事件發生時有效直推數快照。';
+L2527 COMMENT ON COLUMN ledger.award_event."calculation_detail" IS '獎金計算明細JSON；應可解釋來源、代數、率、K值與快照。';
+L2528 COMMENT ON COLUMN ledger.award_event."correlation_id" IS '串接同一業務流程的Correlation ID，供跨表/跨服務追查。';
+L2529 COMMENT ON COLUMN ledger.award_event."reversal_of_award_event_id" IS '若本筆為獎金反轉，指向原Award Event。';
+L2530 
+L2531 COMMENT ON TABLE ledger.pool_snapshot IS '各獎池於結算期間的可用額、Theory總額與K值快照。';
+L2532 COMMENT ON COLUMN ledger.pool_snapshot."pool_snapshot_id" IS 'pool snapshot之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2533 COMMENT ON COLUMN ledger.pool_snapshot."pool_code" IS 'pool的穩定代碼，供程式、報表與整合使用。';
+L2534 COMMENT ON COLUMN ledger.pool_snapshot."period_start" IS 'period start欄位；資料型別與限制請以SQL Definition為準。';
+L2535 COMMENT ON COLUMN ledger.pool_snapshot."period_end" IS 'period end欄位；資料型別與限制請以SQL Definition為準。';
+L2536 COMMENT ON COLUMN ledger.pool_snapshot."pool_available" IS 'pool available欄位；資料型別與限制請以SQL Definition為準。';
+L2537 COMMENT ON COLUMN ledger.pool_snapshot."total_theory" IS 'total theory欄位；資料型別與限制請以SQL Definition為準。';
+L2538 COMMENT ON COLUMN ledger.pool_snapshot."k_factor" IS '該獎池結算批次的K縮減係數，範圍0~1。';
+L2539 COMMENT ON COLUMN ledger.pool_snapshot."rule_version_id" IS '本交易/事件採用的制度規則版本。';
+L2540 COMMENT ON COLUMN ledger.pool_snapshot."created_at" IS '資料列建立時間。';
+L2541 
+L2542 COMMENT ON TABLE ledger.settlement_batch IS '週/月等獎金結算批次主檔，保存期間、Rule Version、狀態及計算指紋。';
+L2543 COMMENT ON COLUMN ledger.settlement_batch."settlement_batch_id" IS 'settlement batch之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2544 COMMENT ON COLUMN ledger.settlement_batch."batch_code" IS 'batch的穩定代碼，供程式、報表與整合使用。';
+L2545 COMMENT ON COLUMN ledger.settlement_batch."settlement_type" IS 'settlement type欄位；資料型別與限制請以SQL Definition為準。';
+L2546 COMMENT ON COLUMN ledger.settlement_batch."period_start" IS 'period start欄位；資料型別與限制請以SQL Definition為準。';
+L2547 COMMENT ON COLUMN ledger.settlement_batch."period_end" IS 'period end欄位；資料型別與限制請以SQL Definition為準。';
+L2548 COMMENT ON COLUMN ledger.settlement_batch."rule_version_id" IS '本交易/事件採用的制度規則版本。';
+L2549 COMMENT ON COLUMN ledger.settlement_batch."status" IS '該Entity目前的業務狀態。';
+L2550 COMMENT ON COLUMN ledger.settlement_batch."calculation_fingerprint" IS 'calculation fingerprint欄位；資料型別與限制請以SQL Definition為準。';
+L2551 COMMENT ON COLUMN ledger.settlement_batch."created_at" IS '資料列建立時間。';
+L2552 COMMENT ON COLUMN ledger.settlement_batch."approved_at" IS '核准時間。';
+L2553 COMMENT ON COLUMN ledger.settlement_batch."closed_at" IS 'closed發生或記錄時間。';
+L2554 
+L2555 COMMENT ON TABLE attribution.referral_code IS '每個Qualification的固定推薦碼。';
+L2556 COMMENT ON COLUMN attribution.referral_code."referral_code_id" IS 'referral code之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2557 COMMENT ON COLUMN attribution.referral_code."qualification_id" IS '會員資格／球唯一識別碼；組織、PV、獎金等核心業務的主要關聯鍵。';
+L2558 COMMENT ON COLUMN attribution.referral_code."referral_code" IS 'referral的穩定代碼，供程式、報表與整合使用。';
+L2559 COMMENT ON COLUMN attribution.referral_code."status" IS '該Entity目前的業務狀態。';
+L2560 COMMENT ON COLUMN attribution.referral_code."created_at" IS '資料列建立時間。';
+L2561 
+L2562 COMMENT ON TABLE attribution.referral_link IS 'Qualification針對Campaign/Asset/Channel建立之分享連結Token。';
+L2563 COMMENT ON COLUMN attribution.referral_link."referral_link_id" IS 'referral link之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2564 COMMENT ON COLUMN attribution.referral_link."qualification_id" IS '會員資格／球唯一識別碼；組織、PV、獎金等核心業務的主要關聯鍵。';
+L2565 COMMENT ON COLUMN attribution.referral_link."token_hash" IS '分享連結Token的Hash；避免資料庫直接保存可使用的原始Token。';
+L2566 COMMENT ON COLUMN attribution.referral_link."campaign_id" IS 'campaign之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2567 COMMENT ON COLUMN attribution.referral_link."asset_id" IS 'asset之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2568 COMMENT ON COLUMN attribution.referral_link."channel_code" IS 'channel的穩定代碼，供程式、報表與整合使用。';
+L2569 COMMENT ON COLUMN attribution.referral_link."valid_from" IS 'valid from欄位；資料型別與限制請以SQL Definition為準。';
+L2570 COMMENT ON COLUMN attribution.referral_link."valid_to" IS 'valid to欄位；資料型別與限制請以SQL Definition為準。';
+L2571 COMMENT ON COLUMN attribution.referral_link."status" IS '該Entity目前的業務狀態。';
+L2572 COMMENT ON COLUMN attribution.referral_link."created_at" IS '資料列建立時間。';
+L2573 COMMENT ON COLUMN attribution.referral_link."created_by" IS '建立此資料之使用者/系統Actor識別碼。';
+L2574 
+L2575 COMMENT ON TABLE attribution.referral_session IS '訪客點入Referral Link形成的匿名Session與Landing資訊。';
+L2576 COMMENT ON COLUMN attribution.referral_session."referral_session_id" IS 'referral session之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2577 COMMENT ON COLUMN attribution.referral_session."referral_link_id" IS 'referral link之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2578 COMMENT ON COLUMN attribution.referral_session."first_seen_at" IS 'first seen發生或記錄時間。';
+L2579 COMMENT ON COLUMN attribution.referral_session."last_seen_at" IS 'last seen發生或記錄時間。';
+L2580 COMMENT ON COLUMN attribution.referral_session."anonymous_visitor_id_hash" IS 'anonymous visitor id的不可逆Hash，用於比對、完整性或去識別。';
+L2581 COMMENT ON COLUMN attribution.referral_session."landing_path" IS 'landing path業務資訊；敏感資訊需遵守資料最小化與存取控制。';
+L2582 COMMENT ON COLUMN attribution.referral_session."user_agent" IS 'user agent業務資訊；敏感資訊需遵守資料最小化與存取控制。';
+L2583 COMMENT ON COLUMN attribution.referral_session."ip_hash" IS 'ip的不可逆Hash，用於比對、完整性或去識別。';
+L2584 
+L2585 COMMENT ON TABLE attribution.attribution_event IS '分享/瀏覽/留資/轉換等Marketing Touchpoint的Append-only歸因事件。';
+L2586 COMMENT ON COLUMN attribution.attribution_event."attribution_event_id" IS 'attribution event之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2587 COMMENT ON COLUMN attribution.attribution_event."referral_session_id" IS 'referral session之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2588 COMMENT ON COLUMN attribution.attribution_event."qualification_id" IS '會員資格／球唯一識別碼；組織、PV、獎金等核心業務的主要關聯鍵。';
+L2589 COMMENT ON COLUMN attribution.attribution_event."event_type" IS '事件類型代碼；描述本筆Append-only事件代表的業務事實。';
+L2590 COMMENT ON COLUMN attribution.attribution_event."entity_type" IS 'entity type欄位；資料型別與限制請以SQL Definition為準。';
+L2591 COMMENT ON COLUMN attribution.attribution_event."entity_id" IS 'entity之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2592 COMMENT ON COLUMN attribution.attribution_event."campaign_id" IS 'campaign之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2593 COMMENT ON COLUMN attribution.attribution_event."occurred_at" IS '業務事實實際發生時間；不得與系統登錄時間混為一談。';
+L2594 COMMENT ON COLUMN attribution.attribution_event."metadata" IS 'metadata欄位；資料型別與限制請以SQL Definition為準。';
+L2595 COMMENT ON COLUMN attribution.attribution_event."correlation_id" IS '串接同一業務流程的Correlation ID，供跨表/跨服務追查。';
+L2596 
+L2597 COMMENT ON TABLE attribution.lead IS '訪客留資及轉換到Person/Qualification的Lead主檔。';
+L2598 COMMENT ON COLUMN attribution.lead."lead_id" IS 'lead之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2599 COMMENT ON COLUMN attribution.lead."referral_session_id" IS 'referral session之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2600 COMMENT ON COLUMN attribution.lead."source_qualification_id" IS 'source qualification之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2601 COMMENT ON COLUMN attribution.lead."lead_status" IS '狀態欄位；合法值由Enum/Check Constraint或業務流程控制。';
+L2602 COMMENT ON COLUMN attribution.lead."contact_name" IS '人可讀名稱/顯示名稱。';
+L2603 COMMENT ON COLUMN attribution.lead."mobile_ciphertext" IS 'mobile的加密密文；僅授權流程可解密。';
+L2604 COMMENT ON COLUMN attribution.lead."mobile_hash" IS 'mobile的不可逆Hash，用於比對、完整性或去識別。';
+L2605 COMMENT ON COLUMN attribution.lead."email" IS 'email業務資訊；敏感資訊需遵守資料最小化與存取控制。';
+L2606 COMMENT ON COLUMN attribution.lead."consent_id" IS 'consent之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2607 COMMENT ON COLUMN attribution.lead."created_at" IS '資料列建立時間。';
+L2608 COMMENT ON COLUMN attribution.lead."converted_person_id" IS 'converted person之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2609 COMMENT ON COLUMN attribution.lead."converted_qualification_id" IS 'converted qualification之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2610 
+L2611 COMMENT ON TABLE attribution.referral_lock IS '正式Sponsor核准後的歸因鎖定；後續點擊不得覆寫。';
+L2612 COMMENT ON COLUMN attribution.referral_lock."referral_lock_id" IS 'referral lock之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2613 COMMENT ON COLUMN attribution.referral_lock."child_qualification_id" IS 'Sponsor Tree上的被推薦Qualification。';
+L2614 COMMENT ON COLUMN attribution.referral_lock."sponsor_qualification_id" IS 'Sponsor Tree上的推薦人Qualification。';
+L2615 COMMENT ON COLUMN attribution.referral_lock."source_referral_link_id" IS 'source referral link之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2616 COMMENT ON COLUMN attribution.referral_lock."locked_at" IS 'locked發生或記錄時間。';
+L2617 COMMENT ON COLUMN attribution.referral_lock."locked_by" IS 'locked by欄位；資料型別與限制請以SQL Definition為準。';
+L2618 COMMENT ON COLUMN attribution.referral_lock."source_application_id" IS 'source application之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2619 COMMENT ON COLUMN attribution.referral_lock."lock_reason" IS 'lock reason欄位；資料型別與限制請以SQL Definition為準。';
+L2620 
+L2621 COMMENT ON TABLE attribution.referral_dispute IS '推薦歸因爭議案件；必須經案件流程處理，不直接改Sponsor。';
+L2622 COMMENT ON COLUMN attribution.referral_dispute."referral_dispute_id" IS 'referral dispute之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2623 COMMENT ON COLUMN attribution.referral_dispute."child_qualification_id" IS 'Sponsor Tree上的被推薦Qualification。';
+L2624 COMMENT ON COLUMN attribution.referral_dispute."claimed_sponsor_qualification_id" IS 'claimed sponsor qualification之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2625 COMMENT ON COLUMN attribution.referral_dispute."current_sponsor_qualification_id" IS 'current sponsor qualification之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2626 COMMENT ON COLUMN attribution.referral_dispute."status" IS '該Entity目前的業務狀態。';
+L2627 COMMENT ON COLUMN attribution.referral_dispute."reason_text" IS '人可讀說明文字，用於補充業務語意或稽核原因。';
+L2628 COMMENT ON COLUMN attribution.referral_dispute."opened_at" IS 'opened發生或記錄時間。';
+L2629 COMMENT ON COLUMN attribution.referral_dispute."opened_by" IS 'opened by欄位；資料型別與限制請以SQL Definition為準。';
+L2630 COMMENT ON COLUMN attribution.referral_dispute."resolved_at" IS 'resolved發生或記錄時間。';
+L2631 COMMENT ON COLUMN attribution.referral_dispute."resolved_by" IS 'resolved by欄位；資料型別與限制請以SQL Definition為準。';
+L2632 
+L2633 COMMENT ON TABLE integration.external_system IS '可整合之外部系統代碼，例如MANUAL、D365_BC、LINE、PAYMENT、LOGISTICS。';
+L2634 COMMENT ON COLUMN integration.external_system."external_system_code" IS '外部系統代碼，Pre-ERP通常為MANUAL，未來可為D365_BC等。';
+L2635 COMMENT ON COLUMN integration.external_system."display_name" IS '人可讀名稱/顯示名稱。';
+L2636 COMMENT ON COLUMN integration.external_system."active" IS '布林控制/資格旗標；True/False之業務意義依欄位名稱與所屬Entity定義。';
+L2637 
+L2638 COMMENT ON TABLE integration.external_reference IS 'UCell Entity與外部系統Entity/Document之對照。';
+L2639 COMMENT ON COLUMN integration.external_reference."external_reference_id" IS 'external reference之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2640 COMMENT ON COLUMN integration.external_reference."external_system_code" IS '外部系統代碼，Pre-ERP通常為MANUAL，未來可為D365_BC等。';
+L2641 COMMENT ON COLUMN integration.external_reference."entity_type" IS 'entity type欄位；資料型別與限制請以SQL Definition為準。';
+L2642 COMMENT ON COLUMN integration.external_reference."internal_entity_id" IS 'internal entity之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2643 COMMENT ON COLUMN integration.external_reference."external_entity_id" IS '外部系統Entity ID。';
+L2644 COMMENT ON COLUMN integration.external_reference."external_document_no" IS '外部系統人可讀單據號碼。';
+L2645 COMMENT ON COLUMN integration.external_reference."version_etag" IS '外部系統版本/ETag，用於併發與同步判斷。';
+L2646 COMMENT ON COLUMN integration.external_reference."sync_status" IS '與外部系統同步狀態。';
+L2647 COMMENT ON COLUMN integration.external_reference."last_synced_at" IS 'last synced發生或記錄時間。';
+L2648 
+L2649 COMMENT ON TABLE integration.outbox_event IS 'Transactional Outbox；在UCell交易提交後可靠發布跨模組/外部事件。';
+L2650 COMMENT ON COLUMN integration.outbox_event."outbox_event_id" IS 'outbox event之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2651 COMMENT ON COLUMN integration.outbox_event."aggregate_type" IS 'aggregate type欄位；資料型別與限制請以SQL Definition為準。';
+L2652 COMMENT ON COLUMN integration.outbox_event."aggregate_id" IS 'aggregate之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2653 COMMENT ON COLUMN integration.outbox_event."event_type" IS '事件類型代碼；描述本筆Append-only事件代表的業務事實。';
+L2654 COMMENT ON COLUMN integration.outbox_event."payload" IS 'payload欄位；資料型別與限制請以SQL Definition為準。';
+L2655 COMMENT ON COLUMN integration.outbox_event."occurred_at" IS '業務事實實際發生時間；不得與系統登錄時間混為一談。';
+L2656 COMMENT ON COLUMN integration.outbox_event."published_at" IS 'published發生或記錄時間。';
+L2657 COMMENT ON COLUMN integration.outbox_event."retry_count" IS 'retry count欄位；資料型別與限制請以SQL Definition為準。';
+L2658 COMMENT ON COLUMN integration.outbox_event."last_error" IS 'last error欄位；資料型別與限制請以SQL Definition為準。';
+L2659 COMMENT ON COLUMN integration.outbox_event."correlation_id" IS '串接同一業務流程的Correlation ID，供跨表/跨服務追查。';
+L2660 
+L2661 COMMENT ON TABLE integration.inbox_event IS '外部事件Inbox與Idempotency Gate；external_system+external_event_id唯一。';
+L2662 COMMENT ON COLUMN integration.inbox_event."inbox_event_id" IS 'inbox event之唯一識別碼或外鍵Reference；實際關聯依資料表FK定義。';
+L2663 COMMENT ON COLUMN integration.inbox_event."external_system_code" IS '外部系統代碼，Pre-ERP通常為MANUAL，未來可為D365_BC等。';
+L2664 COMMENT ON COLUMN integration.inbox_event."external_event_id" IS '外部系統事件唯一碼，用於Idempotency。';
+L2665 COMMENT ON COLUMN integration.inbox_event."event_type" IS '事件類型代碼；描述本筆Append-only事件代表的業務事實。';
+L2666 COMMENT ON COLUMN integration.inbox_event."payload" IS 'payload欄位；資料型別與限制請以SQL Definition為準。';
+L2667 COMMENT ON COLUMN integration.inbox_event."received_at" IS 'received發生或記錄時間。';
+L2668 COMMENT ON COLUMN integration.inbox_event."processed_at" IS 'processed發生或記錄時間。';
+L2669 COMMENT ON COLUMN integration.inbox_event."process_status" IS '狀態欄位；合法值由Enum/Check Constraint或業務流程控制。';
+L2670 COMMENT ON COLUMN integration.inbox_event."last_error" IS 'last error欄位；資料型別與限制請以SQL Definition為準。';
+L2671 
+L2672 COMMENT ON VIEW reporting.v_person_qualifications IS '自然人與其目前持有Qualification的查詢檢視；提供方案、狀態與Active投影。';
+L2673 
+L2674 COMMENT ON VIEW reporting.v_current_sponsor_tree IS '目前有效Sponsor Tree Edge檢視。';
+L2675 
+L2676 COMMENT ON VIEW reporting.v_current_binary_tree IS '目前有效Binary Tree Edge檢視。';
+L2677 
+L2678 COMMENT ON VIEW reporting.v_pv_balance IS '依Qualification及PV Type彙總Append-only PV Ledger之目前餘額。';
+L2679 
+L2680 COMMENT ON VIEW reporting.v_award_summary IS '依Qualification、Award Type、Status彙總獎金事件。';
+L2681 
+L2682 COMMENT ON VIEW reporting.v_order_status IS '會員訂單及最近付款/出貨確認時間的營運檢視。';
+L2683 
+L2684 COMMENT ON VIEW reporting.v_referral_performance IS 'Qualification分享漏斗摘要：Session、Lead與轉換Qualification。';
+L2685 
+L2686 COMMENT ON VIEW reporting.v_subscription_schedule IS '訂閱與逐月認列排程整合檢視。';
+L2687 
+L2688 COMMENT ON VIEW reporting.v_data_integrity_alerts IS '資料完整性警示檢視，主動檢查Holder、Sponsor與付款事件等異常。';
+L2689 
+L2690 COMMENT ON FUNCTION public.utc_now() IS '回傳資料庫目前時鐘時間；統一時間取得介面。';
+L2691 
+L2692 COMMENT ON FUNCTION public.gen_uuid() IS '使用pgcrypto產生UUID。';
+L2693 
+L2694 COMMENT ON FUNCTION public.sha256_text(text) IS '將文字計算SHA-256 Hex字串。';
+L2695 
+L2696 COMMENT ON FUNCTION public.set_updated_at() IS '共用Trigger Function；在UPDATE時自動更新updated_at。';
+L2697 
+L2698 COMMENT ON FUNCTION public.prevent_physical_delete() IS '共用Trigger Function；禁止核心資料Physical DELETE。';
+L2699 
+L2700 COMMENT ON FUNCTION public.prevent_mutation() IS '共用Trigger Function；禁止Append-only表UPDATE/DELETE。';
+L2701 
+L2702 COMMENT ON FUNCTION audit.fn_write_audit_event(public.actor_type, uuid, text, text, uuid, jsonb, jsonb, text, text, uuid) IS '新增一筆跨Domain Audit Event並回傳audit_event_id。';
+L2703 
+L2704 COMMENT ON FUNCTION membership.fn_is_active_at(uuid, timestamptz) IS '判斷指定Qualification在指定時間點是否Active。';
+L2705 
+L2706 COMMENT ON FUNCTION organization.fn_current_sponsor(uuid) IS '取得指定Qualification目前有效Sponsor。';
+L2707 
+L2708 COMMENT ON FUNCTION organization.fn_sponsor_ancestor(uuid, integer) IS '依Sponsor Tree取得指定代數祖先Qualification。';
+L2709 
+L2710 COMMENT ON FUNCTION organization.fn_effective_direct_count_at(uuid, timestamptz) IS '計算指定時間點Sponsor之有效直推數。';
+L2711 
+L2712 COMMENT ON FUNCTION organization.fn_binary_parent(uuid) IS '取得指定Qualification目前Binary Parent。';
+L2713 
+L2714 COMMENT ON FUNCTION organization.fn_binary_ancestor(uuid, integer) IS '依Binary Tree取得指定代數祖先Qualification。';
+L2715 
+L2716 COMMENT ON FUNCTION organization.fn_is_in_binary_subtree(uuid, uuid, public.side_code) IS '判斷Candidate是否位於Root指定LEFT/RIGHT子樹內。';
+L2717 
+L2718 COMMENT ON FUNCTION organization.fn_validate_binary_cycle() IS 'Binary Placement Trigger Function；避免形成循環樹。';
+L2719 
+L2720 COMMENT ON FUNCTION rules.fn_guard_published_mutation() IS '阻止已Published的Rule Version/Parameter被直接修改。';
+L2721 
+L2722 COMMENT ON FUNCTION rules.fn_active_rule_version(text, timestamptz) IS '依Rule Set及時間取得有效Published Rule Version。';
+L2723 
+L2724 COMMENT ON FUNCTION rules.fn_resolve_parameter(uuid, text, timestamptz, jsonb) IS '依Rule Version、Parameter Code、時間與Scope候選解析最終參數值。';
+L2725 
+L2726 COMMENT ON FUNCTION ledger.fn_pv_balance(uuid, text, timestamptz) IS '依Qualification/PV Type/時間點計算PV Ledger累計餘額。';
+L2727 
+L2728 COMMENT ON FUNCTION ledger.fn_compute_k_factor(numeric, numeric) IS '依Pool Available與Theory總額計算K=min(1, available/theory)。';
+L2729 
+L2730 COMMENT ON FUNCTION ledger.fn_rpv_depth(integer) IS 'R1.0B有效直推數對應可領RPV代數的便利函數；正式應與Decision Table/Rule Version一致。';
+L2731 
+L2732 COMMENT ON FUNCTION rules.fn_referral_rate_by_plan(text) IS '依方案取得G1推薦率的便利函數；正式運行應以參數/Decision Table為SoR。';
+L2733 
+L2734 COMMENT ON FUNCTION rules.fn_matching_rate_by_generation(integer) IS '依代數取得Matching比例的便利函數；正式運行應以參數/Decision Table為SoR。';
+L2735 
+L2736 COMMENT ON FUNCTION rules.fn_matching_unlock_depth(integer) IS '依有效直推數取得Matching解鎖代數。';
+L2737 
+L2738 COMMENT ON FUNCTION rules.fn_equalization_rate(text, integer) IS '依方案與G代數取得推薦對等比例；領袖G5=10%已保留。';
+L2739 
+L2740 COMMENT ON FUNCTION rules.fn_equalization_unlock_depth(text, integer) IS '依方案與有效直推數取得推薦對等最大解鎖代數。';
+L2741 
+L2742 COMMENT ON FUNCTION rules.fn_binary_weekly_cap(text) IS '依方案取得Binary每週Pair PV封頂便利函數。';
+L2743 
+L2744 COMMENT ON FUNCTION organization.fn_validate_first_third_left_rule() IS 'Binary Placement Trigger Function；執行Sponsor永久序號第1/3直推必須位於左子樹規則。';
+L2745 
+L2746 COMMENT ON FUNCTION organization.fn_guard_sponsor_update() IS '禁止直接覆寫Current Sponsor/Sequence，要求使用受控Supersede流程。';
+L2747 
+L2748 COMMENT ON PROCEDURE rules.sp_publish_rule_version(uuid, timestamptz, uuid) IS '核准並發布Rule Version，計算Parameter Snapshot Hash並將參數集合標記為Published。';
+L2749 
+L2750 COMMENT ON PROCEDURE subscription.sp_create_schedule(uuid) IS '依重銷方案月數建立3/6/12期Monthly Recognition Schedule，具唯一鍵防重。';
+L2751 
+L2752 COMMENT ON PROCEDURE ledger.sp_reverse_pv_event(uuid, uuid, text) IS '對原PV Event建立等額負向Reversal Event並寫Audit，不修改原事件。';
+L2753 
+L2754 COMMENT ON PROCEDURE subscription.sp_recognize_monthly_rpv(uuid, public.actor_type, uuid) IS '將一筆到期Monthly Recognition認列為RPV Event；使用FOR UPDATE及狀態控制避免重複。';
+L2755 
+L2756 COMMENT ON PROCEDURE commerce.sp_confirm_payment(uuid, numeric, text, text, timestamptz, uuid, uuid) IS 'Pre-ERP人工確認付款；建立Payment Event、更新Order Projection並寫Outbox SALE_CONFIRMED。';
+L2757 
+L2758 COMMENT ON PROCEDURE commerce.sp_confirm_fulfillment(uuid, text, text, timestamptz, uuid, uuid) IS 'Pre-ERP人工確認出貨；建立Fulfillment Event、更新Order Projection並寫Outbox。';
+L2759 
+L2760 COMMENT ON PROCEDURE organization.sp_supersede_sponsor(uuid, uuid, integer, timestamptz, uuid, uuid) IS '在已核准Change Request前提下關閉舊Sponsor有效期間並建立新關係與Audit。';
+L2761 
+L2762 COMMENT ON TRIGGER trg_person_updated_at ON identity.person IS 'Person主檔更新時自動刷新updated_at。';
+L2763 
+L2764 COMMENT ON TRIGGER trg_person_no_delete ON identity.person IS '禁止Person實體刪除。';
+L2765 
+L2766 COMMENT ON TRIGGER trg_consent_no_delete ON identity.consent_record IS '禁止同意證據實體刪除。';
+L2767 
+L2768 COMMENT ON TRIGGER trg_qualification_updated_at ON membership.qualification IS 'Qualification更新時刷新updated_at。';
+L2769 
+L2770 COMMENT ON TRIGGER trg_qualification_no_delete ON membership.qualification IS '禁止Qualification實體刪除。';
+L2771 
+L2772 COMMENT ON TRIGGER trg_sponsor_no_delete ON organization.sponsor_relationship IS '禁止Sponsor關係實體刪除。';
+L2773 
+L2774 COMMENT ON TRIGGER trg_binary_no_delete ON organization.binary_placement IS '禁止Binary Placement實體刪除。';
+L2775 
+L2776 COMMENT ON TRIGGER trg_binary_cycle_guard ON organization.binary_placement IS '新增/改Binary Parent前檢查循環。';
+L2777 
+L2778 COMMENT ON TRIGGER trg_rule_version_no_delete ON rules.rule_version IS '禁止Rule Version實體刪除。';
+L2779 
+L2780 COMMENT ON TRIGGER trg_parameter_value_no_delete ON rules.parameter_value IS '禁止Parameter Value實體刪除。';
+L2781 
+L2782 COMMENT ON TRIGGER trg_rule_version_immutable ON rules.rule_version IS '已Published Rule Version不得再直接修改。';
+L2783 
+L2784 COMMENT ON TRIGGER trg_parameter_value_immutable ON rules.parameter_value IS 'Published Rule下Parameter Value不得直接修改。';
+L2785 
+L2786 COMMENT ON TRIGGER trg_product_updated_at ON commerce.product_reference IS 'Product Reference更新時刷新updated_at。';
+L2787 
+L2788 COMMENT ON TRIGGER trg_order_updated_at ON commerce."order" IS 'Order Projection更新時刷新updated_at。';
+L2789 
+L2790 COMMENT ON TRIGGER trg_order_no_delete ON commerce."order" IS '禁止Order實體刪除。';
+L2791 
+L2792 COMMENT ON TRIGGER trg_payment_append_only_update ON commerce.payment_event IS 'Payment Event禁止UPDATE/DELETE。';
+L2793 
+L2794 COMMENT ON TRIGGER trg_fulfillment_append_only_update ON commerce.fulfillment_event IS 'Fulfillment Event禁止UPDATE/DELETE。';
+L2795 
+L2796 COMMENT ON TRIGGER trg_return_append_only_update ON commerce.return_event IS 'Return Event禁止UPDATE/DELETE。';
+L2797 
+L2798 COMMENT ON TRIGGER trg_pv_append_only ON ledger.pv_ledger IS 'PV Ledger禁止UPDATE/DELETE。';
+L2799 
+L2800 COMMENT ON TRIGGER trg_award_append_only_delete ON ledger.award_event IS 'Award Event禁止DELETE；狀態生命週期更新仍可透過受控服務執行。';
+L2801 
+L2802 COMMENT ON TRIGGER trg_attribution_append_only ON attribution.attribution_event IS 'Attribution Event禁止UPDATE/DELETE。';
+L2803 
+L2804 COMMENT ON TRIGGER trg_outbox_no_delete ON integration.outbox_event IS 'Outbox保留事件歷史，不允許DELETE。';
+L2805 
+L2806 COMMENT ON TRIGGER trg_inbox_no_delete ON integration.inbox_event IS 'Inbox保留外部事件歷史，不允許DELETE。';
+L2807 
+L2808 COMMENT ON TRIGGER trg_binary_first_third_left ON organization.binary_placement IS '新增Binary Placement時驗證第1/3直推位於Sponsor左子樹。';
+L2809 
+L2810 COMMENT ON TRIGGER trg_sponsor_update_guard ON organization.sponsor_relationship IS 'Current Sponsor/Sequence不可直接改寫，必須用Supersede流程。';
+L2811 
+L2812 COMMENT ON INDEX ix_audit_entity_time IS '查詢效能索引；表=audit.audit_event；定義=(entity_type, entity_id, occurred_at DESC)。';
+L2813 
+L2814 COMMENT ON INDEX ix_audit_actor_time IS '查詢效能索引；表=audit.audit_event；定義=(actor_id, occurred_at DESC)。';
+L2815 
+L2816 COMMENT ON INDEX ix_person_name IS '查詢效能索引；表=identity.person；定義=(legal_name)。';
+L2817 
+L2818 COMMENT ON INDEX ix_person_mobile IS '查詢效能索引；表=identity.person；定義=(mobile)。';
+L2819 
+L2820 COMMENT ON INDEX uq_person_primary_bank IS '唯一索引；表=identity.person_bank_profile；定義=(person_id) WHERE is_primary AND valid_to IS NULL。';
+L2821 
+L2822 COMMENT ON INDEX ix_qualification_holder IS '查詢效能索引；表=membership.qualification；定義=(current_holder_person_id, status)。';
+L2823 
+L2824 COMMENT ON INDEX uq_current_holder_per_qualification IS '唯一索引；表=membership.qualification_holder_history；定義=(qualification_id) WHERE valid_to IS NULL。';
+L2825 
+L2826 COMMENT ON INDEX ix_active_period_lookup IS '查詢效能索引；表=membership.active_period；定義=(qualification_id, active_from, active_to)。';
+L2827 
+L2828 COMMENT ON INDEX uq_sponsor_sequence_per_sponsor IS '唯一索引；表=organization.sponsor_relationship；定義=(sponsor_qualification_id, sponsor_sequence_no)。';
+L2829 
+L2830 COMMENT ON INDEX uq_current_sponsor_per_child IS '唯一索引；表=organization.sponsor_relationship；定義=(child_qualification_id) WHERE effective_to IS NULL。';
+L2831 
+L2832 COMMENT ON INDEX ix_sponsor_children IS '查詢效能索引；表=organization.sponsor_relationship；定義=(sponsor_qualification_id, effective_from)。';
+L2833 
+L2834 COMMENT ON INDEX uq_current_binary_position_for_child IS '唯一索引；表=organization.binary_placement；定義=(qualification_id) WHERE effective_to IS NULL。';
+L2835 
+L2836 COMMENT ON INDEX uq_current_binary_slot IS '唯一索引；表=organization.binary_placement；定義=(parent_qualification_id, side) WHERE effective_to IS NULL。';
+L2837 
+L2838 COMMENT ON INDEX ix_binary_parent IS '查詢效能索引；表=organization.binary_placement；定義=(parent_qualification_id, effective_from)。';
+L2839 
+L2840 COMMENT ON INDEX ix_parameter_scope IS '查詢效能索引；表=rules.parameter_set；定義=(rule_version_id, scope_type, scope_key, priority DESC)。';
+L2841 
+L2842 COMMENT ON INDEX ix_order_qualification_time IS '查詢效能索引；表=commerce."order"；定義=(qualification_id, created_at DESC)。';
+L2843 
+L2844 COMMENT ON INDEX ix_order_status_time IS '查詢效能索引；表=commerce."order"；定義=(status, created_at DESC)。';
+L2845 
+L2846 COMMENT ON INDEX uq_payment_external_event IS '唯一索引；表=commerce.payment_event；定義=(source_system, external_event_id) WHERE external_event_id IS NOT NULL。';
+L2847 
+L2848 COMMENT ON INDEX ix_pv_qualification_time IS '查詢效能索引；表=ledger.pv_ledger；定義=(qualification_id, occurred_at DESC)。';
+L2849 
+L2850 COMMENT ON INDEX ix_pv_source IS '查詢效能索引；表=ledger.pv_ledger；定義=(source_type, source_id)。';
+L2851 
+L2852 COMMENT ON INDEX ix_pv_type_time IS '查詢效能索引；表=ledger.pv_ledger；定義=(pv_type, occurred_at DESC)。';
+L2853 
+L2854 COMMENT ON INDEX ix_award_recipient_status IS '查詢效能索引；表=ledger.award_event；定義=(recipient_qualification_id, status, occurred_at DESC)。';
+L2855 
+L2856 COMMENT ON INDEX ix_award_source IS '查詢效能索引；表=ledger.award_event；定義=(source_event_id)。';
+L2857 
+L2858 COMMENT ON INDEX ix_outbox_unpublished IS '查詢效能索引；表=integration.outbox_event；定義=(occurred_at) WHERE published_at IS NULL。';
+L2859 
+L2860 COMMENT ON TYPE public.record_status IS '共用業務狀態Enum：DRAFT/PENDING/APPROVED/EFFECTIVE/SUSPENDED/VOIDED/CLOSED。';
+L2861 COMMENT ON TYPE public.side_code IS 'Binary Tree方向：LEFT或RIGHT。';
+L2862 COMMENT ON TYPE public.actor_type IS '事件操作者種類：USER/SYSTEM/JOB/INTEGRATION。';
+L2863 COMMENT ON TYPE public.rule_status IS 'Rule/Parameter生命週期：DRAFT/REVIEW/APPROVED/PUBLISHED/RETIRED。';
+L2864 COMMENT ON TYPE public.order_status IS '會員訂單狀態：DRAFT/CONFIRMED/PAID/FULFILLED/PARTIAL_RETURN/RETURNED/VOIDED。';
+L2865 COMMENT ON TYPE public.award_status IS '獎金生命週期：CALCULATED/PENDING_45D/EFFECTIVE/PAYABLE/PAID/REVERSED/CLAWBACK。';
+L2866 COMMENT ON TYPE public.parameter_data_type IS '參數資料型別Enum；Parameter Value以JSONB承載、Definition負責型別與驗證。';
+L2867 COMMIT;
+L2868 
+L2869 -- =============================================================================
+L2870 -- END OF UCell R1.0B PostgreSQL Full Database Definition v1.0
+L2871 -- =============================================================================
