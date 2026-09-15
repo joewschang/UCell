@@ -1,0 +1,29 @@
+{
+  "startedAt": "2026-09-15T12:29:42.915Z",
+  "result": "FAIL",
+  "failure": "AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n+ actual - expected\n\n+ '13b79295-0a4e-41fd-a93b-5d3fca68c204'\n- 'ae074dc4-5e51-4ff5-a3dd-ff4e25d06388'\n\n    at file:///C:/UCell/UCell/backend/scripts/admin-full-test.mjs:54:10",
+  "results": [
+    {
+      "method": "POST",
+      "route": "/admin/persons",
+      "status": 201,
+      "expected": 201,
+      "result": "PASS"
+    },
+    {
+      "method": "POST",
+      "route": "/admin/persons",
+      "status": 409,
+      "expected": 409,
+      "result": "PASS"
+    },
+    {
+      "method": "POST",
+      "route": "/admin/persons",
+      "status": 201,
+      "expected": 201,
+      "result": "PASS"
+    }
+  ],
+  "scope": "Isolated ucell_admin_test; existing application calculates test facts; no official monetary result; not frozen five-ball golden or release/UAT signoff"
+}

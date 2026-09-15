@@ -25,16 +25,19 @@ async function request(method, route, body, key=randomUUID(), expected=method===
 }
 try {
   // Non-monetary test prerequisite, not the formal five-ball golden dataset.
-  let rootPerson=await prisma.person.findFirst({where:{legalName:'ADMIN TEST ROOT FIXTURE'}});
-  if(!rootPerson) rootPerson=await prisma.person.create({data:{legalName:'ADMIN TEST ROOT FIXTURE',birthDate:new Date('1990-01-01')}});
+  const fixtureName='ADMIN PHASE2 ROOT FIXTURE '+startedAt;
+  let rootPerson=await prisma.person.findFirst({where:{legalName:fixtureName}});
+  if(!rootPerson) rootPerson=await prisma.person.create({data:{legalName:fixtureName,birthDate:new Date('1990-01-01')}});
   let root=await prisma.qualification.findFirst({where:{currentHolderPersonId:rootPerson.personId}});
   if(!root) root=await prisma.$transaction(async tx=>{
-    const at=new Date('2026-09-01T00:00:00Z');
+    const at=new Date();
     const q=await tx.qualification.create({data:{currentHolderPersonId:rootPerson.personId,planLevelCode:'LEADER',status:'EFFECTIVE',activeFlag:false,effectiveAt:at}});
     await tx.qualificationHolderHistory.create({data:{qualificationId:q.qualificationId,holderPersonId:rootPerson.personId,effectiveFrom:at,sourceType:'ADMIN_TEST_ROOT_FIXTURE'}});
     await tx.qualificationPlanHistory.create({data:{qualificationId:q.qualificationId,planCode:'LEADER',effectiveFrom:at,sourceType:'ADMIN_TEST_ROOT_FIXTURE'}});
+    await tx.qualificationStatusHistory.create({data:{qualificationId:q.qualificationId,status:'EFFECTIVE',effectiveFrom:at,sourceType:'ADMIN_TEST_ROOT_FIXTURE'}});
     return q;
   });
+  devActor=rootPerson.personId;
   const key=randomUUID();
   const {PersonService}=require('./apps/api/dist-admin-dev/modules/person/person.service.js');
   const {IdempotencyService}=require('./apps/api/dist-admin-dev/common/idempotency/idempotency.service.js');
@@ -78,6 +81,16 @@ try {
   await request('POST',`/admin/orders/${order.data.orderId}/payment-confirmations`,payment,paymentKey);
   await request('POST',`/admin/orders/${order.data.orderId}/payment-confirmations`,payment,paymentKey);
   assert.equal(await prisma.paymentEvent.count({where:{orderId:order.data.orderId}}),1);
+  // Connected DEV prerequisite: real worker must capture the original earning evidence before reversal.
+  const deadline=Date.now()+20000;let saleReady=false;
+  while(Date.now()<deadline){
+    const originals=await prisma.pvLedger.findMany({where:{sourceType:'ORDER',sourceId:order.data.orderId,pvType:'GPV',eventType:'GPV_CREATED'}});
+    const captured=await prisma.historicalReplaySnapshot.count({where:{kind:'GPV',sourceId:{in:originals.map(event=>event.eventId)}}});
+    if(originals.length===order.data.lines.length&&captured===originals.length){saleReady=true;break;}
+    await new Promise(resolve=>setTimeout(resolve,250));
+  }
+  assert.ok(saleReady,'SALE_CONFIRMED worker must capture complete historical evidence; no current-state backfill');
+
   await request('GET',`/admin/orders/${order.data.orderId}`);
   const subscription=await request('POST','/admin/subscriptions',{qualificationId:q.qualificationId,planCode:'QUARTER',startMonth:'2026-10-01'});
   await request('GET',`/admin/subscriptions/${subscription.data.subscriptionId}`);

@@ -104,6 +104,13 @@ export function verifyReplayEnvelope(row:any):ReplayEnvelope {
     const active=recipient.qualification.activeIntervals.some((interval:any)=>new Date(interval.activeFrom).getTime()<=at&&(!interval.activeTo||new Date(interval.activeTo).getTime()>at));
     if(active!==recipient.active) pending('HISTORICAL_SNAPSHOT_CORRUPT','Recipient Active flag conflicts with original evidence');
     if(!recipient.active&&dec(recipient.posted).gt(0)) pending('HISTORICAL_SNAPSHOT_CORRUPT','Inactive historical recipient cannot have positive entitlement');
+    if(envelope.kind==='MATCHING_K2') {
+      const source=envelope.evidence.matchingSources?.find((item:any)=>item.sourceAwardId===recipient.sourceAwardId);
+      if(!source) pending('HISTORICAL_SNAPSHOT_MISSING','Original Matching Sponsor source evidence is missing');
+      const ancestors=historicalSponsorAncestors(source.evidence,source.sourceQualificationId,7);
+      if(ancestors.find(item=>item.generation===recipient.generation)?.qualification_id!==recipient.qualificationId||historicalRecipientState(source.evidence,recipient.qualificationId).active!==recipient.active)
+        pending('HISTORICAL_SNAPSHOT_CORRUPT','Matching recipient conflicts with original Sponsor/Active evidence');
+    }
     if(envelope.kind==='EPV') {
       const expectedRate=snapshotDecimal(parameters,recipient.generation===0?'epv.self.rate':'epv.upline.rate',recipient.generation===0?'*':String(recipient.generation));
       if(recipient.rate==null||!dec(recipient.rate).eq(expectedRate)) pending('HISTORICAL_SNAPSHOT_CORRUPT','EPV rate conflicts with original Parameter snapshot');
@@ -150,11 +157,26 @@ export async function sealSettlement(tx:Prisma.TransactionClient,batch:any) {
   const awards=await tx.bonusAward.findMany({where:{settlementBatchId:batch.settlementBatchId},orderBy:{bonusAwardId:'asc'}});
   const recipients:HistoricalRecipient[]=[];
   for(const award of awards) recipients.push(await recipientFromAward(tx,award));
+  const matchingSources:any[]=[];
+  if(batch.settlementType==='MATCHING_K2')for(const sourceAwardId of [...new Set(awards.map(award=>award.sourceAwardId))]) {
+    if(!sourceAwardId) pending('HISTORICAL_SNAPSHOT_MISSING','Matching original source award required');
+    const source=await tx.bonusAward.findUnique({where:{bonusAwardId:sourceAwardId}});
+    if(!source||source.awardType!=='BINARY') pending('HISTORICAL_SNAPSHOT_MISSING','Matching original Binary source is missing');
+    matchingSources.push({sourceAwardId,evidence:await captureHistoricalGraph(tx,source.recipientQualificationId,batch.periodEnd),sourceQualificationId:source.recipientQualificationId});
+  }
   const originals=await tx.pvLedger.findMany({where:{pvType:'GPV',eventType:'GPV_CREATED',ruleVersionCode:batch.ruleVersionCode,occurredAt:{gte:batch.periodStart,lt:batch.periodEnd}},orderBy:{eventId:'asc'}});
   const sources:any[]=[];
   for(const event of originals) {
     const row=await tx.historicalReplaySnapshot.findUnique({where:{kind_sourceId:{kind:'GPV',sourceId:event.eventId}}});
     sources.push(verifyReplayEnvelope(row));
+  }
+  if(batch.settlementType==='REFERRAL_K0')for(const recipient of recipients) {
+    const source=sources.find(item=>item.sourceId===recipient.sourceEventId);
+    const qualification=source?.evidence.qualifications?.[recipient.qualificationId];
+    if(!qualification) pending('HISTORICAL_SNAPSHOT_MISSING','K0 recipient original recognition Qualification evidence is missing');
+    if(historicalSponsorAncestors(source.evidence,source.inputs.qualificationId,7).find(item=>item.generation===recipient.generation)?.qualification_id!==recipient.qualificationId)
+      pending('HISTORICAL_SNAPSHOT_CORRUPT','K0 recipient conflicts with original recognition Sponsor path');
+    recipient.qualification=qualification;
   }
   const carries=batch.settlementType==='BINARY_K1'?await tx.binaryCarry.findMany({where:{periodEnd:batch.periodEnd,ruleVersionCode:batch.ruleVersionCode},orderBy:{qualificationId:'asc'}}):[];
   const carryRecipients:any[]=[];
@@ -164,7 +186,7 @@ export async function sealSettlement(tx:Prisma.TransactionClient,batch:any) {
     carryRecipients.push({...json(carry) as object,qualification,active});
   }
   return storeReplaySnapshot(tx,{format:'UCELL_HISTORICAL_REPLAY_V1',kind:batch.settlementType,sourceId:batch.settlementBatchId,at:batch.periodEnd.toISOString(),ruleVersionCode:batch.ruleVersionCode,parameters,recipients,
-    evidence:{sources,carryRecipients},inputs:{periodStart:batch.periodStart.toISOString(),periodEnd:batch.periodEnd.toISOString(),totalGpv:batch.totalGpv.toString(),k:batch.kFactor.toString()}});
+    evidence:{sources,carryRecipients,matchingSources},inputs:{periodStart:batch.periodStart.toISOString(),periodEnd:batch.periodEnd.toISOString(),totalGpv:batch.totalGpv.toString(),k:batch.kFactor.toString()}});
 }
 
 export function historicalMonthlyEntitlements(events:ReplayEnvelope[],remaining:Map<string,Prisma.Decimal>) {

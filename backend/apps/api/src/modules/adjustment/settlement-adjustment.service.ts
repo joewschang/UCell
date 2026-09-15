@@ -42,6 +42,6 @@ export class SettlementAdjustmentService {
     if(!request.sourceReturnCaseId) throw new UnprocessableEntityException({code:'REPLAY_SOURCE_PENDING',message:'Source return required for dependency-wide replay'});
     // Return-scoped atomic replay replaces obsolete single-recipient posting.
     // Return replay run/period evidence; never fabricate a POSTED adjustment batch.
-    return this.replay.runForReturn(request.sourceReturnCaseId,26,ruleVersionCode);
+    return this.replay.runForReturn(request.sourceReturnCaseId,260,ruleVersionCode);
   }
 }

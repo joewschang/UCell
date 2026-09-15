@@ -13,6 +13,6 @@ export class CarryChainReplayController {
   @Post('returns/:returnCaseId')
   @ApiOperation({summary:'由退貨來源交易開始，逐週重放Binary/Matching至Carry收斂'})
   async run(@Param('returnCaseId') id:string,@Body() body:{maxWeeks?:number}){
-    return {data:await this.service.runForReturn(id,body?.maxWeeks ?? 26)};
+    return {data:await this.service.runForReturn(id,body?.maxWeeks ?? 260)};
   }
 }

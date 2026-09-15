@@ -1,5 +1,5 @@
 command: pnpm test:todo:gate
-started: 2026-09-15T12:18:12.038Z
+started: 2026-09-15T12:27:08.466Z
 exit: 1
 $ node scripts/test-todo-gate.mjs
 TEST_TODO_GATE_FAIL: 133 unresolved executable test placeholders

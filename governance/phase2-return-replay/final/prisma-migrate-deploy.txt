@@ -1,17 +1,17 @@
 command: pnpm --filter @ucell/database exec prisma migrate deploy
-started: 2026-09-15T12:17:03.772Z
+started: 2026-09-15T12:26:01.860Z
 exit: 0
 Prisma schema loaded from prisma\schema.prisma
 Datasource "db": PostgreSQL database "ucell", schemas "audit, commerce, identity, integration, ledger, membership, organization, rules, subscription" at "localhost:5432"
 
-18 migrations found in prisma/migrations
+19 migrations found in prisma/migrations
 
-Applying migration `20260915120000_phase2_historical_replay`
+Applying migration `20260915150000_replay_entitlement_baseline_guards`
 
 The following migration(s) have been applied:
 
 migrations/
-  └─ 20260915120000_phase2_historical_replay/
+  └─ 20260915150000_replay_entitlement_baseline_guards/
     └─ migration.sql
       
 All migrations have been successfully applied.

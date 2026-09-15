@@ -9,7 +9,13 @@ describe('v0.6.1 deterministic replay',()=>{
  it('replay uses original carry-in, not current carry',()=>{const e=binary();expect(periodBinary(e,volumes(),new Map()).carryOut.get('root')!.left.toString()).toBe('800');});
  it('negative GPV reversal is included in historical period subtree GPV',()=>{expect(periodBinary(binary(),volumes(),new Map()).total.toString()).toBe('1800');});
  it('recomputed Pair respects original weekly cap',()=>{expect(periodBinary(binary(),volumes(),new Map()).payables.get('award')!.toString()).toBe('100');});
- it('K1 is recomputed with changed impacted theory and unchanged others',()=>{const e=binary();e.parameters.parameters.find(p=>p.code==='pool.binary.rate')!.value='.01';const r=periodBinary(e,volumes(),new Map());expect(r.k.toString()).toBe('0.18');expect(r.payables.get('award')!.toString()).toBe('18');});
+ it('K1 is recomputed with changed impacted theory and unchanged others',()=>{
+  const e=binary();e.parameters.parameters.find(p=>p.code==='pool.binary.rate')!.value='.01';e.evidence.carryRecipients[0].leftCarryIn='0';e.evidence.carryRecipients[0].weeklyCapSnapshot='1000';
+  e.recipients.push(recipient({key:'other',qualificationId:'root2'}));e.evidence.carryRecipients.push({...e.evidence.carryRecipients[0],qualificationId:'root2',leftCarryIn:'200',rightCarryIn:'200',weeklyCapSnapshot:'200'});
+  for(const source of e.evidence.sources)source.evidence.binary.push({childQualificationId:'root',parentQualificationId:'root2',side:'LEFT'});
+  const original=periodBinary(e,new Map([['left',d(1000)],['right',d(1000)]]),new Map()),r=periodBinary(e,volumes(),new Map());
+  expect(original.payables.get('other')!.toString()).toBe('3.3333');expect(r.k.toString()).toBe('0.036');expect(r.payables.get('award')!.toString()).toBe('14.4');expect(r.payables.get('other')!.toString()).toBe('3.6');
+ });
  it('Matching source uses recomputed Binary Paid',()=>{const e=binary();e.recipients=[recipient({awardType:'MATCHING',sourceAwardId:'source',rate:'.1'})];expect(periodMatching(e,new Map([['source',d(80)]]),d(1800)).payables.get('award')!.toString()).toBe('8');});
  it('K2 is recomputed from adjusted matching theory',()=>{const e=binary();e.recipients=[recipient({awardType:'MATCHING',sourceAwardId:'source',rate:'1'})];const r=periodMatching(e,new Map([['source',d(1000)]]),d(100));expect(r.k.toString()).toBe('0.015');expect(r.payables.get('award')!.toString()).toBe('15');});
  it('original settlement, award and carry rows remain unchanged',()=>{const e=binary(),before=JSON.stringify(e);periodBinary(e,volumes(),new Map());expect(JSON.stringify(e)).toBe(before);});
