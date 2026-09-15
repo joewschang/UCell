@@ -1,8 +1,8 @@
 command: pnpm db:golden
-started: 2026-09-15T17:32:38.847Z
+started: 2026-09-15T17:38:44.256Z
 exit: 0
 Prisma schema loaded from packages\database\prisma\schema.prisma
-Datasource "db": PostgreSQL database "ucell_dev_golden_a1e82758555c49fab262792f291ea212", schemas "audit, commerce, identity, integration, ledger, membership, organization, rules, subscription" at "localhost:5432"
+Datasource "db": PostgreSQL database "ucell_dev_golden_d621c5ea1f0a4fdbaf520758cb5698cd", schemas "audit, commerce, identity, integration, ledger, membership, organization, rules, subscription" at "localhost:5432"
 
 20 migrations found in prisma/migrations
 
@@ -81,7 +81,7 @@ PHASE3_MEMBERSHIP_DB_PASS: 71 assertions; approval, isolation, rollback/retry, t
 DB_GOLDEN_ISOLATED_PASS: fresh database, deployed migrations, deterministic fixtures
 DB_GOLDEN_ISOLATED_CLEANUP_PASS
 $ node scripts/db-golden-isolated.mjs
-(node:27268) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///C:/UCell/UCell/backend/packages/shared/src/r1-0b-golden.ts is not specified and it doesn't parse as CommonJS.
+(node:20356) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///C:/UCell/UCell/backend/packages/shared/src/r1-0b-golden.ts is not specified and it doesn't parse as CommonJS.
 Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
 To eliminate this warning, add "type": "module" to \\?\C:\UCell\UCell\backend\packages\shared\package.json.
 (Use `node --trace-warnings ...` to show where the warning was created)

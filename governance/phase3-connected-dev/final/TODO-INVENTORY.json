@@ -1,7 +1,7 @@
 {
   "originalBaseline": 148,
-  "currentExecutableTodo": 90,
-  "netPlaceholderReduction": 58,
+  "currentExecutableTodo": 87,
+  "netPlaceholderReduction": 61,
   "audit": "Previous 52 TODO claim invalidated: missing cases and unrelated/constant assertions restored. Net reduction alone is not Release approval.",
   "items": [
     {
@@ -138,67 +138,49 @@
     },
     {
       "file": "backend/apps/api/test/epv-global-v05.e2e-spec.ts",
-      "line": 5,
-      "case": "EPV self share = 50% = 840 when Active",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
-    },
-    {
-      "file": "backend/apps/api/test/epv-global-v05.e2e-spec.ts",
-      "line": 6,
-      "case": "EPV Sponsor G1-G5 each 6% when Active",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
-    },
-    {
-      "file": "backend/apps/api/test/epv-global-v05.e2e-spec.ts",
-      "line": 7,
-      "case": "EPV does not use Binary tree",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
-    },
-    {
-      "file": "backend/apps/api/test/epv-global-v05.e2e-spec.ts",
-      "line": 8,
+      "line": 22,
       "case": "non-REPURCHASE order does not create EPV",
       "classification": "Pending Decision: eligible scope / formal PV mapping"
     },
     {
       "file": "backend/apps/api/test/epv-global-v05.e2e-spec.ts",
-      "line": 12,
+      "line": 26,
       "case": "global pool is 5% of period GPV",
       "classification": "Test implementation; SSOT/evidence review before conversion"
     },
     {
       "file": "backend/apps/api/test/epv-global-v05.e2e-spec.ts",
-      "line": 13,
+      "line": 27,
       "case": "weak thresholds are 300k/600k/1m/2m/4m",
       "classification": "Test implementation; SSOT/evidence review before conversion"
     },
     {
       "file": "backend/apps/api/test/epv-global-v05.e2e-spec.ts",
-      "line": 14,
+      "line": 28,
       "case": "rank achievement never downgrades",
       "classification": "Test implementation; SSOT/evidence review before conversion"
     },
     {
       "file": "backend/apps/api/test/epv-global-v05.e2e-spec.ts",
-      "line": 15,
+      "line": 29,
       "case": "monthly payout requires Active and current-month weak side threshold",
       "classification": "Test implementation; SSOT/evidence review before conversion"
     },
     {
       "file": "backend/apps/api/test/epv-global-v05.e2e-spec.ts",
-      "line": 16,
+      "line": 30,
       "case": "passed levels are cumulative",
       "classification": "Test implementation; SSOT/evidence review before conversion"
     },
     {
       "file": "backend/apps/api/test/epv-global-v05.e2e-spec.ts",
-      "line": 17,
+      "line": 31,
       "case": "empty rank slice rolls upward to next higher rank",
       "classification": "Test implementation; SSOT/evidence review before conversion"
     },
     {
       "file": "backend/apps/api/test/epv-global-v05.e2e-spec.ts",
-      "line": 18,
+      "line": 32,
       "case": "welfare 2% is accrued only; no distribution without a formal rule",
       "classification": "Test implementation; SSOT/evidence review before conversion"
     },

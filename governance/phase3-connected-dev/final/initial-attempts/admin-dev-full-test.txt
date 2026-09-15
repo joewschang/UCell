@@ -1,13 +1,4 @@
 command: node backend/scripts/admin-full-test.mjs
-started: 2026-09-15T17:34:35.765Z
-exit: 1
-[TypeError: fetch failed] {
-  [cause]: Error: connect ECONNREFUSED 127.0.0.1:3001
-      at TCPConnectWrap.afterConnect [as oncomplete] (node:net:2021:16) {
-    errno: -4078,
-    code: 'ECONNREFUSED',
-    syscall: 'connect',
-    address: '127.0.0.1',
-    port: 3001
-  }
-}
+started: 2026-09-15T17:34:58.137Z
+exit: 0
+ADMIN_FULL_TEST_PASS: 43 requests; fixture root 01ff5640-b525-4820-a91a-be63e723ee66

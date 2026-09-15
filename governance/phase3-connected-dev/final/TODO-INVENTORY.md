@@ -1,4 +1,4 @@
-Original baseline: 148. Current TODO: 90. Net placeholder reduction: 58.
+Original baseline: 148. Current TODO: 87. Net placeholder reduction: 61.
 
 The previous 52 TODO claim is invalid. Full behavioral coverage must be reviewed independently.
 
@@ -26,17 +26,14 @@ The previous 52 TODO claim is invalid. Full behavioral coverage must be reviewed
 | backend/apps/api/test/bonus-engine-v04.e2e-spec.ts | 48 | rates are G1=15,G2=10,G3-G5=5 | Test implementation; SSOT/evidence review before conversion |
 | backend/apps/api/test/bonus-engine-v04.e2e-spec.ts | 53 | Matching Pool is 15% and K2 <= 1 | Test implementation; SSOT/evidence review before conversion |
 | backend/apps/api/test/bonus-engine-v04.e2e-spec.ts | 57 | award creates CALCULATED then PENDING_45D events | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/epv-global-v05.e2e-spec.ts | 5 | EPV self share = 50% = 840 when Active | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/epv-global-v05.e2e-spec.ts | 6 | EPV Sponsor G1-G5 each 6% when Active | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/epv-global-v05.e2e-spec.ts | 7 | EPV does not use Binary tree | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/epv-global-v05.e2e-spec.ts | 8 | non-REPURCHASE order does not create EPV | Pending Decision: eligible scope / formal PV mapping |
-| backend/apps/api/test/epv-global-v05.e2e-spec.ts | 12 | global pool is 5% of period GPV | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/epv-global-v05.e2e-spec.ts | 13 | weak thresholds are 300k/600k/1m/2m/4m | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/epv-global-v05.e2e-spec.ts | 14 | rank achievement never downgrades | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/epv-global-v05.e2e-spec.ts | 15 | monthly payout requires Active and current-month weak side threshold | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/epv-global-v05.e2e-spec.ts | 16 | passed levels are cumulative | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/epv-global-v05.e2e-spec.ts | 17 | empty rank slice rolls upward to next higher rank | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/epv-global-v05.e2e-spec.ts | 18 | welfare 2% is accrued only; no distribution without a formal rule | Test implementation; SSOT/evidence review before conversion |
+| backend/apps/api/test/epv-global-v05.e2e-spec.ts | 22 | non-REPURCHASE order does not create EPV | Pending Decision: eligible scope / formal PV mapping |
+| backend/apps/api/test/epv-global-v05.e2e-spec.ts | 26 | global pool is 5% of period GPV | Test implementation; SSOT/evidence review before conversion |
+| backend/apps/api/test/epv-global-v05.e2e-spec.ts | 27 | weak thresholds are 300k/600k/1m/2m/4m | Test implementation; SSOT/evidence review before conversion |
+| backend/apps/api/test/epv-global-v05.e2e-spec.ts | 28 | rank achievement never downgrades | Test implementation; SSOT/evidence review before conversion |
+| backend/apps/api/test/epv-global-v05.e2e-spec.ts | 29 | monthly payout requires Active and current-month weak side threshold | Test implementation; SSOT/evidence review before conversion |
+| backend/apps/api/test/epv-global-v05.e2e-spec.ts | 30 | passed levels are cumulative | Test implementation; SSOT/evidence review before conversion |
+| backend/apps/api/test/epv-global-v05.e2e-spec.ts | 31 | empty rank slice rolls upward to next higher rank | Test implementation; SSOT/evidence review before conversion |
+| backend/apps/api/test/epv-global-v05.e2e-spec.ts | 32 | welfare 2% is accrued only; no distribution without a formal rule | Test implementation; SSOT/evidence review before conversion |
 | backend/apps/api/test/negative-flow-v05.e2e-spec.ts | 10 | partial return creates proportional negative GPV event | Pending Decision: eligible scope / formal PV mapping |
 | backend/apps/api/test/negative-flow-v05.e2e-spec.ts | 13 | PENDING_45D direct referral/equalization becomes REVERSED | Test implementation; SSOT/evidence review before conversion |
 | backend/apps/api/test/negative-flow-v05.e2e-spec.ts | 14 | EFFECTIVE/PAYABLE/PAID direct award creates CLAWBACK and recovery ledger | Test implementation; SSOT/evidence review before conversion |
