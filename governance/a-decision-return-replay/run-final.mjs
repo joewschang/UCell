@@ -44,4 +44,3 @@ run('','"C:\\Program Files\\Git\\bin\\bash.exe" scripts/release-gate.sh','releas
 run('backend','pnpm --filter @ucell/api build:admin-dev','full-admin-dev-build');
 
 run('backend','pnpm uat:gate','uat-gate');
-

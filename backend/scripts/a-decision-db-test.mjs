@@ -81,4 +81,3 @@ const out=fileURLToPath(new URL('../../governance/a-decision-return-replay/final
 fs.mkdirSync(out,{recursive:true});
 fs.writeFileSync(out+'db-regression.json',JSON.stringify({result:failure?'FAIL':'PASS',fixturesRolledBack:true,results,...(failure?{error:failure.stack}:{})},null,2)+'\n');
 if(failure){console.error(failure);process.exitCode=1;}else console.log(`PASS ${results.length} real DB assertions; all fixtures rolled back`);
-
