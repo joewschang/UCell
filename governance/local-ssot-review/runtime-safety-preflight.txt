@@ -1,0 +1,4 @@
+cwd: C:\UCell\UCell\backend
+command: node scripts/runtime-safety-preflight.mjs
+exit: 0
+RUNTIME_SAFETY_PREFLIGHT_PASS

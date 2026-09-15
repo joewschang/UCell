@@ -1,0 +1,140 @@
+[
+  {
+    "command": "node scripts/static-validate.mjs",
+    "label": "static-validate",
+    "exit": 0,
+    "result": "PASS"
+  },
+  {
+    "command": "node scripts/convergence-validate.mjs",
+    "label": "convergence-validate",
+    "exit": 0,
+    "result": "PASS"
+  },
+  {
+    "command": "node scripts/golden-domain-test.mjs",
+    "label": "golden-domain-test",
+    "exit": 0,
+    "result": "PASS"
+  },
+  {
+    "command": "node scripts/schema-preflight.mjs",
+    "label": "schema-preflight",
+    "exit": 0,
+    "result": "PASS"
+  },
+  {
+    "command": "node scripts/prisma-relation-preflight.mjs",
+    "label": "prisma-relation-preflight",
+    "exit": 0,
+    "result": "PASS"
+  },
+  {
+    "command": "node scripts/prisma-client-access-preflight.mjs",
+    "label": "prisma-client-access-preflight",
+    "exit": 0,
+    "result": "PASS"
+  },
+  {
+    "command": "node scripts/enum-migration-preflight.mjs",
+    "label": "enum-migration-preflight",
+    "exit": 0,
+    "result": "PASS"
+  },
+  {
+    "command": "node scripts/runtime-safety-preflight.mjs",
+    "label": "runtime-safety-preflight",
+    "exit": 0,
+    "result": "PASS"
+  },
+  {
+    "command": "node scripts/migration-preflight.mjs",
+    "label": "migration-preflight",
+    "exit": 0,
+    "result": "PASS"
+  },
+  {
+    "command": "node scripts/source-preflight.mjs",
+    "label": "source-preflight",
+    "exit": 0,
+    "result": "PASS"
+  },
+  {
+    "command": "node scripts/import-module-preflight.mjs",
+    "label": "import-module-preflight",
+    "exit": 0,
+    "result": "PASS"
+  },
+  {
+    "command": "node scripts/review-r1-preflight.mjs",
+    "label": "review-r1-preflight",
+    "exit": 0,
+    "result": "PASS"
+  },
+  {
+    "command": "node scripts/admin-readmodel-preflight.mjs",
+    "label": "admin-readmodel-preflight",
+    "exit": 0,
+    "result": "PASS"
+  },
+  {
+    "command": "node scripts/admin-observability-preflight.mjs",
+    "label": "admin-observability-preflight",
+    "exit": 0,
+    "result": "PASS"
+  },
+  {
+    "command": "node scripts/admin-operations-preflight.mjs",
+    "label": "admin-operations-preflight",
+    "exit": 0,
+    "result": "PASS"
+  },
+  {
+    "command": "node scripts/operations-ready-preflight.mjs",
+    "label": "operations-ready-preflight",
+    "exit": 0,
+    "result": "PASS"
+  },
+  {
+    "command": "node scripts/security-policy-preflight.mjs",
+    "label": "security-policy-preflight",
+    "exit": 0,
+    "result": "PASS"
+  },
+  {
+    "command": "node scripts/release-readiness-preflight.mjs",
+    "label": "release-readiness-preflight",
+    "exit": 0,
+    "result": "PASS"
+  },
+  {
+    "command": "node scripts/typescript-parse-preflight.mjs",
+    "label": "typescript-parse-preflight",
+    "exit": 0,
+    "result": "PASS"
+  },
+  {
+    "command": "node scripts/golden-r1b-regression.mjs",
+    "label": "golden-r1b-regression",
+    "exit": 0,
+    "result": "PASS"
+  },
+  {
+    "command": "node scripts/golden-economic-cases.mjs",
+    "label": "golden-economic-cases",
+    "exit": 0,
+    "result": "PASS"
+  },
+  {
+    "command": "pnpm --filter @ucell/shared test --runInBand",
+    "label": "shared-golden-tests",
+    "exit": 0,
+    "result": "PASS"
+  },
+  {
+    "command": "node scripts/test-todo-gate.mjs",
+    "label": "test-todo-gate",
+    "exit": 1,
+    "result": "FAIL"
+  }
+]

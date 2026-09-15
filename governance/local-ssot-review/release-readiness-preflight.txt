@@ -1,0 +1,4 @@
+cwd: C:\UCell\UCell\backend
+command: node scripts/release-readiness-preflight.mjs
+exit: 0
+RELEASE_READINESS_PREFLIGHT_PASS

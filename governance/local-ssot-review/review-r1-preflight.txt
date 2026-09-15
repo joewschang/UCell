@@ -1,0 +1,4 @@
+cwd: C:\UCell\UCell\backend
+command: node scripts/review-r1-preflight.mjs
+exit: 0
+REVIEW_R1_PREFLIGHT_PASS

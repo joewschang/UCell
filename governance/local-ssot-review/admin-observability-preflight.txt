@@ -1,0 +1,4 @@
+cwd: C:\UCell\UCell\backend
+command: node scripts/admin-observability-preflight.mjs
+exit: 0
+ADMIN_OBSERVABILITY_PREFLIGHT_PASS

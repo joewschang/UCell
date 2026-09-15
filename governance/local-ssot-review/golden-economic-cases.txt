@@ -1,0 +1,4 @@
+cwd: C:\UCell\UCell\backend
+command: node scripts/golden-economic-cases.mjs
+exit: 0
+GOLDEN_ECONOMIC_CASES_PASS

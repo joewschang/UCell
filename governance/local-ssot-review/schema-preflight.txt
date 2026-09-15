@@ -1,0 +1,4 @@
+cwd: C:\UCell\UCell\backend
+command: node scripts/schema-preflight.mjs
+exit: 0
+SCHEMA_PREFLIGHT_PASS

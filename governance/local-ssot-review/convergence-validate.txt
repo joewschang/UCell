@@ -1,0 +1,4 @@
+cwd: C:\UCell\UCell\backend
+command: node scripts/convergence-validate.mjs
+exit: 0
+CONVERGENCE_VALIDATE_PASS

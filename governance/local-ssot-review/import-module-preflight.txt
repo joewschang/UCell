@@ -1,0 +1,4 @@
+cwd: C:\UCell\UCell\backend
+command: node scripts/import-module-preflight.mjs
+exit: 0
+IMPORT_MODULE_PREFLIGHT_PASS

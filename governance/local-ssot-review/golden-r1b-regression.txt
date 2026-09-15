@@ -1,0 +1,4 @@
+cwd: C:\UCell\UCell\backend
+command: node scripts/golden-r1b-regression.mjs
+exit: 0
+GOLDEN_R1B_REGRESSION_PASS

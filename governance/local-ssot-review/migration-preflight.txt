@@ -1,0 +1,4 @@
+cwd: C:\UCell\UCell\backend
+command: node scripts/migration-preflight.mjs
+exit: 0
+MIGRATION_PREFLIGHT_PASS
