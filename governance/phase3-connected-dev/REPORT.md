@@ -1,6 +1,16 @@
 # Phase 3 Connected DEV progress report
 
-Date: 2026-09-15–16 (Asia/Taipei). Active Backend branch: `codex/backend-phase2`. Production Promotion remains BLOCKED; no RC2, merge, force push or production promotion.
+Date: 2026-09-15–16 (Asia/Taipei). Active Backend branch: `codex/backend-phase3`. Production Promotion remains BLOCKED; no RC2, merge, force push or production promotion.
+
+## Phase 3 ordered continuation
+
+Latest user direction creates `codex/backend-phase3` from verified checkpoint `9c6fbee7c7856fae329b99e74e883608641a1a9b`, which was pushed to origin before changes. This supersedes the earlier active Phase 2 branch choice below. All subsequent stable checkpoints on Phase 3 must update REPORT, PASS/FAIL Matrix and TODO inventory and push normally. Do not modify `member/`; Member API cooperation remains additive. Local `rc1-recovered` remains at shared baseline `63b9a21c0ff328a2a38521f69e3896bd328aa990`.
+
+First priority extends the isolated RPV concurrency fixture to historical recipients: inactive G1 remains zero, Active G2 earns 100 without compression. After recognition, current Binary parent is replaced and Active states change. Two controlled concurrent historical cancellation replays must produce one committed action and a retryable Serializable/unique conflict; explicit redelivery retains one posting per historical recipient, one 100 recovery and one -1200 reversal. Current replacement receives no recovery, and complete original recipient awards/snapshot remain unchanged. The suite now has 20 assertions; fixture rates/time are TEST_ONLY and no operational calendar/scope decision is inferred. No production source/migration changes. TODO inventory remains 74.
+
+Remaining ordered work: K1/K2 period-wide replay, then carry convergence/maxWeeks/resume, then further audited TODO conversions. These are not claimed complete by the RPV fixture. Asia/Taipei, historical fail-closed and Legacy Test Drift are already decided; eligible scope, PV/BV formal mapping and production calendar/cut-off remain Pending Decision. Build/Prisma/offline/formal Security/UAT/release-preparation timestamps retain preceding evidence for this test-only batch.
+
+Phase 3 historical recipient batch verification: two independent fresh Golden runs PASS, each including 20 RPV concurrency assertions, 81 membership assertions and 20 Return/outbox assertions. API 16 suites / 105 tests PASS / 74 TODOs; replay regression 128 assertions PASS; Security Policy Preflight PASS; Admin DEV 43 HTTP requests PASS; diff check PASS. Backend/TODO/RC gates remain BLOCKED by TODOs; formal Security/UAT and Production Promotion remain BLOCKED. REPORT/matrix/inventory are committed and pushed together; exact commands/timestamps/raw output remain in `final/gate-results.json`.
 
 ## Backend branch coordination checkpoint
 
