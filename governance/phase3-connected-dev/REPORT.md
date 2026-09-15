@@ -2,6 +2,8 @@
 
 Branch: integration/member-backend-mvp. Pre-change checkpoint b64a31a; preserved implementation checkpoint 1639bd5. This section supersedes older incomplete Member entries below. Production Promotion remains BLOCKED; no main merge, force push or RC2 promotion.
 
+Verified source/evidence checkpoint: 107cd9c71b0c094be049c7ca3b4f124a47efa7fd, pushed to origin/integration/member-backend-mvp and confirmed by ls-remote. The following documentation-only commit records that immutable SHA. All final matrix gates are PASS or explicitly BLOCKED; no unresolved FAIL result remains. Local DEV API/Worker were restored after Prisma/release checks.
+
 ## Status classification
 
 - CODE COMPLETE: Connected Member MVP API/UI infrastructure for Core-priced order creation/detail, station notification read-state, own Person contact/profile, Core repurchase Dashboard, scoped views and error/session states. Backend Phase 3 is NOT complete.
