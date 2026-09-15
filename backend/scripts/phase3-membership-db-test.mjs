@@ -10,6 +10,7 @@ const {AuditService}=require('./apps/api/dist/common/audit/audit.service.js');
 const {QualificationAccessService}=require('./apps/api/dist/modules/auth/qualification-access.service.js');
 const {UnifiedPayableService}=require('./apps/api/dist/modules/payout/unified-payable.service.js');
 const {RecoveryBalanceService}=require('./apps/api/dist/modules/payout/recovery-balance.service.js');
+const {BonusLifecycleService}=require('./apps/api/dist/modules/bonus/bonus-lifecycle.service.js');
 const url=new URL(process.env.DATABASE_URL??'');
 assert.ok(['localhost','127.0.0.1'].includes(url.hostname));
 assert.match(process.env.GOLDEN_ISOLATION_DATABASE??'',/^ucell_dev_golden_[a-f0-9]{32}$/);
@@ -115,5 +116,23 @@ try{
   equal(payout.totalGross.toString(),'41','batch sums qualification gross');
   equal(payout.totalNet.toString(),'41','batch sums qualification net');
   equal(await db.recoveryApplication.count({where:{payoutLine:{payoutBatchId:payout.payoutBatchId}}}),0,'no cross-qualification recovery applied');
-  console.log(`PHASE3_MEMBERSHIP_DB_PASS: ${assertions} assertions; approval atomicity, tree isolation, first/third rule, duplicate, rollback/retry, temporal access and qualification payout grouping`);
+  const lifecycleAward=await db.bonusAward.create({data:{recipientQualificationId:sponsor,awardType:'REFERRAL',theoryAmount:100,payableAmount:100,activeSnapshot:true,ruleVersionCode:'TEST_ONLY_LIFECYCLE',occurredAt:new Date('2020-01-01'),pendingUntil:end,calculationDetail:{testOnly:true}}});
+  await db.bonusAwardLifecycleEvent.create({data:{bonusAwardId:lifecycleAward.bonusAwardId,status:'PENDING_45D',occurredAt:new Date('2020-01-01')}});
+  const originalLifecycleAward=JSON.stringify(lifecycleAward);
+  let arrived=0,release;
+  const barrier=new Promise(resolve=>{release=resolve;});
+  const scoped={
+    bonusAward:{findMany:args=>db.bonusAward.findMany({...args,where:{...args.where,bonusAwardId:lifecycleAward.bonusAwardId}})},
+    bonusAwardLifecycleEvent:{findFirst:async args=>{const row=await db.bonusAwardLifecycleEvent.findFirst(args);if(++arrived===2)release();await barrier;return row;},create:args=>db.bonusAwardLifecycleEvent.create(args)},
+    $transaction:db.$transaction.bind(db)
+  };
+  const lifecycle=new BonusLifecycleService(scoped);
+  const maturities=await Promise.all([lifecycle.matureDueAwards(end),lifecycle.matureDueAwards(end)]);
+  equal(maturities.reduce((sum,row)=>sum+row.matured,0),1,'parallel maturity appends exactly one EFFECTIVE');
+  equal(await db.bonusAwardLifecycleEvent.count({where:{bonusAwardId:lifecycleAward.bonusAwardId,status:'EFFECTIVE'}}),1,'one durable EFFECTIVE event');
+  equal(JSON.stringify(await db.bonusAward.findUniqueOrThrow({where:{bonusAwardId:lifecycleAward.bonusAwardId}})),originalLifecycleAward,'maturity preserves original award');
+  // Direct production service on a narrowed fixture facade; no monetary calculation is mocked.
+  const serial=new BonusLifecycleService({...scoped,bonusAwardLifecycleEvent:db.bonusAwardLifecycleEvent});
+  equal((await serial.matureDueAwards(end)).matured,0,'maturity duplicate delivery is a no-op');
+  console.log(`PHASE3_MEMBERSHIP_DB_PASS: ${assertions} assertions; approval, isolation, rollback/retry, temporal access, payout grouping and concurrent maturity`);
 }finally{await db.$disconnect();}
