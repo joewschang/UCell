@@ -2,9 +2,9 @@ name: Member frontend checks
 on:
   push:
     branches: [feature/member-liff-mvp]
-    paths: ['member/**', '.github/workflows/member-ci.yml']
+    paths: ['member/**', '.github/workflows/member-ci.yml', 'backend/apps/api/src/modules/auth/line-token-verifier.ts', 'backend/scripts/line-token-verifier.test.mjs']
   pull_request:
-    paths: ['member/**', '.github/workflows/member-ci.yml']
+    paths: ['member/**', '.github/workflows/member-ci.yml', 'backend/apps/api/src/modules/auth/line-token-verifier.ts', 'backend/scripts/line-token-verifier.test.mjs']
 permissions:
   contents: read
 jobs:
@@ -24,6 +24,10 @@ jobs:
       - run: corepack pnpm install --frozen-lockfile
       - run: corepack pnpm run typecheck
       - run: corepack pnpm test
+      - name: Check isolated LINE verifier core
+        run: |
+          corepack pnpm exec tsc --noEmit --module commonjs --target ES2022 --skipLibCheck --types vite/client ../backend/apps/api/src/modules/auth/line-token-verifier.ts
+          node --experimental-strip-types --test ../backend/scripts/line-token-verifier.test.mjs
       - run: corepack pnpm run build
       - name: Install test browser
         run: corepack pnpm exec playwright install --with-deps chromium
