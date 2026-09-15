@@ -22,4 +22,3 @@ Date: 2026-09-16. Branch: integration/member-backend-mvp. Production remains BLO
 | Production Security/UAT | Formal credentials/configuration not available | BLOCKED |
 
 No synthetic token provider or mock data enables production authentication. UI mock mode remains restricted to pure UI DEV; Integration/UAT require VITE_ENABLE_MOCK=false. Pending Decisions remain eligible scope, formal PV/BV mapping, production calendar/cut-off.
-
