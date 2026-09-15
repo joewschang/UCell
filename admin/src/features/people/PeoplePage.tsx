@@ -10,7 +10,13 @@ export function PeoplePage(){
  const people=useQuery({queryKey:['persons',search],queryFn:()=>get<any>('/admin/persons'+qs({q:search,take:50}))});
  const {register,handleSubmit,reset}=useForm<{legalName:string;preferredName?:string;birthDate?:string;mobile?:string;email?:string}>();
  const create=useMutation({
-  mutationFn:(v:any)=>command('/admin/persons',v),
+  mutationFn:(v:any)=>command('/admin/persons',{
+   legalName:v.legalName,
+   preferredName:v.preferredName||undefined,
+   birthDate:v.birthDate||undefined,
+   mobile:v.mobile||undefined,
+   email:v.email||undefined
+  }),
   onSuccess:()=>{reset();qc.invalidateQueries({queryKey:['persons']})}
  });
  const rows:Person[]=people.data?.data ?? [];

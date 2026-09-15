@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { Prisma, PrismaService } from '@ucell/database';
 import { RecoveryBalanceService } from './recovery-balance.service';
 
@@ -7,6 +7,7 @@ export class UnifiedPayableService {
   constructor(private readonly prisma:PrismaService,private readonly recovery:RecoveryBalanceService){}
 
   async materialize(cutoff:Date,ruleVersionCode='R1.0B'){
+    if(!Number.isFinite(cutoff.getTime())) throw new BadRequestException('PAYOUT_CUTOFF_INVALID');
     return this.prisma.$transaction(async tx=>{
       const awards=await tx.bonusAward.findMany({where:{ruleVersionCode,pendingUntil:{lte:cutoff},lifecycleEvents:{some:{status:'EFFECTIVE'}}}});
       let created=0;
@@ -36,6 +37,8 @@ export class UnifiedPayableService {
   }
 
   async createPayoutBatch(periodStart:Date,periodEnd:Date,ruleVersionCode='R1.0B'){
+    if(!Number.isFinite(periodStart.getTime()) || !Number.isFinite(periodEnd.getTime()) || periodEnd<=periodStart)
+      throw new BadRequestException('PAYOUT_PERIOD_INVALID: periodEnd must be later than periodStart');
     return this.prisma.$transaction(async tx=>{
       const entries=await tx.payableEntry.findMany({where:{status:'OPEN',availableAt:{lte:periodEnd},ruleVersionCode},orderBy:[{qualificationId:'asc'},{createdAt:'asc'}]});
       const byQ=new Map<string,typeof entries>();

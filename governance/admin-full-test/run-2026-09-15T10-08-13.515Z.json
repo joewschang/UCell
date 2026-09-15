@@ -1,0 +1,61 @@
+{
+  "startedAt": "2026-09-15T10:08:13.515Z",
+  "results": [
+    {
+      "method": "POST",
+      "route": "/admin/persons",
+      "status": 201,
+      "expected": 201,
+      "result": "PASS"
+    },
+    {
+      "method": "POST",
+      "route": "/admin/persons",
+      "status": 201,
+      "expected": 201,
+      "result": "PASS"
+    },
+    {
+      "method": "POST",
+      "route": "/admin/persons",
+      "status": 409,
+      "expected": 409,
+      "result": "PASS"
+    },
+    {
+      "method": "POST",
+      "route": "/admin/persons",
+      "status": 201,
+      "expected": 201,
+      "result": "PASS"
+    },
+    {
+      "method": "GET",
+      "route": "/admin/organization/placement-preview?sponsorQualificationId=5b0c99aa-de03-449e-9e69-d5473d823cad&binaryParentQualificationId=5b0c99aa-de03-449e-9e69-d5473d823cad&binarySide=LEFT",
+      "status": 200,
+      "expected": 200,
+      "result": "PASS"
+    },
+    {
+      "method": "POST",
+      "route": "/admin/membership-applications",
+      "status": 201,
+      "expected": 201,
+      "result": "PASS"
+    },
+    {
+      "method": "POST",
+      "route": "/admin/membership-applications/6cec1166-ff06-4ac4-a215-c2827650d735/submit",
+      "status": 400,
+      "expected": 201,
+      "result": "FAIL",
+      "error": {
+        "code": "DOMAIN_RULE_VIOLATION",
+        "message": "系統處理失敗",
+        "request_id": "674a8e6a-0535-4db2-8f38-b7d956767d0b",
+        "timestamp": "2026-09-15T10:08:13.706Z"
+      }
+    }
+  ],
+  "scope": "Isolated ucell_admin_test; existing application calculates test facts; no official monetary result; not frozen five-ball golden or release/UAT signoff"
+}
