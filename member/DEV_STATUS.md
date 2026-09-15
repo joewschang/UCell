@@ -1,10 +1,12 @@
 # UCell Member MVP Development Status
 
-Checkpoint: v0.3 / 2026-09-15
+Latest checkpoint: v0.5 (v0.3/v0.4 history retained below)
 Branch: `feature/member-liff-mvp`
 Baseline: `461de2b`; pre-edit checkpoint: `cb44543`.
 
 ## Implemented
+
+The sections through v0.4 below preserve the prior checkpoint record.
 - Mobile home, qualification selector, separate Sponsor/Binary views.
 - Month query, performance values, award lifecycle and append-only ledger display.
 - Product catalog, read-only order/payment/shipment expansion and Person profile.
@@ -59,3 +61,23 @@ See docs/CHECKOUT_INTEGRATION_v0.4.md for the backend handoff boundary.
 Current blockers: Member session exchange, approved quote/create contract, payment,
 server-side authorization/idempotency, browser and device UAT. Production remains
 BLOCKED. No main merge, RC2 promotion or production deployment.
+
+## v0.5 increment — session expiry and runtime DTO checks
+
+- A Member 401 clears the local bearer/raw LINE token and selected qualification,
+  aborts concurrent requests, and unmounts the entire Member provider/App tree.
+  New calls remain blocked until a fresh page bootstrap; reload is not proof of login.
+- Late successful responses, including delayed JSON bodies, cannot restore data.
+  Request abort cleanup is retained. 403 is a scoped denial, not automatic logout.
+- Browser storage failure cannot prevent expiry locking. Member fetch uses no-store.
+- All ten real read-model response types are parsed before render. Missing fields,
+  invalid booleans/arrays, duplicate IDs, unknown award states, non-finite/unsafe
+  numbers and numeric strings fail visibly without substituting demo data or zero.
+  Null remains null; valid zero and signed ledger adjustments remain unchanged.
+- No new dependencies. Source typecheck/build and 54 executable tests PASS
+  (29 retained + 25 added). Whitespace check PASS.
+- Browser/real-device LIFF UAT and server security/release tests remain NOT VERIFIED.
+  Existing browser executable blocker remains; no production promotion.
+
+See docs/SESSION_DATA_BOUNDARY_v0.5.md. This does not implement LINE token exchange,
+server logout/revocation, checkout, or server BOLA/IDOR authorization.

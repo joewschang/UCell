@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router-dom';
 import { bootstrapLiff } from './liff';
 import { QualificationProvider } from './QualificationContext';
 import App from './App';
+import { SessionBoundary } from './SessionBoundary';
 import './styles.css';
 function Bootstrap() {
     const [state, setState] = useState<'loading' | 'ready' | 'redirect'>('loading');
@@ -16,6 +17,6 @@ function Bootstrap() {
         return <main className="loading" role="alert"><h1>UCell 會員中心</h1><p>{error}</p><button onClick={() => setAttempt(n => n + 1)}>重新連線</button></main>;
     if (state !== 'ready')
         return <main className="loading" role="status">{state === 'redirect' ? '正在前往 LINE 登入…' : 'UCell 會員中心載入中…'}</main>;
-    return <QualificationProvider><App /></QualificationProvider>;
+    return <SessionBoundary><QualificationProvider><App /></QualificationProvider></SessionBoundary>;
 }
 createRoot(document.getElementById('root')!).render(<React.StrictMode><BrowserRouter><Bootstrap /></BrowserRouter></React.StrictMode>);

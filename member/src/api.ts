@@ -1,20 +1,44 @@
+import { sessionGuard, type SessionGuard } from './session';
 const base = import.meta.env.VITE_API_BASE_URL || '/api/v1';
-export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
-    const token = sessionStorage.getItem('ucell_member_token');
-    const headers = new Headers(init.headers);
-    headers.set('Accept', 'application/json');
-    if (init.body)
-        headers.set('Content-Type', 'application/json');
-    if (token)
-        headers.set('Authorization', `Bearer ${token}`);
-    const res = await fetch(`${base}${path}`, { ...init, headers, credentials: 'same-origin' });
-    if (!res.ok) {
-        if (res.status === 401)
-            sessionStorage.removeItem('ucell_member_token');
-        throw new Error(res.status === 401 ? '登入已失效，請重新登入' : res.status === 403 ? '您無權查看此資格資料' : '資料暫時無法讀取，請稍後重試');
-    }
-    return res.json() as Promise<T>;
+const expiredMessage = '登入已失效，請重新登入';
+export function createApiClient(guard: SessionGuard) {
+    return async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
+        if (guard.getSnapshot()) throw new Error(expiredMessage);
+        const token = sessionStorage.getItem('ucell_member_token');
+        const headers = new Headers(init.headers);
+        headers.set('Accept', 'application/json');
+        if (init.body) headers.set('Content-Type', 'application/json');
+        if (token) headers.set('Authorization', `Bearer ${token}`);
+        const controller = new AbortController();
+        const abort = () => controller.abort();
+        const unregister = guard.register(controller);
+        init.signal?.addEventListener('abort', abort, { once: true });
+        if (init.signal?.aborted) controller.abort();
+        try {
+            if (controller.signal.aborted) throw new DOMException('Aborted', 'AbortError');
+            const res = await fetch(`${base}${path}`, {
+                ...init, signal: controller.signal, headers,
+                credentials: 'same-origin', cache: 'no-store',
+            });
+            if (guard.getSnapshot()) throw new Error(expiredMessage);
+            if (!res.ok) {
+                if (res.status === 401) guard.expire();
+                throw new Error(res.status === 401 ? expiredMessage :
+                    res.status === 403 ? '您無權查看此資格資料' : '資料暫時無法讀取，請稍後重試');
+            }
+            let result: T;
+            try { result = await res.json() as T; }
+            catch { throw new Error('資料格式異常，請稍後重試'); }
+            if (guard.getSnapshot()) throw new Error(expiredMessage);
+            if (controller.signal.aborted) throw new DOMException('Aborted', 'AbortError');
+            return result;
+        } finally {
+            unregister();
+            init.signal?.removeEventListener('abort', abort);
+        }
+    };
 }
+export const api = createApiClient(sessionGuard);
 export type Qualification = {
     id: string;
     code: string;

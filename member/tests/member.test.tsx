@@ -5,7 +5,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useResource } from '../src/useResource';
 import { QualificationProvider } from '../src/QualificationContext';
 import App from '../src/App';
-import { api } from '../src/api';
+import { api, createApiClient } from '../src/api';
+import { SessionGuard } from '../src/session';
 import { getDashboard, getPerformance } from '../src/memberData';
 let renderer: ReactTestRenderer;
 const memory = new Map<string, string>();
@@ -42,7 +43,7 @@ it('does not expose stale data after API errors', async () => {
 it('discards an expired token on 401', async () => {
     storage.setItem('ucell_member_token', 'expired');
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('', { status: 401 })));
-    await expect(api('/member/me')).rejects.toThrow('登入已失效');
+    await expect(createApiClient(new SessionGuard())('/member/me')).rejects.toThrow('登入已失效');
     expect(storage.getItem('ucell_member_token')).toBeNull();
 });
 it('rejects forbidden access without substituting mock data', async () => {
@@ -108,4 +109,11 @@ it('keeps real checkout unavailable even when the server lists available product
     expect(renderer.root.findAllByType('button').find(b => b.children.join('') === '購買功能準備中')?.props.disabled).toBe(true);
     expect(renderer.root.findAllByType('form')).toHaveLength(0);
     expect(fetch.mock.calls).toHaveLength(2);
+});
+it('renders a recoverable catalog error for malformed API data instead of crashing', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (input: string) => new Response(JSON.stringify(input.includes('/qualifications') ? [q] : [{ id: 'p1', name: 'Invalid', price: '4800', pv: 2880, available: true }]))));
+    await mount('/shop');
+    expect(JSON.stringify(renderer.toJSON())).toContain('資料格式異常');
+    expect(renderer.root.findAllByType('button').some(b => b.children.join('') === '重新載入商品')).toBe(true);
+    expect(JSON.stringify(renderer.toJSON())).not.toContain('NT$ 4,800');
 });
