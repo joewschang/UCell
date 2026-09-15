@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import type { Qualification } from './api';
 import { useNotifications, type NoticeCategory } from './NotificationContext';
-import { getNotifications } from './memberData';
+import { getNotifications,markNotificationRead } from './memberData';
 import { useResource } from './useResource';
 const categories: Record<NoticeCategory, string> = { SERVICE: '服務公告', ORDER: '訂單提醒', ACCOUNT: '資格提醒' };
 export default function Notifications({ q }: { q: Qualification }) {
@@ -26,5 +26,8 @@ export default function Notifications({ q }: { q: Qualification }) {
 }
 function ConnectedNotifications({q}:{q:Qualification}){
  const state=useResource(`notifications:${q.id}`,s=>getNotifications(q,s));
- return <><h2>通知中心</h2><p>目前資格：{q.code} · {q.ballLabel}</p><p className="muted">站內通知；LINE 推播與已讀同步尚未啟用。</p>{state.error?<section role="alert" className="card"><p>{state.error}</p><button onClick={state.retry}>重新載入</button></section>:!state.data?<p role="status">通知載入中…</p>:state.data.length?state.data.map(n=><article className="card" key={n.id}><p>{categories[n.category]} · {n.qualificationId===null?'會員通知':q.code}</p><h3>{n.title}</h3><small>{n.timeLabel}</small><p>{n.body}</p></article>):<p role="status">目前沒有通知</p>}</>;
+ const [busy,setBusy]=useState<string|null>(null),[error,setError]=useState('');
+ const pending=useRef(new Map<string,string>()),flight=useRef(false);
+ async function read(id:string){if(flight.current)return;const key=pending.current.get(id)??crypto.randomUUID();pending.current.set(id,key);flight.current=true;setBusy(id);setError('');try{await markNotificationRead(q,id,key);pending.current.delete(id);state.retry();}catch(e){setError(e instanceof Error?e.message:'已讀更新失敗，請重試');}finally{flight.current=false;setBusy(null);}}
+ return <><h2>通知中心</h2><p>目前資格：{q.code} · {q.ballLabel}</p><p className="muted">站內通知與已讀狀態由伺服器同步；尚未啟用 LINE 推播。</p>{error&&<p role="alert">{error}</p>}{state.error?<section role="alert" className="card"><p>{state.error}</p><button onClick={state.retry}>重新載入</button></section>:!state.data?<p role="status">通知載入中…</p>:state.data.length?state.data.map(n=><article className="card" key={n.id}><p>{categories[n.category]} · {n.qualificationId===null?'會員通知':q.code} · {n.readAt?'已讀':'未讀'}</p><h3>{n.title}</h3><small>{n.timeLabel}</small><p>{n.body}</p>{!n.readAt&&<button disabled={busy!==null} onClick={()=>read(n.id)}>{busy===n.id?'同步中…':'標為已讀'}</button>}</article>):<p role="status">目前沒有通知</p>}</>;
 }

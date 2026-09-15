@@ -20,6 +20,10 @@ async function main(){
     .build();
 
   const doc=SwaggerModule.createDocument(app,config);
+  for(const name of ['MemberProfileDto','MemberContextDto','MemberQueryDto','MemberCreateOrderDto','CreateOrderItemDto','LineExchangeDto']){
+    const schema=doc.components?.schemas?.[name];
+    if(schema&&'properties' in schema)schema.additionalProperties=false;
+  }
   const output=resolve(process.cwd(),'../../openapi.generated.json');
   writeFileSync(output,JSON.stringify(doc,null,2));
   await app.close();

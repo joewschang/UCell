@@ -309,6 +309,8 @@ model Qualification {
 }
 
 model MemberNotification {
+  sourceEventId String? @unique @map("source_event_id") @db.Uuid
+  reads MemberNotificationRead[]
   notificationId String @id @default(uuid()) @map("notification_id") @db.Uuid
   personId String @map("person_id") @db.Uuid
   qualificationId String? @map("qualification_id") @db.Uuid
@@ -318,9 +320,20 @@ model MemberNotification {
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   person Person @relation(fields: [personId], references: [personId])
   qualification Qualification? @relation(fields: [qualificationId], references: [qualificationId])
+  @@unique([notificationId,personId])
   @@index([personId, qualificationId, createdAt])
   @@map("member_notification")
   @@schema("integration")
+}
+
+model MemberNotificationRead {
+ notificationId String @map("notification_id") @db.Uuid
+ personId String @map("person_id") @db.Uuid
+ readAt DateTime @default(now()) @map("read_at") @db.Timestamptz(6)
+ notification MemberNotification @relation(fields:[notificationId,personId],references:[notificationId,personId])
+ @@id([notificationId,personId])
+ @@map("member_notification_read")
+ @@schema("integration")
 }
 
 model QualificationHolderHistory {

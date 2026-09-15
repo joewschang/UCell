@@ -11,9 +11,26 @@ const rankNames: Record<string, string> = { STARTER: '啟航', ELITE: '菁英', 
 export const displayRank = (rank: string) => rankNames[rank] ?? rank;
 export const getQualifications = (signal?: AbortSignal) => isMock ? Promise.resolve(qualifications) : api<unknown>('/member/qualifications', { signal }).then(validate.parseQualifications);
 export const getPerson = (signal: AbortSignal) => isMock ? Promise.resolve<Person>({ name: '示範會員', memberNo: 'DEMO-000001', email: null, phone: null }) : api<unknown>('/member/me', { signal }).then(validate.parsePerson);
-export async function updateProfile(input:{name?:string;email?:string;phone?:string}) {
+export async function updateProfile(input:{name?:string;email?:string;phone?:string},key:string) {
  if(isMock)throw new Error('示範模式不修改會員資料');
- return validate.parsePerson(await api('/member/profile',{method:'PATCH',body:JSON.stringify(input)}));
+ return validate.parsePerson(await api('/member/profile',{method:'PATCH',headers:{'Idempotency-Key':key},body:JSON.stringify(input)}));
+}
+export async function markNotificationRead(q:Qualification,notificationId:string,key:string){
+ const result=await api<{qualificationId:string;notificationId:string;readAt:string}>(`/member/notifications/${encodeURIComponent(notificationId)}/read`,{method:'PATCH',headers:{'Idempotency-Key':key},body:JSON.stringify({qualificationId:q.id})});
+ if(result.qualificationId!==q.id||result.notificationId!==notificationId||typeof result.readAt!=='string'||!Number.isFinite(Date.parse(result.readAt)))throw new Error('通知已讀回應不符，已停止顯示');
+ return result;
+}
+export type ConnectedOrder={qualificationId:string;id:string;status:string;total:string;createdAt:string;lines:{productId:string;name:string;quantity:string;unitPrice?:string;amount:string}[]};
+function parseConnectedOrder(value:unknown,q:Qualification):ConnectedOrder{
+ const row=value as ConnectedOrder;
+ if(!row||row.qualificationId!==q.id||typeof row.id!=='string'||typeof row.total!=='string'||!/^\d+(\.\d+)?$/.test(row.total)||typeof row.status!=='string'||!Array.isArray(row.lines)||!row.lines.every(line=>typeof line.name==='string'&&typeof line.quantity==='string'&&typeof line.amount==='string'))throw new Error('訂單格式或資格不符，已停止顯示');
+ return row;
+}
+export async function createConnectedOrder(q:Qualification,items:{productId:string;quantity:string}[],key:string){
+ return parseConnectedOrder(await api('/member/orders',{method:'POST',headers:{'Idempotency-Key':key},body:JSON.stringify({qualificationId:q.id,items})}),q);
+}
+export async function getConnectedOrder(q:Qualification,id:string,signal:AbortSignal){
+ return parseConnectedOrder(await api(`/member/orders/${encodeURIComponent(id)}?${new URLSearchParams({qualificationId:q.id})}`,{signal}),q);
 }
 export async function getNotifications(q:Qualification,signal:AbortSignal){
  const result=await api<{qualificationId:string;notices:unknown[]}>('/member/notifications?'+new URLSearchParams({qualificationId:q.id}),{signal});
@@ -21,7 +38,7 @@ export async function getNotifications(q:Qualification,signal:AbortSignal){
  const ids=new Set<string>();
  return result.notices.map(value=>{
   const row=value as import('./NotificationContext').Notice;
-  if(!row||typeof row.id!=='string'||!row.id||ids.has(row.id)||![null,q.id].includes(row.qualificationId)||!['SERVICE','ORDER','ACCOUNT'].includes(row.category)||![row.title,row.body,row.timeLabel].every(v=>typeof v==='string'))throw new Error('通知格式異常，已停止顯示');
+  if(!row||typeof row.id!=='string'||!row.id||ids.has(row.id)||![null,q.id].includes(row.qualificationId)||!['SERVICE','ORDER','ACCOUNT'].includes(row.category)||![row.title,row.body,row.timeLabel].every(v=>typeof v==='string')||!(row.readAt===null||typeof row.readAt==='string'&&Number.isFinite(Date.parse(row.readAt))))throw new Error('通知格式異常，已停止顯示');
   ids.add(row.id);return row;
  });
 }

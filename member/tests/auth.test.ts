@@ -43,3 +43,10 @@ it('keeps redirect separate from an authenticated result', async () => {
     await expect(initLiff()).resolves.toEqual({ mode: 'redirect' });
     expect(liff.login).toHaveBeenCalledTimes(1);
 });
+it('distinguishes a retryable exchange conflict from consumed LINE credentials',async()=>{
+ const storage={getItem:vi.fn(),removeItem:vi.fn(),setItem:vi.fn()};vi.stubGlobal('sessionStorage',storage);
+ vi.stubEnv('VITE_ENABLE_MOCK','false');vi.stubEnv('VITE_LIFF_ID','TEST_ONLY');
+ liff.isLoggedIn.mockReturnValue(true);liff.getIDToken.mockReturnValue('RETRY_TEST_ONLY');
+ vi.stubGlobal('fetch',vi.fn(async()=>new Response(JSON.stringify({code:'RETRYABLE_CONFLICT'}),{status:409})));
+ await expect(initLiff()).rejects.toThrow('操作衝突，請重試');expect(storage.setItem).not.toHaveBeenCalled();
+});

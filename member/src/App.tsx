@@ -9,6 +9,7 @@ import { CommerceProvider, useCommerce } from './commerce';
 import Notifications from './Notifications';
 import EndSession from './EndSession';
 import ProfileEditor from './ProfileEditor';
+import {ConnectedOrderDetails} from './ConnectedShop';
 import { NotificationProvider, useNotifications } from './NotificationContext';
 export const number = (n: number | null) => n === null ? '待提供' : n.toLocaleString('zh-TW');
 export const money = (n: number | null) => n === null ? '待確認' : `NT$ ${number(n)}`;
@@ -71,7 +72,7 @@ function Bonuses({ q }: {
 }
 function Orders({ q }: {
     q: Qualification;
-}) { const { orders } = useCommerce(); const state = useResource(`orders:${q.id}`, s => data.getOrders(q, s)); const [expanded, setExpanded] = useState<string | null>(null); return <><h2>我的訂單</h2><Result state={state}>{d => { const visible = [...(data.isMock ? orders.filter(o => o.qualificationId === q.id) : []), ...d.orders]; return visible.length ? visible.map(o => <article className="card" key={o.id}><h3>{o.id}</h3><p>{o.createdAt} · {money(o.total)}</p><p>訂單：{o.status}</p><button aria-expanded={expanded === o.id} onClick={() => setExpanded(expanded === o.id ? null : o.id)}>付款與配送狀態</button>{expanded === o.id && <div><p>付款：{o.paymentStatus}</p><p>配送：{o.shipmentStatus}</p></div>}</article>) : <p>此資格目前沒有訂單</p>; }}</Result></>; }
+}) { const { orders } = useCommerce(); const state = useResource(`orders:${q.id}`, s => data.getOrders(q, s)); const [expanded, setExpanded] = useState<string | null>(null); return <><h2>我的訂單</h2><Result state={state}>{d => { const visible = [...(data.isMock ? orders.filter(o => o.qualificationId === q.id) : []), ...d.orders]; return visible.length ? visible.map(o => <article className="card" key={o.id}><h3>{o.id}</h3><p>{o.createdAt} · {money(o.total)}</p><p>訂單：{o.status}</p><button aria-expanded={expanded === o.id} onClick={() => setExpanded(expanded === o.id ? null : o.id)}>付款與配送狀態</button>{expanded === o.id && <div><p>付款：{o.paymentStatus}</p><p>配送：{o.shipmentStatus}</p>{!data.isMock&&<ConnectedOrderDetails q={q} id={o.id}/>}</div>}</article>) : <p>此資格目前沒有訂單</p>; }}</Result></>; }
 function Me() { const state = useResource('person', data.getPerson); const { qualifications } = useQualification(); return <><h2>我的帳戶</h2><Result state={state}>{p => <section className="card"><h3>{p.name}</h3><p>{p.memberNo}</p><p>電子郵件：{p.email ?? '未提供'}</p><p>電話：{p.phone ?? '未提供'}</p></section>}</Result><ProfileEditor refresh={state.retry}/><h3>我的資格</h3>{qualifications.map(q => <article key={q.id} className="card"><strong>{q.code} · {q.ballLabel}</strong><p>{data.displayRank(q.rank)} · {q.active ? '活躍' : '未活躍'}</p></article>)}<EndSession /></>; }
 function MemberApp() {
     const { loading, error, retry, current } = useQualification();

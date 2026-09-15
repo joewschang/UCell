@@ -1,4 +1,4 @@
-import { PrismaService, Prisma, sealGpvEvent, sealRpvEvent, verifyReplayEnvelope, pending, claimOutboxLease, withOutboxLease, processLeasedReplay, releaseFailedOutboxLease, OutboxLease, matureBonusAward } from '@ucell/database';
+import { PrismaService, Prisma, processMemberOrderNotification, sealGpvEvent, sealRpvEvent, verifyReplayEnvelope, pending, claimOutboxLease, withOutboxLease, processLeasedReplay, releaseFailedOutboxLease, OutboxLease, matureBonusAward } from '@ucell/database';
 import * as crypto from 'node:crypto';
 
 const prisma = new PrismaService();
@@ -176,6 +176,7 @@ export async function pollOutbox(){
       lease=await claimOutboxLease(prisma,event);
       if(!lease)continue;
       if(event.eventType==='SALE_CONFIRMED') await processSaleConfirmed(lease);
+      else if(event.eventType==='MEMBER_ORDER_CREATED') await processMemberOrderNotification(prisma,lease);
       else await processReplayEvent(lease);
     }catch(e){
       if(lease)await releaseFailedOutboxLease(prisma,lease,e);

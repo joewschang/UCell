@@ -198,6 +198,9 @@ try{await prisma.$transaction(async tx=>{
  check('production replay consumer marks success atomically',(await tx.outboxEvent.findUniqueOrThrow({where:{outboxEventId:outbox.outboxEventId}})).processStatus,'PROCESSED');
  check('RPV one negative historical reversal',await tx.pvLedger.count({where:{reversalOfEventId:(await tx.monthlyRecognitionSchedule.findUniqueOrThrow({where:{recognitionId:recognized.recognitionId}})).pvLedgerEventId,pvType:'RPV',amount:-1200}}),1);
  const rpvPost=await tx.entitlementReplayPosting.findFirstOrThrow({where:{actionKey:'RPV:'+recognized.recognitionId+':'+cancellation.cancellation.subscriptionCancellationId}});
+ const rpvRecovery=await tx.bonusRecoveryEvent.findUniqueOrThrow({where:{bonusRecoveryEventId:rpvPost.recoveryId}});
+ const rpvAnchor=await tx.bonusAward.findUniqueOrThrow({where:{bonusAwardId:rpvRecovery.bonusAwardId}});
+ check('RPV recovery anchor uses original RPV type and historical recipient',[rpvAnchor.awardType,rpvAnchor.payableAmount.toString(),rpvAnchor.recipientQualificationId===self.qualificationId],['RPV','0',true]);
  check('RPV historical recipient recovery delta',rpvPost.delta.toString(),'-100');
  check('RPV replay retains original recipient after Binary change',rpvPost.recipientQualificationId===self.qualificationId,true);
  check('RPV current Binary parent receives no recovery',await tx.entitlementReplayPosting.count({where:{actionKey:rpvPost.actionKey,recipientQualificationId:newSponsor.qualificationId}}),0);

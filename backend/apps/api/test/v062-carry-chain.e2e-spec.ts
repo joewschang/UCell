@@ -47,5 +47,9 @@ describe('v0.6.2 schema convergence',()=>{
       expect(columns.length).toBeGreaterThan(0);
     }
   });
-  it.todo('RPV reversal anchor uses BonusAwardType.RPV, not EPV');
+  it('RPV reversal anchor uses BonusAwardType.RPV, not EPV',()=>{
+    expect(actual('RPV recovery anchor uses original RPV type and historical recipient')).toEqual(['RPV','0',true]);
+    expect(actual('RPV historical recipient recovery delta')).toBe('-100');
+    actual('original RPV award rows unchanged');
+  });
 });

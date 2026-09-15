@@ -1,0 +1,28 @@
+import {useRef,useState} from 'react';
+import {Link} from 'react-router-dom';
+import type {Qualification} from './api';
+import {getProducts,createConnectedOrder,getConnectedOrder,type ConnectedOrder} from './memberData';
+import {useResource} from './useResource';
+export function ConnectedOrderDetails({q,id}:{q:Qualification;id:string}){
+ const state=useResource(`order:${q.id}:${id}`,s=>getConnectedOrder(q,id,s));
+ if(state.error)return <section role="alert" className="card"><p>{state.error}</p><button onClick={state.retry}>重新載入訂單</button></section>;
+ if(!state.data)return <p role="status">訂單載入中…</p>;
+ const order=state.data;
+ return <section className="card"><h3>訂單明細 · {q.code}</h3><p>{order.id} · {order.status}</p><p>伺服器商品金額：NT$ {order.total}</p>{order.lines.map((line,index)=><p key={index}>{line.name} × {line.quantity} · NT$ {line.amount}</p>)}<p>付款與配送依後端紀錄，建立訂單不代表付款成功或已出貨。</p></section>;
+}
+export default function ConnectedShop({q}:{q:Qualification}){
+ const catalog=useResource('connected-products',getProducts);
+ const [cart,setCart]=useState<Record<string,number>>({}),[busy,setBusy]=useState(false),[error,setError]=useState(''),[receipt,setReceipt]=useState<ConnectedOrder|null>(null);
+ const flight=useRef(false),pending=useRef<{body:string;key:string}|null>(null);
+ function change(id:string,n:number){if(flight.current)return;setCart(previous=>{const next={...previous};if(n<=0)delete next[id];else next[id]=Math.min(n,99);return next;});pending.current=null;setReceipt(null);setError('');}
+ async function submit(){
+  if(flight.current||!Object.keys(cart).length)return;
+  const items=Object.entries(cart).sort(([a],[b])=>a.localeCompare(b)).map(([productId,n])=>({productId,quantity:String(n)}));
+  const body=JSON.stringify({qualificationId:q.id,items});if(pending.current?.body!==body)pending.current={body,key:crypto.randomUUID()};
+  flight.current=true;setBusy(true);setError('');
+  try{const order=await createConnectedOrder(q,items,pending.current.key);setReceipt(order);setCart({});pending.current=null;}
+  catch(e){setError(e instanceof Error?e.message:'建立訂單失敗，請保留資料重試');}
+  finally{flight.current=false;setBusy(false);}
+ }
+ return <><h2>商品商城</h2><p>目前資格：{q.code} · {q.ballLabel}</p><p>商品價格由 Core 確認。訂單成立後待付款；PV 尚未認列，配送與庫存另待確認。</p>{catalog.error?<section className="card" role="alert"><p>{catalog.error}</p><button onClick={catalog.retry}>重新載入商品</button></section>:!catalog.data?<p role="status">商品載入中…</p>:!catalog.data.length?<p role="status">目前沒有上架商品</p>:catalog.data.map(p=><article className="card" key={p.id}><h3>{p.name}</h3><p>{p.price===null?'價格待確認':`NT$ ${p.price.toLocaleString('zh-TW')}`} · PV 待認列</p><button disabled={busy||!p.available||(cart[p.id]??0)>=99} onClick={()=>change(p.id,(cart[p.id]??0)+1)}>{p.available?'加入購物車':'商品設定待完成'}</button></article>)}<section className="card"><h3>購物車 · {q.code}</h3>{Object.keys(cart).length?Object.entries(cart).map(([id,n])=><p key={id}>{catalog.data?.find(p=>p.id===id)?.name??id} × {n} <button disabled={busy} onClick={()=>change(id,n-1)}>減少</button><button disabled={busy} onClick={()=>change(id,0)}>移除</button></p>):<p>購物車尚無商品</p>}<p>應付商品金額由伺服器建立訂單後提供，前台不計算正式金額或 PV。</p><button disabled={busy||!Object.keys(cart).length} onClick={submit}>{busy?'建立中…':'建立待付款訂單'}</button>{error&&<p role="alert">{error}</p>}</section>{receipt&&<><section role="status" className="card"><h3>待付款訂單已建立</h3><p>{receipt.id} · NT$ {receipt.total}</p></section><ConnectedOrderDetails q={q} id={receipt.id}/></>}<Link to="/orders">查看我的訂單 →</Link></>;
+}

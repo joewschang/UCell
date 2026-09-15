@@ -61,15 +61,27 @@ it('does not perform network or storage writes in demo mode', async () => {
   vi.stubGlobal('fetch', write); vi.stubGlobal('sessionStorage', { setItem: write }); vi.stubGlobal('localStorage', { setItem: write });
   await mount(); act(() => state.markRead('q1', ['demo-welcome'])); expect(write).not.toHaveBeenCalled();
 });
-it('does not show mock unread counts or allow mutations in real mode', async () => {
-  const fetch=vi.fn().mockResolvedValue({ok:true,status:200,json:async()=>({data:{qualificationId:'q1',notices:[{id:'real-notice',qualificationId:'q1',category:'SERVICE',title:'伺服器通知',body:'CONNECTED',timeLabel:'2026-09-16T00:00:00Z'}]},meta:{api_version:'v1',request_id:'notice-test',timestamp:'2026-09-16T00:00:00Z'}})});
+it('does not show mock unread counts or allow demo mutations in real mode', async () => {
+  const fetch=vi.fn().mockResolvedValue({ok:true,status:200,json:async()=>({data:{qualificationId:'q1',notices:[{id:'real-notice',qualificationId:'q1',category:'SERVICE',title:'伺服器通知',body:'CONNECTED',timeLabel:'2026-09-16T00:00:00Z',readAt:null}]},meta:{api_version:'v1',request_id:'notice-test',timestamp:'2026-09-16T00:00:00Z'}})});
   vi.stubGlobal('fetch',fetch);vi.stubGlobal('sessionStorage',{getItem:()=>null});
   await mount('q1', false);
   expect(state.notices).toEqual([]);
   expect(() => state.markRead('q1', ['demo-welcome'])).toThrow('尚未串接');
   expect(JSON.stringify(tree.toJSON())).toContain('伺服器通知');
-  expect(JSON.stringify(tree.toJSON())).toContain('LINE 推播與已讀同步尚未啟用');
+  expect(JSON.stringify(tree.toJSON())).toContain('尚未啟用 LINE 推播');
   expect(fetch).toHaveBeenCalledWith('/api/v1/member/notifications?qualificationId=q1',expect.objectContaining({cache:'no-store'}));
   expect(fetch).toHaveBeenCalledTimes(1);
-  expect(tree.root.findAllByType('button')).toHaveLength(0);
+  expect(button('標為已讀')).toBeDefined();
+});
+it('synchronizes real read state and reloads authoritative notice data',async()=>{
+ let readAt:string|null=null;
+ const fetch=vi.fn(async(_url:string,init:RequestInit)=>{
+  if(init.method==='PATCH')readAt='2026-09-16T01:00:00Z';
+  const data=init.method==='PATCH'?{qualificationId:'q1',notificationId:'real-notice',readAt}:{qualificationId:'q1',notices:[{id:'real-notice',qualificationId:'q1',category:'ORDER',title:'訂單通知',body:'CONNECTED',timeLabel:'2026-09-16T00:00:00Z',readAt}]};
+  return {ok:true,status:200,json:async()=>({data,meta:{api_version:'v1',request_id:'read-test',timestamp:'2026-09-16T00:00:00Z'}})};
+ });
+ vi.stubGlobal('fetch',fetch);vi.stubGlobal('sessionStorage',{getItem:()=>null});
+ await mount('q1',false);await act(async()=>{await button('標為已讀').props.onClick();});
+ expect(fetch.mock.calls.filter(([,init])=>init.method==='PATCH')).toHaveLength(1);
+ expect(JSON.stringify(tree.toJSON())).toContain('已讀');expect(button('標為已讀')).toBeUndefined();
 });

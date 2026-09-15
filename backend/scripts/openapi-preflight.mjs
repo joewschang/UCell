@@ -15,6 +15,22 @@ if(!doc.openapi) failures.push('openapi version missing');
 if(!doc.paths?.['/api/v1/health']) failures.push('/api/v1/health missing');
 if(!Object.keys(doc.paths??{}).some(x=>x.includes('/admin/payouts'))) failures.push('payout endpoints missing');
 if(!Object.keys(doc.paths??{}).some(x=>x.includes('/admin/settlement-adjustments'))) failures.push('adjustment endpoints missing');
+if(!doc.components?.securitySchemes?.memberBearer)failures.push('Member opaque session security scheme missing');
+const memberRoutes={me:'get',qualifications:'get','context/qualification':'post',dashboard:'get','organization/sponsor':'get','organization/binary':'get',referrals:'get',performance:'get',bonuses:'get','bonuses/ledger':'get','repurchase/status':'get',products:'get',orders:'get','orders/{id}':'get',notifications:'get','notifications/{id}/read':'patch',profile:'patch'};
+for(const [route,method] of Object.entries(memberRoutes)){
+ const operation=doc.paths?.['/api/v1/member/'+route]?.[method];
+ if(!operation){failures.push('Member operation missing: '+route);continue;}
+ if(!operation.security?.some(security=>Object.hasOwn(security,'memberBearer')))failures.push('Member auth missing: '+route);
+ if(!operation.responses?.[method==='post'?201:200]?.content?.['application/json']?.schema?.properties?.data)failures.push('Member enveloped response schema missing: '+route);
+ for(const status of [401,403,404,409,422])if(!operation.responses?.[status])failures.push('Member error response missing: '+route+'/'+status);
+}
+for(const [route,method] of [['orders','post'],['profile','patch'],['notifications/{id}/read','patch']]){
+ const operation=doc.paths?.['/api/v1/member/'+route]?.[method];
+ if(!operation?.parameters?.some(parameter=>parameter.in==='header'&&parameter.name.toLowerCase()==='idempotency-key'&&parameter.required))failures.push('Mutation idempotency header missing: '+route);
+ if(!operation?.requestBody)failures.push('Mutation DTO missing: '+route);
+}
+const orderInput=doc.components?.schemas?.MemberCreateOrderDto;
+if(!orderInput||orderInput.additionalProperties!==false||Object.keys(orderInput.properties??{}).some(field=>!['qualificationId','items'].includes(field)))failures.push('Member order input must exclude client monetary/workflow fields');
 
 if(failures.length){
   console.error('OPENAPI_PREFLIGHT_FAIL');

@@ -1,6 +1,7 @@
 import { sessionGuard, type SessionGuard } from './session';
 const base = import.meta.env.VITE_API_BASE_URL || '/api/v1';
 const expiredMessage = '登入已失效，請重新登入';
+export class MemberApiError extends Error { constructor(message:string,public readonly status:number,public readonly code?:string){super(message);this.name='MemberApiError';} }
 export const REQUEST_TIMEOUT_MS = 15_000;
 export function createApiClient(guard: SessionGuard) {
     return async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
@@ -26,8 +27,12 @@ export function createApiClient(guard: SessionGuard) {
             if (guard.getSnapshot()) throw new Error(expiredMessage);
             if (!res.ok) {
                 if (res.status === 401) guard.expire();
-                throw new Error(res.status === 401 ? expiredMessage :
-                    res.status === 403 ? '您無權查看此資格資料' : '資料暫時無法讀取，請稍後重試');
+                let code:string|undefined;try{const body=await res.json();if(typeof body?.code==='string')code=body.code;}catch{/* Status still fails closed for a non-JSON error. */}
+                throw new MemberApiError(res.status === 401 ? expiredMessage :
+                    res.status === 403 ? '您無權查看此資格資料' :
+                    res.status === 409 ? (code==='IDEMPOTENCY_CONFLICT'?'請求識別碼已被不同內容使用，請重新確認資料':'另一筆操作正在處理，請保留原資料重試') :
+                    res.status === 422 ? (code==='RULE_PROFILE_CONFIGURATION_PENDING'?'商品制度設定尚未完成，請稍後再試':'資料未通過驗證或必要設定尚未完成，請確認後重試') :
+                    res.status === 400 ? '資料格式不正確，請檢查輸入內容' : '資料暫時無法讀取，請稍後重試',res.status,code);
             }
             let result: T;
             try { result = await res.json() as T; }

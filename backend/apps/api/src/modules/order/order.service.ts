@@ -6,6 +6,7 @@ import { IdempotencyService } from '../../common/idempotency/idempotency.service
 import { OutboxService } from '../../common/outbox/outbox.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { PaymentConfirmationDto } from './dto/payment-confirmation.dto';
+import { QualificationAccessService } from '../auth/qualification-access.service';
 
 @Injectable()
 export class OrderService {
@@ -16,10 +17,20 @@ export class OrderService {
     private readonly outbox: OutboxService,
   ) {}
 
-  async create(dto: CreateOrderDto, key: string, requestId: string, actorId?: string) {
+  async createMember(dto:CreateOrderDto,key:string,requestId:string,personId:string){
+    await new QualificationAccessService(this.prisma).assertHolder(personId,dto.qualificationId);
+    try{return await this.create({...dto,purpose:'RETAIL'},key,requestId,personId,true);}
+    catch(error){if(['P2002','P2034'].includes((error as any).code))throw new ConflictException({code:'RETRYABLE_CONFLICT',message:'Concurrent operation; retry the identical request with the same Idempotency-Key.'});throw error;}
+  }
+  async create(dto: CreateOrderDto, key: string, requestId: string, actorId?: string, member=false) {
     const correlationId = randomUUID();
 
-    return this.idempotency.execute(`admin:order:create:${actorId ?? 'system'}`, key, dto, async (tx) => {
+    return this.idempotency.execute(`${member?'member':'admin'}:order:create:${actorId ?? 'system'}`, key, dto, async (tx) => {
+      if(member){
+        await new QualificationAccessService(tx as any).assertHolder(actorId!,dto.qualificationId);
+        const person=await tx.person.findUnique({where:{personId:actorId}});
+        if(person?.status!=='EFFECTIVE')throw new ConflictException({code:'MEMBER_PERSON_DISABLED'});
+      }
       const qualification = await tx.qualification.findUnique({
         where: { qualificationId: dto.qualificationId },
       });
@@ -62,14 +73,19 @@ export class OrderService {
 
       for (const item of dto.items) {
         const product = products.find(p => p.productId === item.productId)!;
-        const profile = await tx.productRuleProfile.findFirst({
+        const profileQuery:Prisma.ProductRuleProfileFindManyArgs={
           where: {
             productId: item.productId,
             effectiveFrom: { lte: now },
             OR: [{ effectiveTo: null }, { effectiveTo: { gt: now } }],
           },
           orderBy: { effectiveFrom: 'desc' },
-        });
+        };
+        const profiles:Prisma.ProductRuleProfileGetPayload<{}>[]=[];
+        if(member)profiles.push(...await tx.productRuleProfile.findMany(profileQuery));
+        else {const first=await tx.productRuleProfile.findFirst(profileQuery);if(first)profiles.push(first);}
+        const profile=profiles[0];
+        if(member&&(profiles.length!==1||profile.ruleVersionCode!=='R1.0B'||!profile.parameterSnapshotHash||!/^[a-f0-9]{64}$/.test(profile.parameterSnapshotHash)))throw new UnprocessableEntityException({code:'RULE_PROFILE_CONFIGURATION_PENDING',message:'One traceable effective R1.0B product profile required; no inferred PV/BV mapping.'});
 
         if (!profile) {
           throw new UnprocessableEntityException({
@@ -79,6 +95,7 @@ export class OrderService {
         }
 
         const quantity = new Prisma.Decimal(item.quantity);
+        if(member&&(!quantity.isInteger()||quantity.lte(0)||quantity.gt(99)||product.currentPrice.lt(0)))throw new UnprocessableEntityException({code:'INVALID_PRODUCT_QUANTITY_OR_PRICE'});
         const lineAmount = product.currentPrice.mul(quantity);
         const gpvAmount = lineAmount.mul(profile.gpvRate);
 
@@ -145,6 +162,7 @@ export class OrderService {
         requestId,
         correlationId,
       });
+      if(member)await this.outbox.enqueue(tx,{eventType:'MEMBER_ORDER_CREATED',aggregateType:'ORDER',aggregateId:order.orderId,payload:{orderId:order.orderId,qualificationId:order.qualificationId,personId:actorId},correlationId});
 
       return order;
     });

@@ -25,3 +25,4 @@ export {
   GlobalRankCode,
 } from '@prisma/client';
 export * from './bonus-maturity';
+export * from './member-notification';

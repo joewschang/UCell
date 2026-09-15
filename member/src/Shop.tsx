@@ -4,9 +4,11 @@ import type { Product, Qualification } from './api';
 import { getProducts, isMock } from './memberData';
 import { useResource } from './useResource';
 import { demoProducts, demoTotal, useCommerce, validateShipping, type Shipping } from './commerce';
+import ConnectedShop from './ConnectedShop';
 
 const money = (n: number | null) => n === null ? '待確認' : `NT$ ${n.toLocaleString('zh-TW')}`;
 export default function Shop({ q }: { q: Qualification }) {
+  if(!isMock)return <ConnectedShop key={q.id} q={q}/>;
   const catalog = useResource('products', getProducts);
   const { carts, setQuantity, submit } = useCommerce();
   const cart = carts[q.id] ?? {};
