@@ -1,6 +1,12 @@
 # Phase 3 Connected DEV progress report
 
-Date: 2026-09-15–16 (Asia/Taipei). Branch: `rc1-recovered`. Production Promotion remains BLOCKED; no RC2, merge, force push or production promotion.
+Date: 2026-09-15–16 (Asia/Taipei). Active Backend branch: `codex/backend-phase2`. Production Promotion remains BLOCKED; no RC2, merge, force push or production promotion.
+
+## Backend branch coordination checkpoint
+
+User-authorized branch split: verified work through `6faf1f4edc7e65543fa77b903a89ece4b661101b` is preserved by checkpoint `63b9a21c0ff328a2a38521f69e3896bd328aa990`. Local `rc1-recovered` remains at this shared stable baseline; subsequent Backend work proceeds on `codex/backend-phase2`. The target branch was absent on origin when checked before creation. Publish this checkpoint/report using normal `git push -u origin codex/backend-phase2`; verify remote HEAD after push. Do not move or push `rc1-recovered` as part of the branch split.
+
+For subsequent stable checkpoints, update this REPORT with changed files, commands, gate outcomes, remaining blockers and checkpoint evidence, commit on `codex/backend-phase2`, and push to origin without force. `feature/member-liff-mvp` is parallel Member LINE OA/LIFF work: do not modify `member/`. Backend cooperation with Member API Contract must use additive API implementation, preserving existing contracts. No new test run or expanded PASS claim is made by this documentation/branch-only checkpoint; earlier per-gate timestamps remain authoritative.
 
 Default DEV DB Golden now creates a fresh local `ucell_dev_golden_<uuid>` database, deploys all 20 migrations, loads deterministic five-person/five-qualification fixtures, checks exact fixture counts and frozen pool values, executes timezone/concurrency regression, and removes only its successfully-created test database. Two independent runs passed. It no longer requires pre-existing manual Golden data in the default DEV database.
 
