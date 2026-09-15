@@ -1,0 +1,14 @@
+cwd: C:\UCell\UCell
+command: git status --short --branch
+started: 2026-09-15T09:51:38.321Z
+exit: 0
+## rc1-recovered...origin/rc1-recovered [ahead 16]
+ M admin/src/app/AppShell.tsx
+ M admin/vite.config.ts
+ M backend/apps/api/src/admin-dev.ts
+ M backend/apps/api/src/modules/admin-ops-ready/admin-ops-ready.service.ts
+ M backend/apps/api/src/modules/application/membership-application.module.ts
+?? backend/scripts/admin-dev-smoke.mjs
+?? governance/admin-local-dev/
+?? scripts/start-admin-dev.ps1
+?? scripts/start-admin-ui.ps1

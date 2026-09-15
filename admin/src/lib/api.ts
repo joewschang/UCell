@@ -20,6 +20,10 @@ export interface RequestOptions extends RequestInit {
 }
 
 export async function api<T>(path:string,init:RequestOptions={}):Promise<T>{
+  if(import.meta.env.DEV && import.meta.env.VITE_ADMIN_DEV_READ_ONLY==='true' &&
+    !['GET','HEAD','OPTIONS'].includes((init.method??'GET').toUpperCase())){
+    throw new ApiError(405,null,'本機 Admin DEV 只讀模式：此寫入操作尚未開放。');
+  }
   const headers=new Headers(init.headers);
   headers.set('Content-Type','application/json');
   headers.set('x-request-id',crypto.randomUUID());

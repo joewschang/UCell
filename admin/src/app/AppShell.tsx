@@ -11,6 +11,10 @@ export function AppShell(){
       <nav>{nav.filter(([,to])=>canOpen(user?.role,to)).map(([label,to])=><NavLink end={to==='/'} key={to} to={to}>{label}</NavLink>)}</nav>
       <div className="sidebar-foot"><span>{user?.name}</span><small>{user?.role}</small><button onClick={logout}>登出</button></div>
     </aside>
-    <main className="content"><Outlet/></main>
+    <main className="content">
+      {import.meta.env.DEV && import.meta.env.VITE_ADMIN_DEV_READ_ONLY==='true' &&
+        <div className="callout warning" role="status">本機 Admin DEV 只讀模式：查詢真實 DEV 資料；新增、核准、付款與其他寫入均停用。Production / RC Gate 仍 BLOCKED。</div>}
+      <Outlet/>
+    </main>
   </div>
 }

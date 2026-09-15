@@ -22,7 +22,7 @@ export function ApiWorkbench({title,subtitle,actions}:{title:string;subtitle:str
         <div className="form">
           <Field label="主要 ID / UUID"><input value={id} onChange={e=>setId(e.target.value)} placeholder="貼上 Qualification / Order / Application ID"/></Field>
           <Field label="JSON Request Body"><textarea rows={12} value={body} onChange={e=>setBody(e.target.value)}/></Field>
-          <div className="button-row">{actions.map(a=><button key={a.label} onClick={()=>run(a)}>{a.label}</button>)}</div>
+          <div className="button-row">{actions.map(a=><button key={a.label} disabled={import.meta.env.DEV && import.meta.env.VITE_ADMIN_DEV_READ_ONLY==='true' && a.method==='POST'} onClick={()=>run(a)}>{a.label}</button>)}</div>
           <ErrorBox error={error}/>
         </div>
       </Card>

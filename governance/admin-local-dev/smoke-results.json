@@ -1,0 +1,154 @@
+{
+  "startedAt": "2026-09-15T09:51:37.146Z",
+  "mode": "LOCAL ADMIN DEV READ ONLY",
+  "results": [
+    {
+      "method": "GET",
+      "route": "/admin/dashboard/summary",
+      "status": 200,
+      "result": "PASS"
+    },
+    {
+      "method": "GET",
+      "route": "/health",
+      "status": 200,
+      "result": "PASS"
+    },
+    {
+      "method": "GET",
+      "route": "/admin/persons",
+      "status": 200,
+      "result": "PASS"
+    },
+    {
+      "method": "GET",
+      "route": "/admin/products",
+      "status": 200,
+      "result": "PASS"
+    },
+    {
+      "method": "GET",
+      "route": "/admin/qualifications",
+      "status": 200,
+      "result": "PASS"
+    },
+    {
+      "method": "GET",
+      "route": "/admin/orders",
+      "status": 200,
+      "result": "PASS"
+    },
+    {
+      "method": "GET",
+      "route": "/admin/membership-applications",
+      "status": 200,
+      "result": "PASS"
+    },
+    {
+      "method": "GET",
+      "route": "/admin/subscriptions/plans",
+      "status": 200,
+      "result": "PASS"
+    },
+    {
+      "method": "GET",
+      "route": "/admin/observability/compensation/summary",
+      "status": 200,
+      "result": "PASS"
+    },
+    {
+      "method": "GET",
+      "route": "/admin/observability/settlements",
+      "status": 200,
+      "result": "PASS"
+    },
+    {
+      "method": "GET",
+      "route": "/admin/observability/pools",
+      "status": 200,
+      "result": "PASS"
+    },
+    {
+      "method": "GET",
+      "route": "/admin/operations/returns",
+      "status": 200,
+      "result": "PASS"
+    },
+    {
+      "method": "GET",
+      "route": "/admin/operations/workflows",
+      "status": 200,
+      "result": "PASS"
+    },
+    {
+      "method": "GET",
+      "route": "/admin/operations/recoveries",
+      "status": 200,
+      "result": "PASS"
+    },
+    {
+      "method": "GET",
+      "route": "/admin/operations/payout-batches",
+      "status": 200,
+      "result": "PASS"
+    },
+    {
+      "method": "GET",
+      "route": "/admin/ops-ready/audit-events",
+      "status": 200,
+      "result": "PASS"
+    },
+    {
+      "method": "GET",
+      "route": "/admin/ops-ready/reports/operations?from=2026-09-01T00:00:00Z&to=2026-10-01T00:00:00Z",
+      "status": 200,
+      "result": "PASS"
+    },
+    {
+      "method": "GET",
+      "route": "/admin/ops-ready/integrity-alerts",
+      "status": 200,
+      "result": "PASS"
+    },
+    {
+      "method": "GET",
+      "route": "/admin/ops-ready/reports/operations",
+      "status": 400,
+      "result": "PASS"
+    },
+    {
+      "method": "GET",
+      "route": "/admin/ops-ready/reports/operations?from=invalid&to=invalid",
+      "status": 400,
+      "result": "PASS"
+    },
+    {
+      "method": "GET",
+      "route": "/admin/ops-ready/reports/operations?from=2026-10-01&to=2026-09-01",
+      "status": 400,
+      "result": "PASS"
+    },
+    {
+      "method": "POST",
+      "route": "/admin/persons",
+      "status": 405,
+      "result": "PASS"
+    },
+    {
+      "method": "POST",
+      "route": "/admin/orders",
+      "status": 405,
+      "result": "PASS"
+    },
+    {
+      "method": "POST",
+      "route": "/admin/operations/payout-batches/00000000-0000-4000-8000-000000000000/mark-paid",
+      "status": 405,
+      "result": "PASS"
+    }
+  ],
+  "databaseCountMatch": "PASS",
+  "writeRejection": "PASS",
+  "unchangedDomainCounts": "PASS",
+  "note": "Real DEV DB; HTTP audit events append normally. No formal monetary result generated."
+}

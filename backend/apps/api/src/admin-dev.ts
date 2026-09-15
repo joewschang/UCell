@@ -14,6 +14,7 @@ import { ProductModule } from './modules/product/product.module';
 import { QualificationModule } from './modules/qualification/qualification.module';
 import { OrganizationModule } from './modules/organization/organization.module';
 import { OrderModule } from './modules/order/order.module';
+import { SubscriptionModule } from './modules/subscription/subscription.module';
 import { MembershipApplicationModule } from './modules/application/membership-application.module';
 import { AdminDashboardModule } from './modules/admin-dashboard/admin-dashboard.module';
 import { AdminObservabilityModule } from './modules/admin-observability/admin-observability.module';
@@ -42,7 +43,7 @@ export class AdminDevReadOnlyGuard implements CanActivate {
   imports: [ConfigModule.forRoot({ isGlobal: true, ignoreEnvFile: true }), DatabaseModule,
     AuditModule, IdempotencyModule, OutboxModule, AuthModule, HealthModule,
     PersonModule, ProductModule, OrganizationModule, QualificationModule, OrderModule,
-    MembershipApplicationModule, AdminDashboardModule, AdminObservabilityModule,
+    SubscriptionModule, MembershipApplicationModule, AdminDashboardModule, AdminObservabilityModule,
     AdminOperationsModule, AdminOpsReadyModule],
   providers: [{ provide: APP_GUARD, useClass: AdminDevReadOnlyGuard },
     { provide: APP_GUARD, useClass: AdminAuthenticationGuard },

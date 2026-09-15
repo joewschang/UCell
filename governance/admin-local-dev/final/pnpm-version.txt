@@ -1,0 +1,5 @@
+cwd: C:\UCell\UCell
+command: pnpm --version
+started: 2026-09-15T09:51:38.273Z
+exit: 0
+12.4.1

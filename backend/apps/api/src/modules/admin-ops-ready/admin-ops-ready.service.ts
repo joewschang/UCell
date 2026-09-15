@@ -1,4 +1,4 @@
-import { Injectable,UnprocessableEntityException } from '@nestjs/common';
+import { BadRequestException,Injectable,UnprocessableEntityException } from '@nestjs/common';
 import { Prisma,PrismaService } from '@ucell/database';
 import { AuditService } from '../../common/audit/audit.service';
 
@@ -88,6 +88,8 @@ export class AdminOpsReadyService{
   }
 
   async operationsReport(from:Date,to:Date){
+    if(!Number.isFinite(from.getTime()) || !Number.isFinite(to.getTime()) || from>to)
+      throw new BadRequestException('REPORT_PERIOD_INVALID: valid from/to dates in chronological order are required');
     const [persons,qualifications,applications,orders,returns,awards,payouts,recoveries]=await Promise.all([
       this.prisma.person.count({where:{createdAt:{gte:from,lte:to}}}),
       this.prisma.qualification.count({where:{createdAt:{gte:from,lte:to}}}),

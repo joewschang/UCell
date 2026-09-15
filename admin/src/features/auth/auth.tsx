@@ -40,7 +40,11 @@ export function AuthProvider({children}:{children:React.ReactNode}){
   useEffect(()=>{
     (async()=>{
       const token=sessionStorage.getItem('ucell_admin_token');
-      if(!token){setReady(true);return}
+      if(!token){
+        const cached=savedUser();
+        if(!import.meta.env.DEV || import.meta.env.VITE_ENABLE_DEMO_LOGIN!=='true' || cached?.provider!=='DEV_BYPASS') clear();
+        setReady(true);return;
+      }
       try{
         const r:any=await get('/auth/admin/me');
         const d=r.data;
