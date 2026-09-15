@@ -1,4 +1,4 @@
-Latest verification for each gate; earlier runs remain in gate-results.json. Production Promotion: BLOCKED.
+Latest recorded run per label; Windows aliases include earlier attempts. Current equivalent gates use final-* logs. All attempts remain in gate-results.json. Production Promotion: BLOCKED.
 
 | Gate | PASS/FAIL | Command / evidence | Explanation |
 |---|---|---|---|
@@ -55,7 +55,7 @@ Latest verification for each gate; earlier runs remain in gate-results.json. Pro
 | windows-preflight-entrypoint | PASS | `pnpm preflight` |  |
 | windows-dev-smoke-entrypoint | FAIL | `pnpm dev:smoke` | Missing golden-r1-0b.ts fixture/seed runner |
 | windows-rc-entrypoint | FAIL | `pnpm rc:gate` | 148 TODO guard |
-| windows-release-prep-entrypoint | FAIL | `pnpm release:prep` | 148 TODO guard |
+| windows-release-prep-entrypoint | FAIL | `pnpm release:prep` | Historical Windows alias; current release-prep fails at 148 TODO. Initial owner drift remains in history. |
 | sa-db-regression | PASS | `node backend/scripts/sa-decision-db-test.mjs` | 18 real DB assertions; fixtures rolled back |
 | release-prep | FAIL | `pnpm release:prep` | 148 TODO guard blocks promotion |
 | full-admin-dev-build | PASS | `pnpm --filter @ucell/api build:admin-dev` |  |
