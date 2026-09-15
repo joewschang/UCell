@@ -5,6 +5,11 @@ Frontend implementation checkpoint: `3cb85a6d366add26255c401375ba6d2bfe03caea`.
 This is an engineering handoff, not authorization to publish, a finalized auth
 contract, or a change to R1.0B. Do not mark demo/frontend checks as live integration.
 
+Member-branch additions since that inspection: isolated LINE token verification
+and [Member session/binding authentication](MEMBER_AUTHENTICATION_CORE.md).
+The latter exports a Nest guard but does not add/protect a Member controller yet.
+Its eight core tests do not substitute for Nest/DB or BOLA integration gates.
+
 ## Verified reusable components and limits
 
 Paths below are relative to `backend/apps/api/src/` at the inspected commit.

@@ -2,10 +2,14 @@
 
 Latest checkpoint: v0.6 (prior checkpoint history retained below)
 Current integration handoff: [BACKEND_INTEGRATION_HANDOFF.md](docs/BACKEND_INTEGRATION_HANDOFF.md).
-Latest verified implementation: `3cb85a6d` — 87 tests, build and browser CI PASS
-(run `35005058000`, synthetic data only). Backend reviewed at `df13581c`:
-LINE identity lookup/session/holder services exist, but Member exchange and explicit
-Member route guards remain required. The historical verification sections below
+Prior verified implementation: `747daed9` — 87 frontend tests, seven isolated
+LINE verifier tests, build and browser CI PASS (run `35006546928`, synthetic data).
+Current addition: Member session/binding core and exported Nest guard, eight new
+unit tests PASS; isolated core typecheck, 87 frontend tests and build PASS locally.
+See [MEMBER_AUTHENTICATION_CORE.md](docs/MEMBER_AUTHENTICATION_CORE.md).
+Backend reviewed at `df13581c`: Member exchange, actual guard use on Member routes,
+Nest/DB integration and per-qualification ownership checks remain required.
+The historical verification sections below
 are checkpoint records, not the latest release status. Production stays blocked.
 Branch: `feature/member-liff-mvp`
 Baseline: `461de2b`; pre-edit checkpoint: `cb44543`.
