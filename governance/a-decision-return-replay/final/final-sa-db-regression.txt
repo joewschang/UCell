@@ -1,0 +1,4 @@
+command: node backend/scripts/sa-decision-db-test.mjs
+started: 2026-09-15T11:07:28.316Z
+exit: 0
+PASS 18 real DB assertions; all fixtures rolled back

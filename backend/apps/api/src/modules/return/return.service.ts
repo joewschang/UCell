@@ -25,6 +25,12 @@ export class ReturnService {
       if(!['PAID','FULFILLED','PARTIAL_RETURN'].includes(order.status))
         throw new ConflictException({code:'ORDER_LOCKED',message:'只有已付款/已出貨訂單可退貨。'});
 
+      if(new Set(dto.lines.map(line=>line.orderLineId)).size!==dto.lines.length)
+        throw new UnprocessableEntityException({code:'DUPLICATE_RETURN_LINE',message:'Each original line may appear only once per return event.'});
+      const reused=await tx.returnCase.findUnique({where:{idempotencyKey:key}});
+      if(reused) throw new ConflictException({code:'IDEMPOTENCY_KEY_REUSED',message:'Return event key already belongs to a posted event.'});
+      const previous=await tx.returnLine.aggregate({where:{returnCase:{orderId,status:'POSTED'}},_sum:{returnAmount:true}});
+      const previouslyReturned=previous._sum.returnAmount??new Prisma.Decimal(0);
       const ret=await tx.returnCase.create({
         data:{
           orderId,status:'POSTED',reasonCode:dto.reasonCode,
@@ -68,7 +74,10 @@ export class ReturnService {
         });
       }
 
-      const fullReturn=totalReturn.greaterThanOrEqualTo(order.netAmount);
+      const cumulativeReturn=previouslyReturned.add(totalReturn);
+      if(cumulativeReturn.gt(order.netAmount))
+        throw new UnprocessableEntityException({code:'RETURN_AMOUNT_EXCEEDED',message:'Cumulative returns exceed the original effective transaction amount.'});
+      const fullReturn=cumulativeReturn.eq(order.netAmount);
       await tx.order.update({
         where:{orderId},
         data:{status:fullReturn?'RETURNED':'PARTIAL_RETURN'}

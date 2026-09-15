@@ -1,0 +1,5 @@
+command: pnpm openapi:preflight
+started: 2026-09-15T11:07:34.295Z
+exit: 0
+OPENAPI_PREFLIGHT_PASS
+$ node scripts/openapi-preflight.mjs

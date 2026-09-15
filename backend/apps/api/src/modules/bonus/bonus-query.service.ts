@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnprocessableEntityException } from '@nestjs/common';
 import { Prisma, PrismaService } from '@ucell/database';
 
 @Injectable()
@@ -65,11 +65,7 @@ export class BonusQueryService {
     });
     if(historical) return historical.planCode;
 
-    // Compatibility fallback for pre-history seed data only.
-    const q=await tx.qualification.findUniqueOrThrow({
-      where:{qualificationId},select:{planLevelCode:true}
-    });
-    return q.planLevelCode;
+    throw new UnprocessableEntityException({code:'HISTORICAL_SNAPSHOT_MISSING',message:'Historical qualification plan is required; current plan cannot substitute.',qualificationId,effectiveAt:at.toISOString()});
   }
 
   async isQualificationEffectiveAt(tx:Prisma.TransactionClient,qualificationId:string,at:Date){

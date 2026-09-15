@@ -1,0 +1,4 @@
+command: pnpm --filter @ucell/api build:admin-dev
+started: 2026-09-15T11:08:06.593Z
+exit: 0
+$ tsc -p tsconfig.admin-dev.json

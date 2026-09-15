@@ -1,0 +1,5 @@
+command: pnpm security:preflight
+started: 2026-09-15T11:07:34.442Z
+exit: 0
+SECURITY_POLICY_PREFLIGHT_PASS
+$ node scripts/security-policy-preflight.mjs
