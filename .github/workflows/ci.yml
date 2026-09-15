@@ -2,7 +2,7 @@ name: UCell RC CI
 on:
   pull_request:
   push:
-    branches: [main, develop]
+    branches: [main, develop, rc1-recovered]
 jobs:
   backend:
     runs-on: ubuntu-latest
@@ -24,8 +24,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with: {node-version: 22}
-      - run: corepack enable && corepack prepare pnpm@9.15.0 --activate
+        with: {node-version: 24}
+      - run: corepack enable && corepack prepare pnpm@12.4.1 --activate
       - name: Require lockfile
         run: test -f backend/pnpm-lock.yaml
       - name: Install backend
@@ -54,8 +54,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with: {node-version: 22}
-      - run: corepack enable && corepack prepare pnpm@9.15.0 --activate
+        with: {node-version: 24}
+      - run: corepack enable && corepack prepare pnpm@12.4.1 --activate
       - name: Require lockfile
         run: test -f admin/pnpm-lock.yaml
       - name: Install admin
