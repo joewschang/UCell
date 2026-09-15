@@ -1,0 +1,16 @@
+cwd: C:\UCell\UCell
+command: git status --short --branch
+started: 2026-09-15T10:42:45.225Z
+exit: 0
+## rc1-recovered...origin/rc1-recovered [ahead 26]
+ M backend/apps/api/src/admin-dev.ts
+ M backend/apps/api/src/modules/adjustment/carry-chain-replay.service.ts
+ M backend/apps/api/src/modules/bonus/binary-bonus.service.ts
+ M backend/apps/api/src/modules/bonus/referral-bonus.service.ts
+ M backend/apps/api/src/modules/epv/epv-month.service.ts
+ M backend/apps/api/src/modules/return/reversal.service.ts
+ M backend/scripts/migration-preflight.mjs
+?? governance/sa-decisions/final/gate-results.json
+?? governance/sa-decisions/final/node-version.txt
+?? governance/sa-decisions/final/pnpm-version.txt
+?? governance/sa-decisions/run-verification.mjs

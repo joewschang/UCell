@@ -1,0 +1,1482 @@
+[
+  {
+    "id": "TODO-001",
+    "file": "backend/apps/api/test/bonus-engine-v04.e2e-spec.ts",
+    "line": 3,
+    "title": "G1 STARTER Active receives GPV x 15% theory",
+    "category": "Test implementation",
+    "domain": "bonus-engine-v04",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "Required before implementation; no rule inferred from title alone"
+  },
+  {
+    "id": "TODO-002",
+    "file": "backend/apps/api/test/bonus-engine-v04.e2e-spec.ts",
+    "line": 4,
+    "title": "G1 ELITE Active receives GPV x 20% theory",
+    "category": "Test implementation",
+    "domain": "bonus-engine-v04",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "Required before implementation; no rule inferred from title alone"
+  },
+  {
+    "id": "TODO-003",
+    "file": "backend/apps/api/test/bonus-engine-v04.e2e-spec.ts",
+    "line": 5,
+    "title": "G1 LEADER Active receives GPV x 25% theory",
+    "category": "Test implementation",
+    "domain": "bonus-engine-v04",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "Required before implementation; no rule inferred from title alone"
+  },
+  {
+    "id": "TODO-004",
+    "file": "backend/apps/api/test/bonus-engine-v04.e2e-spec.ts",
+    "line": 6,
+    "title": "inactive G1 generates no referral bonus and equalization base is zero",
+    "category": "Test implementation",
+    "domain": "bonus-engine-v04",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "Required before implementation; no rule inferred from title alone"
+  },
+  {
+    "id": "TODO-005",
+    "file": "backend/apps/api/test/bonus-engine-v04.e2e-spec.ts",
+    "line": 7,
+    "title": "equalization base is same-source G1 referral theory, not GPV",
+    "category": "Test implementation",
+    "domain": "bonus-engine-v04",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "Required before implementation; no rule inferred from title alone"
+  },
+  {
+    "id": "TODO-006",
+    "file": "backend/apps/api/test/bonus-engine-v04.e2e-spec.ts",
+    "line": 8,
+    "title": "STARTER rates G2/G3/G4 are 10/10/10",
+    "category": "Test implementation",
+    "domain": "bonus-engine-v04",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "Required before implementation; no rule inferred from title alone"
+  },
+  {
+    "id": "TODO-007",
+    "file": "backend/apps/api/test/bonus-engine-v04.e2e-spec.ts",
+    "line": 9,
+    "title": "ELITE rates G2..G6 are 20/10/10/5/5",
+    "category": "Test implementation",
+    "domain": "bonus-engine-v04",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "Required before implementation; no rule inferred from title alone"
+  },
+  {
+    "id": "TODO-008",
+    "file": "backend/apps/api/test/bonus-engine-v04.e2e-spec.ts",
+    "line": 10,
+    "title": "LEADER rates G2..G7 are 20/15/10/10/10/5 including G5=10",
+    "category": "Test implementation",
+    "domain": "bonus-engine-v04",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "Required before implementation; no rule inferred from title alone"
+  },
+  {
+    "id": "TODO-009",
+    "file": "backend/apps/api/test/bonus-engine-v04.e2e-spec.ts",
+    "line": 11,
+    "title": "intermediate ineligible generation does not block higher generation",
+    "category": "Test implementation",
+    "domain": "bonus-engine-v04",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "Required before implementation; no rule inferred from title alone"
+  },
+  {
+    "id": "TODO-010",
+    "file": "backend/apps/api/test/bonus-engine-v04.e2e-spec.ts",
+    "line": 12,
+    "title": "recipient plan and effective-direct count control unlock depth",
+    "category": "Test implementation",
+    "domain": "bonus-engine-v04",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "Required before implementation; no rule inferred from title alone"
+  },
+  {
+    "id": "TODO-011",
+    "file": "backend/apps/api/test/bonus-engine-v04.e2e-spec.ts",
+    "line": 13,
+    "title": "Referral + Equalization share 42% pool and K0",
+    "category": "Test implementation",
+    "domain": "bonus-engine-v04",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "Required before implementation; no rule inferred from title alone"
+  },
+  {
+    "id": "TODO-012",
+    "file": "backend/apps/api/test/bonus-engine-v04.e2e-spec.ts",
+    "line": 17,
+    "title": "uses Binary subtree GPV, not Sponsor tree",
+    "category": "Test implementation",
+    "domain": "bonus-engine-v04",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "Required before implementation; no rule inferred from title alone"
+  },
+  {
+    "id": "TODO-013",
+    "file": "backend/apps/api/test/bonus-engine-v04.e2e-spec.ts",
+    "line": 18,
+    "title": "pair = min(left available,right available) subject to weekly cap",
+    "category": "Test implementation",
+    "domain": "bonus-engine-v04",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "Required before implementation; no rule inferred from title alone"
+  },
+  {
+    "id": "TODO-014",
+    "file": "backend/apps/api/test/bonus-engine-v04.e2e-spec.ts",
+    "line": 19,
+    "title": "paired PV deducted from both sides and strong-side carry remains",
+    "category": "Test implementation",
+    "domain": "bonus-engine-v04",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "Required before implementation; no rule inferred from title alone"
+  },
+  {
+    "id": "TODO-015",
+    "file": "backend/apps/api/test/bonus-engine-v04.e2e-spec.ts",
+    "line": 20,
+    "title": "STARTER/ELITE/LEADER weekly caps 450k/900k/1.5m",
+    "category": "Test implementation",
+    "domain": "bonus-engine-v04",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "Required before implementation; no rule inferred from title alone"
+  },
+  {
+    "id": "TODO-016",
+    "file": "backend/apps/api/test/bonus-engine-v04.e2e-spec.ts",
+    "line": 21,
+    "title": "Binary theory = paired PV x 12%",
+    "category": "Test implementation",
+    "domain": "bonus-engine-v04",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "Required before implementation; no rule inferred from title alone"
+  },
+  {
+    "id": "TODO-017",
+    "file": "backend/apps/api/test/bonus-engine-v04.e2e-spec.ts",
+    "line": 22,
+    "title": "Binary Pool is 36% and K1 <= 1",
+    "category": "Test implementation",
+    "domain": "bonus-engine-v04",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "Required before implementation; no rule inferred from title alone"
+  },
+  {
+    "id": "TODO-018",
+    "file": "backend/apps/api/test/bonus-engine-v04.e2e-spec.ts",
+    "line": 23,
+    "title": "inactive recipient produces no Binary award",
+    "category": "Test implementation",
+    "domain": "bonus-engine-v04",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "Required before implementation; no rule inferred from title alone"
+  },
+  {
+    "id": "TODO-019",
+    "file": "backend/apps/api/test/bonus-engine-v04.e2e-spec.ts",
+    "line": 27,
+    "title": "source is actual Binary payable after K1, never Binary theory",
+    "category": "Test implementation",
+    "domain": "bonus-engine-v04",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "Required before implementation; no rule inferred from title alone"
+  },
+  {
+    "id": "TODO-020",
+    "file": "backend/apps/api/test/bonus-engine-v04.e2e-spec.ts",
+    "line": 28,
+    "title": "Sponsor Tree is used to trace matching uplines",
+    "category": "Test implementation",
+    "domain": "bonus-engine-v04",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "Required before implementation; no rule inferred from title alone"
+  },
+  {
+    "id": "TODO-021",
+    "file": "backend/apps/api/test/bonus-engine-v04.e2e-spec.ts",
+    "line": 29,
+    "title": "rates are G1=15,G2=10,G3-G5=5",
+    "category": "Test implementation",
+    "domain": "bonus-engine-v04",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "Required before implementation; no rule inferred from title alone"
+  },
+  {
+    "id": "TODO-022",
+    "file": "backend/apps/api/test/bonus-engine-v04.e2e-spec.ts",
+    "line": 30,
+    "title": "direct 1 unlocks G1-G2, 2 unlocks G1-G3, 3 unlocks G1-G4, 4+ unlocks G1-G5",
+    "category": "Test implementation",
+    "domain": "bonus-engine-v04",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "Required before implementation; no rule inferred from title alone"
+  },
+  {
+    "id": "TODO-023",
+    "file": "backend/apps/api/test/bonus-engine-v04.e2e-spec.ts",
+    "line": 31,
+    "title": "Matching Pool is 15% and K2 <= 1",
+    "category": "Test implementation",
+    "domain": "bonus-engine-v04",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "Required before implementation; no rule inferred from title alone"
+  },
+  {
+    "id": "TODO-024",
+    "file": "backend/apps/api/test/bonus-engine-v04.e2e-spec.ts",
+    "line": 35,
+    "title": "award creates CALCULATED then PENDING_45D events",
+    "category": "Test implementation",
+    "domain": "bonus-engine-v04",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "Required before implementation; no rule inferred from title alone"
+  },
+  {
+    "id": "TODO-025",
+    "file": "backend/apps/api/test/bonus-engine-v04.e2e-spec.ts",
+    "line": 36,
+    "title": "after pending_until latest status becomes EFFECTIVE",
+    "category": "Test implementation",
+    "domain": "bonus-engine-v04",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "Required before implementation; no rule inferred from title alone"
+  },
+  {
+    "id": "TODO-026",
+    "file": "backend/apps/api/test/bonus-engine-v04.e2e-spec.ts",
+    "line": 37,
+    "title": "award row itself remains append-only",
+    "category": "Test implementation",
+    "domain": "bonus-engine-v04",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "Required before implementation; no rule inferred from title alone"
+  },
+  {
+    "id": "TODO-027",
+    "file": "backend/apps/api/test/epv-global-v05.e2e-spec.ts",
+    "line": 2,
+    "title": "REPURCHASE 4800 => excess 2800 x 60% = 1680 EPV",
+    "category": "Test implementation",
+    "domain": "epv-global-v05",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "SA-02/04 clarifies monthly threshold/pools; this original TODO remains unimplemented"
+  },
+  {
+    "id": "TODO-028",
+    "file": "backend/apps/api/test/epv-global-v05.e2e-spec.ts",
+    "line": 3,
+    "title": "EPV self share = 50% = 840 when Active",
+    "category": "Test implementation",
+    "domain": "epv-global-v05",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "SA-02/04 clarifies monthly threshold/pools; this original TODO remains unimplemented"
+  },
+  {
+    "id": "TODO-029",
+    "file": "backend/apps/api/test/epv-global-v05.e2e-spec.ts",
+    "line": 4,
+    "title": "EPV Sponsor G1-G5 each 6% when Active",
+    "category": "Test implementation",
+    "domain": "epv-global-v05",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "SA-02/04 clarifies monthly threshold/pools; this original TODO remains unimplemented"
+  },
+  {
+    "id": "TODO-030",
+    "file": "backend/apps/api/test/epv-global-v05.e2e-spec.ts",
+    "line": 5,
+    "title": "EPV does not use Binary tree",
+    "category": "Test implementation",
+    "domain": "epv-global-v05",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "SA-02/04 clarifies monthly threshold/pools; this original TODO remains unimplemented"
+  },
+  {
+    "id": "TODO-031",
+    "file": "backend/apps/api/test/epv-global-v05.e2e-spec.ts",
+    "line": 6,
+    "title": "non-REPURCHASE order does not create EPV",
+    "category": "Test implementation",
+    "domain": "epv-global-v05",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "SA-02/04 clarifies monthly threshold/pools; this original TODO remains unimplemented"
+  },
+  {
+    "id": "TODO-032",
+    "file": "backend/apps/api/test/epv-global-v05.e2e-spec.ts",
+    "line": 10,
+    "title": "global pool is 5% of period GPV",
+    "category": "Test implementation",
+    "domain": "epv-global-v05",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "SA-02/04 clarifies monthly threshold/pools; this original TODO remains unimplemented"
+  },
+  {
+    "id": "TODO-033",
+    "file": "backend/apps/api/test/epv-global-v05.e2e-spec.ts",
+    "line": 11,
+    "title": "weak thresholds are 300k/600k/1m/2m/4m",
+    "category": "Test implementation",
+    "domain": "epv-global-v05",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "SA-02/04 clarifies monthly threshold/pools; this original TODO remains unimplemented"
+  },
+  {
+    "id": "TODO-034",
+    "file": "backend/apps/api/test/epv-global-v05.e2e-spec.ts",
+    "line": 12,
+    "title": "rank achievement never downgrades",
+    "category": "Test implementation",
+    "domain": "epv-global-v05",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "SA-02/04 clarifies monthly threshold/pools; this original TODO remains unimplemented"
+  },
+  {
+    "id": "TODO-035",
+    "file": "backend/apps/api/test/epv-global-v05.e2e-spec.ts",
+    "line": 13,
+    "title": "monthly payout requires Active and current-month weak side threshold",
+    "category": "Test implementation",
+    "domain": "epv-global-v05",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "SA-02/04 clarifies monthly threshold/pools; this original TODO remains unimplemented"
+  },
+  {
+    "id": "TODO-036",
+    "file": "backend/apps/api/test/epv-global-v05.e2e-spec.ts",
+    "line": 14,
+    "title": "passed levels are cumulative",
+    "category": "Test implementation",
+    "domain": "epv-global-v05",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "SA-02/04 clarifies monthly threshold/pools; this original TODO remains unimplemented"
+  },
+  {
+    "id": "TODO-037",
+    "file": "backend/apps/api/test/epv-global-v05.e2e-spec.ts",
+    "line": 15,
+    "title": "empty rank slice rolls upward to next higher rank",
+    "category": "Test implementation",
+    "domain": "epv-global-v05",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "SA-02/04 clarifies monthly threshold/pools; this original TODO remains unimplemented"
+  },
+  {
+    "id": "TODO-038",
+    "file": "backend/apps/api/test/epv-global-v05.e2e-spec.ts",
+    "line": 16,
+    "title": "welfare 2% is accrued only; no distribution without a formal rule",
+    "category": "Test implementation",
+    "domain": "epv-global-v05",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "SA-02/04 clarifies monthly threshold/pools; this original TODO remains unimplemented"
+  },
+  {
+    "id": "TODO-039",
+    "file": "backend/apps/api/test/idempotency.e2e-spec.ts",
+    "line": 2,
+    "title": "same key + same payload returns original result",
+    "category": "Test implementation",
+    "domain": "idempotency",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "Required before implementation; no rule inferred from title alone"
+  },
+  {
+    "id": "TODO-040",
+    "file": "backend/apps/api/test/idempotency.e2e-spec.ts",
+    "line": 3,
+    "title": "same key + different payload returns IDEMPOTENCY_CONFLICT",
+    "category": "Test implementation",
+    "domain": "idempotency",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "Required before implementation; no rule inferred from title alone"
+  },
+  {
+    "id": "TODO-041",
+    "file": "backend/apps/api/test/idempotency.e2e-spec.ts",
+    "line": 4,
+    "title": "monthly recognition cannot create RPV twice",
+    "category": "Test implementation",
+    "domain": "idempotency",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "Required before implementation; no rule inferred from title alone"
+  },
+  {
+    "id": "TODO-042",
+    "file": "backend/apps/api/test/idempotency.e2e-spec.ts",
+    "line": 5,
+    "title": "same external event cannot be processed twice",
+    "category": "Test implementation",
+    "domain": "idempotency",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "Required before implementation; no rule inferred from title alone"
+  },
+  {
+    "id": "TODO-043",
+    "file": "backend/apps/api/test/negative-flow-v05.e2e-spec.ts",
+    "line": 2,
+    "title": "partial return creates proportional negative GPV event",
+    "category": "Test implementation",
+    "domain": "negative-flow-v05",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "Required before implementation; no rule inferred from title alone"
+  },
+  {
+    "id": "TODO-044",
+    "file": "backend/apps/api/test/negative-flow-v05.e2e-spec.ts",
+    "line": 3,
+    "title": "GPV reversal references original GPV event",
+    "category": "Test implementation",
+    "domain": "negative-flow-v05",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "Required before implementation; no rule inferred from title alone"
+  },
+  {
+    "id": "TODO-045",
+    "file": "backend/apps/api/test/negative-flow-v05.e2e-spec.ts",
+    "line": 4,
+    "title": "returned quantity cannot exceed ordered quantity across multiple returns",
+    "category": "Test implementation",
+    "domain": "negative-flow-v05",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "Required before implementation; no rule inferred from title alone"
+  },
+  {
+    "id": "TODO-046",
+    "file": "backend/apps/api/test/negative-flow-v05.e2e-spec.ts",
+    "line": 5,
+    "title": "PENDING_45D direct referral/equalization becomes REVERSED",
+    "category": "Test implementation",
+    "domain": "negative-flow-v05",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "Required before implementation; no rule inferred from title alone"
+  },
+  {
+    "id": "TODO-047",
+    "file": "backend/apps/api/test/negative-flow-v05.e2e-spec.ts",
+    "line": 6,
+    "title": "EFFECTIVE/PAYABLE/PAID direct award creates CLAWBACK and recovery ledger",
+    "category": "Test implementation",
+    "domain": "negative-flow-v05",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "Required before implementation; no rule inferred from title alone"
+  },
+  {
+    "id": "TODO-048",
+    "file": "backend/apps/api/test/negative-flow-v05.e2e-spec.ts",
+    "line": 7,
+    "title": "original bonus award is never updated/deleted",
+    "category": "Test implementation",
+    "domain": "negative-flow-v05",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "Required before implementation; no rule inferred from title alone"
+  },
+  {
+    "id": "TODO-049",
+    "file": "backend/apps/api/test/negative-flow-v05.e2e-spec.ts",
+    "line": 8,
+    "title": "Binary and Matching create settlement recalculation requests instead of rewriting history",
+    "category": "Test implementation",
+    "domain": "negative-flow-v05",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "Required before implementation; no rule inferred from title alone"
+  },
+  {
+    "id": "TODO-050",
+    "file": "backend/apps/api/test/negative-flow-v05.e2e-spec.ts",
+    "line": 9,
+    "title": "reprocessing RETURN_CONFIRMED is idempotent",
+    "category": "Test implementation",
+    "domain": "negative-flow-v05",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "Required before implementation; no rule inferred from title alone"
+  },
+  {
+    "id": "TODO-051",
+    "file": "backend/apps/api/test/negative-flow-v05.e2e-spec.ts",
+    "line": 13,
+    "title": "EFFECTIVE awards become PAYABLE via payout batch",
+    "category": "Test implementation",
+    "domain": "negative-flow-v05",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "Required before implementation; no rule inferred from title alone"
+  },
+  {
+    "id": "TODO-052",
+    "file": "backend/apps/api/test/negative-flow-v05.e2e-spec.ts",
+    "line": 14,
+    "title": "open clawback recovery offsets next payout",
+    "category": "Test implementation",
+    "domain": "negative-flow-v05",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "Required before implementation; no rule inferred from title alone"
+  },
+  {
+    "id": "TODO-053",
+    "file": "backend/apps/api/test/negative-flow-v05.e2e-spec.ts",
+    "line": 15,
+    "title": "net payout cannot go below zero",
+    "category": "Test implementation",
+    "domain": "negative-flow-v05",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "Required before implementation; no rule inferred from title alone"
+  },
+  {
+    "id": "TODO-054",
+    "file": "backend/apps/api/test/negative-flow-v05.e2e-spec.ts",
+    "line": 16,
+    "title": "mark-paid writes PAID lifecycle events",
+    "category": "Test implementation",
+    "domain": "negative-flow-v05",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "Required before implementation; no rule inferred from title alone"
+  },
+  {
+    "id": "TODO-055",
+    "file": "backend/apps/api/test/organization.e2e-spec.ts",
+    "line": 2,
+    "title": "sponsor tree and binary tree remain independent",
+    "category": "Test implementation",
+    "domain": "organization",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "Required before implementation; no rule inferred from title alone"
+  },
+  {
+    "id": "TODO-056",
+    "file": "backend/apps/api/test/organization.e2e-spec.ts",
+    "line": 3,
+    "title": "binary occupied slot is rejected",
+    "category": "Test implementation",
+    "domain": "organization",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "Required before implementation; no rule inferred from title alone"
+  },
+  {
+    "id": "TODO-057",
+    "file": "backend/apps/api/test/organization.e2e-spec.ts",
+    "line": 4,
+    "title": "binary cycle is rejected",
+    "category": "Test implementation",
+    "domain": "organization",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "Required before implementation; no rule inferred from title alone"
+  },
+  {
+    "id": "TODO-058",
+    "file": "backend/apps/api/test/organization.e2e-spec.ts",
+    "line": 5,
+    "title": "1st and 3rd direct recruit must be within sponsor LEFT subtree",
+    "category": "Test implementation",
+    "domain": "organization",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "Required before implementation; no rule inferred from title alone"
+  },
+  {
+    "id": "TODO-059",
+    "file": "backend/apps/api/test/organization.e2e-spec.ts",
+    "line": 6,
+    "title": "sponsor sequence is permanent and never renumbered after exit",
+    "category": "Test implementation",
+    "domain": "organization",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "Required before implementation; no rule inferred from title alone"
+  },
+  {
+    "id": "TODO-060",
+    "file": "backend/apps/api/test/qualification-isolation.e2e-spec.ts",
+    "line": 2,
+    "title": "Person A cannot read Person B qualification",
+    "category": "Test implementation",
+    "domain": "qualification-isolation",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "Required before implementation; no rule inferred from title alone"
+  },
+  {
+    "id": "TODO-061",
+    "file": "backend/apps/api/test/qualification-isolation.e2e-spec.ts",
+    "line": 3,
+    "title": "same person Ball A active does not make Ball B active",
+    "category": "Test implementation",
+    "domain": "qualification-isolation",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "Required before implementation; no rule inferred from title alone"
+  },
+  {
+    "id": "TODO-062",
+    "file": "backend/apps/api/test/qualification-isolation.e2e-spec.ts",
+    "line": 4,
+    "title": "missing qualification context returns AMBIGUOUS_QUALIFICATION",
+    "category": "Test implementation",
+    "domain": "qualification-isolation",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "Required before implementation; no rule inferred from title alone"
+  },
+  {
+    "id": "TODO-063",
+    "file": "backend/apps/api/test/qualification-isolation.e2e-spec.ts",
+    "line": 5,
+    "title": "member share link is bound to selected qualification",
+    "category": "Test implementation",
+    "domain": "qualification-isolation",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "Required before implementation; no rule inferred from title alone"
+  },
+  {
+    "id": "TODO-064",
+    "file": "backend/apps/api/test/v060-adjustment-lifecycle.e2e-spec.ts",
+    "line": 2,
+    "title": "return never mutates original Binary settlement",
+    "category": "Test implementation",
+    "domain": "v060-adjustment-lifecycle",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "SA-01/03 clarifies replay/carry/snapshots; original coverage remains TODO; decision and implementation blockers are separate"
+  },
+  {
+    "id": "TODO-065",
+    "file": "backend/apps/api/test/v060-adjustment-lifecycle.e2e-spec.ts",
+    "line": 3,
+    "title": "return never mutates original Matching settlement",
+    "category": "Test implementation",
+    "domain": "v060-adjustment-lifecycle",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "SA-01/03 clarifies replay/carry/snapshots; original coverage remains TODO; decision and implementation blockers are separate"
+  },
+  {
+    "id": "TODO-066",
+    "file": "backend/apps/api/test/v060-adjustment-lifecycle.e2e-spec.ts",
+    "line": 4,
+    "title": "replay uses original carry-in and reversal PV events",
+    "category": "Test implementation",
+    "domain": "v060-adjustment-lifecycle",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "SA-01/03 clarifies replay/carry/snapshots; original coverage remains TODO; decision and implementation blockers are separate"
+  },
+  {
+    "id": "TODO-067",
+    "file": "backend/apps/api/test/v060-adjustment-lifecycle.e2e-spec.ts",
+    "line": 5,
+    "title": "positive delta creates compensating award",
+    "category": "Test implementation",
+    "domain": "v060-adjustment-lifecycle",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "SA-01/03 clarifies replay/carry/snapshots; original coverage remains TODO; decision and implementation blockers are separate"
+  },
+  {
+    "id": "TODO-068",
+    "file": "backend/apps/api/test/v060-adjustment-lifecycle.e2e-spec.ts",
+    "line": 6,
+    "title": "negative delta creates recovery",
+    "category": "Test implementation",
+    "domain": "v060-adjustment-lifecycle",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "SA-01/03 clarifies replay/carry/snapshots; original coverage remains TODO; decision and implementation blockers are separate"
+  },
+  {
+    "id": "TODO-069",
+    "file": "backend/apps/api/test/v060-adjustment-lifecycle.e2e-spec.ts",
+    "line": 7,
+    "title": "future subscription recognition is cancelled, not deleted",
+    "category": "Test implementation",
+    "domain": "v060-adjustment-lifecycle",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "SA-01/03 clarifies replay/carry/snapshots; original coverage remains TODO; decision and implementation blockers are separate"
+  },
+  {
+    "id": "TODO-070",
+    "file": "backend/apps/api/test/v060-adjustment-lifecycle.e2e-spec.ts",
+    "line": 8,
+    "title": "recognized RPV gets explicit reversal event",
+    "category": "Test implementation",
+    "domain": "v060-adjustment-lifecycle",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "SA-01/03 clarifies replay/carry/snapshots; original coverage remains TODO; decision and implementation blockers are separate"
+  },
+  {
+    "id": "TODO-071",
+    "file": "backend/apps/api/test/v060-adjustment-lifecycle.e2e-spec.ts",
+    "line": 9,
+    "title": "upgrade has no retroactive bonus effect",
+    "category": "Test implementation",
+    "domain": "v060-adjustment-lifecycle",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "SA-01/03 clarifies replay/carry/snapshots; original coverage remains TODO; decision and implementation blockers are separate"
+  },
+  {
+    "id": "TODO-072",
+    "file": "backend/apps/api/test/v060-adjustment-lifecycle.e2e-spec.ts",
+    "line": 10,
+    "title": "transfer preserves qualificationId and tree positions",
+    "category": "Test implementation",
+    "domain": "v060-adjustment-lifecycle",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "SA-01/03 clarifies replay/carry/snapshots; original coverage remains TODO; decision and implementation blockers are separate"
+  },
+  {
+    "id": "TODO-073",
+    "file": "backend/apps/api/test/v060-adjustment-lifecycle.e2e-spec.ts",
+    "line": 11,
+    "title": "exit preserves qualification for company-held re-transfer",
+    "category": "Test implementation",
+    "domain": "v060-adjustment-lifecycle",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "SA-01/03 clarifies replay/carry/snapshots; original coverage remains TODO; decision and implementation blockers are separate"
+  },
+  {
+    "id": "TODO-074",
+    "file": "backend/apps/api/test/v061-replay.e2e-spec.ts",
+    "line": 2,
+    "title": "replay uses original carry-in, not current carry",
+    "category": "Test implementation",
+    "domain": "v061-replay",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "SA-01/03 clarifies replay/carry/snapshots; original coverage remains TODO; decision and implementation blockers are separate"
+  },
+  {
+    "id": "TODO-075",
+    "file": "backend/apps/api/test/v061-replay.e2e-spec.ts",
+    "line": 3,
+    "title": "negative GPV reversal is included in historical period subtree GPV",
+    "category": "Test implementation",
+    "domain": "v061-replay",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "SA-01/03 clarifies replay/carry/snapshots; original coverage remains TODO; decision and implementation blockers are separate"
+  },
+  {
+    "id": "TODO-076",
+    "file": "backend/apps/api/test/v061-replay.e2e-spec.ts",
+    "line": 4,
+    "title": "recomputed Pair respects original weekly cap",
+    "category": "Test implementation",
+    "domain": "v061-replay",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "SA-01/03 clarifies replay/carry/snapshots; original coverage remains TODO; decision and implementation blockers are separate"
+  },
+  {
+    "id": "TODO-077",
+    "file": "backend/apps/api/test/v061-replay.e2e-spec.ts",
+    "line": 5,
+    "title": "K1 is recomputed with changed impacted theory and unchanged others",
+    "category": "Test implementation",
+    "domain": "v061-replay",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "SA-01/03 clarifies replay/carry/snapshots; original coverage remains TODO; decision and implementation blockers are separate"
+  },
+  {
+    "id": "TODO-078",
+    "file": "backend/apps/api/test/v061-replay.e2e-spec.ts",
+    "line": 6,
+    "title": "Matching source uses recomputed Binary Paid",
+    "category": "Test implementation",
+    "domain": "v061-replay",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "SA-01/03 clarifies replay/carry/snapshots; original coverage remains TODO; decision and implementation blockers are separate"
+  },
+  {
+    "id": "TODO-079",
+    "file": "backend/apps/api/test/v061-replay.e2e-spec.ts",
+    "line": 7,
+    "title": "K2 is recomputed from adjusted matching theory",
+    "category": "Test implementation",
+    "domain": "v061-replay",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "SA-01/03 clarifies replay/carry/snapshots; original coverage remains TODO; decision and implementation blockers are separate"
+  },
+  {
+    "id": "TODO-080",
+    "file": "backend/apps/api/test/v061-replay.e2e-spec.ts",
+    "line": 8,
+    "title": "original settlement, award and carry rows remain unchanged",
+    "category": "Test implementation",
+    "domain": "v061-replay",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "SA-01/03 clarifies replay/carry/snapshots; original coverage remains TODO; decision and implementation blockers are separate"
+  },
+  {
+    "id": "TODO-081",
+    "file": "backend/apps/api/test/v061-replay.e2e-spec.ts",
+    "line": 9,
+    "title": "positive delta creates compensating award",
+    "category": "Test implementation",
+    "domain": "v061-replay",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "SA-01/03 clarifies replay/carry/snapshots; original coverage remains TODO; decision and implementation blockers are separate"
+  },
+  {
+    "id": "TODO-082",
+    "file": "backend/apps/api/test/v061-replay.e2e-spec.ts",
+    "line": 10,
+    "title": "negative delta creates recovery",
+    "category": "Test implementation",
+    "domain": "v061-replay",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "SA-01/03 clarifies replay/carry/snapshots; original coverage remains TODO; decision and implementation blockers are separate"
+  },
+  {
+    "id": "TODO-083",
+    "file": "backend/apps/api/test/v061-replay.e2e-spec.ts",
+    "line": 14,
+    "title": "future scheduled rows become CANCELLED",
+    "category": "Test implementation",
+    "domain": "v061-replay",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "SA-01/03 clarifies replay/carry/snapshots; original coverage remains TODO; decision and implementation blockers are separate"
+  },
+  {
+    "id": "TODO-084",
+    "file": "backend/apps/api/test/v061-replay.e2e-spec.ts",
+    "line": 15,
+    "title": "recognized affected rows enqueue one RPV_REVERSAL_REQUIRED",
+    "category": "Test implementation",
+    "domain": "v061-replay",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "SA-01/03 clarifies replay/carry/snapshots; original coverage remains TODO; decision and implementation blockers are separate"
+  },
+  {
+    "id": "TODO-085",
+    "file": "backend/apps/api/test/v061-replay.e2e-spec.ts",
+    "line": 16,
+    "title": "worker creates exactly one negative RPV reversal event",
+    "category": "Test implementation",
+    "domain": "v061-replay",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "SA-01/03 clarifies replay/carry/snapshots; original coverage remains TODO; decision and implementation blockers are separate"
+  },
+  {
+    "id": "TODO-086",
+    "file": "backend/apps/api/test/v061-replay.e2e-spec.ts",
+    "line": 17,
+    "title": "worker creates recovery for previously payable RPV upline awards",
+    "category": "Test implementation",
+    "domain": "v061-replay",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "SA-01/03 clarifies replay/carry/snapshots; original coverage remains TODO; decision and implementation blockers are separate"
+  },
+  {
+    "id": "TODO-087",
+    "file": "backend/apps/api/test/v061-replay.e2e-spec.ts",
+    "line": 18,
+    "title": "reprocessing event is idempotent",
+    "category": "Test implementation",
+    "domain": "v061-replay",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "SA-01/03 clarifies replay/carry/snapshots; original coverage remains TODO; decision and implementation blockers are separate"
+  },
+  {
+    "id": "TODO-088",
+    "file": "backend/apps/api/test/v061-replay.e2e-spec.ts",
+    "line": 22,
+    "title": "upgrade creates future plan history and does not alter past awards",
+    "category": "Test implementation",
+    "domain": "v061-replay",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "SA-01/03 clarifies replay/carry/snapshots; original coverage remains TODO; decision and implementation blockers are separate"
+  },
+  {
+    "id": "TODO-089",
+    "file": "backend/apps/api/test/v061-replay.e2e-spec.ts",
+    "line": 23,
+    "title": "transfer preserves qualificationId and sponsor/binary positions",
+    "category": "Test implementation",
+    "domain": "v061-replay",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "SA-01/03 clarifies replay/carry/snapshots; original coverage remains TODO; decision and implementation blockers are separate"
+  },
+  {
+    "id": "TODO-090",
+    "file": "backend/apps/api/test/v061-replay.e2e-spec.ts",
+    "line": 24,
+    "title": "exit closes holder interval and status becomes EXITED",
+    "category": "Test implementation",
+    "domain": "v061-replay",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "SA-01/03 clarifies replay/carry/snapshots; original coverage remains TODO; decision and implementation blockers are separate"
+  },
+  {
+    "id": "TODO-091",
+    "file": "backend/apps/api/test/v061-replay.e2e-spec.ts",
+    "line": 25,
+    "title": "company retransfer opens a new holder interval",
+    "category": "Test implementation",
+    "domain": "v061-replay",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "SA-01/03 clarifies replay/carry/snapshots; original coverage remains TODO; decision and implementation blockers are separate"
+  },
+  {
+    "id": "TODO-092",
+    "file": "backend/apps/api/test/v062-carry-chain.e2e-spec.ts",
+    "line": 2,
+    "title": "historical week includes later GPV_REVERSAL linked to original event",
+    "category": "Test implementation",
+    "domain": "v062-carry-chain",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "SA-01/03 clarifies replay/carry/snapshots; original coverage remains TODO; decision and implementation blockers are separate"
+  },
+  {
+    "id": "TODO-093",
+    "file": "backend/apps/api/test/v062-carry-chain.e2e-spec.ts",
+    "line": 3,
+    "title": "return discovers every Binary ancestor impacted by descendant GPV",
+    "category": "Test implementation",
+    "domain": "v062-carry-chain",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "SA-01/03 clarifies replay/carry/snapshots; original coverage remains TODO; decision and implementation blockers are separate"
+  },
+  {
+    "id": "TODO-094",
+    "file": "backend/apps/api/test/v062-carry-chain.e2e-spec.ts",
+    "line": 4,
+    "title": "period replay recomputes all Binary payable amounts when K1 changes",
+    "category": "Test implementation",
+    "domain": "v062-carry-chain",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "SA-01/03 clarifies replay/carry/snapshots; original coverage remains TODO; decision and implementation blockers are separate"
+  },
+  {
+    "id": "TODO-095",
+    "file": "backend/apps/api/test/v062-carry-chain.e2e-spec.ts",
+    "line": 5,
+    "title": "period replay recomputes all Matching payable amounts when K2 changes",
+    "category": "Test implementation",
+    "domain": "v062-carry-chain",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "SA-01/03 clarifies replay/carry/snapshots; original coverage remains TODO; decision and implementation blockers are separate"
+  },
+  {
+    "id": "TODO-096",
+    "file": "backend/apps/api/test/v062-carry-chain.e2e-spec.ts",
+    "line": 6,
+    "title": "next week carry-in uses prior recomputed carry-out",
+    "category": "Test implementation",
+    "domain": "v062-carry-chain",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "SA-01/03 clarifies replay/carry/snapshots; original coverage remains TODO; decision and implementation blockers are separate"
+  },
+  {
+    "id": "TODO-097",
+    "file": "backend/apps/api/test/v062-carry-chain.e2e-spec.ts",
+    "line": 7,
+    "title": "propagation stops when left/right carry match original snapshots",
+    "category": "Test implementation",
+    "domain": "v062-carry-chain",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "SA-01/03 clarifies replay/carry/snapshots; original coverage remains TODO; decision and implementation blockers are separate"
+  },
+  {
+    "id": "TODO-098",
+    "file": "backend/apps/api/test/v062-carry-chain.e2e-spec.ts",
+    "line": 8,
+    "title": "propagation respects maxWeeks safety horizon",
+    "category": "Test implementation",
+    "domain": "v062-carry-chain",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "SA-01/03 clarifies replay/carry/snapshots; original coverage remains TODO; decision and implementation blockers are separate"
+  },
+  {
+    "id": "TODO-099",
+    "file": "backend/apps/api/test/v062-carry-chain.e2e-spec.ts",
+    "line": 9,
+    "title": "each replay period is append-only and replay run is resumable",
+    "category": "Test implementation",
+    "domain": "v062-carry-chain",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "SA-01/03 clarifies replay/carry/snapshots; original coverage remains TODO; decision and implementation blockers are separate"
+  },
+  {
+    "id": "TODO-100",
+    "file": "backend/apps/api/test/v062-carry-chain.e2e-spec.ts",
+    "line": 10,
+    "title": "positive deltas post compensating awards and negative deltas post recovery",
+    "category": "Test implementation",
+    "domain": "v062-carry-chain",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "SA-01/03 clarifies replay/carry/snapshots; original coverage remains TODO; decision and implementation blockers are separate"
+  },
+  {
+    "id": "TODO-101",
+    "file": "backend/apps/api/test/v062-carry-chain.e2e-spec.ts",
+    "line": 11,
+    "title": "original BinaryCarry, SettlementBatch and BonusAward remain untouched",
+    "category": "Test implementation",
+    "domain": "v062-carry-chain",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "SA-01/03 clarifies replay/carry/snapshots; original coverage remains TODO; decision and implementation blockers are separate"
+  },
+  {
+    "id": "TODO-102",
+    "file": "backend/apps/api/test/v062-carry-chain.e2e-spec.ts",
+    "line": 15,
+    "title": "migration 0005 references subscription.subscription, not commerce.subscription",
+    "category": "Test implementation",
+    "domain": "v062-carry-chain",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "SA-01/03 clarifies replay/carry/snapshots; original coverage remains TODO; decision and implementation blockers are separate"
+  },
+  {
+    "id": "TODO-103",
+    "file": "backend/apps/api/test/v062-carry-chain.e2e-spec.ts",
+    "line": 16,
+    "title": "Prisma schema contains adjustment/workflow/replay models",
+    "category": "Test implementation",
+    "domain": "v062-carry-chain",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "SA-01/03 clarifies replay/carry/snapshots; original coverage remains TODO; decision and implementation blockers are separate"
+  },
+  {
+    "id": "TODO-104",
+    "file": "backend/apps/api/test/v062-carry-chain.e2e-spec.ts",
+    "line": 17,
+    "title": "RPV reversal anchor uses BonusAwardType.RPV, not EPV",
+    "category": "Test implementation",
+    "domain": "v062-carry-chain",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "SA-01/03 clarifies replay/carry/snapshots; original coverage remains TODO; decision and implementation blockers are separate"
+  },
+  {
+    "id": "TODO-105",
+    "file": "backend/apps/api/test/v063-golden-path.e2e-spec.ts",
+    "line": 2,
+    "title": "Taiwan local time maps to configured settlement week",
+    "category": "Test implementation",
+    "domain": "v063-golden-path",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "Required before implementation; no rule inferred from title alone"
+  },
+  {
+    "id": "TODO-106",
+    "file": "backend/apps/api/test/v063-golden-path.e2e-spec.ts",
+    "line": 3,
+    "title": "effective BonusAward materializes once",
+    "category": "Test implementation",
+    "domain": "v063-golden-path",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "Required before implementation; no rule inferred from title alone"
+  },
+  {
+    "id": "TODO-107",
+    "file": "backend/apps/api/test/v063-golden-path.e2e-spec.ts",
+    "line": 4,
+    "title": "RPV award materializes once",
+    "category": "Test implementation",
+    "domain": "v063-golden-path",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "Required before implementation; no rule inferred from title alone"
+  },
+  {
+    "id": "TODO-108",
+    "file": "backend/apps/api/test/v063-golden-path.e2e-spec.ts",
+    "line": 5,
+    "title": "payout groups by Qualification rather than Person",
+    "category": "Test implementation",
+    "domain": "v063-golden-path",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "Required before implementation; no rule inferred from title alone"
+  },
+  {
+    "id": "TODO-109",
+    "file": "backend/apps/api/test/v063-golden-path.e2e-spec.ts",
+    "line": 6,
+    "title": "Recovery offsets Gross without changing source Award",
+    "category": "Test implementation",
+    "domain": "v063-golden-path",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "Required before implementation; no rule inferred from title alone"
+  },
+  {
+    "id": "TODO-110",
+    "file": "backend/apps/api/test/v063-golden-path.e2e-spec.ts",
+    "line": 7,
+    "title": "Net payout never becomes negative",
+    "category": "Test implementation",
+    "domain": "v063-golden-path",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "Required before implementation; no rule inferred from title alone"
+  },
+  {
+    "id": "TODO-111",
+    "file": "backend/apps/api/test/v063-golden-path.e2e-spec.ts",
+    "line": 8,
+    "title": "temporal holder check denies former holder after transfer",
+    "category": "Test implementation",
+    "domain": "v063-golden-path",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "Required before implementation; no rule inferred from title alone"
+  },
+  {
+    "id": "TODO-112",
+    "file": "backend/apps/api/test/v063-golden-path.e2e-spec.ts",
+    "line": 9,
+    "title": "RBAC denies unauthorized admin operation",
+    "category": "Test implementation",
+    "domain": "v063-golden-path",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "Required before implementation; no rule inferred from title alone"
+  },
+  {
+    "id": "TODO-113",
+    "file": "backend/apps/api/test/v064-golden-dataset.e2e-spec.ts",
+    "line": 2,
+    "title": "keeps Person and Qualification distinct",
+    "category": "Test implementation",
+    "domain": "v064-golden-dataset",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "Required before implementation; no rule inferred from title alone"
+  },
+  {
+    "id": "TODO-114",
+    "file": "backend/apps/api/test/v064-golden-dataset.e2e-spec.ts",
+    "line": 3,
+    "title": "keeps Sponsor and Binary trees distinct",
+    "category": "Test implementation",
+    "domain": "v064-golden-dataset",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "Required before implementation; no rule inferred from title alone"
+  },
+  {
+    "id": "TODO-115",
+    "file": "backend/apps/api/test/v064-golden-dataset.e2e-spec.ts",
+    "line": 4,
+    "title": "validates Referral 15/20/25",
+    "category": "Test implementation",
+    "domain": "v064-golden-dataset",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "Required before implementation; no rule inferred from title alone"
+  },
+  {
+    "id": "TODO-116",
+    "file": "backend/apps/api/test/v064-golden-dataset.e2e-spec.ts",
+    "line": 5,
+    "title": "validates Equalization including Leader G5=10%",
+    "category": "Test implementation",
+    "domain": "v064-golden-dataset",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "Required before implementation; no rule inferred from title alone"
+  },
+  {
+    "id": "TODO-117",
+    "file": "backend/apps/api/test/v064-golden-dataset.e2e-spec.ts",
+    "line": 6,
+    "title": "validates Active First and no compression",
+    "category": "Test implementation",
+    "domain": "v064-golden-dataset",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "Required before implementation; no rule inferred from title alone"
+  },
+  {
+    "id": "TODO-118",
+    "file": "backend/apps/api/test/v064-golden-dataset.e2e-spec.ts",
+    "line": 7,
+    "title": "validates Binary Carry and K1",
+    "category": "Test implementation",
+    "domain": "v064-golden-dataset",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "Required before implementation; no rule inferred from title alone"
+  },
+  {
+    "id": "TODO-119",
+    "file": "backend/apps/api/test/v064-golden-dataset.e2e-spec.ts",
+    "line": 8,
+    "title": "validates Matching source=Binary Paid after K1",
+    "category": "Test implementation",
+    "domain": "v064-golden-dataset",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "Required before implementation; no rule inferred from title alone"
+  },
+  {
+    "id": "TODO-120",
+    "file": "backend/apps/api/test/v064-golden-dataset.e2e-spec.ts",
+    "line": 9,
+    "title": "validates RPV 5/8/12 on Binary Tree",
+    "category": "Test implementation",
+    "domain": "v064-golden-dataset",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "Required before implementation; no rule inferred from title alone"
+  },
+  {
+    "id": "TODO-121",
+    "file": "backend/apps/api/test/v064-golden-dataset.e2e-spec.ts",
+    "line": 10,
+    "title": "validates EPV on Sponsor Tree",
+    "category": "Test implementation",
+    "domain": "v064-golden-dataset",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "Required before implementation; no rule inferred from title alone"
+  },
+  {
+    "id": "TODO-122",
+    "file": "backend/apps/api/test/v064-golden-dataset.e2e-spec.ts",
+    "line": 11,
+    "title": "validates refund -> replay -> recovery -> payout",
+    "category": "Test implementation",
+    "domain": "v064-golden-dataset",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "Required before implementation; no rule inferred from title alone"
+  },
+  {
+    "id": "TODO-123",
+    "file": "backend/apps/api/test/v064-golden-dataset.e2e-spec.ts",
+    "line": 12,
+    "title": "validates partial recovery across multiple payout batches",
+    "category": "Test implementation",
+    "domain": "v064-golden-dataset",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "Required before implementation; no rule inferred from title alone"
+  },
+  {
+    "id": "TODO-124",
+    "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
+    "line": 2,
+    "title": "creates DRAFT membership application",
+    "category": "Test implementation",
+    "domain": "vertical-slice-02",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "Required before implementation; no rule inferred from title alone"
+  },
+  {
+    "id": "TODO-125",
+    "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
+    "line": 3,
+    "title": "SUBMIT requires sponsor and binary placement data",
+    "category": "Test implementation",
+    "domain": "vertical-slice-02",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "Required before implementation; no rule inferred from title alone"
+  },
+  {
+    "id": "TODO-126",
+    "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
+    "line": 4,
+    "title": "APPROVE creates Qualification + Holder + Sponsor + Binary atomically",
+    "category": "Test implementation",
+    "domain": "vertical-slice-02",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "Required before implementation; no rule inferred from title alone"
+  },
+  {
+    "id": "TODO-127",
+    "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
+    "line": 5,
+    "title": "1st and 3rd direct-left rule is enforced during approval",
+    "category": "Test implementation",
+    "domain": "vertical-slice-02",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "Required before implementation; no rule inferred from title alone"
+  },
+  {
+    "id": "TODO-128",
+    "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
+    "line": 6,
+    "title": "Active periods cannot overlap",
+    "category": "Test implementation",
+    "domain": "vertical-slice-02",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "Required before implementation; no rule inferred from title alone"
+  },
+  {
+    "id": "TODO-129",
+    "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
+    "line": 7,
+    "title": "historical Active query uses event time, not current flag",
+    "category": "Test implementation",
+    "domain": "vertical-slice-02",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "Required before implementation; no rule inferred from title alone"
+  },
+  {
+    "id": "TODO-130",
+    "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
+    "line": 8,
+    "title": "QUARTER creates exactly 3 recognition rows",
+    "category": "Test implementation",
+    "domain": "vertical-slice-02",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "Required before implementation; no rule inferred from title alone"
+  },
+  {
+    "id": "TODO-131",
+    "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
+    "line": 9,
+    "title": "HALF_YEAR creates exactly 6 recognition rows",
+    "category": "Test implementation",
+    "domain": "vertical-slice-02",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "Required before implementation; no rule inferred from title alone"
+  },
+  {
+    "id": "TODO-132",
+    "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
+    "line": 10,
+    "title": "YEAR creates exactly 12 recognition rows",
+    "category": "Test implementation",
+    "domain": "vertical-slice-02",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "Required before implementation; no rule inferred from title alone"
+  },
+  {
+    "id": "TODO-133",
+    "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
+    "line": 11,
+    "title": "each due recognition creates exactly 1,200 RPV once",
+    "category": "Test implementation",
+    "domain": "vertical-slice-02",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "Required before implementation; no rule inferred from title alone"
+  },
+  {
+    "id": "TODO-134",
+    "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
+    "line": 12,
+    "title": "0 direct unlocks 5 binary generations",
+    "category": "Test implementation",
+    "domain": "vertical-slice-02",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "Required before implementation; no rule inferred from title alone"
+  },
+  {
+    "id": "TODO-135",
+    "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
+    "line": 13,
+    "title": "1 direct unlocks 8 binary generations",
+    "category": "Test implementation",
+    "domain": "vertical-slice-02",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "Required before implementation; no rule inferred from title alone"
+  },
+  {
+    "id": "TODO-136",
+    "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
+    "line": 14,
+    "title": "2+ directs unlocks 12 binary generations",
+    "category": "Test implementation",
+    "domain": "vertical-slice-02",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "Required before implementation; no rule inferred from title alone"
+  },
+  {
+    "id": "TODO-137",
+    "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
+    "line": 15,
+    "title": "inactive upline receives 0 and is not compressed",
+    "category": "Test implementation",
+    "domain": "vertical-slice-02",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "Required before implementation; no rule inferred from title alone"
+  },
+  {
+    "id": "TODO-138",
+    "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
+    "line": 16,
+    "title": "higher generation remains independently evaluated",
+    "category": "Test implementation",
+    "domain": "vertical-slice-02",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "Required before implementation; no rule inferred from title alone"
+  },
+  {
+    "id": "TODO-139",
+    "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
+    "line": 17,
+    "title": "re-running a recognition cannot duplicate RPV or awards",
+    "category": "Test implementation",
+    "domain": "vertical-slice-02",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "Required before implementation; no rule inferred from title alone"
+  },
+  {
+    "id": "TODO-140",
+    "file": "backend/apps/api/test/vertical-slice.e2e-spec.ts",
+    "line": 7,
+    "title": "creates Person with idempotent command",
+    "category": "Test implementation",
+    "domain": "vertical-slice",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "Required before implementation; no rule inferred from title alone"
+  },
+  {
+    "id": "TODO-141",
+    "file": "backend/apps/api/test/vertical-slice.e2e-spec.ts",
+    "line": 8,
+    "title": "creates Qualification with permanent sponsor sequence",
+    "category": "Test implementation",
+    "domain": "vertical-slice",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "Required before implementation; no rule inferred from title alone"
+  },
+  {
+    "id": "TODO-142",
+    "file": "backend/apps/api/test/vertical-slice.e2e-spec.ts",
+    "line": 9,
+    "title": "rejects 1st direct placed on RIGHT",
+    "category": "Test implementation",
+    "domain": "vertical-slice",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "Required before implementation; no rule inferred from title alone"
+  },
+  {
+    "id": "TODO-143",
+    "file": "backend/apps/api/test/vertical-slice.e2e-spec.ts",
+    "line": 10,
+    "title": "creates order using server-side Product Rule Profile snapshot",
+    "category": "Test implementation",
+    "domain": "vertical-slice",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "Required before implementation; no rule inferred from title alone"
+  },
+  {
+    "id": "TODO-144",
+    "file": "backend/apps/api/test/vertical-slice.e2e-spec.ts",
+    "line": 11,
+    "title": "confirms payment exactly once",
+    "category": "Test implementation",
+    "domain": "vertical-slice",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "Required before implementation; no rule inferred from title alone"
+  },
+  {
+    "id": "TODO-145",
+    "file": "backend/apps/api/test/vertical-slice.e2e-spec.ts",
+    "line": 12,
+    "title": "writes SALE_CONFIRMED to transactional outbox",
+    "category": "Test implementation",
+    "domain": "vertical-slice",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "Required before implementation; no rule inferred from title alone"
+  },
+  {
+    "id": "TODO-146",
+    "file": "backend/apps/api/test/vertical-slice.e2e-spec.ts",
+    "line": 13,
+    "title": "worker converts SALE_CONFIRMED to GPV_CREATED per order line",
+    "category": "Test implementation",
+    "domain": "vertical-slice",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "Required before implementation; no rule inferred from title alone"
+  },
+  {
+    "id": "TODO-147",
+    "file": "backend/apps/api/test/vertical-slice.e2e-spec.ts",
+    "line": 14,
+    "title": "reprocessing same outbox event does not duplicate GPV",
+    "category": "Test implementation",
+    "domain": "vertical-slice",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "Required before implementation; no rule inferred from title alone"
+  },
+  {
+    "id": "TODO-148",
+    "file": "backend/apps/api/test/vertical-slice.e2e-spec.ts",
+    "line": 15,
+    "title": "PV ledger cannot be UPDATEd or DELETEd",
+    "category": "Test implementation",
+    "domain": "vertical-slice",
+    "status": "TODO / NOT EXECUTED",
+    "specificationReview": "Required before implementation; no rule inferred from title alone"
+  }
+]

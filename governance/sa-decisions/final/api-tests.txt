@@ -1,0 +1,30 @@
+cwd: C:\UCell\UCell\backend
+command: pnpm --filter @ucell/api test:e2e --runInBand
+started: 2026-09-15T10:43:12.696Z
+exit: 1
+$ jest --config ./test/jest-e2e.json "--runInBand"
+FAIL test/connected-dev-defects.e2e-spec.ts
+  ● Test suite failed to run
+
+    [96mtest/connected-dev-defects.e2e-spec.ts[0m:[93m59[0m:[93m11[0m - [91merror[0m[90m TS2554: [0mExpected 4 arguments, but got 3.
+
+    [7m59[0m     await new EpvService(prisma as unknown as PrismaService, rules as unknown as RuntimeRuleService,
+    [7m  [0m [91m          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+    [7m60[0m       query as unknown as BonusQueryService).recognizeOrder('order');
+    [7m  [0m [91m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+      [96msrc/modules/epv/epv.service.ts[0m:[93m15[0m:[93m5[0m
+        [7m15[0m     private readonly months:EpvMonthService,
+        [7m  [0m [96m    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+        An argument for 'months' was not provided.
+
+
+Test Suites: 1 failed, 14 passed, 15 total
+Tests:       148 todo, 18 passed, 166 total
+Snapshots:   0 total
+Time:        4.06 s, estimated 136 s
+Ran all test suites.
+[ELIFECYCLE] Command failed with exit code 1.
+Error: ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL
+
+  × "pnpm recursive run" failed in C:\UCell\UCell\backend\apps\api

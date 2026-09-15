@@ -1,0 +1,51 @@
+{
+  "result": "PASS",
+  "originalTodoCount": 148,
+  "originalTodoFilesUnchanged": true,
+  "frozenSharedConstantsUnchanged": true,
+  "documents": [
+    {
+      "id": "S01",
+      "path": "C:\\UCell\\Docs\\UCell_R1_0_會員制度與獎金計算說明手冊_多資格獨立經營版_v1_5.docx",
+      "expected": "abd0698454d6a530935cdf8e42f81d0b2c6a670c211795396f0e57138fb0a529",
+      "actual": "abd0698454d6a530935cdf8e42f81d0b2c6a670c211795396f0e57138fb0a529",
+      "result": "PASS"
+    },
+    {
+      "id": "S02",
+      "path": "C:\\UCell\\Docs\\UCell_R1_0_會員權益與福利暨會員制度與獎金計算說明手冊_報備一致版_v1_3.docx",
+      "expected": "0108586755b37b5f06da2eaef0f369529fe1004f90b6f673a109c219af62a0aa",
+      "actual": "0108586755b37b5f06da2eaef0f369529fe1004f90b6f673a109c219af62a0aa",
+      "result": "PASS"
+    },
+    {
+      "id": "S03",
+      "path": "C:\\UCell\\Docs\\UCell_R1_0B_PostgreSQL_Full_Database_Definition_Annotated_v1_1.sql",
+      "expected": "637435dfef53adf7ea5809575da8316791f2909537035ca47be1df53e5afaf99",
+      "actual": "637435dfef53adf7ea5809575da8316791f2909537035ca47be1df53e5afaf99",
+      "result": "PASS"
+    },
+    {
+      "id": "S04",
+      "path": "C:\\UCell\\Docs\\UCell_R1_0B_PostgreSQL_Full_Database_Definition_v1_0.sql",
+      "expected": "cc9de45593347f81c6bdcea1411019f8e21d5a0ec197a461f934392e0880c9b3",
+      "actual": "cc9de45593347f81c6bdcea1411019f8e21d5a0ec197a461f934392e0880c9b3",
+      "result": "PASS"
+    },
+    {
+      "id": "S05",
+      "path": "C:\\UCell\\Docs\\UCell_R1_0B_後台MVP細部系統規格書_v1_0.docx",
+      "expected": "077faef0bf9eb6d5f4d05064886296d1c66f7b58c3dd36c7e789d5ab9713220d",
+      "actual": "077faef0bf9eb6d5f4d05064886296d1c66f7b58c3dd36c7e789d5ab9713220d",
+      "result": "PASS"
+    },
+    {
+      "id": "S06",
+      "path": "C:\\UCell\\Docs\\UCell_R1_0B_獎金引擎與核心邏輯規格書_v4_1_多資格獨立經營.docx",
+      "expected": "1ab7ebdab65ad9c36089d63a3c3042b05125be054bf1663fa34e9ed5d5e4bb9c",
+      "actual": "1ab7ebdab65ad9c36089d63a3c3042b05125be054bf1663fa34e9ed5d5e4bb9c",
+      "result": "PASS"
+    }
+  ],
+  "prismaChange": "3 additive nullable snapshot columns; no historical monetary backfill"
+}

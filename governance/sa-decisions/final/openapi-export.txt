@@ -1,0 +1,7 @@
+cwd: C:\UCell\UCell\backend
+command: pnpm openapi
+started: 2026-09-15T10:43:25.933Z
+exit: 0
+OPENAPI_EXPORTED C:\UCell\UCell\backend\openapi.generated.json
+$ pnpm --filter @ucell/api openapi:export
+$ ts-node src/openapi-export.ts

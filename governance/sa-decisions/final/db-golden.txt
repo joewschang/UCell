@@ -1,0 +1,12 @@
+cwd: C:\UCell\UCell\backend
+command: pnpm db:golden
+started: 2026-09-15T10:43:24.487Z
+exit: 1
+$ pnpm exec ts-node scripts/db-golden-e2e.ts
+C:\UCell\UCell\backend\scripts\db-golden-e2e.ts:6
+  if(!ok) throw new Error(`DB_GOLDEN_FAIL: ${msg}`);
+                ^
+Error: DB_GOLDEN_FAIL: five golden qualifications must exist
+    at assert (C:\UCell\UCell\backend\scripts\db-golden-e2e.ts:6:17)
+    at main (C:\UCell\UCell\backend\scripts\db-golden-e2e.ts:19:3)
+[ELIFECYCLE] Command failed with exit code 1.

@@ -1,0 +1,9 @@
+cwd: C:\UCell\UCell\backend
+command: pnpm install --frozen-lockfile
+started: 2026-09-15T10:42:45.283Z
+exit: 0
+Scope: all 6 workspace projects
+? Verifying lockfile against supply-chain policies (665 entries)...
+✓ Lockfile passes supply-chain policies (665 entries in 2.7s)
+Lockfile is up to date, resolution step is skipped
+Done in 2.8s using pnpm v12.4.1

@@ -1,0 +1,5 @@
+command: "C:\Program Files\Git\bin\bash.exe" scripts/release-gate.sh
+started: 2026-09-15T10:53:57.568Z
+exit: 1
+'\"C:\Program Files\Git\bin\bash.exe\"' is not recognized as an internal or external command,
+operable program or batch file.

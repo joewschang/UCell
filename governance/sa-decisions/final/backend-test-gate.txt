@@ -1,0 +1,51 @@
+cwd: C:\UCell\UCell\backend
+command: pnpm test
+started: 2026-09-15T10:43:17.379Z
+exit: 1
+Scope: 5 of 6 workspace projects
+packages/shared test$ jest --config jest.config.cjs
+packages/contracts test$ echo no-tests
+packages/database test$ echo no-tests
+packages/contracts test: no-tests
+packages/contracts test: Done
+packages/database test: no-tests
+packages/database test: Done
+apps/worker test$ echo no-tests
+apps/worker test: no-tests
+apps/worker test: Done
+packages/shared test: Test Suites: 1 passed, 1 total
+packages/shared test: Tests:       6 passed, 6 total
+packages/shared test: Snapshots:   0 total
+packages/shared test: Time:        1.153 s
+packages/shared test: Ran all test suites.
+packages/shared test: Done
+apps/api test$ jest --config ./test/jest-e2e.json
+apps/api test: FAIL test/connected-dev-defects.e2e-spec.ts
+apps/api test:   ● Test suite failed to run
+apps/api test:
+apps/api test:     [96mtest/connected-dev-defects.e2e-spec.ts[0m:[93m59[0m:[93m11[0m - [91merror[0m[90m TS2554: [0mExpected 4 arguments, but got 3.
+apps/api test:
+apps/api test:     [7m59[0m     await new EpvService(prisma as unknown as PrismaService, rules as unknown as RuntimeRuleService,
+apps/api test:     [7m  [0m [91m          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+apps/api test:     [7m60[0m       query as unknown as BonusQueryService).recognizeOrder('order');
+apps/api test:     [7m  [0m [91m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+apps/api test:
+apps/api test:       [96msrc/modules/epv/epv.service.ts[0m:[93m15[0m:[93m5[0m
+apps/api test:         [7m15[0m     private readonly months:EpvMonthService,
+apps/api test:         [7m  [0m [96m    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+apps/api test:         An argument for 'months' was not provided.
+apps/api test:
+apps/api test:
+apps/api test: Test Suites: 1 failed, 14 passed, 15 total
+apps/api test: Tests:       148 todo, 18 passed, 166 total
+apps/api test: Snapshots:   0 total
+apps/api test: Time:        3.96 s
+apps/api test: Ran all test suites.
+apps/api test: Failed
+$ pnpm -r test && pnpm test:todo:gate
+[ELIFECYCLE] Test failed. See above for more details.
+Error: ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL
+
+  × "pnpm recursive run" failed in C:\UCell\UCell\backend\apps\api
+
+[ELIFECYCLE] Test failed. See above for more details.

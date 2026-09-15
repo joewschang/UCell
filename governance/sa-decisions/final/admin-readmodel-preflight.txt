@@ -1,0 +1,5 @@
+cwd: C:\UCell\UCell\backend
+command: node scripts/admin-readmodel-preflight.mjs
+started: 2026-09-15T10:42:50.446Z
+exit: 0
+ADMIN_READMODEL_PREFLIGHT_PASS

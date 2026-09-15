@@ -1,0 +1,4 @@
+command: node scripts/admin-operations-preflight.mjs
+started: 2026-09-15T10:49:09.893Z
+exit: 0
+ADMIN_OPERATIONS_PREFLIGHT_PASS

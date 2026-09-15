@@ -1,0 +1,140 @@
+cwd: C:\UCell\UCell\backend
+command: pnpm dev:smoke
+started: 2026-09-15T10:44:32.465Z
+exit: 1
+== Offline preflight ==
+== UCell R1.0B offline preflight ==
+STATIC_VALIDATE_PASS
+CONVERGENCE_VALIDATE_PASS
+GOLDEN_DOMAIN_PASS
+SCHEMA_PREFLIGHT_PASS
+PRISMA_RELATION_PREFLIGHT_PASS
+PRISMA_CLIENT_ACCESS_PREFLIGHT_PASS
+ENUM_MIGRATION_PREFLIGHT_PASS
+RUNTIME_SAFETY_PREFLIGHT_PASS
+MIGRATION_PREFLIGHT_PASS
+SOURCE_PREFLIGHT_PASS
+IMPORT_MODULE_PREFLIGHT_PASS
+REVIEW_R1_PREFLIGHT_PASS
+ADMIN_READMODEL_PREFLIGHT_PASS
+ADMIN_OBSERVABILITY_PREFLIGHT_PASS
+ADMIN_OPERATIONS_PREFLIGHT_PASS
+OPERATIONS_READY_PREFLIGHT_PASS
+SECURITY_POLICY_PREFLIGHT_PASS
+RELEASE_READINESS_PREFLIGHT_PASS
+TYPESCRIPT_PARSE_PREFLIGHT_PASS
+GOLDEN_R1B_REGRESSION_PASS
+GOLDEN_ECONOMIC_CASES_PASS
+OFFLINE_PREFLIGHT_PASS
+== dependency-backed gate ==
+Prisma schema loaded from prisma\schema.prisma
+The schema at prisma\schema.prisma is valid 🚀
+Prisma schema loaded from prisma\schema.prisma
+
+✔ Generated Prisma Client (v6.19.3) to .\..\..\node_modules\.pnpm\@prisma+client@6.19.3_prism_1d040ab5215f59f0e27ddee7f0cf082e\node_modules\@prisma\client in 294ms
+
+Start by importing your Prisma Client (See: https://pris.ly/d/importing-client)
+
+Tip: Interested in query caching in just a few lines of code? Try Accelerate today! https://pris.ly/tip-3-accelerate
+
+packages/contracts build$ tsc -p tsconfig.json
+packages/shared build$ tsc -p tsconfig.json
+packages/database build$ tsc -p tsconfig.json
+packages/contracts build: Done
+packages/shared build: Done
+packages/database build: Done
+apps/worker build$ tsc -p tsconfig.json
+apps/api build$ nest build
+apps/worker build: Done
+apps/api build: Done
+DEPENDENCY_GATE_PASS
+== Prisma validate/generate ==
+Prisma schema loaded from prisma\schema.prisma
+The schema at prisma\schema.prisma is valid 🚀
+Prisma schema loaded from prisma\schema.prisma
+
+✔ Generated Prisma Client (v6.19.3) to .\..\..\node_modules\.pnpm\@prisma+client@6.19.3_prism_1d040ab5215f59f0e27ddee7f0cf082e\node_modules\@prisma\client in 342ms
+
+Start by importing your Prisma Client (See: https://pris.ly/d/importing-client)
+
+Tip: Want to turn off tips and other hints? https://pris.ly/tip-4-nohints
+
+== Migrations ==
+Prisma schema loaded from prisma\schema.prisma
+Datasource "db": PostgreSQL database "ucell", schemas "audit, commerce, identity, integration, ledger, membership, organization, rules, subscription" at "localhost:5432"
+
+17 migrations found in prisma/migrations
+
+
+No pending migrations to apply.
+== Build ==
+packages/contracts build$ tsc -p tsconfig.json
+packages/shared build$ tsc -p tsconfig.json
+packages/database build$ tsc -p tsconfig.json
+packages/contracts build: Done
+packages/shared build: Done
+packages/database build: Done
+apps/worker build$ tsc -p tsconfig.json
+apps/api build$ nest build
+apps/worker build: Done
+apps/api build: Done
+== Golden seed ==
+$ node scripts/run-bash-gate.mjs dev-smoke.sh
+(node:29544) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///C:/UCell/UCell/backend/packages/shared/src/r1-0b-golden.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to \\?\C:\UCell\UCell\backend\packages\shared\package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+$ prisma "validate"
+warn The configuration property `package.json#prisma` is deprecated and will be removed in Prisma 7. Please migrate to a Prisma config file (e.g., `prisma.config.ts`).
+For more information, see: https://pris.ly/prisma-config
+
+
+Prisma schema warning:
+- Preview feature "multiSchema" is deprecated. The functionality can be used without specifying it as a preview feature.
+$ prisma "generate"
+warn The configuration property `package.json#prisma` is deprecated and will be removed in Prisma 7. Please migrate to a Prisma config file (e.g., `prisma.config.ts`).
+For more information, see: https://pris.ly/prisma-config
+
+warn Preview feature "multiSchema" is deprecated. The functionality can be used without specifying it as a preview feature.
+warn The configuration property `package.json#prisma` is deprecated and will be removed in Prisma 7. Please migrate to a Prisma config file (e.g., `prisma.config.ts`).
+For more information, see: https://pris.ly/prisma-config
+
+
+Prisma schema warning:
+- Preview feature "multiSchema" is deprecated. The functionality can be used without specifying it as a preview feature.
+warn The configuration property `package.json#prisma` is deprecated and will be removed in Prisma 7. Please migrate to a Prisma config file (e.g., `prisma.config.ts`).
+For more information, see: https://pris.ly/prisma-config
+
+warn Preview feature "multiSchema" is deprecated. The functionality can be used without specifying it as a preview feature.
+warn The configuration property `package.json#prisma` is deprecated and will be removed in Prisma 7. Please migrate to a Prisma config file (e.g., `prisma.config.ts`).
+For more information, see: https://pris.ly/prisma-config
+
+node:internal/modules/cjs/loader:1568
+  throw err;
+  ^
+
+Error: Cannot find module './golden-r1-0b.ts'
+Require stack:
+- C:\UCell\UCell\backend\packages\database\prisma\seed\imaginaryUncacheableRequireResolveScript
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1564:15)
+    at wrapResolveFilename (node:internal/modules/cjs/loader:1118:27)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1169:12)
+    at require.resolve (node:internal/modules/helpers:175:31)
+    at requireResolveNonCached (C:\UCell\UCell\backend\node_modules\.pnpm\ts-node@10.9.2_@types+node@24.13.4_typescript@5.9.3\node_modules\ts-node\dist\bin.js:549:16)
+    at getProjectSearchDir (C:\UCell\UCell\backend\node_modules\.pnpm\ts-node@10.9.2_@types+node@24.13.4_typescript@5.9.3\node_modules\ts-node\dist\bin.js:519:40)
+    at phase3 (C:\UCell\UCell\backend\node_modules\.pnpm\ts-node@10.9.2_@types+node@24.13.4_typescript@5.9.3\node_modules\ts-node\dist\bin.js:267:27)
+    at bootstrap (C:\UCell\UCell\backend\node_modules\.pnpm\ts-node@10.9.2_@types+node@24.13.4_typescript@5.9.3\node_modules\ts-node\dist\bin.js:47:30)
+    at main (C:\UCell\UCell\backend\node_modules\.pnpm\ts-node@10.9.2_@types+node@24.13.4_typescript@5.9.3\node_modules\ts-node\dist\bin.js:33:12)
+    at Object.<anonymous> (C:\UCell\UCell\backend\node_modules\.pnpm\ts-node@10.9.2_@types+node@24.13.4_typescript@5.9.3\node_modules\ts-node\dist\bin.js:579:5) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [
+    'C:\\UCell\\UCell\\backend\\packages\\database\\prisma\\seed\\imaginaryUncacheableRequireResolveScript'
+  ]
+}
+
+Node.js v24.21.0
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × "pnpm recursive exec" failed in C:\UCell\UCell\backend\packages\database
+
+[ELIFECYCLE] Command failed with exit code 1.

@@ -1,0 +1,18 @@
+{
+  "result": "PASS",
+  "results": [
+    {
+      "type": "referral",
+      "status": 422,
+      "code": "CONFIGURATION_PENDING",
+      "result": "PASS"
+    },
+    {
+      "type": "binary",
+      "status": 422,
+      "code": "CONFIGURATION_PENDING",
+      "result": "PASS"
+    }
+  ],
+  "noSettlementRowsCreated": true
+}

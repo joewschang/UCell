@@ -1,0 +1,385 @@
+{
+  "format": "Original byte-exact logs preserved in raw-logs.zip; txt files are whitespace-normalized display copies",
+  "files": [
+    {
+      "file": "admin-build.txt",
+      "sha256": "39678b23d1501f30bf598fb177abdf1081aca9be3e364da695c96f7b083cd40e",
+      "bytes": 777
+    },
+    {
+      "file": "admin-dependency-audit.txt",
+      "sha256": "adc63fcc20a32c32caf7a76b5121099bc00699052bb702584e6a97786ea51d94",
+      "bytes": 375
+    },
+    {
+      "file": "admin-install.txt",
+      "sha256": "903423feafb36d125702bc96bb93bf3dbce6caec6ed2c0f0b16c55e93ee3c134",
+      "bytes": 323
+    },
+    {
+      "file": "admin-observability-preflight.txt",
+      "sha256": "b2848742dc71be5ebad8abc21290c69d843f431b4bc9a3787d602459b0578791",
+      "bytes": 161
+    },
+    {
+      "file": "admin-operations-preflight.txt",
+      "sha256": "3385c6d1dc91afa6a39326ca96bb761d4e67d7c00f45e17de2190f925f7c9cfd",
+      "bytes": 155
+    },
+    {
+      "file": "admin-preflight.txt",
+      "sha256": "1355cdced3a62891f85ba406f7f8934186359a4ffdbcd01b3e0b2cacda0467fe",
+      "bytes": 142
+    },
+    {
+      "file": "admin-readmodel-preflight.txt",
+      "sha256": "13d9babee0779511696ec7b4b3a5550d9a004f76824c053e2c7cea04cb6e8e80",
+      "bytes": 153
+    },
+    {
+      "file": "admin-selfaudit.txt",
+      "sha256": "61742c1fa4d20a46d19038514a15f4b8924727cf235bdf0e95ccbbdadc48570b",
+      "bytes": 154
+    },
+    {
+      "file": "admin-tests.txt",
+      "sha256": "ff37d51210e86825679f886808b5b4cf1b16e1f8e44c43f678c77a22f534cf1e",
+      "bytes": 301
+    },
+    {
+      "file": "api-tests.txt",
+      "sha256": "84cb640112219aeba128aada0aa74809be8e02a7515ffc8a8e2b9bd2af21b370",
+      "bytes": 1373
+    },
+    {
+      "file": "backend-build.txt",
+      "sha256": "888b03d9873da19f3711a36a1d20de8834e188c76243677c7bf9897aa8440475",
+      "bytes": 431
+    },
+    {
+      "file": "backend-dependency-audit.txt",
+      "sha256": "8324736bdcc2931c3b040e5c8ec549ae13f6e93dfed8dcb3fb6519bcb438ced2",
+      "bytes": 378
+    },
+    {
+      "file": "backend-install.txt",
+      "sha256": "42442953a74a4b93e252b867d6a069474e794aeecb57ee43fdb57e18572a324e",
+      "bytes": 357
+    },
+    {
+      "file": "backend-peers.txt",
+      "sha256": "d0655c5958e976c279ec5c3972ed28620f2004e3e451db5fd83180744b16d3f4",
+      "bytes": 128
+    },
+    {
+      "file": "backend-test-gate.txt",
+      "sha256": "4da5605f7cc2c90f4fabb3670249a9800e01baed2705e94195acfc8742628724",
+      "bytes": 2388
+    },
+    {
+      "file": "ci-gate.txt",
+      "sha256": "3a7fb89f5f0094e3fb5cd2d2065f3e74044612263440b3130b0af7f14689dae2",
+      "bytes": 2909
+    },
+    {
+      "file": "convergence-validate.txt",
+      "sha256": "2fdd94e8b5937248859c973959f39f20517a117c774c0aa7cf97edd76700d7f0",
+      "bytes": 143
+    },
+    {
+      "file": "db-golden.txt",
+      "sha256": "2ee297e7d6cb86555f9102fd8e029f9770df71cf9dec9c182a0507de5b888dfb",
+      "bytes": 503
+    },
+    {
+      "file": "enum-migration-preflight.txt",
+      "sha256": "633b01ea4fd8833d590d8b15cbcce4006dde1fcdc7b073653548f7c95724c027",
+      "bytes": 151
+    },
+    {
+      "file": "final-admin-build.txt",
+      "sha256": "474adc9c92ac22a06a6340d4e47b54d40fe06de05fe6d0ff9cabb3e6d59fa282",
+      "bytes": 751
+    },
+    {
+      "file": "final-admin-operations-preflight.txt",
+      "sha256": "ba5d440c1b0635012412fc4a7a103052df2583d68db188a3ed2056a29650ce6a",
+      "bytes": 127
+    },
+    {
+      "file": "final-admin-tests.txt",
+      "sha256": "fbc92fdd7334b076ff5830c4d7c34221b066a7aa753877a3588b6c4e32eaf8f0",
+      "bytes": 275
+    },
+    {
+      "file": "final-api-tests.txt",
+      "sha256": "20e2fe68b80851bc61188f035a89ebf4b3bd1e4a37db8fe790cb58317f306410",
+      "bytes": 306
+    },
+    {
+      "file": "final-backend-build.txt",
+      "sha256": "f670b914166ffb9cbf857e35a8ebd744fff0d0cb2f1a8c256a5101149b93245d",
+      "bytes": 403
+    },
+    {
+      "file": "final-backend-test-gate.txt",
+      "sha256": "376533381e8c8e7afddbf0ce3861db2ebe4293e403710d09625833c95fb488de",
+      "bytes": 1866
+    },
+    {
+      "file": "final-ci-gate.txt",
+      "sha256": "2d032b3c9d375c2d279e19104a451b595cff644fe35b597093d3261b1fca45f7",
+      "bytes": 2890
+    },
+    {
+      "file": "final-db-golden.txt",
+      "sha256": "9067c69da18b9a4d63aad6ca53d9729c58b1772e96638a57ca45365393fd61fc",
+      "bytes": 475
+    },
+    {
+      "file": "final-full-admin-dev-build.txt",
+      "sha256": "0a6a28171109745512f7df3b05ad6b2cdbc541438088f81cff05601d75c0604c",
+      "bytes": 125
+    },
+    {
+      "file": "final-openapi-export.txt",
+      "sha256": "fef74395e16a3f2f1ba00dd7ec622e01e886282eb0443ab68deeca5c27b61a9b",
+      "bytes": 201
+    },
+    {
+      "file": "final-openapi-preflight.txt",
+      "sha256": "1c69279afe2351c57035a98fa6ca54768e4a7c5b5be07cb2406f21ef823d0c5b",
+      "bytes": 134
+    },
+    {
+      "file": "final-prisma-generate.txt",
+      "sha256": "f07e8a70133621bae2aa561001f53052a0b0da7e30ad40a6c7d8968878f574ce",
+      "bytes": 871
+    },
+    {
+      "file": "final-prisma-migrate-deploy.txt",
+      "sha256": "775f0a550efcf5c99522999eca93c6e66417194bfeabb48cc69ae1a7ec227dca",
+      "bytes": 627
+    },
+    {
+      "file": "final-prisma-validate.txt",
+      "sha256": "78691c126b40ac078825e7dc74cffae703196208e32903784eec9c6b27613fe2",
+      "bytes": 569
+    },
+    {
+      "file": "final-rc-gate.txt",
+      "sha256": "74035839b44b192c0a3f256cdbaa4eb4a0000811819e73a1b9eb7466d07a795d",
+      "bytes": 854
+    },
+    {
+      "file": "final-release-gate.txt",
+      "sha256": "2f68536546d90bf3f734888e4fb4bf652162ae9747bec03036a6365497a18474",
+      "bytes": 239
+    },
+    {
+      "file": "final-release-prep.txt",
+      "sha256": "2595c5fb753c48a8046c1be23fe5ffd44cd683edd3ca8f68558c34c92bf3d389",
+      "bytes": 5662
+    },
+    {
+      "file": "final-sa-db-regression.txt",
+      "sha256": "62ba2ccf2fd599e6656654c1b18fe3e3928cde953a7e81bc6c024b445d3a956a",
+      "bytes": 149
+    },
+    {
+      "file": "final-security-http-e2e.txt",
+      "sha256": "e52389129460a0401ba5d366987345bed6bd8649e5858d4ed2025cebf209301c",
+      "bytes": 529
+    },
+    {
+      "file": "final-security-policy-preflight.txt",
+      "sha256": "6f79e8545037477649ac97bb981f3fabd071f6559ded2e6f7ac46dbe58390a7f",
+      "bytes": 151
+    },
+    {
+      "file": "final-shared-golden-tests.txt",
+      "sha256": "17bb5a885d907fd0033b2d13934a473cf57ef148879237c639eef1326b3cc300",
+      "bytes": 267
+    },
+    {
+      "file": "final-test-todo-gate.txt",
+      "sha256": "193686f156d275e300cbb34d9cc34999c647f1e96e1ea7e86d70579459265585",
+      "bytes": 851
+    },
+    {
+      "file": "git-status.txt",
+      "sha256": "046f62996e0eeb966df04f5c1978edbf9977c44e1abdb2b7dd92002ba8d49523",
+      "bytes": 744
+    },
+    {
+      "file": "golden-domain-test.txt",
+      "sha256": "ac34a1f18cd28f566e2a86a52d6bced341326d62599e3e1f93a154c83c3597d5",
+      "bytes": 595
+    },
+    {
+      "file": "golden-economic-cases.txt",
+      "sha256": "5207e5bf22cb0393892110c292311d23e082405bdc24ea18cccd9e2a2cae5b38",
+      "bytes": 145
+    },
+    {
+      "file": "golden-r1b-regression.txt",
+      "sha256": "876e89cce02c227c6e02f93ab8ac82e95353c4f5cc6c96680d8e2898414dec48",
+      "bytes": 145
+    },
+    {
+      "file": "http-smoke.txt",
+      "sha256": "d3b04353946f2481a69975f9669c682a9dfd1ff82faefbbd892f4ccb65b08870",
+      "bytes": 484
+    },
+    {
+      "file": "import-module-preflight.txt",
+      "sha256": "cfe821c2c5d552b6e080e55e7d507c4bc2f0a608482ba8a3d45ea85c7c8a483d",
+      "bytes": 149
+    },
+    {
+      "file": "migration-preflight.txt",
+      "sha256": "7ff42bd28458b7144a027c2dcf7af60ce111035631086b4c87e2a175f2ec2074",
+      "bytes": 141
+    },
+    {
+      "file": "node-version.txt",
+      "sha256": "40213ea82bc353f013ef9a99aabca6ca2ea0433ddf26a6ac3e39993625eec86d",
+      "bytes": 96
+    },
+    {
+      "file": "openapi-export.txt",
+      "sha256": "f333f51375a90642893e82e9320e9d0404a2ebcc2ab110257bff978005ed8de5",
+      "bytes": 229
+    },
+    {
+      "file": "openapi-preflight.txt",
+      "sha256": "34786de930f752553102ec1b2afd3e9bf85c90cfa90697c45d3d96cdd2d48ee6",
+      "bytes": 137
+    },
+    {
+      "file": "operations-ready-preflight.txt",
+      "sha256": "39ae23d0f977b759d6800de2f5be5d02562af5449aa56be33cc78f6b6809fa12",
+      "bytes": 155
+    },
+    {
+      "file": "pnpm-version.txt",
+      "sha256": "3425cb0e7066589956cf8f336ac0b85e4e808c4e564358a938ceb00055328a16",
+      "bytes": 93
+    },
+    {
+      "file": "prisma-client-access-preflight.txt",
+      "sha256": "a74bc19cdc4903753d521605c929fafec21efcae8fb0d4d0de192d333ef36a6b",
+      "bytes": 163
+    },
+    {
+      "file": "prisma-generate.txt",
+      "sha256": "070c14bd1f1820826a20b02ab38435b8282747970d8b73f26896c3b3f4fbe8b7",
+      "bytes": 894
+    },
+    {
+      "file": "prisma-migrate-deploy.txt",
+      "sha256": "e39f8e9b2194c75fde95c5294625bc915d5ca8b980e94efa35856f6e65f3711c",
+      "bytes": 868
+    },
+    {
+      "file": "prisma-relation-preflight.txt",
+      "sha256": "da6d59eb5f495e5aaf76d403cf0926ab7b09f784e9efcf9e0b77a243312b54bf",
+      "bytes": 153
+    },
+    {
+      "file": "prisma-validate.txt",
+      "sha256": "ce3fc30e4a055213c5c7ab355aa814e80eedbfc8dfc5d445143353223832d319",
+      "bytes": 597
+    },
+    {
+      "file": "rc-gate.txt",
+      "sha256": "068663909f4f0d5459f32d67fb0e36829ea0c061972e358b5ba792f55c60a439",
+      "bytes": 834
+    },
+    {
+      "file": "release-gate.txt",
+      "sha256": "9a8f0db12309b3c9133e2edb64b325214bfff1f1459394106eaf08733de30c15",
+      "bytes": 5566
+    },
+    {
+      "file": "release-readiness-preflight.txt",
+      "sha256": "d28993d039552b4263ee94be1480038b550ccc930ac61a00c2ff8a1c5f49d787",
+      "bytes": 157
+    },
+    {
+      "file": "review-r1-preflight.txt",
+      "sha256": "ab499c552156b330d2505e8280711875c8ab76a3ec9797a2697e34f0e357c664",
+      "bytes": 141
+    },
+    {
+      "file": "runtime-safety-preflight.txt",
+      "sha256": "791ddbecc2f01792559a75a775463cc7cf31b3fd59727d42fd88a225997ca5e4",
+      "bytes": 151
+    },
+    {
+      "file": "schema-preflight.txt",
+      "sha256": "3140c40320ab963b582745d9950bd09556a0e6ed32418e50f0d010f125d1245c",
+      "bytes": 135
+    },
+    {
+      "file": "security-http-e2e.txt",
+      "sha256": "71abc858995a0afceb5cf720c550f77c79b3a33aaf356233acc7d753ba0accbb",
+      "bytes": 491
+    },
+    {
+      "file": "security-policy-preflight.txt",
+      "sha256": "17c56493f02d31fc66bcd814ddfb9cd06950671d799924340b05bfa693d4d530",
+      "bytes": 153
+    },
+    {
+      "file": "shared-golden-tests.txt",
+      "sha256": "0ee2c14bfc00b66a860f1e776db147440a7241394d977560b0e0e82d6f734b23",
+      "bytes": 295
+    },
+    {
+      "file": "source-preflight.txt",
+      "sha256": "21420fa14442f4f13f9ab473792bfaeff9853e6887d7142a9d430a2fba31daa4",
+      "bytes": 135
+    },
+    {
+      "file": "static-validate.txt",
+      "sha256": "8e5d5bfeebbbf67a50d6c37c332fbfa37cc4b835610c9cc1b97ec37a463632f2",
+      "bytes": 133
+    },
+    {
+      "file": "test-todo-gate.txt",
+      "sha256": "2d12f9e7c68f3c1de7eb87bdd8dcd782864908753db23ab0c512c70c15c2a19d",
+      "bytes": 811
+    },
+    {
+      "file": "typescript-parse-preflight.txt",
+      "sha256": "4b15dacef5ec1fe221457a4883d872bcc3b291024c287874999b269ac17fd4e7",
+      "bytes": 155
+    },
+    {
+      "file": "uat-gate.txt",
+      "sha256": "e31e61dbc6b12bcc627eeaca6bdbd5d3e3ac7e73f4d45250fc74f179cf21bb39",
+      "bytes": 641
+    },
+    {
+      "file": "windows-dev-smoke-entrypoint.txt",
+      "sha256": "079211f4f212d2f2abd32ed07652e870669e623af2c4fb403ac7d709d3dfbf02",
+      "bytes": 6866
+    },
+    {
+      "file": "windows-preflight-entrypoint.txt",
+      "sha256": "b7f23fd32b97400f68141f3a68e5cf42d8ffc11203f9a6874c04ea5a8f0650ae",
+      "bytes": 2869
+    },
+    {
+      "file": "windows-rc-entrypoint.txt",
+      "sha256": "caeb174d6d42b9751f84fbb317dc0452463e61b1d3baf13f6407a3422b777c29",
+      "bytes": 882
+    },
+    {
+      "file": "windows-release-prep-entrypoint.txt",
+      "sha256": "d86280cd22d3bbdc8e5c4fb5f99675398e5b21c097c8df03d1836d201fc517c4",
+      "bytes": 1234
+    }
+  ]
+}

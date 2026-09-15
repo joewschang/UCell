@@ -1,0 +1,83 @@
+{
+  "recordVersion": 1,
+  "authority": "SA ruling explicitly supplied in this task, 2026-09-15; not claimed to be a filed document",
+  "decisionFileSha256": "a4b8af4d5e97634b5fddf99fc3b364ac73e9862dc091474347cbe8fc0ec0032f",
+  "decisions": [
+    {
+      "decisionId": "SA-20260915-01",
+      "status": "PARTIAL / BLOCKERS EXPLICITLY RETAINED",
+      "implemented": [
+        "Historical periods; event-time Binary tree; linked reversals",
+        "Snapshot-based economic pools, period-wide K1/K2, re-derived carry",
+        "Idempotent source reversal and transactional pending dependency outbox"
+      ],
+      "remaining": [
+        "K0 and RPV replay implementation",
+        "Multi-return effective baseline/carry continuation",
+        "EPV allocation/posting pending"
+      ],
+      "files": [
+        "backend/apps/api/src/modules/adjustment/settlement-replay.service.ts",
+        "backend/apps/api/src/modules/adjustment/carry-chain-replay.service.ts",
+        "backend/apps/api/src/modules/return/reversal.service.ts"
+      ]
+    },
+    {
+      "decisionId": "SA-20260915-02",
+      "status": "PARTIAL / BLOCKERS EXPLICITLY RETAINED",
+      "implemented": [
+        "Qualification/calendar-month Decimal threshold",
+        "Chronological order increments and original Active/Sponsor snapshots",
+        "Return month threshold projection evidence"
+      ],
+      "remaining": [
+        "EPV monetary reversal/award allocation pending; projection is not posting",
+        "Other eligibility and mixed-month parameter/timezone policy pending"
+      ],
+      "files": [
+        "backend/apps/api/src/modules/epv/epv.service.ts",
+        "backend/apps/api/src/modules/epv/epv-month.service.ts",
+        "backend/apps/api/src/modules/epv/monthly-epv.ts"
+      ]
+    },
+    {
+      "decisionId": "SA-20260915-03",
+      "status": "PARTIAL / BLOCKERS EXPLICITLY RETAINED",
+      "implemented": [
+        "Explicit versioned calendar; no weekday/time defaults",
+        "SHA256 snapshots locked at configured cut-off; nullable historical columns",
+        "Overlapping/corrupt/missing snapshots fail closed"
+      ],
+      "remaining": [
+        "Approved operational calendar and EPV timezone configuration",
+        "Historical snapshot evidence",
+        "Calendar change between period end and cut-off pending policy"
+      ],
+      "files": [
+        "backend/apps/api/src/modules/rules/parameter-snapshot.ts",
+        "backend/apps/api/src/modules/settlement/settlement-calendar.service.ts",
+        "backend/apps/api/src/modules/bonus/binary-bonus.service.ts",
+        "backend/apps/api/src/modules/bonus/referral-bonus.service.ts",
+        "backend/apps/api/src/modules/global-pool/global-pool.service.ts"
+      ]
+    },
+    {
+      "decisionId": "SA-20260915-04",
+      "status": "RECORDED",
+      "implemented": [
+        "SSOT hierarchy; 42/36/15/5/2 and 4800=>1680",
+        "Legacy golden and per-source shortcut evidence preserved",
+        "Gate inspects current recovery owner; no TODO or frozen constants changed"
+      ],
+      "remaining": [
+        "Historical filing/approval metadata remains evidence gap"
+      ],
+      "files": []
+    }
+  ],
+  "evidence": [
+    "final/db-regression.json",
+    "final/final-api-tests.txt",
+    "final/full-admin-flow.json"
+  ]
+}

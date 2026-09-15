@@ -1,0 +1,2666 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/api/v1/health": {
+      "get": {
+        "operationId": "HealthController_health",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Health"
+        ]
+      }
+    },
+    "/api/v1/admin/dashboard/summary": {
+      "get": {
+        "operationId": "adminDashboardSummary",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "管理後台營運摘要Read Model",
+        "tags": [
+          "Admin - Dashboard"
+        ]
+      }
+    },
+    "/api/v1/admin/observability/organization/sponsor-tree/{rootQualificationId}": {
+      "get": {
+        "operationId": "adminSponsorTree",
+        "parameters": [
+          {
+            "name": "rootQualificationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "depth",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "at",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "推薦樹視圖",
+        "tags": [
+          "Admin - Organization & Compensation Observability"
+        ]
+      }
+    },
+    "/api/v1/admin/observability/organization/binary-tree/{rootQualificationId}": {
+      "get": {
+        "operationId": "adminBinaryTree",
+        "parameters": [
+          {
+            "name": "rootQualificationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "depth",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "at",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "二元樹視圖",
+        "tags": [
+          "Admin - Organization & Compensation Observability"
+        ]
+      }
+    },
+    "/api/v1/admin/observability/qualifications/{qualificationId}/operations": {
+      "get": {
+        "operationId": "adminQualificationOperations",
+        "parameters": [
+          {
+            "name": "qualificationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "Qualification Active/PV/Award/Carry營運視圖",
+        "tags": [
+          "Admin - Organization & Compensation Observability"
+        ]
+      }
+    },
+    "/api/v1/admin/observability/awards/{bonusAwardId}": {
+      "get": {
+        "operationId": "adminAwardDetail",
+        "parameters": [
+          {
+            "name": "bonusAwardId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "獎金來源、K值、生命週期、Recovery與Payable Drill-down",
+        "tags": [
+          "Admin - Organization & Compensation Observability"
+        ]
+      }
+    },
+    "/api/v1/admin/observability/settlements": {
+      "get": {
+        "operationId": "adminSettlementHistory",
+        "parameters": [
+          {
+            "name": "type",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "take",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "K0/K1/K2 Settlement歷史與池壓縮",
+        "tags": [
+          "Admin - Organization & Compensation Observability"
+        ]
+      }
+    },
+    "/api/v1/admin/observability/pools": {
+      "get": {
+        "operationId": "adminPoolHistory",
+        "parameters": [
+          {
+            "name": "take",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "Global/Welfare Pool歷史",
+        "tags": [
+          "Admin - Organization & Compensation Observability"
+        ]
+      }
+    },
+    "/api/v1/admin/observability/compensation/summary": {
+      "get": {
+        "operationId": "adminCompensationSummary",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "獎金/結算/Recovery營運摘要",
+        "tags": [
+          "Admin - Organization & Compensation Observability"
+        ]
+      }
+    },
+    "/api/v1/admin/operations/returns": {
+      "get": {
+        "operationId": "adminReturnQueue",
+        "parameters": [
+          {
+            "name": "status",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "q",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "take",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "退貨/反向/Replay營運佇列",
+        "tags": [
+          "Admin - Returns / Workflows / Payout Operations"
+        ]
+      }
+    },
+    "/api/v1/admin/operations/returns/{id}": {
+      "get": {
+        "operationId": "adminReturnDetail",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "退貨、GPV反向、Recovery、Replay完整追蹤",
+        "tags": [
+          "Admin - Returns / Workflows / Payout Operations"
+        ]
+      }
+    },
+    "/api/v1/admin/operations/workflows": {
+      "get": {
+        "operationId": "adminWorkflowQueue",
+        "parameters": [
+          {
+            "name": "status",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "type",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "q",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "take",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "升級/轉讓/退出/公司再轉讓佇列",
+        "tags": [
+          "Admin - Returns / Workflows / Payout Operations"
+        ]
+      }
+    },
+    "/api/v1/admin/operations/workflows/{id}": {
+      "get": {
+        "operationId": "adminWorkflowDetail",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "Qualification異動Workflow詳情",
+        "tags": [
+          "Admin - Returns / Workflows / Payout Operations"
+        ]
+      }
+    },
+    "/api/v1/admin/operations/recoveries": {
+      "get": {
+        "operationId": "adminRecoveryAging",
+        "parameters": [
+          {
+            "name": "status",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "q",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "take",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "Recovery Aging與抵扣履歷",
+        "tags": [
+          "Admin - Returns / Workflows / Payout Operations"
+        ]
+      }
+    },
+    "/api/v1/admin/operations/payout-batches": {
+      "get": {
+        "operationId": "adminPayoutBatchQueue",
+        "parameters": [
+          {
+            "name": "status",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "take",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "付款批次Queue",
+        "tags": [
+          "Admin - Returns / Workflows / Payout Operations"
+        ]
+      }
+    },
+    "/api/v1/admin/operations/payout-batches/{id}": {
+      "get": {
+        "operationId": "adminPayoutBatchDetail",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "付款批次與Qualification明細",
+        "tags": [
+          "Admin - Returns / Workflows / Payout Operations"
+        ]
+      }
+    },
+    "/api/v1/admin/operations/payout-batches/{id}/approvals/{stage}": {
+      "post": {
+        "operationId": "adminApprovePayoutStage",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "stage",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "Finance/Compliance雙階段付款審核",
+        "tags": [
+          "Admin - Returns / Workflows / Payout Operations"
+        ]
+      }
+    },
+    "/api/v1/admin/operations/payout-batches/{id}/export": {
+      "post": {
+        "operationId": "adminExportPayoutBatch",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "雙核准後標記已匯出付款檔",
+        "tags": [
+          "Admin - Returns / Workflows / Payout Operations"
+        ]
+      }
+    },
+    "/api/v1/admin/operations/payout-batches/{id}/mark-paid": {
+      "post": {
+        "operationId": "adminMarkPayoutPaid",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "記錄外部付款/銀行對帳結果；本系統不直接執行銀行轉帳",
+        "tags": [
+          "Admin - Returns / Workflows / Payout Operations"
+        ]
+      }
+    },
+    "/api/v1/admin/ops-ready/attachments": {
+      "post": {
+        "operationId": "adminRegisterAttachment",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "登錄外部儲存之原始文件Metadata/Hash；不覆寫舊版本",
+        "tags": [
+          "Admin - Operations Ready"
+        ]
+      },
+      "get": {
+        "operationId": "adminListAttachments",
+        "parameters": [
+          {
+            "name": "entityType",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "entityId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "依Entity查附件版本",
+        "tags": [
+          "Admin - Operations Ready"
+        ]
+      }
+    },
+    "/api/v1/admin/ops-ready/audit-events": {
+      "get": {
+        "operationId": "adminAuditSearch",
+        "parameters": [
+          {
+            "name": "entityType",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "entityId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "action",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "actorId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "correlationId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "take",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "Audit Viewer",
+        "tags": [
+          "Admin - Operations Ready"
+        ]
+      }
+    },
+    "/api/v1/admin/ops-ready/reports/operations": {
+      "get": {
+        "operationId": "adminOperationsReport",
+        "parameters": [
+          {
+            "name": "from",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "營運彙總報表",
+        "tags": [
+          "Admin - Operations Ready"
+        ]
+      }
+    },
+    "/api/v1/admin/ops-ready/integrity-alerts": {
+      "get": {
+        "operationId": "adminIntegrityAlerts",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "資料/帳務完整性異常檢查",
+        "tags": [
+          "Admin - Operations Ready"
+        ]
+      }
+    },
+    "/api/v1/admin/ops-ready/exports/{dataset}": {
+      "get": {
+        "operationId": "adminCsvExport",
+        "parameters": [
+          {
+            "name": "dataset",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "take",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "Qualifications/Orders/Payouts CSV匯出",
+        "tags": [
+          "Admin - Operations Ready"
+        ]
+      }
+    },
+    "/api/v1/admin/persons": {
+      "post": {
+        "operationId": "adminCreatePerson",
+        "parameters": [
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePersonDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "建立 Person 草稿",
+        "tags": [
+          "Admin - Person"
+        ]
+      },
+      "get": {
+        "operationId": "adminSearchPersons",
+        "parameters": [
+          {
+            "name": "q",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "take",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "搜尋 Person",
+        "tags": [
+          "Admin - Person"
+        ]
+      }
+    },
+    "/api/v1/admin/persons/{personId}": {
+      "get": {
+        "operationId": "adminGetPerson",
+        "parameters": [
+          {
+            "name": "personId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "取得 Person",
+        "tags": [
+          "Admin - Person"
+        ]
+      }
+    },
+    "/api/v1/admin/products": {
+      "post": {
+        "operationId": "adminUpsertProductReference",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "建立/更新Pre-ERP商品Reference與Rule Profile",
+        "tags": [
+          "Admin - Product Reference"
+        ]
+      },
+      "get": {
+        "operationId": "adminListProducts",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "商品Reference清單",
+        "tags": [
+          "Admin - Product Reference"
+        ]
+      }
+    },
+    "/api/v1/admin/organization/placement-preview": {
+      "get": {
+        "operationId": "adminPreviewBinaryPlacement",
+        "parameters": [
+          {
+            "name": "sponsorQualificationId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "binaryParentQualificationId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "binarySide",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "預檢推薦序號與Binary安置合法性（不寫入）",
+        "tags": [
+          "Admin - Organization"
+        ]
+      }
+    },
+    "/api/v1/admin/organization/binary-placement": {
+      "post": {
+        "operationId": "adminPlaceBinary",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "安置 Binary 位置",
+        "tags": [
+          "Admin - Organization"
+        ]
+      }
+    },
+    "/api/v1/admin/qualifications": {
+      "get": {
+        "operationId": "adminSearchQualifications",
+        "parameters": [
+          {
+            "name": "q",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "take",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "搜尋 Qualification / Sponsor / Binary節點",
+        "tags": [
+          "Admin - Qualification"
+        ]
+      },
+      "post": {
+        "operationId": "adminCreateQualification",
+        "parameters": [
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateQualificationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "建立 Qualification + Sponsor/Binary 關係",
+        "tags": [
+          "Admin - Qualification"
+        ]
+      }
+    },
+    "/api/v1/admin/qualifications/{qualificationId}": {
+      "get": {
+        "operationId": "adminGetQualification",
+        "parameters": [
+          {
+            "name": "qualificationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "取得 Qualification 詳情",
+        "tags": [
+          "Admin - Qualification"
+        ]
+      }
+    },
+    "/api/v1/admin/qualification-workflows": {
+      "post": {
+        "operationId": "QualificationWorkflowController_submit",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "建立並提交升級/轉讓/退出/公司再轉讓Workflow",
+        "tags": [
+          "Admin - Qualification Workflow"
+        ]
+      }
+    },
+    "/api/v1/admin/qualification-workflows/{id}/approve": {
+      "post": {
+        "operationId": "QualificationWorkflowController_approve",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "核准Workflow；僅向未來生效",
+        "tags": [
+          "Admin - Qualification Workflow"
+        ]
+      }
+    },
+    "/api/v1/admin/orders": {
+      "get": {
+        "operationId": "adminSearchOrders",
+        "parameters": [
+          {
+            "name": "status",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "qualificationId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "q",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "take",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "搜尋／列出訂單",
+        "tags": [
+          "Admin - Commerce"
+        ]
+      },
+      "post": {
+        "operationId": "adminCreateOrder",
+        "parameters": [
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateOrderDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "建立並確認會員訂單",
+        "tags": [
+          "Admin - Commerce"
+        ]
+      }
+    },
+    "/api/v1/admin/orders/{orderId}/payment-confirmations": {
+      "post": {
+        "operationId": "adminConfirmPayment",
+        "parameters": [
+          {
+            "name": "orderId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PaymentConfirmationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "Pre-ERP人工確認付款",
+        "tags": [
+          "Admin - Commerce"
+        ]
+      }
+    },
+    "/api/v1/admin/orders/{orderId}": {
+      "get": {
+        "operationId": "adminGetOrder",
+        "parameters": [
+          {
+            "name": "orderId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "取得訂單與付款事件",
+        "tags": [
+          "Admin - Commerce"
+        ]
+      }
+    },
+    "/api/v1/admin/qualifications/{qualificationId}/ledger/pv": {
+      "get": {
+        "operationId": "adminListQualificationPv",
+        "parameters": [
+          {
+            "name": "qualificationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "take",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "Qualification PV帳本",
+        "tags": [
+          "Admin - Ledger"
+        ]
+      }
+    },
+    "/api/v1/admin/qualifications/{qualificationId}/ledger/balances": {
+      "get": {
+        "operationId": "adminQualificationPvBalances",
+        "parameters": [
+          {
+            "name": "qualificationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "Qualification PV餘額彙總",
+        "tags": [
+          "Admin - Ledger"
+        ]
+      }
+    },
+    "/api/v1/admin/membership-applications": {
+      "get": {
+        "operationId": "adminSearchMembershipApplications",
+        "parameters": [
+          {
+            "name": "status",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "q",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "take",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "搜尋／待審會員申請佇列",
+        "tags": [
+          "Admin - Membership Application"
+        ]
+      },
+      "post": {
+        "operationId": "adminCreateMembershipApplication",
+        "parameters": [
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateMembershipApplicationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "建立會員申請草稿",
+        "tags": [
+          "Admin - Membership Application"
+        ]
+      }
+    },
+    "/api/v1/admin/membership-applications/{id}/submit": {
+      "post": {
+        "operationId": "adminSubmitMembershipApplication",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "提交會員申請",
+        "tags": [
+          "Admin - Membership Application"
+        ]
+      }
+    },
+    "/api/v1/admin/membership-applications/{id}/approve": {
+      "post": {
+        "operationId": "adminApproveMembershipApplication",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "核准並使會員資格生效",
+        "tags": [
+          "Admin - Membership Application"
+        ]
+      }
+    },
+    "/api/v1/admin/membership-applications/{id}": {
+      "get": {
+        "operationId": "adminGetMembershipApplication",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "會員申請詳情",
+        "tags": [
+          "Admin - Membership Application"
+        ]
+      }
+    },
+    "/api/v1/admin/qualifications/{qualificationId}/active/at": {
+      "get": {
+        "operationId": "adminIsQualificationActiveAt",
+        "parameters": [
+          {
+            "name": "qualificationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "at",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "查詢指定時點Active",
+        "tags": [
+          "Admin - Active"
+        ]
+      }
+    },
+    "/api/v1/admin/qualifications/{qualificationId}/active/periods": {
+      "post": {
+        "operationId": "adminOpenActivePeriod",
+        "parameters": [
+          {
+            "name": "qualificationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OpenActivePeriodDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "建立Active有效期間",
+        "tags": [
+          "Admin - Active"
+        ]
+      }
+    },
+    "/api/v1/admin/subscriptions/plans": {
+      "get": {
+        "operationId": "adminListSubscriptionPlans",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "重銷方案",
+        "tags": [
+          "Admin - Subscription"
+        ]
+      }
+    },
+    "/api/v1/admin/subscriptions": {
+      "post": {
+        "operationId": "adminCreateSubscription",
+        "parameters": [
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSubscriptionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "建立季/半年/年重銷訂閱與逐月排程",
+        "tags": [
+          "Admin - Subscription"
+        ]
+      }
+    },
+    "/api/v1/admin/subscriptions/{id}": {
+      "get": {
+        "operationId": "adminGetSubscription",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "訂閱與逐月認列排程",
+        "tags": [
+          "Admin - Subscription"
+        ]
+      }
+    },
+    "/api/v1/admin/subscriptions/{id}/cancel": {
+      "post": {
+        "operationId": "adminCancelSubscription",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "取消Subscription；未來Recognition取消，已認列月份排程RPV reversal",
+        "tags": [
+          "Admin - Subscription"
+        ]
+      }
+    },
+    "/api/v1/admin/rpv/recognitions/{recognitionId}/run": {
+      "post": {
+        "operationId": "adminRunMonthlyRpvRecognition",
+        "parameters": [
+          {
+            "name": "recognitionId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "手動執行單月RPV認列",
+        "tags": [
+          "Admin - RPV"
+        ]
+      }
+    },
+    "/api/v1/admin/rpv/recognitions/{recognitionId}/awards": {
+      "get": {
+        "operationId": "adminGetMonthlyRpvAwards",
+        "parameters": [
+          {
+            "name": "recognitionId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "查詢該月RPV向上獎勵",
+        "tags": [
+          "Admin - RPV"
+        ]
+      }
+    },
+    "/api/v1/admin/bonus/settlements/referral": {
+      "post": {
+        "operationId": "adminSettleReferralK0",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "結算推薦＋推薦對等池 K0",
+        "tags": [
+          "Admin - Bonus Engine"
+        ]
+      }
+    },
+    "/api/v1/admin/bonus/settlements/binary": {
+      "post": {
+        "operationId": "adminSettleBinaryK1",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "週結算Binary＋Carry＋K1",
+        "tags": [
+          "Admin - Bonus Engine"
+        ]
+      }
+    },
+    "/api/v1/admin/bonus/settlements/matching": {
+      "post": {
+        "operationId": "adminSettleMatchingK2",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "依Binary實際Paid結算Matching K2",
+        "tags": [
+          "Admin - Bonus Engine"
+        ]
+      }
+    },
+    "/api/v1/admin/bonus/lifecycle/mature": {
+      "post": {
+        "operationId": "adminMatureDueAwards",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "將到期PENDING_45D獎金轉EFFECTIVE",
+        "tags": [
+          "Admin - Bonus Engine"
+        ]
+      }
+    },
+    "/api/v1/admin/bonus/qualifications/{qualificationId}/awards": {
+      "get": {
+        "operationId": "adminListQualificationAwards",
+        "parameters": [
+          {
+            "name": "qualificationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "type",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "Qualification獎金明細",
+        "tags": [
+          "Admin - Bonus Engine"
+        ]
+      }
+    },
+    "/api/v1/admin/orders/{orderId}/returns": {
+      "post": {
+        "operationId": "adminPostReturn",
+        "parameters": [
+          {
+            "name": "orderId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateReturnDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "建立退貨並發出RETURN_CONFIRMED",
+        "tags": [
+          "Admin - Return / Reversal"
+        ]
+      }
+    },
+    "/api/v1/admin/orders/{orderId}/returns/{returnCaseId}/process-reversal": {
+      "post": {
+        "operationId": "adminProcessReturnReversal",
+        "parameters": [
+          {
+            "name": "returnCaseId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "處理GPV反向事件與獎金追回",
+        "tags": [
+          "Admin - Return / Reversal"
+        ]
+      }
+    },
+    "/api/v1/admin/epv/orders/{orderId}/recognize": {
+      "post": {
+        "operationId": "adminRecognizeOrderEpv",
+        "parameters": [
+          {
+            "name": "orderId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "認列重購超額EPV",
+        "tags": [
+          "Admin - EPV"
+        ]
+      }
+    },
+    "/api/v1/admin/pools/global/settle": {
+      "post": {
+        "operationId": "adminSettleGlobalPool",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "月結全球5%池",
+        "tags": [
+          "Admin - Global/Welfare Pool"
+        ]
+      }
+    },
+    "/api/v1/admin/pools/welfare/accrue": {
+      "post": {
+        "operationId": "adminAccrueWelfarePool",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "應計福利2%池，不自行分配",
+        "tags": [
+          "Admin - Global/Welfare Pool"
+        ]
+      }
+    },
+    "/api/v1/admin/payouts/materialize": {
+      "post": {
+        "operationId": "PayoutController_materialize",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "將已生效獎金統一轉入Payable Ledger",
+        "tags": [
+          "Admin - Payout"
+        ]
+      }
+    },
+    "/api/v1/admin/payouts/batches": {
+      "post": {
+        "operationId": "PayoutController_create",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "建立付款批次並依Outstanding Recovery逐筆抵扣",
+        "tags": [
+          "Admin - Payout"
+        ]
+      }
+    },
+    "/api/v1/auth/admin/entra/exchange": {
+      "post": {
+        "operationId": "adminEntraExchange",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "summary": "驗證Microsoft Entra ID Token並交換UCell短效Backend Session",
+        "tags": [
+          "Admin - Authentication"
+        ]
+      }
+    },
+    "/api/v1/auth/admin/me": {
+      "get": {
+        "operationId": "adminMe",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "目前Admin Session",
+        "tags": [
+          "Admin - Authentication"
+        ]
+      }
+    },
+    "/api/v1/auth/admin/logout": {
+      "post": {
+        "operationId": "adminLogout",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "撤銷目前Admin Session",
+        "tags": [
+          "Admin - Authentication"
+        ]
+      }
+    },
+    "/api/v1/admin/settlement-adjustments/requests/{id}/prepare": {
+      "post": {
+        "operationId": "SettlementAdjustmentController_prepare",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "建立不可覆寫歷史的補償結算批次",
+        "tags": [
+          "Admin - Settlement Adjustment"
+        ]
+      }
+    },
+    "/api/v1/admin/settlement-adjustments/requests/{id}/calculate-and-post": {
+      "post": {
+        "operationId": "SettlementAdjustmentController_run",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "以R1.0B deterministic replay重算Binary/Matching並寫Delta",
+        "tags": [
+          "Admin - Settlement Adjustment"
+        ]
+      }
+    },
+    "/api/v1/admin/replays/returns/{returnCaseId}": {
+      "post": {
+        "operationId": "CarryChainReplayController_run",
+        "parameters": [
+          {
+            "name": "returnCaseId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "由退貨來源交易開始，逐週重放Binary/Matching至Carry收斂",
+        "tags": [
+          "Admin - Carry Chain Replay"
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "UCell R1.0B API",
+    "description": "UCell Core API — Rule Version R1.0B FROZEN",
+    "version": "1.0.0",
+    "contact": {}
+  },
+  "tags": [],
+  "servers": [],
+  "components": {
+    "securitySchemes": {
+      "adminBearer": {
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "type": "http"
+      },
+      "memberBearer": {
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "type": "http"
+      }
+    },
+    "schemas": {
+      "CreatePersonDto": {
+        "type": "object",
+        "properties": {
+          "legalName": {
+            "type": "string",
+            "description": "法定姓名",
+            "example": "王小明"
+          },
+          "preferredName": {
+            "type": "string",
+            "description": "慣用名稱"
+          },
+          "birthDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "mobile": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "legalName"
+        ]
+      },
+      "CreateQualificationDto": {
+        "type": "object",
+        "properties": {
+          "personId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "目前持有人 Person ID"
+          },
+          "planLevelCode": {
+            "type": "string",
+            "enum": [
+              "STARTER",
+              "ELITE",
+              "LEADER"
+            ],
+            "description": "方案級別"
+          },
+          "sponsorQualificationId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Sponsor Tree 推薦人 Qualification"
+          },
+          "binaryParentQualificationId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Binary Tree Parent Qualification"
+          },
+          "binarySide": {
+            "type": "string",
+            "enum": [
+              "LEFT",
+              "RIGHT"
+            ]
+          },
+          "effectiveAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "預設為目前時間"
+          }
+        },
+        "required": [
+          "personId",
+          "planLevelCode",
+          "sponsorQualificationId",
+          "binaryParentQualificationId",
+          "binarySide"
+        ]
+      },
+      "CreateOrderItemDto": {
+        "type": "object",
+        "properties": {
+          "productId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "quantity": {
+            "type": "string",
+            "example": "1"
+          }
+        },
+        "required": [
+          "productId",
+          "quantity"
+        ]
+      },
+      "CreateOrderDto": {
+        "type": "object",
+        "properties": {
+          "purpose": {
+            "type": "string",
+            "enum": [
+              "ENTRY",
+              "RETAIL",
+              "REPURCHASE",
+              "SUBSCRIPTION_PREPAY",
+              "UPGRADE"
+            ]
+          },
+          "qualificationId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "訂單歸屬 Qualification"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreateOrderItemDto"
+            }
+          },
+          "sourceReferralToken": {
+            "type": "string",
+            "description": "分享歸因Token，Server只存Hash/解析結果"
+          },
+          "clientReference": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "qualificationId",
+          "items"
+        ]
+      },
+      "PaymentConfirmationDto": {
+        "type": "object",
+        "properties": {
+          "amount": {
+            "type": "string",
+            "example": "14400.00"
+          },
+          "paymentMethod": {
+            "type": "string",
+            "example": "BANK_TRANSFER"
+          },
+          "referenceNo": {
+            "type": "string"
+          },
+          "occurredAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "note": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "amount",
+          "paymentMethod",
+          "referenceNo",
+          "occurredAt"
+        ]
+      },
+      "CreateMembershipApplicationDto": {
+        "type": "object",
+        "properties": {
+          "personId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "requestedPlanLevelCode": {
+            "type": "string",
+            "enum": [
+              "STARTER",
+              "ELITE",
+              "LEADER"
+            ]
+          },
+          "sponsorQualificationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "binaryParentQualificationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "binarySide": {
+            "type": "string",
+            "enum": [
+              "LEFT",
+              "RIGHT"
+            ]
+          },
+          "sourceReferralToken": {
+            "type": "string"
+          },
+          "note": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "personId",
+          "requestedPlanLevelCode"
+        ]
+      },
+      "OpenActivePeriodDto": {
+        "type": "object",
+        "properties": {
+          "activeFrom": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "activeTo": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "sourceType": {
+            "type": "string",
+            "example": "REPURCHASE"
+          },
+          "ruleVersionCode": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "activeFrom",
+          "sourceType"
+        ]
+      },
+      "CreateSubscriptionDto": {
+        "type": "object",
+        "properties": {
+          "qualificationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "planCode": {
+            "type": "string",
+            "enum": [
+              "QUARTER",
+              "HALF_YEAR",
+              "YEAR"
+            ]
+          },
+          "startMonth": {
+            "type": "string",
+            "format": "date",
+            "description": "建議使用該月1日"
+          },
+          "orderId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "qualificationId",
+          "planCode",
+          "startMonth"
+        ]
+      },
+      "ReturnLineDto": {
+        "type": "object",
+        "properties": {
+          "orderLineId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "quantity": {
+            "type": "string",
+            "example": "1"
+          }
+        },
+        "required": [
+          "orderLineId",
+          "quantity"
+        ]
+      },
+      "CreateReturnDto": {
+        "type": "object",
+        "properties": {
+          "reasonCode": {
+            "type": "string"
+          },
+          "occurredAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReturnLineDto"
+            }
+          }
+        },
+        "required": [
+          "reasonCode",
+          "occurredAt",
+          "lines"
+        ]
+      }
+    }
+  }
+}
