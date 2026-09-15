@@ -70,7 +70,7 @@ migrations/
     └─ migration.sql
   └─ 20260915160000_sa_phase3_business_timezone/
     └─ migration.sql
-      
+
 All migrations have been successfully applied.
 DB_GOLDEN_FIXTURES_PASS: frozen manifest loaded into isolated test database; no monetary postings
 DB_TIMEZONE_REGRESSION_PASS: Taipei boundary and prospective historical snapshot

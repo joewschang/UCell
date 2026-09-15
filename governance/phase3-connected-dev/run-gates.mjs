@@ -17,7 +17,8 @@ function run(area,command,label,overrides={}){
  const output=(r.stdout??'')+(r.stderr??'')+(r.error?.message??'');
  const blocked=r.status!==0&&(/TEST_TODO_GATE_FAIL|SECURITY_E2E_BLOCKED|UAT_P0_FAIL|SECURITY_E2E_PARTIAL_PASS/.test(output));
  const result=r.status===0?'PASS':blocked?'BLOCKED':'FAIL';
- fs.writeFileSync(path.join(out,label+'.txt'),`command: ${command}\nstarted: ${started}\nexit: ${r.status}\n${output}`);
+ const log=`command: ${command}\nstarted: ${started}\nexit: ${r.status}\n${output}`.split(/\r?\n/).map(line=>line.trimEnd()).join('\n').trimEnd()+'\n';
+ fs.writeFileSync(path.join(out,label+'.txt'),log);
  results.push({label,command,cwd,started,exitCode:r.status,result});
  fs.writeFileSync(path.join(out,'gate-results.json'),JSON.stringify(results,null,2)+'\n');
  fs.writeFileSync(path.join(out,'PASS-FAIL-MATRIX.md'),'| Gate | Result | Exit |\n|---|---|---:|\n'+results.map(x=>`| ${x.label} | ${x.result} | ${x.exitCode} |`).join('\n')+'\n');

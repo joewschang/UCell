@@ -19,7 +19,7 @@ packages/shared test: Time:        1.851 s, estimated 2 s
 packages/shared test: Ran all test suites.
 packages/shared test: Done
 apps/api test$ jest --config ./test/jest-e2e.json
-apps/api test: 
+apps/api test:
 apps/api test: Test Suites: 16 passed, 16 total
 apps/api test: Tests:       113 todo, 65 passed, 178 total
 apps/api test: Snapshots:   0 total
