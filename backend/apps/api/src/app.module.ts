@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { MemberModule } from './modules/member/member.module';
 import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
 import { DatabaseModule } from '@ucell/database';
@@ -36,6 +37,7 @@ import { AdminRoleGuard } from './modules/auth/admin-role.guard';
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     DatabaseModule,
+    MemberModule,
     AuditModule,
     IdempotencyModule,
     OutboxModule,
