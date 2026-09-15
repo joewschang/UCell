@@ -1,3 +1,5 @@
+import { SettlementCalendarService } from '../settlement/settlement-calendar.service';
+import { snapshotDecimal } from '../rules/parameter-snapshot';
 import { Injectable } from '@nestjs/common';
 import { Prisma, PrismaService } from '@ucell/database';
 import { createHash } from 'crypto';
@@ -10,6 +12,7 @@ export class ReferralBonusService {
     private readonly prisma:PrismaService,
     private readonly rules:RuntimeRuleService,
     private readonly query:BonusQueryService,
+    private readonly calendar:SettlementCalendarService,
   ){}
 
   equalizationUnlockDepth(plan:string,directs:number){
@@ -42,12 +45,13 @@ export class ReferralBonusService {
       });
       if(existing?.status==='FINALIZED') return existing;
 
+      const parameterSnapshot=await this.calendar.captureForPeriod(tx,periodStart,periodEnd,'REFERRAL_K0',ruleVersionCode);
       const batch=existing ?? await tx.settlementBatch.create({
-        data:{settlementType:'REFERRAL_K0',periodStart,periodEnd,ruleVersionCode,status:'DRAFT'}
+        data:{settlementType:'REFERRAL_K0',periodStart,periodEnd,ruleVersionCode,status:'DRAFT',parameterSnapshot:parameterSnapshot as unknown as Prisma.InputJsonValue}
       });
 
-      const pendingDays=await this.rules.integer('award.pending.days','*',periodEnd,ruleVersionCode,tx);
-      const poolRate=await this.rules.decimal('pool.referral.rate','*',periodEnd,ruleVersionCode,tx);
+      const pendingDays=Number(snapshotDecimal(parameterSnapshot,'award.pending.days').toString());
+      const poolRate=snapshotDecimal(parameterSnapshot,'pool.referral.rate','*');
       const totalGpv=await this.query.totalGpv(tx,periodStart,periodEnd);
 
       const gpvEvents=await tx.pvLedger.findMany({

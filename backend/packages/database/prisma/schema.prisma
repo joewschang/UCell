@@ -698,6 +698,7 @@ model RuntimeRuleParameter {
 }
 
 model SettlementBatch {
+  parameterSnapshot Json? @map("parameter_snapshot")
   settlementBatchId String           @id @default(uuid()) @map("settlement_batch_id") @db.Uuid
   settlementType    SettlementType   @map("settlement_type")
   periodStart       DateTime         @map("period_start") @db.Timestamptz(6)
@@ -965,6 +966,7 @@ model QualificationGlobalRankHistory {
 }
 
 model GlobalPoolSettlement {
+  parameterSnapshot Json? @map("parameter_snapshot")
   globalPoolSettlementId String   @id @default(uuid()) @map("global_pool_settlement_id") @db.Uuid
   periodStart            DateTime @map("period_start") @db.Timestamptz(6)
   periodEnd              DateTime @map("period_end") @db.Timestamptz(6)
@@ -1005,6 +1007,7 @@ model GlobalPoolAward {
 }
 
 model WelfarePoolAccrual {
+  parameterSnapshot Json? @map("parameter_snapshot")
   welfarePoolAccrualId String   @id @default(uuid()) @map("welfare_pool_accrual_id") @db.Uuid
   periodStart          DateTime @map("period_start") @db.Timestamptz(6)
   periodEnd            DateTime @map("period_end") @db.Timestamptz(6)

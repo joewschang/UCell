@@ -1,3 +1,5 @@
+import { SettlementCalendarService } from '../settlement/settlement-calendar.service';
+import { snapshotDecimal } from '../rules/parameter-snapshot';
 import { Injectable } from '@nestjs/common';
 import { Prisma, PrismaService } from '@ucell/database';
 import { createHash } from 'crypto';
@@ -10,6 +12,7 @@ export class BinaryBonusService {
     private readonly prisma:PrismaService,
     private readonly rules:RuntimeRuleService,
     private readonly query:BonusQueryService,
+    private readonly calendar:SettlementCalendarService,
   ){}
 
   matchingUnlockDepth(directs:number){
@@ -63,13 +66,14 @@ export class BinaryBonusService {
       });
       if(existing?.status==='FINALIZED') return existing;
 
+      const parameterSnapshot=await this.calendar.captureForPeriod(tx,periodStart,periodEnd,'BINARY_K1',ruleVersionCode);
       const batch=existing ?? await tx.settlementBatch.create({
-        data:{settlementType:'BINARY_K1',periodStart,periodEnd,ruleVersionCode}
+        data:{settlementType:'BINARY_K1',periodStart,periodEnd,ruleVersionCode,parameterSnapshot:parameterSnapshot as unknown as Prisma.InputJsonValue}
       });
 
-      const pendingDays=await this.rules.integer('award.pending.days','*',periodEnd,ruleVersionCode,tx);
-      const poolRate=await this.rules.decimal('pool.binary.rate','*',periodEnd,ruleVersionCode,tx);
-      const pairRate=await this.rules.decimal('binary.pair.rate','*',periodEnd,ruleVersionCode,tx);
+      const pendingDays=Number(snapshotDecimal(parameterSnapshot,'award.pending.days').toString());
+      const poolRate=snapshotDecimal(parameterSnapshot,'pool.binary.rate','*');
+      const pairRate=snapshotDecimal(parameterSnapshot,'binary.pair.rate','*');
       const totalGpv=await this.query.totalGpv(tx,periodStart,periodEnd);
 
       const qualifications=await tx.qualification.findMany({
@@ -95,7 +99,7 @@ export class BinaryBonusService {
         const leftAvailable=leftIn.add(leftPeriod);
         const rightAvailable=rightIn.add(rightPeriod);
 
-        const cap=await this.rules.decimal('binary.weekly.cap',planLevelCode,periodEnd,ruleVersionCode,tx);
+        const cap=snapshotDecimal(parameterSnapshot,'binary.weekly.cap',planLevelCode);
         const rawPair=Prisma.Decimal.min(leftAvailable,rightAvailable);
         const paired=Prisma.Decimal.min(rawPair,cap);
 
@@ -144,7 +148,7 @@ export class BinaryBonusService {
             recipientQualificationId:row.recipientQualificationId,
             theoryAmount:row.theoryAmount,kFactor:k,payableAmount:row.theoryAmount.mul(k),
             activeSnapshot:true,planLevelSnapshot:row.planLevelSnapshot,
-            ruleVersionCode,occurredAt:periodEnd,pendingUntil:row.pendingUntil,
+            ruleVersionCode,parameterSnapshotHash:parameterSnapshot.hash,occurredAt:periodEnd,pendingUntil:row.pendingUntil,
             calculationDetail:row.calculationDetail
           }
         });
@@ -193,12 +197,13 @@ export class BinaryBonusService {
       });
       if(existing?.status==='FINALIZED') return existing;
 
+      const parameterSnapshot=await this.calendar.captureForPeriod(tx,periodStart,periodEnd,'MATCHING_K2',ruleVersionCode);
       const batch=existing ?? await tx.settlementBatch.create({
-        data:{settlementType:'MATCHING_K2',periodStart,periodEnd,ruleVersionCode}
+        data:{settlementType:'MATCHING_K2',periodStart,periodEnd,ruleVersionCode,parameterSnapshot:parameterSnapshot as unknown as Prisma.InputJsonValue}
       });
 
-      const pendingDays=await this.rules.integer('award.pending.days','*',periodEnd,ruleVersionCode,tx);
-      const poolRate=await this.rules.decimal('pool.matching.rate','*',periodEnd,ruleVersionCode,tx);
+      const pendingDays=Number(snapshotDecimal(parameterSnapshot,'award.pending.days').toString());
+      const poolRate=snapshotDecimal(parameterSnapshot,'pool.matching.rate','*');
       const totalGpv=await this.query.totalGpv(tx,periodStart,periodEnd);
 
       const binaryAwards=await tx.bonusAward.findMany({
@@ -214,7 +219,7 @@ export class BinaryBonusService {
           const active=await this.query.isActiveAt(tx,u.qualification_id,periodEnd);
           if(!active || u.generation>unlock) continue;
 
-          const rate=await this.rules.decimal('matching.rate',String(u.generation),periodEnd,ruleVersionCode,tx);
+          const rate=snapshotDecimal(parameterSnapshot,'matching.rate',String(u.generation));
           const theory=source.payableAmount.mul(rate); // actual Binary Paid after K1
           if(theory.lte(0)) continue;
 

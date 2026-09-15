@@ -1,3 +1,5 @@
+import { SettlementCalendarService } from '../settlement/settlement-calendar.service';
+import { snapshotDecimal } from '../rules/parameter-snapshot';
 import { Injectable } from '@nestjs/common';
 import { GlobalRankCode, Prisma, PrismaService } from '@ucell/database';
 import { RuntimeRuleService } from '../rules/runtime-rule.service';
@@ -11,6 +13,7 @@ export class GlobalPoolService {
     private readonly prisma:PrismaService,
     private readonly rules:RuntimeRuleService,
     private readonly query:BonusQueryService,
+    private readonly calendar:SettlementCalendarService,
   ){}
 
   async weakSidePv(tx:Prisma.TransactionClient,qualificationId:string,start:Date,end:Date){
@@ -48,9 +51,10 @@ export class GlobalPoolService {
         where:{periodStart_periodEnd_ruleVersionCode:{periodStart,periodEnd,ruleVersionCode}}
       });
       if(existing) return existing;
+      const parameterSnapshot=await this.calendar.captureForPeriod(tx,periodStart,periodEnd,'GLOBAL',ruleVersionCode);
 
       const totalGpv=await this.query.totalGpv(tx,periodStart,periodEnd);
-      const poolRate=await this.rules.decimal('pool.global.rate','*',periodEnd,ruleVersionCode,tx);
+      const poolRate=snapshotDecimal(parameterSnapshot,'pool.global.rate','*');
       const poolAvailable=totalGpv.mul(poolRate);
 
       const qs=await tx.qualification.findMany({
@@ -67,7 +71,7 @@ export class GlobalPoolService {
       for(const q of qs){
         const weak=weakMap.get(q.qualificationId)!;
         for(const level of LEVELS){
-          const threshold=await this.rules.decimal('global.rank.weak_threshold',level,periodEnd,ruleVersionCode,tx);
+          const threshold=snapshotDecimal(parameterSnapshot,'global.rank.weak_threshold',level);
           if(weak.gte(threshold)){
             await tx.qualificationGlobalRankHistory.upsert({
               where:{qualificationId_rankCode:{qualificationId:q.qualificationId,rankCode:level}},
@@ -86,7 +90,7 @@ export class GlobalPoolService {
           periodStart,periodEnd,totalGpv,poolRate,poolAvailable,
           distributedAmount:new Prisma.Decimal(0),
           undistributedAmount:new Prisma.Decimal(0),
-          ruleVersionCode
+          ruleVersionCode,parameterSnapshot:parameterSnapshot as unknown as Prisma.InputJsonValue
         }
       });
 
@@ -94,8 +98,8 @@ export class GlobalPoolService {
       let carryToHigher=new Prisma.Decimal(0);
 
       for(const level of LEVELS){
-        const rate=await this.rules.decimal('global.rank.pool_rate',level,periodEnd,ruleVersionCode,tx);
-        const threshold=await this.rules.decimal('global.rank.weak_threshold',level,periodEnd,ruleVersionCode,tx);
+        const rate=snapshotDecimal(parameterSnapshot,'global.rank.pool_rate',level);
+        const threshold=snapshotDecimal(parameterSnapshot,'global.rank.weak_threshold',level);
         const rankPool=totalGpv.mul(rate).add(carryToHigher);
 
         const eligible:string[]=[];
@@ -144,10 +148,11 @@ export class GlobalPoolService {
         where:{periodStart_periodEnd_ruleVersionCode:{periodStart,periodEnd,ruleVersionCode}}
       });
       if(existing) return existing;
+      const parameterSnapshot=await this.calendar.captureForPeriod(tx,periodStart,periodEnd,'WELFARE',ruleVersionCode);
       const totalGpv=await this.query.totalGpv(tx,periodStart,periodEnd);
-      const rate=await this.rules.decimal('pool.welfare.rate','*',periodEnd,ruleVersionCode,tx);
+      const rate=snapshotDecimal(parameterSnapshot,'pool.welfare.rate','*');
       return tx.welfarePoolAccrual.create({
-        data:{periodStart,periodEnd,totalGpv,poolRate:rate,accruedAmount:totalGpv.mul(rate),ruleVersionCode}
+        data:{periodStart,periodEnd,totalGpv,poolRate:rate,accruedAmount:totalGpv.mul(rate),ruleVersionCode,parameterSnapshot:parameterSnapshot as unknown as Prisma.InputJsonValue}
       });
     });
   }

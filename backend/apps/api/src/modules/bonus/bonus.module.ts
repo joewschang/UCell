@@ -1,3 +1,4 @@
+import { SettlementModule } from '../settlement/settlement.module';
 import { Module } from '@nestjs/common';
 import { RuntimeRuleModule } from '../rules/runtime-rule.module';
 import { BonusController } from './bonus.controller';
@@ -7,7 +8,7 @@ import { BonusQueryModule } from './bonus-query.module';
 import { ReferralBonusService } from './referral-bonus.service';
 
 @Module({
-  imports:[RuntimeRuleModule,BonusQueryModule],
+  imports:[SettlementModule,RuntimeRuleModule,BonusQueryModule],
   controllers:[BonusController],
   providers:[ReferralBonusService,BinaryBonusService,BonusLifecycleService],
   exports:[ReferralBonusService,BinaryBonusService,BonusLifecycleService]

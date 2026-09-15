@@ -1,0 +1,18 @@
+{
+  "recordVersion": 1,
+  "recordedOn": "2026-09-15",
+  "authority": "SA ruling explicitly supplied by the user in this task",
+  "baseline": "R1.0B FROZEN",
+  "decisions": [
+    {"id":"SA-20260915-01","subject":"Return/Settlement Replay","ruling":"Append-only reversal/clawback; do not overwrite historical Ledger or PAID. Reverse PV/BV/RPV/EPV and deterministically replay affected settlement and K0/K1/K2 downstream dependencies using the historically effective parameter snapshot. Re-derive carry from replayed effective volume; never reset it mechanically."},
+    {"id":"SA-20260915-02","subject":"EPV","ruling":"Qualification + calendar month cumulative eligible personal consumption; max(0, consumption - NT$2000) * 60%. 4800 => 1680. Returns recompute that month's cumulative threshold; never subtract return amount * 60% mechanically."},
+    {"id":"SA-20260915-03","subject":"Settlement cut-off","ruling":"Versioned period/cut-off/timezone/effective_from/effective_to configuration and settlement-time snapshots. No hardcoded weekday/time. Operational cut-off remains configuration pending until formally approved."},
+    {"id":"SA-20260915-04","subject":"SSOT / legacy drift","ruling":"Filed documents > formally approved company documents > R1.0 system specifications > discussion/posters/legacy. Formal pools 42/36/15/5/2 and EPV 4800 => 1680. Conflicting legacy tests/fixtures are Legacy Test Drift; do not alter formal rules to satisfy them."}
+  ],
+  "pendingDecisions": [
+    {"id":"PD-EPV-ALLOCATION","subject":"Redistribution of monthly EPV return differences across historical award recipients","reason":"Monthly threshold is settled. Allocation when same-month events have different Active/Sponsor snapshots is not specified; no latest-first/pro-rata allocation is inferred."},
+    {"id":"PD-EPV-ELIGIBILITY","subject":"Eligible personal consumption outside existing REPURCHASE and order netAmount representation","reason":"The ruling does not define eligibility of other purposes, tax/discount/freight allocation. Existing REPURCHASE netAmount eligibility is retained, not extended."},
+    {"id":"PD-EPV-MONTH-PARAMETERS","subject":"Rate or timezone changes inside one calendar month","reason":"No policy for mixing two historical monthly parameter versions is supplied; fail closed on mixed versions."},
+    {"id":"CP-SETTLEMENT-CALENDAR","subject":"Approved operational calendars for K0/K1/K2/global/welfare","reason":"No approved period/cut-off/timezone configuration values were supplied. No production defaults are seeded."}
+  ]
+}
