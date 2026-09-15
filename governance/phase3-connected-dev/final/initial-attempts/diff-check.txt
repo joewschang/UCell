@@ -1,8 +1,11 @@
 command: git diff --check
-started: 2026-09-15T16:49:54.332Z
+started: 2026-09-15T17:00:59.492Z
 exit: 0
-warning: in the working copy of 'backend/scripts/admin-operations-preflight.mjs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'backend/apps/api/test/organization.e2e-spec.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'backend/apps/api/test/vertical-slice-02.e2e-spec.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'backend/scripts/db-golden-isolated.mjs', LF will be replaced by CRLF the next time Git touches it
 warning: in the working copy of 'governance/phase2-return-replay/final/db-regression.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'governance/phase3-connected-dev/DECISION.md', LF will be replaced by CRLF the next time Git touches it
 warning: in the working copy of 'governance/phase3-connected-dev/REPORT.md', LF will be replaced by CRLF the next time Git touches it
 warning: in the working copy of 'governance/phase3-connected-dev/final/PASS-FAIL-MATRIX.md', LF will be replaced by CRLF the next time Git touches it
 warning: in the working copy of 'governance/phase3-connected-dev/final/TODO-INVENTORY.json', LF will be replaced by CRLF the next time Git touches it
@@ -17,6 +20,8 @@ warning: in the working copy of 'governance/phase3-connected-dev/final/default-d
 warning: in the working copy of 'governance/phase3-connected-dev/final/default-db-golden.txt', LF will be replaced by CRLF the next time Git touches it
 warning: in the working copy of 'governance/phase3-connected-dev/final/diff-check.txt', LF will be replaced by CRLF the next time Git touches it
 warning: in the working copy of 'governance/phase3-connected-dev/final/gate-results.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'governance/phase3-connected-dev/final/initial-attempts/admin-build.txt', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'governance/phase3-connected-dev/final/initial-attempts/admin-tests.txt', LF will be replaced by CRLF the next time Git touches it
 warning: in the working copy of 'governance/phase3-connected-dev/final/initial-attempts/api-tests.txt', LF will be replaced by CRLF the next time Git touches it
 warning: in the working copy of 'governance/phase3-connected-dev/final/initial-attempts/backend-build.txt', LF will be replaced by CRLF the next time Git touches it
 warning: in the working copy of 'governance/phase3-connected-dev/final/initial-attempts/backend-test-gate.txt', LF will be replaced by CRLF the next time Git touches it
@@ -25,10 +30,18 @@ warning: in the working copy of 'governance/phase3-connected-dev/final/initial-a
 warning: in the working copy of 'governance/phase3-connected-dev/final/initial-attempts/default-db-golden.txt', LF will be replaced by CRLF the next time Git touches it
 warning: in the working copy of 'governance/phase3-connected-dev/final/initial-attempts/diff-check.txt', LF will be replaced by CRLF the next time Git touches it
 warning: in the working copy of 'governance/phase3-connected-dev/final/initial-attempts/preflight.txt', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'governance/phase3-connected-dev/final/initial-attempts/prisma-generate.txt', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'governance/phase3-connected-dev/final/initial-attempts/prisma-migrate-deploy.txt', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'governance/phase3-connected-dev/final/initial-attempts/prisma-regression-db-deploy.txt', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'governance/phase3-connected-dev/final/initial-attempts/prisma-validate.txt', LF will be replaced by CRLF the next time Git touches it
 warning: in the working copy of 'governance/phase3-connected-dev/final/initial-attempts/rc.txt', LF will be replaced by CRLF the next time Git touches it
 warning: in the working copy of 'governance/phase3-connected-dev/final/initial-attempts/release-gate.txt', LF will be replaced by CRLF the next time Git touches it
 warning: in the working copy of 'governance/phase3-connected-dev/final/initial-attempts/release-prep.txt', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'governance/phase3-connected-dev/final/initial-attempts/security-http.txt', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'governance/phase3-connected-dev/final/initial-attempts/security-policy-preflight.txt', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'governance/phase3-connected-dev/final/initial-attempts/shared-tests.txt', LF will be replaced by CRLF the next time Git touches it
 warning: in the working copy of 'governance/phase3-connected-dev/final/initial-attempts/todo.txt', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'governance/phase3-connected-dev/final/initial-attempts/uat.txt', LF will be replaced by CRLF the next time Git touches it
 warning: in the working copy of 'governance/phase3-connected-dev/final/preflight.txt', LF will be replaced by CRLF the next time Git touches it
 warning: in the working copy of 'governance/phase3-connected-dev/final/prisma-generate.txt', LF will be replaced by CRLF the next time Git touches it
 warning: in the working copy of 'governance/phase3-connected-dev/final/prisma-migrate-deploy.txt', LF will be replaced by CRLF the next time Git touches it

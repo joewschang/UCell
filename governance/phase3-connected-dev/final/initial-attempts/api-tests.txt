@@ -1,22 +1,24 @@
 command: pnpm --filter @ucell/api test:e2e --runInBand
-started: 2026-09-15T16:46:22.565Z
+started: 2026-09-15T16:57:35.062Z
 exit: 1
 $ jest --config ./test/jest-e2e.json "--runInBand"
 FAIL test/vertical-slice-02.e2e-spec.ts
   ● Test suite failed to run
 
-    [96mtest/vertical-slice-02.e2e-spec.ts[0m:[93m25[0m:[93m41[0m - [91merror[0m[90m TS2345: [0mArgument of type '{ personId: string; requestedPlanLevelCode: string; sponsorQualificationId: string; binaryParentQualificationId: string; binarySide: "LEFT"; }' is not assignable to parameter of type 'CreateMembershipApplicationDto'.
-      Types of property 'requestedPlanLevelCode' are incompatible.
-        Type 'string' is not assignable to type '"STARTER" | "ELITE" | "LEADER"'.
+    [96mtest/vertical-slice-02.e2e-spec.ts[0m:[93m61[0m:[93m19[0m - [91merror[0m[90m TS2339: [0mProperty 'application' does not exist on type '{ value: { application: { personId: string; applicationId: string; requestedPlanLevelCode: string; sponsorQualificationId: string | null; binaryParentQualificationId: string | null; ... 10 more ...; createdQualificationId: string | null; }; qualification: { ...; }; }; replayed: boolean; }'.
 
-    [7m25[0m     const result = await service.create(dto, 'create-key', 'request-A', 'admin-A');
-    [7m  [0m [91m                                        ~~~[0m
+    [7m61[0m     expect(result.application).toMatchObject({ status: 'EFFECTIVE', createdQualificationId: 'ball-new' });
+    [7m  [0m [91m                  ~~~~~~~~~~~[0m
+    [96mtest/vertical-slice-02.e2e-spec.ts[0m:[93m64[0m:[93m138[0m - [91merror[0m[90m TS2339: [0mProperty 'qualification' does not exist on type '{ value: { application: { personId: string; applicationId: string; requestedPlanLevelCode: string; sponsorQualificationId: string | null; binaryParentQualificationId: string | null; ... 10 more ...; createdQualificationId: string | null; }; qualification: { ...; }; }; replayed: boolean; }'.
+
+    [7m64[0m       expect(tx[model].create).toHaveBeenCalledWith({ data: expect.objectContaining({ qualificationId: 'ball-new', effectiveFrom: result.qualification.effectiveAt }) });
+    [7m  [0m [91m                                                                                                                                         ~~~~~~~~~~~~~[0m
 
 
 Test Suites: 1 failed, 15 passed, 16 total
-Tests:       97 todo, 65 passed, 162 total
+Tests:       96 todo, 66 passed, 162 total
 Snapshots:   0 total
-Time:        12.019 s
+Time:        11.673 s, estimated 177 s
 Ran all test suites.
 [ELIFECYCLE] Command failed with exit code 1.
 Error: ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL

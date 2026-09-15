@@ -1,4 +1,4 @@
-Original baseline: 148. Current TODO: 109. Net placeholder reduction: 39.
+Original baseline: 148. Current TODO: 106. Net placeholder reduction: 42.
 
 The previous 52 TODO claim is invalid. Full behavioral coverage must be reviewed independently.
 
@@ -45,7 +45,6 @@ The previous 52 TODO claim is invalid. Full behavioral coverage must be reviewed
 | backend/apps/api/test/negative-flow-v05.e2e-spec.ts | 16 | Binary and Matching create settlement recalculation requests instead of rewriting history | Test implementation; SSOT/evidence review before conversion |
 | backend/apps/api/test/negative-flow-v05.e2e-spec.ts | 21 | EFFECTIVE awards become PAYABLE via payout batch | Test implementation; SSOT/evidence review before conversion |
 | backend/apps/api/test/negative-flow-v05.e2e-spec.ts | 24 | mark-paid writes PAID lifecycle events | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/organization.e2e-spec.ts | 4 | sponsor tree and binary tree remain independent | Test implementation; SSOT/evidence review before conversion |
 | backend/apps/api/test/qualification-isolation.e2e-spec.ts | 21 | member share link is bound to selected qualification | Test implementation; SSOT/evidence review before conversion |
 | backend/apps/api/test/v060-adjustment-lifecycle.e2e-spec.ts | 2 | return never mutates original Binary settlement | Test implementation; SSOT/evidence review before conversion |
 | backend/apps/api/test/v060-adjustment-lifecycle.e2e-spec.ts | 3 | return never mutates original Matching settlement | Test implementation; SSOT/evidence review before conversion |
@@ -92,18 +91,16 @@ The previous 52 TODO claim is invalid. Full behavioral coverage must be reviewed
 | backend/apps/api/test/v064-golden-dataset.e2e-spec.ts | 12 | validates RPV 5/8/12 on Binary Tree | Test implementation; SSOT/evidence review before conversion |
 | backend/apps/api/test/v064-golden-dataset.e2e-spec.ts | 13 | validates EPV on Sponsor Tree | Test implementation; SSOT/evidence review before conversion |
 | backend/apps/api/test/v064-golden-dataset.e2e-spec.ts | 14 | validates refund -> replay -> recovery -> payout | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/vertical-slice-02.e2e-spec.ts | 45 | APPROVE creates Qualification + Holder + Sponsor + Binary atomically | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/vertical-slice-02.e2e-spec.ts | 46 | 1st and 3rd direct-left rule is enforced during approval | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/vertical-slice-02.e2e-spec.ts | 74 | QUARTER creates exactly 3 recognition rows | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/vertical-slice-02.e2e-spec.ts | 75 | HALF_YEAR creates exactly 6 recognition rows | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/vertical-slice-02.e2e-spec.ts | 76 | YEAR creates exactly 12 recognition rows | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/vertical-slice-02.e2e-spec.ts | 77 | each due recognition creates exactly 1,200 RPV once | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/vertical-slice-02.e2e-spec.ts | 78 | 0 direct unlocks 5 binary generations | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/vertical-slice-02.e2e-spec.ts | 79 | 1 direct unlocks 8 binary generations | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/vertical-slice-02.e2e-spec.ts | 80 | 2+ directs unlocks 12 binary generations | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/vertical-slice-02.e2e-spec.ts | 81 | inactive upline receives 0 and is not compressed | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/vertical-slice-02.e2e-spec.ts | 82 | higher generation remains independently evaluated | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/vertical-slice-02.e2e-spec.ts | 83 | re-running a recognition cannot duplicate RPV or awards | Test implementation; SSOT/evidence review before conversion |
+| backend/apps/api/test/vertical-slice-02.e2e-spec.ts | 113 | QUARTER creates exactly 3 recognition rows | Test implementation; SSOT/evidence review before conversion |
+| backend/apps/api/test/vertical-slice-02.e2e-spec.ts | 114 | HALF_YEAR creates exactly 6 recognition rows | Test implementation; SSOT/evidence review before conversion |
+| backend/apps/api/test/vertical-slice-02.e2e-spec.ts | 115 | YEAR creates exactly 12 recognition rows | Test implementation; SSOT/evidence review before conversion |
+| backend/apps/api/test/vertical-slice-02.e2e-spec.ts | 116 | each due recognition creates exactly 1,200 RPV once | Test implementation; SSOT/evidence review before conversion |
+| backend/apps/api/test/vertical-slice-02.e2e-spec.ts | 117 | 0 direct unlocks 5 binary generations | Test implementation; SSOT/evidence review before conversion |
+| backend/apps/api/test/vertical-slice-02.e2e-spec.ts | 118 | 1 direct unlocks 8 binary generations | Test implementation; SSOT/evidence review before conversion |
+| backend/apps/api/test/vertical-slice-02.e2e-spec.ts | 119 | 2+ directs unlocks 12 binary generations | Test implementation; SSOT/evidence review before conversion |
+| backend/apps/api/test/vertical-slice-02.e2e-spec.ts | 120 | inactive upline receives 0 and is not compressed | Test implementation; SSOT/evidence review before conversion |
+| backend/apps/api/test/vertical-slice-02.e2e-spec.ts | 121 | higher generation remains independently evaluated | Test implementation; SSOT/evidence review before conversion |
+| backend/apps/api/test/vertical-slice-02.e2e-spec.ts | 122 | re-running a recognition cannot duplicate RPV or awards | Test implementation; SSOT/evidence review before conversion |
 | backend/apps/api/test/vertical-slice.e2e-spec.ts | 7 | creates Person with idempotent command | Test implementation; SSOT/evidence review before conversion |
 | backend/apps/api/test/vertical-slice.e2e-spec.ts | 8 | creates Qualification with permanent sponsor sequence | Test implementation; SSOT/evidence review before conversion |
 | backend/apps/api/test/vertical-slice.e2e-spec.ts | 9 | rejects 1st direct placed on RIGHT | Test implementation; SSOT/evidence review before conversion |

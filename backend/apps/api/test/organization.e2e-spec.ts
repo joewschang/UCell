@@ -1,7 +1,18 @@
 import { OrganizationService } from '../src/modules/organization/organization.service';
 import { SideCode } from '@ucell/database';
 describe('Organization guardrails (P0)', () => {
-  it.todo('sponsor tree and binary tree remain independent');
+  it('sponsor tree and binary tree remain independent', async () => {
+    const tx = {
+      qualification: { findUnique: jest.fn(async ({ where }: any) => ({ qualificationId: where.qualificationId, currentHolder: { personId: where.qualificationId + '-holder' } })) },
+      sponsorRelationship: { aggregate: jest.fn(async () => ({ _max: { sponsorSequenceNo: 1 } })) },
+      binaryPlacement: { findFirst: jest.fn(async () => null) },
+    };
+    const service = new OrganizationService({ $transaction: async (work: any) => work(tx) } as any);
+    const result = await service.previewPlacement({ sponsorQualificationId: 'sponsor-A', binaryParentQualificationId: 'parent-B', binarySide: 'LEFT' });
+    expect(result).toMatchObject({ valid: true, nextSponsorSequenceNo: 2, sponsor: { qualificationId: 'sponsor-A' }, binaryParent: { qualificationId: 'parent-B' } });
+    expect(tx.sponsorRelationship.aggregate).toHaveBeenCalledWith({ where: { sponsorQualificationId: 'sponsor-A' }, _max: { sponsorSequenceNo: true } });
+    expect(tx.binaryPlacement.findFirst).toHaveBeenCalledWith({ where: { parentQualificationId: 'parent-B', side: 'LEFT', effectiveTo: null }, select: { childQualificationId: true } });
+  });
   it('binary occupied slot is rejected',async()=>{
     const findFirst=jest.fn(async()=>({childQualificationId:'occupied'}));
     await expect(new OrganizationService({} as any).assertBinarySlotAvailable({binaryPlacement:{findFirst}} as any,'parent',SideCode.RIGHT)).rejects.toMatchObject({response:{code:'BINARY_SLOT_OCCUPIED'}});

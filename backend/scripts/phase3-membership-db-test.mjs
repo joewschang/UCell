@@ -1,0 +1,82 @@
+import assert from 'node:assert/strict';
+import {createRequire} from 'node:module';
+import {randomUUID} from 'node:crypto';
+const require=createRequire(new URL('../package.json',import.meta.url));
+const {PrismaClient}=require('@prisma/client');
+const {MembershipApplicationService}=require('./apps/api/dist/modules/application/membership-application.service.js');
+const {OrganizationService}=require('./apps/api/dist/modules/organization/organization.service.js');
+const {IdempotencyService}=require('./apps/api/dist/common/idempotency/idempotency.service.js');
+const {AuditService}=require('./apps/api/dist/common/audit/audit.service.js');
+const url=new URL(process.env.DATABASE_URL??'');
+assert.ok(['localhost','127.0.0.1'].includes(url.hostname));
+assert.match(process.env.GOLDEN_ISOLATION_DATABASE??'',/^ucell_dev_golden_[a-f0-9]{32}$/);
+assert.equal(url.pathname,'/'+process.env.GOLDEN_ISOLATION_DATABASE);
+const db=new PrismaClient(),idempotency=new IdempotencyService(db),audit=new AuditService(),organization=new OrganizationService(db);
+const service=new MembershipApplicationService(db,idempotency,audit,organization);
+let assertions=0;
+function equal(actual,expected,label){assert.deepEqual(actual,expected,label);assertions++;}
+async function rejected(work,code){await assert.rejects(work,error=>error.getResponse?.().code===code);assertions++;}
+try{
+  const owner=await db.person.create({data:{legalName:'MEMBERSHIP ISOLATED TEST ONLY'}});
+  const roots=[];
+  for(let i=0;i<2;i++)roots.push(await db.qualification.create({data:{currentHolderPersonId:owner.personId,planLevelCode:'STARTER',status:'EFFECTIVE',effectiveAt:new Date('2020-01-01')}}));
+  const sponsor=roots[0].qualificationId,parent=roots[1].qualificationId;
+  async function submitted(binaryParentQualificationId,binarySide){
+    const created=await service.create({personId:owner.personId,requestedPlanLevelCode:'STARTER',sponsorQualificationId:sponsor,binaryParentQualificationId,binarySide},randomUUID(),randomUUID());
+    equal(created.value.status,'DRAFT','application starts DRAFT');
+    const app=created.value.applicationId;
+    equal((await service.submit(app,randomUUID(),randomUUID())).value.status,'SUBMITTED','complete placement submits');
+    return app;
+  }
+  const first=await submitted(sponsor,'LEFT');
+  const approved=await service.approve(first,'approve-first',randomUUID());
+  const q=approved.value.qualification.qualificationId;
+  equal(approved.value.application.createdQualificationId,q,'approval links created qualification');
+  equal((await db.qualification.findUniqueOrThrow({where:{qualificationId:q}})).currentHolderPersonId,owner.personId,'holder is application person');
+  for(const [model,field,expected] of [['qualificationHolderHistory','holderPersonId',owner.personId],['qualificationPlanHistory','planCode','STARTER'],['qualificationStatusHistory','status','EFFECTIVE']]){
+    const rows=await db[model].findMany({where:{qualificationId:q}});
+    equal(rows.length,1,model+' exactly one interval');
+    equal(rows[0][field],expected,model+' identity');
+    equal(rows[0].effectiveFrom.getTime(),approved.value.qualification.effectiveAt.getTime(),model+' common transaction effective time');
+  }
+  const firstSponsor=await db.sponsorRelationship.findUniqueOrThrow({where:{childQualificationId:q}});
+  const firstBinary=await db.binaryPlacement.findUniqueOrThrow({where:{childQualificationId:q}});
+  equal(firstSponsor.sponsorQualificationId,sponsor,'first sponsor stored');
+  equal(firstSponsor.sponsorSequenceNo,1,'first sponsor sequence');
+  equal(firstBinary.parentQualificationId,sponsor,'first binary parent');
+  equal(firstBinary.side,'LEFT','first recruit left enforced');
+  const duplicate=await service.approve(first,'approve-first',randomUUID());
+  equal(duplicate.replayed,true,'duplicate approval replays');
+  equal(duplicate.value.qualification.qualificationId,q,'duplicate preserves qualification');
+  equal(await db.qualification.count({where:{qualificationId:q}}),1,'duplicate creates no qualification');
+  equal(await db.qualificationHolderHistory.count({where:{qualificationId:q}}),1,'duplicate creates no holder history');
+
+  const second=await submitted(parent,'LEFT');
+  const secondQ=(await service.approve(second,'approve-second',randomUUID())).value.qualification.qualificationId;
+  equal((await db.sponsorRelationship.findUniqueOrThrow({where:{childQualificationId:secondQ}})).sponsorQualificationId,sponsor,'second retains sponsor A');
+  equal((await db.binaryPlacement.findUniqueOrThrow({where:{childQualificationId:secondQ}})).parentQualificationId,parent,'second places under binary B');
+  equal((await db.sponsorRelationship.findUniqueOrThrow({where:{childQualificationId:secondQ}})).sponsorSequenceNo,2,'independent binary placement retains sponsor sequence');
+
+  const third=await submitted(sponsor,'RIGHT');
+  const before=await db.qualification.count();
+  await rejected(service.approve(third,'approve-third-invalid',randomUUID()),'BINARY_LEFT_SUBTREE_REQUIRED');
+  equal(await db.qualification.count(),before,'invalid third creates no qualification');
+  equal((await db.membershipApplication.findUniqueOrThrow({where:{applicationId:third}})).status,'SUBMITTED','invalid third does not change application');
+  equal(await db.idempotencyRecord.count({where:{actorScope:'admin:membership-application:approve:'+third}}),0,'failed approval rolls back idempotency');
+  equal(await db.sponsorRelationship.count({where:{sponsorQualificationId:sponsor}}),2,'failed third consumes no sequence');
+
+  const validThird=await submitted(q,'LEFT');
+  const failingAudit={write:async(tx,input)=>{await audit.write(tx,input);throw new Error('MEMBERSHIP_INJECTED_AFTER_ALL_WRITES');}};
+  const failing=new MembershipApplicationService(db,idempotency,failingAudit,organization);
+  const models=['qualification','qualificationHolderHistory','qualificationPlanHistory','qualificationStatusHistory','sponsorRelationship','binaryPlacement','auditEvent'];
+  const counts=await Promise.all(models.map(model=>db[model].count()));
+  await assert.rejects(failing.approve(validThird,'approval-retry',randomUUID()),/MEMBERSHIP_INJECTED_AFTER_ALL_WRITES/);assertions++;
+  for(let i=0;i<models.length;i++)equal(await db[models[i]].count(),counts[i],models[i]+' late failure rolls back');
+  equal((await db.membershipApplication.findUniqueOrThrow({where:{applicationId:validThird}})).status,'SUBMITTED','late failure restores submitted application');
+  equal(await db.idempotencyRecord.count({where:{actorScope:'admin:membership-application:approve:'+validThird}}),0,'late failure rolls back key');
+  const retry=(await service.approve(validThird,'approval-retry',randomUUID())).value.qualification.qualificationId;
+  equal((await db.sponsorRelationship.findUniqueOrThrow({where:{childQualificationId:retry}})).sponsorSequenceNo,3,'retry allocates original third sequence');
+  equal((await db.binaryPlacement.findUniqueOrThrow({where:{childQualificationId:retry}})).parentQualificationId,q,'third in sponsor left descendant');
+  equal(await db.sponsorRelationship.count({where:{sponsorQualificationId:sponsor}}),3,'retry creates one sponsor relationship');
+  console.log(`PHASE3_MEMBERSHIP_DB_PASS: ${assertions} assertions; approval atomicity, tree isolation, first/third rule, duplicate and late rollback/retry`);
+}finally{await db.$disconnect();}

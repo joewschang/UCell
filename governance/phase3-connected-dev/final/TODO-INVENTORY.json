@@ -1,7 +1,7 @@
 {
   "originalBaseline": 148,
-  "currentExecutableTodo": 109,
-  "netPlaceholderReduction": 39,
+  "currentExecutableTodo": 106,
+  "netPlaceholderReduction": 42,
   "audit": "Previous 52 TODO claim invalidated: missing cases and unrelated/constant assertions restored. Net reduction alone is not Release approval.",
   "items": [
     {
@@ -248,12 +248,6 @@
       "file": "backend/apps/api/test/negative-flow-v05.e2e-spec.ts",
       "line": 24,
       "case": "mark-paid writes PAID lifecycle events",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
-    },
-    {
-      "file": "backend/apps/api/test/organization.e2e-spec.ts",
-      "line": 4,
-      "case": "sponsor tree and binary tree remain independent",
       "classification": "Test implementation; SSOT/evidence review before conversion"
     },
     {
@@ -534,73 +528,61 @@
     },
     {
       "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
-      "line": 45,
-      "case": "APPROVE creates Qualification + Holder + Sponsor + Binary atomically",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
-    },
-    {
-      "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
-      "line": 46,
-      "case": "1st and 3rd direct-left rule is enforced during approval",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
-    },
-    {
-      "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
-      "line": 74,
+      "line": 113,
       "case": "QUARTER creates exactly 3 recognition rows",
       "classification": "Test implementation; SSOT/evidence review before conversion"
     },
     {
       "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
-      "line": 75,
+      "line": 114,
       "case": "HALF_YEAR creates exactly 6 recognition rows",
       "classification": "Test implementation; SSOT/evidence review before conversion"
     },
     {
       "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
-      "line": 76,
+      "line": 115,
       "case": "YEAR creates exactly 12 recognition rows",
       "classification": "Test implementation; SSOT/evidence review before conversion"
     },
     {
       "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
-      "line": 77,
+      "line": 116,
       "case": "each due recognition creates exactly 1,200 RPV once",
       "classification": "Test implementation; SSOT/evidence review before conversion"
     },
     {
       "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
-      "line": 78,
+      "line": 117,
       "case": "0 direct unlocks 5 binary generations",
       "classification": "Test implementation; SSOT/evidence review before conversion"
     },
     {
       "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
-      "line": 79,
+      "line": 118,
       "case": "1 direct unlocks 8 binary generations",
       "classification": "Test implementation; SSOT/evidence review before conversion"
     },
     {
       "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
-      "line": 80,
+      "line": 119,
       "case": "2+ directs unlocks 12 binary generations",
       "classification": "Test implementation; SSOT/evidence review before conversion"
     },
     {
       "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
-      "line": 81,
+      "line": 120,
       "case": "inactive upline receives 0 and is not compressed",
       "classification": "Test implementation; SSOT/evidence review before conversion"
     },
     {
       "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
-      "line": 82,
+      "line": 121,
       "case": "higher generation remains independently evaluated",
       "classification": "Test implementation; SSOT/evidence review before conversion"
     },
     {
       "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
-      "line": 83,
+      "line": 122,
       "case": "re-running a recognition cannot duplicate RPV or awards",
       "classification": "Test implementation; SSOT/evidence review before conversion"
     },

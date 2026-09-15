@@ -1,0 +1,308 @@
+{
+  "startedAt": "2026-09-15T17:01:27.177Z",
+  "result": "PASS",
+  "results": [
+    {
+      "method": "POST",
+      "route": "/admin/persons",
+      "status": 201,
+      "expected": 201,
+      "result": "PASS"
+    },
+    {
+      "method": "POST",
+      "route": "/admin/persons",
+      "status": 409,
+      "expected": 409,
+      "result": "PASS"
+    },
+    {
+      "method": "POST",
+      "route": "/admin/persons",
+      "status": 201,
+      "expected": 201,
+      "result": "PASS"
+    },
+    {
+      "method": "POST",
+      "route": "/admin/persons",
+      "status": 201,
+      "expected": 201,
+      "result": "PASS"
+    },
+    {
+      "method": "POST",
+      "route": "/admin/persons",
+      "status": 409,
+      "expected": 409,
+      "result": "PASS"
+    },
+    {
+      "method": "POST",
+      "route": "/admin/persons",
+      "status": 201,
+      "expected": 201,
+      "result": "PASS"
+    },
+    {
+      "method": "GET",
+      "route": "/admin/organization/placement-preview?sponsorQualificationId=ae886a10-323f-483d-a6cb-ae6b75a1c988&binaryParentQualificationId=ae886a10-323f-483d-a6cb-ae6b75a1c988&binarySide=LEFT",
+      "status": 200,
+      "expected": 200,
+      "result": "PASS"
+    },
+    {
+      "method": "POST",
+      "route": "/admin/membership-applications",
+      "status": 201,
+      "expected": 201,
+      "result": "PASS"
+    },
+    {
+      "method": "POST",
+      "route": "/admin/membership-applications/e3a126cd-758c-4387-a268-dd27f4eaa59d/submit",
+      "status": 201,
+      "expected": 201,
+      "result": "PASS"
+    },
+    {
+      "method": "POST",
+      "route": "/admin/membership-applications/e3a126cd-758c-4387-a268-dd27f4eaa59d/approve",
+      "status": 201,
+      "expected": 201,
+      "result": "PASS"
+    },
+    {
+      "method": "POST",
+      "route": "/admin/membership-applications/e3a126cd-758c-4387-a268-dd27f4eaa59d/approve",
+      "status": 201,
+      "expected": 201,
+      "result": "PASS"
+    },
+    {
+      "method": "GET",
+      "route": "/admin/qualifications/cdbf1789-73fb-40f1-b121-742736ceb175",
+      "status": 200,
+      "expected": 200,
+      "result": "PASS"
+    },
+    {
+      "method": "GET",
+      "route": "/admin/observability/organization/sponsor-tree/ae886a10-323f-483d-a6cb-ae6b75a1c988",
+      "status": 200,
+      "expected": 200,
+      "result": "PASS"
+    },
+    {
+      "method": "GET",
+      "route": "/admin/observability/organization/binary-tree/ae886a10-323f-483d-a6cb-ae6b75a1c988",
+      "status": 200,
+      "expected": 200,
+      "result": "PASS"
+    },
+    {
+      "method": "GET",
+      "route": "/admin/products",
+      "status": 200,
+      "expected": 200,
+      "result": "PASS"
+    },
+    {
+      "method": "POST",
+      "route": "/admin/orders",
+      "status": 201,
+      "expected": 201,
+      "result": "PASS"
+    },
+    {
+      "method": "POST",
+      "route": "/admin/orders/72d73d72-cc4a-485a-896b-25ae1fe0a098/payment-confirmations",
+      "status": 201,
+      "expected": 201,
+      "result": "PASS"
+    },
+    {
+      "method": "POST",
+      "route": "/admin/orders/72d73d72-cc4a-485a-896b-25ae1fe0a098/payment-confirmations",
+      "status": 201,
+      "expected": 201,
+      "result": "PASS"
+    },
+    {
+      "method": "GET",
+      "route": "/admin/orders/72d73d72-cc4a-485a-896b-25ae1fe0a098",
+      "status": 200,
+      "expected": 200,
+      "result": "PASS"
+    },
+    {
+      "method": "POST",
+      "route": "/admin/subscriptions",
+      "status": 201,
+      "expected": 201,
+      "result": "PASS"
+    },
+    {
+      "method": "GET",
+      "route": "/admin/subscriptions/ca613ba7-b6ab-409f-997b-70ef23a6b828",
+      "status": 200,
+      "expected": 200,
+      "result": "PASS"
+    },
+    {
+      "method": "POST",
+      "route": "/admin/subscriptions/ca613ba7-b6ab-409f-997b-70ef23a6b828/cancel",
+      "status": 201,
+      "expected": 201,
+      "result": "PASS"
+    },
+    {
+      "method": "POST",
+      "route": "/admin/orders/72d73d72-cc4a-485a-896b-25ae1fe0a098/returns",
+      "status": 201,
+      "expected": 201,
+      "result": "PASS"
+    },
+    {
+      "method": "POST",
+      "route": "/admin/orders/72d73d72-cc4a-485a-896b-25ae1fe0a098/returns",
+      "status": 201,
+      "expected": 201,
+      "result": "PASS"
+    },
+    {
+      "method": "POST",
+      "route": "/admin/orders/72d73d72-cc4a-485a-896b-25ae1fe0a098/returns/73d19691-4176-4dc2-9384-8d98f3f66278/process-reversal",
+      "status": 201,
+      "expected": 201,
+      "result": "PASS"
+    },
+    {
+      "method": "GET",
+      "route": "/admin/operations/returns/73d19691-4176-4dc2-9384-8d98f3f66278",
+      "status": 200,
+      "expected": 200,
+      "result": "PASS"
+    },
+    {
+      "method": "POST",
+      "route": "/admin/qualification-workflows",
+      "status": 201,
+      "expected": 201,
+      "result": "PASS"
+    },
+    {
+      "method": "POST",
+      "route": "/admin/qualification-workflows/28fa237e-42fb-42c1-909e-d39ef550b088/approve",
+      "status": 422,
+      "expected": 422,
+      "result": "PASS"
+    },
+    {
+      "method": "POST",
+      "route": "/admin/ops-ready/attachments",
+      "status": 201,
+      "expected": 201,
+      "result": "PASS"
+    },
+    {
+      "method": "GET",
+      "route": "/admin/ops-ready/attachments?entityType=PERSON&entityId=b90e7b71-8524-4603-b7e3-bd3f49f2f746",
+      "status": 200,
+      "expected": 200,
+      "result": "PASS"
+    },
+    {
+      "method": "POST",
+      "route": "/admin/payouts/materialize",
+      "status": 201,
+      "expected": 201,
+      "result": "PASS"
+    },
+    {
+      "method": "POST",
+      "route": "/admin/payouts/materialize",
+      "status": 400,
+      "expected": 400,
+      "result": "PASS"
+    },
+    {
+      "method": "POST",
+      "route": "/admin/payouts/batches",
+      "status": 400,
+      "expected": 400,
+      "result": "PASS"
+    },
+    {
+      "method": "POST",
+      "route": "/admin/payouts/batches",
+      "status": 201,
+      "expected": 201,
+      "result": "PASS"
+    },
+    {
+      "method": "GET",
+      "route": "/admin/operations/payout-batches/486113d6-5ed7-4a0a-a443-701eae38c6e7",
+      "status": 200,
+      "expected": 200,
+      "result": "PASS"
+    },
+    {
+      "method": "POST",
+      "route": "/admin/operations/payout-batches/486113d6-5ed7-4a0a-a443-701eae38c6e7/approvals/FINANCE_REVIEW",
+      "status": 201,
+      "expected": 201,
+      "result": "PASS"
+    },
+    {
+      "method": "POST",
+      "route": "/admin/operations/payout-batches/486113d6-5ed7-4a0a-a443-701eae38c6e7/approvals/COMPLIANCE_REVIEW",
+      "status": 422,
+      "expected": 422,
+      "result": "PASS"
+    },
+    {
+      "method": "POST",
+      "route": "/admin/operations/payout-batches/486113d6-5ed7-4a0a-a443-701eae38c6e7/approvals/COMPLIANCE_REVIEW",
+      "status": 201,
+      "expected": 201,
+      "result": "PASS"
+    },
+    {
+      "method": "POST",
+      "route": "/admin/operations/payout-batches/486113d6-5ed7-4a0a-a443-701eae38c6e7/export",
+      "status": 201,
+      "expected": 201,
+      "result": "PASS"
+    },
+    {
+      "method": "POST",
+      "route": "/admin/operations/payout-batches/486113d6-5ed7-4a0a-a443-701eae38c6e7/mark-paid",
+      "status": 201,
+      "expected": 201,
+      "result": "PASS"
+    },
+    {
+      "method": "GET",
+      "route": "/admin/persons",
+      "status": 401,
+      "expected": 401,
+      "result": "PASS"
+    },
+    {
+      "method": "GET",
+      "route": "/admin/ops-ready/exports/ORDERS",
+      "status": 200,
+      "expected": 200,
+      "result": "PASS"
+    },
+    {
+      "method": "GET",
+      "route": "/admin/ops-ready/integrity-alerts",
+      "status": 200,
+      "expected": 200,
+      "result": "PASS"
+    }
+  ],
+  "scope": "Isolated ucell_admin_test; existing application calculates test facts; no official monetary result; not frozen five-ball golden or release/UAT signoff"
+}
