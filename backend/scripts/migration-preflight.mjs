@@ -9,7 +9,9 @@ const failures=[];
 
 const numeric=new Map();
 for(const d of dirs){
-  const m=d.match(/^(\d{4})_/);
+  // Accept the repository's four-digit sequence and Prisma's fourteen-digit timestamp.
+  // Compare the complete prefix so distinct timestamps in one year remain distinct.
+  const m=d.match(/^(\d{4}|\d{14})_/);
   if(!m){ failures.push(`migration without numeric prefix: ${d}`); continue; }
   const n=m[1];
   const arr=numeric.get(n)??[]; arr.push(d); numeric.set(n,arr);

@@ -1,4 +1,4 @@
-import { captureParameters } from '../rules/parameter-snapshot';
+import { captureParameters, verifySnapshot } from '../rules/parameter-snapshot';
 import { EpvMonthService } from '../epv/epv-month.service';
 import { Injectable, UnprocessableEntityException } from '@nestjs/common';
 import { Prisma, PrismaService } from '@ucell/database';
@@ -145,7 +145,9 @@ export class ReversalService {
       let epvStatus='NOT_REPURCHASE';
       if(ret.order.purpose==='REPURCHASE') {
         try {
-          const snapshot=await captureParameters(tx,ret.order.paidAt??ret.occurredAt,ret.order.ruleVersionCode);
+          const recognition=await tx.auditEvent.findFirst({where:{action:'EPV_MONTH_RECOGNIZED',entityId:ret.orderId}});
+          const originalDetail=recognition?.afterData as any;
+          const snapshot=originalDetail?verifySnapshot(originalDetail.parameterSnapshot):await captureParameters(tx,ret.order.paidAt??ret.occurredAt,ret.order.ruleVersionCode);
           const projection=await this.epvMonths.returnProjection(tx,returnCaseId,snapshot);
           epvStatus='EPV_RETURN_ALLOCATION_PENDING';
           await tx.outboxEvent.create({data:{eventType:'EPV_MONTH_RECALCULATION_REQUIRED',aggregateType:'RETURN',aggregateId:returnCaseId,correlationId:ret.correlationId,payload:{decisionId:'SA-20260915-02',status:epvStatus,qualificationId:projection.qualificationId,monthStart:projection.start.toISOString(),monthEnd:projection.end.toISOString(),timezone:projection.timezone,before:projection.before.toString(),after:projection.after.toString(),originalEpv:projection.original.toString(),recomputedEpv:projection.recomputed.toString(),delta:projection.delta.toString(),sourceOrderIds:projection.sourceOrderIds,parameterSnapshot:snapshot as unknown as Prisma.InputJsonValue}}});

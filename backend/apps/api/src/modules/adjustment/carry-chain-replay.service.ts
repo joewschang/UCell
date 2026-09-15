@@ -109,6 +109,10 @@ export class CarryChainReplayService {
         where:{returnCaseId},include:{order:true,lines:true}
       });
       if(!ret || ret.status!=='POSTED') throw new Error('POSTED return required');
+      if(ret.order.ruleVersionCode!==ruleVersionCode) pending('RULE_VERSION_MISMATCH','Replay must use the source order rule version');
+      if(ret.order.purpose==='REPURCHASE') pending('EPV_RETURN_ALLOCATION_PENDING','Monthly EPV award allocation must be resolved before posting a complete dependency replay');
+      const subscription=await tx.subscription.findFirst({where:{orderId:ret.orderId}});
+      if(subscription) pending('RPV_REPLAY_IMPLEMENTATION_PENDING','Subscription/RPV dependency replay is not implemented; no partial run is posted');
 
       // Economic starting period is derived from original GPV events, not refund posting date.
       const originals=await tx.pvLedger.findMany({

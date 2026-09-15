@@ -25,6 +25,7 @@ import { EpvModule } from './modules/epv/epv.module';
 import { GlobalPoolModule } from './modules/global-pool/global-pool.module';
 import { PayoutModule } from './modules/payout/payout.module';
 import { SettlementModule } from './modules/settlement/settlement.module';
+import { AdjustmentModule } from './modules/adjustment/adjustment.module';
 import { MembershipApplicationModule } from './modules/application/membership-application.module';
 import { AdminDashboardModule } from './modules/admin-dashboard/admin-dashboard.module';
 import { AdminObservabilityModule } from './modules/admin-observability/admin-observability.module';
@@ -66,7 +67,7 @@ export class AdminDevReadOnlyGuard implements CanActivate {
     AuditModule, IdempotencyModule, OutboxModule, AuthModule, HealthModule,
     PersonModule, ProductModule, OrganizationModule, QualificationModule, OrderModule,
     LedgerModule, ActiveModule, RpvModule, RuntimeRuleModule, BonusModule, ReturnModule,
-    EpvModule, GlobalPoolModule, PayoutModule, SettlementModule,
+    EpvModule, GlobalPoolModule, PayoutModule, SettlementModule, AdjustmentModule,
     SubscriptionModule, MembershipApplicationModule, AdminDashboardModule, AdminObservabilityModule,
     AdminOperationsModule, AdminOpsReadyModule],
   providers: [{ provide: APP_GUARD, useClass: AdminDevReadOnlyGuard },

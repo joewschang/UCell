@@ -1,5 +1,5 @@
 import { SettlementCalendarService } from '../settlement/settlement-calendar.service';
-import { snapshotDecimal } from '../rules/parameter-snapshot';
+import { snapshotDecimal, verifySnapshot, captureParameters } from '../rules/parameter-snapshot';
 import { Injectable } from '@nestjs/common';
 import { Prisma, PrismaService } from '@ucell/database';
 import { createHash } from 'crypto';
@@ -45,7 +45,7 @@ export class ReferralBonusService {
       });
       if(existing?.status==='FINALIZED') return existing;
 
-      const parameterSnapshot=await this.calendar.captureForPeriod(tx,periodStart,periodEnd,'REFERRAL_K0',ruleVersionCode);
+      const parameterSnapshot=existing?verifySnapshot(existing.parameterSnapshot):await this.calendar.captureForPeriod(tx,periodStart,periodEnd,'REFERRAL_K0',ruleVersionCode);
       const batch=existing ?? await tx.settlementBatch.create({
         data:{settlementType:'REFERRAL_K0',periodStart,periodEnd,ruleVersionCode,status:'DRAFT',parameterSnapshot:parameterSnapshot as unknown as Prisma.InputJsonValue}
       });
@@ -62,13 +62,14 @@ export class ReferralBonusService {
       const theoryRows:Array<any>=[];
 
       for(const event of gpvEvents){
+        const sourceSnapshot=await captureParameters(tx,event.occurredAt,ruleVersionCode);
         const ancestors=await this.query.sponsorAncestors(tx,event.qualificationId,event.occurredAt,7);
         const g1=ancestors.find(a=>a.generation===1);
         if(!g1) continue;
 
         const g1Active=await this.query.isActiveAt(tx,g1.qualification_id,event.occurredAt);
         const g1Plan=await this.query.qualificationPlanAt(tx,g1.qualification_id,event.occurredAt);
-        const g1Rate=await this.rules.decimal('referral.g1.rate',g1Plan,event.occurredAt,ruleVersionCode,tx);
+        const g1Rate=snapshotDecimal(sourceSnapshot,'referral.g1.rate',g1Plan);
         const g1Theory=g1Active?event.amount.mul(g1Rate):new Prisma.Decimal(0);
 
         if(g1Theory.gt(0)){
@@ -85,6 +86,7 @@ export class ReferralBonusService {
             occurredAt:event.occurredAt,
             pendingUntil:this.query.pendingUntil(event.occurredAt,pendingDays),
             calculationDetail:{
+              parameterSnapshot:sourceSnapshot,
               sourceGpv:event.amount.toString(),
               rate:g1Rate.toString(),
               generation:1
@@ -105,11 +107,7 @@ export class ReferralBonusService {
 
           let rate:Prisma.Decimal;
           try{
-            rate=await this.rules.decimal(
-              'equalization.rate',
-              `${plan}:G${anc.generation}`,
-              event.occurredAt,ruleVersionCode,tx
-            );
+            rate=snapshotDecimal(sourceSnapshot,'equalization.rate',`${plan}:G${anc.generation}`);
           }catch{
             continue;
           }
@@ -130,6 +128,7 @@ export class ReferralBonusService {
             occurredAt:event.occurredAt,
             pendingUntil:this.query.pendingUntil(event.occurredAt,pendingDays),
             calculationDetail:{
+              parameterSnapshot:sourceSnapshot,
               baseG1ReferralTheory:g1Theory.toString(),
               rate:rate.toString(),
               generation:anc.generation,
@@ -162,7 +161,7 @@ export class ReferralBonusService {
             activeSnapshot:row.activeSnapshot,
             effectiveDirectCountSnapshot:row.effectiveDirectCountSnapshot,
             planLevelSnapshot:row.planLevelSnapshot,
-            ruleVersionCode,
+            ruleVersionCode,parameterSnapshotHash:row.calculationDetail.parameterSnapshot.hash,
             occurredAt:row.occurredAt,
             pendingUntil:row.pendingUntil,
             calculationDetail:row.calculationDetail

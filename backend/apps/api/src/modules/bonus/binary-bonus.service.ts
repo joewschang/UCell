@@ -1,5 +1,5 @@
 import { SettlementCalendarService } from '../settlement/settlement-calendar.service';
-import { snapshotDecimal } from '../rules/parameter-snapshot';
+import { snapshotDecimal, verifySnapshot, captureParameters } from '../rules/parameter-snapshot';
 import { Injectable } from '@nestjs/common';
 import { Prisma, PrismaService } from '@ucell/database';
 import { createHash } from 'crypto';
@@ -66,7 +66,7 @@ export class BinaryBonusService {
       });
       if(existing?.status==='FINALIZED') return existing;
 
-      const parameterSnapshot=await this.calendar.captureForPeriod(tx,periodStart,periodEnd,'BINARY_K1',ruleVersionCode);
+      const parameterSnapshot=existing?verifySnapshot(existing.parameterSnapshot):await this.calendar.captureForPeriod(tx,periodStart,periodEnd,'BINARY_K1',ruleVersionCode);
       const batch=existing ?? await tx.settlementBatch.create({
         data:{settlementType:'BINARY_K1',periodStart,periodEnd,ruleVersionCode,parameterSnapshot:parameterSnapshot as unknown as Prisma.InputJsonValue}
       });
@@ -197,7 +197,7 @@ export class BinaryBonusService {
       });
       if(existing?.status==='FINALIZED') return existing;
 
-      const parameterSnapshot=await this.calendar.captureForPeriod(tx,periodStart,periodEnd,'MATCHING_K2',ruleVersionCode);
+      const parameterSnapshot=existing?verifySnapshot(existing.parameterSnapshot):await this.calendar.captureForPeriod(tx,periodStart,periodEnd,'MATCHING_K2',ruleVersionCode);
       const batch=existing ?? await tx.settlementBatch.create({
         data:{settlementType:'MATCHING_K2',periodStart,periodEnd,ruleVersionCode,parameterSnapshot:parameterSnapshot as unknown as Prisma.InputJsonValue}
       });
@@ -258,7 +258,7 @@ export class BinaryBonusService {
             sourceAwardId:row.sourceAwardId,generationNo:row.generationNo,
             theoryAmount:row.theoryAmount,kFactor:k,payableAmount:row.theoryAmount.mul(k),
             activeSnapshot:true,effectiveDirectCountSnapshot:row.effectiveDirectCountSnapshot,
-            planLevelSnapshot:row.planLevelSnapshot,ruleVersionCode,
+            planLevelSnapshot:row.planLevelSnapshot,ruleVersionCode,parameterSnapshotHash:parameterSnapshot.hash,
             occurredAt:periodEnd,pendingUntil:row.pendingUntil,
             calculationDetail:row.calculationDetail
           }

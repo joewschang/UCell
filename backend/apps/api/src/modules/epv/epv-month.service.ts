@@ -44,6 +44,12 @@ export class EpvMonthService {
     const month=await this.bounds(tx,ret.order.paidAt,snapshot);
     const orders=await tx.order.findMany({where:{qualificationId:ret.order.qualificationId,purpose:'REPURCHASE',paidAt:{gte:month.start,lt:month.end,lte:ret.occurredAt}}});
     if(orders.some(o=>o.ruleVersionCode!==snapshot.ruleVersionCode)) pending('EPV_MONTH_PARAMETER_DECISION_PENDING','Mixed monthly rule versions require a decision');
+    for(const order of orders) {
+      const evidence=await tx.auditEvent.findFirst({where:{action:'EPV_MONTH_RECOGNIZED',entityId:order.orderId}});
+      const detail=evidence?.afterData as any;
+      if(detail && (detail.timezone!==month.timezone || detail.base!==snapshotDecimal(snapshot,'epv.base_amount').toString() || detail.rate!==snapshotDecimal(snapshot,'epv.rate').toString()))
+        pending('EPV_MONTH_PARAMETER_DECISION_PENDING','Monthly return spans incompatible historical threshold/rate/timezone snapshots');
+    }
     const previousReturns=await tx.returnLine.aggregate({where:{returnCase:{status:'POSTED',orderId:{in:orders.map(o=>o.orderId)},OR:[{occurredAt:{lt:ret.occurredAt}},{occurredAt:ret.occurredAt,returnCaseId:{lt:returnCaseId}}]}},_sum:{returnAmount:true}});
     const total=orders.reduce((a,o)=>a.add(o.netAmount),new Prisma.Decimal(0));
     const returned=ret.lines.reduce((a,l)=>a.add(l.returnAmount),new Prisma.Decimal(0));
