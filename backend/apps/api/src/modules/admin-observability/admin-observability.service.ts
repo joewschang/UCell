@@ -151,7 +151,7 @@ export class AdminObservabilityService {
   }
 
   async awardDetail(bonusAwardId:string){
-    return this.prisma.bonusAward.findUniqueOrThrow({
+    const award=await this.prisma.bonusAward.findUniqueOrThrow({
       where:{bonusAwardId},
       include:{
         recipient:{include:{currentHolder:true}},
@@ -161,9 +161,12 @@ export class AdminObservabilityService {
         settlementBatch:true,
         lifecycleEvents:{orderBy:{occurredAt:'asc'}},
         recoveryEvents:{include:{applications:true}},
-        payableEntries:true,
       }
     });
+    const payableEntries=await this.prisma.payableEntry.findMany({
+      where:{sourceType:'BONUS_AWARD',sourceId:bonusAwardId},
+    });
+    return {...award,payableEntries};
   }
 
   async settlementHistory(input:{

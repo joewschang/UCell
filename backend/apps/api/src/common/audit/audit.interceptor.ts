@@ -1,6 +1,6 @@
 import { CallHandler,ExecutionContext,Injectable,NestInterceptor } from '@nestjs/common';
 import { Observable,tap } from 'rxjs';
-import { PrismaService } from '@ucell/database';
+import { Prisma, PrismaService } from '@ucell/database';
 
 @Injectable()
 export class AuditInterceptor implements NestInterceptor{
@@ -27,7 +27,7 @@ export class AuditInterceptor implements NestInterceptor{
           // AuditEvent.entity_id is UUID and an HTTP request has no domain entity UUID by default.
           // request_id/correlation_id provide request trace; domain services write their own entity audit facts.
           entityId:null,
-          beforeData:null,
+          beforeData:Prisma.DbNull,
           afterData:{
             path:req.originalUrl ?? req.url,
             role:req.user?.role ?? null,

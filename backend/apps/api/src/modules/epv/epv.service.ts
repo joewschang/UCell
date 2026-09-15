@@ -51,7 +51,7 @@ export class EpvService {
             recipientQualificationId:order.qualificationId,
             sourceQualificationId:order.qualificationId,sourceEventId:ledger.eventId,generationNo:0,
             theoryAmount:amount,payableAmount:amount,kFactor:new Prisma.Decimal(1),
-            activeSnapshot:true,planLevelSnapshot:await this.query.qualificationPlan(tx,order.qualificationId),
+            activeSnapshot:true,planLevelSnapshot:await this.query.qualificationPlanAt(tx,order.qualificationId,at),
             ruleVersionCode,occurredAt:at,
             pendingUntil:this.query.pendingUntil(at,pendingDays),
             calculationDetail:{subtype:'EPV_SELF',epv:epv.toString(),rate:selfRate.toString()}
@@ -77,7 +77,7 @@ export class EpvService {
             theoryAmount:amount,payableAmount:amount,kFactor:new Prisma.Decimal(1),
             activeSnapshot:true,
             effectiveDirectCountSnapshot:await this.query.effectiveDirectCountAt(tx,u.qualification_id,at),
-            planLevelSnapshot:await this.query.qualificationPlan(tx,u.qualification_id),
+            planLevelSnapshot:await this.query.qualificationPlanAt(tx,u.qualification_id,at),
             ruleVersionCode,occurredAt:at,
             pendingUntil:this.query.pendingUntil(at,pendingDays),
             calculationDetail:{subtype:'EPV_UPLINE',epv:epv.toString(),rate:rate.toString(),generation:u.generation}

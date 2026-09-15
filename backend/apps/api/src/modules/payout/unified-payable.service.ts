@@ -26,9 +26,9 @@ export class UnifiedPayableService {
       }
       const rpv=await tx.rpvUplineAwardEvent.findMany({where:{payableAmount:{gt:0}}});
       for(const a of rpv){
-        const exists=await tx.payableEntry.findUnique({where:{sourceType_sourceId:{sourceType:'RPV_UPLINE_AWARD',sourceId:a.rpvUplineAwardEventId}}});
+        const exists=await tx.payableEntry.findUnique({where:{sourceType_sourceId:{sourceType:'RPV_UPLINE_AWARD',sourceId:a.rpvAwardEventId}}});
         if(exists) continue;
-        await tx.payableEntry.create({data:{qualificationId:a.recipientQualificationId,sourceType:'RPV_UPLINE_AWARD',sourceId:a.rpvUplineAwardEventId,awardType:'RPV',grossAmount:a.payableAmount,availableAt:cutoff,status:'OPEN',ruleVersionCode:a.ruleVersionCode}});
+        await tx.payableEntry.create({data:{qualificationId:a.recipientQualificationId,sourceType:'RPV_UPLINE_AWARD',sourceId:a.rpvAwardEventId,awardType:'RPV',grossAmount:a.payableAmount,availableAt:cutoff,status:'OPEN',ruleVersionCode:a.ruleVersionCode}});
         created++;
       }
       return {created};

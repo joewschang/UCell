@@ -9,6 +9,7 @@ allowBuilds:
   prisma: true
   unrs-resolver: true
 overrides:
+  fastify: 5.12.4
   prisma: 6.19.3
   '@prisma/client': 6.19.3
   typescript: 5.9.3

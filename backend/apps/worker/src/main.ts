@@ -1,5 +1,5 @@
 import { PrismaService, Prisma } from '@ucell/database';
-import crypto from 'crypto';
+import * as crypto from 'node:crypto';
 
 const prisma = new PrismaService();
 
