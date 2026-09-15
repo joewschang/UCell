@@ -1,0 +1,84 @@
+command: pnpm db:golden
+started: 2026-09-15T15:54:23.002Z
+exit: 0
+Prisma schema loaded from packages\database\prisma\schema.prisma
+Datasource "db": PostgreSQL database "ucell_dev_golden_a9a39994d50644bd8d7a4bc7b7c30522", schemas "audit, commerce, identity, integration, ledger, membership, organization, rules, subscription" at "localhost:5432"
+
+20 migrations found in prisma/migrations
+
+Applying migration `0001_vertical_slice`
+Applying migration `0002_membership_active_subscription_rpv`
+Applying migration `0003_bonus_engine_core`
+Applying migration `0004_reversal_epv_global_payout`
+Applying migration `0005_adjustment_lifecycle`
+Applying migration `0006_v061_closure`
+Applying migration `0007_v062_carry_chain_replay`
+Applying migration `0008_v063_calendar_payable`
+Applying migration `0009_v064_recovery_auth_audit_golden`
+Applying migration `0010_v065_global_payable_schema`
+Applying migration `0011_v066_convergence_guards`
+Applying migration `0012_v069_schema_relation_convergence`
+Applying migration `0013_review_r1_integrity_guards`
+Applying migration `0014_r4_payout_approval_recovery_integrity`
+Applying migration `0015_r5_operations_ready`
+Applying migration `0016_r6_admin_access_grant`
+Applying migration `20260915110000_sa_parameter_snapshots`
+Applying migration `20260915120000_phase2_historical_replay`
+Applying migration `20260915150000_replay_entitlement_baseline_guards`
+Applying migration `20260915160000_sa_phase3_business_timezone`
+
+The following migration(s) have been applied:
+
+migrations/
+  └─ 0001_vertical_slice/
+    └─ migration.sql
+  └─ 0002_membership_active_subscription_rpv/
+    └─ migration.sql
+  └─ 0003_bonus_engine_core/
+    └─ migration.sql
+  └─ 0004_reversal_epv_global_payout/
+    └─ migration.sql
+  └─ 0005_adjustment_lifecycle/
+    └─ migration.sql
+  └─ 0006_v061_closure/
+    └─ migration.sql
+  └─ 0007_v062_carry_chain_replay/
+    └─ migration.sql
+  └─ 0008_v063_calendar_payable/
+    └─ migration.sql
+  └─ 0009_v064_recovery_auth_audit_golden/
+    └─ migration.sql
+  └─ 0010_v065_global_payable_schema/
+    └─ migration.sql
+  └─ 0011_v066_convergence_guards/
+    └─ migration.sql
+  └─ 0012_v069_schema_relation_convergence/
+    └─ migration.sql
+  └─ 0013_review_r1_integrity_guards/
+    └─ migration.sql
+  └─ 0014_r4_payout_approval_recovery_integrity/
+    └─ migration.sql
+  └─ 0015_r5_operations_ready/
+    └─ migration.sql
+  └─ 0016_r6_admin_access_grant/
+    └─ migration.sql
+  └─ 20260915110000_sa_parameter_snapshots/
+    └─ migration.sql
+  └─ 20260915120000_phase2_historical_replay/
+    └─ migration.sql
+  └─ 20260915150000_replay_entitlement_baseline_guards/
+    └─ migration.sql
+  └─ 20260915160000_sa_phase3_business_timezone/
+    └─ migration.sql
+      
+All migrations have been successfully applied.
+DB_GOLDEN_FIXTURES_PASS: frozen manifest loaded into isolated test database; no monetary postings
+DB_TIMEZONE_REGRESSION_PASS: Taipei boundary and prospective historical snapshot
+DB_GOLDEN_E2E_PASS
+DB_GOLDEN_ISOLATED_PASS: fresh database, deployed migrations, deterministic fixtures
+DB_GOLDEN_ISOLATED_CLEANUP_PASS
+$ node scripts/db-golden-isolated.mjs
+(node:38768) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///C:/UCell/UCell/backend/packages/shared/src/r1-0b-golden.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to \\?\C:\UCell\UCell\backend\packages\shared\package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)

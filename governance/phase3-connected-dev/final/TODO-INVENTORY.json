@@ -1,0 +1,686 @@
+{
+  "originalBaseline": 148,
+  "currentExecutableTodo": 113,
+  "netPlaceholderReduction": 35,
+  "audit": "Previous 52 TODO claim invalidated: missing cases and unrelated/constant assertions restored. Net reduction alone is not Release approval.",
+  "items": [
+    {
+      "file": "backend/apps/api/test/bonus-engine-v04.e2e-spec.ts",
+      "line": 5,
+      "case": "G1 STARTER Active receives GPV x 15% theory",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/bonus-engine-v04.e2e-spec.ts",
+      "line": 6,
+      "case": "G1 ELITE Active receives GPV x 20% theory",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/bonus-engine-v04.e2e-spec.ts",
+      "line": 7,
+      "case": "G1 LEADER Active receives GPV x 25% theory",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/bonus-engine-v04.e2e-spec.ts",
+      "line": 8,
+      "case": "inactive G1 generates no referral bonus and equalization base is zero",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/bonus-engine-v04.e2e-spec.ts",
+      "line": 9,
+      "case": "equalization base is same-source G1 referral theory, not GPV",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/bonus-engine-v04.e2e-spec.ts",
+      "line": 10,
+      "case": "STARTER rates G2/G3/G4 are 10/10/10",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/bonus-engine-v04.e2e-spec.ts",
+      "line": 11,
+      "case": "ELITE rates G2..G6 are 20/10/10/5/5",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/bonus-engine-v04.e2e-spec.ts",
+      "line": 12,
+      "case": "LEADER rates G2..G7 are 20/15/10/10/10/5 including G5=10",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/bonus-engine-v04.e2e-spec.ts",
+      "line": 13,
+      "case": "intermediate ineligible generation does not block higher generation",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/bonus-engine-v04.e2e-spec.ts",
+      "line": 20,
+      "case": "Referral + Equalization share 42% pool and K0",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/bonus-engine-v04.e2e-spec.ts",
+      "line": 24,
+      "case": "uses Binary subtree GPV, not Sponsor tree",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/bonus-engine-v04.e2e-spec.ts",
+      "line": 25,
+      "case": "pair = min(left available,right available) subject to weekly cap",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/bonus-engine-v04.e2e-spec.ts",
+      "line": 26,
+      "case": "paired PV deducted from both sides and strong-side carry remains",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/bonus-engine-v04.e2e-spec.ts",
+      "line": 27,
+      "case": "STARTER/ELITE/LEADER weekly caps 450k/900k/1.5m",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/bonus-engine-v04.e2e-spec.ts",
+      "line": 28,
+      "case": "Binary theory = paired PV x 12%",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/bonus-engine-v04.e2e-spec.ts",
+      "line": 29,
+      "case": "Binary Pool is 36% and K1 <= 1",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/bonus-engine-v04.e2e-spec.ts",
+      "line": 30,
+      "case": "inactive recipient produces no Binary award",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/bonus-engine-v04.e2e-spec.ts",
+      "line": 34,
+      "case": "source is actual Binary payable after K1, never Binary theory",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/bonus-engine-v04.e2e-spec.ts",
+      "line": 35,
+      "case": "Sponsor Tree is used to trace matching uplines",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/bonus-engine-v04.e2e-spec.ts",
+      "line": 36,
+      "case": "rates are G1=15,G2=10,G3-G5=5",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/bonus-engine-v04.e2e-spec.ts",
+      "line": 41,
+      "case": "Matching Pool is 15% and K2 <= 1",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/bonus-engine-v04.e2e-spec.ts",
+      "line": 45,
+      "case": "award creates CALCULATED then PENDING_45D events",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/bonus-engine-v04.e2e-spec.ts",
+      "line": 46,
+      "case": "after pending_until latest status becomes EFFECTIVE",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/bonus-engine-v04.e2e-spec.ts",
+      "line": 47,
+      "case": "award row itself remains append-only",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/epv-global-v05.e2e-spec.ts",
+      "line": 5,
+      "case": "EPV self share = 50% = 840 when Active",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/epv-global-v05.e2e-spec.ts",
+      "line": 6,
+      "case": "EPV Sponsor G1-G5 each 6% when Active",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/epv-global-v05.e2e-spec.ts",
+      "line": 7,
+      "case": "EPV does not use Binary tree",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/epv-global-v05.e2e-spec.ts",
+      "line": 8,
+      "case": "non-REPURCHASE order does not create EPV",
+      "classification": "Pending Decision: eligible scope / formal PV mapping"
+    },
+    {
+      "file": "backend/apps/api/test/epv-global-v05.e2e-spec.ts",
+      "line": 12,
+      "case": "global pool is 5% of period GPV",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/epv-global-v05.e2e-spec.ts",
+      "line": 13,
+      "case": "weak thresholds are 300k/600k/1m/2m/4m",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/epv-global-v05.e2e-spec.ts",
+      "line": 14,
+      "case": "rank achievement never downgrades",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/epv-global-v05.e2e-spec.ts",
+      "line": 15,
+      "case": "monthly payout requires Active and current-month weak side threshold",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/epv-global-v05.e2e-spec.ts",
+      "line": 16,
+      "case": "passed levels are cumulative",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/epv-global-v05.e2e-spec.ts",
+      "line": 17,
+      "case": "empty rank slice rolls upward to next higher rank",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/epv-global-v05.e2e-spec.ts",
+      "line": 18,
+      "case": "welfare 2% is accrued only; no distribution without a formal rule",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/negative-flow-v05.e2e-spec.ts",
+      "line": 10,
+      "case": "partial return creates proportional negative GPV event",
+      "classification": "Pending Decision: eligible scope / formal PV mapping"
+    },
+    {
+      "file": "backend/apps/api/test/negative-flow-v05.e2e-spec.ts",
+      "line": 13,
+      "case": "PENDING_45D direct referral/equalization becomes REVERSED",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/negative-flow-v05.e2e-spec.ts",
+      "line": 14,
+      "case": "EFFECTIVE/PAYABLE/PAID direct award creates CLAWBACK and recovery ledger",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/negative-flow-v05.e2e-spec.ts",
+      "line": 16,
+      "case": "Binary and Matching create settlement recalculation requests instead of rewriting history",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/negative-flow-v05.e2e-spec.ts",
+      "line": 21,
+      "case": "EFFECTIVE awards become PAYABLE via payout batch",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/negative-flow-v05.e2e-spec.ts",
+      "line": 24,
+      "case": "mark-paid writes PAID lifecycle events",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/organization.e2e-spec.ts",
+      "line": 4,
+      "case": "sponsor tree and binary tree remain independent",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/qualification-isolation.e2e-spec.ts",
+      "line": 21,
+      "case": "member share link is bound to selected qualification",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/v060-adjustment-lifecycle.e2e-spec.ts",
+      "line": 2,
+      "case": "return never mutates original Binary settlement",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/v060-adjustment-lifecycle.e2e-spec.ts",
+      "line": 3,
+      "case": "return never mutates original Matching settlement",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/v060-adjustment-lifecycle.e2e-spec.ts",
+      "line": 4,
+      "case": "replay uses original carry-in and reversal PV events",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/v060-adjustment-lifecycle.e2e-spec.ts",
+      "line": 5,
+      "case": "positive delta creates compensating award",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/v060-adjustment-lifecycle.e2e-spec.ts",
+      "line": 6,
+      "case": "negative delta creates recovery",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/v060-adjustment-lifecycle.e2e-spec.ts",
+      "line": 7,
+      "case": "future subscription recognition is cancelled, not deleted",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/v060-adjustment-lifecycle.e2e-spec.ts",
+      "line": 8,
+      "case": "recognized RPV gets explicit reversal event",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/v060-adjustment-lifecycle.e2e-spec.ts",
+      "line": 9,
+      "case": "upgrade has no retroactive bonus effect",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/v060-adjustment-lifecycle.e2e-spec.ts",
+      "line": 10,
+      "case": "transfer preserves qualificationId and tree positions",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/v060-adjustment-lifecycle.e2e-spec.ts",
+      "line": 11,
+      "case": "exit preserves qualification for company-held re-transfer",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/v061-replay.e2e-spec.ts",
+      "line": 47,
+      "case": "upgrade creates future plan history and does not alter past awards",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/v061-replay.e2e-spec.ts",
+      "line": 48,
+      "case": "transfer preserves qualificationId and sponsor/binary positions",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/v061-replay.e2e-spec.ts",
+      "line": 49,
+      "case": "exit closes holder interval and status becomes EXITED",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/v061-replay.e2e-spec.ts",
+      "line": 50,
+      "case": "company retransfer opens a new holder interval",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/v062-carry-chain.e2e-spec.ts",
+      "line": 2,
+      "case": "historical week includes later GPV_REVERSAL linked to original event",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/v062-carry-chain.e2e-spec.ts",
+      "line": 3,
+      "case": "return discovers every Binary ancestor impacted by descendant GPV",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/v062-carry-chain.e2e-spec.ts",
+      "line": 4,
+      "case": "period replay recomputes all Binary payable amounts when K1 changes",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/v062-carry-chain.e2e-spec.ts",
+      "line": 5,
+      "case": "period replay recomputes all Matching payable amounts when K2 changes",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/v062-carry-chain.e2e-spec.ts",
+      "line": 6,
+      "case": "next week carry-in uses prior recomputed carry-out",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/v062-carry-chain.e2e-spec.ts",
+      "line": 7,
+      "case": "propagation stops when left/right carry match original snapshots",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/v062-carry-chain.e2e-spec.ts",
+      "line": 8,
+      "case": "propagation respects maxWeeks safety horizon",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/v062-carry-chain.e2e-spec.ts",
+      "line": 9,
+      "case": "each replay period is append-only and replay run is resumable",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/v062-carry-chain.e2e-spec.ts",
+      "line": 10,
+      "case": "positive deltas post compensating awards and negative deltas post recovery",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/v062-carry-chain.e2e-spec.ts",
+      "line": 11,
+      "case": "original BinaryCarry, SettlementBatch and BonusAward remain untouched",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/v062-carry-chain.e2e-spec.ts",
+      "line": 15,
+      "case": "migration 0005 references subscription.subscription, not commerce.subscription",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/v062-carry-chain.e2e-spec.ts",
+      "line": 16,
+      "case": "Prisma schema contains adjustment/workflow/replay models",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/v062-carry-chain.e2e-spec.ts",
+      "line": 17,
+      "case": "RPV reversal anchor uses BonusAwardType.RPV, not EPV",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/v063-golden-path.e2e-spec.ts",
+      "line": 2,
+      "case": "Taiwan local time maps to configured settlement week",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/v063-golden-path.e2e-spec.ts",
+      "line": 3,
+      "case": "effective BonusAward materializes once",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/v063-golden-path.e2e-spec.ts",
+      "line": 4,
+      "case": "RPV award materializes once",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/v063-golden-path.e2e-spec.ts",
+      "line": 5,
+      "case": "payout groups by Qualification rather than Person",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/v063-golden-path.e2e-spec.ts",
+      "line": 6,
+      "case": "Recovery offsets Gross without changing source Award",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/v063-golden-path.e2e-spec.ts",
+      "line": 7,
+      "case": "Net payout never becomes negative",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/v063-golden-path.e2e-spec.ts",
+      "line": 8,
+      "case": "temporal holder check denies former holder after transfer",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/v063-golden-path.e2e-spec.ts",
+      "line": 9,
+      "case": "RBAC denies unauthorized admin operation",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/v064-golden-dataset.e2e-spec.ts",
+      "line": 5,
+      "case": "keeps Person and Qualification distinct",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/v064-golden-dataset.e2e-spec.ts",
+      "line": 6,
+      "case": "keeps Sponsor and Binary trees distinct",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/v064-golden-dataset.e2e-spec.ts",
+      "line": 7,
+      "case": "validates Referral 15/20/25",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/v064-golden-dataset.e2e-spec.ts",
+      "line": 8,
+      "case": "validates Equalization including Leader G5=10%",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/v064-golden-dataset.e2e-spec.ts",
+      "line": 9,
+      "case": "validates Active First and no compression",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/v064-golden-dataset.e2e-spec.ts",
+      "line": 10,
+      "case": "validates Binary Carry and K1",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/v064-golden-dataset.e2e-spec.ts",
+      "line": 11,
+      "case": "validates Matching source=Binary Paid after K1",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/v064-golden-dataset.e2e-spec.ts",
+      "line": 12,
+      "case": "validates RPV 5/8/12 on Binary Tree",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/v064-golden-dataset.e2e-spec.ts",
+      "line": 13,
+      "case": "validates EPV on Sponsor Tree",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/v064-golden-dataset.e2e-spec.ts",
+      "line": 14,
+      "case": "validates refund -> replay -> recovery -> payout",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
+      "line": 2,
+      "case": "creates DRAFT membership application",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
+      "line": 3,
+      "case": "SUBMIT requires sponsor and binary placement data",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
+      "line": 4,
+      "case": "APPROVE creates Qualification + Holder + Sponsor + Binary atomically",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
+      "line": 5,
+      "case": "1st and 3rd direct-left rule is enforced during approval",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
+      "line": 6,
+      "case": "Active periods cannot overlap",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
+      "line": 7,
+      "case": "historical Active query uses event time, not current flag",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
+      "line": 8,
+      "case": "QUARTER creates exactly 3 recognition rows",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
+      "line": 9,
+      "case": "HALF_YEAR creates exactly 6 recognition rows",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
+      "line": 10,
+      "case": "YEAR creates exactly 12 recognition rows",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
+      "line": 11,
+      "case": "each due recognition creates exactly 1,200 RPV once",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
+      "line": 12,
+      "case": "0 direct unlocks 5 binary generations",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
+      "line": 13,
+      "case": "1 direct unlocks 8 binary generations",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
+      "line": 14,
+      "case": "2+ directs unlocks 12 binary generations",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
+      "line": 15,
+      "case": "inactive upline receives 0 and is not compressed",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
+      "line": 16,
+      "case": "higher generation remains independently evaluated",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
+      "line": 17,
+      "case": "re-running a recognition cannot duplicate RPV or awards",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/vertical-slice.e2e-spec.ts",
+      "line": 7,
+      "case": "creates Person with idempotent command",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/vertical-slice.e2e-spec.ts",
+      "line": 8,
+      "case": "creates Qualification with permanent sponsor sequence",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/vertical-slice.e2e-spec.ts",
+      "line": 9,
+      "case": "rejects 1st direct placed on RIGHT",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/vertical-slice.e2e-spec.ts",
+      "line": 10,
+      "case": "creates order using server-side Product Rule Profile snapshot",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/vertical-slice.e2e-spec.ts",
+      "line": 11,
+      "case": "confirms payment exactly once",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/vertical-slice.e2e-spec.ts",
+      "line": 12,
+      "case": "writes SALE_CONFIRMED to transactional outbox",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/vertical-slice.e2e-spec.ts",
+      "line": 13,
+      "case": "worker converts SALE_CONFIRMED to GPV_CREATED per order line",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/vertical-slice.e2e-spec.ts",
+      "line": 14,
+      "case": "reprocessing same outbox event does not duplicate GPV",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    },
+    {
+      "file": "backend/apps/api/test/vertical-slice.e2e-spec.ts",
+      "line": 15,
+      "case": "PV ledger cannot be UPDATEd or DELETEd",
+      "classification": "Test implementation; SSOT/evidence review before conversion"
+    }
+  ]
+}

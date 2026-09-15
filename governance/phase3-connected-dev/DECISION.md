@@ -1,0 +1,15 @@
+# SA Phase 3 decision and traceability
+
+Authority: SA decision supplied in this task; SSOT priority and R1.0B FROZEN remain unchanged.
+
+| Decision | Implementation | Evidence |
+|---|---|---|
+| First accounting/business timezone is Asia/Taipei; timestamps remain UTC | Migration `20260915160000_sa_phase3_business_timezone` creates versioned accounting/EPV timezone parameters effective 2026-09-15 local midnight. No old parameter or sealed snapshot is updated. | Default/test DB migration logs; isolated DB migration replay |
+| EPV month uses business timezone rather than UTC month | Existing `EpvMonthService.bounds` uses the captured timezone in PostgreSQL; DB tests straddle Taipei midnight at UTC 16:00. Future UTC in the fixture is TEST_ONLY, not an operational decision. | `default-db-golden.txt`, repeat run |
+| RPV uses original recognition Qualification/Binary/Active/Parameter/period/recipient evidence | `sealRpvEvent` captures recognition month, timezone, UTC period bounds and original graph/award recipients. `verifyReplayEnvelope` rejects missing or inconsistent evidence and `replayRpvCancellation` verifies the original ledger event. | `db-regression.txt`; original Binary parent changed after capture; original recipient still receives adjustment |
+| Missing historical evidence fails closed | No live tree/current recipient reconstruction. Old envelopes missing required period/recipient/parameter evidence cannot be silently upgraded. | Missing period, event, Binary and timezone DB cases; no ledger/posting success on missing evidence |
+| All monetary mutation is append-only | Existing ledger/award/PAID rows remain unchanged; replay postings/recovery deltas are appended. No official monetary result is produced by this task; calculations run through application code in isolated test fixtures. | Original award/PAID invariants, DB append-only guards, replay regression |
+
+Pending Decision: eligible-consumption scope, formal PV/BV mapping, production operational calendar/cut-off. No proportional RPV partial-refund allocation across months is inferred without explicit original allocation facts. Existing subscription UTC scheduling is an engineering/calendar issue to address without choosing an unapproved operational calendar.
+
+Test governance correction: commits `f70c47b` through `10aa33e` are preserved as audit evidence. Unverified conversions were restored from `89bfed6`. In particular, constant self-comparisons and assertions against unrelated EPV/ledger evidence do not count as implementation coverage. Every original unresolved case is back in the executable TODO inventory.

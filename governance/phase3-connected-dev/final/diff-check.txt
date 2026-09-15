@@ -1,0 +1,21 @@
+command: git diff --check
+started: 2026-09-15T16:01:11.510Z
+exit: 0
+warning: in the working copy of 'backend/apps/api/src/common/idempotency/idempotency.service.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'backend/apps/api/test/bonus-engine-v04.e2e-spec.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'backend/apps/api/test/epv-global-v05.e2e-spec.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'backend/apps/api/test/idempotency.e2e-spec.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'backend/apps/api/test/negative-flow-v05.e2e-spec.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'backend/apps/api/test/organization.e2e-spec.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'backend/apps/api/test/qualification-isolation.e2e-spec.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'backend/apps/api/test/v062-carry-chain.e2e-spec.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'backend/apps/api/test/v063-golden-path.e2e-spec.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'backend/apps/api/test/v064-golden-dataset.e2e-spec.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'backend/package.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'backend/packages/database/src/historical-replay.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'backend/scripts/db-golden-e2e.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'backend/scripts/db-golden-fixtures.mjs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'backend/scripts/phase2-db-test.mjs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'backend/scripts/security-http-e2e.mjs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'governance/phase2-return-replay/REPORT.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'governance/phase2-return-replay/final/db-regression.json', LF will be replaced by CRLF the next time Git touches it

@@ -46,6 +46,10 @@ export class IdempotencyService {
     const result = await this.prisma.$transaction(async (tx) => {
       const locked = await lookup(tx);
 
+      if (locked && locked.requestHash !== hash) {
+        throw new ConflictException({ code: 'IDEMPOTENCY_CONFLICT', message: '相同 Idempotency-Key 已被不同內容使用。' });
+      }
+
       if (locked?.responseBody !== null && locked?.responseBody !== undefined) {
         if (locked.requestHash !== hash) {
           throw new ConflictException({

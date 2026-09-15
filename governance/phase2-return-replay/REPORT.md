@@ -10,17 +10,17 @@ The DB regression harness passed 81 assertions (fixtures are transactionally rol
 
 The authoritative matrix and raw command output are in [final/PASS-FAIL-MATRIX.md](C:/UCell/UCell/governance/phase2-return-replay/final/PASS-FAIL-MATRIX.md) and [final/gate-results.json](C:/UCell/UCell/governance/phase2-return-replay/final/gate-results.json).
 
-PASS: Node/pnpm checks, static/convergence/source/schema/security-policy preflights, Prisma validate/generate/deploy (19 migrations), Backend Build, Admin Build, API Jest (16 suites; 110 passed, 52 TODO), shared tests (6), Admin tests (4), CI gate, isolated DB Golden (manifest fixture plus DB assertions), Phase 2 DB regression, OpenAPI export/preflight, and Admin DEV full flow.
+Phase 2 PASS evidence is preserved in the original logs. Later Phase 3 edits claiming 110 passed / 52 TODO were invalidated by coverage audit: some original cases had been removed and several assertions did not test their named behavior. Current results are in `governance/phase3-connected-dev/final/PASS-FAIL-MATRIX.md`.
 
-FAIL/BLOCKED: the default `ucell` DB Golden lacks the five-ball fixture; PostgreSQL version subprocess was denied Docker pipe access in the first child-process attempt (direct verification passed PostgreSQL 16.15); backend/release/RC gates remain blocked by 52 executable TODOs; Security HTTP requires formal port 3000 and role tokens; UAT requires its configured tokens and operational environment. Production Promotion remains BLOCKED.
+Phase 2 blockers included default DB Golden fixtures, executable TODOs, and formal Security/UAT environment. Phase 3 now runs default DB Golden in a freshly-created local test database. Production Promotion remains BLOCKED; refer to the new report for current blockers.
 
 ## TODO burn-down
 
-The baseline was 148 executable TODOs. Ninety-six rule-supported cases are now executable, including the isolated DB Golden Dataset invariants. Current count is 52. No TODO was deleted, skipped, or replaced by a fake assertion. Remaining TODOs are Test implementation; cases that depend on pending eligible-consumption scope, PV/BV mapping, operational calendar, or EPV timezone remain pending review.
+The original baseline was 148. The previously reported 96 conversions / 52 remaining is withdrawn. Unverified original cases were restored from commit `89bfed6`; subsequent conversions require assertions against their actual implementation. The Phase 3 TODO inventory records every remaining case and its classification.
 
 ## Remaining blockers
 
-Historical allocation evidence for a return that affects an RPV recognition is required; the consumer correctly refuses to infer a month or recipient from current state. Eligible-consumption scope, PV/BV mapping, production calendar, and EPV timezone remain Pending Decision. The default development database needs an isolated Golden fixture load before its legacy DB Golden can pass. Formal security/UAT credentials and service configuration are absent. These blockers do not change the frozen commercial rules.
+This paragraph describes Phase 2 status only. SA Phase 3 has approved Asia/Taipei timezone and original RPV allocation evidence; eligible-consumption scope, PV/BV mapping, and production calendar remain pending. Formal security/UAT credentials remain absent. See the Phase 3 report for implementation evidence.
 
 ## Traceability
 

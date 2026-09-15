@@ -1,0 +1,4 @@
+command: node scripts/source-preflight.mjs
+started: 2026-09-15T15:54:30.993Z
+exit: 0
+SOURCE_PREFLIGHT_PASS

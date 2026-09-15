@@ -14,6 +14,7 @@ function expect(label,actual,expected){
   if(actual!==expected)failures.push(`${label}: expected ${expected}, got ${actual}`);
 }
 
+async function main(){
 const unauth=await call('/admin/dashboard/summary');
 expect('admin endpoint without bearer',unauth.status,401);
 
@@ -40,3 +41,9 @@ if(!membership||!finance||!compliance){
   process.exit(2);
 }
 console.log('SECURITY_E2E_PASS');
+}
+main().catch(error=>{
+  console.error('SECURITY_E2E_BLOCKED: formal HTTP service or credentials infrastructure unavailable');
+  console.error(error.cause?.code??error.name);
+  process.exitCode=2;
+});

@@ -33,7 +33,7 @@
     "source:preflight": "node scripts/source-preflight.mjs",
     "golden:r1b": "node scripts/golden-r1b-regression.mjs",
     "dev:smoke": "node scripts/run-bash-gate.mjs dev-smoke.sh",
-    "db:golden": "pnpm exec ts-node scripts/db-golden-e2e.ts",
+    "db:golden": "node scripts/db-golden-isolated.mjs",
     "openapi:preflight": "node scripts/openapi-preflight.mjs",
     "http:smoke": "node scripts/http-smoke.mjs",
     "rc:gate": "node scripts/run-bash-gate.mjs rc-gate.sh",

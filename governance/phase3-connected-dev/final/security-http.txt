@@ -1,0 +1,7 @@
+command: pnpm security:e2e
+started: 2026-09-15T15:54:47.772Z
+exit: 2
+$ node scripts/security-http-e2e.mjs
+SECURITY_E2E_BLOCKED: formal HTTP service or credentials infrastructure unavailable
+ECONNREFUSED
+[ELIFECYCLE] Command failed with exit code 2.

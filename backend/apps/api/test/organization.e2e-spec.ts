@@ -1,11 +1,32 @@
 import { OrganizationService } from '../src/modules/organization/organization.service';
 import { SideCode } from '@ucell/database';
-const tx:any={binaryPlacement:{findFirst:jest.fn()},$queryRaw:jest.fn(),sponsorRelationship:{aggregate:jest.fn()}};
-describe('Organization guardrails (P0)',()=>{
-  beforeEach(()=>jest.clearAllMocks());
-  it('sponsor tree and binary tree remain independent',async()=>{tx.binaryPlacement.findFirst.mockResolvedValue(null);await expect(new OrganizationService({} as any).assertBinarySlotAvailable(tx,'parent',SideCode.LEFT)).resolves.toBeUndefined();expect(tx.sponsorRelationship.aggregate).not.toHaveBeenCalled();});
-  it('binary occupied slot is rejected',async()=>{tx.binaryPlacement.findFirst.mockResolvedValue({childQualificationId:'child'});await expect(new OrganizationService({} as any).assertBinarySlotAvailable(tx,'parent',SideCode.LEFT)).rejects.toMatchObject({response:{code:'BINARY_SLOT_OCCUPIED'}});});
-  it('binary cycle is rejected',async()=>{tx.$queryRaw.mockResolvedValue([{found:true}]);await expect(new OrganizationService({} as any).assertNoBinaryCycle(tx,'child','parent')).rejects.toMatchObject({response:{code:'DOMAIN_RULE_VIOLATION'}});});
-  it('1st and 3rd direct recruit must be within sponsor LEFT subtree',async()=>{await expect(new OrganizationService({} as any).assertFirstThirdLeftRule(tx,'sponsor',1,'sponsor',SideCode.RIGHT)).rejects.toMatchObject({response:{code:'BINARY_LEFT_SUBTREE_REQUIRED'}});});
-  it('sponsor sequence is permanent and never renumbered after exit',async()=>{tx.$queryRaw.mockResolvedValue(undefined);tx.sponsorRelationship.aggregate.mockResolvedValue({_max:{sponsorSequenceNo:3}});await expect(new OrganizationService({} as any).allocateSponsorSequence(tx,'sponsor')).resolves.toBe(4);});
+describe('Organization guardrails (P0)', () => {
+  it.todo('sponsor tree and binary tree remain independent');
+  it('binary occupied slot is rejected',async()=>{
+    const findFirst=jest.fn(async()=>({childQualificationId:'occupied'}));
+    await expect(new OrganizationService({} as any).assertBinarySlotAvailable({binaryPlacement:{findFirst}} as any,'parent',SideCode.RIGHT)).rejects.toMatchObject({response:{code:'BINARY_SLOT_OCCUPIED'}});
+    expect(findFirst).toHaveBeenCalledWith({where:{parentQualificationId:'parent',side:SideCode.RIGHT,effectiveTo:null},select:{childQualificationId:true}});
+  });
+  it('binary cycle is rejected',async()=>{
+    const service=new OrganizationService({} as any),query=jest.fn(async()=>[{found:true}]);
+    await expect(service.assertNoBinaryCycle({$queryRaw:query} as any,'child','parent')).rejects.toMatchObject({response:{code:'DOMAIN_RULE_VIOLATION'}});
+    await expect(service.assertNoBinaryCycle({$queryRaw:query} as any,'child','child')).rejects.toMatchObject({response:{code:'DOMAIN_RULE_VIOLATION'}});
+    expect(query).toHaveBeenCalledTimes(1);
+  });
+  it('1st and 3rd direct recruit must be within sponsor LEFT subtree',async()=>{
+    const service=new OrganizationService({} as any),tx={binaryPlacement:{findFirst:jest.fn(async()=>({childQualificationId:'left'}))},$queryRaw:jest.fn(async()=>[{found:false}])};
+    for(const sequence of [1,3]){
+      await expect(service.assertFirstThirdLeftRule(tx as any,'sponsor',sequence,'sponsor',SideCode.RIGHT)).rejects.toMatchObject({response:{code:'BINARY_LEFT_SUBTREE_REQUIRED'}});
+      await expect(service.assertFirstThirdLeftRule(tx as any,'sponsor',sequence,'outside',SideCode.LEFT)).rejects.toMatchObject({response:{code:'BINARY_LEFT_SUBTREE_REQUIRED'}});
+      await expect(service.assertFirstThirdLeftRule(tx as any,'sponsor',sequence,'sponsor',SideCode.LEFT)).resolves.toBeUndefined();
+    }
+    await expect(service.assertFirstThirdLeftRule(tx as any,'sponsor',2,'sponsor',SideCode.RIGHT)).resolves.toBeUndefined();
+  });
+  it('sponsor sequence is permanent and never renumbered after exit',async()=>{
+    const aggregate=jest.fn(async()=>({_max:{sponsorSequenceNo:7}})),query=jest.fn(async()=>[]),tx={$queryRaw:query,sponsorRelationship:{aggregate}};
+    expect(await new OrganizationService({} as any).allocateSponsorSequence(tx as any,'sponsor')).toBe(8);
+    // Closed recruits must remain included: no effectiveTo/status filter is permitted.
+    expect(aggregate).toHaveBeenCalledWith({where:{sponsorQualificationId:'sponsor'},_max:{sponsorSequenceNo:true}});
+    expect(query).toHaveBeenCalledTimes(1);
+  });
 });

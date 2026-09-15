@@ -11,13 +11,17 @@ const {BonusQueryService}=require('../backend/apps/api/dist/modules/bonus/bonus-
 const {RuntimeRuleService}=require('../backend/apps/api/dist/modules/rules/runtime-rule.service.js');
 const url=new URL(process.env.DATABASE_URL??'');assert.equal(url.pathname,'/ucell_admin_test');assert.ok(['localhost','127.0.0.1'].includes(url.hostname));
 const prisma=new PrismaClient(),results=[],version='PHASE2_TEST_'+randomUUID(),rollback=new Error('ROLLBACK_PHASE2_FIXTURES');
-function check(label,actual,expected){assert.deepEqual(actual,expected,label);results.push({label,result:'PASS',actual});}
+function check(label,actual,expected){assert.deepEqual(actual,expected,label);results.push({label,result:'PASS',actual,expected});}
 let failure;
 try{await prisma.$transaction(async tx=>{
  const person=await tx.person.findFirstOrThrow(),product=await tx.productReference.findFirstOrThrow();
  const parameters=await tx.runtimeRuleParameter.findMany({where:{ruleVersionCode:'R1.0B'}});
- for(const row of new Map(parameters.map(r=>[JSON.stringify([r.parameterCode,r.scopeKey]),r])).values()) await tx.runtimeRuleParameter.create({data:{ruleVersionCode:version,parameterCode:row.parameterCode,scopeKey:row.scopeKey,valueJson:row.valueJson,effectiveFrom:new Date('2019-01-01')}});
+ for(const row of new Map(parameters.map(r=>[JSON.stringify([r.parameterCode,r.scopeKey]),r])).values()){
+   if(['epv.calendar.timezone','accounting.timezone'].includes(row.parameterCode))continue; // Explicit TEST_ONLY UTC below.
+   await tx.runtimeRuleParameter.create({data:{ruleVersionCode:version,parameterCode:row.parameterCode,scopeKey:row.scopeKey,valueJson:row.valueJson,effectiveFrom:new Date('2019-01-01')}});
+ }
  await tx.runtimeRuleParameter.create({data:{ruleVersionCode:version,parameterCode:'epv.calendar.timezone',valueJson:'UTC',effectiveFrom:new Date('2019-01-01')}});
+ await tx.runtimeRuleParameter.create({data:{ruleVersionCode:version,parameterCode:'accounting.timezone',valueJson:'UTC',effectiveFrom:new Date('2019-01-01')}});
  async function qualification(active=true){const q=await tx.qualification.create({data:{currentHolderPersonId:person.personId,planLevelCode:'LEADER',status:'EFFECTIVE',effectiveAt:new Date('2020-01-01')}});await tx.qualificationPlanHistory.create({data:{qualificationId:q.qualificationId,planCode:'LEADER',effectiveFrom:new Date('2020-01-01'),sourceType:'PHASE2_TEST'}});await tx.qualificationStatusHistory.create({data:{qualificationId:q.qualificationId,status:'EFFECTIVE',effectiveFrom:new Date('2020-01-01'),sourceType:'PHASE2_TEST'}});if(active)await tx.activePeriod.create({data:{qualificationId:q.qualificationId,activeFrom:new Date('2020-01-01'),sourceType:'PHASE2_TEST',ruleVersionCode:version}});return q;}
  const self=await qualification(),oldSponsor=await qualification(),inactive=await qualification(false),newSponsor=await qualification();
  const relationship=await tx.sponsorRelationship.create({data:{childQualificationId:self.qualificationId,sponsorQualificationId:oldSponsor.qualificationId,sponsorSequenceNo:1,effectiveFrom:new Date('2020-01-01')}});
@@ -95,6 +99,8 @@ try{await prisma.$transaction(async tx=>{
  const originalChainJson=JSON.stringify(chainOriginals);
  const refund=await tx.returnCase.create({data:{orderId:economic[0].order.orderId,status:'POSTED',reasonCode:'PERIOD_TEST',occurredAt:new Date('2020-01-10'),idempotencyKey:randomUUID(),correlationId:randomUUID(),lines:{create:{orderLineId:economic[0].order.lines[0].orderLineId,quantity:1,returnAmount:500,gpvReversalAmount:500}}}});
  await replay.processHistoricalReturn(tx,refund.returnCaseId);
+ const gpvReversal=await tx.pvLedger.findFirstOrThrow({where:{sourceId:refund.returnCaseId,pvType:'GPV',eventType:'GPV_REVERSAL'}});
+ check('GPV reversal references original GPV event',gpvReversal.reversalOfEventId===economic[0].event.eventId,true);
  const postings=await tx.entitlementReplayPosting.findMany({where:{actionKey:'RETURN:'+refund.returnCaseId,entitlementKey:{in:originals.map(a=>a.bonusAwardId)}},orderBy:{entitlementKey:'asc'}});
  check('K0 complete period posts every original entitlement',postings.length,2);
  check('K0 cumulative effective source replay',postings.map(p=>p.recalculatedEntitlement.toNumber()).sort((a,b)=>a-b),[100,500]);
@@ -118,7 +124,25 @@ try{await prisma.$transaction(async tx=>{
  const recognized=await tx.monthlyRecognitionSchedule.create({data:{subscriptionId:sub.subscriptionId,installmentNo:1,recognitionMonth:new Date('2020-01-01'),recognizedAmount:2000,rpvAmount:1200,dueAt:new Date('2020-01-03'),ruleVersionCode:version}});
  const future=await tx.monthlyRecognitionSchedule.create({data:{subscriptionId:sub.subscriptionId,installmentNo:2,recognitionMonth:new Date('2020-02-01'),recognizedAmount:2000,rpvAmount:1200,dueAt:new Date('2020-02-03'),ruleVersionCode:version}});
  await new RpvService(facade,{}).recognize(recognized.recognitionId);
+ const rpvSnapshot=await tx.historicalReplaySnapshot.findUniqueOrThrow({where:{kind_sourceId:{kind:'RPV',sourceId:recognized.recognitionId}}});
+ const countBeforeDuplicate=await tx.pvLedger.count({where:{sourceLineId:recognized.recognitionId,pvType:'RPV'}});
+ await new RpvService(facade,{}).recognize(recognized.recognitionId);
+ check('RPV duplicate recognition appends no original event',await tx.pvLedger.count({where:{sourceLineId:recognized.recognitionId,pvType:'RPV'}}),countBeforeDuplicate);
+ for(const field of ['recognitionMonth','recognitionPeriod','eventId']){
+   const content=JSON.parse(JSON.stringify(rpvSnapshot.content));delete content.inputs[field];
+   await rejected('RPV missing '+field+' fails closed',()=>replay.verifyReplayEnvelope({...rpvSnapshot,content,hash:replay.replayHash(content)}),'HISTORICAL_SNAPSHOT_MISSING');
+ }
+ const missingBinary=JSON.parse(JSON.stringify(rpvSnapshot.content));delete missingBinary.evidence.binary;
+ await rejected('RPV missing Binary evidence fails closed',()=>replay.verifyReplayEnvelope({...rpvSnapshot,content:missingBinary,hash:replay.replayHash(missingBinary)}),'HISTORICAL_SNAPSHOT_MISSING');
+ const missingTimezone=JSON.parse(JSON.stringify(rpvSnapshot.content));missingTimezone.parameters.parameters=missingTimezone.parameters.parameters.filter(p=>p.code!=='accounting.timezone');
+ const {hash:ignoredTimezoneHash,...timezoneBody}=missingTimezone.parameters;missingTimezone.parameters.hash=replay.replayHash(timezoneBody);
+ await rejected('RPV missing historical timezone fails closed',()=>replay.verifyReplayEnvelope({...rpvSnapshot,content:missingTimezone,hash:replay.replayHash(missingTimezone)}),'HISTORICAL_SNAPSHOT_MISSING');
+ const changedRecipient=JSON.parse(JSON.stringify(rpvSnapshot.content));changedRecipient.recipients[0].qualificationId=newSponsor.qualificationId;
+ await rejected('RPV changed sealed recipient rejected',()=>replay.verifyReplayEnvelope({...rpvSnapshot,content:changedRecipient,hash:replay.replayHash(changedRecipient)}),'HISTORICAL_SNAPSHOT_CORRUPT');
  const rpvAwards=JSON.stringify(await tx.rpvUplineAwardEvent.findMany({where:{recognitionId:recognized.recognitionId}}));
+ const originalPlacement=await tx.binaryPlacement.findUniqueOrThrow({where:{childQualificationId:leftQ.qualificationId}});
+ await tx.binaryPlacement.update({where:{binaryPlacementId:originalPlacement.binaryPlacementId},data:{effectiveTo:new Date('2020-01-04')}});
+ await tx.binaryPlacement.update({where:{binaryPlacementId:originalPlacement.binaryPlacementId},data:{parentQualificationId:newSponsor.qualificationId,effectiveFrom:new Date('2020-01-04'),effectiveTo:null}});
  const cancellation=await new SubscriptionCancellationService(facade).cancel(sub.subscriptionId,new Date('2020-01-02'),'PHASE2_TEST');
  check('subscription future rows cancelled',(await tx.monthlyRecognitionSchedule.findUniqueOrThrow({where:{recognitionId:future.recognitionId}})).status,'CANCELLED');
  check('recognized affected event queued exactly once',cancellation.queuedRpvReversalCount,1);
@@ -131,6 +155,8 @@ try{await prisma.$transaction(async tx=>{
  check('RPV one negative historical reversal',await tx.pvLedger.count({where:{reversalOfEventId:(await tx.monthlyRecognitionSchedule.findUniqueOrThrow({where:{recognitionId:recognized.recognitionId}})).pvLedgerEventId,pvType:'RPV',amount:-1200}}),1);
  const rpvPost=await tx.entitlementReplayPosting.findFirstOrThrow({where:{actionKey:'RPV:'+recognized.recognitionId+':'+cancellation.cancellation.subscriptionCancellationId}});
  check('RPV historical recipient recovery delta',rpvPost.delta.toString(),'-100');
+ check('RPV replay retains original recipient after Binary change',rpvPost.recipientQualificationId===self.qualificationId,true);
+ check('RPV current Binary parent receives no recovery',await tx.entitlementReplayPosting.count({where:{actionKey:rpvPost.actionKey,recipientQualificationId:newSponsor.qualificationId}}),0);
  check('original RPV award rows unchanged',JSON.stringify(await tx.rpvUplineAwardEvent.findMany({where:{recognitionId:recognized.recognitionId}})),rpvAwards);
  await replay.consumeReplayOutbox(tx,outbox.outboxEventId);
  check('RPV duplicate processing creates no second posting',await tx.entitlementReplayPosting.count({where:{actionKey:'RPV:'+recognized.recognitionId+':'+cancellation.cancellation.subscriptionCancellationId}}),1);
@@ -168,12 +194,17 @@ try{await prisma.$transaction(async tx=>{
  const idempotency=new IdempotencyService({idempotencyRecord:tx.idempotencyRecord,$transaction:fn=>fn(tx)});
  const returns=new ReturnService(facade,idempotency,new AuditService(),new OutboxService());
  const returnKey=randomUUID(),dto={reasonCode:'FINAL_PARTIAL_TEST',occurredAt:'2020-01-14T00:00:00.000Z',lines:[{orderLineId:order.lines[0].orderLineId,quantity:1}]};
+ await rejected('cumulative returned quantity cannot exceed original quantity',()=>returns.post(order.orderId,{...dto,lines:[{orderLineId:order.lines[0].orderLineId,quantity:2}]},randomUUID(),randomUUID()),'DOMAIN_RULE_VIOLATION');
  const posted=await returns.post(order.orderId,dto,returnKey,randomUUID());
  check('real ReturnService limits final return to original remaining amount',posted.value.lines[0].returnAmount.toString(),'1600');
  check('real multi-return reaches cumulative full return',(await tx.order.findUniqueOrThrow({where:{orderId:order.orderId}})).status,'RETURNED');
  check('same return idempotency request replays',(await returns.post(order.orderId,dto,returnKey,randomUUID())).replayed,true);
  check('same return request publishes one transactional outbox',await tx.outboxEvent.count({where:{aggregateId:posted.value.returnCaseId,eventType:'RETURN_CONFIRMED'}}),1);
  const finalOutbox=await tx.outboxEvent.findFirstOrThrow({where:{aggregateId:posted.value.returnCaseId,eventType:'RETURN_CONFIRMED'}});await replay.consumeReplayOutbox(tx,finalOutbox.outboxEventId);
+ const ledgerBeforeDelivery=await tx.pvLedger.count(),postingBeforeDelivery=await tx.entitlementReplayPosting.count();
+ await replay.consumeReplayOutbox(tx,finalOutbox.outboxEventId);
+ check('duplicate RETURN_CONFIRMED appends no ledger',await tx.pvLedger.count(),ledgerBeforeDelivery);
+ check('duplicate RETURN_CONFIRMED appends no entitlement posting',await tx.entitlementReplayPosting.count(),postingBeforeDelivery);
  const laterEvent=await tx.pvLedger.findFirstOrThrow({where:{sourceId:laterOrder.orderId,pvType:'EPV',eventType:'EPV_CREATED'}});
  const laterSponsorAward=await tx.bonusAward.findFirstOrThrow({where:{sourceEventId:laterEvent.eventId,recipientQualificationId:newSponsor.qualificationId}});
  check('cross-event recalculation uses later original earning recipient',(await tx.entitlementReplayPosting.findFirstOrThrow({where:{actionKey:'RETURN:'+posted.value.returnCaseId,entitlementKey:laterSponsorAward.bonusAwardId}})).delta.toString(),'-57.6');

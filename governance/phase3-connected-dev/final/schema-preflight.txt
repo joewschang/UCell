@@ -1,0 +1,4 @@
+command: node scripts/schema-preflight.mjs
+started: 2026-09-15T15:54:30.862Z
+exit: 0
+SCHEMA_PREFLIGHT_PASS

@@ -1,0 +1,4 @@
+command: pnpm --version
+started: 2026-09-15T15:53:44.376Z
+exit: 0
+12.4.1

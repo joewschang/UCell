@@ -11,6 +11,12 @@ function canonical(value:any):string {
   return JSON.stringify(value);
 }
 export const replayHash=(value:unknown)=>createHash('sha256').update(canonical(value)).digest('hex');
+function historicalAccountingTimezone(parameters:ParameterSnapshot){
+  const rows=parameters.parameters.filter(p=>p.code==='accounting.timezone'&&p.scope==='*');
+  if(rows.length!==1||typeof rows[0].value!=='string') pending('HISTORICAL_SNAPSHOT_MISSING','Original accounting timezone Parameter evidence is required');
+  try{new Intl.DateTimeFormat('en',{timeZone:rows[0].value});}catch{pending('HISTORICAL_SNAPSHOT_CORRUPT','Original accounting timezone is invalid');}
+  return rows[0].value;
+}
 export interface HistoricalRecipient {
   key:string; awardId:string; awardType:'REFERRAL'|'EQUALIZATION'|'BINARY'|'MATCHING'|'EPV'|'RPV';
   qualificationId:string; sourceEventId?:string; sourceAwardId?:string; generation:number;
@@ -72,6 +78,20 @@ export function historicalSponsorAncestors(graph:any,qualificationId:string,maxG
   }
   return result;
 }
+export function historicalBinaryAncestors(graph:any,qualificationId:string,maxGeneration:number) {
+  if(!Array.isArray(graph?.binary)||!qualificationId) pending('HISTORICAL_SNAPSHOT_MISSING','Original Binary path evidence is required');
+  const result:Array<{qualification_id:string;generation:number}>=[];
+  let child=qualificationId;const seen=new Set([child]);
+  for(let generation=1;generation<=maxGeneration;generation++){
+    const parents=graph.binary.filter((edge:any)=>edge.childQualificationId===child);
+    if(parents.length>1) pending('HISTORICAL_SNAPSHOT_CORRUPT','Overlapping original Binary parents');
+    if(!parents.length) break;
+    child=parents[0].parentQualificationId;
+    if(!child||seen.has(child)) pending('HISTORICAL_SNAPSHOT_CORRUPT','Original Binary path is invalid or cyclic');
+    seen.add(child);result.push({qualification_id:child,generation});
+  }
+  return result;
+}
 export function historicalRecipientState(graph:any,qid:string) {
   const evidence=graph?.qualifications?.[qid];
   if(!evidence?.plan||!evidence?.status||!Array.isArray(evidence.activeIntervals)||graph.effectiveDirectCounts?.[qid]==null) pending('HISTORICAL_SNAPSHOT_MISSING','Original recipient evidence is missing');
@@ -96,6 +116,21 @@ export function verifyReplayEnvelope(row:any):ReplayEnvelope {
   if(replayHash(envelope)!==row.hash) pending('HISTORICAL_SNAPSHOT_CORRUPT','Historical calculation evidence was modified');
   const parameters=verifySnapshot(envelope.parameters);
   if(parameters.ruleVersionCode!==envelope.ruleVersionCode||row.ruleVersionCode!==envelope.ruleVersionCode) pending('RULE_VERSION_MISMATCH','Historical evidence rule version mismatch');
+  if(envelope.kind==='RPV'){
+    const source=envelope.evidence.sourceQualification?.qualificationId;
+    if(!source||!envelope.inputs.eventId||!envelope.inputs.subscriptionId||!envelope.inputs.recognitionMonth||!Number.isFinite(new Date(envelope.inputs.recognitionMonth).getTime())||envelope.inputs.recognizedAmount==null||envelope.inputs.volume==null)
+      pending('HISTORICAL_SNAPSHOT_MISSING','RPV original event/recognition period/Qualification evidence is required');
+    if(envelope.evidence.at!==envelope.at||parameters.effectiveAt!==envelope.at||envelope.evidence.sourceQualification.at!==envelope.at)
+      pending('HISTORICAL_SNAPSHOT_CORRUPT','RPV evidence must use the original recognition timestamp');
+    const period=envelope.inputs.recognitionPeriod;
+    if(!period?.start||!period?.end||!period?.timezone||!Number.isFinite(new Date(period.start).getTime())||!Number.isFinite(new Date(period.end).getTime()))
+      pending('HISTORICAL_SNAPSHOT_MISSING','RPV original business period and timezone evidence is required');
+    if(period.timezone!==historicalAccountingTimezone(parameters)||new Date(envelope.at)<new Date(period.start)||new Date(envelope.at)>=new Date(period.end))
+      pending('HISTORICAL_SNAPSHOT_CORRUPT','RPV recognition conflicts with original business period/Parameter evidence');
+    const path=historicalBinaryAncestors(envelope.evidence,source,12);
+    if(path.length!==envelope.recipients.length) pending('HISTORICAL_SNAPSHOT_MISSING','Complete original RPV recipient allocation is required');
+    historicalRecipientState(envelope.evidence,source);
+  }
   for(const recipient of envelope.recipients) {
     if(!recipient.qualification?.plan||!recipient.qualification?.status||!Array.isArray(recipient.qualification.activeIntervals))
       pending('HISTORICAL_SNAPSHOT_MISSING','Historical recipient Qualification/Active evidence is required');
@@ -104,6 +139,17 @@ export function verifyReplayEnvelope(row:any):ReplayEnvelope {
     const active=recipient.qualification.activeIntervals.some((interval:any)=>new Date(interval.activeFrom).getTime()<=at&&(!interval.activeTo||new Date(interval.activeTo).getTime()>at));
     if(active!==recipient.active) pending('HISTORICAL_SNAPSHOT_CORRUPT','Recipient Active flag conflicts with original evidence');
     if(!recipient.active&&dec(recipient.posted).gt(0)) pending('HISTORICAL_SNAPSHOT_CORRUPT','Inactive historical recipient cannot have positive entitlement');
+    if(envelope.kind==='RPV'){
+      const source=envelope.evidence.sourceQualification.qualificationId;
+      const path=historicalBinaryAncestors(envelope.evidence,source,12);
+      if(path.find(item=>item.generation===recipient.generation)?.qualification_id!==recipient.qualificationId)
+        pending('HISTORICAL_SNAPSHOT_CORRUPT','RPV recipient conflicts with original Binary path');
+      const state=historicalRecipientState(envelope.evidence,recipient.qualificationId);
+      const directs=recipient.detail?.effectiveDirectCount,depth=recipient.detail?.unlockedDepth;
+      if(directs==null||depth==null) pending('HISTORICAL_SNAPSHOT_MISSING','RPV original recipient eligibility evidence is required');
+      if(path.find(item=>item.generation===recipient.generation)?.qualification_id!==recipient.qualificationId||state.active!==recipient.active||state.directs!==directs||recipient.eligible!==(recipient.active&&recipient.generation<=depth))
+        pending('HISTORICAL_SNAPSHOT_CORRUPT','RPV recipient conflicts with original Binary/Active/Qualification evidence');
+    }
     if(envelope.kind==='MATCHING_K2') {
       const source=envelope.evidence.matchingSources?.find((item:any)=>item.sourceAwardId===recipient.sourceAwardId);
       if(!source) pending('HISTORICAL_SNAPSHOT_MISSING','Original Matching Sponsor source evidence is missing');
@@ -146,11 +192,16 @@ export async function sealEpvEvent(tx:Prisma.TransactionClient,event:any,paramet
 }
 export async function sealRpvEvent(tx:Prisma.TransactionClient,event:any,schedule:any) {
   const parameters=await captureParameters(tx,event.occurredAt,event.ruleVersionCode);
+  const timezone=historicalAccountingTimezone(parameters);
+  const [period]=await tx.$queryRaw<Array<{start:Date;end:Date}>>`
+    SELECT (date_trunc('month',${schedule.recognitionMonth}::date)::timestamp AT TIME ZONE ${timezone}) AS start,
+      ((date_trunc('month',${schedule.recognitionMonth}::date)+interval '1 month')::timestamp AT TIME ZONE ${timezone}) AS end`;
+  if(!period||event.occurredAt<period.start||event.occurredAt>=period.end) pending('HISTORICAL_SNAPSHOT_MISSING','Original RPV event does not belong to its recorded business recognition period');
   const awards=await tx.rpvUplineAwardEvent.findMany({where:{recognitionId:schedule.recognitionId},orderBy:{rpvAwardEventId:'asc'}});
   const recipients:HistoricalRecipient[]=[];
   for(const award of awards) recipients.push(await recipientFromAward(tx,award,true));
   return storeReplaySnapshot(tx,{format:'UCELL_HISTORICAL_REPLAY_V1',kind:'RPV',sourceId:schedule.recognitionId,at:event.occurredAt.toISOString(),ruleVersionCode:event.ruleVersionCode,parameters,recipients,
-    evidence:await captureHistoricalGraph(tx,event.qualificationId,event.occurredAt),inputs:{eventId:event.eventId,subscriptionId:schedule.subscriptionId,volume:event.amount.toString(),recognitionMonth:json(schedule.recognitionMonth),recognizedAmount:schedule.recognizedAmount.toString(),entitlementMethod:'ORIGINAL_FIXED_AWARD_ON_VALID_RECOGNITION'}});
+    evidence:await captureHistoricalGraph(tx,event.qualificationId,event.occurredAt),inputs:{eventId:event.eventId,subscriptionId:schedule.subscriptionId,volume:event.amount.toString(),recognitionMonth:json(schedule.recognitionMonth),recognitionPeriod:{start:period.start.toISOString(),end:period.end.toISOString(),timezone},recognizedAmount:schedule.recognizedAmount.toString(),entitlementMethod:'ORIGINAL_FIXED_AWARD_ON_VALID_RECOGNITION'}});
 }
 export async function sealSettlement(tx:Prisma.TransactionClient,batch:any) {
   const parameters=verifySnapshot(batch.parameterSnapshot);
@@ -363,6 +414,8 @@ export async function replayRpvCancellation(tx:Prisma.TransactionClient,recognit
   const stateHash=replayHash({recognitionId,valid:false});
   const original=await tx.pvLedger.findUnique({where:{eventId:envelope.inputs.eventId}});
   if(!original) pending('HISTORICAL_SNAPSHOT_MISSING','Original RPV event is missing');
+  if(original.pvType!=='RPV'||original.eventType!=='RPV_CREATED'||original.sourceId!==envelope.inputs.subscriptionId||original.sourceLineId!==recognitionId||original.qualificationId!==envelope.evidence.sourceQualification.qualificationId||original.occurredAt.toISOString()!==envelope.at||original.ruleVersionCode!==envelope.ruleVersionCode||!original.amount.eq(envelope.inputs.volume))
+    pending('HISTORICAL_SNAPSHOT_CORRUPT','RPV original event conflicts with sealed recognition evidence');
   const previous=await tx.pvLedger.aggregate({where:{reversalOfEventId:original.eventId,pvType:'RPV'},_sum:{amount:true}});
   const delta=original.amount.add(previous._sum.amount??dec(0)).negated();
   if(delta.gt(0)) pending('RETURN_AMOUNT_EXCEEDED','Original RPV was reversed beyond its effective volume');

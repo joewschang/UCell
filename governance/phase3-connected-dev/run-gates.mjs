@@ -1,0 +1,39 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import {fileURLToPath} from 'node:url';
+import {spawnSync} from 'node:child_process';
+const dir=path.dirname(fileURLToPath(import.meta.url)),root=path.resolve(dir,'../..'),out=path.join(dir,'final');
+fs.mkdirSync(out,{recursive:true});
+const only=process.argv.find(arg=>arg.startsWith('--only='));const selected=only?new Set(only.slice(7).split(',')):null;
+const results=selected&&fs.existsSync(path.join(out,'gate-results.json'))?JSON.parse(fs.readFileSync(path.join(out,'gate-results.json'),'utf8')):[];
+const env={...process.env,DATABASE_URL:'postgresql://ucell:ucell_dev@localhost:5432/ucell?schema=public',NODE_ENV:'test',ADMIN_AUTH_BYPASS:'false',VITE_ENABLE_DEMO_LOGIN:'false'};
+function run(area,command,label,overrides={}){
+ if(selected&&!selected.has(label))return;
+ const previous=results.findIndex(item=>item.label===label);
+ if(previous>=0){const archive=path.join(out,'initial-attempts');fs.mkdirSync(archive,{recursive:true});fs.copyFileSync(path.join(out,label+'.txt'),path.join(archive,label+'.txt'));results.splice(previous,1);}
+ const cwd=path.join(root,area),started=new Date().toISOString();
+ const options={cwd,env:{...env,...overrides},encoding:'utf8',timeout:180000,maxBuffer:16*1024*1024};
+ const r=label==='release-gate'?spawnSync('C:\\Program Files\\Git\\bin\\bash.exe',['scripts/release-gate.sh'],options):spawnSync('cmd.exe',['/d','/s','/c',command],options);
+ const output=(r.stdout??'')+(r.stderr??'')+(r.error?.message??'');
+ const blocked=r.status!==0&&(/TEST_TODO_GATE_FAIL|SECURITY_E2E_BLOCKED|UAT_P0_FAIL|SECURITY_E2E_PARTIAL_PASS/.test(output));
+ const result=r.status===0?'PASS':blocked?'BLOCKED':'FAIL';
+ fs.writeFileSync(path.join(out,label+'.txt'),`command: ${command}\nstarted: ${started}\nexit: ${r.status}\n${output}`);
+ results.push({label,command,cwd,started,exitCode:r.status,result});
+ fs.writeFileSync(path.join(out,'gate-results.json'),JSON.stringify(results,null,2)+'\n');
+ fs.writeFileSync(path.join(out,'PASS-FAIL-MATRIX.md'),'| Gate | Result | Exit |\n|---|---|---:|\n'+results.map(x=>`| ${x.label} | ${x.result} | ${x.exitCode} |`).join('\n')+'\n');
+ console.log(`${label}: ${result}`);
+}
+run('','node --version','node');run('','pnpm --version','pnpm');run('','git status --short --branch','git');
+for(const command of ['validate','generate','migrate deploy'])run('backend','pnpm --filter @ucell/database exec prisma '+command,'prisma-'+command.replaceAll(' ','-'));
+run('backend','pnpm --filter @ucell/database exec prisma migrate deploy','prisma-regression-db-deploy',{DATABASE_URL:'postgresql://ucell:ucell_dev@localhost:5432/ucell_admin_test?schema=public'});
+run('backend','pnpm build','backend-build');run('admin','pnpm build','admin-build');
+run('backend','pnpm --filter @ucell/api test:e2e --runInBand','api-tests');run('backend','pnpm --filter @ucell/shared test --runInBand','shared-tests');run('admin','pnpm test','admin-tests');
+run('backend','pnpm db:golden','default-db-golden');run('backend','pnpm db:golden','default-db-golden-repeat');
+run('backend','node scripts/phase2-db-test.mjs','db-regression',{DATABASE_URL:'postgresql://ucell:ucell_dev@localhost:5432/ucell_admin_test?schema=public'});
+for(const name of ['static-validate','convergence-validate','schema-preflight','migration-preflight','source-preflight','security-policy-preflight','golden-domain-test','golden-r1b-regression','golden-economic-cases','release-readiness-preflight'])run('backend','node scripts/'+name+'.mjs',name);
+run('backend','pnpm preflight','preflight');run('backend','pnpm security:e2e','security-http');run('backend','pnpm uat:gate','uat');
+run('backend','pnpm test:todo:gate','todo');run('backend','pnpm test','backend-test-gate');run('backend','pnpm rc:gate','rc');run('backend','pnpm release:prep','release-prep');
+run('','"C:\\Program Files\\Git\\bin\\bash.exe" scripts/release-gate.sh','release-gate');
+run('','git diff --check','diff-check');
+run('backend','pnpm --filter @ucell/api build:admin-dev','admin-dev-build');
+run('','node backend/scripts/admin-full-test.mjs','admin-dev-full-test',{DATABASE_URL:'postgresql://ucell:ucell_dev@localhost:5432/ucell_admin_test?schema=public'});
