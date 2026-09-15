@@ -10,13 +10,13 @@ The DB regression harness passed 81 assertions (fixtures are transactionally rol
 
 The authoritative matrix and raw command output are in [final/PASS-FAIL-MATRIX.md](C:/UCell/UCell/governance/phase2-return-replay/final/PASS-FAIL-MATRIX.md) and [final/gate-results.json](C:/UCell/UCell/governance/phase2-return-replay/final/gate-results.json).
 
-PASS: Node/pnpm checks, static/convergence/source/schema/security-policy preflights, Prisma validate/generate/deploy (19 migrations), Backend Build, Admin Build, API Jest (16 suites; 95 passed, 67 TODO), shared tests (6), Admin tests (4), CI gate, isolated DB Golden (manifest fixture plus DB assertions), Phase 2 DB regression, OpenAPI export/preflight, and Admin DEV full flow.
+PASS: Node/pnpm checks, static/convergence/source/schema/security-policy preflights, Prisma validate/generate/deploy (19 migrations), Backend Build, Admin Build, API Jest (16 suites; 100 passed, 62 TODO), shared tests (6), Admin tests (4), CI gate, isolated DB Golden (manifest fixture plus DB assertions), Phase 2 DB regression, OpenAPI export/preflight, and Admin DEV full flow.
 
-FAIL/BLOCKED: the default `ucell` DB Golden lacks the five-ball fixture; PostgreSQL version subprocess was denied Docker pipe access in the first child-process attempt (direct verification passed PostgreSQL 16.15); backend/release/RC gates remain blocked by 67 executable TODOs; Security HTTP requires formal port 3000 and role tokens; UAT requires its configured tokens and operational environment. Production Promotion remains BLOCKED.
+FAIL/BLOCKED: the default `ucell` DB Golden lacks the five-ball fixture; PostgreSQL version subprocess was denied Docker pipe access in the first child-process attempt (direct verification passed PostgreSQL 16.15); backend/release/RC gates remain blocked by 62 executable TODOs; Security HTTP requires formal port 3000 and role tokens; UAT requires its configured tokens and operational environment. Production Promotion remains BLOCKED.
 
 ## TODO burn-down
 
-The baseline was 148 executable TODOs. Eighty-one rule-supported cases are now executable, including EPV self/upline allocation and Sponsor Tree separation. Current count is 67. No TODO was deleted, skipped, or replaced by a fake assertion. Remaining TODOs are Test implementation; cases that depend on pending eligible-consumption scope, PV/BV mapping, operational calendar, or EPV timezone remain pending review.
+The baseline was 148 executable TODOs. Eighty-six rule-supported cases are now executable, including payout/recovery lifecycle and RPV duplicate protection. Current count is 62. No TODO was deleted, skipped, or replaced by a fake assertion. Remaining TODOs are Test implementation; cases that depend on pending eligible-consumption scope, PV/BV mapping, operational calendar, or EPV timezone remain pending review.
 
 ## Remaining blockers
 
