@@ -5,6 +5,7 @@ import { bootstrapLiff } from './liff';
 import { QualificationProvider } from './QualificationContext';
 import App from './App';
 import { SessionBoundary } from './SessionBoundary';
+import { AppErrorBoundary } from './AppErrorBoundary';
 import './styles.css';
 function Bootstrap() {
     const [state, setState] = useState<'loading' | 'ready' | 'redirect'>('loading');
@@ -19,4 +20,4 @@ function Bootstrap() {
         return <main className="loading" role="status">{state === 'redirect' ? '正在前往 LINE 登入…' : 'UCell 會員中心載入中…'}</main>;
     return <SessionBoundary><QualificationProvider><App /></QualificationProvider></SessionBoundary>;
 }
-createRoot(document.getElementById('root')!).render(<React.StrictMode><BrowserRouter><Bootstrap /></BrowserRouter></React.StrictMode>);
+createRoot(document.getElementById('root')!).render(<React.StrictMode><AppErrorBoundary><BrowserRouter><Bootstrap /></BrowserRouter></AppErrorBoundary></React.StrictMode>);
