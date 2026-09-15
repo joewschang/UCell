@@ -24,3 +24,4 @@ export {
   PayoutBatchStatus,
   GlobalRankCode,
 } from '@prisma/client';
+export * from './bonus-maturity';

@@ -1,5 +1,5 @@
 command: pnpm --filter @ucell/database exec prisma migrate deploy
-started: 2026-09-15T17:20:27.479Z
+started: 2026-09-15T17:31:53.686Z
 exit: 0
 Prisma schema loaded from prisma\schema.prisma
 Datasource "db": PostgreSQL database "ucell", schemas "audit, commerce, identity, integration, ledger, membership, organization, rules, subscription" at "localhost:5432"

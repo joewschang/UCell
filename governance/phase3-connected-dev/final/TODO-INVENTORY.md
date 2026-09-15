@@ -1,33 +1,31 @@
-Original baseline: 148. Current TODO: 92. Net placeholder reduction: 56.
+Original baseline: 148. Current TODO: 90. Net placeholder reduction: 58.
 
 The previous 52 TODO claim is invalid. Full behavioral coverage must be reviewed independently.
 
 | File | Line | Case | Classification |
 |---|---:|---|---|
-| backend/apps/api/test/bonus-engine-v04.e2e-spec.ts | 5 | G1 STARTER Active receives GPV x 15% theory | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/bonus-engine-v04.e2e-spec.ts | 6 | G1 ELITE Active receives GPV x 20% theory | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/bonus-engine-v04.e2e-spec.ts | 7 | G1 LEADER Active receives GPV x 25% theory | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/bonus-engine-v04.e2e-spec.ts | 8 | inactive G1 generates no referral bonus and equalization base is zero | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/bonus-engine-v04.e2e-spec.ts | 9 | equalization base is same-source G1 referral theory, not GPV | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/bonus-engine-v04.e2e-spec.ts | 10 | STARTER rates G2/G3/G4 are 10/10/10 | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/bonus-engine-v04.e2e-spec.ts | 11 | ELITE rates G2..G6 are 20/10/10/5/5 | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/bonus-engine-v04.e2e-spec.ts | 12 | LEADER rates G2..G7 are 20/15/10/10/10/5 including G5=10 | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/bonus-engine-v04.e2e-spec.ts | 13 | intermediate ineligible generation does not block higher generation | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/bonus-engine-v04.e2e-spec.ts | 20 | Referral + Equalization share 42% pool and K0 | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/bonus-engine-v04.e2e-spec.ts | 24 | uses Binary subtree GPV, not Sponsor tree | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/bonus-engine-v04.e2e-spec.ts | 25 | pair = min(left available,right available) subject to weekly cap | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/bonus-engine-v04.e2e-spec.ts | 26 | paired PV deducted from both sides and strong-side carry remains | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/bonus-engine-v04.e2e-spec.ts | 27 | STARTER/ELITE/LEADER weekly caps 450k/900k/1.5m | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/bonus-engine-v04.e2e-spec.ts | 28 | Binary theory = paired PV x 12% | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/bonus-engine-v04.e2e-spec.ts | 29 | Binary Pool is 36% and K1 <= 1 | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/bonus-engine-v04.e2e-spec.ts | 30 | inactive recipient produces no Binary award | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/bonus-engine-v04.e2e-spec.ts | 34 | source is actual Binary payable after K1, never Binary theory | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/bonus-engine-v04.e2e-spec.ts | 35 | Sponsor Tree is used to trace matching uplines | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/bonus-engine-v04.e2e-spec.ts | 36 | rates are G1=15,G2=10,G3-G5=5 | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/bonus-engine-v04.e2e-spec.ts | 41 | Matching Pool is 15% and K2 <= 1 | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/bonus-engine-v04.e2e-spec.ts | 45 | award creates CALCULATED then PENDING_45D events | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/bonus-engine-v04.e2e-spec.ts | 46 | after pending_until latest status becomes EFFECTIVE | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/bonus-engine-v04.e2e-spec.ts | 47 | award row itself remains append-only | Test implementation; SSOT/evidence review before conversion |
+| backend/apps/api/test/bonus-engine-v04.e2e-spec.ts | 17 | G1 STARTER Active receives GPV x 15% theory | Test implementation; SSOT/evidence review before conversion |
+| backend/apps/api/test/bonus-engine-v04.e2e-spec.ts | 18 | G1 ELITE Active receives GPV x 20% theory | Test implementation; SSOT/evidence review before conversion |
+| backend/apps/api/test/bonus-engine-v04.e2e-spec.ts | 19 | G1 LEADER Active receives GPV x 25% theory | Test implementation; SSOT/evidence review before conversion |
+| backend/apps/api/test/bonus-engine-v04.e2e-spec.ts | 20 | inactive G1 generates no referral bonus and equalization base is zero | Test implementation; SSOT/evidence review before conversion |
+| backend/apps/api/test/bonus-engine-v04.e2e-spec.ts | 21 | equalization base is same-source G1 referral theory, not GPV | Test implementation; SSOT/evidence review before conversion |
+| backend/apps/api/test/bonus-engine-v04.e2e-spec.ts | 22 | STARTER rates G2/G3/G4 are 10/10/10 | Test implementation; SSOT/evidence review before conversion |
+| backend/apps/api/test/bonus-engine-v04.e2e-spec.ts | 23 | ELITE rates G2..G6 are 20/10/10/5/5 | Test implementation; SSOT/evidence review before conversion |
+| backend/apps/api/test/bonus-engine-v04.e2e-spec.ts | 24 | LEADER rates G2..G7 are 20/15/10/10/10/5 including G5=10 | Test implementation; SSOT/evidence review before conversion |
+| backend/apps/api/test/bonus-engine-v04.e2e-spec.ts | 25 | intermediate ineligible generation does not block higher generation | Test implementation; SSOT/evidence review before conversion |
+| backend/apps/api/test/bonus-engine-v04.e2e-spec.ts | 32 | Referral + Equalization share 42% pool and K0 | Test implementation; SSOT/evidence review before conversion |
+| backend/apps/api/test/bonus-engine-v04.e2e-spec.ts | 36 | uses Binary subtree GPV, not Sponsor tree | Test implementation; SSOT/evidence review before conversion |
+| backend/apps/api/test/bonus-engine-v04.e2e-spec.ts | 37 | pair = min(left available,right available) subject to weekly cap | Test implementation; SSOT/evidence review before conversion |
+| backend/apps/api/test/bonus-engine-v04.e2e-spec.ts | 38 | paired PV deducted from both sides and strong-side carry remains | Test implementation; SSOT/evidence review before conversion |
+| backend/apps/api/test/bonus-engine-v04.e2e-spec.ts | 39 | STARTER/ELITE/LEADER weekly caps 450k/900k/1.5m | Test implementation; SSOT/evidence review before conversion |
+| backend/apps/api/test/bonus-engine-v04.e2e-spec.ts | 40 | Binary theory = paired PV x 12% | Test implementation; SSOT/evidence review before conversion |
+| backend/apps/api/test/bonus-engine-v04.e2e-spec.ts | 41 | Binary Pool is 36% and K1 <= 1 | Test implementation; SSOT/evidence review before conversion |
+| backend/apps/api/test/bonus-engine-v04.e2e-spec.ts | 42 | inactive recipient produces no Binary award | Test implementation; SSOT/evidence review before conversion |
+| backend/apps/api/test/bonus-engine-v04.e2e-spec.ts | 46 | source is actual Binary payable after K1, never Binary theory | Test implementation; SSOT/evidence review before conversion |
+| backend/apps/api/test/bonus-engine-v04.e2e-spec.ts | 47 | Sponsor Tree is used to trace matching uplines | Test implementation; SSOT/evidence review before conversion |
+| backend/apps/api/test/bonus-engine-v04.e2e-spec.ts | 48 | rates are G1=15,G2=10,G3-G5=5 | Test implementation; SSOT/evidence review before conversion |
+| backend/apps/api/test/bonus-engine-v04.e2e-spec.ts | 53 | Matching Pool is 15% and K2 <= 1 | Test implementation; SSOT/evidence review before conversion |
+| backend/apps/api/test/bonus-engine-v04.e2e-spec.ts | 57 | award creates CALCULATED then PENDING_45D events | Test implementation; SSOT/evidence review before conversion |
 | backend/apps/api/test/epv-global-v05.e2e-spec.ts | 5 | EPV self share = 50% = 840 when Active | Test implementation; SSOT/evidence review before conversion |
 | backend/apps/api/test/epv-global-v05.e2e-spec.ts | 6 | EPV Sponsor G1-G5 each 6% when Active | Test implementation; SSOT/evidence review before conversion |
 | backend/apps/api/test/epv-global-v05.e2e-spec.ts | 7 | EPV does not use Binary tree | Test implementation; SSOT/evidence review before conversion |

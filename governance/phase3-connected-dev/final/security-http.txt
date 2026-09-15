@@ -1,5 +1,5 @@
 command: pnpm security:e2e
-started: 2026-09-15T17:21:34.938Z
+started: 2026-09-15T17:33:05.038Z
 exit: 2
 $ node scripts/security-http-e2e.mjs
 SECURITY_E2E_BLOCKED: formal HTTP service or credentials infrastructure unavailable

@@ -1,9 +1,9 @@
 command: pnpm rc:gate
-started: 2026-09-15T17:26:02.256Z
+started: 2026-09-15T17:33:22.907Z
 exit: 1
 $ node scripts/run-bash-gate.mjs rc-gate.sh
-TEST_TODO_GATE_FAIL: 92 unresolved executable test placeholders
-- apps\api\test\bonus-engine-v04.e2e-spec.ts: 24
+TEST_TODO_GATE_FAIL: 90 unresolved executable test placeholders
+- apps\api\test\bonus-engine-v04.e2e-spec.ts: 22
 - apps\api\test\epv-global-v05.e2e-spec.ts: 11
 - apps\api\test\negative-flow-v05.e2e-spec.ts: 6
 - apps\api\test\qualification-isolation.e2e-spec.ts: 1

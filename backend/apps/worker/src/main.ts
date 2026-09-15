@@ -1,4 +1,4 @@
-import { PrismaService, Prisma, sealGpvEvent, sealRpvEvent, verifyReplayEnvelope, pending, claimOutboxLease, withOutboxLease, processLeasedReplay, releaseFailedOutboxLease, OutboxLease } from '@ucell/database';
+import { PrismaService, Prisma, sealGpvEvent, sealRpvEvent, verifyReplayEnvelope, pending, claimOutboxLease, withOutboxLease, processLeasedReplay, releaseFailedOutboxLease, OutboxLease, matureBonusAward } from '@ucell/database';
 import * as crypto from 'node:crypto';
 
 const prisma = new PrismaService();
@@ -201,14 +201,7 @@ async function matureBonusAwards(){
     take:500
   });
   for(const award of awards){
-    const latest=await prisma.bonusAwardLifecycleEvent.findFirst({
-      where:{bonusAwardId:award.bonusAwardId},
-      orderBy:{occurredAt:'desc'}
-    });
-    if(latest?.status!=='PENDING_45D') continue;
-    await prisma.bonusAwardLifecycleEvent.create({
-      data:{bonusAwardId:award.bonusAwardId,status:'EFFECTIVE',occurredAt:now}
-    });
+    await matureBonusAward(prisma,award.bonusAwardId,now);
   }
 }
 

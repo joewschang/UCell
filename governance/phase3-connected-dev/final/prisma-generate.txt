@@ -1,9 +1,9 @@
 command: pnpm --filter @ucell/database exec prisma generate
-started: 2026-09-15T17:20:26.007Z
+started: 2026-09-15T17:31:52.236Z
 exit: 0
 Prisma schema loaded from prisma\schema.prisma
 
-✔ Generated Prisma Client (v6.19.3) to .\..\..\node_modules\.pnpm\@prisma+client@6.19.3_prism_1d040ab5215f59f0e27ddee7f0cf082e\node_modules\@prisma\client in 266ms
+✔ Generated Prisma Client (v6.19.3) to .\..\..\node_modules\.pnpm\@prisma+client@6.19.3_prism_1d040ab5215f59f0e27ddee7f0cf082e\node_modules\@prisma\client in 209ms
 
 Start by importing your Prisma Client (See: https://pris.ly/d/importing-client)
 
