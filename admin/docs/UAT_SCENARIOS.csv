@@ -1,0 +1,17 @@
+﻿id,area,scenario,expected,priority
+UAT-001,Membership,Create Person → Application → Sponsor/Binary preview → Submit → Approve → Qualification,Application EFFECTIVE; Qualification/Sponsor/Binary created,P0
+UAT-002,Order,Create ENTRY order → confirm payment → worker GPV,Order PAID; GPV_CREATED exists exactly once,P0
+UAT-003,Organization,Sponsor #1/#3 invalid right-subtree placement,Backend rejects; DB trigger rejects bypass,P0
+UAT-004,Upgrade,Pay 600 confirmed → Upgrade approve,New plan future-effective; historical awards unchanged,P0
+UAT-005,Transfer,Transfer Qualification to new Person,Qualification ID/Sponsor/Binary unchanged; holder history changes,P0
+UAT-006,Return,Paid order partial return → reversal → replay,GPV reversal exact; recovery invariant holds; replay converges,P0
+UAT-007,Recovery,Recovery exceeds one payout batch,Partial offset across batches; outstanding decreases correctly,P0
+UAT-008,Payout,Finance + Compliance same actor,Second approval rejected,P0
+UAT-009,Payout,Two distinct approvals → export → mark paid,Batch PAID; payable entries PAID; refs audited,P0
+UAT-010,Audit,Trace Return by correlation ID,All related audit events retrievable,P1
+UAT-011,Document,Register document then supersede,v1 SUPERSEDED; v2 ACTIVE; v1 remains,P1
+UAT-012,Integrity,Inject recovery arithmetic mismatch in isolated test DB,CRITICAL alert emitted; no auto-fix,P0
+UAT-013,Security,No bearer on /admin endpoint,401 unless explicit non-prod bypass,P0
+UAT-014,Security,ADMIN_AUTH_BYPASS=true in production,Still requires bearer,P0
+UAT-015,Security,Unauthorized role attempts Finance approval,Rejected,P0
+UAT-016,CSV,Export 10k qualifications/orders/payouts,Valid UTF-8 BOM CSV; row count capped,P2

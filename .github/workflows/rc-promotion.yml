@@ -1,0 +1,19 @@
+name: RC Promotion Gate
+on:
+  workflow_dispatch:
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    environment: production-approval
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify signed release evidence exists
+        run: |
+          test -f governance/SA_System_Function_Matrix.xlsx
+          test -f governance/RELEASE_ALIGNMENT_REPORT.md
+          test -f backend/docs/UAT_EXECUTION_R6.csv
+          test -f backend/release/R6_RELEASE_GATE.json
+      - name: Block unreviewed dependency state
+        run: test -f backend/pnpm-lock.yaml && test -f admin/pnpm-lock.yaml
+      - name: Human approval reminder
+        run: echo "Production deployment is allowed only after all R6 gate evidence is PASS and backup/restore drill is signed off."

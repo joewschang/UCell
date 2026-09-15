@@ -1,0 +1,49 @@
+﻿method,path,label,admin_v0_2_usage
+GET,/health,Health,System
+GET,/admin/persons,List persons,People
+POST,/admin/persons,Create person,People
+GET,/admin/persons/:personId,Get person,People
+POST,/admin/membership-applications,Create application,Applications
+GET,/admin/membership-applications/:id,Get application,Applications
+POST,/admin/membership-applications/:id/submit,Submit application,Applications
+POST,/admin/membership-applications/:id/approve,Approve application,Applications
+POST,/admin/qualifications,Create qualification,Qualifications
+GET,/admin/qualifications/:qualificationId,Get qualification,Qualifications
+GET,/admin/qualifications/:qualificationId/active/at,Check active,Qualifications
+POST,/admin/qualifications/:qualificationId/active/periods,Create active period,Qualifications
+POST,/admin/organization/binary-placement,Place in binary,Organization
+GET,/admin/products,List products,Products
+POST,/admin/products,Create product,Products
+POST,/admin/orders,Create order,Orders/Returns
+GET,/admin/orders/:orderId,Get order,Orders/Returns
+POST,/admin/orders/:orderId/payment-confirmations,Confirm payment,Orders/Returns
+POST,/admin/orders/:orderId/returns,Create return,Orders/Returns
+POST,/admin/orders/:orderId/returns/:returnCaseId/process-reversal,Process reversal,Orders/Returns
+GET,/admin/subscriptions/plans,List subscription plans,Subscriptions
+POST,/admin/subscriptions,Create subscription,Subscriptions
+GET,/admin/subscriptions/:id,Get subscription,Subscriptions
+POST,/admin/subscriptions/:id/cancel,Cancel subscription,Subscriptions
+GET,/admin/qualifications/:qualificationId/ledger/pv,PV ledger,Qualifications
+GET,/admin/qualifications/:qualificationId/ledger/balances,Ledger balances,Qualifications
+GET,/admin/bonus/qualifications/:qualificationId/awards,Bonus awards,Bonuses
+POST,/admin/bonus/settlements/referral,Referral settlement,Bonuses
+POST,/admin/bonus/settlements/binary,Binary settlement,Bonuses
+POST,/admin/bonus/settlements/matching,Matching settlement,Bonuses
+POST,/admin/bonus/lifecycle/mature,Mature awards,Bonuses
+POST,/admin/epv/orders/:orderId/recognize,Recognize EPV,Orders/Bonuses
+POST,/admin/rpv/recognitions/:recognitionId/run,Run RPV,Subscriptions/Bonuses
+GET,/admin/rpv/recognitions/:recognitionId/awards,RPV awards,Subscriptions/Bonuses
+POST,/admin/pools/global/settle,Settle global pool,Bonuses
+POST,/admin/pools/welfare/accrue,Accrue welfare pool,Bonuses
+POST,/admin/settlement-adjustments/requests/:id/prepare,Prepare adjustment,Returns/Bonuses
+POST,/admin/settlement-adjustments/requests/:id/calculate-and-post,Calculate/post adjustment,Returns/Bonuses
+POST,/admin/replays/returns/:returnCaseId,Carry-chain replay,Returns
+POST,/admin/qualification-workflows,Submit workflow,Workflows
+POST,/admin/qualification-workflows/:id/approve,Approve workflow,Workflows
+POST,/admin/payouts/materialize,Materialize payable,Payouts
+POST,/admin/payouts/batches,Create payout batch,Payouts
+GET,/admin/dashboard/summary,Dashboard summary,Dashboard
+GET,/admin/membership-applications,Application queue,Applications
+GET,/admin/qualifications,Qualification search,Qualifications
+GET,/admin/orders,Order search,Orders/Returns
+GET,/admin/organization/placement-preview,Placement preview,Application Wizard

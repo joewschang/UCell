@@ -1,0 +1,24 @@
+# v0.4.0 Acceptance
+
+- [x] Return Queue.
+- [x] Return creation from paid/fulfilled Order.
+- [x] GPV reversal action.
+- [x] Recovery detail.
+- [x] Carry-chain replay.
+- [x] Replay K1/K2 trace.
+- [x] Workflow Queue.
+- [x] Upgrade/Transfer/Exit/Company Retransfer form.
+- [x] Review fee confirmation.
+- [x] Workflow approval.
+- [x] Recovery Aging.
+- [x] Payout Batch Queue/Detail.
+- [x] Finance + Compliance dual approval.
+- [x] Different-actor enforcement in backend.
+- [x] Export state.
+- [x] External payment reconciliation / Mark PAID.
+- [x] Frontend self-audit.
+- [x] Backend R4 offline gate.
+- [ ] Dependency-backed backend RC Gate.
+- [ ] Live API UAT.
+- [ ] Production Auth/RBAC rollout.
+- [ ] Automated bank integration (optional external adapter).

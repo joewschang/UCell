@@ -1,0 +1,19 @@
+FROM node:22-alpine AS build
+RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
+WORKDIR /app
+COPY backend/package.json backend/pnpm-workspace.yaml backend/pnpm-lock.yaml* ./
+COPY backend/apps ./apps
+COPY backend/packages ./packages
+COPY backend/scripts ./scripts
+RUN test -f pnpm-lock.yaml || (echo 'pnpm-lock.yaml is mandatory for production build' && exit 1)
+RUN pnpm install --frozen-lockfile
+RUN pnpm --filter @ucell/database exec prisma generate
+RUN pnpm -r build
+
+FROM node:22-alpine AS runtime
+RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
+WORKDIR /app
+COPY --from=build /app /app
+ENV NODE_ENV=production
+EXPOSE 3000
+CMD ["pnpm","--filter","@ucell/api","start:prod"]

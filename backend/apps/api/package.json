@@ -1,0 +1,43 @@
+{
+  "name": "@ucell/api",
+  "version": "0.6.10",
+  "private": true,
+  "scripts": {
+    "start:dev": "nest start --watch",
+    "start:prod": "node dist/main.js",
+    "build": "nest build",
+    "test": "jest",
+    "test:e2e": "jest --config ./test/jest-e2e.json",
+    "lint": "eslint 'src/**/*.ts'",
+    "openapi:export": "ts-node src/openapi-export.ts"
+  },
+  "dependencies": {
+    "@nestjs/common": "*",
+    "@nestjs/config": "*",
+    "@nestjs/core": "*",
+    "@nestjs/jwt": "*",
+    "@nestjs/platform-fastify": "*",
+    "@nestjs/swagger": "*",
+    "@ucell/database": "workspace:*",
+    "@ucell/shared": "workspace:*",
+    "class-transformer": "*",
+    "class-validator": "*",
+    "fastify": "*",
+    "pino": "*",
+    "reflect-metadata": "*",
+    "rxjs": "*",
+    "@fastify/cors": "*",
+    "@fastify/helmet": "*",
+    "jose": "^5.9.6"
+  },
+  "devDependencies": {
+    "@nestjs/cli": "*",
+    "@nestjs/testing": "*",
+    "@types/node": "*",
+    "eslint": "*",
+    "jest": "*",
+    "ts-jest": "*",
+    "ts-node": "*",
+    "typescript": "*"
+  }
+}

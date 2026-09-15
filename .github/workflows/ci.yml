@@ -1,0 +1,74 @@
+name: UCell RC CI
+on:
+  pull_request:
+  push:
+    branches: [main, develop]
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: ucell
+          POSTGRES_PASSWORD: ucell
+          POSTGRES_DB: ucell
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U ucell -d ucell"
+          --health-interval 10s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgresql://ucell:ucell@localhost:5432/ucell
+      NODE_ENV: test
+      ADMIN_AUTH_BYPASS: "false"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 22}
+      - run: corepack enable && corepack prepare pnpm@9.15.0 --activate
+      - name: Require lockfile
+        run: test -f backend/pnpm-lock.yaml
+      - name: Install backend
+        working-directory: backend
+        run: pnpm install --frozen-lockfile
+      - name: Offline gates
+        working-directory: backend
+        run: bash scripts/ci-gate.sh
+      - name: Prisma validate/generate/migrate
+        working-directory: backend
+        run: |
+          pnpm --filter @ucell/database exec prisma validate
+          pnpm --filter @ucell/database exec prisma generate
+          pnpm --filter @ucell/database exec prisma migrate deploy
+      - name: Build backend
+        working-directory: backend
+        run: pnpm -r build
+      - name: DB golden
+        working-directory: backend
+        run: pnpm exec ts-node scripts/db-golden-e2e.ts
+      - name: Tests
+        working-directory: backend
+        run: pnpm -r test
+  admin:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 22}
+      - run: corepack enable && corepack prepare pnpm@9.15.0 --activate
+      - name: Require lockfile
+        run: test -f admin/pnpm-lock.yaml
+      - name: Install admin
+        working-directory: admin
+        run: pnpm install --frozen-lockfile
+      - name: Static gates
+        working-directory: admin
+        run: pnpm preflight && pnpm selfaudit
+      - name: Build
+        working-directory: admin
+        env:
+          VITE_ENABLE_DEMO_LOGIN: "false"
+          VITE_API_BASE_URL: /api/v1
+          VITE_ENTRA_TENANT_ID: 00000000-0000-0000-0000-000000000000
+          VITE_ENTRA_CLIENT_ID: 00000000-0000-0000-0000-000000000000
+        run: pnpm build

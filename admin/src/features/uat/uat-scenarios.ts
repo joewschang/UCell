@@ -1,0 +1,36 @@
+export type UatStatus='NOT_RUN'|'PASS'|'FAIL'|'BLOCKED';
+export interface UatScenario{
+  id:string;priority:'P0'|'P1';area:string;scenario:string;expected:string;
+}
+export const scenarios:UatScenario[]=[
+ ['UAT-R6-001','P0','Membership','Person→Application→Approve→Qualification','Single Qualification/Sponsor/Binary + audit'],
+ ['UAT-R6-002','P0','Sponsor Rule','1st direct invalid right/non-left placement','API and DB reject'],
+ ['UAT-R6-003','P0','Sponsor Rule','3rd direct invalid right/non-left placement','API and DB reject'],
+ ['UAT-R6-004','P0','Order/GPV','ENTRY order→payment→worker','GPV exactly once'],
+ ['UAT-R6-005','P0','Active','Active period starts/expires','Event-time eligibility correct'],
+ ['UAT-R6-006','P0','Upgrade','NT$600→upgrade approve','Future plan only'],
+ ['UAT-R6-007','P0','Transfer','Transfer holder','Qualification/tree unchanged'],
+ ['UAT-R6-008','P0','Exit','Exit→company-held→retransfer','Lifecycle correct'],
+ ['UAT-R6-009','P0','Return','Partial return after settlement','Reversal/Recovery/Replay exact'],
+ ['UAT-R6-010','P0','Recovery','Recovery spans 3 payouts','Partial recovery deterministic'],
+ ['UAT-R6-011','P0','Payout','Same actor dual approval','Second approval rejected'],
+ ['UAT-R6-012','P0','Payout','Two actors→export→paid','Batch/Payables paid + audit'],
+ ['UAT-R6-013','P0','Auth','No bearer→/admin','401'],
+ ['UAT-R6-014','P0','Auth','Expired/revoked session','401'],
+ ['UAT-R6-015','P0','Auth','Entra without grant','Rejected'],
+ ['UAT-R6-016','P0','Auth','Wrong tenant/audience/signature','Rejected'],
+ ['UAT-R6-017','P0','RBAC','MEMBERSHIP_OPS→payout','403'],
+ ['UAT-R6-018','P0','RBAC','FINANCE→workflow','403'],
+ ['UAT-R6-019','P0','Security','Auth bypass set in production','Still requires bearer'],
+ ['UAT-R6-020','P0','Integrity','Recovery mismatch','CRITICAL alert'],
+ ['UAT-R6-021','P0','Integrity','Payout net mismatch','CRITICAL alert'],
+ ['UAT-R6-022','P1','Audit','Trace correlation ID','All related events found'],
+ ['UAT-R6-023','P1','Documents','Supersede document','v1 retained; v2 active'],
+ ['UAT-R6-024','P1','CSV','Max export','UTF-8 BOM / capped rows'],
+ ['UAT-R6-025','P1','Session','Logout→reuse token','401'],
+ ['UAT-R6-026','P1','Concurrency','Double approve application','One Qualification'],
+ ['UAT-R6-027','P1','Concurrency','Double payment confirm','One business effect/GPV'],
+ ['UAT-R6-028','P1','Replay','Repeat reversal/replay','No duplicate recovery'],
+ ['UAT-R6-029','P1','Backup','Backup/restore staging','Counts/checksums match'],
+ ['UAT-R6-030','P1','Observability','Historical sponsor/binary query','Correct separate trees'],
+].map(([id,priority,area,scenario,expected])=>({id,priority,area,scenario,expected})) as UatScenario[];

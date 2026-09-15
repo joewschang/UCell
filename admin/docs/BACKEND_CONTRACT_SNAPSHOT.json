@@ -1,0 +1,306 @@
+{
+  "adminVersion": "0.2.0",
+  "ruleVersion": "R1.0B",
+  "backendBaseline": "v0.6.10-R2-AdminReadModels",
+  "backendManifest": {
+    "artifact": "UCell_R1_0B_Backend_Implementation",
+    "version": "0.6.10",
+    "phase": "Final Offline Convergence + Golden Economic Cases + RC Promotion Policy",
+    "implemented": [
+      "Person/Qualification relation convergence",
+      "AuthSession Person relation",
+      "BonusAward self source relation",
+      "HTTP audit UUID correctness",
+      "legacy payout safety façade",
+      "Prisma relation preflight",
+      "Prisma client access preflight",
+      "runtime safety preflight"
+    ],
+    "next": "dependency-backed RC gate; promote only after complete pass",
+    "self_audit_fixes": [
+      "EPV uses dedicated BonusAwardType.EPV instead of overloading EQUALIZATION.",
+      "BonusRecoveryEvent has explicit BonusAward relation and is stateful/no-delete for recovery settlement.",
+      "RPV API and worker effective-direct count now use temporal QualificationStatusHistory."
+    ],
+    "rule_version": "R1.0B",
+    "rule_status": "FROZEN",
+    "freeze_date": "2026-09-07",
+    "self_audit": "docs/V060_SELF_AUDIT.md",
+    "validation_status": "static + convergence + pure-domain golden executable locally; Prisma/compile/DB smoke pending networked DEV/CI",
+    "promotion_condition": "v0.7.0 only after RC_GATE_PASS in a dependency/database-enabled environment",
+    "review_revision": "R2-ADMIN-READMODELS",
+    "review_date": "2026-09-09",
+    "review_status": "CURRENT_DEVELOPMENT_SUCCESS_PRE_RC",
+    "review_fixes": [
+      "Restored QualificationWorkflowService and module wiring",
+      "Added initial QualificationPlanHistory and temporal plan lookup",
+      "Made Binary settlement temporal qualification-status/plan aware",
+      "Added DB first/third-direct-left-subtree trigger",
+      "Added DB current Sponsor/sequence mutation guard",
+      "Added import/module and R1 review preflight gates"
+    ],
+    "production_status": "NOT_YET_RC: dependency-backed Prisma/TypeScript/PostgreSQL/HTTP gates remain required",
+    "admin_support_version": "0.2.0",
+    "added_read_models": [
+      "GET /admin/dashboard/summary",
+      "GET /admin/membership-applications",
+      "GET /admin/qualifications",
+      "GET /admin/orders",
+      "GET /admin/organization/placement-preview"
+    ],
+    "rule_impact": "NONE: read-model/support endpoints only"
+  },
+  "routeCount": 48,
+  "routes": [
+    {
+      "method": "GET",
+      "path": "/health",
+      "label": "Health"
+    },
+    {
+      "method": "GET",
+      "path": "/admin/persons",
+      "label": "List persons"
+    },
+    {
+      "method": "POST",
+      "path": "/admin/persons",
+      "label": "Create person"
+    },
+    {
+      "method": "GET",
+      "path": "/admin/persons/:personId",
+      "label": "Get person"
+    },
+    {
+      "method": "POST",
+      "path": "/admin/membership-applications",
+      "label": "Create application"
+    },
+    {
+      "method": "GET",
+      "path": "/admin/membership-applications/:id",
+      "label": "Get application"
+    },
+    {
+      "method": "POST",
+      "path": "/admin/membership-applications/:id/submit",
+      "label": "Submit application"
+    },
+    {
+      "method": "POST",
+      "path": "/admin/membership-applications/:id/approve",
+      "label": "Approve application"
+    },
+    {
+      "method": "POST",
+      "path": "/admin/qualifications",
+      "label": "Create qualification"
+    },
+    {
+      "method": "GET",
+      "path": "/admin/qualifications/:qualificationId",
+      "label": "Get qualification"
+    },
+    {
+      "method": "GET",
+      "path": "/admin/qualifications/:qualificationId/active/at",
+      "label": "Check active"
+    },
+    {
+      "method": "POST",
+      "path": "/admin/qualifications/:qualificationId/active/periods",
+      "label": "Create active period"
+    },
+    {
+      "method": "POST",
+      "path": "/admin/organization/binary-placement",
+      "label": "Place in binary"
+    },
+    {
+      "method": "GET",
+      "path": "/admin/products",
+      "label": "List products"
+    },
+    {
+      "method": "POST",
+      "path": "/admin/products",
+      "label": "Create product"
+    },
+    {
+      "method": "POST",
+      "path": "/admin/orders",
+      "label": "Create order"
+    },
+    {
+      "method": "GET",
+      "path": "/admin/orders/:orderId",
+      "label": "Get order"
+    },
+    {
+      "method": "POST",
+      "path": "/admin/orders/:orderId/payment-confirmations",
+      "label": "Confirm payment"
+    },
+    {
+      "method": "POST",
+      "path": "/admin/orders/:orderId/returns",
+      "label": "Create return"
+    },
+    {
+      "method": "POST",
+      "path": "/admin/orders/:orderId/returns/:returnCaseId/process-reversal",
+      "label": "Process reversal"
+    },
+    {
+      "method": "GET",
+      "path": "/admin/subscriptions/plans",
+      "label": "List subscription plans"
+    },
+    {
+      "method": "POST",
+      "path": "/admin/subscriptions",
+      "label": "Create subscription"
+    },
+    {
+      "method": "GET",
+      "path": "/admin/subscriptions/:id",
+      "label": "Get subscription"
+    },
+    {
+      "method": "POST",
+      "path": "/admin/subscriptions/:id/cancel",
+      "label": "Cancel subscription"
+    },
+    {
+      "method": "GET",
+      "path": "/admin/qualifications/:qualificationId/ledger/pv",
+      "label": "PV ledger"
+    },
+    {
+      "method": "GET",
+      "path": "/admin/qualifications/:qualificationId/ledger/balances",
+      "label": "Ledger balances"
+    },
+    {
+      "method": "GET",
+      "path": "/admin/bonus/qualifications/:qualificationId/awards",
+      "label": "Bonus awards"
+    },
+    {
+      "method": "POST",
+      "path": "/admin/bonus/settlements/referral",
+      "label": "Referral settlement"
+    },
+    {
+      "method": "POST",
+      "path": "/admin/bonus/settlements/binary",
+      "label": "Binary settlement"
+    },
+    {
+      "method": "POST",
+      "path": "/admin/bonus/settlements/matching",
+      "label": "Matching settlement"
+    },
+    {
+      "method": "POST",
+      "path": "/admin/bonus/lifecycle/mature",
+      "label": "Mature awards"
+    },
+    {
+      "method": "POST",
+      "path": "/admin/epv/orders/:orderId/recognize",
+      "label": "Recognize EPV"
+    },
+    {
+      "method": "POST",
+      "path": "/admin/rpv/recognitions/:recognitionId/run",
+      "label": "Run RPV"
+    },
+    {
+      "method": "GET",
+      "path": "/admin/rpv/recognitions/:recognitionId/awards",
+      "label": "RPV awards"
+    },
+    {
+      "method": "POST",
+      "path": "/admin/pools/global/settle",
+      "label": "Settle global pool"
+    },
+    {
+      "method": "POST",
+      "path": "/admin/pools/welfare/accrue",
+      "label": "Accrue welfare pool"
+    },
+    {
+      "method": "POST",
+      "path": "/admin/settlement-adjustments/requests/:id/prepare",
+      "label": "Prepare adjustment"
+    },
+    {
+      "method": "POST",
+      "path": "/admin/settlement-adjustments/requests/:id/calculate-and-post",
+      "label": "Calculate/post adjustment"
+    },
+    {
+      "method": "POST",
+      "path": "/admin/replays/returns/:returnCaseId",
+      "label": "Carry-chain replay"
+    },
+    {
+      "method": "POST",
+      "path": "/admin/qualification-workflows",
+      "label": "Submit workflow"
+    },
+    {
+      "method": "POST",
+      "path": "/admin/qualification-workflows/:id/approve",
+      "label": "Approve workflow"
+    },
+    {
+      "method": "POST",
+      "path": "/admin/payouts/materialize",
+      "label": "Materialize payable"
+    },
+    {
+      "method": "POST",
+      "path": "/admin/payouts/batches",
+      "label": "Create payout batch"
+    },
+    {
+      "method": "GET",
+      "path": "/admin/dashboard/summary",
+      "label": "Dashboard summary"
+    },
+    {
+      "method": "GET",
+      "path": "/admin/membership-applications",
+      "label": "Application queue"
+    },
+    {
+      "method": "GET",
+      "path": "/admin/qualifications",
+      "label": "Qualification search"
+    },
+    {
+      "method": "GET",
+      "path": "/admin/orders",
+      "label": "Order search"
+    },
+    {
+      "method": "GET",
+      "path": "/admin/organization/placement-preview",
+      "label": "Placement preview"
+    }
+  ],
+  "membershipVerticalSlice": [
+    "Person search/create",
+    "Application queue/create/submit/approve",
+    "Qualification search/detail",
+    "Placement preview",
+    "Product list",
+    "Order search/create/payment",
+    "Qualification/PV handoff"
+  ],
+  "contractPolicy": "Frontend does not calculate compensation. Backend remains the sole executable rule source."
+}

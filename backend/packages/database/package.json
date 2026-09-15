@@ -1,0 +1,25 @@
+{
+  "name": "@ucell/database",
+  "version": "0.6.10",
+  "private": true,
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "prisma": "prisma",
+    "prisma:generate": "prisma generate",
+    "test": "echo no-tests"
+  },
+  "dependencies": {
+    "@nestjs/common": "*",
+    "@prisma/client": "*",
+    "prisma": "*"
+  },
+  "devDependencies": {
+    "typescript": "*",
+    "ts-node": "*"
+  },
+  "prisma": {
+    "seed": "ts-node prisma/seed.ts"
+  }
+}

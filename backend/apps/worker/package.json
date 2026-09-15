@@ -1,0 +1,19 @@
+{
+  "name": "@ucell/worker",
+  "version": "0.6.10",
+  "private": true,
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/main.js",
+    "start:dev": "ts-node src/main.ts",
+    "test": "echo no-tests"
+  },
+  "dependencies": {
+    "@ucell/database": "workspace:*",
+    "@ucell/contracts": "workspace:*"
+  },
+  "devDependencies": {
+    "ts-node": "*",
+    "typescript": "*"
+  }
+}

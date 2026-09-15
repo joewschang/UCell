@@ -1,0 +1,1844 @@
+{
+  "release": "UCell R1.0B Production RC1",
+  "reviewedAt": "2026-09-10T04:03:00+08:00",
+  "ruleVersion": "R1.0B FROZEN",
+  "backend": "v0.6.10-R6",
+  "admin": "v0.6.0",
+  "gitHead": "f5c6b5d6d31ed10d50b93e8b959cd2cd58d7aa18",
+  "sourceAlignment": "PASS at static/source level",
+  "productionPromotion": "BLOCKED_PENDING_CONNECTED_GATES_AND_TEST_TODO_ZERO",
+  "unresolvedTestTodos": 148,
+  "fileCount": 366,
+  "files": [
+    {
+      "path": ".github/workflows/ci.yml",
+      "size": 2444,
+      "sha256": "834ca06a27843a60902d550284e835fc9831d62c10badea04d08f368746ab99e"
+    },
+    {
+      "path": ".github/workflows/rc-promotion.yml",
+      "size": 761,
+      "sha256": "2fe6911c4d331588bd71fb17595294adbee57c25dbee3bcc35de04f0ab71d079"
+    },
+    {
+      "path": ".gitignore",
+      "size": 108,
+      "sha256": "49b5508befa092784c4a10dbd5e421532c4039d30f800eb12163c235ded32d14"
+    },
+    {
+      "path": "README.md",
+      "size": 1733,
+      "sha256": "d62b472a2468066accfb047fc94d97799bed27dc6c7b0e529d9dffa8c0d6224b"
+    },
+    {
+      "path": "admin/.env.example",
+      "size": 218,
+      "sha256": "cce2704db7b97c68fee6288f5fc320f5b3037f2e2d74e1c7eb17dd596b49aafd"
+    },
+    {
+      "path": "admin/README.md",
+      "size": 1649,
+      "sha256": "b400446316efd934435e1823f652a90180893040ef812cba3837e91e7ffd4e36"
+    },
+    {
+      "path": "admin/docs/ACCEPTANCE.md",
+      "size": 804,
+      "sha256": "6b5b754f220560ec431f54bc726a9ad086891cdb5d28ccf0b8392fb3180c91c5"
+    },
+    {
+      "path": "admin/docs/ACCEPTANCE_V020.md",
+      "size": 753,
+      "sha256": "6d196d8bdb84ecfd1fbca8df696cc6ec9298a2abb29897816e77a51840a09b81"
+    },
+    {
+      "path": "admin/docs/ACCEPTANCE_V030.md",
+      "size": 488,
+      "sha256": "5602d052275256d522a8e60220cd5a12f896ce35e6b4157afe1e1ee7343beeb9"
+    },
+    {
+      "path": "admin/docs/ACCEPTANCE_V040.md",
+      "size": 754,
+      "sha256": "86a0c3d43fdd88265d3b02eb874df7adb5b75aebc9b9ddd8565460b284b8acfa"
+    },
+    {
+      "path": "admin/docs/ACCEPTANCE_V050.md",
+      "size": 549,
+      "sha256": "dac92adea8cc2dc62af9185cca49a5a4cd8882d2292047187f1befdf3c418706"
+    },
+    {
+      "path": "admin/docs/ADMIN_SECURITY_HEADERS.md",
+      "size": 539,
+      "sha256": "f57cf139bd17b124318441e84f76e9609ee3b7b30c776fbd1b34d5dec38fb7f3"
+    },
+    {
+      "path": "admin/docs/API_COVERAGE.csv",
+      "size": 3297,
+      "sha256": "6611acddf0e5632b6586c47f42e92ef378bfc36e5178911898e037ad79f2bb1a"
+    },
+    {
+      "path": "admin/docs/ARCHITECTURE.md",
+      "size": 1455,
+      "sha256": "7008ac6e6cdf31ba05a56d821745fbccc8656caafe3df459bccc22cc4e4d08e3"
+    },
+    {
+      "path": "admin/docs/BACKEND_CONTRACT_SNAPSHOT.json",
+      "size": 8606,
+      "sha256": "eed3320876f508d36a7e2b4026e4b7d375e7d911796589dee8fa3689a1bc5aae"
+    },
+    {
+      "path": "admin/docs/BACKEND_CONTRACT_SNAPSHOT_v030.json",
+      "size": 3736,
+      "sha256": "cec8f12e6870d9fc3f521c4565157bac792e29b75d1f50a2cfea64310d33cb98"
+    },
+    {
+      "path": "admin/docs/BACKEND_CONTRACT_SNAPSHOT_v040.json",
+      "size": 3997,
+      "sha256": "9981bd80c21e88dc5336e44989a9d3710bed18d61a95aeca51f58f289a7cfedf"
+    },
+    {
+      "path": "admin/docs/BACKEND_CONTRACT_SNAPSHOT_v050.json",
+      "size": 3659,
+      "sha256": "a48ab6ff4a933ddfb487acfdb950ae72a2eea40abaceefbb313c62f4ec10c84a"
+    },
+    {
+      "path": "admin/docs/BACKEND_GAPS.md",
+      "size": 1063,
+      "sha256": "d3d7e4f1d3fc2fefb042c6faf63e8574f7fcf55fdbf4d6942b6e1ece03a8442e"
+    },
+    {
+      "path": "admin/docs/DEPENDENCY_LOCK_POLICY.md",
+      "size": 479,
+      "sha256": "eb059d6a233a7c05d8d953d5ed27804c70d2e0ff78512dc478d7a83b8ad92803"
+    },
+    {
+      "path": "admin/docs/PREFLIGHT_OUTPUT.txt",
+      "size": 22,
+      "sha256": "44b59245acd4374bc1c0159bfcbe1059d34608a49df0826fb8b21267c317b225"
+    },
+    {
+      "path": "admin/docs/RELEASE_READINESS_V060.md",
+      "size": 723,
+      "sha256": "c7afe4fb7e0d8ff2f88fdba7a8744c507df7072031b9a3b50542d12247ec67cb"
+    },
+    {
+      "path": "admin/docs/ROADMAP.md",
+      "size": 1036,
+      "sha256": "a9256494e3d52fcb65f4703bcf5fa7629d4057fb56263acaf7cd7742cd10d52e"
+    },
+    {
+      "path": "admin/docs/SELF_AUDIT.md",
+      "size": 1999,
+      "sha256": "c3b60840120b895e87b4e6853ee62649db8ff37e1dcf19f6f2e967d716b17f50"
+    },
+    {
+      "path": "admin/docs/SELF_AUDIT_V020.md",
+      "size": 2526,
+      "sha256": "58ab2317234361a4e3288c3f6d27d7a462a9b615d43471ece68a1f96ec442bf5"
+    },
+    {
+      "path": "admin/docs/SELF_AUDIT_V030.md",
+      "size": 1075,
+      "sha256": "41ce7abb2623529550d0bb8f52f4054ad1e426b58a3df5289ce728fb9e245b21"
+    },
+    {
+      "path": "admin/docs/SELF_AUDIT_V040.md",
+      "size": 1662,
+      "sha256": "c85dcf2224f2e8048dbd85ae95fc786ff70f010cbfd0c98feefb3a887b0bdbd4"
+    },
+    {
+      "path": "admin/docs/SELF_AUDIT_V050.md",
+      "size": 1181,
+      "sha256": "015997434c72d348661918da61ab3829e577a04d6597f67a439bb8b312f87cdf"
+    },
+    {
+      "path": "admin/docs/SELF_AUDIT_V060.md",
+      "size": 1350,
+      "sha256": "bfc144b86dab15a2fee00e4cb6bb9f7d8f6d753ebe16981a90c113ea3e975dbc"
+    },
+    {
+      "path": "admin/docs/UAT_SCENARIOS.csv",
+      "size": 1753,
+      "sha256": "a94f8a36f8cd8df00a5c174a798052f628e786ddd17a3277df603645820d1a20"
+    },
+    {
+      "path": "admin/docs/VALIDATION_OUTPUT.txt",
+      "size": 49,
+      "sha256": "0468f7a4103d508960e30fa45a07b2fdeb220e00339e729ef6d299c934db0a14"
+    },
+    {
+      "path": "admin/docs/VALIDATION_OUTPUT_V030.txt",
+      "size": 49,
+      "sha256": "85acb0c4e6774688ed25f9a8cd2ee37478e556e61316e732321b033e0c7aa06b"
+    },
+    {
+      "path": "admin/docs/VALIDATION_OUTPUT_V040.txt",
+      "size": 49,
+      "sha256": "20a743575d0913e65e579183000c45383314e9ab4412a2804f85dbdc4f097a9b"
+    },
+    {
+      "path": "admin/docs/VALIDATION_OUTPUT_V050.txt",
+      "size": 49,
+      "sha256": "3efaee24ad9a0905a8e4d8f1ea293cef65ae37aee388224f8ab2e5f9d6dfe767"
+    },
+    {
+      "path": "admin/docs/VALIDATION_OUTPUT_V060.txt",
+      "size": 49,
+      "sha256": "d639ad2b93a067b057908ff44c0e5954f2622ef7513e63ae62d59d7c8582bfb1"
+    },
+    {
+      "path": "admin/index.html",
+      "size": 260,
+      "sha256": "901537ebca2828f9f471e70877f5a3881f847a30e41436e711eaef9a48108c66"
+    },
+    {
+      "path": "admin/package.json",
+      "size": 807,
+      "sha256": "b08e9aaaad9952ee156ba8ccfadb6751c1d38a46b77796125b4d2ee8a5389983"
+    },
+    {
+      "path": "admin/public/.htaccess",
+      "size": 850,
+      "sha256": "6a8a8562aca3dbacde1a8bf1372cbffc018ee6bffe3af767bb76d347038d64e8"
+    },
+    {
+      "path": "admin/scripts/preflight.mjs",
+      "size": 1402,
+      "sha256": "f8754d45ff24f97c50448eb3ddea21dd0296e08658b37156aa57cfb3887cbb57"
+    },
+    {
+      "path": "admin/scripts/v020-self-audit.mjs",
+      "size": 2759,
+      "sha256": "5026bc189c203c7792b8cd58365f09dee638eff1d5b0e54b84ec03cfccad9c52"
+    },
+    {
+      "path": "admin/scripts/v030-self-audit.mjs",
+      "size": 1721,
+      "sha256": "808c5712ed4dfd5dfddde91860156236876ecf1ab9ce75ab7965453f4956acfc"
+    },
+    {
+      "path": "admin/scripts/v040-self-audit.mjs",
+      "size": 1730,
+      "sha256": "39700455ffb238f8d579076142b8c72a54fe9b270fa06d8d88aa43c480392ef6"
+    },
+    {
+      "path": "admin/scripts/v050-self-audit.mjs",
+      "size": 1303,
+      "sha256": "14bf035d00cac13ec04b8c3dfdba1389aa1e870cbf00b0e4a4e36008198551e2"
+    },
+    {
+      "path": "admin/scripts/v060-self-audit.mjs",
+      "size": 1737,
+      "sha256": "250ee828ce6762a5e7ecbcd719e7c26758d4ef4c5d8acbbdff88dbdb35b12979"
+    },
+    {
+      "path": "admin/src/app/App.tsx",
+      "size": 3350,
+      "sha256": "159cb77523296613ec57e198ef34bdafe26749c78f5e29f50adc6dcbdabdc4eb"
+    },
+    {
+      "path": "admin/src/app/AppShell.tsx",
+      "size": 781,
+      "sha256": "0f53fab3ce885232998b46d7f96d3f9058fd50d9b755cd0cd117477607b915bd"
+    },
+    {
+      "path": "admin/src/app/nav.ts",
+      "size": 815,
+      "sha256": "31871e3c68dae09183be2fb46d9228121d62ff05424a41605e833c262fd1fa2a"
+    },
+    {
+      "path": "admin/src/components/SearchSelect.tsx",
+      "size": 1480,
+      "sha256": "b5712bee6c9ee5762ccdcdc1a6fdf905e98f95e358a834c849d413223e66302f"
+    },
+    {
+      "path": "admin/src/components/TreeView.tsx",
+      "size": 1461,
+      "sha256": "6896feab3298afb33896d4465e99a16593677087968c713dab55db31dbeddf1d"
+    },
+    {
+      "path": "admin/src/components/Workbench.tsx",
+      "size": 1491,
+      "sha256": "363229c62b0138b7af03280d78dd1fba19ff7fba915f29713812238fe1fe7fd0"
+    },
+    {
+      "path": "admin/src/components/ui.tsx",
+      "size": 1376,
+      "sha256": "6016ed63d0d0119963104b4af2283ef672bd6e3b5847d5be2d064539f68cfdd2"
+    },
+    {
+      "path": "admin/src/features/applications/ApplicationsPage.tsx",
+      "size": 4187,
+      "sha256": "dde63c015a816cf20f9e515ff462ab6a7d62daed2fcc17a19fa65de3538864f3"
+    },
+    {
+      "path": "admin/src/features/applications/NewApplicationWizard.tsx",
+      "size": 6304,
+      "sha256": "15e34e39ea167dec7d7ddab23668a21e813d34a7badb87a18509778eb7c706bf"
+    },
+    {
+      "path": "admin/src/features/audit/AuditPage.tsx",
+      "size": 2840,
+      "sha256": "0956ae8aeea1b7ce67c584aa1faf74abd78d5c5c21e148ec274cc7f2bde64c0a"
+    },
+    {
+      "path": "admin/src/features/auth/LoginPage.tsx",
+      "size": 2069,
+      "sha256": "388bb741176c6fb3cf2785e62528fe3dbba0eaaf84a0783ccbd1c2f84e2f883a"
+    },
+    {
+      "path": "admin/src/features/auth/RequirePageRole.tsx",
+      "size": 404,
+      "sha256": "25ea825367503c878bf31a7b2e5c42713e42871ebf8f562355ce9c32717e4a22"
+    },
+    {
+      "path": "admin/src/features/auth/auth.tsx",
+      "size": 3561,
+      "sha256": "e90673a59618452b3d1ee05c2415ff17542228a3f71e931e94d4ea50cc4a3414"
+    },
+    {
+      "path": "admin/src/features/auth/entra.ts",
+      "size": 1313,
+      "sha256": "804da096de24788c3ebfd502df0ff1195f841a7dbda20bb56a75f615975f1dce"
+    },
+    {
+      "path": "admin/src/features/auth/permissions.ts",
+      "size": 1466,
+      "sha256": "02d67021aa4f43c199352d0dc53858c3e24312583626f4fc2d8f9a0cce2f1921"
+    },
+    {
+      "path": "admin/src/features/bonuses/BonusesPage.tsx",
+      "size": 7129,
+      "sha256": "994a858731b52a5882e8977111b58780247b388000d1aedf4729e1297cfe4bb6"
+    },
+    {
+      "path": "admin/src/features/dashboard/DashboardPage.tsx",
+      "size": 1493,
+      "sha256": "735b64130302e4accc6e38964810d168766ea305dcf91e3604978342798db1b0"
+    },
+    {
+      "path": "admin/src/features/documents/DocumentsPage.tsx",
+      "size": 4590,
+      "sha256": "51b4bb3783a8b97f3a948ccb47d075ebe1eff21797629afdb90ddad8a297e033"
+    },
+    {
+      "path": "admin/src/features/orders/OrdersPage.tsx",
+      "size": 7145,
+      "sha256": "1355c64c3a68127c7dd34070bb0efe7c03b2c40b325aac430555c688e408a333"
+    },
+    {
+      "path": "admin/src/features/organization/OrganizationPage.tsx",
+      "size": 2753,
+      "sha256": "c0244650ac18e2ab13456dddc1900e9054b4349edc5cd9950ea6226451882b22"
+    },
+    {
+      "path": "admin/src/features/payouts/PayoutsPage.tsx",
+      "size": 7828,
+      "sha256": "5b66061dc43d7ddad71ffb68acb989e884a5ea2624bee767a13d76bf28175a2c"
+    },
+    {
+      "path": "admin/src/features/people/PeoplePage.tsx",
+      "size": 2324,
+      "sha256": "b07d9aad8c1b77b0d9dbd7db6959d0d581a048caaf2d16486750cbf169430419"
+    },
+    {
+      "path": "admin/src/features/products/ProductsPage.tsx",
+      "size": 1999,
+      "sha256": "e82151569f3268aa1297a098e84754c92c2414d3410ea5bdbf911aa05624d282"
+    },
+    {
+      "path": "admin/src/features/qualifications/QualificationsPage.tsx",
+      "size": 3650,
+      "sha256": "40f99dbb4c0403b8642eabcabc5753714d4c577b9c94470b91fa25bf47b632e1"
+    },
+    {
+      "path": "admin/src/features/reports/ReportsPage.tsx",
+      "size": 3881,
+      "sha256": "c66943c17bd6951aced8dd59cefb04c73e8a00e1e680f5408736e36920a8be7a"
+    },
+    {
+      "path": "admin/src/features/returns/ReturnsPage.tsx",
+      "size": 7288,
+      "sha256": "f75e84395fd11b79228816058b742d054711d9c146e73aaf4439d56d3882a4a7"
+    },
+    {
+      "path": "admin/src/features/subscriptions/SubscriptionsPage.tsx",
+      "size": 599,
+      "sha256": "5e5335ae700d94b29aed1ff8fec7d9f3aa7b8606ba464812c87692fac9d4cd01"
+    },
+    {
+      "path": "admin/src/features/system/SystemPage.tsx",
+      "size": 1971,
+      "sha256": "f62d91af2dc63c423cb0e663fccb8f880253d526e2d9f6bed9d80106ec25e21a"
+    },
+    {
+      "path": "admin/src/features/uat/UatPage.tsx",
+      "size": 3717,
+      "sha256": "0449ac997777cd0d72083fb2a1265f26e81d785db0735317142eb5151ce3d8d2"
+    },
+    {
+      "path": "admin/src/features/uat/uat-scenarios.ts",
+      "size": 2756,
+      "sha256": "e52c0ac28f08ac181795f16ca2d3afa67952c965ff9f536415626c81f1c5afa4"
+    },
+    {
+      "path": "admin/src/features/workflows/WorkflowsPage.tsx",
+      "size": 6846,
+      "sha256": "118ee17428884d2a2f03de984ad8a37a7b6f9ce7ea4d693fd5506848cd94c0a2"
+    },
+    {
+      "path": "admin/src/lib/api.ts",
+      "size": 2376,
+      "sha256": "f5db4a903d128658874157b521454e30d10cace870106ef230946cb5900f8a12"
+    },
+    {
+      "path": "admin/src/lib/format.ts",
+      "size": 461,
+      "sha256": "a38e73f93fd947054037f9b1101026fcd8b8cc403bc456d9f73080a15af8bb8c"
+    },
+    {
+      "path": "admin/src/lib/routes.ts",
+      "size": 8305,
+      "sha256": "8de1ac810f772f3a739b7c05a86d9d97065b8e1ea7a73a627b326494f0c89c05"
+    },
+    {
+      "path": "admin/src/main.tsx",
+      "size": 612,
+      "sha256": "0dd349f260c4703832592a006531af97f2e82b2bcf66d9976a3ab80e860212d1"
+    },
+    {
+      "path": "admin/src/styles/main.css",
+      "size": 8663,
+      "sha256": "587095c871a8e35cfece3cab8c2595d1d9a7ce6a72df6c4fd3b7652364c9c7ef"
+    },
+    {
+      "path": "admin/src/types/domain.ts",
+      "size": 2462,
+      "sha256": "2afb50c5ca3ec55bcaaaa6fc4013e4db306193857d9a458f92b6f5a46aa216be"
+    },
+    {
+      "path": "admin/tsconfig.app.json",
+      "size": 488,
+      "sha256": "9d6a7237f25dc572771555d5bfe4f0261b288328e02bfce326e2ad766de32de9"
+    },
+    {
+      "path": "admin/tsconfig.json",
+      "size": 67,
+      "sha256": "b7575b895718ffaa5dd017262ee79cafa5a4edb05020477575019730989c4774"
+    },
+    {
+      "path": "admin/vite.config.ts",
+      "size": 255,
+      "sha256": "9584e9ed14964cce50e047423e93a1588eff0b0f9011fd60015b25dd48ba826f"
+    },
+    {
+      "path": "backend/.env.example",
+      "size": 412,
+      "sha256": "56296ce6996a3367f021d1a6a24e7d4c5e44e5a4c3fe8c6743a3959b288c862d"
+    },
+    {
+      "path": "backend/.github/workflows/backend-ci.yml",
+      "size": 1740,
+      "sha256": "b19539f8d3b65702b662109059e332d7d8cb3d7bd87ff50e49a2ac9678cc50b2"
+    },
+    {
+      "path": "backend/.gitignore",
+      "size": 77,
+      "sha256": "a0b0efae28beea7f15074262a202473a64c40213d9454284a2db02749d55d456"
+    },
+    {
+      "path": "backend/README.md",
+      "size": 3242,
+      "sha256": "35337fed9b259df1cd88e0618a86b9e32c5bd1119e2e508a1b9e62b0dd211536"
+    },
+    {
+      "path": "backend/apps/api/nest-cli.json",
+      "size": 63,
+      "sha256": "f291ee3a28facfc48132772627b5bff72a062a6730313b46da7ee4aab788c36c"
+    },
+    {
+      "path": "backend/apps/api/package.json",
+      "size": 1042,
+      "sha256": "47019db1f5c3a707b8fb976e71e68a8a8725095cd0a6de1c9b088451b075e566"
+    },
+    {
+      "path": "backend/apps/api/src/app.module.ts",
+      "size": 3093,
+      "sha256": "83252ad57a22c4f5e6124f33043379e14341775ac0ddf8cbfc0edba64a38d796"
+    },
+    {
+      "path": "backend/apps/api/src/common/audit/audit.interceptor.ts",
+      "size": 1848,
+      "sha256": "b92c6e810d37b0e5cc2e35e32dec34d8d9055f2dc0765aee537109dbbcf6c2d8"
+    },
+    {
+      "path": "backend/apps/api/src/common/audit/audit.module.ts",
+      "size": 402,
+      "sha256": "37b160166a33d7706ff879b4a8e5f67b590df32d760ad8b5e981b751a651da23"
+    },
+    {
+      "path": "backend/apps/api/src/common/audit/audit.service.ts",
+      "size": 970,
+      "sha256": "77b264cacfc9db62c3dc1365f0603fc428c9ca3995377f01c31dc24d61c24a4e"
+    },
+    {
+      "path": "backend/apps/api/src/common/filters/api-exception.filter.ts",
+      "size": 1062,
+      "sha256": "8bb02c86229c612c8d1ad72ee2af3e3ce1132a2465168416b107cab3011597c1"
+    },
+    {
+      "path": "backend/apps/api/src/common/guards/idempotency.guard.ts",
+      "size": 575,
+      "sha256": "39f252781db67b4f668b15ead352701d3e6eb801baffd0f170f476330e095570"
+    },
+    {
+      "path": "backend/apps/api/src/common/guards/qualification.guard.ts",
+      "size": 1285,
+      "sha256": "2d873fd73f75d809c7a5d8d81f45a982b4bc13b0e7c54a9ca9e4454d947607bc"
+    },
+    {
+      "path": "backend/apps/api/src/common/http/request-context.ts",
+      "size": 212,
+      "sha256": "87abf7cd1eba633d4292cdb1a4e438f3541fd1defe0216c04fde82083c149636"
+    },
+    {
+      "path": "backend/apps/api/src/common/idempotency/idempotency.module.ts",
+      "size": 230,
+      "sha256": "abb9a380f4df281ba8824a8078a1e45b7605351d468a8430ca59ed39eba2afe4"
+    },
+    {
+      "path": "backend/apps/api/src/common/idempotency/idempotency.service.ts",
+      "size": 2416,
+      "sha256": "b8d8befeffab938043dfdcf757e1c4b3d4433757fd8f767be5f25520af8b2e61"
+    },
+    {
+      "path": "backend/apps/api/src/common/interceptors/envelope.interceptor.ts",
+      "size": 915,
+      "sha256": "9db0108ebd644169199ab48dea7c8fc8466b4e5a15ecc9d57ff4d758c1ad12dd"
+    },
+    {
+      "path": "backend/apps/api/src/common/interceptors/request-context.interceptor.ts",
+      "size": 1044,
+      "sha256": "05baef629e116ad3178c69aab0f4283254dfc91ded58de0725ba9d1691a60033"
+    },
+    {
+      "path": "backend/apps/api/src/common/outbox/outbox.module.ts",
+      "size": 205,
+      "sha256": "b4b39f99d958792f4ac99af6c1e5aedf7ba16c91fac3df881b8affd503829758"
+    },
+    {
+      "path": "backend/apps/api/src/common/outbox/outbox.service.ts",
+      "size": 635,
+      "sha256": "1abcc0f3287c22228d3824de34d58d19de62cf2e276a5d253d102015c1a4890d"
+    },
+    {
+      "path": "backend/apps/api/src/common/utils/hash.ts",
+      "size": 606,
+      "sha256": "ba444bf9b7606fba4b34ecbc007057fed51d3c8c3585802eb60e3ca4ef55666b"
+    },
+    {
+      "path": "backend/apps/api/src/common/utils/json-safe.ts",
+      "size": 571,
+      "sha256": "6fa2df3577f4e87f5a0acc81ddc5fe4888dad3db4737c28bc2fab2e20d340caa"
+    },
+    {
+      "path": "backend/apps/api/src/main.ts",
+      "size": 1930,
+      "sha256": "8fad819fcb49730571448f8e63a4d1180760f46d8c1103bfa89cd1c9bffc9cb9"
+    },
+    {
+      "path": "backend/apps/api/src/modules/active/active.controller.ts",
+      "size": 1225,
+      "sha256": "c5cc3bd410a70c744768a5ff8d6686aae97305bb1b5b75ccfce4d3920f71ca0b"
+    },
+    {
+      "path": "backend/apps/api/src/modules/active/active.module.ts",
+      "size": 269,
+      "sha256": "648cbd6a330ca2b55f53c3452fb93e845db1ee2793b3fe2dd147a937e2d187bb"
+    },
+    {
+      "path": "backend/apps/api/src/modules/active/active.service.ts",
+      "size": 2265,
+      "sha256": "5ff7c59d9e0618c3fd647e08fe36ae00746544bbf6fe6e93b244cd659d191b1e"
+    },
+    {
+      "path": "backend/apps/api/src/modules/active/dto/open-active-period.dto.ts",
+      "size": 503,
+      "sha256": "d0f4eb9f0992ab73d128075924800fb90748911acf8818723c3af4d1d33fd478"
+    },
+    {
+      "path": "backend/apps/api/src/modules/adjustment/adjustment.module.ts",
+      "size": 638,
+      "sha256": "dcfa83bbbd969f080a9854539f4a6efafcb137ce880a2e5fce2003d1ad6392a9"
+    },
+    {
+      "path": "backend/apps/api/src/modules/adjustment/carry-chain-replay.controller.ts",
+      "size": 811,
+      "sha256": "4a2f828dd573717f1570f0152827bf9b64789d41c5055f69ed72908ebca73a57"
+    },
+    {
+      "path": "backend/apps/api/src/modules/adjustment/carry-chain-replay.service.ts",
+      "size": 10853,
+      "sha256": "b06ef9ed327d582303d52e75b532592f1a1d9abf5f08668daa8cf80f1d2b9fa8"
+    },
+    {
+      "path": "backend/apps/api/src/modules/adjustment/settlement-adjustment.controller.ts",
+      "size": 932,
+      "sha256": "999f6b6f5c6b1ab76163cec71a0be1e5f6a79a6a1f880b0ced356dae0f810857"
+    },
+    {
+      "path": "backend/apps/api/src/modules/adjustment/settlement-adjustment.service.ts",
+      "size": 7161,
+      "sha256": "4bdb3f9c7f8de19af30599cb3993950a273efc62b9148ff8674c031822ffc15f"
+    },
+    {
+      "path": "backend/apps/api/src/modules/adjustment/settlement-replay.service.ts",
+      "size": 8706,
+      "sha256": "fb208420545260e70abe2aa2c8efac67efd3e5597f9fe0ab86db0af25fe64e29"
+    },
+    {
+      "path": "backend/apps/api/src/modules/admin-dashboard/admin-dashboard.controller.ts",
+      "size": 714,
+      "sha256": "0514397854f8629616670762612a521cb1c77734f62f185c398f717cfbb47de5"
+    },
+    {
+      "path": "backend/apps/api/src/modules/admin-dashboard/admin-dashboard.module.ts",
+      "size": 302,
+      "sha256": "3718f1015ab6f35b52ddea7e7b3b8e96040c2bb6568348f4674a0b566f3cba3e"
+    },
+    {
+      "path": "backend/apps/api/src/modules/admin-dashboard/admin-dashboard.service.ts",
+      "size": 1524,
+      "sha256": "144276e8d27e69e6eb43c053be585b1549cf89642b4471bfe29bf3299772769f"
+    },
+    {
+      "path": "backend/apps/api/src/modules/admin-observability/admin-observability.controller.ts",
+      "size": 3063,
+      "sha256": "c7bbe9629b5803bac043d7dd2b55da625cb93d00125180666a8711f8efe5c805"
+    },
+    {
+      "path": "backend/apps/api/src/modules/admin-observability/admin-observability.module.ts",
+      "size": 338,
+      "sha256": "4290f93b845176fbd5177e096ce27ba6f1286952864ceaeb2c68e0f744367c0e"
+    },
+    {
+      "path": "backend/apps/api/src/modules/admin-observability/admin-observability.service.ts",
+      "size": 7857,
+      "sha256": "b64dd141e16350170fcb31b94f08ffdc6e2be23518791a0106f00612a0e16d58"
+    },
+    {
+      "path": "backend/apps/api/src/modules/admin-operations/admin-operations.controller.ts",
+      "size": 4654,
+      "sha256": "e91b0a32bd425455a62f320128663b91c29993a7fb721f0ac6df54bcd61b9229"
+    },
+    {
+      "path": "backend/apps/api/src/modules/admin-operations/admin-operations.module.ts",
+      "size": 317,
+      "sha256": "cea99bac476c791c83b04fb5ad0ae16774748790ffaf40c5e6701ae91ba23555"
+    },
+    {
+      "path": "backend/apps/api/src/modules/admin-operations/admin-operations.service.ts",
+      "size": 11643,
+      "sha256": "ba4bf2a81b169d8dbd61e061fc953d79f114a818f398a7ec2d58de50f00c17a3"
+    },
+    {
+      "path": "backend/apps/api/src/modules/admin-ops-ready/admin-ops-ready.controller.ts",
+      "size": 2917,
+      "sha256": "98b0e5176a6baf34bfc03dde5e849515e12da30f8ba5d7740cdbba1ca4a65d9f"
+    },
+    {
+      "path": "backend/apps/api/src/modules/admin-ops-ready/admin-ops-ready.module.ts",
+      "size": 305,
+      "sha256": "78de21e1f7c2b3c602f273e2a79fc7fce8bdf6bb65cb8d1b56cf3add779bcb72"
+    },
+    {
+      "path": "backend/apps/api/src/modules/admin-ops-ready/admin-ops-ready.service.ts",
+      "size": 11285,
+      "sha256": "fd3c9dc68951df43b35b7c05e68a1bba50cec25283b366c58e1654cadfc87cf2"
+    },
+    {
+      "path": "backend/apps/api/src/modules/application/dto/create-membership-application.dto.ts",
+      "size": 910,
+      "sha256": "80ddba658b67c709a51ad030e6f5f099a441725d500bcd707a92da276b40bd65"
+    },
+    {
+      "path": "backend/apps/api/src/modules/application/membership-application.controller.ts",
+      "size": 2510,
+      "sha256": "04a501ac8df9872c071151f0f3279dec6ef60d2f06afc0957f66886bf6db4192"
+    },
+    {
+      "path": "backend/apps/api/src/modules/application/membership-application.module.ts",
+      "size": 359,
+      "sha256": "2e8510c8f8e4ebb365e732966ee9f89d236d7fb07d9854c961893a66bfd4173c"
+    },
+    {
+      "path": "backend/apps/api/src/modules/application/membership-application.service.ts",
+      "size": 8890,
+      "sha256": "7a84bf999ed23ac2c6ceda14280c85be7d9aedef9292c5a332493f2e5f9841a1"
+    },
+    {
+      "path": "backend/apps/api/src/modules/auth/admin-auth.controller.ts",
+      "size": 1202,
+      "sha256": "465a5719967a3c18fac15e2ed740a8cd5e86b558dd16f4ad1458c0e87d9a2172"
+    },
+    {
+      "path": "backend/apps/api/src/modules/auth/admin-auth.service.ts",
+      "size": 2671,
+      "sha256": "2bd9eb8f00a493bacbcf0291c57bc0b53dc88259f74d6bd1e04f76fea0730032"
+    },
+    {
+      "path": "backend/apps/api/src/modules/auth/admin-authentication.guard.ts",
+      "size": 1308,
+      "sha256": "cc882f5c5aaaafb09948c70803068db4839f667ed554318043a35386d74bef83"
+    },
+    {
+      "path": "backend/apps/api/src/modules/auth/admin-role.guard.ts",
+      "size": 907,
+      "sha256": "c21491003286ec777d8470dfca3b20e17c9d40a7dcb1dfa0fc2c3767b0341670"
+    },
+    {
+      "path": "backend/apps/api/src/modules/auth/auth.module.ts",
+      "size": 1076,
+      "sha256": "edba8a2d5721d1dbf5169ca4c792772dd44775e8ac3ea262bdc023de4b7d30b9"
+    },
+    {
+      "path": "backend/apps/api/src/modules/auth/authentication.guard.ts",
+      "size": 606,
+      "sha256": "a5d085cd14c8b6aa6a7aa0c399991db4ed99ef2d9320d34682321fe3505ebc8b"
+    },
+    {
+      "path": "backend/apps/api/src/modules/auth/entra-token-verifier.service.ts",
+      "size": 1756,
+      "sha256": "b73cc6c4baf1910620c01fe540154b4af110ee8945e57dfe1e6fe7ebb0062473"
+    },
+    {
+      "path": "backend/apps/api/src/modules/auth/identity-token.service.ts",
+      "size": 1332,
+      "sha256": "b9689bbd19c9758e340e5d08d007d91141a7ea6e95bde62b83c8ce97a6a62661"
+    },
+    {
+      "path": "backend/apps/api/src/modules/auth/line-identity.service.ts",
+      "size": 507,
+      "sha256": "8efee7cf5d9ed4422e2d1ff264afa7fb40d62a30356ae20b097e932fb1ea2872"
+    },
+    {
+      "path": "backend/apps/api/src/modules/auth/qualification-access.service.ts",
+      "size": 584,
+      "sha256": "c698456b8ffaca6d5e75280d52d283dfb11ff243064316b366d9d313cd579601"
+    },
+    {
+      "path": "backend/apps/api/src/modules/auth/roles.decorator.ts",
+      "size": 114,
+      "sha256": "5a981d82c59b47ea78f323c631a5fde7f530e52ccdf96694ab5065393e0b81b0"
+    },
+    {
+      "path": "backend/apps/api/src/modules/bonus/binary-bonus.service.ts",
+      "size": 12068,
+      "sha256": "b54be42224c2d9cc4afe351e0b84389e49d765c54fe9ad69f00e9e7215849b4d"
+    },
+    {
+      "path": "backend/apps/api/src/modules/bonus/bonus-lifecycle.service.ts",
+      "size": 876,
+      "sha256": "5eb82caa04f633795efb2672f992fe80919d353895beb944f1f3acac45950e74"
+    },
+    {
+      "path": "backend/apps/api/src/modules/bonus/bonus-query.module.ts",
+      "size": 203,
+      "sha256": "a1d127decb8e5923f5220142ba8644bf535b3e995f85eb7437f99168f968a0b0"
+    },
+    {
+      "path": "backend/apps/api/src/modules/bonus/bonus-query.service.ts",
+      "size": 3567,
+      "sha256": "91c9544ee6d712ef3ba8a4626a3744abf015ab1a525a38492225c51e9b9abd69"
+    },
+    {
+      "path": "backend/apps/api/src/modules/bonus/bonus.controller.ts",
+      "size": 2487,
+      "sha256": "201b43fc5c43b20a74ead39b8c0ad63f34606fc19637c956c8a5e3ee83f1621d"
+    },
+    {
+      "path": "backend/apps/api/src/modules/bonus/bonus.module.ts",
+      "size": 685,
+      "sha256": "e520a86a773ab481317c7bace67fac93cd1da7d3f26623902d25eb7070c9e0cf"
+    },
+    {
+      "path": "backend/apps/api/src/modules/bonus/referral-bonus.service.ts",
+      "size": 7359,
+      "sha256": "5fb09ddf75ca8a323b93fd9ffa11212d39b61bff791e5cfd1413df2e571e4aa0"
+    },
+    {
+      "path": "backend/apps/api/src/modules/epv/epv.controller.ts",
+      "size": 661,
+      "sha256": "92f6dd6e6b32ee5db7c66269a908c7c1fe8f13f781ff7a4b3594435f65a1809e"
+    },
+    {
+      "path": "backend/apps/api/src/modules/epv/epv.module.ts",
+      "size": 427,
+      "sha256": "8ec0c46997251dcd3f26e18924161a6a3dd98240cf21939dd50e057f79746e6f"
+    },
+    {
+      "path": "backend/apps/api/src/modules/epv/epv.service.ts",
+      "size": 4721,
+      "sha256": "3687482d3d8cc3d9d6a5193a1b3766cb6adc30354514c2dee7680a606cfc20b0"
+    },
+    {
+      "path": "backend/apps/api/src/modules/global-pool/global-pool.controller.ts",
+      "size": 1081,
+      "sha256": "b2b5e27671e02135ba71813de9bb0a48c0368fd28f872a7817cfa8ce129c209a"
+    },
+    {
+      "path": "backend/apps/api/src/modules/global-pool/global-pool.module.ts",
+      "size": 457,
+      "sha256": "1cb8891157b5fd5bf19d1bfeed6cd8a553085f0e84ef9b2f0cc387dd8588b041"
+    },
+    {
+      "path": "backend/apps/api/src/modules/global-pool/global-pool.service.ts",
+      "size": 6324,
+      "sha256": "6cac66053c3aea4159f6c700ffa3987f5672df3c1327a7fcf9e87946411b242d"
+    },
+    {
+      "path": "backend/apps/api/src/modules/health/health.controller.ts",
+      "size": 221,
+      "sha256": "3c07d35bb99ddd3420f5c2b242b7ee27f2cc4d0b78e9991c7ad449dac116e51e"
+    },
+    {
+      "path": "backend/apps/api/src/modules/health/health.module.ts",
+      "size": 168,
+      "sha256": "6f6faa887a52cf6330a65dcb59568a0ee79f8308a1721844eb3ad32dc6d40069"
+    },
+    {
+      "path": "backend/apps/api/src/modules/ledger/ledger.controller.ts",
+      "size": 1006,
+      "sha256": "a663924fdb98a48bf627744f3879f05563442f7e253e4d95382eca5438bde73c"
+    },
+    {
+      "path": "backend/apps/api/src/modules/ledger/ledger.module.ts",
+      "size": 250,
+      "sha256": "c7eb14ef12f60f11c7edd4f6633ad19ee7502ef1540debd87abf9c5c7c644e20"
+    },
+    {
+      "path": "backend/apps/api/src/modules/ledger/ledger.service.ts",
+      "size": 740,
+      "sha256": "bcdc310b386a21a07fc3660e82db3cdbb635b8cc4671e986ca53a378176d2eac"
+    },
+    {
+      "path": "backend/apps/api/src/modules/order/dto/create-order.dto.ts",
+      "size": 1263,
+      "sha256": "760319a9c262e01cd886ac8b93252f267ae00f32fca587504bb3e8c5e12fd576"
+    },
+    {
+      "path": "backend/apps/api/src/modules/order/dto/payment-confirmation.dto.ts",
+      "size": 576,
+      "sha256": "a320cd481048cb05f0feeeb17be1edc21df613861b91fc6f0dd3847d9701f343"
+    },
+    {
+      "path": "backend/apps/api/src/modules/order/order.controller.ts",
+      "size": 2349,
+      "sha256": "41a16a7d6d26f7385d52d92d35c1866f172dd8b02708fc760dfce2c6e056244d"
+    },
+    {
+      "path": "backend/apps/api/src/modules/order/order.module.ts",
+      "size": 243,
+      "sha256": "484d4324ca12e1bfb64ff5b47c2bcaaf1b4c1259d041e5f9ff4e08d027b64f7e"
+    },
+    {
+      "path": "backend/apps/api/src/modules/order/order.service.ts",
+      "size": 9321,
+      "sha256": "0b5c606a30041fe67e21c16e079fe688ed40301b3c37bd45adbabc9f51fbd0a3"
+    },
+    {
+      "path": "backend/apps/api/src/modules/organization/organization.controller.ts",
+      "size": 1400,
+      "sha256": "85120ff1d31da139f7996932581d1cb885d18ae4e0ca107b875c288656b0aa04"
+    },
+    {
+      "path": "backend/apps/api/src/modules/organization/organization.module.ts",
+      "size": 331,
+      "sha256": "dce0c4cc9861a5bcf028e47dc75bfff2131f8a5a0d1bd95c98ca55e7edaefac5"
+    },
+    {
+      "path": "backend/apps/api/src/modules/organization/organization.service.ts",
+      "size": 6410,
+      "sha256": "6e72e7dfcccddce147e4684770219c37eaf3f2a1c9b8993301ef713aebb567f6"
+    },
+    {
+      "path": "backend/apps/api/src/modules/payout/payout.controller.ts",
+      "size": 913,
+      "sha256": "8c7164061c707de93e6f7e4ddd5b833e0665f6dbbc8c2715a4e6b6313454c3ec"
+    },
+    {
+      "path": "backend/apps/api/src/modules/payout/payout.module.ts",
+      "size": 480,
+      "sha256": "be32d6b436ca587baaa76fcda63655b55960165292072ee8cc1973e8e793a7da"
+    },
+    {
+      "path": "backend/apps/api/src/modules/payout/payout.service.ts",
+      "size": 539,
+      "sha256": "6899e0bd33c4b7ea7607bdf0ce78f32f4ecd2df9d07448a74156ae67b89021af"
+    },
+    {
+      "path": "backend/apps/api/src/modules/payout/recovery-balance.service.ts",
+      "size": 1366,
+      "sha256": "27ae60e9de91b30d00adb569d84fe3e9f819179d2d2933f30f2f6b8a02e9a55d"
+    },
+    {
+      "path": "backend/apps/api/src/modules/payout/unified-payable.service.ts",
+      "size": 4138,
+      "sha256": "ca4172ba5c36ce2ef832049bc1b67860e7cfd9bd37a4051b1dfe9e0fef066dd2"
+    },
+    {
+      "path": "backend/apps/api/src/modules/person/dto/create-person.dto.ts",
+      "size": 648,
+      "sha256": "ba0b8572c0a1752aaa566993bd37702f767080e4eca712c79d58bd69445c3507"
+    },
+    {
+      "path": "backend/apps/api/src/modules/person/person.controller.ts",
+      "size": 1503,
+      "sha256": "1d8a4c2f9f6f1436e310007f34560051bbb2abd70d9b34adabb1dd5961c0ea1c"
+    },
+    {
+      "path": "backend/apps/api/src/modules/person/person.module.ts",
+      "size": 248,
+      "sha256": "ac0ba1aafeab202d0d1388144180a8338554dd0039f4378d588183b7dcb0a8ae"
+    },
+    {
+      "path": "backend/apps/api/src/modules/person/person.service.ts",
+      "size": 2025,
+      "sha256": "9ac103a3af4cc70d6f118d45a82f2fb19855ab7efeeaeb47ff448359355fbd65"
+    },
+    {
+      "path": "backend/apps/api/src/modules/product/product.controller.ts",
+      "size": 979,
+      "sha256": "b76dc8d18873dda36a1f56e060a454a8e41b9dd561f37090787f6866ae7f5558"
+    },
+    {
+      "path": "backend/apps/api/src/modules/product/product.module.ts",
+      "size": 257,
+      "sha256": "3e3f4600469438b153651a44c2201c2cd4f03607deb87fead4c2110c379b75ad"
+    },
+    {
+      "path": "backend/apps/api/src/modules/product/product.service.ts",
+      "size": 1626,
+      "sha256": "c86b8fe2a461cbeea2e0a90b80c887e6fc26473b3cb1244b470e80827e5af3cd"
+    },
+    {
+      "path": "backend/apps/api/src/modules/qualification/dto/create-qualification.dto.ts",
+      "size": 993,
+      "sha256": "8ac504c572009fc465b6a162903db6b1aa07b4f1f6159d65bd8c383d03f3843a"
+    },
+    {
+      "path": "backend/apps/api/src/modules/qualification/qualification-status.service.ts",
+      "size": 1326,
+      "sha256": "cac28f9d0a6b0f2e920f0c1faaf7b6b2f0c691baefafe290693fa41cfd70cd77"
+    },
+    {
+      "path": "backend/apps/api/src/modules/qualification/qualification-workflow.controller.ts",
+      "size": 1025,
+      "sha256": "3e3458cf240f519fad953c4a186fec373df80f633cbb6e471b865927fb7def4c"
+    },
+    {
+      "path": "backend/apps/api/src/modules/qualification/qualification-workflow.service.ts",
+      "size": 6811,
+      "sha256": "1d5a44bde6eb96067bab5e206bb5232737e9d88e3fbf130cb43f8cfcfc241005"
+    },
+    {
+      "path": "backend/apps/api/src/modules/qualification/qualification.controller.ts",
+      "size": 1803,
+      "sha256": "44c6e0f623fe3822acb90a604a5563c51fdf83c39a48241f8afb61f39374203a"
+    },
+    {
+      "path": "backend/apps/api/src/modules/qualification/qualification.module.ts",
+      "size": 780,
+      "sha256": "0a2d83196926acda76ba18085c346819f4f2d97e00ad2d1c2c9840e156f5222d"
+    },
+    {
+      "path": "backend/apps/api/src/modules/qualification/qualification.service.ts",
+      "size": 6198,
+      "sha256": "7ae2b1b5a1e5c8ca94a0a7859af9edd5503cb2e9b08315401fc03a80eee40079"
+    },
+    {
+      "path": "backend/apps/api/src/modules/return/dto/create-return.dto.ts",
+      "size": 706,
+      "sha256": "a9dbd0ebff5bf7b4c48c7489580984516fbc362336a6d76c895b0e50b03c961c"
+    },
+    {
+      "path": "backend/apps/api/src/modules/return/return.controller.ts",
+      "size": 1443,
+      "sha256": "1a2b2209254264385c2e4cdb4cecfca90bf6197bcae8eb96ab9e04f3ddf0712f"
+    },
+    {
+      "path": "backend/apps/api/src/modules/return/return.module.ts",
+      "size": 449,
+      "sha256": "6559cea80ae673be3510b0df222674fa3832b669c32e883468b97afbde87cfab"
+    },
+    {
+      "path": "backend/apps/api/src/modules/return/return.service.ts",
+      "size": 4094,
+      "sha256": "96cbe7682024b7478fc591340cdf588f8c64331ed68b228728565f86fbbaaf17"
+    },
+    {
+      "path": "backend/apps/api/src/modules/return/reversal.service.ts",
+      "size": 6232,
+      "sha256": "b0f4dd7dfaf8a2de64209784a904f593c567ef477c7672c02532d5b3a1e3c5c7"
+    },
+    {
+      "path": "backend/apps/api/src/modules/rpv/rpv.controller.ts",
+      "size": 930,
+      "sha256": "afe73367933e07b6382af101e7a7cc2f8bce4ba8f7a3954f97bccb4049e2cb71"
+    },
+    {
+      "path": "backend/apps/api/src/modules/rpv/rpv.module.ts",
+      "size": 337,
+      "sha256": "0d1861660b8c5470d5454ae17559394f2caa769241e330891e1a6e613e08d7a0"
+    },
+    {
+      "path": "backend/apps/api/src/modules/rpv/rpv.service.ts",
+      "size": 5620,
+      "sha256": "1633d56238ba8d71a963aca2af0664c3dadc32c150fa3cc3f1f75d62f9f2a3e9"
+    },
+    {
+      "path": "backend/apps/api/src/modules/rules/runtime-rule.module.ts",
+      "size": 208,
+      "sha256": "bf942c59e64da42891dc2e8d4fb2efc4c7e4229a01761d7f2479ca71481b62fc"
+    },
+    {
+      "path": "backend/apps/api/src/modules/rules/runtime-rule.service.ts",
+      "size": 1099,
+      "sha256": "4018a571196e125fd868de906a9903ac4253bfffe064599a82a91a96d38ca8a9"
+    },
+    {
+      "path": "backend/apps/api/src/modules/settlement/settlement-calendar.service.ts",
+      "size": 1534,
+      "sha256": "3cd09050e9f023840fa6b50bd25ba1f8ceb04eb04c08d829e64ef6add6bac4bb"
+    },
+    {
+      "path": "backend/apps/api/src/modules/settlement/settlement.module.ts",
+      "size": 234,
+      "sha256": "4a99b06c4633f81621e3e39e23aeabed54060b4d2308b20a411bb6bf5fd83f04"
+    },
+    {
+      "path": "backend/apps/api/src/modules/subscription/dto/create-subscription.dto.ts",
+      "size": 592,
+      "sha256": "842c72693e2b1d7ba57de8a6618b5c1410a3521cdca349ccd01c9ba493c1d2c1"
+    },
+    {
+      "path": "backend/apps/api/src/modules/subscription/rpv-reversal.service.ts",
+      "size": 3525,
+      "sha256": "ac71cd79cf1d6bbb0a68a224dcf708a5a75958d8d57a1f495194ff6149ec496a"
+    },
+    {
+      "path": "backend/apps/api/src/modules/subscription/subscription-cancellation.service.ts",
+      "size": 2105,
+      "sha256": "663f894c0565b45030b6ade6966ca435db9aeb08b976fe2bbd002229027db180"
+    },
+    {
+      "path": "backend/apps/api/src/modules/subscription/subscription.controller.ts",
+      "size": 2053,
+      "sha256": "28e71d00875046bbdb0b3b1966bd973d1a6a0b16fc0866fda4f8e15f75dc18b6"
+    },
+    {
+      "path": "backend/apps/api/src/modules/subscription/subscription.module.ts",
+      "size": 567,
+      "sha256": "015427a9a78560f97f5b8f0f78215a528b4bb365864eee0b09fd382547e16c1e"
+    },
+    {
+      "path": "backend/apps/api/src/modules/subscription/subscription.service.ts",
+      "size": 3675,
+      "sha256": "432abfa76ab7e968b59074d1efa52a332258551a83a64af6f434e1580e09c8ab"
+    },
+    {
+      "path": "backend/apps/api/src/openapi-export.ts",
+      "size": 997,
+      "sha256": "c1f77bf94a57ceacfa71e4852b19cb77aaf10ac34633f1803bd3056d1c22f6d4"
+    },
+    {
+      "path": "backend/apps/api/test/bonus-engine-v04.e2e-spec.ts",
+      "size": 1903,
+      "sha256": "e239dd90eaf61ad90746b0c380bacaefa6bd6613224d421723393903ba1a3e41"
+    },
+    {
+      "path": "backend/apps/api/test/epv-global-v05.e2e-spec.ts",
+      "size": 760,
+      "sha256": "b0497efff4b2baab4eeb2a8069bd0313bf22d0d6058fe1b288bb8be0b2277cf3"
+    },
+    {
+      "path": "backend/apps/api/test/idempotency.e2e-spec.ts",
+      "size": 293,
+      "sha256": "a78d72c1c264928099da6455b0955a3de61a263208221a892b9e0d346ab4de7d"
+    },
+    {
+      "path": "backend/apps/api/test/negative-flow-v05.e2e-spec.ts",
+      "size": 918,
+      "sha256": "619cf79de80050f76082390a7f3bc4dfda48f3512f7be6cd84b1912a42080a17"
+    },
+    {
+      "path": "backend/apps/api/test/organization.e2e-spec.ts",
+      "size": 354,
+      "sha256": "1e17046ed5c7230688bdfe3dce717ab40d4665051b27a0ba7cacd8916afddf60"
+    },
+    {
+      "path": "backend/apps/api/test/qualification-isolation.e2e-spec.ts",
+      "size": 322,
+      "sha256": "64ea5b3bace16bf91e6920b016704c507047afc558ef43401102ba6d16f5e45e"
+    },
+    {
+      "path": "backend/apps/api/test/v060-adjustment-lifecycle.e2e-spec.ts",
+      "size": 659,
+      "sha256": "f8680e3a80bc42a7cc75b056cd6a55bb83157d650e86a8bd166ad8bcad916336"
+    },
+    {
+      "path": "backend/apps/api/test/v061-replay.e2e-spec.ts",
+      "size": 1343,
+      "sha256": "bf2514f3e34fb1224a4ac485818505e8635e385a6494c2e6521fe8ce4ec62dba"
+    },
+    {
+      "path": "backend/apps/api/test/v062-carry-chain.e2e-spec.ts",
+      "size": 1132,
+      "sha256": "00013dff35a67ff1056059297ed5914f8ad51bfacb4485979a01901930a72f4f"
+    },
+    {
+      "path": "backend/apps/api/test/v063-golden-path.e2e-spec.ts",
+      "size": 502,
+      "sha256": "666b52b7a3cd643fbad9ec62e47c56ea985a71f5febc4a7c4453624f6bca16b0"
+    },
+    {
+      "path": "backend/apps/api/test/v064-golden-dataset.e2e-spec.ts",
+      "size": 650,
+      "sha256": "d7e35cf20e24aa4c713f630a131dde8b7eeee16052d61f5644952aa4ae6280e7"
+    },
+    {
+      "path": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
+      "size": 1063,
+      "sha256": "4668ee169a5c049dc167166cee9dc020180cdf71ae4cef6f640f83600f9703b0"
+    },
+    {
+      "path": "backend/apps/api/test/vertical-slice.e2e-spec.ts",
+      "size": 724,
+      "sha256": "075d4c10c137c22095e33e1771568ecf4d2bb5aab6b26fdce89a1c6ed2e4c4a4"
+    },
+    {
+      "path": "backend/apps/api/tsconfig.json",
+      "size": 385,
+      "sha256": "0b90f7564b0274d5261fef830ab980c1bea9b54a4eb2e6498a2192b16af4483e"
+    },
+    {
+      "path": "backend/apps/worker/package.json",
+      "size": 401,
+      "sha256": "e05839f81ce8947e0a422f5a09540c6fb98acc8702c2053ff87fa0bf753dfaa5"
+    },
+    {
+      "path": "backend/apps/worker/src/main.ts",
+      "size": 16879,
+      "sha256": "b4dfc08b38848d6f90a00abca71c337cc7e8c70e52f8f57cced66c2aa89f6ebe"
+    },
+    {
+      "path": "backend/apps/worker/tsconfig.json",
+      "size": 159,
+      "sha256": "3b4d122518c20e6f201ba6bc1e1208b171030248eaf43a74792ddb6ed9cb3649"
+    },
+    {
+      "path": "backend/docker-compose.yml",
+      "size": 602,
+      "sha256": "1258ca667a870423fc513c44ed1774ba599402c517378138c40ce6a8a7cd3ab5"
+    },
+    {
+      "path": "backend/docs/ADMIN_BOOTSTRAP.md",
+      "size": 1067,
+      "sha256": "3727973c831575a8b719d3c6364aef1ae031747b3dd2792667a1ed5a08854e4a"
+    },
+    {
+      "path": "backend/docs/ADMIN_R2_CHANGELOG.md",
+      "size": 591,
+      "sha256": "abce0bbd0242e0f2b0abbfd74ddcb06b4621058882347d78b76a4a40227e6db9"
+    },
+    {
+      "path": "backend/docs/ADMIN_R4_CHANGELOG.md",
+      "size": 897,
+      "sha256": "65a3b541f6840d2b34ef1bdd9fd0cf8ad977e0d385e3164df9bd8a79be79e07d"
+    },
+    {
+      "path": "backend/docs/ADMIN_R5_CHANGELOG.md",
+      "size": 1160,
+      "sha256": "5f545acf6f05229c5de332d22eff9bd232a0ba81b6747492f3bca08fffa30216"
+    },
+    {
+      "path": "backend/docs/ARCHITECTURE.md",
+      "size": 846,
+      "sha256": "321d29e72b587c9fe9f04aeb8539b8d2b548341c212f044516adbdc9151bedc7"
+    },
+    {
+      "path": "backend/docs/BONUS_ENGINE_V04.md",
+      "size": 2270,
+      "sha256": "4115334a9bdeb742186f5d0432d798e43b52f42cea70e764be0d890a8b19dc05"
+    },
+    {
+      "path": "backend/docs/DEPENDENCY_LOCK_POLICY.md",
+      "size": 611,
+      "sha256": "c0bca65a6d50cb48afc83f8ced0da8e2ff7194707fb0ddd5c324e03955db0eae"
+    },
+    {
+      "path": "backend/docs/IMPLEMENTATION_ORDER.md",
+      "size": 1080,
+      "sha256": "bd1a8e187cd50c0e8367ed9688ce5cfc703537a9c0e2465baa6f8118a1ec2259"
+    },
+    {
+      "path": "backend/docs/LOCAL_RUNBOOK.md",
+      "size": 859,
+      "sha256": "094689e91d4ece78e236fc34557798f8530906c097b1b0344cad0b17939ea229"
+    },
+    {
+      "path": "backend/docs/PRODUCTION_ENV_CHECKLIST.md",
+      "size": 1217,
+      "sha256": "1e27202c40e48fe5606e0714d388dccdde574f0170add2c970f81fa9828b7b94"
+    },
+    {
+      "path": "backend/docs/PROGRESS.md",
+      "size": 939,
+      "sha256": "4ee18ff85bd9f43d5be706449cc519a46edbedb74c7e7eb11a807dc65f9df643"
+    },
+    {
+      "path": "backend/docs/R1_0B_FROZEN_SSOT.md",
+      "size": 948,
+      "sha256": "04ce14468c93e9f30095177c32d366f07b064c8cc645e0bc7c5a92dcfd01220f"
+    },
+    {
+      "path": "backend/docs/RELEASE_CUTOVER_RUNBOOK.md",
+      "size": 936,
+      "sha256": "71727e086fef97a68cc17ea3f821ade49b9c86229361462c3a1c7525810a1729"
+    },
+    {
+      "path": "backend/docs/RELEASE_PREP_CURRENT_OUTPUT.txt",
+      "size": 832,
+      "sha256": "abab517b22468e209ef0e8a7907f7bd1ebf28d7f882a0647df8462c88c31c2f6"
+    },
+    {
+      "path": "backend/docs/REVIEW_R1_OFFLINE_PREFLIGHT_OUTPUT.txt",
+      "size": 474,
+      "sha256": "a8480ae1a11a532c8afe64b40471f1be8c2a7056512547f07c1e44a6527947a0"
+    },
+    {
+      "path": "backend/docs/REVIEW_R2_OFFLINE_PREFLIGHT_OUTPUT.txt",
+      "size": 536,
+      "sha256": "f17065a4b5e3e1c13dd27af76121052ab536e2e57e90b04aeb1c7a5cd76b4954"
+    },
+    {
+      "path": "backend/docs/REVIEW_R3_OFFLINE_PREFLIGHT_OUTPUT.txt",
+      "size": 571,
+      "sha256": "f0581d6c10c8857ed0be6f56c94f8c4f32675a15f328cd4af52d62e8e76d1a49"
+    },
+    {
+      "path": "backend/docs/REVIEW_R4_OFFLINE_PREFLIGHT_OUTPUT.txt",
+      "size": 603,
+      "sha256": "158734558872396a0d5016cdd04d004f4b57df38c515f75de3c9607a2df74f91"
+    },
+    {
+      "path": "backend/docs/REVIEW_R5_OFFLINE_PREFLIGHT_OUTPUT.txt",
+      "size": 635,
+      "sha256": "16ae360657fd61d33352b18cf1fe2a0be5662cfe3ae0e656e2f06d815ec4cc91"
+    },
+    {
+      "path": "backend/docs/REVIEW_R6_OFFLINE_PREFLIGHT_OUTPUT.txt",
+      "size": 700,
+      "sha256": "c0f6f6c54dec55360ad4277f2df92d47523f27675f6f3ba00546a117cc74141c"
+    },
+    {
+      "path": "backend/docs/ROLLBACK_RUNBOOK.md",
+      "size": 775,
+      "sha256": "78dda789d778d9f163401de6c2ff0cc69d4d5c3d8bc8800838345d6c028f88a6"
+    },
+    {
+      "path": "backend/docs/SECURITY.md",
+      "size": 453,
+      "sha256": "d473d9981a79069d705ad5835d60e8edd99093d7888345ccf6541918f7083971"
+    },
+    {
+      "path": "backend/docs/SECURITY_THREAT_MATRIX.csv",
+      "size": 1698,
+      "sha256": "329b580ca1e037a87a16c15feb5a9338464002781883ed53ba35f3794190ca48"
+    },
+    {
+      "path": "backend/docs/SELF_AUDIT_R6.md",
+      "size": 1776,
+      "sha256": "0fe4b4118113cbef93ac7f66f8cfa3c9ca402f7ef8ec28e8334cfa5f381c0d14"
+    },
+    {
+      "path": "backend/docs/UAT_EXECUTION_R6.csv",
+      "size": 3493,
+      "sha256": "f59b0a00607d03312df9c03d39d20fd35e55971e4b67b426ec265fb4d1b62330"
+    },
+    {
+      "path": "backend/docs/UAT_GATE_CURRENT_OUTPUT.txt",
+      "size": 475,
+      "sha256": "316f0c1ce838519af8b71167016e938a314b4d1009e03bc35e65acf6ea830985"
+    },
+    {
+      "path": "backend/docs/UAT_SCENARIOS_R6.csv",
+      "size": 3128,
+      "sha256": "24b861c93596e2c75471d8c3b8c25d539a4be4a60d7acdb5b8b57b7fa608b3a9"
+    },
+    {
+      "path": "backend/docs/V060_SELF_AUDIT.md",
+      "size": 863,
+      "sha256": "b689231fcc1bac42a772eee6039cd16ad933d3b43f61cda1dda5c4988c7cb34b"
+    },
+    {
+      "path": "backend/docs/V0610_IMPLEMENTATION.md",
+      "size": 573,
+      "sha256": "fb4598961ef49b8ed3052944de2c214063156c143a97946fd786f4a76e83bc7b"
+    },
+    {
+      "path": "backend/docs/V0610_OFFLINE_PREFLIGHT_OUTPUT.txt",
+      "size": 420,
+      "sha256": "5c04225b5f773d98bee3bb9ea05fa4ef187a4b09b14ab904d87b5d9dd92f4b05"
+    },
+    {
+      "path": "backend/docs/V0610_SELF_AUDIT.md",
+      "size": 333,
+      "sha256": "3aabdf5494bfd1c755fca3b054b2544e0752c3620f2ed8c51999f367a88896c5"
+    },
+    {
+      "path": "backend/docs/V061_IMPLEMENTATION.md",
+      "size": 1539,
+      "sha256": "54f9895388210e63d46273e6ba0df938596100198782f7accdd5a270bfe71e7b"
+    },
+    {
+      "path": "backend/docs/V062_IMPLEMENTATION.md",
+      "size": 2511,
+      "sha256": "dc5a47357ca3519b1c0b0394c36715271a18e6906ba8f1820fc6d3e1784276a1"
+    },
+    {
+      "path": "backend/docs/V062_SELF_AUDIT.md",
+      "size": 1197,
+      "sha256": "c144cfc0bc3cf2fe566ee534795d9179e60bdcf3fc094122760ec89673a12a7b"
+    },
+    {
+      "path": "backend/docs/V063_IMPLEMENTATION.md",
+      "size": 1087,
+      "sha256": "c1329fef09799afe54abce45d0923413ff62c85d4e156cdea88cbda1d380e746"
+    },
+    {
+      "path": "backend/docs/V063_SELF_AUDIT.md",
+      "size": 763,
+      "sha256": "a1210a378e99af66fe779336f204408aac4d403c908d54135078e759efe73852"
+    },
+    {
+      "path": "backend/docs/V064_IMPLEMENTATION.md",
+      "size": 796,
+      "sha256": "aac0a4b8ee62371ad68365ac8920d4ac523bfbf778fdcf897b0f2169686219b5"
+    },
+    {
+      "path": "backend/docs/V064_SELF_AUDIT.md",
+      "size": 399,
+      "sha256": "845025984695a0ab84aa6bc613dee0c9c62dc425097b6b593ee4cbc14d776fa0"
+    },
+    {
+      "path": "backend/docs/V065_IMPLEMENTATION.md",
+      "size": 772,
+      "sha256": "35f10bad1162a4d715dd6be82004b9d15108d4ee91b2eb29d46e08cd2f15bdb8"
+    },
+    {
+      "path": "backend/docs/V065_SELF_AUDIT.md",
+      "size": 427,
+      "sha256": "5068c0dec3e136832c3e6b245e2c4e39d825e428f9b8453f292815fb8861cd06"
+    },
+    {
+      "path": "backend/docs/V066_CONVERGENCE_REPORT.md",
+      "size": 1523,
+      "sha256": "e0ef79f29073887168eaf26540b9a8d94220ebde7ca307624925d7867242f64a"
+    },
+    {
+      "path": "backend/docs/V066_SELF_AUDIT.md",
+      "size": 503,
+      "sha256": "d15beda059035f6b36706e997e5e04ed0372252a40780c64685ab815377c5a76"
+    },
+    {
+      "path": "backend/docs/V067_IMPLEMENTATION.md",
+      "size": 1705,
+      "sha256": "b9adf9ef48fa45a2af06fc67da331f4880827cb03c0116f811abd2e4b37bc13e"
+    },
+    {
+      "path": "backend/docs/V067_PREFLIGHT_OUTPUT.txt",
+      "size": 266,
+      "sha256": "49cbfc1625beccc6a6998d783c98640ab28aeacb052879713cfc2b3a0bea0f34"
+    },
+    {
+      "path": "backend/docs/V067_SELF_AUDIT.md",
+      "size": 818,
+      "sha256": "56572b08053b473fbb9d9b44903b96ae392838a7314d7a3eaacc9f3e548d122d"
+    },
+    {
+      "path": "backend/docs/V068_IMPLEMENTATION.md",
+      "size": 1157,
+      "sha256": "0a79865e7da400a49bbacbadd9f75ac5abf78ea4467bca563086355426aef7b0"
+    },
+    {
+      "path": "backend/docs/V068_OFFLINE_PREFLIGHT_OUTPUT.txt",
+      "size": 266,
+      "sha256": "49cbfc1625beccc6a6998d783c98640ab28aeacb052879713cfc2b3a0bea0f34"
+    },
+    {
+      "path": "backend/docs/V068_RUNBOOK.md",
+      "size": 478,
+      "sha256": "32a5b6b668e0209fffaf67d60c16ea3106f7ba29aab47ae37f282707a95673ae"
+    },
+    {
+      "path": "backend/docs/V068_SELF_AUDIT.md",
+      "size": 676,
+      "sha256": "926999a9b85f520fb8ceb968ac5b06f399eaedf9de73d5ce382c76e7ea7e891c"
+    },
+    {
+      "path": "backend/docs/V069_IMPLEMENTATION.md",
+      "size": 1486,
+      "sha256": "b47b983e8ac9b642b190e35d7d736a0d8aed8d0cfe4dc20bc502947d6df7d875"
+    },
+    {
+      "path": "backend/docs/V069_OFFLINE_PREFLIGHT_OUTPUT.txt",
+      "size": 363,
+      "sha256": "898f109706f080d3a51a0ce7cc8fd5f553c8730a72e4176c32991224a015906d"
+    },
+    {
+      "path": "backend/docs/V069_SELF_AUDIT.md",
+      "size": 602,
+      "sha256": "4adbb94d206cfb066884762e3028533eca893cac8cfc00000600fd4a46ffd25a"
+    },
+    {
+      "path": "backend/docs/VERTICAL_SLICE_01.md",
+      "size": 1312,
+      "sha256": "64b29b1eed913e5dae811b6cfab4712d9be5fd897831a48d8374524600e64c8d"
+    },
+    {
+      "path": "backend/docs/VERTICAL_SLICE_02.md",
+      "size": 1687,
+      "sha256": "79d669939c80a7f29a186e8c1e672c088183bd19436ba84144fcf36f0f5f43f9"
+    },
+    {
+      "path": "backend/docs/VERTICAL_SLICE_05.md",
+      "size": 2307,
+      "sha256": "91544c4419fc4baca2b1164423e3a97a94c9f907bb09b8633e4736107bde1b09"
+    },
+    {
+      "path": "backend/infra/docker/api.Dockerfile",
+      "size": 261,
+      "sha256": "955fd371a71246726379d4a17cc43e71597586ddfa692fe8685a691fe7018a45"
+    },
+    {
+      "path": "backend/manifest.json",
+      "size": 2863,
+      "sha256": "491475acd410e991825dd3ceb309bdf8bf7a5d3c85c705420a1a336a08b45558"
+    },
+    {
+      "path": "backend/package.json",
+      "size": 2090,
+      "sha256": "8e219435c860bb02a1b14504d20093a25be0d093c9a4ab5feb325778b1710a79"
+    },
+    {
+      "path": "backend/packages/contracts/package.json",
+      "size": 209,
+      "sha256": "c3dd01632f5474ac3f300350b36a61fb55d3de982d3de46298b08d6a8a1b1bae"
+    },
+    {
+      "path": "backend/packages/contracts/src/events.ts",
+      "size": 570,
+      "sha256": "83a8d4b9b3e7b1e71235d70e357cf9b648a0c843deccaa634eadb70e864df941"
+    },
+    {
+      "path": "backend/packages/contracts/tsconfig.json",
+      "size": 184,
+      "sha256": "7d4ed1e3787bd607c21fa5b57ce6e24b6a000cf63dee97a3445901ee96ed5d42"
+    },
+    {
+      "path": "backend/packages/database/package.json",
+      "size": 504,
+      "sha256": "950b9d218d34f68828fe21f1d2e98ad149fefd613b592f876e90069c903feec1"
+    },
+    {
+      "path": "backend/packages/database/prisma/migrations/0001_vertical_slice/migration.sql",
+      "size": 15692,
+      "sha256": "e7e130870a7fc8dd532d85a4a25af2d07796798c2b70bce92cbc368d5ac8c08a"
+    },
+    {
+      "path": "backend/packages/database/prisma/migrations/0002_membership_active_subscription_rpv/migration.sql",
+      "size": 7939,
+      "sha256": "3af57deb18fe425166373449f3d61093565b89c47a8e5c07b4e8ab955d3ff5a2"
+    },
+    {
+      "path": "backend/packages/database/prisma/migrations/0003_bonus_engine_core/migration.sql",
+      "size": 8489,
+      "sha256": "2810e180112c47283d0cfdc5ea3aef365419971da5d2d77c592e1f029d5e612c"
+    },
+    {
+      "path": "backend/packages/database/prisma/migrations/0004_reversal_epv_global_payout/migration.sql",
+      "size": 11285,
+      "sha256": "b9b6ec99ed12ae19810abcbee2daf68073a0ca4a6fb08311e9673dc0a8aeee7b"
+    },
+    {
+      "path": "backend/packages/database/prisma/migrations/0005_adjustment_lifecycle/migration.sql",
+      "size": 2743,
+      "sha256": "b2313ceb496e4680dca672412c9d2d7ae7202c300f2cbd3957002ca7fd8f3650"
+    },
+    {
+      "path": "backend/packages/database/prisma/migrations/0006_v061_closure/migration.sql",
+      "size": 2543,
+      "sha256": "3dc646d4823199235ade1a181e673f6e6691bad7a3d2f80bd9d4ecdd74798d96"
+    },
+    {
+      "path": "backend/packages/database/prisma/migrations/0007_v062_carry_chain_replay/migration.sql",
+      "size": 2846,
+      "sha256": "789dc460519433f15791cf8463ec52da186734b87dca2d328f034e399988a279"
+    },
+    {
+      "path": "backend/packages/database/prisma/migrations/0008_v063_calendar_payable/migration.sql",
+      "size": 2160,
+      "sha256": "60b3fcd4cb12a1eb411cc5531918a9aeff18f8222f42f4c292f7a05b8315fd86"
+    },
+    {
+      "path": "backend/packages/database/prisma/migrations/0009_v064_recovery_auth_audit_golden/migration.sql",
+      "size": 3619,
+      "sha256": "7ba88783e1881e72812e5391bd3264380496b1b67201399331ffe559c2e47def"
+    },
+    {
+      "path": "backend/packages/database/prisma/migrations/0010_v065_global_payable_schema/migration.sql",
+      "size": 266,
+      "sha256": "803914fa37b9422785480f5a82c534899b380df92989387c8821111e7f19e45a"
+    },
+    {
+      "path": "backend/packages/database/prisma/migrations/0011_v066_convergence_guards/migration.sql",
+      "size": 504,
+      "sha256": "e02f911c58872926f3f33f3d12a186650a12456ea989d5e24fd2ee5107683e95"
+    },
+    {
+      "path": "backend/packages/database/prisma/migrations/0012_v069_schema_relation_convergence/migration.sql",
+      "size": 419,
+      "sha256": "a39f57af8bf37345c6d057da8cdfbc9c3d77b1bd4e4360cac64114f93fc60caf"
+    },
+    {
+      "path": "backend/packages/database/prisma/migrations/0013_review_r1_integrity_guards/migration.sql",
+      "size": 2999,
+      "sha256": "716df53aead8b67b39a9c3f44c1e7790f452969e9263a90676f3af3db4902498"
+    },
+    {
+      "path": "backend/packages/database/prisma/migrations/0014_r4_payout_approval_recovery_integrity/migration.sql",
+      "size": 2016,
+      "sha256": "099d233fedb5cc30013dc5fe2ee9de4d516a5c750f49d7a7eda8c7898bf40729"
+    },
+    {
+      "path": "backend/packages/database/prisma/migrations/0015_r5_operations_ready/migration.sql",
+      "size": 1934,
+      "sha256": "8f8a0bf2d36b5f6a1bf3931a02d6ce06e60133fe09932c00bcc45d15722346bc"
+    },
+    {
+      "path": "backend/packages/database/prisma/migrations/0016_r6_admin_access_grant/migration.sql",
+      "size": 2996,
+      "sha256": "f1ab4acba29b7ce5b7cff8b93bb21cd1216fe2fe8ab47f867cd35c58792204e3"
+    },
+    {
+      "path": "backend/packages/database/prisma/migrations/migration_lock.toml",
+      "size": 24,
+      "sha256": "1db17a8d051aa136110736752c5e1f8b7ed92b6ea8e803112fbbe2497047c210"
+    },
+    {
+      "path": "backend/packages/database/prisma/schema.prisma",
+      "size": 55494,
+      "sha256": "f9d7ebd04a939990acd57db821c0892948dd9c2a211ab91db380d1509d687aff"
+    },
+    {
+      "path": "backend/packages/database/prisma/seed/golden-r1-0b.json",
+      "size": 614,
+      "sha256": "b3e23dd361c1e46f4c3b5793adef43fe6d602a346271ecaecd326f8de2ddfdae"
+    },
+    {
+      "path": "backend/packages/database/prisma/seed.ts",
+      "size": 1043,
+      "sha256": "5a4b3839ad8c8b646f05d702f0b0fe96ab5ded5b0c774c95a0e3cb6556926b02"
+    },
+    {
+      "path": "backend/packages/database/src/database.module.ts",
+      "size": 201,
+      "sha256": "73217ef20f9e574a050e9f9a64a100b5a2dd1cfd2b691fda6c27473241a63b54"
+    },
+    {
+      "path": "backend/packages/database/src/index.ts",
+      "size": 458,
+      "sha256": "d0391704263401ac698a60348dbc0387eccfd4e31e64de59d86cea77cecc2480"
+    },
+    {
+      "path": "backend/packages/database/src/prisma.service.ts",
+      "size": 337,
+      "sha256": "2d1da60887944aab14da7939e027014a3749464f1be1a4e1bb5bed644b886ed5"
+    },
+    {
+      "path": "backend/packages/database/tsconfig.json",
+      "size": 255,
+      "sha256": "dd6e7529db8b7f985de6729f99c4b47542e7110a7bbb727cff080193d23965a4"
+    },
+    {
+      "path": "backend/packages/shared/package.json",
+      "size": 263,
+      "sha256": "3b00e0c77932542e42ee1c05acc05c0c5136768e0f227c91ec90cdfca6f1485e"
+    },
+    {
+      "path": "backend/packages/shared/src/index.ts",
+      "size": 383,
+      "sha256": "60ecaf2d2c091bea0d4d75c45da59b5cda89a163c5711f343d6d4346570776bf"
+    },
+    {
+      "path": "backend/packages/shared/src/r1-0b-golden.ts",
+      "size": 594,
+      "sha256": "c25a2e47cc10637b4737147ccbeb03b8720c95be069303c54213d9a9598c010d"
+    },
+    {
+      "path": "backend/packages/shared/test/r1-0b-golden.spec.ts",
+      "size": 710,
+      "sha256": "d65c323f6a708f280acd91e8b75cb69f0be9c14c4f87dbfc3fc7f20447c82a71"
+    },
+    {
+      "path": "backend/packages/shared/tsconfig.json",
+      "size": 184,
+      "sha256": "7d4ed1e3787bd607c21fa5b57ce6e24b6a000cf63dee97a3445901ee96ed5d42"
+    },
+    {
+      "path": "backend/pnpm-workspace.yaml",
+      "size": 40,
+      "sha256": "60ce4d1dbf137701a4683d171391c51662700c2f3e32a7caab8b2efc22540e65"
+    },
+    {
+      "path": "backend/release/R6_RELEASE_GATE.json",
+      "size": 761,
+      "sha256": "d17efb992526ed51eb226e50f6ea0e93b19a0641ba3032be966a6075442c9d0a"
+    },
+    {
+      "path": "backend/release/RC_PROMOTION_CHECKLIST.json",
+      "size": 766,
+      "sha256": "24792a1490ef16c66a188a2359d175c57b36263c18c7ebf00bf808749c7aec6d"
+    },
+    {
+      "path": "backend/scripts/admin-observability-preflight.mjs",
+      "size": 1057,
+      "sha256": "8a791a5c54ad251ac2956a0e0cca026f1a1914d335d095a1217db62c9dd18df9"
+    },
+    {
+      "path": "backend/scripts/admin-operations-preflight.mjs",
+      "size": 2017,
+      "sha256": "77222197713da42ae4413c8dc40ef3f7fcbc181e42ff7c7e434569a43800a80c"
+    },
+    {
+      "path": "backend/scripts/admin-readmodel-preflight.mjs",
+      "size": 1375,
+      "sha256": "53032bac3fbe77bb0e706494b8005b18a2cc143ad1518fffe7028ea960378c79"
+    },
+    {
+      "path": "backend/scripts/ci-gate.sh",
+      "size": 1249,
+      "sha256": "7e7310e77487c6b59962a9725c98576bad93f38f6d70fa3c1eced908f65c8cbb"
+    },
+    {
+      "path": "backend/scripts/convergence-validate.mjs",
+      "size": 2060,
+      "sha256": "990fde277728008f6b5b9352ab57250bacf6a287cc5ec9ca77aa4efdf41752a8"
+    },
+    {
+      "path": "backend/scripts/db-golden-e2e.ts",
+      "size": 2090,
+      "sha256": "6eaec21d40045a802c6f84ed4c1ede2804c6333aded9d0fe6ff589d6d0c773ba"
+    },
+    {
+      "path": "backend/scripts/dev-smoke.sh",
+      "size": 681,
+      "sha256": "e18ecd04b9676b03dbd0461c37f3c2f91ce096eb77c9a246e82d6cdcb7905a50"
+    },
+    {
+      "path": "backend/scripts/enum-migration-preflight.mjs",
+      "size": 1321,
+      "sha256": "bfc1a56ec7d239dbabe8ab22ecdb56bc202c94ac2d57e9184e2a30d4b6f328b5"
+    },
+    {
+      "path": "backend/scripts/golden-domain-test.mjs",
+      "size": 785,
+      "sha256": "1c33894e442b2cac14c93662d4c9c228492b74bd3ea6ca5fe9e9c32911aa72ab"
+    },
+    {
+      "path": "backend/scripts/golden-economic-cases.mjs",
+      "size": 1378,
+      "sha256": "469484a98b890eb0269f9b7b318ee8b87988ab009c88d64a41533b4d4aaa33d2"
+    },
+    {
+      "path": "backend/scripts/golden-r1b-regression.mjs",
+      "size": 1119,
+      "sha256": "6464e0387e5e3eec714132932212a1851a7f135aa2d12f9fdf47e1af200aad54"
+    },
+    {
+      "path": "backend/scripts/http-smoke.mjs",
+      "size": 331,
+      "sha256": "7c65525a156b7b331abf0a01cea366a9c0b2de814fde732b0b060603cfd2433f"
+    },
+    {
+      "path": "backend/scripts/import-module-preflight.mjs",
+      "size": 1545,
+      "sha256": "2e523856d97a885b80243790c451eb8e0cfcddb08bd73e4cc6416dcd2979c12f"
+    },
+    {
+      "path": "backend/scripts/migration-preflight.mjs",
+      "size": 1461,
+      "sha256": "3ccff5e57386a4d1e84b14d02cad844b8905d2d9b5063ca96cca8fef2a9fabab"
+    },
+    {
+      "path": "backend/scripts/openapi-preflight.mjs",
+      "size": 878,
+      "sha256": "952472ca92671f024950c96dc10b4c9736d2caeec47ca21657f681c24852fefd"
+    },
+    {
+      "path": "backend/scripts/operations-ready-preflight.mjs",
+      "size": 1670,
+      "sha256": "d6c38e97fc3d118e65382052e77c6ffe511ba83a4dd0d4575ec6378333569cc1"
+    },
+    {
+      "path": "backend/scripts/prisma-client-access-preflight.mjs",
+      "size": 1159,
+      "sha256": "e5142edcaeaf3ff6a04aac5005065a76c82a6d301b99c24f94b8b2fafec98498"
+    },
+    {
+      "path": "backend/scripts/prisma-relation-preflight.mjs",
+      "size": 2238,
+      "sha256": "cc8886f6bd37121e1f479f18d875746c897dcd557eb41b09f696ff770548dee9"
+    },
+    {
+      "path": "backend/scripts/rc-gate.sh",
+      "size": 378,
+      "sha256": "1f3b3c90561b84aaf60028f519b9d0b9e6e45b3365fef5bd06ad7c062476b6a1"
+    },
+    {
+      "path": "backend/scripts/release-prep.sh",
+      "size": 1210,
+      "sha256": "f47fb57544415d802e3355db808e348be9052b390be3a6b2548e3aadcf2fc4eb"
+    },
+    {
+      "path": "backend/scripts/release-readiness-preflight.mjs",
+      "size": 1000,
+      "sha256": "3e39f2727967e07a3429fd28fe3b694126bc36055a0b98f3ee818b1938115de6"
+    },
+    {
+      "path": "backend/scripts/review-r1-preflight.mjs",
+      "size": 1437,
+      "sha256": "5b57aa544a9a694d4ce01bd845796418b6d86f87324d9b333af32dacb5268c24"
+    },
+    {
+      "path": "backend/scripts/runtime-safety-preflight.mjs",
+      "size": 933,
+      "sha256": "8f69f453b273e069f92cd40bd4d8de0c4db42313d533541c1c748579a5e8e34c"
+    },
+    {
+      "path": "backend/scripts/schema-preflight.mjs",
+      "size": 1820,
+      "sha256": "dc5cd4f20d5b1e41bed5eea267d5b740681cd88a3779e52aa2d18932bf0f24c2"
+    },
+    {
+      "path": "backend/scripts/security-http-e2e.mjs",
+      "size": 1592,
+      "sha256": "e98f3df268da5d2923f5f1371abbc542e83db0ad3c02b0366200604cee7ef144"
+    },
+    {
+      "path": "backend/scripts/security-policy-preflight.mjs",
+      "size": 2662,
+      "sha256": "2cec8095b963b6c76fa6a66c0a7aa71e100587d389eb5e5a4763d8034d636d9a"
+    },
+    {
+      "path": "backend/scripts/source-preflight.mjs",
+      "size": 1380,
+      "sha256": "75cf167bf519bc63e261c1b1f4a67f7551e750d0e62f7c9750e668605a23c0f9"
+    },
+    {
+      "path": "backend/scripts/static-validate.mjs",
+      "size": 659,
+      "sha256": "2953550b842e3931d9c2f406ba63d7d874f5a216e2b1d840e6cf5e96a9f0e260"
+    },
+    {
+      "path": "backend/scripts/test-todo-gate.mjs",
+      "size": 928,
+      "sha256": "d5173dcea65b212492d89011b2c4fa0f5415c7a5e86d2f4903495106c3a7afce"
+    },
+    {
+      "path": "backend/scripts/typescript-parse-preflight.mjs",
+      "size": 1664,
+      "sha256": "cb2e22aa087e8e47cd40c9f889756a70f9b14cfb8e3317dc3c7717af24b9e767"
+    },
+    {
+      "path": "backend/scripts/uat-gate.mjs",
+      "size": 1152,
+      "sha256": "e733d32aacef692d32bd3eb05ac38c9d9e1a3d94fe2281a212d818a591499e67"
+    },
+    {
+      "path": "deployment/.env.production.example",
+      "size": 389,
+      "sha256": "2b935118d52406e4e056761e6b6aef36f4f12b40c64b5170b8f7f49f812c4dcb"
+    },
+    {
+      "path": "deployment/Dockerfile.admin",
+      "size": 794,
+      "sha256": "4a0deb08ea99cd147b8ee432d095ef33fa1a85d58588d41941e46d7375c44770"
+    },
+    {
+      "path": "deployment/Dockerfile.backend",
+      "size": 703,
+      "sha256": "c57bed70937df1493f42e22c5ae090adffd6784476342d1ce1f77cf99eb371db"
+    },
+    {
+      "path": "deployment/Dockerfile.worker",
+      "size": 658,
+      "sha256": "9f1d2f4a062f36bec06501cae3002fb8c9cf8eed53400ff44a8641ccb97f14e5"
+    },
+    {
+      "path": "deployment/backup.sh",
+      "size": 241,
+      "sha256": "244b8734ea844b37d7422dc2ccdb09fe544ce38b0b0c11cf79b222f5899a89c3"
+    },
+    {
+      "path": "deployment/docker-compose.production.yml",
+      "size": 744,
+      "sha256": "e810dc1bed1a7840798d434ea986e4b6fd36722583c7951f2d56ac7c5d04e94c"
+    },
+    {
+      "path": "deployment/nginx.admin.conf",
+      "size": 743,
+      "sha256": "0f139516e0d97243395300a96197b54893c723207290efc81640acaef2b1d1f1"
+    },
+    {
+      "path": "deployment/restore-drill.sh",
+      "size": 271,
+      "sha256": "d0f82911fcac56877c50bf2c58b00c55496434805b3339fbf67e291567a39a08"
+    },
+    {
+      "path": "governance/AI_CORE_ALIGNMENT.md",
+      "size": 1261,
+      "sha256": "a4c1fa271ebc3c5ebe2d175e62322e3d871b389f0deb45a114860abdff66c665"
+    },
+    {
+      "path": "governance/CURRENT_SSOT_POINTERS.md",
+      "size": 696,
+      "sha256": "82513e37acaa132239cc533d5751cdc4ca2f0ec6c48f4499b589dcc27a09374f"
+    },
+    {
+      "path": "governance/FINAL_SELF_AUDIT.md",
+      "size": 1413,
+      "sha256": "fa59ab0d93dba2d7ce7345bcd2082779496d8569321717084f36388588f433e3"
+    },
+    {
+      "path": "governance/FINAL_VALIDATION_OUTPUT.txt",
+      "size": 2167,
+      "sha256": "238b20ed6ef2b99bb517c876168b12859207cc04645b5d5f8b09d7041e6a1b69"
+    },
+    {
+      "path": "governance/RELEASE_ALIGNMENT_REPORT.md",
+      "size": 3027,
+      "sha256": "4a9d9765a9535373eb9275e4244ab51fe90b1da74be64f5daceac1f40c4283db"
+    },
+    {
+      "path": "governance/SA_System_Function_Matrix.xlsx",
+      "size": 32514,
+      "sha256": "64264277156ec136a6425b114eb5ca980cf03f2d66f1f764684fd070ef100a42"
+    },
+    {
+      "path": "scripts/release-gate.sh",
+      "size": 104,
+      "sha256": "2e09bb92f8a0593803d8bf2208a833627d387db659f4710dc1626833817f83b0"
+    }
+  ]
+}

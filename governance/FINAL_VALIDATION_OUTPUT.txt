@@ -1,0 +1,61 @@
+== Backend offline gate ==
+== UCell R1.0B offline preflight ==
+STATIC_VALIDATE_PASS
+CONVERGENCE_VALIDATE_PASS
+GOLDEN_DOMAIN_PASS
+SCHEMA_PREFLIGHT_PASS
+PRISMA_RELATION_PREFLIGHT_PASS
+PRISMA_CLIENT_ACCESS_PREFLIGHT_PASS
+ENUM_MIGRATION_PREFLIGHT_PASS
+RUNTIME_SAFETY_PREFLIGHT_PASS
+MIGRATION_PREFLIGHT_PASS
+SOURCE_PREFLIGHT_PASS
+IMPORT_MODULE_PREFLIGHT_PASS
+REVIEW_R1_PREFLIGHT_PASS
+ADMIN_READMODEL_PREFLIGHT_PASS
+ADMIN_OBSERVABILITY_PREFLIGHT_PASS
+ADMIN_OPERATIONS_PREFLIGHT_PASS
+OPERATIONS_READY_PREFLIGHT_PASS
+SECURITY_POLICY_PREFLIGHT_PASS
+RELEASE_READINESS_PREFLIGHT_PASS
+TYPESCRIPT_PARSE_PREFLIGHT_PASS
+GOLDEN_R1B_REGRESSION_PASS
+GOLDEN_ECONOMIC_CASES_PASS
+OFFLINE_PREFLIGHT_PASS
+DEPENDENCY_GATE_SKIPPED: pnpm not installed
+
+== Admin preflight/self-audit ==
+ADMIN_PREFLIGHT_PASS
+ADMIN_V060_SELF_AUDIT_PASS
+
+== Rule evidence spot-check ==
+130:('R1.0B','pool.referral.rate','*','0.42','2026-09-01T00:00:00+08:00'),
+131:('R1.0B','pool.binary.rate','*','0.36','2026-09-01T00:00:00+08:00'),
+132:('R1.0B','pool.matching.rate','*','0.15','2026-09-01T00:00:00+08:00'),
+163:('R1.0B','equalization.rate','LEADER:G5','0.10','2026-09-01T00:00:00+08:00'),
+84:('QUARTER','季方案',3,6000,2,2000,1200),
+
+== Test TODO audit ==
+TEST_TODO_GATE_FAIL: 148 unresolved executable test placeholders
+- apps/api/test/bonus-engine-v04.e2e-spec.ts: 26
+- apps/api/test/epv-global-v05.e2e-spec.ts: 12
+- apps/api/test/idempotency.e2e-spec.ts: 4
+- apps/api/test/negative-flow-v05.e2e-spec.ts: 12
+- apps/api/test/organization.e2e-spec.ts: 5
+- apps/api/test/qualification-isolation.e2e-spec.ts: 4
+- apps/api/test/v060-adjustment-lifecycle.e2e-spec.ts: 10
+- apps/api/test/v061-replay.e2e-spec.ts: 18
+- apps/api/test/v062-carry-chain.e2e-spec.ts: 13
+- apps/api/test/v063-golden-path.e2e-spec.ts: 8
+- apps/api/test/v064-golden-dataset.e2e-spec.ts: 11
+- apps/api/test/vertical-slice-02.e2e-spec.ts: 16
+- apps/api/test/vertical-slice.e2e-spec.ts: 9
+TEST_TODO_GATE_RC=1 (nonzero blocks production as designed)
+
+== AI runtime money-path grep ==
+AI_RUNTIME_REFERENCE_COUNT=0
+Expected 0 in deterministic Core transaction path.
+
+== Release manifest / workbook ==
+RELEASE_MANIFEST_PRESENT
+SA_MATRIX_PRESENT

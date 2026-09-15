@@ -1,0 +1,17 @@
+﻿id,threat,risk,control,status
+AUTH-01,Stolen Entra token,High,Verify signature/issuer/audience/tenant; exchange to short-lived opaque backend session,R6
+AUTH-02,Unauthorized employee Entra account,Critical,Explicit AdminAccessGrant allow-list,R6
+AUTH-03,Session token theft,High,"Short TTL, revoke/logout, TLS, sessionStorage frontend",R6
+AUTH-04,DEV bypass in production,Critical,Guard ignores bypass when NODE_ENV=production,R5/R6
+AUTHZ-01,Missing controller role policy,Critical,Global AdminRoleGuard fails closed with ROLE_POLICY_MISSING,R6
+AUTHZ-02,Privilege escalation,Critical,Role decorators + service-level payout role checks + security UAT,R6
+AUTHZ-03,Same actor dual approval,Critical,Backend rejects same actor across Finance/Compliance stages,R4
+BOLA-01,Guess another Qualification UUID,High,Admin role policy; member-side temporal ownership guard before LINE release,Open/Member API
+DATA-01,Delete or overwrite immutable ledger/document,Critical,No-delete triggers; append/supersede semantics,R5
+DATA-02,Recovery arithmetic drift,Critical,DB invariant + Integrity Alert,R4/R5
+DATA-03,Payout arithmetic drift,Critical,Backend calculation + Integrity Alert,R5
+WEB-01,XSS steals admin bearer,High,CSP/Helmet; backend opaque session; frontend moves token to sessionStorage; dependency/security testing,R6
+WEB-02,CSRF,Medium,Bearer Authorization rather than ambient auth cookie; strict CORS,R6
+WEB-03,CORS abuse,High,Production allow-list admin.ucell.life/app.ucell.life,Existing
+OPS-01,Unreviewed production deploy,Critical,R6 Release Gate + cutover checklist,R6
+OPS-02,Failed migration/data loss,Critical,Backup + restore drill + migration gate + rollback runbook,R6

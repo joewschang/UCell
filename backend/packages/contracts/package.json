@@ -1,0 +1,12 @@
+{
+  "name": "@ucell/contracts",
+  "version": "0.6.10",
+  "private": true,
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "echo no-tests"
+  },
+  "devDependencies": {
+    "typescript": "*"
+  }
+}

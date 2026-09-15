@@ -1,0 +1,29 @@
+services:
+  api:
+    build:
+      context: ..
+      dockerfile: deployment/Dockerfile.backend
+    env_file: .env.production
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3000:3000"
+  worker:
+    build:
+      context: ..
+      dockerfile: deployment/Dockerfile.worker
+    env_file: .env.production
+    restart: unless-stopped
+    depends_on:
+      - api
+  admin:
+    build:
+      context: ..
+      dockerfile: deployment/Dockerfile.admin
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL}
+        VITE_ENTRA_TENANT_ID: ${VITE_ENTRA_TENANT_ID}
+        VITE_ENTRA_CLIENT_ID: ${VITE_ENTRA_CLIENT_ID}
+        VITE_ENTRA_REDIRECT_URI: ${VITE_ENTRA_REDIRECT_URI}
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8080:80"

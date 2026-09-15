@@ -1,0 +1,20 @@
+{
+  "ruleVersion": "R1.0B",
+  "status": "FROZEN",
+  "caseCode": "R10B-GOLDEN-BASE-001",
+  "persons": ["A","B","C","D","E"],
+  "plans": {"A":"LEADER","B":"ELITE","C":"STARTER","D":"STARTER","E":"STARTER"},
+  "sponsorTree": [["A","B"],["A","C"],["B","D"],["B","E"]],
+  "binaryTree": [["A","B","LEFT"],["A","C","RIGHT"],["B","D","LEFT"],["B","E","RIGHT"]],
+  "expectedInvariants": [
+    "Person != Qualification",
+    "SponsorTree != BinaryTree",
+    "Active First",
+    "Leader Equalization G5 = 10%",
+    "K0 <= 1",
+    "K1 <= 1",
+    "K2 <= 1",
+    "RPV uses Binary Tree",
+    "EPV upline uses Sponsor Tree"
+  ]
+}

@@ -1,0 +1,22 @@
+# v0.1.0 Acceptance Criteria
+
+- [x] Project skeleton is complete.
+- [x] Admin shell and navigation exist.
+- [x] UI RBAC is defined.
+- [x] API client uses backend as single calculation source.
+- [x] Person creation/list is wired.
+- [x] Membership Application lifecycle is wired.
+- [x] Qualification/Active/Ledger workbench is wired.
+- [x] Product reference is wired.
+- [x] Order/payment/EPV is wired.
+- [x] Binary placement is wired.
+- [x] Subscription is wired.
+- [x] Bonus settlement/lifecycle/pools are wired.
+- [x] Return/reversal/replay is wired.
+- [x] Qualification workflows are wired.
+- [x] Payable/Payout batch is wired.
+- [x] System readiness explicitly surfaces backend gaps.
+- [ ] Production auth.
+- [ ] Backend dependency/DB RC gate.
+- [ ] Full list/search read models.
+- [ ] Production UAT.
