@@ -1,0 +1,4 @@
+command: node scripts/release-readiness-preflight.mjs
+started: 2026-09-15T12:17:43.998Z
+exit: 0
+RELEASE_READINESS_PREFLIGHT_PASS

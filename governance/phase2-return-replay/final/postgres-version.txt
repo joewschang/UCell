@@ -1,0 +1,5 @@
+command: docker exec backend-postgres-1 postgres --version
+started: 2026-09-15T12:17:01.137Z
+exit: 1
+WARNING: Error loading config file: open C:\Users\Administrator\.docker\config.json: Access is denied.
+permission denied while trying to connect to the docker API at npipe:////./pipe/docker_engine

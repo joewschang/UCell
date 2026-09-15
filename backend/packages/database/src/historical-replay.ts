@@ -99,7 +99,18 @@ export function verifyReplayEnvelope(row:any):ReplayEnvelope {
   for(const recipient of envelope.recipients) {
     if(!recipient.qualification?.plan||!recipient.qualification?.status||!Array.isArray(recipient.qualification.activeIntervals))
       pending('HISTORICAL_SNAPSHOT_MISSING','Historical recipient Qualification/Active evidence is required');
+    const at=new Date(recipient.qualification.at??envelope.at).getTime();
+    if(!Number.isFinite(at)) pending('HISTORICAL_SNAPSHOT_MISSING','Historical recipient calculation timestamp is missing');
+    const active=recipient.qualification.activeIntervals.some((interval:any)=>new Date(interval.activeFrom).getTime()<=at&&(!interval.activeTo||new Date(interval.activeTo).getTime()>at));
+    if(active!==recipient.active) pending('HISTORICAL_SNAPSHOT_CORRUPT','Recipient Active flag conflicts with original evidence');
     if(!recipient.active&&dec(recipient.posted).gt(0)) pending('HISTORICAL_SNAPSHOT_CORRUPT','Inactive historical recipient cannot have positive entitlement');
+    if(envelope.kind==='EPV') {
+      const expectedRate=snapshotDecimal(parameters,recipient.generation===0?'epv.self.rate':'epv.upline.rate',recipient.generation===0?'*':String(recipient.generation));
+      if(recipient.rate==null||!dec(recipient.rate).eq(expectedRate)) pending('HISTORICAL_SNAPSHOT_CORRUPT','EPV rate conflicts with original Parameter snapshot');
+      const ancestors=historicalSponsorAncestors(envelope.evidence,envelope.inputs.qualificationId,5);
+      const original=recipient.generation===0?envelope.inputs.qualificationId:ancestors.find(item=>item.generation===recipient.generation)?.qualification_id;
+      if(original!==recipient.qualificationId||historicalRecipientState(envelope.evidence,recipient.qualificationId).active!==recipient.active) pending('HISTORICAL_SNAPSHOT_CORRUPT','EPV recipient conflicts with original Sponsor/Active evidence');
+    }
   }
   return envelope;
 }

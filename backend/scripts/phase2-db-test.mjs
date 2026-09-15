@@ -32,6 +32,8 @@ try{await prisma.$transaction(async tx=>{
  await tx.bonusAwardLifecycleEvent.create({data:{bonusAwardId:selfAward.bonusAwardId,status:'PAID',occurredAt:new Date('2020-01-09'),reasonCode:'PHASE2_TEST_PAID'}});
  const paid=JSON.stringify(await tx.bonusAwardLifecycleEvent.findMany({where:{bonusAwardId:selfAward.bonusAwardId}}));
  await tx.sponsorRelationship.update({where:{sponsorRelationshipId:relationship.sponsorRelationshipId},data:{effectiveTo:new Date('2020-01-06')}});
+ // Supervised fixture supersede: the current-row guard permits replacement only after closing its interval.
+ await tx.sponsorRelationship.update({where:{sponsorRelationshipId:relationship.sponsorRelationshipId},data:{sponsorQualificationId:newSponsor.qualificationId,effectiveFrom:new Date('2020-01-06'),effectiveTo:null}});
  await tx.activePeriod.updateMany({where:{qualificationId:oldSponsor.qualificationId},data:{activeTo:new Date('2020-01-06')}});
  await tx.activePeriod.create({data:{qualificationId:inactive.qualificationId,activeFrom:new Date('2020-01-06'),sourceType:'CHANGED_AFTER_CAPTURE_TEST',ruleVersionCode:version}});
  async function ret(amount=1600){return tx.returnCase.create({data:{orderId:order.orderId,status:'POSTED',reasonCode:'PHASE2_TEST',occurredAt:new Date('2020-01-10'),idempotencyKey:randomUUID(),correlationId:randomUUID(),lines:{create:{orderLineId:order.lines[0].orderLineId,quantity:1,returnAmount:amount,gpvReversalAmount:0}}}});}
@@ -60,27 +62,41 @@ try{await prisma.$transaction(async tx=>{
  await rejected('posting DELETE rejected by DB',()=>tx.entitlementReplayPosting.delete({where:{postingId:firstPost.postingId}}),'APPEND_ONLY_REPLAY_EVIDENCE');
  await rejected('posting cannot repeat previously clawed back delta',()=>tx.entitlementReplayPosting.create({data:{actionKey:'RETURN:INVALID',snapshotId:snapshot.snapshotId,entitlementKey:firstPost.entitlementKey,recipientQualificationId:self.qualificationId,originallyPosted:840,recalculatedEntitlement:0,delta:-840,stateHash:'invalid'}}),'REPLAY_DELTA_BASELINE_MISMATCH');
  const beforeMissing=await tx.pvLedger.count();
- const absent=await tx.returnCase.create({data:{orderId:order.orderId,status:'POSTED',reasonCode:'MISSING',occurredAt:new Date('2020-01-11'),idempotencyKey:randomUUID(),correlationId:randomUUID()}});
  await rejected('missing snapshot fails closed',()=>replay.verifyReplayEnvelope(null),'HISTORICAL_SNAPSHOT_MISSING');
  check('missing snapshot does not append money',await tx.pvLedger.count(),beforeMissing);
  // Original fixture capture precedes replay. TEST_ONLY parameters do not establish an operational calendar.
  const {captureParameters}=require('./packages/database/dist/parameter-snapshot.js');
  const historical=await captureParameters(tx,new Date('2020-01-03'),version);
  const leftQ=await qualification(),rightQ=await qualification();
+ for(const [index,q] of [leftQ,rightQ].entries())await tx.sponsorRelationship.create({data:{sponsorQualificationId:self.qualificationId,childQualificationId:q.qualificationId,sponsorSequenceNo:index+1,effectiveFrom:new Date('2020-01-01')}});
  await tx.binaryPlacement.create({data:{parentQualificationId:self.qualificationId,childQualificationId:leftQ.qualificationId,side:'LEFT',effectiveFrom:new Date('2020-01-01')}});
  await tx.binaryPlacement.create({data:{parentQualificationId:self.qualificationId,childQualificationId:rightQ.qualificationId,side:'RIGHT',effectiveFrom:new Date('2020-01-01')}});
  const economic=[];
  for(const q of [leftQ,rightQ]){const o=await tx.order.create({data:{qualificationId:q.qualificationId,purpose:'RETAIL',status:'PAID',grossAmount:1000,netAmount:1000,ruleVersionCode:version,paidAt:new Date('2020-01-03'),lines:{create:{productId:product.productId,skuSnapshot:product.sku,productNameSnapshot:'GPV TEST',quantity:2,unitPrice:500,lineAmount:1000,gpvRateSnapshot:1,gpvAmountSnapshot:1000,ruleProfileSnapshot:{testOnly:true}}}},include:{lines:true}});const event=await tx.pvLedger.create({data:{qualificationId:q.qualificationId,pvType:'GPV',amount:1000,eventType:'GPV_CREATED',sourceType:'ORDER',sourceId:o.orderId,sourceLineId:o.lines[0].orderLineId,ruleVersionCode:version,occurredAt:o.paidAt,correlationId:randomUUID()}});const row=await replay.sealGpvEvent(tx,event);economic.push({order:o,event,envelope:replay.verifyReplayEnvelope(row)});}
- const batch=await tx.settlementBatch.create({data:{settlementType:'REFERRAL_K0',periodStart:new Date('2020-01-01'),periodEnd:new Date('2020-01-08'),ruleVersionCode:version,status:'FINALIZED',parameterSnapshot:historical,totalGpv:2000,kFactor:'.42'}});
+ const batch=await tx.settlementBatch.create({data:{settlementType:'REFERRAL_K0',periodStart:new Date('2020-01-01'),periodEnd:new Date('2020-01-08'),ruleVersionCode:version,status:'FINALIZED',parameterSnapshot:historical,totalGpv:2000,totalTheory:1100,poolRate:'.42',poolAvailable:840,kFactor:'.76363636'}});
  const originals=[];
- for(const source of economic){originals.push(await tx.bonusAward.create({data:{settlementBatchId:batch.settlementBatchId,awardType:'REFERRAL',recipientQualificationId:self.qualificationId,sourceQualificationId:source.order.qualificationId,sourceEventId:source.event.eventId,theoryAmount:1000,payableAmount:420,kFactor:'.42',activeSnapshot:true,planLevelSnapshot:'LEADER',ruleVersionCode:version,occurredAt:source.event.occurredAt,pendingUntil:new Date('2020-02-17'),calculationDetail:{testOnly:true}}}));}
+ for(const [index,source] of economic.entries()){originals.push(await tx.bonusAward.create({data:{settlementBatchId:batch.settlementBatchId,awardType:'REFERRAL',recipientQualificationId:self.qualificationId,sourceQualificationId:source.order.qualificationId,sourceEventId:source.event.eventId,theoryAmount:index===0?1000:100,payableAmount:index===0?'763.6364':'76.3636',kFactor:'.76363636',activeSnapshot:true,planLevelSnapshot:'LEADER',ruleVersionCode:version,occurredAt:source.event.occurredAt,pendingUntil:new Date('2020-02-17'),calculationDetail:{testOnly:true}}}));}
  await replay.sealSettlement(tx,batch);
  const saved=JSON.stringify(originals);
+ const outside=await qualification();
+ const outsideOrder=await tx.order.create({data:{qualificationId:outside.qualificationId,purpose:'RETAIL',status:'PAID',grossAmount:1000,netAmount:1000,ruleVersionCode:version,paidAt:new Date('2020-01-09'),lines:{create:{productId:product.productId,skuSnapshot:product.sku,productNameSnapshot:'UNRELATED PERIOD POOL TEST',quantity:1,unitPrice:1000,lineAmount:1000,gpvRateSnapshot:1,gpvAmountSnapshot:1000,ruleProfileSnapshot:{testOnly:true}}}},include:{lines:true}});
+ const outsideGpv=await tx.pvLedger.create({data:{qualificationId:outside.qualificationId,pvType:'GPV',amount:1000,eventType:'GPV_CREATED',sourceType:'ORDER',sourceId:outsideOrder.orderId,sourceLineId:outsideOrder.lines[0].orderLineId,ruleVersionCode:version,occurredAt:outsideOrder.paidAt,correlationId:randomUUID()}});await replay.sealGpvEvent(tx,outsideGpv);
+ const chainOriginals=[];
+ for(const [index,start,end,leftIn,rightIn,leftOut,rightOut] of [[0,'2020-01-01','2020-01-08',200,0,1000,800],[1,'2020-01-08','2020-01-10',1000,800,800,600]]){
+  const b=await tx.settlementBatch.create({data:{settlementType:'BINARY_K1',periodStart:new Date(start),periodEnd:new Date(end),ruleVersionCode:version,status:'FINALIZED',parameterSnapshot:historical,totalGpv:index===0?2000:1000,kFactor:1}});
+  const carry=await tx.binaryCarry.create({data:{qualificationId:self.qualificationId,periodEnd:new Date(end),ruleVersionCode:version,leftCarryIn:leftIn,rightCarryIn:rightIn,leftPeriodGpv:index===0?1000:0,rightPeriodGpv:index===0?1000:0,pairedPv:200,leftCarryOut:leftOut,rightCarryOut:rightOut,weeklyCapSnapshot:200}});
+  const award=await tx.bonusAward.create({data:{settlementBatchId:b.settlementBatchId,awardType:'BINARY',recipientQualificationId:self.qualificationId,theoryAmount:24,payableAmount:24,activeSnapshot:true,planLevelSnapshot:'LEADER',ruleVersionCode:version,occurredAt:new Date(end),pendingUntil:new Date('2020-03-01'),calculationDetail:{testOnly:true}}});await replay.sealSettlement(tx,b);
+  const m=await tx.settlementBatch.create({data:{settlementType:'MATCHING_K2',periodStart:new Date(start),periodEnd:new Date(end),ruleVersionCode:version,status:'FINALIZED',parameterSnapshot:historical,totalGpv:index===0?2000:1000,kFactor:1}});
+  const matching=await tx.bonusAward.create({data:{settlementBatchId:m.settlementBatchId,awardType:'MATCHING',recipientQualificationId:newSponsor.qualificationId,sourceAwardId:award.bonusAwardId,generationNo:1,theoryAmount:'2.4',payableAmount:'2.4',activeSnapshot:true,planLevelSnapshot:'LEADER',ruleVersionCode:version,occurredAt:new Date(end),pendingUntil:new Date('2020-03-01'),calculationDetail:{rate:'.1',unlockDepth:7,testOnly:true}}});await replay.sealSettlement(tx,m);
+  chainOriginals.push({batch:b,carry,award,matching});
+ }
+ const originalChainJson=JSON.stringify(chainOriginals);
  const refund=await tx.returnCase.create({data:{orderId:economic[0].order.orderId,status:'POSTED',reasonCode:'PERIOD_TEST',occurredAt:new Date('2020-01-10'),idempotencyKey:randomUUID(),correlationId:randomUUID(),lines:{create:{orderLineId:economic[0].order.lines[0].orderLineId,quantity:1,returnAmount:500,gpvReversalAmount:500}}}});
  await replay.processHistoricalReturn(tx,refund.returnCaseId);
- const postings=await tx.entitlementReplayPosting.findMany({where:{actionKey:'RETURN:'+refund.returnCaseId},orderBy:{entitlementKey:'asc'}});
+ const postings=await tx.entitlementReplayPosting.findMany({where:{actionKey:'RETURN:'+refund.returnCaseId,entitlementKey:{in:originals.map(a=>a.bonusAwardId)}},orderBy:{entitlementKey:'asc'}});
  check('K0 complete period posts every original entitlement',postings.length,2);
- check('K0 cumulative effective source replay',postings.map(p=>p.recalculatedEntitlement.toNumber()).sort((a,b)=>a-b),[210,420]);
+ check('K0 cumulative effective source replay',postings.map(p=>p.recalculatedEntitlement.toNumber()).sort((a,b)=>a-b),[100,500]);
+ check('unaffected K0 entitlement receives positive pool normalization delta',postings.find(p=>p.entitlementKey===originals[1].bonusAwardId).delta.toString(),'23.6364');
  check('K0 original award baseline preserved',JSON.stringify(await tx.bonusAward.findMany({where:{bonusAwardId:{in:originals.map(a=>a.bonusAwardId)}}})),saved);
  const envelope={format:'UCELL_HISTORICAL_REPLAY_V1',kind:'BINARY_K1',sourceId:randomUUID(),ruleVersionCode:version,at:'2020-01-08T00:00:00.000Z',parameters:historical,recipients:[],evidence:{sources:economic.map(e=>e.envelope),carryRecipients:[{qualificationId:self.qualificationId,leftCarryIn:'200',rightCarryIn:'0',leftCarryOut:'0',rightCarryOut:'0',weeklyCapSnapshot:'200',active:true,qualification:{plan:{planCode:'LEADER'},status:{status:'EFFECTIVE'}}}]},inputs:{}};
  const effective=await replay.effectiveGpv(tx,envelope.evidence.sources);
@@ -93,6 +109,93 @@ try{await prisma.$transaction(async tx=>{
  const continuation=replay.periodBinary(next,new Map(),projected.carryOut);
  check('carry continuation derives next historical left carry',continuation.carryOut.get(self.qualificationId).left.toString(),'300');
  check('carry continuation derives next historical right carry',continuation.carryOut.get(self.qualificationId).right.toString(),'600');
+ const {RpvService}=require('../backend/apps/api/dist/modules/rpv/rpv.service.js');
+ const {SubscriptionCancellationService}=require('../backend/apps/api/dist/modules/subscription/subscription-cancellation.service.js');
+ const plan=await tx.subscriptionPlan.create({data:{planCode:'PHASE2_'+randomUUID(),displayName:'PHASE2 TEST ONLY',durationMonths:2,prepaidAmount:4000,productBoxQty:2,monthlyRecognizedAmount:2000,monthlyRpv:1200}});
+ const sub=await tx.subscription.create({data:{qualificationId:leftQ.qualificationId,subscriptionPlanId:plan.subscriptionPlanId,orderId:economic[0].order.orderId,status:'ACTIVE',startMonth:new Date('2020-01-01'),endMonth:new Date('2020-02-01'),ruleVersionCode:version}});
+ const recognized=await tx.monthlyRecognitionSchedule.create({data:{subscriptionId:sub.subscriptionId,installmentNo:1,recognitionMonth:new Date('2020-01-01'),recognizedAmount:2000,rpvAmount:1200,dueAt:new Date('2020-01-03'),ruleVersionCode:version}});
+ const future=await tx.monthlyRecognitionSchedule.create({data:{subscriptionId:sub.subscriptionId,installmentNo:2,recognitionMonth:new Date('2020-02-01'),recognizedAmount:2000,rpvAmount:1200,dueAt:new Date('2020-02-03'),ruleVersionCode:version}});
+ await new RpvService(facade,{}).recognize(recognized.recognitionId);
+ const rpvAwards=JSON.stringify(await tx.rpvUplineAwardEvent.findMany({where:{recognitionId:recognized.recognitionId}}));
+ const cancellation=await new SubscriptionCancellationService(facade).cancel(sub.subscriptionId,new Date('2020-01-02'),'PHASE2_TEST');
+ check('subscription future rows cancelled',(await tx.monthlyRecognitionSchedule.findUniqueOrThrow({where:{recognitionId:future.recognitionId}})).status,'CANCELLED');
+ check('recognized affected event queued exactly once',cancellation.queuedRpvReversalCount,1);
+ const outbox=await tx.outboxEvent.findFirstOrThrow({where:{aggregateId:recognized.recognitionId,eventType:'RPV_REVERSAL_REQUIRED'}});
+ const claim={outboxEventId:outbox.outboxEventId,processStatus:'PENDING',attemptCount:0};
+ check('conditional outbox claim succeeds once',(await tx.outboxEvent.updateMany({where:claim,data:{processStatus:'PROCESSING',attemptCount:1,availableAt:new Date(Date.now()+120000)}})).count,1);
+ check('duplicate outbox claim rejected',(await tx.outboxEvent.updateMany({where:claim,data:{processStatus:'PROCESSING',attemptCount:1}})).count,0);
+ await replay.consumeReplayOutbox(tx,outbox.outboxEventId);
+ check('production replay consumer marks success atomically',(await tx.outboxEvent.findUniqueOrThrow({where:{outboxEventId:outbox.outboxEventId}})).processStatus,'PROCESSED');
+ check('RPV one negative historical reversal',await tx.pvLedger.count({where:{reversalOfEventId:(await tx.monthlyRecognitionSchedule.findUniqueOrThrow({where:{recognitionId:recognized.recognitionId}})).pvLedgerEventId,pvType:'RPV',amount:-1200}}),1);
+ const rpvPost=await tx.entitlementReplayPosting.findFirstOrThrow({where:{actionKey:'RPV:'+recognized.recognitionId+':'+cancellation.cancellation.subscriptionCancellationId}});
+ check('RPV historical recipient recovery delta',rpvPost.delta.toString(),'-100');
+ check('original RPV award rows unchanged',JSON.stringify(await tx.rpvUplineAwardEvent.findMany({where:{recognitionId:recognized.recognitionId}})),rpvAwards);
+ await replay.consumeReplayOutbox(tx,outbox.outboxEventId);
+ check('RPV duplicate processing creates no second posting',await tx.entitlementReplayPosting.count({where:{actionKey:'RPV:'+recognized.recognitionId+':'+cancellation.cancellation.subscriptionCancellationId}}),1);
+ const refund2=await tx.returnCase.create({data:{orderId:economic[0].order.orderId,status:'POSTED',reasonCode:'DOWNSTREAM_TEST',occurredAt:new Date('2020-01-11'),idempotencyKey:randomUUID(),correlationId:randomUUID(),lines:{create:{orderLineId:economic[0].order.lines[0].orderLineId,quantity:1,returnAmount:500,gpvReversalAmount:500}}}});
+ await replay.processHistoricalReturn(tx,refund2.returnCaseId);
+ check('complete replay processes both finalized carry periods',(await tx.replayAction.findUniqueOrThrow({where:{actionKey:'RETURN:'+refund2.returnCaseId}})).result.periods,2);
+ const correctedCarry=await tx.replayCarryProjection.findFirstOrThrow({where:{actionKey:'RETURN:'+refund2.returnCaseId,settlementBatchId:chainOriginals[1].batch.settlementBatchId}});
+ check('multi-return continuation retains valid historical right carry',correctedCarry.carry[self.qualificationId].right,'800');
+ check('multi-return continuation re-derives left carry',correctedCarry.carry[self.qualificationId].left,'0');
+ check('downstream Binary award replay uses corrected incoming carry',(await tx.entitlementReplayPosting.findFirstOrThrow({where:{actionKey:'RETURN:'+refund2.returnCaseId,entitlementKey:chainOriginals[1].award.bonusAwardId}})).delta.toString(),'-24');
+ check('downstream Matching uses exact recalculated Binary source',(await tx.entitlementReplayPosting.findFirstOrThrow({where:{actionKey:'RETURN:'+refund2.returnCaseId,entitlementKey:chainOriginals[1].matching.bonusAwardId}})).recalculatedEntitlement.toString(),'0');
+ for(const original of chainOriginals){check('original carry immutable '+original.batch.settlementBatchId,JSON.stringify(await tx.binaryCarry.findUniqueOrThrow({where:{binaryCarryId:original.carry.binaryCarryId}})),JSON.stringify(original.carry));check('original Binary award immutable '+original.batch.settlementBatchId,JSON.stringify(await tx.bonusAward.findUniqueOrThrow({where:{bonusAwardId:original.award.bonusAwardId}})),JSON.stringify(original.award));}
+
+ check('return downstream does not repeat RPV clawback',await tx.entitlementReplayPosting.count({where:{actionKey:'RPV:'+recognized.recognitionId+':'+cancellation.cancellation.subscriptionCancellationId}}),1);
+ const failOutbox=await tx.outboxEvent.create({data:{eventType:'RPV_REVERSAL_REQUIRED',aggregateType:'MONTHLY_RECOGNITION',aggregateId:randomUUID(),payload:{recognitionId:randomUUID(),subscriptionCancellationId:cancellation.cancellation.subscriptionCancellationId},processStatus:'PENDING',correlationId:randomUUID()}});
+ await rejected('consumer missing historical evidence fails closed',()=>replay.consumeReplayOutbox(tx,failOutbox.outboxEventId),'HISTORICAL_SNAPSHOT_MISSING');
+ check('failed consumer does not publish PROCESSED',(await tx.outboxEvent.findUniqueOrThrow({where:{outboxEventId:failOutbox.outboxEventId}})).processStatus,'PENDING');
+ await rejected('return event idempotency key is DB unique',()=>tx.returnCase.create({data:{orderId:order.orderId,status:'POSTED',reasonCode:'DUPLICATE',occurredAt:new Date('2020-01-11'),idempotencyKey:first.idempotencyKey,correlationId:randomUUID()}}),'Unique constraint');
+ const missingOrder=await tx.order.create({data:{qualificationId:self.qualificationId,purpose:'RETAIL',status:'PAID',grossAmount:1,netAmount:1,ruleVersionCode:version,paidAt:new Date('2020-01-12')}});
+ const missingReturn=await tx.returnCase.create({data:{orderId:missingOrder.orderId,status:'POSTED',reasonCode:'MISSING_SOURCE',occurredAt:new Date('2020-01-13'),idempotencyKey:randomUUID(),correlationId:randomUUID()}});
+ const missingEvent=await tx.outboxEvent.create({data:{eventType:'RETURN_CONFIRMED',aggregateType:'RETURN',aggregateId:missingReturn.returnCaseId,payload:{returnCaseId:missingReturn.returnCaseId},processStatus:'PENDING',correlationId:randomUUID()}});
+ const ledgerCount=await tx.pvLedger.count(),postingCount=await tx.entitlementReplayPosting.count();
+ await rejected('entire return consumer fails closed without original GPV',()=>replay.consumeReplayOutbox(tx,missingEvent.outboxEventId),'HISTORICAL_SNAPSHOT_MISSING');
+ check('missing original return evidence appends no ledger',await tx.pvLedger.count(),ledgerCount);
+ check('missing original return evidence appends no award posting',await tx.entitlementReplayPosting.count(),postingCount);
+ check('missing original return evidence publishes no success action',await tx.replayAction.count({where:{actionKey:'RETURN:'+missingReturn.returnCaseId}}),0);
+ check('missing original return evidence leaves outbox retryable',(await tx.outboxEvent.findUniqueOrThrow({where:{outboxEventId:missingEvent.outboxEventId}})).processStatus,'PENDING');
+ const laterOrder=await tx.order.create({data:{qualificationId:self.qualificationId,purpose:'REPURCHASE',status:'PAID',grossAmount:4800,netAmount:4800,ruleVersionCode:version,paidAt:new Date('2020-01-12'),lines:{create:{productId:product.productId,skuSnapshot:product.sku,productNameSnapshot:'POST RETURN CONSUMPTION TEST',quantity:3,unitPrice:1600,lineAmount:4800,gpvRateSnapshot:0,gpvAmountSnapshot:0,ruleProfileSnapshot:{testOnly:true}}}},include:{lines:true}});
+ const laterGpv=await tx.pvLedger.create({data:{qualificationId:self.qualificationId,pvType:'GPV',amount:0,eventType:'GPV_CREATED',sourceType:'ORDER',sourceId:laterOrder.orderId,sourceLineId:laterOrder.lines[0].orderLineId,ruleVersionCode:version,occurredAt:laterOrder.paidAt,correlationId:randomUUID()}});await replay.sealGpvEvent(tx,laterGpv);
+ check('new recognition continues reconciled monthly effective baseline',(await service.recognizeOrder(laterOrder.orderId,version)).epv,'2640');
+ const {ReturnService}=require('../backend/apps/api/dist/modules/return/return.service.js');
+ const {IdempotencyService}=require('../backend/apps/api/dist/common/idempotency/idempotency.service.js');
+ const {AuditService}=require('../backend/apps/api/dist/common/audit/audit.service.js');
+ const {OutboxService}=require('../backend/apps/api/dist/common/outbox/outbox.service.js');
+ const idempotency=new IdempotencyService({idempotencyRecord:tx.idempotencyRecord,$transaction:fn=>fn(tx)});
+ const returns=new ReturnService(facade,idempotency,new AuditService(),new OutboxService());
+ const returnKey=randomUUID(),dto={reasonCode:'FINAL_PARTIAL_TEST',occurredAt:'2020-01-14T00:00:00.000Z',lines:[{orderLineId:order.lines[0].orderLineId,quantity:1}]};
+ const posted=await returns.post(order.orderId,dto,returnKey,randomUUID());
+ check('real ReturnService limits final return to original remaining amount',posted.value.lines[0].returnAmount.toString(),'1600');
+ check('real multi-return reaches cumulative full return',(await tx.order.findUniqueOrThrow({where:{orderId:order.orderId}})).status,'RETURNED');
+ check('same return idempotency request replays',(await returns.post(order.orderId,dto,returnKey,randomUUID())).replayed,true);
+ check('same return request publishes one transactional outbox',await tx.outboxEvent.count({where:{aggregateId:posted.value.returnCaseId,eventType:'RETURN_CONFIRMED'}}),1);
+ const finalOutbox=await tx.outboxEvent.findFirstOrThrow({where:{aggregateId:posted.value.returnCaseId,eventType:'RETURN_CONFIRMED'}});await replay.consumeReplayOutbox(tx,finalOutbox.outboxEventId);
+ const laterEvent=await tx.pvLedger.findFirstOrThrow({where:{sourceId:laterOrder.orderId,pvType:'EPV',eventType:'EPV_CREATED'}});
+ const laterSponsorAward=await tx.bonusAward.findFirstOrThrow({where:{sourceEventId:laterEvent.eventId,recipientQualificationId:newSponsor.qualificationId}});
+ check('cross-event recalculation uses later original earning recipient',(await tx.entitlementReplayPosting.findFirstOrThrow({where:{actionKey:'RETURN:'+posted.value.returnCaseId,entitlementKey:laterSponsorAward.bonusAwardId}})).delta.toString(),'-57.6');
+ check('earlier historical recipient has no duplicate final clawback',(await tx.entitlementReplayPosting.findFirstOrThrow({where:{actionKey:'RETURN:'+posted.value.returnCaseId,recipientQualificationId:oldSponsor.qualificationId}})).delta.toString(),'0');
+ check('later historical earning original ledger is immutable',(await tx.pvLedger.findUniqueOrThrow({where:{eventId:laterEvent.eventId}})).amount.toString(),'2640');
+
+ await rejected('different request with same return key is rejected',()=>returns.post(order.orderId,{...dto,reasonCode:'CHANGED'},returnKey,randomUUID()),'IDEMPOTENCY_CONFLICT');
+ const discounted=await tx.order.create({data:{qualificationId:self.qualificationId,purpose:'RETAIL',status:'PAID',grossAmount:200,discountAmount:50,netAmount:150,ruleVersionCode:version,paidAt:new Date('2020-01-12'),lines:{create:{productId:product.productId,skuSnapshot:product.sku,productNameSnapshot:'CAP TEST',quantity:2,unitPrice:100,lineAmount:200,gpvRateSnapshot:0,gpvAmountSnapshot:0,ruleProfileSnapshot:{testOnly:true}}}},include:{lines:true}});
+ const capDto={reasonCode:'CAP_TEST',occurredAt:'2020-01-14T00:00:00.000Z',lines:[{orderLineId:discounted.lines[0].orderLineId,quantity:1}]};
+ await returns.post(discounted.orderId,capDto,randomUUID(),randomUUID());
+ await rejected('cumulative money cap rejects available quantity over net amount',()=>returns.post(discounted.orderId,capDto,randomUUID(),randomUUID()),'RETURN_AMOUNT_EXCEEDED');
+ check('failed over-return preserves effective return baseline',(await tx.returnLine.aggregate({where:{returnCase:{orderId:discounted.orderId,status:'POSTED'}},_sum:{returnAmount:true}}))._sum.returnAmount.toString(),'100');
+ const {SettlementCalendarService}=require('../backend/apps/api/dist/modules/settlement/settlement-calendar.service.js');
+ const {snapshotDecimal}=require('../backend/apps/api/dist/modules/rules/parameter-snapshot.js');
+ for(const [parameterCode,valueJson] of [['settlement.timezone','UTC'],['settlement.period',{unit:'WEEK',count:2,anchorLocal:'2020-01-01T00:00:00'}],['settlement.cut_off',{localTime:'13:15:00',daysAfterPeriodEnd:1,approvalReference:'TEST_ONLY_NOT_OPERATIONAL_APPROVAL'}]])await tx.runtimeRuleParameter.create({data:{ruleVersionCode:version,parameterCode,scopeKey:'BINARY_K1',valueJson,effectiveFrom:new Date('2019-01-01')}});
+ const calendar=new SettlementCalendarService(facade),configured=await captureParameters(tx,new Date('2020-01-05'),version);
+ const period=await calendar.periodFor(tx,new Date('2020-01-05'),configured,'BINARY_K1');
+ check('explicit TEST calendar period bounds',[period.start.toISOString(),period.end.toISOString()],['2020-01-01T00:00:00.000Z','2020-01-15T00:00:00.000Z']);
+ await tx.runtimeRuleParameter.updateMany({where:{ruleVersionCode:version,parameterCode:'binary.pair.rate',scopeKey:'*'},data:{effectiveTo:new Date('2020-01-16T13:15:00Z')}});
+ await tx.runtimeRuleParameter.create({data:{ruleVersionCode:version,parameterCode:'binary.pair.rate',valueJson:'.2',effectiveFrom:new Date('2020-01-16T13:15:00Z')}});
+ const atCutoff=await calendar.captureForPeriod(tx,period.start,period.end,'BINARY_K1',version);
+ check('explicit TEST cutoff determines snapshot time',atCutoff.effectiveAt,'2020-01-16T13:15:00.000Z');
+ check('parameter effective exactly at cutoff selected',snapshotDecimal(atCutoff,'binary.pair.rate').toString(),'0.2');
+ check('earlier captured parameter remains historical',snapshotDecimal(historical,'binary.pair.rate').toString(),'0.12');
  throw rollback;
 },{timeout:120000,isolationLevel:Prisma.TransactionIsolationLevel.Serializable});}catch(error){if(error!==rollback)failure=error;}finally{await prisma.$disconnect();}
 const out=new URL('../../governance/phase2-return-replay/final/',import.meta.url);fs.mkdirSync(out,{recursive:true});fs.writeFileSync(new URL('db-regression.json',out),JSON.stringify({result:failure?'FAIL':'PASS',fixturesRolledBack:true,results,...(failure?{error:failure.stack}:{})},null,2)+'\n');

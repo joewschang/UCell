@@ -1,0 +1,4 @@
+command: node scripts/golden-economic-cases.mjs
+started: 2026-09-15T12:17:44.215Z
+exit: 0
+GOLDEN_ECONOMIC_CASES_PASS

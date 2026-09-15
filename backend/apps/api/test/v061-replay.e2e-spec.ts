@@ -1,3 +1,6 @@
+import { execFileSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { periodBinary, periodMatching, appendEntitlementDelta, verifyReplayEnvelope } from '@ucell/database';
 import { binary, d, recipient, sealed } from './phase2-fixtures';
 
@@ -20,11 +23,18 @@ describe('v0.6.1 deterministic replay',()=>{
 });
 
 describe('v0.6.1 subscription cancellation',()=>{
-  it.todo('future scheduled rows become CANCELLED');
-  it.todo('recognized affected rows enqueue one RPV_REVERSAL_REQUIRED');
-  it.todo('worker creates exactly one negative RPV reversal event');
-  it.todo('worker creates recovery for previously payable RPV upline awards');
-  it.todo('reprocessing event is idempotent');
+ let assertions:Array<{label:string;actual:unknown}>;
+ beforeAll(()=>{
+  const root=resolve(__dirname,'../../../..');
+  execFileSync(process.execPath,[resolve(root,'backend/scripts/phase2-db-test.mjs')],{cwd:root,env:{...process.env,DATABASE_URL:process.env.PHASE2_TEST_DATABASE_URL??'postgresql://ucell:ucell_dev@localhost:5432/ucell_admin_test?schema=public'},timeout:30000});
+  assertions=JSON.parse(readFileSync(resolve(root,'governance/phase2-return-replay/final/db-regression.json'),'utf8')).results;
+ },30000);
+ const actual=(label:string)=>{const result=assertions.find(item=>item.label===label);expect(result).toBeDefined();return result!.actual;};
+ it('future scheduled rows become CANCELLED',()=>{expect(actual('subscription future rows cancelled')).toBe('CANCELLED');});
+ it('recognized affected rows enqueue one RPV_REVERSAL_REQUIRED',()=>{expect(actual('recognized affected event queued exactly once')).toBe(1);});
+ it('worker creates exactly one negative RPV reversal event',()=>{expect(actual('RPV one negative historical reversal')).toBe(1);});
+ it('worker creates recovery for previously payable RPV upline awards',()=>{expect(actual('RPV historical recipient recovery delta')).toBe('-100');});
+ it('reprocessing event is idempotent',()=>{expect(actual('RPV duplicate processing creates no second posting')).toBe(1);expect(actual('return downstream does not repeat RPV clawback')).toBe(1);});
 });
 
 describe('v0.6.1 qualification workflow',()=>{

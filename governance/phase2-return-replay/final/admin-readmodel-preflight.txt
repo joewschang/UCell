@@ -1,0 +1,4 @@
+command: node scripts/admin-readmodel-preflight.mjs
+started: 2026-09-15T12:17:43.670Z
+exit: 0
+ADMIN_READMODEL_PREFLIGHT_PASS

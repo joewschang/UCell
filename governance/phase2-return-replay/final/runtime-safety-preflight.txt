@@ -1,0 +1,4 @@
+command: node scripts/runtime-safety-preflight.mjs
+started: 2026-09-15T12:17:43.283Z
+exit: 0
+RUNTIME_SAFETY_PREFLIGHT_PASS

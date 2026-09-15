@@ -1,0 +1,4 @@
+command: node scripts/admin-observability-preflight.mjs
+started: 2026-09-15T12:17:43.737Z
+exit: 0
+ADMIN_OBSERVABILITY_PREFLIGHT_PASS

@@ -1,0 +1,4 @@
+command: node scripts/db-golden-fixtures.mjs
+started: 2026-09-15T12:18:03.369Z
+exit: 0
+DB_GOLDEN_FIXTURES_PASS: frozen manifest loaded into isolated test database; no monetary postings

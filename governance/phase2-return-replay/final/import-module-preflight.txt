@@ -1,0 +1,4 @@
+command: node scripts/import-module-preflight.mjs
+started: 2026-09-15T12:17:43.492Z
+exit: 0
+IMPORT_MODULE_PREFLIGHT_PASS

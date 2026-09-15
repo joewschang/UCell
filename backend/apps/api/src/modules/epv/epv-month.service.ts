@@ -31,8 +31,12 @@ export class EpvMonthService {
         pending('EPV_MONTH_PARAMETER_DECISION_PENDING','Same-month parameter changes or legacy recognition require an explicit migration decision');
       before=before.add(earlier.netAmount);
     }
-    const returns=await tx.returnLine.aggregate({where:{returnCase:{status:'POSTED',orderId:{in:prefix.map(o=>o.orderId)},occurredAt:{lte:order.paidAt}}},_sum:{returnAmount:true}});
-    if((returns._sum.returnAmount??new Prisma.Decimal(0)).gt(0)) pending('EPV_RETURN_ALLOCATION_PENDING','A returned month must be reconciled before recognizing subsequent awards');
+    const priorReturns=await tx.returnCase.findMany({where:{status:'POSTED',orderId:{in:prefix.slice(0,-1).map(o=>o.orderId)},occurredAt:{lte:order.paidAt}},include:{lines:true}});
+    for(const returned of priorReturns) {
+      if(!await tx.replayAction.findUnique({where:{actionKey:'RETURN:'+returned.returnCaseId}})) pending('EPV_RETURN_REPLAY_PENDING','Original monthly returns must complete historical replay before new recognition');
+      before=before.sub(returned.lines.reduce((sum,line)=>sum.add(line.returnAmount),new Prisma.Decimal(0)));
+    }
+    if(before.lt(0)) pending('RETURN_AMOUNT_EXCEEDED','Returned monthly consumption exceeds the original prefix');
     const base=snapshotDecimal(snapshot,'epv.base_amount'),rate=snapshotDecimal(snapshot,'epv.rate');
     const cumulative=before.add(order.netAmount);
     return {...month,base,rate,before,cumulative,epv:monthlyEpv(cumulative,base,rate).sub(monthlyEpv(before,base,rate))};
