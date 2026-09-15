@@ -1,0 +1,26 @@
+name: Member frontend checks
+on:
+  push:
+    branches: [feature/member-liff-mvp]
+    paths: ['member/**', '.github/workflows/member-ci.yml']
+  pull_request:
+    paths: ['member/**', '.github/workflows/member-ci.yml']
+permissions:
+  contents: read
+jobs:
+  member:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: member
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: corepack enable
+      - run: corepack pnpm --version
+      - run: corepack pnpm install --frozen-lockfile
+      - run: corepack pnpm run typecheck
+      - run: corepack pnpm test
+      - run: corepack pnpm run build

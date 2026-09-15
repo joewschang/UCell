@@ -36,3 +36,21 @@ Copy `.env.example` to `.env.local`. Use `VITE_ENABLE_MOCK=true` until Member AP
 `pnpm dev`
 
 Toolchain baseline: Node 24 / pnpm 12.4.1.
+
+## v0.3 read-only interactive checkpoint
+The seven routes now have data views, with explicit mock labels and qualification
+isolation. See `DEV_STATUS.md` for tested scope and live-integration blockers.
+Mock startup requires `VITE_ENABLE_MOCK=true`; a missing LIFF ID is no longer an
+implicit mock fallback. Real login remains fail-closed until backend exchange is
+approved. Product catalog does not submit orders.
+
+Run `corepack pnpm install --frozen-lockfile`, `corepack pnpm test`,
+`corepack pnpm run typecheck`, `corepack pnpm run build` inside `member/`.
+`pnpm-workspace.yaml` permits only the required esbuild installation script.
+The Member-only CI does not replace Backend security/release gates.
+
+For optional local browser smoke checks: install Playwright and Chromium in your
+QA environment, start the mock Vite dev server on port 5174, then run
+`node tests/mobile-smoke.cjs` with Playwright available on Node's module path.
+The script checks 390px layout, navigation, ball persistence and read-only flows.
+Hosting must rewrite SPA routes to index.html; no hosting was published here.
