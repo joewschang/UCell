@@ -22,3 +22,8 @@ Authority: user SA ruling in this task, 2026-09-15. This decision supplements SA
 - Requested complete regression and DB assertions for historical routing changes, paid recovery and repeated partial entitlement replay remain outstanding. The added tests cover safeguards only.
 
 Release/Production remain blocked. No RC2, merge, push or force push is authorized.
+# Phase 2 implementation trace (2026-09-15)
+
+SA-20260915-02 is implemented. Replay uses the original earning event's sealed Qualification, Sponsor/Binary, Active, and Parameter snapshots. Return adjustments are cumulative and append-only: each posting records the historical original baseline, recalculated entitlement, and the incremental delta after prior corrections. PAID differences create recovery/clawback offsets through the payout owner.
+
+The implementation deliberately does not choose eligible-consumption scope, PV/BV event mapping, production operational calendar, or EPV timezone. Missing evidence raises `HISTORICAL_SNAPSHOT_MISSING`; current state is never used as a fallback. Evidence and test results are in `governance/phase2-return-replay/REPORT.md` and `final/db-regression.json`.

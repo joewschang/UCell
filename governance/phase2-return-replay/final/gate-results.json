@@ -203,7 +203,7 @@
     "label": "prisma-validate",
     "cwd": "C:\\UCell\\UCell\\backend",
     "command": "pnpm --filter @ucell/database exec prisma validate",
-    "start": "2026-09-15T12:25:59.263Z",
+    "start": "2026-09-15T12:33:16.273Z",
     "exitCode": 0,
     "result": "PASS"
   },
@@ -211,7 +211,7 @@
     "label": "prisma-generate",
     "cwd": "C:\\UCell\\UCell\\backend",
     "command": "pnpm --filter @ucell/database exec prisma generate",
-    "start": "2026-09-15T12:26:00.425Z",
+    "start": "2026-09-15T12:33:17.428Z",
     "exitCode": 0,
     "result": "PASS"
   },
@@ -219,7 +219,7 @@
     "label": "prisma-migrate-deploy",
     "cwd": "C:\\UCell\\UCell\\backend",
     "command": "pnpm --filter @ucell/database exec prisma migrate deploy",
-    "start": "2026-09-15T12:26:01.860Z",
+    "start": "2026-09-15T12:33:18.919Z",
     "exitCode": 0,
     "result": "PASS"
   },
@@ -227,47 +227,7 @@
     "label": "prisma-test-db-deploy",
     "cwd": "C:\\UCell\\UCell\\backend",
     "command": "pnpm --filter @ucell/database exec prisma migrate deploy",
-    "start": "2026-09-15T12:26:02.970Z",
-    "exitCode": 0,
-    "result": "PASS"
-  },
-  {
-    "label": "backend-build",
-    "cwd": "C:\\UCell\\UCell\\backend",
-    "command": "pnpm -r build",
-    "start": "2026-09-15T12:26:04.049Z",
-    "exitCode": 0,
-    "result": "PASS"
-  },
-  {
-    "label": "admin-build",
-    "cwd": "C:\\UCell\\UCell\\admin",
-    "command": "pnpm build",
-    "start": "2026-09-15T12:26:14.231Z",
-    "exitCode": 0,
-    "result": "PASS"
-  },
-  {
-    "label": "api-tests",
-    "cwd": "C:\\UCell\\UCell\\backend",
-    "command": "pnpm --filter @ucell/api test:e2e --runInBand",
-    "start": "2026-09-15T12:26:18.836Z",
-    "exitCode": 0,
-    "result": "PASS"
-  },
-  {
-    "label": "shared-golden-tests",
-    "cwd": "C:\\UCell\\UCell\\backend",
-    "command": "pnpm --filter @ucell/shared test --runInBand",
-    "start": "2026-09-15T12:26:25.786Z",
-    "exitCode": 0,
-    "result": "PASS"
-  },
-  {
-    "label": "admin-tests",
-    "cwd": "C:\\UCell\\UCell\\admin",
-    "command": "pnpm test",
-    "start": "2026-09-15T12:26:27.525Z",
+    "start": "2026-09-15T12:33:20.058Z",
     "exitCode": 0,
     "result": "PASS"
   },
@@ -275,7 +235,7 @@
     "label": "backend-test-gate",
     "cwd": "C:\\UCell\\UCell\\backend",
     "command": "pnpm test",
-    "start": "2026-09-15T12:26:28.335Z",
+    "start": "2026-09-15T12:33:47.343Z",
     "exitCode": 1,
     "result": "FAIL"
   },
@@ -283,7 +243,7 @@
     "label": "security-policy-preflight",
     "cwd": "C:\\UCell\\UCell\\backend",
     "command": "node scripts/security-policy-preflight.mjs",
-    "start": "2026-09-15T12:26:43.620Z",
+    "start": "2026-09-15T12:34:01.251Z",
     "exitCode": 0,
     "result": "PASS"
   },
@@ -291,7 +251,7 @@
     "label": "ci-gate",
     "cwd": "C:\\UCell\\UCell\\backend",
     "command": "pnpm preflight",
-    "start": "2026-09-15T12:26:43.697Z",
+    "start": "2026-09-15T12:34:01.321Z",
     "exitCode": 0,
     "result": "PASS"
   },
@@ -299,7 +259,7 @@
     "label": "prisma-golden-db-deploy",
     "cwd": "C:\\UCell\\UCell\\backend",
     "command": "pnpm --filter @ucell/database exec prisma migrate deploy",
-    "start": "2026-09-15T12:26:58.426Z",
+    "start": "2026-09-15T12:34:15.122Z",
     "exitCode": 0,
     "result": "PASS"
   },
@@ -307,7 +267,7 @@
     "label": "db-golden-fixtures",
     "cwd": "C:\\UCell\\UCell\\backend",
     "command": "node scripts/db-golden-fixtures.mjs",
-    "start": "2026-09-15T12:26:59.580Z",
+    "start": "2026-09-15T12:34:16.210Z",
     "exitCode": 0,
     "result": "PASS"
   },
@@ -315,15 +275,7 @@
     "label": "db-golden-isolated",
     "cwd": "C:\\UCell\\UCell\\backend",
     "command": "pnpm db:golden",
-    "start": "2026-09-15T12:26:59.826Z",
-    "exitCode": 0,
-    "result": "PASS"
-  },
-  {
-    "label": "phase2-db-regression",
-    "cwd": "C:\\UCell\\UCell",
-    "command": "node backend/scripts/phase2-db-test.mjs",
-    "start": "2026-09-15T12:27:01.342Z",
+    "start": "2026-09-15T12:34:16.425Z",
     "exitCode": 0,
     "result": "PASS"
   },
@@ -331,7 +283,7 @@
     "label": "openapi-export",
     "cwd": "C:\\UCell\\UCell\\backend",
     "command": "pnpm openapi",
-    "start": "2026-09-15T12:27:03.259Z",
+    "start": "2026-09-15T12:34:19.778Z",
     "exitCode": 0,
     "result": "PASS"
   },
@@ -339,7 +291,7 @@
     "label": "openapi-preflight",
     "cwd": "C:\\UCell\\UCell\\backend",
     "command": "pnpm openapi:preflight",
-    "start": "2026-09-15T12:27:08.081Z",
+    "start": "2026-09-15T12:34:24.355Z",
     "exitCode": 0,
     "result": "PASS"
   },
@@ -347,7 +299,7 @@
     "label": "security-http-e2e",
     "cwd": "C:\\UCell\\UCell\\backend",
     "command": "pnpm security:e2e",
-    "start": "2026-09-15T12:27:08.202Z",
+    "start": "2026-09-15T12:34:24.469Z",
     "exitCode": 1,
     "result": "FAIL"
   },
@@ -355,15 +307,7 @@
     "label": "uat-gate",
     "cwd": "C:\\UCell\\UCell\\backend",
     "command": "pnpm uat:gate",
-    "start": "2026-09-15T12:27:08.345Z",
-    "exitCode": 1,
-    "result": "FAIL"
-  },
-  {
-    "label": "todo-gate",
-    "cwd": "C:\\UCell\\UCell\\backend",
-    "command": "pnpm test:todo:gate",
-    "start": "2026-09-15T12:27:08.466Z",
+    "start": "2026-09-15T12:34:24.607Z",
     "exitCode": 1,
     "result": "FAIL"
   },
@@ -371,7 +315,7 @@
     "label": "rc-gate",
     "cwd": "C:\\UCell\\UCell\\backend",
     "command": "pnpm rc:gate",
-    "start": "2026-09-15T12:27:08.599Z",
+    "start": "2026-09-15T12:34:24.845Z",
     "exitCode": 1,
     "result": "FAIL"
   },
@@ -379,7 +323,7 @@
     "label": "release-prep",
     "cwd": "C:\\UCell\\UCell\\backend",
     "command": "pnpm release:prep",
-    "start": "2026-09-15T12:27:08.827Z",
+    "start": "2026-09-15T12:34:25.075Z",
     "exitCode": 1,
     "result": "FAIL"
   },
@@ -387,7 +331,7 @@
     "label": "release-gate",
     "cwd": "C:\\UCell\\UCell",
     "command": "\"C:\\Program Files\\Git\\bin\\bash.exe\" scripts/release-gate.sh",
-    "start": "2026-09-15T12:27:40.452Z",
+    "start": "2026-09-15T12:34:54.838Z",
     "exitCode": 1,
     "result": "FAIL"
   },
@@ -395,8 +339,64 @@
     "label": "full-admin-dev-build",
     "cwd": "C:\\UCell\\UCell\\backend",
     "command": "pnpm --filter @ucell/api build:admin-dev",
-    "start": "2026-09-15T12:27:40.466Z",
+    "start": "2026-09-15T12:34:54.851Z",
     "exitCode": 0,
     "result": "PASS"
+  },
+  {
+    "label": "backend-build",
+    "cwd": "C:\\UCell\\UCell\\backend",
+    "command": "pnpm -r build",
+    "start": "2026-09-15T14:39:06.504Z",
+    "exitCode": 0,
+    "result": "PASS"
+  },
+  {
+    "label": "admin-build",
+    "cwd": "C:\\UCell\\UCell\\admin",
+    "command": "pnpm build",
+    "start": "2026-09-15T14:39:16.772Z",
+    "exitCode": 0,
+    "result": "PASS"
+  },
+  {
+    "label": "api-tests",
+    "cwd": "C:\\UCell\\UCell\\backend",
+    "command": "pnpm --filter @ucell/api test:e2e --runInBand",
+    "start": "2026-09-15T14:39:21.363Z",
+    "exitCode": 0,
+    "result": "PASS"
+  },
+  {
+    "label": "shared-golden-tests",
+    "cwd": "C:\\UCell\\UCell\\backend",
+    "command": "pnpm --filter @ucell/shared test --runInBand",
+    "start": "2026-09-15T14:39:28.899Z",
+    "exitCode": 0,
+    "result": "PASS"
+  },
+  {
+    "label": "admin-tests",
+    "cwd": "C:\\UCell\\UCell\\admin",
+    "command": "pnpm test",
+    "start": "2026-09-15T14:39:30.571Z",
+    "exitCode": 0,
+    "result": "PASS"
+  },
+  {
+    "label": "phase2-db-regression",
+    "cwd": "C:\\UCell\\UCell",
+    "command": "node backend/scripts/phase2-db-test.mjs",
+    "start": "2026-09-15T14:39:31.398Z",
+    "exitCode": 0,
+    "result": "PASS"
+  },
+  {
+    "label": "todo-gate",
+    "cwd": "C:\\UCell\\UCell\\backend",
+    "command": "pnpm test:todo:gate",
+    "start": "2026-09-15T14:39:33.322Z",
+    "exitCode": 1,
+    "result": "FAIL"
   }
 ]

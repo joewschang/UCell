@@ -1,5 +1,5 @@
 command: pnpm security:e2e
-started: 2026-09-15T12:27:08.202Z
+started: 2026-09-15T12:34:24.469Z
 exit: 1
 $ node scripts/security-http-e2e.mjs
 node:internal/modules/run_main:107

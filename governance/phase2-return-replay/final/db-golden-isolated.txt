@@ -1,5 +1,5 @@
 command: pnpm db:golden
-started: 2026-09-15T12:26:59.826Z
+started: 2026-09-15T12:34:16.425Z
 exit: 0
 DB_GOLDEN_E2E_PASS
 $ pnpm exec ts-node scripts/db-golden-e2e.ts

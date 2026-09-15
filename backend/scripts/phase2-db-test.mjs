@@ -198,6 +198,23 @@ try{await prisma.$transaction(async tx=>{
  check('explicit TEST cutoff determines snapshot time',atCutoff.effectiveAt,'2020-01-16T13:15:00.000Z');
  check('parameter effective exactly at cutoff selected',snapshotDecimal(atCutoff,'binary.pair.rate').toString(),'0.2');
  check('earlier captured parameter remains historical',snapshotDecimal(historical,'binary.pair.rate').toString(),'0.12');
+ const {RecoveryBalanceService}=require('../backend/apps/api/dist/modules/payout/recovery-balance.service.js');
+ const {UnifiedPayableService}=require('../backend/apps/api/dist/modules/payout/unified-payable.service.js');
+ const recovery=new RecoveryBalanceService(facade),payables=new UnifiedPayableService(facade,recovery);
+ const priorOutstanding=(await tx.bonusRecoveryEvent.aggregate({where:{bonusAward:{recipientQualificationId:self.qualificationId}},_sum:{outstandingAmount:true}}))._sum.outstandingAmount;
+ let firstLine;
+ for(const capacity of [100,200]){
+  const earned=await tx.bonusAward.create({data:{awardType:'REFERRAL',recipientQualificationId:self.qualificationId,sourceEventId:randomUUID(),theoryAmount:capacity,payableAmount:capacity,activeSnapshot:true,ruleVersionCode:version,occurredAt:new Date('2020-02-01'),pendingUntil:new Date('2020-03-17'),calculationDetail:{testOnly:true,subtype:'OFFSET_CAPACITY_INPUT_FIXTURE'}}});
+  await tx.payableEntry.create({data:{qualificationId:self.qualificationId,sourceType:'BONUS_AWARD',sourceId:earned.bonusAwardId,awardType:'REFERRAL',grossAmount:capacity,availableAt:new Date('2020-03-17'),status:'OPEN',ruleVersionCode:version}});
+  const payout=await payables.createPayoutBatch(new Date('2020-03-01'),new Date('2020-04-01'),version);
+  const line=await tx.payoutLine.findFirstOrThrow({where:{payoutBatchId:payout.payoutBatchId,recipientQualificationId:self.qualificationId}});
+  check('PAID clawback offset limited to new payout capacity '+capacity,line.recoveryOffset.toString(),String(capacity));check('PAID clawback offset preserves nonnegative net '+capacity,line.netAmount.toString(),'0');if(!firstLine)firstLine=line;
+ }
+ const beforeApplications=await tx.recoveryApplication.count({where:{payoutLineId:firstLine.payoutLineId}});
+ check('same payout line offset replay is idempotent',(await recovery.apply(tx,{qualificationId:self.qualificationId,payoutLineId:firstLine.payoutLineId,maxAmount:new Prisma.Decimal(100)})).applied.toString(),'100');
+ check('same payout line creates no duplicate offset application',await tx.recoveryApplication.count({where:{payoutLineId:firstLine.payoutLineId}}),beforeApplications);
+ check('multi-batch clawback outstanding decreases only once per capacity',priorOutstanding.sub((await tx.bonusRecoveryEvent.aggregate({where:{bonusAward:{recipientQualificationId:self.qualificationId}},_sum:{outstandingAmount:true}}))._sum.outstandingAmount).toString(),'300');
+ check('offset does not overwrite original PAID history',JSON.stringify(await tx.bonusAwardLifecycleEvent.findMany({where:{bonusAwardId:selfAward.bonusAwardId}})),paid);
  throw rollback;
 },{timeout:120000,isolationLevel:Prisma.TransactionIsolationLevel.Serializable});}catch(error){if(error!==rollback)failure=error;}finally{await prisma.$disconnect();}
 const out=new URL('../../governance/phase2-return-replay/final/',import.meta.url);fs.mkdirSync(out,{recursive:true});fs.writeFileSync(new URL('db-regression.json',out),JSON.stringify({result:failure?'FAIL':'PASS',fixturesRolledBack:true,results,...(failure?{error:failure.stack}:{})},null,2)+'\n');

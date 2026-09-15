@@ -1,9 +1,9 @@
 command: pnpm test
-started: 2026-09-15T12:26:28.335Z
+started: 2026-09-15T12:33:47.343Z
 exit: 1
 Scope: 5 of 6 workspace projects
-packages/database test$ echo no-tests
 packages/shared test$ jest --config jest.config.cjs
+packages/database test$ echo no-tests
 packages/contracts test$ echo no-tests
 packages/database test: no-tests
 packages/database test: Done
@@ -15,20 +15,20 @@ apps/worker test: Done
 packages/shared test: Test Suites: 1 passed, 1 total
 packages/shared test: Tests:       6 passed, 6 total
 packages/shared test: Snapshots:   0 total
-packages/shared test: Time:        1.204 s
+packages/shared test: Time:        1.121 s
 packages/shared test: Ran all test suites.
 packages/shared test: Done
 apps/api test$ jest --config ./test/jest-e2e.json
 apps/api test: 
 apps/api test: Test Suites: 16 passed, 16 total
-apps/api test: Tests:       133 todo, 43 passed, 176 total
+apps/api test: Tests:       132 todo, 44 passed, 176 total
 apps/api test: Snapshots:   0 total
-apps/api test: Time:        12.986 s
+apps/api test: Time:        11.751 s
 apps/api test: Ran all test suites.
 apps/api test: Done
 $ pnpm -r test && pnpm test:todo:gate
 $ node scripts/test-todo-gate.mjs
-TEST_TODO_GATE_FAIL: 133 unresolved executable test placeholders
+TEST_TODO_GATE_FAIL: 132 unresolved executable test placeholders
 - apps\api\test\bonus-engine-v04.e2e-spec.ts: 26
 - apps\api\test\epv-global-v05.e2e-spec.ts: 11
 - apps\api\test\idempotency.e2e-spec.ts: 4
@@ -39,7 +39,7 @@ TEST_TODO_GATE_FAIL: 133 unresolved executable test placeholders
 - apps\api\test\v061-replay.e2e-spec.ts: 4
 - apps\api\test\v062-carry-chain.e2e-spec.ts: 13
 - apps\api\test\v063-golden-path.e2e-spec.ts: 8
-- apps\api\test\v064-golden-dataset.e2e-spec.ts: 11
+- apps\api\test\v064-golden-dataset.e2e-spec.ts: 10
 - apps\api\test\vertical-slice-02.e2e-spec.ts: 16
 - apps\api\test\vertical-slice.e2e-spec.ts: 9
 [ELIFECYCLE] Command failed with exit code 1.

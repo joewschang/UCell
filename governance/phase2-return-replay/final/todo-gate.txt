@@ -1,8 +1,8 @@
 command: pnpm test:todo:gate
-started: 2026-09-15T12:27:08.466Z
+started: 2026-09-15T14:39:33.322Z
 exit: 1
 $ node scripts/test-todo-gate.mjs
-TEST_TODO_GATE_FAIL: 133 unresolved executable test placeholders
+TEST_TODO_GATE_FAIL: 132 unresolved executable test placeholders
 - apps\api\test\bonus-engine-v04.e2e-spec.ts: 26
 - apps\api\test\epv-global-v05.e2e-spec.ts: 11
 - apps\api\test\idempotency.e2e-spec.ts: 4
@@ -13,7 +13,7 @@ TEST_TODO_GATE_FAIL: 133 unresolved executable test placeholders
 - apps\api\test\v061-replay.e2e-spec.ts: 4
 - apps\api\test\v062-carry-chain.e2e-spec.ts: 13
 - apps\api\test\v063-golden-path.e2e-spec.ts: 8
-- apps\api\test\v064-golden-dataset.e2e-spec.ts: 11
+- apps\api\test\v064-golden-dataset.e2e-spec.ts: 10
 - apps\api\test\vertical-slice-02.e2e-spec.ts: 16
 - apps\api\test\vertical-slice.e2e-spec.ts: 9
 [ELIFECYCLE] Command failed with exit code 1.

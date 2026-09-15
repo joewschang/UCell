@@ -1,11 +1,20 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma, PrismaService } from '@ucell/database';
+import { Prisma, PrismaService, pending } from '@ucell/database';
 
 @Injectable()
 export class RecoveryBalanceService {
   constructor(private readonly prisma:PrismaService){}
 
   async apply(tx:Prisma.TransactionClient,input:{qualificationId:string;payoutLineId:string;maxAmount:Prisma.Decimal}){
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${input.payoutLineId},0))`;
+    const line=await tx.payoutLine.findUnique({where:{payoutLineId:input.payoutLineId}});
+    if(!line||line.recipientQualificationId!==input.qualificationId||!line.grossAmount.eq(input.maxAmount)||input.maxAmount.lt(0))
+      pending('RECOVERY_OFFSET_INPUT_MISMATCH','Offset must use the original payout line recipient and gross amount');
+    const previous=await tx.recoveryApplication.aggregate({where:{payoutLineId:input.payoutLineId},_sum:{amount:true}});
+    if(previous._sum.amount!=null){
+      if(previous._sum.amount.gt(input.maxAmount)) pending('RECOVERY_OFFSET_BASELINE_CORRUPT','Recorded offset exceeds original payout capacity');
+      return {applied:previous._sum.amount,remaining:input.maxAmount.sub(previous._sum.amount)};
+    }
     let remaining=input.maxAmount;
     let applied=new Prisma.Decimal(0);
     const rows=await tx.bonusRecoveryEvent.findMany({
