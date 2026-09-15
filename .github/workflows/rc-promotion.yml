@@ -7,6 +7,13 @@ jobs:
     environment: production-approval
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 24}
+      - name: Enforce executable TODO and UAT blockers
+        working-directory: backend
+        run: |
+          node scripts/test-todo-gate.mjs
+          node scripts/uat-gate.mjs
       - name: Verify signed release evidence exists
         run: |
           test -f governance/SA_System_Function_Matrix.xlsx

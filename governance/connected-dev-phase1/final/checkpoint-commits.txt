@@ -1,0 +1,8 @@
+f4ad9bd fix: checkpoint patched dependencies and admin access tests
+43f8b4b chore: checkpoint baseline gate evidence before dependency security fixes
+c5cfe60 fix: checkpoint CommonJS dependencies and toolchain alignment
+c4dc2f8 fix: checkpoint concrete implementation defects before gate alignment
+120a7e5 fix: checkpoint direct dependencies and executable test runners
+d3f890d fix: checkpoint Prisma and Windows toolchain compatibility
+623127f chore: checkpoint dependency resolution before compatibility fixes
+d30075b chore: checkpoint before connected DEV phase 1

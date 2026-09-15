@@ -1,0 +1,6 @@
+cwd: C:\UCell\UCell
+command: git status --short --branch
+started: 2026-09-15T09:23:54.280Z
+exit: 0
+## rc1-recovered...origin/rc1-recovered [ahead 8]
+?? governance/connected-dev-phase1/final/

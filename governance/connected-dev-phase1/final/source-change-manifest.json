@@ -1,0 +1,164 @@
+{
+  "base": "df13581",
+  "sourceHead": "f4ad9bd5a0bfca9c8870dc1cb6ab8ae92340b786",
+  "ruleVersion": "R1.0B FROZEN",
+  "productionPromotion": "BLOCKED",
+  "files": [
+    {
+      "file": ".github/workflows/ci.yml",
+      "sha256": "03b0f85c9fd9c8b049e769ded32014762cc86f451d68916c7ca9a2b7980f18d4"
+    },
+    {
+      "file": ".github/workflows/rc-promotion.yml",
+      "sha256": "f25f54ec4b8f77b63a6ca18d3fba8a62a44f3049a9ce5e57b9aceec6c2a362b7"
+    },
+    {
+      "file": ".gitignore",
+      "sha256": "ba6785f7f17573409f7469ad5201c8db7feb6ace265ce9804d8b0af535aed2ad"
+    },
+    {
+      "file": "admin/docs/DEPENDENCY_LOCK_POLICY.md",
+      "sha256": "ee0749e7bf92d07fa2d94ed000ad9a753ed18272ad5f89a343154fdb92a52bd9"
+    },
+    {
+      "file": "admin/package.json",
+      "sha256": "92a528e7a41e568eca28e29066aba59a7247b90c74030626a3b30f1220374b62"
+    },
+    {
+      "file": "admin/pnpm-lock.yaml",
+      "sha256": "53bf4cfa4e36ac4c43b3d30a08d04ef8fe78cc696392d7220bbef328be9cbc36"
+    },
+    {
+      "file": "admin/pnpm-workspace.yaml",
+      "sha256": "f8868ff3663fe2be093f63bcf9de9b9d0705e7b79fb87fa6ea389cc23fa05075"
+    },
+    {
+      "file": "admin/src/features/auth/permissions.test.ts",
+      "sha256": "b1b6c22720076f5fbd8c58f494396ce916dd6ce33655325b9ecf796e70b0fb95"
+    },
+    {
+      "file": "admin/src/vite-env.d.ts",
+      "sha256": "65996936fbb042915f7b74a200fcdde7e410f32a669b1ab9597cfaa4b0faddb5"
+    },
+    {
+      "file": "backend/.github/workflows/backend-ci.yml",
+      "sha256": "30e8282e15bcf4a03c2d3e629b274c6bbcd34ad6fd9e4e7cb49315bab3a2d848"
+    },
+    {
+      "file": "backend/apps/api/package.json",
+      "sha256": "901dd2b326f23b237de97a9494036e3e9b450a9cc60df25c9a5d82f519318dcb"
+    },
+    {
+      "file": "backend/apps/api/src/common/audit/audit.interceptor.ts",
+      "sha256": "af1f603e8df3c7fba38fab36d79ea342a52e7d181216c352091a4e3147b4df77"
+    },
+    {
+      "file": "backend/apps/api/src/modules/admin-observability/admin-observability.service.ts",
+      "sha256": "4b66173191fed97f136bfb1479a584fbf247124fbc0c12e9e7e7370276cfb72c"
+    },
+    {
+      "file": "backend/apps/api/src/modules/epv/epv.service.ts",
+      "sha256": "bcbe66b18eb273186400837b0f18ea36ec5a536a0fb317a8ac817eabbce4c33e"
+    },
+    {
+      "file": "backend/apps/api/src/modules/payout/unified-payable.service.ts",
+      "sha256": "ec82db05408b90bde5d335d692dea779a4094af856e2c674fcdc015cc59eb0fa"
+    },
+    {
+      "file": "backend/apps/api/test/connected-dev-defects.e2e-spec.ts",
+      "sha256": "97e7af23fdbb0f4029b3c650aa312d2fe3c3b9f2de1e047a66e3a045369b0d7f"
+    },
+    {
+      "file": "backend/apps/api/test/jest-e2e.json",
+      "sha256": "fabac22191790e451ba9583b504a79eeca1400c464ccf65c3f30df98d10f7519"
+    },
+    {
+      "file": "backend/apps/api/tsconfig.build.json",
+      "sha256": "e9270b41a7d1d615cecd7023067450674626194e59d526cfbc72fcae1edb51c0"
+    },
+    {
+      "file": "backend/apps/api/tsconfig.json",
+      "sha256": "f2f64c6fd8fd20a52f5cfef4262dcb49edb975d78dca758ae991a37194c8834d"
+    },
+    {
+      "file": "backend/apps/worker/package.json",
+      "sha256": "0ed7f4ffb580a795ab75e03012910a0b0af8b2080e47f8d49168520599f00edd"
+    },
+    {
+      "file": "backend/apps/worker/src/main.ts",
+      "sha256": "ccbd7adc4b372ee445cad290588b4be1bf51c25736bc5a968a8ca837f2df6956"
+    },
+    {
+      "file": "backend/docs/DEPENDENCY_LOCK_POLICY.md",
+      "sha256": "6f7b4c3344cd82e69f61cbee7d7cfd799a1e965cba172b88a8ad170d3b43b44b"
+    },
+    {
+      "file": "backend/infra/docker/api.Dockerfile",
+      "sha256": "b88d31fb97e0aaa3632d77b722aa73b213290265eec6883a1ed3e463043f8f98"
+    },
+    {
+      "file": "backend/package.json",
+      "sha256": "79ea06f6ac1574ed361755638369314ca0a4c13456393dfe48250e05983fc9ff"
+    },
+    {
+      "file": "backend/packages/database/package.json",
+      "sha256": "6f76b89feadaaba9025ecb7cd544e2b5eef836a4ee1033709569bf7e8eccbb82"
+    },
+    {
+      "file": "backend/packages/shared/jest.config.cjs",
+      "sha256": "86cc147a4c3b795ddd2d5179643947698b187a0c1b8fc449cfaa012b1ab83596"
+    },
+    {
+      "file": "backend/packages/shared/package.json",
+      "sha256": "f5609abd55e6377c1adcd23bfa1f315f30507ab2b178828b0336fa17aba3fcfe"
+    },
+    {
+      "file": "backend/pnpm-lock.yaml",
+      "sha256": "72170243d5f9e05880463f70478a857b4da7b146ea94d5bc91ecfea4e57a51b2"
+    },
+    {
+      "file": "backend/pnpm-workspace.yaml",
+      "sha256": "fe0d43e75c79194cdee4f65b2ffe0d59ae8300079c6eb9b51be09528064ba35b"
+    },
+    {
+      "file": "backend/scripts/import-module-preflight.mjs",
+      "sha256": "68f89fb1e059b2a73110515d51a7415a55d9cf6ac5673bf3a305931a80c95ecb"
+    },
+    {
+      "file": "backend/scripts/migration-preflight.mjs",
+      "sha256": "accfdc04da94463eb651717c9efb45d9234db4ed529c25d87cd0e07ee0ba4906"
+    },
+    {
+      "file": "backend/scripts/rc-gate.sh",
+      "sha256": "64c18882a81a60ac201353dddcaae76041099107437b076e2b9c2a893ec93310"
+    },
+    {
+      "file": "backend/scripts/schema-preflight.mjs",
+      "sha256": "e00230f2c12d0df360e68164ccf3325e4561e10eff7f7b803f755e4eefe0a996"
+    },
+    {
+      "file": "backend/scripts/source-preflight.mjs",
+      "sha256": "a81d3042d794a4c929ae6ae1883f8e642a40a49b01e6e7ece9b7f8fc8456db1a"
+    },
+    {
+      "file": "backend/scripts/test-todo-gate.mjs",
+      "sha256": "953060d4edf0e3f8ea60cd1bb02326faa5a9554935a8ebdc8f81ab0c92b8244c"
+    },
+    {
+      "file": "backend/tsconfig.json",
+      "sha256": "2168626353e0dd55f40559f821bee4f62c36b09a8e4d61a24f39b3378e9d6b2a"
+    },
+    {
+      "file": "deployment/Dockerfile.admin",
+      "sha256": "464f5ba532458847f19289ce3d8596010f681d1d651fa8b576411311608df17d"
+    },
+    {
+      "file": "deployment/Dockerfile.backend",
+      "sha256": "70106d55b377e56bc96e48e7e83d71c51c2630c87c28efa28773c72041686001"
+    },
+    {
+      "file": "deployment/Dockerfile.worker",
+      "sha256": "ffc0dfa3da5678e4dceecb44c77bfac5690068f15f313c215e3e269e163eb1ae"
+    }
+  ]
+}

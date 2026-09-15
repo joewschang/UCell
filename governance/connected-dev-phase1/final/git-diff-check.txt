@@ -1,0 +1,5 @@
+source/config only; raw evidence excluded
+exit: 0
+warning: in the working copy of '.github/workflows/ci.yml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '.github/workflows/rc-promotion.yml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'backend/scripts/rc-gate.sh', LF will be replaced by CRLF the next time Git touches it

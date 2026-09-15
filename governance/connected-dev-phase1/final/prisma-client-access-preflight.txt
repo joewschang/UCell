@@ -1,0 +1,5 @@
+cwd: C:\UCell\UCell\backend
+command: node scripts/prisma-client-access-preflight.mjs
+started: 2026-09-15T09:23:59.067Z
+exit: 0
+PRISMA_CLIENT_ACCESS_PREFLIGHT_PASS

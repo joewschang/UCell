@@ -1,0 +1,21 @@
+exit: 2
+governance/connected-dev-phase1/backend-build.txt:15: trailing whitespace.
++apps/api build: 
+governance/connected-dev-phase1/backend-build.txt:19: trailing whitespace.
++apps/api build: 
+governance/connected-dev-phase1/backend-build.txt:23: trailing whitespace.
++apps/api build: 
+governance/connected-dev-phase1/backend-build.txt:27: trailing whitespace.
++apps/api build: 
+governance/connected-dev-phase1/backend-build.txt:30: trailing whitespace.
++apps/api build: 
+governance/connected-dev-phase1/backend-build.txt:32: trailing whitespace.
++apps/api build: 
+governance/connected-dev-phase1/backend-build.txt:38: new blank line at EOF.
+governance/connected-dev-phase1/backend-test-gate.txt:23: trailing whitespace.
++apps/api test: 
+governance/connected-dev-phase1/prisma-migrate-deploy.txt:14: new blank line at EOF.
+warning: in the working copy of '.github/workflows/ci.yml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '.github/workflows/rc-promotion.yml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'backend/scripts/rc-gate.sh', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'governance/connected-dev-phase1/run-verification.mjs', LF will be replaced by CRLF the next time Git touches it

@@ -48,7 +48,7 @@ jobs:
         run: pnpm exec ts-node scripts/db-golden-e2e.ts
       - name: Tests
         working-directory: backend
-        run: pnpm -r test
+        run: pnpm test
   admin:
     runs-on: ubuntu-latest
     steps:

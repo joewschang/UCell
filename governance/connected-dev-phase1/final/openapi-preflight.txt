@@ -1,0 +1,5 @@
+cwd: C:\UCell\UCell\backend
+command: node scripts/openapi-preflight.mjs
+started: 2026-09-15T09:24:43.944Z
+exit: 1
+OPENAPI_PREFLIGHT_FAIL: generated spec not found

@@ -1,0 +1,1 @@
+PASS: three workflow files parse with js-yaml. GitHub Actions execution NOT RUN.

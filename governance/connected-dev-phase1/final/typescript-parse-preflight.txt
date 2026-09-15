@@ -1,0 +1,5 @@
+cwd: C:\UCell\UCell\backend
+command: node scripts/typescript-parse-preflight.mjs
+started: 2026-09-15T09:23:59.933Z
+exit: 0
+TYPESCRIPT_PARSE_PREFLIGHT_PASS

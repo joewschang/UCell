@@ -9,11 +9,20 @@ fs.mkdirSync(out, { recursive: true });
 const root = path.resolve(scriptDir, '../..');
 const env = { ...process.env, DATABASE_URL: 'postgresql://ucell:ucell_dev@localhost:5432/ucell?schema=public',
   NODE_ENV: 'test', ADMIN_AUTH_BYPASS: 'false', VITE_ENABLE_DEMO_LOGIN: 'false' };
-const results = [];
+const shellOnly = process.argv.includes('--shell-gates-only');
+const results = shellOnly
+  ? JSON.parse(fs.readFileSync(path.join(out, 'gate-results.json'), 'utf8'))
+    .filter(row => !['ci-gate', 'release-gate', 'rc-gate', 'shell-syntax'].includes(row.label))
+  : [];
 function run(area, command, label) {
   const cwd = path.join(root, area);
   const start = new Date().toISOString();
-  const result = spawnSync('cmd.exe', ['/d', '/s', '/c', command], {
+  const bashPrefix = '"C:\\Program Files\\Git\\bin\\bash.exe" ';
+  const executable = command.startsWith(bashPrefix) ? 'C:\\Program Files\\Git\\bin\\bash.exe' : 'cmd.exe';
+  const args = command.startsWith(bashPrefix)
+    ? command.slice(bashPrefix.length).split(' ')
+    : ['/d', '/s', '/c', command];
+  const result = spawnSync(executable, args, {
     cwd, env, encoding: 'utf8', timeout: 180000, maxBuffer: 16 * 1024 * 1024,
   });
   const output = (result.stdout ?? '') + (result.stderr ?? '') + (result.error?.message ?? '');
@@ -22,6 +31,13 @@ function run(area, command, label) {
     result: result.status === 0 ? 'PASS' : 'FAIL' });
   fs.writeFileSync(path.join(out, 'gate-results.json'), JSON.stringify(results, null, 2) + '\n');
   console.log(`${label}: ${result.status === 0 ? 'PASS' : 'FAIL'} (exit ${result.status})`);
+}
+if (shellOnly) {
+  run('backend', '"C:\\Program Files\\Git\\bin\\bash.exe" -n scripts/rc-gate.sh', 'shell-syntax');
+  run('backend', '"C:\\Program Files\\Git\\bin\\bash.exe" scripts/ci-gate.sh', 'ci-gate');
+  run('backend', '"C:\\Program Files\\Git\\bin\\bash.exe" scripts/rc-gate.sh', 'rc-gate');
+  run('', '"C:\\Program Files\\Git\\bin\\bash.exe" scripts/release-gate.sh', 'release-gate');
+  process.exit(0);
 }
 run('', 'node --version', 'node-version');
 run('', 'pnpm --version', 'pnpm-version');
@@ -54,6 +70,7 @@ run('backend', 'pnpm uat:gate', 'uat-gate');
 run('backend', 'pnpm audit --json', 'backend-dependency-audit');
 run('admin', 'pnpm audit --json', 'admin-dependency-audit');
 run('backend', '"C:\\Program Files\\Git\\bin\\bash.exe" scripts/ci-gate.sh', 'ci-gate');
+run('backend', '"C:\\Program Files\\Git\\bin\\bash.exe" scripts/rc-gate.sh', 'rc-gate');
 run('', '"C:\\Program Files\\Git\\bin\\bash.exe" scripts/release-gate.sh', 'release-gate');
 
 const rows = [];

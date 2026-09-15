@@ -1,0 +1,4 @@
+cwd: C:\UCell\UCell\backend
+command: "C:\Program Files\Git\bin\bash.exe" -n scripts/rc-gate.sh
+started: 2026-09-15T09:25:12.133Z
+exit: 0

@@ -1,0 +1,5 @@
+cwd: C:\UCell\UCell\backend
+command: node scripts/security-policy-preflight.mjs
+started: 2026-09-15T09:23:59.808Z
+exit: 0
+SECURITY_POLICY_PREFLIGHT_PASS

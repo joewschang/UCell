@@ -1,0 +1,47 @@
+[
+  {
+    "category": "Toolchain compatibility",
+    "issue": "Prisma 7 schema URL removal; TypeScript 7 vs ts-jest; NestJS 12 ESM vs CommonJS Jest; Windows URL paths; pnpm 12 build scripts; stale Node 22/pnpm 9 scaffolding",
+    "status": "FIXED; connected runtime passed except replay implementation blocker"
+  },
+  {
+    "category": "Dependency",
+    "issue": "Missing direct @types/node, root ts-node/Prisma; duplicate Fastify; audit advisories in deepmerge-ts/Vite/esbuild/React Router/Vitest",
+    "status": "FIXED; frozen install, peers and final audits PASS"
+  },
+  {
+    "category": "TypeScript",
+    "issue": "Vite ImportMeta.env types, crypto import, inferred API declaration types, Prisma Json null, nonexistent fields/relations",
+    "status": "FIXED; two replay method locations remain; Nest CLI reports these twice (4 diagnostics)"
+  },
+  {
+    "category": "Prisma/DB",
+    "issue": "validate/generate/migrate deploy",
+    "status": "PASS; PostgreSQL 16.15 healthy; all 16 migrations applied; no migration edits"
+  },
+  {
+    "category": "Application implementation",
+    "issue": "RPV source ID, EPV temporal plan lookup, polymorphic award payable query, audit DbNull, gate entrypoints",
+    "status": "FIXED; 3 isolated API regression tests PASS; no formula changes or official monetary result writes"
+  },
+  {
+    "category": "Application implementation",
+    "issue": "Legacy adjustment calls absent replayBinary/replayMatching; OpenAPI and HTTP/security downstream unavailable",
+    "status": "UNRESOLVED; blocked pending specification reconciliation; API not started from partial/stale output"
+  },
+  {
+    "category": "Test implementation",
+    "issue": "Missing Jest E2E config/shared golden runner and no Admin test files",
+    "status": "FIXED for runner/bootstrap entrypoints and added tests; 148 original E2E TODO remain unchanged"
+  },
+  {
+    "category": "Test implementation",
+    "issue": "DB golden seed TypeScript file missing; empty database lacks five fixed-ID qualifications; conditional parameter assertions can vacuously pass",
+    "status": "UNRESOLVED; no invented fixture or relaxed assertions"
+  },
+  {
+    "category": "Specification ambiguity",
+    "issue": "Single-recipient legacy adjustment versus period-wide replay/K1/K2/carry-chain scope; contradictory golden-domain EPV/pools; README source precedence differs from current user instructions; missing approved source documents/links",
+    "status": "STOPPED affected semantic work; formal clarification required"
+  }
+]

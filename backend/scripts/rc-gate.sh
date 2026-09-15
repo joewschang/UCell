@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
+node scripts/test-todo-gate.mjs
 
 bash scripts/dev-smoke.sh
 
