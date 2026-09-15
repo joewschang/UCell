@@ -1,5 +1,20 @@
 import { MembershipApplicationService } from '../src/modules/application/membership-application.service';
 import { ActiveService } from '../src/modules/active/active.service';
+import { execFileSync } from 'node:child_process';
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { resolve, join } from 'node:path';
+
+let rpvEvidence:any[];
+beforeAll(()=>{
+ const root=resolve(__dirname,'../../../..'),directory=mkdtempSync(join(tmpdir(),'ucell-rpv-recognition-'));
+ try{
+  const file=join(directory,'evidence.json');
+  execFileSync(process.execPath,[resolve(root,'backend/scripts/phase2-db-test.mjs')],{cwd:root,env:{...process.env,DATABASE_URL:process.env.PHASE2_TEST_DATABASE_URL??'postgresql://ucell:ucell_dev@localhost:5432/ucell_admin_test?schema=public',PHASE2_DB_EVIDENCE_PATH:file},timeout:30000});
+  const run=JSON.parse(readFileSync(file,'utf8'));expect(run.result).toBe('PASS');rpvEvidence=run.results;
+ }finally{rmSync(directory,{recursive:true,force:true});}
+},30000);
+function rpvActual(label:string){const row=rpvEvidence.find(item=>item.label===label);expect(row).toBeDefined();expect(row.result).toBe('PASS');expect(row.actual).toEqual(row.expected);return row.actual;}
 
 // Execute the real application callback; database atomicity is covered separately
 // by the isolated DB transaction regressions, not claimed by these service tests.
@@ -113,11 +128,20 @@ describe('Vertical Slice 02 - Membership / Active / Subscription / RPV', () => {
   it.todo('QUARTER creates exactly 3 recognition rows');
   it.todo('HALF_YEAR creates exactly 6 recognition rows');
   it.todo('YEAR creates exactly 12 recognition rows');
-  it.todo('each due recognition creates exactly 1,200 RPV once');
+  it('each due recognition creates exactly 1,200 RPV once',()=>{
+    expect(rpvActual('due RPV recognition seals exact original ledger identity').slice(0,3)).toEqual(['1200','RPV','RPV_CREATED']);
+    expect(rpvActual('due RPV recognition updates original schedule identity')[0]).toBe('RECOGNIZED');
+    expect(rpvActual('RPV duplicate recognition appends no original event')).toBe(1);
+  });
   it.todo('0 direct unlocks 5 binary generations');
   it.todo('1 direct unlocks 8 binary generations');
   it.todo('2+ directs unlocks 12 binary generations');
   it.todo('inactive upline receives 0 and is not compressed');
   it.todo('higher generation remains independently evaluated');
-  it.todo('re-running a recognition cannot duplicate RPV or awards');
+  it('re-running a recognition cannot duplicate RPV or awards',()=>{
+    expect(rpvActual('duplicate RPV recognition reports already recognized')).toBe('ALREADY_RECOGNIZED');
+    expect(rpvActual('RPV duplicate recognition appends no original event')).toBe(1);
+    expect(rpvActual('duplicate RPV recognition preserves all original awards').length).toBeGreaterThan(0);
+    rpvActual('duplicate RPV recognition preserves entire historical snapshot');
+  });
 });

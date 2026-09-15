@@ -161,10 +161,17 @@ try{await prisma.$transaction(async tx=>{
  const recognized=await tx.monthlyRecognitionSchedule.create({data:{subscriptionId:sub.subscriptionId,installmentNo:1,recognitionMonth:new Date('2020-01-01'),recognizedAmount:2000,rpvAmount:1200,dueAt:new Date('2020-01-03'),ruleVersionCode:version}});
  const future=await tx.monthlyRecognitionSchedule.create({data:{subscriptionId:sub.subscriptionId,installmentNo:2,recognitionMonth:new Date('2020-02-01'),recognizedAmount:2000,rpvAmount:1200,dueAt:new Date('2020-02-03'),ruleVersionCode:version}});
  await new RpvService(facade,{}).recognize(recognized.recognitionId);
+ const recognizedSchedule=await tx.monthlyRecognitionSchedule.findUniqueOrThrow({where:{recognitionId:recognized.recognitionId}});
+ const recognitionEvent=await tx.pvLedger.findUniqueOrThrow({where:{eventId:recognizedSchedule.pvLedgerEventId}});
+ check('due RPV recognition seals exact original ledger identity',[recognitionEvent.amount.toString(),recognitionEvent.pvType,recognitionEvent.eventType,recognitionEvent.sourceId,recognitionEvent.sourceLineId,recognitionEvent.qualificationId,recognitionEvent.occurredAt.toISOString()],['1200','RPV','RPV_CREATED',sub.subscriptionId,recognized.recognitionId,leftQ.qualificationId,recognized.dueAt.toISOString()]);
+ check('due RPV recognition updates original schedule identity',[recognizedSchedule.status,recognizedSchedule.pvLedgerEventId,recognizedSchedule.recognitionMonth.toISOString()],['RECOGNIZED',recognitionEvent.eventId,recognized.recognitionMonth.toISOString()]);
  const rpvSnapshot=await tx.historicalReplaySnapshot.findUniqueOrThrow({where:{kind_sourceId:{kind:'RPV',sourceId:recognized.recognitionId}}});
+ const originalRecognitionAwards=await tx.rpvUplineAwardEvent.findMany({where:{recognitionId:recognized.recognitionId},orderBy:{rpvAwardEventId:'asc'}});
  const countBeforeDuplicate=await tx.pvLedger.count({where:{sourceLineId:recognized.recognitionId,pvType:'RPV'}});
- await new RpvService(facade,{}).recognize(recognized.recognitionId);
+ check('duplicate RPV recognition reports already recognized',(await new RpvService(facade,{}).recognize(recognized.recognitionId)).skipped,'ALREADY_RECOGNIZED');
  check('RPV duplicate recognition appends no original event',await tx.pvLedger.count({where:{sourceLineId:recognized.recognitionId,pvType:'RPV'}}),countBeforeDuplicate);
+ check('duplicate RPV recognition preserves all original awards',await tx.rpvUplineAwardEvent.findMany({where:{recognitionId:recognized.recognitionId},orderBy:{rpvAwardEventId:'asc'}}),originalRecognitionAwards);
+ check('duplicate RPV recognition preserves entire historical snapshot',await tx.historicalReplaySnapshot.findUniqueOrThrow({where:{kind_sourceId:{kind:'RPV',sourceId:recognized.recognitionId}}}),rpvSnapshot);
  for(const field of ['recognitionMonth','recognitionPeriod','eventId']){
    const content=JSON.parse(JSON.stringify(rpvSnapshot.content));delete content.inputs[field];
    await rejected('RPV missing '+field+' fails closed',()=>replay.verifyReplayEnvelope({...rpvSnapshot,content,hash:replay.replayHash(content)}),'HISTORICAL_SNAPSHOT_MISSING');

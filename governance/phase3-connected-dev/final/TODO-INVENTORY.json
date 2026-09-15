@@ -1,7 +1,7 @@
 {
   "originalBaseline": 148,
-  "currentExecutableTodo": 76,
-  "netPlaceholderReduction": 72,
+  "currentExecutableTodo": 74,
+  "netPlaceholderReduction": 74,
   "audit": "Previous 52 TODO claim invalidated: missing cases and unrelated/constant assertions restored. Net reduction alone is not Release approval.",
   "items": [
     {
@@ -390,62 +390,50 @@
     },
     {
       "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
-      "line": 113,
+      "line": 128,
       "case": "QUARTER creates exactly 3 recognition rows",
       "classification": "Test implementation; SSOT/evidence review before conversion"
     },
     {
       "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
-      "line": 114,
+      "line": 129,
       "case": "HALF_YEAR creates exactly 6 recognition rows",
       "classification": "Test implementation; SSOT/evidence review before conversion"
     },
     {
       "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
-      "line": 115,
+      "line": 130,
       "case": "YEAR creates exactly 12 recognition rows",
       "classification": "Test implementation; SSOT/evidence review before conversion"
     },
     {
       "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
-      "line": 116,
-      "case": "each due recognition creates exactly 1,200 RPV once",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
-    },
-    {
-      "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
-      "line": 117,
+      "line": 136,
       "case": "0 direct unlocks 5 binary generations",
       "classification": "Test implementation; SSOT/evidence review before conversion"
     },
     {
       "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
-      "line": 118,
+      "line": 137,
       "case": "1 direct unlocks 8 binary generations",
       "classification": "Test implementation; SSOT/evidence review before conversion"
     },
     {
       "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
-      "line": 119,
+      "line": 138,
       "case": "2+ directs unlocks 12 binary generations",
       "classification": "Test implementation; SSOT/evidence review before conversion"
     },
     {
       "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
-      "line": 120,
+      "line": 139,
       "case": "inactive upline receives 0 and is not compressed",
       "classification": "Test implementation; SSOT/evidence review before conversion"
     },
     {
       "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
-      "line": 121,
+      "line": 140,
       "case": "higher generation remains independently evaluated",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
-    },
-    {
-      "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
-      "line": 122,
-      "case": "re-running a recognition cannot duplicate RPV or awards",
       "classification": "Test implementation; SSOT/evidence review before conversion"
     },
     {

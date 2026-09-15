@@ -8,6 +8,14 @@ RPV sealing includes original recognition period UTC bounds plus its historical 
 
 Idempotency now checks a transaction-visible unfinished record's request hash before executing work. Regression covers the prior conflict hole. Real parallel transactions in the isolated Golden DB prove one committed entity/idempotency record; serialization/uniqueness conflicts require external redelivery and then return the original result. Injected partial failure rolls back entity/outbox/idempotency together, followed by successful retry and duplicate-delivery verification. This evidence does not claim automatic retry inside the service or complete concurrent monetary Return replay coverage.
 
+## Latest RPV recognition batch
+
+Checkpoint `bce1d46` precedes two vertical-slice-02 TODO conversions for due RPV recognition and duplicate recognition. Five direct DB assertions use actual RpvService and Prisma to verify exact 1200 RPV original ledger/source/Qualification/dueAt identity, RECOGNIZED schedule event/month identity, ALREADY_RECOGNIZED duplicate response, every original award row and the entire archived historical snapshot unchanged. Existing event-count assertion requires exactly one original RPV event. Jest writes its own temporary evidence file to avoid shared-output reads. The TEST_ONLY dueAt and consumption fixtures do not approve operational calendar or eligible scope.
+
+Current TODO inventory is **74** (prior 76, original baseline 148, net reduction 74); replay DB regression increases from 123 to 128 assertions. No production source/schema/business rule changes. Build/Prisma/offline/formal Security/UAT/release-preparation and isolated Golden entries retain preceding timestamps; exact current reruns are in the matrix.
+
+RPV recognition batch verification: 16 suites / 105 Jest tests PASS / 74 TODOs; 128 DB regression assertions PASS; Security Policy Preflight PASS; Admin DEV 43 HTTP requests PASS; diff check PASS. Backend/TODO/RC gates remain BLOCKED by TODOs; formal Security/UAT and Production Promotion remain BLOCKED. Exact commands/timestamps/raw output are in `final/gate-results.json`.
+
 ## Latest direct Qualification batch
 
 Checkpoint `57ca3c9` precedes two vertical-slice TODO conversions using actual QualificationService, OrganizationService and IdempotencyService: Qualification creation with permanent Sponsor sequence, and first direct RIGHT rejection before any Qualification/history/tree/audit writes. Stateful service tests verify duplicate identity, initial holder/plan history, separate Sponsor/Binary placement and sequence progression across an explicitly closed TEST_ONLY relationship. They do not claim mock persistence implements slot occupancy or transaction rollback.
@@ -54,7 +62,7 @@ Latest batch results: 16 Jest suites / 94 tests PASS / 84 TODOs; 109 DB regressi
 
 The earlier report of 52 remaining TODOs / 96 completed cases is withdrawn. Several original cases were removed instead of converted, and assertions against constants or unrelated scenarios were incorrectly counted. The commits remain in history, with checkpoint `e232c92` before correction. Unverified cases were restored from `89bfed6`.
 
-Current inventory: **76 executable TODOs** from original baseline 148. This is a net reduction of 72 placeholders, not a claim that all 72 have completed release-level review. The preceding audited Phase 3 batch converted 19 original TODOs with corresponding service/guard or direct DB assertions: idempotency (4), organization (4), qualification isolation (3), unlock-depth behavior (2), negative return/payout invariants (6). Two additional idempotency defect/rollback regression tests were added. Earlier Phase 2 conversions remain subject to continued coverage review.
+Current inventory: **74 executable TODOs** from original baseline 148. This is a net reduction of 74 placeholders, not a claim that all 74 have completed release-level review. The preceding audited Phase 3 batch converted 19 original TODOs with corresponding service/guard or direct DB assertions: idempotency (4), organization (4), qualification isolation (3), unlock-depth behavior (2), negative return/payout invariants (6). Two additional idempotency defect/rollback regression tests were added. Earlier Phase 2 conversions remain subject to continued coverage review.
 
 The next batch, checkpoint `27789de`, converts four Vertical Slice 02 cases: DRAFT creation using the real service/idempotency callback; SUBMIT rejection for each missing Sponsor/Binary field plus successful submission; Active overlap rejection without mutation; historical Active half-open boundaries independent of the current flag. These are service tests with mocked persistence and do not claim database atomicity or concurrent Active exclusion. All other original cases remain TODO.
 
@@ -94,7 +102,7 @@ The identified local DEV API/worker were restored after Prisma generation, using
 
 ## Remaining blockers and next work
 
-- 76 TODOs: continue SSOT/evidence audit and real implementation tests, especially vertical slice and bonus-engine settlement integration.
+- 74 TODOs: continue SSOT/evidence audit and real implementation tests, especially vertical slice and bonus-engine settlement integration.
 - Commit `83e5b39` adds lease-safe production consumer processing and 20 isolated real DB assertions for concurrent partial returns, rollback/retry, PAID clawback, stale ownership, expired lease and duplicate delivery. This closes the previously missing focused concurrency coverage; broader production workload verification remains outstanding.
 - RPV historical data predating required snapshots cannot be reconstructed from current state; missing allocation/period/timezone evidence remains fail-closed.
 - Formal partial-refund RPV month allocation requires original allocation evidence; no proportional fixed-award assumption is made.

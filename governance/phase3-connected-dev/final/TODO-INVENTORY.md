@@ -1,4 +1,4 @@
-Original baseline: 148. Current TODO: 76. Net placeholder reduction: 72.
+Original baseline: 148. Current TODO: 74. Net placeholder reduction: 74.
 
 The previous 52 TODO claim is invalid. Full behavioral coverage must be reviewed independently.
 
@@ -68,15 +68,13 @@ The previous 52 TODO claim is invalid. Full behavioral coverage must be reviewed
 | backend/apps/api/test/v064-golden-dataset.e2e-spec.ts | 12 | validates RPV 5/8/12 on Binary Tree | Test implementation; SSOT/evidence review before conversion |
 | backend/apps/api/test/v064-golden-dataset.e2e-spec.ts | 13 | validates EPV on Sponsor Tree | Test implementation; SSOT/evidence review before conversion |
 | backend/apps/api/test/v064-golden-dataset.e2e-spec.ts | 14 | validates refund -> replay -> recovery -> payout | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/vertical-slice-02.e2e-spec.ts | 113 | QUARTER creates exactly 3 recognition rows | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/vertical-slice-02.e2e-spec.ts | 114 | HALF_YEAR creates exactly 6 recognition rows | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/vertical-slice-02.e2e-spec.ts | 115 | YEAR creates exactly 12 recognition rows | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/vertical-slice-02.e2e-spec.ts | 116 | each due recognition creates exactly 1,200 RPV once | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/vertical-slice-02.e2e-spec.ts | 117 | 0 direct unlocks 5 binary generations | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/vertical-slice-02.e2e-spec.ts | 118 | 1 direct unlocks 8 binary generations | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/vertical-slice-02.e2e-spec.ts | 119 | 2+ directs unlocks 12 binary generations | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/vertical-slice-02.e2e-spec.ts | 120 | inactive upline receives 0 and is not compressed | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/vertical-slice-02.e2e-spec.ts | 121 | higher generation remains independently evaluated | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/vertical-slice-02.e2e-spec.ts | 122 | re-running a recognition cannot duplicate RPV or awards | Test implementation; SSOT/evidence review before conversion |
+| backend/apps/api/test/vertical-slice-02.e2e-spec.ts | 128 | QUARTER creates exactly 3 recognition rows | Test implementation; SSOT/evidence review before conversion |
+| backend/apps/api/test/vertical-slice-02.e2e-spec.ts | 129 | HALF_YEAR creates exactly 6 recognition rows | Test implementation; SSOT/evidence review before conversion |
+| backend/apps/api/test/vertical-slice-02.e2e-spec.ts | 130 | YEAR creates exactly 12 recognition rows | Test implementation; SSOT/evidence review before conversion |
+| backend/apps/api/test/vertical-slice-02.e2e-spec.ts | 136 | 0 direct unlocks 5 binary generations | Test implementation; SSOT/evidence review before conversion |
+| backend/apps/api/test/vertical-slice-02.e2e-spec.ts | 137 | 1 direct unlocks 8 binary generations | Test implementation; SSOT/evidence review before conversion |
+| backend/apps/api/test/vertical-slice-02.e2e-spec.ts | 138 | 2+ directs unlocks 12 binary generations | Test implementation; SSOT/evidence review before conversion |
+| backend/apps/api/test/vertical-slice-02.e2e-spec.ts | 139 | inactive upline receives 0 and is not compressed | Test implementation; SSOT/evidence review before conversion |
+| backend/apps/api/test/vertical-slice-02.e2e-spec.ts | 140 | higher generation remains independently evaluated | Test implementation; SSOT/evidence review before conversion |
 | backend/apps/api/test/vertical-slice.e2e-spec.ts | 143 | worker converts SALE_CONFIRMED to GPV_CREATED per order line | Test implementation; SSOT/evidence review before conversion |
 | backend/apps/api/test/vertical-slice.e2e-spec.ts | 144 | reprocessing same outbox event does not duplicate GPV | Test implementation; SSOT/evidence review before conversion |
