@@ -1,0 +1,52 @@
+name: Deploy UCell Stage
+
+on:
+  workflow_dispatch:
+    inputs:
+      location:
+        description: Azure region
+        required: true
+        default: eastasia
+      resource_group:
+        description: Isolated Stage resource group
+        required: true
+        default: rg-ucell-stage
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: ucell-stage-deployment
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    environment: stage
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Azure login with federated deployment identity
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      - name: Deploy isolated Stage
+        shell: pwsh
+        env:
+          STAGE_DB_PASSWORD: ${{ secrets.STAGE_POSTGRES_ADMIN_PASSWORD }}
+          LINE_CHANNEL_ID: ${{ secrets.STAGE_LINE_CHANNEL_ID }}
+          LIFF_ID: ${{ secrets.STAGE_LIFF_ID }}
+          ENTRA_TENANT_ID: ${{ secrets.STAGE_ENTRA_TENANT_ID }}
+          ENTRA_CLIENT_ID: ${{ secrets.STAGE_ENTRA_CLIENT_ID }}
+        run: |
+          $securePassword = ConvertTo-SecureString $env:STAGE_DB_PASSWORD -AsPlainText -Force
+          ./deployment/deploy-stage.ps1 `
+            -Location '${{ inputs.location }}' `
+            -ResourceGroup '${{ inputs.resource_group }}' `
+            -PostgresAdminPassword $securePassword `
+            -LineChannelId $env:LINE_CHANNEL_ID `
+            -LiffId $env:LIFF_ID `
+            -EntraTenantId $env:ENTRA_TENANT_ID `
+            -EntraClientId $env:ENTRA_CLIENT_ID

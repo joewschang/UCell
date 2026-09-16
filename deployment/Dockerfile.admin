@@ -2,6 +2,7 @@ FROM node:24-alpine AS build
 RUN corepack enable && corepack prepare pnpm@12.4.1 --activate
 WORKDIR /app
 COPY admin/package.json admin/pnpm-workspace.yaml admin/pnpm-lock.yaml* ./
+COPY shared /shared
 RUN test -f pnpm-lock.yaml || (echo 'pnpm-lock.yaml is mandatory for production build' && exit 1)
 RUN pnpm install --frozen-lockfile
 COPY admin/ ./
