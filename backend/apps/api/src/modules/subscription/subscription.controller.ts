@@ -1,5 +1,5 @@
 import { Roles } from '../auth/roles.decorator';
-import { Body, Controller, Get, Headers, Param, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Headers, Param, Post, Query, Req, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { IdempotencyGuard } from '../../common/guards/idempotency.guard';
 import { CreateSubscriptionDto } from './dto/create-subscription.dto';
@@ -19,6 +19,9 @@ export class SubscriptionController {
   @Get('plans')
   @ApiOperation({operationId:'adminListSubscriptionPlans',summary:'重銷方案'})
   async plans(){ return {data:await this.service.listPlans()}; }
+  @Get()
+  @ApiOperation({operationId:'adminListSubscriptions',summary:'訂閱清單與Qualification/status篩選；只讀既存Core資料，不建立營運日曆'})
+  async list(@Query('status') status?:string,@Query('qualificationId') qualificationId?:string,@Query('take') take?:string){return {data:await this.service.list({status,qualificationId,take:take===undefined?undefined:Number(take)})};}
 
   @Post()
   @UseGuards(IdempotencyGuard)

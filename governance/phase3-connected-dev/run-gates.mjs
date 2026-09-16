@@ -45,3 +45,6 @@ run('','git diff --check','diff-check');
 run('backend','pnpm --filter @ucell/api build:admin-dev','admin-dev-build');
 run('','node backend/scripts/admin-full-test.mjs','admin-dev-full-test',{DATABASE_URL:'postgresql://ucell:ucell_dev@localhost:5432/ucell_admin_test?schema=public'});
 run('backend','node scripts/member-local-auth-preflight.mjs','member-local-auth');
+// Explicit local UI checks require the corresponding isolated DEV servers.
+if(selected?.has('member-mobile-mock'))run('member','pnpm test:browser','member-mobile-mock',{PLAYWRIGHT_CHANNEL:'msedge',SMOKE_SCREENSHOT:path.join(out,'member-mobile-mock.png')});
+if(selected?.has('admin-ui-connected-dev'))run('admin','node scripts/connected-dev-smoke.mjs','admin-ui-connected-dev',{PLAYWRIGHT_CHANNEL:'msedge'});

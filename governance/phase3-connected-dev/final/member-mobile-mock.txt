@@ -1,0 +1,6 @@
+command: pnpm test:browser
+started: 2026-09-16T01:36:29.213Z
+exit: 0
+PASS: local session end confirmation/cancel, unmount, storage clearing and demo restart
+PASS: seven routes, persisted ball selection, separate trees, order expansion, month filter, cart, shipping, confirmation, qualification isolation, notification filters/read/reset, null awards, 320/390/768px overflow, no page errors
+$ node tests/mobile-smoke.cjs

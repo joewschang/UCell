@@ -1,3 +1,38 @@
+# Member / Admin functional gap closure — 2026-09-16
+
+Branch integration/member-backend-mvp; pre-change checkpoint d4f0e99. This section supersedes preceding Member counts and records the additional Admin UI/transport closure. No main merge, force push, RC2 or Production promotion.
+
+CODE COMPLETE: existing Connected Member MVP plus server-confirmed Ball switching, zero-Qualification account access, Core repurchase details and UCell server-session revocation. Specific Admin fixes: typed subscription reads, retry/concurrent submission transport, stale-session cache isolation, server remaining return quantities, Core monetary display/aggregates, query/error/empty/retry, exports and 404.
+
+CONNECTED DEV PASS: Member 106 tests, Backend API 106 tests, isolated Member HTTP/DB 201 assertions twice, replay DB 129 assertions, Admin 11 tests, actual Admin 49 HTTP operations, four direct unauthenticated Member denials and five-screen UI/API smoke (13 real responses). Builds include Backend/Worker/Admin/Member; Prisma validate/generate/deploy and 22 existing migrations PASS. OpenAPI, both real frontend contracts, static/schema/security policy/preflight PASS. Member mobile browser smoke PASS only against explicitly mock UI: seven routes, 320/390/768px, no network writes. It is not formal LINE UAT.
+
+OPERATIONAL CREDENTIAL PENDING: formal LINE/LIFF device login and Entra/RBAC validation. UAT PENDING: real browser/device Golden Journey, operating configuration and signoff. PRODUCTION BLOCKED: 73 TODO, incomplete Backend replay/carry/scheduling, formal Security/UAT and remaining release/backup/restore/workload evidence. RC/release/security/UAT gates remain correctly blocked.
+
+## APIs / migration / files
+
+Added POST /api/v1/member/logout: authenticated current session only, no submitted identity/session/Qualification ownership; Idempotency-Key, transactional revocation/audit. Subsequent delivery with a revoked bearer returns 401, other sessions remain active. Added GET /api/v1/admin/subscriptions with bounded take, Qualification/status validation and deterministic ordering. Admin GET order detail now returns returnedQuantity/remainingReversibleQuantity from cumulative POSTED return facts within RepeatableRead. Return queue monetary aggregate is calculated by Core Decimal read model, not the browser.
+
+New Product profiles capture their effective R1.0B parameter hash and require timezone configuration. Existing profiles are never retrospectively filled/overwritten. An attempted existing GPV rate change now fails closed VERSIONED_PRODUCT_PROFILE_REQUIRED instead of silently ignoring input; the whole price/name write rolls back. This is validation/traceability, not approval of a new rate or formal PV/BV mapping. Member Golden product is created through actual ProductService, proving Admin-to-Member configuration compatibility.
+
+No new migration or dependency/lockfile changes: total 22 migrations. Source changes include Admin app/auth/api/commands/query feedback/orders/returns/products/reports/subscriptions/payout display, additive Backend Member/Order/Product/Subscription/AdminOperations reads, Member context/account/repurchase/logout adapters and UI, OpenAPI and actual regression/browser tests. Full file list/diff is in the checkpoint. Details: UI-FUNCTION-INVENTORY.md.
+
+## Tests / execution / findings
+
+Logout tests inject audit failure after session mutation, assert session/key rollback, retry success, single audit, revoked bearer denial, concurrent delivery and unaffected other session. Product test rejects unapproved existing-rate changes and verifies original profile and price are unchanged. Admin actual HTTP asserts cumulative remaining quantities, server return total, subscription isolation and invalid filter limits. Transport tests cover lost response retry/coalescing, actor changes, real headers/body, timeout and 401/403. Member switching tests hide private data while verifying, deny wrong responses and abort late unmounted attempts.
+
+Frontend initial rerun exposed a test hook returning a mock function; Vitest registered it as cleanup and waited on an unresolved Promise. Fixed the hook, retained every case, cleaned only verified test process trees and reran normal pnpm test: 106 PASS, no runner workaround or skipped tests. Initial browser attempts exposed missing bundled Chromium and a Linux /tmp default; local installed Edge can be selected explicitly and screenshot temp path now uses os.tmpdir. Initial attempts/evidence retained in final logs; final gate matrix has no unresolved FAIL.
+
+Exact commands/timestamps/exits: final/gate-results.json and raw logs. Executed selected run-gates batches for Prisma, all builds/tests, fresh DB Golden twice, replay, contracts, OpenAPI, policy/static/security/UAT/TODO/RC/release checks, live Admin HTTP, Member unauthenticated denials, real local Admin UI and mock Member mobile browser. Local API/Worker restored after Prisma/release tests.
+
+## Remaining unfinished functions / next stage
+
+Admin subscription creation/cancellation is not completed by this read page: legacy Backend UTC schedule construction, versioned scheduling configuration, cancellation retry/rollback and formal operational configuration remain required. Read page deliberately does not expose those unverified writes. Product legacy missing snapshots stay configuration pending; no current-state historical fallback. Backend K1/K2 complete period-wide replay, carry convergence/maxWeeks/resume and 73 executable TODO remain. TODO trajectory 148 → 74 → 73 → 73 for this UI batch; new UI/security cases are additional coverage, not disguised TODO conversion.
+
+Pending Decisions unchanged: eligible-consumption scope, formal PV/BV event mapping, production calendar/cut-off. Payment gateway/ERP fulfillment/LINE push are future external scope, not fabricated MVP success. Next engineering stage remains ordered Backend replay/carry/scheduling/TODO work; formal credentials enable device Security/UAT verification independently.
+
+Previous reports below are historical checkpoint records.
+
+---
 # Connected Member MVP closure checkpoint — 2026-09-16
 
 Branch: integration/member-backend-mvp. Pre-change checkpoint b64a31a; preserved implementation checkpoint 1639bd5. This section supersedes older incomplete Member entries below. Production Promotion remains BLOCKED; no main merge, force push or RC2 promotion.

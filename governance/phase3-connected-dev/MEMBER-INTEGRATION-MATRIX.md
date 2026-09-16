@@ -22,3 +22,9 @@ Date: 2026-09-16. Branch: integration/member-backend-mvp. Production BLOCKED.
 | RC/Release/Production | TODO and formal security/operations blockers | PRODUCTION BLOCKED |
 
 Integration uses VITE_ENABLE_MOCK=false. Pure UI mock mode is retained. No fixture approves eligible-consumption scope, formal PV/BV event mapping, production calendar/cut-off. Asia/Taipei and historical fail-closed are settled. No non-MVP ERP/payment/LINE publisher scope was added.
+
+## Member / Admin gap-closure checkpoint
+
+Latest source adds server-confirmed context switching, Person-only account access, scoped Core recognition details and authenticated UCell-session revocation. Member: 106 tests and 201 fresh isolated HTTP/DB assertions twice. Product used by checkout is created through actual ProductService with prospective parameter hash; legacy profiles remain untouched. Logout rollback/concurrency/other-session isolation is DB asserted. Admin: 11 frontend tests, live HTTP suite and five-screen real UI/API smoke; authoritative remaining reversible quantities and Core return totals replace browser estimates. The exact final HTTP count is recorded in final/admin-dev-full-test.txt.
+
+Member mobile browser smoke PASS is explicitly MOCK UI only, using installed local Edge; it does not verify formal LINE. Connected Admin smoke is local DEV demo with real Core reads, no network mutation or formal Entra proof. Full functional/code blockers are listed in UI-FUNCTION-INVENTORY.md. Subscription versioned scheduling/cancellation engineering remains INCOMPLETE; production calendar/configuration is independently pending. Formal credentials/UAT/Production remain blocked. TODO stays 73 for this UI batch; no placeholder conversion is falsely claimed.

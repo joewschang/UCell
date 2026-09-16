@@ -91,15 +91,27 @@ try {
   }
   assert.ok(saleReady,'SALE_CONFIRMED worker must capture complete historical evidence; no current-state backfill');
 
-  await request('GET',`/admin/orders/${order.data.orderId}`);
+  const originalOrder=await request('GET',`/admin/orders/${order.data.orderId}`);
+  assert.equal(originalOrder.data.lines[0].remainingReversibleQuantity,'1');
   const subscription=await request('POST','/admin/subscriptions',{qualificationId:q.qualificationId,planCode:'QUARTER',startMonth:'2026-10-01'});
   await request('GET',`/admin/subscriptions/${subscription.data.subscriptionId}`);
+  const subList=await request('GET',`/admin/subscriptions?qualificationId=${q.qualificationId}&status=ACTIVE&take=100`);
+  assert.ok(subList.data.some(row=>row.subscriptionId===subscription.data.subscriptionId));
+  assert.ok(subList.data.every(row=>row.qualificationId===q.qualificationId));
+  await request('GET','/admin/subscriptions?status=FORGED',undefined,undefined,422);
+  await request('GET','/admin/subscriptions?qualificationId=FORGED',undefined,undefined,422);
+  await request('GET','/admin/subscriptions?take=NaN',undefined,undefined,422);
   await request('POST',`/admin/subscriptions/${subscription.data.subscriptionId}/cancel`,{effectiveAt:new Date().toISOString(),reasonCode:'ISOLATED TEST FUTURE MONTHS',refundAmount:'0'});
   const returnKey=randomUUID();
   const returnBody={reasonCode:'ADMIN_TEST_ONLY',occurredAt:new Date().toISOString(),lines:[{orderLineId:order.data.lines[0].orderLineId,quantity:'1'}]};
   const returned=await request('POST',`/admin/orders/${order.data.orderId}/returns`,returnBody,returnKey);
   const returnedAgain=await request('POST',`/admin/orders/${order.data.orderId}/returns`,returnBody,returnKey);
   assert.equal(returnedAgain.data.returnCaseId,returned.data.returnCaseId);
+  const afterReturn=await request('GET',`/admin/orders/${order.data.orderId}`);
+  assert.equal(afterReturn.data.lines[0].remainingReversibleQuantity,'0');
+  assert.equal(afterReturn.data.lines[0].returnedQuantity,'1');
+  const returnQueue=await request('GET','/admin/operations/returns?take=100');
+  assert.equal(returnQueue.data.find(row=>row.returnCaseId===returned.data.returnCaseId).returnSummary.totalAmount,String(order.data.netAmount));
   await request('POST',`/admin/orders/${order.data.orderId}/returns/${returned.data.returnCaseId}/process-reversal`);
   await request('GET',`/admin/operations/returns/${returned.data.returnCaseId}`);
   const workflow=await request('POST','/admin/qualification-workflows',{qualificationId:q.qualificationId,workflowType:'UPGRADE',targetPlanCode:'ELITE'});

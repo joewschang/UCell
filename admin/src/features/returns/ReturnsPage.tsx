@@ -1,5 +1,6 @@
 import {useQuery,useQueryClient} from '@tanstack/react-query';
-import {useState} from 'react';
+import {useEffect,useRef,useState} from 'react';
+import {QueryFeedback} from '../../components/QueryFeedback';
 import {command,get,qs} from '../../lib/api';
 import {Order} from '../../types/domain';
 import {Badge,Card,ErrorBox,Field,PageHeader} from '../../components/ui';
@@ -13,10 +14,12 @@ export function ReturnsPage(){
   const [search,setSearch]=useState(''),[status,setStatus]=useState('POSTED'),[selected,setSelected]=useState<string|null>(null);
   const [order,setOrder]=useState<SearchOption|null>(null),[reason,setReason]=useState('MEMBER_RETURN'),[occurredAt,setOccurredAt]=useState(new Date().toISOString());
   const [returnLines,setReturnLines]=useState<ReturnQty[]>([]);const [error,setError]=useState<unknown>(null);const [busy,setBusy]=useState(false);
+  const orderLoad=useRef<AbortController>();
+  useEffect(()=>()=>orderLoad.current?.abort(),[]);
 
   const queue=useQuery({queryKey:['return-queue',status,search],queryFn:()=>get<any>('/admin/operations/returns'+qs({status:status||undefined,q:search,take:100}))});
   const detail=useQuery({queryKey:['return-detail',selected],queryFn:()=>get<any>(`/admin/operations/returns/${selected}`),enabled:!!selected});
-  const rows=queue.data?.data??[];const d=detail.data?.data;
+  const rows=queue.error?[]:queue.data?.data??[];const d=detail.error?undefined:detail.data?.data;
 
   async function orderSearch(q:string){
     const r:any=await get('/admin/orders'+qs({q,take:30}));
@@ -27,20 +30,23 @@ export function ReturnsPage(){
     }));
   }
   async function chooseOrder(x:SearchOption|null){
-    setOrder(x);setReturnLines([]);if(!x)return;
+    orderLoad.current?.abort();const controller=new AbortController();orderLoad.current=controller;
+    setOrder(x);setReturnLines([]);setError(null);if(!x)return;
     try{
-      const r:any=await get(`/admin/orders/${x.id}`);
+      const r:any=await get(`/admin/orders/${x.id}`,{signal:controller.signal});
+      if(controller.signal.aborted)return;
       setReturnLines((r.data?.lines??[]).map((l:any)=>({
         orderLineId:l.orderLineId,
         name:l.productNameSnapshot??l.skuSnapshot??l.orderLineId,
-        max:String(l.quantity),
+        max:String(l.remainingReversibleQuantity??'0'),
         quantity:'0'
       })));
-    }catch(e){setError(e)}
+    }catch(e){if(!controller.signal.aborted)setError(e)}
   }
   async function createReturn(){
     if(!order)return;const lines=returnLines.filter(x=>Number(x.quantity)>0).map(x=>({orderLineId:x.orderLineId,quantity:x.quantity}));
     if(!lines.length){setError(new Error('至少輸入一筆退貨數量'));return}
+    if(returnLines.some(x=>!/^\d+(\.\d+)?$/.test(x.quantity)||Number(x.quantity)>Number(x.max))){setError(new Error('退貨數量不得超過伺服器提供的剩餘可退數量'));return;}
     setBusy(true);setError(null);
     try{
       const r:any=await command(`/admin/orders/${order.id}/returns`,{reasonCode:reason,occurredAt,lines});
@@ -58,21 +64,21 @@ export function ReturnsPage(){
   }
 
   return <><PageHeader title="退貨／反向／Replay" subtitle="保留原交易；退貨→GPV Reversal→Recovery／Recalculation→Carry-chain Replay，全程可追查。"/>
-  <ErrorBox error={error}/>
+  <ErrorBox error={error}/><QueryFeedback query={queue} empty={!rows.length}/>{selected&&<QueryFeedback query={detail}/>}
   <div className="grid two">
     <Card title="建立退貨"><div className="form">
       <SearchSelect label="已付款／已出貨訂單" value={order} onChange={chooseOrder} search={orderSearch}/>
       <Field label="Reason Code"><input value={reason} onChange={e=>setReason(e.target.value)}/></Field>
       <Field label="Occurred At"><input value={occurredAt} onChange={e=>setOccurredAt(e.target.value)}/></Field>
       {returnLines.map((x,i)=><div className="order-builder-row" key={x.orderLineId}><div>{x.name}<small className="muted">可退上限 {x.max}</small></div><input value={x.quantity} onChange={e=>setReturnLines(v=>v.map((r,j)=>j===i?{...r,quantity:e.target.value}:r))}/><div>Qty</div><span/></div>)}
-      <button className="primary" disabled={!order||busy} onClick={createReturn}>建立Return Case</button>
+      <button className="primary" disabled={!order||!returnLines.length||busy} onClick={createReturn}>建立Return Case</button>
     </div></Card>
-    <Card title="處理原則"><p><Badge tone="warn">不可刪除原訂單／PV／Award</Badge></p><p>Return只新增反向與Recovery事實。Binary/Matching歷史差異以Replay與補償帳處理。</p><p className="muted">R4已修正退貨經濟週期改用正式Settlement Calendar，不再使用UTC Sunday捷徑。</p></Card>
+    <Card title="處理原則"><p><Badge tone="warn">不可刪除原訂單／PV／Award</Badge></p><p>Return只新增反向與Recovery事實。Binary/Matching歷史差異以Replay與補償帳處理。</p><p className="muted">Replay 使用封存歷史 period/snapshots；缺少 evidence 時 fail closed。Production calendar/cut-off 仍待核准。</p></Card>
   </div>
 
   <div className="toolbar"><select value={status} onChange={e=>setStatus(e.target.value)}><option value="">全部狀態</option><option>POSTED</option><option>VOIDED</option></select><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="會員姓名／手機／Reason"/></div>
   <div className="split-view">
-    <Card title={`Return Queue (${rows.length})`}>{rows.map((x:any)=><button key={x.returnCaseId} className={`list-row ${selected===x.returnCaseId?'selected':''}`} onClick={()=>setSelected(x.returnCaseId)}><strong>{x.order?.qualification?.currentHolder?.legalName??'—'} · {money(x.lines?.reduce((s:number,l:any)=>s+Number(l.returnAmount),0))}</strong><span>{x.status} · {x.reasonCode}</span><small>{dateTime(x.occurredAt)} · Recovery outstanding {money(x.recoverySummary?.outstanding)}</small></button>)}</Card>
+    <Card title={`Return Queue (${rows.length})`}>{rows.map((x:any)=><button key={x.returnCaseId} className={`list-row ${selected===x.returnCaseId?'selected':''}`} onClick={()=>setSelected(x.returnCaseId)}><strong>{x.order?.qualification?.currentHolder?.legalName??'—'} · {money(x.returnSummary?.totalAmount)}</strong><span>{x.status} · {x.reasonCode}</span><small>{dateTime(x.occurredAt)} · Recovery outstanding {money(x.recoverySummary?.outstanding)}</small></button>)}</Card>
     <Card title="Return Detail">{!d?<p className="muted">選擇Return Case。</p>:<>
       <dl className="detail-grid"><dt>Return ID</dt><dd className="mono">{d.returnCase.returnCaseId}</dd><dt>Order</dt><dd className="mono">{d.returnCase.orderId}</dd><dt>會員</dt><dd>{d.returnCase.order?.qualification?.currentHolder?.legalName}</dd><dt>Reason</dt><dd>{d.returnCase.reasonCode}</dd><dt>Occurred</dt><dd>{dateTime(d.returnCase.occurredAt)}</dd><dt>GPV Reversal Events</dt><dd>{d.reversals?.length??0}</dd><dt>Recovery Events</dt><dd>{d.recoveries?.length??0}</dd><dt>Replay</dt><dd>{d.replay?.status??'尚未執行'}</dd></dl>
       <div className="button-row sticky-actions"><button disabled={busy} onClick={()=>act('reverse')}>Process Reversal</button><button className="primary" disabled={busy} onClick={()=>act('replay')}>Carry-chain Replay</button></div>

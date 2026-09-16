@@ -30,6 +30,13 @@ export class MemberService {
   try{return await new IdempotencyService(this.db).execute(scope,key,input,work);}
   catch(error){if(['P2002','P2034'].includes((error as any).code))throw new ConflictException({code:'RETRYABLE_CONFLICT',message:'Retry identical request using same Idempotency-Key.'});throw error;}
  }
+ async logout(personId:string,sessionId:string,key:string,requestId:string){
+  const result=await this.mutation(`member:logout:${sessionId}`,key,{},async tx=>{
+   const changed=await tx.authSession.updateMany({where:{authSessionId:sessionId,personId,provider:'LINE',status:'ACTIVE'},data:{status:'REVOKED',revokedAt:new Date()}});
+   if(changed.count)await this.audit.write(tx,{actorType:'MEMBER',actorId:personId,action:'MEMBER_SESSION_REVOKED',entityType:'AuthSession',entityId:sessionId,requestId,correlationId:randomUUID()});
+   return {status:'REVOKED',sessionId};
+  });return result.value;
+ }
  async profile(personId:string,input:{name?:string;email?:string;phone?:string},requestId:string,key:string){
   const result=await this.mutation(`member:profile:${personId}`,key,input,async tx=>{
    const before=await tx.person.findUniqueOrThrow({where:{personId}});

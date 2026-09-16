@@ -1,9 +1,11 @@
 import React from 'react';
 import { act, create, type ReactTestRenderer } from 'react-test-renderer';
-import { afterEach, expect, it, vi } from 'vitest';
+import { afterEach,beforeEach, expect, it, vi } from 'vitest';
 import { QualificationProvider, useQualification } from '../src/QualificationContext';
 const getQualifications = vi.hoisted(() => vi.fn());
-vi.mock('../src/memberData', () => ({ getQualifications }));
+const selectQualification=vi.hoisted(()=>vi.fn());
+vi.mock('../src/memberData', () => ({ getQualifications,selectQualification }));
+beforeEach(()=>{selectQualification.mockImplementation(async q=>q);});
 let tree: ReactTestRenderer | undefined;
 const items = ['q1', 'q2'].map(id => ({ id, code: id, rank: 'ELITE', active: true, ballLabel: id }));
 function Probe() { const s = useQualification(); return <><p>{s.loading ? 'loading' : s.error ?? s.current?.id ?? 'empty'}</p><button onClick={() => s.select('q2')}>switch</button><button onClick={s.retry}>retry</button></>; }
@@ -13,8 +15,27 @@ it('loads and switches qualifications when selection storage is unavailable', as
   getQualifications.mockResolvedValue(items);
   await act(async () => { tree = create(<QualificationProvider><Probe /></QualificationProvider>); });
   expect(tree!.root.findByType('p').children).toEqual(['q1']);
-  act(() => tree!.root.findAllByType('button')[0].props.onClick());
+  await act(async () => tree!.root.findAllByType('button')[0].props.onClick());
   expect(tree!.root.findByType('p').children).toEqual(['q2']);
+});
+it('hides scoped data during server validation and fails closed on denied selection',async()=>{
+ getQualifications.mockResolvedValue(items);vi.stubGlobal('sessionStorage',{getItem:()=>null,setItem:vi.fn()});
+ let reject!:(e:Error)=>void;selectQualification.mockImplementation(()=>new Promise((_resolve,r)=>{reject=r}));
+ await act(async()=>{tree=create(<QualificationProvider><Probe/></QualificationProvider>)});
+ await act(async()=>{void tree!.root.findAllByType('button')[0].props.onClick()});
+ expect(tree!.root.findByType('p').children).toEqual(['loading']);
+ await act(async()=>reject(Error('403 qualification denied')));
+ expect(tree!.root.findByType('p').children).toEqual(['403 qualification denied']);
+ expect(sessionStorage.setItem).not.toHaveBeenCalledWith('ucell_qualification_id','q2');
+});
+it('aborts server selection and ignores its late result on unmount',async()=>{
+ getQualifications.mockResolvedValue(items);let resolve!:(q:typeof items[0])=>void;
+ selectQualification.mockImplementation(()=>new Promise(r=>{resolve=r}));
+ await act(async()=>{tree=create(<QualificationProvider><Probe/></QualificationProvider>)});
+ await act(async()=>{void tree!.root.findAllByType('button')[0].props.onClick()});
+ const signal=selectQualification.mock.calls.at(-1)![1] as AbortSignal;
+ await act(async()=>tree!.unmount());tree=undefined;expect(signal.aborted).toBe(true);
+ await act(async()=>resolve(items[1]));
 });
 it('aborts the qualification request when its provider unmounts', async () => {
   getQualifications.mockImplementation(() => new Promise(() => {}));

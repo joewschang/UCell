@@ -1,4 +1,4 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import { ConflictException, Injectable,UnprocessableEntityException } from '@nestjs/common';
 import { Prisma, PrismaService } from '@ucell/database';
 import { randomUUID } from 'crypto';
 import { AuditService } from '../../common/audit/audit.service';
@@ -22,6 +22,12 @@ export class SubscriptionService {
 
   async listPlans(){
     return this.prisma.subscriptionPlan.findMany({where:{isActive:true},orderBy:{durationMonths:'asc'}});
+  }
+  async list(input:{status?:string;qualificationId?:string;take?:number}={}){
+    if(input.status&&!['PENDING','ACTIVE','SUSPENDED','CANCELLED','COMPLETED'].includes(input.status))throw new UnprocessableEntityException({code:'INVALID_SUBSCRIPTION_STATUS'});
+    if(input.qualificationId&&!/^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(input.qualificationId))throw new UnprocessableEntityException({code:'INVALID_QUALIFICATION_ID'});
+    if(input.take!==undefined&&(!Number.isInteger(input.take)||input.take<1))throw new UnprocessableEntityException({code:'INVALID_PAGE_LIMIT'});
+    return this.prisma.subscription.findMany({where:{...(input.status?{status:input.status as any}:{}),...(input.qualificationId?{qualificationId:input.qualificationId}:{})},include:{plan:true},orderBy:[{createdAt:'desc'},{subscriptionId:'desc'}],take:Math.min(input.take??100,200)});
   }
 
   async create(dto:CreateSubscriptionDto,key:string,requestId:string,actorId?:string){

@@ -2,6 +2,7 @@ import React,{createContext,useContext,useEffect,useMemo,useState} from 'react';
 import {clearAdminToken,get,post,setAdminToken} from '../../lib/api';
 import {acquireEntraIdToken,entraLogout} from './entra';
 import type {AdminRole} from './permissions';
+import {useQueryClient} from '@tanstack/react-query';
 
 interface User{
   name:string;role:AdminRole;personId?:string;provider?:string;expiresAt?:string;
@@ -22,12 +23,14 @@ function persistUser(u:User|null){
 }
 
 export function AuthProvider({children}:{children:React.ReactNode}){
+  const queryClient=useQueryClient();
   const [user,setUser]=useState<User|null>(savedUser);
   const [ready,setReady]=useState(false);
   const [busy,setBusy]=useState(false);
   const [error,setError]=useState<string|null>(null);
 
   function clear(){
+    queryClient.clear();
     clearAdminToken();persistUser(null);setUser(null);
   }
 
@@ -67,6 +70,7 @@ export function AuthProvider({children}:{children:React.ReactNode}){
         const r:any=await post('/auth/admin/entra/exchange',{idToken},{skipUnauthorizedEvent:true});
         const d=r.data;
         setAdminToken(d.accessToken,d.expiresAt);
+        queryClient.clear();
         const u:User={
           name:d.user?.preferredName||d.user?.legalName||'Admin',
           role:d.user.role,personId:d.user.personId,
@@ -82,6 +86,7 @@ export function AuthProvider({children}:{children:React.ReactNode}){
       if(import.meta.env.VITE_ENABLE_DEMO_LOGIN!=='true')throw new Error('Demo login disabled');
       if(import.meta.env.PROD)throw new Error('Demo login is forbidden in production');
       const u={name:'DEV Admin',role,provider:'DEV_BYPASS'};
+      queryClient.clear();
       setUser(u);persistUser(u);
     },
     logout:async()=>{

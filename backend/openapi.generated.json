@@ -151,6 +151,111 @@
         ]
       }
     },
+    "/api/v1/member/logout": {
+      "post": {
+        "description": "Revoke only the authenticated UCell LINE session, with transactional audit. Does not log out LINE. Repeated delivery after revocation returns 401; other sessions are unaffected.",
+        "operationId": "memberLogout",
+        "parameters": [
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MemberLogoutDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/LogoutView"
+                    },
+                    "meta": {
+                      "type": "object",
+                      "required": [
+                        "request_id",
+                        "timestamp",
+                        "api_version"
+                      ],
+                      "properties": {
+                        "request_id": {
+                          "type": "string"
+                        },
+                        "timestamp": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "api_version": {
+                          "type": "string",
+                          "enum": [
+                            "v1"
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failure; unknown identity/qualification/monetary fields rejected"
+          },
+          "401": {
+            "description": "Member LINE session required, expired/disabled sessions denied"
+          },
+          "403": {
+            "description": "Qualification not owned"
+          },
+          "404": {
+            "description": "Resource unavailable"
+          },
+          "409": {
+            "description": "Conflicting operation"
+          },
+          "422": {
+            "description": "Invalid input or pending domain decision"
+          }
+        },
+        "security": [
+          {
+            "memberBearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "Member"
+        ]
+      }
+    },
     "/api/v1/member/profile": {
       "patch": {
         "description": "Own display/contact fields only. No legal identity, status, qualification or monetary mutation. Audited idempotent transaction.",
@@ -3586,6 +3691,49 @@
       }
     },
     "/api/v1/admin/subscriptions": {
+      "get": {
+        "operationId": "adminListSubscriptions",
+        "parameters": [
+          {
+            "name": "status",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "qualificationId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "take",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "訂閱清單與Qualification/status篩選；只讀既存Core資料，不建立營運日曆",
+        "tags": [
+          "Admin - Subscription"
+        ]
+      },
       "post": {
         "operationId": "adminCreateSubscription",
         "parameters": [
@@ -4152,6 +4300,25 @@
       }
     },
     "schemas": {
+      "LogoutView": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "REVOKED"
+            ]
+          },
+          "sessionId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "status",
+          "sessionId"
+        ]
+      },
       "QualificationView": {
         "type": "object",
         "properties": {
@@ -4916,6 +5083,16 @@
         "required": [
           "idToken"
         ],
+        "additionalProperties": false
+      },
+      "MemberLogoutDto": {
+        "type": "object",
+        "properties": {
+          "intent": {
+            "type": "string",
+            "description": "Optional fixed intent marker; no Person, session or Qualification identifiers accepted."
+          }
+        },
         "additionalProperties": false
       },
       "MemberProfileDto": {

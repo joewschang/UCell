@@ -2,7 +2,10 @@
 const {chromium}=require('playwright');
 const assert=require('node:assert/strict');
 (async()=>{
- const browser=await chromium.launch({headless:true});
+ // CI may install bundled Chromium; local Windows can select its installed Edge.
+ // Both execute the same tests against the isolated mock server.
+ const channel=process.env.PLAYWRIGHT_CHANNEL;
+ const browser=await chromium.launch({headless:true,...(channel?{channel}:{})});
  let page;
  try {
   page=await browser.newPage({viewport:{width:390,height:844}});
@@ -94,7 +97,7 @@ const assert=require('node:assert/strict');
   await page.setViewportSize({width:390,height:844});
   await page.goto('http://127.0.0.1:5174/');
   await page.getByRole('heading',{name:'您好，示範會員'}).waitFor();
-  await page.screenshot({path:process.env.SMOKE_SCREENSHOT||'/tmp/ucell-member-mobile.png',fullPage:true});
+  await page.screenshot({path:process.env.SMOKE_SCREENSHOT||require('node:path').join(require('node:os').tmpdir(),'ucell-member-mobile.png'),fullPage:true});
   await page.getByRole('link',{name:'我的',exact:true}).click();
   await page.getByRole('button',{name:'結束本頁工作階段',exact:true}).click();
   await page.getByRole('button',{name:'取消，繼續使用',exact:true}).click();

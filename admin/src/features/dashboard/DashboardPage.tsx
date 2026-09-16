@@ -1,13 +1,14 @@
 import {useQuery} from '@tanstack/react-query';
 import {get} from '../../lib/api';
 import {Card,Metric,PageHeader,Badge,ErrorBox} from '../../components/ui';
+import {QueryFeedback} from '../../components/QueryFeedback';
 
 export function DashboardPage(){
  const q=useQuery({queryKey:['dashboard-summary'],queryFn:()=>get<any>('/admin/dashboard/summary'),refetchInterval:30_000});
- const d=q.data?.data;
+ const d=q.error?undefined:q.data?.data;
  return <>
   <PageHeader title="營運總覽" subtitle="R1.0B 管理後台 Read Model；數字皆來自Backend，不使用假資料。"/>
-  <ErrorBox error={q.error}/>
+  <QueryFeedback query={q}/>
   <div className="metrics">
    <Metric label="自然人" value={d?.persons ?? '—'} helper="Person"/>
    <Metric label="會員資格" value={d?.qualifications ?? '—'} helper="Qualification"/>

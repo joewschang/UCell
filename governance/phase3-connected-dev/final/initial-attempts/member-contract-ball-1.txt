@@ -1,14 +1,14 @@
 command: pnpm test:contract
-started: 2026-09-15T19:34:00.840Z
+started: 2026-09-16T01:26:00.234Z
 exit: 0
 
  RUN  v2.1.9 C:/UCell/UCell/member
 
- ✓ tests/contract.test.ts (5 tests) 6ms
+ ✓ tests/contract.test.ts (5 tests) 5ms
 
  Test Files  1 passed (1)
       Tests  5 passed (5)
-   Start at  03:34:01
-   Duration  517ms (transform 70ms, setup 0ms, collect 101ms, tests 6ms, environment 0ms, prepare 146ms)
+   Start at  09:26:00
+   Duration  527ms (transform 65ms, setup 0ms, collect 87ms, tests 5ms, environment 0ms, prepare 173ms)
 
 $ vitest run tests/contract.test.ts

@@ -1,3 +1,4 @@
+import {createCommandClient} from './commands';
 const API_BASE=import.meta.env.VITE_API_BASE_URL ?? '/api/v1';
 
 export class ApiError extends Error {
@@ -10,6 +11,7 @@ export function setAdminToken(token:string,expiresAt?:string){
   if(expiresAt)sessionStorage.setItem('ucell_admin_expires_at',expiresAt);
 }
 export function clearAdminToken(){
+  commands.clear();
   sessionStorage.removeItem('ucell_admin_token');
   sessionStorage.removeItem('ucell_admin_expires_at');
 }
@@ -35,8 +37,13 @@ export async function api<T>(path:string,init:RequestOptions={}):Promise<T>{
   if(init.idempotencyKey) headers.set('Idempotency-Key',init.idempotencyKey);
 
   const {idempotencyKey:_,skipUnauthorizedEvent,...fetchInit}=init;
-  const res=await fetch(`${API_BASE}${path}`,{...fetchInit,headers});
-  const text=await res.text();
+  const controller=new AbortController();const abort=()=>controller.abort();
+  init.signal?.addEventListener('abort',abort,{once:true});if(init.signal?.aborted)controller.abort();
+  const timer=setTimeout(abort,15000);
+  let res:Response,text:string;
+  try{res=await fetch(`${API_BASE}${path}`,{...fetchInit,headers,signal:controller.signal});text=await res.text();}
+  catch(error){if(controller.signal.aborted)throw new ApiError(0,null,'請求已取消或逾時；寫入操作請保留原資料重試，不要重複建立。');throw error;}
+  finally{clearTimeout(timer);init.signal?.removeEventListener('abort',abort);}
   let body:unknown=null;
   if(text){try{body=JSON.parse(text)}catch{body=text}}
 
@@ -45,22 +52,21 @@ export async function api<T>(path:string,init:RequestOptions={}):Promise<T>{
   }
   if(!res.ok){
     const detail=(body as any)?.message ?? (body as any)?.error?.message;
-    throw new ApiError(res.status,body,detail || `API ${res.status}: ${path}`);
+    const code=(body as any)?.code??(body as any)?.error?.code;
+    const label:Record<number,string>={403:'沒有此操作權限',409:'操作衝突，請確認原資料後重試',422:'資料驗證或必要設定未完成'};
+    throw new ApiError(res.status,body,[label[res.status],detail,typeof code==='string'?code:undefined].filter(Boolean).join(' · ') || `API ${res.status}: ${path}`);
   }
   return body as T;
 }
 
-export const get=<T>(p:string)=>api<T>(p);
+export const get=<T>(p:string,options:RequestOptions={})=>api<T>(p,options);
 
-export function command<T>(
-  path:string,data?:unknown,idempotencyKey=crypto.randomUUID()
-){
-  return api<T>(path,{
+const commands=createCommandClient((path,data,idempotencyKey)=>api(path,{
     method:'POST',
     body:data===undefined?undefined:JSON.stringify(data),
     idempotencyKey
-  });
-}
+  }),()=>JSON.stringify([adminToken(),sessionStorage.getItem('ucell_dev_actor_id'),sessionStorage.getItem('ucell_admin_user')]));
+export function command<T>(path:string,data?:unknown,idempotencyKey?:string){return commands.execute<T>(path,data,idempotencyKey);}
 
 export const post=<T>(p:string,data?:unknown,options:RequestOptions={})=>api<T>(p,{
   ...options,method:'POST',

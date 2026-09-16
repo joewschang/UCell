@@ -1,11 +1,12 @@
 import {useQuery,useQueryClient} from '@tanstack/react-query';
-import {useEffect,useState} from 'react';
+import {useEffect,useRef,useState} from 'react';
 import {command,get,qs} from '../../lib/api';
 import {Order,OrderPurpose,ProductReference,Qualification} from '../../types/domain';
 import {Badge,Card,ErrorBox,Field,PageHeader} from '../../components/ui';
 import {SearchOption,SearchSelect} from '../../components/SearchSelect';
 import {dateTime,money} from '../../lib/format';
 import {Link,useSearchParams} from 'react-router-dom';
+import {QueryFeedback} from '../../components/QueryFeedback';
 
 type DraftLine={productId:string;name:string;quantity:string;price:string};
 
@@ -13,10 +14,11 @@ export function OrdersPage(){
  const qc=useQueryClient();const [params]=useSearchParams();const [status,setStatus]=useState(''),[search,setSearch]=useState(''),[selected,setSelected]=useState<string|null>(null);
  const [qualification,setQualification]=useState<SearchOption|null>(null),[purpose,setPurpose]=useState<OrderPurpose>('ENTRY'),[lines,setLines]=useState<DraftLine[]>([]);
  const [paymentRef,setPaymentRef]=useState(''),[paymentMethod,setPaymentMethod]=useState('BANK_TRANSFER'),[error,setError]=useState<unknown>(null),[busy,setBusy]=useState(false);
+ const paymentAttempt=useRef<{signature:string;occurredAt:string}>();
  const orders=useQuery({queryKey:['orders',status,search],queryFn:()=>get<any>('/admin/orders'+qs({status:status||undefined,q:search,take:100}))});
  const products=useQuery({queryKey:['products'],queryFn:()=>get<any>('/admin/products')});
  const detail=useQuery({queryKey:['order',selected],queryFn:()=>get<any>(`/admin/orders/${selected}`),enabled:!!selected});
- const rows:Order[]=orders.data?.data??[];const p:ProductReference[]=products.data?.data??[];const o:any=detail.data?.data;
+ const rows:Order[]=orders.error?[]:orders.data?.data??[];const p:ProductReference[]=products.error?[]:products.data?.data??[];const o:any=detail.error?undefined:detail.data?.data;
 
  useEffect(()=>{
   const qid=params.get('qualificationId');
@@ -41,7 +43,6 @@ export function OrdersPage(){
   const x=p.find(x=>x.productId===id);if(!x)return;
   setLines(v=>[...v,{productId:id,name:x.displayName,quantity:'1',price:x.currentPrice}]);
  }
- const draftTotal=lines.reduce((s,x)=>s+Number(x.price)*Number(x.quantity||0),0);
  async function createOrder(){
   if(!qualification||lines.length===0)return;setBusy(true);setError(null);
   try{
@@ -52,18 +53,21 @@ export function OrdersPage(){
  async function confirmPayment(){
   if(!o)return;setBusy(true);setError(null);
   try{
-   await command(`/admin/orders/${o.orderId}/payment-confirmations`,{amount:String(o.netAmount),paymentMethod,referenceNo:paymentRef,occurredAt:new Date().toISOString()});
+   const signature=JSON.stringify([o.orderId,String(o.netAmount),paymentMethod,paymentRef]);
+   if(paymentAttempt.current?.signature!==signature)paymentAttempt.current={signature,occurredAt:new Date().toISOString()};
+   await command(`/admin/orders/${o.orderId}/payment-confirmations`,{amount:String(o.netAmount),paymentMethod,referenceNo:paymentRef,occurredAt:paymentAttempt.current.occurredAt});
+   paymentAttempt.current=undefined;
    await qc.invalidateQueries({queryKey:['orders']});await qc.invalidateQueries({queryKey:['order',selected]});
   }catch(e){setError(e)}finally{setBusy(false)}
  }
  return <><PageHeader title="訂單與收款" subtitle="Order建立時Backend依Product Rule Profile快照金額/GPV；Payment Confirmed後才由Outbox產生PV。"/>
- <ErrorBox error={error}/>
+ <ErrorBox error={error}/><QueryFeedback query={orders} empty={!rows.length}/><QueryFeedback query={products} empty={!p.length}/>{selected&&<QueryFeedback query={detail}/>}
  <div className="grid two"><Card title="建立訂單"><div className="form">
   <SearchSelect label="歸屬Qualification" value={qualification} onChange={setQualification} search={qualSearch}/>
   <Field label="Purpose"><select value={purpose} onChange={e=>setPurpose(e.target.value as OrderPurpose)}><option>ENTRY</option><option>RETAIL</option><option>REPURCHASE</option><option>SUBSCRIPTION_PREPAY</option><option>UPGRADE</option></select></Field>
   <Field label="加入商品"><select defaultValue="" onChange={e=>{addProduct(e.target.value);e.currentTarget.value=''}}><option value="">選擇商品…</option>{p.map(x=><option key={x.productId} value={x.productId}>{x.sku} · {x.displayName} · {money(x.currentPrice)}</option>)}</select></Field>
-  {lines.map((x,i)=><div className="order-builder-row" key={`${x.productId}-${i}`}><div>{x.name}</div><input value={x.quantity} onChange={e=>setLines(v=>v.map((r,j)=>j===i?{...r,quantity:e.target.value}:r))}/><div>{money(Number(x.price)*Number(x.quantity||0))}</div><button onClick={()=>setLines(v=>v.filter((_,j)=>j!==i))}>移除</button></div>)}
-  <strong>預估總額：{money(draftTotal)}</strong><small className="muted">實際單價與GPV以Backend建立訂單時的快照為準。</small>
+  {lines.map((x,i)=><div className="order-builder-row" key={`${x.productId}-${i}`}><div>{x.name}</div><input value={x.quantity} onChange={e=>setLines(v=>v.map((r,j)=>j===i?{...r,quantity:e.target.value}:r))}/><div>參照單價 {money(x.price)}</div><button onClick={()=>setLines(v=>v.filter((_,j)=>j!==i))}>移除</button></div>)}
+  <small className="muted">正式金額與GPV由Backend建立訂單後提供；後台不自行計算總額。</small>
   <button className="primary" disabled={!qualification||lines.length===0||busy} onClick={createOrder}>建立CONFIRMED訂單</button>
  </div></Card>
  <Card title="訂單詳情／收款">{!o?<p className="muted">從下方清單選擇訂單。</p>:<><dl className="detail-grid"><dt>Order ID</dt><dd className="mono">{o.orderId}</dd><dt>Qualification</dt><dd>{o.qualification?.currentHolder?.legalName}<br/><span className="mono">{o.qualificationId}</span></dd><dt>Purpose</dt><dd>{o.purpose}</dd><dt>Status</dt><dd><Badge tone={o.status==='PAID'?'ok':'warn'}>{o.status}</Badge></dd><dt>Net Amount</dt><dd>{money(o.netAmount)}</dd></dl>

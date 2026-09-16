@@ -8,7 +8,8 @@ import {dateTime,money} from '../../lib/format';
 export function PayoutsPage(){
  const qc=useQueryClient();const {user}=useAuth();
  const [status,setStatus]=useState(''),[selected,setSelected]=useState<string|null>(null),[cutoff,setCutoff]=useState(new Date().toISOString());
- const [periodStart,setPeriodStart]=useState(new Date(Date.now()-7*86400000).toISOString()),[periodEnd,setPeriodEnd]=useState(new Date().toISOString());
+ const [periodStart,setPeriodStart]=useState(''),[periodEnd,setPeriodEnd]=useState('');
+ const [paidAt,setPaidAt]=useState('');
  const [exportRef,setExportRef]=useState(''),[paymentRef,setPaymentRef]=useState(''),[paymentMethod,setPaymentMethod]=useState('BANK_TRANSFER');
  const [error,setError]=useState<unknown>(null),[busy,setBusy]=useState(false);
 
@@ -27,7 +28,7 @@ export function PayoutsPage(){
 
  <div className="grid two"><Card title="建立Payable／Payout Batch"><div className="form">
   <Field label="Materialize Cutoff"><input value={cutoff} onChange={e=>setCutoff(e.target.value)}/></Field><button onClick={()=>mutate(()=>command('/admin/payouts/materialize',{cutoff}))}>Materialize Effective Awards</button>
-  <Field label="Period Start"><input value={periodStart} onChange={e=>setPeriodStart(e.target.value)}/></Field><Field label="Period End"><input value={periodEnd} onChange={e=>setPeriodEnd(e.target.value)}/></Field><button className="primary" onClick={()=>mutate(()=>command('/admin/payouts/batches',{periodStart,periodEnd}))}>Create Payout Batch</button>
+  <Field label="Period Start"><input value={periodStart} onChange={e=>setPeriodStart(e.target.value)}/></Field><Field label="Period End"><input value={periodEnd} onChange={e=>setPeriodEnd(e.target.value)}/></Field><button className="primary" disabled={busy||!periodStart||!periodEnd} onClick={()=>mutate(()=>command('/admin/payouts/batches',{periodStart,periodEnd}))}>Create Payout Batch</button>
  </div></Card>
  <Card title="付款控制"><p><Badge tone="ok">每顆Qualification獨立付款</Badge></p><p><Badge tone="warn">Finance + Compliance雙核准</Badge></p><p>兩階段必須由不同Actor核准；完成後才能Export。系統只記錄外部付款結果，不直接執行銀行轉帳。</p></Card></div>
 
@@ -38,7 +39,7 @@ export function PayoutsPage(){
   <h3>Approvals</h3><p>Finance：{financeApproved?<Badge tone="ok">APPROVED</Badge>:<Badge tone="warn">PENDING</Badge>}　Compliance：{complianceApproved?<Badge tone="ok">APPROVED</Badge>:<Badge tone="warn">PENDING</Badge>}</p>
   {d.status==='READY'&&<div className="button-row"><button disabled={busy||financeApproved||!['FINANCE','SUPER_ADMIN'].includes(user?.role??'')} onClick={()=>mutate(()=>command(`/admin/operations/payout-batches/${d.payoutBatchId}/approvals/FINANCE_REVIEW`,{note:'Admin UI finance review'}))}>Finance Approve</button><button disabled={busy||complianceApproved||!['COMPLIANCE_AUDIT','SUPER_ADMIN'].includes(user?.role??'')} onClick={()=>mutate(()=>command(`/admin/operations/payout-batches/${d.payoutBatchId}/approvals/COMPLIANCE_REVIEW`,{note:'Admin UI compliance review'}))}>Compliance Approve</button></div>}
   {d.status==='READY'&&financeApproved&&complianceApproved&&<div className="form sticky-actions"><Field label="Export Reference"><input value={exportRef} onChange={e=>setExportRef(e.target.value)}/></Field><button className="primary" disabled={!exportRef||busy||!['FINANCE','SUPER_ADMIN'].includes(user?.role??'')} onClick={()=>mutate(()=>command(`/admin/operations/payout-batches/${d.payoutBatchId}/export`,{exportReference:exportRef}))}>Mark EXPORTED</button></div>}
-  {d.status==='EXPORTED'&&<div className="form sticky-actions"><Field label="Payment Reference"><input value={paymentRef} onChange={e=>setPaymentRef(e.target.value)}/></Field><Field label="Payment Method"><input value={paymentMethod} onChange={e=>setPaymentMethod(e.target.value)}/></Field><button className="primary" disabled={!paymentRef||busy||!['FINANCE','SUPER_ADMIN'].includes(user?.role??'')} onClick={()=>mutate(()=>command(`/admin/operations/payout-batches/${d.payoutBatchId}/mark-paid`,{paymentReference:paymentRef,paymentMethod,paidAt:new Date().toISOString()}))}>Reconcile & Mark PAID</button></div>}
+  {d.status==='EXPORTED'&&<div className="form sticky-actions"><Field label="Payment Reference"><input value={paymentRef} onChange={e=>setPaymentRef(e.target.value)}/></Field><Field label="Payment Method"><input value={paymentMethod} onChange={e=>setPaymentMethod(e.target.value)}/></Field><Field label="外部付款時間（ISO）"><input value={paidAt} onChange={e=>setPaidAt(e.target.value)}/></Field><button className="primary" disabled={!paymentRef||!paidAt||busy||!['FINANCE','SUPER_ADMIN'].includes(user?.role??'')} onClick={()=>mutate(()=>command(`/admin/operations/payout-batches/${d.payoutBatchId}/mark-paid`,{paymentReference:paymentRef,paymentMethod,paidAt}))}>Reconcile & Mark PAID</button></div>}
   <h3>Qualification Lines</h3><div className="table-wrap"><table><thead><tr><th>會員</th><th>Qualification</th><th>Gross</th><th>Recovery</th><th>Net</th></tr></thead><tbody>{(d.lines??[]).map((x:any)=><tr key={x.payoutLineId}><td>{x.recipient?.currentHolder?.legalName??'—'}</td><td className="mono">{x.recipientQualificationId}</td><td>{money(x.grossAmount)}</td><td>{money(x.recoveryOffset)}</td><td>{money(x.netAmount)}</td></tr>)}</tbody></table></div>
  </>}</Card></div>
 

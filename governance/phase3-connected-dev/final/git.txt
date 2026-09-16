@@ -1,29 +1,34 @@
 command: git status --short --branch
-started: 2026-09-15T19:32:43.274Z
+started: 2026-09-16T01:26:56.096Z
 exit: 0
 ## integration/member-backend-mvp...origin/integration/member-backend-mvp [ahead 1]
- M backend/apps/api/src/modules/member/member-context.guard.ts
- M backend/apps/api/src/modules/member/member-read.service.ts
+ M admin/src/app/App.tsx
+ M admin/src/app/AppShell.tsx
+ M admin/src/features/auth/auth.tsx
+ M admin/src/features/dashboard/DashboardPage.tsx
+ M admin/src/features/orders/OrdersPage.tsx
+ M admin/src/features/payouts/PayoutsPage.tsx
+ M admin/src/features/products/ProductsPage.tsx
+ M admin/src/features/reports/ReportsPage.tsx
+ M admin/src/features/returns/ReturnsPage.tsx
+ M admin/src/features/subscriptions/SubscriptionsPage.tsx
+ M admin/src/lib/api.ts
+ M backend/apps/api/src/modules/member/member-view.dto.ts
  M backend/apps/api/src/modules/member/member.controller.ts
- M backend/apps/api/src/modules/member/member.module.ts
  M backend/apps/api/src/modules/member/member.service.ts
- M backend/apps/api/src/modules/order/order.module.ts
  M backend/apps/api/src/modules/order/order.service.ts
+ M backend/apps/api/src/modules/product/product.service.ts
+ M backend/apps/api/src/modules/subscription/subscription.controller.ts
+ M backend/apps/api/src/modules/subscription/subscription.service.ts
  M backend/apps/api/src/openapi-export.ts
- M backend/apps/api/test/v062-carry-chain.e2e-spec.ts
- M backend/apps/worker/src/main.ts
  M backend/openapi.generated.json
- M backend/packages/database/prisma/schema.prisma
- M backend/packages/database/src/index.ts
- M backend/scripts/openapi-preflight.mjs
- M backend/scripts/phase2-db-test.mjs
+ M backend/scripts/admin-full-test.mjs
  M backend/scripts/phase3-member-identity-db-test.mjs
  M governance/phase2-return-replay/final/db-regression.json
  M governance/phase3-connected-dev/final/PASS-FAIL-MATRIX.md
- M governance/phase3-connected-dev/final/TODO-INVENTORY.json
- M governance/phase3-connected-dev/final/TODO-INVENTORY.md
  M governance/phase3-connected-dev/final/admin-build.txt
  M governance/phase3-connected-dev/final/admin-dev-build.txt
+ M governance/phase3-connected-dev/final/admin-tests.txt
  M governance/phase3-connected-dev/final/api-tests.txt
  M governance/phase3-connected-dev/final/backend-build.txt
  M governance/phase3-connected-dev/final/db-regression.txt
@@ -32,27 +37,31 @@ exit: 0
  M governance/phase3-connected-dev/final/gate-results.json
  M governance/phase3-connected-dev/final/initial-attempts/admin-build.txt
  M governance/phase3-connected-dev/final/initial-attempts/admin-dev-build.txt
+ M governance/phase3-connected-dev/final/initial-attempts/admin-tests.txt
  M governance/phase3-connected-dev/final/initial-attempts/api-tests.txt
  M governance/phase3-connected-dev/final/initial-attempts/backend-build.txt
  M governance/phase3-connected-dev/final/initial-attempts/db-regression.txt
  M governance/phase3-connected-dev/final/initial-attempts/default-db-golden-repeat.txt
  M governance/phase3-connected-dev/final/initial-attempts/default-db-golden.txt
+ M governance/phase3-connected-dev/final/initial-attempts/git.txt
  M governance/phase3-connected-dev/final/initial-attempts/member-build.txt
  M governance/phase3-connected-dev/final/initial-attempts/member-contract-ball-1.txt
  M governance/phase3-connected-dev/final/initial-attempts/member-contract-ball-2.txt
  M governance/phase3-connected-dev/final/initial-attempts/member-tests.txt
+ M governance/phase3-connected-dev/final/initial-attempts/node.txt
  M governance/phase3-connected-dev/final/initial-attempts/openapi-export.txt
  M governance/phase3-connected-dev/final/initial-attempts/openapi-preflight.txt
+ M governance/phase3-connected-dev/final/initial-attempts/pnpm.txt
  M governance/phase3-connected-dev/final/initial-attempts/prisma-generate.txt
  M governance/phase3-connected-dev/final/initial-attempts/prisma-migrate-deploy.txt
  M governance/phase3-connected-dev/final/initial-attempts/prisma-regression-db-deploy.txt
  M governance/phase3-connected-dev/final/initial-attempts/prisma-validate.txt
- M governance/phase3-connected-dev/final/initial-attempts/security-policy-preflight.txt
  M governance/phase3-connected-dev/final/member-build.txt
  M governance/phase3-connected-dev/final/member-contract-ball-1.txt
  M governance/phase3-connected-dev/final/member-contract-ball-2.txt
  M governance/phase3-connected-dev/final/member-contracts/ball-1.json
  M governance/phase3-connected-dev/final/member-contracts/ball-2.json
+ M governance/phase3-connected-dev/final/member-contracts/member-journey.json
  M governance/phase3-connected-dev/final/member-tests.txt
  M governance/phase3-connected-dev/final/node.txt
  M governance/phase3-connected-dev/final/openapi-export.txt
@@ -62,25 +71,17 @@ exit: 0
  M governance/phase3-connected-dev/final/prisma-migrate-deploy.txt
  M governance/phase3-connected-dev/final/prisma-regression-db-deploy.txt
  M governance/phase3-connected-dev/final/prisma-validate.txt
- M governance/phase3-connected-dev/final/security-policy-preflight.txt
  M member/src/App.tsx
- M member/src/NotificationContext.tsx
- M member/src/Notifications.tsx
- M member/src/ProfileEditor.tsx
- M member/src/Shop.tsx
- M member/src/api.ts
- M member/src/liff.ts
+ M member/src/EndSession.tsx
+ M member/src/QualificationContext.tsx
+ M member/src/SessionBoundary.tsx
  M member/src/memberData.ts
- M member/tests/auth.test.ts
- M member/tests/member.test.tsx
- M member/tests/notifications.test.tsx
- M member/tests/profile.test.tsx
-?? backend/apps/api/src/modules/member/member-view.dto.ts
-?? backend/packages/database/prisma/migrations/20260916040000_member_notification_reads/
-?? backend/packages/database/src/member-notification.ts
-?? governance/phase3-connected-dev/final/initial-attempts/git.txt
-?? governance/phase3-connected-dev/final/initial-attempts/node.txt
-?? governance/phase3-connected-dev/final/initial-attempts/pnpm.txt
-?? governance/phase3-connected-dev/final/member-contracts/member-journey.json
-?? member/src/ConnectedShop.tsx
-?? member/tests/connected-shop.test.tsx
+ M member/src/session.ts
+ M member/tests/qualification-lifecycle.test.tsx
+?? admin/src/components/QueryFeedback.test.tsx
+?? admin/src/components/QueryFeedback.tsx
+?? admin/src/lib/api.test.ts
+?? admin/src/lib/commands.test.ts
+?? admin/src/lib/commands.ts
+?? member/src/RepurchaseDetails.tsx
+?? member/tests/connected-account.test.tsx

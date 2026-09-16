@@ -3,8 +3,10 @@ import {nav} from './nav';
 import {useAuth} from '../features/auth/auth';
 import {canOpen} from '../features/auth/permissions';
 import {useState} from 'react';
+import {useQueryClient} from '@tanstack/react-query';
 
 export function AppShell(){
+  const queryClient=useQueryClient();
   const {user,logout}=useAuth();
   const [devActor,setDevActor]=useState(()=>sessionStorage.getItem('ucell_dev_actor_id')??'');
   return <div className="app">
@@ -12,7 +14,7 @@ export function AppShell(){
       <div className="brand"><div className="brand-mark small">U</div><div><strong>UCell</strong><span>Admin MVP</span></div></div>
       <nav>{nav.filter(([,to])=>canOpen(user?.role,to)).map(([label,to])=><NavLink end={to==='/'} key={to} to={to}>{label}</NavLink>)}</nav>
       <div className="sidebar-foot"><span>{user?.name}</span><small>{user?.role}</small><button onClick={logout}>登出</button></div>
-      {import.meta.env.DEV && import.meta.env.VITE_ADMIN_DEV_FULL_ACCESS==='true' && <label>DEV Actor Person ID（空白使用 ROOT fixture）<input value={devActor} onChange={e=>{setDevActor(e.target.value);sessionStorage.setItem('ucell_dev_actor_id',e.target.value.trim())}}/></label>}
+      {import.meta.env.DEV && import.meta.env.VITE_ADMIN_DEV_FULL_ACCESS==='true' && <label>DEV Actor Person ID（空白使用 ROOT fixture）<input value={devActor} onChange={e=>{setDevActor(e.target.value);sessionStorage.setItem('ucell_dev_actor_id',e.target.value.trim());queryClient.clear()}}/></label>}
     </aside>
     <main className="content">
       {import.meta.env.DEV && import.meta.env.VITE_ADMIN_DEV_FULL_ACCESS==='true' &&

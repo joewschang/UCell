@@ -1,5 +1,5 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
-import { getQualifications } from './memberData';
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
+import { getQualifications,selectQualification } from './memberData';
 import type { Qualification } from './api';
 type State = {
     qualifications: Qualification[];
@@ -18,6 +18,7 @@ export function QualificationProvider({ children }: {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [attempt, setAttempt] = useState(0);
+    const selection=useRef<{sequence:number;controller?:AbortController}>({sequence:0});
     useEffect(() => {
         let alive = true;
         const controller = new AbortController();
@@ -41,13 +42,22 @@ export function QualificationProvider({ children }: {
             setError('無法取得資格清單，請確認登入狀態後重試'); })
             .finally(() => { if (alive)
             setLoading(false); });
-        return () => { alive = false; controller.abort(); };
+        return () => { alive = false; controller.abort(); selection.current.sequence++;selection.current.controller?.abort(); };
     }, [attempt]);
-    const select = (next: string) => {
-        if (!items.some(q => q.id === next))
+    const select = async (next: string) => {
+        const q=items.find(q=>q.id===next);
+        if (!q)
             return;
-        setId(next);
-        try { sessionStorage.setItem('ucell_qualification_id', next); } catch { /* In-memory selection remains valid. */ }
+        selection.current.controller?.abort();const controller=new AbortController();
+        const sequence=++selection.current.sequence;selection.current.controller=controller;
+        setLoading(true);setError(null);setId('');
+        try{
+          const confirmed=await selectQualification(q,controller.signal);
+          if(sequence!==selection.current.sequence||controller.signal.aborted)return;
+          setItems(rows=>rows.map(row=>row.id===confirmed.id?confirmed:row));setId(confirmed.id);
+          try { sessionStorage.setItem('ucell_qualification_id', confirmed.id); } catch { /* Selection memory is optional. */ }
+        }catch(error){if(sequence===selection.current.sequence&&!controller.signal.aborted)setError(error instanceof Error?error.message:'無法確認資格，請重新查詢');}
+        finally{if(sequence===selection.current.sequence&&!controller.signal.aborted)setLoading(false);}
     };
     return <Context.Provider value={{ qualifications: items, current: items.find(q => q.id === id) ?? null, select, loading, error, retry: () => setAttempt(a => a + 1) }}>{children}</Context.Provider>;
 }

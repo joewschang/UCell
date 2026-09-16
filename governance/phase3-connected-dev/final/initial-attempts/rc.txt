@@ -1,5 +1,5 @@
 command: pnpm rc:gate
-started: 2026-09-15T19:34:49.478Z
+started: 2026-09-16T01:28:11.009Z
 exit: 1
 $ node scripts/run-bash-gate.mjs rc-gate.sh
 TEST_TODO_GATE_FAIL: 73 unresolved executable test placeholders

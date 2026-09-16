@@ -1,5 +1,5 @@
 command: pnpm openapi
-started: 2026-09-15T19:34:03.230Z
+started: 2026-09-16T01:26:02.389Z
 exit: 0
 OPENAPI_EXPORTED C:\UCell\UCell\backend\openapi.generated.json
 $ pnpm --filter @ucell/api openapi:export

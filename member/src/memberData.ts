@@ -10,10 +10,28 @@ const qualifications: Qualification[] = [
 const rankNames: Record<string, string> = { STARTER: '啟航', ELITE: '菁英', LEADER: '領袖' };
 export const displayRank = (rank: string) => rankNames[rank] ?? rank;
 export const getQualifications = (signal?: AbortSignal) => isMock ? Promise.resolve(qualifications) : api<unknown>('/member/qualifications', { signal }).then(validate.parseQualifications);
+export async function selectQualification(q:Qualification,signal:AbortSignal):Promise<Qualification>{
+ if(isMock)return q;
+ const result=await api<{qualificationId:string;qualification:unknown}>('/member/context/qualification',{method:'POST',signal,body:JSON.stringify({qualificationId:q.id})});
+ const [selected]=validate.parseQualifications([result?.qualification]);
+ if(result?.qualificationId!==q.id||selected?.id!==q.id)throw new Error('資格確認回應不符，已停止切換');
+ return selected;
+}
+export type Repurchase={qualificationId:string;period:string;status:'ACTIVE'|'PENDING'|'INACTIVE';recognitions:{id:string;status:string;dueAt:string}[]};
+export async function getRepurchaseStatus(q:Qualification,signal:AbortSignal):Promise<Repurchase>{
+ if(isMock)return {qualificationId:q.id,period:'DEMO',status:q.active?'ACTIVE':'INACTIVE',recognitions:[]};
+ const result=await api<Repurchase>('/member/repurchase/status?'+new URLSearchParams({qualificationId:q.id}),{signal});
+ if(result?.qualificationId!==q.id||!/^\d{4}-(0[1-9]|1[0-2])$/.test(result.period)||!['ACTIVE','PENDING','INACTIVE'].includes(result.status)||!Array.isArray(result.recognitions)||!result.recognitions.every(row=>typeof row.id==='string'&&['SCHEDULED','DUE','RECOGNIZED','CANCELLED','REVERSED'].includes(row.status)&&Number.isFinite(Date.parse(row.dueAt))))throw new Error('重購資料格式或資格不符，已停止顯示');
+ return result;
+}
 export const getPerson = (signal: AbortSignal) => isMock ? Promise.resolve<Person>({ name: '示範會員', memberNo: 'DEMO-000001', email: null, phone: null }) : api<unknown>('/member/me', { signal }).then(validate.parsePerson);
 export async function updateProfile(input:{name?:string;email?:string;phone?:string},key:string) {
  if(isMock)throw new Error('示範模式不修改會員資料');
  return validate.parsePerson(await api('/member/profile',{method:'PATCH',headers:{'Idempotency-Key':key},body:JSON.stringify(input)}));
+}
+export async function revokeMemberSession(key:string){
+ const result=await api<{status:string}>('/member/logout',{method:'POST',headers:{'Idempotency-Key':key},body:JSON.stringify({intent:'LOGOUT'})});
+ if(result?.status!=='REVOKED')throw new Error('無法確認伺服器登出結果');
 }
 export async function markNotificationRead(q:Qualification,notificationId:string,key:string){
  const result=await api<{qualificationId:string;notificationId:string;readAt:string}>(`/member/notifications/${encodeURIComponent(notificationId)}/read`,{method:'PATCH',headers:{'Idempotency-Key':key},body:JSON.stringify({qualificationId:q.id})});

@@ -1,18 +1,18 @@
 {
-  "qualificationId": "a27ce48a-a8b6-4e69-88bd-93b17313b4c4",
+  "qualificationId": "4f9bc6fa-b7fa-46c7-a4e1-2de23377afa8",
   "period": "2026-09",
   "responses": {
     "qualifications": {
       "data": [
         {
-          "id": "734f9202-b6a6-40fb-ac12-c5d7c0a0f122",
+          "id": "5fd2de34-414d-4cdd-8e07-865d369ee63c",
           "code": "21",
           "rank": "STARTER",
           "active": true,
           "ballLabel": "球 21"
         },
         {
-          "id": "a27ce48a-a8b6-4e69-88bd-93b17313b4c4",
+          "id": "4f9bc6fa-b7fa-46c7-a4e1-2de23377afa8",
           "code": "22",
           "rank": "STARTER",
           "active": true,
@@ -20,28 +20,28 @@
         }
       ],
       "meta": {
-        "request_id": "e593dd5d-d151-4f9f-ba02-c8de64c1b358",
-        "timestamp": "2026-09-15T19:38:44.496Z",
+        "request_id": "7ba5669c-7b98-4390-8239-1cb985da82ef",
+        "timestamp": "2026-09-16T01:33:20.535Z",
         "api_version": "v1"
       }
     },
     "person": {
       "data": {
         "name": "MEMBER A TEST ONLY",
-        "memberNo": "b1e8dca0-ae13-40e1-88d0-165b5e3a85b3",
+        "memberNo": "9fa5137c-052b-4e82-b5ab-5e69ae0ac695",
         "email": null,
         "phone": null
       },
       "meta": {
-        "request_id": "b8574887-4d34-4736-be54-348fb2aa35f9",
-        "timestamp": "2026-09-15T19:38:44.500Z",
+        "request_id": "7965980a-5382-494d-8218-2bd12ee990e5",
+        "timestamp": "2026-09-16T01:33:20.542Z",
         "api_version": "v1"
       }
     },
     "products": {
       "data": [
         {
-          "id": "885c08db-e34b-468f-80ec-05cd66702dfa",
+          "id": "96a9a7f7-086f-4b19-8e2f-18c389a3372b",
           "name": "TEST ONLY",
           "price": 1600,
           "pv": null,
@@ -51,7 +51,7 @@
           "availabilityMeaning": "ORDERABLE_NOT_STOCK_CONFIRMATION"
         },
         {
-          "id": "e502eba9-ce0b-415e-aa0e-dc82ce181a75",
+          "id": "64b8bf9c-46e8-4d91-a6fb-340597c10ffa",
           "name": "TEST ONLY",
           "price": 1600,
           "pv": null,
@@ -62,23 +62,23 @@
         }
       ],
       "meta": {
-        "request_id": "eefd652a-9e99-44bb-b2f1-bca6b8660582",
-        "timestamp": "2026-09-15T19:38:44.506Z",
+        "request_id": "ba96f955-62b3-4372-a131-915a0f3d8b2c",
+        "timestamp": "2026-09-16T01:33:20.548Z",
         "api_version": "v1"
       }
     },
     "dashboard": {
       "data": {
-        "qualificationId": "a27ce48a-a8b6-4e69-88bd-93b17313b4c4",
+        "qualificationId": "4f9bc6fa-b7fa-46c7-a4e1-2de23377afa8",
         "qualification": {
-          "id": "a27ce48a-a8b6-4e69-88bd-93b17313b4c4",
+          "id": "4f9bc6fa-b7fa-46c7-a4e1-2de23377afa8",
           "code": "22",
           "rank": "STARTER",
           "active": true,
           "ballLabel": "球 22"
         },
         "memberName": "MEMBER A TEST ONLY",
-        "memberNo": "b1e8dca0-ae13-40e1-88d0-165b5e3a85b3",
+        "memberNo": "9fa5137c-052b-4e82-b5ab-5e69ae0ac695",
         "monthlyRepurchaseStatus": "ACTIVE",
         "pv": 23,
         "rpv": 1200,
@@ -90,14 +90,14 @@
         "view": "EFFECTIVE_ORIGINAL_EVENT_MONTH"
       },
       "meta": {
-        "request_id": "8ed06993-3625-4662-9e13-1cd47053eead",
-        "timestamp": "2026-09-15T19:38:44.535Z",
+        "request_id": "4e3428b8-8dcd-47c8-8033-3e7b29da30e9",
+        "timestamp": "2026-09-16T01:33:20.579Z",
         "api_version": "v1"
       }
     },
     "organization": {
       "data": {
-        "qualificationId": "a27ce48a-a8b6-4e69-88bd-93b17313b4c4",
+        "qualificationId": "4f9bc6fa-b7fa-46c7-a4e1-2de23377afa8",
         "sponsor": null,
         "referrals": [],
         "pagination": {
@@ -106,14 +106,14 @@
         }
       },
       "meta": {
-        "request_id": "37f77a03-fab7-4d77-9847-c9b2665b8e9a",
-        "timestamp": "2026-09-15T19:38:44.555Z",
+        "request_id": "a6e58a91-ce68-4ae3-9166-1038c7c5b3a3",
+        "timestamp": "2026-09-16T01:33:20.597Z",
         "api_version": "v1"
       }
     },
     "binary": {
       "data": {
-        "qualificationId": "a27ce48a-a8b6-4e69-88bd-93b17313b4c4",
+        "qualificationId": "4f9bc6fa-b7fa-46c7-a4e1-2de23377afa8",
         "left": {
           "count": 2,
           "volume": null
@@ -126,44 +126,44 @@
         "volumeReason": "SETTLEMENT_NOT_FINALIZED"
       },
       "meta": {
-        "request_id": "7d963c87-90fe-4e07-8940-0884fd414846",
-        "timestamp": "2026-09-15T19:38:44.574Z",
+        "request_id": "cfd8e261-42a6-4c52-82ee-d10841d7feef",
+        "timestamp": "2026-09-16T01:33:20.615Z",
         "api_version": "v1"
       }
     },
     "performance": {
       "data": {
-        "qualificationId": "a27ce48a-a8b6-4e69-88bd-93b17313b4c4",
+        "qualificationId": "4f9bc6fa-b7fa-46c7-a4e1-2de23377afa8",
         "period": "2026-09",
         "pv": 23,
         "rpv": 1200,
         "epv": 480,
         "left": null,
         "right": null,
-        "asOf": "2026-09-15T19:38:44.587Z",
+        "asOf": "2026-09-16T01:33:20.629Z",
         "timezone": "Asia/Taipei",
-        "parameterSnapshotHash": "b77e24364e6d20d70fc73dc0b7bfdbdd90a8fc618e4336f7db3e3e3835e0a885",
+        "parameterSnapshotHash": "63c7b89288914e84260062b580ddf0a2b750c4d2da9fdf1cd6a2aec4f968aba3",
         "view": "EFFECTIVE_ORIGINAL_EVENT_MONTH",
         "settlementStatus": "PENDING"
       },
       "meta": {
-        "request_id": "2bb2df96-8f7f-4a91-8e2f-ef80867fb092",
-        "timestamp": "2026-09-15T19:38:44.598Z",
+        "request_id": "f0749a0a-01f9-4608-9cda-dd9d90a274d8",
+        "timestamp": "2026-09-16T01:33:20.643Z",
         "api_version": "v1"
       }
     },
     "bonuses": {
       "data": {
-        "qualificationId": "a27ce48a-a8b6-4e69-88bd-93b17313b4c4",
+        "qualificationId": "4f9bc6fa-b7fa-46c7-a4e1-2de23377afa8",
         "period": "2026-09",
         "awards": [
           {
-            "id": "fcda2e46-0d8f-42bc-9c8a-d8f0a5a47abd",
+            "id": "f9d63d18-e73c-46cd-9279-19233de2dd06",
             "name": "EPV",
             "status": "PENDING45D",
             "amount": 240,
             "ruleVersion": "R1.0B",
-            "parameterSnapshotHash": "b474c4209eac1e9e6266d6ebddec01629ba11f424d0d17a62df69509e5dce8f7"
+            "parameterSnapshotHash": "bfb84a25588ca94763e3f4bddd075768c3764f1d3ad76e79e2cc6da66024e628"
           }
         ],
         "pagination": {
@@ -172,22 +172,22 @@
         }
       },
       "meta": {
-        "request_id": "51ac83e0-9181-4cee-bb7b-7625b49169ed",
-        "timestamp": "2026-09-15T19:38:44.620Z",
+        "request_id": "fff09f37-3d19-4310-bdcc-2e06bf2aa108",
+        "timestamp": "2026-09-16T01:33:20.665Z",
         "api_version": "v1"
       }
     },
     "ledger": {
       "data": {
-        "qualificationId": "a27ce48a-a8b6-4e69-88bd-93b17313b4c4",
+        "qualificationId": "4f9bc6fa-b7fa-46c7-a4e1-2de23377afa8",
         "period": "2026-09",
         "entries": [
           {
-            "id": "fcda2e46-0d8f-42bc-9c8a-d8f0a5a47abd",
+            "id": "f9d63d18-e73c-46cd-9279-19233de2dd06",
             "label": "EPV",
             "amount": 240,
-            "postedAt": "2026-09-15T19:38:43.768Z",
-            "sourceId": "3b4b809c-17e4-4791-873d-b15e0edfd45a"
+            "postedAt": "2026-09-16T01:33:19.688Z",
+            "sourceId": "f9866653-88ed-45d8-87e9-b52e7d4f44a8"
           }
         ],
         "pagination": {
@@ -196,33 +196,33 @@
         }
       },
       "meta": {
-        "request_id": "36085e77-c8ed-4cb9-8dc6-bb85026b2005",
-        "timestamp": "2026-09-15T19:38:44.640Z",
+        "request_id": "77bfef85-ddc7-42fa-baa1-e9f77dacfcdd",
+        "timestamp": "2026-09-16T01:33:20.686Z",
         "api_version": "v1"
       }
     },
     "repurchase": {
       "data": {
-        "qualificationId": "a27ce48a-a8b6-4e69-88bd-93b17313b4c4",
+        "qualificationId": "4f9bc6fa-b7fa-46c7-a4e1-2de23377afa8",
         "period": "2026-09",
         "status": "ACTIVE",
         "recognitions": [
           {
-            "id": "2267c57d-c2a3-4ad1-8323-81f8650c257d",
+            "id": "b19e51f0-9b4a-4fb2-9aaf-61fdd2402af7",
             "status": "RECOGNIZED",
             "dueAt": "2026-09-15T16:00:00.000Z"
           }
         ]
       },
       "meta": {
-        "request_id": "87d3c80e-9e3e-4624-9938-bbca21ff63a5",
-        "timestamp": "2026-09-15T19:38:44.658Z",
+        "request_id": "2350de29-6624-4907-8c78-04707e2743e9",
+        "timestamp": "2026-09-16T01:33:20.709Z",
         "api_version": "v1"
       }
     },
     "referrals": {
       "data": {
-        "qualificationId": "a27ce48a-a8b6-4e69-88bd-93b17313b4c4",
+        "qualificationId": "4f9bc6fa-b7fa-46c7-a4e1-2de23377afa8",
         "sponsor": null,
         "referrals": [],
         "pagination": {
@@ -231,18 +231,18 @@
         }
       },
       "meta": {
-        "request_id": "c08ddcd6-d92e-4bbd-ab0e-6ce2b19a1426",
-        "timestamp": "2026-09-15T19:38:44.676Z",
+        "request_id": "57e0e9c3-20b9-4742-85ba-2057675916c0",
+        "timestamp": "2026-09-16T01:33:20.730Z",
         "api_version": "v1"
       }
     },
     "orders": {
       "data": {
-        "qualificationId": "a27ce48a-a8b6-4e69-88bd-93b17313b4c4",
+        "qualificationId": "4f9bc6fa-b7fa-46c7-a4e1-2de23377afa8",
         "orders": [
           {
-            "id": "d9d5319f-e8dd-4eb2-8e69-175b4806a58f",
-            "createdAt": "2026-09-15T19:38:43.727Z",
+            "id": "a131a224-06f0-4cc4-ac29-7d181d5f5803",
+            "createdAt": "2026-09-16T01:33:19.645Z",
             "total": 2800,
             "status": "PAID",
             "paymentStatus": "PAID",
@@ -255,8 +255,8 @@
         }
       },
       "meta": {
-        "request_id": "61f45178-7cc9-401d-8147-d4bc2255007f",
-        "timestamp": "2026-09-15T19:38:44.694Z",
+        "request_id": "37bf5034-7e5a-4de7-bdfc-9e6288689541",
+        "timestamp": "2026-09-16T01:33:20.750Z",
         "api_version": "v1"
       }
     }

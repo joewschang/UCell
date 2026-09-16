@@ -289,9 +289,16 @@ export class OrderService {
   }
 
   async get(orderId: string) {
-    return this.prisma.order.findUniqueOrThrow({
+    return this.prisma.$transaction(async tx=>{
+    const order=await tx.order.findUniqueOrThrow({
       where: { orderId },
       include: { lines: true, paymentEvents: true },
     });
+    const returned=await tx.returnLine.groupBy({by:['orderLineId'],where:{returnCase:{orderId,status:'POSTED'}},_sum:{quantity:true}});
+    return {...order,lines:order.lines.map(line=>{
+      const quantity=returned.find(row=>row.orderLineId===line.orderLineId)?._sum.quantity??new Prisma.Decimal(0);
+      return {...line,returnedQuantity:quantity.toString(),remainingReversibleQuantity:Prisma.Decimal.max(0,line.quantity.minus(quantity)).toString()};
+    })};
+    },{isolationLevel:'RepeatableRead'});
   }
 }

@@ -1,4 +1,4 @@
-import {Navigate,Route,Routes} from 'react-router-dom';
+import {Link,Navigate,Route,Routes} from 'react-router-dom';
 import {useAuth} from '../features/auth/auth';
 import {LoginPage} from '../features/auth/LoginPage';
 import {AppShell} from './AppShell';
@@ -44,5 +44,6 @@ export function App(){return <Routes>
   <Route path="/reports" element={<RequirePageRole><ReportsPage/></RequirePageRole>}/>
   <Route path="/uat" element={<RequirePageRole><UatPage/></RequirePageRole>}/>
   <Route path="/system" element={<RequirePageRole><SystemPage/></RequirePageRole>}/>
+  <Route path="*" element={<section className="card"><h1>找不到後台頁面</h1><Link to="/">返回營運總覽</Link></section>}/>
  </Route>
 </Routes>}

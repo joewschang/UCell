@@ -31,6 +31,7 @@ export class AdminOperationsService {
     ]);
     return rows.map(r=>({
       ...r,
+      returnSummary:{totalAmount:r.lines.reduce((sum,line)=>sum.add(line.returnAmount),new Prisma.Decimal(0)).toString()},
       recoverySummary:recoveries.filter(x=>x.returnCaseId===r.returnCaseId).reduce((a,x)=>({
         count:a.count+1,
         amount:a.amount.add(x.recoveryAmount),
