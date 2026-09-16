@@ -7,12 +7,17 @@ param(
   [string]$LineChannelId = '',
   [string]$LiffId = '',
   [string]$EntraTenantId = '',
-  [string]$EntraClientId = ''
+  [string]$EntraClientId = '',
+  [ValidateSet('Local','Acr')]
+  [string]$ContainerBuildMode = 'Local'
 )
 
 $ErrorActionPreference = 'Stop'
-$az = 'C:\Program Files\Microsoft SDKs\Azure\CLI2\wbin\az.cmd'
-if (-not (Test-Path $az)) { throw 'Azure CLI is required.' }
+$azCommand = Get-Command az -ErrorAction SilentlyContinue
+if (-not $azCommand) {
+  $windowsAz = 'C:\Program Files\Microsoft SDKs\Azure\CLI2\wbin\az.cmd'
+  if (Test-Path $windowsAz) { $az = $windowsAz } else { throw 'Azure CLI is required.' }
+} else { $az = $azCommand.Source }
 if (-not $PostgresAdminPassword) { $PostgresAdminPassword = Read-Host 'Stage PostgreSQL administrator password' -AsSecureString }
 $password = [System.Net.NetworkCredential]::new('', $PostgresAdminPassword).Password
 if ($password.Length -lt 16) { throw 'Stage PostgreSQL password must contain at least 16 characters.' }
@@ -35,11 +40,25 @@ $encodedUser = [Uri]::EscapeDataString($PostgresAdminUser)
 $encodedPassword = [Uri]::EscapeDataString($password)
 $databaseUrl = "postgresql://${encodedUser}:$encodedPassword@${hostName}:5432/ucell_stage?schema=public&sslmode=require"
 
-& $az acr build --registry $acr --image ucell-backend:stage --file deployment/Dockerfile.backend . --only-show-errors
-& $az acr build --registry $acr --image ucell-worker:stage --file deployment/Dockerfile.worker . --only-show-errors
-if ($LASTEXITCODE -ne 0) { throw 'One or more Stage container builds failed.' }
-
 $registryServer = "$acr.azurecr.io"
+if ($ContainerBuildMode -eq 'Local') {
+  & $az acr login --name $acr --only-show-errors
+  if ($LASTEXITCODE -ne 0) { throw 'Stage ACR login failed.' }
+  & docker build --tag "$registryServer/ucell-backend:stage" --file deployment/Dockerfile.backend .
+  if ($LASTEXITCODE -ne 0) { throw 'Stage Backend container build failed.' }
+  & docker push "$registryServer/ucell-backend:stage"
+  if ($LASTEXITCODE -ne 0) { throw 'Stage Backend container push failed.' }
+  & docker build --tag "$registryServer/ucell-worker:stage" --file deployment/Dockerfile.worker .
+  if ($LASTEXITCODE -ne 0) { throw 'Stage Worker container build failed.' }
+  & docker push "$registryServer/ucell-worker:stage"
+  if ($LASTEXITCODE -ne 0) { throw 'Stage Worker container push failed.' }
+} else {
+  & $az acr build --registry $acr --image ucell-backend:stage --file deployment/Dockerfile.backend . --only-show-errors
+  if ($LASTEXITCODE -ne 0) { throw 'Stage Backend ACR build failed.' }
+  & $az acr build --registry $acr --image ucell-worker:stage --file deployment/Dockerfile.worker . --only-show-errors
+  if ($LASTEXITCODE -ne 0) { throw 'Stage Worker ACR build failed.' }
+}
+
 $common = @('NODE_ENV=staging',"DATABASE_URL=$databaseUrl",'ADMIN_AUTH_BYPASS=false',"APPLICATIONINSIGHTS_CONNECTION_STRING=$insights",'UCELL_ENVIRONMENT=STAGE')
 if ($LineChannelId) { $common += "LINE_CHANNEL_ID=$LineChannelId" }
 
@@ -57,9 +76,21 @@ if ($LASTEXITCODE -ne 0) { throw 'Stage API/Worker deployment failed.' }
 
 $apiFqdn = & $az containerapp show --name ucell-stage-api --resource-group $ResourceGroup --query properties.configuration.ingress.fqdn --output tsv
 $apiBaseUrl = "https://$apiFqdn/api/v1"
-& $az acr build --registry $acr --image ucell-admin:stage --file deployment/Dockerfile.admin --build-arg VITE_API_BASE_URL=$apiBaseUrl --build-arg VITE_ENTRA_TENANT_ID=$EntraTenantId --build-arg VITE_ENTRA_CLIENT_ID=$EntraClientId . --only-show-errors
-& $az acr build --registry $acr --image ucell-member:stage --file deployment/Dockerfile.member --build-arg VITE_API_BASE_URL=$apiBaseUrl --build-arg VITE_LIFF_ID=$LiffId . --only-show-errors
-if ($LASTEXITCODE -ne 0) { throw 'Stage frontend container builds failed.' }
+if ($ContainerBuildMode -eq 'Local') {
+  & docker build --tag "$registryServer/ucell-admin:stage" --file deployment/Dockerfile.admin --build-arg "VITE_API_BASE_URL=$apiBaseUrl" --build-arg "VITE_ENTRA_TENANT_ID=$EntraTenantId" --build-arg "VITE_ENTRA_CLIENT_ID=$EntraClientId" .
+  if ($LASTEXITCODE -ne 0) { throw 'Stage Admin container build failed.' }
+  & docker push "$registryServer/ucell-admin:stage"
+  if ($LASTEXITCODE -ne 0) { throw 'Stage Admin container push failed.' }
+  & docker build --tag "$registryServer/ucell-member:stage" --file deployment/Dockerfile.member --build-arg "VITE_API_BASE_URL=$apiBaseUrl" --build-arg "VITE_LIFF_ID=$LiffId" .
+  if ($LASTEXITCODE -ne 0) { throw 'Stage Member container build failed.' }
+  & docker push "$registryServer/ucell-member:stage"
+  if ($LASTEXITCODE -ne 0) { throw 'Stage Member container push failed.' }
+} else {
+  & $az acr build --registry $acr --image ucell-admin:stage --file deployment/Dockerfile.admin --build-arg VITE_API_BASE_URL=$apiBaseUrl --build-arg VITE_ENTRA_TENANT_ID=$EntraTenantId --build-arg VITE_ENTRA_CLIENT_ID=$EntraClientId . --only-show-errors
+  if ($LASTEXITCODE -ne 0) { throw 'Stage Admin ACR build failed.' }
+  & $az acr build --registry $acr --image ucell-member:stage --file deployment/Dockerfile.member --build-arg VITE_API_BASE_URL=$apiBaseUrl --build-arg VITE_LIFF_ID=$LiffId . --only-show-errors
+  if ($LASTEXITCODE -ne 0) { throw 'Stage Member ACR build failed.' }
+}
 
 & $az containerapp create --name ucell-stage-admin --resource-group $ResourceGroup --environment $environment --image "$registryServer/ucell-admin:stage" --registry-server $registryServer --registry-identity $identity --user-assigned $identity --ingress external --target-port 80 --min-replicas 1 --max-replicas 2 --only-show-errors
 & $az containerapp create --name ucell-stage-member --resource-group $ResourceGroup --environment $environment --image "$registryServer/ucell-member:stage" --registry-server $registryServer --registry-identity $identity --user-assigned $identity --ingress external --target-port 80 --min-replicas 1 --max-replicas 2 --only-show-errors

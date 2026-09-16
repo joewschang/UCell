@@ -4,7 +4,7 @@ Stage is a disposable pre-production environment. It must use a separate resourc
 
 ## Deployment
 
-Prerequisites: Azure CLI login, Contributor access to the target subscription, and a local PowerShell session at the repository root.
+Prerequisites: Azure CLI login, Docker with Linux container support, Contributor access to the target subscription, and a PowerShell session at the repository root.
 
 ```powershell
 .\deployment\deploy-stage.ps1 -ResourceGroup rg-ucell-stage -Location eastasia

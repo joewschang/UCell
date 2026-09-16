@@ -23,7 +23,7 @@ concurrency:
 jobs:
   deploy:
     environment: stage
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - name: Azure login with federated deployment identity
