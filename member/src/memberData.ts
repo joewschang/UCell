@@ -44,6 +44,7 @@ export async function getDeliveryProfile(signal:AbortSignal):Promise<DeliveryPro
 }
 export type DeliveryProfileInput={recipientName:string;phone:string;countryCode:string;postalCode?:string;region:string;city:string;address:string};
 export async function updateDeliveryProfile(input:DeliveryProfileInput,key:string){const result=await api<{deliveryProfileId:string;status:string;complete:boolean;updatedAt:string;replayed:boolean}>('/member/delivery-profile',{method:'PATCH',headers:{'Idempotency-Key':key},body:JSON.stringify(input)});if(!result||typeof result.deliveryProfileId!=='string'||result.status!=='UPDATED'||result.complete!==true||!Number.isFinite(Date.parse(result.updatedAt)))throw new Error('配送資料更新結果異常');return result;}
+export async function createReferralShareLink(q:Qualification){const result=await api<{qualificationId:string;shareUrl:string;expiresAt:string}>('/member/share-links',{method:'POST',body:JSON.stringify({qualificationId:q.id})});if(!result||result.qualificationId!==q.id||typeof result.shareUrl!=='string'||!/^https:\/\//.test(result.shareUrl)||!Number.isFinite(Date.parse(result.expiresAt)))throw new Error('推薦連結回應不符，已停止顯示');return result;}
 export async function updateProfile(input:{name?:string;email?:string;phone?:string},key:string) {
  if(isMock)throw new Error('示範模式不修改會員資料');
  return validate.parsePerson(await api('/member/profile',{method:'PATCH',headers:{'Idempotency-Key':key},body:JSON.stringify(input)}));

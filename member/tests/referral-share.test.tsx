@@ -1,0 +1,10 @@
+import React from 'react';
+import {act,create,type ReactTestRenderer} from 'react-test-renderer';
+import {afterEach,beforeEach,expect,it,vi} from 'vitest';
+import ReferralShare from '../src/ReferralShare';
+let tree:ReactTestRenderer|undefined;
+const q={id:'ball-1',code:'B1',rank:'STARTER',active:true,ballLabel:'球 1'};
+const response=(data:unknown,status=201)=>new Response(JSON.stringify({data,meta:{request_id:'share-test',api_version:'v1',timestamp:'2026-09-17T00:00:00Z'}}),{status});
+beforeEach(()=>vi.stubGlobal('sessionStorage',{getItem:()=>null}));afterEach(()=>{if(tree)act(()=>tree!.unmount());tree=undefined;vi.unstubAllGlobals();vi.restoreAllMocks();});
+it('requests a server-bound referral URL for the selected ball without client Sponsor mutation',async()=>{const fetch=vi.fn().mockResolvedValue(response({qualificationId:q.id,shareUrl:'https://example.invalid/r/encrypted-token',expiresAt:'2026-09-17T01:00:00Z'}));vi.stubGlobal('fetch',fetch);await act(async()=>{tree=create(<ReferralShare q={q}/>);});const button=tree!.root.findByProps({children:'建立推薦連結'});await act(async()=>button.props.onClick());const body=JSON.parse(fetch.mock.calls[0][1].body);expect(body).toEqual({qualificationId:q.id});expect(JSON.stringify(body)).not.toContain('sponsor');expect(JSON.stringify(tree!.toJSON())).toContain('https://example.invalid/r/encrypted-token');});
+it('fails closed on a mismatched qualification response',async()=>{vi.stubGlobal('fetch',vi.fn().mockResolvedValue(response({qualificationId:'foreign',shareUrl:'https://example.invalid/r/token',expiresAt:'2026-09-17T01:00:00Z'})));await act(async()=>{tree=create(<ReferralShare q={q}/>);});await act(async()=>tree!.root.findByProps({children:'建立推薦連結'}).props.onClick());expect(JSON.stringify(tree!.toJSON())).toContain('推薦連結回應不符');expect(JSON.stringify(tree!.toJSON())).not.toContain('/r/token');});

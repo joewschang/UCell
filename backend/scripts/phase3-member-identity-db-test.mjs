@@ -19,6 +19,7 @@ const {BonusQueryService}=require('./apps/api/dist/modules/bonus/bonus-query.ser
 const {LineTokenVerifierService}=require('./apps/api/dist/modules/auth/line-token-verifier.service.js');
 const {IdentityTokenService}=require('./apps/api/dist/modules/auth/identity-token.service.js');
 const {MemberService}=require('./apps/api/dist/modules/member/member.service.js');
+const {MemberShareLinkService}=require('./apps/api/dist/modules/member/member-share-link.service.js');
 const {OtpCodeService}=require('./apps/api/dist/modules/auth/otp-code.service.js');
 const {SmsOtpProviderService}=require('./apps/api/dist/modules/auth/sms-otp-provider.service.js');
 const {AuditService}=require('./apps/api/dist/common/audit/audit.service.js');
@@ -34,6 +35,9 @@ try{
  process.env.AUTH_CHANNEL_ENABLE_SMS_OTP='true';
  process.env.PII_ENCRYPTION_KEY='AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=';
  process.env.PII_ENCRYPTION_KEY_VERSION='TEST_ONLY_V1';
+ process.env.MEMBER_SHARE_TOKEN_SECRET='TEST_ONLY_MEMBER_SHARE_SECRET_32_BYTES_MINIMUM';
+ process.env.MEMBER_REFERRAL_BASE_URL='https://example.invalid';
+ process.env.MEMBER_SHARE_TOKEN_TTL_SECONDS='3600';
  const person=await db.person.create({data:{legalName:'MEMBER A TEST ONLY',status:'EFFECTIVE'}});
  const other=await db.person.create({data:{legalName:'MEMBER B TEST ONLY',status:'EFFECTIVE'}});
  const empty=await db.person.create({data:{legalName:'MEMBER EMPTY TEST ONLY',status:'EFFECTIVE'}});
@@ -205,6 +209,7 @@ try{
  res=await call('GET','member/me?personId='+other.personId,token);equal(res.statusCode,200,'member me authenticated');equal(res.json().data.name,person.legalName,'client Person tampering ignored');
  res=await call('GET','member/qualifications',token);equal(res.statusCode,200,'owned qualifications fetched');equal(res.json().data.map(q=>q.id),ids.slice(0,2),'only both owned balls returned');
  for(const id of ids.slice(0,2)){res=await call('POST','member/context/qualification',token,{qualificationId:id});equal(res.statusCode,201,'owned ball context allowed');equal(res.json().data.qualificationId,id,'ball context echoes verified id');}
+ res=await call('POST','member/share-links',token,{qualificationId:ids[0]});equal(res.statusCode,201,'owned ball referral share link created');const share=res.json().data,shareUrl=new URL(share.shareUrl);equal([share.qualificationId,shareUrl.origin,shareUrl.pathname.startsWith('/r/')],[ids[0],'https://example.invalid',true],'share link binds owned ball and configured landing origin');equal(app.get(MemberShareLinkService).verify(shareUrl.pathname.slice(3)).qualificationId,ids[0],'encrypted share token verifies to exact owned ball');equal((await call('POST','member/share-links',token,{qualificationId:ids[2]})).statusCode,403,'foreign ball referral share link denied');
  const paths={dashboard:'dashboard',organization:'organization/sponsor',binary:'organization/binary',performance:'performance',bonuses:'bonuses',ledger:'bonuses/ledger',repurchase:'repurchase/status',referrals:'referrals',orders:'orders'};
  const balls=[];
  for(const [index,id] of ids.slice(0,2).entries()){
