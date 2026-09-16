@@ -24,13 +24,13 @@ const assert=require('node:assert/strict');
   await page.getByRole('heading',{name:'營運指揮中心.'}).waitFor();
   await page.getByRole('img',{name:'活躍資格占比 78.0%'}).waitFor();
   await page.getByText('12,840',{exact:true}).waitFor();
-  await page.screenshot({path:'test-artifacts/admin-desktop.png',fullPage:true});
+  await page.screenshot({path:'test-artifacts/admin-desktop.png',fullPage:true,animations:'disabled'});
   for(const width of [320,390,768,1440]){
    await page.setViewportSize({width,height:1100});
    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,width+' overflow');
   }
   await page.setViewportSize({width:390,height:1100});
-  await page.screenshot({path:'test-artifacts/admin-mobile.png',fullPage:true});
+  await page.screenshot({path:'test-artifacts/admin-mobile.png',fullPage:true,animations:'disabled'});
   fail=true;
   await page.getByRole('button',{name:'↻ 更新總覽'}).click();
   await page.getByRole('alert').filter({hasText:'資料更新失敗'}).waitFor();
