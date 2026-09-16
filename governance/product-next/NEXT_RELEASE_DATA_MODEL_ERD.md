@@ -1,93 +1,77 @@
 # UCell Next Release Data Model / ERD
 Status: DESIGN FREEZE CANDIDATE
-Date: 2026-09-16
+Date: 2026-09-17
 
-## Core references (existing, not redefined)
-Person(personId), Qualification(qualificationId), SponsorHistory, BinaryHistory, Product/Order/Core monetary entities remain authoritative.
+## Core references
+Person(personId), Qualification(qualificationId), SponsorHistory, BinaryHistory, Product/Order/Core monetary entities remain authoritative. Three relationship domains remain separate: Person referral, Ball Sponsor Tree, Ball Binary Tree.
 
-## Identity & Compliance tables
+## Membership / referral
 ### PersonMembership
-personId PK/FK; membershipState NETWORK_MEMBER|FORMAL_PENDING|FORMAL_MEMBER; stateVersion; effectiveAt; updatedAt. Prefer append-only state history via PersonMembershipHistory(id,personId,fromState,toState,reasonCode,occurredAt,actorId,correlationId).
+personId PK/FK; membershipState NETWORK_MEMBER|FORMAL_PENDING|FORMAL_MEMBER; stateVersion; effectiveAt; updatedAt.
+PersonMembershipHistory(id,personId,fromState,toState,reasonCode,occurredAt,actorId,correlationId) append-only.
 
-### ProviderIdentity
-id PK; personId FK; provider; issuer; subject; emailHint?; linkedAt; unlinkedAt?; status; UNIQUE(provider,issuer,subject).
+### MemberReferralRelationship
+id; referredPersonId; referrerPersonId; sourceFirstQualificationId; sourceSponsorQualificationId; effectiveAt; ruleVersion; evidenceId; status. The ordinary first formal referral is historical and later Ball sponsor choices do not update it.
 
-### ContractDocumentVersion
-id; contractType; version; contentHash; effectiveFrom; effectiveTo?; requiredAudience; status; storageRef/documentRef; approvedBy; approvedAt.
+### MemberReferralCode
+id; personId; code/tokenHash UNIQUE; defaultReferralQualificationId?; enabledFrom; enabledTo?; status; policyVersion. Code is Person-owned but may resolve to a default/applicable Ball context.
 
-### ConsentEvidence
-id; personId; contractVersionId; consentedAt; channel; evidenceHash; ipFingerprint?; userAgentClass?; correlationId. No raw unnecessary telemetry.
+### FormalMembershipActivationEvidence
+id; personId; qualifyingOrderId; qualifyingOrderLineId?; packageType STARTER|ELITE|LEADER (map to authoritative product codes); firstQualificationId; finalSponsorQualificationId; referrerPersonId; contractEvidenceRef; kycEvidenceRef; ruleVersion; effectiveAt; evidenceHash.
 
-### OTPChallenge
-id; registrationSessionId?; personId?; purpose; destinationFingerprint; providerRef?; createdAt; expiresAt; attemptCount; resendCount; verifiedAt?; lockedAt?; status. Never raw OTP.
+## Identity & Compliance
+ProviderIdentity(id,personId,provider,issuer,subject,linkedAt,unlinkedAt?,status, UNIQUE(provider,issuer,subject)). Current LINE enabled; OTP/Google future feature-disabled.
+ContractDocumentVersion(id,contractType,version,contentHash,effectiveFrom,effectiveTo?,requiredAudience,status,storageRef,approvedBy,approvedAt).
+ConsentEvidence(id,personId,contractVersionId,consentedAt,channel,evidenceHash,correlationId).
+OTPChallenge retained for future purposes; never raw OTP.
+DeliveryProfile(id,personId,recipientName,mobile/phone/address protected fields,effectiveFrom,effectiveTo?).
+FormalMemberApplication(id,personId,status,applicationVersion,createdAt,submittedAt?,reviewedAt?,reviewerId?,decisionReasonCode?,correlationId).
+FormalMemberApplicationSnapshot(id,applicationId,snapshotHash,createdAt,encryptedPayloadRef).
+KycDocument(id,applicationId,documentType,objectKey,checksum,mimeType,byteSize,uploadedAt,verificationState,retentionClass,deletedAt?).
+KycReviewEvidence(id,applicationId,reviewerId,action,reasonCode?,noteRef?,occurredAt,evidenceHash).
+BankAccountIdentity(id,personId,bankCode,accountCiphertext/tokenRef,accountLast4,accountHolderCiphertext,verificationState,effectiveFrom,effectiveTo?,createdAt,auditRef).
 
-### DeliveryProfile
-id; personId; recipientName; mobileEncrypted?; phoneEncrypted?; postalCode; countryCode; region; city; addressEncrypted; effectiveFrom; effectiveTo?; updatedAt.
+## Qualification setup / placement
+### QualificationSetup
+qualificationId PK/FK; ownerPersonId; qualifyingOrderId; packageType; setupStatus PURCHASE_PENDING|PURCHASED|BALL_SETUP_PENDING|PLACEMENT_PENDING|PLACEMENT_OVERDUE|PLACED|ACTIVE (mapping must reconcile with existing Core lifecycle); provisionalAttributionId?; finalSponsorQualificationId?; placementRequestedAt?; placementDueAt?; placedAt?; setupPolicyVersion.
 
-### FormalMemberApplication
-id; personId; status; applicationVersion; createdAt; submittedAt?; reviewedAt?; reviewerId?; decisionReasonCode?; correlationId.
-FormalMemberApplicationSnapshot(id,applicationId,snapshotHash,createdAt,encryptedPayloadRef/versioned normalized fields).
+### QualificationSponsorSelectionEvidence
+id; qualificationId; attributionReferrerPersonId?; attributionReferrerQualificationId?; selectedSponsorQualificationId; selectedSponsorOwnerPersonId; selectedByPersonId; selectedAt; source ATTRIBUTION_PREFILL|MANUAL_INPUT|SYSTEM_ASSIGNMENT; policyVersion; correlationId. Final Sponsor edge remains Core SponsorHistory.
 
-### KycDocument
-id; applicationId; documentType; objectKey; checksum; mimeType; byteSize; uploadedAt; verificationState; retentionClass; deletedAt?; no public URL.
+### PlacementEvidence
+id; qualificationId; sponsorQualificationId; binaryParentQualificationId; side; placedByType SPONSOR_OWNER|ADMIN_OVERRIDE|SYSTEM_AUTO; placedByPersonId?; placedAt; reasonCode?; policyVersion; previousStatus; correlationId; evidenceHash.
 
-### KycReviewEvidence
-id; applicationId; reviewerId; action; reasonCode?; noteRef?; occurredAt; evidenceHash.
-
-### BankAccountIdentity
-id; personId; bankCode; accountCiphertext/tokenRef; accountLast4; accountHolderCiphertext; verificationState; effectiveFrom; effectiveTo?; createdAt; auditRef.
-
-## Growth tables
-### ReferralLink
-id; tokenHash UNIQUE; referrerQualificationId FK; contentVersionId?; campaignId?; activityId?; createdAt; expiresAt?; status; policyVersion.
-
-### ReferralAttribution
-id; anonymousId?; personId?; referrerQualificationId; referralLinkId; firstTouchAt; lastTouchAt; lockedUntil; status; sourceContentVersionId?; campaignId?; activityId?; version.
-Indexes personId,status and anonymousId,status.
-
-### ReferralAttributionHistory
-id; attributionId; action CREATED|TOUCH_RECORDED|EXPIRED|REPLACED|BOUND_TO_PERSON|INVALIDATED; previousReferrerQualificationId?; newReferrerQualificationId?; occurredAt; reasonCode; referralLinkId?; correlationId. Append-only.
+### PlacementEscalationEvidence
+id; qualificationId; dueAt; escalatedAt; escalationType OVERDUE_72H|MANUAL_REVIEW; status; assignedAdminId?; resolvedAt?; resolutionPlacementEvidenceId?; correlationId.
 
 ### SystemAssignmentPolicy
 id; version; effectiveFrom; effectiveTo?; eligiblePoolSelector; tieBreakStrategy; capacityPolicy; exclusionPolicy; lockStrategy; configHash; approvalRef; status.
+SystemAssignmentPoolEntry(id,policyVersion/systemPoolVersion,qualificationId,enabledFrom,enabledTo?,priorityClass,capacityLimit?,status,approvalRef).
 
-### Content / ContentVersion
-Content(id,type,status,createdBy,createdAt). ContentVersion(id,contentId,version,title,summary,bodyRef?,mediaObjectKey?,externalUrl?,thumbnailObjectKey?,audiencePolicy,sharePolicy,publishFrom?,publishTo?,approvedBy?,approvedAt?,contentHash).
+## Growth / referral attribution
+ReferralLink(id,tokenHash UNIQUE,referrerPersonId,referrerQualificationId?,contentVersionId?,campaignId?,activityId?,createdAt,expiresAt?,status,policyVersion).
+ReferralAttribution(id,anonymousId?,personId?,referrerPersonId,referrerQualificationId?,referralLinkId,firstTouchAt,lastTouchAt,lockedUntil,status,sourceContentVersionId?,campaignId?,activityId?,version).
+ReferralAttributionHistory(id,attributionId,action,previous/new referrer Person/Qualification refs as applicable,occurredAt,reasonCode,referralLinkId?,correlationId) append-only.
+Attribution is provisional/prefill; final Sponsor selection may differ and is separately evidenced.
 
-### Activity
-id; title; descriptionRef; venue; onlineUrl?; startsAt; endsAt; registrationFrom; registrationTo; capacity?; waitlistPolicy; audiencePolicy; organizerId; status; createdAt.
-ActivityRegistration(id,activityId,personId,qualificationId?,currentStatus,registeredAt,idempotencyIdentity); active uniqueness enforced by policy.
-ActivityRegistrationHistory(id,registrationId,fromStatus?,toStatus,occurredAt,actorId?,reasonCode?,correlationId).
+## CMS / Activities / Inbox
+Content(id,type,status,createdBy,createdAt); ContentVersion(id,contentId,version,title,summary,bodyRef?,mediaObjectKey?,externalUrl?,thumbnailObjectKey?,audiencePolicy,sharePolicy,publishFrom?,publishTo?,approvedBy?,approvedAt?,contentHash).
+Activity(id,title,descriptionRef,venue,onlineUrl?,startsAt,endsAt,registrationFrom,registrationTo,capacity?,waitlistPolicy,audiencePolicy,organizerId,status,createdAt).
+ActivityRegistration(id,activityId,personId,qualificationId?,currentStatus,registeredAt,idempotencyIdentity); ActivityRegistrationHistory append-only.
+MessagePublication(id,category,title,bodyRef,link?,audienceDefinition,publishFrom,publishTo?,senderId,status,createdAt,approvedBy?,audienceSnapshotHash?). MessageAudienceSnapshot/MessageDelivery/MessageReadEvidence/MessageActionEvidence as previously defined.
 
-### MessagePublication
-id; category; title; bodyRef; link?; audienceDefinition; publishFrom; publishTo?; senderId; status; createdAt; approvedBy?; audienceSnapshotHash?.
-MessageAudienceSnapshot(id,publicationId,personId,qualificationId?,resolvedAt,segmentReason).
-MessageDelivery(id,publicationId,personId,deliveredAt,status, UNIQUE(publicationId,personId)).
-MessageReadEvidence(id,deliveryId,readAt, UNIQUE(deliveryId) if first-read semantics).
-MessageActionEvidence(id,deliveryId,actionType,targetRef?,occurredAt,eventId).
-
-## Analytics tables
-AnalyticsEvent(eventId PK,eventType,schemaVersion,occurredAt,ingestedAt,personId?,qualificationId?,anonymousId?,sessionId?,referralAttributionId?,referralCode?,contentVersionId?,campaignId?,activityId?,messagePublicationId?,orderId?,productId?,source,channel,metadataJson,correlationId).
-AnalyticsProjectionCheckpoint(projectorName PK,projectionVersion,lastEventCursor,lastOccurredAt?,updatedAt,status).
-MetricDefinition(metricId,version,name,numeratorDefinition,denominatorDefinition,sourceDefinition,timeGrain,timezone,inclusionPolicy,exclusionPolicy,nullPolicy,effectiveFrom,effectiveTo?,hash).
-NaslPolicyVersion(id,version,definitionsJson,effectiveFrom,effectiveTo?,hash,approvalRef).
-NaslCurrentSnapshot(asOf,policyVersion,scopeType,scopeId?,newCount,activeCount,suspendCount,lostCount,projectionVersion).
-NaslTransition(periodStart,periodEnd,policyVersion,fromState,toState,count,projectionVersion).
-NaslCohort(cohortKey,ageMonth,policyVersion,total,active,suspend,lost,retainedRate?,projectionVersion).
-SonarThresholdPolicy(id,version,thresholdsJson,effectiveFrom,effectiveTo?,hash,approvalRef).
-SponsorSonarProjection(rootQualificationId,generation,periodStart,periodEnd,qualificationCount,newCount,activeCount,suspendCount,lostCount,repurchaseCount,pv,rpv,epv,engagementValue?,projectionVersion,asOf).
-BinarySonarProjection(rootQualificationId,side,generation,periodStart,periodEnd,qualificationCount,activeCount,newCount,suspendCount,volume?,carry?,repurchaseCount,projectionVersion,asOf).
-OrganizationHealthPolicy(id,version,weightsJson,thresholdsJson,effectiveFrom,effectiveTo?,hash,approvalRef).
-OrganizationHealthSnapshot(rootQualificationId,periodStart,periodEnd,policyVersion,totalScore,componentsJson,asOf,projectionVersion).
+## Analytics / monitoring
+AnalyticsEvent remains append-only and excludes KYC/bank PII.
+Add QualificationPlacementMonitorProjection(qualificationId,ownerPersonId,packageType,sponsorQualificationId,sponsorOwnerPersonId,requestedAt,dueAt,ageBucket,status,interventionStatus,asOf,projectionVersion).
+Other MetricDefinition/NASL/SponsorSonar/BinarySonar/OrganizationHealth projections remain as approved.
 
 ## Relationship summary
-Person 1:N ProviderIdentity/Consent/OTP/KYC Applications/BankIdentity/DeliveryProfile.
-Person 1:N Qualification (existing Core).
-Qualification 1:N ReferralLink; ReferralAttribution points to provisional referrer Qualification.
-Content 1:N ContentVersion; ReferralLink may reference ContentVersion.
-Activity 1:N Registration; Person 1:N Registration.
-Publication 1:N AudienceSnapshot/Delivery; Delivery -> Read/Actions.
-AnalyticsEvent references entities but owns no business truth.
+Person 1:N Qualification.
+Person referral is Person->Person via MemberReferralRelationship.
+Sponsor Tree is Qualification->Qualification via Core SponsorHistory.
+Binary Tree is Qualification->Qualification via Core BinaryHistory.
+Ball #2+ may use another eligible Ball owned by the same Person as Sponsor without changing MemberReferralRelationship.
+Sponsor selection grants placement authority to Sponsor Ball owner; placement target is a separately validated Binary parent/side.
 
 ## DB invariants
-Historical/evidence tables append-only. Effective histories use non-overlapping half-open intervals where applicable. PII encrypted/tokenized; analytics avoids PII. Foreign keys never permit cascade deletion of historical monetary/consent/KYC/audit evidence. Production migrations forward-only.
+No Sponsor or Binary self-edge/cycle. Ownership equality across two different Balls is allowed. Placement commit locks/revalidates new Ball and target slot. Historical/evidence tables append-only. PII encrypted/tokenized. No cascade deletion of historical monetary/consent/KYC/referral/placement evidence. Production migrations forward-only.
