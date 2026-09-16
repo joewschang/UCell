@@ -254,6 +254,13 @@ enum ConsentChannel {
   @@schema("identity")
 }
 
+enum PersonMembershipState {
+  NETWORK_MEMBER
+  FORMAL_PENDING
+  FORMAL_MEMBER
+  @@schema("identity")
+}
+
 enum AuthSessionStatus {
   ACTIVE
   REVOKED
@@ -268,6 +275,9 @@ model Person {
   birthDate      DateTime?    @map("birth_date") @db.Date
   mobile         String?
   email          String?
+  genderCode     String?      @map("gender_code")
+  membershipState PersonMembershipState? @map("membership_state")
+  mobileVerifiedAt DateTime?  @map("mobile_verified_at") @db.Timestamptz(6)
   status         RecordStatus @default(DRAFT)
   createdAt      DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt      DateTime     @updatedAt @map("updated_at") @db.Timestamptz(6)
@@ -280,10 +290,30 @@ model Person {
   adminAccessGrants AdminAccessGrant[]
   memberNotifications MemberNotification[]
   consentEvidence ConsentEvidence[]
+  membershipStateEvents PersonMembershipStateEvent[]
 
   @@index([legalName])
   @@index([mobile])
   @@map("person")
+  @@schema("identity")
+}
+
+model PersonMembershipStateEvent {
+  personMembershipStateEventId String @id @default(uuid()) @map("person_membership_state_event_id") @db.Uuid
+  personId String @map("person_id") @db.Uuid
+  fromState PersonMembershipState? @map("from_state")
+  toState PersonMembershipState @map("to_state")
+  reasonCode String @map("reason_code")
+  sourceType String @map("source_type")
+  sourceId String? @map("source_id") @db.Uuid
+  correlationId String @map("correlation_id") @db.Uuid
+  occurredAt DateTime @default(now()) @map("occurred_at") @db.Timestamptz(6)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  person Person @relation(fields:[personId],references:[personId])
+
+  @@index([personId,occurredAt])
+  @@index([correlationId])
+  @@map("person_membership_state_event")
   @@schema("identity")
 }
 

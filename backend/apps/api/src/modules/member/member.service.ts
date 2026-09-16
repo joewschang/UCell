@@ -24,7 +24,7 @@ export class MemberService {
  }
  async me(personId:string){
   const person=await this.db.person.findUniqueOrThrow({where:{personId}});
-  return {name:person.preferredName??person.legalName,memberNo:person.personId,email:person.email,phone:person.mobile};
+  return {name:person.preferredName??person.legalName,alias:person.preferredName,memberNo:person.personId,email:person.email,phone:person.mobile,gender:person.genderCode,birthDate:person.birthDate?.toISOString().slice(0,10)??null,membershipState:person.membershipState,mobileVerifiedAt:person.mobileVerifiedAt?.toISOString()??null};
  }
  private async mutation<T>(scope:string,key:string,input:unknown,work:Parameters<IdempotencyService['execute']>[3]){
   try{return await new IdempotencyService(this.db).execute(scope,key,input,work);}
@@ -43,7 +43,7 @@ export class MemberService {
    if(before.status!=='EFFECTIVE')throw new UnauthorizedException({code:'MEMBER_PERSON_DISABLED'});
    const after=await tx.person.update({where:{personId},data:{preferredName:input.name,email:input.email,mobile:input.phone}});
    await this.audit.write(tx,{actorType:'MEMBER',actorId:personId,action:'MEMBER_PROFILE_UPDATED',entityType:'Person',entityId:personId,beforeData:{name:before.preferredName,email:before.email,phone:before.mobile},afterData:{name:after.preferredName,email:after.email,phone:after.mobile},requestId,correlationId:randomUUID()});
-   return {name:after.preferredName??after.legalName,memberNo:after.personId,email:after.email,phone:after.mobile};
+   return {name:after.preferredName??after.legalName,alias:after.preferredName,memberNo:after.personId,email:after.email,phone:after.mobile,gender:after.genderCode,birthDate:after.birthDate?.toISOString().slice(0,10)??null,membershipState:after.membershipState,mobileVerifiedAt:after.mobileVerifiedAt?.toISOString()??null};
   });return result.value;
  }
  async markNotificationRead(personId:string,qualificationId:string,notificationId:string,key:string,requestId:string){

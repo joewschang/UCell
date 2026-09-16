@@ -8,9 +8,14 @@ export class QualificationView {
 }
 export class PersonView {
  @ApiProperty() name!:string;
+ @ApiProperty({type:String,nullable:true}) alias!:string|null;
  @ApiProperty({format:'uuid'}) memberNo!:string;
  @ApiProperty({type:String,nullable:true}) email!:string|null;
  @ApiProperty({type:String,nullable:true}) phone!:string|null;
+ @ApiProperty({type:String,nullable:true}) gender!:string|null;
+ @ApiProperty({type:String,format:'date',nullable:true}) birthDate!:string|null;
+ @ApiProperty({enum:['NETWORK_MEMBER','FORMAL_PENDING','FORMAL_MEMBER'],nullable:true,description:'Null means pre-V1.1 legacy state has not been classified; never inferred from Qualification.'}) membershipState!:string|null;
+ @ApiProperty({type:String,format:'date-time',nullable:true}) mobileVerifiedAt!:string|null;
 }
 export class PaginationView {
  @ApiProperty({example:100}) limit!:number;
