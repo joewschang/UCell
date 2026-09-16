@@ -77,7 +77,7 @@ async function binaryHarness(left = '1000', right = '1000', leftIn = '0', rightI
   ]);
   const sources = [source(), source('right', 'RIGHT')];
   sources[0].inputs.volume = left; sources[1].inputs.volume = right;
-  const awards: any[] = [], carries: any[] = [], lifecycle: any[] = [];
+  const awards: any[] = [], carries: any[] = [], lifecycle: any[] = [], evidence: any[] = [];
   const previous = {periodEnd: new Date('2019-12-25'), leftCarryOut: new Prisma.Decimal(leftIn), rightCarryOut: new Prisma.Decimal(rightIn)};
   const tx = {
     settlementBatch: {
@@ -98,12 +98,13 @@ async function binaryHarness(left = '1000', right = '1000', leftIn = '0', rightI
     },
     replayCarryProjection: {findFirst: jest.fn(async () => null)},
     bonusAward: {create: jest.fn(async ({data}: any) => {const award = {...data, bonusAwardId: `binary-${awards.length}`}; awards.push(award); return award;})},
+    bonusCalculationEvidence: {create: jest.fn(async ({data}: any) => {evidence.push(data); return data;})},
     bonusAwardLifecycleEvent: {createMany: jest.fn(async ({data}: any) => {lifecycle.push(...data); return {count: data.length};})},
   };
   const prisma = {$transaction: jest.fn(async (work: any) => work(tx))};
   const query = new BonusQueryService(prisma as any);
   const service = new BinaryBonusService(prisma as any, {} as any, query, {captureForPeriod: async () => snapshot} as any);
-  return {service, tx, sources, awards, carries, lifecycle, previous, start, end};
+  return {service, tx, sources, awards, carries, lifecycle, evidence, previous, start, end};
 }
 
 async function referralHarness(g1Plan = 'STARTER', uplinePlan = 'STARTER', g1Active = true) {
@@ -322,7 +323,24 @@ describe('Bonus Engine v0.4.0', () => {
         expect(h.awards[0].kFactor.toString()).toBe(expectedK);
       }
     });
-    it.todo('inactive recipient produces no Binary award');
+    it('inactive recipient produces zero-entitlement evidence without a Binary award', async () => {
+      const h = await binaryHarness('3000', '1000');
+      h.tx.activePeriod.findFirst.mockImplementation(async () => null as any);
+      const batch = await h.service.settleBinary(h.start, h.end, 'TEST_ONLY');
+      expect(h.carries).toHaveLength(1);
+      expect(h.carries[0].pairedPv.toString()).toBe('1000');
+      expect(h.awards).toEqual([]);
+      expect(h.lifecycle).toEqual([]);
+      expect(h.evidence).toHaveLength(1);
+      expect(h.evidence[0]).toEqual(expect.objectContaining({
+        settlementBatchId:'binary',evidenceType:'BINARY_ELIGIBILITY',
+        recipientQualificationId:'root',reasonCode:'INACTIVE',ruleVersionCode:'TEST_ONLY'
+      }));
+      expect(h.evidence[0].theoreticalAmount.toString()).toBe('120');
+      expect(h.evidence[0].entitlementAmount.toString()).toBe('0');
+      expect(batch.totalTheory.toString()).toBe('0');
+      expect(h.tx.bonusAward.create).not.toHaveBeenCalled();
+    });
   });
 
   describe('Matching', () => {

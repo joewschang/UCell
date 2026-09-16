@@ -98,11 +98,13 @@ export class BinaryBonusService {
           }
         });
 
-        const theory=active?paired.mul(pairRate):new Prisma.Decimal(0);
+        const theoreticalAmount=paired.mul(pairRate);
+        const theory=active?theoreticalAmount:new Prisma.Decimal(0);
         {
           theoryRows.push({
             recipientQualificationId:q.qualificationId,
             theoryAmount:theory,
+            theoreticalAmount,
             activeSnapshot:active,
             planLevelSnapshot:planLevelCode,
             occurredAt:periodEnd,
@@ -124,6 +126,16 @@ export class BinaryBonusService {
         : new Prisma.Decimal(1);
 
       for(const row of theoryRows){
+        if(!row.activeSnapshot){
+          await tx.bonusCalculationEvidence.create({data:{
+            settlementBatchId:batch.settlementBatchId,evidenceType:'BINARY_ELIGIBILITY',
+            recipientQualificationId:row.recipientQualificationId,reasonCode:'INACTIVE',
+            theoreticalAmount:row.theoreticalAmount,entitlementAmount:new Prisma.Decimal(0),
+            ruleVersionCode,parameterSnapshotHash:parameterSnapshot.hash,occurredAt:periodEnd,
+            calculationDetail:row.calculationDetail
+          }});
+          continue;
+        }
         const award=await tx.bonusAward.create({
           data:{
             settlementBatchId:batch.settlementBatchId,

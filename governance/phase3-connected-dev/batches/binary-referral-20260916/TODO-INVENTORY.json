@@ -1,320 +1,372 @@
 {
+  "decisionRegisterRecordVersion": 2,
   "originalBaseline": 148,
-  "currentExecutableTodo": 52,
-  "netPlaceholderReduction": 96,
-  "audit": "Previous 52 TODO claim invalidated: missing cases and unrelated/constant assertions restored. Net reduction alone is not Release approval.",
+  "currentExecutableTodo": 51,
+  "netPlaceholderReduction": 97,
+  "counts": {
+    "IMPLEMENTABLE": 17,
+    "ENGINEERING": 28,
+    "PENDING_DECISION": 3,
+    "LEGACY_TEST_DRIFT": 3
+  },
+  "audit": "Classification aligns the executable TODO baseline to SA Decision Register v2. Pending decisions remain fail-closed and no classification counts as implementation completion.",
   "items": [
     {
       "file": "backend/apps/api/test/bonus-engine-v04.e2e-spec.ts",
-      "line": 325,
-      "case": "inactive recipient produces no Binary award",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
-    },
-    {
-      "file": "backend/apps/api/test/bonus-engine-v04.e2e-spec.ts",
-      "line": 338,
+      "line": 356,
       "case": "Sponsor Tree is used to trace matching uplines",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
+      "classification": "IMPLEMENTABLE",
+      "reason": "Decision Register v2 and Core Logic Addendum v2 provide the governing rule; implementation and evidence remain."
     },
     {
       "file": "backend/apps/api/test/epv-global-v05.e2e-spec.ts",
       "line": 22,
       "case": "non-REPURCHASE order does not create EPV",
-      "classification": "Pending Decision: eligible scope / formal PV mapping"
+      "classification": "LEGACY_TEST_DRIFT",
+      "reason": "DEC-001 makes ConsumptionRecognitionEvent and eligible consideration authoritative; order purpose alone cannot decide eligibility."
     },
     {
       "file": "backend/apps/api/test/epv-global-v05.e2e-spec.ts",
       "line": 26,
       "case": "global pool is 5% of period GPV",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
+      "classification": "ENGINEERING",
+      "reason": "The governing behavior is already approved; remaining work is implementation or executable verification."
     },
     {
       "file": "backend/apps/api/test/epv-global-v05.e2e-spec.ts",
       "line": 27,
       "case": "weak thresholds are 300k/600k/1m/2m/4m",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
+      "classification": "ENGINEERING",
+      "reason": "The governing behavior is already approved; remaining work is implementation or executable verification."
     },
     {
       "file": "backend/apps/api/test/epv-global-v05.e2e-spec.ts",
       "line": 28,
       "case": "rank achievement never downgrades",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
+      "classification": "ENGINEERING",
+      "reason": "The governing behavior is already approved; remaining work is implementation or executable verification."
     },
     {
       "file": "backend/apps/api/test/epv-global-v05.e2e-spec.ts",
       "line": 29,
       "case": "monthly payout requires Active and current-month weak side threshold",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
+      "classification": "ENGINEERING",
+      "reason": "The governing behavior is already approved; remaining work is implementation or executable verification."
     },
     {
       "file": "backend/apps/api/test/epv-global-v05.e2e-spec.ts",
       "line": 30,
       "case": "passed levels are cumulative",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
+      "classification": "ENGINEERING",
+      "reason": "The governing behavior is already approved; remaining work is implementation or executable verification."
     },
     {
       "file": "backend/apps/api/test/epv-global-v05.e2e-spec.ts",
       "line": 31,
       "case": "empty rank slice rolls upward to next higher rank",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
+      "classification": "ENGINEERING",
+      "reason": "The governing behavior is already approved; remaining work is implementation or executable verification."
     },
     {
       "file": "backend/apps/api/test/epv-global-v05.e2e-spec.ts",
       "line": 32,
       "case": "welfare 2% is accrued only; no distribution without a formal rule",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
+      "classification": "ENGINEERING",
+      "reason": "The governing behavior is already approved; remaining work is implementation or executable verification."
     },
     {
       "file": "backend/apps/api/test/negative-flow-v05.e2e-spec.ts",
       "line": 10,
       "case": "partial return creates proportional negative GPV event",
-      "classification": "Pending Decision: eligible scope / formal PV mapping"
+      "classification": "PENDING_DECISION",
+      "reason": "Historical GPV to formal PV/BV mapping is not approved; only this historical conversion remains fail-closed."
     },
     {
       "file": "backend/apps/api/test/negative-flow-v05.e2e-spec.ts",
       "line": 13,
       "case": "PENDING_45D direct referral/equalization becomes REVERSED",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
+      "classification": "IMPLEMENTABLE",
+      "reason": "Decision Register v2 and Core Logic Addendum v2 provide the governing rule; implementation and evidence remain."
     },
     {
       "file": "backend/apps/api/test/negative-flow-v05.e2e-spec.ts",
       "line": 14,
       "case": "EFFECTIVE/PAYABLE/PAID direct award creates CLAWBACK and recovery ledger",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
+      "classification": "IMPLEMENTABLE",
+      "reason": "Decision Register v2 and Core Logic Addendum v2 provide the governing rule; implementation and evidence remain."
     },
     {
       "file": "backend/apps/api/test/negative-flow-v05.e2e-spec.ts",
       "line": 16,
       "case": "Binary and Matching create settlement recalculation requests instead of rewriting history",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
+      "classification": "IMPLEMENTABLE",
+      "reason": "Decision Register v2 and Core Logic Addendum v2 provide the governing rule; implementation and evidence remain."
     },
     {
       "file": "backend/apps/api/test/negative-flow-v05.e2e-spec.ts",
       "line": 21,
       "case": "EFFECTIVE awards become PAYABLE via payout batch",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
+      "classification": "ENGINEERING",
+      "reason": "The governing behavior is already approved; remaining work is implementation or executable verification."
     },
     {
       "file": "backend/apps/api/test/negative-flow-v05.e2e-spec.ts",
       "line": 24,
       "case": "mark-paid writes PAID lifecycle events",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
+      "classification": "ENGINEERING",
+      "reason": "The governing behavior is already approved; remaining work is implementation or executable verification."
     },
     {
       "file": "backend/apps/api/test/qualification-isolation.e2e-spec.ts",
       "line": 21,
       "case": "member share link is bound to selected qualification",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
+      "classification": "ENGINEERING",
+      "reason": "The governing behavior is already approved; remaining work is implementation or executable verification."
     },
     {
       "file": "backend/apps/api/test/v060-adjustment-lifecycle.e2e-spec.ts",
       "line": 40,
       "case": "upgrade has no retroactive bonus effect",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
+      "classification": "ENGINEERING",
+      "reason": "The governing behavior is already approved; remaining work is implementation or executable verification."
     },
     {
       "file": "backend/apps/api/test/v060-adjustment-lifecycle.e2e-spec.ts",
       "line": 41,
       "case": "transfer preserves qualificationId and tree positions",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
+      "classification": "ENGINEERING",
+      "reason": "The governing behavior is already approved; remaining work is implementation or executable verification."
     },
     {
       "file": "backend/apps/api/test/v060-adjustment-lifecycle.e2e-spec.ts",
       "line": 42,
       "case": "exit preserves qualification for company-held re-transfer",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
+      "classification": "ENGINEERING",
+      "reason": "The governing behavior is already approved; remaining work is implementation or executable verification."
     },
     {
       "file": "backend/apps/api/test/v061-replay.e2e-spec.ts",
       "line": 47,
       "case": "upgrade creates future plan history and does not alter past awards",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
+      "classification": "ENGINEERING",
+      "reason": "The governing behavior is already approved; remaining work is implementation or executable verification."
     },
     {
       "file": "backend/apps/api/test/v061-replay.e2e-spec.ts",
       "line": 48,
       "case": "transfer preserves qualificationId and sponsor/binary positions",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
+      "classification": "ENGINEERING",
+      "reason": "The governing behavior is already approved; remaining work is implementation or executable verification."
     },
     {
       "file": "backend/apps/api/test/v061-replay.e2e-spec.ts",
       "line": 49,
       "case": "exit closes holder interval and status becomes EXITED",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
+      "classification": "ENGINEERING",
+      "reason": "The governing behavior is already approved; remaining work is implementation or executable verification."
     },
     {
       "file": "backend/apps/api/test/v061-replay.e2e-spec.ts",
       "line": 50,
       "case": "company retransfer opens a new holder interval",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
+      "classification": "ENGINEERING",
+      "reason": "The governing behavior is already approved; remaining work is implementation or executable verification."
     },
     {
       "file": "backend/apps/api/test/v062-carry-chain.e2e-spec.ts",
       "line": 21,
       "case": "return discovers every Binary ancestor impacted by descendant GPV",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
+      "classification": "IMPLEMENTABLE",
+      "reason": "Decision Register v2 and Core Logic Addendum v2 provide the governing rule; implementation and evidence remain."
     },
     {
       "file": "backend/apps/api/test/v062-carry-chain.e2e-spec.ts",
       "line": 22,
       "case": "period replay recomputes all Binary payable amounts when K1 changes",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
+      "classification": "IMPLEMENTABLE",
+      "reason": "Decision Register v2 and Core Logic Addendum v2 provide the governing rule; implementation and evidence remain."
     },
     {
       "file": "backend/apps/api/test/v062-carry-chain.e2e-spec.ts",
       "line": 23,
       "case": "period replay recomputes all Matching payable amounts when K2 changes",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
+      "classification": "IMPLEMENTABLE",
+      "reason": "Decision Register v2 and Core Logic Addendum v2 provide the governing rule; implementation and evidence remain."
     },
     {
       "file": "backend/apps/api/test/v062-carry-chain.e2e-spec.ts",
       "line": 31,
       "case": "propagation stops when left/right carry match original snapshots",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
+      "classification": "IMPLEMENTABLE",
+      "reason": "Decision Register v2 and Core Logic Addendum v2 provide the governing rule; implementation and evidence remain."
     },
     {
       "file": "backend/apps/api/test/v062-carry-chain.e2e-spec.ts",
       "line": 32,
       "case": "propagation respects maxWeeks safety horizon",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
+      "classification": "IMPLEMENTABLE",
+      "reason": "Decision Register v2 and Core Logic Addendum v2 provide the governing rule; implementation and evidence remain."
     },
     {
       "file": "backend/apps/api/test/v062-carry-chain.e2e-spec.ts",
       "line": 33,
       "case": "each replay period is append-only and replay run is resumable",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
+      "classification": "IMPLEMENTABLE",
+      "reason": "Decision Register v2 and Core Logic Addendum v2 provide the governing rule; implementation and evidence remain."
     },
     {
       "file": "backend/apps/api/test/v062-carry-chain.e2e-spec.ts",
       "line": 34,
       "case": "positive deltas post compensating awards and negative deltas post recovery",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
+      "classification": "IMPLEMENTABLE",
+      "reason": "Decision Register v2 and Core Logic Addendum v2 provide the governing rule; implementation and evidence remain."
     },
     {
       "file": "backend/apps/api/test/v062-carry-chain.e2e-spec.ts",
       "line": 43,
       "case": "migration 0005 references subscription.subscription, not commerce.subscription",
-      "classification": "Legacy Test Drift: cancellation table moved to canonical subscription schema in 0006; retained pending coverage"
+      "classification": "LEGACY_TEST_DRIFT",
+      "reason": "The assertion names a superseded schema/event boundary and must be rewritten against the canonical model."
     },
     {
       "file": "backend/apps/api/test/v063-golden-path.e2e-spec.ts",
       "line": 45,
       "case": "Taiwan local time maps to configured settlement week",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
+      "classification": "IMPLEMENTABLE",
+      "reason": "Decision Register v2 and Core Logic Addendum v2 provide the governing rule; implementation and evidence remain."
     },
     {
       "file": "backend/apps/api/test/v064-golden-dataset.e2e-spec.ts",
       "line": 25,
       "case": "keeps Sponsor and Binary trees distinct",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
+      "classification": "IMPLEMENTABLE",
+      "reason": "Decision Register v2 and Core Logic Addendum v2 provide the governing rule; implementation and evidence remain."
     },
     {
       "file": "backend/apps/api/test/v064-golden-dataset.e2e-spec.ts",
       "line": 26,
       "case": "validates Referral 15/20/25",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
+      "classification": "ENGINEERING",
+      "reason": "The governing behavior is already approved; remaining work is implementation or executable verification."
     },
     {
       "file": "backend/apps/api/test/v064-golden-dataset.e2e-spec.ts",
       "line": 27,
       "case": "validates Equalization including Leader G5=10%",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
+      "classification": "ENGINEERING",
+      "reason": "The governing behavior is already approved; remaining work is implementation or executable verification."
     },
     {
       "file": "backend/apps/api/test/v064-golden-dataset.e2e-spec.ts",
       "line": 28,
       "case": "validates Active First and no compression",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
+      "classification": "IMPLEMENTABLE",
+      "reason": "Decision Register v2 and Core Logic Addendum v2 provide the governing rule; implementation and evidence remain."
     },
     {
       "file": "backend/apps/api/test/v064-golden-dataset.e2e-spec.ts",
       "line": 29,
       "case": "validates Binary Carry and K1",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
+      "classification": "IMPLEMENTABLE",
+      "reason": "Decision Register v2 and Core Logic Addendum v2 provide the governing rule; implementation and evidence remain."
     },
     {
       "file": "backend/apps/api/test/v064-golden-dataset.e2e-spec.ts",
       "line": 30,
       "case": "validates Matching source=Binary Paid after K1",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
+      "classification": "IMPLEMENTABLE",
+      "reason": "Decision Register v2 and Core Logic Addendum v2 provide the governing rule; implementation and evidence remain."
     },
     {
       "file": "backend/apps/api/test/v064-golden-dataset.e2e-spec.ts",
       "line": 31,
       "case": "validates RPV 5/8/12 on Binary Tree",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
+      "classification": "ENGINEERING",
+      "reason": "The governing behavior is already approved; remaining work is implementation or executable verification."
     },
     {
       "file": "backend/apps/api/test/v064-golden-dataset.e2e-spec.ts",
       "line": 32,
       "case": "validates EPV on Sponsor Tree",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
+      "classification": "ENGINEERING",
+      "reason": "The governing behavior is already approved; remaining work is implementation or executable verification."
     },
     {
       "file": "backend/apps/api/test/v064-golden-dataset.e2e-spec.ts",
       "line": 33,
       "case": "validates refund -> replay -> recovery -> payout",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
+      "classification": "IMPLEMENTABLE",
+      "reason": "Decision Register v2 and Core Logic Addendum v2 provide the governing rule; implementation and evidence remain."
     },
     {
       "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
       "line": 128,
       "case": "QUARTER creates exactly 3 recognition rows",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
+      "classification": "ENGINEERING",
+      "reason": "The governing behavior is already approved; remaining work is implementation or executable verification."
     },
     {
       "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
       "line": 129,
       "case": "HALF_YEAR creates exactly 6 recognition rows",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
+      "classification": "ENGINEERING",
+      "reason": "The governing behavior is already approved; remaining work is implementation or executable verification."
     },
     {
       "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
       "line": 130,
       "case": "YEAR creates exactly 12 recognition rows",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
+      "classification": "ENGINEERING",
+      "reason": "The governing behavior is already approved; remaining work is implementation or executable verification."
     },
     {
       "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
       "line": 136,
       "case": "0 direct unlocks 5 binary generations",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
+      "classification": "ENGINEERING",
+      "reason": "The governing behavior is already approved; remaining work is implementation or executable verification."
     },
     {
       "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
       "line": 137,
       "case": "1 direct unlocks 8 binary generations",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
+      "classification": "ENGINEERING",
+      "reason": "The governing behavior is already approved; remaining work is implementation or executable verification."
     },
     {
       "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
       "line": 138,
       "case": "2+ directs unlocks 12 binary generations",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
+      "classification": "ENGINEERING",
+      "reason": "The governing behavior is already approved; remaining work is implementation or executable verification."
     },
     {
       "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
       "line": 139,
       "case": "inactive upline receives 0 and is not compressed",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
+      "classification": "PENDING_DECISION",
+      "reason": "Matching inactive-sponsor skip/stop/compression behavior remains explicitly pending."
     },
     {
       "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
       "line": 140,
       "case": "higher generation remains independently evaluated",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
+      "classification": "PENDING_DECISION",
+      "reason": "Matching inactive-sponsor skip/stop/compression behavior remains explicitly pending."
     },
     {
       "file": "backend/apps/api/test/vertical-slice.e2e-spec.ts",
       "line": 143,
       "case": "worker converts SALE_CONFIRMED to GPV_CREATED per order line",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
+      "classification": "LEGACY_TEST_DRIFT",
+      "reason": "The assertion names a superseded schema/event boundary and must be rewritten against the canonical model."
     },
     {
       "file": "backend/apps/api/test/vertical-slice.e2e-spec.ts",
       "line": 144,
       "case": "reprocessing same outbox event does not duplicate GPV",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
+      "classification": "ENGINEERING",
+      "reason": "The governing behavior is already approved; remaining work is implementation or executable verification."
     }
   ]
 }

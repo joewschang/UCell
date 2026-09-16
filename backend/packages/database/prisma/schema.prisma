@@ -745,10 +745,33 @@ model SettlementBatch {
   finalizedAt       DateTime?        @map("finalized_at") @db.Timestamptz(6)
 
   awards BonusAward[]
+  calculationEvidence BonusCalculationEvidence[]
 
   @@unique([settlementType, periodStart, periodEnd, ruleVersionCode])
   @@index([settlementType, status, periodEnd])
   @@map("settlement_batch")
+  @@schema("ledger")
+}
+
+model BonusCalculationEvidence {
+  bonusCalculationEvidenceId String   @id @default(uuid()) @map("bonus_calculation_evidence_id") @db.Uuid
+  settlementBatchId         String   @map("settlement_batch_id") @db.Uuid
+  evidenceType              String   @map("evidence_type")
+  recipientQualificationId  String   @map("recipient_qualification_id") @db.Uuid
+  reasonCode                String   @map("reason_code")
+  theoreticalAmount         Decimal  @map("theoretical_amount") @db.Decimal(18,4)
+  entitlementAmount         Decimal  @default(0) @map("entitlement_amount") @db.Decimal(18,4)
+  ruleVersionCode           String   @map("rule_version_code")
+  parameterSnapshotHash     String?  @map("parameter_snapshot_hash")
+  occurredAt                DateTime @map("occurred_at") @db.Timestamptz(6)
+  calculationDetail         Json     @map("calculation_detail")
+  createdAt                 DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  settlementBatch SettlementBatch @relation(fields:[settlementBatchId], references:[settlementBatchId])
+
+  @@unique([settlementBatchId, evidenceType, recipientQualificationId])
+  @@index([recipientQualificationId, evidenceType, occurredAt])
+  @@map("bonus_calculation_evidence")
   @@schema("ledger")
 }
 

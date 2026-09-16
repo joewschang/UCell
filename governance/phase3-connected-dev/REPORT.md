@@ -6,6 +6,14 @@ Backend TODO remains 52: these are additional integration tests, not placeholder
 
 ---
 
+# Core Logic Alignment / Binary zero-entitlement evidence — 2026-09-16
+
+SA Decision Register v2 and `R1_0B_CORE_LOGIC_ADDENDUM_v2.md` were traced against the current 52 executable TODO baseline. The regenerated inventory classifies every case with the required vocabulary: 17 IMPLEMENTABLE, 28 ENGINEERING, 3 PENDING_DECISION and 3 LEGACY_TEST_DRIFT after this batch converted one TODO. Classification is not completion evidence.
+
+DEC-003 is now implemented for Binary settlement. An inactive historical Qualification retains its qualification-scoped carry and receives an append-only `BonusCalculationEvidence` row with `reasonCode=INACTIVE`, theoretical amount and zero entitlement. It creates no `BonusAward`, lifecycle event or payable ledger entry. Sealed settlement replay evidence includes the zero-entitlement row, so audit/replay can explain the missing monetary award without polluting payable records. Forward-only migration `20260916120000_binary_zero_entitlement_evidence` adds the guarded evidence table; existing monetary rows are untouched.
+
+Verification: Prisma validate/generate/deploy PASS; fresh DB migration and Golden journey PASS twice; replay DB 132 assertions PASS including schema convergence, append-only rejection and sealed inactive evidence; API 17 suites / 131 PASS / 51 TODO; Backend and Worker builds PASS; Admin build and 22 tests PASS; Member build and 116 tests PASS; cross-end DB/HTTP 59, Member identity 278, membership 98, RPV concurrency 20 PASS; static/schema/migration/security policy preflights PASS. Formal Security E2E, formal LINE/LIFF and Entra credentials, UAT, production calendar values, historical GPV→PV/BV mapping and Matching inactive traversal policy remain BLOCKED/PENDING. Production Promotion remains BLOCKED.
+
 # Backend Binary / Referral TODO continuation — 2026-09-16
 
 Pre-change checkpoint 40ec4f9; branch integration/member-backend-mvp. This batch converts 17 original Bonus Engine TODOs through actual service calculation/query/write assertions: six Binary, ten Referral/Equalization and one initial lifecycle case. Following the earlier three-case Matching batch, the shared working tree now has 52 TODO (69 → 52). One prior v064 conversion remains concurrent uncommitted work; do not interpret this shared-working-tree count as clean-checkout release certification.

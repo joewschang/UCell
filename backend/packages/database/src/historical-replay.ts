@@ -206,6 +206,7 @@ export async function sealRpvEvent(tx:Prisma.TransactionClient,event:any,schedul
 export async function sealSettlement(tx:Prisma.TransactionClient,batch:any) {
   const parameters=verifySnapshot(batch.parameterSnapshot);
   const awards=await tx.bonusAward.findMany({where:{settlementBatchId:batch.settlementBatchId},orderBy:{bonusAwardId:'asc'}});
+  const eligibilityEvidence=await tx.bonusCalculationEvidence.findMany({where:{settlementBatchId:batch.settlementBatchId},orderBy:{bonusCalculationEvidenceId:'asc'}});
   const recipients:HistoricalRecipient[]=[];
   for(const award of awards) recipients.push(await recipientFromAward(tx,award));
   const matchingSources:any[]=[];
@@ -237,7 +238,7 @@ export async function sealSettlement(tx:Prisma.TransactionClient,batch:any) {
     carryRecipients.push({...json(carry) as object,qualification,active});
   }
   return storeReplaySnapshot(tx,{format:'UCELL_HISTORICAL_REPLAY_V1',kind:batch.settlementType,sourceId:batch.settlementBatchId,at:batch.periodEnd.toISOString(),ruleVersionCode:batch.ruleVersionCode,parameters,recipients,
-    evidence:{sources,carryRecipients,matchingSources},inputs:{periodStart:batch.periodStart.toISOString(),periodEnd:batch.periodEnd.toISOString(),totalGpv:batch.totalGpv.toString(),k:batch.kFactor.toString()}});
+    evidence:{sources,carryRecipients,matchingSources,eligibilityEvidence:json(eligibilityEvidence)},inputs:{periodStart:batch.periodStart.toISOString(),periodEnd:batch.periodEnd.toISOString(),totalGpv:batch.totalGpv.toString(),k:batch.kFactor.toString()}});
 }
 
 export function historicalMonthlyEntitlements(events:ReplayEnvelope[],remaining:Map<string,Prisma.Decimal>) {
