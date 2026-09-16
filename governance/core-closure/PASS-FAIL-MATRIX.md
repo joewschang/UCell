@@ -4,7 +4,7 @@
 |---|---|---|
 | Database package build | PASS | `pnpm --filter @ucell/database build` |
 | Backend API build | PASS | `pnpm --filter @ucell/api build` |
-| Backend API Jest | PASS | 182 PASS / 5 TODO / 0 FAIL |
+| Backend API Jest | PASS | 184 PASS / 3 TODO / 0 FAIL |
 | Member build/tests | PASS | 116 tests |
 | Admin build/tests | PASS | 22 tests |
 | Worker build | PASS | TypeScript build |
@@ -14,6 +14,7 @@
 | Frozen bonus Golden cases | PASS | Referral 15/20/25, Leader G5=10%, RPV 5/8/12, historical EPV Sponsor allocation |
 | Qualification workflows | PASS | Future upgrade, transfer, company-held exit/retransfer; stable Qualification and placement graph |
 | Payout lifecycle | PASS | EFFECTIVE materialization, PAID append, allocated entry transition, immutable Award; isolated DB evidence |
+| Canonical recognition boundary | PASS | No eligible ConsumptionRecognition means no EPV accumulator input; PaymentConfirmed creates no volume ledger itself. |
 | Qualification-bound member share link | PASS | Encrypted Backend token; selected temporal holder only; foreign Qualification denied; configured key/base/TTL fail closed. |
 | SALE outbox redelivery idempotency | PASS | Real PostgreSQL, production Worker handler and lease executed twice; one GPV row and one historical snapshot. |
 | Matching Sponsor traversal | PASS | Live settlement calls `sponsorAncestors`; five historical Sponsor recipients asserted |

@@ -33,6 +33,7 @@ function fixture() {
       update: jest.fn(async ({data}: any) => { order = {...order, ...data}; return order; }),
     },
     paymentEvent: { create: jest.fn(async ({data}: any) => ({paymentEventId: 'payment', ...data})) },
+    pvLedger: { create: jest.fn(), upsert: jest.fn() },
     outboxEvent: { create: jest.fn(async ({data}: any) => ({outboxEventId: 'outbox', ...data})) },
   };
   const prisma = {idempotencyRecord: tx.idempotencyRecord, $transaction: jest.fn(async (work: any, _options: any) => work(tx))};
@@ -142,7 +143,7 @@ describe('UCell first vertical slice', () => {
     await f.orders.confirmPayment('order', payment, 'payment-key', 'retry');
     expect(f.tx.outboxEvent.create).toHaveBeenCalledTimes(1);
   });
-  it.todo('worker converts SALE_CONFIRMED to GPV_CREATED per order line');
+  it('payment confirmation does not itself create VolumeRecognition',async()=>{const f=fixture();await f.orders.confirmPayment('order',payment,'recognition-boundary','request');expect(f.tx.paymentEvent.create).toHaveBeenCalledTimes(1);expect(f.tx.outboxEvent.create).toHaveBeenCalledTimes(1);expect(f.tx.pvLedger.create).not.toHaveBeenCalled();expect(f.tx.pvLedger.upsert).not.toHaveBeenCalled();});
   it('reprocessing same outbox event does not duplicate GPV',async()=>{
     const db=new PrismaService();
     try{

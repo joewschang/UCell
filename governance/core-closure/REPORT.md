@@ -1,5 +1,12 @@
 # Core Closure checkpoint report
 
+## Legacy test drift closure continuation
+
+- TODO: 5 -> 3 (`LEGACY_TEST_DRIFT` 2 -> 0; only Pending Decision cases remain).
+- The EPV exclusion test now uses the canonical ConsumptionRecognition boundary: an order with no eligible recognition event is absent from the monthly accumulator.
+- The former SALE_CONFIRMED-to-GPV assertion now executes `OrderService.confirmPayment` and verifies PaymentConfirmed writes payment/outbox evidence but no VolumeRecognition ledger. It does not infer the unresolved historical GPV-to-PV/BV mapping.
+- Backend API: 184 PASS / 3 TODO / 0 FAIL.
+
 ## Engineering TODO closure continuation
 
 - TODO: 7 -> 5 (`ENGINEERING` 2 -> 0; pending classifications unchanged).

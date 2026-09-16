@@ -31,15 +31,14 @@ This checkpoint validates the deployed isolated Azure Stage and the source revis
 | Member tests | PASS | 116 passed. |
 | Prisma validate | PASS | Schema valid with explicit isolated local `DATABASE_URL`. |
 | Prisma migrate deploy | PASS | 25 migrations found; no pending migrations. |
-| Backend tests | PASS WITH TODO | 182 passed, 5 TODO, 0 failed. |
-| TODO release gate | BLOCKED | Correctly rejected the 5 unresolved executable TODOs. |
+| Backend tests | PASS WITH TODO | 184 passed, 3 TODO, 0 failed. |
+| TODO release gate | BLOCKED | Correctly rejected the 3 unresolved executable TODOs, all Pending Decision. |
 
 The first Backend attempt was environment-blocked because local PostgreSQL was not running (`P1001`). After starting the repository PostgreSQL 16 container and using the isolated `ucell_admin_test` database, all executable assertions passed. The failed environment attempt is not counted as a code regression or as a PASS.
 
 ## Remaining release obligations
 
-- No IMPLEMENTABLE or ENGINEERING TODO remains.
-- Two LEGACY_TEST_DRIFT cases: eligible-consumption boundary and canonical volume-recognition event.
+- No IMPLEMENTABLE, ENGINEERING or LEGACY_TEST_DRIFT TODO remains.
 - Three PENDING_DECISION cases remain fail-closed: historical GPV-to-PV/BV mapping and two inactive Matching traversal semantics.
 - Formal LINE/LIFF, Entra/RBAC, Security E2E, UAT, backup/restore drill, shadow settlement, approved Production calendar values and manual Go/No-Go remain BLOCKED.
 

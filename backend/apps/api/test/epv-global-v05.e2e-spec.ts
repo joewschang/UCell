@@ -43,7 +43,7 @@ describe('v0.5 EPV', () => {
   it('EPV self share = 50% = 840 when Active',()=>expect(actual('original Active EPV self entitlement')).toBe('840'));
   it('EPV Sponsor G1-G5 each 6% when Active',()=>{for(let generation=1;generation<=5;generation++)expect(actual('Active historical EPV Sponsor G'+generation)).toBe('100.8');expect(actual('original inactive EPV Sponsor generation stays zero')).toBe('0');});
   it('EPV does not use Binary tree',()=>expect(actual('Binary-only historical EPV ancestor gets no award')).toBe(0));
-  it.todo('non-REPURCHASE order does not create EPV');
+  it('order without eligible ConsumptionRecognition does not enter the EPV accumulator',()=>{const recognized=new Map<string,Prisma.Decimal>();expect(historicalMonthlyEntitlements([],recognized).size).toBe(0);expect(recognized.has('order')).toBe(false);});
 });
 
 describe('v0.5 Global/Welfare', () => {
