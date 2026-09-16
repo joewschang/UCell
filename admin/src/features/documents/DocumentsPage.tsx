@@ -1,3 +1,4 @@
+import {AdminTable} from '../../components/AdminTable';
 import {useState} from 'react';
 import {command,get,qs} from '../../lib/api';
 import {Card,ErrorBox,Field,PageHeader,Badge} from '../../components/ui';
@@ -59,6 +60,6 @@ export function DocumentsPage(){
         <button className="primary" disabled={busy||!entityId||!fileName||sha256.length!==64||!objectKey} onClick={save}>登錄不可變文件Metadata</button>
       </div></Card>
     </div>
-    <Card title="版本紀錄"><div className="table-wrap"><table><thead><tr><th>Type</th><th>Version</th><th>Status</th><th>File</th><th>Storage</th><th>SHA-256</th><th>Uploaded</th></tr></thead><tbody>{rows.map(x=><tr key={x.documentAttachmentId}><td>{x.documentType}</td><td>v{x.versionNo}</td><td><Badge tone={x.status==='ACTIVE'?'ok':'neutral'}>{x.status}</Badge></td><td>{x.originalFileName}</td><td>{x.storageProvider}<br/><span className="mono">{x.objectKey}</span></td><td className="mono">{x.sha256}</td><td>{dateTime(x.uploadedAt)}</td></tr>)}</tbody></table></div></Card>
+    <Card title="版本紀錄"><div className="table-wrap"><AdminTable><thead><tr><th>Type</th><th>Version</th><th>Status</th><th>File</th><th>Storage</th><th>SHA-256</th><th>Uploaded</th></tr></thead><tbody>{rows.map(x=><tr key={x.documentAttachmentId}><td>{x.documentType}</td><td>v{x.versionNo}</td><td><Badge tone={x.status==='ACTIVE'?'ok':'neutral'}>{x.status}</Badge></td><td>{x.originalFileName}</td><td>{x.storageProvider}<br/><span className="mono">{x.objectKey}</span></td><td className="mono">{x.sha256}</td><td>{dateTime(x.uploadedAt)}</td></tr>)}</tbody></AdminTable></div></Card>
   </>
 }

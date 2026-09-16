@@ -1,3 +1,5 @@
+import {ConfirmAction} from '../../components/ConfirmAction';
+import {AdminTable} from '../../components/AdminTable';
 import {useQuery,useQueryClient} from '@tanstack/react-query';
 import {useEffect,useRef,useState} from 'react';
 import {QueryFeedback} from '../../components/QueryFeedback';
@@ -81,9 +83,9 @@ export function ReturnsPage(){
     <Card title={`Return Queue (${rows.length})`}>{rows.map((x:any)=><button key={x.returnCaseId} className={`list-row ${selected===x.returnCaseId?'selected':''}`} onClick={()=>setSelected(x.returnCaseId)}><strong>{x.order?.qualification?.currentHolder?.legalName??'—'} · {money(x.returnSummary?.totalAmount)}</strong><span>{x.status} · {x.reasonCode}</span><small>{dateTime(x.occurredAt)} · Recovery outstanding {money(x.recoverySummary?.outstanding)}</small></button>)}</Card>
     <Card title="Return Detail">{!d?<p className="muted">選擇Return Case。</p>:<>
       <dl className="detail-grid"><dt>Return ID</dt><dd className="mono">{d.returnCase.returnCaseId}</dd><dt>Order</dt><dd className="mono">{d.returnCase.orderId}</dd><dt>會員</dt><dd>{d.returnCase.order?.qualification?.currentHolder?.legalName}</dd><dt>Reason</dt><dd>{d.returnCase.reasonCode}</dd><dt>Occurred</dt><dd>{dateTime(d.returnCase.occurredAt)}</dd><dt>GPV Reversal Events</dt><dd>{d.reversals?.length??0}</dd><dt>Recovery Events</dt><dd>{d.recoveries?.length??0}</dd><dt>Replay</dt><dd>{d.replay?.status??'尚未執行'}</dd></dl>
-      <div className="button-row sticky-actions"><button disabled={busy} onClick={()=>act('reverse')}>Process Reversal</button><button className="primary" disabled={busy} onClick={()=>act('replay')}>Carry-chain Replay</button></div>
-      <h3>Recovery</h3><div className="table-wrap"><table><thead><tr><th>Award</th><th>Status</th><th>Recovery</th><th>Recovered</th><th>Outstanding</th></tr></thead><tbody>{(d.recoveries??[]).map((r:any)=><tr key={r.bonusRecoveryEventId}><td>{r.bonusAward?.awardType} · {r.bonusAward?.recipient?.currentHolder?.legalName}</td><td>{r.status}</td><td>{money(r.recoveryAmount)}</td><td>{money(r.recoveredAmount)}</td><td>{money(r.outstandingAmount)}</td></tr>)}</tbody></table></div>
-      <h3>Replay Periods</h3><div className="table-wrap"><table><thead><tr><th>#</th><th>Period</th><th>K1</th><th>K2</th></tr></thead><tbody>{(d.replay?.periods??[]).map((x:any)=><tr key={x.settlementReplayPeriodId}><td>{x.periodNo}</td><td>{dateTime(x.periodEnd)}</td><td>{x.originalK1} → {x.recomputedK1}</td><td>{x.originalK2??'—'} → {x.recomputedK2??'—'}</td></tr>)}</tbody></table></div>
+      <div className="button-row sticky-actions"><ConfirmAction disabled={busy} onConfirm={()=>act('reverse')}>Process Reversal</ConfirmAction><ConfirmAction className="primary" disabled={busy} onConfirm={()=>act('replay')}>Carry-chain Replay</ConfirmAction></div>
+      <h3>Recovery</h3><div className="table-wrap"><AdminTable><thead><tr><th>Award</th><th>Status</th><th>Recovery</th><th>Recovered</th><th>Outstanding</th></tr></thead><tbody>{(d.recoveries??[]).map((r:any)=><tr key={r.bonusRecoveryEventId}><td>{r.bonusAward?.awardType} · {r.bonusAward?.recipient?.currentHolder?.legalName}</td><td>{r.status}</td><td>{money(r.recoveryAmount)}</td><td>{money(r.recoveredAmount)}</td><td>{money(r.outstandingAmount)}</td></tr>)}</tbody></AdminTable></div>
+      <h3>Replay Periods</h3><div className="table-wrap"><AdminTable><thead><tr><th>#</th><th>Period</th><th>K1</th><th>K2</th></tr></thead><tbody>{(d.replay?.periods??[]).map((x:any)=><tr key={x.settlementReplayPeriodId}><td>{x.periodNo}</td><td>{dateTime(x.periodEnd)}</td><td>{x.originalK1} → {x.recomputedK1}</td><td>{x.originalK2??'—'} → {x.recomputedK2??'—'}</td></tr>)}</tbody></AdminTable></div>
     </>}</Card>
   </div></>
 }

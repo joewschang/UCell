@@ -1,3 +1,5 @@
+import {MemberPageHeader} from './MemberPageHeader';
+import {ErrorState,EmptyState,LoadingState} from '@ucell/design-system';
 import {useRef,useState} from 'react';
 import {Link} from 'react-router-dom';
 import type {Qualification} from './api';
@@ -5,8 +7,8 @@ import {getProducts,createConnectedOrder,getConnectedOrder,type ConnectedOrder} 
 import {useResource} from './useResource';
 export function ConnectedOrderDetails({q,id}:{q:Qualification;id:string}){
  const state=useResource(`order:${q.id}:${id}`,s=>getConnectedOrder(q,id,s));
- if(state.error)return <section role="alert" className="card"><p>{state.error}</p><button onClick={state.retry}>重新載入訂單</button></section>;
- if(!state.data)return <p role="status">訂單載入中…</p>;
+ if(state.error)return <ErrorState message={state.error} retry={state.retry}/>;
+ if(!state.data)return <LoadingState label="訂單載入中…"/>;
  const order=state.data;
  return <section className="card"><h3>訂單明細 · {q.code}</h3><p>{order.id} · {order.status}</p><p>伺服器商品金額：NT$ {order.total}</p>{order.lines.map((line,index)=><p key={index}>{line.name} × {line.quantity} · NT$ {line.amount}</p>)}<p>付款與配送依後端紀錄，建立訂單不代表付款成功或已出貨。</p></section>;
 }
@@ -24,5 +26,5 @@ export default function ConnectedShop({q}:{q:Qualification}){
   catch(e){setError(e instanceof Error?e.message:'建立訂單失敗，請保留資料重試');}
   finally{flight.current=false;setBusy(false);}
  }
- return <><h2>商品商城</h2><p>目前資格：{q.code} · {q.ballLabel}</p><p>商品價格由 Core 確認。訂單成立後待付款；PV 尚未認列，配送與庫存另待確認。</p>{catalog.error?<section className="card" role="alert"><p>{catalog.error}</p><button onClick={catalog.retry}>重新載入商品</button></section>:!catalog.data?<p role="status">商品載入中…</p>:!catalog.data.length?<p role="status">目前沒有上架商品</p>:catalog.data.map(p=><article className="card" key={p.id}><h3>{p.name}</h3><p>{p.price===null?'價格待確認':`NT$ ${p.price.toLocaleString('zh-TW')}`} · PV 待認列</p><button disabled={busy||!p.available||(cart[p.id]??0)>=99} onClick={()=>change(p.id,(cart[p.id]??0)+1)}>{p.available?'加入購物車':'商品設定待完成'}</button></article>)}<section className="card"><h3>購物車 · {q.code}</h3>{Object.keys(cart).length?Object.entries(cart).map(([id,n])=><p key={id}>{catalog.data?.find(p=>p.id===id)?.name??id} × {n} <button disabled={busy} onClick={()=>change(id,n-1)}>減少</button><button disabled={busy} onClick={()=>change(id,0)}>移除</button></p>):<p>購物車尚無商品</p>}<p>應付商品金額由伺服器建立訂單後提供，前台不計算正式金額或 PV。</p><button disabled={busy||!Object.keys(cart).length} onClick={submit}>{busy?'建立中…':'建立待付款訂單'}</button>{error&&<p role="alert">{error}</p>}</section>{receipt&&<><section role="status" className="card"><h3>待付款訂單已建立</h3><p>{receipt.id} · NT$ {receipt.total}</p></section><ConnectedOrderDetails q={q} id={receipt.id}/></>}<Link to="/orders">查看我的訂單 →</Link></>;
+ return <><MemberPageHeader title="商品商城" q={q}/><p>目前資格：{q.code} · {q.ballLabel}</p><p>商品價格由 Core 確認。訂單成立後待付款；PV 尚未認列，配送與庫存另待確認。</p>{catalog.error?<section><ErrorState message={catalog.error}/><button onClick={catalog.retry}>重新載入商品</button></section>:!catalog.data?<LoadingState label="商品載入中…"/>:!catalog.data.length?<EmptyState title="目前沒有上架商品"/>:catalog.data.map(p=><article className="card" key={p.id}><h3>{p.name}</h3><p>{p.price===null?'價格待確認':`NT$ ${p.price.toLocaleString('zh-TW')}`} · PV 待認列</p><button disabled={busy||!p.available||(cart[p.id]??0)>=99} onClick={()=>change(p.id,(cart[p.id]??0)+1)}>{p.available?'加入購物車':'商品設定待完成'}</button></article>)}<section className="card"><h3>購物車 · {q.code}</h3>{Object.keys(cart).length?Object.entries(cart).map(([id,n])=><p key={id}>{catalog.data?.find(p=>p.id===id)?.name??id} × {n} <button disabled={busy} onClick={()=>change(id,n-1)}>減少</button><button disabled={busy} onClick={()=>change(id,0)}>移除</button></p>):<p>購物車尚無商品</p>}<p>應付商品金額由伺服器建立訂單後提供，前台不計算正式金額或 PV。</p><button disabled={busy||!Object.keys(cart).length} onClick={submit}>{busy?'建立中…':'建立待付款訂單'}</button>{error&&<p role="alert">{error}</p>}</section>{receipt&&<><section role="status" className="card"><h3>待付款訂單已建立</h3><p>{receipt.id} · NT$ {receipt.total}</p></section><ConnectedOrderDetails q={q} id={receipt.id}/></>}<Link to="/orders">查看我的訂單 →</Link></>;
 }

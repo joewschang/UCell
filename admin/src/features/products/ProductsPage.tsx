@@ -1,3 +1,4 @@
+import {AdminTable} from '../../components/AdminTable';
 import {useMutation,useQuery,useQueryClient} from '@tanstack/react-query';
 import {useForm} from 'react-hook-form';
 import {get,post} from '../../lib/api';
@@ -17,5 +18,5 @@ export function ProductsPage(){
  <Field label="SKU"><input {...register('sku',{required:true})}/></Field><Field label="商品名稱"><input {...register('displayName',{required:true})}/></Field><Field label="售價"><input {...register('price',{required:true})}/></Field><Field label="GPV Rate"><input defaultValue="0.60" {...register('gpvRate')}/></Field>
  <button className="primary" disabled={create.isPending}>{create.isPending?'儲存中…':'儲存'}</button><ErrorBox error={create.error}/></form></Card><Card title="ERP邊界"><p>庫存、採購、成本、會計不在UCell Core重做；此處只維持制度引擎所需Product Reference。</p></Card></div>
  <QueryFeedback query={q} empty={!rows.length}/>
- <Card title="商品清單"><div className="table-wrap"><table><thead><tr><th>SKU</th><th>名稱</th><th>售價</th><th>GPV Rate</th></tr></thead><tbody>{rows.map(x=><tr key={x.productId}><td>{x.sku}</td><td>{x.displayName}</td><td>{money(x.currentPrice)}</td><td>{x.ruleProfiles?.[0]?.gpvRate??'—'}</td></tr>)}</tbody></table></div></Card></>
+ <Card title="商品清單"><div className="table-wrap"><AdminTable><thead><tr><th>SKU</th><th>名稱</th><th>售價</th><th>GPV Rate</th></tr></thead><tbody>{rows.map(x=><tr key={x.productId}><td>{x.sku}</td><td>{x.displayName}</td><td>{money(x.currentPrice)}</td><td>{x.ruleProfiles?.[0]?.gpvRate??'—'}</td></tr>)}</tbody></AdminTable></div></Card></>
 }

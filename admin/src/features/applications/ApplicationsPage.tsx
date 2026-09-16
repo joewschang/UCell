@@ -1,3 +1,4 @@
+import {ConfirmAction} from '../../components/ConfirmAction';
 import {useQuery,useQueryClient} from '@tanstack/react-query';
 import {useState} from 'react';
 import {command,get,qs} from '../../lib/api';
@@ -35,7 +36,7 @@ export function ApplicationsPage(){
    </dl>
    <div className="sticky-actions button-row">
     {a.status==='DRAFT'&&<button className="primary" disabled={busy} onClick={()=>action('submit')}>Submit申請</button>}
-    {a.status==='SUBMITTED'&&<button className="primary" disabled={busy} onClick={()=>action('approve')}>Approve並建立Qualification</button>}
+    {a.status==='SUBMITTED'&&<ConfirmAction className="primary" disabled={busy} onConfirm={()=>action('approve')}>Approve並建立Qualification</ConfirmAction>}
     {a.status==='EFFECTIVE'&&<><Badge tone="ok">Qualification已生效</Badge>{a.createdQualificationId&&<Link className="button-link" to={`/orders?qualificationId=${a.createdQualificationId}`}>建立入會訂單</Link>}</>}
    </div>
   </>}</Card></div>

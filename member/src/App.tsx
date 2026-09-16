@@ -1,3 +1,4 @@
+import {MemberPageHeader} from './MemberPageHeader';
 import {MemberAppShell,MemberBottomNav,QualificationSwitcher,MobileActionGrid,StatusBadge,MetricCard,MoneyState,LoadingState,ErrorState,QualificationBadge,AwardLifecycle,EmptyState} from '@ucell/design-system';
 import { Link, NavLink, Route, Routes } from 'react-router-dom';
 import { useState, type ReactNode } from 'react';
@@ -62,7 +63,7 @@ function Performance({ q }: {
 }) {
     const [period, setPeriod] = useState(initialMonth);
     const state = useResource(`performance:${q.id}:${period}`, s => data.getPerformance(q, period, s));
-    return <><h2>我的業績</h2><Period value={period} onChange={setPeriod}/><Result state={state}>{d => <><Metrics items={[["PV", d.pv], ["RPV", d.rpv], ["EPV", d.epv], ["左區業績", d.left], ["右區業績", d.right]]}/><p className="muted">資料更新：{d.asOf ?? '尚未提供'}</p></>}</Result></>;
+    return <><MemberPageHeader title="我的業績" q={q}/><Period value={period} onChange={setPeriod}/><Result state={state}>{d => <><Metrics items={[["PV", d.pv], ["RPV", d.rpv], ["EPV", d.epv], ["左區業績", d.left], ["右區業績", d.right]]}/><p className="muted">資料更新：{d.asOf ?? '尚未提供'}</p></>}</Result></>;
 }
 function Bonuses({ q }: {
     q: Qualification;
@@ -74,8 +75,8 @@ function Bonuses({ q }: {
 }
 function Orders({ q }: {
     q: Qualification;
-}) { const { orders } = useCommerce(); const state = useResource(`orders:${q.id}`, s => data.getOrders(q, s)); const [expanded, setExpanded] = useState<string | null>(null); return <><h2>我的訂單</h2><button disabled={state.data === undefined && !state.error} onClick={() => {setExpanded(null);state.retry();}}>重新整理訂單</button><Result state={state}>{d => { const visible = [...(data.isMock ? orders.filter(o => o.qualificationId === q.id) : []), ...d.orders]; return visible.length ? visible.map(o => <article className="card" key={o.id}><h3>{o.id}</h3><p>{o.createdAt} · {money(o.total)}</p><p>訂單：{o.status}</p><button aria-expanded={expanded === o.id} onClick={() => setExpanded(expanded === o.id ? null : o.id)}>付款與配送狀態</button>{expanded === o.id && <div><p>付款：{o.paymentStatus}</p><p>配送：{o.shipmentStatus}</p>{!data.isMock&&<ConnectedOrderDetails q={q} id={o.id}/>}</div>}</article>) : <p>此資格目前沒有訂單</p>; }}</Result></>; }
-function Me() { const state = useResource('person', data.getPerson); const { qualifications } = useQualification(); return <><h2>我的帳戶</h2><Result state={state}>{p => <section className="card"><h3>{p.name}</h3><p>{p.memberNo}</p><p>電子郵件：{p.email ?? '未提供'}</p><p>電話：{p.phone ?? '未提供'}</p></section>}</Result><ProfileEditor refresh={state.retry}/><h3>我的資格</h3>{qualifications.map(q => <article key={q.id} className="card"><strong>{q.code} · {q.ballLabel}</strong><p>{data.displayRank(q.rank)} · {q.active ? '活躍' : '未活躍'}</p></article>)}<EndSession connected={!data.isMock}/></>; }
+}) { const { orders } = useCommerce(); const state = useResource(`orders:${q.id}`, s => data.getOrders(q, s)); const [expanded, setExpanded] = useState<string | null>(null); return <><MemberPageHeader title="我的訂單" q={q}/><button disabled={state.data === undefined && !state.error} onClick={() => {setExpanded(null);state.retry();}}>重新整理訂單</button><Result state={state}>{d => { const visible = [...(data.isMock ? orders.filter(o => o.qualificationId === q.id) : []), ...d.orders]; return visible.length ? visible.map(o => <article className="card" key={o.id}><h3>{o.id}</h3><p>{o.createdAt} · {money(o.total)}</p><p>訂單：{o.status}</p><button aria-expanded={expanded === o.id} onClick={() => setExpanded(expanded === o.id ? null : o.id)}>付款與配送狀態</button>{expanded === o.id && <div><p>付款：{o.paymentStatus}</p><p>配送：{o.shipmentStatus}</p>{!data.isMock&&<ConnectedOrderDetails q={q} id={o.id}/>}</div>}</article>) : <EmptyState title="此資格目前沒有訂單"/>; }}</Result></>; }
+function Me() { const state = useResource('person', data.getPerson); const { qualifications } = useQualification(); return <><MemberPageHeader title="我的帳戶"/><Result state={state}>{p => <section className="card"><h3>{p.name}</h3><p>{p.memberNo}</p><p>電子郵件：{p.email ?? '未提供'}</p><p>電話：{p.phone ?? '未提供'}</p></section>}</Result><ProfileEditor refresh={state.retry}/><h3>我的資格</h3>{qualifications.map(q => <article key={q.id} className="card"><strong>{q.code} · {q.ballLabel}</strong><p>{data.displayRank(q.rank)} · {q.active ? '活躍' : '未活躍'}</p></article>)}<EndSession connected={!data.isMock}/></>; }
 function MemberApp() {
     const { loading, error, retry, current } = useQualification();
     const { unread } = useNotifications(current?.id);

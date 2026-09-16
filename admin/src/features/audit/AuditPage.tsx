@@ -1,3 +1,4 @@
+import {AdminTable} from '../../components/AdminTable';
 import {useQuery} from '@tanstack/react-query';
 import {useState} from 'react';
 import {get,qs} from '../../lib/api';
@@ -19,7 +20,7 @@ export function AuditPage(){
       <Field label="To"><input value={to} onChange={e=>setTo(e.target.value)}/></Field>
     </div></Card>
     <ErrorBox error={q.error}/>
-    <div className="split-view"><Card title={`Audit Events (${rows.length})`}><div className="table-wrap"><table><thead><tr><th>Time</th><th>Action</th><th>Entity</th><th>Actor</th><th>Correlation</th></tr></thead><tbody>{rows.map((x:any)=><tr className="click-row" key={x.auditEventId} onClick={()=>setSelected(x)}><td>{dateTime(x.occurredAt)}</td><td>{x.action}</td><td>{x.entityType}<br/><span className="mono">{x.entityId??'—'}</span></td><td>{x.actorType}<br/><span className="mono">{x.actorId??'—'}</span></td><td className="mono">{x.correlationId}</td></tr>)}</tbody></table></div></Card>
+    <div className="split-view"><Card title={`Audit Events (${rows.length})`}><div className="table-wrap"><AdminTable><thead><tr><th>Time</th><th>Action</th><th>Entity</th><th>Actor</th><th>Correlation</th></tr></thead><tbody>{rows.map((x:any)=><tr className="click-row" key={x.auditEventId} onClick={()=>setSelected(x)}><td>{dateTime(x.occurredAt)}</td><td>{x.action}</td><td>{x.entityType}<br/><span className="mono">{x.entityId??'—'}</span></td><td>{x.actorType}<br/><span className="mono">{x.actorId??'—'}</span></td><td className="mono">{x.correlationId}</td></tr>)}</tbody></AdminTable></div></Card>
     <Card title="Event Detail">{!selected?<p className="muted">選擇一筆Audit Event。</p>:<><dl className="detail-grid"><dt>Request ID</dt><dd className="mono">{selected.requestId}</dd><dt>Correlation ID</dt><dd className="mono">{selected.correlationId}</dd><dt>Reason</dt><dd>{selected.reasonCode??'—'}</dd></dl><h3>Before</h3><JsonResult value={selected.beforeData}/><h3>After</h3><JsonResult value={selected.afterData}/></>}</Card></div>
   </>
 }

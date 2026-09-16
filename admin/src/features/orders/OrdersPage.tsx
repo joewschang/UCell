@@ -1,3 +1,5 @@
+import {ConfirmAction} from '../../components/ConfirmAction';
+import {AdminTable} from '../../components/AdminTable';
 import {useQuery,useQueryClient} from '@tanstack/react-query';
 import {useEffect,useRef,useState} from 'react';
 import {command,get,qs} from '../../lib/api';
@@ -71,9 +73,9 @@ export function OrdersPage(){
   <button className="primary" disabled={!qualification||lines.length===0||busy} onClick={createOrder}>建立CONFIRMED訂單</button>
  </div></Card>
  <Card title="訂單詳情／收款">{!o?<p className="muted">從下方清單選擇訂單。</p>:<><dl className="detail-grid"><dt>Order ID</dt><dd className="mono">{o.orderId}</dd><dt>Qualification</dt><dd>{o.qualification?.currentHolder?.legalName}<br/><span className="mono">{o.qualificationId}</span></dd><dt>Purpose</dt><dd>{o.purpose}</dd><dt>Status</dt><dd><Badge tone={o.status==='PAID'?'ok':'warn'}>{o.status}</Badge></dd><dt>Net Amount</dt><dd>{money(o.netAmount)}</dd></dl>
-  {o.status==='CONFIRMED'&&<div className="form sticky-actions"><Field label="付款方式"><input value={paymentMethod} onChange={e=>setPaymentMethod(e.target.value)}/></Field><Field label="Reference No"><input value={paymentRef} onChange={e=>setPaymentRef(e.target.value)}/></Field><button className="primary" disabled={!paymentRef||busy} onClick={confirmPayment}>確認全額收款 {money(o.netAmount)}</button></div>}
+  {o.status==='CONFIRMED'&&<div className="form sticky-actions"><Field label="付款方式"><input value={paymentMethod} onChange={e=>setPaymentMethod(e.target.value)}/></Field><Field label="Reference No"><input value={paymentRef} onChange={e=>setPaymentRef(e.target.value)}/></Field><ConfirmAction className="primary" disabled={!paymentRef||busy} onConfirm={confirmPayment}>確認全額收款 {money(o.netAmount)}</ConfirmAction></div>}
   {o.status==='PAID'&&<div className="success-panel"><strong>已付款</strong><p>SALE_CONFIRMED事件將由Backend/Worker建立GPV。</p><Link className="button-link" to={`/qualifications?qualificationId=${o.qualificationId}`}>查看Qualification／PV Ledger</Link></div>}</>}</Card></div>
  <Card title="訂單清單"><div className="toolbar"><select value={status} onChange={e=>setStatus(e.target.value)}><option value="">全部狀態</option><option>CONFIRMED</option><option>PAID</option><option>FULFILLED</option></select><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="姓名／手機／Client Reference"/></div>
- <div className="table-wrap"><table><thead><tr><th>Order</th><th>會員</th><th>Purpose</th><th>Status</th><th>Net</th><th>Created</th></tr></thead><tbody>{rows.map(x=><tr key={x.orderId} onClick={()=>setSelected(x.orderId)} style={{cursor:'pointer'}}><td className="mono">{x.orderId}</td><td>{x.qualification?.currentHolder?.legalName??'—'}</td><td>{x.purpose}</td><td>{x.status}</td><td>{money(x.netAmount)}</td><td>{dateTime(x.createdAt)}</td></tr>)}</tbody></table></div></Card>
+ <div className="table-wrap"><AdminTable><thead><tr><th>Order</th><th>會員</th><th>Purpose</th><th>Status</th><th>Net</th><th>Created</th></tr></thead><tbody>{rows.map(x=><tr key={x.orderId} onClick={()=>setSelected(x.orderId)} style={{cursor:'pointer'}}><td className="mono">{x.orderId}</td><td>{x.qualification?.currentHolder?.legalName??'—'}</td><td>{x.purpose}</td><td>{x.status}</td><td>{money(x.netAmount)}</td><td>{dateTime(x.createdAt)}</td></tr>)}</tbody></AdminTable></div></Card>
  </>;
 }

@@ -1,3 +1,4 @@
+import {ConfirmAction} from '../../components/ConfirmAction';
 import {useQuery,useQueryClient} from '@tanstack/react-query';
 import {useState} from 'react';
 import {command,get,qs} from '../../lib/api';
@@ -41,7 +42,7 @@ export function WorkflowsPage(){
   {['TRANSFER','COMPANY_RETRANSFER'].includes(newType)&&<SearchSelect label="Receiving Person" value={receiver} onChange={setReceiver} search={personSearch}/>}
   {newType==='EXIT'&&<SearchSelect label="Company Holder Person" value={company} onChange={setCompany} search={personSearch}/>}
   <label className="checkbox"><input type="checkbox" checked={feePaid} onChange={e=>setFeePaid(e.target.checked)}/> 已確認收取審核費 NT$600</label>
-  <button className="primary" disabled={!qualification||!feePaid||busy||(newType==='UPGRADE'&&!target)||(['TRANSFER','COMPANY_RETRANSFER'].includes(newType)&&!receiver)||(newType==='EXIT'&&!company)} onClick={submit}>Submit Workflow</button>
+  <ConfirmAction className="primary" disabled={!qualification||!feePaid||busy||(newType==='UPGRADE'&&!target)||(['TRANSFER','COMPANY_RETRANSFER'].includes(newType)&&!receiver)||(newType==='EXIT'&&!company)} onConfirm={submit}>Submit Workflow</ConfirmAction>
  </div></Card>
  <Card title="制度／法務邊界"><p><Badge tone="warn">公司不介入會員間對價</Badge></p><p>轉讓之對價關係由轉讓雙方自行約定；公司只審查會員資格移轉程序。</p><p>退出後Qualification由公司持有，公司可再移轉給其他人。</p><p>升級只向未來生效，不回溯歷史獎金。</p></Card></div>
 

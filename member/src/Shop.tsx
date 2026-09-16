@@ -1,3 +1,5 @@
+import {MemberPageHeader} from './MemberPageHeader';
+import {ErrorState,EmptyState,LoadingState} from '@ucell/design-system';
 import { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { Product, Qualification } from './api';
@@ -32,9 +34,9 @@ export default function Shop({ q }: { q: Qualification }) {
       setReceipt(order.id); setReview(false); setShipping({ name: '', phone: '', address: '' });
     } catch (e) { setError(e instanceof Error ? e.message : '請稍後重試'); }
   }
-  return <><h2>商品商城</h2><p>{isMock ? '可體驗選購與訂單確認；示範訂單不扣款、不出貨、不產生 PV。請勿輸入真實個資。' : '線上購買尚未開放，價格與 PV 以訂單確認資料為準。'}</p>
+  return <><MemberPageHeader title="商品商城" q={q}/><p>{isMock ? '可體驗選購與訂單確認；示範訂單不扣款、不出貨、不產生 PV。請勿輸入真實個資。' : '線上購買尚未開放，價格與 PV 以訂單確認資料為準。'}</p>
     {catalog.error ? <section role="alert" className="card"><p>{catalog.error}</p><button onClick={catalog.retry}>重新載入商品</button></section>
-      : !catalog.data ? <p role="status">商品載入中…</p>
+      : !catalog.data ? <LoadingState label="商品載入中…"/>
       : catalog.data.length ? catalog.data.map(p => <article className="card" key={p.id}><div className="product-mark" aria-hidden="true">UCell</div><h3>{p.name}</h3><p>{money(p.price)} · PV {p.pv === null ? '待提供' : p.pv.toLocaleString('zh-TW')}</p>
         <button disabled={!isMock || !p.available || (cart[p.id] ?? 0) >= 99} onClick={() => quantity(p, (cart[p.id] ?? 0) + 1)}>{!isMock ? '購買功能準備中' : !p.available ? '暫無供貨' : '加入示範購物車'}</button></article>) : <p>目前沒有上架商品</p>}
     {isMock && <section className="card"><h3>購物車 · {q.code}</h3><p>共 {count} 件商品</p>
