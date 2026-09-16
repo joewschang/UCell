@@ -27,6 +27,7 @@ try{
   run(['scripts/phase3-rpv-concurrency-db-test.mjs']);
   run(['scripts/system-assignment-db-test.mjs']);
   run(['scripts/qualification-placement-db-test.mjs']);
+  run(['scripts/package-config-db-test.mjs']);
   run(['scripts/phase3-member-identity-db-test.mjs']);
   run(['scripts/content-db-test.mjs']);
   run(['scripts/formal-application-db-test.mjs']);

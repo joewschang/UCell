@@ -1910,3 +1910,137 @@ model MemberReferralRelationship {
   @@map("member_referral_relationship")
   @@schema("identity")
 }
+
+model PackageProfile {
+  packageProfileId String   @id @default(uuid()) @map("package_profile_id") @db.Uuid
+  stableCode       String   @unique @map("stable_code")
+  packageClass     String   @map("package_class")
+  status           String   @default("ACTIVE")
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  versions         PackageProfileVersion[]
+
+  @@index([packageClass, status])
+  @@map("package_profile")
+  @@schema("commerce")
+}
+
+model PackageProfileVersion {
+  packageProfileVersionId    String   @id @default(uuid()) @map("package_profile_version_id") @db.Uuid
+  packageProfileId           String   @map("package_profile_id") @db.Uuid
+  version                    Int
+  displayName                String   @map("display_name")
+  currency                   String
+  priceAmount                Decimal  @map("price_amount") @db.Decimal(18, 2)
+  selectableProductQuantity  Int      @map("selectable_product_quantity")
+  selectionMode              String   @default("EXACT_QUANTITY") @map("selection_mode")
+  membershipEffect           String   @map("membership_effect")
+  qualificationEffect        String   @map("qualification_effect")
+  activeDurationUnit         String?  @map("active_duration_unit")
+  activeDurationValue        Int?     @map("active_duration_value")
+  targetQualificationRequired Boolean @default(false) @map("target_qualification_required")
+  memberEligibilityPolicyRef String?  @map("member_eligibility_policy_ref")
+  salesFrom                  DateTime? @map("sales_from") @db.Timestamptz(6)
+  salesTo                    DateTime? @map("sales_to") @db.Timestamptz(6)
+  effectiveFrom              DateTime? @map("effective_from") @db.Timestamptz(6)
+  effectiveTo                DateTime? @map("effective_to") @db.Timestamptz(6)
+  status                     String   @default("DRAFT")
+  recognitionConfigRef       String?  @map("recognition_config_ref")
+  configHash                 String   @map("config_hash")
+  approvalReference          String?  @map("approval_reference")
+  createdByActor             String   @map("created_by_actor")
+  approvedByActor            String?  @map("approved_by_actor")
+  approvedAt                 DateTime? @map("approved_at") @db.Timestamptz(6)
+  createdAt                  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt                  DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  profile                    PackageProfile @relation(fields: [packageProfileId], references: [packageProfileId])
+  selectableProducts         PackageSelectableProduct[]
+  purchaseSnapshots          PackagePurchaseSnapshot[]
+
+  @@unique([packageProfileId, version])
+  @@index([status, effectiveFrom, effectiveTo, salesFrom, salesTo])
+  @@map("package_profile_version")
+  @@schema("commerce")
+}
+
+model PackageSelectableProduct {
+  packageSelectableProductId String   @id @default(uuid()) @map("package_selectable_product_id") @db.Uuid
+  packageProfileVersionId    String   @map("package_profile_version_id") @db.Uuid
+  productRuleProfileId       String   @map("product_rule_profile_id") @db.Uuid
+  enabledFrom                DateTime @map("enabled_from") @db.Timestamptz(6)
+  enabledTo                  DateTime? @map("enabled_to") @db.Timestamptz(6)
+  minQty                     Int?     @map("min_qty")
+  maxQty                     Int?     @map("max_qty")
+  selectionIncrement         Int      @default(1) @map("selection_increment")
+  sortOrder                  Int      @default(0) @map("sort_order")
+  status                     String   @default("ACTIVE")
+  createdAt                  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  packageVersion             PackageProfileVersion @relation(fields: [packageProfileVersionId], references: [packageProfileVersionId])
+
+  @@unique([packageProfileVersionId, productRuleProfileId])
+  @@index([packageProfileVersionId, status, enabledFrom, enabledTo])
+  @@map("package_selectable_product")
+  @@schema("commerce")
+}
+
+model PackagePurchaseSnapshot {
+  packagePurchaseSnapshotId String   @id @default(uuid()) @map("package_purchase_snapshot_id") @db.Uuid
+  orderId                    String   @unique @map("order_id") @db.Uuid
+  personId                   String   @map("person_id") @db.Uuid
+  targetQualificationId      String?  @map("target_qualification_id") @db.Uuid
+  packageProfileVersionId    String   @map("package_profile_version_id") @db.Uuid
+  packageCode                String   @map("package_code")
+  packageName                String   @map("package_name")
+  packageClass               String   @map("package_class")
+  currency                   String
+  priceAmount                Decimal  @map("price_amount") @db.Decimal(18, 2)
+  selectableProductQuantity  Int      @map("selectable_product_quantity")
+  membershipEffect           String   @map("membership_effect")
+  qualificationEffect        String   @map("qualification_effect")
+  activeDurationUnit         String?  @map("active_duration_unit")
+  activeDurationValue        Int?     @map("active_duration_value")
+  recognitionConfigRef       String   @map("recognition_config_ref")
+  packageConfigHash          String   @map("package_config_hash")
+  purchasedAt                DateTime @map("purchased_at") @db.Timestamptz(6)
+  createdAt                  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  packageVersion             PackageProfileVersion @relation(fields: [packageProfileVersionId], references: [packageProfileVersionId])
+  selections                 PackagePurchaseSelection[]
+
+  @@index([personId, purchasedAt])
+  @@index([targetQualificationId, purchasedAt])
+  @@map("package_purchase_snapshot")
+  @@schema("commerce")
+}
+
+model PackagePurchaseSelection {
+  packagePurchaseSelectionId String   @id @default(uuid()) @map("package_purchase_selection_id") @db.Uuid
+  packagePurchaseSnapshotId  String   @map("package_purchase_snapshot_id") @db.Uuid
+  productRuleProfileId       String   @map("product_rule_profile_id") @db.Uuid
+  productId                  String   @map("product_id") @db.Uuid
+  skuSnapshot                String   @map("sku_snapshot")
+  productDisplaySnapshot     String   @map("product_display_snapshot")
+  quantity                   Int
+  productConfigHash          String   @map("product_config_hash")
+  createdAt                  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  snapshot                   PackagePurchaseSnapshot @relation(fields: [packagePurchaseSnapshotId], references: [packagePurchaseSnapshotId])
+
+  @@unique([packagePurchaseSnapshotId, productRuleProfileId])
+  @@map("package_purchase_selection")
+  @@schema("commerce")
+}
+
+model QualificationActiveEntitlementEvidence {
+  qualificationActiveEntitlementEvidenceId String   @id @default(uuid()) @map("qualification_active_entitlement_evidence_id") @db.Uuid
+  qualificationId                          String   @map("qualification_id") @db.Uuid
+  packagePurchaseSnapshotId                String   @unique @map("package_purchase_snapshot_id") @db.Uuid
+  entitlementType                         String   @map("entitlement_type")
+  periodStart                             DateTime @map("period_start") @db.Timestamptz(6)
+  periodEnd                               DateTime @map("period_end") @db.Timestamptz(6)
+  policyVersion                           String   @map("policy_version")
+  evidenceHash                            String   @map("evidence_hash")
+  status                                  String
+  createdAt                               DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([qualificationId, periodStart, periodEnd])
+  @@map("qualification_active_entitlement_evidence")
+  @@schema("membership")
+}

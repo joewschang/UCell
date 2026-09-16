@@ -33,6 +33,7 @@ import { AdminOpsReadyModule } from './modules/admin-ops-ready/admin-ops-ready.m
 import { AdminAuthenticationGuard } from './modules/auth/admin-authentication.guard';
 import { AdminRoleGuard } from './modules/auth/admin-role.guard';
 import { ContentModule } from './modules/content/content.module';
+import {PackageConfigModule} from './modules/package-config/package-config.module';
 
 @Module({
   imports: [
@@ -67,6 +68,7 @@ import { ContentModule } from './modules/content/content.module';
     AuthModule,
     AdjustmentModule,
     ContentModule,
+    PackageConfigModule,
   ],
   providers:[
     {provide:APP_GUARD,useClass:AdminAuthenticationGuard},
