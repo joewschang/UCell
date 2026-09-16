@@ -5,6 +5,23 @@ import { periodBinary, periodMatching, appendEntitlementDelta, verifyReplayEnvel
 import { binary, d, recipient, sealed } from './phase2-fixtures';
 
 const volumes=()=>new Map([['left',d(800)],['right',d(1000)]]);
+function matchingEnvelope() {
+ const e=binary();
+ e.kind='MATCHING_K2';
+ const qualification=recipient().qualification;
+ e.recipients=[recipient({awardType:'MATCHING',qualificationId:'sponsor-1',generation:1,sourceAwardId:'binary-award',rate:'.15',qualification})];
+ e.evidence.matchingSources=[{
+  sourceAwardId:'binary-award',sourceQualificationId:'binary-recipient',
+  evidence:{
+   at:e.at,
+   sponsor:[{sponsorQualificationId:'sponsor-1',childQualificationId:'binary-recipient'}],
+   binary:[{parentQualificationId:'binary-parent',childQualificationId:'binary-recipient',side:'LEFT'}],
+   qualifications:{'binary-recipient':qualification,'sponsor-1':qualification,'binary-parent':qualification},
+   effectiveDirectCounts:{'binary-recipient':0,'sponsor-1':4,'binary-parent':4},
+  },
+ }];
+ return e;
+}
 describe('v0.6.1 deterministic replay',()=>{
  it('replay uses original carry-in, not current carry',()=>{const e=binary();expect(periodBinary(e,volumes(),new Map()).carryOut.get('root')!.left.toString()).toBe('800');});
  it('negative GPV reversal is included in historical period subtree GPV',()=>{expect(periodBinary(binary(),volumes(),new Map()).total.toString()).toBe('1800');});
@@ -26,6 +43,18 @@ describe('v0.6.1 deterministic replay',()=>{
   });
  }
  it('missing original evidence fails closed',()=>{expect(()=>verifyReplayEnvelope(null)).toThrow();});
+ it('Matching replay validates historical Sponsor recipients even when Binary ancestry differs',()=>{
+  const e=matchingEnvelope();
+  expect(verifyReplayEnvelope(sealed(e))).toBe(e);
+  expect(e.evidence.matchingSources[0].evidence.binary[0].parentQualificationId).toBe('binary-parent');
+  expect(e.recipients[0].qualificationId).toBe('sponsor-1');
+ });
+ it('Matching replay fails closed when historical Sponsor evidence is absent or inconsistent',()=>{
+  const missing=matchingEnvelope();delete missing.evidence.matchingSources;
+  expect(()=>verifyReplayEnvelope(sealed(missing))).toThrow(expect.objectContaining({response:expect.objectContaining({code:'HISTORICAL_SNAPSHOT_MISSING'})}));
+  const substituted=matchingEnvelope();substituted.evidence.matchingSources[0].evidence.sponsor=[];
+  expect(()=>verifyReplayEnvelope(sealed(substituted))).toThrow(expect.objectContaining({response:expect.objectContaining({code:'HISTORICAL_SNAPSHOT_CORRUPT'})}));
+ });
 });
 
 describe('v0.6.1 subscription cancellation',()=>{

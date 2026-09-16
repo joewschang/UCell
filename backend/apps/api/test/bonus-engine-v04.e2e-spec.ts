@@ -353,7 +353,16 @@ describe('Bonus Engine v0.4.0', () => {
         expect(h.tx.bonusAward.findMany).toHaveBeenCalledWith({where: {settlementBatchId: 'binary', awardType: 'BINARY'}});
       }
     });
-    it.todo('Sponsor Tree is used to trace matching uplines');
+    it('Sponsor Tree is used to trace matching uplines', async () => {
+      const h = await matchingHarness('1000', '200');
+      await h.service.settleMatching(h.start, h.end, 'TEST_ONLY');
+      expect(h.query.sponsorAncestors).toHaveBeenCalledTimes(1);
+      expect(h.query.sponsorAncestors).toHaveBeenCalledWith(h.tx, 'binary-recipient', h.end, 5);
+      expect(h.awards.map(a => a.recipientQualificationId)).toEqual([
+        'sponsor-1', 'sponsor-2', 'sponsor-3', 'sponsor-4', 'sponsor-5',
+      ]);
+      expect(h.awards.every(a => a.recipientQualificationId !== 'binary-recipient')).toBe(true);
+    });
     it('rates are G1=15,G2=10,G3-G5=5', async () => {
       const h = await matchingHarness('1000', '100');
       await h.service.settleMatching(h.start, h.end, 'TEST_ONLY');

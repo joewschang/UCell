@@ -1,23 +1,16 @@
 {
   "decisionRegisterRecordVersion": 2,
   "originalBaseline": 148,
-  "currentExecutableTodo": 51,
-  "netPlaceholderReduction": 97,
+  "currentExecutableTodo": 50,
+  "netPlaceholderReduction": 98,
   "counts": {
-    "IMPLEMENTABLE": 17,
+    "IMPLEMENTABLE": 16,
     "ENGINEERING": 28,
     "PENDING_DECISION": 3,
     "LEGACY_TEST_DRIFT": 3
   },
   "audit": "Classification aligns the executable TODO baseline to SA Decision Register v2. Pending decisions remain fail-closed and no classification counts as implementation completion.",
   "items": [
-    {
-      "file": "backend/apps/api/test/bonus-engine-v04.e2e-spec.ts",
-      "line": 356,
-      "case": "Sponsor Tree is used to trace matching uplines",
-      "classification": "IMPLEMENTABLE",
-      "reason": "Decision Register v2 and Core Logic Addendum v2 provide the governing rule; implementation and evidence remain."
-    },
     {
       "file": "backend/apps/api/test/epv-global-v05.e2e-spec.ts",
       "line": 22,
@@ -146,28 +139,28 @@
     },
     {
       "file": "backend/apps/api/test/v061-replay.e2e-spec.ts",
-      "line": 47,
+      "line": 76,
       "case": "upgrade creates future plan history and does not alter past awards",
       "classification": "ENGINEERING",
       "reason": "The governing behavior is already approved; remaining work is implementation or executable verification."
     },
     {
       "file": "backend/apps/api/test/v061-replay.e2e-spec.ts",
-      "line": 48,
+      "line": 77,
       "case": "transfer preserves qualificationId and sponsor/binary positions",
       "classification": "ENGINEERING",
       "reason": "The governing behavior is already approved; remaining work is implementation or executable verification."
     },
     {
       "file": "backend/apps/api/test/v061-replay.e2e-spec.ts",
-      "line": 49,
+      "line": 78,
       "case": "exit closes holder interval and status becomes EXITED",
       "classification": "ENGINEERING",
       "reason": "The governing behavior is already approved; remaining work is implementation or executable verification."
     },
     {
       "file": "backend/apps/api/test/v061-replay.e2e-spec.ts",
-      "line": 50,
+      "line": 79,
       "case": "company retransfer opens a new holder interval",
       "classification": "ENGINEERING",
       "reason": "The governing behavior is already approved; remaining work is implementation or executable verification."

@@ -1,19 +1,18 @@
 # R1.0B Decision Register v2 TODO Inventory
 
-Original audited baseline: 148. Current executable TODO: 51. Net placeholder reduction: 97.
+Original audited baseline: 148. Current executable TODO: 50. Net placeholder reduction: 98.
 
 Classification is governance status, not implementation completion. Pending decisions fail closed and Legacy Test Drift must be corrected without changing the frozen business rules.
 
 | Classification | Count |
 |---|---:|
-| IMPLEMENTABLE | 17 |
+| IMPLEMENTABLE | 16 |
 | ENGINEERING | 28 |
 | PENDING_DECISION | 3 |
 | LEGACY_TEST_DRIFT | 3 |
 
 | File | Line | Case | Classification | Reason |
 |---|---:|---|---|---|
-| backend/apps/api/test/bonus-engine-v04.e2e-spec.ts | 356 | Sponsor Tree is used to trace matching uplines | IMPLEMENTABLE | Decision Register v2 and Core Logic Addendum v2 provide the governing rule; implementation and evidence remain. |
 | backend/apps/api/test/epv-global-v05.e2e-spec.ts | 22 | non-REPURCHASE order does not create EPV | LEGACY_TEST_DRIFT | DEC-001 makes ConsumptionRecognitionEvent and eligible consideration authoritative; order purpose alone cannot decide eligibility. |
 | backend/apps/api/test/epv-global-v05.e2e-spec.ts | 26 | global pool is 5% of period GPV | ENGINEERING | The governing behavior is already approved; remaining work is implementation or executable verification. |
 | backend/apps/api/test/epv-global-v05.e2e-spec.ts | 27 | weak thresholds are 300k/600k/1m/2m/4m | ENGINEERING | The governing behavior is already approved; remaining work is implementation or executable verification. |
@@ -32,10 +31,10 @@ Classification is governance status, not implementation completion. Pending deci
 | backend/apps/api/test/v060-adjustment-lifecycle.e2e-spec.ts | 40 | upgrade has no retroactive bonus effect | ENGINEERING | The governing behavior is already approved; remaining work is implementation or executable verification. |
 | backend/apps/api/test/v060-adjustment-lifecycle.e2e-spec.ts | 41 | transfer preserves qualificationId and tree positions | ENGINEERING | The governing behavior is already approved; remaining work is implementation or executable verification. |
 | backend/apps/api/test/v060-adjustment-lifecycle.e2e-spec.ts | 42 | exit preserves qualification for company-held re-transfer | ENGINEERING | The governing behavior is already approved; remaining work is implementation or executable verification. |
-| backend/apps/api/test/v061-replay.e2e-spec.ts | 47 | upgrade creates future plan history and does not alter past awards | ENGINEERING | The governing behavior is already approved; remaining work is implementation or executable verification. |
-| backend/apps/api/test/v061-replay.e2e-spec.ts | 48 | transfer preserves qualificationId and sponsor/binary positions | ENGINEERING | The governing behavior is already approved; remaining work is implementation or executable verification. |
-| backend/apps/api/test/v061-replay.e2e-spec.ts | 49 | exit closes holder interval and status becomes EXITED | ENGINEERING | The governing behavior is already approved; remaining work is implementation or executable verification. |
-| backend/apps/api/test/v061-replay.e2e-spec.ts | 50 | company retransfer opens a new holder interval | ENGINEERING | The governing behavior is already approved; remaining work is implementation or executable verification. |
+| backend/apps/api/test/v061-replay.e2e-spec.ts | 76 | upgrade creates future plan history and does not alter past awards | ENGINEERING | The governing behavior is already approved; remaining work is implementation or executable verification. |
+| backend/apps/api/test/v061-replay.e2e-spec.ts | 77 | transfer preserves qualificationId and sponsor/binary positions | ENGINEERING | The governing behavior is already approved; remaining work is implementation or executable verification. |
+| backend/apps/api/test/v061-replay.e2e-spec.ts | 78 | exit closes holder interval and status becomes EXITED | ENGINEERING | The governing behavior is already approved; remaining work is implementation or executable verification. |
+| backend/apps/api/test/v061-replay.e2e-spec.ts | 79 | company retransfer opens a new holder interval | ENGINEERING | The governing behavior is already approved; remaining work is implementation or executable verification. |
 | backend/apps/api/test/v062-carry-chain.e2e-spec.ts | 21 | return discovers every Binary ancestor impacted by descendant GPV | IMPLEMENTABLE | Decision Register v2 and Core Logic Addendum v2 provide the governing rule; implementation and evidence remain. |
 | backend/apps/api/test/v062-carry-chain.e2e-spec.ts | 22 | period replay recomputes all Binary payable amounts when K1 changes | IMPLEMENTABLE | Decision Register v2 and Core Logic Addendum v2 provide the governing rule; implementation and evidence remain. |
 | backend/apps/api/test/v062-carry-chain.e2e-spec.ts | 23 | period replay recomputes all Matching payable amounts when K2 changes | IMPLEMENTABLE | Decision Register v2 and Core Logic Addendum v2 provide the governing rule; implementation and evidence remain. |
