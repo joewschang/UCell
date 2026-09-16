@@ -19,6 +19,8 @@ const {BonusQueryService}=require('./apps/api/dist/modules/bonus/bonus-query.ser
 const {LineTokenVerifierService}=require('./apps/api/dist/modules/auth/line-token-verifier.service.js');
 const {IdentityTokenService}=require('./apps/api/dist/modules/auth/identity-token.service.js');
 const {MemberService}=require('./apps/api/dist/modules/member/member.service.js');
+const {OtpCodeService}=require('./apps/api/dist/modules/auth/otp-code.service.js');
+const {SmsOtpProviderService}=require('./apps/api/dist/modules/auth/sms-otp-provider.service.js');
 const {AuditService}=require('./apps/api/dist/common/audit/audit.service.js');
 const {claimOutboxLease,processMemberOrderNotification,captureParameters,releaseFailedOutboxLease}=require('./packages/database/dist/index.js');
 const {EnvelopeInterceptor}=require('./apps/api/dist/common/interceptors/envelope.interceptor.js');
@@ -28,6 +30,7 @@ assert.match(process.env.GOLDEN_ISOLATION_DATABASE??'',/^ucell_dev_golden_[a-f0-
 const db=new PrismaClient();let app,assertions=0;const results=[];
 function equal(actual,expected,label){assert.deepEqual(actual,expected,label);assertions++;results.push({label,actual,expected,result:'PASS'});}
 try{
+ process.env.OTP_HASH_SECRET='TEST_ONLY_OTP_HASH_SECRET_32_BYTES_MINIMUM';
  const person=await db.person.create({data:{legalName:'MEMBER A TEST ONLY',status:'EFFECTIVE'}});
  const other=await db.person.create({data:{legalName:'MEMBER B TEST ONLY',status:'EFFECTIVE'}});
  const empty=await db.person.create({data:{legalName:'MEMBER EMPTY TEST ONLY',status:'EFFECTIVE'}});
@@ -79,6 +82,23 @@ try{
   return {subject:token==='UNBOUND_TEST_ONLY'?'TEST_ONLY_UNBOUND':subject,expiresAt:Math.floor(Date.now()/1000)+3600};
  };
  await app.init();const server=app.getHttpAdapter().getInstance();await server.ready();
+ let deliveredOtp;app.get(OtpCodeService).generate=()=> '246810';app.get(SmsOtpProviderService).send=async(_destination,code)=>{deliveredOtp=code;return {providerRef:'TEST_ONLY_PROVIDER_REF'}};
+ const registrationSessionId=randomUUID(),otpPayload={purpose:'NETWORK_REGISTRATION',destination:'+886912345678',registrationSessionId};
+ let otpResponse=await server.inject({method:'POST',url:'/api/v1/auth/otp/challenges',headers:{'idempotency-key':'TEST_ONLY_OTP_CREATE'},payload:otpPayload});
+ equal(otpResponse.statusCode,201,'OTP challenge created through provider abstraction');
+ const otp=otpResponse.json().data;equal(deliveredOtp,'246810','TEST_ONLY provider receives generated code without API disclosure');
+ equal(Object.hasOwn(otp,'code'),false,'OTP response never exposes raw code');
+ equal((await server.inject({method:'POST',url:'/api/v1/auth/otp/challenges',headers:{'idempotency-key':'TEST_ONLY_OTP_CREATE'},payload:otpPayload})).json().data.replayed,true,'OTP create lost-response retry is idempotent');
+ equal(await db.otpChallenge.count({where:{registrationSessionId}}),1,'OTP retry persists one challenge');
+ for(let attempt=1;attempt<=4;attempt++){const invalid=await server.inject({method:'POST',url:`/api/v1/auth/otp/challenges/${otp.challengeId}/verify`,payload:{code:'000000'}});equal(invalid.statusCode,422,'OTP invalid attempt '+attempt+' rejected');}
+ otpResponse=await server.inject({method:'POST',url:`/api/v1/auth/otp/challenges/${otp.challengeId}/verify`,payload:{code:'246810'}});equal(otpResponse.statusCode,201,'OTP valid code verifies before fifth failure');
+ equal(otpResponse.json().data.status,'VERIFIED','OTP verification status persisted');
+ equal((await server.inject({method:'POST',url:`/api/v1/auth/otp/challenges/${otp.challengeId}/verify`,payload:{code:'246810'}})).json().data.replayed,true,'OTP verification redelivery returns original success');
+ const lockedPayload={...otpPayload,destination:'+886912345679',registrationSessionId:randomUUID()};
+ const lockedChallenge=(await server.inject({method:'POST',url:'/api/v1/auth/otp/challenges',headers:{'idempotency-key':'TEST_ONLY_OTP_LOCK'},payload:lockedPayload})).json().data;
+ for(let attempt=1;attempt<=5;attempt++)equal((await server.inject({method:'POST',url:`/api/v1/auth/otp/challenges/${lockedChallenge.challengeId}/verify`,payload:{code:'000000'}})).statusCode,422,'OTP lockout invalid attempt '+attempt);
+ equal((await db.otpChallenge.findUniqueOrThrow({where:{otpChallengeId:lockedChallenge.challengeId}})).status,'LOCKED','fifth invalid OTP attempt persists lock');
+ equal((await server.inject({method:'POST',url:`/api/v1/auth/otp/challenges/${lockedChallenge.challengeId}/verify`,payload:{code:'246810'}})).statusCode,422,'correct OTP cannot bypass persisted lock');
  const call=(method,path,token,body,key='TEST_ONLY_MEMBER_REQUEST')=>server.inject({method,url:'/api/v1/'+path,headers:{...(token?{authorization:'Bearer '+token}:{}),...(method==='PATCH'||method==='POST'&&(['member/orders','member/logout'].includes(path)||path.endsWith('/consent'))?{'idempotency-key':key}:{})},...(body?{payload:body}:{})});
  // Actual Admin HTTP authorization using isolated opaque sessions. This verifies
  // session/role infrastructure, not formal Entra credentials or production RBAC.

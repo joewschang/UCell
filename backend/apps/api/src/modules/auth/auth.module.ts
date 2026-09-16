@@ -9,9 +9,13 @@ import { AuthenticationGuard } from './authentication.guard';
 import { MemberAuthenticationGuard } from './member-authentication.guard';
 import { Module } from '@nestjs/common';
 import { AdminAuthenticationGuard } from './admin-authentication.guard';
+import { OtpController } from './otp.controller';
+import { OtpService } from './otp.service';
+import { OtpCodeService } from './otp-code.service';
+import { SmsOtpProviderService } from './sms-otp-provider.service';
 @Module({
-  controllers:[AdminAuthController],
-  providers:[QualificationAccessService,AdminRoleGuard,IdentityTokenService,LineIdentityService,AuthenticationGuard,MemberAuthenticationGuard,AdminAuthenticationGuard,EntraTokenVerifierService,AdminAuthService],
+  controllers:[AdminAuthController,OtpController],
+  providers:[QualificationAccessService,AdminRoleGuard,IdentityTokenService,LineIdentityService,AuthenticationGuard,MemberAuthenticationGuard,AdminAuthenticationGuard,EntraTokenVerifierService,AdminAuthService,OtpService,OtpCodeService,SmsOtpProviderService],
   exports:[QualificationAccessService,AdminRoleGuard,IdentityTokenService,LineIdentityService,AuthenticationGuard,MemberAuthenticationGuard,AdminAuthenticationGuard,EntraTokenVerifierService,AdminAuthService]
 })
 export class AuthModule {}
