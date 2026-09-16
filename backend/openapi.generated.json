@@ -151,6 +151,119 @@
         ]
       }
     },
+    "/api/v1/member/contracts/required": {
+      "get": {
+        "description": "Return currently effective required Network Member contract versions and immutable consent status.",
+        "operationId": "memberRequiredContracts",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "Validation failure; unknown identity/qualification/monetary fields rejected"
+          },
+          "401": {
+            "description": "Member LINE session required, expired/disabled sessions denied"
+          },
+          "403": {
+            "description": "Qualification not owned"
+          },
+          "404": {
+            "description": "Resource unavailable"
+          },
+          "409": {
+            "description": "Conflicting operation"
+          },
+          "422": {
+            "description": "Invalid input or pending domain decision"
+          }
+        },
+        "security": [
+          {
+            "memberBearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "Member"
+        ]
+      }
+    },
+    "/api/v1/member/contracts/{versionId}/consent": {
+      "post": {
+        "description": "Append immutable consent evidence bound to the displayed content hash. Duplicate delivery is idempotent.",
+        "operationId": "memberConsentContract",
+        "parameters": [
+          {
+            "name": "versionId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MemberContractConsentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          },
+          "400": {
+            "description": "Validation failure; unknown identity/qualification/monetary fields rejected"
+          },
+          "401": {
+            "description": "Member LINE session required, expired/disabled sessions denied"
+          },
+          "403": {
+            "description": "Qualification not owned"
+          },
+          "404": {
+            "description": "Resource unavailable"
+          },
+          "409": {
+            "description": "Conflicting operation"
+          },
+          "422": {
+            "description": "Invalid input or pending domain decision"
+          }
+        },
+        "security": [
+          {
+            "memberBearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "Member"
+        ]
+      }
+    },
     "/api/v1/member/logout": {
       "post": {
         "description": "Revoke only the authenticated UCell LINE session, with transactional audit. Does not log out LINE. Repeated delivery after revocation returns 401; other sessions are unaffected.",
@@ -1120,6 +1233,55 @@
         ]
       }
     },
+    "/api/v1/member/share-links": {
+      "post": {
+        "description": "Create an encrypted referral URL bound to the selected owned Qualification. Server configuration supplies base URL, key and TTL; missing configuration fails closed.",
+        "operationId": "memberCreateShareLink",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MemberContextDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          },
+          "400": {
+            "description": "Validation failure; unknown identity/qualification/monetary fields rejected"
+          },
+          "401": {
+            "description": "Member LINE session required, expired/disabled sessions denied"
+          },
+          "403": {
+            "description": "Qualification not owned"
+          },
+          "404": {
+            "description": "Resource unavailable"
+          },
+          "409": {
+            "description": "Conflicting operation"
+          },
+          "422": {
+            "description": "Invalid input or pending domain decision"
+          }
+        },
+        "security": [
+          {
+            "memberBearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "Member"
+        ]
+      }
+    },
     "/api/v1/member/performance": {
       "get": {
         "operationId": "MemberController_performance",
@@ -1944,6 +2106,127 @@
         "summary": "撤銷目前Admin Session",
         "tags": [
           "Admin - Authentication"
+        ]
+      }
+    },
+    "/api/v1/auth/otp/challenges": {
+      "post": {
+        "description": "Dormant future-channel endpoint. Creates a 6-digit, five-minute OTP challenge only when SMS OTP is explicitly enabled by an approved deployment configuration.",
+        "operationId": "createOtpChallenge",
+        "parameters": [
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateOtpChallengeDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "503": {
+            "description": "SMS OTP feature disabled or provider configuration pending"
+          }
+        },
+        "summary": "",
+        "tags": [
+          "Authentication - OTP"
+        ]
+      }
+    },
+    "/api/v1/auth/otp/challenges/{id}/verify": {
+      "post": {
+        "description": "Verifies under a database row lock; five failed attempts lock the challenge.",
+        "operationId": "verifyOtpChallenge",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerifyOtpChallengeDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "summary": "",
+        "tags": [
+          "Authentication - OTP"
+        ]
+      }
+    },
+    "/api/v1/member/registration/network": {
+      "post": {
+        "description": "Requires authenticated LINE-backed UCell session, records contract consent and completes NETWORK_MEMBER profile. Mobile/email are contact data. No OTP or Qualification is created.",
+        "operationId": "registerLineNetworkMember",
+        "parameters": [
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NetworkRegistrationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "summary": "",
+        "tags": [
+          "Member - Registration"
         ]
       }
     },
@@ -4495,6 +4778,10 @@
           "name": {
             "type": "string"
           },
+          "alias": {
+            "type": "string",
+            "nullable": true
+          },
           "memberNo": {
             "type": "string",
             "format": "uuid"
@@ -4506,13 +4793,42 @@
           "phone": {
             "type": "string",
             "nullable": true
+          },
+          "gender": {
+            "type": "string",
+            "nullable": true
+          },
+          "birthDate": {
+            "type": "string",
+            "format": "date",
+            "nullable": true
+          },
+          "membershipState": {
+            "type": "string",
+            "enum": [
+              "NETWORK_MEMBER",
+              "FORMAL_PENDING",
+              "FORMAL_MEMBER"
+            ],
+            "nullable": true,
+            "description": "Null means pre-V1.1 legacy state has not been classified; never inferred from Qualification."
+          },
+          "mobileVerifiedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
           }
         },
         "required": [
           "name",
+          "alias",
           "memberNo",
           "email",
-          "phone"
+          "phone",
+          "gender",
+          "birthDate",
+          "membershipState",
+          "mobileVerifiedAt"
         ]
       },
       "PaginationView": {
@@ -5227,6 +5543,29 @@
         ],
         "additionalProperties": false
       },
+      "MemberContractConsentDto": {
+        "type": "object",
+        "properties": {
+          "accepted": {
+            "type": "boolean",
+            "enum": [
+              true
+            ],
+            "description": "Explicit acceptance is required; false is never recorded as consent."
+          },
+          "channel": {
+            "type": "string",
+            "enum": [
+              "MEMBER_WEB",
+              "LIFF"
+            ]
+          }
+        },
+        "required": [
+          "accepted",
+          "channel"
+        ]
+      },
       "MemberLogoutDto": {
         "type": "object",
         "properties": {
@@ -5311,6 +5650,95 @@
           "items"
         ],
         "additionalProperties": false
+      },
+      "CreateOtpChallengeDto": {
+        "type": "object",
+        "properties": {
+          "purpose": {
+            "type": "string",
+            "enum": [
+              "NETWORK_REGISTRATION"
+            ]
+          },
+          "destination": {
+            "type": "string",
+            "example": "+886912345678"
+          },
+          "registrationSessionId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "purpose",
+          "destination",
+          "registrationSessionId"
+        ]
+      },
+      "VerifyOtpChallengeDto": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "pattern": "^[0-9]{6}$"
+          }
+        },
+        "required": [
+          "code"
+        ]
+      },
+      "NetworkRegistrationDto": {
+        "type": "object",
+        "properties": {
+          "contractVersionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "accepted": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "legalName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "alias": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "gender": {
+            "type": "string",
+            "description": "Version-neutral gender code; display labels are client/localization concerns.",
+            "maxLength": 32
+          },
+          "birthDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "mobile": {
+            "type": "string",
+            "example": "+886912345678"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "maxLength": 254
+          }
+        },
+        "required": [
+          "contractVersionId",
+          "accepted",
+          "legalName",
+          "alias",
+          "gender",
+          "birthDate",
+          "mobile",
+          "email"
+        ]
       },
       "CreateOrderDto": {
         "type": "object",

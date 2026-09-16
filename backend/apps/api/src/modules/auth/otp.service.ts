@@ -8,9 +8,11 @@ import { SmsOtpProviderService } from './sms-otp-provider.service';
 @Injectable()
 export class OtpService {
  constructor(private readonly db:PrismaService,private readonly idempotency:IdempotencyService,private readonly codes:OtpCodeService,private readonly provider:SmsOtpProviderService){}
+ private assertEnabled(){if(process.env.AUTH_CHANNEL_ENABLE_SMS_OTP!=='true')throw new ServiceUnavailableException({code:'SMS_OTP_FEATURE_DISABLED'});}
  private secret(){const value=process.env.OTP_HASH_SECRET;if(!value||value.length<32)throw new ServiceUnavailableException({code:'OTP_CONFIGURATION_PENDING'});return value;}
  private hash(value:string){return createHmac('sha256',this.secret()).update(value).digest('hex');}
  async create(input:{purpose:'NETWORK_REGISTRATION'|'MOBILE_CHANGE'|'ACCOUNT_RECOVERY';destination:string;registrationSessionId?:string;personId?:string},key:string){
+  this.assertEnabled();
   if(input.purpose!=='NETWORK_REGISTRATION'||!input.registrationSessionId||input.personId)throw new UnprocessableEntityException({code:'OTP_AUTHENTICATED_FLOW_REQUIRED'});
   const subjectCount=Number(Boolean(input.personId))+Number(Boolean(input.registrationSessionId));
   if(subjectCount!==1)throw new UnprocessableEntityException({code:'OTP_SUBJECT_REQUIRED'});
@@ -30,6 +32,7 @@ export class OtpService {
   });return {...result.value,replayed:result.replayed};}catch(error){if((error as any).code==='P2034')throw new ConflictException({code:'RETRYABLE_CONFLICT'});throw error;}
  }
  async verify(challengeId:string,code:string){
+  this.assertEnabled();
   const result=await this.db.$transaction(async tx=>{
    const rows=await tx.$queryRaw<Array<{status:string;codeHash:string;attemptCount:number;expiresAt:Date;verifiedAt:Date|null}>>`SELECT status,code_hash AS "codeHash",attempt_count AS "attemptCount",expires_at AS "expiresAt",verified_at AS "verifiedAt" FROM identity.otp_challenge WHERE otp_challenge_id=${challengeId}::uuid FOR UPDATE`;
    const row=rows[0];if(!row)return {error:'OTP_CHALLENGE_NOT_FOUND'};

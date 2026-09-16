@@ -31,6 +31,7 @@ const db=new PrismaClient();let app,assertions=0;const results=[];
 function equal(actual,expected,label){assert.deepEqual(actual,expected,label);assertions++;results.push({label,actual,expected,result:'PASS'});}
 try{
  process.env.OTP_HASH_SECRET='TEST_ONLY_OTP_HASH_SECRET_32_BYTES_MINIMUM';
+ process.env.AUTH_CHANNEL_ENABLE_SMS_OTP='true';
  const person=await db.person.create({data:{legalName:'MEMBER A TEST ONLY',status:'EFFECTIVE'}});
  const other=await db.person.create({data:{legalName:'MEMBER B TEST ONLY',status:'EFFECTIVE'}});
  const empty=await db.person.create({data:{legalName:'MEMBER EMPTY TEST ONLY',status:'EFFECTIVE'}});
@@ -99,22 +100,13 @@ try{
  for(let attempt=1;attempt<=5;attempt++)equal((await server.inject({method:'POST',url:`/api/v1/auth/otp/challenges/${lockedChallenge.challengeId}/verify`,payload:{code:'000000'}})).statusCode,422,'OTP lockout invalid attempt '+attempt);
  equal((await db.otpChallenge.findUniqueOrThrow({where:{otpChallengeId:lockedChallenge.challengeId}})).status,'LOCKED','fifth invalid OTP attempt persists lock');
  equal((await server.inject({method:'POST',url:`/api/v1/auth/otp/challenges/${lockedChallenge.challengeId}/verify`,payload:{code:'246810'}})).statusCode,422,'correct OTP cannot bypass persisted lock');
- const networkSessionId=randomUUID(),networkMobile='+886912345680';
- const networkOtp=(await server.inject({method:'POST',url:'/api/v1/auth/otp/challenges',headers:{'idempotency-key':'TEST_ONLY_NETWORK_OTP'},payload:{purpose:'NETWORK_REGISTRATION',destination:networkMobile,registrationSessionId:networkSessionId}})).json().data;
- equal((await server.inject({method:'POST',url:`/api/v1/auth/otp/challenges/${networkOtp.challengeId}/verify`,payload:{code:'246810'}})).statusCode,201,'network registration OTP verified');
- const registrationBody={contractVersionId:contract.contractDocumentVersionId,accepted:true,legalName:'NETWORK MEMBER TEST ONLY',alias:'NETWORK ALIAS',gender:'UNSPECIFIED',birthDate:'1990-01-02',mobile:networkMobile,mobileChallengeId:networkOtp.challengeId,registrationSessionId:networkSessionId,email:'network.test@example.invalid'};
- let registration=await server.inject({method:'POST',url:'/api/v1/registration/network',headers:{'idempotency-key':'TEST_ONLY_NETWORK_REGISTER'},payload:registrationBody});
- equal(registration.statusCode,201,'network member registration commits');
- const registered=registration.json().data;
- equal([registered.membershipState,registered.qualificationCreated],['NETWORK_MEMBER',false],'registration creates Person state without Qualification');
- equal(await db.qualification.count({where:{currentHolderPersonId:registered.personId}}),0,'network registration creates zero Qualifications');
- equal((await db.person.findUniqueOrThrow({where:{personId:registered.personId}})).membershipState,'NETWORK_MEMBER','network Person state persisted');
- equal(await db.personMembershipStateEvent.count({where:{personId:registered.personId,toState:'NETWORK_MEMBER'}}),1,'network state evidence appended once');
- equal(await db.consentEvidence.count({where:{personId:registered.personId,contractDocumentVersionId:contract.contractDocumentVersionId}}),1,'registration consent evidence appended once');
- equal((await db.otpChallenge.findUniqueOrThrow({where:{otpChallengeId:networkOtp.challengeId}})).consumedByPersonId,registered.personId,'verified OTP consumed by created Person');
- registration=await server.inject({method:'POST',url:'/api/v1/registration/network',headers:{'idempotency-key':'TEST_ONLY_NETWORK_REGISTER'},payload:registrationBody});
- equal([registration.statusCode,registration.json().data.personId,registration.json().data.replayed],[201,registered.personId,true],'network registration lost-response retry returns same Person');
- const call=(method,path,token,body,key='TEST_ONLY_MEMBER_REQUEST')=>server.inject({method,url:'/api/v1/'+path,headers:{...(token?{authorization:'Bearer '+token}:{}),...(method==='PATCH'||method==='POST'&&(['member/orders','member/logout'].includes(path)||path.endsWith('/consent'))?{'idempotency-key':key}:{})},...(body?{payload:body}:{})});
+ process.env.AUTH_CHANNEL_ENABLE_SMS_OTP='false';
+ equal((await server.inject({method:'POST',url:'/api/v1/auth/otp/challenges',headers:{'idempotency-key':'TEST_ONLY_DISABLED_OTP'},payload:{...otpPayload,registrationSessionId:randomUUID()}})).statusCode,503,'current LINE release disables OTP challenge creation');
+ equal((await server.inject({method:'POST',url:`/api/v1/auth/otp/challenges/${otp.challengeId}/verify`,payload:{code:'246810'}})).statusCode,503,'current LINE release disables OTP verification');
+ process.env.AUTH_CHANNEL_ENABLE_SMS_OTP='true';
+ equal((await server.inject({method:'POST',url:'/api/v1/member/registration/network',headers:{'idempotency-key':'TEST_ONLY_UNAUTHENTICATED_REGISTRATION'},payload:{}})).statusCode,401,'network registration requires authenticated LINE session');
+ equal((await server.inject({method:'POST',url:'/api/v1/registration/network',headers:{'idempotency-key':'TEST_ONLY_RETIRED_ROUTE'},payload:{}})).statusCode,404,'legacy public registration route is retired');
+ const call=(method,path,token,body,key='TEST_ONLY_MEMBER_REQUEST')=>server.inject({method,url:'/api/v1/'+path,headers:{...(token?{authorization:'Bearer '+token}:{}),...(method==='PATCH'||method==='POST'&&(['member/orders','member/logout','member/registration/network'].includes(path)||path.endsWith('/consent'))?{'idempotency-key':key}:{})},...(body?{payload:body}:{})});
  // Actual Admin HTTP authorization using isolated opaque sessions. This verifies
  // session/role infrastructure, not formal Entra credentials or production RBAC.
  app.get(ConfigService).set('ADMIN_AUTH_BYPASS','false');
@@ -161,6 +153,21 @@ try{
  equal(Boolean(immutableDelete),true,'database rejects consent evidence delete');
  let immutableContract;try{await db.contractDocumentVersion.update({where:{contractDocumentVersionId:contract.contractDocumentVersionId},data:{contentText:'MUTATED'}});}catch(error){immutableContract=error;}
  equal(Boolean(immutableContract),true,'database rejects contract version mutation');
+ const qualificationCountBeforeRegistration=await db.qualification.count({where:{currentHolderPersonId:person.personId}});
+ const verifiedOtpConsumedBeforeRegistration=await db.otpChallenge.count({where:{status:'VERIFIED',consumedAt:{not:null}}});
+ const registrationBody={contractVersionId:contract.contractDocumentVersionId,accepted:true,legalName:person.legalName,alias:person.legalName,gender:'UNSPECIFIED',birthDate:'1990-01-02',mobile:'+886912345680',email:'network.test@example.invalid'};
+ let registration=await call('POST','member/registration/network',token,registrationBody,'TEST_ONLY_NETWORK_REGISTER');
+ equal(registration.statusCode,201,'authenticated LINE network registration commits');
+ const registered=registration.json().data;
+ equal([registered.personId,registered.membershipState,registered.enabledAuthenticationProvider,registered.qualificationCreated],[person.personId,'NETWORK_MEMBER','LINE',false],'registration completes existing LINE Person without Qualification');
+ equal(await db.qualification.count({where:{currentHolderPersonId:person.personId}}),qualificationCountBeforeRegistration,'network registration creates no Qualification');
+ const registeredPerson=await db.person.findUniqueOrThrow({where:{personId:person.personId}});
+ equal([registeredPerson.membershipState,registeredPerson.mobileVerifiedAt],['NETWORK_MEMBER',null],'network Person persists contact mobile without SMS verification');
+ equal(await db.personMembershipStateEvent.count({where:{personId:person.personId,toState:'NETWORK_MEMBER'}}),1,'network state evidence appended once');
+ equal(await db.consentEvidence.count({where:{personId:person.personId,contractDocumentVersionId:contract.contractDocumentVersionId}}),1,'registration reuses immutable consent evidence');
+ equal(await db.otpChallenge.count({where:{status:'VERIFIED',consumedAt:{not:null}}}),verifiedOtpConsumedBeforeRegistration,'LINE-first registration consumes no OTP evidence');
+ registration=await call('POST','member/registration/network',token,registrationBody,'TEST_ONLY_NETWORK_REGISTER');
+ equal([registration.statusCode,registration.json().data.personId,registration.json().data.replayed],[201,person.personId,true],'network registration lost-response retry returns same LINE Person');
  equal((await call('POST','auth/member/line/exchange',null,{idToken:'VALID_TEST_ONLY'})).statusCode,409,'ID token replay denied');
  equal((await call('POST','auth/member/line/exchange',null,{idToken:'INVALID_TEST_ONLY'})).statusCode,401,'invalid LINE token denied');
  equal((await call('POST','auth/member/line/exchange',null,{idToken:'UNBOUND_TEST_ONLY'})).statusCode,401,'unbound LINE denied');

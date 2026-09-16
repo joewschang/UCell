@@ -1,9 +1,9 @@
 # V1.1 OTP Domain Foundation — 2026-09-17
 
-Status: IMPLEMENTED ON INTEGRATION; Production SMS provider remains CONFIG_PENDING.
+Status: ARCHITECTURE READY; `FEATURE_DISABLED` for the current LINE OA release.
 
-The OTP domain implements the approved baseline: six numeric digits, five-minute expiry, five verification attempts, 60-second resend cooldown, five sends per rolling hour and ten per rolling day. Destination and OTP values are stored only as keyed SHA-256 fingerprints/hashes; the raw OTP is neither persisted nor returned. Challenge creation is Serializable and idempotent. Verification locks the challenge row, persists every failed attempt, locks on the fifth failure and returns the original verified result on redelivery.
+`NEXT_RELEASE_AUTH_CHANNEL_DECISION_APPROVED.md` makes LINE the primary and only enabled authentication provider for the current release. Network registration and formal-member upgrade therefore do not require SMS OTP. Mobile and email are contact data in those flows. The API enforces this at runtime: both OTP challenge creation and verification fail closed with `SMS_OTP_FEATURE_DISABLED` unless `AUTH_CHANNEL_ENABLE_SMS_OTP=true` is explicitly supplied by a future approved deployment configuration.
 
-The SMS adapter intentionally fails closed with `SMS_PROVIDER_CONFIGURATION_PENDING`. Golden DB injects a TEST_ONLY provider and deterministic code; this is not Production delivery evidence.
+The dormant OTP domain remains available for a future approved step-up flow: six numeric digits, five-minute expiry, five verification attempts, 60-second resend cooldown, five sends per rolling hour and ten per rolling day. Destination and OTP values are stored only as keyed SHA-256 fingerprints/hashes; the raw OTP is neither persisted nor returned. Challenge creation is Serializable and idempotent. Verification locks the challenge row and persists attempts.
 
-Verification: Prisma validate/generate/migrate deploy PASS; fresh database with 29 migrations PASS; Member Identity Golden 309 HTTP/DB assertions PASS including no-code response, create replay, failed attempts, success replay and persisted lockout. Backend API, four builds and static/security/contract gates are rerun before checkpoint. No Qualification or monetary model is created or changed.
+Golden DB enables the feature only with an explicit `TEST_ONLY` environment value and injects a synthetic provider. This proves the dormant architecture without representing Production SMS delivery evidence. SMS provider credentials are not a current LINE OA release blocker.

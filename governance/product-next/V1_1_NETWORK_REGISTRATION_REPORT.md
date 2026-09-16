@@ -1,9 +1,9 @@
-# V1.1 Network Registration Transaction — 2026-09-17
+# V1.1 LINE-first Network Registration — 2026-09-17
 
-Status: IMPLEMENTED ON INTEGRATION; Production contract/privacy text and SMS delivery remain blocked.
+Status: IMPLEMENTED ON INTEGRATION; formal LINE/LIFF credentials, approved contract/privacy content and UAT remain Production blockers.
 
-`POST /api/v1/registration/network` now atomically validates an effective required contract, locks and consumes matching verified mobile OTP evidence, creates one EFFECTIVE Person with `NETWORK_MEMBER` state, appends membership-state and consent evidence, writes audit/outbox events and returns provider-link options. The transaction is Serializable and idempotent. A mobile fingerprint advisory lock plus recheck prevents concurrent duplicate registration. The flow explicitly returns `qualificationCreated: false` and never creates Sponsor/Binary/Qualification or monetary facts.
+The approved channel rule is enforced by authenticated `POST /api/v1/member/registration/network`. The endpoint requires a valid LINE-backed UCell member session, records the accepted effective contract version, completes the existing Person's basic profile, and transitions that Person to `NETWORK_MEMBER`. Mobile and email are stored as contact data; registration does not request, verify or consume SMS OTP evidence.
 
-Existing Persons are not reclassified. OTP evidence must match the registration session, E.164 mobile fingerprint, NETWORK_REGISTRATION purpose, VERIFIED state and expiry, and can be consumed once.
+The transaction is Serializable and idempotent. It locks the submitted mobile identity, rejects ownership by another Person, preserves immutable consent evidence, appends membership-state and audit evidence, and emits one registration outbox event. It explicitly returns `enabledAuthenticationProvider: LINE` and `qualificationCreated: false`. It creates no Person, Qualification, Sponsor/Binary placement or monetary fact.
 
-Fresh DB with 30 migrations and Member Identity Golden 318 HTTP/DB assertions PASS, including Person creation, one state event, one consent, OTP ownership, zero Qualification and lost-response retry. Initial Golden exposed Prisma deserialization of PostgreSQL advisory-lock `void`; the query now executes the lock in a subquery and returns only a supported boolean. No assertion was weakened.
+The previous unauthenticated OTP registration route was removed because it conflicted with `NEXT_RELEASE_AUTH_CHANNEL_DECISION_APPROVED.md`. OTP and Google structures remain dormant and feature-disabled for future approved releases. Golden coverage verifies same-Person completion, contact-only mobile semantics, no OTP consumption, no Qualification creation, immutable consent reuse and lost-response replay.
