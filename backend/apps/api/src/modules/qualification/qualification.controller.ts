@@ -1,16 +1,19 @@
 import { Roles } from '../auth/roles.decorator';
 import { Body, Controller, Get, Headers, Param, Post, Query, Req, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiProperty, ApiPropertyOptional, ApiTags } from '@nestjs/swagger';
 import { IdempotencyGuard } from '../../common/guards/idempotency.guard';
 import { CreateQualificationDto } from './dto/create-qualification.dto';
 import { QualificationService } from './qualification.service';
+import { SystemAssignmentService } from './system-assignment.service';
+import { IsEnum,IsISO8601,IsOptional,IsString,IsUUID,MaxLength } from 'class-validator';
+class SystemAssignedQualificationDto { @ApiProperty({format:'uuid'}) @IsUUID() personId!:string; @ApiProperty({enum:['STARTER','ELITE','LEADER']}) @IsEnum(['STARTER','ELITE','LEADER']) planLevelCode!:'STARTER'|'ELITE'|'LEADER'; @ApiProperty({maxLength:80}) @IsString() @MaxLength(80) policyVersion!:string; @ApiPropertyOptional({format:'date-time'}) @IsOptional() @IsISO8601() effectiveAt?:string; }
 
 @ApiTags('Admin - Qualification')
 @ApiBearerAuth('adminBearer')
 @Roles('SUPER_ADMIN','MEMBERSHIP_OPS','COMPLIANCE_AUDIT')
 @Controller('admin/qualifications')
 export class QualificationController {
-  constructor(private readonly service: QualificationService) {}
+  constructor(private readonly service: QualificationService,private readonly systemAssignment:SystemAssignmentService) {}
 
 
   @Get()
@@ -38,6 +41,9 @@ export class QualificationController {
     const result = await this.service.create(dto, key, req.requestId, req.user?.personId);
     return { data: result.value, meta: { replayed: result.replayed } };
   }
+  @Post('system-assigned') @UseGuards(IdempotencyGuard)
+  @ApiOperation({operationId:'adminCreateSystemAssignedQualification',summary:'依核准版本化政策建立無有效推薦歸因的 Qualification'})
+  async createSystemAssigned(@Body() dto:SystemAssignedQualificationDto,@Headers('idempotency-key') key:string,@Req() req:any){const result=await this.systemAssignment.create(dto,key,req.requestId,req.user?.personId);return {data:result.value,meta:{replayed:result.replayed}};}
 
   @Get(':qualificationId')
   @ApiOperation({ operationId: 'adminGetQualification', summary: '取得 Qualification 詳情' })

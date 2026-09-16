@@ -443,26 +443,30 @@ model Qualification {
   createdAt             DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt             DateTime             @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  currentHolder              Person                           @relation(fields: [currentHolderPersonId], references: [personId])
-  holderHistory              QualificationHolderHistory[]
-  sponsoredChildren          SponsorRelationship[]            @relation("Sponsor")
-  sponsorRelation            SponsorRelationship?             @relation("SponsoredChild")
-  binaryChildren             BinaryPlacement[]                @relation("BinaryParent")
-  binaryPlacement            BinaryPlacement?                 @relation("BinaryChild")
-  orders                     Order[]
-  pvEvents                   PvLedger[]
-  activePeriods              ActivePeriod[]
-  subscriptions              Subscription[]
-  membershipApplications     MembershipApplication[]
-  bonusAwards                BonusAward[]                     @relation("BonusRecipient")
-  sourceBonusAwards          BonusAward[]                     @relation("BonusSource")
-  binaryCarry                BinaryCarry[]
-  qualificationStatusHistory QualificationStatusHistory[]
-  referralLinks              ReferralLink[]
-  referralAttributions       ReferralAttribution[]
-  globalRankHistory          QualificationGlobalRankHistory[]
-  payoutLines                PayoutLine[]
-  payableEntries             PayableEntry[]
+  currentHolder               Person                           @relation(fields: [currentHolderPersonId], references: [personId])
+  holderHistory               QualificationHolderHistory[]
+  sponsoredChildren           SponsorRelationship[]            @relation("Sponsor")
+  sponsorRelation             SponsorRelationship?             @relation("SponsoredChild")
+  binaryChildren              BinaryPlacement[]                @relation("BinaryParent")
+  binaryPlacement             BinaryPlacement?                 @relation("BinaryChild")
+  orders                      Order[]
+  pvEvents                    PvLedger[]
+  activePeriods               ActivePeriod[]
+  subscriptions               Subscription[]
+  membershipApplications      MembershipApplication[]
+  bonusAwards                 BonusAward[]                     @relation("BonusRecipient")
+  sourceBonusAwards           BonusAward[]                     @relation("BonusSource")
+  binaryCarry                 BinaryCarry[]
+  qualificationStatusHistory  QualificationStatusHistory[]
+  referralLinks               ReferralLink[]
+  referralAttributions        ReferralAttribution[]
+  systemAssignmentPoolEntries SystemAssignmentPoolEntry[]
+  systemAssignmentRoots       SystemAssignmentEvidence[]       @relation("SystemAssignmentRoot")
+  systemAssignmentParents     SystemAssignmentEvidence[]       @relation("SystemAssignmentParent")
+  systemAssignmentChildren    SystemAssignmentEvidence[]       @relation("SystemAssignmentChild")
+  globalRankHistory           QualificationGlobalRankHistory[]
+  payoutLines                 PayoutLine[]
+  payableEntries              PayableEntry[]
 
   @@index([currentHolderPersonId])
   @@index([status, effectiveAt])
@@ -529,6 +533,72 @@ model ReferralAttributionHistory {
   @@index([boundPersonId, occurredAt])
   @@map("referral_attribution_history")
   @@schema("identity")
+}
+
+model SystemAssignmentPolicy {
+  systemAssignmentPolicyId String                      @id @default(uuid()) @map("system_assignment_policy_id") @db.Uuid
+  version                  String                      @unique
+  effectiveFrom            DateTime                    @map("effective_from") @db.Timestamptz(6)
+  effectiveTo              DateTime?                   @map("effective_to") @db.Timestamptz(6)
+  poolSelector             String                      @map("pool_selector")
+  tieBreakStrategy         String                      @map("tie_break_strategy")
+  capacityPolicy           String                      @map("capacity_policy")
+  exclusionPolicy          String                      @map("exclusion_policy")
+  lockStrategy             String                      @map("lock_strategy")
+  configHash               String                      @map("config_hash")
+  approvalReference        String                      @map("approval_reference")
+  status                   String                      @default("ACTIVE")
+  createdAt                DateTime                    @default(now()) @map("created_at") @db.Timestamptz(6)
+  poolEntries              SystemAssignmentPoolEntry[]
+  evidence                 SystemAssignmentEvidence[]
+
+  @@index([status, effectiveFrom, effectiveTo])
+  @@map("system_assignment_policy")
+  @@schema("rules")
+}
+
+model SystemAssignmentPoolEntry {
+  systemAssignmentPoolEntryId String                 @id @default(uuid()) @map("system_assignment_pool_entry_id") @db.Uuid
+  systemAssignmentPolicyId    String                 @map("system_assignment_policy_id") @db.Uuid
+  qualificationId             String                 @map("qualification_id") @db.Uuid
+  priorityClass               Int                    @map("priority_class")
+  capacityLimit               Int?                   @map("capacity_limit")
+  eligibilityState            String                 @map("eligibility_state")
+  enabledFrom                 DateTime               @map("enabled_from") @db.Timestamptz(6)
+  enabledTo                   DateTime?              @map("enabled_to") @db.Timestamptz(6)
+  approvalReference           String                 @map("approval_reference")
+  createdAt                   DateTime               @default(now()) @map("created_at") @db.Timestamptz(6)
+  policy                      SystemAssignmentPolicy @relation(fields: [systemAssignmentPolicyId], references: [systemAssignmentPolicyId])
+  qualification               Qualification          @relation(fields: [qualificationId], references: [qualificationId])
+
+  @@unique([systemAssignmentPolicyId, qualificationId])
+  @@index([eligibilityState, enabledFrom, enabledTo])
+  @@map("system_assignment_pool_entry")
+  @@schema("rules")
+}
+
+model SystemAssignmentEvidence {
+  systemAssignmentEvidenceId  String                 @id @default(uuid()) @map("system_assignment_evidence_id") @db.Uuid
+  systemAssignmentPolicyId    String                 @map("system_assignment_policy_id") @db.Uuid
+  childQualificationId        String                 @unique @map("child_qualification_id") @db.Uuid
+  selectedRootQualificationId String                 @map("selected_root_qualification_id") @db.Uuid
+  binaryParentQualificationId String                 @map("binary_parent_qualification_id") @db.Uuid
+  binarySide                  SideCode               @map("binary_side")
+  rootDescendantCount         Int                    @map("root_descendant_count")
+  policyVersion               String                 @map("policy_version")
+  policyHash                  String                 @map("policy_hash")
+  inputEvidence               Json                   @map("input_evidence")
+  outputEvidence              Json                   @map("output_evidence")
+  correlationId               String                 @map("correlation_id") @db.Uuid
+  executedAt                  DateTime               @map("executed_at") @db.Timestamptz(6)
+  policy                      SystemAssignmentPolicy @relation(fields: [systemAssignmentPolicyId], references: [systemAssignmentPolicyId])
+  child                       Qualification          @relation("SystemAssignmentChild", fields: [childQualificationId], references: [qualificationId])
+  selectedRoot                Qualification          @relation("SystemAssignmentRoot", fields: [selectedRootQualificationId], references: [qualificationId])
+  binaryParent                Qualification          @relation("SystemAssignmentParent", fields: [binaryParentQualificationId], references: [qualificationId])
+
+  @@index([selectedRootQualificationId, executedAt])
+  @@map("system_assignment_evidence")
+  @@schema("organization")
 }
 
 model MemberNotification {

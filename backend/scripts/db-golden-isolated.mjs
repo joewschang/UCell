@@ -25,6 +25,7 @@ try{
   run(['scripts/phase3-return-outbox-db-test.mjs']);
   run(['scripts/phase3-membership-db-test.mjs']);
   run(['scripts/phase3-rpv-concurrency-db-test.mjs']);
+  run(['scripts/system-assignment-db-test.mjs']);
   run(['scripts/phase3-member-identity-db-test.mjs']);
   console.log('DB_GOLDEN_ISOLATED_PASS: fresh database, deployed migrations, deterministic fixtures');
 }finally{
