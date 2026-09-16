@@ -601,6 +601,45 @@ model SystemAssignmentEvidence {
   @@schema("organization")
 }
 
+model PublishedContent {
+  contentId      String           @id @default(uuid()) @map("content_id") @db.Uuid
+  contentType    String           @map("content_type")
+  status         String           @default("DRAFT")
+  createdByActor String           @map("created_by_actor")
+  createdAt      DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  versions       ContentVersion[]
+
+  @@index([status, createdAt])
+  @@map("content")
+  @@schema("integration")
+}
+
+model ContentVersion {
+  contentVersionId  String           @id @default(uuid()) @map("content_version_id") @db.Uuid
+  contentId         String           @map("content_id") @db.Uuid
+  version           Int
+  title             String
+  summary           String?
+  externalUrl       String           @map("external_url")
+  thumbnailUrl      String?          @map("thumbnail_url")
+  audiencePolicy    String           @map("audience_policy")
+  shareable         Boolean          @default(true)
+  publishFrom       DateTime?        @map("publish_from") @db.Timestamptz(6)
+  publishTo         DateTime?        @map("publish_to") @db.Timestamptz(6)
+  approvalReference String?          @map("approval_reference")
+  approvedByActor   String?          @map("approved_by_actor")
+  approvedAt        DateTime?        @map("approved_at") @db.Timestamptz(6)
+  contentHash       String           @map("content_hash")
+  status            String           @default("DRAFT")
+  createdAt         DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  content           PublishedContent @relation(fields: [contentId], references: [contentId])
+
+  @@unique([contentId, version])
+  @@index([status, publishFrom, publishTo])
+  @@map("content_version")
+  @@schema("integration")
+}
+
 model MemberNotification {
   sourceEventId   String?                  @unique @map("source_event_id") @db.Uuid
   reads           MemberNotificationRead[]

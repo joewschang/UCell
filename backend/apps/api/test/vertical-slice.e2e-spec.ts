@@ -147,7 +147,7 @@ describe('UCell first vertical slice', () => {
   it('reprocessing same outbox event does not duplicate GPV',async()=>{
     const db=new PrismaService();
     try{
-      const person=await db.person.findFirstOrThrow(),product=await db.productReference.findFirstOrThrow({where:{isActive:true}}),occurredAt=new Date(),effectiveFrom=new Date(occurredAt.getTime()-86400000);
+      const person=await db.person.create({data:{legalName:'WORKER REDELIVERY TEST ONLY',status:'EFFECTIVE'}}),product=await db.productReference.create({data:{sku:'WORKER_REDELIVERY_'+randomUUID(),displayName:'WORKER REDELIVERY TEST ONLY',currentPrice:1000,isActive:true}}),occurredAt=new Date(),effectiveFrom=new Date(occurredAt.getTime()-86400000);
       const qualification=await db.qualification.create({data:{currentHolderPersonId:person.personId,planLevelCode:'STARTER',status:'EFFECTIVE',effectiveAt:effectiveFrom}});
       await db.qualificationHolderHistory.create({data:{qualificationId:qualification.qualificationId,holderPersonId:person.personId,effectiveFrom,sourceType:'WORKER_REDELIVERY_TEST'}});
       await db.qualificationPlanHistory.create({data:{qualificationId:qualification.qualificationId,planCode:'STARTER',effectiveFrom,sourceType:'WORKER_REDELIVERY_TEST'}});

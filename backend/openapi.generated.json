@@ -4926,6 +4926,191 @@
           "Admin - Carry Chain Replay"
         ]
       }
+    },
+    "/api/v1/admin/content": {
+      "post": {
+        "operationId": "AdminContentController_create",
+        "parameters": [
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "tags": [
+          "Admin - Content"
+        ]
+      }
+    },
+    "/api/v1/admin/content/{id}/versions": {
+      "post": {
+        "operationId": "AdminContentController_add",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "tags": [
+          "Admin - Content"
+        ]
+      }
+    },
+    "/api/v1/admin/content/{id}/versions/{versionId}/publish": {
+      "post": {
+        "operationId": "AdminContentController_publish",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "versionId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublishDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "tags": [
+          "Admin - Content"
+        ]
+      }
+    },
+    "/api/v1/member/content": {
+      "get": {
+        "operationId": "MemberContentController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "memberBearer": []
+          }
+        ],
+        "tags": [
+          "Member - Content"
+        ]
+      }
+    },
+    "/api/v1/member/content/{id}": {
+      "get": {
+        "operationId": "MemberContentController_get",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "memberBearer": []
+          }
+        ],
+        "tags": [
+          "Member - Content"
+        ]
+      }
     }
   },
   "info": {
@@ -6343,6 +6528,68 @@
           "reasonCode",
           "occurredAt",
           "lines"
+        ]
+      },
+      "ContentDto": {
+        "type": "object",
+        "properties": {
+          "contentType": {
+            "type": "string",
+            "enum": [
+              "VIDEO_EXTERNAL",
+              "EXTERNAL_LINK"
+            ]
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 160
+          },
+          "summary": {
+            "type": "string",
+            "maxLength": 1000
+          },
+          "externalUrl": {
+            "type": "string"
+          },
+          "thumbnailUrl": {
+            "type": "string"
+          },
+          "audiencePolicy": {
+            "type": "string",
+            "enum": [
+              "NETWORK_MEMBER"
+            ]
+          },
+          "shareable": {
+            "type": "boolean"
+          },
+          "publishFrom": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "publishTo": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "contentType",
+          "title",
+          "externalUrl",
+          "audiencePolicy",
+          "shareable"
+        ]
+      },
+      "PublishDto": {
+        "type": "object",
+        "properties": {
+          "approvalReference": {
+            "type": "string",
+            "maxLength": 200
+          }
+        },
+        "required": [
+          "approvalReference"
         ]
       }
     }
