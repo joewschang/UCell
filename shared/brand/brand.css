@@ -1,0 +1,3 @@
+.ucell-official-logo{display:inline-block!important;width:124px;height:47px;background-repeat:no-repeat;background-size:244% auto;background-position:50% 4.7%;border-radius:7px;flex-shrink:0;vertical-align:middle}
+.ucell-product-photo{width:100%;aspect-ratio:2/3;background-repeat:no-repeat;background-size:512% auto;border-radius:12px;background-color:#f6f1e8}
+.catalog-product{display:grid;grid-template-columns:minmax(90px,.7fr) minmax(0,1fr);gap:10px 16px;align-items:center}.catalog-product>.ucell-product-photo,.catalog-product>.product-mark{grid-column:1;grid-row:1/4}.catalog-product>h3,.catalog-product>p,.catalog-product>button{grid-column:2;margin:0}.catalog-product>h3{font-size:16px}.catalog-product>p{font-size:13px}.catalog-product>button{font-size:12px}

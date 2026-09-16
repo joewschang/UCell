@@ -1,11 +1,9 @@
 import { createContext, useContext, useRef, useState, type ReactNode } from 'react';
 import type { Order, Product } from './api';
+import products from '../../shared/products.json';
 
 // Demo-only catalog. No values from this module may authorize real orders or PV.
-export const demoProducts: Product[] = [
-  { id: 'DEMO-TIP580', name: 'TIP-580（示範商品）', price: 4800, pv: 2880, available: true },
-  { id: 'DEMO-TIP636', name: 'TIP-636（示範商品）', price: 4800, pv: 2880, available: true },
-];
+export const demoProducts: Product[] = products.map(p=>({id:`DEMO-${p.sku}`,name:`${p.name} ${p.sku}`,price:p.price,pv:p.pv,available:true}));
 export type Cart = Record<string, number>;
 export type Shipping = { name: string; phone: string; address: string };
 export type DemoOrder = Order & { qualificationId: string; items: Cart };

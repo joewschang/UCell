@@ -2,9 +2,9 @@ name: Member frontend checks
 on:
   push:
     branches: [feature/member-liff-mvp]
-    paths: ['UI_DESIGN_BASELINE.md', 'member/**', '.github/workflows/member-ci.yml', 'backend/apps/api/src/modules/auth/**', 'backend/scripts/line-token-verifier.test.mjs', 'backend/scripts/member-authentication.test.mjs']
+    paths: ['shared/**', 'UI_DESIGN_BASELINE.md', 'member/**', '.github/workflows/member-ci.yml', 'backend/apps/api/src/modules/auth/**', 'backend/scripts/line-token-verifier.test.mjs', 'backend/scripts/member-authentication.test.mjs']
   pull_request:
-    paths: ['UI_DESIGN_BASELINE.md', 'member/**', '.github/workflows/member-ci.yml', 'backend/apps/api/src/modules/auth/**', 'backend/scripts/line-token-verifier.test.mjs', 'backend/scripts/member-authentication.test.mjs']
+    paths: ['shared/**', 'UI_DESIGN_BASELINE.md', 'member/**', '.github/workflows/member-ci.yml', 'backend/apps/api/src/modules/auth/**', 'backend/scripts/line-token-verifier.test.mjs', 'backend/scripts/member-authentication.test.mjs']
 permissions:
   contents: read
 jobs:

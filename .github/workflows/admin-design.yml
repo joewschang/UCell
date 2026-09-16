@@ -2,9 +2,9 @@ name: Admin dashboard design checks
 on:
   push:
     branches: [feature/member-liff-mvp]
-    paths: ['UI_DESIGN_BASELINE.md', 'admin/**', 'member/tests/admin-dashboard-smoke.cjs', '.github/workflows/admin-design.yml']
+    paths: ['shared/**', 'UI_DESIGN_BASELINE.md', 'admin/**', 'member/tests/admin-dashboard-smoke.cjs', '.github/workflows/admin-design.yml']
   pull_request:
-    paths: ['UI_DESIGN_BASELINE.md', 'admin/**', 'member/tests/admin-dashboard-smoke.cjs', '.github/workflows/admin-design.yml']
+    paths: ['shared/**', 'UI_DESIGN_BASELINE.md', 'admin/**', 'member/tests/admin-dashboard-smoke.cjs', '.github/workflows/admin-design.yml']
 permissions:
   contents: read
 jobs:

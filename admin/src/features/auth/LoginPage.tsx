@@ -2,6 +2,7 @@ import {useState} from 'react';
 import {Navigate} from 'react-router-dom';
 import {useAuth} from './auth';
 import {entraConfigured} from './entra';
+import Brand from '../../components/Brand';
 
 export function LoginPage(){
   const {user,ready,busy,error,loginEntra,loginDemo}=useAuth();
@@ -13,7 +14,7 @@ export function LoginPage(){
 
   return <main className="login-shell">
     <section className="login-card">
-      <div className="brand-mark">U</div>
+      <Brand/>
       <h1>UCell Admin</h1>
       <p className="muted">R1.0B FROZEN · Admin MVP v0.6.0</p>
 

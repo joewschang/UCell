@@ -2,10 +2,16 @@ import { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { Product, Qualification } from './api';
 import { getProducts, isMock } from './memberData';
+import approvedProducts from '../../shared/products.json';
+import poster from '../../shared/brand/ucell-products.png';
 import { useResource } from './useResource';
 import { demoProducts, demoTotal, useCommerce, validateShipping, type Shipping } from './commerce';
 
 const money = (n: number | null) => n === null ? '待確認' : `NT$ ${n.toLocaleString('zh-TW')}`;
+function ProductPhoto({p}:{p:Product}){
+ const approved=approvedProducts.find(item=>p.id===`DEMO-${item.sku}`);
+ return approved?<div className="ucell-product-photo" role="img" aria-label={`${approved.name} ${approved.sku} 商品包裝`} style={{backgroundImage:`url(${poster})`,backgroundPosition:`${approved.panel*25}% 48.5%`}}/>:<div className="product-mark">商品圖片待提供</div>;
+}
 export default function Shop({ q }: { q: Qualification }) {
   const catalog = useResource('products', getProducts);
   const { carts, setQuantity, submit } = useCommerce();
@@ -33,7 +39,7 @@ export default function Shop({ q }: { q: Qualification }) {
   return <><h2>商品商城</h2><p>{isMock ? '可體驗選購與訂單確認；示範訂單不扣款、不出貨、不產生 PV。請勿輸入真實個資。' : '線上購買尚未開放，價格與 PV 以訂單確認資料為準。'}</p>
     {catalog.error ? <section role="alert" className="card"><p>{catalog.error}</p><button onClick={catalog.retry}>重新載入商品</button></section>
       : !catalog.data ? <p role="status">商品載入中…</p>
-      : catalog.data.length ? catalog.data.map(p => <article className="card" key={p.id}><div className="product-mark" aria-hidden="true">UCell</div><h3>{p.name}</h3><p>{money(p.price)} · PV {p.pv === null ? '待提供' : p.pv.toLocaleString('zh-TW')}</p>
+      : catalog.data.length ? catalog.data.map(p => <article className="card catalog-product" key={p.id}><ProductPhoto p={p}/><h3>{p.name}</h3><p>{money(p.price)} · PV {p.pv === null ? '待提供' : p.pv.toLocaleString('zh-TW')}</p>
         <button disabled={!isMock || !p.available || (cart[p.id] ?? 0) >= 99} onClick={() => quantity(p, (cart[p.id] ?? 0) + 1)}>{!isMock ? '購買功能準備中' : !p.available ? '暫無供貨' : '加入示範購物車'}</button></article>) : <p>目前沒有上架商品</p>}
     {isMock && <section className="card"><h3>購物車 · {q.code}</h3><p>共 {count} 件商品</p>
       {Object.entries(cart).map(([id, n]) => { const p = demoProducts.find(p => p.id === id)!; return <div className="cart-line" key={id}><strong>{p.name}</strong><div className="quantity"><button aria-label={`減少 ${p.name}`} onClick={() => quantity(p, n - 1)}>−</button><output aria-label={`${p.name} 數量`}>{n}</output><button disabled={n >= 99} aria-label={`增加 ${p.name}`} onClick={() => quantity(p, n + 1)}>＋</button><button onClick={() => quantity(p, 0)}>移除</button></div></div>; })}
