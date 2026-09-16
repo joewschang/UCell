@@ -3,7 +3,7 @@
     "label": "node",
     "command": "node --version",
     "cwd": "C:\\UCell\\UCell",
-    "started": "2026-09-16T01:51:38.200Z",
+    "started": "2026-09-16T02:27:12.957Z",
     "exitCode": 0,
     "result": "PASS"
   },
@@ -11,7 +11,7 @@
     "label": "pnpm",
     "command": "pnpm --version",
     "cwd": "C:\\UCell\\UCell",
-    "started": "2026-09-16T01:51:38.244Z",
+    "started": "2026-09-16T02:27:13.004Z",
     "exitCode": 0,
     "result": "PASS"
   },
@@ -19,7 +19,7 @@
     "label": "git",
     "command": "git status --short --branch",
     "cwd": "C:\\UCell\\UCell",
-    "started": "2026-09-16T01:51:38.296Z",
+    "started": "2026-09-16T02:27:13.057Z",
     "exitCode": 0,
     "result": "PASS"
   },
@@ -27,7 +27,7 @@
     "label": "prisma-validate",
     "command": "pnpm --filter @ucell/database exec prisma validate",
     "cwd": "C:\\UCell\\UCell\\backend",
-    "started": "2026-09-16T01:51:38.359Z",
+    "started": "2026-09-16T02:27:13.125Z",
     "exitCode": 0,
     "result": "PASS"
   },
@@ -35,7 +35,7 @@
     "label": "prisma-generate",
     "command": "pnpm --filter @ucell/database exec prisma generate",
     "cwd": "C:\\UCell\\UCell\\backend",
-    "started": "2026-09-16T01:51:39.705Z",
+    "started": "2026-09-16T02:27:14.318Z",
     "exitCode": 0,
     "result": "PASS"
   },
@@ -43,7 +43,7 @@
     "label": "prisma-migrate-deploy",
     "command": "pnpm --filter @ucell/database exec prisma migrate deploy",
     "cwd": "C:\\UCell\\UCell\\backend",
-    "started": "2026-09-16T01:51:41.482Z",
+    "started": "2026-09-16T02:27:15.928Z",
     "exitCode": 0,
     "result": "PASS"
   },
@@ -51,23 +51,7 @@
     "label": "prisma-regression-db-deploy",
     "command": "pnpm --filter @ucell/database exec prisma migrate deploy",
     "cwd": "C:\\UCell\\UCell\\backend",
-    "started": "2026-09-16T01:51:42.772Z",
-    "exitCode": 0,
-    "result": "PASS"
-  },
-  {
-    "label": "backend-build",
-    "command": "pnpm build",
-    "cwd": "C:\\UCell\\UCell\\backend",
-    "started": "2026-09-16T01:51:44.082Z",
-    "exitCode": 0,
-    "result": "PASS"
-  },
-  {
-    "label": "api-tests",
-    "command": "pnpm --filter @ucell/api test:e2e --runInBand",
-    "cwd": "C:\\UCell\\UCell\\backend",
-    "started": "2026-09-16T01:52:01.956Z",
+    "started": "2026-09-16T02:27:17.032Z",
     "exitCode": 0,
     "result": "PASS"
   },
@@ -75,7 +59,7 @@
     "label": "shared-tests",
     "command": "pnpm --filter @ucell/shared test --runInBand",
     "cwd": "C:\\UCell\\UCell\\backend",
-    "started": "2026-09-16T01:52:27.836Z",
+    "started": "2026-09-16T02:28:11.007Z",
     "exitCode": 0,
     "result": "PASS"
   },
@@ -83,7 +67,7 @@
     "label": "default-db-golden",
     "command": "pnpm db:golden",
     "cwd": "C:\\UCell\\UCell\\backend",
-    "started": "2026-09-16T01:52:30.870Z",
+    "started": "2026-09-16T02:28:14.357Z",
     "exitCode": 0,
     "result": "PASS"
   },
@@ -91,7 +75,7 @@
     "label": "default-db-golden-repeat",
     "command": "pnpm db:golden",
     "cwd": "C:\\UCell\\UCell\\backend",
-    "started": "2026-09-16T01:52:45.171Z",
+    "started": "2026-09-16T02:28:28.231Z",
     "exitCode": 0,
     "result": "PASS"
   },
@@ -99,7 +83,7 @@
     "label": "member-contract-ball-1",
     "command": "pnpm test:contract",
     "cwd": "C:\\UCell\\UCell\\member",
-    "started": "2026-09-16T01:53:04.599Z",
+    "started": "2026-09-16T02:28:51.275Z",
     "exitCode": 0,
     "result": "PASS"
   },
@@ -107,7 +91,7 @@
     "label": "member-contract-ball-2",
     "command": "pnpm test:contract",
     "cwd": "C:\\UCell\\UCell\\member",
-    "started": "2026-09-16T01:53:05.925Z",
+    "started": "2026-09-16T02:28:52.457Z",
     "exitCode": 0,
     "result": "PASS"
   },
@@ -115,7 +99,7 @@
     "label": "line-verifier-core",
     "command": "node scripts/line-token-verifier.test.mjs",
     "cwd": "C:\\UCell\\UCell\\backend",
-    "started": "2026-09-16T01:53:07.122Z",
+    "started": "2026-09-16T02:28:53.672Z",
     "exitCode": 0,
     "result": "PASS"
   },
@@ -123,7 +107,7 @@
     "label": "member-auth-core",
     "command": "node scripts/member-authentication.test.mjs",
     "cwd": "C:\\UCell\\UCell\\backend",
-    "started": "2026-09-16T01:53:07.264Z",
+    "started": "2026-09-16T02:28:53.834Z",
     "exitCode": 0,
     "result": "PASS"
   },
@@ -131,7 +115,7 @@
     "label": "openapi-export",
     "command": "pnpm openapi",
     "cwd": "C:\\UCell\\UCell\\backend",
-    "started": "2026-09-16T01:53:07.377Z",
+    "started": "2026-09-16T02:28:53.952Z",
     "exitCode": 0,
     "result": "PASS"
   },
@@ -139,7 +123,7 @@
     "label": "openapi-preflight",
     "command": "pnpm openapi:preflight",
     "cwd": "C:\\UCell\\UCell\\backend",
-    "started": "2026-09-16T01:53:12.962Z",
+    "started": "2026-09-16T02:29:00.104Z",
     "exitCode": 0,
     "result": "PASS"
   },
@@ -147,7 +131,7 @@
     "label": "db-regression",
     "command": "node scripts/phase2-db-test.mjs",
     "cwd": "C:\\UCell\\UCell\\backend",
-    "started": "2026-09-16T01:53:13.087Z",
+    "started": "2026-09-16T02:29:00.244Z",
     "exitCode": 0,
     "result": "PASS"
   },
@@ -155,7 +139,7 @@
     "label": "static-validate",
     "command": "node scripts/static-validate.mjs",
     "cwd": "C:\\UCell\\UCell\\backend",
-    "started": "2026-09-16T01:53:15.528Z",
+    "started": "2026-09-16T02:29:03.174Z",
     "exitCode": 0,
     "result": "PASS"
   },
@@ -163,7 +147,7 @@
     "label": "convergence-validate",
     "command": "node scripts/convergence-validate.mjs",
     "cwd": "C:\\UCell\\UCell\\backend",
-    "started": "2026-09-16T01:53:15.590Z",
+    "started": "2026-09-16T02:29:03.240Z",
     "exitCode": 0,
     "result": "PASS"
   },
@@ -171,7 +155,7 @@
     "label": "schema-preflight",
     "command": "node scripts/schema-preflight.mjs",
     "cwd": "C:\\UCell\\UCell\\backend",
-    "started": "2026-09-16T01:53:15.656Z",
+    "started": "2026-09-16T02:29:03.312Z",
     "exitCode": 0,
     "result": "PASS"
   },
@@ -179,7 +163,7 @@
     "label": "migration-preflight",
     "command": "node scripts/migration-preflight.mjs",
     "cwd": "C:\\UCell\\UCell\\backend",
-    "started": "2026-09-16T01:53:15.722Z",
+    "started": "2026-09-16T02:29:03.387Z",
     "exitCode": 0,
     "result": "PASS"
   },
@@ -187,7 +171,7 @@
     "label": "source-preflight",
     "command": "node scripts/source-preflight.mjs",
     "cwd": "C:\\UCell\\UCell\\backend",
-    "started": "2026-09-16T01:53:15.794Z",
+    "started": "2026-09-16T02:29:03.459Z",
     "exitCode": 0,
     "result": "PASS"
   },
@@ -195,7 +179,7 @@
     "label": "security-policy-preflight",
     "command": "node scripts/security-policy-preflight.mjs",
     "cwd": "C:\\UCell\\UCell\\backend",
-    "started": "2026-09-16T01:53:15.861Z",
+    "started": "2026-09-16T02:29:03.525Z",
     "exitCode": 0,
     "result": "PASS"
   },
@@ -203,7 +187,7 @@
     "label": "golden-domain-test",
     "command": "node scripts/golden-domain-test.mjs",
     "cwd": "C:\\UCell\\UCell\\backend",
-    "started": "2026-09-16T01:53:15.937Z",
+    "started": "2026-09-16T02:29:03.600Z",
     "exitCode": 0,
     "result": "PASS"
   },
@@ -211,7 +195,7 @@
     "label": "golden-r1b-regression",
     "command": "node scripts/golden-r1b-regression.mjs",
     "cwd": "C:\\UCell\\UCell\\backend",
-    "started": "2026-09-16T01:53:16.036Z",
+    "started": "2026-09-16T02:29:03.695Z",
     "exitCode": 0,
     "result": "PASS"
   },
@@ -219,7 +203,7 @@
     "label": "golden-economic-cases",
     "command": "node scripts/golden-economic-cases.mjs",
     "cwd": "C:\\UCell\\UCell\\backend",
-    "started": "2026-09-16T01:53:16.102Z",
+    "started": "2026-09-16T02:29:03.772Z",
     "exitCode": 0,
     "result": "PASS"
   },
@@ -227,7 +211,7 @@
     "label": "release-readiness-preflight",
     "command": "node scripts/release-readiness-preflight.mjs",
     "cwd": "C:\\UCell\\UCell\\backend",
-    "started": "2026-09-16T01:53:16.163Z",
+    "started": "2026-09-16T02:29:03.873Z",
     "exitCode": 0,
     "result": "PASS"
   },
@@ -235,7 +219,7 @@
     "label": "preflight",
     "command": "pnpm preflight",
     "cwd": "C:\\UCell\\UCell\\backend",
-    "started": "2026-09-16T01:53:16.227Z",
+    "started": "2026-09-16T02:29:03.963Z",
     "exitCode": 0,
     "result": "PASS"
   },
@@ -243,7 +227,7 @@
     "label": "security-http",
     "command": "pnpm security:e2e",
     "cwd": "C:\\UCell\\UCell\\backend",
-    "started": "2026-09-16T01:53:33.897Z",
+    "started": "2026-09-16T02:29:22.886Z",
     "exitCode": 2,
     "result": "BLOCKED"
   },
@@ -251,103 +235,15 @@
     "label": "uat",
     "command": "pnpm uat:gate",
     "cwd": "C:\\UCell\\UCell\\backend",
-    "started": "2026-09-16T01:53:34.063Z",
+    "started": "2026-09-16T02:29:23.095Z",
     "exitCode": 1,
     "result": "BLOCKED"
-  },
-  {
-    "label": "todo",
-    "command": "pnpm test:todo:gate",
-    "cwd": "C:\\UCell\\UCell\\backend",
-    "started": "2026-09-16T01:53:34.187Z",
-    "exitCode": 1,
-    "result": "BLOCKED"
-  },
-  {
-    "label": "backend-test-gate",
-    "command": "pnpm test",
-    "cwd": "C:\\UCell\\UCell\\backend",
-    "started": "2026-09-16T01:53:34.339Z",
-    "exitCode": 1,
-    "result": "BLOCKED"
-  },
-  {
-    "label": "rc",
-    "command": "pnpm rc:gate",
-    "cwd": "C:\\UCell\\UCell\\backend",
-    "started": "2026-09-16T01:53:55.810Z",
-    "exitCode": 1,
-    "result": "BLOCKED"
-  },
-  {
-    "label": "release-prep",
-    "command": "pnpm release:prep",
-    "cwd": "C:\\UCell\\UCell\\backend",
-    "started": "2026-09-16T01:53:56.121Z",
-    "exitCode": 1,
-    "result": "BLOCKED"
-  },
-  {
-    "label": "release-gate",
-    "command": "\"C:\\Program Files\\Git\\bin\\bash.exe\" scripts/release-gate.sh",
-    "cwd": "C:\\UCell\\UCell",
-    "started": "2026-09-16T01:54:35.513Z",
-    "exitCode": 1,
-    "result": "BLOCKED"
-  },
-  {
-    "label": "diff-check",
-    "command": "git diff --check",
-    "cwd": "C:\\UCell\\UCell",
-    "started": "2026-09-16T01:55:14.622Z",
-    "exitCode": 0,
-    "result": "PASS"
   },
   {
     "label": "admin-dev-build",
     "command": "pnpm --filter @ucell/api build:admin-dev",
     "cwd": "C:\\UCell\\UCell\\backend",
-    "started": "2026-09-16T01:55:14.755Z",
-    "exitCode": 0,
-    "result": "PASS"
-  },
-  {
-    "label": "member-local-auth",
-    "command": "node scripts/member-local-auth-preflight.mjs",
-    "cwd": "C:\\UCell\\UCell\\backend",
-    "started": "2026-09-16T01:56:31.064Z",
-    "exitCode": 0,
-    "result": "PASS"
-  },
-  {
-    "label": "admin-dev-full-test",
-    "command": "node backend/scripts/admin-full-test.mjs",
-    "cwd": "C:\\UCell\\UCell",
-    "started": "2026-09-16T01:57:02.679Z",
-    "exitCode": 0,
-    "result": "PASS"
-  },
-  {
-    "label": "member-build",
-    "command": "pnpm build",
-    "cwd": "C:\\UCell\\UCell\\member",
-    "started": "2026-09-16T01:59:13.674Z",
-    "exitCode": 0,
-    "result": "PASS"
-  },
-  {
-    "label": "member-tests",
-    "command": "pnpm test",
-    "cwd": "C:\\UCell\\UCell\\member",
-    "started": "2026-09-16T01:59:17.816Z",
-    "exitCode": 0,
-    "result": "PASS"
-  },
-  {
-    "label": "member-mobile-mock",
-    "command": "pnpm test:browser",
-    "cwd": "C:\\UCell\\UCell\\member",
-    "started": "2026-09-16T01:59:19.871Z",
+    "started": "2026-09-16T02:31:06.421Z",
     "exitCode": 0,
     "result": "PASS"
   },
@@ -355,7 +251,7 @@
     "label": "admin-build",
     "command": "pnpm build",
     "cwd": "C:\\UCell\\UCell\\admin",
-    "started": "2026-09-16T02:00:54.065Z",
+    "started": "2026-09-16T02:31:54.331Z",
     "exitCode": 0,
     "result": "PASS"
   },
@@ -363,7 +259,47 @@
     "label": "admin-tests",
     "command": "pnpm test",
     "cwd": "C:\\UCell\\UCell\\admin",
-    "started": "2026-09-16T02:00:58.957Z",
+    "started": "2026-09-16T02:31:59.983Z",
+    "exitCode": 0,
+    "result": "PASS"
+  },
+  {
+    "label": "member-build",
+    "command": "pnpm build",
+    "cwd": "C:\\UCell\\UCell\\member",
+    "started": "2026-09-16T02:32:01.202Z",
+    "exitCode": 0,
+    "result": "PASS"
+  },
+  {
+    "label": "member-tests",
+    "command": "pnpm test",
+    "cwd": "C:\\UCell\\UCell\\member",
+    "started": "2026-09-16T02:32:05.982Z",
+    "exitCode": 0,
+    "result": "PASS"
+  },
+  {
+    "label": "admin-dev-full-test",
+    "command": "node backend/scripts/admin-full-test.mjs",
+    "cwd": "C:\\UCell\\UCell",
+    "started": "2026-09-16T02:32:08.417Z",
+    "exitCode": 0,
+    "result": "PASS"
+  },
+  {
+    "label": "member-local-auth",
+    "command": "node scripts/member-local-auth-preflight.mjs",
+    "cwd": "C:\\UCell\\UCell\\backend",
+    "started": "2026-09-16T02:32:11.219Z",
+    "exitCode": 0,
+    "result": "PASS"
+  },
+  {
+    "label": "member-mobile-mock",
+    "command": "pnpm test:browser",
+    "cwd": "C:\\UCell\\UCell\\member",
+    "started": "2026-09-16T02:32:11.368Z",
     "exitCode": 0,
     "result": "PASS"
   },
@@ -371,7 +307,71 @@
     "label": "admin-ui-connected-dev",
     "command": "node scripts/connected-dev-smoke.mjs",
     "cwd": "C:\\UCell\\UCell\\admin",
-    "started": "2026-09-16T02:00:59.942Z",
+    "started": "2026-09-16T02:32:16.737Z",
+    "exitCode": 0,
+    "result": "PASS"
+  },
+  {
+    "label": "backend-build",
+    "command": "pnpm build",
+    "cwd": "C:\\UCell\\UCell\\backend",
+    "started": "2026-09-16T02:37:40.990Z",
+    "exitCode": 0,
+    "result": "PASS"
+  },
+  {
+    "label": "api-tests",
+    "command": "pnpm --filter @ucell/api test:e2e --runInBand",
+    "cwd": "C:\\UCell\\UCell\\backend",
+    "started": "2026-09-16T02:37:54.512Z",
+    "exitCode": 0,
+    "result": "PASS"
+  },
+  {
+    "label": "todo",
+    "command": "pnpm test:todo:gate",
+    "cwd": "C:\\UCell\\UCell\\backend",
+    "started": "2026-09-16T02:38:22.792Z",
+    "exitCode": 1,
+    "result": "BLOCKED"
+  },
+  {
+    "label": "backend-test-gate",
+    "command": "pnpm test",
+    "cwd": "C:\\UCell\\UCell\\backend",
+    "started": "2026-09-16T02:38:22.964Z",
+    "exitCode": 1,
+    "result": "BLOCKED"
+  },
+  {
+    "label": "rc",
+    "command": "pnpm rc:gate",
+    "cwd": "C:\\UCell\\UCell\\backend",
+    "started": "2026-09-16T02:38:44.493Z",
+    "exitCode": 1,
+    "result": "BLOCKED"
+  },
+  {
+    "label": "release-prep",
+    "command": "pnpm release:prep",
+    "cwd": "C:\\UCell\\UCell\\backend",
+    "started": "2026-09-16T02:39:03.869Z",
+    "exitCode": 1,
+    "result": "BLOCKED"
+  },
+  {
+    "label": "release-gate",
+    "command": "\"C:\\Program Files\\Git\\bin\\bash.exe\" scripts/release-gate.sh",
+    "cwd": "C:\\UCell\\UCell",
+    "started": "2026-09-16T02:39:41.195Z",
+    "exitCode": 1,
+    "result": "BLOCKED"
+  },
+  {
+    "label": "diff-check",
+    "command": "git diff --check",
+    "cwd": "C:\\UCell\\UCell",
+    "started": "2026-09-16T02:40:51.292Z",
     "exitCode": 0,
     "result": "PASS"
   }

@@ -1,27 +1,29 @@
 command: git status --short --branch
-started: 2026-09-16T01:51:38.296Z
+started: 2026-09-16T02:27:13.057Z
 exit: 0
-## integration/member-backend-mvp...origin/integration/member-backend-mvp
- M admin/package.json
- M admin/pnpm-lock.yaml
+## integration/member-backend-mvp...origin/integration/member-backend-mvp [ahead 1]
  M admin/src/app/AppShell.tsx
- M admin/src/components/ui.tsx
+ M admin/src/components/AdminDataGrid.tsx
  M admin/src/features/bonuses/BonusesPage.tsx
  M admin/src/features/dashboard/DashboardPage.tsx
  M admin/src/features/people/PeoplePage.tsx
- M admin/src/main.tsx
+ M admin/src/features/qualifications/QualificationsPage.tsx
+ M admin/src/styles/ucell-theme.css
+ M backend/apps/api/src/modules/person/person.controller.ts
+ M backend/apps/api/src/modules/person/person.service.ts
+ M backend/apps/api/test/v064-golden-dataset.e2e-spec.ts
+ M backend/scripts/phase3-member-identity-db-test.mjs
+ M backend/scripts/phase3-membership-db-test.mjs
+ M governance/phase2-return-replay/final/db-regression.json
  M governance/phase3-connected-dev/final/PASS-FAIL-MATRIX.md
  M governance/phase3-connected-dev/final/gate-results.json
  M governance/phase3-connected-dev/final/node.txt
  M governance/phase3-connected-dev/final/pnpm.txt
- M member/package.json
- M member/pnpm-lock.yaml
  M member/src/App.tsx
- M member/src/QualificationContext.tsx
- M member/src/main.tsx
-?? admin/src/components/AdminDataGrid.tsx
-?? admin/src/styles/ucell-theme.css
-?? governance/ux/
-?? member/src/ucell-theme.css
-?? member/tests/design-system.test.tsx
-?? shared/
+ M member/src/ucell-theme.css
+ M member/tests/design-system.test.tsx
+ M shared/design-system/components.css
+ M shared/design-system/index.tsx
+ M shared/design-system/tokens.css
+?? admin/src/features/qualifications/QualificationDetail.tsx
+?? backend/apps/api/test/person-qualifications.e2e-spec.ts

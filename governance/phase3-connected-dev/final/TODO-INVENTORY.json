@@ -1,139 +1,19 @@
 {
   "originalBaseline": 148,
-  "currentExecutableTodo": 73,
-  "netPlaceholderReduction": 75,
+  "currentExecutableTodo": 52,
+  "netPlaceholderReduction": 96,
   "audit": "Previous 52 TODO claim invalidated: missing cases and unrelated/constant assertions restored. Net reduction alone is not Release approval.",
   "items": [
     {
       "file": "backend/apps/api/test/bonus-engine-v04.e2e-spec.ts",
-      "line": 17,
-      "case": "G1 STARTER Active receives GPV x 15% theory",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
-    },
-    {
-      "file": "backend/apps/api/test/bonus-engine-v04.e2e-spec.ts",
-      "line": 18,
-      "case": "G1 ELITE Active receives GPV x 20% theory",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
-    },
-    {
-      "file": "backend/apps/api/test/bonus-engine-v04.e2e-spec.ts",
-      "line": 19,
-      "case": "G1 LEADER Active receives GPV x 25% theory",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
-    },
-    {
-      "file": "backend/apps/api/test/bonus-engine-v04.e2e-spec.ts",
-      "line": 20,
-      "case": "inactive G1 generates no referral bonus and equalization base is zero",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
-    },
-    {
-      "file": "backend/apps/api/test/bonus-engine-v04.e2e-spec.ts",
-      "line": 21,
-      "case": "equalization base is same-source G1 referral theory, not GPV",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
-    },
-    {
-      "file": "backend/apps/api/test/bonus-engine-v04.e2e-spec.ts",
-      "line": 22,
-      "case": "STARTER rates G2/G3/G4 are 10/10/10",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
-    },
-    {
-      "file": "backend/apps/api/test/bonus-engine-v04.e2e-spec.ts",
-      "line": 23,
-      "case": "ELITE rates G2..G6 are 20/10/10/5/5",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
-    },
-    {
-      "file": "backend/apps/api/test/bonus-engine-v04.e2e-spec.ts",
-      "line": 24,
-      "case": "LEADER rates G2..G7 are 20/15/10/10/10/5 including G5=10",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
-    },
-    {
-      "file": "backend/apps/api/test/bonus-engine-v04.e2e-spec.ts",
-      "line": 25,
-      "case": "intermediate ineligible generation does not block higher generation",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
-    },
-    {
-      "file": "backend/apps/api/test/bonus-engine-v04.e2e-spec.ts",
-      "line": 32,
-      "case": "Referral + Equalization share 42% pool and K0",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
-    },
-    {
-      "file": "backend/apps/api/test/bonus-engine-v04.e2e-spec.ts",
-      "line": 36,
-      "case": "uses Binary subtree GPV, not Sponsor tree",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
-    },
-    {
-      "file": "backend/apps/api/test/bonus-engine-v04.e2e-spec.ts",
-      "line": 37,
-      "case": "pair = min(left available,right available) subject to weekly cap",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
-    },
-    {
-      "file": "backend/apps/api/test/bonus-engine-v04.e2e-spec.ts",
-      "line": 38,
-      "case": "paired PV deducted from both sides and strong-side carry remains",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
-    },
-    {
-      "file": "backend/apps/api/test/bonus-engine-v04.e2e-spec.ts",
-      "line": 39,
-      "case": "STARTER/ELITE/LEADER weekly caps 450k/900k/1.5m",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
-    },
-    {
-      "file": "backend/apps/api/test/bonus-engine-v04.e2e-spec.ts",
-      "line": 40,
-      "case": "Binary theory = paired PV x 12%",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
-    },
-    {
-      "file": "backend/apps/api/test/bonus-engine-v04.e2e-spec.ts",
-      "line": 41,
-      "case": "Binary Pool is 36% and K1 <= 1",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
-    },
-    {
-      "file": "backend/apps/api/test/bonus-engine-v04.e2e-spec.ts",
-      "line": 42,
+      "line": 325,
       "case": "inactive recipient produces no Binary award",
       "classification": "Test implementation; SSOT/evidence review before conversion"
     },
     {
       "file": "backend/apps/api/test/bonus-engine-v04.e2e-spec.ts",
-      "line": 46,
-      "case": "source is actual Binary payable after K1, never Binary theory",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
-    },
-    {
-      "file": "backend/apps/api/test/bonus-engine-v04.e2e-spec.ts",
-      "line": 47,
+      "line": 338,
       "case": "Sponsor Tree is used to trace matching uplines",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
-    },
-    {
-      "file": "backend/apps/api/test/bonus-engine-v04.e2e-spec.ts",
-      "line": 48,
-      "case": "rates are G1=15,G2=10,G3-G5=5",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
-    },
-    {
-      "file": "backend/apps/api/test/bonus-engine-v04.e2e-spec.ts",
-      "line": 53,
-      "case": "Matching Pool is 15% and K2 <= 1",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
-    },
-    {
-      "file": "backend/apps/api/test/bonus-engine-v04.e2e-spec.ts",
-      "line": 57,
-      "case": "award creates CALCULATED then PENDING_45D events",
       "classification": "Test implementation; SSOT/evidence review before conversion"
     },
     {
@@ -324,61 +204,55 @@
     },
     {
       "file": "backend/apps/api/test/v064-golden-dataset.e2e-spec.ts",
-      "line": 5,
-      "case": "keeps Person and Qualification distinct",
-      "classification": "Test implementation; SSOT/evidence review before conversion"
-    },
-    {
-      "file": "backend/apps/api/test/v064-golden-dataset.e2e-spec.ts",
-      "line": 6,
+      "line": 25,
       "case": "keeps Sponsor and Binary trees distinct",
       "classification": "Test implementation; SSOT/evidence review before conversion"
     },
     {
       "file": "backend/apps/api/test/v064-golden-dataset.e2e-spec.ts",
-      "line": 7,
+      "line": 26,
       "case": "validates Referral 15/20/25",
       "classification": "Test implementation; SSOT/evidence review before conversion"
     },
     {
       "file": "backend/apps/api/test/v064-golden-dataset.e2e-spec.ts",
-      "line": 8,
+      "line": 27,
       "case": "validates Equalization including Leader G5=10%",
       "classification": "Test implementation; SSOT/evidence review before conversion"
     },
     {
       "file": "backend/apps/api/test/v064-golden-dataset.e2e-spec.ts",
-      "line": 9,
+      "line": 28,
       "case": "validates Active First and no compression",
       "classification": "Test implementation; SSOT/evidence review before conversion"
     },
     {
       "file": "backend/apps/api/test/v064-golden-dataset.e2e-spec.ts",
-      "line": 10,
+      "line": 29,
       "case": "validates Binary Carry and K1",
       "classification": "Test implementation; SSOT/evidence review before conversion"
     },
     {
       "file": "backend/apps/api/test/v064-golden-dataset.e2e-spec.ts",
-      "line": 11,
+      "line": 30,
       "case": "validates Matching source=Binary Paid after K1",
       "classification": "Test implementation; SSOT/evidence review before conversion"
     },
     {
       "file": "backend/apps/api/test/v064-golden-dataset.e2e-spec.ts",
-      "line": 12,
+      "line": 31,
       "case": "validates RPV 5/8/12 on Binary Tree",
       "classification": "Test implementation; SSOT/evidence review before conversion"
     },
     {
       "file": "backend/apps/api/test/v064-golden-dataset.e2e-spec.ts",
-      "line": 13,
+      "line": 32,
       "case": "validates EPV on Sponsor Tree",
       "classification": "Test implementation; SSOT/evidence review before conversion"
     },
     {
       "file": "backend/apps/api/test/v064-golden-dataset.e2e-spec.ts",
-      "line": 14,
+      "line": 33,
       "case": "validates refund -> replay -> recovery -> payout",
       "classification": "Test implementation; SSOT/evidence review before conversion"
     },

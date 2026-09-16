@@ -1,5 +1,5 @@
 command: node scripts/member-local-auth-preflight.mjs
-started: 2026-09-16T01:55:20.131Z
+started: 2026-09-16T02:31:12.165Z
 exit: 1
 node:internal/modules/run_main:107
     triggerUncaughtException(

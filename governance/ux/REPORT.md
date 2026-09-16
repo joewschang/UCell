@@ -45,3 +45,7 @@ Screenshots: references/member-{dashboard,organization,bonus}-{375,390,430,768}.
 Final Connected DEV matrix: 40 PASS / 7 BLOCKED / 0 FAIL. Browser verifies forward/reverse modal Tab containment, Escape focus restoration, confirmed Qualification feedback and mobile touch targets.
 
 UX-1 source checkpoint: 5a05c3c9b722555955175451cbfa7db832681677; pushed origin/integration/member-backend-mvp. Final screenshot metadata is captured against this committed source. Follow-up evidence update changes documentation/reference metadata only.
+
+## UX-2 refinement
+
+UX-2 delivery is separate in ux2/REPORT.md and ux2/PASS-FAIL-MATRIX.md. UX-1 references are preserved. Six refined screens only; awaiting second SA Visual Review.

@@ -8,3 +8,7 @@
 | Admin consumer | AdminDataGrid | Person bounded result sort/column chooser/pagination; server search remains page-owned |
 
 Remaining: full DataGrid saved view/export/authorized bulk, complete Qualification tabs, Tree Viewer authoritative nodes, pipeline stage metadata, gradual legacy style/component migration. Components without page adoption are not claimed as complete workflows.
+
+## UX-2 refinement
+
+UX-2 refines AwardLifecycle, DetailDrawer focus trap, AdminAppShell and AdminDataGrid toolbar; adds QualificationDetail (ten tabs) and read-only PipelineDetail. Shared tokens remain authoritative; no new UI framework.

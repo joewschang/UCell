@@ -1,31 +1,11 @@
-Original baseline: 148. Current TODO: 73. Net placeholder reduction: 75.
+Original baseline: 148. Current TODO: 52. Net placeholder reduction: 96.
 
 The previous 52 TODO claim is invalid. Full behavioral coverage must be reviewed independently.
 
 | File | Line | Case | Classification |
 |---|---:|---|---|
-| backend/apps/api/test/bonus-engine-v04.e2e-spec.ts | 17 | G1 STARTER Active receives GPV x 15% theory | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/bonus-engine-v04.e2e-spec.ts | 18 | G1 ELITE Active receives GPV x 20% theory | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/bonus-engine-v04.e2e-spec.ts | 19 | G1 LEADER Active receives GPV x 25% theory | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/bonus-engine-v04.e2e-spec.ts | 20 | inactive G1 generates no referral bonus and equalization base is zero | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/bonus-engine-v04.e2e-spec.ts | 21 | equalization base is same-source G1 referral theory, not GPV | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/bonus-engine-v04.e2e-spec.ts | 22 | STARTER rates G2/G3/G4 are 10/10/10 | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/bonus-engine-v04.e2e-spec.ts | 23 | ELITE rates G2..G6 are 20/10/10/5/5 | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/bonus-engine-v04.e2e-spec.ts | 24 | LEADER rates G2..G7 are 20/15/10/10/10/5 including G5=10 | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/bonus-engine-v04.e2e-spec.ts | 25 | intermediate ineligible generation does not block higher generation | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/bonus-engine-v04.e2e-spec.ts | 32 | Referral + Equalization share 42% pool and K0 | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/bonus-engine-v04.e2e-spec.ts | 36 | uses Binary subtree GPV, not Sponsor tree | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/bonus-engine-v04.e2e-spec.ts | 37 | pair = min(left available,right available) subject to weekly cap | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/bonus-engine-v04.e2e-spec.ts | 38 | paired PV deducted from both sides and strong-side carry remains | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/bonus-engine-v04.e2e-spec.ts | 39 | STARTER/ELITE/LEADER weekly caps 450k/900k/1.5m | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/bonus-engine-v04.e2e-spec.ts | 40 | Binary theory = paired PV x 12% | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/bonus-engine-v04.e2e-spec.ts | 41 | Binary Pool is 36% and K1 <= 1 | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/bonus-engine-v04.e2e-spec.ts | 42 | inactive recipient produces no Binary award | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/bonus-engine-v04.e2e-spec.ts | 46 | source is actual Binary payable after K1, never Binary theory | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/bonus-engine-v04.e2e-spec.ts | 47 | Sponsor Tree is used to trace matching uplines | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/bonus-engine-v04.e2e-spec.ts | 48 | rates are G1=15,G2=10,G3-G5=5 | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/bonus-engine-v04.e2e-spec.ts | 53 | Matching Pool is 15% and K2 <= 1 | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/bonus-engine-v04.e2e-spec.ts | 57 | award creates CALCULATED then PENDING_45D events | Test implementation; SSOT/evidence review before conversion |
+| backend/apps/api/test/bonus-engine-v04.e2e-spec.ts | 325 | inactive recipient produces no Binary award | Test implementation; SSOT/evidence review before conversion |
+| backend/apps/api/test/bonus-engine-v04.e2e-spec.ts | 338 | Sponsor Tree is used to trace matching uplines | Test implementation; SSOT/evidence review before conversion |
 | backend/apps/api/test/epv-global-v05.e2e-spec.ts | 22 | non-REPURCHASE order does not create EPV | Pending Decision: eligible scope / formal PV mapping |
 | backend/apps/api/test/epv-global-v05.e2e-spec.ts | 26 | global pool is 5% of period GPV | Test implementation; SSOT/evidence review before conversion |
 | backend/apps/api/test/epv-global-v05.e2e-spec.ts | 27 | weak thresholds are 300k/600k/1m/2m/4m | Test implementation; SSOT/evidence review before conversion |
@@ -57,16 +37,15 @@ The previous 52 TODO claim is invalid. Full behavioral coverage must be reviewed
 | backend/apps/api/test/v062-carry-chain.e2e-spec.ts | 34 | positive deltas post compensating awards and negative deltas post recovery | Test implementation; SSOT/evidence review before conversion |
 | backend/apps/api/test/v062-carry-chain.e2e-spec.ts | 43 | migration 0005 references subscription.subscription, not commerce.subscription | Legacy Test Drift: cancellation table moved to canonical subscription schema in 0006; retained pending coverage |
 | backend/apps/api/test/v063-golden-path.e2e-spec.ts | 45 | Taiwan local time maps to configured settlement week | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/v064-golden-dataset.e2e-spec.ts | 5 | keeps Person and Qualification distinct | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/v064-golden-dataset.e2e-spec.ts | 6 | keeps Sponsor and Binary trees distinct | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/v064-golden-dataset.e2e-spec.ts | 7 | validates Referral 15/20/25 | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/v064-golden-dataset.e2e-spec.ts | 8 | validates Equalization including Leader G5=10% | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/v064-golden-dataset.e2e-spec.ts | 9 | validates Active First and no compression | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/v064-golden-dataset.e2e-spec.ts | 10 | validates Binary Carry and K1 | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/v064-golden-dataset.e2e-spec.ts | 11 | validates Matching source=Binary Paid after K1 | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/v064-golden-dataset.e2e-spec.ts | 12 | validates RPV 5/8/12 on Binary Tree | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/v064-golden-dataset.e2e-spec.ts | 13 | validates EPV on Sponsor Tree | Test implementation; SSOT/evidence review before conversion |
-| backend/apps/api/test/v064-golden-dataset.e2e-spec.ts | 14 | validates refund -> replay -> recovery -> payout | Test implementation; SSOT/evidence review before conversion |
+| backend/apps/api/test/v064-golden-dataset.e2e-spec.ts | 25 | keeps Sponsor and Binary trees distinct | Test implementation; SSOT/evidence review before conversion |
+| backend/apps/api/test/v064-golden-dataset.e2e-spec.ts | 26 | validates Referral 15/20/25 | Test implementation; SSOT/evidence review before conversion |
+| backend/apps/api/test/v064-golden-dataset.e2e-spec.ts | 27 | validates Equalization including Leader G5=10% | Test implementation; SSOT/evidence review before conversion |
+| backend/apps/api/test/v064-golden-dataset.e2e-spec.ts | 28 | validates Active First and no compression | Test implementation; SSOT/evidence review before conversion |
+| backend/apps/api/test/v064-golden-dataset.e2e-spec.ts | 29 | validates Binary Carry and K1 | Test implementation; SSOT/evidence review before conversion |
+| backend/apps/api/test/v064-golden-dataset.e2e-spec.ts | 30 | validates Matching source=Binary Paid after K1 | Test implementation; SSOT/evidence review before conversion |
+| backend/apps/api/test/v064-golden-dataset.e2e-spec.ts | 31 | validates RPV 5/8/12 on Binary Tree | Test implementation; SSOT/evidence review before conversion |
+| backend/apps/api/test/v064-golden-dataset.e2e-spec.ts | 32 | validates EPV on Sponsor Tree | Test implementation; SSOT/evidence review before conversion |
+| backend/apps/api/test/v064-golden-dataset.e2e-spec.ts | 33 | validates refund -> replay -> recovery -> payout | Test implementation; SSOT/evidence review before conversion |
 | backend/apps/api/test/vertical-slice-02.e2e-spec.ts | 128 | QUARTER creates exactly 3 recognition rows | Test implementation; SSOT/evidence review before conversion |
 | backend/apps/api/test/vertical-slice-02.e2e-spec.ts | 129 | HALF_YEAR creates exactly 6 recognition rows | Test implementation; SSOT/evidence review before conversion |
 | backend/apps/api/test/vertical-slice-02.e2e-spec.ts | 130 | YEAR creates exactly 12 recognition rows | Test implementation; SSOT/evidence review before conversion |
@@ -77,5 +56,3 @@ The previous 52 TODO claim is invalid. Full behavioral coverage must be reviewed
 | backend/apps/api/test/vertical-slice-02.e2e-spec.ts | 140 | higher generation remains independently evaluated | Test implementation; SSOT/evidence review before conversion |
 | backend/apps/api/test/vertical-slice.e2e-spec.ts | 143 | worker converts SALE_CONFIRMED to GPV_CREATED per order line | Test implementation; SSOT/evidence review before conversion |
 | backend/apps/api/test/vertical-slice.e2e-spec.ts | 144 | reprocessing same outbox event does not duplicate GPV | Test implementation; SSOT/evidence review before conversion |
-
-UX-1 checkpoint: 73 → 73; no Backend test placeholders changed. Frontend adds5 real presentation/contrast tests and3 Admin grid behavior tests; these do not count as Backend TODO burn-down.

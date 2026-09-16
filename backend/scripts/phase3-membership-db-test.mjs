@@ -12,6 +12,7 @@ const {UnifiedPayableService}=require('./apps/api/dist/modules/payout/unified-pa
 const {RecoveryBalanceService}=require('./apps/api/dist/modules/payout/recovery-balance.service.js');
 const {BonusLifecycleService}=require('./apps/api/dist/modules/bonus/bonus-lifecycle.service.js');
 const {QualificationService}=require('./apps/api/dist/modules/qualification/qualification.service.js');
+const {PersonService}=require('./apps/api/dist/modules/person/person.service.js');
 const url=new URL(process.env.DATABASE_URL??'');
 assert.ok(['localhost','127.0.0.1'].includes(url.hostname));
 assert.match(process.env.GOLDEN_ISOLATION_DATABASE??'',/^ucell_dev_golden_[a-f0-9]{32}$/);
@@ -25,6 +26,24 @@ try{
   const owner=await db.person.create({data:{legalName:'MEMBERSHIP ISOLATED TEST ONLY'}});
   const roots=[];
   for(let i=0;i<2;i++)roots.push(await db.qualification.create({data:{currentHolderPersonId:owner.personId,planLevelCode:'STARTER',status:'EFFECTIVE',effectiveAt:new Date('2020-01-01')}}));
+  const outsider=await db.person.create({data:{legalName:'PERSON QUALIFICATION ISOLATION TEST ONLY'}});
+  const outsiderBall=await db.qualification.create({data:{currentHolderPersonId:outsider.personId,planLevelCode:'STARTER',status:'DRAFT'}});
+  const personReads=new PersonService(db,idempotency,audit);
+  const readModels=['person','qualification','pvLedger','bonusAward','auditEvent','outboxEvent'];
+  const beforeRead=await Promise.all(readModels.map(model=>db[model].count()));
+  const owned=await personReads.qualifications(owner.personId);
+  equal(owned.meta.total,2,'Person master-detail total counts two independent balls');
+  equal(owned.data.map(row=>row.qualificationId).sort(),roots.map(row=>row.qualificationId).sort(),'Person master-detail returns all owned balls only');
+  equal(owned.data.every(row=>row.currentHolderPersonId===owner.personId),true,'Person master-detail never leaks outsider holder');
+  equal(owned.data.some(row=>row.qualificationId===outsiderBall.qualificationId),false,'Person master-detail excludes outsider Qualification');
+  equal((await personReads.qualifications(owner.personId,1,0)).data[0].qualificationId,owned.data[0].qualificationId,'master-detail first page stable');
+  equal((await personReads.qualifications(owner.personId,1,1)).data[0].qualificationId,owned.data[1].qualificationId,'master-detail second page stable');
+  equal((await personReads.qualifications(owner.personId,1,2)).data,[],'master-detail exhausted page empty');
+  equal((await personReads.qualifications(outsider.personId)).data[0].status,'DRAFT','current holder read includes existing DRAFT without inventing effective ownership');
+  await rejected(personReads.qualifications(randomUUID()),'PERSON_NOT_FOUND');
+  await rejected(personReads.qualifications('forged'),'VALIDATION_ERROR');
+  await rejected(personReads.qualifications(owner.personId,101),'VALIDATION_ERROR');
+  for(let i=0;i<readModels.length;i++)equal(await db[readModels[i]].count(),beforeRead[i],readModels[i]+' repeated Person detail reads have no mutation');
   const sponsor=roots[0].qualificationId,parent=roots[1].qualificationId;
   async function submitted(binaryParentQualificationId,binarySide){
     const created=await service.create({personId:owner.personId,requestedPlanLevelCode:'STARTER',sponsorQualificationId:sponsor,binaryParentQualificationId,binarySide},randomUUID(),randomUUID());

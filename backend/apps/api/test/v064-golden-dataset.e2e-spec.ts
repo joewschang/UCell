@@ -1,8 +1,27 @@
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { PersonService } from '../src/modules/person/person.service';
 describe('R1.0B v0.6.4 Golden Dataset',()=>{
-  it.todo('keeps Person and Qualification distinct');
+  it('keeps Person and Qualification distinct', async () => {
+    const personId='00000000-0000-0000-0000-000000000001';
+    const balls=[
+      {qualificationId:'00000000-0000-0000-0000-000000000011',currentHolderPersonId:personId,status:'EFFECTIVE',activeFlag:true},
+      {qualificationId:'00000000-0000-0000-0000-000000000012',currentHolderPersonId:personId,status:'SUSPENDED',activeFlag:false},
+    ];
+    const findMany=jest.fn(async()=>balls), count=jest.fn(async()=>2);
+    const tx={person:{findUnique:jest.fn(async()=>({personId}))},qualification:{findMany,count}};
+    const service=new PersonService({$transaction:async(work:any)=>work(tx)} as any,{} as any,{} as any);
+    const result=await service.qualifications(personId);
+    expect(result.data).toEqual(balls);
+    expect(result.meta.total).toBe(2);
+    expect(new Set(result.data.map(ball=>ball.qualificationId)).size).toBe(2);
+    expect(result.data.every(ball=>ball.qualificationId!==personId)).toBe(true);
+    expect(findMany).toHaveBeenCalledWith(expect.objectContaining({where:{currentHolderPersonId:personId}}));
+    expect(count).toHaveBeenCalledWith({where:{currentHolderPersonId:personId}});
+    // Corresponding isolated PostgreSQL 1:N / outsider / pagination / no-mutation
+    // assertions run in phase3-membership-db-test.mjs, never inferred from Person status.
+  });
   it.todo('keeps Sponsor and Binary trees distinct');
   it.todo('validates Referral 15/20/25');
   it.todo('validates Equalization including Leader G5=10%');

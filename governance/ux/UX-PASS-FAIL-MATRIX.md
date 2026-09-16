@@ -17,3 +17,7 @@
 | Production | BLOCKED |
 
 API changes NONE; DB migration NONE; business logic changes NONE; Backend TODO 73 unchanged in this UX checkpoint. Pending eligible-consumption scope, PV/BV formal mapping and production calendar/cut-off unchanged.
+
+## UX-2 refinement
+
+UX-2 scoped matrix: ux2/PASS-FAIL-MATRIX.md. Member 112 PASS; Admin 16 PASS; Backend API 130 PASS/52 TODO; 24 visual references PASS. Full engineering gates in ../phase3-connected-dev/final/PASS-FAIL-MATRIX.md. Production BLOCKED; further rollout PAUSED.

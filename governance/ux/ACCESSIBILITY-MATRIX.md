@@ -14,3 +14,7 @@
 | Formal LIFF accessibility | OPERATIONAL CREDENTIAL PENDING |
 
 Initial browser focus containment failed; explicit dialog Tab wrapping added and dependency cache refreshed before rerun. No tests weakened.
+
+## UX-2 refinement
+
+UX-2 focused checks PASS: modal forward/reverse Tab containment, Escape/focus restoration, roving Qualification tabs, labels, text-based status, >=44px bottom navigation, white/navy surface loading. Full WCAG/screen-reader and actual LIFF devices remain pending.

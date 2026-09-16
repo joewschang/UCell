@@ -1,5 +1,5 @@
 import {AdminAppShell,AdminSidebar,AdminHeader} from '@ucell/design-system';
-import {NavLink,Outlet} from 'react-router-dom';
+import {NavLink,Outlet,useLocation} from 'react-router-dom';
 import {nav,navGroups} from './nav';
 import {useAuth} from '../features/auth/auth';
 import {canOpen} from '../features/auth/permissions';
@@ -7,13 +7,13 @@ import {useState} from 'react';
 import {useQueryClient} from '@tanstack/react-query';
 
 export function AppShell(){
-  const queryClient=useQueryClient();
+  const queryClient=useQueryClient();const {pathname}=useLocation();
   const {user,logout}=useAuth();
   const [devActor,setDevActor]=useState(()=>sessionStorage.getItem('ucell_dev_actor_id')??'');
   return <AdminAppShell>
     <AdminSidebar>
       <div className="brand"><div className="brand-mark small">U</div><div><strong>UCell</strong><span>Operations Console</span></div></div>
-      <nav aria-label="後台主要功能">{navGroups.map(group=>{const links=nav.filter(([,to])=>group.paths.includes(to)&&canOpen(user?.role,to));return links.length?<section className="uc-nav-group" key={group.label}><h2>{group.label}</h2>{links.map(([label,to])=><NavLink end={to==='/'} key={to} to={to}>{label}</NavLink>)}</section>:null})}</nav>
+      <nav aria-label="後台主要功能">{navGroups.map(group=>{const links=nav.filter(([,to])=>group.paths.includes(to)&&canOpen(user?.role,to));return links.length?<details className="uc-nav-group" key={group.label} open={group.paths.some(path=>pathname===path||path!=='/'&&pathname.startsWith(path+'/'))}><summary>{group.label}</summary>{links.map(([label,to])=><NavLink end={to==='/'} key={to} to={to}>{label}</NavLink>)}</details>:null})}</nav>
       <div className="sidebar-foot"><span>{user?.name}</span><small>{user?.role}</small><button onClick={logout}>登出</button></div>
       {import.meta.env.DEV && import.meta.env.VITE_ADMIN_DEV_FULL_ACCESS==='true' && <label>DEV Actor Person ID（空白使用 ROOT fixture）<input value={devActor} onChange={e=>{setDevActor(e.target.value);sessionStorage.setItem('ucell_dev_actor_id',e.target.value.trim());queryClient.clear()}}/></label>}
     </AdminSidebar>

@@ -3051,6 +3051,148 @@
         ]
       }
     },
+    "/api/v1/admin/persons/{personId}/qualifications": {
+      "get": {
+        "description": "Read-only exact currentHolderPersonId filter. Includes every existing status; does not infer Active or historical ownership. Same Person administration roles. Stable createdAt descending / qualificationId ascending ordering.",
+        "operationId": "adminListPersonQualifications",
+        "parameters": [
+          {
+            "name": "personId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "take",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
+          },
+          {
+            "name": "skip",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "qualificationId",
+                          "currentHolderPersonId",
+                          "qualificationNo",
+                          "planLevelCode",
+                          "status",
+                          "activeFlag"
+                        ],
+                        "properties": {
+                          "qualificationId": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "currentHolderPersonId": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "qualificationNo": {
+                            "type": "string",
+                            "description": "Core BigInt serialized as decimal string"
+                          },
+                          "planLevelCode": {
+                            "type": "string"
+                          },
+                          "status": {
+                            "type": "string",
+                            "description": "Existing Core RecordStatus; no frontend status inference"
+                          },
+                          "activeFlag": {
+                            "type": "boolean"
+                          },
+                          "effectiveAt": {
+                            "type": "string",
+                            "format": "date-time",
+                            "nullable": true
+                          },
+                          "createdAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "updatedAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          }
+                        }
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "total": {
+                          "type": "integer"
+                        },
+                        "take": {
+                          "type": "integer"
+                        },
+                        "skip": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Admin authentication required"
+          },
+          "403": {
+            "description": "Existing Person role policy denies access"
+          },
+          "404": {
+            "description": "PERSON_NOT_FOUND"
+          },
+          "422": {
+            "description": "VALIDATION_ERROR: invalid UUID or pagination"
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "Person 的目前持有資格（1:N）",
+        "tags": [
+          "Admin - Person"
+        ]
+      }
+    },
     "/api/v1/admin/persons/{personId}": {
       "get": {
         "operationId": "adminGetPerson",

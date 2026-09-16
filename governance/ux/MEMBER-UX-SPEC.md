@@ -11,3 +11,7 @@ Organization: separate Sponsor and Binary queries/tabs. Existing masked sponsor/
 Bonus: explicit lifecycle status, nullable money, period query and append-only ledger history. Diagram is a lifecycle legend with only explicit current status; missing effective/payable/paid timestamps are not inferred. No historic ledger edit action.
 
 Commerce, notifications, profile, repurchase and logout remain Connected implementations. Visual harness uses explicit MOCK ONLY fixtures for repeatable screenshots; HTTP/DB Golden and BOLA tests run independently against real isolated DB. Actual LINE/LIFF device verification remains Operational Credential Pending.
+
+## UX-2 refinement
+
+UX-2: compact Header, separate DEV banner, identity/Qualification to Active/repurchase to performance to Bonus hierarchy; Sponsor/direct and Binary side summaries; Chinese lifecycle and domain detail. See ux2/REPORT.md.

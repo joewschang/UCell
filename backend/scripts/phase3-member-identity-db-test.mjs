@@ -6,6 +6,7 @@ const require=createRequire(new URL('../package.json',import.meta.url)),apiRequi
 const {PrismaClient}=require('@prisma/client');
 const {NestFactory}=apiRequire('@nestjs/core'),{FastifyAdapter}=apiRequire('@nestjs/platform-fastify');
 const {ValidationPipe,UnauthorizedException}=apiRequire('@nestjs/common');
+const {ConfigService}=apiRequire('@nestjs/config');
 const {SwaggerModule,DocumentBuilder}=apiRequire('@nestjs/swagger');
 const {AppModule}=require('./apps/api/dist/app.module.js');
 const replay=require('./packages/database/dist/historical-replay.js');
@@ -75,6 +76,30 @@ try{
  };
  await app.init();const server=app.getHttpAdapter().getInstance();await server.ready();
  const call=(method,path,token,body,key='TEST_ONLY_MEMBER_REQUEST')=>server.inject({method,url:'/api/v1/'+path,headers:{...(token?{authorization:'Bearer '+token}:{}),...(method==='PATCH'||method==='POST'&&['member/orders','member/logout'].includes(path)?{'idempotency-key':key}:{})},...(body?{payload:body}:{})});
+ // Actual Admin HTTP authorization using isolated opaque sessions. This verifies
+ // session/role infrastructure, not formal Entra credentials or production RBAC.
+ app.get(ConfigService).set('ADMIN_AUTH_BYPASS','false');
+ const adminPath='admin/persons/'+person.personId+'/qualifications';
+ // Authorized GETs intentionally append access Audit evidence; monetary facts
+ // and outbox remain unchanged. Do not suppress audit to satisfy read assertions.
+ const readOnlyModels=['pvLedger','bonusAward','bonusAwardLifecycleEvent','outboxEvent'];
+ const readOnlyCounts=await Promise.all(readOnlyModels.map(model=>db[model].count()));
+ equal((await call('GET',adminPath)).statusCode,401,'Person Qualification HTTP requires Admin authentication');
+ for(const roleCode of ['SUPER_ADMIN','MEMBERSHIP_OPS','COMPLIANCE_AUDIT']){
+  const session=await app.get(IdentityTokenService).issue({provider:'ADMIN_LOCAL',subject:'ISOLATED_TEST_ONLY_'+roleCode,roleCode});
+  const result=await call('GET',adminPath,session.accessToken);equal(result.statusCode,200,roleCode+' can read Person owned balls');
+  equal(result.json().data.map(row=>row.qualificationId).sort(),ids.slice(0,2).sort(),roleCode+' HTTP list exact owned qualifications');
+ }
+ const adminSession=await app.get(IdentityTokenService).issue({provider:'ADMIN_LOCAL',subject:'ISOLATED_TEST_ONLY_ADMIN_DETAIL',roleCode:'SUPER_ADMIN'});
+ const deniedSession=await app.get(IdentityTokenService).issue({provider:'ADMIN_LOCAL',subject:'ISOLATED_TEST_ONLY_FINANCE',roleCode:'FINANCE'});
+ equal((await call('GET',adminPath,deniedSession.accessToken)).statusCode,403,'Finance role cannot bypass Person policy through child route');
+ equal((await call('GET',adminPath+'?take=1&skip=1',adminSession.accessToken)).json().data.length,1,'Person Qualification HTTP paginates');
+ equal((await call('GET','admin/persons/'+empty.personId+'/qualifications',adminSession.accessToken)).json().data,[],'Person without Qualification HTTP empty state');
+ equal((await call('GET','admin/persons/'+randomUUID()+'/qualifications',adminSession.accessToken)).statusCode,404,'Missing Person HTTP 404');
+ equal((await call('GET','admin/persons/forged/qualifications',adminSession.accessToken)).statusCode,422,'Forged Person UUID HTTP 422');
+ equal((await call('GET',adminPath+'?take=101',adminSession.accessToken)).statusCode,422,'Oversized Person Qualification page HTTP 422');
+ equal((await call('GET',adminPath+'?skip=-1',adminSession.accessToken)).statusCode,422,'Negative Person Qualification offset HTTP 422');
+ for(let i=0;i<readOnlyModels.length;i++)equal(await db[readOnlyModels[i]].count(),readOnlyCounts[i],readOnlyModels[i]+' Admin Person HTTP reads append no facts');
  let res=await call('POST','auth/member/line/exchange',null,{idToken:'VALID_TEST_ONLY'});equal(res.statusCode,201,'synthetic verified LINE exchange');
  const token=res.json().data.accessToken;
  equal((await call('POST','auth/member/line/exchange',null,{idToken:'VALID_TEST_ONLY'})).statusCode,409,'ID token replay denied');

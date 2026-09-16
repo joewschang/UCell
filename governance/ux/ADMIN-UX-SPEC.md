@@ -13,3 +13,7 @@ Bonus/Settlement: pipeline legend is not an execution result; every unsupported 
 DataGrid server pagination, saved views, exports and authorized bulk commands are pending. No generic frontend bulk monetary mutation is introduced. Existing high-risk workflows are preserved rather than replaced with weaker confirmations.
 
 Sidebar is grouped into Dashboard, 會員管理, 組織管理, 商務, 獎金中心, 財務, 營運分析, 系統治理; every original route occurs once and role filtering is unchanged. Person creation is a collapsible labeled form so the operational registry is visible sooner. Loading is distinct from empty data.
+
+## UX-2 refinement
+
+UX-2: collapsible domain groups, unavailable Operations sections, exact owned-Qualification drawer with ten tabs, exact-batch read-only pipeline, shared grid toolbar. Proposed aggregate sources: ux2/READ-MODEL-API-PLAN.md.

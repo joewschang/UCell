@@ -1,29 +1,29 @@
 command: pnpm test
-started: 2026-09-16T01:56:07.364Z
+started: 2026-09-16T02:28:49.238Z
 exit: 0
 
  RUN  v2.1.9 C:/UCell/UCell/member
 
+ ✓ tests/validation.test.ts (17 tests) 12ms
  ✓ tests/envelope.test.ts (4 tests) 7ms
- ✓ tests/validation.test.ts (17 tests) 14ms
- ✓ tests/timeout.test.ts (5 tests) 26ms
- ✓ tests/auth.test.ts (6 tests) 25ms
- ✓ tests/qualification-lifecycle.test.tsx (5 tests) 58ms
- ✓ tests/contract.test.ts (5 tests) 7ms
- ✓ tests/profile.test.tsx (3 tests) 36ms
- ✓ tests/design-system.test.tsx (5 tests) 35ms
- ✓ tests/error-boundary.test.tsx (3 tests) 29ms
- ✓ tests/session.test.tsx (11 tests) 52ms
- ✓ tests/commerce.test.tsx (12 tests) 91ms
- ✓ tests/notifications.test.tsx (10 tests) 71ms
- ✓ tests/connected-shop.test.tsx (5 tests) 102ms
- ✓ tests/connected-account.test.tsx (5 tests) 92ms
- ✓ tests/member.test.tsx (15 tests) 132ms
+ ✓ tests/auth.test.ts (6 tests) 23ms
+ ✓ tests/timeout.test.ts (5 tests) 30ms
+ ✓ tests/contract.test.ts (5 tests) 10ms
+ ✓ tests/design-system.test.tsx (6 tests) 45ms
+ ✓ tests/qualification-lifecycle.test.tsx (5 tests) 36ms
+ ✓ tests/profile.test.tsx (3 tests) 37ms
+ ✓ tests/error-boundary.test.tsx (3 tests) 31ms
+ ✓ tests/session.test.tsx (11 tests) 59ms
+ ✓ tests/commerce.test.tsx (12 tests) 108ms
+ ✓ tests/notifications.test.tsx (10 tests) 82ms
+ ✓ tests/connected-shop.test.tsx (5 tests) 112ms
+ ✓ tests/connected-account.test.tsx (5 tests) 97ms
+ ✓ tests/member.test.tsx (15 tests) 131ms
 
  Test Files  15 passed (15)
-      Tests  111 passed (111)
-   Start at  09:56:07
-   Duration  1.36s (transform 1.85s, setup 0ms, collect 5.42s, tests 778ms, environment 6ms, prepare 3.83s)
+      Tests  112 passed (112)
+   Start at  10:28:49
+   Duration  1.39s (transform 1.96s, setup 0ms, collect 5.54s, tests 819ms, environment 5ms, prepare 4.20s)
 
 $ vitest run
 stderr | tests/notifications.test.tsx > marks one notification once without changing another

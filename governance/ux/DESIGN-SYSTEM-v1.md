@@ -15,3 +15,7 @@ Native dialog is used for accessible modal behavior plus explicit Tab containmen
 UX-1 is a first validated pattern, not completion of every requested feature. Tree Viewer, server-wide DataGrid pagination/export/saved views/bulk operations and complete pipeline evidence remain future additive integrations.
 
 API changes: NONE. DB migration: NONE. Business logic changes: NONE. Production BLOCKED.
+
+## UX-2 refinement
+
+UX-2 adds semantic navy surfaces, restrained card hierarchy and a connected Chinese lifecycle timeline; only Backend current status is highlighted. See ux2/REPORT.md.
