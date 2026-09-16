@@ -12,3 +12,5 @@
 | Backup/restore drill | BLOCKED | Automation/runbook and isolated restore evidence pending |
 | Shadow settlement | BLOCKED | Non-empty production-cycle evidence unavailable |
 | Production promotion | BLOCKED | Manual Go/No-Go prerequisites incomplete |
+| Isolated Azure Stage infrastructure | PASS | East Asia `rg-ucell-stage`; migrations and public runtime smoke pass |
+| Stage operational identity | BLOCKED | Formal LINE LIFF and Entra credentials/device evidence pending |

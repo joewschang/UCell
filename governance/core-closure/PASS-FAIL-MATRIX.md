@@ -28,3 +28,7 @@
 | R1.0B Golden/OpenAPI preflight | PASS | Both gates pass |
 | Formal LINE/Entra/UAT | BLOCKED | Operational credentials/evidence unavailable |
 | Production promotion | BLOCKED | Release prerequisites remain incomplete |
+| Azure Stage foundation | PASS | `rg-ucell-stage`: PostgreSQL 16, ACR, Container Apps environment, identity, Key Vault, Storage, telemetry |
+| Azure Stage Prisma deploy | PASS | `ucell-stage-migrate-8d9rbhq` Succeeded; 25 migrations |
+| Azure Stage runtime smoke | PASS | API health 200; Admin 200; Member 200; API/Worker/Admin/Member Running |
+| Azure Stage formal identity | BLOCKED | LINE LIFF and Entra Stage credentials not yet supplied; `CredentialsVerified=false` |

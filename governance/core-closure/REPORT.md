@@ -59,3 +59,19 @@ Date: 2026-09-16 (Asia/Taipei)
 - Production promotion: BLOCKED.
 
 Pending decisions remain limited to production clock values, historical GPV-to-PV/BV migration mapping, and inactive Matching Sponsor edge semantics.
+
+## Azure isolated Stage deployment
+
+- Subscription: `Azure subscription 1` (`563f9d83-30f0-48db-b3ec-297a2e3d0345`), authenticated as `joewschang@gmail.com`.
+- Resource group: `rg-ucell-stage`; region: East Asia.
+- PostgreSQL Flexible Server 16 is Ready. The empty Stage database was rebuilt after an explicitly authorized reset, and `PGCRYPTO` is allow-listed through Bicep.
+- Prisma migration execution `ucell-stage-migrate-8d9rbhq`: PASS; all 25 migrations applied.
+- ACR contains `ucell-backend`, `ucell-worker`, `ucell-admin`, and `ucell-member` Stage images.
+- Container Apps API, Worker, Admin, and Member: provisioning Succeeded and runtime Running.
+- External checks: API `/api/v1/health` 200 with `status=ok`; Admin `/` 200; Member `/` 200.
+- Stage URLs:
+  - API: `https://ucell-stage-api.victoriousisland-9fc3593c.eastasia.azurecontainerapps.io`
+  - Admin: `https://ucell-stage-admin.victoriousisland-9fc3593c.eastasia.azurecontainerapps.io`
+  - Member: `https://ucell-stage-member.victoriousisland-9fc3593c.eastasia.azurecontainerapps.io`
+- Formal LINE LIFF and Entra values were not supplied. `CredentialsVerified=false`; identity E2E remains `OPERATIONAL_CREDENTIAL_PENDING`.
+- Production resources were not created or promoted. Production Promotion remains BLOCKED.
