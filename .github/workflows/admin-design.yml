@@ -1,0 +1,59 @@
+name: Admin dashboard design checks
+on:
+  push:
+    branches: [feature/member-liff-mvp]
+    paths: ['admin/**', 'member/tests/admin-dashboard-smoke.cjs', '.github/workflows/admin-design.yml']
+  pull_request:
+    paths: ['admin/**', 'member/tests/admin-dashboard-smoke.cjs', '.github/workflows/admin-design.yml']
+permissions:
+  contents: read
+jobs:
+  dashboard:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: corepack enable
+      - name: Install admin dependencies
+        working-directory: admin
+        run: |
+          if test -f pnpm-lock.yaml; then
+            corepack pnpm install --frozen-lockfile
+          else
+            corepack pnpm install --no-frozen-lockfile
+          fi
+      - name: Build admin
+        working-directory: admin
+        run: corepack pnpm run build
+      - name: Install existing browser test toolchain
+        working-directory: member
+        run: |
+          corepack pnpm install --frozen-lockfile
+          corepack pnpm exec playwright install --with-deps chromium
+      - name: Verify dashboard with isolated fixtures
+        env:
+          VITE_ENABLE_DEMO_LOGIN: 'false'
+        run: |
+          mkdir -p test-artifacts
+          cd admin
+          corepack pnpm dev --host 127.0.0.1 --port 5175 --strictPort > ../test-artifacts/admin-server.log 2>&1 &
+          dashboard_pid=$!
+          trap 'kill "$dashboard_pid" 2>/dev/null || true' EXIT
+          cd ..
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:5175/ > /dev/null; then break; fi
+            sleep 1
+          done
+          curl --fail --silent http://127.0.0.1:5175/ > /dev/null
+          timeout 180s node member/tests/admin-dashboard-smoke.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: admin-dashboard-evidence
+          path: |
+            test-artifacts/
+            admin/pnpm-lock.yaml
+          retention-days: 7
