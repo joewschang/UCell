@@ -1,0 +1,12 @@
+TEST_TODO_GATE_FAIL: 52 unresolved executable test placeholders
+- apps\api\test\bonus-engine-v04.e2e-spec.ts: 2
+- apps\api\test\epv-global-v05.e2e-spec.ts: 8
+- apps\api\test\negative-flow-v05.e2e-spec.ts: 6
+- apps\api\test\qualification-isolation.e2e-spec.ts: 1
+- apps\api\test\v060-adjustment-lifecycle.e2e-spec.ts: 3
+- apps\api\test\v061-replay.e2e-spec.ts: 4
+- apps\api\test\v062-carry-chain.e2e-spec.ts: 8
+- apps\api\test\v063-golden-path.e2e-spec.ts: 1
+- apps\api\test\v064-golden-dataset.e2e-spec.ts: 9
+- apps\api\test\vertical-slice-02.e2e-spec.ts: 8
+- apps\api\test\vertical-slice.e2e-spec.ts: 2

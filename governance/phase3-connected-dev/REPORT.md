@@ -1,3 +1,13 @@
+# Backend Binary / Referral TODO continuation — 2026-09-16
+
+Pre-change checkpoint 40ec4f9; branch integration/member-backend-mvp. This batch converts 17 original Bonus Engine TODOs through actual service calculation/query/write assertions: six Binary, ten Referral/Equalization and one initial lifecycle case. Following the earlier three-case Matching batch, the shared working tree now has 52 TODO (69 → 52). One prior v064 conversion remains concurrent uncommitted work; do not interpret this shared-working-tree count as clean-checkout release certification.
+
+Final verification: focused 24 PASS / 2 TODO; complete API 17 suites / 130 PASS / 52 TODO; TODO gate exit 1 correctly BLOCKED; whitespace validation PASS. Actual historical Binary path, archived Sponsor/Active state, independent per-source Equalization base, plan rates/caps, carry and K0/K1 behavior are exercised. Persistence and sealSettlement are mocked; this does not complete DB concurrency, temporal SQL, sealing or period replay/carry convergence. Business rules and production services remain unchanged. Both inactive-Binary no-row/zero-marker interpretation and real Matching Sponsor traversal remain unresolved TODOs. Production Promotion remains BLOCKED.
+
+Current batch [report](batches/binary-referral-20260916/REPORT.md), [gate matrix](batches/binary-referral-20260916/PASS-FAIL-MATRIX.md) and [complete working-tree TODO inventory](batches/binary-referral-20260916/TODO-INVENTORY.md) supersede older Backend TODO counts only. Earlier UX/Member/API evidence below remains historical. The historically withdrawn 52-TODO claim is still invalid; this coincidental new count has separate explicit evidence and makes no claim that all 96 net reductions are release-reviewed.
+
+---
+
 # Member / Admin functional gap closure — 2026-09-16
 
 Branch integration/member-backend-mvp; pre-change checkpoint d4f0e99. This section supersedes preceding Member counts and records the additional Admin UI/transport closure. No main merge, force push, RC2 or Production promotion.

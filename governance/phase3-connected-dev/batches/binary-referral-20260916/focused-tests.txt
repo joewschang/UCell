@@ -1,0 +1,6 @@
+$ jest --config ./test/jest-e2e.json "--runInBand" "bonus-engine-v04"
+Test Suites: 1 passed, 1 total
+Tests:       2 todo, 24 passed, 26 total
+Snapshots:   0 total
+Time:        4.903 s
+Ran all test suites matching bonus-engine-v04.
