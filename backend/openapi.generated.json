@@ -190,6 +190,45 @@
         ]
       }
     },
+    "/api/v1/member/contracts/formal-required": {
+      "get": {
+        "description": "Effective Formal Member contracts and own immutable consent status.",
+        "operationId": "memberFormalRequiredContracts",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "Validation failure; unknown identity/qualification/monetary fields rejected"
+          },
+          "401": {
+            "description": "Member LINE session required, expired/disabled sessions denied"
+          },
+          "403": {
+            "description": "Qualification not owned"
+          },
+          "404": {
+            "description": "Resource unavailable"
+          },
+          "409": {
+            "description": "Conflicting operation"
+          },
+          "422": {
+            "description": "Invalid input or pending domain decision"
+          }
+        },
+        "security": [
+          {
+            "memberBearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "Member"
+        ]
+      }
+    },
     "/api/v1/member/contracts/{versionId}/consent": {
       "post": {
         "description": "Append immutable consent evidence bound to the displayed content hash. Duplicate delivery is idempotent.",
@@ -545,6 +584,111 @@
         },
         "responses": {
           "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "Validation failure; unknown identity/qualification/monetary fields rejected"
+          },
+          "401": {
+            "description": "Member LINE session required, expired/disabled sessions denied"
+          },
+          "403": {
+            "description": "Qualification not owned"
+          },
+          "404": {
+            "description": "Resource unavailable"
+          },
+          "409": {
+            "description": "Conflicting operation"
+          },
+          "422": {
+            "description": "Invalid input or pending domain decision"
+          }
+        },
+        "security": [
+          {
+            "memberBearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "Member"
+        ]
+      }
+    },
+    "/api/v1/member/formal-applications/current": {
+      "get": {
+        "description": "Own current Formal Member application with masked national ID and bank account.",
+        "operationId": "memberCurrentFormalApplication",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "Validation failure; unknown identity/qualification/monetary fields rejected"
+          },
+          "401": {
+            "description": "Member LINE session required, expired/disabled sessions denied"
+          },
+          "403": {
+            "description": "Qualification not owned"
+          },
+          "404": {
+            "description": "Resource unavailable"
+          },
+          "409": {
+            "description": "Conflicting operation"
+          },
+          "422": {
+            "description": "Invalid input or pending domain decision"
+          }
+        },
+        "security": [
+          {
+            "memberBearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "Member"
+        ]
+      }
+    },
+    "/api/v1/member/formal-applications": {
+      "post": {
+        "description": "Encrypt and append a Formal Member application draft snapshot. Does not submit, approve, create Qualification, or change membership state.",
+        "operationId": "memberSaveFormalApplicationDraft",
+        "parameters": [
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FormalMemberDraftDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
             "description": ""
           },
           "400": {
@@ -6063,6 +6207,69 @@
           "region",
           "city",
           "address"
+        ]
+      },
+      "FormalMemberDraftDto": {
+        "type": "object",
+        "properties": {
+          "formalContractVersionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "legalName": {
+            "type": "string",
+            "maxLength": 120
+          },
+          "gender": {
+            "type": "string",
+            "maxLength": 32
+          },
+          "birthDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "nationalId": {
+            "type": "string",
+            "maxLength": 32
+          },
+          "communicationAddress": {
+            "type": "string",
+            "maxLength": 500
+          },
+          "phone": {
+            "type": "string",
+            "maxLength": 32
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "maxLength": 254
+          },
+          "bankCode": {
+            "type": "string",
+            "maxLength": 16
+          },
+          "bankAccount": {
+            "type": "string",
+            "maxLength": 34
+          },
+          "accountHolder": {
+            "type": "string",
+            "maxLength": 120
+          }
+        },
+        "required": [
+          "formalContractVersionId",
+          "legalName",
+          "gender",
+          "birthDate",
+          "nationalId",
+          "communicationAddress",
+          "phone",
+          "email",
+          "bankCode",
+          "bankAccount",
+          "accountHolder"
         ]
       },
       "MemberContextDto": {

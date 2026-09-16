@@ -12,5 +12,6 @@ import { DeliveryProfileService } from './delivery-profile.service';
 import { PiiCryptoService } from '../../common/security/pii-crypto.service';
 import { MemberReferralAttributionController, ReferralAttributionController } from './referral-attribution.controller';
 import { ReferralAttributionService } from './referral-attribution.service';
-@Module({imports:[AuthModule,OrderModule],controllers:[MemberAuthController,MemberController,ReferralAttributionController,MemberReferralAttributionController],providers:[MemberService,MemberReadService,MemberShareLinkService,ReferralAttributionService,MemberContractService,DeliveryProfileService,PiiCryptoService,MemberContextGuard,LineTokenVerifierService]})
+import { FormalMemberApplicationService } from './formal-member-application.service';
+@Module({imports:[AuthModule,OrderModule],controllers:[MemberAuthController,MemberController,ReferralAttributionController,MemberReferralAttributionController],providers:[MemberService,MemberReadService,MemberShareLinkService,ReferralAttributionService,FormalMemberApplicationService,MemberContractService,DeliveryProfileService,PiiCryptoService,MemberContextGuard,LineTokenVerifierService]})
 export class MemberModule {}

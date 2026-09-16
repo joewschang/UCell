@@ -4,7 +4,7 @@ import { CreateOrderItemDto } from '../order/dto/create-order.dto';
 import { OrderService } from '../order/order.service';
 import { Type } from 'class-transformer';
 import { IdempotencyGuard } from '../../common/guards/idempotency.guard';
-import { IsString, IsUUID, IsEmail, MaxLength, MinLength, IsOptional, Matches, ValidateIf, IsArray, ArrayMinSize, ArrayMaxSize, ValidateNested, IsBoolean, IsIn, Equals } from 'class-validator';
+import { IsString, IsUUID, IsEmail, IsDateString, MaxLength, MinLength, IsOptional, Matches, ValidateIf, IsArray, ArrayMinSize, ArrayMaxSize, ValidateNested, IsBoolean, IsIn, Equals } from 'class-validator';
 import { MemberReadService } from './member-read.service';
 import * as views from './member-view.dto';
 import { MemberContextGuard } from './member-context.guard';
@@ -13,6 +13,7 @@ import { MemberService } from './member.service';
 import { MemberShareLinkService } from './member-share-link.service';
 import { MemberContractService } from './member-contract.service';
 import { DeliveryProfileService } from './delivery-profile.service';
+import { FormalMemberApplicationService,FormalDraftInput } from './formal-member-application.service';
 export class LineExchangeDto {
  @ApiProperty({description:'LINE ID token; verified server-side, never logged or persisted raw'}) @IsString() @MinLength(1) @MaxLength(16384) idToken!:string;
 }
@@ -41,6 +42,19 @@ export class DeliveryProfileDto {
  @ApiProperty({maxLength:80}) @IsString() @Matches(/\S/) @MaxLength(80) city!:string;
  @ApiProperty({maxLength:300}) @IsString() @Matches(/\S/) @MinLength(5) @MaxLength(300) address!:string;
 }
+export class FormalMemberDraftDto implements FormalDraftInput {
+ @ApiProperty({format:'uuid'}) @IsUUID() formalContractVersionId!:string;
+ @ApiProperty({maxLength:120}) @IsString() @Matches(/\S/) @MaxLength(120) legalName!:string;
+ @ApiProperty({maxLength:32}) @IsString() @Matches(/\S/) @MaxLength(32) gender!:string;
+ @ApiProperty({format:'date'}) @IsDateString() birthDate!:string;
+ @ApiProperty({maxLength:32}) @IsString() @Matches(/\S/) @MaxLength(32) nationalId!:string;
+ @ApiProperty({maxLength:500}) @IsString() @Matches(/\S/) @MaxLength(500) communicationAddress!:string;
+ @ApiProperty({maxLength:32}) @Matches(/^(?=.*[0-9])\+?[0-9 ()-]{6,32}$/) phone!:string;
+ @ApiProperty({format:'email',maxLength:254}) @IsEmail() @MaxLength(254) email!:string;
+ @ApiProperty({maxLength:16}) @Matches(/^[A-Za-z0-9-]{2,16}$/) bankCode!:string;
+ @ApiProperty({maxLength:34}) @Matches(/^[A-Za-z0-9 -]{4,34}$/) bankAccount!:string;
+ @ApiProperty({maxLength:120}) @IsString() @Matches(/\S/) @MaxLength(120) accountHolder!:string;
+}
 export class MemberQueryDto extends MemberContextDto {
  @ApiProperty({required:false,pattern:'^\\d{4}-(0[1-9]|1[0-2])$',description:'Posted-event month filter using versioned accounting timezone; not an operational settlement cut-off'}) @IsOptional() @Matches(/^\d{4}-(0[1-9]|1[0-2])$/) period?:string;
 }
@@ -60,14 +74,17 @@ export class MemberAuthController {
 @ApiResponse({status:409,description:'Conflicting operation'}) @ApiResponse({status:422,description:'Invalid input or pending domain decision'})
 @Controller('member')
 export class MemberController {
- constructor(private readonly service:MemberService,private readonly reads:MemberReadService,private readonly orderService:OrderService,private readonly shareLinks:MemberShareLinkService,private readonly contracts:MemberContractService,private readonly delivery:DeliveryProfileService){}
+ constructor(private readonly service:MemberService,private readonly reads:MemberReadService,private readonly orderService:OrderService,private readonly shareLinks:MemberShareLinkService,private readonly contracts:MemberContractService,private readonly delivery:DeliveryProfileService,private readonly formalApplications:FormalMemberApplicationService){}
  @Get('me') @ApiResponse({status:200,schema:views.memberEnvelope(views.PersonView)}) @ApiOperation({operationId:'memberMe'}) me(@Req() req:any){return this.service.me(req.user.personId);}
  @Get('contracts/required') @ApiOperation({operationId:'memberRequiredContracts',description:'Return currently effective required Network Member contract versions and immutable consent status.'}) requiredContracts(@Req() req:any){return this.contracts.required(req.user.personId);}
+ @Get('contracts/formal-required') @ApiOperation({operationId:'memberFormalRequiredContracts',description:'Effective Formal Member contracts and own immutable consent status.'}) formalRequiredContracts(@Req() req:any){return this.contracts.formalRequired(req.user.personId);}
  @Post('contracts/:versionId/consent') @UseGuards(IdempotencyGuard) @ApiHeader({name:'Idempotency-Key',required:true}) @ApiOperation({operationId:'memberConsentContract',description:'Append immutable consent evidence bound to the displayed content hash. Duplicate delivery is idempotent.'}) consentContract(@Req() req:any,@Param('versionId',new ParseUUIDPipe()) versionId:string,@Body() body:MemberContractConsentDto,@Headers('idempotency-key') key:string){return this.contracts.consent(req.user.personId,versionId,body,key,req.requestId);}
  @Post('logout') @UseGuards(IdempotencyGuard) @ApiHeader({name:'Idempotency-Key',required:true}) @ApiResponse({status:201,schema:views.memberEnvelope(views.LogoutView)}) @ApiOperation({operationId:'memberLogout',description:'Revoke only the authenticated UCell LINE session, with transactional audit. Does not log out LINE. Repeated delivery after revocation returns 401; other sessions are unaffected.'}) logout(@Req() req:any,@Headers('idempotency-key') key:string,@Body() _body:MemberLogoutDto){return this.service.logout(req.user.personId,req.user.sessionId,key,req.requestId);}
  @Patch('profile') @ApiResponse({status:200,schema:views.memberEnvelope(views.PersonView)}) @UseGuards(IdempotencyGuard) @ApiHeader({name:'Idempotency-Key',required:true}) @ApiOperation({operationId:'memberUpdateProfile',description:'Own display/contact fields only. No legal identity, status, qualification or monetary mutation. Audited idempotent transaction.'}) profile(@Req() req:any,@Body() body:MemberProfileDto,@Headers('idempotency-key') key:string){if(!Object.values(body).some(v=>typeof v==='string'&&v.trim()))throw new UnprocessableEntityException({code:'PROFILE_FIELDS_REQUIRED'});return this.service.profile(req.user.personId,body,req.requestId,key);}
  @Get('delivery-profile') @ApiOperation({operationId:'memberDeliveryProfile',description:'Reads only the authenticated Person current encrypted delivery profile. No Qualification context required.'}) deliveryProfile(@Req() req:any){return this.delivery.get(req.user.personId);}
  @Patch('delivery-profile') @UseGuards(IdempotencyGuard) @ApiHeader({name:'Idempotency-Key',required:true}) @ApiOperation({operationId:'memberUpdateDeliveryProfile',description:'Creates a new encrypted delivery-profile version and closes the prior version. Audit/outbox contain no address or phone.'}) updateDeliveryProfile(@Req() req:any,@Body() body:DeliveryProfileDto,@Headers('idempotency-key') key:string){return this.delivery.update(req.user.personId,body,key,req.requestId);}
+ @Get('formal-applications/current') @ApiOperation({operationId:'memberCurrentFormalApplication',description:'Own current Formal Member application with masked national ID and bank account.'}) currentFormalApplication(@Req() req:any){return this.formalApplications.current(req.user.personId);}
+ @Post('formal-applications') @UseGuards(IdempotencyGuard) @ApiHeader({name:'Idempotency-Key',required:true}) @ApiOperation({operationId:'memberSaveFormalApplicationDraft',description:'Encrypt and append a Formal Member application draft snapshot. Does not submit, approve, create Qualification, or change membership state.'}) saveFormalApplication(@Req() req:any,@Body() body:FormalMemberDraftDto,@Headers('idempotency-key') key:string){return this.formalApplications.save(req.user.personId,body,key,req.requestId);}
  @Get('notifications') @ApiResponse({status:200,schema:views.memberEnvelope(views.NoticesView)}) @ApiOperation({operationId:'memberNotifications',description:'Person-addressed notices plus selected owned Qualification notices, newest first, bounded 100. No LINE push or server read-state mutation.'}) notifications(@Req() req:any,@Query() q:MemberContextDto){return this.service.notifications(req.user.personId,q.qualificationId);}
  @Patch('notifications/:id/read') @ApiResponse({status:200,schema:views.memberEnvelope(views.NoticeReadView)}) @UseGuards(IdempotencyGuard) @ApiHeader({name:'Idempotency-Key',required:true}) @ApiOperation({operationId:'memberReadNotification',description:'Append first Person read evidence; retry and repeated reads preserve original readAt. Owned Qualification audience required. No LINE push.'}) markRead(@Req() req:any,@Body() body:MemberContextDto,@Param('id',new ParseUUIDPipe()) id:string,@Headers('idempotency-key') key:string){return this.service.markNotificationRead(req.user.personId,body.qualificationId,id,key,req.requestId);}
  @Get('qualifications') @ApiResponse({status:200,schema:views.memberEnvelope(views.QualificationView,true)}) @ApiOperation({operationId:'memberQualifications',description:'Owned temporal holder evidence only; empty array for Person without Qualification. Ordered by immutable qualification number.'}) qualifications(@Req() req:any){return this.service.qualifications(req.user.personId);}

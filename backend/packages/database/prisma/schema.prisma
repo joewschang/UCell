@@ -304,23 +304,59 @@ model Person {
   createdAt        DateTime               @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt        DateTime               @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  qualifications         Qualification[]
-  holderHistory          QualificationHolderHistory[]
-  membershipApplications MembershipApplication[]
-  identityLinks          IdentityLink[]
-  authSessions           AuthSession[]
-  adminAccessGrants      AdminAccessGrant[]
-  memberNotifications    MemberNotification[]
-  consentEvidence        ConsentEvidence[]
-  membershipStateEvents  PersonMembershipStateEvent[]
-  otpChallenges          OtpChallenge[]
-  deliveryProfiles       DeliveryProfile[]
-  referralAttributions   ReferralAttribution[]
-  referralBindingHistory ReferralAttributionHistory[]
+  qualifications           Qualification[]
+  holderHistory            QualificationHolderHistory[]
+  membershipApplications   MembershipApplication[]
+  identityLinks            IdentityLink[]
+  authSessions             AuthSession[]
+  adminAccessGrants        AdminAccessGrant[]
+  memberNotifications      MemberNotification[]
+  consentEvidence          ConsentEvidence[]
+  membershipStateEvents    PersonMembershipStateEvent[]
+  otpChallenges            OtpChallenge[]
+  deliveryProfiles         DeliveryProfile[]
+  referralAttributions     ReferralAttribution[]
+  referralBindingHistory   ReferralAttributionHistory[]
+  formalMemberApplications FormalMemberApplication[]
 
   @@index([legalName])
   @@index([mobile])
   @@map("person")
+  @@schema("identity")
+}
+
+model FormalMemberApplication {
+  formalMemberApplicationId String                            @id @default(uuid()) @map("formal_member_application_id") @db.Uuid
+  personId                  String                            @map("person_id") @db.Uuid
+  status                    String                            @default("DRAFT")
+  currentSnapshotHash       String                            @map("current_snapshot_hash")
+  createdAt                 DateTime                          @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt                 DateTime                          @updatedAt @map("updated_at") @db.Timestamptz(6)
+  submittedAt               DateTime?                         @map("submitted_at") @db.Timestamptz(6)
+  reviewedAt                DateTime?                         @map("reviewed_at") @db.Timestamptz(6)
+  reviewerId                String?                           @map("reviewer_id") @db.Uuid
+  decisionReasonCode        String?                           @map("decision_reason_code")
+  person                    Person                            @relation(fields: [personId], references: [personId])
+  snapshots                 FormalMemberApplicationSnapshot[]
+
+  @@index([personId, status])
+  @@map("formal_member_application")
+  @@schema("identity")
+}
+
+model FormalMemberApplicationSnapshot {
+  formalMemberApplicationSnapshotId String                  @id @default(uuid()) @map("formal_member_application_snapshot_id") @db.Uuid
+  formalMemberApplicationId         String                  @map("formal_member_application_id") @db.Uuid
+  version                           Int
+  payloadCiphertext                 String                  @map("payload_ciphertext") @db.Text
+  keyVersion                        String                  @map("key_version")
+  payloadHash                       String                  @map("payload_hash")
+  createdAt                         DateTime                @default(now()) @map("created_at") @db.Timestamptz(6)
+  application                       FormalMemberApplication @relation(fields: [formalMemberApplicationId], references: [formalMemberApplicationId])
+
+  @@unique([formalMemberApplicationId, version])
+  @@index([payloadHash])
+  @@map("formal_member_application_snapshot")
   @@schema("identity")
 }
 
