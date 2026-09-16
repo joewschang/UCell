@@ -791,6 +791,7 @@ model ProductRuleProfile {
   createdAt             DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
 
   product ProductReference @relation(fields: [productId], references: [productId])
+  packageSelectableProducts PackageSelectableProduct[]
 
   @@index([productId, effectiveFrom, effectiveTo])
   @@map("product_rule_profile")
@@ -1815,6 +1816,7 @@ model QualificationSetup {
   qualificationId             String   @id @map("qualification_id") @db.Uuid
   ownerPersonId               String   @map("owner_person_id") @db.Uuid
   qualifyingOrderId           String   @map("qualifying_order_id") @db.Uuid
+  packagePurchaseSnapshotId   String?  @unique @map("package_purchase_snapshot_id") @db.Uuid
   packageType                 String   @map("package_type")
   setupStatus                 String   @map("setup_status")
   provisionalAttributionId    String?  @map("provisional_attribution_id") @db.Uuid
@@ -1975,6 +1977,7 @@ model PackageSelectableProduct {
   status                     String   @default("ACTIVE")
   createdAt                  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   packageVersion             PackageProfileVersion @relation(fields: [packageProfileVersionId], references: [packageProfileVersionId])
+  productRuleProfile         ProductRuleProfile @relation(fields: [productRuleProfileId], references: [productRuleProfileId])
 
   @@unique([packageProfileVersionId, productRuleProfileId])
   @@index([packageProfileVersionId, status, enabledFrom, enabledTo])

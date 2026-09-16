@@ -7,6 +7,9 @@ import { OutboxService } from '../../common/outbox/outbox.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { PaymentConfirmationDto } from './dto/payment-confirmation.dto';
 import { QualificationAccessService } from '../auth/qualification-access.service';
+import { PackageConfigService } from '../package-config/package-config.service';
+
+type MemberOrderInput=Partial<CreateOrderDto>&{packageVersionId?:string;targetQualificationId?:string;selections?:Array<{productRuleProfileId:string;quantity:number}>};
 
 @Injectable()
 export class OrderService {
@@ -15,12 +18,36 @@ export class OrderService {
     private readonly idempotency: IdempotencyService,
     private readonly audit: AuditService,
     private readonly outbox: OutboxService,
+    private readonly packages?: PackageConfigService,
   ) {}
 
-  async createMember(dto:CreateOrderDto,key:string,requestId:string,personId:string){
+  async createMember(dto:MemberOrderInput,key:string,requestId:string,personId:string){
+    if(dto.packageVersionId)return this.createPackageMember(dto,key,requestId,personId);
+    if(!dto.qualificationId||!dto.items?.length||dto.selections?.length)throw new UnprocessableEntityException({code:'INVALID_ORDER_SHAPE'});
     await new QualificationAccessService(this.prisma).assertHolder(personId,dto.qualificationId);
-    try{return await this.create({...dto,purpose:'RETAIL'},key,requestId,personId,true);}
+    try{return await this.create({qualificationId:dto.qualificationId,items:dto.items,purpose:'RETAIL',sourceReferralToken:dto.sourceReferralToken,clientReference:dto.clientReference},key,requestId,personId,true);}
     catch(error){if(['P2002','P2034'].includes((error as any).code))throw new ConflictException({code:'RETRYABLE_CONFLICT',message:'Concurrent operation; retry the identical request with the same Idempotency-Key.'});throw error;}
+  }
+
+  private async createPackageMember(dto:MemberOrderInput,key:string,requestId:string,personId:string){
+    if(dto.items?.length||!dto.selections?.length)throw new UnprocessableEntityException({code:'INVALID_PACKAGE_ORDER_SHAPE'});
+    const correlationId=randomUUID();
+    try{return await this.idempotency.execute(`member:package-order:create:${personId}`,key,dto,async tx=>{
+      const person=await tx.person.findUnique({where:{personId}});if(person?.status!=='EFFECTIVE')throw new ConflictException({code:'MEMBER_PERSON_DISABLED'});
+      const now=new Date(),prepared=await (this.packages??new PackageConfigService(this.prisma)).checkoutData(tx,personId,{packageVersionId:dto.packageVersionId!,targetQualificationId:dto.targetQualificationId,selections:dto.selections!},now),v=prepared.version;
+      let qualificationId=dto.targetQualificationId;
+      if(v.profile.packageClass==='QUALIFICATION'){
+        const qualification=await tx.qualification.create({data:{currentHolderPersonId:personId,planLevelCode:v.profile.stableCode,status:'DRAFT',activeFlag:false}});qualificationId=qualification.qualificationId;
+        await tx.qualificationHolderHistory.create({data:{qualificationId,holderPersonId:personId,effectiveFrom:now,sourceType:'PACKAGE_CHECKOUT'}});
+        await tx.qualificationStatusHistory.create({data:{qualificationId,status:'DRAFT',effectiveFrom:now,sourceType:'PACKAGE_CHECKOUT'}});
+      }
+      if(!qualificationId)throw new UnprocessableEntityException({code:'TARGET_QUALIFICATION_REQUIRED'});
+      const order=await tx.order.create({data:{qualificationId,purpose:v.profile.packageClass==='QUALIFICATION'?'ENTRY':'REPURCHASE',status:'CONFIRMED',currency:v.currency,grossAmount:v.priceAmount,discountAmount:new Prisma.Decimal(0),netAmount:v.priceAmount,ruleVersionCode:v.recognitionConfigRef!,parameterSnapshotHash:v.configHash,confirmedAt:now,lines:{create:prepared.selections.map(s=>({productId:s.product.productId,skuSnapshot:s.product.sku,productNameSnapshot:s.product.displayName,quantity:new Prisma.Decimal(s.quantity),unitPrice:new Prisma.Decimal(0),lineAmount:new Prisma.Decimal(0),gpvRateSnapshot:new Prisma.Decimal(0),gpvAmountSnapshot:new Prisma.Decimal(0),pvRateSnapshot:new Prisma.Decimal(0),ruleProfileSnapshot:{profileId:s.profile.productRuleProfileId,packageSelection:true,recognitionConfigRef:v.recognitionConfigRef,packageConfigHash:v.configHash}}))}},include:{lines:true}});
+      const snapshot=await tx.packagePurchaseSnapshot.create({data:{orderId:order.orderId,personId,targetQualificationId:dto.targetQualificationId,packageProfileVersionId:v.packageProfileVersionId,packageCode:v.profile.stableCode,packageName:v.displayName,packageClass:v.profile.packageClass,currency:v.currency,priceAmount:v.priceAmount,selectableProductQuantity:v.selectableProductQuantity,membershipEffect:v.membershipEffect,qualificationEffect:v.qualificationEffect,activeDurationUnit:v.activeDurationUnit,activeDurationValue:v.activeDurationValue,recognitionConfigRef:v.recognitionConfigRef!,packageConfigHash:v.configHash,purchasedAt:now,selections:{create:prepared.selections.map(s=>({productRuleProfileId:s.productRuleProfileId,productId:s.product.productId,skuSnapshot:s.product.sku,productDisplaySnapshot:s.product.displayName,quantity:s.quantity,productConfigHash:s.productConfigHash}))}}});
+      await this.audit.write(tx,{actorType:'MEMBER',actorId:personId,action:'PACKAGE_ORDER_CREATED',entityType:'ORDER',entityId:order.orderId,afterData:{orderId:order.orderId,qualificationId,packagePurchaseSnapshotId:snapshot.packagePurchaseSnapshotId,packageCode:v.profile.stableCode,packageClass:v.profile.packageClass,netAmount:v.priceAmount.toString()},requestId,correlationId});
+      await this.outbox.enqueue(tx,{eventType:'MEMBER_PACKAGE_ORDER_CREATED',aggregateType:'ORDER',aggregateId:order.orderId,payload:{schemaVersion:1,orderId:order.orderId,qualificationId,personId,packagePurchaseSnapshotId:snapshot.packagePurchaseSnapshotId,packageClass:v.profile.packageClass,recognitionStatus:'PAYMENT_PENDING'},correlationId});
+      return {...order,packagePurchaseSnapshotId:snapshot.packagePurchaseSnapshotId,packageClass:v.profile.packageClass};
+    });}catch(error){if(['P2002','P2034'].includes((error as any).code))throw new ConflictException({code:'RETRYABLE_CONFLICT',message:'Concurrent operation; retry the identical request with the same Idempotency-Key.'});throw error;}
   }
   async create(dto: CreateOrderDto, key: string, requestId: string, actorId?: string, member=false) {
     const correlationId = randomUUID();
@@ -219,6 +246,19 @@ export class OrderService {
         where: { orderId },
         data: { status: 'PAID', paidAt: occurredAt },
       });
+
+      // Legacy unit harnesses predate the additive package delegate; production Prisma always provides it.
+      const packageSnapshot=tx.packagePurchaseSnapshot?await tx.packagePurchaseSnapshot.findUnique({where:{orderId}}):null;
+      if(packageSnapshot){
+        let downstreamStatus='RECOGNITION_CONFIGURATION_PENDING';
+        if(packageSnapshot.packageClass==='QUALIFICATION'){
+          await tx.qualificationSetup.create({data:{qualificationId:order.qualificationId,ownerPersonId:packageSnapshot.personId,qualifyingOrderId:orderId,packagePurchaseSnapshotId:packageSnapshot.packagePurchaseSnapshotId,packageType:packageSnapshot.packageCode,setupStatus:'BALL_SETUP_PENDING',setupPolicyVersion:'NR-DEC-004-V1'}});
+          downstreamStatus='BALL_SETUP_PENDING';
+        }
+        await this.outbox.enqueue(tx,{eventType:'PACKAGE_PAYMENT_CONFIRMED',aggregateType:'ORDER',aggregateId:orderId,correlationId,payload:{schemaVersion:1,eventType:'PACKAGE_PAYMENT_CONFIRMED',orderId,qualificationId:order.qualificationId,packagePurchaseSnapshotId:packageSnapshot.packagePurchaseSnapshotId,packageClass:packageSnapshot.packageClass,occurredAt:occurredAt.toISOString(),recognitionStatus:'CONFIGURATION_PENDING',downstreamStatus}});
+        await this.audit.write(tx,{actorType:actorId?'USER':'SYSTEM',actorId,action:'PACKAGE_PAYMENT_CONFIRMED',entityType:'ORDER',entityId:orderId,afterData:{paymentEventId:payment.paymentEventId,packagePurchaseSnapshotId:packageSnapshot.packagePurchaseSnapshotId,downstreamStatus},requestId,correlationId});
+        return {orderId,status:'PAID',paymentEventId:payment.paymentEventId,correlationId,packagePurchaseSnapshotId:packageSnapshot.packagePurchaseSnapshotId,downstreamStatus};
+      }
 
       await this.outbox.enqueue(tx, {
         eventType: 'SALE_CONFIRMED',

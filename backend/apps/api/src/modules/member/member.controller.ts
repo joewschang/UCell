@@ -4,7 +4,7 @@ import { CreateOrderItemDto } from '../order/dto/create-order.dto';
 import { OrderService } from '../order/order.service';
 import { Type } from 'class-transformer';
 import { IdempotencyGuard } from '../../common/guards/idempotency.guard';
-import { IsString, IsUUID, IsEmail, IsDateString, MaxLength, MinLength, IsOptional, Matches, ValidateIf, IsArray, ArrayMinSize, ArrayMaxSize, ValidateNested, IsBoolean, IsIn, Equals } from 'class-validator';
+import { IsString, IsUUID, IsEmail, IsDateString, MaxLength, MinLength, Min, Max, IsInt, IsOptional, Matches, ValidateIf, IsArray, ArrayMinSize, ArrayMaxSize, ValidateNested, IsBoolean, IsIn, Equals } from 'class-validator';
 import { MemberReadService } from './member-read.service';
 import * as views from './member-view.dto';
 import { MemberContextGuard } from './member-context.guard';
@@ -26,8 +26,16 @@ export class MemberProfileDto {
  @ApiProperty({required:false,format:'email',maxLength:254}) @ValidateIf((_o,v)=>v!==undefined) @IsEmail() @MaxLength(254) email?:string;
  @ApiProperty({required:false,maxLength:32,description:'Contact data only; does not bind or authenticate an identity'}) @ValidateIf((_o,v)=>v!==undefined) @Matches(/^(?=.*[0-9])\+?[0-9 ()-]{6,32}$/) phone?:string;
 }
-export class MemberCreateOrderDto extends MemberContextDto {
- @ApiProperty({type:[CreateOrderItemDto],description:'Product IDs and quantities only; Core determines price/rule snapshots. RETAIL purpose only.'}) @IsArray() @ArrayMinSize(1) @ArrayMaxSize(100) @ValidateNested({each:true}) @Type(()=>CreateOrderItemDto) items!:CreateOrderItemDto[];
+export class MemberPackageSelectionDto {
+ @ApiProperty({format:'uuid'}) @IsUUID() productRuleProfileId!:string;
+ @ApiProperty({minimum:1,maximum:10000}) @Type(()=>Number) @IsInt() @Min(1) @Max(10000) quantity!:number;
+}
+export class MemberCreateOrderDto {
+ @ApiProperty({required:false,format:'uuid',description:'Required for retail orders; for active packages this must match targetQualificationId.'}) @IsOptional() @IsUUID() qualificationId?:string;
+ @ApiProperty({required:false,format:'uuid',description:'Published package version. When supplied, items are rejected and immutable package snapshots are created.'}) @IsOptional() @IsUUID() packageVersionId?:string;
+ @ApiProperty({required:false,format:'uuid'}) @IsOptional() @IsUUID() targetQualificationId?:string;
+ @ApiProperty({required:false,type:[CreateOrderItemDto],description:'Retail product IDs and quantities. Mutually exclusive with packageVersionId.'}) @IsOptional() @IsArray() @ArrayMinSize(1) @ArrayMaxSize(100) @ValidateNested({each:true}) @Type(()=>CreateOrderItemDto) items?:CreateOrderItemDto[];
+ @ApiProperty({required:false,type:[MemberPackageSelectionDto],description:'Exact package selection by versioned product rule profile.'}) @IsOptional() @IsArray() @ArrayMinSize(1) @ArrayMaxSize(200) @ValidateNested({each:true}) @Type(()=>MemberPackageSelectionDto) selections?:MemberPackageSelectionDto[];
 }
 export class MemberContractConsentDto {
  @ApiProperty({enum:[true],description:'Explicit acceptance is required; false is never recorded as consent.'}) @IsBoolean() @Equals(true) accepted!:true;
