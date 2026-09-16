@@ -2,6 +2,7 @@ import { QualificationGuard } from '../src/common/guards/qualification.guard';
 import { ActiveService } from '../src/modules/active/active.service';
 import { MemberShareLinkService } from '../src/modules/member/member-share-link.service';
 import { ForbiddenException } from '@nestjs/common';
+import { AdminContentController } from '../src/modules/content/content.controller';
 const context=(req:any)=>({switchToHttp:()=>({getRequest:()=>req})}) as any;
 describe('Qualification isolation (P0)', () => {
   it('Person A cannot read Person B qualification',async()=>{
@@ -19,6 +20,12 @@ describe('Qualification isolation (P0)', () => {
     const findFirst=jest.fn(),guard=new QualificationGuard({qualification:{findFirst}} as any);
     await expect(guard.canActivate(context({user:{personId:'A'},headers:{}}))).rejects.toMatchObject({response:{code:'AMBIGUOUS_QUALIFICATION'}});
     expect(findFirst).not.toHaveBeenCalled();
+  });
+  it('content roles keep compliance read-only and operations writes explicit',()=>{
+    expect(Reflect.getMetadata('roles',AdminContentController)).toEqual(['SUPER_ADMIN','ORDER_OPS','COMPLIANCE_AUDIT']);
+    expect(Reflect.getMetadata('roles',AdminContentController.prototype.create)).toEqual(['SUPER_ADMIN','ORDER_OPS']);
+    expect(Reflect.getMetadata('roles',AdminContentController.prototype.add)).toEqual(['SUPER_ADMIN','ORDER_OPS']);
+    expect(Reflect.getMetadata('roles',AdminContentController.prototype.publish)).toEqual(['SUPER_ADMIN','ORDER_OPS']);
   });
   it('member share link is bound to selected qualification',async()=>{
     const previous={secret:process.env.MEMBER_SHARE_TOKEN_SECRET,base:process.env.MEMBER_REFERRAL_BASE_URL,ttl:process.env.MEMBER_SHARE_TOKEN_TTL_SECONDS};

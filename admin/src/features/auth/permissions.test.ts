@@ -17,6 +17,8 @@ describe('Admin page access boundaries', () => {
   it('allows compliance audit reads while denying application creation', () => {
     expect(canOpen('COMPLIANCE_AUDIT', '/audit')).toBe(true);
     expect(canOpen('COMPLIANCE_AUDIT', '/applications')).toBe(true);
+    expect(canOpen('COMPLIANCE_AUDIT', '/content')).toBe(true);
+    expect(canOpen('ORDER_OPS', '/content')).toBe(true);
     expect(canOpen('COMPLIANCE_AUDIT', '/applications/new')).toBe(false);
   });
 });

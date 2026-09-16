@@ -1,0 +1,10 @@
+import {Link,useParams} from 'react-router-dom';
+import {EmptyState,ErrorState,LoadingState} from '@ucell/design-system';
+import type {Qualification} from './api';
+import {getContent,getContentDetail} from './memberData';
+import {useResource} from './useResource';
+import ReferralShare from './ReferralShare';
+
+function ContentCard({row}:{row:Awaited<ReturnType<typeof getContent>>[number]}){return <article className="card">{row.thumbnailUrl&&<img src={row.thumbnailUrl} alt="" loading="lazy"/>}<p className="uc-eyebrow">{row.type==='VIDEO_EXTERNAL'?'影音':'連結'}</p><h3>{row.title}</h3>{row.summary&&<p>{row.summary}</p>}<Link className="text-link" to={`/content/${encodeURIComponent(row.id)}`}>查看內容</Link></article>}
+export function ContentList(){const state=useResource('content',getContent);if(state.error)return <ErrorState message={state.error} retry={state.retry}/>;if(!state.data)return <LoadingState/>;return <><h2>影音與內容</h2><p>內容由後台審核發布；顯示期間與會員資格由伺服器判斷。</p>{state.data.length?state.data.map(row=><ContentCard key={row.id} row={row}/>):<EmptyState title="目前沒有已發布內容"/>}</>}
+export function ContentDetail({q}:{q:Qualification}){const {id=''}=useParams(),state=useResource(`content:${id}`,signal=>getContentDetail(id,signal));if(state.error)return <ErrorState message={state.error} retry={state.retry}/>;if(!state.data)return <LoadingState/>;const row=state.data;return <><Link className="text-link" to="/content">返回內容列表</Link><article className="card">{row.thumbnailUrl&&<img src={row.thumbnailUrl} alt="" loading="lazy"/>}<p className="uc-eyebrow">{row.type==='VIDEO_EXTERNAL'?'外部影音':'外部連結'}</p><h2>{row.title}</h2>{row.summary&&<p>{row.summary}</p>}<a className="button primary" href={row.url} target="_blank" rel="noopener noreferrer">{row.type==='VIDEO_EXTERNAL'?'開啟觀看':'開啟連結'}</a><p><small>發布時間：{new Intl.DateTimeFormat('zh-TW',{timeZone:'Asia/Taipei',dateStyle:'medium',timeStyle:'short'}).format(new Date(row.publishedAt))}</small></p></article>{row.shareable&&<ReferralShare q={q} contentId={row.id} title={row.title}/>}</>}

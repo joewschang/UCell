@@ -4928,6 +4928,23 @@
       }
     },
     "/api/v1/admin/content": {
+      "get": {
+        "operationId": "AdminContentController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "tags": [
+          "Admin - Content"
+        ]
+      },
       "post": {
         "operationId": "AdminContentController_create",
         "parameters": [

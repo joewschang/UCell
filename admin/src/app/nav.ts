@@ -11,6 +11,7 @@ export const nav=[
   ['退貨／重算','/returns','returns'],
   ['升級／轉讓／退出','/workflows','workflows'],
   ['結算／付款','/payouts','payouts'],
+  ['影音／連結內容','/content','content'],
   ['文件／附件','/documents','documents'],
   ['稽核紀錄','/audit','audit'],
   ['報表／完整性','/reports','reports'],
@@ -25,5 +26,5 @@ export const navGroups=[
  {label:'獎金中心',paths:['/bonuses']},
  {label:'財務',paths:['/payouts']},
  {label:'營運分析',paths:['/reports']},
- {label:'系統治理',paths:['/documents','/audit','/uat','/system']},
+ {label:'系統治理',paths:['/content','/documents','/audit','/uat','/system']},
 ];

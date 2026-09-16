@@ -16,6 +16,7 @@ import {ReturnsPage} from '../features/returns/ReturnsPage';
 import {WorkflowsPage} from '../features/workflows/WorkflowsPage';
 import {PayoutsPage} from '../features/payouts/PayoutsPage';
 import {DocumentsPage} from '../features/documents/DocumentsPage';
+import {ContentPage} from '../features/content/ContentPage';
 import {AuditPage} from '../features/audit/AuditPage';
 import {ReportsPage} from '../features/reports/ReportsPage';
 import {UatPage} from '../features/uat/UatPage';
@@ -39,7 +40,7 @@ export function App(){return <Routes>
   <Route path="/returns" element={<RequirePageRole><ReturnsPage/></RequirePageRole>}/>
   <Route path="/workflows" element={<RequirePageRole><WorkflowsPage/></RequirePageRole>}/>
   <Route path="/payouts" element={<RequirePageRole><PayoutsPage/></RequirePageRole>}/>
-  <Route path="/documents" element={<RequirePageRole><DocumentsPage/></RequirePageRole>}/>
+  <Route path="/content" element={<RequirePageRole><ContentPage/></RequirePageRole>}/>`r`n  <Route path="/documents" element={<RequirePageRole><DocumentsPage/></RequirePageRole>}/>
   <Route path="/audit" element={<RequirePageRole><AuditPage/></RequirePageRole>}/>
   <Route path="/reports" element={<RequirePageRole><ReportsPage/></RequirePageRole>}/>
   <Route path="/uat" element={<RequirePageRole><UatPage/></RequirePageRole>}/>

@@ -18,7 +18,8 @@ export async function prepareReferralLanding(){
  if(typeof data.anonymousId!=='string'||!uuid(data.anonymousId)||typeof data.transitionState!=='string'||!data.transitionState||typeof data.transitionExpiresAt!=='string'||!Number.isFinite(Date.parse(data.transitionExpiresAt))||Date.parse(data.transitionExpiresAt)<=Date.now())throw new Error('推薦連結回應格式異常');
  try{localStorage.setItem(anonymousKey,data.anonymousId);}catch{/* Transition remains usable without durable anonymous storage. */}
  sessionStorage.setItem(transitionKey,data.transitionState);sessionStorage.setItem(bindingKey,crypto.randomUUID());
- window.history.replaceState({},'','/'+window.location.search);
+ const query=new URLSearchParams(window.location.search),contentId=uuid(query.get('content'));query.delete('content');const suffix=query.toString()?'?'+query.toString():'';
+ window.history.replaceState({},'',(contentId?'/content/'+encodeURIComponent(contentId):'/')+suffix);
 }
 async function bindPendingReferral(accessToken:string){
  const transitionState=sessionStorage.getItem(transitionKey);if(!transitionState)return undefined;
