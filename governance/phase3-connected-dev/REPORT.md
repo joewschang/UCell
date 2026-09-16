@@ -2,6 +2,8 @@
 
 Branch integration/member-backend-mvp; pre-change checkpoint d4f0e99. This section supersedes preceding Member counts and records the additional Admin UI/transport closure. No main merge, force push, RC2 or Production promotion.
 
+Verified source/evidence checkpoint: 8a6dd75ec3028c15e5ffdda2fc0e0fbcce00c865, pushed and confirmed on origin/integration/member-backend-mvp. The following documentation-only commit records this immutable SHA. Final gates contain PASS/BLOCKED and no unresolved FAIL. Local Admin API/Worker restored; temporary mock browser test server stopped.
+
 CODE COMPLETE: existing Connected Member MVP plus server-confirmed Ball switching, zero-Qualification account access, Core repurchase details and UCell server-session revocation. Specific Admin fixes: typed subscription reads, retry/concurrent submission transport, stale-session cache isolation, server remaining return quantities, Core monetary display/aggregates, query/error/empty/retry, exports and 404.
 
 CONNECTED DEV PASS: Member 106 tests, Backend API 106 tests, isolated Member HTTP/DB 201 assertions twice, replay DB 129 assertions, Admin 11 tests, actual Admin 49 HTTP operations, four direct unauthenticated Member denials and five-screen UI/API smoke (13 real responses). Builds include Backend/Worker/Admin/Member; Prisma validate/generate/deploy and 22 existing migrations PASS. OpenAPI, both real frontend contracts, static/schema/security policy/preflight PASS. Member mobile browser smoke PASS only against explicitly mock UI: seven routes, 320/390/768px, no network writes. It is not formal LINE UAT.
