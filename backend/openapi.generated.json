@@ -2157,6 +2157,38 @@
         ]
       }
     },
+    "/api/v1/referrals/landing": {
+      "post": {
+        "description": "Record provisional referral attribution using server time. A 30-day lock does not create or rewrite a Sponsor relationship.",
+        "operationId": "referralLanding",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReferralLandingDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Attribution recorded, retained, or replaced according to the approved 30-day policy."
+          },
+          "409": {
+            "description": "Concurrent update; retry the same landing."
+          },
+          "503": {
+            "description": "Invalid, expired, unpersisted, or misconfigured share token; fail closed."
+          }
+        },
+        "summary": "",
+        "tags": [
+          "Referral - Public"
+        ]
+      }
+    },
     "/api/v1/auth/admin/entra/exchange": {
       "post": {
         "operationId": "adminEntraExchange",
@@ -5794,6 +5826,24 @@
           "items"
         ],
         "additionalProperties": false
+      },
+      "ReferralLandingDto": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "description": "Opaque encrypted token from a server-issued referral URL",
+            "maxLength": 4096
+          },
+          "anonymousId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Anonymous browser identifier returned by the first landing; server generates it when absent."
+          }
+        },
+        "required": [
+          "token"
+        ]
       },
       "CreateOtpChallengeDto": {
         "type": "object",

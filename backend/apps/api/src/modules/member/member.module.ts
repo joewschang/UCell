@@ -10,5 +10,7 @@ import { MemberContextGuard } from './member-context.guard';
 import { MemberAuthController, MemberController } from './member.controller';
 import { DeliveryProfileService } from './delivery-profile.service';
 import { PiiCryptoService } from '../../common/security/pii-crypto.service';
-@Module({imports:[AuthModule,OrderModule],controllers:[MemberAuthController,MemberController],providers:[MemberService,MemberReadService,MemberShareLinkService,MemberContractService,DeliveryProfileService,PiiCryptoService,MemberContextGuard,LineTokenVerifierService]})
+import { ReferralAttributionController } from './referral-attribution.controller';
+import { ReferralAttributionService } from './referral-attribution.service';
+@Module({imports:[AuthModule,OrderModule],controllers:[MemberAuthController,MemberController,ReferralAttributionController],providers:[MemberService,MemberReadService,MemberShareLinkService,ReferralAttributionService,MemberContractService,DeliveryProfileService,PiiCryptoService,MemberContextGuard,LineTokenVerifierService]})
 export class MemberModule {}
