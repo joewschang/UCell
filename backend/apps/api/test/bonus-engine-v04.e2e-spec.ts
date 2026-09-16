@@ -1,6 +1,53 @@
 import { ReferralBonusService } from '../src/modules/bonus/referral-bonus.service';
 import { BinaryBonusService } from '../src/modules/bonus/binary-bonus.service';
 import { BonusLifecycleService } from '../src/modules/bonus/bonus-lifecycle.service';
+import { Prisma, captureParameters } from '@ucell/database';
+import { source, sealed } from './phase2-fixtures';
+
+// Persistence sealing has independent DB regressions; these cases exercise the
+// actual settlement arithmetic and writes, with transaction-local persistence.
+jest.mock('@ucell/database', () => ({
+  ...jest.requireActual('@ucell/database'), sealSettlement: jest.fn(async () => undefined),
+}));
+
+async function matchingHarness(volume = '1000', paid = '200', theory = '1000') {
+  const start = new Date('2020-01-01'), end = new Date('2020-01-08');
+  const rows = [
+    ['award.pending.days', '*', '45'], ['pool.matching.rate', '*', '0.15'],
+    ...['0.15', '0.10', '0.05', '0.05', '0.05'].map((rate, i) => ['matching.rate', String(i + 1), rate]),
+  ].map(([parameterCode, scopeKey, valueJson], i) => ({
+    runtimeRuleParameterId: String(i), parameterCode, scopeKey, valueJson,
+    effectiveFrom: new Date('2019-01-01'), effectiveTo: null,
+  }));
+  const snapshot = await captureParameters({runtimeRuleParameter: {findMany: async () => rows}} as any, start, 'TEST_ONLY');
+  const envelope = source(); envelope.inputs.volume = volume;
+  const awards: any[] = [], lifecycle: any[] = [];
+  const binary = {settlementBatchId: 'binary', status: 'FINALIZED'};
+  const tx = {
+    settlementBatch: {
+      findUnique: jest.fn(async ({where}: any) => where.settlementType_periodStart_periodEnd_ruleVersionCode.settlementType === 'BINARY_K1' ? binary : null),
+      create: jest.fn(async ({data}: any) => ({...data, settlementBatchId: 'matching'})),
+      update: jest.fn(async ({data}: any) => ({...data, settlementBatchId: 'matching', parameterSnapshot: snapshot})),
+    },
+    pvLedger: {findMany: jest.fn(async () => [{eventId: 'left'}])},
+    historicalReplaySnapshot: {findUnique: jest.fn(async () => sealed(envelope))},
+    returnLine: {aggregate: jest.fn(async () => ({_sum: {gpvReversalAmount: null}}))},
+    bonusAward: {
+      findMany: jest.fn(async () => [{bonusAwardId: 'binary-award', recipientQualificationId: 'binary-recipient', payableAmount: new Prisma.Decimal(paid), theoryAmount: new Prisma.Decimal(theory)}]),
+      create: jest.fn(async ({data}: any) => {const award = {...data, bonusAwardId: `matching-${awards.length}`}; awards.push(award); return award;}),
+    },
+    bonusAwardLifecycleEvent: {createMany: jest.fn(async ({data}: any) => {lifecycle.push(...data); return {count: data.length};})},
+  };
+  const query = {
+    sponsorAncestors: jest.fn(async () => [1, 2, 3, 4, 5].map(generation => ({qualification_id: `sponsor-${generation}`, generation}))),
+    effectiveDirectCountAt: jest.fn(async () => 4), isActiveAt: jest.fn(async () => true),
+    qualificationPlanAt: jest.fn(async () => 'LEADER'),
+    pendingUntil: jest.fn((at: Date, days: number) => new Date(at.getTime() + days * 86400000)),
+  };
+  const prisma = {$transaction: jest.fn(async (work: any) => work(tx))};
+  const service = new BinaryBonusService(prisma as any, {} as any, query as any, {captureForPeriod: async () => snapshot} as any);
+  return {service, tx, query, prisma, awards, lifecycle, start, end};
+}
 function lifecycleHarness() {
   const pendingUntil=new Date('2020-02-01'),award={bonusAwardId:'award-A',pendingUntil,payableAmount:'100'};
   const events:any[]=[{bonusAwardId:'award-A',status:'PENDING_45D',occurredAt:new Date('2020-01-01')}];
@@ -43,14 +90,43 @@ describe('Bonus Engine v0.4.0', () => {
   });
 
   describe('Matching', () => {
-    it.todo('source is actual Binary payable after K1, never Binary theory');
+    it('source is actual Binary payable after K1, never Binary theory', async () => {
+      for (const theory of ['1000', '9000']) {
+        const h = await matchingHarness('1000', '200', theory);
+        await h.service.settleMatching(h.start, h.end, 'TEST_ONLY');
+        expect(h.awards.map(a => a.theoryAmount.toString())).toEqual(['30', '20', '10', '10', '10']);
+        expect(h.awards.every(a => a.sourceAwardId === 'binary-award' && a.calculationDetail.sourceBinaryPaid === '200')).toBe(true);
+        expect(h.tx.bonusAward.findMany).toHaveBeenCalledWith({where: {settlementBatchId: 'binary', awardType: 'BINARY'}});
+      }
+    });
     it.todo('Sponsor Tree is used to trace matching uplines');
-    it.todo('rates are G1=15,G2=10,G3-G5=5');
+    it('rates are G1=15,G2=10,G3-G5=5', async () => {
+      const h = await matchingHarness('1000', '100');
+      await h.service.settleMatching(h.start, h.end, 'TEST_ONLY');
+      expect(h.awards.map(a => [a.generationNo, a.recipientQualificationId, a.theoryAmount.toString()])).toEqual([
+        [1, 'sponsor-1', '15'], [2, 'sponsor-2', '10'], [3, 'sponsor-3', '5'], [4, 'sponsor-4', '5'], [5, 'sponsor-5', '5'],
+      ]);
+    });
     it('direct 1 unlocks G1-G2, 2 unlocks G1-G3, 3 unlocks G1-G4, 4+ unlocks G1-G5',()=>{
       const service=new BinaryBonusService({} as any,{} as any,{} as any,{} as any);
       expect([0,1,2,3,4,8].map(d=>service.matchingUnlockDepth(d))).toEqual([0,2,3,4,5,5]);
     });
-    it.todo('Matching Pool is 15% and K2 <= 1');
+    it('Matching Pool is 15% and K2 <= 1', async () => {
+      for (const [volume, expectedPool, expectedK, expectedPayables] of [
+        ['1000', '150', '1', ['30', '20', '10', '10', '10']],
+        ['160', '24', '0.3', ['9', '6', '3', '3', '3']],
+        ['0', '0', '0', ['0', '0', '0', '0', '0']],
+      ] as const) {
+        const h = await matchingHarness(volume);
+        const batch = await h.service.settleMatching(h.start, h.end, 'TEST_ONLY');
+        expect(batch.poolAvailable.toString()).toBe(expectedPool);
+        expect(batch.poolRate.toString()).toBe('0.15');
+        expect(batch.kFactor.toString()).toBe(expectedK);
+        expect(h.awards.map(a => a.payableAmount.toString())).toEqual([...expectedPayables]);
+        expect(h.awards.reduce((sum, a) => sum.add(a.payableAmount), new Prisma.Decimal(0)).lte(batch.poolAvailable)).toBe(true);
+        expect(h.prisma.$transaction).toHaveBeenCalledWith(expect.any(Function), {isolationLevel: Prisma.TransactionIsolationLevel.Serializable});
+      }
+    });
   });
 
   describe('Lifecycle', () => {
