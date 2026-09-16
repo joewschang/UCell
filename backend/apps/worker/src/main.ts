@@ -32,9 +32,9 @@ async function effectiveDirectCountAt(
   return Number(rows[0]?.count ?? '0');
 }
 
-async function processSaleConfirmed(lease:OutboxLease){
+export async function processSaleConfirmed(db:PrismaService,lease:OutboxLease,deps={withOutboxLease,sealGpvEvent,verifyReplayEnvelope}){
   const outboxEventId=lease.outboxEventId;
-  return withOutboxLease(prisma,lease,async tx=>{
+  return deps.withOutboxLease(db,lease,async tx=>{
     const event=await tx.outboxEvent.findUnique({where:{outboxEventId}});
     if(!event || event.processStatus==='PROCESSED') return;
 
@@ -61,8 +61,8 @@ async function processSaleConfirmed(lease:OutboxLease){
           occurredAt:order.paidAt,correlationId:event.correlationId
         }
       });
-      if(!original) await sealGpvEvent(tx,ledger);
-      else verifyReplayEnvelope(await tx.historicalReplaySnapshot.findUnique({where:{kind_sourceId:{kind:'GPV',sourceId:original.eventId}}}));
+      if(!original) await deps.sealGpvEvent(tx,ledger);
+      else deps.verifyReplayEnvelope(await tx.historicalReplaySnapshot.findUnique({where:{kind_sourceId:{kind:'GPV',sourceId:original.eventId}}}));
     }
 
     await tx.outboxEvent.update({
@@ -175,7 +175,7 @@ export async function pollOutbox(){
     try{
       lease=await claimOutboxLease(prisma,event);
       if(!lease)continue;
-      if(event.eventType==='SALE_CONFIRMED') await processSaleConfirmed(lease);
+      if(event.eventType==='SALE_CONFIRMED') await processSaleConfirmed(prisma,lease);
       else if(event.eventType==='MEMBER_ORDER_CREATED') await processMemberOrderNotification(prisma,lease);
       else await processReplayEvent(lease);
     }catch(e){

@@ -2,7 +2,7 @@
 
 | Gate | Status | Blocker |
 |---|---|---|
-| Core builds/tests | PASS WITH TODO | 7 executable TODO remain: 2 engineering, 3 Pending Decision, 2 Legacy Test Drift; no IMPLEMENTABLE placeholders remain |
+| Core builds/tests | PASS WITH TODO | 5 executable TODO remain: 3 Pending Decision and 2 Legacy Test Drift; no IMPLEMENTABLE or ENGINEERING placeholders remain |
 | Replay/carry closure | PASS | Period-wide K1/K2, convergence, max horizon, and resume executable |
 | Production calendar | BLOCKED | Exact operational clock values pending |
 | Formal LINE LIFF | BLOCKED | Formal credentials and device evidence unavailable |

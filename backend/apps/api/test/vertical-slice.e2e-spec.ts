@@ -1,4 +1,4 @@
-import { Prisma } from '@ucell/database';
+import { Prisma, PrismaService, claimOutboxLease } from '@ucell/database';
 import { IdempotencyService } from '../src/common/idempotency/idempotency.service';
 import { OutboxService } from '../src/common/outbox/outbox.service';
 import { PersonService } from '../src/modules/person/person.service';
@@ -6,9 +6,11 @@ import { OrderService } from '../src/modules/order/order.service';
 import { QualificationService } from '../src/modules/qualification/qualification.service';
 import { OrganizationService } from '../src/modules/organization/organization.service';
 import { execFileSync } from 'node:child_process';
+import { randomUUID } from 'node:crypto';
 import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { resolve, join } from 'node:path';
+import { processSaleConfirmed } from '../../worker/src/main';
 
 // Stateful persistence mocks: service-level evidence, not DB concurrency evidence.
 function fixture() {
@@ -141,7 +143,24 @@ describe('UCell first vertical slice', () => {
     expect(f.tx.outboxEvent.create).toHaveBeenCalledTimes(1);
   });
   it.todo('worker converts SALE_CONFIRMED to GPV_CREATED per order line');
-  it.todo('reprocessing same outbox event does not duplicate GPV');
+  it('reprocessing same outbox event does not duplicate GPV',async()=>{
+    const db=new PrismaService();
+    try{
+      const person=await db.person.findFirstOrThrow(),product=await db.productReference.findFirstOrThrow({where:{isActive:true}}),occurredAt=new Date(),effectiveFrom=new Date(occurredAt.getTime()-86400000);
+      const qualification=await db.qualification.create({data:{currentHolderPersonId:person.personId,planLevelCode:'STARTER',status:'EFFECTIVE',effectiveAt:effectiveFrom}});
+      await db.qualificationHolderHistory.create({data:{qualificationId:qualification.qualificationId,holderPersonId:person.personId,effectiveFrom,sourceType:'WORKER_REDELIVERY_TEST'}});
+      await db.qualificationPlanHistory.create({data:{qualificationId:qualification.qualificationId,planCode:'STARTER',effectiveFrom,sourceType:'WORKER_REDELIVERY_TEST'}});
+      await db.qualificationStatusHistory.create({data:{qualificationId:qualification.qualificationId,status:'EFFECTIVE',effectiveFrom,sourceType:'WORKER_REDELIVERY_TEST'}});
+      const order=await db.order.create({data:{qualificationId:qualification.qualificationId,purpose:'RETAIL',status:'PAID',grossAmount:1000,netAmount:1000,ruleVersionCode:'R1.0B',paidAt:occurredAt,lines:{create:{productId:product.productId,skuSnapshot:product.sku,productNameSnapshot:product.displayName,quantity:1,unitPrice:1000,lineAmount:1000,gpvRateSnapshot:1,gpvAmountSnapshot:1000,ruleProfileSnapshot:{testOnly:true,case:'WORKER_REDELIVERY'}}}},include:{lines:true}});
+      const event=await db.outboxEvent.create({data:{eventType:'SALE_CONFIRMED',aggregateType:'ORDER',aggregateId:order.orderId,correlationId:randomUUID(),payload:{eventType:'SALE_CONFIRMED',orderId:order.orderId,qualificationId:qualification.qualificationId,occurredAt:occurredAt.toISOString(),ruleVersionCode:'R1.0B'}}});
+      const lease=await claimOutboxLease(db,event);expect(lease).not.toBeNull();
+      await processSaleConfirmed(db,lease!);await processSaleConfirmed(db,lease!);
+      const rows=await db.pvLedger.findMany({where:{sourceType:'ORDER',sourceId:order.orderId,sourceLineId:order.lines[0].orderLineId,pvType:'GPV'}});
+      expect(rows).toHaveLength(1);expect(rows[0]).toMatchObject({qualificationId:qualification.qualificationId,eventType:'GPV_CREATED'});expect(rows[0].amount.toString()).toBe('1000');
+      expect(await db.historicalReplaySnapshot.count({where:{kind:'GPV',sourceId:rows[0].eventId}})).toBe(1);
+      expect((await db.outboxEvent.findUniqueOrThrow({where:{outboxEventId:event.outboxEventId}})).processStatus).toBe('PROCESSED');
+    }finally{await db.$disconnect();}
+  },30000);
   it('PV ledger cannot be UPDATEd or DELETEd', () => {
     const root=resolve(__dirname,'../../../..'), directory=mkdtempSync(join(tmpdir(),'ucell-pv-'));
     try {

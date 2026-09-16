@@ -10,6 +10,7 @@ import * as views from './member-view.dto';
 import { MemberContextGuard } from './member-context.guard';
 import { MemberAuthenticationGuard } from '../auth/member-authentication.guard';
 import { MemberService } from './member.service';
+import { MemberShareLinkService } from './member-share-link.service';
 export class LineExchangeDto {
  @ApiProperty({description:'LINE ID token; verified server-side, never logged or persisted raw'}) @IsString() @MinLength(1) @MaxLength(16384) idToken!:string;
 }
@@ -44,7 +45,7 @@ export class MemberAuthController {
 @ApiResponse({status:409,description:'Conflicting operation'}) @ApiResponse({status:422,description:'Invalid input or pending domain decision'})
 @Controller('member')
 export class MemberController {
- constructor(private readonly service:MemberService,private readonly reads:MemberReadService,private readonly orderService:OrderService){}
+ constructor(private readonly service:MemberService,private readonly reads:MemberReadService,private readonly orderService:OrderService,private readonly shareLinks:MemberShareLinkService){}
  @Get('me') @ApiResponse({status:200,schema:views.memberEnvelope(views.PersonView)}) @ApiOperation({operationId:'memberMe'}) me(@Req() req:any){return this.service.me(req.user.personId);}
  @Post('logout') @UseGuards(IdempotencyGuard) @ApiHeader({name:'Idempotency-Key',required:true}) @ApiResponse({status:201,schema:views.memberEnvelope(views.LogoutView)}) @ApiOperation({operationId:'memberLogout',description:'Revoke only the authenticated UCell LINE session, with transactional audit. Does not log out LINE. Repeated delivery after revocation returns 401; other sessions are unaffected.'}) logout(@Req() req:any,@Headers('idempotency-key') key:string,@Body() _body:MemberLogoutDto){return this.service.logout(req.user.personId,req.user.sessionId,key,req.requestId);}
  @Patch('profile') @ApiResponse({status:200,schema:views.memberEnvelope(views.PersonView)}) @UseGuards(IdempotencyGuard) @ApiHeader({name:'Idempotency-Key',required:true}) @ApiOperation({operationId:'memberUpdateProfile',description:'Own display/contact fields only. No legal identity, status, qualification or monetary mutation. Audited idempotent transaction.'}) profile(@Req() req:any,@Body() body:MemberProfileDto,@Headers('idempotency-key') key:string){if(!Object.values(body).some(v=>typeof v==='string'&&v.trim()))throw new UnprocessableEntityException({code:'PROFILE_FIELDS_REQUIRED'});return this.service.profile(req.user.personId,body,req.requestId,key);}
@@ -56,6 +57,7 @@ export class MemberController {
  @Get('organization/sponsor') @ApiResponse({status:200,schema:views.memberEnvelope(views.SponsorView)}) sponsor(@Req() req:any,@Query() q:MemberQueryDto){return this.reads.read(req.user.personId,q.qualificationId,'sponsor',q.period);}
  @Get('organization/binary') @ApiResponse({status:200,schema:views.memberEnvelope(views.BinaryView)}) binary(@Req() req:any,@Query() q:MemberQueryDto){return this.reads.read(req.user.personId,q.qualificationId,'binary',q.period);}
  @Get('referrals') @ApiResponse({status:200,schema:views.memberEnvelope(views.SponsorView)}) referrals(@Req() req:any,@Query() q:MemberQueryDto){return this.reads.read(req.user.personId,q.qualificationId,'referrals',q.period);}
+ @Post('share-links') @ApiOperation({operationId:'memberCreateShareLink',description:'Create an encrypted referral URL bound to the selected owned Qualification. Server configuration supplies base URL, key and TTL; missing configuration fails closed.'}) createShareLink(@Req() req:any,@Body() body:MemberContextDto){return this.shareLinks.create(req.user.personId,body.qualificationId);}
  @Get('performance') @ApiResponse({status:200,schema:views.memberEnvelope(views.PerformanceView)}) performance(@Req() req:any,@Query() q:MemberQueryDto){return this.reads.read(req.user.personId,q.qualificationId,'performance',q.period);}
  @Get('bonuses') @ApiResponse({status:200,schema:views.memberEnvelope(views.BonusesView)}) bonuses(@Req() req:any,@Query() q:MemberQueryDto){return this.reads.read(req.user.personId,q.qualificationId,'bonuses',q.period);}
  @Get('bonuses/ledger') @ApiResponse({status:200,schema:views.memberEnvelope(views.LedgerView)}) ledger(@Req() req:any,@Query() q:MemberQueryDto){return this.reads.read(req.user.personId,q.qualificationId,'ledger',q.period);}
