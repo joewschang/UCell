@@ -236,6 +236,21 @@ enum IdentityProvider {
   ADMIN_LOCAL
   ENTRA
   LINE
+  GOOGLE
+  @@schema("identity")
+}
+
+enum ContractAudience {
+  NETWORK_MEMBER
+  FORMAL_MEMBER
+  ALL_MEMBERS
+  @@schema("identity")
+}
+
+enum ConsentChannel {
+  MEMBER_WEB
+  LIFF
+  ADMIN_ASSISTED
   @@schema("identity")
 }
 
@@ -264,10 +279,53 @@ model Person {
   authSessions AuthSession[]
   adminAccessGrants AdminAccessGrant[]
   memberNotifications MemberNotification[]
+  consentEvidence ConsentEvidence[]
 
   @@index([legalName])
   @@index([mobile])
   @@map("person")
+  @@schema("identity")
+}
+
+model ContractDocumentVersion {
+  contractDocumentVersionId String @id @default(uuid()) @map("contract_document_version_id") @db.Uuid
+  contractType String @map("contract_type")
+  versionCode String @map("version_code")
+  title String
+  contentText String @map("content_text") @db.Text
+  contentHash String @map("content_hash")
+  audience ContractAudience
+  required Boolean @default(true)
+  effectiveFrom DateTime @map("effective_from") @db.Timestamptz(6)
+  effectiveTo DateTime? @map("effective_to") @db.Timestamptz(6)
+  approvalReference String @map("approval_reference")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  consentEvidence ConsentEvidence[]
+
+  @@unique([contractType,versionCode])
+  @@index([audience,effectiveFrom,effectiveTo])
+  @@map("contract_document_version")
+  @@schema("identity")
+}
+
+model ConsentEvidence {
+  consentEvidenceId String @id @default(uuid()) @map("consent_evidence_id") @db.Uuid
+  personId String @map("person_id") @db.Uuid
+  contractDocumentVersionId String @map("contract_document_version_id") @db.Uuid
+  contentHashSnapshot String @map("content_hash_snapshot")
+  channel ConsentChannel
+  acceptedAt DateTime @default(now()) @map("accepted_at") @db.Timestamptz(6)
+  requestId String @map("request_id")
+  correlationId String @map("correlation_id") @db.Uuid
+  evidenceHash String @map("evidence_hash")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  person Person @relation(fields:[personId],references:[personId])
+  contractVersion ContractDocumentVersion @relation(fields:[contractDocumentVersionId],references:[contractDocumentVersionId])
+
+  @@unique([personId,contractDocumentVersionId])
+  @@index([contractDocumentVersionId,acceptedAt])
+  @@index([correlationId])
+  @@map("consent_evidence")
   @@schema("identity")
 }
 

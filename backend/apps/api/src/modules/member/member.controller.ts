@@ -4,13 +4,14 @@ import { CreateOrderItemDto } from '../order/dto/create-order.dto';
 import { OrderService } from '../order/order.service';
 import { Type } from 'class-transformer';
 import { IdempotencyGuard } from '../../common/guards/idempotency.guard';
-import { IsString, IsUUID, IsEmail, MaxLength, MinLength, IsOptional, Matches, ValidateIf, IsArray, ArrayMinSize, ArrayMaxSize, ValidateNested } from 'class-validator';
+import { IsString, IsUUID, IsEmail, MaxLength, MinLength, IsOptional, Matches, ValidateIf, IsArray, ArrayMinSize, ArrayMaxSize, ValidateNested, IsBoolean, IsIn, Equals } from 'class-validator';
 import { MemberReadService } from './member-read.service';
 import * as views from './member-view.dto';
 import { MemberContextGuard } from './member-context.guard';
 import { MemberAuthenticationGuard } from '../auth/member-authentication.guard';
 import { MemberService } from './member.service';
 import { MemberShareLinkService } from './member-share-link.service';
+import { MemberContractService } from './member-contract.service';
 export class LineExchangeDto {
  @ApiProperty({description:'LINE ID token; verified server-side, never logged or persisted raw'}) @IsString() @MinLength(1) @MaxLength(16384) idToken!:string;
 }
@@ -25,6 +26,10 @@ export class MemberProfileDto {
 }
 export class MemberCreateOrderDto extends MemberContextDto {
  @ApiProperty({type:[CreateOrderItemDto],description:'Product IDs and quantities only; Core determines price/rule snapshots. RETAIL purpose only.'}) @IsArray() @ArrayMinSize(1) @ArrayMaxSize(100) @ValidateNested({each:true}) @Type(()=>CreateOrderItemDto) items!:CreateOrderItemDto[];
+}
+export class MemberContractConsentDto {
+ @ApiProperty({enum:[true],description:'Explicit acceptance is required; false is never recorded as consent.'}) @IsBoolean() @Equals(true) accepted!:true;
+ @ApiProperty({enum:['MEMBER_WEB','LIFF']}) @IsIn(['MEMBER_WEB','LIFF']) channel!:'MEMBER_WEB'|'LIFF';
 }
 export class MemberQueryDto extends MemberContextDto {
  @ApiProperty({required:false,pattern:'^\\d{4}-(0[1-9]|1[0-2])$',description:'Posted-event month filter using versioned accounting timezone; not an operational settlement cut-off'}) @IsOptional() @Matches(/^\d{4}-(0[1-9]|1[0-2])$/) period?:string;
@@ -45,8 +50,10 @@ export class MemberAuthController {
 @ApiResponse({status:409,description:'Conflicting operation'}) @ApiResponse({status:422,description:'Invalid input or pending domain decision'})
 @Controller('member')
 export class MemberController {
- constructor(private readonly service:MemberService,private readonly reads:MemberReadService,private readonly orderService:OrderService,private readonly shareLinks:MemberShareLinkService){}
+ constructor(private readonly service:MemberService,private readonly reads:MemberReadService,private readonly orderService:OrderService,private readonly shareLinks:MemberShareLinkService,private readonly contracts:MemberContractService){}
  @Get('me') @ApiResponse({status:200,schema:views.memberEnvelope(views.PersonView)}) @ApiOperation({operationId:'memberMe'}) me(@Req() req:any){return this.service.me(req.user.personId);}
+ @Get('contracts/required') @ApiOperation({operationId:'memberRequiredContracts',description:'Return currently effective required Network Member contract versions and immutable consent status.'}) requiredContracts(@Req() req:any){return this.contracts.required(req.user.personId);}
+ @Post('contracts/:versionId/consent') @UseGuards(IdempotencyGuard) @ApiHeader({name:'Idempotency-Key',required:true}) @ApiOperation({operationId:'memberConsentContract',description:'Append immutable consent evidence bound to the displayed content hash. Duplicate delivery is idempotent.'}) consentContract(@Req() req:any,@Param('versionId',new ParseUUIDPipe()) versionId:string,@Body() body:MemberContractConsentDto,@Headers('idempotency-key') key:string){return this.contracts.consent(req.user.personId,versionId,body,key,req.requestId);}
  @Post('logout') @UseGuards(IdempotencyGuard) @ApiHeader({name:'Idempotency-Key',required:true}) @ApiResponse({status:201,schema:views.memberEnvelope(views.LogoutView)}) @ApiOperation({operationId:'memberLogout',description:'Revoke only the authenticated UCell LINE session, with transactional audit. Does not log out LINE. Repeated delivery after revocation returns 401; other sessions are unaffected.'}) logout(@Req() req:any,@Headers('idempotency-key') key:string,@Body() _body:MemberLogoutDto){return this.service.logout(req.user.personId,req.user.sessionId,key,req.requestId);}
  @Patch('profile') @ApiResponse({status:200,schema:views.memberEnvelope(views.PersonView)}) @UseGuards(IdempotencyGuard) @ApiHeader({name:'Idempotency-Key',required:true}) @ApiOperation({operationId:'memberUpdateProfile',description:'Own display/contact fields only. No legal identity, status, qualification or monetary mutation. Audited idempotent transaction.'}) profile(@Req() req:any,@Body() body:MemberProfileDto,@Headers('idempotency-key') key:string){if(!Object.values(body).some(v=>typeof v==='string'&&v.trim()))throw new UnprocessableEntityException({code:'PROFILE_FIELDS_REQUIRED'});return this.service.profile(req.user.personId,body,req.requestId,key);}
  @Get('notifications') @ApiResponse({status:200,schema:views.memberEnvelope(views.NoticesView)}) @ApiOperation({operationId:'memberNotifications',description:'Person-addressed notices plus selected owned Qualification notices, newest first, bounded 100. No LINE push or server read-state mutation.'}) notifications(@Req() req:any,@Query() q:MemberContextDto){return this.service.notifications(req.user.personId,q.qualificationId);}

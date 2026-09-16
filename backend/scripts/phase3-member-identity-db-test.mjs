@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
-import {randomUUID} from 'node:crypto';
+import {createHash,randomUUID} from 'node:crypto';
 import {writeFileSync} from 'node:fs';
 import {runMemberAdminIntegration} from './member-admin-integration-cases.mjs';
 const require=createRequire(new URL('../package.json',import.meta.url)),apiRequire=createRequire(new URL('../apps/api/package.json',import.meta.url));
@@ -31,6 +31,9 @@ try{
  const person=await db.person.create({data:{legalName:'MEMBER A TEST ONLY',status:'EFFECTIVE'}});
  const other=await db.person.create({data:{legalName:'MEMBER B TEST ONLY',status:'EFFECTIVE'}});
  const empty=await db.person.create({data:{legalName:'MEMBER EMPTY TEST ONLY',status:'EFFECTIVE'}});
+ const contractText='TEST ONLY NETWORK MEMBER CONTRACT';
+ const contractHash=createHash('sha256').update(contractText).digest('hex');
+ const contract=await db.contractDocumentVersion.create({data:{contractType:'NETWORK_MEMBERSHIP',versionCode:'TEST_ONLY_V1',title:'TEST ONLY NETWORK MEMBER CONTRACT',contentText:contractText,contentHash:contractHash,audience:'NETWORK_MEMBER',required:true,effectiveFrom:new Date('2020-01-01'),approvalReference:'TEST_ONLY_NOT_PRODUCTION_APPROVAL'}});
  const ids=[];
  for(const holder of [person,person,other]){
   const q=await db.qualification.create({data:{currentHolderPersonId:holder.personId,planLevelCode:'STARTER',status:'EFFECTIVE',effectiveAt:new Date('2020-01-01')}});
@@ -76,7 +79,7 @@ try{
   return {subject:token==='UNBOUND_TEST_ONLY'?'TEST_ONLY_UNBOUND':subject,expiresAt:Math.floor(Date.now()/1000)+3600};
  };
  await app.init();const server=app.getHttpAdapter().getInstance();await server.ready();
- const call=(method,path,token,body,key='TEST_ONLY_MEMBER_REQUEST')=>server.inject({method,url:'/api/v1/'+path,headers:{...(token?{authorization:'Bearer '+token}:{}),...(method==='PATCH'||method==='POST'&&['member/orders','member/logout'].includes(path)?{'idempotency-key':key}:{})},...(body?{payload:body}:{})});
+ const call=(method,path,token,body,key='TEST_ONLY_MEMBER_REQUEST')=>server.inject({method,url:'/api/v1/'+path,headers:{...(token?{authorization:'Bearer '+token}:{}),...(method==='PATCH'||method==='POST'&&(['member/orders','member/logout'].includes(path)||path.endsWith('/consent'))?{'idempotency-key':key}:{})},...(body?{payload:body}:{})});
  // Actual Admin HTTP authorization using isolated opaque sessions. This verifies
  // session/role infrastructure, not formal Entra credentials or production RBAC.
  app.get(ConfigService).set('ADMIN_AUTH_BYPASS','false');
@@ -103,6 +106,26 @@ try{
  for(let i=0;i<readOnlyModels.length;i++)equal(await db[readOnlyModels[i]].count(),readOnlyCounts[i],readOnlyModels[i]+' Admin Person HTTP reads append no facts');
  let res=await call('POST','auth/member/line/exchange',null,{idToken:'VALID_TEST_ONLY'});equal(res.statusCode,201,'synthetic verified LINE exchange');
  const token=res.json().data.accessToken;
+ res=await call('GET','member/contracts/required',token);
+ equal(res.statusCode,200,'required contracts authenticated');
+ equal(res.json().data.map(row=>[row.id,row.contentHash,row.acceptedAt]),[[contract.contractDocumentVersionId,contractHash,null]],'required contract returns exact version/hash and no prior consent');
+ const consentPath=`member/contracts/${contract.contractDocumentVersionId}/consent`,consentBody={accepted:true,channel:'MEMBER_WEB'};
+ res=await call('POST',consentPath,token,consentBody,'TEST_ONLY_CONSENT');
+ equal(res.statusCode,201,'contract consent accepted');
+ const consent=res.json().data;
+ equal([consent.contractVersionId,consent.contentHash,consent.channel],[contract.contractDocumentVersionId,contractHash,'MEMBER_WEB'],'consent binds displayed version and hash');
+ const consentRetry=(await call('POST',consentPath,token,consentBody,'TEST_ONLY_CONSENT')).json().data;
+ equal({...consentRetry,replayed:false},consent,'lost-response consent retry returns original evidence');
+ equal(consentRetry.replayed,true,'lost-response consent retry is marked replayed');
+ equal(await db.consentEvidence.count({where:{personId:person.personId,contractDocumentVersionId:contract.contractDocumentVersionId}}),1,'duplicate consent creates one evidence row');
+ equal(await db.outboxEvent.count({where:{aggregateId:person.personId,eventType:'CONTRACT_CONSENTED'}}),1,'duplicate consent creates one outbox event');
+ equal((await call('GET','member/contracts/required',token)).json().data[0].acceptedAt,consent.acceptedAt,'required contract read-back exposes accepted timestamp');
+ let immutableUpdate;try{await db.consentEvidence.update({where:{consentEvidenceId:consent.consentEvidenceId},data:{channel:'LIFF'}});}catch(error){immutableUpdate=error;}
+ equal(Boolean(immutableUpdate),true,'database rejects consent evidence update');
+ let immutableDelete;try{await db.consentEvidence.delete({where:{consentEvidenceId:consent.consentEvidenceId}});}catch(error){immutableDelete=error;}
+ equal(Boolean(immutableDelete),true,'database rejects consent evidence delete');
+ let immutableContract;try{await db.contractDocumentVersion.update({where:{contractDocumentVersionId:contract.contractDocumentVersionId},data:{contentText:'MUTATED'}});}catch(error){immutableContract=error;}
+ equal(Boolean(immutableContract),true,'database rejects contract version mutation');
  equal((await call('POST','auth/member/line/exchange',null,{idToken:'VALID_TEST_ONLY'})).statusCode,409,'ID token replay denied');
  equal((await call('POST','auth/member/line/exchange',null,{idToken:'INVALID_TEST_ONLY'})).statusCode,401,'invalid LINE token denied');
  equal((await call('POST','auth/member/line/exchange',null,{idToken:'UNBOUND_TEST_ONLY'})).statusCode,401,'unbound LINE denied');
