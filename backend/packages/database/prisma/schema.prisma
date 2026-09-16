@@ -1810,3 +1810,103 @@ model AdminAccessGrant {
   @@map("admin_access_grant")
   @@schema("identity")
 }
+
+model QualificationSetup {
+  qualificationId             String   @id @map("qualification_id") @db.Uuid
+  ownerPersonId               String   @map("owner_person_id") @db.Uuid
+  qualifyingOrderId           String   @map("qualifying_order_id") @db.Uuid
+  packageType                 String   @map("package_type")
+  setupStatus                 String   @map("setup_status")
+  provisionalAttributionId    String?  @map("provisional_attribution_id") @db.Uuid
+  finalSponsorQualificationId String?  @map("final_sponsor_qualification_id") @db.Uuid
+  placementRequestedAt        DateTime? @map("placement_requested_at") @db.Timestamptz(6)
+  placementDueAt              DateTime? @map("placement_due_at") @db.Timestamptz(6)
+  placedAt                    DateTime? @map("placed_at") @db.Timestamptz(6)
+  setupPolicyVersion          String   @map("setup_policy_version")
+  createdAt                   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt                   DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([ownerPersonId, setupStatus])
+  @@index([finalSponsorQualificationId, setupStatus, placementDueAt])
+  @@map("qualification_setup")
+  @@schema("membership")
+}
+
+model QualificationSponsorSelectionEvidence {
+  qualificationSponsorSelectionEvidenceId String   @id @default(uuid()) @map("qualification_sponsor_selection_evidence_id") @db.Uuid
+  qualificationId                         String   @map("qualification_id") @db.Uuid
+  attributionReferrerPersonId             String?  @map("attribution_referrer_person_id") @db.Uuid
+  attributionReferrerQualificationId      String?  @map("attribution_referrer_qualification_id") @db.Uuid
+  selectedSponsorQualificationId          String   @map("selected_sponsor_qualification_id") @db.Uuid
+  selectedSponsorOwnerPersonId            String   @map("selected_sponsor_owner_person_id") @db.Uuid
+  selectedByPersonId                      String   @map("selected_by_person_id") @db.Uuid
+  selectedAt                              DateTime @map("selected_at") @db.Timestamptz(6)
+  source                                  String
+  policyVersion                           String   @map("policy_version")
+  correlationId                          String   @map("correlation_id") @db.Uuid
+  createdAt                               DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([qualificationId, selectedAt])
+  @@map("qualification_sponsor_selection_evidence")
+  @@schema("organization")
+}
+
+model PlacementEvidence {
+  placementEvidenceId         String   @id @default(uuid()) @map("placement_evidence_id") @db.Uuid
+  qualificationId             String   @unique @map("qualification_id") @db.Uuid
+  sponsorQualificationId      String   @map("sponsor_qualification_id") @db.Uuid
+  binaryParentQualificationId String   @map("binary_parent_qualification_id") @db.Uuid
+  side                        SideCode
+  placedByType                String   @map("placed_by_type")
+  placedByPersonId            String?  @map("placed_by_person_id") @db.Uuid
+  placedAt                    DateTime @map("placed_at") @db.Timestamptz(6)
+  reasonCode                  String?  @map("reason_code")
+  policyVersion               String   @map("policy_version")
+  previousStatus              String   @map("previous_status")
+  correlationId               String   @map("correlation_id") @db.Uuid
+  evidenceHash                String   @map("evidence_hash")
+  createdAt                   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([sponsorQualificationId, placedAt])
+  @@index([binaryParentQualificationId, side, placedAt])
+  @@map("placement_evidence")
+  @@schema("organization")
+}
+
+model PlacementEscalationEvidence {
+  placementEscalationEvidenceId String   @id @default(uuid()) @map("placement_escalation_evidence_id") @db.Uuid
+  qualificationId               String   @map("qualification_id") @db.Uuid
+  dueAt                         DateTime @map("due_at") @db.Timestamptz(6)
+  escalatedAt                   DateTime @map("escalated_at") @db.Timestamptz(6)
+  escalationType               String   @map("escalation_type")
+  status                        String
+  assignedAdminId               String?  @map("assigned_admin_id") @db.Uuid
+  resolvedAt                    DateTime? @map("resolved_at") @db.Timestamptz(6)
+  resolutionPlacementEvidenceId String?  @map("resolution_placement_evidence_id") @db.Uuid
+  correlationId                 String   @map("correlation_id") @db.Uuid
+  createdAt                     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@unique([qualificationId, escalationType, dueAt])
+  @@index([status, dueAt])
+  @@map("placement_escalation_evidence")
+  @@schema("organization")
+}
+
+model MemberReferralRelationship {
+  memberReferralRelationshipId String   @id @default(uuid()) @map("member_referral_relationship_id") @db.Uuid
+  referredPersonId             String   @map("referred_person_id") @db.Uuid
+  referrerPersonId             String   @map("referrer_person_id") @db.Uuid
+  firstQualificationId         String   @map("first_qualification_id") @db.Uuid
+  sourceSponsorQualificationId String   @map("source_sponsor_qualification_id") @db.Uuid
+  effectiveFrom                DateTime @map("effective_from") @db.Timestamptz(6)
+  effectiveTo                  DateTime? @map("effective_to") @db.Timestamptz(6)
+  sourceType                   String   @map("source_type")
+  correlationId               String   @map("correlation_id") @db.Uuid
+  evidenceHash                 String   @map("evidence_hash")
+  createdAt                    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([referredPersonId, effectiveFrom, effectiveTo])
+  @@index([referrerPersonId, effectiveFrom, effectiveTo])
+  @@map("member_referral_relationship")
+  @@schema("identity")
+}

@@ -6,11 +6,14 @@ import { QualificationStatusService } from './qualification-status.service';
 import { QualificationWorkflowController } from './qualification-workflow.controller';
 import { QualificationWorkflowService } from './qualification-workflow.service';
 import { SystemAssignmentService } from './system-assignment.service';
+import {AuthModule} from '../auth/auth.module';
+import {AdminQualificationPlacementController,MemberQualificationPlacementController} from './qualification-placement.controller';
+import {QualificationPlacementService} from './qualification-placement.service';
 
 @Module({
-  imports:[OrganizationModule],
-  controllers:[QualificationController,QualificationWorkflowController],
-  providers:[QualificationService,QualificationStatusService,QualificationWorkflowService,SystemAssignmentService],
+  imports:[OrganizationModule,AuthModule],
+  controllers:[QualificationController,QualificationWorkflowController,MemberQualificationPlacementController,AdminQualificationPlacementController],
+  providers:[QualificationService,QualificationStatusService,QualificationWorkflowService,SystemAssignmentService,QualificationPlacementService],
   exports:[QualificationStatusService]
 })
 export class QualificationModule {}
