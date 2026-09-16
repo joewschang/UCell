@@ -181,8 +181,8 @@ describe('Vertical Slice 02 - Membership / Active / Subscription / RPV', () => {
       expect(service.unlockedDepth(directs)).toBe(depth);
     });
   }
-  it.todo('inactive upline receives 0 and is not compressed');
-  it.todo('higher generation remains independently evaluated');
+  it('inactive upline receives 0 and is not compressed',()=>expect(rpvActual('inactive RPV upline receives zero without compression').slice(1)).toEqual([1,false,'0']));
+  it('higher generation remains independently evaluated',()=>expect(rpvActual('higher RPV generation evaluated independently').slice(1)).toEqual([2,true,'100']));
   it('re-running a recognition cannot duplicate RPV or awards',()=>{
     expect(rpvActual('duplicate RPV recognition reports already recognized')).toBe('ALREADY_RECOGNIZED');
     expect(rpvActual('RPV duplicate recognition appends no original event')).toBe(1);

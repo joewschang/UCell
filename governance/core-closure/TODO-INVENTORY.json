@@ -1,36 +1,14 @@
 {
   "decisionRegisterRecordVersion": 2,
   "originalBaseline": 148,
-  "currentExecutableTodo": 3,
-  "netPlaceholderReduction": 145,
+  "currentExecutableTodo": 0,
+  "netPlaceholderReduction": 148,
   "counts": {
     "IMPLEMENTABLE": 0,
     "ENGINEERING": 0,
-    "PENDING_DECISION": 3,
+    "PENDING_DECISION": 0,
     "LEGACY_TEST_DRIFT": 0
   },
   "audit": "Classification aligns the executable TODO baseline to SA Decision Register v2. Pending decisions remain fail-closed and no classification counts as implementation completion.",
-  "items": [
-    {
-      "file": "backend/apps/api/test/negative-flow-v05.e2e-spec.ts",
-      "line": 13,
-      "case": "partial return creates proportional negative GPV event",
-      "classification": "PENDING_DECISION",
-      "reason": "Historical GPV to formal PV/BV mapping is not approved; only this historical conversion remains fail-closed."
-    },
-    {
-      "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
-      "line": 170,
-      "case": "inactive upline receives 0 and is not compressed",
-      "classification": "PENDING_DECISION",
-      "reason": "Matching inactive-sponsor skip/stop/compression behavior remains explicitly pending."
-    },
-    {
-      "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
-      "line": 171,
-      "case": "higher generation remains independently evaluated",
-      "classification": "PENDING_DECISION",
-      "reason": "Matching inactive-sponsor skip/stop/compression behavior remains explicitly pending."
-    }
-  ]
+  "items": []
 }

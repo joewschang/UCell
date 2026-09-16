@@ -10,7 +10,7 @@ beforeAll(()=>{
 },30000);
 function assertion(label:string){const row=evidence.find(r=>r.label===label);expect(row).toBeDefined();expect(row.result).toBe('PASS');expect(row.actual).toEqual(row.expected);return row.actual;}
 describe('v0.5 Return / Reversal / Clawback', () => {
-  it.todo('partial return creates proportional negative GPV event');
+  it('partial return creates proportional negative GPV event',()=>expect(assertion('partial return creates proportional negative GPV event')[0]).toBe('-500'));
   it('GPV reversal references original GPV event',()=>expect(assertion('GPV reversal references original GPV event')).toBe(true));
   it('returned quantity cannot exceed ordered quantity across multiple returns',()=>expect(assertion('cumulative returned quantity cannot exceed original quantity')).toBe(true));
   it('PENDING_45D direct referral/equalization becomes REVERSED',()=>{

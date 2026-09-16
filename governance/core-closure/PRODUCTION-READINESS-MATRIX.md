@@ -2,9 +2,10 @@
 
 | Gate | Status | Blocker |
 |---|---|---|
-| Core builds/tests | PASS WITH TODO | 3 executable TODO remain, all Pending Decision; no IMPLEMENTABLE, ENGINEERING or Legacy Test Drift placeholders remain |
+| Core builds/tests | PASS | Executable TODO gate is zero; Backend Jest 17 suites / 189 tests pass with real DB evidence |
 | Replay/carry closure | PASS | Period-wide K1/K2, convergence, max horizon, and resume executable |
 | Production calendar | BLOCKED | Exact operational clock values pending |
+| Remaining SA decisions | BLOCKED | Production cutoff values, historical GPV to formal PV/BV migration mapping, and Matching inactive-sponsor skip/stop/compression remain undecided; affected paths stay fail closed |
 | Formal LINE LIFF | BLOCKED | Formal credentials and device evidence unavailable |
 | Formal Entra/RBAC | BLOCKED | Formal credentials/evidence unavailable |
 | Security E2E | BLOCKED | Formal identity environments unavailable |

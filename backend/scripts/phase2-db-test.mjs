@@ -137,6 +137,8 @@ try{await prisma.$transaction(async tx=>{
  const refund=await tx.returnCase.create({data:{orderId:economic[0].order.orderId,status:'POSTED',reasonCode:'PERIOD_TEST',occurredAt:new Date('2020-01-10'),idempotencyKey:randomUUID(),correlationId:randomUUID(),lines:{create:{orderLineId:economic[0].order.lines[0].orderLineId,quantity:1,returnAmount:500,gpvReversalAmount:500}}}});
  await replay.processHistoricalReturn(tx,refund.returnCaseId);
  const gpvReversal=await tx.pvLedger.findFirstOrThrow({where:{sourceId:refund.returnCaseId,pvType:'GPV',eventType:'GPV_REVERSAL'}});
+ const postedReturnLine=await tx.returnLine.findFirstOrThrow({where:{returnCaseId:refund.returnCaseId}});
+ check('partial return creates proportional negative GPV event',[gpvReversal.amount.toString(),gpvReversal.qualificationId,gpvReversal.sourceLineId],['-500',economic[0].event.qualificationId,postedReturnLine.returnLineId]);
  check('GPV reversal references original GPV event',gpvReversal.reversalOfEventId===economic[0].event.eventId,true);
  const postings=await tx.entitlementReplayPosting.findMany({where:{actionKey:'RETURN:'+refund.returnCaseId,entitlementKey:{in:originals.map(a=>a.bonusAwardId)}},orderBy:{entitlementKey:'asc'}});
  check('K0 complete period posts every original entitlement',postings.length,2);
@@ -185,6 +187,15 @@ try{await prisma.$transaction(async tx=>{
  check('RPV duplicate recognition appends no original event',await tx.pvLedger.count({where:{sourceLineId:recognized.recognitionId,pvType:'RPV'}}),countBeforeDuplicate);
  check('duplicate RPV recognition preserves all original awards',await tx.rpvUplineAwardEvent.findMany({where:{recognitionId:recognized.recognitionId},orderBy:{rpvAwardEventId:'asc'}}),originalRecognitionAwards);
  check('duplicate RPV recognition preserves entire historical snapshot',await tx.historicalReplaySnapshot.findUniqueOrThrow({where:{kind_sourceId:{kind:'RPV',sourceId:recognized.recognitionId}}}),rpvSnapshot);
+ const rpvSource=await qualification(),rpvInactiveG1=await qualification(false),rpvActiveG2=await qualification();
+ await tx.binaryPlacement.create({data:{parentQualificationId:rpvInactiveG1.qualificationId,childQualificationId:rpvSource.qualificationId,side:'LEFT',effectiveFrom:new Date('2020-01-01')}});
+ await tx.binaryPlacement.create({data:{parentQualificationId:rpvActiveG2.qualificationId,childQualificationId:rpvInactiveG1.qualificationId,side:'LEFT',effectiveFrom:new Date('2020-01-01')}});
+ const traversalSub=await tx.subscription.create({data:{qualificationId:rpvSource.qualificationId,subscriptionPlanId:plan.subscriptionPlanId,orderId:economic[1].order.orderId,status:'ACTIVE',startMonth:new Date('2020-01-01'),endMonth:new Date('2020-01-01'),ruleVersionCode:version}});
+ const traversalRecognition=await tx.monthlyRecognitionSchedule.create({data:{subscriptionId:traversalSub.subscriptionId,installmentNo:1,recognitionMonth:new Date('2020-01-01'),recognizedAmount:2000,rpvAmount:1200,dueAt:new Date('2020-01-03'),ruleVersionCode:version}});
+ await new RpvService(facade,{}).recognize(traversalRecognition.recognitionId);
+ const traversalAwards=await tx.rpvUplineAwardEvent.findMany({where:{recognitionId:traversalRecognition.recognitionId},orderBy:{binaryGeneration:'asc'}});
+ check('inactive RPV upline receives zero without compression',[traversalAwards[0].recipientQualificationId,traversalAwards[0].binaryGeneration,traversalAwards[0].activeSnapshot,traversalAwards[0].payableAmount.toString()],[rpvInactiveG1.qualificationId,1,false,'0']);
+ check('higher RPV generation evaluated independently',[traversalAwards[1].recipientQualificationId,traversalAwards[1].binaryGeneration,traversalAwards[1].activeSnapshot,traversalAwards[1].payableAmount.toString()],[rpvActiveG2.qualificationId,2,true,'100']);
  for(const field of ['recognitionMonth','recognitionPeriod','eventId']){
    const content=JSON.parse(JSON.stringify(rpvSnapshot.content));delete content.inputs[field];
    await rejected('RPV missing '+field+' fails closed',()=>replay.verifyReplayEnvelope({...rpvSnapshot,content,hash:replay.replayHash(content)}),'HISTORICAL_SNAPSHOT_MISSING');
