@@ -7,6 +7,7 @@ Date: 2026-09-16 (Asia/Taipei)
 - TODO: 10 -> 7 (`ENGINEERING` 5 -> 2; pending classifications unchanged).
 - The legacy v0.6 invariant suite now executes the production `QualificationWorkflowService` for upgrade, transfer and company-held exit. It verifies future-only plan history, no historical Award mutation, stable Qualification identity, and unchanged Sponsor/Binary positions.
 - These are transaction-local service assertions and do not replace the separate temporal/DB Golden gates.
+- Backend API: 180 PASS / 7 TODO / 0 FAIL.
 
 ## Global and Welfare continuation
 

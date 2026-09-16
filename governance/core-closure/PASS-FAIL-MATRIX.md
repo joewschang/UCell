@@ -4,7 +4,7 @@
 |---|---|---|
 | Database package build | PASS | `pnpm --filter @ucell/database build` |
 | Backend API build | PASS | `pnpm --filter @ucell/api build` |
-| Backend API Jest | PASS | 163 PASS / 23 TODO / 0 FAIL |
+| Backend API Jest | PASS | 180 PASS / 7 TODO / 0 FAIL |
 | Member build/tests | PASS | 116 tests |
 | Admin build/tests | PASS | 22 tests |
 | Worker build | PASS | TypeScript build |
