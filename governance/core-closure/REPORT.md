@@ -2,6 +2,13 @@
 
 Date: 2026-09-16 (Asia/Taipei)
 
+## Global and Welfare continuation
+
+- TODO: 17 -> 10 (`ENGINEERING` 12 -> 5; pending classifications unchanged).
+- Executable tests now call the production `GlobalPoolService` transaction path with a frozen TEST_ONLY parameter snapshot: Global pool 5%, weak-side thresholds 300k/600k/1m/2m/4m, cumulative non-downgrading rank achievement, Active/current-period eligibility, empty-slice upward carry, and Welfare 2% accrual-only behavior.
+- Persistence delegates are transaction-local test doubles in this focused batch; it is service calculation evidence, not a new DB concurrency claim. Existing schema/Golden gates remain separate.
+- Backend API: 177 PASS / 10 TODO / 0 FAIL.
+
 ## RPV unlock-depth continuation
 
 - TODO: 20 -> 17 (`ENGINEERING` 15 -> 12; pending classifications unchanged).

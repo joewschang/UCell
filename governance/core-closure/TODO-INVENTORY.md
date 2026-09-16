@@ -1,26 +1,19 @@
 # R1.0B Decision Register v2 TODO Inventory
 
-Original audited baseline: 148. Current executable TODO: 17. Net placeholder reduction: 131.
+Original audited baseline: 148. Current executable TODO: 10. Net placeholder reduction: 138.
 
 Classification is governance status, not implementation completion. Pending decisions fail closed and Legacy Test Drift must be corrected without changing the frozen business rules.
 
 | Classification | Count |
 |---|---:|
 | IMPLEMENTABLE | 0 |
-| ENGINEERING | 12 |
+| ENGINEERING | 5 |
 | PENDING_DECISION | 3 |
 | LEGACY_TEST_DRIFT | 2 |
 
 | File | Line | Case | Classification | Reason |
 |---|---:|---|---|---|
-| backend/apps/api/test/epv-global-v05.e2e-spec.ts | 22 | non-REPURCHASE order does not create EPV | LEGACY_TEST_DRIFT | DEC-001 makes ConsumptionRecognitionEvent and eligible consideration authoritative; order purpose alone cannot decide eligibility. |
-| backend/apps/api/test/epv-global-v05.e2e-spec.ts | 26 | global pool is 5% of period GPV | ENGINEERING | The governing behavior is already approved; remaining work is implementation or executable verification. |
-| backend/apps/api/test/epv-global-v05.e2e-spec.ts | 27 | weak thresholds are 300k/600k/1m/2m/4m | ENGINEERING | The governing behavior is already approved; remaining work is implementation or executable verification. |
-| backend/apps/api/test/epv-global-v05.e2e-spec.ts | 28 | rank achievement never downgrades | ENGINEERING | The governing behavior is already approved; remaining work is implementation or executable verification. |
-| backend/apps/api/test/epv-global-v05.e2e-spec.ts | 29 | monthly payout requires Active and current-month weak side threshold | ENGINEERING | The governing behavior is already approved; remaining work is implementation or executable verification. |
-| backend/apps/api/test/epv-global-v05.e2e-spec.ts | 30 | passed levels are cumulative | ENGINEERING | The governing behavior is already approved; remaining work is implementation or executable verification. |
-| backend/apps/api/test/epv-global-v05.e2e-spec.ts | 31 | empty rank slice rolls upward to next higher rank | ENGINEERING | The governing behavior is already approved; remaining work is implementation or executable verification. |
-| backend/apps/api/test/epv-global-v05.e2e-spec.ts | 32 | welfare 2% is accrued only; no distribution without a formal rule | ENGINEERING | The governing behavior is already approved; remaining work is implementation or executable verification. |
+| backend/apps/api/test/epv-global-v05.e2e-spec.ts | 46 | non-REPURCHASE order does not create EPV | LEGACY_TEST_DRIFT | DEC-001 makes ConsumptionRecognitionEvent and eligible consideration authoritative; order purpose alone cannot decide eligibility. |
 | backend/apps/api/test/negative-flow-v05.e2e-spec.ts | 13 | partial return creates proportional negative GPV event | PENDING_DECISION | Historical GPV to formal PV/BV mapping is not approved; only this historical conversion remains fail-closed. |
 | backend/apps/api/test/qualification-isolation.e2e-spec.ts | 21 | member share link is bound to selected qualification | ENGINEERING | The governing behavior is already approved; remaining work is implementation or executable verification. |
 | backend/apps/api/test/v060-adjustment-lifecycle.e2e-spec.ts | 40 | upgrade has no retroactive bonus effect | ENGINEERING | The governing behavior is already approved; remaining work is implementation or executable verification. |
