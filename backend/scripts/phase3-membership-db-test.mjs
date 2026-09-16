@@ -14,6 +14,7 @@ const {BonusLifecycleService}=require('./apps/api/dist/modules/bonus/bonus-lifec
 const {QualificationService}=require('./apps/api/dist/modules/qualification/qualification.service.js');
 const {PersonService}=require('./apps/api/dist/modules/person/person.service.js');
 const {AdminOperationsService}=require('./apps/api/dist/modules/admin-operations/admin-operations.service.js');
+const {SubscriptionService}=require('./apps/api/dist/modules/subscription/subscription.service.js');
 const url=new URL(process.env.DATABASE_URL??'');
 assert.ok(['localhost','127.0.0.1'].includes(url.hostname));
 assert.match(process.env.GOLDEN_ISOLATION_DATABASE??'',/^ucell_dev_golden_[a-f0-9]{32}$/);
@@ -165,6 +166,13 @@ try{
   equal(JSON.stringify(await db.bonusAward.findUniqueOrThrow({where:{bonusAwardId:lifecycleAward.bonusAwardId}})),originalLifecycleAward,'mark-paid preserves original award');
   const direct=new QualificationService(db,idempotency,audit,organization);
   const directRoot=await db.qualification.create({data:{currentHolderPersonId:owner.personId,planLevelCode:'STARTER',status:'EFFECTIVE',effectiveAt:new Date('2020-01-01')}});
+  const subscriptions=new SubscriptionService(db,idempotency,audit);
+  for(const [planCode,months] of [['QUARTER',3],['HALF_YEAR',6],['YEAR',12]]){
+    const created=await subscriptions.create({qualificationId:directRoot.qualificationId,planCode,startMonth:'2026-09-01'},'schedule-'+planCode,randomUUID(),owner.personId);
+    equal(created.value.schedules.length,months,planCode+' persists exactly one recognition row per plan month');
+    equal(created.value.schedules.map(row=>row.installmentNo),Array.from({length:months},(_,i)=>i+1),planCode+' persists contiguous installment sequence');
+    equal(await db.monthlyRecognitionSchedule.count({where:{subscriptionId:created.value.subscriptionId}}),months,planCode+' durable recognition row count');
+  }
   const directDto={personId:owner.personId,planLevelCode:'STARTER',sponsorQualificationId:directRoot.qualificationId,binaryParentQualificationId:directRoot.qualificationId,binarySide:'LEFT',effectiveAt:'2020-01-01T00:00:00.000Z'};
   const directCount=await db.qualification.count();
   await rejected(direct.create({...directDto,binarySide:'RIGHT'},'direct-invalid',randomUUID()),'BINARY_LEFT_SUBTREE_REQUIRED');

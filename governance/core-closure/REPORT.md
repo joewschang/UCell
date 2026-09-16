@@ -2,6 +2,14 @@
 
 Date: 2026-09-16 (Asia/Taipei)
 
+## Subscription schedule cardinality continuation
+
+- TODO: 23 -> 20 (`ENGINEERING` 18 -> 15; pending classifications unchanged).
+- QUARTER, HALF_YEAR and YEAR now execute the production `SubscriptionService` and prove exactly 3, 6 and 12 recognition rows with contiguous installment numbers.
+- Fresh isolated PostgreSQL evidence verifies the durable row counts through the real service and transaction path; membership/payout evidence increased from 102 to 111 assertions.
+- This batch verifies cardinality only. It does not approve the legacy UTC `dueAt` construction or any Production billing/recognition cut-off. Versioned Asia/Taipei subscription scheduling remains an open engineering/release obligation and Production values remain a Pending Decision.
+- Backend API: 166 PASS / 20 TODO / 0 FAIL. Backend build and fresh DB Golden with all 25 migrations: PASS.
+
 - Branch: `integration/member-backend-mvp`
 - Baseline checkpoint: `cbee775`
 - TODO: 51 -> 23 (`IMPLEMENTABLE` 17 -> 0; `ENGINEERING` 28 -> 18; `PENDING_DECISION` 3; `LEGACY_TEST_DRIFT` 2)

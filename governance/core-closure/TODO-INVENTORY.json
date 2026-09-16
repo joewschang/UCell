@@ -1,11 +1,11 @@
 {
   "decisionRegisterRecordVersion": 2,
   "originalBaseline": 148,
-  "currentExecutableTodo": 23,
-  "netPlaceholderReduction": 125,
+  "currentExecutableTodo": 20,
+  "netPlaceholderReduction": 128,
   "counts": {
     "IMPLEMENTABLE": 0,
-    "ENGINEERING": 18,
+    "ENGINEERING": 15,
     "PENDING_DECISION": 3,
     "LEGACY_TEST_DRIFT": 2
   },
@@ -104,56 +104,35 @@
     },
     {
       "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
-      "line": 128,
-      "case": "QUARTER creates exactly 3 recognition rows",
-      "classification": "ENGINEERING",
-      "reason": "The governing behavior is already approved; remaining work is implementation or executable verification."
-    },
-    {
-      "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
-      "line": 129,
-      "case": "HALF_YEAR creates exactly 6 recognition rows",
-      "classification": "ENGINEERING",
-      "reason": "The governing behavior is already approved; remaining work is implementation or executable verification."
-    },
-    {
-      "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
-      "line": 130,
-      "case": "YEAR creates exactly 12 recognition rows",
-      "classification": "ENGINEERING",
-      "reason": "The governing behavior is already approved; remaining work is implementation or executable verification."
-    },
-    {
-      "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
-      "line": 136,
+      "line": 163,
       "case": "0 direct unlocks 5 binary generations",
       "classification": "ENGINEERING",
       "reason": "The governing behavior is already approved; remaining work is implementation or executable verification."
     },
     {
       "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
-      "line": 137,
+      "line": 164,
       "case": "1 direct unlocks 8 binary generations",
       "classification": "ENGINEERING",
       "reason": "The governing behavior is already approved; remaining work is implementation or executable verification."
     },
     {
       "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
-      "line": 138,
+      "line": 165,
       "case": "2+ directs unlocks 12 binary generations",
       "classification": "ENGINEERING",
       "reason": "The governing behavior is already approved; remaining work is implementation or executable verification."
     },
     {
       "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
-      "line": 139,
+      "line": 166,
       "case": "inactive upline receives 0 and is not compressed",
       "classification": "PENDING_DECISION",
       "reason": "Matching inactive-sponsor skip/stop/compression behavior remains explicitly pending."
     },
     {
       "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
-      "line": 140,
+      "line": 167,
       "case": "higher generation remains independently evaluated",
       "classification": "PENDING_DECISION",
       "reason": "Matching inactive-sponsor skip/stop/compression behavior remains explicitly pending."

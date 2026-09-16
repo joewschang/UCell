@@ -1,5 +1,6 @@
 import { MembershipApplicationService } from '../src/modules/application/membership-application.service';
 import { ActiveService } from '../src/modules/active/active.service';
+import { SubscriptionService } from '../src/modules/subscription/subscription.service';
 import { execFileSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -31,6 +32,23 @@ function applicationHarness(application: any = {}) {
   const audit = { write: jest.fn(async () => undefined) };
   const service = new MembershipApplicationService({} as any, idempotency as any, audit as any, {} as any);
   return { tx, idempotency, audit, service };
+}
+
+function subscriptionHarness(durationMonths:number,planCode:'QUARTER'|'HALF_YEAR'|'YEAR') {
+  const schedules:any[]=[],subscription={subscriptionId:'subscription-A'};
+  const plan={subscriptionPlanId:'plan-A',planCode,durationMonths,isActive:true,monthlyRecognizedAmount:{toString:()=> '1200'},monthlyRpv:{toString:()=> '1200'}};
+  const tx:any={
+    qualification:{findUnique:jest.fn(async()=>({qualificationId:'ball-A',status:'EFFECTIVE'}))},
+    subscriptionPlan:{findUnique:jest.fn(async()=>plan)},
+    subscription:{
+      create:jest.fn(async({data}:any)=>({...subscription,...data})),
+      findUniqueOrThrow:jest.fn(async()=>({...subscription,plan,schedules})),
+    },
+    monthlyRecognitionSchedule:{create:jest.fn(async({data}:any)=>{schedules.push(data);return data;})},
+  };
+  const idempotency={execute:jest.fn(async(_scope:string,_key:string,_payload:any,work:any)=>({value:await work(tx),replayed:false}))};
+  const audit={write:jest.fn(async()=>undefined)};
+  return {service:new SubscriptionService({} as any,idempotency as any,audit as any),tx,schedules,audit};
 }
 
 describe('Vertical Slice 02 - Membership / Active / Subscription / RPV', () => {
@@ -125,9 +143,18 @@ describe('Vertical Slice 02 - Membership / Active / Subscription / RPV', () => {
     expect(await service.isActiveAt('ball-A', new Date('2019-12-31T23:59:59Z'))).toBe(false);
     expect(qualification.findUnique).not.toHaveBeenCalled();
   });
-  it.todo('QUARTER creates exactly 3 recognition rows');
-  it.todo('HALF_YEAR creates exactly 6 recognition rows');
-  it.todo('YEAR creates exactly 12 recognition rows');
+  for(const [planCode,months] of [['QUARTER',3],['HALF_YEAR',6],['YEAR',12]] as const){
+    it(`${planCode} creates exactly ${months} recognition rows`,async()=>{
+      const h=subscriptionHarness(months,planCode);
+      const dto={qualificationId:'ball-A',planCode,startMonth:'2026-09-01'};
+      const result=(await h.service.create(dto,'subscription-key','request-A','admin-A')).value;
+      expect(h.schedules).toHaveLength(months);
+      expect(h.schedules.map(row=>row.installmentNo)).toEqual(Array.from({length:months},(_,i)=>i+1));
+      expect(h.schedules.map(row=>row.recognitionMonth.toISOString())).toEqual(Array.from({length:months},(_,i)=>new Date(Date.UTC(2026,8+i,1)).toISOString()));
+      expect(result.schedules).toBe(h.schedules);
+      expect(h.audit.write).toHaveBeenCalledWith(h.tx,expect.objectContaining({action:'SUBSCRIPTION_CREATED',afterData:expect.objectContaining({planCode,months})}));
+    });
+  }
   it('each due recognition creates exactly 1,200 RPV once',()=>{
     expect(rpvActual('due RPV recognition seals exact original ledger identity').slice(0,3)).toEqual(['1200','RPV','RPV_CREATED']);
     expect(rpvActual('due RPV recognition updates original schedule identity')[0]).toBe('RECOGNIZED');
