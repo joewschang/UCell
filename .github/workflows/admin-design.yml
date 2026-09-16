@@ -19,12 +19,7 @@ jobs:
       - run: corepack enable
       - name: Install admin dependencies
         working-directory: admin
-        run: |
-          if test -f pnpm-lock.yaml; then
-            corepack pnpm install --frozen-lockfile
-          else
-            corepack pnpm install --no-frozen-lockfile
-          fi
+        run: corepack pnpm install --frozen-lockfile
       - name: Build admin
         working-directory: admin
         run: corepack pnpm run build

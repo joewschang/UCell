@@ -23,7 +23,7 @@ marked as development previews. Checks cover four widths, valid/zero-denominator
 ratios, stale-response warning and restricted-role shortcut visibility.
 
 Admin dependencies were absent in this checkout and no admin lockfile existed.
-The design workflow bootstraps the existing package manifest if needed and saves
-its generated lockfile as an artifact; once present it uses frozen installation.
+The initial CI install generated a lockfile, now checked in; the workflow uses
+frozen installation. As in Member, esbuild is the only permitted build script.
 Production rollout, real Entra login and full backend/DB gates are outside this
 visual change. No business rules, migrations or payment operations are modified.
