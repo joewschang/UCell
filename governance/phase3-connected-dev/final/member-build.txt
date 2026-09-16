@@ -1,15 +1,15 @@
 command: pnpm build
-started: 2026-09-16T02:32:01.202Z
+started: 2026-09-16T03:02:57.682Z
 exit: 0
 vite v5.4.21 building for production...
 transforming...
-✓ 105 modules transformed.
+✓ 106 modules transformed.
 rendering chunks...
 computing gzip size...
-dist/index.html                   0.42 kB │ gzip:   0.32 kB
-dist/assets/index-CBMY9N2Q.css   66.38 kB │ gzip:   9.94 kB
-dist/assets/index-BKpT_--D.js   566.92 kB │ gzip: 163.45 kB
-✓ built in 2.35s
+dist/index.html                   0.42 kB │ gzip:   0.31 kB
+dist/assets/index-8UZ2lB8I.css   67.18 kB │ gzip:  10.11 kB
+dist/assets/index-Csk99Ep1.js   567.04 kB │ gzip: 163.52 kB
+✓ built in 2.05s
 $ tsc --noEmit && vite build
 
 (!) Some chunks are larger than 500 kB after minification. Consider:

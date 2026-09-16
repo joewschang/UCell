@@ -78,7 +78,7 @@ export function ReturnsPage(){
     <Card title="處理原則"><p><Badge tone="warn">不可刪除原訂單／PV／Award</Badge></p><p>Return只新增反向與Recovery事實。Binary/Matching歷史差異以Replay與補償帳處理。</p><p className="muted">Replay 使用封存歷史 period/snapshots；缺少 evidence 時 fail closed。Production calendar/cut-off 仍待核准。</p></Card>
   </div>
 
-  <div className="toolbar"><select value={status} onChange={e=>setStatus(e.target.value)}><option value="">全部狀態</option><option>POSTED</option><option>VOIDED</option></select><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="會員姓名／手機／Reason"/></div>
+  <div className="toolbar"><select value={status} onChange={e=>setStatus(e.target.value)}><option value="">全部狀態</option><option>POSTED</option><option>VOIDED</option></select><input value={search} onChange={e=>setSearch(e.target.value)} aria-label="會員姓名／手機／Reason" placeholder="會員姓名／手機／Reason"/></div>
   <div className="split-view">
     <Card title={`Return Queue (${rows.length})`}>{rows.map((x:any)=><button key={x.returnCaseId} className={`list-row ${selected===x.returnCaseId?'selected':''}`} onClick={()=>setSelected(x.returnCaseId)}><strong>{x.order?.qualification?.currentHolder?.legalName??'—'} · {money(x.returnSummary?.totalAmount)}</strong><span>{x.status} · {x.reasonCode}</span><small>{dateTime(x.occurredAt)} · Recovery outstanding {money(x.recoverySummary?.outstanding)}</small></button>)}</Card>
     <Card title="Return Detail">{!d?<p className="muted">選擇Return Case。</p>:<>

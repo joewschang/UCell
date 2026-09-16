@@ -18,3 +18,7 @@ Initial browser focus containment failed; explicit dialog Tab wrapping added and
 ## UX-2 refinement
 
 UX-2 focused checks PASS: modal forward/reverse Tab containment, Escape/focus restoration, roving Qualification tabs, labels, text-based status, >=44px bottom navigation, white/navy surface loading. Full WCAG/screen-reader and actual LIFF devices remain pending.
+
+## UX-3 freeze and rollout
+
+UX-3: 26 routes pass named-control, main-landmark, page-heading and textual-status automation. Search labels repaired. Complete screen-reader/manual WCAG and actual LIFF device checks remain pending.

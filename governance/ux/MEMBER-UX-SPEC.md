@@ -15,3 +15,7 @@ Commerce, notifications, profile, repurchase and logout remain Connected impleme
 ## UX-2 refinement
 
 UX-2: compact Header, separate DEV banner, identity/Qualification to Active/repurchase to performance to Bonus hierarchy; Sponsor/direct and Binary side summaries; Chinese lifecycle and domain detail. See ux2/REPORT.md.
+
+## UX-3 freeze and rollout
+
+UX-3 applies the approved mobile shell, Qualification context, headers, states and token surfaces to all eight Member routes. Connected mutation and monetary authority remain unchanged.

@@ -49,3 +49,7 @@ UX-1 source checkpoint: 5a05c3c9b722555955175451cbfa7db832681677; pushed origin/
 ## UX-2 refinement
 
 UX-2 delivery is separate in ux2/REPORT.md and ux2/PASS-FAIL-MATRIX.md. UX-1 references are preserved. Six refined screens only; awaiting second SA Visual Review.
+
+## UX-3 freeze and rollout
+
+UX-3 final report: ux3/REPORT.md. Design System v1 is frozen and rolled out across the complete current Member/Admin route inventory.

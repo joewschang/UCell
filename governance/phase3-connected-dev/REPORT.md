@@ -338,3 +338,7 @@ Final integrated API tests: 130 PASS, 52 executable TODO. Member tests: 112 PASS
 Connected DEV gates: final/PASS-FAIL-MATRIX.md. Member/Admin/Backend/Worker Build, Prisma, isolated DB Golden twice, replay, API/shared/UI tests, HTTP/DB and OpenAPI/security-policy gates PASS. Formal security HTTP/UAT and TODO-dependent release gates remain BLOCKED. Windows Prisma DLL locks during release reruns were resolved by stopping local API/Worker before generation; raw initial failure logs retained.
 
 CODE COMPLETE: scoped UX-2 six screens and owned-Qualification read API. CONNECTED DEV PASS: verified gates only. OPERATIONAL CREDENTIAL PENDING: LINE/LIFF and Entra/RBAC. UAT PENDING. PRODUCTION BLOCKED. No merge main, force push, RC2 or Production promotion. Pending eligible consumption/PV-BV mapping/production calendar-cut-off unchanged.
+
+## UX-3 Design System freeze and rollout
+
+Full report: ../ux/ux3/REPORT.md. Full Connected DEV matrix is 40 PASS / 7 BLOCKED / 0 FAIL. Backend API 130 PASS / 52 TODO; Member 116 PASS; Admin 22 PASS. UX-only rollout added no API, migration, formula or monetary semantic change. Production remains BLOCKED.

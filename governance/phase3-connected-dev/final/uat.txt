@@ -1,5 +1,5 @@
 command: pnpm uat:gate
-started: 2026-09-16T02:29:23.095Z
+started: 2026-09-16T03:03:34.474Z
 exit: 1
 $ node scripts/uat-gate.mjs
 UAT_P0_FAIL

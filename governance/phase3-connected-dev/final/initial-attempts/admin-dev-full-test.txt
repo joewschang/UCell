@@ -1,5 +1,5 @@
 command: node backend/scripts/admin-full-test.mjs
-started: 2026-09-16T02:31:11.115Z
+started: 2026-09-16T03:05:14.515Z
 exit: 1
 [TypeError: fetch failed] {
   [cause]: Error: connect ECONNREFUSED 127.0.0.1:3001

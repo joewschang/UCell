@@ -17,3 +17,7 @@ Conceptual navigation groups must map to these existing modules. Grouped sidebar
 ## UX-2 refinement
 
 UX-2 preserves existing routes and permission checks. QualificationDetail Audit is lazy and role-gated. Additive GET /api/v1/admin/persons/:personId/qualifications provides exact owned rows. No monetary mutation route added.
+
+## UX-3 freeze and rollout
+
+UX-3 full route evidence: ux3/ROUTE-ROLLOUT-MATRIX.md. All 8 Member and 18 protected Admin routes resolved at four target widths.

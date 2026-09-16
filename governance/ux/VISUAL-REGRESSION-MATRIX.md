@@ -7,3 +7,7 @@ Run: node governance/ux/visual-review.mjs, with isolated local Admin/API and exp
 ## UX-2 refinement
 
 UX-2 captures preserved separately in ux2/references: six states x four viewports, fixture type and source commit in results.json. Member mock visual ONLY; Admin isolated real reads. Ten owned-Qualification tabs and navy/timeline loaded-state checks enforced. Awaiting second SA Visual Review.
+
+## UX-3 freeze and rollout
+
+UX-3: 26 additional route reference screenshots in ux3/references; source checkpoint e90d740. Member visual fixture is MOCK ONLY; Admin is isolated Connected DEV reads.

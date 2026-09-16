@@ -12,3 +12,7 @@ Remaining: full DataGrid saved view/export/authorized bulk, complete Qualificati
 ## UX-2 refinement
 
 UX-2 refines AwardLifecycle, DetailDrawer focus trap, AdminAppShell and AdminDataGrid toolbar; adds QualificationDetail (ten tabs) and read-only PipelineDetail. Shared tokens remain authoritative; no new UI framework.
+
+## UX-3 freeze and rollout
+
+UX-3 adds MemberPageHeader, AdminTable bounded-grid adapter and ConfirmAction. AdminDataGrid now supports loaded-page search and row detail while disclosing scope.

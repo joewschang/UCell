@@ -17,3 +17,7 @@ Sidebar is grouped into Dashboard, 會員管理, 組織管理, 商務, 獎金中
 ## UX-2 refinement
 
 UX-2: collapsible domain groups, unavailable Operations sections, exact owned-Qualification drawer with ten tabs, exact-batch read-only pipeline, shared grid toolbar. Proposed aggregate sources: ux2/READ-MODEL-API-PLAN.md.
+
+## UX-3 freeze and rollout
+
+UX-3 applies the enterprise shell and approved grids/states/confirmation patterns to all 18 protected Admin routes. Missing read models remain unavailable.

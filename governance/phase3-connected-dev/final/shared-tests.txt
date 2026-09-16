@@ -1,9 +1,9 @@
 command: pnpm --filter @ucell/shared test --runInBand
-started: 2026-09-16T02:28:11.007Z
+started: 2026-09-16T03:02:27.763Z
 exit: 0
 $ jest --config jest.config.cjs "--runInBand"
 Test Suites: 1 passed, 1 total
 Tests:       6 passed, 6 total
 Snapshots:   0 total
-Time:        1.589 s, estimated 2 s
+Time:        1.412 s, estimated 2 s
 Ran all test suites.

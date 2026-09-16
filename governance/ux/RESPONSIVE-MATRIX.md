@@ -7,3 +7,7 @@ Formal LIFF Browser/device: OPERATIONAL CREDENTIAL PENDING. General Edge respons
 ## UX-2 refinement
 
 UX-2 same viewports: Member 375/390/430/768 at height 844; Admin 1366/1440/1920/768 at height 900. 24 references, no document overflow. Actual LIFF browser is NOT VERIFIED. See ux2/references/results.json.
+
+## UX-3 freeze and rollout
+
+UX-3: 104 route/viewport checks pass. Member 375/390/430/768; Admin 768/1366/1440/1920. Evidence: ux3/references/results.json.

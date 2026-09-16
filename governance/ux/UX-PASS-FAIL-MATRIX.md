@@ -21,3 +21,7 @@ API changes NONE; DB migration NONE; business logic changes NONE; Backend TODO 7
 ## UX-2 refinement
 
 UX-2 scoped matrix: ux2/PASS-FAIL-MATRIX.md. Member 112 PASS; Admin 18 PASS; Backend API 130 PASS/52 TODO; 24 visual references PASS. Full engineering gates in ../phase3-connected-dev/final/PASS-FAIL-MATRIX.md. Production BLOCKED; further rollout PAUSED.
+
+## UX-3 freeze and rollout
+
+UX-3 scoped matrix: ux3/PASS-FAIL-MATRIX.md. Full Connected DEV: 40 PASS / 7 BLOCKED / 0 FAIL. Production remains BLOCKED.

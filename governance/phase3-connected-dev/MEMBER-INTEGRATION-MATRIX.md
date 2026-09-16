@@ -39,3 +39,5 @@ Member 111 tests (106 preserved +5 design-system), real Member HTTP/DB Golden201
 UX-1 source checkpoint: 5a05c3c9b722555955175451cbfa7db832681677; pushed origin/integration/member-backend-mvp. Final screenshot metadata is captured against this committed source. Follow-up evidence update changes documentation/reference metadata only.
 
 UX-2 six-screen refinement: Member tests 112 PASS; Admin 18 PASS; isolated Member/Admin HTTP-DB 219 assertions PASS. Visual Member fixtures are MOCK ONLY, separate from Connected gates. Formal LIFF/LINE, Entra and UAT pending; Production BLOCKED. Report: ../ux/ux2/REPORT.md.
+
+UX-3: all 8 Member routes and 18 Admin routes share approved Design System patterns. Member/Admin Connected integration: 59 actual HTTP/DB assertions; Member identity 278 assertions. Responsive 104 combinations PASS. Formal LINE/Entra/UAT remain pending; Production BLOCKED.

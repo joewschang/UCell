@@ -1,0 +1,789 @@
+{
+  "sourceCommit": "e90d740cf868abf0a2b59e4f4eb8b35e297958af",
+  "checks": 104,
+  "results": [
+    {
+      "kind": "member",
+      "path": "/",
+      "width": 375,
+      "overflow": false
+    },
+    {
+      "kind": "member",
+      "path": "/organization",
+      "width": 375,
+      "overflow": false
+    },
+    {
+      "kind": "member",
+      "path": "/performance",
+      "width": 375,
+      "overflow": false
+    },
+    {
+      "kind": "member",
+      "path": "/bonuses",
+      "width": 375,
+      "overflow": false
+    },
+    {
+      "kind": "member",
+      "path": "/shop",
+      "width": 375,
+      "overflow": false
+    },
+    {
+      "kind": "member",
+      "path": "/orders",
+      "width": 375,
+      "overflow": false
+    },
+    {
+      "kind": "member",
+      "path": "/notifications",
+      "width": 375,
+      "overflow": false
+    },
+    {
+      "kind": "member",
+      "path": "/me",
+      "width": 375,
+      "overflow": false
+    },
+    {
+      "kind": "member",
+      "path": "/",
+      "width": 390,
+      "image": "member-dashboard.png"
+    },
+    {
+      "kind": "member",
+      "path": "/",
+      "width": 390,
+      "overflow": false
+    },
+    {
+      "kind": "member",
+      "path": "/organization",
+      "width": 390,
+      "image": "member-organization.png"
+    },
+    {
+      "kind": "member",
+      "path": "/organization",
+      "width": 390,
+      "overflow": false
+    },
+    {
+      "kind": "member",
+      "path": "/performance",
+      "width": 390,
+      "image": "member-performance.png"
+    },
+    {
+      "kind": "member",
+      "path": "/performance",
+      "width": 390,
+      "overflow": false
+    },
+    {
+      "kind": "member",
+      "path": "/bonuses",
+      "width": 390,
+      "image": "member-bonuses.png"
+    },
+    {
+      "kind": "member",
+      "path": "/bonuses",
+      "width": 390,
+      "overflow": false
+    },
+    {
+      "kind": "member",
+      "path": "/shop",
+      "width": 390,
+      "image": "member-shop.png"
+    },
+    {
+      "kind": "member",
+      "path": "/shop",
+      "width": 390,
+      "overflow": false
+    },
+    {
+      "kind": "member",
+      "path": "/orders",
+      "width": 390,
+      "image": "member-orders.png"
+    },
+    {
+      "kind": "member",
+      "path": "/orders",
+      "width": 390,
+      "overflow": false
+    },
+    {
+      "kind": "member",
+      "path": "/notifications",
+      "width": 390,
+      "image": "member-notifications.png"
+    },
+    {
+      "kind": "member",
+      "path": "/notifications",
+      "width": 390,
+      "overflow": false
+    },
+    {
+      "kind": "member",
+      "path": "/me",
+      "width": 390,
+      "image": "member-me.png"
+    },
+    {
+      "kind": "member",
+      "path": "/me",
+      "width": 390,
+      "overflow": false
+    },
+    {
+      "kind": "member",
+      "path": "/",
+      "width": 430,
+      "overflow": false
+    },
+    {
+      "kind": "member",
+      "path": "/organization",
+      "width": 430,
+      "overflow": false
+    },
+    {
+      "kind": "member",
+      "path": "/performance",
+      "width": 430,
+      "overflow": false
+    },
+    {
+      "kind": "member",
+      "path": "/bonuses",
+      "width": 430,
+      "overflow": false
+    },
+    {
+      "kind": "member",
+      "path": "/shop",
+      "width": 430,
+      "overflow": false
+    },
+    {
+      "kind": "member",
+      "path": "/orders",
+      "width": 430,
+      "overflow": false
+    },
+    {
+      "kind": "member",
+      "path": "/notifications",
+      "width": 430,
+      "overflow": false
+    },
+    {
+      "kind": "member",
+      "path": "/me",
+      "width": 430,
+      "overflow": false
+    },
+    {
+      "kind": "member",
+      "path": "/",
+      "width": 768,
+      "overflow": false
+    },
+    {
+      "kind": "member",
+      "path": "/organization",
+      "width": 768,
+      "overflow": false
+    },
+    {
+      "kind": "member",
+      "path": "/performance",
+      "width": 768,
+      "overflow": false
+    },
+    {
+      "kind": "member",
+      "path": "/bonuses",
+      "width": 768,
+      "overflow": false
+    },
+    {
+      "kind": "member",
+      "path": "/shop",
+      "width": 768,
+      "overflow": false
+    },
+    {
+      "kind": "member",
+      "path": "/orders",
+      "width": 768,
+      "overflow": false
+    },
+    {
+      "kind": "member",
+      "path": "/notifications",
+      "width": 768,
+      "overflow": false
+    },
+    {
+      "kind": "member",
+      "path": "/me",
+      "width": 768,
+      "overflow": false
+    },
+    {
+      "kind": "admin",
+      "path": "/",
+      "width": 768,
+      "overflow": false
+    },
+    {
+      "kind": "admin",
+      "path": "/people",
+      "width": 768,
+      "overflow": false
+    },
+    {
+      "kind": "admin",
+      "path": "/applications",
+      "width": 768,
+      "overflow": false
+    },
+    {
+      "kind": "admin",
+      "path": "/applications/new",
+      "width": 768,
+      "overflow": false
+    },
+    {
+      "kind": "admin",
+      "path": "/qualifications",
+      "width": 768,
+      "overflow": false
+    },
+    {
+      "kind": "admin",
+      "path": "/organization",
+      "width": 768,
+      "overflow": false
+    },
+    {
+      "kind": "admin",
+      "path": "/subscriptions",
+      "width": 768,
+      "overflow": false
+    },
+    {
+      "kind": "admin",
+      "path": "/products",
+      "width": 768,
+      "overflow": false
+    },
+    {
+      "kind": "admin",
+      "path": "/orders",
+      "width": 768,
+      "overflow": false
+    },
+    {
+      "kind": "admin",
+      "path": "/returns",
+      "width": 768,
+      "overflow": false
+    },
+    {
+      "kind": "admin",
+      "path": "/workflows",
+      "width": 768,
+      "overflow": false
+    },
+    {
+      "kind": "admin",
+      "path": "/bonuses",
+      "width": 768,
+      "overflow": false
+    },
+    {
+      "kind": "admin",
+      "path": "/payouts",
+      "width": 768,
+      "overflow": false
+    },
+    {
+      "kind": "admin",
+      "path": "/documents",
+      "width": 768,
+      "overflow": false
+    },
+    {
+      "kind": "admin",
+      "path": "/reports",
+      "width": 768,
+      "overflow": false
+    },
+    {
+      "kind": "admin",
+      "path": "/audit",
+      "width": 768,
+      "overflow": false
+    },
+    {
+      "kind": "admin",
+      "path": "/system",
+      "width": 768,
+      "overflow": false
+    },
+    {
+      "kind": "admin",
+      "path": "/uat",
+      "width": 768,
+      "overflow": false
+    },
+    {
+      "kind": "admin",
+      "path": "/",
+      "width": 1366,
+      "overflow": false
+    },
+    {
+      "kind": "admin",
+      "path": "/people",
+      "width": 1366,
+      "overflow": false
+    },
+    {
+      "kind": "admin",
+      "path": "/applications",
+      "width": 1366,
+      "overflow": false
+    },
+    {
+      "kind": "admin",
+      "path": "/applications/new",
+      "width": 1366,
+      "overflow": false
+    },
+    {
+      "kind": "admin",
+      "path": "/qualifications",
+      "width": 1366,
+      "overflow": false
+    },
+    {
+      "kind": "admin",
+      "path": "/organization",
+      "width": 1366,
+      "overflow": false
+    },
+    {
+      "kind": "admin",
+      "path": "/subscriptions",
+      "width": 1366,
+      "overflow": false
+    },
+    {
+      "kind": "admin",
+      "path": "/products",
+      "width": 1366,
+      "overflow": false
+    },
+    {
+      "kind": "admin",
+      "path": "/orders",
+      "width": 1366,
+      "overflow": false
+    },
+    {
+      "kind": "admin",
+      "path": "/returns",
+      "width": 1366,
+      "overflow": false
+    },
+    {
+      "kind": "admin",
+      "path": "/workflows",
+      "width": 1366,
+      "overflow": false
+    },
+    {
+      "kind": "admin",
+      "path": "/bonuses",
+      "width": 1366,
+      "overflow": false
+    },
+    {
+      "kind": "admin",
+      "path": "/payouts",
+      "width": 1366,
+      "overflow": false
+    },
+    {
+      "kind": "admin",
+      "path": "/documents",
+      "width": 1366,
+      "overflow": false
+    },
+    {
+      "kind": "admin",
+      "path": "/reports",
+      "width": 1366,
+      "overflow": false
+    },
+    {
+      "kind": "admin",
+      "path": "/audit",
+      "width": 1366,
+      "overflow": false
+    },
+    {
+      "kind": "admin",
+      "path": "/system",
+      "width": 1366,
+      "overflow": false
+    },
+    {
+      "kind": "admin",
+      "path": "/uat",
+      "width": 1366,
+      "overflow": false
+    },
+    {
+      "kind": "admin",
+      "path": "/",
+      "width": 1440,
+      "image": "admin-dashboard.png"
+    },
+    {
+      "kind": "admin",
+      "path": "/",
+      "width": 1440,
+      "overflow": false
+    },
+    {
+      "kind": "admin",
+      "path": "/people",
+      "width": 1440,
+      "image": "admin-people.png"
+    },
+    {
+      "kind": "admin",
+      "path": "/people",
+      "width": 1440,
+      "overflow": false
+    },
+    {
+      "kind": "admin",
+      "path": "/applications",
+      "width": 1440,
+      "image": "admin-applications.png"
+    },
+    {
+      "kind": "admin",
+      "path": "/applications",
+      "width": 1440,
+      "overflow": false
+    },
+    {
+      "kind": "admin",
+      "path": "/applications/new",
+      "width": 1440,
+      "image": "admin-applications-new.png"
+    },
+    {
+      "kind": "admin",
+      "path": "/applications/new",
+      "width": 1440,
+      "overflow": false
+    },
+    {
+      "kind": "admin",
+      "path": "/qualifications",
+      "width": 1440,
+      "image": "admin-qualifications.png"
+    },
+    {
+      "kind": "admin",
+      "path": "/qualifications",
+      "width": 1440,
+      "overflow": false
+    },
+    {
+      "kind": "admin",
+      "path": "/organization",
+      "width": 1440,
+      "image": "admin-organization.png"
+    },
+    {
+      "kind": "admin",
+      "path": "/organization",
+      "width": 1440,
+      "overflow": false
+    },
+    {
+      "kind": "admin",
+      "path": "/subscriptions",
+      "width": 1440,
+      "image": "admin-subscriptions.png"
+    },
+    {
+      "kind": "admin",
+      "path": "/subscriptions",
+      "width": 1440,
+      "overflow": false
+    },
+    {
+      "kind": "admin",
+      "path": "/products",
+      "width": 1440,
+      "image": "admin-products.png"
+    },
+    {
+      "kind": "admin",
+      "path": "/products",
+      "width": 1440,
+      "overflow": false
+    },
+    {
+      "kind": "admin",
+      "path": "/orders",
+      "width": 1440,
+      "image": "admin-orders.png"
+    },
+    {
+      "kind": "admin",
+      "path": "/orders",
+      "width": 1440,
+      "overflow": false
+    },
+    {
+      "kind": "admin",
+      "path": "/returns",
+      "width": 1440,
+      "image": "admin-returns.png"
+    },
+    {
+      "kind": "admin",
+      "path": "/returns",
+      "width": 1440,
+      "overflow": false
+    },
+    {
+      "kind": "admin",
+      "path": "/workflows",
+      "width": 1440,
+      "image": "admin-workflows.png"
+    },
+    {
+      "kind": "admin",
+      "path": "/workflows",
+      "width": 1440,
+      "overflow": false
+    },
+    {
+      "kind": "admin",
+      "path": "/bonuses",
+      "width": 1440,
+      "image": "admin-bonuses.png"
+    },
+    {
+      "kind": "admin",
+      "path": "/bonuses",
+      "width": 1440,
+      "overflow": false
+    },
+    {
+      "kind": "admin",
+      "path": "/payouts",
+      "width": 1440,
+      "image": "admin-payouts.png"
+    },
+    {
+      "kind": "admin",
+      "path": "/payouts",
+      "width": 1440,
+      "overflow": false
+    },
+    {
+      "kind": "admin",
+      "path": "/documents",
+      "width": 1440,
+      "image": "admin-documents.png"
+    },
+    {
+      "kind": "admin",
+      "path": "/documents",
+      "width": 1440,
+      "overflow": false
+    },
+    {
+      "kind": "admin",
+      "path": "/reports",
+      "width": 1440,
+      "image": "admin-reports.png"
+    },
+    {
+      "kind": "admin",
+      "path": "/reports",
+      "width": 1440,
+      "overflow": false
+    },
+    {
+      "kind": "admin",
+      "path": "/audit",
+      "width": 1440,
+      "image": "admin-audit.png"
+    },
+    {
+      "kind": "admin",
+      "path": "/audit",
+      "width": 1440,
+      "overflow": false
+    },
+    {
+      "kind": "admin",
+      "path": "/system",
+      "width": 1440,
+      "image": "admin-system.png"
+    },
+    {
+      "kind": "admin",
+      "path": "/system",
+      "width": 1440,
+      "overflow": false
+    },
+    {
+      "kind": "admin",
+      "path": "/uat",
+      "width": 1440,
+      "image": "admin-uat.png"
+    },
+    {
+      "kind": "admin",
+      "path": "/uat",
+      "width": 1440,
+      "overflow": false
+    },
+    {
+      "kind": "admin",
+      "path": "/",
+      "width": 1920,
+      "overflow": false
+    },
+    {
+      "kind": "admin",
+      "path": "/people",
+      "width": 1920,
+      "overflow": false
+    },
+    {
+      "kind": "admin",
+      "path": "/applications",
+      "width": 1920,
+      "overflow": false
+    },
+    {
+      "kind": "admin",
+      "path": "/applications/new",
+      "width": 1920,
+      "overflow": false
+    },
+    {
+      "kind": "admin",
+      "path": "/qualifications",
+      "width": 1920,
+      "overflow": false
+    },
+    {
+      "kind": "admin",
+      "path": "/organization",
+      "width": 1920,
+      "overflow": false
+    },
+    {
+      "kind": "admin",
+      "path": "/subscriptions",
+      "width": 1920,
+      "overflow": false
+    },
+    {
+      "kind": "admin",
+      "path": "/products",
+      "width": 1920,
+      "overflow": false
+    },
+    {
+      "kind": "admin",
+      "path": "/orders",
+      "width": 1920,
+      "overflow": false
+    },
+    {
+      "kind": "admin",
+      "path": "/returns",
+      "width": 1920,
+      "overflow": false
+    },
+    {
+      "kind": "admin",
+      "path": "/workflows",
+      "width": 1920,
+      "overflow": false
+    },
+    {
+      "kind": "admin",
+      "path": "/bonuses",
+      "width": 1920,
+      "overflow": false
+    },
+    {
+      "kind": "admin",
+      "path": "/payouts",
+      "width": 1920,
+      "overflow": false
+    },
+    {
+      "kind": "admin",
+      "path": "/documents",
+      "width": 1920,
+      "overflow": false
+    },
+    {
+      "kind": "admin",
+      "path": "/reports",
+      "width": 1920,
+      "overflow": false
+    },
+    {
+      "kind": "admin",
+      "path": "/audit",
+      "width": 1920,
+      "overflow": false
+    },
+    {
+      "kind": "admin",
+      "path": "/system",
+      "width": 1920,
+      "overflow": false
+    },
+    {
+      "kind": "admin",
+      "path": "/uat",
+      "width": 1920,
+      "overflow": false
+    }
+  ],
+  "memberFixture": "EXPLICIT_MOCK_VISUAL_ONLY",
+  "adminFixture": "ISOLATED_CONNECTED_DEV_READS",
+  "formalCredentialsVerified": false
+}

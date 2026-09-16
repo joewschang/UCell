@@ -22,7 +22,7 @@ export function ApplicationsPage(){
  }
  return <>
   <PageHeader title="會員申請待審" subtitle="Draft → Submitted → Effective；Approve時才正式建立Qualification、Sponsor Relationship與Binary Placement。" actions={<Link className="button-link" to="/applications/new">＋ 新增會員申請</Link>}/>
-  <div className="toolbar"><select value={status} onChange={e=>setStatus(e.target.value)}><option value="">全部狀態</option><option>DRAFT</option><option>SUBMITTED</option><option>EFFECTIVE</option></select><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="姓名／手機／Email"/></div>
+  <div className="toolbar"><select aria-label="申請狀態" value={status} onChange={e=>setStatus(e.target.value)}><option value="">全部狀態</option><option>DRAFT</option><option>SUBMITTED</option><option>EFFECTIVE</option></select><input value={search} onChange={e=>setSearch(e.target.value)} aria-label="姓名／手機／Email" placeholder="姓名／手機／Email"/></div>
   <ErrorBox error={list.error}/><ErrorBox error={error}/>
   <div className="split-view"><Card title={`申請佇列 (${rows.length})`}><div>{rows.map(x=><button className={`list-row ${selected===x.applicationId?'selected':''}`} key={x.applicationId} onClick={()=>setSelected(x.applicationId)}><strong>{x.person?.legalName??x.personId}</strong><span>{x.requestedPlanLevelCode} · <Badge tone={tone(x.status) as any}>{x.status}</Badge></span><small>{dateTime(x.createdAt)} · {x.applicationId}</small></button>)}</div></Card>
   <Card title="申請詳情">{!a?<p className="muted">請從左側選擇一筆申請。</p>:<>

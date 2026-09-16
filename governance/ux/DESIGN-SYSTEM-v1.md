@@ -19,3 +19,7 @@ API changes: NONE. DB migration: NONE. Business logic changes: NONE. Production 
 ## UX-2 refinement
 
 UX-2 adds semantic navy surfaces, restrained card hierarchy and a connected Chinese lifecycle timeline; only Backend current status is highlighted. See ux2/REPORT.md.
+
+## UX-3 freeze and rollout
+
+Design System v1 is FROZEN for product rollout. Authoritative freeze contract: ux3/DESIGN-SYSTEM-v1-FREEZE.md.

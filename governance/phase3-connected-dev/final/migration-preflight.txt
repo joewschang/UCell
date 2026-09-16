@@ -1,4 +1,4 @@
 command: node scripts/migration-preflight.mjs
-started: 2026-09-16T02:29:03.387Z
+started: 2026-09-16T03:03:16.065Z
 exit: 0
 MIGRATION_PREFLIGHT_PASS
