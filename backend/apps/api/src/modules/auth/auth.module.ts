@@ -13,9 +13,11 @@ import { OtpController } from './otp.controller';
 import { OtpService } from './otp.service';
 import { OtpCodeService } from './otp-code.service';
 import { SmsOtpProviderService } from './sms-otp-provider.service';
+import { NetworkRegistrationController } from './network-registration.controller';
+import { NetworkRegistrationService } from './network-registration.service';
 @Module({
-  controllers:[AdminAuthController,OtpController],
-  providers:[QualificationAccessService,AdminRoleGuard,IdentityTokenService,LineIdentityService,AuthenticationGuard,MemberAuthenticationGuard,AdminAuthenticationGuard,EntraTokenVerifierService,AdminAuthService,OtpService,OtpCodeService,SmsOtpProviderService],
+  controllers:[AdminAuthController,OtpController,NetworkRegistrationController],
+  providers:[QualificationAccessService,AdminRoleGuard,IdentityTokenService,LineIdentityService,AuthenticationGuard,MemberAuthenticationGuard,AdminAuthenticationGuard,EntraTokenVerifierService,AdminAuthService,OtpService,OtpCodeService,SmsOtpProviderService,NetworkRegistrationService],
   exports:[QualificationAccessService,AdminRoleGuard,IdentityTokenService,LineIdentityService,AuthenticationGuard,MemberAuthenticationGuard,AdminAuthenticationGuard,EntraTokenVerifierService,AdminAuthService]
 })
 export class AuthModule {}

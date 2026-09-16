@@ -99,6 +99,21 @@ try{
  for(let attempt=1;attempt<=5;attempt++)equal((await server.inject({method:'POST',url:`/api/v1/auth/otp/challenges/${lockedChallenge.challengeId}/verify`,payload:{code:'000000'}})).statusCode,422,'OTP lockout invalid attempt '+attempt);
  equal((await db.otpChallenge.findUniqueOrThrow({where:{otpChallengeId:lockedChallenge.challengeId}})).status,'LOCKED','fifth invalid OTP attempt persists lock');
  equal((await server.inject({method:'POST',url:`/api/v1/auth/otp/challenges/${lockedChallenge.challengeId}/verify`,payload:{code:'246810'}})).statusCode,422,'correct OTP cannot bypass persisted lock');
+ const networkSessionId=randomUUID(),networkMobile='+886912345680';
+ const networkOtp=(await server.inject({method:'POST',url:'/api/v1/auth/otp/challenges',headers:{'idempotency-key':'TEST_ONLY_NETWORK_OTP'},payload:{purpose:'NETWORK_REGISTRATION',destination:networkMobile,registrationSessionId:networkSessionId}})).json().data;
+ equal((await server.inject({method:'POST',url:`/api/v1/auth/otp/challenges/${networkOtp.challengeId}/verify`,payload:{code:'246810'}})).statusCode,201,'network registration OTP verified');
+ const registrationBody={contractVersionId:contract.contractDocumentVersionId,accepted:true,legalName:'NETWORK MEMBER TEST ONLY',alias:'NETWORK ALIAS',gender:'UNSPECIFIED',birthDate:'1990-01-02',mobile:networkMobile,mobileChallengeId:networkOtp.challengeId,registrationSessionId:networkSessionId,email:'network.test@example.invalid'};
+ let registration=await server.inject({method:'POST',url:'/api/v1/registration/network',headers:{'idempotency-key':'TEST_ONLY_NETWORK_REGISTER'},payload:registrationBody});
+ equal(registration.statusCode,201,'network member registration commits');
+ const registered=registration.json().data;
+ equal([registered.membershipState,registered.qualificationCreated],['NETWORK_MEMBER',false],'registration creates Person state without Qualification');
+ equal(await db.qualification.count({where:{currentHolderPersonId:registered.personId}}),0,'network registration creates zero Qualifications');
+ equal((await db.person.findUniqueOrThrow({where:{personId:registered.personId}})).membershipState,'NETWORK_MEMBER','network Person state persisted');
+ equal(await db.personMembershipStateEvent.count({where:{personId:registered.personId,toState:'NETWORK_MEMBER'}}),1,'network state evidence appended once');
+ equal(await db.consentEvidence.count({where:{personId:registered.personId,contractDocumentVersionId:contract.contractDocumentVersionId}}),1,'registration consent evidence appended once');
+ equal((await db.otpChallenge.findUniqueOrThrow({where:{otpChallengeId:networkOtp.challengeId}})).consumedByPersonId,registered.personId,'verified OTP consumed by created Person');
+ registration=await server.inject({method:'POST',url:'/api/v1/registration/network',headers:{'idempotency-key':'TEST_ONLY_NETWORK_REGISTER'},payload:registrationBody});
+ equal([registration.statusCode,registration.json().data.personId,registration.json().data.replayed],[201,registered.personId,true],'network registration lost-response retry returns same Person');
  const call=(method,path,token,body,key='TEST_ONLY_MEMBER_REQUEST')=>server.inject({method,url:'/api/v1/'+path,headers:{...(token?{authorization:'Bearer '+token}:{}),...(method==='PATCH'||method==='POST'&&(['member/orders','member/logout'].includes(path)||path.endsWith('/consent'))?{'idempotency-key':key}:{})},...(body?{payload:body}:{})});
  // Actual Admin HTTP authorization using isolated opaque sessions. This verifies
  // session/role infrastructure, not formal Entra credentials or production RBAC.
