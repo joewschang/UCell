@@ -2,7 +2,7 @@
 
 | Gate | Status | Blocker |
 |---|---|---|
-| Core builds/tests | PASS WITH TODO | 33 executable TODO remain; no IMPLEMENTABLE placeholders remain |
+| Core builds/tests | PASS WITH TODO | 29 executable TODO remain; no IMPLEMENTABLE placeholders remain |
 | Replay/carry closure | PASS | Period-wide K1/K2, convergence, max horizon, and resume executable |
 | Production calendar | BLOCKED | Exact operational clock values pending |
 | Formal LINE LIFF | BLOCKED | Formal credentials and device evidence unavailable |

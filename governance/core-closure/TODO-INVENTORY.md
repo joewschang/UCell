@@ -1,13 +1,13 @@
 # R1.0B Decision Register v2 TODO Inventory
 
-Original audited baseline: 148. Current executable TODO: 33. Net placeholder reduction: 115.
+Original audited baseline: 148. Current executable TODO: 29. Net placeholder reduction: 119.
 
 Classification is governance status, not implementation completion. Pending decisions fail closed and Legacy Test Drift must be corrected without changing the frozen business rules.
 
 | Classification | Count |
 |---|---:|
 | IMPLEMENTABLE | 0 |
-| ENGINEERING | 28 |
+| ENGINEERING | 24 |
 | PENDING_DECISION | 3 |
 | LEGACY_TEST_DRIFT | 2 |
 
@@ -32,10 +32,6 @@ Classification is governance status, not implementation completion. Pending deci
 | backend/apps/api/test/v061-replay.e2e-spec.ts | 87 | transfer preserves qualificationId and sponsor/binary positions | ENGINEERING | The governing behavior is already approved; remaining work is implementation or executable verification. |
 | backend/apps/api/test/v061-replay.e2e-spec.ts | 88 | exit closes holder interval and status becomes EXITED | ENGINEERING | The governing behavior is already approved; remaining work is implementation or executable verification. |
 | backend/apps/api/test/v061-replay.e2e-spec.ts | 89 | company retransfer opens a new holder interval | ENGINEERING | The governing behavior is already approved; remaining work is implementation or executable verification. |
-| backend/apps/api/test/v064-golden-dataset.e2e-spec.ts | 41 | validates Referral 15/20/25 | ENGINEERING | The governing behavior is already approved; remaining work is implementation or executable verification. |
-| backend/apps/api/test/v064-golden-dataset.e2e-spec.ts | 42 | validates Equalization including Leader G5=10% | ENGINEERING | The governing behavior is already approved; remaining work is implementation or executable verification. |
-| backend/apps/api/test/v064-golden-dataset.e2e-spec.ts | 57 | validates RPV 5/8/12 on Binary Tree | ENGINEERING | The governing behavior is already approved; remaining work is implementation or executable verification. |
-| backend/apps/api/test/v064-golden-dataset.e2e-spec.ts | 58 | validates EPV on Sponsor Tree | ENGINEERING | The governing behavior is already approved; remaining work is implementation or executable verification. |
 | backend/apps/api/test/vertical-slice-02.e2e-spec.ts | 128 | QUARTER creates exactly 3 recognition rows | ENGINEERING | The governing behavior is already approved; remaining work is implementation or executable verification. |
 | backend/apps/api/test/vertical-slice-02.e2e-spec.ts | 129 | HALF_YEAR creates exactly 6 recognition rows | ENGINEERING | The governing behavior is already approved; remaining work is implementation or executable verification. |
 | backend/apps/api/test/vertical-slice-02.e2e-spec.ts | 130 | YEAR creates exactly 12 recognition rows | ENGINEERING | The governing behavior is already approved; remaining work is implementation or executable verification. |

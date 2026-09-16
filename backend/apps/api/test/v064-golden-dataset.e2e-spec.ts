@@ -3,6 +3,7 @@ import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { resolve, join } from 'node:path';
 import { PersonService } from '../src/modules/person/person.service';
+import { R10B } from '../../../packages/shared/src/r1-0b-golden';
 let evidence:any[];
 beforeAll(()=>{
   const root=resolve(__dirname,'../../../..'),directory=mkdtempSync(join(tmpdir(),'ucell-v064-'));
@@ -38,8 +39,13 @@ describe('R1.0B v0.6.4 Golden Dataset',()=>{
     expect(actual('Active historical EPV Sponsor G1')).toBe('100.8');
     expect(actual('RPV current Binary parent receives no recovery')).toBe(0);
   });
-  it.todo('validates Referral 15/20/25');
-  it.todo('validates Equalization including Leader G5=10%');
+  it('validates Referral 15/20/25',()=>{
+    expect(R10B.referral).toEqual({STARTER:0.15,ELITE:0.20,LEADER:0.25});
+  });
+  it('validates Equalization including Leader G5=10%',()=>{
+    expect(R10B.equalization.LEADER).toEqual({2:0.20,3:0.15,4:0.10,5:0.10,6:0.10,7:0.05});
+    expect(R10B.equalization.LEADER[5]).toBe(0.10);
+  });
   it('validates Active First and no current-state compression',()=>{
     expect(actual('historically inactive recipient stays zero')).toBe('0');
     expect(actual('historical sponsor receives adjustment despite current inactive')).toBe(1);
@@ -54,8 +60,15 @@ describe('R1.0B v0.6.4 Golden Dataset',()=>{
     expect(actual('downstream Matching uses exact recalculated Binary source')).toBe('0');
     expect(actual('complete replay posts every Matching entitlement')).toBe(3);
   });
-  it.todo('validates RPV 5/8/12 on Binary Tree');
-  it.todo('validates EPV on Sponsor Tree');
+  it('validates RPV 5/8/12 on Binary Tree',()=>{
+    expect([R10B.rpvDepth(0),R10B.rpvDepth(1),R10B.rpvDepth(2)]).toEqual([5,8,12]);
+    expect(actual('RPV replay retains original recipient after Binary change')).toBe(true);
+    expect(actual('RPV current Binary parent receives no recovery')).toBe(0);
+  });
+  it('validates EPV on Sponsor Tree',()=>{
+    for(let generation=1;generation<=5;generation++) expect(actual(`Active historical EPV Sponsor G${generation}`)).toBe('100.8');
+    expect(actual('Binary-only historical EPV ancestor gets no award')).toBe(0);
+  });
   it('validates refund -> replay -> recovery -> payout',()=>{
     expect(actual('real multi-return reaches cumulative full return')).toBe('RETURNED');
     expect(actual('PAID historical reduction appends one CLAWBACK lifecycle')).toBe(1);
