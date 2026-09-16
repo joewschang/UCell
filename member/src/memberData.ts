@@ -24,7 +24,19 @@ export async function getRepurchaseStatus(q:Qualification,signal:AbortSignal):Pr
  if(result?.qualificationId!==q.id||!/^\d{4}-(0[1-9]|1[0-2])$/.test(result.period)||!['ACTIVE','PENDING','INACTIVE'].includes(result.status)||!Array.isArray(result.recognitions)||!result.recognitions.every(row=>typeof row.id==='string'&&['SCHEDULED','DUE','RECOGNIZED','CANCELLED','REVERSED'].includes(row.status)&&Number.isFinite(Date.parse(row.dueAt))))throw new Error('重購資料格式或資格不符，已停止顯示');
  return result;
 }
-export const getPerson = (signal: AbortSignal) => isMock ? Promise.resolve<Person>({ name: '示範會員', memberNo: 'DEMO-000001', email: null, phone: null }) : api<unknown>('/member/me', { signal }).then(validate.parsePerson);
+export const getPerson = (signal: AbortSignal) => isMock ? Promise.resolve<Person>({ name:'示範會員',alias:null,memberNo:'DEMO-000001',email:null,phone:null,gender:null,birthDate:null,membershipState:'NETWORK_MEMBER',mobileVerifiedAt:null }) : api<unknown>('/member/me', { signal }).then(validate.parsePerson);
+export type RequiredContract={id:string;type:string;version:string;title:string;content:string;contentHash:string;required:boolean;effectiveFrom:string;effectiveTo:string|null;acceptedAt:string|null};
+export async function getRequiredContracts(signal:AbortSignal){
+ const rows=await api<unknown>('/member/contracts/required',{signal});
+ if(!Array.isArray(rows)||!rows.every(value=>{const row=value as RequiredContract;return row&&typeof row.id==='string'&&typeof row.type==='string'&&typeof row.version==='string'&&typeof row.title==='string'&&typeof row.content==='string'&&/^[a-f0-9]{64}$/.test(row.contentHash)&&row.required===true&&typeof row.effectiveFrom==='string'&&(row.effectiveTo===null||typeof row.effectiveTo==='string')&&(row.acceptedAt===null||typeof row.acceptedAt==='string');}))throw new Error('合約資料格式異常，已停止註冊');
+ return rows as RequiredContract[];
+}
+export type NetworkRegistrationInput={contractVersionId:string;accepted:true;legalName:string;alias:string;gender:string;birthDate:string;mobile:string;email:string};
+export async function registerNetworkMember(input:NetworkRegistrationInput,key:string){
+ const result=await api<{personId:string;membershipState:string;enabledAuthenticationProvider:string;qualificationCreated:boolean;replayed:boolean}>('/member/registration/network',{method:'POST',headers:{'Idempotency-Key':key},body:JSON.stringify(input)});
+ if(typeof result?.personId==='string'&&result.personId&&result.membershipState==='NETWORK_MEMBER'&&result.enabledAuthenticationProvider==='LINE'&&result.qualificationCreated===false)return result;
+ throw new Error('註冊結果格式異常，請重新載入');
+}
 export async function updateProfile(input:{name?:string;email?:string;phone?:string},key:string) {
  if(isMock)throw new Error('示範模式不修改會員資料');
  return validate.parsePerson(await api('/member/profile',{method:'PATCH',headers:{'Idempotency-Key':key},body:JSON.stringify(input)}));

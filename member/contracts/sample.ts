@@ -2,7 +2,7 @@ const q = { id: 'fixture-q1', code: 'FIXTURE-Q1', rank: 'ELITE', active: true, b
 const month = { qualificationId: q.id, period: '2026-09' };
 const bodies = {
   qualifications: [q],
-  person: { name: '測試會員', memberNo: 'FIXTURE-M1', email: null, phone: null },
+  person: { name:'測試會員',alias:null,memberNo:'FIXTURE-M1',email:null,phone:null,gender:null,birthDate:null,membershipState:'NETWORK_MEMBER',mobileVerifiedAt:null },
   dashboard: { memberName: '測試會員', memberNo: 'FIXTURE-M1', qualification: q, monthlyRepurchaseStatus: 'PENDING', pv: null, rpv: null, epv: null, bonusAmount: null, bonusStatus: 'PENDING' },
   organization: { qualificationId: q.id, sponsor: null, referrals: [] },
   binary: { qualificationId: q.id, left: { count: 0, volume: null }, right: { count: 0, volume: null } },

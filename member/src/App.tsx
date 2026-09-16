@@ -14,6 +14,7 @@ import ProfileEditor from './ProfileEditor';
 import RepurchaseDetails from './RepurchaseDetails';
 import {ConnectedOrderDetails} from './ConnectedShop';
 import { NotificationProvider, useNotifications } from './NotificationContext';
+import NetworkRegistration from './NetworkRegistration';
 export const number = (n: number | null) => n === null ? '待提供' : n.toLocaleString('zh-TW');
 export const money = (n: number | null) => n === null ? '待確認' : `NT$ ${number(n)}`;
 const statusNames: Record<AwardStatus, string> = { PENDING: '結算中', CALCULATED: '已計算', PENDING45D: '等待生效', EFFECTIVE: '已生效', PAYABLE: '可支付', PAID: '已支付', REVERSED: '已沖回', CLAWBACK: '追扣調整' };
@@ -76,7 +77,7 @@ function Bonuses({ q }: {
 function Orders({ q }: {
     q: Qualification;
 }) { const { orders } = useCommerce(); const state = useResource(`orders:${q.id}`, s => data.getOrders(q, s)); const [expanded, setExpanded] = useState<string | null>(null); return <><MemberPageHeader title="我的訂單" q={q}/><button disabled={state.data === undefined && !state.error} onClick={() => {setExpanded(null);state.retry();}}>重新整理訂單</button><Result state={state}>{d => { const visible = [...(data.isMock ? orders.filter(o => o.qualificationId === q.id) : []), ...d.orders]; return visible.length ? visible.map(o => <article className="card" key={o.id}><h3>{o.id}</h3><p>{o.createdAt} · {money(o.total)}</p><p>訂單：{o.status}</p><button aria-expanded={expanded === o.id} onClick={() => setExpanded(expanded === o.id ? null : o.id)}>付款與配送狀態</button>{expanded === o.id && <div><p>付款：{o.paymentStatus}</p><p>配送：{o.shipmentStatus}</p>{!data.isMock&&<ConnectedOrderDetails q={q} id={o.id}/>}</div>}</article>) : <EmptyState title="此資格目前沒有訂單"/>; }}</Result></>; }
-function Me() { const state = useResource('person', data.getPerson); const { qualifications } = useQualification(); return <><MemberPageHeader title="我的帳戶"/><Result state={state}>{p => <section className="card"><h3>{p.name}</h3><p>{p.memberNo}</p><p>電子郵件：{p.email ?? '未提供'}</p><p>電話：{p.phone ?? '未提供'}</p></section>}</Result><ProfileEditor refresh={state.retry}/><h3>我的資格</h3>{qualifications.map(q => <article key={q.id} className="card"><strong>{q.code} · {q.ballLabel}</strong><p>{data.displayRank(q.rank)} · {q.active ? '活躍' : '未活躍'}</p></article>)}<EndSession connected={!data.isMock}/></>; }
+function Me() { const state = useResource('person', data.getPerson); const { qualifications } = useQualification(); return <><MemberPageHeader title="我的帳戶"/><Result state={state}>{p => <><section className="card"><h3>{p.name}</h3><p>{p.memberNo}</p><p>會員狀態：{p.membershipState??'尚未完成網路會員註冊'}</p><p>電子郵件：{p.email ?? '未提供'}</p><p>電話：{p.phone ?? '未提供'}</p></section>{!data.isMock&&p.membershipState===null&&<NetworkRegistration person={p} refresh={state.retry}/>}</>}</Result><ProfileEditor refresh={state.retry}/><h3>我的資格</h3>{qualifications.map(q => <article key={q.id} className="card"><strong>{q.code} · {q.ballLabel}</strong><p>{data.displayRank(q.rank)} · {q.active ? '活躍' : '未活躍'}</p></article>)}<EndSession connected={!data.isMock}/></>; }
 function MemberApp() {
     const { loading, error, retry, current } = useQualification();
     const { unread } = useNotifications(current?.id);

@@ -15,7 +15,7 @@ const response=(data:unknown,status=200)=>new Response(JSON.stringify({data,meta
 beforeEach(()=>{vi.stubGlobal('sessionStorage',{getItem:()=>null,setItem:vi.fn(),removeItem:vi.fn()})});
 afterEach(()=>{if(tree)act(()=>tree!.unmount());tree=undefined;vi.unstubAllGlobals();vi.restoreAllMocks()});
 it('allows a Person without balls to access own profile and server logout without scoped queries',async()=>{
- const fetch=vi.fn(async(url:string)=>url.includes('/qualifications')?response([]):response({name:'Person only',memberNo:'P1',email:null,phone:null}));vi.stubGlobal('fetch',fetch);
+ const fetch=vi.fn(async(url:string)=>url.includes('/qualifications')?response([]):response({name:'Person only',alias:null,memberNo:'P1',email:null,phone:null,gender:null,birthDate:null,membershipState:'NETWORK_MEMBER',mobileVerifiedAt:null}));vi.stubGlobal('fetch',fetch);
  await act(async()=>{tree=create(<MemoryRouter initialEntries={['/me']}><QualificationProvider><App/></QualificationProvider></MemoryRouter>)});
  const text=JSON.stringify(tree!.toJSON());expect(text).toContain('Person only');expect(text).toContain('更新聯絡資料');expect(text).toContain('登出會員服務');
  expect(fetch.mock.calls.every(([url])=>!url.includes('qualificationId'))).toBe(true);

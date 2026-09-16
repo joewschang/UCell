@@ -78,9 +78,14 @@ export type Scoped = {
 };
 export type Person = {
     name: string;
+    alias: string | null;
     memberNo: string;
     email: string | null;
     phone: string | null;
+    gender: string | null;
+    birthDate: string | null;
+    membershipState: 'NETWORK_MEMBER' | 'FORMAL_PENDING' | 'FORMAL_MEMBER' | null;
+    mobileVerifiedAt: string | null;
 };
 export type Organization = Scoped & {
     sponsor: {

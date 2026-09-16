@@ -15,6 +15,7 @@ const object = (fields: Record<string, Check>): Check => v => {
 };
 const enumOf = (...values: string[]): Check => v => typeof v === 'string' && values.includes(v);
 const period: Check = v => typeof v === 'string' && /^\d{4}-(0[1-9]|1[0-2])$/.test(v);
+const date = (v:unknown) => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v) && Number.isFinite(Date.parse(v+'T00:00:00Z'));
 const unique = (check: Check, key: string): Check => v => list(check)(v) && new Set((v as Record<string, unknown>[]).map(x => x[key])).size === (v as unknown[]).length;
 const qualification = object({ id, code: id, rank: id, active: boolean, ballLabel: id });
 const status = enumOf('PENDING', 'CALCULATED', 'PENDING45D', 'EFFECTIVE', 'PAYABLE', 'PAID', 'REVERSED', 'CLAWBACK');
@@ -28,7 +29,7 @@ function schema<T>(check: Check) {
   };
 }
 export const parseQualifications = schema<Qualification[]>(unique(qualification, 'id'));
-export const parsePerson = schema<Person>(object({ name: string, memberNo: id, email: nullable(string), phone: nullable(string) }));
+export const parsePerson = schema<Person>(object({ name: string, alias:nullable(string),memberNo: id, email: nullable(string), phone: nullable(string),gender:nullable(string),birthDate:nullable(date),membershipState:nullable(enumOf('NETWORK_MEMBER','FORMAL_PENDING','FORMAL_MEMBER')),mobileVerifiedAt:nullable(string) }));
 export const parseDashboard = schema<Dashboard>(object({ memberName: string, memberNo: id, qualification,
   monthlyRepurchaseStatus: enumOf('ACTIVE', 'PENDING', 'INACTIVE'), pv: metric, rpv: metric, epv: metric, bonusAmount: metric, bonusStatus: status }));
 export const parseOrganization = schema<Organization>(object({ qualificationId: id, sponsor: nullable(member), referrals: unique(member, 'code') }));
