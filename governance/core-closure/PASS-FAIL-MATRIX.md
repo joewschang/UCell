@@ -4,7 +4,13 @@
 |---|---|---|
 | Database package build | PASS | `pnpm --filter @ucell/database build` |
 | Backend API build | PASS | `pnpm --filter @ucell/api build` |
-| Backend API Jest | PASS | 147 PASS / 39 TODO / 0 FAIL |
+| Backend API Jest | PASS | 153 PASS / 33 TODO / 0 FAIL |
+| Member build/tests | PASS | 116 tests |
+| Admin build/tests | PASS | 22 tests |
+| Worker build | PASS | TypeScript build |
+| Prisma | PASS | validate, generate, deploy; 25 migrations, none pending |
+| Versioned settlement timezone | PASS | TEST_ONLY Asia/Taipei parameter snapshot; local-midnight boundary; rollback |
+| Golden DB-backed wrappers | PASS | Sponsor/Binary separation, Active First, K1 carry, Matching source, Return/Recovery |
 | Matching Sponsor traversal | PASS | Live settlement calls `sponsorAncestors`; five historical Sponsor recipients asserted |
 | Matching historical replay evidence | PASS | Sealed Sponsor/Active/Qualification evidence accepted; Binary disagreement does not replace Sponsor semantics |
 | Missing historical Sponsor evidence | PASS | Fails closed with `HISTORICAL_SNAPSHOT_MISSING` |
@@ -14,6 +20,7 @@
 | Return recalculation requests | PASS | Historical Binary/Matching periods, idempotent unique key, processed only after replay |
 | Pending/PAID negative lifecycle | PASS | Append-only REVERSED or CLAWBACK/recovery; original PAID event immutable |
 | Isolated DB Golden | PASS | Fresh DB, 25 migrations, deterministic fixtures and connected assertions |
+| Static/schema/migration/source preflights | PASS | All four automated preflights |
 | Security policy preflight | PASS | Automated policy preflight |
 | R1.0B Golden/OpenAPI preflight | PASS | Both gates pass |
 | Formal LINE/Entra/UAT | BLOCKED | Operational credentials/evidence unavailable |

@@ -8,4 +8,6 @@
 | Missing history fails closed | `HISTORICAL_SNAPSHOT_MISSING`; no current fallback | PASS |
 | Qualification/Ball isolation | Existing Connected DEV regressions | PASS |
 | Append-only monetary mutation | Existing replay posting/recovery regressions | PASS |
+| Business timezone | TEST_ONLY versioned snapshot resolves Asia/Taipei period boundaries; no UTC calendar substitution | PASS |
+| Active First | Isolated DB Golden evidence is executed by the Golden dataset suite | PASS |
 | Inactive Matching Sponsor edge semantics | Awaiting skip/stop/compression decision | PENDING DECISION |

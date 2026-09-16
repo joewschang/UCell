@@ -3,6 +3,10 @@ import { AdminRoleGuard } from '../src/modules/auth/admin-role.guard';
 import { UnifiedPayableService } from '../src/modules/payout/unified-payable.service';
 import { Prisma } from '@ucell/database';
 import { RecoveryBalanceService } from '../src/modules/payout/recovery-balance.service';
+import { execFileSync } from 'node:child_process';
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join, resolve } from 'node:path';
 
 function recoveryHarness(outstanding: number) {
   const award = { bonusAwardId: 'source-award', recipientQualificationId: 'ball-A', payableAmount: new Prisma.Decimal(outstanding) };
@@ -42,7 +46,16 @@ function materializationHarness(kind: 'BONUS_AWARD' | 'RPV_UPLINE_AWARD') {
 }
 
 describe('R1.0B v0.6.3',()=>{
-  it.todo('Taiwan local time maps to configured settlement week');
+  it('Taiwan local time maps to configured settlement week',()=>{
+    const root=resolve(__dirname,'../../../..'),directory=mkdtempSync(join(tmpdir(),'ucell-v063-'));
+    try{
+      const file=join(directory,'evidence.json');
+      execFileSync(process.execPath,[resolve(root,'backend/scripts/settlement-timezone-db-test.mjs')],{cwd:root,env:{...process.env,DATABASE_URL:process.env.PHASE2_TEST_DATABASE_URL??'postgresql://ucell:ucell_dev@localhost:5432/ucell_admin_test?schema=public',SETTLEMENT_TIMEZONE_EVIDENCE_PATH:file},timeout:30000});
+      const run=JSON.parse(readFileSync(file,'utf8'));expect(run.result).toBe('PASS');
+      expect(run.results.find((item:any)=>item.label==='Taipei configured settlement week bounds')?.actual).toEqual(['2019-12-31T16:00:00.000Z','2020-01-14T16:00:00.000Z','Asia/Taipei']);
+      expect(run.results.find((item:any)=>item.label==='Taipei local-midnight boundary is deterministic')?.actual).toEqual(['2019-12-31T16:00:00.000Z','2019-12-31T16:00:00.000Z']);
+    } finally {rmSync(directory,{recursive:true,force:true});}
+  },30000);
   it('effective BonusAward materializes once', async () => {
     const { service, tx, entries } = materializationHarness('BONUS_AWARD');
     const cutoff = new Date('2020-04-01T00:00:00Z');

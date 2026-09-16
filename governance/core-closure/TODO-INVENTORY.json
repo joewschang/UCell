@@ -1,10 +1,10 @@
 {
   "decisionRegisterRecordVersion": 2,
   "originalBaseline": 148,
-  "currentExecutableTodo": 39,
-  "netPlaceholderReduction": 109,
+  "currentExecutableTodo": 33,
+  "netPlaceholderReduction": 115,
   "counts": {
-    "IMPLEMENTABLE": 6,
+    "IMPLEMENTABLE": 0,
     "ENGINEERING": 28,
     "PENDING_DECISION": 3,
     "LEGACY_TEST_DRIFT": 2
@@ -145,74 +145,32 @@
       "reason": "The governing behavior is already approved; remaining work is implementation or executable verification."
     },
     {
-      "file": "backend/apps/api/test/v063-golden-path.e2e-spec.ts",
-      "line": 45,
-      "case": "Taiwan local time maps to configured settlement week",
-      "classification": "IMPLEMENTABLE",
-      "reason": "Decision Register v2 and Core Logic Addendum v2 provide the governing rule; implementation and evidence remain."
-    },
-    {
       "file": "backend/apps/api/test/v064-golden-dataset.e2e-spec.ts",
-      "line": 25,
-      "case": "keeps Sponsor and Binary trees distinct",
-      "classification": "IMPLEMENTABLE",
-      "reason": "Decision Register v2 and Core Logic Addendum v2 provide the governing rule; implementation and evidence remain."
-    },
-    {
-      "file": "backend/apps/api/test/v064-golden-dataset.e2e-spec.ts",
-      "line": 26,
+      "line": 41,
       "case": "validates Referral 15/20/25",
       "classification": "ENGINEERING",
       "reason": "The governing behavior is already approved; remaining work is implementation or executable verification."
     },
     {
       "file": "backend/apps/api/test/v064-golden-dataset.e2e-spec.ts",
-      "line": 27,
+      "line": 42,
       "case": "validates Equalization including Leader G5=10%",
       "classification": "ENGINEERING",
       "reason": "The governing behavior is already approved; remaining work is implementation or executable verification."
     },
     {
       "file": "backend/apps/api/test/v064-golden-dataset.e2e-spec.ts",
-      "line": 28,
-      "case": "validates Active First and no compression",
-      "classification": "IMPLEMENTABLE",
-      "reason": "Decision Register v2 and Core Logic Addendum v2 provide the governing rule; implementation and evidence remain."
-    },
-    {
-      "file": "backend/apps/api/test/v064-golden-dataset.e2e-spec.ts",
-      "line": 29,
-      "case": "validates Binary Carry and K1",
-      "classification": "IMPLEMENTABLE",
-      "reason": "Decision Register v2 and Core Logic Addendum v2 provide the governing rule; implementation and evidence remain."
-    },
-    {
-      "file": "backend/apps/api/test/v064-golden-dataset.e2e-spec.ts",
-      "line": 30,
-      "case": "validates Matching source=Binary Paid after K1",
-      "classification": "IMPLEMENTABLE",
-      "reason": "Decision Register v2 and Core Logic Addendum v2 provide the governing rule; implementation and evidence remain."
-    },
-    {
-      "file": "backend/apps/api/test/v064-golden-dataset.e2e-spec.ts",
-      "line": 31,
+      "line": 57,
       "case": "validates RPV 5/8/12 on Binary Tree",
       "classification": "ENGINEERING",
       "reason": "The governing behavior is already approved; remaining work is implementation or executable verification."
     },
     {
       "file": "backend/apps/api/test/v064-golden-dataset.e2e-spec.ts",
-      "line": 32,
+      "line": 58,
       "case": "validates EPV on Sponsor Tree",
       "classification": "ENGINEERING",
       "reason": "The governing behavior is already approved; remaining work is implementation or executable verification."
-    },
-    {
-      "file": "backend/apps/api/test/v064-golden-dataset.e2e-spec.ts",
-      "line": 33,
-      "case": "validates refund -> replay -> recovery -> payout",
-      "classification": "IMPLEMENTABLE",
-      "reason": "Decision Register v2 and Core Logic Addendum v2 provide the governing rule; implementation and evidence remain."
     },
     {
       "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
