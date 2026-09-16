@@ -53,8 +53,7 @@ try{await prisma.$transaction(async tx=>{
  const epvActiveAwards=await tx.bonusAward.findMany({where:{sourceQualificationId:epvActiveSelf.qualificationId,awardType:'EPV'}});
  for(let generation=1;generation<=5;generation++)check('Active historical EPV Sponsor G'+generation,epvActiveAwards.find(a=>a.recipientQualificationId===epvChain[generation-1].qualificationId&&a.generationNo===generation).payableAmount.toString(),'100.8');
  check('Binary-only historical EPV ancestor gets no award',epvActiveAwards.filter(a=>a.recipientQualificationId===epvBinaryOnly.qualificationId).length,0);
- await tx.bonusAwardLifecycleEvent.create({data:{bonusAwardId:selfAward.bonusAwardId,status:'PAID',occurredAt:new Date('2020-01-09'),reasonCode:'PHASE2_TEST_PAID'}});
- const paid=JSON.stringify(await tx.bonusAwardLifecycleEvent.findMany({where:{bonusAwardId:selfAward.bonusAwardId},orderBy:{lifecycleEventId:'asc'}}));
+ const paidEvent=await tx.bonusAwardLifecycleEvent.create({data:{bonusAwardId:selfAward.bonusAwardId,status:'PAID',occurredAt:new Date(),reasonCode:'PHASE2_TEST_PAID'}});
  await tx.sponsorRelationship.update({where:{sponsorRelationshipId:relationship.sponsorRelationshipId},data:{effectiveTo:new Date('2020-01-06')}});
  // Supervised fixture supersede: the current-row guard permits replacement only after closing its interval.
  await tx.sponsorRelationship.update({where:{sponsorRelationshipId:relationship.sponsorRelationshipId},data:{sponsorQualificationId:newSponsor.qualificationId,effectiveFrom:new Date('2020-01-06'),effectiveTo:null}});
@@ -76,7 +75,8 @@ try{await prisma.$transaction(async tx=>{
  check('cross-threshold effective entitlement',secondPost.recalculatedEntitlement.toString(),'0');
  check('clawback never exceeds original entitlement',(await tx.bonusRecoveryEvent.aggregate({where:{bonusAwardId:selfAward.bonusAwardId},_sum:{recoveryAmount:true}}))._sum.recoveryAmount.toString(),'840');
  check('original awards are immutable',JSON.stringify(await tx.bonusAward.findMany({where:{sourceQualificationId:self.qualificationId,awardType:'EPV'},orderBy:{bonusAwardId:'asc'}})),originalJson);
- check('original PAID history is immutable',JSON.stringify(await tx.bonusAwardLifecycleEvent.findMany({where:{bonusAwardId:selfAward.bonusAwardId},orderBy:{lifecycleEventId:'asc'}})),paid);
+ check('original PAID history is immutable',await tx.bonusAwardLifecycleEvent.findUniqueOrThrow({where:{lifecycleEventId:paidEvent.lifecycleEventId}}),paidEvent);
+ check('PAID historical reduction appends one CLAWBACK lifecycle',await tx.bonusAwardLifecycleEvent.count({where:{bonusAwardId:selfAward.bonusAwardId,status:'CLAWBACK',reasonCode:'HISTORICAL_REPLAY'}}),1);
  check('original EPV ledger unchanged',(await tx.pvLedger.findFirstOrThrow({where:{sourceId:order.orderId,pvType:'EPV'}})).amount.toString(),'1680');
  check('effective EPV ledger after two returns',(await tx.pvLedger.aggregate({where:{qualificationId:self.qualificationId,pvType:'EPV'},_sum:{amount:true}}))._sum.amount.toString(),'0');
  check('outstanding recovery tracks PAID clawback',(await tx.bonusRecoveryEvent.aggregate({where:{bonusAwardId:selfAward.bonusAwardId},_sum:{outstandingAmount:true}}))._sum.outstandingAmount.toString(),'840');
@@ -97,6 +97,14 @@ try{await prisma.$transaction(async tx=>{
  // Original fixture capture precedes replay. TEST_ONLY parameters do not establish an operational calendar.
  const {captureParameters}=require('./packages/database/dist/parameter-snapshot.js');
  const historical=await captureParameters(tx,new Date('2020-01-03'),version);
+ const pendingAward=await tx.bonusAward.create({data:{awardType:'REFERRAL',recipientQualificationId:self.qualificationId,theoryAmount:100,payableAmount:100,activeSnapshot:true,planLevelSnapshot:'LEADER',ruleVersionCode:version,parameterSnapshotHash:historical.hash,occurredAt:new Date('2020-01-03'),pendingUntil:new Date('2020-02-17'),calculationDetail:{testOnly:true}}});
+ await tx.bonusAwardLifecycleEvent.createMany({data:[{bonusAwardId:pendingAward.bonusAwardId,status:'CALCULATED',occurredAt:new Date('2020-01-03')},{bonusAwardId:pendingAward.bonusAwardId,status:'PENDING_45D',occurredAt:new Date('2020-01-03T00:00:01Z')}]});
+ const pendingEnvelope={format:'UCELL_HISTORICAL_REPLAY_V1',kind:'REFERRAL_K0',sourceId:randomUUID(),ruleVersionCode:version,at:'2020-01-03T00:00:00.000Z',parameters:historical,
+  recipients:[{key:pendingAward.bonusAwardId,awardId:pendingAward.bonusAwardId,awardType:'REFERRAL',qualificationId:self.qualificationId,generation:1,active:true,eligible:true,theory:'100',posted:'100',pendingUntil:'2020-02-17T00:00:00.000Z',detail:{},qualification:{plan:{planCode:'LEADER'},status:{status:'EFFECTIVE'},activeIntervals:[{activeFrom:'2020-01-01T00:00:00.000Z',activeTo:null}]}}],evidence:{sources:[]},inputs:{}};
+ const pendingSnapshot=await replay.storeReplaySnapshot(tx,pendingEnvelope);
+ const pendingPosting=await replay.appendEntitlementDelta(tx,pendingSnapshot,pendingEnvelope.recipients[0],new Prisma.Decimal(0),'RETURN:PENDING_LIFECYCLE',replay.replayHash({pending:true}));
+ check('PENDING_45D historical zero entitlement appends REVERSED lifecycle',(await tx.bonusAwardLifecycleEvent.findFirstOrThrow({where:{bonusAwardId:pendingAward.bonusAwardId},orderBy:[{occurredAt:'desc'},{createdAt:'desc'}]})).status,'REVERSED');
+ check('PENDING_45D reversal creates no recovery',[pendingPosting.recoveryId,await tx.bonusRecoveryEvent.count({where:{bonusAwardId:pendingAward.bonusAwardId}})],[null,0]);
  const leftQ=await qualification(),rightQ=await qualification();
  for(const [index,q] of [leftQ,rightQ].entries())await tx.sponsorRelationship.create({data:{sponsorQualificationId:self.qualificationId,childQualificationId:q.qualificationId,sponsorSequenceNo:index+1,effectiveFrom:new Date('2020-01-01')}});
  await tx.binaryPlacement.create({data:{parentQualificationId:self.qualificationId,childQualificationId:leftQ.qualificationId,side:'LEFT',effectiveFrom:new Date('2020-01-01')}});
@@ -274,9 +282,12 @@ try{await prisma.$transaction(async tx=>{
  const posted=await returns.post(order.orderId,dto,returnKey,randomUUID());
  check('real ReturnService limits final return to original remaining amount',posted.value.lines[0].returnAmount.toString(),'1600');
  check('real multi-return reaches cumulative full return',(await tx.order.findUniqueOrThrow({where:{orderId:order.orderId}})).status,'RETURNED');
+ check('posted return creates historical Binary and Matching recalculation requests',(await tx.settlementRecalculationRequest.findMany({where:{sourceReturnCaseId:posted.value.returnCaseId},orderBy:{settlementType:'asc'}})).map(request=>[request.settlementType,request.status,request.impactedQualificationId]),[['BINARY_K1','PENDING',self.qualificationId],['MATCHING_K2','PENDING',self.qualificationId]]);
  check('same return idempotency request replays',(await returns.post(order.orderId,dto,returnKey,randomUUID())).replayed,true);
+ check('idempotent return creates no duplicate recalculation requests',await tx.settlementRecalculationRequest.count({where:{sourceReturnCaseId:posted.value.returnCaseId}}),2);
  check('same return request publishes one transactional outbox',await tx.outboxEvent.count({where:{aggregateId:posted.value.returnCaseId,eventType:'RETURN_CONFIRMED'}}),1);
  const finalOutbox=await tx.outboxEvent.findFirstOrThrow({where:{aggregateId:posted.value.returnCaseId,eventType:'RETURN_CONFIRMED'}});await replay.consumeReplayOutbox(tx,finalOutbox.outboxEventId);
+ check('successful historical replay processes recalculation requests',(await tx.settlementRecalculationRequest.findMany({where:{sourceReturnCaseId:posted.value.returnCaseId},orderBy:{settlementType:'asc'}})).map(request=>[request.settlementType,request.status,Boolean(request.processedAt)]),[['BINARY_K1','PROCESSED',true],['MATCHING_K2','PROCESSED',true]]);
  const ledgerBeforeDelivery=await tx.pvLedger.count(),postingBeforeDelivery=await tx.entitlementReplayPosting.count();
  await replay.consumeReplayOutbox(tx,finalOutbox.outboxEventId);
  check('duplicate RETURN_CONFIRMED appends no ledger',await tx.pvLedger.count(),ledgerBeforeDelivery);
@@ -321,7 +332,7 @@ try{await prisma.$transaction(async tx=>{
  check('same payout line offset replay is idempotent',(await recovery.apply(tx,{qualificationId:self.qualificationId,payoutLineId:firstLine.payoutLineId,maxAmount:new Prisma.Decimal(100)})).applied.toString(),'100');
  check('same payout line creates no duplicate offset application',await tx.recoveryApplication.count({where:{payoutLineId:firstLine.payoutLineId}}),beforeApplications);
  check('multi-batch clawback outstanding decreases only once per capacity',priorOutstanding.sub((await tx.bonusRecoveryEvent.aggregate({where:{bonusAward:{recipientQualificationId:self.qualificationId}},_sum:{outstandingAmount:true}}))._sum.outstandingAmount).toString(),'300');
- check('offset does not overwrite original PAID history',JSON.stringify(await tx.bonusAwardLifecycleEvent.findMany({where:{bonusAwardId:selfAward.bonusAwardId},orderBy:{lifecycleEventId:'asc'}})),paid);
+ check('offset does not overwrite original PAID history',await tx.bonusAwardLifecycleEvent.findUniqueOrThrow({where:{lifecycleEventId:paidEvent.lifecycleEventId}}),paidEvent);
  throw rollback;
 },{timeout:120000,isolationLevel:Prisma.TransactionIsolationLevel.Serializable});}catch(error){if(error!==rollback)failure=error;}finally{await prisma.$disconnect();}
 const out=new URL('../../governance/phase2-return-replay/final/',import.meta.url);fs.mkdirSync(out,{recursive:true});fs.writeFileSync(process.env.PHASE2_DB_EVIDENCE_PATH??new URL('db-regression.json',out),JSON.stringify({result:failure?'FAIL':'PASS',fixturesRolledBack:true,results,...(failure?{error:failure.stack}:{})},null,2)+'\n');

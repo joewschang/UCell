@@ -27,9 +27,8 @@ try{
  const epv=new EpvService(prisma,new RuntimeRuleService(prisma),new BonusQueryService(prisma),new EpvMonthService());
  check('original monthly EPV',(await epv.recognizeOrder(order.orderId)).epv,'1680');
  const award=await prisma.bonusAward.findFirstOrThrow({where:{sourceQualificationId:q.qualificationId,awardType:'EPV'}});
- await prisma.bonusAwardLifecycleEvent.create({data:{bonusAwardId:award.bonusAwardId,status:'PAID',occurredAt:new Date(),reasonCode:'GOLDEN_TEST_ONLY'}});
+ const paidEvent=await prisma.bonusAwardLifecycleEvent.create({data:{bonusAwardId:award.bonusAwardId,status:'PAID',occurredAt:new Date(),reasonCode:'GOLDEN_TEST_ONLY'}});
  const original=JSON.stringify(await prisma.bonusAward.findUniqueOrThrow({where:{bonusAwardId:award.bonusAwardId}}));
- const paid=JSON.stringify(await prisma.bonusAwardLifecycleEvent.findMany({where:{bonusAwardId:award.bonusAwardId},orderBy:{lifecycleEventId:'asc'}}));
  const returns=new ReturnService(prisma,new IdempotencyService(prisma),new AuditService(),new OutboxService());
  const dto={reasonCode:'GOLDEN_PARTIAL_TEST',occurredAt:at.toISOString(),lines:[{orderLineId:order.lines[0].orderLineId,quantity:1}]};
  const cases=[];for(let i=0;i<2;i++)cases.push((await returns.post(order.orderId,dto,randomUUID(),randomUUID())).value);
@@ -57,7 +56,8 @@ try{
  check('PAID clawback capped at original historical entitlement',(await prisma.bonusRecoveryEvent.aggregate({where:{bonusAwardId:award.bonusAwardId},_sum:{recoveryAmount:true}}))._sum.recoveryAmount.toString(),'840');
  check('both original return actions exist',await prisma.replayAction.count({where:{actionKey:{in:cases.map(c=>'RETURN:'+c.returnCaseId)}}}),2);
  check('original award unchanged',JSON.stringify(await prisma.bonusAward.findUniqueOrThrow({where:{bonusAwardId:award.bonusAwardId}})),original);
- check('original PAID history unchanged',JSON.stringify(await prisma.bonusAwardLifecycleEvent.findMany({where:{bonusAwardId:award.bonusAwardId},orderBy:{lifecycleEventId:'asc'}})),paid);
+ check('original PAID history unchanged',await prisma.bonusAwardLifecycleEvent.findUniqueOrThrow({where:{lifecycleEventId:paidEvent.lifecycleEventId}}),paidEvent);
+ check('PAID recovery appends CLAWBACK lifecycle',await prisma.bonusAwardLifecycleEvent.count({where:{bonusAwardId:award.bonusAwardId,status:'CLAWBACK',reasonCode:'HISTORICAL_REPLAY'}}),1);
  const afterPosting=await prisma.entitlementReplayPosting.count();
  await leases.processLeasedReplay(prisma,firstLease);
  check('stale consumer creates no posting',await prisma.entitlementReplayPosting.count(),afterPosting);

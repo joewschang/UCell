@@ -10,10 +10,23 @@ describe('v0.5 Return / Reversal / Clawback', () => {
   it.todo('partial return creates proportional negative GPV event');
   it('GPV reversal references original GPV event',()=>expect(assertion('GPV reversal references original GPV event')).toBe(true));
   it('returned quantity cannot exceed ordered quantity across multiple returns',()=>expect(assertion('cumulative returned quantity cannot exceed original quantity')).toBe(true));
-  it.todo('PENDING_45D direct referral/equalization becomes REVERSED');
-  it.todo('EFFECTIVE/PAYABLE/PAID direct award creates CLAWBACK and recovery ledger');
+  it('PENDING_45D direct referral/equalization becomes REVERSED',()=>{
+    expect(assertion('PENDING_45D historical zero entitlement appends REVERSED lifecycle')).toBe('REVERSED');
+    expect(assertion('PENDING_45D reversal creates no recovery')).toEqual([null,0]);
+  });
+  it('EFFECTIVE/PAYABLE/PAID direct award creates CLAWBACK and recovery ledger',()=>{
+    expect(assertion('PAID historical reduction appends one CLAWBACK lifecycle')).toBe(1);
+    expect(assertion('outstanding recovery tracks PAID clawback')).toBe('840');
+    expect(assertion('offset does not overwrite original PAID history')).toBeDefined();
+  });
   it('original bonus award is never updated/deleted',()=>{assertion('original awards are immutable');assertion('K0 original award baseline preserved');});
-  it.todo('Binary and Matching create settlement recalculation requests instead of rewriting history');
+  it('Binary and Matching create settlement recalculation requests instead of rewriting history',()=>{
+    expect(assertion('posted return creates historical Binary and Matching recalculation requests').map((row:any[])=>row.slice(0,2))).toEqual([['BINARY_K1','PENDING'],['MATCHING_K2','PENDING']]);
+    expect(assertion('idempotent return creates no duplicate recalculation requests')).toBe(2);
+    expect(assertion('successful historical replay processes recalculation requests').map((row:any[])=>row.slice(0,2))).toEqual([['BINARY_K1','PROCESSED'],['MATCHING_K2','PROCESSED']]);
+    assertion('all original Binary settlement batches unchanged');
+    assertion('all original Matching settlement batches unchanged');
+  });
   it('reprocessing RETURN_CONFIRMED is idempotent',()=>{assertion('duplicate RETURN_CONFIRMED appends no ledger');assertion('duplicate RETURN_CONFIRMED appends no entitlement posting');});
 });
 

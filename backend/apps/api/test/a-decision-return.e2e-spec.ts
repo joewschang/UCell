@@ -13,7 +13,7 @@ describe('A Decision return safeguards',()=>{
   });
   const fixture=(previous:number,amount:number)=>{
     const update=jest.fn();
-    const tx={order:{findUnique:async()=>({orderId:'o',status:'PARTIAL_RETURN',netAmount:d(100),lines:[{orderLineId:'l',quantity:d(10),lineAmount:d(amount),gpvAmountSnapshot:d(10)}]}),update},returnCase:{findUnique:async()=>null,create:async()=>({returnCaseId:'r'}),findUniqueOrThrow:async()=>({returnCaseId:'r'})},returnLine:{aggregate:jest.fn().mockResolvedValueOnce({_sum:{returnAmount:d(previous)}}).mockResolvedValue({_sum:{quantity:d(5)}}),create:async()=>({})}};
+    const tx={order:{findUnique:async()=>({orderId:'o',qualificationId:'q',ruleVersionCode:'TEST_ONLY',paidAt:new Date('2020-01-01'),status:'PARTIAL_RETURN',netAmount:d(100),lines:[{orderLineId:'l',quantity:d(10),lineAmount:d(amount),gpvAmountSnapshot:d(10)}]}),update},returnCase:{findUnique:async()=>null,create:async()=>({returnCaseId:'r'}),findUniqueOrThrow:async()=>({returnCaseId:'r'})},returnLine:{aggregate:jest.fn().mockResolvedValueOnce({_sum:{returnAmount:d(previous)}}).mockResolvedValue({_sum:{quantity:d(5)}}),create:async()=>({})},settlementBatch:{findMany:async()=>[]},settlementRecalculationRequest:{createMany:async()=>({count:0})}};
     const service=new ReturnService({} as any,{execute:async(_:unknown,__:unknown,___:unknown,work:any)=>work(tx)} as any,{write:async()=>{}} as any,{enqueue:async()=>{}} as any);
     return {service,update};
   };

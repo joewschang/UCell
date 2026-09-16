@@ -1,10 +1,10 @@
 {
   "decisionRegisterRecordVersion": 2,
   "originalBaseline": 148,
-  "currentExecutableTodo": 42,
-  "netPlaceholderReduction": 106,
+  "currentExecutableTodo": 39,
+  "netPlaceholderReduction": 109,
   "counts": {
-    "IMPLEMENTABLE": 9,
+    "IMPLEMENTABLE": 6,
     "ENGINEERING": 28,
     "PENDING_DECISION": 3,
     "LEGACY_TEST_DRIFT": 2
@@ -76,35 +76,14 @@
     },
     {
       "file": "backend/apps/api/test/negative-flow-v05.e2e-spec.ts",
-      "line": 13,
-      "case": "PENDING_45D direct referral/equalization becomes REVERSED",
-      "classification": "IMPLEMENTABLE",
-      "reason": "Decision Register v2 and Core Logic Addendum v2 provide the governing rule; implementation and evidence remain."
-    },
-    {
-      "file": "backend/apps/api/test/negative-flow-v05.e2e-spec.ts",
-      "line": 14,
-      "case": "EFFECTIVE/PAYABLE/PAID direct award creates CLAWBACK and recovery ledger",
-      "classification": "IMPLEMENTABLE",
-      "reason": "Decision Register v2 and Core Logic Addendum v2 provide the governing rule; implementation and evidence remain."
-    },
-    {
-      "file": "backend/apps/api/test/negative-flow-v05.e2e-spec.ts",
-      "line": 16,
-      "case": "Binary and Matching create settlement recalculation requests instead of rewriting history",
-      "classification": "IMPLEMENTABLE",
-      "reason": "Decision Register v2 and Core Logic Addendum v2 provide the governing rule; implementation and evidence remain."
-    },
-    {
-      "file": "backend/apps/api/test/negative-flow-v05.e2e-spec.ts",
-      "line": 21,
+      "line": 34,
       "case": "EFFECTIVE awards become PAYABLE via payout batch",
       "classification": "ENGINEERING",
       "reason": "The governing behavior is already approved; remaining work is implementation or executable verification."
     },
     {
       "file": "backend/apps/api/test/negative-flow-v05.e2e-spec.ts",
-      "line": 24,
+      "line": 37,
       "case": "mark-paid writes PAID lifecycle events",
       "classification": "ENGINEERING",
       "reason": "The governing behavior is already approved; remaining work is implementation or executable verification."
@@ -139,28 +118,28 @@
     },
     {
       "file": "backend/apps/api/test/v061-replay.e2e-spec.ts",
-      "line": 76,
+      "line": 86,
       "case": "upgrade creates future plan history and does not alter past awards",
       "classification": "ENGINEERING",
       "reason": "The governing behavior is already approved; remaining work is implementation or executable verification."
     },
     {
       "file": "backend/apps/api/test/v061-replay.e2e-spec.ts",
-      "line": 77,
+      "line": 87,
       "case": "transfer preserves qualificationId and sponsor/binary positions",
       "classification": "ENGINEERING",
       "reason": "The governing behavior is already approved; remaining work is implementation or executable verification."
     },
     {
       "file": "backend/apps/api/test/v061-replay.e2e-spec.ts",
-      "line": 78,
+      "line": 88,
       "case": "exit closes holder interval and status becomes EXITED",
       "classification": "ENGINEERING",
       "reason": "The governing behavior is already approved; remaining work is implementation or executable verification."
     },
     {
       "file": "backend/apps/api/test/v061-replay.e2e-spec.ts",
-      "line": 79,
+      "line": 89,
       "case": "company retransfer opens a new holder interval",
       "classification": "ENGINEERING",
       "reason": "The governing behavior is already approved; remaining work is implementation or executable verification."

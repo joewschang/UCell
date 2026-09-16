@@ -347,6 +347,10 @@ export async function appendEntitlementDelta(tx:Prisma.TransactionClient,row:any
     correctionAwardId=award.bonusAwardId;
     await tx.bonusAwardLifecycleEvent.create({data:{bonusAwardId:correctionAwardId,status:new Date(recipient.pendingUntil)<=new Date()?'EFFECTIVE':'PENDING_45D',occurredAt:new Date(),reasonCode:'HISTORICAL_REPLAY'}});
   } else if(delta.lt(0)) {
+    const latest=await tx.bonusAwardLifecycleEvent.findFirst({where:{bonusAwardId:recipient.awardId},orderBy:[{occurredAt:'desc'},{createdAt:'desc'},{lifecycleEventId:'desc'}]});
+    if(entitlement.eq(0)&&latest&&['CALCULATED','PENDING_45D'].includes(latest.status)) {
+      await tx.bonusAwardLifecycleEvent.create({data:{bonusAwardId:recipient.awardId,status:'REVERSED',occurredAt:new Date(),reasonCode:'HISTORICAL_REPLAY'}});
+    } else {
     let anchorId=recipient.awardId;
     if(recipient.awardType==='RPV') {
       const anchor=await tx.bonusAward.create({data:{awardType:'RPV',recipientQualificationId:recipient.qualificationId,sourceEventId:randomUUID(),generationNo:recipient.generation,
@@ -357,6 +361,8 @@ export async function appendEntitlementDelta(tx:Prisma.TransactionClient,row:any
     const recovery=await tx.bonusRecoveryEvent.create({data:{bonusAwardId:anchorId,returnCaseId,recoveryAmount:delta.abs(),outstandingAmount:delta.abs(),status:'OPEN',
       reasonCode:'HISTORICAL_REPLAY:'+actionKey,occurredAt:new Date()}});
     recoveryId=recovery.bonusRecoveryEventId;
+      if(latest&&['EFFECTIVE','PAYABLE','PAID'].includes(latest.status)) await tx.bonusAwardLifecycleEvent.create({data:{bonusAwardId:recipient.awardId,status:'CLAWBACK',occurredAt:new Date(),reasonCode:'HISTORICAL_REPLAY'}});
+    }
   }
   return tx.entitlementReplayPosting.create({data:{actionKey,snapshotId:row.snapshotId,entitlementKey:recipient.key,recipientQualificationId:recipient.qualificationId,
     originallyPosted:original,recalculatedEntitlement:entitlement,delta,stateHash,correctionAwardId,recoveryId}});

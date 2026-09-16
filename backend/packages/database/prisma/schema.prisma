@@ -938,6 +938,7 @@ model SettlementRecalculationRequest {
   createdAt                       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   processedAt                     DateTime? @map("processed_at") @db.Timestamptz(6)
 
+  @@unique([sourceReturnCaseId,settlementType,periodStart,periodEnd])
   @@index([status,periodEnd])
   @@map("settlement_recalculation_request")
   @@schema("ledger")

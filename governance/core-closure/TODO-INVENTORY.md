@@ -1,12 +1,12 @@
 # R1.0B Decision Register v2 TODO Inventory
 
-Original audited baseline: 148. Current executable TODO: 42. Net placeholder reduction: 106.
+Original audited baseline: 148. Current executable TODO: 39. Net placeholder reduction: 109.
 
 Classification is governance status, not implementation completion. Pending decisions fail closed and Legacy Test Drift must be corrected without changing the frozen business rules.
 
 | Classification | Count |
 |---|---:|
-| IMPLEMENTABLE | 9 |
+| IMPLEMENTABLE | 6 |
 | ENGINEERING | 28 |
 | PENDING_DECISION | 3 |
 | LEGACY_TEST_DRIFT | 2 |
@@ -22,19 +22,16 @@ Classification is governance status, not implementation completion. Pending deci
 | backend/apps/api/test/epv-global-v05.e2e-spec.ts | 31 | empty rank slice rolls upward to next higher rank | ENGINEERING | The governing behavior is already approved; remaining work is implementation or executable verification. |
 | backend/apps/api/test/epv-global-v05.e2e-spec.ts | 32 | welfare 2% is accrued only; no distribution without a formal rule | ENGINEERING | The governing behavior is already approved; remaining work is implementation or executable verification. |
 | backend/apps/api/test/negative-flow-v05.e2e-spec.ts | 10 | partial return creates proportional negative GPV event | PENDING_DECISION | Historical GPV to formal PV/BV mapping is not approved; only this historical conversion remains fail-closed. |
-| backend/apps/api/test/negative-flow-v05.e2e-spec.ts | 13 | PENDING_45D direct referral/equalization becomes REVERSED | IMPLEMENTABLE | Decision Register v2 and Core Logic Addendum v2 provide the governing rule; implementation and evidence remain. |
-| backend/apps/api/test/negative-flow-v05.e2e-spec.ts | 14 | EFFECTIVE/PAYABLE/PAID direct award creates CLAWBACK and recovery ledger | IMPLEMENTABLE | Decision Register v2 and Core Logic Addendum v2 provide the governing rule; implementation and evidence remain. |
-| backend/apps/api/test/negative-flow-v05.e2e-spec.ts | 16 | Binary and Matching create settlement recalculation requests instead of rewriting history | IMPLEMENTABLE | Decision Register v2 and Core Logic Addendum v2 provide the governing rule; implementation and evidence remain. |
-| backend/apps/api/test/negative-flow-v05.e2e-spec.ts | 21 | EFFECTIVE awards become PAYABLE via payout batch | ENGINEERING | The governing behavior is already approved; remaining work is implementation or executable verification. |
-| backend/apps/api/test/negative-flow-v05.e2e-spec.ts | 24 | mark-paid writes PAID lifecycle events | ENGINEERING | The governing behavior is already approved; remaining work is implementation or executable verification. |
+| backend/apps/api/test/negative-flow-v05.e2e-spec.ts | 34 | EFFECTIVE awards become PAYABLE via payout batch | ENGINEERING | The governing behavior is already approved; remaining work is implementation or executable verification. |
+| backend/apps/api/test/negative-flow-v05.e2e-spec.ts | 37 | mark-paid writes PAID lifecycle events | ENGINEERING | The governing behavior is already approved; remaining work is implementation or executable verification. |
 | backend/apps/api/test/qualification-isolation.e2e-spec.ts | 21 | member share link is bound to selected qualification | ENGINEERING | The governing behavior is already approved; remaining work is implementation or executable verification. |
 | backend/apps/api/test/v060-adjustment-lifecycle.e2e-spec.ts | 40 | upgrade has no retroactive bonus effect | ENGINEERING | The governing behavior is already approved; remaining work is implementation or executable verification. |
 | backend/apps/api/test/v060-adjustment-lifecycle.e2e-spec.ts | 41 | transfer preserves qualificationId and tree positions | ENGINEERING | The governing behavior is already approved; remaining work is implementation or executable verification. |
 | backend/apps/api/test/v060-adjustment-lifecycle.e2e-spec.ts | 42 | exit preserves qualification for company-held re-transfer | ENGINEERING | The governing behavior is already approved; remaining work is implementation or executable verification. |
-| backend/apps/api/test/v061-replay.e2e-spec.ts | 76 | upgrade creates future plan history and does not alter past awards | ENGINEERING | The governing behavior is already approved; remaining work is implementation or executable verification. |
-| backend/apps/api/test/v061-replay.e2e-spec.ts | 77 | transfer preserves qualificationId and sponsor/binary positions | ENGINEERING | The governing behavior is already approved; remaining work is implementation or executable verification. |
-| backend/apps/api/test/v061-replay.e2e-spec.ts | 78 | exit closes holder interval and status becomes EXITED | ENGINEERING | The governing behavior is already approved; remaining work is implementation or executable verification. |
-| backend/apps/api/test/v061-replay.e2e-spec.ts | 79 | company retransfer opens a new holder interval | ENGINEERING | The governing behavior is already approved; remaining work is implementation or executable verification. |
+| backend/apps/api/test/v061-replay.e2e-spec.ts | 86 | upgrade creates future plan history and does not alter past awards | ENGINEERING | The governing behavior is already approved; remaining work is implementation or executable verification. |
+| backend/apps/api/test/v061-replay.e2e-spec.ts | 87 | transfer preserves qualificationId and sponsor/binary positions | ENGINEERING | The governing behavior is already approved; remaining work is implementation or executable verification. |
+| backend/apps/api/test/v061-replay.e2e-spec.ts | 88 | exit closes holder interval and status becomes EXITED | ENGINEERING | The governing behavior is already approved; remaining work is implementation or executable verification. |
+| backend/apps/api/test/v061-replay.e2e-spec.ts | 89 | company retransfer opens a new holder interval | ENGINEERING | The governing behavior is already approved; remaining work is implementation or executable verification. |
 | backend/apps/api/test/v063-golden-path.e2e-spec.ts | 45 | Taiwan local time maps to configured settlement week | IMPLEMENTABLE | Decision Register v2 and Core Logic Addendum v2 provide the governing rule; implementation and evidence remain. |
 | backend/apps/api/test/v064-golden-dataset.e2e-spec.ts | 25 | keeps Sponsor and Binary trees distinct | IMPLEMENTABLE | Decision Register v2 and Core Logic Addendum v2 provide the governing rule; implementation and evidence remain. |
 | backend/apps/api/test/v064-golden-dataset.e2e-spec.ts | 26 | validates Referral 15/20/25 | ENGINEERING | The governing behavior is already approved; remaining work is implementation or executable verification. |

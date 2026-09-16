@@ -39,6 +39,24 @@ export class ReturnService {
         }
       });
 
+      if(!order.paidAt) throw new UnprocessableEntityException({
+        code:'HISTORICAL_SNAPSHOT_MISSING',message:'Original order recognition timestamp is required for settlement replay.'
+      });
+      const affectedSettlements=await tx.settlementBatch.findMany({
+        where:{
+          settlementType:{in:['BINARY_K1','MATCHING_K2']},status:'FINALIZED',
+          ruleVersionCode:order.ruleVersionCode,periodStart:{lte:order.paidAt},periodEnd:{gt:order.paidAt}
+        },
+        select:{settlementType:true,periodStart:true,periodEnd:true}
+      });
+      if(affectedSettlements.length) await tx.settlementRecalculationRequest.createMany({
+        data:affectedSettlements.map(batch=>({
+          sourceReturnCaseId:ret.returnCaseId,settlementType:batch.settlementType,
+          periodStart:batch.periodStart,periodEnd:batch.periodEnd,
+          impactedQualificationId:order.qualificationId,status:'PENDING'
+        })),skipDuplicates:true
+      });
+
       let totalReturn=new Prisma.Decimal(0);
       for(const input of dto.lines){
         const line=order.lines.find(x=>x.orderLineId===input.orderLineId);

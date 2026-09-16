@@ -37,9 +37,19 @@ describe('v0.6.1 deterministic replay',()=>{
  it('K2 is recomputed from adjusted matching theory',()=>{const e=binary();e.recipients=[recipient({awardType:'MATCHING',sourceAwardId:'source',rate:'1'})];const r=periodMatching(e,new Map([['source',d(1000)]]),d(100));expect(r.k.toString()).toBe('0.015');expect(r.payables.get('award')!.toString()).toBe('15');});
  it('original settlement, award and carry rows remain unchanged',()=>{const e=binary(),before=JSON.stringify(e);periodBinary(e,volumes(),new Map());expect(JSON.stringify(e)).toBe(before);});
  for(const [name,amount] of [['positive delta creates compensating award',120],['negative delta creates recovery',80]] as const){
-  it(name,async()=>{const e=binary(),r=e.recipients[0],before=JSON.stringify(e);const tx={entitlementReplayPosting:{findUnique:jest.fn().mockResolvedValue(null),aggregate:jest.fn().mockResolvedValue({_sum:{delta:null}}),create:jest.fn().mockImplementation(({data})=>data)},bonusAward:{create:jest.fn().mockResolvedValue({bonusAwardId:'new'})},bonusAwardLifecycleEvent:{create:jest.fn()},bonusRecoveryEvent:{create:jest.fn().mockResolvedValue({bonusRecoveryEventId:'recovery'})}};
+  it(name,async()=>{const e=binary(),r=e.recipients[0],before=JSON.stringify(e);const tx={entitlementReplayPosting:{findUnique:jest.fn().mockResolvedValue(null),aggregate:jest.fn().mockResolvedValue({_sum:{delta:null}}),create:jest.fn().mockImplementation(({data})=>data)},bonusAward:{create:jest.fn().mockResolvedValue({bonusAwardId:'new'})},bonusAwardLifecycleEvent:{findFirst:jest.fn().mockResolvedValue(null),create:jest.fn()},bonusRecoveryEvent:{create:jest.fn().mockResolvedValue({bonusRecoveryEventId:'recovery'})}};
    const post=await appendEntitlementDelta(tx as never,sealed(e),r,d(amount),'RETURN:one','hash');expect(post.delta.toString()).toBe(String(amount-100));expect(JSON.stringify(e)).toBe(before);
    if(amount>100){expect(tx.bonusAward.create).toHaveBeenCalledTimes(1);expect(tx.bonusRecoveryEvent.create).not.toHaveBeenCalled();}else{expect(tx.bonusRecoveryEvent.create).toHaveBeenCalledWith({data:expect.objectContaining({bonusAwardId:'award',recoveryAmount:d(20),outstandingAmount:d(20)})});expect(tx.bonusAward.create).not.toHaveBeenCalled();}
+ });
+ }
+ for(const [status,expected] of [['PENDING_45D','REVERSED'],['PAID','CLAWBACK']] as const) {
+  it(`${status} negative historical entitlement appends ${expected} lifecycle`,async()=>{
+   const e=binary(),r=recipient({awardType:'REFERRAL',theory:'100',posted:'100'});e.recipients=[r];
+   const tx={entitlementReplayPosting:{findUnique:jest.fn().mockResolvedValue(null),aggregate:jest.fn().mockResolvedValue({_sum:{delta:null}}),create:jest.fn().mockImplementation(({data})=>data)},bonusAward:{create:jest.fn()},
+    bonusAwardLifecycleEvent:{findFirst:jest.fn().mockResolvedValue({status,occurredAt:new Date()}),create:jest.fn().mockImplementation(({data})=>data)},bonusRecoveryEvent:{create:jest.fn().mockResolvedValue({bonusRecoveryEventId:'recovery'})}};
+   await appendEntitlementDelta(tx as never,sealed(e),r,d(0),'RETURN:lifecycle','hash','00000000-0000-0000-0000-000000000001');
+   expect(tx.bonusAwardLifecycleEvent.create).toHaveBeenCalledWith({data:expect.objectContaining({bonusAwardId:'award',status:expected,reasonCode:'HISTORICAL_REPLAY'})});
+   expect(tx.bonusRecoveryEvent.create).toHaveBeenCalledTimes(status==='PAID'?1:0);
   });
  }
  it('missing original evidence fails closed',()=>{expect(()=>verifyReplayEnvelope(null)).toThrow();});

@@ -8,4 +8,4 @@
 | Matching traversal | Historical Sponsor/Active/Qualification evidence; fail closed | Inactive Sponsor edge decision |
 | EPV | Historical month recomputation | Expanded concurrent/cross-period cases |
 | RPV | Historical Binary allocation | Expanded concurrency workload |
-| Return recovery | Positive adjustment and negative recovery both DB asserted; originals immutable | Complete consolidated sale-to-recovery Golden |
+| Return recovery | Pending cancellation, PAID clawback/recovery, positive adjustment, request processing, and immutable originals DB asserted | Consolidate as named end-to-end Golden journey |
