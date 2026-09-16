@@ -1,11 +1,11 @@
 {
   "decisionRegisterRecordVersion": 2,
   "originalBaseline": 148,
-  "currentExecutableTodo": 10,
-  "netPlaceholderReduction": 138,
+  "currentExecutableTodo": 7,
+  "netPlaceholderReduction": 141,
   "counts": {
     "IMPLEMENTABLE": 0,
-    "ENGINEERING": 5,
+    "ENGINEERING": 2,
     "PENDING_DECISION": 3,
     "LEGACY_TEST_DRIFT": 2
   },
@@ -29,27 +29,6 @@
       "file": "backend/apps/api/test/qualification-isolation.e2e-spec.ts",
       "line": 21,
       "case": "member share link is bound to selected qualification",
-      "classification": "ENGINEERING",
-      "reason": "The governing behavior is already approved; remaining work is implementation or executable verification."
-    },
-    {
-      "file": "backend/apps/api/test/v060-adjustment-lifecycle.e2e-spec.ts",
-      "line": 40,
-      "case": "upgrade has no retroactive bonus effect",
-      "classification": "ENGINEERING",
-      "reason": "The governing behavior is already approved; remaining work is implementation or executable verification."
-    },
-    {
-      "file": "backend/apps/api/test/v060-adjustment-lifecycle.e2e-spec.ts",
-      "line": 41,
-      "case": "transfer preserves qualificationId and tree positions",
-      "classification": "ENGINEERING",
-      "reason": "The governing behavior is already approved; remaining work is implementation or executable verification."
-    },
-    {
-      "file": "backend/apps/api/test/v060-adjustment-lifecycle.e2e-spec.ts",
-      "line": 42,
-      "case": "exit preserves qualification for company-held re-transfer",
       "classification": "ENGINEERING",
       "reason": "The governing behavior is already approved; remaining work is implementation or executable verification."
     },
