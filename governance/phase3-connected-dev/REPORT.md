@@ -342,3 +342,5 @@ CODE COMPLETE: scoped UX-2 six screens and owned-Qualification read API. CONNECT
 ## UX-3 Design System freeze and rollout
 
 Full report: ../ux/ux3/REPORT.md. Full Connected DEV matrix is 40 PASS / 7 BLOCKED / 0 FAIL. Backend API 130 PASS / 52 TODO; Member 116 PASS; Admin 22 PASS. UX-only rollout added no API, migration, formula or monetary semantic change. Production remains BLOCKED.
+
+Latest SSOT note: remote commits `d1d3b40` / `c811654` approve Core Logic Addendum v2. Eligible-consumption defaults and prospective PV/BV recognition are now decided there. Exact Production cut-off clocks, deterministic legacy GPV migration mapping and unspecified Matching traversal edges remain fail-closed blockers. UX-3 does not implement or reinterpret the new business rules.

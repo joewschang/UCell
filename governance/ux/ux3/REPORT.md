@@ -22,4 +22,6 @@ Commands include toolchain/status/diff, Backend/Worker/Admin/Member builds, Pris
 
 API changes in UX-3: **NONE**. DB migrations: **NONE**. Business logic changes: **NONE**. Monetary semantics changes: **NONE**. Core facts, historical evidence, authorization, ownership and calculation were not changed.
 
-Pending Decisions remain eligible-consumption scope, formal PV/BV mapping and Production operational calendar/cut-off. Operational credentials for LINE/LIFF and Entra/RBAC, Security E2E, UAT, Backup/Restore and release sign-off remain blockers. Production Promotion is **BLOCKED**. No merge main, force push or RC promotion.
+During final publication, the remote integration branch added approved Core Logic Addendum v2 (`d1d3b40`) and the current SSOT pointer (`c811654`). Eligible-consumption defaults and the prospective PV/BV recognition model are therefore no longer unqualified Pending Decisions. UX-3 introduced no implementation of those rules. Remaining fail-closed SSOT/configuration blockers are exact Production cut-off clock values, deterministic migration mapping for pre-existing GPV facts, and unspecified Matching depth skip/stop/compression edges.
+
+Operational credentials for LINE/LIFF and Entra/RBAC, Security E2E, UAT, Backup/Restore and release sign-off remain blockers. Production Promotion is **BLOCKED**. No merge main, force push or RC promotion.
