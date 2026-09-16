@@ -1,5 +1,10 @@
 # UCell Member MVP Development Status
 
+Accepted homepage design: **Luminous Midnight**, included together with Admin's
+**Midnight Current** in the [combined UI baseline](../UI_DESIGN_BASELINE.md).
+This supersedes the warm botanical Member homepage. Both remain on the development
+branch; acceptance of appearance is not production-readiness approval.
+
 Latest checkpoint: v0.6 (prior checkpoint history retained below)
 Current integration handoff: [BACKEND_INTEGRATION_HANDOFF.md](docs/BACKEND_INTEGRATION_HANDOFF.md).
 Prior verified implementation: `747daed9` — 87 frontend tests, seven isolated

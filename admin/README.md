@@ -1,5 +1,9 @@
 # UCell Admin MVP v0.6.0 — UAT + Security Convergence / Release Preparation
 
+登入後 Dashboard 已納入 **Midnight Current 營運指揮中心**設計，與會員首頁
+**Luminous Midnight** 一併成為[開發介面基線](../UI_DESIGN_BASELINE.md)。
+以下原版本功能說明保留；視覺採用不代表正式登入／上線驗證已完成。
+
 制度：R1.0B FROZEN  
 Backend companion：Reviewed v0.6.10-R6 UAT/Security/ReleasePrep  
 Frontend：Admin MVP v0.6.0
