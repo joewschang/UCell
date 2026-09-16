@@ -104,6 +104,15 @@ resource allowAzure 'Microsoft.DBforPostgreSQL/flexibleServers/firewallRules@202
   properties: { startIpAddress: '0.0.0.0', endIpAddress: '0.0.0.0' }
 }
 
+resource postgresExtensions 'Microsoft.DBforPostgreSQL/flexibleServers/configurations@2024-08-01' = {
+  parent: databaseServer
+  name: 'azure.extensions'
+  properties: {
+    value: 'PGCRYPTO'
+    source: 'user-override'
+  }
+}
+
 resource database 'Microsoft.DBforPostgreSQL/flexibleServers/databases@2024-08-01' = {
   parent: databaseServer
   name: 'ucell_stage'
