@@ -1,0 +1,17 @@
+.git
+.gitignore
+.github
+**/node_modules
+**/dist
+**/coverage
+**/.vite
+**/.turbo
+**/*.log
+**/.env
+**/.env.*
+!.env.example
+admin/test-results
+admin/playwright-report
+member/test-results
+member/playwright-report
+governance/ux/screenshots
