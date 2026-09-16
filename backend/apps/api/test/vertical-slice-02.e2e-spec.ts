@@ -1,6 +1,7 @@
 import { MembershipApplicationService } from '../src/modules/application/membership-application.service';
 import { ActiveService } from '../src/modules/active/active.service';
 import { SubscriptionService } from '../src/modules/subscription/subscription.service';
+import { RpvService } from '../src/modules/rpv/rpv.service';
 import { execFileSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -160,9 +161,12 @@ describe('Vertical Slice 02 - Membership / Active / Subscription / RPV', () => {
     expect(rpvActual('due RPV recognition updates original schedule identity')[0]).toBe('RECOGNIZED');
     expect(rpvActual('RPV duplicate recognition appends no original event')).toBe(1);
   });
-  it.todo('0 direct unlocks 5 binary generations');
-  it.todo('1 direct unlocks 8 binary generations');
-  it.todo('2+ directs unlocks 12 binary generations');
+  for(const [directs,depth] of [[0,5],[1,8],[2,12],[3,12]] as const){
+    it(`${directs}${directs>=2?'+':''} directs unlocks ${depth} binary generations`,()=>{
+      const service=new RpvService({} as any,{} as any);
+      expect(service.unlockedDepth(directs)).toBe(depth);
+    });
+  }
   it.todo('inactive upline receives 0 and is not compressed');
   it.todo('higher generation remains independently evaluated');
   it('re-running a recognition cannot duplicate RPV or awards',()=>{

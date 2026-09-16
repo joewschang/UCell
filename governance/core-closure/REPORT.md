@@ -2,6 +2,13 @@
 
 Date: 2026-09-16 (Asia/Taipei)
 
+## RPV unlock-depth continuation
+
+- TODO: 20 -> 17 (`ENGINEERING` 15 -> 12; pending classifications unchanged).
+- The executable suite now calls the production `RpvService.unlockedDepth` implementation and verifies 0 direct = 5 generations, 1 direct = 8, and 2+ directs = 12.
+- The existing isolated Golden evidence for RPV Binary allocation remains the DB-level companion evidence. No inactive-sponsor skip/stop/compression behavior is inferred; both affected cases remain `PENDING_DECISION`.
+- Backend API: 170 PASS / 17 TODO / 0 FAIL.
+
 ## Subscription schedule cardinality continuation
 
 - TODO: 23 -> 20 (`ENGINEERING` 18 -> 15; pending classifications unchanged).
