@@ -8,3 +8,5 @@
 6. Formal LINE/LIFF, Entra/RBAC and UAT remain unverified. Member screenshot harness is explicitly mock visual-only; real isolated DB Golden, Member contract/BOLA and Admin HTTP gates remain separate.
 
 API changes NONE. DB migration NONE. Monetary/business logic changes NONE.
+
+Windows CRLF normalization: a temporary diff --check with core.autocrlf=false treated existing carriage returns as trailing whitespace. The repository-default staged diff --check passed after normal Git normalization. No whitespace gate disabled or global Git config changed.

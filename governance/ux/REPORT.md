@@ -1,6 +1,6 @@
 # UX-1 checkpoint report — 2026-09-16
 
-Branch: integration/member-backend-mvp. Pre-change checkpoint bce9296 pushed before UI edits. Source/evidence checkpoint SHA will be recorded after commit; final screenshot metadata references the committed source.
+Branch: integration/member-backend-mvp. Pre-change checkpoint bce9296 pushed before UI edits. Source checkpoint: 5a05c3c9b722555955175451cbfa7db832681677 (pushed). Final screenshot metadata references this committed source.
 
 ## Delivered pattern
 
@@ -43,3 +43,5 @@ API changes: NONE. DB migration: NONE. Business logic changes: NONE. No merge ma
 Screenshots: references/member-{dashboard,organization,bonus}-{375,390,430,768}.png and references/admin-{dashboard,person-qualification,bonus-settlement}-{1366,1440,1920,768}.png. Fixture/source commit metadata in references/results.json.
 
 Final Connected DEV matrix: 40 PASS / 7 BLOCKED / 0 FAIL. Browser verifies forward/reverse modal Tab containment, Escape focus restoration, confirmed Qualification feedback and mobile touch targets.
+
+UX-1 source checkpoint: 5a05c3c9b722555955175451cbfa7db832681677; pushed origin/integration/member-backend-mvp. Final screenshot metadata is captured against this committed source. Follow-up evidence update changes documentation/reference metadata only.

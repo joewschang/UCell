@@ -33,3 +33,5 @@ Member mobile browser smoke PASS is explicitly MOCK UI only, using installed loc
 ## UX-1 preserved integration checkpoint
 
 Member 111 tests (106 preserved +5 design-system), real Member HTTP/DB Golden201 assertions x2, Server-confirmed Qualification switching +clear ball feedback, Dashboard/Organization/Bonus shared UI; current order/notification/profile/repurchase/logout connected flows unchanged. No API/auth/monetary changes. Visual mock fixture != Connected/Production verification; formal LIFF/Entra/UAT remain pending. Details ../ux/REPORT.md.
+
+UX-1 source checkpoint: 5a05c3c9b722555955175451cbfa7db832681677; pushed origin/integration/member-backend-mvp. Final screenshot metadata is captured against this committed source. Follow-up evidence update changes documentation/reference metadata only.

@@ -308,3 +308,5 @@ Member continuation implementation checkpoint: 0bdc0eac949f406fa46b9da2367035e2d
 ## UX-1 Design System + preserved Connected MVP — 2026-09-16
 
 See ../ux/REPORT.md and UX-PASS-FAIL-MATRIX.md. Member 111 (106 existing +5), Admin 14 (11 existing +3), Backend API106 with73TODO, Member real HTTP/DB201x2, Replay129, Admin49HTTP PASS after API/Worker restoration. Six initial pages and24viewport references verified; Member screenshots mock visual-only, formal LIFF remains pending. Shared tokens/React adapters +Bootstrap Grid; no API/schema/business-rule changes. Remaining rollout and operational/release blockers are explicitly retained.
+
+UX-1 source checkpoint: 5a05c3c9b722555955175451cbfa7db832681677; pushed origin/integration/member-backend-mvp. Final screenshot metadata is captured against this committed source. Follow-up evidence update changes documentation/reference metadata only.

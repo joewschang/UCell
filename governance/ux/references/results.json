@@ -1,5 +1,5 @@
 {
-  "sourceCommit": "bce9296c67cbfc5195501728cd5885dae5ac15ff",
+  "sourceCommit": "5a05c3c9b722555955175451cbfa7db832681677",
   "results": [
     {
       "kind": "member",
@@ -8,7 +8,7 @@
       "height": 844,
       "overflow": false,
       "image": "member-dashboard-375.png",
-      "sourceCommit": "bce9296c67cbfc5195501728cd5885dae5ac15ff",
+      "sourceCommit": "5a05c3c9b722555955175451cbfa7db832681677",
       "fixture": "EXPLICIT_MOCK_VISUAL_ONLY",
       "productionVerified": false
     },
@@ -19,7 +19,7 @@
       "height": 844,
       "overflow": false,
       "image": "member-organization-375.png",
-      "sourceCommit": "bce9296c67cbfc5195501728cd5885dae5ac15ff",
+      "sourceCommit": "5a05c3c9b722555955175451cbfa7db832681677",
       "fixture": "EXPLICIT_MOCK_VISUAL_ONLY",
       "productionVerified": false
     },
@@ -30,7 +30,7 @@
       "height": 844,
       "overflow": false,
       "image": "member-bonus-375.png",
-      "sourceCommit": "bce9296c67cbfc5195501728cd5885dae5ac15ff",
+      "sourceCommit": "5a05c3c9b722555955175451cbfa7db832681677",
       "fixture": "EXPLICIT_MOCK_VISUAL_ONLY",
       "productionVerified": false
     },
@@ -41,7 +41,7 @@
       "height": 844,
       "overflow": false,
       "image": "member-dashboard-390.png",
-      "sourceCommit": "bce9296c67cbfc5195501728cd5885dae5ac15ff",
+      "sourceCommit": "5a05c3c9b722555955175451cbfa7db832681677",
       "fixture": "EXPLICIT_MOCK_VISUAL_ONLY",
       "productionVerified": false
     },
@@ -52,7 +52,7 @@
       "height": 844,
       "overflow": false,
       "image": "member-organization-390.png",
-      "sourceCommit": "bce9296c67cbfc5195501728cd5885dae5ac15ff",
+      "sourceCommit": "5a05c3c9b722555955175451cbfa7db832681677",
       "fixture": "EXPLICIT_MOCK_VISUAL_ONLY",
       "productionVerified": false
     },
@@ -63,7 +63,7 @@
       "height": 844,
       "overflow": false,
       "image": "member-bonus-390.png",
-      "sourceCommit": "bce9296c67cbfc5195501728cd5885dae5ac15ff",
+      "sourceCommit": "5a05c3c9b722555955175451cbfa7db832681677",
       "fixture": "EXPLICIT_MOCK_VISUAL_ONLY",
       "productionVerified": false
     },
@@ -74,7 +74,7 @@
       "height": 844,
       "overflow": false,
       "image": "member-dashboard-430.png",
-      "sourceCommit": "bce9296c67cbfc5195501728cd5885dae5ac15ff",
+      "sourceCommit": "5a05c3c9b722555955175451cbfa7db832681677",
       "fixture": "EXPLICIT_MOCK_VISUAL_ONLY",
       "productionVerified": false
     },
@@ -85,7 +85,7 @@
       "height": 844,
       "overflow": false,
       "image": "member-organization-430.png",
-      "sourceCommit": "bce9296c67cbfc5195501728cd5885dae5ac15ff",
+      "sourceCommit": "5a05c3c9b722555955175451cbfa7db832681677",
       "fixture": "EXPLICIT_MOCK_VISUAL_ONLY",
       "productionVerified": false
     },
@@ -96,7 +96,7 @@
       "height": 844,
       "overflow": false,
       "image": "member-bonus-430.png",
-      "sourceCommit": "bce9296c67cbfc5195501728cd5885dae5ac15ff",
+      "sourceCommit": "5a05c3c9b722555955175451cbfa7db832681677",
       "fixture": "EXPLICIT_MOCK_VISUAL_ONLY",
       "productionVerified": false
     },
@@ -107,7 +107,7 @@
       "height": 844,
       "overflow": false,
       "image": "member-dashboard-768.png",
-      "sourceCommit": "bce9296c67cbfc5195501728cd5885dae5ac15ff",
+      "sourceCommit": "5a05c3c9b722555955175451cbfa7db832681677",
       "fixture": "EXPLICIT_MOCK_VISUAL_ONLY",
       "productionVerified": false
     },
@@ -118,7 +118,7 @@
       "height": 844,
       "overflow": false,
       "image": "member-organization-768.png",
-      "sourceCommit": "bce9296c67cbfc5195501728cd5885dae5ac15ff",
+      "sourceCommit": "5a05c3c9b722555955175451cbfa7db832681677",
       "fixture": "EXPLICIT_MOCK_VISUAL_ONLY",
       "productionVerified": false
     },
@@ -129,7 +129,7 @@
       "height": 844,
       "overflow": false,
       "image": "member-bonus-768.png",
-      "sourceCommit": "bce9296c67cbfc5195501728cd5885dae5ac15ff",
+      "sourceCommit": "5a05c3c9b722555955175451cbfa7db832681677",
       "fixture": "EXPLICIT_MOCK_VISUAL_ONLY",
       "productionVerified": false
     },
@@ -140,7 +140,7 @@
       "height": 900,
       "overflow": false,
       "image": "admin-dashboard-1366.png",
-      "sourceCommit": "bce9296c67cbfc5195501728cd5885dae5ac15ff",
+      "sourceCommit": "5a05c3c9b722555955175451cbfa7db832681677",
       "fixture": "ISOLATED_ADMIN_DEV_HTTP_READS",
       "productionVerified": false
     },
@@ -151,7 +151,7 @@
       "height": 900,
       "overflow": false,
       "image": "admin-person-qualification-1366.png",
-      "sourceCommit": "bce9296c67cbfc5195501728cd5885dae5ac15ff",
+      "sourceCommit": "5a05c3c9b722555955175451cbfa7db832681677",
       "fixture": "ISOLATED_ADMIN_DEV_HTTP_READS",
       "productionVerified": false
     },
@@ -162,7 +162,7 @@
       "height": 900,
       "overflow": false,
       "image": "admin-bonus-settlement-1366.png",
-      "sourceCommit": "bce9296c67cbfc5195501728cd5885dae5ac15ff",
+      "sourceCommit": "5a05c3c9b722555955175451cbfa7db832681677",
       "fixture": "ISOLATED_ADMIN_DEV_HTTP_READS",
       "productionVerified": false
     },
@@ -173,7 +173,7 @@
       "height": 900,
       "overflow": false,
       "image": "admin-dashboard-1440.png",
-      "sourceCommit": "bce9296c67cbfc5195501728cd5885dae5ac15ff",
+      "sourceCommit": "5a05c3c9b722555955175451cbfa7db832681677",
       "fixture": "ISOLATED_ADMIN_DEV_HTTP_READS",
       "productionVerified": false
     },
@@ -184,7 +184,7 @@
       "height": 900,
       "overflow": false,
       "image": "admin-person-qualification-1440.png",
-      "sourceCommit": "bce9296c67cbfc5195501728cd5885dae5ac15ff",
+      "sourceCommit": "5a05c3c9b722555955175451cbfa7db832681677",
       "fixture": "ISOLATED_ADMIN_DEV_HTTP_READS",
       "productionVerified": false
     },
@@ -195,7 +195,7 @@
       "height": 900,
       "overflow": false,
       "image": "admin-bonus-settlement-1440.png",
-      "sourceCommit": "bce9296c67cbfc5195501728cd5885dae5ac15ff",
+      "sourceCommit": "5a05c3c9b722555955175451cbfa7db832681677",
       "fixture": "ISOLATED_ADMIN_DEV_HTTP_READS",
       "productionVerified": false
     },
@@ -206,7 +206,7 @@
       "height": 900,
       "overflow": false,
       "image": "admin-dashboard-1920.png",
-      "sourceCommit": "bce9296c67cbfc5195501728cd5885dae5ac15ff",
+      "sourceCommit": "5a05c3c9b722555955175451cbfa7db832681677",
       "fixture": "ISOLATED_ADMIN_DEV_HTTP_READS",
       "productionVerified": false
     },
@@ -217,7 +217,7 @@
       "height": 900,
       "overflow": false,
       "image": "admin-person-qualification-1920.png",
-      "sourceCommit": "bce9296c67cbfc5195501728cd5885dae5ac15ff",
+      "sourceCommit": "5a05c3c9b722555955175451cbfa7db832681677",
       "fixture": "ISOLATED_ADMIN_DEV_HTTP_READS",
       "productionVerified": false
     },
@@ -228,7 +228,7 @@
       "height": 900,
       "overflow": false,
       "image": "admin-bonus-settlement-1920.png",
-      "sourceCommit": "bce9296c67cbfc5195501728cd5885dae5ac15ff",
+      "sourceCommit": "5a05c3c9b722555955175451cbfa7db832681677",
       "fixture": "ISOLATED_ADMIN_DEV_HTTP_READS",
       "productionVerified": false
     },
@@ -239,7 +239,7 @@
       "height": 900,
       "overflow": false,
       "image": "admin-dashboard-768.png",
-      "sourceCommit": "bce9296c67cbfc5195501728cd5885dae5ac15ff",
+      "sourceCommit": "5a05c3c9b722555955175451cbfa7db832681677",
       "fixture": "ISOLATED_ADMIN_DEV_HTTP_READS",
       "productionVerified": false
     },
@@ -250,7 +250,7 @@
       "height": 900,
       "overflow": false,
       "image": "admin-person-qualification-768.png",
-      "sourceCommit": "bce9296c67cbfc5195501728cd5885dae5ac15ff",
+      "sourceCommit": "5a05c3c9b722555955175451cbfa7db832681677",
       "fixture": "ISOLATED_ADMIN_DEV_HTTP_READS",
       "productionVerified": false
     },
@@ -261,7 +261,7 @@
       "height": 900,
       "overflow": false,
       "image": "admin-bonus-settlement-768.png",
-      "sourceCommit": "bce9296c67cbfc5195501728cd5885dae5ac15ff",
+      "sourceCommit": "5a05c3c9b722555955175451cbfa7db832681677",
       "fixture": "ISOLATED_ADMIN_DEV_HTTP_READS",
       "productionVerified": false
     }
@@ -270,5 +270,10 @@
   "qualificationFeedback": "PASS",
   "mobileNavTouchTargets": "PASS",
   "formalLiff": "NOT_VERIFIED",
-  "formalEntra": "NOT_VERIFIED"
+  "formalEntra": "NOT_VERIFIED",
+  "fixtureEvidence": {
+    "member": "member/src/memberData.ts explicit mock fixture at source checkpoint; no real LINE verification",
+    "admin": "governance/admin-full-test/run-2026-09-16T01-57-02.762Z.json, isolated ucell_admin_test read state; not immutable Production data"
+  },
+  "reverseTabAndFocusRestoration": "PASS"
 }
