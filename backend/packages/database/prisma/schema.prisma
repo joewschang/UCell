@@ -60,7 +60,6 @@ enum EventProcessStatus {
   @@schema("integration")
 }
 
-
 enum ApplicationStatus {
   DRAFT
   SUBMITTED
@@ -91,7 +90,6 @@ enum RecognitionStatus {
 
   @@schema("subscription")
 }
-
 
 enum BonusAwardType {
   REFERRAL
@@ -133,7 +131,6 @@ enum SettlementStatus {
 
   @@schema("ledger")
 }
-
 
 enum QualificationLifecycleStatus {
   DRAFT
@@ -196,12 +193,12 @@ enum GlobalRankCode {
   @@schema("ledger")
 }
 
-
 enum AdjustmentStatus {
   DRAFT
   CALCULATED
   POSTED
   VOIDED
+
   @@schema("ledger")
 }
 
@@ -210,6 +207,7 @@ enum QualificationWorkflowType {
   TRANSFER
   EXIT
   COMPANY_RETRANSFER
+
   @@schema("membership")
 }
 
@@ -220,6 +218,7 @@ enum QualificationWorkflowStatus {
   REJECTED
   EFFECTIVE
   CANCELLED
+
   @@schema("membership")
 }
 
@@ -229,6 +228,7 @@ enum ReplayRunStatus {
   CONVERGED
   MAX_HORIZON
   FAILED
+
   @@schema("ledger")
 }
 
@@ -237,6 +237,7 @@ enum IdentityProvider {
   ENTRA
   LINE
   GOOGLE
+
   @@schema("identity")
 }
 
@@ -244,6 +245,7 @@ enum ContractAudience {
   NETWORK_MEMBER
   FORMAL_MEMBER
   ALL_MEMBERS
+
   @@schema("identity")
 }
 
@@ -251,6 +253,7 @@ enum ConsentChannel {
   MEMBER_WEB
   LIFF
   ADMIN_ASSISTED
+
   @@schema("identity")
 }
 
@@ -258,6 +261,7 @@ enum PersonMembershipState {
   NETWORK_MEMBER
   FORMAL_PENDING
   FORMAL_MEMBER
+
   @@schema("identity")
 }
 
@@ -265,6 +269,7 @@ enum OtpPurpose {
   NETWORK_REGISTRATION
   MOBILE_CHANGE
   ACCOUNT_RECOVERY
+
   @@schema("identity")
 }
 
@@ -273,6 +278,7 @@ enum OtpChallengeStatus {
   VERIFIED
   EXPIRED
   LOCKED
+
   @@schema("identity")
 }
 
@@ -280,33 +286,35 @@ enum AuthSessionStatus {
   ACTIVE
   REVOKED
   EXPIRED
+
   @@schema("identity")
 }
 
 model Person {
-  personId       String       @id @default(uuid()) @map("person_id") @db.Uuid
-  legalName      String       @map("legal_name")
-  preferredName  String?      @map("preferred_name")
-  birthDate      DateTime?    @map("birth_date") @db.Date
-  mobile         String?
-  email          String?
-  genderCode     String?      @map("gender_code")
-  membershipState PersonMembershipState? @map("membership_state")
-  mobileVerifiedAt DateTime?  @map("mobile_verified_at") @db.Timestamptz(6)
-  status         RecordStatus @default(DRAFT)
-  createdAt      DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt      DateTime     @updatedAt @map("updated_at") @db.Timestamptz(6)
+  personId         String                 @id @default(uuid()) @map("person_id") @db.Uuid
+  legalName        String                 @map("legal_name")
+  preferredName    String?                @map("preferred_name")
+  birthDate        DateTime?              @map("birth_date") @db.Date
+  mobile           String?
+  email            String?
+  genderCode       String?                @map("gender_code")
+  membershipState  PersonMembershipState? @map("membership_state")
+  mobileVerifiedAt DateTime?              @map("mobile_verified_at") @db.Timestamptz(6)
+  status           RecordStatus           @default(DRAFT)
+  createdAt        DateTime               @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime               @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  qualifications Qualification[]
-  holderHistory  QualificationHolderHistory[]
+  qualifications         Qualification[]
+  holderHistory          QualificationHolderHistory[]
   membershipApplications MembershipApplication[]
-  identityLinks IdentityLink[]
-  authSessions AuthSession[]
-  adminAccessGrants AdminAccessGrant[]
-  memberNotifications MemberNotification[]
-  consentEvidence ConsentEvidence[]
-  membershipStateEvents PersonMembershipStateEvent[]
-  otpChallenges OtpChallenge[]
+  identityLinks          IdentityLink[]
+  authSessions           AuthSession[]
+  adminAccessGrants      AdminAccessGrant[]
+  memberNotifications    MemberNotification[]
+  consentEvidence        ConsentEvidence[]
+  membershipStateEvents  PersonMembershipStateEvent[]
+  otpChallenges          OtpChallenge[]
+  deliveryProfiles       DeliveryProfile[]
 
   @@index([legalName])
   @@index([mobile])
@@ -314,124 +322,143 @@ model Person {
   @@schema("identity")
 }
 
-model OtpChallenge {
-  otpChallengeId String @id @default(uuid()) @map("otp_challenge_id") @db.Uuid
-  personId String? @map("person_id") @db.Uuid
-  registrationSessionId String? @map("registration_session_id") @db.Uuid
-  purpose OtpPurpose
-  destinationFingerprint String @map("destination_fingerprint")
-  codeHash String @map("code_hash")
-  providerRef String @map("provider_ref")
-  status OtpChallengeStatus @default(PENDING)
-  attemptCount Int @default(0) @map("attempt_count")
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  expiresAt DateTime @map("expires_at") @db.Timestamptz(6)
-  resendAvailableAt DateTime @map("resend_available_at") @db.Timestamptz(6)
-  verifiedAt DateTime? @map("verified_at") @db.Timestamptz(6)
-  lockedAt DateTime? @map("locked_at") @db.Timestamptz(6)
-  consumedAt DateTime? @map("consumed_at") @db.Timestamptz(6)
-  consumedByPersonId String? @map("consumed_by_person_id") @db.Uuid
-  correlationId String @map("correlation_id") @db.Uuid
-  person Person? @relation(fields:[personId],references:[personId])
+model DeliveryProfile {
+  deliveryProfileId String    @id @default(uuid()) @map("delivery_profile_id") @db.Uuid
+  personId          String    @map("person_id") @db.Uuid
+  recipientName     String    @map("recipient_name")
+  contactCiphertext String    @map("contact_ciphertext") @db.Text
+  countryCode       String    @map("country_code")
+  postalCode        String?   @map("postal_code")
+  addressCiphertext String    @map("address_ciphertext") @db.Text
+  keyVersion        String    @map("key_version")
+  effectiveFrom     DateTime  @default(now()) @map("effective_from") @db.Timestamptz(6)
+  effectiveTo       DateTime? @map("effective_to") @db.Timestamptz(6)
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  person            Person    @relation(fields: [personId], references: [personId])
 
-  @@index([destinationFingerprint,createdAt])
-  @@index([registrationSessionId,purpose,status])
-  @@index([personId,purpose,status])
+  @@index([personId, effectiveFrom, effectiveTo])
+  @@map("delivery_profile")
+  @@schema("identity")
+}
+
+model OtpChallenge {
+  otpChallengeId         String             @id @default(uuid()) @map("otp_challenge_id") @db.Uuid
+  personId               String?            @map("person_id") @db.Uuid
+  registrationSessionId  String?            @map("registration_session_id") @db.Uuid
+  purpose                OtpPurpose
+  destinationFingerprint String             @map("destination_fingerprint")
+  codeHash               String             @map("code_hash")
+  providerRef            String             @map("provider_ref")
+  status                 OtpChallengeStatus @default(PENDING)
+  attemptCount           Int                @default(0) @map("attempt_count")
+  createdAt              DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
+  expiresAt              DateTime           @map("expires_at") @db.Timestamptz(6)
+  resendAvailableAt      DateTime           @map("resend_available_at") @db.Timestamptz(6)
+  verifiedAt             DateTime?          @map("verified_at") @db.Timestamptz(6)
+  lockedAt               DateTime?          @map("locked_at") @db.Timestamptz(6)
+  consumedAt             DateTime?          @map("consumed_at") @db.Timestamptz(6)
+  consumedByPersonId     String?            @map("consumed_by_person_id") @db.Uuid
+  correlationId          String             @map("correlation_id") @db.Uuid
+  person                 Person?            @relation(fields: [personId], references: [personId])
+
+  @@index([destinationFingerprint, createdAt])
+  @@index([registrationSessionId, purpose, status])
+  @@index([personId, purpose, status])
   @@map("otp_challenge")
   @@schema("identity")
 }
 
 model PersonMembershipStateEvent {
-  personMembershipStateEventId String @id @default(uuid()) @map("person_membership_state_event_id") @db.Uuid
-  personId String @map("person_id") @db.Uuid
-  fromState PersonMembershipState? @map("from_state")
-  toState PersonMembershipState @map("to_state")
-  reasonCode String @map("reason_code")
-  sourceType String @map("source_type")
-  sourceId String? @map("source_id") @db.Uuid
-  correlationId String @map("correlation_id") @db.Uuid
-  occurredAt DateTime @default(now()) @map("occurred_at") @db.Timestamptz(6)
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  person Person @relation(fields:[personId],references:[personId])
+  personMembershipStateEventId String                 @id @default(uuid()) @map("person_membership_state_event_id") @db.Uuid
+  personId                     String                 @map("person_id") @db.Uuid
+  fromState                    PersonMembershipState? @map("from_state")
+  toState                      PersonMembershipState  @map("to_state")
+  reasonCode                   String                 @map("reason_code")
+  sourceType                   String                 @map("source_type")
+  sourceId                     String?                @map("source_id") @db.Uuid
+  correlationId                String                 @map("correlation_id") @db.Uuid
+  occurredAt                   DateTime               @default(now()) @map("occurred_at") @db.Timestamptz(6)
+  createdAt                    DateTime               @default(now()) @map("created_at") @db.Timestamptz(6)
+  person                       Person                 @relation(fields: [personId], references: [personId])
 
-  @@index([personId,occurredAt])
+  @@index([personId, occurredAt])
   @@index([correlationId])
   @@map("person_membership_state_event")
   @@schema("identity")
 }
 
 model ContractDocumentVersion {
-  contractDocumentVersionId String @id @default(uuid()) @map("contract_document_version_id") @db.Uuid
-  contractType String @map("contract_type")
-  versionCode String @map("version_code")
-  title String
-  contentText String @map("content_text") @db.Text
-  contentHash String @map("content_hash")
-  audience ContractAudience
-  required Boolean @default(true)
-  effectiveFrom DateTime @map("effective_from") @db.Timestamptz(6)
-  effectiveTo DateTime? @map("effective_to") @db.Timestamptz(6)
-  approvalReference String @map("approval_reference")
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  consentEvidence ConsentEvidence[]
+  contractDocumentVersionId String            @id @default(uuid()) @map("contract_document_version_id") @db.Uuid
+  contractType              String            @map("contract_type")
+  versionCode               String            @map("version_code")
+  title                     String
+  contentText               String            @map("content_text") @db.Text
+  contentHash               String            @map("content_hash")
+  audience                  ContractAudience
+  required                  Boolean           @default(true)
+  effectiveFrom             DateTime          @map("effective_from") @db.Timestamptz(6)
+  effectiveTo               DateTime?         @map("effective_to") @db.Timestamptz(6)
+  approvalReference         String            @map("approval_reference")
+  createdAt                 DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+  consentEvidence           ConsentEvidence[]
 
-  @@unique([contractType,versionCode])
-  @@index([audience,effectiveFrom,effectiveTo])
+  @@unique([contractType, versionCode])
+  @@index([audience, effectiveFrom, effectiveTo])
   @@map("contract_document_version")
   @@schema("identity")
 }
 
 model ConsentEvidence {
-  consentEvidenceId String @id @default(uuid()) @map("consent_evidence_id") @db.Uuid
-  personId String @map("person_id") @db.Uuid
-  contractDocumentVersionId String @map("contract_document_version_id") @db.Uuid
-  contentHashSnapshot String @map("content_hash_snapshot")
-  channel ConsentChannel
-  acceptedAt DateTime @default(now()) @map("accepted_at") @db.Timestamptz(6)
-  requestId String @map("request_id")
-  correlationId String @map("correlation_id") @db.Uuid
-  evidenceHash String @map("evidence_hash")
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  person Person @relation(fields:[personId],references:[personId])
-  contractVersion ContractDocumentVersion @relation(fields:[contractDocumentVersionId],references:[contractDocumentVersionId])
+  consentEvidenceId         String                  @id @default(uuid()) @map("consent_evidence_id") @db.Uuid
+  personId                  String                  @map("person_id") @db.Uuid
+  contractDocumentVersionId String                  @map("contract_document_version_id") @db.Uuid
+  contentHashSnapshot       String                  @map("content_hash_snapshot")
+  channel                   ConsentChannel
+  acceptedAt                DateTime                @default(now()) @map("accepted_at") @db.Timestamptz(6)
+  requestId                 String                  @map("request_id")
+  correlationId             String                  @map("correlation_id") @db.Uuid
+  evidenceHash              String                  @map("evidence_hash")
+  createdAt                 DateTime                @default(now()) @map("created_at") @db.Timestamptz(6)
+  person                    Person                  @relation(fields: [personId], references: [personId])
+  contractVersion           ContractDocumentVersion @relation(fields: [contractDocumentVersionId], references: [contractDocumentVersionId])
 
-  @@unique([personId,contractDocumentVersionId])
-  @@index([contractDocumentVersionId,acceptedAt])
+  @@unique([personId, contractDocumentVersionId])
+  @@index([contractDocumentVersionId, acceptedAt])
   @@index([correlationId])
   @@map("consent_evidence")
   @@schema("identity")
 }
 
 model Qualification {
-  memberNotifications MemberNotification[]
-  qualificationId       String       @id @default(uuid()) @map("qualification_id") @db.Uuid
-  qualificationNo       BigInt       @unique @default(autoincrement()) @map("qualification_no")
-  currentHolderPersonId String       @map("current_holder_person_id") @db.Uuid
-  planLevelCode         String       @map("plan_level_code")
-  status                RecordStatus @default(DRAFT)
-  activeFlag            Boolean      @default(false) @map("active_flag")
-  effectiveAt           DateTime?    @map("effective_at") @db.Timestamptz(6)
-  createdAt             DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt             DateTime     @updatedAt @map("updated_at") @db.Timestamptz(6)
+  memberNotifications   MemberNotification[]
+  qualificationId       String               @id @default(uuid()) @map("qualification_id") @db.Uuid
+  qualificationNo       BigInt               @unique @default(autoincrement()) @map("qualification_no")
+  currentHolderPersonId String               @map("current_holder_person_id") @db.Uuid
+  planLevelCode         String               @map("plan_level_code")
+  status                RecordStatus         @default(DRAFT)
+  activeFlag            Boolean              @default(false) @map("active_flag")
+  effectiveAt           DateTime?            @map("effective_at") @db.Timestamptz(6)
+  createdAt             DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt             DateTime             @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  currentHolder Person @relation(fields: [currentHolderPersonId], references: [personId])
-  holderHistory QualificationHolderHistory[]
-  sponsoredChildren SponsorRelationship[] @relation("Sponsor")
-  sponsorRelation SponsorRelationship? @relation("SponsoredChild")
-  binaryChildren BinaryPlacement[] @relation("BinaryParent")
-  binaryPlacement BinaryPlacement? @relation("BinaryChild")
-  orders Order[]
-  pvEvents PvLedger[]
-  activePeriods ActivePeriod[]
-  subscriptions Subscription[]
-  membershipApplications MembershipApplication[]
-  bonusAwards BonusAward[] @relation("BonusRecipient")
-  sourceBonusAwards BonusAward[] @relation("BonusSource")
-  binaryCarry BinaryCarry[]
+  currentHolder              Person                           @relation(fields: [currentHolderPersonId], references: [personId])
+  holderHistory              QualificationHolderHistory[]
+  sponsoredChildren          SponsorRelationship[]            @relation("Sponsor")
+  sponsorRelation            SponsorRelationship?             @relation("SponsoredChild")
+  binaryChildren             BinaryPlacement[]                @relation("BinaryParent")
+  binaryPlacement            BinaryPlacement?                 @relation("BinaryChild")
+  orders                     Order[]
+  pvEvents                   PvLedger[]
+  activePeriods              ActivePeriod[]
+  subscriptions              Subscription[]
+  membershipApplications     MembershipApplication[]
+  bonusAwards                BonusAward[]                     @relation("BonusRecipient")
+  sourceBonusAwards          BonusAward[]                     @relation("BonusSource")
+  binaryCarry                BinaryCarry[]
   qualificationStatusHistory QualificationStatusHistory[]
-  globalRankHistory QualificationGlobalRankHistory[]
-  payoutLines PayoutLine[]
-  payableEntries PayableEntry[]
+  globalRankHistory          QualificationGlobalRankHistory[]
+  payoutLines                PayoutLine[]
+  payableEntries             PayableEntry[]
 
   @@index([currentHolderPersonId])
   @@index([status, effectiveAt])
@@ -440,45 +467,47 @@ model Qualification {
 }
 
 model MemberNotification {
-  sourceEventId String? @unique @map("source_event_id") @db.Uuid
-  reads MemberNotificationRead[]
-  notificationId String @id @default(uuid()) @map("notification_id") @db.Uuid
-  personId String @map("person_id") @db.Uuid
-  qualificationId String? @map("qualification_id") @db.Uuid
-  category String
-  title String
-  body String
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  person Person @relation(fields: [personId], references: [personId])
-  qualification Qualification? @relation(fields: [qualificationId], references: [qualificationId])
-  @@unique([notificationId,personId])
+  sourceEventId   String?                  @unique @map("source_event_id") @db.Uuid
+  reads           MemberNotificationRead[]
+  notificationId  String                   @id @default(uuid()) @map("notification_id") @db.Uuid
+  personId        String                   @map("person_id") @db.Uuid
+  qualificationId String?                  @map("qualification_id") @db.Uuid
+  category        String
+  title           String
+  body            String
+  createdAt       DateTime                 @default(now()) @map("created_at") @db.Timestamptz(6)
+  person          Person                   @relation(fields: [personId], references: [personId])
+  qualification   Qualification?           @relation(fields: [qualificationId], references: [qualificationId])
+
+  @@unique([notificationId, personId])
   @@index([personId, qualificationId, createdAt])
   @@map("member_notification")
   @@schema("integration")
 }
 
 model MemberNotificationRead {
- notificationId String @map("notification_id") @db.Uuid
- personId String @map("person_id") @db.Uuid
- readAt DateTime @default(now()) @map("read_at") @db.Timestamptz(6)
- notification MemberNotification @relation(fields:[notificationId,personId],references:[notificationId,personId])
- @@id([notificationId,personId])
- @@map("member_notification_read")
- @@schema("integration")
+  notificationId String             @map("notification_id") @db.Uuid
+  personId       String             @map("person_id") @db.Uuid
+  readAt         DateTime           @default(now()) @map("read_at") @db.Timestamptz(6)
+  notification   MemberNotification @relation(fields: [notificationId, personId], references: [notificationId, personId])
+
+  @@id([notificationId, personId])
+  @@map("member_notification_read")
+  @@schema("integration")
 }
 
 model QualificationHolderHistory {
-  holderHistoryId String   @id @default(uuid()) @map("holder_history_id") @db.Uuid
-  qualificationId String   @map("qualification_id") @db.Uuid
-  holderPersonId  String   @map("holder_person_id") @db.Uuid
-  effectiveFrom   DateTime @map("effective_from") @db.Timestamptz(6)
+  holderHistoryId String    @id @default(uuid()) @map("holder_history_id") @db.Uuid
+  qualificationId String    @map("qualification_id") @db.Uuid
+  holderPersonId  String    @map("holder_person_id") @db.Uuid
+  effectiveFrom   DateTime  @map("effective_from") @db.Timestamptz(6)
   effectiveTo     DateTime? @map("effective_to") @db.Timestamptz(6)
-  sourceType      String   @map("source_type")
-  sourceId        String?  @map("source_id") @db.Uuid
-  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  sourceType      String    @map("source_type")
+  sourceId        String?   @map("source_id") @db.Uuid
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
 
   qualification Qualification @relation(fields: [qualificationId], references: [qualificationId])
-  holder Person @relation(fields: [holderPersonId], references: [personId])
+  holder        Person        @relation(fields: [holderPersonId], references: [personId])
 
   @@index([qualificationId, effectiveFrom])
   @@index([holderPersonId, effectiveFrom])
@@ -487,16 +516,16 @@ model QualificationHolderHistory {
 }
 
 model SponsorRelationship {
-  sponsorRelationshipId String   @id @default(uuid()) @map("sponsor_relationship_id") @db.Uuid
-  sponsorQualificationId String  @map("sponsor_qualification_id") @db.Uuid
-  childQualificationId   String  @unique @map("child_qualification_id") @db.Uuid
-  sponsorSequenceNo      Int     @map("sponsor_sequence_no")
-  effectiveFrom          DateTime @map("effective_from") @db.Timestamptz(6)
+  sponsorRelationshipId  String    @id @default(uuid()) @map("sponsor_relationship_id") @db.Uuid
+  sponsorQualificationId String    @map("sponsor_qualification_id") @db.Uuid
+  childQualificationId   String    @unique @map("child_qualification_id") @db.Uuid
+  sponsorSequenceNo      Int       @map("sponsor_sequence_no")
+  effectiveFrom          DateTime  @map("effective_from") @db.Timestamptz(6)
   effectiveTo            DateTime? @map("effective_to") @db.Timestamptz(6)
-  createdAt              DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  createdAt              DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
 
   sponsor Qualification @relation("Sponsor", fields: [sponsorQualificationId], references: [qualificationId])
-  child Qualification @relation("SponsoredChild", fields: [childQualificationId], references: [qualificationId])
+  child   Qualification @relation("SponsoredChild", fields: [childQualificationId], references: [qualificationId])
 
   @@unique([sponsorQualificationId, sponsorSequenceNo])
   @@index([sponsorQualificationId, effectiveFrom])
@@ -505,16 +534,16 @@ model SponsorRelationship {
 }
 
 model BinaryPlacement {
-  binaryPlacementId      String   @id @default(uuid()) @map("binary_placement_id") @db.Uuid
-  parentQualificationId  String   @map("parent_qualification_id") @db.Uuid
-  childQualificationId   String   @unique @map("child_qualification_id") @db.Uuid
-  side                   SideCode
-  effectiveFrom          DateTime @map("effective_from") @db.Timestamptz(6)
-  effectiveTo            DateTime? @map("effective_to") @db.Timestamptz(6)
-  createdAt              DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  binaryPlacementId     String    @id @default(uuid()) @map("binary_placement_id") @db.Uuid
+  parentQualificationId String    @map("parent_qualification_id") @db.Uuid
+  childQualificationId  String    @unique @map("child_qualification_id") @db.Uuid
+  side                  SideCode
+  effectiveFrom         DateTime  @map("effective_from") @db.Timestamptz(6)
+  effectiveTo           DateTime? @map("effective_to") @db.Timestamptz(6)
+  createdAt             DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
 
   parent Qualification @relation("BinaryParent", fields: [parentQualificationId], references: [qualificationId])
-  child Qualification @relation("BinaryChild", fields: [childQualificationId], references: [qualificationId])
+  child  Qualification @relation("BinaryChild", fields: [childQualificationId], references: [qualificationId])
 
   @@index([parentQualificationId, side, effectiveTo])
   @@map("binary_placement")
@@ -522,34 +551,34 @@ model BinaryPlacement {
 }
 
 model ProductReference {
-  productId      String   @id @default(uuid()) @map("product_id") @db.Uuid
-  sku            String   @unique
-  displayName    String   @map("display_name")
-  currentPrice   Decimal  @map("current_price") @db.Decimal(18, 2)
-  currency       String   @default("TWD")
-  isActive       Boolean  @default(true) @map("is_active")
-  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  productId    String   @id @default(uuid()) @map("product_id") @db.Uuid
+  sku          String   @unique
+  displayName  String   @map("display_name")
+  currentPrice Decimal  @map("current_price") @db.Decimal(18, 2)
+  currency     String   @default("TWD")
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   ruleProfiles ProductRuleProfile[]
-  orderLines OrderLine[]
+  orderLines   OrderLine[]
 
   @@map("product_reference")
   @@schema("commerce")
 }
 
 model ProductRuleProfile {
-  productRuleProfileId String   @id @default(uuid()) @map("product_rule_profile_id") @db.Uuid
-  productId            String   @map("product_id") @db.Uuid
-  effectiveFrom        DateTime @map("effective_from") @db.Timestamptz(6)
-  effectiveTo          DateTime? @map("effective_to") @db.Timestamptz(6)
-  gpvRate              Decimal  @default(0.60) @map("gpv_rate") @db.Decimal(10, 6)
-  pvRate               Decimal? @map("pv_rate") @db.Decimal(10, 6)
-  rpvEligible          Boolean  @default(false) @map("rpv_eligible")
-  epvEligible          Boolean  @default(false) @map("epv_eligible")
-  ruleVersionCode      String   @map("rule_version_code")
-  parameterSnapshotHash String? @map("parameter_snapshot_hash")
-  createdAt            DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  productRuleProfileId  String    @id @default(uuid()) @map("product_rule_profile_id") @db.Uuid
+  productId             String    @map("product_id") @db.Uuid
+  effectiveFrom         DateTime  @map("effective_from") @db.Timestamptz(6)
+  effectiveTo           DateTime? @map("effective_to") @db.Timestamptz(6)
+  gpvRate               Decimal   @default(0.60) @map("gpv_rate") @db.Decimal(10, 6)
+  pvRate                Decimal?  @map("pv_rate") @db.Decimal(10, 6)
+  rpvEligible           Boolean   @default(false) @map("rpv_eligible")
+  epvEligible           Boolean   @default(false) @map("epv_eligible")
+  ruleVersionCode       String    @map("rule_version_code")
+  parameterSnapshotHash String?   @map("parameter_snapshot_hash")
+  createdAt             DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
 
   product ProductReference @relation(fields: [productId], references: [productId])
 
@@ -559,28 +588,28 @@ model ProductRuleProfile {
 }
 
 model Order {
-  orderId           String      @id @default(uuid()) @map("order_id") @db.Uuid
-  orderNo           BigInt      @unique @default(autoincrement()) @map("order_no")
-  qualificationId   String      @map("qualification_id") @db.Uuid
-  purpose           OrderPurpose @default(RETAIL)
-  status            OrderStatus @default(DRAFT)
-  currency          String      @default("TWD")
-  grossAmount       Decimal     @map("gross_amount") @db.Decimal(18, 2)
-  discountAmount    Decimal     @default(0) @map("discount_amount") @db.Decimal(18, 2)
-  netAmount         Decimal     @map("net_amount") @db.Decimal(18, 2)
-  ruleVersionCode   String      @map("rule_version_code")
-  parameterSnapshotHash String? @map("parameter_snapshot_hash")
-  sourceReferralTokenHash String? @map("source_referral_token_hash")
-  clientReference   String?     @map("client_reference")
-  confirmedAt       DateTime?   @map("confirmed_at") @db.Timestamptz(6)
-  paidAt            DateTime?   @map("paid_at") @db.Timestamptz(6)
-  createdAt         DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt         DateTime    @updatedAt @map("updated_at") @db.Timestamptz(6)
+  orderId                 String       @id @default(uuid()) @map("order_id") @db.Uuid
+  orderNo                 BigInt       @unique @default(autoincrement()) @map("order_no")
+  qualificationId         String       @map("qualification_id") @db.Uuid
+  purpose                 OrderPurpose @default(RETAIL)
+  status                  OrderStatus  @default(DRAFT)
+  currency                String       @default("TWD")
+  grossAmount             Decimal      @map("gross_amount") @db.Decimal(18, 2)
+  discountAmount          Decimal      @default(0) @map("discount_amount") @db.Decimal(18, 2)
+  netAmount               Decimal      @map("net_amount") @db.Decimal(18, 2)
+  ruleVersionCode         String       @map("rule_version_code")
+  parameterSnapshotHash   String?      @map("parameter_snapshot_hash")
+  sourceReferralTokenHash String?      @map("source_referral_token_hash")
+  clientReference         String?      @map("client_reference")
+  confirmedAt             DateTime?    @map("confirmed_at") @db.Timestamptz(6)
+  paidAt                  DateTime?    @map("paid_at") @db.Timestamptz(6)
+  createdAt               DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt               DateTime     @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  qualification Qualification @relation(fields: [qualificationId], references: [qualificationId])
-  lines OrderLine[]
+  qualification Qualification  @relation(fields: [qualificationId], references: [qualificationId])
+  lines         OrderLine[]
   paymentEvents PaymentEvent[]
-  returns ReturnCase[]
+  returns       ReturnCase[]
 
   @@index([qualificationId, createdAt])
   @@index([status, createdAt])
@@ -595,15 +624,15 @@ model OrderLine {
   skuSnapshot         String   @map("sku_snapshot")
   productNameSnapshot String   @map("product_name_snapshot")
   quantity            Decimal  @db.Decimal(18, 4)
-  unitPrice            Decimal  @map("unit_price") @db.Decimal(18, 2)
-  lineAmount           Decimal  @map("line_amount") @db.Decimal(18, 2)
-  gpvRateSnapshot      Decimal  @map("gpv_rate_snapshot") @db.Decimal(10, 6)
-  gpvAmountSnapshot    Decimal  @map("gpv_amount_snapshot") @db.Decimal(18, 4)
-  pvRateSnapshot       Decimal? @map("pv_rate_snapshot") @db.Decimal(10, 6)
-  ruleProfileSnapshot  Json     @map("rule_profile_snapshot")
-  createdAt            DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  unitPrice           Decimal  @map("unit_price") @db.Decimal(18, 2)
+  lineAmount          Decimal  @map("line_amount") @db.Decimal(18, 2)
+  gpvRateSnapshot     Decimal  @map("gpv_rate_snapshot") @db.Decimal(10, 6)
+  gpvAmountSnapshot   Decimal  @map("gpv_amount_snapshot") @db.Decimal(18, 4)
+  pvRateSnapshot      Decimal? @map("pv_rate_snapshot") @db.Decimal(10, 6)
+  ruleProfileSnapshot Json     @map("rule_profile_snapshot")
+  createdAt           DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
-  order Order @relation(fields: [orderId], references: [orderId])
+  order   Order            @relation(fields: [orderId], references: [orderId])
   product ProductReference @relation(fields: [productId], references: [productId])
 
   @@index([orderId])
@@ -632,20 +661,20 @@ model PaymentEvent {
 }
 
 model PvLedger {
-  eventId        String   @id @default(uuid()) @map("event_id") @db.Uuid
-  qualificationId String  @map("qualification_id") @db.Uuid
-  pvType         PvType   @map("pv_type")
-  amount         Decimal  @db.Decimal(18, 4)
-  sourceType     String   @map("source_type")
-  sourceId       String   @map("source_id") @db.Uuid
-  sourceLineId   String?  @map("source_line_id") @db.Uuid
-  eventType      String   @map("event_type")
-  ruleVersionCode String  @map("rule_version_code")
-  parameterSnapshotHash String? @map("parameter_snapshot_hash")
-  occurredAt     DateTime @map("occurred_at") @db.Timestamptz(6)
-  recordedAt     DateTime @default(now()) @map("recorded_at") @db.Timestamptz(6)
-  reversalOfEventId String? @map("reversal_of_event_id") @db.Uuid
-  correlationId  String   @map("correlation_id") @db.Uuid
+  eventId               String   @id @default(uuid()) @map("event_id") @db.Uuid
+  qualificationId       String   @map("qualification_id") @db.Uuid
+  pvType                PvType   @map("pv_type")
+  amount                Decimal  @db.Decimal(18, 4)
+  sourceType            String   @map("source_type")
+  sourceId              String   @map("source_id") @db.Uuid
+  sourceLineId          String?  @map("source_line_id") @db.Uuid
+  eventType             String   @map("event_type")
+  ruleVersionCode       String   @map("rule_version_code")
+  parameterSnapshotHash String?  @map("parameter_snapshot_hash")
+  occurredAt            DateTime @map("occurred_at") @db.Timestamptz(6)
+  recordedAt            DateTime @default(now()) @map("recorded_at") @db.Timestamptz(6)
+  reversalOfEventId     String?  @map("reversal_of_event_id") @db.Uuid
+  correlationId         String   @map("correlation_id") @db.Uuid
 
   qualification Qualification @relation(fields: [qualificationId], references: [qualificationId])
 
@@ -692,80 +721,79 @@ model IdempotencyRecord {
 }
 
 model OutboxEvent {
-  outboxEventId   String             @id @default(uuid()) @map("outbox_event_id") @db.Uuid
-  eventType       String             @map("event_type")
-  aggregateType   String             @map("aggregate_type")
-  aggregateId     String             @map("aggregate_id") @db.Uuid
-  payload         Json
-  processStatus   EventProcessStatus @default(PENDING) @map("process_status")
-  attemptCount    Int                @default(0) @map("attempt_count")
-  availableAt     DateTime           @default(now()) @map("available_at") @db.Timestamptz(6)
-  processedAt     DateTime?          @map("processed_at") @db.Timestamptz(6)
-  lastError       String?            @map("last_error")
-  correlationId   String             @map("correlation_id") @db.Uuid
-  createdAt       DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
+  outboxEventId String             @id @default(uuid()) @map("outbox_event_id") @db.Uuid
+  eventType     String             @map("event_type")
+  aggregateType String             @map("aggregate_type")
+  aggregateId   String             @map("aggregate_id") @db.Uuid
+  payload       Json
+  processStatus EventProcessStatus @default(PENDING) @map("process_status")
+  attemptCount  Int                @default(0) @map("attempt_count")
+  availableAt   DateTime           @default(now()) @map("available_at") @db.Timestamptz(6)
+  processedAt   DateTime?          @map("processed_at") @db.Timestamptz(6)
+  lastError     String?            @map("last_error")
+  correlationId String             @map("correlation_id") @db.Uuid
+  createdAt     DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
 
   @@index([processStatus, availableAt])
   @@map("outbox_event")
   @@schema("integration")
 }
 
-
 model MembershipApplication {
-  applicationId             String            @id @default(uuid()) @map("application_id") @db.Uuid
-  personId                  String            @map("person_id") @db.Uuid
-  requestedPlanLevelCode    String            @map("requested_plan_level_code")
-  sponsorQualificationId    String?           @map("sponsor_qualification_id") @db.Uuid
-  binaryParentQualificationId String?         @map("binary_parent_qualification_id") @db.Uuid
-  binarySide                String?           @map("binary_side")
-  status                    ApplicationStatus @default(DRAFT)
-  submittedAt               DateTime?         @map("submitted_at") @db.Timestamptz(6)
-  approvedAt                DateTime?         @map("approved_at") @db.Timestamptz(6)
-  approvedBy                String?           @map("approved_by") @db.Uuid
-  effectiveAt               DateTime?         @map("effective_at") @db.Timestamptz(6)
-  createdQualificationId    String?           @unique @map("created_qualification_id") @db.Uuid
-  sourceReferralTokenHash   String?           @map("source_referral_token_hash")
-  note                      String?
-  createdAt                 DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt                 DateTime          @updatedAt @map("updated_at") @db.Timestamptz(6)
+  applicationId               String            @id @default(uuid()) @map("application_id") @db.Uuid
+  personId                    String            @map("person_id") @db.Uuid
+  requestedPlanLevelCode      String            @map("requested_plan_level_code")
+  sponsorQualificationId      String?           @map("sponsor_qualification_id") @db.Uuid
+  binaryParentQualificationId String?           @map("binary_parent_qualification_id") @db.Uuid
+  binarySide                  String?           @map("binary_side")
+  status                      ApplicationStatus @default(DRAFT)
+  submittedAt                 DateTime?         @map("submitted_at") @db.Timestamptz(6)
+  approvedAt                  DateTime?         @map("approved_at") @db.Timestamptz(6)
+  approvedBy                  String?           @map("approved_by") @db.Uuid
+  effectiveAt                 DateTime?         @map("effective_at") @db.Timestamptz(6)
+  createdQualificationId      String?           @unique @map("created_qualification_id") @db.Uuid
+  sourceReferralTokenHash     String?           @map("source_referral_token_hash")
+  note                        String?
+  createdAt                   DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt                   DateTime          @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  person Person @relation(fields:[personId], references:[personId])
-  qualification Qualification? @relation(fields:[createdQualificationId], references:[qualificationId])
+  person        Person         @relation(fields: [personId], references: [personId])
+  qualification Qualification? @relation(fields: [createdQualificationId], references: [qualificationId])
 
-  @@index([personId,status])
+  @@index([personId, status])
   @@index([sponsorQualificationId])
   @@map("membership_application")
   @@schema("membership")
 }
 
 model ActivePeriod {
-  activePeriodId   String   @id @default(uuid()) @map("active_period_id") @db.Uuid
-  qualificationId String   @map("qualification_id") @db.Uuid
-  activeFrom      DateTime @map("active_from") @db.Timestamptz(6)
+  activePeriodId  String    @id @default(uuid()) @map("active_period_id") @db.Uuid
+  qualificationId String    @map("qualification_id") @db.Uuid
+  activeFrom      DateTime  @map("active_from") @db.Timestamptz(6)
   activeTo        DateTime? @map("active_to") @db.Timestamptz(6)
-  sourceType      String   @map("source_type")
-  sourceId        String?  @map("source_id") @db.Uuid
-  ruleVersionCode String   @map("rule_version_code")
-  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  sourceType      String    @map("source_type")
+  sourceId        String?   @map("source_id") @db.Uuid
+  ruleVersionCode String    @map("rule_version_code")
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
 
-  qualification Qualification @relation(fields:[qualificationId], references:[qualificationId])
+  qualification Qualification @relation(fields: [qualificationId], references: [qualificationId])
 
-  @@index([qualificationId,activeFrom,activeTo])
+  @@index([qualificationId, activeFrom, activeTo])
   @@map("active_period")
   @@schema("membership")
 }
 
 model SubscriptionPlan {
-  subscriptionPlanId String   @id @default(uuid()) @map("subscription_plan_id") @db.Uuid
-  planCode           String   @unique @map("plan_code")
-  displayName        String   @map("display_name")
-  durationMonths     Int      @map("duration_months")
-  prepaidAmount      Decimal  @map("prepaid_amount") @db.Decimal(18,2)
-  productBoxQty      Int      @map("product_box_qty")
-  monthlyRecognizedAmount Decimal @map("monthly_recognized_amount") @db.Decimal(18,2)
-  monthlyRpv         Decimal  @map("monthly_rpv") @db.Decimal(18,4)
-  isActive           Boolean  @default(true) @map("is_active")
-  createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  subscriptionPlanId      String   @id @default(uuid()) @map("subscription_plan_id") @db.Uuid
+  planCode                String   @unique @map("plan_code")
+  displayName             String   @map("display_name")
+  durationMonths          Int      @map("duration_months")
+  prepaidAmount           Decimal  @map("prepaid_amount") @db.Decimal(18, 2)
+  productBoxQty           Int      @map("product_box_qty")
+  monthlyRecognizedAmount Decimal  @map("monthly_recognized_amount") @db.Decimal(18, 2)
+  monthlyRpv              Decimal  @map("monthly_rpv") @db.Decimal(18, 4)
+  isActive                Boolean  @default(true) @map("is_active")
+  createdAt               DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
   subscriptions Subscription[]
 
@@ -774,83 +802,82 @@ model SubscriptionPlan {
 }
 
 model Subscription {
-  subscriptionId     String             @id @default(uuid()) @map("subscription_id") @db.Uuid
-  qualificationId    String             @map("qualification_id") @db.Uuid
-  subscriptionPlanId String             @map("subscription_plan_id") @db.Uuid
-  orderId            String?            @map("order_id") @db.Uuid
-  status             SubscriptionStatus @default(PENDING)
-  startMonth         DateTime           @map("start_month") @db.Date
-  endMonth           DateTime           @map("end_month") @db.Date
-  ruleVersionCode    String             @map("rule_version_code")
-  parameterSnapshotHash String?         @map("parameter_snapshot_hash")
-  createdAt          DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
-  activatedAt        DateTime?          @map("activated_at") @db.Timestamptz(6)
-  cancelledAt        DateTime?          @map("cancelled_at") @db.Timestamptz(6)
+  subscriptionId        String             @id @default(uuid()) @map("subscription_id") @db.Uuid
+  qualificationId       String             @map("qualification_id") @db.Uuid
+  subscriptionPlanId    String             @map("subscription_plan_id") @db.Uuid
+  orderId               String?            @map("order_id") @db.Uuid
+  status                SubscriptionStatus @default(PENDING)
+  startMonth            DateTime           @map("start_month") @db.Date
+  endMonth              DateTime           @map("end_month") @db.Date
+  ruleVersionCode       String             @map("rule_version_code")
+  parameterSnapshotHash String?            @map("parameter_snapshot_hash")
+  createdAt             DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
+  activatedAt           DateTime?          @map("activated_at") @db.Timestamptz(6)
+  cancelledAt           DateTime?          @map("cancelled_at") @db.Timestamptz(6)
 
-  qualification Qualification @relation(fields:[qualificationId], references:[qualificationId])
-  plan SubscriptionPlan @relation(fields:[subscriptionPlanId], references:[subscriptionPlanId])
-  schedules MonthlyRecognitionSchedule[]
+  qualification Qualification                @relation(fields: [qualificationId], references: [qualificationId])
+  plan          SubscriptionPlan             @relation(fields: [subscriptionPlanId], references: [subscriptionPlanId])
+  schedules     MonthlyRecognitionSchedule[]
 
-  @@index([qualificationId,status])
+  @@index([qualificationId, status])
   @@map("subscription")
   @@schema("subscription")
 }
 
 model MonthlyRecognitionSchedule {
-  recognitionId      String            @id @default(uuid()) @map("recognition_id") @db.Uuid
-  subscriptionId     String            @map("subscription_id") @db.Uuid
-  installmentNo      Int               @map("installment_no")
-  recognitionMonth   DateTime          @map("recognition_month") @db.Date
-  recognizedAmount   Decimal           @map("recognized_amount") @db.Decimal(18,2)
-  rpvAmount          Decimal           @map("rpv_amount") @db.Decimal(18,4)
-  status             RecognitionStatus @default(SCHEDULED)
-  dueAt              DateTime          @map("due_at") @db.Timestamptz(6)
-  recognizedAt       DateTime?         @map("recognized_at") @db.Timestamptz(6)
-  pvLedgerEventId    String?           @unique @map("pv_ledger_event_id") @db.Uuid
-  ruleVersionCode    String            @map("rule_version_code")
-  parameterSnapshotHash String?        @map("parameter_snapshot_hash")
-  createdAt          DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+  recognitionId         String            @id @default(uuid()) @map("recognition_id") @db.Uuid
+  subscriptionId        String            @map("subscription_id") @db.Uuid
+  installmentNo         Int               @map("installment_no")
+  recognitionMonth      DateTime          @map("recognition_month") @db.Date
+  recognizedAmount      Decimal           @map("recognized_amount") @db.Decimal(18, 2)
+  rpvAmount             Decimal           @map("rpv_amount") @db.Decimal(18, 4)
+  status                RecognitionStatus @default(SCHEDULED)
+  dueAt                 DateTime          @map("due_at") @db.Timestamptz(6)
+  recognizedAt          DateTime?         @map("recognized_at") @db.Timestamptz(6)
+  pvLedgerEventId       String?           @unique @map("pv_ledger_event_id") @db.Uuid
+  ruleVersionCode       String            @map("rule_version_code")
+  parameterSnapshotHash String?           @map("parameter_snapshot_hash")
+  createdAt             DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
 
-  subscription Subscription @relation(fields:[subscriptionId], references:[subscriptionId])
+  subscription Subscription @relation(fields: [subscriptionId], references: [subscriptionId])
 
-  @@unique([subscriptionId,installmentNo])
-  @@index([status,dueAt])
+  @@unique([subscriptionId, installmentNo])
+  @@index([status, dueAt])
   @@map("monthly_recognition_schedule")
   @@schema("subscription")
 }
 
 model RpvUplineAwardEvent {
-  rpvAwardEventId           String   @id @default(uuid()) @map("rpv_award_event_id") @db.Uuid
-  recognitionId             String   @map("recognition_id") @db.Uuid
-  sourceQualificationId     String   @map("source_qualification_id") @db.Uuid
-  recipientQualificationId  String   @map("recipient_qualification_id") @db.Uuid
-  binaryGeneration          Int      @map("binary_generation")
-  effectiveDirectCountSnapshot Int   @map("effective_direct_count_snapshot")
-  unlockedDepthSnapshot     Int      @map("unlocked_depth_snapshot")
-  activeSnapshot            Boolean  @map("active_snapshot")
-  theoryAmount              Decimal  @map("theory_amount") @db.Decimal(18,2)
-  payableAmount             Decimal  @map("payable_amount") @db.Decimal(18,2)
-  ruleVersionCode           String   @map("rule_version_code")
-  parameterSnapshotHash     String?  @map("parameter_snapshot_hash")
-  occurredAt                DateTime @map("occurred_at") @db.Timestamptz(6)
-  createdAt                 DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  rpvAwardEventId              String   @id @default(uuid()) @map("rpv_award_event_id") @db.Uuid
+  recognitionId                String   @map("recognition_id") @db.Uuid
+  sourceQualificationId        String   @map("source_qualification_id") @db.Uuid
+  recipientQualificationId     String   @map("recipient_qualification_id") @db.Uuid
+  binaryGeneration             Int      @map("binary_generation")
+  effectiveDirectCountSnapshot Int      @map("effective_direct_count_snapshot")
+  unlockedDepthSnapshot        Int      @map("unlocked_depth_snapshot")
+  activeSnapshot               Boolean  @map("active_snapshot")
+  theoryAmount                 Decimal  @map("theory_amount") @db.Decimal(18, 2)
+  payableAmount                Decimal  @map("payable_amount") @db.Decimal(18, 2)
+  ruleVersionCode              String   @map("rule_version_code")
+  parameterSnapshotHash        String?  @map("parameter_snapshot_hash")
+  occurredAt                   DateTime @map("occurred_at") @db.Timestamptz(6)
+  createdAt                    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
-  @@unique([recognitionId,recipientQualificationId,binaryGeneration])
-  @@index([recipientQualificationId,occurredAt])
+  @@unique([recognitionId, recipientQualificationId, binaryGeneration])
+  @@index([recipientQualificationId, occurredAt])
   @@map("rpv_upline_award_event")
   @@schema("ledger")
 }
 
-
 model RuntimeRuleParameter {
-  runtimeRuleParameterId String   @id @default(uuid()) @map("runtime_rule_parameter_id") @db.Uuid
-  ruleVersionCode       String   @map("rule_version_code")
-  parameterCode         String   @map("parameter_code")
-  scopeKey              String   @default("*") @map("scope_key")
-  valueJson             Json     @map("value_json")
-  effectiveFrom         DateTime @map("effective_from") @db.Timestamptz(6)
-  effectiveTo           DateTime? @map("effective_to") @db.Timestamptz(6)
-  createdAt             DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  runtimeRuleParameterId String    @id @default(uuid()) @map("runtime_rule_parameter_id") @db.Uuid
+  ruleVersionCode        String    @map("rule_version_code")
+  parameterCode          String    @map("parameter_code")
+  scopeKey               String    @default("*") @map("scope_key")
+  valueJson              Json      @map("value_json")
+  effectiveFrom          DateTime  @map("effective_from") @db.Timestamptz(6)
+  effectiveTo            DateTime? @map("effective_to") @db.Timestamptz(6)
+  createdAt              DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
 
   @@unique([ruleVersionCode, parameterCode, scopeKey, effectiveFrom])
   @@index([ruleVersionCode, parameterCode, scopeKey, effectiveFrom, effectiveTo])
@@ -859,23 +886,23 @@ model RuntimeRuleParameter {
 }
 
 model SettlementBatch {
-  parameterSnapshot Json? @map("parameter_snapshot")
+  parameterSnapshot Json?            @map("parameter_snapshot")
   settlementBatchId String           @id @default(uuid()) @map("settlement_batch_id") @db.Uuid
   settlementType    SettlementType   @map("settlement_type")
   periodStart       DateTime         @map("period_start") @db.Timestamptz(6)
   periodEnd         DateTime         @map("period_end") @db.Timestamptz(6)
   ruleVersionCode   String           @map("rule_version_code")
   status            SettlementStatus @default(DRAFT)
-  totalGpv          Decimal          @default(0) @map("total_gpv") @db.Decimal(18,4)
-  poolRate          Decimal          @default(0) @map("pool_rate") @db.Decimal(10,6)
-  poolAvailable     Decimal          @default(0) @map("pool_available") @db.Decimal(18,4)
-  totalTheory       Decimal          @default(0) @map("total_theory") @db.Decimal(18,4)
-  kFactor           Decimal          @default(1) @map("k_factor") @db.Decimal(18,8)
+  totalGpv          Decimal          @default(0) @map("total_gpv") @db.Decimal(18, 4)
+  poolRate          Decimal          @default(0) @map("pool_rate") @db.Decimal(10, 6)
+  poolAvailable     Decimal          @default(0) @map("pool_available") @db.Decimal(18, 4)
+  totalTheory       Decimal          @default(0) @map("total_theory") @db.Decimal(18, 4)
+  kFactor           Decimal          @default(1) @map("k_factor") @db.Decimal(18, 8)
   calculationHash   String?          @map("calculation_hash")
   createdAt         DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
   finalizedAt       DateTime?        @map("finalized_at") @db.Timestamptz(6)
 
-  awards BonusAward[]
+  awards              BonusAward[]
   calculationEvidence BonusCalculationEvidence[]
 
   @@unique([settlementType, periodStart, periodEnd, ruleVersionCode])
@@ -886,19 +913,19 @@ model SettlementBatch {
 
 model BonusCalculationEvidence {
   bonusCalculationEvidenceId String   @id @default(uuid()) @map("bonus_calculation_evidence_id") @db.Uuid
-  settlementBatchId         String   @map("settlement_batch_id") @db.Uuid
-  evidenceType              String   @map("evidence_type")
-  recipientQualificationId  String   @map("recipient_qualification_id") @db.Uuid
-  reasonCode                String   @map("reason_code")
-  theoreticalAmount         Decimal  @map("theoretical_amount") @db.Decimal(18,4)
-  entitlementAmount         Decimal  @default(0) @map("entitlement_amount") @db.Decimal(18,4)
-  ruleVersionCode           String   @map("rule_version_code")
-  parameterSnapshotHash     String?  @map("parameter_snapshot_hash")
-  occurredAt                DateTime @map("occurred_at") @db.Timestamptz(6)
-  calculationDetail         Json     @map("calculation_detail")
-  createdAt                 DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  settlementBatchId          String   @map("settlement_batch_id") @db.Uuid
+  evidenceType               String   @map("evidence_type")
+  recipientQualificationId   String   @map("recipient_qualification_id") @db.Uuid
+  reasonCode                 String   @map("reason_code")
+  theoreticalAmount          Decimal  @map("theoretical_amount") @db.Decimal(18, 4)
+  entitlementAmount          Decimal  @default(0) @map("entitlement_amount") @db.Decimal(18, 4)
+  ruleVersionCode            String   @map("rule_version_code")
+  parameterSnapshotHash      String?  @map("parameter_snapshot_hash")
+  occurredAt                 DateTime @map("occurred_at") @db.Timestamptz(6)
+  calculationDetail          Json     @map("calculation_detail")
+  createdAt                  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
-  settlementBatch SettlementBatch @relation(fields:[settlementBatchId], references:[settlementBatchId])
+  settlementBatch SettlementBatch @relation(fields: [settlementBatchId], references: [settlementBatchId])
 
   @@unique([settlementBatchId, evidenceType, recipientQualificationId])
   @@index([recipientQualificationId, evidenceType, occurredAt])
@@ -907,34 +934,34 @@ model BonusCalculationEvidence {
 }
 
 model BonusAward {
-  bonusAwardId             String         @id @default(uuid()) @map("bonus_award_id") @db.Uuid
-  settlementBatchId        String?        @map("settlement_batch_id") @db.Uuid
-  awardType                BonusAwardType @map("award_type")
-  recipientQualificationId String         @map("recipient_qualification_id") @db.Uuid
-  sourceQualificationId    String?        @map("source_qualification_id") @db.Uuid
-  sourceEventId            String?        @map("source_event_id") @db.Uuid
-  sourceAwardId            String?        @map("source_award_id") @db.Uuid
-  generationNo             Int?           @map("generation_no")
-  theoryAmount             Decimal        @map("theory_amount") @db.Decimal(18,4)
-  kFactor                  Decimal        @default(1) @map("k_factor") @db.Decimal(18,8)
-  payableAmount            Decimal        @map("payable_amount") @db.Decimal(18,4)
-  activeSnapshot           Boolean        @map("active_snapshot")
-  effectiveDirectCountSnapshot Int?       @map("effective_direct_count_snapshot")
-  planLevelSnapshot        String?        @map("plan_level_snapshot")
-  ruleVersionCode          String         @map("rule_version_code")
-  parameterSnapshotHash    String?        @map("parameter_snapshot_hash")
-  occurredAt               DateTime       @map("occurred_at") @db.Timestamptz(6)
-  pendingUntil             DateTime       @map("pending_until") @db.Timestamptz(6)
-  calculationDetail        Json           @map("calculation_detail")
-  createdAt                DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  bonusAwardId                 String         @id @default(uuid()) @map("bonus_award_id") @db.Uuid
+  settlementBatchId            String?        @map("settlement_batch_id") @db.Uuid
+  awardType                    BonusAwardType @map("award_type")
+  recipientQualificationId     String         @map("recipient_qualification_id") @db.Uuid
+  sourceQualificationId        String?        @map("source_qualification_id") @db.Uuid
+  sourceEventId                String?        @map("source_event_id") @db.Uuid
+  sourceAwardId                String?        @map("source_award_id") @db.Uuid
+  generationNo                 Int?           @map("generation_no")
+  theoryAmount                 Decimal        @map("theory_amount") @db.Decimal(18, 4)
+  kFactor                      Decimal        @default(1) @map("k_factor") @db.Decimal(18, 8)
+  payableAmount                Decimal        @map("payable_amount") @db.Decimal(18, 4)
+  activeSnapshot               Boolean        @map("active_snapshot")
+  effectiveDirectCountSnapshot Int?           @map("effective_direct_count_snapshot")
+  planLevelSnapshot            String?        @map("plan_level_snapshot")
+  ruleVersionCode              String         @map("rule_version_code")
+  parameterSnapshotHash        String?        @map("parameter_snapshot_hash")
+  occurredAt                   DateTime       @map("occurred_at") @db.Timestamptz(6)
+  pendingUntil                 DateTime       @map("pending_until") @db.Timestamptz(6)
+  calculationDetail            Json           @map("calculation_detail")
+  createdAt                    DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
 
-  settlementBatch SettlementBatch? @relation(fields:[settlementBatchId], references:[settlementBatchId])
-  recipient Qualification @relation("BonusRecipient", fields:[recipientQualificationId], references:[qualificationId])
-  sourceQualification Qualification? @relation("BonusSource", fields:[sourceQualificationId], references:[qualificationId])
-  lifecycleEvents BonusAwardLifecycleEvent[]
-  recoveryEvents BonusRecoveryEvent[]
-  sourceAward BonusAward? @relation("BonusAwardSource", fields:[sourceAwardId], references:[bonusAwardId])
-  derivedAwards BonusAward[] @relation("BonusAwardSource")
+  settlementBatch     SettlementBatch?           @relation(fields: [settlementBatchId], references: [settlementBatchId])
+  recipient           Qualification              @relation("BonusRecipient", fields: [recipientQualificationId], references: [qualificationId])
+  sourceQualification Qualification?             @relation("BonusSource", fields: [sourceQualificationId], references: [qualificationId])
+  lifecycleEvents     BonusAwardLifecycleEvent[]
+  recoveryEvents      BonusRecoveryEvent[]
+  sourceAward         BonusAward?                @relation("BonusAwardSource", fields: [sourceAwardId], references: [bonusAwardId])
+  derivedAwards       BonusAward[]               @relation("BonusAwardSource")
 
   @@unique([awardType, recipientQualificationId, sourceEventId, generationNo, settlementBatchId])
   @@index([recipientQualificationId, awardType, occurredAt])
@@ -952,7 +979,7 @@ model BonusAwardLifecycleEvent {
   sourceEventId    String?                   @map("source_event_id") @db.Uuid
   createdAt        DateTime                  @default(now()) @map("created_at") @db.Timestamptz(6)
 
-  award BonusAward @relation(fields:[bonusAwardId], references:[bonusAwardId])
+  award BonusAward @relation(fields: [bonusAwardId], references: [bonusAwardId])
 
   @@index([bonusAwardId, occurredAt])
   @@map("bonus_award_lifecycle_event")
@@ -963,74 +990,73 @@ model BinaryCarry {
   binaryCarryId     String   @id @default(uuid()) @map("binary_carry_id") @db.Uuid
   qualificationId   String   @map("qualification_id") @db.Uuid
   periodEnd         DateTime @map("period_end") @db.Timestamptz(6)
-  leftCarryIn       Decimal  @map("left_carry_in") @db.Decimal(18,4)
-  rightCarryIn      Decimal  @map("right_carry_in") @db.Decimal(18,4)
-  leftPeriodGpv     Decimal  @map("left_period_gpv") @db.Decimal(18,4)
-  rightPeriodGpv    Decimal  @map("right_period_gpv") @db.Decimal(18,4)
-  pairedPv          Decimal  @map("paired_pv") @db.Decimal(18,4)
-  leftCarryOut      Decimal  @map("left_carry_out") @db.Decimal(18,4)
-  rightCarryOut     Decimal  @map("right_carry_out") @db.Decimal(18,4)
-  weeklyCapSnapshot Decimal  @map("weekly_cap_snapshot") @db.Decimal(18,4)
+  leftCarryIn       Decimal  @map("left_carry_in") @db.Decimal(18, 4)
+  rightCarryIn      Decimal  @map("right_carry_in") @db.Decimal(18, 4)
+  leftPeriodGpv     Decimal  @map("left_period_gpv") @db.Decimal(18, 4)
+  rightPeriodGpv    Decimal  @map("right_period_gpv") @db.Decimal(18, 4)
+  pairedPv          Decimal  @map("paired_pv") @db.Decimal(18, 4)
+  leftCarryOut      Decimal  @map("left_carry_out") @db.Decimal(18, 4)
+  rightCarryOut     Decimal  @map("right_carry_out") @db.Decimal(18, 4)
+  weeklyCapSnapshot Decimal  @map("weekly_cap_snapshot") @db.Decimal(18, 4)
   ruleVersionCode   String   @map("rule_version_code")
   createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
-  qualification Qualification @relation(fields:[qualificationId], references:[qualificationId])
+  qualification Qualification @relation(fields: [qualificationId], references: [qualificationId])
 
-  @@unique([qualificationId,periodEnd,ruleVersionCode])
-  @@index([qualificationId,periodEnd])
+  @@unique([qualificationId, periodEnd, ruleVersionCode])
+  @@index([qualificationId, periodEnd])
   @@map("binary_carry")
   @@schema("ledger")
 }
 
-
 model QualificationStatusHistory {
-  qualificationStatusHistoryId String   @id @default(uuid()) @map("qualification_status_history_id") @db.Uuid
-  qualificationId              String   @map("qualification_id") @db.Uuid
+  qualificationStatusHistoryId String                       @id @default(uuid()) @map("qualification_status_history_id") @db.Uuid
+  qualificationId              String                       @map("qualification_id") @db.Uuid
   status                       QualificationLifecycleStatus
-  effectiveFrom                DateTime @map("effective_from") @db.Timestamptz(6)
-  effectiveTo                  DateTime? @map("effective_to") @db.Timestamptz(6)
-  sourceType                   String   @map("source_type")
-  sourceId                     String?  @map("source_id") @db.Uuid
-  createdAt                    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  effectiveFrom                DateTime                     @map("effective_from") @db.Timestamptz(6)
+  effectiveTo                  DateTime?                    @map("effective_to") @db.Timestamptz(6)
+  sourceType                   String                       @map("source_type")
+  sourceId                     String?                      @map("source_id") @db.Uuid
+  createdAt                    DateTime                     @default(now()) @map("created_at") @db.Timestamptz(6)
 
-  qualification Qualification @relation(fields:[qualificationId],references:[qualificationId])
+  qualification Qualification @relation(fields: [qualificationId], references: [qualificationId])
 
-  @@index([qualificationId,effectiveFrom,effectiveTo])
+  @@index([qualificationId, effectiveFrom, effectiveTo])
   @@map("qualification_status_history")
   @@schema("membership")
 }
 
 model ReturnCase {
-  returnCaseId      String       @id @default(uuid()) @map("return_case_id") @db.Uuid
-  orderId           String       @map("order_id") @db.Uuid
-  status            ReturnStatus @default(DRAFT)
-  reasonCode        String       @map("reason_code")
-  occurredAt        DateTime     @map("occurred_at") @db.Timestamptz(6)
-  postedAt          DateTime?    @map("posted_at") @db.Timestamptz(6)
-  idempotencyKey    String       @unique @map("idempotency_key")
-  correlationId     String       @map("correlation_id") @db.Uuid
-  createdAt         DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+  returnCaseId   String       @id @default(uuid()) @map("return_case_id") @db.Uuid
+  orderId        String       @map("order_id") @db.Uuid
+  status         ReturnStatus @default(DRAFT)
+  reasonCode     String       @map("reason_code")
+  occurredAt     DateTime     @map("occurred_at") @db.Timestamptz(6)
+  postedAt       DateTime?    @map("posted_at") @db.Timestamptz(6)
+  idempotencyKey String       @unique @map("idempotency_key")
+  correlationId  String       @map("correlation_id") @db.Uuid
+  createdAt      DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
 
-  order Order @relation(fields:[orderId],references:[orderId])
+  order Order        @relation(fields: [orderId], references: [orderId])
   lines ReturnLine[]
 
-  @@index([orderId,occurredAt])
+  @@index([orderId, occurredAt])
   @@map("return_case")
   @@schema("commerce")
 }
 
 model ReturnLine {
-  returnLineId       String   @id @default(uuid()) @map("return_line_id") @db.Uuid
-  returnCaseId       String   @map("return_case_id") @db.Uuid
-  orderLineId        String   @map("order_line_id") @db.Uuid
-  quantity           Decimal  @db.Decimal(18,4)
-  returnAmount       Decimal  @map("return_amount") @db.Decimal(18,2)
-  gpvReversalAmount  Decimal  @map("gpv_reversal_amount") @db.Decimal(18,4)
-  createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  returnLineId      String   @id @default(uuid()) @map("return_line_id") @db.Uuid
+  returnCaseId      String   @map("return_case_id") @db.Uuid
+  orderLineId       String   @map("order_line_id") @db.Uuid
+  quantity          Decimal  @db.Decimal(18, 4)
+  returnAmount      Decimal  @map("return_amount") @db.Decimal(18, 2)
+  gpvReversalAmount Decimal  @map("gpv_reversal_amount") @db.Decimal(18, 4)
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
-  returnCase ReturnCase @relation(fields:[returnCaseId],references:[returnCaseId])
+  returnCase ReturnCase @relation(fields: [returnCaseId], references: [returnCaseId])
 
-  @@unique([returnCaseId,orderLineId])
+  @@unique([returnCaseId, orderLineId])
   @@index([orderLineId])
   @@map("return_line")
   @@schema("commerce")
@@ -1040,41 +1066,40 @@ model BonusRecoveryEvent {
   bonusRecoveryEventId String         @id @default(uuid()) @map("bonus_recovery_event_id") @db.Uuid
   bonusAwardId         String         @map("bonus_award_id") @db.Uuid
   returnCaseId         String?        @map("return_case_id") @db.Uuid
-  recoveryAmount       Decimal        @map("recovery_amount") @db.Decimal(18,4)
-  recoveredAmount      Decimal        @default(0) @map("recovered_amount") @db.Decimal(18,4)
-  outstandingAmount    Decimal        @default(0) @map("outstanding_amount") @db.Decimal(18,4)
+  recoveryAmount       Decimal        @map("recovery_amount") @db.Decimal(18, 4)
+  recoveredAmount      Decimal        @default(0) @map("recovered_amount") @db.Decimal(18, 4)
+  outstandingAmount    Decimal        @default(0) @map("outstanding_amount") @db.Decimal(18, 4)
   status               RecoveryStatus @default(OPEN)
   reasonCode           String         @map("reason_code")
   occurredAt           DateTime       @map("occurred_at") @db.Timestamptz(6)
   createdAt            DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
 
-  bonusAward BonusAward @relation(fields:[bonusAwardId],references:[bonusAwardId])
+  bonusAward   BonusAward            @relation(fields: [bonusAwardId], references: [bonusAwardId])
   applications RecoveryApplication[]
 
-  @@unique([bonusAwardId,returnCaseId,reasonCode])
-  @@index([bonusAwardId,status])
+  @@unique([bonusAwardId, returnCaseId, reasonCode])
+  @@index([bonusAwardId, status])
   @@index([returnCaseId])
   @@map("bonus_recovery_event")
   @@schema("ledger")
 }
 
 model SettlementRecalculationRequest {
-  settlementRecalculationRequestId String   @id @default(uuid()) @map("settlement_recalculation_request_id") @db.Uuid
-  sourceReturnCaseId              String   @map("source_return_case_id") @db.Uuid
-  settlementType                  String   @map("settlement_type")
-  periodStart                     DateTime @map("period_start") @db.Timestamptz(6)
-  periodEnd                       DateTime @map("period_end") @db.Timestamptz(6)
-  impactedQualificationId         String?  @map("impacted_qualification_id") @db.Uuid
-  status                          String   @default("PENDING")
-  createdAt                       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  processedAt                     DateTime? @map("processed_at") @db.Timestamptz(6)
+  settlementRecalculationRequestId String    @id @default(uuid()) @map("settlement_recalculation_request_id") @db.Uuid
+  sourceReturnCaseId               String    @map("source_return_case_id") @db.Uuid
+  settlementType                   String    @map("settlement_type")
+  periodStart                      DateTime  @map("period_start") @db.Timestamptz(6)
+  periodEnd                        DateTime  @map("period_end") @db.Timestamptz(6)
+  impactedQualificationId          String?   @map("impacted_qualification_id") @db.Uuid
+  status                           String    @default("PENDING")
+  createdAt                        DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  processedAt                      DateTime? @map("processed_at") @db.Timestamptz(6)
 
-  @@unique([sourceReturnCaseId,settlementType,periodStart,periodEnd])
-  @@index([status,periodEnd])
+  @@unique([sourceReturnCaseId, settlementType, periodStart, periodEnd])
+  @@index([status, periodEnd])
   @@map("settlement_recalculation_request")
   @@schema("ledger")
 }
-
 
 enum PayoutApprovalStage {
   FINANCE_REVIEW
@@ -1091,44 +1116,44 @@ enum PayoutApprovalDecision {
 }
 
 model PayoutBatch {
-  payoutBatchId  String            @id @default(uuid()) @map("payout_batch_id") @db.Uuid
-  periodStart    DateTime          @map("period_start") @db.Timestamptz(6)
-  periodEnd      DateTime          @map("period_end") @db.Timestamptz(6)
-  status         PayoutBatchStatus @default(DRAFT)
-  totalGross     Decimal           @default(0) @map("total_gross") @db.Decimal(18,4)
-  totalRecovery  Decimal           @default(0) @map("total_recovery") @db.Decimal(18,4)
-  totalNet       Decimal           @default(0) @map("total_net") @db.Decimal(18,4)
-  createdAt      DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
-  exportedAt     DateTime?         @map("exported_at") @db.Timestamptz(6)
-  paidAt         DateTime?         @map("paid_at") @db.Timestamptz(6)
-  exportReference String?          @map("export_reference")
-  paymentReference String?         @map("payment_reference")
-  paymentMethod    String?         @map("payment_method")
+  payoutBatchId    String            @id @default(uuid()) @map("payout_batch_id") @db.Uuid
+  periodStart      DateTime          @map("period_start") @db.Timestamptz(6)
+  periodEnd        DateTime          @map("period_end") @db.Timestamptz(6)
+  status           PayoutBatchStatus @default(DRAFT)
+  totalGross       Decimal           @default(0) @map("total_gross") @db.Decimal(18, 4)
+  totalRecovery    Decimal           @default(0) @map("total_recovery") @db.Decimal(18, 4)
+  totalNet         Decimal           @default(0) @map("total_net") @db.Decimal(18, 4)
+  createdAt        DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+  exportedAt       DateTime?         @map("exported_at") @db.Timestamptz(6)
+  paidAt           DateTime?         @map("paid_at") @db.Timestamptz(6)
+  exportReference  String?           @map("export_reference")
+  paymentReference String?           @map("payment_reference")
+  paymentMethod    String?           @map("payment_method")
 
-  lines PayoutLine[]
+  lines     PayoutLine[]
   approvals PayoutApproval[]
 
-  @@index([status,periodEnd])
+  @@index([status, periodEnd])
   @@map("payout_batch")
   @@schema("ledger")
 }
 
 model PayoutLine {
-  payoutLineId              String   @id @default(uuid()) @map("payout_line_id") @db.Uuid
-  payoutBatchId             String   @map("payout_batch_id") @db.Uuid
-  recipientQualificationId  String   @map("recipient_qualification_id") @db.Uuid
-  grossAmount               Decimal  @map("gross_amount") @db.Decimal(18,4)
-  recoveryOffset            Decimal  @default(0) @map("recovery_offset") @db.Decimal(18,4)
-  netAmount                 Decimal  @map("net_amount") @db.Decimal(18,4)
-  detailJson                Json     @map("detail_json")
-  createdAt                 DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  payoutLineId             String   @id @default(uuid()) @map("payout_line_id") @db.Uuid
+  payoutBatchId            String   @map("payout_batch_id") @db.Uuid
+  recipientQualificationId String   @map("recipient_qualification_id") @db.Uuid
+  grossAmount              Decimal  @map("gross_amount") @db.Decimal(18, 4)
+  recoveryOffset           Decimal  @default(0) @map("recovery_offset") @db.Decimal(18, 4)
+  netAmount                Decimal  @map("net_amount") @db.Decimal(18, 4)
+  detailJson               Json     @map("detail_json")
+  createdAt                DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
-  payoutBatch PayoutBatch @relation(fields:[payoutBatchId],references:[payoutBatchId])
-  recipient Qualification @relation(fields:[recipientQualificationId],references:[qualificationId])
-  payableEntries PayableEntry[]
+  payoutBatch          PayoutBatch           @relation(fields: [payoutBatchId], references: [payoutBatchId])
+  recipient            Qualification         @relation(fields: [recipientQualificationId], references: [qualificationId])
+  payableEntries       PayableEntry[]
   recoveryApplications RecoveryApplication[]
 
-  @@unique([payoutBatchId,recipientQualificationId])
+  @@unique([payoutBatchId, recipientQualificationId])
   @@map("payout_line")
   @@schema("ledger")
 }
@@ -1139,86 +1164,85 @@ model QualificationGlobalRankHistory {
   rankCode                         GlobalRankCode @map("rank_code")
   achievedAt                       DateTime       @map("achieved_at") @db.Timestamptz(6)
   sourcePeriodEnd                  DateTime       @map("source_period_end") @db.Timestamptz(6)
-  ruleVersionCode                 String         @map("rule_version_code")
-  createdAt                       DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  ruleVersionCode                  String         @map("rule_version_code")
+  createdAt                        DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
 
-  qualification Qualification @relation(fields:[qualificationId],references:[qualificationId])
+  qualification Qualification @relation(fields: [qualificationId], references: [qualificationId])
 
-  @@unique([qualificationId,rankCode])
-  @@index([rankCode,achievedAt])
+  @@unique([qualificationId, rankCode])
+  @@index([rankCode, achievedAt])
   @@map("qualification_global_rank_history")
   @@schema("ledger")
 }
 
 model GlobalPoolSettlement {
-  parameterSnapshot Json? @map("parameter_snapshot")
+  parameterSnapshot      Json?    @map("parameter_snapshot")
   globalPoolSettlementId String   @id @default(uuid()) @map("global_pool_settlement_id") @db.Uuid
   periodStart            DateTime @map("period_start") @db.Timestamptz(6)
   periodEnd              DateTime @map("period_end") @db.Timestamptz(6)
-  totalGpv               Decimal  @map("total_gpv") @db.Decimal(18,4)
-  poolRate               Decimal  @map("pool_rate") @db.Decimal(10,6)
-  poolAvailable          Decimal  @map("pool_available") @db.Decimal(18,4)
-  distributedAmount      Decimal  @map("distributed_amount") @db.Decimal(18,4)
-  undistributedAmount    Decimal  @map("undistributed_amount") @db.Decimal(18,4)
+  totalGpv               Decimal  @map("total_gpv") @db.Decimal(18, 4)
+  poolRate               Decimal  @map("pool_rate") @db.Decimal(10, 6)
+  poolAvailable          Decimal  @map("pool_available") @db.Decimal(18, 4)
+  distributedAmount      Decimal  @map("distributed_amount") @db.Decimal(18, 4)
+  undistributedAmount    Decimal  @map("undistributed_amount") @db.Decimal(18, 4)
   ruleVersionCode        String   @map("rule_version_code")
   createdAt              DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
   awards GlobalPoolAward[]
 
-  @@unique([periodStart,periodEnd,ruleVersionCode])
+  @@unique([periodStart, periodEnd, ruleVersionCode])
   @@map("global_pool_settlement")
   @@schema("ledger")
 }
 
 model GlobalPoolAward {
-  globalPoolAwardId       String         @id @default(uuid()) @map("global_pool_award_id") @db.Uuid
-  globalPoolSettlementId  String         @map("global_pool_settlement_id") @db.Uuid
-  qualificationId         String         @map("qualification_id") @db.Uuid
-  rankLevel               GlobalRankCode @map("rank_level")
-  rankPoolRate            Decimal        @map("rank_pool_rate") @db.Decimal(10,6)
-  rankPoolAmount          Decimal        @map("rank_pool_amount") @db.Decimal(18,4)
-  eligibleCount           Int            @map("eligible_count")
-  payableAmount           Decimal        @map("payable_amount") @db.Decimal(18,4)
-  weakSidePvSnapshot      Decimal        @map("weak_side_pv_snapshot") @db.Decimal(18,4)
-  activeSnapshot          Boolean        @map("active_snapshot")
-  createdAt               DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  globalPoolAwardId      String         @id @default(uuid()) @map("global_pool_award_id") @db.Uuid
+  globalPoolSettlementId String         @map("global_pool_settlement_id") @db.Uuid
+  qualificationId        String         @map("qualification_id") @db.Uuid
+  rankLevel              GlobalRankCode @map("rank_level")
+  rankPoolRate           Decimal        @map("rank_pool_rate") @db.Decimal(10, 6)
+  rankPoolAmount         Decimal        @map("rank_pool_amount") @db.Decimal(18, 4)
+  eligibleCount          Int            @map("eligible_count")
+  payableAmount          Decimal        @map("payable_amount") @db.Decimal(18, 4)
+  weakSidePvSnapshot     Decimal        @map("weak_side_pv_snapshot") @db.Decimal(18, 4)
+  activeSnapshot         Boolean        @map("active_snapshot")
+  createdAt              DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
 
-  settlement GlobalPoolSettlement @relation(fields:[globalPoolSettlementId],references:[globalPoolSettlementId])
+  settlement GlobalPoolSettlement @relation(fields: [globalPoolSettlementId], references: [globalPoolSettlementId])
 
-  @@unique([globalPoolSettlementId,qualificationId,rankLevel])
-  @@index([qualificationId,rankLevel])
+  @@unique([globalPoolSettlementId, qualificationId, rankLevel])
+  @@index([qualificationId, rankLevel])
   @@map("global_pool_award")
   @@schema("ledger")
 }
 
 model WelfarePoolAccrual {
-  parameterSnapshot Json? @map("parameter_snapshot")
+  parameterSnapshot    Json?    @map("parameter_snapshot")
   welfarePoolAccrualId String   @id @default(uuid()) @map("welfare_pool_accrual_id") @db.Uuid
   periodStart          DateTime @map("period_start") @db.Timestamptz(6)
   periodEnd            DateTime @map("period_end") @db.Timestamptz(6)
-  totalGpv             Decimal  @map("total_gpv") @db.Decimal(18,4)
-  poolRate             Decimal  @map("pool_rate") @db.Decimal(10,6)
-  accruedAmount        Decimal  @map("accrued_amount") @db.Decimal(18,4)
+  totalGpv             Decimal  @map("total_gpv") @db.Decimal(18, 4)
+  poolRate             Decimal  @map("pool_rate") @db.Decimal(10, 6)
+  accruedAmount        Decimal  @map("accrued_amount") @db.Decimal(18, 4)
   ruleVersionCode      String   @map("rule_version_code")
   createdAt            DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
-  @@unique([periodStart,periodEnd,ruleVersionCode])
+  @@unique([periodStart, periodEnd, ruleVersionCode])
   @@map("welfare_pool_accrual")
   @@schema("ledger")
 }
 
-
 model QualificationPlanHistory {
-  qualificationPlanHistoryId String   @id @default(uuid()) @map("qualification_plan_history_id") @db.Uuid
-  qualificationId            String   @map("qualification_id") @db.Uuid
-  planCode                   String   @map("plan_code")
-  effectiveFrom              DateTime @map("effective_from") @db.Timestamptz(6)
+  qualificationPlanHistoryId String    @id @default(uuid()) @map("qualification_plan_history_id") @db.Uuid
+  qualificationId            String    @map("qualification_id") @db.Uuid
+  planCode                   String    @map("plan_code")
+  effectiveFrom              DateTime  @map("effective_from") @db.Timestamptz(6)
   effectiveTo                DateTime? @map("effective_to") @db.Timestamptz(6)
-  sourceType                 String   @map("source_type")
-  sourceId                   String?  @map("source_id") @db.Uuid
-  createdAt                  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  sourceType                 String    @map("source_type")
+  sourceId                   String?   @map("source_id") @db.Uuid
+  createdAt                  DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
 
-  @@index([qualificationId,effectiveFrom,effectiveTo])
+  @@index([qualificationId, effectiveFrom, effectiveTo])
   @@map("qualification_plan_history")
   @@schema("membership")
 }
@@ -1229,33 +1253,32 @@ model SubscriptionCancellation {
   requestedAt                DateTime @map("requested_at") @db.Timestamptz(6)
   effectiveAt                DateTime @map("effective_at") @db.Timestamptz(6)
   reasonCode                 String   @map("reason_code")
-  refundAmount               Decimal  @default(0) @map("refund_amount") @db.Decimal(18,2)
+  refundAmount               Decimal  @default(0) @map("refund_amount") @db.Decimal(18, 2)
   status                     String   @default("POSTED")
   correlationId              String   @map("correlation_id") @db.Uuid
   createdAt                  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
-  @@index([subscriptionId,effectiveAt])
+  @@index([subscriptionId, effectiveAt])
   @@map("subscription_cancellation")
   @@schema("subscription")
 }
 
-
 model SettlementAdjustmentBatch {
-  settlementAdjustmentBatchId      String           @id @default(uuid()) @map("settlement_adjustment_batch_id") @db.Uuid
-  sourceRecalculationRequestId     String           @unique @map("source_recalculation_request_id") @db.Uuid
-  settlementType                   String           @map("settlement_type")
-  periodStart                      DateTime         @map("period_start") @db.Timestamptz(6)
-  periodEnd                        DateTime         @map("period_end") @db.Timestamptz(6)
-  status                           AdjustmentStatus @default(DRAFT)
-  originalTheory                   Decimal          @default(0) @map("original_theory") @db.Decimal(18,4)
-  recomputedTheory                 Decimal          @default(0) @map("recomputed_theory") @db.Decimal(18,4)
-  deltaTheory                      Decimal          @default(0) @map("delta_theory") @db.Decimal(18,4)
-  originalPayable                  Decimal          @default(0) @map("original_payable") @db.Decimal(18,4)
-  recomputedPayable                Decimal          @default(0) @map("recomputed_payable") @db.Decimal(18,4)
-  deltaPayable                     Decimal          @default(0) @map("delta_payable") @db.Decimal(18,4)
-  calculationSnapshot              Json             @map("calculation_snapshot")
-  createdAt                        DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
-  postedAt                         DateTime?        @map("posted_at") @db.Timestamptz(6)
+  settlementAdjustmentBatchId  String           @id @default(uuid()) @map("settlement_adjustment_batch_id") @db.Uuid
+  sourceRecalculationRequestId String           @unique @map("source_recalculation_request_id") @db.Uuid
+  settlementType               String           @map("settlement_type")
+  periodStart                  DateTime         @map("period_start") @db.Timestamptz(6)
+  periodEnd                    DateTime         @map("period_end") @db.Timestamptz(6)
+  status                       AdjustmentStatus @default(DRAFT)
+  originalTheory               Decimal          @default(0) @map("original_theory") @db.Decimal(18, 4)
+  recomputedTheory             Decimal          @default(0) @map("recomputed_theory") @db.Decimal(18, 4)
+  deltaTheory                  Decimal          @default(0) @map("delta_theory") @db.Decimal(18, 4)
+  originalPayable              Decimal          @default(0) @map("original_payable") @db.Decimal(18, 4)
+  recomputedPayable            Decimal          @default(0) @map("recomputed_payable") @db.Decimal(18, 4)
+  deltaPayable                 Decimal          @default(0) @map("delta_payable") @db.Decimal(18, 4)
+  calculationSnapshot          Json             @map("calculation_snapshot")
+  createdAt                    DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  postedAt                     DateTime?        @map("posted_at") @db.Timestamptz(6)
 
   lines SettlementAdjustmentLine[]
 
@@ -1264,19 +1287,19 @@ model SettlementAdjustmentBatch {
 }
 
 model SettlementAdjustmentLine {
-  settlementAdjustmentLineId String         @id @default(uuid()) @map("settlement_adjustment_line_id") @db.Uuid
-  settlementAdjustmentBatchId String        @map("settlement_adjustment_batch_id") @db.Uuid
-  qualificationId            String         @map("qualification_id") @db.Uuid
-  awardType                  BonusAwardType @map("award_type")
-  originalAmount             Decimal        @map("original_amount") @db.Decimal(18,4)
-  recomputedAmount           Decimal        @map("recomputed_amount") @db.Decimal(18,4)
-  deltaAmount                Decimal        @map("delta_amount") @db.Decimal(18,4)
-  sourceReference            Json           @map("source_reference")
-  createdAt                  DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  settlementAdjustmentLineId  String         @id @default(uuid()) @map("settlement_adjustment_line_id") @db.Uuid
+  settlementAdjustmentBatchId String         @map("settlement_adjustment_batch_id") @db.Uuid
+  qualificationId             String         @map("qualification_id") @db.Uuid
+  awardType                   BonusAwardType @map("award_type")
+  originalAmount              Decimal        @map("original_amount") @db.Decimal(18, 4)
+  recomputedAmount            Decimal        @map("recomputed_amount") @db.Decimal(18, 4)
+  deltaAmount                 Decimal        @map("delta_amount") @db.Decimal(18, 4)
+  sourceReference             Json           @map("source_reference")
+  createdAt                   DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
 
-  batch SettlementAdjustmentBatch @relation(fields:[settlementAdjustmentBatchId],references:[settlementAdjustmentBatchId])
+  batch SettlementAdjustmentBatch @relation(fields: [settlementAdjustmentBatchId], references: [settlementAdjustmentBatchId])
 
-  @@index([qualificationId,awardType])
+  @@index([qualificationId, awardType])
   @@map("settlement_adjustment_line")
   @@schema("ledger")
 }
@@ -1289,18 +1312,17 @@ model QualificationWorkflow {
   applicantPersonId       String?                     @map("applicant_person_id") @db.Uuid
   receivingPersonId       String?                     @map("receiving_person_id") @db.Uuid
   targetPlanCode          String?                     @map("target_plan_code")
-  reviewFee               Decimal                     @default(600) @map("review_fee") @db.Decimal(18,2)
+  reviewFee               Decimal                     @default(600) @map("review_fee") @db.Decimal(18, 2)
   submittedAt             DateTime?                   @map("submitted_at") @db.Timestamptz(6)
   approvedAt              DateTime?                   @map("approved_at") @db.Timestamptz(6)
   effectiveAt             DateTime?                   @map("effective_at") @db.Timestamptz(6)
   payload                 Json                        @default("{}")
   createdAt               DateTime                    @default(now()) @map("created_at") @db.Timestamptz(6)
 
-  @@index([workflowType,status])
+  @@index([workflowType, status])
   @@map("qualification_workflow")
   @@schema("membership")
 }
-
 
 model SettlementReplayRun {
   settlementReplayRunId String          @id @default(uuid()) @map("settlement_replay_run_id") @db.Uuid
@@ -1328,23 +1350,22 @@ model SettlementReplayPeriod {
   periodNo                 Int      @map("period_no")
   periodStart              DateTime @map("period_start") @db.Timestamptz(6)
   periodEnd                DateTime @map("period_end") @db.Timestamptz(6)
-  originalK1               Decimal  @map("original_k1") @db.Decimal(18,8)
-  recomputedK1             Decimal  @map("recomputed_k1") @db.Decimal(18,8)
-  originalK2               Decimal? @map("original_k2") @db.Decimal(18,8)
-  recomputedK2             Decimal? @map("recomputed_k2") @db.Decimal(18,8)
+  originalK1               Decimal  @map("original_k1") @db.Decimal(18, 8)
+  recomputedK1             Decimal  @map("recomputed_k1") @db.Decimal(18, 8)
+  originalK2               Decimal? @map("original_k2") @db.Decimal(18, 8)
+  recomputedK2             Decimal? @map("recomputed_k2") @db.Decimal(18, 8)
   impactedQualifications   Json     @map("impacted_qualifications")
   carryDeltaSnapshot       Json     @map("carry_delta_snapshot")
   awardDeltaSnapshot       Json     @map("award_delta_snapshot")
   createdAt                DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
-  run SettlementReplayRun @relation(fields:[settlementReplayRunId],references:[settlementReplayRunId])
+  run SettlementReplayRun @relation(fields: [settlementReplayRunId], references: [settlementReplayRunId])
 
-  @@unique([settlementReplayRunId,periodEnd])
+  @@unique([settlementReplayRunId, periodEnd])
   @@index([periodEnd])
   @@map("settlement_replay_period")
   @@schema("ledger")
 }
-
 
 model IdentityLink {
   identityLinkId  String           @id @default(uuid()) @map("identity_link_id") @db.Uuid
@@ -1355,9 +1376,10 @@ model IdentityLink {
   displayName     String?          @map("display_name")
   createdAt       DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt       DateTime         @updatedAt @map("updated_at") @db.Timestamptz(6)
-  person Person @relation(fields:[personId],references:[personId])
-  @@unique([provider,providerSubject])
-  @@index([personId,provider])
+  person          Person           @relation(fields: [personId], references: [personId])
+
+  @@unique([provider, providerSubject])
+  @@index([personId, provider])
   @@map("identity_link")
   @@schema("identity")
 }
@@ -1375,27 +1397,28 @@ model AuthSession {
   revokedAt     DateTime?         @map("revoked_at") @db.Timestamptz(6)
   createdAt     DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
 
-  person Person? @relation(fields:[personId],references:[personId])
-  @@index([personId,status,expiresAt])
+  person Person? @relation(fields: [personId], references: [personId])
+
+  @@index([personId, status, expiresAt])
   @@map("auth_session")
   @@schema("identity")
 }
 
 model GoldenCaseRun {
-  goldenCaseRunId String    @id @default(uuid()) @map("golden_case_run_id") @db.Uuid
-  caseCode        String    @map("case_code")
-  ruleVersionCode String    @map("rule_version_code")
-  inputSnapshot   Json      @map("input_snapshot")
-  expectedSnapshot Json     @map("expected_snapshot")
-  actualSnapshot  Json?     @map("actual_snapshot")
-  passed          Boolean?
-  executedAt      DateTime? @map("executed_at") @db.Timestamptz(6)
-  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  @@index([caseCode,ruleVersionCode])
+  goldenCaseRunId  String    @id @default(uuid()) @map("golden_case_run_id") @db.Uuid
+  caseCode         String    @map("case_code")
+  ruleVersionCode  String    @map("rule_version_code")
+  inputSnapshot    Json      @map("input_snapshot")
+  expectedSnapshot Json      @map("expected_snapshot")
+  actualSnapshot   Json?     @map("actual_snapshot")
+  passed           Boolean?
+  executedAt       DateTime? @map("executed_at") @db.Timestamptz(6)
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([caseCode, ruleVersionCode])
   @@map("golden_case_run")
   @@schema("audit")
 }
-
 
 model PayableEntry {
   payableEntryId  String         @id @default(uuid()) @map("payable_entry_id") @db.Uuid
@@ -1403,33 +1426,34 @@ model PayableEntry {
   sourceType      String         @map("source_type")
   sourceId        String         @map("source_id") @db.Uuid
   awardType       BonusAwardType @map("award_type")
-  grossAmount     Decimal        @map("gross_amount") @db.Decimal(18,4)
+  grossAmount     Decimal        @map("gross_amount") @db.Decimal(18, 4)
   availableAt     DateTime       @map("available_at") @db.Timestamptz(6)
   status          String         @default("OPEN")
   payoutLineId    String?        @map("payout_line_id") @db.Uuid
   ruleVersionCode String         @map("rule_version_code")
   createdAt       DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
-  qualification Qualification @relation(fields:[qualificationId],references:[qualificationId])
-  payoutLine PayoutLine? @relation(fields:[payoutLineId],references:[payoutLineId])
-  @@unique([sourceType,sourceId])
-  @@index([status,availableAt,qualificationId])
+  qualification   Qualification  @relation(fields: [qualificationId], references: [qualificationId])
+  payoutLine      PayoutLine?    @relation(fields: [payoutLineId], references: [payoutLineId])
+
+  @@unique([sourceType, sourceId])
+  @@index([status, availableAt, qualificationId])
   @@map("payable_entry")
   @@schema("ledger")
 }
 
 model RecoveryApplication {
-  recoveryApplicationId String   @id @default(uuid()) @map("recovery_application_id") @db.Uuid
-  payoutLineId          String   @map("payout_line_id") @db.Uuid
-  bonusRecoveryEventId  String   @map("bonus_recovery_event_id") @db.Uuid
-  amount                Decimal  @db.Decimal(18,4)
-  createdAt             DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  payoutLine PayoutLine @relation(fields:[payoutLineId],references:[payoutLineId])
-  recoveryEvent BonusRecoveryEvent @relation(fields:[bonusRecoveryEventId],references:[bonusRecoveryEventId])
+  recoveryApplicationId String             @id @default(uuid()) @map("recovery_application_id") @db.Uuid
+  payoutLineId          String             @map("payout_line_id") @db.Uuid
+  bonusRecoveryEventId  String             @map("bonus_recovery_event_id") @db.Uuid
+  amount                Decimal            @db.Decimal(18, 4)
+  createdAt             DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
+  payoutLine            PayoutLine         @relation(fields: [payoutLineId], references: [payoutLineId])
+  recoveryEvent         BonusRecoveryEvent @relation(fields: [bonusRecoveryEventId], references: [bonusRecoveryEventId])
+
   @@index([bonusRecoveryEventId])
   @@map("recovery_application")
   @@schema("ledger")
 }
-
 
 model PayoutApproval {
   payoutApprovalId String                 @id @default(uuid()) @map("payout_approval_id") @db.Uuid
@@ -1440,14 +1464,13 @@ model PayoutApproval {
   note             String?
   createdAt        DateTime               @default(now()) @map("created_at") @db.Timestamptz(6)
 
-  payoutBatch PayoutBatch @relation(fields:[payoutBatchId],references:[payoutBatchId])
+  payoutBatch PayoutBatch @relation(fields: [payoutBatchId], references: [payoutBatchId])
 
-  @@unique([payoutBatchId,stage])
-  @@index([stage,decision,createdAt])
+  @@unique([payoutBatchId, stage])
+  @@index([stage, decision, createdAt])
   @@map("payout_approval")
   @@schema("ledger")
 }
-
 
 enum AttachmentStatus {
   ACTIVE
@@ -1474,17 +1497,16 @@ model DocumentAttachment {
   supersedesId         String?          @map("supersedes_id") @db.Uuid
   metadataJson         Json             @default("{}") @map("metadata_json")
 
-  supersedes DocumentAttachment? @relation("DocumentSupersede",fields:[supersedesId],references:[documentAttachmentId])
+  supersedes   DocumentAttachment?  @relation("DocumentSupersede", fields: [supersedesId], references: [documentAttachmentId])
   supersededBy DocumentAttachment[] @relation("DocumentSupersede")
 
-  @@unique([storageProvider,objectKey])
-  @@unique([entityType,entityId,documentType,versionNo])
-  @@index([entityType,entityId,status,uploadedAt])
+  @@unique([storageProvider, objectKey])
+  @@unique([entityType, entityId, documentType, versionNo])
+  @@index([entityType, entityId, status, uploadedAt])
   @@index([sha256])
   @@map("document_attachment")
   @@schema("audit")
 }
-
 
 enum AdminAccessStatus {
   ACTIVE
@@ -1495,82 +1517,86 @@ enum AdminAccessStatus {
 }
 
 model HistoricalReplaySnapshot {
-  snapshotId String @id @default(uuid()) @map("snapshot_id") @db.Uuid
-  kind String
-  sourceId String @map("source_id") @db.Uuid
-  ruleVersionCode String @map("rule_version_code")
-  content Json
-  hash String
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  postings EntitlementReplayPosting[]
-  @@unique([kind,sourceId])
+  snapshotId      String                     @id @default(uuid()) @map("snapshot_id") @db.Uuid
+  kind            String
+  sourceId        String                     @map("source_id") @db.Uuid
+  ruleVersionCode String                     @map("rule_version_code")
+  content         Json
+  hash            String
+  createdAt       DateTime                   @default(now()) @map("created_at") @db.Timestamptz(6)
+  postings        EntitlementReplayPosting[]
+
+  @@unique([kind, sourceId])
   @@map("historical_replay_snapshot")
   @@schema("ledger")
 }
 
 model EntitlementReplayPosting {
-  postingId String @id @default(uuid()) @map("posting_id") @db.Uuid
-  sequence BigInt @unique @default(autoincrement())
-  actionKey String @map("action_key")
-  snapshotId String @map("snapshot_id") @db.Uuid
-  entitlementKey String @map("entitlement_key")
-  recipientQualificationId String @map("recipient_qualification_id") @db.Uuid
-  originallyPosted Decimal @map("originally_posted") @db.Decimal(18,4)
-  recalculatedEntitlement Decimal @map("recalculated_entitlement") @db.Decimal(18,4)
-  delta Decimal @db.Decimal(18,4)
-  stateHash String @map("state_hash")
-  correctionAwardId String? @map("correction_award_id") @db.Uuid
-  recoveryId String? @map("recovery_id") @db.Uuid
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  snapshot HistoricalReplaySnapshot @relation(fields:[snapshotId],references:[snapshotId])
-  @@unique([actionKey,snapshotId,entitlementKey])
-  @@index([snapshotId,entitlementKey])
+  postingId                String                   @id @default(uuid()) @map("posting_id") @db.Uuid
+  sequence                 BigInt                   @unique @default(autoincrement())
+  actionKey                String                   @map("action_key")
+  snapshotId               String                   @map("snapshot_id") @db.Uuid
+  entitlementKey           String                   @map("entitlement_key")
+  recipientQualificationId String                   @map("recipient_qualification_id") @db.Uuid
+  originallyPosted         Decimal                  @map("originally_posted") @db.Decimal(18, 4)
+  recalculatedEntitlement  Decimal                  @map("recalculated_entitlement") @db.Decimal(18, 4)
+  delta                    Decimal                  @db.Decimal(18, 4)
+  stateHash                String                   @map("state_hash")
+  correctionAwardId        String?                  @map("correction_award_id") @db.Uuid
+  recoveryId               String?                  @map("recovery_id") @db.Uuid
+  createdAt                DateTime                 @default(now()) @map("created_at") @db.Timestamptz(6)
+  snapshot                 HistoricalReplaySnapshot @relation(fields: [snapshotId], references: [snapshotId])
+
+  @@unique([actionKey, snapshotId, entitlementKey])
+  @@index([snapshotId, entitlementKey])
   @@map("entitlement_replay_posting")
   @@schema("ledger")
 }
 
 model ReplayAction {
-  actionKey String @id @map("action_key")
-  stateHash String @map("state_hash")
-  result Json
+  actionKey String   @id @map("action_key")
+  stateHash String   @map("state_hash")
+  result    Json
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
   @@map("replay_action")
   @@schema("ledger")
 }
 
 model ReplayCarryProjection {
-  sequence BigInt @id @default(autoincrement())
-  actionKey String @map("action_key")
-  settlementBatchId String @map("settlement_batch_id") @db.Uuid
-  periodEnd DateTime @map("period_end") @db.Timestamptz(6)
-  ruleVersionCode String @map("rule_version_code")
-  carry Json
-  stateHash String @map("state_hash")
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  @@unique([actionKey,settlementBatchId])
-  @@index([periodEnd,ruleVersionCode])
+  sequence          BigInt   @id @default(autoincrement())
+  actionKey         String   @map("action_key")
+  settlementBatchId String   @map("settlement_batch_id") @db.Uuid
+  periodEnd         DateTime @map("period_end") @db.Timestamptz(6)
+  ruleVersionCode   String   @map("rule_version_code")
+  carry             Json
+  stateHash         String   @map("state_hash")
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@unique([actionKey, settlementBatchId])
+  @@index([periodEnd, ruleVersionCode])
   @@map("replay_carry_projection")
   @@schema("ledger")
 }
 
 model AdminAccessGrant {
   adminAccessGrantId String            @id @default(uuid()) @map("admin_access_grant_id") @db.Uuid
-  personId          String            @map("person_id") @db.Uuid
-  provider          IdentityProvider
-  providerSubject   String            @map("provider_subject")
-  roleCode          String            @map("role_code")
-  status            AdminAccessStatus @default(ACTIVE)
-  validFrom         DateTime          @default(now()) @map("valid_from") @db.Timestamptz(6)
-  validTo           DateTime?         @map("valid_to") @db.Timestamptz(6)
-  createdBy         String?           @map("created_by") @db.Uuid
-  createdAt         DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt         DateTime          @updatedAt @map("updated_at") @db.Timestamptz(6)
+  personId           String            @map("person_id") @db.Uuid
+  provider           IdentityProvider
+  providerSubject    String            @map("provider_subject")
+  roleCode           String            @map("role_code")
+  status             AdminAccessStatus @default(ACTIVE)
+  validFrom          DateTime          @default(now()) @map("valid_from") @db.Timestamptz(6)
+  validTo            DateTime?         @map("valid_to") @db.Timestamptz(6)
+  createdBy          String?           @map("created_by") @db.Uuid
+  createdAt          DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime          @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  person Person @relation(fields:[personId],references:[personId])
+  person Person @relation(fields: [personId], references: [personId])
 
-  @@index([personId,status,validFrom,validTo])
-  @@index([provider,providerSubject,status])
-  @@index([roleCode,status])
+  @@index([personId, status, validFrom, validTo])
+  @@index([provider, providerSubject, status])
+  @@index([roleCode, status])
   @@map("admin_access_grant")
   @@schema("identity")
 }

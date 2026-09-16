@@ -474,6 +474,109 @@
         ]
       }
     },
+    "/api/v1/member/delivery-profile": {
+      "get": {
+        "description": "Reads only the authenticated Person current encrypted delivery profile. No Qualification context required.",
+        "operationId": "memberDeliveryProfile",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "Validation failure; unknown identity/qualification/monetary fields rejected"
+          },
+          "401": {
+            "description": "Member LINE session required, expired/disabled sessions denied"
+          },
+          "403": {
+            "description": "Qualification not owned"
+          },
+          "404": {
+            "description": "Resource unavailable"
+          },
+          "409": {
+            "description": "Conflicting operation"
+          },
+          "422": {
+            "description": "Invalid input or pending domain decision"
+          }
+        },
+        "security": [
+          {
+            "memberBearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "Member"
+        ]
+      },
+      "patch": {
+        "description": "Creates a new encrypted delivery-profile version and closes the prior version. Audit/outbox contain no address or phone.",
+        "operationId": "memberUpdateDeliveryProfile",
+        "parameters": [
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeliveryProfileDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "Validation failure; unknown identity/qualification/monetary fields rejected"
+          },
+          "401": {
+            "description": "Member LINE session required, expired/disabled sessions denied"
+          },
+          "403": {
+            "description": "Qualification not owned"
+          },
+          "404": {
+            "description": "Resource unavailable"
+          },
+          "409": {
+            "description": "Conflicting operation"
+          },
+          "422": {
+            "description": "Invalid input or pending domain decision"
+          }
+        },
+        "security": [
+          {
+            "memberBearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "Member"
+        ]
+      }
+    },
     "/api/v1/member/notifications": {
       "get": {
         "description": "Person-addressed notices plus selected owned Qualification notices, newest first, bounded 100. No LINE push or server read-state mutation.",
@@ -5596,6 +5699,47 @@
           }
         },
         "additionalProperties": false
+      },
+      "DeliveryProfileDto": {
+        "type": "object",
+        "properties": {
+          "recipientName": {
+            "type": "string",
+            "maxLength": 80
+          },
+          "phone": {
+            "type": "string",
+            "maxLength": 32
+          },
+          "countryCode": {
+            "type": "string",
+            "example": "TW"
+          },
+          "postalCode": {
+            "type": "string",
+            "maxLength": 16
+          },
+          "region": {
+            "type": "string",
+            "maxLength": 80
+          },
+          "city": {
+            "type": "string",
+            "maxLength": 80
+          },
+          "address": {
+            "type": "string",
+            "maxLength": 300
+          }
+        },
+        "required": [
+          "recipientName",
+          "phone",
+          "countryCode",
+          "region",
+          "city",
+          "address"
+        ]
       },
       "MemberContextDto": {
         "type": "object",

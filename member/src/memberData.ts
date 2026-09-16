@@ -37,6 +37,13 @@ export async function registerNetworkMember(input:NetworkRegistrationInput,key:s
  if(typeof result?.personId==='string'&&result.personId&&result.membershipState==='NETWORK_MEMBER'&&result.enabledAuthenticationProvider==='LINE'&&result.qualificationCreated===false)return result;
  throw new Error('註冊結果格式異常，請重新載入');
 }
+export type DeliveryProfile={recipientName:string|null;phone:string|null;countryCode:string|null;postalCode:string|null;region:string|null;city:string|null;address:string|null;complete:boolean;updatedAt:string|null};
+export async function getDeliveryProfile(signal:AbortSignal):Promise<DeliveryProfile>{
+ const row=await api<DeliveryProfile>('/member/delivery-profile',{signal});
+ const nullable=(value:unknown)=>value===null||typeof value==='string';if(!row||typeof row.complete!=='boolean'||![row.recipientName,row.phone,row.countryCode,row.postalCode,row.region,row.city,row.address,row.updatedAt].every(nullable))throw new Error('配送資料格式異常，已停止結帳');return row;
+}
+export type DeliveryProfileInput={recipientName:string;phone:string;countryCode:string;postalCode?:string;region:string;city:string;address:string};
+export async function updateDeliveryProfile(input:DeliveryProfileInput,key:string){const result=await api<{deliveryProfileId:string;status:string;complete:boolean;updatedAt:string;replayed:boolean}>('/member/delivery-profile',{method:'PATCH',headers:{'Idempotency-Key':key},body:JSON.stringify(input)});if(!result||typeof result.deliveryProfileId!=='string'||result.status!=='UPDATED'||result.complete!==true||!Number.isFinite(Date.parse(result.updatedAt)))throw new Error('配送資料更新結果異常');return result;}
 export async function updateProfile(input:{name?:string;email?:string;phone?:string},key:string) {
  if(isMock)throw new Error('示範模式不修改會員資料');
  return validate.parsePerson(await api('/member/profile',{method:'PATCH',headers:{'Idempotency-Key':key},body:JSON.stringify(input)}));

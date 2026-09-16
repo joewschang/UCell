@@ -8,5 +8,7 @@ import { MemberContractService } from './member-contract.service';
 import { MemberReadService } from './member-read.service';
 import { MemberContextGuard } from './member-context.guard';
 import { MemberAuthController, MemberController } from './member.controller';
-@Module({imports:[AuthModule,OrderModule],controllers:[MemberAuthController,MemberController],providers:[MemberService,MemberReadService,MemberShareLinkService,MemberContractService,MemberContextGuard,LineTokenVerifierService]})
+import { DeliveryProfileService } from './delivery-profile.service';
+import { PiiCryptoService } from '../../common/security/pii-crypto.service';
+@Module({imports:[AuthModule,OrderModule],controllers:[MemberAuthController,MemberController],providers:[MemberService,MemberReadService,MemberShareLinkService,MemberContractService,DeliveryProfileService,PiiCryptoService,MemberContextGuard,LineTokenVerifierService]})
 export class MemberModule {}

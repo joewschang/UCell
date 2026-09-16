@@ -32,6 +32,8 @@ function equal(actual,expected,label){assert.deepEqual(actual,expected,label);as
 try{
  process.env.OTP_HASH_SECRET='TEST_ONLY_OTP_HASH_SECRET_32_BYTES_MINIMUM';
  process.env.AUTH_CHANNEL_ENABLE_SMS_OTP='true';
+ process.env.PII_ENCRYPTION_KEY='AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=';
+ process.env.PII_ENCRYPTION_KEY_VERSION='TEST_ONLY_V1';
  const person=await db.person.create({data:{legalName:'MEMBER A TEST ONLY',status:'EFFECTIVE'}});
  const other=await db.person.create({data:{legalName:'MEMBER B TEST ONLY',status:'EFFECTIVE'}});
  const empty=await db.person.create({data:{legalName:'MEMBER EMPTY TEST ONLY',status:'EFFECTIVE'}});
@@ -168,6 +170,23 @@ try{
  equal(await db.otpChallenge.count({where:{status:'VERIFIED',consumedAt:{not:null}}}),verifiedOtpConsumedBeforeRegistration,'LINE-first registration consumes no OTP evidence');
  registration=await call('POST','member/registration/network',token,registrationBody,'TEST_ONLY_NETWORK_REGISTER');
  equal([registration.statusCode,registration.json().data.personId,registration.json().data.replayed],[201,person.personId,true],'network registration lost-response retry returns same LINE Person');
+ let delivery=await call('GET','member/delivery-profile',token);equal([delivery.statusCode,delivery.json().data.complete],[200,false],'missing delivery profile is explicit incomplete state');
+ const deliveryBody={recipientName:'MEMBER A TEST ONLY',phone:'+886223456789',countryCode:'TW',postalCode:'100',region:'Taipei',city:'Zhongzheng',address:'TEST ONLY ROAD 1'};
+ delivery=await call('PATCH','member/delivery-profile',token,deliveryBody,'TEST_ONLY_DELIVERY_PROFILE');equal(delivery.statusCode,200,'delivery profile version created');
+ const deliveryResult=delivery.json().data;equal([deliveryResult.status,deliveryResult.complete,deliveryResult.replayed],['UPDATED',true,false],'delivery profile mutation returns non-PII result');
+ let deliveryRows=await db.deliveryProfile.findMany({where:{personId:person.personId},orderBy:{effectiveFrom:'asc'}});equal(deliveryRows.length,1,'one delivery profile version persisted');
+ equal([deliveryRows[0].contactCiphertext.includes(deliveryBody.phone),deliveryRows[0].addressCiphertext.includes(deliveryBody.address),deliveryRows[0].keyVersion],[false,false,'TEST_ONLY_V1'],'delivery phone/address stored encrypted with key version');
+ delivery=await call('GET','member/delivery-profile',token);equal([delivery.json().data.phone,delivery.json().data.address,delivery.json().data.complete],[deliveryBody.phone,deliveryBody.address,true],'authenticated owner reads decrypted current delivery profile');
+ const deliveryAudit=await db.auditEvent.findFirstOrThrow({where:{entityType:'DeliveryProfile',entityId:deliveryResult.deliveryProfileId}});equal(JSON.stringify(deliveryAudit).includes(deliveryBody.address)||JSON.stringify(deliveryAudit).includes(deliveryBody.phone),false,'delivery audit contains no raw address or phone');
+ delivery=await call('PATCH','member/delivery-profile',token,deliveryBody,'TEST_ONLY_DELIVERY_PROFILE');equal([delivery.json().data.deliveryProfileId,delivery.json().data.replayed],[deliveryResult.deliveryProfileId,true],'delivery profile lost-response retry is idempotent');
+ const changedDelivery={...deliveryBody,address:'TEST ONLY ROAD 2'};delivery=await call('PATCH','member/delivery-profile',token,changedDelivery,'TEST_ONLY_DELIVERY_PROFILE_2');equal(delivery.statusCode,200,'delivery profile replacement creates new version');
+ deliveryRows=await db.deliveryProfile.findMany({where:{personId:person.personId},orderBy:{effectiveFrom:'asc'}});equal([deliveryRows.length,deliveryRows.filter(row=>row.effectiveTo===null).length,deliveryRows[0].effectiveTo!==null],[2,1,true],'delivery profile history closes prior version and keeps one current');
+ let deliveryHistoryMutation;try{await db.deliveryProfile.update({where:{deliveryProfileId:deliveryRows[0].deliveryProfileId},data:{recipientName:'MUTATED'}});}catch(error){deliveryHistoryMutation=error;}equal(Boolean(deliveryHistoryMutation),true,'database rejects delivery history rewrite');
+ let deliveryHistoryDelete;try{await db.deliveryProfile.delete({where:{deliveryProfileId:deliveryRows[0].deliveryProfileId}});}catch(error){deliveryHistoryDelete=error;}equal(Boolean(deliveryHistoryDelete),true,'database rejects delivery history delete');
+ const deliveryIdempotency=await db.idempotencyRecord.findUniqueOrThrow({where:{actorScope_idempotencyKey:{actorScope:`member:delivery-profile:${person.personId}`,idempotencyKey:'TEST_ONLY_DELIVERY_PROFILE'}}});equal(JSON.stringify(deliveryIdempotency.responseBody).includes(deliveryBody.address)||JSON.stringify(deliveryIdempotency.responseBody).includes(deliveryBody.phone),false,'delivery idempotency response contains no raw address or phone');
+ const piiKey=process.env.PII_ENCRYPTION_KEY;delete process.env.PII_ENCRYPTION_KEY;equal((await call('GET','member/delivery-profile',token)).statusCode,503,'delivery profile read fails closed without PII key');process.env.PII_ENCRYPTION_KEY=piiKey;
+ const otherDeliverySubject='TEST_ONLY_OTHER_DELIVERY_'+randomUUID();await db.identityLink.create({data:{provider:'LINE',providerSubject:otherDeliverySubject,personId:other.personId}});const otherDeliverySession=await new IdentityTokenService(db).issue({provider:'LINE',subject:otherDeliverySubject,personId:other.personId});
+ equal((await call('GET','member/delivery-profile?personId='+person.personId,otherDeliverySession.accessToken)).json().data.complete,false,'delivery profile ignores foreign Person query and returns authenticated owner state');
  equal((await call('POST','auth/member/line/exchange',null,{idToken:'VALID_TEST_ONLY'})).statusCode,409,'ID token replay denied');
  equal((await call('POST','auth/member/line/exchange',null,{idToken:'INVALID_TEST_ONLY'})).statusCode,401,'invalid LINE token denied');
  equal((await call('POST','auth/member/line/exchange',null,{idToken:'UNBOUND_TEST_ONLY'})).statusCode,401,'unbound LINE denied');
