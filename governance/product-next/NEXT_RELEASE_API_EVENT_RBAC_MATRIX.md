@@ -1,73 +1,70 @@
 # UCell Next Release API / Event / RBAC Matrix
 Status: DESIGN FREEZE CANDIDATE
-Date: 2026-09-16
+Date: 2026-09-17
 
-## API contract conventions
-Existing UCell envelope/auth/error conventions apply. Mutations use Idempotency-Key when repeat delivery is plausible. IDs are opaque. Dates are ISO timestamps with server-authoritative timezone semantics. Sensitive list responses are masked. Pagination bounded. 409 for idempotency/policy conflict where appropriate; 403 ownership/role denial; 404 non-disclosure for foreign sensitive object where policy requires; 422 valid request blocked by missing configuration/evidence.
+## API conventions
+Existing UCell envelope/auth/error conventions apply. Current member authentication is LINE OA/LIFF. Mutations use Idempotency-Key where redelivery is plausible. IDs opaque; sensitive list responses masked. 409 for placement/idempotency conflict, 403 role/ownership denial, 404 non-disclosure where policy requires, 422 for valid request blocked by missing evidence/configuration.
 
-## Key request/response contracts
-POST /registration/network
-Request: contractVersionId, consentProof, legal/display name fields, alias, gender, birthDate, mobileChallengeId, email, referralState?. Response: personId, membershipState, providerLinkOptions. Server validates verified OTP and referral state separately.
+## Member registration / formal application
+Network registration occurs inside authenticated LINE session; no mobileChallengeId required in current channel. Collect required basic/contact fields + contract/privacy evidence. Future OTP/Google endpoints remain feature-disabled.
+Formal application APIs remain protected for data/KYC/document submission and Admin review. KYC approval alone does not create FORMAL_MEMBER without qualifying package purchase evidence.
 
-POST /auth/otp/challenges
-Request: purpose,destination. Response: challengeId,expiresAt,resendAvailableAt; never OTP/provider secret.
-POST /auth/otp/challenges/:id/verify Request: code. Response: verifiedAt/status.
+## Membership package / Ball setup APIs
+GET /api/v1/member/membership-packages -> authoritative eligible 啟航/菁英/領袖 package profiles.
+POST /api/v1/member/membership-qualifications -> initiate qualifying purchase/setup context after authoritative order flow.
+GET /api/v1/member/qualifications/:id/setup -> setup state, attribution prefill, sponsor selection, placement status/dueAt.
+PATCH /api/v1/member/qualifications/:id/sponsor -> member selects/changes final Sponsor Ball before Sponsor confirmation; request sponsorQualificationId; response validated sponsor owner + selection evidence.
+POST /api/v1/member/qualifications/:id/sponsor/confirm -> freezes final Sponsor selection / creates applicable Sponsor history under Core transaction.
+GET /api/v1/member/placements/pending -> Balls for which current Person owns Sponsor Ball and has placement authority.
+GET /api/v1/member/qualifications/:id/placement-options -> authorized legal Binary candidates/read model; not authoritative until commit.
+POST /api/v1/member/qualifications/:id/place -> binaryParentQualificationId, side; Backend revalidates authorization/slot/cycles and atomically places.
 
-GET /member/contracts/required -> contract version metadata/hash/required flag.
-POST /member/contracts/:versionId/consent -> consent evidence id/timestamp.
+For Ball #2+, sponsorQualificationId may reference another eligible Ball owned by current Person. This never changes Person-level referrer.
 
-GET/PATCH /member/delivery-profile -> masked/current delivery fields; mutation idempotent/audited.
+## Admin placement APIs
+GET /api/v1/admin/qualification-placements?status=&aging= -> Placement Monitor.
+GET /api/v1/admin/qualification-placements/:qualificationId -> Sponsor/new Ball/aging/audit/legal option context.
+POST /api/v1/admin/qualification-placements/:qualificationId/place -> requires QUALIFICATION_PLACEMENT_OVERRIDE; request binaryParentQualificationId,side,reasonCode,note?; same Core legality/concurrency validation.
+POST /api/v1/admin/qualification-placements/:qualificationId/assign-reviewer optional operational workflow.
 
-POST /member/formal-applications -> application id/status.
-POST /member/formal-applications/:id/documents -> upload-init or protected upload contract; response object/document reference, never public URL.
-POST /member/formal-applications/:id/submit -> frozen snapshot hash/status.
-GET /member/formal-applications/current -> masked status/checklist/reason codes.
+## Referral APIs
+GET /r/:token validates/records provisional attribution and returns signed LIFF transition state. It never fixes final Sponsor authority.
+POST /member/share-links generates server share URL tied to Person and applicable/default referral Ball context.
+ReferralAttribution response may expose safe referrer display context and referrerQualification code needed for prefill, subject to policy.
 
-Admin KYC list/detail never returns unmasked national ID/bank by default. Explicit privileged detail/document access endpoint/action is audited.
+## Other V1.2/V1.3 APIs
+Content/share, activities, inbox and analytics endpoints remain as previously defined. Analytics returns {asOf,projectionVersion,status,data} and never mutates organization/monetary truth.
 
-GET /r/:token -> validates token, records touch, returns safe redirect/LIFF state. Never exposes final Sponsor authority.
-POST /member/share-links Request source refs; Response signed shareUrl/expiresAt/referralLinkId.
+## Event catalog additions/corrections
+MEMBERSHIP_PACKAGE_PURCHASE_RECOGNIZED: personId,orderId,orderLineId?,packageType,qualificationId?; references Core authoritative order evidence.
+FORMAL_MEMBERSHIP_ACTIVATED: personId,activationEvidenceId,qualifyingOrderId,firstQualificationId,finalSponsorQualificationId,referrerPersonId,ruleVersion.
+QUALIFICATION_SETUP_CREATED: qualificationId,ownerPersonId,packageType,qualifyingOrderId.
+QUALIFICATION_SPONSOR_PREFILLED: qualificationId,attributionId?,referrerPersonId?,referrerQualificationId?.
+QUALIFICATION_SPONSOR_SELECTED: qualificationId,selectedSponsorQualificationId,selectedSponsorOwnerPersonId,source,policyVersion.
+QUALIFICATION_SPONSOR_CONFIRMED: qualificationId,sponsorQualificationId,sponsorOwnerPersonId,confirmedAt.
+QUALIFICATION_PLACEMENT_REQUESTED: qualificationId,sponsorQualificationId,requestedAt,dueAt.
+QUALIFICATION_PLACEMENT_OVERDUE: qualificationId,dueAt,escalatedAt.
+QUALIFICATION_PLACED: qualificationId,sponsorQualificationId,binaryParentQualificationId,side,placedByType,placedByPersonId?,policyVersion.
+QUALIFICATION_ACTIVATED: qualificationId,effectiveAt,activationEvidenceRef.
+SYSTEM_ASSIGNMENT_COMPLETED: qualificationId,systemSponsorQualificationId,binaryParentQualificationId,side,policyVersion.
+MEMBER_REFERRER_ESTABLISHED: referredPersonId,referrerPersonId,firstQualificationId,sourceSponsorQualificationId,effectiveAt.
 
-GET /member/content, /content/:id -> published audience-filtered version.
-POST /member/content/:id/share -> server share URL + source evidence.
+Referral events carry both referrerPersonId and referrerQualificationId when known. Analytics preserves provisional attribution and final Sponsor selection as separate facts.
 
-POST /member/activities/:id/register -> registration status including WAITLISTED; idempotent.
-POST /member/activities/:id/cancel -> current status/evidence.
+## Placement RBAC
+MEMBER: may select Sponsor for own unconfirmed Ball; may place a Ball only when member owns the confirmed Sponsor Ball and policy authorizes placement.
+MEMBER_SERVICE: read masked placement status/support; no placement override by default.
+OPERATIONS: Placement Monitor read; no override unless separately granted.
+QUALIFICATION_PLACEMENT_OVERRIDE: privileged action permission for overdue/Admin placement; reason/audit mandatory.
+AUDITOR: read placement/sponsor/referrer evidence, no mutation.
+SUPER_ADMIN: exceptional/break-glass subject to audit.
+Existing monetary Core roles unchanged.
 
-GET /member/inbox -> deliveries with read state.
-PATCH /member/inbox/:id/read -> firstReadAt/current state.
+## Authorization invariants
+Selecting Sponsor for own Ball != authority to place arbitrary Ball. Placement authority derives from ownership of confirmed Sponsor Ball plus applicable permission. Sponsor Ball and Binary Parent differ. Person ownership equality across two different Balls is allowed for Ball #2+ sponsorship. Self-edge/cycles prohibited in Sponsor and Binary graphs independently.
 
-Admin content/activity/message mutations require appropriate role and audit.
+## Concurrency contract
+Placement commit locks/revalidates new Ball unplaced + target slot available + operator authorized + graphs legal. Competing placement returns 409 PLACEMENT_CONFLICT. Client-side placement-option list is advisory only.
 
-Analytics endpoints return {asOf,projectionVersion,status,data}. status FULL|PARTIAL|UNAVAILABLE. Filters are bounded and validated.
-Sonar endpoints require rootQualificationId ownership/authorized Admin scope and explicit mode-specific DTOs.
-
-## Event payload baseline
-Common: eventId,schemaVersion,eventType,occurredAt,correlationId,actorType,actorId?,personId?,qualificationId?,source,channel.
-NETWORK_MEMBER_REGISTERED: personId,membershipState,referralAttributionId? (no PII).
-MOBILE_VERIFIED: personId?/registrationSessionId,purpose,destinationFingerprint.
-CONTRACT_CONSENTED: personId,contractVersionId,contentHash.
-FORMAL_APPLICATION_SUBMITTED/APPROVED/REJECTED: personId,applicationId,applicationVersion,reasonCode?; no document bytes/ID number.
-REFERRAL_LINK_CLICKED: referralLinkId,anonymousId?,personId?,referrerQualificationId,contentVersionId?/campaignId?/activityId?.
-REFERRAL_ATTRIBUTION_CREATED/REPLACED: attributionId,oldReferrerQualificationId?,newReferrerQualificationId,lockedUntil,reasonCode.
-CONTENT_*: contentId/contentVersionId,referralAttributionId? where relevant.
-ACTIVITY_*: activityId,registrationId?,personId,status.
-MESSAGE_*: publicationId,deliveryId,personId,actionType?.
-ORDER_CREATED/ORDER_PAID/REPURCHASE_COMPLETED: consume authoritative Core event identity/reference; do not synthesize amounts in Analytics.
-
-## RBAC matrix (baseline)
-Action | MEMBER | MEMBER_SERVICE | KYC_REVIEWER | OPERATIONS | FINANCE | ANALYTICS | AUDITOR | SUPER_ADMIN
-Own profile/delivery | RW | masked support | R masked | R masked | - | - | audit R | exceptional
-Own KYC submit/docs | RW own | status support | review R | - | payout-safe status only | - | evidence R policy | exceptional
-Unmask KYC docs | - | - | explicit R audited | - | - | - | policy R | break-glass
-Bank payout identity | own masked/RW via workflow | masked | holder-name check policy | - | explicit R | - | audit R | exceptional
-Content/activity/message admin | R member | support R | - | RW | - | analytics R | audit R | exceptional
-Referral/share | RW own | support R | - | campaign ops | - | aggregate R | audit R | exceptional
-NASL/Sonar | own limited future | support limited | - | R | limited payout context | R aggregate/drill policy | R | R
-Monetary Core mutation | existing Core rules only; none of these new roles gain rights by this document.
-
-## Permission principles
-Role alone is insufficient where object ownership/audience/organization scope applies. Sensitive unmask/document download is an explicit auditable action. Analytics export is separately permissioned. Production SUPER_ADMIN should use break-glass governance.
-
-## Contract tests required
-OpenAPI schemas; auth/role/ownership matrix; masked fields; idempotency; pagination/filter bounds; 30-day referral boundary; foreign object non-disclosure; document signed-access expiry; analytics FULL/PARTIAL/UNAVAILABLE; Person/Qualification and Sponsor/Binary separation.
+## Contract tests
+LINE session registration without OTP; qualifying package vs ordinary product; KYC-only cannot activate Formal Member; first Ball establishes Member Referrer; second Ball own-Ball sponsorship leaves Member Referrer unchanged; attribution prefill can be manually changed before confirmation; Sponsor confirmation immutability; Sponsor-owner placement authorization; 72h due/overdue; Admin override permission/audit; same-slot race; same-Ball double-place; Sponsor/Binary cycle prevention; SYSTEM_AUTO no-referral path; Person/Sponsor/Binary separation.
