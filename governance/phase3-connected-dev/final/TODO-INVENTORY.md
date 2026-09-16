@@ -14,5 +14,5 @@ Classification is governance status, not implementation completion. Pending deci
 | File | Line | Case | Classification | Reason |
 |---|---:|---|---|---|
 | backend/apps/api/test/negative-flow-v05.e2e-spec.ts | 13 | partial return creates proportional negative GPV event | PENDING_DECISION | Historical GPV to formal PV/BV mapping is not approved; only this historical conversion remains fail-closed. |
-| backend/apps/api/test/vertical-slice-02.e2e-spec.ts | 170 | inactive upline receives 0 and is not compressed | PENDING_DECISION | Matching inactive-sponsor skip/stop/compression behavior remains explicitly pending. |
-| backend/apps/api/test/vertical-slice-02.e2e-spec.ts | 171 | higher generation remains independently evaluated | PENDING_DECISION | Matching inactive-sponsor skip/stop/compression behavior remains explicitly pending. |
+| backend/apps/api/test/vertical-slice-02.e2e-spec.ts | 184 | inactive upline receives 0 and is not compressed | PENDING_DECISION | Matching inactive-sponsor skip/stop/compression behavior remains explicitly pending. |
+| backend/apps/api/test/vertical-slice-02.e2e-spec.ts | 185 | higher generation remains independently evaluated | PENDING_DECISION | Matching inactive-sponsor skip/stop/compression behavior remains explicitly pending. |

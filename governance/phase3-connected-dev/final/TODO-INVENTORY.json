@@ -20,14 +20,14 @@
     },
     {
       "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
-      "line": 170,
+      "line": 184,
       "case": "inactive upline receives 0 and is not compressed",
       "classification": "PENDING_DECISION",
       "reason": "Matching inactive-sponsor skip/stop/compression behavior remains explicitly pending."
     },
     {
       "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
-      "line": 171,
+      "line": 185,
       "case": "higher generation remains independently evaluated",
       "classification": "PENDING_DECISION",
       "reason": "Matching inactive-sponsor skip/stop/compression behavior remains explicitly pending."

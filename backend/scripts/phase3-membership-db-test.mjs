@@ -166,12 +166,16 @@ try{
   equal(JSON.stringify(await db.bonusAward.findUniqueOrThrow({where:{bonusAwardId:lifecycleAward.bonusAwardId}})),originalLifecycleAward,'mark-paid preserves original award');
   const direct=new QualificationService(db,idempotency,audit,organization);
   const directRoot=await db.qualification.create({data:{currentHolderPersonId:owner.personId,planLevelCode:'STARTER',status:'EFFECTIVE',effectiveAt:new Date('2020-01-01')}});
+  const subscriptionRule='TEST_ONLY_SUBSCRIPTION_CALENDAR_'+randomUUID();
+  for(const [parameterCode,valueJson] of [['subscription.calendar.timezone','Asia/Taipei'],['subscription.calendar.period',{unit:'MONTH',count:1,anchorLocal:'2020-01-01T00:00:00'}],['subscription.calendar.cutoff',{localTime:'00:00:00',daysAfterPeriodStart:0,approvalReference:'TEST_ONLY_NOT_PRODUCTION_APPROVAL'}]])await db.runtimeRuleParameter.create({data:{ruleVersionCode:subscriptionRule,parameterCode,scopeKey:'*',valueJson,effectiveFrom:new Date('2019-01-01')}});
   const subscriptions=new SubscriptionService(db,idempotency,audit);
   for(const [planCode,months] of [['QUARTER',3],['HALF_YEAR',6],['YEAR',12]]){
-    const created=await subscriptions.create({qualificationId:directRoot.qualificationId,planCode,startMonth:'2026-09-01'},'schedule-'+planCode,randomUUID(),owner.personId);
+    const created=await subscriptions.create({qualificationId:directRoot.qualificationId,planCode,startMonth:'2026-09-01'},'schedule-'+planCode,randomUUID(),owner.personId,subscriptionRule);
     equal(created.value.schedules.length,months,planCode+' persists exactly one recognition row per plan month');
     equal(created.value.schedules.map(row=>row.installmentNo),Array.from({length:months},(_,i)=>i+1),planCode+' persists contiguous installment sequence');
     equal(await db.monthlyRecognitionSchedule.count({where:{subscriptionId:created.value.subscriptionId}}),months,planCode+' durable recognition row count');
+    equal(created.value.schedules[0].dueAt.toISOString(),'2026-08-31T16:00:00.000Z',planCode+' first dueAt is Asia/Taipei local month start');
+    equal(created.value.schedules.every(row=>row.parameterSnapshotHash===created.value.parameterSnapshotHash),true,planCode+' schedule retains calendar snapshot hash');
   }
   const directDto={personId:owner.personId,planLevelCode:'STARTER',sponsorQualificationId:directRoot.qualificationId,binaryParentQualificationId:directRoot.qualificationId,binarySide:'LEFT',effectiveAt:'2020-01-01T00:00:00.000Z'};
   const directCount=await db.qualification.count();

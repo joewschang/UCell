@@ -1,6 +1,7 @@
 import { MembershipApplicationService } from '../src/modules/application/membership-application.service';
 import { ActiveService } from '../src/modules/active/active.service';
 import { SubscriptionService } from '../src/modules/subscription/subscription.service';
+import { SubscriptionCalendarService } from '../src/modules/subscription/subscription-calendar.service';
 import { RpvService } from '../src/modules/rpv/rpv.service';
 import { execFileSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
@@ -49,10 +50,21 @@ function subscriptionHarness(durationMonths:number,planCode:'QUARTER'|'HALF_YEAR
   };
   const idempotency={execute:jest.fn(async(_scope:string,_key:string,_payload:any,work:any)=>({value:await work(tx),replayed:false}))};
   const audit={write:jest.fn(async()=>undefined)};
-  return {service:new SubscriptionService({} as any,idempotency as any,audit as any),tx,schedules,audit};
+  const calendar={schedule:jest.fn(async(_tx:any,startMonth:string,count:number)=>({rows:Array.from({length:count},(_,i)=>({recognitionMonth:new Date(Date.UTC(2026,8+i,1)),dueAt:new Date(Date.UTC(2026,7+i,31,16))})),snapshot:{hash:'TEST_ONLY_SUBSCRIPTION_CALENDAR_HASH'},calendar:{timezone:'Asia/Taipei'}}))};
+  return {service:new SubscriptionService({} as any,idempotency as any,audit as any,calendar as any),tx,schedules,audit,calendar};
 }
 
 describe('Vertical Slice 02 - Membership / Active / Subscription / RPV', () => {
+  it('fails closed when no approved subscription calendar is effective', async () => {
+    const tx:any={
+      runtimeRuleParameter:{findMany:jest.fn(async()=>[])},
+      $queryRaw:jest.fn(),
+    };
+    await expect(new SubscriptionCalendarService().schedule(tx,'2026-09-01',3,'R1.0B')).rejects.toMatchObject({
+      response:{code:'CONFIGURATION_PENDING'},
+    });
+    expect(tx.$queryRaw).not.toHaveBeenCalled();
+  });
   it('creates DRAFT membership application', async () => {
     const { tx, idempotency, audit, service } = applicationHarness();
     const dto = { personId: 'person-A', requestedPlanLevelCode: 'STARTER' as const, sponsorQualificationId: 'sponsor-A', binaryParentQualificationId: 'parent-B', binarySide: 'LEFT' as const };
@@ -152,6 +164,8 @@ describe('Vertical Slice 02 - Membership / Active / Subscription / RPV', () => {
       expect(h.schedules).toHaveLength(months);
       expect(h.schedules.map(row=>row.installmentNo)).toEqual(Array.from({length:months},(_,i)=>i+1));
       expect(h.schedules.map(row=>row.recognitionMonth.toISOString())).toEqual(Array.from({length:months},(_,i)=>new Date(Date.UTC(2026,8+i,1)).toISOString()));
+      expect(h.schedules[0].dueAt.toISOString()).toBe('2026-08-31T16:00:00.000Z');
+      expect(h.schedules.every(row=>row.parameterSnapshotHash==='TEST_ONLY_SUBSCRIPTION_CALENDAR_HASH')).toBe(true);
       expect(result.schedules).toBe(h.schedules);
       expect(h.audit.write).toHaveBeenCalledWith(h.tx,expect.objectContaining({action:'SUBSCRIPTION_CREATED',afterData:expect.objectContaining({planCode,months})}));
     });

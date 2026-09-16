@@ -352,3 +352,7 @@ CODE COMPLETE: scoped UX-2 six screens and owned-Qualification read API. CONNECT
 Full report: ../ux/ux3/REPORT.md. Full Connected DEV matrix is 40 PASS / 7 BLOCKED / 0 FAIL. Backend API 130 PASS / 52 TODO; Member 116 PASS; Admin 22 PASS. UX-only rollout added no API, migration, formula or monetary semantic change. Production remains BLOCKED.
 
 Latest SSOT note: remote commits `d1d3b40` / `c811654` approve Core Logic Addendum v2. Eligible-consumption defaults and prospective PV/BV recognition are now decided there. Exact Production cut-off clocks, deterministic legacy GPV migration mapping and unspecified Matching traversal edges remain fail-closed blockers. UX-3 does not implement or reinterpret the new business rules.
+
+## Subscription versioned scheduling continuation — 2026-09-16
+
+Legacy UTC schedule construction is removed from new subscription creation. Effective versioned parameters now supply timezone, monthly anchor and local recognition cutoff; Core persists one parameter snapshot hash on the Subscription and every generated recognition row. Missing configuration fails closed before writes. Fresh isolated DB Golden evidence verifies a clearly marked TEST_ONLY Asia/Taipei schedule; no Production cutoff value is invented and no historical row is rewritten. The three remaining executable TODOs stay `PENDING_DECISION`. See [batch report](batches/subscription-calendar-20260916/REPORT.md).

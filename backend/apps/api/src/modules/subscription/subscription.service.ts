@@ -4,13 +4,7 @@ import { randomUUID } from 'crypto';
 import { AuditService } from '../../common/audit/audit.service';
 import { IdempotencyService } from '../../common/idempotency/idempotency.service';
 import { CreateSubscriptionDto } from './dto/create-subscription.dto';
-
-function monthStart(date:Date){
-  return new Date(Date.UTC(date.getUTCFullYear(),date.getUTCMonth(),1));
-}
-function addMonths(date:Date,n:number){
-  return new Date(Date.UTC(date.getUTCFullYear(),date.getUTCMonth()+n,1));
-}
+import { SubscriptionCalendarService } from './subscription-calendar.service';
 
 @Injectable()
 export class SubscriptionService {
@@ -18,6 +12,7 @@ export class SubscriptionService {
     private readonly prisma:PrismaService,
     private readonly idempotency:IdempotencyService,
     private readonly audit:AuditService,
+    private readonly calendar:SubscriptionCalendarService=new SubscriptionCalendarService(),
   ){}
 
   async listPlans(){
@@ -30,7 +25,7 @@ export class SubscriptionService {
     return this.prisma.subscription.findMany({where:{...(input.status?{status:input.status as any}:{}),...(input.qualificationId?{qualificationId:input.qualificationId}:{})},include:{plan:true},orderBy:[{createdAt:'desc'},{subscriptionId:'desc'}],take:Math.min(input.take??100,200)});
   }
 
-  async create(dto:CreateSubscriptionDto,key:string,requestId:string,actorId?:string){
+  async create(dto:CreateSubscriptionDto,key:string,requestId:string,actorId?:string,ruleVersionCode='R1.0B'){
     const correlationId=randomUUID();
     return this.idempotency.execute(`admin:subscription:create:${dto.qualificationId}`,key,dto,async tx=>{
       const [q,plan]=await Promise.all([
@@ -40,8 +35,8 @@ export class SubscriptionService {
       if(!q || q.status!=='EFFECTIVE') throw new ConflictException({code:'RESOURCE_NOT_FOUND',message:'Qualification不存在或未生效。'});
       if(!plan || !plan.isActive) throw new ConflictException({code:'RESOURCE_NOT_FOUND',message:'重銷方案不存在或未啟用。'});
 
-      const start=monthStart(new Date(dto.startMonth));
-      const end=addMonths(start,plan.durationMonths-1);
+      const schedule=await this.calendar.schedule(tx,dto.startMonth,plan.durationMonths,ruleVersionCode);
+      const start=schedule.rows[0].recognitionMonth,end=schedule.rows.at(-1)!.recognitionMonth;
 
       const subscription=await tx.subscription.create({
         data:{
@@ -51,14 +46,14 @@ export class SubscriptionService {
           status:'ACTIVE',
           startMonth:start,
           endMonth:end,
-          ruleVersionCode:'R1.0B',
+          ruleVersionCode,
+          parameterSnapshotHash:schedule.snapshot.hash,
           activatedAt:new Date()
         }
       });
 
       for(let i=0;i<plan.durationMonths;i++){
-        const recognitionMonth=addMonths(start,i);
-        const dueAt=new Date(Date.UTC(recognitionMonth.getUTCFullYear(),recognitionMonth.getUTCMonth(),1,0,0,0));
+        const {recognitionMonth,dueAt}=schedule.rows[i];
         await tx.monthlyRecognitionSchedule.create({
           data:{
             subscriptionId:subscription.subscriptionId,
@@ -68,7 +63,8 @@ export class SubscriptionService {
             rpvAmount:plan.monthlyRpv,
             status:'SCHEDULED',
             dueAt,
-            ruleVersionCode:'R1.0B'
+            ruleVersionCode,
+            parameterSnapshotHash:schedule.snapshot.hash
           }
         });
       }
