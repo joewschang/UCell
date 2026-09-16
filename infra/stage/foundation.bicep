@@ -55,7 +55,7 @@ resource registryPull 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
 }
 
 resource vault 'Microsoft.KeyVault/vaults@2023-07-01' = {
-  name: '${compactPrefix}-kv-${suffix}'
+  name: 'ucellkv${suffix}'
   location: location
   properties: {
     tenantId: subscription().tenantId
