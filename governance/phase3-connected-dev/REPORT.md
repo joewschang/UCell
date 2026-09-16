@@ -325,7 +325,7 @@ UX-1 source checkpoint: 5a05c3c9b722555955175451cbfa7db832681677; pushed origin/
 
 Six reference screens refined, with further rollout paused for second SA Visual Review. Report: ../ux/ux2/REPORT.md. Existing Connected contracts retained. Additive exact owned-Qualification read API and HTTP/DB assertions; no migration, monetary or business-rule change.
 
-Final integrated API tests: 130 PASS, 52 executable TODO. Member tests: 112 PASS. Admin tests: 16 PASS. Parallel verified Backend checkpoints 04007e1 and be7247f preserved; the additional owned-Qualification TODO is now executable with real DB evidence. Current 52 count is regenerated from source; the earlier unrelated 52-coverage claim remains invalid. Inventory: final/TODO-INVENTORY.md.
+Final integrated API tests: 130 PASS, 52 executable TODO. Member tests: 112 PASS. Admin tests: 18 PASS. Parallel verified Backend checkpoints 04007e1 and be7247f preserved; the additional owned-Qualification TODO is now executable with real DB evidence. Current 52 count is regenerated from source; the earlier unrelated 52-coverage claim remains invalid. Inventory: final/TODO-INVENTORY.md.
 
 Connected DEV gates: final/PASS-FAIL-MATRIX.md. Member/Admin/Backend/Worker Build, Prisma, isolated DB Golden twice, replay, API/shared/UI tests, HTTP/DB and OpenAPI/security-policy gates PASS. Formal security HTTP/UAT and TODO-dependent release gates remain BLOCKED. Windows Prisma DLL locks during release reruns were resolved by stopping local API/Worker before generation; raw initial failure logs retained.
 

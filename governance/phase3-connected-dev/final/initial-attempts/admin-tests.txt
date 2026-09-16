@@ -1,13 +1,13 @@
 command: pnpm test
-started: 2026-09-16T02:28:13.226Z
+started: 2026-09-16T02:31:59.983Z
 exit: 0
 
  RUN  v4.1.11 C:/UCell/UCell/admin
 
 
- Test Files  5 passed (5)
-      Tests  14 passed (14)
-   Start at  10:28:13
-   Duration  486ms (transform 426ms, setup 0ms, import 651ms, tests 97ms, environment 1ms)
+ Test Files  6 passed (6)
+      Tests  16 passed (16)
+   Start at  10:32:00
+   Duration  611ms (transform 583ms, setup 0ms, import 969ms, tests 207ms, environment 1ms)
 
 $ vitest run

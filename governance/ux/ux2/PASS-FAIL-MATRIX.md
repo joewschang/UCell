@@ -3,7 +3,7 @@
 | Pre-change checkpoint | PASS | ae60e98 pushed |
 | Member/Admin Build | PASS | Connected DEV final gate logs |
 | Member tests | PASS 112 | existing tests preserved; Chinese timeline added |
-| Admin tests | PASS 16 | owned detail tabs and evidence/role denial |
+| Admin tests | PASS 18 | owned detail tabs and evidence/role denial |
 | Six screens / 24 viewports | PASS | references/results.json; visual-only Member mock |
 | Navy surface / Chinese timeline | PASS | browser assertions catch stale package cache |
 | Owned Qualification master-detail | PASS | exact read API; ten tabs visible |

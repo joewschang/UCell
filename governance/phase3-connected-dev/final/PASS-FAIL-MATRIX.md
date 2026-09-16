@@ -31,14 +31,11 @@
 | security-http | BLOCKED | 2 |
 | uat | BLOCKED | 1 |
 | admin-dev-build | PASS | 0 |
-| admin-build | PASS | 0 |
-| admin-tests | PASS | 0 |
 | member-build | PASS | 0 |
 | member-tests | PASS | 0 |
 | admin-dev-full-test | PASS | 0 |
 | member-local-auth | PASS | 0 |
 | member-mobile-mock | PASS | 0 |
-| admin-ui-connected-dev | PASS | 0 |
 | backend-build | PASS | 0 |
 | api-tests | PASS | 0 |
 | todo | BLOCKED | 1 |
@@ -47,3 +44,6 @@
 | release-prep | BLOCKED | 1 |
 | release-gate | BLOCKED | 1 |
 | diff-check | PASS | 0 |
+| admin-build | PASS | 0 |
+| admin-tests | PASS | 0 |
+| admin-ui-connected-dev | PASS | 0 |

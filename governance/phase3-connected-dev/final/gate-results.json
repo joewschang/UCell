@@ -248,22 +248,6 @@
     "result": "PASS"
   },
   {
-    "label": "admin-build",
-    "command": "pnpm build",
-    "cwd": "C:\\UCell\\UCell\\admin",
-    "started": "2026-09-16T02:31:54.331Z",
-    "exitCode": 0,
-    "result": "PASS"
-  },
-  {
-    "label": "admin-tests",
-    "command": "pnpm test",
-    "cwd": "C:\\UCell\\UCell\\admin",
-    "started": "2026-09-16T02:31:59.983Z",
-    "exitCode": 0,
-    "result": "PASS"
-  },
-  {
     "label": "member-build",
     "command": "pnpm build",
     "cwd": "C:\\UCell\\UCell\\member",
@@ -300,14 +284,6 @@
     "command": "pnpm test:browser",
     "cwd": "C:\\UCell\\UCell\\member",
     "started": "2026-09-16T02:32:11.368Z",
-    "exitCode": 0,
-    "result": "PASS"
-  },
-  {
-    "label": "admin-ui-connected-dev",
-    "command": "node scripts/connected-dev-smoke.mjs",
-    "cwd": "C:\\UCell\\UCell\\admin",
-    "started": "2026-09-16T02:32:16.737Z",
     "exitCode": 0,
     "result": "PASS"
   },
@@ -372,6 +348,30 @@
     "command": "git diff --check",
     "cwd": "C:\\UCell\\UCell",
     "started": "2026-09-16T02:40:51.292Z",
+    "exitCode": 0,
+    "result": "PASS"
+  },
+  {
+    "label": "admin-build",
+    "command": "pnpm build",
+    "cwd": "C:\\UCell\\UCell\\admin",
+    "started": "2026-09-16T02:42:25.247Z",
+    "exitCode": 0,
+    "result": "PASS"
+  },
+  {
+    "label": "admin-tests",
+    "command": "pnpm test",
+    "cwd": "C:\\UCell\\UCell\\admin",
+    "started": "2026-09-16T02:42:30.781Z",
+    "exitCode": 0,
+    "result": "PASS"
+  },
+  {
+    "label": "admin-ui-connected-dev",
+    "command": "node scripts/connected-dev-smoke.mjs",
+    "cwd": "C:\\UCell\\UCell\\admin",
+    "started": "2026-09-16T02:42:32.031Z",
     "exitCode": 0,
     "result": "PASS"
   }

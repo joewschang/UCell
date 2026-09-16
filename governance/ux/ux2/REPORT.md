@@ -22,7 +22,7 @@ Scope is limited to six reference screens. Further rollout is paused for SA Visu
 
 Executed commands: `node --version`, `pnpm --version`, `git status`, `git diff --check`; `node governance/phase3-connected-dev/run-gates.mjs` plus focused `--only` reruns; `pnpm build` in Backend/Admin/Member (Backend includes Worker); `pnpm --filter @ucell/database exec prisma validate`, `generate`, `migrate deploy`; `pnpm db:golden` twice; API `test:e2e --runInBand`, Admin/Member `pnpm test`; replay/HTTP/security/static preflights, OpenAPI export/preflight and RC/release commands listed individually in the final gate logs; `node governance/phase3-connected-dev/todo-inventory.mjs`; `node governance/ux/ux2-visual-review.mjs`; Vite restart with `--force`.
 
-- Member tests: 112 PASS; Admin tests: 16 PASS. Existing tests retained; new coverage includes Chinese lifecycle, ten Qualification tabs/role-gated Audit, and inconsistent Qualification evidence denial.
+- Member tests: 112 PASS; Admin tests: 18 PASS. Existing tests retained; new coverage includes Chinese lifecycle, ten Qualification tabs/role-gated Audit, and inconsistent Qualification evidence denial.
 - Backend/Worker, Member/Admin Build, Prisma validate/generate/migrate, isolated DB Golden twice, Replay, HTTP/DB, OpenAPI and security policy were rerun. Latest complete results: `../../phase3-connected-dev/final/PASS-FAIL-MATRIX.md`.
 - Isolated Member/Admin HTTP/DB: 219 assertions; membership DB: 98 assertions; replay: 129 assertions; Admin operation flow: 49 HTTP operations. These are Connected DEV results, not formal credential certification.
 - 24 responsive screenshots: Member 375/390/430/768 × Dashboard/Organization/Bonus; Admin 1366/1440/1920/768 × Dashboard/Person-Qualification/Bonus-Settlement. Browser checks enforce no document overflow, ten owned-Qualification tabs, navy surface loading, Chinese timeline, modal forward/reverse Tab containment, Escape/focus restoration, switch feedback and mobile navigation touch targets.
@@ -37,3 +37,5 @@ Backend parallel checkpoints `04007e1` and `be7247f` are preserved. Final TODO i
 CODE COMPLETE: this six-screen UX-2 refinement. CONNECTED DEV PASS: scoped verified engineering gates. OPERATIONAL CREDENTIAL PENDING: formal LINE/Entra. UAT PENDING. PRODUCTION BLOCKED: unresolved TODOs, credentials, security/UAT/restore/release evidence.
 
 Pending Decisions are unchanged: eligible-consumption scope, formal PV/BV event mapping and production operational calendar/cut-off. Asia/Taipei and historical snapshot fail-closed remain established. Next action: second SA Visual Review; no mechanical whole-site rollout.
+
+Reviewed visual source commit: 436cbf7168bca53454f4f46ff2c8ac697464026b. Latest gate totals: 40 PASS / 7 BLOCKED / 0 FAIL. Two additional Admin pipeline regressions prove ambiguous batches require explicit selection and theory/calculation hash cannot replace missing payout/parameter evidence. Admin suite is now 18 PASS.
