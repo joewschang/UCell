@@ -1,0 +1,264 @@
+{
+  "qualificationId": "21bb18d2-76b3-47c7-8f38-ad200eb39380",
+  "period": "2026-09",
+  "responses": {
+    "qualifications": {
+      "data": [
+        {
+          "id": "6789ac55-632e-4eba-818e-dd8301e1357d",
+          "code": "22",
+          "rank": "STARTER",
+          "active": true,
+          "ballLabel": "球 22"
+        },
+        {
+          "id": "21bb18d2-76b3-47c7-8f38-ad200eb39380",
+          "code": "23",
+          "rank": "STARTER",
+          "active": true,
+          "ballLabel": "球 23"
+        }
+      ],
+      "meta": {
+        "request_id": "1beac63b-7b9c-4def-9202-63c14876c6bb",
+        "timestamp": "2026-09-16T02:49:23.677Z",
+        "api_version": "v1"
+      }
+    },
+    "person": {
+      "data": {
+        "name": "MEMBER A TEST ONLY",
+        "memberNo": "02393dde-68aa-429e-b692-65f5ee03580b",
+        "email": null,
+        "phone": null
+      },
+      "meta": {
+        "request_id": "11bbd7e8-4a66-48f2-a8ac-b763d75d2b38",
+        "timestamp": "2026-09-16T02:49:23.686Z",
+        "api_version": "v1"
+      }
+    },
+    "products": {
+      "data": [
+        {
+          "id": "2632da4b-b7bd-45c8-b215-3e2ec4c1f29a",
+          "name": "TEST ONLY",
+          "price": 1600,
+          "pv": null,
+          "available": false,
+          "reason": "RULE_PROFILE_CONFIGURATION_PENDING",
+          "fulfillmentStatus": "ERP_PENDING",
+          "availabilityMeaning": "ORDERABLE_NOT_STOCK_CONFIRMATION"
+        },
+        {
+          "id": "968e5c49-2e96-415a-a4da-f8fe1432ad48",
+          "name": "TEST ONLY",
+          "price": 1600,
+          "pv": null,
+          "available": false,
+          "reason": "RULE_PROFILE_CONFIGURATION_PENDING",
+          "fulfillmentStatus": "ERP_PENDING",
+          "availabilityMeaning": "ORDERABLE_NOT_STOCK_CONFIRMATION"
+        }
+      ],
+      "meta": {
+        "request_id": "cd3a47ea-d9a4-434c-9b49-16002d432055",
+        "timestamp": "2026-09-16T02:49:23.694Z",
+        "api_version": "v1"
+      }
+    },
+    "dashboard": {
+      "data": {
+        "qualificationId": "21bb18d2-76b3-47c7-8f38-ad200eb39380",
+        "qualification": {
+          "id": "21bb18d2-76b3-47c7-8f38-ad200eb39380",
+          "code": "23",
+          "rank": "STARTER",
+          "active": true,
+          "ballLabel": "球 23"
+        },
+        "memberName": "MEMBER A TEST ONLY",
+        "memberNo": "02393dde-68aa-429e-b692-65f5ee03580b",
+        "monthlyRepurchaseStatus": "ACTIVE",
+        "pv": 23,
+        "rpv": 1200,
+        "epv": 480,
+        "bonusAmount": null,
+        "bonusStatus": "PENDING",
+        "status": "PENDING",
+        "reason": "SETTLEMENT_NOT_FINALIZED",
+        "view": "EFFECTIVE_ORIGINAL_EVENT_MONTH"
+      },
+      "meta": {
+        "request_id": "d731c029-469c-4d0a-8285-ea72b09d4149",
+        "timestamp": "2026-09-16T02:49:23.741Z",
+        "api_version": "v1"
+      }
+    },
+    "organization": {
+      "data": {
+        "qualificationId": "21bb18d2-76b3-47c7-8f38-ad200eb39380",
+        "sponsor": null,
+        "referrals": [],
+        "pagination": {
+          "limit": 100,
+          "truncated": false
+        }
+      },
+      "meta": {
+        "request_id": "3a84a0e8-e19c-485d-b3bc-81346fb1252e",
+        "timestamp": "2026-09-16T02:49:23.774Z",
+        "api_version": "v1"
+      }
+    },
+    "binary": {
+      "data": {
+        "qualificationId": "21bb18d2-76b3-47c7-8f38-ad200eb39380",
+        "left": {
+          "count": 2,
+          "volume": null
+        },
+        "right": {
+          "count": 0,
+          "volume": null
+        },
+        "volumeStatus": "PENDING",
+        "volumeReason": "SETTLEMENT_NOT_FINALIZED"
+      },
+      "meta": {
+        "request_id": "534b4ad4-d127-4c06-beb3-dc2c35e69e4e",
+        "timestamp": "2026-09-16T02:49:23.804Z",
+        "api_version": "v1"
+      }
+    },
+    "performance": {
+      "data": {
+        "qualificationId": "21bb18d2-76b3-47c7-8f38-ad200eb39380",
+        "period": "2026-09",
+        "pv": 23,
+        "rpv": 1200,
+        "epv": 480,
+        "left": null,
+        "right": null,
+        "asOf": "2026-09-16T02:49:23.823Z",
+        "timezone": "Asia/Taipei",
+        "parameterSnapshotHash": "dc9f62a3e5d43a1494d05aa6d1e6b9cfed798fd5b93a15be98e4b06aafdf8044",
+        "view": "EFFECTIVE_ORIGINAL_EVENT_MONTH",
+        "settlementStatus": "PENDING"
+      },
+      "meta": {
+        "request_id": "9fd9b8f4-1e73-4123-857d-8526afc93906",
+        "timestamp": "2026-09-16T02:49:23.843Z",
+        "api_version": "v1"
+      }
+    },
+    "bonuses": {
+      "data": {
+        "qualificationId": "21bb18d2-76b3-47c7-8f38-ad200eb39380",
+        "period": "2026-09",
+        "awards": [
+          {
+            "id": "57cea755-515d-4f24-858e-0b12eac95b45",
+            "name": "EPV",
+            "status": "PENDING45D",
+            "amount": 240,
+            "ruleVersion": "R1.0B",
+            "parameterSnapshotHash": "d3c88e6ffaf14234043655917092d99076faaa293f101f74f04d5b653c3539d6"
+          }
+        ],
+        "pagination": {
+          "limit": 100,
+          "truncated": false
+        }
+      },
+      "meta": {
+        "request_id": "9eb36c4e-38e7-43aa-97e0-df63b0474051",
+        "timestamp": "2026-09-16T02:49:23.871Z",
+        "api_version": "v1"
+      }
+    },
+    "ledger": {
+      "data": {
+        "qualificationId": "21bb18d2-76b3-47c7-8f38-ad200eb39380",
+        "period": "2026-09",
+        "entries": [
+          {
+            "id": "57cea755-515d-4f24-858e-0b12eac95b45",
+            "label": "EPV",
+            "amount": 240,
+            "postedAt": "2026-09-16T02:49:22.471Z",
+            "sourceId": "22d71256-33c2-4101-9e54-ccfc529b3ff9"
+          }
+        ],
+        "pagination": {
+          "limit": 100,
+          "truncated": false
+        }
+      },
+      "meta": {
+        "request_id": "04070110-a9a0-410d-99aa-d1098219244a",
+        "timestamp": "2026-09-16T02:49:23.906Z",
+        "api_version": "v1"
+      }
+    },
+    "repurchase": {
+      "data": {
+        "qualificationId": "21bb18d2-76b3-47c7-8f38-ad200eb39380",
+        "period": "2026-09",
+        "status": "ACTIVE",
+        "recognitions": [
+          {
+            "id": "ef7c5d4c-7f72-4f22-86ed-c812afe87546",
+            "status": "RECOGNIZED",
+            "dueAt": "2026-09-15T16:00:00.000Z"
+          }
+        ]
+      },
+      "meta": {
+        "request_id": "598a27a4-a300-4155-a0ed-6b8bbf9e9b26",
+        "timestamp": "2026-09-16T02:49:23.940Z",
+        "api_version": "v1"
+      }
+    },
+    "referrals": {
+      "data": {
+        "qualificationId": "21bb18d2-76b3-47c7-8f38-ad200eb39380",
+        "sponsor": null,
+        "referrals": [],
+        "pagination": {
+          "limit": 100,
+          "truncated": false
+        }
+      },
+      "meta": {
+        "request_id": "443b1ef5-6fdf-4ce1-91af-c911e6f1d836",
+        "timestamp": "2026-09-16T02:49:23.973Z",
+        "api_version": "v1"
+      }
+    },
+    "orders": {
+      "data": {
+        "qualificationId": "21bb18d2-76b3-47c7-8f38-ad200eb39380",
+        "orders": [
+          {
+            "id": "31eadab3-0c04-4012-88d7-b18f6b475bd4",
+            "createdAt": "2026-09-16T02:49:22.404Z",
+            "total": 2800,
+            "status": "PAID",
+            "paymentStatus": "PAID",
+            "shipmentStatus": "FULFILLMENT_PENDING"
+          }
+        ],
+        "pagination": {
+          "limit": 100,
+          "truncated": false
+        }
+      },
+      "meta": {
+        "request_id": "20ee6592-1249-45b6-98d4-14a4840fabc8",
+        "timestamp": "2026-09-16T02:49:24.004Z",
+        "api_version": "v1"
+      }
+    }
+  }
+}

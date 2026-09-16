@@ -1,0 +1,244 @@
+{
+  "kind": "CONNECTED_DEV_TEST_ONLY",
+  "operationalCredentialsVerified": false,
+  "result": "PASS",
+  "assertions": 59,
+  "results": [
+    {
+      "label": "Finance cannot configure catalog",
+      "result": "PASS"
+    },
+    {
+      "label": "Admin configures actual Core product",
+      "result": "PASS"
+    },
+    {
+      "label": "GET admin/products",
+      "result": "PASS"
+    },
+    {
+      "label": "GET member/products",
+      "result": "PASS"
+    },
+    {
+      "label": "Admin catalog uses Core Decimal",
+      "result": "PASS"
+    },
+    {
+      "label": "Member catalog sees Admin price",
+      "result": "PASS"
+    },
+    {
+      "label": "Member orderability follows configured profile",
+      "result": "PASS"
+    },
+    {
+      "label": "catalog does not imply approved PV mapping",
+      "result": "PASS"
+    },
+    {
+      "label": "GET member/qualifications",
+      "result": "PASS"
+    },
+    {
+      "label": "GET admin/persons/02393dde-68aa-429e-b692-65f5ee03580b/qualifications",
+      "result": "PASS"
+    },
+    {
+      "label": "both endpoints identify the same owned balls",
+      "result": "PASS"
+    },
+    {
+      "label": "GET admin/persons/02393dde-68aa-429e-b692-65f5ee03580b",
+      "result": "PASS"
+    },
+    {
+      "label": "GET member/me",
+      "result": "PASS"
+    },
+    {
+      "label": "Person display name is shared across ends",
+      "result": "PASS"
+    },
+    {
+      "label": "Member bearer cannot enter Admin",
+      "result": "PASS"
+    },
+    {
+      "label": "Admin bearer cannot enter Member",
+      "result": "PASS"
+    },
+    {
+      "label": "Member creates shared Core order",
+      "result": "PASS"
+    },
+    {
+      "label": "Core checkout is priced and unpaid",
+      "result": "PASS"
+    },
+    {
+      "label": "GET admin/orders/604df3be-786f-476f-b60f-faf94d3bfcf9",
+      "result": "PASS"
+    },
+    {
+      "label": "GET member/orders/604df3be-786f-476f-b60f-faf94d3bfcf9",
+      "result": "PASS"
+    },
+    {
+      "label": "Admin sees exact Member order and ball",
+      "result": "PASS"
+    },
+    {
+      "label": "Member detail reads same Core record",
+      "result": "PASS"
+    },
+    {
+      "label": "GET member/orders",
+      "result": "PASS"
+    },
+    {
+      "label": "other owned ball cannot read detail",
+      "result": "PASS"
+    },
+    {
+      "label": "foreign ball cannot read detail",
+      "result": "PASS"
+    },
+    {
+      "label": "GET admin/orders",
+      "result": "PASS"
+    },
+    {
+      "label": "Admin ball filter finds Member checkout",
+      "result": "PASS"
+    },
+    {
+      "label": "Admin filter leaks no other ball",
+      "result": "PASS"
+    },
+    {
+      "label": "Admin prospectively updates reference price",
+      "result": "PASS"
+    },
+    {
+      "label": "GET member/products",
+      "result": "PASS"
+    },
+    {
+      "label": "GET admin/products",
+      "result": "PASS"
+    },
+    {
+      "label": "Member reload sees updated catalog",
+      "result": "PASS"
+    },
+    {
+      "label": "lost-response retry preserves original order/price",
+      "result": "PASS"
+    },
+    {
+      "label": "changed cart cannot reuse the original key",
+      "result": "PASS"
+    },
+    {
+      "label": "new attempt creates order at current price",
+      "result": "PASS"
+    },
+    {
+      "label": "new order uses updated Core price",
+      "result": "PASS"
+    },
+    {
+      "label": "new attempt has distinct order identity",
+      "result": "PASS"
+    },
+    {
+      "label": "unapproved rate change rejected",
+      "result": "PASS"
+    },
+    {
+      "label": "rejected rate change also rolls back price",
+      "result": "PASS"
+    },
+    {
+      "label": "original profile remains immutable",
+      "result": "PASS"
+    },
+    {
+      "label": "underpayment rejected",
+      "result": "PASS"
+    },
+    {
+      "label": "rejected payment leaves no payment fact",
+      "result": "PASS"
+    },
+    {
+      "label": "Admin confirms Core full amount",
+      "result": "PASS"
+    },
+    {
+      "label": "same payment key replays",
+      "result": "PASS"
+    },
+    {
+      "label": "second payment command is locked",
+      "result": "PASS"
+    },
+    {
+      "label": "one committed payment fact",
+      "result": "PASS"
+    },
+    {
+      "label": "one transactional SALE_CONFIRMED event",
+      "result": "PASS"
+    },
+    {
+      "label": "GET admin/orders/604df3be-786f-476f-b60f-faf94d3bfcf9",
+      "result": "PASS"
+    },
+    {
+      "label": "GET member/orders/604df3be-786f-476f-b60f-faf94d3bfcf9",
+      "result": "PASS"
+    },
+    {
+      "label": "GET member/orders",
+      "result": "PASS"
+    },
+    {
+      "label": "both detail endpoints reload PAID",
+      "result": "PASS"
+    },
+    {
+      "label": "Member list reflects payment without claiming shipment",
+      "result": "PASS"
+    },
+    {
+      "label": "Member list identities present",
+      "result": "PASS"
+    },
+    {
+      "label": "GET member/orders",
+      "result": "PASS"
+    },
+    {
+      "label": "new orders stay out of second owned ball",
+      "result": "PASS"
+    },
+    {
+      "label": "GET admin/orders/604df3be-786f-476f-b60f-faf94d3bfcf9",
+      "result": "PASS"
+    },
+    {
+      "label": "paid historical total survives catalog update",
+      "result": "PASS"
+    },
+    {
+      "label": "payment queues event but does not invent PV recognition",
+      "result": "PASS"
+    },
+    {
+      "label": "integration commands grant no bonus",
+      "result": "PASS"
+    }
+  ]
+}

@@ -1,0 +1,429 @@
+{
+  "kind": "CONNECTED_DEV_TEST_ONLY",
+  "operationalCredentialsVerified": false,
+  "productId": "e409c5c6-b325-4e19-a268-5b18093f283a",
+  "qualificationId": "6789ac55-632e-4eba-818e-dd8301e1357d",
+  "orderCreate": {
+    "data": {
+      "qualificationId": "6789ac55-632e-4eba-818e-dd8301e1357d",
+      "id": "604df3be-786f-476f-b60f-faf94d3bfcf9",
+      "status": "CONFIRMED",
+      "total": "799.98",
+      "paymentStatus": "PENDING",
+      "shipmentStatus": "FULFILLMENT_PENDING",
+      "createdAt": "2026-09-16T02:49:25.876Z",
+      "replayed": false,
+      "lines": [
+        {
+          "productId": "e409c5c6-b325-4e19-a268-5b18093f283a",
+          "name": "CROSS END TEST ONLY",
+          "quantity": "2",
+          "unitPrice": "399.99",
+          "amount": "799.98",
+          "pv": null
+        }
+      ]
+    },
+    "meta": {
+      "request_id": "2d107d14-c3c4-4ce3-b7f0-f89539e74fc5",
+      "timestamp": "2026-09-16T02:49:25.900Z",
+      "api_version": "v1"
+    }
+  },
+  "adminOrderBefore": {
+    "data": {
+      "orderId": "604df3be-786f-476f-b60f-faf94d3bfcf9",
+      "orderNo": "9",
+      "qualificationId": "6789ac55-632e-4eba-818e-dd8301e1357d",
+      "purpose": "RETAIL",
+      "status": "CONFIRMED",
+      "currency": "TWD",
+      "grossAmount": "799.98",
+      "discountAmount": "0",
+      "netAmount": "799.98",
+      "ruleVersionCode": "R1.0B",
+      "parameterSnapshotHash": "15b70ff167825cdf690c9090f82f09062f226f4268f33ec3284eccc23aa0701e",
+      "sourceReferralTokenHash": null,
+      "clientReference": null,
+      "confirmedAt": "2026-09-16T02:49:25.872Z",
+      "paidAt": null,
+      "createdAt": "2026-09-16T02:49:25.876Z",
+      "updatedAt": "2026-09-16T02:49:25.876Z",
+      "lines": [
+        {
+          "orderLineId": "7399f16c-e59c-4c66-bb38-8c623cf8b518",
+          "orderId": "604df3be-786f-476f-b60f-faf94d3bfcf9",
+          "productId": "e409c5c6-b325-4e19-a268-5b18093f283a",
+          "skuSnapshot": "CROSS_END_TEST_ONLY_09250ca5-3103-4e1e-83b8-7052f2e256ab",
+          "productNameSnapshot": "CROSS END TEST ONLY",
+          "quantity": "2",
+          "unitPrice": "399.99",
+          "lineAmount": "799.98",
+          "gpvRateSnapshot": "0.6",
+          "gpvAmountSnapshot": "479.988",
+          "pvRateSnapshot": null,
+          "ruleProfileSnapshot": {
+            "pvRate": null,
+            "gpvRate": "0.6",
+            "profileId": "a9391eee-1fdd-4a68-ba5d-c22a06103a7a",
+            "epvEligible": false,
+            "rpvEligible": false,
+            "ruleVersionCode": "R1.0B",
+            "parameterSnapshotHash": "15b70ff167825cdf690c9090f82f09062f226f4268f33ec3284eccc23aa0701e"
+          },
+          "createdAt": "2026-09-16T02:49:25.876Z",
+          "returnedQuantity": "0",
+          "remainingReversibleQuantity": "2"
+        }
+      ],
+      "paymentEvents": []
+    },
+    "meta": {
+      "request_id": "913888e4-ce00-4401-a97c-dd7f1c6847ae",
+      "timestamp": "2026-09-16T02:49:25.912Z",
+      "api_version": "v1"
+    }
+  },
+  "memberOrderBefore": {
+    "data": {
+      "qualificationId": "6789ac55-632e-4eba-818e-dd8301e1357d",
+      "id": "604df3be-786f-476f-b60f-faf94d3bfcf9",
+      "status": "CONFIRMED",
+      "total": "799.98",
+      "createdAt": "2026-09-16T02:49:25.876Z",
+      "lines": [
+        {
+          "productId": "e409c5c6-b325-4e19-a268-5b18093f283a",
+          "name": "CROSS END TEST ONLY",
+          "quantity": "2",
+          "amount": "799.98"
+        }
+      ]
+    },
+    "meta": {
+      "request_id": "12d469cb-48dc-40bc-b346-8d614ec7ace0",
+      "timestamp": "2026-09-16T02:49:25.932Z",
+      "api_version": "v1"
+    }
+  },
+  "adminOrderAfter": {
+    "data": {
+      "orderId": "604df3be-786f-476f-b60f-faf94d3bfcf9",
+      "orderNo": "9",
+      "qualificationId": "6789ac55-632e-4eba-818e-dd8301e1357d",
+      "purpose": "RETAIL",
+      "status": "PAID",
+      "currency": "TWD",
+      "grossAmount": "799.98",
+      "discountAmount": "0",
+      "netAmount": "799.98",
+      "ruleVersionCode": "R1.0B",
+      "parameterSnapshotHash": "15b70ff167825cdf690c9090f82f09062f226f4268f33ec3284eccc23aa0701e",
+      "sourceReferralTokenHash": null,
+      "clientReference": null,
+      "confirmedAt": "2026-09-16T02:49:25.872Z",
+      "paidAt": "2026-09-16T02:49:26.092Z",
+      "createdAt": "2026-09-16T02:49:25.876Z",
+      "updatedAt": "2026-09-16T02:49:26.123Z",
+      "lines": [
+        {
+          "orderLineId": "7399f16c-e59c-4c66-bb38-8c623cf8b518",
+          "orderId": "604df3be-786f-476f-b60f-faf94d3bfcf9",
+          "productId": "e409c5c6-b325-4e19-a268-5b18093f283a",
+          "skuSnapshot": "CROSS_END_TEST_ONLY_09250ca5-3103-4e1e-83b8-7052f2e256ab",
+          "productNameSnapshot": "CROSS END TEST ONLY",
+          "quantity": "2",
+          "unitPrice": "399.99",
+          "lineAmount": "799.98",
+          "gpvRateSnapshot": "0.6",
+          "gpvAmountSnapshot": "479.988",
+          "pvRateSnapshot": null,
+          "ruleProfileSnapshot": {
+            "pvRate": null,
+            "gpvRate": "0.6",
+            "profileId": "a9391eee-1fdd-4a68-ba5d-c22a06103a7a",
+            "epvEligible": false,
+            "rpvEligible": false,
+            "ruleVersionCode": "R1.0B",
+            "parameterSnapshotHash": "15b70ff167825cdf690c9090f82f09062f226f4268f33ec3284eccc23aa0701e"
+          },
+          "createdAt": "2026-09-16T02:49:25.876Z",
+          "returnedQuantity": "0",
+          "remainingReversibleQuantity": "2"
+        }
+      ],
+      "paymentEvents": [
+        {
+          "paymentEventId": "de129d05-aafb-4501-a1cf-07a357e11696",
+          "orderId": "604df3be-786f-476f-b60f-faf94d3bfcf9",
+          "eventType": "PAYMENT_CONFIRMED",
+          "amount": "799.98",
+          "paymentMethod": "BANK_TRANSFER",
+          "referenceNo": "CROSS_END_TEST_ONLY",
+          "idempotencyKey": "CROSS_END_PAYMENT_d225b0b5-3c5a-4d18-a08b-50d6b3c649d9",
+          "occurredAt": "2026-09-16T02:49:26.092Z",
+          "recordedAt": "2026-09-16T02:49:26.119Z",
+          "createdBy": null,
+          "correlationId": "2bda7a13-90a0-4abc-81d8-62ec5fb9750d"
+        }
+      ]
+    },
+    "meta": {
+      "request_id": "34d44ddd-c7a6-4aa7-9f73-0bdf2b4226db",
+      "timestamp": "2026-09-16T02:49:26.167Z",
+      "api_version": "v1"
+    }
+  },
+  "memberOrderAfter": {
+    "data": {
+      "qualificationId": "6789ac55-632e-4eba-818e-dd8301e1357d",
+      "id": "604df3be-786f-476f-b60f-faf94d3bfcf9",
+      "status": "PAID",
+      "total": "799.98",
+      "createdAt": "2026-09-16T02:49:25.876Z",
+      "lines": [
+        {
+          "productId": "e409c5c6-b325-4e19-a268-5b18093f283a",
+          "name": "CROSS END TEST ONLY",
+          "quantity": "2",
+          "amount": "799.98"
+        }
+      ]
+    },
+    "meta": {
+      "request_id": "e1c2fdee-911e-4a09-a669-e2687700e49e",
+      "timestamp": "2026-09-16T02:49:26.179Z",
+      "api_version": "v1"
+    }
+  },
+  "checkoutReplay": {
+    "data": {
+      "qualificationId": "6789ac55-632e-4eba-818e-dd8301e1357d",
+      "id": "604df3be-786f-476f-b60f-faf94d3bfcf9",
+      "status": "CONFIRMED",
+      "total": "799.98",
+      "paymentStatus": "PENDING",
+      "shipmentStatus": "FULFILLMENT_PENDING",
+      "createdAt": "2026-09-16T02:49:25.876Z",
+      "replayed": true,
+      "lines": [
+        {
+          "productId": "e409c5c6-b325-4e19-a268-5b18093f283a",
+          "name": "CROSS END TEST ONLY",
+          "quantity": "2",
+          "unitPrice": "399.99",
+          "amount": "799.98",
+          "pv": null
+        }
+      ]
+    },
+    "meta": {
+      "request_id": "a91643bf-8768-4479-b7bf-d8205497daf8",
+      "timestamp": "2026-09-16T02:49:26.037Z",
+      "api_version": "v1"
+    }
+  },
+  "newCheckout": {
+    "data": {
+      "qualificationId": "6789ac55-632e-4eba-818e-dd8301e1357d",
+      "id": "ca63121c-b9c5-449a-a20f-4b42fbda4f38",
+      "status": "CONFIRMED",
+      "total": "999.98",
+      "paymentStatus": "PENDING",
+      "shipmentStatus": "FULFILLMENT_PENDING",
+      "createdAt": "2026-09-16T02:49:26.067Z",
+      "replayed": false,
+      "lines": [
+        {
+          "productId": "e409c5c6-b325-4e19-a268-5b18093f283a",
+          "name": "CROSS END TEST ONLY",
+          "quantity": "2",
+          "unitPrice": "499.99",
+          "amount": "999.98",
+          "pv": null
+        }
+      ]
+    },
+    "meta": {
+      "request_id": "0b0de358-e8d3-412c-a8a4-36d645f47958",
+      "timestamp": "2026-09-16T02:49:26.080Z",
+      "api_version": "v1"
+    }
+  },
+  "paymentConfirmed": {
+    "data": {
+      "orderId": "604df3be-786f-476f-b60f-faf94d3bfcf9",
+      "status": "PAID",
+      "paymentEventId": "de129d05-aafb-4501-a1cf-07a357e11696",
+      "correlationId": "2bda7a13-90a0-4abc-81d8-62ec5fb9750d"
+    },
+    "meta": {
+      "replayed": false,
+      "request_id": "1b48c3a5-8da5-4fd6-9e95-148a2fedfa54",
+      "timestamp": "2026-09-16T02:49:26.133Z",
+      "api_version": "v1"
+    }
+  },
+  "memberOrdersBefore": {
+    "data": {
+      "qualificationId": "6789ac55-632e-4eba-818e-dd8301e1357d",
+      "orders": [
+        {
+          "id": "604df3be-786f-476f-b60f-faf94d3bfcf9",
+          "createdAt": "2026-09-16T02:49:25.876Z",
+          "total": 799.98,
+          "status": "CONFIRMED",
+          "paymentStatus": "PENDING",
+          "shipmentStatus": "FULFILLMENT_PENDING"
+        }
+      ],
+      "pagination": {
+        "limit": 100,
+        "truncated": false
+      }
+    },
+    "meta": {
+      "request_id": "19c4e6ba-80ce-4da9-af92-5054e830d749",
+      "timestamp": "2026-09-16T02:49:25.959Z",
+      "api_version": "v1"
+    }
+  },
+  "adminCatalogBefore": {
+    "data": [
+      {
+        "productId": "e409c5c6-b325-4e19-a268-5b18093f283a",
+        "sku": "CROSS_END_TEST_ONLY_09250ca5-3103-4e1e-83b8-7052f2e256ab",
+        "displayName": "CROSS END TEST ONLY",
+        "currentPrice": "399.99",
+        "currency": "TWD",
+        "isActive": true,
+        "createdAt": "2026-09-16T02:49:25.767Z",
+        "updatedAt": "2026-09-16T02:49:25.767Z",
+        "ruleProfiles": [
+          {
+            "productRuleProfileId": "a9391eee-1fdd-4a68-ba5d-c22a06103a7a",
+            "productId": "e409c5c6-b325-4e19-a268-5b18093f283a",
+            "effectiveFrom": "2026-09-16T02:49:25.772Z",
+            "effectiveTo": null,
+            "gpvRate": "0.6",
+            "pvRate": null,
+            "rpvEligible": false,
+            "epvEligible": false,
+            "ruleVersionCode": "R1.0B",
+            "parameterSnapshotHash": "15b70ff167825cdf690c9090f82f09062f226f4268f33ec3284eccc23aa0701e",
+            "createdAt": "2026-09-16T02:49:25.775Z"
+          }
+        ]
+      }
+    ],
+    "meta": {
+      "request_id": "b90396aa-9386-4c38-b06a-08054efe8291",
+      "timestamp": "2026-09-16T02:49:25.794Z",
+      "api_version": "v1"
+    }
+  },
+  "memberCatalogBefore": {
+    "data": [
+      {
+        "id": "e409c5c6-b325-4e19-a268-5b18093f283a",
+        "name": "CROSS END TEST ONLY",
+        "price": 399.99,
+        "pv": null,
+        "available": true,
+        "reason": null,
+        "fulfillmentStatus": "ERP_PENDING",
+        "availabilityMeaning": "ORDERABLE_NOT_STOCK_CONFIRMATION"
+      }
+    ],
+    "meta": {
+      "request_id": "fe9b8382-fcec-441b-89df-ba3263e8acd6",
+      "timestamp": "2026-09-16T02:49:25.805Z",
+      "api_version": "v1"
+    }
+  },
+  "adminCatalogAfter": {
+    "data": [
+      {
+        "productId": "e409c5c6-b325-4e19-a268-5b18093f283a",
+        "sku": "CROSS_END_TEST_ONLY_09250ca5-3103-4e1e-83b8-7052f2e256ab",
+        "displayName": "CROSS END TEST ONLY",
+        "currentPrice": "499.99",
+        "currency": "TWD",
+        "isActive": true,
+        "createdAt": "2026-09-16T02:49:25.767Z",
+        "updatedAt": "2026-09-16T02:49:26.002Z",
+        "ruleProfiles": [
+          {
+            "productRuleProfileId": "a9391eee-1fdd-4a68-ba5d-c22a06103a7a",
+            "productId": "e409c5c6-b325-4e19-a268-5b18093f283a",
+            "effectiveFrom": "2026-09-16T02:49:25.772Z",
+            "effectiveTo": null,
+            "gpvRate": "0.6",
+            "pvRate": null,
+            "rpvEligible": false,
+            "epvEligible": false,
+            "ruleVersionCode": "R1.0B",
+            "parameterSnapshotHash": "15b70ff167825cdf690c9090f82f09062f226f4268f33ec3284eccc23aa0701e",
+            "createdAt": "2026-09-16T02:49:25.775Z"
+          }
+        ]
+      }
+    ],
+    "meta": {
+      "request_id": "f5ce1941-7f43-4469-8926-9772cb9f2174",
+      "timestamp": "2026-09-16T02:49:26.026Z",
+      "api_version": "v1"
+    }
+  },
+  "memberCatalogAfter": {
+    "data": [
+      {
+        "id": "e409c5c6-b325-4e19-a268-5b18093f283a",
+        "name": "CROSS END TEST ONLY",
+        "price": 499.99,
+        "pv": null,
+        "available": true,
+        "reason": null,
+        "fulfillmentStatus": "ERP_PENDING",
+        "availabilityMeaning": "ORDERABLE_NOT_STOCK_CONFIRMATION"
+      }
+    ],
+    "meta": {
+      "request_id": "afa8434f-150f-47da-abcb-917870f892df",
+      "timestamp": "2026-09-16T02:49:26.021Z",
+      "api_version": "v1"
+    }
+  },
+  "memberOrdersAfter": {
+    "data": {
+      "qualificationId": "6789ac55-632e-4eba-818e-dd8301e1357d",
+      "orders": [
+        {
+          "id": "ca63121c-b9c5-449a-a20f-4b42fbda4f38",
+          "createdAt": "2026-09-16T02:49:26.067Z",
+          "total": 999.98,
+          "status": "CONFIRMED",
+          "paymentStatus": "PENDING",
+          "shipmentStatus": "FULFILLMENT_PENDING"
+        },
+        {
+          "id": "604df3be-786f-476f-b60f-faf94d3bfcf9",
+          "createdAt": "2026-09-16T02:49:25.876Z",
+          "total": 799.98,
+          "status": "PAID",
+          "paymentStatus": "PAID",
+          "shipmentStatus": "FULFILLMENT_PENDING"
+        }
+      ],
+      "pagination": {
+        "limit": 100,
+        "truncated": false
+      }
+    },
+    "meta": {
+      "request_id": "36d230b7-c683-4e52-87cc-1b524c63e417",
+      "timestamp": "2026-09-16T02:49:26.204Z",
+      "api_version": "v1"
+    }
+  }
+}

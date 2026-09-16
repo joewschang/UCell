@@ -1,5 +1,7 @@
 # Member Connected DEV integration matrix
 
+Latest cross-end continuation (2026-09-16): real Admin catalog → Member checkout → Admin payment → Member reload PASS, 59 additional cross-end HTTP/DB assertions, 278 total identity assertions; Member 116 / Admin 20 / Backend API 130 tests PASS. The Member order refresh uses current-ball GET and clears stale expanded detail. Frontend contract/UI tests replay recorded real endpoint responses; formal two-browser/LINE/Entra UAT remains pending. Backend TODO stays 52. [Plan](../member-admin-integration/PLAN.md), [report](../member-admin-integration/REPORT.md). Older counts below are historical.
+
 Date: 2026-09-16. Branch: integration/member-backend-mvp. Production BLOCKED.
 
 | Area | Evidence | Classification |

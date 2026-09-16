@@ -1,0 +1,7 @@
+$ jest --config ./test/jest-e2e.json "--runInBand"
+
+Test Suites: 17 passed, 17 total
+Tests:       52 todo, 130 passed, 182 total
+Snapshots:   0 total
+Time:        30.056 s, estimated 225 s
+Ran all test suites.

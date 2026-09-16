@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
 import {randomUUID} from 'node:crypto';
 import {writeFileSync} from 'node:fs';
+import {runMemberAdminIntegration} from './member-admin-integration-cases.mjs';
 const require=createRequire(new URL('../package.json',import.meta.url)),apiRequire=createRequire(new URL('../apps/api/package.json',import.meta.url));
 const {PrismaClient}=require('@prisma/client');
 const {NestFactory}=apiRequire('@nestjs/core'),{FastifyAdapter}=apiRequire('@nestjs/platform-fastify');
@@ -312,6 +313,7 @@ try{
  equal(JSON.stringify([await db.pvLedger.findMany({orderBy:{eventId:'asc'}}),await db.bonusAward.findMany({orderBy:{bonusAwardId:'asc'}})]),monetaryBeforeCheckout,'checkout/read/profile preserve all original monetary facts');
  const finalBall1=(await call('GET','member/performance?qualificationId='+ids[0]+'&period=2026-09',token)).json().data;
  equal([finalBall1.pv,finalBall1.rpv,finalBall1.epv],[11,2400,1680],'Golden Journey back to Ball1 remains deterministic');
+ await runMemberAdminIntegration({server,db,memberToken:token,adminToken:adminSession.accessToken,financeToken:deniedSession.accessToken,personId:person.personId,qualificationIds:ids,equal});
  const before=[await db.pvLedger.count(),await db.bonusAward.count(),await db.bonusRecoveryEvent.count()];
  for(let i=0;i<3;i++)await call('GET','member/qualifications',token);
  equal([await db.pvLedger.count(),await db.bonusAward.count(),await db.bonusRecoveryEvent.count()],before,'repeated GET has no monetary side effect');

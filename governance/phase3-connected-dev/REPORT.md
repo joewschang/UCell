@@ -1,3 +1,11 @@
+# Member / Admin cross-end integration continuation — 2026-09-16
+
+Pre-change checkpoint 5270ffc; branch integration/member-backend-mvp. Added a real isolated HTTP/DB journey for Admin catalog → Member checkout → Admin order/payment → Member reloaded PAID state, plus captured-response frontend adapter/UI/transport tests. Final Golden has 59 new cross-end assertions and 278 total Member identity assertions. Member 116 tests, Admin 20 tests, Backend API 17 suites / 130 tests PASS; all three builds PASS. Member now offers 「重新整理訂單」 for the currently selected ball, clearing expanded stale detail before reading Core state. No automatic cross-app push or real browser/device UAT is claimed.
+
+Backend TODO remains 52: these are additional integration tests, not placeholder conversions. No new migration, dependencies or production monetary/rule changes. Formal LINE/LIFF/Entra, Security/UAT, replay/carry/scheduling and Production blockers remain. See [integration plan](../member-admin-integration/PLAN.md) and [batch report/evidence](../member-admin-integration/REPORT.md); earlier Backend/UX/Member counts below are historical.
+
+---
+
 # Backend Binary / Referral TODO continuation — 2026-09-16
 
 Pre-change checkpoint 40ec4f9; branch integration/member-backend-mvp. This batch converts 17 original Bonus Engine TODOs through actual service calculation/query/write assertions: six Binary, ten Referral/Equalization and one initial lifecycle case. Following the earlier three-case Matching batch, the shared working tree now has 52 TODO (69 → 52). One prior v064 conversion remains concurrent uncommitted work; do not interpret this shared-working-tree count as clean-checkout release certification.

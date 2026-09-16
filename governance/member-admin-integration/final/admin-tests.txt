@@ -1,0 +1,10 @@
+$ vitest run
+
+ RUN  v4.1.11 C:/UCell/UCell/admin
+
+
+ Test Files  8 passed (8)
+      Tests  20 passed (20)
+   Start at  10:50:04
+   Duration  1.47s (transform 1.27s, setup 0ms, import 2.50s, tests 385ms, environment 2ms)
+

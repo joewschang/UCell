@@ -1,0 +1,71 @@
+$ vitest run
+
+ RUN  v2.1.9 C:/UCell/UCell/member
+
+ ✓ tests/validation.test.ts (17 tests) 14ms
+ ✓ tests/qualification-lifecycle.test.tsx (5 tests) 43ms
+ ✓ tests/timeout.test.ts (5 tests) 24ms
+ ✓ tests/auth.test.ts (6 tests) 26ms
+ ✓ tests/error-boundary.test.tsx (3 tests) 31ms
+ ✓ tests/design-system.test.tsx (6 tests) 43ms
+stderr | tests/connected-shop.test.tsx > uses Core order amount and requests authorized detail; submits no price or PV
+⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
+⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.
+
+ ✓ tests/contract.test.ts (5 tests) 10ms
+stderr | tests/commerce.test.tsx > completes the shop review flow and clears shipping after success
+⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
+⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.
+
+ ✓ tests/profile.test.tsx (3 tests) 42ms
+ ✓ tests/commerce.test.tsx (12 tests) 174ms
+ ✓ tests/connected-shop.test.tsx (5 tests) 152ms
+stderr | tests/notifications.test.tsx > marks one notification once without changing another
+⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
+⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.
+
+ ✓ tests/notifications.test.tsx (10 tests) 76ms
+ ✓ tests/session.test.tsx (11 tests) 52ms
+stderr | tests/member-admin-integration.test.tsx > refreshes the current-ball order list after an Admin payment, replacing stale status
+⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
+⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.
+
+stderr | tests/member.test.tsx > replaces a saved qualification no longer owned by the member
+⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
+⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.
+
+stderr | tests/connected-account.test.tsx > allows a Person without balls to access own profile and server logout without scoped queries
+⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
+⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.
+
+ ❯ tests/member-admin-integration.test.tsx (4 tests | 1 failed) 124ms
+   × refreshes the current-ball order list after an Admin payment, replacing stale status 87ms
+     → expected '{"type":"div","props":{"className":"a…' not to contain 'CONFIRMED'
+ ✓ tests/connected-account.test.tsx (5 tests) 114ms
+ ✓ tests/member.test.tsx (15 tests) 188ms
+ ✓ tests/envelope.test.ts (4 tests) 8ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/member-admin-integration.test.tsx > refreshes the current-ball order list after an Admin payment, replacing stale status
+AssertionError: expected '{"type":"div","props":{"className":"a…' not to contain 'CONFIRMED'
+
+Expected: "CONFIRMED"
+Received: "{"type":"div","props":{"className":"app","data-app":"member"},"children":[{"type":"header","props":{},"children":[{"type":"div","props":{},"children":[{"type":"b","props":{},"children":["UCell"]},{"type":"small","props":{},"children":["會員服務"]}]},{"type":"a","props":{"className":"notification-link","aria-label":"通知中心","href":"/notifications"},"children":["通知"]}]},{"type":"main","props":{},"children":[{"type":"section","props":{"className":"uc-section uc-context"},"children":[{"type":"label","props":{"htmlFor":"qualification"},"children":["目前資格"]},{"type":"select","props":{"id":"qualification","value":"6789ac55-632e-4eba-818e-dd8301e1357d"},"children":[{"type":"option","props":{"value":"6789ac55-632e-4eba-818e-dd8301e1357d"},"children":["INTEGRATION BALL｜啟航｜球1"]}]},{"type":"small","props":{},"children":["資格活躍"," · 以下組織、業績與獎金均屬此資格"]},{"type":"p","props":{"role":"status","aria-live":"polite"},"children":null}]},{"type":"div","props":{},"children":[{"type":"h2","props":{},"children":["我的訂單"]},{"type":"button","props":{"disabled":false},"children":["重新整理訂單"]},{"type":"article","props":{"className":"card"},"children":[{"type":"h3","props":{},"children":["ca63121c-b9c5-449a-a20f-4b42fbda4f38"]},{"type":"p","props":{},"children":["2026-09-16T02:49:26.067Z"," · ","NT$ 999.98"]},{"type":"p","props":{},"children":["訂單：","CONFIRMED"]},{"type":"button","props":{"aria-expanded":false},"children":["付款與配送狀態"]}]},{"type":"article","props":{"className":"card"},"children":[{"type":"h3","props":{},"children":["604df3be-786f-476f-b60f-faf94d3bfcf9"]},{"type":"p","props":{},"children":["2026-09-16T02:49:25.876Z"," · ","NT$ 799.98"]},{"type":"p","props":{},"children":["訂單：","PAID"]},{"type":"button","props":{"aria-expanded":false},"children":["付款與配送狀態"]}]}]}]},{"type":"nav","props":{"aria-label":"主要功能"},"children":[{"type":"a","props":{"className":"","href":"/"},"children":["首頁"]},{"type":"a","props":{"className":"","href":"/organization"},"children":["組織"]},{"type":"a","props":{"className":"","href":"/shop"},"children":["商城"]},{"type":"a","props":{"className":"","href":"/bonuses"},"children":["獎金"]},{"type":"a","props":{"className":"","href":"/me"},"children":["我的"]}]}]}"
+
+ ❯ tests/member-admin-integration.test.tsx:54:103
+     52|   const refresh=tree!.root.findAllByType('button').find(button=>button…
+     53|   await act(async()=>{refresh!.props.onClick();});
+     54|   expect(JSON.stringify(tree!.toJSON())).toContain('PAID');expect(JSON…
+       |                                                                                                       ^
+     55|   const reads=fetch.mock.calls.filter(([url])=>url.includes('/member/o…
+     56|   expect(reads.every(([url])=>url.includes('qualificationId='+q.id))).…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+ Test Files  1 failed | 15 passed (16)
+      Tests  1 failed | 115 passed (116)
+   Start at  10:50:03
+   Duration  2.22s (transform 5.29s, setup 0ms, collect 10.81s, tests 1.12s, environment 5ms, prepare 6.30s)
+
+[ELIFECYCLE] Test failed. See above for more details.

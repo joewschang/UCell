@@ -1,0 +1,4 @@
+$ node scripts/build.mjs
+src/lib/member-admin-integration.test.ts(1,28): error TS2307: Cannot find module 'node:fs' or its corresponding type declarations.
+src/lib/member-admin-integration.test.ts(6,50): error TS2580: Cannot find name 'process'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node`.
+[ELIFECYCLE] Command failed with exit code 1.

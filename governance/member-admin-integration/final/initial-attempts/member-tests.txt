@@ -1,0 +1,82 @@
+$ vitest run
+
+ RUN  v2.1.9 C:/UCell/UCell/member
+
+ ✓ tests/validation.test.ts (17 tests) 11ms
+ ✓ tests/timeout.test.ts (5 tests) 25ms
+ ✓ tests/auth.test.ts (6 tests) 21ms
+ ✓ tests/error-boundary.test.tsx (3 tests) 28ms
+ ✓ tests/profile.test.tsx (3 tests) 32ms
+ ✓ tests/qualification-lifecycle.test.tsx (5 tests) 37ms
+ ✓ tests/design-system.test.tsx (6 tests) 46ms
+ ✓ tests/contract.test.ts (5 tests) 9ms
+ ✓ tests/session.test.tsx (11 tests) 50ms
+stderr | tests/connected-shop.test.tsx > uses Core order amount and requests authorized detail; submits no price or PV
+⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
+⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.
+
+stderr | tests/notifications.test.tsx > marks one notification once without changing another
+⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
+⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.
+
+ ✓ tests/connected-shop.test.tsx (5 tests) 111ms
+ ✓ tests/notifications.test.tsx (10 tests) 69ms
+stderr | tests/commerce.test.tsx > completes the shop review flow and clears shipping after success
+⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
+⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.
+
+ ❯ tests/member-admin-integration.test.tsx (3 tests | 2 failed) 41ms
+   × actual Member adapters accept the Admin-configured catalog before and after a price update 16ms
+     → API 回應格式異常，請稍後重試
+   × renders reloaded PAID Core detail after Admin payment without claiming shipment 19ms
+     → API 回應格式異常，請稍後重試
+stderr | tests/connected-account.test.tsx > allows a Person without balls to access own profile and server logout without scoped queries
+⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
+⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.
+
+stderr | tests/member.test.tsx > replaces a saved qualification no longer owned by the member
+⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
+⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.
+
+ ✓ tests/commerce.test.tsx (12 tests) 113ms
+ ✓ tests/connected-account.test.tsx (5 tests) 110ms
+ ✓ tests/member.test.tsx (15 tests) 164ms
+ ✓ tests/envelope.test.ts (4 tests) 7ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/member-admin-integration.test.tsx > actual Member adapters accept the Admin-configured catalog before and after a price update
+Error: API 回應格式異常，請稍後重試
+ ❯ unwrapMemberEnvelope src/memberApi.ts:9:11
+      7|   const meta = envelope.meta;
+      8|   if (!Object.prototype.hasOwnProperty.call(envelope, 'data') || !meta…
+      9|     throw new Error('API 回應格式異常，請稍後重試');
+       |           ^
+     10|   const fields = meta as Record<string, unknown>;
+     11|   if (fields.api_version !== 'v1' || typeof fields.request_id !== 'str…
+ ❯ Module.memberApi src/memberApi.ts:19:10
+ ❯ tests/member-admin-integration.test.tsx:19:16
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  tests/member-admin-integration.test.tsx > renders reloaded PAID Core detail after Admin payment without claiming shipment
+Error: API 回應格式異常，請稍後重試
+ ❯ unwrapMemberEnvelope src/memberApi.ts:9:11
+      7|   const meta = envelope.meta;
+      8|   if (!Object.prototype.hasOwnProperty.call(envelope, 'data') || !meta…
+      9|     throw new Error('API 回應格式異常，請稍後重試');
+       |           ^
+     10|   const fields = meta as Record<string, unknown>;
+     11|   if (fields.api_version !== 'v1' || typeof fields.request_id !== 'str…
+ ❯ Module.memberApi src/memberApi.ts:19:10
+ ❯ scoped src/memberData.ts:69:20
+ ❯ tests/member-admin-integration.test.tsx:31:43
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+ Test Files  1 failed | 15 passed (16)
+      Tests  2 failed | 113 passed (115)
+   Start at  10:47:38
+   Duration  2.10s (transform 4.24s, setup 0ms, collect 9.77s, tests 877ms, environment 5ms, prepare 5.82s)
+
+[ELIFECYCLE] Test failed. See above for more details.

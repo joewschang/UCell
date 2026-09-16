@@ -1,0 +1,11 @@
+$ vitest run tests/contract.test.ts
+
+ RUN  v2.1.9 C:/UCell/UCell/member
+
+ ✓ tests/contract.test.ts (5 tests) 8ms
+
+ Test Files  1 passed (1)
+      Tests  5 passed (5)
+   Start at  10:52:14
+   Duration  838ms (transform 159ms, setup 0ms, collect 204ms, tests 8ms, environment 0ms, prepare 248ms)
+

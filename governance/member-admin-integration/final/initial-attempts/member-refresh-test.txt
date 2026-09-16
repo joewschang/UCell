@@ -1,0 +1,32 @@
+$ vitest run "tests/member-admin-integration.test.tsx"
+
+ RUN  v2.1.9 C:/UCell/UCell/member
+
+stderr | tests/member-admin-integration.test.tsx > refreshes the current-ball order list after an Admin payment, replacing stale status
+⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
+⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.
+
+ ❯ tests/member-admin-integration.test.tsx (4 tests | 1 failed) 50ms
+   × refreshes the current-ball order list after an Admin payment, replacing stale status 31ms
+     → expected undefined to be defined
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/member-admin-integration.test.tsx > refreshes the current-ball order list after an Admin payment, replacing stale status
+AssertionError: expected undefined to be defined
+ ❯ tests/member-admin-integration.test.tsx:52:118
+     50|   expect(JSON.stringify(tree!.toJSON())).toContain('CONFIRMED');expect…
+     51|   paid=true;
+     52|   const refresh=tree!.root.findAllByType('button').find(button=>button…
+       |                                                                                                                      ^
+     53|   await act(async()=>{refresh!.props.onClick();});
+     54|   expect(JSON.stringify(tree!.toJSON())).toContain('PAID');expect(JSON…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 3 passed (4)
+   Start at  10:49:36
+   Duration  842ms (transform 185ms, setup 0ms, collect 353ms, tests 50ms, environment 0ms, prepare 150ms)
+
+[ELIFECYCLE] Test failed. See above for more details.
