@@ -99,9 +99,12 @@ const assert=require('node:assert/strict');
    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,width+' home overflow');
    assert.equal(await page.getByRole('navigation',{name:'主要功能'}).getByRole('link').count(),5);
   }
-  if(process.env.SMOKE_SCREENSHOT) await page.screenshot({path:process.env.SMOKE_SCREENSHOT.replace(/\.png$/,'.desktop.png'),fullPage:true});
+  await page.getByLabel('目前資格').selectOption('q1');
+  await page.getByText('已完成',{exact:true}).waitFor();
+  if(process.env.SMOKE_SCREENSHOT) await page.screenshot({path:process.env.SMOKE_SCREENSHOT.replace(/\.png$/,'.desktop.png'),fullPage:true,animations:'disabled'});
   await page.setViewportSize({width:390,height:844});
-  await page.screenshot({path:process.env.SMOKE_SCREENSHOT||'/tmp/ucell-member-mobile.png',fullPage:true});
+  await page.screenshot({path:process.env.SMOKE_SCREENSHOT||'/tmp/ucell-member-mobile.png',fullPage:true,animations:'disabled'});
+  if(process.env.SMOKE_SCREENSHOT) await page.screenshot({path:process.env.SMOKE_SCREENSHOT.replace(/\.png$/,'.viewport.png'),animations:'disabled'});
   await page.getByRole('link',{name:'我的',exact:true}).click();
   await page.getByRole('button',{name:'結束本頁工作階段',exact:true}).click();
   await page.getByRole('button',{name:'取消，繼續使用',exact:true}).click();

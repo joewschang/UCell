@@ -8,6 +8,7 @@ import { SessionBoundary } from './SessionBoundary';
 import { AppErrorBoundary } from './AppErrorBoundary';
 import './styles.css';
 import './premium.css';
+import './tech-home.css';
 function Bootstrap() {
     const [state, setState] = useState<'loading' | 'ready' | 'redirect'>('loading');
     const [error, setError] = useState('');
