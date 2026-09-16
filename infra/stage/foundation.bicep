@@ -68,7 +68,7 @@ resource vault 'Microsoft.KeyVault/vaults@2023-07-01' = {
 }
 
 resource storage 'Microsoft.Storage/storageAccounts@2023-05-01' = {
-  name: '${compactPrefix}st${suffix}'
+  name: 'ucellst${suffix}'
   location: location
   sku: { name: 'Standard_LRS' }
   kind: 'StorageV2'
