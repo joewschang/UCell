@@ -4,7 +4,7 @@
 |---|---|---|
 | Database package build | PASS | `pnpm --filter @ucell/database build` |
 | Backend API build | PASS | `pnpm --filter @ucell/api build` |
-| Backend API Jest | PASS | 157 PASS / 29 TODO / 0 FAIL |
+| Backend API Jest | PASS | 163 PASS / 23 TODO / 0 FAIL |
 | Member build/tests | PASS | 116 tests |
 | Admin build/tests | PASS | 22 tests |
 | Worker build | PASS | TypeScript build |
@@ -12,6 +12,8 @@
 | Versioned settlement timezone | PASS | TEST_ONLY Asia/Taipei parameter snapshot; local-midnight boundary; rollback |
 | Golden DB-backed wrappers | PASS | Sponsor/Binary separation, Active First, K1 carry, Matching source, Return/Recovery |
 | Frozen bonus Golden cases | PASS | Referral 15/20/25, Leader G5=10%, RPV 5/8/12, historical EPV Sponsor allocation |
+| Qualification workflows | PASS | Future upgrade, transfer, company-held exit/retransfer; stable Qualification and placement graph |
+| Payout lifecycle | PASS | EFFECTIVE materialization, PAID append, allocated entry transition, immutable Award; isolated DB evidence |
 | Matching Sponsor traversal | PASS | Live settlement calls `sponsorAncestors`; five historical Sponsor recipients asserted |
 | Matching historical replay evidence | PASS | Sealed Sponsor/Active/Qualification evidence accepted; Binary disagreement does not replace Sponsor semantics |
 | Missing historical Sponsor evidence | PASS | Fails closed with `HISTORICAL_SNAPSHOT_MISSING` |

@@ -1,4 +1,7 @@
 import {execFileSync} from 'node:child_process';import {readFileSync} from 'node:fs';import {resolve} from 'node:path';
+import { Prisma } from '@ucell/database';
+import { UnifiedPayableService } from '../src/modules/payout/unified-payable.service';
+import { AdminOperationsService } from '../src/modules/admin-operations/admin-operations.service';
 let evidence:any[];
 beforeAll(()=>{
  const root=resolve(__dirname,'../../../..');
@@ -31,8 +34,24 @@ describe('v0.5 Return / Reversal / Clawback', () => {
 });
 
 describe('v0.5 payout lifecycle', () => {
-  it.todo('EFFECTIVE awards become PAYABLE via payout batch');
+  it('EFFECTIVE awards become PAYABLE via payout materialization',async()=>{
+    const award={bonusAwardId:'award-A',recipientQualificationId:'ball-A',awardType:'REFERRAL',payableAmount:new Prisma.Decimal(125)};
+    const created:any[]=[];
+    const tx:any={bonusAward:{findMany:jest.fn(async()=>[award])},globalPoolAward:{findMany:jest.fn(async()=>[])},rpvUplineAwardEvent:{findMany:jest.fn(async()=>[])},payableEntry:{findUnique:jest.fn(async()=>null),create:jest.fn(async({data}:any)=>{created.push(data);return data;})}};
+    const service=new UnifiedPayableService({$transaction:async(work:any)=>work(tx)} as any,{} as any);
+    expect(await service.materialize(new Date('2020-03-01T00:00:00Z'),'R1.0B')).toEqual({created:1});
+    expect(created).toEqual([expect.objectContaining({qualificationId:'ball-A',sourceType:'BONUS_AWARD',sourceId:'award-A',awardType:'REFERRAL',grossAmount:new Prisma.Decimal(125),status:'OPEN',ruleVersionCode:'R1.0B'})]);
+  });
   it('open clawback recovery offsets next payout',()=>{expect(assertion('PAID clawback offset limited to new payout capacity 100')).toBe('100');expect(assertion('PAID clawback offset limited to new payout capacity 200')).toBe('200');});
   it('net payout cannot go below zero',()=>{expect(assertion('PAID clawback offset preserves nonnegative net 100')).toBe('0');expect(assertion('PAID clawback offset preserves nonnegative net 200')).toBe('0');});
-  it.todo('mark-paid writes PAID lifecycle events');
+  it('mark-paid writes append-only PAID lifecycle events',async()=>{
+    const paidAt=new Date('2020-03-02T00:00:00Z'),create=jest.fn(),updateMany=jest.fn();
+    const tx:any={payoutBatch:{findUniqueOrThrow:jest.fn(async()=>({payoutBatchId:'batch-A',status:'EXPORTED'})),update:jest.fn(async({data}:any)=>data)},payableEntry:{findMany:jest.fn(async()=>[{sourceId:'award-A'}]),updateMany},bonusAwardLifecycleEvent:{findFirst:jest.fn(async()=>null),create}};
+    const audit={write:jest.fn()};
+    const service=new AdminOperationsService({$transaction:async(work:any)=>work(tx)} as any,audit as any);
+    await service.markPaid('batch-A',{paymentReference:'bank-A',paymentMethod:'BANK',paidAt},'finance-A','FINANCE','request-A','correlation-A');
+    expect(create).toHaveBeenCalledWith({data:{bonusAwardId:'award-A',status:'PAID',occurredAt:paidAt,reasonCode:'PAYOUT_PAID'}});
+    expect(updateMany).toHaveBeenCalledWith({where:{payoutLine:{payoutBatchId:'batch-A'},status:'ALLOCATED'},data:{status:'PAID'}});
+    expect(audit.write).toHaveBeenCalledWith(tx,expect.objectContaining({action:'PAYOUT_PAID',entityId:'batch-A'}));
+  });
 });

@@ -13,6 +13,7 @@ const {RecoveryBalanceService}=require('./apps/api/dist/modules/payout/recovery-
 const {BonusLifecycleService}=require('./apps/api/dist/modules/bonus/bonus-lifecycle.service.js');
 const {QualificationService}=require('./apps/api/dist/modules/qualification/qualification.service.js');
 const {PersonService}=require('./apps/api/dist/modules/person/person.service.js');
+const {AdminOperationsService}=require('./apps/api/dist/modules/admin-operations/admin-operations.service.js');
 const url=new URL(process.env.DATABASE_URL??'');
 assert.ok(['localhost','127.0.0.1'].includes(url.hostname));
 assert.match(process.env.GOLDEN_ISOLATION_DATABASE??'',/^ucell_dev_golden_[a-f0-9]{32}$/);
@@ -154,6 +155,14 @@ try{
   // Direct production service on a narrowed fixture facade; no monetary calculation is mocked.
   const serial=new BonusLifecycleService({...scoped,bonusAwardLifecycleEvent:db.bonusAwardLifecycleEvent});
   equal((await serial.matureDueAwards(end)).matured,0,'maturity duplicate delivery is a no-op');
+  equal((await payable.materialize(end,'TEST_ONLY_LIFECYCLE')).created,1,'EFFECTIVE award materializes one payable entry');
+  const paidBatch=await payable.createPayoutBatch(new Date('2020-01-01'),end,'TEST_ONLY_LIFECYCLE');
+  await db.payoutBatch.update({where:{payoutBatchId:paidBatch.payoutBatchId},data:{status:'EXPORTED',exportedAt:end,exportReference:'TEST_ONLY'}});
+  const operations=new AdminOperationsService(db,audit),paidAt=new Date('2020-02-02T00:00:00Z');
+  await operations.markPaid(paidBatch.payoutBatchId,{paymentReference:'TEST_ONLY_BANK',paymentMethod:'TEST_ONLY',paidAt},owner.personId,'FINANCE',randomUUID(),randomUUID());
+  equal(await db.bonusAwardLifecycleEvent.count({where:{bonusAwardId:lifecycleAward.bonusAwardId,status:'PAID',reasonCode:'PAYOUT_PAID'}}),1,'mark-paid appends one PAID lifecycle event');
+  equal((await db.payableEntry.findUniqueOrThrow({where:{sourceType_sourceId:{sourceType:'BONUS_AWARD',sourceId:lifecycleAward.bonusAwardId}}})).status,'PAID','mark-paid advances allocated payable entry');
+  equal(JSON.stringify(await db.bonusAward.findUniqueOrThrow({where:{bonusAwardId:lifecycleAward.bonusAwardId}})),originalLifecycleAward,'mark-paid preserves original award');
   const direct=new QualificationService(db,idempotency,audit,organization);
   const directRoot=await db.qualification.create({data:{currentHolderPersonId:owner.personId,planLevelCode:'STARTER',status:'EFFECTIVE',effectiveAt:new Date('2020-01-01')}});
   const directDto={personId:owner.personId,planLevelCode:'STARTER',sponsorQualificationId:directRoot.qualificationId,binaryParentQualificationId:directRoot.qualificationId,binarySide:'LEFT',effectiveAt:'2020-01-01T00:00:00.000Z'};

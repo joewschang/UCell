@@ -269,6 +269,18 @@ export class AdminOperationsService {
           paymentMethod:input.paymentMethod
         }
       });
+      const paidAwardEntries=await tx.payableEntry.findMany({
+        where:{payoutLine:{payoutBatchId:id},status:'ALLOCATED',sourceType:'BONUS_AWARD'},
+        select:{sourceId:true}
+      });
+      for(const entry of paidAwardEntries){
+        const alreadyPaid=await tx.bonusAwardLifecycleEvent.findFirst({
+          where:{bonusAwardId:entry.sourceId,status:'PAID'},select:{lifecycleEventId:true}
+        });
+        if(!alreadyPaid) await tx.bonusAwardLifecycleEvent.create({
+          data:{bonusAwardId:entry.sourceId,status:'PAID',occurredAt:paidAt,reasonCode:'PAYOUT_PAID'}
+        });
+      }
       await tx.payableEntry.updateMany({
         where:{payoutLine:{payoutBatchId:id},status:'ALLOCATED'},
         data:{status:'PAID'}

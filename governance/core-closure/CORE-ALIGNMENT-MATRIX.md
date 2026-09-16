@@ -10,4 +10,6 @@
 | Append-only monetary mutation | Existing replay posting/recovery regressions | PASS |
 | Business timezone | TEST_ONLY versioned snapshot resolves Asia/Taipei period boundaries; no UTC calendar substitution | PASS |
 | Active First | Isolated DB Golden evidence is executed by the Golden dataset suite | PASS |
+| Qualification identity across workflow | Upgrade/transfer/exit/retransfer retain Qualification ID and never rewrite Sponsor/Binary placement | PASS |
+| Payout monetary history | PAID is appended while the source Award remains immutable | PASS |
 | Inactive Matching Sponsor edge semantics | Awaiting skip/stop/compression decision | PENDING DECISION |

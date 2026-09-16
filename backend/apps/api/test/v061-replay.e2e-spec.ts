@@ -1,4 +1,5 @@
 import { execFileSync } from 'node:child_process';
+import { QualificationWorkflowService } from '../src/modules/qualification/qualification-workflow.service';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { periodBinary, periodMatching, appendEntitlementDelta, verifyReplayEnvelope } from '@ucell/database';
@@ -83,8 +84,52 @@ describe('v0.6.1 subscription cancellation',()=>{
 });
 
 describe('v0.6.1 qualification workflow',()=>{
-  it.todo('upgrade creates future plan history and does not alter past awards');
-  it.todo('transfer preserves qualificationId and sponsor/binary positions');
-  it.todo('exit closes holder interval and status becomes EXITED');
-  it.todo('company retransfer opens a new holder interval');
+  const effectiveAt=new Date('2100-01-01T00:00:00Z');
+  function harness(workflow:any){
+    const currentPlan={qualificationPlanHistoryId:'plan-old'},currentHolder={holderHistoryId:'holder-old'};
+    const tx:any={
+      qualificationWorkflow:{findUniqueOrThrow:jest.fn(async()=>workflow),update:jest.fn(async({data}:any)=>({...workflow,...data}))},
+      qualificationPlanHistory:{findFirst:jest.fn(async()=>currentPlan),update:jest.fn(),create:jest.fn(async({data}:any)=>data)},
+      qualificationHolderHistory:{findFirst:jest.fn(async()=>currentHolder),update:jest.fn(),create:jest.fn(async({data}:any)=>data)},
+      qualification:{update:jest.fn(async({data}:any)=>({qualificationId:workflow.qualificationId,...data}))},
+      person:{findUnique:jest.fn(async({where}:any)=>({personId:where.personId}))},
+      sponsorRelationship:{update:jest.fn(),create:jest.fn(),delete:jest.fn()},
+      binaryPlacement:{update:jest.fn(),create:jest.fn(),delete:jest.fn()},
+      bonusAward:{update:jest.fn(),delete:jest.fn()},
+    };
+    const statusService={transition:jest.fn()};
+    const transaction=jest.fn(async(work:any)=>work(tx));
+    return {tx,statusService,transaction,service:new QualificationWorkflowService({$transaction:transaction} as any,statusService as any)};
+  }
+  it('upgrade creates future plan history and does not alter past awards',async()=>{
+    const workflow={qualificationWorkflowId:'workflow-upgrade',qualificationId:'ball-A',workflowType:'UPGRADE',status:'SUBMITTED',targetPlanCode:'LEADER',payload:{reviewFeePaid:true}};
+    const {service,tx}=harness(workflow);await service.approve(workflow.qualificationWorkflowId,effectiveAt);
+    expect(tx.qualificationPlanHistory.update).toHaveBeenCalledWith({where:{qualificationPlanHistoryId:'plan-old'},data:{effectiveTo:effectiveAt}});
+    expect(tx.qualificationPlanHistory.create).toHaveBeenCalledWith({data:{qualificationId:'ball-A',planCode:'LEADER',effectiveFrom:effectiveAt,sourceType:'QUALIFICATION_UPGRADE',sourceId:'workflow-upgrade'}});
+    expect(tx.qualification.update).toHaveBeenCalledWith({where:{qualificationId:'ball-A'},data:{planLevelCode:'LEADER'}});
+    expect(tx.bonusAward.update).not.toHaveBeenCalled();expect(tx.bonusAward.delete).not.toHaveBeenCalled();
+  });
+  it('transfer preserves qualificationId and sponsor/binary positions',async()=>{
+    const workflow={qualificationWorkflowId:'workflow-transfer',qualificationId:'ball-A',workflowType:'TRANSFER',status:'SUBMITTED',receivingPersonId:'person-new',payload:{reviewFeePaid:true}};
+    const {service,tx}=harness(workflow);await service.approve(workflow.qualificationWorkflowId,effectiveAt);
+    expect(tx.qualificationHolderHistory.update).toHaveBeenCalledWith({where:{holderHistoryId:'holder-old'},data:{effectiveTo:effectiveAt}});
+    expect(tx.qualificationHolderHistory.create).toHaveBeenCalledWith({data:expect.objectContaining({qualificationId:'ball-A',holderPersonId:'person-new',sourceType:'TRANSFER'})});
+    expect(tx.qualification.update).toHaveBeenCalledWith({where:{qualificationId:'ball-A'},data:{currentHolderPersonId:'person-new'}});
+    for(const graph of [tx.sponsorRelationship,tx.binaryPlacement]){expect(graph.update).not.toHaveBeenCalled();expect(graph.create).not.toHaveBeenCalled();expect(graph.delete).not.toHaveBeenCalled();}
+  });
+  it('exit closes holder interval and status becomes EXITED',async()=>{
+    const workflow={qualificationWorkflowId:'workflow-exit',qualificationId:'ball-A',workflowType:'EXIT',status:'SUBMITTED',payload:{reviewFeePaid:true,companyHolderPersonId:'company'}};
+    const {service,tx,statusService}=harness(workflow);await service.approve(workflow.qualificationWorkflowId,effectiveAt);
+    expect(tx.qualificationHolderHistory.update).toHaveBeenCalledWith({where:{holderHistoryId:'holder-old'},data:{effectiveTo:effectiveAt}});
+    expect(tx.qualificationHolderHistory.create).toHaveBeenCalledWith({data:expect.objectContaining({qualificationId:'ball-A',holderPersonId:'company',sourceType:'QUALIFICATION_EXIT_COMPANY_HELD'})});
+    expect(statusService.transition).toHaveBeenCalledWith(tx,'ball-A','EXITED',effectiveAt,'QUALIFICATION_EXIT','workflow-exit');
+    expect(tx.qualification.update).toHaveBeenCalledWith({where:{qualificationId:'ball-A'},data:{currentHolderPersonId:'company',status:'CLOSED',activeFlag:false}});
+  });
+  it('company retransfer opens a new holder interval',async()=>{
+    const workflow={qualificationWorkflowId:'workflow-retransfer',qualificationId:'ball-A',workflowType:'COMPANY_RETRANSFER',status:'SUBMITTED',receivingPersonId:'person-next',payload:{reviewFeePaid:true}};
+    const {service,tx,statusService}=harness(workflow);await service.approve(workflow.qualificationWorkflowId,effectiveAt);
+    expect(tx.qualificationHolderHistory.create).toHaveBeenCalledWith({data:expect.objectContaining({qualificationId:'ball-A',holderPersonId:'person-next',effectiveFrom:effectiveAt,sourceType:'COMPANY_RETRANSFER'})});
+    expect(statusService.transition).toHaveBeenCalledWith(tx,'ball-A','EFFECTIVE',effectiveAt,'COMPANY_RETRANSFER','workflow-retransfer');
+    expect(tx.qualification.update).toHaveBeenCalledWith({where:{qualificationId:'ball-A'},data:{currentHolderPersonId:'person-next',status:'EFFECTIVE'}});
+  });
 });

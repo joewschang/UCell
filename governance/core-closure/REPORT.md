@@ -4,7 +4,7 @@ Date: 2026-09-16 (Asia/Taipei)
 
 - Branch: `integration/member-backend-mvp`
 - Baseline checkpoint: `cbee775`
-- TODO: 51 -> 29 (`IMPLEMENTABLE` 17 -> 0; `ENGINEERING` 28 -> 24; `PENDING_DECISION` 3; `LEGACY_TEST_DRIFT` 2)
+- TODO: 51 -> 23 (`IMPLEMENTABLE` 17 -> 0; `ENGINEERING` 28 -> 18; `PENDING_DECISION` 3; `LEGACY_TEST_DRIFT` 2)
 - Completed obligation: Matching traversal uses Sponsor Tree and is executable.
 - Historical replay now has executable evidence that Matching recipients are validated against sealed Sponsor/Active/Qualification evidence even when Binary ancestry differs.
 - Missing or substituted historical Sponsor evidence fails closed; no current-state fallback is introduced.
@@ -17,12 +17,14 @@ Date: 2026-09-16 (Asia/Taipei)
 - Versioned Asia/Taipei settlement boundaries are now verified against TEST_ONLY parameter snapshots, including the local-midnight boundary and transaction rollback.
 - Golden dataset wrappers now execute isolated DB evidence for Sponsor/Binary separation, Active First, K1 carry, historical Matching source, and Return-to-Recovery behavior.
 - Frozen Referral 15/20/25, Equalization Leader G5=10%, RPV 5/8/12 Binary allocation, and EPV Sponsor allocation now have executable Golden dataset assertions backed by the frozen constants and isolated historical DB evidence.
-- Backend API: 157 PASS / 29 TODO / 0 FAIL.
+- Qualification upgrade, transfer, company-held exit, and company retransfer now execute the production workflow service with future-only history and unchanged Sponsor/Binary placement evidence.
+- Payout materialization and mark-paid are executable. Mark-paid appends a PAID lifecycle event in the same Serializable transaction, advances allocated payable entries, and preserves the original Award.
+- Backend API: 163 PASS / 23 TODO / 0 FAIL.
 - Member: 116 PASS. Admin: 22 PASS. Backend API, Worker, Database, Member, and Admin builds: PASS.
 - Database package build: PASS.
 - Backend API build: PASS.
 - Prisma validate/generate/deploy: PASS; no pending migrations.
-- Isolated DB Golden: PASS with all 25 migrations and connected return/outbox, membership, RPV, Member/Admin, and identity assertions.
+- Isolated DB Golden: PASS with all 25 migrations and connected return/outbox, 102 membership/payout, RPV, Member/Admin, and identity assertions.
 - Static/schema/migration/source, Security policy, R1.0B Golden, OpenAPI export/preflight: PASS.
 - Business-rule changes: NONE. This checkpoint converts an already decided rule into executable verification.
 - Production promotion: BLOCKED.
