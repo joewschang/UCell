@@ -8,6 +8,7 @@ type State = {
     loading: boolean;
     error: string | null;
     retry: () => void;
+    feedback: string;
 };
 const Context = createContext<State | null>(null);
 export function QualificationProvider({ children }: {
@@ -18,6 +19,7 @@ export function QualificationProvider({ children }: {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [attempt, setAttempt] = useState(0);
+    const [feedback,setFeedback]=useState('');
     const selection=useRef<{sequence:number;controller?:AbortController}>({sequence:0});
     useEffect(() => {
         let alive = true;
@@ -25,6 +27,7 @@ export function QualificationProvider({ children }: {
         setLoading(true);
         setError(null);
         setItems([]);
+        setFeedback('');
         getQualifications(controller.signal).then(q => {
             if (!alive)
                 return;
@@ -50,16 +53,17 @@ export function QualificationProvider({ children }: {
             return;
         selection.current.controller?.abort();const controller=new AbortController();
         const sequence=++selection.current.sequence;selection.current.controller=controller;
-        setLoading(true);setError(null);setId('');
+        setLoading(true);setError(null);setId('');setFeedback('');
         try{
           const confirmed=await selectQualification(q,controller.signal);
           if(sequence!==selection.current.sequence||controller.signal.aborted)return;
           setItems(rows=>rows.map(row=>row.id===confirmed.id?confirmed:row));setId(confirmed.id);
+          setFeedback(`已切換至 ${confirmed.code}｜${confirmed.ballLabel}`);
           try { sessionStorage.setItem('ucell_qualification_id', confirmed.id); } catch { /* Selection memory is optional. */ }
         }catch(error){if(sequence===selection.current.sequence&&!controller.signal.aborted)setError(error instanceof Error?error.message:'無法確認資格，請重新查詢');}
         finally{if(sequence===selection.current.sequence&&!controller.signal.aborted)setLoading(false);}
     };
-    return <Context.Provider value={{ qualifications: items, current: items.find(q => q.id === id) ?? null, select, loading, error, retry: () => setAttempt(a => a + 1) }}>{children}</Context.Provider>;
+    return <Context.Provider value={{ qualifications: items, current: items.find(q => q.id === id) ?? null, select, loading, error, feedback, retry: () => setAttempt(a => a + 1) }}>{children}</Context.Provider>;
 }
 export function useQualification() { const value = useContext(Context); if (!value)
     throw new Error('QualificationProvider missing'); return value; }

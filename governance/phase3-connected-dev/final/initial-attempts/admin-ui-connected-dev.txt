@@ -1,4 +1,4 @@
 command: node scripts/connected-dev-smoke.mjs
-started: 2026-09-16T01:30:48.505Z
+started: 2026-09-16T01:59:24.915Z
 exit: 0
 ADMIN_UI_CONNECTED_DEV_PASS: 13 real HTTP responses; DEV demo, five screens, invalid context error/recovery, 404; no network mutations, formal Entra NOT VERIFIED

@@ -1,14 +1,14 @@
 command: node scripts/member-authentication.test.mjs
-started: 2026-09-16T01:27:29.637Z
+started: 2026-09-16T01:53:07.264Z
 exit: 0
-✔ uses the server token and current binding, exposes only the verified principal (1.521ms)
-✔ rejects missing, duplicate, oversized and malformed credentials before services run (0.6687ms)
-✔ invalid, expired or revoked service results fail closed without identity lookup (0.2318ms)
-✔ rejects Admin providers, roles and incomplete sessions (0.3761ms)
-✔ rejects missing or changed LINE bindings and unrelated provider results (0.8691ms)
-✔ binding service failure is sanitized and never falls back to the session Person (0.1794ms)
-✔ clears the old principal synchronously and only assigns after binding resolves (0.297ms)
-✔ rechecks the binding on subsequent requests instead of caching a previous success (0.3519ms)
+✔ uses the server token and current binding, exposes only the verified principal (1.7338ms)
+✔ rejects missing, duplicate, oversized and malformed credentials before services run (0.734ms)
+✔ invalid, expired or revoked service results fail closed without identity lookup (0.2221ms)
+✔ rejects Admin providers, roles and incomplete sessions (0.4041ms)
+✔ rejects missing or changed LINE bindings and unrelated provider results (0.853ms)
+✔ binding service failure is sanitized and never falls back to the session Person (0.1867ms)
+✔ clears the old principal synchronously and only assigns after binding resolves (0.1946ms)
+✔ rechecks the binding on subsequent requests instead of caching a previous success (0.2146ms)
 ℹ tests 8
 ℹ suites 0
 ℹ pass 8
@@ -16,8 +16,8 @@ exit: 0
 ℹ cancelled 0
 ℹ skipped 0
 ℹ todo 0
-ℹ duration_ms 10.5164
-(node:7652) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///C:/UCell/UCell/backend/apps/api/src/modules/auth/member-authentication.ts is not specified and it doesn't parse as CommonJS.
+ℹ duration_ms 10.0395
+(node:40716) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///C:/UCell/UCell/backend/apps/api/src/modules/auth/member-authentication.ts is not specified and it doesn't parse as CommonJS.
 Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
 To eliminate this warning, add "type": "module" to \\?\C:\UCell\UCell\backend\apps\api\package.json.
 (Use `node --trace-warnings ...` to show where the warning was created)

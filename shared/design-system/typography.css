@@ -1,0 +1,1 @@
+body{font-family:var(--ucell-font-family);line-height:1.6}h1,h2,h3{color:var(--ucell-text-primary);font-weight:700;line-height:1.35}h1{font-size:var(--ucell-font-xl)}h2{font-size:var(--ucell-font-lg)}small{font-size:var(--ucell-font-sm)}.uc-metric strong,.uc-money{font-variant-numeric:tabular-nums;overflow-wrap:anywhere}

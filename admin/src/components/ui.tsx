@@ -1,4 +1,5 @@
 import React from 'react';
+import {MetricCard} from '@ucell/design-system';
 
 export function PageHeader({title,subtitle,actions}:{title:string;subtitle?:string;actions?:React.ReactNode}){
   return <div className="page-header"><div><h1>{title}</h1>{subtitle&&<p>{subtitle}</p>}</div><div>{actions}</div></div>
@@ -7,7 +8,7 @@ export function Card({title,children,className='' }:{title?:string;children:Reac
   return <section className={`card ${className}`}>{title&&<h2>{title}</h2>}{children}</section>
 }
 export function Metric({label,value,helper}:{label:string;value:string|number;helper?:string}){
-  return <div className="metric"><span>{label}</span><strong>{value}</strong>{helper&&<small>{helper}</small>}</div>
+  return <MetricCard label={label} value={value} helper={helper}/>
 }
 export function Badge({children,tone='neutral'}:{children:React.ReactNode;tone?:'ok'|'warn'|'danger'|'neutral'}){
   return <span className={`badge ${tone}`}>{children}</span>

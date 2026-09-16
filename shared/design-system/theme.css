@@ -1,0 +1,2 @@
+:root{--bs-primary:var(--ucell-primary);--bs-body-color:var(--ucell-text-primary);--bs-body-bg:var(--ucell-bg);--bs-border-color:var(--ucell-border);--bs-border-radius:var(--ucell-radius-md)}
+body{background:var(--ucell-bg);color:var(--ucell-text-primary)}:where(button,a,input,select,textarea,summary):focus-visible{outline:3px solid var(--ucell-info);outline-offset:3px}:where(button,input,select,textarea){accent-color:var(--ucell-primary)}

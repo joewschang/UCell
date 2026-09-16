@@ -77,3 +77,5 @@ The previous 52 TODO claim is invalid. Full behavioral coverage must be reviewed
 | backend/apps/api/test/vertical-slice-02.e2e-spec.ts | 140 | higher generation remains independently evaluated | Test implementation; SSOT/evidence review before conversion |
 | backend/apps/api/test/vertical-slice.e2e-spec.ts | 143 | worker converts SALE_CONFIRMED to GPV_CREATED per order line | Test implementation; SSOT/evidence review before conversion |
 | backend/apps/api/test/vertical-slice.e2e-spec.ts | 144 | reprocessing same outbox event does not duplicate GPV | Test implementation; SSOT/evidence review before conversion |
+
+UX-1 checkpoint: 73 → 73; no Backend test placeholders changed. Frontend adds5 real presentation/contrast tests and3 Admin grid behavior tests; these do not count as Backend TODO burn-down.

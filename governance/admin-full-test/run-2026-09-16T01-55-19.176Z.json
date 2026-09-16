@@ -1,0 +1,7 @@
+{
+  "startedAt": "2026-09-16T01:55:19.176Z",
+  "result": "FAIL",
+  "failure": "TypeError: fetch failed",
+  "results": [],
+  "scope": "Isolated ucell_admin_test; existing application calculates test facts; no official monetary result; not frozen five-ball golden or release/UAT signoff"
+}

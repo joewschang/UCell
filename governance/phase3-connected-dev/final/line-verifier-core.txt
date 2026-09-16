@@ -1,13 +1,13 @@
 command: node scripts/line-token-verifier.test.mjs
-started: 2026-09-16T01:27:29.484Z
+started: 2026-09-16T01:53:07.122Z
 exit: 0
-✔ posts only to the official endpoint and returns minimal verified identity (22.4386ms)
-✔ requires server channel configuration and a bounded token before network access (0.668ms)
-✔ rejects issuer, audience, subject and timestamp violations (1.8075ms)
-✔ sends and checks a server-owned expected nonce (1.6116ms)
-✔ rejects provider errors without reading or exposing their content, never retries (0.2767ms)
-✔ sanitizes transport and invalid JSON failures (0.3566ms)
-✔ aborts a stalled provider request after the deadline (0.6813ms)
+✔ posts only to the official endpoint and returns minimal verified identity (20.5576ms)
+✔ requires server channel configuration and a bounded token before network access (0.884ms)
+✔ rejects issuer, audience, subject and timestamp violations (2.1463ms)
+✔ sends and checks a server-owned expected nonce (1.5247ms)
+✔ rejects provider errors without reading or exposing their content, never retries (0.3574ms)
+✔ sanitizes transport and invalid JSON failures (0.3477ms)
+✔ aborts a stalled provider request after the deadline (0.707ms)
 ℹ tests 7
 ℹ suites 0
 ℹ pass 7
@@ -15,8 +15,8 @@ exit: 0
 ℹ cancelled 0
 ℹ skipped 0
 ℹ todo 0
-ℹ duration_ms 32.9108
-(node:35692) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///C:/UCell/UCell/backend/apps/api/src/modules/auth/line-token-verifier.ts is not specified and it doesn't parse as CommonJS.
+ℹ duration_ms 31.4547
+(node:42572) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///C:/UCell/UCell/backend/apps/api/src/modules/auth/line-token-verifier.ts is not specified and it doesn't parse as CommonJS.
 Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
 To eliminate this warning, add "type": "module" to \\?\C:\UCell\UCell\backend\apps\api\package.json.
 (Use `node --trace-warnings ...` to show where the warning was created)

@@ -1,4 +1,12 @@
 command: node backend/scripts/admin-full-test.mjs
-started: 2026-09-16T01:30:45.054Z
-exit: 0
-ADMIN_FULL_TEST_PASS: 48 requests; fixture root 3bf887ee-5af3-425f-a062-97c785e764a3
+started: 2026-09-16T01:56:09.402Z
+exit: 1
+AssertionError [ERR_ASSERTION]: SALE_CONFIRMED worker must capture complete historical evidence; no current-state backfill
+    at file:///C:/UCell/UCell/backend/scripts/admin-full-test.mjs:92:10 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}

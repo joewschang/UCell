@@ -7,6 +7,9 @@ import App from './App';
 import { SessionBoundary } from './SessionBoundary';
 import { AppErrorBoundary } from './AppErrorBoundary';
 import './styles.css';
+import 'bootstrap/dist/css/bootstrap-grid.min.css';
+import '@ucell/design-system/styles';
+import './ucell-theme.css';
 function Bootstrap() {
     const [state, setState] = useState<'loading' | 'ready' | 'redirect'>('loading');
     const [error, setError] = useState('');

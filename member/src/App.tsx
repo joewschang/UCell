@@ -1,3 +1,4 @@
+import {MemberAppShell,MemberBottomNav,QualificationSwitcher,MobileActionGrid,StatusBadge,MetricCard,MoneyState,LoadingState,ErrorState,QualificationBadge,AwardLifecycle} from '@ucell/design-system';
 import { Link, NavLink, Route, Routes } from 'react-router-dom';
 import { useState, type ReactNode } from 'react';
 import { useQualification } from './QualificationContext';
@@ -24,9 +25,9 @@ function Result<T>({ state, children }: {
     children: (value: T) => ReactNode;
 }) {
     if (state.error)
-        return <section className="card" role="alert"><p>{state.error}</p><button onClick={state.retry}>重新載入</button></section>;
+        return <ErrorState message={state.error} retry={state.retry}/>;
     if (state.data === undefined)
-        return <p role="status" className="loading">資料載入中…</p>;
+        return <LoadingState/>;
     return <>{children(state.data)}</>;
 }
 function Metrics({ items }: {
@@ -34,13 +35,13 @@ function Metrics({ items }: {
         string,
         number | null
     ][];
-}) { return <section className="grid">{items.map(([label, value]) => <article key={label}><span>{label}</span><strong>{number(value)}</strong></article>)}</section>; }
-function ContextBar() { const { qualifications, current, select } = useQualification(); return <section className="context"><label htmlFor="qualification">目前資格</label><select id="qualification" value={current?.id ?? ''} onChange={e => select(e.target.value)}>{qualifications.map(q => <option key={q.id} value={q.id}>{q.code}｜{data.displayRank(q.rank)}｜{q.ballLabel}</option>)}</select><small>{current?.active ? '資格活躍' : '資格未活躍'} · 組織、業績與獎金依此資格顯示</small></section>; }
+}) { return <section className="uc-metric-grid">{items.map(([label, value]) => <MetricCard key={label} label={label} value={number(value)}/>)}</section>; }
+function ContextBar() { const {qualifications,current,select,feedback}=useQualification();return <QualificationSwitcher options={qualifications.map(q=>({id:q.id,label:q.code+'｜'+data.displayRank(q.rank)+'｜'+q.ballLabel}))} value={current?.id??''} onChange={select} feedback={feedback} active={current?.active??false}/>; }
 function Home({ q }: {
     q: Qualification;
 }) {
     const state = useResource(`dashboard:${q.id}`, s => data.getDashboard(q, s));
-    return <Result state={state}>{d => <><section className="hero"><h2>您好，{d.memberName}</h2><p>{d.memberNo}</p></section><section className="card"><span>本月重購</span><h2>{{ ACTIVE: '已完成', PENDING: '確認中', INACTIVE: '未完成' }[d.monthlyRepurchaseStatus]}</h2></section><Metrics items={[["PV", d.pv], ["RPV", d.rpv], ["EPV", d.epv]]}/><section className="card"><span>本期獎金 · {statusNames[d.bonusStatus] ?? d.bonusStatus}</span><h2>{d.bonusAmount === null ? '結算中' : money(d.bonusAmount)}</h2></section><RepurchaseDetails q={q}/><h3>快速服務</h3><section className="actions">{[['/organization', '我的組織'], ['/performance', '我的業績'], ['/bonuses', '獎金明細'], ['/shop', '商品商城'], ['/orders', '我的訂單'], ['/me', '會員資料']].map(([path, title]) => <Link key={path} to={path}>{title}</Link>)}</section></>}</Result>;
+    return <Result state={state}>{d => <><section className="hero"><h2>您好，{d.memberName}</h2><QualificationBadge code={q.code} ball={q.ballLabel}/><p>{d.memberNo}</p></section><section className="card"><span>本月重購</span><h2>{{ ACTIVE: '已完成', PENDING: '確認中', INACTIVE: '未完成' }[d.monthlyRepurchaseStatus]}</h2></section><Metrics items={[["PV", d.pv], ["RPV", d.rpv], ["EPV", d.epv]]}/><section className="card"><span>本期獎金 · {statusNames[d.bonusStatus] ?? d.bonusStatus}</span><h2><MoneyState amount={d.bonusAmount} status={d.bonusAmount===null?'PENDING':d.bonusStatus}/></h2></section><RepurchaseDetails q={q}/><h3>快速服務</h3><MobileActionGrid>{[['/organization', '我的組織'], ['/performance', '我的業績'], ['/bonuses', '獎金明細'], ['/shop', '商品商城'], ['/orders', '我的訂單'], ['/me', '會員資料']].map(([path, title]) => <Link key={path} to={path}>{title}</Link>)}</MobileActionGrid></>}</Result>;
 }
 function Organization({ q }: {
     q: Qualification;
@@ -48,7 +49,7 @@ function Organization({ q }: {
     const [tab, setTab] = useState<'sponsor' | 'binary'>('sponsor');
     const sponsor = useResource(`sponsor:${q.id}`, s => data.getOrganization(q, s));
     const binary = useResource(`binary:${q.id}`, s => data.getBinary(q, s));
-    return <><h2>我的組織</h2><div className="tabs"><button aria-pressed={tab === 'sponsor'} onClick={() => setTab('sponsor')}>推薦組織</button><button aria-pressed={tab === 'binary'} onClick={() => setTab('binary')}>二元組織</button></div>{tab === 'sponsor' ? <Result state={sponsor}>{d => <><section className="card"><h3>我的推薦人</h3><p>{d.sponsor ? `${d.sponsor.name} · ${d.sponsor.code}` : '尚無推薦人資料'}</p></section><section className="card"><h3>直推會員</h3>{d.referrals.length ? d.referrals.map(r => <p key={r.code}>{r.name} · {r.code}</p>) : <p>目前沒有直推會員</p>}</section></>}</Result> : <Result state={binary}>{d => <><p>左、右區為安置組織，與推薦關係分別呈現。</p><Metrics items={[["左區人數", d.left.count], ["右區人數", d.right.count], ["左區業績", d.left.volume], ["右區業績", d.right.volume]]}/></>}</Result>}</>;
+    return <><div className="uc-member-title"><h2>我的組織</h2><QualificationBadge code={q.code} ball={q.ballLabel} rank={data.displayRank(q.rank)}/></div><div className="tabs"><button aria-pressed={tab === 'sponsor'} onClick={() => setTab('sponsor')}>推薦組織</button><button aria-pressed={tab === 'binary'} onClick={() => setTab('binary')}>二元組織</button></div>{tab === 'sponsor' ? <Result state={sponsor}>{d => <><section className="card"><h3>我的推薦人</h3><p>{d.sponsor ? `${d.sponsor.name} · ${d.sponsor.code}` : '尚無推薦人資料'}</p></section><section className="card"><h3>直推會員</h3>{d.referrals.length ? d.referrals.map(r => <p key={r.code}>{r.name} · {r.code}</p>) : <p>目前沒有直推會員</p>}</section></>}</Result> : <Result state={binary}>{d => <><p>左、右區為安置組織，與推薦關係分別呈現。</p><Metrics items={[["左區人數", d.left.count], ["右區人數", d.right.count], ["左區業績", d.left.volume], ["右區業績", d.right.volume]]}/><section className="card"><h3>Carry／完整組織</h3><p>待提供：目前 Member API 尚未提供 Carry 與完整 Tree Viewer 資料。</p></section></>}</Result>}</>;
 }
 function Period({ value, onChange }: {
     value: string;
@@ -69,7 +70,7 @@ function Bonuses({ q }: {
     const [period, setPeriod] = useState(initialMonth);
     const awards = useResource(`bonuses:${q.id}:${period}`, s => data.getBonuses(q, period, s));
     const ledger = useResource(`ledger:${q.id}:${period}`, s => data.getLedger(q, period, s));
-    return <><h2>獎金明細</h2><Period value={period} onChange={setPeriod}/><Result state={awards}>{d => d.awards.length ? d.awards.map(a => <article className="card row" key={a.id}><div><h3>{a.name}</h3><span>{statusNames[a.status] ?? a.status}</span></div><strong>{a.amount === null ? '結算中' : money(a.amount)}</strong></article>) : <p>此月份尚無獎金紀錄</p>}</Result><h3>入帳與調整紀錄</h3><Result state={ledger}>{d => d.entries.length ? d.entries.map(e => <article className="card" key={e.id}><h3>{e.label}</h3><strong>{money(e.amount)}</strong><p>{e.postedAt}</p><small>來源：{e.sourceId}</small></article>) : <p>此月份尚無入帳紀錄</p>}</Result></>;
+    return <><div className="uc-member-title"><h2>獎金明細</h2><QualificationBadge code={q.code} ball={q.ballLabel} rank={data.displayRank(q.rank)}/></div><Period value={period} onChange={setPeriod}/><Result state={awards}>{d => d.awards.length ? d.awards.map(a => <article className="card" key={a.id}><div><h3>{a.name}</h3><StatusBadge status={a.status} label={statusNames[a.status] ?? a.status}/></div><MoneyState amount={a.amount} status={a.amount===null?'PENDING':a.status}/><AwardLifecycle status={a.status}/></article>) : <p>此月份尚無獎金紀錄</p>}</Result><h3>入帳與調整紀錄</h3><Result state={ledger}>{d => d.entries.length ? d.entries.map(e => <article className="card" key={e.id}><h3>{e.label}</h3><strong>{money(e.amount)}</strong><p>{e.postedAt}</p><small>來源：{e.sourceId}</small></article>) : <p>此月份尚無入帳紀錄</p>}</Result></>;
 }
 function Orders({ q }: {
     q: Qualification;
@@ -82,7 +83,7 @@ function MemberApp() {
         return <main className="loading" role="status">資格資料載入中…</main>;
     if (error)
         return <main role="alert"><p>{error}</p><button onClick={retry}>重試</button></main>;
-    return <div className="app"><header><div><b>UCell</b><small>會員中心</small></div><span className="badge">{data.isMock ? '示範模式' : '會員服務'}</span>{current && <Link className="notification-link" to="/notifications" aria-label={data.isMock ? `通知中心，${unread} 則未讀` : '通知中心'}>通知{data.isMock ? ` ${unread}` : ''}</Link>}</header>{data.isMock && <aside className="demo-banner">目前為示範資料，不代表真實業績、獎金或訂單。</aside>}<main>{current ? <><ContextBar /><div key={current.id}><Routes><Route path="/" element={<Home q={current}/>}/><Route path="/organization" element={<Organization q={current}/>}/><Route path="/performance" element={<Performance q={current}/>}/><Route path="/bonuses" element={<Bonuses q={current}/>}/><Route path="/shop" element={<Shop q={current}/>}/><Route path="/orders" element={<Orders q={current}/>}/><Route path="/me" element={<Me />}/><Route path="/notifications" element={<Notifications q={current}/>}/><Route path="*" element={<section className="card"><h2>找不到頁面</h2><Link to="/">返回首頁</Link></section>}/></Routes></div></> : <Routes><Route path="/me" element={<Me/>}/><Route path="*" element={<section className="card"><h2>尚未取得會員資格</h2><p>請聯絡客服確認會員綁定與資格狀態。</p><button onClick={retry}>重新查詢</button><Link className="text-link" to="/me">查看會員資料</Link><EndSession connected={!data.isMock}/></section>}/></Routes>}</main><nav aria-label="主要功能"><NavLink end to="/">首頁</NavLink><NavLink to="/organization">組織</NavLink><NavLink to="/shop">商城</NavLink><NavLink to="/bonuses">獎金</NavLink><NavLink to="/me">我的</NavLink></nav></div>;
+    return <MemberAppShell><header><div><b>UCell</b><small>會員中心</small></div><span className="badge">{data.isMock ? '示範模式' : '會員服務'}</span>{current && <Link className="notification-link" to="/notifications" aria-label={data.isMock ? `通知中心，${unread} 則未讀` : '通知中心'}>通知{data.isMock ? ` ${unread}` : ''}</Link>}</header>{data.isMock && <aside className="demo-banner">目前為示範資料，不代表真實業績、獎金或訂單。</aside>}<main>{current ? <><ContextBar /><div key={current.id}><Routes><Route path="/" element={<Home q={current}/>}/><Route path="/organization" element={<Organization q={current}/>}/><Route path="/performance" element={<Performance q={current}/>}/><Route path="/bonuses" element={<Bonuses q={current}/>}/><Route path="/shop" element={<Shop q={current}/>}/><Route path="/orders" element={<Orders q={current}/>}/><Route path="/me" element={<Me />}/><Route path="/notifications" element={<Notifications q={current}/>}/><Route path="*" element={<section className="card"><h2>找不到頁面</h2><Link to="/">返回首頁</Link></section>}/></Routes></div></> : <Routes><Route path="/me" element={<Me/>}/><Route path="*" element={<section className="card"><h2>尚未取得會員資格</h2><p>請聯絡客服確認會員綁定與資格狀態。</p><button onClick={retry}>重新查詢</button><Link className="text-link" to="/me">查看會員資料</Link><EndSession connected={!data.isMock}/></section>}/></Routes>}</main><MemberBottomNav><NavLink end to="/">首頁</NavLink><NavLink to="/organization">組織</NavLink><NavLink to="/shop">商城</NavLink><NavLink to="/bonuses">獎金</NavLink><NavLink to="/me">我的</NavLink></MemberBottomNav></MemberAppShell>;
 }
 
 export default function App() { return <NotificationProvider enabled={data.isMock}><CommerceProvider enabled={data.isMock}><MemberApp /></CommerceProvider></NotificationProvider>; }

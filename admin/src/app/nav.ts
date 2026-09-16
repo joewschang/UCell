@@ -17,3 +17,13 @@ export const nav=[
   ['UAT／上線驗證','/uat','uat'],
   ['系統就緒度','/system','system'],
 ] as const;
+export const navGroups=[
+ {label:'Dashboard',paths:['/']},
+ {label:'會員管理',paths:['/people','/qualifications','/applications','/workflows']},
+ {label:'組織管理',paths:['/organization']},
+ {label:'商務',paths:['/products','/orders','/subscriptions','/returns']},
+ {label:'獎金中心',paths:['/bonuses']},
+ {label:'財務',paths:['/payouts']},
+ {label:'營運分析',paths:['/reports']},
+ {label:'系統治理',paths:['/documents','/audit','/uat','/system']},
+];

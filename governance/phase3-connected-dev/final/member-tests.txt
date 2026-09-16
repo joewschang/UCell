@@ -1,35 +1,36 @@
 command: pnpm test
-started: 2026-09-16T01:33:26.086Z
+started: 2026-09-16T01:59:17.816Z
 exit: 0
 
  RUN  v2.1.9 C:/UCell/UCell/member
 
- ✓ tests/validation.test.ts (17 tests) 11ms
- ✓ tests/envelope.test.ts (4 tests) 8ms
- ✓ tests/timeout.test.ts (5 tests) 22ms
- ✓ tests/auth.test.ts (6 tests) 19ms
- ✓ tests/contract.test.ts (5 tests) 10ms
- ✓ tests/profile.test.tsx (3 tests) 34ms
- ✓ tests/error-boundary.test.tsx (3 tests) 29ms
- ✓ tests/qualification-lifecycle.test.tsx (5 tests) 39ms
- ✓ tests/session.test.tsx (11 tests) 45ms
- ✓ tests/commerce.test.tsx (12 tests) 74ms
- ✓ tests/notifications.test.tsx (10 tests) 64ms
- ✓ tests/connected-shop.test.tsx (5 tests) 82ms
- ✓ tests/connected-account.test.tsx (5 tests) 73ms
- ✓ tests/member.test.tsx (15 tests) 103ms
+ ✓ tests/envelope.test.ts (4 tests) 7ms
+ ✓ tests/validation.test.ts (17 tests) 14ms
+ ✓ tests/timeout.test.ts (5 tests) 24ms
+ ✓ tests/auth.test.ts (6 tests) 21ms
+ ✓ tests/contract.test.ts (5 tests) 8ms
+ ✓ tests/profile.test.tsx (3 tests) 31ms
+ ✓ tests/error-boundary.test.tsx (3 tests) 31ms
+ ✓ tests/qualification-lifecycle.test.tsx (5 tests) 50ms
+ ✓ tests/design-system.test.tsx (5 tests) 43ms
+ ✓ tests/session.test.tsx (11 tests) 48ms
+ ✓ tests/commerce.test.tsx (12 tests) 82ms
+ ✓ tests/connected-shop.test.tsx (5 tests) 85ms
+ ✓ tests/notifications.test.tsx (10 tests) 58ms
+ ✓ tests/connected-account.test.tsx (5 tests) 72ms
+ ✓ tests/member.test.tsx (15 tests) 115ms
 
- Test Files  14 passed (14)
-      Tests  106 passed (106)
-   Start at  09:33:26
-   Duration  1.20s (transform 1.58s, setup 0ms, collect 4.46s, tests 611ms, environment 3ms, prepare 3.02s)
+ Test Files  15 passed (15)
+      Tests  111 passed (111)
+   Start at  09:59:18
+   Duration  1.33s (transform 1.85s, setup 0ms, collect 5.41s, tests 689ms, environment 4ms, prepare 3.66s)
 
 $ vitest run
-stderr | tests/notifications.test.tsx > marks one notification once without changing another
+stderr | tests/connected-shop.test.tsx > uses Core order amount and requests authorized detail; submits no price or PV
 ⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
 ⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.
 
-stderr | tests/connected-shop.test.tsx > uses Core order amount and requests authorized detail; submits no price or PV
+stderr | tests/notifications.test.tsx > marks one notification once without changing another
 ⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
 ⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.
 
@@ -37,10 +38,10 @@ stderr | tests/commerce.test.tsx > completes the shop review flow and clears shi
 ⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
 ⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.
 
-stderr | tests/connected-account.test.tsx > allows a Person without balls to access own profile and server logout without scoped queries
+stderr | tests/member.test.tsx > replaces a saved qualification no longer owned by the member
 ⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
 ⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.
 
-stderr | tests/member.test.tsx > replaces a saved qualification no longer owned by the member
+stderr | tests/connected-account.test.tsx > allows a Person without balls to access own profile and server logout without scoped queries
 ⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
 ⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.

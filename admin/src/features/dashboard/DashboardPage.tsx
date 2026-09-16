@@ -19,7 +19,8 @@ export function DashboardPage(){
    <Card title="今日／本月">
     <div className="detail-grid"><dt>今日訂單</dt><dd>{d?.orders?.today ?? '—'}</dd><dt>本月訂單</dt><dd>{d?.orders?.month ?? '—'}</dd><dt>Open Recovery</dt><dd>{d?.recoveries?.open ?? '—'}</dd><dt>Open Payable</dt><dd>{d?.payable?.open ?? '—'}</dd></div>
    </Card>
-   <Card title="系統狀態"><p><Badge tone="ok">R1.0B FROZEN</Badge></p><p><Badge tone="ok">Backend Reviewed R2 Read Models</Badge></p><p><Badge tone="warn">Backend Dependency/DB RC Gate pending</Badge></p></Card>
+   <Card title="系統狀態"><p><Badge tone="neutral">R1.0B FROZEN</Badge></p><p><Badge tone="warn">Production Promotion BLOCKED</Badge></p><p>正式 LINE、Entra/RBAC、UAT 與 Release Gate 尚待完成。</p></Card>
   </div>
+  <Card title="待接入的營運指標"><p className="muted">GMV、會員 New／Suspend／Lost、左右區失衡、Security Alerts 與結算 Pipeline 明細尚無此 Dashboard API，顯示 unavailable；不以其他數值替代。</p></Card>
  </>
 }

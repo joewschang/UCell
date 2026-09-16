@@ -303,3 +303,8 @@ Executed commands include `pnpm build` (Backend), Admin `pnpm build`, Prisma val
 Implementation checkpoint: 2027a18 (identity, scoped Core reads and integration evidence). Subsequent documentation checkpoint records whitespace verification; push both normally to the integration branch.
 
 Member continuation implementation checkpoint: 0bdc0eac949f406fa46b9da2367035e2d43c5b8f. Normal push publishes it and the following report-only checkpoint to origin/integration/member-backend-mvp.
+
+
+## UX-1 Design System + preserved Connected MVP — 2026-09-16
+
+See ../ux/REPORT.md and UX-PASS-FAIL-MATRIX.md. Member 111 (106 existing +5), Admin 14 (11 existing +3), Backend API106 with73TODO, Member real HTTP/DB201x2, Replay129, Admin49HTTP PASS after API/Worker restoration. Six initial pages and24viewport references verified; Member screenshots mock visual-only, formal LIFF remains pending. Shared tokens/React adapters +Bootstrap Grid; no API/schema/business-rule changes. Remaining rollout and operational/release blockers are explicitly retained.
