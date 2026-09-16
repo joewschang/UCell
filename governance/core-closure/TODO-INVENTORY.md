@@ -1,15 +1,15 @@
 # R1.0B Decision Register v2 TODO Inventory
 
-Original audited baseline: 148. Current executable TODO: 50. Net placeholder reduction: 98.
+Original audited baseline: 148. Current executable TODO: 42. Net placeholder reduction: 106.
 
 Classification is governance status, not implementation completion. Pending decisions fail closed and Legacy Test Drift must be corrected without changing the frozen business rules.
 
 | Classification | Count |
 |---|---:|
-| IMPLEMENTABLE | 16 |
+| IMPLEMENTABLE | 9 |
 | ENGINEERING | 28 |
 | PENDING_DECISION | 3 |
-| LEGACY_TEST_DRIFT | 3 |
+| LEGACY_TEST_DRIFT | 2 |
 
 | File | Line | Case | Classification | Reason |
 |---|---:|---|---|---|
@@ -35,14 +35,6 @@ Classification is governance status, not implementation completion. Pending deci
 | backend/apps/api/test/v061-replay.e2e-spec.ts | 77 | transfer preserves qualificationId and sponsor/binary positions | ENGINEERING | The governing behavior is already approved; remaining work is implementation or executable verification. |
 | backend/apps/api/test/v061-replay.e2e-spec.ts | 78 | exit closes holder interval and status becomes EXITED | ENGINEERING | The governing behavior is already approved; remaining work is implementation or executable verification. |
 | backend/apps/api/test/v061-replay.e2e-spec.ts | 79 | company retransfer opens a new holder interval | ENGINEERING | The governing behavior is already approved; remaining work is implementation or executable verification. |
-| backend/apps/api/test/v062-carry-chain.e2e-spec.ts | 21 | return discovers every Binary ancestor impacted by descendant GPV | IMPLEMENTABLE | Decision Register v2 and Core Logic Addendum v2 provide the governing rule; implementation and evidence remain. |
-| backend/apps/api/test/v062-carry-chain.e2e-spec.ts | 22 | period replay recomputes all Binary payable amounts when K1 changes | IMPLEMENTABLE | Decision Register v2 and Core Logic Addendum v2 provide the governing rule; implementation and evidence remain. |
-| backend/apps/api/test/v062-carry-chain.e2e-spec.ts | 23 | period replay recomputes all Matching payable amounts when K2 changes | IMPLEMENTABLE | Decision Register v2 and Core Logic Addendum v2 provide the governing rule; implementation and evidence remain. |
-| backend/apps/api/test/v062-carry-chain.e2e-spec.ts | 31 | propagation stops when left/right carry match original snapshots | IMPLEMENTABLE | Decision Register v2 and Core Logic Addendum v2 provide the governing rule; implementation and evidence remain. |
-| backend/apps/api/test/v062-carry-chain.e2e-spec.ts | 32 | propagation respects maxWeeks safety horizon | IMPLEMENTABLE | Decision Register v2 and Core Logic Addendum v2 provide the governing rule; implementation and evidence remain. |
-| backend/apps/api/test/v062-carry-chain.e2e-spec.ts | 33 | each replay period is append-only and replay run is resumable | IMPLEMENTABLE | Decision Register v2 and Core Logic Addendum v2 provide the governing rule; implementation and evidence remain. |
-| backend/apps/api/test/v062-carry-chain.e2e-spec.ts | 34 | positive deltas post compensating awards and negative deltas post recovery | IMPLEMENTABLE | Decision Register v2 and Core Logic Addendum v2 provide the governing rule; implementation and evidence remain. |
-| backend/apps/api/test/v062-carry-chain.e2e-spec.ts | 43 | migration 0005 references subscription.subscription, not commerce.subscription | LEGACY_TEST_DRIFT | The assertion names a superseded schema/event boundary and must be rewritten against the canonical model. |
 | backend/apps/api/test/v063-golden-path.e2e-spec.ts | 45 | Taiwan local time maps to configured settlement week | IMPLEMENTABLE | Decision Register v2 and Core Logic Addendum v2 provide the governing rule; implementation and evidence remain. |
 | backend/apps/api/test/v064-golden-dataset.e2e-spec.ts | 25 | keeps Sponsor and Binary trees distinct | IMPLEMENTABLE | Decision Register v2 and Core Logic Addendum v2 provide the governing rule; implementation and evidence remain. |
 | backend/apps/api/test/v064-golden-dataset.e2e-spec.ts | 26 | validates Referral 15/20/25 | ENGINEERING | The governing behavior is already approved; remaining work is implementation or executable verification. |

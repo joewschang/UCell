@@ -1,13 +1,13 @@
 {
   "decisionRegisterRecordVersion": 2,
   "originalBaseline": 148,
-  "currentExecutableTodo": 50,
-  "netPlaceholderReduction": 98,
+  "currentExecutableTodo": 42,
+  "netPlaceholderReduction": 106,
   "counts": {
-    "IMPLEMENTABLE": 16,
+    "IMPLEMENTABLE": 9,
     "ENGINEERING": 28,
     "PENDING_DECISION": 3,
-    "LEGACY_TEST_DRIFT": 3
+    "LEGACY_TEST_DRIFT": 2
   },
   "audit": "Classification aligns the executable TODO baseline to SA Decision Register v2. Pending decisions remain fail-closed and no classification counts as implementation completion.",
   "items": [
@@ -164,62 +164,6 @@
       "case": "company retransfer opens a new holder interval",
       "classification": "ENGINEERING",
       "reason": "The governing behavior is already approved; remaining work is implementation or executable verification."
-    },
-    {
-      "file": "backend/apps/api/test/v062-carry-chain.e2e-spec.ts",
-      "line": 21,
-      "case": "return discovers every Binary ancestor impacted by descendant GPV",
-      "classification": "IMPLEMENTABLE",
-      "reason": "Decision Register v2 and Core Logic Addendum v2 provide the governing rule; implementation and evidence remain."
-    },
-    {
-      "file": "backend/apps/api/test/v062-carry-chain.e2e-spec.ts",
-      "line": 22,
-      "case": "period replay recomputes all Binary payable amounts when K1 changes",
-      "classification": "IMPLEMENTABLE",
-      "reason": "Decision Register v2 and Core Logic Addendum v2 provide the governing rule; implementation and evidence remain."
-    },
-    {
-      "file": "backend/apps/api/test/v062-carry-chain.e2e-spec.ts",
-      "line": 23,
-      "case": "period replay recomputes all Matching payable amounts when K2 changes",
-      "classification": "IMPLEMENTABLE",
-      "reason": "Decision Register v2 and Core Logic Addendum v2 provide the governing rule; implementation and evidence remain."
-    },
-    {
-      "file": "backend/apps/api/test/v062-carry-chain.e2e-spec.ts",
-      "line": 31,
-      "case": "propagation stops when left/right carry match original snapshots",
-      "classification": "IMPLEMENTABLE",
-      "reason": "Decision Register v2 and Core Logic Addendum v2 provide the governing rule; implementation and evidence remain."
-    },
-    {
-      "file": "backend/apps/api/test/v062-carry-chain.e2e-spec.ts",
-      "line": 32,
-      "case": "propagation respects maxWeeks safety horizon",
-      "classification": "IMPLEMENTABLE",
-      "reason": "Decision Register v2 and Core Logic Addendum v2 provide the governing rule; implementation and evidence remain."
-    },
-    {
-      "file": "backend/apps/api/test/v062-carry-chain.e2e-spec.ts",
-      "line": 33,
-      "case": "each replay period is append-only and replay run is resumable",
-      "classification": "IMPLEMENTABLE",
-      "reason": "Decision Register v2 and Core Logic Addendum v2 provide the governing rule; implementation and evidence remain."
-    },
-    {
-      "file": "backend/apps/api/test/v062-carry-chain.e2e-spec.ts",
-      "line": 34,
-      "case": "positive deltas post compensating awards and negative deltas post recovery",
-      "classification": "IMPLEMENTABLE",
-      "reason": "Decision Register v2 and Core Logic Addendum v2 provide the governing rule; implementation and evidence remain."
-    },
-    {
-      "file": "backend/apps/api/test/v062-carry-chain.e2e-spec.ts",
-      "line": 43,
-      "case": "migration 0005 references subscription.subscription, not commerce.subscription",
-      "classification": "LEGACY_TEST_DRIFT",
-      "reason": "The assertion names a superseded schema/event boundary and must be rewritten against the canonical model."
     },
     {
       "file": "backend/apps/api/test/v063-golden-path.e2e-spec.ts",

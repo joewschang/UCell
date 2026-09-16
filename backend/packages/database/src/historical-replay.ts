@@ -440,30 +440,74 @@ export async function replayReturnDependencies(tx:Prisma.TransactionClient,retur
   const stateHash=replayHash(json(facts));
   const economicAt=originalEvents.reduce((at,event)=>at<event.occurredAt?at:event.occurredAt,originalEvents[0].occurredAt);
   const k0Batches=await tx.settlementBatch.findMany({where:{settlementType:'REFERRAL_K0',status:'FINALIZED',ruleVersionCode:ret.order.ruleVersionCode,periodStart:{lte:economicAt},periodEnd:{gt:economicAt}}});
+  // Start with the original recognition period. Its sealed carry-in is the historical baseline;
+  // earlier finalized periods are immutable inputs and cannot be reconstructed from current state.
+  const binaries=await tx.settlementBatch.findMany({where:{settlementType:'BINARY_K1',status:'FINALIZED',ruleVersionCode:ret.order.ruleVersionCode,periodEnd:{gt:economicAt}},orderBy:{periodStart:'asc'}});
+  const calculations:Array<{batch:any;row:any;envelope:ReplayEnvelope;binary:ReturnType<typeof periodBinary>;matching?:{row:any;envelope:ReplayEnvelope;result:ReturnType<typeof periodMatching>;batch:any};carry:Record<string,{left:string;right:string}>}>=[];
+  let incoming=new Map<string,{left:Prisma.Decimal;right:Prisma.Decimal}>();let previousEnd:Date|undefined;
+  let replayRun:any,complete=binaries.length===0,converged=false;
+  if(binaries.length) {
+    const calculationSnapshot=json({format:'UCELL_SETTLEMENT_REPLAY_RUN_V1',actionKey,stateHash,economicAt:economicAt.toISOString(),ruleVersionCode:ret.order.ruleVersionCode});
+    replayRun=await tx.settlementReplayRun.findUnique({where:{sourceReturnCaseId:returnCaseId}});
+    if(replayRun) {
+      const existing=replayRun.calculationSnapshot as any;
+      if(existing?.stateHash!==stateHash||existing?.economicAt!==economicAt.toISOString()||replayRun.ruleVersionCode!==ret.order.ruleVersionCode)
+        pending('HISTORICAL_SNAPSHOT_CONFLICT','Replay run cannot be resumed from different historical facts');
+      if(replayRun.status==='CONVERGED'&&!prior) pending('HISTORICAL_SNAPSHOT_CORRUPT','Converged replay run is missing its immutable replay action');
+    } else replayRun=await tx.settlementReplayRun.create({data:{sourceReturnCaseId:returnCaseId,initialPeriodStart:binaries[0].periodStart,initialPeriodEnd:binaries[0].periodEnd,
+      ruleVersionCode:ret.order.ruleVersionCode,status:'RUNNING',maxWeeks:maxPeriods,calculationSnapshot}});
+  }
+  for(const [index,batch] of binaries.entries()) {
+    if(index>=maxPeriods) break;
+    if(previousEnd&&previousEnd.getTime()!==batch.periodStart.getTime()) pending('HISTORICAL_SNAPSHOT_MISSING','Historical Binary continuation is not contiguous');
+    const {row,envelope}=await loadEnvelope(tx,'BINARY_K1',batch.settlementBatchId);
+    const result=periodBinary(envelope,await effectiveGpv(tx,envelope.evidence.sources),incoming);
+    const matching=await tx.settlementBatch.findFirst({where:{settlementType:'MATCHING_K2',status:'FINALIZED',periodStart:batch.periodStart,periodEnd:batch.periodEnd,ruleVersionCode:batch.ruleVersionCode}});
+    let matchingCalculation:typeof calculations[number]['matching'];
+    if(matching) {
+      const loaded=await loadEnvelope(tx,'MATCHING_K2',matching.settlementBatchId);
+      const resultMatching=periodMatching(loaded.envelope,result.payables,result.total);
+      matchingCalculation={...loaded,result:resultMatching,batch:matching};
+    }
+    const carry=Object.fromEntries([...result.carryOut].map(([qid,value])=>[qid,{left:value.left.toString(),right:value.right.toString()}]));
+    calculations.push({batch,row,envelope,binary:result,matching:matchingCalculation,carry});
+    const carryDelta=Object.fromEntries(envelope.evidence.carryRecipients.map((original:any)=>{
+      const next=result.carryOut.get(original.qualificationId)??pending('HISTORICAL_SNAPSHOT_MISSING','Recomputed carry recipient is absent');
+      return [original.qualificationId,{original:{left:String(original.leftCarryOut),right:String(original.rightCarryOut)},recomputed:{left:next.left.toString(),right:next.right.toString()}}];
+    }));
+    const binaryDeltas=envelope.recipients.map(recipient=>({entitlementKey:recipient.key,qualificationId:recipient.qualificationId,original:recipient.posted,recomputed:result.payables.get(recipient.key)!.toString()}));
+    const matchingDeltas=matchingCalculation?.envelope.recipients.map(recipient=>({entitlementKey:recipient.key,qualificationId:recipient.qualificationId,original:recipient.posted,recomputed:matchingCalculation!.result.payables.get(recipient.key)!.toString()}))??[];
+    const impacted=[...new Set([...Object.entries(carryDelta).filter(([,value]:any)=>value.original.left!==value.recomputed.left||value.original.right!==value.recomputed.right).map(([qid])=>qid),
+      ...binaryDeltas.filter(item=>!dec(item.original).eq(item.recomputed)).map(item=>item.qualificationId),...matchingDeltas.filter(item=>!dec(item.original).eq(item.recomputed)).map(item=>item.qualificationId)])].sort();
+    const periodData={settlementReplayRunId:replayRun.settlementReplayRunId,periodNo:index+1,periodStart:batch.periodStart,periodEnd:batch.periodEnd,
+      originalK1:batch.kFactor,recomputedK1:result.k,originalK2:matchingCalculation?.batch.kFactor,recomputedK2:matchingCalculation?.result.k,
+      impactedQualifications:json(impacted),carryDeltaSnapshot:json(carryDelta),awardDeltaSnapshot:json({binary:binaryDeltas,matching:matchingDeltas})};
+    const saved=await tx.settlementReplayPeriod.findUnique({where:{settlementReplayRunId_periodEnd:{settlementReplayRunId:replayRun.settlementReplayRunId,periodEnd:batch.periodEnd}}});
+    if(saved) {
+      const savedEvidence={periodNo:saved.periodNo,periodStart:saved.periodStart.toISOString(),periodEnd:saved.periodEnd.toISOString(),originalK1:saved.originalK1.toString(),recomputedK1:saved.recomputedK1.toString(),
+        originalK2:saved.originalK2?.toString()??null,recomputedK2:saved.recomputedK2?.toString()??null,impactedQualifications:saved.impactedQualifications,carryDeltaSnapshot:saved.carryDeltaSnapshot,awardDeltaSnapshot:saved.awardDeltaSnapshot};
+      const nextEvidence={periodNo:index+1,periodStart:batch.periodStart.toISOString(),periodEnd:batch.periodEnd.toISOString(),originalK1:dec(batch.kFactor).toString(),recomputedK1:result.k.toString(),
+        originalK2:matchingCalculation?.batch.kFactor?.toString()??null,recomputedK2:matchingCalculation?.result.k.toString()??null,impactedQualifications:impacted,carryDeltaSnapshot:carryDelta,awardDeltaSnapshot:{binary:binaryDeltas,matching:matchingDeltas}};
+      if(replayHash(savedEvidence)!==replayHash(nextEvidence)) pending('HISTORICAL_SNAPSHOT_CONFLICT','Replay period checkpoint is not deterministic');
+    } else await tx.settlementReplayPeriod.create({data:periodData});
+    converged=impacted.length===0;
+    incoming=result.carryOut;previousEnd=batch.periodEnd;
+    if(converged) break;
+  }
+  complete=converged||calculations.length===binaries.length;
+  if(replayRun) replayRun=await tx.settlementReplayRun.update({where:{settlementReplayRunId:replayRun.settlementReplayRunId},data:{status:complete?'CONVERGED':'MAX_HORIZON',maxWeeks:maxPeriods,processedWeeks:calculations.length,convergedAt:complete?new Date():null}});
+  if(!complete) return {returnCaseId,status:'REPLAY_INCOMPLETE',code:'REPLAY_INCOMPLETE',stateHash,periods:calculations.length,maxWeeks:maxPeriods,replayRunId:replayRun.settlementReplayRunId};
+  // Monetary effects are appended only after the complete chain has converged or reached the end
+  // of all finalized periods. A horizon-limited run above commits evidence but no partial money.
   for(const batch of k0Batches) {
     const {row,envelope}=await loadEnvelope(tx,'REFERRAL_K0',batch.settlementBatchId);
     const result=periodK0(envelope,await effectiveGpv(tx,envelope.evidence.sources));
     await postPayables(tx,row,envelope,result.payables,actionKey,stateHash,returnCaseId);
   }
-  // Replay from the oldest finalized baseline. This includes effects of all earlier returns and avoids
-  // mixing original carry with an already adjusted later-period monetary baseline.
-  const binaries=await tx.settlementBatch.findMany({where:{settlementType:'BINARY_K1',status:'FINALIZED',ruleVersionCode:ret.order.ruleVersionCode},orderBy:{periodStart:'asc'}});
-  if(binaries.length>maxPeriods) pending('REPLAY_HORIZON_EXHAUSTED','No partial historical chain is committed');
-  let incoming=new Map<string,{left:Prisma.Decimal;right:Prisma.Decimal}>();let previousEnd:Date|undefined;
-  for(const batch of binaries) {
-    if(previousEnd&&previousEnd.getTime()!==batch.periodStart.getTime()) pending('HISTORICAL_SNAPSHOT_MISSING','Historical Binary continuation is not contiguous');
-    const {row,envelope}=await loadEnvelope(tx,'BINARY_K1',batch.settlementBatchId);
-    const result=periodBinary(envelope,await effectiveGpv(tx,envelope.evidence.sources),incoming);
-    await postPayables(tx,row,envelope,result.payables,actionKey,stateHash,returnCaseId);
-    const matching=await tx.settlementBatch.findFirst({where:{settlementType:'MATCHING_K2',status:'FINALIZED',periodStart:batch.periodStart,periodEnd:batch.periodEnd,ruleVersionCode:batch.ruleVersionCode}});
-    if(matching) {
-      const loaded=await loadEnvelope(tx,'MATCHING_K2',matching.settlementBatchId);
-      const resultMatching=periodMatching(loaded.envelope,result.payables,result.total);
-      await postPayables(tx,loaded.row,loaded.envelope,resultMatching.payables,actionKey,stateHash,returnCaseId);
-    }
-    const carry=Object.fromEntries([...result.carryOut].map(([qid,value])=>[qid,{left:value.left.toString(),right:value.right.toString()}]));
-    await tx.replayCarryProjection.create({data:{actionKey,settlementBatchId:batch.settlementBatchId,periodEnd:batch.periodEnd,ruleVersionCode:batch.ruleVersionCode,carry,stateHash}});
-    incoming=result.carryOut;previousEnd=batch.periodEnd;
+  for(const calculation of calculations) {
+    await postPayables(tx,calculation.row,calculation.envelope,calculation.binary.payables,actionKey,stateHash,returnCaseId);
+    if(calculation.matching) await postPayables(tx,calculation.matching.row,calculation.matching.envelope,calculation.matching.result.payables,actionKey,stateHash,returnCaseId);
+    await tx.replayCarryProjection.create({data:{actionKey,settlementBatchId:calculation.batch.settlementBatchId,periodEnd:calculation.batch.periodEnd,ruleVersionCode:calculation.batch.ruleVersionCode,carry:calculation.carry,stateHash}});
   }
   let epvState:string|undefined;
   if(ret.order.purpose==='REPURCHASE') epvState=await replayEpvMonth(tx,ret.orderId,actionKey,returnCaseId);
@@ -477,7 +521,7 @@ export async function replayReturnDependencies(tx:Prisma.TransactionClient,retur
     }
   }
   await tx.settlementRecalculationRequest.updateMany({where:{sourceReturnCaseId:returnCaseId,status:'PENDING'},data:{status:'PROCESSED',processedAt:new Date()}});
-  const result={returnCaseId,status:'REPLAYED',stateHash,epvState:epvState??null,periods:binaries.length,k0Periods:k0Batches.length};
+  const result={returnCaseId,status:'REPLAYED',stateHash,epvState:epvState??null,periods:calculations.length,k0Periods:k0Batches.length,replayRunId:replayRun?.settlementReplayRunId??null};
   await tx.replayAction.create({data:{actionKey,stateHash,result}});return result;
 }
 
@@ -491,6 +535,7 @@ export async function consumeReplayOutbox(tx:Prisma.TransactionClient,outboxEven
     :event.eventType==='RETURN_CONFIRMED'
       ?await processHistoricalReturn(tx,payload.returnCaseId??event.aggregateId)
       :await replayReturnDependencies(tx,payload.returnCaseId??event.aggregateId);
+  if((result as any).status==='REPLAY_INCOMPLETE') pending('REPLAY_INCOMPLETE','Replay horizon reached before convergence; outbox remains retryable');
   await tx.outboxEvent.update({where:{outboxEventId},data:{processStatus:'PROCESSED',processedAt:new Date(),lastError:null}});
   return result;
 }
