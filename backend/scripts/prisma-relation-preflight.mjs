@@ -31,7 +31,7 @@ for(const [label,field] of noPersonRelations){
 }
 
 if(!/authSessions\s+AuthSession\[\]/.test(person)) failures.push('Person.authSessions inverse relation missing');
-if(!/person\s+Person\?\s+@relation\(fields:\[personId\],references:\[personId\]\)/.test(session))
+if(!/person\s+Person\?\s+@relation\(fields:\s*\[personId\],\s*references:\s*\[personId\]\)/.test(session))
   failures.push('AuthSession.person relation missing');
 if(!/sourceAward\s+BonusAward\?/.test(bonus) || !/derivedAwards\s+BonusAward\[\]/.test(bonus))
   failures.push('BonusAward self relation for sourceAwardId missing');

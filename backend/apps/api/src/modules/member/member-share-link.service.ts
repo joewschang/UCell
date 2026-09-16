@@ -4,6 +4,7 @@ import { PrismaService } from '@ucell/database';
 import { QualificationAccessService } from '../auth/qualification-access.service';
 
 type ShareTokenPayload={version:1;qualificationId:string;issuedAt:string;expiresAt:string};
+type TransitionPayload={version:1;kind:'REFERRAL_TRANSITION';anonymousId:string;referralAttributionId:string;referrerQualificationId:string;attributionVersion:number;issuedAt:string;expiresAt:string};
 
 @Injectable()
 export class MemberShareLinkService {
@@ -27,6 +28,22 @@ export class MemberShareLinkService {
   return {qualificationId,shareUrl:new URL(`/r/${token}`,url).toString(),expiresAt:expiresAt.toISOString()};
  }
  hash(token:string){return createHash('sha256').update(token).digest('hex');}
+ createTransition(input:{anonymousId:string;referralAttributionId:string;referrerQualificationId:string;attributionVersion:number;issuedAt:Date;expiresAt:Date}){
+  const {key}=this.configuration(),iv=randomBytes(12),payload:TransitionPayload={version:1,kind:'REFERRAL_TRANSITION',anonymousId:input.anonymousId,referralAttributionId:input.referralAttributionId,referrerQualificationId:input.referrerQualificationId,attributionVersion:input.attributionVersion,issuedAt:input.issuedAt.toISOString(),expiresAt:input.expiresAt.toISOString()};
+  const cipher=createCipheriv('aes-256-gcm',key,iv),encrypted=Buffer.concat([cipher.update(JSON.stringify(payload),'utf8'),cipher.final()]),tag=cipher.getAuthTag();
+  return Buffer.concat([iv,tag,encrypted]).toString('base64url');
+ }
+ verifyTransition(token:string,now=new Date()){
+  const {key}=this.configuration();
+  try{
+   const bytes=Buffer.from(token,'base64url');if(bytes.length<29)throw new Error('short');
+   const decipher=createDecipheriv('aes-256-gcm',key,bytes.subarray(0,12));decipher.setAuthTag(bytes.subarray(12,28));
+   const payload=JSON.parse(Buffer.concat([decipher.update(bytes.subarray(28)),decipher.final()]).toString('utf8')) as TransitionPayload;
+   const issuedAt=new Date(payload.issuedAt),expiresAt=new Date(payload.expiresAt);
+   if(payload.version!==1||payload.kind!=='REFERRAL_TRANSITION'||!payload.anonymousId||!payload.referralAttributionId||!payload.referrerQualificationId||!Number.isSafeInteger(payload.attributionVersion)||payload.attributionVersion<1||!Number.isFinite(issuedAt.getTime())||!Number.isFinite(expiresAt.getTime())||issuedAt>now||expiresAt<=issuedAt||expiresAt<=now)throw new Error('invalid');
+   return payload;
+  }catch{throw new ServiceUnavailableException({code:'REFERRAL_TRANSITION_INVALID'});}
+ }
  verify(token:string,now=new Date()){
   const {key}=this.configuration();
   try{

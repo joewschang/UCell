@@ -1,13 +1,15 @@
 import {ConflictException,Injectable,ServiceUnavailableException} from '@nestjs/common';
 import {Prisma,PrismaService} from '@ucell/database';
 import {randomUUID} from 'node:crypto';
+import {AuditService} from '../../common/audit/audit.service';
+import {IdempotencyService} from '../../common/idempotency/idempotency.service';
 import {MemberShareLinkService} from './member-share-link.service';
 
 const LOCK_WINDOW_MS=30*24*60*60*1000;
 
 @Injectable()
 export class ReferralAttributionService {
- constructor(private readonly db:PrismaService,private readonly links:MemberShareLinkService){}
+ constructor(private readonly db:PrismaService,private readonly links:MemberShareLinkService,private readonly idempotency:IdempotencyService,private readonly audit:AuditService){}
 
  async land(token:string,anonymousId:string=randomUUID(),now=new Date()){
   const payload=this.links.verify(token,now),tokenHash=this.links.hash(token),correlationId=randomUUID();
@@ -39,5 +41,26 @@ export class ReferralAttributionService {
   catch(error){if((error as any).code==='P2034')throw new ConflictException({code:'RETRYABLE_CONFLICT'});throw error;}
  }
 
- private view(row:any,accepted:boolean,replaced:boolean,reasonCode:string,policyVersion:string){return {anonymousId:row.anonymousId,referralAttributionId:row.referralAttributionId,referrerQualificationId:row.referrerQualificationId,firstTouchAt:row.firstTouchAt.toISOString(),lastTouchAt:row.lastTouchAt.toISOString(),lockedUntil:row.lockedUntil.toISOString(),accepted,replaced,reasonCode,policyVersion};}
+ async bind(personId:string,transitionState:string,idempotencyKey:string,requestId:string,now=new Date()){
+  const state=this.links.verifyTransition(transitionState,now);
+  try{const result=await this.idempotency.execute(`member:referral:bind:${personId}`,idempotencyKey,{transitionStateHash:this.links.hash(transitionState)},async tx=>{
+   await tx.$queryRaw`SELECT true AS locked FROM (SELECT pg_advisory_xact_lock(hashtextextended(${state.anonymousId},0))) AS anonymous_lock`;
+   await tx.$queryRaw`SELECT true AS locked FROM (SELECT pg_advisory_xact_lock(hashtextextended(${personId},0))) AS person_lock`;
+   const attribution=await tx.referralAttribution.findUnique({where:{referralAttributionId:state.referralAttributionId}});
+   if(!attribution||attribution.anonymousId!==state.anonymousId||attribution.referrerQualificationId!==state.referrerQualificationId||attribution.status!=='ACTIVE')throw new ConflictException({code:'REFERRAL_ATTRIBUTION_NOT_BINDABLE'});
+   if(attribution.personId&&attribution.personId!==personId)throw new ConflictException({code:'REFERRAL_ATTRIBUTION_PERSON_CONFLICT'});
+   if(attribution.personId===personId)return {referralAttributionId:attribution.referralAttributionId,referrerQualificationId:attribution.referrerQualificationId,status:'ALREADY_BOUND' as const,boundAt:null};
+   if(attribution.version!==state.attributionVersion||attribution.lockedUntil<=now)throw new ConflictException({code:'REFERRAL_ATTRIBUTION_NOT_BINDABLE'});
+   const other=await tx.referralAttribution.findFirst({where:{personId,status:'ACTIVE',lockedUntil:{gt:now},NOT:{referralAttributionId:attribution.referralAttributionId}}});
+   if(other)throw new ConflictException({code:'PERSON_REFERRAL_ATTRIBUTION_CONFLICT'});
+   const updated=await tx.referralAttribution.update({where:{referralAttributionId:attribution.referralAttributionId},data:{personId,version:{increment:1}}}),correlationId=randomUUID();
+   await tx.referralAttributionHistory.create({data:{referralAttributionId:updated.referralAttributionId,action:'BOUND_TO_PERSON',previousReferrerQualificationId:updated.referrerQualificationId,newReferrerQualificationId:updated.referrerQualificationId,reasonCode:'AUTHENTICATED_LINE_PERSON_BOUND',referralLinkId:updated.referralLinkId,boundPersonId:personId,correlationId,occurredAt:now}});
+   await this.audit.write(tx,{actorType:'MEMBER',actorId:personId,action:'REFERRAL_ATTRIBUTION_BOUND',entityType:'ReferralAttribution',entityId:updated.referralAttributionId,beforeData:{personBound:false},afterData:{personBound:true,referrerQualificationId:updated.referrerQualificationId},requestId,correlationId});
+   await tx.outboxEvent.create({data:{eventType:'REFERRAL_ATTRIBUTION_BOUND',aggregateType:'ReferralAttribution',aggregateId:updated.referralAttributionId,payload:{schemaVersion:1,referralAttributionId:updated.referralAttributionId,personId,referrerQualificationId:updated.referrerQualificationId},correlationId}});
+   return {referralAttributionId:updated.referralAttributionId,referrerQualificationId:updated.referrerQualificationId,status:'BOUND' as const,boundAt:now.toISOString()};
+  });return {...result.value,replayed:result.replayed};}
+  catch(error){if(['P2002','P2034'].includes((error as any).code))throw new ConflictException({code:'RETRYABLE_CONFLICT'});throw error;}
+ }
+
+ private view(row:any,accepted:boolean,replaced:boolean,reasonCode:string,policyVersion:string){const transitionState=this.links.createTransition({anonymousId:row.anonymousId,referralAttributionId:row.referralAttributionId,referrerQualificationId:row.referrerQualificationId,attributionVersion:row.version,issuedAt:row.lastTouchAt,expiresAt:row.lockedUntil});return {anonymousId:row.anonymousId,referralAttributionId:row.referralAttributionId,referrerQualificationId:row.referrerQualificationId,firstTouchAt:row.firstTouchAt.toISOString(),lastTouchAt:row.lastTouchAt.toISOString(),lockedUntil:row.lockedUntil.toISOString(),accepted,replaced,reasonCode,policyVersion,transitionState,transitionExpiresAt:row.lockedUntil.toISOString()};}
 }
