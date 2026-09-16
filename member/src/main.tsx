@@ -7,6 +7,7 @@ import App from './App';
 import { SessionBoundary } from './SessionBoundary';
 import { AppErrorBoundary } from './AppErrorBoundary';
 import './styles.css';
+import './premium.css';
 function Bootstrap() {
     const [state, setState] = useState<'loading' | 'ready' | 'redirect'>('loading');
     const [error, setError] = useState('');

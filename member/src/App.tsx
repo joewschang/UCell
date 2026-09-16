@@ -8,6 +8,7 @@ import Shop from './Shop';
 import { CommerceProvider, useCommerce } from './commerce';
 import Notifications from './Notifications';
 import EndSession from './EndSession';
+import Icon, { type IconName } from './Icon';
 import { NotificationProvider, useNotifications } from './NotificationContext';
 export const number = (n: number | null) => n === null ? '待提供' : n.toLocaleString('zh-TW');
 export const money = (n: number | null) => n === null ? '待確認' : `NT$ ${number(n)}`;
@@ -37,7 +38,20 @@ function Home({ q }: {
     q: Qualification;
 }) {
     const state = useResource(`dashboard:${q.id}`, s => data.getDashboard(q, s));
-    return <Result state={state}>{d => <><section className="hero"><h2>您好，{d.memberName}</h2><p>{d.memberNo}</p></section><section className="card"><span>本月重購</span><h2>{{ ACTIVE: '已完成', PENDING: '確認中', INACTIVE: '未完成' }[d.monthlyRepurchaseStatus]}</h2></section><Metrics items={[["PV", d.pv], ["RPV", d.rpv], ["EPV", d.epv]]}/><section className="card"><span>本期獎金 · {statusNames[d.bonusStatus] ?? d.bonusStatus}</span><h2>{d.bonusAmount === null ? '結算中' : money(d.bonusAmount)}</h2></section><h3>快速服務</h3><section className="actions">{[['/organization', '我的組織'], ['/performance', '我的業績'], ['/bonuses', '獎金明細'], ['/shop', '商品商城'], ['/orders', '我的訂單'], ['/me', '會員資料']].map(([path, title]) => <Link key={path} to={path}>{title}</Link>)}</section></>}</Result>;
+    const services: [string, string, IconName][] = [['/organization', '我的組織', 'organization'], ['/performance', '我的業績', 'chart'], ['/bonuses', '獎金明細', 'bonus'], ['/shop', '商品商城', 'shop'], ['/orders', '我的訂單', 'order'], ['/me', '會員資料', 'person']];
+    return <Result state={state}>{d => <div className="home-layout">
+      <section className="hero">
+        <div className="hero-top"><span className="eyebrow">UCELL · MEMBER PRIVILEGES</span><span className="member-emblem" aria-hidden="true">U</span></div>
+        <p className="hero-intro">美好日常，從照顧自己開始。</p>
+        <h2>您好，{d.memberName}</h2>
+        <div className="hero-bottom"><div><span className="eyebrow">MEMBER ID</span><p>{d.memberNo}</p></div><Link to="/me" aria-label="查看會員資料"><Icon name="arrow"/></Link></div>
+      </section>
+      <section className="card repurchase-card"><span className="service-icon"><Icon name={d.monthlyRepurchaseStatus === 'ACTIVE' ? 'check' : 'shop'}/></span><div><span>本月重購</span><h2>{{ ACTIVE: '已完成', PENDING: '確認中', INACTIVE: '未完成' }[d.monthlyRepurchaseStatus]}</h2></div><Link to="/shop">前往商城 <Icon name="arrow"/></Link></section>
+      <section className="overview"><div className="section-heading"><div><span className="eyebrow">MY OVERVIEW</span><h3>我的會員概況</h3></div><Link to="/performance">查看業績 <Icon name="arrow"/></Link></div><Metrics items={[["PV", d.pv], ["RPV", d.rpv], ["EPV", d.epv]]}/><section className="card bonus-card"><div><span>本期獎金 · {statusNames[d.bonusStatus] ?? d.bonusStatus}</span><h2>{d.bonusAmount === null ? '結算中' : money(d.bonusAmount)}</h2><p>依目前資格顯示，以正式結算紀錄為準。</p></div><Link to="/bonuses" aria-label="查看獎金明細"><Icon name="arrow"/></Link></section></section>
+      <section className="services"><div className="section-heading"><div><span className="eyebrow">AT YOUR SERVICE</span><h3>快速服務</h3></div><span className="section-note">每一步，都為您準備</span></div><div className="actions">{services.map(([path, title, icon]) => <Link key={path} to={path}><span className="service-icon"><Icon name={icon}/></span>{title}</Link>)}</div></section>
+      <Link className="collection-link" to="/shop"><div><span className="eyebrow">UCELL COLLECTION</span><h3>為日常，留一份講究。</h3><p>探索商品與會員選購服務</p></div><Icon name="arrow"/></Link>
+      <p className="brand-footer">UCell <span>陪伴您的每一天</span></p>
+    </div>}</Result>;
 }
 function Organization({ q }: {
     q: Qualification;
@@ -79,7 +93,7 @@ function MemberApp() {
         return <main className="loading" role="status">資格資料載入中…</main>;
     if (error)
         return <main role="alert"><p>{error}</p><button onClick={retry}>重試</button></main>;
-    return <div className="app"><header><div><b>UCell</b><small>會員中心</small></div><span className="badge">{data.isMock ? '示範模式' : '會員服務'}</span>{current && <Link className="notification-link" to="/notifications" aria-label={data.isMock ? `通知中心，${unread} 則未讀` : '通知中心'}>通知{data.isMock ? ` ${unread}` : ''}</Link>}</header>{data.isMock && <aside className="demo-banner">目前為示範資料，不代表真實業績、獎金或訂單。</aside>}<main>{current ? <><ContextBar /><div key={current.id}><Routes><Route path="/" element={<Home q={current}/>}/><Route path="/organization" element={<Organization q={current}/>}/><Route path="/performance" element={<Performance q={current}/>}/><Route path="/bonuses" element={<Bonuses q={current}/>}/><Route path="/shop" element={<Shop q={current}/>}/><Route path="/orders" element={<Orders q={current}/>}/><Route path="/me" element={<Me />}/><Route path="/notifications" element={<Notifications q={current}/>}/><Route path="*" element={<section className="card"><h2>找不到頁面</h2><Link to="/">返回首頁</Link></section>}/></Routes></div></> : <section className="card"><h2>尚未取得會員資格</h2><p>請聯絡客服確認會員綁定與資格狀態。</p><button onClick={retry}>重新查詢</button></section>}</main><nav aria-label="主要功能"><NavLink end to="/">首頁</NavLink><NavLink to="/organization">組織</NavLink><NavLink to="/shop">商城</NavLink><NavLink to="/bonuses">獎金</NavLink><NavLink to="/me">我的</NavLink></nav></div>;
+    return <div className="app"><header><div><b>UCell<span className="brand-dot">.</span></b><small>MEMBER EXPERIENCE</small></div><span className="badge">{data.isMock ? '示範模式' : '會員服務'}</span>{current && <Link className="notification-link" to="/notifications" aria-label={data.isMock ? `通知中心，${unread} 則未讀` : '通知中心'}><Icon name="bell"/><span>通知{data.isMock ? ` ${unread}` : ''}</span></Link>}</header>{data.isMock && <aside className="demo-banner">目前為示範資料，不代表真實業績、獎金或訂單。</aside>}<main>{current ? <><ContextBar /><div key={current.id}><Routes><Route path="/" element={<Home q={current}/>}/><Route path="/organization" element={<Organization q={current}/>}/><Route path="/performance" element={<Performance q={current}/>}/><Route path="/bonuses" element={<Bonuses q={current}/>}/><Route path="/shop" element={<Shop q={current}/>}/><Route path="/orders" element={<Orders q={current}/>}/><Route path="/me" element={<Me />}/><Route path="/notifications" element={<Notifications q={current}/>}/><Route path="*" element={<section className="card"><h2>找不到頁面</h2><Link to="/">返回首頁</Link></section>}/></Routes></div></> : <section className="card"><h2>尚未取得會員資格</h2><p>請聯絡客服確認會員綁定與資格狀態。</p><button onClick={retry}>重新查詢</button></section>}</main><nav aria-label="主要功能"><NavLink end to="/"><Icon name="home"/><span>首頁</span></NavLink><NavLink to="/organization"><Icon name="organization"/><span>組織</span></NavLink><NavLink to="/shop"><Icon name="shop"/><span>商城</span></NavLink><NavLink to="/bonuses"><Icon name="bonus"/><span>獎金</span></NavLink><NavLink to="/me"><Icon name="person"/><span>我的</span></NavLink></nav></div>;
 }
 
 export default function App() { return <NotificationProvider enabled={data.isMock}><CommerceProvider enabled={data.isMock}><MemberApp /></CommerceProvider></NotificationProvider>; }

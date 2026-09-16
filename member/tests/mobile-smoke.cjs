@@ -94,6 +94,13 @@ const assert=require('node:assert/strict');
   await page.setViewportSize({width:390,height:844});
   await page.goto('http://127.0.0.1:5174/');
   await page.getByRole('heading',{name:'您好，示範會員'}).waitFor();
+  for(const width of [320,390,768,1440]) {
+   await page.setViewportSize({width,height:960});
+   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,width+' home overflow');
+   assert.equal(await page.getByRole('navigation',{name:'主要功能'}).getByRole('link').count(),5);
+  }
+  if(process.env.SMOKE_SCREENSHOT) await page.screenshot({path:process.env.SMOKE_SCREENSHOT.replace(/\.png$/,'.desktop.png'),fullPage:true});
+  await page.setViewportSize({width:390,height:844});
   await page.screenshot({path:process.env.SMOKE_SCREENSHOT||'/tmp/ucell-member-mobile.png',fullPage:true});
   await page.getByRole('link',{name:'我的',exact:true}).click();
   await page.getByRole('button',{name:'結束本頁工作階段',exact:true}).click();
