@@ -74,3 +74,11 @@ One Admin full-suite run observed an existing asynchronous package-page timing f
 | UX-3 automated accessibility | PASS | 26 routes: named controls, main landmark, headings, text status semantics |
 | Formal LINE/LIFF and Entra/RBAC | BLOCKED | Operational credentials and formal environment execution still required |
 | Complete WCAG/manual screen-reader audit | BLOCKED | Automated basic checks are not formal accessibility certification |
+
+## Checkpoint 6 verification
+
+| Gate | Result | Evidence |
+|---|---|---|
+| Governed UAT evidence read UI | PASS | API row, filters, loading/error/empty and evidence/local separation regressions |
+| Admin tests | PASS | 17 files / 47 tests |
+| Formal UAT sign-off | BLOCKED | Read-only evidence metadata does not constitute approval or gate completion |

@@ -1,9 +1,26 @@
 import {useMemo,useState} from 'react';
+import {useQuery} from '@tanstack/react-query';
 import {Badge,Card,Field,Metric,PageHeader} from '../../components/ui';
+import {QueryFeedback} from '../../components/QueryFeedback';
+import {get,qs} from '../../lib/api';
 import {scenarios,UatStatus} from './uat-scenarios';
 
 interface Result{status:UatStatus;evidence:string;tester:string;executedAt:string}
 type Results=Record<string,Result>;
+interface UatEvidenceRecord{
+  uatExecutionEvidenceId:string;
+  classification:'LOCAL_ASSISTIVE_ONLY'|'FORMAL_UAT_EVIDENCE';
+  environment:string;
+  scenarioCode:string;
+  result:Exclude<UatStatus,'NOT_RUN'>;
+  evidenceHash:string;
+  artifactReference:string;
+  approvalReference:string|null;
+  actorId:string;
+  executedAt:string;
+  recordedAt:string;
+  formalSignOff:false;
+}
 const key='ucell_uat_r6_results';
 
 function load():Results{
@@ -12,6 +29,13 @@ function load():Results{
 export function UatPage(){
   const [results,setResults]=useState<Results>(load);
   const [priority,setPriority]=useState('ALL');const [area,setArea]=useState('ALL');
+  const [evidenceEnvironment,setEvidenceEnvironment]=useState('');
+  const [evidenceScenario,setEvidenceScenario]=useState('');
+  const evidence=useQuery({
+    queryKey:['uat-evidence',evidenceEnvironment,evidenceScenario],
+    queryFn:()=>get<{data:UatEvidenceRecord[]}>('/admin/uat-evidence'+qs({environment:evidenceEnvironment||undefined,scenarioCode:evidenceScenario||undefined}))
+  });
+  const evidenceRows=evidence.data?.data??[];
   const areas=[...new Set(scenarios.map(x=>x.area))];
   const filtered=scenarios.filter(x=>(priority==='ALL'||x.priority===priority)&&(area==='ALL'||x.area===area));
   const counts=useMemo(()=>{
@@ -64,5 +88,19 @@ export function UatPage(){
         </div>
       </section>
     })}</div></Card>
+    <Card title="受治理的 UAT Evidence（唯讀）">
+      <div role="alert" className="alert-panel"><Badge tone="warn">EVIDENCE_ONLY</Badge><p><strong>此處記錄一律不是正式簽核。</strong> API 的 <code>formalSignOff</code> 必須為 <code>false</code>；不得據此判定 Release Gate PASS 或核准 Production Promotion。</p><p className="muted">此清單來自受治理的 append-only evidence store，與上方瀏覽器 localStorage 輔助結果及統計完全分離。</p></div>
+      <div className="toolbar">
+        <Field label="Evidence Environment"><input value={evidenceEnvironment} onChange={e=>setEvidenceEnvironment(e.target.value)} placeholder="例如 UAT"/></Field>
+        <Field label="Evidence Scenario"><select value={evidenceScenario} onChange={e=>setEvidenceScenario(e.target.value)}><option value="">ALL</option>{scenarios.map(x=><option key={x.id} value={x.id}>{x.id}</option>)}</select></Field>
+      </div>
+      <QueryFeedback query={evidence} empty={!evidence.isPending&&!evidence.error&&evidenceRows.length===0}/>
+      {evidenceRows.length>0&&<div className="table-scroll"><table><thead><tr><th>Classification / Result</th><th>Environment / Scenario</th><th>Time</th><th>Artifact / Hash</th></tr></thead><tbody>{evidenceRows.map(row=><tr key={row.uatExecutionEvidenceId}>
+        <td><Badge tone={row.result==='PASS'?'ok':row.result==='FAIL'?'danger':'warn'}>{row.result}</Badge><div>{row.classification}</div><small>formalSignOff: {String(row.formalSignOff)}</small></td>
+        <td><strong>{row.environment}</strong><div>{row.scenarioCode}</div></td>
+        <td><div>Executed: {row.executedAt}</div><small>Recorded: {row.recordedAt}</small></td>
+        <td><div>{row.artifactReference}</div><code>{row.evidenceHash}</code></td>
+      </tr>)}</tbody></table></div>}
+    </Card>
   </>
 }

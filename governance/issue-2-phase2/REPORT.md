@@ -65,3 +65,10 @@ Member UI still does not guess a “latest” Binary settlement batch. An author
 - Refreshed the frozen UX-3 reference set from checkpoint `2bceaa0492dc70462b431819a743c0d0877cc16d` after the authoritative Admin lifecycle-count integration.
 - All 104 responsive route/viewport assertions and all 26 automated accessibility route checks pass.
 - These results remain local visual/basic accessibility evidence. They do not certify formal LINE/LIFF, Entra/RBAC, screen-reader, or complete WCAG operation.
+
+## Checkpoint 6
+
+- Admin `/uat` now reads the governed append-only UAT evidence store through `GET /admin/uat-evidence` with environment and scenario filters.
+- Governed evidence is rendered in a separate read-only panel with loading, empty, and error states. It is never merged into browser-local scenario counts.
+- Every row exposes `formalSignOff: false`, and the page explicitly prohibits treating evidence metadata as Release Gate PASS or Production Promotion approval.
+- No evidence mutation, UAT sign-off action, monetary behavior, or authorization rule was added.
