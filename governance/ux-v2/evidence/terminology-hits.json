@@ -1,0 +1,3437 @@
+[
+  {
+    "file": "README.md",
+    "line": 23,
+    "text": "AI is **not** permitted to calculate or write monetary results. Deterministic Rule Engine owns PV, awards, settlement, recovery and payout outcomes."
+  },
+  {
+    "file": "admin/docs/ACCEPTANCE.md",
+    "line": 11,
+    "text": "- [x] Order/payment/EPV is wired."
+  },
+  {
+    "file": "admin/docs/ACCEPTANCE_V020.md",
+    "line": 18,
+    "text": "- [x] Payment → Qualification/PV handoff."
+  },
+  {
+    "file": "admin/docs/ACCEPTANCE_V030.md",
+    "line": 7,
+    "text": "- [x] PV balance/ledger context."
+  },
+  {
+    "file": "admin/docs/ACCEPTANCE_V040.md",
+    "line": 5,
+    "text": "- [x] GPV reversal action."
+  },
+  {
+    "file": "admin/docs/ARCHITECTURE.md",
+    "line": 57,
+    "text": "而UCell Core繼續負責Qualification、Organization、PV、Award、Rule Engine。"
+  },
+  {
+    "file": "admin/docs/BACKEND_CONTRACT_SNAPSHOT.json",
+    "line": 21,
+    "text": "      \"EPV uses dedicated BonusAwardType.EPV instead of overloading EQUALIZATION.\","
+  },
+  {
+    "file": "admin/docs/BACKEND_CONTRACT_SNAPSHOT.json",
+    "line": 23,
+    "text": "      \"RPV API and worker effective-direct count now use temporal QualificationStatusHistory.\""
+  },
+  {
+    "file": "admin/docs/BACKEND_CONTRACT_SNAPSHOT.json",
+    "line": 178,
+    "text": "      \"label\": \"PV ledger\""
+  },
+  {
+    "file": "admin/docs/BACKEND_CONTRACT_SNAPSHOT.json",
+    "line": 213,
+    "text": "      \"label\": \"Recognize EPV\""
+  },
+  {
+    "file": "admin/docs/BACKEND_CONTRACT_SNAPSHOT.json",
+    "line": 218,
+    "text": "      \"label\": \"Run RPV\""
+  },
+  {
+    "file": "admin/docs/BACKEND_CONTRACT_SNAPSHOT.json",
+    "line": 223,
+    "text": "      \"label\": \"RPV awards\""
+  },
+  {
+    "file": "admin/docs/BACKEND_CONTRACT_SNAPSHOT.json",
+    "line": 303,
+    "text": "    \"Qualification/PV handoff\""
+  },
+  {
+    "file": "admin/docs/BACKEND_CONTRACT_SNAPSHOT_v030.json",
+    "line": 22,
+    "text": "      \"EPV uses dedicated BonusAwardType.EPV instead of overloading EQUALIZATION.\","
+  },
+  {
+    "file": "admin/docs/BACKEND_CONTRACT_SNAPSHOT_v030.json",
+    "line": 24,
+    "text": "      \"RPV API and worker effective-direct count now use temporal QualificationStatusHistory.\""
+  },
+  {
+    "file": "admin/docs/BACKEND_CONTRACT_SNAPSHOT_v040.json",
+    "line": 22,
+    "text": "      \"EPV uses dedicated BonusAwardType.EPV instead of overloading EQUALIZATION.\","
+  },
+  {
+    "file": "admin/docs/BACKEND_CONTRACT_SNAPSHOT_v040.json",
+    "line": 24,
+    "text": "      \"RPV API and worker effective-direct count now use temporal QualificationStatusHistory.\""
+  },
+  {
+    "file": "admin/docs/BACKEND_CONTRACT_SNAPSHOT_v050.json",
+    "line": 22,
+    "text": "      \"EPV uses dedicated BonusAwardType.EPV instead of overloading EQUALIZATION.\","
+  },
+  {
+    "file": "admin/docs/BACKEND_CONTRACT_SNAPSHOT_v050.json",
+    "line": 24,
+    "text": "      \"RPV API and worker effective-direct count now use temporal QualificationStatusHistory.\""
+  },
+  {
+    "file": "admin/docs/ROADMAP.md",
+    "line": 15,
+    "text": "- E2E UAT: Application → Qualification → Payment → GPV"
+  },
+  {
+    "file": "admin/docs/ROADMAP.md",
+    "line": 21,
+    "text": "- PV ledger"
+  },
+  {
+    "file": "admin/docs/SELF_AUDIT.md",
+    "line": 11,
+    "text": "- Bonus、K0/K1/K2、EPV、RPV、Carry、Recovery不在Frontend自行計算。"
+  },
+  {
+    "file": "admin/docs/SELF_AUDIT.md",
+    "line": 19,
+    "text": "Ledger、Bonus、EPV、RPV、Global/Welfare、Return、Replay、Workflow、Payout。"
+  },
+  {
+    "file": "admin/docs/SELF_AUDIT_V020.md",
+    "line": 32,
+    "text": "- 不在Frontend計算Referral、Equalization、Binary、Matching、RPV、EPV、Global、K0/K1/K2。"
+  },
+  {
+    "file": "admin/docs/SELF_AUDIT_V020.md",
+    "line": 35,
+    "text": "- Payment後才進PV事件流程。"
+  },
+  {
+    "file": "admin/docs/SELF_AUDIT_V020.md",
+    "line": 59,
+    "text": "- Payment Completion → PV Ledger"
+  },
+  {
+    "file": "admin/docs/SELF_AUDIT_V040.md",
+    "line": 5,
+    "text": "- 原Order/PV/Award不提供Delete操作。"
+  },
+  {
+    "file": "admin/docs/SELF_AUDIT_V050.md",
+    "line": 29,
+    "text": "- Paid Order → GPV completeness。"
+  },
+  {
+    "file": "admin/src/features/analytics/AnalyticsVolumePanel.test.tsx",
+    "line": 7,
+    "text": "  const data:VolumeReport={status:'AVAILABLE',volumes:['GPV','RPV','EPV'].map(type=>({type,unit:type,total:amount,left:null,right:null,generations:[{generation:1,...amount}]}))};"
+  },
+  {
+    "file": "admin/src/features/analytics/AnalyticsVolumePanel.test.tsx",
+    "line": 9,
+    "text": "  act(()=>tree.root.findByType('select').props.onChange({target:{value:'EPV'}}));expect(tree.root.findByType('meter').props['aria-label']).toContain('EPV');"
+  },
+  {
+    "file": "admin/src/features/analytics/AnalyticsVolumePanel.tsx",
+    "line": 12,
+    "text": " const [selected,setSelected]=useState('GPV');const row=data.volumes?.find(v=>v.type===selected);const maximum=row?Math.max(0,...row.generations.map(g=>Number(g.net))):0;"
+  },
+  {
+    "file": "admin/src/features/analytics/AnalyticsVolumePanel.tsx",
+    "line": 13,
+    "text": " return <><p>各代使用原始事件保存的歷史組織關係，可能與目前雷達成員不同。GPV、RPV、EPV 分別呈現，單位是各自業績點數，不能相加為 PV 或金額。</p>"
+  },
+  {
+    "file": "admin/src/features/analytics/AnalyticsVolumePanel.tsx",
+    "line": 20,
+    "text": " {data.carry&&<><h3>根球最近一期 Carry</h3>{data.carry.status==='AVAILABLE'?<><p>結算期末：{time(data.carry.periodEnd)} · GPV 點數 · {data.carry.basis==='LATEST_REPLAY_CORRECTION'?'已採最新重算修正':'原結算紀錄'}</p><p>左區 {data.carry.left} ／右區 {data.carry.right}</p><p className=\"muted\">原結算左區 {data.carry.originalLeft} ／右區 {data.carry.originalRight}。Carry 是期末結餘，不能與近 30 天流量相加。</p></>:<p>{reasons[data.carry.reason??'']??'Carry 資料不可用。'}</p>}</>}"
+  },
+  {
+    "file": "admin/src/features/bonuses/BonusesPage.tsx",
+    "line": 22,
+    "text": "  return <><PageHeader title=\"獎金與結算證據\" subtitle=\"Theory、K0/K1/K2、45D生命週期、Carry、Recovery與Pool均只讀Backend結果。\"/>"
+  },
+  {
+    "file": "admin/src/features/bonuses/BonusesPage.tsx",
+    "line": 23,
+    "text": "  <Card title=\"Bonus Engine Pipeline\"><label className=\"field\">結算期間<select value={pipelinePeriod} onChange={e=>{setPipelinePeriod(e.target.value);setPipelineStage(null)}}><option value=\"\">選擇已存在的結算期間</option>{[...new Set<string>(rows.map((r:any)=>r.periodEnd))].map(period=><option key={period} value={period}>{dateTime(period)}</option>)}</select></label><ol className=\"uc-pipeline\" aria-label=\"結算流程\">{['Data Frozen','Active Snapshot','K0','K1','K2','Global Pool','Welfare','45D','Payable'].map((stage,i)=>{const type=({K0:'REFERRAL_K0',K1:'BINARY_K1',K2:'MATCHING_K2'} as Record<string,string>)[stage];const candidates=pipelinePeriod&&type?rows.filt [long source line; inspect file]"
+  },
+  {
+    "file": "admin/src/features/bonuses/BonusesPage.tsx",
+    "line": 28,
+    "text": "  <Card title=\"Qualification Compensation Drill-down\"><SearchSelect label=\"Qualification\" value={qualification} onChange={x=>{setQualification(x);setSelectedAward(null)}} search={qualSearch}/>{!o?<p className=\"muted\">選擇Qualification查看Active、PV、Carry與Award。</p>:<>"
+  },
+  {
+    "file": "admin/src/features/bonuses/BonusesPage.tsx",
+    "line": 29,
+    "text": "    <div className=\"grid two\"><div><h3>PV Balances</h3><div className=\"table-wrap\"><AdminTable><thead><tr><th>Type</th><th>Balance</th></tr></thead><tbody>{(o.balances??[]).map((x:any)=><tr key={x.pvType}><td>{x.pvType}</td><td>{x._sum?.amount??0}</td></tr>)}</tbody></AdminTable></div><h3>Active Timeline</h3><div className=\"timeline-list\">{(o.qualification?.activePeriods??[]).map((x:any)=><div className=\"timeline-item\" key={x.activePeriodId}><strong>{dateTime(x.activeFrom)}</strong><span>→ {dateTime(x.activeTo)}</span><small>{x.sourceType}</small></div>)}</div></div>"
+  },
+  {
+    "file": "admin/src/features/orders/OrdersPage.tsx",
+    "line": 65,
+    "text": " return <><PageHeader title=\"訂單與收款\" subtitle=\"Order建立時Backend依Product Rule Profile快照金額/GPV；Payment Confirmed後才由Outbox產生PV。\"/>"
+  },
+  {
+    "file": "admin/src/features/orders/OrdersPage.tsx",
+    "line": 72,
+    "text": "  <small className=\"muted\">正式金額與GPV由Backend建立訂單後提供；後台不自行計算總額。</small>"
+  },
+  {
+    "file": "admin/src/features/orders/OrdersPage.tsx",
+    "line": 77,
+    "text": "  {o.status==='PAID'&&<div className=\"success-panel\"><strong>已付款</strong><p>{o.packagePurchase?o.packageDownstreamStatus==='BALL_SETUP_PENDING'?'套組付款已確認，新資格尚待 Sponsor／Binary 安置。':'套組付款已確認，正式有效期／認列規則未完成前不會自動生效。':'SALE_CONFIRMED事件將由Backend/Worker建立GPV。'}</p><Link className=\"button-link\" to={`/qualifications?qualificationId=${o.qualificationId}`}>查看Qualification／PV Ledger</Link></div>}</>}</Card></div>"
+  },
+  {
+    "file": "admin/src/features/organization/OrganizationPage.tsx",
+    "line": 29,
+    "text": "  <Card title=\"制度提醒\"><p><Badge tone=\"ok\">Sponsor Tree</Badge>：推薦／推薦對等／EPV。</p><p><Badge tone=\"ok\">Binary Tree</Badge>：左右區GPV、Pair、Carry、K1與RPV。</p><p className=\"muted\">不得互相推導或混用。</p></Card></div>"
+  },
+  {
+    "file": "admin/src/features/packages/PackagesPage.test.tsx",
+    "line": 17,
+    "text": " const rendered=JSON.stringify(tree!.toJSON());expect(get).toHaveBeenCalledWith('/admin/packages');expect(rendered).toContain('正式會員套組');expect(rendered).toContain('4800.00');expect(rendered).toContain('EXACT_QUANTITY');expect(rendered).toContain('APPROVAL-001');expect(rendered).toContain('Core authoritative');expect(rendered).not.toContain('PV =');act(()=>tree!.unmount());"
+  },
+  {
+    "file": "admin/src/features/packages/PackagesPage.test.tsx",
+    "line": 29,
+    "text": "it('submits only explicit Core version configuration and does not derive PV or BV',async()=>{"
+  },
+  {
+    "file": "admin/src/features/packages/PackagesPage.tsx",
+    "line": 43,
+    "text": "  <Card title=\"治理界線\"><p>此頁不在瀏覽器計算 PV、BV、資格效果或應付金額。DRAFT、APPROVED、SCHEDULED、ACTIVE、RETIRED 狀態均直接讀取 Core；Production 排程值仍須正式核准。</p></Card></>;"
+  },
+  {
+    "file": "admin/src/features/products/ProductsPage.tsx",
+    "line": 16,
+    "text": " return <><PageHeader title=\"商品參照\" subtitle=\"Pre-ERP Product Reference；商品價格與GPV Rule Profile由Backend保存快照。\"/>"
+  },
+  {
+    "file": "admin/src/features/products/ProductsPage.tsx",
+    "line": 18,
+    "text": " <Field label=\"SKU\"><input {...register('sku',{required:true})}/></Field><Field label=\"商品名稱\"><input {...register('displayName',{required:true})}/></Field><Field label=\"售價\"><input {...register('price',{required:true})}/></Field><Field label=\"GPV Rate\"><input defaultValue=\"0.60\" {...register('gpvRate')}/></Field>"
+  },
+  {
+    "file": "admin/src/features/products/ProductsPage.tsx",
+    "line": 21,
+    "text": " <Card title=\"商品清單\"><div className=\"table-wrap\"><AdminTable><thead><tr><th>SKU</th><th>名稱</th><th>售價</th><th>GPV Rate</th></tr></thead><tbody>{rows.map(x=><tr key={x.productId}><td>{x.sku}</td><td>{x.displayName}</td><td>{money(x.currentPrice)}</td><td>{x.ruleProfiles?.[0]?.gpvRate??'—'}</td></tr>)}</tbody></AdminTable></div></Card></>"
+  },
+  {
+    "file": "admin/src/features/qualifications/QualificationDetail.test.tsx",
+    "line": 12,
+    "text": "it('fails closed for operations belonging to another Qualification',async()=>{vi.mocked(get).mockImplementation(async(path:string)=>({data:path.includes('/operations')?{qualification:{qualificationId:'outsider'},balances:[{pvType:'PV',_sum:{amount:'999999'}}]}:{qualificationId:'ball-a',planLevelCode:'LEADER'}}) as any);const tree=await render();await act(async()=>{tree.root.findAllByProps({role:'tab'}).find(t=>t.children.join('')==='PV/RPV/EPV')!.props.onClick()});await waitForText(tree,'evidence 不一致');expect(JSON.stringify(tree.toJSON())).not.toContain('999999');act(()=>tree.unmount())});"
+  },
+  {
+    "file": "admin/src/features/qualifications/QualificationDetail.tsx",
+    "line": 9,
+    "text": "const tabs=['Overview','Sponsor','Binary','Active','PV/RPV/EPV','Orders','Bonus','Ledger','Settlement','Audit'];"
+  },
+  {
+    "file": "admin/src/features/qualifications/QualificationDetail.tsx",
+    "line": 13,
+    "text": " const ops=useQuery({queryKey:['qualification-ops-ux2',id],queryFn:()=>get<any>('/admin/observability/qualifications/'+id+'/operations'),enabled:['PV/RPV/EPV','Bonus','Ledger','Settlement'].includes(tab)});"
+  },
+  {
+    "file": "admin/src/features/qualifications/QualificationDetail.tsx",
+    "line": 27,
+    "text": " else if(tab==='PV/RPV/EPV')body=<><p className=\"uc-muted\">Backend ledger aggregation；缺少的 type 不推定為零。</p>{o?.balances?.length?<dl className=\"detail-grid\">{o.balances.map((b:any)=><div key={b.pvType}><dt>{b.pvType}</dt><dd>{b._sum?.amount??'待提供'}</dd></div>)}</dl>:<EmptyState title=\"尚無業績 ledger aggregation\"/>}</>;"
+  },
+  {
+    "file": "admin/src/features/qualifications/QualificationDetail.tsx",
+    "line": 29,
+    "text": " else if(tab==='Ledger')body=<><p>PV Ledger · append-only history · 最近最多 200 筆</p>{o?.pv?.length?<JsonResult value={o.pv}/>:<EmptyState title=\"尚無 PV Ledger\"/>}</>;"
+  },
+  {
+    "file": "admin/src/features/qualifications/QualificationsPage.tsx",
+    "line": 20,
+    "text": " return <><PageHeader title=\"會員資格（球）\" subtitle=\"Qualification是UCell制度運算、組織、PV、Carry、Award與Payout的獨立單位。\"/>"
+  },
+  {
+    "file": "admin/src/features/returns/ReturnsPage.tsx",
+    "line": 68,
+    "text": "  return <><PageHeader title=\"退貨／反向／Replay\" subtitle=\"保留原交易；退貨→GPV Reversal→Recovery／Recalculation→Carry-chain Replay，全程可追查。\"/>"
+  },
+  {
+    "file": "admin/src/features/returns/ReturnsPage.tsx",
+    "line": 78,
+    "text": "    <Card title=\"處理原則\"><p><Badge tone=\"warn\">不可刪除原訂單／PV／Award</Badge></p><p>Return只新增反向與Recovery事實。Binary/Matching歷史差異以Replay與補償帳處理。</p><p className=\"muted\">Replay 使用封存歷史 period/snapshots；缺少 evidence 時 fail closed。Production calendar/cut-off 仍待核准。</p></Card>"
+  },
+  {
+    "file": "admin/src/features/returns/ReturnsPage.tsx",
+    "line": 85,
+    "text": "      <dl className=\"detail-grid\"><dt>Return ID</dt><dd className=\"mono\">{d.returnCase.returnCaseId}</dd><dt>Order</dt><dd className=\"mono\">{d.returnCase.orderId}</dd><dt>會員</dt><dd>{d.returnCase.order?.qualification?.currentHolder?.legalName}</dd><dt>Reason</dt><dd>{d.returnCase.reasonCode}</dd><dt>Occurred</dt><dd>{dateTime(d.returnCase.occurredAt)}</dd><dt>GPV Reversal Events</dt><dd>{d.reversals?.length??0}</dd><dt>Recovery Events</dt><dd>{d.recoveries?.length??0}</dd><dt>Replay</dt><dd>{d.replay?.status??'尚未執行'}</dd></dl>"
+  },
+  {
+    "file": "admin/src/features/subscriptions/SubscriptionsPage.tsx",
+    "line": 15,
+    "text": " <Card title=\"重購方案\"><QueryFeedback query={plans} empty={!plans.data?.data?.length}/>{!plans.error&&(plans.data?.data??[]).map((p:any)=><p key={p.subscriptionPlanId}>{p.planCode} · {p.durationMonths} 期 · 每期認列 {money(p.monthlyRecognizedAmount)} · RPV {p.monthlyRpv}</p>)}</Card>"
+  },
+  {
+    "file": "admin/src/features/subscriptions/SubscriptionsPage.tsx",
+    "line": 18,
+    "text": " {selected&&<Card title=\"訂閱詳情\"><QueryFeedback query={detail}/>{d&&<><p>Qualification：{d.qualificationId}</p><p>{d.status} · Rule {d.ruleVersionCode} · Snapshot {d.parameterSnapshotHash??'歷史設定 evidence 未提供'}</p><div className=\"table-wrap\"><AdminTable><thead><tr><th>期數</th><th>認列月</th><th>到期時間</th><th>狀態</th><th>認列金額</th><th>RPV</th></tr></thead><tbody>{(d.schedules??[]).map((s:any)=><tr key={s.recognitionId}><td>{s.installmentNo}</td><td>{s.recognitionMonth}</td><td>{dateTime(s.dueAt)}</td><td>{s.status}</td><td>{money(s.recognizedAmount)}</td><td>{s.rpvAmount}</td></tr>)}</tbody></AdminTable></div></>}</Card>}</>;"
+  },
+  {
+    "file": "admin/src/features/uat/uat-scenarios.ts",
+    "line": 9,
+    "text": " ['UAT-R6-004','P0','Order/GPV','ENTRY order→payment→worker','GPV exactly once'],"
+  },
+  {
+    "file": "admin/src/features/uat/uat-scenarios.ts",
+    "line": 32,
+    "text": " ['UAT-R6-027','P1','Concurrency','Double payment confirm','One business effect/GPV'],"
+  },
+  {
+    "file": "admin/src/lib/routes.ts",
+    "line": 141,
+    "text": "    \"label\": \"PV ledger\""
+  },
+  {
+    "file": "admin/src/lib/routes.ts",
+    "line": 176,
+    "text": "    \"label\": \"Recognize EPV\""
+  },
+  {
+    "file": "admin/src/lib/routes.ts",
+    "line": 181,
+    "text": "    \"label\": \"Run RPV\""
+  },
+  {
+    "file": "admin/src/lib/routes.ts",
+    "line": 186,
+    "text": "    \"label\": \"RPV awards\""
+  },
+  {
+    "file": "admin/src/types/domain.ts",
+    "line": 7,
+    "text": "export type BonusAwardType='REFERRAL'|'EQUALIZATION'|'BINARY'|'MATCHING'|'RPV'|'EPV'|'GLOBAL';"
+  },
+  {
+    "file": "backend/README.md",
+    "line": 8,
+    "text": "- GPV reversal"
+  },
+  {
+    "file": "backend/README.md",
+    "line": 14,
+    "text": "- EPV excess repurchase"
+  },
+  {
+    "file": "backend/README.md",
+    "line": 24,
+    "text": "- GPV event"
+  },
+  {
+    "file": "backend/README.md",
+    "line": 53,
+    "text": "Deterministic Binary/Matching replay, RPV reversal worker, subscription cancellation and qualification workflow closure."
+  },
+  {
+    "file": "backend/apps/api/src/modules/admin-observability/admin-observability.controller.ts",
+    "line": 41,
+    "text": "  @ApiOperation({operationId:'adminQualificationOperations',summary:'Qualification Active/PV/Award/Carry營運視圖'})"
+  },
+  {
+    "file": "backend/apps/api/src/modules/admin-operations/admin-operations.controller.ts",
+    "line": 23,
+    "text": "  @ApiOperation({operationId:'adminReturnDetail',summary:'退貨、GPV反向、Recovery、Replay完整追蹤'})"
+  },
+  {
+    "file": "backend/apps/api/src/modules/analytics/analytics.controller.ts",
+    "line": 59,
+    "text": "  @ApiOperation({operationId:'adminAnalyticsSonarVolumes',summary:'事件歷史樹的十二代 GPV/RPV/EPV，最近 30 天原始事件截至快照的修正淨量；Binary 另含已結算 Carry'})"
+  },
+  {
+    "file": "backend/apps/api/src/modules/analytics/analytics.volume.ts",
+    "line": 5,
+    "text": "export const VOLUME_TYPES=['GPV','RPV','EPV'] as const;"
+  },
+  {
+    "file": "backend/apps/api/src/modules/analytics/analytics.volume.ts",
+    "line": 34,
+    "text": " const envelope=verifyReplayEnvelope(row),sourceId=event.pvType==='RPV'?event.sourceLineId:event.eventId;"
+  },
+  {
+    "file": "backend/apps/api/src/modules/analytics/analytics.volume.ts",
+    "line": 38,
+    "text": " if(event.pvType==='RPV'&&envelope.inputs.eventId!==event.eventId)throw Error('VOLUME_SOURCE_MISMATCH');"
+  },
+  {
+    "file": "backend/apps/api/src/modules/analytics/analytics.volume.ts",
+    "line": 47,
+    "text": " const ids=events.map(e=>e.eventId),snapshotIds=events.map(e=>e.pvType==='RPV'?e.sourceLineId:e.eventId).filter((id):id is string=>!!id);"
+  },
+  {
+    "file": "backend/apps/api/src/modules/analytics/analytics.volume.ts",
+    "line": 56,
+    "text": "  const facts:VolumeFact[]=events.map(event=>({id:event.eventId,qualificationId:event.qualificationId,type:event.pvType as VolumeType,original:event.amount.toFixed(4),adjustment:decimal(sums.get(event.eventId)??0n),envelope:verifySource(event,rows.get(`${event.pvType}:${event.pvType==='RPV'?event.sourceLineId:event.eventId}`))}));"
+  },
+  {
+    "file": "backend/apps/api/src/modules/bonus/binary-bonus.service.ts",
+    "line": 54,
+    "text": "      const originals=await tx.pvLedger.findMany({where:{pvType:'GPV',eventType:'GPV_CREATED',ruleVersionCode,occurredAt:{gte:periodStart,lt:periodEnd}}});"
+  },
+  {
+    "file": "backend/apps/api/src/modules/bonus/binary-bonus.service.ts",
+    "line": 55,
+    "text": "      const sourceSnapshots=[];for(const event of originals)sourceSnapshots.push(verifyReplayEnvelope(await tx.historicalReplaySnapshot.findUnique({where:{kind_sourceId:{kind:'GPV',sourceId:event.eventId}}})));"
+  },
+  {
+    "file": "backend/apps/api/src/modules/bonus/binary-bonus.service.ts",
+    "line": 204,
+    "text": "      const originals=await tx.pvLedger.findMany({where:{pvType:'GPV',eventType:'GPV_CREATED',ruleVersionCode,occurredAt:{gte:periodStart,lt:periodEnd}}});"
+  },
+  {
+    "file": "backend/apps/api/src/modules/bonus/binary-bonus.service.ts",
+    "line": 205,
+    "text": "      const sourceSnapshots=[];for(const event of originals)sourceSnapshots.push(verifyReplayEnvelope(await tx.historicalReplaySnapshot.findUnique({where:{kind_sourceId:{kind:'GPV',sourceId:event.eventId}}})));"
+  },
+  {
+    "file": "backend/apps/api/src/modules/bonus/bonus-query.service.ts",
+    "line": 83,
+    "text": "      where:{pvType:'GPV',occurredAt:{gte:start,lt:end}},"
+  },
+  {
+    "file": "backend/apps/api/src/modules/bonus/referral-bonus.service.ts",
+    "line": 66,
+    "text": "        where:{pvType:'GPV',eventType:'GPV_CREATED',ruleVersionCode,occurredAt:{gte:new Date(k0Window.numerator.gte),lt:new Date(k0Window.numerator.lt)}},"
+  },
+  {
+    "file": "backend/apps/api/src/modules/bonus/referral-bonus.service.ts",
+    "line": 71,
+    "text": "      for(const event of gpvEvents) sources.push(verifyReplayEnvelope(await tx.historicalReplaySnapshot.findUnique({where:{kind_sourceId:{kind:'GPV',sourceId:event.eventId}}})));"
+  },
+  {
+    "file": "backend/apps/api/src/modules/bonus/referral-bonus.service.ts",
+    "line": 77,
+    "text": "        const source=verifyReplayEnvelope(await tx.historicalReplaySnapshot.findUnique({where:{kind_sourceId:{kind:'GPV',sourceId:event.eventId}}}));"
+  },
+  {
+    "file": "backend/apps/api/src/modules/epv/epv-month.service.ts",
+    "line": 10,
+    "text": "    if(typeof timezone!=='string') pending('CONFIGURATION_PENDING','EPV calendar timezone must be explicitly configured');"
+  },
+  {
+    "file": "backend/apps/api/src/modules/epv/epv-month.service.ts",
+    "line": 11,
+    "text": "    try {new Intl.DateTimeFormat('en',{timeZone:timezone});} catch {pending('INVALID_TIMEZONE','EPV calendar timezone is invalid');}"
+  },
+  {
+    "file": "backend/apps/api/src/modules/epv/epv-month.service.ts",
+    "line": 26,
+    "text": "      const marker=await tx.pvLedger.findFirst({where:{sourceType:'ORDER',sourceId:earlier.orderId,pvType:'EPV',eventType:'EPV_CREATED'}});"
+  },
+  {
+    "file": "backend/apps/api/src/modules/epv/epv-month.service.ts",
+    "line": 27,
+    "text": "      if(!marker) pending('EPV_PREVIOUS_ORDER_PENDING','Recognize earlier same-month orders first; do not assign their EPV to a later Active/Sponsor snapshot');"
+  },
+  {
+    "file": "backend/apps/api/src/modules/epv/epv.controller.ts",
+    "line": 6,
+    "text": "@ApiTags('Admin - EPV')"
+  },
+  {
+    "file": "backend/apps/api/src/modules/epv/epv.controller.ts",
+    "line": 14,
+    "text": "  @ApiOperation({operationId:'adminRecognizeOrderEpv',summary:'認列重購超額EPV'})"
+  },
+  {
+    "file": "backend/apps/api/src/modules/epv/epv.service.ts",
+    "line": 26,
+    "text": "        where:{sourceType:'ORDER',sourceId:orderId,pvType:'EPV',eventType:'EPV_CREATED'}"
+  },
+  {
+    "file": "backend/apps/api/src/modules/epv/epv.service.ts",
+    "line": 38,
+    "text": "          qualificationId:order.qualificationId,pvType:'EPV',amount:epv,"
+  },
+  {
+    "file": "backend/apps/api/src/modules/epv/epv.service.ts",
+    "line": 57,
+    "text": "            awardType:'EPV',"
+  },
+  {
+    "file": "backend/apps/api/src/modules/epv/epv.service.ts",
+    "line": 81,
+    "text": "            awardType:'EPV',"
+  },
+  {
+    "file": "backend/apps/api/src/modules/epv/monthly-epv.ts",
+    "line": 6,
+    "text": "  if(consumption.lt(0)||threshold.lt(0)||rate.lt(0)||rate.gt(1)) pending('INVALID_EPV_INPUT','Monthly EPV inputs are outside their valid range');"
+  },
+  {
+    "file": "backend/apps/api/src/modules/global-pool/global-pool.service.ts",
+    "line": 45,
+    "text": "        WHERE p.pv_type='GPV'::ledger.\"PvType\""
+  },
+  {
+    "file": "backend/apps/api/src/modules/ledger/ledger.controller.ts",
+    "line": 14,
+    "text": "  @ApiOperation({ operationId: 'adminListQualificationPv', summary: 'Qualification PV帳本' })"
+  },
+  {
+    "file": "backend/apps/api/src/modules/ledger/ledger.controller.ts",
+    "line": 20,
+    "text": "  @ApiOperation({ operationId: 'adminQualificationPvBalances', summary: 'Qualification PV餘額彙總' })"
+  },
+  {
+    "file": "backend/apps/api/src/modules/member/member-read.service.ts",
+    "line": 51,
+    "text": "    for(const pvType of ['PV','RPV','EPV'] as const){"
+  },
+  {
+    "file": "backend/apps/api/src/modules/member/member-read.service.ts",
+    "line": 54,
+    "text": "     if(pvType!=='PV')for(const event of events){"
+  },
+  {
+    "file": "backend/apps/api/src/modules/member/member-read.service.ts",
+    "line": 55,
+    "text": "      const sourceId=pvType==='RPV'?event.sourceLineId:event.eventId;"
+  },
+  {
+    "file": "backend/apps/api/src/modules/member/member-read.service.ts",
+    "line": 97,
+    "text": "     return {qualificationId:id,period:month,awards:awards.length?awards.map(row=>{const finalized=row.settlementBatch?.status==='FINALIZED',anchor=byAward.get(row.bonusAwardId),current=state(row);return {id:row.bonusAwardId,name:row.awardType,status:finalized&&current?(current==='PENDING_45D'?'PENDING45D':current):'PENDING',amount:finalized?row.payableAmount.toNumber():null,theoryAmount:row.theoryAmount?.toNumber()??null,finalAmount:finalized?row.payableAmount.toNumber():null,payableAmount:finalized?row.payableAmount.toNumber():null,settlementStatus:finalized?'FINALIZED':'PENDING',pendingReason:finalized?null:row.settlementBatchId?'SETTLEMEN [long source line; inspect file]"
+  },
+  {
+    "file": "backend/apps/api/src/modules/member/member-view.dto.ts",
+    "line": 52,
+    "text": " @ApiProperty({type:Number,nullable:true,required:false,description:'Checkout does not recognize PV; null.'}) pv?:number|null;"
+  },
+  {
+    "file": "backend/apps/api/src/modules/member/member-view.dto.ts",
+    "line": 133,
+    "text": " @ApiProperty({enum:['PENDING','CALCULATED','PENDING45D','EFFECTIVE','PAYABLE','PAID','REVERSED','CLAWBACK']}) status!:string;"
+  },
+  {
+    "file": "backend/apps/api/src/modules/member/member.controller.ts",
+    "line": 103,
+    "text": " @Get('organization/binary') @ApiResponse({status:200,schema:views.memberEnvelope(views.BinaryView)}) @ApiOperation({operationId:'memberBinaryOrganization',description:'Current placement counts remain separate from immutable settlement metrics. Historical left/right GPV and carry are returned only for an explicitly selected finalized BINARY_K1 settlementBatchId and its sealed historical snapshot.'}) binary(@Req() req:any,@Query() q:MemberQueryDto){return this.reads.read(req.user.personId,q.qualificationId,'binary',q.period,q.settlementBatchId);}"
+  },
+  {
+    "file": "backend/apps/api/src/modules/member/member.controller.ts",
+    "line": 112,
+    "text": " @Post('orders') @ApiResponse({status:201,schema:views.memberEnvelope(views.OrderView)}) @UseGuards(IdempotencyGuard) @ApiHeader({name:'Idempotency-Key',required:true}) @ApiOperation({operationId:'memberCreateOrder',description:'Core-authoritative RETAIL order, pending payment/fulfillment; no PV/BV recognition. Missing/overlapping product profile fails closed 422. Retry conflicts with identical key/body. Reject client monetary results.'})"
+  },
+  {
+    "file": "backend/apps/api/src/modules/order/order.service.ts",
+    "line": 115,
+    "text": "        if(member&&(profiles.length!==1||profile.ruleVersionCode!=='R1.0B'||!profile.parameterSnapshotHash||!/^[a-f0-9]{64}$/.test(profile.parameterSnapshotHash)))throw new UnprocessableEntityException({code:'RULE_PROFILE_CONFIGURATION_PENDING',message:'One traceable effective R1.0B product profile required; no inferred PV/BV mapping.'});"
+  },
+  {
+    "file": "backend/apps/api/src/modules/payout/unified-payable.service.ts",
+    "line": 32,
+    "text": "        await tx.payableEntry.create({data:{qualificationId:a.recipientQualificationId,sourceType:'RPV_UPLINE_AWARD',sourceId:a.rpvAwardEventId,awardType:'RPV',grossAmount:a.payableAmount,availableAt:cutoff,status:'OPEN',ruleVersionCode:a.ruleVersionCode}});"
+  },
+  {
+    "file": "backend/apps/api/src/modules/return/return.controller.ts",
+    "line": 28,
+    "text": "  @ApiOperation({operationId:'adminProcessReturnReversal',summary:'處理GPV反向事件與獎金追回'})"
+  },
+  {
+    "file": "backend/apps/api/src/modules/rpv/rpv.controller.ts",
+    "line": 6,
+    "text": "@ApiTags('Admin - RPV')"
+  },
+  {
+    "file": "backend/apps/api/src/modules/rpv/rpv.controller.ts",
+    "line": 14,
+    "text": "  @ApiOperation({operationId:'adminRunMonthlyRpvRecognition',summary:'手動執行單月RPV認列'})"
+  },
+  {
+    "file": "backend/apps/api/src/modules/rpv/rpv.controller.ts",
+    "line": 18,
+    "text": "  @ApiOperation({operationId:'adminGetMonthlyRpvAwards',summary:'查詢該月RPV向上獎勵'})"
+  },
+  {
+    "file": "backend/apps/api/src/modules/rpv/rpv.service.ts",
+    "line": 55,
+    "text": "          pvType:'RPV',"
+  },
+  {
+    "file": "backend/apps/api/src/modules/subscription/rpv-reversal.service.ts",
+    "line": 14,
+    "text": "      return replayRpvCancellation(tx,recognitionId,cancellationId,'RPV:'+recognitionId+':'+cancellationId,correlationId);"
+  },
+  {
+    "file": "backend/apps/api/src/modules/subscription/subscription.controller.ts",
+    "line": 39,
+    "text": "  @ApiOperation({operationId:'adminCancelSubscription',summary:'取消Subscription；未來Recognition取消，已認列月份排程RPV reversal'})"
+  },
+  {
+    "file": "backend/apps/api/test/a-decision-return.e2e-spec.ts",
+    "line": 78,
+    "text": "  test('missing EPV recognition snapshot fails closed before processed marker',async()=>{"
+  },
+  {
+    "file": "backend/apps/api/test/analytics-db.integration.ts",
+    "line": 120,
+    "text": "    const occurredAt=days(3),event=await db.pvLedger.create({data:{qualificationId:chain[1],pvType:'GPV',amount:'100.1234',sourceType:'TEST',sourceId:randomUUID(),eventType:'GPV_CREATED',ruleVersionCode:'R1.0B',occurredAt,correlationId:randomUUID()}});"
+  },
+  {
+    "file": "backend/apps/api/test/analytics-db.integration.ts",
+    "line": 121,
+    "text": "    await db.pvLedger.create({data:{qualificationId:chain[1],pvType:'GPV',amount:'-20',sourceType:'TEST',sourceId:randomUUID(),eventType:'GPV_REVERSAL',ruleVersionCode:'R1.0B',occurredAt:days(1),reversalOfEventId:event.eventId,correlationId:randomUUID()}});"
+  },
+  {
+    "file": "backend/apps/api/test/analytics-db.integration.ts",
+    "line": 122,
+    "text": "    const envelope={format:'UCELL_HISTORICAL_REPLAY_V1',kind:'GPV',sourceId:event.eventId,ruleVersionCode:'R1.0B',at:occurredAt.toISOString(),parameters:await captureParameters(db as any,occurredAt,'R1.0B'),recipients:[],"
+  },
+  {
+    "file": "backend/apps/api/test/analytics-db.integration.ts",
+    "line": 124,
+    "text": "    await db.historicalReplaySnapshot.create({data:{kind:'GPV',sourceId:event.eventId,ruleVersionCode:'R1.0B',content:envelope as any,hash:replayHash(envelope)}});"
+  },
+  {
+    "file": "backend/apps/api/test/analytics-db.integration.ts",
+    "line": 136,
+    "text": "    await db.pvLedger.create({data:{qualificationId:root,pvType:'EPV',amount:5,sourceType:'TEST',sourceId:randomUUID(),eventType:'EPV_CREATED',ruleVersionCode:'R1.0B',occurredAt:days(1),correlationId:randomUUID()}});"
+  },
+  {
+    "file": "backend/apps/api/test/analytics-volume.e2e-spec.ts",
+    "line": 3,
+    "text": "const fact=(patch:Partial<VolumeFact>={}):VolumeFact=>({id:'event',qualificationId:'child',type:'GPV',original:'100.1234',adjustment:'-20.0000',envelope:{evidence:{sponsor:[{childQualificationId:'child',sponsorQualificationId:'root'}],binary:[{childQualificationId:'child',parentQualificationId:'middle',side:'LEFT'},{childQualificationId:'middle',parentQualificationId:'root',side:'RIGHT'}]}} as any,...patch});"
+  },
+  {
+    "file": "backend/apps/api/test/analytics-volume.e2e-spec.ts",
+    "line": 10,
+    "text": " test('does not mix GPV, RPV and EPV units',()=>{const result=aggregateVolumes('root','sponsor',[fact(),fact({type:'RPV',original:'10',adjustment:'0'})]);expect(result[0].total.net).toBe('80.1234');expect(result[1].total.net).toBe('10.0000');expect(result[2].total.events).toBe(0);});"
+  },
+  {
+    "file": "backend/apps/api/test/bonus-engine-v04.e2e-spec.ts",
+    "line": 159,
+    "text": "      it(`G1 ${plan} Active receives GPV x ${plan === 'STARTER' ? 15 : plan === 'ELITE' ? 20 : 25}% theory`, async () => {"
+  },
+  {
+    "file": "backend/apps/api/test/bonus-engine-v04.e2e-spec.ts",
+    "line": 186,
+    "text": "    it('equalization base is same-source G1 referral theory, not GPV', async () => {"
+  },
+  {
+    "file": "backend/apps/api/test/bonus-engine-v04.e2e-spec.ts",
+    "line": 267,
+    "text": "    it('uses Binary subtree GPV, not Sponsor tree', async () => {"
+  },
+  {
+    "file": "backend/apps/api/test/bonus-engine-v04.e2e-spec.ts",
+    "line": 300,
+    "text": "    it('paired PV deducted from both sides and strong-side carry remains', async () => {"
+  },
+  {
+    "file": "backend/apps/api/test/bonus-engine-v04.e2e-spec.ts",
+    "line": 324,
+    "text": "    it('Binary theory = paired PV x 12%', async () => {"
+  },
+  {
+    "file": "backend/apps/api/test/connected-dev-defects.e2e-spec.ts",
+    "line": 11,
+    "text": "  it('uses the actual RPV primary key and retains duplicate protection', async () => {"
+  },
+  {
+    "file": "backend/apps/api/test/connected-dev-defects.e2e-spec.ts",
+    "line": 44,
+    "text": "  it('reads EPV recipient plans at the payment timestamp', async () => {"
+  },
+  {
+    "file": "backend/apps/api/test/epv-global-v05.e2e-spec.ts",
+    "line": 48,
+    "text": "describe('v0.5 EPV', () => {"
+  },
+  {
+    "file": "backend/apps/api/test/epv-global-v05.e2e-spec.ts",
+    "line": 49,
+    "text": "  it('REPURCHASE 4800 => excess 2800 x 60% = 1680 EPV',()=>{expect(historicalMonthlyEntitlements([epv()],new Map([['order',d(4800)]])).get('order')!.toString()).toBe('1680');});"
+  },
+  {
+    "file": "backend/apps/api/test/epv-global-v05.e2e-spec.ts",
+    "line": 50,
+    "text": "  it('EPV self share = 50% = 840 when Active',()=>expect(actual('original Active EPV self entitlement')).toBe('840'));"
+  },
+  {
+    "file": "backend/apps/api/test/epv-global-v05.e2e-spec.ts",
+    "line": 51,
+    "text": "  it('EPV Sponsor G1-G5 each 6% when Active',()=>{for(let generation=1;generation<=5;generation++)expect(actual('Active historical EPV Sponsor G'+generation)).toBe('100.8');expect(actual('original inactive EPV Sponsor generation stays zero')).toBe('0');});"
+  },
+  {
+    "file": "backend/apps/api/test/epv-global-v05.e2e-spec.ts",
+    "line": 52,
+    "text": "  it('EPV does not use Binary tree',()=>expect(actual('Binary-only historical EPV ancestor gets no award')).toBe(0));"
+  },
+  {
+    "file": "backend/apps/api/test/epv-global-v05.e2e-spec.ts",
+    "line": 53,
+    "text": "  it('order without eligible ConsumptionRecognition does not enter the EPV accumulator',()=>{const recognized=new Map<string,Prisma.Decimal>();expect(historicalMonthlyEntitlements([],recognized).size).toBe(0);expect(recognized.has('order')).toBe(false);});"
+  },
+  {
+    "file": "backend/apps/api/test/epv-global-v05.e2e-spec.ts",
+    "line": 58,
+    "text": "  it('global pool is 5% of period GPV',async()=>{const h=await globalHarness({total:'1000'});const row=await h.service.evaluateAndSettle(start,end,'TEST_ONLY');expect(row.poolRate.toString()).toBe('0.05');expect(row.poolAvailable.toString()).toBe('50');});"
+  },
+  {
+    "file": "backend/apps/api/test/gpv-immediate-effects-db.e2e-spec.ts",
+    "line": 18,
+    "text": "describe('v3 GPV immediate economic evidence',()=>{"
+  },
+  {
+    "file": "backend/apps/api/test/gpv-immediate-effects-db.e2e-spec.ts",
+    "line": 33,
+    "text": "      const person=await tx.person.create({data:{legalName:'GPV immediate owner',status:'EFFECTIVE'}});"
+  },
+  {
+    "file": "backend/apps/api/test/gpv-immediate-effects-db.e2e-spec.ts",
+    "line": 59,
+    "text": "      const event=await tx.pvLedger.create({data:{qualificationId:source.qualificationId,pvType:'GPV',amount:d(1000),sourceType:'TEST_ORDER',sourceId:randomUUID(),"
+  },
+  {
+    "file": "backend/apps/api/test/gpv-immediate-effects-db.e2e-spec.ts",
+    "line": 78,
+    "text": "      expect(await tx.historicalReplaySnapshot.count({where:{kind:'GPV',sourceId:event.eventId}})).toBe(1);"
+  },
+  {
+    "file": "backend/apps/api/test/gpv-immediate-effects-db.e2e-spec.ts",
+    "line": 91,
+    "text": "      const person=await tx.person.create({data:{legalName:'GPV missing snapshot',status:'EFFECTIVE'}});"
+  },
+  {
+    "file": "backend/apps/api/test/gpv-immediate-effects-db.e2e-spec.ts",
+    "line": 98,
+    "text": "      const event=await tx.pvLedger.create({data:{eventId,qualificationId:source.qualificationId,pvType:'GPV',amount:d(1000),sourceType:'TEST_ORDER',sourceId:randomUUID(),eventType:'GPV_CREATED',ruleVersionCode:rule,parameterSnapshotHash:'missing',occurredAt:at,correlationId:randomUUID()}});"
+  },
+  {
+    "file": "backend/apps/api/test/gpv-immediate-effects-db.e2e-spec.ts",
+    "line": 101,
+    "text": "    expect(await db.historicalReplaySnapshot.count({where:{kind:'GPV',sourceId:eventId}})).toBe(0);"
+  },
+  {
+    "file": "backend/apps/api/test/idempotency.e2e-spec.ts",
+    "line": 26,
+    "text": "  it('monthly recognition cannot create RPV twice',async()=>{"
+  },
+  {
+    "file": "backend/apps/api/test/member-binary-read-model.e2e-spec.ts",
+    "line": 58,
+    "text": "  ['negative period GPV','rightPeriodGpv','-1'],"
+  },
+  {
+    "file": "backend/apps/api/test/negative-flow-v05.e2e-spec.ts",
+    "line": 14,
+    "text": "  it('partial return creates proportional negative GPV event',()=>expect(assertion('partial return creates proportional negative GPV event')[0]).toBe('-500'));"
+  },
+  {
+    "file": "backend/apps/api/test/negative-flow-v05.e2e-spec.ts",
+    "line": 15,
+    "text": "  it('GPV reversal references original GPV event',()=>expect(assertion('GPV reversal references original GPV event')).toBe(true));"
+  },
+  {
+    "file": "backend/apps/api/test/phase2-fixtures.ts",
+    "line": 11,
+    "text": " return {format:'UCELL_HISTORICAL_REPLAY_V1',kind:'GPV',sourceId:id,ruleVersionCode:'TEST_ONLY',at:'2020-01-02T00:00:00.000Z',parameters:parameters(),recipients:[],evidence:{binary:[{parentQualificationId:'root',childQualificationId:id,side}],sponsor:[]},inputs:{qualificationId:id,volume:'1000',orderId:id,lineId:id}};"
+  },
+  {
+    "file": "backend/apps/api/test/phase2-fixtures.ts",
+    "line": 17,
+    "text": " return {...source(id),kind:'EPV',recipients:[recipient({awardType:'EPV',rate:'.5',posted:'840'})],inputs:{orderId:id,consumption:amount,volume:'1680',base:'2000',rate:'.6',timezone:'TEST_ONLY_UTC',qualificationId:'root'}};"
+  },
+  {
+    "file": "backend/apps/api/test/recognition-active-db.e2e-spec.ts",
+    "line": 8,
+    "text": "  it('B06/B07/B08/B09 uses one qualification-month accumulator for threshold transaction, pre-threshold state, month reset, and EPV evidence',async()=>{"
+  },
+  {
+    "file": "backend/apps/api/test/recognition-active-db.e2e-spec.ts",
+    "line": 16,
+    "text": "          amount,eligible:true,concreteVolumeType:'GPV' as const,productProfileVersion:'TEST_PROFILE_V1',ruleVersionCode:'TEST_ONLY',"
+  },
+  {
+    "file": "backend/apps/api/test/recognition-active-db.e2e-spec.ts",
+    "line": 39,
+    "text": "        expect(await tx.pvLedger.count({where:{sourceType:'TEST_ORDER',sourceId,pvType:'GPV'}})).toBe(1);"
+  },
+  {
+    "file": "backend/apps/api/test/recognition-active-db.e2e-spec.ts",
+    "line": 40,
+    "text": "        expect(await tx.volumeRecognitionClassification.count({where:{volumeEventId:first.volume!.eventId,concreteVolumeType:'GPV'}})).toBe(1);"
+  },
+  {
+    "file": "backend/apps/api/test/recognition-active-db.e2e-spec.ts",
+    "line": 43,
+    "text": "        const historical=await tx.pvLedger.create({data:{qualificationId:ballA.qualificationId,pvType:'GPV',amount:'50',sourceType:'TEST_ORDER',sourceId:historicalSource,"
+  },
+  {
+    "file": "backend/apps/api/test/recognition-active-db.e2e-spec.ts",
+    "line": 47,
+    "text": "        expect(await tx.pvLedger.count({where:{sourceType:'TEST_ORDER',sourceId:historicalSource,pvType:'GPV'}})).toBe(1);"
+  },
+  {
+    "file": "backend/apps/api/test/sa-decisions.e2e-spec.ts",
+    "line": 16,
+    "text": "describe('SA-20260915-02 monthly EPV regression',()=>{"
+  },
+  {
+    "file": "backend/apps/api/test/sa-decisions.e2e-spec.ts",
+    "line": 43,
+    "text": "  test('recognition rejects missing earlier order instead of allocating its EPV to later recipients',async()=>{"
+  },
+  {
+    "file": "backend/apps/api/test/v060-adjustment-lifecycle.e2e-spec.ts",
+    "line": 25,
+    "text": " it('replay uses original carry-in and reversal PV events',()=>{"
+  },
+  {
+    "file": "backend/apps/api/test/v060-adjustment-lifecycle.e2e-spec.ts",
+    "line": 26,
+    "text": "  expect(actual('GPV reversal references original GPV event')).toBe(true);"
+  },
+  {
+    "file": "backend/apps/api/test/v060-adjustment-lifecycle.e2e-spec.ts",
+    "line": 46,
+    "text": " it('recognized RPV gets explicit reversal event',()=>{expect(actual('RPV one negative historical reversal')).toBe(1);actual('original RPV award rows unchanged');});"
+  },
+  {
+    "file": "backend/apps/api/test/v061-replay.e2e-spec.ts",
+    "line": 29,
+    "text": " it('negative GPV reversal is included in historical period subtree GPV',()=>{expect(periodBinary(binary(),volumes(),new Map()).total.toString()).toBe('1800');});"
+  },
+  {
+    "file": "backend/apps/api/test/v061-replay.e2e-spec.ts",
+    "line": 83,
+    "text": " it('worker creates exactly one negative RPV reversal event',()=>{expect(actual('RPV one negative historical reversal')).toBe(1);});"
+  },
+  {
+    "file": "backend/apps/api/test/v061-replay.e2e-spec.ts",
+    "line": 84,
+    "text": " it('worker creates recovery for previously payable RPV upline awards',()=>{expect(actual('RPV historical recipient recovery delta')).toBe('-100');});"
+  },
+  {
+    "file": "backend/apps/api/test/v061-replay.e2e-spec.ts",
+    "line": 85,
+    "text": " it('reprocessing event is idempotent',()=>{expect(actual('RPV duplicate processing creates no second posting')).toBe(1);expect(actual('return downstream does not repeat RPV clawback')).toBe(1);});"
+  },
+  {
+    "file": "backend/apps/api/test/v062-carry-chain.e2e-spec.ts",
+    "line": 19,
+    "text": "    expect(actual('GPV reversal references original GPV event')).toBe(true);"
+  },
+  {
+    "file": "backend/apps/api/test/v062-carry-chain.e2e-spec.ts",
+    "line": 23,
+    "text": "  it('return discovers every historical Binary ancestor impacted by descendant GPV',()=>{"
+  },
+  {
+    "file": "backend/apps/api/test/v062-carry-chain.e2e-spec.ts",
+    "line": 89,
+    "text": "  it('RPV reversal anchor uses BonusAwardType.RPV, not EPV',()=>{"
+  },
+  {
+    "file": "backend/apps/api/test/v062-carry-chain.e2e-spec.ts",
+    "line": 90,
+    "text": "    expect(actual('RPV recovery anchor uses original RPV type and historical recipient')).toEqual(['RPV','0',true]);"
+  },
+  {
+    "file": "backend/apps/api/test/v062-carry-chain.e2e-spec.ts",
+    "line": 91,
+    "text": "    expect(actual('RPV historical recipient recovery delta')).toBe('-100');"
+  },
+  {
+    "file": "backend/apps/api/test/v062-carry-chain.e2e-spec.ts",
+    "line": 92,
+    "text": "    actual('original RPV award rows unchanged');"
+  },
+  {
+    "file": "backend/apps/api/test/v063-golden-path.e2e-spec.ts",
+    "line": 68,
+    "text": "  it('RPV award materializes once', async () => {"
+  },
+  {
+    "file": "backend/apps/api/test/v063-golden-path.e2e-spec.ts",
+    "line": 74,
+    "text": "    expect([...entries.values()]).toEqual([expect.objectContaining({ qualificationId: 'ball-B', sourceType: 'RPV_UPLINE_AWARD', sourceId: 'rpv-A', awardType: 'RPV', grossAmount: new Prisma.Decimal(80), ruleVersionCode: 'TEST_ONLY' })]);"
+  },
+  {
+    "file": "backend/apps/api/test/v064-golden-dataset.e2e-spec.ts",
+    "line": 38,
+    "text": "    expect(actual('Binary-only historical EPV ancestor gets no award')).toBe(0);"
+  },
+  {
+    "file": "backend/apps/api/test/v064-golden-dataset.e2e-spec.ts",
+    "line": 39,
+    "text": "    expect(actual('Active historical EPV Sponsor G1')).toBe('100.8');"
+  },
+  {
+    "file": "backend/apps/api/test/v064-golden-dataset.e2e-spec.ts",
+    "line": 40,
+    "text": "    expect(actual('RPV current Binary parent receives no recovery')).toBe(0);"
+  },
+  {
+    "file": "backend/apps/api/test/v064-golden-dataset.e2e-spec.ts",
+    "line": 63,
+    "text": "  it('validates RPV 5/8/12 on Binary Tree',()=>{"
+  },
+  {
+    "file": "backend/apps/api/test/v064-golden-dataset.e2e-spec.ts",
+    "line": 65,
+    "text": "    expect(actual('RPV replay retains original recipient after Binary change')).toBe(true);"
+  },
+  {
+    "file": "backend/apps/api/test/v064-golden-dataset.e2e-spec.ts",
+    "line": 66,
+    "text": "    expect(actual('RPV current Binary parent receives no recovery')).toBe(0);"
+  },
+  {
+    "file": "backend/apps/api/test/v064-golden-dataset.e2e-spec.ts",
+    "line": 68,
+    "text": "  it('validates EPV on Sponsor Tree',()=>{"
+  },
+  {
+    "file": "backend/apps/api/test/v064-golden-dataset.e2e-spec.ts",
+    "line": 69,
+    "text": "    for(let generation=1;generation<=5;generation++) expect(actual(`Active historical EPV Sponsor G${generation}`)).toBe('100.8');"
+  },
+  {
+    "file": "backend/apps/api/test/v064-golden-dataset.e2e-spec.ts",
+    "line": 70,
+    "text": "    expect(actual('Binary-only historical EPV ancestor gets no award')).toBe(0);"
+  },
+  {
+    "file": "backend/apps/api/test/v3-mandatory-contract.e2e-spec.ts",
+    "line": 23,
+    "text": "  it.each(['PV', 'BV'])('T11/T12 rejects generic %s before persistence or award creation', async generic => {"
+  },
+  {
+    "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
+    "line": 57,
+    "text": "describe('Vertical Slice 02 - Membership / Active / Subscription / RPV', () => {"
+  },
+  {
+    "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
+    "line": 173,
+    "text": "  it('each due recognition creates exactly 1,200 RPV once',()=>{"
+  },
+  {
+    "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
+    "line": 174,
+    "text": "    expect(rpvActual('due RPV recognition seals exact original ledger identity').slice(0,3)).toEqual(['1200','RPV','RPV_CREATED']);"
+  },
+  {
+    "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
+    "line": 175,
+    "text": "    expect(rpvActual('due RPV recognition updates original schedule identity')[0]).toBe('RECOGNIZED');"
+  },
+  {
+    "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
+    "line": 176,
+    "text": "    expect(rpvActual('RPV duplicate recognition appends no original event')).toBe(1);"
+  },
+  {
+    "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
+    "line": 184,
+    "text": "  it('inactive upline receives 0 and is not compressed',()=>expect(rpvActual('inactive RPV upline receives zero without compression').slice(1)).toEqual([1,false,'0']));"
+  },
+  {
+    "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
+    "line": 185,
+    "text": "  it('higher generation remains independently evaluated',()=>expect(rpvActual('higher RPV generation evaluated independently').slice(1)).toEqual([2,true,'100']));"
+  },
+  {
+    "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
+    "line": 186,
+    "text": "  it('re-running a recognition cannot duplicate RPV or awards',()=>{"
+  },
+  {
+    "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
+    "line": 187,
+    "text": "    expect(rpvActual('duplicate RPV recognition reports already recognized')).toBe('ALREADY_RECOGNIZED');"
+  },
+  {
+    "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
+    "line": 188,
+    "text": "    expect(rpvActual('RPV duplicate recognition appends no original event')).toBe(1);"
+  },
+  {
+    "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
+    "line": 189,
+    "text": "    expect(rpvActual('duplicate RPV recognition preserves all original awards').length).toBeGreaterThan(0);"
+  },
+  {
+    "file": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
+    "line": 190,
+    "text": "    rpvActual('duplicate RPV recognition preserves entire historical snapshot');"
+  },
+  {
+    "file": "backend/apps/api/test/vertical-slice.e2e-spec.ts",
+    "line": 147,
+    "text": "  it('reprocessing same outbox event does not duplicate GPV',async()=>{"
+  },
+  {
+    "file": "backend/apps/api/test/vertical-slice.e2e-spec.ts",
+    "line": 160,
+    "text": "      const rows=await db.pvLedger.findMany({where:{sourceType:'ORDER',sourceId:order.orderId,sourceLineId:order.lines[0].orderLineId,pvType:'GPV'}});"
+  },
+  {
+    "file": "backend/apps/api/test/vertical-slice.e2e-spec.ts",
+    "line": 162,
+    "text": "      expect(await db.historicalReplaySnapshot.count({where:{kind:'GPV',sourceId:rows[0].eventId}})).toBe(1);"
+  },
+  {
+    "file": "backend/apps/api/test/vertical-slice.e2e-spec.ts",
+    "line": 166,
+    "text": "  it('PV ledger cannot be UPDATEd or DELETEd', () => {"
+  },
+  {
+    "file": "backend/apps/api/test/vertical-slice.e2e-spec.ts",
+    "line": 172,
+    "text": "      for(const label of ['PV Ledger UPDATE rejected by DB','PV Ledger DELETE rejected by DB','PV Ledger entire original row survives rejected mutations']){"
+  },
+  {
+    "file": "backend/apps/worker/src/main.ts",
+    "line": 51,
+    "text": "        concreteVolumeType:'GPV',productProfileVersion:String((line.ruleProfileSnapshot as any)?.profileId??'ORDER_LINE_SNAPSHOT'),"
+  },
+  {
+    "file": "backend/apps/worker/src/main.ts",
+    "line": 77,
+    "text": "          sourceId:schedule.subscriptionId,sourceLineId:schedule.recognitionId,pvType:'RPV'"
+  },
+  {
+    "file": "backend/apps/worker/src/main.ts",
+    "line": 82,
+    "text": "        qualificationId:schedule.subscription.qualificationId,pvType:'RPV',amount:schedule.rpvAmount,"
+  },
+  {
+    "file": "backend/docs/ADMIN_R5_CHANGELOG.md",
+    "line": 20,
+    "text": "- Paid Order without GPV after grace window."
+  },
+  {
+    "file": "backend/docs/ARCHITECTURE.md",
+    "line": 22,
+    "text": "2. Qualification is the aggregate root for organization/Active/PV/bonus."
+  },
+  {
+    "file": "backend/docs/ARCHITECTURE.md",
+    "line": 23,
+    "text": "3. No cross-ball borrowing of Active, direct count, PV, carry, bonus, subscription."
+  },
+  {
+    "file": "backend/docs/BONUS_ENGINE_V04.md",
+    "line": 16,
+    "text": "the G1 referral bonus theory created by the SAME source GPV event."
+  },
+  {
+    "file": "backend/docs/BONUS_ENGINE_V04.md",
+    "line": 58,
+    "text": "- calculate left subtree period GPV"
+  },
+  {
+    "file": "backend/docs/BONUS_ENGINE_V04.md",
+    "line": 59,
+    "text": "- calculate right subtree period GPV"
+  },
+  {
+    "file": "backend/docs/BONUS_ENGINE_V04.md",
+    "line": 60,
+    "text": "- available = carry in + period GPV"
+  },
+  {
+    "file": "backend/docs/BONUS_ENGINE_V04.md",
+    "line": 62,
+    "text": "- paired PV is capped by own plan weekly cap"
+  },
+  {
+    "file": "backend/docs/BONUS_ENGINE_V04.md",
+    "line": 63,
+    "text": "- theory = paired PV x 12%"
+  },
+  {
+    "file": "backend/docs/BONUS_ENGINE_V04.md",
+    "line": 93,
+    "text": "15% GPV"
+  },
+  {
+    "file": "backend/docs/BONUS_ENGINE_V04.md",
+    "line": 96,
+    "text": "### 5. 45-day lifecycle"
+  },
+  {
+    "file": "backend/docs/IMPLEMENTATION_ORDER.md",
+    "line": 33,
+    "text": "- GPV/PV/RPV/EPV events"
+  },
+  {
+    "file": "backend/docs/IMPLEMENTATION_ORDER.md",
+    "line": 40,
+    "text": "- monthly 1,200 RPV"
+  },
+  {
+    "file": "backend/docs/PROGRESS.md",
+    "line": 4,
+    "text": "Person / Qualification / Order / Payment / GPV"
+  },
+  {
+    "file": "backend/docs/PROGRESS.md",
+    "line": 7,
+    "text": "Membership Application / Active / Subscription / Monthly RPV / 5-8-12"
+  },
+  {
+    "file": "backend/docs/PROGRESS.md",
+    "line": 15,
+    "text": "- partial GPV reversal"
+  },
+  {
+    "file": "backend/docs/PROGRESS.md",
+    "line": 21,
+    "text": "- EPV"
+  },
+  {
+    "file": "backend/docs/R1_0B_FROZEN_SSOT.md",
+    "line": 18,
+    "text": "- Subscription cancellation and RPV reversal queue"
+  },
+  {
+    "file": "backend/docs/RELEASE_CUTOVER_RUNBOOK.md",
+    "line": 17,
+    "text": "    - Payment/GPV"
+  },
+  {
+    "file": "backend/docs/V060_SELF_AUDIT.md",
+    "line": 11,
+    "text": "The exact Binary/Matching deterministic replay calculator is not approximated. It must reuse/refactor the frozen v0.4 calculators and accept original carry-in plus source PV events including reversals, then recompute Pair, Carry, K1, Binary Paid, Matching and K2."
+  },
+  {
+    "file": "backend/docs/V060_SELF_AUDIT.md",
+    "line": 13,
+    "text": "The RPV reversal worker and full qualification workflow API/controller are the next implementation slice. This avoids inventing refund arithmetic inconsistent with the frozen制度."
+  },
+  {
+    "file": "backend/docs/V0610_IMPLEMENTATION.md",
+    "line": 11,
+    "text": "Binary pair/carry, Matching from Binary Paid, RPV depth, EPV excess repurchase,"
+  },
+  {
+    "file": "backend/docs/V061_IMPLEMENTATION.md",
+    "line": 6,
+    "text": "   - immutable historical GPV ledger including negative reversal events"
+  },
+  {
+    "file": "backend/docs/V061_IMPLEMENTATION.md",
+    "line": 20,
+    "text": "   - creates immutable negative RPV ledger event"
+  },
+  {
+    "file": "backend/docs/V061_IMPLEMENTATION.md",
+    "line": 21,
+    "text": "   - creates recovery facts for previously paid RPV-upline amounts"
+  },
+  {
+    "file": "backend/docs/V062_IMPLEMENTATION.md",
+    "line": 11,
+    "text": "Historical replay now selects the ORIGINAL GPV events in the target period and adds every"
+  },
+  {
+    "file": "backend/docs/V062_IMPLEMENTATION.md",
+    "line": 54,
+    "text": "- RPV reversal technical anchor uses dedicated `BonusAwardType.RPV`."
+  },
+  {
+    "file": "backend/docs/V062_IMPLEMENTATION.md",
+    "line": 60,
+    "text": "4. Payout integration for Global Pool and RPV award recovery under one unified payable ledger."
+  },
+  {
+    "file": "backend/docs/V062_SELF_AUDIT.md",
+    "line": 6,
+    "text": "- A returned qualification's GPV affects Binary ancestors, not primarily its own Binary subtree."
+  },
+  {
+    "file": "backend/docs/V062_SELF_AUDIT.md",
+    "line": 16,
+    "text": "- RPV reversal used EPV as a technical award type."
+  },
+  {
+    "file": "backend/docs/V062_SELF_AUDIT.md",
+    "line": 17,
+    "text": "  Added dedicated RPV award type."
+  },
+  {
+    "file": "backend/docs/V063_IMPLEMENTATION.md",
+    "line": 7,
+    "text": "- Unified Payable Ledger introduced for BonusAward and RPV Upline Award."
+  },
+  {
+    "file": "backend/docs/V063_IMPLEMENTATION.md",
+    "line": 15,
+    "text": "Historical Award / RPV Award / Recovery facts are immutable."
+  },
+  {
+    "file": "backend/docs/V065_IMPLEMENTATION.md",
+    "line": 8,
+    "text": "- Global Pool awards are adapted into the same Payable Ledger used by BonusAward and RPV awards."
+  },
+  {
+    "file": "backend/docs/VERTICAL_SLICE_01.md",
+    "line": 1,
+    "text": "# Vertical Slice 01 — Person → Qualification → Order → Payment → GPV"
+  },
+  {
+    "file": "backend/docs/VERTICAL_SLICE_01.md",
+    "line": 26,
+    "text": "   - 交易當下價格、GPV Rate、Rule Version Snapshot"
+  },
+  {
+    "file": "backend/docs/VERTICAL_SLICE_01.md",
+    "line": 31,
+    "text": "   - GPV snapshot per line"
+  },
+  {
+    "file": "backend/docs/VERTICAL_SLICE_01.md",
+    "line": 50,
+    "text": "   - GPV ledger query"
+  },
+  {
+    "file": "backend/docs/VERTICAL_SLICE_01.md",
+    "line": 62,
+    "text": "- RPV 5/8/12 depth"
+  },
+  {
+    "file": "backend/docs/VERTICAL_SLICE_02.md",
+    "line": 1,
+    "text": "# Vertical Slice 02 — Membership Application → Active → Subscription → RPV"
+  },
+  {
+    "file": "backend/docs/VERTICAL_SLICE_02.md",
+    "line": 33,
+    "text": "- 1,200 RPV per month"
+  },
+  {
+    "file": "backend/docs/VERTICAL_SLICE_02.md",
+    "line": 34,
+    "text": "- never create all future RPV at payment date"
+  },
+  {
+    "file": "backend/docs/VERTICAL_SLICE_02.md",
+    "line": 36,
+    "text": "## 4. R1.0B RPV"
+  },
+  {
+    "file": "backend/docs/VERTICAL_SLICE_02.md",
+    "line": 38,
+    "text": "1. create one RPV ledger event for source Qualification;"
+  },
+  {
+    "file": "backend/docs/VERTICAL_SLICE_05.md",
+    "line": 1,
+    "text": "# v0.5 — Negative Flow, EPV, Global/Welfare, Payout"
+  },
+  {
+    "file": "backend/docs/VERTICAL_SLICE_05.md",
+    "line": 14,
+    "text": "These awards keep `source_event_id`, therefore the refund can identify the exact source GPV."
+  },
+  {
+    "file": "backend/docs/VERTICAL_SLICE_05.md",
+    "line": 26,
+    "text": "- Pair PV"
+  },
+  {
+    "file": "backend/docs/VERTICAL_SLICE_05.md",
+    "line": 44,
+    "text": "## EPV"
+  },
+  {
+    "file": "backend/docs/VERTICAL_SLICE_05.md",
+    "line": 49,
+    "text": "- Excess × 60% = EPV"
+  },
+  {
+    "file": "backend/docs/VERTICAL_SLICE_05.md",
+    "line": 50,
+    "text": "- Self: EPV × 50%"
+  },
+  {
+    "file": "backend/docs/VERTICAL_SLICE_05.md",
+    "line": 51,
+    "text": "- Sponsor Tree G1-G5: EPV × 6% each"
+  },
+  {
+    "file": "backend/docs/VERTICAL_SLICE_05.md",
+    "line": 59,
+    "text": "→ EPV 1,680"
+  },
+  {
+    "file": "backend/docs/VERTICAL_SLICE_05.md",
+    "line": 62,
+    "text": "→ total 1,344 = 80% of EPV"
+  },
+  {
+    "file": "backend/docs/VERTICAL_SLICE_05.md",
+    "line": 65,
+    "text": "5% of GPV."
+  },
+  {
+    "file": "backend/docs/VERTICAL_SLICE_05.md",
+    "line": 77,
+    "text": "- actual current-month weak-side PV >= that level threshold"
+  },
+  {
+    "file": "backend/manifest.json",
+    "line": 17,
+    "text": "    \"EPV uses dedicated BonusAwardType.EPV instead of overloading EQUALIZATION.\","
+  },
+  {
+    "file": "backend/manifest.json",
+    "line": 19,
+    "text": "    \"RPV API and worker effective-direct count now use temporal QualificationStatusHistory.\""
+  },
+  {
+    "file": "backend/openapi.generated.json",
+    "line": 390,
+    "text": "        \"summary\": \"事件歷史樹的十二代 GPV/RPV/EPV，最近 30 天原始事件截至快照的修正淨量；Binary 另含已結算 Carry\","
+  },
+  {
+    "file": "backend/openapi.generated.json",
+    "line": 1732,
+    "text": "        \"description\": \"Current placement counts remain separate from immutable settlement metrics. Historical left/right GPV and carry are returned only for an explicitly selected finalized BINARY_K1 settlementBatchId and its sealed historical snapshot.\","
+  },
+  {
+    "file": "backend/openapi.generated.json",
+    "line": 2609,
+    "text": "        \"description\": \"Core-authoritative RETAIL order, pending payment/fulfillment; no PV/BV recognition. Missing/overlapping product profile fails closed 422. Retry conflicts with identical key/body. Reject client monetary results.\","
+  },
+  {
+    "file": "backend/openapi.generated.json",
+    "line": 4085,
+    "text": "        \"summary\": \"Qualification Active/PV/Award/Carry營運視圖\","
+  },
+  {
+    "file": "backend/openapi.generated.json",
+    "line": 4318,
+    "text": "        \"summary\": \"退貨、GPV反向、Recovery、Replay完整追蹤\","
+  },
+  {
+    "file": "backend/openapi.generated.json",
+    "line": 5838,
+    "text": "        \"summary\": \"Qualification PV帳本\","
+  },
+  {
+    "file": "backend/openapi.generated.json",
+    "line": 5867,
+    "text": "        \"summary\": \"Qualification PV餘額彙總\","
+  },
+  {
+    "file": "backend/openapi.generated.json",
+    "line": 6288,
+    "text": "        \"summary\": \"取消Subscription；未來Recognition取消，已認列月份排程RPV reversal\","
+  },
+  {
+    "file": "backend/openapi.generated.json",
+    "line": 6317,
+    "text": "        \"summary\": \"手動執行單月RPV認列\","
+  },
+  {
+    "file": "backend/openapi.generated.json",
+    "line": 6319,
+    "text": "          \"Admin - RPV\""
+  },
+  {
+    "file": "backend/openapi.generated.json",
+    "line": 6346,
+    "text": "        \"summary\": \"查詢該月RPV向上獎勵\","
+  },
+  {
+    "file": "backend/openapi.generated.json",
+    "line": 6348,
+    "text": "          \"Admin - RPV\""
+  },
+  {
+    "file": "backend/openapi.generated.json",
+    "line": 6539,
+    "text": "        \"summary\": \"處理GPV反向事件與獎金追回\","
+  },
+  {
+    "file": "backend/openapi.generated.json",
+    "line": 6568,
+    "text": "        \"summary\": \"認列重購超額EPV\","
+  },
+  {
+    "file": "backend/openapi.generated.json",
+    "line": 6570,
+    "text": "          \"Admin - EPV\""
+  },
+  {
+    "file": "backend/openapi.generated.json",
+    "line": 7322,
+    "text": "            \"description\": \"Checkout does not recognize PV; null.\""
+  },
+  {
+    "file": "backend/openapi.generated.json",
+    "line": 7744,
+    "text": "              \"PENDING45D\","
+  },
+  {
+    "file": "backend/packages/database/prisma/seed/golden-r1-0b.json",
+    "line": 17,
+    "text": "    \"RPV uses Binary Tree\","
+  },
+  {
+    "file": "backend/packages/database/prisma/seed/golden-r1-0b.json",
+    "line": 18,
+    "text": "    \"EPV upline uses Sponsor Tree\""
+  },
+  {
+    "file": "backend/packages/database/src/gpv-immediate-effects.ts",
+    "line": 19,
+    "text": " * Materializes the non-final effects of an authoritative GPV fact. The caller"
+  },
+  {
+    "file": "backend/packages/database/src/gpv-immediate-effects.ts",
+    "line": 24,
+    "text": "  if(event.pvType!=='GPV'||event.eventType!=='GPV_CREATED') throw new Error('GPV_CREATED_REQUIRED');"
+  },
+  {
+    "file": "backend/packages/database/src/gpv-immediate-effects.ts",
+    "line": 28,
+    "text": "    format:'UCELL_HISTORICAL_REPLAY_V1',kind:'GPV',sourceId:event.eventId,"
+  },
+  {
+    "file": "backend/packages/database/src/historical-replay.ts",
+    "line": 21,
+    "text": "  key:string; awardId:string; awardType:'REFERRAL'|'EQUALIZATION'|'BINARY'|'MATCHING'|'EPV'|'RPV';"
+  },
+  {
+    "file": "backend/packages/database/src/historical-replay.ts",
+    "line": 119,
+    "text": "  if(envelope.kind==='RPV'){"
+  },
+  {
+    "file": "backend/packages/database/src/historical-replay.ts",
+    "line": 122,
+    "text": "      pending('HISTORICAL_SNAPSHOT_MISSING','RPV original event/recognition period/Qualification evidence is required');"
+  },
+  {
+    "file": "backend/packages/database/src/historical-replay.ts",
+    "line": 124,
+    "text": "      pending('HISTORICAL_SNAPSHOT_CORRUPT','RPV evidence must use the original recognition timestamp');"
+  },
+  {
+    "file": "backend/packages/database/src/historical-replay.ts",
+    "line": 127,
+    "text": "      pending('HISTORICAL_SNAPSHOT_MISSING','RPV original business period and timezone evidence is required');"
+  },
+  {
+    "file": "backend/packages/database/src/historical-replay.ts",
+    "line": 129,
+    "text": "      pending('HISTORICAL_SNAPSHOT_CORRUPT','RPV recognition conflicts with original business period/Parameter evidence');"
+  },
+  {
+    "file": "backend/packages/database/src/historical-replay.ts",
+    "line": 131,
+    "text": "    if(path.length!==envelope.recipients.length) pending('HISTORICAL_SNAPSHOT_MISSING','Complete original RPV recipient allocation is required');"
+  },
+  {
+    "file": "backend/packages/database/src/historical-replay.ts",
+    "line": 142,
+    "text": "    if(envelope.kind==='RPV'){"
+  },
+  {
+    "file": "backend/packages/database/src/historical-replay.ts",
+    "line": 146,
+    "text": "        pending('HISTORICAL_SNAPSHOT_CORRUPT','RPV recipient conflicts with original Binary path');"
+  },
+  {
+    "file": "backend/packages/database/src/historical-replay.ts",
+    "line": 149,
+    "text": "      if(directs==null||depth==null) pending('HISTORICAL_SNAPSHOT_MISSING','RPV original recipient eligibility evidence is required');"
+  },
+  {
+    "file": "backend/packages/database/src/historical-replay.ts",
+    "line": 151,
+    "text": "        pending('HISTORICAL_SNAPSHOT_CORRUPT','RPV recipient conflicts with original Binary/Active/Qualification evidence');"
+  },
+  {
+    "file": "backend/packages/database/src/historical-replay.ts",
+    "line": 160,
+    "text": "    if(envelope.kind==='EPV') {"
+  },
+  {
+    "file": "backend/packages/database/src/historical-replay.ts",
+    "line": 162,
+    "text": "      if(recipient.rate==null||!dec(recipient.rate).eq(expectedRate)) pending('HISTORICAL_SNAPSHOT_CORRUPT','EPV rate conflicts with original Parameter snapshot');"
+  },
+  {
+    "file": "backend/packages/database/src/historical-replay.ts",
+    "line": 165,
+    "text": "      if(original!==recipient.qualificationId||historicalRecipientState(envelope.evidence,recipient.qualificationId).active!==recipient.active) pending('HISTORICAL_SNAPSHOT_CORRUPT','EPV recipient conflicts with original Sponsor/Active evidence');"
+  },
+  {
+    "file": "backend/packages/database/src/historical-replay.ts",
+    "line": 173,
+    "text": "  return storeReplaySnapshot(tx,{format:'UCELL_HISTORICAL_REPLAY_V1',kind:'GPV',sourceId:event.eventId,ruleVersionCode:event.ruleVersionCode,at:event.occurredAt.toISOString(),parameters,recipients:[],evidence,"
+  },
+  {
+    "file": "backend/packages/database/src/historical-replay.ts",
+    "line": 179,
+    "text": "  return {key:rpv?award.rpvAwardEventId:award.bonusAwardId,awardId:rpv?award.rpvAwardEventId:award.bonusAwardId,awardType:rpv?'RPV':award.awardType,"
+  },
+  {
+    "file": "backend/packages/database/src/historical-replay.ts",
+    "line": 187,
+    "text": "  const awards=await tx.bonusAward.findMany({where:{sourceEventId:event.eventId,awardType:'EPV'},orderBy:{bonusAwardId:'asc'}});"
+  },
+  {
+    "file": "backend/packages/database/src/historical-replay.ts",
+    "line": 190,
+    "text": "  return storeReplaySnapshot(tx,{format:'UCELL_HISTORICAL_REPLAY_V1',kind:'EPV',sourceId:event.eventId,at:event.occurredAt.toISOString(),ruleVersionCode:event.ruleVersionCode,parameters,recipients,"
+  },
+  {
+    "file": "backend/packages/database/src/historical-replay.ts",
+    "line": 199,
+    "text": "  if(!period||event.occurredAt<period.start||event.occurredAt>=period.end) pending('HISTORICAL_SNAPSHOT_MISSING','Original RPV event does not belong to its recorded business recognition period');"
+  },
+  {
+    "file": "backend/packages/database/src/historical-replay.ts",
+    "line": 203,
+    "text": "  return storeReplaySnapshot(tx,{format:'UCELL_HISTORICAL_REPLAY_V1',kind:'RPV',sourceId:schedule.recognitionId,at:event.occurredAt.toISOString(),ruleVersionCode:event.ruleVersionCode,parameters,recipients,"
+  },
+  {
+    "file": "backend/packages/database/src/historical-replay.ts",
+    "line": 219,
+    "text": "  const originals=await tx.pvLedger.findMany({where:{pvType:'GPV',eventType:'GPV_CREATED',ruleVersionCode:batch.ruleVersionCode,occurredAt:{gte:batch.periodStart,lt:batch.periodEnd}},orderBy:{eventId:'asc'}});"
+  },
+  {
+    "file": "backend/packages/database/src/historical-replay.ts",
+    "line": 222,
+    "text": "    const row=await tx.historicalReplaySnapshot.findUnique({where:{kind_sourceId:{kind:'GPV',sourceId:event.eventId}}});"
+  },
+  {
+    "file": "backend/packages/database/src/historical-replay.ts",
+    "line": 343,
+    "text": "      sourceAwardId:recipient.awardType==='RPV'?undefined:recipient.awardId,sourceEventId:randomUUID(),generationNo:recipient.generation,"
+  },
+  {
+    "file": "backend/packages/database/src/historical-replay.ts",
+    "line": 355,
+    "text": "    if(recipient.awardType==='RPV') {"
+  },
+  {
+    "file": "backend/packages/database/src/historical-replay.ts",
+    "line": 356,
+    "text": "      const anchor=await tx.bonusAward.create({data:{awardType:'RPV',recipientQualificationId:recipient.qualificationId,sourceEventId:randomUUID(),generationNo:recipient.generation,"
+  },
+  {
+    "file": "backend/packages/database/src/historical-replay.ts",
+    "line": 374,
+    "text": "    if(!source.inputs.orderId||!source.inputs.lineId) pending('HISTORICAL_SNAPSHOT_MISSING','Original GPV transaction/line mapping is required');"
+  },
+  {
+    "file": "backend/packages/database/src/historical-replay.ts",
+    "line": 377,
+    "text": "    if(amount.lt(0)) pending('RETURN_AMOUNT_EXCEEDED','Cumulative reversal exceeds original GPV');"
+  },
+  {
+    "file": "backend/packages/database/src/historical-replay.ts",
+    "line": 390,
+    "text": "  const marker=await tx.pvLedger.findFirst({where:{sourceType:'ORDER',sourceId:orderId,pvType:'EPV',eventType:'EPV_CREATED'}});"
+  },
+  {
+    "file": "backend/packages/database/src/historical-replay.ts",
+    "line": 391,
+    "text": "  if(!marker) pending('HISTORICAL_SNAPSHOT_MISSING','Original EPV event is missing');"
+  },
+  {
+    "file": "backend/packages/database/src/historical-replay.ts",
+    "line": 392,
+    "text": "  const original=await loadEnvelope(tx,'EPV',marker.eventId);"
+  },
+  {
+    "file": "backend/packages/database/src/historical-replay.ts",
+    "line": 394,
+    "text": "  const events=await tx.pvLedger.findMany({where:{qualificationId:marker.qualificationId,pvType:'EPV',eventType:'EPV_CREATED',occurredAt:{gte:new Date(month.monthStart),lt:new Date(month.monthEnd)}},orderBy:{eventId:'asc'}});"
+  },
+  {
+    "file": "backend/packages/database/src/historical-replay.ts",
+    "line": 397,
+    "text": "    const loaded=await loadEnvelope(tx,'EPV',event.eventId);rows.push(loaded.row);envelopes.push(loaded.envelope);"
+  },
+  {
+    "file": "backend/packages/database/src/historical-replay.ts",
+    "line": 405,
+    "text": "      if(recipient.rate==null) pending('HISTORICAL_SNAPSHOT_MISSING','Original EPV recipient rate is required');"
+  },
+  {
+    "file": "backend/packages/database/src/historical-replay.ts",
+    "line": 409,
+    "text": "    const previous=await tx.pvLedger.aggregate({where:{reversalOfEventId:envelope.sourceId,pvType:'EPV'},_sum:{amount:true}});"
+  },
+  {
+    "file": "backend/packages/database/src/historical-replay.ts",
+    "line": 411,
+    "text": "    if(!delta.eq(0)) await tx.pvLedger.upsert({where:{eventType_sourceType_sourceId_sourceLineId_pvType:{eventType:'EPV_REPLAY_ADJUSTMENT',sourceType:'RETURN',sourceId:returnCaseId!,sourceLineId:envelope.sourceId,pvType:'EPV'}},update:{},create:{qualificationId:marker.qualificationId,pvType:'EPV',amount:delta,"
+  },
+  {
+    "file": "backend/packages/database/src/historical-replay.ts",
+    "line": 420,
+    "text": " * edits the original recognition, accumulator, Active interval, or EPV row."
+  },
+  {
+    "file": "backend/packages/database/src/historical-replay.ts",
+    "line": 423,
+    "text": "  const first=input.envelopes[0]??pending('HISTORICAL_SNAPSHOT_MISSING','EPV month has no sealed recognition evidence');"
+  },
+  {
+    "file": "backend/packages/database/src/historical-replay.ts",
+    "line": 426,
+    "text": "  // Migration 41 is prospective. Legacy sealed EPV snapshots remain replayable,"
+  },
+  {
+    "file": "backend/packages/database/src/historical-replay.ts",
+    "line": 437,
+    "text": "    recognitionPurpose:'EPV',productProfileVersion:'HISTORICAL_REPLAY',ruleVersionCode:first.ruleVersionCode,parameterSnapshotHash:first.parameters.hash,"
+  },
+  {
+    "file": "backend/packages/database/src/historical-replay.ts",
+    "line": 468,
+    "text": "  const {row,envelope}=await loadEnvelope(tx,'RPV',recognitionId);"
+  },
+  {
+    "file": "backend/packages/database/src/historical-replay.ts",
+    "line": 473,
+    "text": "  if(!original) pending('HISTORICAL_SNAPSHOT_MISSING','Original RPV event is missing');"
+  },
+  {
+    "file": "backend/packages/database/src/historical-replay.ts",
+    "line": 474,
+    "text": "  if(original.pvType!=='RPV'||original.eventType!=='RPV_CREATED'||original.sourceId!==envelope.inputs.subscriptionId||original.sourceLineId!==recognitionId||original.qualificationId!==envelope.evidence.sourceQualification.qualificationId||original.occurredAt.toISOString()!==envelope.at||original.ruleVersionCode!==envelope.ruleVersionCode||!original.amount.eq(envelope.inputs.volume))"
+  },
+  {
+    "file": "backend/packages/database/src/historical-replay.ts",
+    "line": 475,
+    "text": "    pending('HISTORICAL_SNAPSHOT_CORRUPT','RPV original event conflicts with sealed recognition evidence');"
+  },
+  {
+    "file": "backend/packages/database/src/historical-replay.ts",
+    "line": 476,
+    "text": "  const previous=await tx.pvLedger.aggregate({where:{reversalOfEventId:original.eventId,pvType:'RPV'},_sum:{amount:true}});"
+  },
+  {
+    "file": "backend/packages/database/src/historical-replay.ts",
+    "line": 478,
+    "text": "  if(delta.gt(0)) pending('RETURN_AMOUNT_EXCEEDED','Original RPV was reversed beyond its effective volume');"
+  },
+  {
+    "file": "backend/packages/database/src/historical-replay.ts",
+    "line": 479,
+    "text": "  if(!delta.eq(0)) await tx.pvLedger.create({data:{qualificationId:original.qualificationId,pvType:'RPV',amount:delta,sourceType:'MONTHLY_RECOGNITION_REVERSAL',sourceId:envelope.inputs.subscriptionId,sourceLineId:recognitionId,eventType:'RPV_REVERSAL',"
+  },
+  {
+    "file": "backend/packages/database/src/historical-replay.ts",
+    "line": 491,
+    "text": "  const originalEvents=await tx.pvLedger.findMany({where:{sourceType:'ORDER',sourceId:ret.orderId,pvType:'GPV',eventType:'GPV_CREATED'}});"
+  },
+  {
+    "file": "backend/packages/database/src/historical-replay.ts",
+    "line": 493,
+    "text": "  for(const event of originalEvents) await loadEnvelope(tx,'GPV',event.eventId);"
+  },
+  {
+    "file": "backend/packages/database/src/historical-replay.ts",
+    "line": 576,
+    "text": "      await replayRpvCancellation(tx,schedule.recognitionId,cancellation.subscriptionCancellationId,'RPV:'+schedule.recognitionId+':'+cancellation.subscriptionCancellationId,ret.correlationId);"
+  },
+  {
+    "file": "backend/packages/database/src/historical-replay.ts",
+    "line": 590,
+    "text": "    ?await replayRpvCancellation(tx,payload.recognitionId,payload.subscriptionCancellationId,'RPV:'+payload.recognitionId+':'+payload.subscriptionCancellationId,event.correlationId)"
+  },
+  {
+    "file": "backend/packages/database/src/historical-replay.ts",
+    "line": 605,
+    "text": "    const original=await tx.pvLedger.findFirst({where:{sourceType:'ORDER',sourceId:ret.orderId,sourceLineId:line.orderLineId,pvType:'GPV',eventType:'GPV_CREATED'}});"
+  },
+  {
+    "file": "backend/packages/database/src/historical-replay.ts",
+    "line": 606,
+    "text": "    if(!original) pending('HISTORICAL_SNAPSHOT_MISSING','Original GPV line evidence is missing');"
+  },
+  {
+    "file": "backend/packages/database/src/historical-replay.ts",
+    "line": 607,
+    "text": "    const source=await loadEnvelope(tx,'GPV',original.eventId);"
+  },
+  {
+    "file": "backend/packages/database/src/historical-replay.ts",
+    "line": 608,
+    "text": "    const reversal=await tx.pvLedger.upsert({where:{eventType_sourceType_sourceId_sourceLineId_pvType:{eventType:'GPV_REVERSAL',sourceType:'RETURN',sourceId:returnCaseId,sourceLineId:line.returnLineId,pvType:'GPV'}},update:{},create:{qualificationId:original.qualificationId,pvType:'GPV',amount:line.gpvReversalAmount.negated(),sourceType:'RETURN',sourceId:returnCaseId,sourceLineId:line.returnLineId,eventType:'GPV_REVERSAL',ruleVersionCode:original.ruleVersionCode,parameterSnapshotHash:source.envelope.parameters.hash,occurredAt:ret.occurredAt,reversalOfEventId:original.eventId,correlationId:ret.correlationId}});"
+  },
+  {
+    "file": "backend/packages/database/src/historical-replay.ts",
+    "line": 617,
+    "text": "  const events=await tx.pvLedger.findMany({where:{pvType:'GPV',eventType:'GPV_CREATED',ruleVersionCode,occurredAt:{gte:start,lt:end}},orderBy:{eventId:'asc'}});"
+  },
+  {
+    "file": "backend/packages/database/src/historical-replay.ts",
+    "line": 619,
+    "text": "  for(const event of events) sources.push((await loadEnvelope(tx,'GPV',event.eventId)).envelope);"
+  },
+  {
+    "file": "backend/packages/database/src/recognition-active.ts",
+    "line": 8,
+    "text": "export type ConcreteRecognitionType='GPV'|'RPV'|'EPV';"
+  },
+  {
+    "file": "backend/packages/database/src/recognition-active.ts",
+    "line": 43,
+    "text": "  if(!['GPV','RPV','EPV'].includes(input.concreteVolumeType)) throw new Error('GENERIC_VOLUME_CANNOT_BE_RECOGNIZED');"
+  },
+  {
+    "file": "backend/packages/database/src/recognition-active.ts",
+    "line": 106,
+    "text": "    await tx.volumeRecognitionClassification.upsert({where:{volumeEventId:volume.eventId},update:{},create:{volumeEventId:volume.eventId,volumeClass:'PV',concreteVolumeType:input.concreteVolumeType,"
+  },
+  {
+    "file": "backend/packages/shared/test/r1-0b-golden.spec.ts",
+    "line": 6,
+    "text": "  it('locks RPV depths 5/8/12',()=>{expect(R10B.rpvDepth(0)).toBe(5);expect(R10B.rpvDepth(1)).toBe(8);expect(R10B.rpvDepth(2)).toBe(12)});"
+  },
+  {
+    "file": "backend/packages/shared/test/r1-0b-golden.spec.ts",
+    "line": 7,
+    "text": "  it('locks EPV 4800 example at 1680',()=>expect(R10B.epv(4800)).toBe(1680));"
+  },
+  {
+    "file": "backend/scripts/v3-mandatory-golden.matrix.json",
+    "line": 8,
+    "text": "    {\"id\":\"T05\",\"requirement\":\"GPV immediately writes theory and Binary propagation without final Award\",\"command\":\"api-db-gpv\"},"
+  },
+  {
+    "file": "backend/scripts/v3-mandatory-golden.matrix.json",
+    "line": 14,
+    "text": "    {\"id\":\"T11\",\"requirement\":\"Generic PV cannot create an Award\",\"command\":\"api-contract\"},"
+  },
+  {
+    "file": "backend/scripts/v3-mandatory-golden.matrix.json",
+    "line": 15,
+    "text": "    {\"id\":\"T12\",\"requirement\":\"Generic BV cannot create an Award\",\"command\":\"api-contract\"},"
+  },
+  {
+    "file": "backend/scripts/v3-mandatory-golden.matrix.json",
+    "line": 16,
+    "text": "    {\"id\":\"T13\",\"requirement\":\"Historical GPV is classified without duplicate volume\",\"command\":\"api-db-recognition\"},"
+  },
+  {
+    "file": "backend/scripts/v3-mandatory-golden.matrix.json",
+    "line": 19,
+    "text": "    {\"id\":\"T16\",\"requirement\":\"Return recomputes the complete historical month EPV accumulator\",\"command\":\"api-return-replay\"},"
+  },
+  {
+    "file": "deployment/STAGE-DEPLOYMENT.md",
+    "line": 36,
+    "text": "The fixed manifest creates or reuses one minimal Person, Qualification, product, DRAFT order, Warehouse, InventoryItem, and InventoryBalance. Set `UCELL_INVENTORY_WAREHOUSE_ID` to the manifest warehouse ID (`51000000-0000-4000-8000-000000000006`) so the worker uses that inventory. Re-running the seed is idempotent and does not reset an existing balance. It creates no payment, award, payable, PV ledger, settlement, or Golden fixture facts. Review `backend/scripts/stage-uat-seed-manifest.json` before an authorized Stage run."
+  },
+  {
+    "file": "governance/AI_CORE_ALIGNMENT.md",
+    "line": 7,
+    "text": "The current R6 transaction path contains no LLM/AI module writing PV, Award, Settlement, Recovery or Payout. This is **correct for MVP/production safety** and aligned with the Master/MVP specifications, where AI integration is an Adapter/later phase."
+  },
+  {
+    "file": "governance/CURRENT_SSOT_POINTERS.md",
+    "line": 24,
+    "text": "- `governance/sa-decisions/R1_0B_VOLUME_CLASS_CLARIFICATION_20260917.md` — PV/BV abstract volume class clarification; historical GPV remains GPV with no economic migration."
+  },
+  {
+    "file": "governance/CURRENT_SSOT_POINTERS.md",
+    "line": 25,
+    "text": "- `governance/sa-decisions/R1_0B_CORE_LOGIC_ADDENDUM_v2.md` — approved recognition, calendar, Binary evidence, Sponsor traversal, Carry, 45D and Return semantics."
+  },
+  {
+    "file": "governance/RELEASE_ALIGNMENT_REPORT.md",
+    "line": 13,
+    "text": "- Binary theory 12%, weekly caps 450k/900k/1.5m paired PV, strong-side carry, Binary Pool 36% / K1."
+  },
+  {
+    "file": "governance/RELEASE_ALIGNMENT_REPORT.md",
+    "line": 15,
+    "text": "- Subscription 6k/12k/24k with 3/6/12 monthly recognitions; 1,200 RPV/month."
+  },
+  {
+    "file": "governance/RELEASE_ALIGNMENT_REPORT.md",
+    "line": 16,
+    "text": "- RPV uses Binary Tree and 0/1/2+ direct unlock 5/8/12 generations, NT$100/generation."
+  },
+  {
+    "file": "governance/RELEASE_ALIGNMENT_REPORT.md",
+    "line": 17,
+    "text": "- EPV uses REPURCHASE excess above 2,000 x 60%; Self 50%; Sponsor G1-G5 each 6%."
+  },
+  {
+    "file": "governance/a-decision-return-replay/DECISION.md",
+    "line": 5,
+    "text": "1. K0/RPV replay uses the original transaction recognition month's historical Qualification, Binary Tree, Active and Parameter snapshots. EPV uses the original calculation period's Sponsor Tree, Active, Qualification and Parameter snapshots. Current state is never a substitute. Missing evidence must fail closed with HISTORICAL_SNAPSHOT_MISSING."
+  },
+  {
+    "file": "governance/a-decision-return-replay/DECISION.md",
+    "line": 7,
+    "text": "3. Cumulative effective transaction state drives PV/BV/RPV/EPV and downstream awards. Original remaining reversible amount caps partial returns. Return event IDs and idempotency keys are unique."
+  },
+  {
+    "file": "governance/a-decision-return-replay/DECISION.md",
+    "line": 12,
+    "text": "- Historical EPV parameters: `ReversalService.processReturn` requires the original recognition audit snapshot. Missing snapshot is rethrown and rolls back the transaction instead of being converted into a successful pending marker. Regression verifies no processed audit or outbox is emitted."
+  },
+  {
+    "file": "governance/a-decision-return-replay/DECISION.md",
+    "line": 17,
+    "text": "- Complete immutable historical Qualification/Tree/Active envelopes are not captured by every original recognition/settlement path. Temporal-table queries alone do not prove the original snapshot. K0/RPV/EPV entitlement replay must not be declared complete."
+  },
+  {
+    "file": "governance/a-decision-return-replay/DECISION.md",
+    "line": 19,
+    "text": "- Worker return/RPV handlers require the same snapshot validation and correction owner; API safeguards do not establish Worker coverage."
+  },
+  {
+    "file": "governance/a-decision-return-replay/DECISION.md",
+    "line": 20,
+    "text": "- RPV partial refund allocation across subscription recognition months and fixed award entitlement eligibility needs explicit SSOT support. Do not assume proportional fixed-100 awards."
+  },
+  {
+    "file": "governance/a-decision-return-replay/DECISION.md",
+    "line": 21,
+    "text": "- BV mapping is not represented by the existing GPV/RPV/EPV enum; no BV alias is inferred."
+  },
+  {
+    "file": "governance/a-decision-return-replay/DECISION.md",
+    "line": 29,
+    "text": "The implementation deliberately does not choose eligible-consumption scope, PV/BV event mapping, production operational calendar, or EPV timezone. Missing evidence raises `HISTORICAL_SNAPSHOT_MISSING`; current state is never used as a fallback. Evidence and test results are in `governance/phase2-return-replay/REPORT.md` and `final/db-regression.json`."
+  },
+  {
+    "file": "governance/admin-full-test/REPORT.md",
+    "line": 21,
+    "text": "完整profile重用既有Ledger/Active/RPV/Rule/Bonus/Return/EPV/GlobalPool/Payout/Settlement等module；legacy AdjustmentModule因缺兩個replay方法仍未納入DEV可執行範圍，沒有寫stub、修改公式、transpile-only或掩蓋完整Backend build FAIL。沒有公開bind或外部bank送出。DEV profile strict build與完整Backend build分開列示。"
+  },
+  {
+    "file": "governance/admin-full-test/REPORT.md",
+    "line": 29,
+    "text": "限制：付款批次沒有可分配獎金，這次驗證空批次狀態／雙審流程，不宣稱非空付款金額計算、recovery offset或銀行執行已驗收。Workflow未確認review fee，approval422為正確拒絕，不把它當核准成功。Subscription只測未來月份取消，沒有已認列RPV reversal／多筆月累計EPV驗收。文件只metadata/hash，沒有外部檔案上傳。原SSOT矛盾golden常數仍列LegacyTestDrift，本輪沒有改制度。Legacy replay與正式五球fixture／148 domain TODO仍未解決。"
+  },
+  {
+    "file": "governance/analytics/IMPLEMENTATION-INVENTORY.md",
+    "line": 18,
+    "text": "| PV/RPV/EPV/Carry 趨勢 | Core 有相關 ledger，Sonar 無 adapter | 已接最近 30 天原事件修正淨量 GPV/RPV/EPV、歷史各代／左右與根球最新已結算 Carry；泛型 PV 不加總，任意期間與 Carry 趨勢尚缺 |"
+  },
+  {
+    "file": "governance/analytics/IMPLEMENTATION-INVENTORY.md",
+    "line": 32,
+    "text": "3. 第三階段已接 GPV/RPV/EPV 與 Carry；接續補任意期間、分區增量及 Carry 趨勢，維持歷史證據與單位分離。"
+  },
+  {
+    "file": "governance/analytics/PHASE2-DELIVERY.md",
+    "line": 39,
+    "text": "尚缺有效互動事件／完整健康總分、PV/RPV/EPV/Carry adapter、來源篩選、Outbox 增量、受控分析匯出、保留清除流程、真實資料 UAT 及運轉 SLO。缺少過去快照的月份仍無數值，功能完成不能替代觀測資料。"
+  },
+  {
+    "file": "governance/analytics/PHASE3-VOLUME-DELIVERY.md",
+    "line": 9,
+    "text": "GPV、RPV、EPV 各自保留原始量、帶正負號調整、淨量與原始事件數；四位小數以 fixed-point bigint 精確加總，JSON 使用十進位字串，圖表僅為相對量。PV 是分類且可能有舊泛型 ledger，不可擅自等同 GPV 或 GPV+RPV+EPV；genericPV 明確為 UNAVAILABLE。GLOBAL 和其他 ruleVersion 也不混入。"
+  },
+  {
+    "file": "governance/analytics/PHASE3-VOLUME-DELIVERY.md",
+    "line": 11,
+    "text": "每筆來源先驗證 Core HistoricalReplaySnapshot 的 hash、參數版本、事件 ID／時間／資格／原始量。GPV/EPV 用 eventId 查證，RPV 用 recognitionId（sourceLineId）查證並驗 eventId。取保存的 Sponsor/Binary 歷史樹分別歸屬，起點本身排除，最多第 12 代。Binary 左右區採原事件時根球第一條邊。調整始終歸入原事件的歷史位置，即使現在已移動；不從現況樹推導。"
+  },
+  {
+    "file": "governance/analytics/PHASE3-VOLUME-DELIVERY.md",
+    "line": 21,
+    "text": "輸出原始左右 Carry、修正後左右 Carry、periodEnd、修正來源與序號。單位為 GPV 點數；Carry 是結餘，不與 30 天業績流量相加。Sponsor 表不提供 Carry。"
+  },
+  {
+    "file": "governance/analytics/REPORT.md",
+    "line": 10,
+    "text": "- Historical volume/carry projection 保持 Sponsor Tree 與 Binary Tree 分離，沿原 evidence path 彙總 GPV/RPV/EPV，使用固定四位小數整數運算；未 finalized 或 correction evidence 不完整時顯示 unavailable，不以零值替代。"
+  },
+  {
+    "file": "governance/analytics/REPORT.md",
+    "line": 42,
+    "text": "仍未完成：完整 cohort-age 留存熱圖、來源與自選期間篩選、PV／RPV／EPV／Carry adapter、有效互動事件、完整健康總分、Outbox 增量 projector、定時刷新／運轉 SLO、分析專用匯出、正式資料保留清除程序、真實 UAT 校準。這些均列在盤點清單，不能以第一版畫面完成代替。"
+  },
+  {
+    "file": "governance/commerce-b1/REPORT.md",
+    "line": 72,
+    "text": "4. Package RecognitionConfig resolution and return allocation remain fail closed and Core-owned. No PV/BV/RPV/EPV/Bonus/Carry/Settlement semantics are inferred."
+  },
+  {
+    "file": "governance/commerce-fulfillment-audit/MIGRATION_IMPACT.md",
+    "line": 20,
+    "text": "- Decimal price 沿用 Decimal(18,2)，volume/stock 分開；stock unit精度/serial integrality須決定，不轉 float 計算，不遷移 PV/BV 欄位。"
+  },
+  {
+    "file": "governance/commerce-fulfillment-audit/REPORT.md",
+    "line": 123,
+    "text": "另需 Core 保持 fail closed：package recognition resolver、Active-duration stacking/start/renewal、package return allocation、歷史 GPV->PV/BV mapping。這些不授權 Commerce 改 monetary logic。"
+  },
+  {
+    "file": "governance/commerce-fulfillment-audit/SCHEMA_PROPOSAL.md",
+    "line": 10,
+    "text": "| Product version / recognition profile | commerce.product_rule_profile.product_rule_profile_id；不可將其 gpvRate 解釋為 BV |"
+  },
+  {
+    "file": "governance/commerce-fulfillment-audit/TEST_PLAN.md",
+    "line": 18,
+    "text": "| G01 | 台新 online -> PAID -> reserve -> pick/serial -> QC -> 黑貓 -> invoice -> delivered（B2–B7） | explicit package recognition reference、1 stock serial、configured mock providers；HTTP 每一關 | 1 verified capture / paid bridge / reservation / shipment；QC 6 checks；獨立 invoice receipt；Core 未推算 PV/BV；全程 correlation links |"
+  },
+  {
+    "file": "governance/connected-dev-final-review/REPORT.md",
+    "line": 48,
+    "text": "| Application implementation | RPV source ID、polymorphic payable query、audit JSON null、EPV temporal plan lookup 已修復；replay integration 未解決 |"
+  },
+  {
+    "file": "governance/connected-dev-final-review/REPORT.md",
+    "line": 51,
+    "text": "| Specification ambiguity | replay pool/recipient/跨期 carry 契約、EPV 同月多筆及退貨 allocation、正式 cut-off、文件控制仍待核准來源 |"
+  },
+  {
+    "file": "governance/connected-dev-final-review/REPORT.md",
+    "line": 55,
+    "text": "Legacy Test Drift：前一 commit d3e0764 已修正測試 gate 去讀現有 shared 常數，未修改 production 規則。本輪依最新指示正式登錄 drift 並保存 df13581 原檔；沒有再改 EPV/pool 語意。原始來源見 golden-domain-test.legacy.mjs.txt，歷史修正與 hash 見 legacy-test-drift.json。不能因修正後 golden PASS 宣稱完整 monetary correctness。"
+  },
+  {
+    "file": "governance/connected-dev-phase1/REPORT.md",
+    "line": 51,
+    "text": "變更用途：固定 Prisma 6.19.3／TypeScript 5.9.3／NestJS 11 與單一 Fastify；補直接依賴、pnpm build allow-list、Vite client 型別、API build config、Jest runners；修正 Windows file URL、crypto import、Prisma DbNull、RPV primary key、EPV payment-time plan snapshot 與 polymorphic payable read model；強化 root tests／CI／RC 的 TODO gate；更新 Docker toolchain 與 lock policies；修補 audit 漏洞。"
+  },
+  {
+    "file": "governance/connected-dev-phase1/REPORT.md",
+    "line": 173,
+    "text": "注意：golden-domain-test 的 process PASS 不採認為制度驗證，因為其 EPV amount×0.70 與 pool 42/36/12/5/5，和其他 frozen 定義 excess-above-2000×0.60／42/36/15/5/2 矛盾；原檔保留。"
+  },
+  {
+    "file": "governance/connected-dev-phase1/REPORT.md",
+    "line": 185,
+    "text": "- Application implementation：RPV source ID, EPV temporal plan lookup, polymorphic award payable query, audit DbNull, gate entrypoints。FIXED; 3 isolated API regression tests PASS; no formula changes or official monetary result writes。"
+  },
+  {
+    "file": "governance/connected-dev-phase1/REPORT.md",
+    "line": 189,
+    "text": "- Specification ambiguity：Single-recipient legacy adjustment versus period-wide replay/K1/K2/carry-chain scope; contradictory golden-domain EPV/pools; README source precedence differs from current user instructions; missing approved source documents/links。STOPPED affected semantic work; formal clarification required。"
+  },
+  {
+    "file": "governance/core-closure/PASS-FAIL-MATRIX.md",
+    "line": 76,
+    "text": "| Frozen bonus Golden cases | PASS | Referral 15/20/25, Leader G5=10%, RPV 5/8/12, historical EPV Sponsor allocation |"
+  },
+  {
+    "file": "governance/core-closure/PASS-FAIL-MATRIX.md",
+    "line": 79,
+    "text": "| Canonical recognition boundary | PASS | No eligible ConsumptionRecognition means no EPV accumulator input; PaymentConfirmed creates no volume ledger itself. |"
+  },
+  {
+    "file": "governance/core-closure/PASS-FAIL-MATRIX.md",
+    "line": 81,
+    "text": "| SALE outbox redelivery idempotency | PASS | Real PostgreSQL, production Worker handler and lease executed twice; one GPV row and one historical snapshot. |"
+  },
+  {
+    "file": "governance/core-closure/PRODUCTION-READINESS-MATRIX.md",
+    "line": 8,
+    "text": "| Remaining SA decisions | BLOCKED | Production cutoff values, historical GPV to formal PV/BV migration mapping, and Matching inactive-sponsor skip/stop/compression remain undecided; affected paths stay fail closed |"
+  },
+  {
+    "file": "governance/core-closure/REPLAY-MATRIX.md",
+    "line": 9,
+    "text": "| EPV | Historical month recomputation | Expanded concurrent/cross-period cases |"
+  },
+  {
+    "file": "governance/core-closure/REPLAY-MATRIX.md",
+    "line": 10,
+    "text": "| RPV | Historical Binary allocation | Expanded concurrency workload |"
+  },
+  {
+    "file": "governance/core-closure/REPORT.md",
+    "line": 68,
+    "text": "- The EPV exclusion test now uses the canonical ConsumptionRecognition boundary: an order with no eligible recognition event is absent from the monthly accumulator."
+  },
+  {
+    "file": "governance/core-closure/REPORT.md",
+    "line": 69,
+    "text": "- The former SALE_CONFIRMED-to-GPV assertion now executes `OrderService.confirmPayment` and verifies PaymentConfirmed writes payment/outbox evidence but no VolumeRecognition ledger. It does not infer the unresolved historical GPV-to-PV/BV mapping."
+  },
+  {
+    "file": "governance/core-closure/REPORT.md",
+    "line": 77,
+    "text": "- A real PostgreSQL integration test executes the production Worker sale handler and outbox lease twice. It verifies one GPV ledger row, one sealed historical snapshot and a PROCESSED outbox state."
+  },
+  {
+    "file": "governance/core-closure/REPORT.md",
+    "line": 96,
+    "text": "## RPV unlock-depth continuation"
+  },
+  {
+    "file": "governance/core-closure/REPORT.md",
+    "line": 100,
+    "text": "- The existing isolated Golden evidence for RPV Binary allocation remains the DB-level companion evidence. No inactive-sponsor skip/stop/compression behavior is inferred; both affected cases remain `PENDING_DECISION`."
+  },
+  {
+    "file": "governance/core-closure/REPORT.md",
+    "line": 125,
+    "text": "- Frozen Referral 15/20/25, Equalization Leader G5=10%, RPV 5/8/12 Binary allocation, and EPV Sponsor allocation now have executable Golden dataset assertions backed by the frozen constants and isolated historical DB evidence."
+  },
+  {
+    "file": "governance/core-closure/REPORT.md",
+    "line": 133,
+    "text": "- Isolated DB Golden: PASS with all 25 migrations and connected return/outbox, 102 membership/payout, RPV, Member/Admin, and identity assertions."
+  },
+  {
+    "file": "governance/core-closure/REPORT.md",
+    "line": 138,
+    "text": "Pending decisions remain limited to production clock values, historical GPV-to-PV/BV migration mapping, and inactive Matching Sponsor edge semantics."
+  },
+  {
+    "file": "governance/core-closure/TODO-CLOSURE-20260917.md",
+    "line": 7,
+    "text": "- Partial return GPV reversal verifies an existing historical GPV fact. It does not create or assume a GPV-to-PV/BV migration mapping. Real DB evidence confirms `-500` for a 50% return, links the reversal to the original GPV event, and links the reversal line to the posted ReturnLine."
+  },
+  {
+    "file": "governance/core-closure/TODO-CLOSURE-20260917.md",
+    "line": 8,
+    "text": "- The two inactive-upline cases exercise RPV traversal on the historical Binary Tree. They do not decide Matching traversal behavior. Real DB evidence confirms generation 1 remains present with zero entitlement when inactive and generation 2 is independently evaluated and paid when active."
+  },
+  {
+    "file": "governance/core-closure/TODO-CLOSURE-20260917.md",
+    "line": 20,
+    "text": "- Historical GPV to formal PV/BV migration mapping."
+  },
+  {
+    "file": "governance/integrations/provider-foundation/GOLDEN-JOURNEY.md",
+    "line": 25,
+    "text": "| 3 | Load Product/Package offer | Price, ProductProfile, PV/BV fields and eligibility are Backend-authoritative; UI performs no monetary calculation |"
+  },
+  {
+    "file": "governance/integrations/provider-foundation/GOLDEN-JOURNEY.md",
+    "line": 32,
+    "text": "| 10 | Execute approved consumption/volume recognition | Separate Core events use versioned product/rule/parameter evidence; provider never calculates PV/BV/RPV/EPV |"
+  },
+  {
+    "file": "governance/integrations/provider-foundation/INTEGRATION-ARCHITECTURE.md",
+    "line": 19,
+    "text": "5. Provider callbacks never write PV, BV, RPV, EPV, Award, Ledger, Carry or Settlement directly."
+  },
+  {
+    "file": "governance/integrations/provider-foundation/REPORT.md",
+    "line": 26,
+    "text": "The migration does not add or modify Award, Ledger, Carry, Settlement, PV, RPV or EPV data."
+  },
+  {
+    "file": "governance/issue-2-phase1/ADMIN-LOW-FIDELITY-WIREFRAMES.md",
+    "line": 76,
+    "text": "[Frozen][Active][K0][K1][K2][Pools][45D][Payable]"
+  },
+  {
+    "file": "governance/issue-2-phase1/COMPONENT_SPEC.md",
+    "line": 31,
+    "text": "| Commerce | `ConnectedShop`, `ConnectedOrderDetails`, package selectors, delivery editor | Client submits product/rule IDs and quantities, never official totals/PV |"
+  },
+  {
+    "file": "governance/issue-2-phase1/INFORMATION_ARCHITECTURE.md",
+    "line": 15,
+    "text": "      ├─ Home: Active, repurchase, PV/RPV/EPV, bonus"
+  },
+  {
+    "file": "governance/issue-2-phase1/MEMBER-LOW-FIDELITY-WIREFRAMES.md",
+    "line": 28,
+    "text": "[PV] [RPV] [EPV]"
+  },
+  {
+    "file": "governance/issue-2-phase1/MEMBER-LOW-FIDELITY-WIREFRAMES.md",
+    "line": 53,
+    "text": "[PV] [RPV] [EPV]"
+  },
+  {
+    "file": "governance/issue-2-phase1/MEMBER-LOW-FIDELITY-WIREFRAMES.md",
+    "line": 65,
+    "text": "[CALCULATED—45D—EFFECTIVE—PAYABLE—PAID]"
+  },
+  {
+    "file": "governance/issue-2-phase1/MEMBER-LOW-FIDELITY-WIREFRAMES.md",
+    "line": 80,
+    "text": "[Sticky cart: items only, no client total/PV]"
+  },
+  {
+    "file": "governance/issue-2-phase1/PAGE_MAPPING.md",
+    "line": 13,
+    "text": "| `/performance` | Period performance | `GET performance?q&period` | PV/RPV/EPV authoritative; left/right settlement fields pending |"
+  },
+  {
+    "file": "governance/issue-2-phase1/PAGE_MAPPING.md",
+    "line": 15,
+    "text": "| `/shop` | Products, cart, delivery, packages | `GET products`, `GET/PATCH delivery-profile`, package endpoints, `POST orders`, `GET order/:id` | Core price authoritative; PV/fulfillment may be pending; 409/422/idempotency |"
+  },
+  {
+    "file": "governance/issue-2-phase1/PAGE_MAPPING.md",
+    "line": 45,
+    "text": "| `/products` | Product reference | admin products | Super Admin, Order Ops, Compliance; prospective PV/BV terminology gap |"
+  },
+  {
+    "file": "governance/issue-2-phase1/PAGE_MAPPING.md",
+    "line": 67,
+    "text": "| Member product PV | Null | Versioned independent PV/BV product profile |"
+  },
+  {
+    "file": "governance/issue-2-phase1/TERMINOLOGY_AUDIT.md",
+    "line": 22,
+    "text": "| PENDING45D | `45日等待期` | Preserve enum in detail | `等待生效` alone loses the 45D distinction |"
+  },
+  {
+    "file": "governance/issue-2-phase1/TERMINOLOGY_AUDIT.md",
+    "line": 44,
+    "text": "| `PENDING45D` / `PENDING_45D` | 45日等待期 |"
+  },
+  {
+    "file": "governance/issue-2-phase1/TERMINOLOGY_AUDIT.md",
+    "line": 56,
+    "text": "1. Products and Orders still contain `GPV Rate`, `金額/GPV` and `Outbox產生PV` copy. Prospective PV and BV are independent fields; UX must not reinterpret historical GPV or assert a mapping."
+  },
+  {
+    "file": "governance/issue-2-phase1/TERMINOLOGY_AUDIT.md",
+    "line": 59,
+    "text": "4. Member Binary `volume` lacks an approved PV/BV/GPV label. Display `左右區業績（Core 回傳）` until the read model defines its unit."
+  },
+  {
+    "file": "governance/issue-2-phase1/UX_AUDIT.md",
+    "line": 49,
+    "text": "| UX-016 | Medium | Product/Order copy still mentions GPV in places | Do not reinterpret it as prospective PV/BV; align contract first |"
+  },
+  {
+    "file": "governance/issue-2-phase2/MEMBER-BINARY-SETTLEMENT-READ-MODEL.md",
+    "line": 7,
+    "text": "GPV and carry only from the sealed `BINARY_K1` historical replay snapshot for that"
+  },
+  {
+    "file": "governance/issue-2-phase2/MEMBER-BINARY-SETTLEMENT-READ-MODEL.md",
+    "line": 30,
+    "text": "This slice changes no PV, BV, GPV, Carry, K1, settlement, or replay calculation."
+  },
+  {
+    "file": "governance/issue-2-phase2/REPORT.md",
+    "line": 58,
+    "text": "- Historical period GPV and carry reject missing, negative, non-finite, unsafe-range, mismatched, draft, or corrupt evidence. No current-state fallback is used."
+  },
+  {
+    "file": "governance/local-ssot-review/REPORT.md",
+    "line": 13,
+    "text": "| S02 | R1.0 報備一致版手冊 v1.3 | 標示已報備比例、pool 與 EPV 算例 |"
+  },
+  {
+    "file": "governance/local-ssot-review/REPORT.md",
+    "line": 24,
+    "text": "S02 section 12.2／P0422、20.3／P0567：4,800 減 2,000 的超額部分乘 60%，EPV=1,680；S01 同段、S05 P0647、S06 P0026 交叉一致。"
+  },
+  {
+    "file": "governance/local-ssot-review/REPORT.md",
+    "line": 26,
+    "text": "因此第一階段所保留的 backend/scripts/golden-domain-test.mjs 之 amount×70%、EPV(2400)=1680 與 42/36/12/5/5 pool 是明確 Test implementation defect，不是需要新商業規則的問題。"
+  },
+  {
+    "file": "governance/local-ssot-review/REPORT.md",
+    "line": 27,
+    "text": "本次移除该 gate 內錯誤重複公式，直接讀取既有 packages/shared/src/r1-0b-golden.ts 的 R10B/k，並以來源文件的明確 pool 各項與 4,800 算例斷言。保留 Leader G5、RPV depth、K-factor bounds，新增基準/低於基準 EPV 為零的边界檢查。"
+  },
+  {
+    "file": "governance/local-ssot-review/REPORT.md",
+    "line": 35,
+    "text": "3. EPV 時間/累計口徑：S02 P0417-P0418 寫「當月合格消費」累計超額；S06 P0026 的「單次消費超過當月…基準」措辭仍不足以決定多筆同月交易與退貨的 allocation/idempotency 邊界。本次只使用各文件一致的單筆 4,800 算例，不改 production recognizeOrder 語意。"
+  },
+  {
+    "file": "governance/local-ssot-review/REPORT.md",
+    "line": 45,
+    "text": "本次解決分類：Test implementation（錯誤 golden 常數/算例）；未解決分類：Specification ambiguity（replay/EPV aggregation/cut-off/文件控制）與 Test implementation（DB fixture）。Backend build/DB golden/HTTP/security/UAT/backup 等仍沿用第一階段 BLOCKED/FAIL，沒有因 offline golden PASS 宣稱完整 release 通過。"
+  },
+  {
+    "file": "governance/member-admin-integration/PLAN.md",
+    "line": 3,
+    "text": "日期：2026-09-16。制度基準：R1.0B FROZEN。本規劃以現有 API 為範圍，不新增未核准的金流、PV/BV 或資格制度。"
+  },
+  {
+    "file": "governance/member-admin-integration/PLAN.md",
+    "line": 43,
+    "text": "| 5 | 訂閱／認列 → Member repurchase | 待工程與設定：versioned timezone/scheduling、取消重送/rollback、歷史 RPV；不得自行決定 production cut-off 或比例分攤 |"
+  },
+  {
+    "file": "governance/member-admin-integration/PLAN.md",
+    "line": 50,
+    "text": "- 收款測試只證明 Core 手動確認／transactional outbox。未執行外部 payment gateway、SALE_CONFIRMED-to-PV 正式 mapping、ERP 出貨或 LINE push。"
+  },
+  {
+    "file": "governance/member-admin-integration/REPORT.md",
+    "line": 23,
+    "text": "Cross-end cases prove Admin catalog creation/price updates, two owned balls matching Admin Person view, shared Person display name, Member checkout visible through Admin order/ball filters, independent old/new prices, identical checkout retries, conflicting carts, rate-change rollback, full-amount payment validation, one payment/SALE_CONFIRMED event across duplicate delivery, PAID reflected through both detail APIs and Member list, pending fulfillment, other-ball exclusion and bidirectional bearer denial. Payment queues an event; no PV or bonus is generated by these integration commands."
+  },
+  {
+    "file": "governance/member-admin-integration/REPORT.md",
+    "line": 38,
+    "text": "Planning and acceptance criteria: [PLAN.md](PLAN.md). Integration is Connected DEV only: formal LINE/LIFF/Entra, device/browser UAT, operating configuration and Production remain pending/blocked. Original eligible-consumption/PV/BV/cut-off decisions are unchanged. This batch does not convert any TODO or complete Backend Phase 3. Concurrent Admin UX work is preserved; its uncommitted files are not included in this commit or newly certified by these batch logs."
+  },
+  {
+    "file": "governance/phase2-return-replay/REPORT.md",
+    "line": 5,
+    "text": "Phase 2 implements historical, append-only replay for GPV/K0, Binary/K1, Matching/K2, EPV monthly threshold allocation, RPV cancellation, multi-return carry continuation, and the production outbox consumer. Every replay reads the sealed original Qualification, Sponsor/Binary, Active, and Parameter evidence. Missing evidence fails closed with `HISTORICAL_SNAPSHOT_MISSING`."
+  },
+  {
+    "file": "governance/phase2-return-replay/REPORT.md",
+    "line": 7,
+    "text": "The DB regression harness passed 81 assertions (fixtures are transactionally rolled back). It covers partial and repeated returns, cross-threshold EPV, historical recipient changes, inactive recipients, duplicate/idempotency keys, complete period replay, carry continuation, RPV cancellation, PAID clawback, two payout batches, append-only mutation guards, and missing evidence. The Admin DEV full-access flow passed 43 HTTP requests. `http://127.0.0.1:4173/` and its API proxy returned HTTP 200."
+  },
+  {
+    "file": "governance/phase2-return-replay/REPORT.md",
+    "line": 31,
+    "text": "This paragraph describes Phase 2 status only. SA Phase 3 has approved Asia/Taipei timezone and original RPV allocation evidence; eligible-consumption scope, PV/BV mapping, and production calendar remain pending. Formal security/UAT credentials remain absent. See the Phase 3 report for implementation evidence."
+  },
+  {
+    "file": "governance/phase3-connected-dev/DECISION.md",
+    "line": 7,
+    "text": "| First accounting/business timezone is Asia/Taipei; timestamps remain UTC | Migration `20260915160000_sa_phase3_business_timezone` creates versioned accounting/EPV timezone parameters effective 2026-09-15 local midnight. No old parameter or sealed snapshot is updated. | Default/test DB migration logs; isolated DB migration replay |"
+  },
+  {
+    "file": "governance/phase3-connected-dev/DECISION.md",
+    "line": 8,
+    "text": "| EPV month uses business timezone rather than UTC month | Existing `EpvMonthService.bounds` uses the captured timezone in PostgreSQL; DB tests straddle Taipei midnight at UTC 16:00. Future UTC in the fixture is TEST_ONLY, not an operational decision. | `default-db-golden.txt`, repeat run |"
+  },
+  {
+    "file": "governance/phase3-connected-dev/DECISION.md",
+    "line": 9,
+    "text": "| RPV uses original recognition Qualification/Binary/Active/Parameter/period/recipient evidence | `sealRpvEvent` captures recognition month, timezone, UTC period bounds and original graph/award recipients. `verifyReplayEnvelope` rejects missing or inconsistent evidence and `replayRpvCancellation` verifies the original ledger event. | `db-regression.txt`; original Binary parent changed after capture; original recipient still receives adjustment |"
+  },
+  {
+    "file": "governance/phase3-connected-dev/DECISION.md",
+    "line": 13,
+    "text": "| Return/downstream replay does not rewrite original historical monetary records (existing SA append-only decision) | Production replay remains unchanged. v060/v062 regression checks all original Binary/Matching settlement batches and original carry/award rows after cumulative returns; cancellation retains its schedule row and appends RPV reversal. A later reversal contributes to the original event period and carry continues from the prior replay result. | 101 DB regression assertions; focused v060/v062 Jest cases use private evidence files, preserving CLI canonical output |"
+  },
+  {
+    "file": "governance/phase3-connected-dev/DECISION.md",
+    "line": 15,
+    "text": "| EPV recipients follow Sponsor and historical Active evidence (existing SSOT/SA rule) | Test-only fixtures use the real recognition service, archived Parameter/Qualification/Active evidence and separate Sponsor/Binary paths. Consumption scope and event mapping remain unapproved. | Original Active self 840, five Active Sponsor generations 100.8 each, inactive Sponsor zero and Binary-only ancestor no award; existing return regression preserves historical Sponsor despite current-state changes |"
+  },
+  {
+    "file": "governance/phase3-connected-dev/DECISION.md",
+    "line": 17,
+    "text": "Order profile engineering traceability (existing versioned/traceable rule and deterministic application calculation requirements, no new SA decision): checkpoint `17bc149` precedes the real OrderService/IdempotencyService profile test and missing-profile rejection test. TEST_ONLY persistence mocks verify server-side price/profile selection, effective period lookup, sealed per-line metadata, duplicate retaining original snapshot, and no order/payment/outbox/audit writes without a profile. This does not approve fixture rates/eligibility as production rules, formal PV/BV mapping or consumption scope, and does not claim DB concurrency/rollback ev [long source line; inspect file]"
+  },
+  {
+    "file": "governance/phase3-connected-dev/DECISION.md",
+    "line": 19,
+    "text": "Vertical slice engineering traceability (existing idempotency and Transactional Outbox requirements, no new SA decision): checkpoint `a6fd20a` precedes three executable Person/payment/outbox cases. Actual services use stateful persistence mocks; assertions check duplicate/conflicting commands, one payment, PAID rejection of a second key, exact sealed SALE_CONFIRMED payload/correlation and the transaction-local audit delegate. This is sequential service evidence, not concurrent DB payment or rollback verification. Formal PV/BV mapping and consumption scope are not inferred."
+  },
+  {
+    "file": "governance/phase3-connected-dev/DECISION.md",
+    "line": 23,
+    "text": "Replay delta traceability (existing SA deterministic cumulative return/append-only decision): checkpoint `1c03647` precedes six actual DB assertions linking positive historical deltas to newly appended compensating awards and negative deltas to original-award recovery records, preserving original award contents and historical metadata. Duplicate return processing preserves posting/award/recovery counts. Three corresponding v060 TODOs become executable; fixture amounts/rates do not establish production PV/BV mapping or eligible scope."
+  },
+  {
+    "file": "governance/phase3-connected-dev/DECISION.md",
+    "line": 27,
+    "text": "RPV recognition traceability (existing original recognition evidence and idempotency requirements): checkpoint `bce1d46` precedes two executable TODO conversions and five real DB assertions through RpvService. Original ledger Qualification/source/dueAt and schedule event/month identity are checked; sequential duplicate leaves exactly one original ledger event and retains all original awards plus the entire historical snapshot. No concurrent recognition or approved operational calendar/eligible scope claim is made."
+  },
+  {
+    "file": "governance/phase3-connected-dev/DECISION.md",
+    "line": 29,
+    "text": "Concurrent RPV engineering traceability: checkpoint `4e64446` precedes a fresh Golden DB controlled-read-barrier regression through actual RpvService Serializable transactions. One committed recognition, losing-delivery conflict, explicit external redelivery and retained original event/snapshot identity are required. The fixture has no uplines, so recipient-allocation concurrency remains outside this test. No automatic retry or production calendar approval is inferred; TODO count remains unchanged."
+  },
+  {
+    "file": "governance/phase3-connected-dev/DECISION.md",
+    "line": 31,
+    "text": "Phase 3 recipient concurrency traceability: checkpoint `9c6fbee7c7856fae329b99e74e883608641a1a9b` precedes the historical RPV recipient extension. Real DB recognition archives inactive G1 and Active G2; subsequent current Binary/Active changes cannot redirect entitlement. Controlled parallel replay plus external retry must preserve original awards/snapshot, one historical G2 recovery, inactive G1 zero and one original-event reversal. Active branch is now `codex/backend-phase3`; stable checkpoint reports/matrix/inventory are pushed normally. This fixture does not approve calendar/scope or claim K1/K2/carry TODO completion."
+  },
+  {
+    "file": "governance/phase3-connected-dev/DECISION.md",
+    "line": 33,
+    "text": "Pending Decision: eligible-consumption scope, formal PV/BV mapping, production operational calendar/cut-off. No proportional RPV partial-refund allocation across months is inferred without explicit original allocation facts. Existing subscription UTC scheduling is an engineering/calendar issue to address without choosing an unapproved operational calendar."
+  },
+  {
+    "file": "governance/phase3-connected-dev/DECISION.md",
+    "line": 35,
+    "text": "Test governance correction: commits `f70c47b` through `10aa33e` are preserved as audit evidence. Unverified conversions were restored from `89bfed6`. In particular, constant self-comparisons and assertions against unrelated EPV/ledger evidence do not count as implementation coverage. Every original unresolved case is back in the executable TODO inventory."
+  },
+  {
+    "file": "governance/phase3-connected-dev/MATCHING-TODO-BATCH-20260916.md",
+    "line": 32,
+    "text": "Phase 3 remains incomplete. Next engineering work includes period-wide K1/K2 replay, carry convergence/maxWeeks/resume, subscription scheduling and remaining audited TODO conversion. Eligible-consumption scope, formal PV/BV mapping and production calendar/cut-off remain Pending Decisions. Production Promotion, formal Security/UAT and TODO-dependent release gates remain BLOCKED. No main merge or force push."
+  },
+  {
+    "file": "governance/phase3-connected-dev/MEMBER-INTEGRATION-MATRIX.md",
+    "line": 9,
+    "text": "| Orders/create/detail | Core prices, ownership, payload rejection, stable-key retry/conflict/concurrency/audit rollback, old price replay | CODE COMPLETE / CONNECTED DEV PASS; payment/PV recognition/ERP not claimed |"
+  },
+  {
+    "file": "governance/phase3-connected-dev/MEMBER-INTEGRATION-MATRIX.md",
+    "line": 13,
+    "text": "| Ball switching/views | Ball1 PV/RPV/EPV 11/2400/1680; Ball2 23/1200/480; separate Sponsor/Binary; non-empty bonus/ledger | CONNECTED DEV PASS |"
+  },
+  {
+    "file": "governance/phase3-connected-dev/MEMBER-INTEGRATION-MATRIX.md",
+    "line": 26,
+    "text": "Integration uses VITE_ENABLE_MOCK=false. Pure UI mock mode is retained. No fixture approves eligible-consumption scope, formal PV/BV event mapping, production calendar/cut-off. Asia/Taipei and historical fail-closed are settled. No non-MVP ERP/payment/LINE publisher scope was added."
+  },
+  {
+    "file": "governance/phase3-connected-dev/MEMBER-TRACEABILITY.md",
+    "line": 9,
+    "text": "| Historical snapshot fail closed | RPV/EPV volume reads verify archived replay envelope; missing or mismatched timezone evidence rejects; original-month reversal attribution |"
+  },
+  {
+    "file": "governance/phase3-connected-dev/MEMBER-TRACEABILITY.md",
+    "line": 10,
+    "text": "| Frontend cannot determine monetary results | Read adapters consume persisted Core facts; null pending values; existing EPV/RPV services create explicit TEST_ONLY fixture facts |"
+  },
+  {
+    "file": "governance/phase3-connected-dev/MEMBER-TRACEABILITY.md",
+    "line": 27,
+    "text": "Pre-change b64a31a; implementation preserved 1639bd5. Core-priced Member order recording is distinguished from payment/PV recognition and physical fulfillment. The existing authoritative Core computes order facts from a single effective R1.0B profile; missing/ambiguous profile fails closed. Client price/PV/purpose cannot enter the order DTO. Pending formal event mapping is not inferred or enabled by this order API."
+  },
+  {
+    "file": "governance/phase3-connected-dev/MEMBER-TRACEABILITY.md",
+    "line": 31,
+    "text": "183 isolated HTTP/DB assertions twice, 99 Member tests and 129 replay DB assertions validate this checkpoint. One existing RPV anchor TODO was converted with actual DB assertions; 73 remain. Synthetic LINE verification is test-only. Formal LINE/Entra/browser UAT/Production evidence remains blocked. Earlier checkout/read-state pending entries describe superseded engineering incompleteness, not new commercial decisions."
+  },
+  {
+    "file": "governance/phase3-connected-dev/MEMBER-TRACEABILITY.md",
+    "line": 37,
+    "text": "Prospective new ProductRuleProfile parameter hashes come from existing versioned R1.0B Core parameters; no current-state hash is backfilled onto an old profile. Existing-rate changes reject VERSIONED_PRODUCT_PROFILE_REQUIRED and rollback all product writes. Formal PV/BV event mapping is not inferred. Admin order amount display and return totals use Core values; remaining reversible quantity uses the same cumulative POSTED-return predicate as ReturnService, while actual return mutation independently enforces caps. Read-only subscription UI exposes the unresolved Backend scheduling/calendar/cancellation work rather than enabling legacy writes."
+  },
+  {
+    "file": "governance/phase3-connected-dev/REPORT.md",
+    "line": 15,
+    "text": "Verification: Prisma validate/generate/deploy PASS; fresh DB migration and Golden journey PASS twice; replay DB 132 assertions PASS including schema convergence, append-only rejection and sealed inactive evidence; API 17 suites / 131 PASS / 51 TODO; Backend and Worker builds PASS; Admin build and 22 tests PASS; Member build and 116 tests PASS; cross-end DB/HTTP 59, Member identity 278, membership 98, RPV concurrency 20 PASS; static/schema/migration/security policy preflights PASS. Formal Security E2E, formal LINE/LIFF and Entra credentials, UAT, production calendar values, historical GPV→PV/BV mapping and Matching inactive traversal policy re [long source line; inspect file]"
+  },
+  {
+    "file": "governance/phase3-connected-dev/REPORT.md",
+    "line": 43,
+    "text": "New Product profiles capture their effective R1.0B parameter hash and require timezone configuration. Existing profiles are never retrospectively filled/overwritten. An attempted existing GPV rate change now fails closed VERSIONED_PRODUCT_PROFILE_REQUIRED instead of silently ignoring input; the whole price/name write rolls back. This is validation/traceability, not approval of a new rate or formal PV/BV mapping. Member Golden product is created through actual ProductService, proving Admin-to-Member configuration compatibility."
+  },
+  {
+    "file": "governance/phase3-connected-dev/REPORT.md",
+    "line": 59,
+    "text": "Pending Decisions unchanged: eligible-consumption scope, formal PV/BV event mapping, production calendar/cut-off. Payment gateway/ERP fulfillment/LINE push are future external scope, not fabricated MVP success. Next engineering stage remains ordered Backend replay/carry/scheduling/TODO work; formal credentials enable device Security/UAT verification independently."
+  },
+  {
+    "file": "governance/phase3-connected-dev/REPORT.md",
+    "line": 80,
+    "text": "POST /api/v1/member/orders now delegates to authoritative Core OrderService in a Member-specific Serializable/idempotent path. Server revalidates temporal ownership, active product and a single effective traceable R1.0B rule profile. Client supplies only Qualification and item IDs/quantities; price, PV and purpose fields are rejected. Order confirmation means recorded order, not payment, fulfillment or PV recognition. Missing configuration fails closed; pending formal PV/BV event mapping remains unresolved. Decimal order prices come from Backend; frontend does not sum monetary results. Duplicate payload/key returns original order even after p [long source line; inspect file]"
+  },
+  {
+    "file": "governance/phase3-connected-dev/REPORT.md",
+    "line": 100,
+    "text": "TODO burn-down: 148 → 74 → 73. One existing RPV anchor-type TODO became a real regression backed by DB recovery evidence; replay assertions increased 128 → 129. No TODO deletion/skip/fake assertion. Detailed remaining cases: final/TODO-INVENTORY.md."
+  },
+  {
+    "file": "governance/phase3-connected-dev/REPORT.md",
+    "line": 102,
+    "text": "Pending Decisions remain eligible-consumption complete scope, PV/BV formal event mapping, production operational calendar/cut-off. Asia/Taipei and historical snapshot fail-closed are settled."
+  },
+  {
+    "file": "governance/phase3-connected-dev/REPORT.md",
+    "line": 104,
+    "text": "Next stage: ordered RPV concurrency and K1/K2 period-wide replay, carry convergence/maxWeeks/resume, qualification/subscription/Golden workload TODO batches. Formal LINE device/UAT testing requires operational credentials. This checkpoint is Member engineering closure, not Backend Phase 3 or Production completion."
+  },
+  {
+    "file": "governance/phase3-connected-dev/REPORT.md",
+    "line": 137,
+    "text": "Pending Decisions: eligible-consumption complete scope, formal PV/BV event mapping, production operational calendar/cut-off. Checkout remains blocked by its unresolved formal configuration; unaffected reads/profile/notification work continues. Next work: richer OpenAPI DTO/pagination, notification publication/read-state policy, authenticated browser Golden Journey with real LINE credentials, approved checkout configuration, and ordered Backend replay/carry/TODO completion. Unified Member takeover remains active; do not assign another agent to modify member/."
+  },
+  {
+    "file": "governance/phase3-connected-dev/REPORT.md",
+    "line": 158,
+    "text": "Reads use Core persisted facts. Sponsor and Binary representations are independent. RPV/EPV require sealed historical evidence. Effective volume attributes later reversal events to original event month. CALCULATED or unfinalized awards remain PENDING/null and are not exposed as posted ledger entries. Dashboard unsettled bonus remains null. Unknown Binary volume remains null. Product inventory is closed pending ERP evidence. No formal eligible scope or PV/BV event mapping is inferred from TEST_ONLY fixtures."
+  },
+  {
+    "file": "governance/phase3-connected-dev/REPORT.md",
+    "line": 164,
+    "text": "Backend build (including Worker), Admin build, Admin DEV build, Member build PASS. API 105 Jest tests PASS; 74 executable TODO remain. Member 89 tests PASS. LINE verifier core 7 and Member authentication core 8 tests PASS. Two fresh isolated DB Golden runs each include 87 new Member HTTP/DB assertions, 20 historical RPV concurrency, 81 membership and 20 Return/outbox assertions. Replay regression 128 assertions PASS. Actual Ball 1/Ball 2 HTTP bundles pass Member runtime contract validation."
+  },
+  {
+    "file": "governance/phase3-connected-dev/REPORT.md",
+    "line": 166,
+    "text": "Golden journey uses a synthetic LINE verification boundary in an isolated test application, actual opaque sessions, actual Prisma DB and actual Core services. Ball 1 PV/RPV/EPV = 11/2400/1680; Ball 2 = 23/1200/480. Sponsor counts = 2/0; Binary left counts = 1/2. Switching back restores original results. Foreign-ball direct API, forged context, missing context, expired session, Admin session and suspended Person are denied. Repeated reads leave monetary counts unchanged. Formal LINE provider credentials are NOT verified."
+  },
+  {
+    "file": "governance/phase3-connected-dev/REPORT.md",
+    "line": 174,
+    "text": "TODO progression: 148 → 74 → 74. This batch adds tests; it does not claim TODO conversion. RPV historical concurrency coverage is established; K1/K2 complete period-wide replay, carry convergence/maxWeeks/resume, remaining Qualification/subscription/golden-flow TODOs and production consumer workload still need completion. Subscription scheduling must use versioned Asia/Taipei configuration without inventing an operational calendar."
+  },
+  {
+    "file": "governance/phase3-connected-dev/REPORT.md",
+    "line": 178,
+    "text": "Pending Decisions remain eligible-consumption complete scope, PV/BV formal event mapping, production operational calendar and cut-off. Continue engineering work independently; fail closed only affected features. Next ordered Backend stage: K1/K2 period-wide replay, carry convergence/maxWeeks/resume, then audited TODO batches, alongside Member write/read completion. Commit and push each stable checkpoint to origin integration/member-backend-mvp."
+  },
+  {
+    "file": "governance/phase3-connected-dev/REPORT.md",
+    "line": 191,
+    "text": "First priority extends the isolated RPV concurrency fixture to historical recipients: inactive G1 remains zero, Active G2 earns 100 without compression. After recognition, current Binary parent is replaced and Active states change. Two controlled concurrent historical cancellation replays must produce one committed action and a retryable Serializable/unique conflict; explicit redelivery retains one posting per historical recipient, one 100 recovery and one -1200 reversal. Current replacement receives no recovery, and complete original recipient awards/snapshot remain unchanged. The suite now has 20 assertions; fixture rates/time are TEST_ONLY [long source line; inspect file]"
+  },
+  {
+    "file": "governance/phase3-connected-dev/REPORT.md",
+    "line": 193,
+    "text": "Remaining ordered work: K1/K2 period-wide replay, then carry convergence/maxWeeks/resume, then further audited TODO conversions. These are not claimed complete by the RPV fixture. Asia/Taipei, historical fail-closed and Legacy Test Drift are already decided; eligible scope, PV/BV formal mapping and production calendar/cut-off remain Pending Decision. Build/Prisma/offline/formal Security/UAT/release-preparation timestamps retain preceding evidence for this test-only batch."
+  },
+  {
+    "file": "governance/phase3-connected-dev/REPORT.md",
+    "line": 195,
+    "text": "Phase 3 historical recipient batch verification: two independent fresh Golden runs PASS, each including 20 RPV concurrency assertions, 81 membership assertions and 20 Return/outbox assertions. API 16 suites / 105 tests PASS / 74 TODOs; replay regression 128 assertions PASS; Security Policy Preflight PASS; Admin DEV 43 HTTP requests PASS; diff check PASS. Backend/TODO/RC gates remain BLOCKED by TODOs; formal Security/UAT and Production Promotion remain BLOCKED. REPORT/matrix/inventory are committed and pushed together; exact commands/timestamps/raw output remain in `final/gate-results.json`."
+  },
+  {
+    "file": "governance/phase3-connected-dev/REPORT.md",
+    "line": 205,
+    "text": "RPV sealing includes original recognition period UTC bounds plus its historical accounting timezone. Replay verifies original event identity, recognition timestamp, Qualification, Binary path, Active/direct-count evidence, Parameter snapshot and complete recipient allocation. Missing evidence produces `HISTORICAL_SNAPSHOT_MISSING`; no current-state fallback is introduced. A changed current Binary parent receives no historical recovery, and original RPV awards remain unchanged."
+  },
+  {
+    "file": "governance/phase3-connected-dev/REPORT.md",
+    "line": 209,
+    "text": "## Latest concurrent RPV recognition batch"
+  },
+  {
+    "file": "governance/phase3-connected-dev/REPORT.md",
+    "line": 211,
+    "text": "Checkpoint `4e64446` precedes a new isolated Golden RPV regression. A controlled barrier lets two real Serializable transactions read the same SCHEDULED recognition before proceeding. Eight DB assertions require one committed delivery, a P2034/P2002 conflict for the losing delivery, successful external redelivery as ALREADY_RECOGNIZED, one exact 1200 original ledger event, committed event identity in both sealed snapshot and schedule, and complete snapshot retention on duplicate. The fixture has no uplines; it does not claim concurrent recipient-award allocation coverage. It uses explicit TEST_ONLY dueAt/plan/source histories and does not app [long source line; inspect file]"
+  },
+  {
+    "file": "governance/phase3-connected-dev/REPORT.md",
+    "line": 215,
+    "text": "Concurrent RPV batch verification: API tests and both fresh isolated Golden runs PASS; each Golden run executes eight new concurrent recognition assertions alongside the existing suites. Replay DB regression remains 128 assertions PASS; Security Policy Preflight PASS. No duplicate recognition defect was reproduced: the losing Serializable delivery fails and explicit redelivery returns ALREADY_RECOGNIZED. Concurrent RPV recipient-award allocation remains unverified by this no-upline fixture."
+  },
+  {
+    "file": "governance/phase3-connected-dev/REPORT.md",
+    "line": 219,
+    "text": "## Latest RPV recognition batch"
+  },
+  {
+    "file": "governance/phase3-connected-dev/REPORT.md",
+    "line": 221,
+    "text": "Checkpoint `bce1d46` precedes two vertical-slice-02 TODO conversions for due RPV recognition and duplicate recognition. Five direct DB assertions use actual RpvService and Prisma to verify exact 1200 RPV original ledger/source/Qualification/dueAt identity, RECOGNIZED schedule event/month identity, ALREADY_RECOGNIZED duplicate response, every original award row and the entire archived historical snapshot unchanged. Existing event-count assertion requires exactly one original RPV event. Jest writes its own temporary evidence file to avoid shared-output reads. The TEST_ONLY dueAt and consumption fixtures do not approve operational calendar or el [long source line; inspect file]"
+  },
+  {
+    "file": "governance/phase3-connected-dev/REPORT.md",
+    "line": 225,
+    "text": "RPV recognition batch verification: 16 suites / 105 Jest tests PASS / 74 TODOs; 128 DB regression assertions PASS; Security Policy Preflight PASS; Admin DEV 43 HTTP requests PASS; diff check PASS. Backend/TODO/RC gates remain BLOCKED by TODOs; formal Security/UAT and Production Promotion remain BLOCKED. Exact commands/timestamps/raw output are in `final/gate-results.json`."
+  },
+  {
+    "file": "governance/phase3-connected-dev/REPORT.md",
+    "line": 247,
+    "text": "Checkpoint `bed3413` precedes two TODO conversions: Prisma adjustment/workflow/replay model convergence and PV Ledger immutability. Five direct DB assertions compare actual information_schema columns with every scalar field mapping in generated Prisma metadata for SettlementAdjustmentBatch/Line, QualificationWorkflow and SettlementReplayRun/Period. Three direct assertions attempt UPDATE and DELETE through Prisma, require the append-only DB trigger error, roll back each rejected statement to a savepoint and compare the entire retained original ledger row. Jest uses private evidence output files; no production source, schema or monetary rule is [long source line; inspect file]"
+  },
+  {
+    "file": "governance/phase3-connected-dev/REPORT.md",
+    "line": 265,
+    "text": "Current inventory is **84 TODOs**, down from 87 in the preceding EPV batch (baseline 148, net placeholder reduction 64). Earlier counts below describe prior batches. The first run's mock parameter TypeScript inference error is preserved before repair at `fe783f0` and in `final/initial-attempts/api-tests.txt`; mock signatures were corrected without weakening assertions. This test-only batch retains preceding build/Prisma/offline/formal Security/UAT/release-preparation timestamps. See the matrix for current rerun evidence."
+  },
+  {
+    "file": "governance/phase3-connected-dev/REPORT.md",
+    "line": 281,
+    "text": "Checkpoint `1736321` precedes two payable idempotency conversions. Real `UnifiedPayableService.materialize` executes against stateful mocked transaction delegates; repeated BonusAward/RPV inputs create exactly one payable with the original source, recipient Qualification and amount. This is service-level idempotency evidence, not a concurrent database materialization test or approval of historical lifecycle eligibility. No production implementation changed; build/Prisma/offline/release-preparation results retain their preceding timestamps."
+  },
+  {
+    "file": "governance/phase3-connected-dev/REPORT.md",
+    "line": 283,
+    "text": "Checkpoint `68ae674` precedes three payout conversions: Qualification grouping despite a common Person, recovery offset without source Award mutation, and recovery bounded by payout gross so net remains nonnegative. The service tests execute `UnifiedPayableService` or `RecoveryBalanceService` against stateful transaction delegates and verify duplicate offset adds no second application. Fresh isolated DB fixtures add real payout grouping with the same holder Person, exact entry allocation and independent line amounts. TEST_ONLY inputs do not define formal PV/BV events or operational calendar."
+  },
+  {
+    "file": "governance/phase3-connected-dev/REPORT.md",
+    "line": 285,
+    "text": "Checkpoint `9ded574` precedes four append-only conversions in v060: original Binary settlement immutability, original Matching settlement/award immutability, cancellation retains the future recognition row, and recognized RPV receives an explicit negative reversal while its original awards remain unchanged. Four direct DB assertions were added to the existing multi-return/downstream fixture. The new Jest suite supplies its own temporary evidence output file to prevent shared report-read races; the CLI regression retains its canonical governance output by default."
+  },
+  {
+    "file": "governance/phase3-connected-dev/REPORT.md",
+    "line": 293,
+    "text": "Checkpoint `8f30757` precedes three EPV recipient conversions. The real service processes explicit TEST_ONLY 4800 consumption fixtures and asserts Active self 840, all five Active Sponsor generations 100.8 each, an inactive original Sponsor zero, and a Binary-only ancestor no award. The all-active Binary path remains inside the sponsor's left subtree and adds an intermediate Binary-only node, independently of the five-generation Sponsor path. Eight direct DB assertions were added; no eligible-consumption scope, production mapping or business parameter was changed. Non-REPURCHASE scope remains TODO/Pending Decision."
+  },
+  {
+    "file": "governance/phase3-connected-dev/REPORT.md",
+    "line": 295,
+    "text": "The latest focused Jest result is 16 suites / 91 tests PASS, with 87 TODOs. DB regression has 109 assertions with fixture rollback; the fresh Golden runner additionally exercises 20 monetary Return/outbox assertions and 71 membership/temporal/payout/maturity assertions (48 approval, five temporal, 14 grouping, four maturity). [TODO inventory](C:/UCell/UCell/governance/phase3-connected-dev/final/TODO-INVENTORY.md) records each unresolved name/file/line and its engineering or Pending Decision classification. No skip was added and original unresolved cases are retained. Exact gate timestamps and commands are in `final/gate-results.json`; Securit [long source line; inspect file]"
+  },
+  {
+    "file": "governance/phase3-connected-dev/REPORT.md",
+    "line": 299,
+    "text": "Checkpoint `350a8d2` preserves the EPV fixture/tests before repairing a test implementation defect: parallel Backend tests compared complete unordered SQL row arrays and failed when identical records arrived in a different order. Evidence comparisons now use stable primary-key ordering for Bonus/RPV awards and lifecycle rows, retaining every field and immutability assertion. The original failure is preserved in `final/initial-attempts/backend-test-gate.txt`. API tests and 109-assertion DB regression passed after repair; Backend test gate now reports only the 87-TODO blocker. No production or monetary implementation changed in this batch."
+  },
+  {
+    "file": "governance/phase3-connected-dev/REPORT.md",
+    "line": 315,
+    "text": "- RPV historical data predating required snapshots cannot be reconstructed from current state; missing allocation/period/timezone evidence remains fail-closed."
+  },
+  {
+    "file": "governance/phase3-connected-dev/REPORT.md",
+    "line": 316,
+    "text": "- Formal partial-refund RPV month allocation requires original allocation evidence; no proportional fixed-award assumption is made."
+  },
+  {
+    "file": "governance/phase3-connected-dev/REPORT.md",
+    "line": 319,
+    "text": "- Eligible-consumption scope, formal PV/BV mapping and production operational calendar/cut-off remain Pending Decision. Existing subscription UTC schedule construction still requires a versioned scheduling implementation without guessing cut-off policy."
+  },
+  {
+    "file": "governance/phase3-connected-dev/REPORT.md",
+    "line": 348,
+    "text": "CODE COMPLETE: scoped UX-2 six screens and owned-Qualification read API. CONNECTED DEV PASS: verified gates only. OPERATIONAL CREDENTIAL PENDING: LINE/LIFF and Entra/RBAC. UAT PENDING. PRODUCTION BLOCKED. No merge main, force push, RC2 or Production promotion. Pending eligible consumption/PV-BV mapping/production calendar-cut-off unchanged."
+  },
+  {
+    "file": "governance/phase3-connected-dev/REPORT.md",
+    "line": 354,
+    "text": "Latest SSOT note: remote commits `d1d3b40` / `c811654` approve Core Logic Addendum v2. Eligible-consumption defaults and prospective PV/BV recognition are now decided there. Exact Production cut-off clocks, deterministic legacy GPV migration mapping and unspecified Matching traversal edges remain fail-closed blockers. UX-3 does not implement or reinterpret the new business rules."
+  },
+  {
+    "file": "governance/phase3-connected-dev/UI-FUNCTION-INVENTORY.md",
+    "line": 28,
+    "text": "Pending Decisions: eligible-consumption complete scope; formal PV/BV event mapping; production operational calendar/cut-off. Asia/Taipei and historical snapshot fail-closed are settled. Backend TODO 73, K1/K2 period-wide replay and carry convergence/maxWeeks/resume remain unfinished. No TODO removed/skipped/faked by this UI batch."
+  },
+  {
+    "file": "governance/phase3-connected-dev/batches/binary-referral-20260916/REPORT.md",
+    "line": 9,
+    "text": "| Binary subtree GPV rather than Sponsor tree | Archived multi-level Binary path determines root side even when its descendant edge is RIGHT; Sponsor-only 9000 volume is excluded from both sides |"
+  },
+  {
+    "file": "governance/phase3-connected-dev/batches/binary-referral-20260916/REPORT.md",
+    "line": 12,
+    "text": "| STARTER/ELITE/LEADER caps 450k/900k/1.5m | Actual paired PV, persisted cap, recipient plan snapshot and theory for each plan |"
+  },
+  {
+    "file": "governance/phase3-connected-dev/batches/binary-referral-20260916/REPORT.md",
+    "line": 13,
+    "text": "| Binary theory=paired PV×12% | Decimal fractional-volume case: 1234.56 paired yields 148.1472 |"
+  },
+  {
+    "file": "governance/phase3-connected-dev/batches/binary-referral-20260916/REPORT.md",
+    "line": 15,
+    "text": "| Active G1 STARTER 15% | Actual Referral row for 1000 source GPV: 150 theory, original source identity and plan/Active snapshot |"
+  },
+  {
+    "file": "governance/phase3-connected-dev/batches/binary-referral-20260916/REPORT.md",
+    "line": 25,
+    "text": "| CALCULATED then PENDING_45D | Every actual Referral/Equalization/Binary/Matching award has exactly these two initial statuses in order, linked by award ID; actual 45-day pending boundary |"
+  },
+  {
+    "file": "governance/phase3-connected-dev/batches/binary-referral-20260916/REPORT.md",
+    "line": 42,
+    "text": "- Eligible-consumption scope, formal PV/BV mapping and production calendar/cut-off remain Pending Decisions. Formal Security/UAT and Production Promotion remain BLOCKED."
+  },
+  {
+    "file": "governance/phase3-connected-dev/batches/binary-referral-20260916/TODO-INVENTORY.md",
+    "line": 17,
+    "text": "| backend/apps/api/test/epv-global-v05.e2e-spec.ts | 22 | non-REPURCHASE order does not create EPV | LEGACY_TEST_DRIFT | DEC-001 makes ConsumptionRecognitionEvent and eligible consideration authoritative; order purpose alone cannot decide eligibility. |"
+  },
+  {
+    "file": "governance/phase3-connected-dev/batches/binary-referral-20260916/TODO-INVENTORY.md",
+    "line": 18,
+    "text": "| backend/apps/api/test/epv-global-v05.e2e-spec.ts | 26 | global pool is 5% of period GPV | ENGINEERING | The governing behavior is already approved; remaining work is implementation or executable verification. |"
+  },
+  {
+    "file": "governance/phase3-connected-dev/batches/binary-referral-20260916/TODO-INVENTORY.md",
+    "line": 25,
+    "text": "| backend/apps/api/test/negative-flow-v05.e2e-spec.ts | 10 | partial return creates proportional negative GPV event | PENDING_DECISION | Historical GPV to formal PV/BV mapping is not approved; only this historical conversion remains fail-closed. |"
+  },
+  {
+    "file": "governance/phase3-connected-dev/batches/binary-referral-20260916/TODO-INVENTORY.md",
+    "line": 39,
+    "text": "| backend/apps/api/test/v062-carry-chain.e2e-spec.ts | 21 | return discovers every Binary ancestor impacted by descendant GPV | IMPLEMENTABLE | Decision Register v2 and Core Logic Addendum v2 provide the governing rule; implementation and evidence remain. |"
+  },
+  {
+    "file": "governance/phase3-connected-dev/batches/binary-referral-20260916/TODO-INVENTORY.md",
+    "line": 54,
+    "text": "| backend/apps/api/test/v064-golden-dataset.e2e-spec.ts | 31 | validates RPV 5/8/12 on Binary Tree | ENGINEERING | The governing behavior is already approved; remaining work is implementation or executable verification. |"
+  },
+  {
+    "file": "governance/phase3-connected-dev/batches/binary-referral-20260916/TODO-INVENTORY.md",
+    "line": 55,
+    "text": "| backend/apps/api/test/v064-golden-dataset.e2e-spec.ts | 32 | validates EPV on Sponsor Tree | ENGINEERING | The governing behavior is already approved; remaining work is implementation or executable verification. |"
+  },
+  {
+    "file": "governance/phase3-connected-dev/batches/binary-referral-20260916/TODO-INVENTORY.md",
+    "line": 66,
+    "text": "| backend/apps/api/test/vertical-slice.e2e-spec.ts | 144 | reprocessing same outbox event does not duplicate GPV | ENGINEERING | The governing behavior is already approved; remaining work is implementation or executable verification. |"
+  },
+  {
+    "file": "governance/phase3-connected-dev/batches/subscription-calendar-20260916/REPORT.md",
+    "line": 16,
+    "text": "| Golden DB journey | PASS: membership 117, RPV concurrency 20, Member identity 278, Member/Admin integration 59 assertions |"
+  },
+  {
+    "file": "governance/phase3-connected-dev/batches/subscription-calendar-20260916/REPORT.md",
+    "line": 19,
+    "text": "The executable TODO inventory remains 3, all `PENDING_DECISION`: historical GPV to PV/BV conversion and the two Matching inactive-sponsor traversal cases. Production remains blocked by the unapproved operational cutoff values, formal credentials/security E2E and UAT."
+  },
+  {
+    "file": "governance/product-next/COMMERCE_FULFILLMENT_GOLDEN_JOURNEYS.md",
+    "line": 30,
+    "text": "Browser callback, webhook and reconciliation query arrive concurrently. Unique provider event/idempotency and Payment transition rules result in one canonical PAID transition and one downstream recognition/fulfillment trigger. No duplicate Ball, PV/BV, invoice or shipment."
+  },
+  {
+    "file": "governance/product-next/DEVELOPMENT_EXECUTION_PLAN_20260917.md",
+    "line": 89,
+    "text": "5. Resolve production cut-off, historical GPV-to-PV/BV migration, and inactive Matching Sponsor semantics."
+  },
+  {
+    "file": "governance/product-next/IMPLEMENTATION-PLAN.md",
+    "line": 8,
+    "text": "Implementation begins in additive, backward-compatible slices after each R1.0B integration checkpoint. Existing Member/Admin checkout, payment, refresh and PAID journey must remain operational. No next-release service may calculate or mutate PV, BV, RPV, EPV, bonus, carry, settlement or payout."
+  },
+  {
+    "file": "governance/product-next/NEXT_RELEASE_API_EVENT_RBAC_MATRIX.md",
+    "line": 9,
+    "text": "GET /api/v1/member/packages?class=QUALIFICATION|ACTIVE_DURATION -> active server-authoritative package versions; returns packageVersionId, displayName, class, price/currency, selectableProductQuantity, effects, sales/effective status and safe summary. No client-derived price/PV/BV."
+  },
+  {
+    "file": "governance/product-next/NEXT_RELEASE_API_EVENT_RBAC_MATRIX.md",
+    "line": 56,
+    "text": "Exact selected quantity for initial EXACT_QUANTITY mode. Every selected product eligible under package version and per-SKU constraints. Package effective/sale window valid. Client stale version fails with PACKAGE_VERSION_STALE/NOT_SELLABLE. Missing recognition config on monetary path -> CONFIGURATION_PENDING/fail closed; do not guess PV/BV. Active package target must be owned/eligible Ball. Historical PackagePurchaseSnapshot immutable."
+  },
+  {
+    "file": "governance/product-next/NEXT_RELEASE_CORE_BOUNDARIES.md",
+    "line": 33,
+    "text": "Orders/payment recognition boundaries, qualifying membership package evidence, ProductProfile, PV/BV/RPV/EPV, bonus, carry, settlement, ledger, return/replay/recovery. Existing Core Logic Addendum v2 remains controlling."
+  },
+  {
+    "file": "governance/product-next/NEXT_RELEASE_DATA_MODEL_ERD.md",
+    "line": 54,
+    "text": "Package versions used by orders cannot be edited/deleted. Selected products must be eligible under the purchased/effective package version and quantities validated server-side. Do not infer PV/BV from price or selected retail totals; explicit recognition config required. No Sponsor/Binary cycles. Historical/evidence tables append-only. PII protected. Production migrations forward-only."
+  },
+  {
+    "file": "governance/product-next/NEXT_RELEASE_DECISION_BATCH4_PACKAGE_CONFIG_APPROVED.md",
+    "line": 4,
+    "text": "Scope: membership qualification packages and active-duration packages. Monetary PV/BV recognition remains governed by approved Core rules and package/product version configuration; no unapproved PV/BV inference is made here."
+  },
+  {
+    "file": "governance/product-next/NEXT_RELEASE_DECISION_BATCH4_PACKAGE_CONFIG_APPROVED.md",
+    "line": 33,
+    "text": "Frontend never derives package price, PV/BV or eligibility from `4800 x quantity`."
+  },
+  {
+    "file": "governance/product-next/NEXT_RELEASE_DECISION_BATCH4_PACKAGE_CONFIG_APPROVED.md",
+    "line": 38,
+    "text": "## 7. PV/BV / recognition boundary"
+  },
+  {
+    "file": "governance/product-next/NEXT_RELEASE_DECISION_BATCH4_PACKAGE_CONFIG_APPROVED.md",
+    "line": 39,
+    "text": "The stated NTD 4,800 is the main product retail/display price, but package payment amounts and selectable product retail totals differ for Active-duration packages. Therefore DO NOT infer PV/BV/eligible-consumption from product retail sum or package price. Each package/product version must reference explicit approved recognition configuration. If missing, affected monetary recognition FAILS CLOSED while order/package evidence remains intact."
+  },
+  {
+    "file": "governance/product-next/NEXT_RELEASE_SPRINT_PLAN.md",
+    "line": 50,
+    "text": "Track A and Track B may run concurrently after branch/schema ownership is assigned. Only one designated Schema Owner merges Prisma/migration changes; other streams submit schema proposals/patches through that owner. Track B must not modify Bonus/PV/BV/RPV/EPV/Carry/Settlement formulas. Track C does not mutate business truth."
+  },
+  {
+    "file": "governance/product-next/NEXT_RELEASE_SYSTEM_BALL_RESERVOIR_CORE_SPEC.md",
+    "line": 26,
+    "text": "- no PV/BV is generated merely from System ownership, creation, reclaim, assignment, default Active or placement;"
+  },
+  {
+    "file": "governance/product-next/NEXT_RELEASE_SYSTEM_BALL_RESERVOIR_CORE_SPEC.md",
+    "line": 86,
+    "text": "Foundation System Ball; member exit reclaim; special placement; SYSTEM->PERSON effective boundary; PERSON->SYSTEM boundary; default Active without PV/BV generation; downstream real volume preserved; System Ball bonus -> B only; Person ineligible bonus -> A only; eligible Person -> Member only; duplicate delivery; concurrent routing; reservoir debit/transfer approval; replay A->Member, B->Member, Member->B; historical ownership missing -> fail closed; no double destination; ledger reconciliation; sealed settlement/replay evidence."
+  },
+  {
+    "file": "governance/product-next/NEXT_RELEASE_SYSTEM_BALL_RESERVOIR_CORE_SPEC.md",
+    "line": 89,
+    "text": "System Ball != fake member. System Ball != special bonus rank. Active != PV/BV generation. Ownership change != organization-node recreation. Reservoir balance != editable field. Company flexible use != unaudited mutation. A != B and must remain separately traceable. Analytics may report reservoirs but cannot mutate them."
+  },
+  {
+    "file": "governance/product-next/NEXT_RELEASE_SYSTEM_BALL_RESERVOIR_ENGINEERING_DELTA.md",
+    "line": 82,
+    "text": "A Foundation System Ball -> Active override -> no own PV/BV -> downstream real volume -> bonus -> B."
+  },
+  {
+    "file": "governance/product-next/PACKAGE_PRODUCT_SELECTION_GOLDEN_JOURNEY.md",
+    "line": 24,
+    "text": "Two selected main products may each have retail/display price 4,800 while package payment is 6,000. System never calculates PV/BV/eligible consumption by multiplying retail price or assuming package price. It uses explicit recognitionConfigRef. Missing config blocks monetary recognition with CONFIGURATION_PENDING; historical order/package evidence remains."
+  },
+  {
+    "file": "governance/product-next/PACKAGE_PRODUCT_SELECTION_GOLDEN_JOURNEY.md",
+    "line": 36,
+    "text": "Package cards show server price and selectable count. Product picker shows eligible products only, +/- quantity, selected/required counter, validation messages and review summary. Qualification active packages prompt target Ball when needed. Checkout review shows package, selected products and total payable package price. Do not show inferred PV/BV unless authoritative API provides it under approved policy."
+  },
+  {
+    "file": "governance/product-next/UCELL_V1_1_V1_3_PRODUCT_SYSTEM_SPEC.md",
+    "line": 105,
+    "text": "For each generation 1..12, read models may expose total Qualifications, Active/Suspend/Lost, new joins, repurchase rate, PV/RPV/EPV authoritative aggregates, and permitted bonus summaries. Binary mode additionally exposes left/right counts, volumes, carry and balance indicators."
+  },
+  {
+    "file": "governance/product-next/UCELL_V1_1_V1_3_PRODUCT_SYSTEM_SPEC.md",
+    "line": 117,
+    "text": "5. Generation 1–12 PV/RPV/EPV."
+  },
+  {
+    "file": "governance/product-next/UCELL_V1_1_V1_3_PRODUCT_SYSTEM_SPEC.md",
+    "line": 132,
+    "text": "Core remains authority for Person/Qualification/Organization/Active/Rule/PV/BV/RPV/EPV/Bonus/Ledger/Settlement. Growth owns attribution/content/activity/inbox. Identity/KYC owns verification evidence and formal-member workflow. Analytics consumes append-only events/read models. ERP remains future inventory/accounting/fulfillment boundary. AI may analyze read models later but cannot mutate monetary truth."
+  },
+  {
+    "file": "governance/product-next/V1_10_ADMIN_PACKAGE_CREATE_REPORT.md",
+    "line": 12,
+    "text": "- Sent no PV or BV formula or derived amount from Admin. Product rule profiles and lifecycle approval remain separate subsequent commands."
+  },
+  {
+    "file": "governance/product-next/V1_10_ADMIN_PACKAGE_CREATE_REPORT.md",
+    "line": 19,
+    "text": "- Tests verify stable-code normalization, explicit version payload, absence of PV/BV fields, and package-role route isolation."
+  },
+  {
+    "file": "governance/product-next/V1_11_ADMIN_PACKAGE_PRODUCT_POOL_REPORT.md",
+    "line": 13,
+    "text": "- Keeps official product value and PV/BV rules in the selected Backend Product Rule Profile. The Admin UI does not calculate them."
+  },
+  {
+    "file": "governance/product-next/V1_14_MEMBER_ACTIVE_DURATION_PACKAGE_REPORT.md",
+    "line": 18,
+    "text": "The Member UI submits only package version, target Qualification, and selected Product Rule Profile quantities. Backend/Core remains authoritative for official price, duration effect, payment, PV/BV, recognition, and Qualification lifecycle. A created order remains pending payment and does not claim that the Qualification has been extended."
+  },
+  {
+    "file": "governance/product-next/V1_1_CONSENT_FOUNDATION_REPORT.md",
+    "line": 5,
+    "text": "This additive slice implements the first V1.1 Identity/Compliance foundation from the approved next-release engineering contract. It does not create a Qualification and does not read or mutate PV, BV, RPV, EPV, bonus, carry, settlement or payout."
+  },
+  {
+    "file": "governance/product-next/V1_1_DELIVERY_PROFILE_REPORT.md",
+    "line": 9,
+    "text": "Connected Member checkout reads Backend authoritative profile state and blocks order creation while delivery data is incomplete. Saving delivery data is separate from Formal Member/KYC and never creates or mutates Qualification, Sponsor/Binary placement, price, PV/BV or monetary facts."
+  },
+  {
+    "file": "governance/product-next/V1_3_ANALYTICS_SONAR_DETAILED_SPEC.md",
+    "line": 24,
+    "text": "Scope = selected root Qualification + historical/effective Sponsor Tree. For generation 1..12: qualificationCount, newCount, activeCount/rate, suspend/lost analytical counts, repurchaseCount/rate, PV/RPV/EPV authoritative aggregates, permitted bonus summary, engagement metrics. Drill-down returns contributing Qualification IDs under authorization."
+  },
+  {
+    "file": "governance/product-next/V1_3_ANALYTICS_SONAR_DETAILED_SPEC.md",
+    "line": 41,
+    "text": "F. Sonar generation volumes: generation 1..12 x PV/RPV/EPV (compatible units only; UI may split charts if scales differ)."
+  },
+  {
+    "file": "governance/product-next/V1_3_QUALIFICATION_PLACEMENT_CORE_REPORT.md",
+    "line": 30,
+    "text": "- Existing Member/Admin, identity, return, membership, RPV concurrency, System Assignment, content, and formal-application DB journeys remain PASS."
+  },
+  {
+    "file": "governance/product-next/V1_4_CONFIGURABLE_PACKAGE_CORE_REPORT.md",
+    "line": 18,
+    "text": "- PV/BV and eligible consumption are never inferred from package price or selected retail totals."
+  },
+  {
+    "file": "governance/product-next/V1_5_PACKAGE_CHECKOUT_CORE_REPORT.md",
+    "line": 18,
+    "text": "- Package product choices carry zero inferred line PV/GPV and zero inferred allocation; the server-authoritative package price is the Order total."
+  },
+  {
+    "file": "governance/product-next/V1_5_PACKAGE_CHECKOUT_CORE_REPORT.md",
+    "line": 28,
+    "text": "- DB Golden: PASS, including 19 package-checkout assertions and all prior concurrency, return, membership, RPV, placement, package config, content, and formal-application suites"
+  },
+  {
+    "file": "governance/product-next/V1_5_PACKAGE_CHECKOUT_CORE_REPORT.md",
+    "line": 40,
+    "text": "- Package recognition processing must resolve `recognitionConfigRef` into explicit PV/BV/consumption events; price or retail-line totals must never be used as inferred recognition."
+  },
+  {
+    "file": "governance/product-next/V1_7_MEMBER_PACKAGE_CONTRACT_REPORT.md",
+    "line": 11,
+    "text": "- Preserved Backend/Core authority: the Member client sends no price, PV, BV, qualification owner, placement, or monetary calculation."
+  },
+  {
+    "file": "governance/product-next/V1_8_FIRST_QUALIFICATION_MEMBER_UI_REPORT.md",
+    "line": 12,
+    "text": "- Kept price, PV, BV, recognition, placement, and monetary calculation outside the frontend. The UI submits only the package version and selected product-profile quantities."
+  },
+  {
+    "file": "governance/product-next/V1_9_ADMIN_PACKAGE_READBACK_REPORT.md",
+    "line": 17,
+    "text": "- The new test verifies that the UI displays the persisted Core amount and evidence and does not introduce a PV formula."
+  },
+  {
+    "file": "governance/production/STAGE-ACCEPTANCE-20260916.md",
+    "line": 42,
+    "text": "- Three PENDING_DECISION cases remain fail-closed: historical GPV-to-PV/BV mapping and two inactive Matching traversal semantics."
+  },
+  {
+    "file": "governance/r1-0b-v3-implementation/BOUNDARY_GAP_ANALYSIS.md",
+    "line": 16,
+    "text": "| Active and EPV shared accumulator | ALREADY_IMPLEMENTED_AND_PROVEN | Both derive from QualificationMonthEligibleConsumptionAccumulator | Named B09 evidence | None |"
+  },
+  {
+    "file": "governance/r1-0b-v3-implementation/GAP_ANALYSIS.md",
+    "line": 11,
+    "text": "| PV/BV classification | CHANGE_REQUIRED, TEST_REQUIRED | SA-20260917-13 | `PvType` represents `PV` beside GPV/RPV/EPV; no abstract-class guard | Preserve historical concrete rows; add semantic guard; prove generic PV/BV cannot create Award/Ledger and no duplicate volume is migrated | Additive metadata only if needed | None |"
+  },
+  {
+    "file": "governance/r1-0b-v3-implementation/GAP_ANALYSIS.md",
+    "line": 12,
+    "text": "| Recognition chain | CHANGE_REQUIRED, MIGRATION_REQUIRED | SA-20260916-05, SA-20260917-13/14 | Worker derives GPV directly from paid OrderLine; no ConsumptionRecognition entity | Persist versioned eligible ConsumptionRecognition, then immutable concrete VolumeRecognition; Payment remains evidence only | Yes | Prevents invalid recognition; formulas unchanged |"
+  },
+  {
+    "file": "governance/r1-0b-v3-implementation/GAP_ANALYSIS.md",
+    "line": 13,
+    "text": "| GPV immediate effects | CHANGE_REQUIRED, MIGRATION_REQUIRED, TEST_REQUIRED | SA-20260917-14 | Referral/Matching theory and Binary aggregation occur during settlement | At GPV recognition append historical Referral theory, fixed-generation Matching theory/zero evidence and per-ancestor Binary side ledger; no final K0/Award before batch | Yes | Timing/evidence only |"
+  },
+  {
+    "file": "governance/r1-0b-v3-implementation/GAP_ANALYSIS.md",
+    "line": 15,
+    "text": "| EPV eligibility | CHANGE_REQUIRED, TEST_REQUIRED | SA-20260915-02, SA-20260916-05/17 | Monthly service scans paid repurchase order amount | Aggregate eligible ConsumptionRecognition per Qualification/month and recompute whole historical month after POSTED return | Recognition migration | Formula unchanged |"
+  },
+  {
+    "file": "governance/r1-0b-v3-implementation/GAP_ANALYSIS.md",
+    "line": 18,
+    "text": "| RPV | TEST_REQUIRED | SA-20260917-16/17/19 | Binary routing and 5/8/12 unlock exist | Bind to authoritative recognition and v3 Active snapshot; preserve zero-generation evidence | No/new evidence FK | Frozen amounts unchanged |"
+  },
+  {
+    "file": "governance/r1-0b-v3-implementation/GAP_ANALYSIS.md",
+    "line": 19,
+    "text": "| Binary recognition ledger | CHANGE_REQUIRED, MIGRATION_REQUIRED, TEST_REQUIRED | SA-20260917-14/17 | Settlement scans historical tree/snapshots | Append immutable Qualification/ancestor/side ledger at recognition; settlement aggregates ledger | Yes | Same eligible GPV |"
+  },
+  {
+    "file": "governance/r1-0b-v3-implementation/GAP_ANALYSIS.md",
+    "line": 26,
+    "text": "| Return/replay | CHANGE_REQUIRED, TEST_REQUIRED | SA-20260915-01, SA-20260916-12, v3 | K0/K1/K2/EPV/RPV replay exists; Active/Global/Reservoir/Welfare absent | POSTED recomputes Active, concrete volumes, theories, Binary ledger, Global/Reservoir/Welfare and downstream deltas; PAID uses recovery | Additive evidence | Delta only |"
+  },
+  {
+    "file": "governance/r1-0b-v3-implementation/GAP_ANALYSIS.md",
+    "line": 31,
+    "text": "The implementation gate must cover all 17 Product Owner cases: Active threshold timing/month reset; Ball isolation; exact Sunday boundary; immediate GPV effects without premature K0; weekly caps/month reference; both payout mappings and holiday shift; Reservoir A normal/retry/duplicate/replay/rollback; generic PV/BV prohibition; historical GPV no-duplicate classification; inactive Matching continuation; Active/EPV return replay; and PAID append-only recovery."
+  },
+  {
+    "file": "governance/r1-0b-v3-implementation/GAP_ANALYSIS.md",
+    "line": 36,
+    "text": "- PaymentConfirmed → GPV documentation/tests without ConsumptionRecognition are obsolete."
+  },
+  {
+    "file": "governance/r1-0b-v3-implementation/PASS-FAIL-MATRIX.md",
+    "line": 8,
+    "text": "| Historical GPV no duplicate migration | PASS | additive classification; no recognition backfill |"
+  },
+  {
+    "file": "governance/r1-0b-v3-implementation/PASS-FAIL-MATRIX.md",
+    "line": 9,
+    "text": "| ConsumptionRecognition / concrete volume | PASS | immutable GPV/RPV/EPV evidence; generic PV/BV cannot award |"
+  },
+  {
+    "file": "governance/r1-0b-v3-implementation/PASS-FAIL-MATRIX.md",
+    "line": 11,
+    "text": "| Immediate GPV theory/Binary ledger | PASS | Serializable Referral/Matching/Binary evidence; no premature K0 |"
+  },
+  {
+    "file": "governance/r1-0b-v3-implementation/PASS-FAIL-MATRIX.md",
+    "line": 17,
+    "text": "| EPV/Active POSTED-return replay | PASS | full historical month recomputation and interval evidence |"
+  },
+  {
+    "file": "governance/r1-0b-v3-implementation/REPORT.md",
+    "line": 6,
+    "text": "- Migration 41 adds immutable ConsumptionRecognition, concrete GPV/RPV/EPV classification evidence, Qualification-month Active evidence, immediate theory/Binary ledger evidence, Business Calendar/payout anchors and Reservoir A."
+  },
+  {
+    "file": "governance/r1-0b-v3-implementation/REPORT.md",
+    "line": 8,
+    "text": "- GPV recognition performs historical Sponsor Referral/Matching theory and Qualification-scoped Binary ancestor propagation in one Serializable transaction. Theory does not create premature final K0 or PAID entitlement."
+  },
+  {
+    "file": "governance/r1-0b-v3-implementation/REPORT.md",
+    "line": 10,
+    "text": "- POSTED returns recompute the historical Qualification month, Active interval, EPV and downstream evidence. Missing historical evidence fails closed; PAID reductions append Recovery/CLAWBACK."
+  },
+  {
+    "file": "governance/sa-decisions/R1_0B_CORE_LOGIC_ADDENDUM_v2.md",
+    "line": 13,
+    "text": "- Organization, Active, PV/RPV/EPV, Bonus, Carry, Ledger and settlement context are Qualification-scoped unless an endpoint/rule explicitly declares Person scope."
+  },
+  {
+    "file": "governance/sa-decisions/R1_0B_CORE_LOGIC_ADDENDUM_v2.md",
+    "line": 29,
+    "text": "- VolumeRecognition: immutable PV/BV/RPV/EPV-related recognition facts, scoped to source line, Qualification, period/time and parameter snapshot."
+  },
+  {
+    "file": "governance/sa-decisions/R1_0B_CORE_LOGIC_ADDENDUM_v2.md",
+    "line": 32,
+    "text": "PV and BV are independent values/fields. A product may configure them equal, but code must never hardcode equality. Existing historical GPV/RPV/EPV facts are not renamed/migrated by inference."
+  },
+  {
+    "file": "governance/sa-decisions/R1_0B_CORE_LOGIC_ADDENDUM_v2.md",
+    "line": 36,
+    "text": "Monthly EPV accumulator uses only eligible ConsumptionRecognition events."
+  },
+  {
+    "file": "governance/sa-decisions/R1_0B_CORE_LOGIC_ADDENDUM_v2.md",
+    "line": 53,
+    "text": "EPV remains Qualification + calendar-month cumulative:"
+  },
+  {
+    "file": "governance/sa-decisions/R1_0B_CORE_LOGIC_ADDENDUM_v2.md",
+    "line": 55,
+    "text": "`EPV = max(0, eligible monthly personal consumption - 2000) * 60%`"
+  },
+  {
+    "file": "governance/sa-decisions/R1_0B_CORE_LOGIC_ADDENDUM_v2.md",
+    "line": 108,
+    "text": "## 8. 45D lifecycle"
+  },
+  {
+    "file": "governance/sa-decisions/R1_0B_CORE_LOGIC_ADDENDUM_v2.md",
+    "line": 114,
+    "text": "The 45D anchor derives from the authoritative settlement period end/cut-off policy captured in the applicable OperationalCalendarVersion, not from delayed job execution time. `pendingUntil` is persisted as historical evidence and is not moved merely by replay execution delay."
+  },
+  {
+    "file": "governance/sa-decisions/R1_0B_CORE_LOGIC_ADDENDUM_v2.md",
+    "line": 154,
+    "text": "2. Deterministic migration mapping for pre-existing GPV facts into formal PV/BV fields/events."
+  },
+  {
+    "file": "governance/sa-decisions/R1_0B_CORE_LOGIC_ADDENDUM_v2.md",
+    "line": 164,
+    "text": "- PV/BV independence test;"
+  },
+  {
+    "file": "governance/sa-decisions/R1_0B_CORE_LOGIC_ADDENDUM_v2.md",
+    "line": 165,
+    "text": "- Return POSTED recognition reversal and monthly EPV recomputation;"
+  },
+  {
+    "file": "governance/sa-decisions/R1_0B_CORE_LOGIC_ADDENDUM_v2.md",
+    "line": 169,
+    "text": "- 45D anchor stability under delayed execution/replay;"
+  },
+  {
+    "file": "governance/sa-decisions/R1_0B_PRODUCT_OWNER_BOUNDARY_DECISIONS_20260917.md",
+    "line": 27,
+    "text": "- Active and EPV use the same authoritative `Qualification x calendar month` eligible-consumption accumulator."
+  },
+  {
+    "file": "governance/sa-decisions/R1_0B_PRODUCT_OWNER_BOUNDARY_DECISIONS_20260917.md",
+    "line": 30,
+    "text": "- EPV is calculated from the amount above the same NT$2,000 threshold."
+  },
+  {
+    "file": "governance/sa-decisions/R1_0B_PRODUCT_OWNER_BOUNDARY_DECISIONS_20260917.md",
+    "line": 69,
+    "text": "6. Active and EPV read the same accumulator;"
+  },
+  {
+    "file": "governance/sa-decisions/R1_0B_VOLUME_CLASS_CLARIFICATION_20260917.md",
+    "line": 9,
+    "text": "This decision clarifies the domain semantics of PV, BV, GPV, RPV and EPV. It does not change already-approved R1.0B economic formulas for GPV, RPV or EPV, and it must not create duplicate monetary or volume entitlement."
+  },
+  {
+    "file": "governance/sa-decisions/R1_0B_VOLUME_CLASS_CLARIFICATION_20260917.md",
+    "line": 13,
+    "text": "### PV"
+  },
+  {
+    "file": "governance/sa-decisions/R1_0B_VOLUME_CLASS_CLARIFICATION_20260917.md",
+    "line": 15,
+    "text": "PV is an abstract Point/Performance Volume class/concept. It is not, by itself, a separate R1.0B bonus-bearing concrete volume alongside GPV/RPV/EPV."
+  },
+  {
+    "file": "governance/sa-decisions/R1_0B_VOLUME_CLASS_CLARIFICATION_20260917.md",
+    "line": 17,
+    "text": "Under R1.0B the concrete PV-class business volume types are:"
+  },
+  {
+    "file": "governance/sa-decisions/R1_0B_VOLUME_CLASS_CLARIFICATION_20260917.md",
+    "line": 19,
+    "text": "- GPV — General PV: concrete general-performance volume used by the applicable general compensation rules."
+  },
+  {
+    "file": "governance/sa-decisions/R1_0B_VOLUME_CLASS_CLARIFICATION_20260917.md",
+    "line": 20,
+    "text": "- RPV — Repurchase PV: concrete repurchase volume used by Active/repurchase rules."
+  },
+  {
+    "file": "governance/sa-decisions/R1_0B_VOLUME_CLASS_CLARIFICATION_20260917.md",
+    "line": 21,
+    "text": "- EPV — Excess PV: concrete excess-consumption volume used by EPV rules."
+  },
+  {
+    "file": "governance/sa-decisions/R1_0B_VOLUME_CLASS_CLARIFICATION_20260917.md",
+    "line": 23,
+    "text": "A ProductProfile may define PV-related conversion parameters. The effective RuleVersion and recognition purpose determine which concrete PV-class recognition fact is emitted. Abstract PV must not independently create monetary entitlement in addition to GPV/RPV/EPV."
+  },
+  {
+    "file": "governance/sa-decisions/R1_0B_VOLUME_CLASS_CLARIFICATION_20260917.md",
+    "line": 25,
+    "text": "### BV"
+  },
+  {
+    "file": "governance/sa-decisions/R1_0B_VOLUME_CLASS_CLARIFICATION_20260917.md",
+    "line": 27,
+    "text": "BV is an abstract/reserved Business Volume class/concept. BV historically represented a possible organizational/business-volume basis, but under the current R1.0B economic rules its former bonus-calculation role has been replaced by GPV where the approved rule specifies GPV/general-performance volume."
+  },
+  {
+    "file": "governance/sa-decisions/R1_0B_VOLUME_CLASS_CLARIFICATION_20260917.md",
+    "line": 29,
+    "text": "R1.0B therefore has no active bonus formula whose monetary entitlement is calculated directly from an abstract BV value. BV remains reserved for domain compatibility, future versioned rules, ERP/analytics or other formally approved use. No concrete BV recognition shall be invented merely to populate the abstract class."
+  },
+  {
+    "file": "governance/sa-decisions/R1_0B_VOLUME_CLASS_CLARIFICATION_20260917.md",
+    "line": 37,
+    "text": "PaymentConfirmed alone creates no volume. A qualifying ConsumptionRecognition under ProductProfile + RuleVersion may emit concrete VolumeRecognition facts such as GPV, RPV or EPV."
+  },
+  {
+    "file": "governance/sa-decisions/R1_0B_VOLUME_CLASS_CLARIFICATION_20260917.md",
+    "line": 41,
+    "text": "- `volume_class = PV`"
+  },
+  {
+    "file": "governance/sa-decisions/R1_0B_VOLUME_CLASS_CLARIFICATION_20260917.md",
+    "line": 42,
+    "text": "- `volume_type = GPV | RPV | EPV`"
+  },
+  {
+    "file": "governance/sa-decisions/R1_0B_VOLUME_CLASS_CLARIFICATION_20260917.md",
+    "line": 49,
+    "text": "BV remains a reserved abstract class with no active R1.0B concrete bonus-bearing type unless a later approved RuleVersion explicitly defines one."
+  },
+  {
+    "file": "governance/sa-decisions/R1_0B_VOLUME_CLASS_CLARIFICATION_20260917.md",
+    "line": 55,
+    "text": "- Referral / Referral Matching / Binary / Matching / Global / Welfare: consume GPV or the formally defined general-performance basis."
+  },
+  {
+    "file": "governance/sa-decisions/R1_0B_VOLUME_CLASS_CLARIFICATION_20260917.md",
+    "line": 56,
+    "text": "- Repurchase / Active-related routes: consume RPV and the applicable ConsumptionRecognition evidence."
+  },
+  {
+    "file": "governance/sa-decisions/R1_0B_VOLUME_CLASS_CLARIFICATION_20260917.md",
+    "line": 57,
+    "text": "- EPV self/sponsor routes: consume EPV."
+  },
+  {
+    "file": "governance/sa-decisions/R1_0B_VOLUME_CLASS_CLARIFICATION_20260917.md",
+    "line": 58,
+    "text": "- Abstract PV: no direct monetary formula."
+  },
+  {
+    "file": "governance/sa-decisions/R1_0B_VOLUME_CLASS_CLARIFICATION_20260917.md",
+    "line": 59,
+    "text": "- Abstract BV: no active R1.0B direct monetary formula."
+  },
+  {
+    "file": "governance/sa-decisions/R1_0B_VOLUME_CLASS_CLARIFICATION_20260917.md",
+    "line": 61,
+    "text": "Code or configuration equivalent to `bonus = PV * rate` or `bonus = BV * rate` is invalid for R1.0B unless a later approved RuleVersion defines a concrete semantic basis."
+  },
+  {
+    "file": "governance/sa-decisions/R1_0B_VOLUME_CLASS_CLARIFICATION_20260917.md",
+    "line": 63,
+    "text": "## 5. Historical GPV clarification"
+  },
+  {
+    "file": "governance/sa-decisions/R1_0B_VOLUME_CLASS_CLARIFICATION_20260917.md",
+    "line": 65,
+    "text": "Historical GPV facts remain GPV. They are not duplicated, renamed or economically migrated into separate PV or BV recognition rows."
+  },
+  {
+    "file": "governance/sa-decisions/R1_0B_VOLUME_CLASS_CLARIFICATION_20260917.md",
+    "line": 67,
+    "text": "For the current domain model, historical GPV can be semantically classified as a concrete PV-class volume type without changing its amount, source, period, Qualification, ledger identity or economic effect. This is classification, not economic migration."
+  },
+  {
+    "file": "governance/sa-decisions/R1_0B_VOLUME_CLASS_CLARIFICATION_20260917.md",
+    "line": 69,
+    "text": "Accordingly, the former pending question `PD-LEGACY-GPV-PVBV-MIGRATION` is resolved for R1.0B as **NO ECONOMIC MIGRATION REQUIRED**. Any physical schema refactor or metadata backfill must be non-monetary, idempotent, reconciliation-proven and must not duplicate historical volume or entitlement."
+  },
+  {
+    "file": "governance/sa-decisions/R1_0B_VOLUME_CLASS_CLARIFICATION_20260917.md",
+    "line": 73,
+    "text": "This decision supersedes only the semantic wording in SA-20260916-06 that described PV and BV as independent concrete values/fields. The invariant that PV must never be hardcoded equal to BV remains valid as a defensive compatibility rule, but neither abstract class independently generates R1.0B monetary entitlement."
+  },
+  {
+    "file": "governance/sa-decisions/R1_0B_VOLUME_CLASS_CLARIFICATION_20260917.md",
+    "line": 82,
+    "text": "2. Verify no active R1.0B bonus path consumes generic PV or BV directly."
+  },
+  {
+    "file": "governance/sa-decisions/R1_0B_VOLUME_CLASS_CLARIFICATION_20260917.md",
+    "line": 83,
+    "text": "3. Preserve GPV/RPV/EPV historical rows and identifiers; prohibit duplicate PV/BV backfill that changes economic totals."
+  },
+  {
+    "file": "governance/sa-decisions/R1_0B_VOLUME_CLASS_CLARIFICATION_20260917.md",
+    "line": 84,
+    "text": "4. Add executable tests proving GPV/RPV/EPV concrete routing and proving abstract PV/BV cannot independently create Award/Ledger credit."
+  },
+  {
+    "file": "governance/sa-decisions/REPORT.md",
+    "line": 1,
+    "text": "本階段已建立四項 SA Decision/Traceability，修復完整 Backend build，落實月累計 EPV、historical period/snapshot 與保護性 replay。**完整獎金退貨 posting 尚未完成；Production Promotion 仍 BLOCKED。**"
+  },
+  {
+    "file": "governance/sa-decisions/REPORT.md",
+    "line": 9,
+    "text": "| SA-01 Return/replay | API/Worker append-only GPV source reversal、idempotent audit marker、transactional replay outbox；replay 依原事件當時 Binary tree、原 finalized period、historical parameters 與 linked reversals。K1/K2 pool/denominator 全期重算、carry 由有效業績重新推導；cut-off/week 不再固定。舊 single-recipient calculate-and-post 改委派 atomic return-scoped replay，回傳 replay run/period evidence，沒有偽造 POSTED batch。 | K0/RPV complete dependency replay、multi-return effective baseline/carry continuation 尚未實作；EPV allocation/posting pending。route 在 partial monetary posting 前阻擋，horizon 未收斂會 rollback。 |"
+  },
+  {
+    "file": "governance/sa-decisions/REPORT.md",
+    "line": 10,
+    "text": "| SA-02 EPV | Qualification + calendar month 累計，max(0, consumption-2000)*60%；三筆1600為0/720/960，合計1680。認列依序使用原付款的 Active/Sponsor snapshot，零額 event 是 consumption idempotent marker。退貨回沖整月累計後重算 threshold，產生 immutable evidence/outbox。 | Return projection 不是正式 EPV monetary reversal/clawback。跨 historical recipient/source events 的差額分攤 pending；其他 consumption eligibility、月內 rule/timezone 改版 pending。既有 REPURCHASE/netAmount eligibility 未自行擴充。 |"
+  },
+  {
+    "file": "governance/sa-decisions/REPORT.md",
+    "line": 11,
+    "text": "| SA-03 Cut-off/snapshot | K0/K1/K2/global/welfare type-scoped period/cut-off/timezone/effective windows；參數 IDs、SHA256 snapshot 持久化，monetary snapshot 鎖在 configured cut-off。period 格式為unit(DAY/WEEK/MONTH)/count/anchorLocal；cut-off為localTime/daysAfterPeriodEnd/approvalReference。缺設定、overlap、corrupt/missing history fail closed。 | 這是配置格式，不是營運核准；沒有 production 日期、timezone、approval seed。Calendar 在 period end 到 cut-off 間改版需 migration policy。EPV calendar timezone 仍須配置。 |"
+  },
+  {
+    "file": "governance/sa-decisions/REPORT.md",
+    "line": 14,
+    "text": "Prisma 只新增 SettlementBatch/GlobalPoolSettlement/WelfarePoolAccrual 三個 nullable snapshot JSON 欄位，17 migrations 已在本機兩個 DEV DB deploy。原 migrations/seed 未修改、historical PAID/Ledger 未覆寫、NULL snapshot 未以今天參數回填。PV/BV 對現有 GPV/RPV/EPV event 的正式映射列 Pending Decision，不自動推定等價。"
+  },
+  {
+    "file": "governance/sa-decisions/REPORT.md",
+    "line": 29,
+    "text": "| Application implementation | K0 complete period-wide replay、subscription/RPV downstream replay、multi-return已追加差額effective baseline/carry continuation。這些是尚待完成的工程實作，不要求SA重裁已明確的invariant。新monthly/dependency outbox尚無production consumer，保持PENDING；worker build PASS不代表worker E2E完成。 |"
+  },
+  {
+    "file": "governance/sa-decisions/REPORT.md",
+    "line": 30,
+    "text": "| Pending Decision/configuration | EPV monthly return差額跨historical Active/Sponsor recipients及原EPV events分攤；其他eligible consumption；月內parameter/timezone及end-to-cut-off calendar改版；PV/BV正式event映射；核准operational calendars與EPV timezone。 |"
+  },
+  {
+    "file": "governance/sa-decisions/REPORT.md",
+    "line": 35,
+    "text": "下一階段先補K0/RPV與multi-return完整engine，再依EPV allocation決議實作monetary reversal；由核准資料提供operational calendar與historical snapshots，最後完成五球/非空金流與148 TODO。"
+  },
+  {
+    "file": "governance/sa-decisions/decisions.json",
+    "line": 9,
+    "text": "    {\"id\":\"SA-20260915-02\",\"subject\":\"EPV monthly threshold\",\"ruling\":\"Qualification + calendar month cumulative eligible personal consumption; max(0, consumption - NT$2000) * 60%. 4800 => 1680. Returns recompute that month's cumulative threshold; never subtract return amount * 60% mechanically.\"},"
+  },
+  {
+    "file": "governance/sa-decisions/decisions.json",
+    "line": 10,
+    "text": "    {\"id\":\"SA-20260915-04\",\"subject\":\"SSOT / legacy drift\",\"ruling\":\"Filed documents > formally approved company documents > R1.0/R1.0B system specifications > approved SA decisions > discussion/posters/legacy. Formal pools 42/36/15/5/2 and EPV 4800 => 1680. Conflicting legacy tests/fixtures are Legacy Test Drift; do not alter formal rules to satisfy them.\"},"
+  },
+  {
+    "file": "governance/sa-decisions/decisions.json",
+    "line": 15,
+    "text": "    {\"id\":\"SA-20260917-13\",\"subject\":\"PV/BV abstract volume classes\",\"ruling\":\"PV and BV are abstract Volume Classes/Concepts. Under R1.0B, GPV, RPV and EPV are the concrete PV-class business volume types used by active economic rules. BV is a reserved abstract Business Volume class and has no active R1.0B bonus-calculation formula. Abstract PV/BV must not independently create monetary entitlement. Historical GPV remains GPV and requires no economic migration or duplicate PV/BV recognition; semantic classification is non-monetary. This supersedes only the prior wording that treated PV/BV as independent concrete bonus-bearing values/fields.\"},"
+  },
+  {
+    "file": "governance/sa-decisions/decisions.json",
+    "line": 16,
+    "text": "    {\"id\":\"SA-20260917-14\",\"subject\":\"Operational calendar and settlement cadence\",\"ruling\":\"Timezone is Asia/Taipei. GPV recognition immediately calculates Referral Theory and Referral Matching Theory and immediately propagates eligible GPV to historical Binary ancestors' left/right ledgers. Binary weekly settlement runs every Sunday 00:00 Asia/Taipei using half-open weekly boundaries [previous Sunday 00:00, current Sunday 00:00). RPV and EPV recognition/calculation occur immediately when their authoritative recognition events occur. Award settlement batches close on the 10th and 25th of every calendar month. Theory may be calculated earlier [long source line; inspect file]"
+  },
+  {
+    "file": "governance/sa-decisions/decisions.json",
+    "line": 17,
+    "text": "    {\"id\":\"SA-20260917-15\",\"subject\":\"Payout calendar replacing literal 45x24h arithmetic\",\"ruling\":\"The business meaning of the 45-day award hold is implemented by fixed payout batches, not literal settlement timestamp + 45*24 hours. Awards in the 10th settlement batch have nominal payout on the 25th of the following month. Awards in the 25th settlement batch have nominal payout on the 10th of the month after next. If the nominal payout date is not a business day, payout moves to the next business day according to the effective BusinessCalendarVersion. The system persists settlement date, nominal payout date, adjusted payout date and calenda [long source line; inspect file]"
+  },
+  {
+    "file": "governance/sa-decisions/decisions.json",
+    "line": 19,
+    "text": "    {\"id\":\"SA-20260917-17\",\"subject\":\"Multiple Qualifications per Person\",\"ruling\":\"A Person may own multiple Qualifications/Balls. Each Qualification is an independent economic and organizational calculation scope for Active, GPV/RPV/EPV, Sponsor/Binary position, Carry, Bonus, Global eligibility, Ledger and Settlement. Active, volume, Carry or eligibility of one Qualification must never be borrowed by another Qualification. Ownership cardinality is explicit system functionality, not an inference from a single-ball model.\"},"
+  },
+  {
+    "file": "governance/sa-decisions/traceability.json",
+    "line": 15,
+    "text": "        \"K0 and RPV replay implementation\","
+  },
+  {
+    "file": "governance/sa-decisions/traceability.json",
+    "line": 17,
+    "text": "        \"EPV allocation/posting pending\""
+  },
+  {
+    "file": "governance/sa-decisions/traceability.json",
+    "line": 34,
+    "text": "        \"EPV monetary reversal/award allocation pending; projection is not posting\","
+  },
+  {
+    "file": "governance/sa-decisions/traceability.json",
+    "line": 52,
+    "text": "        \"Approved operational calendar and EPV timezone configuration\","
+  },
+  {
+    "file": "governance/user-guide/local-test-20260918/UCELL-LOCAL-TEST-USER-GUIDE.md",
+    "line": 52,
+    "text": "先確認目前 Qualification/Ball。新版首頁使用會員控制台呈現會員、資格與球位，再依序顯示 Active、重購、PV/RPV/EPV、獎金狀態與快速服務。`PENDING + amount:null` 顯示「結算中」，不顯示 NT$0。"
+  },
+  {
+    "file": "governance/user-guide/local-test-20260918/UCELL-LOCAL-TEST-USER-GUIDE.md",
+    "line": 59,
+    "text": "4. 查看 Backend/fixture 回傳的 PV、RPV、EPV。"
+  },
+  {
+    "file": "governance/user-guide/local-test-20260918/UCELL-LOCAL-TEST-USER-GUIDE.md",
+    "line": 72,
+    "text": "選擇月份後查看目前 Qualification 的 PV、RPV、EPV、左右區業績與更新時間。所有數值以 Backend 為權威來源。"
+  },
+  {
+    "file": "governance/user-guide/local-test-20260918/UCELL-LOCAL-TEST-USER-GUIDE.md",
+    "line": 78,
+    "text": "查看 Award lifecycle：CALCULATED、PENDING45D、EFFECTIVE、PAYABLE、PAID。介面只標示 Backend 回傳的目前狀態，不推測其他階段已完成。展開制度明細可查看 Settlement、Rule Version 與 Parameter Snapshot evidence；Adjustment、Reversal、Clawback 保留 append-only 紀錄。"
+  },
+  {
+    "file": "governance/user-guide/local-test-20260918/UCELL-LOCAL-TEST-USER-GUIDE.md",
+    "line": 84,
+    "text": "本頁示範加入購物車與建立示範訂單。正式價格與 PV 必須由 Backend 回傳；DEV Mock 不扣款、不出貨、不產生正式 PV。"
+  },
+  {
+    "file": "governance/user-guide/local-test-20260918/UCELL-LOCAL-TEST-USER-GUIDE.md",
+    "line": 152,
+    "text": "Qualification master-detail 含 Overview、Sponsor、Binary、Active、PV/RPV/EPV、Orders、Bonus、Ledger、Settlement、Audit。所有 evidence 必須屬於同一 Qualification。"
+  },
+  {
+    "file": "governance/user-guide/local-test-20260918/UCELL-LOCAL-TEST-USER-GUIDE.md",
+    "line": 170,
+    "text": "依 Qualification 建立訂單並查看 detail。付款確認後才由 outbox 驅動 recognition；前端不計算價格、PV 或 BV。"
+  },
+  {
+    "file": "governance/user-guide/local-test-20260918/UCELL-LOCAL-TEST-USER-GUIDE.md",
+    "line": 188,
+    "text": "查看 Data Frozen、Active、K0、K1、K2、Pools、45D、Payable pipeline，以及 Rule/Parameter/Snapshot/Replay evidence。此頁只讀 Core monetary facts。"
+  },
+  {
+    "file": "governance/user-guide/local-test-20260918/UCELL-LOCAL-TEST-USER-GUIDE.md",
+    "line": 249,
+    "text": "2. 所有金額、PV/RPV/EPV、Carry、Matching、Pool、Clawback 均由 Backend authoritative result 顯示，前端不得推導。"
+  },
+  {
+    "file": "governance/ux/ADMIN-UX-SPEC.md",
+    "line": 9,
+    "text": "Qualification module retains existing holder, Sponsor, Binary, Active timeline, orders and PV ledger. Person and Qualification data stay separate. Requested full multi-tab detail migration remains staged."
+  },
+  {
+    "file": "governance/ux/DESIGN-SYSTEM-v1.md",
+    "line": 9,
+    "text": "Statuses preserve domain enums. ACTIVE/EFFECTIVE/PASS/RECOGNIZED/PAID success; PENDING/PENDING45D/PROCESSING/SCHEDULED/DUE/SUBMITTED warning; FAILED/SUSPENDED/EXCEPTION/REVERSED/CLAWBACK danger; CALCULATED/PAYABLE/INFORMATION info; DRAFT/INACTIVE/CANCELLED/CLOSED/VOIDED/EXITED and unknown values neutral. Text labels always accompany color. Tone denotes presentation only, never release approval or historical completion."
+  },
+  {
+    "file": "governance/ux/MEMBER-UX-SPEC.md",
+    "line": 5,
+    "text": "Dashboard: authoritative member identity, qualification badge, Core repurchase status/details, PV/RPV/EPV, pending monetary state and service shortcuts. Notifications retains existing connected page/link; dashboard preview is not invented."
+  },
+  {
+    "file": "governance/ux/MEMBER-UX-SPEC.md",
+    "line": 9,
+    "text": "Organization: separate Sponsor and Binary queries/tabs. Existing masked sponsor/referrals and server left/right counts/volumes retained. Complete tree nodes, GPV semantics and Carry are unavailable in current Member read contract; do not substitute counts or derive carry. Full viewer zoom/pan/search/depth is deferred until authoritative API exists."
+  },
+  {
+    "file": "governance/ux/REPORT.md",
+    "line": 32,
+    "text": "Backend priority continues: RPV concurrency coverage, complete K1/K2 period replay, carry convergence/maxWeeks/resume, subscription versioned schedule, TODO burn-down. TODO baseline 148 → 74 → 73; this UX batch 73 → 73. No TODO deleted, skipped or replaced with fake assertions."
+  },
+  {
+    "file": "governance/ux/REPORT.md",
+    "line": 34,
+    "text": "Pending SA Decisions unchanged: eligible-consumption scope, PV/BV formal event mapping, production operational calendar/cut-off. Asia/Taipei and historical fail-closed remain approved."
+  },
+  {
+    "file": "governance/ux/UX-PASS-FAIL-MATRIX.md",
+    "line": 19,
+    "text": "API changes NONE; DB migration NONE; business logic changes NONE; Backend TODO 73 unchanged in this UX checkpoint. Pending eligible-consumption scope, PV/BV formal mapping and production calendar/cut-off unchanged."
+  },
+  {
+    "file": "governance/ux/local-modernization/REPORT.md",
+    "line": 20,
+    "text": "- Member Dashboard now presents a layered identity console, Qualification and repurchase status, authoritative PV/RPV/EPV cards, settlement spotlight and numbered service actions."
+  },
+  {
+    "file": "governance/ux/ux2/READ-MODEL-API-PLAN.md",
+    "line": 11,
+    "text": "| Orders/GMV/payment/returns | Core order/payment/return facts | Business-day boundary uses versioned Asia/Taipei parameter. Pending PV/BV mapping must not be inferred. GMV currency/status inclusion must have SSOT. |"
+  },
+  {
+    "file": "governance/ux/ux2/REPORT.md",
+    "line": 9,
+    "text": "- Dashboard: compact service header; separate explicit DEV-only banner; Qualification context, member identity, Active/repurchase, PV/RPV/EPV and nullable Bonus in that order. Recognition details are expandable."
+  },
+  {
+    "file": "governance/ux/ux2/REPORT.md",
+    "line": 39,
+    "text": "Pending Decisions are unchanged: eligible-consumption scope, formal PV/BV event mapping and production operational calendar/cut-off. Asia/Taipei and historical snapshot fail-closed remain established. Next action: second SA Visual Review; no mechanical whole-site rollout."
+  },
+  {
+    "file": "governance/ux/ux3/REPORT.md",
+    "line": 7,
+    "text": "- Member: Home, Organization, Performance, Bonus, Shop, Orders, Notifications and Me/Profile share the approved mobile shell, Qualification context, tokens, headers, cards and state components. Existing connected idempotency, server price/PV authority and Person/Qualification separation are unchanged."
+  },
+  {
+    "file": "governance/ux/ux3/REPORT.md",
+    "line": 16,
+    "text": "- Tests: Backend API 130 PASS / 52 TODO; Member 116 PASS; Admin 22 PASS; shared PASS. DB Golden isolated twice PASS. Member/Admin integration adds 59 actual HTTP/DB assertions; Member identity DB is 278 assertions; membership DB 98; replay DB 129; RPV concurrency DB 20; return/outbox DB 20."
+  },
+  {
+    "file": "governance/ux/ux3/REPORT.md",
+    "line": 25,
+    "text": "During final publication, the remote integration branch added approved Core Logic Addendum v2 (`d1d3b40`) and the current SSOT pointer (`c811654`). Eligible-consumption defaults and the prospective PV/BV recognition model are therefore no longer unqualified Pending Decisions. UX-3 introduced no implementation of those rules. Remaining fail-closed SSOT/configuration blockers are exact Production cut-off clock values, deterministic migration mapping for pre-existing GPV facts, and unspecified Matching depth skip/stop/compression edges."
+  },
+  {
+    "file": "member/DEV_STATUS.md",
+    "line": 61,
+    "text": "PII persistence and no payment/PV/award posting. Refresh discards demo state."
+  },
+  {
+    "file": "member/README.md",
+    "line": 14,
+    "text": "- Official PV/RPV/EPV and awards come from UCell Core API."
+  },
+  {
+    "file": "member/README.md",
+    "line": 69,
+    "text": "real payment or PV recognition occurs. Cart/order state is in-memory and disappears"
+  },
+  {
+    "file": "member/docs/API_INTEGRATION_v0.1.md",
+    "line": 13,
+    "text": "- PV, RPV, EPV are official Core values; frontend never derives them."
+  },
+  {
+    "file": "member/docs/API_INTEGRATION_v0.1.md",
+    "line": 16,
+    "text": "- Award status follows `CALCULATED -> PENDING45D -> EFFECTIVE -> PAYABLE -> PAID` and reversal/clawback is append-only."
+  },
+  {
+    "file": "member/docs/API_VIEW_CONTRACT_v0.3.md",
+    "line": 25,
+    "text": "settlement calendar or EPV timezone decision. Server owns recognition/cut-off and"
+  },
+  {
+    "file": "member/docs/API_VIEW_CONTRACT_v0.3.md",
+    "line": 27,
+    "text": "No sums, PV derivations, pool allocations or monetary posting occur in the client."
+  },
+  {
+    "file": "member/docs/CHECKOUT_INTEGRATION_v0.4.md",
+    "line": 14,
+    "text": "Demo catalog price/PV is illustrative (4,800 / 2,880); subtotal is demo-only and"
+  },
+  {
+    "file": "member/docs/CHECKOUT_INTEGRATION_v0.4.md",
+    "line": 15,
+    "text": "excludes freight. No PV, active status, inventory or bonus entry is generated."
+  },
+  {
+    "file": "member/docs/CHECKOUT_INTEGRATION_v0.4.md",
+    "line": 32,
+    "text": "   context. Server owns eligibility, SKU prices/PV, tax/freight, availability and"
+  },
+  {
+    "file": "member/docs/CHECKOUT_INTEGRATION_v0.4.md",
+    "line": 50,
+    "text": "Eligible consumption, EPV timezone, PV/BV mapping and operational calendar remain"
+  },
+  {
+    "file": "member/docs/SESSION_DATA_BOUNDARY_v0.5.md",
+    "line": 33,
+    "text": "not settle EPV timezone, operational calendar, recognition or cutoff semantics."
+  },
+  {
+    "file": "member/docs/SESSION_DATA_BOUNDARY_v0.5.md",
+    "line": 36,
+    "text": "nonnegative price/PV and tree counts use nonnegative safe integers. Signed ledger"
+  },
+  {
+    "file": "member/src/App.tsx",
+    "line": 50,
+    "text": "    return <Result state={state}>{d => <div className=\"uc-dashboard\"><section className=\"hero uc-member-identity\"><div className=\"uc-orbit\" aria-hidden=\"true\"/><div className=\"uc-identity-copy\"><small>UCELL MEMBER CONSOLE</small><h2>您好，{d.memberName}</h2><p>{d.memberNo}</p></div><div className=\"uc-identity-badge\"><span>{data.displayRank(q.rank)}</span><strong>{q.code}</strong><small>{q.ballLabel}</small></div></section><section className=\"card uc-member-status\"><div className=\"uc-status-block\"><span>目前經營資格</span><strong>{qualificationActiveLabel(q.active)}</strong><small>{d.monthReference??'月份尚未提供'} · {d.activeInterval?`${d.activeInterval.act [long source line; inspect file]"
+  },
+  {
+    "file": "member/src/App.tsx",
+    "line": 71,
+    "text": "    return <><MemberPageHeader title=\"我的業績\" q={q}/><Period value={period} onChange={setPeriod}/><Result state={state}>{d => <><Metrics items={[[\"PV\", d.pv], [\"RPV\", d.rpv], [\"EPV\", d.epv], [\"左區業績\", d.left], [\"右區業績\", d.right]]}/><p className=\"muted\">資料更新：{d.asOf ?? '尚未提供'}</p></>}</Result></>;"
+  },
+  {
+    "file": "member/src/ConnectedShop.tsx",
+    "line": 32,
+    "text": " return <><MemberPageHeader title=\"商品商城\" q={q}/><p>目前資格：{q.code} · {q.ballLabel}</p><p>商品價格由 Core 確認。訂單成立後待付款；PV 尚未認列，配送與庫存另待確認。</p>{delivery.error?<section><ErrorState message={delivery.error}/><button onClick={delivery.retry}>重新載入配送資料</button></section>:!delivery.data?<LoadingState label=\"配送資料載入中…\"/>:<DeliveryProfileEditor profile={delivery.data} refresh={delivery.retry}/>} {catalog.error?<section><ErrorState message={catalog.error}/><button onClick={catalog.retry}>重新載入商品</button></section>:!catalog.data?<LoadingState label=\"商品載入中…\"/>:!catalog.data.length?<EmptyState title=\"目前沒有上架商品\"/>:catalog.data.map(p=><article className=\"card\" key={p.id [long source line; inspect file]"
+  },
+  {
+    "file": "member/src/QualificationPackageShop.tsx",
+    "line": 11,
+    "text": " return <><h2>取得第一個會員資格</h2><p>請選擇正式套組與商品。套組價格及訂單金額由 Core 提供，前台不計算 PV、BV 或正式認列。</p>"
+  },
+  {
+    "file": "member/src/Shop.tsx",
+    "line": 38,
+    "text": "  return <><MemberPageHeader title=\"商品商城\" q={q}/><p>{isMock ? '可體驗選購與訂單確認；示範訂單不扣款、不出貨、不產生 PV。請勿輸入真實個資。' : '線上購買尚未開放，價格與 PV 以訂單確認資料為準。'}</p>"
+  },
+  {
+    "file": "member/src/Shop.tsx",
+    "line": 41,
+    "text": "      : catalog.data.length ? catalog.data.map(p => <article className=\"card\" key={p.id}><div className=\"product-mark\" aria-hidden=\"true\">UCell</div><h3>{p.name}</h3><p>{money(p.price)} · PV {p.pv === null ? '尚未提供' : p.pv.toLocaleString('zh-TW')}</p>"
+  },
+  {
+    "file": "member/src/Shop.tsx",
+    "line": 45,
+    "text": "      {!count ? <p>購物車尚無商品</p> : <><p>示範商品小計：<strong>{money(demoTotal(cart))}</strong></p><p className=\"muted\">未含運費；正式應付金額與 PV 待訂單確認。</p>"
+  },
+  {
+    "file": "member/src/api.ts",
+    "line": 68,
+    "text": "export type AwardStatus = 'PENDING' | 'CALCULATED' | 'PENDING45D' | 'EFFECTIVE' | 'PAYABLE' | 'PAID' | 'REVERSED' | 'CLAWBACK';"
+  },
+  {
+    "file": "member/src/commerce.tsx",
+    "line": 4,
+    "text": "// Demo-only catalog. No values from this module may authorize real orders or PV."
+  },
+  {
+    "file": "member/src/terminology.ts",
+    "line": 16,
+    "text": "  PENDING45D: '45日等待期',"
+  },
+  {
+    "file": "member/src/validation.ts",
+    "line": 23,
+    "text": "const status = enumOf('PENDING', 'CALCULATED', 'PENDING45D', 'EFFECTIVE', 'PAYABLE', 'PAID', 'REVERSED', 'CLAWBACK');"
+  },
+  {
+    "file": "member/tests/connected-shop.test.tsx",
+    "line": 14,
+    "text": "it('uses Core order amount and requests authorized detail; submits no price or PV',async()=>{"
+  },
+  {
+    "file": "member/tests/design-system.test.tsx",
+    "line": 6,
+    "text": " it('renders a Chinese timeline rather than domain badge text',()=>{const html=renderToStaticMarkup(<AwardLifecycle status=\"PENDING45D\"/>);expect(html).toContain('uc-award-timeline');expect(html).toContain('已計算');expect(html).toContain('等待生效');expect(html).toContain('目前狀態');expect(html).not.toContain('CALCULATED');expect(html).not.toContain('PAYABLE');expect(html.match(/aria-current=\"step\"/g)).toHaveLength(1)});"
+  },
+  {
+    "file": "member/tests/design-system.test.tsx",
+    "line": 8,
+    "text": " it('maps existing statuses and keeps unknown statuses neutral',()=>{expect(statusTone('ACTIVE')).toBe('success');expect(statusTone('PENDING45D')).toBe('warning');expect(statusTone('PENDING_45D')).toBe('warning');expect(statusTone('SUSPENDED')).toBe('danger');expect(statusTone('CALCULATED')).toBe('info');expect(statusTone('NEW_UNREVIEWED_ENUM')).toBe('neutral');expect(renderToStaticMarkup(<StatusBadge status=\"SUSPENDED\"/>)).toContain('SUSPENDED')});"
+  },
+  {
+    "file": "member/tests/design-system.test.tsx",
+    "line": 9,
+    "text": " it('does not infer completion of other lifecycle stages',()=>{const html=renderToStaticMarkup(<AwardLifecycle status=\"PENDING45D\"/>);expect(html.match(/aria-current=\"step\"/g)).toHaveLength(1);expect(html).toContain('其他階段不代表已完成');expect(renderToStaticMarkup(<AwardLifecycle status=\"CLAWBACK\"/>)).not.toContain('aria-current=\"step\"')});"
+  },
+  {
+    "file": "member/tests/terminology.test.ts",
+    "line": 12,
+    "text": "    expect(awardStatusLabels.PENDING45D).toBe('45日等待期');"
+  },
+  {
+    "file": "shared/design-system/index.tsx",
+    "line": 4,
+    "text": "const tones:Record<string,StatusTone>={SUCCESS:'success',ACTIVE:'success',EFFECTIVE:'success',PASS:'success',RECOGNIZED:'success',PAID:'success',PENDING:'warning',PROCESSING:'warning',PENDING45D:'warning',PENDING_45D:'warning','45D':'warning',SUBMITTED:'warning',SCHEDULED:'warning',DUE:'warning',FAILED:'danger',SUSPENDED:'danger',EXCEPTION:'danger',REVERSED:'danger',CLAWBACK:'danger',DRAFT:'neutral',INACTIVE:'neutral',CANCELLED:'neutral',CLOSED:'neutral',VOIDED:'neutral',EXITED:'neutral',CALCULATED:'info',INFORMATION:'info',PAYABLE:'info'};"
+  },
+  {
+    "file": "shared/design-system/index.tsx",
+    "line": 9,
+    "text": "export function MoneyState({amount,status}:{amount:number|string|null;status?:string}){return <strong className=\"uc-money\">{amount===null?(status==='PENDING'||status==='CALCULATED'||status==='PENDING45D'?'結算中':'待提供'):`NT$ ${typeof amount==='number'?amount.toLocaleString('zh-TW'):amount}`}</strong>}"
+  },
+  {
+    "file": "shared/design-system/index.tsx",
+    "line": 21,
+    "text": "const lifecycleStages=[['CALCULATED','已計算'],['PENDING45D','等待生效'],['EFFECTIVE','已生效'],['PAYABLE','可支付'],['PAID','已支付']] as const;"
+  }
+]

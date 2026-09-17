@@ -1,0 +1,24 @@
+warn The configuration property `package.json#prisma` is deprecated and will be removed in Prisma 7. Please migrate to a Prisma config file (e.g., `prisma.config.ts`).
+For more information, see: https://pris.ly/prisma-config
+
+Prisma schema loaded from prisma\schema.prisma
+
+Prisma schema warning:
+- Preview feature "multiSchema" is deprecated. The functionality can be used without specifying it as a preview feature.
+Error: Prisma schema validation - (get-config wasm)
+Error code: P1012
+error: Environment variable not found: DATABASE_URL.
+  -->  prisma\schema.prisma:8
+   |
+ 7 |   provider = "postgresql"
+ 8 |   url      = env("DATABASE_URL")
+   |
+
+Validation Error Count: 1
+[Context: getConfig]
+
+Prisma CLI Version : 6.19.3
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × "pnpm recursive exec" failed in C:\UCell\ux-v2-
+  │ phase1\backend\packages\database

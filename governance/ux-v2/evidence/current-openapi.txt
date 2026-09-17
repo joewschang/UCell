@@ -1,0 +1,2 @@
+$ node scripts/openapi-preflight.mjs
+OPENAPI_PREFLIGHT_PASS

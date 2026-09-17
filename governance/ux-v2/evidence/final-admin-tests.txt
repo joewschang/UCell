@@ -1,0 +1,27 @@
+$ vitest run
+
+ RUN  v4.1.11 C:/UCell/ux-v2-phase1/admin
+
+ ❯ src/features/provider-operations/ProviderOperationsPage.test.tsx (1 test | 1 failed) 47ms
+   × renders safe provider health and backlog fields without sensitive evidence 45ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/features/provider-operations/ProviderOperationsPage.test.tsx > renders safe provider health and backlog fields without sensitive evidence
+AssertionError: expected '[{"type":"div","props":{"className":"…' to contain 'CRITICAL'
+
+Expected: "CRITICAL"
+Received: "[{"type":"div","props":{"className":"uc-header"},"children":[{"type":"div","props":{},"children":[{"type":"h1","props":{},"children":["Provider Webhook 營運"]},{"type":"p","props":{},"children":["監看付款、發票與物流 provider webhook inbox；資料每分鐘自動更新。"]}]},{"type":"button","props":{},"children":["重新整理"]}]},{"type":"section","props":{"className":"uc-state","role":"status"},"children":[{"type":"p","props":{},"children":["資料載入中…"]},{"type":"div","props":{"className":"uc-skeleton","aria-hidden":"true"},"children":null},{"type":"div","props":{"className":"uc-skeleton","aria-hidden":"true"},"children":null}]},{"type":"section","props":{"className":"card "},"children":[{"type":"h2","props":{},"children":["Backlog 篩選"]},{"type":"form","props":{},"children":[{"type":"div","props":{"className":"filter-grid"},"children":[{"type":"label","props":{"className":"field"},"children":[{"type":"span","props":{},"children":["Domain"]},{"type":"select","props":{"value":""},"children":[{"type":"option","props":{"value":""},"children":["全部"]},{"type":"option","props":{},"children":["PAYMENT"]},{"type":"option","props":{},"children":["INVOICE"]},{"type":"option","props":{},"children":["LOGISTICS"]}]}]},{"type":"label","props":{"className":"field"},"children":[{"type":"span","props":{},"children":["Provider"]},{"type":"input","props":{"maxLength":100,"value":""},"children":null}]},{"type":"label","props":{"className":"field"},"children":[{"type":"span","props":{},"children":["狀態"]},{"type":"select","props":{"value":""},"children":[{"type":"option","props":{"value":""},"children":["預設營運 backlog"]},{"type":"option","props":{},"children":["RECEIVED"]},{"type":"option","props":{},"children":["VERIFIED"]},{"type":"option","props":{},"children":["REJECTED"]},{"type":"option","props":{},"children":["PROCESSING"]},{"type":"option","props":{},"children":["PROCESSED"]},{"type":"option","props":{},"children":["RETRY_PENDING"]},{"type":"option","props":{},"children":["MANUAL_REVIEW"]}]}]},{"type":"label","props":{"className":"field"},"children":[{"type":"span","props":{},"children":["載入筆數"]},{"type":"select","props":{"value":50},"children":[{"type":"option","props":{},"children":["25"]},{"type":"option","props":{},"children":["50"]},{"type":"option","props":{},"children":["100"]},{"type":"option","props":{},"children":["200"]}]}]}]},{"type":"div","props":{"className":"button-row"},"children":[{"type":"button","props":{"className":"primary","type":"submit"},"children":["套用篩選"]},{"type":"button","props":{"type":"button"},"children":["清除"]}]}]}]},{"type":"section","props":{"className":"uc-state","role":"status"},"children":[{"type":"p","props":{},"children":["資料載入中…"]},{"type":"div","props":{"className":"uc-skeleton","aria-hidden":"true"},"children":null},{"type":"div","props":{"className":"uc-skeleton","aria-hidden":"true"},"children":null}]}]"
+
+ ❯ src/features/provider-operations/ProviderOperationsPage.test.tsx:13:109
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 21 passed (22)
+      Tests  1 failed | 62 passed (63)
+   Start at  06:20:40
+   Duration  2.60s (transform 6.90s, setup 0ms, import 12.87s, tests 1.54s, environment 6ms)
+
+[ELIFECYCLE] Test failed. See above for more details.

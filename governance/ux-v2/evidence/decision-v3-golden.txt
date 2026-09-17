@@ -1,0 +1,20 @@
+$ node scripts/v3-mandatory-golden.mjs
+T01 PASS - Threshold transaction is Active for itself
+T02 PASS - New Taipei month resets to Inactive
+T03 PASS - Ball A Active does not activate Ball B
+T04 PASS - Exact Sunday 00:00 belongs only to new Binary week
+T05 PASS - GPV immediately writes theory and Binary propagation without final Award
+T06 PASS - Weekly caps and x4 display values
+T07 PASS - 10th settlement maps to following-month 25th payout
+T08 PASS - 25th settlement maps to month-after-next 10th payout
+T09 PASS - Holiday payout advances to next Business Day
+T10 PASS - Global undistributed reaches Reservoir A exactly once across normal, retry, duplicate, replay and rollback
+T11 PASS - Generic PV cannot create an Award
+T12 PASS - Generic BV cannot create an Award
+T13 PASS - Historical GPV is classified without duplicate volume
+T14 PASS - Inactive intermediate fixed generation is zero while higher generation continues
+T15 PASS - Return replays the historical Active threshold and interval
+T16 PASS - Return recomputes the complete historical month EPV accumulator
+T17 PASS - PAID reduction appends clawback/recovery and preserves original PAID history
+
+V3_MANDATORY_GOLDEN PASS
