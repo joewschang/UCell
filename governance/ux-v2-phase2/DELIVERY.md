@@ -52,3 +52,11 @@
 原本初始載入、切球確認及確認失敗時，MemberApp 會移除整個 shell，只留下通用文字。現在持續顯示品牌、skip link 與五項導覽，在主要內容區使用共用 LoadingState／ErrorState。切球訊息顯示正在確認的資格代碼與球名稱；待確認資格只用於文字提示，不作為已確認的 current 或資料查詢依據。原有 abort、sequence、server confirmation 與錯誤隔離保持不變。重試會重設載入文字並重新讀取資格清單。
 
 本輪 Member 全部 25 files / 159 tests PASS；TypeScript 與 Vite build PASS。新增兩項 App 整合測試覆蓋初始載入／503 保留導覽，以及切球時隱藏舊資料、403 失敗隔離與重試恢復。沒有修改 CSS、Admin 或後端；前述瀏覽器截圖屬上一輪 shell 驗證，本輪未重新擷取，不作為新增等待／錯誤狀態的視覺驗證。
+
+## 切球鍵盤焦點補強
+
+切球或錯誤重試開始時，焦點先移至持續存在的主要內容區；確認成功後回到資格選單。確認失敗時保留在錯誤內容區。若使用者在等待期間自行將焦點移至導覽，不強制搶回。資格 ID 亦列入恢復判斷，支援快速完成的選取。
+
+驗證：Member 相關 3 files / 33 tests PASS；修正 TypeScript DOM 空值判斷後，最終 TypeScript + Vite build PASS。Edge headless 五項焦點情境 PASS：等待、成功、保留使用者移至導覽的焦點、403 失敗與重試成功。瀏覽器測試攔截所有 API，未連接真實後端。
+
+重現：在 member 目錄以 VITE_ENABLE_MOCK=false 啟動 Vite 於 127.0.0.1:5186，再執行 node tests/qualification-focus.cjs。tests/qualification-focus.html 與 entry.tsx 是測試入口，使用實際 App 與 QualificationProvider，跳過 LIFF 啟動；不列入 production build 入口。
