@@ -17,6 +17,15 @@ function adapter(provider: PaymentProviderAdapter['provider']): PaymentProviderA
 }
 
 describe('Payment provider registry', () => {
+  it('rejects unknown runtime availability and snapshots mutable config', () => {
+    const taishin = adapter('TAISHIN_ECOM');
+    expect(() => new PaymentProviderRegistry([taishin], JSON.parse('{"TAISHIN_ECOM":"ENABELD"}')).resolve('TAISHIN_ECOM')).toThrow();
+    const config = { TAISHIN_ECOM: 'FEATURE_DISABLED' as const };
+    const registry = new PaymentProviderRegistry([taishin], config);
+    Object.assign(config, { TAISHIN_ECOM: 'ENABLED' });
+    expect(() => registry.resolve('TAISHIN_ECOM')).toThrow();
+    expect(() => new PaymentProviderRegistry([adapter('UNKNOWN' as never)], { UNKNOWN: 'ENABLED' } as never).resolve('UNKNOWN' as never)).toThrow();
+  });
   it('resolves one explicitly enabled provider adapter', () => {
     const taishin = adapter('TAISHIN_ECOM');
     const registry = new PaymentProviderRegistry([taishin], { TAISHIN_ECOM: 'ENABLED' });

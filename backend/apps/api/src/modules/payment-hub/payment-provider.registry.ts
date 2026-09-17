@@ -1,4 +1,4 @@
-import { PaymentProvider, PaymentProviderAdapter } from './payment-provider.adapter';
+import { PaymentProvider, PaymentProviderAdapter, PAYMENT_PROVIDERS } from './payment-provider.adapter';
 
 export type PaymentProviderAvailability = 'ENABLED' | 'CONFIG_PENDING' | 'FEATURE_DISABLED';
 
@@ -8,7 +8,8 @@ export class PaymentProviderRegistryError extends Error {
       | 'PAYMENT_PROVIDER_DUPLICATE'
       | 'PAYMENT_PROVIDER_DISABLED'
       | 'PAYMENT_PROVIDER_CONFIG_PENDING'
-      | 'PAYMENT_PROVIDER_ADAPTER_UNAVAILABLE',
+      | 'PAYMENT_PROVIDER_ADAPTER_UNAVAILABLE'
+      | 'PAYMENT_PROVIDER_CONFIG_INVALID',
     message: string,
     readonly provider: PaymentProvider,
   ) {
@@ -24,6 +25,7 @@ export class PaymentProviderRegistry {
     adapters: ReadonlyArray<PaymentProviderAdapter>,
     private readonly availability: Readonly<Partial<Record<PaymentProvider, PaymentProviderAvailability>>>,
   ) {
+    this.availability = Object.freeze({ ...availability });
     for (const adapter of adapters) {
       if (this.adapters.has(adapter.provider)) {
         throw new PaymentProviderRegistryError(
@@ -41,6 +43,7 @@ export class PaymentProviderRegistry {
   }
 
   resolve(provider: PaymentProvider): PaymentProviderAdapter {
+    if (!PAYMENT_PROVIDERS.includes(provider)) throw new PaymentProviderRegistryError('PAYMENT_PROVIDER_CONFIG_INVALID', 'Unknown payment provider.', provider);
     const status = this.status(provider);
     if (status === 'FEATURE_DISABLED') {
       throw new PaymentProviderRegistryError(
@@ -56,6 +59,7 @@ export class PaymentProviderRegistry {
         provider,
       );
     }
+    if (status !== 'ENABLED') throw new PaymentProviderRegistryError('PAYMENT_PROVIDER_CONFIG_INVALID', 'Unknown provider availability.', provider);
     const adapter = this.adapters.get(provider);
     if (!adapter) {
       throw new PaymentProviderRegistryError(

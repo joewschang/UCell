@@ -1,9 +1,27 @@
 import {
   PaymentEvidenceSecurityError,
   sanitizePaymentEvidenceMetadata,
+  projectCanonicalPaymentMetadata,
 } from '../src/modules/payment-hub/payment-evidence-sanitizer';
 
 describe('Payment Hub evidence security', () => {
+  it.each([NaN, Infinity, -Infinity])('rejects non-finite evidence %s', value => {
+    expect(() => sanitizePaymentEvidenceMetadata({ result: value })).toThrow(expect.objectContaining({ code: 'PAYMENT_EVIDENCE_UNSUPPORTED_VALUE' }));
+  });
+  it('rejects numeric card data, secret aliases and arbitrary provider payloads', () => {
+    expect(() => sanitizePaymentEvidenceMetadata({ result: 4111111111111111 })).toThrow(expect.objectContaining({ code: 'CARDHOLDER_DATA_FORBIDDEN' }));
+    expect(() => sanitizePaymentEvidenceMetadata({ providerSecret: 'SYNTHETIC_ONLY' })).toThrow();
+    expect(() => projectCanonicalPaymentMetadata({ response: { status: 'PAID' } })).toThrow();
+    expect(() => projectCanonicalPaymentMetadata({ correlationId: 'transport-only' })).toThrow();
+  });
+  it('freezes the flat canonical projection and rejects unknown fields', () => {
+    const source = { amount: '100.00', currency: 'TWD' };
+    const safe = projectCanonicalPaymentMetadata(source);
+    source.amount = '200.00';
+    expect(safe.amount).toBe('100.00');
+    expect(Object.isFrozen(safe)).toBe(true);
+    expect(() => projectCanonicalPaymentMetadata({ amount: 'NaN' })).toThrow();
+  });
   it('preserves safe provider references while redacting secrets recursively', () => {
     const source = {
       providerTransactionRef: 'txn-001',

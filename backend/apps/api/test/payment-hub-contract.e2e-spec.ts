@@ -3,14 +3,24 @@ import {
   classifyProviderEvent,
   PaymentTransitionError,
 } from '../src/modules/payment-hub/canonical-payment-transition';
+import { createPaymentVerificationBoundary, VerifiedPaymentReceipt } from '../src/modules/payment-hub/payment-provider.adapter';
 
 describe('Payment Hub canonical contract', () => {
   const webhookEvidence = {
+    receipt: undefined as VerifiedPaymentReceipt | undefined,
     source: 'VERIFIED_WEBHOOK' as const,
     signatureVerified: true,
     providerEventIdentity: 'event-001',
     providerTransactionRef: 'txn-001',
   };
+  beforeAll(async () => {
+    webhookEvidence.receipt = await createPaymentVerificationBoundary({ verify: async () => ({
+      provider: 'TAISHIN_ECOM', connectionId: 'merchant-test', paymentId: 'payment-test', orderId: 'order-test',
+      operationId: 'capture-test', operationKind: 'PAYMENT', amount: '100.00', currency: 'TWD',
+      status: 'PAID', source: 'VERIFIED_WEBHOOK', providerEventIdentity: 'event-001', providerTransactionRef: 'txn-001',
+      payloadHash: 'a'.repeat(64), safeEvidenceRef: 'evidence-test', verifiedAt: '2026-09-17T00:00:00Z', verificationConfigVersion: 'mock-only',
+    }) })(undefined);
+  });
 
   it('accepts PAID only from complete verified provider evidence', () => {
     expect(() => assertCanonicalPaymentTransition('PENDING', 'PAID', webhookEvidence)).not.toThrow();
@@ -45,7 +55,7 @@ describe('Payment Hub canonical contract', () => {
     }
   });
 
-  it('permits controlled POS evidence without storing card data', () => {
+  it('requires verified reconciliation after controlled POS intake', () => {
     expect(() =>
       assertCanonicalPaymentTransition('PENDING', 'PAID', {
         source: 'CONTROLLED_POS_EVIDENCE',
@@ -54,12 +64,20 @@ describe('Payment Hub canonical contract', () => {
         batchRef: 'batch-01',
         recordedBy: 'operator-01',
       }),
-    ).not.toThrow();
+    ).toThrow(expect.objectContaining({ code: 'PAYMENT_EVIDENCE_UNTRUSTED' }));
   });
 
-  it('classifies duplicate provider delivery without a second business effect', () => {
+  it('classifies duplicate evidence without claiming DB effect idempotency', () => {
     expect(classifyProviderEvent(null, 'hash-a')).toEqual({ result: 'NEW' });
     expect(classifyProviderEvent('hash-a', 'hash-a')).toEqual({ result: 'REPLAY' });
+  });
+
+  it.each(['UNRECOGNIZED', '', 'browser_return'])('rejects runtime source %s', source => {
+    expect(() => assertCanonicalPaymentTransition('PENDING', 'PAID', { ...webhookEvidence, source: source as never })).toThrow();
+  });
+  it('rejects query references alone and copied receipts', () => {
+    expect(() => assertCanonicalPaymentTransition('PENDING', 'PAID', { source: 'PROVIDER_QUERY', providerTransactionRef: 'txn-001' })).toThrow();
+    expect(() => assertCanonicalPaymentTransition('PENDING', 'PAID', { ...webhookEvidence, receipt: { ...webhookEvidence.receipt! } })).toThrow();
   });
 
   it('rejects reuse of provider event identity with a changed payload', () => {

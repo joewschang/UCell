@@ -1,0 +1,611 @@
+{
+  "baseline": "2176b049dde32300e5023bcb7088d89890fec519",
+  "observedAt": "2026-09-17T05:51:49.163Z",
+  "currentBranch": "DETACHED_HEAD",
+  "newCommit": null,
+  "closingRemoteDelta": {
+    "base": "2176b049dde32300e5023bcb7088d89890fec519",
+    "head": "98a69992940fb00c89b592aa964614a1c7e4cce5",
+    "observedAt": "2026-09-17T05:51:25.417Z",
+    "status": "ahead",
+    "commits": [
+      {
+        "sha": "df2547d7a04e0985b69ba163c7329aed714a83ec",
+        "message": "feat(payment): add canonical provider contract"
+      },
+      {
+        "sha": "98a69992940fb00c89b592aa964614a1c7e4cce5",
+        "message": "fix(organization): connect binary placement command"
+      }
+    ],
+    "files": [
+      {
+        "filename": "backend/apps/api/src/modules/organization/organization.controller.ts",
+        "status": "modified",
+        "patch": "@@ -1,15 +1,27 @@\n import { Roles } from '../auth/roles.decorator';\n-import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';\n-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';\n+import { Body, Controller, Get, Headers, Post, Query, Req, UseGuards } from '@nestjs/common';\n+import { ApiBearerAuth, ApiHeader, ApiOperation, ApiProperty, ApiTags } from '@nestjs/swagger';\n+import { IsEnum, IsString, IsUUID, MaxLength, MinLength } from 'class-validator';\n import { IdempotencyGuard } from '../../common/guards/idempotency.guard';\n+import { QualificationPlacementService } from '../qualification/qualification-placement.service';\n import { OrganizationService } from './organization.service';\n \n+class LegacyAdminBinaryPlacementDto {\n+  @ApiProperty({ format: 'uuid' }) @IsUUID() qualificationId!: string;\n+  @ApiProperty({ format: 'uuid' }) @IsUUID() binaryParentQualificationId!: string;\n+  @ApiProperty({ enum: ['LEFT', 'RIGHT'] }) @IsEnum(['LEFT', 'RIGHT']) side!: 'LEFT' | 'RIGHT';\n+  @ApiProperty({ maxLength: 120 }) @IsString() @MinLength(1) @MaxLength(120) reasonCode!: string;\n+}\n+\n @ApiTags('Admin - Organization')\n @ApiBearerAuth('adminBearer')\n @Roles('SUPER_ADMIN','MEMBERSHIP_OPS','COMPLIANCE_AUDIT')\n @Controller('admin/organization')\n export class OrganizationController {\n-  constructor(private readonly service:OrganizationService){}\n+  constructor(\n+    private readonly service: OrganizationService,\n+    private readonly placement: QualificationPlacementService,\n+  ) {}\n \n   @Get('placement-preview')\n   @ApiOperation({operationId:'adminPreviewBinaryPlacement',summary:'預檢推薦序號與Binary安置合法性（不寫入）'})\n@@ -24,10 +36,30 @@ export class OrganizationController {\n   }\n \n   @Post('binary-placement')\n+  @Roles('SUPER_ADMIN','QUALIFICATION_PLACEMENT_OVERRIDE')\n   @UseGuards(IdempotencyGuard)\n-  @ApiOperation({ operationId:'adminPlaceBinary', summary:'安置 Binary 位置' })\n-  async place(@Body() dto:Record<string,unknown>) {\n-    // TODO call organization application service.\n-    return { data:{ accepted:true } };\n+  @ApiHeader({ name: 'Idempotency-Key', required: true })\n+  @ApiOperation({\n+    operationId:'adminPlaceBinary',\n+    summary:'安置 Binary 位置（相容端點）',\n+    description:'Delegates to the canonical Qualification placement command with the same authorization, legality, concurrency, evidence and audit controls.',\n+  })\n+  async place(\n+    @Body() dto: LegacyAdminBinaryPlacementDto,\n+    @Headers('idempotency-key') key: string,\n+    @Req() req: any,\n+  ) {\n+    const result = await this.placement.placeByAdmin(\n+      req.user?.personId,\n+      {\n+        qualificationId: dto.qualificationId,\n+        binaryParentQualificationId: dto.binaryParentQualificationId,\n+        side: dto.side,\n+        reasonCode: dto.reasonCode,\n+      },\n+      key,\n+      req.requestId,\n+    );\n+    return { data: result.value, meta: { replayed: result.replayed } };\n   }\n }"
+      },
+      {
+        "filename": "backend/apps/api/src/modules/organization/organization.module.ts",
+        "status": "modified",
+        "patch": "@@ -1,10 +1,11 @@\n import { Module } from '@nestjs/common';\n+import { QualificationPlacementService } from '../qualification/qualification-placement.service';\n import { OrganizationController } from './organization.controller';\n import { OrganizationService } from './organization.service';\n \n @Module({\n   controllers: [OrganizationController],\n-  providers: [OrganizationService],\n-  exports: [OrganizationService],\n+  providers: [OrganizationService, QualificationPlacementService],\n+  exports: [OrganizationService, QualificationPlacementService],\n })\n export class OrganizationModule {}"
+      },
+      {
+        "filename": "backend/apps/api/src/modules/payment-hub/canonical-payment-transition.ts",
+        "status": "added",
+        "patch": "@@ -0,0 +1,132 @@\n+import { CanonicalPaymentStatus } from './payment-provider.adapter';\n+\n+export type PaymentEvidenceSource =\n+  | 'BROWSER_RETURN'\n+  | 'VERIFIED_WEBHOOK'\n+  | 'PROVIDER_QUERY'\n+  | 'RECONCILIATION'\n+  | 'CONTROLLED_POS_EVIDENCE';\n+\n+export interface PaymentTransitionEvidence {\n+  source: PaymentEvidenceSource;\n+  signatureVerified?: boolean;\n+  providerEventIdentity?: string;\n+  providerTransactionRef?: string;\n+  terminalRef?: string;\n+  batchRef?: string;\n+  recordedBy?: string;\n+}\n+\n+export type ProviderEventDecision =\n+  | { result: 'NEW' }\n+  | { result: 'REPLAY' }\n+  | { result: 'CONFLICT'; code: 'PROVIDER_EVENT_IDENTITY_CONFLICT' };\n+\n+const allowedTransitions: Readonly<Record<CanonicalPaymentStatus, ReadonlySet<CanonicalPaymentStatus>>> = {\n+  CREATED: new Set(['PENDING', 'AUTHORIZED', 'CAPTURED', 'PAID', 'FAILED', 'CANCELLED']),\n+  PENDING: new Set(['AUTHORIZED', 'CAPTURED', 'PAID', 'FAILED', 'CANCELLED']),\n+  AUTHORIZED: new Set(['CAPTURED', 'PAID', 'FAILED', 'CANCELLED']),\n+  CAPTURED: new Set(['PAID', 'REFUND_PENDING', 'PARTIALLY_REFUNDED', 'REFUNDED']),\n+  PAID: new Set(['REFUND_PENDING', 'PARTIALLY_REFUNDED', 'REFUNDED']),\n+  FAILED: new Set(),\n+  CANCELLED: new Set(),\n+  REFUND_PENDING: new Set(['PARTIALLY_REFUNDED', 'REFUNDED']),\n+  PARTIALLY_REFUNDED: new Set(['REFUND_PENDING', 'REFUNDED']),\n+  REFUNDED: new Set(),\n+};\n+\n+const providerOutcomeStatuses = new Set<CanonicalPaymentStatus>([\n+  'AUTHORIZED',\n+  'CAPTURED',\n+  'PAID',\n+  'FAILED',\n+  'CANCELLED',\n+  'REFUND_PENDING',\n+  'PARTIALLY_REFUNDED',\n+  'REFUNDED',\n+]);\n+\n+export class PaymentTransitionError extends Error {\n+  constructor(\n+    readonly code:\n+      | 'PAYMENT_EVIDENCE_UNTRUSTED'\n+      | 'PAYMENT_EVIDENCE_INCOMPLETE'\n+      | 'PAYMENT_TRANSITION_INVALID',\n+    message: string,\n+  ) {\n+    super(message);\n+    this.name = 'PaymentTransitionError';\n+  }\n+}\n+\n+export function assertCanonicalPaymentTransition(\n+  current: CanonicalPaymentStatus,\n+  next: CanonicalPaymentStatus,\n+  evidence: PaymentTransitionEvidence,\n+): void {\n+  if (current === next) return;\n+\n+  if (!allowedTransitions[current].has(next)) {\n+    throw new PaymentTransitionError(\n+      'PAYMENT_TRANSITION_INVALID',\n+      `Payment cannot transition from ${current} to ${next}.`,\n+    );\n+  }\n+\n+  if (providerOutcomeStatuses.has(next)) assertTrustedProviderEvidence(evidence);\n+}\n+\n+function assertTrustedProviderEvidence(evidence: PaymentTransitionEvidence): void {\n+  if (evidence.source === 'BROWSER_RETURN') {\n+    throw new PaymentTransitionError(\n+      'PAYMENT_EVIDENCE_UNTRUSTED',\n+      'Browser return is navigation evidence and cannot establish a provider payment outcome.',\n+    );\n+  }\n+\n+  if (evidence.source === 'VERIFIED_WEBHOOK') {\n+    if (!evidence.signatureVerified || !evidence.providerEventIdentity || !evidence.providerTransactionRef) {\n+      throw new PaymentTransitionError(\n+        'PAYMENT_EVIDENCE_INCOMPLETE',\n+        'Verified webhook evidence requires signature, provider event identity and transaction reference.',\n+      );\n+    }\n+    return;\n+  }\n+\n+  if (evidence.source === 'PROVIDER_QUERY') {\n+    if (!evidence.providerTransactionRef) {\n+      throw new PaymentTransitionError(\n+        'PAYMENT_EVIDENCE_INCOMPLETE',\n+        'Provider query evidence requires a provider transaction reference.',\n+      );\n+    }\n+    return;\n+  }\n+\n+  if (evidence.source === 'RECONCILIATION') {\n+    if (!evidence.providerTransactionRef || !evidence.batchRef) {\n+      throw new PaymentTransitionError(\n+        'PAYMENT_EVIDENCE_INCOMPLETE',\n+        'Reconciliation evidence requires transaction and batch references.',\n+      );\n+    }\n+    return;\n+  }\n+\n+  if (!evidence.providerTransactionRef || !evidence.recordedBy || (!evidence.terminalRef && !evidence.batchRef)) {\n+    throw new PaymentTransitionError(\n+      'PAYMENT_EVIDENCE_INCOMPLETE',\n+      'Controlled POS evidence requires transaction, operator and terminal or batch reference.',\n+    );\n+  }\n+}\n+\n+export function classifyProviderEvent(\n+  existingPayloadHash: string | null,\n+  incomingPayloadHash: string,\n+): ProviderEventDecision {\n+  if (existingPayloadHash === null) return { result: 'NEW' };\n+  if (existingPayloadHash === incomingPayloadHash) return { result: 'REPLAY' };\n+  return { result: 'CONFLICT', code: 'PROVIDER_EVENT_IDENTITY_CONFLICT' };\n+}"
+      },
+      {
+        "filename": "backend/apps/api/src/modules/payment-hub/payment-provider.adapter.ts",
+        "status": "added",
+        "patch": "@@ -0,0 +1,70 @@\n+export type PaymentProvider =\n+  | 'TAISHIN_ECOM'\n+  | 'TAISHIN_POS'\n+  | 'ECPAY'\n+  | 'LINE_PAY'\n+  | 'OTHER';\n+\n+export type CanonicalPaymentStatus =\n+  | 'CREATED'\n+  | 'PENDING'\n+  | 'AUTHORIZED'\n+  | 'CAPTURED'\n+  | 'PAID'\n+  | 'FAILED'\n+  | 'CANCELLED'\n+  | 'REFUND_PENDING'\n+  | 'PARTIALLY_REFUNDED'\n+  | 'REFUNDED';\n+\n+export interface CreatePaymentRequest {\n+  paymentId: string;\n+  orderId: string;\n+  amount: string;\n+  currency: string;\n+  idempotencyKey: string;\n+  returnUrl?: string;\n+}\n+\n+export interface ProviderPaymentResult {\n+  provider: PaymentProvider;\n+  providerTransactionRef: string;\n+  status: CanonicalPaymentStatus;\n+  safeResponseRef?: string;\n+}\n+\n+export interface ProviderWebhookEnvelope {\n+  providerEventId?: string;\n+  rawBody: string;\n+  headers: Readonly<Record<string, string | string[] | undefined>>;\n+  receivedAt: Date;\n+  correlationId: string;\n+}\n+\n+export interface VerifiedProviderEvent {\n+  provider: PaymentProvider;\n+  providerEventIdentity: string;\n+  providerTransactionRef: string;\n+  status: CanonicalPaymentStatus;\n+  payloadHash: string;\n+  occurredAt?: Date;\n+}\n+\n+export interface ReconciliationQuery {\n+  settlementDate: string;\n+  providerBatchRef?: string;\n+}\n+\n+export interface PaymentProviderAdapter {\n+  readonly provider: PaymentProvider;\n+  createPayment(request: CreatePaymentRequest): Promise<ProviderPaymentResult>;\n+  queryPayment(providerTransactionRef: string): Promise<ProviderPaymentResult>;\n+  cancelOrVoid(providerTransactionRef: string, idempotencyKey: string): Promise<ProviderPaymentResult>;\n+  refund(\n+    providerTransactionRef: string,\n+    amount: string,\n+    idempotencyKey: string,\n+  ): Promise<ProviderPaymentResult>;\n+  verifyWebhook(envelope: ProviderWebhookEnvelope): Promise<VerifiedProviderEvent>;\n+  reconcile(query: ReconciliationQuery): Promise<ReadonlyArray<ProviderPaymentResult>>;\n+}"
+      },
+      {
+        "filename": "backend/apps/api/src/modules/qualification/qualification.module.ts",
+        "status": "modified",
+        "patch": "@@ -8,12 +8,11 @@ import { QualificationWorkflowService } from './qualification-workflow.service';\n import { SystemAssignmentService } from './system-assignment.service';\n import {AuthModule} from '../auth/auth.module';\n import {AdminQualificationPlacementController,MemberQualificationPlacementController} from './qualification-placement.controller';\n-import {QualificationPlacementService} from './qualification-placement.service';\n \n @Module({\n   imports:[OrganizationModule,AuthModule],\n   controllers:[QualificationController,QualificationWorkflowController,MemberQualificationPlacementController,AdminQualificationPlacementController],\n-  providers:[QualificationService,QualificationStatusService,QualificationWorkflowService,SystemAssignmentService,QualificationPlacementService],\n+  providers:[QualificationService,QualificationStatusService,QualificationWorkflowService,SystemAssignmentService],\n   exports:[QualificationStatusService]\n })\n export class QualificationModule {}"
+      },
+      {
+        "filename": "backend/apps/api/test/organization.e2e-spec.ts",
+        "status": "modified",
+        "patch": "@@ -1,3 +1,4 @@\n+import { OrganizationController } from '../src/modules/organization/organization.controller';\n import { OrganizationService } from '../src/modules/organization/organization.service';\n import { SideCode } from '@ucell/database';\n describe('Organization guardrails (P0)', () => {\n@@ -41,3 +42,31 @@ describe('Organization guardrails (P0)', () => {\n     expect(query).toHaveBeenCalledTimes(1);\n   });\n });\n+\n+import { OrganizationController } from '../src/modules/organization/organization.controller';\n+\n+describe('Organization legacy placement endpoint', () => {\n+  it('delegates to the canonical admin placement command and preserves replay metadata', async () => {\n+    const placement = {\n+      placeByAdmin: jest.fn(async () => ({ value: { placementEvidenceId: 'evidence-1' }, replayed: true })),\n+    };\n+    const controller = new OrganizationController({} as any, placement as any);\n+    const dto = {\n+      qualificationId: '11111111-1111-4111-8111-111111111111',\n+      binaryParentQualificationId: '22222222-2222-4222-8222-222222222222',\n+      side: 'LEFT' as const,\n+      reasonCode: 'ADMIN_APPROVED',\n+    };\n+\n+    await expect(controller.place(dto, 'idempotency-key-1', {\n+      user: { personId: 'admin-1' },\n+      requestId: 'request-1',\n+    })).resolves.toEqual({ data: { placementEvidenceId: 'evidence-1' }, meta: { replayed: true } });\n+    expect(placement.placeByAdmin).toHaveBeenCalledWith(\n+      'admin-1',\n+      dto,\n+      'idempotency-key-1',\n+      'request-1',\n+    );\n+  });\n+});"
+      },
+      {
+        "filename": "backend/apps/api/test/payment-hub-contract.e2e-spec.ts",
+        "status": "added",
+        "patch": "@@ -0,0 +1,81 @@\n+import {\n+  assertCanonicalPaymentTransition,\n+  classifyProviderEvent,\n+  PaymentTransitionError,\n+} from '../src/modules/payment-hub/canonical-payment-transition';\n+\n+describe('Payment Hub canonical contract', () => {\n+  const webhookEvidence = {\n+    source: 'VERIFIED_WEBHOOK' as const,\n+    signatureVerified: true,\n+    providerEventIdentity: 'event-001',\n+    providerTransactionRef: 'txn-001',\n+  };\n+\n+  it('accepts PAID only from complete verified provider evidence', () => {\n+    expect(() => assertCanonicalPaymentTransition('PENDING', 'PAID', webhookEvidence)).not.toThrow();\n+  });\n+\n+  it('fails closed when browser return attempts to mark a payment PAID', () => {\n+    expect(() =>\n+      assertCanonicalPaymentTransition('PENDING', 'PAID', { source: 'BROWSER_RETURN' }),\n+    ).toThrow(expect.objectContaining({ code: 'PAYMENT_EVIDENCE_UNTRUSTED' }));\n+  });\n+\n+  it('requires verified webhook identity and transaction evidence', () => {\n+    expect(() =>\n+      assertCanonicalPaymentTransition('PENDING', 'PAID', {\n+        source: 'VERIFIED_WEBHOOK',\n+        signatureVerified: true,\n+      }),\n+    ).toThrow(expect.objectContaining({ code: 'PAYMENT_EVIDENCE_INCOMPLETE' }));\n+  });\n+\n+  it('requires trusted evidence before entering the refund lifecycle', () => {\n+    expect(() =>\n+      assertCanonicalPaymentTransition('PAID', 'REFUND_PENDING', { source: 'BROWSER_RETURN' }),\n+    ).toThrow(expect.objectContaining({ code: 'PAYMENT_EVIDENCE_UNTRUSTED' }));\n+  });\n+\n+  it('prevents a paid payment from regressing to pending or failed', () => {\n+    for (const target of ['PENDING', 'FAILED'] as const) {\n+      expect(() => assertCanonicalPaymentTransition('PAID', target, webhookEvidence)).toThrow(\n+        expect.objectContaining({ code: 'PAYMENT_TRANSITION_INVALID' }),\n+      );\n+    }\n+  });\n+\n+  it('permits controlled POS evidence without storing card data', () => {\n+    expect(() =>\n+      assertCanonicalPaymentTransition('PENDING', 'PAID', {\n+        source: 'CONTROLLED_POS_EVIDENCE',\n+        providerTransactionRef: 'pos-txn-001',\n+        terminalRef: 'terminal-01',\n+        batchRef: 'batch-01',\n+        recordedBy: 'operator-01',\n+      }),\n+    ).not.toThrow();\n+  });\n+\n+  it('classifies duplicate provider delivery without a second business effect', () => {\n+    expect(classifyProviderEvent(null, 'hash-a')).toEqual({ result: 'NEW' });\n+    expect(classifyProviderEvent('hash-a', 'hash-a')).toEqual({ result: 'REPLAY' });\n+  });\n+\n+  it('rejects reuse of provider event identity with a changed payload', () => {\n+    expect(classifyProviderEvent('hash-a', 'hash-b')).toEqual({\n+      result: 'CONFLICT',\n+      code: 'PROVIDER_EVENT_IDENTITY_CONFLICT',\n+    });\n+  });\n+\n+  it('exposes stable machine-readable errors', () => {\n+    try {\n+      assertCanonicalPaymentTransition('REFUNDED', 'PAID', webhookEvidence);\n+      throw new Error('expected transition rejection');\n+    } catch (error) {\n+      expect(error).toBeInstanceOf(PaymentTransitionError);\n+      expect(error).toMatchObject({ code: 'PAYMENT_TRANSITION_INVALID' });\n+    }\n+  });\n+});"
+      },
+      {
+        "filename": "governance/product-next/V1_16_PAYMENT_HUB_CANONICAL_CONTRACT_REPORT.md",
+        "status": "added",
+        "patch": "@@ -0,0 +1,42 @@\n+# V1.16 Payment Hub Canonical Contract Report\n+\n+Status: IMPLEMENTED — DOMAIN CONTRACT SLICE\n+Date: 2026-09-17\n+Branch: integration/member-backend-mvp\n+\n+## Scope delivered\n+\n+- Added provider-neutral `PaymentProviderAdapter` contract for create, query, cancel/void, refund, verified webhook and reconciliation operations.\n+- Added canonical payment statuses without leaking Taishin, ECPay or LINE Pay payloads into Order/Core domains.\n+- Added fail-closed transition validation. Browser return cannot establish PAID, FAILED, cancellation or refund outcomes.\n+- Required complete evidence for verified webhook, provider query, reconciliation and controlled physical POS paths.\n+- Added provider-event decision logic for NEW, safe REPLAY and changed-payload identity CONFLICT.\n+- Added nine contract tests covering verified PAID, browser-return rejection, incomplete webhook evidence, refund evidence, terminal-state regression, controlled POS evidence, duplicate delivery and identity conflict.\n+\n+## SSOT alignment\n+\n+- `COMMERCE_FULFILLMENT_INTEGRATION_ARCHITECTURE.md` sections 4, 5, 16 and 17.\n+- `COMMERCE_FULFILLMENT_DATA_API_CONTRACT.md` section 2.\n+- `COMMERCE_FULFILLMENT_GOLDEN_JOURNEYS.md` C1, C3, C4, C5 and C9.\n+\n+This slice does not alter R1.0B recognition, ledger, award, return or replay economics. It does not infer a provider outcome from Order state or a member browser redirect.\n+\n+## Verification\n+\n+- Backend API build: PASS.\n+- Focused Payment Hub Jest: 1 suite, 9 tests PASS.\n+- Isolated Backend API Jest: fresh database, 39 migrations, 18 suites, 198 tests PASS.\n+- Isolated database cleanup: PASS.\n+\n+## Remaining gates\n+\n+This is not a DB or provider certification pass. The following remain open:\n+\n+- designated Prisma schema owner and approved forward-only Payment tables/migration;\n+- transactional provider-event unique identity, Payment transition and outbox persistence;\n+- Taishin sandbox credentials, signature/checksum verification and signed webhook tests;\n+- concurrent webhook/query/reconciliation DB race verification;\n+- refund/cancel, reconciliation, RBAC, audit and operations UI integration;\n+- ECPay and LINE Pay adapters when their approved credentials/contracts are available.\n+\n+Production Promotion remains blocked."
+      },
+      {
+        "filename": "governance/product-next/V1_17_BINARY_PLACEMENT_COMPATIBILITY_REPORT.md",
+        "status": "added",
+        "patch": "@@ -0,0 +1,32 @@\n+# V1.17 Binary Placement Compatibility Endpoint Report\n+\n+Status: IMPLEMENTED\n+Date: 2026-09-17\n+Branch: integration/member-backend-mvp\n+\n+## Result\n+\n+The legacy `POST /admin/organization/binary-placement` route no longer returns a synthetic `{ accepted: true }` response. It now delegates to the canonical `QualificationPlacementService.placeByAdmin` command.\n+\n+The compatibility route therefore uses the same controls as `POST /admin/qualification-placements/:id/place`:\n+\n+- explicit `QUALIFICATION_PLACEMENT_OVERRIDE` or `SUPER_ADMIN` authorization;\n+- validated qualification, Binary parent, side and mandatory reason code;\n+- required Idempotency-Key;\n+- advisory transaction locks for Qualification and Binary slot;\n+- pending/setup, Sponsor authority, eligibility, occupied-slot, cycle and first/third-left checks;\n+- append-only placement evidence, audit event and outbox event;\n+- replay metadata on duplicate delivery.\n+\n+`QualificationPlacementService` is now provided and exported by `OrganizationModule`, so both canonical and compatibility controllers execute one implementation rather than duplicating placement rules.\n+\n+## Verification\n+\n+- Organization focused Jest: 1 suite, 6 tests PASS.\n+- Backend API build: PASS.\n+- Admin build: PASS (existing bundle-size warning only).\n+- Isolated Backend API Jest: fresh DB, 39 migrations, 18 suites, 199 tests PASS.\n+- Isolated DB cleanup: PASS.\n+- No schema or monetary-rule change.\n+\n+Production Promotion remains blocked by the existing formal gates."
+      }
+    ]
+  },
+  "readiness": "B1_BLOCKED",
+  "schemaOwner": "UNCONFIRMED",
+  "coreLiveFileScope": "UNCONFIRMED",
+  "memberLiveFileScope": "UNCONFIRMED",
+  "sourceReview": {
+    "productNext": [
+      {
+        "file": "governance/product-next/COMMERCE_FULFILLMENT_DATA_API_CONTRACT.md",
+        "sha256": "6a6562db64dceac0dac59bf7046b1a261497eff6f578cef12d62e9c18b58a346"
+      },
+      {
+        "file": "governance/product-next/COMMERCE_FULFILLMENT_GOLDEN_JOURNEYS.md",
+        "sha256": "e3f065c4d3eef108c9d7698e6d3b7407c712e44da369c1904309f149e007397c"
+      },
+      {
+        "file": "governance/product-next/COMMERCE_FULFILLMENT_INTEGRATION_ARCHITECTURE.md",
+        "sha256": "4e7814af917389579a76d47ceac8df076b782343b51387c1886ef51f0266aa6b"
+      },
+      {
+        "file": "governance/product-next/FORMAL_MEMBER_BALL_PLACEMENT_GOLDEN_JOURNEY.md",
+        "sha256": "09421291801e368031c89cce57702e275b1acf9086dcc23bcbd519bde18035c3"
+      },
+      {
+        "file": "governance/product-next/IMPLEMENTATION-PLAN.md",
+        "sha256": "3e3a3300b0201ed663b322ad06954789421ad583cfaf4a089f6c9231ebf25e96"
+      },
+      {
+        "file": "governance/product-next/NEXT_RELEASE_API_EVENT_RBAC_MATRIX.md",
+        "sha256": "732c4088832b54a1c18f81e8f1f9fc470619c3f13f355b3bd45cb97d60573570"
+      },
+      {
+        "file": "governance/product-next/NEXT_RELEASE_AUTH_CHANNEL_DECISION_APPROVED.md",
+        "sha256": "12f8f249c7ad8cee9556fe716b92040affdf6e65ea025f3ebca14c431f37c29c"
+      },
+      {
+        "file": "governance/product-next/NEXT_RELEASE_BACKLOG_ACCEPTANCE.md",
+        "sha256": "093da56f1e616d1a2f703f46fd113e38f25eed40bfa4f0c33c3a6ad47378159e"
+      },
+      {
+        "file": "governance/product-next/NEXT_RELEASE_CORE_BOUNDARIES.md",
+        "sha256": "2033463be58ba934e34ba3a7a953c8b79cb0486eee494bcbf127c1f73ab526d1"
+      },
+      {
+        "file": "governance/product-next/NEXT_RELEASE_DATA_MODEL_ERD.md",
+        "sha256": "310742b391ad274bdb2def3f6e0a649e77ad819a193604082be965a854e0e46c"
+      },
+      {
+        "file": "governance/product-next/NEXT_RELEASE_DECISION_BATCH1_APPROVED.md",
+        "sha256": "aae101839adc0e40d770b66f3c590c8a74a7bdb8db313ede092152f29c5fb020"
+      },
+      {
+        "file": "governance/product-next/NEXT_RELEASE_DECISION_BATCH2_APPROVED.md",
+        "sha256": "93063a5fdec4de6e57a8271498043956cca3dc49ebc8debeed2b3a1ace750ab5"
+      },
+      {
+        "file": "governance/product-next/NEXT_RELEASE_DECISION_BATCH3_PLACEMENT_APPROVED.md",
+        "sha256": "7953587380e0c9656a5d909fac2815175814d840b3b00179b498a6ccf336b2ac"
+      },
+      {
+        "file": "governance/product-next/NEXT_RELEASE_DECISION_BATCH4_PACKAGE_CONFIG_APPROVED.md",
+        "sha256": "9638dbd991f8161397651e2e73d7698da7f154a4ae31011ffbfb4fd8272ebfb2"
+      },
+      {
+        "file": "governance/product-next/NEXT_RELEASE_DECISION_REGISTER_PROPOSAL.md",
+        "sha256": "460f4305052c4ca548b8e14951576980a729e7327e6ba4d843e895f621de41e4"
+      },
+      {
+        "file": "governance/product-next/NEXT_RELEASE_ENGINEERING_CONTRACT.md",
+        "sha256": "d152f73be0b53e2941abe15113ae28a13281a4fa4212995d0ebfb1fdff7df5de"
+      },
+      {
+        "file": "governance/product-next/NEXT_RELEASE_IMPLEMENTATION_READINESS_MATRIX.md",
+        "sha256": "56fa288115d32e770777024f6f137062366fa72e9340fe6b16e0e229b1916dee"
+      },
+      {
+        "file": "governance/product-next/NEXT_RELEASE_SPRINT_PLAN.md",
+        "sha256": "b2fdd83f81ee24cc20668888c3d9d04b4837073f3cb8daf5ed6a49dc9b749027"
+      },
+      {
+        "file": "governance/product-next/NEXT_RELEASE_SYSTEM_BALL_RESERVOIR_CORE_SPEC.md",
+        "sha256": "d947839152d7787d4a6c32b54828e226c9ba40b83083c9feea56a7c5ab44768e"
+      },
+      {
+        "file": "governance/product-next/NEXT_RELEASE_SYSTEM_BALL_RESERVOIR_ENGINEERING_DELTA.md",
+        "sha256": "38729cf081ced9fa7745f3ffb6e5ca0395b6d0dacac2ad51fb502448a12017ed"
+      },
+      {
+        "file": "governance/product-next/PACKAGE_PRODUCT_SELECTION_GOLDEN_JOURNEY.md",
+        "sha256": "781563895e648874f10bd1b2cd357cadeb3bc77c8df0fd9fa87517f350780ef1"
+      },
+      {
+        "file": "governance/product-next/TAIWAN_PRIVACY_MLM_COMPLIANCE_BASELINE.md",
+        "sha256": "4c2f6aed657c1f8776a93fed167f270a6145074737a12eb16fe63cb39316c15e"
+      },
+      {
+        "file": "governance/product-next/UCELL_V1_1_V1_3_PRODUCT_SYSTEM_SPEC.md",
+        "sha256": "a5b39b4fe724c002457dbcef21020c3f71f6efe00e1c1939f287815d922c7b53"
+      },
+      {
+        "file": "governance/product-next/V1_10_ADMIN_PACKAGE_CREATE_REPORT.md",
+        "sha256": "33e0845afc6e2254db27daa0182587e39f28b0ef8dc44994b636e59bae5f9eae"
+      },
+      {
+        "file": "governance/product-next/V1_11_ADMIN_PACKAGE_PRODUCT_POOL_REPORT.md",
+        "sha256": "86e4d8c92ded81072108f098f4d3d47e7b103215daea41ad004fa1b981462e0b"
+      },
+      {
+        "file": "governance/product-next/V1_12_ADMIN_PACKAGE_APPROVAL_REPORT.md",
+        "sha256": "ca5927d0b5db3147ff9e2da89c05ff81be1c08fd41fc8d8f112f652f53f121d2"
+      },
+      {
+        "file": "governance/product-next/V1_13_ADMIN_PACKAGE_LIFECYCLE_REPORT.md",
+        "sha256": "ed826fab364fea83526d3132142fa3b7952891e56fe45dfc60a9a517d98e1ff3"
+      },
+      {
+        "file": "governance/product-next/V1_14_MEMBER_ACTIVE_DURATION_PACKAGE_REPORT.md",
+        "sha256": "8f9a5eccfb48adcf962b3539365678db0caefd5b99faac8c5c234d1a3e4950a2"
+      },
+      {
+        "file": "governance/product-next/V1_15_PACKAGE_ORDER_OPERATIONS_READBACK_REPORT.md",
+        "sha256": "d5d1896404d78c89d9231261c00181901bc658c461ea1e69f4b0cebd72286fd7"
+      },
+      {
+        "file": "governance/product-next/V1_1_CONSENT_FOUNDATION_REPORT.md",
+        "sha256": "e8d84eb82de41ef0f6c77a609a17dd50664938b3b59e3d5754f844e386ab6900"
+      },
+      {
+        "file": "governance/product-next/V1_1_DELIVERY_PROFILE_REPORT.md",
+        "sha256": "dceccc19a7aef5a575cc5b0691cdf81562ddf423b4b59654490cb85140b0871e"
+      },
+      {
+        "file": "governance/product-next/V1_1_FORMAL_APPLICATION_ADMIN_QUEUE_REPORT.md",
+        "sha256": "09da9478eaef4c2b4900ee5f08efabe80d68efc30d982a51f379dcdab0cc5724"
+      },
+      {
+        "file": "governance/product-next/V1_1_FORMAL_APPLICATION_DRAFT_REPORT.md",
+        "sha256": "a5fb31fab1d06b5378b5bace0a80b1c79faa444b9434b0a3c98835e6d1a555e8"
+      },
+      {
+        "file": "governance/product-next/V1_1_IDENTITY_COMPLIANCE_DETAILED_SPEC.md",
+        "sha256": "4190b3b94c76e5c8e8d8436e0e3abeedc37ff75484927c839844540db8b57ac3"
+      },
+      {
+        "file": "governance/product-next/V1_1_NETWORK_PROFILE_FOUNDATION_REPORT.md",
+        "sha256": "2556909e8feb59b790d6f591ab76c144ae8bd08c217b92bdacbfdceedd6817c1"
+      },
+      {
+        "file": "governance/product-next/V1_1_NETWORK_REGISTRATION_REPORT.md",
+        "sha256": "b6b13c8a780798983ec6e240e7710db20dae8514d6459665fc5cbf90047df4c4"
+      },
+      {
+        "file": "governance/product-next/V1_1_OTP_DOMAIN_REPORT.md",
+        "sha256": "a38cb88bdce6b018b581f69df5bd3f5913079d6fe99828c60a3942174a488f2d"
+      },
+      {
+        "file": "governance/product-next/V1_2_CONTENT_CROSS_END_REPORT.md",
+        "sha256": "303b51b87a94812888bc6fbae3c0c085f03827cf2b44f741ac12362d7feaa5fc"
+      },
+      {
+        "file": "governance/product-next/V1_2_EXTERNAL_CONTENT_REPORT.md",
+        "sha256": "ac0566db09f794ce4c0092ebadc10d62e6c8fe61243e051b8e53baf24a7db5d7"
+      },
+      {
+        "file": "governance/product-next/V1_2_GROWTH_PLATFORM_DETAILED_SPEC.md",
+        "sha256": "1570cf1dd1e54f30a460359ae9ef9987099386cef60194a0a1b68a1917fb70aa"
+      },
+      {
+        "file": "governance/product-next/V1_2_REFERRAL_SHARE_REPORT.md",
+        "sha256": "0a1c86cefdf3ae4cd4d9a3b2f3ff380c416d889193b80a0aa4aeb2ecbd8b9288"
+      },
+      {
+        "file": "governance/product-next/V1_2_SYSTEM_ASSIGNMENT_REPORT.md",
+        "sha256": "49d05e685a08d21cb1f891267b4a6e181af2a698eff44e60c3fa63b0915f93a2"
+      },
+      {
+        "file": "governance/product-next/V1_3_ANALYTICS_SONAR_DETAILED_SPEC.md",
+        "sha256": "74b049f7902e3da649cbb7a9e4c8d83cdf5467210689332a6620b536183ce6d5"
+      },
+      {
+        "file": "governance/product-next/V1_3_QUALIFICATION_PLACEMENT_CORE_REPORT.md",
+        "sha256": "1689adf566c504ae0cb515ea35be1ff57a19ec779c49e389785078a673a32e06"
+      },
+      {
+        "file": "governance/product-next/V1_4_CONFIGURABLE_PACKAGE_CORE_REPORT.md",
+        "sha256": "b7143005342a097b1a340389cd152ddb3d0deb813ede106dda86748569f80a6a"
+      },
+      {
+        "file": "governance/product-next/V1_5_PACKAGE_CHECKOUT_CORE_REPORT.md",
+        "sha256": "7ab3a0ad14796119292edb4d84fd79d790a891d770501418b8b85420f3848c3b"
+      },
+      {
+        "file": "governance/product-next/V1_6_PACKAGE_ADMIN_COMMAND_HARDENING.md",
+        "sha256": "4fdf733b0886a17beb0d2e3ed8dec24d4855d327d6c0671903de4f72361d0226"
+      },
+      {
+        "file": "governance/product-next/V1_7_MEMBER_PACKAGE_CONTRACT_REPORT.md",
+        "sha256": "32e6f70f8f3bdc591a00f7413aab555912af1425b315e611bb11610f0f370dd3"
+      },
+      {
+        "file": "governance/product-next/V1_8_FIRST_QUALIFICATION_MEMBER_UI_REPORT.md",
+        "sha256": "232831eddd01b4f1c46d71841781c7c069f68f0a77875c5cb9bc90996f0adac6"
+      },
+      {
+        "file": "governance/product-next/V1_9_ADMIN_PACKAGE_READBACK_REPORT.md",
+        "sha256": "b0ad73fe1b3f9eb6f288217159ddf1c1f182552b1b32907388dbffc3183ebe00"
+      }
+    ],
+    "originalFiledManuals": "NOT_PRESENT_IN_CHECKOUT; not independently verified"
+  },
+  "schema": {
+    "file": "backend/packages/database/prisma/schema.prisma",
+    "sha256": "230355944bbcc59cb88f09d6a192865e80c75fc43cf77941026ebf74e5770b36",
+    "migrations": [
+      {
+        "file": "backend/packages/database/prisma/migrations/0001_vertical_slice/migration.sql",
+        "sha256": "654be616e16c3ac9930ef644dbc5a2a8519f7dbacbd304c3236e5ac0d146977b"
+      },
+      {
+        "file": "backend/packages/database/prisma/migrations/0002_membership_active_subscription_rpv/migration.sql",
+        "sha256": "3a4f4e7e379396e7a4e8de2b6728f6b6c5176f1209e8465cf767c8a6b62793ec"
+      },
+      {
+        "file": "backend/packages/database/prisma/migrations/0003_bonus_engine_core/migration.sql",
+        "sha256": "110c26001b5513f2e8224484b6cb56c542366672f799dec9d91e7d283db6ea36"
+      },
+      {
+        "file": "backend/packages/database/prisma/migrations/0004_reversal_epv_global_payout/migration.sql",
+        "sha256": "0f5bf3c2a7e858606a4edc75f0f19876d8423e304aeea0b8ab573ca757110fb6"
+      },
+      {
+        "file": "backend/packages/database/prisma/migrations/0005_adjustment_lifecycle/migration.sql",
+        "sha256": "6415f81e890cd400ccd2fed3e81ff22f8e5b44127b7ea5bf1798575a407ac448"
+      },
+      {
+        "file": "backend/packages/database/prisma/migrations/0006_v061_closure/migration.sql",
+        "sha256": "c2b3cbfed089afc8e7aa7951b09fe144d6404e71ef5ba1061d3a63e858ab4603"
+      },
+      {
+        "file": "backend/packages/database/prisma/migrations/0007_v062_carry_chain_replay/migration.sql",
+        "sha256": "1348c765a20ba8f5e752b7afb5ec4d080d43b8bfe5c7518c0f02aa8cde06e81a"
+      },
+      {
+        "file": "backend/packages/database/prisma/migrations/0008_v063_calendar_payable/migration.sql",
+        "sha256": "9d91f9b1e79f4d1caa24c8f6de1b4b46ced8c4d1b4ec1f6df797c8f2fb253d31"
+      },
+      {
+        "file": "backend/packages/database/prisma/migrations/0009_v064_recovery_auth_audit_golden/migration.sql",
+        "sha256": "325c7f39e3462dad29d07268f98c98ba7bc185b02440e8743f609336cf6d1bbc"
+      },
+      {
+        "file": "backend/packages/database/prisma/migrations/0010_v065_global_payable_schema/migration.sql",
+        "sha256": "a96e2ad4e1c750537c26063a093f866425ee9d968501da42ba18a551402ecaa4"
+      },
+      {
+        "file": "backend/packages/database/prisma/migrations/0011_v066_convergence_guards/migration.sql",
+        "sha256": "57b45c2b382d304fc9fc45291d962c49b870b21a908032abfbd05f8e0e572486"
+      },
+      {
+        "file": "backend/packages/database/prisma/migrations/0012_v069_schema_relation_convergence/migration.sql",
+        "sha256": "4dfa7353204c50c22d9055bdbb9a36bd8785be8bc16098aa4fd04085ed5e4e60"
+      },
+      {
+        "file": "backend/packages/database/prisma/migrations/0013_review_r1_integrity_guards/migration.sql",
+        "sha256": "18a05a96f959172ab3024717ac0a3036734773df6b54ad5486076b5792343a95"
+      },
+      {
+        "file": "backend/packages/database/prisma/migrations/0014_r4_payout_approval_recovery_integrity/migration.sql",
+        "sha256": "78af33cd9566d59475cf3ad9e298ccc994bac9bcab9e7c20db84f4102da58699"
+      },
+      {
+        "file": "backend/packages/database/prisma/migrations/0015_r5_operations_ready/migration.sql",
+        "sha256": "c6528588f889bc009c2f8a7bfa337ceed6d5a4a2d5d89385d56f6f8a73b23a30"
+      },
+      {
+        "file": "backend/packages/database/prisma/migrations/0016_r6_admin_access_grant/migration.sql",
+        "sha256": "e7216e8001cd94b00e2f3b05b990269703454d316e989a02113569d8028c9ad8"
+      },
+      {
+        "file": "backend/packages/database/prisma/migrations/20260915110000_sa_parameter_snapshots/migration.sql",
+        "sha256": "0db382bbb462bcf8f1de8d0f5eb53483d75e65457ea59eb058fe0fd09030a9d3"
+      },
+      {
+        "file": "backend/packages/database/prisma/migrations/20260915120000_phase2_historical_replay/migration.sql",
+        "sha256": "030e40964a9d9dca4e7015a15e59d02487efd1e2789c6a86038fefbc37947778"
+      },
+      {
+        "file": "backend/packages/database/prisma/migrations/20260915150000_replay_entitlement_baseline_guards/migration.sql",
+        "sha256": "4ac86221ef835e4544823da2b10a464eaa900e69ec840fc4bc133a586753929e"
+      },
+      {
+        "file": "backend/packages/database/prisma/migrations/20260915160000_sa_phase3_business_timezone/migration.sql",
+        "sha256": "060cd92a4ace54b5bfafb3d76bf57a354ececf3aa02edaf1bcdd46866171dc49"
+      },
+      {
+        "file": "backend/packages/database/prisma/migrations/20260916030000_member_notification/migration.sql",
+        "sha256": "85a9d96f9dd87f980aa445ce3bfce48a023f674c44bdf6d441aa061d8b140dbf"
+      },
+      {
+        "file": "backend/packages/database/prisma/migrations/20260916040000_member_notification_reads/migration.sql",
+        "sha256": "cca1293cd70019d9433f55b7395509500a1b4ccc1b0ec45be05a1b679a1b25b3"
+      },
+      {
+        "file": "backend/packages/database/prisma/migrations/20260916120000_binary_zero_entitlement_evidence/migration.sql",
+        "sha256": "f5c8b8599316a8645e855a9b9e56ac1128f6aa0a565d8481618ca0cc3ef61611"
+      },
+      {
+        "file": "backend/packages/database/prisma/migrations/20260916170000_replay_horizon_alignment/migration.sql",
+        "sha256": "f71998748704c918a24a91cf447af24210e3913cb7473130280941257dc4a010"
+      },
+      {
+        "file": "backend/packages/database/prisma/migrations/20260916171000_return_recalculation_idempotency/migration.sql",
+        "sha256": "cf513c96090fc3d3f66e87c27270da81ec7e8642b2059f4ad72eb8b3430ecf32"
+      },
+      {
+        "file": "backend/packages/database/prisma/migrations/20260916233000_v11_contract_consent_foundation/migration.sql",
+        "sha256": "cb32449b388bd0f90d346fab3fb9c8647e214f5b21e5e66c44046e358b8896bc"
+      },
+      {
+        "file": "backend/packages/database/prisma/migrations/20260916234000_v11_contract_version_immutability/migration.sql",
+        "sha256": "8a0efcd0a8d9bf4b0bea980d70355187dba811b2ecf8377042bac7767941a0ae"
+      },
+      {
+        "file": "backend/packages/database/prisma/migrations/20260917010000_v11_network_member_profile/migration.sql",
+        "sha256": "8f54edd946853ad1d070b8431ab361439d82821418dab69ca0ce09cb929b4b5e"
+      },
+      {
+        "file": "backend/packages/database/prisma/migrations/20260917013000_v11_otp_domain/migration.sql",
+        "sha256": "2cc4939073d5b9e106413a3d3831f7c70a3dca0bc945cee3ee2523ec636327ad"
+      },
+      {
+        "file": "backend/packages/database/prisma/migrations/20260917020000_v11_network_registration/migration.sql",
+        "sha256": "800fd6ab2a1f2a5009b7862ad9ece1a2ca87cf2bd9059f6b06b9e665578deeb8"
+      },
+      {
+        "file": "backend/packages/database/prisma/migrations/20260917030000_v11_delivery_profile/migration.sql",
+        "sha256": "33f6822b7f7916679ba0969c4ceb150a2fd280abf727fd89e960106a135339b2"
+      },
+      {
+        "file": "backend/packages/database/prisma/migrations/20260917040000_v12_referral_attribution/migration.sql",
+        "sha256": "a0fe7c1f4b9cb4fe03638c12e1237ad7a4f82f38092e5212ee57b7eb0751dcd0"
+      },
+      {
+        "file": "backend/packages/database/prisma/migrations/20260917041000_v12_referral_person_binding/migration.sql",
+        "sha256": "0841091061762286af196ae7bba0aa0566e474b46a480eeb8c4490617f6d73ac"
+      },
+      {
+        "file": "backend/packages/database/prisma/migrations/20260917042000_v12_system_assignment/migration.sql",
+        "sha256": "96e8beba6deeacc783bd9e2fba884e10f26b9fa082e1cacd814f1433a3107473"
+      },
+      {
+        "file": "backend/packages/database/prisma/migrations/20260917043000_v12_external_content/migration.sql",
+        "sha256": "76fb2f5b14a694271e789a0c9cbf3060b341517c170896a244d5ad809060070d"
+      },
+      {
+        "file": "backend/packages/database/prisma/migrations/20260917050000_v11_formal_application_draft/migration.sql",
+        "sha256": "0adcbe83d956ab0005d0d0d65eb04523c0bd4e8fb757a769d111ea50d5e98b8b"
+      },
+      {
+        "file": "backend/packages/database/prisma/migrations/20260917060000_v13_qualification_placement/migration.sql",
+        "sha256": "4e05ad14665e2b01d9234b8d8c6d974247443cc8c4a5eb787c69b2a19075c562"
+      },
+      {
+        "file": "backend/packages/database/prisma/migrations/20260917070000_v14_configurable_packages/migration.sql",
+        "sha256": "0a30166face7147fdc7fddd83d68ae90c37c78aa1fb51599c4f06ca89831598a"
+      },
+      {
+        "file": "backend/packages/database/prisma/migrations/20260917080000_v15_package_checkout/migration.sql",
+        "sha256": "f9ac925d51004885af5e5ff096096dd1b8c9a7a0412f0cff4161aab20501d1aa"
+      }
+    ]
+  },
+  "branches": [
+    {
+      "branch": "origin/integration/member-backend-mvp",
+      "sha": "2176b049dde32300e5023bcb7088d89890fec519",
+      "exclusiveCountsBranchThenBaseline": "0\t0"
+    },
+    {
+      "branch": "origin/codex/backend-phase3",
+      "sha": "73bb9282c7fdd456e60848976cd939a9bb9b9a9b",
+      "exclusiveCountsBranchThenBaseline": "0\t164"
+    },
+    {
+      "branch": "origin/feature/member-liff-mvp",
+      "sha": "f12b164b17eed5352748e4394029efac25361b55",
+      "exclusiveCountsBranchThenBaseline": "8\t232"
+    }
+  ],
+  "memberExclusiveChangedFiles": [
+    ".github/workflows/admin-design.yml",
+    ".github/workflows/member-ci.yml",
+    "UI_DESIGN_BASELINE.md",
+    "admin/README.md",
+    "admin/docs/DASHBOARD_DESIGN.md",
+    "admin/pnpm-lock.yaml",
+    "admin/pnpm-workspace.yaml",
+    "admin/src/app/AppShell.tsx",
+    "admin/src/components/Brand.tsx",
+    "admin/src/features/auth/LoginPage.tsx",
+    "admin/src/features/dashboard/DashboardPage.tsx",
+    "admin/src/features/dashboard/dashboard.css",
+    "admin/src/features/products/ProductsPage.tsx",
+    "admin/src/vite-env.d.ts",
+    "member/DEV_STATUS.md",
+    "member/docs/PREMIUM_INTERFACE.md",
+    "member/docs/TECH_HOME.md",
+    "member/src/App.tsx",
+    "member/src/Brand.tsx",
+    "member/src/Icon.tsx",
+    "member/src/Shop.tsx",
+    "member/src/commerce.tsx",
+    "member/src/main.tsx",
+    "member/src/premium.css",
+    "member/src/tech-home.css",
+    "member/tests/admin-dashboard-smoke.cjs",
+    "member/tests/mobile-smoke.cjs",
+    "shared/PRODUCT_PUBLICATION.md",
+    "shared/brand/brand.css",
+    "shared/brand/ucell-products.png",
+    "shared/products.json"
+  ],
+  "checks": [
+    {
+      "command": "node scripts/schema-preflight.mjs",
+      "exitCode": 0,
+      "stdout": "SCHEMA_PREFLIGHT_PASS",
+      "stderr": "",
+      "scope": "BASELINE_STATIC_ONLY"
+    },
+    {
+      "command": "node scripts/migration-preflight.mjs",
+      "exitCode": 0,
+      "stdout": "MIGRATION_PREFLIGHT_PASS",
+      "stderr": "",
+      "scope": "BASELINE_STATIC_ONLY"
+    },
+    {
+      "command": "node scripts/openapi-preflight.mjs",
+      "exitCode": 0,
+      "stdout": "OPENAPI_PREFLIGHT_PASS",
+      "stderr": "",
+      "scope": "BASELINE_STATIC_ONLY"
+    },
+    {
+      "command": "node scripts/security-policy-preflight.mjs",
+      "exitCode": 0,
+      "stdout": "SECURITY_POLICY_PREFLIGHT_PASS",
+      "stderr": "",
+      "scope": "BASELINE_STATIC_ONLY"
+    },
+    {
+      "command": "node scripts/test-todo-gate.mjs",
+      "exitCode": 0,
+      "stdout": "TEST_TODO_GATE_PASS",
+      "stderr": "",
+      "scope": "BASELINE_STATIC_ONLY"
+    }
+  ],
+  "proposalValidation": {
+    "status": "PASS",
+    "operations": 44,
+    "schemas": 44,
+    "resolvedRefs": 389,
+    "goldenCases": 20,
+    "typescriptSyntax": "PASS (node stripTypeScriptTypes parser; not TypeScript typecheck or app build)",
+    "trackedSourceDiff": "EMPTY",
+    "fullOpenApiStandardsValidation": "NOT_RUN; local structural checks only",
+    "initialAttempt": "node --check rejected TS export in inferred CommonJS mode; replaced with explicit TS parser without executing proposal"
+  },
+  "baselineOpenApiDrift": {
+    "packagePaths": [],
+    "memberOrderDtoProperties": [
+      "qualificationId",
+      "items"
+    ],
+    "status": "SOURCE_SPEC_DRIFT; preflight is incomplete"
+  },
+  "execution": {
+    "build": "NOT_RUN",
+    "prismaGenerate": "NOT_RUN",
+    "migrationFromZero": "NOT_RUN",
+    "unit": "NOT_RUN",
+    "integration": "NOT_RUN",
+    "http": "NOT_RUN",
+    "dbAssertions": "NOT_RUN",
+    "concurrency": "NOT_RUN",
+    "rbac": "NOT_RUN",
+    "providerMock": "NOT_RUN",
+    "providerSandboxUat": "NOT_VERIFIED",
+    "production": "NOT_READY"
+  },
+  "changedFiles": [
+    {
+      "file": "governance/commerce-fulfillment-audit/ADAPTER_INTERFACES.proposal.ts",
+      "sha256": "f166cbc33fd681e89526878944d7884c5e8a12c085b48fb0f25ad7a6010c18dd"
+    },
+    {
+      "file": "governance/commerce-fulfillment-audit/API_PROPOSAL.md",
+      "sha256": "fbbf0871b2ef182efb8e13f7a816dc0adfe2b725165fd24870fe219c48951d91"
+    },
+    {
+      "file": "governance/commerce-fulfillment-audit/CLOSING_DELTA.md",
+      "sha256": "87a2286fce81a92d6d32e29685ba50f1685dee74280e1e8eae881c2ec66ec702"
+    },
+    {
+      "file": "governance/commerce-fulfillment-audit/MIGRATION_IMPACT.md",
+      "sha256": "5254cbc0252726377ec10c31d7fa20d6afd2a3bb0eacc8e5c863125f013b2ddf"
+    },
+    {
+      "file": "governance/commerce-fulfillment-audit/OWNERSHIP_PLAN.md",
+      "sha256": "e3b9d2f4c2b2cbc9f5271e201f4a0be3cb01416261a1fc2e63625067a03e0b6a"
+    },
+    {
+      "file": "governance/commerce-fulfillment-audit/REPORT.md",
+      "sha256": "36ab38eab7bedb131cd425f4c14689aa66a1aedabdf3a4a328ac3411f836249c"
+    },
+    {
+      "file": "governance/commerce-fulfillment-audit/SCHEMA_PROPOSAL.md",
+      "sha256": "e50fb774bfce03a2b46e3322cc7e5c31652195b94ddcb35c3ae81d3287d1f3be"
+    },
+    {
+      "file": "governance/commerce-fulfillment-audit/TEST_PLAN.md",
+      "sha256": "c927b6ccd0ce48ad516aa56faed0f92e42690b0452bd898809777e5f54e9563d"
+    },
+    {
+      "file": "governance/commerce-fulfillment-audit/closing-delta.json",
+      "sha256": "497df40e0110aad0496959be8f68c81b1ce03816d997ace6f822d0e14ed672c6"
+    },
+    {
+      "file": "governance/commerce-fulfillment-audit/openapi.proposal.json",
+      "sha256": "ae04ac8fddb5bce2568316933d73992e1042b1712fe064146834e652b17403c4"
+    },
+    {
+      "file": "governance/commerce-fulfillment-audit/validate-proposals.mjs",
+      "sha256": "1849cfa2b029a340b4b9e9ef3b62df97d4ac5314deb01b8e649fa59b72cdc7f3"
+    },
+    {
+      "file": "governance/commerce-fulfillment-audit/evidence.json",
+      "sha256": null,
+      "note": "Self hash intentionally excluded"
+    }
+  ]
+}

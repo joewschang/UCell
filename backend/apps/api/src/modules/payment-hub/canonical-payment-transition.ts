@@ -1,4 +1,4 @@
-import { CanonicalPaymentStatus } from './payment-provider.adapter';
+import { CanonicalPaymentStatus, PAYMENT_STATUSES, VerifiedPaymentReceipt, assertIssuedPaymentReceipt } from './payment-provider.adapter';
 
 export type PaymentEvidenceSource =
   | 'BROWSER_RETURN'
@@ -8,6 +8,7 @@ export type PaymentEvidenceSource =
   | 'CONTROLLED_POS_EVIDENCE';
 
 export interface PaymentTransitionEvidence {
+  receipt?: VerifiedPaymentReceipt;
   source: PaymentEvidenceSource;
   signatureVerified?: boolean;
   providerEventIdentity?: string;
@@ -64,17 +65,27 @@ export function assertCanonicalPaymentTransition(
   next: CanonicalPaymentStatus,
   evidence: PaymentTransitionEvidence,
 ): void {
-  if (current !== next && !allowedTransitions[current].has(next)) {
+  if (!PAYMENT_STATUSES.includes(current) || !PAYMENT_STATUSES.includes(next)
+    || (current !== next && !allowedTransitions[current].has(next))) {
     throw new PaymentTransitionError(
       'PAYMENT_TRANSITION_INVALID',
       `Payment cannot transition from ${current} to ${next}.`,
     );
   }
 
-  if (providerOutcomeStatuses.has(next)) assertTrustedProviderEvidence(evidence);
+  if (!evidence || !['BROWSER_RETURN', 'VERIFIED_WEBHOOK', 'PROVIDER_QUERY', 'RECONCILIATION', 'CONTROLLED_POS_EVIDENCE'].includes(evidence.source)) {
+    throw new PaymentTransitionError('PAYMENT_EVIDENCE_UNTRUSTED', 'Unknown payment evidence source.');
+  }
+  if (providerOutcomeStatuses.has(next)) {
+    assertTrustedProviderEvidence(evidence);
+    if (evidence.receipt!.status !== next) throw new PaymentTransitionError('PAYMENT_EVIDENCE_INCOMPLETE', 'Receipt status does not match transition.');
+  }
 }
 
 function assertTrustedProviderEvidence(evidence: PaymentTransitionEvidence): void {
+  if (evidence.source === 'CONTROLLED_POS_EVIDENCE') {
+    throw new PaymentTransitionError('PAYMENT_EVIDENCE_UNTRUSTED', 'POS intake requires verified query or reconciliation before payment recognition.');
+  }
   if (evidence.source === 'BROWSER_RETURN') {
     throw new PaymentTransitionError(
       'PAYMENT_EVIDENCE_UNTRUSTED',
@@ -83,40 +94,18 @@ function assertTrustedProviderEvidence(evidence: PaymentTransitionEvidence): voi
   }
 
   if (evidence.source === 'VERIFIED_WEBHOOK') {
-    if (!evidence.signatureVerified || !evidence.providerEventIdentity || !evidence.providerTransactionRef) {
+    if (!evidence.providerEventIdentity || !evidence.providerTransactionRef) {
       throw new PaymentTransitionError(
         'PAYMENT_EVIDENCE_INCOMPLETE',
         'Verified webhook evidence requires signature, provider event identity and transaction reference.',
       );
     }
-    return;
   }
-
-  if (evidence.source === 'PROVIDER_QUERY') {
-    if (!evidence.providerTransactionRef) {
-      throw new PaymentTransitionError(
-        'PAYMENT_EVIDENCE_INCOMPLETE',
-        'Provider query evidence requires a provider transaction reference.',
-      );
-    }
-    return;
-  }
-
-  if (evidence.source === 'RECONCILIATION') {
-    if (!evidence.providerTransactionRef || !evidence.batchRef) {
-      throw new PaymentTransitionError(
-        'PAYMENT_EVIDENCE_INCOMPLETE',
-        'Reconciliation evidence requires transaction and batch references.',
-      );
-    }
-    return;
-  }
-
-  if (!evidence.providerTransactionRef || !evidence.recordedBy || (!evidence.terminalRef && !evidence.batchRef)) {
-    throw new PaymentTransitionError(
-      'PAYMENT_EVIDENCE_INCOMPLETE',
-      'Controlled POS evidence requires transaction, operator and terminal or batch reference.',
-    );
+  try { assertIssuedPaymentReceipt(evidence.receipt); }
+  catch { throw new PaymentTransitionError('PAYMENT_EVIDENCE_INCOMPLETE', 'Verified bound receipt required.'); }
+  if (evidence.receipt.source !== evidence.source || evidence.receipt.providerTransactionRef !== evidence.providerTransactionRef
+    || evidence.receipt.providerEventIdentity !== evidence.providerEventIdentity) {
+    throw new PaymentTransitionError('PAYMENT_EVIDENCE_INCOMPLETE', 'Receipt identity does not match evidence.');
   }
 }
 

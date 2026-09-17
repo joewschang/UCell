@@ -1,0 +1,297 @@
+{
+  "url": "https://api.github.com/repos/joewschang/UCell/compare/b1acc4d986fb37364905bea11843b24d53e4fbb3...8dc0be7a543679891b282fc1d7eaed1c89c6bc24",
+  "html_url": "https://github.com/joewschang/UCell/compare/b1acc4d986fb37364905bea11843b24d53e4fbb3...8dc0be7a543679891b282fc1d7eaed1c89c6bc24",
+  "permalink_url": "https://github.com/joewschang/UCell/compare/joewschang:b1acc4d...joewschang:8dc0be7",
+  "diff_url": "https://github.com/joewschang/UCell/compare/b1acc4d986fb37364905bea11843b24d53e4fbb3...8dc0be7a543679891b282fc1d7eaed1c89c6bc24.diff",
+  "patch_url": "https://github.com/joewschang/UCell/compare/b1acc4d986fb37364905bea11843b24d53e4fbb3...8dc0be7a543679891b282fc1d7eaed1c89c6bc24.patch",
+  "base_commit": {
+    "sha": "b1acc4d986fb37364905bea11843b24d53e4fbb3",
+    "node_id": "C_kwDOTOGw99oAKGIxYWNjNGQ5ODZmYjM3MzY0OTA1YmVhMTE4NDNiMjRkNTNlNGZiYjM",
+    "commit": {
+      "author": {
+        "name": "joewschang",
+        "email": "joewschang@gmail.com",
+        "date": "2026-09-17T06:29:48Z"
+      },
+      "committer": {
+        "name": "joewschang",
+        "email": "joewschang@gmail.com",
+        "date": "2026-09-17T06:29:48Z"
+      },
+      "message": "feat(payment): add fail-closed provider registry",
+      "tree": {
+        "sha": "7dbcfbb603f70dcf9dc6096b51e8207f68d16ccf",
+        "url": "https://api.github.com/repos/joewschang/UCell/git/trees/7dbcfbb603f70dcf9dc6096b51e8207f68d16ccf"
+      },
+      "url": "https://api.github.com/repos/joewschang/UCell/git/commits/b1acc4d986fb37364905bea11843b24d53e4fbb3",
+      "comment_count": 0,
+      "verification": {
+        "verified": false,
+        "reason": "unsigned",
+        "signature": null,
+        "payload": null,
+        "verified_at": null
+      }
+    },
+    "url": "https://api.github.com/repos/joewschang/UCell/commits/b1acc4d986fb37364905bea11843b24d53e4fbb3",
+    "html_url": "https://github.com/joewschang/UCell/commit/b1acc4d986fb37364905bea11843b24d53e4fbb3",
+    "comments_url": "https://api.github.com/repos/joewschang/UCell/commits/b1acc4d986fb37364905bea11843b24d53e4fbb3/comments",
+    "author": {
+      "login": "joewschang",
+      "id": 6160348,
+      "node_id": "MDQ6VXNlcjYxNjAzNDg=",
+      "avatar_url": "https://avatars.githubusercontent.com/u/6160348?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/joewschang",
+      "html_url": "https://github.com/joewschang",
+      "followers_url": "https://api.github.com/users/joewschang/followers",
+      "following_url": "https://api.github.com/users/joewschang/following{/other_user}",
+      "gists_url": "https://api.github.com/users/joewschang/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/joewschang/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/joewschang/subscriptions",
+      "organizations_url": "https://api.github.com/users/joewschang/orgs",
+      "repos_url": "https://api.github.com/users/joewschang/repos",
+      "events_url": "https://api.github.com/users/joewschang/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/joewschang/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "committer": {
+      "login": "joewschang",
+      "id": 6160348,
+      "node_id": "MDQ6VXNlcjYxNjAzNDg=",
+      "avatar_url": "https://avatars.githubusercontent.com/u/6160348?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/joewschang",
+      "html_url": "https://github.com/joewschang",
+      "followers_url": "https://api.github.com/users/joewschang/followers",
+      "following_url": "https://api.github.com/users/joewschang/following{/other_user}",
+      "gists_url": "https://api.github.com/users/joewschang/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/joewschang/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/joewschang/subscriptions",
+      "organizations_url": "https://api.github.com/users/joewschang/orgs",
+      "repos_url": "https://api.github.com/users/joewschang/repos",
+      "events_url": "https://api.github.com/users/joewschang/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/joewschang/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "parents": [
+      {
+        "sha": "8cd3011dc075d3456893bc207c3a7536c7639bf2",
+        "url": "https://api.github.com/repos/joewschang/UCell/commits/8cd3011dc075d3456893bc207c3a7536c7639bf2",
+        "html_url": "https://github.com/joewschang/UCell/commit/8cd3011dc075d3456893bc207c3a7536c7639bf2"
+      }
+    ]
+  },
+  "merge_base_commit": {
+    "sha": "b1acc4d986fb37364905bea11843b24d53e4fbb3",
+    "node_id": "C_kwDOTOGw99oAKGIxYWNjNGQ5ODZmYjM3MzY0OTA1YmVhMTE4NDNiMjRkNTNlNGZiYjM",
+    "commit": {
+      "author": {
+        "name": "joewschang",
+        "email": "joewschang@gmail.com",
+        "date": "2026-09-17T06:29:48Z"
+      },
+      "committer": {
+        "name": "joewschang",
+        "email": "joewschang@gmail.com",
+        "date": "2026-09-17T06:29:48Z"
+      },
+      "message": "feat(payment): add fail-closed provider registry",
+      "tree": {
+        "sha": "7dbcfbb603f70dcf9dc6096b51e8207f68d16ccf",
+        "url": "https://api.github.com/repos/joewschang/UCell/git/trees/7dbcfbb603f70dcf9dc6096b51e8207f68d16ccf"
+      },
+      "url": "https://api.github.com/repos/joewschang/UCell/git/commits/b1acc4d986fb37364905bea11843b24d53e4fbb3",
+      "comment_count": 0,
+      "verification": {
+        "verified": false,
+        "reason": "unsigned",
+        "signature": null,
+        "payload": null,
+        "verified_at": null
+      }
+    },
+    "url": "https://api.github.com/repos/joewschang/UCell/commits/b1acc4d986fb37364905bea11843b24d53e4fbb3",
+    "html_url": "https://github.com/joewschang/UCell/commit/b1acc4d986fb37364905bea11843b24d53e4fbb3",
+    "comments_url": "https://api.github.com/repos/joewschang/UCell/commits/b1acc4d986fb37364905bea11843b24d53e4fbb3/comments",
+    "author": {
+      "login": "joewschang",
+      "id": 6160348,
+      "node_id": "MDQ6VXNlcjYxNjAzNDg=",
+      "avatar_url": "https://avatars.githubusercontent.com/u/6160348?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/joewschang",
+      "html_url": "https://github.com/joewschang",
+      "followers_url": "https://api.github.com/users/joewschang/followers",
+      "following_url": "https://api.github.com/users/joewschang/following{/other_user}",
+      "gists_url": "https://api.github.com/users/joewschang/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/joewschang/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/joewschang/subscriptions",
+      "organizations_url": "https://api.github.com/users/joewschang/orgs",
+      "repos_url": "https://api.github.com/users/joewschang/repos",
+      "events_url": "https://api.github.com/users/joewschang/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/joewschang/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "committer": {
+      "login": "joewschang",
+      "id": 6160348,
+      "node_id": "MDQ6VXNlcjYxNjAzNDg=",
+      "avatar_url": "https://avatars.githubusercontent.com/u/6160348?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/joewschang",
+      "html_url": "https://github.com/joewschang",
+      "followers_url": "https://api.github.com/users/joewschang/followers",
+      "following_url": "https://api.github.com/users/joewschang/following{/other_user}",
+      "gists_url": "https://api.github.com/users/joewschang/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/joewschang/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/joewschang/subscriptions",
+      "organizations_url": "https://api.github.com/users/joewschang/orgs",
+      "repos_url": "https://api.github.com/users/joewschang/repos",
+      "events_url": "https://api.github.com/users/joewschang/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/joewschang/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "parents": [
+      {
+        "sha": "8cd3011dc075d3456893bc207c3a7536c7639bf2",
+        "url": "https://api.github.com/repos/joewschang/UCell/commits/8cd3011dc075d3456893bc207c3a7536c7639bf2",
+        "html_url": "https://github.com/joewschang/UCell/commit/8cd3011dc075d3456893bc207c3a7536c7639bf2"
+      }
+    ]
+  },
+  "status": "ahead",
+  "ahead_by": 1,
+  "behind_by": 0,
+  "total_commits": 1,
+  "commits": [
+    {
+      "sha": "8dc0be7a543679891b282fc1d7eaed1c89c6bc24",
+      "node_id": "C_kwDOTOGw99oAKDhkYzBiZTdhNTQzNjc5ODkxYjI4MmZjMWQ3ZWFlZDFjODljNmJjMjQ",
+      "commit": {
+        "author": {
+          "name": "joewschang",
+          "email": "joewschang@gmail.com",
+          "date": "2026-09-17T06:46:41Z"
+        },
+        "committer": {
+          "name": "joewschang",
+          "email": "joewschang@gmail.com",
+          "date": "2026-09-17T06:46:41Z"
+        },
+        "message": "feat(payment): canonicalize provider event identity",
+        "tree": {
+          "sha": "b205c67abbf99a2922179bca3099b5482a961d94",
+          "url": "https://api.github.com/repos/joewschang/UCell/git/trees/b205c67abbf99a2922179bca3099b5482a961d94"
+        },
+        "url": "https://api.github.com/repos/joewschang/UCell/git/commits/8dc0be7a543679891b282fc1d7eaed1c89c6bc24",
+        "comment_count": 0,
+        "verification": {
+          "verified": false,
+          "reason": "unsigned",
+          "signature": null,
+          "payload": null,
+          "verified_at": null
+        }
+      },
+      "url": "https://api.github.com/repos/joewschang/UCell/commits/8dc0be7a543679891b282fc1d7eaed1c89c6bc24",
+      "html_url": "https://github.com/joewschang/UCell/commit/8dc0be7a543679891b282fc1d7eaed1c89c6bc24",
+      "comments_url": "https://api.github.com/repos/joewschang/UCell/commits/8dc0be7a543679891b282fc1d7eaed1c89c6bc24/comments",
+      "author": {
+        "login": "joewschang",
+        "id": 6160348,
+        "node_id": "MDQ6VXNlcjYxNjAzNDg=",
+        "avatar_url": "https://avatars.githubusercontent.com/u/6160348?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/joewschang",
+        "html_url": "https://github.com/joewschang",
+        "followers_url": "https://api.github.com/users/joewschang/followers",
+        "following_url": "https://api.github.com/users/joewschang/following{/other_user}",
+        "gists_url": "https://api.github.com/users/joewschang/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/joewschang/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/joewschang/subscriptions",
+        "organizations_url": "https://api.github.com/users/joewschang/orgs",
+        "repos_url": "https://api.github.com/users/joewschang/repos",
+        "events_url": "https://api.github.com/users/joewschang/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/joewschang/received_events",
+        "type": "User",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "committer": {
+        "login": "joewschang",
+        "id": 6160348,
+        "node_id": "MDQ6VXNlcjYxNjAzNDg=",
+        "avatar_url": "https://avatars.githubusercontent.com/u/6160348?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/joewschang",
+        "html_url": "https://github.com/joewschang",
+        "followers_url": "https://api.github.com/users/joewschang/followers",
+        "following_url": "https://api.github.com/users/joewschang/following{/other_user}",
+        "gists_url": "https://api.github.com/users/joewschang/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/joewschang/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/joewschang/subscriptions",
+        "organizations_url": "https://api.github.com/users/joewschang/orgs",
+        "repos_url": "https://api.github.com/users/joewschang/repos",
+        "events_url": "https://api.github.com/users/joewschang/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/joewschang/received_events",
+        "type": "User",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "parents": [
+        {
+          "sha": "b1acc4d986fb37364905bea11843b24d53e4fbb3",
+          "url": "https://api.github.com/repos/joewschang/UCell/commits/b1acc4d986fb37364905bea11843b24d53e4fbb3",
+          "html_url": "https://github.com/joewschang/UCell/commit/b1acc4d986fb37364905bea11843b24d53e4fbb3"
+        }
+      ]
+    }
+  ],
+  "files": [
+    {
+      "sha": "11ee44900259d553a5763dd59d463ff5a29ef62a",
+      "filename": "backend/apps/api/src/modules/payment-hub/provider-event-canonicalizer.ts",
+      "status": "added",
+      "additions": 72,
+      "deletions": 0,
+      "changes": 72,
+      "blob_url": "https://github.com/joewschang/UCell/blob/8dc0be7a543679891b282fc1d7eaed1c89c6bc24/backend%2Fapps%2Fapi%2Fsrc%2Fmodules%2Fpayment-hub%2Fprovider-event-canonicalizer.ts",
+      "raw_url": "https://github.com/joewschang/UCell/raw/8dc0be7a543679891b282fc1d7eaed1c89c6bc24/backend%2Fapps%2Fapi%2Fsrc%2Fmodules%2Fpayment-hub%2Fprovider-event-canonicalizer.ts",
+      "contents_url": "https://api.github.com/repos/joewschang/UCell/contents/backend%2Fapps%2Fapi%2Fsrc%2Fmodules%2Fpayment-hub%2Fprovider-event-canonicalizer.ts?ref=8dc0be7a543679891b282fc1d7eaed1c89c6bc24",
+      "patch": "@@ -0,0 +1,72 @@\n+import { requestHash } from '../../common/utils/hash';\n+import { PaymentEvidenceSource } from './canonical-payment-transition';\n+import { sanitizePaymentEvidenceMetadata, SafePaymentEvidenceValue } from './payment-evidence-sanitizer';\n+import { CanonicalPaymentStatus, PaymentProvider, VerifiedProviderEvent } from './payment-provider.adapter';\n+\n+export interface CanonicalProviderEventInput {\n+  provider: PaymentProvider;\n+  source: Exclude<PaymentEvidenceSource, 'BROWSER_RETURN'>;\n+  providerEventId?: string;\n+  providerTransactionRef: string;\n+  status: CanonicalPaymentStatus;\n+  metadata: Readonly<Record<string, unknown>>;\n+  occurredAt?: Date;\n+}\n+\n+export interface CanonicalizedProviderEvent extends VerifiedProviderEvent {\n+  source: CanonicalProviderEventInput['source'];\n+  safeMetadata: { [key: string]: SafePaymentEvidenceValue };\n+}\n+\n+export class ProviderEventCanonicalizationError extends Error {\n+  constructor(\n+    readonly code: 'PROVIDER_TRANSACTION_REF_REQUIRED' | 'PROVIDER_EVENT_ID_INVALID',\n+    message: string,\n+  ) {\n+    super(message);\n+    this.name = 'ProviderEventCanonicalizationError';\n+  }\n+}\n+\n+export function canonicalizeProviderEvent(input: CanonicalProviderEventInput): CanonicalizedProviderEvent {\n+  const providerTransactionRef = input.providerTransactionRef.trim();\n+  if (!providerTransactionRef) {\n+    throw new ProviderEventCanonicalizationError(\n+      'PROVIDER_TRANSACTION_REF_REQUIRED',\n+      'Provider transaction reference is required for canonical payment evidence.',\n+    );\n+  }\n+\n+  const explicitEventId = input.providerEventId?.trim();\n+  if (input.providerEventId !== undefined && !explicitEventId) {\n+    throw new ProviderEventCanonicalizationError(\n+      'PROVIDER_EVENT_ID_INVALID',\n+      'Provider event ID must not be blank when supplied.',\n+    );\n+  }\n+\n+  const safeMetadata = sanitizePaymentEvidenceMetadata(input.metadata);\n+  const canonicalEvidence = {\n+    provider: input.provider,\n+    source: input.source,\n+    providerTransactionRef,\n+    status: input.status,\n+    safeMetadata,\n+    occurredAt: input.occurredAt?.toISOString() ?? null,\n+  };\n+  const payloadHash = requestHash(canonicalEvidence);\n+  const providerEventIdentity = explicitEventId\n+    ? `${input.provider}:EVENT:${explicitEventId}`\n+    : `${input.provider}:HASH:${payloadHash}`;\n+\n+  return {\n+    provider: input.provider,\n+    source: input.source,\n+    providerEventIdentity,\n+    providerTransactionRef,\n+    status: input.status,\n+    payloadHash,\n+    safeMetadata,\n+    occurredAt: input.occurredAt,\n+  };\n+}"
+    },
+    {
+      "sha": "c91c912c98c9914f04119dbd4da6f75e080ccecd",
+      "filename": "backend/apps/api/test/provider-event-canonicalizer.e2e-spec.ts",
+      "status": "added",
+      "additions": 73,
+      "deletions": 0,
+      "changes": 73,
+      "blob_url": "https://github.com/joewschang/UCell/blob/8dc0be7a543679891b282fc1d7eaed1c89c6bc24/backend%2Fapps%2Fapi%2Ftest%2Fprovider-event-canonicalizer.e2e-spec.ts",
+      "raw_url": "https://github.com/joewschang/UCell/raw/8dc0be7a543679891b282fc1d7eaed1c89c6bc24/backend%2Fapps%2Fapi%2Ftest%2Fprovider-event-canonicalizer.e2e-spec.ts",
+      "contents_url": "https://api.github.com/repos/joewschang/UCell/contents/backend%2Fapps%2Fapi%2Ftest%2Fprovider-event-canonicalizer.e2e-spec.ts?ref=8dc0be7a543679891b282fc1d7eaed1c89c6bc24",
+      "patch": "@@ -0,0 +1,73 @@\n+import { PaymentEvidenceSecurityError } from '../src/modules/payment-hub/payment-evidence-sanitizer';\n+import {\n+  canonicalizeProviderEvent,\n+  ProviderEventCanonicalizationError,\n+} from '../src/modules/payment-hub/provider-event-canonicalizer';\n+\n+const base = {\n+  provider: 'TAISHIN_ECOM' as const,\n+  source: 'VERIFIED_WEBHOOK' as const,\n+  providerTransactionRef: 'txn-001',\n+  status: 'PAID' as const,\n+  metadata: { amount: '4800.00', currency: 'TWD' },\n+};\n+\n+describe('Payment provider event canonicalization', () => {\n+  it('uses a provider-namespaced explicit event identity', () => {\n+    const event = canonicalizeProviderEvent({ ...base, providerEventId: ' event-001 ' });\n+    expect(event.providerEventIdentity).toBe('TAISHIN_ECOM:EVENT:event-001');\n+    expect(event.providerTransactionRef).toBe('txn-001');\n+    expect(event.payloadHash).toMatch(/^[a-f0-9]{64}$/);\n+  });\n+\n+  it('derives deterministic fallback identity regardless of metadata key order', () => {\n+    const first = canonicalizeProviderEvent({ ...base, metadata: { amount: '4800.00', currency: 'TWD' } });\n+    const second = canonicalizeProviderEvent({ ...base, metadata: { currency: 'TWD', amount: '4800.00' } });\n+    expect(second.providerEventIdentity).toBe(first.providerEventIdentity);\n+    expect(second.payloadHash).toBe(first.payloadHash);\n+  });\n+\n+  it('ignores raw secret differences after redaction', () => {\n+    const first = canonicalizeProviderEvent({ ...base, metadata: { amount: '4800.00', signature: 'secret-a' } });\n+    const second = canonicalizeProviderEvent({ ...base, metadata: { amount: '4800.00', signature: 'secret-b' } });\n+    expect(second.payloadHash).toBe(first.payloadHash);\n+    expect(second.safeMetadata.signature).toBe('[REDACTED]');\n+  });\n+\n+  it('changes payload hash when safe business evidence changes', () => {\n+    const paid = canonicalizeProviderEvent(base);\n+    const refunded = canonicalizeProviderEvent({ ...base, status: 'REFUNDED' });\n+    expect(refunded.payloadHash).not.toBe(paid.payloadHash);\n+    expect(refunded.providerEventIdentity).not.toBe(paid.providerEventIdentity);\n+  });\n+\n+  it('namespaces fallback identities by provider', () => {\n+    const taishin = canonicalizeProviderEvent(base);\n+    const ecpay = canonicalizeProviderEvent({ ...base, provider: 'ECPAY' });\n+    expect(ecpay.providerEventIdentity).not.toBe(taishin.providerEventIdentity);\n+  });\n+\n+  it('rejects missing transaction reference and blank supplied event ID', () => {\n+    expect(() => canonicalizeProviderEvent({ ...base, providerTransactionRef: ' ' })).toThrow(\n+      expect.objectContaining({ code: 'PROVIDER_TRANSACTION_REF_REQUIRED' }),\n+    );\n+    expect(() => canonicalizeProviderEvent({ ...base, providerEventId: ' ' })).toThrow(\n+      expect.objectContaining({ code: 'PROVIDER_EVENT_ID_INVALID' }),\n+    );\n+  });\n+\n+  it('applies cardholder-data protection before hashing', () => {\n+    expect(() => canonicalizeProviderEvent({ ...base, metadata: { cvv: '123' } })).toThrow(\n+      expect.objectContaining({ code: 'CARDHOLDER_DATA_FORBIDDEN' }),\n+    );\n+  });\n+\n+  it('exposes stable error classes', () => {\n+    expect(() => canonicalizeProviderEvent({ ...base, providerTransactionRef: '' })).toThrow(\n+      ProviderEventCanonicalizationError,\n+    );\n+    expect(() => canonicalizeProviderEvent({ ...base, metadata: { pan: 'x' } })).toThrow(\n+      PaymentEvidenceSecurityError,\n+    );\n+  });\n+});"
+    },
+    {
+      "sha": "7cbdfc6c82d449b6712d4c38e781e3a2ba40e6d2",
+      "filename": "governance/product-next/V1_20_PROVIDER_EVENT_CANONICALIZATION_REPORT.md",
+      "status": "added",
+      "additions": 31,
+      "deletions": 0,
+      "changes": 31,
+      "blob_url": "https://github.com/joewschang/UCell/blob/8dc0be7a543679891b282fc1d7eaed1c89c6bc24/governance%2Fproduct-next%2FV1_20_PROVIDER_EVENT_CANONICALIZATION_REPORT.md",
+      "raw_url": "https://github.com/joewschang/UCell/raw/8dc0be7a543679891b282fc1d7eaed1c89c6bc24/governance%2Fproduct-next%2FV1_20_PROVIDER_EVENT_CANONICALIZATION_REPORT.md",
+      "contents_url": "https://api.github.com/repos/joewschang/UCell/contents/governance%2Fproduct-next%2FV1_20_PROVIDER_EVENT_CANONICALIZATION_REPORT.md?ref=8dc0be7a543679891b282fc1d7eaed1c89c6bc24",
+      "patch": "@@ -0,0 +1,31 @@\n+# V1.20 Provider Event Canonicalization Report\n+\n+Status: IMPLEMENTED — IDEMPOTENCY CONTRACT SLICE\n+Date: 2026-09-17\n+Branch: integration/member-backend-mvp\n+\n+## Scope delivered\n+\n+- Added canonical provider-event construction shared by verified webhook, provider query, reconciliation and controlled POS evidence paths.\n+- Explicit provider event IDs are trimmed and namespaced by provider.\n+- When a provider supplies no event ID, identity is derived from a deterministic SHA-256 hash of canonical safe evidence.\n+- Hash input includes provider, evidence source, provider transaction reference, canonical status, sanitized metadata and occurredAt when supplied.\n+- Metadata key order does not change identity.\n+- Raw signature/secret differences do not create distinct business events because secrets are redacted before hashing.\n+- Changed safe business evidence changes the payload hash, allowing the existing replay/conflict decision to reject event-identity reuse with altered content.\n+- Blank event IDs and missing provider transaction references fail closed.\n+- PAN/CVV protection runs before hashing.\n+\n+## Verification\n+\n+- Focused provider canonicalizer Jest: 1 suite, 8 tests PASS.\n+- Backend API build: PASS.\n+- Isolated Backend API Jest: fresh DB, 39 migrations, 21 suites, 224 tests PASS.\n+- Isolated database cleanup: PASS.\n+- No schema, provider enablement, credential or monetary-rule change.\n+\n+## Remaining gates\n+\n+Transactional persistence must eventually enforce provider + event identity uniqueness and write Payment transition/outbox evidence atomically under the designated schema owner. Official provider signature/checksum verification and sandbox/UAT remain blocked on formal provider material and credentials.\n+\n+Production Promotion remains blocked."
+    }
+  ]
+}

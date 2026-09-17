@@ -1,0 +1,427 @@
+{
+  "url": "https://api.github.com/repos/joewschang/UCell/compare/98a69992940fb00c89b592aa964614a1c7e4cce5...b1acc4d986fb37364905bea11843b24d53e4fbb3",
+  "html_url": "https://github.com/joewschang/UCell/compare/98a69992940fb00c89b592aa964614a1c7e4cce5...b1acc4d986fb37364905bea11843b24d53e4fbb3",
+  "permalink_url": "https://github.com/joewschang/UCell/compare/joewschang:98a6999...joewschang:b1acc4d",
+  "diff_url": "https://github.com/joewschang/UCell/compare/98a69992940fb00c89b592aa964614a1c7e4cce5...b1acc4d986fb37364905bea11843b24d53e4fbb3.diff",
+  "patch_url": "https://github.com/joewschang/UCell/compare/98a69992940fb00c89b592aa964614a1c7e4cce5...b1acc4d986fb37364905bea11843b24d53e4fbb3.patch",
+  "base_commit": {
+    "sha": "98a69992940fb00c89b592aa964614a1c7e4cce5",
+    "node_id": "C_kwDOTOGw99oAKDk4YTY5OTkyOTQwZmIwMGM4OWI1OTJhYTk2NDYxNGExYzdlNGNjZTU",
+    "commit": {
+      "author": {
+        "name": "joewschang",
+        "email": "joewschang@gmail.com",
+        "date": "2026-09-17T05:26:03Z"
+      },
+      "committer": {
+        "name": "joewschang",
+        "email": "joewschang@gmail.com",
+        "date": "2026-09-17T05:26:03Z"
+      },
+      "message": "fix(organization): connect binary placement command",
+      "tree": {
+        "sha": "3e955e277fc0187471706ba77cf273d3641850bf",
+        "url": "https://api.github.com/repos/joewschang/UCell/git/trees/3e955e277fc0187471706ba77cf273d3641850bf"
+      },
+      "url": "https://api.github.com/repos/joewschang/UCell/git/commits/98a69992940fb00c89b592aa964614a1c7e4cce5",
+      "comment_count": 0,
+      "verification": {
+        "verified": false,
+        "reason": "unsigned",
+        "signature": null,
+        "payload": null,
+        "verified_at": null
+      }
+    },
+    "url": "https://api.github.com/repos/joewschang/UCell/commits/98a69992940fb00c89b592aa964614a1c7e4cce5",
+    "html_url": "https://github.com/joewschang/UCell/commit/98a69992940fb00c89b592aa964614a1c7e4cce5",
+    "comments_url": "https://api.github.com/repos/joewschang/UCell/commits/98a69992940fb00c89b592aa964614a1c7e4cce5/comments",
+    "author": {
+      "login": "joewschang",
+      "id": 6160348,
+      "node_id": "MDQ6VXNlcjYxNjAzNDg=",
+      "avatar_url": "https://avatars.githubusercontent.com/u/6160348?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/joewschang",
+      "html_url": "https://github.com/joewschang",
+      "followers_url": "https://api.github.com/users/joewschang/followers",
+      "following_url": "https://api.github.com/users/joewschang/following{/other_user}",
+      "gists_url": "https://api.github.com/users/joewschang/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/joewschang/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/joewschang/subscriptions",
+      "organizations_url": "https://api.github.com/users/joewschang/orgs",
+      "repos_url": "https://api.github.com/users/joewschang/repos",
+      "events_url": "https://api.github.com/users/joewschang/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/joewschang/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "committer": {
+      "login": "joewschang",
+      "id": 6160348,
+      "node_id": "MDQ6VXNlcjYxNjAzNDg=",
+      "avatar_url": "https://avatars.githubusercontent.com/u/6160348?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/joewschang",
+      "html_url": "https://github.com/joewschang",
+      "followers_url": "https://api.github.com/users/joewschang/followers",
+      "following_url": "https://api.github.com/users/joewschang/following{/other_user}",
+      "gists_url": "https://api.github.com/users/joewschang/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/joewschang/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/joewschang/subscriptions",
+      "organizations_url": "https://api.github.com/users/joewschang/orgs",
+      "repos_url": "https://api.github.com/users/joewschang/repos",
+      "events_url": "https://api.github.com/users/joewschang/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/joewschang/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "parents": [
+      {
+        "sha": "df2547d7a04e0985b69ba163c7329aed714a83ec",
+        "url": "https://api.github.com/repos/joewschang/UCell/commits/df2547d7a04e0985b69ba163c7329aed714a83ec",
+        "html_url": "https://github.com/joewschang/UCell/commit/df2547d7a04e0985b69ba163c7329aed714a83ec"
+      }
+    ]
+  },
+  "merge_base_commit": {
+    "sha": "98a69992940fb00c89b592aa964614a1c7e4cce5",
+    "node_id": "C_kwDOTOGw99oAKDk4YTY5OTkyOTQwZmIwMGM4OWI1OTJhYTk2NDYxNGExYzdlNGNjZTU",
+    "commit": {
+      "author": {
+        "name": "joewschang",
+        "email": "joewschang@gmail.com",
+        "date": "2026-09-17T05:26:03Z"
+      },
+      "committer": {
+        "name": "joewschang",
+        "email": "joewschang@gmail.com",
+        "date": "2026-09-17T05:26:03Z"
+      },
+      "message": "fix(organization): connect binary placement command",
+      "tree": {
+        "sha": "3e955e277fc0187471706ba77cf273d3641850bf",
+        "url": "https://api.github.com/repos/joewschang/UCell/git/trees/3e955e277fc0187471706ba77cf273d3641850bf"
+      },
+      "url": "https://api.github.com/repos/joewschang/UCell/git/commits/98a69992940fb00c89b592aa964614a1c7e4cce5",
+      "comment_count": 0,
+      "verification": {
+        "verified": false,
+        "reason": "unsigned",
+        "signature": null,
+        "payload": null,
+        "verified_at": null
+      }
+    },
+    "url": "https://api.github.com/repos/joewschang/UCell/commits/98a69992940fb00c89b592aa964614a1c7e4cce5",
+    "html_url": "https://github.com/joewschang/UCell/commit/98a69992940fb00c89b592aa964614a1c7e4cce5",
+    "comments_url": "https://api.github.com/repos/joewschang/UCell/commits/98a69992940fb00c89b592aa964614a1c7e4cce5/comments",
+    "author": {
+      "login": "joewschang",
+      "id": 6160348,
+      "node_id": "MDQ6VXNlcjYxNjAzNDg=",
+      "avatar_url": "https://avatars.githubusercontent.com/u/6160348?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/joewschang",
+      "html_url": "https://github.com/joewschang",
+      "followers_url": "https://api.github.com/users/joewschang/followers",
+      "following_url": "https://api.github.com/users/joewschang/following{/other_user}",
+      "gists_url": "https://api.github.com/users/joewschang/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/joewschang/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/joewschang/subscriptions",
+      "organizations_url": "https://api.github.com/users/joewschang/orgs",
+      "repos_url": "https://api.github.com/users/joewschang/repos",
+      "events_url": "https://api.github.com/users/joewschang/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/joewschang/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "committer": {
+      "login": "joewschang",
+      "id": 6160348,
+      "node_id": "MDQ6VXNlcjYxNjAzNDg=",
+      "avatar_url": "https://avatars.githubusercontent.com/u/6160348?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/joewschang",
+      "html_url": "https://github.com/joewschang",
+      "followers_url": "https://api.github.com/users/joewschang/followers",
+      "following_url": "https://api.github.com/users/joewschang/following{/other_user}",
+      "gists_url": "https://api.github.com/users/joewschang/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/joewschang/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/joewschang/subscriptions",
+      "organizations_url": "https://api.github.com/users/joewschang/orgs",
+      "repos_url": "https://api.github.com/users/joewschang/repos",
+      "events_url": "https://api.github.com/users/joewschang/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/joewschang/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "parents": [
+      {
+        "sha": "df2547d7a04e0985b69ba163c7329aed714a83ec",
+        "url": "https://api.github.com/repos/joewschang/UCell/commits/df2547d7a04e0985b69ba163c7329aed714a83ec",
+        "html_url": "https://github.com/joewschang/UCell/commit/df2547d7a04e0985b69ba163c7329aed714a83ec"
+      }
+    ]
+  },
+  "status": "ahead",
+  "ahead_by": 2,
+  "behind_by": 0,
+  "total_commits": 2,
+  "commits": [
+    {
+      "sha": "8cd3011dc075d3456893bc207c3a7536c7639bf2",
+      "node_id": "C_kwDOTOGw99oAKDhjZDMwMTFkYzA3NWQzNDU2ODkzYmMyMDdjM2E3NTM2Yzc2MzliZjI",
+      "commit": {
+        "author": {
+          "name": "joewschang",
+          "email": "joewschang@gmail.com",
+          "date": "2026-09-17T05:56:36Z"
+        },
+        "committer": {
+          "name": "joewschang",
+          "email": "joewschang@gmail.com",
+          "date": "2026-09-17T05:56:36Z"
+        },
+        "message": "feat(payment): sanitize provider evidence metadata",
+        "tree": {
+          "sha": "5897717fe268563a1697b862690b7e19bd8bba87",
+          "url": "https://api.github.com/repos/joewschang/UCell/git/trees/5897717fe268563a1697b862690b7e19bd8bba87"
+        },
+        "url": "https://api.github.com/repos/joewschang/UCell/git/commits/8cd3011dc075d3456893bc207c3a7536c7639bf2",
+        "comment_count": 0,
+        "verification": {
+          "verified": false,
+          "reason": "unsigned",
+          "signature": null,
+          "payload": null,
+          "verified_at": null
+        }
+      },
+      "url": "https://api.github.com/repos/joewschang/UCell/commits/8cd3011dc075d3456893bc207c3a7536c7639bf2",
+      "html_url": "https://github.com/joewschang/UCell/commit/8cd3011dc075d3456893bc207c3a7536c7639bf2",
+      "comments_url": "https://api.github.com/repos/joewschang/UCell/commits/8cd3011dc075d3456893bc207c3a7536c7639bf2/comments",
+      "author": {
+        "login": "joewschang",
+        "id": 6160348,
+        "node_id": "MDQ6VXNlcjYxNjAzNDg=",
+        "avatar_url": "https://avatars.githubusercontent.com/u/6160348?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/joewschang",
+        "html_url": "https://github.com/joewschang",
+        "followers_url": "https://api.github.com/users/joewschang/followers",
+        "following_url": "https://api.github.com/users/joewschang/following{/other_user}",
+        "gists_url": "https://api.github.com/users/joewschang/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/joewschang/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/joewschang/subscriptions",
+        "organizations_url": "https://api.github.com/users/joewschang/orgs",
+        "repos_url": "https://api.github.com/users/joewschang/repos",
+        "events_url": "https://api.github.com/users/joewschang/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/joewschang/received_events",
+        "type": "User",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "committer": {
+        "login": "joewschang",
+        "id": 6160348,
+        "node_id": "MDQ6VXNlcjYxNjAzNDg=",
+        "avatar_url": "https://avatars.githubusercontent.com/u/6160348?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/joewschang",
+        "html_url": "https://github.com/joewschang",
+        "followers_url": "https://api.github.com/users/joewschang/followers",
+        "following_url": "https://api.github.com/users/joewschang/following{/other_user}",
+        "gists_url": "https://api.github.com/users/joewschang/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/joewschang/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/joewschang/subscriptions",
+        "organizations_url": "https://api.github.com/users/joewschang/orgs",
+        "repos_url": "https://api.github.com/users/joewschang/repos",
+        "events_url": "https://api.github.com/users/joewschang/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/joewschang/received_events",
+        "type": "User",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "parents": [
+        {
+          "sha": "98a69992940fb00c89b592aa964614a1c7e4cce5",
+          "url": "https://api.github.com/repos/joewschang/UCell/commits/98a69992940fb00c89b592aa964614a1c7e4cce5",
+          "html_url": "https://github.com/joewschang/UCell/commit/98a69992940fb00c89b592aa964614a1c7e4cce5"
+        }
+      ]
+    },
+    {
+      "sha": "b1acc4d986fb37364905bea11843b24d53e4fbb3",
+      "node_id": "C_kwDOTOGw99oAKGIxYWNjNGQ5ODZmYjM3MzY0OTA1YmVhMTE4NDNiMjRkNTNlNGZiYjM",
+      "commit": {
+        "author": {
+          "name": "joewschang",
+          "email": "joewschang@gmail.com",
+          "date": "2026-09-17T06:29:48Z"
+        },
+        "committer": {
+          "name": "joewschang",
+          "email": "joewschang@gmail.com",
+          "date": "2026-09-17T06:29:48Z"
+        },
+        "message": "feat(payment): add fail-closed provider registry",
+        "tree": {
+          "sha": "7dbcfbb603f70dcf9dc6096b51e8207f68d16ccf",
+          "url": "https://api.github.com/repos/joewschang/UCell/git/trees/7dbcfbb603f70dcf9dc6096b51e8207f68d16ccf"
+        },
+        "url": "https://api.github.com/repos/joewschang/UCell/git/commits/b1acc4d986fb37364905bea11843b24d53e4fbb3",
+        "comment_count": 0,
+        "verification": {
+          "verified": false,
+          "reason": "unsigned",
+          "signature": null,
+          "payload": null,
+          "verified_at": null
+        }
+      },
+      "url": "https://api.github.com/repos/joewschang/UCell/commits/b1acc4d986fb37364905bea11843b24d53e4fbb3",
+      "html_url": "https://github.com/joewschang/UCell/commit/b1acc4d986fb37364905bea11843b24d53e4fbb3",
+      "comments_url": "https://api.github.com/repos/joewschang/UCell/commits/b1acc4d986fb37364905bea11843b24d53e4fbb3/comments",
+      "author": {
+        "login": "joewschang",
+        "id": 6160348,
+        "node_id": "MDQ6VXNlcjYxNjAzNDg=",
+        "avatar_url": "https://avatars.githubusercontent.com/u/6160348?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/joewschang",
+        "html_url": "https://github.com/joewschang",
+        "followers_url": "https://api.github.com/users/joewschang/followers",
+        "following_url": "https://api.github.com/users/joewschang/following{/other_user}",
+        "gists_url": "https://api.github.com/users/joewschang/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/joewschang/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/joewschang/subscriptions",
+        "organizations_url": "https://api.github.com/users/joewschang/orgs",
+        "repos_url": "https://api.github.com/users/joewschang/repos",
+        "events_url": "https://api.github.com/users/joewschang/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/joewschang/received_events",
+        "type": "User",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "committer": {
+        "login": "joewschang",
+        "id": 6160348,
+        "node_id": "MDQ6VXNlcjYxNjAzNDg=",
+        "avatar_url": "https://avatars.githubusercontent.com/u/6160348?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/joewschang",
+        "html_url": "https://github.com/joewschang",
+        "followers_url": "https://api.github.com/users/joewschang/followers",
+        "following_url": "https://api.github.com/users/joewschang/following{/other_user}",
+        "gists_url": "https://api.github.com/users/joewschang/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/joewschang/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/joewschang/subscriptions",
+        "organizations_url": "https://api.github.com/users/joewschang/orgs",
+        "repos_url": "https://api.github.com/users/joewschang/repos",
+        "events_url": "https://api.github.com/users/joewschang/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/joewschang/received_events",
+        "type": "User",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "parents": [
+        {
+          "sha": "8cd3011dc075d3456893bc207c3a7536c7639bf2",
+          "url": "https://api.github.com/repos/joewschang/UCell/commits/8cd3011dc075d3456893bc207c3a7536c7639bf2",
+          "html_url": "https://github.com/joewschang/UCell/commit/8cd3011dc075d3456893bc207c3a7536c7639bf2"
+        }
+      ]
+    }
+  ],
+  "files": [
+    {
+      "sha": "8526a06ac58321134fe21dbe32f96a8b06d757a8",
+      "filename": "backend/apps/api/src/modules/payment-hub/payment-evidence-sanitizer.ts",
+      "status": "added",
+      "additions": 130,
+      "deletions": 0,
+      "changes": 130,
+      "blob_url": "https://github.com/joewschang/UCell/blob/b1acc4d986fb37364905bea11843b24d53e4fbb3/backend%2Fapps%2Fapi%2Fsrc%2Fmodules%2Fpayment-hub%2Fpayment-evidence-sanitizer.ts",
+      "raw_url": "https://github.com/joewschang/UCell/raw/b1acc4d986fb37364905bea11843b24d53e4fbb3/backend%2Fapps%2Fapi%2Fsrc%2Fmodules%2Fpayment-hub%2Fpayment-evidence-sanitizer.ts",
+      "contents_url": "https://api.github.com/repos/joewschang/UCell/contents/backend%2Fapps%2Fapi%2Fsrc%2Fmodules%2Fpayment-hub%2Fpayment-evidence-sanitizer.ts?ref=b1acc4d986fb37364905bea11843b24d53e4fbb3",
+      "patch": "@@ -0,0 +1,130 @@\n+export type SafePaymentEvidenceValue =\n+  | string\n+  | number\n+  | boolean\n+  | null\n+  | SafePaymentEvidenceValue[]\n+  | { [key: string]: SafePaymentEvidenceValue };\n+\n+export class PaymentEvidenceSecurityError extends Error {\n+  constructor(\n+    readonly code: 'CARDHOLDER_DATA_FORBIDDEN' | 'PAYMENT_EVIDENCE_UNSUPPORTED_VALUE',\n+    message: string,\n+  ) {\n+    super(message);\n+    this.name = 'PaymentEvidenceSecurityError';\n+  }\n+}\n+\n+const forbiddenCardKeys = new Set([\n+  'pan',\n+  'cardnumber',\n+  'creditcardnumber',\n+  'debitcardnumber',\n+  'cvv',\n+  'cvc',\n+  'cvv2',\n+  'cvc2',\n+  'cardsecuritycode',\n+  'track1',\n+  'track2',\n+  'trackdata',\n+  'fulltrackdata',\n+  'magstripe',\n+]);\n+\n+const identifierKeys = new Set([\n+  'batchref',\n+  'correlationid',\n+  'ordernumber',\n+  'paymentid',\n+  'providereventid',\n+  'providertransactionref',\n+  'terminalref',\n+]);\n+\n+const secretKeys = new Set([\n+  'authorization',\n+  'apikey',\n+  'clientsecret',\n+  'merchantsecret',\n+  'password',\n+  'privatekey',\n+  'signature',\n+  'signatureraw',\n+  'token',\n+  'webhooksecret',\n+]);\n+\n+function normalizedKey(key: string): string {\n+  return key.replace(/[^a-z0-9]/gi, '').toLowerCase();\n+}\n+\n+function containsLikelyPan(value: string): boolean {\n+  const candidates = value.match(/(?:\\d[ -]?){13,19}/g) ?? [];\n+  return candidates.some((candidate) => {\n+    const digits = candidate.replace(/\\D/g, '');\n+    if (digits.length < 13 || digits.length > 19 || /^(\\d)\\1+$/.test(digits)) return false;\n+    let sum = 0;\n+    let doubleDigit = false;\n+    for (let index = digits.length - 1; index >= 0; index -= 1) {\n+      let digit = Number(digits[index]);\n+      if (doubleDigit) {\n+        digit *= 2;\n+        if (digit > 9) digit -= 9;\n+      }\n+      sum += digit;\n+      doubleDigit = !doubleDigit;\n+    }\n+    return sum % 10 === 0;\n+  });\n+}\n+\n+export function sanitizePaymentEvidenceMetadata(\n+  input: Readonly<Record<string, unknown>>,\n+): { [key: string]: SafePaymentEvidenceValue } {\n+  return sanitizeObject(input, '$');\n+}\n+\n+function sanitizeObject(\n+  input: Readonly<Record<string, unknown>>,\n+  path: string,\n+): { [key: string]: SafePaymentEvidenceValue } {\n+  const output: { [key: string]: SafePaymentEvidenceValue } = {};\n+  for (const [key, value] of Object.entries(input)) {\n+    const normalized = normalizedKey(key);\n+    if (forbiddenCardKeys.has(normalized)) {\n+      throw new PaymentEvidenceSecurityError(\n+        'CARDHOLDER_DATA_FORBIDDEN',\n+        `Cardholder data field is forbidden in payment evidence metadata at ${path}.${key}.`,\n+      );\n+    }\n+    if (secretKeys.has(normalized)) {\n+      output[key] = '[REDACTED]';\n+      continue;\n+    }\n+    output[key] = sanitizeValue(value, `${path}.${key}`, identifierKeys.has(normalized));\n+  }\n+  return output;\n+}\n+\n+function sanitizeValue(value: unknown, path: string, identifier = false): SafePaymentEvidenceValue {\n+  if (value === null || typeof value === 'boolean' || typeof value === 'number') return value;\n+  if (typeof value === 'string') {\n+    if (!identifier && containsLikelyPan(value)) {\n+      throw new PaymentEvidenceSecurityError(\n+        'CARDHOLDER_DATA_FORBIDDEN',\n+        `Likely card PAN is forbidden in payment evidence metadata at ${path}.`,\n+      );\n+    }\n+    return value;\n+  }\n+  if (Array.isArray(value)) return value.map((item, index) => sanitizeValue(item, `${path}[${index}]`, identifier));\n+  if (typeof value === 'object' && Object.getPrototypeOf(value) === Object.prototype) {\n+    return sanitizeObject(value as Readonly<Record<string, unknown>>, path);\n+  }\n+  throw new PaymentEvidenceSecurityError(\n+    'PAYMENT_EVIDENCE_UNSUPPORTED_VALUE',\n+    `Unsupported payment evidence value at ${path}.`,\n+  );\n+}"
+    },
+    {
+      "sha": "69813288e4be5228d18b37caa681e6185427930b",
+      "filename": "backend/apps/api/src/modules/payment-hub/payment-provider.registry.ts",
+      "status": "added",
+      "additions": 69,
+      "deletions": 0,
+      "changes": 69,
+      "blob_url": "https://github.com/joewschang/UCell/blob/b1acc4d986fb37364905bea11843b24d53e4fbb3/backend%2Fapps%2Fapi%2Fsrc%2Fmodules%2Fpayment-hub%2Fpayment-provider.registry.ts",
+      "raw_url": "https://github.com/joewschang/UCell/raw/b1acc4d986fb37364905bea11843b24d53e4fbb3/backend%2Fapps%2Fapi%2Fsrc%2Fmodules%2Fpayment-hub%2Fpayment-provider.registry.ts",
+      "contents_url": "https://api.github.com/repos/joewschang/UCell/contents/backend%2Fapps%2Fapi%2Fsrc%2Fmodules%2Fpayment-hub%2Fpayment-provider.registry.ts?ref=b1acc4d986fb37364905bea11843b24d53e4fbb3",
+      "patch": "@@ -0,0 +1,69 @@\n+import { PaymentProvider, PaymentProviderAdapter } from './payment-provider.adapter';\n+\n+export type PaymentProviderAvailability = 'ENABLED' | 'CONFIG_PENDING' | 'FEATURE_DISABLED';\n+\n+export class PaymentProviderRegistryError extends Error {\n+  constructor(\n+    readonly code:\n+      | 'PAYMENT_PROVIDER_DUPLICATE'\n+      | 'PAYMENT_PROVIDER_DISABLED'\n+      | 'PAYMENT_PROVIDER_CONFIG_PENDING'\n+      | 'PAYMENT_PROVIDER_ADAPTER_UNAVAILABLE',\n+    message: string,\n+    readonly provider: PaymentProvider,\n+  ) {\n+    super(message);\n+    this.name = 'PaymentProviderRegistryError';\n+  }\n+}\n+\n+export class PaymentProviderRegistry {\n+  private readonly adapters = new Map<PaymentProvider, PaymentProviderAdapter>();\n+\n+  constructor(\n+    adapters: ReadonlyArray<PaymentProviderAdapter>,\n+    private readonly availability: Readonly<Partial<Record<PaymentProvider, PaymentProviderAvailability>>>,\n+  ) {\n+    for (const adapter of adapters) {\n+      if (this.adapters.has(adapter.provider)) {\n+        throw new PaymentProviderRegistryError(\n+          'PAYMENT_PROVIDER_DUPLICATE',\n+          `Multiple adapters are registered for ${adapter.provider}.`,\n+          adapter.provider,\n+        );\n+      }\n+      this.adapters.set(adapter.provider, adapter);\n+    }\n+  }\n+\n+  status(provider: PaymentProvider): PaymentProviderAvailability {\n+    return this.availability[provider] ?? 'FEATURE_DISABLED';\n+  }\n+\n+  resolve(provider: PaymentProvider): PaymentProviderAdapter {\n+    const status = this.status(provider);\n+    if (status === 'FEATURE_DISABLED') {\n+      throw new PaymentProviderRegistryError(\n+        'PAYMENT_PROVIDER_DISABLED',\n+        `Payment provider ${provider} is feature disabled.`,\n+        provider,\n+      );\n+    }\n+    if (status === 'CONFIG_PENDING') {\n+      throw new PaymentProviderRegistryError(\n+        'PAYMENT_PROVIDER_CONFIG_PENDING',\n+        `Payment provider ${provider} is awaiting approved environment configuration.`,\n+        provider,\n+      );\n+    }\n+    const adapter = this.adapters.get(provider);\n+    if (!adapter) {\n+      throw new PaymentProviderRegistryError(\n+        'PAYMENT_PROVIDER_ADAPTER_UNAVAILABLE',\n+        `Payment provider ${provider} is enabled but no adapter is registered.`,\n+        provider,\n+      );\n+    }\n+    return adapter;\n+  }\n+}"
+    },
+    {
+      "sha": "1a145a90d17fae67bc6e718e7bcedef56e4b1dd4",
+      "filename": "backend/apps/api/test/organization.e2e-spec.ts",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 1,
+      "changes": 2,
+      "blob_url": "https://github.com/joewschang/UCell/blob/b1acc4d986fb37364905bea11843b24d53e4fbb3/backend%2Fapps%2Fapi%2Ftest%2Forganization.e2e-spec.ts",
+      "raw_url": "https://github.com/joewschang/UCell/raw/b1acc4d986fb37364905bea11843b24d53e4fbb3/backend%2Fapps%2Fapi%2Ftest%2Forganization.e2e-spec.ts",
+      "contents_url": "https://api.github.com/repos/joewschang/UCell/contents/backend%2Fapps%2Fapi%2Ftest%2Forganization.e2e-spec.ts?ref=b1acc4d986fb37364905bea11843b24d53e4fbb3",
+      "patch": "@@ -43,7 +43,7 @@ describe('Organization guardrails (P0)', () => {\n   });\n });\n \n-import { OrganizationController } from '../src/modules/organization/organization.controller';\n+\n \n describe('Organization legacy placement endpoint', () => {\n   it('delegates to the canonical admin placement command and preserves replay metadata', async () => {"
+    },
+    {
+      "sha": "1d4e3d25f3a59869e8fe7ec1aac26fe82d6cb636",
+      "filename": "backend/apps/api/test/payment-evidence-security.e2e-spec.ts",
+      "status": "added",
+      "additions": 75,
+      "deletions": 0,
+      "changes": 75,
+      "blob_url": "https://github.com/joewschang/UCell/blob/b1acc4d986fb37364905bea11843b24d53e4fbb3/backend%2Fapps%2Fapi%2Ftest%2Fpayment-evidence-security.e2e-spec.ts",
+      "raw_url": "https://github.com/joewschang/UCell/raw/b1acc4d986fb37364905bea11843b24d53e4fbb3/backend%2Fapps%2Fapi%2Ftest%2Fpayment-evidence-security.e2e-spec.ts",
+      "contents_url": "https://api.github.com/repos/joewschang/UCell/contents/backend%2Fapps%2Fapi%2Ftest%2Fpayment-evidence-security.e2e-spec.ts?ref=b1acc4d986fb37364905bea11843b24d53e4fbb3",
+      "patch": "@@ -0,0 +1,75 @@\n+import {\n+  PaymentEvidenceSecurityError,\n+  sanitizePaymentEvidenceMetadata,\n+} from '../src/modules/payment-hub/payment-evidence-sanitizer';\n+\n+describe('Payment Hub evidence security', () => {\n+  it('preserves safe provider references while redacting secrets recursively', () => {\n+    const source = {\n+      providerTransactionRef: 'txn-001',\n+      providerEventId: 'event-001',\n+      response: { status: 'PAID', signature: 'raw-signature', authorization: 'Bearer secret' },\n+    };\n+\n+    expect(sanitizePaymentEvidenceMetadata(source)).toEqual({\n+      providerTransactionRef: 'txn-001',\n+      providerEventId: 'event-001',\n+      response: { status: 'PAID', signature: '[REDACTED]', authorization: '[REDACTED]' },\n+    });\n+    expect(source.response.signature).toBe('raw-signature');\n+  });\n+\n+  it.each(['pan', 'card_number', 'CVV', 'track2', 'full-track-data'])(\n+    'rejects forbidden cardholder field %s',\n+    (field) => {\n+      expect(() => sanitizePaymentEvidenceMetadata({ [field]: 'sensitive' })).toThrow(\n+        expect.objectContaining({ code: 'CARDHOLDER_DATA_FORBIDDEN' }),\n+      );\n+    },\n+  );\n+\n+  it('rejects a likely PAN hidden inside an otherwise generic string field', () => {\n+    expect(() => sanitizePaymentEvidenceMetadata({ note: 'card 4111 1111 1111 1111' })).toThrow(\n+      expect.objectContaining({ code: 'CARDHOLDER_DATA_FORBIDDEN' }),\n+    );\n+  });\n+\n+  it('allows a numeric provider reference while keeping generic text under PAN detection', () => {\n+    expect(sanitizePaymentEvidenceMetadata({ providerTransactionRef: '4111111111111111' })).toEqual({\n+      providerTransactionRef: '4111111111111111',\n+    });\n+    expect(() => sanitizePaymentEvidenceMetadata({ description: '4111111111111111' })).toThrow(\n+      expect.objectContaining({ code: 'CARDHOLDER_DATA_FORBIDDEN' }),\n+    );\n+  });\n+\n+  it('does not confuse ordinary provider, terminal or batch references with a PAN', () => {\n+    expect(sanitizePaymentEvidenceMetadata({\n+      providerTransactionRef: 'TXN-20260917-000001',\n+      terminalRef: 'TERM-01',\n+      batchRef: 'BATCH-20260917',\n+      amount: '4800.00',\n+    })).toEqual({\n+      providerTransactionRef: 'TXN-20260917-000001',\n+      terminalRef: 'TERM-01',\n+      batchRef: 'BATCH-20260917',\n+      amount: '4800.00',\n+    });\n+  });\n+\n+  it('rejects values that cannot be represented as immutable JSON evidence', () => {\n+    expect(() => sanitizePaymentEvidenceMetadata({ receivedAt: new Date() })).toThrow(\n+      expect.objectContaining({ code: 'PAYMENT_EVIDENCE_UNSUPPORTED_VALUE' }),\n+    );\n+  });\n+\n+  it('exposes stable machine-readable security errors', () => {\n+    try {\n+      sanitizePaymentEvidenceMetadata({ cvc2: '123' });\n+      throw new Error('expected security rejection');\n+    } catch (error) {\n+      expect(error).toBeInstanceOf(PaymentEvidenceSecurityError);\n+      expect(error).toMatchObject({ code: 'CARDHOLDER_DATA_FORBIDDEN' });\n+    }\n+  });\n+});"
+    },
+    {
+      "sha": "ef2b89a4c95778a6907a2614435c6f47565c0be0",
+      "filename": "backend/apps/api/test/payment-provider-registry.e2e-spec.ts",
+      "status": "added",
+      "additions": 64,
+      "deletions": 0,
+      "changes": 64,
+      "blob_url": "https://github.com/joewschang/UCell/blob/b1acc4d986fb37364905bea11843b24d53e4fbb3/backend%2Fapps%2Fapi%2Ftest%2Fpayment-provider-registry.e2e-spec.ts",
+      "raw_url": "https://github.com/joewschang/UCell/raw/b1acc4d986fb37364905bea11843b24d53e4fbb3/backend%2Fapps%2Fapi%2Ftest%2Fpayment-provider-registry.e2e-spec.ts",
+      "contents_url": "https://api.github.com/repos/joewschang/UCell/contents/backend%2Fapps%2Fapi%2Ftest%2Fpayment-provider-registry.e2e-spec.ts?ref=b1acc4d986fb37364905bea11843b24d53e4fbb3",
+      "patch": "@@ -0,0 +1,64 @@\n+import { PaymentProviderAdapter } from '../src/modules/payment-hub/payment-provider.adapter';\n+import {\n+  PaymentProviderRegistry,\n+  PaymentProviderRegistryError,\n+} from '../src/modules/payment-hub/payment-provider.registry';\n+\n+function adapter(provider: PaymentProviderAdapter['provider']): PaymentProviderAdapter {\n+  return {\n+    provider,\n+    createPayment: jest.fn(),\n+    queryPayment: jest.fn(),\n+    cancelOrVoid: jest.fn(),\n+    refund: jest.fn(),\n+    verifyWebhook: jest.fn(),\n+    reconcile: jest.fn(),\n+  };\n+}\n+\n+describe('Payment provider registry', () => {\n+  it('resolves one explicitly enabled provider adapter', () => {\n+    const taishin = adapter('TAISHIN_ECOM');\n+    const registry = new PaymentProviderRegistry([taishin], { TAISHIN_ECOM: 'ENABLED' });\n+    expect(registry.resolve('TAISHIN_ECOM')).toBe(taishin);\n+  });\n+\n+  it('defaults an unspecified provider to FEATURE_DISABLED', () => {\n+    const registry = new PaymentProviderRegistry([adapter('LINE_PAY')], {});\n+    expect(registry.status('LINE_PAY')).toBe('FEATURE_DISABLED');\n+    expect(() => registry.resolve('LINE_PAY')).toThrow(\n+      expect.objectContaining({ code: 'PAYMENT_PROVIDER_DISABLED', provider: 'LINE_PAY' }),\n+    );\n+  });\n+\n+  it('fails closed while provider configuration is pending even when adapter code exists', () => {\n+    const registry = new PaymentProviderRegistry([adapter('ECPAY')], { ECPAY: 'CONFIG_PENDING' });\n+    expect(() => registry.resolve('ECPAY')).toThrow(\n+      expect.objectContaining({ code: 'PAYMENT_PROVIDER_CONFIG_PENDING', provider: 'ECPAY' }),\n+    );\n+  });\n+\n+  it('fails closed when configuration enables a provider without an adapter', () => {\n+    const registry = new PaymentProviderRegistry([], { TAISHIN_POS: 'ENABLED' });\n+    expect(() => registry.resolve('TAISHIN_POS')).toThrow(\n+      expect.objectContaining({ code: 'PAYMENT_PROVIDER_ADAPTER_UNAVAILABLE', provider: 'TAISHIN_POS' }),\n+    );\n+  });\n+\n+  it('rejects duplicate adapters so provider routing cannot be ambiguous', () => {\n+    expect(() => new PaymentProviderRegistry(\n+      [adapter('TAISHIN_ECOM'), adapter('TAISHIN_ECOM')],\n+      { TAISHIN_ECOM: 'ENABLED' },\n+    )).toThrow(expect.objectContaining({ code: 'PAYMENT_PROVIDER_DUPLICATE' }));\n+  });\n+\n+  it('exposes stable machine-readable routing errors', () => {\n+    try {\n+      new PaymentProviderRegistry([], {}).resolve('OTHER');\n+      throw new Error('expected provider rejection');\n+    } catch (error) {\n+      expect(error).toBeInstanceOf(PaymentProviderRegistryError);\n+      expect(error).toMatchObject({ code: 'PAYMENT_PROVIDER_DISABLED', provider: 'OTHER' });\n+    }\n+  });\n+});"
+    },
+    {
+      "sha": "64111054e37c7309a247a56efa46bdc32ddf96cb",
+      "filename": "governance/product-next/V1_18_PAYMENT_EVIDENCE_SECURITY_REPORT.md",
+      "status": "added",
+      "additions": 36,
+      "deletions": 0,
+      "changes": 36,
+      "blob_url": "https://github.com/joewschang/UCell/blob/b1acc4d986fb37364905bea11843b24d53e4fbb3/governance%2Fproduct-next%2FV1_18_PAYMENT_EVIDENCE_SECURITY_REPORT.md",
+      "raw_url": "https://github.com/joewschang/UCell/raw/b1acc4d986fb37364905bea11843b24d53e4fbb3/governance%2Fproduct-next%2FV1_18_PAYMENT_EVIDENCE_SECURITY_REPORT.md",
+      "contents_url": "https://api.github.com/repos/joewschang/UCell/contents/governance%2Fproduct-next%2FV1_18_PAYMENT_EVIDENCE_SECURITY_REPORT.md?ref=b1acc4d986fb37364905bea11843b24d53e4fbb3",
+      "patch": "@@ -0,0 +1,36 @@\n+# V1.18 Payment Evidence Security Contract Report\n+\n+Status: IMPLEMENTED — DOMAIN SECURITY SLICE\n+Date: 2026-09-17\n+Branch: integration/member-backend-mvp\n+\n+## Scope delivered\n+\n+- Added recursive payment-evidence metadata sanitization before future persistence/logging adapters.\n+- Rejects fields representing PAN, card number, CVV/CVC and magnetic-track data with stable `CARDHOLDER_DATA_FORBIDDEN` errors.\n+- Detects Luhn-valid PAN-like values in free-text metadata, including spaced card-number forms.\n+- Redacts authorization, API key, secret, private key, signature and token fields rather than retaining provider secrets.\n+- Preserves explicit provider event/transaction, terminal, batch and correlation identifiers, including numeric provider-issued references.\n+- Rejects non-JSON evidence values so persistence remains deterministic and reviewable.\n+- Produces a sanitized copy without mutating the provider input object.\n+\n+## SSOT alignment\n+\n+- `COMMERCE_FULFILLMENT_INTEGRATION_ARCHITECTURE.md` sections 5 and 17.\n+- `COMMERCE_FULFILLMENT_DATA_API_CONTRACT.md` sections 2 and 12.\n+- This change does not persist raw webhook payloads and does not alter Order, recognition or R1.0B monetary state.\n+\n+## Verification\n+\n+- Focused Payment evidence security Jest: 1 suite, 11 tests PASS.\n+- Backend API build: PASS.\n+- Isolated Backend API Jest: fresh DB, 39 migrations, 19 suites, 210 tests PASS.\n+- Isolated database cleanup: PASS.\n+\n+## Remaining gates\n+\n+- Wire the sanitizer into the approved Payment persistence path after the designated Prisma schema owner lands forward-only tables.\n+- Provider-specific signature/checksum validation still requires official Taishin/ECPay/LINE Pay documentation and credentials.\n+- No DEV test in this checkpoint is provider UAT or Production evidence.\n+\n+Production Promotion remains blocked."
+    },
+    {
+      "sha": "47538db62c6972d8086b791223468a24669ff298",
+      "filename": "governance/product-next/V1_19_PAYMENT_PROVIDER_REGISTRY_REPORT.md",
+      "status": "added",
+      "additions": 34,
+      "deletions": 0,
+      "changes": 34,
+      "blob_url": "https://github.com/joewschang/UCell/blob/b1acc4d986fb37364905bea11843b24d53e4fbb3/governance%2Fproduct-next%2FV1_19_PAYMENT_PROVIDER_REGISTRY_REPORT.md",
+      "raw_url": "https://github.com/joewschang/UCell/raw/b1acc4d986fb37364905bea11843b24d53e4fbb3/governance%2Fproduct-next%2FV1_19_PAYMENT_PROVIDER_REGISTRY_REPORT.md",
+      "contents_url": "https://api.github.com/repos/joewschang/UCell/contents/governance%2Fproduct-next%2FV1_19_PAYMENT_PROVIDER_REGISTRY_REPORT.md?ref=b1acc4d986fb37364905bea11843b24d53e4fbb3",
+      "patch": "@@ -0,0 +1,34 @@\n+# V1.19 Payment Provider Registry Report\n+\n+Status: IMPLEMENTED — FAIL-CLOSED ROUTING CONTRACT\n+Date: 2026-09-17\n+Branch: integration/member-backend-mvp\n+\n+## Scope delivered\n+\n+- Added a provider-neutral registry for Payment adapters.\n+- Provider availability is explicit: `ENABLED`, `CONFIG_PENDING` or `FEATURE_DISABLED`.\n+- Providers omitted from configuration default to `FEATURE_DISABLED`.\n+- Adapter code cannot be used while configuration is pending or the feature is disabled.\n+- Enabling a provider without a registered adapter fails closed.\n+- Duplicate adapters for the same provider are rejected to prevent ambiguous routing.\n+- Registry failures expose stable provider-specific machine-readable codes.\n+\n+No provider is enabled by this checkpoint. No credentials, merchant configuration or production callback assumptions are stored in source control.\n+\n+## Verification\n+\n+- Focused provider registry Jest: 1 suite, 6 tests PASS.\n+- Backend API build: PASS.\n+- Isolated Backend API Jest: fresh DB, 39 migrations, 20 suites, 216 tests PASS.\n+- Isolated database cleanup: PASS.\n+- No schema, Order, recognition or monetary-rule change.\n+\n+## Remaining gates\n+\n+- Approved environment-bound provider availability configuration.\n+- Official provider adapter and signature/checksum implementation.\n+- Forward-only Payment persistence owned by the designated Prisma schema owner.\n+- Provider sandbox/UAT and Production credentials/evidence.\n+\n+Production Promotion remains blocked."
+    }
+  ]
+}

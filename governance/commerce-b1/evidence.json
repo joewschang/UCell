@@ -1,0 +1,322 @@
+{
+  "base": "4541f98f26a17de1f44cdbd4554ef9581b4f9497",
+  "branch": "feature/commerce-fulfillment-b1-contracts",
+  "recordedAt": "2026-09-17T08:45:53.474Z",
+  "node": "v24.21.0",
+  "scope": "B1 contract-only; no provider implementation or Core bridge wiring",
+  "runtimeFileCount": 20,
+  "runtimeFiles": [
+    "backend/apps/api/src/modules/commerce/contracts/common.ts",
+    "backend/apps/api/src/modules/commerce/contracts/core-boundary.ts",
+    "backend/apps/api/src/modules/commerce/contracts/erp.ts",
+    "backend/apps/api/src/modules/commerce/contracts/fulfillment.ts",
+    "backend/apps/api/src/modules/commerce/contracts/inventory.ts",
+    "backend/apps/api/src/modules/commerce/contracts/invoice.ts",
+    "backend/apps/api/src/modules/commerce/contracts/logistics.ts",
+    "backend/apps/api/src/modules/commerce/contracts/rma.ts",
+    "backend/apps/api/src/modules/payment-hub/canonical-payment-transition.ts",
+    "backend/apps/api/src/modules/payment-hub/payment-evidence-sanitizer.ts",
+    "backend/apps/api/src/modules/payment-hub/payment-provider.adapter.ts",
+    "backend/apps/api/src/modules/payment-hub/payment-provider.registry.ts",
+    "backend/apps/api/src/modules/payment-hub/provider-event-canonicalizer.ts",
+    "backend/apps/api/src/modules/payment-hub/provider-event-decision.ts",
+    "backend/apps/api/test/commerce-contracts.e2e-spec.ts",
+    "backend/apps/api/test/payment-evidence-security.e2e-spec.ts",
+    "backend/apps/api/test/payment-hub-contract.e2e-spec.ts",
+    "backend/apps/api/test/payment-provider-registry.e2e-spec.ts",
+    "backend/apps/api/test/provider-event-canonicalizer.e2e-spec.ts",
+    "backend/apps/api/test/provider-event-decision.e2e-spec.ts"
+  ],
+  "protectedTrackedFilesChecked": 245,
+  "protectedDiff": "EMPTY",
+  "schemaSha256": "230355944bbcc59cb88f09d6a192865e80c75fc43cf77941026ebf74e5770b36",
+  "checks": {
+    "apiBuild": "PASS",
+    "fromZeroMigrations": 39,
+    "isolatedApi": {
+      "suites": 25,
+      "tests": 278,
+      "status": "PASS",
+      "cleanup": "PASS"
+    },
+    "staticPreflights": [
+      "schema",
+      "migration",
+      "openapi",
+      "security-policy",
+      "test-todo"
+    ],
+    "newCommerceHttp": "NOT_IMPLEMENTED",
+    "newCommerceDbConcurrency": "NOT_IMPLEMENTED",
+    "providerMock": "NOT_RUN",
+    "providerUat": "NOT_RUN",
+    "productionReady": false
+  },
+  "initialFailure": {
+    "cause": "Missing local compiled database package / worker dependency resolution",
+    "fromZeroMigrations": "PASS",
+    "cleanup": "PASS",
+    "resolved": true
+  },
+  "files": [
+    {
+      "path": "backend/apps/api/src/modules/commerce/contracts/common.ts",
+      "sha256": "81518fe0d94e925b33789df212beda73e575df712e4d4a0f45288c1cf439622e",
+      "bytes": 1806
+    },
+    {
+      "path": "backend/apps/api/src/modules/commerce/contracts/core-boundary.ts",
+      "sha256": "c6ef9940b74016826071b49202156441de86fc010b6a49fc7f09a9fc9e019c6a",
+      "bytes": 1000
+    },
+    {
+      "path": "backend/apps/api/src/modules/commerce/contracts/erp.ts",
+      "sha256": "64ad57029c8a24f68be3dea3d033c952e1d79204189d55fd9dbc02678e5fb6ad",
+      "bytes": 1841
+    },
+    {
+      "path": "backend/apps/api/src/modules/commerce/contracts/fulfillment.ts",
+      "sha256": "c7a0c7d519d3070562dbba9c18e71acca0ba3dde7e93c52b97d77564c3ad1f3e",
+      "bytes": 1331
+    },
+    {
+      "path": "backend/apps/api/src/modules/commerce/contracts/inventory.ts",
+      "sha256": "c04e5d1868507695fcaca44dff66571b9cf50086d73b2df5b14dc9728e8dd668",
+      "bytes": 865
+    },
+    {
+      "path": "backend/apps/api/src/modules/commerce/contracts/invoice.ts",
+      "sha256": "9afcb1dbc69b2adf2ea3a7ea28cc0f1b2398a6dbc09ef4fd55a0559cdb6655ff",
+      "bytes": 1459
+    },
+    {
+      "path": "backend/apps/api/src/modules/commerce/contracts/logistics.ts",
+      "sha256": "18c7b68d0f2c54ab283e4c55a69a0350540780ee063509fb50edafb789047865",
+      "bytes": 2383
+    },
+    {
+      "path": "backend/apps/api/src/modules/commerce/contracts/rma.ts",
+      "sha256": "5097b51d2670dd37e848c822c33f0f5dc672783be861ca6dd88cda5959e32aaa",
+      "bytes": 879
+    },
+    {
+      "path": "backend/apps/api/src/modules/payment-hub/canonical-payment-transition.ts",
+      "sha256": "863819c17a4e815a6c98d06efb6819ad5eb86a2b3293df16afc761416ee4bb43",
+      "bytes": 4698
+    },
+    {
+      "path": "backend/apps/api/src/modules/payment-hub/payment-evidence-sanitizer.ts",
+      "sha256": "0c97f41ca98acc314d0701b57e53e98acab60c78f0d124722f63eb52ec0ecf04",
+      "bytes": 5867
+    },
+    {
+      "path": "backend/apps/api/src/modules/payment-hub/payment-provider.adapter.ts",
+      "sha256": "deed312843bef8af302228add9cc080ca1d4def4c6e1d3856084bf00e209316a",
+      "bytes": 5359
+    },
+    {
+      "path": "backend/apps/api/src/modules/payment-hub/payment-provider.registry.ts",
+      "sha256": "3ca3617ce7433c849ed9641843b75533c67f04afe8040102fe8af4e95583c1d4",
+      "bytes": 2738
+    },
+    {
+      "path": "backend/apps/api/src/modules/payment-hub/provider-event-canonicalizer.ts",
+      "sha256": "015d43e5da200800a0a9719e0696957668ebb1e448bcedb5b16f843a1cb1b3b3",
+      "bytes": 3383
+    },
+    {
+      "path": "backend/apps/api/src/modules/payment-hub/provider-event-decision.ts",
+      "sha256": "7478fa7c4b1afa1ac829bfdeb88d69249f7e214a739d84399672cc3e67000585",
+      "bytes": 5123
+    },
+    {
+      "path": "backend/apps/api/test/commerce-contracts.e2e-spec.ts",
+      "sha256": "58da3b9ea68e3755ba21dd2586fd71cf939f6eb60e738f44d771f2e85d0eae8c",
+      "bytes": 2619
+    },
+    {
+      "path": "backend/apps/api/test/payment-evidence-security.e2e-spec.ts",
+      "sha256": "a8e2021ff4f0216458e7157d3ced86630ca611cad650daab16527feac8fccba8",
+      "bytes": 4173
+    },
+    {
+      "path": "backend/apps/api/test/payment-hub-contract.e2e-spec.ts",
+      "sha256": "b34ca9c5d2130e3a8e6a27ff999fa6ca70111c42c3020569c6c24b74a1819afa",
+      "bytes": 4564
+    },
+    {
+      "path": "backend/apps/api/test/payment-provider-registry.e2e-spec.ts",
+      "sha256": "b0327ab7086d5aeb2f43e41a80bcf11ae9f128d402afe2a9bc0990734446d53b",
+      "bytes": 3335
+    },
+    {
+      "path": "backend/apps/api/test/provider-event-canonicalizer.e2e-spec.ts",
+      "sha256": "85440bd2524a0c548b3ad9c333bcbca5b0a43dd139abe9a3ebf3ebf13f96eee7",
+      "bytes": 4298
+    },
+    {
+      "path": "backend/apps/api/test/provider-event-decision.e2e-spec.ts",
+      "sha256": "6ed911630399a390dc753e33734e20521b258685bbf75a392d319dea87764090",
+      "bytes": 5883
+    },
+    {
+      "path": "governance/commerce-b1/.gitignore",
+      "sha256": "28ffe926b9cf2d82a321d291c10eb59f606e7b62d70510ef8290832bf38ced30",
+      "bytes": 130
+    },
+    {
+      "path": "governance/commerce-b1/OWNERSHIP.md",
+      "sha256": "2a7123834b16b8a9ca927fd1e95257edb1fc0c1705a26cb7d15254c14debe0bc",
+      "bytes": 2703
+    },
+    {
+      "path": "governance/commerce-b1/REPORT.md",
+      "sha256": "0f0cc9eaa5c71a94ca5fb31158f791954370c862138af30b4363e781824cf050",
+      "bytes": 8064
+    },
+    {
+      "path": "governance/commerce-b1/SCHEMA_API_DELTA.md",
+      "sha256": "d8ebf2165e14dcba2b287cc053c637dd8e556fb615d7ee9712287cb7f8278cf0",
+      "bytes": 3962
+    },
+    {
+      "path": "governance/commerce-b1/db-regression.json",
+      "sha256": "822fe29fed5101274d50cc67cb5efc1e522265444e12830cd2bc73ec06285fe7",
+      "bytes": 118741
+    },
+    {
+      "path": "governance/commerce-event-identity-review/COORDINATION_RECEIPT.md",
+      "sha256": "9de4320d6d1dcf05feeb6948b2f07f9a44a1afb2fa317dae9d3b7f657c15bdeb",
+      "bytes": 1338
+    },
+    {
+      "path": "governance/commerce-event-identity-review/OWNERSHIP_CHECKPOINT.md",
+      "sha256": "15c8eacb4e07ed9e678a51ac490456c4b77f09211e6b8b8baece2ce11d2ef0a5",
+      "bytes": 1551
+    },
+    {
+      "path": "governance/commerce-event-identity-review/REPORT.md",
+      "sha256": "df4ad82ad01830b0007548e335c348aa552fd3a9aa20b624edae254e73c7fa6f",
+      "bytes": 7998
+    },
+    {
+      "path": "governance/commerce-event-identity-review/delta.json",
+      "sha256": "8b434f079bda5dcf51503dca7530af4ef7d2126e68d07017bef94da624cadb9b",
+      "bytes": 23377
+    },
+    {
+      "path": "governance/commerce-event-identity-review/probe.mjs",
+      "sha256": "0d9bb5962c1dbd22748c26439b3dc2312fbed031c94fe7cfd79a83221caf3158",
+      "bytes": 6547
+    },
+    {
+      "path": "governance/commerce-event-identity-review/results.json",
+      "sha256": "e6937f438c885b9fc99dc9fba351759d2724c5e7dfafec1106a68db18cae22f4",
+      "bytes": 3490
+    },
+    {
+      "path": "governance/commerce-event-identity-review/snapshot.json",
+      "sha256": "810186e316d179524fc5b24b26092ab24ad828c25e70e7622a04f91321741544",
+      "bytes": 8097
+    },
+    {
+      "path": "governance/commerce-fulfillment-audit/ADAPTER_INTERFACES.proposal.ts",
+      "sha256": "f166cbc33fd681e89526878944d7884c5e8a12c085b48fb0f25ad7a6010c18dd",
+      "bytes": 12219
+    },
+    {
+      "path": "governance/commerce-fulfillment-audit/API_PROPOSAL.md",
+      "sha256": "fbbf0871b2ef182efb8e13f7a816dc0adfe2b725165fd24870fe219c48951d91",
+      "bytes": 8561
+    },
+    {
+      "path": "governance/commerce-fulfillment-audit/CLOSING_DELTA.md",
+      "sha256": "87a2286fce81a92d6d32e29685ba50f1685dee74280e1e8eae881c2ec66ec702",
+      "bytes": 3669
+    },
+    {
+      "path": "governance/commerce-fulfillment-audit/MIGRATION_IMPACT.md",
+      "sha256": "5254cbc0252726377ec10c31d7fa20d6afd2a3bb0eacc8e5c863125f013b2ddf",
+      "bytes": 3957
+    },
+    {
+      "path": "governance/commerce-fulfillment-audit/OWNERSHIP_PLAN.md",
+      "sha256": "e3b9d2f4c2b2cbc9f5271e201f4a0be3cb01416261a1fc2e63625067a03e0b6a",
+      "bytes": 4099
+    },
+    {
+      "path": "governance/commerce-fulfillment-audit/REPORT.md",
+      "sha256": "36ab38eab7bedb131cd425f4c14689aa66a1aedabdf3a4a328ac3411f836249c",
+      "bytes": 15097
+    },
+    {
+      "path": "governance/commerce-fulfillment-audit/SCHEMA_PROPOSAL.md",
+      "sha256": "e50fb774bfce03a2b46e3322cc7e5c31652195b94ddcb35c3ae81d3287d1f3be",
+      "bytes": 11843
+    },
+    {
+      "path": "governance/commerce-fulfillment-audit/TEST_PLAN.md",
+      "sha256": "c927b6ccd0ce48ad516aa56faed0f92e42690b0452bd898809777e5f54e9563d",
+      "bytes": 7954
+    },
+    {
+      "path": "governance/commerce-fulfillment-audit/closing-delta.json",
+      "sha256": "497df40e0110aad0496959be8f68c81b1ce03816d997ace6f822d0e14ed672c6",
+      "bytes": 21572
+    },
+    {
+      "path": "governance/commerce-fulfillment-audit/evidence.json",
+      "sha256": "4887ce62aa77b742c41140087d0cc6ef7422d6cf0e42820a79ec2b4af29a37dc",
+      "bytes": 45757
+    },
+    {
+      "path": "governance/commerce-fulfillment-audit/openapi.proposal.json",
+      "sha256": "ae04ac8fddb5bce2568316933d73992e1042b1712fe064146834e652b17403c4",
+      "bytes": 188950
+    },
+    {
+      "path": "governance/commerce-fulfillment-audit/validate-proposals.mjs",
+      "sha256": "1849cfa2b029a340b4b9e9ef3b62df97d4ac5314deb01b8e649fa59b72cdc7f3",
+      "bytes": 7221
+    },
+    {
+      "path": "governance/commerce-fulfillment-review/REVIEW.md",
+      "sha256": "32004dd0057ef1f5ac328d099a70774c0af1aa1d671186f590f1e1e8fe52ef47",
+      "bytes": 10063
+    },
+    {
+      "path": "governance/commerce-fulfillment-review/manifest.json",
+      "sha256": "95e9764e749fcc808405adad71000f5409f30af982e7cb701efb790d30c29e92",
+      "bytes": 1753
+    },
+    {
+      "path": "governance/commerce-fulfillment-review/probe-results.json",
+      "sha256": "b87b7df9c48d394b2e09562c58e6d9755d3fc88a964b300fd0f6e6e80de25a04",
+      "bytes": 5473
+    },
+    {
+      "path": "governance/commerce-fulfillment-review/probe-upstream.mjs",
+      "sha256": "8841aa04ae1291a52210c3ed942439bc7ab1f54345fc3bfffa30facd1ff6503a",
+      "bytes": 8278
+    },
+    {
+      "path": "governance/commerce-fulfillment-review/upstream-delta.json",
+      "sha256": "ba85b68565d8afbe26b67b70b0d8bac5e3335e234d200ce4c99308398082f70e",
+      "bytes": 38488
+    },
+    {
+      "path": "governance/commerce-fulfillment-review/upstream-snapshot.json",
+      "sha256": "b4cae124824fc22c571a236f1b2693d614b5bdc361ce24f30de9a30f1692bded",
+      "bytes": 13936
+    },
+    {
+      "path": "governance/commerce-b1/isolated-tests-final.log",
+      "sha256": "1c81672190703c78a3a42f4acbca3760dbf4b5826f20a79a4dd7e62c79b9978c",
+      "bytes": 5797
+    }
+  ],
+  "logNormalization": {
+    "operation": "Trailing whitespace removed from committed log only",
+    "originalRawSha256": "e608b3de73f107f2dad40d5ee0a603dadff7df38a713c2f28546648e9424dd51"
+  }
+}

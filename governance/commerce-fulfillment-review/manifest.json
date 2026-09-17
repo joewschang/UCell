@@ -1,0 +1,63 @@
+{
+  "audit": "Commerce continuation audit",
+  "createdAt": "2026-09-17T06:52:11.996Z",
+  "localHead": "2176b049dde32300e5023bcb7088d89890fec519",
+  "auditedUpstreamHead": "b1acc4d986fb37364905bea11843b24d53e4fbb3",
+  "closingChecks": {
+    "git diff --name-only HEAD": {
+      "exitCode": 0,
+      "output": ""
+    },
+    "git diff --check": {
+      "exitCode": 0,
+      "output": ""
+    },
+    "git status --short": {
+      "untrackedDirectories": [
+        "governance/commerce-fulfillment-audit/",
+        "governance/commerce-fulfillment-review/"
+      ]
+    }
+  },
+  "probe": {
+    "total": 22,
+    "pass": 14,
+    "fail": 8,
+    "exitCode": 1
+  },
+  "files": [
+    {
+      "name": "probe-results.json",
+      "bytes": 5473,
+      "sha256": "b87b7df9c48d394b2e09562c58e6d9755d3fc88a964b300fd0f6e6e80de25a04"
+    },
+    {
+      "name": "probe-upstream.mjs",
+      "bytes": 8278,
+      "sha256": "8841aa04ae1291a52210c3ed942439bc7ab1f54345fc3bfffa30facd1ff6503a"
+    },
+    {
+      "name": "REVIEW.md",
+      "bytes": 10063,
+      "sha256": "32004dd0057ef1f5ac328d099a70774c0af1aa1d671186f590f1e1e8fe52ef47"
+    },
+    {
+      "name": "upstream-delta.json",
+      "bytes": 38488,
+      "sha256": "ba85b68565d8afbe26b67b70b0d8bac5e3335e234d200ce4c99308398082f70e"
+    },
+    {
+      "name": "upstream-snapshot.json",
+      "bytes": 13936,
+      "sha256": "b4cae124824fc22c571a236f1b2693d614b5bdc361ce24f30de9a30f1692bded"
+    }
+  ],
+  "manifestSelfHash": "omitted",
+  "newCommit": null,
+  "b1": "BLOCKED",
+  "blockers": [
+    "Unique Schema/migration Owner not confirmed",
+    "Core/Member live file ownership and Payment Hub handoff not confirmed",
+    "Shared payment evidence/Core and Return POSTED bridge contract responsibility not frozen"
+  ]
+}

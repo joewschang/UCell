@@ -1,0 +1,175 @@
+{
+  "auditedAt": "2026-09-17T06:49:55.010Z",
+  "sourceRef": "b1acc4d986fb37364905bea11843b24d53e4fbb3",
+  "node": "v24.21.0",
+  "execution": "ISOLATED_HELPER_PROBES",
+  "sourceIntegrity": "PASS",
+  "sourceHashes": {
+    "payment-evidence-sanitizer.ts": {
+      "gitBlob": "8526a06ac58321134fe21dbe32f96a8b06d757a8",
+      "sha256": "d5ff6b7bde1c788e38382901fd02c9a6250b37534dcf805a0e66cff607cb64d8"
+    },
+    "payment-provider.adapter.ts": {
+      "gitBlob": "f6ccbd529f62c015501a7a190064480e6b4122e4",
+      "sha256": "a5ba85ef584e044ce947c87a9d120c7e6289d663c04d45dcf177dc5b2446ba43"
+    },
+    "canonical-payment-transition.ts": {
+      "gitBlob": "6dbd6c640d35d2715aa0b6f5b04b8813199b9e62",
+      "sha256": "a732e0cdff4655f30cbe00b520c20e8d2462b8e8e61ce17638fc38f06292194c"
+    },
+    "payment-provider.registry.ts": {
+      "gitBlob": "69813288e4be5228d18b37caa681e6185427930b",
+      "sha256": "c13dd812ad4255daee69e76ba47d0d56520d4f1d547fd93b3c3ebe17e0442383"
+    }
+  },
+  "transformation": "Node stripTypeScriptTypes transform; exact type-only imports removed in memory; no repository runtime files edited",
+  "scope": "No TypeScript typecheck, app build, database, HTTP ingress, provider mock/sandbox or production verification",
+  "interpretation": "Boundary-proposal and runtime-input-hardening cases test requirements at the helper boundary; failures do not prove an exposed HTTP vulnerability. Integration may enforce these guards elsewhere, requiring separate evidence.",
+  "summary": {
+    "total": 22,
+    "pass": 14,
+    "fail": 8
+  },
+  "results": [
+    {
+      "id": "P01",
+      "category": "existing-behavior",
+      "requirement": "Browser redirect cannot establish PAID",
+      "status": "PASS"
+    },
+    {
+      "id": "P02",
+      "category": "existing-behavior",
+      "requirement": "Webhook with false signature is rejected",
+      "status": "PASS"
+    },
+    {
+      "id": "P03",
+      "category": "existing-behavior",
+      "requirement": "Complete asserted verified webhook passes helper",
+      "status": "PASS"
+    },
+    {
+      "id": "P04",
+      "category": "boundary-proposal",
+      "requirement": "POS references alone cannot prove verified reconciliation",
+      "status": "FAIL",
+      "assertion": "ERR_ASSERTION"
+    },
+    {
+      "id": "P05",
+      "category": "boundary-proposal",
+      "requirement": "Query reference alone cannot prove provider verification",
+      "status": "FAIL",
+      "assertion": "ERR_ASSERTION"
+    },
+    {
+      "id": "P06",
+      "category": "runtime-input-hardening",
+      "requirement": "Unknown evidence source must fail closed",
+      "status": "FAIL",
+      "assertion": "ERR_ASSERTION"
+    },
+    {
+      "id": "P07",
+      "category": "existing-behavior",
+      "requirement": "Same provider event hash classifies as REPLAY",
+      "status": "PASS"
+    },
+    {
+      "id": "P08",
+      "category": "existing-behavior",
+      "requirement": "Conflicting provider event hash classifies as CONFLICT",
+      "status": "PASS"
+    },
+    {
+      "id": "S01",
+      "category": "existing-behavior",
+      "requirement": "Known secret key is redacted",
+      "status": "PASS"
+    },
+    {
+      "id": "S02",
+      "category": "existing-behavior",
+      "requirement": "Explicit PAN field is rejected",
+      "status": "PASS"
+    },
+    {
+      "id": "S03",
+      "category": "existing-behavior",
+      "requirement": "Date nested in metadata is rejected",
+      "status": "PASS"
+    },
+    {
+      "id": "S04",
+      "category": "serialization",
+      "requirement": "NaN cannot silently serialize as null evidence",
+      "status": "FAIL",
+      "assertion": "ERR_ASSERTION"
+    },
+    {
+      "id": "S05",
+      "category": "serialization",
+      "requirement": "Infinity cannot silently serialize as null evidence",
+      "status": "FAIL",
+      "assertion": "ERR_ASSERTION"
+    },
+    {
+      "id": "S06",
+      "category": "boundary-proposal",
+      "requirement": "Likely PAN detection also rejects numeric metadata values",
+      "status": "FAIL",
+      "assertion": "ERR_ASSERTION"
+    },
+    {
+      "id": "S07",
+      "category": "boundary-proposal",
+      "requirement": "Unapproved secret alias is rejected or redacted before persistence",
+      "status": "FAIL",
+      "assertion": "ERR_ASSERTION"
+    },
+    {
+      "id": "S08",
+      "category": "existing-behavior",
+      "requirement": "Safe identifiers preserve shape without mutating input",
+      "status": "PASS"
+    },
+    {
+      "id": "R01",
+      "category": "existing-behavior",
+      "requirement": "Missing provider config defaults disabled",
+      "status": "PASS"
+    },
+    {
+      "id": "R02",
+      "category": "existing-behavior",
+      "requirement": "CONFIG_PENDING blocks resolution",
+      "status": "PASS"
+    },
+    {
+      "id": "R03",
+      "category": "existing-behavior",
+      "requirement": "ENABLED without adapter fails closed",
+      "status": "PASS"
+    },
+    {
+      "id": "R04",
+      "category": "existing-behavior",
+      "requirement": "Duplicate provider adapters are rejected",
+      "status": "PASS"
+    },
+    {
+      "id": "R05",
+      "category": "runtime-input-hardening",
+      "requirement": "Unknown runtime availability cannot resolve adapter",
+      "status": "FAIL",
+      "assertion": "ERR_ASSERTION"
+    },
+    {
+      "id": "R06",
+      "category": "existing-behavior",
+      "requirement": "Explicit ENABLED resolves registered adapter",
+      "status": "PASS"
+    }
+  ]
+}

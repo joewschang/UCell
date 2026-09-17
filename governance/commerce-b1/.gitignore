@@ -1,0 +1,3 @@
+# Local first-attempt diagnostics; compact failure details are recorded in REPORT.md.
+isolated-tests.log
+isolated-tests-retry.log

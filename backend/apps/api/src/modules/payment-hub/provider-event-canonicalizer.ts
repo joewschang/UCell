@@ -1,11 +1,10 @@
 import { requestHash } from '../../common/utils/hash';
-import { PaymentEvidenceSource } from './canonical-payment-transition';
-import { sanitizePaymentEvidenceMetadata, SafePaymentEvidenceValue } from './payment-evidence-sanitizer';
-import { CanonicalPaymentStatus, PaymentProvider, VerifiedProviderEvent } from './payment-provider.adapter';
+import { projectCanonicalPaymentMetadata } from './payment-evidence-sanitizer';
+import { CanonicalPaymentStatus, PaymentProvider, VerifiedProviderEvent, VerifiedPaymentSource, PAYMENT_PROVIDERS, PAYMENT_STATUSES, VERIFIED_PAYMENT_SOURCES } from './payment-provider.adapter';
 
 export interface CanonicalProviderEventInput {
   provider: PaymentProvider;
-  source: Exclude<PaymentEvidenceSource, 'BROWSER_RETURN'>;
+  source: VerifiedPaymentSource;
   providerEventId?: string;
   providerTransactionRef: string;
   status: CanonicalPaymentStatus;
@@ -15,12 +14,12 @@ export interface CanonicalProviderEventInput {
 
 export interface CanonicalizedProviderEvent extends VerifiedProviderEvent {
   source: CanonicalProviderEventInput['source'];
-  safeMetadata: { [key: string]: SafePaymentEvidenceValue };
+  safeMetadata: Readonly<Record<string, string>>;
 }
 
 export class ProviderEventCanonicalizationError extends Error {
   constructor(
-    readonly code: 'PROVIDER_TRANSACTION_REF_REQUIRED' | 'PROVIDER_EVENT_ID_INVALID',
+    readonly code: 'PROVIDER_TRANSACTION_REF_REQUIRED' | 'PROVIDER_EVENT_ID_INVALID' | 'PROVIDER_EVENT_INPUT_INVALID',
     message: string,
   ) {
     super(message);
@@ -29,6 +28,13 @@ export class ProviderEventCanonicalizationError extends Error {
 }
 
 export function canonicalizeProviderEvent(input: CanonicalProviderEventInput): CanonicalizedProviderEvent {
+  if (!input || !PAYMENT_PROVIDERS.includes(input.provider) || !PAYMENT_STATUSES.includes(input.status)
+    || !(VERIFIED_PAYMENT_SOURCES as readonly string[]).includes(input.source)
+    || (input.occurredAt !== undefined && (!(input.occurredAt instanceof Date) || !Number.isFinite(input.occurredAt.getTime())))) {
+    throw new ProviderEventCanonicalizationError('PROVIDER_EVENT_INPUT_INVALID', 'Unsupported provider event input.');
+  }
+  if (typeof input.providerTransactionRef !== 'string') throw new ProviderEventCanonicalizationError('PROVIDER_TRANSACTION_REF_REQUIRED', 'Transaction reference required.');
+  if (input.providerEventId !== undefined && typeof input.providerEventId !== 'string') throw new ProviderEventCanonicalizationError('PROVIDER_EVENT_ID_INVALID', 'Invalid event ID.');
   const providerTransactionRef = input.providerTransactionRef.trim();
   if (!providerTransactionRef) {
     throw new ProviderEventCanonicalizationError(
@@ -45,7 +51,7 @@ export function canonicalizeProviderEvent(input: CanonicalProviderEventInput): C
     );
   }
 
-  const safeMetadata = sanitizePaymentEvidenceMetadata(input.metadata);
+  const safeMetadata = projectCanonicalPaymentMetadata(input.metadata);
   const canonicalEvidence = {
     provider: input.provider,
     source: input.source,
@@ -59,7 +65,7 @@ export function canonicalizeProviderEvent(input: CanonicalProviderEventInput): C
     ? `${input.provider}:EVENT:${explicitEventId}`
     : `${input.provider}:HASH:${payloadHash}`;
 
-  return {
+  return Object.freeze({
     provider: input.provider,
     source: input.source,
     providerEventIdentity,
@@ -67,6 +73,6 @@ export function canonicalizeProviderEvent(input: CanonicalProviderEventInput): C
     status: input.status,
     payloadHash,
     safeMetadata,
-    occurredAt: input.occurredAt,
-  };
+    occurredAt: canonicalEvidence.occurredAt ?? undefined,
+  });
 }

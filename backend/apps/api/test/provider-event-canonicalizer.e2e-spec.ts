@@ -13,6 +13,23 @@ const base = {
 };
 
 describe('Payment provider event canonicalization', () => {
+  it.each([
+    { source: 'BROWSER_RETURN' }, { source: 'CONTROLLED_POS_EVIDENCE' },
+    { provider: 'UNCONFIGURED' }, { status: 'UNRECOGNIZED' },
+  ])('rejects untrusted runtime enum input %j', invalid => {
+    expect(() => canonicalizeProviderEvent({ ...base, ...invalid } as never)).toThrow();
+  });
+  it('returns immutable evidence with timestamp independent of caller Date', () => {
+    const date = new Date(0);
+    const event = canonicalizeProviderEvent({ ...base, occurredAt: date });
+    date.setTime(1000);
+    expect(event.occurredAt).toBe('1970-01-01T00:00:00.000Z');
+    expect(Object.isFrozen(event)).toBe(true);
+    expect(Object.isFrozen(event.safeMetadata)).toBe(true);
+  });
+  it('rejects non-finite metadata before hashing', () => {
+    expect(() => canonicalizeProviderEvent({ ...base, metadata: { result: NaN } })).toThrow();
+  });
   it('uses a provider-namespaced explicit event identity', () => {
     const event = canonicalizeProviderEvent({ ...base, providerEventId: ' event-001 ' });
     expect(event.providerEventIdentity).toBe('TAISHIN_ECOM:EVENT:event-001');

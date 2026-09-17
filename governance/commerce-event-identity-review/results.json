@@ -1,0 +1,107 @@
+{
+  "sourceRef": "8dc0be7a543679891b282fc1d7eaed1c89c6bc24",
+  "checkedAt": "2026-09-17T07:18:50.143Z",
+  "sourceIntegrity": "PASS",
+  "sourceHashes": {
+    "hash.ts": "ba444bf9b7606fba4b34ecbc007057fed51d3c8c3585802eb60e3ca4ef55666b",
+    "provider-event-canonicalizer.ts": "8177a109074a5abecb83ed8c8106bad2c67294df137d2808cd0fe4432e682858",
+    "payment-evidence-sanitizer.ts": "d5ff6b7bde1c788e38382901fd02c9a6250b37534dcf805a0e66cff607cb64d8"
+  },
+  "node": "v24.21.0",
+  "scope": "Isolated exact-source helper execution; imports rebound to snapshotted dependencies; no app build, typecheck, DB or HTTP testing",
+  "interpretation": "Observed-limitation PASS confirms a risk-relevant behavior, not acceptance of business idempotency. Boundary-proposal failures require ingress responsibility to be settled; no exposed API vulnerability is claimed.",
+  "total": 14,
+  "pass": 9,
+  "fail": 5,
+  "results": [
+    {
+      "id": "E01",
+      "category": "regression",
+      "description": "Metadata key order preserves hash",
+      "status": "PASS"
+    },
+    {
+      "id": "E02",
+      "category": "regression",
+      "description": "Blank explicit event ID is rejected",
+      "status": "PASS"
+    },
+    {
+      "id": "E03",
+      "category": "regression",
+      "description": "Explicit event identity is stable across business evidence changes while hash differs",
+      "status": "PASS"
+    },
+    {
+      "id": "E04",
+      "category": "observed-limitation",
+      "description": "Webhook and query without explicit ID produce distinct identities",
+      "status": "PASS"
+    },
+    {
+      "id": "E05",
+      "category": "observed-limitation",
+      "description": "Same explicit event ID across sources has different hash",
+      "status": "PASS"
+    },
+    {
+      "id": "E06",
+      "category": "observed-limitation",
+      "description": "Redelivery timestamp differences change fallback identity",
+      "status": "PASS"
+    },
+    {
+      "id": "E07",
+      "category": "observed-limitation",
+      "description": "Correlation metadata differences change fallback identity",
+      "status": "PASS"
+    },
+    {
+      "id": "E08",
+      "category": "boundary-proposal",
+      "description": "Runtime browser input is rejected before constructing a VerifiedProviderEvent",
+      "status": "FAIL",
+      "assertion": "ERR_ASSERTION"
+    },
+    {
+      "id": "E09",
+      "category": "boundary-proposal",
+      "description": "Runtime unknown provider is rejected",
+      "status": "FAIL",
+      "assertion": "ERR_ASSERTION"
+    },
+    {
+      "id": "E10",
+      "category": "boundary-proposal",
+      "description": "Runtime unknown canonical status is rejected",
+      "status": "FAIL",
+      "assertion": "ERR_ASSERTION"
+    },
+    {
+      "id": "E11",
+      "category": "evidence-integrity",
+      "description": "Caller Date mutation does not change already returned evidence",
+      "status": "FAIL",
+      "assertion": "ERR_ASSERTION"
+    },
+    {
+      "id": "E12",
+      "category": "evidence-integrity",
+      "description": "NaN is rejected before evidence hashing",
+      "status": "FAIL",
+      "assertion": "ERR_ASSERTION"
+    },
+    {
+      "id": "E13",
+      "category": "observed-limitation",
+      "description": "NaN and null produce identical evidence hashes",
+      "status": "PASS"
+    },
+    {
+      "id": "E14",
+      "category": "regression",
+      "description": "Secret signature changes do not change sanitized hash",
+      "status": "PASS"
+    }
+  ]
+}
