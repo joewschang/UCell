@@ -1,74 +1,70 @@
 # UCell V1.1–V1.3 Sprint Plan
-Status: PLANNING BASELINE — DO NOT START until Gate 0 approval
-Date: 2026-09-16
+Status: PLANNING BASELINE — implementation gates apply
+Date: 2026-09-17
 
-Assumption: one primary Codex engineering stream with SA review; parallelization allowed only with file/domain ownership. Sprint duration is planning unit, not a calendar promise.
+## Gate 0 — Current R1.0B Core closure
+Current Core Codex remains priority owner. Next-release schema changes require approved branch/checkpoint unless explicitly isolated. Core monetary modules remain protected.
 
-## Gate 0 — Current RC closure
-Owner: current Core Codex. Exit: approved R1.0B Core checkpoint, replay/carry/release obligations at accepted state, next-release branch cut from verified integration checkpoint. No next-release schema migration before Gate 0 unless separately authorized.
+## Track A — Member / Qualification / Growth
+A1 shared contracts/event seams and LINE-first identity.
+A2 Network Member registration + consent.
+A3 Formal application/KYC/bank evidence.
+A4 Configurable Package Management + Member Product Picker (啟航/菁英/領袖/季/半年/年活躍).
+A5 Qualifying purchase -> Ball setup; Referral prefill/manual Sponsor selection; first Ball establishes Person referrer.
+A6 Sponsor-owner manual Binary placement + 72h monitor/Admin override + system-auto no-referral path.
+A7 Referral attribution/share/LIFF bridge.
+A8 CMS/share.
+A9 Activities.
+A10 Inbox/announcements.
 
-## Sprint 1 — Foundations / contracts
-Deliver: feature branch, schema stubs/migrations for consent/provider identity/OTP/referral attribution/AnalyticsEvent where approved; event envelope; privacy logging guard; OpenAPI skeleton; test fixtures. No KYC document bytes yet.
-Acceptance: migrate from zero; build; event idempotency; no monetary regression.
+## Track B — Commerce & Fulfillment (parallel, domain-isolated)
+B1 Commerce contracts/schema owner coordination: Payment/Inventory/Fulfillment/QC/Invoice/Logistics/RMA/ERP outbox; no monetary formula changes.
+B2 Taishin online Payment Adapter + webhook/idempotency/reconciliation; Taishin physical POS evidence workflow.
+B3 Inventory Lite + warehouse/item/lot/serial + reserve/release/movement concurrency.
+B4 Fulfillment UI/API: allocation, pick list, barcode/QR scan, serial/lot binding, pack.
+B5 QC gate: SKU/QTY/lot-serial/expiry/package/label checks and exception handling.
+B6 Logistics adapters: Black Cat home delivery + 7-ELEVEN pickup (direct or approved aggregator adapter), label/tracking/webhook normalization.
+B7 Invoice Hub: ECPay first candidate + provider abstraction; issue/void/allowance/query.
+B8 Additional Payment adapters: ECPay and LINE Pay.
+B9 Return/RMA integration: receive/serial verify/disposition -> POSTED -> refund/invoice adjustment/Core replay fan-out.
+B10 ERP Integration Gateway + Dynamics 365 BC adapter contract, mapping/outbox/reconciliation/cutover tooling. BC deployment itself is later operational gate.
 
-## Sprint 2 — Network registration
-Deliver contract consent + OTP + network profile + LINE/Google-compatible identity + zero-Qualification access.
-Acceptance: end-to-end registration Golden; duplicate/race/expiry; BOLA; consent immutability.
+## Track C — Analytics / Operations
+C1 Analytics projector/checkpoints/MetricDefinition.
+C2 NASL current/transition/cohort/reactivation/churn.
+C3 Sponsor Sonar 1–12.
+C4 Binary Sonar 1–12.
+C5 Growth/package/fulfillment funnels and exception trends.
+C6 Health labels/Operations brief/hardening.
 
-## Sprint 3 — Formal member/KYC
-Deliver formal application, protected documents, bank identity, Admin review, membership state transition.
-Acceptance: document security/RBAC, concurrent approve, rollback, bank history, no Sponsor/Binary mutation.
+## Dependency graph
+A4 Package/Product Picker must exist before full A5 qualification-package Golden and before Commerce package checkout Golden.
+B2 payment canonical PAID contract must be stable before automatic fulfillment release.
+B3 inventory reservation before B4 picking; B4 before B5 QC; B5 before B6 dispatch.
+B7 invoice may develop parallel to B3–B6 but release policy must coordinate with paid/return states.
+B9 depends on shipment/serial evidence and existing Core Return POSTED/replay contract.
+B10 must not change UCell domain contracts; it adapts them to BC.
+C analytics consumes source events only after contracts freeze.
 
-## Sprint 4 — Delivery profile + formal workflow integration
-Deliver checkout profile completion and formal-member prerequisite integration where required.
-Acceptance: Network member can buy with completed delivery data; formal upgrade remains separate; existing Core order price/ownership untouched.
+## Parallelization / ownership
+Track A and Track B may run concurrently after branch/schema ownership is assigned. Only one designated Schema Owner merges Prisma/migration changes; other streams submit schema proposals/patches through that owner. Track B must not modify Bonus/PV/BV/RPV/EPV/Carry/Settlement formulas. Track C does not mutate business truth.
 
-## Sprint 5 — Referral attribution
-Deliver signed referral links, landing, anonymous tracking, 30-day lock/replacement, Person binding, history, LIFF state bridge.
-Acceptance: exact time-boundary/concurrency/tamper tests; Sponsor immutability.
-
-## Sprint 6 — System assignment
-Blocked until Product Decision. Deliver versioned policy and deterministic system-ball+BFS placement.
-Acceptance: concurrent placements, deterministic tie-break, audit/policy hash, no silent random behavior.
-
-## Sprint 7 — CMS/share
-Deliver Admin content/version/publish and Member view/share.
-Acceptance: audience/window/private media, event tracking, responsive UI.
-
-## Sprint 8 — Activities
-Deliver activity CRUD/publish, registration/cancel/waitlist/check-in-ready Admin flow.
-Acceptance: last-seat race, idempotency, history, audience authorization.
-
-## Sprint 9 — Inbox/announcements
-Deliver publication/audience snapshot/delivery/read/action.
-Acceptance: audience isolation, exactly-once first-read evidence, publication audit. LINE push remains optional future channel.
-
-## Sprint 10 — Analytics projection foundation
-Deliver projector/checkpoints, MetricDefinition, replay/rebuild, asOf/status contracts.
-Acceptance: duplicate/out-of-order events, deterministic rebuild, stale/partial semantics, Core reconciliation framework.
-
-## Sprint 11 — NASL
-Blocked on NASL definition approval. Deliver current/transition/cohort/reactivation/churn.
-Acceptance: policy version, timezone, Person/Qualification separation, cohort reconciliation.
-
-## Sprint 12 — Sponsor Sonar
-Deliver 1–12 generation Sponsor projection, filters/drill-down.
-Acceptance: Sponsor-only traversal, depth boundary, performance, RBAC.
-
-## Sprint 13 — Binary Sonar
-Deliver left/right + 1–12 Binary projection, volume/carry/balance.
-Acceptance: Binary-only traversal, Core volume reconciliation, unavailable missing evidence.
-
-## Sprint 14 — Growth analytics
-Deliver referral/content/activity/message funnels and exception trends.
-Acceptance: event-time attribution, no retroactive conversion rewrite, bounded filters/export controls.
-
-## Sprint 15 — Health / Operations brief / hardening
-Blocked on policy weights/thresholds. Deliver explainable health score, heat labels, daily operations brief, performance/security/UAT hardening.
-Acceptance: component explanation, versioned policy, cannot influence bonus/rank, workload tests, accessibility, final UAT.
-
-## Parallelization rules
-Identity/KYC and Growth may become separate branches only after shared event/data contract freeze. Analytics implementation waits for event contract and sufficient source history. No two agents modify Prisma schema concurrently without a designated schema owner. Core monetary modules remain owned by Core stream.
+Recommended immediate split after Gate/branch approval:
+- Core Closure Codex: R1.0B only.
+- Member/Growth Codex: A track.
+- Commerce/Fulfillment Codex: B track.
+- Analytics may wait or start event/projection scaffolding only.
 
 ## Every sprint evidence
-REPORT, changed-file inventory, commit SHA, migrations, OpenAPI, tests, DB Golden, security matrix, unresolved decisions, screenshots for UI, performance evidence where relevant, PASS/BLOCKED matrix. No Production claim from synthetic credentials.
+REPORT; changed-file inventory; commit SHA; migration-from-zero; OpenAPI; unit/integration/HTTP/DB assertions; DB Golden; RBAC/BOLA; concurrency/idempotency; provider sandbox evidence when applicable; UI screenshots/responsive checks; unresolved decisions; PASS/BLOCKED matrix. Provider synthetic mocks can prove DEV behavior but never Production readiness.
+
+## Production release gates
+LINE: real LIFF credentials/device UAT.
+KYC: legal/SOP/retention/RBAC.
+Payment: provider production credentials, signed callback, refund and reconciliation.
+Warehouse: inventory reconciliation, scan/serial/QC workload UAT.
+Logistics: label/tracking/cancel/return UAT.
+Invoice: issue/void/allowance UAT and accounting SOP.
+ERP-less: backup/restore + daily inventory/payment reconciliation.
+BC later: mapping/reconciliation/cutover/rollback approval.
+Global: Security E2E, monitoring, incident runbook and formal Go/No-Go.
