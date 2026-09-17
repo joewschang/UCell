@@ -98,3 +98,13 @@ All external credentials remain `OPERATIONAL_CREDENTIAL_PENDING`. Provider-neutr
 - Added real PostgreSQL reconciliation assertions for exact replay, changed-evidence conflict, eight-way concurrent ingestion, rollback and absence of monetary side effects.
 - Focused provider regression: 49 PASS. Complete Backend API: 470 PASS in 51 suites. Shipment isolated DB: 27 PASS.
 - Added migrations `20260918233000_provider_webhook_verification_evidence` and `20260918235000_shipment_aggregate_integrity`.
+
+## Provider inbox lifecycle and connection identity checkpoint
+
+- Added an explicit provider-neutral Inbox state machine and database trigger that prevents invalid status regression and protects verification evidence after leaving `RECEIVED`.
+- Added real PostgreSQL verification persistence tests for VERIFIED/REJECTED replay, eight-way concurrent verification, forced rollback and provider-event identity collision.
+- Added database guards that bind Webhook Inbox and Reconciliation evidence to the exact versioned Provider Connection domain/provider/connection key and prevent referenced connection identity drift.
+- Rejected evidence continues to retain a null canonical provider event identity.
+- Added migrations `20260919013000_provider_webhook_inbox_lifecycle` and `20260919020000_provider_ingress_connection_identity`.
+- Provider identity DB: 11 PASS. Focused state/persistence/reconciliation tests: 52 PASS. Complete Backend API: 509 PASS in 53 suites.
+- Fresh isolated database deployed all 51 workspace migrations; DB Golden, builds and existing release preflights PASS.

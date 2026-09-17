@@ -42,3 +42,8 @@
 | Reconciliation PostgreSQL concurrency/rollback | PASS | Eight-way unique winner, exact replay, conflict, rollback and zero monetary side effects |
 | Shipment persistence DB assertions after integrity migration | PASS | 27 assertions on a fresh isolated database |
 | Complete Backend API after persistence integration | PASS | 470 tests / 51 suites |
+| Provider Inbox lifecycle guard | PASS | Pure decision plus DB trigger prevents illegal transitions and evidence mutation |
+| Webhook persistence PostgreSQL concurrency/rollback | PASS | Eight-way CAS, exact replay, forced rollback and identity collision coverage |
+| Provider Connection identity integrity | PASS | Webhook/Reconciliation/version binding and reverse drift protection; 11 DB assertions |
+| Complete Backend API after provider identity slice | PASS | 509 tests / 53 suites |
+| Fresh migration/DB Golden after provider identity slice | PASS | All 51 workspace migrations deployed and deterministic DB Golden completed |
