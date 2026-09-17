@@ -8,6 +8,8 @@
 | Member TypeScript | PASS | `pnpm typecheck` |
 | Member tests | PASS | 23 files / 139 tests |
 | Member build | PASS | Vite production build |
+| Responsive route review | PASS | 104 route/viewport combinations; 26 refreshed references |
+| Accessibility static review | PASS | 26 routes; formal screen-reader audit remains pending |
 | Admin route authorization | PASS | Explicit 403 regression; unauthenticated login redirect retained |
 | Member qualification context visibility | PASS | Shared page-header and terminology regressions |
 | Monetary/business semantics | PASS | No Core, Backend, Prisma, or API changes |
