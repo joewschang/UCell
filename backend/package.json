@@ -21,6 +21,8 @@
     "db:generate": "pnpm --filter @ucell/database prisma generate",
     "db:migrate": "pnpm --filter @ucell/database prisma migrate dev",
     "db:deploy": "pnpm --filter @ucell/database prisma migrate deploy",
+    "stage:uat:seed": "node scripts/stage-uat-seed.mjs",
+    "stage:uat:seed:test": "node scripts/stage-uat-seed.test.mjs",
     "openapi": "pnpm --filter @ucell/api openapi:export",
     "docker:up": "docker compose up -d",
     "docker:down": "docker compose down",

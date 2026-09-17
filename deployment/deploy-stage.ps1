@@ -4,11 +4,15 @@ param(
   [string]$PostgresAdminUser = 'ucellstageadmin', [SecureString]$PostgresAdminPassword,
   [string]$LineLoginChannelId = '', [string]$LiffId = '',
   [string]$EntraTenantId = '', [string]$EntraClientId = '', [string]$EntraRedirectUri = '', [string]$ImageTag = '',
+  [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$InventoryWarehouseId,
+  [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$InventoryPolicyVersion,
   [ValidateRange(1,180)][int]$MigrationPollAttempts = 120,
   [ValidateRange(1,60)][int]$HealthPollAttempts = 30,
   [ValidateSet('Local','Acr')][string]$ContainerBuildMode = 'Local'
 )
 $ErrorActionPreference = 'Stop'
+if($InventoryWarehouseId -notmatch '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$'){throw 'UCELL_INVENTORY_WAREHOUSE_ID must be a UUID.'}
+if($InventoryPolicyVersion -notmatch '^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$'){throw 'UCELL_INVENTORY_POLICY_VERSION is missing or invalid.'}
 $windowsAzPython = 'C:\Program Files\Microsoft SDKs\Azure\CLI2\python.exe'
 if (Test-Path $windowsAzPython) { $script:AzExecutable=$windowsAzPython; $script:AzPrefix=@('-IBm','azure.cli') }
 else { $az=Get-Command az -ErrorAction SilentlyContinue; if(-not $az){throw 'Azure CLI is required.'}; $script:AzExecutable=$az.Source; $script:AzPrefix=@() }
@@ -68,7 +72,7 @@ foreach($r in @('ucell-backend','ucell-worker')){
   else{Invoke-AzChecked "build $r" @('acr','build','--registry',$acr,'--image',"${r}:$ImageTag",'--file',$df,'.','--only-show-errors')|Out-Null}
 }
 $backendImage=Resolve-Image 'ucell-backend'; $workerImage=Resolve-Image 'ucell-worker'
-$serverEnv=@('NODE_ENV=staging','ADMIN_AUTH_BYPASS=false',"APPLICATIONINSIGHTS_CONNECTION_STRING=$insights",'UCELL_ENVIRONMENT=STAGE','DATABASE_URL=secretref:database-url')
+$serverEnv=@('NODE_ENV=staging','ADMIN_AUTH_BYPASS=false',"APPLICATIONINSIGHTS_CONNECTION_STRING=$insights",'UCELL_ENVIRONMENT=STAGE','DATABASE_URL=secretref:database-url',"UCELL_INVENTORY_WAREHOUSE_ID=$InventoryWarehouseId","UCELL_INVENTORY_POLICY_VERSION=$InventoryPolicyVersion")
 $serverRemove=@()
 if($LineLoginChannelId){$serverEnv+="LINE_LOGIN_CHANNEL_ID=$LineLoginChannelId"}else{$serverRemove+='LINE_LOGIN_CHANNEL_ID'}
 if($EntraTenantId){$serverEnv+="ENTRA_TENANT_ID=$EntraTenantId"}else{$serverRemove+='ENTRA_TENANT_ID'}

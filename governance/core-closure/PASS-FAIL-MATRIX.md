@@ -1,5 +1,16 @@
 # Core Closure pass/fail matrix
 
+## Latest HEAD Stage/UAT preparation
+
+| Gate | Result | Evidence |
+|---|---|---|
+| Latest HEAD local preflight/OpenAPI/RC | PASS | 40 migrations and isolated DB Golden |
+| Stage deployment static preflight | PASS | 19 assertions |
+| Stage UAT seed safety | PASS | environment/host/database/destructive-operation guards |
+| Stage Golden Journey runner contract | PASS | mocked API journey 3/3 |
+| Latest HEAD Stage redeployment | BLOCKED | existing Stage DB administrator secret unavailable to this session |
+| Formal identity Golden Journey | BLOCKED | Stage LINE/LIFF and Entra credentials unavailable |
+
 ## P1-E/G connected slice
 
 | Gate | Result | Evidence |

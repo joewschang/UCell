@@ -1,0 +1,11 @@
+{
+  "version": "STAGE_UAT_SEED_V1",
+  "person": { "personId": "51000000-0000-4000-8000-000000000001", "legalName": "Stage UAT Member" },
+  "qualification": { "qualificationId": "51000000-0000-4000-8000-000000000002", "planLevelCode": "STARTER" },
+  "product": { "productId": "51000000-0000-4000-8000-000000000003", "sku": "STAGE-UAT-PRODUCT-001", "displayName": "Stage UAT Product", "currentPrice": "4800.00" },
+  "order": { "orderId": "51000000-0000-4000-8000-000000000004", "clientReference": "STAGE-UAT-SEED-V1-ORDER", "grossAmount": "4800.00" },
+  "orderLine": { "orderLineId": "51000000-0000-4000-8000-000000000005" },
+  "warehouse": { "warehouseId": "51000000-0000-4000-8000-000000000006", "code": "STAGE-UAT", "name": "Stage UAT Warehouse" },
+  "inventoryItem": { "inventoryItemId": "51000000-0000-4000-8000-000000000007", "sku": "STAGE-UAT-PRODUCT-001" },
+  "balance": { "onHand": "100.0000", "reserved": "0.0000" }
+}

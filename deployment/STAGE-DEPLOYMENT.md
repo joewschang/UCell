@@ -8,6 +8,7 @@ The GitHub `stage` environment must provide these secrets:
 - `STAGE_POSTGRES_ADMIN_PASSWORD`: Stage-only PostgreSQL administrator password.
 - `STAGE_LINE_LOGIN_CHANNEL_ID`, `STAGE_LIFF_ID`: formal Stage LINE Login/LIFF configuration when available.
 - `STAGE_ENTRA_TENANT_ID`, `STAGE_ENTRA_CLIENT_ID`, `STAGE_ENTRA_REDIRECT_URI`: formal Stage Entra configuration when available.
+- GitHub environment variables `UCELL_INVENTORY_WAREHOUSE_ID` and `UCELL_INVENTORY_POLICY_VERSION` are mandatory. Deployment fails before Azure access when either is empty or invalid.
 
 Every run builds a commit/run-specific image tag, resolves the ACR digest, deploys the digest URI, and emits the image, revision, migration execution and health evidence as JSON. Existing Container Apps are updated with a new revision suffix. Migration and health polling are bounded and any failed Azure/Docker operation terminates the run.
 
@@ -20,3 +21,16 @@ Before any deployment, run:
 ```powershell
 node deployment/stage-preflight.mjs
 ```
+
+## Optional UAT seed
+
+The UAT seed is separate from deployment and is never run by the workflow. It accepts only `UCELL_ENVIRONMENT=STAGE`, the exact opt-in `UCELL_STAGE_UAT_SEED_OPT_IN=SEED_STAGE_UAT_V1`, an Azure PostgreSQL host, and database name `ucell_stage`. Validation occurs before Prisma is loaded or a connection is opened. Localhost, production-like targets, destructive arguments, reset, and drop are rejected.
+
+```powershell
+$env:UCELL_ENVIRONMENT='STAGE'
+$env:UCELL_STAGE_UAT_SEED_OPT_IN='SEED_STAGE_UAT_V1'
+$env:DATABASE_URL='<stage-only connection string>'
+pnpm --dir backend stage:uat:seed
+```
+
+The fixed manifest creates or reuses one minimal Person, Qualification, product, DRAFT order, Warehouse, InventoryItem, and InventoryBalance. Set `UCELL_INVENTORY_WAREHOUSE_ID` to the manifest warehouse ID (`51000000-0000-4000-8000-000000000006`) so the worker uses that inventory. Re-running the seed is idempotent and does not reset an existing balance. It creates no payment, award, payable, PV ledger, settlement, or Golden fixture facts. Review `backend/scripts/stage-uat-seed-manifest.json` before an authorized Stage run.

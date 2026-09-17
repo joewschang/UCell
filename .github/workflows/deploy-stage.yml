@@ -43,6 +43,8 @@ jobs:
           ENTRA_TENANT_ID: ${{ secrets.STAGE_ENTRA_TENANT_ID }}
           ENTRA_CLIENT_ID: ${{ secrets.STAGE_ENTRA_CLIENT_ID }}
           ENTRA_REDIRECT_URI: ${{ secrets.STAGE_ENTRA_REDIRECT_URI }}
+          UCELL_INVENTORY_WAREHOUSE_ID: ${{ vars.UCELL_INVENTORY_WAREHOUSE_ID }}
+          UCELL_INVENTORY_POLICY_VERSION: ${{ vars.UCELL_INVENTORY_POLICY_VERSION }}
         run: |
           $securePassword = ConvertTo-SecureString $env:STAGE_DB_PASSWORD -AsPlainText -Force
           ./deployment/deploy-stage.ps1 `
@@ -54,5 +56,7 @@ jobs:
             -EntraTenantId $env:ENTRA_TENANT_ID `
             -EntraClientId $env:ENTRA_CLIENT_ID `
             -EntraRedirectUri $env:ENTRA_REDIRECT_URI `
+            -InventoryWarehouseId $env:UCELL_INVENTORY_WAREHOUSE_ID `
+            -InventoryPolicyVersion $env:UCELL_INVENTORY_POLICY_VERSION `
             -ImageTag '${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}' `
             -ContainerBuildMode Acr

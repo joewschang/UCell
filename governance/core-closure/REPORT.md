@@ -1,5 +1,15 @@
 # Core Closure checkpoint report
 
+## Latest HEAD Stage redeployment preparation — 2026-09-17
+
+- Deployment target HEAD: `3fc745e` plus this preparation checkpoint; local/remote were fast-forwarded before validation.
+- Backend preflight, OpenAPI preflight and RC gate: PASS. Fresh isolated database applies all 40 migrations and completes deterministic DB Golden.
+- Stage deployment now requires explicit `UCELL_INVENTORY_WAREHOUSE_ID` and `UCELL_INVENTORY_POLICY_VERSION` for API and Worker; missing configuration fails closed.
+- Added a guarded, idempotent Stage UAT seed. It only accepts explicit STAGE opt-in and the `ucell_stage` database on Azure PostgreSQL, creates no payment/award/ledger/settlement facts, and never resets existing balance.
+- Added an API-only Stage Golden Journey runner with HTTPS Stage allowlisting, formal credential requirements, two-Qualification isolation, BOLA denial, commerce/profile/notification flow and deterministic Ball restore.
+- Stage deployment preflight: 19 assertions PASS; UAT seed safety tests PASS; Golden Journey mocked contract tests: 3/3 PASS.
+- Actual Stage migration, seed and Golden Journey: BLOCKED pending the existing Stage PostgreSQL administrator secret and formal LINE/Entra credentials. No Stage resource was modified in this preparation checkpoint.
+
 ## P1-E/G Connected Payment-to-Inventory slice — 2026-09-17
 
 - A verified `PAID` Payment transition now emits a dedicated outbox fact consumed by the Worker and reserves inventory from authoritative server Order/OrderLine snapshots.
