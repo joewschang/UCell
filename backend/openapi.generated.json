@@ -21,6 +21,46 @@
         ]
       }
     },
+    "/api/v1/admin/analytics/policy-versions": {
+      "get": {
+        "operationId": "adminAnalyticsPolicyVersions",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "可查詢的管理政策版本",
+        "tags": [
+          "Admin - Management Analytics"
+        ]
+      }
+    },
+    "/api/v1/admin/analytics/refresh/status": {
+      "get": {
+        "operationId": "adminAnalyticsRefreshStatus",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "自動更新狀態與各設定範圍的保存快照鮮度",
+        "tags": [
+          "Admin - Management Analytics"
+        ]
+      }
+    },
     "/api/v1/admin/analytics/roots": {
       "get": {
         "operationId": "adminAnalyticsRoots",
@@ -311,6 +351,43 @@
           }
         ],
         "summary": "單代資格證據 ID，最多 100 筆",
+        "tags": [
+          "Admin - Management Analytics"
+        ]
+      }
+    },
+    "/api/v1/admin/analytics/sonar/{tree}/{qualificationId}/volumes": {
+      "get": {
+        "operationId": "adminAnalyticsSonarVolumes",
+        "parameters": [
+          {
+            "name": "tree",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "qualificationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "事件歷史樹的十二代 GPV/RPV/EPV，最近 30 天原始事件截至快照的修正淨量；Binary 另含已結算 Carry",
         "tags": [
           "Admin - Management Analytics"
         ]
@@ -4766,6 +4843,177 @@
         ]
       }
     },
+    "/api/v1/admin/provider-operations/webhooks/health": {
+      "get": {
+        "operationId": "adminProviderWebhookHealth",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "required": [
+                        "generatedAt",
+                        "state",
+                        "total",
+                        "dueBacklog",
+                        "expiredLeases",
+                        "manualReview",
+                        "oldestDueReceivedAt",
+                        "counts"
+                      ],
+                      "properties": {
+                        "generatedAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "state": {
+                          "type": "string",
+                          "enum": [
+                            "HEALTHY",
+                            "DEGRADED",
+                            "CRITICAL"
+                          ]
+                        },
+                        "total": {
+                          "type": "integer"
+                        },
+                        "dueBacklog": {
+                          "type": "integer"
+                        },
+                        "expiredLeases": {
+                          "type": "integer"
+                        },
+                        "manualReview": {
+                          "type": "integer"
+                        },
+                        "oldestDueReceivedAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "nullable": true
+                        },
+                        "counts": {
+                          "type": "object"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "Provider webhook inbox health and backlog counts",
+        "tags": [
+          "Admin - Provider Operations"
+        ]
+      }
+    },
+    "/api/v1/admin/provider-operations/webhooks/backlog": {
+      "get": {
+        "operationId": "adminProviderWebhookBacklog",
+        "parameters": [
+          {
+            "name": "domain",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "provider",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "take",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "required": [
+                        "generatedAt",
+                        "items",
+                        "limit",
+                        "truncated"
+                      ],
+                      "properties": {
+                        "generatedAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "items": {
+                          "type": "array",
+                          "items": {
+                            "type": "object"
+                          }
+                        },
+                        "limit": {
+                          "type": "integer"
+                        },
+                        "truncated": {
+                          "type": "boolean"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "Provider webhook operational backlog without payload or verification evidence",
+        "tags": [
+          "Admin - Provider Operations"
+        ]
+      }
+    },
     "/api/v1/admin/persons": {
       "post": {
         "operationId": "adminCreatePerson",
@@ -6771,83 +7019,6 @@
         "summary": "Read append-only UAT execution evidence.",
         "tags": [
           "Admin - UAT Evidence"
-        ]
-      }
-    },
-    "/api/v1/admin/analytics/policy-versions": {
-      "get": {
-        "operationId": "adminAnalyticsPolicyVersions",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "adminBearer": []
-          }
-        ],
-        "summary": "可查詢的管理政策版本",
-        "tags": [
-          "Admin - Management Analytics"
-        ]
-      }
-    },
-    "/api/v1/admin/analytics/refresh/status": {
-      "get": {
-        "operationId": "adminAnalyticsRefreshStatus",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "adminBearer": []
-          }
-        ],
-        "summary": "自動更新狀態與各設定範圍的保存快照鮮度",
-        "tags": [
-          "Admin - Management Analytics"
-        ]
-      }
-    },
-    "/api/v1/admin/analytics/sonar/{tree}/{qualificationId}/volumes": {
-      "get": {
-        "operationId": "adminAnalyticsSonarVolumes",
-        "parameters": [
-          {
-            "name": "tree",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "qualificationId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "adminBearer": []
-          }
-        ],
-        "summary": "事件歷史樹的十二代 GPV/RPV/EPV，最近 30 天原始事件截至快照的修正淨量；Binary 另含已結算 Carry",
-        "tags": [
-          "Admin - Management Analytics"
         ]
       }
     }

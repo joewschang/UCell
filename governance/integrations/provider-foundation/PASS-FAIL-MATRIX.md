@@ -55,3 +55,10 @@
 | Complete Backend API after worker lease slice | PASS | 550 tests / 57 suites |
 | Fresh DB Golden after worker lease migration | PASS | All 52 workspace migrations and deterministic DB assertions completed |
 | Provider acknowledgement/status/domain-effect adapters | BLOCKED | Provider-specific contracts and credentials remain OPERATIONAL_CREDENTIAL_PENDING |
+| Provider-neutral consumer runner | PASS | Explicit handlers only; missing/unclassified processing fails closed to MANUAL_REVIEW |
+| Stale worker finalization reporting | PASS | Lost lease is counted separately and cannot be reported as processed |
+| Provider operations health/backlog API | PASS | Read-only RBAC view; excludes payload, evidence hashes/references and lease owner |
+| Provider runner and operations focused regression | PASS | 38 tests across worker and operations slices |
+| Complete Backend API after operations slice | PASS | 571 tests / 60 suites |
+| OpenAPI and release preflights after operations slice | PASS | Build, OpenAPI, schema, migration, source, security and TODO gates passed |
+| Fresh DB Golden after operations slice | PASS | All 52 migrations and deterministic DB assertions completed |

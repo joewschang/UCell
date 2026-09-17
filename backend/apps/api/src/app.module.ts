@@ -31,6 +31,7 @@ import { AdminDashboardModule } from './modules/admin-dashboard/admin-dashboard.
 import { AdminObservabilityModule } from './modules/admin-observability/admin-observability.module';
 import { AdminOperationsModule } from './modules/admin-operations/admin-operations.module';
 import { AdminOpsReadyModule } from './modules/admin-ops-ready/admin-ops-ready.module';
+import { AdminProviderOperationsModule } from './modules/admin-provider-operations/admin-provider-operations.module';
 import { AdminAuthenticationGuard } from './modules/auth/admin-authentication.guard';
 import { AdminRoleGuard } from './modules/auth/admin-role.guard';
 import { ContentModule } from './modules/content/content.module';
@@ -51,6 +52,7 @@ import { UatEvidenceModule } from './modules/uat-evidence/uat-evidence.module';
     AdminObservabilityModule,
     AdminOperationsModule,
     AdminOpsReadyModule,
+    AdminProviderOperationsModule,
     PersonModule,
     ProductModule,
     OrganizationModule,

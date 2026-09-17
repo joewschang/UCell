@@ -122,3 +122,16 @@ All external credentials remain `OPERATIONAL_CREDENTIAL_PENDING`. Provider-neutr
 - Corrected Windows/Jest test isolation: provider DB tests accept generated `ucell_jest_*` databases, and Phase 2 suites write separate evidence files instead of racing on one shared file.
 
 Business logic changes: **NONE**. No provider policy, acknowledgement, mapping, monetary result or R1.0B rule was inferred.
+
+## Provider consumer boundary and operations visibility checkpoint
+
+- Added a provider-neutral batch runner that claims durable leases, requires an explicit registered handler outcome, and delegates all terminal/retry decisions to the existing versioned retry configuration.
+- Missing handlers and unclassified exceptions fail closed to `MANUAL_REVIEW`; stale lease finalization is counted separately and cannot be reported as processed.
+- The runner does not start itself, acknowledge provider callbacks, map provider status, or mutate payment, invoice, shipment or monetary aggregates.
+- Added RBAC-protected read-only Admin endpoints for webhook health and backlog, including due work, expired leases, manual-review count and status/domain/provider aggregates.
+- Operational responses intentionally exclude raw payload, payload/evidence hashes, safe evidence references and lease-owner identity.
+- Focused Provider runner/lease/outcome regression: 29 PASS. Provider operations HTTP/service regression: 9 PASS.
+- Complete Backend API: 571 PASS in 60 suites. Backend build, OpenAPI export/preflight, schema, migration, source, security and TODO gates: PASS.
+- Fresh isolated DB Golden: PASS with all 52 migrations.
+
+Business logic changes: **NONE**. Provider-specific handlers remain disabled until approved contracts, mappings and credentials exist.
