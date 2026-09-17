@@ -18,7 +18,10 @@ export class InventoryReservationError extends Error {
       | 'INVENTORY_QUANTITY_INVALID'
       | 'INVENTORY_QUANTITY_OVERFLOW'
       | 'INVENTORY_INSUFFICIENT_AVAILABLE'
-      | 'INVENTORY_RELEASE_EXCEEDS_RESERVED',
+      | 'INVENTORY_RELEASE_EXCEEDS_RESERVED'
+      | 'INVENTORY_ITEM_ID_INVALID'
+      | 'INVENTORY_BALANCE_MISSING'
+      | 'INVENTORY_BATCH_EMPTY',
     message: string,
   ) {
     super(message);
