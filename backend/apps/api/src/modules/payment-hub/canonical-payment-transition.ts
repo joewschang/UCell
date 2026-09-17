@@ -64,9 +64,7 @@ export function assertCanonicalPaymentTransition(
   next: CanonicalPaymentStatus,
   evidence: PaymentTransitionEvidence,
 ): void {
-  if (current === next) return;
-
-  if (!allowedTransitions[current].has(next)) {
+  if (current !== next && !allowedTransitions[current].has(next)) {
     throw new PaymentTransitionError(
       'PAYMENT_TRANSITION_INVALID',
       `Payment cannot transition from ${current} to ${next}.`,
