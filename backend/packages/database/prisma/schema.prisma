@@ -229,6 +229,35 @@ enum PaymentAttemptStatus {
   @@schema("commerce")
 }
 
+enum ProviderIntegrationDomain {
+  PAYMENT
+  INVOICE
+  LOGISTICS
+
+  @@schema("commerce")
+}
+
+enum ProviderWebhookStatus {
+  RECEIVED
+  VERIFIED
+  REJECTED
+  PROCESSING
+  PROCESSED
+  RETRY_PENDING
+  MANUAL_REVIEW
+
+  @@schema("commerce")
+}
+
+enum ProviderReconciliationStatus {
+  RUNNING
+  MATCHED
+  DISCREPANCY
+  FAILED
+
+  @@schema("commerce")
+}
+
 enum InventoryTrackingMode {
   NONE
   LOT
@@ -1102,6 +1131,60 @@ model PaymentOperationClaim {
   @@schema("commerce")
 }
 
+model ProviderWebhookInbox {
+  providerWebhookInboxId    String                    @id @default(uuid()) @map("provider_webhook_inbox_id") @db.Uuid
+  domain                    ProviderIntegrationDomain
+  provider                  String
+  connectionId              String                    @map("connection_id")
+  ingressKey                String                    @map("ingress_key")
+  providerEventIdentity     String?                   @map("provider_event_identity")
+  payloadHash               String                    @map("payload_hash")
+  safeEvidenceRef           String                    @map("safe_evidence_ref")
+  verificationConfigVersion String                    @map("verification_config_version")
+  status                    ProviderWebhookStatus     @default(RECEIVED)
+  attemptCount              Int                       @default(0) @map("attempt_count")
+  lastErrorCode             String?                   @map("last_error_code")
+  receivedAt                DateTime                  @default(now()) @map("received_at") @db.Timestamptz(6)
+  verifiedAt                DateTime?                 @map("verified_at") @db.Timestamptz(6)
+  processedAt               DateTime?                 @map("processed_at") @db.Timestamptz(6)
+  nextAttemptAt             DateTime?                 @map("next_attempt_at") @db.Timestamptz(6)
+  correlationId             String                    @map("correlation_id") @db.Uuid
+
+  @@unique([domain, provider, connectionId, ingressKey])
+  @@unique([domain, provider, connectionId, providerEventIdentity])
+  @@index([status, nextAttemptAt, receivedAt])
+  @@index([correlationId])
+  @@map("provider_webhook_inbox")
+  @@schema("commerce")
+}
+
+model ProviderReconciliationRun {
+  providerReconciliationRunId String                       @id @default(uuid()) @map("provider_reconciliation_run_id") @db.Uuid
+  domain                      ProviderIntegrationDomain
+  provider                    String
+  connectionId                String                       @map("connection_id")
+  runKey                      String                       @map("run_key")
+  providerBatchRef            String?                      @map("provider_batch_ref")
+  periodStart                 DateTime                     @map("period_start") @db.Timestamptz(6)
+  periodEnd                   DateTime                     @map("period_end") @db.Timestamptz(6)
+  status                      ProviderReconciliationStatus @default(RUNNING)
+  providerRecordCount         Int                          @default(0) @map("provider_record_count")
+  internalRecordCount         Int                          @default(0) @map("internal_record_count")
+  discrepancyCount            Int                          @default(0) @map("discrepancy_count")
+  evidenceHash                String?                      @map("evidence_hash")
+  safeEvidenceRef             String?                      @map("safe_evidence_ref")
+  verificationConfigVersion   String                       @map("verification_config_version")
+  startedAt                   DateTime                     @default(now()) @map("started_at") @db.Timestamptz(6)
+  completedAt                 DateTime?                    @map("completed_at") @db.Timestamptz(6)
+  correlationId               String                       @map("correlation_id") @db.Uuid
+
+  @@unique([domain, provider, connectionId, runKey])
+  @@index([domain, provider, status, startedAt])
+  @@index([periodStart, periodEnd])
+  @@map("provider_reconciliation_run")
+  @@schema("commerce")
+}
+
 model Warehouse {
   warehouseId String       @id @default(uuid()) @map("warehouse_id") @db.Uuid
   code        String       @unique
@@ -1470,11 +1553,11 @@ model UatExecutionEvidence {
   evidenceHash           String                    @map("evidence_hash")
   artifactReference      String                    @map("artifact_reference")
   approvalReference      String?                   @map("approval_reference")
-  actorId                 String                    @map("actor_id") @db.Uuid
-  executedAt              DateTime                  @map("executed_at") @db.Timestamptz(6)
-  recordedAt              DateTime                  @default(now()) @map("recorded_at") @db.Timestamptz(6)
-  requestId               String                    @map("request_id")
-  correlationId           String                    @map("correlation_id") @db.Uuid
+  actorId                String                    @map("actor_id") @db.Uuid
+  executedAt             DateTime                  @map("executed_at") @db.Timestamptz(6)
+  recordedAt             DateTime                  @default(now()) @map("recorded_at") @db.Timestamptz(6)
+  requestId              String                    @map("request_id")
+  correlationId          String                    @map("correlation_id") @db.Uuid
 
   @@unique([classification, environment, scenarioCode, evidenceHash])
   @@index([environment, scenarioCode, recordedAt])
