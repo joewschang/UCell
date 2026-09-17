@@ -22,12 +22,12 @@ export const nav=[
   ['Provider Webhook 營運','/provider-operations','provider-operations'],
 ] as const;
 export const navGroups=[
- {label:'Dashboard',paths:['/']},
- {label:'會員管理',paths:['/people','/qualifications','/applications','/workflows']},
- {label:'組織管理',paths:['/organization']},
+ {label:'營運中心',paths:['/','/content']},
+ {label:'會員與資格',paths:['/people','/qualifications','/applications','/workflows']},
  {label:'商務',paths:['/products','/packages','/orders','/subscriptions','/returns']},
- {label:'獎金中心',paths:['/bonuses']},
- {label:'財務',paths:['/payouts']},
- {label:'營運分析',paths:['/reports','/analytics']},
- {label:'系統治理',paths:['/content','/documents','/audit','/uat','/system','/provider-operations']},
+ {label:'組織',paths:['/organization']},
+ {label:'獎金財務',paths:['/bonuses','/payouts']},
+ {label:'分析中心',paths:['/reports','/analytics']},
+ {label:'治理稽核',paths:['/documents','/audit']},
+ {label:'系統與發布',paths:['/uat','/system','/provider-operations']},
 ];

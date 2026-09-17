@@ -13,3 +13,5 @@
 .uc-actions a{background:linear-gradient(155deg,var(--ucell-surface-elevated),var(--ucell-surface));border-color:var(--ucell-border-subtle);box-shadow:var(--ucell-shadow-sm)}.uc-actions a:hover{border-color:var(--ucell-primary);box-shadow:var(--ucell-shadow-glow)}
 .uc-skeleton{background:linear-gradient(90deg,var(--ucell-surface-secondary),var(--ucell-surface),var(--ucell-surface-secondary));background-size:220% 100%;animation:ucell-shimmer 1.8s linear infinite}@keyframes ucell-shimmer{to{background-position:-220% 0}}
 .uc-dialog::backdrop{background:#061b29b8;backdrop-filter:blur(4px)}
+
+.uc-skip-link{position:fixed;top:8px;left:8px;z-index:1000;padding:12px 16px;background:var(--ucell-surface,#fff);color:var(--ucell-text-primary,#17332d);transform:translateY(-200%)}.uc-skip-link:focus{transform:translateY(0);outline:3px solid var(--ucell-primary,#087056)}

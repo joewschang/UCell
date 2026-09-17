@@ -30,7 +30,7 @@ const assert=require('node:assert/strict');
    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,route+' overflow');
   }
   await page.goto('http://127.0.0.1:5174/organization');
-  await page.getByRole('button',{name:'二元組織'}).click();
+  await page.getByRole('button',{name:'二元安置組織',exact:true}).click();
   await page.getByText('左區人數').waitFor();
   await page.goto('http://127.0.0.1:5174/orders');
   await page.getByText('此資格目前沒有訂單').waitFor();
