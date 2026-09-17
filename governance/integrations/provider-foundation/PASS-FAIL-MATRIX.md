@@ -80,3 +80,7 @@
 | Provider Worker runtime focused regression | PASS | 33 tests / 4 suites; database, Worker and API builds PASS |
 | Complete Backend API after Worker runtime wiring | PASS | 578 tests / 61 suites on isolated PostgreSQL; all release preflights PASS |
 | Shared Worker lease PostgreSQL regression | PASS | 30 assertions on fresh 53-migration database; SKIP LOCKED, reclaim, retry and rollback verified |
+| Worker tick overlap protection | PASS | Concurrent triggers cannot start a second tick while one is in flight |
+| Worker graceful shutdown | PASS | SIGTERM/SIGINT drain current work, clear scheduling and disconnect once |
+| Worker poll configuration | PASS | Explicit 250-60000 ms bound; malformed values fail startup |
+| Complete Backend API after graceful loop | PASS | 582 tests / 62 suites on isolated PostgreSQL; full workspace build and preflights PASS |

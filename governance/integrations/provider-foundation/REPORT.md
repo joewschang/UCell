@@ -178,3 +178,13 @@ Business logic changes: **NONE**.
 - Database, Worker and API builds PASS. Focused runtime/runner/lease/outcome regression: 33 PASS across 4 suites. Complete Backend API: 578 PASS in 61 suites on isolated PostgreSQL; schema, migration, source, security and TODO preflights PASS. Fresh Provider worker lease DB: 30 concurrency, reclaim, exclusion, retry and rollback assertions PASS.
 
 Business logic changes: **NONE**. The registered handler list remains empty until an approved provider contract and credentials exist.
+
+## Worker serial loop and graceful shutdown checkpoint
+
+- Replaced the ad hoc interval flag with a reusable serial Worker loop that prevents overlapping ticks.
+- `SIGTERM` and `SIGINT` stop new ticks, clear the timer, wait for the current tick to settle, then disconnect Prisma exactly once.
+- Poll interval is explicit and bounded to 250-60000 ms; invalid configuration fails at startup.
+- Focused Worker lifecycle/runtime regression: 8 PASS. Complete Backend API: 582 PASS in 62 suites on isolated PostgreSQL.
+- Full database, shared, Worker and API builds plus schema, migration, source, security and TODO preflights PASS.
+
+Business logic changes: **NONE**.

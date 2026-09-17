@@ -1,6 +1,7 @@
 import { PrismaService, Prisma, processMemberOrderNotification, processPaymentInventoryReservation, recognizeConsumption, applyGpvImmediateEffects, sealRpvEvent, pending, claimOutboxLease, withOutboxLease, processLeasedReplay, releaseFailedOutboxLease, OutboxLease, matureBonusAward } from '@ucell/database';
 import * as crypto from 'node:crypto';
 import { pollProviderWebhooks, type ProviderHandlerRegistration } from './provider-runtime';
+import { WorkerLoop, workerPollInterval } from './worker-loop';
 
 const prisma = new PrismaService();
 const providerHandlers: readonly ProviderHandlerRegistration[] = Object.freeze([]);
@@ -213,11 +214,13 @@ async function tick(){
 }
 
 async function main(){
-  console.log('UCell worker v0.5.0 started');
-  let running=true;
-  setInterval(()=>{if(running) return;running=true;void tick().catch(console.error).finally(()=>{running=false;});},2000);
-  try{await tick();}finally{running=false;}
+  const loop=new WorkerLoop({tick,disconnect:()=>prisma.$disconnect(),onError:error=>console.error('worker tick failed',error)},workerPollInterval());
+  const shutdown=(signal:string)=>{console.log(`UCell worker received ${signal}; draining current tick`);void loop.stop().then(()=>{process.exitCode=0;}).catch(error=>{console.error(error);process.exitCode=1;});};
+  process.once('SIGTERM',()=>shutdown('SIGTERM'));
+  process.once('SIGINT',()=>shutdown('SIGINT'));
+  console.log('UCell worker v0.6.10 started');
+  await loop.start();
 }
-if(require.main===module) main().catch(async e=>{
-  console.error(e);await prisma.$disconnect();process.exit(1);
+if(require.main===module) main().catch(async error=>{
+  console.error(error);await prisma.$disconnect();process.exitCode=1;
 });
