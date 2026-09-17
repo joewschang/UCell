@@ -19,6 +19,7 @@ export const nav=[
   ['NASL／十二代健康雷達','/analytics','analytics'],
   ['UAT／上線驗證','/uat','uat'],
   ['系統就緒度','/system','system'],
+  ['Provider Webhook 營運','/provider-operations','provider-operations'],
 ] as const;
 export const navGroups=[
  {label:'Dashboard',paths:['/']},
@@ -28,5 +29,5 @@ export const navGroups=[
  {label:'獎金中心',paths:['/bonuses']},
  {label:'財務',paths:['/payouts']},
  {label:'營運分析',paths:['/reports','/analytics']},
- {label:'系統治理',paths:['/content','/documents','/audit','/uat','/system']},
+ {label:'系統治理',paths:['/content','/documents','/audit','/uat','/system','/provider-operations']},
 ];

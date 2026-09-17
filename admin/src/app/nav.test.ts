@@ -10,5 +10,6 @@ describe('admin navigation terminology',()=>{
     expect(Object.values(labels)).not.toContain('重銷方案');
     expect(Object.values(labels)).not.toContain('獎金／帳本');
     expect(Object.values(labels)).not.toContain('結算／付款');
+    expect(labels['/provider-operations']).toBe('Provider Webhook 營運');
   });
 });

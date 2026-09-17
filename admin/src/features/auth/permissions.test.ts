@@ -26,4 +26,11 @@ describe('Admin page access boundaries', () => {
     expect(canOpen('PACKAGE_CONFIG_APPROVE','/packages')).toBe(true);
     expect(canOpen('PACKAGE_CONFIG_MANAGE','/orders')).toBe(false);
   });
+  it('matches provider operations API roles',()=>{
+    expect(canOpen('SUPER_ADMIN','/provider-operations')).toBe(true);
+    expect(canOpen('ORDER_OPS','/provider-operations')).toBe(true);
+    expect(canOpen('FINANCE','/provider-operations')).toBe(true);
+    expect(canOpen('COMPLIANCE_AUDIT','/provider-operations')).toBe(true);
+    expect(canOpen('MEMBERSHIP_OPS','/provider-operations')).toBe(false);
+  });
 });

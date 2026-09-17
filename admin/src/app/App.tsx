@@ -23,6 +23,7 @@ import {ReportsPage} from '../features/reports/ReportsPage';
 import {AnalyticsPage} from '../features/analytics/AnalyticsPage';
 import {UatPage} from '../features/uat/UatPage';
 import {SystemPage} from '../features/system/SystemPage';
+import {ProviderOperationsPage} from '../features/provider-operations/ProviderOperationsPage';
 import {RequirePageRole} from '../features/auth/RequirePageRole';
 
 function Protected(){const {user,ready}=useAuth();if(!ready)return <div className="app-loading">驗證管理員Session…</div>;return user?<AppShell/>:<Navigate to="/login" replace/>}
@@ -50,6 +51,7 @@ export function App(){return <Routes>
   <Route path="/analytics" element={<RequirePageRole><AnalyticsPage/></RequirePageRole>}/>
   <Route path="/uat" element={<RequirePageRole><UatPage/></RequirePageRole>}/>
   <Route path="/system" element={<RequirePageRole><SystemPage/></RequirePageRole>}/>
+  <Route path="/provider-operations" element={<RequirePageRole><ProviderOperationsPage/></RequirePageRole>}/>
   <Route path="*" element={<section className="card"><h1>找不到後台頁面</h1><Link to="/">返回營運總覽</Link></section>}/>
  </Route>
 </Routes>}

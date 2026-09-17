@@ -135,3 +135,14 @@ Business logic changes: **NONE**. No provider policy, acknowledgement, mapping, 
 - Fresh isolated DB Golden: PASS with all 52 migrations.
 
 Business logic changes: **NONE**. Provider-specific handlers remain disabled until approved contracts, mappings and credentials exist.
+
+## Admin Provider Operations console checkpoint
+
+- Connected the approved read-only webhook health and backlog APIs to `/provider-operations` in the Admin Operations Console.
+- Added health metrics, domain/provider/status/limit filters, searchable bounded DataGrid, truncated-result notice and shared loading/error/empty states.
+- Page RBAC matches the Backend roles: `SUPER_ADMIN`, `ORDER_OPS`, `FINANCE`, and `COMPLIANCE_AUDIT`.
+- Frontend contracts do not expose payload hashes, verification hashes, safe evidence references, raw callbacks or lease-owner identity.
+- Complete Admin regression: 63 PASS in 22 files. Admin production build: PASS.
+- The UI remains read-only. No manual retry or status mutation was added because the current governed state machine requires lease-aware `MANUAL_REVIEW → PROCESSING`; a direct requeue would bypass worker ownership and audit guarantees.
+
+Business logic changes: **NONE**.

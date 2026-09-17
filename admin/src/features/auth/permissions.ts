@@ -22,5 +22,6 @@ export const pageRoles:Record<string,AdminRole[]>={
   '/analytics':['SUPER_ADMIN','MEMBERSHIP_OPS','FINANCE','COMPLIANCE_AUDIT'],
   '/uat':['SUPER_ADMIN','COMPLIANCE_AUDIT'],
   '/system':['SUPER_ADMIN','COMPLIANCE_AUDIT'],
+  '/provider-operations':['SUPER_ADMIN','ORDER_OPS','FINANCE','COMPLIANCE_AUDIT'],
 };
 export const canOpen=(role:AdminRole|undefined,path:string)=>!!role && (pageRoles[path]?.includes(role) ?? false);

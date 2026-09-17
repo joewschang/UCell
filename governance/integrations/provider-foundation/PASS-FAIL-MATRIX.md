@@ -62,3 +62,6 @@
 | Complete Backend API after operations slice | PASS | 571 tests / 60 suites |
 | OpenAPI and release preflights after operations slice | PASS | Build, OpenAPI, schema, migration, source, security and TODO gates passed |
 | Fresh DB Golden after operations slice | PASS | All 52 migrations and deterministic DB assertions completed |
+| Admin Provider Operations console | PASS | Connected health/backlog API, RBAC, filters, bounded DataGrid and standard system states |
+| Admin regression after Provider console | PASS | 63 tests / 22 files; production build PASS |
+| Governed manual retry command | BLOCKED | Requires lease-aware transition, reason, actor, idempotency and audit; no unsafe direct requeue UI added |
