@@ -53,6 +53,13 @@ describe('v0.5 Global/Welfare', () => {
   it('rank achievement never downgrades',async()=>{const h=await globalHarness({weak:{q:'4000000'}});await h.service.evaluateAndSettle(start,end,'TEST_ONLY');(h.service.weakSidePv as jest.Mock).mockResolvedValue(new Prisma.Decimal(0));await h.service.evaluateAndSettle(end,new Date('2020-03-01'),'TEST_ONLY');expect(h.ranks.size).toBe(5);expect(h.tx.qualificationGlobalRankHistory.upsert).toHaveBeenCalledTimes(5);});
   it('monthly payout requires Active and current-month weak side threshold',async()=>{const h=await globalHarness({weak:{inactive:'4000000',below:'299999'},active:{inactive:false,below:true}});await h.service.evaluateAndSettle(start,end,'TEST_ONLY');expect(h.awards).toEqual([]);});
   it('passed levels are cumulative',async()=>{const h=await globalHarness({weak:{q:'1000000'}});await h.service.evaluateAndSettle(start,end,'TEST_ONLY');expect([...h.ranks]).toEqual(['q:NEW_STAR','q:EXCELLENCE','q:GLORY']);expect(h.awards.map(row=>row.rankLevel)).toEqual(['NEW_STAR','EXCELLENCE','GLORY']);});
-  it('empty rank slice rolls upward to next higher rank',async()=>{const h=await globalHarness({total:'1000'});const row=await h.service.evaluateAndSettle(start,end,'TEST_ONLY');expect(row.distributedAmount.toString()).toBe('0');expect(row.undistributedAmount.toString()).toBe('50');expect(h.awards).toEqual([]);});
+  it('v3 replacement for legacy roll-up: empty rank slices remain undistributed',async()=>{
+    const h=await globalHarness({total:'1000'});
+    const row=await h.service.evaluateAndSettle(start,end,'TEST_ONLY');
+    expect(row.distributedAmount.toString()).toBe('0');
+    expect(row.undistributedAmount.toString()).toBe('50');
+    expect(new Prisma.Decimal(row.poolAvailable).equals(new Prisma.Decimal(row.distributedAmount).add(row.undistributedAmount))).toBe(true);
+    expect(h.awards).toEqual([]);
+  });
   it('welfare 2% is accrued only; no distribution without a formal rule',async()=>{const h=await globalHarness({total:'1000'});const row=await h.service.accrueWelfare(start,end,'TEST_ONLY');expect(row.poolRate.toString()).toBe('0.02');expect(row.accruedAmount.toString()).toBe('20');expect(h.awards).toEqual([]);});
 });

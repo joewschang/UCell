@@ -22,6 +22,15 @@ const paymentClaim=modelBlock('PaymentOperationClaim');
 const inventoryBalance=modelBlock('InventoryBalance');
 const inventoryMovement=modelBlock('InventoryMovement');
 const inventoryClaim=modelBlock('InventoryOperationClaim');
+const volumeClassification=modelBlock('VolumeRecognitionClassification');
+const consumptionRecognition=modelBlock('ConsumptionRecognitionEvent');
+const accumulatorEvidence=modelBlock('QualificationMonthAccumulatorEvidence');
+const activeIntervalEvidence=modelBlock('ActiveIntervalEvidence');
+const theoryEvidence=modelBlock('TheoryCalculationEvidence');
+const binaryVolumeLedger=modelBlock('BinaryVolumeLedger');
+const settlementCalendarEvidence=modelBlock('SettlementCalendarEvidence');
+const awardPayoutAnchor=modelBlock('AwardPayoutAnchor');
+const reservoirEffect=modelBlock('ReservoirLedgerEffect');
 
 if(!/qualifications\s+Qualification\[\]/.test(person)) failures.push('Person must own Qualifications');
 if(/payoutLines\s+PayoutLine\[\]/.test(person)) failures.push('Person must not directly own payout lines');
@@ -43,6 +52,19 @@ if(!/businessEffectIdentity\s+String\s+@unique/.test(paymentClaim) || !/outboxEv
 if(!/@@id\(\[warehouseId, inventoryItemId\]\)/.test(inventoryBalance)) failures.push('InventoryBalance must be warehouse/item scoped');
 if(!/idempotencyKey\s+String\s+@unique/.test(inventoryMovement)) failures.push('InventoryMovement idempotency key must be unique');
 if(!/operationHash/.test(inventoryClaim) || !/resultHash/.test(inventoryClaim) || !/outboxEventId\s+String\s+@unique/.test(inventoryClaim)) failures.push('Inventory operation claim must bind deterministic result and outbox evidence');
+must(/enum VolumeClass\s*\{[\s\S]*?\bPV\b[\s\S]*?\bBV\b/,'PV/BV abstract VolumeClass required');
+must(/enum ConcreteVolumeType\s*\{[\s\S]*?\bGPV\b[\s\S]*?\bRPV\b[\s\S]*?\bEPV\b/,'GPV/RPV/EPV concrete volume types required');
+if(!/volumeEventId\s+String\s+@unique/.test(volumeClassification)) failures.push('Concrete classification must be one-to-one with an existing volume event');
+if(!/idempotencyKey\s+String\s+@unique/.test(consumptionRecognition) || !/reversalOfEventId/.test(consumptionRecognition)) failures.push('Consumption recognition must be idempotent and reversal-linked');
+if(!/qualificationId/.test(accumulatorEvidence) || !/calendarMonth/.test(accumulatorEvidence) || !/thresholdCrossed/.test(accumulatorEvidence)) failures.push('Qualification-month accumulator evidence required');
+if(!/activeFrom/.test(activeIntervalEvidence) || !/activeTo/.test(activeIntervalEvidence) || !/supersedesActiveEvidenceId/.test(activeIntervalEvidence)) failures.push('Append-only Active interval replay evidence required');
+if(!/fixedGenerationNo/.test(theoryEvidence) || !/reasonCode/.test(theoryEvidence) || !/theoryAmount/.test(theoryEvidence)) failures.push('Fixed-generation theory and zero evidence required');
+if(!/ancestorQualificationId/.test(binaryVolumeLedger) || !/historicalBinaryPathHash/.test(binaryVolumeLedger) || !/side\s+SideCode/.test(binaryVolumeLedger)) failures.push('Qualification-scoped Binary volume ledger required');
+must(/model BusinessCalendarVersion\s*\{/,'BusinessCalendarVersion required');
+must(/model BusinessCalendarDate\s*\{/,'Versioned business calendar dates required');
+if(!/settlementDate/.test(settlementCalendarEvidence) || !/settlementSlot/.test(settlementCalendarEvidence) || !/businessCalendarVersionId/.test(settlementCalendarEvidence)) failures.push('Settlement date/slot/calendar evidence required');
+if(!/nominalPayoutDate/.test(awardPayoutAnchor) || !/adjustedPayoutDate/.test(awardPayoutAnchor) || !/bonusAwardId\s+String\s+@unique/.test(awardPayoutAnchor)) failures.push('Immutable Award payout anchor required');
+if(!/sourceGlobalSettlementId/.test(reservoirEffect) || !/idempotencyKey\s+String\s+@unique/.test(reservoirEffect)) failures.push('Idempotent Reservoir A source-period effect required');
 
 if(failures.length){
   console.error('SCHEMA_PREFLIGHT_FAIL');

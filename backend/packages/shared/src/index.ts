@@ -1,5 +1,7 @@
 export const API_VERSION = 'v1';
 
+export * from './calendar/calendar';
+
 export const ErrorCodes = {
   AmbiguousQualification: 'AMBIGUOUS_QUALIFICATION',
   QualificationNotOwned: 'QUALIFICATION_NOT_OWNED',

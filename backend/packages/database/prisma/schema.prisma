@@ -50,6 +50,49 @@ enum PvType {
   @@schema("ledger")
 }
 
+enum VolumeClass {
+  PV
+  BV
+
+  @@schema("ledger")
+}
+
+enum ConcreteVolumeType {
+  GPV
+  RPV
+  EPV
+
+  @@schema("ledger")
+}
+
+enum RecognitionDirection {
+  ORIGINAL
+  REVERSAL
+
+  @@schema("ledger")
+}
+
+enum TheoryKind {
+  REFERRAL
+  REFERRAL_MATCHING
+  BINARY_MATCHING
+
+  @@schema("ledger")
+}
+
+enum SettlementSlot {
+  TENTH
+  TWENTY_FIFTH
+
+  @@schema("ledger")
+}
+
+enum ReservoirEffectType {
+  GLOBAL_UNDISTRIBUTED
+
+  @@schema("ledger")
+}
+
 enum EventProcessStatus {
   PENDING
   PROCESSING
@@ -1239,6 +1282,142 @@ model PvLedger {
   @@schema("ledger")
 }
 
+model ConsumptionRecognitionEvent {
+  consumptionRecognitionEventId String               @id @default(uuid()) @map("consumption_recognition_event_id") @db.Uuid
+  qualificationId               String               @map("qualification_id") @db.Uuid
+  sourceType                    String               @map("source_type")
+  sourceId                      String               @map("source_id") @db.Uuid
+  sourceLineId                  String?              @map("source_line_id") @db.Uuid
+  direction                     RecognitionDirection @default(ORIGINAL)
+  eligible                      Boolean
+  eligibleAmount                Decimal              @map("eligible_amount") @db.Decimal(18, 4)
+  exclusionReasonCode           String?              @map("exclusion_reason_code")
+  recognitionPurpose            String               @map("recognition_purpose")
+  productProfileVersion         String               @map("product_profile_version")
+  ruleVersionCode               String               @map("rule_version_code")
+  parameterSnapshotHash         String               @map("parameter_snapshot_hash")
+  recognizedAt                  DateTime             @map("recognized_at") @db.Timestamptz(6)
+  recognitionMonth              DateTime             @map("recognition_month") @db.Date
+  timezone                      String               @default("Asia/Taipei")
+  reversalOfEventId             String?              @map("reversal_of_event_id") @db.Uuid
+  idempotencyKey                String               @unique @map("idempotency_key")
+  correlationId                 String               @map("correlation_id") @db.Uuid
+  evidenceHash                  String               @map("evidence_hash")
+  createdAt                     DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@unique([sourceType, sourceId, sourceLineId, direction])
+  @@index([qualificationId, recognitionMonth, recognizedAt])
+  @@map("consumption_recognition_event")
+  @@schema("ledger")
+}
+
+model VolumeRecognitionClassification {
+  volumeRecognitionClassificationId String             @id @default(uuid()) @map("volume_recognition_classification_id") @db.Uuid
+  volumeEventId                     String             @unique @map("volume_event_id") @db.Uuid
+  volumeClass                       VolumeClass        @map("volume_class")
+  concreteVolumeType                ConcreteVolumeType @map("concrete_volume_type")
+  classificationVersion             String             @map("classification_version")
+  ruleVersionCode                   String             @map("rule_version_code")
+  evidenceHash                      String             @map("evidence_hash")
+  createdAt                         DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([volumeClass, concreteVolumeType])
+  @@map("volume_recognition_classification")
+  @@schema("ledger")
+}
+
+model QualificationMonthAccumulatorEvidence {
+  qualificationMonthAccumulatorEvidenceId String   @id @default(uuid()) @map("qualification_month_accumulator_evidence_id") @db.Uuid
+  qualificationId                         String   @map("qualification_id") @db.Uuid
+  calendarMonth                           DateTime @map("calendar_month") @db.Date
+  consumptionRecognitionEventId           String   @map("consumption_recognition_event_id") @db.Uuid
+  replayRunId                             String?  @map("replay_run_id") @db.Uuid
+  cumulativeBefore                        Decimal  @map("cumulative_before") @db.Decimal(18, 4)
+  eligibleDelta                           Decimal  @map("eligible_delta") @db.Decimal(18, 4)
+  cumulativeAfter                         Decimal  @map("cumulative_after") @db.Decimal(18, 4)
+  activeThreshold                         Decimal  @map("active_threshold") @db.Decimal(18, 4)
+  thresholdCrossed                        Boolean  @map("threshold_crossed")
+  epvAfter                                Decimal  @map("epv_after") @db.Decimal(18, 4)
+  sequenceNo                              Int      @map("sequence_no")
+  ruleVersionCode                         String   @map("rule_version_code")
+  evidenceHash                            String   @map("evidence_hash")
+  idempotencyKey                          String   @unique @map("idempotency_key")
+  recordedAt                              DateTime @default(now()) @map("recorded_at") @db.Timestamptz(6)
+
+  @@unique([qualificationId, calendarMonth, sequenceNo])
+  @@index([qualificationId, calendarMonth, recordedAt])
+  @@map("qualification_month_accumulator_evidence")
+  @@schema("ledger")
+}
+
+model ActiveIntervalEvidence {
+  activeIntervalEvidenceId    String   @id @default(uuid()) @map("active_interval_evidence_id") @db.Uuid
+  qualificationId             String   @map("qualification_id") @db.Uuid
+  calendarMonth               DateTime @map("calendar_month") @db.Date
+  sourceAccumulatorEvidenceId String   @map("source_accumulator_evidence_id") @db.Uuid
+  activeFrom                  DateTime @map("active_from") @db.Timestamptz(6)
+  activeTo                    DateTime @map("active_to") @db.Timestamptz(6)
+  supersedesActiveEvidenceId  String?  @map("supersedes_active_evidence_id") @db.Uuid
+  replayRunId                 String?  @map("replay_run_id") @db.Uuid
+  reasonCode                  String   @map("reason_code")
+  ruleVersionCode             String   @map("rule_version_code")
+  evidenceHash                String   @map("evidence_hash")
+  idempotencyKey              String   @unique @map("idempotency_key")
+  createdAt                   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([qualificationId, calendarMonth, activeFrom])
+  @@map("active_interval_evidence")
+  @@schema("ledger")
+}
+
+model TheoryCalculationEvidence {
+  theoryCalculationEvidenceId String     @id @default(uuid()) @map("theory_calculation_evidence_id") @db.Uuid
+  theoryKind                  TheoryKind @map("theory_kind")
+  sourceVolumeEventId         String     @map("source_volume_event_id") @db.Uuid
+  sourceQualificationId       String     @map("source_qualification_id") @db.Uuid
+  recipientQualificationId    String     @map("recipient_qualification_id") @db.Uuid
+  fixedGenerationNo           Int        @map("fixed_generation_no")
+  baseAmount                  Decimal    @map("base_amount") @db.Decimal(18, 4)
+  rateSnapshot                Decimal    @map("rate_snapshot") @db.Decimal(10, 8)
+  theoryAmount                Decimal    @map("theory_amount") @db.Decimal(18, 4)
+  activeSnapshot              Boolean    @map("active_snapshot")
+  unlockEligibleSnapshot      Boolean    @map("unlock_eligible_snapshot")
+  reasonCode                  String     @map("reason_code")
+  historicalSponsorPathHash   String     @map("historical_sponsor_path_hash")
+  ruleVersionCode             String     @map("rule_version_code")
+  parameterSnapshotHash       String     @map("parameter_snapshot_hash")
+  occurredAt                  DateTime   @map("occurred_at") @db.Timestamptz(6)
+  idempotencyKey              String     @unique @map("idempotency_key")
+  createdAt                   DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@unique([theoryKind, sourceVolumeEventId, recipientQualificationId, fixedGenerationNo])
+  @@index([recipientQualificationId, theoryKind, occurredAt])
+  @@map("theory_calculation_evidence")
+  @@schema("ledger")
+}
+
+model BinaryVolumeLedger {
+  binaryVolumeLedgerId           String   @id @default(uuid()) @map("binary_volume_ledger_id") @db.Uuid
+  sourceVolumeEventId            String   @map("source_volume_event_id") @db.Uuid
+  sourceQualificationId          String   @map("source_qualification_id") @db.Uuid
+  ancestorQualificationId        String   @map("ancestor_qualification_id") @db.Uuid
+  binaryGenerationNo             Int      @map("binary_generation_no")
+  side                           SideCode
+  amount                         Decimal  @db.Decimal(18, 4)
+  occurredAt                     DateTime @map("occurred_at") @db.Timestamptz(6)
+  qualificationScopeHash         String   @map("qualification_scope_hash")
+  historicalBinaryPathHash       String   @map("historical_binary_path_hash")
+  ruleVersionCode                String   @map("rule_version_code")
+  idempotencyKey                 String   @unique @map("idempotency_key")
+  reversalOfBinaryVolumeLedgerId String?  @map("reversal_of_binary_volume_ledger_id") @db.Uuid
+  createdAt                      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@unique([sourceVolumeEventId, ancestorQualificationId, binaryGenerationNo])
+  @@index([ancestorQualificationId, occurredAt, side])
+  @@map("binary_volume_ledger")
+  @@schema("ledger")
+}
+
 model AuditEvent {
   auditEventId  String   @id @default(uuid()) @map("audit_event_id") @db.Uuid
   actorType     String   @map("actor_type")
@@ -1787,6 +1966,87 @@ model WelfarePoolAccrual {
 
   @@unique([periodStart, periodEnd, ruleVersionCode])
   @@map("welfare_pool_accrual")
+  @@schema("ledger")
+}
+
+model BusinessCalendarVersion {
+  businessCalendarVersionId String    @id @default(uuid()) @map("business_calendar_version_id") @db.Uuid
+  versionCode               String    @unique @map("version_code")
+  timezone                  String    @default("Asia/Taipei")
+  effectiveFrom             DateTime  @map("effective_from") @db.Date
+  effectiveTo               DateTime? @map("effective_to") @db.Date
+  approvalReference         String    @map("approval_reference")
+  calendarHash              String    @map("calendar_hash")
+  createdAt                 DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([effectiveFrom, effectiveTo])
+  @@map("business_calendar_version")
+  @@schema("rules")
+}
+
+model BusinessCalendarDate {
+  businessCalendarDateId    String   @id @default(uuid()) @map("business_calendar_date_id") @db.Uuid
+  businessCalendarVersionId String   @map("business_calendar_version_id") @db.Uuid
+  calendarDate              DateTime @map("calendar_date") @db.Date
+  isBusinessDay             Boolean  @map("is_business_day")
+  holidayReason             String?  @map("holiday_reason")
+  holidaySource             String?  @map("holiday_source")
+  evidenceHash              String   @map("evidence_hash")
+  createdAt                 DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@unique([businessCalendarVersionId, calendarDate])
+  @@index([calendarDate, isBusinessDay])
+  @@map("business_calendar_date")
+  @@schema("rules")
+}
+
+model SettlementCalendarEvidence {
+  settlementCalendarEvidenceId String         @id @default(uuid()) @map("settlement_calendar_evidence_id") @db.Uuid
+  settlementBatchId            String         @unique @map("settlement_batch_id") @db.Uuid
+  settlementDate               DateTime       @map("settlement_date") @db.Date
+  settlementSlot               SettlementSlot @map("settlement_slot")
+  businessCalendarVersionId    String         @map("business_calendar_version_id") @db.Uuid
+  timezone                     String         @default("Asia/Taipei")
+  anchorHash                   String         @map("anchor_hash")
+  createdAt                    DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([settlementDate, settlementSlot])
+  @@map("settlement_calendar_evidence")
+  @@schema("ledger")
+}
+
+model AwardPayoutAnchor {
+  awardPayoutAnchorId          String   @id @default(uuid()) @map("award_payout_anchor_id") @db.Uuid
+  bonusAwardId                 String   @unique @map("bonus_award_id") @db.Uuid
+  settlementCalendarEvidenceId String   @map("settlement_calendar_evidence_id") @db.Uuid
+  settlementDate               DateTime @map("settlement_date") @db.Date
+  nominalPayoutDate            DateTime @map("nominal_payout_date") @db.Date
+  adjustedPayoutDate           DateTime @map("adjusted_payout_date") @db.Date
+  businessCalendarVersionId    String   @map("business_calendar_version_id") @db.Uuid
+  anchorHash                   String   @map("anchor_hash")
+  createdAt                    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([adjustedPayoutDate])
+  @@map("award_payout_anchor")
+  @@schema("ledger")
+}
+
+model ReservoirLedgerEffect {
+  reservoirLedgerEffectId  String              @id @default(uuid()) @map("reservoir_ledger_effect_id") @db.Uuid
+  reservoirCode            String              @default("A") @map("reservoir_code")
+  effectType               ReservoirEffectType @map("effect_type")
+  sourceGlobalSettlementId String              @map("source_global_settlement_id") @db.Uuid
+  sourcePeriodStart        DateTime            @map("source_period_start") @db.Timestamptz(6)
+  sourcePeriodEnd          DateTime            @map("source_period_end") @db.Timestamptz(6)
+  amount                   Decimal             @db.Decimal(18, 4)
+  ruleVersionCode          String              @map("rule_version_code")
+  idempotencyKey           String              @unique @map("idempotency_key")
+  evidenceHash             String              @map("evidence_hash")
+  createdAt                DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@unique([reservoirCode, effectType, sourceGlobalSettlementId])
+  @@index([reservoirCode, sourcePeriodEnd])
+  @@map("reservoir_ledger_effect")
   @@schema("ledger")
 }
 

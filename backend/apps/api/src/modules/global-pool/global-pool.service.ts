@@ -4,6 +4,7 @@ import { Injectable } from '@nestjs/common';
 import { GlobalRankCode, Prisma, PrismaService } from '@ucell/database';
 import { RuntimeRuleService } from '../rules/runtime-rule.service';
 import { BonusQueryService } from '../bonus/bonus-query.service';
+import { calculateGlobalPool, GlobalRankSliceInput } from './global-pool-calculation';
 
 const LEVELS:GlobalRankCode[]=['NEW_STAR','EXCELLENCE','GLORY','DIAMOND','CROWN'];
 
@@ -94,13 +95,11 @@ export class GlobalPoolService {
         }
       });
 
-      let distributed=new Prisma.Decimal(0);
-      let carryToHigher=new Prisma.Decimal(0);
+      const sliceInputs:GlobalRankSliceInput[]=[];
 
       for(const level of LEVELS){
         const rate=snapshotDecimal(parameterSnapshot,'global.rank.pool_rate',level);
         const threshold=snapshotDecimal(parameterSnapshot,'global.rank.weak_threshold',level);
-        const rankPool=totalGpv.mul(rate).add(carryToHigher);
 
         const eligible:string[]=[];
         for(const q of qs){
@@ -113,31 +112,28 @@ export class GlobalPoolService {
           });
           if(achieved) eligible.push(q.qualificationId);
         }
+        sliceInputs.push({level,rate,eligibleQualificationIds:eligible});
+      }
 
-        if(eligible.length===0){
-          carryToHigher=rankPool;
-          continue;
-        }
-
-        const each=rankPool.div(eligible.length);
-        for(const qid of eligible){
+      const calculation=calculateGlobalPool(totalGpv,poolAvailable,sliceInputs);
+      for(const slice of calculation.slices){
+        if(slice.amountPerRecipient===null) continue;
+        for(const qid of slice.eligibleQualificationIds){
           await tx.globalPoolAward.create({
             data:{
               globalPoolSettlementId:settlement.globalPoolSettlementId,
-              qualificationId:qid,rankLevel:level,rankPoolRate:rate,
-              rankPoolAmount:rankPool,eligibleCount:eligible.length,
-              payableAmount:each,weakSidePvSnapshot:weakMap.get(qid)!,
+              qualificationId:qid,rankLevel:slice.level,rankPoolRate:slice.rate,
+              rankPoolAmount:slice.amount,eligibleCount:slice.eligibleQualificationIds.length,
+              payableAmount:slice.amountPerRecipient,weakSidePvSnapshot:weakMap.get(qid)!,
               activeSnapshot:true
             }
           });
         }
-        distributed=distributed.add(rankPool);
-        carryToHigher=new Prisma.Decimal(0);
       }
 
       return tx.globalPoolSettlement.update({
         where:{globalPoolSettlementId:settlement.globalPoolSettlementId},
-        data:{distributedAmount:distributed,undistributedAmount:carryToHigher}
+        data:{distributedAmount:calculation.distributedAmount,undistributedAmount:calculation.undistributedAmount}
       });
     },{isolationLevel:Prisma.TransactionIsolationLevel.Serializable});
   }
