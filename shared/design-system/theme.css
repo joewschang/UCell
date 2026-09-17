@@ -1,2 +1,3 @@
 :root{--bs-primary:var(--ucell-primary);--bs-body-color:var(--ucell-text-primary);--bs-body-bg:var(--ucell-bg);--bs-border-color:var(--ucell-border);--bs-border-radius:var(--ucell-radius-md)}
-body{background:var(--ucell-bg);color:var(--ucell-text-primary)}:where(button,a,input,select,textarea,summary):focus-visible{outline:3px solid var(--ucell-info);outline-offset:3px}:where(button,input,select,textarea){accent-color:var(--ucell-primary)}
+body{background:var(--ucell-bg);color:var(--ucell-text-primary);text-rendering:optimizeLegibility}:where(button,a,input,select,textarea,summary):focus-visible{outline:3px solid var(--ucell-accent-cyan);outline-offset:3px}:where(button,input,select,textarea){accent-color:var(--ucell-primary)}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
