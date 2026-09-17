@@ -97,3 +97,7 @@
 | Azure Stage Prisma deploy | PASS | `ucell-stage-migrate-8d9rbhq` Succeeded; 25 migrations |
 | Azure Stage runtime smoke | PASS | API health 200; Admin 200; Member 200; API/Worker/Admin/Member Running |
 | Azure Stage formal identity | BLOCKED | LINE LIFF and Entra Stage credentials not yet supplied; `CredentialsVerified=false` |
+| Local isolated Admin runtime | PASS | API 3001, Admin UI 4173, `ucell_admin_test`; full-access DEV banner visible |
+| Local Member visual runtime | PASS | UI 5174, explicit mock visual fixture; not Connected/UAT evidence |
+| Local page capture/user guide | PASS | 31 full-page screenshots: 10 Member at 390px, 21 Admin at 1440px |
+| Admin applications envelope regression | PASS | `/applications` renders Backend `{data:[...]}` response; typecheck/build and 31 tests pass |

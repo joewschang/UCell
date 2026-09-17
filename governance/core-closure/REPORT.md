@@ -142,3 +142,12 @@ Pending decisions remain limited to production clock values, historical GPV-to-P
   - Member: `https://ucell-stage-member.victoriousisland-9fc3593c.eastasia.azurecontainerapps.io`
 - Formal LINE LIFF and Entra values were not supplied. `CredentialsVerified=false`; identity E2E remains `OPERATIONAL_CREDENTIAL_PENDING`.
 - Production resources were not created or promoted. Production Promotion remains BLOCKED.
+
+## Local test deployment and user guide (2026-09-18)
+
+- Local PostgreSQL 16 remained healthy. Admin full-access DEV API runs against the isolated `ucell_admin_test` database at `127.0.0.1:3001`; Admin UI runs at `127.0.0.1:4173`; Member explicit mock visual fixture runs at `127.0.0.1:5174`.
+- API health, Admin UI, and Member UI responded successfully. The worker was intentionally not started because visual documentation does not require background monetary/outbox mutations.
+- Captured 31 full-page references: 10 Member routes at 390px and 21 Admin routes at 1440px. Member screenshots remain `EXPLICIT_MOCK_VISUAL_ONLY`; Admin uses isolated DEV reads/writes. Neither is formal credential or UAT evidence.
+- Fixed an Admin Connected API envelope defect that made `/applications` render blank when formal member application metadata returned `{data:[...]}`. This is an API integration correction; business logic changes: NONE.
+- Admin typecheck/tests: PASS (31). Member tests: PASS (136). Admin and Member builds: PASS. Screenshot route capture: PASS (31).
+- User guide: `governance/user-guide/local-test-20260918/UCELL-LOCAL-TEST-USER-GUIDE.md`.

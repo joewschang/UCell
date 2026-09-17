@@ -15,9 +15,9 @@ export function ApplicationsPage(){
  const [formalStatus,setFormalStatus]=useState('');
  const [selected,setSelected]=useState<string|null>(null);const [error,setError]=useState<unknown>(null);const [busy,setBusy]=useState(false);
  const list=useQuery({queryKey:['applications',status,search],queryFn:()=>get<any>('/admin/membership-applications'+qs({status:status||undefined,q:search,take:100}))});
- const formalList=useQuery({queryKey:['formal-applications',formalStatus],queryFn:()=>get<any[]>('/admin/formal-member-applications'+qs({status:formalStatus||undefined,take:100}))});
+ const formalList=useQuery({queryKey:['formal-applications',formalStatus],queryFn:()=>get<{data:any[]}>('/admin/formal-member-applications'+qs({status:formalStatus||undefined,take:100}))});
  const detail=useQuery({queryKey:['application',selected],queryFn:()=>get<any>(`/admin/membership-applications/${selected}`),enabled:!!selected});
- const rows:MembershipApplication[]=list.data?.data??[];const a:MembershipApplication|undefined=detail.data?.data;
+ const rows:MembershipApplication[]=list.data?.data??[];const formalRows=formalList.data?.data??[];const a:MembershipApplication|undefined=detail.data?.data;
  async function action(kind:'submit'|'approve'){
   if(!selected)return;setBusy(true);setError(null);
   try{await command(`/admin/membership-applications/${selected}/${kind}`);await qc.invalidateQueries({queryKey:['applications']});await qc.invalidateQueries({queryKey:['application',selected]})}
@@ -47,8 +47,8 @@ export function ApplicationsPage(){
    <p className="muted">僅顯示狀態與不可逆證據；加密申請內容不會為佇列解密。KYC 文件、送審與核准仍待正式政策與權限配置。</p>
    <div className="toolbar"><select aria-label="正式會員申請狀態" value={formalStatus} onChange={e=>setFormalStatus(e.target.value)}><option value="">全部狀態</option><option>DRAFT</option><option>SUBMITTED</option><option>UNDER_REVIEW</option><option>NEEDS_MORE_INFO</option></select></div>
    <ErrorBox error={formalList.error}/>
-   <div className="table-wrap"><AdminTable><thead><tr><th>申請人</th><th>會員狀態</th><th>申請狀態</th><th>版本</th><th>Evidence Hash</th><th>更新時間</th></tr></thead><tbody>{(formalList.data??[]).map(row=><tr key={row.id}><td>{row.personNameMasked}<br/><small className="mono">{row.id}</small></td><td>{row.membershipState??'—'}</td><td><Badge tone={row.status==='DRAFT'?'neutral':'warn'}>{row.status}</Badge></td><td>{row.version===null?'—':`v${row.version}`}</td><td className="mono">{row.payloadHash}</td><td>{dateTime(row.updatedAt)}</td></tr>)}</tbody></AdminTable></div>
-   {!formalList.isLoading&&!(formalList.data??[]).length&&<p>目前沒有正式會員補件草稿。</p>}
+   <div className="table-wrap"><AdminTable><thead><tr><th>申請人</th><th>會員狀態</th><th>申請狀態</th><th>版本</th><th>Evidence Hash</th><th>更新時間</th></tr></thead><tbody>{formalRows.map(row=><tr key={row.id}><td>{row.personNameMasked}<br/><small className="mono">{row.id}</small></td><td>{row.membershipState??'—'}</td><td><Badge tone={row.status==='DRAFT'?'neutral':'warn'}>{row.status}</Badge></td><td>{row.version===null?'—':`v${row.version}`}</td><td className="mono">{row.payloadHash}</td><td>{dateTime(row.updatedAt)}</td></tr>)}</tbody></AdminTable></div>
+   {!formalList.isLoading&&!formalRows.length&&<p>目前沒有正式會員補件草稿。</p>}
   </Card>
  </>
 }

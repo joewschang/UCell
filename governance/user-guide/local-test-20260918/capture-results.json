@@ -1,0 +1,199 @@
+{
+  "capturedAt": "2026-09-17T16:13:11.594Z",
+  "memberViewport": "390x844",
+  "adminViewport": "1440x1000",
+  "results": [
+    {
+      "surface": "member",
+      "path": "/",
+      "file": "C:/UCell/UCell/governance/user-guide/local-test-20260918/screenshots/member/01-home.png",
+      "title": "UCell 會員中心"
+    },
+    {
+      "surface": "member",
+      "path": "/organization",
+      "file": "C:/UCell/UCell/governance/user-guide/local-test-20260918/screenshots/member/02-organization.png",
+      "title": "UCell 會員中心"
+    },
+    {
+      "surface": "member",
+      "path": "/performance",
+      "file": "C:/UCell/UCell/governance/user-guide/local-test-20260918/screenshots/member/03-performance.png",
+      "title": "UCell 會員中心"
+    },
+    {
+      "surface": "member",
+      "path": "/bonuses",
+      "file": "C:/UCell/UCell/governance/user-guide/local-test-20260918/screenshots/member/04-bonuses.png",
+      "title": "UCell 會員中心"
+    },
+    {
+      "surface": "member",
+      "path": "/shop",
+      "file": "C:/UCell/UCell/governance/user-guide/local-test-20260918/screenshots/member/05-shop.png",
+      "title": "UCell 會員中心"
+    },
+    {
+      "surface": "member",
+      "path": "/orders",
+      "file": "C:/UCell/UCell/governance/user-guide/local-test-20260918/screenshots/member/06-orders.png",
+      "title": "UCell 會員中心"
+    },
+    {
+      "surface": "member",
+      "path": "/content",
+      "file": "C:/UCell/UCell/governance/user-guide/local-test-20260918/screenshots/member/07-content.png",
+      "title": "UCell 會員中心"
+    },
+    {
+      "surface": "member",
+      "path": "/content/11111111-1111-4111-8111-111111111111",
+      "file": "C:/UCell/UCell/governance/user-guide/local-test-20260918/screenshots/member/07b-content-detail-unavailable.png",
+      "title": "UCell 會員中心"
+    },
+    {
+      "surface": "member",
+      "path": "/notifications",
+      "file": "C:/UCell/UCell/governance/user-guide/local-test-20260918/screenshots/member/08-notifications.png",
+      "title": "UCell 會員中心"
+    },
+    {
+      "surface": "member",
+      "path": "/me",
+      "file": "C:/UCell/UCell/governance/user-guide/local-test-20260918/screenshots/member/09-profile.png",
+      "title": "UCell 會員中心"
+    },
+    {
+      "surface": "member",
+      "path": "/content/:id",
+      "omitted": true,
+      "reason": "No DEV mock content record available"
+    },
+    {
+      "surface": "admin",
+      "path": "/login",
+      "file": "C:/UCell/UCell/governance/user-guide/local-test-20260918/screenshots/admin/00-login.png",
+      "title": "UCell Admin"
+    },
+    {
+      "surface": "admin",
+      "path": "/",
+      "file": "C:/UCell/UCell/governance/user-guide/local-test-20260918/screenshots/admin/01-dashboard.png",
+      "title": "UCell Admin"
+    },
+    {
+      "surface": "admin",
+      "path": "/people",
+      "file": "C:/UCell/UCell/governance/user-guide/local-test-20260918/screenshots/admin/02-people.png",
+      "title": "UCell Admin"
+    },
+    {
+      "surface": "admin",
+      "path": "/applications",
+      "file": "C:/UCell/UCell/governance/user-guide/local-test-20260918/screenshots/admin/03-applications.png",
+      "title": "UCell Admin"
+    },
+    {
+      "surface": "admin",
+      "path": "/applications/new",
+      "file": "C:/UCell/UCell/governance/user-guide/local-test-20260918/screenshots/admin/04-application-new.png",
+      "title": "UCell Admin"
+    },
+    {
+      "surface": "admin",
+      "path": "/qualifications",
+      "file": "C:/UCell/UCell/governance/user-guide/local-test-20260918/screenshots/admin/05-qualifications.png",
+      "title": "UCell Admin"
+    },
+    {
+      "surface": "admin",
+      "path": "/products",
+      "file": "C:/UCell/UCell/governance/user-guide/local-test-20260918/screenshots/admin/06-products.png",
+      "title": "UCell Admin"
+    },
+    {
+      "surface": "admin",
+      "path": "/packages",
+      "file": "C:/UCell/UCell/governance/user-guide/local-test-20260918/screenshots/admin/07-packages.png",
+      "title": "UCell Admin"
+    },
+    {
+      "surface": "admin",
+      "path": "/orders",
+      "file": "C:/UCell/UCell/governance/user-guide/local-test-20260918/screenshots/admin/08-orders.png",
+      "title": "UCell Admin"
+    },
+    {
+      "surface": "admin",
+      "path": "/organization",
+      "file": "C:/UCell/UCell/governance/user-guide/local-test-20260918/screenshots/admin/09-organization.png",
+      "title": "UCell Admin"
+    },
+    {
+      "surface": "admin",
+      "path": "/subscriptions",
+      "file": "C:/UCell/UCell/governance/user-guide/local-test-20260918/screenshots/admin/10-subscriptions.png",
+      "title": "UCell Admin"
+    },
+    {
+      "surface": "admin",
+      "path": "/bonuses",
+      "file": "C:/UCell/UCell/governance/user-guide/local-test-20260918/screenshots/admin/11-bonuses.png",
+      "title": "UCell Admin"
+    },
+    {
+      "surface": "admin",
+      "path": "/returns",
+      "file": "C:/UCell/UCell/governance/user-guide/local-test-20260918/screenshots/admin/12-returns.png",
+      "title": "UCell Admin"
+    },
+    {
+      "surface": "admin",
+      "path": "/workflows",
+      "file": "C:/UCell/UCell/governance/user-guide/local-test-20260918/screenshots/admin/13-workflows.png",
+      "title": "UCell Admin"
+    },
+    {
+      "surface": "admin",
+      "path": "/payouts",
+      "file": "C:/UCell/UCell/governance/user-guide/local-test-20260918/screenshots/admin/14-payouts.png",
+      "title": "UCell Admin"
+    },
+    {
+      "surface": "admin",
+      "path": "/content",
+      "file": "C:/UCell/UCell/governance/user-guide/local-test-20260918/screenshots/admin/15-content.png",
+      "title": "UCell Admin"
+    },
+    {
+      "surface": "admin",
+      "path": "/documents",
+      "file": "C:/UCell/UCell/governance/user-guide/local-test-20260918/screenshots/admin/16-documents.png",
+      "title": "UCell Admin"
+    },
+    {
+      "surface": "admin",
+      "path": "/audit",
+      "file": "C:/UCell/UCell/governance/user-guide/local-test-20260918/screenshots/admin/17-audit.png",
+      "title": "UCell Admin"
+    },
+    {
+      "surface": "admin",
+      "path": "/reports",
+      "file": "C:/UCell/UCell/governance/user-guide/local-test-20260918/screenshots/admin/18-reports.png",
+      "title": "UCell Admin"
+    },
+    {
+      "surface": "admin",
+      "path": "/uat",
+      "file": "C:/UCell/UCell/governance/user-guide/local-test-20260918/screenshots/admin/19-uat.png",
+      "title": "UCell Admin"
+    },
+    {
+      "surface": "admin",
+      "path": "/system",
+      "file": "C:/UCell/UCell/governance/user-guide/local-test-20260918/screenshots/admin/20-system.png",
+      "title": "UCell Admin"
+    }
+  ]
+}
