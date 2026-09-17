@@ -1,5 +1,5 @@
 import {afterEach,beforeEach,expect,it,vi} from 'vitest';
-import {createQualificationPackageOrder,getPackageProducts,getQualificationPackages} from '../src/memberData';
+import {createPackageOrder,createQualificationPackageOrder,getActiveDurationPackages,getPackageProducts,getQualificationPackages} from '../src/memberData';
 
 const packageVersionId='11111111-1111-4111-8111-111111111111';
 const productRuleProfileId='22222222-2222-4222-8222-222222222222';
@@ -40,4 +40,16 @@ it('fails closed on malformed package evidence and duplicate selections',async()
  vi.stubGlobal('fetch',vi.fn(async()=>envelope([{...offer,configHash:'TEST_ONLY'}])));
  await expect(getQualificationPackages(new AbortController().signal)).rejects.toThrow('套組資料格式異常');
  await expect(createQualificationPackageOrder(packageVersionId,[{productRuleProfileId,quantity:1},{productRuleProfileId,quantity:1}],'package-key')).rejects.toThrow('套組選擇資料格式異常');
+});
+
+it('binds active-duration checkout to the explicit owned Qualification',async()=>{
+ const activeOffer={...offer,packageClass:'ACTIVE_DURATION',activeDurationUnit:'MONTH',activeDurationValue:1,targetQualificationRequired:true,qualificationEffect:'ACTIVE_ENTITLEMENT'},response={qualificationId,id:orderId,status:'CONFIRMED',total:'4800',paymentStatus:'PENDING',shipmentStatus:'PENDING',createdAt:'2026-09-17T01:00:00.000Z',replayed:false,lines:[]};let call=0;
+ const fetch=vi.fn(async(_url:string,init:RequestInit={})=>envelope(call++===0?[activeOffer]:response));vi.stubGlobal('fetch',fetch);
+ await expect(getActiveDurationPackages(new AbortController().signal)).resolves.toEqual([activeOffer]);await expect(createPackageOrder(packageVersionId,[{productRuleProfileId,quantity:2}],'duration-key',qualificationId)).resolves.toEqual(response);
+ expect(JSON.parse(fetch.mock.calls[1][1].body as string)).toEqual({packageVersionId,targetQualificationId:qualificationId,selections:[{productRuleProfileId,quantity:2}]});
+});
+
+it('fails closed when an active-duration order is returned for another Ball',async()=>{
+ vi.stubGlobal('fetch',vi.fn(async()=>envelope({qualificationId:'66666666-6666-4666-8666-666666666666',id:orderId,status:'CONFIRMED',total:'4800',paymentStatus:'PENDING',shipmentStatus:'PENDING',createdAt:'2026-09-17T01:00:00.000Z',replayed:false,lines:[]})));
+ await expect(createPackageOrder(packageVersionId,[{productRuleProfileId,quantity:2}],'duration-key',qualificationId)).rejects.toThrow('套組訂單回應異常');
 });

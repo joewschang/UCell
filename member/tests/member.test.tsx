@@ -105,17 +105,18 @@ it('renders a useful not-found page', async () => {
 });
 it('requires explicit cart selection before real checkout and performs no eager mutation', async () => {
     const delivery={recipientName:'Member',phone:'+886223456789',countryCode:'TW',postalCode:'100',region:'Taipei',city:'Zhongzheng',address:'Test Road 1',complete:true,updatedAt:'2026-09-17T00:00:00Z'};
-    const fetch = vi.fn(async (input: string) => response(input.includes('/qualifications') ? [q] : input.includes('/delivery-profile')?delivery:[{ id: 'live-product', name: 'Real catalog', price: 4800, pv: 2880, available: true }]));
+    const fetch = vi.fn(async (input: string) => response(input.includes('/qualifications') ? [q] : input.includes('/delivery-profile')?delivery:input.includes('class=ACTIVE_DURATION')?[]:[{ id: 'live-product', name: 'Real catalog', price: 4800, pv: 2880, available: true }]));
     vi.stubGlobal('fetch', fetch);
     await mount('/shop');
     expect(renderer.root.findAllByType('button').find(b => b.children.join('') === '加入購物車')?.props.disabled).toBe(false);
     expect(renderer.root.findAllByType('button').find(b => b.children.join('') === '建立待付款訂單')?.props.disabled).toBe(true);
     expect(renderer.root.findAllByType('form')).toHaveLength(1);
-    expect(fetch.mock.calls).toHaveLength(3);
+    expect(fetch.mock.calls).toHaveLength(4);
+    expect(fetch.mock.calls.every(([,init])=>(init?.method??'GET')==='GET')).toBe(true);
 });
 it('renders a recoverable catalog error for malformed API data instead of crashing', async () => {
     const delivery={recipientName:'Member',phone:'+886223456789',countryCode:'TW',postalCode:'100',region:'Taipei',city:'Zhongzheng',address:'Test Road 1',complete:true,updatedAt:'2026-09-17T00:00:00Z'};
-    vi.stubGlobal('fetch', vi.fn(async (input: string) => response(input.includes('/qualifications') ? [q] : input.includes('/delivery-profile')?delivery:[{ id: 'p1', name: 'Invalid', price: '4800', pv: 2880, available: true }])));
+    vi.stubGlobal('fetch', vi.fn(async (input: string) => response(input.includes('/qualifications') ? [q] : input.includes('/delivery-profile')?delivery:input.includes('class=ACTIVE_DURATION')?[]:[{ id: 'p1', name: 'Invalid', price: '4800', pv: 2880, available: true }])));
     await mount('/shop');
     expect(JSON.stringify(renderer.toJSON())).toContain('資料格式異常');
     expect(renderer.root.findAllByType('button').some(b => b.children.join('') === '重新載入商品')).toBe(true);
