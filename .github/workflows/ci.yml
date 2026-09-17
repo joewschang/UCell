@@ -53,7 +53,7 @@ jobs:
         run: pnpm -r build
       - name: DB golden
         working-directory: backend
-        run: pnpm exec ts-node scripts/db-golden-e2e.ts
+        run: pnpm db:golden
       - name: Tests
         working-directory: backend
         run: pnpm test
