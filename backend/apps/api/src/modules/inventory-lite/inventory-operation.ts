@@ -89,7 +89,21 @@ export function decideInventoryOperation(input: {
 }
 
 export function hashInventoryOperationResult(result: InventoryReservationBatchDecision): string {
-  return createHash('sha256').update(JSON.stringify(result)).digest('hex');
+  return createHash('sha256').update(stableJson(result)).digest('hex');
+}
+
+// PostgreSQL JSONB does not preserve object key insertion order. Result hashes
+// therefore use a recursive canonical representation so persisted read-back is
+// byte-for-byte deterministic.
+function stableJson(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map(stableJson).join(',')}]`;
+  if (value !== null && typeof value === 'object') {
+    return `{${Object.entries(value as Record<string, unknown>)
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([key, entry]) => `${JSON.stringify(key)}:${stableJson(entry)}`)
+      .join(',')}}`;
+  }
+  return JSON.stringify(value);
 }
 
 function canonicalizeCommand(command: InventoryOperationCommand): InventoryOperationDecision['canonicalCommand'] {

@@ -1,5 +1,14 @@
 # Core Closure checkpoint report
 
+## P1-B/D Payment and Inventory transaction persistence — 2026-09-17
+
+- Payment persistence now runs a Serializable transaction with aggregate locking and bounded conflict retry, atomically committing provider-event evidence, state transition, projection/version, operation claim and outbox.
+- `CAPTURED` and `PAID` remain distinct; only `PAID` records `paidAt`. Provider event replay validates all persisted references and fails closed on orphan/tampered/incomplete evidence.
+- Inventory persistence uses deterministic advisory-lock ordering and a Serializable transaction for balance/version, reservation/lines, append-only movement/evidence, operation claim and outbox.
+- RELEASE is bound to the original reservation/line and remaining reversible quantity. Duplicate delivery returns the persisted result; insufficient or incomplete evidence fails closed.
+- Combined API build: PASS. Payment focused evidence: 24 PASS. Inventory focused evidence: 35 PASS; real PostgreSQL concurrency/rollback regression: 18 assertions PASS.
+- Business logic changes: NONE. No provider mapping, split tender, reservation expiry, warehouse allocation, PICK or SHIP accounting timing was inferred.
+
 ## P1-A durable Payment/Inventory schema — 2026-09-17
 
 - Added forward-only migration 40 with canonical Payment aggregate/attempt/provider-event/state-transition/operation-claim persistence and Inventory warehouse/item/balance/reservation/movement/evidence/operation-claim persistence.

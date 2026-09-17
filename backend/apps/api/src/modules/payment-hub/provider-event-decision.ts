@@ -24,6 +24,19 @@ export class ProviderEventDecisionError extends Error {
     | 'PAYMENT_RECEIPT_BINDING_MISMATCH' | 'PAYMENT_OPERATION_CONFLICT' | 'PAYMENT_OPERATION_INCOMPLETE', message: string) { super(message); }
 }
 
+export function deriveProviderOperationIdentity(receipt: VerifiedPaymentReceipt): Readonly<{
+  businessEffectIdentity: string; operationHash: string;
+}> {
+  assertIssuedPaymentReceipt(receipt);
+  return Object.freeze({
+    businessEffectIdentity: requestHash([receipt.provider, receipt.connectionId, receipt.paymentId, receipt.operationKind, receipt.operationId]),
+    operationHash: requestHash({ provider: receipt.provider, connectionId: receipt.connectionId,
+      paymentId: receipt.paymentId, orderId: receipt.orderId, transaction: receipt.providerTransactionRef,
+      operationKind: receipt.operationKind, operationId: receipt.operationId,
+      amount: receipt.amount, currency: receipt.currency, status: receipt.status }),
+  });
+}
+
 /** DB owner must obtain binding, delivery hash and a complete operation claim under one transaction,
  * enforce unique claims and write state/outbox atomically. This function does no I/O. */
 export function decideProviderEventApplication(input: {
@@ -49,11 +62,7 @@ export function decideProviderEventApplication(input: {
     || event.safeMetadata.amount !== receipt.amount || event.safeMetadata.currency !== receipt.currency) {
     throw new ProviderEventDecisionError('PAYMENT_RECEIPT_BINDING_MISMATCH', 'Receipt, canonical evidence and stored payment binding must agree.');
   }
-  const businessEffectIdentity = requestHash([receipt.provider, receipt.connectionId, receipt.paymentId, receipt.operationKind, receipt.operationId]);
-  const operationHash = requestHash({ provider: receipt.provider, connectionId: receipt.connectionId,
-    paymentId: receipt.paymentId, orderId: receipt.orderId, transaction: receipt.providerTransactionRef,
-    operationKind: receipt.operationKind, operationId: receipt.operationId,
-    amount: receipt.amount, currency: receipt.currency, status: receipt.status });
+  const { businessEffectIdentity, operationHash } = deriveProviderOperationIdentity(receipt);
   const duplicate = classifyProviderEvent(input.existingPayloadHash, event.payloadHash);
   if (duplicate.result === 'CONFLICT') throw new ProviderEventDecisionError('PROVIDER_EVENT_IDENTITY_CONFLICT', 'Event identity conflict.');
   const claim = input.existingOperationClaim;

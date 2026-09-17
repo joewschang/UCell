@@ -55,6 +55,19 @@ describe('Inventory Lite canonical operation and idempotency contract', () => {
     expect(replay.items).toEqual(first.items);
   });
 
+  it('hashes persisted JSONB results independently of object key order', () => {
+    const first = decideInventoryOperation({ command, balances, existingClaim: null });
+    const item = first.items[0];
+    const reordered = { items: [{
+      after: { available: item.after.available, reserved: item.after.reserved, onHand: item.after.onHand },
+      quantity: item.quantity,
+      inventoryItemId: item.inventoryItemId,
+      before: { available: item.before.available, reserved: item.before.reserved, onHand: item.before.onHand },
+      movementType: item.movementType,
+    }, ...first.items.slice(1)] };
+    expect(hashInventoryOperationResult(reordered)).toBe(hashInventoryOperationResult({ items: first.items }));
+  });
+
   it('rejects idempotency-key reuse with a different operation', () => {
     const first = decideInventoryOperation({ command, balances, existingClaim: null });
     expect(() => decideInventoryOperation({

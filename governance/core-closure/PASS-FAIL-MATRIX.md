@@ -1,5 +1,16 @@
 # Core Closure pass/fail matrix
 
+## P1-B/D transaction checkpoint
+
+| Gate | Result | Evidence |
+|---|---|---|
+| API build | PASS | Nest build after Payment/Inventory merge |
+| Payment persistence | PASS | 24 focused tests; Serializable duplicate/lost-response/conflict/rollback evidence |
+| Inventory persistence | PASS | 35 focused tests; deterministic locks and persisted replay |
+| Inventory PostgreSQL concurrency | PASS | 18 assertions including final-unit race and 20-delivery replay |
+| Payment provider sandbox/UAT | BLOCKED | official provider adapter/specification/credentials unavailable |
+| PICK/SHIP accounting | PENDING DECISION | intentionally not implemented in this checkpoint |
+
 ## P1-A persistence checkpoint
 
 | Gate | Result | Evidence |
