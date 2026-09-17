@@ -1,5 +1,6 @@
 import {
   decideInventoryOperation,
+  hashInventoryOperationResult,
   InventoryOperationCommand,
   PersistedInventoryOperationClaim,
 } from '../src/modules/inventory-lite/inventory-operation';
@@ -17,9 +18,12 @@ const command: InventoryOperationCommand = {
   ],
 };
 
-function completeClaim(operationHash: string): PersistedInventoryOperationClaim {
+function completeClaim(decision: ReturnType<typeof decideInventoryOperation>): PersistedInventoryOperationClaim {
+  const result = { items: decision.items };
   return {
-    operationHash,
+    operationHash: decision.operationHash,
+    resultHash: hashInventoryOperationResult(result),
+    result,
     movementEvidenceRefs: ['movement-a', 'movement-b'],
     balanceEvidenceRefs: ['balance-a', 'balance-b'],
     outboxIntentRef: 'outbox-a',
@@ -45,7 +49,8 @@ describe('Inventory Lite canonical operation and idempotency contract', () => {
 
   it('returns a replay only for a complete committed claim with the same hash', () => {
     const first = decideInventoryOperation({ command, balances, existingClaim: null });
-    const replay = decideInventoryOperation({ command, balances, existingClaim: completeClaim(first.operationHash) });
+    const balancesAfterFirstCommit = Object.fromEntries(first.items.map((item) => [item.inventoryItemId, item.after]));
+    const replay = decideInventoryOperation({ command, balances: balancesAfterFirstCommit, existingClaim: completeClaim(first) });
     expect(replay.action).toBe('NOOP_REPLAY');
     expect(replay.items).toEqual(first.items);
   });
@@ -53,18 +58,30 @@ describe('Inventory Lite canonical operation and idempotency contract', () => {
   it('rejects idempotency-key reuse with a different operation', () => {
     const first = decideInventoryOperation({ command, balances, existingClaim: null });
     expect(() => decideInventoryOperation({
-      command: { ...command, sourceId: 'order-b' }, balances, existingClaim: completeClaim(first.operationHash),
+      command: { ...command, sourceId: 'order-b' }, balances, existingClaim: completeClaim(first),
     })).toThrow(expect.objectContaining({ code: 'INVENTORY_OPERATION_CONFLICT' }));
   });
 
   it.each(['movementEvidenceRefs', 'balanceEvidenceRefs', 'outboxIntentRef'] as const)(
     'fails closed when a persisted claim has incomplete %s', (field) => {
       const first = decideInventoryOperation({ command, balances, existingClaim: null });
-      const claim = { ...completeClaim(first.operationHash), [field]: field === 'outboxIntentRef' ? '' : [] } as PersistedInventoryOperationClaim;
+      const claim = { ...completeClaim(first), [field]: field === 'outboxIntentRef' ? '' : [] } as PersistedInventoryOperationClaim;
       expect(() => decideInventoryOperation({ command, balances, existingClaim: claim }))
         .toThrow(expect.objectContaining({ code: 'INVENTORY_OPERATION_CLAIM_INCOMPLETE' }));
     },
   );
+
+  it('rejects a stored result that is tampered or does not match the canonical lines', () => {
+    const first = decideInventoryOperation({ command, balances, existingClaim: null });
+    const claim = completeClaim(first);
+    expect(() => decideInventoryOperation({ command, balances, existingClaim: {
+      ...claim, result: { items: [{ ...claim.result.items[0], quantity: 2 }, claim.result.items[1]] },
+    } })).toThrow(expect.objectContaining({ code: 'INVENTORY_OPERATION_CLAIM_INCOMPLETE' }));
+    const wrongButRehashed = { items: [{ ...claim.result.items[0], inventoryItemId: 'item-z' }, claim.result.items[1]] };
+    expect(() => decideInventoryOperation({ command, balances, existingClaim: {
+      ...claim, result: wrongButRehashed, resultHash: hashInventoryOperationResult(wrongButRehashed),
+    } })).toThrow(expect.objectContaining({ code: 'INVENTORY_OPERATION_CLAIM_INCOMPLETE' }));
+  });
 
   it('keeps reserve and release identities separate', () => {
     const reserve = decideInventoryOperation({ command, balances, existingClaim: null });

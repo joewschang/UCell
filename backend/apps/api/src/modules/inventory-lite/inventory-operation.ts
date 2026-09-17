@@ -5,7 +5,7 @@ import {
   InventoryReservationBatchDecision,
   InventoryReservationLine,
 } from './inventory-reservation-batch';
-import { InventoryBalanceSnapshot } from './inventory-reservation';
+import { assertInventoryBalance, InventoryBalanceSnapshot } from './inventory-reservation';
 
 export type InventoryOperationType = 'RESERVE' | 'RELEASE';
 
@@ -20,6 +20,8 @@ export interface InventoryOperationCommand {
 
 export interface PersistedInventoryOperationClaim {
   operationHash: string;
+  resultHash: string;
+  result: InventoryReservationBatchDecision;
   movementEvidenceRefs: readonly string[];
   balanceEvidenceRefs: readonly string[];
   outboxIntentRef: string;
@@ -63,22 +65,26 @@ export function decideInventoryOperation(input: {
   const operationHash = createHash('sha256')
     .update(JSON.stringify(canonicalCommand))
     .digest('hex');
-  const batch = canonicalCommand.operationType === 'RESERVE'
-    ? decideInventoryReservationBatch(input.balances, canonicalCommand.lines)
-    : decideInventoryReleaseBatch(input.balances, canonicalCommand.lines);
 
   if (input.existingClaim !== null) {
-    assertCompleteClaim(input.existingClaim, batch.items.length);
+    assertCompleteClaim(input.existingClaim, canonicalCommand);
     if (input.existingClaim.operationHash !== operationHash) {
       throw new InventoryOperationError(
         'INVENTORY_OPERATION_CONFLICT',
         'The idempotency key is already bound to a different inventory operation.',
       );
     }
-    return { action: 'NOOP_REPLAY', operationHash, canonicalCommand, items: batch.items };
+    return { action: 'NOOP_REPLAY', operationHash, canonicalCommand, items: input.existingClaim.result.items };
   }
 
+  const batch = canonicalCommand.operationType === 'RESERVE'
+    ? decideInventoryReservationBatch(input.balances, canonicalCommand.lines)
+    : decideInventoryReleaseBatch(input.balances, canonicalCommand.lines);
   return { action: 'APPLY', operationHash, canonicalCommand, items: batch.items };
+}
+
+export function hashInventoryOperationResult(result: InventoryReservationBatchDecision): string {
+  return createHash('sha256').update(JSON.stringify(result)).digest('hex');
 }
 
 function canonicalizeCommand(command: InventoryOperationCommand): InventoryOperationDecision['canonicalCommand'] {
@@ -115,8 +121,14 @@ function required(value: string): string {
   return normalized;
 }
 
-function assertCompleteClaim(claim: PersistedInventoryOperationClaim, expectedMovements: number): void {
+function assertCompleteClaim(
+  claim: PersistedInventoryOperationClaim,
+  command: InventoryOperationDecision['canonicalCommand'],
+): void {
+  const expectedMovements = command.lines.length;
   if (!claim || typeof claim.operationHash !== 'string' || !claim.operationHash.trim()
+    || typeof claim.resultHash !== 'string' || !claim.resultHash.trim()
+    || !claim.result || !Array.isArray(claim.result.items)
     || !Array.isArray(claim.movementEvidenceRefs)
     || claim.movementEvidenceRefs.length !== expectedMovements
     || claim.movementEvidenceRefs.some((ref) => typeof ref !== 'string' || !ref.trim())
@@ -129,6 +141,25 @@ function assertCompleteClaim(claim: PersistedInventoryOperationClaim, expectedMo
     throw new InventoryOperationError(
       'INVENTORY_OPERATION_CLAIM_INCOMPLETE',
       'Persisted inventory operation claim is missing movement, balance or outbox evidence.',
+    );
+  }
+  if (hashInventoryOperationResult(claim.result) !== claim.resultHash
+    || claim.result.items.length !== expectedMovements
+    || claim.result.items.some((item, index) => {
+      const expected = command.lines[index];
+      try {
+        assertInventoryBalance(item.before);
+        assertInventoryBalance(item.after);
+      } catch {
+        return true;
+      }
+      return item.inventoryItemId !== expected.inventoryItemId
+        || item.quantity !== expected.quantity
+        || item.movementType !== command.operationType;
+    })) {
+    throw new InventoryOperationError(
+      'INVENTORY_OPERATION_CLAIM_INCOMPLETE',
+      'Persisted inventory operation result does not match its hash or canonical command.',
     );
   }
 }

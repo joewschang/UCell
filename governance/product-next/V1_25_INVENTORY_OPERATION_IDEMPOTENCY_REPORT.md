@@ -8,6 +8,7 @@ Scope: Backend/Core Inventory Lite pure decision boundary
 - Canonical RESERVE/RELEASE command with warehouse, source and idempotency context.
 - Duplicate item lines are aggregated and sorted before SHA-256 operation identity is produced.
 - Retries return `NOOP_REPLAY` only when the persisted claim has the same hash and complete movement, balance and outbox evidence references.
+- The persisted claim also carries a hashed result snapshot. Lost-response retries return that committed result without recalculating against already-changed balances; tampered or command-mismatched results fail closed.
 - Reusing an idempotency claim for a different operation fails closed.
 - Missing context, invalid runtime operation type and incomplete/orphan claims fail closed.
 - The boundary remains pure. Its caller must lock balances in canonical item order and atomically persist movements, balances, operation claim and outbox intent.
