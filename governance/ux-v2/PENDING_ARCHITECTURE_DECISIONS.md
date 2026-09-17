@@ -1,5 +1,7 @@
 # Pending architecture decisions
 
+Review aid: [D1/D2 decision worksheet](ARCHITECTURE_DECISION_WORKSHEET.md) lists the exact fields/options requiring disposition and their acceptance conditions. The user's continuation selects architecture review only; it does not approve either decision or implementation.
+
 Status: REVIEW_REQUIRED, Phase 1 only. Only D1/D2 require bounded product decisions. G1–G4 are implementation/provenance gates, not additional open economic rules. Authority: [complete Issue snapshot](evidence/ISSUE_2_SNAPSHOT.md) plus [fourth addendum](evidence/ISSUE_2_ANALYTICS_ADDENDUM.md). Precedence: filed documents > formally approved company documents > frozen R1.0/R1.0B specifications > approved SA decisions > approved Issue #2 decisions > legacy discussions/fixtures/screenshots.
 
 | ID | Evidence / unresolved boundary | Recommendation and alternatives | Decision owner / implementation gate |
