@@ -59,3 +59,9 @@ Production operational cut-off remains undecided and is not used by the Dashboar
 - Dashboard now reports exhaustive current Person record and Qualification lifecycle status counts while keeping NASL New/Active/Suspend/Lost explicitly unavailable.
 
 Member UI still does not guess a “latest” Binary settlement batch. An authoritative member-visible settlement index is required before adding a selector.
+
+## Checkpoint 5
+
+- Refreshed the frozen UX-3 reference set from checkpoint `2bceaa0492dc70462b431819a743c0d0877cc16d` after the authoritative Admin lifecycle-count integration.
+- All 104 responsive route/viewport assertions and all 26 automated accessibility route checks pass.
+- These results remain local visual/basic accessibility evidence. They do not certify formal LINE/LIFF, Entra/RBAC, screen-reader, or complete WCAG operation.

@@ -65,3 +65,12 @@ One Admin full-suite run observed an existing asynchronous package-page timing f
 | OpenAPI preflight | PASS | Member settlement scope, Dashboard lifecycle and UAT evidence operations |
 | Database migration | PASS | `20260918150000_uat_evidence_foundation` |
 | Production promotion | BLOCKED | Formal UAT sign-off and remaining release gates are not satisfied by evidence ingestion |
+
+## Checkpoint 5 verification
+
+| Gate | Result | Evidence |
+|---|---|---|
+| UX-3 responsive routes | PASS | 104 route/viewport assertions; 26 refreshed reference screens |
+| UX-3 automated accessibility | PASS | 26 routes: named controls, main landmark, headings, text status semantics |
+| Formal LINE/LIFF and Entra/RBAC | BLOCKED | Operational credentials and formal environment execution still required |
+| Complete WCAG/manual screen-reader audit | BLOCKED | Automated basic checks are not formal accessibility certification |
