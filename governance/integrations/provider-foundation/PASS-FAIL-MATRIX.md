@@ -16,3 +16,8 @@
 | Invoice provider adapters/UAT | BLOCKED | OPERATIONAL_CREDENTIAL_PENDING |
 | Logistics provider adapters/UAT | BLOCKED | OPERATIONAL_CREDENTIAL_PENDING |
 | Production Promotion | BLOCKED | Formal Security/UAT/reconciliation/operational evidence absent |
+| Versioned Provider Connection persistence | PASS | Immutable versions; secret references only |
+| Invoice evidence/transition/claim schema | PASS | Append-only evidence and existing Outbox linkage |
+| Invoice operation decision regression | PASS | 13 focused tests across foundation slices |
+| Complete Backend API after Invoice schema | PASS | 395 tests / 45 suites |
+| Fresh DB Golden after Invoice migration | PASS | All 45 migrations deployed |

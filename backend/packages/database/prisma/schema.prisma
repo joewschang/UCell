@@ -258,6 +258,57 @@ enum ProviderReconciliationStatus {
   @@schema("commerce")
 }
 
+enum ProviderConnectionStatus {
+  DRAFT
+  ACTIVE
+  SUSPENDED
+  RETIRED
+
+  @@schema("commerce")
+}
+
+enum ProviderEnvironment {
+  TEST
+  STAGE
+  PRODUCTION
+
+  @@schema("commerce")
+}
+
+enum CanonicalInvoiceStatus {
+  DRAFT
+  ISSUE_PENDING
+  ISSUED
+  VOID_PENDING
+  VOIDED
+  ALLOWANCE_PENDING
+  PARTIALLY_ALLOWED
+  FULLY_ALLOWED
+  FAILED
+  MANUAL_REVIEW
+
+  @@schema("commerce")
+}
+
+enum InvoiceAdjustmentStatus {
+  REQUESTED
+  SUBMITTED
+  CONFIRMED
+  FAILED
+  MANUAL_REVIEW
+
+  @@schema("commerce")
+}
+
+enum InvoiceOperationType {
+  ISSUE
+  APPLY_PROVIDER_EVENT
+  CREATE_ALLOWANCE
+  VOID
+
+  @@schema("commerce")
+}
+
 enum InventoryTrackingMode {
   NONE
   LOT
@@ -964,6 +1015,7 @@ model Order {
   payments              Payment[]
   inventoryReservations InventoryReservation[]
   returns               ReturnCase[]
+  invoices              Invoice[]
 
   @@index([qualificationId, createdAt])
   @@index([status, createdAt])
@@ -1132,23 +1184,25 @@ model PaymentOperationClaim {
 }
 
 model ProviderWebhookInbox {
-  providerWebhookInboxId    String                    @id @default(uuid()) @map("provider_webhook_inbox_id") @db.Uuid
-  domain                    ProviderIntegrationDomain
-  provider                  String
-  connectionId              String                    @map("connection_id")
-  ingressKey                String                    @map("ingress_key")
-  providerEventIdentity     String?                   @map("provider_event_identity")
-  payloadHash               String                    @map("payload_hash")
-  safeEvidenceRef           String                    @map("safe_evidence_ref")
-  verificationConfigVersion String                    @map("verification_config_version")
-  status                    ProviderWebhookStatus     @default(RECEIVED)
-  attemptCount              Int                       @default(0) @map("attempt_count")
-  lastErrorCode             String?                   @map("last_error_code")
-  receivedAt                DateTime                  @default(now()) @map("received_at") @db.Timestamptz(6)
-  verifiedAt                DateTime?                 @map("verified_at") @db.Timestamptz(6)
-  processedAt               DateTime?                 @map("processed_at") @db.Timestamptz(6)
-  nextAttemptAt             DateTime?                 @map("next_attempt_at") @db.Timestamptz(6)
-  correlationId             String                    @map("correlation_id") @db.Uuid
+  providerWebhookInboxId      String                     @id @default(uuid()) @map("provider_webhook_inbox_id") @db.Uuid
+  domain                      ProviderIntegrationDomain
+  provider                    String
+  connectionId                String                     @map("connection_id")
+  ingressKey                  String                     @map("ingress_key")
+  providerEventIdentity       String?                    @map("provider_event_identity")
+  payloadHash                 String                     @map("payload_hash")
+  safeEvidenceRef             String                     @map("safe_evidence_ref")
+  verificationConfigVersion   String                     @map("verification_config_version")
+  status                      ProviderWebhookStatus      @default(RECEIVED)
+  attemptCount                Int                        @default(0) @map("attempt_count")
+  lastErrorCode               String?                    @map("last_error_code")
+  receivedAt                  DateTime                   @default(now()) @map("received_at") @db.Timestamptz(6)
+  verifiedAt                  DateTime?                  @map("verified_at") @db.Timestamptz(6)
+  processedAt                 DateTime?                  @map("processed_at") @db.Timestamptz(6)
+  nextAttemptAt               DateTime?                  @map("next_attempt_at") @db.Timestamptz(6)
+  correlationId               String                     @map("correlation_id") @db.Uuid
+  providerConnectionVersionId String?                    @map("provider_connection_version_id") @db.Uuid
+  providerConnectionVersion   ProviderConnectionVersion? @relation(fields: [providerConnectionVersionId], references: [providerConnectionVersionId])
 
   @@unique([domain, provider, connectionId, ingressKey])
   @@unique([domain, provider, connectionId, providerEventIdentity])
@@ -1177,11 +1231,198 @@ model ProviderReconciliationRun {
   startedAt                   DateTime                     @default(now()) @map("started_at") @db.Timestamptz(6)
   completedAt                 DateTime?                    @map("completed_at") @db.Timestamptz(6)
   correlationId               String                       @map("correlation_id") @db.Uuid
+  providerConnectionVersionId String?                      @map("provider_connection_version_id") @db.Uuid
+  providerConnectionVersion   ProviderConnectionVersion?   @relation(fields: [providerConnectionVersionId], references: [providerConnectionVersionId])
 
   @@unique([domain, provider, connectionId, runKey])
   @@index([domain, provider, status, startedAt])
   @@index([periodStart, periodEnd])
   @@map("provider_reconciliation_run")
+  @@schema("commerce")
+}
+
+model ProviderConnection {
+  providerConnectionId String                      @id @default(uuid()) @map("provider_connection_id") @db.Uuid
+  domain               ProviderIntegrationDomain
+  provider             String
+  connectionKey        String                      @map("connection_key")
+  status               ProviderConnectionStatus    @default(DRAFT)
+  createdAt            DateTime                    @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt            DateTime                    @updatedAt @map("updated_at") @db.Timestamptz(6)
+  versions             ProviderConnectionVersion[]
+
+  @@unique([domain, provider, connectionKey])
+  @@index([domain, provider, status])
+  @@map("provider_connection")
+  @@schema("commerce")
+}
+
+model ProviderConnectionVersion {
+  providerConnectionVersionId String              @id @default(uuid()) @map("provider_connection_version_id") @db.Uuid
+  providerConnectionId        String              @map("provider_connection_id") @db.Uuid
+  version                     Int
+  environment                 ProviderEnvironment
+  endpointBaseUrl             String?             @map("endpoint_base_url")
+  credentialSecretRef         String              @map("credential_secret_ref")
+  webhookVerificationRef      String              @map("webhook_verification_ref")
+  configHash                  String              @map("config_hash")
+  effectiveFrom               DateTime            @map("effective_from") @db.Timestamptz(6)
+  effectiveTo                 DateTime?           @map("effective_to") @db.Timestamptz(6)
+  approvalReference           String?             @map("approval_reference")
+  createdByActor              String              @map("created_by_actor")
+  createdAt                   DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  connection         ProviderConnection             @relation(fields: [providerConnectionId], references: [providerConnectionId])
+  webhookInboxes     ProviderWebhookInbox[]
+  reconciliationRuns ProviderReconciliationRun[]
+  invoices           Invoice[]
+  invoiceEvidence    InvoiceProviderEventEvidence[]
+
+  @@unique([providerConnectionId, version])
+  @@index([providerConnectionId, environment, effectiveFrom, effectiveTo])
+  @@map("provider_connection_version")
+  @@schema("commerce")
+}
+
+model Invoice {
+  invoiceId                   String                 @id @default(uuid()) @map("invoice_id") @db.Uuid
+  orderId                     String                 @map("order_id") @db.Uuid
+  provider                    String
+  connectionId                String                 @map("connection_id")
+  providerConnectionVersionId String                 @map("provider_connection_version_id") @db.Uuid
+  providerInvoiceRef          String?                @map("provider_invoice_ref")
+  invoiceNumber               String?                @map("invoice_number")
+  status                      CanonicalInvoiceStatus @default(DRAFT)
+  currency                    String                 @default("TWD")
+  salesAmount                 Decimal                @map("sales_amount") @db.Decimal(18, 2)
+  taxAmount                   Decimal                @map("tax_amount") @db.Decimal(18, 2)
+  totalAmount                 Decimal                @map("total_amount") @db.Decimal(18, 2)
+  taxPolicySnapshotRef        String                 @map("tax_policy_snapshot_ref")
+  issuedAt                    DateTime?              @map("issued_at") @db.Timestamptz(6)
+  createdAt                   DateTime               @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt                   DateTime               @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  order                     Order                          @relation(fields: [orderId], references: [orderId])
+  providerConnectionVersion ProviderConnectionVersion      @relation(fields: [providerConnectionVersionId], references: [providerConnectionVersionId])
+  providerEvidence          InvoiceProviderEventEvidence[]
+  stateTransitions          InvoiceStateTransition[]
+  allowances                InvoiceAllowance[]
+  voids                     InvoiceVoid[]
+  operationClaims           InvoiceOperationClaim[]
+
+  @@unique([provider, connectionId, providerInvoiceRef])
+  @@index([orderId, createdAt])
+  @@index([status, createdAt])
+  @@map("invoice")
+  @@schema("commerce")
+}
+
+model InvoiceProviderEventEvidence {
+  invoiceProviderEventEvidenceId String   @id @default(uuid()) @map("invoice_provider_event_evidence_id") @db.Uuid
+  invoiceId                      String   @map("invoice_id") @db.Uuid
+  providerConnectionVersionId    String   @map("provider_connection_version_id") @db.Uuid
+  providerEventIdentity          String   @map("provider_event_identity")
+  providerInvoiceRef             String?  @map("provider_invoice_ref")
+  source                         String
+  payloadHash                    String   @map("payload_hash")
+  safeEvidenceRef                String   @map("safe_evidence_ref")
+  verifiedAt                     DateTime @map("verified_at") @db.Timestamptz(6)
+  receivedAt                     DateTime @default(now()) @map("received_at") @db.Timestamptz(6)
+  correlationId                  String   @map("correlation_id") @db.Uuid
+
+  invoice                   Invoice                   @relation(fields: [invoiceId], references: [invoiceId])
+  providerConnectionVersion ProviderConnectionVersion @relation(fields: [providerConnectionVersionId], references: [providerConnectionVersionId])
+  stateTransitions          InvoiceStateTransition[]
+
+  @@unique([providerConnectionVersionId, providerEventIdentity])
+  @@index([invoiceId, receivedAt])
+  @@map("invoice_provider_event_evidence")
+  @@schema("commerce")
+}
+
+model InvoiceStateTransition {
+  invoiceStateTransitionId       String                 @id @default(uuid()) @map("invoice_state_transition_id") @db.Uuid
+  invoiceId                      String                 @map("invoice_id") @db.Uuid
+  invoiceProviderEventEvidenceId String?                @map("invoice_provider_event_evidence_id") @db.Uuid
+  fromStatus                     CanonicalInvoiceStatus @map("from_status")
+  toStatus                       CanonicalInvoiceStatus @map("to_status")
+  businessEffectIdentity         String                 @map("business_effect_identity")
+  operationHash                  String                 @map("operation_hash")
+  occurredAt                     DateTime               @map("occurred_at") @db.Timestamptz(6)
+  recordedAt                     DateTime               @default(now()) @map("recorded_at") @db.Timestamptz(6)
+  correlationId                  String                 @map("correlation_id") @db.Uuid
+
+  invoice          Invoice                       @relation(fields: [invoiceId], references: [invoiceId])
+  providerEvidence InvoiceProviderEventEvidence? @relation(fields: [invoiceProviderEventEvidenceId], references: [invoiceProviderEventEvidenceId])
+
+  @@unique([invoiceId, businessEffectIdentity])
+  @@unique([invoiceProviderEventEvidenceId, operationHash])
+  @@index([invoiceId, recordedAt])
+  @@map("invoice_state_transition")
+  @@schema("commerce")
+}
+
+model InvoiceAllowance {
+  invoiceAllowanceId     String                  @id @default(uuid()) @map("invoice_allowance_id") @db.Uuid
+  invoiceId              String                  @map("invoice_id") @db.Uuid
+  providerAllowanceRef   String?                 @map("provider_allowance_ref")
+  businessEffectIdentity String                  @map("business_effect_identity")
+  amount                 Decimal                 @db.Decimal(18, 2)
+  currency               String
+  status                 InvoiceAdjustmentStatus @default(REQUESTED)
+  reasonCode             String                  @map("reason_code")
+  sourceReturnId         String?                 @map("source_return_id") @db.Uuid
+  safeEvidenceRef        String?                 @map("safe_evidence_ref")
+  occurredAt             DateTime                @map("occurred_at") @db.Timestamptz(6)
+  createdAt              DateTime                @default(now()) @map("created_at") @db.Timestamptz(6)
+  correlationId          String                  @map("correlation_id") @db.Uuid
+
+  invoice Invoice @relation(fields: [invoiceId], references: [invoiceId])
+
+  @@unique([invoiceId, businessEffectIdentity])
+  @@unique([invoiceId, providerAllowanceRef])
+  @@index([invoiceId, occurredAt])
+  @@map("invoice_allowance")
+  @@schema("commerce")
+}
+
+model InvoiceVoid {
+  invoiceVoidId          String                  @id @default(uuid()) @map("invoice_void_id") @db.Uuid
+  invoiceId              String                  @map("invoice_id") @db.Uuid
+  providerVoidRef        String?                 @map("provider_void_ref")
+  businessEffectIdentity String                  @map("business_effect_identity")
+  status                 InvoiceAdjustmentStatus @default(REQUESTED)
+  reasonCode             String                  @map("reason_code")
+  safeEvidenceRef        String?                 @map("safe_evidence_ref")
+  occurredAt             DateTime                @map("occurred_at") @db.Timestamptz(6)
+  createdAt              DateTime                @default(now()) @map("created_at") @db.Timestamptz(6)
+  correlationId          String                  @map("correlation_id") @db.Uuid
+
+  invoice Invoice @relation(fields: [invoiceId], references: [invoiceId])
+
+  @@unique([invoiceId, businessEffectIdentity])
+  @@unique([invoiceId, providerVoidRef])
+  @@index([invoiceId, occurredAt])
+  @@map("invoice_void")
+  @@schema("commerce")
+}
+
+model InvoiceOperationClaim {
+  invoiceOperationClaimId String               @id @default(uuid()) @map("invoice_operation_claim_id") @db.Uuid
+  invoiceId               String               @map("invoice_id") @db.Uuid
+  operationType           InvoiceOperationType @map("operation_type")
+  businessEffectIdentity  String               @unique @map("business_effect_identity")
+  operationHash           String               @map("operation_hash")
+  committedEffectRef      String               @map("committed_effect_ref")
+  outboxEventId           String               @unique @map("outbox_event_id") @db.Uuid
+  committedAt             DateTime             @default(now()) @map("committed_at") @db.Timestamptz(6)
+
+  invoice     Invoice     @relation(fields: [invoiceId], references: [invoiceId])
+  outboxEvent OutboxEvent @relation(fields: [outboxEventId], references: [outboxEventId])
+
+  @@unique([invoiceId, operationHash])
+  @@index([invoiceId, committedAt])
+  @@map("invoice_operation_claim")
   @@schema("commerce")
 }
 
@@ -1598,6 +1839,7 @@ model OutboxEvent {
 
   paymentOperationClaim   PaymentOperationClaim?
   inventoryOperationClaim InventoryOperationClaim?
+  invoiceOperationClaim   InvoiceOperationClaim?
 
   @@index([processStatus, availableAt])
   @@map("outbox_event")

@@ -55,3 +55,13 @@ All external credentials remain `OPERATIONAL_CREDENTIAL_PENDING`. Provider-neutr
 ## Business logic changes
 
 **NONE.** R1.0B recognition, monetary calculation, historical replay and Return POSTED semantics are unchanged.
+
+## Invoice durable persistence checkpoint
+
+- Added immutable, versioned Provider Connection records using secret references only.
+- Added Invoice projection plus append-only provider evidence, transitions, allowances, voids and operation claims linked to the existing Outbox.
+- Added fail-closed operation decisions for disabled/pending providers, missing evidence, changed-payload replay and destructive actions without approval evidence.
+- Migration `20260918210000_provider_connection_invoice_persistence` applied successfully; total migrations: 45.
+- Focused tests: 13 PASS. Complete Backend API: 395 PASS in 45 suites.
+- Schema, migration and source preflights: PASS. Fresh isolated DB Golden: PASS.
+- Invoice issue timing, tax/rounding and void/allowance policy remain configuration/approval pending; no policy was inferred.
