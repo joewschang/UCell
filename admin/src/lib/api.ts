@@ -12,6 +12,7 @@ export function setAdminToken(token:string,expiresAt?:string){
 }
 export function clearAdminToken(){
   commands.clear();
+  putCommands.clear();
   sessionStorage.removeItem('ucell_admin_token');
   sessionStorage.removeItem('ucell_admin_expires_at');
 }
@@ -67,6 +68,10 @@ const commands=createCommandClient((path,data,idempotencyKey)=>api(path,{
     idempotencyKey
   }),()=>JSON.stringify([adminToken(),sessionStorage.getItem('ucell_dev_actor_id'),sessionStorage.getItem('ucell_admin_user')]));
 export function command<T>(path:string,data?:unknown,idempotencyKey?:string){return commands.execute<T>(path,data,idempotencyKey);}
+const putCommands=createCommandClient((path,data,idempotencyKey)=>api(path,{
+  method:'PUT',body:data===undefined?undefined:JSON.stringify(data),idempotencyKey
+}),()=>JSON.stringify([adminToken(),sessionStorage.getItem('ucell_dev_actor_id'),sessionStorage.getItem('ucell_admin_user')]));
+export function putCommand<T>(path:string,data?:unknown,idempotencyKey?:string){return putCommands.execute<T>(path,data,idempotencyKey);}
 
 export const post=<T>(p:string,data?:unknown,options:RequestOptions={})=>api<T>(p,{
   ...options,method:'POST',

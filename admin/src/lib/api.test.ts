@@ -1,5 +1,5 @@
 import {afterEach,beforeEach,expect,it,vi} from 'vitest';
-import {api,clearAdminToken,command} from './api';
+import {api,clearAdminToken,command,putCommand} from './api';
 const memory=new Map<string,string>();
 beforeEach(()=>{memory.clear();vi.stubGlobal('sessionStorage',{getItem:(key:string)=>memory.get(key)??null,setItem:(key:string,value:string)=>memory.set(key,value),removeItem:(key:string)=>memory.delete(key)});vi.stubGlobal('window',{dispatchEvent:vi.fn()});clearAdminToken();});
 afterEach(()=>{clearAdminToken();vi.useRealTimers();vi.unstubAllGlobals();vi.restoreAllMocks();});
@@ -16,6 +16,11 @@ it('bounds a stalled request without pretending that a write was rolled back',as
  const request=api('/admin/orders',{method:'POST',body:'{}',idempotencyKey:'retry-me'});
  const assertion=expect(request).rejects.toThrow('保留原資料重試');await vi.advanceTimersByTimeAsync(15000);await assertion;
  expect(fetch.mock.calls[0][1].signal.aborted).toBe(true);expect(window.dispatchEvent).not.toHaveBeenCalled();expect(vi.getTimerCount()).toBe(0);
+});
+it('uses PUT with an idempotency key for replace-style configuration commands',async()=>{
+ const fetch=vi.fn().mockResolvedValue(new Response(JSON.stringify({data:{count:1}})));vi.stubGlobal('fetch',fetch);
+ await putCommand('/admin/packages/versions/version/selectable-products',{products:[{productRuleProfileId:'rule',maxQty:1}]});
+ expect(fetch.mock.calls[0][1].method).toBe('PUT');expect(new Headers(fetch.mock.calls[0][1].headers).get('Idempotency-Key')).toBeTruthy();
 });
 it('denies 401 and notifies session expiry; 403 remains a recoverable authorization error',async()=>{
  const fetch=vi.fn().mockResolvedValueOnce(new Response(JSON.stringify({message:'session expired'}),{status:401})).mockResolvedValueOnce(new Response(JSON.stringify({message:'qualification forbidden'}),{status:403}));vi.stubGlobal('fetch',fetch);

@@ -1,13 +1,13 @@
 import {QueryClient,QueryClientProvider} from '@tanstack/react-query';
 import {act,create} from 'react-test-renderer';
 import {beforeEach,expect,it,vi} from 'vitest';
-import {command,get} from '../../lib/api';
+import {command,get,putCommand} from '../../lib/api';
 import {PackagesPage} from './PackagesPage';
 
 const auth=vi.hoisted(()=>({role:'COMPLIANCE_AUDIT'}));
-vi.mock('../../lib/api',()=>({get:vi.fn(),command:vi.fn()}));
+vi.mock('../../lib/api',()=>({get:vi.fn(),command:vi.fn(),putCommand:vi.fn()}));
 vi.mock('../auth/auth',()=>({useAuth:()=>({user:{role:auth.role}})}));
-beforeEach(()=>{auth.role='COMPLIANCE_AUDIT';vi.mocked(get).mockReset();vi.mocked(command).mockReset();});
+beforeEach(()=>{auth.role='COMPLIANCE_AUDIT';vi.mocked(get).mockReset();vi.mocked(command).mockReset();vi.mocked(putCommand).mockReset();});
 
 it('renders Core package versions and evidence without calculating monetary values',async()=>{
  vi.mocked(get).mockResolvedValue({data:[{packageProfileId:'profile-1',stableCode:'QUALIFICATION_STARTER',packageClass:'QUALIFICATION',status:'ACTIVE',versions:[{packageProfileVersionId:'version-1',version:2,displayName:'正式會員套組',currency:'TWD',priceAmount:'4800.00',selectableProductQuantity:2,selectionMode:'EXACT_QUANTITY',membershipEffect:'FORMAL_MEMBER',qualificationEffect:'CREATE_QUALIFICATION',targetQualificationRequired:false,status:'ACTIVE',effectiveFrom:'2026-09-17T00:00:00.000Z',effectiveTo:null,salesFrom:'2026-09-17T00:00:00.000Z',salesTo:null,approvalReference:'APPROVAL-001',configHash:'a'.repeat(64),selectableProducts:[{productRuleProfileId:'rule-1',minQty:1,maxQty:2,selectionIncrement:1,sortOrder:1,status:'ACTIVE'}]}]}]});
@@ -32,4 +32,13 @@ it('submits only explicit Core version configuration and does not derive PV or B
  act(()=>field('顯示名稱').props.onChange({target:{value:'正式會員套組'}}));act(()=>field('正式價格').props.onChange({target:{value:'4800'}}));act(()=>field('Membership Effect').props.onChange({target:{value:'FORMAL_MEMBER'}}));act(()=>field('Qualification Effect').props.onChange({target:{value:'CREATE_QUALIFICATION'}}));act(()=>field('Recognition Config Reference').props.onChange({target:{value:'R1_QUALIFICATION'}}));
  await act(async()=>{tree!.root.findAllByType('button').find(button=>button.children.join('')==='新增版本草稿')!.props.onClick();await new Promise(resolve=>setTimeout(resolve,10));});
  expect(command).toHaveBeenCalledWith('/admin/packages/11111111-1111-4111-8111-111111111111/versions',{displayName:'正式會員套組',currency:'TWD',priceAmount:'4800',selectableProductQuantity:1,membershipEffect:'FORMAL_MEMBER',qualificationEffect:'CREATE_QUALIFICATION',targetQualificationRequired:false,recognitionConfigRef:'R1_QUALIFICATION'});expect(JSON.stringify(vi.mocked(command).mock.calls[0][1])).not.toMatch(/pv|bv/i);act(()=>tree!.unmount());
+});
+
+it('replaces a DRAFT product pool through the idempotent PUT command with explicit limits',async()=>{
+ auth.role='PACKAGE_CONFIG_MANAGE';const versionId='11111111-1111-4111-8111-111111111111',ruleId='22222222-2222-4222-8222-222222222222';vi.mocked(get).mockImplementation(async path=>path==='/admin/products'?{data:[{productId:'product-1',sku:'SKU-1',displayName:'商品一',currentPrice:'100',currency:'TWD',isActive:true,ruleProfiles:[{productRuleProfileId:ruleId,gpvRate:'0',pvRate:'0',ruleVersionCode:'RULE-1'}]}]}:{data:[{packageProfileId:'profile-1',stableCode:'STARTER_BALL',packageClass:'QUALIFICATION',status:'ACTIVE',versions:[{packageProfileVersionId:versionId,version:1,displayName:'正式會員套組',currency:'TWD',priceAmount:'4800',selectableProductQuantity:2,selectionMode:'EXACT_QUANTITY',membershipEffect:'FORMAL_MEMBER',qualificationEffect:'CREATE_QUALIFICATION',targetQualificationRequired:false,status:'DRAFT',effectiveFrom:null,effectiveTo:null,salesFrom:null,salesTo:null,approvalReference:null,configHash:'a'.repeat(64),selectableProducts:[]}]}]} as any);vi.mocked(putCommand).mockResolvedValue({});
+ let tree:ReturnType<typeof create>;await act(async()=>{tree=create(<QueryClientProvider client={new QueryClient({defaultOptions:{queries:{retry:false}}})}><PackagesPage/></QueryClientProvider>);await new Promise(resolve=>setTimeout(resolve,20));});
+ const select=(label:string)=>tree!.root.findAllByType('label').find(item=>item.findAllByType('span')[0]?.children.join('')===label)!.findByType('select');
+ act(()=>select('DRAFT 套組版本').props.onChange({target:{value:versionId}}));act(()=>select('加入 Product Rule Profile').props.onChange({target:{value:ruleId}}));
+ await act(async()=>{tree!.root.findAllByType('button').find(button=>button.children.join('')==='儲存完整商品池')!.props.onClick();await new Promise(resolve=>setTimeout(resolve,10));});
+ expect(putCommand).toHaveBeenCalledWith(`/admin/packages/versions/${versionId}/selectable-products`,{products:[{productRuleProfileId:ruleId,minQty:0,maxQty:1,selectionIncrement:1,sortOrder:0}]});act(()=>tree!.unmount());
 });

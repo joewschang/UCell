@@ -54,7 +54,7 @@ export interface ProductReference {
   currentPrice:string;
   currency:string;
   isActive:boolean;
-  ruleProfiles?:Array<{gpvRate:string;pvRate?:string|null;ruleVersionCode:string}>;
+  ruleProfiles?:Array<{productRuleProfileId:string;gpvRate:string;pvRate?:string|null;ruleVersionCode:string}>;
 }
 export interface OrderLine {
   orderLineId?:UUID; productId:UUID; skuSnapshot?:string; productNameSnapshot?:string;
