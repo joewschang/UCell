@@ -20,7 +20,8 @@ Current R1.0B source set includes:
 
 Approved implementation clarifications:
 
-- `governance/sa-decisions/decisions.json` — Decision Register v2.
+- `governance/sa-decisions/decisions.json` — Decision Register v3.
+- `governance/sa-decisions/R1_0B_VOLUME_CLASS_CLARIFICATION_20260917.md` — PV/BV abstract volume class clarification; historical GPV remains GPV with no economic migration.
 - `governance/sa-decisions/R1_0B_CORE_LOGIC_ADDENDUM_v2.md` — approved recognition, calendar, Binary evidence, Sponsor traversal, Carry, 45D and Return semantics.
 
 Important: these SA addenda fill gaps only. They do not override a conflicting higher-authority filed/formally approved source. A discovered conflict must fail closed for the affected production path and be escalated for SSOT review.
