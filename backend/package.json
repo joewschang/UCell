@@ -54,6 +54,7 @@
     "release:prep": "node scripts/run-bash-gate.mjs release-prep.sh",
     "test:todo:gate": "node scripts/test-todo-gate.mjs",
     "test:api:isolated": "node scripts/api-jest-isolated.mjs",
+    "test:member:explain:isolated": "pnpm build && node scripts/member-explain-db-isolated.mjs",
     "test:member:binary:settlement": "node scripts/member-binary-settlement-db-test.mjs",
     "test:uat:evidence": "node scripts/uat-evidence-db-test.mjs",
     "test:shipment:persistence:isolated": "node scripts/shipment-persistence-db-isolated.mjs"
