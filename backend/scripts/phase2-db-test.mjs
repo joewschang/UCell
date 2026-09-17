@@ -11,7 +11,10 @@ const {BonusQueryService}=require('../backend/apps/api/dist/modules/bonus/bonus-
 const {RuntimeRuleService}=require('../backend/apps/api/dist/modules/rules/runtime-rule.service.js');
 const url=new URL(process.env.DATABASE_URL??'');assert.equal(url.pathname,'/ucell_admin_test');assert.ok(['localhost','127.0.0.1'].includes(url.hostname));
 const prisma=new PrismaClient(),results=[],version='PHASE2_TEST_'+randomUUID(),rollback=new Error('ROLLBACK_PHASE2_FIXTURES');
-function check(label,actual,expected){assert.deepEqual(actual,expected,label);results.push({label,result:'PASS',actual,expected});}
+function check(label,actual,expected,stableEvidence){
+ assert.deepEqual(actual,expected,label);
+ results.push({label,result:'PASS',...(stableEvidence??{actual,expected})});
+}
 let failure;
 try{await prisma.$transaction(async tx=>{
  for(const [name,schema,table] of [['SettlementAdjustmentBatch','ledger','settlement_adjustment_batch'],['SettlementAdjustmentLine','ledger','settlement_adjustment_line'],['QualificationWorkflow','membership','qualification_workflow'],['SettlementReplayRun','ledger','settlement_replay_run'],['SettlementReplayPeriod','ledger','settlement_replay_period'],['BonusCalculationEvidence','ledger','bonus_calculation_evidence']]){
@@ -74,8 +77,8 @@ try{await prisma.$transaction(async tx=>{
  check('multi-return incremental self delta',secondPost.delta.toString(),'-360');
  check('cross-threshold effective entitlement',secondPost.recalculatedEntitlement.toString(),'0');
  check('clawback never exceeds original entitlement',(await tx.bonusRecoveryEvent.aggregate({where:{bonusAwardId:selfAward.bonusAwardId},_sum:{recoveryAmount:true}}))._sum.recoveryAmount.toString(),'840');
- check('original awards are immutable',JSON.stringify(await tx.bonusAward.findMany({where:{sourceQualificationId:self.qualificationId,awardType:'EPV'},orderBy:{bonusAwardId:'asc'}})),originalJson);
- check('original PAID history is immutable',await tx.bonusAwardLifecycleEvent.findUniqueOrThrow({where:{lifecycleEventId:paidEvent.lifecycleEventId}}),paidEvent);
+ check('original awards are immutable',JSON.stringify(await tx.bonusAward.findMany({where:{sourceQualificationId:self.qualificationId,awardType:'EPV'},orderBy:{bonusAwardId:'asc'}})),originalJson,{actual:'UNCHANGED',expected:'UNCHANGED'});
+ check('original PAID history is immutable',await tx.bonusAwardLifecycleEvent.findUniqueOrThrow({where:{lifecycleEventId:paidEvent.lifecycleEventId}}),paidEvent,{actual:'UNCHANGED',expected:'UNCHANGED'});
  check('PAID historical reduction appends one CLAWBACK lifecycle',await tx.bonusAwardLifecycleEvent.count({where:{bonusAwardId:selfAward.bonusAwardId,status:'CLAWBACK',reasonCode:'HISTORICAL_REPLAY'}}),1);
  check('original EPV ledger unchanged',(await tx.pvLedger.findFirstOrThrow({where:{sourceId:order.orderId,pvType:'EPV'}})).amount.toString(),'1680');
  check('effective EPV ledger after two returns',(await tx.pvLedger.aggregate({where:{qualificationId:self.qualificationId,pvType:'EPV'},_sum:{amount:true}}))._sum.amount.toString(),'0');
@@ -84,7 +87,7 @@ try{await prisma.$transaction(async tx=>{
  const originalPv=await tx.pvLedger.findUniqueOrThrow({where:{eventId:gpv.eventId}});
  await rejected('PV Ledger UPDATE rejected by DB',()=>tx.pvLedger.update({where:{eventId:gpv.eventId},data:{amount:999}}),'UCell append-only table pv_ledger does not allow UPDATE/DELETE');
  await rejected('PV Ledger DELETE rejected by DB',()=>tx.pvLedger.delete({where:{eventId:gpv.eventId}}),'UCell append-only table pv_ledger does not allow UPDATE/DELETE');
- check('PV Ledger entire original row survives rejected mutations',await tx.pvLedger.findUniqueOrThrow({where:{eventId:gpv.eventId}}),originalPv);
+ check('PV Ledger entire original row survives rejected mutations',await tx.pvLedger.findUniqueOrThrow({where:{eventId:gpv.eventId}}),originalPv,{actual:'UNCHANGED',expected:'UNCHANGED'});
  const snapshot=await tx.historicalReplaySnapshot.findFirstOrThrow({where:{kind:'EPV',sourceId:{in:originalAwards.map(a=>a.sourceEventId)}}});
  await rejected('snapshot UPDATE rejected by DB',()=>tx.historicalReplaySnapshot.update({where:{snapshotId:snapshot.snapshotId},data:{hash:'invalid'}}),'APPEND_ONLY_REPLAY_EVIDENCE');
  await rejected('posting DELETE rejected by DB',()=>tx.entitlementReplayPosting.delete({where:{postingId:firstPost.postingId}}),'APPEND_ONLY_REPLAY_EVIDENCE');
@@ -127,7 +130,7 @@ try{await prisma.$transaction(async tx=>{
   const carry=await tx.binaryCarry.create({data:{qualificationId:self.qualificationId,periodEnd:new Date(end),ruleVersionCode:version,leftCarryIn:leftIn,rightCarryIn:rightIn,leftPeriodGpv:index===0?1000:0,rightPeriodGpv:index===0?1000:0,pairedPv:paired,leftCarryOut:leftOut,rightCarryOut:rightOut,weeklyCapSnapshot:200}});
   const theory=String(Number(paired)*.12);
   const award=await tx.bonusAward.create({data:{settlementBatchId:b.settlementBatchId,awardType:'BINARY',recipientQualificationId:self.qualificationId,theoryAmount:theory,payableAmount:theory,activeSnapshot:true,planLevelSnapshot:'LEADER',ruleVersionCode:version,occurredAt:new Date(end),pendingUntil:new Date('2020-03-01'),calculationDetail:{testOnly:true}}});const sealedBinary=await replay.sealSettlement(tx,b);
-  if(zeroEvidence){const sealedEnvelope=replay.verifyReplayEnvelope(sealedBinary);check('sealed Binary snapshot retains inactive zero-entitlement reason',[sealedEnvelope.evidence.eligibilityEvidence[0].recipientQualificationId,sealedEnvelope.evidence.eligibilityEvidence[0].reasonCode,sealedEnvelope.evidence.eligibilityEvidence[0].entitlementAmount],[inactive.qualificationId,'INACTIVE','0']);}
+  if(zeroEvidence){const sealedEnvelope=replay.verifyReplayEnvelope(sealedBinary);check('sealed Binary snapshot retains inactive zero-entitlement reason',[sealedEnvelope.evidence.eligibilityEvidence[0].recipientQualificationId,sealedEnvelope.evidence.eligibilityEvidence[0].reasonCode,sealedEnvelope.evidence.eligibilityEvidence[0].entitlementAmount],[inactive.qualificationId,'INACTIVE','0'],{actual:[true,'INACTIVE','0'],expected:[true,'INACTIVE','0']});}
   const m=await tx.settlementBatch.create({data:{settlementType:'MATCHING_K2',periodStart:new Date(start),periodEnd:new Date(end),ruleVersionCode:version,status:'FINALIZED',parameterSnapshot:historical,totalGpv,kFactor:1}});
   const matchingTheory=String(Number(theory)*.1);
   const matching=await tx.bonusAward.create({data:{settlementBatchId:m.settlementBatchId,awardType:'MATCHING',recipientQualificationId:newSponsor.qualificationId,sourceAwardId:award.bonusAwardId,generationNo:1,theoryAmount:matchingTheory,payableAmount:matchingTheory,activeSnapshot:true,planLevelSnapshot:'LEADER',ruleVersionCode:version,occurredAt:new Date(end),pendingUntil:new Date('2020-03-01'),calculationDetail:{rate:'.1',unlockDepth:7,testOnly:true}}});await replay.sealSettlement(tx,m);
@@ -138,7 +141,7 @@ try{await prisma.$transaction(async tx=>{
  await replay.processHistoricalReturn(tx,refund.returnCaseId);
  const gpvReversal=await tx.pvLedger.findFirstOrThrow({where:{sourceId:refund.returnCaseId,pvType:'GPV',eventType:'GPV_REVERSAL'}});
  const postedReturnLine=await tx.returnLine.findFirstOrThrow({where:{returnCaseId:refund.returnCaseId}});
- check('partial return creates proportional negative GPV event',[gpvReversal.amount.toString(),gpvReversal.qualificationId,gpvReversal.sourceLineId],['-500',economic[0].event.qualificationId,postedReturnLine.returnLineId]);
+ check('partial return creates proportional negative GPV event',[gpvReversal.amount.toString(),gpvReversal.qualificationId,gpvReversal.sourceLineId],['-500',economic[0].event.qualificationId,postedReturnLine.returnLineId],{actual:['-500',true,true],expected:['-500',true,true]});
  check('GPV reversal references original GPV event',gpvReversal.reversalOfEventId===economic[0].event.eventId,true);
  const postings=await tx.entitlementReplayPosting.findMany({where:{actionKey:'RETURN:'+refund.returnCaseId,entitlementKey:{in:originals.map(a=>a.bonusAwardId)}},orderBy:{entitlementKey:'asc'}});
  check('K0 complete period posts every original entitlement',postings.length,2);
@@ -147,16 +150,16 @@ try{await prisma.$transaction(async tx=>{
  const positive=postings.find(p=>p.entitlementKey===originals[1].bonusAwardId),negative=postings.find(p=>p.entitlementKey===originals[0].bonusAwardId);
  assert.ok(positive.correctionAwardId);assert.ok(negative.recoveryId);
  const correction=await tx.bonusAward.findUniqueOrThrow({where:{bonusAwardId:positive.correctionAwardId}});
- check('positive replay delta creates exact compensating award',[correction.sourceAwardId,correction.recipientQualificationId,correction.awardType,correction.theoryAmount.toString(),correction.payableAmount.toString()],[originals[1].bonusAwardId,self.qualificationId,'REFERRAL','23.6364','23.6364']);
- check('positive replay compensating award retains historical evidence',[correction.parameterSnapshotHash,correction.ruleVersionCode,correction.pendingUntil.toISOString(),correction.calculationDetail.snapshotId,correction.calculationDetail.actionKey],[historical.hash,version,originals[1].pendingUntil.toISOString(),positive.snapshotId,'RETURN:'+refund.returnCaseId]);
+ check('positive replay delta creates exact compensating award',[correction.sourceAwardId,correction.recipientQualificationId,correction.awardType,correction.theoryAmount.toString(),correction.payableAmount.toString()],[originals[1].bonusAwardId,self.qualificationId,'REFERRAL','23.6364','23.6364'],{actual:[true,true,'REFERRAL','23.6364','23.6364'],expected:[true,true,'REFERRAL','23.6364','23.6364']});
+ check('positive replay compensating award retains historical evidence',[correction.parameterSnapshotHash,correction.ruleVersionCode,correction.pendingUntil.toISOString(),correction.calculationDetail.snapshotId,correction.calculationDetail.actionKey],[historical.hash,version,originals[1].pendingUntil.toISOString(),positive.snapshotId,'RETURN:'+refund.returnCaseId],{actual:[true,true,'2020-02-17T00:00:00.000Z',true,true],expected:[true,true,'2020-02-17T00:00:00.000Z',true,true]});
  check('positive replay compensating award has one historical replay lifecycle',await tx.bonusAwardLifecycleEvent.count({where:{bonusAwardId:correction.bonusAwardId,reasonCode:'HISTORICAL_REPLAY'}}),1);
  const recoveryRow=await tx.bonusRecoveryEvent.findUniqueOrThrow({where:{bonusRecoveryEventId:negative.recoveryId}});
- check('negative replay delta creates exact original award recovery',[negative.delta.toString(),recoveryRow.bonusAwardId,recoveryRow.returnCaseId,recoveryRow.recoveryAmount.toString(),recoveryRow.outstandingAmount.toString(),recoveryRow.status],['-263.6364',originals[0].bonusAwardId,refund.returnCaseId,'263.6364','263.6364','OPEN']);
+ check('negative replay delta creates exact original award recovery',[negative.delta.toString(),recoveryRow.bonusAwardId,recoveryRow.returnCaseId,recoveryRow.recoveryAmount.toString(),recoveryRow.outstandingAmount.toString(),recoveryRow.status],['-263.6364',originals[0].bonusAwardId,refund.returnCaseId,'263.6364','263.6364','OPEN'],{actual:['-263.6364',true,true,'263.6364','263.6364','OPEN'],expected:['-263.6364',true,true,'263.6364','263.6364','OPEN']});
  check('replay delta uses exactly one correction direction',[positive.recoveryId,negative.correctionAwardId],[null,null]);
  const beforeReplay=[await tx.entitlementReplayPosting.count(),await tx.bonusAward.count(),await tx.bonusRecoveryEvent.count()];
  await replay.processHistoricalReturn(tx,refund.returnCaseId);
- check('duplicate return creates no second posting compensating award or recovery',[await tx.entitlementReplayPosting.count(),await tx.bonusAward.count(),await tx.bonusRecoveryEvent.count()],beforeReplay);
- check('K0 original award baseline preserved',JSON.stringify(await tx.bonusAward.findMany({where:{bonusAwardId:{in:originals.map(a=>a.bonusAwardId)}},orderBy:{bonusAwardId:'asc'}})),saved);
+ check('duplicate return creates no second posting compensating award or recovery',[await tx.entitlementReplayPosting.count(),await tx.bonusAward.count(),await tx.bonusRecoveryEvent.count()],beforeReplay,{actual:{postingDelta:0,awardDelta:0,recoveryDelta:0},expected:{postingDelta:0,awardDelta:0,recoveryDelta:0}});
+ check('K0 original award baseline preserved',JSON.stringify(await tx.bonusAward.findMany({where:{bonusAwardId:{in:originals.map(a=>a.bonusAwardId)}},orderBy:{bonusAwardId:'asc'}})),saved,{actual:'UNCHANGED',expected:'UNCHANGED'});
  const envelope={format:'UCELL_HISTORICAL_REPLAY_V1',kind:'BINARY_K1',sourceId:randomUUID(),ruleVersionCode:version,at:'2020-01-08T00:00:00.000Z',parameters:historical,recipients:[],evidence:{sources:economic.map(e=>e.envelope),carryRecipients:[{qualificationId:self.qualificationId,leftCarryIn:'200',rightCarryIn:'0',leftCarryOut:'0',rightCarryOut:'0',weeklyCapSnapshot:'200',active:true,qualification:{plan:{planCode:'LEADER'},status:{status:'EFFECTIVE'}}}]},inputs:{}};
  const effective=await replay.effectiveGpv(tx,envelope.evidence.sources);
  envelope.recipients=[{key:'binary-original',awardId:'binary-original',awardType:'BINARY',qualificationId:self.qualificationId,generation:0,active:true,eligible:true,theory:'100',posted:'100',pendingUntil:'2020-03-01T00:00:00.000Z',detail:{},qualification:{plan:{planCode:'LEADER'},status:{status:'EFFECTIVE'},activeIntervals:[]}}];
@@ -178,15 +181,15 @@ try{await prisma.$transaction(async tx=>{
  await new RpvService(facade,{}).recognize(recognized.recognitionId);
  const recognizedSchedule=await tx.monthlyRecognitionSchedule.findUniqueOrThrow({where:{recognitionId:recognized.recognitionId}});
  const recognitionEvent=await tx.pvLedger.findUniqueOrThrow({where:{eventId:recognizedSchedule.pvLedgerEventId}});
- check('due RPV recognition seals exact original ledger identity',[recognitionEvent.amount.toString(),recognitionEvent.pvType,recognitionEvent.eventType,recognitionEvent.sourceId,recognitionEvent.sourceLineId,recognitionEvent.qualificationId,recognitionEvent.occurredAt.toISOString()],['1200','RPV','RPV_CREATED',sub.subscriptionId,recognized.recognitionId,leftQ.qualificationId,recognized.dueAt.toISOString()]);
- check('due RPV recognition updates original schedule identity',[recognizedSchedule.status,recognizedSchedule.pvLedgerEventId,recognizedSchedule.recognitionMonth.toISOString()],['RECOGNIZED',recognitionEvent.eventId,recognized.recognitionMonth.toISOString()]);
+ check('due RPV recognition seals exact original ledger identity',[recognitionEvent.amount.toString(),recognitionEvent.pvType,recognitionEvent.eventType,recognitionEvent.sourceId,recognitionEvent.sourceLineId,recognitionEvent.qualificationId,recognitionEvent.occurredAt.toISOString()],['1200','RPV','RPV_CREATED',sub.subscriptionId,recognized.recognitionId,leftQ.qualificationId,recognized.dueAt.toISOString()],{actual:['1200','RPV','RPV_CREATED',true,true,true,'2020-01-03T00:00:00.000Z'],expected:['1200','RPV','RPV_CREATED',true,true,true,'2020-01-03T00:00:00.000Z']});
+ check('due RPV recognition updates original schedule identity',[recognizedSchedule.status,recognizedSchedule.pvLedgerEventId,recognizedSchedule.recognitionMonth.toISOString()],['RECOGNIZED',recognitionEvent.eventId,recognized.recognitionMonth.toISOString()],{actual:['RECOGNIZED',true,'2020-01-01T00:00:00.000Z'],expected:['RECOGNIZED',true,'2020-01-01T00:00:00.000Z']});
  const rpvSnapshot=await tx.historicalReplaySnapshot.findUniqueOrThrow({where:{kind_sourceId:{kind:'RPV',sourceId:recognized.recognitionId}}});
  const originalRecognitionAwards=await tx.rpvUplineAwardEvent.findMany({where:{recognitionId:recognized.recognitionId},orderBy:{rpvAwardEventId:'asc'}});
  const countBeforeDuplicate=await tx.pvLedger.count({where:{sourceLineId:recognized.recognitionId,pvType:'RPV'}});
  check('duplicate RPV recognition reports already recognized',(await new RpvService(facade,{}).recognize(recognized.recognitionId)).skipped,'ALREADY_RECOGNIZED');
  check('RPV duplicate recognition appends no original event',await tx.pvLedger.count({where:{sourceLineId:recognized.recognitionId,pvType:'RPV'}}),countBeforeDuplicate);
- check('duplicate RPV recognition preserves all original awards',await tx.rpvUplineAwardEvent.findMany({where:{recognitionId:recognized.recognitionId},orderBy:{rpvAwardEventId:'asc'}}),originalRecognitionAwards);
- check('duplicate RPV recognition preserves entire historical snapshot',await tx.historicalReplaySnapshot.findUniqueOrThrow({where:{kind_sourceId:{kind:'RPV',sourceId:recognized.recognitionId}}}),rpvSnapshot);
+ check('duplicate RPV recognition preserves all original awards',await tx.rpvUplineAwardEvent.findMany({where:{recognitionId:recognized.recognitionId},orderBy:{rpvAwardEventId:'asc'}}),originalRecognitionAwards,{actual:'UNCHANGED',expected:'UNCHANGED'});
+ check('duplicate RPV recognition preserves entire historical snapshot',await tx.historicalReplaySnapshot.findUniqueOrThrow({where:{kind_sourceId:{kind:'RPV',sourceId:recognized.recognitionId}}}),rpvSnapshot,{actual:'UNCHANGED',expected:'UNCHANGED'});
  const rpvSource=await qualification(),rpvInactiveG1=await qualification(false),rpvActiveG2=await qualification();
  await tx.binaryPlacement.create({data:{parentQualificationId:rpvInactiveG1.qualificationId,childQualificationId:rpvSource.qualificationId,side:'LEFT',effectiveFrom:new Date('2020-01-01')}});
  await tx.binaryPlacement.create({data:{parentQualificationId:rpvActiveG2.qualificationId,childQualificationId:rpvInactiveG1.qualificationId,side:'LEFT',effectiveFrom:new Date('2020-01-01')}});
@@ -194,8 +197,8 @@ try{await prisma.$transaction(async tx=>{
  const traversalRecognition=await tx.monthlyRecognitionSchedule.create({data:{subscriptionId:traversalSub.subscriptionId,installmentNo:1,recognitionMonth:new Date('2020-01-01'),recognizedAmount:2000,rpvAmount:1200,dueAt:new Date('2020-01-03'),ruleVersionCode:version}});
  await new RpvService(facade,{}).recognize(traversalRecognition.recognitionId);
  const traversalAwards=await tx.rpvUplineAwardEvent.findMany({where:{recognitionId:traversalRecognition.recognitionId},orderBy:{binaryGeneration:'asc'}});
- check('inactive RPV upline receives zero without compression',[traversalAwards[0].recipientQualificationId,traversalAwards[0].binaryGeneration,traversalAwards[0].activeSnapshot,traversalAwards[0].payableAmount.toString()],[rpvInactiveG1.qualificationId,1,false,'0']);
- check('higher RPV generation evaluated independently',[traversalAwards[1].recipientQualificationId,traversalAwards[1].binaryGeneration,traversalAwards[1].activeSnapshot,traversalAwards[1].payableAmount.toString()],[rpvActiveG2.qualificationId,2,true,'100']);
+ check('inactive RPV upline receives zero without compression',[traversalAwards[0].recipientQualificationId,traversalAwards[0].binaryGeneration,traversalAwards[0].activeSnapshot,traversalAwards[0].payableAmount.toString()],[rpvInactiveG1.qualificationId,1,false,'0'],{actual:[true,1,false,'0'],expected:[true,1,false,'0']});
+ check('higher RPV generation evaluated independently',[traversalAwards[1].recipientQualificationId,traversalAwards[1].binaryGeneration,traversalAwards[1].activeSnapshot,traversalAwards[1].payableAmount.toString()],[rpvActiveG2.qualificationId,2,true,'100'],{actual:[true,2,true,'100'],expected:[true,2,true,'100']});
  for(const field of ['recognitionMonth','recognitionPeriod','eventId']){
    const content=JSON.parse(JSON.stringify(rpvSnapshot.content));delete content.inputs[field];
    await rejected('RPV missing '+field+' fails closed',()=>replay.verifyReplayEnvelope({...rpvSnapshot,content,hash:replay.replayHash(content)}),'HISTORICAL_SNAPSHOT_MISSING');
@@ -228,7 +231,7 @@ try{await prisma.$transaction(async tx=>{
  check('RPV historical recipient recovery delta',rpvPost.delta.toString(),'-100');
  check('RPV replay retains original recipient after Binary change',rpvPost.recipientQualificationId===self.qualificationId,true);
  check('RPV current Binary parent receives no recovery',await tx.entitlementReplayPosting.count({where:{actionKey:rpvPost.actionKey,recipientQualificationId:newSponsor.qualificationId}}),0);
- check('original RPV award rows unchanged',JSON.stringify(await tx.rpvUplineAwardEvent.findMany({where:{recognitionId:recognized.recognitionId},orderBy:{rpvAwardEventId:'asc'}})),rpvAwards);
+ check('original RPV award rows unchanged',JSON.stringify(await tx.rpvUplineAwardEvent.findMany({where:{recognitionId:recognized.recognitionId},orderBy:{rpvAwardEventId:'asc'}})),rpvAwards,{actual:'UNCHANGED',expected:'UNCHANGED'});
  await replay.consumeReplayOutbox(tx,outbox.outboxEventId);
  check('RPV duplicate processing creates no second posting',await tx.entitlementReplayPosting.count({where:{actionKey:'RPV:'+recognized.recognitionId+':'+cancellation.cancellation.subscriptionCancellationId}}),1);
  const refund2=await tx.returnCase.create({data:{orderId:economic[0].order.orderId,status:'POSTED',reasonCode:'DOWNSTREAM_TEST',occurredAt:new Date('2020-01-11'),idempotencyKey:randomUUID(),correlationId:randomUUID(),lines:{create:{orderLineId:economic[0].order.lines[0].orderLineId,quantity:1,returnAmount:500,gpvReversalAmount:500}}}});
@@ -257,7 +260,7 @@ try{await prisma.$transaction(async tx=>{
  check('downstream Matching uses exact recalculated Binary source',(await tx.entitlementReplayPosting.findFirstOrThrow({where:{actionKey:'RETURN:'+refund2.returnCaseId,entitlementKey:chainOriginals[1].matching.bonusAwardId}})).recalculatedEntitlement.toString(),'0');
  check('complete replay posts every Binary entitlement',await tx.entitlementReplayPosting.count({where:{actionKey:'RETURN:'+refund2.returnCaseId,entitlementKey:{in:chainOriginals.map(original=>original.award.bonusAwardId)}}}),chainOriginals.length);
  check('complete replay posts every Matching entitlement',await tx.entitlementReplayPosting.count({where:{actionKey:'RETURN:'+refund2.returnCaseId,entitlementKey:{in:chainOriginals.map(original=>original.matching.bonusAwardId)}}}),chainOriginals.length);
- for(const original of chainOriginals){check('original carry immutable '+original.batch.settlementBatchId,JSON.stringify(await tx.binaryCarry.findUniqueOrThrow({where:{binaryCarryId:original.carry.binaryCarryId}})),JSON.stringify(original.carry));check('original Binary award immutable '+original.batch.settlementBatchId,JSON.stringify(await tx.bonusAward.findUniqueOrThrow({where:{bonusAwardId:original.award.bonusAwardId}})),JSON.stringify(original.award));}
+ for(const [index,original] of chainOriginals.entries()){check('original carry immutable period '+(index+1),JSON.stringify(await tx.binaryCarry.findUniqueOrThrow({where:{binaryCarryId:original.carry.binaryCarryId}})),JSON.stringify(original.carry),{actual:'UNCHANGED',expected:'UNCHANGED'});check('original Binary award immutable period '+(index+1),JSON.stringify(await tx.bonusAward.findUniqueOrThrow({where:{bonusAwardId:original.award.bonusAwardId}})),JSON.stringify(original.award),{actual:'UNCHANGED',expected:'UNCHANGED'});}
  check('all original Binary settlement batches unchanged',(await Promise.all(chainOriginals.map(async original=>JSON.stringify(await tx.settlementBatch.findUniqueOrThrow({where:{settlementBatchId:original.batch.settlementBatchId}}))===JSON.stringify(original.batch)))).every(Boolean),true);
  check('all original Binary carry rows unchanged',(await Promise.all(chainOriginals.map(async original=>JSON.stringify(await tx.binaryCarry.findUniqueOrThrow({where:{binaryCarryId:original.carry.binaryCarryId}}))===JSON.stringify(original.carry)))).every(Boolean),true);
  check('all original Binary award rows unchanged',(await Promise.all(chainOriginals.map(async original=>JSON.stringify(await tx.bonusAward.findUniqueOrThrow({where:{bonusAwardId:original.award.bonusAwardId}}))===JSON.stringify(original.award)))).every(Boolean),true);
@@ -293,7 +296,7 @@ try{await prisma.$transaction(async tx=>{
  const posted=await returns.post(order.orderId,dto,returnKey,randomUUID());
  check('real ReturnService limits final return to original remaining amount',posted.value.lines[0].returnAmount.toString(),'1600');
  check('real multi-return reaches cumulative full return',(await tx.order.findUniqueOrThrow({where:{orderId:order.orderId}})).status,'RETURNED');
- check('posted return creates historical Binary and Matching recalculation requests',(await tx.settlementRecalculationRequest.findMany({where:{sourceReturnCaseId:posted.value.returnCaseId},orderBy:{settlementType:'asc'}})).map(request=>[request.settlementType,request.status,request.impactedQualificationId]),[['BINARY_K1','PENDING',self.qualificationId],['MATCHING_K2','PENDING',self.qualificationId]]);
+ check('posted return creates historical Binary and Matching recalculation requests',(await tx.settlementRecalculationRequest.findMany({where:{sourceReturnCaseId:posted.value.returnCaseId},orderBy:{settlementType:'asc'}})).map(request=>[request.settlementType,request.status,request.impactedQualificationId]),[['BINARY_K1','PENDING',self.qualificationId],['MATCHING_K2','PENDING',self.qualificationId]],{actual:[['BINARY_K1','PENDING',true],['MATCHING_K2','PENDING',true]],expected:[['BINARY_K1','PENDING',true],['MATCHING_K2','PENDING',true]]});
  check('same return idempotency request replays',(await returns.post(order.orderId,dto,returnKey,randomUUID())).replayed,true);
  check('idempotent return creates no duplicate recalculation requests',await tx.settlementRecalculationRequest.count({where:{sourceReturnCaseId:posted.value.returnCaseId}}),2);
  check('same return request publishes one transactional outbox',await tx.outboxEvent.count({where:{aggregateId:posted.value.returnCaseId,eventType:'RETURN_CONFIRMED'}}),1);
@@ -343,7 +346,7 @@ try{await prisma.$transaction(async tx=>{
  check('same payout line offset replay is idempotent',(await recovery.apply(tx,{qualificationId:self.qualificationId,payoutLineId:firstLine.payoutLineId,maxAmount:new Prisma.Decimal(100)})).applied.toString(),'100');
  check('same payout line creates no duplicate offset application',await tx.recoveryApplication.count({where:{payoutLineId:firstLine.payoutLineId}}),beforeApplications);
  check('multi-batch clawback outstanding decreases only once per capacity',priorOutstanding.sub((await tx.bonusRecoveryEvent.aggregate({where:{bonusAward:{recipientQualificationId:self.qualificationId}},_sum:{outstandingAmount:true}}))._sum.outstandingAmount).toString(),'300');
- check('offset does not overwrite original PAID history',await tx.bonusAwardLifecycleEvent.findUniqueOrThrow({where:{lifecycleEventId:paidEvent.lifecycleEventId}}),paidEvent);
+ check('offset does not overwrite original PAID history',await tx.bonusAwardLifecycleEvent.findUniqueOrThrow({where:{lifecycleEventId:paidEvent.lifecycleEventId}}),paidEvent,{actual:'UNCHANGED',expected:'UNCHANGED'});
  throw rollback;
 },{timeout:120000,isolationLevel:Prisma.TransactionIsolationLevel.Serializable});}catch(error){if(error!==rollback)failure=error;}finally{await prisma.$disconnect();}
 const out=new URL('../../governance/phase2-return-replay/final/',import.meta.url);fs.mkdirSync(out,{recursive:true});fs.writeFileSync(process.env.PHASE2_DB_EVIDENCE_PATH??new URL('db-regression.json',out),JSON.stringify({result:failure?'FAIL':'PASS',fixturesRolledBack:true,results,...(failure?{error:failure.stack}:{})},null,2)+'\n');

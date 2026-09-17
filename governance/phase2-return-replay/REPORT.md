@@ -18,6 +18,14 @@ Phase 2 blockers included default DB Golden fixtures, executable TODOs, and form
 
 The original baseline was 148. The previously reported 96 conversions / 52 remaining is withdrawn. Unverified original cases were restored from commit `89bfed6`; subsequent conversions require assertions against their actual implementation. The Phase 3 TODO inventory records every remaining case and its classification.
 
+## Deterministic committed DB evidence — 2026-09-18
+
+- `phase2-db-test.mjs` continues to compare complete raw database values with `assert.deepEqual`; assertion strength is unchanged.
+- Only the committed JSON projection is stabilized on an explicit per-check basis. UUIDs, runtime timestamps, randomly derived hashes, UUID labels, and environment-wide absolute counts are replaced by relationship booleans, semantic values, immutable markers, or scoped zero deltas after the raw assertion passes.
+- No global sanitizer is used, so new checks must deliberately define stable evidence when their raw values are non-deterministic.
+- Two consecutive executions passed 154 real DB assertions with fixtures rolled back and produced identical SHA-256 `96851217C810289A6D34F70A6DB69BB5AC7F4FC0117C5190024B0462254DE139`.
+- Business logic and monetary results are unchanged.
+
 ## Remaining blockers
 
 This paragraph describes Phase 2 status only. SA Phase 3 has approved Asia/Taipei timezone and original RPV allocation evidence; eligible-consumption scope, PV/BV mapping, and production calendar remain pending. Formal security/UAT credentials remain absent. See the Phase 3 report for implementation evidence.

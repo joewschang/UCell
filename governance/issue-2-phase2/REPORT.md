@@ -72,3 +72,9 @@ Member UI still does not guess a “latest” Binary settlement batch. An author
 - Governed evidence is rendered in a separate read-only panel with loading, empty, and error states. It is never merged into browser-local scenario counts.
 - Every row exposes `formalSignOff: false`, and the page explicitly prohibits treating evidence metadata as Release Gate PASS or Production Promotion approval.
 - No evidence mutation, UAT sign-off action, monetary behavior, or authorization rule was added.
+
+## Checkpoint 7
+
+- UX-3 responsive review remains PASS for 104 route/viewport checks after the governed UAT evidence panel integration.
+- Automated accessibility review remains PASS for all 26 routes. Complete screen-reader and formal WCAG review remain pending.
+- The visual evidence manifest now identifies source checkpoint `c9da7499411a11f298f95cf07d34f151bc0dc3c8`.
