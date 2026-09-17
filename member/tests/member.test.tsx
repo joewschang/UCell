@@ -27,6 +27,15 @@ it('ignores slow results after qualification switch', async () => {
     await act(async () => first('ball 1'));
     expect(renderer.root.findByType('p').children).toEqual(['ball 2']);
 });
+it('keeps the latest A response after an A to B to A switch', async () => {
+    let oldA!: (value: string) => void;
+    let oldB!: (value: string) => void;
+    await act(async () => { renderer = create(<Probe id="A" load={() => new Promise(resolve => { oldA = resolve; })}/>); });
+    await act(async () => { renderer.update(<Probe id="B" load={() => new Promise(resolve => { oldB = resolve; })}/>); });
+    await act(async () => { renderer.update(<Probe id="A" load={async () => 'latest A'}/>); });
+    await act(async () => { oldB('stale B'); oldA('stale A'); });
+    expect(renderer.root.findByType('p').children).toEqual(['latest A']);
+});
 it('clears the previous month while next month loads', async () => {
     await act(async () => { renderer = create(<Probe id="q1:2026-08" load={async () => 'August'}/>); });
     await act(async () => renderer.update(<Probe id="q1:2026-09" load={() => new Promise(() => { })}/>));
