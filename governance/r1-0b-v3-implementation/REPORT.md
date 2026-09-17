@@ -20,7 +20,7 @@
 
 ## Stage/UAT disposition
 
-- Code and automated Connected DEV evidence are ready for a Stage image/deployment checkpoint.
-- Formal Stage redeployment and Connected Golden Journey remain operationally blocked until Stage PostgreSQL, LINE/LIFF and Entra/RBAC credentials are available to the deployment session.
+- Code and automated Connected DEV evidence are ready for a Stage image/deployment checkpoint. Stage preflight: 19/19 assertions PASS; upgrade/Golden harness: 7/7 tests PASS; UAT seed safety test PASS.
+- Formal Stage redeployment and Connected Golden Journey remain operationally blocked: Azure Security Defaults requires a fresh interactive CLI login, and Stage PostgreSQL plus LINE/LIFF and Entra/RBAC credentials are not available to this deployment session.
 - Synthetic credentials must not be used as formal provider evidence.
 - Production Promotion remains BLOCKED; no Production resource or promotion is authorized.
