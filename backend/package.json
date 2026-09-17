@@ -34,6 +34,7 @@
     "migration:preflight": "node scripts/migration-preflight.mjs",
     "source:preflight": "node scripts/source-preflight.mjs",
     "golden:r1b": "node scripts/golden-r1b-regression.mjs",
+    "golden:v3:mandatory": "node scripts/v3-mandatory-golden.mjs",
     "dev:smoke": "node scripts/run-bash-gate.mjs dev-smoke.sh",
     "db:golden": "node scripts/db-golden-isolated.mjs",
     "openapi:preflight": "node scripts/openapi-preflight.mjs",

@@ -6,6 +6,7 @@ import { RuntimeRuleService } from '../rules/runtime-rule.service';
 import { BonusQueryService } from '../bonus/bonus-query.service';
 import { calculateGlobalPool, GlobalRankSliceInput } from './global-pool-calculation';
 import { randomUUID } from 'node:crypto';
+import { createHash } from 'node:crypto';
 import { GlobalPoolPersistence, GlobalPoolAwardWrite } from './global-pool-persistence';
 
 const LEVELS:GlobalRankCode[]=['NEW_STAR','EXCELLENCE','GLORY','DIAMOND','CROWN'];
@@ -147,9 +148,13 @@ export class GlobalPoolService {
       const parameterSnapshot=await this.calendar.captureForPeriod(tx,periodStart,periodEnd,'WELFARE',ruleVersionCode);
       const totalGpv=await this.query.totalGpv(tx,periodStart,periodEnd);
       const rate=snapshotDecimal(parameterSnapshot,'pool.welfare.rate','*');
-      return tx.welfarePoolAccrual.create({
+      const accrual=await tx.welfarePoolAccrual.create({
         data:{periodStart,periodEnd,totalGpv,poolRate:rate,accruedAmount:totalGpv.mul(rate),ruleVersionCode,parameterSnapshot:parameterSnapshot as unknown as Prisma.InputJsonValue}
       });
+      const idempotencyKey=`welfare:initial:${accrual.welfarePoolAccrualId}`;
+      await tx.welfarePoolEffect.create({data:{welfarePoolAccrualId:accrual.welfarePoolAccrualId,effectType:'INITIAL_ACCRUAL',amount:accrual.accruedAmount,
+        ruleVersionCode,idempotencyKey,evidenceHash:createHash('sha256').update(JSON.stringify({kind:'WELFARE_INITIAL_ACCRUAL',sourceId:accrual.welfarePoolAccrualId,amount:accrual.accruedAmount.toFixed(4),ruleVersionCode})).digest('hex')}});
+      return accrual;
     });
   }
 }

@@ -114,7 +114,7 @@ export class AdminObservabilityService {
   }
 
   async qualificationOperations(qualificationId:string){
-    const [qualification,pv,awards,carry]=await Promise.all([
+    const [qualification,pv,awards,carry,activeEvidence,theoryEvidence]=await Promise.all([
       this.prisma.qualification.findUniqueOrThrow({
         where:{qualificationId},
         include:{
@@ -141,13 +141,15 @@ export class AdminObservabilityService {
       this.prisma.binaryCarry.findMany({
         where:{qualificationId},orderBy:{periodEnd:'desc'},take:52
       }),
+      this.prisma.activeIntervalEvidence.findMany({where:{qualificationId},orderBy:{createdAt:'desc'},take:100}),
+      this.prisma.theoryCalculationEvidence.findMany({where:{recipientQualificationId:qualificationId},orderBy:{occurredAt:'desc'},take:200}),
     ]);
 
     const balances=await this.prisma.pvLedger.groupBy({
       by:['pvType'],where:{qualificationId},_sum:{amount:true}
     });
 
-    return {qualification,pv,balances,awards,carry};
+    return {qualification,pv,balances,awards,carry,v3Evidence:{activeIntervals:activeEvidence,theoryCalculations:theoryEvidence}};
   }
 
   async awardDetail(bonusAwardId:string){
@@ -166,7 +168,19 @@ export class AdminObservabilityService {
     const payableEntries=await this.prisma.payableEntry.findMany({
       where:{sourceType:'BONUS_AWARD',sourceId:bonusAwardId},
     });
-    return {...award,payableEntries};
+    const anchors=typeof this.prisma.$queryRaw==='function'
+      ?await this.prisma.$queryRaw<Array<{settlementDate:Date;nominalPayoutDate:Date;adjustedPayoutDate:Date;businessCalendarVersion:string;anchorHash:string}>>`SELECT a.settlement_date AS "settlementDate",a.nominal_payout_date AS "nominalPayoutDate",a.adjusted_payout_date AS "adjustedPayoutDate",v.version_code AS "businessCalendarVersion",a.anchor_hash AS "anchorHash" FROM ledger.award_payout_anchor a JOIN rules.business_calendar_version v ON v.business_calendar_version_id=a.business_calendar_version_id WHERE a.bonus_award_id=${bonusAwardId}::uuid`
+      :[];
+    const [anchor]=anchors;
+    const finalized=award.settlementBatch?.status==='FINALIZED';
+    return {...award,theoryAmount:award.theoryAmount,finalAmount:finalized?award.payableAmount:null,payableAmount:finalized?award.payableAmount:null,settlementStatus:finalized?'FINALIZED':'PENDING',pendingReason:finalized?null:award.settlementBatchId?'SETTLEMENT_NOT_FINALIZED':'SETTLEMENT_NOT_ASSIGNED',payoutSchedule:anchor??{settlementDate:null,nominalPayoutDate:null,adjustedPayoutDate:null,businessCalendarVersion:null,anchorHash:null},v3Evidence:{ruleVersion:award.ruleVersionCode,parameterSnapshotHash:award.parameterSnapshotHash,calculationHash:award.settlementBatch?.calculationHash??null},payableEntries};
+  }
+
+  async reservoirA(take=100){
+    const limit=Math.min(Math.max(Number.isFinite(take)?Math.trunc(take):100,1),200);
+    const effects=await this.prisma.reservoirLedgerEffect.findMany({where:{reservoirCode:'A'},orderBy:[{sourcePeriodEnd:'desc'},{createdAt:'desc'}],take:limit+1});
+    const total=await this.prisma.reservoirLedgerEffect.aggregate({where:{reservoirCode:'A'},_sum:{amount:true}});
+    return {reservoirCode:'A' as const,balance:(total._sum.amount??new Prisma.Decimal(0)).toString(),effects:effects.slice(0,limit).map(row=>({id:row.reservoirLedgerEffectId,effectType:row.effectType,amount:row.amount.toString(),sourceGlobalSettlementId:row.sourceGlobalSettlementId,sourcePeriodStart:row.sourcePeriodStart.toISOString(),sourcePeriodEnd:row.sourcePeriodEnd.toISOString(),ruleVersion:row.ruleVersionCode,parameterSnapshotHash:null,evidenceHash:row.evidenceHash,replayActionKey:row.replayActionKey,createdAt:row.createdAt.toISOString()})),limit,truncated:effects.length>limit};
   }
 
   async settlementHistory(input:{

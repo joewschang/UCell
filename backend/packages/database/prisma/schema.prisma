@@ -89,6 +89,14 @@ enum SettlementSlot {
 
 enum ReservoirEffectType {
   GLOBAL_UNDISTRIBUTED
+  REPLAY_ADJUSTMENT
+
+  @@schema("ledger")
+}
+
+enum WelfareEffectType {
+  INITIAL_ACCRUAL
+  REPLAY_ADJUSTMENT
 
   @@schema("ledger")
 }
@@ -2042,11 +2050,27 @@ model ReservoirLedgerEffect {
   ruleVersionCode          String              @map("rule_version_code")
   idempotencyKey           String              @unique @map("idempotency_key")
   evidenceHash             String              @map("evidence_hash")
+  replayActionKey          String?             @unique @map("replay_action_key")
   createdAt                DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
 
-  @@unique([reservoirCode, effectType, sourceGlobalSettlementId])
   @@index([reservoirCode, sourcePeriodEnd])
   @@map("reservoir_ledger_effect")
+  @@schema("ledger")
+}
+
+model WelfarePoolEffect {
+  welfarePoolEffectId  String            @id @default(uuid()) @map("welfare_pool_effect_id") @db.Uuid
+  welfarePoolAccrualId String            @map("welfare_pool_accrual_id") @db.Uuid
+  effectType           WelfareEffectType @map("effect_type")
+  amount               Decimal           @db.Decimal(18, 4)
+  ruleVersionCode      String            @map("rule_version_code")
+  idempotencyKey       String            @unique @map("idempotency_key")
+  evidenceHash         String            @map("evidence_hash")
+  replayActionKey      String?           @unique @map("replay_action_key")
+  createdAt            DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([welfarePoolAccrualId, createdAt])
+  @@map("welfare_pool_effect")
   @@schema("ledger")
 }
 

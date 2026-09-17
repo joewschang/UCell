@@ -5,7 +5,10 @@ export class QualificationView {
  @ApiProperty() rank!:string;
  @ApiProperty() active!:boolean;
  @ApiProperty() ballLabel!:string;
+ @ApiProperty({pattern:'^\\d{4}-(0[1-9]|1[0-2])$',description:'Asia/Taipei calendar month used for the Active projection.'}) monthReference!:string;
+ @ApiProperty({type:()=>ActiveIntervalView,nullable:true,description:'Authoritative v3 Active interval for monthReference; null means no Active evidence.'}) activeInterval!:ActiveIntervalView|null;
 }
+export class ActiveIntervalView { @ApiProperty({format:'date-time'}) activeFrom!:string; @ApiProperty({format:'date-time'}) activeTo!:string; }
 export class PersonView {
  @ApiProperty() name!:string;
  @ApiProperty({type:String,nullable:true}) alias!:string|null;
@@ -92,6 +95,8 @@ export class DashboardView {
  @ApiProperty({type:Number,nullable:true}) epv!:number|null;
  @ApiProperty({type:Number,nullable:true,description:'Unfinalized settlement is null, not zero.'}) bonusAmount!:number|null;
  @ApiProperty() bonusStatus!:string;
+ @ApiProperty({pattern:'^\\d{4}-(0[1-9]|1[0-2])$'}) monthReference!:string;
+ @ApiProperty({type:()=>ActiveIntervalView,nullable:true}) activeInterval!:ActiveIntervalView|null;
 }
 export class TreeNodeView { @ApiProperty() code!:string; @ApiProperty({description:'Masked name'}) name!:string; }
 export class SponsorView {
@@ -107,6 +112,17 @@ export class AwardView {
  @ApiProperty() name!:string;
  @ApiProperty({enum:['PENDING','CALCULATED','PENDING45D','EFFECTIVE','PAYABLE','PAID','REVERSED','CLAWBACK']}) status!:string;
  @ApiProperty({type:Number,nullable:true,description:'Null for unfinalized or absent lifecycle evidence.'}) amount!:number|null;
+ @ApiProperty({type:Number,nullable:true}) theoryAmount!:number|null;
+ @ApiProperty({type:Number,nullable:true,description:'Null until the settlement batch is FINALIZED.'}) finalAmount!:number|null;
+ @ApiProperty({type:Number,nullable:true,description:'Null until final settlement evidence exists.'}) payableAmount!:number|null;
+ @ApiProperty({enum:['PENDING','FINALIZED']}) settlementStatus!:string;
+ @ApiProperty({type:String,nullable:true}) pendingReason!:string|null;
+ @ApiProperty({type:String,format:'date',nullable:true}) settlementDate!:string|null;
+ @ApiProperty({type:String,format:'date',nullable:true}) nominalPayoutDate!:string|null;
+ @ApiProperty({type:String,format:'date',nullable:true}) adjustedPayoutDate!:string|null;
+ @ApiProperty({type:String,nullable:true}) businessCalendarVersion!:string|null;
+ @ApiProperty({type:String,nullable:true}) ruleVersion!:string|null;
+ @ApiProperty({type:String,nullable:true}) parameterSnapshotHash!:string|null;
 }
 export class BonusesView extends ScopedPeriodView { @ApiProperty({type:[AwardView]}) awards!:AwardView[]; @ApiProperty({type:PaginationView}) pagination!:PaginationView; }
 export class LedgerEntryView { @ApiProperty() id!:string; @ApiProperty() label!:string; @ApiProperty({type:Number,nullable:true}) amount!:number|null; @ApiProperty({format:'date-time'}) postedAt!:string; @ApiProperty() sourceId!:string; }
@@ -118,5 +134,5 @@ export class OrdersView { @ApiProperty({format:'uuid'}) qualificationId!:string;
 export class ContextView { @ApiProperty({format:'uuid'}) qualificationId!:string; @ApiProperty({type:QualificationView}) qualification!:QualificationView; }
 export class LogoutView { @ApiProperty({enum:['REVOKED']}) status!:string; @ApiProperty({format:'uuid'}) sessionId!:string; }
 export class LineSessionView { @ApiProperty({description:'Opaque UCell bearer, not LINE token.'}) accessToken!:string; @ApiProperty({format:'date-time'}) expiresAt!:string; @ApiProperty({format:'uuid'}) sessionId!:string; }
-export const memberViewModels=[LogoutView,QualificationView,PersonView,PaginationView,NoticeView,NoticesView,NoticeReadView,OrderLineView,OrderView,ProductView,PerformanceView,DashboardView,TreeNodeView,SponsorView,SideView,BinaryView,AwardView,BonusesView,LedgerEntryView,LedgerView,RecognitionView,RepurchaseView,OrderListEntryView,OrdersView,ContextView,LineSessionView];
+export const memberViewModels=[LogoutView,ActiveIntervalView,QualificationView,PersonView,PaginationView,NoticeView,NoticesView,NoticeReadView,OrderLineView,OrderView,ProductView,PerformanceView,DashboardView,TreeNodeView,SponsorView,SideView,BinaryView,AwardView,BonusesView,LedgerEntryView,LedgerView,RecognitionView,RepurchaseView,OrderListEntryView,OrdersView,ContextView,LineSessionView];
 export function memberEnvelope(type:Function,array=false){return {type:'object',required:['data','meta'],properties:{data:array?{type:'array',items:{$ref:getSchemaPath(type)}}:{$ref:getSchemaPath(type)},meta:{type:'object',required:['request_id','timestamp','api_version'],properties:{request_id:{type:'string'},timestamp:{type:'string',format:'date-time'},api_version:{type:'string',enum:['v1']}}}}};}

@@ -1,33 +1,26 @@
 # R1.0B Decision Register v3 implementation report
 
-## Immediate theory and historical replay checkpoint — 2026-09-17
+## Stable closure checkpoint — 2026-09-17
 
-- Authoritative GPV recognition now appends G1 Referral Theory, fixed-generation Referral Matching theory/zero evidence and Qualification-scoped Binary ancestor left/right ledger entries in the same Serializable transaction.
-- Immediate processing creates no final K0, BonusAward or PAID entitlement. Missing historical Sponsor/Binary/Active/parameter evidence fails closed; retry is exactly once and same-Person Balls remain isolated.
-- Referral and Binary Matching now retain fixed historical Sponsor generations. Inactive/unlocked failure produces zero evidence while traversal continues; no compression, substitution, redistribution or backfill occurs. Binary Matching uses Binary Paid and the frozen 15/10/5/5/5 rates/unlock depths.
-- POSTED-return replay now appends whole-month EPV/consumption accumulator and superseding Active interval evidence where v3 recognition evidence exists. Pre-v3 facts retain the sealed legacy replay path instead of fabricating history. Existing PAID reductions continue through append-only Recovery/CLAWBACK.
-- Database/API/Worker builds PASS; Matching/Return focused regressions 46/46 PASS; immediate GPV PostgreSQL regression 2/2 PASS.
-- Remaining blocker: migration 41 cannot represent signed Global/Reservoir/Welfare replay deltas; a forward-only migration and replay integration are required.
+- Decision Register v3 is implemented against `recordVersion=3`; `pendingDecisions=[]` remains authoritative.
+- Migration 41 adds immutable ConsumptionRecognition, concrete GPV/RPV/EPV classification evidence, Qualification-month Active evidence, immediate theory/Binary ledger evidence, Business Calendar/payout anchors and Reservoir A.
+- Migration 42 adds signed append-only Reservoir A/Welfare replay deltas with replay-action uniqueness. Original pool, award, ledger and PAID records remain immutable.
+- GPV recognition performs historical Sponsor Referral/Matching theory and Qualification-scoped Binary ancestor propagation in one Serializable transaction. Theory does not create premature final K0 or PAID entitlement.
+- Fixed-generation Matching preserves historical generations; ineligible intermediate generations append zero evidence and traversal continues without compression, substitution, redistribution or backfill.
+- POSTED returns recompute the historical Qualification month, Active interval, EPV and downstream evidence. Missing historical evidence fails closed; PAID reductions append Recovery/CLAWBACK.
+- Business dates use Asia/Taipei, Sunday 00:00 half-open weekly boundaries, 10/25 settlement batches and fixed nominal payout mapping with versioned business-day adjustment.
+- Global undistributed amount is transferred to Reservoir A exactly once. Replay appends signed deltas; Welfare remains accrual-only.
+- Member/Admin read projections expose Active interval/month, theory/final/payable separation, settlement/calendar evidence and Reservoir A. Unfinalized monetary results are returned as `PENDING` with `amount=null`.
+- Mandatory v3 Golden cases: 17/17 PASS.
+- Official isolated API suite: 38 suites / 343 tests PASS.
+- Member: build PASS; 136/136 tests PASS. Admin: build PASS; 31/31 tests PASS.
+- Fresh isolated DB Golden: 42 migrations PASS; all deterministic DB suites PASS, including 356 Member identity assertions and 8 replay-pool-delta assertions.
+- Offline/dependency preflight, Prisma validate/generate/migrate, Backend/API/Worker build, OpenAPI preflight, Security policy preflight and RC gate PASS.
+- Legacy Test Drift corrected in the DB Golden fixture: unfinalized Member bonus readback now expects `PENDING`/`null`; underlying append-only ledger facts remain asserted separately.
 
-## Connected evidence checkpoint — 2026-09-17
+## Stage/UAT disposition
 
-- `SALE_CONFIRMED` now enters an idempotent ConsumptionRecognition transaction instead of writing GPV directly from payment/order existence.
-- The transaction updates the Qualification/Asia-Taipei month accumulator, creates same-event Active evidence at the NT$2,000 threshold, persists only concrete GPV/RPV/EPV classification and rejects generic PV/BV.
-- Tests prove pre-threshold inactive, threshold transaction active, subsequent active, next-month reset, Ball isolation and historical GPV no-duplicate reuse.
-- Business Calendar persistence now seals immutable version/date evidence, canonical 10/25 settlement classification and nominal/adjusted payout anchors; retry and delayed execution preserve the original anchor.
-- Global settlement, member awards and the initial Reservoir A effect commit in one Serializable transaction. Duplicate/concurrent delivery is exactly once; missing/tampered evidence fails closed; Welfare remains accrual-only.
-- Database/API/Worker builds PASS. Combined Connected DB regression: 6 suites / 37 tests PASS.
-- Remaining v3 closure: immediate GPV Referral/Matching theory and Binary ancestor ledger, fixed-generation zero evidence, POSTED-return Active/Global/Reservoir/Welfare replay, complete mandatory Golden 17 and full gates.
-
-## Evidence foundation checkpoint — 2026-09-17
-
-- Baseline: Decision Register v3, no pending product decisions.
-- Added migration 41 with immutable/idempotent ConsumptionRecognition, concrete volume classification sidecar, Qualification-month accumulator, Active interval, fixed-generation theory evidence, Binary volume ledger, BusinessCalendarVersion/date, settlement calendar evidence, payout anchor and Reservoir A ledger effect.
-- Historical GPV rows are not duplicated or economically migrated.
-- Existing Global/Welfare records and all new evidence receive append-only database protection.
-- Global empty rank slices are now undistributed rather than redistributed to later recipients; the pool reconciliation equation remains enforced.
-- Added Asia/Taipei Sunday-week, canonical 10/25 settlement and fixed payout-batch domain resolvers with business-day adjustment and fail-closed missing-calendar behavior.
-- Validation: Prisma/schema/migration preflight PASS; fresh 0→41 and existing DB Golden PASS; shared calendar 14/14 PASS; Global focused 15/15 PASS.
-- Stage deployment: deferred until all v3 service/worker/golden gates pass. Production Promotion remains BLOCKED.
-
-Next: connect recognition/Active/theory/Binary ledger transactions; persist settlement/payout calendar anchors; persist Reservoir A exactly once and extend return replay.
+- Code and automated Connected DEV evidence are ready for a Stage image/deployment checkpoint.
+- Formal Stage redeployment and Connected Golden Journey remain operationally blocked until Stage PostgreSQL, LINE/LIFF and Entra/RBAC credentials are available to the deployment session.
+- Synthetic credentials must not be used as formal provider evidence.
+- Production Promotion remains BLOCKED; no Production resource or promotion is authorized.

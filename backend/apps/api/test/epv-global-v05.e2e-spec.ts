@@ -23,7 +23,7 @@ async function globalHarness(input:{total?:string;weak?:Record<string,string>;ac
   ...['300000','600000','1000000','2000000','4000000'].map((value,i)=>['global.rank.weak_threshold',levels[i],value])]
   .map(([parameterCode,scopeKey,valueJson],i)=>({runtimeRuleParameterId:String(i),parameterCode,scopeKey,valueJson,effectiveFrom:new Date('2019-01-01'),effectiveTo:null}));
  const snapshot=await captureParameters({runtimeRuleParameter:{findMany:async()=>parameters}} as any,new Date('2020-02-01'),'TEST_ONLY');
- const qualifications=Object.keys(input.weak??{}).map(qualificationId=>({qualificationId})),ranks=new Set<string>(),awards:any[]=[],settlements:any[]=[],reservoir:any[]=[],accruals:any[]=[];
+ const qualifications=Object.keys(input.weak??{}).map(qualificationId=>({qualificationId})),ranks=new Set<string>(),awards:any[]=[],settlements:any[]=[],reservoir:any[]=[],accruals:any[]=[],welfareEffects:any[]=[];
  const tx:any={
   qualification:{findMany:jest.fn(async()=>qualifications)},
   qualificationGlobalRankHistory:{
@@ -34,15 +34,16 @@ async function globalHarness(input:{total?:string;weak?:Record<string,string>;ac
   globalPoolAward:{create:jest.fn(async({data}:any)=>{awards.push(data);return data;})},
   reservoirLedgerEffect:{
    create:jest.fn(async({data}:any)=>{const row={...data,createdAt:new Date()};reservoir.push(row);return row;}),
-   findUnique:jest.fn(async()=>reservoir.at(-1)??null),
+   findFirst:jest.fn(async()=>reservoir.at(-1)??null),
   },
   bonusAward:{create:jest.fn()},payable:{create:jest.fn()},ledgerEntry:{create:jest.fn()},
-  welfarePoolAccrual:{findUnique:jest.fn(async()=>null),create:jest.fn(async({data}:any)=>{accruals.push(data);return data;})},
+  welfarePoolAccrual:{findUnique:jest.fn(async()=>null),create:jest.fn(async({data}:any)=>{const row={welfarePoolAccrualId:'welfare-1',...data};accruals.push(row);return row;})},
+  welfarePoolEffect:{create:jest.fn(async({data}:any)=>{welfareEffects.push(data);return data;})},
  };
  const query={totalGpv:jest.fn(async()=>new Prisma.Decimal(input.total??'10000000')),isActiveAt:jest.fn(async(_tx:any,qid:string)=>input.active?.[qid]??true)};
  const service=new GlobalPoolService({$transaction:async(work:any)=>work(tx)} as any,{} as any,query as any,{captureForPeriod:async()=>snapshot} as any,new GlobalPoolPersistence());
  jest.spyOn(service,'weakSidePv').mockImplementation(async(_tx:any,qid:string)=>new Prisma.Decimal(input.weak?.[qid]??0));
- return {service,tx,snapshot,ranks,awards,settlements,reservoir,accruals};
+ return {service,tx,snapshot,ranks,awards,settlements,reservoir,accruals,welfareEffects};
 }
 describe('v0.5 EPV', () => {
   it('REPURCHASE 4800 => excess 2800 x 60% = 1680 EPV',()=>{expect(historicalMonthlyEntitlements([epv()],new Map([['order',d(4800)]])).get('order')!.toString()).toBe('1680');});
@@ -79,5 +80,5 @@ describe('v0.5 Global/Welfare', () => {
     expect(h.tx.globalPoolSettlement.create).toHaveBeenCalledTimes(1);
     expect(h.tx.reservoirLedgerEffect.create).toHaveBeenCalledTimes(1);
   });
-  it('welfare 2% is accrual-only and creates no member Award, Payable, or Ledger',async()=>{const h=await globalHarness({total:'1000'});const row=await h.service.accrueWelfare(start,end,'TEST_ONLY');expect(row.poolRate.toString()).toBe('0.02');expect(row.accruedAmount.toString()).toBe('20');expect(h.awards).toEqual([]);expect(h.tx.bonusAward.create).not.toHaveBeenCalled();expect(h.tx.payable.create).not.toHaveBeenCalled();expect(h.tx.ledgerEntry.create).not.toHaveBeenCalled();});
+  it('welfare 2% is accrual-only and creates no member Award, Payable, or Ledger',async()=>{const h=await globalHarness({total:'1000'});const row=await h.service.accrueWelfare(start,end,'TEST_ONLY');expect(row.poolRate.toString()).toBe('0.02');expect(row.accruedAmount.toString()).toBe('20');expect(h.welfareEffects).toHaveLength(1);expect(h.welfareEffects[0]).toMatchObject({effectType:'INITIAL_ACCRUAL',amount:row.accruedAmount});expect(h.awards).toEqual([]);expect(h.tx.bonusAward.create).not.toHaveBeenCalled();expect(h.tx.payable.create).not.toHaveBeenCalled();expect(h.tx.ledgerEntry.create).not.toHaveBeenCalled();});
 });

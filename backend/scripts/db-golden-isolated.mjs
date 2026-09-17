@@ -33,6 +33,7 @@ try{
   run(['scripts/phase3-member-identity-db-test.mjs']);
   run(['scripts/content-db-test.mjs']);
   run(['scripts/formal-application-db-test.mjs']);
+  run(['scripts/replay-pool-delta-db-test.mjs']);
   console.log('DB_GOLDEN_ISOLATED_PASS: fresh database, deployed migrations, deterministic fixtures');
 }finally{
   // Only this successfully-created random test database is removed.

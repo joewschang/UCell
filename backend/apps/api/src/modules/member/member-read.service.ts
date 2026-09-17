@@ -63,7 +63,13 @@ export class MemberReadService {
      return pending('LIFECYCLE_EVIDENCE_AMBIGUOUS','Conflicting lifecycle timestamps require explicit chronology evidence');
     };
     const disclosed=(row:typeof awards[number])=>!!state(row)&&state(row)!=='CALCULATED'&&(!row.settlementBatchId||row.settlementBatch?.status==='FINALIZED');
-    if(kind==='bonuses')return {qualificationId:id,period:month,awards:awards.length?awards.map(row=>({id:row.bonusAwardId,name:row.awardType,status:!disclosed(row)?'PENDING':state(row)==='PENDING_45D'?'PENDING45D':state(row),amount:disclosed(row)?row.payableAmount.toNumber():null,ruleVersion:row.ruleVersionCode,parameterSnapshotHash:row.parameterSnapshotHash})):[{id:'settlement-pending',name:'獎金結算',status:'PENDING',amount:null}],pagination:{limit:100,truncated:awards.length===100}};
+    if(kind==='bonuses'){
+     const ids=awards.map(row=>row.bonusAwardId);
+     const anchors=ids.length?await tx.$queryRaw<Array<{bonusAwardId:string;settlementDate:Date;nominalPayoutDate:Date;adjustedPayoutDate:Date;versionCode:string}>>`SELECT a.bonus_award_id AS "bonusAwardId",a.settlement_date AS "settlementDate",a.nominal_payout_date AS "nominalPayoutDate",a.adjusted_payout_date AS "adjustedPayoutDate",v.version_code AS "versionCode" FROM ledger.award_payout_anchor a JOIN rules.business_calendar_version v ON v.business_calendar_version_id=a.business_calendar_version_id WHERE a.bonus_award_id=ANY(${ids}::uuid[])`:[];
+     const byAward=new Map(anchors.map(anchor=>[anchor.bonusAwardId,anchor]));
+     const date=(value:Date)=>value.toISOString().slice(0,10);
+     return {qualificationId:id,period:month,awards:awards.length?awards.map(row=>{const finalized=row.settlementBatch?.status==='FINALIZED',anchor=byAward.get(row.bonusAwardId),current=state(row);return {id:row.bonusAwardId,name:row.awardType,status:finalized&&current?(current==='PENDING_45D'?'PENDING45D':current):'PENDING',amount:finalized?row.payableAmount.toNumber():null,theoryAmount:row.theoryAmount?.toNumber()??null,finalAmount:finalized?row.payableAmount.toNumber():null,payableAmount:finalized?row.payableAmount.toNumber():null,settlementStatus:finalized?'FINALIZED':'PENDING',pendingReason:finalized?null:row.settlementBatchId?'SETTLEMENT_NOT_FINALIZED':'SETTLEMENT_NOT_ASSIGNED',settlementDate:anchor?date(anchor.settlementDate):null,nominalPayoutDate:anchor?date(anchor.nominalPayoutDate):null,adjustedPayoutDate:anchor?date(anchor.adjustedPayoutDate):null,businessCalendarVersion:anchor?.versionCode??null,ruleVersion:row.ruleVersionCode,parameterSnapshotHash:row.parameterSnapshotHash};}):[{id:'settlement-pending',name:'獎金結算',status:'PENDING',amount:null,theoryAmount:null,finalAmount:null,payableAmount:null,settlementStatus:'PENDING',pendingReason:'SETTLEMENT_NOT_AVAILABLE',settlementDate:null,nominalPayoutDate:null,adjustedPayoutDate:null,businessCalendarVersion:null,ruleVersion:null,parameterSnapshotHash:null}],pagination:{limit:100,truncated:awards.length===100}};
+    }
     const recoveries=await tx.bonusRecoveryEvent.findMany({where:{bonusAward:{recipientQualificationId:id},occurredAt:at},orderBy:[{occurredAt:'asc'},{bonusRecoveryEventId:'asc'}],take:100});
     return {qualificationId:id,period:month,entries:[...awards.filter(disclosed).map(row=>({id:row.bonusAwardId,label:row.awardType,amount:row.payableAmount.toNumber(),postedAt:row.createdAt.toISOString(),sourceId:row.sourceEventId??row.bonusAwardId})),...recoveries.map(row=>({id:row.bonusRecoveryEventId,label:'CLAWBACK',amount:row.recoveryAmount.negated().toNumber(),postedAt:row.occurredAt.toISOString(),sourceId:row.bonusAwardId}))],pagination:{limit:100,truncated:awards.length===100||recoveries.length===100}};
    }
@@ -73,7 +79,9 @@ export class MemberReadService {
    if(kind==='dashboard'){
     const qualification=(await this.identity.qualifications(personId)).find(row=>row.id===id)!;
     const person=await this.identity.me(personId);
-    return {qualificationId:id,qualification,memberName:person.name,memberNo:person.memberNo,monthlyRepurchaseStatus:(await repurchase()).status,...await volumes(),bonusAmount:null,bonusStatus:'PENDING',status:'PENDING',reason:'SETTLEMENT_NOT_FINALIZED',view:'EFFECTIVE_ORIGINAL_EVENT_MONTH'};
+    const interval=await tx.activeIntervalEvidence.findFirst({where:{qualificationId:id,calendarMonth:new Date(month+'-01')},orderBy:{createdAt:'desc'}});
+    const activeInterval=interval?{activeFrom:interval.activeFrom.toISOString(),activeTo:interval.activeTo.toISOString()}:null;
+    return {qualificationId:id,qualification:{...qualification,monthReference:month,active:!!interval&&interval.activeFrom<=now&&interval.activeTo>now,activeInterval},memberName:person.name,memberNo:person.memberNo,monthReference:month,activeInterval,monthlyRepurchaseStatus:(await repurchase()).status,...await volumes(),bonusAmount:null,bonusStatus:'PENDING',status:'PENDING',reason:'SETTLEMENT_NOT_FINALIZED',view:'EFFECTIVE_ORIGINAL_EVENT_MONTH'};
    }
    if(kind==='orders'){
     const rows=await tx.order.findMany({where:{qualificationId:id},orderBy:[{createdAt:'desc'},{orderId:'desc'}],take:100});

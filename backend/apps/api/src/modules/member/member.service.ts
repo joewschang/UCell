@@ -69,7 +69,10 @@ export class MemberService {
  async qualifications(personId:string){
   const now=new Date();
   const rows=await this.db.qualification.findMany({where:{currentHolderPersonId:personId,holderHistory:{some:{holderPersonId:personId,effectiveFrom:{lte:now},OR:[{effectiveTo:null},{effectiveTo:{gt:now}}]}}},include:{activePeriods:{where:{activeFrom:{lte:now},OR:[{activeTo:null},{activeTo:{gt:now}}]}}},orderBy:{qualificationNo:'asc'}});
-  return rows.map(row=>({id:row.qualificationId,code:String(row.qualificationNo),rank:row.planLevelCode,active:row.activePeriods.length>0,ballLabel:'球 '+String(row.qualificationNo)}));
+  const monthReference=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Taipei',year:'numeric',month:'2-digit'}).format(now);
+  const evidence=await this.db.activeIntervalEvidence.findMany({where:{qualificationId:{in:rows.map(row=>row.qualificationId)},calendarMonth:new Date(monthReference+'-01')},orderBy:{createdAt:'desc'}});
+  const latest=new Map<string,typeof evidence[number]>();for(const row of evidence)if(!latest.has(row.qualificationId))latest.set(row.qualificationId,row);
+  return rows.map(row=>{const interval=latest.get(row.qualificationId);return {id:row.qualificationId,code:String(row.qualificationNo),rank:row.planLevelCode,active:!!interval&&interval.activeFrom<=now&&interval.activeTo>now,ballLabel:'球 '+String(row.qualificationNo),monthReference,activeInterval:interval?{activeFrom:interval.activeFrom.toISOString(),activeTo:interval.activeTo.toISOString()}:null};});
  }
  async context(personId:string,qualificationId:string){
   await this.access.assertHolder(personId,qualificationId);

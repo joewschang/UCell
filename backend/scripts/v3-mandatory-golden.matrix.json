@@ -1,0 +1,22 @@
+{
+  "version": "R1.0B-v3-2026-09-17",
+  "cases": [
+    {"id":"T01","requirement":"Threshold transaction is Active for itself","command":"api-db-recognition"},
+    {"id":"T02","requirement":"New Taipei month resets to Inactive","command":"api-db-recognition"},
+    {"id":"T03","requirement":"Ball A Active does not activate Ball B","command":"api-db-recognition"},
+    {"id":"T04","requirement":"Exact Sunday 00:00 belongs only to new Binary week","command":"api-contract"},
+    {"id":"T05","requirement":"GPV immediately writes theory and Binary propagation without final Award","command":"api-db-gpv"},
+    {"id":"T06","requirement":"Weekly caps and x4 display values","command":"api-contract-and-bonus"},
+    {"id":"T07","requirement":"10th settlement maps to following-month 25th payout","command":"api-db-calendar"},
+    {"id":"T08","requirement":"25th settlement maps to month-after-next 10th payout","command":"api-db-calendar"},
+    {"id":"T09","requirement":"Holiday payout advances to next Business Day","command":"api-db-calendar"},
+    {"id":"T10","requirement":"Global undistributed reaches Reservoir A exactly once across normal, retry, duplicate, replay and rollback","command":"api-db-reservoir"},
+    {"id":"T11","requirement":"Generic PV cannot create an Award","command":"api-contract"},
+    {"id":"T12","requirement":"Generic BV cannot create an Award","command":"api-contract"},
+    {"id":"T13","requirement":"Historical GPV is classified without duplicate volume","command":"api-db-recognition"},
+    {"id":"T14","requirement":"Inactive intermediate fixed generation is zero while higher generation continues","command":"api-bonus"},
+    {"id":"T15","requirement":"Return replays the historical Active threshold and interval","command":"api-return-replay"},
+    {"id":"T16","requirement":"Return recomputes the complete historical month EPV accumulator","command":"api-return-replay"},
+    {"id":"T17","requirement":"PAID reduction appends clawback/recovery and preserves original PAID history","command":"api-recovery"}
+  ]
+}

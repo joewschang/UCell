@@ -60,6 +60,8 @@ export type Qualification = {
     rank: string;
     active: boolean;
     ballLabel: string;
+    monthReference?: string;
+    activeInterval?: { activeFrom: string; activeTo: string } | null;
 };
 export type AwardStatus = 'PENDING' | 'CALCULATED' | 'PENDING45D' | 'EFFECTIVE' | 'PAYABLE' | 'PAID' | 'REVERSED' | 'CLAWBACK';
 export type Dashboard = {
@@ -72,6 +74,8 @@ export type Dashboard = {
     epv: number | null;
     bonusAmount: number | null;
     bonusStatus: AwardStatus;
+    monthReference?: string;
+    activeInterval?: { activeFrom: string; activeTo: string } | null;
 };
 export type Scoped = {
     qualificationId: string;
@@ -121,6 +125,17 @@ export type Award = {
     name: string;
     status: AwardStatus;
     amount: number | null;
+    theoryAmount?: number | null;
+    finalAmount?: number | null;
+    payableAmount?: number | null;
+    settlementStatus?: 'PENDING' | 'FINALIZED';
+    pendingReason?: string | null;
+    settlementDate?: string | null;
+    nominalPayoutDate?: string | null;
+    adjustedPayoutDate?: string | null;
+    businessCalendarVersion?: string | null;
+    ruleVersion?: string | null;
+    parameterSnapshotHash?: string | null;
 };
 export type Bonus = Scoped & {
     period: string;

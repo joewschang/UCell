@@ -9,7 +9,8 @@ function localTestDatabaseUrl(){
   const raw=process.env.GPV_IMMEDIATE_TEST_DATABASE_URL??process.env.DATABASE_URL;
   if(!raw) throw new Error('GPV_IMMEDIATE_DB_TEST_URL_REQUIRED');
   const url=new URL(raw),database=decodeURIComponent(url.pathname.replace(/^\//,''));
-  if(!['localhost','127.0.0.1','[::1]'].includes(url.hostname)||!database.endsWith('_test'))
+  const isolatedRunner=/^ucell_jest_[0-9a-f]{32}$/.test(database);
+  if(!['localhost','127.0.0.1','[::1]'].includes(url.hostname)||(!database.endsWith('_test')&&!isolatedRunner))
     throw new Error('GPV_IMMEDIATE_DB_TEST_REQUIRES_LOCAL_TEST_DATABASE');
   return raw;
 }

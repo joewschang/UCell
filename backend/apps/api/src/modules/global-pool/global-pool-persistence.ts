@@ -105,14 +105,8 @@ export class GlobalPoolPersistence {
     });
     if (!settlement) return null;
 
-    const effect = await tx.reservoirLedgerEffect.findUnique({
-      where: {
-        reservoirCode_effectType_sourceGlobalSettlementId: {
-          reservoirCode: 'A',
-          effectType: 'GLOBAL_UNDISTRIBUTED',
-          sourceGlobalSettlementId: settlement.globalPoolSettlementId,
-        },
-      },
+    const effect = await tx.reservoirLedgerEffect.findFirst({
+      where: {reservoirCode:'A',effectType:'GLOBAL_UNDISTRIBUTED',sourceGlobalSettlementId:settlement.globalPoolSettlementId},
     });
     const expectedHash = this.reservoirHash({
       settlementId: settlement.globalPoolSettlementId,

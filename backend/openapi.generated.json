@@ -3465,6 +3465,50 @@
         ]
       }
     },
+    "/api/v1/admin/observability/reservoir-a": {
+      "get": {
+        "operationId": "adminReservoirAHistory",
+        "parameters": [
+          {
+            "name": "take",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/ReservoirAView"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "Reservoir A append-only effects and authoritative balance",
+        "tags": [
+          "Admin - Organization & Compensation Observability"
+        ]
+      }
+    },
     "/api/v1/admin/observability/compensation/summary": {
       "get": {
         "operationId": "adminCompensationSummary",
@@ -6049,6 +6093,23 @@
           "sessionId"
         ]
       },
+      "ActiveIntervalView": {
+        "type": "object",
+        "properties": {
+          "activeFrom": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "activeTo": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "activeFrom",
+          "activeTo"
+        ]
+      },
       "QualificationView": {
         "type": "object",
         "properties": {
@@ -6067,6 +6128,21 @@
           },
           "ballLabel": {
             "type": "string"
+          },
+          "monthReference": {
+            "type": "string",
+            "pattern": "^\\d{4}-(0[1-9]|1[0-2])$",
+            "description": "Asia/Taipei calendar month used for the Active projection."
+          },
+          "activeInterval": {
+            "nullable": true,
+            "description": "Authoritative v3 Active interval for monthReference; null means no Active evidence.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ActiveIntervalView"
+              }
+            ]
           }
         },
         "required": [
@@ -6074,7 +6150,9 @@
           "code",
           "rank",
           "active",
-          "ballLabel"
+          "ballLabel",
+          "monthReference",
+          "activeInterval"
         ]
       },
       "PersonView": {
@@ -6465,6 +6543,19 @@
           },
           "bonusStatus": {
             "type": "string"
+          },
+          "monthReference": {
+            "type": "string",
+            "pattern": "^\\d{4}-(0[1-9]|1[0-2])$"
+          },
+          "activeInterval": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ActiveIntervalView"
+              }
+            ]
           }
         },
         "required": [
@@ -6477,7 +6568,9 @@
           "rpv",
           "epv",
           "bonusAmount",
-          "bonusStatus"
+          "bonusStatus",
+          "monthReference",
+          "activeInterval"
         ]
       },
       "TreeNodeView": {
@@ -6592,13 +6685,76 @@
             "type": "number",
             "nullable": true,
             "description": "Null for unfinalized or absent lifecycle evidence."
+          },
+          "theoryAmount": {
+            "type": "number",
+            "nullable": true
+          },
+          "finalAmount": {
+            "type": "number",
+            "nullable": true,
+            "description": "Null until the settlement batch is FINALIZED."
+          },
+          "payableAmount": {
+            "type": "number",
+            "nullable": true,
+            "description": "Null until final settlement evidence exists."
+          },
+          "settlementStatus": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "FINALIZED"
+            ]
+          },
+          "pendingReason": {
+            "type": "string",
+            "nullable": true
+          },
+          "settlementDate": {
+            "type": "string",
+            "format": "date",
+            "nullable": true
+          },
+          "nominalPayoutDate": {
+            "type": "string",
+            "format": "date",
+            "nullable": true
+          },
+          "adjustedPayoutDate": {
+            "type": "string",
+            "format": "date",
+            "nullable": true
+          },
+          "businessCalendarVersion": {
+            "type": "string",
+            "nullable": true
+          },
+          "ruleVersion": {
+            "type": "string",
+            "nullable": true
+          },
+          "parameterSnapshotHash": {
+            "type": "string",
+            "nullable": true
           }
         },
         "required": [
           "id",
           "name",
           "status",
-          "amount"
+          "amount",
+          "theoryAmount",
+          "finalAmount",
+          "payableAmount",
+          "settlementStatus",
+          "pendingReason",
+          "settlementDate",
+          "nominalPayoutDate",
+          "adjustedPayoutDate",
+          "businessCalendarVersion",
+          "ruleVersion",
+          "parameterSnapshotHash"
         ]
       },
       "BonusesView": {
@@ -7333,6 +7489,123 @@
       "ValidateSelectionDto": {
         "type": "object",
         "properties": {}
+      },
+      "V3EvidenceView": {
+        "type": "object",
+        "properties": {
+          "ruleVersion": {
+            "type": "string",
+            "nullable": true
+          },
+          "parameterSnapshotHash": {
+            "type": "string",
+            "nullable": true
+          },
+          "evidenceHash": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "ruleVersion",
+          "parameterSnapshotHash",
+          "evidenceHash"
+        ]
+      },
+      "ReservoirAEffectView": {
+        "type": "object",
+        "properties": {
+          "ruleVersion": {
+            "type": "string",
+            "nullable": true
+          },
+          "parameterSnapshotHash": {
+            "type": "string",
+            "nullable": true
+          },
+          "evidenceHash": {
+            "type": "string",
+            "nullable": true
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "effectType": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "string",
+            "description": "Authoritative signed decimal string."
+          },
+          "sourceGlobalSettlementId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "sourcePeriodStart": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "sourcePeriodEnd": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "replayActionKey": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "ruleVersion",
+          "parameterSnapshotHash",
+          "evidenceHash",
+          "id",
+          "effectType",
+          "amount",
+          "sourceGlobalSettlementId",
+          "sourcePeriodStart",
+          "sourcePeriodEnd",
+          "replayActionKey",
+          "createdAt"
+        ]
+      },
+      "ReservoirAView": {
+        "type": "object",
+        "properties": {
+          "reservoirCode": {
+            "type": "string",
+            "enum": [
+              "A"
+            ]
+          },
+          "balance": {
+            "type": "string",
+            "description": "Authoritative sum of append-only effects as a decimal string."
+          },
+          "effects": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReservoirAEffectView"
+            }
+          },
+          "limit": {
+            "type": "number"
+          },
+          "truncated": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "reservoirCode",
+          "balance",
+          "effects",
+          "limit",
+          "truncated"
+        ]
       },
       "CreatePersonDto": {
         "type": "object",

@@ -1,12 +1,14 @@
 import { Roles } from '../auth/roles.decorator';
 import { Controller,Get,Param,Query } from '@nestjs/common';
-import { ApiBearerAuth,ApiOperation,ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth,ApiExtraModels,ApiOperation,ApiResponse,ApiTags,getSchemaPath } from '@nestjs/swagger';
 import { AdminObservabilityService } from './admin-observability.service';
+import {ReservoirAEffectView,ReservoirAView,V3EvidenceView} from './admin-observability.dto';
 
 @ApiTags('Admin - Organization & Compensation Observability')
 @ApiBearerAuth('adminBearer')
 @Roles('SUPER_ADMIN')
 @Controller('admin/observability')
+@ApiExtraModels(V3EvidenceView,ReservoirAEffectView,ReservoirAView)
 export class AdminObservabilityController{
   constructor(private readonly service:AdminObservabilityService){}
 
@@ -65,6 +67,12 @@ export class AdminObservabilityController{
   pools(@Query('take') take?:string){
     return this.service.poolHistory(Number(take??24)).then(data=>({data}));
   }
+
+  @Roles('SUPER_ADMIN','FINANCE','COMPLIANCE_AUDIT')
+  @Get('reservoir-a')
+  @ApiOperation({operationId:'adminReservoirAHistory',summary:'Reservoir A append-only effects and authoritative balance'})
+  @ApiResponse({status:200,schema:{type:'object',required:['data'],properties:{data:{$ref:getSchemaPath(ReservoirAView)}}}})
+  reservoirA(@Query('take') take?:string){return this.service.reservoirA(Number(take??100)).then(data=>({data}));}
 
   @Roles('SUPER_ADMIN','FINANCE','COMPLIANCE_AUDIT')
   @Get('compensation/summary')

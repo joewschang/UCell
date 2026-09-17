@@ -5,6 +5,9 @@ export type ApplicationStatus='DRAFT'|'SUBMITTED'|'APPROVED'|'REJECTED'|'EFFECTI
 export type SideCode='LEFT'|'RIGHT';
 export type OrderPurpose='ENTRY'|'RETAIL'|'REPURCHASE'|'SUBSCRIPTION_PREPAY'|'UPGRADE';
 export type BonusAwardType='REFERRAL'|'EQUALIZATION'|'BINARY'|'MATCHING'|'RPV'|'EPV'|'GLOBAL';
+export interface V3Evidence {ruleVersion:string|null;parameterSnapshotHash:string|null;evidenceHash:string|null}
+export interface ReservoirAEffect extends V3Evidence {id:UUID;effectType:string;amount:string;sourceGlobalSettlementId:UUID;sourcePeriodStart:string;sourcePeriodEnd:string;replayActionKey:string|null;createdAt:string}
+export interface ReservoirAProjection {reservoirCode:'A';balance:string;effects:ReservoirAEffect[];limit:number;truncated:boolean}
 
 export interface Person {
   personId:UUID;

@@ -49,6 +49,10 @@ if(!/uq_reservoir_source_effect/i.test(all) || !/validate_reservoir_a_effect/i.t
   failures.push('Reservoir A exactly-once source validation missing');
 if(!/trg_global_pool_settlement_append_only/i.test(all) || !/trg_welfare_pool_accrual_append_only/i.test(all))
   failures.push('Global/Welfare immutability hardening missing');
+if(!/ReservoirEffectType[\s\S]*REPLAY_ADJUSTMENT/i.test(all) || !/uq_reservoir_replay_action/i.test(all) || !/ck_reservoir_effect_shape/i.test(all))
+  failures.push('Reservoir signed exactly-once replay delta migration missing');
+if(!/CREATE TABLE ledger\.welfare_pool_effect/i.test(all) || !/uq_welfare_replay_action/i.test(all) || !/trg_welfare_pool_effect_append_only/i.test(all))
+  failures.push('Welfare append-only replay delta migration missing');
 
 if(failures.length){
   console.error('MIGRATION_PREFLIGHT_FAIL');

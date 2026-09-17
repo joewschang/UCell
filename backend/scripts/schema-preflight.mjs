@@ -31,6 +31,7 @@ const binaryVolumeLedger=modelBlock('BinaryVolumeLedger');
 const settlementCalendarEvidence=modelBlock('SettlementCalendarEvidence');
 const awardPayoutAnchor=modelBlock('AwardPayoutAnchor');
 const reservoirEffect=modelBlock('ReservoirLedgerEffect');
+const welfareEffect=modelBlock('WelfarePoolEffect');
 
 if(!/qualifications\s+Qualification\[\]/.test(person)) failures.push('Person must own Qualifications');
 if(/payoutLines\s+PayoutLine\[\]/.test(person)) failures.push('Person must not directly own payout lines');
@@ -65,6 +66,8 @@ must(/model BusinessCalendarDate\s*\{/,'Versioned business calendar dates requir
 if(!/settlementDate/.test(settlementCalendarEvidence) || !/settlementSlot/.test(settlementCalendarEvidence) || !/businessCalendarVersionId/.test(settlementCalendarEvidence)) failures.push('Settlement date/slot/calendar evidence required');
 if(!/nominalPayoutDate/.test(awardPayoutAnchor) || !/adjustedPayoutDate/.test(awardPayoutAnchor) || !/bonusAwardId\s+String\s+@unique/.test(awardPayoutAnchor)) failures.push('Immutable Award payout anchor required');
 if(!/sourceGlobalSettlementId/.test(reservoirEffect) || !/idempotencyKey\s+String\s+@unique/.test(reservoirEffect)) failures.push('Idempotent Reservoir A source-period effect required');
+if(!/REPLAY_ADJUSTMENT/.test(schema) || !/replayActionKey\s+String\?\s+@unique/.test(reservoirEffect)) failures.push('Signed exactly-once Reservoir replay adjustment required');
+if(!/welfarePoolAccrualId/.test(welfareEffect) || !/amount\s+Decimal/.test(welfareEffect) || !/replayActionKey\s+String\?\s+@unique/.test(welfareEffect)) failures.push('Append-only signed Welfare replay effect required');
 
 if(failures.length){
   console.error('SCHEMA_PREFLIGHT_FAIL');

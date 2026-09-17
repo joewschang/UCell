@@ -27,9 +27,9 @@ describe('Global settlement Reservoir A persistence',()=>{
   it.each(['missing','tampered'])('fails closed for %s Reservoir evidence on replay',async(kind)=>{
     const persistence=new GlobalPoolPersistence();
     const settlement={globalPoolSettlementId:base.settlementId,periodStart:start,periodEnd:end,undistributedAmount:base.undistributedAmount,ruleVersionCode:'R1.0B'};
-    const validTx:any={globalPoolSettlement:{findUnique:jest.fn(async()=>settlement)},reservoirLedgerEffect:{findUnique:jest.fn(async()=>null)}};
+    const validTx:any={globalPoolSettlement:{findUnique:jest.fn(async()=>settlement)},reservoirLedgerEffect:{findFirst:jest.fn(async()=>null)}};
     if(kind==='tampered'){
-      validTx.reservoirLedgerEffect.findUnique.mockResolvedValue({sourcePeriodStart:start,sourcePeriodEnd:end,amount:base.undistributedAmount,ruleVersionCode:'R1.0B',idempotencyKey:`reservoir:A:global-undistributed:${base.settlementId}`,evidenceHash:'tampered'});
+      validTx.reservoirLedgerEffect.findFirst.mockResolvedValue({sourcePeriodStart:start,sourcePeriodEnd:end,amount:base.undistributedAmount,ruleVersionCode:'R1.0B',idempotencyKey:`reservoir:A:global-undistributed:${base.settlementId}`,evidenceHash:'tampered'});
     }
     await expect(persistence.verifiedExisting(validTx,start,end,'R1.0B')).rejects.toBeInstanceOf(ConflictException);
   });
