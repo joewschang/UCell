@@ -1,7 +1,9 @@
 # Issue #2 Phase 1 — UX inventory and specification
 
-Status: COMPLETE (documentation checkpoint only)  
-Baseline: `9a7438b5f1e86d81db16419c51e20cc14095c2f0`  
+Status: COMPLETE (documentation checkpoint only)
+
+Baseline: `9a7438b5f1e86d81db16419c51e20cc14095c2f0`
+
 Branch: `integration/member-backend-mvp`
 
 This phase inventories Member, Admin, shared components, UI-facing APIs/read models, and the 35-page functional guide before any implementation. It changes no R1.0B rules, monetary semantics, authorization, historical evidence, API behavior, routes, or UI code.
