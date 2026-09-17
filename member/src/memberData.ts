@@ -120,7 +120,14 @@ export async function getDashboard(q: Qualification, signal: AbortSignal): Promi
     return validate.parseDashboard(result);
 }
 export const getOrganization = (q: Qualification, s: AbortSignal) => scoped<Organization>('organization/sponsor', q, { qualificationId: q.id, sponsor: { code: q.id === 'q1' ? 'DEMO-S01' : 'DEMO-S02', name: '示範推薦人' }, referrals: q.id === 'q1' ? [{ code: 'DEMO-R01', name: '示範直推會員' }] : [] }, s, validate.parseOrganization);
-export const getBinary = (q: Qualification, s: AbortSignal) => scoped<Binary>('organization/binary', q, { qualificationId: q.id, left: { count: q.id === 'q1' ? 3 : 0, volume: null, carry: null }, right: { count: q.id === 'q1' ? 2 : 0, volume: null, carry: null }, settlementMetrics: { status: 'UNAVAILABLE', reason: 'SETTLEMENT_METRICS_READ_MODEL_NOT_AVAILABLE' }, fullTree: { status: 'UNAVAILABLE', reason: 'BINARY_TREE_READ_MODEL_NOT_AVAILABLE' } }, s, validate.parseBinary);
+export async function getBinary(q:Qualification,s:AbortSignal,settlementBatchId?:string):Promise<Binary>{
+ const sample={qualificationId:q.id,left:{count:q.id==='q1'?3:0,volume:null,carry:null},right:{count:q.id==='q1'?2:0,volume:null,carry:null},settlementMetrics:{status:'UNAVAILABLE' as const,reason:'SETTLEMENT_METRICS_READ_MODEL_NOT_AVAILABLE'},settlementScope:null,fullTree:{status:'UNAVAILABLE' as const,reason:'BINARY_TREE_READ_MODEL_NOT_AVAILABLE'}};
+ if(isMock)return sample;
+ const query=new URLSearchParams({qualificationId:q.id});if(settlementBatchId)query.set('settlementBatchId',settlementBatchId);
+ const result=validate.parseBinary(await api<unknown>(`/member/organization/binary?${query}`,{signal:s}));
+ if(result.qualificationId!==q.id||settlementBatchId&&result.settlementScope?.settlementBatchId!==settlementBatchId)throw new Error('二元結算範圍或資格不符，已停止顯示');
+ return result;
+}
 export const getPerformance = (q: Qualification, p: string, s: AbortSignal) => scoped<Performance>('performance', q, { qualificationId: q.id, period: p, pv: null, rpv: null, epv: null, left: null, right: null, asOf: null }, s, validate.parsePerformance, p);
 export const getBonuses = (q: Qualification, p: string, s: AbortSignal) => scoped<Bonus>('bonuses', q, { qualificationId: q.id, period: p, awards: ['推薦獎金', '對碰獎金', '對等獎金', '全球獎金'].map((name, i) => ({ id: `${q.id}-${i}`, name, status: 'PENDING', amount: null })) }, s, validate.parseBonus, p);
 export const getLedger = (q: Qualification, p: string, s: AbortSignal) => scoped<Ledger>('bonuses/ledger', q, { qualificationId: q.id, period: p, entries: [] }, s, validate.parseLedger, p);

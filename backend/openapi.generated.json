@@ -1115,6 +1115,16 @@
               "pattern": "^\\d{4}-(0[1-9]|1[0-2])$",
               "type": "string"
             }
+          },
+          {
+            "name": "settlementBatchId",
+            "required": false,
+            "in": "query",
+            "description": "Immutable finalized BINARY_K1 settlement scope. Required before historical volume/carry can be disclosed; omission keeps those values unavailable.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -1212,6 +1222,16 @@
               "pattern": "^\\d{4}-(0[1-9]|1[0-2])$",
               "type": "string"
             }
+          },
+          {
+            "name": "settlementBatchId",
+            "required": false,
+            "in": "query",
+            "description": "Immutable finalized BINARY_K1 settlement scope. Required before historical volume/carry can be disclosed; omission keeps those values unavailable.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -1288,7 +1308,8 @@
     },
     "/api/v1/member/organization/binary": {
       "get": {
-        "operationId": "MemberController_binary",
+        "description": "Current placement counts remain separate from immutable settlement metrics. Historical left/right GPV and carry are returned only for an explicitly selected finalized BINARY_K1 settlementBatchId and its sealed historical snapshot.",
+        "operationId": "memberBinaryOrganization",
         "parameters": [
           {
             "name": "qualificationId",
@@ -1307,6 +1328,16 @@
             "description": "Posted-event month filter using versioned accounting timezone; not an operational settlement cut-off",
             "schema": {
               "pattern": "^\\d{4}-(0[1-9]|1[0-2])$",
+              "type": "string"
+            }
+          },
+          {
+            "name": "settlementBatchId",
+            "required": false,
+            "in": "query",
+            "description": "Immutable finalized BINARY_K1 settlement scope. Required before historical volume/carry can be disclosed; omission keeps those values unavailable.",
+            "schema": {
+              "format": "uuid",
               "type": "string"
             }
           }
@@ -1378,6 +1409,7 @@
             "memberBearer": []
           }
         ],
+        "summary": "",
         "tags": [
           "Member"
         ]
@@ -1404,6 +1436,16 @@
             "description": "Posted-event month filter using versioned accounting timezone; not an operational settlement cut-off",
             "schema": {
               "pattern": "^\\d{4}-(0[1-9]|1[0-2])$",
+              "type": "string"
+            }
+          },
+          {
+            "name": "settlementBatchId",
+            "required": false,
+            "in": "query",
+            "description": "Immutable finalized BINARY_K1 settlement scope. Required before historical volume/carry can be disclosed; omission keeps those values unavailable.",
+            "schema": {
+              "format": "uuid",
               "type": "string"
             }
           }
@@ -1552,6 +1594,16 @@
               "pattern": "^\\d{4}-(0[1-9]|1[0-2])$",
               "type": "string"
             }
+          },
+          {
+            "name": "settlementBatchId",
+            "required": false,
+            "in": "query",
+            "description": "Immutable finalized BINARY_K1 settlement scope. Required before historical volume/carry can be disclosed; omission keeps those values unavailable.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -1647,6 +1699,16 @@
             "description": "Posted-event month filter using versioned accounting timezone; not an operational settlement cut-off",
             "schema": {
               "pattern": "^\\d{4}-(0[1-9]|1[0-2])$",
+              "type": "string"
+            }
+          },
+          {
+            "name": "settlementBatchId",
+            "required": false,
+            "in": "query",
+            "description": "Immutable finalized BINARY_K1 settlement scope. Required before historical volume/carry can be disclosed; omission keeps those values unavailable.",
+            "schema": {
+              "format": "uuid",
               "type": "string"
             }
           }
@@ -1746,6 +1808,16 @@
               "pattern": "^\\d{4}-(0[1-9]|1[0-2])$",
               "type": "string"
             }
+          },
+          {
+            "name": "settlementBatchId",
+            "required": false,
+            "in": "query",
+            "description": "Immutable finalized BINARY_K1 settlement scope. Required before historical volume/carry can be disclosed; omission keeps those values unavailable.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -1841,6 +1913,16 @@
             "description": "Posted-event month filter using versioned accounting timezone; not an operational settlement cut-off",
             "schema": {
               "pattern": "^\\d{4}-(0[1-9]|1[0-2])$",
+              "type": "string"
+            }
+          },
+          {
+            "name": "settlementBatchId",
+            "required": false,
+            "in": "query",
+            "description": "Immutable finalized BINARY_K1 settlement scope. Required before historical volume/carry can be disclosed; omission keeps those values unavailable.",
+            "schema": {
+              "format": "uuid",
               "type": "string"
             }
           }
@@ -2017,6 +2099,16 @@
             "description": "Posted-event month filter using versioned accounting timezone; not an operational settlement cut-off",
             "schema": {
               "pattern": "^\\d{4}-(0[1-9]|1[0-2])$",
+              "type": "string"
+            }
+          },
+          {
+            "name": "settlementBatchId",
+            "required": false,
+            "in": "query",
+            "description": "Immutable finalized BINARY_K1 settlement scope. Required before historical volume/carry can be disclosed; omission keeps those values unavailable.",
+            "schema": {
+              "format": "uuid",
               "type": "string"
             }
           }
@@ -2217,6 +2309,16 @@
             "description": "Posted-event month filter using versioned accounting timezone; not an operational settlement cut-off",
             "schema": {
               "pattern": "^\\d{4}-(0[1-9]|1[0-2])$",
+              "type": "string"
+            }
+          },
+          {
+            "name": "settlementBatchId",
+            "required": false,
+            "in": "query",
+            "description": "Immutable finalized BINARY_K1 settlement scope. Required before historical volume/carry can be disclosed; omission keeps those values unavailable.",
+            "schema": {
+              "format": "uuid",
               "type": "string"
             }
           },
@@ -3237,7 +3339,202 @@
         "parameters": [],
         "responses": {
           "200": {
-            "description": ""
+            "description": "Authoritative operational counts. NASL fields remain explicitly unavailable until their aggregation policy is approved.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "required": [
+                        "generatedAt",
+                        "persons",
+                        "qualifications",
+                        "activeQualifications",
+                        "memberLifecycle",
+                        "ruleVersionCode"
+                      ],
+                      "properties": {
+                        "generatedAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "persons": {
+                          "type": "integer"
+                        },
+                        "qualifications": {
+                          "type": "integer"
+                        },
+                        "activeQualifications": {
+                          "type": "integer"
+                        },
+                        "memberLifecycle": {
+                          "type": "object",
+                          "required": [
+                            "nasl",
+                            "currentPersonRecordStatus",
+                            "currentQualificationLifecycleStatus"
+                          ],
+                          "properties": {
+                            "nasl": {
+                              "type": "object",
+                              "description": "Person NASL aggregation is not inferred from record or Qualification status.",
+                              "properties": {
+                                "new": {
+                                  "type": "object",
+                                  "required": [
+                                    "availability",
+                                    "value",
+                                    "reasonCode"
+                                  ],
+                                  "properties": {
+                                    "availability": {
+                                      "type": "string",
+                                      "enum": [
+                                        "UNAVAILABLE"
+                                      ]
+                                    },
+                                    "value": {
+                                      "type": "string",
+                                      "nullable": true,
+                                      "example": null
+                                    },
+                                    "reasonCode": {
+                                      "type": "string"
+                                    }
+                                  }
+                                },
+                                "active": {
+                                  "type": "object",
+                                  "required": [
+                                    "availability",
+                                    "value",
+                                    "reasonCode"
+                                  ],
+                                  "properties": {
+                                    "availability": {
+                                      "type": "string",
+                                      "enum": [
+                                        "UNAVAILABLE"
+                                      ]
+                                    },
+                                    "value": {
+                                      "type": "string",
+                                      "nullable": true,
+                                      "example": null
+                                    },
+                                    "reasonCode": {
+                                      "type": "string"
+                                    }
+                                  }
+                                },
+                                "suspended": {
+                                  "type": "object",
+                                  "required": [
+                                    "availability",
+                                    "value",
+                                    "reasonCode"
+                                  ],
+                                  "properties": {
+                                    "availability": {
+                                      "type": "string",
+                                      "enum": [
+                                        "UNAVAILABLE"
+                                      ]
+                                    },
+                                    "value": {
+                                      "type": "string",
+                                      "nullable": true,
+                                      "example": null
+                                    },
+                                    "reasonCode": {
+                                      "type": "string"
+                                    }
+                                  }
+                                },
+                                "lost": {
+                                  "type": "object",
+                                  "required": [
+                                    "availability",
+                                    "value",
+                                    "reasonCode"
+                                  ],
+                                  "properties": {
+                                    "availability": {
+                                      "type": "string",
+                                      "enum": [
+                                        "UNAVAILABLE"
+                                      ]
+                                    },
+                                    "value": {
+                                      "type": "string",
+                                      "nullable": true,
+                                      "example": null
+                                    },
+                                    "reasonCode": {
+                                      "type": "string"
+                                    }
+                                  }
+                                }
+                              }
+                            },
+                            "currentPersonRecordStatus": {
+                              "type": "object",
+                              "properties": {
+                                "availability": {
+                                  "type": "string",
+                                  "enum": [
+                                    "AVAILABLE"
+                                  ]
+                                },
+                                "source": {
+                                  "type": "string",
+                                  "example": "identity.person.status"
+                                },
+                                "counts": {
+                                  "type": "object",
+                                  "additionalProperties": {
+                                    "type": "integer"
+                                  }
+                                }
+                              }
+                            },
+                            "currentQualificationLifecycleStatus": {
+                              "type": "object",
+                              "properties": {
+                                "availability": {
+                                  "type": "string",
+                                  "enum": [
+                                    "AVAILABLE"
+                                  ]
+                                },
+                                "source": {
+                                  "type": "string",
+                                  "example": "membership.qualification.status"
+                                },
+                                "counts": {
+                                  "type": "object",
+                                  "additionalProperties": {
+                                    "type": "integer"
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        },
+                        "ruleVersionCode": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "security": [
@@ -6050,6 +6347,88 @@
           "Member - Content"
         ]
       }
+    },
+    "/api/v1/admin/uat-evidence": {
+      "post": {
+        "operationId": "adminRecordUatEvidence",
+        "parameters": [
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecordUatEvidenceDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "Append UAT execution evidence; this does not sign off UAT or pass a release gate.",
+        "tags": [
+          "Admin - UAT Evidence"
+        ]
+      },
+      "get": {
+        "operationId": "adminListUatEvidence",
+        "parameters": [
+          {
+            "name": "environment",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "scenarioCode",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "Read append-only UAT execution evidence.",
+        "tags": [
+          "Admin - UAT Evidence"
+        ]
+      }
     }
   },
   "info": {
@@ -6666,6 +7045,47 @@
           "reason"
         ]
       },
+      "BinarySettlementScopeView": {
+        "type": "object",
+        "properties": {
+          "settlementBatchId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "periodStart": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "periodEnd": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "ruleVersion": {
+            "type": "string"
+          },
+          "parameterSnapshotHash": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "calculationHash": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "finalizedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "settlementBatchId",
+          "periodStart",
+          "periodEnd",
+          "ruleVersion",
+          "parameterSnapshotHash",
+          "calculationHash",
+          "finalizedAt"
+        ]
+      },
       "BinaryView": {
         "type": "object",
         "properties": {
@@ -6687,6 +7107,16 @@
               }
             ]
           },
+          "settlementScope": {
+            "nullable": true,
+            "description": "Exact immutable settlement evidence used for volume/carry. Null when no explicit finalized settlement scope was requested.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BinarySettlementScopeView"
+              }
+            ]
+          },
           "fullTree": {
             "description": "Availability of the bounded, privacy-safe full Binary Tree read model.",
             "allOf": [
@@ -6701,6 +7131,7 @@
           "left",
           "right",
           "settlementMetrics",
+          "settlementScope",
           "fullTree"
         ]
       },
@@ -8029,6 +8460,59 @@
         },
         "required": [
           "approvalReference"
+        ]
+      },
+      "RecordUatEvidenceDto": {
+        "type": "object",
+        "properties": {
+          "classification": {
+            "type": "string",
+            "enum": [
+              "LOCAL_ASSISTIVE_ONLY",
+              "FORMAL_UAT_EVIDENCE"
+            ]
+          },
+          "environment": {
+            "type": "string",
+            "example": "CONNECTED_DEV"
+          },
+          "scenarioCode": {
+            "type": "string",
+            "example": "UAT-R6-001"
+          },
+          "result": {
+            "type": "string",
+            "enum": [
+              "PASS",
+              "FAIL",
+              "BLOCKED"
+            ]
+          },
+          "evidenceHash": {
+            "type": "string",
+            "description": "Lowercase SHA-256 of the referenced immutable evidence artifact."
+          },
+          "artifactReference": {
+            "type": "string",
+            "description": "Governed object URI, build artifact reference, or immutable evidence identifier."
+          },
+          "approvalReference": {
+            "type": "string",
+            "description": "Required for FORMAL_UAT_EVIDENCE; identifies the approved execution authority."
+          },
+          "executedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "classification",
+          "environment",
+          "scenarioCode",
+          "result",
+          "evidenceHash",
+          "artifactReference",
+          "executedAt"
         ]
       }
     }

@@ -65,6 +65,7 @@ export class FormalMemberDraftDto implements FormalDraftInput {
 }
 export class MemberQueryDto extends MemberContextDto {
  @ApiProperty({required:false,pattern:'^\\d{4}-(0[1-9]|1[0-2])$',description:'Posted-event month filter using versioned accounting timezone; not an operational settlement cut-off'}) @IsOptional() @Matches(/^\d{4}-(0[1-9]|1[0-2])$/) period?:string;
+ @ApiProperty({required:false,format:'uuid',description:'Immutable finalized BINARY_K1 settlement scope. Required before historical volume/carry can be disclosed; omission keeps those values unavailable.'}) @IsOptional() @IsUUID() settlementBatchId?:string;
 }
 @ApiExtraModels(...views.memberViewModels) @ApiTags('Member - Authentication')
 @Controller('auth/member')
@@ -99,7 +100,7 @@ export class MemberController {
  @Post('context/qualification') @ApiResponse({status:201,schema:views.memberEnvelope(views.ContextView)}) @ApiOperation({operationId:'memberQualificationContext',description:'Validate selected ball; all scoped reads must repeat server ownership authorization. No monetary mutation.'}) context(@Req() req:any,@Body() body:MemberContextDto){return this.service.context(req.user.personId,body.qualificationId);}
  @Get('dashboard') @ApiResponse({status:200,schema:views.memberEnvelope(views.DashboardView)}) dashboard(@Req() req:any,@Query() q:MemberQueryDto){return this.reads.read(req.user.personId,q.qualificationId,'dashboard',q.period);}
  @Get('organization/sponsor') @ApiResponse({status:200,schema:views.memberEnvelope(views.SponsorView)}) sponsor(@Req() req:any,@Query() q:MemberQueryDto){return this.reads.read(req.user.personId,q.qualificationId,'sponsor',q.period);}
- @Get('organization/binary') @ApiResponse({status:200,schema:views.memberEnvelope(views.BinaryView)}) binary(@Req() req:any,@Query() q:MemberQueryDto){return this.reads.read(req.user.personId,q.qualificationId,'binary',q.period);}
+ @Get('organization/binary') @ApiResponse({status:200,schema:views.memberEnvelope(views.BinaryView)}) @ApiOperation({operationId:'memberBinaryOrganization',description:'Current placement counts remain separate from immutable settlement metrics. Historical left/right GPV and carry are returned only for an explicitly selected finalized BINARY_K1 settlementBatchId and its sealed historical snapshot.'}) binary(@Req() req:any,@Query() q:MemberQueryDto){return this.reads.read(req.user.personId,q.qualificationId,'binary',q.period,q.settlementBatchId);}
  @Get('referrals') @ApiResponse({status:200,schema:views.memberEnvelope(views.SponsorView)}) referrals(@Req() req:any,@Query() q:MemberQueryDto){return this.reads.read(req.user.personId,q.qualificationId,'referrals',q.period);}
  @Post('share-links') @ApiOperation({operationId:'memberCreateShareLink',description:'Create an encrypted referral URL bound to the selected owned Qualification. Server configuration supplies base URL, key and TTL; missing configuration fails closed.'}) createShareLink(@Req() req:any,@Body() body:MemberContextDto){return this.shareLinks.create(req.user.personId,body.qualificationId);}
  @Get('performance') @ApiResponse({status:200,schema:views.memberEnvelope(views.PerformanceView)}) performance(@Req() req:any,@Query() q:MemberQueryDto){return this.reads.read(req.user.personId,q.qualificationId,'performance',q.period);}

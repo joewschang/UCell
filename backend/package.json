@@ -51,6 +51,8 @@
     "release:readiness": "node scripts/release-readiness-preflight.mjs",
     "release:prep": "node scripts/run-bash-gate.mjs release-prep.sh",
     "test:todo:gate": "node scripts/test-todo-gate.mjs",
-    "test:api:isolated": "node scripts/api-jest-isolated.mjs"
+    "test:api:isolated": "node scripts/api-jest-isolated.mjs",
+    "test:member:binary:settlement": "node scripts/member-binary-settlement-db-test.mjs",
+    "test:uat:evidence": "node scripts/uat-evidence-db-test.mjs"
   }
 }

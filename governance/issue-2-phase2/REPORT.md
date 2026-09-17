@@ -49,3 +49,13 @@ No database migration was introduced.
 - A timing-sensitive Admin package test now uses deterministic React Query cache setup while retaining its GET and content assertions.
 
 Production operational cut-off remains undecided and is not used by the Dashboard calendar aggregation.
+
+## Checkpoint 4
+
+- Added append-only `audit.uat_execution_evidence` storage with database guards against update and delete.
+- Formal UAT evidence ingestion requires the governed UAT deployment, explicit feature enablement, Super Admin, actor, approval reference, immutable artifact hash, and idempotency key. Every API result remains `formalSignOff: false`.
+- Added exact-scope Member Binary settlement reads using an explicit finalized `BINARY_K1` batch and its sealed historical replay snapshot.
+- Historical period GPV and carry reject missing, negative, non-finite, unsafe-range, mismatched, draft, or corrupt evidence. No current-state fallback is used.
+- Dashboard now reports exhaustive current Person record and Qualification lifecycle status counts while keeping NASL New/Active/Suspend/Lost explicitly unavailable.
+
+Member UI still does not guess a “latest” Binary settlement batch. An authoritative member-visible settlement index is required before adding a selector.

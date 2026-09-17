@@ -49,3 +49,19 @@ One Admin full-suite run observed an existing asynchronous package-page timing f
 | Member/Admin builds | PASS | Production Vite builds |
 | Database migration | NONE | Existing schema is sufficient |
 | Business/monetary semantics | NONE | Read boundaries and evidence classification only |
+
+## Checkpoint 4 verification
+
+| Gate | Result | Evidence |
+|---|---|---|
+| Prisma schema validate | PASS | 43-migration schema |
+| Prisma client generate | PASS | Normal Windows query-engine client regenerated after controlled DEV API restart |
+| Backend build | PASS | Shared, contracts, database, API, worker |
+| Backend isolated API | PASS | 43 suites / 379 tests on fresh isolated DB |
+| Member Binary DB regression | PASS | 7 assertions |
+| UAT evidence DB regression | PASS | 4 assertions: append, update deny, delete deny, formal approval constraint |
+| Member tests/build | PASS | 24 files / 142 tests |
+| Admin tests/build | PASS | 17 files / 44 tests |
+| OpenAPI preflight | PASS | Member settlement scope, Dashboard lifecycle and UAT evidence operations |
+| Database migration | PASS | `20260918150000_uat_evidence_foundation` |
+| Production promotion | BLOCKED | Formal UAT sign-off and remaining release gates are not satisfied by evidence ingestion |

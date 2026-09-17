@@ -32,6 +32,7 @@ import { AdminDashboardModule } from './modules/admin-dashboard/admin-dashboard.
 import { AdminObservabilityModule } from './modules/admin-observability/admin-observability.module';
 import { AdminOperationsModule } from './modules/admin-operations/admin-operations.module';
 import { AdminOpsReadyModule } from './modules/admin-ops-ready/admin-ops-ready.module';
+import { UatEvidenceModule } from './modules/uat-evidence/uat-evidence.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { AdminAuthenticationGuard } from './modules/auth/admin-authentication.guard';
 import { AdminRoleGuard } from './modules/auth/admin-role.guard';
@@ -72,7 +73,7 @@ export class AdminDevReadOnlyGuard implements CanActivate {
     LedgerModule, ActiveModule, RpvModule, RuntimeRuleModule, BonusModule, ReturnModule,
     EpvModule, GlobalPoolModule, PayoutModule, SettlementModule, AdjustmentModule,
     SubscriptionModule, MembershipApplicationModule, AdminDashboardModule, AdminObservabilityModule,
-    AdminOperationsModule, AdminOpsReadyModule],
+    AdminOperationsModule, AdminOpsReadyModule, UatEvidenceModule],
   providers: [{ provide: APP_GUARD, useClass: AdminDevReadOnlyGuard },
     { provide: APP_GUARD, useClass: AdminAuthenticationGuard },
     { provide: APP_GUARD, useClass: AdminRoleGuard }],

@@ -2,22 +2,39 @@ import { Injectable, NotFoundException, UnprocessableEntityException } from '@ne
 import { PrismaService, captureParameters, snapshotValue, pending, verifyReplayEnvelope } from '@ucell/database';
 import { QualificationAccessService } from '../auth/qualification-access.service';
 import { MemberService } from './member.service';
+export async function readBinarySettlement(tx:any,qualificationId:string,settlementBatchId:string){
+ const batch=await tx.settlementBatch.findUnique({where:{settlementBatchId}});
+ if(!batch||batch.settlementType!=='BINARY_K1')throw new NotFoundException({code:'BINARY_SETTLEMENT_NOT_FOUND'});
+ if(batch.status!=='FINALIZED'||!batch.finalizedAt||!batch.calculationHash||!/^[a-f0-9]{64}$/.test(batch.calculationHash))pending('SETTLEMENT_NOT_FINALIZED','Finalized Binary settlement evidence is required');
+ const snapshotRow=await tx.historicalReplaySnapshot.findUnique({where:{kind_sourceId:{kind:'BINARY_K1',sourceId:settlementBatchId}}});
+ const evidence=verifyReplayEnvelope(snapshotRow);
+ if(evidence.kind!=='BINARY_K1'||evidence.sourceId!==settlementBatchId||evidence.ruleVersionCode!==batch.ruleVersionCode)pending('HISTORICAL_SNAPSHOT_MISSING','Binary settlement replay evidence does not match the requested batch');
+ if(evidence.inputs?.periodStart!==batch.periodStart.toISOString()||evidence.inputs?.periodEnd!==batch.periodEnd.toISOString())pending('HISTORICAL_SNAPSHOT_MISSING','Binary settlement period evidence does not match the requested batch');
+ if(!evidence.parameters?.hash||!/^[a-f0-9]{64}$/.test(evidence.parameters.hash))pending('HISTORICAL_SNAPSHOT_MISSING','Binary settlement Parameter snapshot hash is required');
+ const carries=Array.isArray(evidence.evidence?.carryRecipients)?evidence.evidence.carryRecipients.filter((row:any)=>row?.qualificationId===qualificationId):[];
+ if(carries.length!==1)pending('HISTORICAL_SNAPSHOT_MISSING','Unique historical Binary carry evidence is required for the selected Qualification');
+ const carry=carries[0] as Record<string,unknown>;
+ const metric=(name:string)=>{const value=Number(carry[name]);if(!Number.isFinite(value)||value<0||value>Number.MAX_SAFE_INTEGER)pending('HISTORICAL_SNAPSHOT_MISSING',`Historical Binary ${name} evidence is invalid`);return value;};
+ return {qualificationId,left:{count:null,volume:metric('leftPeriodGpv'),carry:metric('leftCarryOut')},right:{count:null,volume:metric('rightPeriodGpv'),carry:metric('rightCarryOut')},settlementMetrics:{status:'AVAILABLE' as const,reason:null},settlementScope:{settlementBatchId,periodStart:batch.periodStart.toISOString(),periodEnd:batch.periodEnd.toISOString(),ruleVersion:batch.ruleVersionCode,parameterSnapshotHash:evidence.parameters.hash,calculationHash:batch.calculationHash,finalizedAt:batch.finalizedAt.toISOString()},fullTree:{status:'UNAVAILABLE' as const,reason:'BINARY_TREE_READ_MODEL_NOT_AVAILABLE'}};
+}
 export function unavailableBinaryView(qualificationId:string,counts:Array<{side:string;count:string}>){
  return {
   qualificationId,
   left:{count:Number(counts.find(row=>row.side==='LEFT')?.count??0),volume:null,carry:null},
   right:{count:Number(counts.find(row=>row.side==='RIGHT')?.count??0),volume:null,carry:null},
   settlementMetrics:{status:'UNAVAILABLE' as const,reason:'SETTLEMENT_METRICS_READ_MODEL_NOT_AVAILABLE'},
+  settlementScope:null,
   fullTree:{status:'UNAVAILABLE' as const,reason:'BINARY_TREE_READ_MODEL_NOT_AVAILABLE'},
  };
 }
 @Injectable()
 export class MemberReadService {
  constructor(private readonly db:PrismaService,private readonly identity:MemberService,private readonly access:QualificationAccessService){}
- async read(personId:string,id:string,kind:string,period?:string){
+ async read(personId:string,id:string,kind:string,period?:string,settlementBatchId?:string){
   await this.identity.context(personId,id);
   return this.db.$transaction(async tx=>{
    await new QualificationAccessService(tx as any).assertHolder(personId,id);
+   if(kind==='binary'&&settlementBatchId)return readBinarySettlement(tx,id,settlementBatchId);
    const now=new Date(),snapshot=await captureParameters(tx,now,'R1.0B'),timezone=snapshotValue(snapshot,'accounting.timezone');
    if(typeof timezone!=='string')pending('HISTORICAL_SNAPSHOT_MISSING','Versioned accounting timezone evidence required');
    const current=new Intl.DateTimeFormat('en-CA',{timeZone:timezone,year:'numeric',month:'2-digit'}).format(now);

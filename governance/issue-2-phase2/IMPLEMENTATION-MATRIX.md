@@ -15,5 +15,10 @@
 | Dashboard local-time order windows | Versioned accounting timezone with database-resolved half-open bounds | COMPLETE |
 | Conditional Member journeys | Zero-Qualification shop and registration flows have deterministic regressions | COMPLETE |
 | Browser-local UAT evidence | Explicit `LOCAL_ASSISTIVE_ONLY`; export cannot represent formal sign-off | COMPLETE |
+| UAT evidence persistence | Append-only DB/API foundation with formal-ingestion guards; never auto-signs off | COMPLETE FOUNDATION |
+| Member historical Binary carry | Exact finalized BINARY_K1 batch with sealed historical snapshot | COMPLETE API SLICE |
+| Member Binary settlement selector | No authoritative member-visible settlement index exists | API DEPENDENCY |
+| Current Person/Qualification lifecycle counts | Exhaustive enum counts from authoritative records | COMPLETE |
+| NASL New/Active/Suspend/Lost | Definitions are not approved; explicit unavailable metrics | PENDING DEFINITION |
 
 No R1.0B business logic or monetary semantics changed.

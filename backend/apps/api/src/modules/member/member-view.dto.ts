@@ -110,11 +110,21 @@ export class ReadModelAvailabilityView {
  @ApiProperty({enum:['AVAILABLE','UNAVAILABLE']}) status!:'AVAILABLE'|'UNAVAILABLE';
  @ApiProperty({type:String,nullable:true,description:'Machine-readable reason. The frontend must not derive missing Core values.'}) reason!:string|null;
 }
+export class BinarySettlementScopeView {
+ @ApiProperty({format:'uuid'}) settlementBatchId!:string;
+ @ApiProperty({format:'date-time'}) periodStart!:string;
+ @ApiProperty({format:'date-time'}) periodEnd!:string;
+ @ApiProperty() ruleVersion!:string;
+ @ApiProperty({pattern:'^[a-f0-9]{64}$'}) parameterSnapshotHash!:string;
+ @ApiProperty({pattern:'^[a-f0-9]{64}$'}) calculationHash!:string;
+ @ApiProperty({format:'date-time'}) finalizedAt!:string;
+}
 export class BinaryView {
  @ApiProperty({format:'uuid'}) qualificationId!:string;
  @ApiProperty({type:SideView}) left!:SideView;
  @ApiProperty({type:SideView}) right!:SideView;
  @ApiProperty({type:ReadModelAvailabilityView,description:'Availability of authoritative left/right volume and carry for the requested settlement period.'}) settlementMetrics!:ReadModelAvailabilityView;
+ @ApiProperty({type:BinarySettlementScopeView,nullable:true,description:'Exact immutable settlement evidence used for volume/carry. Null when no explicit finalized settlement scope was requested.'}) settlementScope!:BinarySettlementScopeView|null;
  @ApiProperty({type:ReadModelAvailabilityView,description:'Availability of the bounded, privacy-safe full Binary Tree read model.'}) fullTree!:ReadModelAvailabilityView;
 }
 export class AwardView {
@@ -144,5 +154,5 @@ export class OrdersView { @ApiProperty({format:'uuid'}) qualificationId!:string;
 export class ContextView { @ApiProperty({format:'uuid'}) qualificationId!:string; @ApiProperty({type:QualificationView}) qualification!:QualificationView; }
 export class LogoutView { @ApiProperty({enum:['REVOKED']}) status!:string; @ApiProperty({format:'uuid'}) sessionId!:string; }
 export class LineSessionView { @ApiProperty({description:'Opaque UCell bearer, not LINE token.'}) accessToken!:string; @ApiProperty({format:'date-time'}) expiresAt!:string; @ApiProperty({format:'uuid'}) sessionId!:string; }
-export const memberViewModels=[LogoutView,ActiveIntervalView,QualificationView,PersonView,PaginationView,NoticeView,NoticesView,NoticeReadView,OrderLineView,OrderView,ProductView,PerformanceView,DashboardView,TreeNodeView,SponsorView,SideView,ReadModelAvailabilityView,BinaryView,AwardView,BonusesView,LedgerEntryView,LedgerView,RecognitionView,RepurchaseView,OrderListEntryView,OrdersView,ContextView,LineSessionView];
+export const memberViewModels=[LogoutView,ActiveIntervalView,QualificationView,PersonView,PaginationView,NoticeView,NoticesView,NoticeReadView,OrderLineView,OrderView,ProductView,PerformanceView,DashboardView,TreeNodeView,SponsorView,SideView,ReadModelAvailabilityView,BinarySettlementScopeView,BinaryView,AwardView,BonusesView,LedgerEntryView,LedgerView,RecognitionView,RepurchaseView,OrderListEntryView,OrdersView,ContextView,LineSessionView];
 export function memberEnvelope(type:Function,array=false){return {type:'object',required:['data','meta'],properties:{data:array?{type:'array',items:{$ref:getSchemaPath(type)}}:{$ref:getSchemaPath(type)},meta:{type:'object',required:['request_id','timestamp','api_version'],properties:{request_id:{type:'string'},timestamp:{type:'string',format:'date-time'},api_version:{type:'string',enum:['v1']}}}}};}

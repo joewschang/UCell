@@ -115,6 +115,15 @@ export type Binary = Scoped & {
         carry: number | null;
     };
     settlementMetrics: ReadModelAvailability;
+    settlementScope?: {
+        settlementBatchId: string;
+        periodStart: string;
+        periodEnd: string;
+        ruleVersion: string;
+        parameterSnapshotHash: string;
+        calculationHash: string;
+        finalizedAt: string;
+    } | null;
     fullTree: ReadModelAvailability;
 };
 export type ReadModelAvailability = {

@@ -1,4 +1,4 @@
-import { AdminDashboardService, dashboardCalendarBounds } from '../src/modules/admin-dashboard/admin-dashboard.service';
+import { AdminDashboardService, dashboardCalendarBounds, statusCounts } from '../src/modules/admin-dashboard/admin-dashboard.service';
 
 const parameter=(value:unknown,id='timezone')=>({runtimeRuleParameterId:id,parameterCode:'accounting.timezone',scopeKey:'*',valueJson:value,effectiveFrom:new Date('2020-01-01T00:00:00.000Z'),effectiveTo:null});
 
@@ -7,7 +7,7 @@ function txFor(timezone:unknown,bounds?:{dayStart:Date;dayEnd:Date;monthStart:Da
   const tx={
     runtimeRuleParameter:{findMany:jest.fn(async()=>timezone==='OVERLAP'?[parameter('Asia/Taipei','a'),parameter('UTC','b')]:timezone===undefined?[]:[parameter(timezone)])},
     $queryRaw:jest.fn(async()=>bounds?[bounds]:[]),
-    person:{count:jest.fn(async()=>0)},qualification:{count:jest.fn(async()=>0)},membershipApplication:{count:jest.fn(async()=>0)},order:{count:orderCount},bonusRecoveryEvent:{count:jest.fn(async()=>0)},payableEntry:{count:jest.fn(async()=>0)},
+    person:{count:jest.fn(async()=>0),groupBy:jest.fn(async()=>[{status:'EFFECTIVE',_count:{_all:7}},{status:'SUSPENDED',_count:{_all:2}}])},qualification:{count:jest.fn(async()=>0),groupBy:jest.fn(async()=>[{status:'EFFECTIVE',_count:{_all:9}},{status:'EXITED',_count:{_all:1}}])},membershipApplication:{count:jest.fn(async()=>0)},order:{count:orderCount},bonusRecoveryEvent:{count:jest.fn(async()=>0)},payableEntry:{count:jest.fn(async()=>0)},
   };
   return {tx,orderCount};
 }
@@ -33,7 +33,16 @@ describe('Admin Dashboard versioned accounting calendar',()=>{
       [{where:{createdAt:{gte:taipei.monthStart,lt:taipei.monthEnd}}}],
     ]);
     expect(result.generatedAt).toEqual(now);
+    expect(result.memberLifecycle).toMatchObject({
+      nasl:{new:{availability:'UNAVAILABLE',value:null,reasonCode:'PERSON_NASL_NEW_DEFINITION_PENDING'},lost:{availability:'UNAVAILABLE',value:null,reasonCode:'PERSON_NASL_LOST_DEFINITION_PENDING'}},
+      currentPersonRecordStatus:{availability:'AVAILABLE',source:'identity.person.status',counts:{EFFECTIVE:7,SUSPENDED:2,DRAFT:0}},
+      currentQualificationLifecycleStatus:{availability:'AVAILABLE',source:'membership.qualification.status',counts:{EFFECTIVE:9,EXITED:1,DRAFT:0}},
+    });
     expect(transactionOptions).toEqual({isolationLevel:'RepeatableRead'});
+  });
+
+  test('status count projection is exhaustive and ignores values outside the declared domain',()=>{
+    expect(statusCounts(['DRAFT','EFFECTIVE'] as const,[{status:'EFFECTIVE',_count:{_all:3}},{status:'UNKNOWN',_count:{_all:99}}])).toEqual({DRAFT:0,EFFECTIVE:3});
   });
 
   test.each([

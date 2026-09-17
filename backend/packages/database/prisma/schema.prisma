@@ -1446,6 +1446,43 @@ model AuditEvent {
   @@schema("audit")
 }
 
+enum UatEvidenceClassification {
+  LOCAL_ASSISTIVE_ONLY
+  FORMAL_UAT_EVIDENCE
+
+  @@schema("audit")
+}
+
+enum UatEvidenceResult {
+  PASS
+  FAIL
+  BLOCKED
+
+  @@schema("audit")
+}
+
+model UatExecutionEvidence {
+  uatExecutionEvidenceId String                    @id @default(uuid()) @map("uat_execution_evidence_id") @db.Uuid
+  classification         UatEvidenceClassification
+  environment            String
+  scenarioCode           String                    @map("scenario_code")
+  result                 UatEvidenceResult
+  evidenceHash           String                    @map("evidence_hash")
+  artifactReference      String                    @map("artifact_reference")
+  approvalReference      String?                   @map("approval_reference")
+  actorId                 String                    @map("actor_id") @db.Uuid
+  executedAt              DateTime                  @map("executed_at") @db.Timestamptz(6)
+  recordedAt              DateTime                  @default(now()) @map("recorded_at") @db.Timestamptz(6)
+  requestId               String                    @map("request_id")
+  correlationId           String                    @map("correlation_id") @db.Uuid
+
+  @@unique([classification, environment, scenarioCode, evidenceHash])
+  @@index([environment, scenarioCode, recordedAt])
+  @@index([actorId, recordedAt])
+  @@map("uat_execution_evidence")
+  @@schema("audit")
+}
+
 model IdempotencyRecord {
   idempotencyRecordId String   @id @default(uuid()) @map("idempotency_record_id") @db.Uuid
   actorScope          String   @map("actor_scope")
