@@ -87,3 +87,14 @@ All external credentials remain `OPERATIONAL_CREDENTIAL_PENDING`. Provider-neutr
 - Added isolated Shipment persistence DB verification: 21 assertions for append-only tables, claim/outbox uniqueness, provider-event uniqueness, immutable snapshot guards and CVS store evidence.
 - Complete Backend API: 431 PASS in 48 suites. Shipment DB assertions, fresh DB Golden, builds and all existing preflight gates: PASS.
 - Official provider signing vectors, mappings, callbacks, credentials and sandbox UAT remain `OPERATIONAL_CREDENTIAL_PENDING`.
+
+## Webhook persistence and shipment integrity checkpoint
+
+- Connected provider-neutral verification decisions to durable `ProviderWebhookInbox` state with compare-and-set concurrency protection.
+- Persisted only safe verification hash and signed timestamp evidence; raw callback bytes, signatures and secrets remain excluded.
+- Rejected callbacks remain terminal evidence but do not claim the unverified provider event identity, preventing forged rejection from blocking a later genuine event.
+- Added composite Shipment foreign keys so Parcel and QC evidence must belong to the same Fulfillment.
+- Added database guards binding Shipment provider/connection identity to its versioned LOGISTICS Provider Connection.
+- Added real PostgreSQL reconciliation assertions for exact replay, changed-evidence conflict, eight-way concurrent ingestion, rollback and absence of monetary side effects.
+- Focused provider regression: 49 PASS. Complete Backend API: 470 PASS in 51 suites. Shipment isolated DB: 27 PASS.
+- Added migrations `20260918233000_provider_webhook_verification_evidence` and `20260918235000_shipment_aggregate_integrity`.

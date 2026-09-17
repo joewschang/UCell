@@ -37,7 +37,9 @@ try {
     const fulfillmentId = id();
     const otherFulfillmentId = id();
     const parcelId = id();
+    const otherParcelId = id();
     const qcId = id();
+    const otherQcId = id();
     const shipmentId = id();
     const otherShipmentId = id();
     const trackingId = id();
@@ -73,12 +75,17 @@ try {
         ('${otherFulfillmentId}', '${orderId}', 'SECONDARY', 'snapshot://allocation/2', 'snapshot://fulfillment-policy/2', now());
       INSERT INTO commerce.fulfillment_parcel
         (fulfillment_parcel_id, fulfillment_id, parcel_key, content_snapshot_ref, package_snapshot_ref)
-      VALUES ('${parcelId}', '${fulfillmentId}', 'PARCEL-1', 'snapshot://contents/1', 'snapshot://package/1');
+      VALUES
+        ('${parcelId}', '${fulfillmentId}', 'PARCEL-1', 'snapshot://contents/1', 'snapshot://package/1'),
+        ('${otherParcelId}', '${otherFulfillmentId}', 'PARCEL-2', 'snapshot://contents/2', 'snapshot://package/2');
       INSERT INTO commerce.fulfillment_qc_evidence
         (fulfillment_qc_evidence_id, fulfillment_id, policy_id, policy_version, policy_snapshot_ref,
          result, checks, inspector_actor, reason, occurred_at, correlation_id)
-      VALUES ('${qcId}', '${fulfillmentId}', 'QC', '1', 'snapshot://qc-policy/1',
-              'PASS', '{"sealed":true}', 'DB_ASSERTION', 'PASSED', now(), '${id()}');
+      VALUES
+        ('${qcId}', '${fulfillmentId}', 'QC', '1', 'snapshot://qc-policy/1',
+         'PASS', '{"sealed":true}', 'DB_ASSERTION', 'PASSED', now(), '${id()}'),
+        ('${otherQcId}', '${otherFulfillmentId}', 'QC', '1', 'snapshot://qc-policy/1',
+         'PASS', '{"sealed":true}', 'DB_ASSERTION', 'PASSED', now(), '${id()}');
       INSERT INTO commerce.shipment
         (shipment_id, fulfillment_id, fulfillment_parcel_id, fulfillment_qc_evidence_id,
          provider, connection_id, provider_connection_version_id, carrier, shipping_method,
@@ -204,6 +211,33 @@ try {
               '${connectionVersionId}', 'TEST_CARRIER', 'CVS_PICKUP', 'snapshot://recipient/4',
               '   ', 'PROVIDER-SHIPMENT-CVS-BLANK', now())
     `, /shipment_pickup_store_ck/);
+
+    await rejectsInSavepoint(tx, 'shipment parcel must belong to the same fulfillment', `
+      INSERT INTO commerce.shipment
+        (fulfillment_id, fulfillment_parcel_id, fulfillment_qc_evidence_id, provider, connection_id,
+         provider_connection_version_id, carrier, shipping_method, recipient_snapshot_ref, updated_at)
+      VALUES ('${fulfillmentId}', '${otherParcelId}', '${qcId}', 'TEST_CARRIER', 'SHIPMENT_DB_ASSERTION',
+              '${connectionVersionId}', 'TEST_CARRIER', 'HOME_DELIVERY', 'snapshot://recipient/cross-parcel', now())
+    `, /shipment_parcel_fulfillment_fk/);
+    await rejectsInSavepoint(tx, 'shipment QC evidence must belong to the same fulfillment', `
+      INSERT INTO commerce.shipment
+        (fulfillment_id, fulfillment_parcel_id, fulfillment_qc_evidence_id, provider, connection_id,
+         provider_connection_version_id, carrier, shipping_method, recipient_snapshot_ref, updated_at)
+      VALUES ('${fulfillmentId}', '${parcelId}', '${otherQcId}', 'TEST_CARRIER', 'SHIPMENT_DB_ASSERTION',
+              '${connectionVersionId}', 'TEST_CARRIER', 'HOME_DELIVERY', 'snapshot://recipient/cross-qc', now())
+    `, /shipment_qc_fulfillment_fk/);
+    await rejectsInSavepoint(tx, 'shipment provider must match the version connection', `
+      UPDATE commerce.shipment SET provider = 'OTHER_CARRIER' WHERE shipment_id = '${shipmentId}'
+    `, /shipment provider identity/);
+    await rejectsInSavepoint(tx, 'shipment connection id must match the version connection', `
+      UPDATE commerce.shipment SET connection_id = 'OTHER_CONNECTION' WHERE shipment_id = '${shipmentId}'
+    `, /shipment provider identity/);
+    await rejectsInSavepoint(tx, 'shipment provider connection must be logistics domain', `
+      UPDATE commerce.provider_connection SET domain = 'PAYMENT' WHERE provider_connection_id = '${connectionId}'
+    `, /shipment|provider connection identity/);
+    await rejectsInSavepoint(tx, 'referenced provider connection identity cannot drift', `
+      UPDATE commerce.provider_connection SET connection_key = 'RENAMED' WHERE provider_connection_id = '${connectionId}'
+    `, /provider connection identity/);
 
     throw new Error('ROLLBACK_SHIPMENT_DB_ASSERTIONS');
   }, { timeout: 30_000 }).catch(error => {

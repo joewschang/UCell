@@ -1248,6 +1248,8 @@ model ProviderWebhookInbox {
   ingressKey                  String                     @map("ingress_key")
   providerEventIdentity       String?                    @map("provider_event_identity")
   payloadHash                 String                     @map("payload_hash")
+  verificationEvidenceHash    String?                    @map("verification_evidence_hash")
+  signatureTimestamp          DateTime?                  @map("signature_timestamp") @db.Timestamptz(6)
   safeEvidenceRef             String                     @map("safe_evidence_ref")
   verificationConfigVersion   String                     @map("verification_config_version")
   status                      ProviderWebhookStatus      @default(RECEIVED)
@@ -1519,6 +1521,7 @@ model FulfillmentParcel {
   shipments   Shipment[]
 
   @@unique([fulfillmentId, parcelKey])
+  @@unique([fulfillmentParcelId, fulfillmentId])
   @@index([fulfillmentId, createdAt])
   @@map("fulfillment_parcel")
   @@schema("commerce")
@@ -1541,6 +1544,7 @@ model FulfillmentQcEvidence {
   fulfillment Fulfillment @relation(fields: [fulfillmentId], references: [fulfillmentId])
   shipments   Shipment[]
 
+  @@unique([fulfillmentQcEvidenceId, fulfillmentId])
   @@index([fulfillmentId, occurredAt])
   @@map("fulfillment_qc_evidence")
   @@schema("commerce")
@@ -1565,8 +1569,8 @@ model Shipment {
   updatedAt                   DateTime                @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   fulfillment               Fulfillment                     @relation(fields: [fulfillmentId], references: [fulfillmentId])
-  parcel                    FulfillmentParcel               @relation(fields: [fulfillmentParcelId], references: [fulfillmentParcelId])
-  qcEvidence                FulfillmentQcEvidence           @relation(fields: [fulfillmentQcEvidenceId], references: [fulfillmentQcEvidenceId])
+  parcel                    FulfillmentParcel               @relation(fields: [fulfillmentParcelId, fulfillmentId], references: [fulfillmentParcelId, fulfillmentId])
+  qcEvidence                FulfillmentQcEvidence           @relation(fields: [fulfillmentQcEvidenceId, fulfillmentId], references: [fulfillmentQcEvidenceId, fulfillmentId])
   providerConnectionVersion ProviderConnectionVersion       @relation(fields: [providerConnectionVersionId], references: [providerConnectionVersionId])
   trackingEvidence          ShipmentTrackingEventEvidence[]
   stateTransitions          ShipmentStateTransition[]

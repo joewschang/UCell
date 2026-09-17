@@ -62,7 +62,7 @@ export function decideProviderWebhookVerification(input: Readonly<{
     );
   }
 
-  const verificationEvidenceHash = sha256(stableJson(evidence));
+  const verificationEvidenceHash = hashProviderWebhookVerificationEvidence(evidence);
   if (input.existing !== null) {
     assertPersistedEvidence(input.existing);
     if (input.existing.providerEventIdentity !== evidence.providerEventIdentity
@@ -104,6 +104,14 @@ export function decideProviderWebhookVerification(input: Readonly<{
 
   return Object.freeze({ action: 'ACCEPT', providerEventIdentity: evidence.providerEventIdentity,
     payloadHash: evidence.payloadHash, verificationEvidenceHash });
+}
+
+/** Produces the provider-neutral audit digest for complete adapter evidence.
+ * This deliberately does not verify a provider signature. */
+export function hashProviderWebhookVerificationEvidence(
+  value: ProviderWebhookVerificationEvidence,
+): string {
+  return sha256(stableJson(canonicalEvidence(value)));
 }
 
 function canonicalEvidence(evidence: ProviderWebhookVerificationEvidence): ProviderWebhookVerificationEvidence {

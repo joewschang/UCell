@@ -36,3 +36,9 @@
 | Complete Backend API after verification slice | PASS | 431 tests / 48 suites |
 | Fresh DB Golden after verification slice | PASS | All 46 migrations plus deterministic regression completed |
 | Official provider signature vectors and callback certification | BLOCKED | OPERATIONAL_CREDENTIAL_PENDING; provider-specific algorithms were not inferred |
+| Webhook verification persistence | PASS | VERIFIED/REJECTED terminal evidence, CAS concurrency and exact replay/conflict behavior |
+| Rejected-event identity poisoning protection | PASS | Rejected evidence does not claim unverified canonical provider event identity |
+| Shipment aggregate relational integrity | PASS | Parcel/QC/Fulfillment composite FKs and LOGISTICS provider-version identity guards |
+| Reconciliation PostgreSQL concurrency/rollback | PASS | Eight-way unique winner, exact replay, conflict, rollback and zero monetary side effects |
+| Shipment persistence DB assertions after integrity migration | PASS | 27 assertions on a fresh isolated database |
+| Complete Backend API after persistence integration | PASS | 470 tests / 51 suites |
