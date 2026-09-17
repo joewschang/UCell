@@ -1,5 +1,7 @@
 # Phase 1 Architecture Review Report
 
+Latest disposition: [PO company operating-unit clarification](COMPANY_BALL_OPERATING_UNIT_DECISION.md) partially resolves D2. Company Balls are independent operating units and participate in ordinary actual referral sequence; no sequence omission or default company placement exemption. Actual Sponsor graph/bootstrap order and D1 plan/rank remain pending. This disposition supersedes earlier blanket statements that all of D2 is undecided.
+
 Further review: [D1/D2 code impact](DECISION_CODE_IMPACT_REVIEW.md) traces current enforcement/calculation paths and supplies 12 proposed acceptance vectors plus a 24-order conditional truth table. These are review evidence, not executed implementation tests or approved company economics.
 
 Review continuation: [D1/D2 decision worksheet](ARCHITECTURE_DECISION_WORKSHEET.md) provides a concrete PO/SA decision form. Both decisions remain pending; the continuation is architecture review only.

@@ -1,5 +1,7 @@
 # D1 / D2 code impact review
 
+Subsequent PO clarification: [company operating-unit decision](COMPANY_BALL_OPERATING_UNIT_DECISION.md) approves independent company Balls participating in ordinary actual referral order. This resolves that part of D2; actual Sponsor graph/order remains pending. Conditional truth-table results below are unchanged, and do not authorize sequence omission or a founding exemption.
+
 Status: architecture review only; no implementation or economic approval. Read against `5810149d86cdcf11057bf56dc1f2c193c18dc1b2` (production code unchanged from the previously audited baseline). This supplements the [decision worksheet](ARCHITECTURE_DECISION_WORKSHEET.md).
 
 ## D1: actual economic dependencies
@@ -57,4 +59,4 @@ Application traversal currently selects open Binary edges (`effectiveTo: null`),
 | DI11 | Return/replay after company configuration or ownership changes | Original effective plan/ancestry/destination retained; B adjustment exactly once |
 | DI12 | Company Ball final entitlement | Core theory/K preserved; no duplicate member PAYABLE/PAID; A/B remain separate |
 
-No live fixtures, schema changes, migrations or production commands were run for this analysis. The truth table validates a conditional predicate only. D1/D2 remain REVIEW_REQUIRED, and Production remains BLOCKED.
+No live fixtures, schema changes, migrations or production commands were run for this analysis. The truth table validates a conditional predicate only. D1 and the remaining D2 graph/order details remain REVIEW_REQUIRED, and Production remains BLOCKED.

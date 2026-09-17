@@ -24,6 +24,8 @@ Acceptance after approval: #1/#2/#3 use exactly the approved profile; ordinary m
 
 ## D2 — Company Sponsor and canonical founding placement
 
+PARTIALLY RESOLVED by [PO operating-unit clarification](COMPANY_BALL_OPERATING_UNIT_DECISION.md): company Balls are independent operating units and participate in actual referral ordering like other Balls. The earlier default preference for a founding exception is withdrawn. Actual Sponsor edges and valid placement flow remain to be specified.
+
 Already approved: founding #4–#7 are sponsored by Company, while their Binary parents are #2/#3. Sponsor cannot be inferred from Binary parent. Canonical bootstrap positions remain fixed; ordinary member placement constraints remain enforced.
 
 Recommended architecture candidate, still requiring approval: designate tree #1 as the Company's Sponsor Qualification for that tree, backed by CompanyPrincipal evidence. Explicitly decide Sponsor ancestry of company #1/#2/#3; Binary edges do not answer this question. This choice affects fixed Sponsor generations and entitlement evidence, so it is not a display-only choice.
@@ -32,13 +34,13 @@ Concrete collision: if founding slots are filled #4, #5, #6, the third Company r
 
 | Option | Required approval / tradeoff |
 |---|---|
-| A: per-tree Sponsor #1 with a narrow canonical founding placement exception | Define exact exception eligibility and company Sponsor ancestry. Preserve ordinary referral sequence evidence and all normal member guards. Do not infer any Sponsor commission-rate exception. |
+| A: per-tree Sponsor #1 using ordinary actual referral sequence and placement guards | Specify company Sponsor ancestry and bootstrap referral order; validate founding placements against the actual sequence. No company-only exemption. |
 | B: principal-only Company Sponsor edges | Requires mixed-type historical Sponsor traversal and generation semantics; larger Core impact. Cannot reuse the current Qualification-only relationship as-is. |
 | C: a global designated Company Sponsor Qualification | Requires explicit cross-tree Sponsor attribution and economic ancestry decisions. Binary volume and Carry must remain tree-isolated. |
 
-Recommend reviewing A first because it fits the current Qualification-based Sponsor identity, but no option is approved here. A valid disposition must state whether the exception is solely for canonical #4–#7 placement under the designated company Sponsor, how actual referral order is recorded, whether subsequent referrals remain ordinary, and how SQL/application guards enforce the same scope. Do not exempt all COMPANY-owned Balls or all referrals from the rule.
+Option A remains a possible Qualification-based designation, not an approved Sponsor graph. Any CompanyPrincipal representation must preserve each operating Ball and its independent sequence. Principal-only or global designation alternatives cannot merge Ball economics or bypass ordinary ordering.
 
-Acceptance after approval: all 24 founding-slot fill orders preserve canonical topology and approved Sponsor semantics; concurrent claims cannot double-occupy; normal first/third-left checks still reject ordinary invalid placement; cross-tree Binary propagation is rejected; Sponsor generations and B evidence match the approved ancestry; replay uses historical designation and does not substitute current Sponsor.
+Acceptance after graph approval: evaluate all 24 founding-slot orders for the correct accept/reject result, not universal success. Concurrent claims cannot double-occupy; ordinary first/third-left checks remain enforced; historical replay uses actual designation, sequence and ancestry.
 
 ## Bounded next-phase proposal
 

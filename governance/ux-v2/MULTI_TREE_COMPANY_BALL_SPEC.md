@@ -54,13 +54,15 @@ Activation is a separate governed command; DRAFT bootstrap cannot accept normal 
 
 ## 4. Company Sponsor model
 
+Approved clarification: [independent operating unit decision](COMPANY_BALL_OPERATING_UNIT_DECISION.md). Every company Ball remains an independent operating Qualification and participates in actual Sponsor sequence like other Balls. CompanyPrincipal identifies ownership, not a merged operational recipient. Canonical position numbers are not referral sequence numbers; do not skip company referrals or reset the sequence for founding members.
+
 Recommended technical representation: retain Qualification-to-Qualification Sponsor edges. Each tree has a separately recorded CompanySponsorDesignation linking CompanyPrincipal to a designated company Qualification (candidate: that tree's #1). Founding Sponsor selection explicitly records that designation; Binary parent remains #2 or #3. Company identity is the business Sponsor; the designated Qualification is its economic traversal anchor.
 
 Alternative principal-only Sponsor edges would introduce mixed node types into fixed historical generations and cannot reuse present Core without new traversal rules. A global designated company Qualification is possible but changes referral recipient/tree attribution. Neither alternative is silently selected. D2 requires PO confirmation of designation, company-node Sponsor ancestry and normal first/third-left interaction before economic implementation.
 
 For all founding positions: `sponsorPrincipal=COMPANY`; #4/#5 `binaryParent=#2`; #6/#7 `binaryParent=#3`. A founding placement command must verify the pre-existing explicit Company Sponsor evidence; if a different Sponsor is confirmed, reject and use the separately approved setup workflow. Placement never creates or rewrites Sponsor edges as a hidden side effect.
 
-The existing first/third-left guard lives in both `organization.service.ts` and migration 0013. With candidate Sponsor #1 and sequence #6 as the third company referral, canonical #6 is on #1's right subtree. This is a concrete conflict, not permission to bypass all normal member guards. Preserve the universal canonical positions while reviewing the narrow Company Sponsor sequence rule. Arbitrary filling order must also be addressed; do not assume #4–#7 are occupied in sequence.
+The existing first/third-left guard lives in both `organization.service.ts` and migration 0013. With candidate Sponsor #1 and no prior Sponsor referrals, filling #4, #5, #6 makes #6 the third referral on #1's right subtree. Existing real company referrals change that sequence and must be counted. This is a concrete conflict, not permission to bypass all normal member guards. Preserve canonical positions and ordinary actual Sponsor ordering; no company/founding exception is the default recommendation. Resolve the actual Sponsor graph and valid placement flow before implementation. Arbitrary filling order must also be addressed; do not assume #4–#7 are occupied in sequence.
 
 Sponsor traversal uses its own historical edges and fixed generations, continues past zero/ineligible generations without compression, and never substitutes a holder's other Ball. Tree isolation applies to Binary propagation/Carry; do not silently prohibit otherwise lawful Sponsor relationships merely because Binary tree IDs differ.
 
