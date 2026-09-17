@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { MemberModule } from './modules/member/member.module';
 import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
@@ -38,6 +39,7 @@ import { UatEvidenceModule } from './modules/uat-evidence/uat-evidence.module';
 
 @Module({
   imports: [
+    AnalyticsModule,
     ConfigModule.forRoot({ isGlobal: true }),
     DatabaseModule,
     MemberModule,

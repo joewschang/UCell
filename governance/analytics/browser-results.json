@@ -1,0 +1,17 @@
+{
+  "status": "PASS",
+  "fixture": "ISOLATED_TEST_FIXTURE_NOT_BUSINESS_DATA",
+  "viewports": [
+    1440,
+    390
+  ],
+  "checks": [
+    "12 generations",
+    "tree switch",
+    "rebuild wiring",
+    "mobile overflow",
+    "finance read only",
+    "customer-service denied before query",
+    "no page errors"
+  ]
+}

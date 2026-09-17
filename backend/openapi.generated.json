@@ -1,6 +1,350 @@
 {
   "openapi": "3.0.0",
   "paths": {
+    "/api/v1/admin/analytics/policy": {
+      "get": {
+        "operationId": "adminAnalyticsPolicy",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "版本化 NASL 與十二代健康管理定義",
+        "tags": [
+          "Admin - Management Analytics"
+        ]
+      }
+    },
+    "/api/v1/admin/analytics/roots": {
+      "get": {
+        "operationId": "adminAnalyticsRoots",
+        "parameters": [
+          {
+            "name": "q",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "依球號選擇分析範圍，最多 30 筆，不回傳個資",
+        "tags": [
+          "Admin - Management Analytics"
+        ]
+      }
+    },
+    "/api/v1/admin/analytics/overview": {
+      "get": {
+        "operationId": "adminAnalyticsOverview",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "已保存 NASL 分布、同期群與狀態轉換",
+        "tags": [
+          "Admin - Management Analytics"
+        ]
+      }
+    },
+    "/api/v1/admin/analytics/nasl/current": {
+      "get": {
+        "operationId": "adminAnalyticsNaslCurrent",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "目前 NASL 分布",
+        "tags": [
+          "Admin - Management Analytics"
+        ]
+      }
+    },
+    "/api/v1/admin/analytics/nasl/transitions": {
+      "get": {
+        "operationId": "adminAnalyticsNaslTransitions",
+        "parameters": [
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "description": "台北日期 YYYY-MM-DD，包含；須與 to 同時提供，最多 366 天",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "description": "台北日期 YYYY-MM-DD，不包含；最晚為明日",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "policyVersion",
+            "required": false,
+            "in": "query",
+            "description": "精確政策版本；預設目前政策，不混合版本",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "已保存快照間狀態轉換",
+        "tags": [
+          "Admin - Management Analytics"
+        ]
+      }
+    },
+    "/api/v1/admin/analytics/nasl/cohorts": {
+      "get": {
+        "operationId": "adminAnalyticsNaslCohorts",
+        "parameters": [
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "description": "台北日期 YYYY-MM-DD，包含；須與 to 同時提供，最多 366 天",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "description": "台北日期 YYYY-MM-DD，不包含；最晚為明日",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "policyVersion",
+            "required": false,
+            "in": "query",
+            "description": "精確政策版本；預設目前政策，不混合版本",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "同政策固定月末母體的同期群活躍占比與活躍留存",
+        "tags": [
+          "Admin - Management Analytics"
+        ]
+      }
+    },
+    "/api/v1/admin/analytics/nasl/history": {
+      "get": {
+        "operationId": "adminAnalyticsHistory",
+        "parameters": [
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "description": "台北日期 YYYY-MM-DD，包含；須與 to 同時提供，最多 366 天",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "description": "台北日期 YYYY-MM-DD，不包含；最晚為明日",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "policyVersion",
+            "required": false,
+            "in": "query",
+            "description": "精確政策版本；預設目前政策，不混合版本",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "每日 NASL 快照，台北日期左含右不含，最多 366 天；預設 90 天",
+        "tags": [
+          "Admin - Management Analytics"
+        ]
+      }
+    },
+    "/api/v1/admin/analytics/sonar/{tree}/{qualificationId}": {
+      "get": {
+        "operationId": "adminAnalyticsSonar",
+        "parameters": [
+          {
+            "name": "tree",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "qualificationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "推薦／雙軌十二代健康雷達；僅查詢投影",
+        "tags": [
+          "Admin - Management Analytics"
+        ]
+      }
+    },
+    "/api/v1/admin/analytics/sonar/{tree}/{qualificationId}/contributors": {
+      "get": {
+        "operationId": "adminAnalyticsContributors",
+        "parameters": [
+          {
+            "name": "tree",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "qualificationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "generation",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "單代資格證據 ID，最多 100 筆",
+        "tags": [
+          "Admin - Management Analytics"
+        ]
+      }
+    },
+    "/api/v1/admin/analytics/rebuild": {
+      "post": {
+        "operationId": "adminAnalyticsRebuild",
+        "parameters": [
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "建立不可覆寫的管理分析快照；需要 UUID Idempotency-Key",
+        "tags": [
+          "Admin - Management Analytics"
+        ]
+      }
+    },
     "/api/v1/auth/member/line/exchange": {
       "post": {
         "operationId": "memberLineExchange",
@@ -3339,7 +3683,7 @@
         "parameters": [],
         "responses": {
           "200": {
-            "description": "Authoritative operational counts. NASL fields remain explicitly unavailable until their aggregation policy is approved.",
+            "description": "Authoritative operational counts. Legacy NASL fields remain unavailable here; use the versioned /admin/analytics/overview projection.",
             "content": {
               "application/json": {
                 "schema": {
@@ -6427,6 +6771,83 @@
         "summary": "Read append-only UAT execution evidence.",
         "tags": [
           "Admin - UAT Evidence"
+        ]
+      }
+    },
+    "/api/v1/admin/analytics/policy-versions": {
+      "get": {
+        "operationId": "adminAnalyticsPolicyVersions",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "可查詢的管理政策版本",
+        "tags": [
+          "Admin - Management Analytics"
+        ]
+      }
+    },
+    "/api/v1/admin/analytics/refresh/status": {
+      "get": {
+        "operationId": "adminAnalyticsRefreshStatus",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "自動更新狀態與各設定範圍的保存快照鮮度",
+        "tags": [
+          "Admin - Management Analytics"
+        ]
+      }
+    },
+    "/api/v1/admin/analytics/sonar/{tree}/{qualificationId}/volumes": {
+      "get": {
+        "operationId": "adminAnalyticsSonarVolumes",
+        "parameters": [
+          {
+            "name": "tree",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "qualificationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "事件歷史樹的十二代 GPV/RPV/EPV，最近 30 天原始事件截至快照的修正淨量；Binary 另含已結算 Carry",
+        "tags": [
+          "Admin - Management Analytics"
         ]
       }
     }

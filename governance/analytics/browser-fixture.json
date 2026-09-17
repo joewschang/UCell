@@ -1,0 +1,2441 @@
+{
+  "label": "ISOLATED_TEST_FIXTURE_NOT_BUSINESS_DATA",
+  "root": "5324b639-04b6-40b1-8aad-5f648d48a977",
+  "overview": {
+    "snapshotId": "f6c64635-ab47-4dfa-bb34-6b11e480243c",
+    "asOf": "2026-09-17T21:47:11.286Z",
+    "policyVersion": "UCELL-MGMT-2026-09-v1",
+    "projectionVersion": "analytics-v1",
+    "status": "AVAILABLE",
+    "lagSeconds": 0,
+    "issues": [
+      "REGISTRATION_DATE_USES_PERSON_CREATED_AT",
+      "SYSTEM_SCOPE_USES_EXPLICIT_POOL",
+      "ENGAGEMENT_EVENTS_NOT_CONNECTED",
+      "VOLUME_REQUIRES_SEPARATE_ROOT_PROJECTION"
+    ],
+    "comparisonAsOf": "2026-09-17T21:47:11.068Z",
+    "scope": "ALL_COMPANY_PERSONS",
+    "rates": {
+      "A": 0.25,
+      "L": 0.25,
+      "N": 0.25,
+      "S": 0.25
+    },
+    "total": 4,
+    "counts": {
+      "A": 1,
+      "L": 1,
+      "N": 1,
+      "S": 1
+    },
+    "cohorts": [
+      {
+        "month": "2026-05",
+        "total": 2,
+        "counts": {
+          "A": 1,
+          "L": 1,
+          "N": 0,
+          "S": 0
+        },
+        "activeRate": 0.5
+      },
+      {
+        "month": "2026-07",
+        "total": 1,
+        "counts": {
+          "A": 0,
+          "L": 0,
+          "N": 0,
+          "S": 1
+        },
+        "activeRate": 0
+      },
+      {
+        "month": "2026-09",
+        "total": 1,
+        "counts": {
+          "A": 0,
+          "L": 0,
+          "N": 1,
+          "S": 0
+        },
+        "activeRate": 0
+      }
+    ],
+    "transitions": {
+      "matrix": {
+        "A->A": 1,
+        "L->L": 1,
+        "N->N": 1,
+        "S->S": 1
+      },
+      "removed": 0,
+      "becameLost": 0,
+      "comparable": 4,
+      "newEntrants": 0,
+      "reactivated": 0,
+      "activeRetention": 1
+    },
+    "neverActivated": 1,
+    "excludedPersonRecords": 0,
+    "policy": {
+      "version": "UCELL-MGMT-2026-09-v1",
+      "weights": {
+        "risk": 15,
+        "depth": 10,
+        "active": 25,
+        "growth": 15,
+        "balance": 10,
+        "engagement": 5,
+        "repurchase": 20
+      },
+      "lostDays": 90,
+      "timezone": "Asia/Taipei",
+      "activeDays": 30,
+      "generations": 12,
+      "smallSample": 5,
+      "elevatedRisk": 0.5,
+      "growthTarget": 0.1,
+      "denominatorZero": "UNAVAILABLE",
+      "materialDecline": 0.1,
+      "refundSemantics": "A historical payment is engagement evidence even after a return; no net-sales inference",
+      "repurchaseBasis": "REPURCHASE order paid or subscription installment recognized in rolling 30 days",
+      "freshnessSeconds": 900,
+      "qualifyingEvents": [
+        "ORDER_PAID",
+        "REPURCHASE_RECOGNIZED"
+      ],
+      "projectionVersion": "analytics-v1",
+      "registrationBasis": "Person.createdAt (record creation proxy; not legal enrollment date)",
+      "growingImprovement": 0.05,
+      "suspendNeverActivated": "S / NEVER_ACTIVATED between >30 and <=90 days since record creation"
+    }
+  },
+  "history": {
+    "policyVersion": "UCELL-MGMT-2026-09-v1",
+    "from": "2026-06-21",
+    "toExclusive": "2026-09-19",
+    "timezone": "Asia/Taipei",
+    "rows": [
+      {
+        "snapshotId": "f6c64635-ab47-4dfa-bb34-6b11e480243c",
+        "asOf": "2026-09-17T21:47:11.286Z",
+        "policyVersion": "UCELL-MGMT-2026-09-v1",
+        "projectionVersion": "analytics-v1",
+        "status": "AVAILABLE",
+        "lagSeconds": 0,
+        "issues": [
+          "REGISTRATION_DATE_USES_PERSON_CREATED_AT",
+          "SYSTEM_SCOPE_USES_EXPLICIT_POOL",
+          "ENGAGEMENT_EVENTS_NOT_CONNECTED",
+          "VOLUME_REQUIRES_SEPARATE_ROOT_PROJECTION"
+        ],
+        "comparisonAsOf": "2026-09-17T21:47:11.068Z",
+        "rates": {
+          "A": 0.25,
+          "L": 0.25,
+          "N": 0.25,
+          "S": 0.25
+        },
+        "total": 4,
+        "counts": {
+          "A": 1,
+          "L": 1,
+          "N": 1,
+          "S": 1
+        },
+        "cohorts": [
+          {
+            "month": "2026-05",
+            "total": 2,
+            "counts": {
+              "A": 1,
+              "L": 1,
+              "N": 0,
+              "S": 0
+            },
+            "activeRate": 0.5
+          },
+          {
+            "month": "2026-07",
+            "total": 1,
+            "counts": {
+              "A": 0,
+              "L": 0,
+              "N": 0,
+              "S": 1
+            },
+            "activeRate": 0
+          },
+          {
+            "month": "2026-09",
+            "total": 1,
+            "counts": {
+              "A": 0,
+              "L": 0,
+              "N": 1,
+              "S": 0
+            },
+            "activeRate": 0
+          }
+        ],
+        "transitions": {
+          "matrix": {
+            "A->A": 1,
+            "L->L": 1,
+            "N->N": 1,
+            "S->S": 1
+          },
+          "removed": 0,
+          "becameLost": 0,
+          "comparable": 4,
+          "newEntrants": 0,
+          "reactivated": 0,
+          "activeRetention": 1
+        },
+        "neverActivated": 1,
+        "excludedPersonRecords": 0
+      }
+    ],
+    "basis": "CAPTURED_SNAPSHOTS_ONLY_NO_SYNTHETIC_BACKFILL"
+  },
+  "roots": [
+    {
+      "id": "5324b639-04b6-40b1-8aad-5f648d48a977",
+      "label": "Q#1"
+    },
+    {
+      "id": "2165682f-61e2-4f7f-bd8d-61cdccdf0250",
+      "label": "Q#2"
+    },
+    {
+      "id": "678b5442-0ae1-4b55-b808-db95551fd4a6",
+      "label": "Q#3"
+    },
+    {
+      "id": "0e6900de-823b-4346-9773-b6293958b520",
+      "label": "Q#4"
+    },
+    {
+      "id": "6d5bebd0-e102-4343-be3c-52e249ccc23c",
+      "label": "Q#5"
+    },
+    {
+      "id": "926383a2-adeb-41d0-82b3-17f354c812b6",
+      "label": "Q#6"
+    },
+    {
+      "id": "e9679f2b-8f36-4dd1-85c7-8d523b7b0217",
+      "label": "Q#7"
+    },
+    {
+      "id": "5f230cb6-7bf6-4a87-96f4-5a7148337809",
+      "label": "Q#8"
+    },
+    {
+      "id": "7280b492-522d-4d51-bbe4-e492d9dfb74c",
+      "label": "Q#9"
+    },
+    {
+      "id": "8b82924f-a2e2-40cf-96d7-ad855bcb307d",
+      "label": "Q#10"
+    },
+    {
+      "id": "d6035f25-59d1-4940-b16e-207febb6fb54",
+      "label": "Q#11"
+    },
+    {
+      "id": "87e898dc-bc48-42a2-958a-90d172740188",
+      "label": "Q#12"
+    },
+    {
+      "id": "45cdcd38-5f0d-4d9b-82ce-700ddb5d7fa9",
+      "label": "Q#13"
+    },
+    {
+      "id": "f7ea815d-baea-45c7-b176-369fb83e0f1e",
+      "label": "Q#14"
+    }
+  ],
+  "sponsor": {
+    "snapshotId": "f6c64635-ab47-4dfa-bb34-6b11e480243c",
+    "asOf": "2026-09-17T21:47:11.286Z",
+    "policyVersion": "UCELL-MGMT-2026-09-v1",
+    "projectionVersion": "analytics-v1",
+    "status": "AVAILABLE",
+    "lagSeconds": 0,
+    "issues": [
+      "REGISTRATION_DATE_USES_PERSON_CREATED_AT",
+      "SYSTEM_SCOPE_USES_EXPLICIT_POOL",
+      "ENGAGEMENT_EVENTS_NOT_CONNECTED",
+      "VOLUME_REQUIRES_SEPARATE_ROOT_PROJECTION"
+    ],
+    "comparisonAsOf": "2026-09-17T21:47:11.068Z",
+    "heat": {
+      "label": "CRITICAL",
+      "reason": "ACTIVE_LT_30_AND_RISK_GE_50"
+    },
+    "left": null,
+    "root": "5324b639-04b6-40b1-8aad-5f648d48a977",
+    "tree": "sponsor",
+    "right": null,
+    "total": {
+      "heat": {
+        "label": "CRITICAL",
+        "reason": "ACTIVE_LT_30_AND_RISK_GE_50"
+      },
+      "nasl": {
+        "A": 0,
+        "L": 0,
+        "N": 0,
+        "S": 1
+      },
+      "newRate": 0,
+      "newCount": 0,
+      "riskRate": 1,
+      "activeRate": 0.08333333333333333,
+      "generation": 0,
+      "activeCount": 1,
+      "personCount": 1,
+      "systemCount": 0,
+      "repurchaseRate": 0.08333333333333333,
+      "repurchaseCount": 1,
+      "qualificationCount": 12,
+      "classifiedPersonCount": 1
+    },
+    "health": {
+      "score": null,
+      "reason": "INCOMPLETE_COMPONENTS_NO_REWEIGHTING",
+      "coverage": 85,
+      "components": [
+        {
+          "key": "active",
+          "value": 0.08333333333333333,
+          "weight": 25
+        },
+        {
+          "key": "repurchase",
+          "value": 0.08333333333333333,
+          "weight": 20
+        },
+        {
+          "key": "growth",
+          "value": 0,
+          "weight": 15
+        },
+        {
+          "key": "risk",
+          "value": 0,
+          "weight": 15
+        },
+        {
+          "key": "balance",
+          "value": null,
+          "weight": 10
+        },
+        {
+          "key": "depth",
+          "value": 0.08333333333333333,
+          "weight": 10
+        },
+        {
+          "key": "engagement",
+          "value": null,
+          "weight": 5
+        }
+      ]
+    },
+    "volume": {
+      "pv": null,
+      "epv": null,
+      "rpv": null,
+      "carry": null,
+      "reason": "AUTHORITATIVE_VOLUME_ADAPTER_NOT_CONNECTED"
+    },
+    "balance": null,
+    "growing": null,
+    "generations": [
+      {
+        "heat": {
+          "label": "INSUFFICIENT_SAMPLE",
+          "reason": "FEWER_THAN_5_QUALIFICATIONS"
+        },
+        "nasl": {
+          "A": 0,
+          "L": 0,
+          "N": 0,
+          "S": 1
+        },
+        "newRate": 0,
+        "newCount": 0,
+        "riskRate": 1,
+        "activeRate": 1,
+        "generation": 1,
+        "activeCount": 1,
+        "personCount": 1,
+        "systemCount": 0,
+        "repurchaseRate": 1,
+        "repurchaseCount": 1,
+        "qualificationCount": 1,
+        "classifiedPersonCount": 1
+      },
+      {
+        "heat": {
+          "label": "INSUFFICIENT_SAMPLE",
+          "reason": "FEWER_THAN_5_QUALIFICATIONS"
+        },
+        "nasl": {
+          "A": 0,
+          "L": 0,
+          "N": 0,
+          "S": 1
+        },
+        "newRate": 0,
+        "newCount": 0,
+        "riskRate": 1,
+        "activeRate": 0,
+        "generation": 2,
+        "activeCount": 0,
+        "personCount": 1,
+        "systemCount": 0,
+        "repurchaseRate": 0,
+        "repurchaseCount": 0,
+        "qualificationCount": 1,
+        "classifiedPersonCount": 1
+      },
+      {
+        "heat": {
+          "label": "INSUFFICIENT_SAMPLE",
+          "reason": "FEWER_THAN_5_QUALIFICATIONS"
+        },
+        "nasl": {
+          "A": 0,
+          "L": 0,
+          "N": 0,
+          "S": 1
+        },
+        "newRate": 0,
+        "newCount": 0,
+        "riskRate": 1,
+        "activeRate": 0,
+        "generation": 3,
+        "activeCount": 0,
+        "personCount": 1,
+        "systemCount": 0,
+        "repurchaseRate": 0,
+        "repurchaseCount": 0,
+        "qualificationCount": 1,
+        "classifiedPersonCount": 1
+      },
+      {
+        "heat": {
+          "label": "INSUFFICIENT_SAMPLE",
+          "reason": "FEWER_THAN_5_QUALIFICATIONS"
+        },
+        "nasl": {
+          "A": 0,
+          "L": 0,
+          "N": 0,
+          "S": 1
+        },
+        "newRate": 0,
+        "newCount": 0,
+        "riskRate": 1,
+        "activeRate": 0,
+        "generation": 4,
+        "activeCount": 0,
+        "personCount": 1,
+        "systemCount": 0,
+        "repurchaseRate": 0,
+        "repurchaseCount": 0,
+        "qualificationCount": 1,
+        "classifiedPersonCount": 1
+      },
+      {
+        "heat": {
+          "label": "INSUFFICIENT_SAMPLE",
+          "reason": "FEWER_THAN_5_QUALIFICATIONS"
+        },
+        "nasl": {
+          "A": 0,
+          "L": 0,
+          "N": 0,
+          "S": 1
+        },
+        "newRate": 0,
+        "newCount": 0,
+        "riskRate": 1,
+        "activeRate": 0,
+        "generation": 5,
+        "activeCount": 0,
+        "personCount": 1,
+        "systemCount": 0,
+        "repurchaseRate": 0,
+        "repurchaseCount": 0,
+        "qualificationCount": 1,
+        "classifiedPersonCount": 1
+      },
+      {
+        "heat": {
+          "label": "INSUFFICIENT_SAMPLE",
+          "reason": "FEWER_THAN_5_QUALIFICATIONS"
+        },
+        "nasl": {
+          "A": 0,
+          "L": 0,
+          "N": 0,
+          "S": 1
+        },
+        "newRate": 0,
+        "newCount": 0,
+        "riskRate": 1,
+        "activeRate": 0,
+        "generation": 6,
+        "activeCount": 0,
+        "personCount": 1,
+        "systemCount": 0,
+        "repurchaseRate": 0,
+        "repurchaseCount": 0,
+        "qualificationCount": 1,
+        "classifiedPersonCount": 1
+      },
+      {
+        "heat": {
+          "label": "INSUFFICIENT_SAMPLE",
+          "reason": "FEWER_THAN_5_QUALIFICATIONS"
+        },
+        "nasl": {
+          "A": 0,
+          "L": 0,
+          "N": 0,
+          "S": 1
+        },
+        "newRate": 0,
+        "newCount": 0,
+        "riskRate": 1,
+        "activeRate": 0,
+        "generation": 7,
+        "activeCount": 0,
+        "personCount": 1,
+        "systemCount": 0,
+        "repurchaseRate": 0,
+        "repurchaseCount": 0,
+        "qualificationCount": 1,
+        "classifiedPersonCount": 1
+      },
+      {
+        "heat": {
+          "label": "INSUFFICIENT_SAMPLE",
+          "reason": "FEWER_THAN_5_QUALIFICATIONS"
+        },
+        "nasl": {
+          "A": 0,
+          "L": 0,
+          "N": 0,
+          "S": 1
+        },
+        "newRate": 0,
+        "newCount": 0,
+        "riskRate": 1,
+        "activeRate": 0,
+        "generation": 8,
+        "activeCount": 0,
+        "personCount": 1,
+        "systemCount": 0,
+        "repurchaseRate": 0,
+        "repurchaseCount": 0,
+        "qualificationCount": 1,
+        "classifiedPersonCount": 1
+      },
+      {
+        "heat": {
+          "label": "INSUFFICIENT_SAMPLE",
+          "reason": "FEWER_THAN_5_QUALIFICATIONS"
+        },
+        "nasl": {
+          "A": 0,
+          "L": 0,
+          "N": 0,
+          "S": 1
+        },
+        "newRate": 0,
+        "newCount": 0,
+        "riskRate": 1,
+        "activeRate": 0,
+        "generation": 9,
+        "activeCount": 0,
+        "personCount": 1,
+        "systemCount": 0,
+        "repurchaseRate": 0,
+        "repurchaseCount": 0,
+        "qualificationCount": 1,
+        "classifiedPersonCount": 1
+      },
+      {
+        "heat": {
+          "label": "INSUFFICIENT_SAMPLE",
+          "reason": "FEWER_THAN_5_QUALIFICATIONS"
+        },
+        "nasl": {
+          "A": 0,
+          "L": 0,
+          "N": 0,
+          "S": 1
+        },
+        "newRate": 0,
+        "newCount": 0,
+        "riskRate": 1,
+        "activeRate": 0,
+        "generation": 10,
+        "activeCount": 0,
+        "personCount": 1,
+        "systemCount": 0,
+        "repurchaseRate": 0,
+        "repurchaseCount": 0,
+        "qualificationCount": 1,
+        "classifiedPersonCount": 1
+      },
+      {
+        "heat": {
+          "label": "INSUFFICIENT_SAMPLE",
+          "reason": "FEWER_THAN_5_QUALIFICATIONS"
+        },
+        "nasl": {
+          "A": 0,
+          "L": 0,
+          "N": 0,
+          "S": 1
+        },
+        "newRate": 0,
+        "newCount": 0,
+        "riskRate": 1,
+        "activeRate": 0,
+        "generation": 11,
+        "activeCount": 0,
+        "personCount": 1,
+        "systemCount": 0,
+        "repurchaseRate": 0,
+        "repurchaseCount": 0,
+        "qualificationCount": 1,
+        "classifiedPersonCount": 1
+      },
+      {
+        "heat": {
+          "label": "INSUFFICIENT_SAMPLE",
+          "reason": "FEWER_THAN_5_QUALIFICATIONS"
+        },
+        "nasl": {
+          "A": 0,
+          "L": 0,
+          "N": 0,
+          "S": 1
+        },
+        "newRate": 0,
+        "newCount": 0,
+        "riskRate": 1,
+        "activeRate": 0,
+        "generation": 12,
+        "activeCount": 0,
+        "personCount": 1,
+        "systemCount": 0,
+        "repurchaseRate": 0,
+        "repurchaseCount": 0,
+        "qualificationCount": 1,
+        "classifiedPersonCount": 1
+      }
+    ],
+    "sampleWarning": null,
+    "activeRateDelta": null
+  },
+  "binary": {
+    "snapshotId": "f6c64635-ab47-4dfa-bb34-6b11e480243c",
+    "asOf": "2026-09-17T21:47:11.286Z",
+    "policyVersion": "UCELL-MGMT-2026-09-v1",
+    "projectionVersion": "analytics-v1",
+    "status": "AVAILABLE",
+    "lagSeconds": 0,
+    "issues": [
+      "REGISTRATION_DATE_USES_PERSON_CREATED_AT",
+      "SYSTEM_SCOPE_USES_EXPLICIT_POOL",
+      "ENGAGEMENT_EVENTS_NOT_CONNECTED",
+      "VOLUME_REQUIRES_SEPARATE_ROOT_PROJECTION"
+    ],
+    "comparisonAsOf": "2026-09-17T21:47:11.068Z",
+    "heat": {
+      "label": "INSUFFICIENT_SAMPLE",
+      "reason": "FEWER_THAN_5_QUALIFICATIONS"
+    },
+    "left": {
+      "heat": {
+        "label": "INSUFFICIENT_SAMPLE",
+        "reason": "FEWER_THAN_5_QUALIFICATIONS"
+      },
+      "nasl": {
+        "A": 0,
+        "L": 0,
+        "N": 0,
+        "S": 1
+      },
+      "newRate": 0,
+      "newCount": 0,
+      "riskRate": 1,
+      "activeRate": 1,
+      "generation": 0,
+      "activeCount": 1,
+      "personCount": 1,
+      "systemCount": 0,
+      "repurchaseRate": 1,
+      "repurchaseCount": 1,
+      "qualificationCount": 1,
+      "classifiedPersonCount": 1
+    },
+    "root": "5324b639-04b6-40b1-8aad-5f648d48a977",
+    "tree": "binary",
+    "right": {
+      "heat": {
+        "label": "INSUFFICIENT_SAMPLE",
+        "reason": "FEWER_THAN_5_QUALIFICATIONS"
+      },
+      "nasl": {
+        "A": 0,
+        "L": 0,
+        "N": 0,
+        "S": 0
+      },
+      "newRate": null,
+      "newCount": 0,
+      "riskRate": null,
+      "activeRate": null,
+      "generation": 0,
+      "activeCount": 0,
+      "personCount": 0,
+      "systemCount": 0,
+      "repurchaseRate": null,
+      "repurchaseCount": 0,
+      "qualificationCount": 0,
+      "classifiedPersonCount": 0
+    },
+    "total": {
+      "heat": {
+        "label": "INSUFFICIENT_SAMPLE",
+        "reason": "FEWER_THAN_5_QUALIFICATIONS"
+      },
+      "nasl": {
+        "A": 0,
+        "L": 0,
+        "N": 0,
+        "S": 1
+      },
+      "newRate": 0,
+      "newCount": 0,
+      "riskRate": 1,
+      "activeRate": 1,
+      "generation": 0,
+      "activeCount": 1,
+      "personCount": 1,
+      "systemCount": 0,
+      "repurchaseRate": 1,
+      "repurchaseCount": 1,
+      "qualificationCount": 1,
+      "classifiedPersonCount": 1
+    },
+    "health": {
+      "score": null,
+      "reason": "INCOMPLETE_COMPONENTS_NO_REWEIGHTING",
+      "coverage": 95,
+      "components": [
+        {
+          "key": "active",
+          "value": 1,
+          "weight": 25
+        },
+        {
+          "key": "repurchase",
+          "value": 1,
+          "weight": 20
+        },
+        {
+          "key": "growth",
+          "value": 0,
+          "weight": 15
+        },
+        {
+          "key": "risk",
+          "value": 0,
+          "weight": 15
+        },
+        {
+          "key": "balance",
+          "value": 0,
+          "weight": 10
+        },
+        {
+          "key": "depth",
+          "value": 1,
+          "weight": 10
+        },
+        {
+          "key": "engagement",
+          "value": null,
+          "weight": 5
+        }
+      ]
+    },
+    "volume": {
+      "pv": null,
+      "epv": null,
+      "rpv": null,
+      "carry": null,
+      "reason": "AUTHORITATIVE_VOLUME_ADAPTER_NOT_CONNECTED"
+    },
+    "balance": 0,
+    "growing": null,
+    "generations": [
+      {
+        "heat": {
+          "label": "INSUFFICIENT_SAMPLE",
+          "reason": "FEWER_THAN_5_QUALIFICATIONS"
+        },
+        "nasl": {
+          "A": 0,
+          "L": 0,
+          "N": 0,
+          "S": 1
+        },
+        "newRate": 0,
+        "newCount": 0,
+        "riskRate": 1,
+        "activeRate": 1,
+        "generation": 1,
+        "activeCount": 1,
+        "personCount": 1,
+        "systemCount": 0,
+        "repurchaseRate": 1,
+        "repurchaseCount": 1,
+        "qualificationCount": 1,
+        "classifiedPersonCount": 1
+      },
+      {
+        "heat": {
+          "label": "INSUFFICIENT_SAMPLE",
+          "reason": "FEWER_THAN_5_QUALIFICATIONS"
+        },
+        "nasl": {
+          "A": 0,
+          "L": 0,
+          "N": 0,
+          "S": 0
+        },
+        "newRate": null,
+        "newCount": 0,
+        "riskRate": null,
+        "activeRate": null,
+        "generation": 2,
+        "activeCount": 0,
+        "personCount": 0,
+        "systemCount": 0,
+        "repurchaseRate": null,
+        "repurchaseCount": 0,
+        "qualificationCount": 0,
+        "classifiedPersonCount": 0
+      },
+      {
+        "heat": {
+          "label": "INSUFFICIENT_SAMPLE",
+          "reason": "FEWER_THAN_5_QUALIFICATIONS"
+        },
+        "nasl": {
+          "A": 0,
+          "L": 0,
+          "N": 0,
+          "S": 0
+        },
+        "newRate": null,
+        "newCount": 0,
+        "riskRate": null,
+        "activeRate": null,
+        "generation": 3,
+        "activeCount": 0,
+        "personCount": 0,
+        "systemCount": 0,
+        "repurchaseRate": null,
+        "repurchaseCount": 0,
+        "qualificationCount": 0,
+        "classifiedPersonCount": 0
+      },
+      {
+        "heat": {
+          "label": "INSUFFICIENT_SAMPLE",
+          "reason": "FEWER_THAN_5_QUALIFICATIONS"
+        },
+        "nasl": {
+          "A": 0,
+          "L": 0,
+          "N": 0,
+          "S": 0
+        },
+        "newRate": null,
+        "newCount": 0,
+        "riskRate": null,
+        "activeRate": null,
+        "generation": 4,
+        "activeCount": 0,
+        "personCount": 0,
+        "systemCount": 0,
+        "repurchaseRate": null,
+        "repurchaseCount": 0,
+        "qualificationCount": 0,
+        "classifiedPersonCount": 0
+      },
+      {
+        "heat": {
+          "label": "INSUFFICIENT_SAMPLE",
+          "reason": "FEWER_THAN_5_QUALIFICATIONS"
+        },
+        "nasl": {
+          "A": 0,
+          "L": 0,
+          "N": 0,
+          "S": 0
+        },
+        "newRate": null,
+        "newCount": 0,
+        "riskRate": null,
+        "activeRate": null,
+        "generation": 5,
+        "activeCount": 0,
+        "personCount": 0,
+        "systemCount": 0,
+        "repurchaseRate": null,
+        "repurchaseCount": 0,
+        "qualificationCount": 0,
+        "classifiedPersonCount": 0
+      },
+      {
+        "heat": {
+          "label": "INSUFFICIENT_SAMPLE",
+          "reason": "FEWER_THAN_5_QUALIFICATIONS"
+        },
+        "nasl": {
+          "A": 0,
+          "L": 0,
+          "N": 0,
+          "S": 0
+        },
+        "newRate": null,
+        "newCount": 0,
+        "riskRate": null,
+        "activeRate": null,
+        "generation": 6,
+        "activeCount": 0,
+        "personCount": 0,
+        "systemCount": 0,
+        "repurchaseRate": null,
+        "repurchaseCount": 0,
+        "qualificationCount": 0,
+        "classifiedPersonCount": 0
+      },
+      {
+        "heat": {
+          "label": "INSUFFICIENT_SAMPLE",
+          "reason": "FEWER_THAN_5_QUALIFICATIONS"
+        },
+        "nasl": {
+          "A": 0,
+          "L": 0,
+          "N": 0,
+          "S": 0
+        },
+        "newRate": null,
+        "newCount": 0,
+        "riskRate": null,
+        "activeRate": null,
+        "generation": 7,
+        "activeCount": 0,
+        "personCount": 0,
+        "systemCount": 0,
+        "repurchaseRate": null,
+        "repurchaseCount": 0,
+        "qualificationCount": 0,
+        "classifiedPersonCount": 0
+      },
+      {
+        "heat": {
+          "label": "INSUFFICIENT_SAMPLE",
+          "reason": "FEWER_THAN_5_QUALIFICATIONS"
+        },
+        "nasl": {
+          "A": 0,
+          "L": 0,
+          "N": 0,
+          "S": 0
+        },
+        "newRate": null,
+        "newCount": 0,
+        "riskRate": null,
+        "activeRate": null,
+        "generation": 8,
+        "activeCount": 0,
+        "personCount": 0,
+        "systemCount": 0,
+        "repurchaseRate": null,
+        "repurchaseCount": 0,
+        "qualificationCount": 0,
+        "classifiedPersonCount": 0
+      },
+      {
+        "heat": {
+          "label": "INSUFFICIENT_SAMPLE",
+          "reason": "FEWER_THAN_5_QUALIFICATIONS"
+        },
+        "nasl": {
+          "A": 0,
+          "L": 0,
+          "N": 0,
+          "S": 0
+        },
+        "newRate": null,
+        "newCount": 0,
+        "riskRate": null,
+        "activeRate": null,
+        "generation": 9,
+        "activeCount": 0,
+        "personCount": 0,
+        "systemCount": 0,
+        "repurchaseRate": null,
+        "repurchaseCount": 0,
+        "qualificationCount": 0,
+        "classifiedPersonCount": 0
+      },
+      {
+        "heat": {
+          "label": "INSUFFICIENT_SAMPLE",
+          "reason": "FEWER_THAN_5_QUALIFICATIONS"
+        },
+        "nasl": {
+          "A": 0,
+          "L": 0,
+          "N": 0,
+          "S": 0
+        },
+        "newRate": null,
+        "newCount": 0,
+        "riskRate": null,
+        "activeRate": null,
+        "generation": 10,
+        "activeCount": 0,
+        "personCount": 0,
+        "systemCount": 0,
+        "repurchaseRate": null,
+        "repurchaseCount": 0,
+        "qualificationCount": 0,
+        "classifiedPersonCount": 0
+      },
+      {
+        "heat": {
+          "label": "INSUFFICIENT_SAMPLE",
+          "reason": "FEWER_THAN_5_QUALIFICATIONS"
+        },
+        "nasl": {
+          "A": 0,
+          "L": 0,
+          "N": 0,
+          "S": 0
+        },
+        "newRate": null,
+        "newCount": 0,
+        "riskRate": null,
+        "activeRate": null,
+        "generation": 11,
+        "activeCount": 0,
+        "personCount": 0,
+        "systemCount": 0,
+        "repurchaseRate": null,
+        "repurchaseCount": 0,
+        "qualificationCount": 0,
+        "classifiedPersonCount": 0
+      },
+      {
+        "heat": {
+          "label": "INSUFFICIENT_SAMPLE",
+          "reason": "FEWER_THAN_5_QUALIFICATIONS"
+        },
+        "nasl": {
+          "A": 0,
+          "L": 0,
+          "N": 0,
+          "S": 0
+        },
+        "newRate": null,
+        "newCount": 0,
+        "riskRate": null,
+        "activeRate": null,
+        "generation": 12,
+        "activeCount": 0,
+        "personCount": 0,
+        "systemCount": 0,
+        "repurchaseRate": null,
+        "repurchaseCount": 0,
+        "qualificationCount": 0,
+        "classifiedPersonCount": 0
+      }
+    ],
+    "sampleWarning": "SMALL_SAMPLE",
+    "activeRateDelta": null
+  },
+  "contributors": {
+    "snapshotId": "f6c64635-ab47-4dfa-bb34-6b11e480243c",
+    "asOf": "2026-09-17T21:47:11.286Z",
+    "policyVersion": "UCELL-MGMT-2026-09-v1",
+    "projectionVersion": "analytics-v1",
+    "status": "AVAILABLE",
+    "lagSeconds": 0,
+    "issues": [
+      "REGISTRATION_DATE_USES_PERSON_CREATED_AT",
+      "SYSTEM_SCOPE_USES_EXPLICIT_POOL",
+      "ENGAGEMENT_EVENTS_NOT_CONNECTED",
+      "VOLUME_REQUIRES_SEPARATE_ROOT_PROJECTION"
+    ],
+    "comparisonAsOf": "2026-09-17T21:47:11.068Z",
+    "generation": 12,
+    "total": 1,
+    "qualificationIds": [
+      "45cdcd38-5f0d-4d9b-82ce-700ddb5d7fa9"
+    ],
+    "truncated": false
+  },
+  "cohorts": {
+    "metricVersion": "COHORT_FIXED_MONTH_END_V1",
+    "policyVersion": "UCELL-MGMT-2026-09-v1",
+    "timezone": "Asia/Taipei",
+    "from": "2026-06-21",
+    "toExclusive": "2026-09-19",
+    "basis": "LAST_CAPTURE_ON_FINAL_LOCAL_DAY_NO_BACKFILL",
+    "rows": [
+      {
+        "cohortMonth": "2026-06",
+        "baselineAsOf": null,
+        "baselineSize": null,
+        "baselineActive": null,
+        "cells": [
+          {
+            "age": 0,
+            "observationMonth": "2026-06",
+            "status": "BASELINE_NOT_OBSERVED",
+            "asOf": null,
+            "observed": 0,
+            "missing": 0,
+            "activeCount": null,
+            "activeShare": null,
+            "activeRetention": null
+          },
+          {
+            "age": 1,
+            "observationMonth": "2026-07",
+            "status": "BASELINE_NOT_OBSERVED",
+            "asOf": null,
+            "observed": 0,
+            "missing": 0,
+            "activeCount": null,
+            "activeShare": null,
+            "activeRetention": null
+          },
+          {
+            "age": 2,
+            "observationMonth": "2026-08",
+            "status": "BASELINE_NOT_OBSERVED",
+            "asOf": null,
+            "observed": 0,
+            "missing": 0,
+            "activeCount": null,
+            "activeShare": null,
+            "activeRetention": null
+          },
+          {
+            "age": 3,
+            "observationMonth": "2026-09",
+            "status": "MONTH_NOT_CLOSED",
+            "asOf": null,
+            "observed": 0,
+            "missing": 0,
+            "activeCount": null,
+            "activeShare": null,
+            "activeRetention": null
+          },
+          {
+            "age": 4,
+            "observationMonth": "2026-10",
+            "status": "MONTH_NOT_CLOSED",
+            "asOf": null,
+            "observed": 0,
+            "missing": 0,
+            "activeCount": null,
+            "activeShare": null,
+            "activeRetention": null
+          },
+          {
+            "age": 5,
+            "observationMonth": "2026-11",
+            "status": "MONTH_NOT_CLOSED",
+            "asOf": null,
+            "observed": 0,
+            "missing": 0,
+            "activeCount": null,
+            "activeShare": null,
+            "activeRetention": null
+          },
+          {
+            "age": 6,
+            "observationMonth": "2026-12",
+            "status": "MONTH_NOT_CLOSED",
+            "asOf": null,
+            "observed": 0,
+            "missing": 0,
+            "activeCount": null,
+            "activeShare": null,
+            "activeRetention": null
+          },
+          {
+            "age": 7,
+            "observationMonth": "2027-01",
+            "status": "MONTH_NOT_CLOSED",
+            "asOf": null,
+            "observed": 0,
+            "missing": 0,
+            "activeCount": null,
+            "activeShare": null,
+            "activeRetention": null
+          },
+          {
+            "age": 8,
+            "observationMonth": "2027-02",
+            "status": "MONTH_NOT_CLOSED",
+            "asOf": null,
+            "observed": 0,
+            "missing": 0,
+            "activeCount": null,
+            "activeShare": null,
+            "activeRetention": null
+          },
+          {
+            "age": 9,
+            "observationMonth": "2027-03",
+            "status": "MONTH_NOT_CLOSED",
+            "asOf": null,
+            "observed": 0,
+            "missing": 0,
+            "activeCount": null,
+            "activeShare": null,
+            "activeRetention": null
+          },
+          {
+            "age": 10,
+            "observationMonth": "2027-04",
+            "status": "MONTH_NOT_CLOSED",
+            "asOf": null,
+            "observed": 0,
+            "missing": 0,
+            "activeCount": null,
+            "activeShare": null,
+            "activeRetention": null
+          },
+          {
+            "age": 11,
+            "observationMonth": "2027-05",
+            "status": "MONTH_NOT_CLOSED",
+            "asOf": null,
+            "observed": 0,
+            "missing": 0,
+            "activeCount": null,
+            "activeShare": null,
+            "activeRetention": null
+          },
+          {
+            "age": 12,
+            "observationMonth": "2027-06",
+            "status": "MONTH_NOT_CLOSED",
+            "asOf": null,
+            "observed": 0,
+            "missing": 0,
+            "activeCount": null,
+            "activeShare": null,
+            "activeRetention": null
+          }
+        ]
+      },
+      {
+        "cohortMonth": "2026-07",
+        "baselineAsOf": null,
+        "baselineSize": null,
+        "baselineActive": null,
+        "cells": [
+          {
+            "age": 0,
+            "observationMonth": "2026-07",
+            "status": "BASELINE_NOT_OBSERVED",
+            "asOf": null,
+            "observed": 0,
+            "missing": 0,
+            "activeCount": null,
+            "activeShare": null,
+            "activeRetention": null
+          },
+          {
+            "age": 1,
+            "observationMonth": "2026-08",
+            "status": "BASELINE_NOT_OBSERVED",
+            "asOf": null,
+            "observed": 0,
+            "missing": 0,
+            "activeCount": null,
+            "activeShare": null,
+            "activeRetention": null
+          },
+          {
+            "age": 2,
+            "observationMonth": "2026-09",
+            "status": "MONTH_NOT_CLOSED",
+            "asOf": null,
+            "observed": 0,
+            "missing": 0,
+            "activeCount": null,
+            "activeShare": null,
+            "activeRetention": null
+          },
+          {
+            "age": 3,
+            "observationMonth": "2026-10",
+            "status": "MONTH_NOT_CLOSED",
+            "asOf": null,
+            "observed": 0,
+            "missing": 0,
+            "activeCount": null,
+            "activeShare": null,
+            "activeRetention": null
+          },
+          {
+            "age": 4,
+            "observationMonth": "2026-11",
+            "status": "MONTH_NOT_CLOSED",
+            "asOf": null,
+            "observed": 0,
+            "missing": 0,
+            "activeCount": null,
+            "activeShare": null,
+            "activeRetention": null
+          },
+          {
+            "age": 5,
+            "observationMonth": "2026-12",
+            "status": "MONTH_NOT_CLOSED",
+            "asOf": null,
+            "observed": 0,
+            "missing": 0,
+            "activeCount": null,
+            "activeShare": null,
+            "activeRetention": null
+          },
+          {
+            "age": 6,
+            "observationMonth": "2027-01",
+            "status": "MONTH_NOT_CLOSED",
+            "asOf": null,
+            "observed": 0,
+            "missing": 0,
+            "activeCount": null,
+            "activeShare": null,
+            "activeRetention": null
+          },
+          {
+            "age": 7,
+            "observationMonth": "2027-02",
+            "status": "MONTH_NOT_CLOSED",
+            "asOf": null,
+            "observed": 0,
+            "missing": 0,
+            "activeCount": null,
+            "activeShare": null,
+            "activeRetention": null
+          },
+          {
+            "age": 8,
+            "observationMonth": "2027-03",
+            "status": "MONTH_NOT_CLOSED",
+            "asOf": null,
+            "observed": 0,
+            "missing": 0,
+            "activeCount": null,
+            "activeShare": null,
+            "activeRetention": null
+          },
+          {
+            "age": 9,
+            "observationMonth": "2027-04",
+            "status": "MONTH_NOT_CLOSED",
+            "asOf": null,
+            "observed": 0,
+            "missing": 0,
+            "activeCount": null,
+            "activeShare": null,
+            "activeRetention": null
+          },
+          {
+            "age": 10,
+            "observationMonth": "2027-05",
+            "status": "MONTH_NOT_CLOSED",
+            "asOf": null,
+            "observed": 0,
+            "missing": 0,
+            "activeCount": null,
+            "activeShare": null,
+            "activeRetention": null
+          },
+          {
+            "age": 11,
+            "observationMonth": "2027-06",
+            "status": "MONTH_NOT_CLOSED",
+            "asOf": null,
+            "observed": 0,
+            "missing": 0,
+            "activeCount": null,
+            "activeShare": null,
+            "activeRetention": null
+          },
+          {
+            "age": 12,
+            "observationMonth": "2027-07",
+            "status": "MONTH_NOT_CLOSED",
+            "asOf": null,
+            "observed": 0,
+            "missing": 0,
+            "activeCount": null,
+            "activeShare": null,
+            "activeRetention": null
+          }
+        ]
+      },
+      {
+        "cohortMonth": "2026-08",
+        "baselineAsOf": null,
+        "baselineSize": null,
+        "baselineActive": null,
+        "cells": [
+          {
+            "age": 0,
+            "observationMonth": "2026-08",
+            "status": "BASELINE_NOT_OBSERVED",
+            "asOf": null,
+            "observed": 0,
+            "missing": 0,
+            "activeCount": null,
+            "activeShare": null,
+            "activeRetention": null
+          },
+          {
+            "age": 1,
+            "observationMonth": "2026-09",
+            "status": "MONTH_NOT_CLOSED",
+            "asOf": null,
+            "observed": 0,
+            "missing": 0,
+            "activeCount": null,
+            "activeShare": null,
+            "activeRetention": null
+          },
+          {
+            "age": 2,
+            "observationMonth": "2026-10",
+            "status": "MONTH_NOT_CLOSED",
+            "asOf": null,
+            "observed": 0,
+            "missing": 0,
+            "activeCount": null,
+            "activeShare": null,
+            "activeRetention": null
+          },
+          {
+            "age": 3,
+            "observationMonth": "2026-11",
+            "status": "MONTH_NOT_CLOSED",
+            "asOf": null,
+            "observed": 0,
+            "missing": 0,
+            "activeCount": null,
+            "activeShare": null,
+            "activeRetention": null
+          },
+          {
+            "age": 4,
+            "observationMonth": "2026-12",
+            "status": "MONTH_NOT_CLOSED",
+            "asOf": null,
+            "observed": 0,
+            "missing": 0,
+            "activeCount": null,
+            "activeShare": null,
+            "activeRetention": null
+          },
+          {
+            "age": 5,
+            "observationMonth": "2027-01",
+            "status": "MONTH_NOT_CLOSED",
+            "asOf": null,
+            "observed": 0,
+            "missing": 0,
+            "activeCount": null,
+            "activeShare": null,
+            "activeRetention": null
+          },
+          {
+            "age": 6,
+            "observationMonth": "2027-02",
+            "status": "MONTH_NOT_CLOSED",
+            "asOf": null,
+            "observed": 0,
+            "missing": 0,
+            "activeCount": null,
+            "activeShare": null,
+            "activeRetention": null
+          },
+          {
+            "age": 7,
+            "observationMonth": "2027-03",
+            "status": "MONTH_NOT_CLOSED",
+            "asOf": null,
+            "observed": 0,
+            "missing": 0,
+            "activeCount": null,
+            "activeShare": null,
+            "activeRetention": null
+          },
+          {
+            "age": 8,
+            "observationMonth": "2027-04",
+            "status": "MONTH_NOT_CLOSED",
+            "asOf": null,
+            "observed": 0,
+            "missing": 0,
+            "activeCount": null,
+            "activeShare": null,
+            "activeRetention": null
+          },
+          {
+            "age": 9,
+            "observationMonth": "2027-05",
+            "status": "MONTH_NOT_CLOSED",
+            "asOf": null,
+            "observed": 0,
+            "missing": 0,
+            "activeCount": null,
+            "activeShare": null,
+            "activeRetention": null
+          },
+          {
+            "age": 10,
+            "observationMonth": "2027-06",
+            "status": "MONTH_NOT_CLOSED",
+            "asOf": null,
+            "observed": 0,
+            "missing": 0,
+            "activeCount": null,
+            "activeShare": null,
+            "activeRetention": null
+          },
+          {
+            "age": 11,
+            "observationMonth": "2027-07",
+            "status": "MONTH_NOT_CLOSED",
+            "asOf": null,
+            "observed": 0,
+            "missing": 0,
+            "activeCount": null,
+            "activeShare": null,
+            "activeRetention": null
+          },
+          {
+            "age": 12,
+            "observationMonth": "2027-08",
+            "status": "MONTH_NOT_CLOSED",
+            "asOf": null,
+            "observed": 0,
+            "missing": 0,
+            "activeCount": null,
+            "activeShare": null,
+            "activeRetention": null
+          }
+        ]
+      },
+      {
+        "cohortMonth": "2026-09",
+        "baselineAsOf": null,
+        "baselineSize": null,
+        "baselineActive": null,
+        "cells": [
+          {
+            "age": 0,
+            "observationMonth": "2026-09",
+            "status": "MONTH_NOT_CLOSED",
+            "asOf": null,
+            "observed": 0,
+            "missing": 0,
+            "activeCount": null,
+            "activeShare": null,
+            "activeRetention": null
+          },
+          {
+            "age": 1,
+            "observationMonth": "2026-10",
+            "status": "MONTH_NOT_CLOSED",
+            "asOf": null,
+            "observed": 0,
+            "missing": 0,
+            "activeCount": null,
+            "activeShare": null,
+            "activeRetention": null
+          },
+          {
+            "age": 2,
+            "observationMonth": "2026-11",
+            "status": "MONTH_NOT_CLOSED",
+            "asOf": null,
+            "observed": 0,
+            "missing": 0,
+            "activeCount": null,
+            "activeShare": null,
+            "activeRetention": null
+          },
+          {
+            "age": 3,
+            "observationMonth": "2026-12",
+            "status": "MONTH_NOT_CLOSED",
+            "asOf": null,
+            "observed": 0,
+            "missing": 0,
+            "activeCount": null,
+            "activeShare": null,
+            "activeRetention": null
+          },
+          {
+            "age": 4,
+            "observationMonth": "2027-01",
+            "status": "MONTH_NOT_CLOSED",
+            "asOf": null,
+            "observed": 0,
+            "missing": 0,
+            "activeCount": null,
+            "activeShare": null,
+            "activeRetention": null
+          },
+          {
+            "age": 5,
+            "observationMonth": "2027-02",
+            "status": "MONTH_NOT_CLOSED",
+            "asOf": null,
+            "observed": 0,
+            "missing": 0,
+            "activeCount": null,
+            "activeShare": null,
+            "activeRetention": null
+          },
+          {
+            "age": 6,
+            "observationMonth": "2027-03",
+            "status": "MONTH_NOT_CLOSED",
+            "asOf": null,
+            "observed": 0,
+            "missing": 0,
+            "activeCount": null,
+            "activeShare": null,
+            "activeRetention": null
+          },
+          {
+            "age": 7,
+            "observationMonth": "2027-04",
+            "status": "MONTH_NOT_CLOSED",
+            "asOf": null,
+            "observed": 0,
+            "missing": 0,
+            "activeCount": null,
+            "activeShare": null,
+            "activeRetention": null
+          },
+          {
+            "age": 8,
+            "observationMonth": "2027-05",
+            "status": "MONTH_NOT_CLOSED",
+            "asOf": null,
+            "observed": 0,
+            "missing": 0,
+            "activeCount": null,
+            "activeShare": null,
+            "activeRetention": null
+          },
+          {
+            "age": 9,
+            "observationMonth": "2027-06",
+            "status": "MONTH_NOT_CLOSED",
+            "asOf": null,
+            "observed": 0,
+            "missing": 0,
+            "activeCount": null,
+            "activeShare": null,
+            "activeRetention": null
+          },
+          {
+            "age": 10,
+            "observationMonth": "2027-07",
+            "status": "MONTH_NOT_CLOSED",
+            "asOf": null,
+            "observed": 0,
+            "missing": 0,
+            "activeCount": null,
+            "activeShare": null,
+            "activeRetention": null
+          },
+          {
+            "age": 11,
+            "observationMonth": "2027-08",
+            "status": "MONTH_NOT_CLOSED",
+            "asOf": null,
+            "observed": 0,
+            "missing": 0,
+            "activeCount": null,
+            "activeShare": null,
+            "activeRetention": null
+          },
+          {
+            "age": 12,
+            "observationMonth": "2027-09",
+            "status": "MONTH_NOT_CLOSED",
+            "asOf": null,
+            "observed": 0,
+            "missing": 0,
+            "activeCount": null,
+            "activeShare": null,
+            "activeRetention": null
+          }
+        ]
+      }
+    ]
+  },
+  "versions": [
+    "UCELL-MGMT-2026-09-v1"
+  ],
+  "refresh": {
+    "enabled": false,
+    "seconds": 300,
+    "scopes": [
+      "GLOBAL"
+    ],
+    "running": false,
+    "lastStartedAt": null,
+    "lastFinishedAt": null,
+    "lastSuccessAt": null,
+    "results": [],
+    "processStatusResetsOnRestart": true,
+    "scopeFreshness": [
+      {
+        "scope": "GLOBAL",
+        "asOf": null,
+        "status": "UNAVAILABLE",
+        "lagSeconds": null
+      }
+    ]
+  },
+  "volumeSponsor": {
+    "snapshotId": "e1e5ef7f-11d4-405f-8556-cedecc2f2236",
+    "asOf": "2026-09-17T21:47:11.476Z",
+    "policyVersion": "UCELL-MGMT-2026-09-v1",
+    "projectionVersion": "analytics-v1",
+    "status": "AVAILABLE",
+    "lagSeconds": 0,
+    "issues": [
+      "REGISTRATION_DATE_USES_PERSON_CREATED_AT",
+      "SYSTEM_SCOPE_USES_EXPLICIT_POOL",
+      "ENGAGEMENT_EVENTS_NOT_CONNECTED",
+      "VOLUME_REQUIRES_SEPARATE_ROOT_PROJECTION"
+    ],
+    "comparisonAsOf": "2026-09-17T21:47:11.286Z",
+    "from": "2026-08-18T21:47:11.476Z",
+    "basis": "ORIGINAL_EVENT_WINDOW_WITH_ADJUSTMENTS_KNOWN_AT_CAPTURE",
+    "reason": null,
+    "genericPV": {
+      "reason": "PV_IS_A_CLASS_NOT_AN_ADDITIVE_TOTAL",
+      "status": "UNAVAILABLE"
+    },
+    "toExclusive": "2026-09-17T21:47:11.476Z",
+    "evidenceHash": "72dbac183cc7edabb483571528a7a55e41931861eaf7d208dbf1a95a36a72dd9",
+    "sourceEvents": 1,
+    "metricVersion": "HISTORICAL_VOLUME_30D_V1",
+    "ruleVersionCode": "R1.0B",
+    "freshness": "AVAILABLE",
+    "root": "5324b639-04b6-40b1-8aad-5f648d48a977",
+    "tree": "sponsor",
+    "volumes": [
+      {
+        "left": null,
+        "type": "GPV",
+        "unit": "GPV_POINT",
+        "right": null,
+        "total": {
+          "net": "80.1234",
+          "events": 1,
+          "original": "100.1234",
+          "adjustment": "-20.0000"
+        },
+        "generations": [
+          {
+            "net": "80.1234",
+            "events": 1,
+            "original": "100.1234",
+            "adjustment": "-20.0000",
+            "generation": 1
+          },
+          {
+            "net": "0.0000",
+            "events": 0,
+            "original": "0.0000",
+            "adjustment": "0.0000",
+            "generation": 2
+          },
+          {
+            "net": "0.0000",
+            "events": 0,
+            "original": "0.0000",
+            "adjustment": "0.0000",
+            "generation": 3
+          },
+          {
+            "net": "0.0000",
+            "events": 0,
+            "original": "0.0000",
+            "adjustment": "0.0000",
+            "generation": 4
+          },
+          {
+            "net": "0.0000",
+            "events": 0,
+            "original": "0.0000",
+            "adjustment": "0.0000",
+            "generation": 5
+          },
+          {
+            "net": "0.0000",
+            "events": 0,
+            "original": "0.0000",
+            "adjustment": "0.0000",
+            "generation": 6
+          },
+          {
+            "net": "0.0000",
+            "events": 0,
+            "original": "0.0000",
+            "adjustment": "0.0000",
+            "generation": 7
+          },
+          {
+            "net": "0.0000",
+            "events": 0,
+            "original": "0.0000",
+            "adjustment": "0.0000",
+            "generation": 8
+          },
+          {
+            "net": "0.0000",
+            "events": 0,
+            "original": "0.0000",
+            "adjustment": "0.0000",
+            "generation": 9
+          },
+          {
+            "net": "0.0000",
+            "events": 0,
+            "original": "0.0000",
+            "adjustment": "0.0000",
+            "generation": 10
+          },
+          {
+            "net": "0.0000",
+            "events": 0,
+            "original": "0.0000",
+            "adjustment": "0.0000",
+            "generation": 11
+          },
+          {
+            "net": "0.0000",
+            "events": 0,
+            "original": "0.0000",
+            "adjustment": "0.0000",
+            "generation": 12
+          }
+        ]
+      },
+      {
+        "left": null,
+        "type": "RPV",
+        "unit": "RPV_POINT",
+        "right": null,
+        "total": {
+          "net": "0.0000",
+          "events": 0,
+          "original": "0.0000",
+          "adjustment": "0.0000"
+        },
+        "generations": [
+          {
+            "net": "0.0000",
+            "events": 0,
+            "original": "0.0000",
+            "adjustment": "0.0000",
+            "generation": 1
+          },
+          {
+            "net": "0.0000",
+            "events": 0,
+            "original": "0.0000",
+            "adjustment": "0.0000",
+            "generation": 2
+          },
+          {
+            "net": "0.0000",
+            "events": 0,
+            "original": "0.0000",
+            "adjustment": "0.0000",
+            "generation": 3
+          },
+          {
+            "net": "0.0000",
+            "events": 0,
+            "original": "0.0000",
+            "adjustment": "0.0000",
+            "generation": 4
+          },
+          {
+            "net": "0.0000",
+            "events": 0,
+            "original": "0.0000",
+            "adjustment": "0.0000",
+            "generation": 5
+          },
+          {
+            "net": "0.0000",
+            "events": 0,
+            "original": "0.0000",
+            "adjustment": "0.0000",
+            "generation": 6
+          },
+          {
+            "net": "0.0000",
+            "events": 0,
+            "original": "0.0000",
+            "adjustment": "0.0000",
+            "generation": 7
+          },
+          {
+            "net": "0.0000",
+            "events": 0,
+            "original": "0.0000",
+            "adjustment": "0.0000",
+            "generation": 8
+          },
+          {
+            "net": "0.0000",
+            "events": 0,
+            "original": "0.0000",
+            "adjustment": "0.0000",
+            "generation": 9
+          },
+          {
+            "net": "0.0000",
+            "events": 0,
+            "original": "0.0000",
+            "adjustment": "0.0000",
+            "generation": 10
+          },
+          {
+            "net": "0.0000",
+            "events": 0,
+            "original": "0.0000",
+            "adjustment": "0.0000",
+            "generation": 11
+          },
+          {
+            "net": "0.0000",
+            "events": 0,
+            "original": "0.0000",
+            "adjustment": "0.0000",
+            "generation": 12
+          }
+        ]
+      },
+      {
+        "left": null,
+        "type": "EPV",
+        "unit": "EPV_POINT",
+        "right": null,
+        "total": {
+          "net": "0.0000",
+          "events": 0,
+          "original": "0.0000",
+          "adjustment": "0.0000"
+        },
+        "generations": [
+          {
+            "net": "0.0000",
+            "events": 0,
+            "original": "0.0000",
+            "adjustment": "0.0000",
+            "generation": 1
+          },
+          {
+            "net": "0.0000",
+            "events": 0,
+            "original": "0.0000",
+            "adjustment": "0.0000",
+            "generation": 2
+          },
+          {
+            "net": "0.0000",
+            "events": 0,
+            "original": "0.0000",
+            "adjustment": "0.0000",
+            "generation": 3
+          },
+          {
+            "net": "0.0000",
+            "events": 0,
+            "original": "0.0000",
+            "adjustment": "0.0000",
+            "generation": 4
+          },
+          {
+            "net": "0.0000",
+            "events": 0,
+            "original": "0.0000",
+            "adjustment": "0.0000",
+            "generation": 5
+          },
+          {
+            "net": "0.0000",
+            "events": 0,
+            "original": "0.0000",
+            "adjustment": "0.0000",
+            "generation": 6
+          },
+          {
+            "net": "0.0000",
+            "events": 0,
+            "original": "0.0000",
+            "adjustment": "0.0000",
+            "generation": 7
+          },
+          {
+            "net": "0.0000",
+            "events": 0,
+            "original": "0.0000",
+            "adjustment": "0.0000",
+            "generation": 8
+          },
+          {
+            "net": "0.0000",
+            "events": 0,
+            "original": "0.0000",
+            "adjustment": "0.0000",
+            "generation": 9
+          },
+          {
+            "net": "0.0000",
+            "events": 0,
+            "original": "0.0000",
+            "adjustment": "0.0000",
+            "generation": 10
+          },
+          {
+            "net": "0.0000",
+            "events": 0,
+            "original": "0.0000",
+            "adjustment": "0.0000",
+            "generation": 11
+          },
+          {
+            "net": "0.0000",
+            "events": 0,
+            "original": "0.0000",
+            "adjustment": "0.0000",
+            "generation": 12
+          }
+        ]
+      }
+    ],
+    "carry": null
+  },
+  "volumeBinary": {
+    "snapshotId": "e1e5ef7f-11d4-405f-8556-cedecc2f2236",
+    "asOf": "2026-09-17T21:47:11.476Z",
+    "policyVersion": "UCELL-MGMT-2026-09-v1",
+    "projectionVersion": "analytics-v1",
+    "status": "AVAILABLE",
+    "lagSeconds": 0,
+    "issues": [
+      "REGISTRATION_DATE_USES_PERSON_CREATED_AT",
+      "SYSTEM_SCOPE_USES_EXPLICIT_POOL",
+      "ENGAGEMENT_EVENTS_NOT_CONNECTED",
+      "VOLUME_REQUIRES_SEPARATE_ROOT_PROJECTION"
+    ],
+    "comparisonAsOf": "2026-09-17T21:47:11.286Z",
+    "from": "2026-08-18T21:47:11.476Z",
+    "basis": "ORIGINAL_EVENT_WINDOW_WITH_ADJUSTMENTS_KNOWN_AT_CAPTURE",
+    "reason": null,
+    "genericPV": {
+      "reason": "PV_IS_A_CLASS_NOT_AN_ADDITIVE_TOTAL",
+      "status": "UNAVAILABLE"
+    },
+    "toExclusive": "2026-09-17T21:47:11.476Z",
+    "evidenceHash": "72dbac183cc7edabb483571528a7a55e41931861eaf7d208dbf1a95a36a72dd9",
+    "sourceEvents": 1,
+    "metricVersion": "HISTORICAL_VOLUME_30D_V1",
+    "ruleVersionCode": "R1.0B",
+    "freshness": "AVAILABLE",
+    "root": "5324b639-04b6-40b1-8aad-5f648d48a977",
+    "tree": "binary",
+    "volumes": [
+      {
+        "left": {
+          "net": "0.0000",
+          "events": 0,
+          "original": "0.0000",
+          "adjustment": "0.0000"
+        },
+        "type": "GPV",
+        "unit": "GPV_POINT",
+        "right": {
+          "net": "80.1234",
+          "events": 1,
+          "original": "100.1234",
+          "adjustment": "-20.0000"
+        },
+        "total": {
+          "net": "80.1234",
+          "events": 1,
+          "original": "100.1234",
+          "adjustment": "-20.0000"
+        },
+        "generations": [
+          {
+            "net": "80.1234",
+            "events": 1,
+            "original": "100.1234",
+            "adjustment": "-20.0000",
+            "generation": 1
+          },
+          {
+            "net": "0.0000",
+            "events": 0,
+            "original": "0.0000",
+            "adjustment": "0.0000",
+            "generation": 2
+          },
+          {
+            "net": "0.0000",
+            "events": 0,
+            "original": "0.0000",
+            "adjustment": "0.0000",
+            "generation": 3
+          },
+          {
+            "net": "0.0000",
+            "events": 0,
+            "original": "0.0000",
+            "adjustment": "0.0000",
+            "generation": 4
+          },
+          {
+            "net": "0.0000",
+            "events": 0,
+            "original": "0.0000",
+            "adjustment": "0.0000",
+            "generation": 5
+          },
+          {
+            "net": "0.0000",
+            "events": 0,
+            "original": "0.0000",
+            "adjustment": "0.0000",
+            "generation": 6
+          },
+          {
+            "net": "0.0000",
+            "events": 0,
+            "original": "0.0000",
+            "adjustment": "0.0000",
+            "generation": 7
+          },
+          {
+            "net": "0.0000",
+            "events": 0,
+            "original": "0.0000",
+            "adjustment": "0.0000",
+            "generation": 8
+          },
+          {
+            "net": "0.0000",
+            "events": 0,
+            "original": "0.0000",
+            "adjustment": "0.0000",
+            "generation": 9
+          },
+          {
+            "net": "0.0000",
+            "events": 0,
+            "original": "0.0000",
+            "adjustment": "0.0000",
+            "generation": 10
+          },
+          {
+            "net": "0.0000",
+            "events": 0,
+            "original": "0.0000",
+            "adjustment": "0.0000",
+            "generation": 11
+          },
+          {
+            "net": "0.0000",
+            "events": 0,
+            "original": "0.0000",
+            "adjustment": "0.0000",
+            "generation": 12
+          }
+        ]
+      },
+      {
+        "left": {
+          "net": "0.0000",
+          "events": 0,
+          "original": "0.0000",
+          "adjustment": "0.0000"
+        },
+        "type": "RPV",
+        "unit": "RPV_POINT",
+        "right": {
+          "net": "0.0000",
+          "events": 0,
+          "original": "0.0000",
+          "adjustment": "0.0000"
+        },
+        "total": {
+          "net": "0.0000",
+          "events": 0,
+          "original": "0.0000",
+          "adjustment": "0.0000"
+        },
+        "generations": [
+          {
+            "net": "0.0000",
+            "events": 0,
+            "original": "0.0000",
+            "adjustment": "0.0000",
+            "generation": 1
+          },
+          {
+            "net": "0.0000",
+            "events": 0,
+            "original": "0.0000",
+            "adjustment": "0.0000",
+            "generation": 2
+          },
+          {
+            "net": "0.0000",
+            "events": 0,
+            "original": "0.0000",
+            "adjustment": "0.0000",
+            "generation": 3
+          },
+          {
+            "net": "0.0000",
+            "events": 0,
+            "original": "0.0000",
+            "adjustment": "0.0000",
+            "generation": 4
+          },
+          {
+            "net": "0.0000",
+            "events": 0,
+            "original": "0.0000",
+            "adjustment": "0.0000",
+            "generation": 5
+          },
+          {
+            "net": "0.0000",
+            "events": 0,
+            "original": "0.0000",
+            "adjustment": "0.0000",
+            "generation": 6
+          },
+          {
+            "net": "0.0000",
+            "events": 0,
+            "original": "0.0000",
+            "adjustment": "0.0000",
+            "generation": 7
+          },
+          {
+            "net": "0.0000",
+            "events": 0,
+            "original": "0.0000",
+            "adjustment": "0.0000",
+            "generation": 8
+          },
+          {
+            "net": "0.0000",
+            "events": 0,
+            "original": "0.0000",
+            "adjustment": "0.0000",
+            "generation": 9
+          },
+          {
+            "net": "0.0000",
+            "events": 0,
+            "original": "0.0000",
+            "adjustment": "0.0000",
+            "generation": 10
+          },
+          {
+            "net": "0.0000",
+            "events": 0,
+            "original": "0.0000",
+            "adjustment": "0.0000",
+            "generation": 11
+          },
+          {
+            "net": "0.0000",
+            "events": 0,
+            "original": "0.0000",
+            "adjustment": "0.0000",
+            "generation": 12
+          }
+        ]
+      },
+      {
+        "left": {
+          "net": "0.0000",
+          "events": 0,
+          "original": "0.0000",
+          "adjustment": "0.0000"
+        },
+        "type": "EPV",
+        "unit": "EPV_POINT",
+        "right": {
+          "net": "0.0000",
+          "events": 0,
+          "original": "0.0000",
+          "adjustment": "0.0000"
+        },
+        "total": {
+          "net": "0.0000",
+          "events": 0,
+          "original": "0.0000",
+          "adjustment": "0.0000"
+        },
+        "generations": [
+          {
+            "net": "0.0000",
+            "events": 0,
+            "original": "0.0000",
+            "adjustment": "0.0000",
+            "generation": 1
+          },
+          {
+            "net": "0.0000",
+            "events": 0,
+            "original": "0.0000",
+            "adjustment": "0.0000",
+            "generation": 2
+          },
+          {
+            "net": "0.0000",
+            "events": 0,
+            "original": "0.0000",
+            "adjustment": "0.0000",
+            "generation": 3
+          },
+          {
+            "net": "0.0000",
+            "events": 0,
+            "original": "0.0000",
+            "adjustment": "0.0000",
+            "generation": 4
+          },
+          {
+            "net": "0.0000",
+            "events": 0,
+            "original": "0.0000",
+            "adjustment": "0.0000",
+            "generation": 5
+          },
+          {
+            "net": "0.0000",
+            "events": 0,
+            "original": "0.0000",
+            "adjustment": "0.0000",
+            "generation": 6
+          },
+          {
+            "net": "0.0000",
+            "events": 0,
+            "original": "0.0000",
+            "adjustment": "0.0000",
+            "generation": 7
+          },
+          {
+            "net": "0.0000",
+            "events": 0,
+            "original": "0.0000",
+            "adjustment": "0.0000",
+            "generation": 8
+          },
+          {
+            "net": "0.0000",
+            "events": 0,
+            "original": "0.0000",
+            "adjustment": "0.0000",
+            "generation": 9
+          },
+          {
+            "net": "0.0000",
+            "events": 0,
+            "original": "0.0000",
+            "adjustment": "0.0000",
+            "generation": 10
+          },
+          {
+            "net": "0.0000",
+            "events": 0,
+            "original": "0.0000",
+            "adjustment": "0.0000",
+            "generation": 11
+          },
+          {
+            "net": "0.0000",
+            "events": 0,
+            "original": "0.0000",
+            "adjustment": "0.0000",
+            "generation": 12
+          }
+        ]
+      }
+    ],
+    "carry": {
+      "left": "60.0000",
+      "unit": "GPV_POINT",
+      "basis": "LATEST_REPLAY_CORRECTION",
+      "right": "0.0000",
+      "status": "AVAILABLE",
+      "periodEnd": "2026-09-15T21:47:11.442Z",
+      "originalLeft": "80.0000",
+      "originalRight": "0.0000",
+      "correctionSequence": "1"
+    }
+  }
+}

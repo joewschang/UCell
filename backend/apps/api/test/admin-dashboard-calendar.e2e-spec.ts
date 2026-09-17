@@ -34,7 +34,7 @@ describe('Admin Dashboard versioned accounting calendar',()=>{
     ]);
     expect(result.generatedAt).toEqual(now);
     expect(result.memberLifecycle).toMatchObject({
-      nasl:{new:{availability:'UNAVAILABLE',value:null,reasonCode:'PERSON_NASL_NEW_DEFINITION_PENDING'},lost:{availability:'UNAVAILABLE',value:null,reasonCode:'PERSON_NASL_LOST_DEFINITION_PENDING'}},
+      nasl:{new:{availability:'UNAVAILABLE',value:null,reasonCode:'NASL_DEDICATED_ANALYTICS_PROJECTION'},lost:{availability:'UNAVAILABLE',value:null,reasonCode:'NASL_DEDICATED_ANALYTICS_PROJECTION'}},
       currentPersonRecordStatus:{availability:'AVAILABLE',source:'identity.person.status',counts:{EFFECTIVE:7,SUSPENDED:2,DRAFT:0}},
       currentQualificationLifecycleStatus:{availability:'AVAILABLE',source:'membership.qualification.status',counts:{EFFECTIVE:9,EXITED:1,DRAFT:0}},
     });

@@ -3268,3 +3268,20 @@ model QualificationActiveEntitlementEvidence {
   @@map("qualification_active_entitlement_evidence")
   @@schema("membership")
 }
+
+// Derived management data only. SQL trigger enforces immutable snapshots.
+model ManagementAnalyticsSnapshot {
+  snapshotId    String   @id @map("snapshot_id") @db.Uuid
+  actorKey      String   @map("actor_key")
+  scopeKey      String   @map("scope_key")
+  asOf          DateTime @map("as_of") @db.Timestamptz(6)
+  policyVersion String   @map("policy_version")
+  sourceHash    String   @map("source_hash")
+  payload       Json
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([scopeKey, asOf(sort: Desc)], map: "management_analytics_scope_time")
+  @@index([asOf(sort: Desc)], map: "management_analytics_time")
+  @@map("management_analytics_snapshot")
+  @@schema("integration")
+}

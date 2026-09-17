@@ -20,6 +20,7 @@ import {DocumentsPage} from '../features/documents/DocumentsPage';
 import {ContentPage} from '../features/content/ContentPage';
 import {AuditPage} from '../features/audit/AuditPage';
 import {ReportsPage} from '../features/reports/ReportsPage';
+import {AnalyticsPage} from '../features/analytics/AnalyticsPage';
 import {UatPage} from '../features/uat/UatPage';
 import {SystemPage} from '../features/system/SystemPage';
 import {RequirePageRole} from '../features/auth/RequirePageRole';
@@ -46,6 +47,7 @@ export function App(){return <Routes>
   <Route path="/documents" element={<RequirePageRole><DocumentsPage/></RequirePageRole>}/>
   <Route path="/audit" element={<RequirePageRole><AuditPage/></RequirePageRole>}/>
   <Route path="/reports" element={<RequirePageRole><ReportsPage/></RequirePageRole>}/>
+  <Route path="/analytics" element={<RequirePageRole><AnalyticsPage/></RequirePageRole>}/>
   <Route path="/uat" element={<RequirePageRole><UatPage/></RequirePageRole>}/>
   <Route path="/system" element={<RequirePageRole><SystemPage/></RequirePageRole>}/>
   <Route path="*" element={<section className="card"><h1>找不到後台頁面</h1><Link to="/">返回營運總覽</Link></section>}/>

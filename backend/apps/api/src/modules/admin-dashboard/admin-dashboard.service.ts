@@ -80,10 +80,10 @@ export class AdminDashboardService {
         payable:{open:payableEntries},
         memberLifecycle:{
           nasl:{
-            new:unavailableNaslMetric('PERSON_NASL_NEW_DEFINITION_PENDING'),
-            active:unavailableNaslMetric('PERSON_NASL_ACTIVE_DEFINITION_PENDING'),
-            suspended:unavailableNaslMetric('PERSON_NASL_SUSPEND_DEFINITION_PENDING'),
-            lost:unavailableNaslMetric('PERSON_NASL_LOST_DEFINITION_PENDING'),
+            new:unavailableNaslMetric('NASL_DEDICATED_ANALYTICS_PROJECTION'),
+            active:unavailableNaslMetric('NASL_DEDICATED_ANALYTICS_PROJECTION'),
+            suspended:unavailableNaslMetric('NASL_DEDICATED_ANALYTICS_PROJECTION'),
+            lost:unavailableNaslMetric('NASL_DEDICATED_ANALYTICS_PROJECTION'),
           },
           currentPersonRecordStatus:{
             availability:'AVAILABLE' as const,

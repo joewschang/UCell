@@ -16,6 +16,7 @@ export const nav=[
   ['文件／附件','/documents','documents'],
   ['稽核紀錄','/audit','audit'],
   ['報表／完整性','/reports','reports'],
+  ['NASL／十二代健康雷達','/analytics','analytics'],
   ['UAT／上線驗證','/uat','uat'],
   ['系統就緒度','/system','system'],
 ] as const;
@@ -26,6 +27,6 @@ export const navGroups=[
  {label:'商務',paths:['/products','/packages','/orders','/subscriptions','/returns']},
  {label:'獎金中心',paths:['/bonuses']},
  {label:'財務',paths:['/payouts']},
- {label:'營運分析',paths:['/reports']},
+ {label:'營運分析',paths:['/reports','/analytics']},
  {label:'系統治理',paths:['/content','/documents','/audit','/uat','/system']},
 ];

@@ -19,6 +19,7 @@ export const pageRoles:Record<string,AdminRole[]>={
   '/documents':['SUPER_ADMIN','MEMBERSHIP_OPS','ORDER_OPS','COMPLIANCE_AUDIT'],
   '/audit':['SUPER_ADMIN','COMPLIANCE_AUDIT'],
   '/reports':['SUPER_ADMIN','FINANCE','COMPLIANCE_AUDIT'],
+  '/analytics':['SUPER_ADMIN','MEMBERSHIP_OPS','FINANCE','COMPLIANCE_AUDIT'],
   '/uat':['SUPER_ADMIN','COMPLIANCE_AUDIT'],
   '/system':['SUPER_ADMIN','COMPLIANCE_AUDIT'],
 };

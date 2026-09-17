@@ -1,4 +1,5 @@
 import 'reflect-metadata';
+import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { MemberModule } from './modules/member/member.module';
 import { Module, CanActivate, ExecutionContext, Injectable, MethodNotAllowedException, UnauthorizedException, ValidationPipe } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
@@ -73,7 +74,7 @@ export class AdminDevReadOnlyGuard implements CanActivate {
     LedgerModule, ActiveModule, RpvModule, RuntimeRuleModule, BonusModule, ReturnModule,
     EpvModule, GlobalPoolModule, PayoutModule, SettlementModule, AdjustmentModule,
     SubscriptionModule, MembershipApplicationModule, AdminDashboardModule, AdminObservabilityModule,
-    AdminOperationsModule, AdminOpsReadyModule, UatEvidenceModule],
+    AdminOperationsModule, AdminOpsReadyModule, UatEvidenceModule, AnalyticsModule],
   providers: [{ provide: APP_GUARD, useClass: AdminDevReadOnlyGuard },
     { provide: APP_GUARD, useClass: AdminAuthenticationGuard },
     { provide: APP_GUARD, useClass: AdminRoleGuard }],
