@@ -30,6 +30,7 @@ export function createApiClient(guard: SessionGuard) {
                 let code:string|undefined;try{const body=await res.json();if(typeof body?.code==='string')code=body.code;}catch{/* Status still fails closed for a non-JSON error. */}
                 throw new MemberApiError(res.status === 401 ? expiredMessage :
                     res.status === 403 ? '您無權查看此資格資料' :
+                    res.status === 404 ? '找不到指定資料，資料可能已移除或您無權查看' :
                     res.status === 409 ? (code==='IDEMPOTENCY_CONFLICT'?'請求識別碼已被不同內容使用，請重新確認資料':'另一筆操作正在處理，請保留原資料重試') :
                     res.status === 422 ? (code==='RULE_PROFILE_CONFIGURATION_PENDING'?'商品制度設定尚未完成，請稍後再試':'資料未通過驗證或必要設定尚未完成，請確認後重試') :
                     res.status === 400 ? '資料格式不正確，請檢查輸入內容' : '資料暫時無法讀取，請稍後重試',res.status,code);
@@ -45,6 +46,7 @@ export function createApiClient(guard: SessionGuard) {
             if (guard.getSnapshot()) throw new Error(expiredMessage);
             if (init.signal?.aborted) throw new DOMException('Aborted', 'AbortError');
             if (timedOut) throw new Error('連線逾時，請檢查網路後重新載入');
+            if (error instanceof TypeError) throw new MemberApiError('目前無法連線至會員服務，請檢查網路後重新載入', 0, 'NETWORK_UNAVAILABLE');
             throw error;
         } finally {
             clearTimeout(timer);
@@ -105,11 +107,19 @@ export type Binary = Scoped & {
     left: {
         count: number | null;
         volume: number | null;
+        carry: number | null;
     };
     right: {
         count: number | null;
         volume: number | null;
+        carry: number | null;
     };
+    settlementMetrics: ReadModelAvailability;
+    fullTree: ReadModelAvailability;
+};
+export type ReadModelAvailability = {
+    status: 'AVAILABLE' | 'UNAVAILABLE';
+    reason: string | null;
 };
 export type Performance = Scoped & {
     period: string;

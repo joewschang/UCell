@@ -27,3 +27,14 @@ it('denies 401 and notifies session expiry; 403 remains a recoverable authorizat
  await expect(api('/auth/admin/me')).rejects.toThrow('session expired');expect(window.dispatchEvent).toHaveBeenCalledTimes(1);
  await expect(api('/admin/qualifications')).rejects.toThrow('qualification forbidden');expect(window.dispatchEvent).toHaveBeenCalledTimes(1);
 });
+it('classifies 404 and offline failures for consistent UI states',async()=>{
+ const fetch=vi.fn().mockResolvedValueOnce(new Response('',{status:404})).mockRejectedValueOnce(new TypeError('Failed to fetch'));vi.stubGlobal('fetch',fetch);
+ await expect(api('/admin/missing')).rejects.toMatchObject({status:404,message:expect.stringContaining('找不到指定資料')});
+ await expect(api('/admin/offline')).rejects.toMatchObject({status:0,message:expect.stringContaining('無法連線')});
+ expect(window.dispatchEvent).not.toHaveBeenCalled();
+});
+it('distinguishes caller cancellation from request timeout',async()=>{
+ const fetch=vi.fn((_url,init)=>new Promise((_resolve,reject)=>init.signal.addEventListener('abort',()=>reject(Error('aborted')))));vi.stubGlobal('fetch',fetch);
+ const controller=new AbortController();const request=api('/admin/slow',{signal:controller.signal});controller.abort();
+ await expect(request).rejects.toMatchObject({status:0,message:expect.stringContaining('請求已取消')});
+});

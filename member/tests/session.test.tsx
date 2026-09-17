@@ -79,6 +79,16 @@ it('does not terminate the session on 403', async () => {
   await expect(createApiClient(guard)('/denied')).rejects.toThrow('無權');
   expect(guard.getSnapshot()).toBe(false);
 });
+it('distinguishes missing data and offline service without changing the session', async () => {
+  const guard = new SessionGuard();
+  const fetch = vi.fn()
+    .mockResolvedValueOnce(new Response('', { status: 404 }))
+    .mockRejectedValueOnce(new TypeError('Failed to fetch'));
+  vi.stubGlobal('fetch', fetch);
+  await expect(createApiClient(guard)('/missing')).rejects.toMatchObject({ status: 404, message: expect.stringContaining('找不到指定資料') });
+  await expect(createApiClient(guard)('/offline')).rejects.toMatchObject({ status: 0, code: 'NETWORK_UNAVAILABLE', message: expect.stringContaining('無法連線') });
+  expect(guard.getSnapshot()).toBe(false);
+});
 it('locks even if browser storage is unavailable, and notifies once', () => {
   vi.stubGlobal('sessionStorage', { removeItem() { throw Error('blocked'); } });
   const guard = new SessionGuard(); const notify = vi.fn(); guard.subscribe(notify);

@@ -5,7 +5,7 @@ const bodies = {
   person: { name:'測試會員',alias:null,memberNo:'FIXTURE-M1',email:null,phone:null,gender:null,birthDate:null,membershipState:'NETWORK_MEMBER',mobileVerifiedAt:null },
   dashboard: { memberName: '測試會員', memberNo: 'FIXTURE-M1', qualification: q, monthlyRepurchaseStatus: 'PENDING', pv: null, rpv: null, epv: null, bonusAmount: null, bonusStatus: 'PENDING' },
   organization: { qualificationId: q.id, sponsor: null, referrals: [] },
-  binary: { qualificationId: q.id, left: { count: 0, volume: null }, right: { count: 0, volume: null } },
+  binary: { qualificationId: q.id, left: { count: 0, volume: null, carry: null }, right: { count: 0, volume: null, carry: null }, settlementMetrics: { status: 'UNAVAILABLE', reason: 'SETTLEMENT_METRICS_READ_MODEL_NOT_AVAILABLE' }, fullTree: { status: 'UNAVAILABLE', reason: 'BINARY_TREE_READ_MODEL_NOT_AVAILABLE' } },
   performance: { ...month, pv: null, rpv: null, epv: null, left: null, right: null, asOf: null },
   bonuses: { ...month, awards: [{ id: 'fixture-award', name: '測試獎金', status: 'PENDING', amount: null }] },
   ledger: { ...month, entries: [{ id: 'fixture-adjustment', label: '測試調整', amount: -1, postedAt: '2026-09-15T00:00:00Z', sourceId: 'fixture-source' }] },

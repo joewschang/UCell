@@ -23,7 +23,8 @@ const qualification = object({ id, code: id, rank: id, active: boolean, ballLabe
 const status = enumOf('PENDING', 'CALCULATED', 'PENDING45D', 'EFFECTIVE', 'PAYABLE', 'PAID', 'REVERSED', 'CLAWBACK');
 const metric = nullable(number);
 const member = object({ code: id, name: string });
-const side = object({ count: nullable(count), volume: metric });
+const side = object({ count: nullable(count), volume: metric, carry: metric });
+const readModelAvailability = object({ status: enumOf('AVAILABLE', 'UNAVAILABLE'), reason: nullable(string) });
 function schema<T>(check: Check) {
   return (value: unknown): T => {
     if (!check(value)) throw new Error('資料格式異常，已停止顯示；請重新載入或聯絡客服');
@@ -35,7 +36,7 @@ export const parsePerson = schema<Person>(object({ name: string, alias:nullable(
 export const parseDashboard = schema<Dashboard>(object({ memberName: string, memberNo: id, qualification,
   monthlyRepurchaseStatus: enumOf('ACTIVE', 'PENDING', 'INACTIVE'), pv: metric, rpv: metric, epv: metric, bonusAmount: metric, bonusStatus: status,monthReference:optional(period),activeInterval:optional(nullable(activeInterval)) }));
 export const parseOrganization = schema<Organization>(object({ qualificationId: id, sponsor: nullable(member), referrals: unique(member, 'code') }));
-export const parseBinary = schema<Binary>(object({ qualificationId: id, left: side, right: side }));
+export const parseBinary = schema<Binary>(object({ qualificationId: id, left: side, right: side, settlementMetrics: readModelAvailability, fullTree: readModelAvailability }));
 export const parsePerformance = schema<Performance>(object({ qualificationId: id, period, pv: metric, rpv: metric, epv: metric, left: metric, right: metric, asOf: nullable(string) }));
 export const parseBonus = schema<Bonus>(object({ qualificationId: id, period, awards: unique(object({ id, name: string, status, amount: metric,theoryAmount:optional(metric),finalAmount:optional(metric),payableAmount:optional(metric),settlementStatus:optional(enumOf('PENDING','FINALIZED')),pendingReason:optional(nullable(string)),settlementDate:optional(nullable(date)),nominalPayoutDate:optional(nullable(date)),adjustedPayoutDate:optional(nullable(date)),businessCalendarVersion:optional(nullable(string)),ruleVersion:optional(nullable(string)),parameterSnapshotHash:optional(nullable(string)) }), 'id') }));
 export const parseLedger = schema<Ledger>(object({ qualificationId: id, period, entries: unique(object({ id, label: string, amount: metric, postedAt: string, sourceId: id }), 'id') }));

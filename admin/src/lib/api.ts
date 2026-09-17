@@ -40,10 +40,16 @@ export async function api<T>(path:string,init:RequestOptions={}):Promise<T>{
   const {idempotencyKey:_,skipUnauthorizedEvent,...fetchInit}=init;
   const controller=new AbortController();const abort=()=>controller.abort();
   init.signal?.addEventListener('abort',abort,{once:true});if(init.signal?.aborted)controller.abort();
-  const timer=setTimeout(abort,15000);
+  let timedOut=false;
+  const timer=setTimeout(()=>{timedOut=true;abort()},15000);
   let res:Response,text:string;
   try{res=await fetch(`${API_BASE}${path}`,{...fetchInit,headers,signal:controller.signal});text=await res.text();}
-  catch(error){if(controller.signal.aborted)throw new ApiError(0,null,'請求已取消或逾時；寫入操作請保留原資料重試，不要重複建立。');throw error;}
+  catch(error){
+    if(init.signal?.aborted)throw new ApiError(0,null,'請求已取消；系統未確認操作結果。');
+    if(timedOut)throw new ApiError(0,null,'連線逾時；寫入操作請保留原資料重試，不要重複建立。');
+    if(error instanceof TypeError)throw new ApiError(0,null,'目前無法連線至管理服務，請檢查網路後重新載入。');
+    throw error;
+  }
   finally{clearTimeout(timer);init.signal?.removeEventListener('abort',abort);}
   let body:unknown=null;
   if(text){try{body=JSON.parse(text)}catch{body=text}}
@@ -54,7 +60,7 @@ export async function api<T>(path:string,init:RequestOptions={}):Promise<T>{
   if(!res.ok){
     const detail=(body as any)?.message ?? (body as any)?.error?.message;
     const code=(body as any)?.code??(body as any)?.error?.code;
-    const label:Record<number,string>={403:'沒有此操作權限',409:'操作衝突，請確認原資料後重試',422:'資料驗證或必要設定未完成'};
+    const label:Record<number,string>={401:'管理員工作階段已失效，請重新登入',403:'沒有此操作權限',404:'找不到指定資料',409:'操作衝突，請確認原資料後重試',422:'資料驗證或必要設定未完成'};
     throw new ApiError(res.status,body,[label[res.status],detail,typeof code==='string'?code:undefined].filter(Boolean).join(' · ') || `API ${res.status}: ${path}`);
   }
   return body as T;

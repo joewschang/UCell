@@ -2,6 +2,15 @@ import { Injectable, NotFoundException, UnprocessableEntityException } from '@ne
 import { PrismaService, captureParameters, snapshotValue, pending, verifyReplayEnvelope } from '@ucell/database';
 import { QualificationAccessService } from '../auth/qualification-access.service';
 import { MemberService } from './member.service';
+export function unavailableBinaryView(qualificationId:string,counts:Array<{side:string;count:string}>){
+ return {
+  qualificationId,
+  left:{count:Number(counts.find(row=>row.side==='LEFT')?.count??0),volume:null,carry:null},
+  right:{count:Number(counts.find(row=>row.side==='RIGHT')?.count??0),volume:null,carry:null},
+  settlementMetrics:{status:'UNAVAILABLE' as const,reason:'SETTLEMENT_METRICS_READ_MODEL_NOT_AVAILABLE'},
+  fullTree:{status:'UNAVAILABLE' as const,reason:'BINARY_TREE_READ_MODEL_NOT_AVAILABLE'},
+ };
+}
 @Injectable()
 export class MemberReadService {
  constructor(private readonly db:PrismaService,private readonly identity:MemberService,private readonly access:QualificationAccessService){}
@@ -46,7 +55,7 @@ export class MemberReadService {
    }
    if(kind==='binary'){
     const counts=await tx.$queryRaw<Array<{side:string;count:string}>>`WITH RECURSIVE tree AS (SELECT child_qualification_id AS id,side FROM organization.binary_placement WHERE parent_qualification_id=${id}::uuid AND effective_from<=${now} AND (effective_to IS NULL OR effective_to>${now}) UNION ALL SELECT p.child_qualification_id,t.side FROM organization.binary_placement p JOIN tree t ON p.parent_qualification_id=t.id WHERE p.effective_from<=${now} AND (p.effective_to IS NULL OR p.effective_to>${now})) SELECT side::text,COUNT(*)::text AS count FROM tree GROUP BY side`;
-    return {qualificationId:id,left:{count:Number(counts.find(row=>row.side==='LEFT')?.count??0),volume:null},right:{count:Number(counts.find(row=>row.side==='RIGHT')?.count??0),volume:null},volumeStatus:'PENDING',volumeReason:'SETTLEMENT_NOT_FINALIZED'};
+    return unavailableBinaryView(id,counts);
    }
    if(kind==='repurchase'){
     return repurchase();

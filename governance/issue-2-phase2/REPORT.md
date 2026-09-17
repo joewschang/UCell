@@ -29,3 +29,13 @@ Baseline: `85f4869a2ae1b415a300029ab46ef0996b7bfddf`
 - UAT evidence remains pending a governed evidence store and formal sign-off workflow.
 
 Production Promotion remains **BLOCKED**.
+
+## Checkpoint 2
+
+- Binary placement counts remain authoritative, while volume, carry, and full-tree projections now expose explicit additive availability contracts.
+- Missing Binary settlement metrics remain `null` with `SETTLEMENT_METRICS_READ_MODEL_NOT_AVAILABLE`; the UI never converts them to zero.
+- The Admin dashboard connects the existing compensation summary for historical award, recovery, and finalized-batch facts, without inferring current settlement state.
+- Member and Admin API clients now distinguish missing data, offline service, timeout, cancellation, and expired sessions.
+- OpenAPI was regenerated for the additive Binary response fields.
+
+No database migration was introduced.

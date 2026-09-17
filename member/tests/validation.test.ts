@@ -22,7 +22,17 @@ it('accepts signed ledger adjustments and rejects unknown award status', () => {
 });
 it('validates nested organizations and count types', () => {
   expect(() => v.parseOrganization({ qualificationId: 'q1', sponsor: null, referrals: [null] })).toThrow();
-  expect(() => v.parseBinary({ qualificationId: 'q1', left: { count: 1.5, volume: 0 }, right: { count: 0, volume: null } })).toThrow();
+  const unavailable = {
+    qualificationId: 'q1',
+    left: { count: 1, volume: null, carry: null },
+    right: { count: 0, volume: null, carry: null },
+    settlementMetrics: { status: 'UNAVAILABLE', reason: 'SETTLEMENT_METRICS_READ_MODEL_NOT_AVAILABLE' },
+    fullTree: { status: 'UNAVAILABLE', reason: 'BINARY_TREE_READ_MODEL_NOT_AVAILABLE' },
+  } as const;
+  expect(v.parseBinary(unavailable)).toEqual(unavailable);
+  expect(() => v.parseBinary({ ...unavailable, left: { ...unavailable.left, count: 1.5 } })).toThrow();
+  expect(() => v.parseBinary({ ...unavailable, settlementMetrics: { status: 'AVAILABLE', reason: 1 } })).toThrow();
+  expect(() => v.parseBinary({ qualificationId: 'q1', left: { count: 1, volume: null }, right: { count: 0, volume: null } })).toThrow();
 });
 it('rejects missing period metrics and malformed order arrays', () => {
   expect(() => v.parsePerformance({ qualificationId: 'q1', period: '2026-13' })).toThrow();

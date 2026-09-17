@@ -6632,11 +6632,38 @@
           "volume": {
             "type": "number",
             "nullable": true
+          },
+          "carry": {
+            "type": "number",
+            "nullable": true,
+            "description": "Authoritative settlement carry. Null while the read model is unavailable; never interpreted as zero."
           }
         },
         "required": [
           "count",
-          "volume"
+          "volume",
+          "carry"
+        ]
+      },
+      "ReadModelAvailabilityView": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "AVAILABLE",
+              "UNAVAILABLE"
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "nullable": true,
+            "description": "Machine-readable reason. The frontend must not derive missing Core values."
+          }
+        },
+        "required": [
+          "status",
+          "reason"
         ]
       },
       "BinaryView": {
@@ -6651,12 +6678,30 @@
           },
           "right": {
             "$ref": "#/components/schemas/SideView"
+          },
+          "settlementMetrics": {
+            "description": "Availability of authoritative left/right volume and carry for the requested settlement period.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ReadModelAvailabilityView"
+              }
+            ]
+          },
+          "fullTree": {
+            "description": "Availability of the bounded, privacy-safe full Binary Tree read model.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ReadModelAvailabilityView"
+              }
+            ]
           }
         },
         "required": [
           "qualificationId",
           "left",
-          "right"
+          "right",
+          "settlementMetrics",
+          "fullTree"
         ]
       },
       "AwardView": {

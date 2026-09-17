@@ -18,6 +18,21 @@
 | UAT sign-off | BLOCKED | Formal evidence workflow pending |
 | Production promotion | BLOCKED | Release gates remain incomplete |
 
+## Checkpoint 2 verification
+
+| Gate | Result | Evidence |
+|---|---|---|
+| Backend build | PASS | Shared, contracts, database, API, and worker builds |
+| Backend isolated API | PASS | 41 suites / 358 tests; all 42 migrations on isolated DB |
+| Backend Binary read model | PASS | 2 focused regressions |
+| OpenAPI export/preflight | PASS | Additive availability contract exported and validated |
+| Member tests | PASS | 23 files / 140 tests |
+| Admin tests | PASS | 16 files / 43 tests, including dashboard RBAC query gating |
+| Member/Admin builds | PASS | Production Vite builds |
+| Business/monetary semantics | PASS | No formula, ledger, settlement, or authorization changes |
+
 ## Notes
 
 The initial sandboxed rerun could not write Vite and TypeScript temporary files under `C:\UCell\UCell` (`EPERM`). The same commands were rerun with the required workspace write permission and passed. This was an execution-environment restriction, not a product failure.
+
+One Admin full-suite run observed an existing asynchronous package-page timing failure. Its focused rerun and the following complete 16-file suite both passed without code or assertion changes; it is recorded as test-infrastructure timing evidence rather than hidden.
