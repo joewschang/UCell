@@ -19,13 +19,13 @@ const flatHash = (value: Record<string, unknown>) => createHash('sha256').update
 function fixture() {
   const now = new Date(), month = taipeiMonth(now), dec = (v: string) => new Prisma.Decimal(v);
   const recognition: any = { consumptionRecognitionEventId: 'recognition-1', qualificationId: qid, sourceType: 'ORDER_PAYMENT', sourceId: 'order-1', sourceLineId: null,
-    eligible: true, eligibleAmount: dec('2000'), recognitionPurpose: 'GPV', recognizedAt: month.start, recognitionMonth: month.calendarMonth,
+    direction: 'ORIGINAL', reversalOfEventId: null, createdAt: month.start, eligible: true, eligibleAmount: dec('2000'), recognitionPurpose: 'GPV', recognizedAt: month.start, recognitionMonth: month.calendarMonth,
     parameterSnapshotHash: 'a'.repeat(64), ruleVersionCode: 'R1.0B' };
   recognition.evidenceHash = flatHash({ qualificationId: qid, sourceType: recognition.sourceType, sourceId: recognition.sourceId, sourceLineId: null,
     eligible: true, eligibleAmount: '2000', purpose: 'GPV', recognizedAt: month.start.toISOString(), month: month.key });
   const accumulator: any = { qualificationMonthAccumulatorEvidenceId: 'accumulator-1', consumptionRecognitionEventId: 'recognition-1', qualificationId: qid,
     calendarMonth: month.calendarMonth, cumulativeBefore: dec('0'), eligibleDelta: dec('2000'), cumulativeAfter: dec('2000'), activeThreshold: dec('2000'),
-    thresholdCrossed: true, ruleVersionCode: 'R1.0B', replayRunId: null };
+    sequenceNo: 1, recordedAt: month.start, thresholdCrossed: true, ruleVersionCode: 'R1.0B', replayRunId: null };
   accumulator.evidenceHash = flatHash({ recognitionId: 'recognition-1', before: '0', delta: '2000', after: '2000', threshold: '2000' });
   const interval: any = { activeIntervalEvidenceId: 'interval-1', qualificationId: qid, sourceAccumulatorEvidenceId: 'accumulator-1', calendarMonth: month.calendarMonth,
     activeFrom: month.start, activeTo: month.end, createdAt: month.start, ruleVersionCode: 'R1.0B', replayRunId: null, supersedesActiveEvidenceId: null,
@@ -54,7 +54,7 @@ function fixture() {
     systemAssignmentPoolEntry: { findFirst: jest.fn(async () => null) },
     activeIntervalEvidence: { findMany: jest.fn(async () => [interval]) },
     qualificationMonthAccumulatorEvidence: { findUnique: jest.fn(async () => accumulator), findFirst: jest.fn(async () => null) },
-    consumptionRecognitionEvent: { findUnique: jest.fn(async () => recognition) },
+    consumptionRecognitionEvent: { findUnique: jest.fn(async () => recognition), findFirst: jest.fn(async () => null) },
     activePeriod: { findMany: jest.fn(async () => [period]) },
     settlementBatch: { findUnique: jest.fn(async (input: any) => input.where.settlementBatchId === bid ? batch : null) },
     historicalReplaySnapshot: { findUnique: jest.fn(async () => snapshot) },
@@ -145,6 +145,56 @@ describe('Member Explain HTTP adapters', () => {
   });
   it('does not claim current Active when another accumulator revision was replayed', async () => {
     data.db.qualificationMonthAccumulatorEvidence.findFirst.mockResolvedValue({ qualificationMonthAccumulatorEvidenceId: 'replayed-accumulator' });
+    const response = await app.inject({ method: 'GET', url: activeUrl, headers }); expect(response.statusCode).toBe(422);
+  });
+  function belowThreshold(amount = '1999.9999', eligible = true) {
+    const { accumulator: a, recognition: r, db } = data;
+    a.eligibleDelta = a.cumulativeAfter = new Prisma.Decimal(amount); a.thresholdCrossed = false;
+    r.eligibleAmount = new Prisma.Decimal(amount); r.eligible = eligible;
+    a.evidenceHash = flatHash({ recognitionId: r.consumptionRecognitionEventId, before: '0', delta: amount, after: amount, threshold: '2000' });
+    r.evidenceHash = flatHash({ qualificationId: qid, sourceType: r.sourceType, sourceId: r.sourceId, sourceLineId: r.sourceLineId,
+      eligible, eligibleAmount: amount, purpose: r.recognitionPurpose, recognizedAt: r.recognizedAt.toISOString(), month: taipeiMonth(r.recognizedAt).key });
+    db.activeIntervalEvidence.findMany.mockResolvedValue([]); db.activePeriod.findMany.mockResolvedValue([]);
+    db.qualificationMonthAccumulatorEvidence.findFirst.mockImplementation(async (query: any) => query.where.replayRunId ? null : a);
+  }
+  it.each([['1999.9999', true], ['0', false]])('explains persisted below-threshold evidence (%s, eligible=%s)', async (amount, eligible) => {
+    belowThreshold(amount as string, eligible as boolean);
+    const response = await app.inject({ method: 'GET', url: activeUrl, headers });
+    expect(response.statusCode).toBe(200);
+    expect(response.json().data.result).toEqual({ active: false, ownerType: 'MEMBER', reasonCode: 'BELOW_THRESHOLD' });
+    expect(response.json().data.evidenceRefs).toHaveLength(2);
+    expect(response.json().data.updatedAt).toBe(data.accumulator.recordedAt.toISOString());
+    expect(data.db.qualificationMonthAccumulatorEvidence.findFirst).toHaveBeenCalledWith({
+      where: { qualificationId: qid, calendarMonth: data.accumulator.calendarMonth }, orderBy: { sequenceNo: 'desc' },
+    });
+    expect(response.headers['cache-control']).toBe('no-store'); expect(data.db.auditEvent.create).toHaveBeenCalled();
+  });
+  it.each(['threshold', 'later-above-threshold', 'future', 'replay', 'correction', 'active-period', 'wrong-ball', 'wrong-month', 'recognition-future'])(
+    'does not claim inactive for conflicting or unsupported evidence: %s', async kind => {
+      belowThreshold();
+      if (kind === 'threshold') data.accumulator.activeThreshold = new Prisma.Decimal('1200');
+      if (kind === 'later-above-threshold') data.accumulator.cumulativeAfter = new Prisma.Decimal('2001');
+      if (kind === 'future') data.accumulator.recordedAt = new Date(Date.now() + 60000);
+      if (kind === 'replay') data.accumulator.replayRunId = 'replay-1';
+      if (kind === 'correction') data.db.consumptionRecognitionEvent.findFirst.mockResolvedValue({ consumptionRecognitionEventId: 'correction-1' });
+      if (kind === 'active-period') data.db.activePeriod.findMany.mockResolvedValue([data.period]);
+      if (kind === 'wrong-ball') data.recognition.qualificationId = other;
+      if (kind === 'wrong-month') data.accumulator.calendarMonth = new Date('2000-01-01T00:00:00Z');
+      if (kind === 'recognition-future') data.recognition.recognizedAt = new Date(Date.now() + 60000);
+      const response = await app.inject({ method: 'GET', url: activeUrl, headers });
+      expect(response.statusCode).toBe(422); expect(response.body).not.toContain('BELOW_THRESHOLD');
+    });
+  it.each(['accumulator', 'recognition'])('rejects tampered below-threshold %s evidence', async kind => {
+    belowThreshold(); data[kind as 'accumulator' | 'recognition'].evidenceHash = 'f'.repeat(64);
+    const response = await app.inject({ method: 'GET', url: activeUrl, headers });
+    expect(response.statusCode).toBe(503); expect(response.body).toContain('INVALID_EVIDENCE');
+  });
+  it('does not interpret thresholdCrossed=false as inactive after a prior crossing', async () => {
+    belowThreshold('2500');
+    const response = await app.inject({ method: 'GET', url: activeUrl, headers }); expect(response.statusCode).toBe(422);
+  });
+  it('requires a stored accumulator even when no current ActivePeriod exists', async () => {
+    belowThreshold(); data.db.qualificationMonthAccumulatorEvidence.findFirst.mockResolvedValue(null);
     const response = await app.inject({ method: 'GET', url: activeUrl, headers }); expect(response.statusCode).toBe(422);
   });
   it('never reads Carry from a draft settlement', async () => {

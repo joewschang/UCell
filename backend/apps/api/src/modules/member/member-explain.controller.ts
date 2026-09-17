@@ -22,13 +22,13 @@ const resultSchema = {
     definitionKey: { type: 'string' }, definitionVersion: { type: 'string' }, ruleVersion: { type: 'string' }, parameterVersion: { type: 'string' },
     classification: { type: 'string', enum: ['MEMBER_SELF'] },
     evidenceRefs: { type: 'array', maxItems: 100, items: { type: 'object', required: ['type', 'id', 'revision'], properties: { type: { type: 'string' }, id: { type: 'string' }, revision: { type: 'string' } } } },
-    result: { type: 'object', description: 'Active: active boolean, ownerType MEMBER, reasonCode THRESHOLD_MET. Carry: leftCarry/rightCarry exact decimal strings.' },
+    result: { type: 'object', description: 'Active: active boolean, ownerType MEMBER, reasonCode THRESHOLD_MET or BELOW_THRESHOLD. Carry: leftCarry/rightCarry exact decimal strings.' },
   },
 };
 const activeResultSchema = { ...resultSchema, properties: { ...resultSchema.properties,
   definitionKey: { type: 'string', enum: ['active.status'] }, finality: { type: 'string', enum: ['NOT_APPLICABLE'] },
   result: { type: 'object', additionalProperties: false, required: ['active', 'ownerType', 'reasonCode'], properties: {
-    active: { type: 'boolean', enum: [true] }, ownerType: { type: 'string', enum: ['MEMBER'] }, reasonCode: { type: 'string', enum: ['THRESHOLD_MET'] },
+    active: { type: 'boolean', enum: [true, false] }, ownerType: { type: 'string', enum: ['MEMBER'] }, reasonCode: { type: 'string', enum: ['THRESHOLD_MET', 'BELOW_THRESHOLD'] },
   } },
 } };
 const carryResultSchema = { ...resultSchema, required: [...resultSchema.required, 'periodEnd'], properties: { ...resultSchema.properties,
@@ -51,7 +51,7 @@ const carryResultSchema = { ...resultSchema, required: [...resultSchema.required
 @Controller('member/explain')
 export class MemberExplainController {
   constructor(private readonly service: MemberExplainService) {}
-  @Get('active') @Header('Cache-Control', 'no-store') @ApiOperation({ operationId: 'memberExplainActive', description: 'Current positive Active with a verified v3 consumption evidence chain. Absence is unavailable, not an inferred inactive/zero result.' })
+  @Get('active') @Header('Cache-Control', 'no-store') @ApiOperation({ operationId: 'memberExplainActive', description: 'Current Active or below-threshold status with verified original v3 consumption evidence. Missing evidence and unsupported replay/corrections remain unavailable.' })
   @ApiResponse({ status: 200, schema: { type: 'object', properties: { data: activeResultSchema } } })
   active(@Req() request: MemberExplainRequest, @Query() query: MemberExplainActiveQuery) { return this.service.explain(request, 'getActiveStatus', query); }
   @Get('binary-carry') @Header('Cache-Control', 'no-store') @ApiOperation({ operationId: 'memberExplainBinaryCarry', description: 'Original sealed batch Carry, exact decimal strings. Does not infer tree identity or substitute current/replayed totals.' })

@@ -8,19 +8,20 @@ const hash = (value: Record<string, unknown>) => createHash('sha256').update(JSO
 const sha = (value: unknown): value is string => typeof value === 'string' && /^[a-f0-9]{64}$/.test(value);
 const sameDate = (a: Date, b: Date) => a instanceof Date && b instanceof Date && a.getTime() === b.getTime();
 
-/** Only evidence-backed current positive Active is available in this first adapter. */
+/** Current original evidence only; missing evidence never implies inactive. */
 export async function readMemberActiveEvidence(tx: Prisma.TransactionClient, qualificationId: string, now: Date): Promise<SourceRead> {
   const month = taipeiMonth(now);
   const rows = await tx.activeIntervalEvidence.findMany({ where: { qualificationId, calendarMonth: month.calendarMonth },
     orderBy: [{ createdAt: 'desc' }, { activeIntervalEvidenceId: 'desc' }], take: 2 });
   const interval = rows[0];
-  if (!interval || interval.replayRunId || interval.supersedesActiveEvidenceId || interval.activeFrom > now || interval.activeTo <= now) return unavailable();
+  if (interval && (interval.replayRunId || interval.supersedesActiveEvidenceId || interval.activeFrom > now || interval.activeTo <= now)) return unavailable();
   if (rows[1] && sameDate(rows[1].createdAt, interval.createdAt)) return unavailable();
-  if (interval.ruleVersionCode !== 'R1.0B') return unavailable();
+  if (interval && interval.ruleVersionCode !== 'R1.0B') return unavailable();
   // A month containing replayed accumulator evidence needs the future replay-aware adapter.
   const replayed = await tx.qualificationMonthAccumulatorEvidence.findFirst({ where: { qualificationId,
     calendarMonth: month.calendarMonth, replayRunId: { not: null } }, select: { qualificationMonthAccumulatorEvidenceId: true } });
   if (replayed) return unavailable();
+  if (!interval) return readMemberBelowThreshold(tx, qualificationId, now);
   const accumulator = await tx.qualificationMonthAccumulatorEvidence.findUnique({ where: { qualificationMonthAccumulatorEvidenceId: interval.sourceAccumulatorEvidenceId } });
   if (!accumulator || accumulator.replayRunId || accumulator.qualificationId !== qualificationId
     || !sameDate(accumulator.calendarMonth, month.calendarMonth) || !accumulator.thresholdCrossed
@@ -48,6 +49,52 @@ export async function readMemberActiveEvidence(tx: Prisma.TransactionClient, qua
     ], result: { active: true, ownerType: 'MEMBER', reasonCode: 'THRESHOLD_MET' } };
 }
 
+
+/** Compare persisted accumulation; do not recalculate economic totals or threshold crossing. */
+async function readMemberBelowThreshold(tx: Prisma.TransactionClient, qualificationId: string, now: Date): Promise<SourceRead> {
+  const month = taipeiMonth(now);
+  const accumulator = await tx.qualificationMonthAccumulatorEvidence.findFirst({
+    where: { qualificationId, calendarMonth: month.calendarMonth }, orderBy: { sequenceNo: 'desc' },
+  });
+  if (!accumulator || accumulator.replayRunId || accumulator.qualificationId !== qualificationId
+    || !sameDate(accumulator.calendarMonth, month.calendarMonth) || accumulator.ruleVersionCode !== 'R1.0B'
+    || accumulator.activeThreshold.toString() !== '2000' || accumulator.thresholdCrossed
+    || !Number.isInteger(accumulator.sequenceNo) || accumulator.sequenceNo < 1
+    || accumulator.recordedAt > now || accumulator.recordedAt < month.start
+    || accumulator.cumulativeAfter.isNegative() || !accumulator.cumulativeAfter.lt(accumulator.activeThreshold)
+    || accumulator.cumulativeBefore.isNegative() || accumulator.cumulativeBefore.gt(accumulator.cumulativeAfter)
+    || accumulator.eligibleDelta.isNegative()) return unavailable();
+  // Corrections require replay-aware semantics, even if an original accumulator remains present.
+  const correction = await tx.consumptionRecognitionEvent.findFirst({ where: { qualificationId,
+    recognitionMonth: month.calendarMonth, OR: [{ direction: { not: 'ORIGINAL' } }, { reversalOfEventId: { not: null } }] },
+    select: { consumptionRecognitionEventId: true } });
+  if (correction) return unavailable();
+  const recognition = await tx.consumptionRecognitionEvent.findUnique({
+    where: { consumptionRecognitionEventId: accumulator.consumptionRecognitionEventId },
+  });
+  if (!recognition || recognition.qualificationId !== qualificationId || recognition.direction !== 'ORIGINAL'
+    || recognition.reversalOfEventId || recognition.ruleVersionCode !== accumulator.ruleVersionCode
+    || !sameDate(recognition.recognitionMonth, month.calendarMonth) || recognition.recognizedAt < month.start
+    || recognition.recognizedAt > now || recognition.createdAt > now || !sha(recognition.parameterSnapshotHash)
+    || !recognition.eligibleAmount.equals(accumulator.eligibleDelta)
+    || (recognition.eligible ? !recognition.eligibleAmount.gt(0) : !recognition.eligibleAmount.isZero())) return unavailable();
+  if (accumulator.evidenceHash !== hash({ recognitionId: recognition.consumptionRecognitionEventId,
+    before: accumulator.cumulativeBefore.toString(), delta: accumulator.eligibleDelta.toString(),
+    after: accumulator.cumulativeAfter.toString(), threshold: accumulator.activeThreshold.toString() })
+    || recognition.evidenceHash !== hash({ qualificationId, sourceType: recognition.sourceType, sourceId: recognition.sourceId,
+      sourceLineId: recognition.sourceLineId, eligible: recognition.eligible, eligibleAmount: recognition.eligibleAmount.toString(),
+      purpose: recognition.recognitionPurpose, recognizedAt: recognition.recognizedAt.toISOString(), month: month.key })) return invalid();
+  const active = await tx.activePeriod.findMany({ where: { qualificationId, activeFrom: { lte: now },
+    OR: [{ activeTo: null }, { activeTo: { gt: now } }] }, take: 1 });
+  if (active.length) return unavailable();
+  return { status: 'AVAILABLE', finality: 'NOT_APPLICABLE', scope: { qualificationId },
+    updatedAt: accumulator.recordedAt.toISOString(), ruleVersion: accumulator.ruleVersionCode,
+    parameterVersion: recognition.parameterSnapshotHash,
+    evidenceRefs: [
+      { type: 'QualificationMonthAccumulatorEvidence', id: accumulator.qualificationMonthAccumulatorEvidenceId, revision: accumulator.evidenceHash },
+      { type: 'ConsumptionRecognitionEvent', id: recognition.consumptionRecognitionEventId, revision: recognition.evidenceHash },
+    ], result: { active: false, ownerType: 'MEMBER', reasonCode: 'BELOW_THRESHOLD' } };
+}
 /** Original sealed batch evidence only, not current or latest corrected Carry. */
 export async function readMemberSettlementCarry(tx: Prisma.TransactionClient, qualificationId: string, settlementBatchId: string): Promise<SourceRead> {
   const batch = await tx.settlementBatch.findUnique({ where: { settlementBatchId } });

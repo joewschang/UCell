@@ -424,7 +424,7 @@
     },
     "/api/v1/member/explain/active": {
       "get": {
-        "description": "Current positive Active with a verified v3 consumption evidence chain. Absence is unavailable, not an inferred inactive/zero result.",
+        "description": "Current Active or below-threshold status with verified original v3 consumption evidence. Missing evidence and unsupported replay/corrections remain unavailable.",
         "operationId": "memberExplainActive",
         "parameters": [
           {
@@ -555,7 +555,8 @@
                             "active": {
                               "type": "boolean",
                               "enum": [
-                                true
+                                true,
+                                false
                               ]
                             },
                             "ownerType": {
@@ -567,7 +568,8 @@
                             "reasonCode": {
                               "type": "string",
                               "enum": [
-                                "THRESHOLD_MET"
+                                "THRESHOLD_MET",
+                                "BELOW_THRESHOLD"
                               ]
                             }
                           }

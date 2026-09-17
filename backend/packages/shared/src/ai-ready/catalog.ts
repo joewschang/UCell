@@ -30,7 +30,7 @@ const common = {
 export const READ_DEFINITIONS: Readonly<Record<ToolName, ReadDefinition>> = Object.freeze({
   getActiveStatus: definition({ ...common, key: 'active.status', name: '球的 Active 狀態',
     description: 'Authoritative eligibility state, including explicit ownership classification; never inferred from a displayed label.',
-    grain: 'QUALIFICATION_PERIOD', source: 'Member v3 ActiveInterval/Accumulator/Consumption evidence adapter (positive current state only)',
+    grain: 'QUALIFICATION_PERIOD', source: 'Member v3 ActiveInterval/Accumulator/Consumption evidence adapter (current original active or evidence-backed below-threshold state)',
     dimensions: ['qualificationId'], timeMode: 'CURRENT', timestampMeaning: 'Authoritative current source observation',
     replayPolicy: 'Use source eligibility and ownership evidence; no earlier-event backfill.',
     classification: 'MEMBER_SELF', requiredPermission: 'explain:active:read' }),
