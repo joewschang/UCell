@@ -17,6 +17,11 @@ const qualification=modelBlock('Qualification');
 const payoutLine=modelBlock('PayoutLine');
 const recovery=modelBlock('BonusRecoveryEvent');
 const payable=modelBlock('PayableEntry');
+const payment=modelBlock('Payment');
+const paymentClaim=modelBlock('PaymentOperationClaim');
+const inventoryBalance=modelBlock('InventoryBalance');
+const inventoryMovement=modelBlock('InventoryMovement');
+const inventoryClaim=modelBlock('InventoryOperationClaim');
 
 if(!/qualifications\s+Qualification\[\]/.test(person)) failures.push('Person must own Qualifications');
 if(/payoutLines\s+PayoutLine\[\]/.test(person)) failures.push('Person must not directly own payout lines');
@@ -29,6 +34,15 @@ if(!/qualification\s+Qualification/.test(payable)) failures.push('PayableEntry q
 must(/model IdentityLink\s*\{/,'IdentityLink required');
 must(/model AuthSession\s*\{/,'AuthSession required');
 must(/model GoldenCaseRun\s*\{/,'GoldenCaseRun required');
+must(/model PaymentProviderEventEvidence\s*\{/,'Payment provider evidence persistence required');
+must(/model PaymentStateTransition\s*\{/,'Payment state transition persistence required');
+must(/model InventoryReservationLine\s*\{/,'Inventory reservation line persistence required');
+must(/model InventoryBalanceEvidence\s*\{/,'Inventory balance evidence persistence required');
+if(!/orderId\s+String/.test(payment) || !/providerTransactionRef/.test(payment)) failures.push('Payment must bind Order and provider transaction reference');
+if(!/businessEffectIdentity\s+String\s+@unique/.test(paymentClaim) || !/outboxEventId\s+String\s+@unique/.test(paymentClaim)) failures.push('Payment operation claim must uniquely bind effect and outbox evidence');
+if(!/@@id\(\[warehouseId, inventoryItemId\]\)/.test(inventoryBalance)) failures.push('InventoryBalance must be warehouse/item scoped');
+if(!/idempotencyKey\s+String\s+@unique/.test(inventoryMovement)) failures.push('InventoryMovement idempotency key must be unique');
+if(!/operationHash/.test(inventoryClaim) || !/resultHash/.test(inventoryClaim) || !/outboxEventId\s+String\s+@unique/.test(inventoryClaim)) failures.push('Inventory operation claim must bind deterministic result and outbox evidence');
 
 if(failures.length){
   console.error('SCHEMA_PREFLIGHT_FAIL');

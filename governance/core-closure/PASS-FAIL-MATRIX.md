@@ -1,5 +1,16 @@
 # Core Closure pass/fail matrix
 
+## P1-A persistence checkpoint
+
+| Gate | Result | Evidence |
+|---|---|---|
+| Prisma schema/migration | PASS | validate/generate; migration 40; fresh 0→40 deploy |
+| Payment persistence constraints | PASS | unique event/operation/idempotency/outbox references; append-only evidence |
+| Inventory balance constraints | PASS | DB rejects negative/reserved-over-on-hand state |
+| Inventory append-only evidence | PASS | DB rejects movement mutation |
+| Existing DEV migration | PASS | migration 40 applied; status up to date |
+| Provider/UAT evidence | BLOCKED | no provider-specific credentials/specification verified |
+
 ## 2026-09-17 consolidated P0 checkpoint
 
 | Gate | Result | Evidence |

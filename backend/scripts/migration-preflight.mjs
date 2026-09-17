@@ -27,6 +27,14 @@ if(!/outstanding_amount/i.test(all))
   failures.push('partial recovery migration missing outstanding_amount');
 if(!/settlement\.timezone/i.test(all))
   failures.push('settlement timezone parameter migration missing');
+if(!/CREATE TABLE\s+"commerce"\."payment_operation_claim"/i.test(all))
+  failures.push('payment operation claim migration missing');
+if(!/CREATE TABLE\s+"commerce"\."inventory_operation_claim"/i.test(all))
+  failures.push('inventory operation claim migration missing');
+if(!/inventory_balance_available_nonnegative/i.test(all))
+  failures.push('inventory non-negative balance constraint missing');
+if(!/payment_provider_event_evidence_append_only/i.test(all) || !/inventory_movement_append_only/i.test(all))
+  failures.push('payment/inventory append-only evidence triggers missing');
 
 if(failures.length){
   console.error('MIGRATION_PREFLIGHT_FAIL');

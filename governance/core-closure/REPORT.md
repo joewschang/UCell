@@ -1,5 +1,15 @@
 # Core Closure checkpoint report
 
+## P1-A durable Payment/Inventory schema — 2026-09-17
+
+- Added forward-only migration 40 with canonical Payment aggregate/attempt/provider-event/state-transition/operation-claim persistence and Inventory warehouse/item/balance/reservation/movement/evidence/operation-claim persistence.
+- Legacy `PaymentEvent` remains intact and is not reinterpreted as provider-verified evidence.
+- Database constraints enforce provider/operation uniqueness, hash and currency shape, non-negative inventory (`onHand >= reserved >= 0`), release bounds and complete foreign-key ownership.
+- Payment evidence/transitions/claims and Inventory movements/evidence/claims are append-only through database triggers.
+- Prisma validate/generate, schema/migration preflights, database build, DEV deploy and fresh 0→40 migration: PASS.
+- Focused DB checks reject negative inventory and mutation of append-only movement evidence.
+- Business logic changes: NONE. Provider-specific payment semantics, split tender, reservation expiry and PICK/SHIP accounting timing remain outside this schema checkpoint.
+
 ## Consolidated P0 engineering checkpoint — 2026-09-17
 
 - Branch: `integration/member-backend-mvp`; consolidated branch history includes the superseded Member feature branch while retaining the approved UX-3 tree.
