@@ -67,3 +67,10 @@
 重新執行：Member 25 files / 159 tests PASS；Admin 23 files / 73 tests PASS；兩端 TypeScript 與 Vite build PASS。Admin 仍有大於 500 kB 的 bundle 提示。此次未重跑瀏覽器；前述瀏覽器結果各對應其原先實作版本。
 
 相對 462930c 的交付差異僅在 Member、Admin、shared/design-system 與 governance/ux-v2-phase2。從較早基線繼承的 Provider migration 與 AI-ready 檔案屬其他工作已提交內容，本任務未編寫或執行這些 migration／AI 功能，也未重跑 backend 驗證。整合檢查不代表制度決議、上線或資料庫變更授權。此分支已包含所核對的整合基線，尚未推送或合回主整合分支。
+## PR #3 CI 追查
+
+初始 head e32fa1f 的 GitHub Actions：Admin 與 stage-static PASS；Member 單元測試／型別／建置 PASS，但 mobile-smoke.cjs 使用舊按鈕名稱「二元組織」而 timeout。已改為實際 UI 的「二元安置組織」並使用 exact 匹配；同一完整 smoke 在本機 Edge PASS，包含七路由、球隔離、購物車、通知、登出／重啟與 320／390／768px 溢出檢查。這次只有測試選取器改動，不改產品文字或放寬斷言。
+
+UCell RC CI 的 backend 在 DB golden 失敗：DB_GOLDEN_FAIL: five golden qualifications must exist（job 105416714020，run 35285476307）。workflow 在 migration/build 後直接執行 db-golden-e2e.ts，未準備該脚本要求的固定五筆資格；相同錯誤見既有 governance/a-decision-return-replay/final/final-db-golden.txt。此 PR 相對 base 未修改 backend 或 workflow。本次不擴大核准的前端範圍去修改 seed／migration 或後端 CI；backend 檢查仍為阻擋，不能宣稱整體 CI 通過。
+
+PR：https://github.com/joewschang/UCell/pull/3，維持 draft；無審查意見，GitHub 回報 mergeable=true（僅指無合併衝突）。
