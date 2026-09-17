@@ -1,14 +1,37 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException, UnprocessableEntityException } from '@nestjs/common';
 import { PrismaService } from '@ucell/database';
+import { AuditService } from '../../common/audit/audit.service';
+import { IdempotencyService } from '../../common/idempotency/idempotency.service';
 
 const DOMAINS = ['PAYMENT','INVOICE','LOGISTICS'] as const;
 const STATUSES = ['RECEIVED','VERIFIED','REJECTED','PROCESSING','PROCESSED','RETRY_PENDING','MANUAL_REVIEW'] as const;
 type Domain = typeof DOMAINS[number];
 type Status = typeof STATUSES[number];
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 @Injectable()
 export class AdminProviderOperationsService {
-  constructor(private readonly prisma:PrismaService){}
+  constructor(private readonly prisma:PrismaService,private readonly idempotency:IdempotencyService,private readonly audit:AuditService){}
+
+  async retryManualReview(id:string,reasonInput:string,key:string,actorKey:string|undefined,actorId:string|undefined,requestId:string,correlationId:string,now=new Date()){
+    if(!actorKey) throw new ForbiddenException({code:'PROVIDER_RETRY_ACTOR_REQUIRED'});
+    if(!UUID_PATTERN.test(id)) throw new BadRequestException({code:'PROVIDER_WEBHOOK_ID_INVALID'});
+    const reason=reasonInput?.trim();
+    if(!reason||reason.length<10||reason.length>500) throw new UnprocessableEntityException({code:'PROVIDER_RETRY_REASON_INVALID'});
+    const command={providerWebhookInboxId:id,reason};
+    const result=await this.idempotency.execute(`admin:provider-webhook:retry:${actorKey}`,key,command,async tx=>{
+      const before=await tx.providerWebhookInbox.findUnique({where:{providerWebhookInboxId:id},select:{providerWebhookInboxId:true,status:true,attemptCount:true,lastErrorCode:true,nextAttemptAt:true}});
+      if(!before) throw new NotFoundException({code:'PROVIDER_WEBHOOK_NOT_FOUND'});
+      if(before.status!=='MANUAL_REVIEW') throw new ConflictException({code:'PROVIDER_WEBHOOK_NOT_MANUAL_REVIEW'});
+      const changed=await tx.providerWebhookInbox.updateMany({where:{providerWebhookInboxId:id,status:'MANUAL_REVIEW'},data:{status:'RETRY_PENDING',nextAttemptAt:now,leaseOwner:null,leaseExpiresAt:null}});
+      if(changed.count!==1) throw new ConflictException({code:'PROVIDER_WEBHOOK_RETRY_CONFLICT'});
+      const after={providerWebhookInboxId:id,status:'RETRY_PENDING' as const,attemptCount:before.attemptCount,nextAttemptAt:now.toISOString(),requeued:true};
+      const persistedActorId=actorId&&UUID_PATTERN.test(actorId)?actorId:undefined;
+      await this.audit.write(tx,{actorType:'ADMIN',actorId:persistedActorId,action:'PROVIDER_WEBHOOK_MANUAL_RETRY_REQUESTED',entityType:'ProviderWebhookInbox',entityId:id,beforeData:before,afterData:{...after,reason,...(!persistedActorId?{actorReference:actorKey}:{})},reasonCode:'MANUAL_RETRY',requestId,correlationId});
+      return after;
+    });
+    return {...result.value,replayed:result.replayed};
+  }
 
   async health(now=new Date()){
     const dueWhere={OR:[{status:'RECEIVED' as const},{status:'VERIFIED' as const},{status:'RETRY_PENDING' as const,nextAttemptAt:{lte:now}}]};
