@@ -3,6 +3,7 @@ import {
   claimOutboxLease,
   PrismaService,
   processPaymentInventoryReservation,
+  releaseFailedOutboxLease,
 } from '@ucell/database';
 import { PaymentPersistenceService } from '../src/modules/payment-hub/payment-persistence.service';
 import { canonicalizeProviderEvent, CanonicalProviderEventInput } from '../src/modules/payment-hub/provider-event-canonicalizer';
@@ -130,5 +131,78 @@ describe('Connected DEV verified payment to inventory reservation', () => {
     expect((await db.inventoryBalance.findUniqueOrThrow({ where: {
       warehouseId_inventoryItemId: { warehouseId, inventoryItemId: row.item.inventoryItemId },
     } })).reserved.toString()).toBe('0');
+  }, 30_000);
+
+  it('releases a failed delivery, then reserves exactly once after stock is replenished', async () => {
+    const row = await fixture(1);
+    const persisted = await verifiedPaid(row.payment, row.order.orderId);
+    const firstLease = await claim(persisted.outboxEventId);
+    let failure: unknown;
+    try {
+      await processPaymentInventoryReservation(db, firstLease, {
+        warehouseId, policyVersion: 'TEST_ONLY_CONNECTED_POLICY_V1',
+      });
+    } catch (error) {
+      failure = error;
+    }
+    expect(failure).toMatchObject({ code: 'INVENTORY_INSUFFICIENT_AVAILABLE' });
+    expect((await releaseFailedOutboxLease(db, firstLease, failure, new Date('2026-09-17T01:01:00Z'))).count).toBe(1);
+    expect(await db.outboxEvent.findUniqueOrThrow({ where: { outboxEventId: persisted.outboxEventId } })).toMatchObject({
+      processStatus: 'PENDING', attemptCount: 1,
+    });
+
+    await db.inventoryBalance.update({
+      where: { warehouseId_inventoryItemId: { warehouseId, inventoryItemId: row.item.inventoryItemId } },
+      data: { onHand: 10 },
+    });
+    await db.outboxEvent.update({ where: { outboxEventId: persisted.outboxEventId }, data: { availableAt: new Date(0) } });
+    const retried = await processPaymentInventoryReservation(db, await claim(persisted.outboxEventId), {
+      warehouseId, policyVersion: 'TEST_ONLY_CONNECTED_POLICY_V1',
+    });
+    expect(retried).toMatchObject({ action: 'RESERVED' });
+    expect(await db.inventoryReservation.count({ where: { orderId: row.order.orderId } })).toBe(1);
+    expect(await db.inventoryMovement.count({ where: { sourceType: 'ORDER', sourceId: row.order.orderId } })).toBe(1);
+  }, 30_000);
+
+  it('moves the tenth failed delivery to DEAD without changing PAID evidence or inventory', async () => {
+    const row = await fixture(1);
+    const persisted = await verifiedPaid(row.payment, row.order.orderId);
+    await db.outboxEvent.update({
+      where: { outboxEventId: persisted.outboxEventId },
+      data: { processStatus: 'PENDING', attemptCount: 9, availableAt: new Date(0) },
+    });
+    const tenthLease = await claim(persisted.outboxEventId);
+    let failure: unknown;
+    try {
+      await processPaymentInventoryReservation(db, tenthLease, {
+        warehouseId, policyVersion: 'TEST_ONLY_CONNECTED_POLICY_V1',
+      });
+    } catch (error) {
+      failure = error;
+    }
+    expect(failure).toMatchObject({ code: 'INVENTORY_INSUFFICIENT_AVAILABLE' });
+    expect((await releaseFailedOutboxLease(db, tenthLease, failure)).count).toBe(1);
+    expect(await db.outboxEvent.findUniqueOrThrow({ where: { outboxEventId: persisted.outboxEventId } })).toMatchObject({
+      processStatus: 'DEAD', attemptCount: 10,
+    });
+    expect((await db.payment.findUniqueOrThrow({ where: { paymentId: row.payment.paymentId } })).status).toBe('PAID');
+    expect((await db.order.findUniqueOrThrow({ where: { orderId: row.order.orderId } })).status).toBe('PAID');
+    expect(await db.inventoryReservation.count({ where: { orderId: row.order.orderId } })).toBe(0);
+    expect(await db.inventoryMovement.count({ where: { sourceType: 'ORDER', sourceId: row.order.orderId } })).toBe(0);
+  }, 30_000);
+
+  it('fails closed when a worker loses its lease before projecting payment evidence', async () => {
+    const row = await fixture(10);
+    const persisted = await verifiedPaid(row.payment, row.order.orderId);
+    const staleLease = await claim(persisted.outboxEventId);
+    await db.outboxEvent.update({
+      where: { outboxEventId: persisted.outboxEventId },
+      data: { processStatus: 'PENDING', availableAt: new Date(0) },
+    });
+    await expect(processPaymentInventoryReservation(db, staleLease, {
+      warehouseId, policyVersion: 'TEST_ONLY_CONNECTED_POLICY_V1',
+    })).resolves.toEqual({ lostLease: true });
+    expect(await db.inventoryReservation.count({ where: { orderId: row.order.orderId } })).toBe(0);
+    expect(await db.inventoryMovement.count({ where: { sourceType: 'ORDER', sourceId: row.order.orderId } })).toBe(0);
   }, 30_000);
 });

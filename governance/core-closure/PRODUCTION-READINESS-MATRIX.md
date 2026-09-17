@@ -15,3 +15,12 @@
 | Production promotion | BLOCKED | Manual Go/No-Go prerequisites incomplete |
 | Isolated Azure Stage infrastructure | PASS | East Asia `rg-ucell-stage`; migrations and public runtime smoke pass |
 | Stage operational identity | BLOCKED | Formal LINE LIFF and Entra credentials/device evidence pending |
+## Payment-to-Inventory delivery recovery — 2026-09-18
+
+| Capability | Status | Evidence / limit |
+|---|---|---|
+| Failed delivery lease release and retry | CONNECTED DEV PASS | Real PostgreSQL regression; replenished retry creates one reservation/movement |
+| Retry exhaustion | CONNECTED DEV PASS | Attempt 10 becomes `DEAD`; Payment/Order remain `PAID`, no inventory mutation |
+| Stale worker lease fencing | CONNECTED DEV PASS | Lost lease returns fail-closed before Inventory effects |
+| Production broker/workload execution | BLOCKED | Requires governed UAT/Stage workload evidence |
+| Backend regression after recovery coverage | PASS | 43 suites / 382 tests on fresh isolated database; all 43 migrations applied |

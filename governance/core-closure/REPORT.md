@@ -1,5 +1,15 @@
 # Core Closure checkpoint report
 
+## P1-H Payment-to-Inventory delivery recovery — 2026-09-18
+
+- Failed inventory allocation now has executable worker-delivery evidence that the owned outbox lease returns to `PENDING`, retains its error, and can be retried after stock replenishment.
+- The retry creates exactly one reservation and one inventory movement; the existing transition-scoped idempotency claim prevents duplicate effects.
+- A tenth failed delivery moves the outbox event to `DEAD` while preserving the authoritative `PAID` Payment and Order facts and creating no inventory mutation.
+- A stale worker lease fails closed before projecting Payment evidence or writing Inventory state.
+- Focused PostgreSQL regression: 5/5 PASS. Full isolated Backend API: 43 suites / 382 tests PASS after applying all 43 migrations to a fresh database. Backend/Worker/Database build, Worker outbox regression, Inventory concurrency regression, and executable TODO gate PASS.
+- No schema migration or business-rule change was introduced.
+- Evidence level remains CONNECTED DEV. Warehouse allocation policy, PICK/SHIP and return-to-inventory policy remain outside this slice.
+
 ## Latest HEAD Stage redeployment preparation — 2026-09-17
 
 - Deployment target HEAD: `3fc745e` plus this preparation checkpoint; local/remote were fast-forwarded before validation.
