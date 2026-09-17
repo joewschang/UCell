@@ -1,4 +1,5 @@
 import {
+  decideInventoryRelease,
   decideInventoryReservation,
   InventoryBalanceSnapshot,
   InventoryReservationDecision,
@@ -18,10 +19,26 @@ export function decideInventoryReservationBatch(
   balances: Readonly<Record<string, InventoryBalanceSnapshot>>,
   lines: ReadonlyArray<InventoryReservationLine>,
 ): InventoryReservationBatchDecision {
+  return decideBatch(balances, lines, 'reservation', decideInventoryReservation);
+}
+
+export function decideInventoryReleaseBatch(
+  balances: Readonly<Record<string, InventoryBalanceSnapshot>>,
+  lines: ReadonlyArray<InventoryReservationLine>,
+): InventoryReservationBatchDecision {
+  return decideBatch(balances, lines, 'release', decideInventoryRelease);
+}
+
+function decideBatch(
+  balances: Readonly<Record<string, InventoryBalanceSnapshot>>,
+  lines: ReadonlyArray<InventoryReservationLine>,
+  operation: 'reservation' | 'release',
+  decide: (balance: InventoryBalanceSnapshot, quantity: number) => InventoryReservationDecision,
+): InventoryReservationBatchDecision {
   if (lines.length === 0) {
     throw new InventoryReservationError(
       'INVENTORY_BATCH_EMPTY',
-      'Inventory reservation batch must contain at least one line.',
+      `Inventory ${operation} batch must contain at least one line.`,
     );
   }
 
@@ -31,7 +48,7 @@ export function decideInventoryReservationBatch(
     if (!inventoryItemId) {
       throw new InventoryReservationError(
         'INVENTORY_ITEM_ID_INVALID',
-        'Inventory reservation line requires an inventory item ID.',
+        `Inventory ${operation} line requires an inventory item ID.`,
       );
     }
     const current = requestedByItem.get(inventoryItemId) ?? 0;
@@ -39,7 +56,7 @@ export function decideInventoryReservationBatch(
     if (!Number.isSafeInteger(aggregate)) {
       throw new InventoryReservationError(
         'INVENTORY_QUANTITY_OVERFLOW',
-        `Aggregated reservation quantity overflowed for inventory item ${inventoryItemId}.`,
+        `Aggregated ${operation} quantity overflowed for inventory item ${inventoryItemId}.`,
       );
     }
     requestedByItem.set(inventoryItemId, aggregate);
@@ -55,7 +72,7 @@ export function decideInventoryReservationBatch(
           `Inventory balance is missing for inventory item ${inventoryItemId}.`,
         );
       }
-      return { inventoryItemId, ...decideInventoryReservation(balance, quantity) };
+      return { inventoryItemId, ...decide(balance, quantity) };
     });
 
   return { items };
