@@ -168,3 +168,13 @@ Business logic changes: **NONE**. This is an operational recovery control and do
 - Backend focused regression: 12 PASS; complete Backend API: 574 PASS in 60 suites on isolated PostgreSQL. Admin: 68 PASS in 22 files; typecheck and production build PASS. OpenAPI and all schema, migration, source, security and TODO preflights PASS.
 
 Business logic changes: **NONE**.
+
+## Provider Worker runtime wiring checkpoint
+
+- Moved the already verified provider-neutral outcome, lease and batch-runner primitives into the shared database package so API and Worker use one implementation.
+- Wired the real Worker tick to the shared runtime with an explicit environment opt-in; the default is disabled.
+- An enabled runtime requires an exact domain/provider/connection handler registry. Empty, duplicate or ambiguous configuration fails before any Inbox row is claimed.
+- Lease duration, batch size, maximum attempts and retry backoff are bounded and validated. No provider acknowledgement, raw-status mapping or domain/monetary effect was introduced.
+- Database, Worker and API builds PASS. Focused runtime/runner/lease/outcome regression: 33 PASS across 4 suites. Complete Backend API: 578 PASS in 61 suites on isolated PostgreSQL; schema, migration, source, security and TODO preflights PASS. Fresh Provider worker lease DB: 30 concurrency, reclaim, exclusion, retry and rollback assertions PASS.
+
+Business logic changes: **NONE**. The registered handler list remains empty until an approved provider contract and credentials exist.

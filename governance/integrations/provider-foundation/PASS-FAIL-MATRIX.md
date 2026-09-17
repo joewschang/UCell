@@ -75,3 +75,8 @@
 | Admin regression after detail slice | PASS | 68 tests / 22 files; typecheck and production build PASS |
 | Complete Backend API after detail slice | PASS | 574 tests / 60 suites on isolated PostgreSQL |
 | OpenAPI and release preflights after detail slice | PASS | OpenAPI, schema, migration, source, security and TODO gates passed |
+| Shared Provider Worker primitives | PASS | API and Worker use the same outcome, lease and batch-runner implementation |
+| Provider Worker runtime opt-in | PASS | Disabled by default; enabled mode requires bounded config and an exact non-empty handler registry before claiming |
+| Provider Worker runtime focused regression | PASS | 33 tests / 4 suites; database, Worker and API builds PASS |
+| Complete Backend API after Worker runtime wiring | PASS | 578 tests / 61 suites on isolated PostgreSQL; all release preflights PASS |
+| Shared Worker lease PostgreSQL regression | PASS | 30 assertions on fresh 53-migration database; SKIP LOCKED, reclaim, retry and rollback verified |

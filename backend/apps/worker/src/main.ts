@@ -1,7 +1,9 @@
 import { PrismaService, Prisma, processMemberOrderNotification, processPaymentInventoryReservation, recognizeConsumption, applyGpvImmediateEffects, sealRpvEvent, pending, claimOutboxLease, withOutboxLease, processLeasedReplay, releaseFailedOutboxLease, OutboxLease, matureBonusAward } from '@ucell/database';
 import * as crypto from 'node:crypto';
+import { pollProviderWebhooks, type ProviderHandlerRegistration } from './provider-runtime';
 
 const prisma = new PrismaService();
+const providerHandlers: readonly ProviderHandlerRegistration[] = Object.freeze([]);
 
 function unlockedDepth(count:number){
   if(count<=0) return 5;
@@ -207,6 +209,7 @@ async function tick(){
   await pollOutbox();
   await pollRecognitions();
   await matureBonusAwards();
+  await pollProviderWebhooks(prisma,providerHandlers);
 }
 
 async function main(){

@@ -34,3 +34,6 @@ export * from './payment-inventory-bridge';
 export * from './recognition-active';
 export * from './gpv-immediate-effects';
 export * from './replay-pool-delta';
+export * from './provider/provider-worker-outcome-decision';
+export * from './provider/provider-webhook-worker-lease';
+export * from './provider/provider-webhook-worker-runner';
