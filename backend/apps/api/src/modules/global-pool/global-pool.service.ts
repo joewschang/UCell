@@ -5,6 +5,8 @@ import { GlobalRankCode, Prisma, PrismaService } from '@ucell/database';
 import { RuntimeRuleService } from '../rules/runtime-rule.service';
 import { BonusQueryService } from '../bonus/bonus-query.service';
 import { calculateGlobalPool, GlobalRankSliceInput } from './global-pool-calculation';
+import { randomUUID } from 'node:crypto';
+import { GlobalPoolPersistence, GlobalPoolAwardWrite } from './global-pool-persistence';
 
 const LEVELS:GlobalRankCode[]=['NEW_STAR','EXCELLENCE','GLORY','DIAMOND','CROWN'];
 
@@ -15,6 +17,7 @@ export class GlobalPoolService {
     private readonly rules:RuntimeRuleService,
     private readonly query:BonusQueryService,
     private readonly calendar:SettlementCalendarService,
+    private readonly persistence:GlobalPoolPersistence,
   ){}
 
   async weakSidePv(tx:Prisma.TransactionClient,qualificationId:string,start:Date,end:Date){
@@ -47,10 +50,9 @@ export class GlobalPoolService {
   }
 
   async evaluateAndSettle(periodStart:Date,periodEnd:Date,ruleVersionCode='R1.0B'){
-    return this.prisma.$transaction(async tx=>{
-      const existing=await tx.globalPoolSettlement.findUnique({
-        where:{periodStart_periodEnd_ruleVersionCode:{periodStart,periodEnd,ruleVersionCode}}
-      });
+    try {
+      return await this.prisma.$transaction(async tx=>{
+      const existing=await this.persistence.verifiedExisting(tx,periodStart,periodEnd,ruleVersionCode);
       if(existing) return existing;
       const parameterSnapshot=await this.calendar.captureForPeriod(tx,periodStart,periodEnd,'GLOBAL',ruleVersionCode);
 
@@ -86,15 +88,6 @@ export class GlobalPoolService {
         }
       }
 
-      const settlement=await tx.globalPoolSettlement.create({
-        data:{
-          periodStart,periodEnd,totalGpv,poolRate,poolAvailable,
-          distributedAmount:new Prisma.Decimal(0),
-          undistributedAmount:new Prisma.Decimal(0),
-          ruleVersionCode,parameterSnapshot:parameterSnapshot as unknown as Prisma.InputJsonValue
-        }
-      });
-
       const sliceInputs:GlobalRankSliceInput[]=[];
 
       for(const level of LEVELS){
@@ -116,26 +109,33 @@ export class GlobalPoolService {
       }
 
       const calculation=calculateGlobalPool(totalGpv,poolAvailable,sliceInputs);
+      const awards:GlobalPoolAwardWrite[]=[];
       for(const slice of calculation.slices){
         if(slice.amountPerRecipient===null) continue;
         for(const qid of slice.eligibleQualificationIds){
-          await tx.globalPoolAward.create({
-            data:{
-              globalPoolSettlementId:settlement.globalPoolSettlementId,
+          awards.push({
               qualificationId:qid,rankLevel:slice.level,rankPoolRate:slice.rate,
               rankPoolAmount:slice.amount,eligibleCount:slice.eligibleQualificationIds.length,
               payableAmount:slice.amountPerRecipient,weakSidePvSnapshot:weakMap.get(qid)!,
-              activeSnapshot:true
-            }
           });
         }
       }
-
-      return tx.globalPoolSettlement.update({
-        where:{globalPoolSettlementId:settlement.globalPoolSettlementId},
-        data:{distributedAmount:calculation.distributedAmount,undistributedAmount:calculation.undistributedAmount}
+      return this.persistence.persist(tx,{
+        settlementId:randomUUID(), periodStart, periodEnd, totalGpv, poolRate, poolAvailable,
+        distributedAmount:calculation.distributedAmount,
+        undistributedAmount:calculation.undistributedAmount,
+        ruleVersionCode,
+        parameterSnapshot:parameterSnapshot as unknown as Prisma.InputJsonValue,
+        awards,
       });
-    },{isolationLevel:Prisma.TransactionIsolationLevel.Serializable});
+      },{isolationLevel:Prisma.TransactionIsolationLevel.Serializable});
+    } catch (error) {
+      if ((error as {code?:string}).code === 'P2002' || (error as {code?:string}).code === 'P2034') {
+        return this.prisma.$transaction(tx=>this.persistence.verifiedExisting(tx,periodStart,periodEnd,ruleVersionCode)
+          .then(existing=>{ if (!existing) throw error; return existing; }));
+      }
+      throw error;
+    }
   }
 
   async accrueWelfare(periodStart:Date,periodEnd:Date,ruleVersionCode='R1.0B'){

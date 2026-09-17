@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
 import { SettlementCalendarService } from './settlement-calendar.service';
-@Module({providers:[SettlementCalendarService],exports:[SettlementCalendarService]})
+import { BusinessCalendarPersistenceService } from './business-calendar-persistence.service';
+@Module({providers:[SettlementCalendarService,BusinessCalendarPersistenceService],exports:[SettlementCalendarService,BusinessCalendarPersistenceService]})
 export class SettlementModule {}

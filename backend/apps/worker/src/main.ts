@@ -1,4 +1,4 @@
-import { PrismaService, Prisma, processMemberOrderNotification, processPaymentInventoryReservation, sealGpvEvent, sealRpvEvent, verifyReplayEnvelope, pending, claimOutboxLease, withOutboxLease, processLeasedReplay, releaseFailedOutboxLease, OutboxLease, matureBonusAward } from '@ucell/database';
+import { PrismaService, Prisma, processMemberOrderNotification, processPaymentInventoryReservation, recognizeConsumption, sealGpvEvent, sealRpvEvent, pending, claimOutboxLease, withOutboxLease, processLeasedReplay, releaseFailedOutboxLease, OutboxLease, matureBonusAward } from '@ucell/database';
 import * as crypto from 'node:crypto';
 
 const prisma = new PrismaService();
@@ -32,7 +32,7 @@ async function effectiveDirectCountAt(
   return Number(rows[0]?.count ?? '0');
 }
 
-export async function processSaleConfirmed(db:PrismaService,lease:OutboxLease,deps={withOutboxLease,sealGpvEvent,verifyReplayEnvelope}){
+export async function processSaleConfirmed(db:PrismaService,lease:OutboxLease,deps={withOutboxLease,sealGpvEvent}){
   const outboxEventId=lease.outboxEventId;
   return deps.withOutboxLease(db,lease,async tx=>{
     const event=await tx.outboxEvent.findUnique({where:{outboxEventId}});
@@ -43,26 +43,16 @@ export async function processSaleConfirmed(db:PrismaService,lease:OutboxLease,de
     if(!order || !['PAID','FULFILLED','PARTIAL_RETURN','RETURNED'].includes(order.status)) throw new Error(`SALE_CONFIRMED order ${payload.orderId} is not PAID`);
 
     if(!order.paidAt) pending('HISTORICAL_SNAPSHOT_MISSING','Original sale recognition timestamp is missing');
+    if(!order.parameterSnapshotHash) pending('HISTORICAL_SNAPSHOT_MISSING','Original sale Parameter snapshot hash is missing');
     for(const line of order.lines){
-      const original=await tx.pvLedger.findFirst({where:{sourceType:'ORDER',sourceId:order.orderId,sourceLineId:line.orderLineId,eventType:'GPV_CREATED',pvType:'GPV'}});
-      const ledger=await tx.pvLedger.upsert({
-        where:{
-          eventType_sourceType_sourceId_sourceLineId_pvType:{
-            eventType:'GPV_CREATED',sourceType:'ORDER',sourceId:order.orderId,
-            sourceLineId:line.orderLineId,pvType:'GPV'
-          }
-        },
-        update:{},
-        create:{
-          qualificationId:order.qualificationId,pvType:'GPV',amount:line.gpvAmountSnapshot,
-          sourceType:'ORDER',sourceId:order.orderId,sourceLineId:line.orderLineId,
-          eventType:'GPV_CREATED',ruleVersionCode:order.ruleVersionCode,
-          parameterSnapshotHash:order.parameterSnapshotHash,
-          occurredAt:order.paidAt,correlationId:event.correlationId
-        }
+      const result=await recognizeConsumption(tx,{
+        qualificationId:order.qualificationId,sourceType:'ORDER',sourceId:order.orderId,sourceLineId:line.orderLineId,
+        amount:line.gpvAmountSnapshot,eligible:line.gpvAmountSnapshot.gt(0),exclusionReasonCode:'ZERO_ELIGIBLE_AMOUNT',
+        concreteVolumeType:'GPV',productProfileVersion:String((line.ruleProfileSnapshot as any)?.profileId??'ORDER_LINE_SNAPSHOT'),
+        ruleVersionCode:order.ruleVersionCode,parameterSnapshotHash:order.parameterSnapshotHash,recognizedAt:order.paidAt,
+        activeThreshold:process.env.UCELL_ACTIVE_THRESHOLD??'1200',correlationId:event.correlationId
       });
-      if(!original) await deps.sealGpvEvent(tx,ledger);
-      else deps.verifyReplayEnvelope(await tx.historicalReplaySnapshot.findUnique({where:{kind_sourceId:{kind:'GPV',sourceId:original.eventId}}}));
+      if(result.created&&result.volume) await deps.sealGpvEvent(tx,result.volume);
     }
 
     await tx.outboxEvent.update({

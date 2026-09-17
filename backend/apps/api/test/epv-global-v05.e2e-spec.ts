@@ -1,5 +1,6 @@
 import { captureParameters, historicalMonthlyEntitlements, Prisma } from '@ucell/database';
 import { GlobalPoolService } from '../src/modules/global-pool/global-pool.service';
+import { GlobalPoolPersistence } from '../src/modules/global-pool/global-pool-persistence';
 import { epv,d } from './phase2-fixtures';
 import { execFileSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
@@ -22,21 +23,26 @@ async function globalHarness(input:{total?:string;weak?:Record<string,string>;ac
   ...['300000','600000','1000000','2000000','4000000'].map((value,i)=>['global.rank.weak_threshold',levels[i],value])]
   .map(([parameterCode,scopeKey,valueJson],i)=>({runtimeRuleParameterId:String(i),parameterCode,scopeKey,valueJson,effectiveFrom:new Date('2019-01-01'),effectiveTo:null}));
  const snapshot=await captureParameters({runtimeRuleParameter:{findMany:async()=>parameters}} as any,new Date('2020-02-01'),'TEST_ONLY');
- const qualifications=Object.keys(input.weak??{}).map(qualificationId=>({qualificationId})),ranks=new Set<string>(),awards:any[]=[],settlements:any[]=[],accruals:any[]=[];
+ const qualifications=Object.keys(input.weak??{}).map(qualificationId=>({qualificationId})),ranks=new Set<string>(),awards:any[]=[],settlements:any[]=[],reservoir:any[]=[],accruals:any[]=[];
  const tx:any={
   qualification:{findMany:jest.fn(async()=>qualifications)},
   qualificationGlobalRankHistory:{
    upsert:jest.fn(async({where,create}:any)=>{ranks.add(`${where.qualificationId_rankCode.qualificationId}:${where.qualificationId_rankCode.rankCode}`);return create;}),
    findUnique:jest.fn(async({where}:any)=>ranks.has(`${where.qualificationId_rankCode.qualificationId}:${where.qualificationId_rankCode.rankCode}`)?where.qualificationId_rankCode:null),
   },
-  globalPoolSettlement:{findUnique:jest.fn(async()=>null),create:jest.fn(async({data}:any)=>{const row={...data,globalPoolSettlementId:`settlement-${settlements.length}`};settlements.push(row);return row;}),update:jest.fn(async({data}:any)=>({...settlements.at(-1),...data}))},
+  globalPoolSettlement:{findUnique:jest.fn(async()=>null),create:jest.fn(async({data}:any)=>{const row={...data};settlements.push(row);return row;}),update:jest.fn(async({data}:any)=>({...settlements.at(-1),...data}))},
   globalPoolAward:{create:jest.fn(async({data}:any)=>{awards.push(data);return data;})},
+  reservoirLedgerEffect:{
+   create:jest.fn(async({data}:any)=>{const row={...data,createdAt:new Date()};reservoir.push(row);return row;}),
+   findUnique:jest.fn(async()=>reservoir.at(-1)??null),
+  },
+  bonusAward:{create:jest.fn()},payable:{create:jest.fn()},ledgerEntry:{create:jest.fn()},
   welfarePoolAccrual:{findUnique:jest.fn(async()=>null),create:jest.fn(async({data}:any)=>{accruals.push(data);return data;})},
  };
  const query={totalGpv:jest.fn(async()=>new Prisma.Decimal(input.total??'10000000')),isActiveAt:jest.fn(async(_tx:any,qid:string)=>input.active?.[qid]??true)};
- const service=new GlobalPoolService({$transaction:async(work:any)=>work(tx)} as any,{} as any,query as any,{captureForPeriod:async()=>snapshot} as any);
+ const service=new GlobalPoolService({$transaction:async(work:any)=>work(tx)} as any,{} as any,query as any,{captureForPeriod:async()=>snapshot} as any,new GlobalPoolPersistence());
  jest.spyOn(service,'weakSidePv').mockImplementation(async(_tx:any,qid:string)=>new Prisma.Decimal(input.weak?.[qid]??0));
- return {service,tx,snapshot,ranks,awards,settlements,accruals};
+ return {service,tx,snapshot,ranks,awards,settlements,reservoir,accruals};
 }
 describe('v0.5 EPV', () => {
   it('REPURCHASE 4800 => excess 2800 x 60% = 1680 EPV',()=>{expect(historicalMonthlyEntitlements([epv()],new Map([['order',d(4800)]])).get('order')!.toString()).toBe('1680');});
@@ -60,6 +66,9 @@ describe('v0.5 Global/Welfare', () => {
     expect(row.undistributedAmount.toString()).toBe('50');
     expect(new Prisma.Decimal(row.poolAvailable).equals(new Prisma.Decimal(row.distributedAmount).add(row.undistributedAmount))).toBe(true);
     expect(h.awards).toEqual([]);
+    expect(h.reservoir).toHaveLength(1);
+    expect(h.reservoir[0].amount.toString()).toBe('50');
+    expect(h.reservoir[0].sourceGlobalSettlementId).toBe(row.globalPoolSettlementId);
   });
-  it('welfare 2% is accrued only; no distribution without a formal rule',async()=>{const h=await globalHarness({total:'1000'});const row=await h.service.accrueWelfare(start,end,'TEST_ONLY');expect(row.poolRate.toString()).toBe('0.02');expect(row.accruedAmount.toString()).toBe('20');expect(h.awards).toEqual([]);});
+  it('welfare 2% is accrual-only and creates no member Award, Payable, or Ledger',async()=>{const h=await globalHarness({total:'1000'});const row=await h.service.accrueWelfare(start,end,'TEST_ONLY');expect(row.poolRate.toString()).toBe('0.02');expect(row.accruedAmount.toString()).toBe('20');expect(h.awards).toEqual([]);expect(h.tx.bonusAward.create).not.toHaveBeenCalled();expect(h.tx.payable.create).not.toHaveBeenCalled();expect(h.tx.ledgerEntry.create).not.toHaveBeenCalled();});
 });

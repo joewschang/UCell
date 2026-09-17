@@ -1,4 +1,4 @@
-import { Prisma, PrismaService, claimOutboxLease } from '@ucell/database';
+import { Prisma, PrismaService, captureParameters, claimOutboxLease } from '@ucell/database';
 import { IdempotencyService } from '../src/common/idempotency/idempotency.service';
 import { OutboxService } from '../src/common/outbox/outbox.service';
 import { PersonService } from '../src/modules/person/person.service';
@@ -152,7 +152,8 @@ describe('UCell first vertical slice', () => {
       await db.qualificationHolderHistory.create({data:{qualificationId:qualification.qualificationId,holderPersonId:person.personId,effectiveFrom,sourceType:'WORKER_REDELIVERY_TEST'}});
       await db.qualificationPlanHistory.create({data:{qualificationId:qualification.qualificationId,planCode:'STARTER',effectiveFrom,sourceType:'WORKER_REDELIVERY_TEST'}});
       await db.qualificationStatusHistory.create({data:{qualificationId:qualification.qualificationId,status:'EFFECTIVE',effectiveFrom,sourceType:'WORKER_REDELIVERY_TEST'}});
-      const order=await db.order.create({data:{qualificationId:qualification.qualificationId,purpose:'RETAIL',status:'PAID',grossAmount:1000,netAmount:1000,ruleVersionCode:'R1.0B',paidAt:occurredAt,lines:{create:{productId:product.productId,skuSnapshot:product.sku,productNameSnapshot:product.displayName,quantity:1,unitPrice:1000,lineAmount:1000,gpvRateSnapshot:1,gpvAmountSnapshot:1000,ruleProfileSnapshot:{testOnly:true,case:'WORKER_REDELIVERY'}}}},include:{lines:true}});
+      const parameterSnapshot=await db.$transaction(tx=>captureParameters(tx,occurredAt,'R1.0B'));
+      const order=await db.order.create({data:{qualificationId:qualification.qualificationId,purpose:'RETAIL',status:'PAID',grossAmount:1000,netAmount:1000,ruleVersionCode:'R1.0B',parameterSnapshotHash:parameterSnapshot.hash,paidAt:occurredAt,lines:{create:{productId:product.productId,skuSnapshot:product.sku,productNameSnapshot:product.displayName,quantity:1,unitPrice:1000,lineAmount:1000,gpvRateSnapshot:1,gpvAmountSnapshot:1000,ruleProfileSnapshot:{testOnly:true,case:'WORKER_REDELIVERY',parameterSnapshotHash:parameterSnapshot.hash}}}},include:{lines:true}});
       const event=await db.outboxEvent.create({data:{eventType:'SALE_CONFIRMED',aggregateType:'ORDER',aggregateId:order.orderId,correlationId:randomUUID(),payload:{eventType:'SALE_CONFIRMED',orderId:order.orderId,qualificationId:qualification.qualificationId,occurredAt:occurredAt.toISOString(),ruleVersionCode:'R1.0B'}}});
       const lease=await claimOutboxLease(db,event);expect(lease).not.toBeNull();
       await processSaleConfirmed(db,lease!);await processSaleConfirmed(db,lease!);
