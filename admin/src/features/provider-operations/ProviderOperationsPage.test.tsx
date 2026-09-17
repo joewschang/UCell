@@ -9,6 +9,7 @@ vi.mock('../auth/auth',()=>({useAuth:()=>({user:{role}})}));
 vi.mock('@ucell/design-system',async importOriginal=>({
  ...await importOriginal<typeof import('@ucell/design-system')>(),
  UCellButton:({children,...props}:any)=><button {...props}>{children}</button>,
+ DetailDrawer:({open,title,children}:any)=>open?<aside><h2>{title}</h2>{children}</aside>:null,
  ConfirmDialog:({open,title,onConfirm,children}:any)=>open?<section><h2>{title}</h2>{children}<input aria-label="操作原因" required/><button onClick={()=>onConfirm('provider incident reviewed')}>確認測試</button></section>:null,
 }));
 vi.mock('../../lib/api',async importOriginal=>({...await importOriginal<typeof import('../../lib/api')>(),get:vi.fn(),command:vi.fn()}));
@@ -18,7 +19,7 @@ const item={providerWebhookInboxId:'inbox-1',domain:'PAYMENT',provider:'ACME',co
 const backlog={data:{generatedAt:'2026-09-19T00:00:00Z',limit:50,truncated:false,items:[item]}};
 
 async function render(){
- vi.mocked(get).mockImplementation(async path=>path.endsWith('/health')?health:backlog as never);
+ vi.mocked(get).mockImplementation(async path=>path.endsWith('/health')?health:path.endsWith('/inbox-1')?{data:{...item,providerEventIdentity:'evt-1',verifiedAt:'2026-09-18T22:01:00Z',processedAt:null,leaseExpiresAt:null,signatureTimestamp:'2026-09-18T22:00:00Z',audit:[{auditEventId:'audit-1',actorType:'ADMIN',actorId:null,actorReference:'entra-subject',action:'PROVIDER_WEBHOOK_MANUAL_RETRY_REQUESTED',reasonCode:'MANUAL_RETRY',reason:'provider incident reviewed',requestId:'request',correlationId:'correlation-1',occurredAt:'2026-09-18T22:02:00Z'}],auditTruncated:false}}:backlog as never);
  const client=new QueryClient({defaultOptions:{queries:{retry:false},mutations:{retry:false}}});let tree!:ReactTestRenderer;
  await act(async()=>{tree=create(<QueryClientProvider client={client}><ProviderOperationsPage/></QueryClientProvider>);await new Promise(resolve=>setTimeout(resolve,100));});
  return tree;
@@ -31,6 +32,12 @@ it('renders safe provider fields and exposes governed retry only for super admin
  expect(output).toContain('Provider Webhook 營運');expect(output).toContain('CRITICAL');expect(output).toContain('ACME');expect(output).toContain('TEMPORARY');expect(output).toContain('人工重試');expect(output).not.toMatch(/payloadHash|verificationEvidenceHash|safeEvidenceRef|leaseOwner/);
  act(()=>tree.unmount());
  role='COMPLIANCE_AUDIT';const readOnly=await render();expect(JSON.stringify(readOnly.toJSON())).not.toContain('人工重試');act(()=>readOnly.unmount());
+});
+
+it('opens a safe operational detail drawer with audit history',async()=>{
+ const tree=await render();
+ await act(async()=>{tree.root.findAllByType('button').find(node=>node.children.includes('查看'))!.props.onClick();await new Promise(resolve=>setTimeout(resolve,100))});
+ const output=JSON.stringify(tree.toJSON());expect(output).toContain('Webhook 營運明細');expect(output).toContain('PROVIDER_WEBHOOK_MANUAL_RETRY_REQUESTED');expect(output).toContain('provider incident reviewed');expect(output).not.toMatch(/payloadHash|safeEvidenceRef|verificationEvidenceHash|leaseOwner/);act(()=>tree.unmount());
 });
 
 it('requires confirmation reason and submits the governed retry command',async()=>{

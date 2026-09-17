@@ -33,6 +33,31 @@ export class AdminProviderOperationsService {
     return {...result.value,replayed:result.replayed};
   }
 
+  async detail(id:string){
+    if(!UUID_PATTERN.test(id)) throw new BadRequestException({code:'PROVIDER_WEBHOOK_ID_INVALID'});
+    const [row,events]=await Promise.all([
+      this.prisma.providerWebhookInbox.findUnique({where:{providerWebhookInboxId:id},select:{
+        providerWebhookInboxId:true,domain:true,provider:true,connectionId:true,providerEventIdentity:true,
+        correlationId:true,status:true,attemptCount:true,lastErrorCode:true,receivedAt:true,verifiedAt:true,
+        processedAt:true,nextAttemptAt:true,leaseExpiresAt:true,signatureTimestamp:true,
+      }}),
+      this.prisma.auditEvent.findMany({where:{entityType:'ProviderWebhookInbox',entityId:id,action:{startsWith:'PROVIDER_WEBHOOK_'}},orderBy:[{occurredAt:'desc'},{auditEventId:'desc'}],take:50,select:{auditEventId:true,actorType:true,actorId:true,action:true,reasonCode:true,requestId:true,correlationId:true,occurredAt:true,afterData:true}}),
+    ]);
+    if(!row) throw new NotFoundException({code:'PROVIDER_WEBHOOK_NOT_FOUND'});
+    return {
+      ...row,
+      receivedAt:row.receivedAt.toISOString(),verifiedAt:row.verifiedAt?.toISOString()??null,
+      processedAt:row.processedAt?.toISOString()??null,nextAttemptAt:row.nextAttemptAt?.toISOString()??null,
+      leaseExpiresAt:row.leaseExpiresAt?.toISOString()??null,signatureTimestamp:row.signatureTimestamp?.toISOString()??null,
+      audit:events.map(event=>({
+        auditEventId:event.auditEventId,actorType:event.actorType,actorId:event.actorId,action:event.action,
+        reasonCode:event.reasonCode,requestId:event.requestId,correlationId:event.correlationId,
+        occurredAt:event.occurredAt.toISOString(),reason:jsonString(event.afterData,'reason'),actorReference:jsonString(event.afterData,'actorReference'),
+      })),
+      auditTruncated:events.length===50,
+    };
+  }
+
   async health(now=new Date()){
     const dueWhere={OR:[{status:'RECEIVED' as const},{status:'VERIFIED' as const},{status:'RETRY_PENDING' as const,nextAttemptAt:{lte:now}}]};
     const [total,byStatus,byDomain,byProvider,dueBacklog,expiredLeases,manualReview,oldestDue]=await Promise.all([
@@ -85,4 +110,10 @@ export class AdminProviderOperationsService {
 function parseEnum<T extends readonly string[]>(value:string,values:T,code:string):T[number]{
   if(!(values as readonly string[]).includes(value)) throw new BadRequestException(code);
   return value as T[number];
+}
+
+function jsonString(value:unknown,key:string):string|null{
+  if(!value||typeof value!=='object'||Array.isArray(value))return null;
+  const candidate=(value as Record<string,unknown>)[key];
+  return typeof candidate==='string'?candidate:null;
 }

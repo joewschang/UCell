@@ -27,6 +27,16 @@ export class AdminProviderOperationsController {
     return this.service.backlog({domain,provider,status,take:take===undefined?undefined:Number(take)}).then(data=>({data}));
   }
 
+  @Get(':id')
+  @ApiParam({name:'id',format:'uuid'})
+  @ApiOperation({operationId:'adminProviderWebhookDetail',summary:'Safe Provider Inbox detail and bounded append-only audit history'})
+  @ApiResponse({status:200,description:'Safe operational detail; excludes payload, hashes, evidence references and lease owner'})
+  @ApiResponse({status:400,description:'Invalid webhook id'})
+  @ApiResponse({status:401,description:'Admin authentication required'})
+  @ApiResponse({status:403,description:'Operational or compliance role required'})
+  @ApiResponse({status:404,description:'Webhook Inbox row not found'})
+  detail(@Param('id') id:string){return this.service.detail(id).then(data=>({data}));}
+
   @Post(':id/retry')
   @HttpCode(200)
   @Roles('SUPER_ADMIN')

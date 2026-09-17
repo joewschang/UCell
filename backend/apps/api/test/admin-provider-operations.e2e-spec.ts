@@ -34,11 +34,21 @@ describe('Admin provider webhook operations read model',()=>{
   });
 
   it('keeps both endpoints wrapped in the admin API data envelope',async()=>{
-    const service={health:jest.fn().mockResolvedValue({state:'HEALTHY'}),backlog:jest.fn().mockResolvedValue({items:[]})};
+    const service={health:jest.fn().mockResolvedValue({state:'HEALTHY'}),backlog:jest.fn().mockResolvedValue({items:[]}),detail:jest.fn().mockResolvedValue({status:'MANUAL_REVIEW'})};
     const controller=new AdminProviderOperationsController(service as never);
     await expect(controller.health()).resolves.toEqual({data:{state:'HEALTHY'}});
     await expect(controller.backlog(undefined,undefined,undefined,'25')).resolves.toEqual({data:{items:[]}});
+    await expect(controller.detail('00000000-0000-4000-8000-000000000001')).resolves.toEqual({data:{status:'MANUAL_REVIEW'}});
     expect(service.backlog).toHaveBeenCalledWith({domain:undefined,provider:undefined,status:undefined,take:25});
+  });
+
+  it('returns safe detail with bounded audit history and no stored secrets or evidence hashes',async()=>{
+    const providerWebhookInbox={findUnique:jest.fn(async()=>({providerWebhookInboxId:'00000000-0000-4000-8000-000000000001',domain:'PAYMENT',provider:'ACME',connectionId:'primary',providerEventIdentity:'evt-safe',correlationId:'00000000-0000-4000-8000-000000000002',status:'MANUAL_REVIEW',attemptCount:3,lastErrorCode:'PERMANENT_FAILURE',receivedAt:now,verifiedAt:now,processedAt:null,nextAttemptAt:null,leaseExpiresAt:null,signatureTimestamp:now}))};
+    const auditEvent={findMany:jest.fn(async()=>[{auditEventId:'audit',actorType:'ADMIN',actorId:null,action:'PROVIDER_WEBHOOK_MANUAL_RETRY_REQUESTED',reasonCode:'MANUAL_RETRY',requestId:'request',correlationId:'00000000-0000-4000-8000-000000000002',occurredAt:now,afterData:{reason:'reviewed evidence',actorReference:'entra-subject',payloadHash:'must-not-leak'}}])};
+    const result=await new AdminProviderOperationsService({providerWebhookInbox,auditEvent} as unknown as PrismaService,{} as never,{} as never).detail('00000000-0000-4000-8000-000000000001');
+    expect(result).toMatchObject({status:'MANUAL_REVIEW',audit:[{reason:'reviewed evidence',actorReference:'entra-subject'}],auditTruncated:false});
+    const serialized=JSON.stringify(result);expect(serialized).not.toMatch(/payloadHash|safeEvidenceRef|verificationEvidenceHash|leaseOwner/);
+    expect(auditEvent.findMany).toHaveBeenCalledWith(expect.objectContaining({take:50,where:expect.objectContaining({action:{startsWith:'PROVIDER_WEBHOOK_'}})}));
   });
 
   it('allows only operational and audit admin roles',()=>{

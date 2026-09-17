@@ -5014,6 +5014,48 @@
         ]
       }
     },
+    "/api/v1/admin/provider-operations/webhooks/{id}": {
+      "get": {
+        "operationId": "adminProviderWebhookDetail",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Safe operational detail; excludes payload, hashes, evidence references and lease owner"
+          },
+          "400": {
+            "description": "Invalid webhook id"
+          },
+          "401": {
+            "description": "Admin authentication required"
+          },
+          "403": {
+            "description": "Operational or compliance role required"
+          },
+          "404": {
+            "description": "Webhook Inbox row not found"
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "Safe Provider Inbox detail and bounded append-only audit history",
+        "tags": [
+          "Admin - Provider Operations"
+        ]
+      }
+    },
     "/api/v1/admin/provider-operations/webhooks/{id}/retry": {
       "post": {
         "operationId": "adminRetryProviderWebhook",

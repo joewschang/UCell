@@ -70,3 +70,8 @@
 | Complete Backend API after manual retry | PASS | 573 tests / 60 suites on isolated PostgreSQL |
 | Admin regression after manual retry | PASS | 67 tests / 22 files; typecheck and production build PASS |
 | Fresh DB Golden after manual retry | PASS | All 53 migrations and deterministic DB assertions completed in an isolated database |
+| Safe Provider Inbox detail API | PASS | Bounded append-only audit read-back; payload, signatures, hashes, evidence references and lease owner excluded |
+| Admin Provider detail drawer | PASS | Connected read-only lifecycle/audit view with shared Loading/Error/Empty states |
+| Admin regression after detail slice | PASS | 68 tests / 22 files; typecheck and production build PASS |
+| Complete Backend API after detail slice | PASS | 574 tests / 60 suites on isolated PostgreSQL |
+| OpenAPI and release preflights after detail slice | PASS | OpenAPI, schema, migration, source, security and TODO gates passed |

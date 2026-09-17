@@ -158,3 +158,13 @@ Business logic changes: **NONE**.
 - Fresh isolated DB Golden deployed all 53 workspace migrations and passed deterministic fixtures, timezone, concurrency, return/outbox, membership, RPV, placement, checkout, Member/Admin integration, identity and replay-pool assertions.
 
 Business logic changes: **NONE**. This is an operational recovery control and does not interpret provider status or write domain/monetary results.
+
+## Safe Provider Inbox detail checkpoint
+
+- Added an RBAC-protected read model for one Provider Inbox item with a bounded 50-event append-only operational audit history.
+- The response exposes lifecycle, provider/connection identity, timestamps, correlation, retry count and sanitized actor/reason evidence only.
+- Raw callback payload, signature, payload/verification hashes, safe evidence references and worker lease-owner identity remain excluded.
+- Added a connected Admin Detail Drawer with shared Loading, Error and Empty states; the view is read-only and does not infer provider status.
+- Backend focused regression: 12 PASS; complete Backend API: 574 PASS in 60 suites on isolated PostgreSQL. Admin: 68 PASS in 22 files; typecheck and production build PASS. OpenAPI and all schema, migration, source, security and TODO preflights PASS.
+
+Business logic changes: **NONE**.
