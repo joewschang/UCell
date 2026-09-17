@@ -1,92 +1,24 @@
 {
-  "recordVersion": 2,
-  "recordedOn": "2026-09-16",
-  "authority": "Product Owner explicitly instructed SA to execute the proposed rule/core-logic updates; these rulings extend R1.0B FROZEN where prior SSOT was silent and do not supersede higher-authority filed/formally-approved documents.",
+  "recordVersion": 3,
+  "recordedOn": "2026-09-17",
+  "authority": "Product Owner explicitly instructed SA to execute the approved R1.0B rule/core-logic clarifications. These rulings extend R1.0B FROZEN where prior SSOT was silent and do not supersede higher-authority filed/formally-approved documents.",
   "baseline": "R1.0B FROZEN",
-  "ssotPrecedence": [
-    "Filed documents",
-    "Formally approved company documents",
-    "R1.0/R1.0B system specifications",
-    "Approved SA Decision Register",
-    "Discussion/posters/legacy tests"
-  ],
+  "ssotPrecedence": ["Filed documents","Formally approved company documents","R1.0/R1.0B system specifications","Approved SA Decision Register","Discussion/posters/legacy tests"],
   "decisions": [
-    {
-      "id": "SA-20260915-01",
-      "subject": "Return/Settlement Replay",
-      "ruling": "Append-only reversal/clawback; do not overwrite historical Ledger or PAID. Reverse recognized volume/economic events and deterministically replay affected settlement and K0/K1/K2 downstream dependencies using historically effective snapshots. Re-derive carry from replayed effective volume; never reset it mechanically."
-    },
-    {
-      "id": "SA-20260915-02",
-      "subject": "EPV monthly threshold",
-      "ruling": "Qualification + calendar month cumulative eligible personal consumption; max(0, consumption - NT$2000) * 60%. 4800 => 1680. Returns recompute that month's cumulative threshold; never subtract return amount * 60% mechanically."
-    },
-    {
-      "id": "SA-20260915-03",
-      "subject": "Settlement cut-off architecture",
-      "ruling": "Use versioned period/cut-off/timezone/effective_from/effective_to configuration and settlement-time snapshots. No hardcoded weekday/time. Asia/Taipei is the approved timezone baseline; exact production cut-off values remain configuration pending until Product Owner approval."
-    },
-    {
-      "id": "SA-20260915-04",
-      "subject": "SSOT / legacy drift",
-      "ruling": "Filed documents > formally approved company documents > R1.0/R1.0B system specifications > approved SA decisions > discussion/posters/legacy. Formal pools 42/36/15/5/2 and EPV 4800 => 1680. Conflicting legacy tests/fixtures are Legacy Test Drift; do not alter formal rules to satisfy them."
-    },
-    {
-      "id": "SA-20260916-05",
-      "subject": "Eligible Consumption Recognition",
-      "ruling": "Eligibility is determined by a versioned ConsumptionRecognitionEvent, not by Order existence alone. Only paid/confirmed, non-gift, non-replacement, non-company-subsidy personal-consumption lines explicitly eligible under the effective rule may enter the monthly eligible-consumption accumulator. Gifts, free replacements, company compensation/subsidy and zero-consideration fulfillment do not generate eligible consumption. Points-only redemption does not create new eligible consumption; mixed points+cash recognizes only the authoritative eligible cash consideration unless a later formally approved rule explicitly provides otherwise. Tax, freight and payment fees are excluded unless a formally approved rule explicitly includes them. Return POSTED reverses the original recognition event in its historical recognition period and triggers replay."
-    },
-    {
-      "id": "SA-20260916-06",
-      "subject": "PV/BV/RPV/EPV Event Mapping",
-      "ruling": "Order, payment, consumption recognition and volume recognition are separate domain events. OrderCreated creates no official PV/BV/RPV/EPV. PaymentConfirmed alone creates no volume. Sale/ConsumptionRecognition under the effective ProductProfile/RuleVersion emits immutable VolumeRecognition events scoped to Qualification, source line, recognition time/period and parameter snapshot. PV and BV remain independent fields/values even when configured equal; no hardcoded PV=BV equivalence. Existing GPV/RPV/EPV historical facts must not be renamed or migrated by inference. Return POSTED emits linked reversal events and replay; it never edits original recognition rows. Exact legacy GPV-to-PV/BV migration mapping remains fail-closed until evidence supports a deterministic mapping."
-    },
-    {
-      "id": "SA-20260916-07",
-      "subject": "Operational Calendar Model",
-      "ruling": "All production schedules are represented by an immutable/versioned OperationalCalendarVersion containing timezone, period definition, recognition cut-off, settlement cut-off/schedule, effective window and approval reference. Asia/Taipei is the timezone baseline. No service may hardcode weekday/hour/month-end policy. Exact weekly/monthly production cut-off clock values remain Product Owner configuration pending; affected production posting stays fail-closed until approved."
-    },
-    {
-      "id": "SA-20260916-08",
-      "subject": "Binary inactive evidence",
-      "ruling": "An ineligible/inactive Binary recipient must leave deterministic calculation evidence with zero entitlement and reason code; absence of an Award row alone is not sufficient audit evidence. Zero evidence is calculation/eligibility evidence and must not create a payable or monetary Ledger credit. Historical replay uses the historical Active snapshot."
-    },
-    {
-      "id": "SA-20260916-09",
-      "subject": "Matching/Equalization sponsor traversal",
-      "ruling": "Matching/Equalization recipient traversal follows the historical Sponsor Tree of the earning period, never the Binary Tree and never current Sponsor state. Recipient identity is Qualification-scoped; another Qualification owned by the same Person cannot substitute. Historical Active/eligibility snapshots govern recipient eligibility. Existing formally specified skip/stop depth semantics remain authoritative; where a depth-specific skip/stop rule is absent, the engine must fail closed rather than invent compression."
-    },
-    {
-      "id": "SA-20260916-10",
-      "subject": "Carry lifecycle",
-      "ruling": "Carry belongs to Qualification/Binary position, not Person. CarryOut = replayed effective CarryIn + eligible side volume - consumed/matched volume plus/minus linked historical adjustments according to the effective Binary rule. Suspend does not erase carry. Reactivation resumes the preserved/replayed carry. Transfer of Person ownership does not move carry to another Qualification. Permanent termination/expiry may clear carry only when an explicit effective RuleVersion authorizes it. Historical reversal must replay forward until carry converges; maxWeeks is a safety guard, not a business truncation rule."
-    },
-    {
-      "id": "SA-20260916-11",
-      "subject": "45D lifecycle anchor",
-      "ruling": "The holding period is anchored to the authoritative settlement period end/cut-off policy captured by the applicable OperationalCalendarVersion, not to when a delayed calculation job happens to finish. pendingUntil is persisted as historical evidence. Recalculation/replay must not move the original anchor merely because execution occurred later. During hold, adjustments are append-only entitlement deltas; after PAID, negative deltas become recovery/clawback/offset and never overwrite the original paid Award."
-    },
-    {
-      "id": "SA-20260916-12",
-      "subject": "Return state and economic recognition",
-      "ruling": "Return workflow is REQUESTED -> APPROVED -> RECEIVED -> POSTED -> REFUNDED (or equivalent states preserving these semantics). REQUESTED/APPROVED/RECEIVED do not reverse official volume. POSTED is the authoritative economic/volume reversal event and triggers linked historical replay. REFUNDED records payment refund completion and may occur after POSTED; payment refund and volume reversal are separate idempotent events. Multiple returns are bounded by remaining reversible quantity/value and each return has a unique idempotency key."
-    }
+    {"id":"SA-20260915-01","subject":"Return/Settlement Replay","ruling":"Append-only reversal/clawback; do not overwrite historical Ledger or PAID. Reverse recognized volume/economic events and deterministically replay affected settlement and K0/K1/K2 downstream dependencies using historically effective snapshots. Re-derive carry from replayed effective volume; never reset it mechanically."},
+    {"id":"SA-20260915-02","subject":"EPV monthly threshold","ruling":"Qualification + calendar month cumulative eligible personal consumption; max(0, consumption - NT$2000) * 60%. 4800 => 1680. Returns recompute that month's cumulative threshold; never subtract return amount * 60% mechanically."},
+    {"id":"SA-20260915-04","subject":"SSOT / legacy drift","ruling":"Filed documents > formally approved company documents > R1.0/R1.0B system specifications > approved SA decisions > discussion/posters/legacy. Formal pools 42/36/15/5/2 and EPV 4800 => 1680. Conflicting legacy tests/fixtures are Legacy Test Drift; do not alter formal rules to satisfy them."},
+    {"id":"SA-20260916-05","subject":"Eligible Consumption Recognition","ruling":"Eligibility is determined by a versioned ConsumptionRecognitionEvent, not by Order existence alone. Only paid/confirmed, non-gift, non-replacement, non-company-subsidy personal-consumption lines explicitly eligible under the effective rule may enter the monthly eligible-consumption accumulator. Gifts, free replacements, company compensation/subsidy and zero-consideration fulfillment do not generate eligible consumption. Points-only redemption does not create new eligible consumption; mixed points+cash recognizes only authoritative eligible cash consideration unless a later formally approved rule provides otherwise. Tax, freight and payment fees are excluded unless formally approved. Return POSTED reverses the original recognition event in its historical recognition period and triggers replay."},
+    {"id":"SA-20260916-08","subject":"Binary inactive evidence","ruling":"An ineligible/inactive Binary recipient must leave deterministic calculation evidence with zero entitlement and reason code; absence of an Award row alone is not sufficient audit evidence. Zero evidence must not create payable or monetary Ledger credit. Historical replay uses the historical Active snapshot."},
+    {"id":"SA-20260916-10","subject":"Carry lifecycle","ruling":"Carry belongs to Qualification/Binary position, not Person. Suspend does not erase carry. Reactivation resumes preserved/replayed carry. Holder transfer does not move carry to another Qualification. Historical reversal replays forward until carry converges; maxWeeks is an engineering safety guard, not a business truncation rule."},
+    {"id":"SA-20260916-12","subject":"Return state and economic recognition","ruling":"Return workflow is REQUESTED -> APPROVED -> RECEIVED -> POSTED -> REFUNDED (or equivalent states preserving these semantics). REQUESTED/APPROVED/RECEIVED do not reverse official volume. POSTED is the authoritative economic/volume reversal event and triggers linked historical replay. REFUNDED records payment refund completion separately. Multiple returns are bounded by remaining reversible quantity/value and each return has a unique idempotency key."},
+    {"id":"SA-20260917-13","subject":"PV/BV abstract volume classes","ruling":"PV and BV are abstract Volume Classes/Concepts. Under R1.0B, GPV, RPV and EPV are the concrete PV-class business volume types used by active economic rules. BV is a reserved abstract Business Volume class and has no active R1.0B bonus-calculation formula. Abstract PV/BV must not independently create monetary entitlement. Historical GPV remains GPV and requires no economic migration or duplicate PV/BV recognition; semantic classification is non-monetary. This supersedes only the prior wording that treated PV/BV as independent concrete bonus-bearing values/fields."},
+    {"id":"SA-20260917-14","subject":"Operational calendar and settlement cadence","ruling":"Timezone is Asia/Taipei. GPV recognition immediately calculates Referral Theory and Referral Matching Theory and immediately propagates eligible GPV to historical Binary ancestors' left/right ledgers. Binary weekly settlement runs every Sunday 00:00 Asia/Taipei using half-open weekly boundaries [previous Sunday 00:00, current Sunday 00:00). RPV and EPV recognition/calculation occur immediately when their authoritative recognition events occur. Award settlement batches close on the 10th and 25th of every calendar month. Theory may be calculated earlier, but final pool/K materialization occurs at the applicable settlement batch."},
+    {"id":"SA-20260917-15","subject":"Payout calendar replacing literal 45x24h arithmetic","ruling":"The business meaning of the 45-day award hold is implemented by fixed payout batches, not literal settlement timestamp + 45*24 hours. Awards in the 10th settlement batch have nominal payout on the 25th of the following month. Awards in the 25th settlement batch have nominal payout on the 10th of the month after next. If the nominal payout date is not a business day, payout moves to the next business day according to the effective BusinessCalendarVersion. The system persists settlement date, nominal payout date, adjusted payout date and calendar version. Historical replay must preserve the original authoritative payout-calendar anchor unless the underlying settlement classification itself changes."},
+    {"id":"SA-20260917-16","subject":"Qualification-scoped Active effective interval","ruling":"Active is independently determined per Qualification/Ball and calendar month. When that Qualification's cumulative eligible monthly consumption first reaches NT$2,000, it becomes Active immediately at the authoritative recognition timestamp and remains Active through the end of that same calendar month in Asia/Taipei. Active is not retroactive: awards/events before the threshold timestamp remain Inactive and are not backfilled. At the start of the next calendar month the Qualification is Inactive until that month's threshold is reached. The threshold-crossing ConsumptionRecognition is processed before award eligibility derived from that same transaction, so the threshold-crossing transaction may use the newly created Active snapshot for its own eligible downstream awards. Returns POSTED replay the original month and may revise historical Active intervals and downstream entitlement."},
+    {"id":"SA-20260917-17","subject":"Multiple Qualifications per Person","ruling":"A Person may own multiple Qualifications/Balls. Each Qualification is an independent economic and organizational calculation scope for Active, GPV/RPV/EPV, Sponsor/Binary position, Carry, Bonus, Global eligibility, Ledger and Settlement. Active, volume, Carry or eligibility of one Qualification must never be borrowed by another Qualification. Ownership cardinality is explicit system functionality, not an inference from a single-ball model."},
+    {"id":"SA-20260917-18","subject":"Global Pool undistributed balance","ruling":"Global Pool is 5% under the effective R1.0B pool rules. After calculating eligible recipients/rights, any Global Pool amount not distributed for the period flows to Reservoir A. It is not redistributed to other recipients and does not alter their established rights. The transfer to Reservoir A must be append-only, source-period linked, idempotent and independently auditable."},
+    {"id":"SA-20260917-19","subject":"Matching inactive/invalid generation semantics","ruling":"Referral Matching and Binary Matching traverse fixed historical Sponsor generations. If an intermediate recipient is Inactive or otherwise fails the applicable unlock/eligibility rule, that fixed generation receives zero; traversal continues to the next specified historical generation. There is no stop, no compression, no substitution and no redistribution/backfill to another recipient. Historical Active/eligibility and Qualification evidence remain authoritative."}
   ],
-  "pendingDecisions": [
-    {
-      "id": "CP-SETTLEMENT-CALENDAR-VALUES",
-      "subject": "Exact production weekly/monthly recognition and settlement cut-off clock values",
-      "reason": "Architecture/timezone are approved, but exact operational weekday/time/month-end values require Product Owner operational approval before production posting."
-    },
-    {
-      "id": "PD-LEGACY-GPV-PVBV-MIGRATION",
-      "subject": "Deterministic mapping of pre-existing GPV historical facts to formal PV/BV event fields",
-      "reason": "New event semantics are approved prospectively. Existing GPV/RPV/EPV historical facts must not be reclassified without evidence and reconciliation."
-    },
-    {
-      "id": "PD-MATCHING-DEPTH-EDGE",
-      "subject": "Any sponsor-depth-specific skip/stop/compression edge case not already stated in higher-authority R1.0B rules",
-      "reason": "Sponsor Tree and historical eligibility are approved; unspecified compression/termination behavior remains fail-closed rather than inferred."
-    }
-  ]
+  "pendingDecisions": []
 }
