@@ -1,6 +1,7 @@
 import { execFileSync } from 'node:child_process';
 import { QualificationWorkflowService } from '../src/modules/qualification/qualification-workflow.service';
 import { readFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { resolve } from 'node:path';
 import { periodBinary, periodMatching, appendEntitlementDelta, verifyReplayEnvelope } from '@ucell/database';
 import { binary, d, recipient, sealed } from './phase2-fixtures';
@@ -72,8 +73,9 @@ describe('v0.6.1 subscription cancellation',()=>{
  let assertions:Array<{label:string;actual:unknown}>;
  beforeAll(()=>{
   const root=resolve(__dirname,'../../../..');
-  execFileSync(process.execPath,[resolve(root,'backend/scripts/phase2-db-test.mjs')],{cwd:root,env:{...process.env,DATABASE_URL:process.env.PHASE2_TEST_DATABASE_URL??'postgresql://ucell:ucell_dev@localhost:5432/ucell_admin_test?schema=public'},timeout:30000});
-  assertions=JSON.parse(readFileSync(resolve(root,'governance/phase2-return-replay/final/db-regression.json'),'utf8')).results;
+  const evidencePath=resolve(tmpdir(),`ucell-phase2-replay-${process.pid}.json`);
+  execFileSync(process.execPath,[resolve(root,'backend/scripts/phase2-db-test.mjs')],{cwd:root,env:{...process.env,DATABASE_URL:process.env.PHASE2_TEST_DATABASE_URL??'postgresql://ucell:ucell_dev@localhost:5432/ucell_admin_test?schema=public',PHASE2_DB_EVIDENCE_PATH:evidencePath},timeout:30000});
+  assertions=JSON.parse(readFileSync(evidencePath,'utf8')).results;
  },30000);
  const actual=(label:string)=>{const result=assertions.find(item=>item.label===label);expect(result).toBeDefined();return result!.actual;};
  it('future scheduled rows become CANCELLED',()=>{expect(actual('subscription future rows cancelled')).toBe('CANCELLED');});

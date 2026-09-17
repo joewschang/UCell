@@ -1259,6 +1259,8 @@ model ProviderWebhookInbox {
   verifiedAt                  DateTime?                  @map("verified_at") @db.Timestamptz(6)
   processedAt                 DateTime?                  @map("processed_at") @db.Timestamptz(6)
   nextAttemptAt               DateTime?                  @map("next_attempt_at") @db.Timestamptz(6)
+  leaseOwner                  String?                    @map("lease_owner")
+  leaseExpiresAt              DateTime?                  @map("lease_expires_at") @db.Timestamptz(6)
   correlationId               String                     @map("correlation_id") @db.Uuid
   providerConnectionVersionId String?                    @map("provider_connection_version_id") @db.Uuid
   providerConnectionVersion   ProviderConnectionVersion? @relation(fields: [providerConnectionVersionId], references: [providerConnectionVersionId])
@@ -1266,6 +1268,7 @@ model ProviderWebhookInbox {
   @@unique([domain, provider, connectionId, ingressKey])
   @@unique([domain, provider, connectionId, providerEventIdentity])
   @@index([status, nextAttemptAt, receivedAt])
+  @@index([status, leaseExpiresAt, nextAttemptAt, receivedAt])
   @@index([correlationId])
   @@map("provider_webhook_inbox")
   @@schema("commerce")

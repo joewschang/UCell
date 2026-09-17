@@ -47,3 +47,11 @@
 | Provider Connection identity integrity | PASS | Webhook/Reconciliation/version binding and reverse drift protection; 11 DB assertions |
 | Complete Backend API after provider identity slice | PASS | 509 tests / 53 suites |
 | Fresh migration/DB Golden after provider identity slice | PASS | All 51 workspace migrations deployed and deterministic DB Golden completed |
+| Webhook worker atomic claim | PASS | `FOR UPDATE SKIP LOCKED` claims VERIFIED, due retry and expired PROCESSING rows |
+| Webhook worker lease ownership | PASS | Owner, attempt and unexpired DB-clock CAS prevent stale/foreign finalization |
+| Worker retry/manual-review outcome | PASS | Explicit configured retry; permanent, exhausted and unknown outcomes fail closed to MANUAL_REVIEW |
+| Worker crash recovery PostgreSQL assertions | PASS | 30 assertions cover concurrency, reclaim, retry, stale owner, rollback and terminal outcomes |
+| Focused worker/lifecycle regression | PASS | 57 tests / 3 suites |
+| Complete Backend API after worker lease slice | PASS | 550 tests / 57 suites |
+| Fresh DB Golden after worker lease migration | PASS | All 52 workspace migrations and deterministic DB assertions completed |
+| Provider acknowledgement/status/domain-effect adapters | BLOCKED | Provider-specific contracts and credentials remain OPERATIONAL_CREDENTIAL_PENDING |

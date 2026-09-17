@@ -1,12 +1,13 @@
-import {execFileSync} from 'node:child_process';import {readFileSync} from 'node:fs';import {resolve} from 'node:path';
+import {execFileSync} from 'node:child_process';import {readFileSync} from 'node:fs';import {tmpdir} from 'node:os';import {resolve} from 'node:path';
 import { Prisma } from '@ucell/database';
 import { UnifiedPayableService } from '../src/modules/payout/unified-payable.service';
 import { AdminOperationsService } from '../src/modules/admin-operations/admin-operations.service';
 let evidence:any[];
 beforeAll(()=>{
  const root=resolve(__dirname,'../../../..');
- execFileSync(process.execPath,[resolve(root,'backend/scripts/phase2-db-test.mjs')],{cwd:root,env:{...process.env,DATABASE_URL:process.env.PHASE2_TEST_DATABASE_URL??'postgresql://ucell:ucell_dev@localhost:5432/ucell_admin_test?schema=public'},timeout:30000});
- const run=JSON.parse(readFileSync(resolve(root,'governance/phase2-return-replay/final/db-regression.json'),'utf8'));expect(run.result).toBe('PASS');evidence=run.results;
+ const evidencePath=resolve(tmpdir(),`ucell-phase2-negative-${process.pid}.json`);
+ execFileSync(process.execPath,[resolve(root,'backend/scripts/phase2-db-test.mjs')],{cwd:root,env:{...process.env,DATABASE_URL:process.env.PHASE2_TEST_DATABASE_URL??'postgresql://ucell:ucell_dev@localhost:5432/ucell_admin_test?schema=public',PHASE2_DB_EVIDENCE_PATH:evidencePath},timeout:30000});
+ const run=JSON.parse(readFileSync(evidencePath,'utf8'));expect(run.result).toBe('PASS');evidence=run.results;
 },30000);
 function assertion(label:string){const row=evidence.find(r=>r.label===label);expect(row).toBeDefined();expect(row.result).toBe('PASS');expect(row.actual).toEqual(row.expected);return row.actual;}
 describe('v0.5 Return / Reversal / Clawback', () => {

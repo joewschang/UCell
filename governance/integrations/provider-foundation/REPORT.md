@@ -108,3 +108,17 @@ All external credentials remain `OPERATIONAL_CREDENTIAL_PENDING`. Provider-neutr
 - Added migrations `20260919013000_provider_webhook_inbox_lifecycle` and `20260919020000_provider_ingress_connection_identity`.
 - Provider identity DB: 11 PASS. Focused state/persistence/reconciliation tests: 52 PASS. Complete Backend API: 509 PASS in 53 suites.
 - Fresh isolated database deployed all 51 workspace migrations; DB Golden, builds and existing release preflights PASS.
+
+## Recoverable webhook worker lease checkpoint
+
+- Added atomic `FOR UPDATE SKIP LOCKED` claiming for verified, due retry, and expired processing Inbox rows.
+- Added paired lease owner/expiry evidence, attempt counters and database-clock compare-and-set finalization so a stale or foreign worker cannot commit an outcome.
+- Successful work becomes `PROCESSED`; configured retryable failures become `RETRY_PENDING`; permanent, exhausted, or unknown outcomes become `MANUAL_REVIEW`.
+- Lease recovery is deterministic after worker failure and finalization clears the lease without changing verification or provider identity evidence.
+- Added provider-neutral outcome decisions only. Provider acknowledgement contracts, raw status mapping and domain or monetary side effects remain unimplemented until approved adapter contracts exist.
+- Migration `20260919023000_provider_webhook_worker_lease` applied to the local Connected DEV database; fresh isolated databases deploy all 52 workspace migrations.
+- Focused worker/lifecycle regression: 57 PASS across 3 suites. Worker PostgreSQL assertions: 30 PASS.
+- Complete Backend API: 550 PASS in 57 suites. Isolated DB Golden: PASS with all 52 migrations.
+- Corrected Windows/Jest test isolation: provider DB tests accept generated `ucell_jest_*` databases, and Phase 2 suites write separate evidence files instead of racing on one shared file.
+
+Business logic changes: **NONE**. No provider policy, acknowledgement, mapping, monetary result or R1.0B rule was inferred.

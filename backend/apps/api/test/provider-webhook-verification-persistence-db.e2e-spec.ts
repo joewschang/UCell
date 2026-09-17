@@ -7,10 +7,12 @@ import type { ProviderWebhookVerificationEvidence } from '../src/modules/commerc
 
 const testDatabaseUrl = process.env.PROVIDER_WEBHOOK_VERIFICATION_TEST_DATABASE_URL
   ?? process.env.PHASE2_TEST_DATABASE_URL
+  ?? process.env.DATABASE_URL
   ?? 'postgresql://ucell:ucell_dev@localhost:5432/ucell_admin_test?schema=public';
 const parsedTestDatabaseUrl = new URL(testDatabaseUrl);
+const testDatabaseName = parsedTestDatabaseUrl.pathname.slice(1);
 if (!['localhost', '127.0.0.1'].includes(parsedTestDatabaseUrl.hostname)
-  || !parsedTestDatabaseUrl.pathname.slice(1).endsWith('_test')) {
+  || !(testDatabaseName.endsWith('_test') || /^ucell_jest_[a-f0-9]{32}$/.test(testDatabaseName))) {
   throw new Error('PROVIDER_WEBHOOK_VERIFICATION_TEST_DATABASE_REQUIRED');
 }
 process.env.DATABASE_URL = testDatabaseUrl;
