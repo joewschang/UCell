@@ -21,3 +21,12 @@
 | Invoice operation decision regression | PASS | 13 focused tests across foundation slices |
 | Complete Backend API after Invoice schema | PASS | 395 tests / 45 suites |
 | Fresh DB Golden after Invoice migration | PASS | All 45 migrations deployed |
+| Fulfillment/Parcel/QC persistence | PASS | Immutable snapshot references and append-only QC evidence |
+| Shipment tracking/transition/claim schema | PASS | Append-only evidence, provider version binding and transactional Outbox linkage |
+| Shipment operation decision regression | PASS | Provider/QC/idempotency/callback/status guards; 21 focused provider/shipment tests |
+| Complete Backend API after Shipment schema | PASS | 407 tests / 46 suites |
+| Backend/Admin DEV/database builds | PASS | TypeScript compilation completed after Prisma generation |
+| Schema/migration/source/security/OpenAPI/TODO gates | PASS | Existing release validations accepted the shipment slice |
+| Fresh DB Golden after Shipment migration | PASS | All 46 migrations deployed with deterministic existing assertions |
+| Inventory deduction and split-shipment policy | BLOCKED | Operational decision pending; implementation remains fail closed |
+| Provider status mapping and live logistics UAT | BLOCKED | Provider mapping approval and credentials pending |

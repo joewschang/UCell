@@ -65,3 +65,14 @@ All external credentials remain `OPERATIONAL_CREDENTIAL_PENDING`. Provider-neutr
 - Focused tests: 13 PASS. Complete Backend API: 395 PASS in 45 suites.
 - Schema, migration and source preflights: PASS. Fresh isolated DB Golden: PASS.
 - Invoice issue timing, tax/rounding and void/allowance policy remain configuration/approval pending; no policy was inferred.
+
+## Fulfillment and shipment persistence checkpoint
+
+- Added Fulfillment, Parcel and QC evidence persistence with immutable allocation, policy, content and package snapshot references.
+- Added Shipment projection plus append-only tracking evidence, state transitions and operation claims linked to a single transactional Outbox event.
+- Added fail-closed shipment decisions for provider configuration pending, incomplete QC evidence, changed-content idempotency replay, incomplete atomic claims, foreign callback identity and invalid status regression.
+- Stale/out-of-order carrier facts remain evidence but cannot regress the canonical Shipment projection.
+- Migration `20260918223000_fulfillment_shipment_persistence` applied successfully; total migrations: 46.
+- Focused provider/shipment tests: 21 PASS. Complete Backend API: 407 PASS in 46 suites.
+- Backend, Admin DEV API and database package builds: PASS. Schema, migration, source, security, OpenAPI and TODO preflights: PASS. Fresh isolated DB Golden: PASS.
+- Inventory deduction timing, split-shipment policy, provider raw-status mappings, warehouse/lot/serial rules and direct-versus-aggregator routing remain pending; no operational policy was inferred.

@@ -309,6 +309,62 @@ enum InvoiceOperationType {
   @@schema("commerce")
 }
 
+enum FulfillmentStatus {
+  READY
+  ALLOCATED
+  PICKING
+  PICKED
+  QC_PENDING
+  QC_PASSED
+  PACKED
+  SHIPPING_REQUESTED
+  SHIPPED
+  DELIVERED
+  EXCEPTION
+  CANCELLED
+
+  @@schema("commerce")
+}
+
+enum QcStatus {
+  PENDING
+  PASS
+  FAIL
+  HOLD
+
+  @@schema("commerce")
+}
+
+enum ShippingMethod {
+  HOME_DELIVERY
+  CVS_PICKUP
+
+  @@schema("commerce")
+}
+
+enum CanonicalShipmentStatus {
+  READY
+  LABEL_CREATED
+  PICKED_UP
+  IN_TRANSIT
+  DELIVERED
+  DELIVERY_FAILED
+  RETURNING
+  RETURNED
+  CANCELLED
+
+  @@schema("commerce")
+}
+
+enum ShipmentOperationType {
+  CREATE_SHIPMENT
+  GET_LABEL
+  APPLY_TRACKING_EVENT
+  CANCEL_SHIPMENT
+
+  @@schema("commerce")
+}
+
 enum InventoryTrackingMode {
   NONE
   LOT
@@ -1016,6 +1072,7 @@ model Order {
   inventoryReservations InventoryReservation[]
   returns               ReturnCase[]
   invoices              Invoice[]
+  fulfillments          Fulfillment[]
 
   @@index([qualificationId, createdAt])
   @@index([status, createdAt])
@@ -1272,11 +1329,13 @@ model ProviderConnectionVersion {
   createdByActor              String              @map("created_by_actor")
   createdAt                   DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
 
-  connection         ProviderConnection             @relation(fields: [providerConnectionId], references: [providerConnectionId])
+  connection         ProviderConnection              @relation(fields: [providerConnectionId], references: [providerConnectionId])
   webhookInboxes     ProviderWebhookInbox[]
   reconciliationRuns ProviderReconciliationRun[]
   invoices           Invoice[]
   invoiceEvidence    InvoiceProviderEventEvidence[]
+  shipments          Shipment[]
+  trackingEvidence   ShipmentTrackingEventEvidence[]
 
   @@unique([providerConnectionId, version])
   @@index([providerConnectionId, environment, effectiveFrom, effectiveTo])
@@ -1423,6 +1482,167 @@ model InvoiceOperationClaim {
   @@unique([invoiceId, operationHash])
   @@index([invoiceId, committedAt])
   @@map("invoice_operation_claim")
+  @@schema("commerce")
+}
+
+model Fulfillment {
+  fulfillmentId                String            @id @default(uuid()) @map("fulfillment_id") @db.Uuid
+  orderId                      String            @map("order_id") @db.Uuid
+  fulfillmentKey               String            @map("fulfillment_key")
+  status                       FulfillmentStatus @default(READY)
+  allocationSnapshotRef        String            @map("allocation_snapshot_ref")
+  fulfillmentPolicySnapshotRef String            @map("fulfillment_policy_snapshot_ref")
+  createdAt                    DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt                    DateTime          @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  order      Order                   @relation(fields: [orderId], references: [orderId])
+  parcels    FulfillmentParcel[]
+  qcEvidence FulfillmentQcEvidence[]
+  shipments  Shipment[]
+
+  @@unique([orderId, fulfillmentKey])
+  @@index([orderId, createdAt])
+  @@index([status, createdAt])
+  @@map("fulfillment")
+  @@schema("commerce")
+}
+
+model FulfillmentParcel {
+  fulfillmentParcelId String   @id @default(uuid()) @map("fulfillment_parcel_id") @db.Uuid
+  fulfillmentId       String   @map("fulfillment_id") @db.Uuid
+  parcelKey           String   @map("parcel_key")
+  contentSnapshotRef  String   @map("content_snapshot_ref")
+  packageSnapshotRef  String   @map("package_snapshot_ref")
+  createdAt           DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  fulfillment Fulfillment @relation(fields: [fulfillmentId], references: [fulfillmentId])
+  shipments   Shipment[]
+
+  @@unique([fulfillmentId, parcelKey])
+  @@index([fulfillmentId, createdAt])
+  @@map("fulfillment_parcel")
+  @@schema("commerce")
+}
+
+model FulfillmentQcEvidence {
+  fulfillmentQcEvidenceId String   @id @default(uuid()) @map("fulfillment_qc_evidence_id") @db.Uuid
+  fulfillmentId           String   @map("fulfillment_id") @db.Uuid
+  policyId                String   @map("policy_id")
+  policyVersion           String   @map("policy_version")
+  policySnapshotRef       String   @map("policy_snapshot_ref")
+  result                  QcStatus
+  checks                  Json
+  inspectorActor          String   @map("inspector_actor")
+  reason                  String
+  occurredAt              DateTime @map("occurred_at") @db.Timestamptz(6)
+  recordedAt              DateTime @default(now()) @map("recorded_at") @db.Timestamptz(6)
+  correlationId           String   @map("correlation_id") @db.Uuid
+
+  fulfillment Fulfillment @relation(fields: [fulfillmentId], references: [fulfillmentId])
+  shipments   Shipment[]
+
+  @@index([fulfillmentId, occurredAt])
+  @@map("fulfillment_qc_evidence")
+  @@schema("commerce")
+}
+
+model Shipment {
+  shipmentId                  String                  @id @default(uuid()) @map("shipment_id") @db.Uuid
+  fulfillmentId               String                  @map("fulfillment_id") @db.Uuid
+  fulfillmentParcelId         String                  @map("fulfillment_parcel_id") @db.Uuid
+  fulfillmentQcEvidenceId     String                  @map("fulfillment_qc_evidence_id") @db.Uuid
+  provider                    String
+  connectionId                String                  @map("connection_id")
+  providerConnectionVersionId String                  @map("provider_connection_version_id") @db.Uuid
+  carrier                     String
+  shippingMethod              ShippingMethod          @map("shipping_method")
+  recipientSnapshotRef        String                  @map("recipient_snapshot_ref")
+  pickupStoreSnapshotRef      String?                 @map("pickup_store_snapshot_ref")
+  providerShipmentRef         String?                 @map("provider_shipment_ref")
+  trackingNo                  String?                 @map("tracking_no")
+  status                      CanonicalShipmentStatus @default(READY)
+  createdAt                   DateTime                @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt                   DateTime                @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  fulfillment               Fulfillment                     @relation(fields: [fulfillmentId], references: [fulfillmentId])
+  parcel                    FulfillmentParcel               @relation(fields: [fulfillmentParcelId], references: [fulfillmentParcelId])
+  qcEvidence                FulfillmentQcEvidence           @relation(fields: [fulfillmentQcEvidenceId], references: [fulfillmentQcEvidenceId])
+  providerConnectionVersion ProviderConnectionVersion       @relation(fields: [providerConnectionVersionId], references: [providerConnectionVersionId])
+  trackingEvidence          ShipmentTrackingEventEvidence[]
+  stateTransitions          ShipmentStateTransition[]
+  operationClaims           ShipmentOperationClaim[]
+
+  @@unique([provider, connectionId, providerShipmentRef])
+  @@index([fulfillmentId, createdAt])
+  @@index([status, createdAt])
+  @@map("shipment")
+  @@schema("commerce")
+}
+
+model ShipmentTrackingEventEvidence {
+  shipmentTrackingEventEvidenceId String                   @id @default(uuid()) @map("shipment_tracking_event_evidence_id") @db.Uuid
+  shipmentId                      String                   @map("shipment_id") @db.Uuid
+  providerConnectionVersionId     String                   @map("provider_connection_version_id") @db.Uuid
+  providerEventIdentity           String                   @map("provider_event_identity")
+  providerShipmentRef             String                   @map("provider_shipment_ref")
+  rawStatusCode                   String                   @map("raw_status_code")
+  normalizedStatus                CanonicalShipmentStatus? @map("normalized_status")
+  mappingSnapshotRef              String?                  @map("mapping_snapshot_ref")
+  payloadHash                     String                   @map("payload_hash")
+  safeEvidenceRef                 String                   @map("safe_evidence_ref")
+  eventTime                       DateTime                 @map("event_time") @db.Timestamptz(6)
+  verifiedAt                      DateTime                 @map("verified_at") @db.Timestamptz(6)
+  receivedAt                      DateTime                 @default(now()) @map("received_at") @db.Timestamptz(6)
+  correlationId                   String                   @map("correlation_id") @db.Uuid
+
+  shipment                  Shipment                  @relation(fields: [shipmentId], references: [shipmentId])
+  providerConnectionVersion ProviderConnectionVersion @relation(fields: [providerConnectionVersionId], references: [providerConnectionVersionId])
+  stateTransitions          ShipmentStateTransition[]
+
+  @@unique([providerConnectionVersionId, providerEventIdentity])
+  @@index([shipmentId, eventTime])
+  @@map("shipment_tracking_event_evidence")
+  @@schema("commerce")
+}
+
+model ShipmentStateTransition {
+  shipmentStateTransitionId       String                  @id @default(uuid()) @map("shipment_state_transition_id") @db.Uuid
+  shipmentId                      String                  @map("shipment_id") @db.Uuid
+  shipmentTrackingEventEvidenceId String?                 @map("shipment_tracking_event_evidence_id") @db.Uuid
+  fromStatus                      CanonicalShipmentStatus @map("from_status")
+  toStatus                        CanonicalShipmentStatus @map("to_status")
+  businessEffectIdentity          String                  @map("business_effect_identity")
+  operationHash                   String                  @map("operation_hash")
+  occurredAt                      DateTime                @map("occurred_at") @db.Timestamptz(6)
+  recordedAt                      DateTime                @default(now()) @map("recorded_at") @db.Timestamptz(6)
+  correlationId                   String                  @map("correlation_id") @db.Uuid
+
+  shipment         Shipment                       @relation(fields: [shipmentId], references: [shipmentId])
+  trackingEvidence ShipmentTrackingEventEvidence? @relation(fields: [shipmentTrackingEventEvidenceId], references: [shipmentTrackingEventEvidenceId])
+
+  @@unique([shipmentId, businessEffectIdentity])
+  @@unique([shipmentTrackingEventEvidenceId, operationHash])
+  @@index([shipmentId, recordedAt])
+  @@map("shipment_state_transition")
+  @@schema("commerce")
+}
+
+model ShipmentOperationClaim {
+  shipmentOperationClaimId String                @id @default(uuid()) @map("shipment_operation_claim_id") @db.Uuid
+  shipmentId               String                @map("shipment_id") @db.Uuid
+  operationType            ShipmentOperationType @map("operation_type")
+  businessEffectIdentity   String                @unique @map("business_effect_identity")
+  operationHash            String                @map("operation_hash")
+  committedEffectRef       String                @map("committed_effect_ref")
+  outboxEventId            String                @unique @map("outbox_event_id") @db.Uuid
+  committedAt              DateTime              @default(now()) @map("committed_at") @db.Timestamptz(6)
+
+  shipment    Shipment    @relation(fields: [shipmentId], references: [shipmentId])
+  outboxEvent OutboxEvent @relation(fields: [outboxEventId], references: [outboxEventId])
+
+  @@unique([shipmentId, operationHash])
+  @@index([shipmentId, committedAt])
+  @@map("shipment_operation_claim")
   @@schema("commerce")
 }
 
@@ -1840,6 +2060,7 @@ model OutboxEvent {
   paymentOperationClaim   PaymentOperationClaim?
   inventoryOperationClaim InventoryOperationClaim?
   invoiceOperationClaim   InvoiceOperationClaim?
+  shipmentOperationClaim  ShipmentOperationClaim?
 
   @@index([processStatus, availableAt])
   @@map("outbox_event")
