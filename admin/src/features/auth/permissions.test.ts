@@ -21,4 +21,9 @@ describe('Admin page access boundaries', () => {
     expect(canOpen('ORDER_OPS', '/content')).toBe(true);
     expect(canOpen('COMPLIANCE_AUDIT', '/applications/new')).toBe(false);
   });
+  it('limits package configuration roles to package read-back and dashboard entry',()=>{
+    expect(canOpen('PACKAGE_CONFIG_MANAGE','/packages')).toBe(true);
+    expect(canOpen('PACKAGE_CONFIG_APPROVE','/packages')).toBe(true);
+    expect(canOpen('PACKAGE_CONFIG_MANAGE','/orders')).toBe(false);
+  });
 });
