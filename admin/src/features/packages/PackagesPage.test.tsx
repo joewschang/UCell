@@ -51,3 +51,19 @@ it('allows the approval role to submit a recorded reference without exposing cre
  await act(async()=>{tree!.root.findAllByType('button').find(button=>button.children.join('')==='核准版本')!.props.onClick();await new Promise(resolve=>setTimeout(resolve,10));});
  expect(command).toHaveBeenCalledWith(`/admin/packages/versions/${versionId}/approve`,{approvalReference:'APPROVAL-001'});act(()=>tree!.unmount());
 });
+
+it('requires an explicit timezone and sends no inferred package schedule values',async()=>{
+ auth.role='PACKAGE_CONFIG_APPROVE';const versionId='11111111-1111-4111-8111-111111111111';vi.mocked(get).mockResolvedValue({data:[{packageProfileId:'profile-1',stableCode:'STARTER_BALL',packageClass:'QUALIFICATION',status:'ACTIVE',versions:[{packageProfileVersionId:versionId,version:1,displayName:'正式會員套組',currency:'TWD',priceAmount:'4800',selectableProductQuantity:2,selectionMode:'EXACT_QUANTITY',membershipEffect:'FORMAL_MEMBER',qualificationEffect:'CREATE_QUALIFICATION',targetQualificationRequired:false,status:'APPROVED',effectiveFrom:null,effectiveTo:null,salesFrom:null,salesTo:null,approvalReference:'APPROVAL-001',configHash:'a'.repeat(64),selectableProducts:[]}]}]});vi.mocked(command).mockResolvedValue({});
+ let tree:ReturnType<typeof create>;await act(async()=>{tree=create(<QueryClientProvider client={new QueryClient({defaultOptions:{queries:{retry:false}}})}><PackagesPage/></QueryClientProvider>);await new Promise(resolve=>setTimeout(resolve,20));});
+ const field=(label:string,type:'input'|'select')=>tree!.root.findAllByType('label').find(item=>item.findAllByType('span')[0]?.children.join('')===label)!.findByType(type);
+ const submit=tree!.root.findAllByType('button').find(button=>button.children.join('')==='儲存明確排程')!;expect(submit.props.disabled).toBe(true);expect(field('生效時間（含時區）','input').props.value).toBe('');
+ act(()=>field('APPROVED 套組版本','select').props.onChange({target:{value:versionId}}));act(()=>field('生效時間（含時區）','input').props.onChange({target:{value:'2026-10-01T00:00:00+08:00'}}));
+ await act(async()=>{submit.props.onClick();await new Promise(resolve=>setTimeout(resolve,10));});expect(command).toHaveBeenCalledWith(`/admin/packages/versions/${versionId}/schedule`,{effectiveFrom:'2026-10-01T00:00:00+08:00'});act(()=>tree!.unmount());
+});
+
+it('offers activation only for scheduled versions and keeps retirement explicit',async()=>{
+ auth.role='PACKAGE_CONFIG_APPROVE';const versionId='11111111-1111-4111-8111-111111111111';vi.mocked(get).mockResolvedValue({data:[{packageProfileId:'profile-1',stableCode:'STARTER_BALL',packageClass:'QUALIFICATION',status:'ACTIVE',versions:[{packageProfileVersionId:versionId,version:1,displayName:'正式會員套組',currency:'TWD',priceAmount:'4800',selectableProductQuantity:2,selectionMode:'EXACT_QUANTITY',membershipEffect:'FORMAL_MEMBER',qualificationEffect:'CREATE_QUALIFICATION',targetQualificationRequired:false,status:'SCHEDULED',effectiveFrom:'2026-09-17T00:00:00.000Z',effectiveTo:null,salesFrom:null,salesTo:null,approvalReference:'APPROVAL-001',configHash:'a'.repeat(64),selectableProducts:[]}]}]});vi.mocked(command).mockResolvedValue({});
+ let tree:ReturnType<typeof create>;await act(async()=>{tree=create(<QueryClientProvider client={new QueryClient({defaultOptions:{queries:{retry:false}}})}><PackagesPage/></QueryClientProvider>);await new Promise(resolve=>setTimeout(resolve,20));});
+ await act(async()=>{tree!.root.findAllByType('button').find(button=>button.children.join('')==='啟用已到期排程')!.props.onClick();await new Promise(resolve=>setTimeout(resolve,10));});await act(async()=>{tree!.root.findAllByType('button').find(button=>button.children.join('')==='退役版本')!.props.onClick();await new Promise(resolve=>setTimeout(resolve,10));});
+ expect(command).toHaveBeenCalledWith(`/admin/packages/versions/${versionId}/activate`);expect(command).toHaveBeenCalledWith(`/admin/packages/versions/${versionId}/retire`);act(()=>tree!.unmount());
+});
