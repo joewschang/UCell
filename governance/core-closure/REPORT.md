@@ -1,5 +1,15 @@
 # Core Closure checkpoint report
 
+## P1-E/G Connected Payment-to-Inventory slice — 2026-09-17
+
+- A verified `PAID` Payment transition now emits a dedicated outbox fact consumed by the Worker and reserves inventory from authoritative server Order/OrderLine snapshots.
+- `CAPTURED` remains non-paid and produces no reservation. Missing warehouse/policy configuration fails closed.
+- Redelivery converges to persisted `NOOP_REPLAY`; it cannot create a second reservation or movement.
+- Insufficient stock preserves verified Payment and Order payment evidence, creates no reservation/movement and does not fabricate fulfillment success.
+- Shared inventory decisions/persistence moved to `@ucell/database` so API and Worker execute one implementation.
+- Database, Worker and API builds: PASS; connected focused regression: 7 suites / 47 tests PASS.
+- Evidence level: CONNECTED DEV PASS only. Provider sandbox/UAT and PICK/SHIP remain outside this checkpoint.
+
 ## P1-B/D Payment and Inventory transaction persistence — 2026-09-17
 
 - Payment persistence now runs a Serializable transaction with aggregate locking and bounded conflict retry, atomically committing provider-event evidence, state transition, projection/version, operation claim and outbox.

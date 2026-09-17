@@ -26,3 +26,8 @@ export {
 } from '@prisma/client';
 export * from './bonus-maturity';
 export * from './member-notification';
+export * from './inventory/inventory-reservation';
+export * from './inventory/inventory-reservation-batch';
+export * from './inventory/inventory-operation';
+export * from './inventory/inventory-persistence.service';
+export * from './payment-inventory-bridge';

@@ -1,4 +1,4 @@
-import { PrismaService, Prisma, processMemberOrderNotification, sealGpvEvent, sealRpvEvent, verifyReplayEnvelope, pending, claimOutboxLease, withOutboxLease, processLeasedReplay, releaseFailedOutboxLease, OutboxLease, matureBonusAward } from '@ucell/database';
+import { PrismaService, Prisma, processMemberOrderNotification, processPaymentInventoryReservation, sealGpvEvent, sealRpvEvent, verifyReplayEnvelope, pending, claimOutboxLease, withOutboxLease, processLeasedReplay, releaseFailedOutboxLease, OutboxLease, matureBonusAward } from '@ucell/database';
 import * as crypto from 'node:crypto';
 
 const prisma = new PrismaService();
@@ -167,10 +167,10 @@ export async function processReplayEvent(lease:OutboxLease,db:PrismaService=pris
 
 export async function pollOutbox(
   db:PrismaService=prisma,
-  deps={claimOutboxLease,processSaleConfirmed,processMemberOrderNotification,processLeasedReplay,releaseFailedOutboxLease}
+  deps={claimOutboxLease,processSaleConfirmed,processMemberOrderNotification,processPaymentInventoryReservation,processLeasedReplay,releaseFailedOutboxLease}
 ){
   const events=await db.outboxEvent.findMany({
-    where:{eventType:{in:['SALE_CONFIRMED','MEMBER_ORDER_CREATED','RETURN_CONFIRMED','RETURN_DEPENDENCY_REPLAY_REQUIRED','EPV_MONTH_RECALCULATION_REQUIRED','RPV_REVERSAL_REQUIRED']},processStatus:{in:['PENDING','PROCESSING']},availableAt:{lte:new Date()}},
+    where:{eventType:{in:['SALE_CONFIRMED','MEMBER_ORDER_CREATED','PAYMENT_STATE_TRANSITIONED','RETURN_CONFIRMED','RETURN_DEPENDENCY_REPLAY_REQUIRED','EPV_MONTH_RECALCULATION_REQUIRED','RPV_REVERSAL_REQUIRED']},processStatus:{in:['PENDING','PROCESSING']},availableAt:{lte:new Date()}},
     orderBy:{createdAt:'asc'},take:20
   });
   for(const event of events){
@@ -180,6 +180,10 @@ export async function pollOutbox(
       if(!lease)continue;
       if(event.eventType==='SALE_CONFIRMED') await deps.processSaleConfirmed(db,lease);
       else if(event.eventType==='MEMBER_ORDER_CREATED') await deps.processMemberOrderNotification(db,lease);
+      else if(event.eventType==='PAYMENT_STATE_TRANSITIONED') await deps.processPaymentInventoryReservation(db,lease,{
+        warehouseId:process.env.UCELL_INVENTORY_WAREHOUSE_ID??'',
+        policyVersion:process.env.UCELL_INVENTORY_POLICY_VERSION??''
+      });
       else await deps.processLeasedReplay(db,lease);
     }catch(e){
       if(lease)await deps.releaseFailedOutboxLease(db,lease,e);

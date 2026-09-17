@@ -1,5 +1,17 @@
 # Core Closure pass/fail matrix
 
+## P1-E/G connected slice
+
+| Gate | Result | Evidence |
+|---|---|---|
+| Verified PAID → Inventory reserve | PASS | connected PostgreSQL read-back |
+| CAPTURED isolation | PASS | no Order PAID projection or reservation |
+| Worker duplicate delivery | PASS | persisted `NOOP_REPLAY`; one reservation/movement |
+| Insufficient stock boundary | PASS | payment retained; no reservation or false fulfillment |
+| Database/API/Worker builds | PASS | shared inventory implementation compiles in all consumers |
+| Connected focused regression | PASS | 7 suites / 47 tests |
+| Provider sandbox/UAT | BLOCKED | formal provider adapter/credentials unavailable |
+
 ## P1-B/D transaction checkpoint
 
 | Gate | Result | Evidence |
