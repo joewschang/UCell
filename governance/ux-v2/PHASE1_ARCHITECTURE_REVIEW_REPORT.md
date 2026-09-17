@@ -1,5 +1,7 @@
 # Phase 1 Architecture Review Report
 
+Further review: [D1/D2 code impact](DECISION_CODE_IMPACT_REVIEW.md) traces current enforcement/calculation paths and supplies 12 proposed acceptance vectors plus a 24-order conditional truth table. These are review evidence, not executed implementation tests or approved company economics.
+
 Review continuation: [D1/D2 decision worksheet](ARCHITECTURE_DECISION_WORKSHEET.md) provides a concrete PO/SA decision form. Both decisions remain pending; the continuation is architecture review only.
 
 Disposition: READY FOR ARCHITECTURE REVIEW; NOT implementation approval. Production promotion BLOCKED. Final source baseline: `935e8a288f0e0891e657175a0f9a4f1afc12a47b`, branch `integration/member-backend-mvp`. Only this governance package is changed. No Core/UI/schema/migration/provider/Stage/Production implementation is included.
