@@ -7,6 +7,7 @@ import {PackagesPage} from './PackagesPage';
 const auth=vi.hoisted(()=>({role:'COMPLIANCE_AUDIT'}));
 vi.mock('../../lib/api',()=>({get:vi.fn(),command:vi.fn(),putCommand:vi.fn()}));
 vi.mock('../auth/auth',()=>({useAuth:()=>({user:{role:auth.role}})}));
+vi.mock('../../components/ConfirmAction',()=>({ConfirmAction:({children,onConfirm,disabled}:any)=><button disabled={disabled} onClick={()=>onConfirm('APPROVAL-001')}>{children}</button>}));
 beforeEach(()=>{auth.role='COMPLIANCE_AUDIT';vi.mocked(get).mockReset();vi.mocked(command).mockReset();vi.mocked(putCommand).mockReset();});
 
 it('renders Core package versions and evidence without calculating monetary values',async()=>{
@@ -41,4 +42,12 @@ it('replaces a DRAFT product pool through the idempotent PUT command with explic
  act(()=>select('DRAFT 套組版本').props.onChange({target:{value:versionId}}));act(()=>select('加入 Product Rule Profile').props.onChange({target:{value:ruleId}}));
  await act(async()=>{tree!.root.findAllByType('button').find(button=>button.children.join('')==='儲存完整商品池')!.props.onClick();await new Promise(resolve=>setTimeout(resolve,10));});
  expect(putCommand).toHaveBeenCalledWith(`/admin/packages/versions/${versionId}/selectable-products`,{products:[{productRuleProfileId:ruleId,minQty:0,maxQty:1,selectionIncrement:1,sortOrder:0}]});act(()=>tree!.unmount());
+});
+
+it('allows the approval role to submit a recorded reference without exposing creator controls',async()=>{
+ auth.role='PACKAGE_CONFIG_APPROVE';const versionId='11111111-1111-4111-8111-111111111111';vi.mocked(get).mockResolvedValue({data:[{packageProfileId:'profile-1',stableCode:'STARTER_BALL',packageClass:'QUALIFICATION',status:'ACTIVE',versions:[{packageProfileVersionId:versionId,version:1,displayName:'正式會員套組',currency:'TWD',priceAmount:'4800',selectableProductQuantity:2,selectionMode:'EXACT_QUANTITY',membershipEffect:'FORMAL_MEMBER',qualificationEffect:'CREATE_QUALIFICATION',targetQualificationRequired:false,status:'DRAFT',effectiveFrom:null,effectiveTo:null,salesFrom:null,salesTo:null,approvalReference:null,configHash:'a'.repeat(64),selectableProducts:[{productRuleProfileId:'rule-1',minQty:0,maxQty:2,selectionIncrement:1,sortOrder:0,status:'ACTIVE'}]}]}]});vi.mocked(command).mockResolvedValue({});
+ let tree:ReturnType<typeof create>;await act(async()=>{tree=create(<QueryClientProvider client={new QueryClient({defaultOptions:{queries:{retry:false}}})}><PackagesPage/></QueryClientProvider>);await new Promise(resolve=>setTimeout(resolve,20));});
+ expect(tree!.root.findAllByType('button').some(button=>button.children.join('')==='建立套組主檔')).toBe(false);
+ await act(async()=>{tree!.root.findAllByType('button').find(button=>button.children.join('')==='核准版本')!.props.onClick();await new Promise(resolve=>setTimeout(resolve,10));});
+ expect(command).toHaveBeenCalledWith(`/admin/packages/versions/${versionId}/approve`,{approvalReference:'APPROVAL-001'});act(()=>tree!.unmount());
 });
