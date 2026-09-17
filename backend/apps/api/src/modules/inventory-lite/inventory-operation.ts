@@ -5,7 +5,12 @@ import {
   InventoryReservationBatchDecision,
   InventoryReservationLine,
 } from './inventory-reservation-batch';
-import { assertInventoryBalance, InventoryBalanceSnapshot } from './inventory-reservation';
+import {
+  assertInventoryBalance,
+  decideInventoryRelease,
+  decideInventoryReservation,
+  InventoryBalanceSnapshot,
+} from './inventory-reservation';
 
 export type InventoryOperationType = 'RESERVE' | 'RELEASE';
 
@@ -150,6 +155,10 @@ function assertCompleteClaim(
       try {
         assertInventoryBalance(item.before);
         assertInventoryBalance(item.after);
+        const transition = command.operationType === 'RESERVE'
+          ? decideInventoryReservation(item.before, item.quantity)
+          : decideInventoryRelease(item.before, item.quantity);
+        if (JSON.stringify(transition.after) !== JSON.stringify(item.after)) return true;
       } catch {
         return true;
       }

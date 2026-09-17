@@ -81,6 +81,13 @@ describe('Inventory Lite canonical operation and idempotency contract', () => {
     expect(() => decideInventoryOperation({ command, balances, existingClaim: {
       ...claim, result: wrongButRehashed, resultHash: hashInventoryOperationResult(wrongButRehashed),
     } })).toThrow(expect.objectContaining({ code: 'INVENTORY_OPERATION_CLAIM_INCOMPLETE' }));
+    const invalidTransition = { items: [
+      { ...claim.result.items[0], after: claim.result.items[0].before },
+      claim.result.items[1],
+    ] };
+    expect(() => decideInventoryOperation({ command, balances, existingClaim: {
+      ...claim, result: invalidTransition, resultHash: hashInventoryOperationResult(invalidTransition),
+    } })).toThrow(expect.objectContaining({ code: 'INVENTORY_OPERATION_CLAIM_INCOMPLETE' }));
   });
 
   it('keeps reserve and release identities separate', () => {
