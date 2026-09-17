@@ -12,10 +12,10 @@ export interface ReadRequestContext {
   permissions: readonly string[]; correlationId: string;
 }
 export interface ReadQuery {
-  qualificationId?: string; binaryTreeId?: string; periodEnd?: string; entryId?: string;
+  qualificationId?: string; binaryTreeId?: string; periodEnd?: string; entryId?: string; settlementBatchId?: string;
 }
 export interface AuthorizedReadTarget {
-  qualificationId: string; binaryTreeId?: string; entryId?: string;
+  qualificationId: string; binaryTreeId?: string; entryId?: string; settlementBatchId?: string;
 }
 export interface EvidenceReference { type: string; id: string; revision: string; }
 export interface SourceRead {
@@ -59,7 +59,7 @@ const knownTool = (v: unknown): v is ToolName => typeof v === 'string' && Object
 export function parseReadQuery(tool: ToolName, raw: unknown): Readonly<ReadQuery> {
   if (!knownTool(tool) || !record(raw)) return fail('INVALID_QUERY');
   const fields = tool === 'getActiveStatus' ? ['qualificationId']
-    : tool === 'explainBinaryCarry' ? ['qualificationId', 'binaryTreeId', 'periodEnd'] : ['entryId'];
+    : tool === 'explainBinaryCarry' ? ['qualificationId', 'binaryTreeId', 'periodEnd'] : tool === 'explainBinarySettlementCarry' ? ['qualificationId', 'settlementBatchId'] : ['entryId'];
   // No actor, role, permission, SQL, URL, arbitrary time mode or context override.
   if (Object.keys(raw).some(k => !fields.includes(k))) return fail('INVALID_QUERY');
   if (fields.some(k => !(k === 'periodEnd' ? instant(raw[k]) : id(raw[k])))) return fail('INVALID_QUERY');
@@ -82,10 +82,12 @@ function checkAccess(context: ReadRequestContext, tool: ToolName, query: ReadQue
 function targetCopy(value: AuthorizedReadTarget | null, query: ReadQuery): Readonly<AuthorizedReadTarget> {
   if (!value || !id(value.qualificationId) || (value.binaryTreeId !== undefined && !id(value.binaryTreeId))
     || (value.entryId !== undefined && !id(value.entryId))
+    || (value.settlementBatchId !== undefined && !id(value.settlementBatchId))
+    || (query.settlementBatchId !== undefined && query.settlementBatchId !== value.settlementBatchId)
     || (query.qualificationId !== undefined && query.qualificationId !== value.qualificationId)
     || (query.binaryTreeId !== undefined && query.binaryTreeId !== value.binaryTreeId)
     || (query.entryId !== undefined && query.entryId !== value.entryId)) return fail('DENIED');
-  return Object.freeze({ qualificationId: value.qualificationId, binaryTreeId: value.binaryTreeId, entryId: value.entryId });
+  return Object.freeze({ qualificationId: value.qualificationId, binaryTreeId: value.binaryTreeId, entryId: value.entryId, settlementBatchId: value.settlementBatchId });
 }
 const decimal = (v: unknown): v is string => typeof v === 'string' && /^-?(?:0|[1-9]\d{0,17})(?:\.\d{1,8})?$/.test(v);
 function projectResult(tool: ToolName, raw: unknown): Record<string, string | boolean> {
@@ -96,7 +98,7 @@ function projectResult(tool: ToolName, raw: unknown): Record<string, string | bo
     if (raw.ownerType === 'MEMBER' && (raw.reasonCode === 'COMPANY_RULE' || raw.active !== (raw.reasonCode === 'THRESHOLD_MET'))) return fail('INVALID_EVIDENCE');
     return { active: raw.active, ownerType: raw.ownerType as string, reasonCode: raw.reasonCode };
   }
-  if (tool === 'explainBinaryCarry') {
+  if (tool === 'explainBinaryCarry' || tool === 'explainBinarySettlementCarry') {
     if (!decimal(raw.leftCarry) || !decimal(raw.rightCarry) || raw.leftCarry.startsWith('-') || raw.rightCarry.startsWith('-')) return fail('INVALID_EVIDENCE');
     return { leftCarry: raw.leftCarry, rightCarry: raw.rightCarry };
   }
@@ -111,10 +113,10 @@ function envelope(tool: ToolName, raw: unknown, target: AuthorizedReadTarget, qu
     || typeof raw.finality !== 'string' || !['FINALIZED', 'PROVISIONAL', 'NOT_APPLICABLE'].includes(raw.finality)
     || !instant(raw.updatedAt) || !id(raw.ruleVersion) || !id(raw.parameterVersion)
     || !Array.isArray(raw.evidenceRefs) || raw.evidenceRefs.length > 100) return fail('INVALID_EVIDENCE');
-  for (const field of ['qualificationId', 'binaryTreeId', 'entryId'] as const) {
+  for (const field of ['qualificationId', 'binaryTreeId', 'entryId', 'settlementBatchId'] as const) {
     if (raw.scope[field] !== target[field]) return fail('INVALID_EVIDENCE');
   }
-  if (raw.periodEnd !== query.periodEnd) return fail('INVALID_EVIDENCE');
+  if (tool === 'explainBinarySettlementCarry' ? !instant(raw.periodEnd) : raw.periodEnd !== query.periodEnd) return fail('INVALID_EVIDENCE');
   if (raw.status === 'AVAILABLE' && (raw.evidenceRefs.length === 0
     || (tool !== 'getActiveStatus' && raw.finality !== 'FINALIZED'))) return fail('INVALID_EVIDENCE');
   if (raw.status === 'UNAVAILABLE' && raw.result !== null) return fail('INVALID_EVIDENCE');
@@ -125,7 +127,7 @@ function envelope(tool: ToolName, raw: unknown, target: AuthorizedReadTarget, qu
   const definition = READ_DEFINITIONS[tool];
   // Explicit projection: arbitrary source fields, PII, prose and links never pass through.
   return { status: raw.status as SourceRead['status'], finality: raw.finality as SourceRead['finality'],
-    scope: { ...target }, ...(query.periodEnd ? { periodEnd: query.periodEnd } : {}), updatedAt: raw.updatedAt,
+    scope: { ...target }, ...(raw.periodEnd ? { periodEnd: raw.periodEnd as string } : {}), updatedAt: raw.updatedAt,
     definitionKey: definition.key, definitionVersion: definition.version,
     ruleVersion: raw.ruleVersion, parameterVersion: raw.parameterVersion, classification: definition.classification === 'MEMBER_SELF' && audience === 'ADMIN' ? 'ADMIN_OPERATIONAL' : definition.classification,
     evidenceRefs: refs, result: raw.status === 'AVAILABLE' ? projectResult(tool, raw.result) : null };

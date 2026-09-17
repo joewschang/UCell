@@ -1,3 +1,5 @@
+import { MemberExplainController } from './member-explain.controller';
+import { MemberExplainService } from './member-explain.service';
 import { Module } from '@nestjs/common';
 import { AuthModule } from '../auth/auth.module';
 import { OrderModule } from '../order/order.module';
@@ -14,5 +16,5 @@ import { MemberReferralAttributionController, ReferralAttributionController } fr
 import { ReferralAttributionService } from './referral-attribution.service';
 import { FormalMemberApplicationService } from './formal-member-application.service';
 import { AdminFormalMemberApplicationController } from './admin-formal-member-application.controller';
-@Module({imports:[AuthModule,OrderModule],controllers:[MemberAuthController,MemberController,ReferralAttributionController,MemberReferralAttributionController,AdminFormalMemberApplicationController],providers:[MemberService,MemberReadService,MemberShareLinkService,ReferralAttributionService,FormalMemberApplicationService,MemberContractService,DeliveryProfileService,PiiCryptoService,MemberContextGuard,LineTokenVerifierService]})
+@Module({imports:[AuthModule,OrderModule],controllers:[MemberExplainController,MemberAuthController,MemberController,ReferralAttributionController,MemberReferralAttributionController,AdminFormalMemberApplicationController],providers:[MemberExplainService,MemberService,MemberReadService,MemberShareLinkService,ReferralAttributionService,FormalMemberApplicationService,MemberContractService,DeliveryProfileService,PiiCryptoService,MemberContextGuard,LineTokenVerifierService]})
 export class MemberModule {}

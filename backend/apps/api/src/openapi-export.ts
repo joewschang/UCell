@@ -20,7 +20,7 @@ async function main(){
     .build();
 
   const doc=SwaggerModule.createDocument(app,config);
-  for(const name of ['MemberLogoutDto','MemberProfileDto','MemberContextDto','MemberQueryDto','MemberCreateOrderDto','CreateOrderItemDto','LineExchangeDto']){
+  for(const name of ['MemberExplainActiveQuery','MemberExplainCarryQuery','MemberLogoutDto','MemberProfileDto','MemberContextDto','MemberQueryDto','MemberCreateOrderDto','CreateOrderItemDto','LineExchangeDto']){
     const schema=doc.components?.schemas?.[name];
     if(schema&&'properties' in schema)schema.additionalProperties=false;
   }

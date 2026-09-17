@@ -422,6 +422,387 @@
         ]
       }
     },
+    "/api/v1/member/explain/active": {
+      "get": {
+        "description": "Current positive Active with a verified v3 consumption evidence chain. Absence is unavailable, not an inferred inactive/zero result.",
+        "operationId": "memberExplainActive",
+        "parameters": [
+          {
+            "name": "qualificationId",
+            "required": true,
+            "in": "query",
+            "description": "Explicit selected Ball; current ownership is checked server-side before and after reading.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "required": [
+                        "status",
+                        "finality",
+                        "scope",
+                        "updatedAt",
+                        "definitionKey",
+                        "definitionVersion",
+                        "ruleVersion",
+                        "parameterVersion",
+                        "classification",
+                        "evidenceRefs",
+                        "result"
+                      ],
+                      "properties": {
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "AVAILABLE"
+                          ]
+                        },
+                        "finality": {
+                          "type": "string",
+                          "enum": [
+                            "NOT_APPLICABLE"
+                          ]
+                        },
+                        "scope": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "qualificationId"
+                          ],
+                          "properties": {
+                            "qualificationId": {
+                              "type": "string",
+                              "format": "uuid"
+                            },
+                            "settlementBatchId": {
+                              "type": "string",
+                              "format": "uuid"
+                            }
+                          }
+                        },
+                        "periodEnd": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "updatedAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "definitionKey": {
+                          "type": "string",
+                          "enum": [
+                            "active.status"
+                          ]
+                        },
+                        "definitionVersion": {
+                          "type": "string"
+                        },
+                        "ruleVersion": {
+                          "type": "string"
+                        },
+                        "parameterVersion": {
+                          "type": "string"
+                        },
+                        "classification": {
+                          "type": "string",
+                          "enum": [
+                            "MEMBER_SELF"
+                          ]
+                        },
+                        "evidenceRefs": {
+                          "type": "array",
+                          "maxItems": 100,
+                          "items": {
+                            "type": "object",
+                            "required": [
+                              "type",
+                              "id",
+                              "revision"
+                            ],
+                            "properties": {
+                              "type": {
+                                "type": "string"
+                              },
+                              "id": {
+                                "type": "string"
+                              },
+                              "revision": {
+                                "type": "string"
+                              }
+                            }
+                          }
+                        },
+                        "result": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "active",
+                            "ownerType",
+                            "reasonCode"
+                          ],
+                          "properties": {
+                            "active": {
+                              "type": "boolean",
+                              "enum": [
+                                true
+                              ]
+                            },
+                            "ownerType": {
+                              "type": "string",
+                              "enum": [
+                                "MEMBER"
+                              ]
+                            },
+                            "reasonCode": {
+                              "type": "string",
+                              "enum": [
+                                "THRESHOLD_MET"
+                              ]
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "INVALID_QUERY; unsupported fields/time modes rejected"
+          },
+          "401": {
+            "description": "Member authentication required"
+          },
+          "403": {
+            "description": "DENIED; selected Ball is not authorized"
+          },
+          "409": {
+            "description": "CONTEXT_CHANGED; suppress obsolete results"
+          },
+          "422": {
+            "description": "HISTORICAL_UNAVAILABLE; authoritative evidence absent or unsupported"
+          },
+          "503": {
+            "description": "INVALID_EVIDENCE or SOURCE_UNAVAILABLE; no fallback"
+          },
+          "504": {
+            "description": "TIMEOUT; no result released"
+          }
+        },
+        "security": [
+          {
+            "memberBearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "Member - Explain"
+        ]
+      }
+    },
+    "/api/v1/member/explain/binary-carry": {
+      "get": {
+        "description": "Original sealed batch Carry, exact decimal strings. Does not infer tree identity or substitute current/replayed totals.",
+        "operationId": "memberExplainBinaryCarry",
+        "parameters": [
+          {
+            "name": "qualificationId",
+            "required": true,
+            "in": "query",
+            "description": "Explicit selected Ball; current ownership is checked server-side before and after reading.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "settlementBatchId",
+            "required": true,
+            "in": "query",
+            "description": "Exact original FINALIZED BINARY_K1 batch; not latest corrected Carry or inferred tree scope.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "required": [
+                        "status",
+                        "finality",
+                        "scope",
+                        "updatedAt",
+                        "definitionKey",
+                        "definitionVersion",
+                        "ruleVersion",
+                        "parameterVersion",
+                        "classification",
+                        "evidenceRefs",
+                        "result",
+                        "periodEnd"
+                      ],
+                      "properties": {
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "AVAILABLE"
+                          ]
+                        },
+                        "finality": {
+                          "type": "string",
+                          "enum": [
+                            "FINALIZED"
+                          ]
+                        },
+                        "scope": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "qualificationId",
+                            "settlementBatchId"
+                          ],
+                          "properties": {
+                            "qualificationId": {
+                              "type": "string",
+                              "format": "uuid"
+                            },
+                            "settlementBatchId": {
+                              "type": "string",
+                              "format": "uuid"
+                            }
+                          }
+                        },
+                        "periodEnd": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "updatedAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "definitionKey": {
+                          "type": "string",
+                          "enum": [
+                            "binary.settlement_carry"
+                          ]
+                        },
+                        "definitionVersion": {
+                          "type": "string"
+                        },
+                        "ruleVersion": {
+                          "type": "string"
+                        },
+                        "parameterVersion": {
+                          "type": "string"
+                        },
+                        "classification": {
+                          "type": "string",
+                          "enum": [
+                            "MEMBER_SELF"
+                          ]
+                        },
+                        "evidenceRefs": {
+                          "type": "array",
+                          "maxItems": 100,
+                          "items": {
+                            "type": "object",
+                            "required": [
+                              "type",
+                              "id",
+                              "revision"
+                            ],
+                            "properties": {
+                              "type": {
+                                "type": "string"
+                              },
+                              "id": {
+                                "type": "string"
+                              },
+                              "revision": {
+                                "type": "string"
+                              }
+                            }
+                          }
+                        },
+                        "result": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "leftCarry",
+                            "rightCarry"
+                          ],
+                          "properties": {
+                            "leftCarry": {
+                              "type": "string",
+                              "pattern": "^(0|[1-9][0-9]{0,17})(\\.[0-9]{1,8})?$"
+                            },
+                            "rightCarry": {
+                              "type": "string",
+                              "pattern": "^(0|[1-9][0-9]{0,17})(\\.[0-9]{1,8})?$"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "INVALID_QUERY; unsupported fields/time modes rejected"
+          },
+          "401": {
+            "description": "Member authentication required"
+          },
+          "403": {
+            "description": "DENIED; selected Ball is not authorized"
+          },
+          "409": {
+            "description": "CONTEXT_CHANGED; suppress obsolete results"
+          },
+          "422": {
+            "description": "HISTORICAL_UNAVAILABLE; authoritative evidence absent or unsupported"
+          },
+          "503": {
+            "description": "INVALID_EVIDENCE or SOURCE_UNAVAILABLE; no fallback"
+          },
+          "504": {
+            "description": "TIMEOUT; no result released"
+          }
+        },
+        "security": [
+          {
+            "memberBearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "Member - Explain"
+        ]
+      }
+    },
     "/api/v1/auth/member/line/exchange": {
       "post": {
         "operationId": "memberLineExchange",
