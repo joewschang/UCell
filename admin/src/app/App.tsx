@@ -8,6 +8,7 @@ import {ApplicationsPage} from '../features/applications/ApplicationsPage';
 import {NewApplicationWizard} from '../features/applications/NewApplicationWizard';
 import {QualificationsPage} from '../features/qualifications/QualificationsPage';
 import {ProductsPage} from '../features/products/ProductsPage';
+import {PackagesPage} from '../features/packages/PackagesPage';
 import {OrdersPage} from '../features/orders/OrdersPage';
 import {OrganizationPage} from '../features/organization/OrganizationPage';
 import {SubscriptionsPage} from '../features/subscriptions/SubscriptionsPage';
@@ -33,6 +34,7 @@ export function App(){return <Routes>
   <Route path="/applications/new" element={<RequirePageRole><NewApplicationWizard/></RequirePageRole>}/>
   <Route path="/qualifications" element={<RequirePageRole><QualificationsPage/></RequirePageRole>}/>
   <Route path="/products" element={<RequirePageRole><ProductsPage/></RequirePageRole>}/>
+  <Route path="/packages" element={<RequirePageRole><PackagesPage/></RequirePageRole>}/>
   <Route path="/orders" element={<RequirePageRole><OrdersPage/></RequirePageRole>}/>
   <Route path="/organization" element={<RequirePageRole><OrganizationPage/></RequirePageRole>}/>
   <Route path="/subscriptions" element={<RequirePageRole><SubscriptionsPage/></RequirePageRole>}/>
@@ -40,7 +42,8 @@ export function App(){return <Routes>
   <Route path="/returns" element={<RequirePageRole><ReturnsPage/></RequirePageRole>}/>
   <Route path="/workflows" element={<RequirePageRole><WorkflowsPage/></RequirePageRole>}/>
   <Route path="/payouts" element={<RequirePageRole><PayoutsPage/></RequirePageRole>}/>
-  <Route path="/content" element={<RequirePageRole><ContentPage/></RequirePageRole>}/>`r`n  <Route path="/documents" element={<RequirePageRole><DocumentsPage/></RequirePageRole>}/>
+  <Route path="/content" element={<RequirePageRole><ContentPage/></RequirePageRole>}/>
+  <Route path="/documents" element={<RequirePageRole><DocumentsPage/></RequirePageRole>}/>
   <Route path="/audit" element={<RequirePageRole><AuditPage/></RequirePageRole>}/>
   <Route path="/reports" element={<RequirePageRole><ReportsPage/></RequirePageRole>}/>
   <Route path="/uat" element={<RequirePageRole><UatPage/></RequirePageRole>}/>
