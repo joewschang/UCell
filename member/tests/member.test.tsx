@@ -87,6 +87,36 @@ it('replaces a saved qualification no longer owned by the member', async () => {
     expect(renderer.root.findByType('select').props.value).toBe('q1');
     expect(storage.getItem('ucell_qualification_id')).toBe('q1');
 });
+it('keeps navigation during initial qualification loading and failure', async () => {
+    let finish!: (value: Response) => void;
+    vi.stubGlobal('fetch', vi.fn(() => new Promise(resolve => { finish = resolve; })));
+    await mount('/bonuses');
+    expect(renderer.root.findByProps({'aria-label':'主要功能'}).findAllByType('a')).toHaveLength(5);
+    expect(JSON.stringify(renderer.toJSON())).toContain('資格資料載入中');
+    await act(async () => finish(new Response('', {status:503})));
+    expect(renderer.root.findByProps({'aria-label':'主要功能'}).findAllByType('a')).toHaveLength(5);
+    expect(renderer.root.findByProps({role:'alert'})).toBeDefined();
+    expect(renderer.root.findAllByType('button').some(button=>button.children.join('')==='重新載入')).toBe(true);
+});
+it('names the pending ball without exposing old data, and recovers after denied selection', async () => {
+    fakeAPI();
+    const normalFetch=globalThis.fetch;
+    let finish!: (value: Response) => void;
+    vi.stubGlobal('fetch', vi.fn((input:string, init?:RequestInit)=>input.includes('/context/qualification')
+        ? new Promise<Response>(resolve=>{finish=resolve;}) : normalFetch(input,init)));
+    await mount();
+    expect(JSON.stringify(renderer.toJSON())).toContain('結算中');
+    await act(async () => {void renderer.root.findByType('select').props.onChange({target:{value:'q2'}});});
+    expect(JSON.stringify(renderer.toJSON())).toContain('正在確認 Q2｜球1');
+    expect(JSON.stringify(renderer.toJSON())).not.toContain('結算中');
+    expect(renderer.root.findByProps({'aria-label':'主要功能'}).findAllByType('a')).toHaveLength(5);
+    await act(async () => finish(new Response('', {status:403})));
+    expect(JSON.stringify(renderer.toJSON())).not.toContain('結算中');
+    expect(renderer.root.findAllByType('select')).toHaveLength(0);
+    await act(async () => renderer.root.findAllByType('button').find(button=>button.children.join('')==='重新載入')!.props.onClick());
+    expect(renderer.root.findByType('select').props.value).toBe('q1');
+    expect(JSON.stringify(renderer.toJSON())).not.toContain('正在確認 Q2');
+});
 it('rejects tampered qualification selection', async () => {
     fakeAPI();
     await mount();

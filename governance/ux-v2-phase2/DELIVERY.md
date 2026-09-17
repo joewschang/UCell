@@ -46,3 +46,9 @@
 ## 後續差異審查
 
 再次核對所有變更均屬共用顯示、導覽、相關測試與交付證據。新增的 AppShell 渲染測試涵蓋 CUSTOMER_SERVICE、PACKAGE_CONFIG_MANAGE、PACKAGE_CONFIG_APPROVE、MEMBERSHIP_OPS，確認分組後不增加可見路由、不渲染無權限的空組。既有 canOpen 與 pageRoles 不變。完整測試數字以上一輪 64 項與本轮新增 4 項分別記錄，不冒稱重新執行完整套件。
+
+## 切球與載入體驗補強
+
+原本初始載入、切球確認及確認失敗時，MemberApp 會移除整個 shell，只留下通用文字。現在持續顯示品牌、skip link 與五項導覽，在主要內容區使用共用 LoadingState／ErrorState。切球訊息顯示正在確認的資格代碼與球名稱；待確認資格只用於文字提示，不作為已確認的 current 或資料查詢依據。原有 abort、sequence、server confirmation 與錯誤隔離保持不變。重試會重設載入文字並重新讀取資格清單。
+
+本輪 Member 全部 25 files / 159 tests PASS；TypeScript 與 Vite build PASS。新增兩項 App 整合測試覆蓋初始載入／503 保留導覽，以及切球時隱藏舊資料、403 失敗隔離與重試恢復。沒有修改 CSS、Admin 或後端；前述瀏覽器截圖屬上一輪 shell 驗證，本輪未重新擷取，不作為新增等待／錯誤狀態的視覺驗證。
