@@ -34,6 +34,13 @@ export class ReferralBonusService {
     return 0;
   }
 
+  equalizationMaximumDepth(plan:string){
+    if(plan==='STARTER') return 4;
+    if(plan==='ELITE') return 6;
+    if(plan==='LEADER') return 7;
+    return 0;
+  }
+
   async settle(periodStart:Date,periodEnd:Date,ruleVersionCode='R1.0B'){
     return this.prisma.$transaction(async tx=>{
       const existing=await tx.settlementBatch.findUnique({
@@ -74,7 +81,11 @@ export class ReferralBonusService {
         const g1Active=historicalRecipientState(source.evidence,g1.qualification_id).active;
         const g1Plan=historicalRecipientState(source.evidence,g1.qualification_id).plan;
         const g1Rate=snapshotDecimal(sourceSnapshot,'referral.g1.rate',g1Plan);
-        const g1Theory=g1Active?effective.get(event.eventId)!.mul(g1Rate):new Prisma.Decimal(0);
+        // Matching generations are fixed historical sponsor positions.  Their
+        // base is the G1 referral theory for this source, independent of
+        // whether G1 itself is entitled to an award.
+        const g1ReferralTheory=effective.get(event.eventId)!.mul(g1Rate);
+        const g1Theory=g1Active?g1ReferralTheory:new Prisma.Decimal(0);
 
         if(g1Theory.gt(0)){
           theoryRows.push({
@@ -99,8 +110,15 @@ export class ReferralBonusService {
           });
         }
 
-        // Equalization exists only when same source transaction generated G1 referral bonus.
-        if(g1Theory.lte(0)) continue;
+        if(!g1Active && g1ReferralTheory.gt(0)){
+          await tx.bonusCalculationEvidence.createMany({data:[{
+            settlementBatchId:batch.settlementBatchId,evidenceType:'REFERRAL_ELIGIBILITY',
+            recipientQualificationId:g1.qualification_id,reasonCode:'INACTIVE',
+            theoreticalAmount:g1ReferralTheory,entitlementAmount:new Prisma.Decimal(0),
+            ruleVersionCode,parameterSnapshotHash:sourceSnapshot.hash,occurredAt:event.occurredAt,
+            calculationDetail:{sourceEventId:event.eventId,generation:1,rate:g1Rate.toString(),sourceGpv:effective.get(event.eventId)!.toString()}
+          }],skipDuplicates:true});
+        }
 
         for(const anc of ancestors.filter(a=>a.generation>=2)){
           const plan=historicalRecipientState(source.evidence,anc.qualification_id).plan;
@@ -108,11 +126,23 @@ export class ReferralBonusService {
           const unlock=this.equalizationUnlockDepth(plan,directCount);
           const active=historicalRecipientState(source.evidence,anc.qualification_id).active;
 
-          if(!active || anc.generation>unlock) continue;
+          // A plan has no rate outside its configured fixed generation range.
+          if(anc.generation>this.equalizationMaximumDepth(plan)) continue;
 
           const rate=snapshotDecimal(sourceSnapshot,'equalization.rate',`${plan}:G${anc.generation}`);
+          const theoreticalAmount=g1ReferralTheory.mul(rate);
+          if(!active || anc.generation>unlock){
+            await tx.bonusCalculationEvidence.createMany({data:[{
+              settlementBatchId:batch.settlementBatchId,evidenceType:'REFERRAL_MATCHING_ELIGIBILITY',
+              recipientQualificationId:anc.qualification_id,reasonCode:!active?'INACTIVE':'LOCKED',
+              theoreticalAmount,entitlementAmount:new Prisma.Decimal(0),ruleVersionCode,
+              parameterSnapshotHash:sourceSnapshot.hash,occurredAt:event.occurredAt,
+              calculationDetail:{sourceEventId:event.eventId,baseG1ReferralTheory:g1ReferralTheory.toString(),rate:rate.toString(),generation:anc.generation,unlockDepth:unlock,effectiveDirectCount:directCount}
+            }],skipDuplicates:true});
+            continue;
+          }
 
-          const theory=g1Theory.mul(rate);
+          const theory=theoreticalAmount;
           if(theory.lte(0)) continue;
 
           theoryRows.push({
@@ -129,7 +159,7 @@ export class ReferralBonusService {
             pendingUntil:this.query.pendingUntil(event.occurredAt,pendingDays),
             calculationDetail:{
               parameterSnapshot:sourceSnapshot,
-              baseG1ReferralTheory:g1Theory.toString(),
+              baseG1ReferralTheory:g1ReferralTheory.toString(),
               originalCalculationSourceVolume:effective.get(event.eventId)!.toString(),
               rate:rate.toString(),
               generation:anc.generation,

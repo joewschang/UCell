@@ -1,5 +1,14 @@
 # R1.0B Decision Register v3 implementation report
 
+## Immediate theory and historical replay checkpoint — 2026-09-17
+
+- Authoritative GPV recognition now appends G1 Referral Theory, fixed-generation Referral Matching theory/zero evidence and Qualification-scoped Binary ancestor left/right ledger entries in the same Serializable transaction.
+- Immediate processing creates no final K0, BonusAward or PAID entitlement. Missing historical Sponsor/Binary/Active/parameter evidence fails closed; retry is exactly once and same-Person Balls remain isolated.
+- Referral and Binary Matching now retain fixed historical Sponsor generations. Inactive/unlocked failure produces zero evidence while traversal continues; no compression, substitution, redistribution or backfill occurs. Binary Matching uses Binary Paid and the frozen 15/10/5/5/5 rates/unlock depths.
+- POSTED-return replay now appends whole-month EPV/consumption accumulator and superseding Active interval evidence where v3 recognition evidence exists. Pre-v3 facts retain the sealed legacy replay path instead of fabricating history. Existing PAID reductions continue through append-only Recovery/CLAWBACK.
+- Database/API/Worker builds PASS; Matching/Return focused regressions 46/46 PASS; immediate GPV PostgreSQL regression 2/2 PASS.
+- Remaining blocker: migration 41 cannot represent signed Global/Reservoir/Welfare replay deltas; a forward-only migration and replay integration are required.
+
 ## Connected evidence checkpoint — 2026-09-17
 
 - `SALE_CONFIRMED` now enters an idempotent ConsumptionRecognition transaction instead of writing GPV directly from payment/order existence.

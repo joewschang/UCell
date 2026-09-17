@@ -411,7 +411,49 @@ export async function replayEpvMonth(tx:Prisma.TransactionClient,orderId:string,
     if(!delta.eq(0)) await tx.pvLedger.upsert({where:{eventType_sourceType_sourceId_sourceLineId_pvType:{eventType:'EPV_REPLAY_ADJUSTMENT',sourceType:'RETURN',sourceId:returnCaseId!,sourceLineId:envelope.sourceId,pvType:'EPV'}},update:{},create:{qualificationId:marker.qualificationId,pvType:'EPV',amount:delta,
       sourceType:'RETURN',sourceId:returnCaseId!,sourceLineId:envelope.sourceId,eventType:'EPV_REPLAY_ADJUSTMENT',ruleVersionCode:envelope.ruleVersionCode,parameterSnapshotHash:envelope.parameters.hash,occurredAt:new Date(),reversalOfEventId:envelope.sourceId,correlationId:returnCaseId!}});
   }
+  if(returnCaseId) await appendQualificationMonthReplayEvidence(tx,{marker,envelopes,remaining,actionKey,returnCaseId,stateHash});
   return stateHash;
+}
+
+/**
+ * Migration 41 append-only projection for a historical return.  This never
+ * edits the original recognition, accumulator, Active interval, or EPV row.
+ */
+export async function appendQualificationMonthReplayEvidence(tx:Prisma.TransactionClient,input:{marker:any;envelopes:ReplayEnvelope[];remaining:Map<string,Prisma.Decimal>;actionKey:string;returnCaseId:string;stateHash:string}) {
+  const first=input.envelopes[0]??pending('HISTORICAL_SNAPSHOT_MISSING','EPV month has no sealed recognition evidence');
+  const monthStart=new Date(first.inputs.monthStart),monthEnd=new Date(first.inputs.monthEnd);
+  const originals=await tx.consumptionRecognitionEvent.findMany({where:{qualificationId:input.marker.qualificationId,recognitionMonth:monthStart,direction:'ORIGINAL'},orderBy:[{recognizedAt:'asc'},{consumptionRecognitionEventId:'asc'}]});
+  // Migration 41 is prospective. Legacy sealed EPV snapshots remain replayable,
+  // but cannot be backfilled by manufacturing recognition evidence.
+  if(!originals.length) return {skipped:'PRE_V3_RECOGNITION'} as const;
+  const prior=await tx.qualificationMonthAccumulatorEvidence.findFirst({where:{qualificationId:input.marker.qualificationId,calendarMonth:monthStart},orderBy:{sequenceNo:'desc'}});
+  if(!prior) return {skipped:'PRE_V3_ACCUMULATOR'} as const;
+  const before=originals.reduce((sum:any,row:any)=>sum.add(row.eligibleAmount),dec(0));
+  const after=[...input.remaining.values()].reduce((sum,value)=>sum.add(value),dec(0));
+  if(after.lt(0)||after.gt(before)) pending('RETURN_AMOUNT_EXCEEDED','Recomputed monthly consumption is outside the original recognized total');
+  const delta=after.sub(before),recognitionKey=`recognition-replay:${input.actionKey}:EPV_MONTH`;
+  let reversal=await tx.consumptionRecognitionEvent.findUnique({where:{idempotencyKey:recognitionKey}});
+  if(!reversal) reversal=await tx.consumptionRecognitionEvent.create({data:{qualificationId:input.marker.qualificationId,sourceType:'RETURN',sourceId:input.returnCaseId,direction:'REVERSAL',eligible:true,eligibleAmount:delta,
+    recognitionPurpose:'EPV',productProfileVersion:'HISTORICAL_REPLAY',ruleVersionCode:first.ruleVersionCode,parameterSnapshotHash:first.parameters.hash,
+    recognizedAt:new Date(first.at),recognitionMonth:monthStart,reversalOfEventId:originals[0].consumptionRecognitionEventId,idempotencyKey:recognitionKey,
+    correlationId:input.returnCaseId,evidenceHash:replayHash({actionKey:input.actionKey,stateHash:input.stateHash,before:before.toString(),after:after.toString()})}});
+  const accumulatorKey=`accumulator-replay:${input.actionKey}:EPV_MONTH`;
+  let accumulator=await tx.qualificationMonthAccumulatorEvidence.findUnique({where:{idempotencyKey:accumulatorKey}});
+  if(!accumulator) accumulator=await tx.qualificationMonthAccumulatorEvidence.create({data:{qualificationId:input.marker.qualificationId,calendarMonth:monthStart,
+    consumptionRecognitionEventId:reversal.consumptionRecognitionEventId,cumulativeBefore:before,eligibleDelta:delta,cumulativeAfter:after,
+    activeThreshold:prior.activeThreshold,thresholdCrossed:before.lt(prior.activeThreshold)&&after.gte(prior.activeThreshold),epvAfter:after,
+    sequenceNo:prior.sequenceNo+1,ruleVersionCode:first.ruleVersionCode,evidenceHash:replayHash({actionKey:input.actionKey,stateHash:input.stateHash,before:before.toString(),after:after.toString(),threshold:prior.activeThreshold.toString()}),idempotencyKey:accumulatorKey}});
+  if(after.gte(prior.activeThreshold)) {
+    let cumulative=dec(0),activeFrom=new Date(first.at);
+    for(const envelope of input.envelopes) { cumulative=cumulative.add(input.remaining.get(envelope.inputs.orderId)??dec(0)); if(cumulative.gte(prior.activeThreshold)){activeFrom=new Date(envelope.at);break;} }
+    const priorActive=await tx.activeIntervalEvidence.findFirst({where:{qualificationId:input.marker.qualificationId,calendarMonth:monthStart},orderBy:{createdAt:'desc'}});
+    const activeKey=`active-replay:${input.actionKey}:EPV_MONTH`;
+    const existing=await tx.activeIntervalEvidence.findUnique({where:{idempotencyKey:activeKey}});
+    if(!existing) await tx.activeIntervalEvidence.create({data:{qualificationId:input.marker.qualificationId,calendarMonth:monthStart,sourceAccumulatorEvidenceId:accumulator.qualificationMonthAccumulatorEvidenceId,
+      activeFrom,activeTo:monthEnd,supersedesActiveEvidenceId:priorActive?.activeIntervalEvidenceId,reasonCode:'HISTORICAL_RETURN_REPLAY',ruleVersionCode:first.ruleVersionCode,
+      evidenceHash:replayHash({actionKey:input.actionKey,stateHash:input.stateHash,activeFrom:activeFrom.toISOString(),activeTo:monthEnd.toISOString()}),idempotencyKey:activeKey}});
+  }
+  return {before,after,active:after.gte(prior.activeThreshold),accumulator};
 }
 export async function replayRpvCancellation(tx:Prisma.TransactionClient,recognitionId:string,cancellationId:string,actionKey:string,correlationId:string) {
   const prior=await tx.replayAction.findUnique({where:{actionKey}});if(prior) return prior.result;

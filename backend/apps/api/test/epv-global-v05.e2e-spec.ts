@@ -70,5 +70,14 @@ describe('v0.5 Global/Welfare', () => {
     expect(h.reservoir[0].amount.toString()).toBe('50');
     expect(h.reservoir[0].sourceGlobalSettlementId).toBe(row.globalPoolSettlementId);
   });
+  it('Reservoir A settlement replay is idempotent and appends no duplicate effect',async()=>{
+    const h=await globalHarness({total:'1000'});
+    const first=await h.service.evaluateAndSettle(start,end,'TEST_ONLY');
+    h.tx.globalPoolSettlement.findUnique.mockResolvedValue(first);
+    const second=await h.service.evaluateAndSettle(start,end,'TEST_ONLY');
+    expect(second).toBe(first);
+    expect(h.tx.globalPoolSettlement.create).toHaveBeenCalledTimes(1);
+    expect(h.tx.reservoirLedgerEffect.create).toHaveBeenCalledTimes(1);
+  });
   it('welfare 2% is accrual-only and creates no member Award, Payable, or Ledger',async()=>{const h=await globalHarness({total:'1000'});const row=await h.service.accrueWelfare(start,end,'TEST_ONLY');expect(row.poolRate.toString()).toBe('0.02');expect(row.accruedAmount.toString()).toBe('20');expect(h.awards).toEqual([]);expect(h.tx.bonusAward.create).not.toHaveBeenCalled();expect(h.tx.payable.create).not.toHaveBeenCalled();expect(h.tx.ledgerEntry.create).not.toHaveBeenCalled();});
 });

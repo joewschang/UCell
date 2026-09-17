@@ -1,10 +1,31 @@
-import { Prisma } from '@ucell/database';
+import { appendQualificationMonthReplayEvidence, Prisma } from '@ucell/database';
 import { BonusQueryService } from '../src/modules/bonus/bonus-query.service';
 import { ReturnService } from '../src/modules/return/return.service';
 import { ReversalService } from '../src/modules/return/reversal.service';
 
 const d=(n:number)=>new Prisma.Decimal(n);
 describe('A Decision return safeguards',()=>{
+  test.each([
+    ['above',2500,true,1],
+    ['below',1500,false,0],
+  ])('return recomputes Qualification-month Active %s threshold append-only',async(_label,remaining,active,activeWrites)=>{
+    const activeCreate=jest.fn(async({data}:any)=>data);
+    const accumulatorCreate=jest.fn(async({data}:any)=>({qualificationMonthAccumulatorEvidenceId:'replay-accumulator',...data}));
+    const tx:any={
+      consumptionRecognitionEvent:{
+        findMany:async()=>[{consumptionRecognitionEventId:'original-recognition',eligibleAmount:d(3000)}],findUnique:async()=>null,
+        create:async({data}:any)=>({consumptionRecognitionEventId:'reversal-recognition',...data}),
+      },
+      qualificationMonthAccumulatorEvidence:{findFirst:async()=>({sequenceNo:1,activeThreshold:d(2000)}),findUnique:async()=>null,create:accumulatorCreate},
+      activeIntervalEvidence:{findFirst:async()=>({activeIntervalEvidenceId:'original-active'}),findUnique:async()=>null,create:activeCreate},
+    };
+    const envelope:any={ruleVersionCode:'R1.0B',at:'2026-09-05T00:00:00.000Z',parameters:{hash:'parameters'},inputs:{monthStart:'2026-08-31T16:00:00.000Z',monthEnd:'2026-09-30T16:00:00.000Z',orderId:'order'}};
+    const result=await appendQualificationMonthReplayEvidence(tx,{marker:{qualificationId:'q'},envelopes:[envelope],remaining:new Map([['order',d(remaining)]]),actionKey:`RETURN:${_label}`,returnCaseId:'return',stateHash:'state'});
+    expect(result.active).toBe(active);
+    expect(accumulatorCreate).toHaveBeenCalledWith({data:expect.objectContaining({cumulativeBefore:d(3000),eligibleDelta:d(remaining-3000),cumulativeAfter:d(remaining),epvAfter:d(remaining),thresholdCrossed:false})});
+    expect(activeCreate).toHaveBeenCalledTimes(activeWrites);
+    if(active) expect(activeCreate).toHaveBeenCalledWith({data:expect.objectContaining({supersedesActiveEvidenceId:'original-active',reasonCode:'HISTORICAL_RETURN_REPLAY'})});
+  });
   test('missing historical plan never reads current qualification',async()=>{
     const current=jest.fn();
     const tx={qualificationPlanHistory:{findFirst:async()=>null},qualification:{findUniqueOrThrow:current}};

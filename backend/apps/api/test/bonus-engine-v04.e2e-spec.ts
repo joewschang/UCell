@@ -22,7 +22,7 @@ async function matchingHarness(volume = '1000', paid = '200', theory = '1000') {
   }));
   const snapshot = await captureParameters({runtimeRuleParameter: {findMany: async () => rows}} as any, start, 'TEST_ONLY');
   const envelope = source(); envelope.inputs.volume = volume;
-  const awards: any[] = [], lifecycle: any[] = [];
+  const awards: any[] = [], lifecycle: any[] = [], evidence: any[] = [];
   const binary = {settlementBatchId: 'binary', status: 'FINALIZED'};
   const tx = {
     settlementBatch: {
@@ -37,6 +37,10 @@ async function matchingHarness(volume = '1000', paid = '200', theory = '1000') {
       findMany: jest.fn(async () => [{bonusAwardId: 'binary-award', recipientQualificationId: 'binary-recipient', payableAmount: new Prisma.Decimal(paid), theoryAmount: new Prisma.Decimal(theory)}]),
       create: jest.fn(async ({data}: any) => {const award = {...data, bonusAwardId: `matching-${awards.length}`}; awards.push(award); return award;}),
     },
+    bonusCalculationEvidence: {
+      create: jest.fn(async ({data}: any) => {evidence.push(data); return data;}),
+      createMany: jest.fn(async ({data}: any) => {evidence.push(...data); return {count:data.length};}),
+    },
     bonusAwardLifecycleEvent: {createMany: jest.fn(async ({data}: any) => {lifecycle.push(...data); return {count: data.length};})},
   };
   const query = {
@@ -47,7 +51,7 @@ async function matchingHarness(volume = '1000', paid = '200', theory = '1000') {
   };
   const prisma = {$transaction: jest.fn(async (work: any) => work(tx))};
   const service = new BinaryBonusService(prisma as any, {} as any, query as any, {captureForPeriod: async () => snapshot} as any);
-  return {service, tx, query, prisma, awards, lifecycle, start, end};
+  return {service, tx, query, prisma, awards, lifecycle, evidence, start, end};
 }
 function lifecycleHarness() {
   const pendingUntil=new Date('2020-02-01'),award={bonusAwardId:'award-A',pendingUntil,payableAmount:'100'};
@@ -98,7 +102,10 @@ async function binaryHarness(left = '1000', right = '1000', leftIn = '0', rightI
     },
     replayCarryProjection: {findFirst: jest.fn(async () => null)},
     bonusAward: {create: jest.fn(async ({data}: any) => {const award = {...data, bonusAwardId: `binary-${awards.length}`}; awards.push(award); return award;})},
-    bonusCalculationEvidence: {create: jest.fn(async ({data}: any) => {evidence.push(data); return data;})},
+    bonusCalculationEvidence: {
+      create: jest.fn(async ({data}: any) => {evidence.push(data); return data;}),
+      createMany: jest.fn(async ({data}: any) => {evidence.push(...data); return {count:data.length};}),
+    },
     bonusAwardLifecycleEvent: {createMany: jest.fn(async ({data}: any) => {lifecycle.push(...data); return {count: data.length};})},
   };
   const prisma = {$transaction: jest.fn(async (work: any) => work(tx))};
@@ -127,7 +134,7 @@ async function referralHarness(g1Plan = 'STARTER', uplinePlan = 'STARTER', g1Act
     effectiveDirectCounts: Object.fromEntries([1, 2, 3, 4, 5, 6, 7].map(g => [`g${g}`, 4])),
   };
   const sources = [envelope];
-  const awards: any[] = [], lifecycle: any[] = [];
+  const awards: any[] = [], lifecycle: any[] = [], evidence: any[] = [];
   const tx = {
     settlementBatch: {
       findUnique: jest.fn(async () => null),
@@ -138,12 +145,13 @@ async function referralHarness(g1Plan = 'STARTER', uplinePlan = 'STARTER', g1Act
     historicalReplaySnapshot: {findUnique: jest.fn(async ({where}: any) => sealed(sources.find(s => s.sourceId === where.kind_sourceId.sourceId)!))},
     returnLine: {aggregate: jest.fn(async () => ({_sum: {gpvReversalAmount: null}}))},
     bonusAward: {create: jest.fn(async ({data}: any) => {const award = {...data, bonusAwardId: `referral-${awards.length}`}; awards.push(award); return award;})},
+    bonusCalculationEvidence: {createMany: jest.fn(async ({data}: any) => {evidence.push(...data); return {count:data.length};})},
     bonusAwardLifecycleEvent: {createMany: jest.fn(async ({data}: any) => {lifecycle.push(...data); return {count: data.length};})},
   };
   const prisma = {$transaction: jest.fn(async (work: any) => work(tx))};
   const query = new BonusQueryService(prisma as any);
   const service = new ReferralBonusService(prisma as any, {} as any, query, {captureForPeriod: async () => snapshot} as any);
-  return {service, tx, envelope, sources, awards, lifecycle, start, end};
+  return {service, tx, envelope, sources, awards, lifecycle, evidence, start, end};
 }
 describe('Bonus Engine v0.4.0', () => {
   describe('Referral / Equalization', () => {
@@ -160,13 +168,20 @@ describe('Bonus Engine v0.4.0', () => {
         expect(referral[0].activeSnapshot).toBe(true);
       });
     }
-    it('inactive G1 generates no referral bonus and equalization base is zero', async () => {
+    it('inactive G1 gets zero evidence while higher fixed generations still use G1 referral theory', async () => {
       const h = await referralHarness('LEADER', 'LEADER', false);
       const batch = await h.service.settle(h.start, h.end, 'TEST_ONLY');
-      expect(h.awards).toEqual([]);
-      expect(batch.totalTheory.toString()).toBe('0');
-      expect(h.tx.bonusAward.create).not.toHaveBeenCalled();
-      expect(h.tx.bonusAwardLifecycleEvent.createMany).not.toHaveBeenCalled();
+      expect(h.awards.map(a => [a.generationNo, a.recipientQualificationId])).toEqual([
+        [2,'g2'],[3,'g3'],[4,'g4'],[5,'g5'],[6,'g6'],[7,'g7'],
+      ]);
+      expect(h.awards.every(a => a.calculationDetail.baseG1ReferralTheory === '250')).toBe(true);
+      expect(h.evidence).toHaveLength(1);
+      expect(h.evidence[0]).toEqual(expect.objectContaining({
+        evidenceType:'REFERRAL_ELIGIBILITY',recipientQualificationId:'g1',reasonCode:'INACTIVE'
+      }));
+      expect(h.evidence[0].theoreticalAmount.toString()).toBe('250');
+      expect(h.evidence[0].entitlementAmount.toString()).toBe('0');
+      expect(batch.totalTheory.toString()).toBe('175');
     });
     it('equalization base is same-source G1 referral theory, not GPV', async () => {
       for (const [plan, expectedBase, expectedTheory] of [['STARTER', '150', '15'], ['LEADER', '250', '25']]) {
@@ -217,6 +232,12 @@ describe('Bonus Engine v0.4.0', () => {
         expect(h.awards.filter(a => a.awardType === 'EQUALIZATION').map(a => [a.generationNo, a.recipientQualificationId, a.theoryAmount.toString()])).toEqual([
           [3, 'g3', '15'], [4, 'g4', '15'],
         ]);
+        expect(h.evidence).toHaveLength(1);
+        expect(h.evidence[0]).toEqual(expect.objectContaining({
+          evidenceType:'REFERRAL_MATCHING_ELIGIBILITY',recipientQualificationId:'g2',reasonCode:reason === 'inactive' ? 'INACTIVE' : 'LOCKED'
+        }));
+        expect(h.evidence[0].theoreticalAmount.toString()).toBe('15');
+        expect(h.evidence[0].entitlementAmount.toString()).toBe('0');
       }
     });
     it('recipient plan and effective-direct count control unlock depth',()=>{
@@ -373,6 +394,23 @@ describe('Bonus Engine v0.4.0', () => {
     it('direct 1 unlocks G1-G2, 2 unlocks G1-G3, 3 unlocks G1-G4, 4+ unlocks G1-G5',()=>{
       const service=new BinaryBonusService({} as any,{} as any,{} as any,{} as any);
       expect([0,1,2,3,4,8].map(d=>service.matchingUnlockDepth(d))).toEqual([0,2,3,4,5,5]);
+    });
+    it('inactive or locked intermediate generation records zero evidence and does not compress later generations', async () => {
+      for (const reason of ['inactive','locked'] as const) {
+        const h = await matchingHarness('1000','100');
+        if (reason === 'inactive') (h.query.isActiveAt as jest.Mock).mockImplementation(async (_tx:any,id:string) => id !== 'sponsor-2');
+        else (h.query.effectiveDirectCountAt as jest.Mock).mockImplementation(async (_tx:any,id:string) => id === 'sponsor-2' ? 0 : 4);
+        await h.service.settleMatching(h.start,h.end,'TEST_ONLY');
+        expect(h.awards.map(a => [a.generationNo,a.recipientQualificationId,a.theoryAmount.toString()])).toEqual([
+          [1,'sponsor-1','15'],[3,'sponsor-3','5'],[4,'sponsor-4','5'],[5,'sponsor-5','5'],
+        ]);
+        expect(h.evidence).toHaveLength(1);
+        expect(h.evidence[0]).toEqual(expect.objectContaining({
+          evidenceType:'BINARY_MATCHING_ELIGIBILITY',recipientQualificationId:'sponsor-2',reasonCode:reason === 'inactive' ? 'INACTIVE' : 'LOCKED'
+        }));
+        expect(h.evidence[0].theoreticalAmount.toString()).toBe('10');
+        expect(h.evidence[0].entitlementAmount.toString()).toBe('0');
+      }
     });
     it('Matching Pool is 15% and K2 <= 1', async () => {
       for (const [volume, expectedPool, expectedK, expectedPayables] of [

@@ -32,3 +32,4 @@ export * from './inventory/inventory-operation';
 export * from './inventory/inventory-persistence.service';
 export * from './payment-inventory-bridge';
 export * from './recognition-active';
+export * from './gpv-immediate-effects';

@@ -1,4 +1,4 @@
-import { PrismaService, Prisma, processMemberOrderNotification, processPaymentInventoryReservation, recognizeConsumption, sealGpvEvent, sealRpvEvent, pending, claimOutboxLease, withOutboxLease, processLeasedReplay, releaseFailedOutboxLease, OutboxLease, matureBonusAward } from '@ucell/database';
+import { PrismaService, Prisma, processMemberOrderNotification, processPaymentInventoryReservation, recognizeConsumption, applyGpvImmediateEffects, sealRpvEvent, pending, claimOutboxLease, withOutboxLease, processLeasedReplay, releaseFailedOutboxLease, OutboxLease, matureBonusAward } from '@ucell/database';
 import * as crypto from 'node:crypto';
 
 const prisma = new PrismaService();
@@ -32,7 +32,7 @@ async function effectiveDirectCountAt(
   return Number(rows[0]?.count ?? '0');
 }
 
-export async function processSaleConfirmed(db:PrismaService,lease:OutboxLease,deps={withOutboxLease,sealGpvEvent}){
+export async function processSaleConfirmed(db:PrismaService,lease:OutboxLease,deps={withOutboxLease,applyGpvImmediateEffects}){
   const outboxEventId=lease.outboxEventId;
   return deps.withOutboxLease(db,lease,async tx=>{
     const event=await tx.outboxEvent.findUnique({where:{outboxEventId}});
@@ -52,7 +52,7 @@ export async function processSaleConfirmed(db:PrismaService,lease:OutboxLease,de
         ruleVersionCode:order.ruleVersionCode,parameterSnapshotHash:order.parameterSnapshotHash,recognizedAt:order.paidAt,
         activeThreshold:process.env.UCELL_ACTIVE_THRESHOLD??'1200',correlationId:event.correlationId
       });
-      if(result.created&&result.volume) await deps.sealGpvEvent(tx,result.volume);
+      if(result.created&&result.volume) await deps.applyGpvImmediateEffects(tx,result.volume);
     }
 
     await tx.outboxEvent.update({

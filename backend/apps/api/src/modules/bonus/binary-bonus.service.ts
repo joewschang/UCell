@@ -220,7 +220,9 @@ export class BinaryBonusService {
 
 
           const rate=snapshotDecimal(parameterSnapshot,'matching.rate',String(u.generation));
-          const theory=active&&u.generation<=unlock?source.payableAmount.mul(rate):new Prisma.Decimal(0); // actual Binary Paid after K1
+          const theoreticalAmount=source.payableAmount.mul(rate); // actual Binary Paid after K1
+          const eligible=active&&u.generation<=unlock;
+          const theory=eligible?theoreticalAmount:new Prisma.Decimal(0);
 
 
           rows.push({
@@ -229,6 +231,8 @@ export class BinaryBonusService {
             sourceAwardId:source.bonusAwardId,
             generationNo:u.generation,
             theoryAmount:theory,
+            theoreticalAmount,
+            eligible,
             activeSnapshot:active,
             effectiveDirectCountSnapshot:directCount,
             planLevelSnapshot:await this.query.qualificationPlanAt(tx,u.qualification_id,periodEnd),
@@ -250,6 +254,17 @@ export class BinaryBonusService {
         : new Prisma.Decimal(1);
 
       for(const row of rows){
+        if(!row.eligible){
+          await tx.bonusCalculationEvidence.createMany({data:[{
+            settlementBatchId:batch.settlementBatchId,evidenceType:'BINARY_MATCHING_ELIGIBILITY',
+            recipientQualificationId:row.recipientQualificationId,
+            reasonCode:!row.activeSnapshot?'INACTIVE':'LOCKED',
+            theoreticalAmount:row.theoreticalAmount,entitlementAmount:new Prisma.Decimal(0),
+            ruleVersionCode,parameterSnapshotHash:parameterSnapshot.hash,occurredAt:periodEnd,
+            calculationDetail:{...row.calculationDetail,sourceAwardId:row.sourceAwardId,sourceQualificationId:row.sourceQualificationId}
+          }],skipDuplicates:true});
+          continue;
+        }
         const award=await tx.bonusAward.create({
           data:{
             settlementBatchId:batch.settlementBatchId,awardType:'MATCHING',
