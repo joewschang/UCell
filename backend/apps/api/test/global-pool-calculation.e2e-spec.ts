@@ -32,4 +32,20 @@ describe('Global Pool v3 pure calculation', () => {
       { level: 'NEW_STAR', rate: new Prisma.Decimal('0.015'), eligibleQualificationIds: ['recipient'] },
     ])).toThrow('Global rank slices exceed the available Global pool');
   });
+
+  it('B12 conserves distributed Global plus Reservoir A after deterministic rounding', () => {
+    const result = calculateGlobalPool(new Prisma.Decimal(100), new Prisma.Decimal(1), [
+      { level: 'NEW_STAR', rate: new Prisma.Decimal('.01'), eligibleQualificationIds: ['a', 'b', 'c'] },
+    ]);
+    expect(result.slices[0].amountPerRecipient?.toString()).toBe('0.3333');
+    expect(result.distributedAmount.toString()).toBe('0.9999');
+    expect(result.undistributedAmount.toString()).toBe('0.0001');
+    expect(result.distributedAmount.add(result.undistributedAmount).toString()).toBe('1');
+
+    const tiny = calculateGlobalPool(new Prisma.Decimal('.0001'), new Prisma.Decimal('.0001'), [
+      { level: 'NEW_STAR', rate: new Prisma.Decimal(1), eligibleQualificationIds: ['a', 'b'] },
+    ]);
+    expect(tiny.distributedAmount.toString()).toBe('0');
+    expect(tiny.undistributedAmount.toString()).toBe('0.0001');
+  });
 });

@@ -29,3 +29,9 @@
 | Stage deployment harness | PASS | 19 preflight assertions; 7 upgrade/Golden tests; UAT seed guard PASS |
 | Stage redeployment/UAT | BLOCKED | fresh interactive Azure login and Stage credentials/secrets required |
 | Production promotion | BLOCKED | prohibited pending formal UAT/release decision |
+| Boundary B01-B20 | PASS | half-open cut-offs, K0 window, Binary batching, Active/replay, Global conservation, multi-Ball/exit/security |
+| Full isolated API after boundary closure | PASS | 39 suites / 354 tests |
+| Decision v3 economic invariance | PASS | Mandatory Golden 17/17 on fresh 0→42 database |
+| Boundary migration impact | PASS | no new migration; existing 42 deploy cleanly |
+| Inventory PICK/SHIP timing | DEFERRED_BY_PRODUCT_OWNER | explicitly outside this Stage UAT batch |
+| Stage manual Admin identity | EXTERNAL_CREDENTIAL_BLOCKED | formal Stage Entra test user required; bypass remains disabled |

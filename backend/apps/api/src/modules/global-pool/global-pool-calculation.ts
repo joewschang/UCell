@@ -27,6 +27,9 @@ export function calculateGlobalPool(
   poolAvailable: Prisma.Decimal,
   inputs: GlobalRankSliceInput[],
 ): GlobalPoolCalculationResult {
+  // Truncate each equal right at the persisted monetary scale. Rounding up
+  // could over-distribute a slice; all remainder belongs to Reservoir A.
+  const currency = (value: Prisma.Decimal) => value.toDecimalPlaces(4, Prisma.Decimal.ROUND_DOWN);
   let distributedAmount = new Prisma.Decimal(0);
   let undistributedAmount = new Prisma.Decimal(0);
 
@@ -37,11 +40,16 @@ export function calculateGlobalPool(
       return { ...input, amount, amountPerRecipient: null };
     }
 
-    distributedAmount = distributedAmount.add(amount);
+    // Awards are persisted as Decimal(18,4).  Account the amount that will
+    // actually be persisted and retain every division residue in Reservoir A.
+    const amountPerRecipient = currency(amount.div(input.eligibleQualificationIds.length));
+    const persistedDistribution = amountPerRecipient.mul(input.eligibleQualificationIds.length);
+    distributedAmount = distributedAmount.add(persistedDistribution);
+    undistributedAmount = undistributedAmount.add(amount.sub(persistedDistribution));
     return {
       ...input,
       amount,
-      amountPerRecipient: amount.div(input.eligibleQualificationIds.length),
+      amountPerRecipient,
     };
   });
 

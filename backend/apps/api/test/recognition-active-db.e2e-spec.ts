@@ -5,7 +5,7 @@ const ROLLBACK='TEST_ROLLBACK';
 const at=(local:string)=>new Date(`${local}+08:00`);
 
 describe('R1.0B v3 recognition and Active DB slice',()=>{
-  it('uses qualification-scoped Taipei-month evidence and exactly-once concrete GPV',async()=>{
+  it('B06/B07/B08/B09 uses one qualification-month accumulator for threshold transaction, pre-threshold state, month reset, and EPV evidence',async()=>{
     const db=new PrismaService();
     try{
       await expect(db.$transaction(async tx=>{
@@ -22,6 +22,7 @@ describe('R1.0B v3 recognition and Active DB slice',()=>{
 
         const crossing=await recognizeConsumption(tx,input(randomUUID(),at('2026-09-30T12:00:00'),'1'));
         expect(crossing.accumulator?.thresholdCrossed).toBe(true);
+        expect(crossing.accumulator?.epvAfter.toString()).toBe(crossing.accumulator?.cumulativeAfter.toString());
         expect(await tx.activePeriod.count({where:{qualificationId:ballA.qualificationId,activeFrom:{lte:at('2026-09-30T12:00:00')},OR:[{activeTo:null},{activeTo:{gt:at('2026-09-30T12:00:00')}}]}})).toBe(1);
         expect(await tx.activePeriod.count({where:{qualificationId:ballA.qualificationId,activeFrom:{lte:at('2026-09-30T12:00:01')},OR:[{activeTo:null},{activeTo:{gt:at('2026-09-30T12:00:01')}}]}})).toBe(1);
         expect(await tx.activePeriod.count({where:{qualificationId:ballB.qualificationId,activeFrom:{lte:at('2026-09-30T12:00:01')},OR:[{activeTo:null},{activeTo:{gt:at('2026-09-30T12:00:01')}}]}})).toBe(0);

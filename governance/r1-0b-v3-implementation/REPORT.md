@@ -24,3 +24,39 @@
 - Formal Stage redeployment and Connected Golden Journey remain operationally blocked: Azure Security Defaults requires a fresh interactive CLI login, and Stage PostgreSQL plus LINE/LIFF and Entra/RBAC credentials are not available to this deployment session.
 - Synthetic credentials must not be used as formal provider evidence.
 - Production Promotion remains BLOCKED; no Production resource or promotion is authorized.
+## Incremental Boundary Closure checkpoint — 2026-09-17
+
+### IMPLEMENTED
+
+- Added deterministic Asia/Taipei settlement windows at the 10th/25th 00:00 boundaries using `[previous_cutoff,current_cutoff)`.
+- Binary weeks remain atomic and map by canonical Sunday close to the next applicable 10th/25th batch.
+- K0 numerator and Referral/Referral Matching denominator now share one immutable window evidence object and hash.
+- Return POSTED replay appends a superseding inactive interval when historical consumption removes Active; original Active/Award/Ledger/PAID evidence remains unchanged.
+- Global recipient amounts round down deterministically at persisted precision; every residue remains undistributed and enters Reservoir A. No Reservoir outflow was added.
+
+### EXECUTABLE_EVIDENCE
+
+- Boundary B01-B20: PASS.
+- Shared calendar: 19/19 PASS; focused API boundary/regression: 52/52 PASS.
+- Full isolated API: 39 suites / 354 tests PASS.
+- Decision v3 Mandatory Golden: 17/17 PASS on a fresh 0→42 test database.
+- Member build + 136/136 tests PASS; Admin build + 31/31 tests PASS.
+- Fresh isolated DB Golden, replay/return/recovery, K0/K1/K2/carry regressions, OpenAPI, Security preflight and RC gate PASS.
+- No migration added; existing 42 migrations deploy cleanly from zero.
+
+### STAGE_READY
+
+- Stage preflight 19/19, upgrade/Golden harness 7/7 and UAT seed guard PASS.
+- Latest Boundary Closure HEAD must be deployed; Stage has not yet been changed by this checkpoint.
+
+### EXTERNAL_CREDENTIAL_BLOCKED
+
+- Azure interactive login must be completed before resource inspection/deployment.
+- Stage PostgreSQL deployment secret and formal LINE/LIFF/Entra credentials are unavailable to this session.
+- `ADMIN_AUTH_BYPASS=false` remains enforced. Manual Admin UAT requires the approved Stage Entra test user; no bypass was introduced.
+
+### DEFERRED_BY_PRODUCT_OWNER
+
+- Inventory PICK/SHIP accounting timing. Existing Payment PAID → inventory reserve behavior remains unchanged and this deferral does not block functional Stage UAT.
+
+Production Promotion remains BLOCKED.

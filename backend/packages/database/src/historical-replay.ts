@@ -443,15 +443,23 @@ export async function appendQualificationMonthReplayEvidence(tx:Prisma.Transacti
     consumptionRecognitionEventId:reversal.consumptionRecognitionEventId,cumulativeBefore:before,eligibleDelta:delta,cumulativeAfter:after,
     activeThreshold:prior.activeThreshold,thresholdCrossed:before.lt(prior.activeThreshold)&&after.gte(prior.activeThreshold),epvAfter:after,
     sequenceNo:prior.sequenceNo+1,ruleVersionCode:first.ruleVersionCode,evidenceHash:replayHash({actionKey:input.actionKey,stateHash:input.stateHash,before:before.toString(),after:after.toString(),threshold:prior.activeThreshold.toString()}),idempotencyKey:accumulatorKey}});
+  const priorActive=await tx.activeIntervalEvidence.findFirst({where:{qualificationId:input.marker.qualificationId,calendarMonth:monthStart},orderBy:{createdAt:'desc'}});
   if(after.gte(prior.activeThreshold)) {
     let cumulative=dec(0),activeFrom=new Date(first.at);
     for(const envelope of input.envelopes) { cumulative=cumulative.add(input.remaining.get(envelope.inputs.orderId)??dec(0)); if(cumulative.gte(prior.activeThreshold)){activeFrom=new Date(envelope.at);break;} }
-    const priorActive=await tx.activeIntervalEvidence.findFirst({where:{qualificationId:input.marker.qualificationId,calendarMonth:monthStart},orderBy:{createdAt:'desc'}});
     const activeKey=`active-replay:${input.actionKey}:EPV_MONTH`;
     const existing=await tx.activeIntervalEvidence.findUnique({where:{idempotencyKey:activeKey}});
     if(!existing) await tx.activeIntervalEvidence.create({data:{qualificationId:input.marker.qualificationId,calendarMonth:monthStart,sourceAccumulatorEvidenceId:accumulator.qualificationMonthAccumulatorEvidenceId,
       activeFrom,activeTo:monthEnd,supersedesActiveEvidenceId:priorActive?.activeIntervalEvidenceId,reasonCode:'HISTORICAL_RETURN_REPLAY',ruleVersionCode:first.ruleVersionCode,
       evidenceHash:replayHash({actionKey:input.actionKey,stateHash:input.stateHash,activeFrom:activeFrom.toISOString(),activeTo:monthEnd.toISOString()}),idempotencyKey:activeKey}});
+  } else if(priorActive) {
+    // Append a zero-length replacement so the latest authoritative evidence
+    // explicitly removes the historical interval without editing it.
+    const activeKey=`active-replay:${input.actionKey}:EPV_MONTH`;
+    const existing=await tx.activeIntervalEvidence.findUnique({where:{idempotencyKey:activeKey}});
+    if(!existing) await tx.activeIntervalEvidence.create({data:{qualificationId:input.marker.qualificationId,calendarMonth:monthStart,sourceAccumulatorEvidenceId:accumulator.qualificationMonthAccumulatorEvidenceId,
+      activeFrom:monthEnd,activeTo:monthEnd,supersedesActiveEvidenceId:priorActive.activeIntervalEvidenceId,reasonCode:'HISTORICAL_RETURN_REPLAY_INACTIVE',ruleVersionCode:first.ruleVersionCode,
+      evidenceHash:replayHash({actionKey:input.actionKey,stateHash:input.stateHash,activeFrom:null,activeTo:null}),idempotencyKey:activeKey}});
   }
   return {before,after,active:after.gte(prior.activeThreshold),accumulator};
 }

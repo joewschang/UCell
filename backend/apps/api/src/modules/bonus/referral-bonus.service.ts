@@ -5,6 +5,7 @@ import { Prisma, PrismaService, sealSettlement, effectiveGpv, verifyReplayEnvelo
 import { createHash } from 'crypto';
 import { RuntimeRuleService } from '../rules/runtime-rule.service';
 import { BonusQueryService } from './bonus-query.service';
+import { createK0WindowEvidence } from '@ucell/shared';
 
 @Injectable()
 export class ReferralBonusService {
@@ -59,9 +60,10 @@ export class ReferralBonusService {
 
       const pendingDays=Number(snapshotDecimal(parameterSnapshot,'award.pending.days').toString());
       const poolRate=snapshotDecimal(parameterSnapshot,'pool.referral.rate','*');
+      const k0Window=createK0WindowEvidence({start:periodStart,end:periodEnd});
 
       const gpvEvents=await tx.pvLedger.findMany({
-        where:{pvType:'GPV',eventType:'GPV_CREATED',ruleVersionCode,occurredAt:{gte:periodStart,lt:periodEnd}},
+        where:{pvType:'GPV',eventType:'GPV_CREATED',ruleVersionCode,occurredAt:{gte:new Date(k0Window.numerator.gte),lt:new Date(k0Window.numerator.lt)}},
         orderBy:{occurredAt:'asc'}
       });
 
@@ -209,7 +211,7 @@ export class ReferralBonusService {
       const hash=createHash('sha256')
         .update(JSON.stringify({
           batch:batch.settlementBatchId,totalGpv:totalGpv.toString(),
-          poolRate:poolRate.toString(),totalTheory:totalTheory.toString(),k:k.toString()
+          poolRate:poolRate.toString(),totalTheory:totalTheory.toString(),k:k.toString(),k0Window
         })).digest('hex');
 
       const finalized=await tx.settlementBatch.update({

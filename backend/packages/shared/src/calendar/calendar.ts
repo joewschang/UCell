@@ -14,6 +14,17 @@ export interface BinaryWeek {
   readonly end: Date;
 }
 
+export interface SettlementWindow {
+  readonly timeZone: typeof UCELL_TIME_ZONE;
+  readonly start: Date;
+  readonly end: Date;
+}
+
+export interface K0WindowEvidence {
+  readonly numerator: {readonly gte: string; readonly lt: string};
+  readonly denominator: {readonly gte: string; readonly lt: string};
+}
+
 export interface BusinessCalendarDay {
   readonly date: LocalDate;
   readonly businessDay: boolean;
@@ -41,7 +52,8 @@ export class CalendarResolutionError extends Error {
       | 'BUSINESS_CALENDAR_VERSION_MISSING'
       | 'BUSINESS_CALENDAR_DATE_MISSING'
       | 'BUSINESS_CALENDAR_DATE_MISMATCH'
-      | 'BUSINESS_DAY_NOT_FOUND',
+      | 'BUSINESS_DAY_NOT_FOUND'
+      | 'NON_CANONICAL_BINARY_WEEK_CLOSE',
     message: string,
   ) {
     super(message);
@@ -63,6 +75,71 @@ export function resolveBinaryWeek(at: Date): BinaryWeek {
   const startAsLocalUtc = localMidnightAsUtc - taipeiWallClock.getUTCDay() * DAY_MS;
   const start = new Date(startAsLocalUtc - TAIPEI_OFFSET_MS);
   return {timeZone: UCELL_TIME_ZONE, start, end: new Date(start.getTime() + 7 * DAY_MS)};
+}
+
+/** Resolves the approved half-open 10th/25th Asia/Taipei settlement window. */
+export function resolveSettlementWindow(at: Date): SettlementWindow {
+  assertFiniteDate(at);
+  const local = new Date(at.getTime() + TAIPEI_OFFSET_MS);
+  const year = local.getUTCFullYear();
+  const month = local.getUTCMonth();
+  const day = local.getUTCDate();
+  let startLocal: Date;
+  let endLocal: Date;
+  if (day >= 25) {
+    startLocal = new Date(Date.UTC(year, month, 25));
+    endLocal = new Date(Date.UTC(year, month + 1, 10));
+  } else if (day >= 10) {
+    startLocal = new Date(Date.UTC(year, month, 10));
+    endLocal = new Date(Date.UTC(year, month, 25));
+  } else {
+    startLocal = new Date(Date.UTC(year, month - 1, 25));
+    endLocal = new Date(Date.UTC(year, month, 10));
+  }
+  return {
+    timeZone: UCELL_TIME_ZONE,
+    start: new Date(startLocal.getTime() - TAIPEI_OFFSET_MS),
+    end: new Date(endLocal.getTime() - TAIPEI_OFFSET_MS),
+  };
+}
+
+/** Assigns an atomic completed Binary week to the first 10th/25th batch after its close. */
+export function resolveBinaryWeekBatch(binaryWeekEnd: Date): Date {
+  assertFiniteDate(binaryWeekEnd);
+  const local = new Date(binaryWeekEnd.getTime() + TAIPEI_OFFSET_MS);
+  if (local.getUTCDay() !== 0 || local.getUTCHours() !== 0 || local.getUTCMinutes() !== 0 ||
+      local.getUTCSeconds() !== 0 || local.getUTCMilliseconds() !== 0) {
+    throw new CalendarResolutionError(
+      'NON_CANONICAL_BINARY_WEEK_CLOSE',
+      'Binary week close must be Sunday 00:00:00 Asia/Taipei',
+    );
+  }
+  const year = local.getUTCFullYear();
+  const month = local.getUTCMonth();
+  const day = local.getUTCDate();
+  const cutoffLocal = day < 10
+    ? new Date(Date.UTC(year, month, 10))
+    : day < 25
+      ? new Date(Date.UTC(year, month, 25))
+      : new Date(Date.UTC(year, month + 1, 10));
+  return new Date(cutoffLocal.getTime() - TAIPEI_OFFSET_MS);
+}
+
+/** Produces auditable proof that both sides of K0 use one exact window. */
+export function createK0WindowEvidence(window: Pick<SettlementWindow, 'start' | 'end'>): K0WindowEvidence {
+  assertFiniteDate(window.start);
+  assertFiniteDate(window.end);
+  if (window.start >= window.end) {
+    throw new CalendarResolutionError('INVALID_DATE', 'K0 settlement window must be increasing');
+  }
+  const range = Object.freeze({gte: window.start.toISOString(), lt: window.end.toISOString()});
+  return Object.freeze({numerator: range, denominator: range});
+}
+
+function assertFiniteDate(value: Date): void {
+  if (!(value instanceof Date) || !Number.isFinite(value.getTime())) {
+    throw new CalendarResolutionError('INVALID_DATE', 'A finite timestamp is required');
+  }
 }
 
 /** Maps an authoritative 10th/25th settlement anchor to its frozen payout batch. */

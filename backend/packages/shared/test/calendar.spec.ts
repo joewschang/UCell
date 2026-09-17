@@ -3,8 +3,11 @@ import {
   LocalDate,
   VersionedBusinessCalendar,
   nextBusinessDay,
+  createK0WindowEvidence,
+  resolveBinaryWeekBatch,
   resolveBinaryWeek,
   resolvePayoutSchedule,
+  resolveSettlementWindow,
 } from '../src/calendar/calendar';
 
 function calendar(
@@ -35,6 +38,55 @@ describe('binary weekly calendar', () => {
     const week = resolveBinaryWeek(new Date('2027-01-01T00:00:00.000Z'));
     expect(week.start.toISOString()).toBe('2026-12-26T16:00:00.000Z');
     expect(week.end.toISOString()).toBe('2027-01-02T16:00:00.000Z');
+  });
+});
+
+describe('10th/25th settlement boundary closure', () => {
+  it('B01 assigns 10th minus one second to the prior window and exact cutoff to the new window', () => {
+    const before = resolveSettlementWindow(new Date('2026-09-09T15:59:59.000Z'));
+    const exact = resolveSettlementWindow(new Date('2026-09-09T16:00:00.000Z'));
+    expect([before.start.toISOString(), before.end.toISOString()]).toEqual([
+      '2026-08-24T16:00:00.000Z', '2026-09-09T16:00:00.000Z',
+    ]);
+    expect([exact.start.toISOString(), exact.end.toISOString()]).toEqual([
+      '2026-09-09T16:00:00.000Z', '2026-09-24T16:00:00.000Z',
+    ]);
+  });
+
+  it('B02 assigns 25th minus one second to the prior window and exact cutoff to the new window', () => {
+    const before = resolveSettlementWindow(new Date('2026-09-24T15:59:59.000Z'));
+    const exact = resolveSettlementWindow(new Date('2026-09-24T16:00:00.000Z'));
+    expect([before.start.toISOString(), before.end.toISOString()]).toEqual([
+      '2026-09-09T16:00:00.000Z', '2026-09-24T16:00:00.000Z',
+    ]);
+    expect([exact.start.toISOString(), exact.end.toISOString()]).toEqual([
+      '2026-09-24T16:00:00.000Z', '2026-10-09T16:00:00.000Z',
+    ]);
+  });
+
+  it('B03 gives the K0 numerator and denominator the identical half-open window', () => {
+    const evidence = createK0WindowEvidence(resolveSettlementWindow(new Date('2026-09-20T00:00:00Z')));
+    expect(evidence.numerator).toBe(evidence.denominator);
+    expect(evidence).toEqual({
+      numerator: {gte: '2026-09-09T16:00:00.000Z', lt: '2026-09-24T16:00:00.000Z'},
+      denominator: {gte: '2026-09-09T16:00:00.000Z', lt: '2026-09-24T16:00:00.000Z'},
+    });
+  });
+
+  it('B04 keeps a Binary week crossing the 10th whole and maps its close to the next batch', () => {
+    const week = resolveBinaryWeek(new Date('2026-09-10T00:00:00Z'));
+    expect([week.start.toISOString(), week.end.toISOString()]).toEqual([
+      '2026-09-05T16:00:00.000Z', '2026-09-12T16:00:00.000Z',
+    ]);
+    expect(resolveBinaryWeekBatch(week.end).toISOString()).toBe('2026-09-24T16:00:00.000Z');
+  });
+
+  it('B05 keeps a Binary week crossing the 25th whole and maps its close to the next batch', () => {
+    const week = resolveBinaryWeek(new Date('2026-09-25T00:00:00Z'));
+    expect([week.start.toISOString(), week.end.toISOString()]).toEqual([
+      '2026-09-19T16:00:00.000Z', '2026-09-26T16:00:00.000Z',
+    ]);
+    expect(resolveBinaryWeekBatch(week.end).toISOString()).toBe('2026-10-09T16:00:00.000Z');
   });
 });
 

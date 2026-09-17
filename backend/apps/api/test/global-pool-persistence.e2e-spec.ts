@@ -33,4 +33,28 @@ describe('Global settlement Reservoir A persistence',()=>{
     }
     await expect(persistence.verifiedExisting(validTx,start,end,'R1.0B')).rejects.toBeInstanceOf(ConflictException);
   });
+
+  it('B13 normal, retry, and replay use the same exactly-once Reservoir A evidence',async()=>{
+    const settlement={globalPoolSettlementId:base.settlementId,periodStart:start,periodEnd:end,undistributedAmount:base.undistributedAmount,ruleVersionCode:'R1.0B'};
+    const persistence=new GlobalPoolPersistence();
+    const created:any[]=[];
+    const tx:any={
+      globalPoolSettlement:{create:async({data}:any)=>data,findUnique:async()=>settlement},
+      globalPoolAward:{create:jest.fn()},
+      reservoirLedgerEffect:{
+        create:async({data}:any)=>{created.push(data);return data;},
+        findFirst:async()=>created[0],
+      },
+    };
+    await persistence.persist(tx,base);
+    expect(await persistence.verifiedExisting(tx,start,end,'R1.0B')).toBe(settlement);
+    expect(await persistence.verifiedExisting(tx,start,end,'R1.0B')).toBe(settlement);
+    expect(created).toHaveLength(1);
+  });
+
+  it('B14 exposes no automatic Reservoir A outflow operation',()=>{
+    const operations=Object.getOwnPropertyNames(GlobalPoolPersistence.prototype);
+    expect(operations).toEqual(expect.arrayContaining(['persist','verifiedExisting']));
+    expect(operations.some(name=>/outflow|withdraw|release|disburse/i.test(name))).toBe(false);
+  });
 });
