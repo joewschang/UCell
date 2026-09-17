@@ -30,3 +30,9 @@
 | Fresh DB Golden after Shipment migration | PASS | All 46 migrations deployed with deterministic existing assertions |
 | Inventory deduction and split-shipment policy | BLOCKED | Operational decision pending; implementation remains fail closed |
 | Provider status mapping and live logistics UAT | BLOCKED | Provider mapping approval and credentials pending |
+| Provider-neutral webhook verification boundary | PASS | Explicit verified verdict, evidence hash, time-window and exact replay/conflict regression |
+| Provider-neutral reconciliation ingestion | PASS | Deterministic hashes, idempotent replay, changed-run conflict and no monetary mutation |
+| Shipment persistence DB assertions | PASS | 21 real PostgreSQL assertions in fresh isolated database; cleanup PASS |
+| Complete Backend API after verification slice | PASS | 431 tests / 48 suites |
+| Fresh DB Golden after verification slice | PASS | All 46 migrations plus deterministic regression completed |
+| Official provider signature vectors and callback certification | BLOCKED | OPERATIONAL_CREDENTIAL_PENDING; provider-specific algorithms were not inferred |

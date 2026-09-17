@@ -76,3 +76,14 @@ All external credentials remain `OPERATIONAL_CREDENTIAL_PENDING`. Provider-neutr
 - Focused provider/shipment tests: 21 PASS. Complete Backend API: 407 PASS in 46 suites.
 - Backend, Admin DEV API and database package builds: PASS. Schema, migration, source, security, OpenAPI and TODO preflights: PASS. Fresh isolated DB Golden: PASS.
 - Inventory deduction timing, split-shipment policy, provider raw-status mappings, warehouse/lot/serial rules and direct-versus-aggregator routing remain pending; no operational policy was inferred.
+
+## Provider verification and reconciliation checkpoint
+
+- Added a provider-neutral webhook verification decision boundary that accepts only an explicit adapter `VERIFIED` verdict with complete event identity, payload digest, safe evidence, configuration version and canonical UTC timestamps.
+- Added configured signature-age and future-skew checks without assuming any provider signing algorithm, canonical header format or callback acknowledgement contract.
+- Exact durable redelivery is a no-op; changed payload, evidence, configuration or verification time under the same event identity fails closed.
+- Added provider-neutral reconciliation ingestion with deterministic input/output/evidence hashes, exact replay, changed-run conflict and concurrent unique-insert recovery.
+- Reconciliation writes only reconciliation evidence and exposes no monetary aggregate mutation path.
+- Added isolated Shipment persistence DB verification: 21 assertions for append-only tables, claim/outbox uniqueness, provider-event uniqueness, immutable snapshot guards and CVS store evidence.
+- Complete Backend API: 431 PASS in 48 suites. Shipment DB assertions, fresh DB Golden, builds and all existing preflight gates: PASS.
+- Official provider signing vectors, mappings, callbacks, credentials and sandbox UAT remain `OPERATIONAL_CREDENTIAL_PENDING`.
