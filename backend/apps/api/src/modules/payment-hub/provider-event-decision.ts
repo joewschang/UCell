@@ -7,20 +7,28 @@ import { CanonicalPaymentStatus, assertIssuedPaymentReceipt, VerifiedPaymentRece
  * not a new Commerce allocation of the original Order total. */
 export type PaymentBinding = Readonly<{ paymentId: string; orderId: string; provider: string;
   connectionId: string; providerTransactionRef: string; amount: string; currency: string }>;
+/** Loaded and cross-checked by Core under the same DB transaction as the payment.
+ * References prove the intended persistence contract, not runtime DB verification here. */
+export type PersistedPaymentOperationClaim = Readonly<{
+  integrity: 'COMMITTED'; businessEffectIdentity: string; operationHash: string;
+  committedEffectRef: string; paymentStateEvidenceRef: string; outboxIntentRef: string;
+}> | Readonly<{
+  integrity: 'INCOMPLETE'; businessEffectIdentity: string; operationHash: string; reasonCode: string;
+}>;
 export type ProviderEventApplicationDecision = Readonly<{
   action: 'APPLY' | 'NOOP_REPLAY' | 'NOOP_OPERATION'; event: CanonicalizedProviderEvent;
   nextStatus: CanonicalPaymentStatus; businessEffectIdentity: string; operationHash: string;
 }>;
 export class ProviderEventDecisionError extends Error {
   constructor(readonly code: 'PROVIDER_EVENT_IDENTITY_CONFLICT' | 'PAYMENT_EVIDENCE_SOURCE_MISMATCH'
-    | 'PAYMENT_RECEIPT_BINDING_MISMATCH' | 'PAYMENT_OPERATION_CONFLICT', message: string) { super(message); }
+    | 'PAYMENT_RECEIPT_BINDING_MISMATCH' | 'PAYMENT_OPERATION_CONFLICT' | 'PAYMENT_OPERATION_INCOMPLETE', message: string) { super(message); }
 }
 
-/** DB owner must obtain binding and both existing hashes under one transaction,
+/** DB owner must obtain binding, delivery hash and a complete operation claim under one transaction,
  * enforce unique claims and write state/outbox atomically. This function does no I/O. */
 export function decideProviderEventApplication(input: {
   currentStatus: CanonicalPaymentStatus; binding: PaymentBinding;
-  existingPayloadHash: string | null; existingOperationHash: string | null;
+  existingPayloadHash: string | null; existingOperationClaim: PersistedPaymentOperationClaim | null;
   event: CanonicalProviderEventInput;
   evidence: Omit<PaymentTransitionEvidence, 'source' | 'providerEventIdentity' | 'providerTransactionRef'> & {
     source?: PaymentTransitionEvidence['source']; receipt: VerifiedPaymentReceipt;
@@ -48,15 +56,23 @@ export function decideProviderEventApplication(input: {
     amount: receipt.amount, currency: receipt.currency, status: receipt.status });
   const duplicate = classifyProviderEvent(input.existingPayloadHash, event.payloadHash);
   if (duplicate.result === 'CONFLICT') throw new ProviderEventDecisionError('PROVIDER_EVENT_IDENTITY_CONFLICT', 'Event identity conflict.');
-  if (input.existingOperationHash !== null && input.existingOperationHash !== operationHash) {
-    throw new ProviderEventDecisionError('PAYMENT_OPERATION_CONFLICT', 'Business operation evidence conflict.');
+  const claim = input.existingOperationClaim;
+  if (claim !== null) {
+    if (!claim || claim.integrity !== 'COMMITTED'
+      || [claim.committedEffectRef, claim.paymentStateEvidenceRef, claim.outboxIntentRef]
+        .some(ref => typeof ref !== 'string' || !ref.trim())) {
+      throw new ProviderEventDecisionError('PAYMENT_OPERATION_INCOMPLETE', 'Operation claim is missing committed state, effect or outbox evidence.');
+    }
+    if (claim.operationHash !== operationHash || claim.businessEffectIdentity !== businessEffectIdentity) {
+      throw new ProviderEventDecisionError('PAYMENT_OPERATION_CONFLICT', 'Business operation evidence conflict.');
+    }
   }
   const result = { event, businessEffectIdentity, operationHash };
-  if (duplicate.result === 'REPLAY' && input.existingOperationHash !== operationHash) {
+  if (duplicate.result === 'REPLAY' && claim === null) {
     throw new ProviderEventDecisionError('PAYMENT_OPERATION_CONFLICT', 'Persisted delivery is missing its atomic operation claim.');
   }
   if (duplicate.result === 'REPLAY') return Object.freeze({ ...result, action: 'NOOP_REPLAY', nextStatus: input.currentStatus });
-  if (input.existingOperationHash === operationHash) return Object.freeze({ ...result, action: 'NOOP_OPERATION', nextStatus: input.currentStatus });
+  if (claim !== null) return Object.freeze({ ...result, action: 'NOOP_OPERATION', nextStatus: input.currentStatus });
   assertCanonicalPaymentTransition(input.currentStatus, event.status, {
     ...input.evidence, source: event.source, providerEventIdentity: event.providerEventIdentity, providerTransactionRef: event.providerTransactionRef,
   });

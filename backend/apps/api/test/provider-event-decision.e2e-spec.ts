@@ -1,4 +1,4 @@
-import { decideProviderEventApplication } from '../src/modules/payment-hub/provider-event-decision';
+import { decideProviderEventApplication, PersistedPaymentOperationClaim, ProviderEventApplicationDecision } from '../src/modules/payment-hub/provider-event-decision';
 import { canonicalizeProviderEvent } from '../src/modules/payment-hub/provider-event-canonicalizer';
 import { createPaymentVerificationBoundary, VerifiedPaymentFact, VerifiedPaymentReceipt } from '../src/modules/payment-hub/payment-provider.adapter';
 
@@ -18,8 +18,12 @@ async function fixture(inputEvent: Parameters<typeof canonicalizeProviderEvent>[
     payloadHash: canonical.payloadHash, safeEvidenceRef: 'evidence-test', verifiedAt: '2026-09-17T00:00:00Z',
     verificationConfigVersion: 'MOCK_ONLY', ...overrides,
   }) })(undefined);
-  return { currentStatus: 'PENDING' as const, binding, existingPayloadHash: null, existingOperationHash: null,
+  return { currentStatus: 'PENDING' as const, binding, existingPayloadHash: null, existingOperationClaim: null,
     event: inputEvent, evidence: { receipt } };
+}
+function committedClaim(decision: ProviderEventApplicationDecision): Extract<PersistedPaymentOperationClaim, { integrity: 'COMMITTED' }> {
+  return { integrity: 'COMMITTED', operationHash: decision.operationHash, businessEffectIdentity: decision.businessEffectIdentity,
+    committedEffectRef: 'effect-test', paymentStateEvidenceRef: 'state-test', outboxIntentRef: 'outbox-test' };
 }
 describe('Payment event and business-operation decisions (pure contract)', () => {
   it('applies a bound, mock-verified operation', async () => {
@@ -27,16 +31,16 @@ describe('Payment event and business-operation decisions (pure contract)', () =>
   });
   it('requires verification even for exact delivery replay', async () => {
     const input = await fixture(); const first = decideProviderEventApplication(input);
-    const replay = { ...input, currentStatus: 'PAID' as const, existingPayloadHash: first.event.payloadHash, existingOperationHash: first.operationHash };
+    const replay = { ...input, currentStatus: 'PAID' as const, existingPayloadHash: first.event.payloadHash, existingOperationClaim: committedClaim(first) };
     expect(decideProviderEventApplication(replay).action).toBe('NOOP_REPLAY');
     expect(() => decideProviderEventApplication({ ...replay, evidence: { receipt: {} as VerifiedPaymentReceipt } })).toThrow();
-    expect(() => decideProviderEventApplication({ ...replay, existingOperationHash: null })).toThrow();
+    expect(() => decideProviderEventApplication({ ...replay, existingOperationClaim: null })).toThrow();
     expect(() => decideProviderEventApplication({ ...replay, currentStatus: 'UNKNOWN' as never })).toThrow();
   });
   it('deduplicates one operation observed through webhook and query', async () => {
     const first = decideProviderEventApplication(await fixture());
     const query = await fixture({ ...event, source: 'PROVIDER_QUERY', providerEventId: 'query-observation' });
-    const second = decideProviderEventApplication({ ...query, currentStatus: 'PAID', existingOperationHash: first.operationHash });
+    const second = decideProviderEventApplication({ ...query, currentStatus: 'PAID', existingOperationClaim: committedClaim(first) });
     expect(second.event.providerEventIdentity).not.toBe(first.event.providerEventIdentity);
     expect(second.businessEffectIdentity).toBe(first.businessEffectIdentity);
     expect(second.action).toBe('NOOP_OPERATION');
@@ -50,10 +54,28 @@ describe('Payment event and business-operation decisions (pure contract)', () =>
   it('rejects canonical payload tampering and conflicting operation evidence', async () => {
     const input = await fixture();
     expect(() => decideProviderEventApplication({ ...input, event: { ...event, metadata: { ...event.metadata, amount: '200.00' } } })).toThrow();
-    expect(() => decideProviderEventApplication({ ...input, existingOperationHash: 'conflict' })).toThrow(
+    expect(() => decideProviderEventApplication({ ...input, existingOperationClaim: { ...committedClaim(decideProviderEventApplication(input)), operationHash: 'conflict' } })).toThrow(
       expect.objectContaining({ code: 'PAYMENT_OPERATION_CONFLICT' }));
     expect(() => decideProviderEventApplication({ ...input, existingPayloadHash: 'conflict' })).toThrow(
       expect.objectContaining({ code: 'PROVIDER_EVENT_IDENTITY_CONFLICT' }));
+  });
+  it.each(['committedEffectRef', 'paymentStateEvidenceRef', 'outboxIntentRef'] as const)(
+    'rejects an operation without committed %s for replay and new observation', async key => {
+      const input = await fixture(); const first = decideProviderEventApplication(input);
+      const claim = { ...committedClaim(first), [key]: '' };
+      for (const existingPayloadHash of [null, first.event.payloadHash]) {
+        expect(() => decideProviderEventApplication({ ...input, existingPayloadHash, existingOperationClaim: claim })).toThrow(
+          expect.objectContaining({ code: 'PAYMENT_OPERATION_INCOMPLETE' }));
+      }
+    });
+  it('rejects explicit incomplete, bare-hash and wrong-identity operation claims', async () => {
+    const input = await fixture(); const first = decideProviderEventApplication(input);
+    expect(() => decideProviderEventApplication({ ...input, existingOperationClaim: { integrity: 'INCOMPLETE',
+      operationHash: first.operationHash, businessEffectIdentity: first.businessEffectIdentity, reasonCode: 'OUTBOX_MISSING' } })).toThrow(
+        expect.objectContaining({ code: 'PAYMENT_OPERATION_INCOMPLETE' }));
+    expect(() => decideProviderEventApplication({ ...input, existingOperationClaim: first.operationHash as never })).toThrow();
+    expect(() => decideProviderEventApplication({ ...input, existingOperationClaim: { ...committedClaim(first), businessEffectIdentity: 'wrong-operation' } })).toThrow(
+      expect.objectContaining({ code: 'PAYMENT_OPERATION_CONFLICT' }));
   });
   it('keeps two partial refund operations distinct', async () => {
     const refundEvent = { ...event, status: 'PARTIALLY_REFUNDED' as const };

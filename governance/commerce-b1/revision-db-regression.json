@@ -1,0 +1,3016 @@
+{
+  "result": "PASS",
+  "fixturesRolledBack": true,
+  "results": [
+    {
+      "label": "Prisma DB column convergence SettlementAdjustmentBatch",
+      "result": "PASS",
+      "actual": [
+        "calculation_snapshot",
+        "created_at",
+        "delta_payable",
+        "delta_theory",
+        "original_payable",
+        "original_theory",
+        "period_end",
+        "period_start",
+        "posted_at",
+        "recomputed_payable",
+        "recomputed_theory",
+        "settlement_adjustment_batch_id",
+        "settlement_type",
+        "source_recalculation_request_id",
+        "status"
+      ],
+      "expected": [
+        "calculation_snapshot",
+        "created_at",
+        "delta_payable",
+        "delta_theory",
+        "original_payable",
+        "original_theory",
+        "period_end",
+        "period_start",
+        "posted_at",
+        "recomputed_payable",
+        "recomputed_theory",
+        "settlement_adjustment_batch_id",
+        "settlement_type",
+        "source_recalculation_request_id",
+        "status"
+      ]
+    },
+    {
+      "label": "Prisma DB column convergence SettlementAdjustmentLine",
+      "result": "PASS",
+      "actual": [
+        "award_type",
+        "created_at",
+        "delta_amount",
+        "original_amount",
+        "qualification_id",
+        "recomputed_amount",
+        "settlement_adjustment_batch_id",
+        "settlement_adjustment_line_id",
+        "source_reference"
+      ],
+      "expected": [
+        "award_type",
+        "created_at",
+        "delta_amount",
+        "original_amount",
+        "qualification_id",
+        "recomputed_amount",
+        "settlement_adjustment_batch_id",
+        "settlement_adjustment_line_id",
+        "source_reference"
+      ]
+    },
+    {
+      "label": "Prisma DB column convergence QualificationWorkflow",
+      "result": "PASS",
+      "actual": [
+        "applicant_person_id",
+        "approved_at",
+        "created_at",
+        "effective_at",
+        "payload",
+        "qualification_id",
+        "qualification_workflow_id",
+        "receiving_person_id",
+        "review_fee",
+        "status",
+        "submitted_at",
+        "target_plan_code",
+        "workflow_type"
+      ],
+      "expected": [
+        "applicant_person_id",
+        "approved_at",
+        "created_at",
+        "effective_at",
+        "payload",
+        "qualification_id",
+        "qualification_workflow_id",
+        "receiving_person_id",
+        "review_fee",
+        "status",
+        "submitted_at",
+        "target_plan_code",
+        "workflow_type"
+      ]
+    },
+    {
+      "label": "Prisma DB column convergence SettlementReplayRun",
+      "result": "PASS",
+      "actual": [
+        "calculation_snapshot",
+        "converged_at",
+        "created_at",
+        "initial_period_end",
+        "initial_period_start",
+        "max_weeks",
+        "processed_weeks",
+        "rule_version_code",
+        "settlement_replay_run_id",
+        "source_return_case_id",
+        "status",
+        "updated_at"
+      ],
+      "expected": [
+        "calculation_snapshot",
+        "converged_at",
+        "created_at",
+        "initial_period_end",
+        "initial_period_start",
+        "max_weeks",
+        "processed_weeks",
+        "rule_version_code",
+        "settlement_replay_run_id",
+        "source_return_case_id",
+        "status",
+        "updated_at"
+      ]
+    },
+    {
+      "label": "Prisma DB column convergence SettlementReplayPeriod",
+      "result": "PASS",
+      "actual": [
+        "award_delta_snapshot",
+        "carry_delta_snapshot",
+        "created_at",
+        "impacted_qualifications",
+        "original_k1",
+        "original_k2",
+        "period_end",
+        "period_no",
+        "period_start",
+        "recomputed_k1",
+        "recomputed_k2",
+        "settlement_replay_period_id",
+        "settlement_replay_run_id"
+      ],
+      "expected": [
+        "award_delta_snapshot",
+        "carry_delta_snapshot",
+        "created_at",
+        "impacted_qualifications",
+        "original_k1",
+        "original_k2",
+        "period_end",
+        "period_no",
+        "period_start",
+        "recomputed_k1",
+        "recomputed_k2",
+        "settlement_replay_period_id",
+        "settlement_replay_run_id"
+      ]
+    },
+    {
+      "label": "Prisma DB column convergence BonusCalculationEvidence",
+      "result": "PASS",
+      "actual": [
+        "bonus_calculation_evidence_id",
+        "calculation_detail",
+        "created_at",
+        "entitlement_amount",
+        "evidence_type",
+        "occurred_at",
+        "parameter_snapshot_hash",
+        "reason_code",
+        "recipient_qualification_id",
+        "rule_version_code",
+        "settlement_batch_id",
+        "theoretical_amount"
+      ],
+      "expected": [
+        "bonus_calculation_evidence_id",
+        "calculation_detail",
+        "created_at",
+        "entitlement_amount",
+        "evidence_type",
+        "occurred_at",
+        "parameter_snapshot_hash",
+        "reason_code",
+        "recipient_qualification_id",
+        "rule_version_code",
+        "settlement_batch_id",
+        "theoretical_amount"
+      ]
+    },
+    {
+      "label": "original EPV 4800 => 1680",
+      "result": "PASS",
+      "actual": "1680",
+      "expected": "1680"
+    },
+    {
+      "label": "original Active EPV self entitlement",
+      "result": "PASS",
+      "actual": "840",
+      "expected": "840"
+    },
+    {
+      "label": "original inactive EPV Sponsor generation stays zero",
+      "result": "PASS",
+      "actual": "0",
+      "expected": "0"
+    },
+    {
+      "label": "Active historical EPV Sponsor G1",
+      "result": "PASS",
+      "actual": "100.8",
+      "expected": "100.8"
+    },
+    {
+      "label": "Active historical EPV Sponsor G2",
+      "result": "PASS",
+      "actual": "100.8",
+      "expected": "100.8"
+    },
+    {
+      "label": "Active historical EPV Sponsor G3",
+      "result": "PASS",
+      "actual": "100.8",
+      "expected": "100.8"
+    },
+    {
+      "label": "Active historical EPV Sponsor G4",
+      "result": "PASS",
+      "actual": "100.8",
+      "expected": "100.8"
+    },
+    {
+      "label": "Active historical EPV Sponsor G5",
+      "result": "PASS",
+      "actual": "100.8",
+      "expected": "100.8"
+    },
+    {
+      "label": "Binary-only historical EPV ancestor gets no award",
+      "result": "PASS",
+      "actual": 0,
+      "expected": 0
+    },
+    {
+      "label": "partial return historical self delta",
+      "result": "PASS",
+      "actual": "-480",
+      "expected": "-480"
+    },
+    {
+      "label": "first effective historical self entitlement",
+      "result": "PASS",
+      "actual": "360",
+      "expected": "360"
+    },
+    {
+      "label": "historical sponsor receives adjustment despite current inactive",
+      "result": "PASS",
+      "actual": 1,
+      "expected": 1
+    },
+    {
+      "label": "current sponsor never receives historical money",
+      "result": "PASS",
+      "actual": 0,
+      "expected": 0
+    },
+    {
+      "label": "historically inactive recipient stays zero",
+      "result": "PASS",
+      "actual": "0",
+      "expected": "0"
+    },
+    {
+      "label": "duplicate return no duplicate recovery",
+      "result": "PASS",
+      "actual": 2,
+      "expected": 2
+    },
+    {
+      "label": "multi-return incremental self delta",
+      "result": "PASS",
+      "actual": "-360",
+      "expected": "-360"
+    },
+    {
+      "label": "cross-threshold effective entitlement",
+      "result": "PASS",
+      "actual": "0",
+      "expected": "0"
+    },
+    {
+      "label": "clawback never exceeds original entitlement",
+      "result": "PASS",
+      "actual": "840",
+      "expected": "840"
+    },
+    {
+      "label": "original awards are immutable",
+      "result": "PASS",
+      "actual": "[{\"bonusAwardId\":\"074e1e24-6368-497f-8184-a12b0921e203\",\"settlementBatchId\":null,\"awardType\":\"EPV\",\"recipientQualificationId\":\"b6a51240-88f1-4af9-ae8e-dbe85db3cf20\",\"sourceQualificationId\":\"182c65c2-0461-4517-a519-3828c7a04bbe\",\"sourceEventId\":\"cb7c4acb-f29c-4e47-a9a1-02e60f56f046\",\"sourceAwardId\":null,\"generationNo\":2,\"theoryAmount\":\"0\",\"kFactor\":\"1\",\"payableAmount\":\"0\",\"activeSnapshot\":false,\"effectiveDirectCountSnapshot\":1,\"planLevelSnapshot\":\"LEADER\",\"ruleVersionCode\":\"PHASE2_TEST_59a06b0c-6fd5-4277-a493-e18136ae4050\",\"parameterSnapshotHash\":\"9535e9ca0219348d2923c6888e2747891c45493feb94317b00115052c1c9dfa2\",\"occurredAt\":\"2020-01-05T00:00:00.000Z\",\"pendingUntil\":\"2020-02-19T00:00:00.000Z\",\"calculationDetail\":{\"epv\":\"1680\",\"rate\":\"0.06\",\"subtype\":\"EPV_UPLINE\",\"generation\":2},\"createdAt\":\"2026-09-17T08:54:46.990Z\"},{\"bonusAwardId\":\"aedf7ef5-538a-415b-94db-d044d89c3589\",\"settlementBatchId\":null,\"awardType\":\"EPV\",\"recipientQualificationId\":\"4a5b9746-c74e-44f0-87f5-851cec5de8d0\",\"sourceQualificationId\":\"182c65c2-0461-4517-a519-3828c7a04bbe\",\"sourceEventId\":\"cb7c4acb-f29c-4e47-a9a1-02e60f56f046\",\"sourceAwardId\":null,\"generationNo\":1,\"theoryAmount\":\"100.8\",\"kFactor\":\"1\",\"payableAmount\":\"100.8\",\"activeSnapshot\":true,\"effectiveDirectCountSnapshot\":1,\"planLevelSnapshot\":\"LEADER\",\"ruleVersionCode\":\"PHASE2_TEST_59a06b0c-6fd5-4277-a493-e18136ae4050\",\"parameterSnapshotHash\":\"9535e9ca0219348d2923c6888e2747891c45493feb94317b00115052c1c9dfa2\",\"occurredAt\":\"2020-01-05T00:00:00.000Z\",\"pendingUntil\":\"2020-02-19T00:00:00.000Z\",\"calculationDetail\":{\"epv\":\"1680\",\"rate\":\"0.06\",\"subtype\":\"EPV_UPLINE\",\"generation\":1},\"createdAt\":\"2026-09-17T08:54:46.984Z\"},{\"bonusAwardId\":\"d41c24ce-afd6-4818-b2e8-ea0d1c9fe50e\",\"settlementBatchId\":null,\"awardType\":\"EPV\",\"recipientQualificationId\":\"182c65c2-0461-4517-a519-3828c7a04bbe\",\"sourceQualificationId\":\"182c65c2-0461-4517-a519-3828c7a04bbe\",\"sourceEventId\":\"cb7c4acb-f29c-4e47-a9a1-02e60f56f046\",\"sourceAwardId\":null,\"generationNo\":0,\"theoryAmount\":\"840\",\"kFactor\":\"1\",\"payableAmount\":\"840\",\"activeSnapshot\":true,\"effectiveDirectCountSnapshot\":null,\"planLevelSnapshot\":\"LEADER\",\"ruleVersionCode\":\"PHASE2_TEST_59a06b0c-6fd5-4277-a493-e18136ae4050\",\"parameterSnapshotHash\":\"9535e9ca0219348d2923c6888e2747891c45493feb94317b00115052c1c9dfa2\",\"occurredAt\":\"2020-01-05T00:00:00.000Z\",\"pendingUntil\":\"2020-02-19T00:00:00.000Z\",\"calculationDetail\":{\"epv\":\"1680\",\"rate\":\"0.5\",\"subtype\":\"EPV_SELF\"},\"createdAt\":\"2026-09-17T08:54:46.972Z\"}]",
+      "expected": "[{\"bonusAwardId\":\"074e1e24-6368-497f-8184-a12b0921e203\",\"settlementBatchId\":null,\"awardType\":\"EPV\",\"recipientQualificationId\":\"b6a51240-88f1-4af9-ae8e-dbe85db3cf20\",\"sourceQualificationId\":\"182c65c2-0461-4517-a519-3828c7a04bbe\",\"sourceEventId\":\"cb7c4acb-f29c-4e47-a9a1-02e60f56f046\",\"sourceAwardId\":null,\"generationNo\":2,\"theoryAmount\":\"0\",\"kFactor\":\"1\",\"payableAmount\":\"0\",\"activeSnapshot\":false,\"effectiveDirectCountSnapshot\":1,\"planLevelSnapshot\":\"LEADER\",\"ruleVersionCode\":\"PHASE2_TEST_59a06b0c-6fd5-4277-a493-e18136ae4050\",\"parameterSnapshotHash\":\"9535e9ca0219348d2923c6888e2747891c45493feb94317b00115052c1c9dfa2\",\"occurredAt\":\"2020-01-05T00:00:00.000Z\",\"pendingUntil\":\"2020-02-19T00:00:00.000Z\",\"calculationDetail\":{\"epv\":\"1680\",\"rate\":\"0.06\",\"subtype\":\"EPV_UPLINE\",\"generation\":2},\"createdAt\":\"2026-09-17T08:54:46.990Z\"},{\"bonusAwardId\":\"aedf7ef5-538a-415b-94db-d044d89c3589\",\"settlementBatchId\":null,\"awardType\":\"EPV\",\"recipientQualificationId\":\"4a5b9746-c74e-44f0-87f5-851cec5de8d0\",\"sourceQualificationId\":\"182c65c2-0461-4517-a519-3828c7a04bbe\",\"sourceEventId\":\"cb7c4acb-f29c-4e47-a9a1-02e60f56f046\",\"sourceAwardId\":null,\"generationNo\":1,\"theoryAmount\":\"100.8\",\"kFactor\":\"1\",\"payableAmount\":\"100.8\",\"activeSnapshot\":true,\"effectiveDirectCountSnapshot\":1,\"planLevelSnapshot\":\"LEADER\",\"ruleVersionCode\":\"PHASE2_TEST_59a06b0c-6fd5-4277-a493-e18136ae4050\",\"parameterSnapshotHash\":\"9535e9ca0219348d2923c6888e2747891c45493feb94317b00115052c1c9dfa2\",\"occurredAt\":\"2020-01-05T00:00:00.000Z\",\"pendingUntil\":\"2020-02-19T00:00:00.000Z\",\"calculationDetail\":{\"epv\":\"1680\",\"rate\":\"0.06\",\"subtype\":\"EPV_UPLINE\",\"generation\":1},\"createdAt\":\"2026-09-17T08:54:46.984Z\"},{\"bonusAwardId\":\"d41c24ce-afd6-4818-b2e8-ea0d1c9fe50e\",\"settlementBatchId\":null,\"awardType\":\"EPV\",\"recipientQualificationId\":\"182c65c2-0461-4517-a519-3828c7a04bbe\",\"sourceQualificationId\":\"182c65c2-0461-4517-a519-3828c7a04bbe\",\"sourceEventId\":\"cb7c4acb-f29c-4e47-a9a1-02e60f56f046\",\"sourceAwardId\":null,\"generationNo\":0,\"theoryAmount\":\"840\",\"kFactor\":\"1\",\"payableAmount\":\"840\",\"activeSnapshot\":true,\"effectiveDirectCountSnapshot\":null,\"planLevelSnapshot\":\"LEADER\",\"ruleVersionCode\":\"PHASE2_TEST_59a06b0c-6fd5-4277-a493-e18136ae4050\",\"parameterSnapshotHash\":\"9535e9ca0219348d2923c6888e2747891c45493feb94317b00115052c1c9dfa2\",\"occurredAt\":\"2020-01-05T00:00:00.000Z\",\"pendingUntil\":\"2020-02-19T00:00:00.000Z\",\"calculationDetail\":{\"epv\":\"1680\",\"rate\":\"0.5\",\"subtype\":\"EPV_SELF\"},\"createdAt\":\"2026-09-17T08:54:46.972Z\"}]"
+    },
+    {
+      "label": "original PAID history is immutable",
+      "result": "PASS",
+      "actual": {
+        "lifecycleEventId": "6cfd00c4-8eb7-4e34-8d5d-3c641bc399f2",
+        "bonusAwardId": "d41c24ce-afd6-4818-b2e8-ea0d1c9fe50e",
+        "status": "PAID",
+        "occurredAt": "2026-09-17T08:54:47.272Z",
+        "reasonCode": "PHASE2_TEST_PAID",
+        "sourceEventId": null,
+        "createdAt": "2026-09-17T08:54:47.273Z"
+      },
+      "expected": {
+        "lifecycleEventId": "6cfd00c4-8eb7-4e34-8d5d-3c641bc399f2",
+        "bonusAwardId": "d41c24ce-afd6-4818-b2e8-ea0d1c9fe50e",
+        "status": "PAID",
+        "occurredAt": "2026-09-17T08:54:47.272Z",
+        "reasonCode": "PHASE2_TEST_PAID",
+        "sourceEventId": null,
+        "createdAt": "2026-09-17T08:54:47.273Z"
+      }
+    },
+    {
+      "label": "PAID historical reduction appends one CLAWBACK lifecycle",
+      "result": "PASS",
+      "actual": 1,
+      "expected": 1
+    },
+    {
+      "label": "original EPV ledger unchanged",
+      "result": "PASS",
+      "actual": "1680",
+      "expected": "1680"
+    },
+    {
+      "label": "effective EPV ledger after two returns",
+      "result": "PASS",
+      "actual": "0",
+      "expected": "0"
+    },
+    {
+      "label": "outstanding recovery tracks PAID clawback",
+      "result": "PASS",
+      "actual": "840",
+      "expected": "840"
+    },
+    {
+      "label": "PV Ledger UPDATE rejected by DB",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "label": "PV Ledger DELETE rejected by DB",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "label": "PV Ledger entire original row survives rejected mutations",
+      "result": "PASS",
+      "actual": {
+        "eventId": "6c63e37b-ba8e-44fd-b3a5-5ec8845442a3",
+        "qualificationId": "182c65c2-0461-4517-a519-3828c7a04bbe",
+        "pvType": "GPV",
+        "amount": "0",
+        "sourceType": "ORDER",
+        "sourceId": "32b21226-6323-4cd4-b8d8-05a1fbe1d5e1",
+        "sourceLineId": "cfd8c71d-804b-4625-aace-c6162697e972",
+        "eventType": "GPV_CREATED",
+        "ruleVersionCode": "PHASE2_TEST_59a06b0c-6fd5-4277-a493-e18136ae4050",
+        "parameterSnapshotHash": null,
+        "occurredAt": "2020-01-05T00:00:00.000Z",
+        "recordedAt": "2026-09-17T08:54:46.909Z",
+        "reversalOfEventId": null,
+        "correlationId": "720d7288-afcd-4186-8862-214c43e13cf3"
+      },
+      "expected": {
+        "eventId": "6c63e37b-ba8e-44fd-b3a5-5ec8845442a3",
+        "qualificationId": "182c65c2-0461-4517-a519-3828c7a04bbe",
+        "pvType": "GPV",
+        "amount": "0",
+        "sourceType": "ORDER",
+        "sourceId": "32b21226-6323-4cd4-b8d8-05a1fbe1d5e1",
+        "sourceLineId": "cfd8c71d-804b-4625-aace-c6162697e972",
+        "eventType": "GPV_CREATED",
+        "ruleVersionCode": "PHASE2_TEST_59a06b0c-6fd5-4277-a493-e18136ae4050",
+        "parameterSnapshotHash": null,
+        "occurredAt": "2020-01-05T00:00:00.000Z",
+        "recordedAt": "2026-09-17T08:54:46.909Z",
+        "reversalOfEventId": null,
+        "correlationId": "720d7288-afcd-4186-8862-214c43e13cf3"
+      }
+    },
+    {
+      "label": "snapshot UPDATE rejected by DB",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "label": "posting DELETE rejected by DB",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "label": "posting cannot repeat previously clawed back delta",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "label": "DB rejects recipient changed from historical evidence",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "label": "DB rejects original baseline altered from historical evidence",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "label": "missing snapshot fails closed",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "label": "missing snapshot does not append money",
+      "result": "PASS",
+      "actual": 78,
+      "expected": 78
+    },
+    {
+      "label": "PENDING_45D historical zero entitlement appends REVERSED lifecycle",
+      "result": "PASS",
+      "actual": "REVERSED",
+      "expected": "REVERSED"
+    },
+    {
+      "label": "PENDING_45D reversal creates no recovery",
+      "result": "PASS",
+      "actual": [
+        null,
+        0
+      ],
+      "expected": [
+        null,
+        0
+      ]
+    },
+    {
+      "label": "Binary zero-entitlement evidence UPDATE rejected by DB",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "label": "sealed Binary snapshot retains inactive zero-entitlement reason",
+      "result": "PASS",
+      "actual": [
+        "b6a51240-88f1-4af9-ae8e-dbe85db3cf20",
+        "INACTIVE",
+        "0"
+      ],
+      "expected": [
+        "b6a51240-88f1-4af9-ae8e-dbe85db3cf20",
+        "INACTIVE",
+        "0"
+      ]
+    },
+    {
+      "label": "partial return creates proportional negative GPV event",
+      "result": "PASS",
+      "actual": [
+        "-500",
+        "b3e41001-f03a-4e64-b0f6-99232269e03c",
+        "6943c322-40a9-4933-9429-19b8f95abdcd"
+      ],
+      "expected": [
+        "-500",
+        "b3e41001-f03a-4e64-b0f6-99232269e03c",
+        "6943c322-40a9-4933-9429-19b8f95abdcd"
+      ]
+    },
+    {
+      "label": "GPV reversal references original GPV event",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "label": "K0 complete period posts every original entitlement",
+      "result": "PASS",
+      "actual": 2,
+      "expected": 2
+    },
+    {
+      "label": "K0 cumulative effective source replay",
+      "result": "PASS",
+      "actual": [
+        100,
+        500
+      ],
+      "expected": [
+        100,
+        500
+      ]
+    },
+    {
+      "label": "unaffected K0 entitlement receives positive pool normalization delta",
+      "result": "PASS",
+      "actual": "23.6364",
+      "expected": "23.6364"
+    },
+    {
+      "label": "positive replay delta creates exact compensating award",
+      "result": "PASS",
+      "actual": [
+        "08f1b3a4-93f9-41b3-89ff-8218665fc9e3",
+        "182c65c2-0461-4517-a519-3828c7a04bbe",
+        "REFERRAL",
+        "23.6364",
+        "23.6364"
+      ],
+      "expected": [
+        "08f1b3a4-93f9-41b3-89ff-8218665fc9e3",
+        "182c65c2-0461-4517-a519-3828c7a04bbe",
+        "REFERRAL",
+        "23.6364",
+        "23.6364"
+      ]
+    },
+    {
+      "label": "positive replay compensating award retains historical evidence",
+      "result": "PASS",
+      "actual": [
+        "dbf5a5c51b90dd85dabbdfe2655283096146e65bb754824466c427670c4cc1d9",
+        "PHASE2_TEST_59a06b0c-6fd5-4277-a493-e18136ae4050",
+        "2020-02-17T00:00:00.000Z",
+        "26233108-a0a3-426b-8f26-e2e3a872a86e",
+        "RETURN:4748d22d-a58a-4c89-9012-72ba8637c759"
+      ],
+      "expected": [
+        "dbf5a5c51b90dd85dabbdfe2655283096146e65bb754824466c427670c4cc1d9",
+        "PHASE2_TEST_59a06b0c-6fd5-4277-a493-e18136ae4050",
+        "2020-02-17T00:00:00.000Z",
+        "26233108-a0a3-426b-8f26-e2e3a872a86e",
+        "RETURN:4748d22d-a58a-4c89-9012-72ba8637c759"
+      ]
+    },
+    {
+      "label": "positive replay compensating award has one historical replay lifecycle",
+      "result": "PASS",
+      "actual": 1,
+      "expected": 1
+    },
+    {
+      "label": "negative replay delta creates exact original award recovery",
+      "result": "PASS",
+      "actual": [
+        "-263.6364",
+        "82d69fc7-ba73-4568-b3db-90dd87ee7d69",
+        "4748d22d-a58a-4c89-9012-72ba8637c759",
+        "263.6364",
+        "263.6364",
+        "OPEN"
+      ],
+      "expected": [
+        "-263.6364",
+        "82d69fc7-ba73-4568-b3db-90dd87ee7d69",
+        "4748d22d-a58a-4c89-9012-72ba8637c759",
+        "263.6364",
+        "263.6364",
+        "OPEN"
+      ]
+    },
+    {
+      "label": "replay delta uses exactly one correction direction",
+      "result": "PASS",
+      "actual": [
+        null,
+        null
+      ],
+      "expected": [
+        null,
+        null
+      ]
+    },
+    {
+      "label": "duplicate return creates no second posting compensating award or recovery",
+      "result": "PASS",
+      "actual": [
+        15,
+        19,
+        4
+      ],
+      "expected": [
+        15,
+        19,
+        4
+      ]
+    },
+    {
+      "label": "K0 original award baseline preserved",
+      "result": "PASS",
+      "actual": "[{\"bonusAwardId\":\"08f1b3a4-93f9-41b3-89ff-8218665fc9e3\",\"settlementBatchId\":\"4796ee6b-2176-4203-b1af-b33dc6f0c2d7\",\"awardType\":\"REFERRAL\",\"recipientQualificationId\":\"182c65c2-0461-4517-a519-3828c7a04bbe\",\"sourceQualificationId\":\"b98c6bfe-8af8-4c5d-b017-fdddd711ac08\",\"sourceEventId\":\"941baefd-39c4-49a4-915a-718a478aabec\",\"sourceAwardId\":null,\"generationNo\":1,\"theoryAmount\":\"100\",\"kFactor\":\"0.76363636\",\"payableAmount\":\"76.3636\",\"activeSnapshot\":true,\"effectiveDirectCountSnapshot\":null,\"planLevelSnapshot\":\"LEADER\",\"ruleVersionCode\":\"PHASE2_TEST_59a06b0c-6fd5-4277-a493-e18136ae4050\",\"parameterSnapshotHash\":null,\"occurredAt\":\"2020-01-03T00:00:00.000Z\",\"pendingUntil\":\"2020-02-17T00:00:00.000Z\",\"calculationDetail\":{\"testOnly\":true},\"createdAt\":\"2026-09-17T08:54:47.634Z\"},{\"bonusAwardId\":\"82d69fc7-ba73-4568-b3db-90dd87ee7d69\",\"settlementBatchId\":\"4796ee6b-2176-4203-b1af-b33dc6f0c2d7\",\"awardType\":\"REFERRAL\",\"recipientQualificationId\":\"182c65c2-0461-4517-a519-3828c7a04bbe\",\"sourceQualificationId\":\"b3e41001-f03a-4e64-b0f6-99232269e03c\",\"sourceEventId\":\"e9ad2d71-873b-436f-bf9e-ecefad6a80f2\",\"sourceAwardId\":null,\"generationNo\":1,\"theoryAmount\":\"1000\",\"kFactor\":\"0.76363636\",\"payableAmount\":\"763.6364\",\"activeSnapshot\":true,\"effectiveDirectCountSnapshot\":null,\"planLevelSnapshot\":\"LEADER\",\"ruleVersionCode\":\"PHASE2_TEST_59a06b0c-6fd5-4277-a493-e18136ae4050\",\"parameterSnapshotHash\":null,\"occurredAt\":\"2020-01-03T00:00:00.000Z\",\"pendingUntil\":\"2020-02-17T00:00:00.000Z\",\"calculationDetail\":{\"testOnly\":true},\"createdAt\":\"2026-09-17T08:54:47.631Z\"}]",
+      "expected": "[{\"bonusAwardId\":\"08f1b3a4-93f9-41b3-89ff-8218665fc9e3\",\"settlementBatchId\":\"4796ee6b-2176-4203-b1af-b33dc6f0c2d7\",\"awardType\":\"REFERRAL\",\"recipientQualificationId\":\"182c65c2-0461-4517-a519-3828c7a04bbe\",\"sourceQualificationId\":\"b98c6bfe-8af8-4c5d-b017-fdddd711ac08\",\"sourceEventId\":\"941baefd-39c4-49a4-915a-718a478aabec\",\"sourceAwardId\":null,\"generationNo\":1,\"theoryAmount\":\"100\",\"kFactor\":\"0.76363636\",\"payableAmount\":\"76.3636\",\"activeSnapshot\":true,\"effectiveDirectCountSnapshot\":null,\"planLevelSnapshot\":\"LEADER\",\"ruleVersionCode\":\"PHASE2_TEST_59a06b0c-6fd5-4277-a493-e18136ae4050\",\"parameterSnapshotHash\":null,\"occurredAt\":\"2020-01-03T00:00:00.000Z\",\"pendingUntil\":\"2020-02-17T00:00:00.000Z\",\"calculationDetail\":{\"testOnly\":true},\"createdAt\":\"2026-09-17T08:54:47.634Z\"},{\"bonusAwardId\":\"82d69fc7-ba73-4568-b3db-90dd87ee7d69\",\"settlementBatchId\":\"4796ee6b-2176-4203-b1af-b33dc6f0c2d7\",\"awardType\":\"REFERRAL\",\"recipientQualificationId\":\"182c65c2-0461-4517-a519-3828c7a04bbe\",\"sourceQualificationId\":\"b3e41001-f03a-4e64-b0f6-99232269e03c\",\"sourceEventId\":\"e9ad2d71-873b-436f-bf9e-ecefad6a80f2\",\"sourceAwardId\":null,\"generationNo\":1,\"theoryAmount\":\"1000\",\"kFactor\":\"0.76363636\",\"payableAmount\":\"763.6364\",\"activeSnapshot\":true,\"effectiveDirectCountSnapshot\":null,\"planLevelSnapshot\":\"LEADER\",\"ruleVersionCode\":\"PHASE2_TEST_59a06b0c-6fd5-4277-a493-e18136ae4050\",\"parameterSnapshotHash\":null,\"occurredAt\":\"2020-01-03T00:00:00.000Z\",\"pendingUntil\":\"2020-02-17T00:00:00.000Z\",\"calculationDetail\":{\"testOnly\":true},\"createdAt\":\"2026-09-17T08:54:47.631Z\"}]"
+    },
+    {
+      "label": "DB effective subtree honors partial return",
+      "result": "PASS",
+      "actual": "500",
+      "expected": "500"
+    },
+    {
+      "label": "later reversal belongs to original historical week",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "label": "historical cap preserves nonzero left carry",
+      "result": "PASS",
+      "actual": "500",
+      "expected": "500"
+    },
+    {
+      "label": "historical cap preserves nonzero right carry",
+      "result": "PASS",
+      "actual": "800",
+      "expected": "800"
+    },
+    {
+      "label": "carry continuation derives next historical left carry",
+      "result": "PASS",
+      "actual": "300",
+      "expected": "300"
+    },
+    {
+      "label": "carry continuation derives next historical right carry",
+      "result": "PASS",
+      "actual": "600",
+      "expected": "600"
+    },
+    {
+      "label": "due RPV recognition seals exact original ledger identity",
+      "result": "PASS",
+      "actual": [
+        "1200",
+        "RPV",
+        "RPV_CREATED",
+        "b5e9fca1-8460-491e-bc4b-e27c942ade8b",
+        "0ee1688d-3b53-482b-b5c8-5126190bafd7",
+        "b3e41001-f03a-4e64-b0f6-99232269e03c",
+        "2020-01-03T00:00:00.000Z"
+      ],
+      "expected": [
+        "1200",
+        "RPV",
+        "RPV_CREATED",
+        "b5e9fca1-8460-491e-bc4b-e27c942ade8b",
+        "0ee1688d-3b53-482b-b5c8-5126190bafd7",
+        "b3e41001-f03a-4e64-b0f6-99232269e03c",
+        "2020-01-03T00:00:00.000Z"
+      ]
+    },
+    {
+      "label": "due RPV recognition updates original schedule identity",
+      "result": "PASS",
+      "actual": [
+        "RECOGNIZED",
+        "0444f162-047d-4de2-acd7-2a28cd6ea030",
+        "2020-01-01T00:00:00.000Z"
+      ],
+      "expected": [
+        "RECOGNIZED",
+        "0444f162-047d-4de2-acd7-2a28cd6ea030",
+        "2020-01-01T00:00:00.000Z"
+      ]
+    },
+    {
+      "label": "duplicate RPV recognition reports already recognized",
+      "result": "PASS",
+      "actual": "ALREADY_RECOGNIZED",
+      "expected": "ALREADY_RECOGNIZED"
+    },
+    {
+      "label": "RPV duplicate recognition appends no original event",
+      "result": "PASS",
+      "actual": 1,
+      "expected": 1
+    },
+    {
+      "label": "duplicate RPV recognition preserves all original awards",
+      "result": "PASS",
+      "actual": [
+        {
+          "rpvAwardEventId": "65132c67-2d1a-4dec-9524-42e9e7672c5b",
+          "recognitionId": "0ee1688d-3b53-482b-b5c8-5126190bafd7",
+          "sourceQualificationId": "b3e41001-f03a-4e64-b0f6-99232269e03c",
+          "recipientQualificationId": "182c65c2-0461-4517-a519-3828c7a04bbe",
+          "binaryGeneration": 1,
+          "effectiveDirectCountSnapshot": 2,
+          "unlockedDepthSnapshot": 12,
+          "activeSnapshot": true,
+          "theoryAmount": "100",
+          "payableAmount": "100",
+          "ruleVersionCode": "PHASE2_TEST_59a06b0c-6fd5-4277-a493-e18136ae4050",
+          "parameterSnapshotHash": null,
+          "occurredAt": "2020-01-03T00:00:00.000Z",
+          "createdAt": "2026-09-17T08:54:48.330Z"
+        }
+      ],
+      "expected": [
+        {
+          "rpvAwardEventId": "65132c67-2d1a-4dec-9524-42e9e7672c5b",
+          "recognitionId": "0ee1688d-3b53-482b-b5c8-5126190bafd7",
+          "sourceQualificationId": "b3e41001-f03a-4e64-b0f6-99232269e03c",
+          "recipientQualificationId": "182c65c2-0461-4517-a519-3828c7a04bbe",
+          "binaryGeneration": 1,
+          "effectiveDirectCountSnapshot": 2,
+          "unlockedDepthSnapshot": 12,
+          "activeSnapshot": true,
+          "theoryAmount": "100",
+          "payableAmount": "100",
+          "ruleVersionCode": "PHASE2_TEST_59a06b0c-6fd5-4277-a493-e18136ae4050",
+          "parameterSnapshotHash": null,
+          "occurredAt": "2020-01-03T00:00:00.000Z",
+          "createdAt": "2026-09-17T08:54:48.330Z"
+        }
+      ]
+    },
+    {
+      "label": "duplicate RPV recognition preserves entire historical snapshot",
+      "result": "PASS",
+      "actual": {
+        "snapshotId": "3f6c71f5-32c9-48d4-b93e-6ec472976818",
+        "kind": "RPV",
+        "sourceId": "0ee1688d-3b53-482b-b5c8-5126190bafd7",
+        "ruleVersionCode": "PHASE2_TEST_59a06b0c-6fd5-4277-a493-e18136ae4050",
+        "content": {
+          "at": "2020-01-03T00:00:00.000Z",
+          "kind": "RPV",
+          "format": "UCELL_HISTORICAL_REPLAY_V1",
+          "inputs": {
+            "volume": "1200",
+            "eventId": "0444f162-047d-4de2-acd7-2a28cd6ea030",
+            "subscriptionId": "b5e9fca1-8460-491e-bc4b-e27c942ade8b",
+            "recognitionMonth": "2020-01-01T00:00:00.000Z",
+            "recognizedAmount": "2000",
+            "entitlementMethod": "ORIGINAL_FIXED_AWARD_ON_VALID_RECOGNITION",
+            "recognitionPeriod": {
+              "end": "2020-02-01T00:00:00.000Z",
+              "start": "2020-01-01T00:00:00.000Z",
+              "timezone": "UTC"
+            }
+          },
+          "evidence": {
+            "at": "2020-01-03T00:00:00.000Z",
+            "binary": [
+              {
+                "side": "LEFT",
+                "createdAt": "2026-09-17T08:54:47.115Z",
+                "effectiveTo": null,
+                "effectiveFrom": "2020-01-01T00:00:00.000Z",
+                "binaryPlacementId": "a74dabc6-8951-4272-b6c7-aa7db6962199",
+                "childQualificationId": "1184ef85-2097-486f-9a02-5c6cfadcff12",
+                "parentQualificationId": "157e14ff-1c20-4bea-8598-aae256d93388"
+              },
+              {
+                "side": "LEFT",
+                "createdAt": "2026-09-17T08:54:47.114Z",
+                "effectiveTo": null,
+                "effectiveFrom": "2020-01-01T00:00:00.000Z",
+                "binaryPlacementId": "2de6028a-c463-4df5-8d00-cac7af35b801",
+                "childQualificationId": "157e14ff-1c20-4bea-8598-aae256d93388",
+                "parentQualificationId": "b4dec112-1f97-4ae3-bf7d-a4d72abf7224"
+              },
+              {
+                "side": "LEFT",
+                "createdAt": "2026-09-17T08:54:47.109Z",
+                "effectiveTo": null,
+                "effectiveFrom": "2020-01-01T00:00:00.000Z",
+                "binaryPlacementId": "06efcc5a-3396-4648-b0a0-246076cbcc46",
+                "childQualificationId": "31d9d50b-cf0c-4d2b-9e2d-ae05f0cdc617",
+                "parentQualificationId": "3bb74df9-102e-4a10-9eb9-40efc44a709d"
+              },
+              {
+                "side": "LEFT",
+                "createdAt": "2026-09-17T08:54:47.112Z",
+                "effectiveTo": null,
+                "effectiveFrom": "2020-01-01T00:00:00.000Z",
+                "binaryPlacementId": "c4b2ad96-d93a-4921-9172-94cedb874148",
+                "childQualificationId": "3bb74df9-102e-4a10-9eb9-40efc44a709d",
+                "parentQualificationId": "f94cac5e-aea9-44fb-b63e-860a2d03082c"
+              },
+              {
+                "side": "LEFT",
+                "createdAt": "2026-09-17T08:54:47.489Z",
+                "effectiveTo": null,
+                "effectiveFrom": "2020-01-01T00:00:00.000Z",
+                "binaryPlacementId": "de16120e-43fc-4893-aa55-c3be5e649276",
+                "childQualificationId": "b3e41001-f03a-4e64-b0f6-99232269e03c",
+                "parentQualificationId": "182c65c2-0461-4517-a519-3828c7a04bbe"
+              },
+              {
+                "side": "LEFT",
+                "createdAt": "2026-09-17T08:54:47.104Z",
+                "effectiveTo": null,
+                "effectiveFrom": "2020-01-01T00:00:00.000Z",
+                "binaryPlacementId": "11dc063d-39e7-4b90-ba3d-26618866b5d1",
+                "childQualificationId": "b4dec112-1f97-4ae3-bf7d-a4d72abf7224",
+                "parentQualificationId": "c8d80c40-0c61-45e3-a1d3-070c5fdbfea9"
+              },
+              {
+                "side": "RIGHT",
+                "createdAt": "2026-09-17T08:54:47.490Z",
+                "effectiveTo": null,
+                "effectiveFrom": "2020-01-01T00:00:00.000Z",
+                "binaryPlacementId": "28a32b50-dbfb-4666-b7cf-aadc7a94263f",
+                "childQualificationId": "b98c6bfe-8af8-4c5d-b017-fdddd711ac08",
+                "parentQualificationId": "182c65c2-0461-4517-a519-3828c7a04bbe"
+              },
+              {
+                "side": "LEFT",
+                "createdAt": "2026-09-17T08:54:47.107Z",
+                "effectiveTo": null,
+                "effectiveFrom": "2020-01-01T00:00:00.000Z",
+                "binaryPlacementId": "c842eb4c-fe5a-4554-8f39-6b6d7036bda9",
+                "childQualificationId": "c8d80c40-0c61-45e3-a1d3-070c5fdbfea9",
+                "parentQualificationId": "31d9d50b-cf0c-4d2b-9e2d-ae05f0cdc617"
+              }
+            ],
+            "sponsor": [
+              {
+                "createdAt": "2026-09-17T08:54:47.102Z",
+                "effectiveTo": null,
+                "effectiveFrom": "2020-01-01T00:00:00.000Z",
+                "sponsorSequenceNo": 1,
+                "childQualificationId": "1184ef85-2097-486f-9a02-5c6cfadcff12",
+                "sponsorRelationshipId": "8c61269e-bb4f-4861-9734-057c85ef3a74",
+                "sponsorQualificationId": "b4dec112-1f97-4ae3-bf7d-a4d72abf7224"
+              },
+              {
+                "createdAt": "2026-09-17T08:54:47.108Z",
+                "effectiveTo": null,
+                "effectiveFrom": "2020-01-01T00:00:00.000Z",
+                "sponsorSequenceNo": 1,
+                "childQualificationId": "31d9d50b-cf0c-4d2b-9e2d-ae05f0cdc617",
+                "sponsorRelationshipId": "6928750d-4d26-4f63-8e46-3012c403d432",
+                "sponsorQualificationId": "3bb74df9-102e-4a10-9eb9-40efc44a709d"
+              },
+              {
+                "createdAt": "2026-09-17T08:54:47.111Z",
+                "effectiveTo": null,
+                "effectiveFrom": "2020-01-01T00:00:00.000Z",
+                "sponsorSequenceNo": 1,
+                "childQualificationId": "3bb74df9-102e-4a10-9eb9-40efc44a709d",
+                "sponsorRelationshipId": "7b3d35da-b26d-4908-833a-07a1eb87110d",
+                "sponsorQualificationId": "f94cac5e-aea9-44fb-b63e-860a2d03082c"
+              },
+              {
+                "createdAt": "2026-09-17T08:54:46.901Z",
+                "effectiveTo": null,
+                "effectiveFrom": "2020-01-01T00:00:00.000Z",
+                "sponsorSequenceNo": 1,
+                "childQualificationId": "4a5b9746-c74e-44f0-87f5-851cec5de8d0",
+                "sponsorRelationshipId": "90f39b08-ac06-4c27-8595-2e08b6c5233f",
+                "sponsorQualificationId": "b6a51240-88f1-4af9-ae8e-dbe85db3cf20"
+              },
+              {
+                "createdAt": "2026-09-17T08:54:47.487Z",
+                "effectiveTo": null,
+                "effectiveFrom": "2020-01-01T00:00:00.000Z",
+                "sponsorSequenceNo": 1,
+                "childQualificationId": "b3e41001-f03a-4e64-b0f6-99232269e03c",
+                "sponsorRelationshipId": "8474ea23-9585-4709-8df9-23fa507f43b6",
+                "sponsorQualificationId": "182c65c2-0461-4517-a519-3828c7a04bbe"
+              },
+              {
+                "createdAt": "2026-09-17T08:54:47.103Z",
+                "effectiveTo": null,
+                "effectiveFrom": "2020-01-01T00:00:00.000Z",
+                "sponsorSequenceNo": 1,
+                "childQualificationId": "b4dec112-1f97-4ae3-bf7d-a4d72abf7224",
+                "sponsorRelationshipId": "1ed8775d-a4a4-42eb-a8a2-c154db39444c",
+                "sponsorQualificationId": "c8d80c40-0c61-45e3-a1d3-070c5fdbfea9"
+              },
+              {
+                "createdAt": "2026-09-17T08:54:47.488Z",
+                "effectiveTo": null,
+                "effectiveFrom": "2020-01-01T00:00:00.000Z",
+                "sponsorSequenceNo": 2,
+                "childQualificationId": "b98c6bfe-8af8-4c5d-b017-fdddd711ac08",
+                "sponsorRelationshipId": "b5093257-80af-4e7c-812d-b214381b64f1",
+                "sponsorQualificationId": "182c65c2-0461-4517-a519-3828c7a04bbe"
+              },
+              {
+                "createdAt": "2026-09-17T08:54:47.106Z",
+                "effectiveTo": null,
+                "effectiveFrom": "2020-01-01T00:00:00.000Z",
+                "sponsorSequenceNo": 1,
+                "childQualificationId": "c8d80c40-0c61-45e3-a1d3-070c5fdbfea9",
+                "sponsorRelationshipId": "0e6ee8fc-c62a-4dc8-a878-5018b427f8cc",
+                "sponsorQualificationId": "31d9d50b-cf0c-4d2b-9e2d-ae05f0cdc617"
+              }
+            ],
+            "qualifications": {
+              "182c65c2-0461-4517-a519-3828c7a04bbe": {
+                "at": "2020-01-03T00:00:00.000Z",
+                "plan": {
+                  "planCode": "LEADER",
+                  "sourceId": null,
+                  "createdAt": "2026-09-17T08:54:46.883Z",
+                  "sourceType": "PHASE2_TEST",
+                  "effectiveTo": null,
+                  "effectiveFrom": "2020-01-01T00:00:00.000Z",
+                  "qualificationId": "182c65c2-0461-4517-a519-3828c7a04bbe",
+                  "qualificationPlanHistoryId": "1748de33-de1f-429f-802c-3868861ec97a"
+                },
+                "status": {
+                  "status": "EFFECTIVE",
+                  "sourceId": null,
+                  "createdAt": "2026-09-17T08:54:46.884Z",
+                  "sourceType": "PHASE2_TEST",
+                  "effectiveTo": null,
+                  "effectiveFrom": "2020-01-01T00:00:00.000Z",
+                  "qualificationId": "182c65c2-0461-4517-a519-3828c7a04bbe",
+                  "qualificationStatusHistoryId": "d2d354f7-5a1b-49b3-b648-29cbae5e8f80"
+                },
+                "activeIntervals": [
+                  {
+                    "activeTo": null,
+                    "sourceId": null,
+                    "createdAt": "2026-09-17T08:54:46.885Z",
+                    "activeFrom": "2020-01-01T00:00:00.000Z",
+                    "sourceType": "PHASE2_TEST",
+                    "activePeriodId": "5b61e1d9-4ec4-4de8-9c79-45362e0dae60",
+                    "qualificationId": "182c65c2-0461-4517-a519-3828c7a04bbe",
+                    "ruleVersionCode": "PHASE2_TEST_59a06b0c-6fd5-4277-a493-e18136ae4050"
+                  }
+                ],
+                "qualificationId": "182c65c2-0461-4517-a519-3828c7a04bbe"
+              },
+              "b3e41001-f03a-4e64-b0f6-99232269e03c": {
+                "at": "2020-01-03T00:00:00.000Z",
+                "plan": {
+                  "planCode": "LEADER",
+                  "sourceId": null,
+                  "createdAt": "2026-09-17T08:54:47.482Z",
+                  "sourceType": "PHASE2_TEST",
+                  "effectiveTo": null,
+                  "effectiveFrom": "2020-01-01T00:00:00.000Z",
+                  "qualificationId": "b3e41001-f03a-4e64-b0f6-99232269e03c",
+                  "qualificationPlanHistoryId": "eff926d4-f6b2-4fe4-8543-98b00dc412f1"
+                },
+                "status": {
+                  "status": "EFFECTIVE",
+                  "sourceId": null,
+                  "createdAt": "2026-09-17T08:54:47.482Z",
+                  "sourceType": "PHASE2_TEST",
+                  "effectiveTo": null,
+                  "effectiveFrom": "2020-01-01T00:00:00.000Z",
+                  "qualificationId": "b3e41001-f03a-4e64-b0f6-99232269e03c",
+                  "qualificationStatusHistoryId": "2bfea262-e290-4aa0-b58c-6c8103de0e92"
+                },
+                "activeIntervals": [
+                  {
+                    "activeTo": null,
+                    "sourceId": null,
+                    "createdAt": "2026-09-17T08:54:47.483Z",
+                    "activeFrom": "2020-01-01T00:00:00.000Z",
+                    "sourceType": "PHASE2_TEST",
+                    "activePeriodId": "1f2baeb3-1c7d-4f4d-a6c5-8011d8f7bdd0",
+                    "qualificationId": "b3e41001-f03a-4e64-b0f6-99232269e03c",
+                    "ruleVersionCode": "PHASE2_TEST_59a06b0c-6fd5-4277-a493-e18136ae4050"
+                  }
+                ],
+                "qualificationId": "b3e41001-f03a-4e64-b0f6-99232269e03c"
+              }
+            },
+            "sourceQualification": {
+              "at": "2020-01-03T00:00:00.000Z",
+              "plan": {
+                "planCode": "LEADER",
+                "sourceId": null,
+                "createdAt": "2026-09-17T08:54:47.482Z",
+                "sourceType": "PHASE2_TEST",
+                "effectiveTo": null,
+                "effectiveFrom": "2020-01-01T00:00:00.000Z",
+                "qualificationId": "b3e41001-f03a-4e64-b0f6-99232269e03c",
+                "qualificationPlanHistoryId": "eff926d4-f6b2-4fe4-8543-98b00dc412f1"
+              },
+              "status": {
+                "status": "EFFECTIVE",
+                "sourceId": null,
+                "createdAt": "2026-09-17T08:54:47.482Z",
+                "sourceType": "PHASE2_TEST",
+                "effectiveTo": null,
+                "effectiveFrom": "2020-01-01T00:00:00.000Z",
+                "qualificationId": "b3e41001-f03a-4e64-b0f6-99232269e03c",
+                "qualificationStatusHistoryId": "2bfea262-e290-4aa0-b58c-6c8103de0e92"
+              },
+              "activeIntervals": [
+                {
+                  "activeTo": null,
+                  "sourceId": null,
+                  "createdAt": "2026-09-17T08:54:47.483Z",
+                  "activeFrom": "2020-01-01T00:00:00.000Z",
+                  "sourceType": "PHASE2_TEST",
+                  "activePeriodId": "1f2baeb3-1c7d-4f4d-a6c5-8011d8f7bdd0",
+                  "qualificationId": "b3e41001-f03a-4e64-b0f6-99232269e03c",
+                  "ruleVersionCode": "PHASE2_TEST_59a06b0c-6fd5-4277-a493-e18136ae4050"
+                }
+              ],
+              "qualificationId": "b3e41001-f03a-4e64-b0f6-99232269e03c"
+            },
+            "effectiveDirectCounts": {
+              "182c65c2-0461-4517-a519-3828c7a04bbe": 2,
+              "b3e41001-f03a-4e64-b0f6-99232269e03c": 0
+            }
+          },
+          "sourceId": "0ee1688d-3b53-482b-b5c8-5126190bafd7",
+          "parameters": {
+            "hash": "dbf5a5c51b90dd85dabbdfe2655283096146e65bb754824466c427670c4cc1d9",
+            "format": "UCELL_PARAMETER_SNAPSHOT_V1",
+            "parameters": [
+              {
+                "id": "2be3c78c-c1ae-4a91-acf6-a590c8ed40a6",
+                "to": null,
+                "code": "accounting.timezone",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "*",
+                "value": "UTC"
+              },
+              {
+                "id": "53fd40e8-77bc-4740-ba12-3ca5da92a8ca",
+                "to": null,
+                "code": "award.pending.days",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "*",
+                "value": 45
+              },
+              {
+                "id": "ff5746bc-062c-4036-837b-0e2c2a8fb785",
+                "to": null,
+                "code": "binary.pair.rate",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "*",
+                "value": 0.12
+              },
+              {
+                "id": "ddf9924c-1363-48b7-8420-35830a18165e",
+                "to": null,
+                "code": "binary.weekly.cap",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "ELITE",
+                "value": 900000
+              },
+              {
+                "id": "027a9ff1-5a00-4ef7-8d46-ae6dcb56473b",
+                "to": null,
+                "code": "binary.weekly.cap",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "LEADER",
+                "value": 1500000
+              },
+              {
+                "id": "8fc8dc69-902b-4881-8ab5-2a79402f7448",
+                "to": null,
+                "code": "binary.weekly.cap",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "STARTER",
+                "value": 450000
+              },
+              {
+                "id": "6b3e70f0-6d64-445f-ae28-8814c52022bf",
+                "to": null,
+                "code": "epv.base_amount",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "*",
+                "value": 2000
+              },
+              {
+                "id": "acbd7d45-8352-4601-8364-dde202e6fb31",
+                "to": null,
+                "code": "epv.calendar.timezone",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "*",
+                "value": "UTC"
+              },
+              {
+                "id": "116a006f-9a17-4983-9f9e-1a466d969a08",
+                "to": null,
+                "code": "epv.rate",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "*",
+                "value": 0.6
+              },
+              {
+                "id": "ffb96366-d4ca-4634-95f9-144eee2a06b3",
+                "to": null,
+                "code": "epv.self.rate",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "*",
+                "value": 0.5
+              },
+              {
+                "id": "8f8b2099-e4d6-49d9-858b-0381d2024bb8",
+                "to": null,
+                "code": "epv.upline.rate",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "1",
+                "value": 0.06
+              },
+              {
+                "id": "28a68fbc-6a12-4d0c-be4a-1e844ded78b8",
+                "to": null,
+                "code": "epv.upline.rate",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "2",
+                "value": 0.06
+              },
+              {
+                "id": "0b88a04e-06ae-45ca-9ad7-ef4aa8e2c180",
+                "to": null,
+                "code": "epv.upline.rate",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "3",
+                "value": 0.06
+              },
+              {
+                "id": "e6c31afb-e2b1-4b4e-9d2d-c5a6334156bc",
+                "to": null,
+                "code": "epv.upline.rate",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "4",
+                "value": 0.06
+              },
+              {
+                "id": "35cf3978-d610-4209-ba30-0d5d1254a5a5",
+                "to": null,
+                "code": "epv.upline.rate",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "5",
+                "value": 0.06
+              },
+              {
+                "id": "418ad600-78da-412c-98b5-9290c8c5861f",
+                "to": null,
+                "code": "equalization.rate",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "ELITE:G2",
+                "value": 0.2
+              },
+              {
+                "id": "16191421-1d23-4487-ab01-c949450b7e00",
+                "to": null,
+                "code": "equalization.rate",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "ELITE:G3",
+                "value": 0.1
+              },
+              {
+                "id": "9870bfb4-9a6d-48b5-89a3-88411e3f41d9",
+                "to": null,
+                "code": "equalization.rate",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "ELITE:G4",
+                "value": 0.1
+              },
+              {
+                "id": "d3eb9b16-c713-4b8a-a017-2fab3bc61e19",
+                "to": null,
+                "code": "equalization.rate",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "ELITE:G5",
+                "value": 0.05
+              },
+              {
+                "id": "4e91b26d-e99e-4573-a9b1-26cb414d38da",
+                "to": null,
+                "code": "equalization.rate",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "ELITE:G6",
+                "value": 0.05
+              },
+              {
+                "id": "a42b85a9-2f64-4654-a4d2-9258a54c3b2a",
+                "to": null,
+                "code": "equalization.rate",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "LEADER:G2",
+                "value": 0.2
+              },
+              {
+                "id": "08cd69e1-4057-4a3b-b52f-3b6080a0e3f8",
+                "to": null,
+                "code": "equalization.rate",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "LEADER:G3",
+                "value": 0.15
+              },
+              {
+                "id": "535a44b1-e680-4002-8ca6-d928fedec7f9",
+                "to": null,
+                "code": "equalization.rate",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "LEADER:G4",
+                "value": 0.1
+              },
+              {
+                "id": "b375a11c-ea5d-4f1e-aa29-2722197f299d",
+                "to": null,
+                "code": "equalization.rate",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "LEADER:G5",
+                "value": 0.1
+              },
+              {
+                "id": "a051a6ad-83da-4b87-b64d-4d34b71796d2",
+                "to": null,
+                "code": "equalization.rate",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "LEADER:G6",
+                "value": 0.1
+              },
+              {
+                "id": "be66cfc6-daeb-4f28-abd7-89798b98c809",
+                "to": null,
+                "code": "equalization.rate",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "LEADER:G7",
+                "value": 0.05
+              },
+              {
+                "id": "49347dfb-5254-45ce-b42c-cb1099a66e7b",
+                "to": null,
+                "code": "equalization.rate",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "STARTER:G2",
+                "value": 0.1
+              },
+              {
+                "id": "cdadce96-f328-4d6b-9111-096a79f1b72d",
+                "to": null,
+                "code": "equalization.rate",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "STARTER:G3",
+                "value": 0.1
+              },
+              {
+                "id": "a52838ec-9e5d-4674-881a-f7145f7c8fd9",
+                "to": null,
+                "code": "equalization.rate",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "STARTER:G4",
+                "value": 0.1
+              },
+              {
+                "id": "b2034df9-d6e2-4cc9-a6ff-0c1b8774b416",
+                "to": null,
+                "code": "global.rank.pool_rate",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "CROWN",
+                "value": 0.015
+              },
+              {
+                "id": "edf8832c-be8e-4db3-bc18-525b0f269855",
+                "to": null,
+                "code": "global.rank.pool_rate",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "DIAMOND",
+                "value": 0.005
+              },
+              {
+                "id": "a8aee8ed-5c9c-44af-b1ec-5e91eb6b6bd2",
+                "to": null,
+                "code": "global.rank.pool_rate",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "EXCELLENCE",
+                "value": 0.01
+              },
+              {
+                "id": "1da88b79-a274-4685-bb79-0ffc63fd0de8",
+                "to": null,
+                "code": "global.rank.pool_rate",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "GLORY",
+                "value": 0.005
+              },
+              {
+                "id": "d77bea5c-06f3-467c-a948-2df55e888996",
+                "to": null,
+                "code": "global.rank.pool_rate",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "NEW_STAR",
+                "value": 0.015
+              },
+              {
+                "id": "36db6a39-eebd-4394-be33-45aa0679eac3",
+                "to": null,
+                "code": "global.rank.weak_threshold",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "CROWN",
+                "value": 4000000
+              },
+              {
+                "id": "c3db44dd-8fa5-42e5-8c05-406362766a7c",
+                "to": null,
+                "code": "global.rank.weak_threshold",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "DIAMOND",
+                "value": 2000000
+              },
+              {
+                "id": "c97ebaf0-74e8-4af0-bdb8-42746c26bf04",
+                "to": null,
+                "code": "global.rank.weak_threshold",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "EXCELLENCE",
+                "value": 600000
+              },
+              {
+                "id": "b66de68c-1e9b-44b3-b3ea-2e949af395a3",
+                "to": null,
+                "code": "global.rank.weak_threshold",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "GLORY",
+                "value": 1000000
+              },
+              {
+                "id": "3b26d3ee-f636-4f63-a9cb-5aec90599aa2",
+                "to": null,
+                "code": "global.rank.weak_threshold",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "NEW_STAR",
+                "value": 300000
+              },
+              {
+                "id": "3d8284af-4569-4e17-9e02-4a565d52b988",
+                "to": null,
+                "code": "matching.rate",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "1",
+                "value": 0.15
+              },
+              {
+                "id": "b0018d94-7ffc-43bf-8a9c-918bf4c306d9",
+                "to": null,
+                "code": "matching.rate",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "2",
+                "value": 0.1
+              },
+              {
+                "id": "7e2287fa-705d-4dd3-8a61-89b73a733583",
+                "to": null,
+                "code": "matching.rate",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "3",
+                "value": 0.05
+              },
+              {
+                "id": "d1eea960-e568-4953-bb87-934f3731da49",
+                "to": null,
+                "code": "matching.rate",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "4",
+                "value": 0.05
+              },
+              {
+                "id": "97a1b795-0463-4c4b-92c0-6c6fe43df42f",
+                "to": null,
+                "code": "matching.rate",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "5",
+                "value": 0.05
+              },
+              {
+                "id": "7956dd1e-3300-49c9-8f16-9a8da5efc7a7",
+                "to": null,
+                "code": "pool.binary.rate",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "*",
+                "value": 0.36
+              },
+              {
+                "id": "79e5f429-0a7f-4924-9c77-04f1acf28872",
+                "to": null,
+                "code": "pool.global.rate",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "*",
+                "value": 0.05
+              },
+              {
+                "id": "5ef74c60-b3b7-4de1-be9c-729e5af680e5",
+                "to": null,
+                "code": "pool.matching.rate",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "*",
+                "value": 0.15
+              },
+              {
+                "id": "61a64a68-83cf-41cf-a609-d9d4d4fff374",
+                "to": null,
+                "code": "pool.referral.rate",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "*",
+                "value": 0.42
+              },
+              {
+                "id": "0bb54f5f-3f75-48d3-a15a-e6b8a28c236d",
+                "to": null,
+                "code": "pool.welfare.rate",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "*",
+                "value": 0.02
+              },
+              {
+                "id": "cd1a4332-8880-4fd0-91ef-ef975bac7a4b",
+                "to": null,
+                "code": "referral.g1.rate",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "ELITE",
+                "value": 0.2
+              },
+              {
+                "id": "001898e1-0187-40f7-8dff-41c7c88367b9",
+                "to": null,
+                "code": "referral.g1.rate",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "LEADER",
+                "value": 0.25
+              },
+              {
+                "id": "3bba576a-0f96-401a-a84d-d442a59fa7e2",
+                "to": null,
+                "code": "referral.g1.rate",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "STARTER",
+                "value": 0.15
+              },
+              {
+                "id": "3ba56ee0-fceb-4f0e-b5d2-4952e37d6fcc",
+                "to": null,
+                "code": "settlement.timezone",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "*",
+                "value": "Asia/Taipei"
+              },
+              {
+                "id": "2d38f6b4-4ee3-4e5b-9aca-4ec2602a43df",
+                "to": null,
+                "code": "settlement.week.starts_on",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "*",
+                "value": 1
+              }
+            ],
+            "effectiveAt": "2020-01-03T00:00:00.000Z",
+            "ruleVersionCode": "PHASE2_TEST_59a06b0c-6fd5-4277-a493-e18136ae4050"
+          },
+          "recipients": [
+            {
+              "key": "65132c67-2d1a-4dec-9524-42e9e7672c5b",
+              "active": true,
+              "detail": {
+                "unlockedDepth": 12,
+                "effectiveDirectCount": 2
+              },
+              "posted": "100",
+              "theory": "100",
+              "awardId": "65132c67-2d1a-4dec-9524-42e9e7672c5b",
+              "eligible": true,
+              "awardType": "RPV",
+              "generation": 1,
+              "pendingUntil": "2020-01-03T00:00:00.000Z",
+              "qualification": {
+                "at": "2020-01-03T00:00:00.000Z",
+                "plan": {
+                  "planCode": "LEADER",
+                  "sourceId": null,
+                  "createdAt": "2026-09-17T08:54:46.883Z",
+                  "sourceType": "PHASE2_TEST",
+                  "effectiveTo": null,
+                  "effectiveFrom": "2020-01-01T00:00:00.000Z",
+                  "qualificationId": "182c65c2-0461-4517-a519-3828c7a04bbe",
+                  "qualificationPlanHistoryId": "1748de33-de1f-429f-802c-3868861ec97a"
+                },
+                "status": {
+                  "status": "EFFECTIVE",
+                  "sourceId": null,
+                  "createdAt": "2026-09-17T08:54:46.884Z",
+                  "sourceType": "PHASE2_TEST",
+                  "effectiveTo": null,
+                  "effectiveFrom": "2020-01-01T00:00:00.000Z",
+                  "qualificationId": "182c65c2-0461-4517-a519-3828c7a04bbe",
+                  "qualificationStatusHistoryId": "d2d354f7-5a1b-49b3-b648-29cbae5e8f80"
+                },
+                "activeIntervals": [
+                  {
+                    "activeTo": null,
+                    "sourceId": null,
+                    "createdAt": "2026-09-17T08:54:46.885Z",
+                    "activeFrom": "2020-01-01T00:00:00.000Z",
+                    "sourceType": "PHASE2_TEST",
+                    "activePeriodId": "5b61e1d9-4ec4-4de8-9c79-45362e0dae60",
+                    "qualificationId": "182c65c2-0461-4517-a519-3828c7a04bbe",
+                    "ruleVersionCode": "PHASE2_TEST_59a06b0c-6fd5-4277-a493-e18136ae4050"
+                  }
+                ],
+                "qualificationId": "182c65c2-0461-4517-a519-3828c7a04bbe"
+              },
+              "qualificationId": "182c65c2-0461-4517-a519-3828c7a04bbe"
+            }
+          ],
+          "ruleVersionCode": "PHASE2_TEST_59a06b0c-6fd5-4277-a493-e18136ae4050"
+        },
+        "hash": "458fa0e0454a2ddcec37bd07be5f39502783a894c20d5f0e9dca3fa7160b0ed0",
+        "createdAt": "2026-09-17T08:54:48.354Z"
+      },
+      "expected": {
+        "snapshotId": "3f6c71f5-32c9-48d4-b93e-6ec472976818",
+        "kind": "RPV",
+        "sourceId": "0ee1688d-3b53-482b-b5c8-5126190bafd7",
+        "ruleVersionCode": "PHASE2_TEST_59a06b0c-6fd5-4277-a493-e18136ae4050",
+        "content": {
+          "at": "2020-01-03T00:00:00.000Z",
+          "kind": "RPV",
+          "format": "UCELL_HISTORICAL_REPLAY_V1",
+          "inputs": {
+            "volume": "1200",
+            "eventId": "0444f162-047d-4de2-acd7-2a28cd6ea030",
+            "subscriptionId": "b5e9fca1-8460-491e-bc4b-e27c942ade8b",
+            "recognitionMonth": "2020-01-01T00:00:00.000Z",
+            "recognizedAmount": "2000",
+            "entitlementMethod": "ORIGINAL_FIXED_AWARD_ON_VALID_RECOGNITION",
+            "recognitionPeriod": {
+              "end": "2020-02-01T00:00:00.000Z",
+              "start": "2020-01-01T00:00:00.000Z",
+              "timezone": "UTC"
+            }
+          },
+          "evidence": {
+            "at": "2020-01-03T00:00:00.000Z",
+            "binary": [
+              {
+                "side": "LEFT",
+                "createdAt": "2026-09-17T08:54:47.115Z",
+                "effectiveTo": null,
+                "effectiveFrom": "2020-01-01T00:00:00.000Z",
+                "binaryPlacementId": "a74dabc6-8951-4272-b6c7-aa7db6962199",
+                "childQualificationId": "1184ef85-2097-486f-9a02-5c6cfadcff12",
+                "parentQualificationId": "157e14ff-1c20-4bea-8598-aae256d93388"
+              },
+              {
+                "side": "LEFT",
+                "createdAt": "2026-09-17T08:54:47.114Z",
+                "effectiveTo": null,
+                "effectiveFrom": "2020-01-01T00:00:00.000Z",
+                "binaryPlacementId": "2de6028a-c463-4df5-8d00-cac7af35b801",
+                "childQualificationId": "157e14ff-1c20-4bea-8598-aae256d93388",
+                "parentQualificationId": "b4dec112-1f97-4ae3-bf7d-a4d72abf7224"
+              },
+              {
+                "side": "LEFT",
+                "createdAt": "2026-09-17T08:54:47.109Z",
+                "effectiveTo": null,
+                "effectiveFrom": "2020-01-01T00:00:00.000Z",
+                "binaryPlacementId": "06efcc5a-3396-4648-b0a0-246076cbcc46",
+                "childQualificationId": "31d9d50b-cf0c-4d2b-9e2d-ae05f0cdc617",
+                "parentQualificationId": "3bb74df9-102e-4a10-9eb9-40efc44a709d"
+              },
+              {
+                "side": "LEFT",
+                "createdAt": "2026-09-17T08:54:47.112Z",
+                "effectiveTo": null,
+                "effectiveFrom": "2020-01-01T00:00:00.000Z",
+                "binaryPlacementId": "c4b2ad96-d93a-4921-9172-94cedb874148",
+                "childQualificationId": "3bb74df9-102e-4a10-9eb9-40efc44a709d",
+                "parentQualificationId": "f94cac5e-aea9-44fb-b63e-860a2d03082c"
+              },
+              {
+                "side": "LEFT",
+                "createdAt": "2026-09-17T08:54:47.489Z",
+                "effectiveTo": null,
+                "effectiveFrom": "2020-01-01T00:00:00.000Z",
+                "binaryPlacementId": "de16120e-43fc-4893-aa55-c3be5e649276",
+                "childQualificationId": "b3e41001-f03a-4e64-b0f6-99232269e03c",
+                "parentQualificationId": "182c65c2-0461-4517-a519-3828c7a04bbe"
+              },
+              {
+                "side": "LEFT",
+                "createdAt": "2026-09-17T08:54:47.104Z",
+                "effectiveTo": null,
+                "effectiveFrom": "2020-01-01T00:00:00.000Z",
+                "binaryPlacementId": "11dc063d-39e7-4b90-ba3d-26618866b5d1",
+                "childQualificationId": "b4dec112-1f97-4ae3-bf7d-a4d72abf7224",
+                "parentQualificationId": "c8d80c40-0c61-45e3-a1d3-070c5fdbfea9"
+              },
+              {
+                "side": "RIGHT",
+                "createdAt": "2026-09-17T08:54:47.490Z",
+                "effectiveTo": null,
+                "effectiveFrom": "2020-01-01T00:00:00.000Z",
+                "binaryPlacementId": "28a32b50-dbfb-4666-b7cf-aadc7a94263f",
+                "childQualificationId": "b98c6bfe-8af8-4c5d-b017-fdddd711ac08",
+                "parentQualificationId": "182c65c2-0461-4517-a519-3828c7a04bbe"
+              },
+              {
+                "side": "LEFT",
+                "createdAt": "2026-09-17T08:54:47.107Z",
+                "effectiveTo": null,
+                "effectiveFrom": "2020-01-01T00:00:00.000Z",
+                "binaryPlacementId": "c842eb4c-fe5a-4554-8f39-6b6d7036bda9",
+                "childQualificationId": "c8d80c40-0c61-45e3-a1d3-070c5fdbfea9",
+                "parentQualificationId": "31d9d50b-cf0c-4d2b-9e2d-ae05f0cdc617"
+              }
+            ],
+            "sponsor": [
+              {
+                "createdAt": "2026-09-17T08:54:47.102Z",
+                "effectiveTo": null,
+                "effectiveFrom": "2020-01-01T00:00:00.000Z",
+                "sponsorSequenceNo": 1,
+                "childQualificationId": "1184ef85-2097-486f-9a02-5c6cfadcff12",
+                "sponsorRelationshipId": "8c61269e-bb4f-4861-9734-057c85ef3a74",
+                "sponsorQualificationId": "b4dec112-1f97-4ae3-bf7d-a4d72abf7224"
+              },
+              {
+                "createdAt": "2026-09-17T08:54:47.108Z",
+                "effectiveTo": null,
+                "effectiveFrom": "2020-01-01T00:00:00.000Z",
+                "sponsorSequenceNo": 1,
+                "childQualificationId": "31d9d50b-cf0c-4d2b-9e2d-ae05f0cdc617",
+                "sponsorRelationshipId": "6928750d-4d26-4f63-8e46-3012c403d432",
+                "sponsorQualificationId": "3bb74df9-102e-4a10-9eb9-40efc44a709d"
+              },
+              {
+                "createdAt": "2026-09-17T08:54:47.111Z",
+                "effectiveTo": null,
+                "effectiveFrom": "2020-01-01T00:00:00.000Z",
+                "sponsorSequenceNo": 1,
+                "childQualificationId": "3bb74df9-102e-4a10-9eb9-40efc44a709d",
+                "sponsorRelationshipId": "7b3d35da-b26d-4908-833a-07a1eb87110d",
+                "sponsorQualificationId": "f94cac5e-aea9-44fb-b63e-860a2d03082c"
+              },
+              {
+                "createdAt": "2026-09-17T08:54:46.901Z",
+                "effectiveTo": null,
+                "effectiveFrom": "2020-01-01T00:00:00.000Z",
+                "sponsorSequenceNo": 1,
+                "childQualificationId": "4a5b9746-c74e-44f0-87f5-851cec5de8d0",
+                "sponsorRelationshipId": "90f39b08-ac06-4c27-8595-2e08b6c5233f",
+                "sponsorQualificationId": "b6a51240-88f1-4af9-ae8e-dbe85db3cf20"
+              },
+              {
+                "createdAt": "2026-09-17T08:54:47.487Z",
+                "effectiveTo": null,
+                "effectiveFrom": "2020-01-01T00:00:00.000Z",
+                "sponsorSequenceNo": 1,
+                "childQualificationId": "b3e41001-f03a-4e64-b0f6-99232269e03c",
+                "sponsorRelationshipId": "8474ea23-9585-4709-8df9-23fa507f43b6",
+                "sponsorQualificationId": "182c65c2-0461-4517-a519-3828c7a04bbe"
+              },
+              {
+                "createdAt": "2026-09-17T08:54:47.103Z",
+                "effectiveTo": null,
+                "effectiveFrom": "2020-01-01T00:00:00.000Z",
+                "sponsorSequenceNo": 1,
+                "childQualificationId": "b4dec112-1f97-4ae3-bf7d-a4d72abf7224",
+                "sponsorRelationshipId": "1ed8775d-a4a4-42eb-a8a2-c154db39444c",
+                "sponsorQualificationId": "c8d80c40-0c61-45e3-a1d3-070c5fdbfea9"
+              },
+              {
+                "createdAt": "2026-09-17T08:54:47.488Z",
+                "effectiveTo": null,
+                "effectiveFrom": "2020-01-01T00:00:00.000Z",
+                "sponsorSequenceNo": 2,
+                "childQualificationId": "b98c6bfe-8af8-4c5d-b017-fdddd711ac08",
+                "sponsorRelationshipId": "b5093257-80af-4e7c-812d-b214381b64f1",
+                "sponsorQualificationId": "182c65c2-0461-4517-a519-3828c7a04bbe"
+              },
+              {
+                "createdAt": "2026-09-17T08:54:47.106Z",
+                "effectiveTo": null,
+                "effectiveFrom": "2020-01-01T00:00:00.000Z",
+                "sponsorSequenceNo": 1,
+                "childQualificationId": "c8d80c40-0c61-45e3-a1d3-070c5fdbfea9",
+                "sponsorRelationshipId": "0e6ee8fc-c62a-4dc8-a878-5018b427f8cc",
+                "sponsorQualificationId": "31d9d50b-cf0c-4d2b-9e2d-ae05f0cdc617"
+              }
+            ],
+            "qualifications": {
+              "182c65c2-0461-4517-a519-3828c7a04bbe": {
+                "at": "2020-01-03T00:00:00.000Z",
+                "plan": {
+                  "planCode": "LEADER",
+                  "sourceId": null,
+                  "createdAt": "2026-09-17T08:54:46.883Z",
+                  "sourceType": "PHASE2_TEST",
+                  "effectiveTo": null,
+                  "effectiveFrom": "2020-01-01T00:00:00.000Z",
+                  "qualificationId": "182c65c2-0461-4517-a519-3828c7a04bbe",
+                  "qualificationPlanHistoryId": "1748de33-de1f-429f-802c-3868861ec97a"
+                },
+                "status": {
+                  "status": "EFFECTIVE",
+                  "sourceId": null,
+                  "createdAt": "2026-09-17T08:54:46.884Z",
+                  "sourceType": "PHASE2_TEST",
+                  "effectiveTo": null,
+                  "effectiveFrom": "2020-01-01T00:00:00.000Z",
+                  "qualificationId": "182c65c2-0461-4517-a519-3828c7a04bbe",
+                  "qualificationStatusHistoryId": "d2d354f7-5a1b-49b3-b648-29cbae5e8f80"
+                },
+                "activeIntervals": [
+                  {
+                    "activeTo": null,
+                    "sourceId": null,
+                    "createdAt": "2026-09-17T08:54:46.885Z",
+                    "activeFrom": "2020-01-01T00:00:00.000Z",
+                    "sourceType": "PHASE2_TEST",
+                    "activePeriodId": "5b61e1d9-4ec4-4de8-9c79-45362e0dae60",
+                    "qualificationId": "182c65c2-0461-4517-a519-3828c7a04bbe",
+                    "ruleVersionCode": "PHASE2_TEST_59a06b0c-6fd5-4277-a493-e18136ae4050"
+                  }
+                ],
+                "qualificationId": "182c65c2-0461-4517-a519-3828c7a04bbe"
+              },
+              "b3e41001-f03a-4e64-b0f6-99232269e03c": {
+                "at": "2020-01-03T00:00:00.000Z",
+                "plan": {
+                  "planCode": "LEADER",
+                  "sourceId": null,
+                  "createdAt": "2026-09-17T08:54:47.482Z",
+                  "sourceType": "PHASE2_TEST",
+                  "effectiveTo": null,
+                  "effectiveFrom": "2020-01-01T00:00:00.000Z",
+                  "qualificationId": "b3e41001-f03a-4e64-b0f6-99232269e03c",
+                  "qualificationPlanHistoryId": "eff926d4-f6b2-4fe4-8543-98b00dc412f1"
+                },
+                "status": {
+                  "status": "EFFECTIVE",
+                  "sourceId": null,
+                  "createdAt": "2026-09-17T08:54:47.482Z",
+                  "sourceType": "PHASE2_TEST",
+                  "effectiveTo": null,
+                  "effectiveFrom": "2020-01-01T00:00:00.000Z",
+                  "qualificationId": "b3e41001-f03a-4e64-b0f6-99232269e03c",
+                  "qualificationStatusHistoryId": "2bfea262-e290-4aa0-b58c-6c8103de0e92"
+                },
+                "activeIntervals": [
+                  {
+                    "activeTo": null,
+                    "sourceId": null,
+                    "createdAt": "2026-09-17T08:54:47.483Z",
+                    "activeFrom": "2020-01-01T00:00:00.000Z",
+                    "sourceType": "PHASE2_TEST",
+                    "activePeriodId": "1f2baeb3-1c7d-4f4d-a6c5-8011d8f7bdd0",
+                    "qualificationId": "b3e41001-f03a-4e64-b0f6-99232269e03c",
+                    "ruleVersionCode": "PHASE2_TEST_59a06b0c-6fd5-4277-a493-e18136ae4050"
+                  }
+                ],
+                "qualificationId": "b3e41001-f03a-4e64-b0f6-99232269e03c"
+              }
+            },
+            "sourceQualification": {
+              "at": "2020-01-03T00:00:00.000Z",
+              "plan": {
+                "planCode": "LEADER",
+                "sourceId": null,
+                "createdAt": "2026-09-17T08:54:47.482Z",
+                "sourceType": "PHASE2_TEST",
+                "effectiveTo": null,
+                "effectiveFrom": "2020-01-01T00:00:00.000Z",
+                "qualificationId": "b3e41001-f03a-4e64-b0f6-99232269e03c",
+                "qualificationPlanHistoryId": "eff926d4-f6b2-4fe4-8543-98b00dc412f1"
+              },
+              "status": {
+                "status": "EFFECTIVE",
+                "sourceId": null,
+                "createdAt": "2026-09-17T08:54:47.482Z",
+                "sourceType": "PHASE2_TEST",
+                "effectiveTo": null,
+                "effectiveFrom": "2020-01-01T00:00:00.000Z",
+                "qualificationId": "b3e41001-f03a-4e64-b0f6-99232269e03c",
+                "qualificationStatusHistoryId": "2bfea262-e290-4aa0-b58c-6c8103de0e92"
+              },
+              "activeIntervals": [
+                {
+                  "activeTo": null,
+                  "sourceId": null,
+                  "createdAt": "2026-09-17T08:54:47.483Z",
+                  "activeFrom": "2020-01-01T00:00:00.000Z",
+                  "sourceType": "PHASE2_TEST",
+                  "activePeriodId": "1f2baeb3-1c7d-4f4d-a6c5-8011d8f7bdd0",
+                  "qualificationId": "b3e41001-f03a-4e64-b0f6-99232269e03c",
+                  "ruleVersionCode": "PHASE2_TEST_59a06b0c-6fd5-4277-a493-e18136ae4050"
+                }
+              ],
+              "qualificationId": "b3e41001-f03a-4e64-b0f6-99232269e03c"
+            },
+            "effectiveDirectCounts": {
+              "182c65c2-0461-4517-a519-3828c7a04bbe": 2,
+              "b3e41001-f03a-4e64-b0f6-99232269e03c": 0
+            }
+          },
+          "sourceId": "0ee1688d-3b53-482b-b5c8-5126190bafd7",
+          "parameters": {
+            "hash": "dbf5a5c51b90dd85dabbdfe2655283096146e65bb754824466c427670c4cc1d9",
+            "format": "UCELL_PARAMETER_SNAPSHOT_V1",
+            "parameters": [
+              {
+                "id": "2be3c78c-c1ae-4a91-acf6-a590c8ed40a6",
+                "to": null,
+                "code": "accounting.timezone",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "*",
+                "value": "UTC"
+              },
+              {
+                "id": "53fd40e8-77bc-4740-ba12-3ca5da92a8ca",
+                "to": null,
+                "code": "award.pending.days",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "*",
+                "value": 45
+              },
+              {
+                "id": "ff5746bc-062c-4036-837b-0e2c2a8fb785",
+                "to": null,
+                "code": "binary.pair.rate",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "*",
+                "value": 0.12
+              },
+              {
+                "id": "ddf9924c-1363-48b7-8420-35830a18165e",
+                "to": null,
+                "code": "binary.weekly.cap",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "ELITE",
+                "value": 900000
+              },
+              {
+                "id": "027a9ff1-5a00-4ef7-8d46-ae6dcb56473b",
+                "to": null,
+                "code": "binary.weekly.cap",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "LEADER",
+                "value": 1500000
+              },
+              {
+                "id": "8fc8dc69-902b-4881-8ab5-2a79402f7448",
+                "to": null,
+                "code": "binary.weekly.cap",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "STARTER",
+                "value": 450000
+              },
+              {
+                "id": "6b3e70f0-6d64-445f-ae28-8814c52022bf",
+                "to": null,
+                "code": "epv.base_amount",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "*",
+                "value": 2000
+              },
+              {
+                "id": "acbd7d45-8352-4601-8364-dde202e6fb31",
+                "to": null,
+                "code": "epv.calendar.timezone",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "*",
+                "value": "UTC"
+              },
+              {
+                "id": "116a006f-9a17-4983-9f9e-1a466d969a08",
+                "to": null,
+                "code": "epv.rate",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "*",
+                "value": 0.6
+              },
+              {
+                "id": "ffb96366-d4ca-4634-95f9-144eee2a06b3",
+                "to": null,
+                "code": "epv.self.rate",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "*",
+                "value": 0.5
+              },
+              {
+                "id": "8f8b2099-e4d6-49d9-858b-0381d2024bb8",
+                "to": null,
+                "code": "epv.upline.rate",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "1",
+                "value": 0.06
+              },
+              {
+                "id": "28a68fbc-6a12-4d0c-be4a-1e844ded78b8",
+                "to": null,
+                "code": "epv.upline.rate",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "2",
+                "value": 0.06
+              },
+              {
+                "id": "0b88a04e-06ae-45ca-9ad7-ef4aa8e2c180",
+                "to": null,
+                "code": "epv.upline.rate",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "3",
+                "value": 0.06
+              },
+              {
+                "id": "e6c31afb-e2b1-4b4e-9d2d-c5a6334156bc",
+                "to": null,
+                "code": "epv.upline.rate",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "4",
+                "value": 0.06
+              },
+              {
+                "id": "35cf3978-d610-4209-ba30-0d5d1254a5a5",
+                "to": null,
+                "code": "epv.upline.rate",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "5",
+                "value": 0.06
+              },
+              {
+                "id": "418ad600-78da-412c-98b5-9290c8c5861f",
+                "to": null,
+                "code": "equalization.rate",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "ELITE:G2",
+                "value": 0.2
+              },
+              {
+                "id": "16191421-1d23-4487-ab01-c949450b7e00",
+                "to": null,
+                "code": "equalization.rate",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "ELITE:G3",
+                "value": 0.1
+              },
+              {
+                "id": "9870bfb4-9a6d-48b5-89a3-88411e3f41d9",
+                "to": null,
+                "code": "equalization.rate",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "ELITE:G4",
+                "value": 0.1
+              },
+              {
+                "id": "d3eb9b16-c713-4b8a-a017-2fab3bc61e19",
+                "to": null,
+                "code": "equalization.rate",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "ELITE:G5",
+                "value": 0.05
+              },
+              {
+                "id": "4e91b26d-e99e-4573-a9b1-26cb414d38da",
+                "to": null,
+                "code": "equalization.rate",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "ELITE:G6",
+                "value": 0.05
+              },
+              {
+                "id": "a42b85a9-2f64-4654-a4d2-9258a54c3b2a",
+                "to": null,
+                "code": "equalization.rate",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "LEADER:G2",
+                "value": 0.2
+              },
+              {
+                "id": "08cd69e1-4057-4a3b-b52f-3b6080a0e3f8",
+                "to": null,
+                "code": "equalization.rate",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "LEADER:G3",
+                "value": 0.15
+              },
+              {
+                "id": "535a44b1-e680-4002-8ca6-d928fedec7f9",
+                "to": null,
+                "code": "equalization.rate",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "LEADER:G4",
+                "value": 0.1
+              },
+              {
+                "id": "b375a11c-ea5d-4f1e-aa29-2722197f299d",
+                "to": null,
+                "code": "equalization.rate",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "LEADER:G5",
+                "value": 0.1
+              },
+              {
+                "id": "a051a6ad-83da-4b87-b64d-4d34b71796d2",
+                "to": null,
+                "code": "equalization.rate",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "LEADER:G6",
+                "value": 0.1
+              },
+              {
+                "id": "be66cfc6-daeb-4f28-abd7-89798b98c809",
+                "to": null,
+                "code": "equalization.rate",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "LEADER:G7",
+                "value": 0.05
+              },
+              {
+                "id": "49347dfb-5254-45ce-b42c-cb1099a66e7b",
+                "to": null,
+                "code": "equalization.rate",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "STARTER:G2",
+                "value": 0.1
+              },
+              {
+                "id": "cdadce96-f328-4d6b-9111-096a79f1b72d",
+                "to": null,
+                "code": "equalization.rate",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "STARTER:G3",
+                "value": 0.1
+              },
+              {
+                "id": "a52838ec-9e5d-4674-881a-f7145f7c8fd9",
+                "to": null,
+                "code": "equalization.rate",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "STARTER:G4",
+                "value": 0.1
+              },
+              {
+                "id": "b2034df9-d6e2-4cc9-a6ff-0c1b8774b416",
+                "to": null,
+                "code": "global.rank.pool_rate",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "CROWN",
+                "value": 0.015
+              },
+              {
+                "id": "edf8832c-be8e-4db3-bc18-525b0f269855",
+                "to": null,
+                "code": "global.rank.pool_rate",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "DIAMOND",
+                "value": 0.005
+              },
+              {
+                "id": "a8aee8ed-5c9c-44af-b1ec-5e91eb6b6bd2",
+                "to": null,
+                "code": "global.rank.pool_rate",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "EXCELLENCE",
+                "value": 0.01
+              },
+              {
+                "id": "1da88b79-a274-4685-bb79-0ffc63fd0de8",
+                "to": null,
+                "code": "global.rank.pool_rate",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "GLORY",
+                "value": 0.005
+              },
+              {
+                "id": "d77bea5c-06f3-467c-a948-2df55e888996",
+                "to": null,
+                "code": "global.rank.pool_rate",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "NEW_STAR",
+                "value": 0.015
+              },
+              {
+                "id": "36db6a39-eebd-4394-be33-45aa0679eac3",
+                "to": null,
+                "code": "global.rank.weak_threshold",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "CROWN",
+                "value": 4000000
+              },
+              {
+                "id": "c3db44dd-8fa5-42e5-8c05-406362766a7c",
+                "to": null,
+                "code": "global.rank.weak_threshold",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "DIAMOND",
+                "value": 2000000
+              },
+              {
+                "id": "c97ebaf0-74e8-4af0-bdb8-42746c26bf04",
+                "to": null,
+                "code": "global.rank.weak_threshold",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "EXCELLENCE",
+                "value": 600000
+              },
+              {
+                "id": "b66de68c-1e9b-44b3-b3ea-2e949af395a3",
+                "to": null,
+                "code": "global.rank.weak_threshold",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "GLORY",
+                "value": 1000000
+              },
+              {
+                "id": "3b26d3ee-f636-4f63-a9cb-5aec90599aa2",
+                "to": null,
+                "code": "global.rank.weak_threshold",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "NEW_STAR",
+                "value": 300000
+              },
+              {
+                "id": "3d8284af-4569-4e17-9e02-4a565d52b988",
+                "to": null,
+                "code": "matching.rate",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "1",
+                "value": 0.15
+              },
+              {
+                "id": "b0018d94-7ffc-43bf-8a9c-918bf4c306d9",
+                "to": null,
+                "code": "matching.rate",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "2",
+                "value": 0.1
+              },
+              {
+                "id": "7e2287fa-705d-4dd3-8a61-89b73a733583",
+                "to": null,
+                "code": "matching.rate",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "3",
+                "value": 0.05
+              },
+              {
+                "id": "d1eea960-e568-4953-bb87-934f3731da49",
+                "to": null,
+                "code": "matching.rate",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "4",
+                "value": 0.05
+              },
+              {
+                "id": "97a1b795-0463-4c4b-92c0-6c6fe43df42f",
+                "to": null,
+                "code": "matching.rate",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "5",
+                "value": 0.05
+              },
+              {
+                "id": "7956dd1e-3300-49c9-8f16-9a8da5efc7a7",
+                "to": null,
+                "code": "pool.binary.rate",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "*",
+                "value": 0.36
+              },
+              {
+                "id": "79e5f429-0a7f-4924-9c77-04f1acf28872",
+                "to": null,
+                "code": "pool.global.rate",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "*",
+                "value": 0.05
+              },
+              {
+                "id": "5ef74c60-b3b7-4de1-be9c-729e5af680e5",
+                "to": null,
+                "code": "pool.matching.rate",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "*",
+                "value": 0.15
+              },
+              {
+                "id": "61a64a68-83cf-41cf-a609-d9d4d4fff374",
+                "to": null,
+                "code": "pool.referral.rate",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "*",
+                "value": 0.42
+              },
+              {
+                "id": "0bb54f5f-3f75-48d3-a15a-e6b8a28c236d",
+                "to": null,
+                "code": "pool.welfare.rate",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "*",
+                "value": 0.02
+              },
+              {
+                "id": "cd1a4332-8880-4fd0-91ef-ef975bac7a4b",
+                "to": null,
+                "code": "referral.g1.rate",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "ELITE",
+                "value": 0.2
+              },
+              {
+                "id": "001898e1-0187-40f7-8dff-41c7c88367b9",
+                "to": null,
+                "code": "referral.g1.rate",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "LEADER",
+                "value": 0.25
+              },
+              {
+                "id": "3bba576a-0f96-401a-a84d-d442a59fa7e2",
+                "to": null,
+                "code": "referral.g1.rate",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "STARTER",
+                "value": 0.15
+              },
+              {
+                "id": "3ba56ee0-fceb-4f0e-b5d2-4952e37d6fcc",
+                "to": null,
+                "code": "settlement.timezone",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "*",
+                "value": "Asia/Taipei"
+              },
+              {
+                "id": "2d38f6b4-4ee3-4e5b-9aca-4ec2602a43df",
+                "to": null,
+                "code": "settlement.week.starts_on",
+                "from": "2019-01-01T00:00:00.000Z",
+                "scope": "*",
+                "value": 1
+              }
+            ],
+            "effectiveAt": "2020-01-03T00:00:00.000Z",
+            "ruleVersionCode": "PHASE2_TEST_59a06b0c-6fd5-4277-a493-e18136ae4050"
+          },
+          "recipients": [
+            {
+              "key": "65132c67-2d1a-4dec-9524-42e9e7672c5b",
+              "active": true,
+              "detail": {
+                "unlockedDepth": 12,
+                "effectiveDirectCount": 2
+              },
+              "posted": "100",
+              "theory": "100",
+              "awardId": "65132c67-2d1a-4dec-9524-42e9e7672c5b",
+              "eligible": true,
+              "awardType": "RPV",
+              "generation": 1,
+              "pendingUntil": "2020-01-03T00:00:00.000Z",
+              "qualification": {
+                "at": "2020-01-03T00:00:00.000Z",
+                "plan": {
+                  "planCode": "LEADER",
+                  "sourceId": null,
+                  "createdAt": "2026-09-17T08:54:46.883Z",
+                  "sourceType": "PHASE2_TEST",
+                  "effectiveTo": null,
+                  "effectiveFrom": "2020-01-01T00:00:00.000Z",
+                  "qualificationId": "182c65c2-0461-4517-a519-3828c7a04bbe",
+                  "qualificationPlanHistoryId": "1748de33-de1f-429f-802c-3868861ec97a"
+                },
+                "status": {
+                  "status": "EFFECTIVE",
+                  "sourceId": null,
+                  "createdAt": "2026-09-17T08:54:46.884Z",
+                  "sourceType": "PHASE2_TEST",
+                  "effectiveTo": null,
+                  "effectiveFrom": "2020-01-01T00:00:00.000Z",
+                  "qualificationId": "182c65c2-0461-4517-a519-3828c7a04bbe",
+                  "qualificationStatusHistoryId": "d2d354f7-5a1b-49b3-b648-29cbae5e8f80"
+                },
+                "activeIntervals": [
+                  {
+                    "activeTo": null,
+                    "sourceId": null,
+                    "createdAt": "2026-09-17T08:54:46.885Z",
+                    "activeFrom": "2020-01-01T00:00:00.000Z",
+                    "sourceType": "PHASE2_TEST",
+                    "activePeriodId": "5b61e1d9-4ec4-4de8-9c79-45362e0dae60",
+                    "qualificationId": "182c65c2-0461-4517-a519-3828c7a04bbe",
+                    "ruleVersionCode": "PHASE2_TEST_59a06b0c-6fd5-4277-a493-e18136ae4050"
+                  }
+                ],
+                "qualificationId": "182c65c2-0461-4517-a519-3828c7a04bbe"
+              },
+              "qualificationId": "182c65c2-0461-4517-a519-3828c7a04bbe"
+            }
+          ],
+          "ruleVersionCode": "PHASE2_TEST_59a06b0c-6fd5-4277-a493-e18136ae4050"
+        },
+        "hash": "458fa0e0454a2ddcec37bd07be5f39502783a894c20d5f0e9dca3fa7160b0ed0",
+        "createdAt": "2026-09-17T08:54:48.354Z"
+      }
+    },
+    {
+      "label": "inactive RPV upline receives zero without compression",
+      "result": "PASS",
+      "actual": [
+        "888ce581-4361-48bf-85d9-9a3ce3562ee6",
+        1,
+        false,
+        "0"
+      ],
+      "expected": [
+        "888ce581-4361-48bf-85d9-9a3ce3562ee6",
+        1,
+        false,
+        "0"
+      ]
+    },
+    {
+      "label": "higher RPV generation evaluated independently",
+      "result": "PASS",
+      "actual": [
+        "3975b7f4-b4fb-42e3-8cc3-0ee4540711bd",
+        2,
+        true,
+        "100"
+      ],
+      "expected": [
+        "3975b7f4-b4fb-42e3-8cc3-0ee4540711bd",
+        2,
+        true,
+        "100"
+      ]
+    },
+    {
+      "label": "RPV missing recognitionMonth fails closed",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "label": "RPV missing recognitionPeriod fails closed",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "label": "RPV missing eventId fails closed",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "label": "RPV missing Binary evidence fails closed",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "label": "RPV missing historical timezone fails closed",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "label": "RPV changed sealed recipient rejected",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "label": "subscription future rows cancelled",
+      "result": "PASS",
+      "actual": "CANCELLED",
+      "expected": "CANCELLED"
+    },
+    {
+      "label": "recognized affected event queued exactly once",
+      "result": "PASS",
+      "actual": 1,
+      "expected": 1
+    },
+    {
+      "label": "conditional outbox claim succeeds once",
+      "result": "PASS",
+      "actual": 1,
+      "expected": 1
+    },
+    {
+      "label": "duplicate outbox claim rejected",
+      "result": "PASS",
+      "actual": 0,
+      "expected": 0
+    },
+    {
+      "label": "production replay consumer marks success atomically",
+      "result": "PASS",
+      "actual": "PROCESSED",
+      "expected": "PROCESSED"
+    },
+    {
+      "label": "RPV one negative historical reversal",
+      "result": "PASS",
+      "actual": 1,
+      "expected": 1
+    },
+    {
+      "label": "RPV recovery anchor uses original RPV type and historical recipient",
+      "result": "PASS",
+      "actual": [
+        "RPV",
+        "0",
+        true
+      ],
+      "expected": [
+        "RPV",
+        "0",
+        true
+      ]
+    },
+    {
+      "label": "RPV historical recipient recovery delta",
+      "result": "PASS",
+      "actual": "-100",
+      "expected": "-100"
+    },
+    {
+      "label": "RPV replay retains original recipient after Binary change",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "label": "RPV current Binary parent receives no recovery",
+      "result": "PASS",
+      "actual": 0,
+      "expected": 0
+    },
+    {
+      "label": "original RPV award rows unchanged",
+      "result": "PASS",
+      "actual": "[{\"rpvAwardEventId\":\"65132c67-2d1a-4dec-9524-42e9e7672c5b\",\"recognitionId\":\"0ee1688d-3b53-482b-b5c8-5126190bafd7\",\"sourceQualificationId\":\"b3e41001-f03a-4e64-b0f6-99232269e03c\",\"recipientQualificationId\":\"182c65c2-0461-4517-a519-3828c7a04bbe\",\"binaryGeneration\":1,\"effectiveDirectCountSnapshot\":2,\"unlockedDepthSnapshot\":12,\"activeSnapshot\":true,\"theoryAmount\":\"100\",\"payableAmount\":\"100\",\"ruleVersionCode\":\"PHASE2_TEST_59a06b0c-6fd5-4277-a493-e18136ae4050\",\"parameterSnapshotHash\":null,\"occurredAt\":\"2020-01-03T00:00:00.000Z\",\"createdAt\":\"2026-09-17T08:54:48.330Z\"}]",
+      "expected": "[{\"rpvAwardEventId\":\"65132c67-2d1a-4dec-9524-42e9e7672c5b\",\"recognitionId\":\"0ee1688d-3b53-482b-b5c8-5126190bafd7\",\"sourceQualificationId\":\"b3e41001-f03a-4e64-b0f6-99232269e03c\",\"recipientQualificationId\":\"182c65c2-0461-4517-a519-3828c7a04bbe\",\"binaryGeneration\":1,\"effectiveDirectCountSnapshot\":2,\"unlockedDepthSnapshot\":12,\"activeSnapshot\":true,\"theoryAmount\":\"100\",\"payableAmount\":\"100\",\"ruleVersionCode\":\"PHASE2_TEST_59a06b0c-6fd5-4277-a493-e18136ae4050\",\"parameterSnapshotHash\":null,\"occurredAt\":\"2020-01-03T00:00:00.000Z\",\"createdAt\":\"2026-09-17T08:54:48.330Z\"}]"
+    },
+    {
+      "label": "RPV duplicate processing creates no second posting",
+      "result": "PASS",
+      "actual": 1,
+      "expected": 1
+    },
+    {
+      "label": "maxWeeks returns explicit incomplete status",
+      "result": "PASS",
+      "actual": [
+        "REPLAY_INCOMPLETE",
+        "REPLAY_INCOMPLETE",
+        1,
+        1
+      ],
+      "expected": [
+        "REPLAY_INCOMPLETE",
+        "REPLAY_INCOMPLETE",
+        1,
+        1
+      ]
+    },
+    {
+      "label": "maxWeeks persists resumable non-monetary checkpoint",
+      "result": "PASS",
+      "actual": [
+        "MAX_HORIZON",
+        1,
+        1
+      ],
+      "expected": [
+        "MAX_HORIZON",
+        1,
+        1
+      ]
+    },
+    {
+      "label": "incomplete replay appends no monetary entitlement",
+      "result": "PASS",
+      "actual": 0,
+      "expected": 0
+    },
+    {
+      "label": "incomplete replay appends exactly one immutable period checkpoint",
+      "result": "PASS",
+      "actual": 1,
+      "expected": 1
+    },
+    {
+      "label": "resume converges same replay run",
+      "result": "PASS",
+      "actual": [
+        true,
+        "CONVERGED",
+        3
+      ],
+      "expected": [
+        true,
+        "CONVERGED",
+        3
+      ]
+    },
+    {
+      "label": "resume preserves and completes append-only period checkpoints",
+      "result": "PASS",
+      "actual": 3,
+      "expected": 3
+    },
+    {
+      "label": "period checkpoints capture complete K1 and K2 replay",
+      "result": "PASS",
+      "actual": [
+        [
+          1,
+          "1",
+          "1",
+          "1",
+          "1"
+        ],
+        [
+          2,
+          "1",
+          "1",
+          "1",
+          "1"
+        ],
+        [
+          3,
+          "1",
+          "1",
+          "1",
+          "1"
+        ]
+      ],
+      "expected": [
+        [
+          1,
+          "1",
+          "1",
+          "1",
+          "1"
+        ],
+        [
+          2,
+          "1",
+          "1",
+          "1",
+          "1"
+        ],
+        [
+          3,
+          "1",
+          "1",
+          "1",
+          "1"
+        ]
+      ]
+    },
+    {
+      "label": "propagation stops at first converged carry and award boundary",
+      "result": "PASS",
+      "actual": [
+        3,
+        []
+      ],
+      "expected": [
+        3,
+        []
+      ]
+    },
+    {
+      "label": "replay period checkpoint UPDATE rejected by DB",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "label": "complete replay processes affected periods through convergence",
+      "result": "PASS",
+      "actual": 3,
+      "expected": 3
+    },
+    {
+      "label": "multi-return continuation retains valid historical right carry",
+      "result": "PASS",
+      "actual": "800",
+      "expected": "800"
+    },
+    {
+      "label": "multi-return continuation re-derives left carry",
+      "result": "PASS",
+      "actual": "0",
+      "expected": "0"
+    },
+    {
+      "label": "downstream Binary award replay uses corrected incoming carry",
+      "result": "PASS",
+      "actual": "-24",
+      "expected": "-24"
+    },
+    {
+      "label": "downstream Matching uses exact recalculated Binary source",
+      "result": "PASS",
+      "actual": "0",
+      "expected": "0"
+    },
+    {
+      "label": "complete replay posts every Binary entitlement",
+      "result": "PASS",
+      "actual": 3,
+      "expected": 3
+    },
+    {
+      "label": "complete replay posts every Matching entitlement",
+      "result": "PASS",
+      "actual": 3,
+      "expected": 3
+    },
+    {
+      "label": "original carry immutable 2f497cc1-c5c0-4b38-b98f-8e14587ea788",
+      "result": "PASS",
+      "actual": "{\"binaryCarryId\":\"76acaaa5-74cb-47b6-ac3a-311eda1ecca4\",\"qualificationId\":\"182c65c2-0461-4517-a519-3828c7a04bbe\",\"periodEnd\":\"2020-01-08T00:00:00.000Z\",\"leftCarryIn\":\"200\",\"rightCarryIn\":\"0\",\"leftPeriodGpv\":\"1000\",\"rightPeriodGpv\":\"1000\",\"pairedPv\":\"200\",\"leftCarryOut\":\"1000\",\"rightCarryOut\":\"800\",\"weeklyCapSnapshot\":\"200\",\"ruleVersionCode\":\"PHASE2_TEST_59a06b0c-6fd5-4277-a493-e18136ae4050\",\"createdAt\":\"2026-09-17T08:54:47.740Z\"}",
+      "expected": "{\"binaryCarryId\":\"76acaaa5-74cb-47b6-ac3a-311eda1ecca4\",\"qualificationId\":\"182c65c2-0461-4517-a519-3828c7a04bbe\",\"periodEnd\":\"2020-01-08T00:00:00.000Z\",\"leftCarryIn\":\"200\",\"rightCarryIn\":\"0\",\"leftPeriodGpv\":\"1000\",\"rightPeriodGpv\":\"1000\",\"pairedPv\":\"200\",\"leftCarryOut\":\"1000\",\"rightCarryOut\":\"800\",\"weeklyCapSnapshot\":\"200\",\"ruleVersionCode\":\"PHASE2_TEST_59a06b0c-6fd5-4277-a493-e18136ae4050\",\"createdAt\":\"2026-09-17T08:54:47.740Z\"}"
+    },
+    {
+      "label": "original Binary award immutable 2f497cc1-c5c0-4b38-b98f-8e14587ea788",
+      "result": "PASS",
+      "actual": "{\"bonusAwardId\":\"5a25f25d-50ff-464a-919c-3e7e826bb58d\",\"settlementBatchId\":\"2f497cc1-c5c0-4b38-b98f-8e14587ea788\",\"awardType\":\"BINARY\",\"recipientQualificationId\":\"182c65c2-0461-4517-a519-3828c7a04bbe\",\"sourceQualificationId\":null,\"sourceEventId\":null,\"sourceAwardId\":null,\"generationNo\":null,\"theoryAmount\":\"24\",\"kFactor\":\"1\",\"payableAmount\":\"24\",\"activeSnapshot\":true,\"effectiveDirectCountSnapshot\":null,\"planLevelSnapshot\":\"LEADER\",\"ruleVersionCode\":\"PHASE2_TEST_59a06b0c-6fd5-4277-a493-e18136ae4050\",\"parameterSnapshotHash\":null,\"occurredAt\":\"2020-01-08T00:00:00.000Z\",\"pendingUntil\":\"2020-03-01T00:00:00.000Z\",\"calculationDetail\":{\"testOnly\":true},\"createdAt\":\"2026-09-17T08:54:47.742Z\"}",
+      "expected": "{\"bonusAwardId\":\"5a25f25d-50ff-464a-919c-3e7e826bb58d\",\"settlementBatchId\":\"2f497cc1-c5c0-4b38-b98f-8e14587ea788\",\"awardType\":\"BINARY\",\"recipientQualificationId\":\"182c65c2-0461-4517-a519-3828c7a04bbe\",\"sourceQualificationId\":null,\"sourceEventId\":null,\"sourceAwardId\":null,\"generationNo\":null,\"theoryAmount\":\"24\",\"kFactor\":\"1\",\"payableAmount\":\"24\",\"activeSnapshot\":true,\"effectiveDirectCountSnapshot\":null,\"planLevelSnapshot\":\"LEADER\",\"ruleVersionCode\":\"PHASE2_TEST_59a06b0c-6fd5-4277-a493-e18136ae4050\",\"parameterSnapshotHash\":null,\"occurredAt\":\"2020-01-08T00:00:00.000Z\",\"pendingUntil\":\"2020-03-01T00:00:00.000Z\",\"calculationDetail\":{\"testOnly\":true},\"createdAt\":\"2026-09-17T08:54:47.742Z\"}"
+    },
+    {
+      "label": "original carry immutable 49a51731-de63-4d4e-ad9b-af58faf73309",
+      "result": "PASS",
+      "actual": "{\"binaryCarryId\":\"10eab58d-524d-40ba-82ed-7698892c6398\",\"qualificationId\":\"182c65c2-0461-4517-a519-3828c7a04bbe\",\"periodEnd\":\"2020-01-10T00:00:00.000Z\",\"leftCarryIn\":\"1000\",\"rightCarryIn\":\"800\",\"leftPeriodGpv\":\"0\",\"rightPeriodGpv\":\"0\",\"pairedPv\":\"200\",\"leftCarryOut\":\"800\",\"rightCarryOut\":\"600\",\"weeklyCapSnapshot\":\"200\",\"ruleVersionCode\":\"PHASE2_TEST_59a06b0c-6fd5-4277-a493-e18136ae4050\",\"createdAt\":\"2026-09-17T08:54:47.916Z\"}",
+      "expected": "{\"binaryCarryId\":\"10eab58d-524d-40ba-82ed-7698892c6398\",\"qualificationId\":\"182c65c2-0461-4517-a519-3828c7a04bbe\",\"periodEnd\":\"2020-01-10T00:00:00.000Z\",\"leftCarryIn\":\"1000\",\"rightCarryIn\":\"800\",\"leftPeriodGpv\":\"0\",\"rightPeriodGpv\":\"0\",\"pairedPv\":\"200\",\"leftCarryOut\":\"800\",\"rightCarryOut\":\"600\",\"weeklyCapSnapshot\":\"200\",\"ruleVersionCode\":\"PHASE2_TEST_59a06b0c-6fd5-4277-a493-e18136ae4050\",\"createdAt\":\"2026-09-17T08:54:47.916Z\"}"
+    },
+    {
+      "label": "original Binary award immutable 49a51731-de63-4d4e-ad9b-af58faf73309",
+      "result": "PASS",
+      "actual": "{\"bonusAwardId\":\"698eedcb-effe-4107-b213-5debac2c594d\",\"settlementBatchId\":\"49a51731-de63-4d4e-ad9b-af58faf73309\",\"awardType\":\"BINARY\",\"recipientQualificationId\":\"182c65c2-0461-4517-a519-3828c7a04bbe\",\"sourceQualificationId\":null,\"sourceEventId\":null,\"sourceAwardId\":null,\"generationNo\":null,\"theoryAmount\":\"24\",\"kFactor\":\"1\",\"payableAmount\":\"24\",\"activeSnapshot\":true,\"effectiveDirectCountSnapshot\":null,\"planLevelSnapshot\":\"LEADER\",\"ruleVersionCode\":\"PHASE2_TEST_59a06b0c-6fd5-4277-a493-e18136ae4050\",\"parameterSnapshotHash\":null,\"occurredAt\":\"2020-01-10T00:00:00.000Z\",\"pendingUntil\":\"2020-03-01T00:00:00.000Z\",\"calculationDetail\":{\"testOnly\":true},\"createdAt\":\"2026-09-17T08:54:47.917Z\"}",
+      "expected": "{\"bonusAwardId\":\"698eedcb-effe-4107-b213-5debac2c594d\",\"settlementBatchId\":\"49a51731-de63-4d4e-ad9b-af58faf73309\",\"awardType\":\"BINARY\",\"recipientQualificationId\":\"182c65c2-0461-4517-a519-3828c7a04bbe\",\"sourceQualificationId\":null,\"sourceEventId\":null,\"sourceAwardId\":null,\"generationNo\":null,\"theoryAmount\":\"24\",\"kFactor\":\"1\",\"payableAmount\":\"24\",\"activeSnapshot\":true,\"effectiveDirectCountSnapshot\":null,\"planLevelSnapshot\":\"LEADER\",\"ruleVersionCode\":\"PHASE2_TEST_59a06b0c-6fd5-4277-a493-e18136ae4050\",\"parameterSnapshotHash\":null,\"occurredAt\":\"2020-01-10T00:00:00.000Z\",\"pendingUntil\":\"2020-03-01T00:00:00.000Z\",\"calculationDetail\":{\"testOnly\":true},\"createdAt\":\"2026-09-17T08:54:47.917Z\"}"
+    },
+    {
+      "label": "original carry immutable abf31a90-c1fb-489a-b640-977d720c584f",
+      "result": "PASS",
+      "actual": "{\"binaryCarryId\":\"db0996d5-1716-4c8c-a50a-94a0f17ef781\",\"qualificationId\":\"182c65c2-0461-4517-a519-3828c7a04bbe\",\"periodEnd\":\"2020-01-17T00:00:00.000Z\",\"leftCarryIn\":\"0\",\"rightCarryIn\":\"800\",\"leftPeriodGpv\":\"0\",\"rightPeriodGpv\":\"0\",\"pairedPv\":\"0\",\"leftCarryOut\":\"0\",\"rightCarryOut\":\"800\",\"weeklyCapSnapshot\":\"200\",\"ruleVersionCode\":\"PHASE2_TEST_59a06b0c-6fd5-4277-a493-e18136ae4050\",\"createdAt\":\"2026-09-17T08:54:48.062Z\"}",
+      "expected": "{\"binaryCarryId\":\"db0996d5-1716-4c8c-a50a-94a0f17ef781\",\"qualificationId\":\"182c65c2-0461-4517-a519-3828c7a04bbe\",\"periodEnd\":\"2020-01-17T00:00:00.000Z\",\"leftCarryIn\":\"0\",\"rightCarryIn\":\"800\",\"leftPeriodGpv\":\"0\",\"rightPeriodGpv\":\"0\",\"pairedPv\":\"0\",\"leftCarryOut\":\"0\",\"rightCarryOut\":\"800\",\"weeklyCapSnapshot\":\"200\",\"ruleVersionCode\":\"PHASE2_TEST_59a06b0c-6fd5-4277-a493-e18136ae4050\",\"createdAt\":\"2026-09-17T08:54:48.062Z\"}"
+    },
+    {
+      "label": "original Binary award immutable abf31a90-c1fb-489a-b640-977d720c584f",
+      "result": "PASS",
+      "actual": "{\"bonusAwardId\":\"e0a80ae4-bbd8-44c7-91aa-1fe90210204d\",\"settlementBatchId\":\"abf31a90-c1fb-489a-b640-977d720c584f\",\"awardType\":\"BINARY\",\"recipientQualificationId\":\"182c65c2-0461-4517-a519-3828c7a04bbe\",\"sourceQualificationId\":null,\"sourceEventId\":null,\"sourceAwardId\":null,\"generationNo\":null,\"theoryAmount\":\"0\",\"kFactor\":\"1\",\"payableAmount\":\"0\",\"activeSnapshot\":true,\"effectiveDirectCountSnapshot\":null,\"planLevelSnapshot\":\"LEADER\",\"ruleVersionCode\":\"PHASE2_TEST_59a06b0c-6fd5-4277-a493-e18136ae4050\",\"parameterSnapshotHash\":null,\"occurredAt\":\"2020-01-17T00:00:00.000Z\",\"pendingUntil\":\"2020-03-01T00:00:00.000Z\",\"calculationDetail\":{\"testOnly\":true},\"createdAt\":\"2026-09-17T08:54:48.064Z\"}",
+      "expected": "{\"bonusAwardId\":\"e0a80ae4-bbd8-44c7-91aa-1fe90210204d\",\"settlementBatchId\":\"abf31a90-c1fb-489a-b640-977d720c584f\",\"awardType\":\"BINARY\",\"recipientQualificationId\":\"182c65c2-0461-4517-a519-3828c7a04bbe\",\"sourceQualificationId\":null,\"sourceEventId\":null,\"sourceAwardId\":null,\"generationNo\":null,\"theoryAmount\":\"0\",\"kFactor\":\"1\",\"payableAmount\":\"0\",\"activeSnapshot\":true,\"effectiveDirectCountSnapshot\":null,\"planLevelSnapshot\":\"LEADER\",\"ruleVersionCode\":\"PHASE2_TEST_59a06b0c-6fd5-4277-a493-e18136ae4050\",\"parameterSnapshotHash\":null,\"occurredAt\":\"2020-01-17T00:00:00.000Z\",\"pendingUntil\":\"2020-03-01T00:00:00.000Z\",\"calculationDetail\":{\"testOnly\":true},\"createdAt\":\"2026-09-17T08:54:48.064Z\"}"
+    },
+    {
+      "label": "all original Binary settlement batches unchanged",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "label": "all original Binary carry rows unchanged",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "label": "all original Binary award rows unchanged",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "label": "all original Matching settlement batches unchanged",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "label": "all original Matching award rows unchanged",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "label": "cancelled future recognition row retained",
+      "result": "PASS",
+      "actual": 1,
+      "expected": 1
+    },
+    {
+      "label": "return downstream does not repeat RPV clawback",
+      "result": "PASS",
+      "actual": 1,
+      "expected": 1
+    },
+    {
+      "label": "consumer missing historical evidence fails closed",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "label": "failed consumer does not publish PROCESSED",
+      "result": "PASS",
+      "actual": "PENDING",
+      "expected": "PENDING"
+    },
+    {
+      "label": "return event idempotency key is DB unique",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "label": "entire return consumer fails closed without original GPV",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "label": "missing original return evidence appends no ledger",
+      "result": "PASS",
+      "actual": 86,
+      "expected": 86
+    },
+    {
+      "label": "missing original return evidence appends no award posting",
+      "result": "PASS",
+      "actual": 24,
+      "expected": 24
+    },
+    {
+      "label": "missing original return evidence publishes no success action",
+      "result": "PASS",
+      "actual": 0,
+      "expected": 0
+    },
+    {
+      "label": "missing original return evidence leaves outbox retryable",
+      "result": "PASS",
+      "actual": "PENDING",
+      "expected": "PENDING"
+    },
+    {
+      "label": "new recognition continues reconciled monthly effective baseline",
+      "result": "PASS",
+      "actual": "2640",
+      "expected": "2640"
+    },
+    {
+      "label": "cumulative returned quantity cannot exceed original quantity",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "label": "real ReturnService limits final return to original remaining amount",
+      "result": "PASS",
+      "actual": "1600",
+      "expected": "1600"
+    },
+    {
+      "label": "real multi-return reaches cumulative full return",
+      "result": "PASS",
+      "actual": "RETURNED",
+      "expected": "RETURNED"
+    },
+    {
+      "label": "posted return creates historical Binary and Matching recalculation requests",
+      "result": "PASS",
+      "actual": [
+        [
+          "BINARY_K1",
+          "PENDING",
+          "182c65c2-0461-4517-a519-3828c7a04bbe"
+        ],
+        [
+          "MATCHING_K2",
+          "PENDING",
+          "182c65c2-0461-4517-a519-3828c7a04bbe"
+        ]
+      ],
+      "expected": [
+        [
+          "BINARY_K1",
+          "PENDING",
+          "182c65c2-0461-4517-a519-3828c7a04bbe"
+        ],
+        [
+          "MATCHING_K2",
+          "PENDING",
+          "182c65c2-0461-4517-a519-3828c7a04bbe"
+        ]
+      ]
+    },
+    {
+      "label": "same return idempotency request replays",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "label": "idempotent return creates no duplicate recalculation requests",
+      "result": "PASS",
+      "actual": 2,
+      "expected": 2
+    },
+    {
+      "label": "same return request publishes one transactional outbox",
+      "result": "PASS",
+      "actual": 1,
+      "expected": 1
+    },
+    {
+      "label": "successful historical replay processes recalculation requests",
+      "result": "PASS",
+      "actual": [
+        [
+          "BINARY_K1",
+          "PROCESSED",
+          true
+        ],
+        [
+          "MATCHING_K2",
+          "PROCESSED",
+          true
+        ]
+      ],
+      "expected": [
+        [
+          "BINARY_K1",
+          "PROCESSED",
+          true
+        ],
+        [
+          "MATCHING_K2",
+          "PROCESSED",
+          true
+        ]
+      ]
+    },
+    {
+      "label": "duplicate RETURN_CONFIRMED appends no ledger",
+      "result": "PASS",
+      "actual": 90,
+      "expected": 90
+    },
+    {
+      "label": "duplicate RETURN_CONFIRMED appends no entitlement posting",
+      "result": "PASS",
+      "actual": 37,
+      "expected": 37
+    },
+    {
+      "label": "cross-event recalculation uses later original earning recipient",
+      "result": "PASS",
+      "actual": "-57.6",
+      "expected": "-57.6"
+    },
+    {
+      "label": "earlier historical recipient has no duplicate final clawback",
+      "result": "PASS",
+      "actual": "0",
+      "expected": "0"
+    },
+    {
+      "label": "later historical earning original ledger is immutable",
+      "result": "PASS",
+      "actual": "2640",
+      "expected": "2640"
+    },
+    {
+      "label": "different request with same return key is rejected",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "label": "cumulative money cap rejects available quantity over net amount",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "label": "failed over-return preserves effective return baseline",
+      "result": "PASS",
+      "actual": "100",
+      "expected": "100"
+    },
+    {
+      "label": "explicit TEST calendar period bounds",
+      "result": "PASS",
+      "actual": [
+        "2020-01-01T00:00:00.000Z",
+        "2020-01-15T00:00:00.000Z"
+      ],
+      "expected": [
+        "2020-01-01T00:00:00.000Z",
+        "2020-01-15T00:00:00.000Z"
+      ]
+    },
+    {
+      "label": "explicit TEST cutoff determines snapshot time",
+      "result": "PASS",
+      "actual": "2020-01-16T13:15:00.000Z",
+      "expected": "2020-01-16T13:15:00.000Z"
+    },
+    {
+      "label": "parameter effective exactly at cutoff selected",
+      "result": "PASS",
+      "actual": "0.2",
+      "expected": "0.2"
+    },
+    {
+      "label": "earlier captured parameter remains historical",
+      "result": "PASS",
+      "actual": "0.12",
+      "expected": "0.12"
+    },
+    {
+      "label": "PAID clawback offset limited to new payout capacity 100",
+      "result": "PASS",
+      "actual": "100",
+      "expected": "100"
+    },
+    {
+      "label": "PAID clawback offset preserves nonnegative net 100",
+      "result": "PASS",
+      "actual": "0",
+      "expected": "0"
+    },
+    {
+      "label": "PAID clawback offset limited to new payout capacity 200",
+      "result": "PASS",
+      "actual": "200",
+      "expected": "200"
+    },
+    {
+      "label": "PAID clawback offset preserves nonnegative net 200",
+      "result": "PASS",
+      "actual": "0",
+      "expected": "0"
+    },
+    {
+      "label": "same payout line offset replay is idempotent",
+      "result": "PASS",
+      "actual": "100",
+      "expected": "100"
+    },
+    {
+      "label": "same payout line creates no duplicate offset application",
+      "result": "PASS",
+      "actual": 1,
+      "expected": 1
+    },
+    {
+      "label": "multi-batch clawback outstanding decreases only once per capacity",
+      "result": "PASS",
+      "actual": "300",
+      "expected": "300"
+    },
+    {
+      "label": "offset does not overwrite original PAID history",
+      "result": "PASS",
+      "actual": {
+        "lifecycleEventId": "6cfd00c4-8eb7-4e34-8d5d-3c641bc399f2",
+        "bonusAwardId": "d41c24ce-afd6-4818-b2e8-ea0d1c9fe50e",
+        "status": "PAID",
+        "occurredAt": "2026-09-17T08:54:47.272Z",
+        "reasonCode": "PHASE2_TEST_PAID",
+        "sourceEventId": null,
+        "createdAt": "2026-09-17T08:54:47.273Z"
+      },
+      "expected": {
+        "lifecycleEventId": "6cfd00c4-8eb7-4e34-8d5d-3c641bc399f2",
+        "bonusAwardId": "d41c24ce-afd6-4818-b2e8-ea0d1c9fe50e",
+        "status": "PAID",
+        "occurredAt": "2026-09-17T08:54:47.272Z",
+        "reasonCode": "PHASE2_TEST_PAID",
+        "sourceEventId": null,
+        "createdAt": "2026-09-17T08:54:47.273Z"
+      }
+    }
+  ]
+}

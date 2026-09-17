@@ -1,0 +1,193 @@
+{
+  "recordedAt": "2026-09-17T08:57:08.610Z",
+  "integrationBase": "d5bcfb648c146d1e3946b869052b6b2b4271598e",
+  "previousSubmission": "ae71939a498a0183474e531295d8100d12a2d536",
+  "branch": "feature/commerce-fulfillment-b1-contracts",
+  "history": "Original Commerce submission and correction rebased onto the Core-requested integration base; final commit SHA supplied in handoff.",
+  "checks": {
+    "apiBuild": "PASS",
+    "focused": {
+      "suites": 6,
+      "tests": 73,
+      "status": "PASS"
+    },
+    "isolated": {
+      "suites": 26,
+      "tests": 288,
+      "status": "PASS",
+      "migrationsFromZero": 39,
+      "cleanup": "PASS"
+    },
+    "protectedDiff": "EMPTY",
+    "newCommerceHttp": "NOT_IMPLEMENTED",
+    "realConcurrency": "NOT_IMPLEMENTED",
+    "providerMock": "NOT_RUN",
+    "providerUat": "NOT_RUN"
+  },
+  "correctionRuntimeFiles": [
+    "backend/apps/api/src/modules/commerce/contracts/core-boundary.ts",
+    "backend/apps/api/src/modules/commerce/contracts/fulfillment.ts",
+    "backend/apps/api/src/modules/commerce/contracts/rma.ts",
+    "backend/apps/api/src/modules/payment-hub/provider-event-decision.ts",
+    "backend/apps/api/test/commerce-contracts.e2e-spec.ts",
+    "backend/apps/api/test/provider-event-decision.e2e-spec.ts"
+  ],
+  "fullCommerceRuntimeFiles": [
+    "backend/apps/api/src/modules/commerce/contracts/common.ts",
+    "backend/apps/api/src/modules/commerce/contracts/core-boundary.ts",
+    "backend/apps/api/src/modules/commerce/contracts/erp.ts",
+    "backend/apps/api/src/modules/commerce/contracts/fulfillment.ts",
+    "backend/apps/api/src/modules/commerce/contracts/inventory.ts",
+    "backend/apps/api/src/modules/commerce/contracts/invoice.ts",
+    "backend/apps/api/src/modules/commerce/contracts/logistics.ts",
+    "backend/apps/api/src/modules/commerce/contracts/rma.ts",
+    "backend/apps/api/src/modules/payment-hub/canonical-payment-transition.ts",
+    "backend/apps/api/src/modules/payment-hub/payment-evidence-sanitizer.ts",
+    "backend/apps/api/src/modules/payment-hub/payment-provider.adapter.ts",
+    "backend/apps/api/src/modules/payment-hub/payment-provider.registry.ts",
+    "backend/apps/api/src/modules/payment-hub/provider-event-canonicalizer.ts",
+    "backend/apps/api/src/modules/payment-hub/provider-event-decision.ts",
+    "backend/apps/api/test/commerce-contracts.e2e-spec.ts",
+    "backend/apps/api/test/payment-evidence-security.e2e-spec.ts",
+    "backend/apps/api/test/payment-hub-contract.e2e-spec.ts",
+    "backend/apps/api/test/payment-provider-registry.e2e-spec.ts",
+    "backend/apps/api/test/provider-event-canonicalizer.e2e-spec.ts",
+    "backend/apps/api/test/provider-event-decision.e2e-spec.ts"
+  ],
+  "inheritedCoreBaselineFiles": [
+    "backend/apps/api/src/modules/inventory-lite/inventory-reservation-batch.ts",
+    "backend/apps/api/test/inventory-release-batch.e2e-spec.ts",
+    "governance/product-next/V1_24_INVENTORY_RESERVATION_RELEASE_BATCH_REPORT.md"
+  ],
+  "logNormalization": {
+    "operation": "Trailing whitespace only",
+    "rawSha256": "5068068769e6b8af7bf826f92ef5975298b6b8a26d6bcd1ecd2027759ae2a3f3"
+  },
+  "files": [
+    {
+      "path": "backend/apps/api/src/modules/commerce/contracts/common.ts",
+      "sha256": "ab2e325e6bee58ee4da7f99ccb0a7a496fc37c38a46ee45fac296dbc41cd2795",
+      "bytes": 1844
+    },
+    {
+      "path": "backend/apps/api/src/modules/commerce/contracts/core-boundary.ts",
+      "sha256": "24763de6c503d978236937888abe1f7c0ae2c5c9d2bbaaff87019d22bae3ee15",
+      "bytes": 1235
+    },
+    {
+      "path": "backend/apps/api/src/modules/commerce/contracts/erp.ts",
+      "sha256": "c7e9e28e9237253a739374b6b50915c40cc578a87829e058e6a171774fd6cd3d",
+      "bytes": 1868
+    },
+    {
+      "path": "backend/apps/api/src/modules/commerce/contracts/fulfillment.ts",
+      "sha256": "74bdb446ad1052a741c5155acaed97c13d2db0df04dde44a2a4e8138502b91a2",
+      "bytes": 2024
+    },
+    {
+      "path": "backend/apps/api/src/modules/commerce/contracts/inventory.ts",
+      "sha256": "3047da84c98f831f3b95a8441c4a215f75f9ec79c04dd59997a072575198d8b0",
+      "bytes": 878
+    },
+    {
+      "path": "backend/apps/api/src/modules/commerce/contracts/invoice.ts",
+      "sha256": "e5335725a90c98e79a38587e94c06a1bc956f009729f3bfd2b7828a890a78077",
+      "bytes": 1479
+    },
+    {
+      "path": "backend/apps/api/src/modules/commerce/contracts/logistics.ts",
+      "sha256": "b80a9ec6b87281589434c5592707d2d242ee7c33c63feba78fe0a8171975ee5f",
+      "bytes": 2421
+    },
+    {
+      "path": "backend/apps/api/src/modules/commerce/contracts/rma.ts",
+      "sha256": "a9eaa007e3088f78e1ba644911afc3d6de271340316f0ad4aff2beeab3979337",
+      "bytes": 909
+    },
+    {
+      "path": "backend/apps/api/src/modules/payment-hub/canonical-payment-transition.ts",
+      "sha256": "61027f36439f42630630d05a0d510206dc589e309d11a3e8fd35b8876897241e",
+      "bytes": 4724
+    },
+    {
+      "path": "backend/apps/api/src/modules/payment-hub/payment-evidence-sanitizer.ts",
+      "sha256": "747048fa342f903e01b27233d692ff09c8958b367b440bd16fa16a29fd8056da",
+      "bytes": 5909
+    },
+    {
+      "path": "backend/apps/api/src/modules/payment-hub/payment-provider.adapter.ts",
+      "sha256": "37d602098aca48c445ff38e62bda116fc750bac0e2d34426322687f78af0510d",
+      "bytes": 5415
+    },
+    {
+      "path": "backend/apps/api/src/modules/payment-hub/payment-provider.registry.ts",
+      "sha256": "14ad9cfd943079a3a89c1cde28a1d2c53b17a305d3ac6e75b507d72ddbb6eddf",
+      "bytes": 2751
+    },
+    {
+      "path": "backend/apps/api/src/modules/payment-hub/provider-event-canonicalizer.ts",
+      "sha256": "6c26342891e56d7cd81772ac3bbef3be4f978e7be3726ee48b0f8248617f9bd0",
+      "bytes": 3401
+    },
+    {
+      "path": "backend/apps/api/src/modules/payment-hub/provider-event-decision.ts",
+      "sha256": "0a0a9efd1f5d3039c6ca4c2acf48ff7ac8cd7542b31f24de9b4be5d8e012ee57",
+      "bytes": 6193
+    },
+    {
+      "path": "backend/apps/api/test/commerce-contracts.e2e-spec.ts",
+      "sha256": "2b83198da1cdede3bf799691d878bbf4cc4eb241b78a993e78c0851d0d163e10",
+      "bytes": 5369
+    },
+    {
+      "path": "backend/apps/api/test/payment-evidence-security.e2e-spec.ts",
+      "sha256": "e6725010556d2d399b1fad56ba9e033801cd335334d8521994f3a7d9fbd0308d",
+      "bytes": 4193
+    },
+    {
+      "path": "backend/apps/api/test/payment-hub-contract.e2e-spec.ts",
+      "sha256": "def289ba5efb3fefb71a7b0eec9cdb20ff9024ec3f88049e12a1040d2a93cfc8",
+      "bytes": 4589
+    },
+    {
+      "path": "backend/apps/api/test/payment-provider-registry.e2e-spec.ts",
+      "sha256": "70bf6ff0f35f1257396c119fdbe86224c9e62991c7cf8845551be374131d045a",
+      "bytes": 3345
+    },
+    {
+      "path": "backend/apps/api/test/provider-event-canonicalizer.e2e-spec.ts",
+      "sha256": "07201927c998f477d9917e57b04c4a3c0b26f18d2cfcdfac0f2504dcecd6774d",
+      "bytes": 4316
+    },
+    {
+      "path": "backend/apps/api/test/provider-event-decision.e2e-spec.ts",
+      "sha256": "85190cb8c1a247fff53bea2bf5a446c26a43dd6c0ff19f730f0d400aa5bb6b1c",
+      "bytes": 8037
+    },
+    {
+      "path": "governance/commerce-b1/REPORT.md",
+      "sha256": "7302de4e46b1bc1fed563c1809fb11c68771ccd3410649852c2a34900decc481",
+      "bytes": 8773
+    },
+    {
+      "path": "governance/commerce-b1/REVIEW_FIXES.md",
+      "sha256": "243b7b3b75ac3582009d48828bf50e8ced3ff4c5a878afe46a5d73a750cfbdf6",
+      "bytes": 4463
+    },
+    {
+      "path": "governance/commerce-b1/SCHEMA_API_DELTA.md",
+      "sha256": "d04a01cdae88ab0bc51578462d7b84cfb9190ac89bd29418b75039ba02c5abde",
+      "bytes": 6046
+    },
+    {
+      "path": "governance/commerce-b1/revision-db-regression.json",
+      "sha256": "025abc4d9efcfa6f84a6f0f31bbfecd82fe4cc1cb9f81ad62e61b6a6a4f0d94c",
+      "bytes": 118741
+    },
+    {
+      "path": "governance/commerce-b1/revision-isolated-tests.log",
+      "sha256": "b01024d64cc86996b6167454fb660cfb29be0a7f9be524d343a9e2ef91c29d58",
+      "bytes": 5781
+    }
+  ]
+}

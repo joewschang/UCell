@@ -1,5 +1,15 @@
 # B1 schema / API delta proposal
 
+## Core review revision (integration base d5bcfb6)
+
+- QC uses a backend-loaded `QcPolicySnapshot` (`policyId`, `version`, non-empty `requiredChecks`). Evidence must match both policy ID and version. LABEL can be absent from an approved pre-label policy and required by a later policy. B1 defines no default sequencing policy. Missing required checks or mismatched policy fail closed; UI input is not an authoritative policy source.
+- Core port is `postReceivedRmaAtCanonicalBoundary(ReceivedRmaPostingInput, context)`. Input requires `status: RECEIVED`, `receivedEvidenceRef`, `coreApprovedPostingRef` and `approvedAllocationRef`. Output explicitly carries `status: POSTED`. Core must validate receipt/posting/allocation references transactionally before creating POSTED evidence. APPROVED alone never triggers recognition reversal; no ReturnService implementation is included.
+- Replace bare existingOperationHash input with `PersistedPaymentOperationClaim`. A COMMITTED claim contains its business effect identity/hash plus committed effect, payment-state evidence and outbox-intent references. INCOMPLETE claims or missing references fail closed before either NOOP path. Wrong claim identity/hash is a conflict.
+- The Core persistence loader must verify referenced records exist, belong to the same committed transaction/operation and match authoritative binding. Nonempty references in a pure helper are not database proof. A stored delivery without a complete claim, or a claim without its committed state/effect/outbox, must enter integrity recovery rather than being treated as successful idempotency.
+- The outbox reference proves committed intent, not external provider success or completed Core recognition. Actual downstream receipt/reconciliation remains an independent retryable workflow. No DDL or new monetary event is authorized by this revision.
+
+These amendments supersede the initial bare-hash claim and `postApprovedRma` proposal wording below and in the original audit. Historical evidence remains associated with its original commit.
+
 No schema, migrations, controllers or generated OpenAPI change in B1. The original full proposals remain at `../commerce-fulfillment-audit/SCHEMA_PROPOSAL.md`, `API_PROPOSAL.md`, `openapi.proposal.json` and `TEST_PLAN.md`; they are proposals, not installed endpoints. Their prior B1 BLOCKED status records their historical checkpoint; current ownership is in OWNERSHIP.md.
 
 ## Payment persistence additions for Schema Owner review

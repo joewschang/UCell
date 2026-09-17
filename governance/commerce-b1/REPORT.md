@@ -1,5 +1,9 @@
 # B1 Commerce contracts implementation
 
+**Current resubmission:** Core's three review requests are addressed on integration base `d5bcfb648c146d1e3946b869052b6b2b4271598e`. API build PASS; focused 6 suites / 73 tests PASS; final isolated 26 suites / 288 tests PASS; 39 migrations from zero and DB cleanup PASS. See [REVIEW_FIXES.md](REVIEW_FIXES.md) and revision-evidence.json for the current contracts and exact delta.
+
+The remainder records the original `ae71939` submission and its evidence. Its fixed six-check QC policy, original RMA port name and bare operation-hash input are superseded by the review revision; historical test results are retained rather than overwritten.
+
 **B1 READY — contract-only slice implemented and locally verified; awaiting Core integration review.** Commerce/Fulfillment operational capability is not complete. No B2 provider implementation, new schema, controller, runtime module wiring or monetary change is included.
 
 Base SHA: `4541f98f26a17de1f44cdbd4554ef9581b4f9497`.
