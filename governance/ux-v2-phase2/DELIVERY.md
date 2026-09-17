@@ -60,3 +60,10 @@
 驗證：Member 相關 3 files / 33 tests PASS；修正 TypeScript DOM 空值判斷後，最終 TypeScript + Vite build PASS。Edge headless 五項焦點情境 PASS：等待、成功、保留使用者移至導覽的焦點、403 失敗與重試成功。瀏覽器測試攔截所有 API，未連接真實後端。
 
 重現：在 member 目錄以 VITE_ENABLE_MOCK=false 啟動 Vite 於 127.0.0.1:5186，再執行 node tests/qualification-focus.cjs。tests/qualification-focus.html 與 entry.tsx 是測試入口，使用實際 App 與 QualificationProvider，跳過 LIFF 啟動；不列入 production build 入口。
+## 最新整合基線相容性
+
+已將 integration/member-backend-mvp 的已提交版本 462930c 合入獨立 Phase 2 分支，merge commit 為 1534f85，沒有衝突。來源 checkout 的未提交 backend/packages/database/src/provider/ 未帶入，來源 checkout 未修改。
+
+重新執行：Member 25 files / 159 tests PASS；Admin 23 files / 73 tests PASS；兩端 TypeScript 與 Vite build PASS。Admin 仍有大於 500 kB 的 bundle 提示。此次未重跑瀏覽器；前述瀏覽器結果各對應其原先實作版本。
+
+相對 462930c 的交付差異僅在 Member、Admin、shared/design-system 與 governance/ux-v2-phase2。從較早基線繼承的 Provider migration 與 AI-ready 檔案屬其他工作已提交內容，本任務未編寫或執行這些 migration／AI 功能，也未重跑 backend 驗證。整合檢查不代表制度決議、上線或資料庫變更授權。此分支已包含所核對的整合基線，尚未推送或合回主整合分支。
