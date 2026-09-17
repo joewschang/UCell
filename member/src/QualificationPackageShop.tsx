@@ -9,8 +9,7 @@ export default function QualificationPackageShop({onCreated}:{onCreated:()=>void
  const delivery=useResource('delivery-profile',getDeliveryProfile);
  const [selected,setSelected]=useState<PackageOffer|null>(null);
  return <><h2>取得第一個會員資格</h2><p>請選擇正式套組與商品。套組價格及訂單金額由 Core 提供，前台不計算 PV、BV 或正式認列。</p>
- {delivery.error?<ErrorState message={delivery.error} retry={delivery.retry}/>:!delivery.data?<LoadingState label="配送資料載入中…"/>:<DeliveryProfileEditor profile={delivery.data} refresh={delivery.retry}/>} 
- {packages.error?<ErrorState message={packages.error} retry={packages.retry}/>:!packages.data?<LoadingState label="套組載入中…"/>:!packages.data.length?<EmptyState title="目前沒有可申請的正式會員套組"/>:packages.data.map(item=><article className="card" key={item.packageVersionId}><h3>{item.displayName}</h3><p>套組價格：{item.currency} {item.priceAmount}</p><p>需選擇 {item.selectableProductQuantity} 件商品</p><button disabled={!delivery.data?.complete} onClick={()=>setSelected(item)}>{delivery.data?.complete?'選擇套組商品':'請先完成配送資料'}</button></article>)}
+ {delivery.error?<ErrorState message={delivery.error} retry={delivery.retry}/>:!delivery.data?<LoadingState label="配送資料載入中…"/>:<DeliveryProfileEditor profile={delivery.data} refresh={delivery.retry}/>} {packages.error?<ErrorState message={packages.error} retry={packages.retry}/>:!packages.data?<LoadingState label="套組載入中…"/>:!packages.data.length?<EmptyState title="目前沒有可申請的正式會員套組"/>:packages.data.map(item=><article className="card" key={item.packageVersionId}><h3>{item.displayName}</h3><p>套組價格：{item.currency} {item.priceAmount}</p><p>需選擇 {item.selectableProductQuantity} 件商品</p><button disabled={!delivery.data?.complete} onClick={()=>setSelected(item)}>{delivery.data?.complete?'選擇套組商品':'請先完成配送資料'}</button></article>)}
  {selected&&<PackageSelection offer={selected} onCancel={()=>setSelected(null)} onCreated={onCreated}/>}</>;
 }
 
