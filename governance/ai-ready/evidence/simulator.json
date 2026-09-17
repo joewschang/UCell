@@ -1,0 +1,54 @@
+{
+  "mode": "SYNTHETIC_NO_PROVIDER_NO_DATABASE",
+  "passed": 8,
+  "scenarios": [
+    {
+      "name": "owned Active",
+      "outcome": "AVAILABLE",
+      "passed": true,
+      "auditEvents": 1
+    },
+    {
+      "name": "other Ball denied",
+      "outcome": "DENIED",
+      "passed": true,
+      "auditEvents": 1
+    },
+    {
+      "name": "carry precision",
+      "outcome": "AVAILABLE",
+      "passed": true,
+      "auditEvents": 1
+    },
+    {
+      "name": "other tree denied",
+      "outcome": "DENIED",
+      "passed": true,
+      "auditEvents": 1
+    },
+    {
+      "name": "Member B denied",
+      "outcome": "DENIED",
+      "passed": true,
+      "auditEvents": 1
+    },
+    {
+      "name": "Admin B correction",
+      "outcome": "AVAILABLE",
+      "passed": true,
+      "auditEvents": 1
+    },
+    {
+      "name": "missing source",
+      "outcome": "UNAVAILABLE",
+      "passed": true,
+      "auditEvents": 1
+    },
+    {
+      "name": "query injection denied",
+      "outcome": "INVALID_QUERY",
+      "passed": true,
+      "auditEvents": 0
+    }
+  ]
+}

@@ -1,0 +1,1601 @@
+[
+  {
+    "method": "get",
+    "path": "/api/v1/admin/analytics/policy",
+    "operationId": "adminAnalyticsPolicy",
+    "summary": "版本化 NASL 與十二代健康管理定義",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "get",
+    "path": "/api/v1/admin/analytics/policy-versions",
+    "operationId": "adminAnalyticsPolicyVersions",
+    "summary": "可查詢的管理政策版本",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "get",
+    "path": "/api/v1/admin/analytics/refresh/status",
+    "operationId": "adminAnalyticsRefreshStatus",
+    "summary": "自動更新狀態與各設定範圍的保存快照鮮度",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "get",
+    "path": "/api/v1/admin/analytics/roots",
+    "operationId": "adminAnalyticsRoots",
+    "summary": "依球號選擇分析範圍，最多 30 筆，不回傳個資",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "get",
+    "path": "/api/v1/admin/analytics/overview",
+    "operationId": "adminAnalyticsOverview",
+    "summary": "已保存 NASL 分布、同期群與狀態轉換",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "get",
+    "path": "/api/v1/admin/analytics/nasl/current",
+    "operationId": "adminAnalyticsNaslCurrent",
+    "summary": "目前 NASL 分布",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "get",
+    "path": "/api/v1/admin/analytics/nasl/transitions",
+    "operationId": "adminAnalyticsNaslTransitions",
+    "summary": "已保存快照間狀態轉換",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "get",
+    "path": "/api/v1/admin/analytics/nasl/cohorts",
+    "operationId": "adminAnalyticsNaslCohorts",
+    "summary": "同政策固定月末母體的同期群活躍占比與活躍留存",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "get",
+    "path": "/api/v1/admin/analytics/nasl/history",
+    "operationId": "adminAnalyticsHistory",
+    "summary": "每日 NASL 快照，台北日期左含右不含，最多 366 天；預設 90 天",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "get",
+    "path": "/api/v1/admin/analytics/sonar/{tree}/{qualificationId}",
+    "operationId": "adminAnalyticsSonar",
+    "summary": "推薦／雙軌十二代健康雷達；僅查詢投影",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "get",
+    "path": "/api/v1/admin/analytics/sonar/{tree}/{qualificationId}/contributors",
+    "operationId": "adminAnalyticsContributors",
+    "summary": "單代資格證據 ID，最多 100 筆",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "get",
+    "path": "/api/v1/admin/analytics/sonar/{tree}/{qualificationId}/volumes",
+    "operationId": "adminAnalyticsSonarVolumes",
+    "summary": "事件歷史樹的十二代 GPV/RPV/EPV，最近 30 天原始事件截至快照的修正淨量；Binary 另含已結算 Carry",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "post",
+    "path": "/api/v1/admin/analytics/rebuild",
+    "operationId": "adminAnalyticsRebuild",
+    "summary": "建立不可覆寫的管理分析快照；需要 UUID Idempotency-Key",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "post",
+    "path": "/api/v1/auth/member/line/exchange",
+    "operationId": "memberLineExchange",
+    "summary": ""
+  },
+  {
+    "method": "get",
+    "path": "/api/v1/member/me",
+    "operationId": "memberMe",
+    "summary": "",
+    "security": [
+      {
+        "memberBearer": []
+      }
+    ]
+  },
+  {
+    "method": "get",
+    "path": "/api/v1/member/contracts/required",
+    "operationId": "memberRequiredContracts",
+    "summary": "",
+    "security": [
+      {
+        "memberBearer": []
+      }
+    ]
+  },
+  {
+    "method": "get",
+    "path": "/api/v1/member/contracts/formal-required",
+    "operationId": "memberFormalRequiredContracts",
+    "summary": "",
+    "security": [
+      {
+        "memberBearer": []
+      }
+    ]
+  },
+  {
+    "method": "post",
+    "path": "/api/v1/member/contracts/{versionId}/consent",
+    "operationId": "memberConsentContract",
+    "summary": "",
+    "security": [
+      {
+        "memberBearer": []
+      }
+    ]
+  },
+  {
+    "method": "post",
+    "path": "/api/v1/member/logout",
+    "operationId": "memberLogout",
+    "summary": "",
+    "security": [
+      {
+        "memberBearer": []
+      }
+    ]
+  },
+  {
+    "method": "patch",
+    "path": "/api/v1/member/profile",
+    "operationId": "memberUpdateProfile",
+    "summary": "",
+    "security": [
+      {
+        "memberBearer": []
+      }
+    ]
+  },
+  {
+    "method": "get",
+    "path": "/api/v1/member/delivery-profile",
+    "operationId": "memberDeliveryProfile",
+    "summary": "",
+    "security": [
+      {
+        "memberBearer": []
+      }
+    ]
+  },
+  {
+    "method": "patch",
+    "path": "/api/v1/member/delivery-profile",
+    "operationId": "memberUpdateDeliveryProfile",
+    "summary": "",
+    "security": [
+      {
+        "memberBearer": []
+      }
+    ]
+  },
+  {
+    "method": "get",
+    "path": "/api/v1/member/formal-applications/current",
+    "operationId": "memberCurrentFormalApplication",
+    "summary": "",
+    "security": [
+      {
+        "memberBearer": []
+      }
+    ]
+  },
+  {
+    "method": "post",
+    "path": "/api/v1/member/formal-applications",
+    "operationId": "memberSaveFormalApplicationDraft",
+    "summary": "",
+    "security": [
+      {
+        "memberBearer": []
+      }
+    ]
+  },
+  {
+    "method": "get",
+    "path": "/api/v1/member/notifications",
+    "operationId": "memberNotifications",
+    "summary": "",
+    "security": [
+      {
+        "memberBearer": []
+      }
+    ]
+  },
+  {
+    "method": "patch",
+    "path": "/api/v1/member/notifications/{id}/read",
+    "operationId": "memberReadNotification",
+    "summary": "",
+    "security": [
+      {
+        "memberBearer": []
+      }
+    ]
+  },
+  {
+    "method": "get",
+    "path": "/api/v1/member/qualifications",
+    "operationId": "memberQualifications",
+    "summary": "",
+    "security": [
+      {
+        "memberBearer": []
+      }
+    ]
+  },
+  {
+    "method": "post",
+    "path": "/api/v1/member/context/qualification",
+    "operationId": "memberQualificationContext",
+    "summary": "",
+    "security": [
+      {
+        "memberBearer": []
+      }
+    ]
+  },
+  {
+    "method": "get",
+    "path": "/api/v1/member/dashboard",
+    "operationId": "MemberController_dashboard",
+    "security": [
+      {
+        "memberBearer": []
+      }
+    ]
+  },
+  {
+    "method": "get",
+    "path": "/api/v1/member/organization/sponsor",
+    "operationId": "MemberController_sponsor",
+    "security": [
+      {
+        "memberBearer": []
+      }
+    ]
+  },
+  {
+    "method": "get",
+    "path": "/api/v1/member/organization/binary",
+    "operationId": "memberBinaryOrganization",
+    "summary": "",
+    "security": [
+      {
+        "memberBearer": []
+      }
+    ]
+  },
+  {
+    "method": "get",
+    "path": "/api/v1/member/referrals",
+    "operationId": "MemberController_referrals",
+    "security": [
+      {
+        "memberBearer": []
+      }
+    ]
+  },
+  {
+    "method": "post",
+    "path": "/api/v1/member/share-links",
+    "operationId": "memberCreateShareLink",
+    "summary": "",
+    "security": [
+      {
+        "memberBearer": []
+      }
+    ]
+  },
+  {
+    "method": "get",
+    "path": "/api/v1/member/performance",
+    "operationId": "MemberController_performance",
+    "security": [
+      {
+        "memberBearer": []
+      }
+    ]
+  },
+  {
+    "method": "get",
+    "path": "/api/v1/member/bonuses",
+    "operationId": "MemberController_bonuses",
+    "security": [
+      {
+        "memberBearer": []
+      }
+    ]
+  },
+  {
+    "method": "get",
+    "path": "/api/v1/member/bonuses/ledger",
+    "operationId": "MemberController_ledger",
+    "security": [
+      {
+        "memberBearer": []
+      }
+    ]
+  },
+  {
+    "method": "get",
+    "path": "/api/v1/member/repurchase/status",
+    "operationId": "MemberController_repurchase",
+    "security": [
+      {
+        "memberBearer": []
+      }
+    ]
+  },
+  {
+    "method": "get",
+    "path": "/api/v1/member/products",
+    "operationId": "MemberController_products",
+    "security": [
+      {
+        "memberBearer": []
+      }
+    ]
+  },
+  {
+    "method": "get",
+    "path": "/api/v1/member/orders",
+    "operationId": "MemberController_orders",
+    "security": [
+      {
+        "memberBearer": []
+      }
+    ]
+  },
+  {
+    "method": "post",
+    "path": "/api/v1/member/orders",
+    "operationId": "memberCreateOrder",
+    "summary": "",
+    "security": [
+      {
+        "memberBearer": []
+      }
+    ]
+  },
+  {
+    "method": "get",
+    "path": "/api/v1/member/orders/{id}",
+    "operationId": "MemberController_order",
+    "security": [
+      {
+        "memberBearer": []
+      }
+    ]
+  },
+  {
+    "method": "post",
+    "path": "/api/v1/referrals/landing",
+    "operationId": "referralLanding",
+    "summary": ""
+  },
+  {
+    "method": "post",
+    "path": "/api/v1/member/referrals/bind",
+    "operationId": "memberBindReferralAttribution",
+    "summary": "",
+    "security": [
+      {
+        "memberBearer": []
+      }
+    ]
+  },
+  {
+    "method": "get",
+    "path": "/api/v1/admin/formal-member-applications",
+    "operationId": "adminListFormalMemberApplications",
+    "summary": "",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "post",
+    "path": "/api/v1/auth/admin/entra/exchange",
+    "operationId": "adminEntraExchange",
+    "summary": "驗證Microsoft Entra ID Token並交換UCell短效Backend Session"
+  },
+  {
+    "method": "get",
+    "path": "/api/v1/auth/admin/me",
+    "operationId": "adminMe",
+    "summary": "目前Admin Session",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "post",
+    "path": "/api/v1/auth/admin/logout",
+    "operationId": "adminLogout",
+    "summary": "撤銷目前Admin Session",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "post",
+    "path": "/api/v1/auth/otp/challenges",
+    "operationId": "createOtpChallenge",
+    "summary": ""
+  },
+  {
+    "method": "post",
+    "path": "/api/v1/auth/otp/challenges/{id}/verify",
+    "operationId": "verifyOtpChallenge",
+    "summary": ""
+  },
+  {
+    "method": "post",
+    "path": "/api/v1/member/registration/network",
+    "operationId": "registerLineNetworkMember",
+    "summary": ""
+  },
+  {
+    "method": "get",
+    "path": "/api/v1/admin/orders",
+    "operationId": "adminSearchOrders",
+    "summary": "搜尋／列出訂單",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "post",
+    "path": "/api/v1/admin/orders",
+    "operationId": "adminCreateOrder",
+    "summary": "建立並確認會員訂單",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "post",
+    "path": "/api/v1/admin/orders/{orderId}/payment-confirmations",
+    "operationId": "adminConfirmPayment",
+    "summary": "Pre-ERP人工確認付款",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "get",
+    "path": "/api/v1/admin/orders/{orderId}",
+    "operationId": "adminGetOrder",
+    "summary": "取得訂單與付款事件",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "get",
+    "path": "/api/v1/admin/packages",
+    "operationId": "AdminPackageConfigController_list",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "post",
+    "path": "/api/v1/admin/packages",
+    "operationId": "AdminPackageConfigController_create",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "post",
+    "path": "/api/v1/admin/packages/{id}/versions",
+    "operationId": "AdminPackageConfigController_add",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "put",
+    "path": "/api/v1/admin/packages/versions/{id}/selectable-products",
+    "operationId": "AdminPackageConfigController_products",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "post",
+    "path": "/api/v1/admin/packages/versions/{id}/approve",
+    "operationId": "AdminPackageConfigController_approve",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "post",
+    "path": "/api/v1/admin/packages/versions/{id}/schedule",
+    "operationId": "AdminPackageConfigController_schedule",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "post",
+    "path": "/api/v1/admin/packages/versions/{id}/activate",
+    "operationId": "AdminPackageConfigController_activate",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "post",
+    "path": "/api/v1/admin/packages/versions/{id}/retire",
+    "operationId": "AdminPackageConfigController_retire",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "get",
+    "path": "/api/v1/member/packages",
+    "operationId": "memberPackages",
+    "summary": "",
+    "security": [
+      {
+        "memberBearer": []
+      }
+    ]
+  },
+  {
+    "method": "get",
+    "path": "/api/v1/member/packages/{id}/products",
+    "operationId": "MemberPackageController_products",
+    "security": [
+      {
+        "memberBearer": []
+      }
+    ]
+  },
+  {
+    "method": "post",
+    "path": "/api/v1/member/package-selections/validate",
+    "operationId": "MemberPackageController_validate",
+    "security": [
+      {
+        "memberBearer": []
+      }
+    ]
+  },
+  {
+    "method": "get",
+    "path": "/api/v1/health",
+    "operationId": "HealthController_health"
+  },
+  {
+    "method": "get",
+    "path": "/api/v1/admin/dashboard/summary",
+    "operationId": "adminDashboardSummary",
+    "summary": "管理後台營運摘要Read Model",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "get",
+    "path": "/api/v1/admin/observability/organization/sponsor-tree/{rootQualificationId}",
+    "operationId": "adminSponsorTree",
+    "summary": "推薦樹視圖",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "get",
+    "path": "/api/v1/admin/observability/organization/binary-tree/{rootQualificationId}",
+    "operationId": "adminBinaryTree",
+    "summary": "二元樹視圖",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "get",
+    "path": "/api/v1/admin/observability/qualifications/{qualificationId}/operations",
+    "operationId": "adminQualificationOperations",
+    "summary": "Qualification Active/PV/Award/Carry營運視圖",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "get",
+    "path": "/api/v1/admin/observability/awards/{bonusAwardId}",
+    "operationId": "adminAwardDetail",
+    "summary": "獎金來源、K值、生命週期、Recovery與Payable Drill-down",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "get",
+    "path": "/api/v1/admin/observability/settlements",
+    "operationId": "adminSettlementHistory",
+    "summary": "K0/K1/K2 Settlement歷史與池壓縮",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "get",
+    "path": "/api/v1/admin/observability/pools",
+    "operationId": "adminPoolHistory",
+    "summary": "Global/Welfare Pool歷史",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "get",
+    "path": "/api/v1/admin/observability/reservoir-a",
+    "operationId": "adminReservoirAHistory",
+    "summary": "Reservoir A append-only effects and authoritative balance",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "get",
+    "path": "/api/v1/admin/observability/compensation/summary",
+    "operationId": "adminCompensationSummary",
+    "summary": "獎金/結算/Recovery營運摘要",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "get",
+    "path": "/api/v1/admin/operations/returns",
+    "operationId": "adminReturnQueue",
+    "summary": "退貨/反向/Replay營運佇列",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "get",
+    "path": "/api/v1/admin/operations/returns/{id}",
+    "operationId": "adminReturnDetail",
+    "summary": "退貨、GPV反向、Recovery、Replay完整追蹤",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "get",
+    "path": "/api/v1/admin/operations/workflows",
+    "operationId": "adminWorkflowQueue",
+    "summary": "升級/轉讓/退出/公司再轉讓佇列",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "get",
+    "path": "/api/v1/admin/operations/workflows/{id}",
+    "operationId": "adminWorkflowDetail",
+    "summary": "Qualification異動Workflow詳情",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "get",
+    "path": "/api/v1/admin/operations/recoveries",
+    "operationId": "adminRecoveryAging",
+    "summary": "Recovery Aging與抵扣履歷",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "get",
+    "path": "/api/v1/admin/operations/payout-batches",
+    "operationId": "adminPayoutBatchQueue",
+    "summary": "付款批次Queue",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "get",
+    "path": "/api/v1/admin/operations/payout-batches/{id}",
+    "operationId": "adminPayoutBatchDetail",
+    "summary": "付款批次與Qualification明細",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "post",
+    "path": "/api/v1/admin/operations/payout-batches/{id}/approvals/{stage}",
+    "operationId": "adminApprovePayoutStage",
+    "summary": "Finance/Compliance雙階段付款審核",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "post",
+    "path": "/api/v1/admin/operations/payout-batches/{id}/export",
+    "operationId": "adminExportPayoutBatch",
+    "summary": "雙核准後標記已匯出付款檔",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "post",
+    "path": "/api/v1/admin/operations/payout-batches/{id}/mark-paid",
+    "operationId": "adminMarkPayoutPaid",
+    "summary": "記錄外部付款/銀行對帳結果；本系統不直接執行銀行轉帳",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "post",
+    "path": "/api/v1/admin/ops-ready/attachments",
+    "operationId": "adminRegisterAttachment",
+    "summary": "登錄外部儲存之原始文件Metadata/Hash；不覆寫舊版本",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "get",
+    "path": "/api/v1/admin/ops-ready/attachments",
+    "operationId": "adminListAttachments",
+    "summary": "依Entity查附件版本",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "get",
+    "path": "/api/v1/admin/ops-ready/audit-events",
+    "operationId": "adminAuditSearch",
+    "summary": "Audit Viewer",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "get",
+    "path": "/api/v1/admin/ops-ready/reports/operations",
+    "operationId": "adminOperationsReport",
+    "summary": "營運彙總報表",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "get",
+    "path": "/api/v1/admin/ops-ready/integrity-alerts",
+    "operationId": "adminIntegrityAlerts",
+    "summary": "資料/帳務完整性異常檢查",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "get",
+    "path": "/api/v1/admin/ops-ready/exports/{dataset}",
+    "operationId": "adminCsvExport",
+    "summary": "Qualifications/Orders/Payouts CSV匯出",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "get",
+    "path": "/api/v1/admin/provider-operations/webhooks/health",
+    "operationId": "adminProviderWebhookHealth",
+    "summary": "Provider webhook inbox health and backlog counts",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "get",
+    "path": "/api/v1/admin/provider-operations/webhooks/backlog",
+    "operationId": "adminProviderWebhookBacklog",
+    "summary": "Provider webhook operational backlog without payload or verification evidence",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "post",
+    "path": "/api/v1/admin/persons",
+    "operationId": "adminCreatePerson",
+    "summary": "建立 Person 草稿",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "get",
+    "path": "/api/v1/admin/persons",
+    "operationId": "adminSearchPersons",
+    "summary": "搜尋 Person",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "get",
+    "path": "/api/v1/admin/persons/{personId}/qualifications",
+    "operationId": "adminListPersonQualifications",
+    "summary": "Person 的目前持有資格（1:N）",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "get",
+    "path": "/api/v1/admin/persons/{personId}",
+    "operationId": "adminGetPerson",
+    "summary": "取得 Person",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "post",
+    "path": "/api/v1/admin/products",
+    "operationId": "adminUpsertProductReference",
+    "summary": "建立/更新Pre-ERP商品Reference與Rule Profile",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "get",
+    "path": "/api/v1/admin/products",
+    "operationId": "adminListProducts",
+    "summary": "商品Reference清單",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "get",
+    "path": "/api/v1/admin/organization/placement-preview",
+    "operationId": "adminPreviewBinaryPlacement",
+    "summary": "預檢推薦序號與Binary安置合法性（不寫入）",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "post",
+    "path": "/api/v1/admin/organization/binary-placement",
+    "operationId": "adminPlaceBinary",
+    "summary": "安置 Binary 位置（相容端點）",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "get",
+    "path": "/api/v1/admin/qualifications",
+    "operationId": "adminSearchQualifications",
+    "summary": "搜尋 Qualification / Sponsor / Binary節點",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "post",
+    "path": "/api/v1/admin/qualifications",
+    "operationId": "adminCreateQualification",
+    "summary": "建立 Qualification + Sponsor/Binary 關係",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "post",
+    "path": "/api/v1/admin/qualifications/system-assigned",
+    "operationId": "adminCreateSystemAssignedQualification",
+    "summary": "依核准版本化政策建立無有效推薦歸因的 Qualification",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "get",
+    "path": "/api/v1/admin/qualifications/{qualificationId}",
+    "operationId": "adminGetQualification",
+    "summary": "取得 Qualification 詳情",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "post",
+    "path": "/api/v1/admin/qualification-workflows",
+    "operationId": "QualificationWorkflowController_submit",
+    "summary": "建立並提交升級/轉讓/退出/公司再轉讓Workflow",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "post",
+    "path": "/api/v1/admin/qualification-workflows/{id}/approve",
+    "operationId": "QualificationWorkflowController_approve",
+    "summary": "核准Workflow；僅向未來生效",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "get",
+    "path": "/api/v1/member/placements/pending",
+    "operationId": "memberPendingQualificationPlacements",
+    "summary": "",
+    "security": [
+      {
+        "memberBearer": []
+      }
+    ]
+  },
+  {
+    "method": "post",
+    "path": "/api/v1/member/qualifications/{id}/place",
+    "operationId": "memberPlaceQualification",
+    "summary": "",
+    "security": [
+      {
+        "memberBearer": []
+      }
+    ]
+  },
+  {
+    "method": "get",
+    "path": "/api/v1/admin/qualification-placements",
+    "operationId": "adminQualificationPlacementMonitor",
+    "summary": "",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "post",
+    "path": "/api/v1/admin/qualification-placements/sweep-overdue",
+    "operationId": "adminSweepOverdueQualificationPlacements",
+    "summary": "",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "post",
+    "path": "/api/v1/admin/qualification-placements/{id}/place",
+    "operationId": "adminOverrideQualificationPlacement",
+    "summary": "",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "get",
+    "path": "/api/v1/admin/qualifications/{qualificationId}/ledger/pv",
+    "operationId": "adminListQualificationPv",
+    "summary": "Qualification PV帳本",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "get",
+    "path": "/api/v1/admin/qualifications/{qualificationId}/ledger/balances",
+    "operationId": "adminQualificationPvBalances",
+    "summary": "Qualification PV餘額彙總",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "get",
+    "path": "/api/v1/admin/membership-applications",
+    "operationId": "adminSearchMembershipApplications",
+    "summary": "搜尋／待審會員申請佇列",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "post",
+    "path": "/api/v1/admin/membership-applications",
+    "operationId": "adminCreateMembershipApplication",
+    "summary": "建立會員申請草稿",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "post",
+    "path": "/api/v1/admin/membership-applications/{id}/submit",
+    "operationId": "adminSubmitMembershipApplication",
+    "summary": "提交會員申請",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "post",
+    "path": "/api/v1/admin/membership-applications/{id}/approve",
+    "operationId": "adminApproveMembershipApplication",
+    "summary": "核准並使會員資格生效",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "get",
+    "path": "/api/v1/admin/membership-applications/{id}",
+    "operationId": "adminGetMembershipApplication",
+    "summary": "會員申請詳情",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "get",
+    "path": "/api/v1/admin/qualifications/{qualificationId}/active/at",
+    "operationId": "adminIsQualificationActiveAt",
+    "summary": "查詢指定時點Active",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "post",
+    "path": "/api/v1/admin/qualifications/{qualificationId}/active/periods",
+    "operationId": "adminOpenActivePeriod",
+    "summary": "建立Active有效期間",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "get",
+    "path": "/api/v1/admin/subscriptions/plans",
+    "operationId": "adminListSubscriptionPlans",
+    "summary": "重銷方案",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "get",
+    "path": "/api/v1/admin/subscriptions",
+    "operationId": "adminListSubscriptions",
+    "summary": "訂閱清單與Qualification/status篩選；只讀既存Core資料，不建立營運日曆",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "post",
+    "path": "/api/v1/admin/subscriptions",
+    "operationId": "adminCreateSubscription",
+    "summary": "建立季/半年/年重銷訂閱與逐月排程",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "get",
+    "path": "/api/v1/admin/subscriptions/{id}",
+    "operationId": "adminGetSubscription",
+    "summary": "訂閱與逐月認列排程",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "post",
+    "path": "/api/v1/admin/subscriptions/{id}/cancel",
+    "operationId": "adminCancelSubscription",
+    "summary": "取消Subscription；未來Recognition取消，已認列月份排程RPV reversal",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "post",
+    "path": "/api/v1/admin/rpv/recognitions/{recognitionId}/run",
+    "operationId": "adminRunMonthlyRpvRecognition",
+    "summary": "手動執行單月RPV認列",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "get",
+    "path": "/api/v1/admin/rpv/recognitions/{recognitionId}/awards",
+    "operationId": "adminGetMonthlyRpvAwards",
+    "summary": "查詢該月RPV向上獎勵",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "post",
+    "path": "/api/v1/admin/bonus/settlements/referral",
+    "operationId": "adminSettleReferralK0",
+    "summary": "結算推薦＋推薦對等池 K0",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "post",
+    "path": "/api/v1/admin/bonus/settlements/binary",
+    "operationId": "adminSettleBinaryK1",
+    "summary": "週結算Binary＋Carry＋K1",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "post",
+    "path": "/api/v1/admin/bonus/settlements/matching",
+    "operationId": "adminSettleMatchingK2",
+    "summary": "依Binary實際Paid結算Matching K2",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "post",
+    "path": "/api/v1/admin/bonus/lifecycle/mature",
+    "operationId": "adminMatureDueAwards",
+    "summary": "將到期PENDING_45D獎金轉EFFECTIVE",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "get",
+    "path": "/api/v1/admin/bonus/qualifications/{qualificationId}/awards",
+    "operationId": "adminListQualificationAwards",
+    "summary": "Qualification獎金明細",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "post",
+    "path": "/api/v1/admin/orders/{orderId}/returns",
+    "operationId": "adminPostReturn",
+    "summary": "建立退貨並發出RETURN_CONFIRMED",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "post",
+    "path": "/api/v1/admin/orders/{orderId}/returns/{returnCaseId}/process-reversal",
+    "operationId": "adminProcessReturnReversal",
+    "summary": "處理GPV反向事件與獎金追回",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "post",
+    "path": "/api/v1/admin/epv/orders/{orderId}/recognize",
+    "operationId": "adminRecognizeOrderEpv",
+    "summary": "認列重購超額EPV",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "post",
+    "path": "/api/v1/admin/pools/global/settle",
+    "operationId": "adminSettleGlobalPool",
+    "summary": "月結全球5%池",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "post",
+    "path": "/api/v1/admin/pools/welfare/accrue",
+    "operationId": "adminAccrueWelfarePool",
+    "summary": "應計福利2%池，不自行分配",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "post",
+    "path": "/api/v1/admin/payouts/materialize",
+    "operationId": "PayoutController_materialize",
+    "summary": "將已生效獎金統一轉入Payable Ledger",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "post",
+    "path": "/api/v1/admin/payouts/batches",
+    "operationId": "PayoutController_create",
+    "summary": "建立付款批次並依Outstanding Recovery逐筆抵扣",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "post",
+    "path": "/api/v1/admin/settlement-adjustments/requests/{id}/prepare",
+    "operationId": "SettlementAdjustmentController_prepare",
+    "summary": "建立不可覆寫歷史的補償結算批次",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "post",
+    "path": "/api/v1/admin/settlement-adjustments/requests/{id}/calculate-and-post",
+    "operationId": "SettlementAdjustmentController_run",
+    "summary": "以R1.0B deterministic replay重算Binary/Matching並寫Delta",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "post",
+    "path": "/api/v1/admin/replays/returns/{returnCaseId}",
+    "operationId": "CarryChainReplayController_run",
+    "summary": "由退貨來源交易開始，逐週重放Binary/Matching至Carry收斂",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "get",
+    "path": "/api/v1/admin/content",
+    "operationId": "AdminContentController_list",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "post",
+    "path": "/api/v1/admin/content",
+    "operationId": "AdminContentController_create",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "post",
+    "path": "/api/v1/admin/content/{id}/versions",
+    "operationId": "AdminContentController_add",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "post",
+    "path": "/api/v1/admin/content/{id}/versions/{versionId}/publish",
+    "operationId": "AdminContentController_publish",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "get",
+    "path": "/api/v1/member/content",
+    "operationId": "MemberContentController_list",
+    "security": [
+      {
+        "memberBearer": []
+      }
+    ]
+  },
+  {
+    "method": "get",
+    "path": "/api/v1/member/content/{id}",
+    "operationId": "MemberContentController_get",
+    "security": [
+      {
+        "memberBearer": []
+      }
+    ]
+  },
+  {
+    "method": "post",
+    "path": "/api/v1/admin/uat-evidence",
+    "operationId": "adminRecordUatEvidence",
+    "summary": "Append UAT execution evidence; this does not sign off UAT or pass a release gate.",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  },
+  {
+    "method": "get",
+    "path": "/api/v1/admin/uat-evidence",
+    "operationId": "adminListUatEvidence",
+    "summary": "Read append-only UAT execution evidence.",
+    "security": [
+      {
+        "adminBearer": []
+      }
+    ]
+  }
+]

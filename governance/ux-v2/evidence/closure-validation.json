@@ -1,0 +1,9 @@
+{
+  "status": "PASS",
+  "baseline": "935e8a288f0e0891e657175a0f9a4f1afc12a47b",
+  "requiredDocuments": 16,
+  "relativeLinks": 104,
+  "protectedHashes": 995,
+  "seedCases": 24,
+  "errors": []
+}

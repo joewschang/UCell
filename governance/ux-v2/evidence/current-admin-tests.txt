@@ -1,0 +1,9 @@
+$ vitest run
+
+ RUN  v4.1.11 C:/UCell/ux-v2-phase1/admin
+
+
+ Test Files  21 passed (21)
+      Tests  61 passed (61)
+   Start at  06:13:51
+   Duration  2.59s (transform 6.17s, setup 0ms, import 11.27s, tests 1.40s, environment 6ms)

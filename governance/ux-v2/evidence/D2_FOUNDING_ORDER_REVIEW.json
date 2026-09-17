@@ -1,0 +1,1697 @@
+{
+  "status": "REVIEW_TRUTH_TABLE_NOT_DATABASE_TEST",
+  "assumptions": [
+    "Sponsor is tree #1",
+    "canonical #4/#5 left and #6/#7 right",
+    "no intervening referrals",
+    "sequence assigned in insertion order",
+    "existingReferralCount=2 is hypothetical company #2/#3 Sponsor edges, not approved"
+  ],
+  "summary": {
+    "orders": 24,
+    "passingWithZeroExistingReferrals": 4,
+    "passingWithTwoExistingReferrals": 12
+  },
+  "cases": [
+    {
+      "order": [
+        4,
+        5,
+        6,
+        7
+      ],
+      "scenarios": [
+        {
+          "existingReferralCount": 0,
+          "checks": [
+            {
+              "slot": 4,
+              "sequence": 1,
+              "leftRequired": true,
+              "inLeftSubtree": true
+            },
+            {
+              "slot": 5,
+              "sequence": 2,
+              "leftRequired": false,
+              "inLeftSubtree": true
+            },
+            {
+              "slot": 6,
+              "sequence": 3,
+              "leftRequired": true,
+              "inLeftSubtree": false
+            },
+            {
+              "slot": 7,
+              "sequence": 4,
+              "leftRequired": false,
+              "inLeftSubtree": false
+            }
+          ],
+          "passesFirstThirdLeftOnly": false
+        },
+        {
+          "existingReferralCount": 2,
+          "checks": [
+            {
+              "slot": 4,
+              "sequence": 3,
+              "leftRequired": true,
+              "inLeftSubtree": true
+            },
+            {
+              "slot": 5,
+              "sequence": 4,
+              "leftRequired": false,
+              "inLeftSubtree": true
+            },
+            {
+              "slot": 6,
+              "sequence": 5,
+              "leftRequired": false,
+              "inLeftSubtree": false
+            },
+            {
+              "slot": 7,
+              "sequence": 6,
+              "leftRequired": false,
+              "inLeftSubtree": false
+            }
+          ],
+          "passesFirstThirdLeftOnly": true
+        }
+      ]
+    },
+    {
+      "order": [
+        4,
+        5,
+        7,
+        6
+      ],
+      "scenarios": [
+        {
+          "existingReferralCount": 0,
+          "checks": [
+            {
+              "slot": 4,
+              "sequence": 1,
+              "leftRequired": true,
+              "inLeftSubtree": true
+            },
+            {
+              "slot": 5,
+              "sequence": 2,
+              "leftRequired": false,
+              "inLeftSubtree": true
+            },
+            {
+              "slot": 7,
+              "sequence": 3,
+              "leftRequired": true,
+              "inLeftSubtree": false
+            },
+            {
+              "slot": 6,
+              "sequence": 4,
+              "leftRequired": false,
+              "inLeftSubtree": false
+            }
+          ],
+          "passesFirstThirdLeftOnly": false
+        },
+        {
+          "existingReferralCount": 2,
+          "checks": [
+            {
+              "slot": 4,
+              "sequence": 3,
+              "leftRequired": true,
+              "inLeftSubtree": true
+            },
+            {
+              "slot": 5,
+              "sequence": 4,
+              "leftRequired": false,
+              "inLeftSubtree": true
+            },
+            {
+              "slot": 7,
+              "sequence": 5,
+              "leftRequired": false,
+              "inLeftSubtree": false
+            },
+            {
+              "slot": 6,
+              "sequence": 6,
+              "leftRequired": false,
+              "inLeftSubtree": false
+            }
+          ],
+          "passesFirstThirdLeftOnly": true
+        }
+      ]
+    },
+    {
+      "order": [
+        4,
+        6,
+        5,
+        7
+      ],
+      "scenarios": [
+        {
+          "existingReferralCount": 0,
+          "checks": [
+            {
+              "slot": 4,
+              "sequence": 1,
+              "leftRequired": true,
+              "inLeftSubtree": true
+            },
+            {
+              "slot": 6,
+              "sequence": 2,
+              "leftRequired": false,
+              "inLeftSubtree": false
+            },
+            {
+              "slot": 5,
+              "sequence": 3,
+              "leftRequired": true,
+              "inLeftSubtree": true
+            },
+            {
+              "slot": 7,
+              "sequence": 4,
+              "leftRequired": false,
+              "inLeftSubtree": false
+            }
+          ],
+          "passesFirstThirdLeftOnly": true
+        },
+        {
+          "existingReferralCount": 2,
+          "checks": [
+            {
+              "slot": 4,
+              "sequence": 3,
+              "leftRequired": true,
+              "inLeftSubtree": true
+            },
+            {
+              "slot": 6,
+              "sequence": 4,
+              "leftRequired": false,
+              "inLeftSubtree": false
+            },
+            {
+              "slot": 5,
+              "sequence": 5,
+              "leftRequired": false,
+              "inLeftSubtree": true
+            },
+            {
+              "slot": 7,
+              "sequence": 6,
+              "leftRequired": false,
+              "inLeftSubtree": false
+            }
+          ],
+          "passesFirstThirdLeftOnly": true
+        }
+      ]
+    },
+    {
+      "order": [
+        4,
+        6,
+        7,
+        5
+      ],
+      "scenarios": [
+        {
+          "existingReferralCount": 0,
+          "checks": [
+            {
+              "slot": 4,
+              "sequence": 1,
+              "leftRequired": true,
+              "inLeftSubtree": true
+            },
+            {
+              "slot": 6,
+              "sequence": 2,
+              "leftRequired": false,
+              "inLeftSubtree": false
+            },
+            {
+              "slot": 7,
+              "sequence": 3,
+              "leftRequired": true,
+              "inLeftSubtree": false
+            },
+            {
+              "slot": 5,
+              "sequence": 4,
+              "leftRequired": false,
+              "inLeftSubtree": true
+            }
+          ],
+          "passesFirstThirdLeftOnly": false
+        },
+        {
+          "existingReferralCount": 2,
+          "checks": [
+            {
+              "slot": 4,
+              "sequence": 3,
+              "leftRequired": true,
+              "inLeftSubtree": true
+            },
+            {
+              "slot": 6,
+              "sequence": 4,
+              "leftRequired": false,
+              "inLeftSubtree": false
+            },
+            {
+              "slot": 7,
+              "sequence": 5,
+              "leftRequired": false,
+              "inLeftSubtree": false
+            },
+            {
+              "slot": 5,
+              "sequence": 6,
+              "leftRequired": false,
+              "inLeftSubtree": true
+            }
+          ],
+          "passesFirstThirdLeftOnly": true
+        }
+      ]
+    },
+    {
+      "order": [
+        4,
+        7,
+        5,
+        6
+      ],
+      "scenarios": [
+        {
+          "existingReferralCount": 0,
+          "checks": [
+            {
+              "slot": 4,
+              "sequence": 1,
+              "leftRequired": true,
+              "inLeftSubtree": true
+            },
+            {
+              "slot": 7,
+              "sequence": 2,
+              "leftRequired": false,
+              "inLeftSubtree": false
+            },
+            {
+              "slot": 5,
+              "sequence": 3,
+              "leftRequired": true,
+              "inLeftSubtree": true
+            },
+            {
+              "slot": 6,
+              "sequence": 4,
+              "leftRequired": false,
+              "inLeftSubtree": false
+            }
+          ],
+          "passesFirstThirdLeftOnly": true
+        },
+        {
+          "existingReferralCount": 2,
+          "checks": [
+            {
+              "slot": 4,
+              "sequence": 3,
+              "leftRequired": true,
+              "inLeftSubtree": true
+            },
+            {
+              "slot": 7,
+              "sequence": 4,
+              "leftRequired": false,
+              "inLeftSubtree": false
+            },
+            {
+              "slot": 5,
+              "sequence": 5,
+              "leftRequired": false,
+              "inLeftSubtree": true
+            },
+            {
+              "slot": 6,
+              "sequence": 6,
+              "leftRequired": false,
+              "inLeftSubtree": false
+            }
+          ],
+          "passesFirstThirdLeftOnly": true
+        }
+      ]
+    },
+    {
+      "order": [
+        4,
+        7,
+        6,
+        5
+      ],
+      "scenarios": [
+        {
+          "existingReferralCount": 0,
+          "checks": [
+            {
+              "slot": 4,
+              "sequence": 1,
+              "leftRequired": true,
+              "inLeftSubtree": true
+            },
+            {
+              "slot": 7,
+              "sequence": 2,
+              "leftRequired": false,
+              "inLeftSubtree": false
+            },
+            {
+              "slot": 6,
+              "sequence": 3,
+              "leftRequired": true,
+              "inLeftSubtree": false
+            },
+            {
+              "slot": 5,
+              "sequence": 4,
+              "leftRequired": false,
+              "inLeftSubtree": true
+            }
+          ],
+          "passesFirstThirdLeftOnly": false
+        },
+        {
+          "existingReferralCount": 2,
+          "checks": [
+            {
+              "slot": 4,
+              "sequence": 3,
+              "leftRequired": true,
+              "inLeftSubtree": true
+            },
+            {
+              "slot": 7,
+              "sequence": 4,
+              "leftRequired": false,
+              "inLeftSubtree": false
+            },
+            {
+              "slot": 6,
+              "sequence": 5,
+              "leftRequired": false,
+              "inLeftSubtree": false
+            },
+            {
+              "slot": 5,
+              "sequence": 6,
+              "leftRequired": false,
+              "inLeftSubtree": true
+            }
+          ],
+          "passesFirstThirdLeftOnly": true
+        }
+      ]
+    },
+    {
+      "order": [
+        5,
+        4,
+        6,
+        7
+      ],
+      "scenarios": [
+        {
+          "existingReferralCount": 0,
+          "checks": [
+            {
+              "slot": 5,
+              "sequence": 1,
+              "leftRequired": true,
+              "inLeftSubtree": true
+            },
+            {
+              "slot": 4,
+              "sequence": 2,
+              "leftRequired": false,
+              "inLeftSubtree": true
+            },
+            {
+              "slot": 6,
+              "sequence": 3,
+              "leftRequired": true,
+              "inLeftSubtree": false
+            },
+            {
+              "slot": 7,
+              "sequence": 4,
+              "leftRequired": false,
+              "inLeftSubtree": false
+            }
+          ],
+          "passesFirstThirdLeftOnly": false
+        },
+        {
+          "existingReferralCount": 2,
+          "checks": [
+            {
+              "slot": 5,
+              "sequence": 3,
+              "leftRequired": true,
+              "inLeftSubtree": true
+            },
+            {
+              "slot": 4,
+              "sequence": 4,
+              "leftRequired": false,
+              "inLeftSubtree": true
+            },
+            {
+              "slot": 6,
+              "sequence": 5,
+              "leftRequired": false,
+              "inLeftSubtree": false
+            },
+            {
+              "slot": 7,
+              "sequence": 6,
+              "leftRequired": false,
+              "inLeftSubtree": false
+            }
+          ],
+          "passesFirstThirdLeftOnly": true
+        }
+      ]
+    },
+    {
+      "order": [
+        5,
+        4,
+        7,
+        6
+      ],
+      "scenarios": [
+        {
+          "existingReferralCount": 0,
+          "checks": [
+            {
+              "slot": 5,
+              "sequence": 1,
+              "leftRequired": true,
+              "inLeftSubtree": true
+            },
+            {
+              "slot": 4,
+              "sequence": 2,
+              "leftRequired": false,
+              "inLeftSubtree": true
+            },
+            {
+              "slot": 7,
+              "sequence": 3,
+              "leftRequired": true,
+              "inLeftSubtree": false
+            },
+            {
+              "slot": 6,
+              "sequence": 4,
+              "leftRequired": false,
+              "inLeftSubtree": false
+            }
+          ],
+          "passesFirstThirdLeftOnly": false
+        },
+        {
+          "existingReferralCount": 2,
+          "checks": [
+            {
+              "slot": 5,
+              "sequence": 3,
+              "leftRequired": true,
+              "inLeftSubtree": true
+            },
+            {
+              "slot": 4,
+              "sequence": 4,
+              "leftRequired": false,
+              "inLeftSubtree": true
+            },
+            {
+              "slot": 7,
+              "sequence": 5,
+              "leftRequired": false,
+              "inLeftSubtree": false
+            },
+            {
+              "slot": 6,
+              "sequence": 6,
+              "leftRequired": false,
+              "inLeftSubtree": false
+            }
+          ],
+          "passesFirstThirdLeftOnly": true
+        }
+      ]
+    },
+    {
+      "order": [
+        5,
+        6,
+        4,
+        7
+      ],
+      "scenarios": [
+        {
+          "existingReferralCount": 0,
+          "checks": [
+            {
+              "slot": 5,
+              "sequence": 1,
+              "leftRequired": true,
+              "inLeftSubtree": true
+            },
+            {
+              "slot": 6,
+              "sequence": 2,
+              "leftRequired": false,
+              "inLeftSubtree": false
+            },
+            {
+              "slot": 4,
+              "sequence": 3,
+              "leftRequired": true,
+              "inLeftSubtree": true
+            },
+            {
+              "slot": 7,
+              "sequence": 4,
+              "leftRequired": false,
+              "inLeftSubtree": false
+            }
+          ],
+          "passesFirstThirdLeftOnly": true
+        },
+        {
+          "existingReferralCount": 2,
+          "checks": [
+            {
+              "slot": 5,
+              "sequence": 3,
+              "leftRequired": true,
+              "inLeftSubtree": true
+            },
+            {
+              "slot": 6,
+              "sequence": 4,
+              "leftRequired": false,
+              "inLeftSubtree": false
+            },
+            {
+              "slot": 4,
+              "sequence": 5,
+              "leftRequired": false,
+              "inLeftSubtree": true
+            },
+            {
+              "slot": 7,
+              "sequence": 6,
+              "leftRequired": false,
+              "inLeftSubtree": false
+            }
+          ],
+          "passesFirstThirdLeftOnly": true
+        }
+      ]
+    },
+    {
+      "order": [
+        5,
+        6,
+        7,
+        4
+      ],
+      "scenarios": [
+        {
+          "existingReferralCount": 0,
+          "checks": [
+            {
+              "slot": 5,
+              "sequence": 1,
+              "leftRequired": true,
+              "inLeftSubtree": true
+            },
+            {
+              "slot": 6,
+              "sequence": 2,
+              "leftRequired": false,
+              "inLeftSubtree": false
+            },
+            {
+              "slot": 7,
+              "sequence": 3,
+              "leftRequired": true,
+              "inLeftSubtree": false
+            },
+            {
+              "slot": 4,
+              "sequence": 4,
+              "leftRequired": false,
+              "inLeftSubtree": true
+            }
+          ],
+          "passesFirstThirdLeftOnly": false
+        },
+        {
+          "existingReferralCount": 2,
+          "checks": [
+            {
+              "slot": 5,
+              "sequence": 3,
+              "leftRequired": true,
+              "inLeftSubtree": true
+            },
+            {
+              "slot": 6,
+              "sequence": 4,
+              "leftRequired": false,
+              "inLeftSubtree": false
+            },
+            {
+              "slot": 7,
+              "sequence": 5,
+              "leftRequired": false,
+              "inLeftSubtree": false
+            },
+            {
+              "slot": 4,
+              "sequence": 6,
+              "leftRequired": false,
+              "inLeftSubtree": true
+            }
+          ],
+          "passesFirstThirdLeftOnly": true
+        }
+      ]
+    },
+    {
+      "order": [
+        5,
+        7,
+        4,
+        6
+      ],
+      "scenarios": [
+        {
+          "existingReferralCount": 0,
+          "checks": [
+            {
+              "slot": 5,
+              "sequence": 1,
+              "leftRequired": true,
+              "inLeftSubtree": true
+            },
+            {
+              "slot": 7,
+              "sequence": 2,
+              "leftRequired": false,
+              "inLeftSubtree": false
+            },
+            {
+              "slot": 4,
+              "sequence": 3,
+              "leftRequired": true,
+              "inLeftSubtree": true
+            },
+            {
+              "slot": 6,
+              "sequence": 4,
+              "leftRequired": false,
+              "inLeftSubtree": false
+            }
+          ],
+          "passesFirstThirdLeftOnly": true
+        },
+        {
+          "existingReferralCount": 2,
+          "checks": [
+            {
+              "slot": 5,
+              "sequence": 3,
+              "leftRequired": true,
+              "inLeftSubtree": true
+            },
+            {
+              "slot": 7,
+              "sequence": 4,
+              "leftRequired": false,
+              "inLeftSubtree": false
+            },
+            {
+              "slot": 4,
+              "sequence": 5,
+              "leftRequired": false,
+              "inLeftSubtree": true
+            },
+            {
+              "slot": 6,
+              "sequence": 6,
+              "leftRequired": false,
+              "inLeftSubtree": false
+            }
+          ],
+          "passesFirstThirdLeftOnly": true
+        }
+      ]
+    },
+    {
+      "order": [
+        5,
+        7,
+        6,
+        4
+      ],
+      "scenarios": [
+        {
+          "existingReferralCount": 0,
+          "checks": [
+            {
+              "slot": 5,
+              "sequence": 1,
+              "leftRequired": true,
+              "inLeftSubtree": true
+            },
+            {
+              "slot": 7,
+              "sequence": 2,
+              "leftRequired": false,
+              "inLeftSubtree": false
+            },
+            {
+              "slot": 6,
+              "sequence": 3,
+              "leftRequired": true,
+              "inLeftSubtree": false
+            },
+            {
+              "slot": 4,
+              "sequence": 4,
+              "leftRequired": false,
+              "inLeftSubtree": true
+            }
+          ],
+          "passesFirstThirdLeftOnly": false
+        },
+        {
+          "existingReferralCount": 2,
+          "checks": [
+            {
+              "slot": 5,
+              "sequence": 3,
+              "leftRequired": true,
+              "inLeftSubtree": true
+            },
+            {
+              "slot": 7,
+              "sequence": 4,
+              "leftRequired": false,
+              "inLeftSubtree": false
+            },
+            {
+              "slot": 6,
+              "sequence": 5,
+              "leftRequired": false,
+              "inLeftSubtree": false
+            },
+            {
+              "slot": 4,
+              "sequence": 6,
+              "leftRequired": false,
+              "inLeftSubtree": true
+            }
+          ],
+          "passesFirstThirdLeftOnly": true
+        }
+      ]
+    },
+    {
+      "order": [
+        6,
+        4,
+        5,
+        7
+      ],
+      "scenarios": [
+        {
+          "existingReferralCount": 0,
+          "checks": [
+            {
+              "slot": 6,
+              "sequence": 1,
+              "leftRequired": true,
+              "inLeftSubtree": false
+            },
+            {
+              "slot": 4,
+              "sequence": 2,
+              "leftRequired": false,
+              "inLeftSubtree": true
+            },
+            {
+              "slot": 5,
+              "sequence": 3,
+              "leftRequired": true,
+              "inLeftSubtree": true
+            },
+            {
+              "slot": 7,
+              "sequence": 4,
+              "leftRequired": false,
+              "inLeftSubtree": false
+            }
+          ],
+          "passesFirstThirdLeftOnly": false
+        },
+        {
+          "existingReferralCount": 2,
+          "checks": [
+            {
+              "slot": 6,
+              "sequence": 3,
+              "leftRequired": true,
+              "inLeftSubtree": false
+            },
+            {
+              "slot": 4,
+              "sequence": 4,
+              "leftRequired": false,
+              "inLeftSubtree": true
+            },
+            {
+              "slot": 5,
+              "sequence": 5,
+              "leftRequired": false,
+              "inLeftSubtree": true
+            },
+            {
+              "slot": 7,
+              "sequence": 6,
+              "leftRequired": false,
+              "inLeftSubtree": false
+            }
+          ],
+          "passesFirstThirdLeftOnly": false
+        }
+      ]
+    },
+    {
+      "order": [
+        6,
+        4,
+        7,
+        5
+      ],
+      "scenarios": [
+        {
+          "existingReferralCount": 0,
+          "checks": [
+            {
+              "slot": 6,
+              "sequence": 1,
+              "leftRequired": true,
+              "inLeftSubtree": false
+            },
+            {
+              "slot": 4,
+              "sequence": 2,
+              "leftRequired": false,
+              "inLeftSubtree": true
+            },
+            {
+              "slot": 7,
+              "sequence": 3,
+              "leftRequired": true,
+              "inLeftSubtree": false
+            },
+            {
+              "slot": 5,
+              "sequence": 4,
+              "leftRequired": false,
+              "inLeftSubtree": true
+            }
+          ],
+          "passesFirstThirdLeftOnly": false
+        },
+        {
+          "existingReferralCount": 2,
+          "checks": [
+            {
+              "slot": 6,
+              "sequence": 3,
+              "leftRequired": true,
+              "inLeftSubtree": false
+            },
+            {
+              "slot": 4,
+              "sequence": 4,
+              "leftRequired": false,
+              "inLeftSubtree": true
+            },
+            {
+              "slot": 7,
+              "sequence": 5,
+              "leftRequired": false,
+              "inLeftSubtree": false
+            },
+            {
+              "slot": 5,
+              "sequence": 6,
+              "leftRequired": false,
+              "inLeftSubtree": true
+            }
+          ],
+          "passesFirstThirdLeftOnly": false
+        }
+      ]
+    },
+    {
+      "order": [
+        6,
+        5,
+        4,
+        7
+      ],
+      "scenarios": [
+        {
+          "existingReferralCount": 0,
+          "checks": [
+            {
+              "slot": 6,
+              "sequence": 1,
+              "leftRequired": true,
+              "inLeftSubtree": false
+            },
+            {
+              "slot": 5,
+              "sequence": 2,
+              "leftRequired": false,
+              "inLeftSubtree": true
+            },
+            {
+              "slot": 4,
+              "sequence": 3,
+              "leftRequired": true,
+              "inLeftSubtree": true
+            },
+            {
+              "slot": 7,
+              "sequence": 4,
+              "leftRequired": false,
+              "inLeftSubtree": false
+            }
+          ],
+          "passesFirstThirdLeftOnly": false
+        },
+        {
+          "existingReferralCount": 2,
+          "checks": [
+            {
+              "slot": 6,
+              "sequence": 3,
+              "leftRequired": true,
+              "inLeftSubtree": false
+            },
+            {
+              "slot": 5,
+              "sequence": 4,
+              "leftRequired": false,
+              "inLeftSubtree": true
+            },
+            {
+              "slot": 4,
+              "sequence": 5,
+              "leftRequired": false,
+              "inLeftSubtree": true
+            },
+            {
+              "slot": 7,
+              "sequence": 6,
+              "leftRequired": false,
+              "inLeftSubtree": false
+            }
+          ],
+          "passesFirstThirdLeftOnly": false
+        }
+      ]
+    },
+    {
+      "order": [
+        6,
+        5,
+        7,
+        4
+      ],
+      "scenarios": [
+        {
+          "existingReferralCount": 0,
+          "checks": [
+            {
+              "slot": 6,
+              "sequence": 1,
+              "leftRequired": true,
+              "inLeftSubtree": false
+            },
+            {
+              "slot": 5,
+              "sequence": 2,
+              "leftRequired": false,
+              "inLeftSubtree": true
+            },
+            {
+              "slot": 7,
+              "sequence": 3,
+              "leftRequired": true,
+              "inLeftSubtree": false
+            },
+            {
+              "slot": 4,
+              "sequence": 4,
+              "leftRequired": false,
+              "inLeftSubtree": true
+            }
+          ],
+          "passesFirstThirdLeftOnly": false
+        },
+        {
+          "existingReferralCount": 2,
+          "checks": [
+            {
+              "slot": 6,
+              "sequence": 3,
+              "leftRequired": true,
+              "inLeftSubtree": false
+            },
+            {
+              "slot": 5,
+              "sequence": 4,
+              "leftRequired": false,
+              "inLeftSubtree": true
+            },
+            {
+              "slot": 7,
+              "sequence": 5,
+              "leftRequired": false,
+              "inLeftSubtree": false
+            },
+            {
+              "slot": 4,
+              "sequence": 6,
+              "leftRequired": false,
+              "inLeftSubtree": true
+            }
+          ],
+          "passesFirstThirdLeftOnly": false
+        }
+      ]
+    },
+    {
+      "order": [
+        6,
+        7,
+        4,
+        5
+      ],
+      "scenarios": [
+        {
+          "existingReferralCount": 0,
+          "checks": [
+            {
+              "slot": 6,
+              "sequence": 1,
+              "leftRequired": true,
+              "inLeftSubtree": false
+            },
+            {
+              "slot": 7,
+              "sequence": 2,
+              "leftRequired": false,
+              "inLeftSubtree": false
+            },
+            {
+              "slot": 4,
+              "sequence": 3,
+              "leftRequired": true,
+              "inLeftSubtree": true
+            },
+            {
+              "slot": 5,
+              "sequence": 4,
+              "leftRequired": false,
+              "inLeftSubtree": true
+            }
+          ],
+          "passesFirstThirdLeftOnly": false
+        },
+        {
+          "existingReferralCount": 2,
+          "checks": [
+            {
+              "slot": 6,
+              "sequence": 3,
+              "leftRequired": true,
+              "inLeftSubtree": false
+            },
+            {
+              "slot": 7,
+              "sequence": 4,
+              "leftRequired": false,
+              "inLeftSubtree": false
+            },
+            {
+              "slot": 4,
+              "sequence": 5,
+              "leftRequired": false,
+              "inLeftSubtree": true
+            },
+            {
+              "slot": 5,
+              "sequence": 6,
+              "leftRequired": false,
+              "inLeftSubtree": true
+            }
+          ],
+          "passesFirstThirdLeftOnly": false
+        }
+      ]
+    },
+    {
+      "order": [
+        6,
+        7,
+        5,
+        4
+      ],
+      "scenarios": [
+        {
+          "existingReferralCount": 0,
+          "checks": [
+            {
+              "slot": 6,
+              "sequence": 1,
+              "leftRequired": true,
+              "inLeftSubtree": false
+            },
+            {
+              "slot": 7,
+              "sequence": 2,
+              "leftRequired": false,
+              "inLeftSubtree": false
+            },
+            {
+              "slot": 5,
+              "sequence": 3,
+              "leftRequired": true,
+              "inLeftSubtree": true
+            },
+            {
+              "slot": 4,
+              "sequence": 4,
+              "leftRequired": false,
+              "inLeftSubtree": true
+            }
+          ],
+          "passesFirstThirdLeftOnly": false
+        },
+        {
+          "existingReferralCount": 2,
+          "checks": [
+            {
+              "slot": 6,
+              "sequence": 3,
+              "leftRequired": true,
+              "inLeftSubtree": false
+            },
+            {
+              "slot": 7,
+              "sequence": 4,
+              "leftRequired": false,
+              "inLeftSubtree": false
+            },
+            {
+              "slot": 5,
+              "sequence": 5,
+              "leftRequired": false,
+              "inLeftSubtree": true
+            },
+            {
+              "slot": 4,
+              "sequence": 6,
+              "leftRequired": false,
+              "inLeftSubtree": true
+            }
+          ],
+          "passesFirstThirdLeftOnly": false
+        }
+      ]
+    },
+    {
+      "order": [
+        7,
+        4,
+        5,
+        6
+      ],
+      "scenarios": [
+        {
+          "existingReferralCount": 0,
+          "checks": [
+            {
+              "slot": 7,
+              "sequence": 1,
+              "leftRequired": true,
+              "inLeftSubtree": false
+            },
+            {
+              "slot": 4,
+              "sequence": 2,
+              "leftRequired": false,
+              "inLeftSubtree": true
+            },
+            {
+              "slot": 5,
+              "sequence": 3,
+              "leftRequired": true,
+              "inLeftSubtree": true
+            },
+            {
+              "slot": 6,
+              "sequence": 4,
+              "leftRequired": false,
+              "inLeftSubtree": false
+            }
+          ],
+          "passesFirstThirdLeftOnly": false
+        },
+        {
+          "existingReferralCount": 2,
+          "checks": [
+            {
+              "slot": 7,
+              "sequence": 3,
+              "leftRequired": true,
+              "inLeftSubtree": false
+            },
+            {
+              "slot": 4,
+              "sequence": 4,
+              "leftRequired": false,
+              "inLeftSubtree": true
+            },
+            {
+              "slot": 5,
+              "sequence": 5,
+              "leftRequired": false,
+              "inLeftSubtree": true
+            },
+            {
+              "slot": 6,
+              "sequence": 6,
+              "leftRequired": false,
+              "inLeftSubtree": false
+            }
+          ],
+          "passesFirstThirdLeftOnly": false
+        }
+      ]
+    },
+    {
+      "order": [
+        7,
+        4,
+        6,
+        5
+      ],
+      "scenarios": [
+        {
+          "existingReferralCount": 0,
+          "checks": [
+            {
+              "slot": 7,
+              "sequence": 1,
+              "leftRequired": true,
+              "inLeftSubtree": false
+            },
+            {
+              "slot": 4,
+              "sequence": 2,
+              "leftRequired": false,
+              "inLeftSubtree": true
+            },
+            {
+              "slot": 6,
+              "sequence": 3,
+              "leftRequired": true,
+              "inLeftSubtree": false
+            },
+            {
+              "slot": 5,
+              "sequence": 4,
+              "leftRequired": false,
+              "inLeftSubtree": true
+            }
+          ],
+          "passesFirstThirdLeftOnly": false
+        },
+        {
+          "existingReferralCount": 2,
+          "checks": [
+            {
+              "slot": 7,
+              "sequence": 3,
+              "leftRequired": true,
+              "inLeftSubtree": false
+            },
+            {
+              "slot": 4,
+              "sequence": 4,
+              "leftRequired": false,
+              "inLeftSubtree": true
+            },
+            {
+              "slot": 6,
+              "sequence": 5,
+              "leftRequired": false,
+              "inLeftSubtree": false
+            },
+            {
+              "slot": 5,
+              "sequence": 6,
+              "leftRequired": false,
+              "inLeftSubtree": true
+            }
+          ],
+          "passesFirstThirdLeftOnly": false
+        }
+      ]
+    },
+    {
+      "order": [
+        7,
+        5,
+        4,
+        6
+      ],
+      "scenarios": [
+        {
+          "existingReferralCount": 0,
+          "checks": [
+            {
+              "slot": 7,
+              "sequence": 1,
+              "leftRequired": true,
+              "inLeftSubtree": false
+            },
+            {
+              "slot": 5,
+              "sequence": 2,
+              "leftRequired": false,
+              "inLeftSubtree": true
+            },
+            {
+              "slot": 4,
+              "sequence": 3,
+              "leftRequired": true,
+              "inLeftSubtree": true
+            },
+            {
+              "slot": 6,
+              "sequence": 4,
+              "leftRequired": false,
+              "inLeftSubtree": false
+            }
+          ],
+          "passesFirstThirdLeftOnly": false
+        },
+        {
+          "existingReferralCount": 2,
+          "checks": [
+            {
+              "slot": 7,
+              "sequence": 3,
+              "leftRequired": true,
+              "inLeftSubtree": false
+            },
+            {
+              "slot": 5,
+              "sequence": 4,
+              "leftRequired": false,
+              "inLeftSubtree": true
+            },
+            {
+              "slot": 4,
+              "sequence": 5,
+              "leftRequired": false,
+              "inLeftSubtree": true
+            },
+            {
+              "slot": 6,
+              "sequence": 6,
+              "leftRequired": false,
+              "inLeftSubtree": false
+            }
+          ],
+          "passesFirstThirdLeftOnly": false
+        }
+      ]
+    },
+    {
+      "order": [
+        7,
+        5,
+        6,
+        4
+      ],
+      "scenarios": [
+        {
+          "existingReferralCount": 0,
+          "checks": [
+            {
+              "slot": 7,
+              "sequence": 1,
+              "leftRequired": true,
+              "inLeftSubtree": false
+            },
+            {
+              "slot": 5,
+              "sequence": 2,
+              "leftRequired": false,
+              "inLeftSubtree": true
+            },
+            {
+              "slot": 6,
+              "sequence": 3,
+              "leftRequired": true,
+              "inLeftSubtree": false
+            },
+            {
+              "slot": 4,
+              "sequence": 4,
+              "leftRequired": false,
+              "inLeftSubtree": true
+            }
+          ],
+          "passesFirstThirdLeftOnly": false
+        },
+        {
+          "existingReferralCount": 2,
+          "checks": [
+            {
+              "slot": 7,
+              "sequence": 3,
+              "leftRequired": true,
+              "inLeftSubtree": false
+            },
+            {
+              "slot": 5,
+              "sequence": 4,
+              "leftRequired": false,
+              "inLeftSubtree": true
+            },
+            {
+              "slot": 6,
+              "sequence": 5,
+              "leftRequired": false,
+              "inLeftSubtree": false
+            },
+            {
+              "slot": 4,
+              "sequence": 6,
+              "leftRequired": false,
+              "inLeftSubtree": true
+            }
+          ],
+          "passesFirstThirdLeftOnly": false
+        }
+      ]
+    },
+    {
+      "order": [
+        7,
+        6,
+        4,
+        5
+      ],
+      "scenarios": [
+        {
+          "existingReferralCount": 0,
+          "checks": [
+            {
+              "slot": 7,
+              "sequence": 1,
+              "leftRequired": true,
+              "inLeftSubtree": false
+            },
+            {
+              "slot": 6,
+              "sequence": 2,
+              "leftRequired": false,
+              "inLeftSubtree": false
+            },
+            {
+              "slot": 4,
+              "sequence": 3,
+              "leftRequired": true,
+              "inLeftSubtree": true
+            },
+            {
+              "slot": 5,
+              "sequence": 4,
+              "leftRequired": false,
+              "inLeftSubtree": true
+            }
+          ],
+          "passesFirstThirdLeftOnly": false
+        },
+        {
+          "existingReferralCount": 2,
+          "checks": [
+            {
+              "slot": 7,
+              "sequence": 3,
+              "leftRequired": true,
+              "inLeftSubtree": false
+            },
+            {
+              "slot": 6,
+              "sequence": 4,
+              "leftRequired": false,
+              "inLeftSubtree": false
+            },
+            {
+              "slot": 4,
+              "sequence": 5,
+              "leftRequired": false,
+              "inLeftSubtree": true
+            },
+            {
+              "slot": 5,
+              "sequence": 6,
+              "leftRequired": false,
+              "inLeftSubtree": true
+            }
+          ],
+          "passesFirstThirdLeftOnly": false
+        }
+      ]
+    },
+    {
+      "order": [
+        7,
+        6,
+        5,
+        4
+      ],
+      "scenarios": [
+        {
+          "existingReferralCount": 0,
+          "checks": [
+            {
+              "slot": 7,
+              "sequence": 1,
+              "leftRequired": true,
+              "inLeftSubtree": false
+            },
+            {
+              "slot": 6,
+              "sequence": 2,
+              "leftRequired": false,
+              "inLeftSubtree": false
+            },
+            {
+              "slot": 5,
+              "sequence": 3,
+              "leftRequired": true,
+              "inLeftSubtree": true
+            },
+            {
+              "slot": 4,
+              "sequence": 4,
+              "leftRequired": false,
+              "inLeftSubtree": true
+            }
+          ],
+          "passesFirstThirdLeftOnly": false
+        },
+        {
+          "existingReferralCount": 2,
+          "checks": [
+            {
+              "slot": 7,
+              "sequence": 3,
+              "leftRequired": true,
+              "inLeftSubtree": false
+            },
+            {
+              "slot": 6,
+              "sequence": 4,
+              "leftRequired": false,
+              "inLeftSubtree": false
+            },
+            {
+              "slot": 5,
+              "sequence": 5,
+              "leftRequired": false,
+              "inLeftSubtree": true
+            },
+            {
+              "slot": 4,
+              "sequence": 6,
+              "leftRequired": false,
+              "inLeftSubtree": true
+            }
+          ],
+          "passesFirstThirdLeftOnly": false
+        }
+      ]
+    }
+  ]
+}

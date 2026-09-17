@@ -6,7 +6,8 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "test": "jest --config jest.config.cjs"
+    "test": "jest --config jest.config.cjs",
+    "test:ai-ready": "jest --config jest.config.cjs --runInBand test/ai-ready.spec.ts"
   },
   "devDependencies": {
     "@types/jest": "^30.0.0",

@@ -143,6 +143,28 @@ Business logic changes: **NONE**. Provider-specific handlers remain disabled unt
 - Page RBAC matches the Backend roles: `SUPER_ADMIN`, `ORDER_OPS`, `FINANCE`, and `COMPLIANCE_AUDIT`.
 - Frontend contracts do not expose payload hashes, verification hashes, safe evidence references, raw callbacks or lease-owner identity.
 - Complete Admin regression: 63 PASS in 22 files. Admin production build: PASS.
-- The UI remains read-only. No manual retry or status mutation was added because the current governed state machine requires lease-aware `MANUAL_REVIEW → PROCESSING`; a direct requeue would bypass worker ownership and audit guarantees.
+- At this checkpoint the UI remained read-only because a direct `MANUAL_REVIEW → PROCESSING` action would bypass worker ownership and audit guarantees. The later governed-retry checkpoint adds a safe `MANUAL_REVIEW → RETRY_PENDING` command instead.
+
+Business logic changes: **NONE**.
+
+## Governed manual webhook retry checkpoint
+
+- Added a `SUPER_ADMIN`-only manual retry command for Inbox rows already in `MANUAL_REVIEW`.
+- The command requires an idempotency key and an operator reason, writes append-only audit evidence, and schedules `RETRY_PENDING` without acquiring or impersonating a worker lease.
+- The worker remains the only component allowed to claim the row and enter `PROCESSING`; the original error code and verification evidence remain immutable.
+- The Admin console exposes the command only for eligible rows and uses the shared confirmation dialog with a mandatory reason.
+- Real PostgreSQL assertions cover exact replay, changed-payload conflict, concurrent commands, audit/idempotency cardinality, forced rollback, lifecycle guards, and subsequent worker claim: 22 assertions passed.
+- Complete Backend API: 573 PASS in 60 suites. Admin: 67 PASS in 22 files; typecheck and production build PASS. OpenAPI, schema, migration, source, security and TODO preflights PASS.
+- Fresh isolated DB Golden deployed all 53 workspace migrations and passed deterministic fixtures, timezone, concurrency, return/outbox, membership, RPV, placement, checkout, Member/Admin integration, identity and replay-pool assertions.
+
+Business logic changes: **NONE**. This is an operational recovery control and does not interpret provider status or write domain/monetary results.
+
+## Safe Provider Inbox detail checkpoint
+
+- Added an RBAC-protected read model for one Provider Inbox item with a bounded 50-event append-only operational audit history.
+- The response exposes lifecycle, provider/connection identity, timestamps, correlation, retry count and sanitized actor/reason evidence only.
+- Raw callback payload, signature, payload/verification hashes, safe evidence references and worker lease-owner identity remain excluded.
+- Added a connected Admin Detail Drawer with shared Loading, Error and Empty states; the view is read-only and does not infer provider status.
+- Backend focused regression: 12 PASS; complete Backend API: 574 PASS in 60 suites on isolated PostgreSQL. Admin: 68 PASS in 22 files; typecheck and production build PASS. OpenAPI and all schema, migration, source, security and TODO preflights PASS.
 
 Business logic changes: **NONE**.

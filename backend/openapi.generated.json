@@ -5014,6 +5014,114 @@
         ]
       }
     },
+    "/api/v1/admin/provider-operations/webhooks/{id}": {
+      "get": {
+        "operationId": "adminProviderWebhookDetail",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Safe operational detail; excludes payload, hashes, evidence references and lease owner"
+          },
+          "400": {
+            "description": "Invalid webhook id"
+          },
+          "401": {
+            "description": "Admin authentication required"
+          },
+          "403": {
+            "description": "Operational or compliance role required"
+          },
+          "404": {
+            "description": "Webhook Inbox row not found"
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "Safe Provider Inbox detail and bounded append-only audit history",
+        "tags": [
+          "Admin - Provider Operations"
+        ]
+      }
+    },
+    "/api/v1/admin/provider-operations/webhooks/{id}/retry": {
+      "post": {
+        "operationId": "adminRetryProviderWebhook",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RetryProviderWebhookDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Scheduled for governed worker retry, or exact idempotent replay"
+          },
+          "400": {
+            "description": "Invalid webhook id or Idempotency-Key"
+          },
+          "401": {
+            "description": "Admin authentication required"
+          },
+          "403": {
+            "description": "SUPER_ADMIN role and actor identity required"
+          },
+          "404": {
+            "description": "Webhook Inbox row not found"
+          },
+          "409": {
+            "description": "Idempotency conflict, state changed, or concurrent retry conflict"
+          },
+          "422": {
+            "description": "Operator reason is missing or invalid"
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "Governed requeue from MANUAL_REVIEW; worker must acquire a new lease before processing",
+        "tags": [
+          "Admin - Provider Operations"
+        ]
+      }
+    },
     "/api/v1/admin/persons": {
       "post": {
         "operationId": "adminCreatePerson",
@@ -8673,6 +8781,19 @@
           "effects",
           "limit",
           "truncated"
+        ]
+      },
+      "RetryProviderWebhookDto": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "minLength": 10,
+            "maxLength": 500
+          }
+        },
+        "required": [
+          "reason"
         ]
       },
       "CreatePersonDto": {

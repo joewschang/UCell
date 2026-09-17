@@ -1,0 +1,2 @@
+$ node scripts/security-policy-preflight.mjs
+SECURITY_POLICY_PREFLIGHT_PASS
