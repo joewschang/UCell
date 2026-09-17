@@ -1,5 +1,14 @@
 {
   "capturedAt": "2026-09-17T16:13:11.594Z",
+  "updatedAt": "2026-09-18T19:10:00+08:00",
+  "sourceCommit": "9c8426eb66cbf8bd75872d5bb8f0b4129f4a2493",
+  "premiumReferencesUpdated": [
+    "member:/",
+    "member:/organization",
+    "member:/bonuses",
+    "admin:/"
+  ],
+  "formalCredentialsVerified": false,
   "memberViewport": "390x844",
   "adminViewport": "1440x1000",
   "results": [

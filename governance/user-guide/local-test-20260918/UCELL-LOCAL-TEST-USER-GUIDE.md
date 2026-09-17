@@ -2,7 +2,12 @@
 
 產製日期：2026-09-18  
 來源分支：`integration/member-backend-mvp`  
-來源 HEAD：`409615ab2f4e56f30861f41ddcbd5d8f8109f799`
+更新日期：2026-09-18
+來源 HEAD：`9c8426eb66cbf8bd75872d5bb8f0b4129f4a2493`
+
+本版已同步 UCell Premium Biotech × FinTech 視覺、Admin Operations Command Center、Member 身分控制台、組織節點視圖、Award lifecycle，以及受治理 UAT evidence 唯讀面板。
+
+簡報版：[`UCell-R1.0B-本機測試系統使用手冊-UX更新版.pptx`](UCell-R1.0B-本機測試系統使用手冊-UX更新版.pptx)
 
 ## 環境界線
 
@@ -30,17 +35,35 @@ pnpm dev --host 127.0.0.1 --strictPort
 
 Admin 登入頁按「DEV：Super Admin」。此登入只能用於本機 non-production。Admin 寫入會進入 `ucell_admin_test`，不要把畫面或資料當成 Stage/UAT 證據。
 
+### 啟動後檢查
+
+```powershell
+Invoke-WebRequest http://127.0.0.1:3001/api/v1/health -UseBasicParsing
+Invoke-WebRequest http://127.0.0.1:4173/ -UseBasicParsing
+Invoke-WebRequest http://127.0.0.1:5174/ -UseBasicParsing
+```
+
+三個網址應回應 HTTP 200。若 Admin 顯示登入頁，請按「DEV：Super Admin」。Member 頂端若顯示「DEV 示範模式」，代表目前使用明確的視覺 fixture。
+
 ## Member 前台
 
 ### 1. 首頁／會員中心 — `/`
 
-先確認目前 Qualification/Ball。首頁依序顯示 Active、重購、PV/RPV/EPV、獎金狀態與快速服務。`PENDING + amount:null` 顯示「結算中」，不顯示 NT$0。
+先確認目前 Qualification/Ball。新版首頁使用會員控制台呈現會員、資格與球位，再依序顯示 Active、重購、PV/RPV/EPV、獎金狀態與快速服務。`PENDING + amount:null` 顯示「結算中」，不顯示 NT$0。
+
+操作順序：
+
+1. 在「目前資格」選擇 Qualification/Ball。
+2. 確認畫面顯示「以下組織、業績與獎金均屬此資格」。
+3. 查看 Active 與本月重購狀態。
+4. 查看 Backend/fixture 回傳的 PV、RPV、EPV。
+5. 使用底部導覽或快速服務進入其他功能。
 
 ![Member 首頁](screenshots/member/01-home.png)
 
 ### 2. 我的組織 — `/organization`
 
-Sponsor Tree 與 Binary Tree 使用不同頁籤與語意。切換球後，畫面上所有組織資料都應跟著目前 Qualification 更新。
+Sponsor Tree 與 Binary Tree 使用不同頁籤與語意。推薦組織以推薦人節點與直推 network 呈現；二元安置組織使用獨立的左右區面板。切換球後，畫面上所有組織資料都應跟著目前 Qualification 更新。缺少正式 settlement read model 時，業績與 Carry 顯示 unavailable，不從其他數值推算。
 
 ![Member 組織](screenshots/member/02-organization.png)
 
@@ -52,7 +75,7 @@ Sponsor Tree 與 Binary Tree 使用不同頁籤與語意。切換球後，畫面
 
 ### 4. 獎金明細 — `/bonuses`
 
-查看 Award lifecycle：CALCULATED → PENDING45D → EFFECTIVE → PAYABLE → PAID。展開明細可查看 Settlement、Rule Version 與 Parameter Snapshot evidence；Adjustment/Reversal/Clawback 應保留 append-only 紀錄。
+查看 Award lifecycle：CALCULATED、PENDING45D、EFFECTIVE、PAYABLE、PAID。介面只標示 Backend 回傳的目前狀態，不推測其他階段已完成。展開制度明細可查看 Settlement、Rule Version 與 Parameter Snapshot evidence；Adjustment、Reversal、Clawback 保留 append-only 紀錄。
 
 ![Member 獎金](screenshots/member/04-bonuses.png)
 
@@ -102,7 +125,7 @@ Person-level 資料與 1:N Qualifications/Balls 分開顯示。正式 Connected 
 
 ### 1. 營運總覽 — `/`
 
-顯示 Backend authoritative Read Model。尚未接入的 NASL、GMV、Organization Health、Settlement/Security Read Models 顯示 unavailable，不填假資料。
+新版 Operations Command Center 顯示 Backend authoritative Read Model、Rule Version、Snapshot time、Person/Qualification/Active/Application KPI，以及目前 record-status composition。組成圖只視覺化 Backend 回傳的非金額 count，並提供文字與 source。尚未接入的 NASL、GMV、Organization Health、Settlement/Security Read Models 顯示 unavailable，不填假資料。
 
 ![Admin 總覽](screenshots/admin/01-dashboard.png)
 
@@ -210,7 +233,7 @@ Return lifecycle 為 REQUESTED → APPROVED → RECEIVED → POSTED → REFUNDED
 
 ### 19. UAT Console — `/uat`
 
-記錄 NOT_RUN、PASS、FAIL、BLOCKED、Tester 與 Evidence。瀏覽器內紀錄不等於正式 UAT 簽核。
+上半部以 localStorage 記錄 NOT_RUN、PASS、FAIL、BLOCKED、Tester 與本機 Evidence。下半部唯讀顯示 `GET /admin/uat-evidence` 回傳的 append-only evidence metadata，可依 environment 與 scenario 篩選。兩區資料完全分離；所有 API evidence 仍顯示 `formalSignOff: false`，不得用來宣告 Release Gate PASS 或 Production Promotion。
 
 ![Admin UAT](screenshots/admin/19-uat.png)
 
@@ -227,3 +250,4 @@ Return lifecycle 為 REQUESTED → APPROVED → RECEIVED → POSTED → REFUNDED
 3. Admin 高風險操作需確認、理由與 audit evidence；請只在 `ucell_admin_test` 操作。
 4. 本機完整權限模式是功能測試工具，不代表正式 Entra RBAC 或 Production 授權已通過。
 5. 截圖清單與 fixture 說明可查閱同目錄 `capture-results.json`。
+6. Premium UI 自動驗證涵蓋 Member 375／390／430／768，以及 Admin 768／1366／1440／1920；完整 manual screen-reader/WCAG audit 尚未完成。
