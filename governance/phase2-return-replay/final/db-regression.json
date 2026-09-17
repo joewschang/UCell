@@ -399,8 +399,8 @@
     {
       "label": "missing snapshot does not append money",
       "result": "PASS",
-      "actual": 80,
-      "expected": 80
+      "actual": 7,
+      "expected": 7
     },
     {
       "label": "PENDING_45D historical zero entitlement appends REVERSED lifecycle",
@@ -1099,8 +1099,8 @@
     {
       "label": "missing original return evidence appends no ledger",
       "result": "PASS",
-      "actual": 88,
-      "expected": 88
+      "actual": 15,
+      "expected": 15
     },
     {
       "label": "missing original return evidence appends no award posting",
@@ -1221,8 +1221,8 @@
     {
       "label": "duplicate RETURN_CONFIRMED appends no ledger",
       "result": "PASS",
-      "actual": 92,
-      "expected": 92
+      "actual": 19,
+      "expected": 19
     },
     {
       "label": "duplicate RETURN_CONFIRMED appends no entitlement posting",

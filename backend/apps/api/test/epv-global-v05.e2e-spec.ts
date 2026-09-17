@@ -2,19 +2,9 @@ import { captureParameters, historicalMonthlyEntitlements, Prisma } from '@ucell
 import { GlobalPoolService } from '../src/modules/global-pool/global-pool.service';
 import { GlobalPoolPersistence } from '../src/modules/global-pool/global-pool-persistence';
 import { epv,d } from './phase2-fixtures';
-import { execFileSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { resolve, join } from 'node:path';
+import { phase2DbEvidence } from './phase2-db-evidence';
 let evidence:any[];
-beforeAll(()=>{
- const root=resolve(__dirname,'../../../..'),directory=mkdtempSync(join(tmpdir(),'ucell-epv-'));
- try{
-  const file=join(directory,'evidence.json');
-  execFileSync(process.execPath,[resolve(root,'backend/scripts/phase2-db-test.mjs')],{cwd:root,env:{...process.env,DATABASE_URL:process.env.PHASE2_TEST_DATABASE_URL??'postgresql://ucell:ucell_dev@localhost:5432/ucell_admin_test?schema=public',PHASE2_DB_EVIDENCE_PATH:file},timeout:30000});
-  const run=JSON.parse(readFileSync(file,'utf8'));expect(run.result).toBe('PASS');evidence=run.results;
- }finally{rmSync(directory,{recursive:true,force:true});}
-},30000);
+beforeAll(()=>{ evidence=[...phase2DbEvidence()]; },30000);
 function actual(label:string){const row=evidence.find(item=>item.label===label);expect(row).toBeDefined();expect(row.result).toBe('PASS');expect(row.actual).toEqual(row.expected);return row.actual;}
 const levels=['NEW_STAR','EXCELLENCE','GLORY','DIAMOND','CROWN'] as const;
 async function globalHarness(input:{total?:string;weak?:Record<string,string>;active?:Record<string,boolean>}={}){

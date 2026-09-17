@@ -1,18 +1,8 @@
-import { execFileSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { resolve, join } from 'node:path';
 import { PersonService } from '../src/modules/person/person.service';
 import { R10B } from '../../../packages/shared/src/r1-0b-golden';
+import { phase2DbEvidence } from './phase2-db-evidence';
 let evidence:any[];
-beforeAll(()=>{
-  const root=resolve(__dirname,'../../../..'),directory=mkdtempSync(join(tmpdir(),'ucell-v064-'));
-  try{
-    const file=join(directory,'evidence.json');
-    execFileSync(process.execPath,[resolve(root,'backend/scripts/phase2-db-test.mjs')],{cwd:root,env:{...process.env,DATABASE_URL:process.env.PHASE2_TEST_DATABASE_URL??'postgresql://ucell:ucell_dev@localhost:5432/ucell_admin_test?schema=public',PHASE2_DB_EVIDENCE_PATH:file},timeout:30000});
-    const run=JSON.parse(readFileSync(file,'utf8'));expect(run.result).toBe('PASS');evidence=run.results;
-  } finally {rmSync(directory,{recursive:true,force:true});}
-},30000);
+beforeAll(()=>{ evidence=[...phase2DbEvidence()]; },30000);
 function actual(label:string){const observed=evidence.find((item:any)=>item.label===label);expect(observed).toBeDefined();expect(observed.result).toBe('PASS');expect(observed.actual).toEqual(observed.expected);return observed.actual;}
 describe('R1.0B v0.6.4 Golden Dataset',()=>{
   it('keeps Person and Qualification distinct', async () => {

@@ -84,3 +84,6 @@
 | Worker graceful shutdown | PASS | SIGTERM/SIGINT drain current work, clear scheduling and disconnect once |
 | Worker poll configuration | PASS | Explicit 250-60000 ms bound; malformed values fail startup |
 | Complete Backend API after graceful loop | PASS | 582 tests / 62 suites on isolated PostgreSQL; full workspace build and preflights PASS |
+| Provider workload telemetry | PASS | Sanitized batch counts, latency, throughput and outcomes only; no payload, credentials or monetary values |
+| Backend isolated Jest DB reliability | PASS | One disposable `ucell_jest_*` database, shared Phase 2 evidence, minimal seed and forced cleanup |
+| Complete Backend API after telemetry/isolation repair | PASS | 607 tests / 64 suites; isolated PostgreSQL cleanup PASS |

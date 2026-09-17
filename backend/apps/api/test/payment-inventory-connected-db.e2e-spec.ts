@@ -13,7 +13,7 @@ const testDatabaseUrl = process.env.PAYMENT_INVENTORY_TEST_DATABASE_URL
   ?? process.env.PHASE2_TEST_DATABASE_URL
   ?? 'postgresql://ucell:ucell_dev@localhost:5432/ucell_admin_test?schema=public';
 const parsed = new URL(testDatabaseUrl);
-if (!['localhost', '127.0.0.1'].includes(parsed.hostname) || !parsed.pathname.slice(1).endsWith('_test')) {
+if (!['localhost', '127.0.0.1'].includes(parsed.hostname) || !(parsed.pathname.slice(1).endsWith('_test') || /^ucell_jest_[a-f0-9]{32}$/.test(parsed.pathname.slice(1)))) {
   throw new Error('PAYMENT_INVENTORY_TEST_DATABASE_REQUIRED');
 }
 process.env.DATABASE_URL = testDatabaseUrl;

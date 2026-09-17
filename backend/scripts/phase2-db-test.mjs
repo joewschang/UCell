@@ -9,7 +9,7 @@ const {EpvService}=require('../backend/apps/api/dist/modules/epv/epv.service.js'
 const {EpvMonthService}=require('../backend/apps/api/dist/modules/epv/epv-month.service.js');
 const {BonusQueryService}=require('../backend/apps/api/dist/modules/bonus/bonus-query.service.js');
 const {RuntimeRuleService}=require('../backend/apps/api/dist/modules/rules/runtime-rule.service.js');
-const url=new URL(process.env.DATABASE_URL??'');assert.equal(url.pathname,'/ucell_admin_test');assert.ok(['localhost','127.0.0.1'].includes(url.hostname));
+const url=new URL(process.env.DATABASE_URL??'');assert.match(url.pathname,/^\/(?:ucell_admin_test|ucell_jest_[a-f0-9]{32})$/);assert.ok(['localhost','127.0.0.1'].includes(url.hostname));
 const prisma=new PrismaClient(),results=[],version='PHASE2_TEST_'+randomUUID(),rollback=new Error('ROLLBACK_PHASE2_FIXTURES');
 function check(label,actual,expected,stableEvidence){
  assert.deepEqual(actual,expected,label);

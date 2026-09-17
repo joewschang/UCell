@@ -11,7 +11,7 @@ const testDatabaseUrl = process.env.PROVIDER_RECONCILIATION_TEST_DATABASE_URL
   ?? 'postgresql://ucell:ucell_dev@localhost:5432/ucell_admin_test?schema=public';
 const parsedTestDatabaseUrl = new URL(testDatabaseUrl);
 if (!['localhost', '127.0.0.1'].includes(parsedTestDatabaseUrl.hostname)
-  || !parsedTestDatabaseUrl.pathname.slice(1).endsWith('_test')) {
+  || !(parsedTestDatabaseUrl.pathname.slice(1).endsWith('_test') || /^ucell_jest_[a-f0-9]{32}$/.test(parsedTestDatabaseUrl.pathname.slice(1)))) {
   throw new Error('PROVIDER_RECONCILIATION_TEST_DATABASE_REQUIRED');
 }
 process.env.DATABASE_URL = testDatabaseUrl;

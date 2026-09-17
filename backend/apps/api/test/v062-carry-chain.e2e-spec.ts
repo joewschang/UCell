@@ -4,15 +4,9 @@ import { tmpdir } from 'node:os';
 import { resolve, join } from 'node:path';
 import { periodBinary } from '@ucell/database';
 import { binary, d, recipient } from './phase2-fixtures';
+import { phase2DbEvidence } from './phase2-db-evidence';
 let evidence: any[];
-beforeAll(() => {
- const root=resolve(__dirname,'../../../..'),directory=mkdtempSync(join(tmpdir(),'ucell-v062-'));
- try {
-  const file=join(directory,'evidence.json');
-  execFileSync(process.execPath,[resolve(root,'backend/scripts/phase2-db-test.mjs')],{cwd:root,env:{...process.env,DATABASE_URL:process.env.PHASE2_TEST_DATABASE_URL??'postgresql://ucell:ucell_dev@localhost:5432/ucell_admin_test?schema=public',PHASE2_DB_EVIDENCE_PATH:file},timeout:30000});
-  const run=JSON.parse(readFileSync(file,'utf8'));expect(run.result).toBe('PASS');evidence=run.results;
- } finally { rmSync(directory,{recursive:true,force:true}); }
-},30000);
+beforeAll(() => { evidence=[...phase2DbEvidence()]; },30000);
 function actual(label:string){const row=evidence.find(item=>item.label===label);expect(row).toBeDefined();expect(row.result).toBe('PASS');expect(row.actual).toEqual(row.expected);return row.actual;}
 describe('v0.6.2 economic attribution and carry-chain replay',()=>{
   it('historical week includes later GPV_REVERSAL linked to original event',()=>{

@@ -7,7 +7,7 @@ const require=createRequire(new URL('../package.json',import.meta.url));
 const {PrismaClient}=require('@prisma/client');
 const {captureParameters}=require('../backend/apps/api/dist/modules/rules/parameter-snapshot.js');
 const {SettlementCalendarService}=require('../backend/apps/api/dist/modules/settlement/settlement-calendar.service.js');
-const url=new URL(process.env.DATABASE_URL??'');assert.equal(url.pathname,'/ucell_admin_test');assert.ok(['localhost','127.0.0.1'].includes(url.hostname));
+const url=new URL(process.env.DATABASE_URL??'');assert.match(url.pathname,/^\/(?:ucell_admin_test|ucell_jest_[a-f0-9]{32})$/);assert.ok(['localhost','127.0.0.1'].includes(url.hostname));
 const prisma=new PrismaClient(),results=[],rollback=new Error('ROLLBACK_TIMEZONE_TEST'),version='TIMEZONE_TEST_'+randomUUID();
 function check(label,actual,expected){assert.deepEqual(actual,expected,label);results.push({label,result:'PASS',actual,expected});}
 let failure;

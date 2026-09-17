@@ -188,3 +188,13 @@ Business logic changes: **NONE**. The registered handler list remains empty unti
 - Full database, shared, Worker and API builds plus schema, migration, source, security and TODO preflights PASS.
 
 Business logic changes: **NONE**.
+
+## Provider workload telemetry and isolated DB reliability checkpoint
+
+- Added sanitized in-process Provider Worker workload telemetry for batch count, failures, claimed/finalized/stale outcomes, retry/manual-review outcomes, cumulative/max latency and throughput.
+- Telemetry excludes provider payloads, evidence, identities, credentials and monetary values; handler registration remains empty and runtime remains disabled by default.
+- Repaired the complete Backend Jest infrastructure so destructive Phase 2 evidence is generated once per disposable `ucell_jest_*` database and shared by its consumer suites.
+- All database-backed suites now accept only the established local `_test` database or the runner-generated exact `ucell_jest_[a-f0-9]{32}` pattern. The runner seeds only the minimum Person/Product fixture and always force-drops the disposable database.
+- Focused Provider Worker regression: 11 PASS across 3 suites. Complete Backend API: 607 PASS in 64 suites. Shared, Worker and API builds plus schema, migration, source, security and TODO preflights PASS.
+
+Business logic changes: **NONE**. The isolation repair changes test execution only; it does not change replay, carry, settlement or monetary behavior.

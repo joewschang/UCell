@@ -2,9 +2,11 @@ import { PrismaService, Prisma, processMemberOrderNotification, processPaymentIn
 import * as crypto from 'node:crypto';
 import { pollProviderWebhooks, type ProviderHandlerRegistration } from './provider-runtime';
 import { WorkerLoop, workerPollInterval } from './worker-loop';
+import { ProviderWorkloadMetrics } from './provider-workload-metrics';
 
 const prisma = new PrismaService();
 const providerHandlers: readonly ProviderHandlerRegistration[] = Object.freeze([]);
+const providerMetrics = new ProviderWorkloadMetrics();
 
 function unlockedDepth(count:number){
   if(count<=0) return 5;
@@ -210,7 +212,14 @@ async function tick(){
   await pollOutbox();
   await pollRecognitions();
   await matureBonusAwards();
-  await pollProviderWebhooks(prisma,providerHandlers);
+  const providerStartedAt=Date.now();
+  try{
+    const provider=await pollProviderWebhooks(prisma,providerHandlers);
+    if(provider.enabled&&provider.result)console.log(JSON.stringify(providerMetrics.record(provider.result,Date.now()-providerStartedAt)));
+  }catch(error){
+    console.error(JSON.stringify({...providerMetrics.recordFailure(Date.now()-providerStartedAt),errorCode:'PROVIDER_WORKER_BATCH_FAILED'}));
+    throw error;
+  }
 }
 
 async function main(){
