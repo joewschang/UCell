@@ -26,5 +26,6 @@
 | RC gate | PASS | build, Prisma, migrations, DB Golden, OpenAPI, smoke |
 | Formal LINE/LIFF verification | BLOCKED | operational credentials pending |
 | Formal Entra/RBAC verification | BLOCKED | operational credentials pending |
-| Stage deployment harness | PASS | 19 preflight assertions; 7 upgrade/Golden tests; UAT seed guard PASS |`r`n| Stage redeployment/UAT | BLOCKED | fresh interactive Azure login and Stage credentials/secrets required |
+| Stage deployment harness | PASS | 19 preflight assertions; 7 upgrade/Golden tests; UAT seed guard PASS |
+| Stage redeployment/UAT | BLOCKED | fresh interactive Azure login and Stage credentials/secrets required |
 | Production promotion | BLOCKED | prohibited pending formal UAT/release decision |
