@@ -2384,6 +2384,44 @@
         ]
       }
     },
+    "/api/v1/admin/formal-member-applications": {
+      "get": {
+        "description": "Read-only metadata queue. The encrypted application payload is never decrypted or returned.",
+        "operationId": "adminListFormalMemberApplications",
+        "parameters": [
+          {
+            "name": "status",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "take",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "Admin - Formal Member Application"
+        ]
+      }
+    },
     "/api/v1/auth/admin/entra/exchange": {
       "post": {
         "operationId": "adminEntraExchange",
@@ -2723,6 +2761,459 @@
         "summary": "取得訂單與付款事件",
         "tags": [
           "Admin - Commerce"
+        ]
+      }
+    },
+    "/api/v1/admin/packages": {
+      "get": {
+        "operationId": "AdminPackageConfigController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "tags": [
+          "Admin - Package Configuration"
+        ]
+      },
+      "post": {
+        "operationId": "AdminPackageConfigController_create",
+        "parameters": [
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePackageProfileDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "tags": [
+          "Admin - Package Configuration"
+        ]
+      }
+    },
+    "/api/v1/admin/packages/{id}/versions": {
+      "post": {
+        "operationId": "AdminPackageConfigController_add",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PackageVersionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "tags": [
+          "Admin - Package Configuration"
+        ]
+      }
+    },
+    "/api/v1/admin/packages/versions/{id}/selectable-products": {
+      "put": {
+        "operationId": "AdminPackageConfigController_products",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProductPoolDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "tags": [
+          "Admin - Package Configuration"
+        ]
+      }
+    },
+    "/api/v1/admin/packages/versions/{id}/approve": {
+      "post": {
+        "operationId": "AdminPackageConfigController_approve",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApprovalDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "tags": [
+          "Admin - Package Configuration"
+        ]
+      }
+    },
+    "/api/v1/admin/packages/versions/{id}/schedule": {
+      "post": {
+        "operationId": "AdminPackageConfigController_schedule",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScheduleDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "tags": [
+          "Admin - Package Configuration"
+        ]
+      }
+    },
+    "/api/v1/admin/packages/versions/{id}/activate": {
+      "post": {
+        "operationId": "AdminPackageConfigController_activate",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "tags": [
+          "Admin - Package Configuration"
+        ]
+      }
+    },
+    "/api/v1/admin/packages/versions/{id}/retire": {
+      "post": {
+        "operationId": "AdminPackageConfigController_retire",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "tags": [
+          "Admin - Package Configuration"
+        ]
+      }
+    },
+    "/api/v1/member/packages": {
+      "get": {
+        "operationId": "memberPackages",
+        "parameters": [
+          {
+            "name": "class",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "memberBearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "Member - Packages"
+        ]
+      }
+    },
+    "/api/v1/member/packages/{id}/products": {
+      "get": {
+        "operationId": "MemberPackageController_products",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "memberBearer": []
+          }
+        ],
+        "tags": [
+          "Member - Packages"
+        ]
+      }
+    },
+    "/api/v1/member/package-selections/validate": {
+      "post": {
+        "operationId": "MemberPackageController_validate",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ValidateSelectionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "memberBearer": []
+          }
+        ],
+        "tags": [
+          "Member - Packages"
         ]
       }
     },
@@ -3920,8 +4411,36 @@
     },
     "/api/v1/admin/organization/binary-placement": {
       "post": {
+        "description": "Delegates to the canonical Qualification placement command with the same authorization, legality, concurrency, evidence and audit controls.",
         "operationId": "adminPlaceBinary",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LegacyAdminBinaryPlacementDto"
+              }
+            }
+          }
+        },
         "responses": {
           "201": {
             "description": ""
@@ -3932,7 +4451,7 @@
             "adminBearer": []
           }
         ],
-        "summary": "安置 Binary 位置",
+        "summary": "安置 Binary 位置（相容端點）",
         "tags": [
           "Admin - Organization"
         ]
@@ -4134,6 +4653,221 @@
         "summary": "核准Workflow；僅向未來生效",
         "tags": [
           "Admin - Qualification Workflow"
+        ]
+      }
+    },
+    "/api/v1/member/placements/pending": {
+      "get": {
+        "description": "Balls awaiting placement for which the authenticated Person owns the confirmed Sponsor Ball.",
+        "operationId": "memberPendingQualificationPlacements",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "memberBearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "Member - Qualification Placement"
+        ]
+      }
+    },
+    "/api/v1/member/qualifications/{id}/place": {
+      "post": {
+        "description": "Serializable placement commit; Sponsor owner authorization and Binary legality are revalidated server-side.",
+        "operationId": "memberPlaceQualification",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlaceQualificationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "memberBearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "Member - Qualification Placement"
+        ]
+      }
+    },
+    "/api/v1/admin/qualification-placements": {
+      "get": {
+        "operationId": "adminQualificationPlacementMonitor",
+        "parameters": [
+          {
+            "name": "status",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "aging",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "take",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "Admin - Qualification Placement"
+        ]
+      }
+    },
+    "/api/v1/admin/qualification-placements/sweep-overdue": {
+      "post": {
+        "operationId": "adminSweepOverdueQualificationPlacements",
+        "parameters": [
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "Admin - Qualification Placement"
+        ]
+      }
+    },
+    "/api/v1/admin/qualification-placements/{id}/place": {
+      "post": {
+        "description": "Requires explicit placement override role and reason. Same legality/concurrency checks as Sponsor owner placement.",
+        "operationId": "adminOverrideQualificationPlacement",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminPlaceQualificationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "Admin - Qualification Placement"
         ]
       }
     },
@@ -6304,26 +7038,56 @@
         ],
         "additionalProperties": false
       },
+      "MemberPackageSelectionDto": {
+        "type": "object",
+        "properties": {
+          "productRuleProfileId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "quantity": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 10000
+          }
+        },
+        "required": [
+          "productRuleProfileId",
+          "quantity"
+        ]
+      },
       "MemberCreateOrderDto": {
         "type": "object",
         "properties": {
           "qualificationId": {
             "type": "string",
             "format": "uuid",
-            "description": "Selected Qualification; server checks authenticated Person ownership on every request"
+            "description": "Required for retail orders; for active packages this must match targetQualificationId."
+          },
+          "packageVersionId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Published package version. When supplied, items are rejected and immutable package snapshots are created."
+          },
+          "targetQualificationId": {
+            "type": "string",
+            "format": "uuid"
           },
           "items": {
-            "description": "Product IDs and quantities only; Core determines price/rule snapshots. RETAIL purpose only.",
+            "description": "Retail product IDs and quantities. Mutually exclusive with packageVersionId.",
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/CreateOrderItemDto"
             }
+          },
+          "selections": {
+            "description": "Exact package selection by versioned product rule profile.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MemberPackageSelectionDto"
+            }
           }
         },
-        "required": [
-          "qualificationId",
-          "items"
-        ],
         "additionalProperties": false
       },
       "ReferralLandingDto": {
@@ -6512,6 +7276,64 @@
           "occurredAt"
         ]
       },
+      "CreatePackageProfileDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "PackageVersionDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "SelectableProductDto": {
+        "type": "object",
+        "properties": {
+          "productRuleProfileId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "minQty": {
+            "type": "number"
+          },
+          "maxQty": {
+            "type": "number"
+          },
+          "selectionIncrement": {
+            "type": "number"
+          },
+          "sortOrder": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "productRuleProfileId"
+        ]
+      },
+      "ProductPoolDto": {
+        "type": "object",
+        "properties": {
+          "products": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SelectableProductDto"
+            }
+          }
+        },
+        "required": [
+          "products"
+        ]
+      },
+      "ApprovalDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "ScheduleDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "ValidateSelectionDto": {
+        "type": "object",
+        "properties": {}
+      },
       "CreatePersonDto": {
         "type": "object",
         "properties": {
@@ -6537,6 +7359,36 @@
         },
         "required": [
           "legalName"
+        ]
+      },
+      "LegacyAdminBinaryPlacementDto": {
+        "type": "object",
+        "properties": {
+          "qualificationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "binaryParentQualificationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "side": {
+            "type": "string",
+            "enum": [
+              "LEFT",
+              "RIGHT"
+            ]
+          },
+          "reasonCode": {
+            "type": "string",
+            "maxLength": 120
+          }
+        },
+        "required": [
+          "qualificationId",
+          "binaryParentQualificationId",
+          "side",
+          "reasonCode"
         ]
       },
       "CreateQualificationDto": {
@@ -6615,6 +7467,51 @@
           "personId",
           "planLevelCode",
           "policyVersion"
+        ]
+      },
+      "PlaceQualificationDto": {
+        "type": "object",
+        "properties": {
+          "binaryParentQualificationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "side": {
+            "type": "string",
+            "enum": [
+              "LEFT",
+              "RIGHT"
+            ]
+          }
+        },
+        "required": [
+          "binaryParentQualificationId",
+          "side"
+        ]
+      },
+      "AdminPlaceQualificationDto": {
+        "type": "object",
+        "properties": {
+          "binaryParentQualificationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "side": {
+            "type": "string",
+            "enum": [
+              "LEFT",
+              "RIGHT"
+            ]
+          },
+          "reasonCode": {
+            "type": "string",
+            "maxLength": 120
+          }
+        },
+        "required": [
+          "binaryParentQualificationId",
+          "side",
+          "reasonCode"
         ]
       },
       "CreateMembershipApplicationDto": {

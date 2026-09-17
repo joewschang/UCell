@@ -13,7 +13,10 @@ function walk(dir){
 }
 for(const file of walk('apps')){
   const s=fs.readFileSync(file,'utf8');
-  for(const m of s.matchAll(/from\s+['"](\.[^'"]+)['"]/g)){
+  // TypeScript permits comments/newlines (and no trivia) between `from` and
+  // the module string.  Keep this preflight lexical rather than enforcing a
+  // formatter-specific single-space layout.
+  for(const m of s.matchAll(/\bfrom(?:\s|\/\*[\s\S]*?\*\/|\/\/[^\r\n]*(?:\r?\n|$))*['"](\.[^'"]+)['"]/g)){
     const p=path.resolve(path.dirname(file),m[1]);
     const candidates=[p+'.ts',p+'.tsx',path.join(p,'index.ts')];
     if(!candidates.some(fs.existsSync)) failures.push(`${file}: missing import ${m[1]}`);
@@ -22,7 +25,7 @@ for(const file of walk('apps')){
 for(const file of walk('apps/api/src').filter(x=>x.endsWith('.module.ts'))){
   const s=fs.readFileSync(file,'utf8');
   const imports=new Set();
-  for(const m of s.matchAll(/import\s+\{([^}]+)\}/g))
+  for(const m of s.matchAll(/\bimport\s*\{([^}]+)\}/g))
     m[1].split(',').map(x=>x.trim().split(/\s+as\s+/).pop()).forEach(x=>imports.add(x));
   const mod=s.match(/@Module\(\{([\s\S]*?)\}\)/)?.[1] ?? '';
   for(const k of ['controllers','providers','exports']){

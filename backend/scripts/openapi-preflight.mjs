@@ -30,7 +30,14 @@ for(const [route,method] of [['orders','post'],['profile','patch'],['notificatio
  if(!operation?.requestBody)failures.push('Mutation DTO missing: '+route);
 }
 const orderInput=doc.components?.schemas?.MemberCreateOrderDto;
-if(!orderInput||orderInput.additionalProperties!==false||Object.keys(orderInput.properties??{}).some(field=>!['qualificationId','items'].includes(field)))failures.push('Member order input must exclude client monetary/workflow fields');
+const approvedOrderFields=['qualificationId','items','packageVersionId','targetQualificationId','selections'];
+const orderFields=Object.keys(orderInput?.properties??{});
+if(!orderInput||orderInput.additionalProperties!==false||approvedOrderFields.some(field=>!orderFields.includes(field))||orderFields.some(field=>!approvedOrderFields.includes(field)))failures.push('Member order input must contain exactly the approved retail/package checkout fields');
+const clientControlledMonetaryFields=['price','unitPrice','amount','lineAmount','grossAmount','discountAmount','netAmount','pv','bv','rpv','epv','bonus','carry'];
+for(const schemaName of ['MemberCreateOrderDto','CreateOrderItemDto','MemberPackageSelectionDto']){
+ const fields=Object.keys(doc.components?.schemas?.[schemaName]?.properties??{});
+ if(fields.some(field=>clientControlledMonetaryFields.includes(field)))failures.push(`Member order input exposes client monetary field: ${schemaName}`);
+}
 
 if(failures.length){
   console.error('OPENAPI_PREFLIGHT_FAIL');

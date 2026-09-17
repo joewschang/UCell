@@ -15,11 +15,11 @@ pnpm --filter @ucell/database exec prisma migrate deploy
 echo "== Build =="
 pnpm -r build
 
-echo "== Golden seed =="
-pnpm --filter @ucell/database exec ts-node prisma/seed/golden-r1-0b.ts
-
-echo "== DB Golden =="
-pnpm exec ts-node scripts/db-golden-e2e.ts
+echo "== Isolated DB Golden =="
+# The legacy TypeScript seed was retired.  The isolated runner creates a
+# disposable database, applies every migration, loads the frozen JSON fixture,
+# executes the DB/HTTP assertions, and drops the database on completion.
+pnpm db:golden
 
 echo "== OpenAPI =="
 pnpm --filter @ucell/api openapi:export

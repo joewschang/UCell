@@ -6,12 +6,21 @@ const app=fs.readFileSync('apps/api/src/app.module.ts','utf8');
 const failures=[];
 const must=(ok,msg)=>{if(!ok) failures.push(msg)};
 
+// Keep schema checks scoped to one model and insensitive to Prisma formatter
+// alignment.  The previous cross-model regex depended on exactly one space
+// between the field type and @relation.
+const model=(name)=>schema.match(new RegExp(`model\\s+${name}\\s*\\{([\\s\\S]*?)\\n\\}`))?.[1] ?? '';
+const escapeRegex=(value)=>value.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+const hasRelation=(modelName,fieldName,typeName)=>new RegExp(
+  `(?:^|\\n)\\s*${escapeRegex(fieldName)}\\s+${escapeRegex(typeName)}\\s+@relation\\b`,
+).test(model(modelName));
+
 // v0.6.6 schema/service convergence gates
-must(/model PayableEntry[\s\S]*qualification Qualification @relation/.test(schema),'PayableEntry->Qualification relation missing');
-must(/model PayableEntry[\s\S]*payoutLine PayoutLine\? @relation/.test(schema),'PayableEntry->PayoutLine relation missing');
-must(/model RecoveryApplication[\s\S]*recoveryEvent BonusRecoveryEvent @relation/.test(schema),'RecoveryApplication->Recovery relation missing');
-must(/model PayoutLine[\s\S]*payableEntries PayableEntry\[\]/.test(schema),'PayoutLine reverse payable relation missing');
-must(/model BonusRecoveryEvent[\s\S]*applications RecoveryApplication\[\]/.test(schema),'Recovery reverse application relation missing');
+must(hasRelation('PayableEntry','qualification','Qualification'),'PayableEntry->Qualification relation missing');
+must(hasRelation('PayableEntry','payoutLine','PayoutLine?'),'PayableEntry->PayoutLine relation missing');
+must(hasRelation('RecoveryApplication','recoveryEvent','BonusRecoveryEvent'),'RecoveryApplication->Recovery relation missing');
+must(/(?:^|\n)\s*payableEntries\s+PayableEntry\[\]/.test(model('PayoutLine')),'PayoutLine reverse payable relation missing');
+must(/(?:^|\n)\s*applications\s+RecoveryApplication\[\]/.test(model('BonusRecoveryEvent')),'Recovery reverse application relation missing');
 const personBlock=(schema.match(/model Person \{[\s\S]*?\n\}/)||[''])[0];
 must(!personBlock.includes('payoutLines PayoutLine[]'),'Person must not own Qualification payout lines directly');
 must(/outstandingAmount\s+Decimal/.test(schema),'Outstanding recovery field missing');

@@ -1,117 +1,113 @@
 [CmdletBinding()]
 param(
-  [string]$Location = 'eastasia',
-  [string]$ResourceGroup = 'rg-ucell-stage',
-  [string]$PostgresAdminUser = 'ucellstageadmin',
-  [SecureString]$PostgresAdminPassword,
-  [string]$LineChannelId = '',
-  [string]$LiffId = '',
-  [string]$EntraTenantId = '',
-  [string]$EntraClientId = '',
-  [ValidateSet('Local','Acr')]
-  [string]$ContainerBuildMode = 'Local'
+  [string]$Location = 'eastasia', [string]$ResourceGroup = 'rg-ucell-stage',
+  [string]$PostgresAdminUser = 'ucellstageadmin', [SecureString]$PostgresAdminPassword,
+  [string]$LineLoginChannelId = '', [string]$LiffId = '',
+  [string]$EntraTenantId = '', [string]$EntraClientId = '', [string]$EntraRedirectUri = '', [string]$ImageTag = '',
+  [ValidateRange(1,180)][int]$MigrationPollAttempts = 120,
+  [ValidateRange(1,60)][int]$HealthPollAttempts = 30,
+  [ValidateSet('Local','Acr')][string]$ContainerBuildMode = 'Local'
 )
-
 $ErrorActionPreference = 'Stop'
 $windowsAzPython = 'C:\Program Files\Microsoft SDKs\Azure\CLI2\python.exe'
-if (Test-Path $windowsAzPython) {
-  $script:AzExecutable = $windowsAzPython
-  $script:AzPrefix = @('-IBm','azure.cli')
-} else {
-  $azCommand = Get-Command az -ErrorAction SilentlyContinue
-  if (-not $azCommand) { throw 'Azure CLI is required.' }
-  $script:AzExecutable = $azCommand.Source
-  $script:AzPrefix = @()
-}
-function Invoke-Az {
-  $commandArgs = @($script:AzPrefix) + @($args)
-  & $script:AzExecutable @commandArgs
-}
-if (-not $PostgresAdminPassword) { $PostgresAdminPassword = Read-Host 'Stage PostgreSQL administrator password' -AsSecureString }
-$password = [System.Net.NetworkCredential]::new('', $PostgresAdminPassword).Password
-if ($password.Length -lt 16) { throw 'Stage PostgreSQL password must contain at least 16 characters.' }
+if (Test-Path $windowsAzPython) { $script:AzExecutable=$windowsAzPython; $script:AzPrefix=@('-IBm','azure.cli') }
+else { $az=Get-Command az -ErrorAction SilentlyContinue; if(-not $az){throw 'Azure CLI is required.'}; $script:AzExecutable=$az.Source; $script:AzPrefix=@() }
 
-Invoke-Az account show --only-show-errors | Out-Null
-Invoke-Az extension add --name containerapp --upgrade --only-show-errors | Out-Null
-foreach($provider in @('Microsoft.App','Microsoft.ContainerRegistry','Microsoft.DBforPostgreSQL','Microsoft.Insights','Microsoft.KeyVault','Microsoft.ManagedIdentity','Microsoft.OperationalInsights','Microsoft.Storage')){
-  Invoke-Az provider register --namespace $provider --wait --only-show-errors | Out-Null
+function Invoke-AzChecked([string]$Operation,[string[]]$Arguments) {
+  $allArguments=@($script:AzPrefix)+$Arguments
+  $output=& $script:AzExecutable @allArguments
+  if($LASTEXITCODE -ne 0){throw "Azure CLI operation failed: $Operation (exit $LASTEXITCODE)."}
+  return $output
 }
-Invoke-Az group create --name $ResourceGroup --location $Location --only-show-errors | Out-Null
-$deployment = Invoke-Az deployment group create --resource-group $ResourceGroup --template-file infra/stage/foundation.bicep --parameters postgresAdminUser=$PostgresAdminUser postgresAdminPassword=$password --query properties.outputs --output json --only-show-errors | ConvertFrom-Json
-if ($LASTEXITCODE -ne 0) { throw 'Stage foundation deployment failed.' }
-
-$acr = $deployment.acrName.value
-$identity = $deployment.workloadIdentityId.value
-$environment = $deployment.containerEnvironmentName.value
-$hostName = $deployment.postgresHost.value
-$insights = $deployment.applicationInsightsConnectionString.value
-$encodedUser = [Uri]::EscapeDataString($PostgresAdminUser)
-$encodedPassword = [Uri]::EscapeDataString($password)
-$databaseUrl = "postgresql://${encodedUser}:$encodedPassword@${hostName}:5432/ucell_stage?sslmode=require"
-
-$registryServer = "$acr.azurecr.io"
-if ($ContainerBuildMode -eq 'Local') {
-  Invoke-Az acr login --name $acr --only-show-errors
-  if ($LASTEXITCODE -ne 0) { throw 'Stage ACR login failed.' }
-  & docker build --tag "$registryServer/ucell-backend:stage" --file deployment/Dockerfile.backend .
-  if ($LASTEXITCODE -ne 0) { throw 'Stage Backend container build failed.' }
-  & docker push "$registryServer/ucell-backend:stage"
-  if ($LASTEXITCODE -ne 0) { throw 'Stage Backend container push failed.' }
-  & docker build --tag "$registryServer/ucell-worker:stage" --file deployment/Dockerfile.worker .
-  if ($LASTEXITCODE -ne 0) { throw 'Stage Worker container build failed.' }
-  & docker push "$registryServer/ucell-worker:stage"
-  if ($LASTEXITCODE -ne 0) { throw 'Stage Worker container push failed.' }
-} else {
-  Invoke-Az acr build --registry $acr --image ucell-backend:stage --file deployment/Dockerfile.backend . --only-show-errors
-  if ($LASTEXITCODE -ne 0) { throw 'Stage Backend ACR build failed.' }
-  Invoke-Az acr build --registry $acr --image ucell-worker:stage --file deployment/Dockerfile.worker . --only-show-errors
-  if ($LASTEXITCODE -ne 0) { throw 'Stage Worker ACR build failed.' }
+function Invoke-NativeChecked([string]$Operation,[string]$Executable,[string[]]$Arguments) {
+  & $Executable @Arguments
+  if($LASTEXITCODE -ne 0){throw "Native operation failed: $Operation (exit $LASTEXITCODE)."}
+}
+function Test-App([string]$Name) {
+  $allArguments=@($script:AzPrefix)+@('containerapp','show','--name',$Name,'--resource-group',$ResourceGroup,'--only-show-errors')
+  & $script:AzExecutable @allArguments *> $null
+  return $LASTEXITCODE -eq 0
+}
+function Resolve-Image([string]$Repository) {
+  $digest=(Invoke-AzChecked "resolve $Repository digest" @('acr','repository','show','--name',$acr,'--image',"${Repository}:$ImageTag",'--query','digest','-o','tsv','--only-show-errors')).Trim()
+  if($digest -notmatch '^sha256:[0-9a-f]{64}$'){throw "Invalid ACR digest for ${Repository}:$ImageTag."}
+  return "$registryServer/$Repository@$digest"
+}
+function Set-App([string]$Name,[string]$Image,[int]$Min,[int]$Max,[string[]]$Env=@(),[string[]]$RemoveEnv=@(),[switch]$Ingress,[int]$Port=0,[switch]$Database) {
+  if(Test-App $Name){
+    if($Database){Invoke-AzChecked "set $Name secret" @('containerapp','secret','set','--name',$Name,'--resource-group',$ResourceGroup,'--secrets',"database-url=$databaseUrl",'--only-show-errors')|Out-Null}
+    $a=@('containerapp','update','--name',$Name,'--resource-group',$ResourceGroup,'--image',$Image,'--revision-suffix',$revisionSuffix,'--min-replicas',"$Min",'--max-replicas',"$Max",'--only-show-errors')
+    if($Env.Count){$a+=@('--set-env-vars')+$Env}; if($RemoveEnv.Count){$a+=@('--remove-env-vars')+$RemoveEnv}; Invoke-AzChecked "update $Name" $a|Out-Null
+  } else {
+    $a=@('containerapp','create','--name',$Name,'--resource-group',$ResourceGroup,'--environment',$environment,'--image',$Image,'--registry-server',$registryServer,'--registry-identity',$identity,'--user-assigned',$identity,'--revision-suffix',$revisionSuffix,'--min-replicas',"$Min",'--max-replicas',"$Max",'--only-show-errors')
+    if($Ingress){$a+=@('--ingress','external','--target-port',"$Port")}; if($Database){$a+=@('--secrets',"database-url=$databaseUrl")}; if($Env.Count){$a+=@('--env-vars')+$Env}
+    Invoke-AzChecked "create $Name" $a|Out-Null
+  }
 }
 
-$common = @('NODE_ENV=staging',"DATABASE_URL=$databaseUrl",'ADMIN_AUTH_BYPASS=false',"APPLICATIONINSIGHTS_CONNECTION_STRING=$insights",'UCELL_ENVIRONMENT=STAGE')
-if ($LineChannelId) { $common += "LINE_CHANNEL_ID=$LineChannelId" }
-
-Invoke-Az containerapp job show --name ucell-stage-migrate --resource-group $ResourceGroup --only-show-errors 2>$null | Out-Null
-if ($LASTEXITCODE -eq 0) {
-  Invoke-Az containerapp job secret set --name ucell-stage-migrate --resource-group $ResourceGroup --secrets "database-url=$databaseUrl" --only-show-errors | Out-Null
-  Invoke-Az containerapp job update --name ucell-stage-migrate --resource-group $ResourceGroup --image "$registryServer/ucell-backend:stage" --container-name ucell-stage-migrate --replica-timeout 1800 --replica-retry-limit 0 --parallelism 1 --replica-completion-count 1 --set-env-vars 'DATABASE_URL=secretref:database-url' 'NODE_ENV=staging' --command pnpm --args 'db:deploy' --only-show-errors | Out-Null
-} else {
-  Invoke-Az containerapp job create --name ucell-stage-migrate --resource-group $ResourceGroup --environment $environment --trigger-type Manual --replica-timeout 1800 --replica-retry-limit 0 --parallelism 1 --replica-completion-count 1 --image "$registryServer/ucell-backend:stage" --registry-server $registryServer --registry-identity $identity --mi-user-assigned $identity --secrets "database-url=$databaseUrl" --env-vars 'DATABASE_URL=secretref:database-url' 'NODE_ENV=staging' --command pnpm --args 'db:deploy' --only-show-errors | Out-Null
+if(-not $ImageTag){
+  if($env:GITHUB_SHA){$commit=$env:GITHUB_SHA}else{$commit=(& git rev-parse HEAD).Trim(); if($LASTEXITCODE -ne 0){throw 'Cannot resolve Git commit for image tag.'}}; if(-not $commit){throw 'Cannot resolve image tag.'}
+  $run=if($env:GITHUB_RUN_ID){"$($env:GITHUB_RUN_ID)-$($env:GITHUB_RUN_ATTEMPT)"}else{(Get-Date).ToUniversalTime().ToString('yyyyMMddHHmmss')}; $ImageTag="$commit-$run"
 }
-if ($LASTEXITCODE -ne 0) { throw 'Stage migration job configuration failed.' }
-$execution = Invoke-Az containerapp job start --name ucell-stage-migrate --resource-group $ResourceGroup --query name --output tsv --only-show-errors
-do {
-  Start-Sleep -Seconds 10
-  $migrationStatus = Invoke-Az containerapp job execution show --name ucell-stage-migrate --resource-group $ResourceGroup --job-execution-name $execution --query properties.status --output tsv --only-show-errors
-} while ($migrationStatus -in @('Running','Processing','Pending'))
-if ($migrationStatus -ne 'Succeeded') { throw "Stage Prisma migration failed with status $migrationStatus." }
+$ImageTag=($ImageTag.ToLowerInvariant()-replace '[^a-z0-9_.-]','-').Trim('-','.'); if(-not $ImageTag -or $ImageTag.Length -gt 128){throw 'Invalid image tag.'}
+$token=($ImageTag-replace '[^a-z0-9]',''); if($token.Length -gt 45){$token=$token.Substring(0,45)}; $revisionSuffix="r-$token"
+if(-not $PostgresAdminPassword){$PostgresAdminPassword=Read-Host 'Stage PostgreSQL administrator password' -AsSecureString}
+$password=[System.Net.NetworkCredential]::new('',$PostgresAdminPassword).Password; if($password.Length -lt 16){throw 'Stage PostgreSQL password must contain at least 16 characters.'}
 
-Invoke-Az containerapp create --name ucell-stage-api --resource-group $ResourceGroup --environment $environment --image "$registryServer/ucell-backend:stage" --registry-server $registryServer --registry-identity $identity --user-assigned $identity --ingress external --target-port 3000 --min-replicas 1 --max-replicas 3 --secrets "database-url=$databaseUrl" --env-vars @($common | Where-Object { $_ -notlike 'DATABASE_URL=*' }) 'DATABASE_URL=secretref:database-url' --only-show-errors
-Invoke-Az containerapp create --name ucell-stage-worker --resource-group $ResourceGroup --environment $environment --image "$registryServer/ucell-worker:stage" --registry-server $registryServer --registry-identity $identity --user-assigned $identity --min-replicas 1 --max-replicas 2 --secrets "database-url=$databaseUrl" --env-vars @($common | Where-Object { $_ -notlike 'DATABASE_URL=*' }) 'DATABASE_URL=secretref:database-url' --only-show-errors
-if ($LASTEXITCODE -ne 0) { throw 'Stage API/Worker deployment failed.' }
+Invoke-AzChecked 'verify Azure session' @('account','show','--only-show-errors')|Out-Null
+Invoke-AzChecked 'install Container Apps extension' @('extension','add','--name','containerapp','--upgrade','--only-show-errors')|Out-Null
+foreach($p in @('Microsoft.App','Microsoft.ContainerRegistry','Microsoft.DBforPostgreSQL','Microsoft.Insights','Microsoft.KeyVault','Microsoft.ManagedIdentity','Microsoft.OperationalInsights','Microsoft.Storage')){Invoke-AzChecked "register $p" @('provider','register','--namespace',$p,'--wait','--only-show-errors')|Out-Null}
+Invoke-AzChecked 'create Stage resource group' @('group','create','--name',$ResourceGroup,'--location',$Location,'--only-show-errors')|Out-Null
+$deployment=(Invoke-AzChecked 'deploy Stage foundation' @('deployment','group','create','--resource-group',$ResourceGroup,'--template-file','infra/stage/foundation.bicep','--parameters',"postgresAdminUser=$PostgresAdminUser", "postgresAdminPassword=$password",'--query','properties.outputs','-o','json','--only-show-errors')|ConvertFrom-Json)
+$acr=$deployment.acrName.value; $identity=$deployment.workloadIdentityId.value; $environment=$deployment.containerEnvironmentName.value; $hostName=$deployment.postgresHost.value; $insights=$deployment.applicationInsightsConnectionString.value
+$databaseUrl="postgresql://$([Uri]::EscapeDataString($PostgresAdminUser)):$([Uri]::EscapeDataString($password))@${hostName}:5432/ucell_stage?sslmode=require"; $registryServer="$acr.azurecr.io"
 
-$apiFqdn = Invoke-Az containerapp show --name ucell-stage-api --resource-group $ResourceGroup --query properties.configuration.ingress.fqdn --output tsv
-$apiBaseUrl = "https://$apiFqdn/api/v1"
-if ($ContainerBuildMode -eq 'Local') {
-  & docker build --tag "$registryServer/ucell-admin:stage" --file deployment/Dockerfile.admin --build-arg "VITE_API_BASE_URL=$apiBaseUrl" --build-arg "VITE_ENTRA_TENANT_ID=$EntraTenantId" --build-arg "VITE_ENTRA_CLIENT_ID=$EntraClientId" .
-  if ($LASTEXITCODE -ne 0) { throw 'Stage Admin container build failed.' }
-  & docker push "$registryServer/ucell-admin:stage"
-  if ($LASTEXITCODE -ne 0) { throw 'Stage Admin container push failed.' }
-  & docker build --tag "$registryServer/ucell-member:stage" --file deployment/Dockerfile.member --build-arg "VITE_API_BASE_URL=$apiBaseUrl" --build-arg "VITE_LIFF_ID=$LiffId" .
-  if ($LASTEXITCODE -ne 0) { throw 'Stage Member container build failed.' }
-  & docker push "$registryServer/ucell-member:stage"
-  if ($LASTEXITCODE -ne 0) { throw 'Stage Member container push failed.' }
-} else {
-  Invoke-Az acr build --registry $acr --image ucell-admin:stage --file deployment/Dockerfile.admin --build-arg VITE_API_BASE_URL=$apiBaseUrl --build-arg VITE_ENTRA_TENANT_ID=$EntraTenantId --build-arg VITE_ENTRA_CLIENT_ID=$EntraClientId . --only-show-errors
-  if ($LASTEXITCODE -ne 0) { throw 'Stage Admin ACR build failed.' }
-  Invoke-Az acr build --registry $acr --image ucell-member:stage --file deployment/Dockerfile.member --build-arg VITE_API_BASE_URL=$apiBaseUrl --build-arg VITE_LIFF_ID=$LiffId . --only-show-errors
-  if ($LASTEXITCODE -ne 0) { throw 'Stage Member ACR build failed.' }
+foreach($r in @('ucell-backend','ucell-worker')){
+  $df=if($r -eq 'ucell-backend'){'deployment/Dockerfile.backend'}else{'deployment/Dockerfile.worker'}
+  if($ContainerBuildMode -eq 'Local'){if($r -eq 'ucell-backend'){Invoke-AzChecked 'login ACR' @('acr','login','--name',$acr,'--only-show-errors')|Out-Null}; Invoke-NativeChecked "build $r" docker @('build','-t',"$registryServer/${r}:$ImageTag",'-f',$df,'.'); Invoke-NativeChecked "push $r" docker @('push',"$registryServer/${r}:$ImageTag")}
+  else{Invoke-AzChecked "build $r" @('acr','build','--registry',$acr,'--image',"${r}:$ImageTag",'--file',$df,'.','--only-show-errors')|Out-Null}
 }
+$backendImage=Resolve-Image 'ucell-backend'; $workerImage=Resolve-Image 'ucell-worker'
+$serverEnv=@('NODE_ENV=staging','ADMIN_AUTH_BYPASS=false',"APPLICATIONINSIGHTS_CONNECTION_STRING=$insights",'UCELL_ENVIRONMENT=STAGE','DATABASE_URL=secretref:database-url')
+$serverRemove=@()
+if($LineLoginChannelId){$serverEnv+="LINE_LOGIN_CHANNEL_ID=$LineLoginChannelId"}else{$serverRemove+='LINE_LOGIN_CHANNEL_ID'}
+if($EntraTenantId){$serverEnv+="ENTRA_TENANT_ID=$EntraTenantId"}else{$serverRemove+='ENTRA_TENANT_ID'}
+if($EntraClientId){$serverEnv+="ENTRA_CLIENT_ID=$EntraClientId"}else{$serverRemove+='ENTRA_CLIENT_ID'}
 
-Invoke-Az containerapp create --name ucell-stage-admin --resource-group $ResourceGroup --environment $environment --image "$registryServer/ucell-admin:stage" --registry-server $registryServer --registry-identity $identity --user-assigned $identity --ingress external --target-port 80 --min-replicas 1 --max-replicas 2 --only-show-errors
-Invoke-Az containerapp create --name ucell-stage-member --resource-group $ResourceGroup --environment $environment --image "$registryServer/ucell-member:stage" --registry-server $registryServer --registry-identity $identity --user-assigned $identity --ingress external --target-port 80 --min-replicas 1 --max-replicas 2 --only-show-errors
-if ($LASTEXITCODE -ne 0) { throw 'Stage Container Apps deployment failed.' }
+$jobShowArguments=@($script:AzPrefix)+@('containerapp','job','show','--name','ucell-stage-migrate','--resource-group',$ResourceGroup,'--only-show-errors')
+& $script:AzExecutable @jobShowArguments *> $null
+if($LASTEXITCODE -eq 0){
+  Invoke-AzChecked 'set migration secret' @('containerapp','job','secret','set','--name','ucell-stage-migrate','--resource-group',$ResourceGroup,'--secrets',"database-url=$databaseUrl",'--only-show-errors')|Out-Null
+  Invoke-AzChecked 'update migration job' @('containerapp','job','update','--name','ucell-stage-migrate','--resource-group',$ResourceGroup,'--image',$backendImage,'--container-name','ucell-stage-migrate','--replica-timeout','1800','--replica-retry-limit','0','--parallelism','1','--replica-completion-count','1','--set-env-vars','DATABASE_URL=secretref:database-url','NODE_ENV=staging','--command','pnpm','--args','db:deploy','--only-show-errors')|Out-Null
+}else{
+  Invoke-AzChecked 'create migration job' @('containerapp','job','create','--name','ucell-stage-migrate','--resource-group',$ResourceGroup,'--environment',$environment,'--trigger-type','Manual','--replica-timeout','1800','--replica-retry-limit','0','--parallelism','1','--replica-completion-count','1','--image',$backendImage,'--registry-server',$registryServer,'--registry-identity',$identity,'--mi-user-assigned',$identity,'--secrets',"database-url=$databaseUrl",'--env-vars','DATABASE_URL=secretref:database-url','NODE_ENV=staging','--command','pnpm','--args','db:deploy','--only-show-errors')|Out-Null
+}
+$execution=(Invoke-AzChecked 'start migration' @('containerapp','job','start','--name','ucell-stage-migrate','--resource-group',$ResourceGroup,'--query','name','-o','tsv','--only-show-errors')).Trim(); if(-not $execution){throw 'Migration execution name is empty.'}
+$migrationStatus=''; for($i=1;$i -le $MigrationPollAttempts;$i++){Start-Sleep 10; $migrationStatus=(Invoke-AzChecked 'poll migration' @('containerapp','job','execution','show','--name','ucell-stage-migrate','--resource-group',$ResourceGroup,'--job-execution-name',$execution,'--query','properties.status','-o','tsv','--only-show-errors')).Trim(); if($migrationStatus -notin @('Running','Processing','Pending')){break}}
+if($migrationStatus -ne 'Succeeded'){throw "Stage migration failed or timed out: $migrationStatus."}
 
-$adminFqdn = Invoke-Az containerapp show --name ucell-stage-admin --resource-group $ResourceGroup --query properties.configuration.ingress.fqdn --output tsv
-$memberFqdn = Invoke-Az containerapp show --name ucell-stage-member --resource-group $ResourceGroup --query properties.configuration.ingress.fqdn --output tsv
-[pscustomobject]@{ ResourceGroup=$ResourceGroup; Api="https://$apiFqdn"; Admin="https://$adminFqdn"; Member="https://$memberFqdn"; CredentialsVerified=([bool]$LineChannelId -and [bool]$EntraTenantId -and [bool]$EntraClientId) } | ConvertTo-Json
+Set-App 'ucell-stage-api' $backendImage 1 3 $serverEnv -RemoveEnv $serverRemove -Ingress -Port 3000 -Database
+Set-App 'ucell-stage-worker' $workerImage 1 2 $serverEnv -RemoveEnv $serverRemove -Database
+$apiFqdn=(Invoke-AzChecked 'read API FQDN' @('containerapp','show','--name','ucell-stage-api','--resource-group',$ResourceGroup,'--query','properties.configuration.ingress.fqdn','-o','tsv','--only-show-errors')).Trim(); if(-not $apiFqdn){throw 'API FQDN is empty.'}
+$apiOrigin="https://$apiFqdn"; $apiBaseUrl="$apiOrigin/api/v1"
+
+$frontends=@(
+  @{r='ucell-admin';df='deployment/Dockerfile.admin';args=@("VITE_API_BASE_URL=$apiBaseUrl","VITE_ENTRA_TENANT_ID=$EntraTenantId","VITE_ENTRA_CLIENT_ID=$EntraClientId","VITE_ENTRA_REDIRECT_URI=$EntraRedirectUri","CSP_API_ORIGIN=$apiOrigin")},
+  @{r='ucell-member';df='deployment/Dockerfile.member';args=@("VITE_API_BASE_URL=$apiBaseUrl","VITE_LIFF_ID=$LiffId","CSP_API_ORIGIN=$apiOrigin")}
+)
+foreach($f in $frontends){
+  if($ContainerBuildMode -eq 'Local'){$a=@('build','-t',"$registryServer/$($f.r):$ImageTag",'-f',$f.df); foreach($b in $f.args){$a+=@('--build-arg',$b)}; $a+='.'; Invoke-NativeChecked "build $($f.r)" docker $a; Invoke-NativeChecked "push $($f.r)" docker @('push',"$registryServer/$($f.r):$ImageTag")}
+  else{$a=@('acr','build','--registry',$acr,'--image',"$($f.r):$ImageTag",'--file',$f.df); foreach($b in $f.args){$a+=@('--build-arg',$b)}; $a+=@('.','--only-show-errors'); Invoke-AzChecked "build $($f.r)" $a|Out-Null}
+}
+$adminImage=Resolve-Image 'ucell-admin'; $memberImage=Resolve-Image 'ucell-member'
+Set-App 'ucell-stage-admin' $adminImage 1 2 -Ingress -Port 80
+Set-App 'ucell-stage-member' $memberImage 1 2 -Ingress -Port 80
+
+$evidence=@(); foreach($name in @('ucell-stage-api','ucell-stage-worker','ucell-stage-admin','ucell-stage-member')){
+  $state=(Invoke-AzChecked "read $name state" @('containerapp','show','--name',$name,'--resource-group',$ResourceGroup,'--query','{revision:properties.latestRevisionName,image:properties.template.containers[0].image,fqdn:properties.configuration.ingress.fqdn}','-o','json','--only-show-errors')|ConvertFrom-Json); if($state.image -notmatch '@sha256:[0-9a-f]{64}$'){throw "$name is not digest pinned."}
+  $rev=(Invoke-AzChecked "read $name revision" @('containerapp','revision','show','--name',$name,'--resource-group',$ResourceGroup,'--revision',$state.revision,'--query','{active:properties.active,healthState:properties.healthState,runningState:properties.runningState,createdTime:properties.createdTime}','-o','json','--only-show-errors')|ConvertFrom-Json)
+  $evidence += [pscustomobject]@{Name=$name;Revision=$state.revision;Image=$state.image;Fqdn=$state.fqdn;Active=$rev.active;HealthState=$rev.healthState;RunningState=$rev.runningState;CreatedTime=$rev.createdTime}
+}
+$healthy=$false; for($i=1;$i -le $HealthPollAttempts;$i++){try{$response=Invoke-WebRequest "$apiBaseUrl/health" -TimeoutSec 10 -UseBasicParsing; if($response.StatusCode -eq 200){$healthy=$true;break}}catch{if($i -eq $HealthPollAttempts){throw "Stage API health probe failed: $($_.Exception.Message)"}}; Start-Sleep 5}; if(-not $healthy){throw 'Stage API did not become healthy.'}
+$adminFqdn=($evidence|Where-Object Name -eq 'ucell-stage-admin').Fqdn; $memberFqdn=($evidence|Where-Object Name -eq 'ucell-stage-member').Fqdn
+[pscustomobject]@{ResourceGroup=$ResourceGroup;ImageTag=$ImageTag;MigrationExecution=$execution;MigrationStatus=$migrationStatus;Api=$apiOrigin;Admin="https://$adminFqdn";Member="https://$memberFqdn";ApiHealth='PASS';IdentityConfiguration=[pscustomobject]@{LineConfigured=([bool]$LineLoginChannelId -and [bool]$LiffId);EntraConfigured=([bool]$EntraTenantId -and [bool]$EntraClientId -and [bool]$EntraRedirectUri);VerificationStatus='OPERATIONAL_CREDENTIAL_PENDING'};Revisions=$evidence}|ConvertTo-Json -Depth 6

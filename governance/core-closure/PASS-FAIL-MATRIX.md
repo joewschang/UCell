@@ -1,5 +1,22 @@
 # Core Closure pass/fail matrix
 
+## 2026-09-17 consolidated P0 checkpoint
+
+| Gate | Result | Evidence |
+|---|---|---|
+| Backend/Worker build | PASS | dependency gate and corrected RC gate |
+| Admin build/tests | PASS | 31/31 |
+| Member build/tests | PASS | 136/136 baseline |
+| Backend API Jest | PASS | 297/297 baseline plus Worker entry regression 3/3 |
+| Prisma | PASS | validate, generate, deploy; 39 migrations |
+| Isolated DB Golden | PASS | fresh database; 39 migrations; >=690 HTTP/DB assertions |
+| Convergence/import/OpenAPI drift | PASS | corrected parsers and refreshed OpenAPI artifact |
+| RC gate | PASS | deterministic isolated DB Golden replaces retired seed |
+| Stage deployment static preflight | PASS | 16 assertions; PowerShell syntax PASS |
+| Stage current-version rollout | BLOCKED | immutable-image redeploy and migrations 26–39 not yet executed |
+| Formal LINE/Entra Security E2E | BLOCKED | operational credentials unavailable |
+| UAT/Production promotion | BLOCKED | formal credentials, UAT, restore/workload and release evidence incomplete |
+
 | Gate | Result | Evidence |
 |---|---|---|
 | Database package build | PASS | `pnpm --filter @ucell/database build` |

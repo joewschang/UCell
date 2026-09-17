@@ -161,25 +161,28 @@ async function processRecognition(recognitionId:string){
 }
 
 
-export async function processReplayEvent(lease:OutboxLease) {
-  return processLeasedReplay(prisma,lease);
+export async function processReplayEvent(lease:OutboxLease,db:PrismaService=prisma) {
+  return processLeasedReplay(db,lease);
 }
 
-export async function pollOutbox(){
-  const events=await prisma.outboxEvent.findMany({
-    where:{eventType:{in:['SALE_CONFIRMED','RETURN_CONFIRMED','RETURN_DEPENDENCY_REPLAY_REQUIRED','EPV_MONTH_RECALCULATION_REQUIRED','RPV_REVERSAL_REQUIRED']},processStatus:{in:['PENDING','PROCESSING']},availableAt:{lte:new Date()}},
+export async function pollOutbox(
+  db:PrismaService=prisma,
+  deps={claimOutboxLease,processSaleConfirmed,processMemberOrderNotification,processLeasedReplay,releaseFailedOutboxLease}
+){
+  const events=await db.outboxEvent.findMany({
+    where:{eventType:{in:['SALE_CONFIRMED','MEMBER_ORDER_CREATED','RETURN_CONFIRMED','RETURN_DEPENDENCY_REPLAY_REQUIRED','EPV_MONTH_RECALCULATION_REQUIRED','RPV_REVERSAL_REQUIRED']},processStatus:{in:['PENDING','PROCESSING']},availableAt:{lte:new Date()}},
     orderBy:{createdAt:'asc'},take:20
   });
   for(const event of events){
     let lease:OutboxLease|null=null;
     try{
-      lease=await claimOutboxLease(prisma,event);
+      lease=await deps.claimOutboxLease(db,event);
       if(!lease)continue;
-      if(event.eventType==='SALE_CONFIRMED') await processSaleConfirmed(prisma,lease);
-      else if(event.eventType==='MEMBER_ORDER_CREATED') await processMemberOrderNotification(prisma,lease);
-      else await processReplayEvent(lease);
+      if(event.eventType==='SALE_CONFIRMED') await deps.processSaleConfirmed(db,lease);
+      else if(event.eventType==='MEMBER_ORDER_CREATED') await deps.processMemberOrderNotification(db,lease);
+      else await deps.processLeasedReplay(db,lease);
     }catch(e){
-      if(lease)await releaseFailedOutboxLease(prisma,lease,e);
+      if(lease)await deps.releaseFailedOutboxLease(db,lease,e);
     }
   }
 }

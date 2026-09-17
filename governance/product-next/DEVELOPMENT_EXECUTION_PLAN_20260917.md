@@ -9,6 +9,24 @@ Preserve the closed R1.0B Core while converting the implemented next-release dom
 
 ## P0 — Integrated baseline and Stage currency
 
+Current checkpoint status (2026-09-17): local integrated gates are green. Stage deployment is deliberately pending until the hardened deployment path is reviewed and the required operational credentials/configuration are supplied.
+
+Completed engineering closure:
+
+- Fixed Prisma/import gate parsers and refreshed the authoritative OpenAPI artifact.
+- Added the missing Worker poll path for `MEMBER_ORDER_CREATED` with lease-loss, retry and duplicate-delivery regression.
+- Replaced the retired mutable golden seed in the RC gate with the deterministic isolated DB Golden runner.
+- Split Admin and Member CSP policies and parameterized the connected API origin.
+- Corrected Backend LINE/Entra environment names and removed the false non-empty-string credential success signal.
+- Hardened Stage deployment around immutable source tags/digests, explicit revisions, bounded migration/health polling and deployment evidence.
+
+Remaining before Stage rollout:
+
+- Supply controlled Stage PII/share-token secrets and formal LINE/Entra configuration through Key Vault/managed identity.
+- Execute schema conflict preflight against the existing 25-migration Stage database before applying migrations 26–39.
+- Build/push immutable images, deploy a new revision, run browser-connected Admin/Member smoke and prove `MEMBER_ORDER_CREATED -> Worker -> Notification`.
+- Preserve `OPERATIONAL_CREDENTIAL_PENDING` when formal LINE/Entra evidence is unavailable.
+
 1. Run Backend, Worker, Admin and Member builds from the consolidated HEAD.
 2. Run Prisma validate/generate and migrate a fresh isolated database from zero.
 3. Run all Backend Jest, DB Golden, replay, Member/Admin, OpenAPI, Security and release gates.
@@ -29,6 +47,14 @@ Single Schema Owner controls all Prisma/migration changes.
 5. Implement deterministic row locking and movement idempotency.
 6. Prove concurrent final-unit reservation/release against PostgreSQL.
 7. Keep PICK/SHIP accounting timing configuration pending until approved.
+
+Implementation packages (single Prisma schema owner):
+
+1. Add forward-only Payment, PaymentAttempt, provider-event evidence, state-transition and operation-claim persistence alongside the legacy `PaymentEvent` during migration.
+2. Prove Serializable manual-confirm/webhook races, provider-event uniqueness, payload-hash conflict, rollback and lost-response replay.
+3. Add Warehouse, InventoryItem, InventoryBalance, Reservation/Line, append-only Movement and operation-claim persistence with database non-negative checks.
+4. Prove canonical lock ordering, final-unit competition, duplicate release, deadlock resistance, rollback and retry.
+5. Atomically emit transactional outbox facts from both domains, then connect the checkout-to-reservation slice.
 
 Exit: connected DB evidence replaces pure decision-only evidence; provider credentials remain separately blocked.
 

@@ -2,8 +2,16 @@ name: UCell RC CI
 on:
   pull_request:
   push:
-    branches: [main, develop, rc1-recovered]
+    branches: [main, develop, rc1-recovered, integration/member-backend-mvp]
 jobs:
+  stage-static:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 24}
+      - name: Validate Stage deployment contract
+        run: node deployment/stage-preflight.mjs
   backend:
     runs-on: ubuntu-latest
     services:

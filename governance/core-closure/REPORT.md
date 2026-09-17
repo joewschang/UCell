@@ -1,5 +1,18 @@
 # Core Closure checkpoint report
 
+## Consolidated P0 engineering checkpoint — 2026-09-17
+
+- Branch: `integration/member-backend-mvp`; consolidated branch history includes the superseded Member feature branch while retaining the approved UX-3 tree.
+- Backend/Worker/Admin/Member builds: PASS. Prisma validate/generate/deploy: PASS, 39 migrations.
+- Backend API: 297/297 PASS at baseline; Worker poll regression: 3/3 PASS; Member: 136/136 PASS; Admin: 31/31 PASS.
+- Isolated DB Golden: PASS with all 39 migrations and at least 690 explicit HTTP/DB assertions; corrected RC gate rerun: PASS.
+- Convergence, import/module, OpenAPI, Security policy, release readiness and Stage deployment static preflights: PASS.
+- `MEMBER_ORDER_CREATED` is now included in the production Worker poll allowlist; claim, CAS lease loss, acknowledgement rollback/release and retry have executable coverage.
+- Stage deployment now uses immutable commit/run tags resolved to registry digests, explicit revisions, bounded migration/health polling and separate Admin/Member CSP policies.
+- Business logic changes: NONE. Monetary semantics, authorization, Qualification isolation and historical evidence behavior are unchanged.
+- Stage redeployment: NOT RUN in this checkpoint. Formal LINE/Entra evidence remains `OPERATIONAL_CREDENTIAL_PENDING`; Production Promotion remains BLOCKED.
+- Next engineering track: Payment/Inventory durable PostgreSQL persistence under one schema owner, followed by connected concurrency and outbox evidence.
+
 ## Legacy test drift closure continuation
 
 - TODO: 5 -> 3 (`LEGACY_TEST_DRIFT` 2 -> 0; only Pending Decision cases remain).
