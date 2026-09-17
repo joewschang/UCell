@@ -24,7 +24,7 @@ export function PayoutsPage(){
  const financeApproved=d?.approvals?.some((x:any)=>x.stage==='FINANCE_REVIEW'&&x.decision==='APPROVED');
  const complianceApproved=d?.approvals?.some((x:any)=>x.stage==='COMPLIANCE_REVIEW'&&x.decision==='APPROVED');
 
- return <><PageHeader title="結算／付款" subtitle="Effective Award → Payable → Recovery Offset → Dual Approval → Export → External Payment Reconciliation。"/>
+ return <><PageHeader title="付款批次與對帳" subtitle="Effective Award → Payable → Recovery Offset → Dual Approval → Export → External Payment Reconciliation。"/>
  <ErrorBox error={error}/>
  <div className="metrics"><Metric label="Open Recovery" value={rec.length} helper={money(rec.reduce((s:number,x:any)=>s+Number(x.outstandingAmount),0))}/><Metric label="Payout Batches" value={rows.length} helper={status||'All'}/><Metric label="Role" value={user?.role??'—'} helper="UI only"/><Metric label="Rule" value="R1.0B" helper="Qualification-first"/></div>
 

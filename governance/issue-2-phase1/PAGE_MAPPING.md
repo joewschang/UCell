@@ -74,3 +74,5 @@ All scoped reads revalidate Person ownership in Backend. Client-supplied ownersh
 ## API inventory caveat
 
 `backend/openapi.generated.json` currently contains 123 paths. `admin/src/lib/routes.ts` contains 74 static route strings and is not an API source of truth. The System page must not present that registry as complete or as a live release gate.
+
+Phase 2 disposition: the System page now labels this list as an Issue #2 Phase 1 static snapshot, shows its audit date, scope and OpenAPI source, and exposes the measured 123-path/134-operation drift. A contract test locks the audited counts and requires the documented OpenAPI operation count to exceed the curated UI list; runtime code does not invent or infer readiness evidence.

@@ -8,7 +8,8 @@ import { useResource } from './useResource';
 import { demoProducts, demoTotal, useCommerce, validateShipping, type Shipping } from './commerce';
 import ConnectedShop from './ConnectedShop';
 
-const money = (n: number | null) => n === null ? '待確認' : `NT$ ${n.toLocaleString('zh-TW')}`;
+import {formatNullableMoney} from './terminology';
+const money = formatNullableMoney;
 export default function Shop({ q }: { q: Qualification }) {
   if(!isMock)return <ConnectedShop key={q.id} q={q}/>;
   const catalog = useResource('products', getProducts);
@@ -37,7 +38,7 @@ export default function Shop({ q }: { q: Qualification }) {
   return <><MemberPageHeader title="商品商城" q={q}/><p>{isMock ? '可體驗選購與訂單確認；示範訂單不扣款、不出貨、不產生 PV。請勿輸入真實個資。' : '線上購買尚未開放，價格與 PV 以訂單確認資料為準。'}</p>
     {catalog.error ? <section role="alert" className="card"><p>{catalog.error}</p><button onClick={catalog.retry}>重新載入商品</button></section>
       : !catalog.data ? <LoadingState label="商品載入中…"/>
-      : catalog.data.length ? catalog.data.map(p => <article className="card" key={p.id}><div className="product-mark" aria-hidden="true">UCell</div><h3>{p.name}</h3><p>{money(p.price)} · PV {p.pv === null ? '待提供' : p.pv.toLocaleString('zh-TW')}</p>
+      : catalog.data.length ? catalog.data.map(p => <article className="card" key={p.id}><div className="product-mark" aria-hidden="true">UCell</div><h3>{p.name}</h3><p>{money(p.price)} · PV {p.pv === null ? '尚未提供' : p.pv.toLocaleString('zh-TW')}</p>
         <button disabled={!isMock || !p.available || (cart[p.id] ?? 0) >= 99} onClick={() => quantity(p, (cart[p.id] ?? 0) + 1)}>{!isMock ? '購買功能準備中' : !p.available ? '暫無供貨' : '加入示範購物車'}</button></article>) : <p>目前沒有上架商品</p>}
     {isMock && <section className="card"><h3>購物車 · {q.code}</h3><p>共 {count} 件商品</p>
       {Object.entries(cart).map(([id, n]) => { const p = demoProducts.find(p => p.id === id)!; return <div className="cart-line" key={id}><strong>{p.name}</strong><div className="quantity"><button aria-label={`減少 ${p.name}`} onClick={() => quantity(p, n - 1)}>−</button><output aria-label={`${p.name} 數量`}>{n}</output><button disabled={n >= 99} aria-label={`增加 ${p.name}`} onClick={() => quantity(p, n + 1)}>＋</button><button onClick={() => quantity(p, 0)}>移除</button></div></div>; })}

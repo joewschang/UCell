@@ -1,3 +1,19 @@
+/**
+ * Curated UI reference captured during the Issue #2 Phase 1 audit.
+ *
+ * This is intentionally not generated or fetched at runtime. The backend
+ * OpenAPI artifact remains the API contract source of truth, while this list
+ * supports human-readable navigation on the System page.
+ */
+export const backendRouteSnapshot = {
+  asOf: '2026-09-18',
+  source: 'Issue #2 Phase 1 manual inventory',
+  authoritativeSource: 'backend/openapi.generated.json',
+  scope: 'Selected Admin and health operations used by the Admin UI',
+  knownOpenApiPathCountAtAudit: 123,
+  knownOpenApiOperationCountAtAudit: 134,
+} as const;
+
 export const backendRoutes=[
   {
     "method": "GET",
