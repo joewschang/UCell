@@ -1,5 +1,7 @@
 # Phase 1 Architecture Review Report
 
+Pending concrete proposal: [bootstrap Sponsor sequence candidate](BOOTSTRAP_SPONSOR_SEQUENCE_REVIEW.md) demonstrates a valid first/third-left sequence when real company #2/#3 referrals precede founding member referrals. It does not approve that Sponsor graph, #1's upstream relationship or D1 configuration.
+
 Latest disposition: [PO company operating-unit clarification](COMPANY_BALL_OPERATING_UNIT_DECISION.md) partially resolves D2. Company Balls are independent operating units and participate in ordinary actual referral sequence; no sequence omission or default company placement exemption. Actual Sponsor graph/bootstrap order and D1 plan/rank remain pending. This disposition supersedes earlier blanket statements that all of D2 is undecided.
 
 Further review: [D1/D2 code impact](DECISION_CODE_IMPACT_REVIEW.md) traces current enforcement/calculation paths and supplies 12 proposed acceptance vectors plus a 24-order conditional truth table. These are review evidence, not executed implementation tests or approved company economics.

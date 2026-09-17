@@ -1,5 +1,7 @@
 # D1 / D2 code impact review
 
+Sequence clarification: the 24-order truth table assumes each new Sponsor relationship is created in the same order as the illustrated placements. It is not a rule to renumber existing pending-placement Balls. See [concrete bootstrap candidate](BOOTSTRAP_SPONSOR_SEQUENCE_REVIEW.md) for the separate registration/placement cases and root boundary.
+
 Subsequent PO clarification: [company operating-unit decision](COMPANY_BALL_OPERATING_UNIT_DECISION.md) approves independent company Balls participating in ordinary actual referral order. This resolves that part of D2; actual Sponsor graph/order remains pending. Conditional truth-table results below are unchanged, and do not authorize sequence omission or a founding exemption.
 
 Status: architecture review only; no implementation or economic approval. Read against `5810149d86cdcf11057bf56dc1f2c193c18dc1b2` (production code unchanged from the previously audited baseline). This supplements the [decision worksheet](ARCHITECTURE_DECISION_WORKSHEET.md).

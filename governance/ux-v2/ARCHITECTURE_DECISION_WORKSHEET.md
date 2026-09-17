@@ -1,5 +1,7 @@
 # Architecture decision worksheet — D1 / D2
 
+Concrete candidate: [bootstrap Sponsor sequence review](BOOTSTRAP_SPONSOR_SEQUENCE_REVIEW.md) shows #2/#3 consuming #1's actual sequences 1/2 and a lawful founding sequence 3–6. It remains pending confirmation and distinguishes referral registration order from later placement order.
+
 Source-level review: [code impact and acceptance vectors](DECISION_CODE_IMPACT_REVIEW.md) explains plan/cap/Carry dependencies, company Sponsor direct-count effects and the conditional 24-order placement table. The example below assumes no prior Sponsor referrals; company bootstrap Sponsor ancestry is itself pending.
 
 Status: PROPOSED FOR PO/SA REVIEW. This worksheet does not approve economics or authorize implementation. It continues the completed Phase 1 review package at commit `98f282a1f2ceba761735635a5558daf7b9e19360`. On continuation, origin had no newer commits and Issue #2 still contained the same six captured addenda.
