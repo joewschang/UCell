@@ -36,3 +36,16 @@
 The initial sandboxed rerun could not write Vite and TypeScript temporary files under `C:\UCell\UCell` (`EPERM`). The same commands were rerun with the required workspace write permission and passed. This was an execution-environment restriction, not a product failure.
 
 One Admin full-suite run observed an existing asynchronous package-page timing failure. Its focused rerun and the following complete 16-file suite both passed without code or assertion changes; it is recorded as test-infrastructure timing evidence rather than hidden.
+
+## Checkpoint 3 verification
+
+| Gate | Result | Evidence |
+|---|---|---|
+| Backend build | PASS | Shared, contracts, database, API, worker |
+| Backend isolated API | PASS | 42 suites / 364 tests; 42 migrations applied to isolated DB |
+| Versioned dashboard calendar | PASS | Taipei/UTC boundaries and missing/invalid/overlap fail-closed cases |
+| Member tests | PASS | 24 files / 142 tests, including conditional journeys |
+| Admin tests | PASS | 17 files / 44 tests, including UAT boundary and deterministic package render |
+| Member/Admin builds | PASS | Production Vite builds |
+| Database migration | NONE | Existing schema is sufficient |
+| Business/monetary semantics | NONE | Read boundaries and evidence classification only |

@@ -37,13 +37,20 @@ export function UatPage(){
     });
   }
   function exportJson(){
-    const data={release:'R6',exportedAt:new Date().toISOString(),results};
+    const data={
+      release:'R6',
+      evidenceClassification:'LOCAL_ASSISTIVE_ONLY',
+      formalSignOff:false,
+      exportedAt:new Date().toISOString(),
+      results
+    };
     const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
     const url=URL.createObjectURL(blob);const a=document.createElement('a');
-    a.href=url;a.download=`ucell_uat_r6_${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(url);
+    a.href=url;a.download=`ucell_uat_r6_local_assistive_${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(url);
   }
 
-  return <><PageHeader title="UAT Console" subtitle="R6正式UAT執行清單。瀏覽器紀錄只供執行輔助；正式Release Gate仍以簽核後UAT_EXECUTION_R6.csv為準。" actions={<button onClick={exportJson}>匯出Evidence JSON</button>}/>
+  return <><PageHeader title="UAT 執行輔助工具" subtitle="協助逐項記錄 R6 測試；本頁不建立正式 UAT 證據或簽核。" actions={<button onClick={exportJson}>匯出本機輔助 JSON（非簽核）</button>}/>
+    <Card className="alert-panel"><div role="alert"><Badge tone="warn">LOCAL_ASSISTIVE_ONLY</Badge><h2>僅限瀏覽器本機執行輔助</h2><p>本頁資料保存在目前瀏覽器的 localStorage，可能被修改或清除，不是受治理的正式證據。</p><p><strong>畫面狀態、統計與匯出 JSON 均不得作為 UAT 簽核、Release Gate PASS 或 Production Promotion 依據。</strong></p><p className="muted">正式 UAT 必須使用核准的 evidence store、身分與時間證據，以及完成簽核的 UAT_EXECUTION_R6.csv。</p></div></Card>
     <div className="metrics"><Metric label="PASS" value={counts.pass}/><Metric label="FAIL" value={counts.fail}/><Metric label="BLOCKED" value={counts.blocked}/><Metric label="NOT RUN" value={counts.notRun}/></div>
     <Card title="篩選"><div className="toolbar"><select value={priority} onChange={e=>setPriority(e.target.value)}><option>ALL</option><option>P0</option><option>P1</option></select><select value={area} onChange={e=>setArea(e.target.value)}><option>ALL</option>{areas.map(x=><option key={x}>{x}</option>)}</select></div></Card>
     <Card title={`Scenarios (${filtered.length})`}><div className="uat-list">{filtered.map(x=>{

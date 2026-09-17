@@ -39,3 +39,13 @@ Production Promotion remains **BLOCKED**.
 - OpenAPI was regenerated for the additive Binary response fields.
 
 No database migration was introduced.
+
+## Checkpoint 3
+
+- Admin Dashboard order-day and order-month windows now use the effective versioned `accounting.timezone` snapshot inside one repeatable-read transaction.
+- The database resolves half-open UTC boundaries with `AT TIME ZONE`; missing, invalid, or overlapping configuration fails closed before aggregate queries.
+- The UAT page and exported JSON are explicitly classified `LOCAL_ASSISTIVE_ONLY` with `formalSignOff: false`.
+- Conditional Member journey regressions cover zero-Qualification shop/onboarding and network-registration entry without scoped reads or mutations.
+- A timing-sensitive Admin package test now uses deterministic React Query cache setup while retaining its GET and content assertions.
+
+Production operational cut-off remains undecided and is not used by the Dashboard calendar aggregation.

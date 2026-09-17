@@ -12,5 +12,8 @@
 | Member/Admin error states | 404, offline, timeout, cancellation, and session expiry are explicitly distinguished | COMPLETE |
 | Formal identity evidence | Requires LINE/Entra operational credentials | OPERATIONAL BLOCKER |
 | Formal UAT evidence | Requires governed evidence workflow and sign-off | UAT BLOCKER |
+| Dashboard local-time order windows | Versioned accounting timezone with database-resolved half-open bounds | COMPLETE |
+| Conditional Member journeys | Zero-Qualification shop and registration flows have deterministic regressions | COMPLETE |
+| Browser-local UAT evidence | Explicit `LOCAL_ASSISTIVE_ONLY`; export cannot represent formal sign-off | COMPLETE |
 
 No R1.0B business logic or monetary semantics changed.
