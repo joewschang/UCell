@@ -1,6 +1,8 @@
 export const API_VERSION = 'v1';
 
 export * from './calendar/calendar';
+export * from './ai-ready/catalog';
+export * from './ai-ready/read-gateway';
 
 export const ErrorCodes = {
   AmbiguousQualification: 'AMBIGUOUS_QUALIFICATION',
