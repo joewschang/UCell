@@ -8,12 +8,11 @@ import { QualificationWorkflowService } from './qualification-workflow.service';
 import { SystemAssignmentService } from './system-assignment.service';
 import {AuthModule} from '../auth/auth.module';
 import {AdminQualificationPlacementController,MemberQualificationPlacementController} from './qualification-placement.controller';
-import {QualificationPlacementService} from './qualification-placement.service';
 
 @Module({
   imports:[OrganizationModule,AuthModule],
   controllers:[QualificationController,QualificationWorkflowController,MemberQualificationPlacementController,AdminQualificationPlacementController],
-  providers:[QualificationService,QualificationStatusService,QualificationWorkflowService,SystemAssignmentService,QualificationPlacementService],
+  providers:[QualificationService,QualificationStatusService,QualificationWorkflowService,SystemAssignmentService],
   exports:[QualificationStatusService]
 })
 export class QualificationModule {}

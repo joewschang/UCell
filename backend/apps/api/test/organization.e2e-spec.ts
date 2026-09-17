@@ -1,3 +1,4 @@
+import { OrganizationController } from '../src/modules/organization/organization.controller';
 import { OrganizationService } from '../src/modules/organization/organization.service';
 import { SideCode } from '@ucell/database';
 describe('Organization guardrails (P0)', () => {
@@ -39,5 +40,33 @@ describe('Organization guardrails (P0)', () => {
     // Closed recruits must remain included: no effectiveTo/status filter is permitted.
     expect(aggregate).toHaveBeenCalledWith({where:{sponsorQualificationId:'sponsor'},_max:{sponsorSequenceNo:true}});
     expect(query).toHaveBeenCalledTimes(1);
+  });
+});
+
+import { OrganizationController } from '../src/modules/organization/organization.controller';
+
+describe('Organization legacy placement endpoint', () => {
+  it('delegates to the canonical admin placement command and preserves replay metadata', async () => {
+    const placement = {
+      placeByAdmin: jest.fn(async () => ({ value: { placementEvidenceId: 'evidence-1' }, replayed: true })),
+    };
+    const controller = new OrganizationController({} as any, placement as any);
+    const dto = {
+      qualificationId: '11111111-1111-4111-8111-111111111111',
+      binaryParentQualificationId: '22222222-2222-4222-8222-222222222222',
+      side: 'LEFT' as const,
+      reasonCode: 'ADMIN_APPROVED',
+    };
+
+    await expect(controller.place(dto, 'idempotency-key-1', {
+      user: { personId: 'admin-1' },
+      requestId: 'request-1',
+    })).resolves.toEqual({ data: { placementEvidenceId: 'evidence-1' }, meta: { replayed: true } });
+    expect(placement.placeByAdmin).toHaveBeenCalledWith(
+      'admin-1',
+      dto,
+      'idempotency-key-1',
+      'request-1',
+    );
   });
 });
