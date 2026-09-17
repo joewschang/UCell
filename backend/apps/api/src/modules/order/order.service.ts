@@ -306,7 +306,7 @@ export class OrderService {
     const take=Math.min(Math.max(input.take ?? 50,1),100);
     const q=input.q?.trim();
 
-    return this.prisma.order.findMany({
+    const orders=await this.prisma.order.findMany({
       where:{
         ...(input.status?{status:input.status as any}:{}),
         ...(input.qualificationId?{qualificationId:input.qualificationId}:{}),
@@ -326,6 +326,12 @@ export class OrderService {
       orderBy:{createdAt:'desc'},
       take,
     });
+    if(!orders.length)return orders;
+    const orderIds=orders.map(row=>row.orderId),[snapshots,setups]=await Promise.all([
+      this.prisma.packagePurchaseSnapshot.findMany({where:{orderId:{in:orderIds}},include:{selections:true}}),
+      this.prisma.qualificationSetup.findMany({where:{qualifyingOrderId:{in:orderIds}}}),
+    ]);
+    return orders.map(order=>{const snapshot=snapshots.find(row=>row.orderId===order.orderId),setup=setups.find(row=>row.qualifyingOrderId===order.orderId);return {...order,...this.packageReadback(snapshot,setup)};});
   }
 
   async get(orderId: string) {
@@ -335,10 +341,13 @@ export class OrderService {
       include: { lines: true, paymentEvents: true },
     });
     const returned=await tx.returnLine.groupBy({by:['orderLineId'],where:{returnCase:{orderId,status:'POSTED'}},_sum:{quantity:true}});
-    return {...order,lines:order.lines.map(line=>{
+    const [snapshot,setup]=await Promise.all([tx.packagePurchaseSnapshot.findUnique({where:{orderId},include:{selections:true}}),tx.qualificationSetup.findFirst({where:{qualifyingOrderId:orderId}})]);
+    return {...order,...this.packageReadback(snapshot,setup),lines:order.lines.map(line=>{
       const quantity=returned.find(row=>row.orderLineId===line.orderLineId)?._sum.quantity??new Prisma.Decimal(0);
       return {...line,returnedQuantity:quantity.toString(),remainingReversibleQuantity:Prisma.Decimal.max(0,line.quantity.minus(quantity)).toString()};
     })};
     },{isolationLevel:'RepeatableRead'});
   }
+
+  private packageReadback(snapshot:any,setup:any){if(!snapshot)return {packagePurchase:null,packageDownstreamStatus:null};return {packagePurchase:{packagePurchaseSnapshotId:snapshot.packagePurchaseSnapshotId,packageProfileVersionId:snapshot.packageProfileVersionId,packageCode:snapshot.packageCode,packageName:snapshot.packageName,packageClass:snapshot.packageClass,currency:snapshot.currency,priceAmount:snapshot.priceAmount.toString(),selectableProductQuantity:snapshot.selectableProductQuantity,membershipEffect:snapshot.membershipEffect,qualificationEffect:snapshot.qualificationEffect,activeDurationUnit:snapshot.activeDurationUnit,activeDurationValue:snapshot.activeDurationValue,recognitionConfigRef:snapshot.recognitionConfigRef,packageConfigHash:snapshot.packageConfigHash,purchasedAt:snapshot.purchasedAt.toISOString(),selections:(snapshot.selections??[]).map((row:any)=>({productRuleProfileId:row.productRuleProfileId,productId:row.productId,sku:row.skuSnapshot,displayName:row.productDisplaySnapshot,quantity:row.quantity,productConfigHash:row.productConfigHash}))},packageDownstreamStatus:setup?.setupStatus??(snapshot.packageClass==='ACTIVE_DURATION'?'RECOGNITION_CONFIGURATION_PENDING':'PAYMENT_PENDING')};}
 }
