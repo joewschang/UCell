@@ -43,7 +43,7 @@ describe('Organization guardrails (P0)', () => {
   });
 });
 
-import { OrganizationController } from '../src/modules/organization/organization.controller';
+
 
 describe('Organization legacy placement endpoint', () => {
   it('delegates to the canonical admin placement command and preserves replay metadata', async () => {
