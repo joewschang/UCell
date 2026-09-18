@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { verifyCarryHttp } from './member-explain-carry-http-cases.mjs';
 import { randomUUID } from 'node:crypto';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
@@ -97,6 +98,8 @@ try {
   eq((await audits()).at(-1).afterData.outcome, 'DENIED', 'service authorization denial audited');
   assert.ok(!response.body.includes('THRESHOLD_MET')); assertions++;
   await db.qualification.update({ where: { qualificationId: qid }, data: { currentHolderPersonId: person.personId } });
+
+  await verifyCarryHttp({ db, qid, foreign, request, eq, audits });
 
   await db.authSession.update({ where: { authSessionId: session.sessionId }, data: { status: 'REVOKED', revokedAt: new Date() } });
   eq((await request()).statusCode, 401, 'revoked real session rejected');
