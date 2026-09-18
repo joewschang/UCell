@@ -1,5 +1,5 @@
 import { Roles } from '../auth/roles.decorator';
-import { Body, Controller, Param, Post } from '@nestjs/common';
+import { Body, Controller, Param, Post, Req } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { QualificationWorkflowService } from './qualification-workflow.service';
 
@@ -18,7 +18,7 @@ export class QualificationWorkflowController {
 
   @Post(':id/approve')
   @ApiOperation({summary:'核准Workflow；僅向未來生效'})
-  async approve(@Param('id') id:string,@Body() body:{effectiveAt?:string}){
-    return {data:await this.service.approve(id,body.effectiveAt?new Date(body.effectiveAt):undefined)};
+  async approve(@Param('id') id:string,@Body() body:{effectiveAt?:string},@Req() req:any){
+    return {data:await this.service.approve(id,body.effectiveAt?new Date(body.effectiveAt):undefined,req.user)};
   }
 }

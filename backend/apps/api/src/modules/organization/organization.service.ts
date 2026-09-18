@@ -1,3 +1,4 @@
+import { attachTreePlacement, TreePlacementMeta } from './tree-placement';
 import { ConflictException, Injectable, UnprocessableEntityException } from '@nestjs/common';
 import { Prisma, PrismaService, SideCode } from '@ucell/database';
 
@@ -34,6 +35,15 @@ export class OrganizationService {
       const side=input.binarySide as SideCode;
 
       try{
+        const membership=await tx.binaryTreeMembership.findUnique({where:{qualificationId:input.binaryParentQualificationId},include:{binaryTree:true}});
+        if(membership && membership.binaryTree.status!=='ACTIVE')throw new ConflictException({code:'TREE_NOT_OPEN_TO_PLACEMENT'});
+        if(membership){
+          const positions=await tx.treeCanonicalPosition.findMany({where:{binaryTreeId:membership.binaryTreeId}});
+          const parentPosition=positions.find(p=>p.occupantQualificationId===input.binaryParentQualificationId);
+          const canonical=parentPosition && positions.find(p=>p.parentPositionNo===parentPosition.positionNo && p.side===side);
+          const designation=await tx.companySponsorDesignation.findUnique({where:{binaryTreeId:membership.binaryTreeId}});
+          if(canonical && input.sponsorQualificationId!==designation?.qualificationId)throw new ConflictException({code:'FOUNDING_COMPANY_SPONSOR_REQUIRED'});
+        }
         await this.assertBinarySlotAvailable(tx,input.binaryParentQualificationId,side);
         await this.assertFirstThirdLeftRule(
           tx,input.sponsorQualificationId,nextSponsorSequenceNo,
@@ -61,6 +71,10 @@ export class OrganizationService {
     });
   }
 
+  async createBinaryPlacement(tx: Prisma.TransactionClient, data: {parentQualificationId:string;childQualificationId:string;side:SideCode;effectiveFrom:Date}, meta:TreePlacementMeta) {
+    await attachTreePlacement(tx,data,meta);
+    return tx.binaryPlacement.create({data});
+  }
   async allocateSponsorSequence(
     tx: Prisma.TransactionClient,
     sponsorQualificationId: string,

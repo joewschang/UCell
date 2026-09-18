@@ -1,4 +1,4 @@
-export type AdminRole='SUPER_ADMIN'|'MEMBERSHIP_OPS'|'ORDER_OPS'|'FINANCE'|'COMPLIANCE_AUDIT'|'CUSTOMER_SERVICE'|'PACKAGE_CONFIG_MANAGE'|'PACKAGE_CONFIG_APPROVE';
+export type AdminRole='QUALIFICATION_PLACEMENT_OVERRIDE'|'SUPER_ADMIN'|'MEMBERSHIP_OPS'|'ORDER_OPS'|'FINANCE'|'COMPLIANCE_AUDIT'|'CUSTOMER_SERVICE'|'PACKAGE_CONFIG_MANAGE'|'PACKAGE_CONFIG_APPROVE';
 
 export const pageRoles:Record<string,AdminRole[]>={
   '/':['SUPER_ADMIN','MEMBERSHIP_OPS','ORDER_OPS','FINANCE','COMPLIANCE_AUDIT','CUSTOMER_SERVICE','PACKAGE_CONFIG_MANAGE','PACKAGE_CONFIG_APPROVE'],
@@ -9,6 +9,7 @@ export const pageRoles:Record<string,AdminRole[]>={
   '/products':['SUPER_ADMIN','ORDER_OPS','COMPLIANCE_AUDIT'],
   '/packages':['SUPER_ADMIN','ORDER_OPS','COMPLIANCE_AUDIT','PACKAGE_CONFIG_MANAGE','PACKAGE_CONFIG_APPROVE'],
   '/orders':['SUPER_ADMIN','ORDER_OPS','FINANCE','COMPLIANCE_AUDIT'],
+  '/admin/organization/trees':['SUPER_ADMIN','MEMBERSHIP_OPS','QUALIFICATION_PLACEMENT_OVERRIDE','COMPLIANCE_AUDIT'],
   '/organization':['SUPER_ADMIN','MEMBERSHIP_OPS','COMPLIANCE_AUDIT'],
   '/subscriptions':['SUPER_ADMIN','ORDER_OPS','FINANCE','COMPLIANCE_AUDIT'],
   '/bonuses':['SUPER_ADMIN','FINANCE','COMPLIANCE_AUDIT'],
@@ -24,4 +25,4 @@ export const pageRoles:Record<string,AdminRole[]>={
   '/system':['SUPER_ADMIN','COMPLIANCE_AUDIT'],
   '/provider-operations':['SUPER_ADMIN','ORDER_OPS','FINANCE','COMPLIANCE_AUDIT'],
 };
-export const canOpen=(role:AdminRole|undefined,path:string)=>!!role && (pageRoles[path]?.includes(role) ?? false);
+export const canOpen=(role:AdminRole|undefined,path:string)=>!!role && (pageRoles[/^\/admin\/organization\/trees\/[a-f0-9-]{36}$/i.test(path)?'/admin/organization/trees':path]?.includes(role) ?? false);

@@ -44,7 +44,7 @@ function fixture() {
 const payment = {amount: '2400', paymentMethod: 'TEST_ONLY', referenceNo: 'fixture', occurredAt: '2026-01-02T03:04:05.000Z'};
 function qualificationFixture(){
  const f=fixture(),relationships:any[]=[];let sequence=0;
- const tx={...f.tx,
+ const tx={...f.tx, binaryTreeMembership:{findUnique:jest.fn(async()=>null)},
   $queryRaw:jest.fn(async()=>[]),
   person:{findUnique:jest.fn(async()=>({personId:'person'}))},
   qualification:{findUnique:jest.fn(async({where}:any)=>({qualificationId:where.qualificationId})),create:jest.fn(async({data}:any)=>({...data,qualificationId:'created-'+(++sequence)}))},

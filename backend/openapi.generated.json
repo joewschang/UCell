@@ -1,6 +1,614 @@
 {
   "openapi": "3.0.0",
   "paths": {
+    "/api/v1/admin/organization/trees": {
+      "post": {
+        "operationId": "adminCreateBinaryTree",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTreeDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "原子建立三顆公司球及七個標準位置",
+        "tags": [
+          "Admin - Binary Trees"
+        ]
+      },
+      "get": {
+        "operationId": "adminListBinaryTrees",
+        "parameters": [
+          {
+            "name": "timezone",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "Asia/Taipei"
+              ]
+            }
+          },
+          {
+            "name": "asOf",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "periodStart",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "periodEnd",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "knowledgeCutoff",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "after",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "依指定時間與記錄截點列出樹",
+        "tags": [
+          "Admin - Binary Trees"
+        ]
+      }
+    },
+    "/api/v1/admin/organization/trees/{id}/settings": {
+      "post": {
+        "operationId": "adminChangeBinaryTree",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChangeTreeDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "更新樹名称或生命週期，保留不可變歷史",
+        "tags": [
+          "Admin - Binary Trees"
+        ]
+      }
+    },
+    "/api/v1/admin/organization/trees/{id}/company-sponsor-confirmations": {
+      "post": {
+        "operationId": "adminConfirmTreeCompanySponsor",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmSponsorDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "獨立確認公司 Sponsor 與實際序號",
+        "tags": [
+          "Admin - Binary Trees"
+        ]
+      }
+    },
+    "/api/v1/admin/organization/trees/{id}/placements": {
+      "post": {
+        "operationId": "adminPlaceTreeQualification",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlaceTreeDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "明確選擇樹內位置；不變更 Sponsor",
+        "tags": [
+          "Admin - Binary Trees"
+        ]
+      }
+    },
+    "/api/v1/admin/organization/trees/{id}": {
+      "get": {
+        "operationId": "adminReadBinaryTree",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "timezone",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "Asia/Taipei"
+              ]
+            }
+          },
+          {
+            "name": "asOf",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "periodStart",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "periodEnd",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "knowledgeCutoff",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "讀取樹與七個標準位置的非金額歷史統計",
+        "tags": [
+          "Admin - Binary Trees"
+        ]
+      }
+    },
+    "/api/v1/admin/organization/trees/{id}/nodes": {
+      "get": {
+        "operationId": "adminReadBinaryTreeNodes",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "timezone",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "Asia/Taipei"
+              ]
+            }
+          },
+          {
+            "name": "asOf",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "periodStart",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "periodEnd",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "knowledgeCutoff",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "after",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "分頁讀取指定時間的完整樹節點；總數不受頁面上限限制",
+        "tags": [
+          "Admin - Binary Trees"
+        ]
+      }
+    },
+    "/api/v1/admin/organization/trees/{id}/placement-preview": {
+      "get": {
+        "operationId": "adminPreviewTreePlacement",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "qualificationId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "binaryParentQualificationId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "side",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "LEFT",
+                "RIGHT"
+              ]
+            }
+          },
+          {
+            "name": "expectedVersion",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "預檢實際 Sponsor 與指定位置，回傳版本綁定 token",
+        "tags": [
+          "Admin - Binary Trees"
+        ]
+      }
+    },
+    "/api/v1/admin/organization/placement-preview": {
+      "get": {
+        "operationId": "adminPreviewBinaryPlacement",
+        "parameters": [
+          {
+            "name": "sponsorQualificationId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "binaryParentQualificationId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "binarySide",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "預檢推薦序號與Binary安置合法性（不寫入）",
+        "tags": [
+          "Admin - Organization"
+        ]
+      }
+    },
+    "/api/v1/admin/organization/binary-placement": {
+      "post": {
+        "description": "Delegates to the canonical Qualification placement command with the same authorization, legality, concurrency, evidence and audit controls.",
+        "operationId": "adminPlaceBinary",
+        "parameters": [
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LegacyAdminBinaryPlacementDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "安置 Binary 位置（相容端點）",
+        "tags": [
+          "Admin - Organization"
+        ]
+      }
+    },
     "/api/v1/member/explain/structured": {
       "get": {
         "description": "Versioned stored evidence with explicit Taipei effective and recorded-time bounds. Unprovable historical facts return UNAVAILABLE. No money calculation or external AI provider.",
@@ -6652,99 +7260,6 @@
         ]
       }
     },
-    "/api/v1/admin/organization/placement-preview": {
-      "get": {
-        "operationId": "adminPreviewBinaryPlacement",
-        "parameters": [
-          {
-            "name": "sponsorQualificationId",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "binaryParentQualificationId",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "binarySide",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "adminBearer": []
-          }
-        ],
-        "summary": "預檢推薦序號與Binary安置合法性（不寫入）",
-        "tags": [
-          "Admin - Organization"
-        ]
-      }
-    },
-    "/api/v1/admin/organization/binary-placement": {
-      "post": {
-        "description": "Delegates to the canonical Qualification placement command with the same authorization, legality, concurrency, evidence and audit controls.",
-        "operationId": "adminPlaceBinary",
-        "parameters": [
-          {
-            "name": "idempotency-key",
-            "required": true,
-            "in": "header",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "Idempotency-Key",
-            "in": "header",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/LegacyAdminBinaryPlacementDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "adminBearer": []
-          }
-        ],
-        "summary": "安置 Binary 位置（相容端點）",
-        "tags": [
-          "Admin - Organization"
-        ]
-      }
-    },
     "/api/v1/admin/qualifications": {
       "get": {
         "operationId": "adminSearchQualifications",
@@ -8400,6 +8915,141 @@
       }
     },
     "schemas": {
+      "CreateTreeDto": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "maxLength": 500
+          },
+          "treeName": {
+            "type": "string",
+            "maxLength": 120
+          },
+          "treeCode": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "reason",
+          "treeName"
+        ]
+      },
+      "ChangeTreeDto": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "maxLength": 500
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ACTIVE",
+              "CLOSED_TO_NEW",
+              "ARCHIVED"
+            ]
+          },
+          "treeName": {
+            "type": "string",
+            "maxLength": 120
+          },
+          "expectedVersion": {
+            "type": "number",
+            "minimum": 1
+          }
+        },
+        "required": [
+          "reason",
+          "expectedVersion"
+        ]
+      },
+      "ConfirmSponsorDto": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "maxLength": 500
+          },
+          "qualificationId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "reason",
+          "qualificationId"
+        ]
+      },
+      "PlaceTreeDto": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "maxLength": 500
+          },
+          "qualificationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "preflightToken": {
+            "type": "string"
+          },
+          "binaryParentQualificationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "side": {
+            "type": "string",
+            "enum": [
+              "LEFT",
+              "RIGHT"
+            ]
+          },
+          "expectedVersion": {
+            "type": "number",
+            "minimum": 1
+          }
+        },
+        "required": [
+          "reason",
+          "qualificationId",
+          "preflightToken",
+          "binaryParentQualificationId",
+          "side",
+          "expectedVersion"
+        ]
+      },
+      "LegacyAdminBinaryPlacementDto": {
+        "type": "object",
+        "properties": {
+          "qualificationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "binaryParentQualificationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "side": {
+            "type": "string",
+            "enum": [
+              "LEFT",
+              "RIGHT"
+            ]
+          },
+          "reasonCode": {
+            "type": "string",
+            "maxLength": 120
+          }
+        },
+        "required": [
+          "qualificationId",
+          "binaryParentQualificationId",
+          "side",
+          "reasonCode"
+        ]
+      },
       "CreateOtpChallengeDto": {
         "type": "object",
         "properties": {
@@ -10068,36 +10718,6 @@
         },
         "required": [
           "legalName"
-        ]
-      },
-      "LegacyAdminBinaryPlacementDto": {
-        "type": "object",
-        "properties": {
-          "qualificationId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "binaryParentQualificationId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "side": {
-            "type": "string",
-            "enum": [
-              "LEFT",
-              "RIGHT"
-            ]
-          },
-          "reasonCode": {
-            "type": "string",
-            "maxLength": 120
-          }
-        },
-        "required": [
-          "qualificationId",
-          "binaryParentQualificationId",
-          "side",
-          "reasonCode"
         ]
       },
       "CreateQualificationDto": {

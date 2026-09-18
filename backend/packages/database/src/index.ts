@@ -37,3 +37,4 @@ export * from './replay-pool-delta';
 export * from './provider/provider-worker-outcome-decision';
 export * from './provider/provider-webhook-worker-lease';
 export * from './provider/provider-webhook-worker-runner';
+export * from './tree-projection-outbox';

@@ -1,3 +1,4 @@
+import { BinaryTreeModule } from './modules/binary-tree/binary-tree.module';
 import { ExplainModule } from './modules/explain/explain.module';
 import { Module } from '@nestjs/common';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
@@ -41,6 +42,7 @@ import { UatEvidenceModule } from './modules/uat-evidence/uat-evidence.module';
 
 @Module({
   imports: [
+    BinaryTreeModule,
     ExplainModule,
     AnalyticsModule,
     ConfigModule.forRoot({ isGlobal: true }),

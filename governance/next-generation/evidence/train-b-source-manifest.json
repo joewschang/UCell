@@ -1,0 +1,188 @@
+{
+  "parent": "755a2a0",
+  "oldMigrationCount": 53,
+  "changedOldMigrations": [],
+  "migrationCount": 54,
+  "files": [
+    {
+      "path": "admin/src/app/App.tsx",
+      "sha256NormalizedLf": "61387f2ade96bedfeea1690e9b0bf35ef5eda619def3fa951578d6e9dde3ec96"
+    },
+    {
+      "path": "admin/src/app/nav.ts",
+      "sha256NormalizedLf": "0e5436f0ee26a0eaa86d82e5cac300b3726775de8de020388cccc7ae1889d141"
+    },
+    {
+      "path": "admin/src/features/auth/permissions.ts",
+      "sha256NormalizedLf": "e6257fc5a81bd4bc4bb2f1b156112c25ca53898e9a42975b76d114dd9762d408"
+    },
+    {
+      "path": "admin/src/features/organization/BinaryTreesPage.test.tsx",
+      "sha256NormalizedLf": "0e80b0b98a792570b4f1bf0be75e668665a47796d823221ed0b33b1950d83f46"
+    },
+    {
+      "path": "admin/src/features/organization/BinaryTreesPage.tsx",
+      "sha256NormalizedLf": "0ef7676d36dd2e3e01049addf546f17b89374b26cffa9a8fc2b50be54da7e520"
+    },
+    {
+      "path": "admin/src/features/qualifications/QualificationDetail.test.tsx",
+      "sha256NormalizedLf": "a2e2942b3cc167b02820fbce4110c61a1f9e768e24c70bfe126e2b6dbb2756df"
+    },
+    {
+      "path": "admin/src/features/qualifications/QualificationDetail.tsx",
+      "sha256NormalizedLf": "092e166f401691cdef428287c544bd7a44c41b976aea2ce097ede696637e3dcd"
+    },
+    {
+      "path": "admin/src/features/qualifications/QualificationsPage.tsx",
+      "sha256NormalizedLf": "141c4f46cc2bb4a8b9934f85eacca7d8083157f1153024022b8bb09126a21159"
+    },
+    {
+      "path": "admin/src/lib/format.ts",
+      "sha256NormalizedLf": "f892cbb758a831867b77d633ba86bce615cfb62e71fb1600ac57b9947b060c8d"
+    },
+    {
+      "path": "admin/src/types/domain.ts",
+      "sha256NormalizedLf": "667a9f1c6f0c90a8f098d1b8dd7bc864123a380cff5c878aac751dfa9e4bdc5b"
+    },
+    {
+      "path": "backend/apps/api/src/app.module.ts",
+      "sha256NormalizedLf": "1ea44e9bf3587f107e798e71daa6a3f7a95f94e1799ae06887e46398a6bbe3fd"
+    },
+    {
+      "path": "backend/apps/api/src/modules/admin-ops-ready/admin-ops-ready.service.ts",
+      "sha256NormalizedLf": "cab64f43d2658925387881c687c75fb8e78c153ea653d39b59129fe45a4c6f01"
+    },
+    {
+      "path": "backend/apps/api/src/modules/analytics/analytics.source.ts",
+      "sha256NormalizedLf": "44e26758d0acfacea8a1a8add51758ef1919b6f7cc9d62452b426d73ade4f8d5"
+    },
+    {
+      "path": "backend/apps/api/src/modules/application/membership-application.service.ts",
+      "sha256NormalizedLf": "519297958f0033b4dc78415a128e7182f24924fcd4b5c5321305a2cdd1edccc0"
+    },
+    {
+      "path": "backend/apps/api/src/modules/binary-tree/binary-tree-metrics.ts",
+      "sha256NormalizedLf": "34b42646978c0ddf3c7c63ddbcad78a6f3664f8ee977b72cd50aa85c2acfe75e"
+    },
+    {
+      "path": "backend/apps/api/src/modules/binary-tree/binary-tree-read.controller.ts",
+      "sha256NormalizedLf": "8375550169e50649b76381b307d09c9c2f5342928b0ac662d634de68790c579a"
+    },
+    {
+      "path": "backend/apps/api/src/modules/binary-tree/binary-tree-read.service.ts",
+      "sha256NormalizedLf": "defc098d5109057814627604581346c5c6037671e6670cc0a0ef3af7ca4da77e"
+    },
+    {
+      "path": "backend/apps/api/src/modules/binary-tree/binary-tree.controller.ts",
+      "sha256NormalizedLf": "ba067d01b19738616c8f26cc3e499fbedfe1380cb855944d43968cbcd1b18a70"
+    },
+    {
+      "path": "backend/apps/api/src/modules/binary-tree/binary-tree.module.ts",
+      "sha256NormalizedLf": "397616a5b01bdb68ca7c0a425e5993f30e306e70c123b1b4f5ae7f2df5886baa"
+    },
+    {
+      "path": "backend/apps/api/src/modules/binary-tree/binary-tree.service.ts",
+      "sha256NormalizedLf": "7edc0cf199b1d3246d7aabd5b4df25146d02913bc904b29a0d4ad61a77fa139e"
+    },
+    {
+      "path": "backend/apps/api/src/modules/binary-tree/tree-authorization.ts",
+      "sha256NormalizedLf": "63996d1a060a4ecd3677f2d4f0898ae946715e18c6f4ac13ccd65d7ffdb7fb56"
+    },
+    {
+      "path": "backend/apps/api/src/modules/member/member-read.service.ts",
+      "sha256NormalizedLf": "7f8941e0801c0e48a79c3f5cec8dbf3e3a5f4ad0d7036fcb624aa676a0f9b86c"
+    },
+    {
+      "path": "backend/apps/api/src/modules/organization/organization.service.ts",
+      "sha256NormalizedLf": "0b0ac1503fdb2cfd7f6f3855b41608df6a8571ae3009fadb642467325b4a7dc3"
+    },
+    {
+      "path": "backend/apps/api/src/modules/organization/tree-placement.ts",
+      "sha256NormalizedLf": "44c27b027f4f04867f850f16c670d0cba350c96e8d5e67f2262cc0e10cf4a8df"
+    },
+    {
+      "path": "backend/apps/api/src/modules/qualification/qualification-placement.service.ts",
+      "sha256NormalizedLf": "a54c31d1736d1d662f42a06753c6ee3a325cad0105374a7b3011307266c15c6b"
+    },
+    {
+      "path": "backend/apps/api/src/modules/qualification/qualification-workflow.controller.ts",
+      "sha256NormalizedLf": "ee195feacbfdfc0c7bb9d83edddc11d6b1383c3ae4fca27b6fc712d0f4b87c7f"
+    },
+    {
+      "path": "backend/apps/api/src/modules/qualification/qualification-workflow.service.ts",
+      "sha256NormalizedLf": "3761aa6e5c86e88455dfc45b13e80403cc8f84b8732131aa59eb1c8e672b0b5a"
+    },
+    {
+      "path": "backend/apps/api/src/modules/qualification/qualification.service.ts",
+      "sha256NormalizedLf": "01c9fac101e535b531fe87294eb1b6d5b55c59ebbcb93fce38cd13322fde0e93"
+    },
+    {
+      "path": "backend/apps/api/src/modules/qualification/system-assignment.service.ts",
+      "sha256NormalizedLf": "ae40a70f0e57978f3fa36d96992071a34508a416a08e244162b965ee5f361157"
+    },
+    {
+      "path": "backend/apps/api/test/binary-tree-db.e2e-spec.ts",
+      "sha256NormalizedLf": "9dc6f7b3f94fc9c33125b93e55d9a68d222e8fc753aaf193b258816d5ecb6325"
+    },
+    {
+      "path": "backend/apps/api/test/binary-tree-metrics.e2e-spec.ts",
+      "sha256NormalizedLf": "a62025d7b034e7d368ff1d56658e53943cd9eeff4a39bc1707dd4c9b7f668e52"
+    },
+    {
+      "path": "backend/apps/api/test/boundary-qualification.e2e-spec.ts",
+      "sha256NormalizedLf": "e75b354c29a41241d629dddde398021abff80c0515a53ab676e7c0c239aa5a22"
+    },
+    {
+      "path": "backend/apps/api/test/organization.e2e-spec.ts",
+      "sha256NormalizedLf": "7b99e570f6f63f5ed0ef9fd86b8291ccd6c24df92be876e6364014fbd56b0bc5"
+    },
+    {
+      "path": "backend/apps/api/test/tree-projection-outbox.e2e-spec.ts",
+      "sha256NormalizedLf": "57287fab1aba2ae70d7c809019ce35fb9a65c2890a0558cab1b62826177aa369"
+    },
+    {
+      "path": "backend/apps/api/test/v060-adjustment-lifecycle.e2e-spec.ts",
+      "sha256NormalizedLf": "e1cb776d56abd5a65de37fe7b37c42457b428891dcb878ec8e2dfdce6acf1405"
+    },
+    {
+      "path": "backend/apps/api/test/v061-replay.e2e-spec.ts",
+      "sha256NormalizedLf": "3f0616c874cd7eb4d5933b5b4fa2b1b03c4487bf06d5e0e91cf4ee6b1f840186"
+    },
+    {
+      "path": "backend/apps/api/test/vertical-slice-02.e2e-spec.ts",
+      "sha256NormalizedLf": "4001fc13c6766809c163739ee5f7cf51e977b105bf2c95db1d6baae5520ffc02"
+    },
+    {
+      "path": "backend/apps/api/test/vertical-slice.e2e-spec.ts",
+      "sha256NormalizedLf": "ebd36dad5516fcd60b11f37a5bd860f319cef68b2f6b7f3b363b7198622c4312"
+    },
+    {
+      "path": "backend/apps/api/test/worker-outbox.e2e-spec.ts",
+      "sha256NormalizedLf": "8411c674580429511378b290f6cb19698c46170929ea0f9ddb1aacc22833dcbd"
+    },
+    {
+      "path": "backend/apps/worker/src/main.ts",
+      "sha256NormalizedLf": "a88b8e3af858b2a1c7327e0e50cd458f5e8ebc8ab2b721ceffb312c42d78fc59"
+    },
+    {
+      "path": "backend/openapi.generated.json",
+      "sha256NormalizedLf": "6d342a879a99a66fa442048593f11bd995da96217776f05bdc3aab5dd037e2c3"
+    },
+    {
+      "path": "backend/packages/database/prisma/migrations/20260919040000_multi_tree_nonmonetary/migration.sql",
+      "sha256NormalizedLf": "bb319d3950fd1577c722ff26e868b5b6917c37cf03a1f1c74060b09e603d6a27"
+    },
+    {
+      "path": "backend/packages/database/prisma/schema.prisma",
+      "sha256NormalizedLf": "c8483357ebd5733f9d552e46bb650e038955c2a2cbde3fb731ad43bfe32da483"
+    },
+    {
+      "path": "backend/packages/database/src/index.ts",
+      "sha256NormalizedLf": "7a935fcc380c0f8c5e4d50809556fd467a1b89f845db6010c199083540819d5e"
+    },
+    {
+      "path": "backend/packages/database/src/tree-projection-outbox.ts",
+      "sha256NormalizedLf": "8a494efd6db219771cd1a6fd38de765cf5b28b3a99c38ef489e83a6fb42665f6"
+    }
+  ]
+}

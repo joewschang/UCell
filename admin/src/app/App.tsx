@@ -1,3 +1,4 @@
+import {BinaryTreesPage} from '../features/organization/BinaryTreesPage';
 import {Link,Navigate,Route,Routes} from 'react-router-dom';
 import {useAuth} from '../features/auth/auth';
 import {LoginPage} from '../features/auth/LoginPage';
@@ -38,6 +39,7 @@ export function App(){return <Routes>
   <Route path="/products" element={<RequirePageRole><ProductsPage/></RequirePageRole>}/>
   <Route path="/packages" element={<RequirePageRole><PackagesPage/></RequirePageRole>}/>
   <Route path="/orders" element={<RequirePageRole><OrdersPage/></RequirePageRole>}/>
+  <Route path="/admin/organization/trees/:id?" element={<RequirePageRole><BinaryTreesPage/></RequirePageRole>}/>
   <Route path="/organization" element={<RequirePageRole><OrganizationPage/></RequirePageRole>}/>
   <Route path="/subscriptions" element={<RequirePageRole><SubscriptionsPage/></RequirePageRole>}/>
   <Route path="/bonuses" element={<RequirePageRole><BonusesPage/></RequirePageRole>}/>

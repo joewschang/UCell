@@ -96,7 +96,7 @@ describe('Vertical Slice 02 - Membership / Active / Subscription / RPV', () => {
     }
     const organization = {
       allocateSponsorSequence: jest.fn(async () => 2), assertBinarySlotAvailable: jest.fn(),
-      assertFirstThirdLeftRule: jest.fn(), assertNoBinaryCycle: jest.fn(),
+      assertFirstThirdLeftRule: jest.fn(), assertNoBinaryCycle: jest.fn(), createBinaryPlacement: jest.fn(async (client:any,data:any)=>client.binaryPlacement.create({data})),
     };
     const execute = jest.fn(async (_scope: string, _key: string, _payload: any, work: any) => ({ value: await work(tx), replayed: false }));
     const audit = { write: jest.fn() };

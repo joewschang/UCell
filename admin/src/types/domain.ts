@@ -22,12 +22,14 @@ export interface Person {
 export interface Qualification {
   qualificationId:UUID;
   qualificationNo?:string|number;
-  currentHolderPersonId:UUID;
-  planLevelCode:PlanLevel;
+  currentHolderPersonId:UUID|null;
+  currentCompanyPrincipalId?:UUID|null;
+  kind?:'MEMBER_ORIGIN'|'COMPANY_BOOTSTRAP';
+  planLevelCode:PlanLevel|null;
   status:QualificationStatus;
   activeFlag:boolean;
   effectiveAt?:string|null;
-  currentHolder?:Person;
+  currentHolder?:Person|null;
   sponsorRelation?:any;
   binaryPlacement?:any;
 }

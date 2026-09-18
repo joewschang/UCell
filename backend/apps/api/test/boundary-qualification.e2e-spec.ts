@@ -13,6 +13,7 @@ const packageVersion={
 function packageHarness(){
   let sequence=0;
   const tx:any={
+      $queryRaw:jest.fn(async()=>[]),binaryTreeMembership:{findUnique:jest.fn(async()=>null)},
     person:{findUnique:jest.fn(async()=>({status:'EFFECTIVE'}))},
     qualification:{create:jest.fn(async({data}:any)=>({qualificationId:`ball-${++sequence}`,...data}))},
     qualificationHolderHistory:{create:jest.fn()},qualificationStatusHistory:{create:jest.fn()},
@@ -61,9 +62,10 @@ describe('Boundary Golden B18-B19 company-held exit',()=>{
   it('preserves Qualification identity, trees, carry and historical monetary rows',async()=>{
     const workflow={qualificationWorkflowId:'exit',qualificationId:'ball-stable',workflowType:'EXIT',status:'SUBMITTED',payload:{reviewFeePaid:true,companyHolderPersonId:'company'}};
     const tx:any={
+      $queryRaw:jest.fn(async()=>[]),binaryTreeMembership:{findUnique:jest.fn(async()=>null)},
       qualificationWorkflow:{findUniqueOrThrow:jest.fn(async()=>workflow),update:jest.fn()},
       qualificationHolderHistory:{findFirst:jest.fn(async()=>({holderHistoryId:'holder-old'})),update:jest.fn(),create:jest.fn()},
-      qualification:{update:jest.fn(async({where,data}:any)=>({...where,...data}))},person:{findUnique:jest.fn(async()=>({personId:'company'}))},
+      qualification:{findUniqueOrThrow:jest.fn(async()=>({kind:'MEMBER_ORIGIN'})),update:jest.fn(async({where,data}:any)=>({...where,...data}))},person:{findUnique:jest.fn(async()=>({personId:'company'}))},
       sponsorRelationship:{update:jest.fn(),create:jest.fn(),delete:jest.fn()},binaryPlacement:{update:jest.fn(),create:jest.fn(),delete:jest.fn()},
       binaryCarry:{update:jest.fn(),create:jest.fn(),delete:jest.fn()},bonusAward:{update:jest.fn(),create:jest.fn(),delete:jest.fn()},pvLedger:{update:jest.fn(),create:jest.fn(),delete:jest.fn()},
     };

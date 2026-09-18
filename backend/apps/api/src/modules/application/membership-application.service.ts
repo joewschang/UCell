@@ -108,7 +108,7 @@ export class MembershipApplicationService {
       await tx.qualificationPlanHistory.create({
         data:{
           qualificationId:qualification.qualificationId,
-          planCode:qualification.planLevelCode,
+          planCode:app.requestedPlanLevelCode,
           effectiveFrom:effectiveAt,
           sourceType:'INITIAL_PLAN',
           sourceId:applicationId
@@ -144,14 +144,9 @@ export class MembershipApplicationService {
         }
       });
 
-      await tx.binaryPlacement.create({
-        data:{
-          parentQualificationId:app.binaryParentQualificationId,
-          childQualificationId:qualification.qualificationId,
-          side,
-          effectiveFrom:effectiveAt
-        }
-      });
+      await this.organization.createBinaryPlacement(tx,{
+        parentQualificationId:app.binaryParentQualificationId,childQualificationId:qualification.qualificationId,side,effectiveFrom:effectiveAt
+      },{sourceType:'MEMBERSHIP_APPLICATION_APPROVAL',actorId,correlationId,reason:'Approved application placement'});
 
       const updated=await tx.membershipApplication.update({
         where:{applicationId},

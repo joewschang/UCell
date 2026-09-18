@@ -6,6 +6,7 @@ export const nav=[
   ['商品參照','/products','products'],
   ['套組與資格商品','/packages','packages'],
   ['訂單與收款','/orders','orders'],
+  ['多樹管理','/admin/organization/trees','binary-trees'],
   ['組織／安置','/organization','organization'],
   ['重購訂閱','/subscriptions','subscriptions'],
   ['獎金與結算證據','/bonuses','bonuses'],
@@ -24,7 +25,7 @@ export const nav=[
 export const navGroups=[
  {label:'Dashboard',paths:['/']},
  {label:'會員管理',paths:['/people','/qualifications','/applications','/workflows']},
- {label:'組織管理',paths:['/organization']},
+ {label:'組織管理',paths:['/organization','/admin/organization/trees']},
  {label:'商務',paths:['/products','/packages','/orders','/subscriptions','/returns']},
  {label:'獎金中心',paths:['/bonuses']},
  {label:'財務',paths:['/payouts']},

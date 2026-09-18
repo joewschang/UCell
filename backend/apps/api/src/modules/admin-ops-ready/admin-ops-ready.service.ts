@@ -239,7 +239,7 @@ export class AdminOpsReadyService{
       });
       headers=['qualificationId','qualificationNo','holder','plan','status','activeFlag','effectiveAt'];
       rows=data.map(x=>[
-        x.qualificationId,String(x.qualificationNo),x.currentHolder.legalName,
+        x.qualificationId,String(x.qualificationNo),x.currentHolder?.legalName??(x.currentCompanyPrincipalId?'公司球':''),
         x.planLevelCode,x.status,String(x.activeFlag),x.effectiveAt?.toISOString()??''
       ]);
     }else if(dataset==='ORDERS'){
@@ -249,7 +249,7 @@ export class AdminOpsReadyService{
       });
       headers=['orderId','orderNo','holder','qualificationId','purpose','status','netAmount','paidAt','createdAt'];
       rows=data.map(x=>[
-        x.orderId,String(x.orderNo),x.qualification.currentHolder.legalName,x.qualificationId,
+        x.orderId,String(x.orderNo),x.qualification.currentHolder?.legalName??(x.qualification.currentCompanyPrincipalId?'公司球':''),x.qualificationId,
         x.purpose,x.status,x.netAmount.toString(),x.paidAt?.toISOString()??'',x.createdAt.toISOString()
       ]);
     }else{

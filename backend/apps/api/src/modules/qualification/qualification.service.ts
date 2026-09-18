@@ -67,7 +67,7 @@ export class QualificationService {
       await tx.qualificationPlanHistory.create({
         data:{
           qualificationId:qualification.qualificationId,
-          planCode:qualification.planLevelCode,
+          planCode:dto.planLevelCode,
           effectiveFrom:effectiveAt,
           sourceType:'INITIAL_PLAN',
           sourceId:undefined
@@ -92,14 +92,9 @@ export class QualificationService {
         },
       });
 
-      await tx.binaryPlacement.create({
-        data: {
-          parentQualificationId: dto.binaryParentQualificationId,
-          childQualificationId: qualification.qualificationId,
-          side,
-          effectiveFrom: effectiveAt,
-        },
-      });
+      await this.organization.createBinaryPlacement(tx,{
+        parentQualificationId:dto.binaryParentQualificationId,childQualificationId:qualification.qualificationId,side,effectiveFrom:effectiveAt
+      },{sourceType:'DIRECT_QUALIFICATION_CREATE',actorId,correlationId,reason:'Direct qualification placement'});
 
       await this.audit.write(tx, {
         actorType: actorId ? 'USER' : 'SYSTEM',

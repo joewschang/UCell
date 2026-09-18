@@ -67,7 +67,7 @@ export class MemberReadService {
    if(kind==='sponsor'||kind==='referrals'){
     const links=await tx.sponsorRelationship.findMany({where:{sponsorQualificationId:id,effectiveFrom:{lte:now},OR:[{effectiveTo:null},{effectiveTo:{gt:now}}]},include:{child:{include:{currentHolder:true}}},orderBy:{sponsorSequenceNo:'asc'},take:100});
     const parent=await tx.sponsorRelationship.findFirst({where:{childQualificationId:id,effectiveFrom:{lte:now},OR:[{effectiveTo:null},{effectiveTo:{gt:now}}]},include:{sponsor:{include:{currentHolder:true}}}});
-    const view=(q:any)=>({code:String(q.qualificationNo),name:(q.currentHolder.preferredName??q.currentHolder.legalName).slice(0,1)+'＊'});
+    const view=(q:any)=>({code:String(q.qualificationNo),name:q.currentCompanyPrincipalId?'公司球':(q.currentHolder?.preferredName??q.currentHolder?.legalName??'未知').slice(0,1)+'＊',...(q.currentCompanyPrincipalId?{ownerType:'COMPANY',activeLabel:'Always Active (Company Rule)'}:{})});
     return {qualificationId:id,sponsor:parent?view(parent.sponsor):null,referrals:links.map(row=>view(row.child)),pagination:{limit:100,truncated:links.length===100}};
    }
    if(kind==='binary'){

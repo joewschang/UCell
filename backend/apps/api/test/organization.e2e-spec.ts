@@ -3,7 +3,7 @@ import { OrganizationService } from '../src/modules/organization/organization.se
 import { SideCode } from '@ucell/database';
 describe('Organization guardrails (P0)', () => {
   it('sponsor tree and binary tree remain independent', async () => {
-    const tx = {
+    const tx = { binaryTreeMembership: { findUnique: jest.fn(async()=>null) },
       qualification: { findUnique: jest.fn(async ({ where }: any) => ({ qualificationId: where.qualificationId, currentHolder: { personId: where.qualificationId + '-holder' } })) },
       sponsorRelationship: { aggregate: jest.fn(async () => ({ _max: { sponsorSequenceNo: 1 } })) },
       binaryPlacement: { findFirst: jest.fn(async () => null) },

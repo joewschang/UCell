@@ -90,10 +90,11 @@ describe('v0.6.1 qualification workflow',()=>{
   function harness(workflow:any){
     const currentPlan={qualificationPlanHistoryId:'plan-old'},currentHolder={holderHistoryId:'holder-old'};
     const tx:any={
+      $queryRaw:jest.fn(async()=>[]),binaryTreeMembership:{findUnique:jest.fn(async()=>null)},
       qualificationWorkflow:{findUniqueOrThrow:jest.fn(async()=>workflow),update:jest.fn(async({data}:any)=>({...workflow,...data}))},
       qualificationPlanHistory:{findFirst:jest.fn(async()=>currentPlan),update:jest.fn(),create:jest.fn(async({data}:any)=>data)},
       qualificationHolderHistory:{findFirst:jest.fn(async()=>currentHolder),update:jest.fn(),create:jest.fn(async({data}:any)=>data)},
-      qualification:{update:jest.fn(async({data}:any)=>({qualificationId:workflow.qualificationId,...data}))},
+      qualification:{findUniqueOrThrow:jest.fn(async()=>({kind:'MEMBER_ORIGIN'})),update:jest.fn(async({data}:any)=>({qualificationId:workflow.qualificationId,...data}))},
       person:{findUnique:jest.fn(async({where}:any)=>({personId:where.personId}))},
       sponsorRelationship:{update:jest.fn(),create:jest.fn(),delete:jest.fn()},
       binaryPlacement:{update:jest.fn(),create:jest.fn(),delete:jest.fn()},

@@ -538,6 +538,7 @@ enum AuthSessionStatus {
 }
 
 model Person {
+  qualificationOwnerIntervals QualificationOwnerInterval[]
   personId         String                 @id @default(uuid()) @map("person_id") @db.Uuid
   legalName        String                 @map("legal_name")
   preferredName    String?                @map("preferred_name")
@@ -715,18 +716,27 @@ model ConsentEvidence {
 }
 
 model Qualification {
+  kind QualificationKind @default(MEMBER_ORIGIN)
+  currentCompanyPrincipalId String? @map("current_company_principal_id") @db.Uuid
+  currentCompanyPrincipal CompanyPrincipal? @relation(fields: [currentCompanyPrincipalId], references: [companyPrincipalId])
+  ownerIntervals QualificationOwnerInterval[]
+  binaryTreeMembership BinaryTreeMembership?
+  canonicalPosition TreeCanonicalPosition?
+  foundingOccupation FoundingOccupationEvidence?
+  treePlacementEvidence PlacementTreeEvidence?
+  companySponsorDesignation CompanySponsorDesignation?
   memberNotifications   MemberNotification[]
   qualificationId       String               @id @default(uuid()) @map("qualification_id") @db.Uuid
   qualificationNo       BigInt               @unique @default(autoincrement()) @map("qualification_no")
-  currentHolderPersonId String               @map("current_holder_person_id") @db.Uuid
-  planLevelCode         String               @map("plan_level_code")
+  currentHolderPersonId String?              @map("current_holder_person_id") @db.Uuid
+  planLevelCode         String?              @map("plan_level_code")
   status                RecordStatus         @default(DRAFT)
   activeFlag            Boolean              @default(false) @map("active_flag")
   effectiveAt           DateTime?            @map("effective_at") @db.Timestamptz(6)
   createdAt             DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt             DateTime             @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  currentHolder               Person                           @relation(fields: [currentHolderPersonId], references: [personId])
+  currentHolder               Person?                          @relation(fields: [currentHolderPersonId], references: [personId], onDelete: Restrict)
   holderHistory               QualificationHolderHistory[]
   sponsoredChildren           SponsorRelationship[]            @relation("Sponsor")
   sponsorRelation             SponsorRelationship?             @relation("SponsoredChild")
@@ -3284,4 +3294,203 @@ model ManagementAnalyticsSnapshot {
   @@index([asOf(sort: Desc)], map: "management_analytics_time")
   @@map("management_analytics_snapshot")
   @@schema("integration")
+}
+
+enum QualificationKind {
+  MEMBER_ORIGIN
+  COMPANY_BOOTSTRAP
+  @@schema("membership")
+}
+enum QualificationOwnerType {
+  MEMBER
+  COMPANY
+  @@schema("membership")
+}
+enum BinaryTreeStatus {
+  DRAFT
+  ACTIVE
+  CLOSED_TO_NEW
+  ARCHIVED
+  @@schema("organization")
+}
+model CompanyPrincipal {
+  companyPrincipalId String @id @default(uuid()) @map("company_principal_id") @db.Uuid
+  code String @unique
+  displayName String @map("display_name")
+  status String @default("ACTIVE")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  qualifications Qualification[]
+  ownerIntervals QualificationOwnerInterval[]
+  binaryTrees BinaryTree[]
+  @@map("company_principal")
+  @@schema("membership")
+}
+model QualificationOwnerInterval {
+  ownerIntervalId String @id @default(uuid()) @map("owner_interval_id") @db.Uuid
+  qualificationId String @map("qualification_id") @db.Uuid
+  ownerType QualificationOwnerType @map("owner_type")
+  personId String? @map("person_id") @db.Uuid
+  companyPrincipalId String? @map("company_principal_id") @db.Uuid
+  effectiveFrom DateTime @map("effective_from") @db.Timestamptz(6)
+  effectiveTo DateTime? @map("effective_to") @db.Timestamptz(6)
+  recordedAt DateTime @default(now()) @map("recorded_at") @db.Timestamptz(6)
+  closedRecordedAt DateTime? @map("closed_recorded_at") @db.Timestamptz(6)
+  sourceType String @map("source_type")
+  sourceId String @map("source_id") @db.Uuid
+  evidenceHash String @map("evidence_hash")
+  qualification Qualification @relation(fields: [qualificationId], references: [qualificationId])
+  person Person? @relation(fields: [personId], references: [personId])
+  companyPrincipal CompanyPrincipal? @relation(fields: [companyPrincipalId], references: [companyPrincipalId])
+  @@index([qualificationId, effectiveFrom, effectiveTo])
+  @@unique([qualificationId, sourceType, sourceId])
+  @@map("qualification_owner_interval")
+  @@schema("membership")
+}
+model BinaryTree {
+  binaryTreeId String @id @default(uuid()) @map("binary_tree_id") @db.Uuid
+  treeCode String @unique @map("tree_code")
+  treeName String @map("tree_name")
+  status BinaryTreeStatus @default(DRAFT)
+  topologyVersion Int @default(1) @map("topology_version")
+  companyPrincipalId String @map("company_principal_id") @db.Uuid
+  bootstrapProfileVersion String @default("COMPANY_BOOTSTRAP_PROFILE_V1") @map("bootstrap_profile_version")
+  economicActivation String @default("PENDING_MAPPING") @map("economic_activation")
+  createdByActorId String @map("created_by_actor_id") @db.Uuid
+  effectiveAt DateTime @map("effective_at") @db.Timestamptz(6)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  companyPrincipal CompanyPrincipal @relation(fields: [companyPrincipalId], references: [companyPrincipalId])
+  statusEvents BinaryTreeStatusEvent[]
+  memberships BinaryTreeMembership[]
+  positions TreeCanonicalPosition[]
+  foundingOccupations FoundingOccupationEvidence[]
+  sponsorDesignation CompanySponsorDesignation?
+  placements PlacementTreeEvidence[]
+  ancestry BinaryTreeAncestry[]
+  projectionCheckpoint BinaryTreeProjectionCheckpoint?
+  @@index([status, createdAt, binaryTreeId])
+  @@map("binary_tree")
+  @@schema("organization")
+}
+model BinaryTreeStatusEvent {
+  binaryTreeStatusEventId String @id @default(uuid()) @map("binary_tree_status_event_id") @db.Uuid
+  binaryTreeId String @map("binary_tree_id") @db.Uuid
+  previousStatus BinaryTreeStatus? @map("previous_status")
+  status BinaryTreeStatus
+  topologyVersion Int @map("topology_version")
+  treeName String @map("tree_name")
+  actorId String @map("actor_id") @db.Uuid
+  reason String
+  effectiveAt DateTime @map("effective_at") @db.Timestamptz(6)
+  recordedAt DateTime @default(now()) @map("recorded_at") @db.Timestamptz(6)
+  correlationId String @map("correlation_id") @db.Uuid
+  evidenceHash String @map("evidence_hash")
+  binaryTree BinaryTree @relation(fields: [binaryTreeId], references: [binaryTreeId])
+  @@unique([binaryTreeId, topologyVersion])
+  @@index([binaryTreeId, effectiveAt, recordedAt])
+  @@map("binary_tree_status_event")
+  @@schema("organization")
+}
+model BinaryTreeMembership {
+  qualificationId String @id @map("qualification_id") @db.Uuid
+  binaryTreeId String @map("binary_tree_id") @db.Uuid
+  effectiveFrom DateTime @map("effective_from") @db.Timestamptz(6)
+  recordedAt DateTime @default(now()) @map("recorded_at") @db.Timestamptz(6)
+  placementTreeEvidenceId String @unique @map("placement_tree_evidence_id") @db.Uuid
+  qualification Qualification @relation(fields: [qualificationId], references: [qualificationId])
+  binaryTree BinaryTree @relation(fields: [binaryTreeId], references: [binaryTreeId])
+  @@unique([binaryTreeId, qualificationId])
+  @@index([binaryTreeId, effectiveFrom, qualificationId])
+  @@map("binary_tree_membership")
+  @@schema("organization")
+}
+model TreeCanonicalPosition {
+  binaryTreeId String @map("binary_tree_id") @db.Uuid
+  positionNo Int @map("position_no")
+  parentPositionNo Int? @map("parent_position_no")
+  side SideCode?
+  occupantQualificationId String? @unique @map("occupant_qualification_id") @db.Uuid
+  occupiedAt DateTime? @map("occupied_at") @db.Timestamptz(6)
+  recordedAt DateTime @default(now()) @map("recorded_at") @db.Timestamptz(6)
+  binaryTree BinaryTree @relation(fields: [binaryTreeId], references: [binaryTreeId])
+  occupant Qualification? @relation(fields: [occupantQualificationId], references: [qualificationId])
+  @@id([binaryTreeId, positionNo])
+  @@map("tree_canonical_position")
+  @@schema("organization")
+}
+model FoundingOccupationEvidence {
+  foundingOccupationEvidenceId String @id @default(uuid()) @map("founding_occupation_evidence_id") @db.Uuid
+  binaryTreeId String @map("binary_tree_id") @db.Uuid
+  positionNo Int @map("position_no")
+  qualificationId String @unique @map("qualification_id") @db.Uuid
+  initialPersonId String @map("initial_person_id") @db.Uuid
+  companySponsorQualificationId String @map("company_sponsor_qualification_id") @db.Uuid
+  sponsorRelationshipId String @unique @map("sponsor_relationship_id") @db.Uuid
+  actualSponsorSequenceNo Int @map("actual_sponsor_sequence_no")
+  effectiveAt DateTime @map("effective_at") @db.Timestamptz(6)
+  recordedAt DateTime @default(now()) @map("recorded_at") @db.Timestamptz(6)
+  evidenceHash String @map("evidence_hash")
+  binaryTree BinaryTree @relation(fields: [binaryTreeId], references: [binaryTreeId])
+  qualification Qualification @relation(fields: [qualificationId], references: [qualificationId])
+  @@unique([binaryTreeId, positionNo])
+  @@map("founding_occupation_evidence")
+  @@schema("organization")
+}
+model CompanySponsorDesignation {
+  binaryTreeId String @id @map("binary_tree_id") @db.Uuid
+  qualificationId String @unique @map("qualification_id") @db.Uuid
+  effectiveAt DateTime @map("effective_at") @db.Timestamptz(6)
+  recordedAt DateTime @default(now()) @map("recorded_at") @db.Timestamptz(6)
+  evidenceHash String @map("evidence_hash")
+  binaryTree BinaryTree @relation(fields: [binaryTreeId], references: [binaryTreeId])
+  qualification Qualification @relation(fields: [qualificationId], references: [qualificationId])
+  @@map("company_sponsor_designation")
+  @@schema("organization")
+}
+model PlacementTreeEvidence {
+  placementTreeEvidenceId String @id @default(uuid()) @map("placement_tree_evidence_id") @db.Uuid
+  binaryTreeId String @map("binary_tree_id") @db.Uuid
+  qualificationId String @unique @map("qualification_id") @db.Uuid
+  parentQualificationId String? @map("parent_qualification_id") @db.Uuid
+  side SideCode?
+  placementKind String @map("placement_kind")
+  sourceType String @map("source_type")
+  actorType String @map("actor_type")
+  actorId String? @map("actor_id") @db.Uuid
+  reason String
+  effectiveAt DateTime @map("effective_at") @db.Timestamptz(6)
+  recordedAt DateTime @default(now()) @map("recorded_at") @db.Timestamptz(6)
+  topologyVersion Int @map("topology_version")
+  correlationId String @map("correlation_id") @db.Uuid
+  evidenceHash String @map("evidence_hash")
+  binaryTree BinaryTree @relation(fields: [binaryTreeId], references: [binaryTreeId])
+  qualification Qualification @relation(fields: [qualificationId], references: [qualificationId])
+  @@index([binaryTreeId, effectiveAt, qualificationId])
+  @@map("placement_tree_evidence")
+  @@schema("organization")
+}
+model BinaryTreeAncestry {
+  binaryTreeId String @map("binary_tree_id") @db.Uuid
+  ancestorQualificationId String @map("ancestor_qualification_id") @db.Uuid
+  descendantQualificationId String @map("descendant_qualification_id") @db.Uuid
+  depth Int
+  firstSide SideCode? @map("first_side")
+  effectiveFrom DateTime @map("effective_from") @db.Timestamptz(6)
+  recordedAt DateTime @default(now()) @map("recorded_at") @db.Timestamptz(6)
+  binaryTree BinaryTree @relation(fields: [binaryTreeId], references: [binaryTreeId])
+  @@id([binaryTreeId, ancestorQualificationId, descendantQualificationId])
+  @@index([binaryTreeId, ancestorQualificationId, depth, descendantQualificationId])
+  @@index([binaryTreeId, descendantQualificationId])
+  @@map("binary_tree_ancestry")
+  @@schema("organization")
+}
+model BinaryTreeProjectionCheckpoint {
+  binaryTreeId String @id @map("binary_tree_id") @db.Uuid
+  sourceVersion Int @map("source_version")
+  generation String @db.Uuid
+  status String
+  dataThrough DateTime @map("data_through") @db.Timestamptz(6)
+  recordedAt DateTime @default(now()) @map("recorded_at") @db.Timestamptz(6)
+  binaryTree BinaryTree @relation(fields: [binaryTreeId], references: [binaryTreeId])
+  @@map("binary_tree_projection_checkpoint")
+  @@schema("organization")
 }

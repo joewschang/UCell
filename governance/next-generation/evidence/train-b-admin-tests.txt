@@ -1,0 +1,9 @@
+$ vitest run
+
+ RUN  v4.1.11 C:/UCell/next-generation/admin
+
+
+ Test Files  23 passed (23)
+      Tests  75 passed (75)
+   Start at  13:00:24
+   Duration  1.91s (transform 3.41s, setup 0ms, import 7.73s, tests 2.46s, environment 4ms)

@@ -18,13 +18,21 @@ function harness(events:any[]){
     processSaleConfirmed:jest.fn(),
     processMemberOrderNotification:jest.fn().mockResolvedValue({notificationId:'notice-1'}),
     processPaymentInventoryReservation:jest.fn(),
-    processLeasedReplay:jest.fn(),
+    processLeasedReplay:jest.fn(),processTreeProjectionEvent:jest.fn(),
     releaseFailedOutboxLease:jest.fn()
   };
   return {db,lease,deps};
 }
 
 describe('worker outbox poll entry',()=>{
+  it('dispatches tree projection events through the fenced lease handler',async()=>{
+    const h=harness([event({eventType:'BINARY_TREE_CHANGED'})]);
+    await pollOutbox(h.db,h.deps as any);
+    expect(h.db.outboxEvent.findMany.mock.calls[0][0].where.eventType.in).toContain('BINARY_TREE_CHANGED');
+    expect(h.deps.processTreeProjectionEvent).toHaveBeenCalledWith(h.db,h.lease);
+    expect(h.deps.processLeasedReplay).not.toHaveBeenCalled();
+    expect(h.deps.processSaleConfirmed).not.toHaveBeenCalled();
+  });
   it('claims and dispatches MEMBER_ORDER_CREATED instead of leaving it permanently pending',async()=>{
     const h=harness([event()]);
     await pollOutbox(h.db,h.deps as any);
