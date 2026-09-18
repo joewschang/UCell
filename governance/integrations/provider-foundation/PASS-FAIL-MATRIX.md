@@ -87,3 +87,6 @@
 | Provider workload telemetry | PASS | Sanitized batch counts, latency, throughput and outcomes only; no payload, credentials or monetary values |
 | Backend isolated Jest DB reliability | PASS | One disposable `ucell_jest_*` database, shared Phase 2 evidence, minimal seed and forced cleanup |
 | Complete Backend API after telemetry/isolation repair | PASS | 607 tests / 64 suites; isolated PostgreSQL cleanup PASS |
+| Provider reconciliation health API | PASS | Authoritative persisted status/domain counts and oldest exception age; RBAC protected |
+| Provider reconciliation exception queue | PASS | Bounded safe fields only; evidence, batch refs, connection versions and secrets excluded |
+| Complete Backend API after reconciliation read model | PASS | 630 tests / 65 suites; disposable PostgreSQL cleanup PASS |

@@ -105,6 +105,29 @@ export class AdminProviderOperationsService {
       leaseExpired:row.status==='PROCESSING'&&!!row.leaseExpiresAt&&row.leaseExpiresAt<=now,
     })),limit:take,truncated:rows.length>take};
   }
+  async reconciliationHealth(now=new Date()){
+    const [total,byStatus,byDomain,exceptions,oldestException]=await Promise.all([
+      this.prisma.providerReconciliationRun.count(),
+      this.prisma.providerReconciliationRun.groupBy({by:['status'],_count:{_all:true}}),
+      this.prisma.providerReconciliationRun.groupBy({by:['domain'],_count:{_all:true}}),
+      this.prisma.providerReconciliationRun.count({where:{status:{in:['DISCREPANCY','FAILED']}}}),
+      this.prisma.providerReconciliationRun.findFirst({where:{status:{in:['DISCREPANCY','FAILED']}},orderBy:[{startedAt:'asc'},{providerReconciliationRunId:'asc'}],select:{startedAt:true}}),
+    ]);
+    const failed=byStatus.find(row=>row.status==='FAILED')?._count._all??0;
+    const discrepancy=byStatus.find(row=>row.status==='DISCREPANCY')?._count._all??0;
+    return {generatedAt:now.toISOString(),state:failed>0?'CRITICAL':discrepancy>0?'DEGRADED':'HEALTHY',total,exceptions,oldestExceptionAt:oldestException?.startedAt.toISOString()??null,counts:{byStatus:Object.fromEntries(byStatus.map(row=>[row.status,row._count._all])),byDomain:Object.fromEntries(byDomain.map(row=>[row.domain,row._count._all]))}};
+  }
+
+  async reconciliationExceptions(input:{domain?:string;provider?:string;status?:string;take?:number}={},now=new Date()){
+    const domain=input.domain?parseEnum(input.domain,DOMAINS,'PROVIDER_RECONCILIATION_DOMAIN_INVALID'):undefined;
+    const status=input.status?parseEnum(input.status,['DISCREPANCY','FAILED'] as const,'PROVIDER_RECONCILIATION_STATUS_INVALID'):undefined;
+    const provider=input.provider?.trim();
+    if(input.provider!==undefined&&(!provider||provider.length>100))throw new BadRequestException('PROVIDER_RECONCILIATION_PROVIDER_INVALID');
+    const take=Number.isFinite(input.take)?Math.trunc(input.take!):50;
+    if(take<1||take>200)throw new BadRequestException('PROVIDER_RECONCILIATION_TAKE_INVALID');
+    const rows=await this.prisma.providerReconciliationRun.findMany({where:{...(domain?{domain}:{}),...(provider?{provider}:{}),status:status??{in:['DISCREPANCY','FAILED']}},orderBy:[{startedAt:'asc'},{providerReconciliationRunId:'asc'}],take:take+1,select:{providerReconciliationRunId:true,domain:true,provider:true,connectionId:true,runKey:true,periodStart:true,periodEnd:true,status:true,providerRecordCount:true,internalRecordCount:true,discrepancyCount:true,verificationConfigVersion:true,startedAt:true,completedAt:true,correlationId:true}});
+    return {generatedAt:now.toISOString(),items:rows.slice(0,take).map(row=>({...row,periodStart:row.periodStart.toISOString(),periodEnd:row.periodEnd.toISOString(),startedAt:row.startedAt.toISOString(),completedAt:row.completedAt?.toISOString()??null})),limit:take,truncated:rows.length>take};
+  }
 }
 
 function parseEnum<T extends readonly string[]>(value:string,values:T,code:string):T[number]{

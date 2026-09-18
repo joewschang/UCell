@@ -5505,6 +5505,88 @@
         ]
       }
     },
+    "/api/v1/admin/provider-operations/reconciliation/health": {
+      "get": {
+        "operationId": "adminProviderReconciliationHealth",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Safe aggregate health without evidence references or monetary interpretation"
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "Provider reconciliation health from authoritative persisted runs",
+        "tags": [
+          "Admin - Provider Reconciliation"
+        ]
+      }
+    },
+    "/api/v1/admin/provider-operations/reconciliation/exceptions": {
+      "get": {
+        "operationId": "adminProviderReconciliationExceptions",
+        "parameters": [
+          {
+            "name": "domain",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "provider",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "take",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Safe exception rows; excludes provider batch and stored evidence references"
+          },
+          "400": {
+            "description": "Invalid filter or limit"
+          },
+          "401": {
+            "description": "Admin authentication required"
+          },
+          "403": {
+            "description": "Operational, finance or compliance role required"
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "Bounded reconciliation discrepancy and failure queue",
+        "tags": [
+          "Admin - Provider Reconciliation"
+        ]
+      }
+    },
     "/api/v1/admin/persons": {
       "post": {
         "operationId": "adminCreatePerson",

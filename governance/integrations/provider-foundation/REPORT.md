@@ -198,3 +198,13 @@ Business logic changes: **NONE**.
 - Focused Provider Worker regression: 11 PASS across 3 suites. Complete Backend API: 607 PASS in 64 suites. Shared, Worker and API builds plus schema, migration, source, security and TODO preflights PASS.
 
 Business logic changes: **NONE**. The isolation repair changes test execution only; it does not change replay, carry, settlement or monetary behavior.
+
+## Provider reconciliation operations read model checkpoint
+
+- Added RBAC-protected reconciliation health and exception endpoints backed only by persisted `ProviderReconciliationRun` facts.
+- Health reports status/domain counts and oldest exception age; the exception queue is bounded, filter-validated and oldest-first.
+- Responses omit provider batch references, evidence hashes/references, connection-version identity and all secret material. They expose no mutation and make no monetary discrepancy interpretation.
+- Focused Provider operations/reconciliation regression: 20 PASS. Complete Backend API: 630 PASS in 65 suites on a disposable PostgreSQL database; cleanup PASS.
+- Shared, Worker and API builds plus OpenAPI export/preflight, schema, migration, source, security and TODO gates PASS.
+
+Business logic changes: **NONE**. Provider-specific reconciliation policy, provider mapping and operational credentials remain blocked/pending.
