@@ -1,23 +1,13 @@
-# OpenAPI contract report — working checkpoint
+# OpenAPI contract report
 
-Status: schema and structural compatibility PASS; full API contract closure IN_PROGRESS.
+PASS against START_HEAD 26fa675da0132646484b4a8806a8d5ab55e0e6f6. Generated SSOT: backend/openapi.generated.json.
 
-Baseline: 26fa675da0132646484b4a8806a8d5ab55e0e6f6. Generated artifact: backend/openapi.generated.json.
+174 operations; all original 167 retained, 7 additions (Reservoir Center and six period projection/export routes). Swagger generation, @apidevtools/swagger-parser validation, repository OpenAPI preflight and structural operation/security/parameter/schema comparison pass. See evidence/openapi-contract-diff.json and final-validation.json.
 
-- Baseline operations: 167; current generated operations: 174.
-- Original operations retained; 7 additions: Reservoir Center read and 6 period projection/export operations.
-- Swagger-generated document validated with @apidevtools/swagger-parser 13.0.0.
-- Existing OpenAPI preflight PASS.
-- Structural operation/security/parameter/schema compatibility comparison: no detected breaking changes.
-- Exact machine evidence: evidence/openapi-contract-diff.json.
-- Reproduce from backend: node scripts/openapi-closure-contract.mjs 26fa675da0132646484b4a8806a8d5ab55e0e6f6.
+Controllers/DTOs document metrics, time/asOf, dimensions/filters, snapshot/cursor, stale status, definition versions, classification, evidence and standard success/error envelopes. Fixed AnalyticsQuery adapters reject unsupported scopes/SQL and malformed settlement scope with 422. RBAC/BOLA, revocation, idempotency/conflict, snapshot mismatch and native CSV streaming are covered by real DB/HTTP tests. DTO/UUID syntax validation may return 400 as documented; domain validation returns 422.
 
-The detector cannot prove business-semantic compatibility. Subsequent tree pages require the first-page snapshotToken; clients must retain that identity. This intentional pagination contract must be documented and covered by HTTP tests. Complete success/error response schemas, API RBAC/BOLA/error contract tests and final regeneration remain required before closure.
+Structural comparison does not prove business semantics. Tree/report clients must retain the first-page snapshot token for subsequent pages; actual concurrent late-commit tests verify fixed visibility. No browser recursive calculation or all-page export is introduced.
 
-SwaggerHub: EXTERNAL_TOOL_PENDING, target unconfirmed; no project created/uploaded. Stage STOP; Production BLOCKED.
+Against older Stage-tagged source 22595798d30dee1af80aeb832c0d36cede8f5175 (134 operations), the raw detector retains one FAIL: GET /api/v1/member/organization/binary operationId MemberController_binary → memberBinaryOrganization. It already exists at START_HEAD; this round retains it. URL/method unchanged; old generated SDK callers need the renamed method. See evidence/openapi-stage-source-diff.json. This does not represent a regression from the required 167-operation baseline.
 
-## Stage-source compatibility review
-
-The deployed source tag resolves to 22595798d30dee1af80aeb832c0d36cede8f5175, 134 operations; current working artifact has 174. A separate diff reports one operationId change: GET /api/v1/member/organization/binary, MemberController_binary → memberBinaryOrganization. This already exists at START_HEAD and is unchanged in this round. URL and HTTP method remain; generated SDK operation names must be regenerated/migrated at Stage upgrade. Evidence: evidence/openapi-stage-source-diff.json. The raw detector result is retained as FAIL for this old-source comparison rather than silently suppressed.
-
-Against START_HEAD, all 167 operations remain structurally compatible and 7 operations are added. New Reservoir schema detail and Analytics supported-metric/UUID documentation are prepared; final regeneration and validation remain pending.
+Swagger: DEV enabled, Stage script prepared enabled for approved UAT, Production default disabled. SwaggerHub is documentation publishing and remains EXTERNAL_TOOL_PENDING until API target is confirmed; it is not API SSOT or a Core development blocker. No publishing project was invented. Stage STOP; Production BLOCKED.

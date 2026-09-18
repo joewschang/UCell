@@ -187,5 +187,6 @@
   ],
   "environment": "LOCAL_ISOLATED_POSTGRES_55432",
   "stageDeployment": "STOP",
-  "production": "BLOCKED"
+  "production": "BLOCKED",
+  "implementationCandidate": "dbd9a57b6b54dec9fe34b7d5802a6625d835a88f"
 }

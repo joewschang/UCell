@@ -1,8 +1,8 @@
-# Train B code review — in progress
+# Train B code review — CLOSED
 
 Review baseline: 26fa675da0132646484b4a8806a8d5ab55e0e6f6; integration/member-backend-mvp.
 Authority: Issue #2 and PO decision https://github.com/joewschang/UCell/issues/2#issuecomment-5725701382.
-This file is an active review record, not closure or Stage approval.
+Earlier rows are historical checkpoints. The final closure disposition supersedes corresponding open findings; Stage deployment remains STOP.
 
 | Classification | Finding | Action / evidence |
 |---|---|---|
@@ -95,3 +95,21 @@ This checkpoint supersedes the corresponding earlier open findings, without dele
 Always Active is correctly based on explicit historical Company ownership under the earlier SSOT, including member-origin company-held Balls. Such Balls retain their own Plan and never acquire the bootstrap LEADER binding. A temporary narrower interpretation was rejected after reading the full SSOT and was not retained.
 
 A later attempt to read RPV cancellation-related code was rejected by the tool; that additional inspection is not claimed complete. Existing Core RPV/replay regressions remain recorded separately.
+
+
+## Final closure disposition
+
+Local/isolated code gates PASS for implementation candidate dbd9a57b6b54dec9fe34b7d5802a6625d835a88f. This section supersedes historical open rows above; history is retained. No unresolved NEEDS_FIX remains in the implemented scope.
+
+- PASS: full destination source/type/period/settlement guards; adversarial Company Golden.
+- PASS: incomplete canonical ancestry fails closed; bounded ancestry and leaf guard validated at 1M across four shapes.
+- PASS: current Company LEADER/Reservoir labels, canonical UI and 81 Admin tests/build; manual visual UAT remains DEFERRED to the authored package.
+- PASS: stored replay Carry Pair PV and source/owner/Active Last Updated; Company succession timestamp assertions.
+- PASS: Train C fixed metric adapters, tree or individual Founding Ball rebuild scope, actual request/rebuild/read, immutable jobs, concurrency/leases, bounded private exports and financial stale semantics.
+- PASS: Company Core EPV Return and RPV recognition/duplicate Golden; ordinary Member Global payout and baseline invariance. Additional RPV cancellation scenario remains explicitly not claimed.
+- PASS: final complete regression, 67-migration RC/DB Golden, full App Security, 174-operation OpenAPI validation/167-operation compatibility, populated 12-cell scale matrix.
+- SCALE_RISK — documented: warm local sequential latency and harness RSS do not certify Production concurrency/settlement throughput. Large aggregates use background jobs.
+- DEFERRED: formal identity credentials, SwaggerHub target, manual UAT execution and derived physical retention policy. None is represented as completed.
+- SECURITY_RISK — controlled: Stage STOP; Production BLOCKED; no deployment or Stage database mutation.
+
+Exact final gate evidence: evidence/final-validation.json and TRAIN_B_CLOSURE_PASS_FAIL_MATRIX.md.

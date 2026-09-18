@@ -1,18 +1,14 @@
-# Current Train B closure / Train C implementation checkpoint
+# Next Generation implementation status
 
-IN_PROGRESS — NOT_READY_FOR_STAGE_REVIEW. Stage deployment STOP; Production BLOCKED.
-Start HEAD: 26fa675da0132646484b4a8806a8d5ab55e0e6f6. Origin was fetched and synchronized before work.
-Latest PO approval: COMPANY_BOOTSTRAP_PROFILE_V1 = LEADER, comment 5725701382.
-See COMPANY_BOOTSTRAP_PROFILE_V1_APPROVED_MAPPING.md; the earlier pending record is preserved as history.
+Train B closure and Train C analytics foundation local/isolated gates PASS. Company LEADER binding and Reservoir B monetary routing/replay are implemented through existing Core. READY_FOR_STAGE_REVIEW; Stage deployment remains STOP pending explicit confirmation. Production BLOCKED.
 
-Current work includes stable MVCC tree pagination, versioned LEADER binding, Company Core final-entitlement routing,
-append-only Reservoir B/replay isolation, canonical seven-position UI and Reservoir Center/Explain.
-Company Golden 17 includes Global late settlement, post-settlement Return/Replay and stable Reservoir stale-state snapshots. Decision v3 17/17, Member 142 and Shared 181 pass; latest full API checkpoint 743 tests requires rerun after later fixes. Admin 79 tests PASS. OpenAPI 174 operations (167 retained) passes schema/structural checks. 1M deep projected detail P95 249 ms; full scale/analytics/UAT/regression gates remain in progress.
-Migration files currently total 65; this is a working checkpoint, not a deployed count.
-See TRAIN_B_CODE_REVIEW.md for open findings and evidence. No Stage or Production change has been made.
+START_HEAD: 26fa675da0132646484b4a8806a8d5ab55e0e6f6. Implementation candidate: dbd9a57b6b54dec9fe34b7d5802a6625d835a88f. Final pushed report-only handoff commit is reported separately. Origin was fetched before work; final synchronization is verified at handoff.
 
-The attachment section-37 truncation is not a global blocker. Issue #2/comments and governance SSOT remain authoritative.
-Missing unmatched source material must be recorded SOURCE_NOT_AVAILABLE.
+Current source: 67 migrations, 174 generated OpenAPI operations (167 retained). Exact test counts and domain results are in evidence/final-validation.json and TRAIN_B_CLOSURE_PASS_FAIL_MATRIX.md. Full 12-cell populated tree scale baseline, RC, Security, Decision v3 17/17 and economic invariance pass. UAT checklist ready; manual execution pending.
+
+Authority: Issue #2 and all comments, especially approval 5725701382; governance SSOT. Pending LEADER history is preserved and superseded by APPROVED_LEADER_BINDING. Always Active does not bypass Global rank; member-origin Company-held Balls retain their own Plan.
+
+No LLM/RAG/Vector DB or Stage/Production deployment was performed. Formal identity credentials and SwaggerHub target remain external; unsupported Next Rank Pipeline/missing attachment evidence is SOURCE_NOT_AVAILABLE. See the eight closure reports and Stage candidate report for limitations, backup and recovery.
 
 ---
 
