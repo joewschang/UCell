@@ -1,6 +1,658 @@
 {
   "openapi": "3.0.0",
   "paths": {
+    "/api/v1/admin/finance/reservoirs": {
+      "get": {
+        "description": "Finance-confidential immutable sources. Read-only; signed replay correction is not a payout. Stable UUID cursor within server snapshot. A rejects tree/position/awardType filters.",
+        "operationId": "adminReadReservoirCenter",
+        "parameters": [
+          {
+            "name": "kind",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "A",
+                "B"
+              ]
+            }
+          },
+          {
+            "name": "timezone",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "Asia/Taipei"
+              ]
+            }
+          },
+          {
+            "name": "asOf",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "knowledgeCutoff",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "periodStart",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "periodEnd",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "tree",
+            "required": false,
+            "in": "query",
+            "description": "B only",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "position",
+            "required": false,
+            "in": "query",
+            "description": "B bootstrap position only",
+            "schema": {
+              "minimum": 1,
+              "maximum": 3,
+              "type": "number"
+            }
+          },
+          {
+            "name": "awardType",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "REFERRAL",
+                "EQUALIZATION",
+                "BINARY",
+                "MATCHING",
+                "RPV",
+                "EPV",
+                "GLOBAL"
+              ]
+            }
+          },
+          {
+            "name": "after",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "snapshotToken",
+            "required": false,
+            "in": "query",
+            "description": "Required with after; fixed actor/role/query and MVCC visibility; expires after one hour.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Snapshot-consistent posted ledger; STALE amounts are not a complete latest entitlement. Decimal TWD, at most 100 entries.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "required": [
+                        "kind",
+                        "time",
+                        "filters",
+                        "status",
+                        "sourceEvidence",
+                        "definitionVersion",
+                        "dataThrough",
+                        "dataClassification",
+                        "flowPolicy",
+                        "unit",
+                        "snapshotToken",
+                        "snapshotExpiresAt",
+                        "items",
+                        "total",
+                        "cumulative",
+                        "periodInflow",
+                        "nextCursor",
+                        "lastUpdated"
+                      ],
+                      "properties": {
+                        "kind": {
+                          "type": "string",
+                          "enum": [
+                            "A",
+                            "B"
+                          ]
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "CURRENT",
+                            "STALE"
+                          ]
+                        },
+                        "time": {
+                          "type": "object",
+                          "required": [
+                            "timezone",
+                            "asOf",
+                            "knowledgeCutoff",
+                            "periodStart",
+                            "periodEnd"
+                          ],
+                          "properties": {
+                            "timezone": {
+                              "type": "string",
+                              "enum": [
+                                "Asia/Taipei"
+                              ]
+                            },
+                            "asOf": {
+                              "type": "string",
+                              "format": "date-time"
+                            },
+                            "knowledgeCutoff": {
+                              "type": "string",
+                              "format": "date-time"
+                            },
+                            "periodStart": {
+                              "type": "string",
+                              "format": "date-time"
+                            },
+                            "periodEnd": {
+                              "type": "string",
+                              "format": "date-time"
+                            }
+                          }
+                        },
+                        "filters": {
+                          "type": "object",
+                          "properties": {
+                            "tree": {
+                              "type": "string",
+                              "format": "uuid"
+                            },
+                            "position": {
+                              "type": "integer",
+                              "minimum": 1,
+                              "maximum": 3
+                            },
+                            "awardType": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        "sourceEvidence": {
+                          "type": "object",
+                          "required": [
+                            "status",
+                            "pendingReturns",
+                            "pendingReplays"
+                          ],
+                          "properties": {
+                            "status": {
+                              "type": "string",
+                              "enum": [
+                                "CURRENT",
+                                "STALE"
+                              ]
+                            },
+                            "pendingReturns": {
+                              "type": "string",
+                              "pattern": "^[0-9]+$"
+                            },
+                            "pendingReplays": {
+                              "type": "string",
+                              "pattern": "^[0-9]+$"
+                            }
+                          }
+                        },
+                        "definitionVersion": {
+                          "type": "string"
+                        },
+                        "dataThrough": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "lastUpdated": {
+                          "type": "string",
+                          "format": "date-time",
+                          "nullable": true
+                        },
+                        "dataClassification": {
+                          "type": "string",
+                          "enum": [
+                            "FINANCE_CONFIDENTIAL"
+                          ]
+                        },
+                        "flowPolicy": {
+                          "type": "string",
+                          "enum": [
+                            "INFLOW_ONLY"
+                          ]
+                        },
+                        "unit": {
+                          "type": "string",
+                          "enum": [
+                            "TWD"
+                          ]
+                        },
+                        "snapshotToken": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "snapshotExpiresAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "nextCursor": {
+                          "type": "string",
+                          "format": "uuid",
+                          "nullable": true
+                        },
+                        "total": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "cumulative": {
+                          "type": "string",
+                          "pattern": "^-?[0-9]+(?:\\.[0-9]+)?$"
+                        },
+                        "periodInflow": {
+                          "type": "string",
+                          "pattern": "^-?[0-9]+(?:\\.[0-9]+)?$"
+                        },
+                        "items": {
+                          "type": "array",
+                          "maxItems": 100,
+                          "items": {
+                            "type": "object",
+                            "required": [
+                              "id",
+                              "effectType",
+                              "amount",
+                              "recordedAt",
+                              "settlement",
+                              "periodStart",
+                              "periodEnd",
+                              "ruleVersion",
+                              "snapshotHash"
+                            ],
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "format": "uuid"
+                              },
+                              "effectType": {
+                                "type": "string"
+                              },
+                              "amount": {
+                                "type": "string",
+                                "pattern": "^-?[0-9]+(?:\\.[0-9]+)?$"
+                              },
+                              "recordedAt": {
+                                "type": "string",
+                                "format": "date-time"
+                              },
+                              "settlement": {
+                                "type": "string",
+                                "format": "uuid",
+                                "nullable": true
+                              },
+                              "periodStart": {
+                                "type": "string",
+                                "format": "date-time"
+                              },
+                              "periodEnd": {
+                                "type": "string",
+                                "format": "date-time"
+                              },
+                              "ruleVersion": {
+                                "type": "string"
+                              },
+                              "snapshotHash": {
+                                "type": "string"
+                              },
+                              "tree": {
+                                "type": "string",
+                                "format": "uuid"
+                              },
+                              "position": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 3,
+                                "nullable": true
+                              },
+                              "qualificationId": {
+                                "type": "string",
+                                "format": "uuid"
+                              },
+                              "awardType": {
+                                "type": "string",
+                                "enum": [
+                                  "REFERRAL",
+                                  "EQUALIZATION",
+                                  "BINARY",
+                                  "MATCHING",
+                                  "EPV",
+                                  "RPV",
+                                  "GLOBAL"
+                                ]
+                              },
+                              "parameterVersion": {
+                                "type": "string"
+                              },
+                              "replayPostingId": {
+                                "type": "string",
+                                "format": "uuid",
+                                "nullable": true
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "required": [
+                        "request_id",
+                        "timestamp",
+                        "api_version"
+                      ],
+                      "properties": {
+                        "request_id": {
+                          "type": "string"
+                        },
+                        "timestamp": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "api_version": {
+                          "type": "string",
+                          "enum": [
+                            "v1"
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "DTO validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message",
+                    "request_id",
+                    "timestamp"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "oneOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      ]
+                    },
+                    "details": {
+                      "nullable": true
+                    },
+                    "request_id": {
+                      "type": "string"
+                    },
+                    "timestamp": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Session expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message",
+                    "request_id",
+                    "timestamp"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "oneOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      ]
+                    },
+                    "details": {
+                      "nullable": true
+                    },
+                    "request_id": {
+                      "type": "string"
+                    },
+                    "timestamp": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Live Entra Finance/Super Admin/Audit grant required; revoked or unauthorized role denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message",
+                    "request_id",
+                    "timestamp"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "oneOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      ]
+                    },
+                    "details": {
+                      "nullable": true
+                    },
+                    "request_id": {
+                      "type": "string"
+                    },
+                    "timestamp": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Missing, changed or expired pagination snapshot",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message",
+                    "request_id",
+                    "timestamp"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "oneOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      ]
+                    },
+                    "details": {
+                      "nullable": true
+                    },
+                    "request_id": {
+                      "type": "string"
+                    },
+                    "timestamp": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Invalid time context or unsupported filters",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message",
+                    "request_id",
+                    "timestamp"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "oneOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      ]
+                    },
+                    "details": {
+                      "nullable": true
+                    },
+                    "request_id": {
+                      "type": "string"
+                    },
+                    "timestamp": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "分開讀取 Reservoir A/B 權威分錄與期間／累積金額",
+        "tags": [
+          "Admin - Reservoir Center"
+        ]
+      }
+    },
     "/api/v1/admin/organization/trees": {
       "post": {
         "operationId": "adminCreateBinaryTree",
@@ -427,6 +1079,26 @@
             "name": "after",
             "required": false,
             "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "parentQualificationId",
+            "required": false,
+            "in": "query",
+            "description": "Expand direct children within the same tree-wide snapshot; never downloads the entire tree.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "snapshotToken",
+            "required": false,
+            "in": "query",
+            "description": "First-page snapshot identity, required with after; bound to actor, role, tree and time. Conflict/expiry: 409.",
             "schema": {
               "format": "uuid",
               "type": "string"
@@ -1014,7 +1686,7 @@
     },
     "/api/v1/admin/explain/reservoir": {
       "get": {
-        "description": "Stored Reservoir A accrual/correction, requires live Entra finance/audit grant. Reservoir B always returns NOT_ACTIVATED pending company profile binding.",
+        "description": "Stored Reservoir A accrual/correction, requires live Entra finance/audit grant. Reservoir B reads immutable Company Core final entitlement, original LEADER binding and signed replay effect; no frontend recomputation.",
         "operationId": "adminExplainReservoir",
         "parameters": [
           {
@@ -1985,6 +2657,2450 @@
         "summary": "建立不可覆寫的管理分析快照；需要 UUID Idempotency-Key",
         "tags": [
           "Admin - Management Analytics"
+        ]
+      }
+    },
+    "/api/v1/admin/analytics/period-projections/jobs": {
+      "post": {
+        "description": "Derived read models only. Requires Idempotency-Key. Never writes economic facts.",
+        "operationId": "adminRequestPeriodProjection",
+        "parameters": [
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 128,
+              "pattern": "^[-a-zA-Z0-9_:]{1,128}$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PeriodJobDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Actor-bound idempotent projection job",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "required": [
+                        "jobId",
+                        "status",
+                        "replayed"
+                      ],
+                      "properties": {
+                        "jobId": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "REQUESTED",
+                            "RUNNING",
+                            "COMPLETED",
+                            "FAILED",
+                            "EXPIRED"
+                          ]
+                        },
+                        "replayed": {
+                          "type": "boolean"
+                        }
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "required": [
+                        "request_id",
+                        "timestamp",
+                        "api_version"
+                      ],
+                      "properties": {
+                        "request_id": {
+                          "type": "string"
+                        },
+                        "timestamp": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "api_version": {
+                          "type": "string",
+                          "enum": [
+                            "v1"
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed UUID or DTO shape rejected by global validation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message",
+                    "request_id",
+                    "timestamp"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "oneOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      ]
+                    },
+                    "details": {
+                      "nullable": true
+                    },
+                    "request_id": {
+                      "type": "string"
+                    },
+                    "timestamp": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Session expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message",
+                    "request_id",
+                    "timestamp"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "oneOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      ]
+                    },
+                    "details": {
+                      "nullable": true
+                    },
+                    "request_id": {
+                      "type": "string"
+                    },
+                    "timestamp": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Live Entra Finance/Super Admin/Audit grant required; session and grants rechecked",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message",
+                    "request_id",
+                    "timestamp"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "oneOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      ]
+                    },
+                    "details": {
+                      "nullable": true
+                    },
+                    "request_id": {
+                      "type": "string"
+                    },
+                    "timestamp": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Job not visible to this actor",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message",
+                    "request_id",
+                    "timestamp"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "oneOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      ]
+                    },
+                    "details": {
+                      "nullable": true
+                    },
+                    "request_id": {
+                      "type": "string"
+                    },
+                    "timestamp": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Idempotency conflict, queue limit, unavailable generation or snapshot context mismatch",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message",
+                    "request_id",
+                    "timestamp"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "oneOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      ]
+                    },
+                    "details": {
+                      "nullable": true
+                    },
+                    "request_id": {
+                      "type": "string"
+                    },
+                    "timestamp": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Invalid query, unsupported metric/filter/dimension or time context",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message",
+                    "request_id",
+                    "timestamp"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "oneOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      ]
+                    },
+                    "details": {
+                      "nullable": true
+                    },
+                    "request_id": {
+                      "type": "string"
+                    },
+                    "timestamp": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "建立 dry-run／rebuild／reconcile 背景工作",
+        "tags": [
+          "Admin - Period Analytics"
+        ]
+      }
+    },
+    "/api/v1/admin/analytics/period-projections/jobs/{id}": {
+      "get": {
+        "operationId": "adminGetPeriodProjectionJob",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Actor-bound projection status and reconciliation evidence",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "required": [
+                        "job_id",
+                        "status",
+                        "mode",
+                        "query",
+                        "result",
+                        "failure_code",
+                        "requested_at",
+                        "started_at",
+                        "completed_at"
+                      ],
+                      "properties": {
+                        "job_id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "REQUESTED",
+                            "RUNNING",
+                            "COMPLETED",
+                            "FAILED"
+                          ]
+                        },
+                        "mode": {
+                          "type": "string",
+                          "enum": [
+                            "DRY_RUN",
+                            "REBUILD",
+                            "RECONCILE"
+                          ]
+                        },
+                        "query": {
+                          "type": "object"
+                        },
+                        "requested_at": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "started_at": {
+                          "type": "string",
+                          "format": "date-time",
+                          "nullable": true
+                        },
+                        "completed_at": {
+                          "type": "string",
+                          "format": "date-time",
+                          "nullable": true
+                        },
+                        "failure_code": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "result": {
+                          "type": "object",
+                          "nullable": true,
+                          "properties": {
+                            "mode": {
+                              "type": "string"
+                            },
+                            "generation": {
+                              "type": "string",
+                              "format": "uuid",
+                              "nullable": true
+                            },
+                            "sourceHash": {
+                              "type": "string"
+                            },
+                            "previousGeneration": {
+                              "type": "string",
+                              "format": "uuid",
+                              "nullable": true
+                            },
+                            "reconciles": {
+                              "type": "boolean",
+                              "nullable": true
+                            },
+                            "rowCount": {
+                              "type": "integer"
+                            },
+                            "status": {
+                              "type": "string",
+                              "enum": [
+                                "CURRENT",
+                                "STALE"
+                              ]
+                            },
+                            "manifest": {
+                              "type": "object"
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "required": [
+                        "request_id",
+                        "timestamp",
+                        "api_version"
+                      ],
+                      "properties": {
+                        "request_id": {
+                          "type": "string"
+                        },
+                        "timestamp": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "api_version": {
+                          "type": "string",
+                          "enum": [
+                            "v1"
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed UUID or DTO shape rejected by global validation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message",
+                    "request_id",
+                    "timestamp"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "oneOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      ]
+                    },
+                    "details": {
+                      "nullable": true
+                    },
+                    "request_id": {
+                      "type": "string"
+                    },
+                    "timestamp": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Session expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message",
+                    "request_id",
+                    "timestamp"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "oneOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      ]
+                    },
+                    "details": {
+                      "nullable": true
+                    },
+                    "request_id": {
+                      "type": "string"
+                    },
+                    "timestamp": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Live Entra Finance/Super Admin/Audit grant required; session and grants rechecked",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message",
+                    "request_id",
+                    "timestamp"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "oneOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      ]
+                    },
+                    "details": {
+                      "nullable": true
+                    },
+                    "request_id": {
+                      "type": "string"
+                    },
+                    "timestamp": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Job not visible to this actor",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message",
+                    "request_id",
+                    "timestamp"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "oneOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      ]
+                    },
+                    "details": {
+                      "nullable": true
+                    },
+                    "request_id": {
+                      "type": "string"
+                    },
+                    "timestamp": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Idempotency conflict, queue limit, unavailable generation or snapshot context mismatch",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message",
+                    "request_id",
+                    "timestamp"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "oneOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      ]
+                    },
+                    "details": {
+                      "nullable": true
+                    },
+                    "request_id": {
+                      "type": "string"
+                    },
+                    "timestamp": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Invalid query, unsupported metric/filter/dimension or time context",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message",
+                    "request_id",
+                    "timestamp"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "oneOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      ]
+                    },
+                    "details": {
+                      "nullable": true
+                    },
+                    "request_id": {
+                      "type": "string"
+                    },
+                    "timestamp": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "讀取本人投影工作的狀態及 reconciliation 結果",
+        "tags": [
+          "Admin - Period Analytics"
+        ]
+      }
+    },
+    "/api/v1/admin/analytics/period-projections/query": {
+      "post": {
+        "description": "Finance-confidential. Maximum 100 rows. STALE/REBUILDING/UPDATING/FAILED is not authoritative current data. No SQL input; monetary values remain source decimal strings.",
+        "operationId": "adminQueryPeriodAggregate",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PeriodReadDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Standard HTTP envelope containing projection evidence and fixed generation cursor",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "required": [
+                        "status",
+                        "projectionStatus",
+                        "snapshot",
+                        "nextCursor",
+                        "dataThrough",
+                        "definitionVersion",
+                        "result",
+                        "time"
+                      ],
+                      "properties": {
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "AVAILABLE",
+                            "PARTIAL",
+                            "UNAVAILABLE"
+                          ]
+                        },
+                        "projectionStatus": {
+                          "type": "string",
+                          "enum": [
+                            "CURRENT",
+                            "UPDATING",
+                            "REBUILDING",
+                            "STALE",
+                            "FAILED"
+                          ]
+                        },
+                        "snapshot": {
+                          "type": "string",
+                          "format": "uuid",
+                          "nullable": true
+                        },
+                        "nextCursor": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "dataThrough": {
+                          "type": "string",
+                          "format": "date-time",
+                          "nullable": true
+                        },
+                        "definitionVersion": {
+                          "type": "string"
+                        },
+                        "projectionVersion": {
+                          "type": "string"
+                        },
+                        "time": {
+                          "type": "object"
+                        },
+                        "scope": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "isLatestGeneration": {
+                          "type": "boolean"
+                        },
+                        "updatedAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "metricKey": {
+                          "type": "string"
+                        },
+                        "total": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "finality": {
+                          "type": "string",
+                          "enum": [
+                            "NOT_APPLICABLE"
+                          ]
+                        },
+                        "quality": {
+                          "type": "string",
+                          "enum": [
+                            "VERIFIED",
+                            "PARTIAL",
+                            "UNAVAILABLE"
+                          ]
+                        },
+                        "ruleVersion": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "parameterVersion": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "versionReason": {
+                          "type": "string"
+                        },
+                        "dataClassification": {
+                          "type": "string",
+                          "enum": [
+                            "FINANCE_CONFIDENTIAL"
+                          ]
+                        },
+                        "evidenceRefs": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "required": [
+                              "type",
+                              "id",
+                              "revision"
+                            ],
+                            "properties": {
+                              "type": {
+                                "type": "string"
+                              },
+                              "id": {
+                                "type": "string"
+                              },
+                              "revision": {
+                                "type": "string"
+                              }
+                            }
+                          }
+                        },
+                        "explainCode": {
+                          "type": "string"
+                        },
+                        "canonicalDeepLink": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "manifest": {
+                          "type": "object"
+                        },
+                        "result": {
+                          "type": "array",
+                          "nullable": true,
+                          "maxItems": 100,
+                          "items": {
+                            "type": "object",
+                            "required": [
+                              "key",
+                              "dimensions",
+                              "measures",
+                              "evidence"
+                            ],
+                            "properties": {
+                              "key": {
+                                "type": "string"
+                              },
+                              "dimensions": {
+                                "type": "object",
+                                "additionalProperties": {
+                                  "type": "string"
+                                }
+                              },
+                              "measures": {
+                                "type": "object",
+                                "additionalProperties": {
+                                  "oneOf": [
+                                    {
+                                      "type": "string",
+                                      "nullable": true
+                                    },
+                                    {
+                                      "type": "number"
+                                    }
+                                  ]
+                                }
+                              },
+                              "evidence": {
+                                "type": "object"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "required": [
+                        "request_id",
+                        "timestamp",
+                        "api_version"
+                      ],
+                      "properties": {
+                        "request_id": {
+                          "type": "string"
+                        },
+                        "timestamp": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "api_version": {
+                          "type": "string",
+                          "enum": [
+                            "v1"
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed UUID or DTO shape rejected by global validation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message",
+                    "request_id",
+                    "timestamp"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "oneOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      ]
+                    },
+                    "details": {
+                      "nullable": true
+                    },
+                    "request_id": {
+                      "type": "string"
+                    },
+                    "timestamp": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Session expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message",
+                    "request_id",
+                    "timestamp"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "oneOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      ]
+                    },
+                    "details": {
+                      "nullable": true
+                    },
+                    "request_id": {
+                      "type": "string"
+                    },
+                    "timestamp": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Live Entra Finance/Super Admin/Audit grant required; session and grants rechecked",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message",
+                    "request_id",
+                    "timestamp"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "oneOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      ]
+                    },
+                    "details": {
+                      "nullable": true
+                    },
+                    "request_id": {
+                      "type": "string"
+                    },
+                    "timestamp": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Job not visible to this actor",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message",
+                    "request_id",
+                    "timestamp"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "oneOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      ]
+                    },
+                    "details": {
+                      "nullable": true
+                    },
+                    "request_id": {
+                      "type": "string"
+                    },
+                    "timestamp": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Idempotency conflict, queue limit, unavailable generation or snapshot context mismatch",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message",
+                    "request_id",
+                    "timestamp"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "oneOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      ]
+                    },
+                    "details": {
+                      "nullable": true
+                    },
+                    "request_id": {
+                      "type": "string"
+                    },
+                    "timestamp": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Invalid query, unsupported metric/filter/dimension or time context",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message",
+                    "request_id",
+                    "timestamp"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "oneOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      ]
+                    },
+                    "details": {
+                      "nullable": true
+                    },
+                    "request_id": {
+                      "type": "string"
+                    },
+                    "timestamp": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "讀取固定 generation 的分析資料",
+        "tags": [
+          "Admin - Period Analytics"
+        ]
+      }
+    },
+    "/api/v1/admin/analytics/period-projections/exports": {
+      "post": {
+        "description": "Requires Idempotency-Key. Expires after 24 hours. Actor-bound private download; authorization rechecked by worker and download.",
+        "operationId": "adminRequestPeriodExport",
+        "parameters": [
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 128,
+              "pattern": "^[-a-zA-Z0-9_:]{1,128}$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PeriodExportDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Actor-bound idempotent export job",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "required": [
+                        "exportId",
+                        "status",
+                        "replayed"
+                      ],
+                      "properties": {
+                        "exportId": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "REQUESTED",
+                            "RUNNING",
+                            "COMPLETED",
+                            "FAILED",
+                            "EXPIRED"
+                          ]
+                        },
+                        "replayed": {
+                          "type": "boolean"
+                        }
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "required": [
+                        "request_id",
+                        "timestamp",
+                        "api_version"
+                      ],
+                      "properties": {
+                        "request_id": {
+                          "type": "string"
+                        },
+                        "timestamp": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "api_version": {
+                          "type": "string",
+                          "enum": [
+                            "v1"
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed UUID or DTO shape rejected by global validation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message",
+                    "request_id",
+                    "timestamp"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "oneOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      ]
+                    },
+                    "details": {
+                      "nullable": true
+                    },
+                    "request_id": {
+                      "type": "string"
+                    },
+                    "timestamp": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Session expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message",
+                    "request_id",
+                    "timestamp"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "oneOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      ]
+                    },
+                    "details": {
+                      "nullable": true
+                    },
+                    "request_id": {
+                      "type": "string"
+                    },
+                    "timestamp": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Live Entra Finance/Super Admin/Audit grant required; session and grants rechecked",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message",
+                    "request_id",
+                    "timestamp"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "oneOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      ]
+                    },
+                    "details": {
+                      "nullable": true
+                    },
+                    "request_id": {
+                      "type": "string"
+                    },
+                    "timestamp": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Job not visible to this actor",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message",
+                    "request_id",
+                    "timestamp"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "oneOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      ]
+                    },
+                    "details": {
+                      "nullable": true
+                    },
+                    "request_id": {
+                      "type": "string"
+                    },
+                    "timestamp": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Idempotency conflict, queue limit, unavailable generation or snapshot context mismatch",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message",
+                    "request_id",
+                    "timestamp"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "oneOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      ]
+                    },
+                    "details": {
+                      "nullable": true
+                    },
+                    "request_id": {
+                      "type": "string"
+                    },
+                    "timestamp": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Invalid query, unsupported metric/filter/dimension or time context",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message",
+                    "request_id",
+                    "timestamp"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "oneOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      ]
+                    },
+                    "details": {
+                      "nullable": true
+                    },
+                    "request_id": {
+                      "type": "string"
+                    },
+                    "timestamp": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "建立相同查詢與 snapshot 的背景 CSV 匯出",
+        "tags": [
+          "Admin - Period Analytics"
+        ]
+      }
+    },
+    "/api/v1/admin/analytics/period-projections/exports/{id}": {
+      "get": {
+        "operationId": "adminGetPeriodExport",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Export lifecycle, snapshot and provenance",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "required": [
+                        "export_id",
+                        "status",
+                        "snapshot",
+                        "query",
+                        "requested_at",
+                        "generated_at",
+                        "expires_at",
+                        "data_through",
+                        "definition_version",
+                        "row_count",
+                        "chunk_count",
+                        "content_hash",
+                        "failure_code"
+                      ],
+                      "properties": {
+                        "export_id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "REQUESTED",
+                            "RUNNING",
+                            "COMPLETED",
+                            "FAILED",
+                            "EXPIRED"
+                          ]
+                        },
+                        "snapshot": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "query": {
+                          "type": "object"
+                        },
+                        "requested_at": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "generated_at": {
+                          "type": "string",
+                          "format": "date-time",
+                          "nullable": true
+                        },
+                        "expires_at": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "data_through": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "definition_version": {
+                          "type": "string"
+                        },
+                        "row_count": {
+                          "type": "integer",
+                          "nullable": true
+                        },
+                        "chunk_count": {
+                          "type": "integer",
+                          "nullable": true
+                        },
+                        "content_hash": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "failure_code": {
+                          "type": "string",
+                          "nullable": true
+                        }
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "required": [
+                        "request_id",
+                        "timestamp",
+                        "api_version"
+                      ],
+                      "properties": {
+                        "request_id": {
+                          "type": "string"
+                        },
+                        "timestamp": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "api_version": {
+                          "type": "string",
+                          "enum": [
+                            "v1"
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed UUID or DTO shape rejected by global validation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message",
+                    "request_id",
+                    "timestamp"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "oneOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      ]
+                    },
+                    "details": {
+                      "nullable": true
+                    },
+                    "request_id": {
+                      "type": "string"
+                    },
+                    "timestamp": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Session expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message",
+                    "request_id",
+                    "timestamp"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "oneOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      ]
+                    },
+                    "details": {
+                      "nullable": true
+                    },
+                    "request_id": {
+                      "type": "string"
+                    },
+                    "timestamp": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Live Entra Finance/Super Admin/Audit grant required; session and grants rechecked",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message",
+                    "request_id",
+                    "timestamp"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "oneOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      ]
+                    },
+                    "details": {
+                      "nullable": true
+                    },
+                    "request_id": {
+                      "type": "string"
+                    },
+                    "timestamp": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Job not visible to this actor",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message",
+                    "request_id",
+                    "timestamp"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "oneOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      ]
+                    },
+                    "details": {
+                      "nullable": true
+                    },
+                    "request_id": {
+                      "type": "string"
+                    },
+                    "timestamp": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Idempotency conflict, queue limit, unavailable generation or snapshot context mismatch",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message",
+                    "request_id",
+                    "timestamp"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "oneOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      ]
+                    },
+                    "details": {
+                      "nullable": true
+                    },
+                    "request_id": {
+                      "type": "string"
+                    },
+                    "timestamp": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Invalid query, unsupported metric/filter/dimension or time context",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message",
+                    "request_id",
+                    "timestamp"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "oneOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      ]
+                    },
+                    "details": {
+                      "nullable": true
+                    },
+                    "request_id": {
+                      "type": "string"
+                    },
+                    "timestamp": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "讀取本人 ExportJob 與 snapshot／filters／定義版本",
+        "tags": [
+          "Admin - Period Analytics"
+        ]
+      }
+    },
+    "/api/v1/admin/analytics/period-projections/exports/{id}/file": {
+      "get": {
+        "description": "Server reads bounded stored chunks. Browser does not request all source data. Download is audited and reauthorizes every chunk.",
+        "operationId": "adminDownloadPeriodExport",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "UTF-8 CSV with generatedAt, dataThrough, snapshot, filters and definitionVersion",
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed UUID or DTO shape rejected by global validation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message",
+                    "request_id",
+                    "timestamp"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "oneOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      ]
+                    },
+                    "details": {
+                      "nullable": true
+                    },
+                    "request_id": {
+                      "type": "string"
+                    },
+                    "timestamp": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Session expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message",
+                    "request_id",
+                    "timestamp"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "oneOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      ]
+                    },
+                    "details": {
+                      "nullable": true
+                    },
+                    "request_id": {
+                      "type": "string"
+                    },
+                    "timestamp": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Live Entra Finance/Super Admin/Audit grant required; session and grants rechecked",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message",
+                    "request_id",
+                    "timestamp"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "oneOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      ]
+                    },
+                    "details": {
+                      "nullable": true
+                    },
+                    "request_id": {
+                      "type": "string"
+                    },
+                    "timestamp": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Job not visible to this actor",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message",
+                    "request_id",
+                    "timestamp"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "oneOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      ]
+                    },
+                    "details": {
+                      "nullable": true
+                    },
+                    "request_id": {
+                      "type": "string"
+                    },
+                    "timestamp": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Idempotency conflict, queue limit, unavailable generation or snapshot context mismatch",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message",
+                    "request_id",
+                    "timestamp"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "oneOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      ]
+                    },
+                    "details": {
+                      "nullable": true
+                    },
+                    "request_id": {
+                      "type": "string"
+                    },
+                    "timestamp": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "Export expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message",
+                    "request_id",
+                    "timestamp"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "oneOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      ]
+                    },
+                    "details": {
+                      "nullable": true
+                    },
+                    "request_id": {
+                      "type": "string"
+                    },
+                    "timestamp": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Invalid query, unsupported metric/filter/dimension or time context",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message",
+                    "request_id",
+                    "timestamp"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "oneOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      ]
+                    },
+                    "details": {
+                      "nullable": true
+                    },
+                    "request_id": {
+                      "type": "string"
+                    },
+                    "timestamp": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "串流下載本人未到期 CSV",
+        "tags": [
+          "Admin - Period Analytics"
         ]
       }
     },
@@ -9137,6 +12253,361 @@
           "birthDate",
           "mobile",
           "email"
+        ]
+      },
+      "PeriodJobDto": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "object",
+            "required": [
+              "metrics",
+              "time"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "metrics": {
+                "type": "array",
+                "minItems": 1,
+                "maxItems": 1,
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "rank.bonus",
+                    "rank.gpv",
+                    "rank.new_achievements",
+                    "binary.left_carry",
+                    "binary.right_carry",
+                    "binary.pairpv",
+                    "tree.comparison",
+                    "bonus.distribution",
+                    "founding.statistics",
+                    "return.cohort_rates",
+                    "rank.distribution",
+                    "active.rate",
+                    "tree.monthly_new_balls",
+                    "reservoir.a",
+                    "reservoir.b",
+                    "pool.k0",
+                    "pool.k1",
+                    "pool.k2"
+                  ]
+                }
+              },
+              "time": {
+                "type": "object",
+                "required": [
+                  "timezone",
+                  "asOf",
+                  "knowledgeCutoff",
+                  "periodStart",
+                  "periodEnd"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "timezone": {
+                    "type": "string",
+                    "enum": [
+                      "Asia/Taipei"
+                    ]
+                  },
+                  "asOf": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "knowledgeCutoff": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "periodStart": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "periodEnd": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "settlementId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "ruleVersion": {
+                    "type": "string"
+                  }
+                }
+              },
+              "dimensions": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "groupBy": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "filters": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "string"
+                }
+              },
+              "limit": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 100,
+                "default": 50
+              }
+            }
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "DRY_RUN",
+              "REBUILD",
+              "RECONCILE"
+            ]
+          }
+        },
+        "required": [
+          "mode"
+        ]
+      },
+      "PeriodReadDto": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "object",
+            "required": [
+              "metrics",
+              "time"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "metrics": {
+                "type": "array",
+                "minItems": 1,
+                "maxItems": 1,
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "rank.bonus",
+                    "rank.gpv",
+                    "rank.new_achievements",
+                    "binary.left_carry",
+                    "binary.right_carry",
+                    "binary.pairpv",
+                    "tree.comparison",
+                    "bonus.distribution",
+                    "founding.statistics",
+                    "return.cohort_rates",
+                    "rank.distribution",
+                    "active.rate",
+                    "tree.monthly_new_balls",
+                    "reservoir.a",
+                    "reservoir.b",
+                    "pool.k0",
+                    "pool.k1",
+                    "pool.k2"
+                  ]
+                }
+              },
+              "time": {
+                "type": "object",
+                "required": [
+                  "timezone",
+                  "asOf",
+                  "knowledgeCutoff",
+                  "periodStart",
+                  "periodEnd"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "timezone": {
+                    "type": "string",
+                    "enum": [
+                      "Asia/Taipei"
+                    ]
+                  },
+                  "asOf": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "knowledgeCutoff": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "periodStart": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "periodEnd": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "settlementId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "ruleVersion": {
+                    "type": "string"
+                  }
+                }
+              },
+              "dimensions": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "groupBy": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "filters": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "string"
+                }
+              },
+              "limit": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 100,
+                "default": 50
+              }
+            },
+            "description": "Train A AnalyticsQuery; one supported metric and explicit AsOfContext. Unknown metrics, dimensions and filters return 422."
+          },
+          "snapshot": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Immutable aggregate generation. Required with after; query must match exactly."
+          },
+          "after": {
+            "type": "string",
+            "maxLength": 200
+          }
+        }
+      },
+      "PeriodExportDto": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "object",
+            "required": [
+              "metrics",
+              "time"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "metrics": {
+                "type": "array",
+                "minItems": 1,
+                "maxItems": 1,
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "rank.bonus",
+                    "rank.gpv",
+                    "rank.new_achievements",
+                    "binary.left_carry",
+                    "binary.right_carry",
+                    "binary.pairpv",
+                    "tree.comparison",
+                    "bonus.distribution",
+                    "founding.statistics",
+                    "return.cohort_rates",
+                    "rank.distribution",
+                    "active.rate",
+                    "tree.monthly_new_balls",
+                    "reservoir.a",
+                    "reservoir.b",
+                    "pool.k0",
+                    "pool.k1",
+                    "pool.k2"
+                  ]
+                }
+              },
+              "time": {
+                "type": "object",
+                "required": [
+                  "timezone",
+                  "asOf",
+                  "knowledgeCutoff",
+                  "periodStart",
+                  "periodEnd"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "timezone": {
+                    "type": "string",
+                    "enum": [
+                      "Asia/Taipei"
+                    ]
+                  },
+                  "asOf": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "knowledgeCutoff": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "periodStart": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "periodEnd": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "settlementId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "ruleVersion": {
+                    "type": "string"
+                  }
+                }
+              },
+              "dimensions": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "groupBy": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "filters": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "string"
+                }
+              },
+              "limit": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 100,
+                "default": 50
+              }
+            }
+          },
+          "snapshot": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "snapshot"
         ]
       },
       "LogoutView": {

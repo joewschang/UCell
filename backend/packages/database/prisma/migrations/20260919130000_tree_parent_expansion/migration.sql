@@ -1,0 +1,1 @@
+CREATE INDEX placement_tree_parent_expansion_idx ON organization.placement_tree_evidence(binary_tree_id,parent_qualification_id,qualification_id) INCLUDE(effective_at,recorded_at);

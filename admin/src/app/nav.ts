@@ -12,6 +12,7 @@ export const nav=[
   ['獎金與結算證據','/bonuses','bonuses'],
   ['退貨／重算','/returns','returns'],
   ['升級／轉讓／退出','/workflows','workflows'],
+  ['Reservoir Center','/admin/finance/reservoirs','reservoirs'],
   ['付款批次與對帳','/payouts','payouts'],
   ['影音／連結內容','/content','content'],
   ['文件／附件','/documents','documents'],
@@ -28,7 +29,7 @@ export const navGroups=[
  {label:'組織管理',paths:['/organization','/admin/organization/trees']},
  {label:'商務',paths:['/products','/packages','/orders','/subscriptions','/returns']},
  {label:'獎金中心',paths:['/bonuses']},
- {label:'財務',paths:['/payouts']},
+ {label:'財務／治理',paths:['/payouts','/admin/finance/reservoirs']},
  {label:'營運分析',paths:['/reports','/analytics']},
  {label:'系統治理',paths:['/content','/documents','/audit','/uat','/system','/provider-operations']},
 ];

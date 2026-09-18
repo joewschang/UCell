@@ -1,5 +1,6 @@
+import {effectiveSponsorDirectCount} from '@ucell/database';
 import { Injectable } from '@nestjs/common';
-import { Prisma, PrismaService, sealRpvEvent } from '@ucell/database';
+import { Prisma, PrismaService, sealRpvEvent, companyAlwaysActiveAt, captureParameters } from '@ucell/database';
 import { randomUUID } from 'crypto';
 import { ActiveService } from '../active/active.service';
 
@@ -13,28 +14,7 @@ export class RpvService {
     return 12;
   }
 
-  async effectiveDirectCountAt(
-    tx:Prisma.TransactionClient,
-    sponsorQualificationId:string,
-    at:Date,
-  ){
-    const rows=await tx.$queryRaw<Array<{count:string}>>`
-      SELECT COUNT(*)::text AS count
-      FROM organization.sponsor_relationship sr
-      WHERE sr.sponsor_qualification_id = ${sponsorQualificationId}::uuid
-        AND sr.effective_from <= ${at}
-        AND (sr.effective_to IS NULL OR sr.effective_to > ${at})
-        AND EXISTS (
-          SELECT 1
-          FROM membership.qualification_status_history qsh
-          WHERE qsh.qualification_id=sr.child_qualification_id
-            AND qsh.status='EFFECTIVE'::membership."QualificationLifecycleStatus"
-            AND qsh.effective_from <= ${at}
-            AND (qsh.effective_to IS NULL OR qsh.effective_to > ${at})
-        )
-    `;
-    return Number(rows[0]?.count ?? '0');
-  }
+  async effectiveDirectCountAt(tx:Prisma.TransactionClient,sponsorQualificationId:string,at:Date){return effectiveSponsorDirectCount(tx,sponsorQualificationId,at);}
 
   async recognize(recognitionId:string){
     const correlationId=randomUUID();
@@ -96,7 +76,9 @@ export class RpvService {
             OR:[{activeTo:null},{activeTo:{gt:schedule.dueAt}}]
           }
         });
-        const active=!!activeRow;
+        const company=await companyAlwaysActiveAt(tx,a.qualification_id,schedule.dueAt);
+        const active=company||!!activeRow;
+        const companySnapshot=company?await captureParameters(tx,schedule.dueAt,schedule.ruleVersionCode):null;
         const eligible=a.generation<=depth && active;
         const theory=new Prisma.Decimal('100.00');
         const payable=eligible?theory:new Prisma.Decimal('0.00');
@@ -121,7 +103,7 @@ export class RpvService {
             theoryAmount:theory,
             payableAmount:payable,
             ruleVersionCode:schedule.ruleVersionCode,
-            parameterSnapshotHash:schedule.parameterSnapshotHash,
+            parameterSnapshotHash:companySnapshot?.hash??schedule.parameterSnapshotHash,
             occurredAt:schedule.dueAt
           }
         });

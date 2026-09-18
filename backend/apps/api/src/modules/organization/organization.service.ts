@@ -130,6 +130,8 @@ export class OrganizationService {
         FROM organization.binary_placement bp
         WHERE bp.child_qualification_id = ${parentQualificationId}::uuid
           AND bp.effective_to IS NULL
+          AND EXISTS(SELECT 1 FROM organization.binary_placement outgoing
+            WHERE outgoing.parent_qualification_id=${childQualificationId}::uuid AND outgoing.effective_to IS NULL)
         UNION ALL
         SELECT bp.parent_qualification_id
         FROM organization.binary_placement bp

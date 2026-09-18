@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { Prisma, PrismaService } from '@ucell/database';
+import { Prisma, PrismaService, isReservoirBSource } from '@ucell/database';
 import { RecoveryBalanceService } from './recovery-balance.service';
 
 @Injectable()
@@ -12,6 +12,7 @@ export class UnifiedPayableService {
       const awards=await tx.bonusAward.findMany({where:{ruleVersionCode,pendingUntil:{lte:cutoff},lifecycleEvents:{some:{status:'EFFECTIVE'}}}});
       let created=0;
       for(const a of awards){
+        if(await isReservoirBSource(tx,a.bonusAwardId))continue;
         if(a.payableAmount.lte(0)) continue;
         const exists=await tx.payableEntry.findUnique({where:{sourceType_sourceId:{sourceType:'BONUS_AWARD',sourceId:a.bonusAwardId}}});
         if(exists) continue;
@@ -20,6 +21,7 @@ export class UnifiedPayableService {
       }
       const globalAwards=await tx.globalPoolAward.findMany({where:{payableAmount:{gt:0}}});
       for(const a of globalAwards){
+        if(await isReservoirBSource(tx,a.globalPoolAwardId))continue;
         const exists=await tx.payableEntry.findUnique({where:{sourceType_sourceId:{sourceType:'GLOBAL_POOL_AWARD',sourceId:a.globalPoolAwardId}}});
         if(exists) continue;
         await tx.payableEntry.create({data:{qualificationId:a.qualificationId,sourceType:'GLOBAL_POOL_AWARD',sourceId:a.globalPoolAwardId,awardType:'GLOBAL',grossAmount:a.payableAmount,availableAt:cutoff,status:'OPEN',ruleVersionCode}});
@@ -27,6 +29,7 @@ export class UnifiedPayableService {
       }
       const rpv=await tx.rpvUplineAwardEvent.findMany({where:{payableAmount:{gt:0}}});
       for(const a of rpv){
+        if(await isReservoirBSource(tx,a.rpvAwardEventId))continue;
         const exists=await tx.payableEntry.findUnique({where:{sourceType_sourceId:{sourceType:'RPV_UPLINE_AWARD',sourceId:a.rpvAwardEventId}}});
         if(exists) continue;
         await tx.payableEntry.create({data:{qualificationId:a.recipientQualificationId,sourceType:'RPV_UPLINE_AWARD',sourceId:a.rpvAwardEventId,awardType:'RPV',grossAmount:a.payableAmount,availableAt:cutoff,status:'OPEN',ruleVersionCode:a.ruleVersionCode}});

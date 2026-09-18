@@ -13,7 +13,7 @@ export interface ExplainPayloads {
   getActiveStatus: ExplainActive; explainActive: ExplainActive; explainPerformance: ExplainPerformance;
   explainBinaryCarry: ExplainBinaryPairCarry; explainAward: ExplainAward; explainSettlement: ExplainSettlement;
   explainPayout: ExplainPayout; explainReturnImpact: ExplainReturnImpact; explainReservoirA: ExplainReservoir;
-  explainReservoirB: ExplainReservoir; getTreeStats: { descendantCount: string; monthlyNewBalls: string };
+  explainReservoirB: ExplainReservoir & {theory:string;k:string;final:string;awardType:string;companyBall:string;profile:string;tree:string;position:string;economicDestination:'RESERVOIR_B';sourceRecognition:string;settlement:string;snapshotHash:string}; getTreeStats: { descendantCount: string; monthlyNewBalls: string };
 }
 export type ExplainTool = keyof ExplainPayloads;
 const specs = Object.freeze({
@@ -32,6 +32,7 @@ const specs = Object.freeze({
 export const EXPLAIN_TOOL_NAMES = Object.freeze(Object.keys(specs) as ExplainTool[]);
 export interface ExplainQuery { qualificationId?: string; binaryTreeId?: string; resourceId?: string; time: AsOfContext; }
 export interface ExplainPorts {
+  activatedTools?:readonly ExplainTool[];
   resolveContext(): Promise<UCellRequestContext>;
   /** Real server ownership, role and resource checks are mandatory; never supplied by a client. */
   authorize(context: UCellRequestContext, tool: ExplainTool, query: Readonly<ExplainQuery>): Promise<boolean>;
@@ -84,6 +85,13 @@ function payload(tool: ExplainTool, raw: unknown): ExplainPayloads[ExplainTool] 
   if (tool === 'explainBinaryCarry' && fields.some(k => (raw[k] as string).startsWith('-'))) return contractFail('INVALID_EVIDENCE');
   if (tool === 'getTreeStats' && fields.some(k => !/^(0|[1-9]\d*)$/.test(raw[k] as string))) return contractFail('INVALID_EVIDENCE');
   if (tool.startsWith('explainReservoir') && (!['ACCRUAL','CORRECTION'].includes(raw.kind as string) || (raw.kind === 'ACCRUAL' && (raw.amount as string).startsWith('-')))) return contractFail('INVALID_EVIDENCE');
+  if(tool==='explainReservoirB'){
+    for(const key of ['theory','k','final']){if(!decimal(raw[key])&&!(key!=='final'&&raw[key]==='NOT_APPLICABLE'))return contractFail('INVALID_EVIDENCE');values[key]=raw[key];}
+    for(const key of ['awardType','companyBall','profile','tree','position','economicDestination','sourceRecognition','settlement','snapshotHash']){
+      if(!isId(raw[key]))return contractFail('INVALID_EVIDENCE');values[key]=raw[key];
+    }
+    if(raw.economicDestination!=='RESERVOIR_B'||!['1','2','3','MEMBER_ORIGIN'].includes(raw.position as string)||!/^[a-f0-9]{64}$/.test(raw.snapshotHash as string))return contractFail('INVALID_EVIDENCE');
+  }
   return Object.freeze(values) as unknown as ExplainPayloads[ExplainTool];
 }
 function unavailable(tool: ExplainTool, q: ExplainQuery, ctx: UCellRequestContext, activated = true): EvidenceEnvelope<never> {
@@ -123,8 +131,8 @@ export function createExplainGateway(ports: ExplainPorts) {
       access(ctx,tool,q);
       if (!await ports.authorize(ctx,tool,q)) return contractFail('DENIED');
       let result: EvidenceEnvelope<ExplainPayloads[ExplainTool]>;
-      // No adapter can bypass the unapproved Company economics or absent tree-model gate.
-      if (tool === 'explainReservoirB' || tool === 'getTreeStats') result = unavailable(tool,q,ctx,false);
+      // Activation is server-owned; request payloads cannot enable a source adapter.
+      if ((tool === 'explainReservoirB'&&!ports.activatedTools?.includes(tool)) || tool === 'getTreeStats') result = unavailable(tool,q,ctx,false);
       else {
         const signal = new AbortController(); let timer: ReturnType<typeof setTimeout> | undefined;
         try { const source = await Promise.race([ports.read(tool,q,ctx,signal.signal),new Promise<never>((_,reject) => {

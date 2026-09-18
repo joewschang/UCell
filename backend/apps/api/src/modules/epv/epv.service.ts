@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma, PrismaService, sealEpvEvent } from '@ucell/database';
+import { Prisma, PrismaService, routeCompanyBonus, sealEpvEvent } from '@ucell/database';
 import { randomUUID } from 'crypto';
 import { RuntimeRuleService } from '../rules/runtime-rule.service';
 import { BonusQueryService } from '../bonus/bonus-query.service';
@@ -64,7 +64,7 @@ export class EpvService {
             calculationDetail:{subtype:'EPV_SELF',epv:epv.toString(),rate:selfRate.toString()}
           }
         });
-        await tx.bonusAwardLifecycleEvent.createMany({data:[
+        if(!await routeCompanyBonus(tx,award,snapshot)) await tx.bonusAwardLifecycleEvent.createMany({data:[
           {bonusAwardId:award.bonusAwardId,status:'CALCULATED',occurredAt:new Date()},
           {bonusAwardId:award.bonusAwardId,status:'PENDING_45D',occurredAt:new Date()}
         ]});
@@ -90,7 +90,7 @@ export class EpvService {
             calculationDetail:{subtype:'EPV_UPLINE',epv:epv.toString(),rate:rate.toString(),generation:u.generation}
           }
         });
-        await tx.bonusAwardLifecycleEvent.createMany({data:[
+        if(!await routeCompanyBonus(tx,award,snapshot)) await tx.bonusAwardLifecycleEvent.createMany({data:[
           {bonusAwardId:award.bonusAwardId,status:'CALCULATED',occurredAt:new Date()},
           {bonusAwardId:award.bonusAwardId,status:'PENDING_45D',occurredAt:new Date()}
         ]});

@@ -1,3 +1,4 @@
+import {ReservoirCenterPage} from '../features/reservoir/ReservoirCenterPage';
 import {BinaryTreesPage} from '../features/organization/BinaryTreesPage';
 import {Link,Navigate,Route,Routes} from 'react-router-dom';
 import {useAuth} from '../features/auth/auth';
@@ -42,6 +43,7 @@ export function App(){return <Routes>
   <Route path="/admin/organization/trees/:id?" element={<RequirePageRole><BinaryTreesPage/></RequirePageRole>}/>
   <Route path="/organization" element={<RequirePageRole><OrganizationPage/></RequirePageRole>}/>
   <Route path="/subscriptions" element={<RequirePageRole><SubscriptionsPage/></RequirePageRole>}/>
+  <Route path="/admin/finance/reservoirs" element={<RequirePageRole><ReservoirCenterPage/></RequirePageRole>}/>
   <Route path="/bonuses" element={<RequirePageRole><BonusesPage/></RequirePageRole>}/>
   <Route path="/returns" element={<RequirePageRole><ReturnsPage/></RequirePageRole>}/>
   <Route path="/workflows" element={<RequirePageRole><WorkflowsPage/></RequirePageRole>}/>

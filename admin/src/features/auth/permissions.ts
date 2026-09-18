@@ -12,6 +12,7 @@ export const pageRoles:Record<string,AdminRole[]>={
   '/admin/organization/trees':['SUPER_ADMIN','MEMBERSHIP_OPS','QUALIFICATION_PLACEMENT_OVERRIDE','COMPLIANCE_AUDIT'],
   '/organization':['SUPER_ADMIN','MEMBERSHIP_OPS','COMPLIANCE_AUDIT'],
   '/subscriptions':['SUPER_ADMIN','ORDER_OPS','FINANCE','COMPLIANCE_AUDIT'],
+  '/admin/finance/reservoirs':['SUPER_ADMIN','FINANCE','COMPLIANCE_AUDIT'],
   '/bonuses':['SUPER_ADMIN','FINANCE','COMPLIANCE_AUDIT'],
   '/returns':['SUPER_ADMIN','ORDER_OPS','FINANCE','COMPLIANCE_AUDIT'],
   '/workflows':['SUPER_ADMIN','MEMBERSHIP_OPS','COMPLIANCE_AUDIT'],

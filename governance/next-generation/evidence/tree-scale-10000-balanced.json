@@ -1,0 +1,174 @@
+{
+  "size": 10000,
+  "shape": "balanced",
+  "seedMs": 2960.9830999999995,
+  "projectionBuildMs": null,
+  "hardware": {
+    "cpu": "11th Gen Intel(R) Core(TM) i7-11700 @ 2.50GHz",
+    "logicalCpus": 16,
+    "hostMemoryBytes": 34187874304,
+    "node": "v24.21.0"
+  },
+  "stats": {
+    "ancestry_rows": "39989",
+    "max_depth": 13
+  },
+  "timings": {
+    "treeDetailService": {
+      "requestedSamples": 100,
+      "samples": 100,
+      "failures": [],
+      "p50Ms": 361.79169999999976,
+      "p95Ms": 412.8177099999999,
+      "p99Ms": 457.1564839999996,
+      "maxMs": 457.9765999999945,
+      "payloadBytes": 7492,
+      "maxProcessRssBytes": 770764800
+    },
+    "snapshotPage2Service": {
+      "requestedSamples": 100,
+      "samples": 100,
+      "failures": [],
+      "p50Ms": 11.26220000000103,
+      "p95Ms": 16.804044999998585,
+      "p99Ms": 22.994865000003777,
+      "maxMs": 23.813099999999395,
+      "payloadBytes": 19072,
+      "maxProcessRssBytes": 730251264
+    },
+    "nodeExpansionService": {
+      "requestedSamples": 100,
+      "samples": 100,
+      "failures": [],
+      "p50Ms": 9.012249999999767,
+      "p95Ms": 11.87346999999936,
+      "p99Ms": 12.675978999999066,
+      "maxMs": 13.58469999999943,
+      "payloadBytes": 791,
+      "maxProcessRssBytes": 730157056
+    },
+    "periodTreeAggregateSource": {
+      "requestedSamples": 100,
+      "samples": 100,
+      "failures": [],
+      "p50Ms": 10.287349999998696,
+      "p95Ms": 12.570664999997826,
+      "p99Ms": 13.558357999999062,
+      "maxMs": 13.771999999997206,
+      "payloadBytes": 553,
+      "maxProcessRssBytes": 731639808
+    }
+  },
+  "foundingPlan": [
+    {
+      "Plan": {
+        "Node Type": "Aggregate",
+        "Strategy": "Plain",
+        "Partial Mode": "Simple",
+        "Parallel Aware": false,
+        "Async Capable": false,
+        "Startup Cost": 764.93,
+        "Total Cost": 764.94,
+        "Plan Rows": 1,
+        "Plan Width": 8,
+        "Actual Startup Time": 0.686,
+        "Actual Total Time": 0.687,
+        "Actual Rows": 1,
+        "Actual Loops": 1,
+        "Shared Hit Blocks": 217,
+        "Shared Read Blocks": 0,
+        "Shared Dirtied Blocks": 0,
+        "Shared Written Blocks": 0,
+        "Local Hit Blocks": 0,
+        "Local Read Blocks": 0,
+        "Local Dirtied Blocks": 0,
+        "Local Written Blocks": 0,
+        "Temp Read Blocks": 0,
+        "Temp Written Blocks": 0,
+        "Plans": [
+          {
+            "Node Type": "Bitmap Heap Scan",
+            "Parent Relationship": "Outer",
+            "Parallel Aware": false,
+            "Async Capable": false,
+            "Relation Name": "binary_tree_ancestry",
+            "Alias": "binary_tree_ancestry",
+            "Startup Cost": 213.21,
+            "Total Cost": 757.72,
+            "Plan Rows": 2886,
+            "Plan Width": 0,
+            "Actual Startup Time": 0.193,
+            "Actual Total Time": 0.543,
+            "Actual Rows": 3855,
+            "Actual Loops": 1,
+            "Recheck Cond": "((binary_tree_id = 'b4e3c3d6-cf38-4631-bbe8-faf823ab613f'::uuid) AND (ancestor_qualification_id = '3bd9a474-c3af-423e-a691-000000000004'::uuid) AND (depth > 0))",
+            "Rows Removed by Index Recheck": 0,
+            "Exact Heap Blocks": 151,
+            "Lossy Heap Blocks": 0,
+            "Shared Hit Blocks": 217,
+            "Shared Read Blocks": 0,
+            "Shared Dirtied Blocks": 0,
+            "Shared Written Blocks": 0,
+            "Local Hit Blocks": 0,
+            "Local Read Blocks": 0,
+            "Local Dirtied Blocks": 0,
+            "Local Written Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0,
+            "Plans": [
+              {
+                "Node Type": "Bitmap Index Scan",
+                "Parent Relationship": "Outer",
+                "Parallel Aware": false,
+                "Async Capable": false,
+                "Index Name": "binary_tree_ancestry_binary_tree_id_ancestor_qualification__idx",
+                "Startup Cost": 0,
+                "Total Cost": 212.49,
+                "Plan Rows": 2886,
+                "Plan Width": 0,
+                "Actual Startup Time": 0.178,
+                "Actual Total Time": 0.178,
+                "Actual Rows": 3855,
+                "Actual Loops": 1,
+                "Index Cond": "((binary_tree_id = 'b4e3c3d6-cf38-4631-bbe8-faf823ab613f'::uuid) AND (ancestor_qualification_id = '3bd9a474-c3af-423e-a691-000000000004'::uuid) AND (depth > 0))",
+                "Shared Hit Blocks": 66,
+                "Shared Read Blocks": 0,
+                "Shared Dirtied Blocks": 0,
+                "Shared Written Blocks": 0,
+                "Local Hit Blocks": 0,
+                "Local Read Blocks": 0,
+                "Local Dirtied Blocks": 0,
+                "Local Written Blocks": 0,
+                "Temp Read Blocks": 0,
+                "Temp Written Blocks": 0
+              }
+            ]
+          }
+        ]
+      },
+      "Planning": {
+        "Shared Hit Blocks": 0,
+        "Shared Read Blocks": 0,
+        "Shared Dirtied Blocks": 0,
+        "Shared Written Blocks": 0,
+        "Local Hit Blocks": 0,
+        "Local Read Blocks": 0,
+        "Local Dirtied Blocks": 0,
+        "Local Written Blocks": 0,
+        "Temp Read Blocks": 0,
+        "Temp Written Blocks": 0
+      },
+      "Planning Time": 0.077,
+      "Triggers": [],
+      "Execution Time": 0.701
+    }
+  ],
+  "workload": {
+    "synthetic": true,
+    "bulkTopologyRevision": true,
+    "economicSourceEvents": 0,
+    "carrySettlements": 0,
+    "apiMeasurement": "SERVICE_PLUS_DB_NOT_HTTP_TRANSPORT",
+    "coverage": "Topology/first-placement counts/snapshot pagination; GPV and Carry populated-source workloads are separate required evidence."
+  }
+}

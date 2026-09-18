@@ -1,0 +1,15 @@
+{
+  "observedAt": "2026-09-18T17:09:16.0921404Z",
+  "workload": "1M wide final matrix; observed sample, not peak or per-query memory",
+  "docker": {
+    "BlockIO": "2.38GB / 138GB",
+    "CPUPerc": "100.15%",
+    "Container": "ucell-next-generation-tests",
+    "ID": "80582d7b5a84",
+    "MemPerc": "26.62%",
+    "MemUsage": "4.136GiB / 15.54GiB",
+    "Name": "ucell-next-generation-tests",
+    "NetIO": "657MB / 1.73GB",
+    "PIDs": "13"
+  }
+}

@@ -8,6 +8,7 @@
     "pnpm": ">=12.4.1 <13"
   },
   "devDependencies": {
+    "@apidevtools/swagger-parser": "^13.0.0",
     "@prisma/client": "6.19.3",
     "@types/node": "^24.0.0",
     "ts-node": "^10.9.2",
@@ -59,6 +60,9 @@
     "test:uat:evidence": "node scripts/uat-evidence-db-test.mjs",
     "test:shipment:persistence:isolated": "node scripts/shipment-persistence-db-isolated.mjs",
     "test:provider:workload": "node scripts/provider-worker-workload-isolated.mjs",
-    "provider:enablement:preflight": "ts-node scripts/provider-enablement-preflight.ts"
+    "provider:enablement:preflight": "ts-node scripts/provider-enablement-preflight.ts",
+    "analytics:worker": "node scripts/period-projection-worker.mjs --watch",
+    "test:scale:matrix": "node scripts/tree-scale-matrix.mjs",
+    "rc:isolated": "node scripts/rc-gate-isolated.mjs"
   }
 }

@@ -1,0 +1,23 @@
+{
+  "recordedAt": "2026-09-18T17:15:11.822Z",
+  "issue": "https://github.com/joewschang/UCell/issues/2",
+  "commentCount": 10,
+  "commentIds": [
+    5721413725,
+    5721534662,
+    5721571611,
+    5721655484,
+    5721760042,
+    5721811201,
+    5722342390,
+    5722354891,
+    5724881227,
+    5725701382
+  ],
+  "latestDecision": 5725701382,
+  "stageReadOnlyRecheck": {
+    "revision": "ucell-stage-api--r-225957920260917154017",
+    "image": "ucellstageacr5mafbbsq33mgu.azurecr.io/ucell-backend@sha256:afd3082e10f047206e6c01698d7d51b632490b11e1cfb7c83a2efc8b18170a7b"
+  },
+  "stageMutation": false
+}

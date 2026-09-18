@@ -1,5 +1,7 @@
 # COMPANY_BOOTSTRAP_PROFILE_V1_PENDING_MAPPING
 
+> Historical record superseded by [APPROVED_LEADER_BINDING](COMPANY_BOOTSTRAP_PROFILE_V1_APPROVED_MAPPING.md), PO comment 5725701382. Original text preserved below.
+
 Status: PENDING_MAPPING. D1 architecture and D2 placement are APPROVED; only company monetary activation is closed. Train A and non-monetary Train B continue.
 
 Authority: GitHub Issue #2 comments 5722342390 (D1/D2 disposition) and 5722354891 (execution directive). Reviewed on 2026-09-18 against repository baseline 14b714f. Historical Phase 1 PENDING_D1/PENDING_D2 statements do not supersede these dispositions.

@@ -1,3 +1,4 @@
+import {ReservoirModule} from './modules/reservoir/reservoir.module';
 import { BinaryTreeModule } from './modules/binary-tree/binary-tree.module';
 import { ExplainModule } from './modules/explain/explain.module';
 import { Module } from '@nestjs/common';
@@ -42,6 +43,7 @@ import { UatEvidenceModule } from './modules/uat-evidence/uat-evidence.module';
 
 @Module({
   imports: [
+    ReservoirModule,
     BinaryTreeModule,
     ExplainModule,
     AnalyticsModule,

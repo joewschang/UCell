@@ -1,3 +1,4 @@
+import {memberEconomicMocks} from './member-economic-fixture';
 import { Prisma } from '@ucell/database';
 import { appendQualificationMonthReplayEvidence } from '../../../packages/database/src/historical-replay';
 import { BonusQueryService } from '../src/modules/bonus/bonus-query.service';
@@ -12,7 +13,7 @@ describe('A Decision return safeguards',()=>{
   ])('return recomputes Qualification-month Active %s threshold append-only',async(_label,remaining,active,activeWrites)=>{
     const activeCreate=jest.fn(async({data}:any)=>data);
     const accumulatorCreate=jest.fn(async({data}:any)=>({qualificationMonthAccumulatorEvidenceId:'replay-accumulator',...data}));
-    const tx:any={
+    const tx:any={...memberEconomicMocks(),
       consumptionRecognitionEvent:{
         findMany:async()=>[{consumptionRecognitionEventId:'original-recognition',eligibleAmount:d(3000)}],findUnique:async()=>null,
         create:async({data}:any)=>({consumptionRecognitionEventId:'reversal-recognition',...data}),
@@ -31,7 +32,7 @@ describe('A Decision return safeguards',()=>{
 
   test('B10 Return POSTED moves the historical Active threshold timestamp',async()=>{
     const activeCreate=jest.fn(async({data}:any)=>data);
-    const tx:any={
+    const tx:any={...memberEconomicMocks(),
       consumptionRecognitionEvent:{findMany:async()=>[{consumptionRecognitionEventId:'r1',eligibleAmount:d(3000)}],findUnique:async()=>null,create:async({data}:any)=>({consumptionRecognitionEventId:'reversal',...data})},
       qualificationMonthAccumulatorEvidence:{findFirst:async()=>({sequenceNo:3,activeThreshold:d(2000)}),findUnique:async()=>null,create:async({data}:any)=>({qualificationMonthAccumulatorEvidenceId:'acc',...data})},
       activeIntervalEvidence:{findFirst:async()=>({activeIntervalEvidenceId:'original-active'}),findUnique:async()=>null,create:activeCreate},
@@ -43,7 +44,7 @@ describe('A Decision return safeguards',()=>{
 
   test('B11 Return POSTED removes Active with append-only superseding evidence',async()=>{
     const activeCreate=jest.fn(async({data}:any)=>data);
-    const tx:any={
+    const tx:any={...memberEconomicMocks(),
       consumptionRecognitionEvent:{findMany:async()=>[{consumptionRecognitionEventId:'r1',eligibleAmount:d(3000)}],findUnique:async()=>null,create:async({data}:any)=>({consumptionRecognitionEventId:'reversal',...data})},
       qualificationMonthAccumulatorEvidence:{findFirst:async()=>({sequenceNo:1,activeThreshold:d(2000)}),findUnique:async()=>null,create:async({data}:any)=>({qualificationMonthAccumulatorEvidenceId:'acc',...data})},
       activeIntervalEvidence:{findFirst:async()=>({activeIntervalEvidenceId:'original-active'}),findUnique:async()=>null,create:activeCreate},
@@ -55,13 +56,13 @@ describe('A Decision return safeguards',()=>{
   });
   test('missing historical plan never reads current qualification',async()=>{
     const current=jest.fn();
-    const tx={qualificationPlanHistory:{findFirst:async()=>null},qualification:{findUniqueOrThrow:current}};
+    const tx={...memberEconomicMocks(),qualificationPlanHistory:{findFirst:async()=>null},qualification:{...memberEconomicMocks().qualification,findUniqueOrThrow:current}};
     await expect(new BonusQueryService({} as any).qualificationPlanAt(tx as any,'q',new Date())).rejects.toMatchObject({response:{code:'HISTORICAL_SNAPSHOT_MISSING'}});
     expect(current).not.toHaveBeenCalled();
   });
   const fixture=(previous:number,amount:number)=>{
     const update=jest.fn();
-    const tx={order:{findUnique:async()=>({orderId:'o',qualificationId:'q',ruleVersionCode:'TEST_ONLY',paidAt:new Date('2020-01-01'),status:'PARTIAL_RETURN',netAmount:d(100),lines:[{orderLineId:'l',quantity:d(10),lineAmount:d(amount),gpvAmountSnapshot:d(10)}]}),update},returnCase:{findUnique:async()=>null,create:async()=>({returnCaseId:'r'}),findUniqueOrThrow:async()=>({returnCaseId:'r'})},returnLine:{aggregate:jest.fn().mockResolvedValueOnce({_sum:{returnAmount:d(previous)}}).mockResolvedValue({_sum:{quantity:d(5)}}),create:async()=>({})},settlementBatch:{findMany:async()=>[]},settlementRecalculationRequest:{createMany:async()=>({count:0})}};
+    const tx={...memberEconomicMocks(),order:{findUnique:async()=>({orderId:'o',qualificationId:'q',ruleVersionCode:'TEST_ONLY',paidAt:new Date('2020-01-01'),status:'PARTIAL_RETURN',netAmount:d(100),lines:[{orderLineId:'l',quantity:d(10),lineAmount:d(amount),gpvAmountSnapshot:d(10)}]}),update},returnCase:{findUnique:async()=>null,create:async()=>({returnCaseId:'r'}),findUniqueOrThrow:async()=>({returnCaseId:'r'})},returnLine:{aggregate:jest.fn().mockResolvedValueOnce({_sum:{returnAmount:d(previous)}}).mockResolvedValue({_sum:{quantity:d(5)}}),create:async()=>({})},settlementBatch:{findMany:async()=>[]},settlementRecalculationRequest:{createMany:async()=>({count:0})}};
     const service=new ReturnService({} as any,{execute:async(_:unknown,__:unknown,___:unknown,work:any)=>work(tx)} as any,{write:async()=>{}} as any,{enqueue:async()=>{}} as any);
     return {service,update};
   };
@@ -77,7 +78,7 @@ describe('A Decision return safeguards',()=>{
   });
   test('missing EPV recognition snapshot fails closed before processed marker',async()=>{
     const audit=jest.fn();const outbox=jest.fn();
-    const tx={replayAction:{findUnique:async()=>null},returnCase:{findUnique:async()=>({status:'POSTED',orderId:'o',lines:[],order:{purpose:'REPURCHASE'}})},auditEvent:{findFirst:async()=>null,create:audit},pvLedger:{findFirst:async()=>null,findMany:async()=>[]},outboxEvent:{create:outbox}};
+    const tx={...memberEconomicMocks(),replayAction:{findUnique:async()=>null},returnCase:{findUnique:async()=>({status:'POSTED',orderId:'o',lines:[],order:{purpose:'REPURCHASE'}})},auditEvent:{findFirst:async()=>null,create:audit},pvLedger:{findFirst:async()=>null,findMany:async()=>[]},outboxEvent:{create:outbox}};
     const service=new ReversalService({$transaction:async(work:any)=>work(tx)} as any,{} as any,{} as any);
     await expect(service.processReturn('r')).rejects.toMatchObject({response:{code:'HISTORICAL_SNAPSHOT_MISSING'}});
     expect(audit).not.toHaveBeenCalled();expect(outbox).not.toHaveBeenCalled();

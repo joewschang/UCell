@@ -1,0 +1,432 @@
+{
+  "baseline": "26fa675da0132646484b4a8806a8d5ab55e0e6f6",
+  "recordedAt": "2026-09-18T17:25:19.689Z",
+  "normalization": "CRLF_TO_LF",
+  "files": [
+    {
+      "file": "admin/src/app/App.tsx",
+      "sha256": "fe39ea89dd6a5230ac52b37f5a587960da372885f2ab9ec73413bc7d9a4fd1cc"
+    },
+    {
+      "file": "admin/src/app/nav.ts",
+      "sha256": "21e9fd0ebcdc797dbda027763498797a3d37387ffc05015390a760e3783ade32"
+    },
+    {
+      "file": "admin/src/features/auth/permissions.ts",
+      "sha256": "6e62a0f67f9d705362b6960c6b70610089e288836fb8d141c9bef0e9073e3761"
+    },
+    {
+      "file": "admin/src/features/organization/BinaryTreesPage.test.tsx",
+      "sha256": "730b397d4d4b0494970c6e67e835f39975dbee3f9cac2c0144911d6c0dfb1a32"
+    },
+    {
+      "file": "admin/src/features/organization/BinaryTreesPage.tsx",
+      "sha256": "f9b53632c506bc8932004091f850385bf29fcac669f06ac37bc1fa0fde7d60dc"
+    },
+    {
+      "file": "admin/src/features/organization/CanonicalTree.tsx",
+      "sha256": "01ca92565e80f882dbab3b57e8d7cdf5d7ba79e5977afa5455c10b7ce9fa6d4c"
+    },
+    {
+      "file": "admin/src/features/reservoir/ReservoirCenterPage.test.tsx",
+      "sha256": "3a607a742a140c400f301ea23d691480f29b41ca5139f91a473509336c39d178"
+    },
+    {
+      "file": "admin/src/features/reservoir/ReservoirCenterPage.tsx",
+      "sha256": "b8ba3cef3c36c6e9ec3db214b7530ddd93eea8d54b6cf6b4e0ccd78ee0769308"
+    },
+    {
+      "file": "backend/apps/api/src/app.module.ts",
+      "sha256": "51b8cc596db8bdbdfe054277fe31bcf0cf1e2c5d3ca8c70dedea74068ac9f568"
+    },
+    {
+      "file": "backend/apps/api/src/common/interceptors/envelope.interceptor.ts",
+      "sha256": "5e0665a321612600e149993ffbc3050bce2abc1021be1b8882df7039ba693376"
+    },
+    {
+      "file": "backend/apps/api/src/modules/analytics/analytics.module.ts",
+      "sha256": "47c947bc5bc6aa545d6b6f966452541b758ffc99c7b80d75bd3b0a10616322f0"
+    },
+    {
+      "file": "backend/apps/api/src/modules/analytics/bonus-bands.config.ts",
+      "sha256": "d46ae1022e1aa124ec3469f2ec06b246ee1b659c02bfa4e99e1a33d8db74dc19"
+    },
+    {
+      "file": "backend/apps/api/src/modules/analytics/financial-completeness.ts",
+      "sha256": "aba2b4276abc0fca5e294882621500784c6225ce6dbfd52f2dcffaf995a37faf"
+    },
+    {
+      "file": "backend/apps/api/src/modules/analytics/period-bonus-source.ts",
+      "sha256": "99f353e1723b4a42801489352cac2ba344684e679e81cf79457f62c9e431bf5e"
+    },
+    {
+      "file": "backend/apps/api/src/modules/analytics/period-carry-source.ts",
+      "sha256": "a25bd0a46c2e64bab7a850d0294fe335afdefb61237a8866273751beb10bae64"
+    },
+    {
+      "file": "backend/apps/api/src/modules/analytics/period-export.service.ts",
+      "sha256": "03b6cbd7095d36d649ed1d5cb779e52be5b7383e8d05dcac6c74b4aa1d615c6c"
+    },
+    {
+      "file": "backend/apps/api/src/modules/analytics/period-founding-source.ts",
+      "sha256": "0e7a9c23c1e95438fd988016058fa3f68309cfb0ab65c910e7e7acc3afb2c549"
+    },
+    {
+      "file": "backend/apps/api/src/modules/analytics/period-openapi.ts",
+      "sha256": "70a5b64a0bd1e64943a224f041fb31ca3951645fdb9b10546972215fcc9dfec0"
+    },
+    {
+      "file": "backend/apps/api/src/modules/analytics/period-projection-sources.ts",
+      "sha256": "4a3600da96067755a5c5919a555e5ba8bf447ace7c0f08cbae3bfd06163ab307"
+    },
+    {
+      "file": "backend/apps/api/src/modules/analytics/period-projection.controller.ts",
+      "sha256": "2db3a7ba6e9c215d73c9dd6d737f38e4162dde2ac908948f91eca3de561dfa5d"
+    },
+    {
+      "file": "backend/apps/api/src/modules/analytics/period-projection.service.ts",
+      "sha256": "7700ba2b065fdb11dc9e04dd477bcd06107184acd02a6cbda6abf68e60290f17"
+    },
+    {
+      "file": "backend/apps/api/src/modules/analytics/period-return-source.ts",
+      "sha256": "ec026fb1353e80de4e0718dbbf0b85a7cad6ac9615fa9c65f7b1a426fe42cd0d"
+    },
+    {
+      "file": "backend/apps/api/src/modules/binary-tree/binary-tree-metrics.ts",
+      "sha256": "21b291822b7809328deb87eb281f7f20a876f6286412f3aa511f6cc4826cd668"
+    },
+    {
+      "file": "backend/apps/api/src/modules/binary-tree/binary-tree-read.controller.ts",
+      "sha256": "ec19f360348618235fca3b1dcce16af284117afac82b0ade0f4426c002b4e80a"
+    },
+    {
+      "file": "backend/apps/api/src/modules/binary-tree/binary-tree-read.service.ts",
+      "sha256": "6180c910f6a4724e599b6d229b65983198f118ba365d6951c5c9b1936433f19a"
+    },
+    {
+      "file": "backend/apps/api/src/modules/binary-tree/tree-active-evidence.ts",
+      "sha256": "cb5379c9a2597eb9794a4634d8d943ee5cd1eba1ec008b207be94c50c9bf581d"
+    },
+    {
+      "file": "backend/apps/api/src/modules/binary-tree/tree-ancestry-integrity.ts",
+      "sha256": "8d32313c274ebe8128db55965dcb93c3d5ceb8b37cf1eca39d7ad55eed6fbc0d"
+    },
+    {
+      "file": "backend/apps/api/src/modules/binary-tree/tree-authorization.ts",
+      "sha256": "16225f6f5de053b10e98b281f03cd6089fd5734fbe71dd76a3f4075a72c58bbd"
+    },
+    {
+      "file": "backend/apps/api/src/modules/binary-tree/tree-node-snapshot.ts",
+      "sha256": "8fea303fe66c11612a220d81b6fd0ce2fb501017db91121b8e7eb32f46f92192"
+    },
+    {
+      "file": "backend/apps/api/src/modules/binary-tree/tree-statistics-projection.ts",
+      "sha256": "2350d26e5592c7b448997d4cc469599482220ea585e308f3e571b248306a4686"
+    },
+    {
+      "file": "backend/apps/api/src/modules/bonus/binary-bonus.service.ts",
+      "sha256": "dbf9424e0d17c9cbedec0afbf9aaa260b01a01f8a4d9b843e4d91586e482c2e8"
+    },
+    {
+      "file": "backend/apps/api/src/modules/bonus/bonus-query.service.ts",
+      "sha256": "923024773a07ade4fd1c2f041050ba949a430c58244b4828d5ae65d194bc9e6a"
+    },
+    {
+      "file": "backend/apps/api/src/modules/bonus/referral-bonus.service.ts",
+      "sha256": "621ffaa8c1a47ab5d9801cfe0415809adaea319fa68a99b048c426c93acd2a50"
+    },
+    {
+      "file": "backend/apps/api/src/modules/epv/epv.service.ts",
+      "sha256": "8d843f746fe65a8b33761b01ec4bfbd7936af7224260687eeeb933571a439598"
+    },
+    {
+      "file": "backend/apps/api/src/modules/explain/admin-structured-explain.controller.ts",
+      "sha256": "531f0c92d0d3cec17a98641e7df403693718e0a75318b5789bf9cfb80ecb7045"
+    },
+    {
+      "file": "backend/apps/api/src/modules/explain/admin-structured-explain.service.ts",
+      "sha256": "09b1df9af6a7b87b61fe302e8df65baf5ea5bbc72f8c8ee34be7fef0be320ebb"
+    },
+    {
+      "file": "backend/apps/api/src/modules/explain/structured-explain-source.ts",
+      "sha256": "818a9a3d025fa5a938fefad873d465fe4448266bb428ce68086adfd0340bdd6d"
+    },
+    {
+      "file": "backend/apps/api/src/modules/global-pool/global-pool-calculation.ts",
+      "sha256": "038a02de7a4c80e58f5f4fba12fc1bf81a2f556bc03b04f59230383e7079bcd9"
+    },
+    {
+      "file": "backend/apps/api/src/modules/global-pool/global-pool-persistence.ts",
+      "sha256": "f536af7dc24db2455edf346417fb61c1df432a6d1c047cd10524956498305431"
+    },
+    {
+      "file": "backend/apps/api/src/modules/global-pool/global-pool.service.ts",
+      "sha256": "36653cc078253743fac85884370b851a54a6218487d448aad988b9b31f89199a"
+    },
+    {
+      "file": "backend/apps/api/src/modules/organization/organization.service.ts",
+      "sha256": "05211204b19039aad5e8cc81b8f40f15e4f74a071cfe51386c5749eb33a3cd0f"
+    },
+    {
+      "file": "backend/apps/api/src/modules/organization/tree-placement.ts",
+      "sha256": "667dff43a9f3d063108ada918d57ce55be79f905e6a0bf3539b8431d101b4a1a"
+    },
+    {
+      "file": "backend/apps/api/src/modules/payout/unified-payable.service.ts",
+      "sha256": "0a479bb5b908ac0f6c49f939bdc9742c3a5c7d308f31422a52f448352bc03ab3"
+    },
+    {
+      "file": "backend/apps/api/src/modules/reservoir/report-snapshot.ts",
+      "sha256": "62ef5c11ed56e38cbfc34d10172659f127e0ab72083d03bb390e6d12dda3431f"
+    },
+    {
+      "file": "backend/apps/api/src/modules/reservoir/reservoir-openapi.ts",
+      "sha256": "69ebbfc57e26dc9d3787027f07111b913dd6290f9acbc527a21a1f136bb937c4"
+    },
+    {
+      "file": "backend/apps/api/src/modules/reservoir/reservoir.controller.ts",
+      "sha256": "6fb6722b3b310818233d996abaa98cfe3cbf71d602e1849febd8d9ef8ae8c66c"
+    },
+    {
+      "file": "backend/apps/api/src/modules/reservoir/reservoir.module.ts",
+      "sha256": "0c137dd5e0b0aa9422f78da013d73ef24cfa61a41e3e27114dd8dc8d688667b1"
+    },
+    {
+      "file": "backend/apps/api/src/modules/reservoir/reservoir.service.ts",
+      "sha256": "02d209da686ff80d249a4f1cee82e981586301b2183f5d0dc3469e064a1b6054"
+    },
+    {
+      "file": "backend/apps/api/src/modules/rpv/rpv.service.ts",
+      "sha256": "9a1e3c375d6693662bdf8468292d148656a5e847d9b5c8ca5b06dae4f6743148"
+    },
+    {
+      "file": "backend/apps/api/test/a-decision-return.e2e-spec.ts",
+      "sha256": "c67a9102bb125e6792f77dbbf01e365439029e8bcbda7f5fc081d3605d9de6e4"
+    },
+    {
+      "file": "backend/apps/api/test/admin-structured-explain.e2e-spec.ts",
+      "sha256": "e2d992ec6fed51c6f362bcfb75f0cf46379e4f1ef0bf89ff33df822a0eb32fcd"
+    },
+    {
+      "file": "backend/apps/api/test/binary-tree-metrics.e2e-spec.ts",
+      "sha256": "580a64188ed89aeff24d67b452183703b653b70d53f1daeaae56e4a69665590a"
+    },
+    {
+      "file": "backend/apps/api/test/bonus-engine-v04.e2e-spec.ts",
+      "sha256": "06f3136821d4f85bd23cf4725a195661bfe26a318fb24da002adfd4148957d2c"
+    },
+    {
+      "file": "backend/apps/api/test/company-economic.integration.ts",
+      "sha256": "e5065c1e4744f5d61b7e4cb6fe2218bad637f0ecadcc3ef76e50957f77071e98"
+    },
+    {
+      "file": "backend/apps/api/test/company-volume-economic.integration.ts",
+      "sha256": "a50bafcad455fb901a2ac1f11ef7ca67512b6ae0fa93d651ac5f821ff022fece"
+    },
+    {
+      "file": "backend/apps/api/test/connected-dev-defects.e2e-spec.ts",
+      "sha256": "bbfd3bbd5fe3c24f98775d87ad9623cbf5c3f80c49957134579763ac10457241"
+    },
+    {
+      "file": "backend/apps/api/test/epv-global-v05.e2e-spec.ts",
+      "sha256": "ce66c11a50c7682477a14e1176be374184a7a78f380ede18f2629b62d94e11ec"
+    },
+    {
+      "file": "backend/apps/api/test/full-app-security.integration.ts",
+      "sha256": "e3f92d5aec5a7f0503e1d583f75201dec4a6a37eaed1a50374a2054420793c06"
+    },
+    {
+      "file": "backend/apps/api/test/member-economic-fixture.ts",
+      "sha256": "c4b1ef8468dacf9fc954eda8508683b21558d9d091b1e9540c9b08e3afb08329"
+    },
+    {
+      "file": "backend/apps/api/test/member-global-economic.integration.ts",
+      "sha256": "def492dbfd80837ba864308ed4485718c6d1302993b4ede7900d5382a87c8fec"
+    },
+    {
+      "file": "backend/apps/api/test/negative-flow-v05.e2e-spec.ts",
+      "sha256": "326bc4caf0ddb0327751d348108dd5aa34d571dc2744af06e6b0a80849d9efcd"
+    },
+    {
+      "file": "backend/apps/api/test/period-http-contract.e2e-spec.ts",
+      "sha256": "c50704a65061fccccc00afd2bce5f1a4a0f303c3fbb6107a0bc1dac03f7dc4d9"
+    },
+    {
+      "file": "backend/apps/api/test/period-projection.e2e-spec.ts",
+      "sha256": "598ca90737c4d28107172a4da633b52f7ee577208fdf731222f97f5f5275bc52"
+    },
+    {
+      "file": "backend/apps/api/test/train-bc-foundation.e2e-spec.ts",
+      "sha256": "ea2c0dd8258a14f0fa960e01984240fbbfed961a10454e15b4ceab854d7b6437"
+    },
+    {
+      "file": "backend/apps/api/test/train-bc-http-security.e2e-spec.ts",
+      "sha256": "b10624671227911894c050ab16969ac4388c7107fa99b5624874ae06ca7ab6d1"
+    },
+    {
+      "file": "backend/apps/api/test/tree-scale-populated-http.integration.ts",
+      "sha256": "c2a4318452a68b614b99eeaeb69a03885bfb72c75dc18de5ebe11074b91f0615"
+    },
+    {
+      "file": "backend/apps/api/test/tree-scale-resume.integration.ts",
+      "sha256": "714adb2232f20018b554be3bfcef9222c74188e688773c88f1871ad22e4d4137"
+    },
+    {
+      "file": "backend/apps/api/test/tree-scale.integration.ts",
+      "sha256": "f2fbf15a00d652f3c1cf06ac315bddea55516fe7f5e3d8ae409511df89bdccd4"
+    },
+    {
+      "file": "backend/apps/api/test/v061-replay.e2e-spec.ts",
+      "sha256": "b549576010211a94aaa17f76265eeaeaa656020e533cad27b6fa0e9f9b333640"
+    },
+    {
+      "file": "backend/apps/api/test/v063-golden-path.e2e-spec.ts",
+      "sha256": "a7ad25d96fc2b95d4ff91db89841e9610861520914b8457af6c541d32a909128"
+    },
+    {
+      "file": "backend/apps/api/test/v3-mandatory-contract.e2e-spec.ts",
+      "sha256": "44f15ce901f4b2e81c53d820c161a00061301d98da7a09a97b1f3ffc091ca823"
+    },
+    {
+      "file": "backend/apps/worker/src/main.ts",
+      "sha256": "819be1e0d983182206527a75783703acceef52bf47d7ff777e2f8c5b8cc40fd2"
+    },
+    {
+      "file": "backend/openapi.generated.json",
+      "sha256": "ae2ed72f5b4d4404a1edf5c1c66b0c19cff95d00f8fd491a3676fbc0d5e6e77a"
+    },
+    {
+      "file": "backend/package.json",
+      "sha256": "1ba62f49e4632ef95ccccccf6f2dd55a6d28752cb175fa4eefc4d0d45d1a4b33"
+    },
+    {
+      "file": "backend/packages/database/prisma/migrations/20260919050000_tree_read_snapshot/migration.sql",
+      "sha256": "e7d5d8642c51e3f8b59ed0910caff4658359fef18300f7795dc5e1144dcca41f"
+    },
+    {
+      "file": "backend/packages/database/prisma/migrations/20260919060000_company_leader_binding/migration.sql",
+      "sha256": "7651d51094e16cde5a9af9c638bc2c7a490bd0332f203b0cda7a1c7f8bfa880b"
+    },
+    {
+      "file": "backend/packages/database/prisma/migrations/20260919070000_reservoir_b_destination/migration.sql",
+      "sha256": "3f579265a7a7c1071c549fa13ef1deacc395321e1b71f5d8364f118f6ca721a9"
+    },
+    {
+      "file": "backend/packages/database/prisma/migrations/20260919080000_matching_source_identity/migration.sql",
+      "sha256": "ef97fe53c669aa7b8e25f3aa4f7aa851285a5754e9ffca76e46d92814fa2e068"
+    },
+    {
+      "file": "backend/packages/database/prisma/migrations/20260919090000_report_read_snapshot/migration.sql",
+      "sha256": "945c234d483a6f50d55a2bc11efe21b50f3a6166e8a5137082aaa9bd92280bd2"
+    },
+    {
+      "file": "backend/packages/database/prisma/migrations/20260919100000_period_aggregate_jobs/migration.sql",
+      "sha256": "fd20de2627dbd15fbd84794a379d7f1c327670a85f68e081c7b410195495a2e7"
+    },
+    {
+      "file": "backend/packages/database/prisma/migrations/20260919110000_tree_leaf_cycle_guard/migration.sql",
+      "sha256": "612af4883ef5464761bfa2db3e24d2d003bd7fb32e10f8cdc54627337e12ce62"
+    },
+    {
+      "file": "backend/packages/database/prisma/migrations/20260919120000_owner_interval_temporal_guard/migration.sql",
+      "sha256": "5e29ced9d5aa0b7be56991abf7c36641e48c7f35e42025871d7c7dbc14bc0716"
+    },
+    {
+      "file": "backend/packages/database/prisma/migrations/20260919130000_tree_parent_expansion/migration.sql",
+      "sha256": "e3f217c5ee66a62bc95b364e2e8ab6f63b0a1911d67bdbbbeada64e78dacf347"
+    },
+    {
+      "file": "backend/packages/database/prisma/migrations/20260919140000_projection_publication_fence/migration.sql",
+      "sha256": "48fc474ec3af67c36e7b744e00d64ef2124eb07f79387f1556001d1ca6b3f06b"
+    },
+    {
+      "file": "backend/packages/database/prisma/migrations/20260919150000_settlement_replay_metrics/migration.sql",
+      "sha256": "1a72616f8e91ea71f3b8199444642cc1668f60886d16a147e4a5f9b72edd739b"
+    },
+    {
+      "file": "backend/packages/database/prisma/migrations/20260919160000_pv_reversal_lookup/migration.sql",
+      "sha256": "ad34927da2b21d5addb5ae374dd3364b9ba76a3746f0103eef1e6eda4702499f"
+    },
+    {
+      "file": "backend/packages/database/prisma/migrations/20260919170000_projection_job_identity/migration.sql",
+      "sha256": "08664262f8698c4c56141fc76de01abe81b63db3402257fb1896e9c418f72c32"
+    },
+    {
+      "file": "backend/packages/database/prisma/schema.prisma",
+      "sha256": "7318d026c493bc747a2b2fabf80385c3e7961931ab52ea9e21fc59025aa96802"
+    },
+    {
+      "file": "backend/packages/database/src/company-profile.ts",
+      "sha256": "ac0a2842b68b9579627a6f4899491d6053ed0ba6277b8e384eb2888c538c44e1"
+    },
+    {
+      "file": "backend/packages/database/src/global-pool-calculation.ts",
+      "sha256": "d3cd41a35566dac2e39428aa5061e999159b6402798c94b5c0d95e7d86882657"
+    },
+    {
+      "file": "backend/packages/database/src/historical-replay.ts",
+      "sha256": "7e49ffce085172039d4d249a9484bc32fa33ece14ce52d31f14c15684f389e73"
+    },
+    {
+      "file": "backend/packages/database/src/index.ts",
+      "sha256": "e656f84e582e8948d7c289a82f8e004f6fc8b00d4caea697535667512ac9ed42"
+    },
+    {
+      "file": "backend/packages/database/src/reservoir-b.ts",
+      "sha256": "65e670a9cbf3c389eb0e689bfdbb54bed4f724cb8de603f53d7d2429c1c3c391"
+    },
+    {
+      "file": "backend/packages/shared/src/ai-ready/catalog.ts",
+      "sha256": "e567c4e86036d688e682dd6abc3bf1cb097bae9ffb57a6ad6d50fabccf4e2624"
+    },
+    {
+      "file": "backend/packages/shared/src/ai-ready/explain.ts",
+      "sha256": "762b2cb607594f143956e407bba3dfe3245056091c3ea980919fefc3b9a10d4c"
+    },
+    {
+      "file": "backend/packages/shared/src/ai-ready/semantic.ts",
+      "sha256": "fdccdff8d37f7a51b534780d66753fe23a191683dbddef359c0c68f495e8b956"
+    },
+    {
+      "file": "backend/pnpm-lock.yaml",
+      "sha256": "049f71c859ba0f9763318dc3d6c8e7eae61ca8b503933357eaf97f0c03d06bbb"
+    },
+    {
+      "file": "backend/scripts/api-jest-isolated.mjs",
+      "sha256": "7aad4c910d435b85ca17aa86b931d1e33212e94293a689ae417cfab1504e0298"
+    },
+    {
+      "file": "backend/scripts/member-economic-baseline.mjs",
+      "sha256": "e7cc834fc21c36b346bea2044e43385d6c1b4baf512187369d00faa55d37a59b"
+    },
+    {
+      "file": "backend/scripts/openapi-closure-contract.mjs",
+      "sha256": "8d8e8824fa80c9ed0beaaf6cb096c4531cfcd6e5b94c36ed06e1efcc5d8d1698"
+    },
+    {
+      "file": "backend/scripts/period-projection-worker.mjs",
+      "sha256": "b36da85c219c649009ec2b1deed12af822568b30c8f19d778035bd390e19c0e1"
+    },
+    {
+      "file": "backend/scripts/rc-gate-isolated.mjs",
+      "sha256": "29e39078738e5c4fb04d90a7440bbf3b118c4deb1ddd83e86fa49c0d43750db7"
+    },
+    {
+      "file": "backend/scripts/tree-scale-matrix.mjs",
+      "sha256": "aabd2090ea09587100273fc100774ae82db89084aad147e331aeb6248cd0f371"
+    },
+    {
+      "file": "backend/scripts/typescript-parse-preflight.mjs",
+      "sha256": "b5a1e166a4c148748ba1dc6ac8f276a730a83ae9d39fb7668c66131de6c431cb"
+    },
+    {
+      "file": "backend/scripts/v3-mandatory-golden.mjs",
+      "sha256": "0b7f07be5b3b33c3b25b79d6058370a87559b976ec880ef279a2e6bcc54c5732"
+    },
+    {
+      "file": "deployment/deploy-stage.ps1",
+      "sha256": "085c95ef9967fbb42bc895a304db0411a2f45646ffaaba9ef696485fad62831f"
+    }
+  ],
+  "aggregateHash": "deab33e796605f5a4c9962fffa5b589e33092fdf486bbd430653eddba7d5b5e3"
+}

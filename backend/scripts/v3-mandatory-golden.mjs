@@ -25,7 +25,7 @@ else {
   try {
     const parsed = new URL(url);
     const database = decodeURIComponent(parsed.pathname.replace(/^\//, ''));
-    if (!['localhost', '127.0.0.1', '[::1]'].includes(parsed.hostname) || !database.endsWith('_test'))
+    if (!['localhost', '127.0.0.1', '[::1]'].includes(parsed.hostname) || (!database.endsWith('_test')&&!/^ucell_jest_[a-f0-9]{32}$/.test(database)))
       dbBlocker = 'LOCAL_POSTGRES_DATABASE_NAME_MUST_END_WITH_TEST';
   } catch { dbBlocker = 'INVALID_DATABASE_URL'; }
 }
@@ -53,7 +53,7 @@ for (const commandName of [...new Set(matrix.cases.map(item => item.command))]) 
   const args = process.platform === 'win32' ? ['/d', '/s', '/c', argv.join(' ')] : argv.slice(1);
   const result = spawnSync(executable, args, {
     cwd: new URL('..', import.meta.url), encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'],
-    env: { ...process.env, DATABASE_URL: url ?? '', GPV_IMMEDIATE_TEST_DATABASE_URL: url ?? '', GLOBAL_RESERVOIR_TEST_DATABASE_URL: url ?? '' },
+    env: { ...process.env, DATABASE_URL: url ?? '', PHASE2_TEST_DATABASE_URL: url ?? '', CALENDAR_PERSISTENCE_TEST_DATABASE_URL: url ?? '', GPV_IMMEDIATE_TEST_DATABASE_URL: url ?? '', GLOBAL_RESERVOIR_TEST_DATABASE_URL: url ?? '' },
   });
   const detail = result.error?.message ?? result.stderr ?? result.stdout ?? `process exited ${result.status}`;
   outcomes.set(commandName, { status: result.status === 0 ? 'PASS' : 'FAIL', detail: detail.trim() });

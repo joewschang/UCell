@@ -45,11 +45,15 @@ export async function attachTreePlacement(tx:Prisma.TransactionClient,data:{pare
   await tx.foundingOccupationEvidence.create({data:{binaryTreeId:tree.binaryTreeId,positionNo:position.positionNo,qualificationId:q.qualificationId,initialPersonId:q.currentHolderPersonId,
    companySponsorQualificationId:designation.qualificationId,sponsorRelationshipId:sponsor.sponsorRelationshipId,actualSponsorSequenceNo:sponsor.sponsorSequenceNo,effectiveAt:data.effectiveFrom,evidenceHash}});
  }
- const ancestors=await tx.binaryTreeAncestry.findMany({where:{binaryTreeId:tree.binaryTreeId,descendantQualificationId:data.parentQualificationId}});
+ // Canonical roots #1–#7 support complete tree/founding statistics. Keep self only as
+ // the insertion proof; arbitrary parent expansion uses immutable placement edges.
+ // This bounds new ancestry storage independently of pathological tree depth.
+ const canonicalIds=positions.flatMap(p=>p.occupantQualificationId?[p.occupantQualificationId]:[]);
+ const ancestors=await tx.binaryTreeAncestry.findMany({where:{binaryTreeId:tree.binaryTreeId,descendantQualificationId:data.parentQualificationId,ancestorQualificationId:{in:[...canonicalIds,data.parentQualificationId]}}});
  if(!ancestors.some(a=>a.depth===0 && a.ancestorQualificationId===data.parentQualificationId))throw new ConflictException({code:'TREE_PROJECTION_UNAVAILABLE'});
  if(ancestors.some(a=>a.ancestorQualificationId===q.qualificationId))throw new ConflictException({code:'BINARY_CYCLE'});
  await tx.binaryTreeAncestry.createMany({data:[{binaryTreeId:tree.binaryTreeId,ancestorQualificationId:q.qualificationId,descendantQualificationId:q.qualificationId,depth:0,firstSide:null,effectiveFrom:data.effectiveFrom},
-  ...ancestors.map(a=>({binaryTreeId:tree.binaryTreeId,ancestorQualificationId:a.ancestorQualificationId,descendantQualificationId:q.qualificationId,depth:a.depth+1,firstSide:a.depth===0?data.side:a.firstSide,effectiveFrom:data.effectiveFrom}))]});
+  ...ancestors.filter(a=>canonicalIds.includes(a.ancestorQualificationId)).map(a=>({binaryTreeId:tree.binaryTreeId,ancestorQualificationId:a.ancestorQualificationId,descendantQualificationId:q.qualificationId,depth:a.depth+1,firstSide:a.depth===0?data.side:a.firstSide,effectiveFrom:data.effectiveFrom}))]});
  await tx.binaryTree.update({where:{binaryTreeId:tree.binaryTreeId},data:{topologyVersion:version}});
  await tx.binaryTreeProjectionCheckpoint.update({where:{binaryTreeId:tree.binaryTreeId},data:{sourceVersion:version,dataThrough:data.effectiveFrom,recordedAt:new Date(),status:'READY'}});
  await tx.auditEvent.create({data:{actorType:meta.actorType??'ADMIN',actorId:meta.actorId,action:'TREE_QUALIFICATION_PLACED',entityType:'BinaryTree',entityId:tree.binaryTreeId,afterData:{...body,evidenceHash},requestId:correlationId,correlationId}});

@@ -1,7 +1,7 @@
 import { SettlementCalendarService } from '../settlement/settlement-calendar.service';
 import { snapshotDecimal } from '../rules/parameter-snapshot';
 import { Injectable } from '@nestjs/common';
-import { GlobalRankCode, Prisma, PrismaService } from '@ucell/database';
+import { GlobalRankCode, Prisma, PrismaService, sealGlobalSettlement, captureGlobalPeriod, globalWeakSide } from '@ucell/database';
 import { RuntimeRuleService } from '../rules/runtime-rule.service';
 import { BonusQueryService } from '../bonus/bonus-query.service';
 import { calculateGlobalPool, GlobalRankSliceInput } from './global-pool-calculation';
@@ -21,33 +21,8 @@ export class GlobalPoolService {
     private readonly persistence:GlobalPoolPersistence,
   ){}
 
-  async weakSidePv(tx:Prisma.TransactionClient,qualificationId:string,start:Date,end:Date){
-    const side=async(side:'LEFT'|'RIGHT')=>{
-      const rows=await tx.$queryRaw<Array<{amount:string}>>`
-        WITH RECURSIVE first_child AS (
-          SELECT child_qualification_id AS qualification_id
-          FROM organization.binary_placement
-          WHERE parent_qualification_id=${qualificationId}::uuid
-            AND side=${side}::organization."SideCode"
-            AND effective_to IS NULL
-        ),
-        subtree AS (
-          SELECT qualification_id FROM first_child
-          UNION ALL
-          SELECT bp.child_qualification_id
-          FROM organization.binary_placement bp
-          JOIN subtree s ON bp.parent_qualification_id=s.qualification_id
-          WHERE bp.effective_to IS NULL
-        )
-        SELECT COALESCE(SUM(p.amount),0)::text AS amount
-        FROM ledger.pv_ledger p
-        JOIN subtree s ON p.qualification_id=s.qualification_id
-        WHERE p.pv_type='GPV'::ledger."PvType"
-          AND p.occurred_at>=${start} AND p.occurred_at<${end}
-      `;
-      return new Prisma.Decimal(rows[0]?.amount ?? '0');
-    };
-    return Prisma.Decimal.min(await side('LEFT'),await side('RIGHT'));
+  async weakSidePv(tx:Prisma.TransactionClient,qualificationId:string,start:Date,end:Date,facts?:Awaited<ReturnType<typeof captureGlobalPeriod>>){
+    return globalWeakSide(facts??await captureGlobalPeriod(tx,start,end,'R1.0B'),qualificationId);
   }
 
   async evaluateAndSettle(periodStart:Date,periodEnd:Date,ruleVersionCode='R1.0B'){
@@ -57,7 +32,8 @@ export class GlobalPoolService {
       if(existing) return existing;
       const parameterSnapshot=await this.calendar.captureForPeriod(tx,periodStart,periodEnd,'GLOBAL',ruleVersionCode);
 
-      const totalGpv=await this.query.totalGpv(tx,periodStart,periodEnd);
+      const periodFacts=await captureGlobalPeriod(tx,periodStart,periodEnd,ruleVersionCode);
+      const totalGpv=periodFacts.total;
       const poolRate=snapshotDecimal(parameterSnapshot,'pool.global.rate','*');
       const poolAvailable=totalGpv.mul(poolRate);
 
@@ -68,7 +44,7 @@ export class GlobalPoolService {
 
       const weakMap=new Map<string,Prisma.Decimal>();
       for(const q of qs){
-        weakMap.set(q.qualificationId,await this.weakSidePv(tx,q.qualificationId,periodStart,periodEnd));
+        weakMap.set(q.qualificationId,await this.weakSidePv(tx,q.qualificationId,periodStart,periodEnd,periodFacts));
       }
 
       // Rank is historical achievement: once passed, never downgraded.
@@ -121,7 +97,7 @@ export class GlobalPoolService {
           });
         }
       }
-      return this.persistence.persist(tx,{
+      const settlement=await this.persistence.persist(tx,{
         settlementId:randomUUID(), periodStart, periodEnd, totalGpv, poolRate, poolAvailable,
         distributedAmount:calculation.distributedAmount,
         undistributedAmount:calculation.undistributedAmount,
@@ -129,6 +105,8 @@ export class GlobalPoolService {
         parameterSnapshot:parameterSnapshot as unknown as Prisma.InputJsonValue,
         awards,
       });
+      await sealGlobalSettlement(tx,settlement,periodFacts);
+      return settlement;
       },{isolationLevel:Prisma.TransactionIsolationLevel.Serializable});
     } catch (error) {
       if ((error as {code?:string}).code === 'P2002' || (error as {code?:string}).code === 'P2034') {

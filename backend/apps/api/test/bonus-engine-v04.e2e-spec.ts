@@ -1,3 +1,4 @@
+import {memberEconomicMocks} from './member-economic-fixture';
 import { ReferralBonusService } from '../src/modules/bonus/referral-bonus.service';
 import { BinaryBonusService } from '../src/modules/bonus/binary-bonus.service';
 import { BonusLifecycleService } from '../src/modules/bonus/bonus-lifecycle.service';
@@ -24,7 +25,7 @@ async function matchingHarness(volume = '1000', paid = '200', theory = '1000') {
   const envelope = source(); envelope.inputs.volume = volume;
   const awards: any[] = [], lifecycle: any[] = [], evidence: any[] = [];
   const binary = {settlementBatchId: 'binary', status: 'FINALIZED'};
-  const tx = {
+  const tx = {...memberEconomicMocks(),
     settlementBatch: {
       findUnique: jest.fn(async ({where}: any) => where.settlementType_periodStart_periodEnd_ruleVersionCode.settlementType === 'BINARY_K1' ? binary : null),
       create: jest.fn(async ({data}: any) => ({...data, settlementBatchId: 'matching'})),
@@ -56,7 +57,7 @@ async function matchingHarness(volume = '1000', paid = '200', theory = '1000') {
 function lifecycleHarness() {
   const pendingUntil=new Date('2020-02-01'),award={bonusAwardId:'award-A',pendingUntil,payableAmount:'100'};
   const events:any[]=[{bonusAwardId:'award-A',status:'PENDING_45D',occurredAt:new Date('2020-01-01')}];
-  const tx={
+  const tx={...memberEconomicMocks(),
     $queryRaw:jest.fn(async()=>[{bonus_award_id:'award-A'}]),
     bonusAwardLifecycleEvent:{findFirst:jest.fn(async()=>events[events.length-1]),create:jest.fn(async({data}:any)=>{events.push(data);return data;})},
     bonusAward:{update:jest.fn(),delete:jest.fn()},
@@ -83,7 +84,7 @@ async function binaryHarness(left = '1000', right = '1000', leftIn = '0', rightI
   sources[0].inputs.volume = left; sources[1].inputs.volume = right;
   const awards: any[] = [], carries: any[] = [], lifecycle: any[] = [], evidence: any[] = [];
   const previous = {periodEnd: new Date('2019-12-25'), leftCarryOut: new Prisma.Decimal(leftIn), rightCarryOut: new Prisma.Decimal(rightIn)};
-  const tx = {
+  const tx = {...memberEconomicMocks(),
     settlementBatch: {
       findUnique: jest.fn(async () => null),
       create: jest.fn(async ({data}: any) => ({...data, settlementBatchId: 'binary'})),
@@ -92,7 +93,7 @@ async function binaryHarness(left = '1000', right = '1000', leftIn = '0', rightI
     pvLedger: {findMany: jest.fn(async () => sources.map(s => ({eventId: s.sourceId})))},
     historicalReplaySnapshot: {findUnique: jest.fn(async ({where}: any) => sealed(sources.find(s => s.sourceId === where.kind_sourceId.sourceId)!))},
     returnLine: {aggregate: jest.fn(async () => ({_sum: {gpvReversalAmount: null}}))},
-    qualification: {findMany: jest.fn(async () => [{qualificationId: 'root'}])},
+    qualification: {...memberEconomicMocks().qualification,findMany: jest.fn(async () => [{qualificationId: 'root'}])},
     qualificationStatusHistory: {findFirst: jest.fn(async () => ({status: 'EFFECTIVE'}))},
     qualificationPlanHistory: {findFirst: jest.fn(async () => ({planCode: plan}))},
     activePeriod: {findFirst: jest.fn(async () => ({activeFrom: start, activeTo: null}))},
@@ -135,7 +136,7 @@ async function referralHarness(g1Plan = 'STARTER', uplinePlan = 'STARTER', g1Act
   };
   const sources = [envelope];
   const awards: any[] = [], lifecycle: any[] = [], evidence: any[] = [];
-  const tx = {
+  const tx = {...memberEconomicMocks(),
     settlementBatch: {
       findUnique: jest.fn(async () => null),
       create: jest.fn(async ({data}: any) => ({...data, settlementBatchId: 'referral'})),

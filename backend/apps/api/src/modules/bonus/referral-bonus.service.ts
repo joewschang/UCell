@@ -1,7 +1,7 @@
 import { SettlementCalendarService } from '../settlement/settlement-calendar.service';
 import { snapshotDecimal, verifySnapshot, captureParameters } from '../rules/parameter-snapshot';
 import { Injectable } from '@nestjs/common';
-import { Prisma, PrismaService, sealSettlement, effectiveGpv, verifyReplayEnvelope, historicalSponsorAncestors, historicalRecipientState } from '@ucell/database';
+import { Prisma, PrismaService, routeCompanyBonus, sealSettlement, effectiveGpv, verifyReplayEnvelope, historicalSponsorAncestors, historicalRecipientState } from '@ucell/database';
 import { createHash } from 'crypto';
 import { RuntimeRuleService } from '../rules/runtime-rule.service';
 import { BonusQueryService } from './bonus-query.service';
@@ -200,7 +200,7 @@ export class ReferralBonusService {
             calculationDetail:row.calculationDetail
           }
         });
-        await tx.bonusAwardLifecycleEvent.createMany({
+        if(!await routeCompanyBonus(tx,award,row.calculationDetail.parameterSnapshot)) await tx.bonusAwardLifecycleEvent.createMany({
           data:[
             {bonusAwardId:award.bonusAwardId,status:'CALCULATED',occurredAt:new Date()},
             {bonusAwardId:award.bonusAwardId,status:'PENDING_45D',occurredAt:new Date()}

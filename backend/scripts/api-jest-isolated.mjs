@@ -18,7 +18,7 @@ const target=new URL(base);target.pathname='/'+database;
 const cwd=fileURLToPath(new URL('../',import.meta.url));
 const evidencePath=join(cwd,`.phase2-${database}.json`);
 const admin=new PrismaClient({datasources:{db:{url:control.href}}});
-const env={...process.env,DATABASE_URL:target.href,PHASE2_TEST_DATABASE_URL:target.href,PHASE2_SHARED_DB_EVIDENCE_PATH:evidencePath};
+const env={...process.env,DATABASE_URL:target.href,PHASE2_TEST_DATABASE_URL:target.href,V3_GOLDEN_DATABASE_URL:target.href,PHASE2_SHARED_DB_EVIDENCE_PATH:evidencePath};
 function run(args,workdir=cwd){const result=spawnSync(process.execPath,args,{cwd:workdir,env,stdio:'inherit'});if(result.error)throw result.error;assert.equal(result.status,0,'isolated Jest child failed');}
 let created=false;
 try{
@@ -27,7 +27,8 @@ try{
   const fixture=new PrismaClient({datasources:{db:{url:target.href}}});
   try{await fixture.person.create({data:{legalName:'ISOLATED TEST PERSON'}});await fixture.productReference.create({data:{sku:'ISOLATED-TEST',displayName:'ISOLATED TEST PRODUCT',currentPrice:1}});}finally{await fixture.$disconnect();}
   run([join(cwd,'scripts','phase2-db-test.mjs')]);
-  run([join(dirname(apiRequire.resolve('jest/package.json')),'bin','jest.js'),'--config','./test/jest-e2e.json','--runInBand'],join(cwd,'apps','api'));
+  if(process.argv.length===3&&process.argv[2]==='--decision-v3')run([join(cwd,'scripts','v3-mandatory-golden.mjs')]);
+  else run([join(dirname(apiRequire.resolve('jest/package.json')),'bin','jest.js'),'--config','./test/jest-e2e.json','--runInBand',...process.argv.slice(2)],join(cwd,'apps','api'));
   console.log('API_JEST_ISOLATED_PASS');
 }finally{
   try{unlinkSync(evidencePath);}catch(error){if(error?.code!=='ENOENT')throw error;}

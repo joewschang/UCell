@@ -716,6 +716,8 @@ model ConsentEvidence {
 }
 
 model Qualification {
+ economicDestinations AwardEconomicDestination[]
+ companyProfileBindings CompanyBootstrapProfileBinding[]
   kind QualificationKind @default(MEMBER_ORIGIN)
   currentCompanyPrincipalId String? @map("current_company_principal_id") @db.Uuid
   currentCompanyPrincipal CompanyPrincipal? @relation(fields: [currentCompanyPrincipalId], references: [companyPrincipalId])
@@ -1840,6 +1842,7 @@ model PvLedger {
   parameterSnapshotHash String?  @map("parameter_snapshot_hash")
   occurredAt            DateTime @map("occurred_at") @db.Timestamptz(6)
   recordedAt            DateTime @default(now()) @map("recorded_at") @db.Timestamptz(6)
+  // Partial covering ix_pv_reversal_recorded is defined in SQL migration 66.
   reversalOfEventId     String?  @map("reversal_of_event_id") @db.Uuid
   correlationId         String   @map("correlation_id") @db.Uuid
 
@@ -2193,6 +2196,7 @@ model MonthlyRecognitionSchedule {
 }
 
 model RpvUplineAwardEvent {
+ economicDestination AwardEconomicDestination?
   rpvAwardEventId              String   @id @default(uuid()) @map("rpv_award_event_id") @db.Uuid
   recognitionId                String   @map("recognition_id") @db.Uuid
   sourceQualificationId        String   @map("source_qualification_id") @db.Uuid
@@ -2279,6 +2283,7 @@ model BonusCalculationEvidence {
 }
 
 model BonusAward {
+ economicDestination AwardEconomicDestination?
   bonusAwardId                 String         @id @default(uuid()) @map("bonus_award_id") @db.Uuid
   settlementBatchId            String?        @map("settlement_batch_id") @db.Uuid
   awardType                    BonusAwardType @map("award_type")
@@ -2308,7 +2313,8 @@ model BonusAward {
   sourceAward         BonusAward?                @relation("BonusAwardSource", fields: [sourceAwardId], references: [bonusAwardId])
   derivedAwards       BonusAward[]               @relation("BonusAwardSource")
 
-  @@unique([awardType, recipientQualificationId, sourceEventId, generationNo, settlementBatchId])
+  // uq_bonus_award_source is an expression unique index maintained by SQL migration.
+  // Matching additionally keys sourceAwardId; Prisma cannot represent CASE/COALESCE indexes.
   @@index([recipientQualificationId, awardType, occurredAt])
   @@index([settlementBatchId, awardType])
   @@map("bonus_award")
@@ -2541,6 +2547,7 @@ model GlobalPoolSettlement {
 }
 
 model GlobalPoolAward {
+ economicDestination AwardEconomicDestination?
   globalPoolAwardId      String         @id @default(uuid()) @map("global_pool_award_id") @db.Uuid
   globalPoolSettlementId String         @map("global_pool_settlement_id") @db.Uuid
   qualificationId        String         @map("qualification_id") @db.Uuid
@@ -2640,6 +2647,7 @@ model AwardPayoutAnchor {
 }
 
 model ReservoirLedgerEffect {
+ recordedTransaction BigInt @default(dbgenerated("txid_current()")) @map("recorded_transaction")
   reservoirLedgerEffectId  String              @id @default(uuid()) @map("reservoir_ledger_effect_id") @db.Uuid
   reservoirCode            String              @default("A") @map("reservoir_code")
   effectType               ReservoirEffectType @map("effect_type")
@@ -2974,6 +2982,7 @@ model HistoricalReplaySnapshot {
 }
 
 model EntitlementReplayPosting {
+ reservoirBEffect ReservoirBEffect?
   postingId                String                   @id @default(uuid()) @map("posting_id") @db.Uuid
   sequence                 BigInt                   @unique @default(autoincrement())
   actionKey                String                   @map("action_key")
@@ -3326,6 +3335,9 @@ model CompanyPrincipal {
   @@schema("membership")
 }
 model QualificationOwnerInterval {
+ economicDestinations AwardEconomicDestination[]
+ recordedTransaction BigInt @default(dbgenerated("txid_current()")) @map("recorded_transaction")
+ closedTransaction BigInt? @map("closed_transaction")
   ownerIntervalId String @id @default(uuid()) @map("owner_interval_id") @db.Uuid
   qualificationId String @map("qualification_id") @db.Uuid
   ownerType QualificationOwnerType @map("owner_type")
@@ -3347,6 +3359,8 @@ model QualificationOwnerInterval {
   @@schema("membership")
 }
 model BinaryTree {
+ economicDestinations AwardEconomicDestination[]
+ companyProfileBindings CompanyBootstrapProfileBinding[]
   binaryTreeId String @id @default(uuid()) @map("binary_tree_id") @db.Uuid
   treeCode String @unique @map("tree_code")
   treeName String @map("tree_name")
@@ -3366,7 +3380,7 @@ model BinaryTree {
   sponsorDesignation CompanySponsorDesignation?
   placements PlacementTreeEvidence[]
   ancestry BinaryTreeAncestry[]
-  projectionCheckpoint BinaryTreeProjectionCheckpoint?
+   projectionCheckpoint BinaryTreeProjectionCheckpoint?
   @@index([status, createdAt, binaryTreeId])
   @@map("binary_tree")
   @@schema("organization")
@@ -3390,7 +3404,47 @@ model BinaryTreeStatusEvent {
   @@map("binary_tree_status_event")
   @@schema("organization")
 }
+model CompanyBootstrapProfileBinding {
+ economicDestinations AwardEconomicDestination[]
+ bindingId String @id @default(uuid()) @map("binding_id") @db.Uuid
+ qualificationId String @map("qualification_id") @db.Uuid
+ binaryTreeId String @map("binary_tree_id") @db.Uuid
+ companyPosition Int @map("company_position")
+ profileVersion String @map("profile_version")
+ planCode String @map("plan_code")
+ ruleVersion String @map("rule_version")
+ parameterVersion String @map("parameter_version")
+ snapshotHash String @map("snapshot_hash")
+ effectiveAt DateTime @map("effective_at") @db.Timestamptz(6)
+ effectiveFrom DateTime @map("effective_from") @db.Timestamptz(6)
+ effectiveTo DateTime? @map("effective_to") @db.Timestamptz(6)
+ parameterSnapshot Json @map("parameter_snapshot")
+ approvalReference String @map("approval_reference")
+ recordedAt DateTime @default(now()) @map("recorded_at") @db.Timestamptz(6)
+ qualification Qualification @relation(fields:[qualificationId],references:[qualificationId])
+ binaryTree BinaryTree @relation(fields:[binaryTreeId],references:[binaryTreeId])
+ @@unique([qualificationId,snapshotHash])
+ @@index([qualificationId,effectiveAt],map:"company_profile_effective_idx")
+ @@map("company_bootstrap_profile_binding")
+ @@schema("membership")
+}
+
+model TreeReadSnapshot {
+ snapshotToken String @id @default(uuid()) @map("snapshot_token") @db.Uuid
+ binaryTreeId String @map("binary_tree_id") @db.Uuid
+ actorId String @map("actor_id") @db.Uuid
+ role String
+ time Json
+ databaseSnapshot String @map("database_snapshot")
+ capturedAt DateTime @default(now()) @map("captured_at") @db.Timestamptz(6)
+ expiresAt DateTime @map("expires_at") @db.Timestamptz(6)
+ designation CompanySponsorDesignation @relation(fields:[binaryTreeId],references:[binaryTreeId])
+ @@index([expiresAt])
+ @@map("tree_read_snapshot")
+ @@schema("organization")
+}
 model BinaryTreeMembership {
+ recordedTransaction BigInt @default(dbgenerated("txid_current()")) @map("recorded_transaction")
   qualificationId String @id @map("qualification_id") @db.Uuid
   binaryTreeId String @map("binary_tree_id") @db.Uuid
   effectiveFrom DateTime @map("effective_from") @db.Timestamptz(6)
@@ -3436,6 +3490,7 @@ model FoundingOccupationEvidence {
   @@schema("organization")
 }
 model CompanySponsorDesignation {
+ readSnapshots TreeReadSnapshot[]
   binaryTreeId String @id @map("binary_tree_id") @db.Uuid
   qualificationId String @unique @map("qualification_id") @db.Uuid
   effectiveAt DateTime @map("effective_at") @db.Timestamptz(6)
@@ -3493,4 +3548,68 @@ model BinaryTreeProjectionCheckpoint {
   binaryTree BinaryTree @relation(fields: [binaryTreeId], references: [binaryTreeId])
   @@map("binary_tree_projection_checkpoint")
   @@schema("organization")
+}
+
+model AwardEconomicDestination {
+ destinationId String @id @default(uuid()) @map("destination_id") @db.Uuid
+ sourceBonusAwardId String? @unique @map("source_bonus_award_id") @db.Uuid
+ sourceRpvAwardId String? @unique @map("source_rpv_award_id") @db.Uuid
+ sourceGlobalAwardId String? @unique @map("source_global_award_id") @db.Uuid
+ qualificationId String @map("qualification_id") @db.Uuid
+ binaryTreeId String @map("binary_tree_id") @db.Uuid
+ ownerIntervalId String @map("owner_interval_id") @db.Uuid
+ bindingId String? @map("binding_id") @db.Uuid
+ companyPosition Int? @map("company_position")
+ destination String @default("RESERVOIR_B")
+ awardType String @map("award_type")
+ sourceSettlementId String? @map("source_settlement_id") @db.Uuid
+ periodStart DateTime @map("period_start") @db.Timestamptz(6)
+ periodEnd DateTime @map("period_end") @db.Timestamptz(6)
+ finalAmount Decimal @map("final_amount") @db.Decimal(18,4)
+ ruleVersion String @map("rule_version")
+ parameterVersion String @map("parameter_version")
+ snapshotHash String @map("snapshot_hash")
+ parameterSnapshot Json @map("parameter_snapshot")
+ effectiveAt DateTime @map("effective_at") @db.Timestamptz(6)
+ recordedAt DateTime @default(now()) @map("recorded_at") @db.Timestamptz(6)
+ sourceBonusAward BonusAward? @relation(fields:[sourceBonusAwardId],references:[bonusAwardId])
+ sourceRpvAward RpvUplineAwardEvent? @relation(fields:[sourceRpvAwardId],references:[rpvAwardEventId])
+ sourceGlobalAward GlobalPoolAward? @relation(fields:[sourceGlobalAwardId],references:[globalPoolAwardId])
+ qualification Qualification @relation(fields:[qualificationId],references:[qualificationId])
+ binaryTree BinaryTree @relation(fields:[binaryTreeId],references:[binaryTreeId])
+ ownerInterval QualificationOwnerInterval @relation(fields:[ownerIntervalId],references:[ownerIntervalId])
+ binding CompanyBootstrapProfileBinding? @relation(fields:[bindingId],references:[bindingId])
+ effects ReservoirBEffect[]
+ @@index([binaryTreeId,periodStart,destinationId],map:"award_destination_tree_period_idx")
+ @@map("award_economic_destination")
+ @@schema("ledger")
+}
+model ReservoirBEffect {
+ recordedTransaction BigInt @default(dbgenerated("txid_current()")) @map("recorded_transaction")
+ effectId String @id @default(uuid()) @map("effect_id") @db.Uuid
+ destinationId String @map("destination_id") @db.Uuid
+ effectType String @map("effect_type")
+ replayPostingId String? @unique @map("replay_posting_id") @db.Uuid
+ amountDelta Decimal @map("amount_delta") @db.Decimal(18,4)
+ effectiveAt DateTime @map("effective_at") @db.Timestamptz(6)
+ recordedAt DateTime @default(now()) @map("recorded_at") @db.Timestamptz(6)
+ idempotencyKey String @unique @map("idempotency_key")
+ destination AwardEconomicDestination @relation(fields:[destinationId],references:[destinationId])
+ replayPosting EntitlementReplayPosting? @relation(fields:[replayPostingId],references:[postingId])
+ @@index([destinationId,recordedAt,effectId],map:"reservoir_b_destination_recorded_idx")
+ @@map("reservoir_b_effect")
+ @@schema("ledger")
+}
+
+model ReportReadSnapshot {
+ snapshotId String @id @default(uuid()) @map("snapshot_id") @db.Uuid
+ actorId String @map("actor_id") @db.Uuid
+ role String
+ query Json
+ databaseSnapshot String @map("database_snapshot")
+ capturedAt DateTime @default(now()) @map("captured_at") @db.Timestamptz(6)
+ expiresAt DateTime @map("expires_at") @db.Timestamptz(6)
+ @@index([expiresAt],map:"report_read_snapshot_expiry_idx")
+ @@map("report_read_snapshot")
+ @@schema("ledger")
 }

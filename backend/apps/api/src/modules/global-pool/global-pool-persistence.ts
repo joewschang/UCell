@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { ConflictException, Injectable } from '@nestjs/common';
-import { GlobalRankCode, Prisma } from '@ucell/database';
+import { GlobalRankCode, Prisma, routeCompanyFinal } from '@ucell/database';
 
 export interface GlobalPoolAwardWrite {
   qualificationId: string;
@@ -68,13 +68,14 @@ export class GlobalPoolPersistence {
     });
 
     for (const award of input.awards) {
-      await tx.globalPoolAward.create({
+      const final=await tx.globalPoolAward.create({
         data: {
           globalPoolSettlementId: input.settlementId,
           ...award,
           activeSnapshot: true,
         },
       });
+      await routeCompanyFinal(tx,{sourceGlobalAwardId:final.globalPoolAwardId,qualificationId:award.qualificationId,awardType:'GLOBAL',amount:award.payableAmount,at:input.periodEnd,sourceSettlementId:input.settlementId,periodStart:input.periodStart,periodEnd:input.periodEnd},input.parameterSnapshot);
     }
 
     await tx.reservoirLedgerEffect.create({

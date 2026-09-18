@@ -48,7 +48,7 @@ export const READ_DEFINITIONS: Readonly<Record<ToolName, ReadDefinition>> = Obje
     classification: 'MEMBER_SELF', requiredPermission: 'explain:binary:read' }),
   explainReservoirB: definition({ ...common, key: 'reservoir.b.entry', name: '水庫 B 分錄',
     description: 'One company entitlement accrual or signed correction, never an A balance or a withdrawal.',
-    grain: 'LEDGER_ENTRY', source: 'Reservoir B ledger adapter (not yet implemented)',
+    grain: 'LEDGER_ENTRY', source: 'Authoritative ReservoirBEffect and immutable AwardEconomicDestination adapter',
     dimensions: ['entryId', 'qualificationId', 'binaryTreeId'], timeMode: 'ENTRY', timestampMeaning: 'Source entry effective time',
     replayPolicy: 'Preserve source revision and correction reference; no duplicate accrual.',
     classification: 'FINANCE_CONFIDENTIAL', requiredPermission: 'explain:reservoir-b:read' }),

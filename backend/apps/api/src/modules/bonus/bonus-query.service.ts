@@ -1,12 +1,13 @@
+import {effectiveSponsorDirectCount} from '@ucell/database';
 import { Injectable, UnprocessableEntityException } from '@nestjs/common';
-import { Prisma, PrismaService } from '@ucell/database';
+import { Prisma, PrismaService, companyAlwaysActiveAt, companyPlanAt, ParameterSnapshot } from '@ucell/database';
 
 @Injectable()
 export class BonusQueryService {
   constructor(private readonly prisma:PrismaService){}
 
   async isActiveAt(tx:Prisma.TransactionClient,qualificationId:string,at:Date){
-    return !!await tx.activePeriod.findFirst({
+    return await companyAlwaysActiveAt(tx,qualificationId,at)||!!await tx.activePeriod.findFirst({
       where:{
         qualificationId,
         activeFrom:{lte:at},
@@ -15,24 +16,7 @@ export class BonusQueryService {
     });
   }
 
-  async effectiveDirectCountAt(tx:Prisma.TransactionClient,sponsorQualificationId:string,at:Date){
-    const rows=await tx.$queryRaw<Array<{count:string}>>`
-      SELECT COUNT(*)::text AS count
-      FROM organization.sponsor_relationship sr
-      WHERE sr.sponsor_qualification_id=${sponsorQualificationId}::uuid
-        AND sr.effective_from <= ${at}
-        AND (sr.effective_to IS NULL OR sr.effective_to > ${at})
-        AND EXISTS (
-          SELECT 1
-          FROM membership.qualification_status_history qsh
-          WHERE qsh.qualification_id=sr.child_qualification_id
-            AND qsh.status='EFFECTIVE'::membership."QualificationLifecycleStatus"
-            AND qsh.effective_from <= ${at}
-            AND (qsh.effective_to IS NULL OR qsh.effective_to > ${at})
-        )
-    `;
-    return Number(rows[0]?.count ?? '0');
-  }
+  async effectiveDirectCountAt(tx:Prisma.TransactionClient,sponsorQualificationId:string,at:Date){return effectiveSponsorDirectCount(tx,sponsorQualificationId,at);}
 
   async sponsorAncestors(tx:Prisma.TransactionClient,qualificationId:string,at:Date,maxGeneration:number){
     return tx.$queryRaw<Array<{qualification_id:string;generation:number}>>`
@@ -54,7 +38,8 @@ export class BonusQueryService {
     `;
   }
 
-  async qualificationPlanAt(tx:Prisma.TransactionClient,qualificationId:string,at:Date){
+  async qualificationPlanAt(tx:Prisma.TransactionClient,qualificationId:string,at:Date,parameters?:ParameterSnapshot){
+    const company=await companyPlanAt(tx,qualificationId,at,parameters);if(company)return company;
     const historical=await tx.qualificationPlanHistory.findFirst({
       where:{
         qualificationId,
@@ -69,6 +54,8 @@ export class BonusQueryService {
   }
 
   async isQualificationEffectiveAt(tx:Prisma.TransactionClient,qualificationId:string,at:Date){
+    const identity=await tx.qualification.findUnique({where:{qualificationId},select:{kind:true,effectiveAt:true}});
+    if(identity?.kind==='COMPANY_BOOTSTRAP')return !!identity.effectiveAt&&identity.effectiveAt<=at;
     return !!await tx.qualificationStatusHistory.findFirst({
       where:{
         qualificationId,status:'EFFECTIVE',

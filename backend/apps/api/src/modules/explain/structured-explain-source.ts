@@ -77,6 +77,28 @@ export async function readStructuredExplanation(tx: Prisma.TransactionClient, to
     return envelope(q,{gpv:total('GPV'),rpv:total('RPV'),epv:total('EPV')},rows[0].ruleVersionCode,rows[0].parameterSnapshotHash!,updated,asOf,
       rows.map(r=>({type:'PvLedger',id:r.eventId,revision:r.parameterSnapshotHash!})));
   }
+  if(tool==='explainReservoirB'){
+    const effect=await tx.reservoirBEffect.findUnique({where:{effectId:q.resourceId!},include:{destination:{include:{binding:true,sourceBonusAward:{include:{settlementBatch:true}},sourceRpvAward:true,sourceGlobalAward:{include:{settlement:true}}}},replayPosting:true}});
+    if(!effect||effect.effectiveAt>asOf||effect.recordedAt>cutoff)return missing();
+    const d=effect.destination;
+    if(d.recordedAt>cutoff||d.periodStart.toISOString()!==q.time.periodStart||d.periodEnd.toISOString()!==q.time.periodEnd)return missing();
+    let params:ReturnType<typeof verifySnapshot>;try{params=verifySnapshot(d.parameterSnapshot);}catch{return invalid();}
+    if(params.hash!==d.snapshotHash||params.ruleVersionCode!==d.ruleVersion)return invalid();
+    const bonus=d.sourceBonusAward,rpv=d.sourceRpvAward,global=d.sourceGlobalAward;
+    const source=bonus??rpv??global;if(!source||!source.payableAmount.eq(d.finalAmount))return invalid();
+    if(bonus?.settlementBatch&&(bonus.settlementBatch.status!=='FINALIZED'||!bonus.settlementBatch.finalizedAt||bonus.settlementBatch.finalizedAt>cutoff))return missing();
+    const refs=[{type:'ReservoirBEffect',id:effect.effectId,revision:effect.idempotencyKey},
+      {type:'AwardEconomicDestination',id:d.destinationId,revision:d.snapshotHash},
+      {type:bonus?'BonusAward':rpv?'RpvUplineAwardEvent':'GlobalPoolAward',id:(d.sourceBonusAwardId??d.sourceRpvAwardId??d.sourceGlobalAwardId)!,revision:d.snapshotHash}];
+    if(d.binding){if(d.binding.snapshotHash!==d.snapshotHash||d.binding.recordedAt>cutoff)return invalid();refs.push({type:'CompanyBootstrapProfileBinding',id:d.binding.bindingId,revision:d.binding.snapshotHash});}
+    if(effect.replayPosting){if(effect.replayPosting.createdAt>cutoff||!effect.replayPosting.delta.eq(effect.amountDelta))return invalid();refs.push({type:'EntitlementReplayPosting',id:effect.replayPosting.postingId,revision:effect.replayPosting.stateHash});}
+    return envelope(q,{amount:effect.amountDelta.toString(),kind:effect.effectType==='ENTITLEMENT'?'ACCRUAL':'CORRECTION',
+      theory:bonus?.theoryAmount.toString()??rpv?.theoryAmount.toString()??'NOT_APPLICABLE',k:bonus?.kFactor.toString()??'NOT_APPLICABLE',final:d.finalAmount.toString(),
+      awardType:d.awardType,companyBall:d.qualificationId,profile:d.binding?.planCode??bonus?.planLevelSnapshot??'MEMBER_ORIGIN_ORIGINAL_PLAN',
+      tree:d.binaryTreeId,position:d.companyPosition?String(d.companyPosition):'MEMBER_ORIGIN',economicDestination:d.destination,
+      sourceRecognition:bonus?.sourceEventId??rpv?.recognitionId??'SETTLEMENT_SOURCE_SET',settlement:d.sourceSettlementId??'NOT_APPLICABLE',snapshotHash:d.snapshotHash},
+      d.ruleVersion,d.parameterVersion,effect.recordedAt,d.effectiveAt,refs);
+  }
   if(tool==='explainReservoirA') {
     const row=await tx.reservoirLedgerEffect.findUnique({where:{reservoirLedgerEffectId:q.resourceId!}});
     if(!row || row.reservoirCode!=='A' || row.createdAt>cutoff || row.sourcePeriodEnd>asOf

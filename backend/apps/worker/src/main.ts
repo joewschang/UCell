@@ -1,4 +1,5 @@
-import { PrismaService, Prisma, processMemberOrderNotification, processPaymentInventoryReservation, recognizeConsumption, applyGpvImmediateEffects, sealRpvEvent, pending, claimOutboxLease, withOutboxLease, processLeasedReplay, processTreeProjectionEvent, releaseFailedOutboxLease, OutboxLease, matureBonusAward } from '@ucell/database';
+import {effectiveSponsorDirectCount} from '@ucell/database';
+import { PrismaService, Prisma, companyAlwaysActiveAt, captureParameters, processMemberOrderNotification, processPaymentInventoryReservation, recognizeConsumption, applyGpvImmediateEffects, sealRpvEvent, pending, claimOutboxLease, withOutboxLease, processLeasedReplay, processTreeProjectionEvent, releaseFailedOutboxLease, OutboxLease, matureBonusAward } from '@ucell/database';
 import * as crypto from 'node:crypto';
 import { pollProviderWebhooks, type ProviderHandlerRegistration } from './provider-runtime';
 import { WorkerLoop, workerPollInterval } from './worker-loop';
@@ -14,28 +15,7 @@ function unlockedDepth(count:number){
   return 12;
 }
 
-async function effectiveDirectCountAt(
-  tx:Prisma.TransactionClient,
-  sponsorQualificationId:string,
-  at:Date
-){
-  const rows=await tx.$queryRaw<Array<{count:string}>>`
-    SELECT COUNT(*)::text AS count
-    FROM organization.sponsor_relationship sr
-    WHERE sr.sponsor_qualification_id=${sponsorQualificationId}::uuid
-      AND sr.effective_from <= ${at}
-      AND (sr.effective_to IS NULL OR sr.effective_to > ${at})
-      AND EXISTS (
-        SELECT 1
-        FROM membership.qualification_status_history qsh
-        WHERE qsh.qualification_id=sr.child_qualification_id
-          AND qsh.status='EFFECTIVE'::membership."QualificationLifecycleStatus"
-          AND qsh.effective_from <= ${at}
-          AND (qsh.effective_to IS NULL OR qsh.effective_to > ${at})
-      )
-  `;
-  return Number(rows[0]?.count ?? '0');
-}
+async function effectiveDirectCountAt(tx:Prisma.TransactionClient,sponsorQualificationId:string,at:Date){return effectiveSponsorDirectCount(tx,sponsorQualificationId,at);}
 
 export async function processSaleConfirmed(db:PrismaService,lease:OutboxLease,deps={withOutboxLease,applyGpvImmediateEffects}){
   const outboxEventId=lease.outboxEventId;
@@ -113,7 +93,9 @@ async function processRecognition(recognitionId:string){
     for(const a of ancestors){
       const directCount=await effectiveDirectCountAt(tx,a.qualification_id,schedule.dueAt);
       const depth=unlockedDepth(directCount);
-      const active=!!await tx.activePeriod.findFirst({
+      const company=await companyAlwaysActiveAt(tx,a.qualification_id,schedule.dueAt);
+      const companySnapshot=company?await captureParameters(tx,schedule.dueAt,schedule.ruleVersionCode):null;
+      const active=company||!!await tx.activePeriod.findFirst({
         where:{
           qualificationId:a.qualification_id,
           activeFrom:{lte:schedule.dueAt},
@@ -141,7 +123,7 @@ async function processRecognition(recognitionId:string){
           theoryAmount:theory,
           payableAmount:(active && a.generation<=depth)?theory:new Prisma.Decimal(0),
           ruleVersionCode:schedule.ruleVersionCode,
-          parameterSnapshotHash:schedule.parameterSnapshotHash,
+          parameterSnapshotHash:companySnapshot?.hash??schedule.parameterSnapshotHash,
           occurredAt:schedule.dueAt
         }
       });

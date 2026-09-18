@@ -1,4 +1,6 @@
-import { captureParameters, historicalMonthlyEntitlements, Prisma } from '@ucell/database';
+jest.mock('@ucell/database',()=>({...jest.requireActual('@ucell/database'),sealGlobalSettlement:jest.fn(async()=>undefined),captureGlobalPeriod:jest.fn()}));
+import {memberEconomicMocks} from './member-economic-fixture';
+import { captureGlobalPeriod, captureParameters, historicalMonthlyEntitlements, Prisma } from '@ucell/database';
 import { GlobalPoolService } from '../src/modules/global-pool/global-pool.service';
 import { GlobalPoolPersistence } from '../src/modules/global-pool/global-pool-persistence';
 import { epv,d } from './phase2-fixtures';
@@ -13,9 +15,10 @@ async function globalHarness(input:{total?:string;weak?:Record<string,string>;ac
   ...['300000','600000','1000000','2000000','4000000'].map((value,i)=>['global.rank.weak_threshold',levels[i],value])]
   .map(([parameterCode,scopeKey,valueJson],i)=>({runtimeRuleParameterId:String(i),parameterCode,scopeKey,valueJson,effectiveFrom:new Date('2019-01-01'),effectiveTo:null}));
  const snapshot=await captureParameters({runtimeRuleParameter:{findMany:async()=>parameters}} as any,new Date('2020-02-01'),'TEST_ONLY');
+ (captureGlobalPeriod as jest.Mock).mockResolvedValue({total:new Prisma.Decimal(input.total??'10000000')});
  const qualifications=Object.keys(input.weak??{}).map(qualificationId=>({qualificationId})),ranks=new Set<string>(),awards:any[]=[],settlements:any[]=[],reservoir:any[]=[],accruals:any[]=[],welfareEffects:any[]=[];
- const tx:any={
-  qualification:{findMany:jest.fn(async()=>qualifications)},
+ const tx:any={...memberEconomicMocks(),
+  qualification:{...memberEconomicMocks().qualification,findMany:jest.fn(async()=>qualifications)},
   qualificationGlobalRankHistory:{
    upsert:jest.fn(async({where,create}:any)=>{ranks.add(`${where.qualificationId_rankCode.qualificationId}:${where.qualificationId_rankCode.rankCode}`);return create;}),
    findUnique:jest.fn(async({where}:any)=>ranks.has(`${where.qualificationId_rankCode.qualificationId}:${where.qualificationId_rankCode.rankCode}`)?where.qualificationId_rankCode:null),

@@ -1,6 +1,7 @@
 export * from './prisma.service';
 export * from './database.module';
 export * from './parameter-snapshot';
+export * from './company-profile';
 export * from './historical-replay';
 export * from './outbox-lease';
 export {
@@ -38,3 +39,7 @@ export * from './provider/provider-worker-outcome-decision';
 export * from './provider/provider-webhook-worker-lease';
 export * from './provider/provider-webhook-worker-runner';
 export * from './tree-projection-outbox';
+
+export * from './reservoir-b';
+
+export * from './global-pool-calculation';

@@ -1,3 +1,7 @@
+import {calculateGlobalPool} from './global-pool-calculation';
+import {appendReplayPoolDeltas} from './replay-pool-delta';
+import {companyOwnerAt,companyAlwaysActiveAt,routeCompanyFinal} from './reservoir-b';
+import {bindCompanyLeaderProfile,effectiveCompanyParameters} from './company-profile';
 import { Prisma } from '@prisma/client';
 import { createHash, randomUUID } from 'node:crypto';
 import { captureParameters, ParameterSnapshot, pending, snapshotDecimal, verifySnapshot } from './parameter-snapshot';
@@ -18,7 +22,7 @@ function historicalAccountingTimezone(parameters:ParameterSnapshot){
   return rows[0].value;
 }
 export interface HistoricalRecipient {
-  key:string; awardId:string; awardType:'REFERRAL'|'EQUALIZATION'|'BINARY'|'MATCHING'|'EPV'|'RPV';
+  key:string; awardId:string; awardType:'REFERRAL'|'EQUALIZATION'|'BINARY'|'MATCHING'|'EPV'|'RPV'|'GLOBAL';
   qualificationId:string; sourceEventId?:string; sourceAwardId?:string; generation:number;
   active:boolean; eligible:boolean; theory:string; posted:string; pendingUntil:string;
   rate?:string; detail:any; qualification:any;
@@ -27,14 +31,17 @@ export interface ReplayEnvelope {
   format:'UCELL_HISTORICAL_REPLAY_V1'; kind:string; sourceId:string; ruleVersionCode:string;
   at:string; parameters:ParameterSnapshot; recipients:HistoricalRecipient[]; evidence:any; inputs:any;
 }
-async function qualificationEvidence(tx:Prisma.TransactionClient,qid:string,at:Date) {
-  const plans=await tx.qualificationPlanHistory.findMany({where:{qualificationId:qid,effectiveFrom:{lte:at},OR:[{effectiveTo:null},{effectiveTo:{gt:at}}]}});
-  const statuses=await tx.qualificationStatusHistory.findMany({where:{qualificationId:qid,effectiveFrom:{lte:at},OR:[{effectiveTo:null},{effectiveTo:{gt:at}}]}});
-  if(plans.length!==1||statuses.length!==1) pending('HISTORICAL_SNAPSHOT_MISSING',`Historical Qualification evidence is incomplete or overlapping: ${qid}/${at.toISOString()}`);
-  const active=await tx.activePeriod.findMany({where:{qualificationId:qid,activeFrom:{lte:at}},orderBy:{activeFrom:'asc'}});
-  return json({qualificationId:qid,at:at.toISOString(),plan:plans[0],status:statuses[0],activeIntervals:active});
+async function qualificationEvidence(tx:Prisma.TransactionClient,qid:string,at:Date,parameters?:ParameterSnapshot) {
+ const q=await tx.qualification.findUnique({where:{qualificationId:qid}});
+ const owner=await companyOwnerAt(tx,qid,at);
+ const binding=q?.kind==='COMPANY_BOOTSTRAP'?await bindCompanyLeaderProfile(tx,qid,parameters??await effectiveCompanyParameters(tx,at)):null;
+ const plans=binding?[{planCode:binding.planCode,bindingId:binding.bindingId,snapshotHash:binding.snapshotHash,effectiveFrom:binding.effectiveFrom,effectiveTo:binding.effectiveTo}]:await tx.qualificationPlanHistory.findMany({where:{qualificationId:qid,effectiveFrom:{lte:at},OR:[{effectiveTo:null},{effectiveTo:{gt:at}}]}});
+ const statuses=binding&&q?.effectiveAt&&q.effectiveAt<=at?[{status:'EFFECTIVE',effectiveFrom:q.effectiveAt,effectiveTo:null,sourceType:'IMMUTABLE_COMPANY_BOOTSTRAP',sourceId:binding.bindingId}]:await tx.qualificationStatusHistory.findMany({where:{qualificationId:qid,effectiveFrom:{lte:at},OR:[{effectiveTo:null},{effectiveTo:{gt:at}}]}});
+ if(plans.length!==1||statuses.length!==1)pending('HISTORICAL_SNAPSHOT_MISSING','Historical Qualification evidence is incomplete or overlapping: '+qid+'/'+at.toISOString());
+ const active=owner?[{activeFrom:owner.effectiveFrom,activeTo:owner.effectiveTo,sourceType:'COMPANY_OWNER_INTERVAL',sourceId:owner.ownerIntervalId}]:await tx.activePeriod.findMany({where:{qualificationId:qid,activeFrom:{lte:at}},orderBy:{activeFrom:'asc'}});
+ return json({qualificationId:qid,at:at.toISOString(),plan:plans[0],status:statuses[0],activeIntervals:active,...(owner?{economicOwner:{ownerType:'COMPANY',ownerIntervalId:owner.ownerIntervalId,companyPrincipalId:owner.companyPrincipalId},companyProfile:binding?{bindingId:binding.bindingId,parameterVersion:binding.parameterVersion,snapshotHash:binding.snapshotHash,parameterSnapshot:binding.parameterSnapshot}:null}:{})});
 }
-export async function captureHistoricalGraph(tx:Prisma.TransactionClient,sourceQualificationId:string,at:Date) {
+export async function captureHistoricalGraph(tx:Prisma.TransactionClient,sourceQualificationId:string,at:Date,parameters?:ParameterSnapshot) {
   const where={effectiveFrom:{lte:at},OR:[{effectiveTo:null},{effectiveTo:{gt:at}}]};
   const sponsor=await tx.sponsorRelationship.findMany({where,orderBy:{childQualificationId:'asc'}});
   const binary=await tx.binaryPlacement.findMany({where,orderBy:{childQualificationId:'asc'}});
@@ -54,10 +61,11 @@ export async function captureHistoricalGraph(tx:Prisma.TransactionClient,sourceQ
   }
   const qualifications:Record<string,any>={},effectiveDirectCounts:Record<string,number>={};
   for(const id of [...ids].sort()) {
-    qualifications[id]=await qualificationEvidence(tx,id,at);
+    qualifications[id]=await qualificationEvidence(tx,id,at,parameters);
     let count=0;
     for(const child of sponsor.filter(edge=>edge.sponsorQualificationId===id)) {
-      const states=await tx.qualificationStatusHistory.findMany({where:{qualificationId:child.childQualificationId,effectiveFrom:{lte:at},OR:[{effectiveTo:null},{effectiveTo:{gt:at}}]}});
+      const direct=await tx.qualification.findUnique({where:{qualificationId:child.childQualificationId}});
+      const states=direct?.kind==='COMPANY_BOOTSTRAP'&&direct.effectiveAt&&direct.effectiveAt<=at?[{status:'EFFECTIVE'}]:await tx.qualificationStatusHistory.findMany({where:{qualificationId:child.childQualificationId,effectiveFrom:{lte:at},OR:[{effectiveTo:null},{effectiveTo:{gt:at}}]}});
       if(states.length!==1) pending('HISTORICAL_SNAPSHOT_MISSING','Historical direct Qualification status is missing or overlapping');
       if(states[0].status==='EFFECTIVE') count++;
     }
@@ -169,13 +177,13 @@ export function verifyReplayEnvelope(row:any):ReplayEnvelope {
 }
 export async function sealGpvEvent(tx:Prisma.TransactionClient,event:any) {
   const parameters=await captureParameters(tx,event.occurredAt,event.ruleVersionCode);
-  const evidence=await captureHistoricalGraph(tx,event.qualificationId,event.occurredAt);
+  const evidence=await captureHistoricalGraph(tx,event.qualificationId,event.occurredAt,parameters);
   return storeReplaySnapshot(tx,{format:'UCELL_HISTORICAL_REPLAY_V1',kind:'GPV',sourceId:event.eventId,ruleVersionCode:event.ruleVersionCode,at:event.occurredAt.toISOString(),parameters,recipients:[],evidence,
     inputs:{eventId:event.eventId,qualificationId:event.qualificationId,orderId:event.sourceType==='ORDER'?event.sourceId:null,lineId:event.sourceLineId,volume:event.amount.toString()}});
 }
-async function recipientFromAward(tx:Prisma.TransactionClient,award:any,rpv=false):Promise<HistoricalRecipient> {
+async function recipientFromAward(tx:Prisma.TransactionClient,award:any,rpv=false,parameters?:ParameterSnapshot):Promise<HistoricalRecipient> {
   const at=award.occurredAt;
-  const qualification=await qualificationEvidence(tx,award.recipientQualificationId,at);
+  const qualification=await qualificationEvidence(tx,award.recipientQualificationId,at,(award.calculationDetail as any)?.parameterSnapshot??parameters);
   return {key:rpv?award.rpvAwardEventId:award.bonusAwardId,awardId:rpv?award.rpvAwardEventId:award.bonusAwardId,awardType:rpv?'RPV':award.awardType,
     qualificationId:award.recipientQualificationId,sourceEventId:award.sourceEventId??undefined,sourceAwardId:award.sourceAwardId??undefined,
     generation:rpv?award.binaryGeneration:(award.generationNo??0),active:award.activeSnapshot,
@@ -186,9 +194,9 @@ async function recipientFromAward(tx:Prisma.TransactionClient,award:any,rpv=fals
 export async function sealEpvEvent(tx:Prisma.TransactionClient,event:any,parameters:ParameterSnapshot,month:any,order:any) {
   const awards=await tx.bonusAward.findMany({where:{sourceEventId:event.eventId,awardType:'EPV'},orderBy:{bonusAwardId:'asc'}});
   const recipients:HistoricalRecipient[]=[];
-  for(const award of awards) recipients.push(await recipientFromAward(tx,award));
+  for(const award of awards) recipients.push(await recipientFromAward(tx,award,false,parameters));
   return storeReplaySnapshot(tx,{format:'UCELL_HISTORICAL_REPLAY_V1',kind:'EPV',sourceId:event.eventId,at:event.occurredAt.toISOString(),ruleVersionCode:event.ruleVersionCode,parameters,recipients,
-    evidence:await captureHistoricalGraph(tx,event.qualificationId,event.occurredAt),inputs:{orderId:order.orderId,qualificationId:order.qualificationId,consumption:order.netAmount.toString(),volume:event.amount.toString(),monthStart:month.start.toISOString(),monthEnd:month.end.toISOString(),timezone:month.timezone,base:month.base.toString(),rate:month.rate.toString()}});
+    evidence:await captureHistoricalGraph(tx,event.qualificationId,event.occurredAt,parameters),inputs:{orderId:order.orderId,qualificationId:order.qualificationId,consumption:order.netAmount.toString(),volume:event.amount.toString(),monthStart:month.start.toISOString(),monthEnd:month.end.toISOString(),timezone:month.timezone,base:month.base.toString(),rate:month.rate.toString()}});
 }
 export async function sealRpvEvent(tx:Prisma.TransactionClient,event:any,schedule:any) {
   const parameters=await captureParameters(tx,event.occurredAt,event.ruleVersionCode);
@@ -199,16 +207,19 @@ export async function sealRpvEvent(tx:Prisma.TransactionClient,event:any,schedul
   if(!period||event.occurredAt<period.start||event.occurredAt>=period.end) pending('HISTORICAL_SNAPSHOT_MISSING','Original RPV event does not belong to its recorded business recognition period');
   const awards=await tx.rpvUplineAwardEvent.findMany({where:{recognitionId:schedule.recognitionId},orderBy:{rpvAwardEventId:'asc'}});
   const recipients:HistoricalRecipient[]=[];
-  for(const award of awards) recipients.push(await recipientFromAward(tx,award,true));
+  for(const award of awards){
+    await routeCompanyFinal(tx,{sourceRpvAwardId:award.rpvAwardEventId,qualificationId:award.recipientQualificationId,awardType:'RPV',amount:award.payableAmount,at:award.occurredAt,periodStart:period.start,periodEnd:period.end},parameters);
+    recipients.push(await recipientFromAward(tx,award,true,parameters));
+  }
   return storeReplaySnapshot(tx,{format:'UCELL_HISTORICAL_REPLAY_V1',kind:'RPV',sourceId:schedule.recognitionId,at:event.occurredAt.toISOString(),ruleVersionCode:event.ruleVersionCode,parameters,recipients,
-    evidence:await captureHistoricalGraph(tx,event.qualificationId,event.occurredAt),inputs:{eventId:event.eventId,subscriptionId:schedule.subscriptionId,volume:event.amount.toString(),recognitionMonth:json(schedule.recognitionMonth),recognitionPeriod:{start:period.start.toISOString(),end:period.end.toISOString(),timezone},recognizedAmount:schedule.recognizedAmount.toString(),entitlementMethod:'ORIGINAL_FIXED_AWARD_ON_VALID_RECOGNITION'}});
+    evidence:await captureHistoricalGraph(tx,event.qualificationId,event.occurredAt,parameters),inputs:{eventId:event.eventId,subscriptionId:schedule.subscriptionId,volume:event.amount.toString(),recognitionMonth:json(schedule.recognitionMonth),recognitionPeriod:{start:period.start.toISOString(),end:period.end.toISOString(),timezone},recognizedAmount:schedule.recognizedAmount.toString(),entitlementMethod:'ORIGINAL_FIXED_AWARD_ON_VALID_RECOGNITION'}});
 }
 export async function sealSettlement(tx:Prisma.TransactionClient,batch:any) {
   const parameters=verifySnapshot(batch.parameterSnapshot);
   const awards=await tx.bonusAward.findMany({where:{settlementBatchId:batch.settlementBatchId},orderBy:{bonusAwardId:'asc'}});
   const eligibilityEvidence=await tx.bonusCalculationEvidence.findMany({where:{settlementBatchId:batch.settlementBatchId},orderBy:{bonusCalculationEvidenceId:'asc'}});
   const recipients:HistoricalRecipient[]=[];
-  for(const award of awards) recipients.push(await recipientFromAward(tx,award));
+  for(const award of awards) recipients.push(await recipientFromAward(tx,award,false,parameters));
   const matchingSources:any[]=[];
   if(batch.settlementType==='MATCHING_K2')for(const sourceAwardId of [...new Set(awards.map(award=>award.sourceAwardId))]) {
     if(!sourceAwardId) pending('HISTORICAL_SNAPSHOT_MISSING','Matching original source award required');
@@ -233,8 +244,8 @@ export async function sealSettlement(tx:Prisma.TransactionClient,batch:any) {
   const carries=batch.settlementType==='BINARY_K1'?await tx.binaryCarry.findMany({where:{periodEnd:batch.periodEnd,ruleVersionCode:batch.ruleVersionCode},orderBy:{qualificationId:'asc'}}):[];
   const carryRecipients:any[]=[];
   for(const carry of carries) {
-    const qualification=await qualificationEvidence(tx,carry.qualificationId,batch.periodEnd);
-    const active=!!await tx.activePeriod.findFirst({where:{qualificationId:carry.qualificationId,activeFrom:{lte:batch.periodEnd},OR:[{activeTo:null},{activeTo:{gt:batch.periodEnd}}]}});
+    const qualification=await qualificationEvidence(tx,carry.qualificationId,batch.periodEnd,parameters);
+    const active=await companyAlwaysActiveAt(tx,carry.qualificationId,batch.periodEnd)||!!await tx.activePeriod.findFirst({where:{qualificationId:carry.qualificationId,activeFrom:{lte:batch.periodEnd},OR:[{activeTo:null},{activeTo:{gt:batch.periodEnd}}]}});
     carryRecipients.push({...json(carry) as object,qualification,active});
   }
   return storeReplaySnapshot(tx,{format:'UCELL_HISTORICAL_REPLAY_V1',kind:batch.settlementType,sourceId:batch.settlementBatchId,at:batch.periodEnd.toISOString(),ruleVersionCode:batch.ruleVersionCode,parameters,recipients,
@@ -269,7 +280,7 @@ export function periodK0(envelope:ReplayEnvelope,effective:Map<string,Prisma.Dec
   const theory=theories.reduce((sum,value)=>sum.add(value),dec(0));
   const pool=total.mul(snapshotDecimal(envelope.parameters,'pool.referral.rate'));
   const k=theory.gt(0)?Prisma.Decimal.min(dec(1),pool.div(theory)):dec(1);
-  return {k,total,payables:new Map(envelope.recipients.map((recipient,index)=>[recipient.key,money(theories[index].mul(k))]))};
+  return {k,total,theory,pool,payables:new Map(envelope.recipients.map((recipient,index)=>[recipient.key,money(theories[index].mul(k))]))};
 }
 export function sourceSide(source:ReplayEnvelope,root:string):'LEFT'|'RIGHT'|null {
   let child=source.inputs.qualificationId;
@@ -287,6 +298,7 @@ export function periodBinary(envelope:ReplayEnvelope,effective:Map<string,Prisma
   const sources=envelope.evidence.sources as ReplayEnvelope[];
   const carryOut=new Map<string,{left:Prisma.Decimal;right:Prisma.Decimal}>();
   const theories=new Map<string,Prisma.Decimal>();
+  const pairedPv=new Map<string,Prisma.Decimal>();
   for(const [qid,incoming] of carryIn) if((incoming.left.gt(0)||incoming.right.gt(0))&&!envelope.evidence.carryRecipients.some((carry:any)=>carry.qualificationId===qid)) pending('HISTORICAL_SNAPSHOT_MISSING','Historical carry continuation recipient is missing');
   for(const carry of envelope.evidence.carryRecipients) {
     if(!carry.qualification?.plan||!carry.qualification?.status||typeof carry.active!=='boolean') pending('HISTORICAL_SNAPSHOT_MISSING','Complete historical carry recipient is required');
@@ -300,6 +312,7 @@ export function periodBinary(envelope:ReplayEnvelope,effective:Map<string,Prisma
     }
     if(left.lt(0)||right.lt(0)) pending('NEGATIVE_ECONOMIC_GPV','Effective historical carry cannot be negative');
     const paired=Prisma.Decimal.min(left,right,dec(carry.weeklyCapSnapshot));
+    pairedPv.set(carry.qualificationId,paired);
     theories.set(carry.qualificationId,carry.active?paired.mul(snapshotDecimal(envelope.parameters,'binary.pair.rate')):dec(0));
     carryOut.set(carry.qualificationId,{left:left.sub(paired),right:right.sub(paired)});
   }
@@ -314,7 +327,7 @@ export function periodBinary(envelope:ReplayEnvelope,effective:Map<string,Prisma
   }
   // Zero original awards must be captured so a later historical carry correction can create entitlement.
   for(const [qid,theoryAmount] of theories) if(theoryAmount.gt(0)&&!envelope.recipients.some(r=>r.qualificationId===qid)) pending('HISTORICAL_SNAPSHOT_MISSING','Historical zero entitlement recipient was not captured');
-  return {k,total,payables,carryOut};
+  return {k,total,theory,pool,payables,carryOut,pairedPv};
 }
 export function periodMatching(envelope:ReplayEnvelope,binaryPaid:Map<string,Prisma.Decimal>,effectiveTotal:Prisma.Decimal) {
   const theories=envelope.recipients.map(recipient=>{
@@ -324,7 +337,7 @@ export function periodMatching(envelope:ReplayEnvelope,binaryPaid:Map<string,Pri
   const theory=theories.reduce((sum,value)=>sum.add(value),dec(0));
   const pool=effectiveTotal.mul(snapshotDecimal(envelope.parameters,'pool.matching.rate'));
   const k=theory.gt(0)?Prisma.Decimal.min(dec(1),pool.div(theory)):dec(1);
-  return {k,payables:new Map(envelope.recipients.map((recipient,index)=>[recipient.key,money(theories[index].mul(k))]))};
+  return {k,total:effectiveTotal,theory,pool,payables:new Map(envelope.recipients.map((recipient,index)=>[recipient.key,money(theories[index].mul(k))]))};
 }
 
 export async function appendEntitlementDelta(tx:Prisma.TransactionClient,row:any,recipient:HistoricalRecipient,recalculated:Prisma.Decimal,actionKey:string,stateHash:string,returnCaseId?:string) {
@@ -334,13 +347,23 @@ export async function appendEntitlementDelta(tx:Prisma.TransactionClient,row:any
   const sealed=envelope.recipients.find(item=>item.key===recipient.key);
   if(!sealed||replayHash(sealed)!==replayHash(recipient)) pending('HISTORICAL_SNAPSHOT_CORRUPT','Recipient must exactly match original sealed entitlement');
   if(recalculated.lt(0)||(!recipient.eligible&&recalculated.gt(0))) pending('HISTORICAL_SNAPSHOT_CORRUPT','Recalculated entitlement violates original eligibility');
+  const destination=await tx.awardEconomicDestination.findFirst({where:{OR:[{sourceBonusAwardId:recipient.awardId},{sourceRpvAwardId:recipient.awardId},{sourceGlobalAwardId:recipient.awardId}]}});
+  if(destination){
+    await tx.$queryRaw`SELECT destination_id FROM ledger.award_economic_destination WHERE destination_id=${destination.destinationId}::uuid FOR UPDATE`;
+    const retry=await tx.entitlementReplayPosting.findUnique({where:{actionKey_snapshotId_entitlementKey:{actionKey,snapshotId:row.snapshotId,entitlementKey:recipient.key}}});if(retry)return retry;
+  }else if(recipient.qualification?.economicOwner?.ownerType==='COMPANY')pending('RESERVOIR_B_ORIGINAL_MISSING','Company replay cannot create Member recovery');
   const original=dec(recipient.posted),entitlement=money(recalculated);
   const posted=await tx.entitlementReplayPosting.aggregate({where:{snapshotId:row.snapshotId,entitlementKey:recipient.key},_sum:{delta:true}});
   const delta=entitlement.sub(original).sub(posted._sum.delta??dec(0));
+  if(destination){
+    const posting=await tx.entitlementReplayPosting.create({data:{actionKey,snapshotId:row.snapshotId,entitlementKey:recipient.key,recipientQualificationId:recipient.qualificationId,originallyPosted:original,recalculatedEntitlement:entitlement,delta,stateHash}});
+    await tx.reservoirBEffect.create({data:{destinationId:destination.destinationId,effectType:'REPLAY_ADJUSTMENT',replayPostingId:posting.postingId,amountDelta:delta,effectiveAt:destination.effectiveAt,idempotencyKey:'reservoir:B:replay:'+posting.postingId}});
+    return posting;
+  }
   let correctionAwardId:string|undefined,recoveryId:string|undefined;
   if(delta.gt(0)) {
     const award=await tx.bonusAward.create({data:{awardType:recipient.awardType,recipientQualificationId:recipient.qualificationId,
-      sourceAwardId:recipient.awardType==='RPV'?undefined:recipient.awardId,sourceEventId:randomUUID(),generationNo:recipient.generation,
+      sourceAwardId:['RPV','GLOBAL'].includes(recipient.awardType)?undefined:recipient.awardId,sourceEventId:randomUUID(),generationNo:recipient.generation,
       theoryAmount:delta,payableAmount:delta,kFactor:dec(1),activeSnapshot:recipient.active,
       planLevelSnapshot:recipient.qualification.plan.planCode,ruleVersionCode:envelope.ruleVersionCode,parameterSnapshotHash:envelope.parameters.hash,
       occurredAt:new Date(),pendingUntil:new Date(recipient.pendingUntil),calculationDetail:{subtype:'HISTORICAL_ENTITLEMENT_DELTA',actionKey,snapshotId:row.snapshotId,entitlementKey:recipient.key,stateHash}}});
@@ -352,10 +375,10 @@ export async function appendEntitlementDelta(tx:Prisma.TransactionClient,row:any
       await tx.bonusAwardLifecycleEvent.create({data:{bonusAwardId:recipient.awardId,status:'REVERSED',occurredAt:new Date(),reasonCode:'HISTORICAL_REPLAY'}});
     } else {
     let anchorId=recipient.awardId;
-    if(recipient.awardType==='RPV') {
-      const anchor=await tx.bonusAward.create({data:{awardType:'RPV',recipientQualificationId:recipient.qualificationId,sourceEventId:randomUUID(),generationNo:recipient.generation,
+    if(recipient.awardType==='RPV'||recipient.awardType==='GLOBAL') {
+      const anchor=await tx.bonusAward.create({data:{awardType:recipient.awardType,recipientQualificationId:recipient.qualificationId,sourceEventId:randomUUID(),generationNo:recipient.generation,
         theoryAmount:dec(0),payableAmount:dec(0),activeSnapshot:recipient.active,ruleVersionCode:envelope.ruleVersionCode,parameterSnapshotHash:envelope.parameters.hash,
-        occurredAt:new Date(),pendingUntil:new Date(recipient.pendingUntil),calculationDetail:{subtype:'HISTORICAL_RPV_RECOVERY_ANCHOR',originalRpvAwardId:recipient.awardId,actionKey}}});
+        occurredAt:new Date(),pendingUntil:new Date(recipient.pendingUntil),calculationDetail:{subtype:'HISTORICAL_TYPED_RECOVERY_ANCHOR',originalSourceType:recipient.awardType,originalAwardId:recipient.awardId,actionKey}}});
       anchorId=anchor.bonusAwardId;
     }
     const recovery=await tx.bonusRecoveryEvent.create({data:{bonusAwardId:anchorId,returnCaseId,recoveryAmount:delta.abs(),outstandingAmount:delta.abs(),status:'OPEN',
@@ -499,7 +522,7 @@ export async function replayReturnDependencies(tx:Prisma.TransactionClient,retur
   // Start with the original recognition period. Its sealed carry-in is the historical baseline;
   // earlier finalized periods are immutable inputs and cannot be reconstructed from current state.
   const binaries=await tx.settlementBatch.findMany({where:{settlementType:'BINARY_K1',status:'FINALIZED',ruleVersionCode:ret.order.ruleVersionCode,periodEnd:{gt:economicAt}},orderBy:{periodStart:'asc'}});
-  const calculations:Array<{batch:any;row:any;envelope:ReplayEnvelope;binary:ReturnType<typeof periodBinary>;matching?:{row:any;envelope:ReplayEnvelope;result:ReturnType<typeof periodMatching>;batch:any};carry:Record<string,{left:string;right:string}>}>=[];
+  const calculations:Array<{batch:any;row:any;envelope:ReplayEnvelope;binary:ReturnType<typeof periodBinary>;matching?:{row:any;envelope:ReplayEnvelope;result:ReturnType<typeof periodMatching>;batch:any};carry:Record<string,{left:string;right:string;pairedPv:string}>}>=[];
   let incoming=new Map<string,{left:Prisma.Decimal;right:Prisma.Decimal}>();let previousEnd:Date|undefined;
   let replayRun:any,complete=binaries.length===0,converged=false;
   if(binaries.length) {
@@ -525,7 +548,7 @@ export async function replayReturnDependencies(tx:Prisma.TransactionClient,retur
       const resultMatching=periodMatching(loaded.envelope,result.payables,result.total);
       matchingCalculation={...loaded,result:resultMatching,batch:matching};
     }
-    const carry=Object.fromEntries([...result.carryOut].map(([qid,value])=>[qid,{left:value.left.toString(),right:value.right.toString()}]));
+    const carry=Object.fromEntries([...result.carryOut].map(([qid,value])=>[qid,{left:value.left.toString(),right:value.right.toString(),pairedPv:result.pairedPv.get(qid)!.toString()}]));
     calculations.push({batch,row,envelope,binary:result,matching:matchingCalculation,carry});
     const carryDelta=Object.fromEntries(envelope.evidence.carryRecipients.map((original:any)=>{
       const next=result.carryOut.get(original.qualificationId)??pending('HISTORICAL_SNAPSHOT_MISSING','Recomputed carry recipient is absent');
@@ -559,12 +582,16 @@ export async function replayReturnDependencies(tx:Prisma.TransactionClient,retur
     const {row,envelope}=await loadEnvelope(tx,'REFERRAL_K0',batch.settlementBatchId);
     const result=periodK0(envelope,await effectiveGpv(tx,envelope.evidence.sources));
     await postPayables(tx,row,envelope,result.payables,actionKey,stateHash,returnCaseId);
+    await recordReplayMetric(tx,batch.settlementBatchId,row.snapshotId,actionKey,stateHash,result);
   }
   for(const calculation of calculations) {
     await postPayables(tx,calculation.row,calculation.envelope,calculation.binary.payables,actionKey,stateHash,returnCaseId);
     if(calculation.matching) await postPayables(tx,calculation.matching.row,calculation.matching.envelope,calculation.matching.result.payables,actionKey,stateHash,returnCaseId);
+    await recordReplayMetric(tx,calculation.batch.settlementBatchId,calculation.row.snapshotId,actionKey,stateHash,calculation.binary);
+    if(calculation.matching)await recordReplayMetric(tx,calculation.matching.batch.settlementBatchId,calculation.matching.row.snapshotId,actionKey,stateHash,calculation.matching.result);
     await tx.replayCarryProjection.create({data:{actionKey,settlementBatchId:calculation.batch.settlementBatchId,periodEnd:calculation.batch.periodEnd,ruleVersionCode:calculation.batch.ruleVersionCode,carry:calculation.carry,stateHash}});
   }
+  await replayGlobalPeriods(tx,economicAt,ret.order.ruleVersionCode,actionKey,stateHash,returnCaseId);
   let epvState:string|undefined;
   if(ret.order.purpose==='REPURCHASE') epvState=await replayEpvMonth(tx,ret.orderId,actionKey,returnCaseId);
   const subscriptions=await tx.subscription.findMany({where:{orderId:ret.orderId},include:{schedules:true}});
@@ -579,6 +606,12 @@ export async function replayReturnDependencies(tx:Prisma.TransactionClient,retur
   await tx.settlementRecalculationRequest.updateMany({where:{sourceReturnCaseId:returnCaseId,status:'PENDING'},data:{status:'PROCESSED',processedAt:new Date()}});
   const result={returnCaseId,status:'REPLAYED',stateHash,epvState:epvState??null,periods:calculations.length,k0Periods:k0Batches.length,replayRunId:replayRun?.settlementReplayRunId??null};
   await tx.replayAction.create({data:{actionKey,stateHash,result}});return result;
+}
+
+
+async function recordReplayMetric(tx:Prisma.TransactionClient,batchId:string,snapshotId:string,actionKey:string,stateHash:string,result:{total:Prisma.Decimal;theory:Prisma.Decimal;pool:Prisma.Decimal;k:Prisma.Decimal}){
+ await tx.$executeRaw`INSERT INTO ledger.settlement_replay_metric(settlement_batch_id,snapshot_id,action_key,state_hash,total_gpv,total_theory,pool_available,k_factor)
+ VALUES(${batchId}::uuid,${snapshotId}::uuid,${actionKey},${stateHash},${result.total},${result.theory},${result.pool},${result.k})`;
 }
 
 export async function consumeReplayOutbox(tx:Prisma.TransactionClient,outboxEventId:string) {
@@ -619,4 +652,71 @@ export async function capturedSideGpv(tx:Prisma.TransactionClient,root:string,si
   for(const event of events) sources.push((await loadEnvelope(tx,'GPV',event.eventId)).envelope);
   const effective=await effectiveGpv(tx,sources);
   return sources.reduce((sum,source)=>sourceSide(source,root)===side?sum.add(effective.get(source.sourceId)!):sum,dec(0));
+}
+
+/** Seal the exact graph and parameter evidence used by the shared Global engine. */
+export async function sealGlobalSettlement(tx:Prisma.TransactionClient,settlement:any,facts?:Awaited<ReturnType<typeof captureGlobalPeriod>>){
+ const parameters=verifySnapshot(settlement.parameterSnapshot);
+ const {sources,binary,effective,total}=facts??await captureGlobalPeriod(tx,settlement.periodStart,settlement.periodEnd,settlement.ruleVersionCode);
+ if(!total.eq(settlement.totalGpv))pending('GLOBAL_SOURCE_EVIDENCE_MISMATCH','Global source cohort does not reconcile to the finalized Core total');
+ const awards=await tx.globalPoolAward.findMany({where:{globalPoolSettlementId:settlement.globalPoolSettlementId},orderBy:{globalPoolAwardId:'asc'}});
+ const recipients:HistoricalRecipient[]=[];
+ for(const award of awards){
+  const qualification=await qualificationEvidence(tx,award.qualificationId,settlement.periodEnd,parameters);
+  recipients.push({key:award.globalPoolAwardId,awardId:award.globalPoolAwardId,awardType:'GLOBAL',qualificationId:award.qualificationId,generation:0,
+   active:award.activeSnapshot,eligible:true,theory:award.payableAmount.toString(),posted:award.payableAmount.toString(),pendingUntil:settlement.periodEnd.toISOString(),
+   detail:{rank:award.rankLevel,weakSidePv:award.weakSidePvSnapshot.toString()},qualification});
+ }
+ const envelope:ReplayEnvelope={format:'UCELL_HISTORICAL_REPLAY_V1',kind:'GLOBAL',sourceId:settlement.globalPoolSettlementId,ruleVersionCode:settlement.ruleVersionCode,at:settlement.periodEnd.toISOString(),parameters,recipients,
+  evidence:{sources,binary},inputs:{periodStart:settlement.periodStart.toISOString(),periodEnd:settlement.periodEnd.toISOString(),totalGpv:total.toString(),undistributed:settlement.undistributedAmount.toString()}};
+ const check=periodGlobal(envelope,effective);
+ if(!check.calculation.undistributedAmount.eq(settlement.undistributedAmount)||recipients.some(r=>!check.payables.get(r.key)?.eq(r.posted)))
+  pending('GLOBAL_SOURCE_EVIDENCE_MISMATCH','Sealed Global graph and parameters do not reproduce original entitlements');
+ return storeReplaySnapshot(tx,envelope);
+}
+export function periodGlobal(envelope:ReplayEnvelope,effective:Map<string,Prisma.Decimal>){
+ const sources=envelope.evidence.sources as ReplayEnvelope[];
+ if(!Array.isArray(envelope.evidence.binary))pending('HISTORICAL_SNAPSHOT_MISSING','Original Global binary graph is required');
+ const total=sources.reduce((n,s)=>n.add(effective.get(s.sourceId)??pending('HISTORICAL_SNAPSHOT_MISSING','Global source amount absent')),dec(0));
+ const weak=new Map<string,Prisma.Decimal>();
+ for(const qid of new Set(envelope.recipients.map(r=>r.qualificationId))){
+  let left=dec(0),right=dec(0);
+  for(const s of sources){const side=sourceSide({...s,evidence:{...s.evidence,binary:envelope.evidence.binary}},qid);if(side==='LEFT')left=left.add(effective.get(s.sourceId)!);if(side==='RIGHT')right=right.add(effective.get(s.sourceId)!);}
+  weak.set(qid,Prisma.Decimal.min(left,right));
+ }
+ const levels=['NEW_STAR','EXCELLENCE','GLORY','DIAMOND','CROWN'] as const;
+ const inputs=levels.map(level=>({level,rate:snapshotDecimal(envelope.parameters,'global.rank.pool_rate',level),
+  eligibleQualificationIds:envelope.recipients.filter(r=>r.detail.rank===level&&r.active&&r.eligible&&weak.get(r.qualificationId)!.gte(snapshotDecimal(envelope.parameters,'global.rank.weak_threshold',level))).map(r=>r.qualificationId)}));
+ const calculation=calculateGlobalPool(total,total.mul(snapshotDecimal(envelope.parameters,'pool.global.rate')),inputs);
+ const payables=new Map(envelope.recipients.map(r=>{const slice=calculation.slices.find(s=>s.level===r.detail.rank)!;return [r.key,slice.eligibleQualificationIds.includes(r.qualificationId)?slice.amountPerRecipient!:dec(0)] as const;}));
+ return {total,calculation,payables};
+}
+async function replayGlobalPeriods(tx:Prisma.TransactionClient,economicAt:Date,rule:string,actionKey:string,stateHash:string,returnCaseId:string){
+ const settlements=await tx.globalPoolSettlement.findMany({where:{ruleVersionCode:rule,periodStart:{lte:economicAt},periodEnd:{gt:economicAt}},orderBy:{globalPoolSettlementId:'asc'}});
+ for(const settlement of settlements){
+  await tx.$queryRaw`SELECT global_pool_settlement_id FROM ledger.global_pool_settlement WHERE global_pool_settlement_id=${settlement.globalPoolSettlementId}::uuid FOR UPDATE`;
+  const {row,envelope}=await loadEnvelope(tx,'GLOBAL',settlement.globalPoolSettlementId);
+  const result=periodGlobal(envelope,await effectiveGpv(tx,envelope.evidence.sources));
+  await postPayables(tx,row,envelope,result.payables,actionKey,stateHash,returnCaseId);
+  const posted=await tx.reservoirLedgerEffect.aggregate({where:{sourceGlobalSettlementId:settlement.globalPoolSettlementId},_sum:{amount:true}});
+  const delta=result.calculation.undistributedAmount.sub(posted._sum.amount??dec(0));
+  if(!delta.eq(0))await appendReplayPoolDeltas(tx,{actionKey:actionKey+':'+settlement.globalPoolSettlementId,reservoir:{sourceGlobalSettlementId:settlement.globalPoolSettlementId,delta}});
+ }
+}
+
+export async function captureGlobalPeriod(tx:Prisma.TransactionClient,start:Date,end:Date,rule:string){
+ const originals=await tx.pvLedger.findMany({where:{pvType:'GPV',eventType:'GPV_CREATED',ruleVersionCode:rule,occurredAt:{gte:start,lt:end}},orderBy:{eventId:'asc'}});
+ const sources:ReplayEnvelope[]=[];for(const event of originals)sources.push((await loadEnvelope(tx,'GPV',event.eventId)).envelope);
+ const binary=await tx.binaryPlacement.findMany({where:{effectiveTo:null},orderBy:{childQualificationId:'asc'}});
+ const effective=await effectiveGpv(tx,sources),total=[...effective.values()].reduce((n,v)=>n.add(v),dec(0));
+ return {sources,binary,effective,total};
+}
+export function globalWeakSide(facts:Awaited<ReturnType<typeof captureGlobalPeriod>>,qid:string){
+ let left=dec(0),right=dec(0);
+ for(const source of facts.sources){
+  const side=sourceSide({...source,evidence:{...source.evidence,binary:facts.binary}},qid);
+  if(side==='LEFT')left=left.add(facts.effective.get(source.sourceId)!);
+  if(side==='RIGHT')right=right.add(facts.effective.get(source.sourceId)!);
+ }
+ return Prisma.Decimal.min(left,right);
 }

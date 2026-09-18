@@ -14,7 +14,7 @@ beforeEach(()=>{role='COMPLIANCE_AUDIT';vi.mocked(get).mockReset().mockResolvedV
 async function render(){let view:ReturnType<typeof create>;await act(async()=>{view=create(<MemoryRouter initialEntries={['/admin/organization/trees/'+id]}><Routes><Route path="/admin/organization/trees/:id" element={<BinaryTreesPage/>}/></Routes></MemoryRouter>)});return view!;}
 it('audit readers see company status and empty positions without write controls',async()=>{
  const view=await render(),output=JSON.stringify(view.toJSON());
- expect(output).toContain('Always Active (Company Rule)');expect(output).toContain('尚未占用');expect(output).toContain('金額統計目前不可用');
+ expect(output).toContain('Always Active (Company Rule)');expect(output).toContain('尚未占用');expect(output).toContain('Reservoir Center');expect(output).toContain('領袖 LEADER');expect(output).toContain('AVAILABLE');
  expect(output).not.toContain('儲存名稱');expect(output).not.toContain('確認公司 Sponsor');expect(output).not.toContain('放置於選定位置');
  expect(get).toHaveBeenCalledWith(expect.stringContaining('knowledgeCutoff='));expect(command).not.toHaveBeenCalled();act(()=>view.unmount());
 });
@@ -34,4 +34,30 @@ it('does not substitute empty statistics when historical evidence is unavailable
 });
 it('grants only declared tree paths and roles',()=>{
  expect(canOpen('QUALIFICATION_PLACEMENT_OVERRIDE','/admin/organization/trees/'+id)).toBe(true);expect(canOpen('FINANCE','/admin/organization/trees')).toBe(false);expect(canOpen('SUPER_ADMIN','/admin/organization/trees/unregistered')).toBe(false);
+});
+
+it('requests and reloads background statistics using the same server query and applied cutoff',async()=>{
+ const query={metrics:['founding.statistics'],filters:{binaryTreeId:id},time:{asOf:'2026-09-01T00:00:00.000Z'}};
+ const statistics={required:true,projectionStatus:'STALE',snapshot:null,dataThrough:null,projectedAt:null,query};
+ vi.mocked(get).mockResolvedValueOnce({data:{status:'PARTIAL',result:{...result,statistics}}});
+ const view=await render(),originalUrl=vi.mocked(get).mock.calls[0][0];
+ vi.mocked(command).mockResolvedValue({data:{jobId:id,status:'REQUESTED'}});
+ await act(async()=>view.root.findAllByType('button').find(b=>b.children.join('')==='建立此截點的統計')!.props.onClick());
+ expect(command).toHaveBeenCalledWith('/admin/analytics/period-projections/jobs',{query,mode:'REBUILD'});
+ vi.mocked(get).mockResolvedValueOnce({data:{status:'COMPLETED'}}).mockResolvedValueOnce({data:{status:'PARTIAL',result:{...result,statistics:{...statistics,projectionStatus:'CURRENT',snapshot:id}}}});
+ await act(async()=>view.root.findAllByType('button').find(b=>b.children.join('')==='檢查統計工作')!.props.onClick());
+ expect(get).toHaveBeenLastCalledWith(originalUrl);expect(JSON.stringify(view.toJSON())).toContain('CURRENT');act(()=>view.unmount());
+});
+it('carries the server snapshot token through pagination and child expansion',async()=>{
+ const view=await render();
+ vi.mocked(get).mockResolvedValueOnce({data:{status:'AVAILABLE',total:101,snapshotToken:'fixed-snapshot',nextCursor:'cursor-1',items:[{qualificationId:'parent-node',parentQualificationId:null,depth:0,ownerType:'COMPANY'}]}});
+ await act(async()=>view.root.findAllByType('button').find(b=>b.children.join('')==='載入節點')!.props.onClick());
+ vi.mocked(get).mockResolvedValueOnce({data:{status:'AVAILABLE',total:101,snapshotToken:'fixed-snapshot',nextCursor:null,items:[{qualificationId:'last-node',parentQualificationId:'parent-node',depth:1,ownerType:'MEMBER'}]}});
+ await act(async()=>view.root.findAllByType('button').find(b=>b.children.join('')==='下一頁節點')!.props.onClick());
+ expect(get).toHaveBeenLastCalledWith(expect.stringContaining('snapshotToken=fixed-snapshot'));
+ expect(get).toHaveBeenLastCalledWith(expect.stringContaining('after=cursor-1'));
+ vi.mocked(get).mockResolvedValueOnce({data:{status:'AVAILABLE',total:0,snapshotToken:'fixed-snapshot',nextCursor:null,items:[],parentQualificationId:'last-node'}});
+ await act(async()=>view.root.findAllByType('button').find(b=>b.children.join('')==='展開子節點')!.props.onClick());
+ expect(get).toHaveBeenLastCalledWith(expect.stringContaining('snapshotToken=fixed-snapshot'));
+ expect(get).toHaveBeenLastCalledWith(expect.stringContaining('parentQualificationId=last-node'));act(()=>view.unmount());
 });

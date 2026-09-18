@@ -1,3 +1,4 @@
+import {memberEconomicMocks} from './member-economic-fixture';
 import { appendEntitlementDelta, recognizeConsumption } from '@ucell/database';
 import { resolveBinaryWeek } from '@ucell/shared';
 import { binary, d, recipient, sealed } from './phase2-fixtures';
@@ -44,7 +45,7 @@ describe('R1.0B v3 mandatory contract cases', () => {
     const before = JSON.stringify(envelope);
     const lifecycleCreate = jest.fn(async ({ data }: any) => data);
     const recoveryCreate = jest.fn(async ({ data }: any) => ({ bonusRecoveryEventId: 'recovery', ...data }));
-    const tx = {
+    const tx = {...memberEconomicMocks(),
       entitlementReplayPosting: {
         findUnique: jest.fn(async () => null),
         aggregate: jest.fn(async () => ({ _sum: { delta: null } })),

@@ -1,0 +1,191 @@
+{
+  "status": "PASS",
+  "startHead": "26fa675da0132646484b4a8806a8d5ab55e0e6f6",
+  "migrationFiles": 67,
+  "backend": {
+    "suites": 77,
+    "tests": 755,
+    "pending": 0
+  },
+  "domains": {
+    "binary-tree-db.e2e-spec.ts": {
+      "passed": 32,
+      "total": 32
+    },
+    "train-bc-http-security.e2e-spec.ts": {
+      "passed": 4,
+      "total": 4
+    },
+    "period-projection.e2e-spec.ts": {
+      "passed": 6,
+      "total": 6
+    },
+    "member-explain.e2e-spec.ts": {
+      "passed": 37,
+      "total": 37
+    },
+    "structured-explain.e2e-spec.ts": {
+      "passed": 17,
+      "total": 17
+    },
+    "period-http-contract.e2e-spec.ts": {
+      "passed": 4,
+      "total": 4
+    },
+    "global-pool-reservoir-db.e2e-spec.ts": {
+      "passed": 3,
+      "total": 3
+    },
+    "analytics-refresh.e2e-spec.ts": {
+      "passed": 5,
+      "total": 5
+    },
+    "analytics-policy.e2e-spec.ts": {
+      "passed": 26,
+      "total": 26
+    },
+    "analytics-volume.e2e-spec.ts": {
+      "passed": 8,
+      "total": 8
+    },
+    "admin-structured-explain.e2e-spec.ts": {
+      "passed": 8,
+      "total": 8
+    },
+    "tree-projection-outbox.e2e-spec.ts": {
+      "passed": 9,
+      "total": 9
+    },
+    "structured-explain-source.e2e-spec.ts": {
+      "passed": 9,
+      "total": 9
+    },
+    "binary-tree-metrics.e2e-spec.ts": {
+      "passed": 10,
+      "total": 10
+    },
+    "analytics-history.e2e-spec.ts": {
+      "passed": 11,
+      "total": 11
+    },
+    "payment-evidence-security.e2e-spec.ts": {
+      "passed": 16,
+      "total": 16
+    },
+    "train-bc-foundation.e2e-spec.ts": {
+      "passed": 7,
+      "total": 7
+    }
+  },
+  "steps": [
+    {
+      "name": "build",
+      "at": "2026-09-18T17:10:51.9153414Z",
+      "logHash": "1af2f092ef2fb908be1977e5a538a917c68277a5990c79c5920a34aaa0ddd3c2"
+    },
+    {
+      "name": "company-volume",
+      "at": "2026-09-18T17:11:14.6335178Z",
+      "logHash": "5ca38dc9097708ad7029ad7f23fb3e74f66df8a7a69013bc900034a38fba98e5"
+    },
+    {
+      "name": "company",
+      "at": "2026-09-18T17:11:40.8942587Z",
+      "logHash": "e1f6958c353f7d0fbbcd67e66780b8348b2e0f98cfd378e72b4e1beffc0b6852"
+    },
+    {
+      "name": "api",
+      "at": "2026-09-18T17:13:07.6411364Z",
+      "logHash": "052c74e191b19780bc8db669d9da4f8491ae9bb45915a8dc681921ba9e31048b"
+    },
+    {
+      "name": "security",
+      "at": "2026-09-18T17:13:25.7729049Z",
+      "logHash": "dc92bb2da5dc612f356d1746ac6d8e77a17147aab533e69cfc8df50a3880b5ec"
+    },
+    {
+      "name": "member-economic",
+      "at": "2026-09-18T17:13:40.3345241Z",
+      "logHash": "8100cf8a924b6017861d5e4404d49400f234d47e76bda9216f447a1ee86ac831"
+    },
+    {
+      "name": "decision-v3",
+      "at": "2026-09-18T17:14:37.2122785Z",
+      "logHash": "f4ac9e4b853609efe9ecbe54a2cb8e248118267b2415d00d4a38368eedb3bae3"
+    },
+    {
+      "name": "shared",
+      "at": "2026-09-18T17:14:42.5797837Z",
+      "logHash": "9d0719bd60c157b127f079298c63e9be69b365ba850e6014a668ae8db7e0b0ea"
+    },
+    {
+      "name": "admin",
+      "at": "2026-09-18T17:14:45.0885941Z",
+      "logHash": "e9079308b73aec552d5765cacc06b0cf068e7495223095f498321a5ec68707c1"
+    },
+    {
+      "name": "member",
+      "at": "2026-09-18T17:14:49.9043423Z",
+      "logHash": "2744295ca9adb5c25cdca4d590b4bf2dea16c05a618726a83aa896aa93b7d56e"
+    },
+    {
+      "name": "admin-build",
+      "at": "2026-09-18T17:14:56.4439659Z",
+      "logHash": "6a4266cec2db0eef3540df4715dd5bfe04c94b5e6e612a499a48424f08bc7570"
+    },
+    {
+      "name": "member-build",
+      "at": "2026-09-18T17:15:02.2398025Z",
+      "logHash": "0885584b4c3c25a768c86090fdca967ee085aba4dd634ac41ffa10ecac9f9b57"
+    },
+    {
+      "name": "openapi-generate",
+      "at": "2026-09-18T17:15:10.6011132Z",
+      "logHash": "350e4b34a5d740b7ceea1caec7855b5075891095ebebdc83748eef6c1721741b"
+    },
+    {
+      "name": "openapi-validate",
+      "at": "2026-09-18T17:15:10.6618405Z",
+      "logHash": "24df06fbfd6be7b04cb6d3d0d6bc71ecada0e6c1988b2b2f0d91090ab8745397"
+    },
+    {
+      "name": "openapi-contract",
+      "at": "2026-09-18T17:15:10.9928701Z",
+      "logHash": "5ba5fbbdb4bd83f2637c54a087bc85c8cb812ba79d1a04aad2395508df340e75"
+    },
+    {
+      "name": "member-baseline",
+      "at": "2026-09-18T17:15:12.2537718Z",
+      "logHash": "6cbdb95d78514db0e933662570361714d81f85d6d2bc54515f3abaed95f57c61"
+    },
+    {
+      "name": "rc",
+      "at": "2026-09-18T17:16:47.7369345Z",
+      "logHash": "487403c23496c6575a6411ddc2fcb8023cf317504401cc884052be50582dc16e"
+    },
+    {
+      "name": "scale-timestamp-rerun",
+      "at": "2026-09-18T17:21:33.8372294Z",
+      "logHash": "d8f310ce3b420a32023e6ad38799441720d39b1a0e00bfa8b47a9d67269dcf16"
+    },
+    {
+      "name": "worker-cli",
+      "logHash": "4da199ff48f48a1c0a034331fafa45715bf38ea7322dc649db9d46aa6a40e7eb"
+    },
+    {
+      "name": "stage-static",
+      "logHash": "38e6f01082720a9de5ae018d93c3b30019c463bc4362efc842a2f7de6ba9a9f8"
+    },
+    {
+      "name": "provider-static",
+      "logHash": "a97cf94a4c98f32f0259f835381456aefa6eb48b8aaee66674040b3a41140170"
+    },
+    {
+      "name": "admin-static",
+      "logHash": "5b7547e724e0b7b26e2e3e6058e03ea1a98d6f6b26f0cbdadd30ece7cbde96bb"
+    }
+  ],
+  "environment": "LOCAL_ISOLATED_POSTGRES_55432",
+  "stageDeployment": "STOP",
+  "production": "BLOCKED"
+}

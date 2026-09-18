@@ -1,0 +1,101 @@
+{
+  "baseline": "26fa675da0132646484b4a8806a8d5ab55e0e6f6",
+  "status": "PASS",
+  "unchangedCoreSources": [
+    {
+      "path": "packages/shared/src/r1-0b-golden.ts",
+      "before": "c25a2e47cc10637b4737147ccbeb03b8720c95be069303c54213d9a9598c010d",
+      "after": "c25a2e47cc10637b4737147ccbeb03b8720c95be069303c54213d9a9598c010d",
+      "unchanged": true
+    },
+    {
+      "path": "packages/database/src/recognition-active.ts",
+      "before": "adb987a6cf6eab62f8b970b52ba9d23e5610e4fa8568f33cf368724bd970d074",
+      "after": "adb987a6cf6eab62f8b970b52ba9d23e5610e4fa8568f33cf368724bd970d074",
+      "unchanged": true
+    },
+    {
+      "path": "packages/database/src/gpv-immediate-effects.ts",
+      "before": "563a77f8be485915ef5fa85c7d2cc904557e4763875430b406b74dcb62ddf850",
+      "after": "563a77f8be485915ef5fa85c7d2cc904557e4763875430b406b74dcb62ddf850",
+      "unchanged": true
+    },
+    {
+      "path": "packages/database/src/bonus-maturity.ts",
+      "before": "dd6ce868a76fcf055562a367a92cecc603212f360b9b397e8089ac72608f4898",
+      "after": "dd6ce868a76fcf055562a367a92cecc603212f360b9b397e8089ac72608f4898",
+      "unchanged": true
+    },
+    {
+      "path": "packages/database/src/parameter-snapshot.ts",
+      "before": "dcfc919837cd31cfbe77e86c500215ad1c573bb01bebb10f63782a9259cb7d5e",
+      "after": "dcfc919837cd31cfbe77e86c500215ad1c573bb01bebb10f63782a9259cb7d5e",
+      "unchanged": true
+    },
+    {
+      "path": "packages/database/src/replay-pool-delta.ts",
+      "before": "421cf604ade69bb895584eae1758c46a0ccafc9a71943da6b3a1dd1281376721",
+      "after": "421cf604ade69bb895584eae1758c46a0ccafc9a71943da6b3a1dd1281376721",
+      "unchanged": true
+    },
+    {
+      "path": "apps/api/src/modules/payout/recovery-balance.service.ts",
+      "before": "67a2874ef65039c6019cb739e913b9de9cf3e19567f751ea9d94849f51e4778d",
+      "after": "67a2874ef65039c6019cb739e913b9de9cf3e19567f751ea9d94849f51e4778d",
+      "unchanged": true
+    }
+  ],
+  "unchangedMemberFixtureAssertions": [
+    {
+      "path": "apps/api/test/a-decision-return.e2e-spec.ts",
+      "baselineExpectations": 16,
+      "currentExpectations": 16,
+      "missing": []
+    },
+    {
+      "path": "apps/api/test/bonus-engine-v04.e2e-spec.ts",
+      "baselineExpectations": 108,
+      "currentExpectations": 108,
+      "missing": []
+    },
+    {
+      "path": "apps/api/test/connected-dev-defects.e2e-spec.ts",
+      "baselineExpectations": 8,
+      "currentExpectations": 8,
+      "missing": []
+    },
+    {
+      "path": "apps/api/test/epv-global-v05.e2e-spec.ts",
+      "baselineExpectations": 36,
+      "currentExpectations": 36,
+      "missing": []
+    },
+    {
+      "path": "apps/api/test/negative-flow-v05.e2e-spec.ts",
+      "baselineExpectations": 24,
+      "currentExpectations": 24,
+      "missing": []
+    },
+    {
+      "path": "apps/api/test/v061-replay.e2e-spec.ts",
+      "baselineExpectations": 50,
+      "currentExpectations": 50,
+      "missing": []
+    },
+    {
+      "path": "apps/api/test/v063-golden-path.e2e-spec.ts",
+      "baselineExpectations": 49,
+      "currentExpectations": 49,
+      "missing": []
+    },
+    {
+      "path": "apps/api/test/v3-mandatory-contract.e2e-spec.ts",
+      "baselineExpectations": 10,
+      "currentExpectations": 10,
+      "missing": []
+    }
+  ],
+  "comparedGlobalVectors": 36,
+  "failures": [],
+  "scope": "Baseline arithmetic/recognition/Active/maturity/recovery source and preserved ordinary-member expectations; execute current full API/DB Golden and Member Global payout integration separately. This is not a production data comparison."
+}

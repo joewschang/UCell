@@ -1,7 +1,7 @@
 import { SettlementCalendarService } from '../settlement/settlement-calendar.service';
 import { snapshotDecimal, verifySnapshot, captureParameters } from '../rules/parameter-snapshot';
 import { Injectable } from '@nestjs/common';
-import { Prisma, PrismaService, sealSettlement, capturedSideGpv, verifyReplayEnvelope, effectiveGpv, pending } from '@ucell/database';
+import { Prisma, PrismaService, routeCompanyBonus, sealSettlement, capturedSideGpv, verifyReplayEnvelope, effectiveGpv, pending } from '@ucell/database';
 import { createHash } from 'crypto';
 import { RuntimeRuleService } from '../rules/runtime-rule.service';
 import { BonusQueryService } from './bonus-query.service';
@@ -66,7 +66,7 @@ export class BinaryBonusService {
         const effective=await this.query.isQualificationEffectiveAt(tx,q.qualificationId,periodEnd);
         if(!effective) continue;
         const active=await this.query.isActiveAt(tx,q.qualificationId,periodEnd);
-        const planLevelCode=await this.query.qualificationPlanAt(tx,q.qualificationId,periodEnd);
+        const planLevelCode=await this.query.qualificationPlanAt(tx,q.qualificationId,periodEnd,parameterSnapshot);
         const previous=await tx.binaryCarry.findFirst({
           where:{qualificationId:q.qualificationId,periodEnd:{lt:periodEnd},ruleVersionCode},
           orderBy:{periodEnd:'desc'}
@@ -147,7 +147,7 @@ export class BinaryBonusService {
             calculationDetail:row.calculationDetail
           }
         });
-        await tx.bonusAwardLifecycleEvent.createMany({
+        if(!await routeCompanyBonus(tx,award,parameterSnapshot)) await tx.bonusAwardLifecycleEvent.createMany({
           data:[
             {bonusAwardId:award.bonusAwardId,status:'CALCULATED',occurredAt:new Date()},
             {bonusAwardId:award.bonusAwardId,status:'PENDING_45D',occurredAt:new Date()}
@@ -235,7 +235,7 @@ export class BinaryBonusService {
             eligible,
             activeSnapshot:active,
             effectiveDirectCountSnapshot:directCount,
-            planLevelSnapshot:await this.query.qualificationPlanAt(tx,u.qualification_id,periodEnd),
+            planLevelSnapshot:await this.query.qualificationPlanAt(tx,u.qualification_id,periodEnd,parameterSnapshot),
             occurredAt:periodEnd,
             pendingUntil:this.query.pendingUntil(periodEnd,pendingDays),
             calculationDetail:{
@@ -278,7 +278,7 @@ export class BinaryBonusService {
             calculationDetail:row.calculationDetail
           }
         });
-        await tx.bonusAwardLifecycleEvent.createMany({
+        if(!await routeCompanyBonus(tx,award,parameterSnapshot)) await tx.bonusAwardLifecycleEvent.createMany({
           data:[
             {bonusAwardId:award.bonusAwardId,status:'CALCULATED',occurredAt:new Date()},
             {bonusAwardId:award.bonusAwardId,status:'PENDING_45D',occurredAt:new Date()}

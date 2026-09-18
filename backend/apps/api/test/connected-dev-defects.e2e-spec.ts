@@ -1,3 +1,4 @@
+import {memberEconomicMocks} from './member-economic-fixture';
 import { Prisma, PrismaService } from '@ucell/database';
 import { UnifiedPayableService } from '../src/modules/payout/unified-payable.service';
 import { AdminObservabilityService } from '../src/modules/admin-observability/admin-observability.service';
@@ -12,7 +13,7 @@ describe('Connected DEV implementation regressions', () => {
     const event = { rpvAwardEventId: 'rpv-event', recipientQualificationId: 'ball',
       payableAmount: new Prisma.Decimal(1), ruleVersionCode: 'R1.0B' };
     let entry: unknown;
-    const tx = {
+    const tx = {...memberEconomicMocks(),
       bonusAward: { findMany: jest.fn().mockResolvedValue([]) },
       globalPoolAward: { findMany: jest.fn().mockResolvedValue([]) },
       rpvUplineAwardEvent: { findMany: jest.fn().mockResolvedValue([event]) },
@@ -43,7 +44,7 @@ describe('Connected DEV implementation regressions', () => {
 
   it('reads EPV recipient plans at the payment timestamp', async () => {
     const at = new Date('2026-09-01T00:00:00Z');
-    const tx = {
+    const tx = {...memberEconomicMocks(),
       order: { findUnique: jest.fn().mockResolvedValue({ orderId: 'order', status: 'PAID',
         purpose: 'REPURCHASE', ruleVersionCode:'R1.0B', qualificationId: 'self', paidAt: at, netAmount: new Prisma.Decimal(4800) }) },
       pvLedger: { findFirst: jest.fn().mockResolvedValue(null), create: jest.fn().mockResolvedValue({ eventId: 'event',occurredAt:at,qualificationId:'self',amount:new Prisma.Decimal(1680),ruleVersionCode:'R1.0B' }) },

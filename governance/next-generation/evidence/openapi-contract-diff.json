@@ -1,0 +1,18 @@
+{
+  "baseline": "26fa675da0132646484b4a8806a8d5ab55e0e6f6",
+  "validatedWith": "@apidevtools/swagger-parser",
+  "baselineOperations": 167,
+  "currentOperations": 174,
+  "added": [
+    "GET /api/v1/admin/finance/reservoirs",
+    "POST /api/v1/admin/analytics/period-projections/jobs",
+    "GET /api/v1/admin/analytics/period-projections/jobs/{id}",
+    "POST /api/v1/admin/analytics/period-projections/query",
+    "POST /api/v1/admin/analytics/period-projections/exports",
+    "GET /api/v1/admin/analytics/period-projections/exports/{id}",
+    "GET /api/v1/admin/analytics/period-projections/exports/{id}/file"
+  ],
+  "failures": [],
+  "manualReview": [],
+  "limitation": "Structural compatibility only. Pagination token behavior and business semantics require contract tests and review."
+}

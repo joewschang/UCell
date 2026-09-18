@@ -15,6 +15,10 @@ class TreeTimeQuery {
 class TreeListQuery extends TreeTimeQuery {
  @ApiPropertyOptional({format:'uuid'}) @IsOptional() @IsUUID() after?:string;
 }
+class TreeNodeQuery extends TreeListQuery {
+ @ApiPropertyOptional({format:'uuid',description:'Expand direct children within the same tree-wide snapshot; never downloads the entire tree.'}) @IsOptional() @IsUUID() parentQualificationId?:string;
+ @ApiPropertyOptional({format:'uuid',description:'First-page snapshot identity, required with after; bound to actor, role, tree and time. Conflict/expiry: 409.'}) @IsOptional() @IsUUID() snapshotToken?:string;
+}
 class TreePreviewQuery {
  @ApiProperty({format:'uuid'}) @IsUUID() qualificationId!:string;
  @ApiProperty({format:'uuid'}) @IsUUID() binaryParentQualificationId!:string;
@@ -31,7 +35,7 @@ export class BinaryTreeReadController {
  @Get(':id') @Header('Cache-Control','no-store') @ApiOperation({operationId:'adminReadBinaryTree',summary:'讀取樹與七個標準位置的非金額歷史統計'})
  async detail(@Req() req:{user:TreePrincipal},@Param('id',ParseUUIDPipe) id:string,@Query() time:TreeTimeQuery){return {data:await this.service.detail(req.user,id,{...time})};}
  @Get(':id/nodes') @Header('Cache-Control','no-store') @ApiOperation({operationId:'adminReadBinaryTreeNodes',summary:'分頁讀取指定時間的完整樹節點；總數不受頁面上限限制'})
- async nodes(@Req() req:{user:TreePrincipal},@Param('id',ParseUUIDPipe) id:string,@Query() input:TreeListQuery){const {after,...time}=input;return {data:await this.service.nodes(req.user,id,time,after)};}
+ async nodes(@Req() req:{user:TreePrincipal},@Param('id',ParseUUIDPipe) id:string,@Query() input:TreeNodeQuery){const {after,snapshotToken,parentQualificationId,...time}=input;return {data:await this.service.nodes(req.user,id,time,after,snapshotToken,parentQualificationId)};}
  @Get(':id/placement-preview') @Header('Cache-Control','no-store') @ApiOperation({operationId:'adminPreviewTreePlacement',summary:'預檢實際 Sponsor 與指定位置，回傳版本綁定 token'})
  async preview(@Req() req:{user:TreePrincipal},@Param('id',ParseUUIDPipe) id:string,@Query() input:TreePreviewQuery){return {data:await this.commands.preview(req.user,id,input)};}
 }

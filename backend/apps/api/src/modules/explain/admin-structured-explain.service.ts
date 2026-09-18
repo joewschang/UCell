@@ -26,7 +26,7 @@ export class AdminStructuredExplainService {
    return {actorId:p.personId!,actorType:'ADMIN',personId:p.personId,roles:[p.role],permissions:['explain:reservoir-a:read','explain:reservoir-b:read'],
     scopes:['finance:reservoir:read'],locale:'zh-TW',timezone:'Asia/Taipei',correlationId,contextVersion:p.sessionId+'.'+grants[0].adminAccessGrantId};
   };
-  const gateway=createExplainGateway({resolveContext,authorize:async c=>c.actorType==='ADMIN' && c.scopes.includes('finance:reservoir:read'),
+  const gateway=createExplainGateway({activatedTools:['explainReservoirB'],resolveContext,authorize:async c=>c.actorType==='ADMIN' && c.scopes.includes('finance:reservoir:read'),
    read:async(name,q,_context,signal)=>{
     const now=new Date().toISOString();if(q.time.asOf>now || q.time.knowledgeCutoff>now) throw new ReadContractError('INVALID_QUERY');
     return this.db.$transaction(async tx=>{if(signal.aborted)throw new ReadContractError('TIMEOUT');const result=await readStructuredExplanation(tx,name,q);if(signal.aborted)throw new ReadContractError('TIMEOUT');return result;},{isolationLevel:'RepeatableRead',maxWait:500,timeout:1500});

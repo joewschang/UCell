@@ -49,7 +49,8 @@ export async function readFoundingPerformance(tx:Prisma.TransactionClient,treeId
   }
   refs.push({type:'HistoricalReplaySnapshot',id:stored.snapshotId,revision:stored.hash});
  }
- return {status:'AVAILABLE' as const,reason:null,unit:'GPV_POINT',basisVersion:'TREE_GPV_SOURCE_V1',value:{cumulative:totals.cumulative.toFixed(4),month:totals.month.toFixed(4),leftMonth:totals.leftMonth.toFixed(4),rightMonth:totals.rightMonth.toFixed(4)},sourceEvents:rows.length,sourceHash:treeHash(refs),sourceWatermark:time.knowledgeCutoff,evidenceRefs:refs};
+ const lastUpdated=[...rows.map(r=>r.recordedAt),...corrections.map(r=>r.recordedAt),...snapshots.map(r=>r.createdAt)].filter((d):d is Date=>d instanceof Date).sort((a,b)=>b.getTime()-a.getTime())[0]?.toISOString()??null;
+ return {status:'AVAILABLE' as const,lastUpdated,reason:null,unit:'GPV_POINT',basisVersion:'TREE_GPV_SOURCE_V1',value:{cumulative:totals.cumulative.toFixed(4),month:totals.month.toFixed(4),leftMonth:totals.leftMonth.toFixed(4),rightMonth:totals.rightMonth.toFixed(4)},sourceEvents:rows.length,sourceHash:treeHash(refs),sourceWatermark:time.knowledgeCutoff,evidenceRefs:refs};
 }
 export async function readFoundingCarry(tx:Prisma.TransactionClient,root:string,time:AsOfContext){
  const at=new Date(time.asOf),known=new Date(time.knowledgeCutoff);
@@ -60,14 +61,16 @@ export async function readFoundingCarry(tx:Prisma.TransactionClient,root:string,
  if(batches.length!==1)return unavailable('CARRY_PERIOD_NOT_FINALIZED');
  const batch=batches[0],snapshot=await tx.historicalReplaySnapshot.findUnique({where:{kind_sourceId:{kind:'BINARY_K1',sourceId:batch.settlementBatchId}}});
  if(!snapshot||snapshot.createdAt>known)return unavailable('CARRY_SEAL_MISSING');
- try{const seal=verifyReplayEnvelope(snapshot);if(seal.ruleVersionCode!==batch.ruleVersionCode||!Array.isArray(seal.evidence.carryRecipients)||!seal.evidence.carryRecipients.some((r:any)=>r.qualificationId===root&&new Prisma.Decimal(r.leftCarryOut).eq(row.leftCarryOut)&&new Prisma.Decimal(r.rightCarryOut).eq(row.rightCarryOut)))return unavailable('CARRY_SEAL_MISMATCH');}catch{return unavailable('CARRY_SEAL_INVALID');}
+ try{const seal=verifyReplayEnvelope(snapshot);if(seal.ruleVersionCode!==batch.ruleVersionCode||!Array.isArray(seal.evidence.carryRecipients)||!seal.evidence.carryRecipients.some((r:any)=>r.qualificationId===root&&new Prisma.Decimal(r.leftCarryOut).eq(row.leftCarryOut)&&new Prisma.Decimal(r.rightCarryOut).eq(row.rightCarryOut)&&new Prisma.Decimal(r.pairedPv).eq(row.pairedPv)))return unavailable('CARRY_SEAL_MISMATCH');}catch{return unavailable('CARRY_SEAL_INVALID');}
  if(await tx.settlementRecalculationRequest.findFirst({where:{periodEnd:row.periodEnd,createdAt:{lte:known},OR:[{impactedQualificationId:root},{impactedQualificationId:null}],AND:[{OR:[{processedAt:null},{processedAt:{gt:known}}]}]}}))return unavailable('CARRY_REPLAY_PENDING');
  const correction=await tx.replayCarryProjection.findFirst({where:{settlementBatchId:batch.settlementBatchId,createdAt:{lte:known}},orderBy:{sequence:'desc'}});
  const revised=(correction?.carry as any)?.[root];
  if(correction&&!revised)return unavailable('CARRY_CORRECTION_INCOMPLETE');
  try{
   const left=new Prisma.Decimal(correction?revised.left:row.leftCarryOut),right=new Prisma.Decimal(correction?revised.right:row.rightCarryOut);
+  const pairedPv=correction?(revised.pairedPv==null?null:new Prisma.Decimal(revised.pairedPv)):row.pairedPv;
+  if(pairedPv?.isNegative())return unavailable('CARRY_CORRECTION_INVALID');
   if(left.isNegative()||right.isNegative())return unavailable('CARRY_CORRECTION_INVALID');
-  return {status:'AVAILABLE' as const,reason:null,unit:'GPV_POINT',basisVersion:'SEALED_BINARY_CARRY_V1',value:{left:left.toFixed(4),right:right.toFixed(4)},settlementId:batch.settlementBatchId,periodEnd:row.periodEnd.toISOString(),ruleVersion:row.ruleVersionCode,replaySequence:correction?.sequence.toString()??null,sourceWatermark:time.knowledgeCutoff,evidenceRefs:[{type:'HistoricalReplaySnapshot',id:snapshot.snapshotId,revision:snapshot.hash},...(correction?[{type:'ReplayCarryProjection',id:correction.sequence.toString(),revision:correction.stateHash}]:[])]};
+  return {status:'AVAILABLE' as const,reason:null,unit:'GPV_POINT',basisVersion:'SEALED_BINARY_CARRY_V1',value:{left:left.toFixed(4),right:right.toFixed(4),pairedPv:pairedPv?.toFixed(4)??null},pairPvStatus:pairedPv===null?'REPLAY_PAIR_EVIDENCE_NOT_AVAILABLE':'AVAILABLE',lastUpdated:(correction?.createdAt??row.createdAt).toISOString(),settlementId:batch.settlementBatchId,periodEnd:row.periodEnd.toISOString(),ruleVersion:row.ruleVersionCode,replaySequence:correction?.sequence.toString()??null,sourceWatermark:time.knowledgeCutoff,evidenceRefs:[{type:'HistoricalReplaySnapshot',id:snapshot.snapshotId,revision:snapshot.hash},...(correction?[{type:'ReplayCarryProjection',id:correction.sequence.toString(),revision:correction.stateHash}]:[])]};
  }catch{return unavailable('CARRY_CORRECTION_INVALID');}
 }

@@ -1,3 +1,4 @@
+import {memberEconomicMocks} from './member-economic-fixture';
 import { QualificationAccessService } from '../src/modules/auth/qualification-access.service';
 import { AdminRoleGuard } from '../src/modules/auth/admin-role.guard';
 import { UnifiedPayableService } from '../src/modules/payout/unified-payable.service';
@@ -12,7 +13,7 @@ function recoveryHarness(outstanding: number) {
   const award = { bonusAwardId: 'source-award', recipientQualificationId: 'ball-A', payableAmount: new Prisma.Decimal(outstanding) };
   const recovery = { bonusRecoveryEventId: 'recovery-A', recoveredAmount: new Prisma.Decimal(0), outstandingAmount: new Prisma.Decimal(outstanding), bonusAward: award };
   const applications: any[] = [];
-  const tx = {
+  const tx = {...memberEconomicMocks(),
     $executeRaw: jest.fn(async () => 1),
     payoutLine: { findUnique: jest.fn(async () => ({ recipientQualificationId: 'ball-A', grossAmount: new Prisma.Decimal(100) })) },
     recoveryApplication: {
@@ -32,7 +33,7 @@ function materializationHarness(kind: 'BONUS_AWARD' | 'RPV_UPLINE_AWARD') {
   const award = kind === 'BONUS_AWARD'
     ? { bonusAwardId: 'award-A', recipientQualificationId: 'ball-A', awardType: 'REFERRAL', payableAmount: new Prisma.Decimal(100) }
     : { rpvAwardEventId: 'rpv-A', recipientQualificationId: 'ball-B', payableAmount: new Prisma.Decimal(80), ruleVersionCode: 'TEST_ONLY' };
-  const tx = {
+  const tx = {...memberEconomicMocks(),
     bonusAward: { findMany: jest.fn(async () => kind === 'BONUS_AWARD' ? [award] : []) },
     globalPoolAward: { findMany: jest.fn(async () => []) },
     rpvUplineAwardEvent: { findMany: jest.fn(async () => kind === 'RPV_UPLINE_AWARD' ? [award] : []) },
@@ -80,7 +81,7 @@ describe('R1.0B v0.6.3',()=>{
       { payableEntryId: 'entry-A2', qualificationId: 'ball-A', personId: 'same-person', grossAmount: new Prisma.Decimal(7) },
     ];
     const lines: any[] = [];
-    const tx = {
+    const tx = {...memberEconomicMocks(),
       payableEntry: { findMany: jest.fn(async () => entries), update: jest.fn(async () => undefined) },
       payoutBatch: { create: jest.fn(async () => ({ payoutBatchId: 'batch-A' })), update: jest.fn(async ({ data }: any) => data) },
       payoutLine: {
