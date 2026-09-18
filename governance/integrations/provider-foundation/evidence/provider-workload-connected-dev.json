@@ -1,0 +1,29 @@
+{
+  "result": "PASS",
+  "classification": "CONNECTED_DEV_ENGINEERING_ONLY",
+  "configuration": {
+    "events": 200,
+    "workers": 8,
+    "batchSize": 25,
+    "retryPercent": 10
+  },
+  "metrics": {
+    "durationMs": 594.66,
+    "throughputPerSecond": 336.326,
+    "operationLatencyMs": {
+      "p50": 10.55,
+      "p95": 16.634,
+      "max": 34.281
+    },
+    "claimed": 220,
+    "finalized": 220,
+    "stale": 0,
+    "retries": 20,
+    "failures": 0,
+    "conflictRate": 0,
+    "retryRate": 0.1,
+    "lockWaiters": 0,
+    "outboxBacklogDelta": 0,
+    "remainingInboxBacklog": 0
+  }
+}

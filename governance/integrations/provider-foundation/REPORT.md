@@ -227,3 +227,12 @@ Business logic changes: **NONE**.
 - Focused harness regression: 9 PASS. Complete Backend API: 639 PASS in 66 suites on disposable PostgreSQL; cleanup PASS. Shared, Worker and API builds plus schema, migration, source, security and TODO gates PASS.
 
 Business logic changes: **NONE**. No signature algorithm, provider status mapping, acknowledgement contract or domain/monetary effect was inferred.
+
+## Provider Connected DEV workload checkpoint
+
+- Added an isolated PostgreSQL workload runner that applies all 53 migrations, seeds 200 verified Inbox rows, runs eight concurrent workers with batch size 25, retries 10% once, then verifies redelivery and final convergence.
+- The recorded run completed 220 claims/finalizations, including 20 retries, with zero stale finalization, failure, lock waiter, outbox backlog delta or remaining Inbox backlog.
+- The evidence records duration, throughput, p50/p95/max operation latency, conflict/retry/failure rates and backlog. It is explicitly classified `CONNECTED_DEV_ENGINEERING_ONLY` and is not Production workload evidence.
+- The workload uses provider-neutral Inbox lifecycle only and creates no provider acknowledgement, canonical payment/invoice/logistics effect, outbox event or monetary mutation.
+
+Business logic changes: **NONE**.

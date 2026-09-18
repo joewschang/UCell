@@ -95,3 +95,5 @@
 | Provider certification harness | PASS | Reference-only required vector runner; missing evidence=PENDING and engineering fixtures=ENGINEERING_ONLY |
 | Official provider vector execution | BLOCKED | OPERATIONAL_CREDENTIAL_PENDING; harness exists but no provider certification is claimed |
 | Complete Backend API after certification harness | PASS | 639 tests / 66 suites; disposable PostgreSQL cleanup PASS |
+| Provider worker Connected DEV workload | PASS | 200 events, 8 workers, 220 finalized including 20 retries; zero stale/failure/backlog in disposable DB |
+| Provider Production workload | BLOCKED | Stage/UAT infrastructure, official adapters and governed production-like evidence remain required |
