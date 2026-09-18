@@ -59,6 +59,10 @@
     "test:uat:evidence": "node scripts/uat-evidence-db-test.mjs",
     "test:shipment:persistence:isolated": "node scripts/shipment-persistence-db-isolated.mjs",
     "test:provider:workload": "node scripts/provider-worker-workload-isolated.mjs",
-    "provider:enablement:preflight": "ts-node scripts/provider-enablement-preflight.ts"
+    "provider:enablement:preflight": "ts-node scripts/provider-enablement-preflight.ts",
+    "openapi:governance": "node scripts/openapi-governance.mjs gate",
+    "openapi:governance:test": "node --test scripts/openapi-governance.test.mjs",
+    "swaggerhub:publish": "node scripts/openapi-governance.mjs publish",
+    "swaggerhub:release:check": "node scripts/openapi-governance.mjs release-check"
   }
 }

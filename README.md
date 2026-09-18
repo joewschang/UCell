@@ -33,3 +33,7 @@ AI is **not** permitted to calculate or write monetary results. Deterministic Ru
 ## Required promotion gates
 
 Run `scripts/release-gate.sh` in a connected DEV/CI environment. No production deployment if any P0/UAT/security/database/backup gate fails or is not run.
+
+## SwaggerHub API documentation
+
+[UCell API on SwaggerHub](https://app.swaggerhub.com/apis/ragetech/ucell-api/1.0.0) is private under `ragetech`. See [connection and update instructions](governance/swaggerhub/README.md). CI-controlled one-way synchronization is defined in `.github/workflows/swaggerhub-sync.yml`; see [OpenAPI contract evidence](OPENAPI_CONTRACT_REPORT.md) for validation and activation status.
