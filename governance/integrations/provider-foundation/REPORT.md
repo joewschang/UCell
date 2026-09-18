@@ -217,3 +217,13 @@ Business logic changes: **NONE**. Provider-specific reconciliation policy, provi
 - Admin focused regression: 6 PASS. Complete Admin regression: 68 PASS in 22 files. TypeScript and production build PASS.
 
 Business logic changes: **NONE**.
+
+## Provider certification harness checkpoint
+
+- Added a provider-neutral, reference-only certification harness for PAYMENT, INVOICE, LOGISTICS and IDENTITY adapters.
+- A certification manifest must contain exactly the official valid, tampered, wrong-key, expired and replay cases. Raw payloads, signatures, keys and tokens are never accepted; the executor receives only approved `kv://`, `evidence://` or `provider-vector://` references.
+- Missing manifests return `OPERATIONAL_CREDENTIAL_PENDING`. Engineering fixtures always return `ENGINEERING_ONLY`, even when every expected verdict matches. Only a complete `OFFICIAL_PROVIDER_VECTOR` set can return harness `PASS`; that result is test-vector evidence and does not replace sandbox/UAT approval.
+- Executor exceptions are converted to safe rejected outcomes without leaking provider or secret details.
+- Focused harness regression: 9 PASS. Complete Backend API: 639 PASS in 66 suites on disposable PostgreSQL; cleanup PASS. Shared, Worker and API builds plus schema, migration, source, security and TODO gates PASS.
+
+Business logic changes: **NONE**. No signature algorithm, provider status mapping, acknowledgement contract or domain/monetary effect was inferred.

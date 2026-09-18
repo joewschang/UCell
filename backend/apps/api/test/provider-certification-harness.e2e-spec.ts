@@ -1,0 +1,16 @@
+import {runProviderCertification,type ProviderCertificationManifest} from '../src/modules/commerce/provider-certification-harness';
+const cases=['VALID','TAMPERED','WRONG_KEY','EXPIRED','REPLAY'] as const;
+function manifest(evidenceClass:'OFFICIAL_PROVIDER_VECTOR'|'ENGINEERING_FIXTURE'='ENGINEERING_FIXTURE'):ProviderCertificationManifest{return {domain:'PAYMENT',provider:'LINE_PAY',environment:'STAGE',providerApiVersion:'v3',verificationConfigVersion:'stage-v1',evidenceClass,approvalReference:'approval-123',vectors:cases.map(item=>({case:item,vectorId:`line-pay-${item.toLowerCase()}`,inputRef:`provider-vector://line-pay/${item.toLowerCase()}`,expected:item==='VALID'?'ACCEPT':'REJECT'}))};}
+describe('Provider certification harness',()=>{
+ it('stays credential-pending when no official manifest exists',async()=>{await expect(runProviderCertification(undefined,async()=>{throw new Error('must not execute')},new Date('2026-09-19T00:00:00Z'))).resolves.toMatchObject({status:'OPERATIONAL_CREDENTIAL_PENDING',cases:[]});});
+ it('runs all required vectors but labels engineering fixtures ENGINEERING_ONLY',async()=>{const calls:string[]=[];const result=await runProviderCertification(manifest(),async vector=>{calls.push(vector.inputRef);return vector.case==='VALID'?'ACCEPT':'REJECT'},new Date('2026-09-19T00:00:00Z'));expect(result.status).toBe('ENGINEERING_ONLY');expect(result.cases).toHaveLength(5);expect(calls.every(ref=>ref.startsWith('provider-vector://'))).toBe(true);expect(JSON.stringify(result)).not.toMatch(/signature|secret|payload|token/i);});
+ it('allows PASS only for a complete official provider vector set',async()=>{const result=await runProviderCertification(manifest('OFFICIAL_PROVIDER_VECTOR'),async vector=>vector.case==='VALID'?'ACCEPT':'REJECT');expect(result.status).toBe('PASS');expect(result.cases.every(item=>item.passed)).toBe(true);});
+ it('fails official certification when any observed verdict differs',async()=>{const result=await runProviderCertification(manifest('OFFICIAL_PROVIDER_VECTOR'),async()=> 'REJECT');expect(result.status).toBe('FAIL');expect(result.cases.find(item=>item.case==='VALID')?.passed).toBe(false);});
+ it.each([
+  {...manifest(),vectors:manifest().vectors.slice(0,4)},
+  {...manifest(),vectors:manifest().vectors.map((v,i)=>i===1?{...v,case:'VALID' as const}:v)},
+  {...manifest(),vectors:manifest().vectors.map((v,i)=>i===0?{...v,inputRef:'raw-secret-value'}:v)},
+  {...manifest(),vectors:manifest().vectors.map((v,i)=>i===0?{...v,expected:'REJECT' as const}:v)},
+ ])('rejects incomplete, duplicate, embedded-input or inverted manifests',async value=>{await expect(runProviderCertification(value as ProviderCertificationManifest,async()=> 'REJECT')).rejects.toThrow('PROVIDER_CERTIFICATION_MANIFEST_INVALID');});
+ it('converts executor exceptions into a rejected vector without leaking the exception',async()=>{const result=await runProviderCertification(manifest(),async vector=>{if(vector.case==='WRONG_KEY')throw new Error('secret detail');return vector.case==='VALID'?'ACCEPT':'REJECT'});expect(result.status).toBe('ENGINEERING_ONLY');expect(result.cases.find(item=>item.case==='WRONG_KEY')).toMatchObject({actual:'REJECT',passed:true});expect(JSON.stringify(result)).not.toContain('secret detail');});
+});

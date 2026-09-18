@@ -25,6 +25,7 @@ Legend: **FOUNDATION** = canonical code exists; **CONTRACT** = interface only; *
 | Provider-neutral contract | FOUNDATION | FOUNDATION | CONTRACT | CONTRACT |
 | Versioned connection/config | Partial | FOUNDATION | Registry foundation | Registry foundation |
 | Official signature/token verifier | PENDING | PENDING | PENDING | PENDING |
+| Reference-only certification harness | FOUNDATION | FOUNDATION | FOUNDATION | FOUNDATION |
 | Canonical event identity/hash | Token exchange foundation | FOUNDATION | Shared ingress foundation | Shared ingress foundation |
 | DB persistence/unique operation claim | Session/token evidence | FOUNDATION | GAP | GAP |
 | Transactional outbox bridge | Session flows present | Payment foundation present | GAP | GAP |

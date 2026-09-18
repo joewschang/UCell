@@ -92,3 +92,6 @@
 | Complete Backend API after reconciliation read model | PASS | 630 tests / 65 suites; disposable PostgreSQL cleanup PASS |
 | Admin reconciliation console | PASS | Connected health metrics and bounded exception DataGrid; no monetary inference or evidence leakage |
 | Admin regression after reconciliation console | PASS | 68 tests / 22 files; typecheck and production build PASS |
+| Provider certification harness | PASS | Reference-only required vector runner; missing evidence=PENDING and engineering fixtures=ENGINEERING_ONLY |
+| Official provider vector execution | BLOCKED | OPERATIONAL_CREDENTIAL_PENDING; harness exists but no provider certification is claimed |
+| Complete Backend API after certification harness | PASS | 639 tests / 66 suites; disposable PostgreSQL cleanup PASS |
