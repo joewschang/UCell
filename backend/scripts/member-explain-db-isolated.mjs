@@ -28,6 +28,7 @@ try {
   run([require.resolve('prisma/build/index.js'), 'migrate', 'deploy', '--schema', 'packages/database/prisma/schema.prisma']);
   run(['scripts/member-explain-db-test.mjs']);
   run(['scripts/member-explain-http-db-test.mjs']);
+  run(['scripts/structured-explain-http-db-test.mjs']);
   console.log('MEMBER_EXPLAIN_DB_ISOLATED_PASS');
 } finally {
   try {

@@ -1,5 +1,7 @@
 # Phase 1 Architecture Review Report
 
+> 2026-09-18 implementation update: Issue #2 comments [5722342390](https://github.com/joewschang/UCell/issues/2#issuecomment-5722342390) and [5722354891](https://github.com/joewschang/UCell/issues/2#issuecomment-5722354891) approve D1 architecture and D2. Pending/STOP statements below record the original Phase 1 review and are superseded for those decisions. Only exact Company economics profile binding remains closed; see [pending mapping](../next-generation/COMPANY_BOOTSTRAP_PROFILE_V1_PENDING_MAPPING.md). Train A and non-monetary Train B are authorized. This does not authorize Stage or Production deployment.
+
 Pending concrete proposal: [bootstrap Sponsor sequence candidate](BOOTSTRAP_SPONSOR_SEQUENCE_REVIEW.md) demonstrates a valid first/third-left sequence when real company #2/#3 referrals precede founding member referrals. It does not approve that Sponsor graph, #1's upstream relationship or D1 configuration.
 
 Latest disposition: [PO company operating-unit clarification](COMPANY_BALL_OPERATING_UNIT_DECISION.md) partially resolves D2. Company Balls are independent operating units and participate in ordinary actual referral sequence; no sequence omission or default company placement exemption. Actual Sponsor graph/bootstrap order and D1 plan/rank remain pending. This disposition supersedes earlier blanket statements that all of D2 is undecided.

@@ -1,0 +1,17 @@
+[
+  {
+    "path": "backend/packages/database/prisma/schema.prisma",
+    "sha256": "d910d2155c38a37e767c8ed18c5ea44d9297636f2313d9a52116b08adc698789",
+    "changedFromIntegrationBaseline": false
+  },
+  {
+    "path": "backend/apps/api/src/modules/bonus/referral-bonus.service.ts",
+    "sha256": "38014e39403d1954274bad71c7d384aafd02b7d2949046021245a991a1ffbe3b",
+    "changedFromIntegrationBaseline": false
+  },
+  {
+    "path": "backend/apps/api/src/modules/bonus/binary-bonus.service.ts",
+    "sha256": "4d0b01914e192aef44ed0d66e2f4f90b81b6c3dfc396a6d800576764833358f0",
+    "changedFromIntegrationBaseline": false
+  }
+]

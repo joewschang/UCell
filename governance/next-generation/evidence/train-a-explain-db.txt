@@ -1,0 +1,187 @@
+$ pnpm build && node scripts/member-explain-db-isolated.mjs
+$ pnpm -r build
+packages/database build$ tsc -p tsconfig.json
+packages/shared build$ tsc -p tsconfig.json
+packages/contracts build$ tsc -p tsconfig.json
+packages/contracts build: Done
+packages/shared build: Done
+packages/database build: Done
+apps/worker build$ tsc -p tsconfig.json
+apps/api build$ nest build
+apps/worker build: Done
+apps/api build: Done
+Prisma schema loaded from packages\database\prisma\schema.prisma
+Datasource "db": PostgreSQL database "ucell_explain_6eadcc6ee4114823948c9b4e833eed78", schemas "audit, commerce, identity, integration, ledger, membership, organization, rules, subscription" at "127.0.0.1:55432"
+
+53 migrations found in prisma/migrations
+
+Applying migration `0001_vertical_slice`
+Applying migration `0002_membership_active_subscription_rpv`
+Applying migration `0003_bonus_engine_core`
+Applying migration `0004_reversal_epv_global_payout`
+Applying migration `0005_adjustment_lifecycle`
+Applying migration `0006_v061_closure`
+Applying migration `0007_v062_carry_chain_replay`
+Applying migration `0008_v063_calendar_payable`
+Applying migration `0009_v064_recovery_auth_audit_golden`
+Applying migration `0010_v065_global_payable_schema`
+Applying migration `0011_v066_convergence_guards`
+Applying migration `0012_v069_schema_relation_convergence`
+Applying migration `0013_review_r1_integrity_guards`
+Applying migration `0014_r4_payout_approval_recovery_integrity`
+Applying migration `0015_r5_operations_ready`
+Applying migration `0016_r6_admin_access_grant`
+Applying migration `20260915110000_sa_parameter_snapshots`
+Applying migration `20260915120000_phase2_historical_replay`
+Applying migration `20260915150000_replay_entitlement_baseline_guards`
+Applying migration `20260915160000_sa_phase3_business_timezone`
+Applying migration `20260916030000_member_notification`
+Applying migration `20260916040000_member_notification_reads`
+Applying migration `20260916120000_binary_zero_entitlement_evidence`
+Applying migration `20260916170000_replay_horizon_alignment`
+Applying migration `20260916171000_return_recalculation_idempotency`
+Applying migration `20260916233000_v11_contract_consent_foundation`
+Applying migration `20260916234000_v11_contract_version_immutability`
+Applying migration `20260917010000_v11_network_member_profile`
+Applying migration `20260917013000_v11_otp_domain`
+Applying migration `20260917020000_v11_network_registration`
+Applying migration `20260917030000_v11_delivery_profile`
+Applying migration `20260917040000_v12_referral_attribution`
+Applying migration `20260917041000_v12_referral_person_binding`
+Applying migration `20260917042000_v12_system_assignment`
+Applying migration `20260917043000_v12_external_content`
+Applying migration `20260917050000_v11_formal_application_draft`
+Applying migration `20260917060000_v13_qualification_placement`
+Applying migration `20260917070000_v14_configurable_packages`
+Applying migration `20260917080000_v15_package_checkout`
+Applying migration `20260917210000_v16_payment_inventory_persistence`
+Applying migration `20260917220000_r1_0b_v3_evidence`
+Applying migration `20260917230000_r1_0b_v3_replay_pool_deltas`
+Applying migration `20260918150000_uat_evidence_foundation`
+Applying migration `20260918193000_provider_integration_foundation`
+Applying migration `20260918210000_provider_connection_invoice_persistence`
+Applying migration `20260918223000_fulfillment_shipment_persistence`
+Applying migration `20260918233000_provider_webhook_verification_evidence`
+Applying migration `20260918235000_shipment_aggregate_integrity`
+Applying migration `20260919010000_management_analytics_projection`
+Applying migration `20260919013000_provider_webhook_inbox_lifecycle`
+Applying migration `20260919020000_provider_ingress_connection_identity`
+Applying migration `20260919023000_provider_webhook_worker_lease`
+Applying migration `20260919030000_provider_webhook_manual_retry`
+
+The following migration(s) have been applied:
+
+migrations/
+  └─ 0001_vertical_slice/
+    └─ migration.sql
+  └─ 0002_membership_active_subscription_rpv/
+    └─ migration.sql
+  └─ 0003_bonus_engine_core/
+    └─ migration.sql
+  └─ 0004_reversal_epv_global_payout/
+    └─ migration.sql
+  └─ 0005_adjustment_lifecycle/
+    └─ migration.sql
+  └─ 0006_v061_closure/
+    └─ migration.sql
+  └─ 0007_v062_carry_chain_replay/
+    └─ migration.sql
+  └─ 0008_v063_calendar_payable/
+    └─ migration.sql
+  └─ 0009_v064_recovery_auth_audit_golden/
+    └─ migration.sql
+  └─ 0010_v065_global_payable_schema/
+    └─ migration.sql
+  └─ 0011_v066_convergence_guards/
+    └─ migration.sql
+  └─ 0012_v069_schema_relation_convergence/
+    └─ migration.sql
+  └─ 0013_review_r1_integrity_guards/
+    └─ migration.sql
+  └─ 0014_r4_payout_approval_recovery_integrity/
+    └─ migration.sql
+  └─ 0015_r5_operations_ready/
+    └─ migration.sql
+  └─ 0016_r6_admin_access_grant/
+    └─ migration.sql
+  └─ 20260915110000_sa_parameter_snapshots/
+    └─ migration.sql
+  └─ 20260915120000_phase2_historical_replay/
+    └─ migration.sql
+  └─ 20260915150000_replay_entitlement_baseline_guards/
+    └─ migration.sql
+  └─ 20260915160000_sa_phase3_business_timezone/
+    └─ migration.sql
+  └─ 20260916030000_member_notification/
+    └─ migration.sql
+  └─ 20260916040000_member_notification_reads/
+    └─ migration.sql
+  └─ 20260916120000_binary_zero_entitlement_evidence/
+    └─ migration.sql
+  └─ 20260916170000_replay_horizon_alignment/
+    └─ migration.sql
+  └─ 20260916171000_return_recalculation_idempotency/
+    └─ migration.sql
+  └─ 20260916233000_v11_contract_consent_foundation/
+    └─ migration.sql
+  └─ 20260916234000_v11_contract_version_immutability/
+    └─ migration.sql
+  └─ 20260917010000_v11_network_member_profile/
+    └─ migration.sql
+  └─ 20260917013000_v11_otp_domain/
+    └─ migration.sql
+  └─ 20260917020000_v11_network_registration/
+    └─ migration.sql
+  └─ 20260917030000_v11_delivery_profile/
+    └─ migration.sql
+  └─ 20260917040000_v12_referral_attribution/
+    └─ migration.sql
+  └─ 20260917041000_v12_referral_person_binding/
+    └─ migration.sql
+  └─ 20260917042000_v12_system_assignment/
+    └─ migration.sql
+  └─ 20260917043000_v12_external_content/
+    └─ migration.sql
+  └─ 20260917050000_v11_formal_application_draft/
+    └─ migration.sql
+  └─ 20260917060000_v13_qualification_placement/
+    └─ migration.sql
+  └─ 20260917070000_v14_configurable_packages/
+    └─ migration.sql
+  └─ 20260917080000_v15_package_checkout/
+    └─ migration.sql
+  └─ 20260917210000_v16_payment_inventory_persistence/
+    └─ migration.sql
+  └─ 20260917220000_r1_0b_v3_evidence/
+    └─ migration.sql
+  └─ 20260917230000_r1_0b_v3_replay_pool_deltas/
+    └─ migration.sql
+  └─ 20260918150000_uat_evidence_foundation/
+    └─ migration.sql
+  └─ 20260918193000_provider_integration_foundation/
+    └─ migration.sql
+  └─ 20260918210000_provider_connection_invoice_persistence/
+    └─ migration.sql
+  └─ 20260918223000_fulfillment_shipment_persistence/
+    └─ migration.sql
+  └─ 20260918233000_provider_webhook_verification_evidence/
+    └─ migration.sql
+  └─ 20260918235000_shipment_aggregate_integrity/
+    └─ migration.sql
+  └─ 20260919010000_management_analytics_projection/
+    └─ migration.sql
+  └─ 20260919013000_provider_webhook_inbox_lifecycle/
+    └─ migration.sql
+  └─ 20260919020000_provider_ingress_connection_identity/
+    └─ migration.sql
+  └─ 20260919023000_provider_webhook_worker_lease/
+    └─ migration.sql
+  └─ 20260919030000_provider_webhook_manual_retry/
+    └─ migration.sql
+
+All migrations have been successfully applied.
+MEMBER_EXPLAIN_DB_PASS: 21 assertions; real migrated PostgreSQL and production recognition writer
+MEMBER_EXPLAIN_HTTP_DB_PASS: 65 assertions; real Nest HTTP pipeline, Prisma, sessions, ownership, source and audit
+STRUCTURED_EXPLAIN_HTTP_DB_PASS: 16 assertions; real sessions, holders, immutable Award, audit, known-at and no recalculation
+MEMBER_EXPLAIN_DB_ISOLATED_PASS
+MEMBER_EXPLAIN_DB_ISOLATED_CLEANUP_PASS

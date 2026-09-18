@@ -1,0 +1,38 @@
+import assert from 'node:assert/strict';
+import {randomUUID} from 'node:crypto';
+import {createRequire} from 'node:module';
+import {fileURLToPath} from 'node:url';
+const target=new URL(process.env.DATABASE_URL??'');
+assert.ok(['localhost','127.0.0.1'].includes(target.hostname));assert.match(target.pathname,/^\/ucell_explain_[a-f0-9]{32}$/);
+const require=createRequire(new URL('../apps/api/package.json',import.meta.url));require('reflect-metadata');
+const {Test}=require('@nestjs/testing'),{ValidationPipe}=require('@nestjs/common'),{FastifyAdapter}=require('@nestjs/platform-fastify'),{PrismaService}=require('@ucell/database');
+const load=p=>require(fileURLToPath(new URL('../apps/api/dist/'+p+'.js',import.meta.url)));
+const {MemberStructuredExplainController}=load('modules/explain/member-structured-explain.controller');
+const {MemberStructuredExplainService}=load('modules/explain/member-structured-explain.service');
+const {MemberAuthenticationGuard}=load('modules/auth/member-authentication.guard'),{MemberContextGuard}=load('modules/member/member-context.guard');
+const {QualificationAccessService}=load('modules/auth/qualification-access.service'),{IdentityTokenService}=load('modules/auth/identity-token.service'),{LineIdentityService}=load('modules/auth/line-identity.service');
+const {EnvelopeInterceptor}=load('common/interceptors/envelope.interceptor');
+let app,db,n=0;const eq=(a,b,label)=>{assert.deepEqual(a,b,label);n++;};
+try{
+ const mod=await Test.createTestingModule({controllers:[MemberStructuredExplainController],providers:[PrismaService,MemberStructuredExplainService,MemberAuthenticationGuard,MemberContextGuard,QualificationAccessService,IdentityTokenService,LineIdentityService]}).compile();
+ app=mod.createNestApplication(new FastifyAdapter(),{logger:false});app.setGlobalPrefix('api/v1');app.useGlobalPipes(new ValidationPipe({whitelist:true,forbidNonWhitelisted:true,transform:true}));app.useGlobalInterceptors(new EnvelopeInterceptor());await app.init();await app.getHttpAdapter().getInstance().ready();db=mod.get(PrismaService);
+ const person=await db.person.create({data:{legalName:'TEST ONLY structured reader',status:'EFFECTIVE',membershipState:'NETWORK_MEMBER'}});
+ const subject='synthetic-structured-'+randomUUID();await db.identityLink.create({data:{personId:person.personId,provider:'LINE',providerSubject:subject}});
+ const session=await mod.get(IdentityTokenService).issue({provider:'LINE',personId:person.personId,subject});
+ const qualification=await db.qualification.create({data:{currentHolderPersonId:person.personId,planLevelCode:'STARTER',status:'EFFECTIVE',effectiveAt:new Date()}});
+ const qid=qualification.qualificationId;await db.qualificationHolderHistory.create({data:{qualificationId:qid,holderPersonId:person.personId,effectiveFrom:new Date(),sourceType:'TEST_ONLY'}});
+ const award=await db.bonusAward.create({data:{awardType:'BINARY',recipientQualificationId:qid,theoryAmount:'100',kFactor:'.5',payableAmount:'49.1234',activeSnapshot:true,ruleVersionCode:'TEST_ONLY',parameterSnapshotHash:'a'.repeat(64),occurredAt:new Date(Date.now()-10000),pendingUntil:new Date(),calculationDetail:{fixture:true,bankAccount:'never-export',providerSecret:'secret'}}});
+ const now=new Date(),time={timezone:'Asia/Taipei',periodStart:new Date(now.getTime()-86400000).toISOString(),periodEnd:new Date(now.getTime()+86400000).toISOString(),asOf:now.toISOString(),knowledgeCutoff:now.toISOString()};
+ const url=(extra={})=>'/api/v1/member/explain/structured?'+new URLSearchParams({...time,qualificationId:qid,resourceId:award.bonusAwardId,tool:'explainAward',...extra});
+ const headers={authorization:'Bearer '+session.accessToken};const request=(extra={},auth=headers)=>app.inject({method:'GET',url:url(extra),headers:auth});
+ const before=await db.bonusAward.count();let r=await request();eq(r.statusCode,200,'real stored bearer and holder accepted');
+ eq(r.json().data.result,{theory:'100',k:'0.5',final:'49.1234',awardType:'BINARY'},'stored Final preserved, no formula reexecution');eq(r.json().data.quality,'VERIFIED','source quality');eq(r.headers['cache-control'],'no-store','no cache');
+ eq(r.body.includes('never-export')||r.body.includes('providerSecret')||r.body.includes(session.accessToken),false,'no secret source fields');
+ r=await request({knowledgeCutoff:new Date(award.createdAt.getTime()-1).toISOString()});eq(r.json().data.status,'UNAVAILABLE','recorded after cutoff is unavailable');eq(r.json().data.result,null,'no historical current fallback');
+ eq((await request({qualificationId:randomUUID()})).statusCode,403,'foreign Ball denied');eq((await request({roles:'SUPER_ADMIN'})).statusCode,400,'argument role injection denied');
+ eq((await request({resourceId:randomUUID()})).json().data.result,null,'missing Award is not zero');eq((await request({},{})).statusCode,401,'unauthenticated request denied');
+ const audits=await db.auditEvent.findMany({where:{action:'MEMBER_STRUCTURED_EXPLAIN_READ',entityId:qid}});eq(audits.length,3,'successful and unavailable reads persist exact audit count');eq(Object.keys(audits[0].afterData).sort(),['definitionVersion','outcome','tool'],'audit only includes safe metadata');
+ eq(await db.bonusAward.count(),before,'reader never creates Awards');eq((await db.bonusAward.findUniqueOrThrow({where:{bonusAwardId:award.bonusAwardId}})).payableAmount.toString(),'49.1234','source amount unchanged');
+ await db.authSession.update({where:{authSessionId:session.sessionId},data:{status:'REVOKED',revokedAt:new Date()}});eq((await request()).statusCode,401,'revoked persisted session rejected');
+ console.log(`STRUCTURED_EXPLAIN_HTTP_DB_PASS: ${n} assertions; real sessions, holders, immutable Award, audit, known-at and no recalculation`);
+}finally{if(app)await app.close();else if(db)await db.$disconnect();}

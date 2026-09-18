@@ -1,5 +1,7 @@
 # Pending architecture decisions
 
+> 2026-09-18 implementation update: Issue #2 comments [5722342390](https://github.com/joewschang/UCell/issues/2#issuecomment-5722342390) and [5722354891](https://github.com/joewschang/UCell/issues/2#issuecomment-5722354891) approve D1 architecture and D2. Pending/STOP statements below record the original Phase 1 review and are superseded for those decisions. Only exact Company economics profile binding remains closed; see [pending mapping](../next-generation/COMPANY_BOOTSTRAP_PROFILE_V1_PENDING_MAPPING.md). Train A and non-monetary Train B are authorized. This does not authorize Stage or Production deployment.
+
 Review aid: [D1/D2 decision worksheet](ARCHITECTURE_DECISION_WORKSHEET.md) lists the exact fields/options requiring disposition and their acceptance conditions. The user's continuation selects architecture review only; it does not approve either decision or implementation.
 
 Status: REVIEW_REQUIRED, Phase 1 only. Only D1/D2 require bounded product decisions. G1–G4 are implementation/provenance gates, not additional open economic rules. Authority: [complete Issue snapshot](evidence/ISSUE_2_SNAPSHOT.md) plus [fourth addendum](evidence/ISSUE_2_ANALYTICS_ADDENDUM.md). Precedence: filed documents > formally approved company documents > frozen R1.0/R1.0B specifications > approved SA decisions > approved Issue #2 decisions > legacy discussions/fixtures/screenshots.

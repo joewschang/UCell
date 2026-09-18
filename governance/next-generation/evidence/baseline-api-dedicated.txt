@@ -1,0 +1,7 @@
+[Nest] 12560  - 2026/09/18 上午7:36:37    WARN [AnalyticsRefreshWorker] Management analytics refresh failed: ANALYTICS_REFRESH_FAILED
+
+Test Suites: 63 passed, 63 total
+Tests:       604 passed, 604 total
+Snapshots:   0 total
+Time:        46.045 s, estimated 80 s
+Ran all test suites.

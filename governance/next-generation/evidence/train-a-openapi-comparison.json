@@ -1,0 +1,9 @@
+{
+  "integrationBaseline": "0fe7bc2d2838f3d5d93b4f452dddaa68cf71bff0",
+  "existingOperationChanges": [],
+  "addedPaths": [
+    "/api/v1/member/explain/structured",
+    "/api/v1/admin/explain/reservoir"
+  ],
+  "operations": 159
+}

@@ -1,0 +1,42 @@
+[
+  {
+    "File": "catalog.ts",
+    "ContainsNul": false,
+    "SHA256": "F16578CF2B3CBCE55145DF708CDFF3CE52B7059E3DACD17E0C6C74395EAFA62D"
+  },
+  {
+    "File": "contracts.ts",
+    "ContainsNul": false,
+    "SHA256": "A164BA67FFB7DFFB0930EDB8F19E1917D48A95275A4592F318B0C5ED0A9C706B"
+  },
+  {
+    "File": "explain.ts",
+    "ContainsNul": false,
+    "SHA256": "5B53389D9E48695B7BC849FCEB65176D07DC8157BFBE2578ED834BF97BA13A6E"
+  },
+  {
+    "File": "knowledge.ts",
+    "ContainsNul": false,
+    "SHA256": "C3D3CC354F769C562F82CD5CCD289B66229176DB27F2A5279A0198BBC7F32798"
+  },
+  {
+    "File": "read-gateway.ts",
+    "ContainsNul": false,
+    "SHA256": "6A83B06106BC64306038F092197C9581714717294E67CCD8062C0B1CAA425F5F"
+  },
+  {
+    "File": "semantic.ts",
+    "ContainsNul": false,
+    "SHA256": "577064A73FF5249BF1069205B50F7BE3AE826D4636574922C4C89A618CBD3FBA"
+  },
+  {
+    "File": "structured-explain-source.ts",
+    "ContainsNul": false,
+    "SHA256": "74C1BE0F3EA4D4A8765408EDFE3B301F438BF9E4715BF0BB8CCF3A9976159E4C"
+  },
+  {
+    "File": "train-a.spec.ts",
+    "ContainsNul": false,
+    "SHA256": "47E8C66563774B5DB9557D81132759BBDF5E2E20B617089A740B78A0B2BA4263"
+  }
+]

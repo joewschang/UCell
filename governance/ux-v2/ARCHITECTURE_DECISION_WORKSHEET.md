@@ -1,5 +1,7 @@
 # Architecture decision worksheet — D1 / D2
 
+> 2026-09-18 implementation update: Issue #2 comments [5722342390](https://github.com/joewschang/UCell/issues/2#issuecomment-5722342390) and [5722354891](https://github.com/joewschang/UCell/issues/2#issuecomment-5722354891) approve D1 architecture and D2. Pending/STOP statements below record the original Phase 1 review and are superseded for those decisions. Only exact Company economics profile binding remains closed; see [pending mapping](../next-generation/COMPANY_BOOTSTRAP_PROFILE_V1_PENDING_MAPPING.md). Train A and non-monetary Train B are authorized. This does not authorize Stage or Production deployment.
+
 Concrete candidate: [bootstrap Sponsor sequence review](BOOTSTRAP_SPONSOR_SEQUENCE_REVIEW.md) shows #2/#3 consuming #1's actual sequences 1/2 and a lawful founding sequence 3–6. It remains pending confirmation and distinguishes referral registration order from later placement order.
 
 Source-level review: [code impact and acceptance vectors](DECISION_CODE_IMPACT_REVIEW.md) explains plan/cap/Carry dependencies, company Sponsor direct-count effects and the conditional 24-order placement table. The example below assumes no prior Sponsor referrals; company bootstrap Sponsor ancestry is itself pending.

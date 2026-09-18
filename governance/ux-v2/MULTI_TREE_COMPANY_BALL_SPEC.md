@@ -1,5 +1,7 @@
 # Multi-Tree / Company Ball domain specification
 
+> 2026-09-18 implementation update: Issue #2 comments [5722342390](https://github.com/joewschang/UCell/issues/2#issuecomment-5722342390) and [5722354891](https://github.com/joewschang/UCell/issues/2#issuecomment-5722354891) approve D1 architecture and D2. Pending/STOP statements below record the original Phase 1 review and are superseded for those decisions. Only exact Company economics profile binding remains closed; see [pending mapping](../next-generation/COMPANY_BOOTSTRAP_PROFILE_V1_PENDING_MAPPING.md). Train A and non-monetary Train B are authorized. This does not authorize Stage or Production deployment.
+
 Status: PHASE_1_SPECIFICATION; implementation gated by PO/SA Architecture Review. Baseline: `903b8e96b9419e4dad2625777b7ec8ff1053c433`, branch `integration/member-backend-mvp`. Production Promotion: BLOCKED.
 
 ## 1. Authority and invariants

@@ -15,10 +15,17 @@ beforeEach(()=>{
   vi.mocked(get).mockResolvedValue({data:[]});
 });
 
+async function waitForEvidence(tree:ReturnType<typeof create>){
+  await vi.waitFor(async()=>{
+    await act(async()=>{await Promise.resolve();});
+    expect(JSON.stringify(tree.toJSON())).not.toContain('資料載入中');
+  });
+}
 async function render(){
   const client=new QueryClient({defaultOptions:{queries:{retry:false}}});
   let tree:ReturnType<typeof create>;
-  await act(async()=>{tree=create(<QueryClientProvider client={client}><UatPage/></QueryClientProvider>);await new Promise(resolve=>setTimeout(resolve,20));});
+  await act(async()=>{tree=create(<QueryClientProvider client={client}><UatPage/></QueryClientProvider>);});
+  await waitForEvidence(tree!);
   return tree!;
 }
 
@@ -46,7 +53,8 @@ it('shows empty, loading, and error feedback for the governed evidence query',as
   const client=new QueryClient({defaultOptions:{queries:{retry:false}}});let tree:ReturnType<typeof create>;
   act(()=>{tree=create(<QueryClientProvider client={client}><UatPage/></QueryClientProvider>);});
   expect(JSON.stringify(tree!.toJSON())).toContain('資料載入中');
-  await act(async()=>{resolveRequest({data:[]});await new Promise(resolve=>setTimeout(resolve,20));});expect(JSON.stringify(tree!.toJSON())).toContain('目前沒有符合條件的資料');act(()=>tree!.unmount());
+  await act(async()=>{resolveRequest({data:[]});});
+  await waitForEvidence(tree!);expect(JSON.stringify(tree!.toJSON())).toContain('目前沒有符合條件的資料');act(()=>tree!.unmount());
 
   vi.mocked(get).mockRejectedValue(new Error('evidence service unavailable'));tree=await render();expect(JSON.stringify(tree.toJSON())).toContain('evidence service unavailable');act(()=>tree.unmount());
 });
