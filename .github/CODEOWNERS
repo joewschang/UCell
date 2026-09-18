@@ -9,3 +9,4 @@
 /backend/openapi.generated.json @joewschang
 /backend/apps/api/src/ @joewschang
 /.gitattributes @joewschang
+/.github/workflows/ci.yml @joewschang
