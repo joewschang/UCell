@@ -58,6 +58,7 @@
     "test:member:binary:settlement": "node scripts/member-binary-settlement-db-test.mjs",
     "test:uat:evidence": "node scripts/uat-evidence-db-test.mjs",
     "test:shipment:persistence:isolated": "node scripts/shipment-persistence-db-isolated.mjs",
-    "test:provider:workload": "node scripts/provider-worker-workload-isolated.mjs"
+    "test:provider:workload": "node scripts/provider-worker-workload-isolated.mjs",
+    "provider:enablement:preflight": "ts-node scripts/provider-enablement-preflight.ts"
   }
 }

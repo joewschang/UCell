@@ -236,3 +236,14 @@ Business logic changes: **NONE**. No signature algorithm, provider status mappin
 - The workload uses provider-neutral Inbox lifecycle only and creates no provider acknowledgement, canonical payment/invoice/logistics effect, outbox event or monetary mutation.
 
 Business logic changes: **NONE**.
+
+## Provider enablement fail-closed checkpoint (2026-09-18)
+
+- Added a deployment/runtime preflight that prevents `UCELL_PROVIDER_WORKER_ENABLED=true` from activating a provider without an exact versioned enablement manifest.
+- Every enabled handler must match one manifest entry by domain, provider and connection ID. Extra, missing and duplicate registrations fail closed before any Inbox row is claimed.
+- UAT/Production require an effective Provider Connection Version, 64-character config hash, versioned Azure Key Vault secret URIs, official provider-vector `PASS`, certification evidence reference, operational approval and UAT approval reference.
+- Raw credentials are rejected. LOCAL and CONNECTED_DEV provider processing remains disabled even when the enable flag is set.
+- Missing manifest evidence returns `PROVIDER_ENABLEMENT_MANIFEST_REQUIRED`; this is an intentional deployment failure, not a provider certification claim.
+- Verification: 13 focused tests PASS; complete Backend API 682 tests / 70 suites PASS; 154 isolated DB assertions PASS; full Backend workspace build PASS; source/security/TODO preflights PASS.
+- No schema migration and no R1.0B monetary or authorization change.
+- Official adapters, credentials, provider sandbox/UAT and Production enablement remain `OPERATIONAL_CREDENTIAL_PENDING` / BLOCKED.

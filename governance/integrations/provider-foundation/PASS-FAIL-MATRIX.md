@@ -97,3 +97,7 @@
 | Complete Backend API after certification harness | PASS | 639 tests / 66 suites; disposable PostgreSQL cleanup PASS |
 | Provider worker Connected DEV workload | PASS | 200 events, 8 workers, 220 finalized including 20 retries; zero stale/failure/backlog in disposable DB |
 | Provider Production workload | BLOCKED | Stage/UAT infrastructure, official adapters and governed production-like evidence remain required |
+| Provider enablement deployment/runtime gate | PASS | Exact handler-manifest binding; effective version, Key Vault URI, official certification, approval and UAT references required before claim |
+| Provider enablement focused regression | PASS | 13 executable tests cover production evidence, engineering-only rejection, expiry, environment mismatch, raw-secret rejection, duplicate and registry mismatch |
+| Complete Backend API after enablement gate | PASS | 682 tests / 70 suites; 154 isolated DB assertions; disposable database cleanup PASS |
+| Official provider UAT and Production activation | BLOCKED | OPERATIONAL_CREDENTIAL_PENDING; no provider has official vectors, credentials and signed UAT approval evidence |

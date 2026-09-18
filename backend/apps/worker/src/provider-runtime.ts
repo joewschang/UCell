@@ -6,6 +6,7 @@ import {
   type ProviderWebhookWorkerLease,
   type ProviderWebhookWorkerRunResult,
 } from '@ucell/database';
+import { loadProviderEnablementManifest, validateProviderEnablementManifest, type ProviderDeploymentEnvironment } from './provider-enablement';
 
 export type ProviderHandlerRegistration = Readonly<{
   domain: ProviderWebhookWorkerLease['domain'];
@@ -40,10 +41,17 @@ export async function pollProviderWebhooks(
   const config = providerRuntimeConfig(environment);
   if (!config.enabled) return Object.freeze({ enabled: false, result: null });
   const resolve = handlerResolver(registrations);
+  const deploymentEnvironment=providerDeploymentEnvironment(environment);
+  validateProviderEnablementManifest(loadProviderEnablementManifest(environment),deploymentEnvironment,now,registrations);
   const result = await runProviderWebhookBatch(new ProviderWebhookWorkerLeaseService(db), resolve, config, now);
   return Object.freeze({ enabled: true, result });
 }
 
+export function providerDeploymentEnvironment(environment:NodeJS.ProcessEnv):ProviderDeploymentEnvironment{
+  const value=environment.UCELL_DEPLOYMENT_ENVIRONMENT;
+  if(!value||!['LOCAL','CONNECTED_DEV','UAT','PRODUCTION'].includes(value))throw new Error('PROVIDER_DEPLOYMENT_ENVIRONMENT_REQUIRED');
+  return value as ProviderDeploymentEnvironment;
+}
 export function providerRuntimeConfig(environment: NodeJS.ProcessEnv): ProviderRuntimeConfig {
   const enabled = parseBoolean(environment.UCELL_PROVIDER_WORKER_ENABLED, false);
   if (!enabled) return Object.freeze({ enabled:false,leaseOwner:'disabled',leaseMs:120_000,batchSize:20,maxAttempts:3,retryBackoffSeconds:[30,120] });

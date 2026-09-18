@@ -70,3 +70,7 @@ Legend: **FOUNDATION** = canonical code exists; **CONTRACT** = interface only; *
 - ECPay payment, invoice and logistics remain separate adapters even if one vendor supplies all three.
 - No provider may directly create Consumption/Volume/Bonus facts.
 - Production remains blocked until formal credentials, security E2E, reconciliation, UAT and approval evidence pass.
+
+## Runtime enablement gate
+
+`UCELL_PROVIDER_WORKER_ENABLED` defaults to `false`. An enabled UAT or Production worker also requires `UCELL_PROVIDER_ENABLEMENT_MANIFEST_PATH`. The referenced manifest contains references only and must bind every runtime handler exactly to an effective Provider Connection Version, versioned Azure Key Vault credential and webhook-verification secret URIs, official provider-vector PASS evidence, operational approval and UAT approval. Missing, expired, engineering-only, mismatched or duplicate evidence fails before Inbox claim. This gate does not certify a provider; formal UAT remains blocked until the external evidence exists.

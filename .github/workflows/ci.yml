@@ -41,7 +41,9 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Offline gates
         working-directory: backend
-        run: bash scripts/ci-gate.sh
+        run: |
+          bash scripts/ci-gate.sh
+          pnpm provider:enablement:preflight
       - name: Prisma validate/generate/migrate
         working-directory: backend
         run: |
