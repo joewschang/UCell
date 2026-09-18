@@ -17,9 +17,11 @@ vi.mock('../../lib/api',async importOriginal=>({...await importOriginal<typeof i
 const health={data:{generatedAt:'2026-09-19T00:00:00Z',state:'CRITICAL',total:9,dueBacklog:3,expiredLeases:1,manualReview:2,oldestDueReceivedAt:'2026-09-18T22:00:00Z',counts:{byDomain:{PAYMENT:9}}}};
 const item={providerWebhookInboxId:'inbox-1',domain:'PAYMENT',provider:'ACME',connectionId:'primary',status:'MANUAL_REVIEW',attemptCount:2,lastErrorCode:'TEMPORARY',receivedAt:'2026-09-18T22:00:00Z',nextAttemptAt:null,correlationId:'correlation-1',due:true,leaseExpired:false};
 const backlog={data:{generatedAt:'2026-09-19T00:00:00Z',limit:50,truncated:false,items:[item]}};
+const reconciliationHealth={data:{generatedAt:'2026-09-19T00:00:00Z',state:'DEGRADED',total:4,exceptions:1,oldestExceptionAt:'2026-09-18T20:00:00Z',counts:{byDomain:{PAYMENT:4},byStatus:{MATCHED:3,DISCREPANCY:1}}}};
+const reconciliationQueue={data:{generatedAt:'2026-09-19T00:00:00Z',limit:50,truncated:false,items:[{providerReconciliationRunId:'recon-1',domain:'PAYMENT',provider:'ACME',connectionId:'primary',runKey:'daily-1',periodStart:'2026-09-18T00:00:00Z',periodEnd:'2026-09-19T00:00:00Z',status:'DISCREPANCY',providerRecordCount:3,internalRecordCount:2,discrepancyCount:1,verificationConfigVersion:'v1',startedAt:'2026-09-19T00:01:00Z',completedAt:'2026-09-19T00:02:00Z',correlationId:'recon-correlation'}]}};
 
 async function render(){
- vi.mocked(get).mockImplementation(async path=>path.endsWith('/health')?health:path.endsWith('/inbox-1')?{data:{...item,providerEventIdentity:'evt-1',verifiedAt:'2026-09-18T22:01:00Z',processedAt:null,leaseExpiresAt:null,signatureTimestamp:'2026-09-18T22:00:00Z',audit:[{auditEventId:'audit-1',actorType:'ADMIN',actorId:null,actorReference:'entra-subject',action:'PROVIDER_WEBHOOK_MANUAL_RETRY_REQUESTED',reasonCode:'MANUAL_RETRY',reason:'provider incident reviewed',requestId:'request',correlationId:'correlation-1',occurredAt:'2026-09-18T22:02:00Z'}],auditTruncated:false}}:backlog as never);
+ vi.mocked(get).mockImplementation(async path=>path.includes('/reconciliation/health')?reconciliationHealth:path.includes('/reconciliation/exceptions')?reconciliationQueue:path.endsWith('/health')?health:path.endsWith('/inbox-1')?{data:{...item,providerEventIdentity:'evt-1',verifiedAt:'2026-09-18T22:01:00Z',processedAt:null,leaseExpiresAt:null,signatureTimestamp:'2026-09-18T22:00:00Z',audit:[{auditEventId:'audit-1',actorType:'ADMIN',actorId:null,actorReference:'entra-subject',action:'PROVIDER_WEBHOOK_MANUAL_RETRY_REQUESTED',reasonCode:'MANUAL_RETRY',reason:'provider incident reviewed',requestId:'request',correlationId:'correlation-1',occurredAt:'2026-09-18T22:02:00Z'}],auditTruncated:false}}:backlog as never);
  const client=new QueryClient({defaultOptions:{queries:{retry:false},mutations:{retry:false}}});let tree!:ReactTestRenderer;
  await act(async()=>{tree=create(<QueryClientProvider client={client}><ProviderOperationsPage/></QueryClientProvider>);await new Promise(resolve=>setTimeout(resolve,100));});
  return tree;
@@ -29,7 +31,7 @@ beforeEach(()=>{role='SUPER_ADMIN';vi.clearAllMocks()});
 
 it('renders safe provider fields and exposes governed retry only for super admin',async()=>{
  const tree=await render(),output=JSON.stringify(tree.toJSON());
- expect(output).toContain('Provider Webhook 營運');expect(output).toContain('CRITICAL');expect(output).toContain('ACME');expect(output).toContain('TEMPORARY');expect(output).toContain('人工重試');expect(output).not.toMatch(/payloadHash|verificationEvidenceHash|safeEvidenceRef|leaseOwner/);
+ expect(output).toContain('Provider Webhook 營運');expect(output).toContain('CRITICAL');expect(output).toContain('Provider 對帳健康狀態');expect(output).toContain('DISCREPANCY');expect(output).toContain('recon-correlation');expect(output).toContain('ACME');expect(output).toContain('TEMPORARY');expect(output).toContain('人工重試');expect(output).not.toMatch(/payloadHash|verificationEvidenceHash|safeEvidenceRef|leaseOwner/);
  act(()=>tree.unmount());
  role='COMPLIANCE_AUDIT';const readOnly=await render();expect(JSON.stringify(readOnly.toJSON())).not.toContain('人工重試');act(()=>readOnly.unmount());
 });

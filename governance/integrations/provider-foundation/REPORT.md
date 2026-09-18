@@ -208,3 +208,12 @@ Business logic changes: **NONE**. The isolation repair changes test execution on
 - Shared, Worker and API builds plus OpenAPI export/preflight, schema, migration, source, security and TODO gates PASS.
 
 Business logic changes: **NONE**. Provider-specific reconciliation policy, provider mapping and operational credentials remain blocked/pending.
+
+## Admin reconciliation console checkpoint
+
+- Connected the authoritative reconciliation health and exception APIs to the existing Admin Provider Operations Console.
+- Added health state, total/exception/discrepancy/failure metrics and a shared searchable DataGrid for bounded exception rows.
+- The console displays provider/internal/discrepancy record counts, period, verification config version and correlation only; it does not infer monetary variance or expose stored provider evidence.
+- Admin focused regression: 6 PASS. Complete Admin regression: 68 PASS in 22 files. TypeScript and production build PASS.
+
+Business logic changes: **NONE**.

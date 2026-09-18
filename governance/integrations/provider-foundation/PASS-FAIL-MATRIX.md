@@ -90,3 +90,5 @@
 | Provider reconciliation health API | PASS | Authoritative persisted status/domain counts and oldest exception age; RBAC protected |
 | Provider reconciliation exception queue | PASS | Bounded safe fields only; evidence, batch refs, connection versions and secrets excluded |
 | Complete Backend API after reconciliation read model | PASS | 630 tests / 65 suites; disposable PostgreSQL cleanup PASS |
+| Admin reconciliation console | PASS | Connected health metrics and bounded exception DataGrid; no monetary inference or evidence leakage |
+| Admin regression after reconciliation console | PASS | 68 tests / 22 files; typecheck and production build PASS |
