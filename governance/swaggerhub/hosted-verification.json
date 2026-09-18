@@ -1,0 +1,40 @@
+{
+  "status": "HOSTED_VERIFICATION_PASS_PUBLICATION_NOT_RUN",
+  "implementationCommit": "f1e0fc10c216c3547a1a1b30aeaf1cad9f1e9a3e",
+  "pullRequest": 4,
+  "runId": 35329872016,
+  "runUrl": "https://github.com/joewschang/UCell/actions/runs/35329872016",
+  "event": "pull_request",
+  "artifactId": 10540587335,
+  "ciGeneratedMatchesLocalBytes": true,
+  "gates": {
+    "status": "PASS",
+    "commit": "314ba535b059f38192430ed91a86b79d4f84be7e",
+    "executionContext": "github-actions",
+    "gates": {
+      "generated": "PASS",
+      "secretScan": "PASS",
+      "validation": "PASS",
+      "breakingDiff": "PASS",
+      "publisherTests": "PASS",
+      "contractTests": "PASS",
+      "securityTests": "PASS"
+    },
+    "baselineSha256": "4ca2023863cdc12dd767c0e63cf836394d2d12899681e33c7fd635fb26ef674c",
+    "generated": {
+      "version": "1.1.0",
+      "pathCount": 154,
+      "operationCount": 167,
+      "schemaCount": 75,
+      "artifactSha256": "2800e9779fcaeeea8be5fc7ef781c0c95ebb663219055589496272e0a1de5aef",
+      "canonicalSha256": "ca2e6a9eb83005a6f2a1c951d7b293d6b8f5af4ada534fc858bb72b02f09d4f0"
+    },
+    "comparison": {
+      "normalization": "case-insensitive identical header deduplication; inferred missing URI placeholder declarations",
+      "baselineSha256": "cb4a8081aba590ebdfaba932508b83f04118f7ed3207db67952e8406bf5f0ff1",
+      "candidateSha256": "158f973b3ce280282ff2e6658ecf25e5ef26212e63cce368881834c795cc7d48"
+    }
+  },
+  "published": false,
+  "note": "PR CI verifies the merge commit, not the branch head. Publication job was skipped by its trusted-branch boundary."
+}

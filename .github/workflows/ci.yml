@@ -55,10 +55,13 @@ jobs:
         run: pnpm -r build
       - name: DB golden
         working-directory: backend
-        run: pnpm exec ts-node scripts/db-golden-e2e.ts
+        run: pnpm db:golden
       - name: Tests
         working-directory: backend
-        run: pnpm test
+        run: |
+          pnpm -r --filter '!@ucell/api' test
+          pnpm test:api:isolated
+          pnpm test:todo:gate
   admin:
     runs-on: ubuntu-latest
     steps:

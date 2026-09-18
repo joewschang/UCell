@@ -1,0 +1,12 @@
+# Contract/publication governance requires repository-owner review.
+/.github/workflows/swaggerhub-sync.yml @joewschang
+/.github/workflows/rc-promotion.yml @joewschang
+/.github/CODEOWNERS @joewschang
+/governance/swaggerhub/ @joewschang
+/backend/scripts/openapi-*.mjs @joewschang
+/backend/apps/api/src/openapi-export.ts @joewschang
+/backend/release/R6_RELEASE_GATE.json @joewschang
+/backend/openapi.generated.json @joewschang
+/backend/apps/api/src/ @joewschang
+/.gitattributes @joewschang
+/.github/workflows/ci.yml @joewschang

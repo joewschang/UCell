@@ -1,0 +1,52 @@
+{
+  "status": "LOCAL_VERIFICATION_PASS_CI_ACTIVATION_PENDING",
+  "sourceBaseCommit": "26fa675da0132646484b4a8806a8d5ab55e0e6f6",
+  "workingTreeIncludesUncommittedImplementation": true,
+  "generated": {
+    "version": "1.1.0",
+    "pathCount": 154,
+    "operationCount": 167,
+    "schemaCount": 75,
+    "artifactSha256": "2800e9779fcaeeea8be5fc7ef781c0c95ebb663219055589496272e0a1de5aef",
+    "canonicalSha256": "ca2e6a9eb83005a6f2a1c951d7b293d6b8f5af4ada534fc858bb72b02f09d4f0"
+  },
+  "baseline": {
+    "version": "1.0.0",
+    "pathCount": 147,
+    "operationCount": 159,
+    "schemaCount": 71,
+    "artifactSha256": "4ca2023863cdc12dd767c0e63cf836394d2d12899681e33c7fd635fb26ef674c",
+    "canonicalSha256": "e69c5678c01fe98e1878e7afc6eac6945caf3194bb19778c20d177e498a39a93"
+  },
+  "lastVerifiedSwaggerHub": {
+    "version": "1.0.0",
+    "private": true,
+    "canonicalSha256": "e69c5678c01fe98e1878e7afc6eac6945caf3194bb19778c20d177e498a39a93",
+    "rawResponseSha256": null,
+    "note": "Historical manual import verified semantic equality; raw Registry response bytes were not retained. CI captures both raw and canonical published hashes."
+  },
+  "candidateVersion": "1.1.0",
+  "gates": {
+    "generated": "PASS",
+    "secretScan": "PASS",
+    "validation": "PASS",
+    "breakingDiff": "PASS",
+    "publisherTests": "PASS",
+    "contractTests": "PASS",
+    "securityTests": "PASS"
+  },
+  "comparison": {
+    "normalization": "case-insensitive identical header deduplication; inferred missing URI placeholder declarations",
+    "baselineSha256": "cb4a8081aba590ebdfaba932508b83f04118f7ed3207db67952e8406bf5f0ff1",
+    "candidateSha256": "158f973b3ce280282ff2e6658ecf25e5ef26212e63cce368881834c795cc7d48"
+  },
+  "tests": {
+    "publisher": 24,
+    "apiSuites": 73,
+    "apiTests": 734,
+    "dbAssertions": 154
+  },
+  "hostedCiExecuted": false,
+  "cloudChangedInThisTask": false,
+  "stageOrProductionDeployed": false
+}

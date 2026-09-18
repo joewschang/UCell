@@ -1,6 +1,6 @@
 import { Roles } from '../auth/roles.decorator';
 import { Body, Controller, Headers, Param, Post, Req, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
 import { IdempotencyGuard } from '../../common/guards/idempotency.guard';
 import { CreateReturnDto } from './dto/create-return.dto';
 import { ReturnService } from './return.service';
@@ -25,6 +25,7 @@ export class ReturnController {
   }
 
   @Post(':returnCaseId/process-reversal')
+  @ApiParam({name:'orderId',type:String,required:true})
   @ApiOperation({operationId:'adminProcessReturnReversal',summary:'處理GPV反向事件與獎金追回'})
   async reverse(@Param('returnCaseId') id:string){
     return {data:await this.reversal.processReturn(id)};
