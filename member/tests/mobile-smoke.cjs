@@ -31,7 +31,7 @@ const assert=require('node:assert/strict');
   }
   await page.goto('http://127.0.0.1:5174/organization');
   await page.getByRole('tab',{name:'二元組織'}).click();
-  await page.getByText('左區人數').waitFor();
+  await page.getByText('左區球數').waitFor();
   await page.goto('http://127.0.0.1:5174/orders');
   await page.getByText('此資格目前沒有訂單').waitFor();
   await page.getByLabel('目前資格').selectOption('q1');
@@ -39,7 +39,7 @@ const assert=require('node:assert/strict');
   await page.getByText('配送：未出貨').waitFor();
   await page.goto('http://127.0.0.1:5174/bonuses');
   await page.getByLabel('查詢月份').fill('2026-08');
-  await page.getByText('推薦獎金',{exact:true}).waitFor();
+  await page.getByRole('heading',{name:'推薦獎金',exact:true}).waitFor();
   assert.equal(await page.getByText('NT$ 0',{exact:true}).count(),0);
   await page.goto('http://127.0.0.1:5174/shop');
   await page.getByRole('button',{name:'加入示範購物車'}).first().click();

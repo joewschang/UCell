@@ -11950,25 +11950,49 @@
         "parameters": [
           {
             "name": "status",
-            "required": true,
+            "required": false,
             "in": "query",
+            "description": "Optional subscription lifecycle status.",
             "schema": {
+              "type": "string",
+              "enum": [
+                "PENDING",
+                "ACTIVE",
+                "SUSPENDED",
+                "CANCELLED",
+                "COMPLETED"
+              ]
+            }
+          },
+          {
+            "name": "ballNo",
+            "required": false,
+            "in": "query",
+            "description": "Exact immutable Ball Number for the operator-facing filter. UUIDs are not accepted by this field.",
+            "schema": {
+              "maxLength": 59,
+              "pattern": "^[A-Z][A-Z0-9_-]{0,39}(?:X\\d{6}|\\d{6,19})$",
               "type": "string"
             }
           },
           {
             "name": "qualificationId",
-            "required": true,
+            "required": false,
             "in": "query",
+            "description": "Legacy technical Qualification filter retained only for existing integrations. New operator-facing clients must use ballNo.",
             "schema": {
+              "format": "uuid",
               "type": "string"
             }
           },
           {
             "name": "take",
-            "required": true,
+            "required": false,
             "in": "query",
+            "description": "Maximum rows, 1 through 200. Defaults to 100.",
             "schema": {
+              "minimum": 1,
+              "maximum": 200,
               "type": "string"
             }
           }
@@ -11983,7 +12007,7 @@
             "adminBearer": []
           }
         ],
-        "summary": "訂閱清單與Qualification/status篩選；只讀既存Core資料，不建立營運日曆",
+        "summary": "訂閱清單與 Ball Number/status 篩選；只讀既存Core資料，不建立營運日曆",
         "tags": [
           "Admin - Subscription"
         ]

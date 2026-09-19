@@ -1,5 +1,5 @@
 import React from 'react';
-import {MemoryRouter,Route,Routes} from 'react-router-dom';
+import {MemoryRouter,Route,Routes,useNavigate} from 'react-router-dom';
 import {act,create} from 'react-test-renderer';
 import {beforeEach,expect,it,vi} from 'vitest';
 import {ApiError,get,command} from '../../lib/api';
@@ -15,6 +15,13 @@ const id='10000000-0000-4000-8000-000000000001';
 const result={binaryTreeId:id,treeCode:'TREE-A',treeName:'樹 A',status:'ACTIVE',topologyVersion:2,positions:Array.from({length:7},(_,i)=>({positionNo:i+1,binaryPositionNo:String(i+1),path:i?'L'.repeat(i):'',ballNo:i<3?'TREE-AX00000'+(i+1):null,parentPositionNo:i?Math.floor((i+1)/2):null,side:i%2?'LEFT':'RIGHT',qualificationId:i<3?'company-'+i:null,ownerType:i<3?'COMPANY':null,activeLabel:i<3?'Always Active (Company Rule)':null,companyProfile:i<3?{status:'AVAILABLE',planCode:'LEADER',profileVersion:'COMPANY_BOOTSTRAP_PROFILE_V1'}:null,descendantBalls:0,distinctMemberPersons:0,newBallsInPeriod:0}))};
 beforeEach(()=>{role='COMPLIANCE_AUDIT';vi.mocked(get).mockReset().mockResolvedValue({data:{status:'PARTIAL',result}});vi.mocked(command).mockReset();});
 async function render(){let view:ReturnType<typeof create>;await act(async()=>{view=create(<MemoryRouter initialEntries={['/admin/organization/trees/'+id]}><Routes><Route path="/admin/organization/trees/:id" element={<BinaryTreesPage/>}/></Routes></MemoryRouter>)});return view!;}
+function deferred(){let resolve!: (value:unknown|PromiseLike<unknown>)=>void;return {promise:new Promise<unknown>(r=>{resolve=r}),resolve};}
+function detail(treeId:string,treeCode:string,treeName:string){return {data:{status:'PARTIAL',result:{...result,binaryTreeId:treeId,treeCode,treeName}}};}
+function TreeRouteSwitcher(){
+ const navigate=useNavigate(),otherId='10000000-0000-4000-8000-000000000002';
+ return <><button type="button" onClick={()=>navigate('/admin/organization/trees/'+id)}>切換至 A</button><button type="button" onClick={()=>navigate('/admin/organization/trees/'+otherId)}>切換至 B</button><Routes><Route path="/admin/organization/trees/:id" element={<BinaryTreesPage/>}/></Routes></>;
+}
+async function renderSwitcher(){let view:ReturnType<typeof create>;await act(async()=>{view=create(<MemoryRouter initialEntries={['/admin/organization/trees/'+id]}><TreeRouteSwitcher/></MemoryRouter>);await Promise.resolve();});return view!;}
 it('audit readers see company status and empty positions without write controls',async()=>{
  const view=await render(),output=JSON.stringify(view.toJSON());
  expect(output).toContain('Always Active (Company Rule)');expect(output).toContain('TREE-AX000001');expect(output).toContain('尚未占用');expect(output).toContain('Reservoir Center');expect(output).toContain('領袖 LEADER');expect(output).toContain('AVAILABLE');expect(output).not.toContain('company-0');
@@ -204,5 +211,43 @@ it('clears the stale node page when snapshot pagination receives 409',async()=>{
  await act(async()=>view.root.findAllByType('button').find(b=>b.children.join('')==='下一頁節點')!.props.onClick());
  const output=JSON.stringify(view.toJSON());
  expect(output).not.toContain('下一頁節點');expect(output).toContain('已清除預檢與節點快照');expect(output).toContain('重新載入、重新檢視選定位置');
+ act(()=>view.unmount());
+});
+
+it('suppresses delayed A → B → A tree-detail responses after the latest route context wins',async()=>{
+ const requests:Array<{path:string;resolve:(value:unknown|PromiseLike<unknown>)=>void}>=[];
+ vi.mocked(get).mockImplementation(((path:string)=>new Promise<unknown>(resolve=>{requests.push({path,resolve});})) as typeof get);
+ const view=await renderSwitcher();
+ expect(requests).toHaveLength(1);
+ const button=(label:string)=>view.root.findAllByType('button').find(node=>node.children.join('')===label)!;
+ await act(async()=>{button('切換至 B').props.onClick();await Promise.resolve();});
+ await act(async()=>{button('切換至 A').props.onClick();await Promise.resolve();});
+ expect(requests).toHaveLength(3);
+
+ await act(async()=>{requests[1].resolve(detail('10000000-0000-4000-8000-000000000002','TREE-B-STALE','樹 B 舊回應'));await Promise.resolve();});
+ await act(async()=>{requests[0].resolve(detail(id,'TREE-A-STALE','樹 A 舊回應'));await Promise.resolve();});
+ expect(JSON.stringify(view.toJSON())).not.toContain('舊回應');
+
+ await act(async()=>{requests[2].resolve(detail(id,'TREE-A-FRESH','樹 A 最新回應'));await Promise.resolve();});
+ const output=JSON.stringify(view.toJSON());
+ expect(output).toContain('樹 A 最新回應');expect(output).not.toContain('樹 B 舊回應');expect(output).not.toContain('樹 A 舊回應');
+ act(()=>view.unmount());
+});
+
+it('suppresses an older concurrent node-page response after a newer node request wins',async()=>{
+ const first=deferred(),second=deferred();let nodeRequests=0;
+ vi.mocked(get).mockImplementation(((path:string)=>path.includes('/nodes')
+  ?(nodeRequests++===0?first.promise:second.promise)
+  :Promise.resolve({data:{status:'PARTIAL',result}})) as typeof get);
+ const view=await render();
+ const load=view.root.findAllByType('button').find(node=>node.children.join('')==='載入節點')!;
+ await act(async()=>{load.props.onClick();load.props.onClick();await Promise.resolve();});
+ expect(nodeRequests).toBe(2);
+ const page=(ballNo:string)=>({data:{status:'AVAILABLE',total:1,nextCursor:null,items:[{qualificationId:ballNo,ballNo,binaryPositionNo:'8',path:'LLL',parentQualificationId:null,side:'LEFT',depth:1,ownerType:'MEMBER',activeLabel:'ACTIVE'}]}});
+ await act(async()=>{second.resolve(page('TREE-A-CURRENT'));await Promise.resolve();});
+ expect(JSON.stringify(view.toJSON())).toContain('TREE-A-CURRENT');
+ await act(async()=>{first.resolve(page('TREE-A-STALE'));await Promise.resolve();});
+ const output=JSON.stringify(view.toJSON());
+ expect(output).toContain('TREE-A-CURRENT');expect(output).not.toContain('TREE-A-STALE');
  act(()=>view.unmount());
 });

@@ -16,6 +16,13 @@ if(!doc.paths?.['/api/v1/health']) failures.push('/api/v1/health missing');
 if(!Object.keys(doc.paths??{}).some(x=>x.includes('/admin/payouts'))) failures.push('payout endpoints missing');
 if(!Object.keys(doc.paths??{}).some(x=>x.includes('/admin/settlement-adjustments'))) failures.push('adjustment endpoints missing');
 if(!doc.components?.securitySchemes?.memberBearer)failures.push('Member opaque session security scheme missing');
+const subscriptionList=doc.paths?.['/api/v1/admin/subscriptions']?.get;
+const subscriptionParameter=name=>subscriptionList?.parameters?.find(parameter=>parameter.in==='query'&&parameter.name===name);
+const ballNoParameter=subscriptionParameter('ballNo');
+if(!subscriptionList)failures.push('Admin subscription list operation missing');
+if(!ballNoParameter||ballNoParameter.required||ballNoParameter.schema?.maxLength!==59||ballNoParameter.schema?.pattern!=='^[A-Z][A-Z0-9_-]{0,39}(?:X\\d{6}|\\d{6,19})$')failures.push('Admin subscription Ball Number query contract missing or invalid');
+const legacyQualificationId=subscriptionParameter('qualificationId');
+if(!legacyQualificationId||legacyQualificationId.required||legacyQualificationId.schema?.format!=='uuid')failures.push('Admin subscription legacy Qualification query compatibility missing');
 const memberRoutes={me:'get',qualifications:'get','context/qualification':'post',dashboard:'get','organization/sponsor':'get','organization/binary':'get',referrals:'get',performance:'get',bonuses:'get','bonuses/ledger':'get','repurchase/status':'get',products:'get',orders:'get','orders/{id}':'get',notifications:'get','notifications/{id}/read':'patch',profile:'patch'};
 for(const [route,method] of Object.entries(memberRoutes)){
  const operation=doc.paths?.['/api/v1/member/'+route]?.[method];

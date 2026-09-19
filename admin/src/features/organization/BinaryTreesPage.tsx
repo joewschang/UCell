@@ -236,7 +236,7 @@ export function BinaryTreesPage(){
  }
 
  async function loadNodes(after?:string,expandParent?:string){
-  const target=id,serial=requestSerial.current;
+  const target=id,serial=++requestSerial.current;
   const snapshotToken=after||expandParent?nodes?.snapshotToken:undefined;
   setBusy(true);setError(null);
   try{

@@ -4,6 +4,7 @@ import { randomUUID } from 'crypto';
 import { AuditService } from '../../common/audit/audit.service';
 import { IdempotencyService } from '../../common/idempotency/idempotency.service';
 import { CreateSubscriptionDto } from './dto/create-subscription.dto';
+import { ballNoPattern, subscriptionStatuses } from './dto/list-subscriptions-query.dto';
 import { SubscriptionCalendarService } from './subscription-calendar.service';
 
 @Injectable()
@@ -18,11 +19,14 @@ export class SubscriptionService {
   async listPlans(){
     return this.prisma.subscriptionPlan.findMany({where:{isActive:true},orderBy:{durationMonths:'asc'}});
   }
-  async list(input:{status?:string;qualificationId?:string;take?:number}={}){
-    if(input.status&&!['PENDING','ACTIVE','SUSPENDED','CANCELLED','COMPLETED'].includes(input.status))throw new UnprocessableEntityException({code:'INVALID_SUBSCRIPTION_STATUS'});
-    if(input.qualificationId&&!/^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(input.qualificationId))throw new UnprocessableEntityException({code:'INVALID_QUALIFICATION_ID'});
+  async list(input:{status?:string;ballNo?:string;qualificationId?:string;take?:number}={}){
+    const status=input.status?.trim(),ballNo=input.ballNo?.trim(),qualificationId=input.qualificationId?.trim();
+    if(input.status!==undefined&&(!status||!subscriptionStatuses.includes(status as typeof subscriptionStatuses[number])))throw new UnprocessableEntityException({code:'INVALID_SUBSCRIPTION_STATUS'});
+    if(input.ballNo!==undefined&&(!ballNo||!ballNoPattern.test(ballNo)))throw new UnprocessableEntityException({code:'INVALID_BALL_NO'});
+    if(input.qualificationId!==undefined&&(!qualificationId||!/^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(qualificationId)))throw new UnprocessableEntityException({code:'INVALID_QUALIFICATION_ID'});
+    if(ballNo&&qualificationId)throw new UnprocessableEntityException({code:'SUBSCRIPTION_FILTER_AMBIGUOUS'});
     if(input.take!==undefined&&(!Number.isInteger(input.take)||input.take<1))throw new UnprocessableEntityException({code:'INVALID_PAGE_LIMIT'});
-    return this.prisma.subscription.findMany({where:{...(input.status?{status:input.status as any}:{}),...(input.qualificationId?{qualificationId:input.qualificationId}:{})},include:{plan:true,qualification:{include:{currentHolder:true}}},orderBy:[{createdAt:'desc'},{subscriptionId:'desc'}],take:Math.min(input.take??100,200)});
+    return this.prisma.subscription.findMany({where:{...(status?{status:status as any}:{}),...(qualificationId?{qualificationId}:ballNo?{qualification:{ballNo}}:{})},include:{plan:true,qualification:{select:{ballNo:true,currentHolder:{select:{memberNo:true}}}}},orderBy:[{createdAt:'desc'},{subscriptionId:'desc'}],take:Math.min(input.take??100,200)});
   }
 
   async create(dto:CreateSubscriptionDto,key:string,requestId:string,actorId?:string,ruleVersionCode='R1.0B'){
@@ -93,7 +97,7 @@ export class SubscriptionService {
   async get(id:string){
     return this.prisma.subscription.findUniqueOrThrow({
       where:{subscriptionId:id},
-      include:{plan:true,schedules:{orderBy:{installmentNo:'asc'}}}
+      include:{plan:true,qualification:{select:{ballNo:true,currentHolder:{select:{memberNo:true}}}},schedules:{orderBy:{installmentNo:'asc'}}}
     });
   }
 }

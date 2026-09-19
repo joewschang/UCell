@@ -3,6 +3,7 @@ import { Body, Controller, Get, Headers, Param, Post, Query, Req, UseGuards } fr
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { IdempotencyGuard } from '../../common/guards/idempotency.guard';
 import { CreateSubscriptionDto } from './dto/create-subscription.dto';
+import { ListSubscriptionsQueryDto } from './dto/list-subscriptions-query.dto';
 import { SubscriptionService } from './subscription.service';
 import { SubscriptionCancellationService } from './subscription-cancellation.service';
 
@@ -20,8 +21,15 @@ export class SubscriptionController {
   @ApiOperation({operationId:'adminListSubscriptionPlans',summary:'重銷方案'})
   async plans(){ return {data:await this.service.listPlans()}; }
   @Get()
-  @ApiOperation({operationId:'adminListSubscriptions',summary:'訂閱清單與Qualification/status篩選；只讀既存Core資料，不建立營運日曆'})
-  async list(@Query('status') status?:string,@Query('qualificationId') qualificationId?:string,@Query('take') take?:string){return {data:await this.service.list({status,qualificationId,take:take===undefined?undefined:Number(take)})};}
+  @ApiOperation({operationId:'adminListSubscriptions',summary:'訂閱清單與 Ball Number/status 篩選；只讀既存Core資料，不建立營運日曆'})
+  async list(@Query() query:ListSubscriptionsQueryDto){
+    return {data:await this.service.list({
+      status:query.status,
+      ballNo:query.ballNo,
+      qualificationId:query.qualificationId,
+      take:query.take===undefined?undefined:Number(query.take),
+    })};
+  }
 
   @Post()
   @UseGuards(IdempotencyGuard)
