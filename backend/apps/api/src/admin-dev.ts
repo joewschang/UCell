@@ -1,6 +1,11 @@
 import 'reflect-metadata';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
+import { BinaryTreeModule } from './modules/binary-tree/binary-tree.module';
+import { ContentModule } from './modules/content/content.module';
+import { ExplainModule } from './modules/explain/explain.module';
 import { MemberModule } from './modules/member/member.module';
+import { PackageConfigModule } from './modules/package-config/package-config.module';
+import { ReservoirModule } from './modules/reservoir/reservoir.module';
 import { Module, CanActivate, ExecutionContext, Injectable, MethodNotAllowedException, UnauthorizedException, ValidationPipe } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -45,18 +50,100 @@ import { RequestContextInterceptor } from './common/interceptors/request-context
 @Injectable()
 export class AdminDevReadOnlyGuard implements CanActivate {
   constructor(private readonly config: ConfigService, private readonly prisma: PrismaService) {}
+
+  /**
+   * The full-access DEV entry point is restricted to the isolated test database
+   * at bootstrap.  It still has to exercise the same Entra/session/grant
+   * boundary used by sensitive tree operations, instead of manufacturing an
+   * ADMIN_LOCAL principal here.
+   */
+  private async resolveIsolatedEntraPrincipal(actorId: unknown) {
+    if (this.config.get('NODE_ENV') !== 'development') {
+      throw new UnauthorizedException('ADMIN_TEST_ACTOR_INVALID');
+    }
+    let selectedActorId: string | undefined;
+    if (actorId !== undefined) {
+      if (typeof actorId !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(actorId)) {
+        throw new UnauthorizedException('ADMIN_TEST_ACTOR_INVALID');
+      }
+      selectedActorId = actorId;
+    }
+
+    let people;
+    if (selectedActorId) {
+      const person = await this.prisma.person.findUnique({ where: { personId: selectedActorId } });
+      people = person ? [person] : [];
+    } else {
+      people = await this.prisma.person.findMany({ where: { legalName: 'ADMIN TEST ROOT FIXTURE' }, take: 2 });
+    }
+    if (people.length !== 1 || !people[0]) {
+      throw new UnauthorizedException('ADMIN_TEST_ACTOR_REQUIRED');
+    }
+
+    const person = people[0];
+    const now = new Date();
+    const links = await this.prisma.identityLink.findMany({
+      where: { personId: person.personId, provider: 'ENTRA' },
+      select: { providerSubject: true },
+      take: 2,
+    });
+    if (links.length !== 1 || !links[0]) {
+      throw new UnauthorizedException('ADMIN_TEST_ACTOR_ENTRA_IDENTITY_REQUIRED');
+    }
+
+    const subject = links[0].providerSubject;
+    if (typeof subject !== 'string' || subject.trim().length === 0) {
+      throw new UnauthorizedException('ADMIN_TEST_ACTOR_ENTRA_IDENTITY_REQUIRED');
+    }
+    const grants = await this.prisma.adminAccessGrant.findMany({
+      where: {
+        personId: person.personId,
+        provider: 'ENTRA',
+        providerSubject: subject,
+        status: 'ACTIVE',
+        validFrom: { lte: now },
+        OR: [{ validTo: null }, { validTo: { gt: now } }],
+      },
+      select: { roleCode: true },
+      take: 2,
+    });
+    if (grants.length !== 1 || !grants[0]) {
+      throw new UnauthorizedException('ADMIN_TEST_ACTOR_ENTRA_GRANT_REQUIRED');
+    }
+
+    const role = grants[0].roleCode;
+    const sessions = await this.prisma.authSession.findMany({
+      where: {
+        personId: person.personId,
+        provider: 'ENTRA',
+        subject,
+        status: 'ACTIVE',
+        revokedAt: null,
+        expiresAt: { gt: now },
+      },
+      select: { authSessionId: true, roleCode: true },
+      take: 2,
+    });
+    if (sessions.length !== 1 || !sessions[0] || sessions[0].roleCode !== role) {
+      throw new UnauthorizedException('ADMIN_TEST_ACTOR_ENTRA_SESSION_REQUIRED');
+    }
+
+    return {
+      sessionId: sessions[0].authSessionId,
+      personId: person.personId,
+      provider: 'ENTRA' as const,
+      subject,
+      role,
+    };
+  }
+
   async canActivate(context: ExecutionContext) {
     const path=context.switchToHttp().getRequest().url?.split('?')[0]??'';
     if(path==='/api/v1/member'||path.startsWith('/api/v1/member/')||path.startsWith('/api/v1/auth/member/'))return true;
     if (this.config.get('UCELL_ADMIN_DEV_FULL_ACCESS') === 'true') {
       const req=context.switchToHttp().getRequest();
       const id=req.headers['x-ucell-dev-actor-id'];
-      if(id && (typeof id!=='string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)))
-        throw new UnauthorizedException('ADMIN_TEST_ACTOR_INVALID');
-      const actor=id ? await this.prisma.person.findUnique({where:{personId:id}})
-        : await this.prisma.person.findFirst({where:{legalName:'ADMIN TEST ROOT FIXTURE'}});
-      if(!actor) throw new UnauthorizedException('ADMIN_TEST_ACTOR_REQUIRED: provision a test Person first');
-      req.user={sessionId:'ISOLATED_DEV_TEST',personId:actor.personId,provider:'ADMIN_LOCAL',subject:'isolated-dev-test',role:'SUPER_ADMIN'};
+      req.user=await this.resolveIsolatedEntraPrincipal(id);
       return true;
     }
     const method = context.switchToHttp().getRequest().method;
@@ -70,6 +157,7 @@ export class AdminDevReadOnlyGuard implements CanActivate {
 // Separate DEV entrypoint; the production AppModule/build/release gates are unchanged.
 @Module({
   imports: [ConfigModule.forRoot({ isGlobal: true, ignoreEnvFile: true }), DatabaseModule,
+    BinaryTreeModule, ContentModule, ExplainModule, PackageConfigModule, ReservoirModule,
     AuditModule, IdempotencyModule, OutboxModule, AuthModule, HealthModule, MemberModule,
     PersonModule, ProductModule, OrganizationModule, QualificationModule, OrderModule,
     LedgerModule, ActiveModule, RpvModule, RuntimeRuleModule, BonusModule, ReturnModule,

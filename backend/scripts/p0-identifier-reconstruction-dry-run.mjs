@@ -7,7 +7,20 @@ try{
   db.$queryRaw`SELECT count(*)::int AS count FROM identity.person WHERE member_no IS NULL`,
   db.$queryRaw`SELECT count(*)::int AS count FROM identity.person WHERE member_no !~ '^[0-9]{10}$'`,
   db.$queryRaw`SELECT count(*)::int AS count FROM organization.binary_tree_membership WHERE binary_position_no IS NULL OR binary_position_no<=0`,
-  db.$queryRaw`SELECT count(*)::int AS count FROM membership.qualification q JOIN organization.binary_tree_membership m USING(qualification_id) JOIN organization.binary_tree t USING(binary_tree_id) WHERE q.ball_no IS NULL OR q.ball_no<>CASE WHEN m.binary_position_no<=3 THEN t.tree_code||'X'||lpad(m.binary_position_no::text,6,'0') ELSE t.tree_code||lpad((m.binary_position_no-3)::text,6,'0') END`,
+  // PostgreSQL lpad truncates an input longer than its target width. Keep this
+  // read-only reconstruction check exactly aligned with migration 69 and
+  // ballNoFor(): six is a minimum display width, never a maximum ordinal.
+  db.$queryRaw`WITH ball_positions AS (
+    SELECT q.ball_no,t.tree_code,m.binary_position_no,
+      CASE WHEN m.binary_position_no<=3 THEN m.binary_position_no::text ELSE (m.binary_position_no-3)::text END AS ordinal
+    FROM membership.qualification q
+    JOIN organization.binary_tree_membership m USING(qualification_id)
+    JOIN organization.binary_tree t USING(binary_tree_id)
+  )
+  SELECT count(*)::int AS count FROM ball_positions
+  WHERE ball_no IS NULL OR ball_no<>tree_code
+    || CASE WHEN binary_position_no<=3 THEN 'X' ELSE '' END
+    || CASE WHEN length(ordinal)<6 THEN lpad(ordinal,6,'0') ELSE ordinal END`,
   db.$queryRaw`SELECT count(*)::int AS count FROM (SELECT binary_tree_id,binary_position_no FROM organization.binary_tree_membership GROUP BY 1,2 HAVING count(*)>1) x`
  ]);
  const report={mode:'READ_ONLY_DRY_RUN',memberNo:{missing:missingMemberNo[0].count,invalid:invalidMemberNo[0].count},binaryPosition:{missingOrInvalid:missingPosition[0].count,duplicate:duplicatePosition[0].count},ballNo:{missingOrMismatch:invalidBallNo[0].count}};

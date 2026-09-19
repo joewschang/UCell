@@ -1,7 +1,7 @@
 import {useEffect,useRef,useState} from 'react';
 import {Link,useNavigate,useParams} from 'react-router-dom';
 import {EmptyState,LoadingState} from '@ucell/design-system';
-import {CanonicalTree} from './CanonicalTree';
+import {CanonicalTree,authoritativeActiveLabel,hasApprovedLeaderCompanyBinding} from './CanonicalTree';
 import {ApiError,command,get,qs} from '../../lib/api';
 import {useAuth} from '../auth/auth';
 import {Badge,Card,ErrorBox,Field,PageHeader} from '../../components/ui';
@@ -10,7 +10,7 @@ type Tree={binaryTreeId:string;treeCode:string;treeName:string;status:string;top
 type Position={
  positionNo:number;binaryPositionNo?:string;path?:string;ballNo?:string|null;
  parentPositionNo:number|null;side:string|null;qualificationId:string|null;ownerType:string|null;activeLabel:string|null;
- companyProfile?:{status:string;planCode:string|null;profileVersion:string|null}|null;
+ companyProfile?:{status:unknown;planCode:unknown;profileVersion:unknown}|null;
  actualSponsorSequenceNo?:number|null;descendantBalls:number|null;distinctMemberPersons:number|null;newBallsInPeriod:number|null;
  leftDescendantBalls?:number|null;rightDescendantBalls?:number|null;leftNewBallsInPeriod?:number|null;rightNewBallsInPeriod?:number|null;
  holderId?:string|null;lastUpdated?:string;dataThrough?:string;evidenceQuality?:string;
@@ -24,8 +24,8 @@ type NodePage={
 };
 type Detail={
  status:string;
- result:(Tree&{positions:Position[];statistics?:{query:unknown;required:boolean;projectionStatus:string;snapshot:string|null;dataThrough:string|null;projectedAt:string|null}})|null;
- explainCode?:string;
+ result:(Tree&{positions:Position[];statistics?:{query:unknown;required:boolean;projectionStatus:unknown;snapshot:string|null;dataThrough:string|null;projectedAt:string|null}})|null;
+ explainCode?:unknown;
 };
 type PlacementSide='LEFT'|'RIGHT';
 type PlacementPreflight={
@@ -57,6 +57,13 @@ function nowContext(){
 
 function sideLabel(side:string){return side==='LEFT'?'左側':side==='RIGHT'?'右側':'—'}
 
+function tableBallNumberLabel(position:Position){
+ if(typeof position.ballNo==='string'&&position.ballNo.trim().length>0)return position.ballNo;
+ return position.qualificationId!==null&&position.qualificationId!==undefined
+  ?'已占用 · Ball Number 證據未提供'
+  :'尚未占用';
+}
+
 type StatisticState='AVAILABLE'|'PENDING'|'UNAVAILABLE'|'STALE'|'FAILED';
 const statisticStateCopy:Record<StatisticState,{label:string;tone:'ok'|'warn'|'danger'|'neutral';guidance:string}>={
  AVAILABLE:{label:'AVAILABLE · 可用',tone:'ok',guidance:'此數值由伺服器權威讀模型提供。'},
@@ -76,15 +83,49 @@ function statisticState(status:unknown):StatisticState{
  }
 }
 
-function projectionGuidance(status:unknown){
- const state=statisticState(status);
- if(state==='PENDING')return '背景統計正在建立；完成後重新載入此資料截點。';
- if(state==='STALE')return '背景統計尚未反映此資料截點；暫不宣稱為最新正式數字。';
- if(state==='FAILED')return '背景統計建立未完成；請由具權限的管理員重新建立或查核。';
- return null;
+type ProjectionState='CURRENT'|'UPDATING'|'REBUILDING'|'STALE'|'FAILED'|'NOT_REQUIRED'|'UNAVAILABLE';
+const projectionStateCopy:Record<ProjectionState,{label:string;tone:'ok'|'warn'|'danger'|'neutral';guidance:string}>={
+ CURRENT:{label:'CURRENT · 最新',tone:'ok',guidance:'背景統計已由伺服器完成，且資料截點可用。'},
+ UPDATING:{label:'UPDATING · 更新中',tone:'warn',guidance:'背景統計正在更新；完成前不宣稱為最新正式數字。'},
+ REBUILDING:{label:'REBUILDING · 重建中',tone:'warn',guidance:'背景統計正在重建；完成前不宣稱為最新正式數字。'},
+ STALE:{label:'STALE · 待更新',tone:'warn',guidance:'背景統計尚未反映此資料截點；暫不宣稱為最新正式數字。'},
+ FAILED:{label:'FAILED · 建立失敗',tone:'danger',guidance:'背景統計未能完成；請由具權限的管理員重新建立或查核。'},
+ NOT_REQUIRED:{label:'NOT_REQUIRED · 不需投影',tone:'neutral',guidance:'此範圍不需要背景統計投影。'},
+ UNAVAILABLE:{label:'UNAVAILABLE · 暫不可用',tone:'neutral',guidance:'伺服器未提供可驗證的投影狀態，系統不會以未辨識狀態宣稱資料可用。'}
+};
+
+function projectionState(status:unknown):ProjectionState{
+ switch(String(status??'').trim().toUpperCase()){
+  case 'CURRENT':return 'CURRENT';
+  case 'UPDATING':return 'UPDATING';
+  case 'REBUILDING':return 'REBUILDING';
+  case 'STALE':return 'STALE';
+  case 'FAILED':return 'FAILED';
+  case 'NOT_REQUIRED':return 'NOT_REQUIRED';
+  default:return 'UNAVAILABLE';
+ }
 }
 
-function StatisticCell({label,status,value,dataThrough,projectionStatus}:{label:string;status:unknown;value:string|number|null|undefined;dataThrough?:string;projectionStatus?:string}){
+function projectionGuidance(status:unknown){
+ const state=projectionState(status);
+ return state==='CURRENT'||state==='NOT_REQUIRED'?null:projectionStateCopy[state].guidance;
+}
+
+function unavailableTreeGuidance(explainCode:unknown){
+ switch(explainCode){
+  case 'HISTORICAL_UNAVAILABLE':return '指定時間或記錄截點沒有可驗證的樹資料。';
+  case 'CANONICAL_ANCESTRY_EVIDENCE_INCOMPLETE':return '樹的祖先關係證據尚未完整，系統無法安全提供此資料。';
+  case 'OWNER_EVIDENCE_UNAVAILABLE':return '指定時間的樹資料尚未提供，因為持有人證據尚未完整。';
+  default:return '樹資料目前不可用；伺服器未提供可辨識的可用性原因。';
+ }
+}
+
+function nodeActiveLabel(ownerType:unknown,activeLabel:unknown){
+ if(activeLabel==='Always Active (Company Rule)')return ownerType==='COMPANY'?activeLabel:null;
+ return activeLabel==='ACTIVE'||activeLabel==='INACTIVE'?activeLabel:null;
+}
+
+function StatisticCell({label,status,value,dataThrough,projectionStatus}:{label:string;status:unknown;value:string|number|null|undefined;dataThrough?:string;projectionStatus?:unknown}){
  const declaredState=statisticState(status),hasValue=value!==null&&value!==undefined;
  const state=declaredState==='AVAILABLE'&&!hasValue?'UNAVAILABLE':declaredState;
  const copy=statisticStateCopy[state];
@@ -290,7 +331,10 @@ export function BinaryTreesPage(){
  }
 
  const tree=detail?.result,base='/admin/organization/trees'+(id?'/'+id:'');
- const leaderProfileAvailable=(tree?.positions.filter(position=>position.positionNo<=3)??[]).length===3&&tree!.positions.filter(position=>position.positionNo<=3).every(position=>position.companyProfile?.status==='AVAILABLE'&&position.companyProfile.planCode==='LEADER');
+ const leaderProfileAvailable=[1,2,3].every(positionNo=>{
+  const position=tree?.positions.find(candidate=>candidate.positionNo===positionNo);
+  return position!==undefined&&hasApprovedLeaderCompanyBinding(position);
+ });
  const preflightParentPosition=preflight?tree?.positions.find(position=>position.ballNo===preflight.parentBallNo):undefined;
  const transitions=(tree?({DRAFT:['ACTIVE','ARCHIVED'],ACTIVE:['CLOSED_TO_NEW'],CLOSED_TO_NEW:['ACTIVE','ARCHIVED']}[tree.status]??[]):[]) as string[];
  return <>
@@ -318,11 +362,11 @@ export function BinaryTreesPage(){
   </Card>}
 
   {id&&busy&&!detail&&!loaded&&<LoadingState label="正在載入樹資料與權威位置…"/>}
-  {id&&detail&&!tree&&<Card title="資料不可用"><p>指定時間的樹資料尚未提供。</p><p className="muted">系統不會以目前資料替代缺少的歷史證據。</p></Card>}
+  {id&&detail&&!tree&&<Card title="資料不可用"><p>{unavailableTreeGuidance(detail.explainCode)}</p><p className="muted">系統不會以目前資料替代缺少的歷史證據。</p></Card>}
 
-  {tree?.statistics&&tree.statistics.projectionStatus!=='NOT_REQUIRED'&&<Card title="背景統計">
-   {(()=>{const state=statisticState(tree.statistics!.projectionStatus),copy=statisticStateCopy[state];return <p><Badge tone={copy.tone}><span>{copy.label}</span></Badge> · 資料截點 {tree.statistics!.dataThrough??appliedTime.current.knowledgeCutoff}</p>;})()}
-   {statisticState(tree.statistics.projectionStatus)!=='AVAILABLE'&&<p>{statisticStateCopy[statisticState(tree.statistics.projectionStatus)].guidance} 樹的位置與操作仍可使用。</p>}
+  {tree?.statistics&&projectionState(tree.statistics.projectionStatus)!=='NOT_REQUIRED'&&<Card title="背景統計">
+   {(()=>{const state=projectionState(tree.statistics!.projectionStatus),copy=projectionStateCopy[state];return <p><Badge tone={copy.tone}><span>{copy.label}</span></Badge> · 資料截點 {tree.statistics!.dataThrough??appliedTime.current.knowledgeCutoff}</p>;})()}
+   {projectionState(tree.statistics.projectionStatus)!=='CURRENT'&&<p>{projectionStateCopy[projectionState(tree.statistics.projectionStatus)].guidance} 樹的位置與操作仍可使用。</p>}
    {['SUPER_ADMIN','COMPLIANCE_AUDIT'].includes(user?.role??'')?<div className="button-row"><button type="button" disabled={busy} onClick={()=>void rebuildStatistics()}>建立此截點的統計</button>{statisticsJob&&<button type="button" disabled={busy} onClick={()=>void rebuildStatistics(true)}>檢查統計工作</button>}</div>:<p>請具統計重建權限的管理員建立此截點的統計。</p>}
    {tree.statistics.snapshot&&<p className="muted">統計快照已固定 · 產生時間 {tree.statistics.projectedAt??'伺服器未提供'}</p>}
   </Card>}
@@ -330,17 +374,17 @@ export function BinaryTreesPage(){
   {tree&&<><Card title={tree.treeName}>
    <div className="tree-summary"><p>{tree.treeCode} · <Badge>{tree.status}</Badge> · Tree version {tree.topologyVersion}</p><p>{leaderProfileAvailable?'公司球 LEADER Profile 已由伺服器核准。':'公司球 LEADER Profile 證據尚未提供；系統不會依創始位置自行推定方案。'} GPV 與 Carry 為來源點數，不代表可領金額；財務內容只由具權限的 Reservoir Center 顯示。</p></div>
    <CanonicalTree positions={tree.positions} selectedBallNo={parent} onSelect={p=>{
-    if(!p.ballNo){setNotice('#'+p.positionNo+' 尚未占用，不能作為父球。請選擇已有 Ball Number 的節點。');return;}
+    if(!p.ballNo){setNotice(p.qualificationId?'#'+p.positionNo+' 已有資格占用，但 Ball Number 證據未提供，不能作為父球。請重新讀取權威樹資料。':'#'+p.positionNo+' 尚未占用，不能作為父球。請選擇已有 Ball Number 的節點。');return;}
     setParent(p.ballNo);setPreflight(null);setPlacementReceipt(null);setNotice('父球已選為 #'+p.positionNo+'：'+p.ballNo+'。請選擇左右側並進行預檢。');
    }}/>
-   <div className="table-wrap"><table><caption className="uc-sr-only">創始位置與伺服器權威統計。每個 GPV 與 Carry 欄位都會顯示伺服器回傳的可用狀態；未提供的數值不以零值替代。後代統計不包含位置自身。</caption><thead><tr><th scope="col">位置／路徑</th><th scope="col">Ball Number</th><th scope="col">持有類型</th><th scope="col">Sponsor 序號</th><th scope="col">後代球數</th><th scope="col">後代會員</th><th scope="col">期間新球</th><th scope="col">左／右後代</th><th scope="col">累積 GPV</th><th scope="col">期間 GPV</th><th scope="col">左 Carry</th><th scope="col">右 Carry</th><th scope="col">持有人狀態</th><th scope="col">Active</th><th scope="col">左／右期間新球</th><th scope="col">左／右期間 GPV</th><th scope="col">Pair PV</th><th scope="col">Last Updated</th><th scope="col">Data Through</th><th scope="col">Evidence Quality</th></tr></thead><tbody>{tree.positions.map(p=><tr key={p.positionNo}><td>#{p.positionNo}{p.binaryPositionNo&&<><br/><small>{p.binaryPositionNo}{p.path?' · '+p.path:''}</small></>}<br/><small>{p.parentPositionNo?'父位置 #'+p.parentPositionNo+' · '+sideLabel(p.side??''):'根位置'}</small></td><td>{p.ballNo??'尚未占用'}</td><td>{p.ownerType??'—'}{p.activeLabel&&<div>{p.activeLabel}</div>}</td><td>{p.actualSponsorSequenceNo??'—'}</td><td>{p.descendantBalls??'—'}</td><td>{p.distinctMemberPersons??'—'}</td><td>{p.newBallsInPeriod??'—'}</td><td>{p.leftDescendantBalls??'—'} / {p.rightDescendantBalls??'—'}</td><td><StatisticCell label="累積 GPV" status={p.performance?.status} value={p.performance?.value?.cumulative} dataThrough={p.dataThrough} projectionStatus={tree.statistics?.projectionStatus}/></td><td><StatisticCell label="期間 GPV" status={p.performance?.status} value={p.performance?.value?.month} dataThrough={p.dataThrough} projectionStatus={tree.statistics?.projectionStatus}/></td><td><StatisticCell label="左 Carry" status={p.carry?.status} value={p.carry?.value?.left} dataThrough={p.dataThrough} projectionStatus={tree.statistics?.projectionStatus}/></td><td><StatisticCell label="右 Carry" status={p.carry?.status} value={p.carry?.value?.right} dataThrough={p.dataThrough} projectionStatus={tree.statistics?.projectionStatus}/></td><td>{p.holderId?'已綁定（詳情未提供）':'—'}</td><td>{p.activeLabel??'證據不可用'}</td><td>{p.leftNewBallsInPeriod??'—'} / {p.rightNewBallsInPeriod??'—'}</td><td><StatisticCell label="左／右期間 GPV" status={p.performance?.status} value={p.performance?.value?.leftMonth!=null&&p.performance?.value?.rightMonth!=null?`${p.performance.value.leftMonth} / ${p.performance.value.rightMonth}`:null} dataThrough={p.dataThrough} projectionStatus={tree.statistics?.projectionStatus}/></td><td><StatisticCell label="Pair PV" status={p.carry?.pairPvStatus??p.carry?.status} value={p.carry?.value?.pairedPv} dataThrough={p.dataThrough} projectionStatus={tree.statistics?.projectionStatus}/></td><td>{p.lastUpdated??'—'}</td><td><DataThroughCell value={p.dataThrough}/></td><td>{p.evidenceQuality??'PARTIAL'}</td></tr>)}</tbody></table></div>
+   <div className="table-wrap"><table><caption className="uc-sr-only">創始位置與伺服器權威統計。每個 GPV 與 Carry 欄位都會顯示伺服器回傳的可用狀態；未提供的數值不以零值替代。後代統計不包含位置自身。</caption><thead><tr><th scope="col">位置／路徑</th><th scope="col">Ball Number</th><th scope="col">持有類型</th><th scope="col">Sponsor 序號</th><th scope="col">後代球數</th><th scope="col">後代會員</th><th scope="col">期間新球</th><th scope="col">左／右後代</th><th scope="col">累積 GPV</th><th scope="col">期間 GPV</th><th scope="col">左 Carry</th><th scope="col">右 Carry</th><th scope="col">持有人狀態</th><th scope="col">Active</th><th scope="col">左／右期間新球</th><th scope="col">左／右期間 GPV</th><th scope="col">Pair PV</th><th scope="col">Last Updated</th><th scope="col">Data Through</th><th scope="col">Evidence Quality</th></tr></thead><tbody>{tree.positions.map(p=>{const active=authoritativeActiveLabel(p);return <tr key={p.positionNo}><td>#{p.positionNo}{p.binaryPositionNo&&<><br/><small>{p.binaryPositionNo}{p.path?' · '+p.path:''}</small></>}<br/><small>{p.parentPositionNo?'父位置 #'+p.parentPositionNo+' · '+sideLabel(p.side??''):'根位置'}</small></td><td>{tableBallNumberLabel(p)}</td><td>{p.ownerType??'—'}{active&&<div>{active}</div>}</td><td>{p.actualSponsorSequenceNo??'—'}</td><td>{p.descendantBalls??'—'}</td><td>{p.distinctMemberPersons??'—'}</td><td>{p.newBallsInPeriod??'—'}</td><td>{p.leftDescendantBalls??'—'} / {p.rightDescendantBalls??'—'}</td><td><StatisticCell label="累積 GPV" status={p.performance?.status} value={p.performance?.value?.cumulative} dataThrough={p.dataThrough} projectionStatus={tree.statistics?.projectionStatus}/></td><td><StatisticCell label="期間 GPV" status={p.performance?.status} value={p.performance?.value?.month} dataThrough={p.dataThrough} projectionStatus={tree.statistics?.projectionStatus}/></td><td><StatisticCell label="左 Carry" status={p.carry?.status} value={p.carry?.value?.left} dataThrough={p.dataThrough} projectionStatus={tree.statistics?.projectionStatus}/></td><td><StatisticCell label="右 Carry" status={p.carry?.status} value={p.carry?.value?.right} dataThrough={p.dataThrough} projectionStatus={tree.statistics?.projectionStatus}/></td><td>{p.holderId?'已綁定（詳情未提供）':'—'}</td><td>{active??'證據不可用'}</td><td>{p.leftNewBallsInPeriod??'—'} / {p.rightNewBallsInPeriod??'—'}</td><td><StatisticCell label="左／右期間 GPV" status={p.performance?.status} value={p.performance?.value?.leftMonth!=null&&p.performance?.value?.rightMonth!=null?`${p.performance.value.leftMonth} / ${p.performance.value.rightMonth}`:null} dataThrough={p.dataThrough} projectionStatus={tree.statistics?.projectionStatus}/></td><td><StatisticCell label="Pair PV" status={p.carry?.pairPvStatus??p.carry?.status} value={p.carry?.value?.pairedPv} dataThrough={p.dataThrough} projectionStatus={tree.statistics?.projectionStatus}/></td><td>{p.lastUpdated??'—'}</td><td><DataThroughCell value={p.dataThrough}/></td><td>{p.evidenceQuality??'PARTIAL'}</td></tr>})}</tbody></table></div>
    <p className="muted">會員人數依指定時間的持有人去重；公司主體不計為會員。新球依首次有效放置時間計算，持有人移轉與公司承接不會形成新球。</p>
   </Card>
 
   <Card title="完整 Binary 樹節點">
    <p>目前資料截點：{appliedTime.current.asOf}；期間 {appliedTime.current.periodStart} 至 {appliedTime.current.periodEnd}。</p>
    <div className="button-row"><button type="button" disabled={busy} onClick={()=>void loadNodes()}>載入節點</button>{nodes&&<button type="button" disabled={busy} onClick={()=>void loadNodes()}>從根節點重新載入</button>}</div>
-   {nodes&&<section aria-live="polite">{nodes.parentQualificationId?<p>目前節點的直接子節點數：{nodes.total??'不可用'}；本頁顯示 {nodes.items.length} 個。</p>:<p>總節點數：{nodes.total??'不可用'}；本頁顯示 {nodes.items.length} 個。統計仍以整棵樹計算。</p>}{nodes.snapshotToken&&<p className="muted">此頁固定於資料時間 {nodes.time?.asOf??appliedTime.current.asOf}；記錄截點 {nodes.time?.knowledgeCutoff??appliedTime.current.knowledgeCutoff}。快照有效至 {nodes.snapshotExpiresAt??'伺服器未提供'}。</p>}{nodes.status==='UNAVAILABLE'?<EmptyState title="此時間的節點證據不可用"/>:nodes.items.length?<div className="table-wrap"><table><caption className="uc-sr-only">Bounded Binary Tree 節點。每次展開與換頁都固定使用同一 server snapshot。</caption><thead><tr><th scope="col">深度</th><th scope="col">Ball Number</th><th scope="col">位置／路徑</th><th scope="col">左右側</th><th scope="col">持有類型</th><th scope="col">下一步</th></tr></thead><tbody>{nodes.items.map(node=><tr key={node.qualificationId}><td>{node.depth}</td><td>{node.ballNo??'證據未提供'}</td><td>{node.binaryPositionNo??'—'} {node.path??''}</td><td>{sideLabel(node.side??'')}</td><td>{node.ownerType}{node.activeLabel&&<div>{node.activeLabel}</div>}</td><td><button type="button" disabled={busy} aria-label={'展開 Ball Number '+(node.ballNo??'未提供')+' 的子節點；Binary 位置 '+(node.binaryPositionNo??'未提供')+'；路徑 '+(node.path??'未提供')+'；'+sideLabel(node.side??'')} onClick={()=>void loadNodes(undefined,node.qualificationId)}>展開子節點</button></td></tr>)}</tbody></table></div>:<EmptyState title="這個範圍沒有節點"/>}{nodes.nextCursor&&<button type="button" disabled={busy} onClick={()=>void loadNodes(nodes.nextCursor!)}>下一頁節點</button>}</section>}
+   {nodes&&<section aria-live="polite">{nodes.parentQualificationId?<p>目前節點的直接子節點數：{nodes.total??'不可用'}；本頁顯示 {nodes.items.length} 個。</p>:<p>總節點數：{nodes.total??'不可用'}；本頁顯示 {nodes.items.length} 個。統計仍以整棵樹計算。</p>}{nodes.snapshotToken&&<p className="muted">此頁固定於資料時間 {nodes.time?.asOf??appliedTime.current.asOf}；記錄截點 {nodes.time?.knowledgeCutoff??appliedTime.current.knowledgeCutoff}。快照有效至 {nodes.snapshotExpiresAt??'伺服器未提供'}。</p>}{nodes.status==='UNAVAILABLE'?<EmptyState title="此時間的節點證據不可用"/>:nodes.items.length?<div className="table-wrap"><table><caption className="uc-sr-only">Bounded Binary Tree 節點。每次展開與換頁都固定使用同一 server snapshot。</caption><thead><tr><th scope="col">深度</th><th scope="col">Ball Number</th><th scope="col">位置／路徑</th><th scope="col">左右側</th><th scope="col">持有類型</th><th scope="col">下一步</th></tr></thead><tbody>{nodes.items.map(node=>{const active=nodeActiveLabel(node.ownerType,node.activeLabel);return <tr key={node.qualificationId}><td>{node.depth}</td><td>{node.ballNo??'證據未提供'}</td><td>{node.binaryPositionNo??'—'} {node.path??''}</td><td>{sideLabel(node.side??'')}</td><td>{node.ownerType}{active&&<div>{active}</div>}</td><td><button type="button" disabled={busy} aria-label={'展開 Ball Number '+(node.ballNo??'未提供')+' 的子節點；Binary 位置 '+(node.binaryPositionNo??'未提供')+'；路徑 '+(node.path??'未提供')+'；'+sideLabel(node.side??'')} onClick={()=>void loadNodes(undefined,node.qualificationId)}>展開子節點</button></td></tr>})}</tbody></table></div>:<EmptyState title="這個範圍沒有節點"/>}{nodes.nextCursor&&<button type="button" disabled={busy} onClick={()=>void loadNodes(nodes.nextCursor!)}>下一頁節點</button>}</section>}
   </Card></>}
 
   {manage&&(!id||tree&&tree.status!=='ARCHIVED')&&<Card title={id?'樹設定':'建立樹'}><form className="form" onSubmit={e=>{e.preventDefault();void write(id?base+'/settings':base,{treeName:name,reason,...(tree?{expectedVersion:tree.topologyVersion}:{})})}}>

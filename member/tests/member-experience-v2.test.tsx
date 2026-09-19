@@ -45,6 +45,8 @@ it('labels the legacy plan-level field as a plan and controls repurchase details
  expect(html).not.toContain('<dt>等級</dt>');
  expect(html).toContain('aria-expanded="true"');
  expect(html).toContain('aria-controls="repurchase-details"');
+ expect(html).toContain('class="uc-button uc-today-task-link"');
+ expect(html).toContain('type="button"');
 });
 
 it('keeps page headers safe when an authoritative member number is not available yet',()=>{

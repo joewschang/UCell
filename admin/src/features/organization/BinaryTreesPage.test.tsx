@@ -96,7 +96,40 @@ it('does not infer LEADER from a Company position when the approved profile is u
  const positions=result.positions.map(position=>position.positionNo<=3?{...position,companyProfile:{status:'UNAVAILABLE',planCode:null,profileVersion:null}}:position);
  vi.mocked(get).mockResolvedValueOnce({data:{status:'PARTIAL',result:{...result,positions}}});
  const view=await render(),output=JSON.stringify(view.toJSON());
- expect(output).toContain('LEADER Profile 資料未提供');expect(output).toContain('公司球 LEADER Profile 證據尚未提供');expect(output).not.toContain('領袖 LEADER');expect(output).not.toContain('公司球 LEADER Profile 已由伺服器核准');
+ expect(output).toContain('公司持有 · LEADER Profile 證據未提供');expect(output).toContain('公司球 LEADER Profile 證據尚未提供');expect(output).not.toContain('領袖 LEADER');expect(output).not.toContain('公司球 LEADER Profile 已由伺服器核准');
+ act(()=>view.unmount());
+});
+it('shows a Company-held non-bootstrap Ball as Always Active without labelling it LEADER',async()=>{
+ const positions=result.positions.map(position=>position.positionNo===4?{
+  ...position,ballNo:'TREE-A000004',qualificationId:'member-origin-company-held',ownerType:'COMPANY',activeLabel:'Always Active (Company Rule)',
+  companyProfile:{status:'AVAILABLE',planCode:'LEADER',profileVersion:'COMPANY_BOOTSTRAP_PROFILE_V1'}
+ }:position);
+ vi.mocked(get).mockResolvedValueOnce({data:{status:'PARTIAL',result:{...result,positions}}});
+ const view=await render();
+ const fourth=view.root.findAllByType('button').find(button=>String(button.props['aria-label']).includes('創始位置 #4'))!;
+ expect(fourth.findAllByType('strong')[0].children.join('')).toContain('公司持有球');
+ expect(fourth.findAllByType('div').some(node=>node.children.join('')==='公司持有 · 非 Bootstrap · 保留原 Plan')).toBe(true);
+ expect(fourth.findAllByType('span').some(node=>node.children.join('')==='Always Active')).toBe(true);
+ expect(String(fourth.props['aria-label'])).toContain('非 Bootstrap，保留原 Plan');
+ expect(String(fourth.props['aria-label'])).not.toContain('已核准 LEADER Profile');
+ act(()=>view.unmount());
+});
+it('treats an occupied position without a Ball Number as unavailable rather than AVAILABLE',async()=>{
+ role='QUALIFICATION_PLACEMENT_OVERRIDE';
+ const positions=result.positions.map(position=>position.positionNo===4?{
+  ...position,ballNo:null,qualificationId:'qualification-without-ball-number',ownerType:'MEMBER',activeLabel:null,companyProfile:null
+ }:position);
+ vi.mocked(get).mockResolvedValueOnce({data:{status:'PARTIAL',result:{...result,positions}}});
+ const view=await render();
+ const fourth=view.root.findAllByType('button').find(button=>String(button.props['aria-label']).includes('創始位置 #4'))!;
+ expect(fourth.findAllByType('strong')[0].children.join('')).toContain('Member Ball');
+ expect(fourth.findAllByType('strong')[0].children.join('')).not.toContain('AVAILABLE');
+ expect(String(fourth.props['aria-label'])).toContain('Ball Number 證據未提供');
+ expect(view.root.findAllByType('td').some(cell=>cell.children.join('')==='已占用 · Ball Number 證據未提供')).toBe(true);
+ await act(async()=>fourth.props.onClick());
+ const parentInput=view.root.findAllByType('input').find(input=>input.props.placeholder==='例如 TREE-A000001')!;
+ expect(parentInput.props.value).toBe('');
+ expect(JSON.stringify(view.toJSON())).toContain('已有資格占用，但 Ball Number 證據未提供，不能作為父球');
  act(()=>view.unmount());
 });
 it('grants only declared tree paths and roles',()=>{
@@ -113,7 +146,23 @@ it('requests and reloads background statistics using the same server query and a
  expect(command).toHaveBeenCalledWith('/admin/analytics/period-projections/jobs',{query,mode:'REBUILD'});
  vi.mocked(get).mockResolvedValueOnce({data:{status:'COMPLETED'}}).mockResolvedValueOnce({data:{status:'PARTIAL',result:{...result,statistics:{...statistics,projectionStatus:'CURRENT',snapshot:id}}}});
  await act(async()=>view.root.findAllByType('button').find(b=>b.children.join('')==='檢查統計工作')!.props.onClick());
- expect(get).toHaveBeenLastCalledWith(originalUrl);expect(JSON.stringify(view.toJSON())).toContain('AVAILABLE · 可用');expect(JSON.stringify(view.toJSON())).not.toContain('CURRENT');act(()=>view.unmount());
+ expect(get).toHaveBeenLastCalledWith(originalUrl);expect(JSON.stringify(view.toJSON())).toContain('CURRENT · 最新');act(()=>view.unmount());
+});
+
+it('fails closed for unknown tree explain and projection codes',async()=>{
+ vi.mocked(get).mockResolvedValueOnce({data:{status:'UNAVAILABLE',result:null,explainCode:'UNRECOGNISED_INTERNAL_REASON'}});
+ const unavailable=await render(),unavailableOutput=JSON.stringify(unavailable.toJSON());
+ expect(unavailableOutput).toContain('樹資料目前不可用；伺服器未提供可辨識的可用性原因。');
+ expect(unavailableOutput).not.toContain('UNRECOGNISED_INTERNAL_REASON');
+ act(()=>unavailable.unmount());
+
+ const statistics={required:true,projectionStatus:'UNRECOGNISED_PROJECTION',snapshot:null,dataThrough:null,projectedAt:null,query:{metrics:['founding.statistics']}};
+ vi.mocked(get).mockResolvedValueOnce({data:{status:'PARTIAL',result:{...result,statistics}}});
+ const projection=await render(),projectionOutput=JSON.stringify(projection.toJSON());
+ expect(projectionOutput).toContain('UNAVAILABLE · 暫不可用');
+ expect(projectionOutput).toContain('伺服器未提供可驗證的投影狀態');
+ expect(projectionOutput).not.toContain('UNRECOGNISED_PROJECTION');
+ act(()=>projection.unmount());
 });
 it('renders server statistic states and data-through without exposing raw metric reasons or snapshot identifiers',async()=>{
  const dataThrough='2026-09-19T01:00:00.000Z';

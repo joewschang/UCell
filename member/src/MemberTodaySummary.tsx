@@ -1,7 +1,7 @@
 import type {Qualification} from './api';
 import * as data from './memberData';
 import {useResource} from './useResource';
-import {ErrorState,LoadingState} from '@ucell/design-system';
+import {ErrorState,LoadingState,UCellButton} from '@ucell/design-system';
 import {availabilityText,formatNullableNumber,qualificationActiveLabel} from './terminology';
 
 type RepurchaseState='ACTIVE'|'PENDING'|'INACTIVE';
@@ -35,6 +35,6 @@ export default function MemberTodaySummary({q,monthlyRepurchaseStatus,repurchase
    </dl>}
    {binary.data?.settlementMetrics.status==='UNAVAILABLE'&&<p className="uc-binary-unavailable" role="status">二元結算讀取模型尚未提供，Carry 不顯示為零。</p>}
   </div>
-  <div className="uc-today-task"><div><small>目前待辦</small><strong>{task.title}</strong><p>{task.detail}</p></div><button type="button" className="uc-today-task-link" aria-expanded={repurchaseDetailsOpen} aria-controls="repurchase-details" onClick={onShowRepurchaseDetails}>查看重購詳情</button></div>
+  <div className="uc-today-task"><div><small>目前待辦</small><strong>{task.title}</strong><p>{task.detail}</p></div><UCellButton className="uc-today-task-link" aria-expanded={repurchaseDetailsOpen} aria-controls="repurchase-details" onClick={onShowRepurchaseDetails}>查看重購詳情</UCellButton></div>
  </section>;
 }

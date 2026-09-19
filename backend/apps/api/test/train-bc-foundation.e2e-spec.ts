@@ -20,9 +20,16 @@ const create=async()=> (await commands.create(p,{treeName:'Closure '+randomUUID(
 const time=()=>{const now=new Date().toISOString();return {timezone:'Asia/Taipei' as const,asOf:now,knowledgeCutoff:now,periodStart:'2026-01-01T00:00:00.000Z',periodEnd:'2099-01-01T00:00:00.000Z'}};
 it('binds all three bootstrap Balls in independent trees to exact LEADER evidence, with no Global rank grants',async()=>{
  for(let t=0;t<2;t++){
-  const tree=await create(),snapshot=await captureParameters(db as unknown as Prisma.TransactionClient,new Date(),'R1.0B');
+  const tree=await create();
+  const detail=await reader.detail(p,tree.binaryTreeId,time());
+  expect(detail.result!.positions.slice(0,3).map(position=>position.companyProfile)).toEqual([
+   {status:'AVAILABLE',planCode:'LEADER',profileVersion:'COMPANY_BOOTSTRAP_PROFILE_V1'},
+   {status:'AVAILABLE',planCode:'LEADER',profileVersion:'COMPANY_BOOTSTRAP_PROFILE_V1'},
+   {status:'AVAILABLE',planCode:'LEADER',profileVersion:'COMPANY_BOOTSTRAP_PROFILE_V1'},
+  ]);
   for(let i=0;i<3;i++){
-   const binding=await db.$transaction(tx=>bindCompanyLeaderProfile(tx,tree.companyQualificationIds[i],snapshot));
+   const binding=await db.companyBootstrapProfileBinding.findFirstOrThrow({where:{qualificationId:tree.companyQualificationIds[i]}});
+   const snapshot=await captureParameters(db as unknown as Prisma.TransactionClient,binding.effectiveAt,'R1.0B');
    expect(binding).toMatchObject({planCode:'LEADER',binaryTreeId:tree.binaryTreeId,companyPosition:i+1,snapshotHash:snapshot.hash});
    const again=await db.$transaction(tx=>bindCompanyLeaderProfile(tx,tree.companyQualificationIds[i],snapshot));expect(again.bindingId).toBe(binding.bindingId);
    expect(await db.qualificationGlobalRankHistory.count({where:{qualificationId:tree.companyQualificationIds[i]}})).toBe(0);
@@ -31,12 +38,17 @@ it('binds all three bootstrap Balls in independent trees to exact LEADER evidenc
  }
 },30000);
 it('rejects missing, ambiguous and corrupt snapshots; old sealed profile does not consult new parameters',async()=>{
- const snapshot=await captureParameters(db as unknown as Prisma.TransactionClient,new Date(),'R1.0B'),before=resolveLeaderProfile(snapshot);
+ const tree=await create(),snapshot=await captureParameters(db as unknown as Prisma.TransactionClient,new Date(),'R1.0B'),before=resolveLeaderProfile(snapshot);
  const seal=(parameters:typeof snapshot.parameters)=>{const {hash,...body}=snapshot;const value={...body,parameters};return {...value,hash:replayHash(value)};};
- expect(()=>resolveLeaderProfile(seal(snapshot.parameters.filter(r=>r.code!=='binary.weekly.cap'||r.scope!=='LEADER')))).toThrow();
+ const missing=seal(snapshot.parameters.filter(r=>r.code!=='binary.weekly.cap'||r.scope!=='LEADER'));
+ expect(()=>resolveLeaderProfile(missing)).toThrow();
  const row=snapshot.parameters.find(r=>r.code==='binary.weekly.cap'&&r.scope==='LEADER')!;
- expect(()=>resolveLeaderProfile(seal([...snapshot.parameters,{...row,id:randomUUID()}]))).toThrow();
+ const ambiguous=seal([...snapshot.parameters,{...row,id:randomUUID()}]);
+ expect(()=>resolveLeaderProfile(ambiguous)).toThrow();
  expect(()=>resolveLeaderProfile({...snapshot,hash:'0'.repeat(64)})).toThrow();
+ await expect(db.$transaction(tx=>bindCompanyLeaderProfile(tx,tree.companyQualificationIds[0],missing))).rejects.toMatchObject({response:{code:'CONFIGURATION_PENDING'}});
+ await expect(db.$transaction(tx=>bindCompanyLeaderProfile(tx,tree.companyQualificationIds[0],ambiguous))).rejects.toMatchObject({response:{code:'COMPANY_PROFILE_AMBIGUOUS'}});
+ expect(await db.companyBootstrapProfileBinding.count({where:{binaryTreeId:tree.binaryTreeId}})).toBe(3);
  const changed=seal(snapshot.parameters.map(r=>r===row?{...r,id:randomUUID(),value:'1234567'}:r));
  expect(resolveLeaderProfile(changed).snapshotHash).not.toBe(before.snapshotHash);
  expect(resolveLeaderProfile(snapshot)).toEqual(before);

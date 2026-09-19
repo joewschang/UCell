@@ -12,6 +12,8 @@ No LLM/RAG/Vector DB or Stage/Production deployment was performed. Formal identi
 
 P0 regression found and corrected PostgreSQL `lpad` truncation for Ball identifiers whose position ordinal exceeds six digits. Migration 69 restores the authoritative minimum-six-digit, naturally growing identifier rule. Test fixtures now use valid 10-digit Member Numbers and public Ball Numbers, and explicitly prove that internal Qualification/order UUIDs remain absent from Member UI output.
 
+**2026-09-19 local P0/UI evidence update:** the persistent local `ucell` database was backed up, restored into a disposable verification database, and upgraded to 69 migrations; its read-only P0 reconstruction check is PASS. Fresh 0→69 isolated verification reports 154 real DB assertions. Admin UX v2 regression is 28 files / 106 tests, Member is 26 files / 149 tests, and both production builds pass. The isolated connected Admin smoke passes 49 requests with a real worker-produced historical replay snapshot. New Tree creation atomically seals the approved LEADER binding for #1–#3; browser UAT confirmed the three Company Balls as LEADER/Always Active and #4–#7 as AVAILABLE. Migration, OpenAPI, and security-policy preflights pass. See [P0_LOCAL_DB_AND_UX_V2_CONTINUATION_REPORT.md](P0_LOCAL_DB_AND_UX_V2_CONTINUATION_REPORT.md). This is local/isolated evidence only: Stage remains STOP and Production remains BLOCKED.
+
 ---
 
 ## Prior checkpoint history (preserved; superseded where stated above)

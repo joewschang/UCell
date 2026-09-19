@@ -1,5 +1,5 @@
 import {ConflictException,ForbiddenException,Injectable,UnprocessableEntityException} from '@nestjs/common';
-import {binaryPath,Prisma,PrismaService,ballNoFor,childPosition} from '@ucell/database';
+import {binaryPath,Prisma,PrismaService,ballNoFor,childPosition,bindCompanyLeaderProfile,effectiveCompanyParameters} from '@ucell/database';
 import {randomUUID} from 'node:crypto';
 import {IdempotencyService} from '../../common/idempotency/idempotency.service';
 import {OrganizationService} from '../organization/organization.service';
@@ -60,6 +60,11 @@ export class BinaryTreeService {
    }
    for(let positionNo=1;positionNo<=7;positionNo++)await tx.treeCanonicalPosition.create({data:{binaryTreeId:treeId,positionNo,parentPositionNo:positionNo===1?null:Math.floor(positionNo/2),
     side:positionNo===1?null:positionNo%2===0?'LEFT':'RIGHT',occupantQualificationId:positionNo<=3?balls[positionNo-1]:null,occupiedAt:positionNo<=3?at:null}});
+   // The approved Company profile is an immutable, effective Core snapshot.  Bind it
+   // inside the bootstrap transaction only after the canonical positions and owner
+   // intervals exist, so a missing or ambiguous registry rolls the whole tree back.
+   const parameters=await effectiveCompanyParameters(tx,at);
+   for(const ball of balls)await bindCompanyLeaderProfile(tx,ball,parameters);
    await tx.companySponsorDesignation.create({data:{binaryTreeId:treeId,qualificationId:balls[0],effectiveAt:at,evidenceHash:treeHash({treeId,qualificationId:balls[0],effectiveAt:at.toISOString()})}});
    for(let i=1;i<3;i++){
     await tx.sponsorRelationship.create({data:{sponsorQualificationId:balls[0],childQualificationId:balls[i],sponsorSequenceNo:i,effectiveFrom:at}});

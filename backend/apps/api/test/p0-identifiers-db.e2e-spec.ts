@@ -1,4 +1,6 @@
 import {randomUUID} from 'node:crypto';
+import {spawnSync} from 'node:child_process';
+import {resolve} from 'node:path';
 import {PrismaService} from '@ucell/database';
 import {BinaryTreeService,TreePrincipal} from '../src/modules/binary-tree/binary-tree.service';
 import {OrganizationService} from '../src/modules/organization/organization.service';
@@ -40,4 +42,45 @@ describe('P0 identifier database boundary',()=>{
   await db.qualification.create({data:{currentHolderPersonId:person.personId,planLevelCode:'ELITE',status:'EFFECTIVE',effectiveAt:new Date()}});
   await expect(trees.resolveUnplacedMemberQualification(actor,person.memberNo)).rejects.toMatchObject({response:{code:'MEMBER_NO_QUALIFICATION_AMBIGUOUS'}});
  });
+ it('keeps the reconstruction dry run correct when a Ball ordinal grows past six digits',async()=>{
+  const actor=await admin(),tree=(await trees.create(actor,{treeName:'P0 natural Ball Number growth',reason:'Verify dry-run natural ordinal growth'},randomUUID())).value;
+  await trees.change(actor,tree.binaryTreeId,{status:'ACTIVE',expectedVersion:1,reason:'Activate P0 growth verification'},randomUUID());
+  const path=[
+   {position:4n,parent:2n,side:'LEFT' as const},
+   {position:7n,parent:3n,side:'RIGHT' as const},
+   {position:15n,parent:7n,side:'RIGHT' as const},
+   {position:30n,parent:15n,side:'LEFT' as const},
+   {position:61n,parent:30n,side:'RIGHT' as const},
+   {position:122n,parent:61n,side:'LEFT' as const},
+   {position:244n,parent:122n,side:'LEFT' as const},
+   {position:488n,parent:244n,side:'LEFT' as const},
+   {position:976n,parent:488n,side:'LEFT' as const},
+   {position:1953n,parent:976n,side:'RIGHT' as const},
+   {position:3906n,parent:1953n,side:'LEFT' as const},
+   {position:7812n,parent:3906n,side:'LEFT' as const},
+   {position:15625n,parent:7812n,side:'RIGHT' as const},
+   {position:31250n,parent:15625n,side:'LEFT' as const},
+   {position:62500n,parent:31250n,side:'LEFT' as const},
+   {position:125000n,parent:62500n,side:'LEFT' as const},
+   {position:250000n,parent:125000n,side:'LEFT' as const},
+   {position:500001n,parent:250000n,side:'RIGHT' as const},
+   {position:1000003n,parent:500001n,side:'RIGHT' as const},
+  ];
+  const qualifications=new Map<bigint,string>([[1n,tree.companyQualificationIds[0]],[2n,tree.companyQualificationIds[1]],[3n,tree.companyQualificationIds[2]]]);
+  let version=2,lastBallNo='';
+  for(const step of path){
+   const at=new Date(),person=await db.person.create({data:{legalName:`P0 GROWTH ${step.position} ${randomUUID()}`}});
+   const qualification=await db.qualification.create({data:{currentHolderPersonId:person.personId,planLevelCode:'STARTER',status:'EFFECTIVE',effectiveAt:at}});
+   await db.qualificationHolderHistory.create({data:{qualificationId:qualification.qualificationId,holderPersonId:person.personId,effectiveFrom:at,sourceType:'P0_GROWTH_TEST',sourceId:randomUUID()}});
+   await trees.confirmCompanySponsor(actor,tree.binaryTreeId,{qualificationId:qualification.qualificationId,reason:'Confirm P0 growth test sponsor'},randomUUID());
+   const placed=await trees.place(actor,tree.binaryTreeId,{qualificationId:qualification.qualificationId,binaryParentQualificationId:qualifications.get(step.parent)!,side:step.side,expectedVersion:version++,reason:'Place P0 growth test Ball'},randomUUID());
+   expect(placed.value.binaryPositionNo).toBe(step.position.toString());
+   qualifications.set(step.position,qualification.qualificationId);lastBallNo=placed.value.ballNo!;
+  }
+  expect(lastBallNo).toBe(`${tree.treeCode}1000000`);
+  const url=process.env.PHASE2_TEST_DATABASE_URL!;
+  const result=spawnSync(process.execPath,[resolve(process.cwd(),'../../scripts/p0-identifier-reconstruction-dry-run.mjs')],{cwd:resolve(process.cwd(),'../..'),env:{...process.env,DATABASE_URL:url},encoding:'utf8'});
+  expect(result.status).toBe(0);
+  expect(result.stdout).toContain('"status": "PASS"');
+ },30000);
 });
