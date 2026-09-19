@@ -50,6 +50,7 @@
     "golden:economic": "node scripts/golden-economic-cases.mjs",
     "security:preflight": "node scripts/security-policy-preflight.mjs",
     "security:e2e": "node scripts/security-http-e2e.mjs",
+    "p0:reconstruction:dry-run": "node scripts/p0-identifier-reconstruction-dry-run.mjs",
     "uat:gate": "node scripts/uat-gate.mjs",
     "release:readiness": "node scripts/release-readiness-preflight.mjs",
     "release:prep": "node scripts/run-bash-gate.mjs release-prep.sh",
