@@ -15,7 +15,8 @@ beforeEach(() => { memory.clear(); vi.stubGlobal('sessionStorage', storage); });
 afterEach(() => { if (renderer)
     act(() => renderer.unmount()); vi.unstubAllGlobals(); vi.restoreAllMocks(); });
 const response = (data: unknown) => new Response(JSON.stringify({ data, meta: { request_id: 'test-request', timestamp: '2026-09-15T00:00:00.000Z', api_version: 'v1' } }));
-const q = { id: 'q1', code: 'Q1', rank: 'ELITE', active: true, ballLabel: '球1' };
+const q = { id: 'q1', code: 'A000001', rank: 'ELITE', active: true, ballLabel: '球1' };
+const person = { name: 'Member', alias: null, memberNo: '2609000001', email: null, phone: null, gender: null, birthDate: null, membershipState: 'NETWORK_MEMBER', mobileVerifiedAt: null };
 function Probe({ id, load }: {
     id: string;
     load: (s: AbortSignal) => Promise<string>;
@@ -65,9 +66,11 @@ async function mount(path = '/') {
 function fakeAPI() {
     vi.stubGlobal('fetch', vi.fn(async (input: string) => {
         if (input.includes('/qualifications'))
-            return response([q, { ...q, id: 'q2', code: 'Q2' }]);
+            return response([q, { ...q, id: 'q2', code: 'A000002' }]);
+        if (input.includes('/member/me'))
+            return response(person);
         if (input.includes('/dashboard'))
-            return response({ memberName: 'Member', memberNo: 'M1', qualification: q, monthlyRepurchaseStatus: 'PENDING', pv: null, rpv: null, epv: null, bonusAmount: null, bonusStatus: 'PENDING' });
+            return response({ memberName: 'Member', memberNo: '2609000001', qualification: q, monthlyRepurchaseStatus: 'PENDING', pv: null, rpv: null, epv: null, bonusAmount: null, bonusStatus: 'PENDING' });
         return response([]);
     }));
 }
@@ -106,7 +109,7 @@ it('renders a useful not-found page', async () => {
 });
 it('requires explicit cart selection before real checkout and performs no eager mutation', async () => {
     const delivery={recipientName:'Member',phone:'+886223456789',countryCode:'TW',postalCode:'100',region:'Taipei',city:'Zhongzheng',address:'Test Road 1',complete:true,updatedAt:'2026-09-17T00:00:00Z'};
-    const fetch = vi.fn(async (input: string) => response(input.includes('/qualifications') ? [q] : input.includes('/delivery-profile')?delivery:input.includes('class=ACTIVE_DURATION')?[]:[{ id: 'live-product', name: 'Real catalog', price: 4800, pv: 2880, available: true }]));
+    const fetch = vi.fn(async (input: string) => response(input.includes('/qualifications') ? [q] : input.includes('/member/me') ? person : input.includes('/delivery-profile')?delivery:input.includes('class=ACTIVE_DURATION')?[]:[{ id: 'live-product', name: 'Real catalog', price: 4800, pv: 2880, available: true }]));
     vi.stubGlobal('fetch', fetch);
     await mount('/shop');
     expect(renderer.root.findAllByType('button').find(b => b.children.join('') === '加入購物車')?.props.disabled).toBe(false);
@@ -117,7 +120,7 @@ it('requires explicit cart selection before real checkout and performs no eager 
 });
 it('renders a recoverable catalog error for malformed API data instead of crashing', async () => {
     const delivery={recipientName:'Member',phone:'+886223456789',countryCode:'TW',postalCode:'100',region:'Taipei',city:'Zhongzheng',address:'Test Road 1',complete:true,updatedAt:'2026-09-17T00:00:00Z'};
-    vi.stubGlobal('fetch', vi.fn(async (input: string) => response(input.includes('/qualifications') ? [q] : input.includes('/delivery-profile')?delivery:input.includes('class=ACTIVE_DURATION')?[]:[{ id: 'p1', name: 'Invalid', price: '4800', pv: 2880, available: true }])));
+    vi.stubGlobal('fetch', vi.fn(async (input: string) => response(input.includes('/qualifications') ? [q] : input.includes('/member/me') ? person : input.includes('/delivery-profile')?delivery:input.includes('class=ACTIVE_DURATION')?[]:[{ id: 'p1', name: 'Invalid', price: '4800', pv: 2880, available: true }])));
     await mount('/shop');
     expect(JSON.stringify(renderer.toJSON())).toContain('資料格式異常');
     expect(renderer.root.findAllByType('button').some(b => b.children.join('') === '重新載入商品')).toBe(true);

@@ -4,11 +4,13 @@ Train B closure and Train C analytics foundation local/isolated gates PASS. Comp
 
 START_HEAD: 26fa675da0132646484b4a8806a8d5ab55e0e6f6. Implementation candidate: dbd9a57b6b54dec9fe34b7d5802a6625d835a88f. Final pushed report-only handoff commit is reported separately. Origin was fetched before work; final synchronization is verified at handoff.
 
-Current source: 67 migrations, 174 generated OpenAPI operations (167 retained). Exact test counts and domain results are in evidence/final-validation.json and TRAIN_B_CLOSURE_PASS_FAIL_MATRIX.md. Full 12-cell populated tree scale baseline, RC, Security, Decision v3 17/17 and economic invariance pass. UAT checklist ready; manual execution pending.
+Current source: 69 migrations, 175 generated OpenAPI operations (167 retained). Exact Train B/C test counts and domain results are in evidence/final-validation.json and TRAIN_B_CLOSURE_PASS_FAIL_MATRIX.md. The 2026-09-19 P0/UI continuation passes fresh 0→69 migration deployment, API 81 suites / 776 tests, Member 26 / 149, Admin 26 / 96, Analytics 58, Decision v3 17/17, OpenAPI, Security policy and RC isolated. UAT checklist is ready; manual execution remains pending.
 
 Authority: Issue #2 and all comments, especially approval 5725701382; governance SSOT. Pending LEADER history is preserved and superseded by APPROVED_LEADER_BINDING. Always Active does not bypass Global rank; member-origin Company-held Balls retain their own Plan.
 
 No LLM/RAG/Vector DB or Stage/Production deployment was performed. Formal identity credentials and SwaggerHub target remain external; unsupported Next Rank Pipeline/missing attachment evidence is SOURCE_NOT_AVAILABLE. See the eight closure reports and Stage candidate report for limitations, backup and recovery.
+
+P0 regression found and corrected PostgreSQL `lpad` truncation for Ball identifiers whose position ordinal exceeds six digits. Migration 69 restores the authoritative minimum-six-digit, naturally growing identifier rule. Test fixtures now use valid 10-digit Member Numbers and public Ball Numbers, and explicitly prove that internal Qualification/order UUIDs remain absent from Member UI output.
 
 ---
 

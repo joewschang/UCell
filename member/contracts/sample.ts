@@ -1,9 +1,9 @@
-const q = { id: 'fixture-q1', code: 'FIXTURE-Q1', rank: 'ELITE', active: true, ballLabel: '測試球 1' };
+const q = { id: 'fixture-q1', code: 'FIXTURE000001', rank: 'ELITE', active: true, ballLabel: '測試球 1' };
 const month = { qualificationId: q.id, period: '2026-09' };
 const bodies = {
   qualifications: [q],
-  person: { name:'測試會員',alias:null,memberNo:'FIXTURE-M1',email:null,phone:null,gender:null,birthDate:null,membershipState:'NETWORK_MEMBER',mobileVerifiedAt:null },
-  dashboard: { memberName: '測試會員', memberNo: 'FIXTURE-M1', qualification: q, monthlyRepurchaseStatus: 'PENDING', pv: null, rpv: null, epv: null, bonusAmount: null, bonusStatus: 'PENDING' },
+  person: { name:'測試會員',alias:null,memberNo:'2609000001',email:null,phone:null,gender:null,birthDate:null,membershipState:'NETWORK_MEMBER',mobileVerifiedAt:null },
+  dashboard: { memberName: '測試會員', memberNo: '2609000001', qualification: q, monthlyRepurchaseStatus: 'PENDING', pv: null, rpv: null, epv: null, bonusAmount: null, bonusStatus: 'PENDING' },
   organization: { qualificationId: q.id, sponsor: null, referrals: [] },
   binary: { qualificationId: q.id, left: { count: 0, volume: null, carry: null }, right: { count: 0, volume: null, carry: null }, settlementMetrics: { status: 'UNAVAILABLE', reason: 'SETTLEMENT_METRICS_READ_MODEL_NOT_AVAILABLE' }, fullTree: { status: 'UNAVAILABLE', reason: 'BINARY_TREE_READ_MODEL_NOT_AVAILABLE' } },
   performance: { ...month, pv: null, rpv: null, epv: null, left: null, right: null, asOf: null },

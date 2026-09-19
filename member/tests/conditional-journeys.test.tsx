@@ -9,7 +9,7 @@ let tree:ReactTestRenderer|undefined;
 const response=(data:unknown)=>new Response(JSON.stringify({data,meta:{request_id:'conditional-journey',api_version:'v1',timestamp:'2026-09-18T00:00:00.000Z'}}));
 const offer={packageVersionId:'11111111-1111-4111-8111-111111111111',packageCode:'QUALIFICATION-STARTER',displayName:'正式會員啟用套組',packageClass:'QUALIFICATION',version:1,currency:'TWD',priceAmount:'4800',selectableProductQuantity:2,selectionMode:'EXACT_QUANTITY',membershipEffect:'FORMAL_MEMBER',qualificationEffect:'CREATE_QUALIFICATION',activeDurationUnit:null,activeDurationValue:null,targetQualificationRequired:false,effectiveFrom:'2026-09-17T00:00:00.000Z',effectiveTo:null,configHash:'a'.repeat(64)};
 const incompleteDelivery={recipientName:null,phone:null,countryCode:null,postalCode:null,region:null,city:null,address:null,complete:false,updatedAt:null};
-const person={name:'LINE 使用者',alias:null,memberNo:'person-1',email:null,phone:null,gender:null,birthDate:null,membershipState:null,mobileVerifiedAt:null};
+const person={name:'LINE 使用者',alias:null,memberNo:'2609000003',email:null,phone:null,gender:null,birthDate:null,membershipState:null,mobileVerifiedAt:null};
 const contract={id:'contract-1',type:'NETWORK_MEMBERSHIP',version:'V1',title:'網路會員合約',content:'測試合約內容',contentHash:'a'.repeat(64),required:true,effectiveFrom:'2026-01-01T00:00:00Z',effectiveTo:null,acceptedAt:null};
 
 beforeEach(()=>vi.stubGlobal('sessionStorage',{getItem:()=>null,setItem:vi.fn(),removeItem:vi.fn()}));

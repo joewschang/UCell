@@ -13,7 +13,7 @@ ACR metadata tag 2259579-20260917154017 resolves to source commit 22595798d30dee
 
 ## Migration / OpenAPI delta
 
-Migration source files: actual Stage applied migration inventory/checksums: NOT_QUERIED. Current repository migration count is 68; this is not an assertion of deployed DB state.
+Migration source files: actual Stage applied migration inventory/checksums: NOT_QUERIED. Current repository migration count is 69; this is not an assertion of deployed DB state. Migration 69 corrects PostgreSQL Ball Number validation so ordinals longer than six digits grow naturally instead of being truncated by `lpad`.
 
 New candidate migrations 55–67 cover MVCC tree snapshots, versioned Company LEADER binding, typed final destinations and append-only B, Matching source identity, report snapshots, period jobs/generations/export, safe leaf cycle path, existing owner-exclusion assertion, parent expansion index, publication fence, replay K outputs, partial covering PV reversal index, and immutable job identity. Migration 54 remains unchanged; migration 62 verifies its existing exclusion instead of adding a duplicate GiST index.
 
@@ -35,7 +35,7 @@ Once Company monetary facts exist, an image-only rollback to code without destin
 
 ## Gate and UAT package
 
-P0 local evidence passes Prisma validate, API/Admin/Member builds, fresh 0→68 migrations, P0 identifier DB tests, reconstruction dry-run and focused Admin tests. Full formal HTTP `security:e2e` is BLOCKED because required credentials infrastructure returns ECONNREFUSED. The user explicitly excluded scale tests. Therefore this candidate is not ready for Stage review.
+P0 local evidence passes Prisma validate, API/Admin/Member builds, fresh 0→69 migrations, API 776/776, Admin 96/96, Member 149/149, Analytics 58/58, Decision v3 17/17, OpenAPI, Security policy and RC isolated. Full formal HTTP `security:e2e` remains BLOCKED because required credentials infrastructure returns ECONNREFUSED. The user explicitly excluded scale tests. Therefore this candidate is not ready for Stage review.
 
 TRAIN_B_C_UAT_CHECKLIST.md has 32 executable manual cases including Tree creation/#1–#7, placement/Sponsor rules, lifecycle, statistics/snapshot, Reservoir/Return/replay and role/error/session flows. Checklist READY; manual execution PENDING. CUA sandbox ACL failure prevented visual inspection here. This is preparation for Stage UAT review, not completed manual acceptance or Production readiness.
 

@@ -63,13 +63,17 @@ it('pins page one through a placement that writes early but commits late; reject
   await db.qualificationStatusHistory.create({data:{qualificationId:q.qualificationId,status:'EFFECTIVE',effectiveFrom:q.effectiveAt!,sourceType:'SYNTHETIC'}});
   await db.qualificationHolderHistory.create({data:{qualificationId:q.qualificationId,holderPersonId:owner.personId,effectiveFrom:new Date(),sourceType:'SYNTHETIC',sourceId:randomUUID()}});
   await commands.confirmCompanySponsor(p,tree.binaryTreeId,{qualificationId:q.qualificationId,reason:'Synthetic'},randomUUID());
-  await commands.place(p,tree.binaryTreeId,{qualificationId:q.qualificationId,binaryParentQualificationId:parent,side:'LEFT',expectedVersion:i+2,reason:'Synthetic'},randomUUID());
-  ids.push(q.qualificationId);parent=q.qualificationId;
+  // Keep a meaningful 50-level skew while adding the remaining rows as right
+  // branches. Binary heap positions are intentionally stored as PostgreSQL
+  // bigint, so an artificial 101-level all-left path would exceed the domain.
+  const placementParent=i<50?parent:ids[i-50],side=i<50?'LEFT' as const:'RIGHT' as const;
+  await commands.place(p,tree.binaryTreeId,{qualificationId:q.qualificationId,binaryParentQualificationId:placementParent,side,expectedVersion:i+2,reason:'Synthetic'},randomUUID());
+  ids.push(q.qualificationId);if(i<50)parent=q.qualificationId;
  }
- // Deep chains retain root/#2/#4 plus self, rather than quadratic all-ancestor closure.
+ // Deep paths retain canonical ancestors plus self, rather than quadratic all-ancestor closure.
  const ancestryRows=await db.binaryTreeAncestry.count({where:{binaryTreeId:tree.binaryTreeId}});
  expect(ancestryRows).toBeLessThanOrEqual(5+101*4);
- expect(await db.binaryTreeAncestry.findUnique({where:{binaryTreeId_ancestorQualificationId_descendantQualificationId:{binaryTreeId:tree.binaryTreeId,ancestorQualificationId:tree.companyQualificationIds[0],descendantQualificationId:parent}}})).toMatchObject({depth:102,firstSide:'LEFT'});
+ expect(await db.binaryTreeAncestry.findUnique({where:{binaryTreeId_ancestorQualificationId_descendantQualificationId:{binaryTreeId:tree.binaryTreeId,ancestorQualificationId:tree.companyQualificationIds[0],descendantQualificationId:parent}}})).toMatchObject({depth:51,firstSide:'LEFT'});
  const late=await db.qualification.create({data:{currentHolderPersonId:owner.personId,planLevelCode:'STARTER',status:'EFFECTIVE',effectiveAt:new Date()}});
  await db.qualificationPlanHistory.create({data:{qualificationId:late.qualificationId,planCode:'STARTER',effectiveFrom:late.effectiveAt!,sourceType:'SYNTHETIC'}});
   await db.qualificationStatusHistory.create({data:{qualificationId:late.qualificationId,status:'EFFECTIVE',effectiveFrom:late.effectiveAt!,sourceType:'SYNTHETIC'}});

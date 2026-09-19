@@ -8,14 +8,17 @@ describe('R1.0B v0.6.4 Golden Dataset',()=>{
   it('keeps Person and Qualification distinct', async () => {
     const personId='00000000-0000-0000-0000-000000000001';
     const balls=[
-      {qualificationId:'00000000-0000-0000-0000-000000000011',currentHolderPersonId:personId,status:'EFFECTIVE',activeFlag:true},
-      {qualificationId:'00000000-0000-0000-0000-000000000012',currentHolderPersonId:personId,status:'SUSPENDED',activeFlag:false},
+      {qualificationId:'00000000-0000-0000-0000-000000000011',currentHolderPersonId:personId,status:'EFFECTIVE',activeFlag:true,kind:'MEMBER_ORIGIN',planLevelCode:'STARTER',binaryTreeMembership:null,canonicalPosition:null,ownerIntervals:[],companyProfileBindings:[],globalRankHistory:[]},
+      {qualificationId:'00000000-0000-0000-0000-000000000012',currentHolderPersonId:personId,status:'SUSPENDED',activeFlag:false,kind:'MEMBER_ORIGIN',planLevelCode:'STARTER',binaryTreeMembership:null,canonicalPosition:null,ownerIntervals:[],companyProfileBindings:[],globalRankHistory:[]},
     ];
     const findMany=jest.fn(async()=>balls), count=jest.fn(async()=>2);
-    const tx={person:{findUnique:jest.fn(async()=>({personId}))},qualification:{findMany,count}};
+    const tx={person:{findUnique:jest.fn(async()=>({personId}))},qualification:{findMany,count},qualificationPlanHistory:{findMany:jest.fn(async()=>[])}};
     const service=new PersonService({$transaction:async(work:any)=>work(tx)} as any,{} as any,{} as any);
     const result=await service.qualifications(personId);
-    expect(result.data).toEqual(balls);
+    expect(result.data.map(ball=>({qualificationId:ball.qualificationId,currentHolderPersonId:ball.currentHolderPersonId,status:ball.status,activeFlag:ball.activeFlag}))).toEqual(
+      balls.map(({qualificationId,currentHolderPersonId,status,activeFlag})=>({qualificationId,currentHolderPersonId,status,activeFlag})),
+    );
+    expect(result.data.every(ball=>ball.admin360.schemaVersion==='ADMIN_QUALIFICATION_360_V1')).toBe(true);
     expect(result.meta.total).toBe(2);
     expect(new Set(result.data.map(ball=>ball.qualificationId)).size).toBe(2);
     expect(result.data.every(ball=>ball.qualificationId!==personId)).toBe(true);

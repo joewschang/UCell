@@ -10,12 +10,12 @@ import EndSession from '../src/EndSession';
 import {SessionGuard} from '../src/session';
 import {SessionBoundary} from '../src/SessionBoundary';
 let tree:ReactTestRenderer|undefined;
-const q={id:'q1',code:'Q1',rank:'ELITE',active:false,ballLabel:'球1'};
+const q={id:'q1',code:'A000001',rank:'ELITE',active:false,ballLabel:'球1'};
 const response=(data:unknown,status=200)=>new Response(JSON.stringify({data,meta:{request_id:'test',api_version:'v1',timestamp:'2026-09-16T00:00:00Z'}}),{status});
 beforeEach(()=>{vi.stubGlobal('sessionStorage',{getItem:()=>null,setItem:vi.fn(),removeItem:vi.fn()})});
 afterEach(()=>{if(tree)act(()=>tree!.unmount());tree=undefined;vi.unstubAllGlobals();vi.restoreAllMocks()});
 it('allows a Person without balls to access own profile and server logout without scoped queries',async()=>{
- const fetch=vi.fn(async(url:string)=>url.includes('/qualifications')?response([]):response({name:'Person only',alias:null,memberNo:'P1',email:null,phone:null,gender:null,birthDate:null,membershipState:'NETWORK_MEMBER',mobileVerifiedAt:null}));vi.stubGlobal('fetch',fetch);
+ const fetch=vi.fn(async(url:string)=>url.includes('/qualifications')?response([]):response({name:'Person only',alias:null,memberNo:'2609000002',email:null,phone:null,gender:null,birthDate:null,membershipState:'NETWORK_MEMBER',mobileVerifiedAt:null}));vi.stubGlobal('fetch',fetch);
  await act(async()=>{tree=create(<MemoryRouter initialEntries={['/me']}><QualificationProvider><App/></QualificationProvider></MemoryRouter>)});
  const text=JSON.stringify(tree!.toJSON());expect(text).toContain('Person only');expect(text).toContain('更新聯絡資料');expect(text).toContain('登出會員服務');
  expect(fetch.mock.calls.every(([url])=>!url.includes('qualificationId'))).toBe(true);

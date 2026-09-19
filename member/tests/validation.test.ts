@@ -1,6 +1,6 @@
 import { expect, it } from 'vitest';
 import * as v from '../src/validation';
-const q = { id: 'q1', code: 'Q1', rank: 'NEW_RANK', active: true, ballLabel: '球1' };
+const q = { id: 'q1', code: 'A000001', rank: 'NEW_RANK', active: true, ballLabel: '球1' };
 const product = { id: 'p1', name: 'Test', price: 4800, pv: 2880, available: true };
 it('accepts new rank strings, nulls and legitimate zero without coercion', () => {
   expect(v.parseQualifications([q])).toEqual([q]);
