@@ -22,7 +22,7 @@ export class SubscriptionService {
     if(input.status&&!['PENDING','ACTIVE','SUSPENDED','CANCELLED','COMPLETED'].includes(input.status))throw new UnprocessableEntityException({code:'INVALID_SUBSCRIPTION_STATUS'});
     if(input.qualificationId&&!/^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(input.qualificationId))throw new UnprocessableEntityException({code:'INVALID_QUALIFICATION_ID'});
     if(input.take!==undefined&&(!Number.isInteger(input.take)||input.take<1))throw new UnprocessableEntityException({code:'INVALID_PAGE_LIMIT'});
-    return this.prisma.subscription.findMany({where:{...(input.status?{status:input.status as any}:{}),...(input.qualificationId?{qualificationId:input.qualificationId}:{})},include:{plan:true},orderBy:[{createdAt:'desc'},{subscriptionId:'desc'}],take:Math.min(input.take??100,200)});
+    return this.prisma.subscription.findMany({where:{...(input.status?{status:input.status as any}:{}),...(input.qualificationId?{qualificationId:input.qualificationId}:{})},include:{plan:true,qualification:{include:{currentHolder:true}}},orderBy:[{createdAt:'desc'},{subscriptionId:'desc'}],take:Math.min(input.take??100,200)});
   }
 
   async create(dto:CreateSubscriptionDto,key:string,requestId:string,actorId?:string,ruleVersionCode='R1.0B'){

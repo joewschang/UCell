@@ -1,7 +1,7 @@
 {
   "name": "ucell-platform",
   "private": true,
-  "version": "0.6.10",
+  "version": "0.6.11",
   "packageManager": "pnpm@12.4.1",
   "engines": {
     "node": ">=24 <25",

@@ -16,8 +16,8 @@ export function WorkflowsPage(){
  const detail=useQuery({queryKey:['workflow-detail',selected],queryFn:()=>get<any>(`/admin/operations/workflows/${selected}`),enabled:!!selected});
  const rows=queue.data?.data??[];const d=detail.data?.data;
 
- async function qualSearch(q:string){const r:any=await get('/admin/qualifications'+qs({q,status:'EFFECTIVE',take:20}));return (r.data as Qualification[]).map(x=>({id:x.qualificationId,primary:`Q#${x.qualificationNo??'—'} · ${x.currentHolder?.legalName??'—'}`,secondary:`${x.planLevelCode} · ${x.qualificationId}`}))}
- async function personSearch(q:string){const r:any=await get('/admin/persons'+qs({q,take:20}));return (r.data as Person[]).map(x=>({id:x.personId,primary:x.legalName,secondary:[x.mobile,x.email,x.personId].filter(Boolean).join(' · ')}))}
+ async function qualSearch(q:string){const r:any=await get('/admin/qualifications'+qs({q,status:'EFFECTIVE',take:20}));return (r.data as Qualification[]).map(x=>({id:x.qualificationId,primary:`${x.ballNo??'未放置 Ball'} · ${x.currentHolder?.legalName??'—'}`,secondary:`${x.currentHolder?.memberNo??'會員編號未提供'} · ${x.planLevelCode}`}))}
+ async function personSearch(q:string){const r:any=await get('/admin/persons'+qs({q,take:20}));return (r.data as Person[]).map(x=>({id:x.personId,primary:x.legalName,secondary:[x.memberNo,x.mobile,x.email].filter(Boolean).join(' · ')}))}
  async function submit(){
   if(!qualification)return;setBusy(true);setError(null);
   try{
@@ -33,7 +33,7 @@ export function WorkflowsPage(){
  }
  async function approve(){if(!selected)return;setBusy(true);setError(null);try{await command(`/admin/qualification-workflows/${selected}/approve`,{});await qc.invalidateQueries({queryKey:['workflow-queue']});await qc.invalidateQueries({queryKey:['workflow-detail',selected]})}catch(e){setError(e)}finally{setBusy(false)}}
 
- return <><PageHeader title="升級／轉讓／退出" subtitle="審核費NT$600；核准後向未來生效。轉讓移轉該Qualification全部權利義務，Qualification ID與組織位置不變。"/>
+ return <><PageHeader title="升級／轉讓／退出" subtitle="審核費NT$600；核准後向未來生效。轉讓移轉該 Ball 的全部權利義務，Ball Number 與組織位置不變。"/>
  <ErrorBox error={error}/>
  <div className="grid two"><Card title="建立Workflow"><div className="form">
   <SearchSelect label="Qualification" value={qualification} onChange={setQualification} search={qualSearch}/>
@@ -47,7 +47,7 @@ export function WorkflowsPage(){
  <Card title="制度／法務邊界"><p><Badge tone="warn">公司不介入會員間對價</Badge></p><p>轉讓之對價關係由轉讓雙方自行約定；公司只審查會員資格移轉程序。</p><p>退出後Qualification由公司持有，公司可再移轉給其他人。</p><p>升級只向未來生效，不回溯歷史獎金。</p></Card></div>
 
  <div className="toolbar"><select value={status} onChange={e=>setStatus(e.target.value)}><option value="">全部狀態</option><option>SUBMITTED</option><option>EFFECTIVE</option><option>REJECTED</option><option>CANCELLED</option></select><select value={type} onChange={e=>setType(e.target.value)}><option value="">全部類型</option><option>UPGRADE</option><option>TRANSFER</option><option>EXIT</option><option>COMPANY_RETRANSFER</option></select><input value={search} onChange={e=>setSearch(e.target.value)} aria-label="會員／接收人／Qualification" placeholder="會員／接收人／Qualification"/></div>
- <div className="split-view"><Card title={`Workflow Queue (${rows.length})`}>{rows.map((x:any)=><button key={x.qualificationWorkflowId} className={`list-row ${selected===x.qualificationWorkflowId?'selected':''}`} onClick={()=>setSelected(x.qualificationWorkflowId)}><strong>{x.workflowType} · {x.qualification?.currentHolder?.legalName??'—'}</strong><span>{x.status} · Review Fee {money(x.reviewFee)}</span><small>{dateTime(x.submittedAt??x.createdAt)} · {x.qualificationWorkflowId}</small></button>)}</Card>
- <Card title="Workflow Detail">{!d?<p className="muted">選擇Workflow。</p>:<><dl className="detail-grid"><dt>Type</dt><dd>{d.workflowType}</dd><dt>Status</dt><dd>{d.status}</dd><dt>Qualification</dt><dd>{d.qualification?.currentHolder?.legalName}<br/><span className="mono">{d.qualificationId}</span></dd><dt>Receiver</dt><dd>{d.receiver?.legalName??'—'}</dd><dt>Target Plan</dt><dd>{d.targetPlanCode??'—'}</dd><dt>Review Fee</dt><dd>{money(d.reviewFee)} · {d.payload?.reviewFeePaid?'已確認':'未確認'}</dd><dt>Submitted</dt><dd>{dateTime(d.submittedAt)}</dd><dt>Effective</dt><dd>{dateTime(d.effectiveAt)}</dd></dl>{d.status==='SUBMITTED'&&<button className="primary sticky-actions" disabled={busy||d.payload?.reviewFeePaid!==true} onClick={approve}>Approve（Server Time，禁止回溯）</button>}</>}</Card></div>
+ <div className="split-view"><Card title={`Workflow Queue (${rows.length})`}>{rows.map((x:any)=><button key={x.qualificationWorkflowId} className={`list-row ${selected===x.qualificationWorkflowId?'selected':''}`} onClick={()=>setSelected(x.qualificationWorkflowId)}><strong>{x.workflowType} · {x.qualification?.ballNo??'Ball evidence 未提供'} · {x.qualification?.currentHolder?.legalName??'—'}</strong><span>{x.qualification?.currentHolder?.memberNo??'會員編號未提供'} · {x.status} · Review Fee {money(x.reviewFee)}</span><small>{dateTime(x.submittedAt??x.createdAt)}</small></button>)}</Card>
+ <Card title="Workflow Detail">{!d?<p className="muted">選擇Workflow。</p>:<><dl className="detail-grid"><dt>Type</dt><dd>{d.workflowType}</dd><dt>Status</dt><dd>{d.status}</dd><dt>Ball</dt><dd>{d.qualification?.ballNo??'Ball evidence 未提供'}<br/>{d.qualification?.currentHolder?.memberNo??'會員編號未提供'} · {d.qualification?.currentHolder?.legalName??'—'}</dd><dt>Receiver</dt><dd>{d.receiver?.legalName??'—'}</dd><dt>Target Plan</dt><dd>{d.targetPlanCode??'—'}</dd><dt>Review Fee</dt><dd>{money(d.reviewFee)} · {d.payload?.reviewFeePaid?'已確認':'未確認'}</dd><dt>Submitted</dt><dd>{dateTime(d.submittedAt)}</dd><dt>Effective</dt><dd>{dateTime(d.effectiveAt)}</dd></dl>{d.status==='SUBMITTED'&&<button className="primary sticky-actions" disabled={busy||d.payload?.reviewFeePaid!==true} onClick={approve}>Approve（Server Time，禁止回溯）</button>}</>}</Card></div>
  </>
 }

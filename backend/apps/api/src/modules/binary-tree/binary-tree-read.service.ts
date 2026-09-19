@@ -4,7 +4,7 @@ import {treeStatisticsProjection} from './tree-statistics-projection';
 import {readTreeNodeSnapshot} from './tree-node-snapshot';
 import {readFoundingPerformance,readFoundingCarry} from './binary-tree-metrics';
 import {Injectable,UnprocessableEntityException} from '@nestjs/common';
-import {Prisma,PrismaService} from '@ucell/database';
+import {binaryPath,Prisma,PrismaService} from '@ucell/database';
 import {AsOfContext,parseAsOfContext} from '@ucell/shared';
 import {BinaryTreeService,TreePrincipal} from './binary-tree.service';
 @Injectable()
@@ -46,6 +46,7 @@ export class BinaryTreeReadService {
   for(const slot of slots){
    const membership=slot.occupantQualificationId?await tx.binaryTreeMembership.findFirst({where:{qualificationId:slot.occupantQualificationId,binaryTreeId:id,effectiveFrom:{lte:at},recordedAt:{lte:known}}}):null;
    if(!membership){positions.push({positionNo:slot.positionNo,parentPositionNo:slot.parentPositionNo,side:slot.side,qualificationId:null,ownerType:null,activeLabel:null,descendantBalls:null,distinctMemberPersons:null,newBallsInPeriod:null,leftDescendantBalls:null,rightDescendantBalls:null,leftNewBallsInPeriod:null,rightNewBallsInPeriod:null,performance:null,carry:null});continue;}
+   const qualification=await tx.qualification.findUnique({where:{qualificationId:membership.qualificationId},select:{ballNo:true}});
    const owners=await tx.qualificationOwnerInterval.findMany({where:{qualificationId:membership.qualificationId,effectiveFrom:{lte:at},recordedAt:{lte:known},OR:[{effectiveTo:null},{effectiveTo:{gt:at}},{closedRecordedAt:{gt:known}}]},take:2});
    if(owners.length!==1)return {status:'UNAVAILABLE',explainCode:'OWNER_EVIDENCE_UNAVAILABLE',time,result:null};
    const owner=owners[0];
@@ -71,7 +72,7 @@ export class BinaryTreeReadService {
    const performance=projected?{status:m.cumulativeGpv===null?'UNAVAILABLE':'AVAILABLE',reason:null,value:m.cumulativeGpv===null?null:{cumulative:String(m.cumulativeGpv),month:String(m.monthlyGpv),leftMonth:String(m.leftMonthlyGpv),rightMonth:String(m.rightMonthlyGpv)}}:slot.positionNo>=4?(statistics.required?{status:'UNAVAILABLE',reason:'BACKGROUND_PROJECTION_REQUIRED',value:null}:await readFoundingPerformance(tx,id,membership.qualificationId,time)):null;
    const carry=projected?.evidence.carry??(slot.positionNo>=4?await readFoundingCarry(tx,membership.qualificationId,time):null);
    const lastUpdated=[membership.recordedAt,owner.recordedAt,activeEvidence.lastUpdated,(counts[0] as any).updated,(performance as any)?.lastUpdated,(carry as any)?.lastUpdated,projected?.evidence.lastUpdated].filter(v=>v!=null).map(v=>new Date(v).toISOString()).sort().at(-1)!;
-   positions.push({performance,carry,holderId:owner.personId??owner.companyPrincipalId,occupationStatus:'OCCUPIED',lastUpdated,dataThrough:statistics.dataThrough??time.knowledgeCutoff,evidenceQuality:slot.positionNo<4?'AUTHORITATIVE':performance?.status==='AVAILABLE'&&carry?.status==='AVAILABLE'&&active!=='UNKNOWN'?'AUTHORITATIVE':'PARTIAL',leftDescendantBalls:numberOrNull(counts[0].left_balls),rightDescendantBalls:numberOrNull(counts[0].right_balls),leftNewBallsInPeriod:numberOrNull(counts[0].left_new),rightNewBallsInPeriod:numberOrNull(counts[0].right_new),positionNo:slot.positionNo,parentPositionNo:slot.parentPositionNo,side:slot.side,qualificationId:membership.qualificationId,ownerType:owner.ownerType,
+   positions.push({performance,carry,holderId:owner.personId??owner.companyPrincipalId,occupationStatus:'OCCUPIED',lastUpdated,dataThrough:statistics.dataThrough??time.knowledgeCutoff,evidenceQuality:slot.positionNo<4?'AUTHORITATIVE':performance?.status==='AVAILABLE'&&carry?.status==='AVAILABLE'&&active!=='UNKNOWN'?'AUTHORITATIVE':'PARTIAL',leftDescendantBalls:numberOrNull(counts[0].left_balls),rightDescendantBalls:numberOrNull(counts[0].right_balls),leftNewBallsInPeriod:numberOrNull(counts[0].left_new),rightNewBallsInPeriod:numberOrNull(counts[0].right_new),positionNo:slot.positionNo,binaryPositionNo:membership.binaryPositionNo.toString(),path:binaryPath(membership.binaryPositionNo),ballNo:qualification?.ballNo??null,parentPositionNo:slot.parentPositionNo,side:slot.side,qualificationId:membership.qualificationId,ownerType:owner.ownerType,
     activeLabel:active==='ALWAYS_ACTIVE'?'Always Active (Company Rule)':m?.active??active,actualSponsorSequenceNo:founding?.actualSponsorSequenceNo??(slot.positionNo===2?1:slot.positionNo===3?2:null),
     descendantBalls:numberOrNull(counts[0].balls),distinctMemberPersons:numberOrNull(counts[0].persons),newBallsInPeriod:numberOrNull(counts[0].new_balls)});
   }

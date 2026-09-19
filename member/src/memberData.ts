@@ -4,8 +4,8 @@ import { type Dashboard, type Qualification, type Scoped, type Person, type Orga
 import { memberApi as api } from './memberApi';
 export const isMock = import.meta.env.VITE_ENABLE_MOCK === 'true';
 const qualifications: Qualification[] = [
-    { id: 'q1', code: 'Q-000123', rank: 'LEADER', active: true, ballLabel: '球 1' },
-    { id: 'q2', code: 'Q-000124', rank: 'ELITE', active: false, ballLabel: '球 2' },
+    { id: 'q1', code: 'A000001', rank: 'LEADER', active: true, ballLabel: '球 A000001' },
+    { id: 'q2', code: 'A000002', rank: 'ELITE', active: false, ballLabel: '球 A000002' },
 ];
 const rankNames: Record<string, string> = { STARTER: '啟航', ELITE: '菁英', LEADER: '領袖' };
 export const displayRank = (rank: string) => rankNames[rank] ?? rank;
@@ -24,7 +24,7 @@ export async function getRepurchaseStatus(q:Qualification,signal:AbortSignal):Pr
  if(result?.qualificationId!==q.id||!/^\d{4}-(0[1-9]|1[0-2])$/.test(result.period)||!['ACTIVE','PENDING','INACTIVE'].includes(result.status)||!Array.isArray(result.recognitions)||!result.recognitions.every(row=>typeof row.id==='string'&&['SCHEDULED','DUE','RECOGNIZED','CANCELLED','REVERSED'].includes(row.status)&&Number.isFinite(Date.parse(row.dueAt))))throw new Error('重購資料格式或資格不符，已停止顯示');
  return result;
 }
-export const getPerson = (signal: AbortSignal) => isMock ? Promise.resolve<Person>({ name:'示範會員',alias:null,memberNo:'DEMO-000001',email:null,phone:null,gender:null,birthDate:null,membershipState:'NETWORK_MEMBER',mobileVerifiedAt:null }) : api<unknown>('/member/me', { signal }).then(validate.parsePerson);
+export const getPerson = (signal: AbortSignal) => isMock ? Promise.resolve<Person>({ name:'示範會員',alias:null,memberNo:'2609000001',email:null,phone:null,gender:null,birthDate:null,membershipState:'NETWORK_MEMBER',mobileVerifiedAt:null }) : api<unknown>('/member/me', { signal }).then(validate.parsePerson);
 export type RequiredContract={id:string;type:string;version:string;title:string;content:string;contentHash:string;required:boolean;effectiveFrom:string;effectiveTo:string|null;acceptedAt:string|null};
 export async function getRequiredContracts(signal:AbortSignal){
  const rows=await api<unknown>('/member/contracts/required',{signal});
@@ -113,7 +113,7 @@ async function scoped<T extends Scoped>(path: string, q: Qualification, sample: 
 }
 export async function getDashboard(q: Qualification, signal: AbortSignal): Promise<Dashboard> {
     if (isMock)
-        return { memberName: '示範會員', memberNo: 'DEMO-000001', qualification: q, monthlyRepurchaseStatus: q.active ? 'ACTIVE' : 'INACTIVE', pv: q.id === 'q1' ? 2880 : null, rpv: q.id === 'q1' ? 1200 : null, epv: q.id === 'q1' ? 1680 : null, bonusAmount: null, bonusStatus: 'PENDING' };
+        return { memberName: '示範會員', memberNo: '2609000001', qualification: q, monthlyRepurchaseStatus: q.active ? 'ACTIVE' : 'INACTIVE', pv: q.id === 'q1' ? 2880 : null, rpv: q.id === 'q1' ? 1200 : null, epv: q.id === 'q1' ? 1680 : null, bonusAmount: null, bonusStatus: 'PENDING' };
     const result = await api<Dashboard>(`/member/dashboard?qualificationId=${encodeURIComponent(q.id)}`, { signal });
     if (result?.qualification?.id !== q.id)
         throw new Error('回傳資格不符，已停止顯示資料');
@@ -127,6 +127,17 @@ export async function getBinary(q:Qualification,s:AbortSignal,settlementBatchId?
  const result=validate.parseBinary(await api<unknown>(`/member/organization/binary?${query}`,{signal:s}));
  if(result.qualificationId!==q.id||settlementBatchId&&result.settlementScope?.settlementBatchId!==settlementBatchId)throw new Error('二元結算範圍或資格不符，已停止顯示');
  return result;
+}
+export type MemberTreeNode={ballNo:string;binaryPositionNo:string;side:'LEFT'|'RIGHT'|null;nodeKind:'AnonymousBallNode'};
+export type MemberTreePage={status:'AVAILABLE'|'UNAVAILABLE';snapshotToken:string|null;snapshotExpiresAt:string|null;parentBallNo:string|null;hiddenBootstrapBoundary?:boolean;items:MemberTreeNode[];nextCursor:string|null};
+export type MemberTreeTime={timezone:'Asia/Taipei';asOf:string;knowledgeCutoff:string;periodStart:string;periodEnd:string};
+export function newMemberTreeTime():MemberTreeTime{const now=new Date(),year=now.getUTCFullYear(),month=now.getUTCMonth();return {timezone:'Asia/Taipei',asOf:now.toISOString(),knowledgeCutoff:now.toISOString(),periodStart:new Date(Date.UTC(year,month,1)).toISOString(),periodEnd:new Date(Date.UTC(year,month+1,1)).toISOString()};}
+export async function getMemberTree(q:Qualification,parentBallNo:string|undefined,snapshotToken:string|undefined,time:MemberTreeTime,s:AbortSignal):Promise<MemberTreePage>{
+ if(isMock)return {status:'AVAILABLE',snapshotToken:'mock-safe-tree',snapshotExpiresAt:null,parentBallNo:parentBallNo??q.code,hiddenBootstrapBoundary:(parentBallNo??q.code)==='A000001',items:parentBallNo?[{ballNo:'A000020',binaryPositionNo:'20',side:'LEFT',nodeKind:'AnonymousBallNode'}]:[{ballNo:'A000005',binaryPositionNo:'8',side:'LEFT',nodeKind:'AnonymousBallNode'},{ballNo:'A000006',binaryPositionNo:'9',side:'RIGHT',nodeKind:'AnonymousBallNode'}],nextCursor:null};
+ const query=new URLSearchParams({...time,ballNo:q.code,...(parentBallNo?{parentBallNo}:{}),...(snapshotToken?{snapshotToken}:{})});
+ const value=await api<unknown>(`/member/organization/tree?${query}`,{signal:s}) as MemberTreePage;
+ if(!value||!['AVAILABLE','UNAVAILABLE'].includes(value.status)||!Array.isArray(value.items)||!value.items.every(node=>node&&typeof node.ballNo==='string'&&/^\d+$/.test(node.binaryPositionNo)&&['LEFT','RIGHT',null].includes(node.side)&&node.nodeKind==='AnonymousBallNode'))throw new Error('安全組織資料格式異常，已停止顯示');
+ return value;
 }
 export const getPerformance = (q: Qualification, p: string, s: AbortSignal) => scoped<Performance>('performance', q, { qualificationId: q.id, period: p, pv: null, rpv: null, epv: null, left: null, right: null, asOf: null }, s, validate.parsePerformance, p);
 export const getBonuses = (q: Qualification, p: string, s: AbortSignal) => scoped<Bonus>('bonuses', q, { qualificationId: q.id, period: p, awards: ['推薦獎金', '對碰獎金', '對等獎金', '全球獎金'].map((name, i) => ({ id: `${q.id}-${i}`, name, status: 'PENDING', amount: null })) }, s, validate.parseBonus, p);

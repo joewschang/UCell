@@ -72,6 +72,7 @@ export class PersonService {
         OR: [
           { legalName: { contains: query, mode: 'insensitive' } },
           { preferredName: { contains: query, mode: 'insensitive' } },
+          { memberNo: { contains: query } },
           { mobile: { contains: query } },
           { email: { contains: query, mode: 'insensitive' } },
         ],

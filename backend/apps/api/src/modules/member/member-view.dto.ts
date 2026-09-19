@@ -1,7 +1,7 @@
 import {ApiProperty,getSchemaPath} from '@nestjs/swagger';
 export class QualificationView {
  @ApiProperty({format:'uuid'}) id!:string;
- @ApiProperty() code!:string;
+ @ApiProperty({description:'Member-authorized immutable business Ball number; never a UUID.'}) code!:string;
  @ApiProperty() rank!:string;
  @ApiProperty() active!:boolean;
  @ApiProperty() ballLabel!:string;
@@ -12,7 +12,7 @@ export class ActiveIntervalView { @ApiProperty({format:'date-time'}) activeFrom!
 export class PersonView {
  @ApiProperty() name!:string;
  @ApiProperty({type:String,nullable:true}) alias!:string|null;
- @ApiProperty({format:'uuid'}) memberNo!:string;
+ @ApiProperty({pattern:'^\\d{10}$',description:'Immutable Asia/Taipei YYMM + monthly six-digit business member number.'}) memberNo!:string;
  @ApiProperty({type:String,nullable:true}) email!:string|null;
  @ApiProperty({type:String,nullable:true}) phone!:string|null;
  @ApiProperty({type:String,nullable:true}) gender!:string|null;
@@ -98,7 +98,27 @@ export class DashboardView {
  @ApiProperty({pattern:'^\\d{4}-(0[1-9]|1[0-2])$'}) monthReference!:string;
  @ApiProperty({type:()=>ActiveIntervalView,nullable:true}) activeInterval!:ActiveIntervalView|null;
 }
-export class TreeNodeView { @ApiProperty() code!:string; @ApiProperty({description:'Masked name'}) name!:string; }
+/** Member-safe topology node. It deliberately has no qualification/tree UUID, owner type, Company state or finance fields. */
+export class TreeNodeView {
+ @ApiProperty({description:'Authorized business Ball number only.'}) code!:string;
+ @ApiProperty({description:'Present only for a direct-sponsored visible Ball; an empty string means the holder identity is intentionally omitted.'}) name!:string;
+ @ApiProperty({enum:['DirectSponsoredIdentity','AnonymousBallNode']}) nodeKind!:'DirectSponsoredIdentity'|'AnonymousBallNode';
+}
+export class MemberTreeNodeView {
+ @ApiProperty() ballNo!:string;
+ @ApiProperty({description:'Decimal string; never converted to a JavaScript number.'}) binaryPositionNo!:string;
+ @ApiProperty({enum:['LEFT','RIGHT'],nullable:true}) side!:'LEFT'|'RIGHT'|null;
+ @ApiProperty({enum:['AnonymousBallNode']}) nodeKind!:'AnonymousBallNode';
+}
+export class MemberTreePageView {
+ @ApiProperty({enum:['AVAILABLE','UNAVAILABLE']}) status!:'AVAILABLE'|'UNAVAILABLE';
+ @ApiProperty({type:String,nullable:true}) snapshotToken!:string|null;
+ @ApiProperty({type:String,format:'date-time',nullable:true}) snapshotExpiresAt!:string|null;
+ @ApiProperty({type:String,nullable:true}) parentBallNo!:string|null;
+ @ApiProperty({description:'A neutral upstream indicator only. It never identifies a hidden Company Bootstrap Ball.'}) hiddenBootstrapBoundary!:boolean;
+ @ApiProperty({type:[MemberTreeNodeView]}) items!:MemberTreeNodeView[];
+ @ApiProperty({type:String,nullable:true}) nextCursor!:string|null;
+}
 export class SponsorView {
  @ApiProperty({format:'uuid'}) qualificationId!:string;
  @ApiProperty({type:TreeNodeView,nullable:true}) sponsor!:TreeNodeView|null;
@@ -154,5 +174,5 @@ export class OrdersView { @ApiProperty({format:'uuid'}) qualificationId!:string;
 export class ContextView { @ApiProperty({format:'uuid'}) qualificationId!:string; @ApiProperty({type:QualificationView}) qualification!:QualificationView; }
 export class LogoutView { @ApiProperty({enum:['REVOKED']}) status!:string; @ApiProperty({format:'uuid'}) sessionId!:string; }
 export class LineSessionView { @ApiProperty({description:'Opaque UCell bearer, not LINE token.'}) accessToken!:string; @ApiProperty({format:'date-time'}) expiresAt!:string; @ApiProperty({format:'uuid'}) sessionId!:string; }
-export const memberViewModels=[LogoutView,ActiveIntervalView,QualificationView,PersonView,PaginationView,NoticeView,NoticesView,NoticeReadView,OrderLineView,OrderView,ProductView,PerformanceView,DashboardView,TreeNodeView,SponsorView,SideView,ReadModelAvailabilityView,BinarySettlementScopeView,BinaryView,AwardView,BonusesView,LedgerEntryView,LedgerView,RecognitionView,RepurchaseView,OrderListEntryView,OrdersView,ContextView,LineSessionView];
+export const memberViewModels=[LogoutView,ActiveIntervalView,QualificationView,PersonView,PaginationView,NoticeView,NoticesView,NoticeReadView,OrderLineView,OrderView,ProductView,PerformanceView,DashboardView,TreeNodeView,MemberTreeNodeView,MemberTreePageView,SponsorView,SideView,ReadModelAvailabilityView,BinarySettlementScopeView,BinaryView,AwardView,BonusesView,LedgerEntryView,LedgerView,RecognitionView,RepurchaseView,OrderListEntryView,OrdersView,ContextView,LineSessionView];
 export function memberEnvelope(type:Function,array=false){return {type:'object',required:['data','meta'],properties:{data:array?{type:'array',items:{$ref:getSchemaPath(type)}}:{$ref:getSchemaPath(type)},meta:{type:'object',required:['request_id','timestamp','api_version'],properties:{request_id:{type:'string'},timestamp:{type:'string',format:'date-time'},api_version:{type:'string',enum:['v1']}}}}};}

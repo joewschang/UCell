@@ -1,18 +1,15 @@
 {
-  "baseline": "26fa675da0132646484b4a8806a8d5ab55e0e6f6",
+  "baseline": "35bfef1b3d3134601b70990818fc620968dafa4c",
   "validatedWith": "@apidevtools/swagger-parser",
-  "baselineOperations": 167,
-  "currentOperations": 174,
+  "baselineOperations": 174,
+  "currentOperations": 175,
   "added": [
-    "GET /api/v1/admin/finance/reservoirs",
-    "POST /api/v1/admin/analytics/period-projections/jobs",
-    "GET /api/v1/admin/analytics/period-projections/jobs/{id}",
-    "POST /api/v1/admin/analytics/period-projections/query",
-    "POST /api/v1/admin/analytics/period-projections/exports",
-    "GET /api/v1/admin/analytics/period-projections/exports/{id}",
-    "GET /api/v1/admin/analytics/period-projections/exports/{id}/file"
+    "GET /api/v1/member/organization/tree"
   ],
-  "failures": [],
+  "failures": [
+    "GET /api/v1/member/me response 200 application/json.data.memberNo: format changed",
+    "PATCH /api/v1/member/profile response 200 application/json.data.memberNo: format changed"
+  ],
   "manualReview": [],
   "limitation": "Structural compatibility only. Pagination token behavior and business semantics require contract tests and review."
 }

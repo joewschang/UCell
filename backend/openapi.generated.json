@@ -1135,19 +1135,39 @@
           },
           {
             "name": "qualificationId",
-            "required": true,
+            "required": false,
             "in": "query",
+            "description": "Legacy technical identifier. Prefer qualificationMemberNo.",
             "schema": {
               "format": "uuid",
               "type": "string"
             }
           },
           {
-            "name": "binaryParentQualificationId",
-            "required": true,
+            "name": "qualificationMemberNo",
+            "required": false,
             "in": "query",
+            "description": "Public Member Number for the single unplaced Member-origin qualification.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "binaryParentQualificationId",
+            "required": false,
+            "in": "query",
+            "description": "Legacy technical identifier. Prefer binaryParentBallNo.",
             "schema": {
               "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "binaryParentBallNo",
+            "required": false,
+            "in": "query",
+            "description": "Immutable public Ball Number of the parent within this Tree.",
+            "schema": {
               "type": "string"
             }
           },
@@ -6901,6 +6921,168 @@
         ]
       }
     },
+    "/api/v1/member/organization/tree": {
+      "get": {
+        "description": "Server-side, bounded and snapshot-consistent binary-tree expansion. Bootstrap Company Balls #1–#3 and all Company/reservoir fields are excluded before serialization.",
+        "operationId": "memberReadBinaryTreeChildren",
+        "parameters": [
+          {
+            "name": "ballNo",
+            "required": true,
+            "in": "query",
+            "description": "Selected owned Ball number. UUIDs are not part of the member topology contract.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "parentBallNo",
+            "required": false,
+            "in": "query",
+            "description": "Expand one visible Ball only. Omit to expand the selected Ball.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "timezone",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "Asia/Taipei"
+              ]
+            }
+          },
+          {
+            "name": "asOf",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "periodStart",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "periodEnd",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "knowledgeCutoff",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "after",
+            "required": false,
+            "in": "query",
+            "description": "Opaque cursor from this exact snapshot.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "snapshotToken",
+            "required": false,
+            "in": "query",
+            "description": "Snapshot token returned by page one; required with after.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/MemberTreePageView"
+                    },
+                    "meta": {
+                      "type": "object",
+                      "required": [
+                        "request_id",
+                        "timestamp",
+                        "api_version"
+                      ],
+                      "properties": {
+                        "request_id": {
+                          "type": "string"
+                        },
+                        "timestamp": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "api_version": {
+                          "type": "string",
+                          "enum": [
+                            "v1"
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failure; unknown identity/qualification/monetary fields rejected"
+          },
+          "401": {
+            "description": "Member LINE session required, expired/disabled sessions denied"
+          },
+          "403": {
+            "description": "Qualification not owned"
+          },
+          "404": {
+            "description": "Resource unavailable"
+          },
+          "409": {
+            "description": "Conflicting operation"
+          },
+          "422": {
+            "description": "Invalid input or pending domain decision"
+          }
+        },
+        "security": [
+          {
+            "memberBearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "Member"
+        ]
+      }
+    },
     "/api/v1/member/referrals": {
       "get": {
         "operationId": "MemberController_referrals",
@@ -12089,12 +12271,16 @@
           },
           "qualificationId": {
             "type": "string",
-            "format": "uuid"
+            "format": "uuid",
+            "description": "Legacy technical identifier. Prefer qualificationMemberNo."
+          },
+          "qualificationMemberNo": {
+            "type": "string",
+            "description": "Public Member Number for the single unplaced Member-origin qualification."
           }
         },
         "required": [
-          "reason",
-          "qualificationId"
+          "reason"
         ]
       },
       "PlaceTreeDto": {
@@ -12106,14 +12292,24 @@
           },
           "qualificationId": {
             "type": "string",
-            "format": "uuid"
+            "format": "uuid",
+            "description": "Legacy technical identifier. Prefer qualificationMemberNo."
+          },
+          "qualificationMemberNo": {
+            "type": "string",
+            "description": "Public Member Number for the single unplaced Member-origin qualification."
           },
           "preflightToken": {
             "type": "string"
           },
           "binaryParentQualificationId": {
             "type": "string",
-            "format": "uuid"
+            "format": "uuid",
+            "description": "Legacy technical identifier. Prefer binaryParentBallNo."
+          },
+          "binaryParentBallNo": {
+            "type": "string",
+            "description": "Immutable public Ball Number of the parent within this Tree."
           },
           "side": {
             "type": "string",
@@ -12129,9 +12325,7 @@
         },
         "required": [
           "reason",
-          "qualificationId",
           "preflightToken",
-          "binaryParentQualificationId",
           "side",
           "expectedVersion"
         ]
@@ -12654,7 +12848,8 @@
             "format": "uuid"
           },
           "code": {
-            "type": "string"
+            "type": "string",
+            "description": "Member-authorized immutable business Ball number; never a UUID."
           },
           "rank": {
             "type": "string"
@@ -12703,7 +12898,8 @@
           },
           "memberNo": {
             "type": "string",
-            "format": "uuid"
+            "pattern": "^\\d{10}$",
+            "description": "Immutable Asia/Taipei YYMM + monthly six-digit business member number."
           },
           "email": {
             "type": "string",
@@ -13113,16 +13309,105 @@
         "type": "object",
         "properties": {
           "code": {
-            "type": "string"
+            "type": "string",
+            "description": "Authorized business Ball number only."
           },
           "name": {
             "type": "string",
-            "description": "Masked name"
+            "description": "Present only for a direct-sponsored visible Ball; an empty string means the holder identity is intentionally omitted."
+          },
+          "nodeKind": {
+            "type": "string",
+            "enum": [
+              "DirectSponsoredIdentity",
+              "AnonymousBallNode"
+            ]
           }
         },
         "required": [
           "code",
-          "name"
+          "name",
+          "nodeKind"
+        ]
+      },
+      "MemberTreeNodeView": {
+        "type": "object",
+        "properties": {
+          "ballNo": {
+            "type": "string"
+          },
+          "binaryPositionNo": {
+            "type": "string",
+            "description": "Decimal string; never converted to a JavaScript number."
+          },
+          "side": {
+            "type": "string",
+            "enum": [
+              "LEFT",
+              "RIGHT"
+            ],
+            "nullable": true
+          },
+          "nodeKind": {
+            "type": "string",
+            "enum": [
+              "AnonymousBallNode"
+            ]
+          }
+        },
+        "required": [
+          "ballNo",
+          "binaryPositionNo",
+          "side",
+          "nodeKind"
+        ]
+      },
+      "MemberTreePageView": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "AVAILABLE",
+              "UNAVAILABLE"
+            ]
+          },
+          "snapshotToken": {
+            "type": "string",
+            "nullable": true
+          },
+          "snapshotExpiresAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "parentBallNo": {
+            "type": "string",
+            "nullable": true
+          },
+          "hiddenBootstrapBoundary": {
+            "type": "boolean",
+            "description": "A neutral upstream indicator only. It never identifies a hidden Company Bootstrap Ball."
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MemberTreeNodeView"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "status",
+          "snapshotToken",
+          "snapshotExpiresAt",
+          "parentBallNo",
+          "hiddenBootstrapBoundary",
+          "items",
+          "nextCursor"
         ]
       },
       "SponsorView": {

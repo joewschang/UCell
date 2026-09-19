@@ -1,5 +1,5 @@
 import {ConflictException} from '@nestjs/common';
-import {Prisma,PrismaService} from '@ucell/database';
+import {binaryPath,Prisma,PrismaService} from '@ucell/database';
 import {AsOfContext} from '@ucell/shared';
 import {TreePrincipal} from './tree-authorization';
 /** Retain transaction visibility, not an approximation of commit order with timestamps. */
@@ -21,9 +21,10 @@ export async function readTreeNodeSnapshot(db:PrismaService,p:TreePrincipal,id:s
   const visible=Prisma.sql`m.binary_tree_id=${id}::uuid AND m.effective_from<=${at} AND m.recorded_at<=${known} AND txid_visible_in_snapshot(m.recorded_transaction,${visibility}::txid_snapshot)`;
   const parentScope=parentQualificationId?Prisma.sql`AND EXISTS(SELECT 1 FROM organization.placement_tree_evidence child WHERE child.placement_tree_evidence_id=m.placement_tree_evidence_id AND child.parent_qualification_id=${parentQualificationId}::uuid AND child.effective_at<=${at} AND child.recorded_at<=${known})`:Prisma.empty;
   const [count]=await tx.$queryRaw<Array<{total:bigint}>>(Prisma.sql`SELECT count(*) AS total FROM organization.binary_tree_membership m WHERE ${visible} ${parentScope}`);
-  const rows=await tx.$queryRaw<Array<{qualificationId:string;parentQualificationId:string|null;side:string|null;evidenceId:string|null;depth:number|null;ownerType:string|null;owners:bigint}>>(Prisma.sql`
-   SELECT e.placement_tree_evidence_id AS "evidenceId",m.qualification_id AS "qualificationId",e.parent_qualification_id AS "parentQualificationId",e.side::text AS side,a.depth,o.owner_type AS "ownerType",o.owners
+  const rows=await tx.$queryRaw<Array<{qualificationId:string;ballNo:string|null;binaryPositionNo:bigint;parentQualificationId:string|null;side:string|null;evidenceId:string|null;depth:number|null;ownerType:string|null;owners:bigint}>>(Prisma.sql`
+   SELECT e.placement_tree_evidence_id AS "evidenceId",m.qualification_id AS "qualificationId",q.ball_no AS "ballNo",m.binary_position_no AS "binaryPositionNo",e.parent_qualification_id AS "parentQualificationId",e.side::text AS side,a.depth,o.owner_type AS "ownerType",o.owners
    FROM organization.binary_tree_membership m
+   JOIN membership.qualification q ON q.qualification_id=m.qualification_id
    LEFT JOIN organization.placement_tree_evidence e ON e.placement_tree_evidence_id=m.placement_tree_evidence_id AND e.effective_at<=${at} AND e.recorded_at<=${known}
    LEFT JOIN organization.binary_tree_ancestry a ON a.binary_tree_id=m.binary_tree_id AND a.ancestor_qualification_id=${root.qualificationId}::uuid AND a.descendant_qualification_id=m.qualification_id AND a.effective_from<=${at} AND a.recorded_at<=${known}
    LEFT JOIN LATERAL (
@@ -38,6 +39,6 @@ export async function readTreeNodeSnapshot(db:PrismaService,p:TreePrincipal,id:s
    ORDER BY m.qualification_id LIMIT 101`);
   if(rows.some(row=>row.owners!==1n||row.depth===null||row.evidenceId===null))return {status:'UNAVAILABLE',time,items:[],nextCursor:null,total:null,snapshotToken:snapshot.snapshotToken};
   return {status:'AVAILABLE',time,parentQualificationId:parentQualificationId??null,total:Number(count.total),snapshotToken:snapshot.snapshotToken,snapshotExpiresAt:snapshot.expiresAt.toISOString(),
-   items:rows.slice(0,100).map(({owners,evidenceId,...row})=>({...row,activeLabel:row.ownerType==='COMPANY'?'Always Active (Company Rule)':null})),nextCursor:rows.length>100?rows[99].qualificationId:null};
+   items:rows.slice(0,100).map(({owners,evidenceId,...row})=>({...row,binaryPositionNo:row.binaryPositionNo.toString(),path:binaryPath(row.binaryPositionNo),activeLabel:row.ownerType==='COMPANY'?'Always Active (Company Rule)':null})),nextCursor:rows.length>100?rows[99].qualificationId:null};
  },{isolationLevel:Prisma.TransactionIsolationLevel.RepeatableRead,timeout:15000});
 }

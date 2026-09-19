@@ -138,6 +138,8 @@ export class QualificationService {
         ...(q?{
           OR:[
             {qualificationId:q.match(/^[0-9a-f-]{36}$/i)?q:undefined},
+            {ballNo:{contains:q,mode:'insensitive'}},
+            {currentHolder:{memberNo:{contains:q}}},
             {currentHolder:{legalName:{contains:q,mode:'insensitive'}}},
             {currentHolder:{preferredName:{contains:q,mode:'insensitive'}}},
             {currentHolder:{mobile:{contains:q}}},

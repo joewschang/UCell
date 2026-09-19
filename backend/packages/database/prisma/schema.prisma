@@ -540,6 +540,8 @@ enum AuthSessionStatus {
 model Person {
   qualificationOwnerIntervals QualificationOwnerInterval[]
   personId         String                 @id @default(uuid()) @map("person_id") @db.Uuid
+  /// Immutable business identifier. Allocated in PostgreSQL using Asia/Taipei YYMM month counters.
+  memberNo         String                 @unique @default(dbgenerated("identity.allocate_member_no()")) @map("member_no")
   legalName        String                 @map("legal_name")
   preferredName    String?                @map("preferred_name")
   birthDate        DateTime?              @map("birth_date") @db.Date
@@ -730,6 +732,8 @@ model Qualification {
   memberNotifications   MemberNotification[]
   qualificationId       String               @id @default(uuid()) @map("qualification_id") @db.Uuid
   qualificationNo       BigInt               @unique @default(autoincrement()) @map("qualification_no")
+  /// Immutable business Ball identifier after Binary placement. It is never a relational key.
+  ballNo                String?              @unique @map("ball_no")
   currentHolderPersonId String?              @map("current_holder_person_id") @db.Uuid
   planLevelCode         String?              @map("plan_level_code")
   status                RecordStatus         @default(DRAFT)
@@ -3447,12 +3451,15 @@ model BinaryTreeMembership {
  recordedTransaction BigInt @default(dbgenerated("txid_current()")) @map("recorded_transaction")
   qualificationId String @id @map("qualification_id") @db.Uuid
   binaryTreeId String @map("binary_tree_id") @db.Uuid
+  /// Precision-safe binary-heap topology identity, serialized as a decimal string at HTTP boundaries.
+  binaryPositionNo BigInt @map("binary_position_no")
   effectiveFrom DateTime @map("effective_from") @db.Timestamptz(6)
   recordedAt DateTime @default(now()) @map("recorded_at") @db.Timestamptz(6)
   placementTreeEvidenceId String @unique @map("placement_tree_evidence_id") @db.Uuid
   qualification Qualification @relation(fields: [qualificationId], references: [qualificationId])
   binaryTree BinaryTree @relation(fields: [binaryTreeId], references: [binaryTreeId])
   @@unique([binaryTreeId, qualificationId])
+  @@unique([binaryTreeId, binaryPositionNo])
   @@index([binaryTreeId, effectiveFrom, qualificationId])
   @@map("binary_tree_membership")
   @@schema("organization")
@@ -3504,6 +3511,7 @@ model CompanySponsorDesignation {
 model PlacementTreeEvidence {
   placementTreeEvidenceId String @id @default(uuid()) @map("placement_tree_evidence_id") @db.Uuid
   binaryTreeId String @map("binary_tree_id") @db.Uuid
+  binaryPositionNo BigInt @map("binary_position_no")
   qualificationId String @unique @map("qualification_id") @db.Uuid
   parentQualificationId String? @map("parent_qualification_id") @db.Uuid
   side SideCode?

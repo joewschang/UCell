@@ -11,6 +11,7 @@ export interface ReservoirAProjection {reservoirCode:'A';balance:string;effects:
 
 export interface Person {
   personId:UUID;
+  memberNo?:string;
   legalName:string;
   preferredName?:string|null;
   birthDate?:string|null;
@@ -21,6 +22,7 @@ export interface Person {
 }
 export interface Qualification {
   qualificationId:UUID;
+  ballNo?:string|null;
   qualificationNo?:string|number;
   currentHolderPersonId:UUID|null;
   currentCompanyPrincipalId?:UUID|null;

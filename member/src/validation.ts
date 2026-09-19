@@ -2,6 +2,8 @@ import type { Binary, Bonus, Dashboard, Ledger, Orders, Organization, Performanc
 type Check = (value: unknown) => boolean;
 const string: Check = v => typeof v === 'string';
 const id: Check = v => typeof v === 'string' && v.trim().length > 0;
+const memberNo: Check = v => typeof v === 'string' && /^\d{10}$/.test(v);
+const ballNo: Check = v => typeof v === 'string' && /^[A-Z][A-Z0-9_-]{0,39}(?:X\d{6,}|\d{6,})$/.test(v);
 const boolean: Check = v => typeof v === 'boolean';
 // Only display DTOs use JS numbers; no coercion of decimal strings or null to zero.
 const number: Check = v => typeof v === 'number' && Number.isFinite(v) && Math.abs(v) <= Number.MAX_SAFE_INTEGER;
@@ -19,7 +21,7 @@ const period: Check = v => typeof v === 'string' && /^\d{4}-(0[1-9]|1[0-2])$/.te
 const date = (v:unknown) => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v) && Number.isFinite(Date.parse(v+'T00:00:00Z'));
 const unique = (check: Check, key: string): Check => v => list(check)(v) && new Set((v as Record<string, unknown>[]).map(x => x[key])).size === (v as unknown[]).length;
 const activeInterval=object({activeFrom:string,activeTo:string});
-const qualification = object({ id, code: id, rank: id, active: boolean, ballLabel: id,monthReference:optional(period),activeInterval:optional(nullable(activeInterval)) });
+const qualification = object({ id, code: ballNo, rank: id, active: boolean, ballLabel: string,monthReference:optional(period),activeInterval:optional(nullable(activeInterval)) });
 const status = enumOf('PENDING', 'CALCULATED', 'PENDING45D', 'EFFECTIVE', 'PAYABLE', 'PAID', 'REVERSED', 'CLAWBACK');
 const metric = nullable(number);
 const member = object({ code: id, name: string });
@@ -33,8 +35,8 @@ function schema<T>(check: Check) {
   };
 }
 export const parseQualifications = schema<Qualification[]>(unique(qualification, 'id'));
-export const parsePerson = schema<Person>(object({ name: string, alias:nullable(string),memberNo: id, email: nullable(string), phone: nullable(string),gender:nullable(string),birthDate:nullable(date),membershipState:nullable(enumOf('NETWORK_MEMBER','FORMAL_PENDING','FORMAL_MEMBER')),mobileVerifiedAt:nullable(string) }));
-export const parseDashboard = schema<Dashboard>(object({ memberName: string, memberNo: id, qualification,
+export const parsePerson = schema<Person>(object({ name: string, alias:nullable(string),memberNo, email: nullable(string), phone: nullable(string),gender:nullable(string),birthDate:nullable(date),membershipState:nullable(enumOf('NETWORK_MEMBER','FORMAL_PENDING','FORMAL_MEMBER')),mobileVerifiedAt:nullable(string) }));
+export const parseDashboard = schema<Dashboard>(object({ memberName: string, memberNo, qualification,
   monthlyRepurchaseStatus: enumOf('ACTIVE', 'PENDING', 'INACTIVE'), pv: metric, rpv: metric, epv: metric, bonusAmount: metric, bonusStatus: status,monthReference:optional(period),activeInterval:optional(nullable(activeInterval)) }));
 export const parseOrganization = schema<Organization>(object({ qualificationId: id, sponsor: nullable(member), referrals: unique(member, 'code') }));
 export const parseBinary = schema<Binary>(object({ qualificationId: id, left: side, right: side, settlementMetrics: readModelAvailability, settlementScope:optional(nullable(binarySettlementScope)), fullTree: readModelAvailability }));

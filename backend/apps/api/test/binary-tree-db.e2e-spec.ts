@@ -30,7 +30,10 @@ describe('Binary tree atomic bootstrap database boundary',()=>{
   const positions=await db.treeCanonicalPosition.findMany({where:{binaryTreeId:treeId},orderBy:{positionNo:'asc'}});
   expect(positions).toHaveLength(7);expect(positions.filter(p=>p.occupantQualificationId)).toHaveLength(3);
   const balls=await db.qualification.findMany({where:{qualificationId:{in:members.map(m=>m.qualificationId)}}});
-  for(const ball of balls){expect(ball.kind).toBe('COMPANY_BOOTSTRAP');expect(ball.currentHolderPersonId).toBeNull();expect(ball.currentCompanyPrincipalId).toBeTruthy();expect(ball.planLevelCode).toBeNull();}
+  for(const [index,ball] of balls.sort((a,b)=>a.ballNo!.localeCompare(b.ballNo!)).entries()){expect(ball.kind).toBe('COMPANY_BOOTSTRAP');expect(ball.ballNo).toBe(`${created.value.treeCode}X${String(index+1).padStart(6,'0')}`);expect(ball.currentHolderPersonId).toBeNull();expect(ball.currentCompanyPrincipalId).toBeTruthy();expect(ball.planLevelCode).toBeNull();}
+  expect(members.map(member=>member.binaryPositionNo).sort((a,b)=>Number(a-b))).toEqual([1n,2n,3n]);
+  await expect(db.qualification.update({where:{qualificationId:balls[0].qualificationId},data:{ballNo:'FORGED000001'}})).rejects.toThrow();
+  await expect(db.binaryTreeMembership.update({where:{qualificationId:balls[0].qualificationId},data:{binaryPositionNo:99n}})).rejects.toThrow();
   const edges=await db.sponsorRelationship.findMany({where:{sponsorQualificationId:positions[0].occupantQualificationId!},orderBy:{sponsorSequenceNo:'asc'}});
   expect(edges.map(e=>e.sponsorSequenceNo)).toEqual([1,2]);
   expect(await db.qualificationHolderHistory.count({where:{qualificationId:{in:balls.map(b=>b.qualificationId)}}})).toBe(0);
@@ -80,6 +83,8 @@ describe('Binary tree atomic bootstrap database boundary',()=>{
   await db.qualificationHolderHistory.create({data:{qualificationId:q.qualificationId,holderPersonId:person.personId,effectiveFrom:at,sourceType:'SYNTHETIC_TEST',sourceId:randomUUID()}});
   await service.confirmCompanySponsor(admin,treeId,{qualificationId:q.qualificationId,reason:'Confirm'},randomUUID());
   await service.place(admin,treeId,{qualificationId:q.qualificationId,binaryParentQualificationId:created.value.companyQualificationIds[1],side:'LEFT',expectedVersion:2,reason:'Place'},randomUUID());
+  expect(await db.qualification.findUnique({where:{qualificationId:q.qualificationId}})).toMatchObject({ballNo:`${created.value.treeCode}000001`});
+  expect(await db.binaryTreeMembership.findUnique({where:{qualificationId:q.qualificationId}})).toMatchObject({binaryPositionNo:4n});
   const workflow=new QualificationWorkflowService(db,new QualificationStatusService(db)),company=await db.companyPrincipal.findUniqueOrThrow({where:{code:'UCELL_COMPANY'}});
   const before=new Date().toISOString(),originalEdge=await db.binaryPlacement.findUniqueOrThrow({where:{childQualificationId:q.qualificationId}});
   const exit=await workflow.submit({qualificationId:q.qualificationId,workflowType:'EXIT',payload:{reviewFeePaid:true,companyPrincipalId:company.companyPrincipalId}});
@@ -123,6 +128,17 @@ describe('Binary tree atomic bootstrap database boundary',()=>{
  it('denies membership operators the placement override command before any write',async()=>{
   const operator=await principal('MEMBERSHIP_OPS');
   await expect(service.place(operator,randomUUID(),{qualificationId:randomUUID(),binaryParentQualificationId:randomUUID(),side:'LEFT',expectedVersion:1,reason:'Unauthorized override'},randomUUID())).rejects.toMatchObject({response:{code:'TREE_COMMAND_ROLE_DENIED'}});
+ });
+ it('resolves public Member and Ball identifiers only when their authoritative scope is unique',async()=>{
+  const a=(await service.create(admin,{treeName:'Public identifier scope',reason:'Synthetic identifier scope'},randomUUID())).value;
+  const b=(await service.create(admin,{treeName:'Other public identifier scope',reason:'Synthetic identifier scope'},randomUUID())).value;
+  const person=await db.person.create({data:{legalName:'SYNTHETIC IDENTIFIER '+randomUUID()}});
+  const q=await db.qualification.create({data:{currentHolderPersonId:person.personId,planLevelCode:'STARTER',status:'EFFECTIVE',effectiveAt:new Date()}});
+  expect(await service.resolveUnplacedMemberQualification(admin,person.memberNo)).toBe(q.qualificationId);
+  expect(await service.resolveTreeBall(admin,a.binaryTreeId,a.companyBallNos[1])).toBe(a.companyQualificationIds[1]);
+  await expect(service.resolveTreeBall(admin,a.binaryTreeId,b.companyBallNos[1])).rejects.toMatchObject({response:{code:'BINARY_TREE_SCOPE_MISMATCH'}});
+  await db.qualification.create({data:{currentHolderPersonId:person.personId,planLevelCode:'ELITE',status:'EFFECTIVE',effectiveAt:new Date()}});
+  await expect(service.resolveUnplacedMemberQualification(admin,person.memberNo)).rejects.toMatchObject({response:{code:'MEMBER_NO_QUALIFICATION_AMBIGUOUS'}});
  });
  it('rechecks revoked sessions before replaying a committed command',async()=>{
   const actor=await principal('SUPER_ADMIN'),input={treeName:'Revocation test',reason:'Synthetic revocation verification'},key=randomUUID();

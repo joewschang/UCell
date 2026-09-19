@@ -1,11 +1,12 @@
 import { Body, Controller, Get, Post, Patch, Headers, Req, UseGuards, Query, Param, ParseUUIDPipe, UnprocessableEntityException } from '@nestjs/common';
-import { ApiBearerAuth, ApiExtraModels, ApiHeader, ApiOperation, ApiProperty, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiExtraModels, ApiHeader, ApiOperation, ApiProperty, ApiPropertyOptional, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { CreateOrderItemDto } from '../order/dto/create-order.dto';
 import { OrderService } from '../order/order.service';
 import { Type } from 'class-transformer';
 import { IdempotencyGuard } from '../../common/guards/idempotency.guard';
 import { IsString, IsUUID, IsEmail, IsDateString, MaxLength, MinLength, Min, Max, IsInt, IsOptional, Matches, ValidateIf, IsArray, ArrayMinSize, ArrayMaxSize, ValidateNested, IsBoolean, IsIn, Equals } from 'class-validator';
 import { MemberReadService } from './member-read.service';
+import { MemberTreeReadService } from './member-tree-read.service';
 import * as views from './member-view.dto';
 import { MemberContextGuard } from './member-context.guard';
 import { MemberAuthenticationGuard } from '../auth/member-authentication.guard';
@@ -67,6 +68,17 @@ export class MemberQueryDto extends MemberContextDto {
  @ApiProperty({required:false,pattern:'^\\d{4}-(0[1-9]|1[0-2])$',description:'Posted-event month filter using versioned accounting timezone; not an operational settlement cut-off'}) @IsOptional() @Matches(/^\d{4}-(0[1-9]|1[0-2])$/) period?:string;
  @ApiProperty({required:false,format:'uuid',description:'Immutable finalized BINARY_K1 settlement scope. Required before historical volume/carry can be disclosed; omission keeps those values unavailable.'}) @IsOptional() @IsUUID() settlementBatchId?:string;
 }
+export class MemberTreeQueryDto {
+ @ApiProperty({description:'Selected owned Ball number. UUIDs are not part of the member topology contract.'}) @Matches(/^[A-Z][A-Z0-9_-]{0,39}(?:X\d{6,}|\d{6,})$/) ballNo!:string;
+ @ApiPropertyOptional({description:'Expand one visible Ball only. Omit to expand the selected Ball.'}) @IsOptional() @Matches(/^[A-Z][A-Z0-9_-]{0,39}(?:X\d{6,}|\d{6,})$/) parentBallNo?:string;
+ @ApiProperty({enum:['Asia/Taipei']}) @IsIn(['Asia/Taipei']) timezone!:'Asia/Taipei';
+ @ApiProperty({format:'date-time'}) @IsString() asOf!:string;
+ @ApiProperty({format:'date-time'}) @IsString() periodStart!:string;
+ @ApiProperty({format:'date-time'}) @IsString() periodEnd!:string;
+ @ApiProperty({format:'date-time'}) @IsString() knowledgeCutoff!:string;
+ @ApiPropertyOptional({description:'Opaque cursor from this exact snapshot.'}) @IsOptional() @IsUUID() after?:string;
+ @ApiPropertyOptional({description:'Snapshot token returned by page one; required with after.'}) @IsOptional() @IsUUID() snapshotToken?:string;
+}
 @ApiExtraModels(...views.memberViewModels) @ApiTags('Member - Authentication')
 @Controller('auth/member')
 export class MemberAuthController {
@@ -83,7 +95,7 @@ export class MemberAuthController {
 @ApiResponse({status:409,description:'Conflicting operation'}) @ApiResponse({status:422,description:'Invalid input or pending domain decision'})
 @Controller('member')
 export class MemberController {
- constructor(private readonly service:MemberService,private readonly reads:MemberReadService,private readonly orderService:OrderService,private readonly shareLinks:MemberShareLinkService,private readonly contracts:MemberContractService,private readonly delivery:DeliveryProfileService,private readonly formalApplications:FormalMemberApplicationService){}
+ constructor(private readonly service:MemberService,private readonly reads:MemberReadService,private readonly trees:MemberTreeReadService,private readonly orderService:OrderService,private readonly shareLinks:MemberShareLinkService,private readonly contracts:MemberContractService,private readonly delivery:DeliveryProfileService,private readonly formalApplications:FormalMemberApplicationService){}
  @Get('me') @ApiResponse({status:200,schema:views.memberEnvelope(views.PersonView)}) @ApiOperation({operationId:'memberMe'}) me(@Req() req:any){return this.service.me(req.user.personId);}
  @Get('contracts/required') @ApiOperation({operationId:'memberRequiredContracts',description:'Return currently effective required Network Member contract versions and immutable consent status.'}) requiredContracts(@Req() req:any){return this.contracts.required(req.user.personId);}
  @Get('contracts/formal-required') @ApiOperation({operationId:'memberFormalRequiredContracts',description:'Effective Formal Member contracts and own immutable consent status.'}) formalRequiredContracts(@Req() req:any){return this.contracts.formalRequired(req.user.personId);}
@@ -101,6 +113,7 @@ export class MemberController {
  @Get('dashboard') @ApiResponse({status:200,schema:views.memberEnvelope(views.DashboardView)}) dashboard(@Req() req:any,@Query() q:MemberQueryDto){return this.reads.read(req.user.personId,q.qualificationId,'dashboard',q.period);}
  @Get('organization/sponsor') @ApiResponse({status:200,schema:views.memberEnvelope(views.SponsorView)}) sponsor(@Req() req:any,@Query() q:MemberQueryDto){return this.reads.read(req.user.personId,q.qualificationId,'sponsor',q.period);}
  @Get('organization/binary') @ApiResponse({status:200,schema:views.memberEnvelope(views.BinaryView)}) @ApiOperation({operationId:'memberBinaryOrganization',description:'Current placement counts remain separate from immutable settlement metrics. Historical left/right GPV and carry are returned only for an explicitly selected finalized BINARY_K1 settlementBatchId and its sealed historical snapshot.'}) binary(@Req() req:any,@Query() q:MemberQueryDto){return this.reads.read(req.user.personId,q.qualificationId,'binary',q.period,q.settlementBatchId);}
+ @Get('organization/tree') @ApiResponse({status:200,schema:views.memberEnvelope(views.MemberTreePageView)}) @ApiOperation({operationId:'memberReadBinaryTreeChildren',description:'Server-side, bounded and snapshot-consistent binary-tree expansion. Bootstrap Company Balls #1–#3 and all Company/reservoir fields are excluded before serialization.'}) tree(@Req() req:any,@Query() q:MemberTreeQueryDto){return this.trees.children(req.user.personId,q);}
  @Get('referrals') @ApiResponse({status:200,schema:views.memberEnvelope(views.SponsorView)}) referrals(@Req() req:any,@Query() q:MemberQueryDto){return this.reads.read(req.user.personId,q.qualificationId,'referrals',q.period);}
  @Post('share-links') @ApiOperation({operationId:'memberCreateShareLink',description:'Create an encrypted referral URL bound to the selected owned Qualification. Server configuration supplies base URL, key and TTL; missing configuration fails closed.'}) createShareLink(@Req() req:any,@Body() body:MemberContextDto){return this.shareLinks.create(req.user.personId,body.qualificationId);}
  @Get('performance') @ApiResponse({status:200,schema:views.memberEnvelope(views.PerformanceView)}) performance(@Req() req:any,@Query() q:MemberQueryDto){return this.reads.read(req.user.personId,q.qualificationId,'performance',q.period);}

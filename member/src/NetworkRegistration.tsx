@@ -15,7 +15,7 @@ export default function NetworkRegistration({person,refresh}:{person:Person;refr
   if(!input.legalName||!input.alias||!input.gender||!input.birthDate||!/^\+[1-9][0-9]{7,14}$/.test(input.mobile)||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.email)){setError('請完整填寫姓名、別名、性別、出生日期、手機與 Email');return;}
   const body=JSON.stringify(input);if(pending.current?.body!==body)pending.current={body,key:crypto.randomUUID()};
   flight.current=true;setBusy(true);setError('');
-  try{const result=await registerNetworkMember(input,pending.current.key);if(result.personId!==person.memberNo)throw new Error('註冊身分回應不符，已停止更新');pending.current=null;setDone(true);refresh();}
+  try{await registerNetworkMember(input,pending.current.key);pending.current=null;setDone(true);refresh();}
   catch(reason){setError(reason instanceof Error?reason.message:'註冊失敗，請保留資料後重試');}
   finally{flight.current=false;setBusy(false);}
  }

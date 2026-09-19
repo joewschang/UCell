@@ -1,5 +1,5 @@
 import {ConflictException,UnprocessableEntityException} from '@nestjs/common';
-import {Prisma} from '@ucell/database';
+import {Prisma,ballNoFor,childPosition} from '@ucell/database';
 import {createHash,randomUUID} from 'node:crypto';
 export type TreePlacementMeta={sourceType:string;actorId?:string;actorType?:'ADMIN'|'MEMBER'|'SYSTEM';reason?:string;correlationId?:string};
 export const treeHash=(value:unknown)=>createHash('sha256').update(JSON.stringify(value)).digest('hex');
@@ -27,6 +27,8 @@ export async function attachTreePlacement(tx:Prisma.TransactionClient,data:{pare
  if(!owner)await tx.qualificationOwnerInterval.create({data:{qualificationId:q.qualificationId,ownerType:'MEMBER',personId:q.currentHolderPersonId,effectiveFrom:history[0].effectiveFrom,
   sourceType:'HOLDER_HISTORY_IMPORT',sourceId:history[0].holderHistoryId,evidenceHash:treeHash({holderHistoryId:history[0].holderHistoryId,personId:q.currentHolderPersonId,effectiveFrom:history[0].effectiveFrom.toISOString()})}});
  const positions=await tx.treeCanonicalPosition.findMany({where:{binaryTreeId:tree.binaryTreeId}});
+ const parentMembership=await tx.binaryTreeMembership.findUniqueOrThrow({where:{qualificationId:data.parentQualificationId}});
+ const binaryPositionNo=childPosition(parentMembership.binaryPositionNo,data.side);
  const parentPosition=positions.find(p=>p.occupantQualificationId===data.parentQualificationId);
  const position=parentPosition?positions.find(p=>p.parentPositionNo===parentPosition.positionNo && p.side===data.side):undefined;
  const sponsor=await tx.sponsorRelationship.findUnique({where:{childQualificationId:q.qualificationId}});
@@ -34,12 +36,13 @@ export async function attachTreePlacement(tx:Prisma.TransactionClient,data:{pare
  const designation=await tx.companySponsorDesignation.findUniqueOrThrow({where:{binaryTreeId:tree.binaryTreeId}});
  if(position && (position.positionNo<4 || position.occupantQualificationId))throw new ConflictException({code:'BINARY_SLOT_OCCUPIED'});
  if(position && sponsor.sponsorQualificationId!==designation.qualificationId)throw new ConflictException({code:'FOUNDING_COMPANY_SPONSOR_REQUIRED'});
- const id=randomUUID(),correlationId=meta.correlationId??randomUUID(),version=tree.topologyVersion+1;
- const body={binaryTreeId:tree.binaryTreeId,qualificationId:q.qualificationId,parentQualificationId:data.parentQualificationId,side:data.side,effectiveAt:data.effectiveFrom.toISOString(),topologyVersion:version,sourceType:meta.sourceType};
+ const id=randomUUID(),correlationId=meta.correlationId??randomUUID(),version=tree.topologyVersion+1,ballNo=ballNoFor(tree.treeCode,binaryPositionNo);
+ const body={binaryTreeId:tree.binaryTreeId,qualificationId:q.qualificationId,parentQualificationId:data.parentQualificationId,side:data.side,binaryPositionNo:binaryPositionNo.toString(),ballNo,effectiveAt:data.effectiveFrom.toISOString(),topologyVersion:version,sourceType:meta.sourceType};
  const evidenceHash=treeHash(body);
  await tx.placementTreeEvidence.create({data:{placementTreeEvidenceId:id,binaryTreeId:tree.binaryTreeId,qualificationId:q.qualificationId,parentQualificationId:data.parentQualificationId,side:data.side,
-  placementKind:'PLACEMENT',sourceType:meta.sourceType,actorType:meta.actorType??'ADMIN',actorId:meta.actorId,reason:meta.reason?.trim()||meta.sourceType,effectiveAt:data.effectiveFrom,topologyVersion:version,correlationId,evidenceHash}});
- await tx.binaryTreeMembership.create({data:{qualificationId:q.qualificationId,binaryTreeId:tree.binaryTreeId,effectiveFrom:data.effectiveFrom,placementTreeEvidenceId:id}});
+  binaryPositionNo,placementKind:'PLACEMENT',sourceType:meta.sourceType,actorType:meta.actorType??'ADMIN',actorId:meta.actorId,reason:meta.reason?.trim()||meta.sourceType,effectiveAt:data.effectiveFrom,topologyVersion:version,correlationId,evidenceHash}});
+ await tx.binaryTreeMembership.create({data:{qualificationId:q.qualificationId,binaryTreeId:tree.binaryTreeId,binaryPositionNo,effectiveFrom:data.effectiveFrom,placementTreeEvidenceId:id}});
+ await tx.qualification.update({where:{qualificationId:q.qualificationId},data:{ballNo}});
  if(position){
   await tx.treeCanonicalPosition.update({where:{binaryTreeId_positionNo:{binaryTreeId:tree.binaryTreeId,positionNo:position.positionNo}},data:{occupantQualificationId:q.qualificationId,occupiedAt:data.effectiveFrom}});
   await tx.foundingOccupationEvidence.create({data:{binaryTreeId:tree.binaryTreeId,positionNo:position.positionNo,qualificationId:q.qualificationId,initialPersonId:q.currentHolderPersonId,

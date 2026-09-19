@@ -9,12 +9,12 @@ let role='COMPLIANCE_AUDIT';
 vi.mock('../auth/auth',()=>({useAuth:()=>({user:{role}})}));
 vi.mock('../../lib/api',()=>({get:vi.fn(),command:vi.fn(),qs:(v:Record<string,string>)=>'?'+new URLSearchParams(v).toString()}));
 const id='10000000-0000-4000-8000-000000000001';
-const result={binaryTreeId:id,treeCode:'TREE-A',treeName:'樹 A',status:'ACTIVE',topologyVersion:2,positions:Array.from({length:7},(_,i)=>({positionNo:i+1,parentPositionNo:i?Math.floor((i+1)/2):null,side:i%2?'LEFT':'RIGHT',qualificationId:i<3?'company-'+i:null,ownerType:i<3?'COMPANY':null,activeLabel:i<3?'Always Active (Company Rule)':null,descendantBalls:0,distinctMemberPersons:0,newBallsInPeriod:0}))};
+const result={binaryTreeId:id,treeCode:'TREE-A',treeName:'樹 A',status:'ACTIVE',topologyVersion:2,positions:Array.from({length:7},(_,i)=>({positionNo:i+1,binaryPositionNo:String(i+1),path:i?'L'.repeat(i):'',ballNo:i<3?'TREE-AX00000'+(i+1):null,parentPositionNo:i?Math.floor((i+1)/2):null,side:i%2?'LEFT':'RIGHT',qualificationId:i<3?'company-'+i:null,ownerType:i<3?'COMPANY':null,activeLabel:i<3?'Always Active (Company Rule)':null,descendantBalls:0,distinctMemberPersons:0,newBallsInPeriod:0}))};
 beforeEach(()=>{role='COMPLIANCE_AUDIT';vi.mocked(get).mockReset().mockResolvedValue({data:{status:'PARTIAL',result}});vi.mocked(command).mockReset();});
 async function render(){let view:ReturnType<typeof create>;await act(async()=>{view=create(<MemoryRouter initialEntries={['/admin/organization/trees/'+id]}><Routes><Route path="/admin/organization/trees/:id" element={<BinaryTreesPage/>}/></Routes></MemoryRouter>)});return view!;}
 it('audit readers see company status and empty positions without write controls',async()=>{
  const view=await render(),output=JSON.stringify(view.toJSON());
- expect(output).toContain('Always Active (Company Rule)');expect(output).toContain('尚未占用');expect(output).toContain('Reservoir Center');expect(output).toContain('領袖 LEADER');expect(output).toContain('AVAILABLE');
+ expect(output).toContain('Always Active (Company Rule)');expect(output).toContain('TREE-AX000001');expect(output).toContain('尚未占用');expect(output).toContain('Reservoir Center');expect(output).toContain('領袖 LEADER');expect(output).toContain('AVAILABLE');expect(output).not.toContain('company-0');
  expect(output).not.toContain('儲存名稱');expect(output).not.toContain('確認公司 Sponsor');expect(output).not.toContain('放置於選定位置');
  expect(get).toHaveBeenCalledWith(expect.stringContaining('knowledgeCutoff='));expect(command).not.toHaveBeenCalled();act(()=>view.unmount());
 });
@@ -23,6 +23,19 @@ it('membership operators can confirm Sponsor but cannot override placement',asyn
 });
 it('placement operators receive only their command controls',async()=>{
  role='QUALIFICATION_PLACEMENT_OVERRIDE';const view=await render(),output=JSON.stringify(view.toJSON());expect(output).toContain('放置於選定位置');expect(output).not.toContain('儲存名稱');expect(output).not.toContain('確認公司 Sponsor');act(()=>view.unmount());
+});
+it('uses public Member and Ball identifiers when a canonical parent is selected for placement preview',async()=>{
+ role='QUALIFICATION_PLACEMENT_OVERRIDE';const view=await render();
+ const memberInput=view.root.findAllByType('input').find(input=>input.props.placeholder==='例如 2609000001')!;
+ await act(async()=>memberInput.props.onChange({target:{value:'2609000001'}}));
+ const rootBall=view.root.findAllByType('button').find(button=>button.props['aria-label']==='選擇 #1 公司球')!;
+ await act(async()=>rootBall.props.onClick());
+ vi.mocked(get).mockResolvedValueOnce({data:{preflightToken:'p'.repeat(64),actualSponsorSequenceNo:3,sponsorQualificationId:'hidden'}});
+ await act(async()=>view.root.findAllByType('button').find(button=>button.children.join('')==='預檢選定位置')!.props.onClick());
+ expect(get).toHaveBeenLastCalledWith(expect.stringContaining('qualificationMemberNo=2609000001'));
+ expect(get).toHaveBeenLastCalledWith(expect.stringContaining('binaryParentBallNo=TREE-AX000001'));
+ expect(get).not.toHaveBeenLastCalledWith(expect.stringContaining('binaryParentQualificationId='));
+ act(()=>view.unmount());
 });
 it('shows node totals separately from the paginated rows',async()=>{
  const view=await render();vi.mocked(get).mockResolvedValue({data:{status:'AVAILABLE',total:101,items:[{qualificationId:'node-1',parentQualificationId:'root',depth:13,side:'LEFT',ownerType:'MEMBER'}],nextCursor:id}});
@@ -50,7 +63,7 @@ it('requests and reloads background statistics using the same server query and a
 });
 it('carries the server snapshot token through pagination and child expansion',async()=>{
  const view=await render();
- vi.mocked(get).mockResolvedValueOnce({data:{status:'AVAILABLE',total:101,snapshotToken:'fixed-snapshot',nextCursor:'cursor-1',items:[{qualificationId:'parent-node',parentQualificationId:null,depth:0,ownerType:'COMPANY'}]}});
+ vi.mocked(get).mockResolvedValueOnce({data:{status:'AVAILABLE',total:101,snapshotToken:'fixed-snapshot',nextCursor:'cursor-1',items:[{qualificationId:'parent-node',ballNo:'TREE-A000004',binaryPositionNo:'4',path:'LL',parentQualificationId:null,depth:0,ownerType:'COMPANY'}]}});
  await act(async()=>view.root.findAllByType('button').find(b=>b.children.join('')==='載入節點')!.props.onClick());
  vi.mocked(get).mockResolvedValueOnce({data:{status:'AVAILABLE',total:101,snapshotToken:'fixed-snapshot',nextCursor:null,items:[{qualificationId:'last-node',parentQualificationId:'parent-node',depth:1,ownerType:'MEMBER'}]}});
  await act(async()=>view.root.findAllByType('button').find(b=>b.children.join('')==='下一頁節點')!.props.onClick());

@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, UnprocessableEntityException } from '@ne
 import { PrismaService, captureParameters, snapshotValue, pending, verifyReplayEnvelope } from '@ucell/database';
 import { QualificationAccessService } from '../auth/qualification-access.service';
 import { MemberService } from './member.service';
+export function memberSafeAnonymousNode(q:{ballNo:string|null}){return {code:q.ballNo??'UNAVAILABLE',name:'',nodeKind:'AnonymousBallNode' as const};}
 export async function readBinarySettlement(tx:any,qualificationId:string,settlementBatchId:string){
  const batch=await tx.settlementBatch.findUnique({where:{settlementBatchId}});
  if(!batch||batch.settlementType!=='BINARY_K1')throw new NotFoundException({code:'BINARY_SETTLEMENT_NOT_FOUND'});
@@ -65,10 +66,19 @@ export class MemberReadService {
     return totals;
    };
    if(kind==='sponsor'||kind==='referrals'){
-    const links=await tx.sponsorRelationship.findMany({where:{sponsorQualificationId:id,effectiveFrom:{lte:now},OR:[{effectiveTo:null},{effectiveTo:{gt:now}}]},include:{child:{include:{currentHolder:true}}},orderBy:{sponsorSequenceNo:'asc'},take:100});
-    const parent=await tx.sponsorRelationship.findFirst({where:{childQualificationId:id,effectiveFrom:{lte:now},OR:[{effectiveTo:null},{effectiveTo:{gt:now}}]},include:{sponsor:{include:{currentHolder:true}}}});
-    const view=(q:any)=>({code:String(q.qualificationNo),name:q.currentCompanyPrincipalId?'公司球':(q.currentHolder?.preferredName??q.currentHolder?.legalName??'未知').slice(0,1)+'＊',...(q.currentCompanyPrincipalId?{ownerType:'COMPANY',activeLabel:'Always Active (Company Rule)'}:{})});
-    return {qualificationId:id,sponsor:parent?view(parent.sponsor):null,referrals:links.map(row=>view(row.child)),pagination:{limit:100,truncated:links.length===100}};
+    const links=await tx.sponsorRelationship.findMany({where:{sponsorQualificationId:id,effectiveFrom:{lte:now},OR:[{effectiveTo:null},{effectiveTo:{gt:now}}]},include:{child:{include:{currentHolder:true,binaryTreeMembership:true}}},orderBy:{sponsorSequenceNo:'asc'},take:100});
+    const parent=await tx.sponsorRelationship.findFirst({where:{childQualificationId:id,effectiveFrom:{lte:now},OR:[{effectiveTo:null},{effectiveTo:{gt:now}}]},include:{sponsor:{include:{currentHolder:true,binaryTreeMembership:true}}}});
+    // A Member projection is constructed here, not masked in React. Bootstrap #1-#3
+    // never cross this boundary; non-direct nodes omit every holder PII field.
+    const hiddenBootstrap=(q:any)=>q.binaryTreeMembership&&q.binaryTreeMembership.binaryPositionNo<=3n;
+    const direct=(q:any)=>({code:q.ballNo??'UNAVAILABLE',name:(q.currentHolder?.preferredName??q.currentHolder?.legalName??'').slice(0,1)+'＊',nodeKind:'DirectSponsoredIdentity'});
+    // The legacy field stays an empty display label for contract compatibility; it
+    // never carries a holder name outside a direct-sponsored relationship.
+    const anonymous=memberSafeAnonymousNode;
+    const safeChildren=links.map(row=>row.child).filter(q=>!hiddenBootstrap(q)).map(direct);
+    // A sponsor is upstream, therefore never a direct-sponsored identity for this viewer.
+    const safeParent=parent&&!hiddenBootstrap(parent.sponsor)?anonymous(parent.sponsor):null;
+    return {qualificationId:id,sponsor:safeParent,referrals:safeChildren,pagination:{limit:100,truncated:links.length===100}};
    }
    if(kind==='binary'){
     const counts=await tx.$queryRaw<Array<{side:string;count:string}>>`WITH RECURSIVE tree AS (SELECT child_qualification_id AS id,side FROM organization.binary_placement WHERE parent_qualification_id=${id}::uuid AND effective_from<=${now} AND (effective_to IS NULL OR effective_to>${now}) UNION ALL SELECT p.child_qualification_id,t.side FROM organization.binary_placement p JOIN tree t ON p.parent_qualification_id=t.id WHERE p.effective_from<=${now} AND (p.effective_to IS NULL OR p.effective_to>${now})) SELECT side::text,COUNT(*)::text AS count FROM tree GROUP BY side`;
