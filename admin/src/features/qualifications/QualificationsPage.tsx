@@ -3,9 +3,10 @@ import {useQuery} from '@tanstack/react-query';
 import {useEffect,useState} from 'react';
 import {get,qs} from '../../lib/api';
 import {Qualification} from '../../types/domain';
-import {Badge,Card,ErrorBox,PageHeader} from '../../components/ui';
-import {dateTime,holderName,qNo} from '../../lib/format';
+import {Badge,Card,PageHeader} from '../../components/ui';
+import {holderName} from '../../lib/format';
 import {useSearchParams} from 'react-router-dom';
+import {EmptyState,ErrorState,LoadingState} from '@ucell/design-system';
 
 export function QualificationsPage(){
  const [params]=useSearchParams();
@@ -17,8 +18,8 @@ export function QualificationsPage(){
    const id=params.get('qualificationId');
    if(id)setSelected(id);
  },[params]);
- return <><PageHeader title="會員資格（球）" subtitle="Qualification是UCell制度運算、組織、PV、Carry、Award與Payout的獨立單位。"/>
- <div className="toolbar"><input value={search} onChange={e=>setSearch(e.target.value)} aria-label="Ball Number／會員編號／持有人姓名／手機／Email" placeholder="Ball Number／會員編號／持有人姓名／手機／Email"/><select aria-label="Qualification 狀態" value={status} onChange={e=>setStatus(e.target.value)}><option value="">全部狀態</option><option>EFFECTIVE</option><option>CLOSED</option><option>SUSPENDED</option></select></div>
- <ErrorBox error={list.error}/><div className="uc-master-detail"><Card title={`Qualifications (${rows.length})`}>{rows.map(x=><button className={`list-row ${selected===x.qualificationId?'selected':''}`} key={x.qualificationId} onClick={()=>setSelected(x.qualificationId)}><strong>{x.ballNo??'未放置 Ball'} · {holderName(x)}</strong><span>{x.currentHolder?.memberNo??'會員編號未提供'} · {x.planLevelCode} · <Badge tone={x.currentCompanyPrincipalId||x.activeFlag?'ok':'neutral'}>{x.currentCompanyPrincipalId?'Always Active (Company Rule)':x.activeFlag?'ACTIVE':'NOT ACTIVE'}</Badge></span></button>)}</Card>
- <Card title="Qualification詳情">{selected?<QualificationDetail key={selected} id={selected}/>:<p className="muted">請選擇一顆會員資格。</p>}</Card></div></>
+ return <><PageHeader title="Ball 管理（Qualification 360）" subtitle="每顆 Ball 是制度運算、組織、PV、Carry、Award 與 Payout 的獨立單位；畫面以 Ball Number 與 Member Number 呈現。"/>
+ <div className="toolbar" role="search" aria-label="Ball 搜尋"><input value={search} onChange={e=>{setSearch(e.target.value);setSelected(null)}} aria-label="Ball Number／會員編號／持有人姓名／手機／Email" placeholder="Ball Number／會員編號／持有人姓名／手機／Email"/><select aria-label="Qualification 狀態" value={status} onChange={e=>{setStatus(e.target.value);setSelected(null)}}><option value="">全部狀態</option><option>EFFECTIVE</option><option>CLOSED</option><option>SUSPENDED</option></select></div>
+ <div className="uc-master-detail"><Card title={`Ball 清單${list.isSuccess?' ('+rows.length+')':''}`}><section aria-live="polite" aria-busy={list.isPending}>{list.isPending?<LoadingState label="正在載入 Ball 清單…"/>:list.error?<ErrorState message={String(list.error)} retry={()=>void list.refetch()}/>:rows.length?<>{rows.map(x=><button type="button" aria-pressed={selected===x.qualificationId} aria-controls="ball-detail" className={`list-row ${selected===x.qualificationId?'selected':''}`} key={x.qualificationId} onClick={()=>setSelected(x.qualificationId)}><strong>{x.ballNo??'未放置 Ball'} · {holderName(x)}</strong><span>{x.currentHolder?.memberNo??'會員編號未提供'} · {x.planLevelCode??'Plan 未提供'} · <Badge tone={x.currentCompanyPrincipalId||x.activeFlag?'ok':'neutral'}>{x.currentCompanyPrincipalId?'Always Active (Company Rule)':x.activeFlag?'ACTIVE':'NOT ACTIVE'}</Badge></span></button>)}</>:<EmptyState title="沒有符合條件的 Ball"><p>請調整 Ball Number、Member Number 或狀態條件。空白結果不會被推定為零或不存在的歷史資料。</p></EmptyState>}</section></Card>
+ <Card title="Ball 360"><section id="ball-detail" aria-live="polite">{selected?<QualificationDetail key={selected} id={selected}/>:<EmptyState title="請選擇一顆 Ball"><p>清單使用公開的 Ball Number 與 Member Number；內部 Qualification UUID 不會在正常營運畫面顯示。</p></EmptyState>}</section></Card></div></>
 }

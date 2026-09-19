@@ -30,10 +30,13 @@ export const formatNullableMoney = (value: number | null | undefined) =>
 export const qualificationActiveLabel = (active: boolean) =>
   active ? '資格狀態：有效' : '資格狀態：未有效';
 
-const rankLabels: Record<string,string> = {
+const planLevelLabels: Record<string,string> = {
   MEMBER: '會員',
   ELITE: '菁英',
   LEADER: '領袖',
 };
 
-export const qualificationRankLabel = (rank: string) => rankLabels[rank] ?? rank;
+/** The legacy `rank` transport field contains a plan-level code, not Global Rank. */
+export const qualificationPlanLevelLabel = (planLevelCode: string) => planLevelLabels[planLevelCode] ?? planLevelCode;
+/** @deprecated Use qualificationPlanLevelLabel; retained for callers using the legacy transport name. */
+export const qualificationRankLabel = qualificationPlanLevelLabel;

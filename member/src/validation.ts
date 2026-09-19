@@ -3,7 +3,8 @@ type Check = (value: unknown) => boolean;
 const string: Check = v => typeof v === 'string';
 const id: Check = v => typeof v === 'string' && v.trim().length > 0;
 const memberNo: Check = v => typeof v === 'string' && /^\d{10}$/.test(v);
-const ballNo: Check = v => typeof v === 'string' && /^[A-Z][A-Z0-9_-]{0,39}(?:X\d{6,}|\d{6,})$/.test(v);
+export const isBallNo = (value: unknown): value is string => typeof value === 'string' && /^[A-Z][A-Z0-9_-]{0,39}(?:X\d{6,}|\d{6,})$/.test(value);
+const ballNo: Check = isBallNo;
 const boolean: Check = v => typeof v === 'boolean';
 // Only display DTOs use JS numbers; no coercion of decimal strings or null to zero.
 const number: Check = v => typeof v === 'number' && Number.isFinite(v) && Math.abs(v) <= Number.MAX_SAFE_INTEGER;

@@ -22,10 +22,14 @@ it('uses PUT with an idempotency key for replace-style configuration commands',a
  await putCommand('/admin/packages/versions/version/selectable-products',{products:[{productRuleProfileId:'rule',maxQty:1}]});
  expect(fetch.mock.calls[0][1].method).toBe('PUT');expect(new Headers(fetch.mock.calls[0][1].headers).get('Idempotency-Key')).toBeTruthy();
 });
-it('denies 401 and notifies session expiry; 403 remains a recoverable authorization error',async()=>{
+it('denies 401 and notifies session expiry without rendering server error detail',async()=>{
  const fetch=vi.fn().mockResolvedValueOnce(new Response(JSON.stringify({message:'session expired'}),{status:401})).mockResolvedValueOnce(new Response(JSON.stringify({message:'qualification forbidden'}),{status:403}));vi.stubGlobal('fetch',fetch);
- await expect(api('/auth/admin/me')).rejects.toThrow('session expired');expect(window.dispatchEvent).toHaveBeenCalledTimes(1);
- await expect(api('/admin/qualifications')).rejects.toThrow('qualification forbidden');expect(window.dispatchEvent).toHaveBeenCalledTimes(1);
+ await expect(api('/auth/admin/me')).rejects.toThrow('工作階段已失效');expect(window.dispatchEvent).toHaveBeenCalledTimes(1);
+ await expect(api('/admin/qualifications')).rejects.toThrow('沒有此操作權限');expect(window.dispatchEvent).toHaveBeenCalledTimes(1);
+});
+it('does not expose raw server details in an operational error',async()=>{
+ const fetch=vi.fn().mockResolvedValue(new Response(JSON.stringify({message:'Qualification 550e8400-e29b-41d4-a716-446655440000 belongs to another person'}),{status:403}));vi.stubGlobal('fetch',fetch);
+ await expect(api('/admin/qualifications/550e8400-e29b-41d4-a716-446655440000')).rejects.toMatchObject({message:'沒有此操作權限，系統未顯示受限制的資料'});
 });
 it('classifies 404 and offline failures for consistent UI states',async()=>{
  const fetch=vi.fn().mockResolvedValueOnce(new Response('',{status:404})).mockRejectedValueOnce(new TypeError('Failed to fetch'));vi.stubGlobal('fetch',fetch);

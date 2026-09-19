@@ -1,6 +1,6 @@
 import {Type} from 'class-transformer';
 import {Controller,Get,Header,Param,ParseUUIDPipe,Query,Req,UnprocessableEntityException} from '@nestjs/common';
-import {ApiBearerAuth,ApiOperation,ApiProperty,ApiPropertyOptional,ApiTags} from '@nestjs/swagger';
+import {ApiBearerAuth,ApiOperation,ApiProperty,ApiPropertyOptional,ApiResponse,ApiTags} from '@nestjs/swagger';
 import {IsIn,IsOptional,IsString,IsUUID,IsInt,Matches,Min} from 'class-validator';
 import {Roles} from '../auth/roles.decorator';
 import {BinaryTreeReadService} from './binary-tree-read.service';
@@ -34,7 +34,16 @@ export class BinaryTreeReadController {
  constructor(private readonly service:BinaryTreeReadService,private readonly commands:BinaryTreeService){}
  @Get() @Header('Cache-Control','no-store') @ApiOperation({operationId:'adminListBinaryTrees',summary:'依指定時間與記錄截點列出樹'})
  async list(@Req() req:{user:TreePrincipal},@Query() input:TreeListQuery){const {after,...time}=input;return {data:await this.service.list(req.user,time,after)};}
- @Get(':id') @Header('Cache-Control','no-store') @ApiOperation({operationId:'adminReadBinaryTree',summary:'讀取樹與七個標準位置的非金額歷史統計'})
+ @Get(':id') @Header('Cache-Control','no-store') @ApiOperation({operationId:'adminReadBinaryTree',summary:'讀取樹與七個標準位置的非金額歷史統計',description:'Company position LEADER presentation is returned only from a sealed effective profile binding. Missing or ambiguous evidence is UNAVAILABLE; clients must not infer LEADER from a position number or Company ownership.'})
+ @ApiResponse({status:200,schema:{type:'object',required:['data'],properties:{data:{type:'object',required:['status','time','result'],properties:{
+  status:{type:'string',enum:['PARTIAL','UNAVAILABLE']},
+  time:{type:'object'},
+  result:{type:'object',nullable:true,properties:{positions:{type:'array',items:{type:'object',properties:{
+   positionNo:{type:'integer'},ballNo:{type:'string',nullable:true},ownerType:{type:'string',nullable:true},activeLabel:{type:'string',nullable:true},
+   companyProfile:{type:'object',nullable:true,description:'Bounded Company bootstrap profile read; no rule/parameter/snapshot evidence is returned.',required:['status','planCode','profileVersion'],properties:{status:{type:'string',enum:['AVAILABLE','UNAVAILABLE']},planCode:{type:'string',nullable:true,enum:['LEADER']},profileVersion:{type:'string',nullable:true}}}
+  }}}}}
+ }}}}})
+ @ApiResponse({status:401,description:'Admin authentication required'}) @ApiResponse({status:403,description:'Tree role policy denies access'}) @ApiResponse({status:422,description:'Invalid historical time context'})
  async detail(@Req() req:{user:TreePrincipal},@Param('id',ParseUUIDPipe) id:string,@Query() time:TreeTimeQuery){return {data:await this.service.detail(req.user,id,{...time})};}
  @Get(':id/nodes') @Header('Cache-Control','no-store') @ApiOperation({operationId:'adminReadBinaryTreeNodes',summary:'分頁讀取指定時間的完整樹節點；總數不受頁面上限限制'})
  async nodes(@Req() req:{user:TreePrincipal},@Param('id',ParseUUIDPipe) id:string,@Query() input:TreeNodeQuery){const {after,snapshotToken,parentQualificationId,...time}=input;return {data:await this.service.nodes(req.user,id,time,after,snapshotToken,parentQualificationId)};}

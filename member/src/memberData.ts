@@ -7,8 +7,11 @@ const qualifications: Qualification[] = [
     { id: 'q1', code: 'A000001', rank: 'LEADER', active: true, ballLabel: '球 A000001' },
     { id: 'q2', code: 'A000002', rank: 'ELITE', active: false, ballLabel: '球 A000002' },
 ];
-const rankNames: Record<string, string> = { STARTER: '啟航', ELITE: '菁英', LEADER: '領袖' };
-export const displayRank = (rank: string) => rankNames[rank] ?? rank;
+const planLevelNames: Record<string, string> = { STARTER: '啟航', ELITE: '菁英', LEADER: '領袖' };
+/** The transport field is named rank for compatibility, but it is the plan-level code. */
+export const displayPlanLevel = (planLevelCode: string) => planLevelNames[planLevelCode] ?? planLevelCode;
+/** @deprecated Use displayPlanLevel; this is not a Global Rank formatter. */
+export const displayRank = displayPlanLevel;
 export const getQualifications = (signal?: AbortSignal) => isMock ? Promise.resolve(qualifications) : api<unknown>('/member/qualifications', { signal }).then(validate.parseQualifications);
 export async function selectQualification(q:Qualification,signal:AbortSignal):Promise<Qualification>{
  if(isMock)return q;
@@ -131,13 +134,39 @@ export async function getBinary(q:Qualification,s:AbortSignal,settlementBatchId?
 export type MemberTreeNode={ballNo:string;binaryPositionNo:string;side:'LEFT'|'RIGHT'|null;nodeKind:'AnonymousBallNode'};
 export type MemberTreePage={status:'AVAILABLE'|'UNAVAILABLE';snapshotToken:string|null;snapshotExpiresAt:string|null;parentBallNo:string|null;hiddenBootstrapBoundary?:boolean;items:MemberTreeNode[];nextCursor:string|null};
 export type MemberTreeTime={timezone:'Asia/Taipei';asOf:string;knowledgeCutoff:string;periodStart:string;periodEnd:string};
-export function newMemberTreeTime():MemberTreeTime{const now=new Date(),year=now.getUTCFullYear(),month=now.getUTCMonth();return {timezone:'Asia/Taipei',asOf:now.toISOString(),knowledgeCutoff:now.toISOString(),periodStart:new Date(Date.UTC(year,month,1)).toISOString(),periodEnd:new Date(Date.UTC(year,month+1,1)).toISOString()};}
-export async function getMemberTree(q:Qualification,parentBallNo:string|undefined,snapshotToken:string|undefined,time:MemberTreeTime,s:AbortSignal):Promise<MemberTreePage>{
+export function newMemberTreeTime(now=new Date()):MemberTreeTime{
+ const taipeiOffset=8*60*60*1000,taipei=new Date(now.getTime()+taipeiOffset),year=taipei.getUTCFullYear(),month=taipei.getUTCMonth();
+ return {timezone:'Asia/Taipei',asOf:now.toISOString(),knowledgeCutoff:now.toISOString(),periodStart:new Date(Date.UTC(year,month,1)-taipeiOffset).toISOString(),periodEnd:new Date(Date.UTC(year,month+1)-taipeiOffset).toISOString()};
+}
+function isRecord(value:unknown):value is Record<string,unknown>{return !!value&&typeof value==='object'&&!Array.isArray(value);}
+function onlyKeys(value:Record<string,unknown>,keys:string[]){return Object.keys(value).every(key=>keys.includes(key));}
+function invalidMemberTree():never{throw new Error('安全組織資料格式異常，已停止顯示');}
+function safeMemberTreePage(value:unknown,expectedParentBallNo:string,requestedSnapshotToken:string|undefined):MemberTreePage{
+ if(!isRecord(value)||!onlyKeys(value,['status','snapshotToken','snapshotExpiresAt','parentBallNo','hiddenBootstrapBoundary','items','nextCursor']))return invalidMemberTree();
+ const status=value.status==='AVAILABLE'||value.status==='UNAVAILABLE'?value.status:invalidMemberTree();
+ const snapshotToken=value.snapshotToken===null?null:typeof value.snapshotToken==='string'&&value.snapshotToken.length>0?value.snapshotToken:invalidMemberTree();
+ const snapshotExpiresAt=value.snapshotExpiresAt===null?null:typeof value.snapshotExpiresAt==='string'&&Number.isFinite(Date.parse(value.snapshotExpiresAt))?value.snapshotExpiresAt:invalidMemberTree();
+ const parentBallNo=value.parentBallNo===undefined||value.parentBallNo===null?null:validate.isBallNo(value.parentBallNo)?value.parentBallNo:invalidMemberTree();
+ const hasHiddenBootstrapBoundary=typeof value.hiddenBootstrapBoundary==='boolean';
+ const hiddenBootstrapBoundary:boolean=hasHiddenBootstrapBoundary?value.hiddenBootstrapBoundary as boolean:false;
+ const nextCursor=value.nextCursor===null?null:typeof value.nextCursor==='string'&&value.nextCursor.length>0?value.nextCursor:invalidMemberTree();
+ if(!Array.isArray(value.items))return invalidMemberTree();
+ const items=value.items.map(item=>{
+  if(!isRecord(item)||!onlyKeys(item,['ballNo','binaryPositionNo','side','nodeKind']))return invalidMemberTree();
+  const ballNo=item.ballNo,binaryPositionNo=item.binaryPositionNo,side:MemberTreeNode['side']=item.side==='LEFT'||item.side==='RIGHT'||item.side===null?item.side:invalidMemberTree();
+  if(!validate.isBallNo(ballNo)||typeof binaryPositionNo!=='string'||!/^\d+$/.test(binaryPositionNo)||item.nodeKind!=='AnonymousBallNode')return invalidMemberTree();
+  return {ballNo,binaryPositionNo,side,nodeKind:'AnonymousBallNode' as const};
+ });
+ if(requestedSnapshotToken!==undefined&&snapshotToken!==requestedSnapshotToken)return invalidMemberTree();
+ if(status==='AVAILABLE'&&(!snapshotToken||!snapshotExpiresAt||Date.parse(snapshotExpiresAt)<=Date.now()||parentBallNo!==expectedParentBallNo||!hasHiddenBootstrapBoundary))return invalidMemberTree();
+ if(status==='UNAVAILABLE'&&(items.length!==0||nextCursor!==null))return invalidMemberTree();
+ return {status,snapshotToken,snapshotExpiresAt,parentBallNo,hiddenBootstrapBoundary,items,nextCursor};
+}
+export async function getMemberTree(q:Qualification,parentBallNo:string|undefined,snapshotToken:string|undefined,time:MemberTreeTime,after:string|undefined,s:AbortSignal):Promise<MemberTreePage>{
  if(isMock)return {status:'AVAILABLE',snapshotToken:'mock-safe-tree',snapshotExpiresAt:null,parentBallNo:parentBallNo??q.code,hiddenBootstrapBoundary:(parentBallNo??q.code)==='A000001',items:parentBallNo?[{ballNo:'A000020',binaryPositionNo:'20',side:'LEFT',nodeKind:'AnonymousBallNode'}]:[{ballNo:'A000005',binaryPositionNo:'8',side:'LEFT',nodeKind:'AnonymousBallNode'},{ballNo:'A000006',binaryPositionNo:'9',side:'RIGHT',nodeKind:'AnonymousBallNode'}],nextCursor:null};
- const query=new URLSearchParams({...time,ballNo:q.code,...(parentBallNo?{parentBallNo}:{}),...(snapshotToken?{snapshotToken}:{})});
- const value=await api<unknown>(`/member/organization/tree?${query}`,{signal:s}) as MemberTreePage;
- if(!value||!['AVAILABLE','UNAVAILABLE'].includes(value.status)||!Array.isArray(value.items)||!value.items.every(node=>node&&typeof node.ballNo==='string'&&/^\d+$/.test(node.binaryPositionNo)&&['LEFT','RIGHT',null].includes(node.side)&&node.nodeKind==='AnonymousBallNode'))throw new Error('安全組織資料格式異常，已停止顯示');
- return value;
+ const query=new URLSearchParams({...time,ballNo:q.code,...(parentBallNo?{parentBallNo}:{}),...(snapshotToken?{snapshotToken}:{}),...(after?{after}:{})});
+ const value=await api<unknown>(`/member/organization/tree?${query}`,{signal:s});
+ return safeMemberTreePage(value,parentBallNo??q.code,snapshotToken);
 }
 export const getPerformance = (q: Qualification, p: string, s: AbortSignal) => scoped<Performance>('performance', q, { qualificationId: q.id, period: p, pv: null, rpv: null, epv: null, left: null, right: null, asOf: null }, s, validate.parsePerformance, p);
 export const getBonuses = (q: Qualification, p: string, s: AbortSignal) => scoped<Bonus>('bonuses', q, { qualificationId: q.id, period: p, awards: ['推薦獎金', '對碰獎金', '對等獎金', '全球獎金'].map((name, i) => ({ id: `${q.id}-${i}`, name, status: 'PENDING', amount: null })) }, s, validate.parseBonus, p);

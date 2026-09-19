@@ -942,6 +942,7 @@
     },
     "/api/v1/admin/organization/trees/{id}": {
       "get": {
+        "description": "Company position LEADER presentation is returned only from a sealed effective profile binding. Missing or ambiguous evidence is UNAVAILABLE; clients must not infer LEADER from a position number or Company ownership.",
         "operationId": "adminReadBinaryTree",
         "parameters": [
           {
@@ -1002,7 +1003,107 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "required": [
+                        "status",
+                        "time",
+                        "result"
+                      ],
+                      "properties": {
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "PARTIAL",
+                            "UNAVAILABLE"
+                          ]
+                        },
+                        "time": {
+                          "type": "object"
+                        },
+                        "result": {
+                          "type": "object",
+                          "nullable": true,
+                          "properties": {
+                            "positions": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "positionNo": {
+                                    "type": "integer"
+                                  },
+                                  "ballNo": {
+                                    "type": "string",
+                                    "nullable": true
+                                  },
+                                  "ownerType": {
+                                    "type": "string",
+                                    "nullable": true
+                                  },
+                                  "activeLabel": {
+                                    "type": "string",
+                                    "nullable": true
+                                  },
+                                  "companyProfile": {
+                                    "type": "object",
+                                    "nullable": true,
+                                    "description": "Bounded Company bootstrap profile read; no rule/parameter/snapshot evidence is returned.",
+                                    "required": [
+                                      "status",
+                                      "planCode",
+                                      "profileVersion"
+                                    ],
+                                    "properties": {
+                                      "status": {
+                                        "type": "string",
+                                        "enum": [
+                                          "AVAILABLE",
+                                          "UNAVAILABLE"
+                                        ]
+                                      },
+                                      "planCode": {
+                                        "type": "string",
+                                        "nullable": true,
+                                        "enum": [
+                                          "LEADER"
+                                        ]
+                                      },
+                                      "profileVersion": {
+                                        "type": "string",
+                                        "nullable": true
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Admin authentication required"
+          },
+          "403": {
+            "description": "Tree role policy denies access"
+          },
+          "422": {
+            "description": "Invalid historical time context"
           }
         },
         "security": [
@@ -10351,7 +10452,7 @@
     },
     "/api/v1/admin/persons/{personId}/qualifications": {
       "get": {
-        "description": "Read-only exact currentHolderPersonId filter. Includes every existing status; does not infer Active or historical ownership. Same Person administration roles. Stable createdAt descending / qualificationId ascending ordering.",
+        "description": "Read-only exact currentHolderPersonId filter. Includes every existing status; does not infer Active or historical ownership. Same Person administration roles. Stable createdAt descending / qualificationId ascending ordering. admin360 is a bounded server-side projection; unavailable historical/current evidence is never guessed.",
         "operationId": "adminListPersonQualifications",
         "parameters": [
           {
@@ -10444,6 +10545,243 @@
                           "updatedAt": {
                             "type": "string",
                             "format": "date-time"
+                          },
+                          "admin360": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": [
+                              "schemaVersion",
+                              "organization",
+                              "owner",
+                              "plan",
+                              "globalRank"
+                            ],
+                            "properties": {
+                              "schemaVersion": {
+                                "type": "string",
+                                "enum": [
+                                  "ADMIN_QUALIFICATION_360_V1"
+                                ]
+                              },
+                              "organization": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "required": [
+                                  "status",
+                                  "reasonCode",
+                                  "treeCode",
+                                  "binaryPositionNo",
+                                  "binaryPath",
+                                  "canonicalPositionNo",
+                                  "canonicalSide"
+                                ],
+                                "properties": {
+                                  "status": {
+                                    "type": "string",
+                                    "enum": [
+                                      "AVAILABLE",
+                                      "UNAVAILABLE"
+                                    ]
+                                  },
+                                  "reasonCode": {
+                                    "type": "string",
+                                    "nullable": true
+                                  },
+                                  "treeCode": {
+                                    "type": "string",
+                                    "nullable": true
+                                  },
+                                  "binaryPositionNo": {
+                                    "type": "string",
+                                    "nullable": true,
+                                    "description": "Binary position serialized as a decimal string."
+                                  },
+                                  "binaryPath": {
+                                    "type": "string",
+                                    "nullable": true,
+                                    "description": "Server-calculated binary path."
+                                  },
+                                  "canonicalPositionNo": {
+                                    "type": "integer",
+                                    "nullable": true
+                                  },
+                                  "canonicalSide": {
+                                    "type": "string",
+                                    "enum": [
+                                      "LEFT",
+                                      "RIGHT"
+                                    ],
+                                    "nullable": true
+                                  }
+                                }
+                              },
+                              "owner": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "required": [
+                                  "status",
+                                  "reasonCode",
+                                  "ownerType",
+                                  "memberNo",
+                                  "companyCode"
+                                ],
+                                "properties": {
+                                  "status": {
+                                    "type": "string",
+                                    "enum": [
+                                      "AVAILABLE",
+                                      "UNAVAILABLE"
+                                    ]
+                                  },
+                                  "reasonCode": {
+                                    "type": "string",
+                                    "nullable": true
+                                  },
+                                  "ownerType": {
+                                    "type": "string",
+                                    "enum": [
+                                      "MEMBER",
+                                      "COMPANY"
+                                    ],
+                                    "nullable": true
+                                  },
+                                  "memberNo": {
+                                    "type": "string",
+                                    "nullable": true
+                                  },
+                                  "companyCode": {
+                                    "type": "string",
+                                    "nullable": true
+                                  }
+                                }
+                              },
+                              "plan": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "required": [
+                                  "status",
+                                  "reasonCode",
+                                  "planCode",
+                                  "source",
+                                  "profileVersion",
+                                  "effectiveFrom",
+                                  "effectiveTo"
+                                ],
+                                "properties": {
+                                  "status": {
+                                    "type": "string",
+                                    "enum": [
+                                      "AVAILABLE",
+                                      "UNAVAILABLE"
+                                    ]
+                                  },
+                                  "reasonCode": {
+                                    "type": "string",
+                                    "nullable": true
+                                  },
+                                  "planCode": {
+                                    "type": "string",
+                                    "nullable": true
+                                  },
+                                  "source": {
+                                    "type": "string",
+                                    "enum": [
+                                      "COMPANY_BOOTSTRAP_PROFILE_BINDING",
+                                      "QUALIFICATION_PLAN_HISTORY"
+                                    ],
+                                    "nullable": true
+                                  },
+                                  "profileVersion": {
+                                    "type": "string",
+                                    "nullable": true
+                                  },
+                                  "effectiveFrom": {
+                                    "type": "string",
+                                    "format": "date-time",
+                                    "nullable": true
+                                  },
+                                  "effectiveTo": {
+                                    "type": "string",
+                                    "format": "date-time",
+                                    "nullable": true
+                                  }
+                                }
+                              },
+                              "globalRank": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "required": [
+                                  "status",
+                                  "reasonCode",
+                                  "scope",
+                                  "highestRank",
+                                  "achievements"
+                                ],
+                                "properties": {
+                                  "status": {
+                                    "type": "string",
+                                    "enum": [
+                                      "AVAILABLE",
+                                      "UNAVAILABLE"
+                                    ]
+                                  },
+                                  "reasonCode": {
+                                    "type": "string",
+                                    "nullable": true
+                                  },
+                                  "scope": {
+                                    "type": "string",
+                                    "enum": [
+                                      "GLOBAL_CUMULATIVE"
+                                    ]
+                                  },
+                                  "highestRank": {
+                                    "type": "string",
+                                    "enum": [
+                                      "NEW_STAR",
+                                      "EXCELLENCE",
+                                      "GLORY",
+                                      "DIAMOND",
+                                      "CROWN"
+                                    ],
+                                    "nullable": true
+                                  },
+                                  "achievements": {
+                                    "type": "array",
+                                    "maxItems": 5,
+                                    "items": {
+                                      "type": "object",
+                                      "additionalProperties": false,
+                                      "required": [
+                                        "rankCode",
+                                        "achievedAt",
+                                        "sourcePeriodEnd"
+                                      ],
+                                      "properties": {
+                                        "rankCode": {
+                                          "type": "string",
+                                          "enum": [
+                                            "NEW_STAR",
+                                            "EXCELLENCE",
+                                            "GLORY",
+                                            "DIAMOND",
+                                            "CROWN"
+                                          ]
+                                        },
+                                        "achievedAt": {
+                                          "type": "string",
+                                          "format": "date-time"
+                                        },
+                                        "sourcePeriodEnd": {
+                                          "type": "string",
+                                          "format": "date-time"
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
                           }
                         }
                       }
@@ -10681,6 +11019,7 @@
     },
     "/api/v1/admin/qualifications/{qualificationId}": {
       "get": {
+        "description": "Existing Ball detail plus a bounded admin360 server-side projection. Organization, owner, plan and global rank are returned only from their authoritative facts; unavailable evidence is not inferred.",
         "operationId": "adminGetQualification",
         "parameters": [
           {
@@ -10688,13 +11027,299 @@
             "required": true,
             "in": "path",
             "schema": {
+              "format": "uuid",
               "type": "string"
             }
           }
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "Admin Ball 360 read model. admin360 contains no relationship UUIDs, evidence hashes, or parameter snapshots.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "qualificationId": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "qualificationNo": {
+                          "type": "string",
+                          "description": "Core BigInt serialized as decimal string"
+                        },
+                        "ballNo": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "planLevelCode": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "status": {
+                          "type": "string"
+                        },
+                        "activeFlag": {
+                          "type": "boolean"
+                        },
+                        "admin360": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "schemaVersion",
+                            "organization",
+                            "owner",
+                            "plan",
+                            "globalRank"
+                          ],
+                          "properties": {
+                            "schemaVersion": {
+                              "type": "string",
+                              "enum": [
+                                "ADMIN_QUALIFICATION_360_V1"
+                              ]
+                            },
+                            "organization": {
+                              "type": "object",
+                              "additionalProperties": false,
+                              "required": [
+                                "status",
+                                "reasonCode",
+                                "treeCode",
+                                "binaryPositionNo",
+                                "binaryPath",
+                                "canonicalPositionNo",
+                                "canonicalSide"
+                              ],
+                              "properties": {
+                                "status": {
+                                  "type": "string",
+                                  "enum": [
+                                    "AVAILABLE",
+                                    "UNAVAILABLE"
+                                  ]
+                                },
+                                "reasonCode": {
+                                  "type": "string",
+                                  "nullable": true
+                                },
+                                "treeCode": {
+                                  "type": "string",
+                                  "nullable": true
+                                },
+                                "binaryPositionNo": {
+                                  "type": "string",
+                                  "nullable": true,
+                                  "description": "Binary position serialized as a decimal string."
+                                },
+                                "binaryPath": {
+                                  "type": "string",
+                                  "nullable": true,
+                                  "description": "Server-calculated binary path."
+                                },
+                                "canonicalPositionNo": {
+                                  "type": "integer",
+                                  "nullable": true
+                                },
+                                "canonicalSide": {
+                                  "type": "string",
+                                  "enum": [
+                                    "LEFT",
+                                    "RIGHT"
+                                  ],
+                                  "nullable": true
+                                }
+                              }
+                            },
+                            "owner": {
+                              "type": "object",
+                              "additionalProperties": false,
+                              "required": [
+                                "status",
+                                "reasonCode",
+                                "ownerType",
+                                "memberNo",
+                                "companyCode"
+                              ],
+                              "properties": {
+                                "status": {
+                                  "type": "string",
+                                  "enum": [
+                                    "AVAILABLE",
+                                    "UNAVAILABLE"
+                                  ]
+                                },
+                                "reasonCode": {
+                                  "type": "string",
+                                  "nullable": true
+                                },
+                                "ownerType": {
+                                  "type": "string",
+                                  "enum": [
+                                    "MEMBER",
+                                    "COMPANY"
+                                  ],
+                                  "nullable": true
+                                },
+                                "memberNo": {
+                                  "type": "string",
+                                  "nullable": true
+                                },
+                                "companyCode": {
+                                  "type": "string",
+                                  "nullable": true
+                                }
+                              }
+                            },
+                            "plan": {
+                              "type": "object",
+                              "additionalProperties": false,
+                              "required": [
+                                "status",
+                                "reasonCode",
+                                "planCode",
+                                "source",
+                                "profileVersion",
+                                "effectiveFrom",
+                                "effectiveTo"
+                              ],
+                              "properties": {
+                                "status": {
+                                  "type": "string",
+                                  "enum": [
+                                    "AVAILABLE",
+                                    "UNAVAILABLE"
+                                  ]
+                                },
+                                "reasonCode": {
+                                  "type": "string",
+                                  "nullable": true
+                                },
+                                "planCode": {
+                                  "type": "string",
+                                  "nullable": true
+                                },
+                                "source": {
+                                  "type": "string",
+                                  "enum": [
+                                    "COMPANY_BOOTSTRAP_PROFILE_BINDING",
+                                    "QUALIFICATION_PLAN_HISTORY"
+                                  ],
+                                  "nullable": true
+                                },
+                                "profileVersion": {
+                                  "type": "string",
+                                  "nullable": true
+                                },
+                                "effectiveFrom": {
+                                  "type": "string",
+                                  "format": "date-time",
+                                  "nullable": true
+                                },
+                                "effectiveTo": {
+                                  "type": "string",
+                                  "format": "date-time",
+                                  "nullable": true
+                                }
+                              }
+                            },
+                            "globalRank": {
+                              "type": "object",
+                              "additionalProperties": false,
+                              "required": [
+                                "status",
+                                "reasonCode",
+                                "scope",
+                                "highestRank",
+                                "achievements"
+                              ],
+                              "properties": {
+                                "status": {
+                                  "type": "string",
+                                  "enum": [
+                                    "AVAILABLE",
+                                    "UNAVAILABLE"
+                                  ]
+                                },
+                                "reasonCode": {
+                                  "type": "string",
+                                  "nullable": true
+                                },
+                                "scope": {
+                                  "type": "string",
+                                  "enum": [
+                                    "GLOBAL_CUMULATIVE"
+                                  ]
+                                },
+                                "highestRank": {
+                                  "type": "string",
+                                  "enum": [
+                                    "NEW_STAR",
+                                    "EXCELLENCE",
+                                    "GLORY",
+                                    "DIAMOND",
+                                    "CROWN"
+                                  ],
+                                  "nullable": true
+                                },
+                                "achievements": {
+                                  "type": "array",
+                                  "maxItems": 5,
+                                  "items": {
+                                    "type": "object",
+                                    "additionalProperties": false,
+                                    "required": [
+                                      "rankCode",
+                                      "achievedAt",
+                                      "sourcePeriodEnd"
+                                    ],
+                                    "properties": {
+                                      "rankCode": {
+                                        "type": "string",
+                                        "enum": [
+                                          "NEW_STAR",
+                                          "EXCELLENCE",
+                                          "GLORY",
+                                          "DIAMOND",
+                                          "CROWN"
+                                        ]
+                                      },
+                                      "achievedAt": {
+                                        "type": "string",
+                                        "format": "date-time"
+                                      },
+                                      "sourcePeriodEnd": {
+                                        "type": "string",
+                                        "format": "date-time"
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Admin authentication required"
+          },
+          "403": {
+            "description": "Existing Qualification role policy denies access"
+          },
+          "404": {
+            "description": "Qualification not found"
           }
         },
         "security": [

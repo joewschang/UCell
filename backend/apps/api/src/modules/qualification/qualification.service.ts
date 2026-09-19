@@ -1,10 +1,11 @@
 import { ConflictException, Injectable } from '@nestjs/common';
-import { PrismaService, SideCode } from '@ucell/database';
+import { Prisma, PrismaService, SideCode } from '@ucell/database';
 import { randomUUID } from 'crypto';
 import { AuditService } from '../../common/audit/audit.service';
 import { IdempotencyService } from '../../common/idempotency/idempotency.service';
 import { OrganizationService } from '../organization/organization.service';
 import { CreateQualificationDto } from './dto/create-qualification.dto';
+import { adminQualification360Include, projectAdminQualification360 } from './admin-qualification-360';
 
 @Injectable()
 export class QualificationService {
@@ -158,17 +159,31 @@ export class QualificationService {
   }
 
   async get(qualificationId: string) {
-    return this.prisma.qualification.findUniqueOrThrow({
-      where: { qualificationId },
-      include: {
-        currentHolder: true,
-        sponsorRelation:{include:{sponsor:{include:{currentHolder:true}}}},
-        binaryPlacement:{include:{parent:{include:{currentHolder:true}}}},
-        holderHistory:{orderBy:{effectiveFrom:'desc'},take:20},
-        qualificationStatusHistory:{orderBy:{effectiveFrom:'desc'},take:20},
-        activePeriods:{orderBy:{activeFrom:'desc'},take:20},
-        orders:{orderBy:{createdAt:'desc'},take:10},
-      },
-    });
+    return this.prisma.$transaction(async tx => {
+      const at = new Date();
+      const row = await tx.qualification.findUniqueOrThrow({
+        where: { qualificationId },
+        include: {
+          currentHolder: true,
+          sponsorRelation:{include:{sponsor:{include:{currentHolder:true}}}},
+          binaryPlacement:{include:{parent:{include:{currentHolder:true}}}},
+          holderHistory:{orderBy:{effectiveFrom:'desc'},take:20},
+          qualificationStatusHistory:{orderBy:{effectiveFrom:'desc'},take:20},
+          activePeriods:{orderBy:{activeFrom:'desc'},take:20},
+          orders:{orderBy:{createdAt:'desc'},take:10},
+          ...adminQualification360Include(at),
+        },
+      });
+      const admin360 = await projectAdminQualification360(tx, [row], at);
+      const {
+        binaryTreeMembership,
+        canonicalPosition,
+        ownerIntervals,
+        companyProfileBindings,
+        globalRankHistory,
+        ...qualification
+      } = row;
+      return { ...qualification, admin360: admin360.get(row.qualificationId)! };
+    }, { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead });
   }
 }

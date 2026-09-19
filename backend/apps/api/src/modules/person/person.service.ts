@@ -3,6 +3,7 @@ import { Prisma, PrismaService } from '@ucell/database';
 import { randomUUID } from 'crypto';
 import { AuditService } from '../../common/audit/audit.service';
 import { IdempotencyService } from '../../common/idempotency/idempotency.service';
+import { adminQualification360Include, projectAdminQualification360 } from '../qualification/admin-qualification-360';
 import { CreatePersonDto } from './dto/create-person.dto';
 
 @Injectable()
@@ -57,12 +58,31 @@ export class PersonService {
     return this.prisma.$transaction(async tx => {
       const person = await tx.person.findUnique({ where: { personId }, select: { personId: true } });
       if (!person) throw new NotFoundException({ code: 'PERSON_NOT_FOUND' });
+      const at = new Date();
       const where = { currentHolderPersonId: personId };
       const total = await tx.qualification.count({ where });
       const data = await tx.qualification.findMany({
-        where, take, skip, orderBy: [{ createdAt: 'desc' }, { qualificationId: 'asc' }],
+        where,
+        take,
+        skip,
+        orderBy: [{ createdAt: 'desc' }, { qualificationId: 'asc' }],
+        include: adminQualification360Include(at),
       });
-      return { data, meta: { total, take, skip } };
+      const admin360 = await projectAdminQualification360(tx, data, at);
+      return {
+        data: data.map((row) => {
+          const {
+            binaryTreeMembership,
+            canonicalPosition,
+            ownerIntervals,
+            companyProfileBindings,
+            globalRankHistory,
+            ...qualification
+          } = row;
+          return { ...qualification, admin360: admin360.get(row.qualificationId)! };
+        }),
+        meta: { total, take, skip },
+      };
     }, { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead });
   }
 

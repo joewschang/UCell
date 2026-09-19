@@ -1,15 +1,10 @@
 {
-  "baseline": "35bfef1b3d3134601b70990818fc620968dafa4c",
+  "baseline": "55e607182fcc3368ca9095c6deac83eb6498ff4e",
   "validatedWith": "@apidevtools/swagger-parser",
-  "baselineOperations": 174,
+  "baselineOperations": 175,
   "currentOperations": 175,
-  "added": [
-    "GET /api/v1/member/organization/tree"
-  ],
-  "failures": [
-    "GET /api/v1/member/me response 200 application/json.data.memberNo: format changed",
-    "PATCH /api/v1/member/profile response 200 application/json.data.memberNo: format changed"
-  ],
+  "added": [],
+  "failures": [],
   "manualReview": [],
   "limitation": "Structural compatibility only. Pagination token behavior and business semantics require contract tests and review."
 }

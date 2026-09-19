@@ -4,11 +4,13 @@ import { afterEach,beforeEach, expect, it, vi } from 'vitest';
 import { QualificationProvider, useQualification } from '../src/QualificationContext';
 const getQualifications = vi.hoisted(() => vi.fn());
 const selectQualification=vi.hoisted(()=>vi.fn());
-vi.mock('../src/memberData', () => ({ getQualifications,selectQualification }));
-beforeEach(()=>{selectQualification.mockImplementation(async q=>q);});
+const getPerson=vi.hoisted(()=>vi.fn());
+vi.mock('../src/memberData', () => ({ getQualifications,selectQualification,getPerson }));
+beforeEach(()=>{selectQualification.mockImplementation(async q=>q);getPerson.mockResolvedValue({memberNo:'2609000001'});});
 let tree: ReactTestRenderer | undefined;
 const items = ['q1', 'q2'].map(id => ({ id, code: id, rank: 'ELITE', active: true, ballLabel: id }));
 function Probe() { const s = useQualification(); return <><p>{s.loading ? 'loading' : s.error ?? s.current?.id ?? 'empty'}</p><button onClick={() => s.select('q2')}>switch</button><button onClick={s.retry}>retry</button></>; }
+function IdentityProbe(){const s=useQualification();return <p>{s.memberNoStatus==='available'?s.memberNo:'unavailable'}</p>;}
 afterEach(() => { if (tree) act(() => tree!.unmount()); tree = undefined; vi.unstubAllGlobals(); vi.clearAllMocks(); });
 it('loads and switches qualifications when selection storage is unavailable', async () => {
   vi.stubGlobal('sessionStorage', { getItem() { throw Error('blocked'); }, setItem() { throw Error('blocked'); }, removeItem() { throw Error('blocked'); } });
@@ -17,6 +19,12 @@ it('loads and switches qualifications when selection storage is unavailable', as
   expect(tree!.root.findByType('p').children).toEqual(['q1']);
   await act(async () => tree!.root.findAllByType('button')[0].props.onClick());
   expect(tree!.root.findByType('p').children).toEqual(['q2']);
+});
+it('keeps the verified own member number in shared member context',async()=>{
+ getQualifications.mockResolvedValue(items);
+ getPerson.mockResolvedValue({memberNo:'2609000001'});
+ await act(async()=>{tree=create(<QualificationProvider><IdentityProbe/></QualificationProvider>);});
+ expect(tree!.root.findByType('p').children).toEqual(['2609000001']);
 });
 it('hides scoped data during server validation and fails closed on denied selection',async()=>{
  getQualifications.mockResolvedValue(items);vi.stubGlobal('sessionStorage',{getItem:()=>null,setItem:vi.fn()});

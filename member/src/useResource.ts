@@ -1,13 +1,18 @@
 import { useEffect, useState } from 'react';
 /** Keyed state prevents previous qualification/period data flashing before effects run. */
-export function useResource<T>(key: string, load: (signal: AbortSignal) => Promise<T>) {
+export function useResource<T>(key: string, load: (signal: AbortSignal) => Promise<T>, enabled = true) {
     const [attempt, setAttempt] = useState(0);
     const [state, setState] = useState<{
         key: string;
         data?: T;
         error?: string;
+        errorCause?: unknown;
     }>({ key: '' });
     useEffect(() => {
+        if (!enabled) {
+            setState({ key });
+            return;
+        }
         const controller = new AbortController();
         setState({ key });
         load(controller.signal).then(data => {
@@ -15,9 +20,9 @@ export function useResource<T>(key: string, load: (signal: AbortSignal) => Promi
                 setState({ key, data });
         }).catch(error => {
             if (!controller.signal.aborted)
-                setState({ key, error: error instanceof Error ? error.message : '資料讀取失敗' });
+                setState({ key, error: error instanceof Error ? error.message : '資料讀取失敗', errorCause: error });
         });
         return () => controller.abort();
-    }, [key, attempt]); // Callers encode all request inputs in key.
+    }, [key, attempt, enabled]); // Callers encode all request inputs in key.
     return { ...(state.key === key ? state : { key }), retry: () => setAttempt(n => n + 1) };
 }

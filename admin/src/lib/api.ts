@@ -58,10 +58,19 @@ export async function api<T>(path:string,init:RequestOptions={}):Promise<T>{
     window.dispatchEvent(new CustomEvent('ucell:admin-unauthorized'));
   }
   if(!res.ok){
-    const detail=(body as any)?.message ?? (body as any)?.error?.message;
-    const code=(body as any)?.code??(body as any)?.error?.code;
-    const label:Record<number,string>={401:'管理員工作階段已失效，請重新登入',403:'沒有此操作權限',404:'找不到指定資料',409:'操作衝突，請確認原資料後重試',422:'資料驗證或必要設定未完成'};
-    throw new ApiError(res.status,body,[label[res.status],detail,typeof code==='string'?code:undefined].filter(Boolean).join(' · ') || `API ${res.status}: ${path}`);
+    // A server detail may contain an internal identifier or metadata the current
+    // operator is not allowed to learn. Primary operational UI only receives a
+    // status-specific, safe message; authorized audit screens can still inspect
+    // their own evidence through their dedicated APIs.
+    const label:Record<number,string>={
+      400:'資料格式不正確，請檢查輸入後重試',
+      401:'管理員工作階段已失效，請重新登入',
+      403:'沒有此操作權限，系統未顯示受限制的資料',
+      404:'找不到指定資料，可能已移除或無權查看',
+      409:'資料已變更或位置已被占用；請重新載入後確認',
+      422:'資料驗證或必要設定未完成，請依欄位說明修正後重試',
+    };
+    throw new ApiError(res.status,body,label[res.status]??'服務暫時無法完成此請求，請稍後重試');
   }
   return body as T;
 }

@@ -5,7 +5,11 @@ import { PersonController } from '../src/modules/person/person.controller';
 function harness(personExists = true) {
   const tx = {
     person: { findUnique: jest.fn(async () => personExists ? { personId: 'a' } : null) },
-    qualification: { count: jest.fn(async () => 2), findMany: jest.fn(async () => [{ qualificationId: 'ball-a' }, { qualificationId: 'ball-b' }]) },
+    qualification: { count: jest.fn(async () => 2), findMany: jest.fn(async () => [
+      { qualificationId: 'ball-a', kind: 'MEMBER_ORIGIN', planLevelCode: 'STARTER', binaryTreeMembership: null, canonicalPosition: null, ownerIntervals: [], companyProfileBindings: [], globalRankHistory: [] },
+      { qualificationId: 'ball-b', kind: 'MEMBER_ORIGIN', planLevelCode: 'STARTER', binaryTreeMembership: null, canonicalPosition: null, ownerIntervals: [], companyProfileBindings: [], globalRankHistory: [] },
+    ]) },
+    qualificationPlanHistory: { findMany: jest.fn(async () => []) },
   };
   const prisma = { $transaction: jest.fn(async (work: any) => work(tx)) };
   return { tx, prisma, service: new PersonService(prisma as any, {} as any, {} as any) };
@@ -14,9 +18,17 @@ const personId = '00000000-0000-0000-0000-000000000001';
 describe('Admin Person current Qualifications read model', () => {
   it('filters exact current holder, stable paginates and snapshots rows/count together', async () => {
     const { service, prisma, tx } = harness();
-    expect(await service.qualifications(personId, 1, 1)).toEqual({ data: [{ qualificationId: 'ball-a' }, { qualificationId: 'ball-b' }], meta: { total: 2, take: 1, skip: 1 } });
+    const result = await service.qualifications(personId, 1, 1);
+    expect(result.meta).toEqual({ total: 2, take: 1, skip: 1 });
+    expect(result.data.map((row: any) => row.qualificationId)).toEqual(['ball-a', 'ball-b']);
+    expect(result.data.every((row: any) => row.admin360?.schemaVersion === 'ADMIN_QUALIFICATION_360_V1')).toBe(true);
+    expect(result.data.every((row: any) => row.admin360?.plan?.status === 'UNAVAILABLE')).toBe(true);
     expect(tx.qualification.count).toHaveBeenCalledWith({ where: { currentHolderPersonId: personId } });
-    expect(tx.qualification.findMany).toHaveBeenCalledWith({ where: { currentHolderPersonId: personId }, take: 1, skip: 1, orderBy: [{ createdAt: 'desc' }, { qualificationId: 'asc' }] });
+    expect(tx.qualification.findMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: { currentHolderPersonId: personId }, take: 1, skip: 1, orderBy: [{ createdAt: 'desc' }, { qualificationId: 'asc' }],
+      include: expect.objectContaining({ binaryTreeMembership: expect.any(Object), ownerIntervals: expect.any(Object), companyProfileBindings: expect.any(Object), globalRankHistory: expect.any(Object) }),
+    }));
+    expect(tx.qualificationPlanHistory.findMany).toHaveBeenCalledTimes(1);
     expect(prisma.$transaction).toHaveBeenCalledWith(expect.any(Function), { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead });
   });
   it('rejects invalid input before querying and missing Person as 404', async () => {
