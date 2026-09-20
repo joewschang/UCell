@@ -39,9 +39,10 @@ export async function initLiff() {
     // synthetic LINE session. This path is unavailable outside Vite DEV,
     // accepts only localhost and requires an explicit per-member env token.
     const uat = typeof window === 'undefined' ? null : new URLSearchParams(window.location.search).get('uat');
-    if (typeof window !== 'undefined' && import.meta.env.DEV && ['127.0.0.1', 'localhost'].includes(window.location.hostname) &&
+    const stageUat=import.meta.env.PROD&&import.meta.env.VITE_STAGE_UAT_MEMBER_ENABLED==='true';
+    if (typeof window !== 'undefined' && ((import.meta.env.DEV && ['127.0.0.1', 'localhost'].includes(window.location.hostname))||stageUat) &&
         uat && /^[A-E]$/.test(uat)) {
-        const token = import.meta.env[`VITE_LOCAL_UAT_MEMBER_${uat}_TOKEN`];
+        const token = stageUat ? import.meta.env.VITE_STAGE_UAT_MEMBER_TOKEN : import.meta.env[`VITE_LOCAL_UAT_MEMBER_${uat}_TOKEN`];
         if (!token) throw new Error('本機 UAT 身分未設定');
         const response = await request('/member/me', { headers: { Authorization: 'Bearer ' + token } });
         if (!response.ok) throw new Error('本機 UAT 身分已失效，請重新建立 fixture');

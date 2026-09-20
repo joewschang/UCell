@@ -9,7 +9,7 @@ export function LoginPage(){
   if(!ready)return <main className="login-shell"><section className="login-card"><p>驗證登入狀態…</p></section></main>;
   if(user)return <Navigate to="/" replace/>;
 
-  const demo=import.meta.env.VITE_ENABLE_DEMO_LOGIN==='true'&&!import.meta.env.PROD;
+  const demo=import.meta.env.VITE_ENABLE_DEMO_LOGIN==='true'&&(!import.meta.env.PROD||import.meta.env.VITE_STAGE_UAT_DEMO_LOGIN==='true');
   const localUatActor=import.meta.env.VITE_LOCAL_UAT_ADMIN_SUPER_ID;
   const localUat=import.meta.env.DEV&&['127.0.0.1','localhost'].includes(window.location.hostname)&&!!localUatActor;
   const loginLocalUat=()=>{
@@ -39,7 +39,7 @@ export function LoginPage(){
 
       {demo&&<>
         <hr/>
-        <div className="callout warning">DEV ONLY：下列登入不建立正式Backend Session，只能搭配非production的ADMIN_AUTH_BYPASS。</div>
+        <div className="callout warning">Temporary UAT：下列登入不建立正式Backend Session，只能搭配非production的 ADMIN_AUTH_BYPASS。</div>
         <div className="stack">
           {localUat&&<button onClick={loginLocalUat}>DEV：Local UAT Super Admin</button>}
           <button onClick={()=>loginDemo('SUPER_ADMIN')}>DEV：Super Admin</button>

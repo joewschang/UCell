@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 export const OPT_IN = 'SEED_STAGE_UAT_V1';
@@ -47,4 +48,4 @@ async function main() {
   try { console.log(JSON.stringify(await seedStageUat(prisma, manifest, Prisma.Decimal))); } finally { await prisma.$disconnect(); }
 }
 
-if (process.argv[1] && fileURLToPath(import.meta.url) === fileURLToPath(new URL(`file:///${process.argv[1].replaceAll('\\', '/')}`))) main().catch((error) => { console.error(`STAGE_UAT_SEED_FAIL: ${error.message}`); process.exitCode = 1; });
+if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1])) main().catch((error) => { console.error(`STAGE_UAT_SEED_FAIL: ${error.message}`); process.exitCode = 1; });

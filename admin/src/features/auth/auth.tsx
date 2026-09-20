@@ -45,7 +45,8 @@ export function AuthProvider({children}:{children:React.ReactNode}){
       const token=sessionStorage.getItem('ucell_admin_token');
       if(!token){
         const cached=savedUser();
-        if(!import.meta.env.DEV || import.meta.env.VITE_ENABLE_DEMO_LOGIN!=='true' || cached?.provider!=='DEV_BYPASS') clear();
+        const stageUat=import.meta.env.PROD&&import.meta.env.VITE_STAGE_UAT_DEMO_LOGIN==='true';
+        if((!import.meta.env.DEV&&!stageUat) || import.meta.env.VITE_ENABLE_DEMO_LOGIN!=='true' || cached?.provider!=='DEV_BYPASS') clear();
         setReady(true);return;
       }
       try{
@@ -84,7 +85,7 @@ export function AuthProvider({children}:{children:React.ReactNode}){
     },
     loginDemo:(role:AdminRole)=>{
       if(import.meta.env.VITE_ENABLE_DEMO_LOGIN!=='true')throw new Error('Demo login disabled');
-      if(import.meta.env.PROD)throw new Error('Demo login is forbidden in production');
+      if(import.meta.env.PROD&&import.meta.env.VITE_STAGE_UAT_DEMO_LOGIN!=='true')throw new Error('Demo login is forbidden in production');
       const u={name:'DEV Admin',role,provider:'DEV_BYPASS'};
       queryClient.clear();
       setUser(u);persistUser(u);
