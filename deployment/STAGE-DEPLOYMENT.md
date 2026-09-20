@@ -6,6 +6,7 @@ The GitHub `stage` environment must provide these secrets:
 
 - `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`: federated deployment identity.
 - `STAGE_POSTGRES_ADMIN_PASSWORD`: Stage-only PostgreSQL administrator password.
+- `STAGE_PII_ENCRYPTION_KEY`: Stage-only base64-encoded 32-byte encryption key used for encrypted Member delivery and formal-application fields. It is injected into Container Apps as a secret reference and is never a frontend build argument.
 - `STAGE_LINE_LOGIN_CHANNEL_ID`, `STAGE_LIFF_ID`: formal Stage LINE Login/LIFF configuration when available.
 - `STAGE_ENTRA_TENANT_ID`, `STAGE_ENTRA_CLIENT_ID`, `STAGE_ENTRA_REDIRECT_URI`: formal Stage Entra configuration when available.
 - GitHub environment variables `UCELL_INVENTORY_WAREHOUSE_ID` and `UCELL_INVENTORY_POLICY_VERSION` are mandatory. Deployment fails before Azure access when either is empty or invalid.

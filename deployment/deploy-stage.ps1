@@ -1,7 +1,8 @@
 [CmdletBinding()]
 param(
   [string]$Location = 'eastasia', [string]$ResourceGroup = 'rg-ucell-stage',
-  [string]$PostgresAdminUser = 'ucellstageadmin', [SecureString]$PostgresAdminPassword,
+  [string]$PostgresAdminUser = 'ucellstageadmin', [SecureString]$PostgresAdminPassword, [SecureString]$PiiEncryptionKey,
+  [ValidatePattern('^[A-Za-z0-9._-]{1,64}$')][string]$PiiEncryptionKeyVersion = 'STAGE_V1',
   [string]$LineLoginChannelId = '', [string]$LiffId = '',
   [string]$EntraTenantId = '', [string]$EntraClientId = '', [string]$EntraRedirectUri = '', [string]$ImageTag = '',
   [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$InventoryWarehouseId,
@@ -37,14 +38,16 @@ function Resolve-Image([string]$Repository) {
   if($digest -notmatch '^sha256:[0-9a-f]{64}$'){throw "Invalid ACR digest for ${Repository}:$ImageTag."}
   return "$registryServer/$Repository@$digest"
 }
-function Set-App([string]$Name,[string]$Image,[int]$Min,[int]$Max,[string[]]$Env=@(),[string[]]$RemoveEnv=@(),[switch]$Ingress,[int]$Port=0,[switch]$Database) {
+function Set-App([string]$Name,[string]$Image,[int]$Min,[int]$Max,[string[]]$Env=@(),[string[]]$RemoveEnv=@(),[string[]]$Secrets=@(),[switch]$Ingress,[int]$Port=0,[switch]$Database) {
   if(Test-App $Name){
     if($Database){Invoke-AzChecked "set $Name secret" @('containerapp','secret','set','--name',$Name,'--resource-group',$ResourceGroup,'--secrets',"database-url=$databaseUrl",'--only-show-errors')|Out-Null}
+    if($Secrets.Count){Invoke-AzChecked "set $Name application secrets" (@('containerapp','secret','set','--name',$Name,'--resource-group',$ResourceGroup,'--secrets')+$Secrets+@('--only-show-errors'))|Out-Null}
     $a=@('containerapp','update','--name',$Name,'--resource-group',$ResourceGroup,'--image',$Image,'--revision-suffix',$revisionSuffix,'--min-replicas',"$Min",'--max-replicas',"$Max",'--only-show-errors')
     if($Env.Count){$a+=@('--set-env-vars')+$Env}; if($RemoveEnv.Count){$a+=@('--remove-env-vars')+$RemoveEnv}; Invoke-AzChecked "update $Name" $a|Out-Null
   } else {
     $a=@('containerapp','create','--name',$Name,'--resource-group',$ResourceGroup,'--environment',$environment,'--image',$Image,'--registry-server',$registryServer,'--registry-identity',$identity,'--user-assigned',$identity,'--revision-suffix',$revisionSuffix,'--min-replicas',"$Min",'--max-replicas',"$Max",'--only-show-errors')
-    if($Ingress){$a+=@('--ingress','external','--target-port',"$Port")}; if($Database){$a+=@('--secrets',"database-url=$databaseUrl")}; if($Env.Count){$a+=@('--env-vars')+$Env}
+    $createSecrets=@(); if($Database){$createSecrets+="database-url=$databaseUrl"}; if($Secrets.Count){$createSecrets+=$Secrets}
+    if($Ingress){$a+=@('--ingress','external','--target-port',"$Port")}; if($createSecrets.Count){$a+=@('--secrets')+$createSecrets}; if($Env.Count){$a+=@('--env-vars')+$Env}
     Invoke-AzChecked "create $Name" $a|Out-Null
   }
 }
@@ -57,6 +60,10 @@ $ImageTag=($ImageTag.ToLowerInvariant()-replace '[^a-z0-9_.-]','-').Trim('-','.'
 $token=($ImageTag-replace '[^a-z0-9]',''); if($token.Length -gt 45){$token=$token.Substring(0,45)}; $revisionSuffix="r-$token"
 if(-not $PostgresAdminPassword){$PostgresAdminPassword=Read-Host 'Stage PostgreSQL administrator password' -AsSecureString}
 $password=[System.Net.NetworkCredential]::new('',$PostgresAdminPassword).Password; if($password.Length -lt 16){throw 'Stage PostgreSQL password must contain at least 16 characters.'}
+if(-not $PiiEncryptionKey){$PiiEncryptionKey=Read-Host 'Stage PII encryption key (base64 32-byte key)' -AsSecureString}
+$piiKey=[System.Net.NetworkCredential]::new('',$PiiEncryptionKey).Password
+try{$piiBytes=[Convert]::FromBase64String($piiKey)}catch{throw 'Stage PII encryption key must be base64.'}
+if($piiBytes.Length -ne 32){throw 'Stage PII encryption key must decode to exactly 32 bytes.'}
 
 Invoke-AzChecked 'verify Azure session' @('account','show','--only-show-errors')|Out-Null
 Invoke-AzChecked 'install Container Apps extension' @('extension','add','--name','containerapp','--upgrade','--only-show-errors')|Out-Null
@@ -72,7 +79,7 @@ foreach($r in @('ucell-backend','ucell-worker')){
   else{Invoke-AzChecked "build $r" @('acr','build','--registry',$acr,'--image',"${r}:$ImageTag",'--file',$df,'.','--only-show-errors')|Out-Null}
 }
 $backendImage=Resolve-Image 'ucell-backend'; $workerImage=Resolve-Image 'ucell-worker'
-$serverEnv=@('NODE_ENV=staging','ADMIN_AUTH_BYPASS=false','SWAGGER_ENABLED=true',"APPLICATIONINSIGHTS_CONNECTION_STRING=$insights",'UCELL_ENVIRONMENT=STAGE','DATABASE_URL=secretref:database-url',"UCELL_INVENTORY_WAREHOUSE_ID=$InventoryWarehouseId","UCELL_INVENTORY_POLICY_VERSION=$InventoryPolicyVersion")
+$serverEnv=@('NODE_ENV=staging','ADMIN_AUTH_BYPASS=false','SWAGGER_ENABLED=true',"APPLICATIONINSIGHTS_CONNECTION_STRING=$insights",'UCELL_ENVIRONMENT=STAGE','DATABASE_URL=secretref:database-url','PII_ENCRYPTION_KEY=secretref:pii-encryption-key',"PII_ENCRYPTION_KEY_VERSION=$PiiEncryptionKeyVersion","UCELL_INVENTORY_WAREHOUSE_ID=$InventoryWarehouseId","UCELL_INVENTORY_POLICY_VERSION=$InventoryPolicyVersion")
 $serverRemove=@()
 if($LineLoginChannelId){$serverEnv+="LINE_LOGIN_CHANNEL_ID=$LineLoginChannelId"}else{$serverRemove+='LINE_LOGIN_CHANNEL_ID'}
 if($EntraTenantId){$serverEnv+="ENTRA_TENANT_ID=$EntraTenantId"}else{$serverRemove+='ENTRA_TENANT_ID'}
@@ -90,8 +97,8 @@ $execution=(Invoke-AzChecked 'start migration' @('containerapp','job','start','-
 $migrationStatus=''; for($i=1;$i -le $MigrationPollAttempts;$i++){Start-Sleep 10; $migrationStatus=(Invoke-AzChecked 'poll migration' @('containerapp','job','execution','show','--name','ucell-stage-migrate','--resource-group',$ResourceGroup,'--job-execution-name',$execution,'--query','properties.status','-o','tsv','--only-show-errors')).Trim(); if($migrationStatus -notin @('Running','Processing','Pending')){break}}
 if($migrationStatus -ne 'Succeeded'){throw "Stage migration failed or timed out: $migrationStatus."}
 
-Set-App 'ucell-stage-api' $backendImage 1 3 $serverEnv -RemoveEnv $serverRemove -Ingress -Port 3000 -Database
-Set-App 'ucell-stage-worker' $workerImage 1 2 $serverEnv -RemoveEnv $serverRemove -Database
+Set-App 'ucell-stage-api' $backendImage 1 3 $serverEnv -RemoveEnv $serverRemove -Secrets @("pii-encryption-key=$piiKey") -Ingress -Port 3000 -Database
+Set-App 'ucell-stage-worker' $workerImage 1 2 $serverEnv -RemoveEnv $serverRemove -Secrets @("pii-encryption-key=$piiKey") -Database
 $apiFqdn=(Invoke-AzChecked 'read API FQDN' @('containerapp','show','--name','ucell-stage-api','--resource-group',$ResourceGroup,'--query','properties.configuration.ingress.fqdn','-o','tsv','--only-show-errors')).Trim(); if(-not $apiFqdn){throw 'API FQDN is empty.'}
 $apiOrigin="https://$apiFqdn"; $apiBaseUrl="$apiOrigin/api/v1"
 

@@ -38,6 +38,7 @@ jobs:
         shell: pwsh
         env:
           STAGE_DB_PASSWORD: ${{ secrets.STAGE_POSTGRES_ADMIN_PASSWORD }}
+          STAGE_PII_ENCRYPTION_KEY: ${{ secrets.STAGE_PII_ENCRYPTION_KEY }}
           LINE_LOGIN_CHANNEL_ID: ${{ secrets.STAGE_LINE_LOGIN_CHANNEL_ID }}
           LIFF_ID: ${{ secrets.STAGE_LIFF_ID }}
           ENTRA_TENANT_ID: ${{ secrets.STAGE_ENTRA_TENANT_ID }}
@@ -51,6 +52,7 @@ jobs:
             -Location '${{ inputs.location }}' `
             -ResourceGroup '${{ inputs.resource_group }}' `
             -PostgresAdminPassword $securePassword `
+            -PiiEncryptionKey (ConvertTo-SecureString $env:STAGE_PII_ENCRYPTION_KEY -AsPlainText -Force) `
             -LineLoginChannelId $env:LINE_LOGIN_CHANNEL_ID `
             -LiffId $env:LIFF_ID `
             -EntraTenantId $env:ENTRA_TENANT_ID `
