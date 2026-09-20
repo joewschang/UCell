@@ -20,6 +20,7 @@ const assertions = [
   ['UAT manifest warehouse is a valid configured warehouse candidate', /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-8[0-9a-f]{3}-[0-9a-f]{12}$/i.test(uatManifest.warehouse.warehouseId)],
   ['omitted identity configuration is removed on update', deploy.includes("'--remove-env-vars'") && deploy.includes("$serverRemove+='LINE_LOGIN_CHANNEL_ID'")],
   ['immutable ACR digest resolution', deploy.includes('Resolve-Image') && deploy.includes('@$digest')],
+  ['local build resolves pushed Docker RepoDigest', deploy.includes('docker image inspect') && deploy.includes('RepoDigests')],
   ['existing Container App update path', deploy.includes("'containerapp','update'")],
   ['unique revision suffix', deploy.includes("'--revision-suffix',$revisionSuffix")],
   ['bounded migration polling', deploy.includes('$MigrationPollAttempts') && !deploy.includes('do {')],

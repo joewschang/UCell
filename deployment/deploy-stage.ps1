@@ -34,6 +34,12 @@ function Test-App([string]$Name) {
   return $LASTEXITCODE -eq 0
 }
 function Resolve-Image([string]$Repository) {
+  if($ContainerBuildMode -eq 'Local'){
+    $image="$registryServer/${Repository}:$ImageTag"
+    $repoDigest=(& docker image inspect --format '{{index .RepoDigests 0}}' $image).Trim()
+    if($LASTEXITCODE -ne 0 -or $repoDigest -notmatch "^$([regex]::Escape($registryServer))/$([regex]::Escape($Repository))@sha256:[0-9a-f]{64}$"){throw "Invalid local Docker digest for $image."}
+    return $repoDigest
+  }
   $digest=(Invoke-AzChecked "resolve $Repository digest" @('acr','repository','show','--name',$acr,'--image',"${Repository}:$ImageTag",'--query','digest','-o','tsv','--only-show-errors')).Trim()
   if($digest -notmatch '^sha256:[0-9a-f]{64}$'){throw "Invalid ACR digest for ${Repository}:$ImageTag."}
   return "$registryServer/$Repository@$digest"
