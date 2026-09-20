@@ -14,6 +14,7 @@ const assertions = [
   ['backend Entra tenant wiring', deploy.includes('ENTRA_TENANT_ID=$EntraTenantId')],
   ['backend Entra client wiring', deploy.includes('ENTRA_CLIENT_ID=$EntraClientId')],
   ['PII key is secret-referenced and never a frontend build argument', deploy.includes('PII_ENCRYPTION_KEY=secretref:pii-encryption-key') && deploy.includes('pii-encryption-key=$piiKey') && workflow.includes('STAGE_PII_ENCRYPTION_KEY')],
+  ['Stage permits btree_gist before temporal-tree migration', deploy.includes("'allow Stage btree_gist extension'") && deploy.includes("'azure.extensions'")],
   ['inventory warehouse fails closed and is wired', deploy.includes("Parameter(Mandatory)") && deploy.includes('UCELL_INVENTORY_WAREHOUSE_ID=$InventoryWarehouseId') && workflow.includes('vars.UCELL_INVENTORY_WAREHOUSE_ID')],
   ['inventory policy fails closed and is wired', deploy.includes('UCELL_INVENTORY_POLICY_VERSION=$InventoryPolicyVersion') && workflow.includes('vars.UCELL_INVENTORY_POLICY_VERSION')],
   ['UAT manifest warehouse is a valid configured warehouse candidate', /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-8[0-9a-f]{3}-[0-9a-f]{12}$/i.test(uatManifest.warehouse.warehouseId)],

@@ -137,6 +137,7 @@ output acrName string = registry.name
 output workloadIdentityId string = workloadIdentity.id
 output containerEnvironmentName string = containerEnvironment.name
 output postgresHost string = databaseServer.properties.fullyQualifiedDomainName
+output postgresServerName string = databaseServer.name
 output postgresDatabase string = database.name
 output postgresAdminUser string = postgresAdminUser
 output keyVaultName string = vault.name

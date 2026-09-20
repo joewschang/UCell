@@ -72,6 +72,14 @@ Invoke-AzChecked 'create Stage resource group' @('group','create','--name',$Reso
 $deployment=(Invoke-AzChecked 'deploy Stage foundation' @('deployment','group','create','--resource-group',$ResourceGroup,'--template-file','infra/stage/foundation.bicep','--parameters',"postgresAdminUser=$PostgresAdminUser", "postgresAdminPassword=$password",'--query','properties.outputs','-o','json','--only-show-errors')|ConvertFrom-Json)
 $acr=$deployment.acrName.value; $identity=$deployment.workloadIdentityId.value; $environment=$deployment.containerEnvironmentName.value; $hostName=$deployment.postgresHost.value; $insights=$deployment.applicationInsightsConnectionString.value
 $databaseUrl="postgresql://$([Uri]::EscapeDataString($PostgresAdminUser)):$([Uri]::EscapeDataString($password))@${hostName}:5432/ucell_stage?sslmode=require"; $registryServer="$acr.azurecr.io"
+# Temporal tree constraints use EXCLUDE ... USING gist. Azure PostgreSQL requires
+# explicit allow-listing before CREATE EXTENSION btree_gist can run in migration 0400.
+$allowedExtensions=(Invoke-AzChecked 'read Stage extension allow-list' @('postgres','flexible-server','parameter','show','--resource-group',$ResourceGroup,'--server-name',$deployment.postgresServerName.value,'--name','azure.extensions','--query','value','-o','tsv','--only-show-errors')).Trim()
+$extensionValues=@($allowedExtensions -split ',' | ForEach-Object {$_.Trim()} | Where-Object {$_})
+if($extensionValues -notcontains 'BTREE_GIST'){
+  $extensionValues+='BTREE_GIST'
+  Invoke-AzChecked 'allow Stage btree_gist extension' @('postgres','flexible-server','parameter','set','--resource-group',$ResourceGroup,'--server-name',$deployment.postgresServerName.value,'--name','azure.extensions','--value',($extensionValues -join ','),'--only-show-errors')|Out-Null
+}
 
 foreach($r in @('ucell-backend','ucell-worker')){
   $df=if($r -eq 'ucell-backend'){'deployment/Dockerfile.backend'}else{'deployment/Dockerfile.worker'}
