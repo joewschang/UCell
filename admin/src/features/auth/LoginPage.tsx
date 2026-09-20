@@ -10,6 +10,13 @@ export function LoginPage(){
   if(user)return <Navigate to="/" replace/>;
 
   const demo=import.meta.env.VITE_ENABLE_DEMO_LOGIN==='true'&&!import.meta.env.PROD;
+  const localUatActor=import.meta.env.VITE_LOCAL_UAT_ADMIN_SUPER_ID;
+  const localUat=import.meta.env.DEV&&['127.0.0.1','localhost'].includes(window.location.hostname)&&!!localUatActor;
+  const loginLocalUat=()=>{
+    if(!localUatActor) return;
+    sessionStorage.setItem('ucell_dev_actor_id',localUatActor);
+    loginDemo('SUPER_ADMIN');
+  };
 
   return <main className="login-shell">
     <section className="login-card">
@@ -34,6 +41,7 @@ export function LoginPage(){
         <hr/>
         <div className="callout warning">DEV ONLY：下列登入不建立正式Backend Session，只能搭配非production的ADMIN_AUTH_BYPASS。</div>
         <div className="stack">
+          {localUat&&<button onClick={loginLocalUat}>DEV：Local UAT Super Admin</button>}
           <button onClick={()=>loginDemo('SUPER_ADMIN')}>DEV：Super Admin</button>
           <button onClick={()=>loginDemo('MEMBERSHIP_OPS')}>DEV：Membership Ops</button>
           <button onClick={()=>loginDemo('FINANCE')}>DEV：Finance</button>

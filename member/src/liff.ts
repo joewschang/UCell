@@ -35,6 +35,20 @@ export async function initLiff() {
     sessionStorage.removeItem('ucell_line_id_token');
     if (import.meta.env.VITE_ENABLE_MOCK === 'true')
         return { mode: 'mock' as const };
+    // Local UAT can exercise the real Member API with an already-issued,
+    // synthetic LINE session. This path is unavailable outside Vite DEV,
+    // accepts only localhost and requires an explicit per-member env token.
+    const uat = typeof window === 'undefined' ? null : new URLSearchParams(window.location.search).get('uat');
+    if (typeof window !== 'undefined' && import.meta.env.DEV && ['127.0.0.1', 'localhost'].includes(window.location.hostname) &&
+        uat && /^[A-E]$/.test(uat)) {
+        const token = import.meta.env[`VITE_LOCAL_UAT_MEMBER_${uat}_TOKEN`];
+        if (!token) throw new Error('本機 UAT 身分未設定');
+        const response = await request('/member/me', { headers: { Authorization: 'Bearer ' + token } });
+        if (!response.ok) throw new Error('本機 UAT 身分已失效，請重新建立 fixture');
+        parsePerson(unwrapMemberEnvelope(response.body));
+        sessionStorage.setItem('ucell_member_token', token);
+        return { mode: 'connected' as const };
+    }
     await prepareReferralLanding();
     const id = import.meta.env.VITE_LIFF_ID;
     if (!id)

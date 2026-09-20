@@ -113,8 +113,8 @@ it('requires explicit cart selection before real checkout and performs no eager 
     vi.stubGlobal('fetch', fetch);
     await mount('/shop');
     expect(renderer.root.findAllByType('button').find(b => b.children.join('') === '加入購物車')?.props.disabled).toBe(false);
-    expect(renderer.root.findAllByType('button').find(b => b.children.join('') === '建立待付款訂單')?.props.disabled).toBe(true);
-    expect(renderer.root.findAllByType('form')).toHaveLength(1);
+    expect(renderer.root.findAllByType('button').find(b => b.children.join('') === '前往結帳')?.props.disabled).toBe(true);
+    expect(renderer.root.findAllByType('form')).toHaveLength(0);
     expect(fetch.mock.calls.some(([url])=>String(url).includes('/member/me'))).toBe(true);
     expect(fetch.mock.calls.every(([,init])=>(init?.method??'GET')==='GET')).toBe(true);
 });
