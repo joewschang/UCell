@@ -156,6 +156,45 @@ v1 Retail Referral Base = 訂單行「商品實付淨額」：
 
 若商品 disabled 或 rate=0，Award=0且不得建立非必要 payable award。
 
+
+### 結帳時推薦碼補填、修正與鎖定
+- WEB_MEMBER 若尚未存在有效 Retail Referrer Attribution，RETAIL_PRODUCT 結帳頁可「選填」商品推薦碼（ballNo）。
+- referral deep link/QR 帶入的 code 只作 Candidate；在第一筆形成 attribution 的訂單 commit 前，使用者可修改或清除。
+- 結帳按「驗證」時只做 server-side SponsorResolver/ReferrerResolver 驗證與安全顯示，不得建立永久 attribution。
+- Order commit 時 Backend 必須再次 resolve/validate；成功後以該 code 建立 stable Retail Referrer Attribution，並 snapshot 到 Order Line。
+- 沒有推薦碼仍可原價結帳：Retail Referrer = NONE，RETAIL_REFERRAL = 0。
+- 一旦有效 Retail Referrer Attribution 已建立，後續商城結帳只顯示既有 referrer，不允許會員自行改成其他推薦碼；避免 last-click 搶單。
+- 若需更正，走 Admin「Retail Referrer Correction」受控流程，需 reason、RBAC、audit、effectiveFrom；只影響更正生效後的新訂單，不回溯修改歷史 Order Snapshot/Award。
+- QUALIFIED_MEMBER 不顯示 WEB_MEMBER 商品推薦碼輸入框；依 R1.0B 正式會員經濟規則。
+- Qualification Package 的「會員推薦人/推薦碼」與 Retail Product 的「商品推薦碼」UI/語意必須分開；兩者可同用 ballNo，但不得共用 relationship state。
+
+### 推薦者 Active Eligibility
+RETAIL_REFERRAL 是否成立除 SKU 參數與 Retail Attribution 外，還必須檢查「受益推薦 Ball 在該筆交易的 authoritative eligibility time 是否符合 R1.0B Active 規則」。
+
+正式原則：
+- 不在本規格硬編碼 Active 算法；必須呼叫現有 R1.0B Active/Eligibility authoritative service/evidence。
+- Award recognition 時 snapshot：referrerBallId/ballNo、activeEligible boolean、activeRuleVersion、activeAsOf/evidence reference。
+- 只有 retailReferralEnabled=true、有效 attribution、且 referrer Ball activeEligible=true 時，才建立 payable RETAIL_REFERRAL。
+- 推薦者不活躍時：該筆訂單的 Retail Referral = 0 / INELIGIBLE（依既有Award模型採最小一致表示），不得暫存在待領池、不得日後恢復活躍後追補，除非未來另立正式Decision。
+- Active判斷使用該筆Award recognition/economic event的正式as-of，不使用目前最新狀態回算歷史。
+- 後續推薦者失去Active，不追回先前在當時合格且已成立的Retail Referral；商品退貨仍依Return/Replay處理。
+- 若交易當時不活躍，後來恢復Active，不得改寫該歷史訂單為可領。
+- Admin/Explain應能說明「商品可推薦 + 推薦歸屬有效，但推薦Ball於認列時不符合Active，因此本筆商品推薦獎金不成立」，不得洩漏不必要PII。
+- Retail Referrer Attribution本身不因推薦者暫時Inactive而刪除；後續每筆新訂單重新按各自recognition as-of檢查Active。
+
+新增必測：
+- 無既有attribution時checkout可補填/修改/清除推薦碼；
+- 首筆commit後attribution鎖定，後續checkout不可自行換碼；
+- 無推薦碼可正常原價結帳且無Retail Referral；
+- Admin更正只影響effectiveFrom後新訂單；
+- Qualification Sponsor code與Retail Referral code relationship不混用；
+- referrer active + enabled SKU → payable RETAIL_REFERRAL；
+- referrer inactive at recognition → no payable award；
+- inactive後恢復不追補舊單；
+- active後失效不追回先前合法award（Return除外）；
+- historical replay使用snapshotted active rule/as-of evidence；
+- Active eligibility check不改既有R1.0B Active演算法與Golden。
+
 ### Order Line Snapshot
 Retail order 成立/recognition 時必須 snapshot，不可結算時回讀商品目前最新值：
 - retailReferralEnabled
