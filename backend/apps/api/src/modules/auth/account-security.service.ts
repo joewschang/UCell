@@ -15,7 +15,8 @@ export class AccountSecurityService {
   async readPersonSecurity(personId:string){
     const person=await this.db.person.findUnique({where:{personId},select:{personId:true,memberNo:true,securityStatus:true,securityLockedAt:true,securityLockedReason:true,identityLinks:{where:{provider:'LINE'},select:{identityLinkId:true,providerSubject:true,status:true,createdAt:true,revokedAt:true,revokeReason:true,replacedByBindingId:true}},accountRecoveryRequests:{where:{type:'LINE_REBIND'},orderBy:{createdAt:'desc'},take:20,select:{accountRecoveryRequestId:true,type:true,status:true,createdAt:true,approvedAt:true,completedAt:true,rejectedAt:true,reasonCode:true}}}});
     if(!person) throw new NotFoundException({code:'PERSON_NOT_FOUND'});
-    return person;
+    const timeline=await this.db.auditEvent.findMany({where:{OR:[{entityType:'Person',entityId:personId},{entityType:'AccountRecoveryRequest',afterData:{path:['personId'],equals:personId}}],action:{in:['PERSON_SECURITY_LOCKED','LINE_BINDING_REVOKED','LINE_REBIND_REQUESTED','LINE_REBIND_APPROVED','LINE_REBIND_COMPLETED']}},orderBy:{occurredAt:'desc'},take:50,select:{action:true,reasonCode:true,occurredAt:true}});
+    return {...person,timeline};
   }
 
   async lockPerson(personId:string,reasonCode:string,actor:Actor){
