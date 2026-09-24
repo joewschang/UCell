@@ -118,6 +118,108 @@ Member response 不得因此揭露 Bootstrap #1–#3 ballNo、Reservoir 或公�
 - BOLA/PII enumeration blocked；
 - Sponsor Evidence 不被 Binary Parent 覆寫。
 
+
+## 5B. 商品推薦獎金 Retail Referral Award（正式規則）
+
+### 目的與邊界
+新增獨立 Award Type：RETAIL_REFERRAL（商品推薦獎金）。
+適用於一般網路會員 WEB_MEMBER 的一般商品 RETAIL_PRODUCT 消費推薦分潤。
+RETAIL_REFERRAL 與 R1.0B Qualification Sponsor/Referral Award、Sponsor Tree、Binary Tree 完全分離；不得因零售推薦自動建立 Sponsor Relationship、Ball 或 Binary Placement。
+
+### Retail Referrer Attribution
+- 一般網路會員可具有 Retail Referrer Ball attribution。
+- attribution 指向 Sponsor/Referrer Ball，以 ballNo 作人類可讀 referral code；內部仍用 immutable key/reference。
+- referral link/code/QR 進入時先形成 Candidate；完成一般網路會員註冊/核准歸屬時，由 Server 重新 resolve/validate 後建立 attribution evidence。
+- 第一版採穩定歸屬，不採 last-click 搶單：既有有效 Retail Referrer 不因之後點擊另一推薦連結自動改寫。
+- Retail Referrer 的變更/解除必須走受控 policy、留下 reason/audit；不得由 query string 覆寫。
+- 一般商品訂單建立時 snapshot 當時有效的 Retail Referrer Ball。
+- Person 轉為 QUALIFIED_MEMBER 後，新的商品訂單預設不再套 WEB_MEMBER Retail Referral；改走 R1.0B 正式會員經濟規則，避免雙重計獎。若未來要讓正式會員也適用，需另立 Decision。
+
+### SKU/Product 版本化參數
+每一個 RETAIL_PRODUCT/SKU 的有效版本可設定：
+- retailReferralEnabled: boolean
+- retailReferralCalculationType: PERCENTAGE（v1先實作；FIXED_AMOUNT預留但不得未核准啟用）
+- retailReferralRate: decimal，當 enabled=true 時必填，範圍由 validation policy 控制
+- retailReferralBaseType: NET_PAID_ITEM_AMOUNT（v1正式基準）
+- retailReferralRuleVersion/effectiveFrom/effectiveTo 或沿用既有商品版本化/effective dating
+- 可選 eligibility metadata，優先沿用既有 Product/SKU parameter model
+
+不得把全公司固定比例硬編碼在 Award Engine。商品營運人員可依授權調整未來有效版本；不得覆寫歷史版本。
+
+### 計算基礎
+v1 Retail Referral Base = 訂單行「商品實付淨額」：
+- 以該 order line 實際商品金額為基礎；
+- 排除運費、非商品費用；
+- 訂單層折扣/優惠若分攤至商品行，使用分攤後 line net paid amount；
+- 稅務含/未稅呈現依既有 Order money model，不另造第二套 rounding；Award base 必須使用同一 authoritative monetary snapshot；
+- Award = base × snapshotted retailReferralRate，依既有 money/rounding policy。
+
+若商品 disabled 或 rate=0，Award=0且不得建立非必要 payable award。
+
+### Order Line Snapshot
+Retail order 成立/recognition 時必須 snapshot，不可結算時回讀商品目前最新值：
+- retailReferralEnabled
+- retailReferralCalculationType
+- retailReferralRate
+- retailReferralBaseType
+- retailReferralRuleVersion/productVersion
+- retailReferrerBallId
+- retailReferrerBallNo（display/evidence snapshot）
+- attribution/evidence reference
+- base amount inputs
+
+商品日後由10%改5%，既有訂單仍依下單/recognition時的10% snapshot。Replay也使用歷史snapshot/effective evidence。
+
+### Award / Ledger / Settlement
+- Award Type = RETAIL_REFERRAL。
+- beneficiary = snapshotted Retail Referrer Ball。
+- source = retail order line / recognition evidence。
+- append-only ledger/evidence、idempotency、settlement/payout沿用既有框架。
+- 不產生 Sponsor Tree edge，不產生 Binary volume/award，除非R1.0B其他正式規則本身另有明文；本Award不得自行注入GPV/RPV/EPV/PV/BV。
+- WEB_MEMBER本身無Ball時，其消費不得被錯誤塞入Retail Referrer Ball作組織業績。
+
+### Return / Refund
+- Return尚未POSTED：不改既有Award事實。
+- Return POSTED：依退回order line比例/金額重算該Retail Referral effect。
+- 未支付部分以adjustment抵銷；已支付部分進既有Recovery機制。
+- 使用既有 Return → Replay → Adjustment/Recovery 架構，不另做可變更歷史Award的捷徑。
+- 部分退貨、數量退貨、折讓必須有deterministic proportional/line-level evidence，沿用既有money rounding。
+
+### Admin 商品設定 UX
+商品/SKU版本頁新增「商品推薦獎金」區：
+- 啟用商品推薦獎金
+- 計算方式：百分比（v1）
+- 推薦獎金比例
+- 計算基礎：商品實付淨額
+- 生效時間/版本
+- 變更預覽與Audit
+
+權限依既有Product/Economic Parameter RBAC；已生效歷史版本不得直接覆寫。
+
+### Member / Admin UX
+WEB_MEMBER購物頁可在需要時顯示「由推薦人推薦」等低敏感資訊，但不得揭露不必要holder PII。
+推薦Ball持有人在收益/ledger中看到 RETAIL_REFERRAL，顯示來源商品/訂單的最小必要evidence，不揭露消費者不必要PII。
+Admin/Finance可依RBAC查Retail Referral attribution、Award、Return/Recovery與商品參數版本。
+
+### Company / Hidden Bootstrap
+Retail Referral不得透過Member UI暴露Tree Position 1–3 Bootstrap Company Balls。若未來Company alias可作Retail Referrer，必須另由Company policy解析並遵守Member zero-disclosure；本v1不得自行推定。
+
+### 必測
+- WEB_MEMBER + valid Retail Referrer + enabled SKU → 正確RETAIL_REFERRAL。
+- enabled=false/rate=0 → no payable award。
+- 不同SKU可有不同rate。
+- 商品版本10%→5%，歷史order保持10%。
+- order discount正確分攤到line base；shipping不進base。
+- referrer snapshot後query string不能改寫既有order。
+- Retail Referral不建立Sponsor Tree/Binary edge。
+- WEB_MEMBER消費不注入referrer Ball組織業績。
+- QUALIFIED_MEMBER新訂單不套WEB_MEMBER Retail Referral，避免double award。
+- partial/full return POSTED deterministic adjustment/recovery。
+- replay使用歷史snapshot。
+- beneficiary/referrer BOLA/PII安全。
+- concurrent/idempotent order recognition不重複發Award。
+- R1.0B既有Economic Golden結果不變（新增fixture除外）。
+
 ## 6. 紙本申請/訂購 Admin Wizard
 Step1 搜尋既有Person：memberNo及核准PII/自然人唯一查核，先防duplicate。
 Step2 無既有Person才建立，source=PAPER_APPLICATION，產生/沿用memberNo。
