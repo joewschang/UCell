@@ -489,6 +489,16 @@ enum IdentityProvider {
   @@schema("identity")
 }
 
+enum NotificationDeliveryStatus {
+  PENDING
+  CONFIGURATION_PENDING
+  SENT
+  FAILED
+  EXPIRED
+
+  @@schema("integration")
+}
+
 enum PersonSecurityStatus {
   NORMAL
   SECURITY_LOCKED
@@ -3366,12 +3376,36 @@ model LineMessagingEvent {
   occurredAt               DateTime             @map("occurred_at") @db.Timestamptz(6)
   sourceSubjectHash        String?              @map("source_subject_hash")
   payloadHash              String               @map("payload_hash")
+  status                   EventProcessStatus   @default(PENDING)
+  attemptCount             Int                  @default(0) @map("attempt_count")
+  processedAt              DateTime?            @map("processed_at") @db.Timestamptz(6)
+  lastErrorCode            String?              @map("last_error_code")
   createdAt                DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
   inbox                    ProviderWebhookInbox @relation(fields:[providerWebhookInboxId],references:[providerWebhookInboxId])
 
   @@index([providerWebhookInboxId])
   @@index([eventType, occurredAt])
+  @@index([status, createdAt])
   @@map("line_messaging_event")
+  @@schema("integration")
+}
+
+model NotificationDelivery {
+  notificationDeliveryId String                     @id @default(uuid()) @map("notification_delivery_id") @db.Uuid
+  personId               String                     @map("person_id") @db.Uuid
+  channel                String
+  notificationType       String                     @map("notification_type")
+  destinationBindingId   String?                    @map("destination_binding_id") @db.Uuid
+  status                 NotificationDeliveryStatus @default(PENDING)
+  attemptCount           Int                        @default(0) @map("attempt_count")
+  evidenceHash           String                     @map("evidence_hash")
+  expiresAt              DateTime?                  @map("expires_at") @db.Timestamptz(6)
+  sentAt                 DateTime?                  @map("sent_at") @db.Timestamptz(6)
+  createdAt              DateTime                   @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([personId, createdAt])
+  @@index([status, expiresAt])
+  @@map("notification_delivery")
   @@schema("integration")
 }
 

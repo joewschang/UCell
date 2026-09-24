@@ -4,11 +4,11 @@ import * as crypto from 'node:crypto';
 import { pollProviderWebhooks, type ProviderHandlerRegistration } from './provider-runtime';
 import { WorkerLoop, workerPollInterval } from './worker-loop';
 import { ProviderWorkloadMetrics } from './provider-workload-metrics';
-import { lineMessagingObserverHandler } from './line-messaging-handler';
+import { createLineMessagingObserverHandler } from './line-messaging-handler';
 
 const prisma = new PrismaService();
 const providerHandlers: readonly ProviderHandlerRegistration[] = process.env.LINE_MESSAGING_WORKER_ENABLED==='true'
-  ? Object.freeze([{domain:'IDENTITY',provider:'LINE_MESSAGING',connectionId:'LINE_MESSAGING_DEFAULT',handler:lineMessagingObserverHandler}])
+  ? Object.freeze([{domain:'IDENTITY',provider:'LINE_MESSAGING',connectionId:'LINE_MESSAGING_DEFAULT',handler:createLineMessagingObserverHandler(prisma)}])
   : Object.freeze([]);
 const providerMetrics = new ProviderWorkloadMetrics();
 

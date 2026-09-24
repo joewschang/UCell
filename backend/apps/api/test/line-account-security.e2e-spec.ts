@@ -15,7 +15,7 @@ describe('LINE account security lite',()=>{
 
   it('returns bounded security data without recovery tokens',async()=>{
     const findUnique=jest.fn().mockResolvedValue({personId:'person-1',memberNo:'M1',securityStatus:'NORMAL',identityLinks:[],accountRecoveryRequests:[]});
-    const service=new AccountSecurityService({person:{findUnique},auditEvent:{findMany:jest.fn().mockResolvedValue([])}} as any,{write:jest.fn()} as any);
+    const service=new AccountSecurityService({person:{findUnique},auditEvent:{findMany:jest.fn().mockResolvedValue([])},notificationDelivery:{findMany:jest.fn().mockResolvedValue([])}} as any,{write:jest.fn()} as any);
     await expect(service.readPersonSecurity('person-1')).resolves.toMatchObject({personId:'person-1',securityStatus:'NORMAL'});
     expect(findUnique).toHaveBeenCalledWith(expect.objectContaining({where:{personId:'person-1'},select:expect.objectContaining({accountRecoveryRequests:expect.objectContaining({take:20})})}));
   });

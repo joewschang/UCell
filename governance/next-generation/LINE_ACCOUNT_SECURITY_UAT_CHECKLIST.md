@@ -40,3 +40,7 @@
 - First account link requires company-approved verification evidence; memberNo-only binding is prohibited.
 - Rebind completion requires an approved secure completion-token delivery channel; neither Admin nor member UI may reveal the raw token.
 - Connected Stage Messaging requires formal LINE credentials, secret storage, and provider enablement approval.
+
+- [ ] Verify LINE message events move from PENDING to PROCESSED only for the supported identity event types; an unmatched event fails closed for review.
+- [ ] Verify each approved notification class creates a CONFIGURATION_PENDING delivery record until a configured sender is available; no customer message is sent by this foundation.
+- [ ] Verify the Admin Person 360 delivery list contains only delivery type, lifecycle state, and timestamps.

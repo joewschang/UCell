@@ -7,6 +7,7 @@
 - Admin Person 360 exposes masked binding lifecycle and governed lock, revoke, and rebind-request actions.
 - LINE Messaging webhook validates the exact raw request body with HMAC-SHA256, stores no raw payload, writes a deduplicated `IDENTITY` inbox row and normalized event metadata, and has a disabled-by-default observer worker registration.
 - Rich Menu action contract maps only approved actions to internal Experience V2 routes.
+- Notification delivery records retain only type, lifecycle state, timestamps, and evidence hash; unconfigured providers remain `CONFIGURATION_PENDING`.
 
 ## Fail-closed external dependencies
 
@@ -24,3 +25,5 @@
 3. Webhook: synthetic raw-body signature validation, duplicate ingress metadata, normalized event persistence, and worker observer registration.
 
 No Stage or Production action is authorized by this document.
+
+- LINE messaging worker lifecycle is now explicitly PENDING → PROCESSED for allowlisted identity observer events; unmatched or stale leases fail closed for review.
