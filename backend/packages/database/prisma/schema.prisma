@@ -3401,6 +3401,9 @@ model NotificationDelivery {
   evidenceHash           String                     @map("evidence_hash")
   expiresAt              DateTime?                  @map("expires_at") @db.Timestamptz(6)
   sentAt                 DateTime?                  @map("sent_at") @db.Timestamptz(6)
+  lastAttemptAt          DateTime?                  @map("last_attempt_at") @db.Timestamptz(6)
+  providerCorrelation    String?                    @map("provider_correlation")
+  failureCode            String?                    @map("failure_code")
   createdAt              DateTime                   @default(now()) @map("created_at") @db.Timestamptz(6)
 
   @@unique([personId, channel, notificationType, evidenceHash])

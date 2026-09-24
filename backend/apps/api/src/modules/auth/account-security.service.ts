@@ -17,7 +17,7 @@ export class AccountSecurityService {
     const person=await this.db.person.findUnique({where:{personId},select:{personId:true,memberNo:true,securityStatus:true,securityLockedAt:true,securityLockedReason:true,identityLinks:{where:{provider:'LINE'},select:{identityLinkId:true,providerSubject:true,status:true,createdAt:true,revokedAt:true,revokeReason:true,replacedByBindingId:true}},accountRecoveryRequests:{where:{type:'LINE_REBIND'},orderBy:{createdAt:'desc'},take:20,select:{accountRecoveryRequestId:true,type:true,status:true,createdAt:true,approvedAt:true,completedAt:true,rejectedAt:true,reasonCode:true}}}});
     if(!person) throw new NotFoundException({code:'PERSON_NOT_FOUND'});
     const timeline=await this.db.auditEvent.findMany({where:{OR:[{entityType:'Person',entityId:personId},{entityType:'AccountRecoveryRequest',afterData:{path:['personId'],equals:personId}}],action:{in:['PERSON_SECURITY_LOCKED','LINE_BINDING_REVOKED','LINE_REBIND_REQUESTED','LINE_REBIND_APPROVED','LINE_REBIND_COMPLETED']}},orderBy:{occurredAt:'desc'},take:50,select:{action:true,reasonCode:true,occurredAt:true}});
-    const deliveries=await (this.db.notificationDelivery as any).findMany({where:{personId},orderBy:{createdAt:'desc'},take:20,select:{notificationType:true,status:true,createdAt:true,sentAt:true,expiresAt:true}});
+    const deliveries=await (this.db.notificationDelivery as any).findMany({where:{personId},orderBy:{createdAt:'desc'},take:20,select:{notificationType:true,status:true,createdAt:true,sentAt:true,expiresAt:true,lastAttemptAt:true,providerCorrelation:true,failureCode:true}});
     return {...person,timeline,deliveries};
   }
 
