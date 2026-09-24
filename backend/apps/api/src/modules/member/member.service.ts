@@ -13,8 +13,9 @@ export class MemberService {
   const identity=await this.verifier.verify(idToken),key=createHash('sha256').update(idToken).digest('hex');
   try{return await this.db.$transaction(async tx=>{
    const binding=await tx.identityLink.findUnique({where:{provider_providerSubject:{provider:'LINE',providerSubject:identity.subject}},include:{person:true}});
-   if(!binding)throw new UnauthorizedException({code:'LINE_ACCOUNT_UNBOUND'});
+   if(!binding||binding.status!=='ACTIVE')throw new UnauthorizedException({code:'LINE_ACCOUNT_UNBOUND'});
    if(binding.person.status!=='EFFECTIVE')throw new UnauthorizedException({code:'MEMBER_PERSON_DISABLED'});
+   if(binding.person.securityStatus!=='NORMAL')throw new UnauthorizedException({code:'MEMBER_SECURITY_LOCKED'});
    await tx.idempotencyRecord.create({data:{actorScope:'member:line:exchange',idempotencyKey:key,requestHash:key,responseBody:{consumed:true},statusCode:200,expiresAt:new Date(identity.expiresAt*1000)}});
    const ttlSeconds=Math.min(3600,identity.expiresAt-Math.floor(Date.now()/1000));
    if(ttlSeconds<=0)throw new UnauthorizedException({code:'LINE_TOKEN_EXPIRED'});

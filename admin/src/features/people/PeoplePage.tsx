@@ -7,6 +7,7 @@ import {Person} from '../../types/domain';
 import {Card,ErrorBox,Field,PageHeader} from '../../components/ui';
 import {useState} from 'react';
 import {DetailDrawer,StatusBadge,EmptyState,LoadingState,ErrorState} from '@ucell/design-system';
+import {ConfirmAction} from '../../components/ConfirmAction';
 
 type CreatePersonForm={legalName:string;preferredName?:string;birthDate?:string;mobile?:string;email?:string};
 type Admin360={
@@ -31,12 +32,15 @@ export function PeoplePage(){
  const [selectedQualification,setSelectedQualification]=useState<string|null>(null);
  const [qualificationSkip,setQualificationSkip]=useState(0);
  const [createNotice,setCreateNotice]=useState('');
+ const [verificationReference,setVerificationReference]=useState('');
  const owned=useQuery({
   queryKey:['person-owned-qualifications',selected?.personId,qualificationSkip],
   queryFn:()=>get<any>('/admin/persons/'+selected!.personId+'/qualifications'+qs({take:20,skip:qualificationSkip})),
   enabled:!!selected
  });
  const people=useQuery({queryKey:['persons',search],queryFn:()=>get<any>('/admin/persons'+qs({q:search,take:50}))});
+ const security=useQuery({queryKey:['person-account-security',selected?.personId],queryFn:()=>get<any>('/admin/persons/'+selected!.personId+'/account-security'),enabled:!!selected});
+ const securityCommand=useMutation({mutationFn:({path,body}:{path:string;body:Record<string,string>})=>command<any>(path,body),onSuccess:()=>void qc.invalidateQueries({queryKey:['person-account-security',selected?.personId]})});
  const {register,handleSubmit,reset}=useForm<CreatePersonForm>();
  const create=useMutation({
   mutationFn:(v:CreatePersonForm)=>command<any>('/admin/persons',{
@@ -97,7 +101,14 @@ export function PeoplePage(){
      {owned.isPending?<LoadingState label="正在載入此會員的 Ball…"/>:owned.error?<ErrorState message={String(owned.error)} retry={()=>void owned.refetch()}/>:ownedRows.length?<><p className="uc-muted">權威清單共 {ownedTotal??'—'} 顆 Ball；依目前持有人查詢。Ball 的歷史持有人與獎金主張請於各 Ball 詳情查看。</p>{ownedRows.map((q:any)=><button type="button" className={`list-row ${selectedQualification===q.qualificationId?'selected':''}`} key={q.qualificationId} aria-label={`開啟球編號 ${ballLabel(q)} 的 Ball 360`} aria-pressed={selectedQualification===q.qualificationId} onClick={()=>setSelectedQualification(q.qualificationId)}><strong>{ballLabel(q)} · {planLabel(q)}</strong><span>{treeLabel(q)} · {rankLabel(q)} · {q.status??'狀態未提供'} · {ownerLabel(q)}</span></button>)}<div className="button-row"><button type="button" disabled={!qualificationSkip} onClick={()=>setQualificationSkip(s=>Math.max(0,s-20))}>上一批 Ball</button><button type="button" disabled={ownedTotal===undefined||qualificationSkip+20>=ownedTotal} onClick={()=>setQualificationSkip(s=>s+20)}>下一批 Ball</button></div></>:<EmptyState title="此會員尚無 Ball"><p>建立 Person 不會自動產生 Ball；請依正式申請與核准流程建立資格。</p></EmptyState>}
     </section>
     {selectedQualification&&<section aria-label="已選取 Ball 詳情"><QualificationDetail key={selectedQualification} id={selectedQualification}/></section>}
-    <p className="uc-unavailable">LINE／KYC：目前 read API 未提供。</p>
+    <section aria-labelledby="person-account-security"><h3 id="person-account-security">帳號安全</h3>
+     {security.isPending?<LoadingState label="正在讀取帳號安全狀態…"/>:security.error?<ErrorState message={String(security.error)} retry={()=>void security.refetch()}/>:<>{(()=>{const value=security.data?.data;const links=value?.identityLinks??[];const masked=(subject:string)=>subject.length<7?'已綁定 LINE':subject.slice(0,3)+'•••'+subject.slice(-3);return <>
+      <dl className="detail-grid"><dt>安全狀態</dt><dd><StatusBadge status={value?.securityStatus??'UNAVAILABLE'}/></dd><dt>LINE 綁定</dt><dd>{links.length?links.map((link:any)=><span key={link.identityLinkId}>{masked(link.providerSubject)} · {link.status}<br/></span>):'尚無 LINE 綁定'}</dd><dt>換綁申請</dt><dd>{value?.accountRecoveryRequests?.[0]?.status??'無'}</dd></dl>
+      <div className="button-row"><ConfirmAction reasonRecorded disabled={securityCommand.isPending} onConfirm={reason=>securityCommand.mutateAsync({path:'/admin/persons/'+selected.personId+'/account-security/lock',body:{reasonCode:reason}})}>鎖定帳號</ConfirmAction><ConfirmAction reasonRecorded disabled={securityCommand.isPending} onConfirm={reason=>securityCommand.mutateAsync({path:'/admin/persons/'+selected.personId+'/account-security/line-binding/revoke',body:{reasonCode:reason}})}>撤銷 LINE 綁定</ConfirmAction></div>
+      <Field label="換綁驗證參考編號"><input value={verificationReference} onChange={e=>setVerificationReference(e.target.value)} maxLength={160} placeholder="例如 CASE-20260924-001"/></Field>
+      <ConfirmAction reasonRecorded disabled={securityCommand.isPending||verificationReference.trim().length<8} onConfirm={reason=>securityCommand.mutateAsync({path:'/admin/persons/'+selected.personId+'/account-security/line-rebind-requests',body:{reasonCode:reason,verificationReference}})}>建立 LINE 換綁申請</ConfirmAction><ErrorBox error={securityCommand.error}/>
+     </>})()}</>}
+    </section>
    </section>}
   </DetailDrawer>
  </>;

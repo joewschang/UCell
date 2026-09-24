@@ -7,6 +7,11 @@ async function request(path:string,init:RequestInit={}){
  finally{clearTimeout(timer);}
 }
 const transitionKey='ucell_referral_transition',bindingKey='ucell_referral_binding_key',anonymousKey='ucell_referral_anonymous_id';
+const intendedDestinationKey='ucell_line_intended_destination';
+function intendedDestination(){
+ const value=window.location.pathname+window.location.search+window.location.hash;
+ return value.startsWith('/')&&!value.startsWith('//')?value:'/';
+}
 function uuid(value:string|null){return value&&/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)?value:undefined;}
 export async function prepareReferralLanding(){
  if(typeof window==='undefined')return;
@@ -56,7 +61,12 @@ export async function initLiff() {
         throw new Error('LINE 登入尚未設定，請聯絡客服');
     await liff.init({ liffId: id });
     if (!liff.isLoggedIn()) {
-        liff.login();
+      // Keep only an internal relative route; no external redirect can be supplied.
+        if(typeof window!=='undefined'){
+          const destination=intendedDestination();
+          sessionStorage.setItem(intendedDestinationKey,destination);
+          liff.login({redirectUri:window.location.origin+destination});
+        }else liff.login();
         return { mode: 'redirect' as const };
     }
     const cached=sessionStorage.getItem('ucell_member_token');
@@ -74,6 +84,9 @@ export async function initLiff() {
     const data=unwrapMemberEnvelope(response.body) as {accessToken?:unknown;expiresAt?:unknown};
     if(typeof data.accessToken!=='string'||!data.accessToken||typeof data.expiresAt!=='string'||Date.parse(data.expiresAt)<=Date.now()||!Number.isFinite(Date.parse(data.expiresAt)))throw new Error('會員登入回應格式異常');
     sessionStorage.setItem('ucell_member_token',data.accessToken);
+    const destination=sessionStorage.getItem(intendedDestinationKey);
+    sessionStorage.removeItem(intendedDestinationKey);
+    if(destination&&destination!==window.location.pathname+window.location.search+window.location.hash)window.history.replaceState({},'',destination);
     return {mode:'connected' as const,referralWarning:await bindPendingReferral(data.accessToken)};
 }
 let boot: ReturnType<typeof initLiff> | undefined;

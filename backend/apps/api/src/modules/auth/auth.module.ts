@@ -15,9 +15,17 @@ import { OtpCodeService } from './otp-code.service';
 import { SmsOtpProviderService } from './sms-otp-provider.service';
 import { NetworkRegistrationController } from './network-registration.controller';
 import { NetworkRegistrationService } from './network-registration.service';
+import { AuditModule } from '../../common/audit/audit.module';
+import { AccountSecurityService } from './account-security.service';
+import { AccountSecurityController } from './account-security.controller';
+import { LineMessagingAdapter } from './line-messaging.adapter';
+import { LineMessagingIngressService } from './line-messaging-ingress.service';
+import { LineMessagingWebhookController } from './line-messaging-webhook.controller';
+import { PaymentHubModule } from '../payment-hub/payment-hub.module';
 @Module({
-  controllers:[AdminAuthController,OtpController,NetworkRegistrationController],
-  providers:[QualificationAccessService,AdminRoleGuard,IdentityTokenService,LineIdentityService,AuthenticationGuard,MemberAuthenticationGuard,AdminAuthenticationGuard,EntraTokenVerifierService,AdminAuthService,OtpService,OtpCodeService,SmsOtpProviderService,NetworkRegistrationService],
-  exports:[QualificationAccessService,AdminRoleGuard,IdentityTokenService,LineIdentityService,AuthenticationGuard,MemberAuthenticationGuard,AdminAuthenticationGuard,EntraTokenVerifierService,AdminAuthService]
+  imports:[AuditModule,PaymentHubModule],
+  controllers:[AdminAuthController,OtpController,NetworkRegistrationController,AccountSecurityController,LineMessagingWebhookController],
+  providers:[QualificationAccessService,AdminRoleGuard,IdentityTokenService,LineIdentityService,AuthenticationGuard,MemberAuthenticationGuard,AdminAuthenticationGuard,EntraTokenVerifierService,AdminAuthService,OtpService,OtpCodeService,SmsOtpProviderService,NetworkRegistrationService,AccountSecurityService,LineMessagingAdapter,LineMessagingIngressService],
+  exports:[QualificationAccessService,AdminRoleGuard,IdentityTokenService,LineIdentityService,AuthenticationGuard,MemberAuthenticationGuard,AdminAuthenticationGuard,EntraTokenVerifierService,AdminAuthService,AccountSecurityService]
 })
 export class AuthModule {}

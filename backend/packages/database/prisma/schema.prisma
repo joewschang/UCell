@@ -233,6 +233,7 @@ enum ProviderIntegrationDomain {
   PAYMENT
   INVOICE
   LOGISTICS
+  IDENTITY
 
   @@schema("commerce")
 }
@@ -488,6 +489,37 @@ enum IdentityProvider {
   @@schema("identity")
 }
 
+enum PersonSecurityStatus {
+  NORMAL
+  SECURITY_LOCKED
+
+  @@schema("identity")
+}
+
+enum IdentityLinkStatus {
+  ACTIVE
+  REVOKED
+
+  @@schema("identity")
+}
+
+enum AccountRecoveryType {
+  LINE_REBIND
+  BANK_ACCOUNT_CHANGE
+
+  @@schema("identity")
+}
+
+enum AccountRecoveryStatus {
+  PENDING
+  APPROVED
+  COMPLETED
+  REJECTED
+  CANCELLED
+
+  @@schema("identity")
+}
+
 enum ContractAudience {
   NETWORK_MEMBER
   FORMAL_MEMBER
@@ -550,6 +582,9 @@ model Person {
   genderCode       String?                @map("gender_code")
   membershipState  PersonMembershipState? @map("membership_state")
   mobileVerifiedAt DateTime?              @map("mobile_verified_at") @db.Timestamptz(6)
+  securityStatus   PersonSecurityStatus   @default(NORMAL) @map("security_status")
+  securityLockedAt DateTime?              @map("security_locked_at") @db.Timestamptz(6)
+  securityLockedReason String?            @map("security_locked_reason")
   status           RecordStatus           @default(DRAFT)
   createdAt        DateTime               @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt        DateTime               @updatedAt @map("updated_at") @db.Timestamptz(6)
@@ -568,6 +603,7 @@ model Person {
   referralAttributions     ReferralAttribution[]
   referralBindingHistory   ReferralAttributionHistory[]
   formalMemberApplications FormalMemberApplication[]
+  accountRecoveryRequests  AccountRecoveryRequest[]
 
   @@index([legalName])
   @@index([mobile])
@@ -1280,6 +1316,7 @@ model ProviderWebhookInbox {
   correlationId               String                     @map("correlation_id") @db.Uuid
   providerConnectionVersionId String?                    @map("provider_connection_version_id") @db.Uuid
   providerConnectionVersion   ProviderConnectionVersion? @relation(fields: [providerConnectionVersionId], references: [providerConnectionVersionId])
+  lineMessagingEvents         LineMessagingEvent[]
 
   @@unique([domain, provider, connectionId, ingressKey])
   @@unique([domain, provider, connectionId, providerEventIdentity])
@@ -2828,12 +2865,18 @@ model IdentityLink {
   providerSubject String           @map("provider_subject")
   email           String?
   displayName     String?          @map("display_name")
+  status          IdentityLinkStatus @default(ACTIVE)
+  revokedAt       DateTime?        @map("revoked_at") @db.Timestamptz(6)
+  revokeReason    String?          @map("revoke_reason")
+  replacedByBindingId String?      @map("replaced_by_binding_id") @db.Uuid
   createdAt       DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt       DateTime         @updatedAt @map("updated_at") @db.Timestamptz(6)
   person          Person           @relation(fields: [personId], references: [personId])
+  replacedByBinding IdentityLink?  @relation("IdentityLinkReplacement",fields:[replacedByBindingId],references:[identityLinkId])
+  replacedBindings IdentityLink[]  @relation("IdentityLinkReplacement")
 
   @@unique([provider, providerSubject])
-  @@index([personId, provider])
+  @@index([personId, provider, status])
   @@map("identity_link")
   @@schema("identity")
 }
@@ -3313,6 +3356,49 @@ enum QualificationKind {
   MEMBER_ORIGIN
   COMPANY_BOOTSTRAP
   @@schema("membership")
+}
+
+model LineMessagingEvent {
+  lineMessagingEventId     String               @id @default(uuid()) @map("line_messaging_event_id") @db.Uuid
+  providerWebhookInboxId   String               @map("provider_webhook_inbox_id") @db.Uuid
+  providerEventIdentity    String               @unique @map("provider_event_identity")
+  eventType                String               @map("event_type")
+  occurredAt               DateTime             @map("occurred_at") @db.Timestamptz(6)
+  sourceSubjectHash        String?              @map("source_subject_hash")
+  payloadHash              String               @map("payload_hash")
+  createdAt                DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
+  inbox                    ProviderWebhookInbox @relation(fields:[providerWebhookInboxId],references:[providerWebhookInboxId])
+
+  @@index([providerWebhookInboxId])
+  @@index([eventType, occurredAt])
+  @@map("line_messaging_event")
+  @@schema("integration")
+}
+
+model AccountRecoveryRequest {
+  accountRecoveryRequestId String                @id @default(uuid()) @map("account_recovery_request_id") @db.Uuid
+  personId                 String                @map("person_id") @db.Uuid
+  type                     AccountRecoveryType
+  status                   AccountRecoveryStatus @default(PENDING)
+  requesterActorId         String?               @map("requester_actor_id") @db.Uuid
+  approverActorId          String?               @map("approver_actor_id") @db.Uuid
+  verificationEvidence     Json?                 @map("verification_evidence")
+  requestedProviderSubject String?               @map("requested_provider_subject")
+  completionTokenHash      String?               @unique @map("completion_token_hash")
+  completionTokenExpiresAt DateTime?             @map("completion_token_expires_at") @db.Timestamptz(6)
+  completionTokenUsedAt    DateTime?             @map("completion_token_used_at") @db.Timestamptz(6)
+  approvedAt               DateTime?             @map("approved_at") @db.Timestamptz(6)
+  completedAt              DateTime?             @map("completed_at") @db.Timestamptz(6)
+  rejectedAt               DateTime?             @map("rejected_at") @db.Timestamptz(6)
+  reasonCode               String?               @map("reason_code")
+  idempotencyKey           String                @unique @map("idempotency_key")
+  createdAt                DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt                DateTime              @updatedAt @map("updated_at") @db.Timestamptz(6)
+  person                   Person                @relation(fields: [personId], references: [personId])
+
+  @@index([personId, type, status, createdAt])
+  @@map("account_recovery_request")
+  @@schema("identity")
 }
 enum QualificationOwnerType {
   MEMBER

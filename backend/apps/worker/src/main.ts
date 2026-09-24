@@ -4,9 +4,12 @@ import * as crypto from 'node:crypto';
 import { pollProviderWebhooks, type ProviderHandlerRegistration } from './provider-runtime';
 import { WorkerLoop, workerPollInterval } from './worker-loop';
 import { ProviderWorkloadMetrics } from './provider-workload-metrics';
+import { lineMessagingObserverHandler } from './line-messaging-handler';
 
 const prisma = new PrismaService();
-const providerHandlers: readonly ProviderHandlerRegistration[] = Object.freeze([]);
+const providerHandlers: readonly ProviderHandlerRegistration[] = process.env.LINE_MESSAGING_WORKER_ENABLED==='true'
+  ? Object.freeze([{domain:'IDENTITY',provider:'LINE_MESSAGING',connectionId:'LINE_MESSAGING_DEFAULT',handler:lineMessagingObserverHandler}])
+  : Object.freeze([]);
 const providerMetrics = new ProviderWorkloadMetrics();
 
 function unlockedDepth(count:number){

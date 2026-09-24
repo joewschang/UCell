@@ -25,7 +25,7 @@ export class MemberAuthenticationGuard implements CanActivate {
       const expected=Buffer.from(stageToken!); const actual=Buffer.from(supplied);
       if(expected.length===actual.length && timingSafeEqual(expected,actual)){
         const person=await this.db.person.findUnique({where:{personId:'51000000-0000-4000-8000-000000000001'}});
-        if(!person||person.status!=='EFFECTIVE')throw new UnauthorizedException('STAGE_UAT_MEMBER_UNAVAILABLE');
+        if(!person||person.status!=='EFFECTIVE'||person.securityStatus!=='NORMAL')throw new UnauthorizedException('STAGE_UAT_MEMBER_UNAVAILABLE');
         request.user={sessionId:'STAGE_UAT_MEMBER',personId:person.personId,provider:'LINE',subject:'stage-uat-member'};
         return true;
       }
@@ -37,6 +37,7 @@ export class MemberAuthenticationGuard implements CanActivate {
       });
       const person=await this.db.person.findUnique({where:{personId:request.user.personId}});
       if(!person||person.status!=='EFFECTIVE')throw new MemberAuthenticationError('MEMBER_PERSON_DISABLED');
+      if(person.securityStatus!=='NORMAL')throw new MemberAuthenticationError('MEMBER_SECURITY_LOCKED');
       return true;
     } catch (error) {
       delete request.user;
