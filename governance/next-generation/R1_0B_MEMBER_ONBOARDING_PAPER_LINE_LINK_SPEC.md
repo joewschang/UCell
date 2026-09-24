@@ -61,6 +61,63 @@ Sponsor與Binary Parent分離。
 安置一律重用既有Tree/Parent/LEFT-RIGHT/Preflight/Commit。
 Admin代安置時Sponsor不變，performedBy=Admin，reason/audit必填。
 
+
+## 5A. 推薦碼 / Sponsor Code（正式規則）
+
+推薦碼是 Sponsor Ball 的人類可讀入口，不另建立第二套 referral-code SSOT。
+
+### 一般推薦碼
+- Referral/Sponsor Code = Sponsor Ball.ballNo。
+- ballNo 已是 unique、immutable、human-readable，因此不新增可漂移的 referralCode 欄位。
+- 不使用 Person.memberNo 作推薦碼，因一個 Person 可持有多顆 Ball，推薦關係必須精確指向 Sponsor Ball。
+- 不使用 UUID 作會員可見推薦碼。
+- 推薦碼 resolver 必須 server-side 驗證 Ball 存在、有效、可作 Sponsor、使用者授權/制度資格與 R1.0B effective rules。
+
+### 推薦入口
+支援三種等價入口：
+1. 手動輸入 ballNo，例如 A001286；
+2. 推薦連結，例如 /join?ref=A001286（正式 domain/route 依環境設定）；
+3. QR Code，內容只承載核准的推薦 deep link，不嵌入 PII 或內部 UUID。
+
+LINE/OA/LIFF deep-link 流程必須保留 referral context 到 UCell onboarding，但不得讓 browser 直接建立 Sponsor relationship。
+
+### Candidate → Evidence
+- 使用者第一次由 referral link/code 進入時只建立 Sponsor Candidate/context。
+- 在建立 Qualification Package Order 前，UI 顯示核准的推薦資訊讓使用者確認。
+- Order/Qualification acquisition 建立時，Backend重新 resolve/validate referral code，並 snapshot 成 authoritative Sponsor Evidence。
+- Sponsor Evidence 成立後，不得因後續 Binary Placement 改成 Binary Parent。
+- 一般 RETAIL_PRODUCT 購物不因 ref 參數建立 Sponsor Relationship；推薦碼只在 Qualification acquisition 等 R1.0B 正式需要 Sponsor 的流程產生制度效果。
+
+### 紙本
+紙本會員申請單/訂購建檔可輸入相同推薦碼（Sponsor Ball.ballNo）。Admin輸入後必須經同一 SponsorResolver 解析、顯示核准最小推薦人資訊供核對，再建立 acquisition evidence；不得另做紙本 Sponsor 邏輯。
+
+### Company Sponsor
+創始/公司推薦等 R1.0B 核准情境不得要求 Member 使用或看到隱藏的 Bootstrap Company Ball #1–#3。
+可使用受控 business alias（例如實際 alias 由設定決定，不在程式硬編碼），由 server-side Company Sponsor Policy 解析成 authoritative company sponsor evidence。
+Member response 不得因此揭露 Bootstrap #1–#3 ballNo、Reservoir 或公司經濟資訊。
+
+### 安全與一致性
+- referral query/string 是 untrusted input；不得直接當 sponsorId。
+- 不得透過推薦碼查詢任意 Ball holder PII。
+- invalid/ineligible/expired（若未來政策有期限）推薦碼 fail closed，要求重新確認。
+- 同一 acquisition 的 Sponsor Evidence 必須 idempotent。
+- 推薦碼解析與 Sponsor eligibility 需保留 ruleVersion/effectiveAt/evidence。
+- Ball ownership change 不改 ballNo，因此不改既有推薦碼 identity；是否仍可作新 Sponsor 由當期 R1.0B eligibility 判斷。
+
+### 必測
+- valid ballNo resolves to exact Sponsor Ball；
+- memberNo 不可被當 Sponsor Code；
+- UUID 不可作公開推薦碼；
+- Person 多 Ball 時不同 ballNo 精確歸屬不同 Sponsor Ball；
+- referral deep link/QR context survives LINE Login redirect；
+- client tamper ref 在 order commit 時會被 server重新驗證；
+- RETAIL_PRODUCT order 不建立 Sponsor relationship；
+- Qualification order snapshot Sponsor Evidence；
+- 紙本與線上使用同一 SponsorResolver；
+- Company alias 不洩漏 Bootstrap #1–#3；
+- BOLA/PII enumeration blocked；
+- Sponsor Evidence 不被 Binary Parent 覆寫。
+
 ## 6. 紙本申請/訂購 Admin Wizard
 Step1 搜尋既有Person：memberNo及核准PII/自然人唯一查核，先防duplicate。
 Step2 無既有Person才建立，source=PAPER_APPLICATION，產生/沿用memberNo。
