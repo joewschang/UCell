@@ -1,0 +1,5 @@
+import {lineNotificationSender} from '../../worker/src/line-notification-adapter';
+describe('LINE outbound sender boundary',()=>{
+ it('fails closed without a configured token',async()=>{const sender=lineNotificationSender({} as NodeJS.ProcessEnv);await expect(sender.send({recipient:'never-used',templateKey:'ORDER',correlationId:'c'})).resolves.toEqual({kind:'FAILED',code:'LINE_SENDER_CONFIGURATION_PENDING'});expect(sender.configured).toBe(false);});
+ it('classifies provider retryability without exposing the token',async()=>{const sender=lineNotificationSender({LINE_MESSAGING_CHANNEL_ACCESS_TOKEN:'secret'} as NodeJS.ProcessEnv,async()=>new Response('',{status:429}));await expect(sender.send({recipient:'u',templateKey:'ORDER',correlationId:'c'})).resolves.toEqual({kind:'RETRY',code:'LINE_HTTP_429'});});
+});
