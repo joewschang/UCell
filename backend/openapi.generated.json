@@ -2571,6 +2571,30 @@
         ]
       }
     },
+    "/api/v1/admin/integrations/line/status": {
+      "get": {
+        "description": "Returns configuration presence and aggregate delivery state only. It never returns LINE secrets, access tokens, raw webhook payloads, or LINE subjects.",
+        "operationId": "adminLineIntegrationStatus",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Read-only LINE readiness and aggregate delivery queue state"
+          },
+          "403": {
+            "description": "Role denied"
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "Read LINE integration readiness and notification delivery summary",
+        "tags": [
+          "Admin - LINE Integration"
+        ]
+      }
+    },
     "/api/v1/admin/analytics/policy": {
       "get": {
         "operationId": "adminAnalyticsPolicy",

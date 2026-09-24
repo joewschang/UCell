@@ -44,3 +44,9 @@
 - [ ] Verify LINE message events move from PENDING to PROCESSED only for the supported identity event types; an unmatched event fails closed for review.
 - [ ] Verify each approved notification class creates a CONFIGURATION_PENDING delivery record until a configured sender is available; no customer message is sent by this foundation.
 - [ ] Verify the Admin Person 360 delivery list contains only delivery type, lifecycle state, and timestamps.
+
+## LINE readiness and member state
+
+1. As SUPER_ADMIN or MEMBERSHIP_OPS, call GET /api/v1/admin/integrations/line/status and confirm only boolean readiness, safe webhook metadata, and aggregate delivery counts are returned.
+2. Confirm an unbound LINE identity receives the account-linking guidance; a locked identity receives rebind/support guidance; neither response discloses a Person, Ball, token, or LINE subject.
+3. Confirm unauthorized roles receive 403 for the LINE readiness endpoint.

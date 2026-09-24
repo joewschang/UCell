@@ -23,10 +23,12 @@ import { LineMessagingIngressService } from './line-messaging-ingress.service';
 import { LineMessagingWebhookController } from './line-messaging-webhook.controller';
 import { PaymentHubModule } from '../payment-hub/payment-hub.module';
 import { NotificationDeliveryService } from './notification-delivery.service';
+import { LineIntegrationStatusService } from './line-integration-status.service';
+import { LineIntegrationStatusController } from './line-integration-status.controller';
 @Module({
   imports:[AuditModule,PaymentHubModule],
-  controllers:[AdminAuthController,OtpController,NetworkRegistrationController,AccountSecurityController,LineMessagingWebhookController],
-  providers:[QualificationAccessService,AdminRoleGuard,IdentityTokenService,LineIdentityService,AuthenticationGuard,MemberAuthenticationGuard,AdminAuthenticationGuard,EntraTokenVerifierService,AdminAuthService,OtpService,OtpCodeService,SmsOtpProviderService,NetworkRegistrationService,AccountSecurityService,LineMessagingAdapter,LineMessagingIngressService,NotificationDeliveryService],
+  controllers:[AdminAuthController,OtpController,NetworkRegistrationController,AccountSecurityController,LineMessagingWebhookController,LineIntegrationStatusController],
+  providers:[QualificationAccessService,AdminRoleGuard,IdentityTokenService,LineIdentityService,AuthenticationGuard,MemberAuthenticationGuard,AdminAuthenticationGuard,EntraTokenVerifierService,AdminAuthService,OtpService,OtpCodeService,SmsOtpProviderService,NetworkRegistrationService,AccountSecurityService,LineMessagingAdapter,LineMessagingIngressService,NotificationDeliveryService,LineIntegrationStatusService],
   exports:[QualificationAccessService,AdminRoleGuard,IdentityTokenService,LineIdentityService,AuthenticationGuard,MemberAuthenticationGuard,AdminAuthenticationGuard,EntraTokenVerifierService,AdminAuthService,AccountSecurityService]
 })
 export class AuthModule {}

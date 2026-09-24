@@ -27,3 +27,6 @@
 No Stage or Production action is authorized by this document.
 
 - LINE messaging worker lifecycle is now explicitly PENDING → PROCESSED for allowlisted identity observer events; unmatched or stale leases fail closed for review.
+
+- Admin LINE readiness endpoint reports only configured/not-configured flags, worker enablement, safe webhook metadata, and aggregate delivery states. It is RBAC protected and never returns credentials or source identities.
+- Member LIFF login now distinguishes unbound, security-locked, disabled, unavailable, and replay/conflict states without exposing backend internals.
