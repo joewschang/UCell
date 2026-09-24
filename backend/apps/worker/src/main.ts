@@ -141,6 +141,8 @@ async function processRecognition(recognitionId:string){
 }
 
 
+export async function expireNotificationDeliveries(db:Pick<PrismaService,'notificationDelivery'>=prisma,now=new Date()){return (db.notificationDelivery as any).updateMany({where:{status:{in:['PENDING','CONFIGURATION_PENDING']},expiresAt:{lte:now}},data:{status:'EXPIRED'}});}
+
 export async function processReplayEvent(lease:OutboxLease,db:PrismaService=prisma) {
   return processLeasedReplay(db,lease);
 }
@@ -198,6 +200,7 @@ async function tick(){
   await pollOutbox();
   await pollRecognitions();
   await matureBonusAwards();
+  await expireNotificationDeliveries();
   const providerStartedAt=Date.now();
   try{
     const provider=await pollProviderWebhooks(prisma,providerHandlers);

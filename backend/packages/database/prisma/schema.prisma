@@ -3403,6 +3403,7 @@ model NotificationDelivery {
   sentAt                 DateTime?                  @map("sent_at") @db.Timestamptz(6)
   createdAt              DateTime                   @default(now()) @map("created_at") @db.Timestamptz(6)
 
+  @@unique([personId, channel, notificationType, evidenceHash])
   @@index([personId, createdAt])
   @@index([status, expiresAt])
   @@map("notification_delivery")

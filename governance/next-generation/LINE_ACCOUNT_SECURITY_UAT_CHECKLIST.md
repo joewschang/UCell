@@ -50,3 +50,6 @@
 1. As SUPER_ADMIN or MEMBERSHIP_OPS, call GET /api/v1/admin/integrations/line/status and confirm only boolean readiness, safe webhook metadata, and aggregate delivery counts are returned.
 2. Confirm an unbound LINE identity receives the account-linking guidance; a locked identity receives rebind/support guidance; neither response discloses a Person, Ball, token, or LINE subject.
 3. Confirm unauthorized roles receive 403 for the LINE readiness endpoint.
+
+4. Complete a synthetic approved LINE rebind through the authorized backend flow and confirm exactly one LINE_REBIND delivery record is created for the recovery request; retry must not create a duplicate.
+5. Create an expired synthetic configuration-pending delivery record and confirm worker maintenance changes it to EXPIRED without an external API call.

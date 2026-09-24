@@ -3,6 +3,7 @@ import { Prisma, PrismaService } from '@ucell/database';
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import { AuditService } from '../../common/audit/audit.service';
 import { IdempotencyService } from '../../common/idempotency/idempotency.service';
+import { NotificationDeliveryService } from './notification-delivery.service';
 
 type Actor = { actorId?: string; actorType: 'ADMIN'|'MEMBER'|'SYSTEM'; requestId: string };
 const hash = (value:string) => createHash('sha256').update(value).digest('hex');
@@ -10,7 +11,7 @@ const hash = (value:string) => createHash('sha256').update(value).digest('hex');
 /** Account-takeover controls. It only changes identity/session state, never member economics. */
 @Injectable()
 export class AccountSecurityService {
-  constructor(private readonly db:PrismaService,private readonly audit:AuditService,private readonly idempotency?:IdempotencyService){}
+  constructor(private readonly db:PrismaService,private readonly audit:AuditService,private readonly idempotency?:IdempotencyService,private readonly deliveries?:NotificationDeliveryService){}
 
   async readPersonSecurity(personId:string){
     const person=await this.db.person.findUnique({where:{personId},select:{personId:true,memberNo:true,securityStatus:true,securityLockedAt:true,securityLockedReason:true,identityLinks:{where:{provider:'LINE'},select:{identityLinkId:true,providerSubject:true,status:true,createdAt:true,revokedAt:true,revokeReason:true,replacedByBindingId:true}},accountRecoveryRequests:{where:{type:'LINE_REBIND'},orderBy:{createdAt:'desc'},take:20,select:{accountRecoveryRequestId:true,type:true,status:true,createdAt:true,approvedAt:true,completedAt:true,rejectedAt:true,reasonCode:true}}}});
@@ -118,6 +119,7 @@ export class AccountSecurityService {
       await tx.accountRecoveryRequest.update({where:{accountRecoveryRequestId:request.accountRecoveryRequestId},data:{status:'COMPLETED',requestedProviderSubject:input.newLineSubject,completionTokenUsedAt:now,completedAt:now}});
       await tx.person.update({where:{personId:request.personId},data:{securityStatus:'NORMAL',securityLockedAt:null,securityLockedReason:null}});
       await this.audit.write(tx,{...actor,action:'LINE_REBIND_COMPLETED',entityType:'AccountRecoveryRequest',entityId:request.accountRecoveryRequestId,afterData:{personId:request.personId,newBindingId:binding.identityLinkId},correlationId:randomUUID()});
+      if(this.deliveries)await this.deliveries.queueOn(tx as any,{personId:request.personId,bindingId:binding.identityLinkId,type:'LINE_REBIND',sourceReference:request.accountRecoveryRequestId});
       return {personId:request.personId,bindingId:binding.identityLinkId,status:'COMPLETED' as const};
     },{isolationLevel:'Serializable'});
   }
