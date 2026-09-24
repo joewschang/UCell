@@ -1,0 +1,2 @@
+import {lineNotificationTemplate} from '../../worker/src/line-notification-templates';
+describe('LINE notification templates',()=>{it('maps only approved event types to versioned safe template keys',()=>{expect(lineNotificationTemplate('ORDER')).toBe('UCELL_ORDER_V1');expect(lineNotificationTemplate('LINE_REBIND')).toBe('UCELL_LINE_REBIND_V1');expect(lineNotificationTemplate('PV_UPDATE')).toBeUndefined();});});
