@@ -79,15 +79,21 @@ export async function processRetailReferralReturn(db:PrismaService,lease:OutboxL
   for(const returned of ret.lines){
    const snapshot=ret.order.retailReferralLineSnapshots.find(row=>row.orderLineId===returned.orderLineId);if(!snapshot?.retailReferralEnabled||!snapshot.referrerQualificationId||!snapshot.rate)continue;
    const award=await tx.bonusAward.findFirst({where:{awardType:'RETAIL_REFERRAL',recipientQualificationId:snapshot.referrerQualificationId,sourceEventId:returned.orderLineId}});if(!award||award.payableAmount.lte(0))continue;
-   const adjustment=returned.returnAmount.mul(snapshot.rate);if(adjustment.lte(0))continue;
+   const requestedAdjustment=returned.returnAmount.mul(snapshot.rate);if(requestedAdjustment.lte(0))continue;
+   const priorRecovery=await tx.bonusRecoveryEvent.aggregate({where:{bonusAwardId:award.bonusAwardId},_sum:{recoveryAmount:true}});
+   const remaining=Prisma.Decimal.max(new Prisma.Decimal(0),award.payableAmount.sub(priorRecovery._sum.recoveryAmount??0));
+   const adjustment=Prisma.Decimal.min(requestedAdjustment,remaining);if(adjustment.lte(0))continue;
    const latest=await tx.bonusAwardLifecycleEvent.findFirst({where:{bonusAwardId:award.bonusAwardId},orderBy:{occurredAt:'desc'}});
    if(latest&&['CALCULATED','PENDING_45D'].includes(latest.status)){
-    if(adjustment.gte(award.payableAmount))await tx.bonusAwardLifecycleEvent.create({data:{bonusAwardId:award.bonusAwardId,status:'REVERSED',occurredAt:ret.occurredAt,reasonCode:'RETAIL_RETURN_FULL_OFFSET'}});
+    if(priorRecovery._sum.recoveryAmount===null&&adjustment.gte(remaining))await tx.bonusAwardLifecycleEvent.create({data:{bonusAwardId:award.bonusAwardId,status:'REVERSED',occurredAt:ret.occurredAt,reasonCode:'RETAIL_RETURN_FULL_OFFSET'}});
     else if(!await tx.bonusRecoveryEvent.findFirst({where:{bonusAwardId:award.bonusAwardId,returnCaseId:ret.returnCaseId,reasonCode:'RETAIL_RETURN_PENDING_OFFSET'}}))await tx.bonusRecoveryEvent.create({data:{bonusAwardId:award.bonusAwardId,returnCaseId:ret.returnCaseId,recoveryAmount:adjustment,outstandingAmount:adjustment,status:'OFFSETTING',reasonCode:'RETAIL_RETURN_PENDING_OFFSET',occurredAt:ret.occurredAt}});
    }
-   else if(latest&&['EFFECTIVE','PAYABLE','PAID'].includes(latest.status)){
+   else if(latest&&['EFFECTIVE','PAYABLE','PAID','CLAWBACK'].includes(latest.status)){
     const recovery=await tx.bonusRecoveryEvent.findFirst({where:{bonusAwardId:award.bonusAwardId,returnCaseId:ret.returnCaseId,reasonCode:'RETAIL_RETURN'}});
-    if(!recovery){await tx.bonusRecoveryEvent.create({data:{bonusAwardId:award.bonusAwardId,returnCaseId:ret.returnCaseId,recoveryAmount:adjustment,outstandingAmount:adjustment,status:'OPEN',reasonCode:'RETAIL_RETURN',occurredAt:ret.occurredAt}});await tx.bonusAwardLifecycleEvent.create({data:{bonusAwardId:award.bonusAwardId,status:'CLAWBACK',occurredAt:ret.occurredAt,reasonCode:'RETAIL_RETURN'}});}
+    if(!recovery){
+     await tx.bonusRecoveryEvent.create({data:{bonusAwardId:award.bonusAwardId,returnCaseId:ret.returnCaseId,recoveryAmount:adjustment,outstandingAmount:adjustment,status:'OPEN',reasonCode:'RETAIL_RETURN',occurredAt:ret.occurredAt}});
+     if(latest.status!=='CLAWBACK')await tx.bonusAwardLifecycleEvent.create({data:{bonusAwardId:award.bonusAwardId,status:'CLAWBACK',occurredAt:ret.occurredAt,reasonCode:'RETAIL_RETURN'}});
+    }
    }
   }
   await tx.outboxEvent.update({where:{outboxEventId:lease.outboxEventId},data:{processStatus:'PROCESSED',processedAt:new Date()}});
