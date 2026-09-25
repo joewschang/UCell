@@ -20,13 +20,14 @@ jobs:
         env:
           POSTGRES_USER: ucell
           POSTGRES_PASSWORD: ucell
-          POSTGRES_DB: ucell
+          POSTGRES_DB: ucell_admin_test
         ports: ["5432:5432"]
         options: >-
-          --health-cmd "pg_isready -U ucell -d ucell"
+          --health-cmd "pg_isready -U ucell -d ucell_admin_test"
           --health-interval 10s --health-timeout 5s --health-retries 10
     env:
-      DATABASE_URL: postgresql://ucell:ucell@localhost:5432/ucell
+      DATABASE_URL: postgresql://ucell:ucell@localhost:5432/ucell_admin_test
+      PHASE2_TEST_DATABASE_URL: postgresql://ucell:ucell@localhost:5432/ucell_admin_test
       NODE_ENV: test
       ADMIN_AUTH_BYPASS: "false"
     steps:
@@ -55,10 +56,14 @@ jobs:
         run: pnpm -r build
       - name: DB golden
         working-directory: backend
-        run: pnpm exec ts-node scripts/db-golden-e2e.ts
+        run: pnpm db:golden
       - name: Tests
         working-directory: backend
-        run: pnpm test
+        # API suites share the test database; retain concurrency inside each suite.
+        run: |
+          pnpm -r --filter '!@ucell/api' test
+          pnpm --filter @ucell/api test --runInBand
+          pnpm test:todo:gate
   admin:
     runs-on: ubuntu-latest
     steps:

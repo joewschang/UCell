@@ -1,7 +1,13 @@
 import {describe,expect,it} from 'vitest';
-import {nav} from './nav';
+import {nav,navGroups} from './nav';
 
 describe('admin navigation terminology',()=>{
+  it('places every existing route in exactly one of the eight approved groups',()=>{
+    expect(navGroups.map(group=>group.label)).toEqual(['Dashboard','會員管理','組織管理','商務','獎金中心','財務／治理','營運分析','系統治理']);
+    const paths=navGroups.flatMap(group=>group.paths);
+    expect(paths.sort()).toEqual(nav.map(([,path])=>path).sort());
+    expect(new Set(paths).size).toBe(paths.length);
+  });
   it('uses the approved operational terms without conflating subscriptions, evidence and payout',()=>{
     const labels=Object.fromEntries(nav.map(([label,path])=>[path,label]));
     expect(labels['/subscriptions']).toBe('重購訂閱');

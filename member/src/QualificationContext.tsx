@@ -6,6 +6,7 @@ type State = {
     current: Qualification | null;
     select: (id: string) => void;
     loading: boolean;
+    loadingLabel: string;
     error: string | null;
     retry: () => void;
     feedback: string;
@@ -19,6 +20,7 @@ export function QualificationProvider({ children }: {
     const [items, setItems] = useState<Qualification[]>([]);
     const [id, setId] = useState('');
     const [loading, setLoading] = useState(true);
+    const [loadingLabel, setLoadingLabel] = useState('資格資料載入中…');
     const [error, setError] = useState<string | null>(null);
     const [attempt, setAttempt] = useState(0);
     const [feedback,setFeedback]=useState('');
@@ -29,6 +31,7 @@ export function QualificationProvider({ children }: {
         let alive = true;
         const controller = new AbortController();
         setLoading(true);
+        setLoadingLabel('資格資料載入中…');
         setError(null);
         setItems([]);
         setFeedback('');
@@ -80,6 +83,7 @@ export function QualificationProvider({ children }: {
         selection.current.controller?.abort();const controller=new AbortController();
         const sequence=++selection.current.sequence;selection.current.controller=controller;
         setLoading(true);setError(null);setId('');setFeedback('');
+        setLoadingLabel(`正在確認球編號 ${q.code}，請稍候…`);
         try{
           const confirmed=await data.selectQualification(q,controller.signal);
           if(sequence!==selection.current.sequence||controller.signal.aborted)return;
@@ -89,7 +93,7 @@ export function QualificationProvider({ children }: {
         }catch(error){if(sequence===selection.current.sequence&&!controller.signal.aborted)setError(error instanceof Error?error.message:'無法確認資格，請重新查詢');}
         finally{if(sequence===selection.current.sequence&&!controller.signal.aborted)setLoading(false);}
     };
-    return <Context.Provider value={{ qualifications: items, current: items.find(q => q.id === id) ?? null, select, loading, error, feedback, memberNo, memberNoStatus, retry: () => setAttempt(a => a + 1) }}>{children}</Context.Provider>;
+    return <Context.Provider value={{ qualifications: items, current: items.find(q => q.id === id) ?? null, select, loading, loadingLabel, error, feedback, memberNo, memberNoStatus, retry: () => setAttempt(a => a + 1) }}>{children}</Context.Provider>;
 }
 export function useOptionalQualification() { return useContext(Context); }
 export function useQualification() { const value = useOptionalQualification(); if (!value)

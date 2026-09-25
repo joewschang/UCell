@@ -1,6 +1,8 @@
+import { useQualificationFocus } from './useQualificationFocus';
+import { MemberNavigation, IncomeNavigation } from './MemberNavigation';
 import {MemberPageHeader} from './MemberPageHeader';
-import {MemberAppShell,MemberBottomNav,QualificationSwitcher,MobileActionGrid,MetricCard,MoneyState,LoadingState,ErrorState,EmptyState} from '@ucell/design-system';
-import { Link, NavLink, Route, Routes } from 'react-router-dom';
+import {MemberAppShell,QualificationSwitcher,MobileActionGrid,MetricCard,MoneyState,LoadingState,ErrorState,EmptyState} from '@ucell/design-system';
+import { Link, Route, Routes } from 'react-router-dom';
 import { useState, type KeyboardEvent, type ReactNode } from 'react';
 import { useQualification } from './QualificationContext';
 import * as data from './memberData';
@@ -47,7 +49,7 @@ function Metrics({ items }: {
         number | null
     ][];
 }) { return <section className="uc-metric-grid">{items.map(([label, value]) => <MetricCard key={label} label={label} value={number(value)}/>)}</section>; }
-function ContextBar() { const {qualifications,current,select,feedback}=useQualification();return <QualificationSwitcher options={qualifications.map(q=>({id:q.id,label:`球編號 ${q.code}｜方案 ${data.displayPlanLevel(q.rank)}`}))} value={current?.id??''} onChange={select} feedback={feedback} active={current?.active??false}/>; }
+function ContextBar({beforeSelect}:{beforeSelect:()=>void}) { const {qualifications,current,select,feedback}=useQualification();return <QualificationSwitcher options={qualifications.map(q=>({id:q.id,label:`球編號 ${q.code}｜方案 ${data.displayPlanLevel(q.rank)}`}))} value={current?.id??''} onChange={id=>{beforeSelect();void select(id)}} feedback={feedback} active={current?.active??false}/>; }
 function Home({ q }: {
     q: Qualification;
 }) {
@@ -117,7 +119,7 @@ function Performance({ q }: {
 }) {
     const [period, setPeriod] = useState(initialMonth);
     const state = useResource(`performance:${q.id}:${period}`, s => data.getPerformance(q, period, s));
-    return <><MemberPageHeader title="我的業績" q={q}/><Period value={period} onChange={setPeriod}/><Result state={state}>{d => <><Metrics items={[["PV", d.pv], ["RPV", d.rpv], ["EPV", d.epv], ["左區業績", d.left], ["右區業績", d.right]]}/><p className="muted">資料更新：{d.asOf ?? '尚未提供'}</p></>}</Result></>;
+    return <><MemberPageHeader title="我的業績" q={q}/><IncomeNavigation/><Period value={period} onChange={setPeriod}/><Result state={state}>{d => <><Metrics items={[["PV", d.pv], ["RPV", d.rpv], ["EPV", d.epv], ["左區業績", d.left], ["右區業績", d.right]]}/><p className="muted">資料更新：{d.asOf ?? '尚未提供'}</p></>}</Result></>;
 }
 function Bonuses({ q }: {
     q: Qualification;
@@ -125,7 +127,7 @@ function Bonuses({ q }: {
     const [period, setPeriod] = useState(initialMonth);
     const awards = useResource(`bonuses:${q.id}:${period}`, s => data.getBonuses(q, period, s));
     const ledger = useResource(`ledger:${q.id}:${period}`, s => data.getLedger(q, period, s));
-    return <div className="uc-bonuses"><MemberPageHeader title="獎金明細" q={q}/><p className="uc-page-intro">每筆紀錄都屬於目前球編號；金額、結算與撥付只顯示伺服器已提供的結果。</p><Period value={period} onChange={setPeriod}/><Result state={awards}>{d => d.awards.length ? <section className="uc-award-list" aria-label="獎金項目">{d.awards.map(a => <MemberAwardJourney key={a.id} award={a} q={q} period={period}/>)}</section> : <EmptyState title="此月份尚無獎金紀錄"><p>尚無資料不等同金額為零。</p></EmptyState>}</Result><div className="uc-section-heading"><div><small>ACCOUNT LEDGER</small><h3>入帳與調整紀錄</h3></div></div><Result state={ledger}>{d => d.entries.length ? <section className="uc-ledger-list" aria-label="入帳與調整紀錄">{d.entries.map(e => <article className="card uc-ledger-card" key={e.id}><div><small>{e.postedAt}</small><h3>{e.label}</h3><span>系統已記錄此筆入帳來源</span></div><strong>{money(e.amount)}</strong></article>)}</section> : <EmptyState title="此月份尚無入帳紀錄"><p>尚無資料不等同沒有後續結算或調整。</p></EmptyState>}</Result></div>;
+    return <div className="uc-bonuses"><MemberPageHeader title="獎金明細" q={q}/><IncomeNavigation/><p className="uc-page-intro">每筆紀錄都屬於目前球編號；金額、結算與撥付只顯示伺服器已提供的結果。</p><Period value={period} onChange={setPeriod}/><Result state={awards}>{d => d.awards.length ? <section className="uc-award-list" aria-label="獎金項目">{d.awards.map(a => <MemberAwardJourney key={a.id} award={a} q={q} period={period}/>)}</section> : <EmptyState title="此月份尚無獎金紀錄"><p>尚無資料不等同金額為零。</p></EmptyState>}</Result><div className="uc-section-heading"><div><small>ACCOUNT LEDGER</small><h3>入帳與調整紀錄</h3></div></div><Result state={ledger}>{d => d.entries.length ? <section className="uc-ledger-list" aria-label="入帳與調整紀錄">{d.entries.map(e => <article className="card uc-ledger-card" key={e.id}><div><small>{e.postedAt}</small><h3>{e.label}</h3><span>系統已記錄此筆入帳來源</span></div><strong>{money(e.amount)}</strong></article>)}</section> : <EmptyState title="此月份尚無入帳紀錄"><p>尚無資料不等同沒有後續結算或調整。</p></EmptyState>}</Result></div>;
 }
 function Orders({ q }: {
     q: Qualification;
@@ -147,17 +149,14 @@ function Me() {
  </>;
 }
 function MemberApp() {
-    const { loading, error, retry, current, memberNo, memberNoStatus } = useQualification();
+    const { loading, loadingLabel, error, retry, current, memberNo, memberNoStatus } = useQualification();
     const { unread } = useNotifications(current?.id);
     const memberIdentityLabel=memberNo?`會員編號 ${memberNo}`:memberNoStatus==='loading'?'會員編號確認中':'會員編號尚未提供（帳戶資料尚未同步）';
-    if (loading)
-        return <main className="loading"><LoadingState label="正在確認目前球與會員資格…"/></main>;
-    if (error)
-        return <main className="loading"><ErrorState message={error} retry={retry}/></main>;
-    return <MemberAppShell>
+    const {mainRef,begin}=useQualificationFocus(loading,error,current?.id);
+    return <MemberAppShell><a className="uc-skip-link" href="#member-main">跳至主要內容</a>
       <header><div><b>UCell</b><small>{memberIdentityLabel}</small></div>{current && <Link className="notification-link" to="/notifications" aria-label={data.isMock ? `通知中心，${unread} 則未讀` : '通知中心'}>通知{data.isMock ? ` ${unread}` : ''}</Link>}</header>
       {data.isMock && <aside className="demo-banner" data-environment="mock-visual-only"><strong>DEV 示範模式 · </strong><span>目前為示範資料，不代表真實業績、獎金或訂單。</span></aside>}
-      <main>{current ? <><ContextBar /><div key={current.id}><Routes>
+      <main ref={mainRef} id="member-main" tabIndex={-1}>{loading ? <LoadingState label={loadingLabel}/> : error ? <ErrorState message={error} retry={()=>{begin();retry()}}/> : current ? <><ContextBar beforeSelect={begin}/><div key={current.id}><Routes>
         <Route path="/" element={<Home q={current}/>}/>
         <Route path="/organization" element={<Organization q={current}/>}/>
         <Route path="/performance" element={<Performance q={current}/>}/>
@@ -174,7 +173,7 @@ function MemberApp() {
         <Route path="/me" element={<Me/>}/>
         <Route path="*" element={<section className="card"><h2>尚未取得會員資格</h2><p>可先完成正式會員資料，再透過正式套組取得第一個會員資格。</p><Link className="text-link" to="/shop">選擇正式會員套組</Link><button onClick={retry}>重新查詢</button><Link className="text-link" to="/me">查看會員資料</Link><EndSession connected={!data.isMock}/></section>}/>
       </Routes>}</main>
-      <MemberBottomNav><NavLink end to="/">首頁</NavLink><NavLink to="/organization">組織</NavLink><NavLink to="/shop">商城</NavLink><NavLink to="/bonuses">收益</NavLink><NavLink to="/me">我的</NavLink></MemberBottomNav>
+      <MemberNavigation/>
     </MemberAppShell>;
 }
 
