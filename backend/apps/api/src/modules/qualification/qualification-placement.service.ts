@@ -6,6 +6,8 @@ import {IdempotencyService} from '../../common/idempotency/idempotency.service';
 import {OrganizationService} from '../organization/organization.service';
 
 type PlacementInput={qualificationId:string;binaryParentQualificationId:string;side:'LEFT'|'RIGHT';reasonCode?:string};
+type MemberPlacementInput={ballNo:string;binaryParentBallNo:string;side:'LEFT'|'RIGHT'};
+const publicBallNo=/^[A-Z][A-Z0-9]{5,58}$/;
 
 @Injectable()
 export class QualificationPlacementService {
@@ -14,7 +16,7 @@ export class QualificationPlacementService {
  async pendingForSponsorOwner(personId:string,now=new Date()){
   const owned=await this.db.qualification.findMany({where:{currentHolderPersonId:personId},select:{qualificationId:true}}),sponsorIds=owned.map(x=>x.qualificationId);
   const rows=await this.db.qualificationSetup.findMany({where:{setupStatus:{in:['PLACEMENT_PENDING','PLACEMENT_OVERDUE']},finalSponsorQualificationId:{in:sponsorIds}},orderBy:{placementDueAt:'asc'},take:100});
-  const personIds=[...new Set(rows.map(x=>x.ownerPersonId))],qualificationIds=[...new Set(rows.map(x=>x.finalSponsorQualificationId).filter((x):x is string=>!!x))]; const [people,sponsors]=await Promise.all([this.db.person.findMany({where:{personId:{in:personIds}},select:{personId:true,memberNo:true}}),this.db.qualification.findMany({where:{qualificationId:{in:qualificationIds}},select:{qualificationId:true,ballNo:true}})]); const memberNoByPerson=new Map(people.map(x=>[x.personId,x.memberNo])),ballNoByQualification=new Map(sponsors.map(x=>[x.qualificationId,x.ballNo])); return rows.map(x=>this.view(x,now,{memberNo:memberNoByPerson.get(x.ownerPersonId)??null,sponsorBallNo:x.finalSponsorQualificationId?ballNoByQualification.get(x.finalSponsorQualificationId)??null:null}));
+  const personIds=[...new Set(rows.map(x=>x.ownerPersonId))],qualificationIds=[...new Set(rows.flatMap(x=>[x.qualificationId,x.finalSponsorQualificationId].filter((id):id is string=>!!id)))]; const [people,qualifications]=await Promise.all([this.db.person.findMany({where:{personId:{in:personIds}},select:{personId:true,memberNo:true}}),this.db.qualification.findMany({where:{qualificationId:{in:qualificationIds}},select:{qualificationId:true,ballNo:true}})]); const memberNoByPerson=new Map(people.map(x=>[x.personId,x.memberNo])),ballNoByQualification=new Map(qualifications.map(x=>[x.qualificationId,x.ballNo])); return rows.map(x=>this.view(x,now,{memberNo:memberNoByPerson.get(x.ownerPersonId)??null,pendingBallNo:ballNoByQualification.get(x.qualificationId)??null,sponsorBallNo:x.finalSponsorQualificationId?ballNoByQualification.get(x.finalSponsorQualificationId)??null:null}));
  }
 
  async monitor(input:{status?:string;aging?:string;take?:number}={},now=new Date()){
@@ -23,6 +25,13 @@ export class QualificationPlacementService {
  }
 
  async placeBySponsorOwner(personId:string,input:PlacementInput,key:string,requestId:string){return this.place(personId,'SPONSOR_OWNER',input,key,requestId);}
+ async placeBySponsorOwnerBallNo(personId:string,input:MemberPlacementInput,key:string,requestId:string){
+  if(!publicBallNo.test(input.ballNo)||!publicBallNo.test(input.binaryParentBallNo))throw new UnprocessableEntityException({code:'PLACEMENT_BALL_NO_INVALID'});
+  const [qualification,parent]=await Promise.all([this.db.qualification.findUnique({where:{ballNo:input.ballNo},select:{qualificationId:true,ballNo:true}}),this.db.qualification.findUnique({where:{ballNo:input.binaryParentBallNo},select:{qualificationId:true,ballNo:true}})]);
+  if(!qualification||!parent)throw new NotFoundException({code:'PLACEMENT_BALL_NOT_FOUND'});
+  const placed=await this.place(personId,'SPONSOR_OWNER',{qualificationId:qualification.qualificationId,binaryParentQualificationId:parent.qualificationId,side:input.side},key,requestId);
+  return {ballNo:qualification.ballNo,binaryParentBallNo:parent.ballNo,side:placed.value.side,placedAt:placed.value.placedAt,evidenceHash:placed.value.evidenceHash};
+ }
  async placeByAdmin(actorPersonId:string|undefined,input:PlacementInput,key:string,requestId:string){if(!input.reasonCode?.trim())throw new UnprocessableEntityException({code:'PLACEMENT_OVERRIDE_REASON_REQUIRED'});return this.place(actorPersonId,'ADMIN_OVERRIDE',input,key,requestId);}
 
  async sweepOverdue(actorPersonId:string|undefined,key:string,requestId:string,now=new Date()){
@@ -57,5 +66,5 @@ export class QualificationPlacementService {
   });}catch(error){if(['P2002','P2034'].includes((error as any).code)||((error as any).code==='P2010'&&(error as any).meta?.code==='40001'))throw new ConflictException({code:'PLACEMENT_CONFLICT'});throw error;}
  }
 
- private view(row:any,now:Date,identity?:{memberNo:string|null;sponsorBallNo:string|null}){const status=row.setupStatus==='PLACEMENT_PENDING'&&row.placementDueAt&&row.placementDueAt<=now?'PLACEMENT_OVERDUE':row.setupStatus,ageMs=row.placementRequestedAt?Math.max(0,now.getTime()-row.placementRequestedAt.getTime()):0,h=Math.floor(ageMs/3600000),agingBucket=status==='PLACEMENT_OVERDUE'||h>=72?'OVERDUE':h>=48?'48_72H':h>=24?'24_48H':'0_24H';return {qualificationId:row.qualificationId,pendingMemberNo:identity?.memberNo??null,packageType:row.packageType,sponsorBallNo:identity?.sponsorBallNo??null,paymentState:'CONFIRMED',requestedAt:row.placementRequestedAt?.toISOString()??null,dueAt:row.placementDueAt?.toISOString()??null,placedAt:row.placedAt?.toISOString()??null,status,agingBucket,policyVersion:row.setupPolicyVersion};}
+ private view(row:any,now:Date,identity?:{memberNo:string|null;pendingBallNo:string|null;sponsorBallNo:string|null}){const status=row.setupStatus==='PLACEMENT_PENDING'&&row.placementDueAt&&row.placementDueAt<=now?'PLACEMENT_OVERDUE':row.setupStatus,ageMs=row.placementRequestedAt?Math.max(0,now.getTime()-row.placementRequestedAt.getTime()):0,h=Math.floor(ageMs/3600000),agingBucket=status==='PLACEMENT_OVERDUE'||h>=72?'OVERDUE':h>=48?'48_72H':h>=24?'24_48H':'0_24H';return {pendingBallNo:identity?.pendingBallNo??null,pendingMemberNo:identity?.memberNo??null,packageType:row.packageType,sponsorBallNo:identity?.sponsorBallNo??null,paymentState:'CONFIRMED',requestedAt:row.placementRequestedAt?.toISOString()??null,dueAt:row.placementDueAt?.toISOString()??null,placedAt:row.placedAt?.toISOString()??null,status,agingBucket,policyVersion:row.setupPolicyVersion};}
 }

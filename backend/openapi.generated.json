@@ -10060,13 +10060,13 @@
         ]
       }
     },
-    "/api/v1/member/qualifications/{id}/place": {
+    "/api/v1/member/placements/{ballNo}/place": {
       "post": {
-        "description": "Serializable placement commit; Sponsor owner authorization and Binary legality are revalidated server-side.",
+        "description": "Serializable placement commit using public Ball numbers only; Sponsor owner authorization and Binary legality are revalidated server-side.",
         "operationId": "memberPlaceQualification",
         "parameters": [
           {
-            "name": "id",
+            "name": "ballNo",
             "required": true,
             "in": "path",
             "schema": {
@@ -10095,7 +10095,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/PlaceQualificationDto"
+                "$ref": "#/components/schemas/MemberPlaceQualificationDto"
               }
             }
           }
@@ -15878,12 +15878,13 @@
           "policyVersion"
         ]
       },
-      "PlaceQualificationDto": {
+      "MemberPlaceQualificationDto": {
         "type": "object",
         "properties": {
-          "binaryParentQualificationId": {
+          "binaryParentBallNo": {
             "type": "string",
-            "format": "uuid"
+            "pattern": "^[A-Z][A-Z0-9]{5,58}$",
+            "description": "Public parent Ball number. UUIDs are not accepted in the member flow."
           },
           "side": {
             "type": "string",
@@ -15894,7 +15895,7 @@
           }
         },
         "required": [
-          "binaryParentQualificationId",
+          "binaryParentBallNo",
           "side"
         ]
       },

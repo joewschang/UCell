@@ -23,6 +23,7 @@ import WebMemberRetailShop from './WebMemberRetailShop';
 import MemberBinaryTree from './MemberBinaryTree';
 import MemberTodaySummary from './MemberTodaySummary';
 import MemberAwardJourney from './MemberAwardJourney';
+import PlacementWorkbench from './PlacementWorkbench';
 import {availabilityText,awardStatusLabels,formatNullableMoney,formatNullableNumber,qualificationActiveLabel} from './terminology';
 export const number = formatNullableNumber;
 export const money = formatNullableMoney;
@@ -97,7 +98,7 @@ function Organization({ q }: {
                 <section className="card uc-sponsor-card"><small>UPLINE NODE</small><h3>我的推薦人</h3><div className="uc-person-node"><i aria-hidden="true"/><div><strong>{d.sponsor?.name || d.sponsor?.code || '目前沒有推薦人資料'}</strong>{d.sponsor && <span>球編號 {d.sponsor.code}</span>}</div></div></section>
                 <section className="card uc-referral-card"><div className="uc-card-heading"><div><small>DIRECT NETWORK</small><h3>直推會員</h3></div><strong>{d.referrals.length}</strong></div><p className="uc-system-note">本次 API 回傳 {d.referrals.length} 位直推會員</p>{d.referrals.length ? <div className="uc-node-list">{d.referrals.map((r, index) => <div className="uc-person-node" key={r.code}><i aria-hidden="true"/><div><strong>{r.name || r.code}</strong><span>球編號 {r.code}</span></div><small>{String(index + 1).padStart(2, '0')}</small></div>)}</div> : <p>目前沒有直推會員</p>}</section>
             </div>
-            <ReferralShare q={q}/>
+            <ReferralShare q={q}/><PlacementWorkbench/>
         </>}</Result></section> : <section id="org-binary-panel" role="tabpanel" aria-labelledby="org-binary-tab"><Result state={binary}>{d => <>
             <div className="uc-network-note"><span aria-hidden="true"/><p>左、右區屬二元安置組織，與推薦組織分別呈現。業績與 Carry 只有在權威結算資料可用時才會顯示。</p></div>
             <div className="uc-binary-summary">{[['左區', d.left], ['右區', d.right]].map(([label, side], index) => <section className="card uc-binary-card" data-side={index === 0 ? 'left' : 'right'} key={String(label)}><div className="uc-card-heading"><div><small>{index === 0 ? 'LEFT NETWORK' : 'RIGHT NETWORK'}</small><h3>{String(label)}</h3></div><span className="uc-node-pulse" aria-hidden="true"/></div><dl><div><dt>{String(label)}球數</dt><dd>{number((side as typeof d.left).count)}</dd></div><div><dt>{String(label)}業績</dt><dd>{d.settlementMetrics.status === 'AVAILABLE' ? number((side as typeof d.left).volume) : availabilityText.readModelMissing}</dd></div><div><dt>Carry</dt><dd>{d.settlementMetrics.status === 'AVAILABLE' ? number((side as typeof d.left).carry) : availabilityText.readModelMissing}</dd></div></dl></section>)}</div>

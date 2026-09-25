@@ -1,6 +1,6 @@
 import {Body,Controller,Get,Headers,Param,ParseUUIDPipe,Post,Query,Req,UseGuards} from '@nestjs/common';
 import {ApiBearerAuth,ApiHeader,ApiOperation,ApiProperty,ApiPropertyOptional,ApiTags} from '@nestjs/swagger';
-import {IsEnum,IsOptional,IsString,IsUUID,MaxLength,MinLength} from 'class-validator';
+import {IsEnum,IsOptional,IsString,IsUUID,Matches,MaxLength,MinLength} from 'class-validator';
 import {IdempotencyGuard} from '../../common/guards/idempotency.guard';
 import {MemberAuthenticationGuard} from '../auth/member-authentication.guard';
 import {Roles} from '../auth/roles.decorator';
@@ -8,13 +8,14 @@ import {QualificationPlacementService} from './qualification-placement.service';
 
 class PlaceQualificationDto { @ApiProperty({format:'uuid'}) @IsUUID() binaryParentQualificationId!:string; @ApiProperty({enum:['LEFT','RIGHT']}) @IsEnum(['LEFT','RIGHT']) side!:'LEFT'|'RIGHT'; }
 class AdminPlaceQualificationDto extends PlaceQualificationDto { @ApiProperty({maxLength:120}) @IsString() @MinLength(1) @MaxLength(120) reasonCode!:string; }
+class MemberPlaceQualificationDto { @ApiProperty({pattern:'^[A-Z][A-Z0-9]{5,58}$',description:'Public parent Ball number. UUIDs are not accepted in the member flow.'}) @Matches(/^[A-Z][A-Z0-9]{5,58}$/) binaryParentBallNo!:string; @ApiProperty({enum:['LEFT','RIGHT']}) @IsEnum(['LEFT','RIGHT']) side!:'LEFT'|'RIGHT'; }
 
 @ApiTags('Member - Qualification Placement') @ApiBearerAuth('memberBearer') @UseGuards(MemberAuthenticationGuard)
 @Controller('member')
 export class MemberQualificationPlacementController {
  constructor(private readonly service:QualificationPlacementService){}
  @Get('placements/pending') @ApiOperation({operationId:'memberPendingQualificationPlacements',description:'Balls awaiting placement for which the authenticated Person owns the confirmed Sponsor Ball.'}) pending(@Req() req:any){return this.service.pendingForSponsorOwner(req.user.personId);}
- @Post('qualifications/:id/place') @UseGuards(IdempotencyGuard) @ApiHeader({name:'Idempotency-Key',required:true}) @ApiOperation({operationId:'memberPlaceQualification',description:'Serializable placement commit; Sponsor owner authorization and Binary legality are revalidated server-side.'}) place(@Req() req:any,@Param('id',new ParseUUIDPipe()) id:string,@Body() body:PlaceQualificationDto,@Headers('idempotency-key') key:string){return this.service.placeBySponsorOwner(req.user.personId,{qualificationId:id,...body},key,req.requestId);}
+ @Post('placements/:ballNo/place') @UseGuards(IdempotencyGuard) @ApiHeader({name:'Idempotency-Key',required:true}) @ApiOperation({operationId:'memberPlaceQualification',description:'Serializable placement commit using public Ball numbers only; Sponsor owner authorization and Binary legality are revalidated server-side.'}) place(@Req() req:any,@Param('ballNo') ballNo:string,@Body() body:MemberPlaceQualificationDto,@Headers('idempotency-key') key:string){return this.service.placeBySponsorOwnerBallNo(req.user.personId,{ballNo,...body},key,req.requestId);}
 }
 
 @ApiTags('Admin - Qualification Placement') @ApiBearerAuth('adminBearer') @Roles('SUPER_ADMIN','MEMBERSHIP_OPS','COMPLIANCE_AUDIT')
