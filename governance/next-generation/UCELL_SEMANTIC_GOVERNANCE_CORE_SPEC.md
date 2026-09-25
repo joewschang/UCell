@@ -537,3 +537,168 @@ Add:
 - AUTHORITATIVE_ECONOMIC metric cannot be overridden by ad-hoc formula.
 - missing historical evidence => UNKNOWN/UNAVAILABLE.
 - alias resolution cannot bypass metric version/status/privacy.
+
+
+## 45. Certification lifecycle and official-number policy
+
+Definition lifecycle and runtime certification are separate concerns.
+
+Definition governance lifecycle:
+DRAFT → REVIEW → APPROVED → DEPRECATED → RETIRED.
+
+Operational certification lifecycle for an APPROVED definition:
+UNMAPPED → SOURCE_MAPPED → GOLDEN_VERIFIED → CERTIFIED.
+A definition may be APPROVED in business meaning while not yet CERTIFIED for official numeric reporting.
+
+CERTIFIED requires all deterministic gates true:
+- authorityMapped
+- factMapped
+- grainDefined
+- timeBasisDefined
+- scopeDefined
+- privacyDefined
+- ruleVersionMapped where applicable
+- lineageDefined
+- joinSafetyDefined
+- freshnessDefined
+- RBACMapped
+- goldenCovered
+- sourceDriftCheckEnabled
+
+Only CERTIFIED effective metrics may be presented as "official UCell KPI" by Dashboard, Export or future AI.
+
+APPROVED but non-CERTIFIED:
+- definition may be displayed;
+- numeric value must not be represented as official KPI;
+- exploratory calculation, if later allowed, must be explicitly labeled non-official and cannot replace certified truth.
+
+DRAFT/DECISION_REQUIRED:
+- not available as official KPI;
+- consumers may only explain that the definition is unresolved.
+
+RETIRED:
+- available only for historical reproduction when authorized.
+
+## 46. Semantic authority conflict handling
+
+If Governance SSOT, runtime Core, DB schema/projection, Golden evidence or OpenAPI semantics disagree, Semantic Core MUST NOT choose an answer silently.
+
+Create a governed conflict record:
+SEMANTIC_AUTHORITY_CONFLICT
+- conflictId
+- definitionCode/version
+- governanceEvidenceRef/hash
+- runtimeEvidenceRef/hash
+- schemaEvidenceRef/hash
+- goldenEvidenceRef/hash if present
+- conflictType
+- conflictDescription
+- detectedAt
+- detectedBy
+- severity
+- status OPEN|RESOLVED|ACCEPTED_WITH_LIMITATION
+- resolutionDecisionRef
+- resolvedAt/resolvedBy
+
+While an authority conflict is OPEN:
+- affected definition cannot become CERTIFIED;
+- dependent derived metrics cannot become CERTIFIED unless proven unaffected;
+- future AI cannot state affected values as official;
+- no automatic migration may "fix" economic Core based only on Semantic metadata.
+
+Conflict resolution requires explicit authority evidence and audit.
+
+## 47. Source Authority Matrix contract
+
+SG-A1 MUST produce a machine-readable and human-readable Source Authority Matrix. Minimum columns:
+definitionCode; definitionVersion; definitionType; factKind if applicable; semanticStatus; certificationStatus; businessDefinition; authoritativeDomain; authoritativeService; authoritativeProjection/View; physicalSourceMapping; grain; businessKey; event/timeBasis; asOf semantics; ruleCode/ruleVersion; scope; privacyClass; approvedJoins; freshnessSource; goldenEvidence; OpenAPI surface; knownLimitations; conflictId.
+
+The Matrix is evidence, not a substitute for Core. Physical table/column names may change while the stable definition remains.
+
+## 48. Certification dependency propagation
+
+Certification is dependency-aware:
+- DERIVED metric cannot be CERTIFIED unless all required upstream metrics/datasets/rules are CERTIFIED/effective or the dependency is explicitly non-numeric metadata.
+- Dataset cannot be AI-queryable if its grain/privacy/source mapping is uncertified.
+- Definition deprecation does not retroactively invalidate historical certified evidence; historical queries bind to effective historical versions.
+- New source/rule versions require re-verification of affected Golden fixtures before the new version becomes CERTIFIED.
+
+Dependency graph must support impact analysis before approval/effective activation.
+
+## 49. Drift firewall
+
+Automated checks must detect:
+- seed hash drift;
+- approved definition mutation;
+- source projection/schema mapping drift;
+- enum/status drift relevant to certified metrics;
+- rule version/evidence drift;
+- privacy classification drift;
+- missing/deprecated source fields;
+- OpenAPI contract drift for governed definition endpoints.
+
+Drift result:
+PASS — certified consumer remains enabled.
+WARN — non-breaking documented difference; certification may remain only if policy explicitly allows.
+BLOCK — certification suspended for affected current version until reconciled.
+
+Drift detection must never mutate Economic Core automatically.
+
+## 50. Official KPI response contract
+
+Every official KPI result must carry at least:
+metricCode
+metricVersion
+certificationStatus=CERTIFIED
+value
+unit/currency
+scopeCode
+period or asOf
+timeBasis
+dataThrough
+refreshedAt
+freshnessStatus
+ruleVersion/evidence where applicable
+resultEvidenceRef
+privacyClass
+
+If freshness exceeds SLA:
+- response remains distinguishable as STALE;
+- UI/AI must not describe it as real-time/current without qualification.
+If source is unavailable:
+- value is UNKNOWN/UNAVAILABLE, not zero.
+
+## 51. Consumer behavior matrix
+
+Admin Dashboard:
+- official cards/charts use CERTIFIED metrics only;
+- DRAFT/uncertified metrics appear only in Governance/Analyst areas with clear status.
+
+Export:
+- same metric version/scope/privacy as interactive result;
+- no hidden extra PII;
+- export metadata includes definition/asOf/dataThrough.
+
+Future AI Data Assistant:
+- CERTIFIED → may state as official fact with evidence.
+- APPROVED non-CERTIFIED → may explain definition/status, not claim official numeric truth.
+- DRAFT/DECISION_REQUIRED → disclose that no official KPI is defined.
+- RETIRED → historical reproduction only.
+- OPEN authority conflict → state conflict/limitation; no invented reconciliation.
+
+## 52. Phase-1 closure sequencing
+
+Because R1.0B onboarding/retail/paper/LINE work is still evolving on the integration branch, Semantic Core implementation MUST use the post-onboarding closure FINAL_HEAD as SG-A1 baseline unless Product Owner explicitly authorizes parallel schema work.
+
+Recommended sequence:
+1. close current Onboarding/Retail/Paper/Existing-Member-LINE verticals and freeze evidence checkpoint;
+2. run SG-A1 Source Authority Audit against that FINAL_HEAD;
+3. update Source Authority Matrix and conflicts;
+4. only then create Semantic registry migrations;
+5. seed APPROVED definitions with correct certification status;
+6. implement Semantic Golden/drift/security gates;
+7. close SG-A;
+8. then design Governed Analytics Query Engine;
+9. only after query/security closure begin AI Data Assistant runtime.
+
+This sequencing avoids semantic migrations being built against moving transaction state machines.
