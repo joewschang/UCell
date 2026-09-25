@@ -1,0 +1,110 @@
+{
+  "toolVersion": "1.32.1",
+  "secretScan": "PASS",
+  "securityCompatibility": "PASS",
+  "validation": {
+    "exitCode": 0,
+    "stdout": "No findings detected\n",
+    "stderr": ""
+  },
+  "breakingDiff": {
+    "exitCode": 1,
+    "changes": [
+      {
+        "id": "request-parameter-type-changed",
+        "text": "for the `path` request parameter `qualificationId`, the `format` was changed from `none` to `uuid`",
+        "level": 3,
+        "operation": "GET",
+        "operationId": "adminGetQualification",
+        "path": "/api/v1/admin/qualifications/{qualificationId}",
+        "section": "paths",
+        "fingerprint": "54670732b17f"
+      },
+      {
+        "id": "request-parameter-became-enum",
+        "text": "the `query` request parameter `status` was restricted to a list of enum values",
+        "level": 3,
+        "operation": "GET",
+        "operationId": "adminListSubscriptions",
+        "path": "/api/v1/admin/subscriptions",
+        "section": "paths",
+        "fingerprint": "dc1e1c4567f4"
+      },
+      {
+        "id": "request-parameter-max-set",
+        "text": "for the `query` request parameter `take`, the max was set to `200.00`",
+        "comment": "Setting a bound rejects values the previous contract accepted. If your clients are known to stay within the new limit, lower this check with --severity-levels.",
+        "level": 3,
+        "operation": "GET",
+        "operationId": "adminListSubscriptions",
+        "path": "/api/v1/admin/subscriptions",
+        "section": "paths",
+        "fingerprint": "fd2f74c24e1b"
+      },
+      {
+        "id": "request-parameter-min-set",
+        "text": "for the `query` request parameter `take`, the min was set to `1.00`",
+        "comment": "Setting a bound rejects values the previous contract accepted. If your clients are known to stay within the new limit, lower this check with --severity-levels.",
+        "level": 3,
+        "operation": "GET",
+        "operationId": "adminListSubscriptions",
+        "path": "/api/v1/admin/subscriptions",
+        "section": "paths",
+        "fingerprint": "2064fee6d3e4"
+      },
+      {
+        "id": "request-parameter-type-changed",
+        "text": "for the `query` request parameter `qualificationId`, the `format` was changed from `none` to `uuid`",
+        "level": 3,
+        "operation": "GET",
+        "operationId": "adminListSubscriptions",
+        "path": "/api/v1/admin/subscriptions",
+        "section": "paths",
+        "fingerprint": "0f54e1dcde65"
+      },
+      {
+        "id": "response-property-type-changed",
+        "text": "the `data/memberNo` response's property `format` changed from `uuid` to `none` for status `200`",
+        "level": 3,
+        "operation": "GET",
+        "operationId": "memberMe",
+        "path": "/api/v1/member/me",
+        "section": "paths",
+        "fingerprint": "83eb74424214"
+      },
+      {
+        "id": "response-property-type-changed",
+        "text": "the `data/memberNo` response's property `format` changed from `uuid` to `none` for status `200`",
+        "level": 3,
+        "operation": "PATCH",
+        "operationId": "memberUpdateProfile",
+        "path": "/api/v1/member/profile",
+        "section": "paths",
+        "fingerprint": "d146aad18959"
+      },
+      {
+        "id": "api-path-removed-without-deprecation",
+        "text": "api path removed without deprecation",
+        "level": 3,
+        "operation": "POST",
+        "operationId": "memberPlaceQualification",
+        "path": "/api/v1/member/qualifications/{id}/place",
+        "section": "paths",
+        "baseSource": {
+          "file": "C:/UCell/backups/branch-integration-20260925/baseline.json"
+        },
+        "fingerprint": "84bb78cb1583"
+      }
+    ],
+    "stderr": ""
+  },
+  "generated": {
+    "version": "1.1.0",
+    "pathCount": 182,
+    "operationCount": 196,
+    "schemaCount": 88,
+    "artifactSha256": "3cf00072330e3231e3eef4c4e864af23b7acef3484555bb724027b1de3392e7e",
+    "canonicalSha256": "f9db34cb341b15eb402021ea329e861da2af5835eecbee27df138aaa81668e7a"
+  },
+  "baselineUnchanged": true
+}

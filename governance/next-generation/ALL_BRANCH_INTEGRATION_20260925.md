@@ -43,6 +43,25 @@
 - Admin：115 tests 分批通過（原 111 項與修正後的 4 項 AppShell tests）；production build PASS。
 - 真實 Edge headless browser：切換中焦點、成功後焦點還原、主動移至導覽後不搶回焦點、拒絕與重試流程 PASS。
 - Prisma／source／schema／migration／security／OpenAPI 靜態檢查 PASS。
-- SwaggerHub publisher unit tests：23 PASS；釘選版本 oasdiff 測試的後續執行結果另列於下方。
+- SwaggerHub publisher unit tests：24 PASS、0 skipped（包含官方 checksum 驗證的 oasdiff 1.32.1 實際比較測試）。
+
+## API 契約審核結果與發布限制
+
+已修正兩個分析 API 的 `Idempotency-Key` 大小寫重複宣告，保留明確的長度與格式限制，避免同一 header 出現互相矛盾的 Swagger schema。
+
+完整結果見 [ALL_BRANCH_OPENAPI_REVIEW_20260925.json](ALL_BRANCH_OPENAPI_REVIEW_20260925.json)。目前規格為 1.1.0、182 paths、196 operations、88 schemas；oasdiff validation、secret scan 與 security compatibility 均 PASS。
+
+相對 SwaggerHub 原核准 baseline，breaking diff 列出 8 項差異：
+
+1. Admin 資格查詢的 qualificationId 明確限制 UUID。
+2. 訂閱查詢 status 限制允許值。
+3. 訂閱查詢 take 最大值 200。
+4. 訂閱查詢 take 最小值 1。
+5. 訂閱查詢 qualificationId 明確限制 UUID。
+6. Member me 的 memberNo 由 UUID 改為業務會員編號。
+7. Member profile 的 memberNo 同上。
+8. 舊 `/member/qualifications/{id}/place` 路由已由公共待安置參照碼流程取代。
+
+這些差異已具體列出供契約審核；不放寬現行輸入驗證、不恢復錯誤會員編號語意，也不修改核准 baseline 或跳過 breaking-change gate。因此 SwaggerHub 自動發布仍會受契約差異門檻阻擋，並非發布驗證全綠。程式分支整合與本機建置完成不代表已部署正式服務。
 
 本次未部署遠端服務、未發布 SwaggerHub 契約、未新增資料庫 migration。既有 SwaggerHub 核准 baseline 與 breaking-change 禁止規則保留，不以更新 baseline 掩蓋差異。
