@@ -1,6 +1,6 @@
 import {PrismaClient,Prisma} from '@prisma/client';
 import {randomUUID} from 'node:crypto';
-import {processRetailReferralPayment} from '../../worker/src/main';
+import {processRetailReferralPayment,processRetailReferralReturn} from '../../worker/src/main';
 
 const ROLLBACK='RETAIL_REFERRAL_TEST_ROLLBACK';
 const url=process.env.RETAIL_REFERRAL_TEST_DATABASE_URL??process.env.DATABASE_URL;
@@ -46,6 +46,35 @@ describeDb('Retail Referral rollback integration harness',()=>{
    expect(await tx.pvLedger.count({where:{qualificationId:referrer.qualificationId}})).toBe(0);
    expect(await tx.binaryPlacement.count({where:{childQualificationId:referrer.qualificationId}})).toBe(0);
    expect(await tx.outboxEvent.findUniqueOrThrow({where:{outboxEventId:event.outboxEventId}})).toMatchObject({processStatus:'PROCESSED'});
+   throw new Error(ROLLBACK);
+  },{isolationLevel:Prisma.TransactionIsolationLevel.Serializable,timeout:30000})).rejects.toThrow(ROLLBACK);
+  expect(await db.person.count({where:{legalName:{startsWith:marker}}})).toBe(0);
+ },40000);
+ it('writes one append-only pending recovery for a partial return and preserves the original award',async()=>{
+  const marker=`RETAIL_REFERRAL_RETURN_${Date.now()}`;
+  await expect(db.$transaction(async tx=>{
+   const at=new Date('2044-03-01T04:00:00.000Z');
+   const rule=`TEST_RETAIL_RETURN_${randomUUID()}`;
+   const owner=await tx.person.create({data:{legalName:`${marker}_OWNER`,status:'EFFECTIVE'}});
+   const purchaser=await tx.person.create({data:{legalName:`${marker}_PURCHASER`,status:'EFFECTIVE'}});
+   const referrer=await tx.qualification.create({data:{currentHolderPersonId:owner.personId,planLevelCode:'STARTER',status:'EFFECTIVE',effectiveAt:at}});
+   const product=await tx.productReference.create({data:{sku:`${marker}_SKU`,displayName:'Synthetic return product',currentPrice:d(100)}});
+   const profile=await tx.productRuleProfile.create({data:{productId:product.productId,effectiveFrom:at,gpvRate:d(0),ruleVersionCode:rule}});
+   const order=await tx.order.create({data:{purchaserPersonId:purchaser.personId,purpose:'RETAIL',status:'PAID',grossAmount:d(100),netAmount:d(100),ruleVersionCode:rule,paidAt:at}});
+   const line=await tx.orderLine.create({data:{orderId:order.orderId,productId:product.productId,skuSnapshot:product.sku,productNameSnapshot:product.displayName,quantity:d(1),unitPrice:d(100),lineAmount:d(100),gpvRateSnapshot:d(0),gpvAmountSnapshot:d(0),ruleProfileSnapshot:{profileId:profile.productRuleProfileId}}});
+   await tx.retailReferralOrderLineSnapshot.create({data:{orderLineId:line.orderLineId,orderId:order.orderId,referrerQualificationId:referrer.qualificationId,retailReferralEnabled:true,calculationType:'PERCENTAGE',rate:d('.1'),baseType:'NET_PAID_ITEM_AMOUNT',netPaidItemAmount:d(100),productRuleProfileId:profile.productRuleProfileId,productRuleVersion:rule,attributionEvidence:{kind:'SYNTHETIC_TEST'}}});
+   const award=await tx.bonusAward.create({data:{awardType:'RETAIL_REFERRAL',recipientQualificationId:referrer.qualificationId,sourceEventId:line.orderLineId,theoryAmount:d(10),payableAmount:d(10),kFactor:d(1),activeSnapshot:true,planLevelSnapshot:'STARTER',ruleVersionCode:rule,occurredAt:at,pendingUntil:new Date('2044-04-15T04:00:00.000Z'),calculationDetail:{kind:'SYNTHETIC_TEST'}}});
+   await tx.bonusAwardLifecycleEvent.create({data:{bonusAwardId:award.bonusAwardId,status:'PENDING_45D',occurredAt:at}});
+   const returnCase=await tx.returnCase.create({data:{orderId:order.orderId,status:'POSTED',reasonCode:'SYNTHETIC_PARTIAL_RETURN',occurredAt:new Date('2044-03-02T04:00:00.000Z'),postedAt:new Date('2044-03-02T04:00:00.000Z'),idempotencyKey:randomUUID(),correlationId:randomUUID(),lines:{create:{orderLineId:line.orderLineId,quantity:d('.5'),returnAmount:d(40),gpvReversalAmount:d(0)}}}});
+   const event=await tx.outboxEvent.create({data:{eventType:'WEB_MEMBER_RETAIL_RETURN_POSTED',aggregateType:'RETURN_CASE',aggregateId:returnCase.returnCaseId,payload:{returnCaseId:returnCase.returnCaseId},correlationId:randomUUID()}});
+   const deps={withOutboxLease:async (_db:any,_lease:any,work:any)=>work(tx)};
+   await processRetailReferralReturn(db as any,{outboxEventId:event.outboxEventId} as any,deps as any);
+   await processRetailReferralReturn(db as any,{outboxEventId:event.outboxEventId} as any,deps as any);
+   const recovered=await tx.bonusRecoveryEvent.findMany({where:{bonusAwardId:award.bonusAwardId,returnCaseId:returnCase.returnCaseId}});
+   expect(recovered).toHaveLength(1);
+   expect(recovered[0]).toMatchObject({recoveryAmount:d(4),outstandingAmount:d(4),status:'OFFSETTING',reasonCode:'RETAIL_RETURN_PENDING_OFFSET'});
+   expect(await tx.bonusAward.findUniqueOrThrow({where:{bonusAwardId:award.bonusAwardId}})).toMatchObject({theoryAmount:d(10),payableAmount:d(10)});
+   expect(await tx.bonusAwardLifecycleEvent.count({where:{bonusAwardId:award.bonusAwardId,status:'REVERSED'}})).toBe(0);
    throw new Error(ROLLBACK);
   },{isolationLevel:Prisma.TransactionIsolationLevel.Serializable,timeout:30000})).rejects.toThrow(ROLLBACK);
   expect(await db.person.count({where:{legalName:{startsWith:marker}}})).toBe(0);
