@@ -702,3 +702,175 @@ Recommended sequence:
 9. only after query/security closure begin AI Data Assistant runtime.
 
 This sequencing avoids semantic migrations being built against moving transaction state machines.
+
+
+## 53. Tier-C Decision Package v1 — approved semantic decisions
+
+This section resolves selected business semantics so SG-A1 can map sources without inventing formulas. These decisions define analytics meaning only; they do not alter R1.0B economic rules.
+
+### 53.1 WEB_MEMBER → QUALIFIED_MEMBER conversion
+
+Use cohort conversion, not mismatched calendar numerator/denominator.
+
+Cohort entry:
+- Person's first authoritative WEB_MEMBER_EFFECTIVE event.
+- Each Person enters this cohort once.
+
+Conversion event:
+- Person's first authoritative QUALIFICATION_ACTIVATED / first transition to QUALIFIED_MEMBER.
+- Additional Balls do not count as additional Person conversions.
+
+Certified candidate metrics:
+- WEB_TO_QUALIFIED_7D_RATE
+- WEB_TO_QUALIFIED_30D_RATE
+- WEB_TO_QUALIFIED_90D_RATE
+- WEB_TO_QUALIFIED_MEDIAN_DAYS
+- WEB_TO_QUALIFIED_AVG_DAYS
+
+For Nd rate:
+denominator = Persons whose WEB_MEMBER cohort entry is old enough to have a complete N-day observation window as-of the metric cutoff, unless the response is explicitly labeled an immature/in-progress cohort.
+numerator = denominator Persons whose first QUALIFIED_MEMBER transition occurs within N elapsed days after their WEB_MEMBER cohort entry.
+A Person converting before/at the exact governed N-day boundary counts once.
+Censoring/maturity MUST be explicit; incomplete cohorts MUST NOT be compared to mature cohorts as if equivalent.
+
+Default business comparison should favor 30D conversion; 7D is early signal and 90D is longer-cycle. No single lifetime conversion KPI is designated as the default because it changes indefinitely.
+
+Allowed dimensions after privacy/grain review may include registration cohort, registration source, initial Retail Referrer Ball, and first Qualification Package. Historical attribution/package snapshots are required; current values cannot rewrite cohorts.
+
+### 53.2 Conversion duration
+
+WEB_TO_QUALIFIED_DURATION:
+start = first WEB_MEMBER_EFFECTIVE.
+end = first QUALIFICATION_ACTIVATED / first QUALIFIED_MEMBER transition.
+Only converted Persons have a completed duration.
+MEDIAN is the preferred central-tendency display; AVG may accompany it.
+Non-converted Persons are censored and MUST NOT be treated as zero-day durations.
+
+### 53.3 Return analytics — operational vs cohort
+
+Do not publish one ambiguous RETURN_RATE.
+
+Operational facts:
+- POSTED_RETURN_UNITS_BY_PERIOD
+- POSTED_RETURN_AMOUNT_BY_PERIOD
+These answer "how much return activity was posted in this period" and use RETURN_POSTED_AT.
+
+Quality/cohort metrics:
+- 30D_RETURN_UNIT_RATE
+- 30D_RETURN_AMOUNT_RATE
+Recommended primary quality metric: 30D_RETURN_UNIT_RATE.
+
+30D_RETURN_UNIT_RATE:
+denominator = recognized sold units belonging to a sales cohort with a complete 30-day observation window.
+numerator = those cohort units with authoritative POSTED return quantity within 30 elapsed days from the governed sales-recognition event.
+Partial returns count returned quantity, not merely return-document count.
+
+30D_RETURN_AMOUNT_RATE:
+denominator = authoritative cohort product sales base approved by Commerce mapping.
+numerator = authoritative POSTED return monetary effect within the 30-day window attributable to that cohort.
+Exact monetary base remains SOURCE_MAPPING_REQUIRED until current Order/Return money semantics are audited.
+
+Open returns not POSTED do not enter official return numerators.
+Late returns after day 30 are excluded from 30D cohort rate but remain visible in operational return facts and may support future 60D/90D metrics.
+
+### 53.4 Placement pending duration
+
+PLACEMENT_PENDING_DURATION:
+start = authoritative PAYMENT_CONFIRMED_AT for the qualification acquisition that enters PLACEMENT_PENDING.
+end = authoritative PLACEMENT_COMMITTED_AT that activates the Qualification.
+If payment is reversed/cancelled/refunded before placement, it is not a completed placement-duration observation; cancellation analysis is separate.
+
+Candidate certified metrics after timestamp mapping:
+- PLACEMENT_PENDING_COUNT (current state as-of)
+- PLACEMENT_PENDING_MEDIAN_HOURS
+- PLACEMENT_PENDING_AVG_HOURS
+- PLACEMENT_PENDING_P95_HOURS
+- PLACEMENT_PENDING_OVER_24H_COUNT
+
+For current pending age, duration is asOf - start and is explicitly an open age, not a completed duration.
+Median is preferred over average for operational summary; P95 exposes tail delay.
+
+### 53.5 UCell Commerce Sales vs accounting revenue
+
+UCell Semantic Core MUST NOT label internal order/payment analytics as accounting Revenue unless an ERP/accounting authority is integrated and the accounting definition is certified.
+
+Approved terminology:
+- GROSS_PRODUCT_SALES
+- DISCOUNT_AMOUNT
+- NET_PAID_PRODUCT_AMOUNT
+- POSTED_RETURN_AMOUNT
+- COMMERCE_NET_AFTER_POSTED_RETURNS (candidate, source mapping required)
+
+"Accounting Revenue", tax revenue recognition and statutory accounting remain ERP/accounting authority.
+
+COMMERCE_NET_AFTER_POSTED_RETURNS is an operational commerce metric, not GAAP/IFRS/accounting revenue. Exact period/cohort variant must be named explicitly.
+
+### 53.6 ERP truth provenance
+
+Add TruthSourceDefinition separate from subjective confidence scoring.
+
+Truth source categories:
+- UCELL_AUTHORITATIVE — UCell owns the business truth (membership, Ball, UCell order, UCell award etc.).
+- EXTERNAL_INTEGRATED — received from an external authoritative system through governed API/webhook/integration.
+- EXTERNAL_IMPORTED — received through governed CSV/Excel/media import.
+- MANUAL_VERIFIED — entered/confirmed by authorized Admin with audit/evidence.
+- UNKNOWN — no reliable current source.
+
+This is provenance, not a numeric confidence score.
+
+ERP fulfillment facts MUST carry:
+sourceSystem, truthSource, externalReference where available, dataThrough, imported/receivedAt, verifiedBy when manual, evidenceRef.
+
+Example: ERP handoff success is UCELL_AUTHORITATIVE about the handoff event; shipment status imported from EzTooL is EXTERNAL_IMPORTED; an Admin-entered tracking status is MANUAL_VERIFIED.
+
+### 53.7 ERP freshness semantics
+
+For imported/manual ERP data:
+- no import/current evidence => UNKNOWN, not "not shipped";
+- stale data remains last-known state + STALE freshness;
+- UI/AI must state data-through time when discussing fulfillment;
+- UCell must not infer invoice/shipment/return completion merely from successful order handoff.
+
+## 54. Cohort engine requirements
+
+CohortDefinition metadata:
+cohortCode, entryFact, subjectGrain, observationWindow, maturityRule, conversion/outcomeFact, eventBoundaryPolicy, timezone, allowedDimensions, privacy, version.
+
+Cohort metrics MUST distinguish:
+MATURE — full observation window elapsed.
+IN_PROGRESS — window not elapsed.
+CENSORED — subject exits/invalidates under an approved exclusion policy.
+UNKNOWN — required evidence unavailable.
+
+Default official cohort comparisons use MATURE cohorts unless explicitly labeled otherwise.
+
+## 55. Quantile/median semantics
+
+Median/P95 metrics must be computed by deterministic server/database analytics, not by LLM.
+Definition declares population, open-vs-completed observations, time unit and rounding/display policy.
+P95_PLACEMENT_PENDING_HOURS uses completed durations unless a separately named OPEN_PENDING_AGE_P95 metric is created.
+Never mix open pending ages with completed placement durations under one metric code.
+
+## 56. Truth source is orthogonal to certification
+
+A metric may be CERTIFIED while consuming EXTERNAL_IMPORTED facts if lineage/freshness/import controls are certified.
+Conversely, UCELL_AUTHORITATIVE provenance alone does not make a metric CERTIFIED; semantic gates still apply.
+TruthSource answers "where did the fact come from?" Certification answers "is this metric definition/source chain approved and verified?"
+
+## 57. Additional Golden cases for Tier-C decisions
+
+- cohort denominator excludes immature subjects for official 7D/30D/90D rates.
+- one Person converts at most once for WEB→QUALIFIED Person conversion.
+- additional Ball does not increment conversion numerator.
+- non-converted Person is censored, not duration=0.
+- operational posted returns and 30D cohort return rate produce intentionally different results when returns cross calendar periods.
+- partial return uses returned quantity.
+- unposted return excluded from official numerator.
+- payment-confirmed→placement-committed duration maps exact acquisition.
+- cancelled-before-placement not counted as completed duration.
+- open pending age not mixed with completed duration.
+- Commerce metrics are not labeled Accounting Revenue.
+- ERP handoff success does not imply shipment/invoice.
+- missing ERP import => UNKNOWN.
+- imported ERP state carries dataThrough and EXTERNAL_IMPORTED provenance.
+- manual fulfillment fact carries MANUAL_VERIFIED and audit evidence.
