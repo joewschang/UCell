@@ -5,7 +5,7 @@ import {it,expect,vi,afterEach} from 'vitest';
 import ConnectedShop from '../src/ConnectedShop';
 let tree:ReactTestRenderer;
 const q={id:'qa',code:'BALL1',rank:'STARTER',active:true,ballLabel:'球1'};
-const order={qualificationId:'qa',id:'order1',status:'CONFIRMED',total:'399',createdAt:'2026-09-16T00:00:00Z',lines:[{productId:'p1',name:'Core product',quantity:'1',amount:'399'}]};
+const order={qualificationId:'qa',id:'order1',orderNo:'1',status:'CONFIRMED',total:'399',createdAt:'2026-09-16T00:00:00Z',lines:[{productId:'p1',name:'Core product',quantity:'1',amount:'399'}]};
 const delivery={recipientName:'Test Member',phone:'+886223456789',countryCode:'TW',postalCode:'100',region:'Taipei',city:'Zhongzheng',address:'Test Road 1',complete:true,updatedAt:'2026-09-17T00:00:00Z'};
 const envelope=(data:unknown)=>({ok:true,status:200,json:async()=>({data,meta:{api_version:'v1',request_id:'shop-test',timestamp:'2026-09-16T00:00:00Z'}})});
 afterEach(()=>{if(tree)act(()=>tree.unmount());vi.unstubAllGlobals();});
@@ -13,7 +13,7 @@ const button=(label:string)=>tree.root.findAllByType('button').find(b=>b.childre
 async function mount(){vi.stubGlobal('sessionStorage',{getItem:()=>null});await act(async()=>{tree=create(<MemoryRouter><ConnectedShop q={q}/></MemoryRouter>);});}
 it('uses Core order amount and requests authorized detail; submits no price or PV',async()=>{
  const fetch=vi.fn(async(url:string,init:RequestInit)=>url.endsWith('/delivery-profile')?envelope(delivery):url.endsWith('/products')?envelope([{id:'p1',name:'Core product',price:999999,pv:null,available:true}]):envelope(order));vi.stubGlobal('fetch',fetch);
- await mount();act(()=>button('加入購物車').props.onClick());act(()=>button('前往結帳').props.onClick());await act(async()=>{await button('使用此配送資料建立待付款訂單').props.onClick();});
+ await mount();act(()=>button('加入購物車').props.onClick());act(()=>button('前往結帳').props.onClick());await act(async()=>{await button('使用此配送資料建立待付款訂單').props.onClick();await Promise.resolve();});
  const post=fetch.mock.calls.find(([,init])=>init.method==='POST')!;
  expect(JSON.parse(post[1].body as string)).toEqual({qualificationId:'qa',items:[{productId:'p1',quantity:'1'}]});
  expect((post[1].headers as Headers).get('Idempotency-Key')).toBeTruthy();
