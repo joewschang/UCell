@@ -8528,6 +8528,58 @@
         ]
       }
     },
+    "/api/v1/member/retail-referrer": {
+      "get": {
+        "description": "Returns the authenticated WEB_MEMBER current locked retail referrer without holder PII. A null result means checkout may remain unattributed or validate a candidate.",
+        "operationId": "memberRetailReferrer",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "memberBearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "Member - Retail referral"
+        ]
+      }
+    },
+    "/api/v1/member/retail-referrer/candidate": {
+      "post": {
+        "description": "Validates a retail Ball candidate without creating permanent attribution, SponsorRelationship, Binary edge, Qualification, or monetary effect.",
+        "operationId": "memberValidateRetailReferrerCandidate",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RetailReferrerCandidateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "memberBearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "Member - Retail referral"
+        ]
+      }
+    },
     "/api/v1/admin/orders": {
       "get": {
         "operationId": "adminSearchOrders",
@@ -15115,6 +15167,11 @@
             "type": "string",
             "pattern": "^[A-Z][A-Z0-9_-]{0,39}(?:X\\d{6,}|\\d{6,})$",
             "description": "Untrusted Sponsor Ball candidate. Accepted only for a qualification package; server resolves it again and records evidence. It never creates a relationship for retail orders."
+          },
+          "retailReferralCode": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Z0-9_-]{0,39}(?:X\\d{6,}|\\d{6,})$",
+            "description": "Optional WEB_MEMBER retail referral Ball candidate. Validation is non-binding; the server revalidates it only when the first attributed retail order is committed."
           }
         },
         "additionalProperties": false
@@ -15148,6 +15205,18 @@
         },
         "required": [
           "transitionState"
+        ]
+      },
+      "RetailReferrerCandidateDto": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "Untrusted public Ball number. This read validates only; it never creates a retail attribution or Sponsor relationship."
+          }
+        },
+        "required": [
+          "code"
         ]
       },
       "CreateOrderDto": {

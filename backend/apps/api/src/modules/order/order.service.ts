@@ -10,8 +10,9 @@ import { QualificationAccessService } from '../auth/qualification-access.service
 import { PackageConfigService } from '../package-config/package-config.service';
 import { SponsorResolver } from '../qualification/sponsor-resolver.service';
 import { OrganizationService } from '../organization/organization.service';
+import { RetailReferrerAttributionService } from './retail-referrer-attribution.service';
 
-type MemberOrderInput=Partial<CreateOrderDto>&{packageVersionId?:string;targetQualificationId?:string;sponsorCode?:string;selections?:Array<{productRuleProfileId:string;quantity:number}>};
+type MemberOrderInput=Partial<CreateOrderDto>&{packageVersionId?:string;targetQualificationId?:string;sponsorCode?:string;retailReferralCode?:string;selections?:Array<{productRuleProfileId:string;quantity:number}>};
 
 @Injectable()
 export class OrderService {
@@ -23,14 +24,65 @@ export class OrderService {
     private readonly packages?: PackageConfigService,
     private readonly sponsors?: SponsorResolver,
     private readonly organization?: OrganizationService,
+    private readonly retailAttributions?: RetailReferrerAttributionService,
   ) {}
 
   async createMember(dto:MemberOrderInput,key:string,requestId:string,personId:string){
     if(dto.packageVersionId)return this.createPackageMember(dto,key,requestId,personId);
-    if(!dto.qualificationId||!dto.items?.length||dto.selections?.length)throw new UnprocessableEntityException({code:'INVALID_ORDER_SHAPE'});
+    if(!dto.items?.length||dto.selections?.length)throw new UnprocessableEntityException({code:'INVALID_ORDER_SHAPE'});
+    if(!dto.qualificationId)return this.createWebRetailMember(dto,key,requestId,personId);
     await new QualificationAccessService(this.prisma).assertHolder(personId,dto.qualificationId);
     try{return await this.create({qualificationId:dto.qualificationId,items:dto.items,purpose:'RETAIL',sourceReferralToken:dto.sourceReferralToken,clientReference:dto.clientReference},key,requestId,personId,true);}
     catch(error){if(['P2002','P2034'].includes((error as any).code))throw new ConflictException({code:'RETRYABLE_CONFLICT',message:'Concurrent operation; retry the identical request with the same Idempotency-Key.'});throw error;}
+  }
+
+  private async createWebRetailMember(dto:MemberOrderInput,key:string,requestId:string,personId:string){
+    if(dto.sponsorCode)throw new UnprocessableEntityException({code:'QUALIFICATION_SPONSOR_CODE_NOT_ALLOWED_FOR_RETAIL'});
+    const correlationId=randomUUID();
+    try{return await this.idempotency.execute(`member:web-retail-order:create:${personId}`,key,dto,async tx=>{
+      const person=await tx.person.findUnique({where:{personId},select:{status:true}});
+      if(person?.status!=='EFFECTIVE')throw new ConflictException({code:'MEMBER_PERSON_DISABLED'});
+      const ownedEffective=await tx.qualification.count({where:{currentHolderPersonId:personId,status:'EFFECTIVE'}});
+      if(ownedEffective)throw new ConflictException({code:'QUALIFIED_MEMBER_RETAIL_REQUIRES_BALL_CONTEXT'});
+      const now=new Date(),productIds=[...new Set(dto.items!.map(item=>item.productId))];
+      const products=await tx.productReference.findMany({where:{productId:{in:productIds},isActive:true}});
+      if(products.length!==productIds.length)throw new ConflictException({code:'RESOURCE_NOT_FOUND'});
+      const lines:any[]=[]; let gross=new Prisma.Decimal(0); let ruleVersionCode='R1.0B'; let parameterSnapshotHash:string|undefined;
+      for(const item of dto.items!){
+        const product=products.find(row=>row.productId===item.productId)!;
+        const profiles=await tx.productRuleProfile.findMany({where:{productId:product.productId,effectiveFrom:{lte:now},OR:[{effectiveTo:null},{effectiveTo:{gt:now}}]},orderBy:{effectiveFrom:'desc'}});
+        if(profiles.length!==1)throw new UnprocessableEntityException({code:'RULE_PROFILE_CONFIGURATION_PENDING'});
+        const profile=profiles[0];
+        const quantity=new Prisma.Decimal(item.quantity);
+        if(!quantity.isInteger()||quantity.lte(0)||quantity.gt(99)||product.currentPrice.lt(0))throw new UnprocessableEntityException({code:'INVALID_PRODUCT_QUANTITY_OR_PRICE'});
+        const lineAmount=product.currentPrice.mul(quantity); gross=gross.add(lineAmount); ruleVersionCode=profile.ruleVersionCode; parameterSnapshotHash=profile.parameterSnapshotHash??parameterSnapshotHash;
+        lines.push({productId:product.productId,skuSnapshot:product.sku,productNameSnapshot:product.displayName,quantity,unitPrice:product.currentPrice,lineAmount,gpvRateSnapshot:new Prisma.Decimal(0),gpvAmountSnapshot:new Prisma.Decimal(0),pvRateSnapshot:new Prisma.Decimal(0),ruleProfileSnapshot:{profileId:profile.productRuleProfileId,ruleVersionCode:profile.ruleVersionCode,parameterSnapshotHash:profile.parameterSnapshotHash,pricingContext:'WEB_MEMBER_RETAIL_LIST_PRICE',retailReferral:{enabled:profile.retailReferralEnabled,calculationType:profile.retailReferralCalculationType,rate:profile.retailReferralRate?.toString()??null,baseType:profile.retailReferralBaseType}}});
+      }
+      const order=await tx.order.create({data:{purchaserPersonId:personId,purpose:'RETAIL',status:'CONFIRMED',grossAmount:gross,discountAmount:new Prisma.Decimal(0),netAmount:gross,ruleVersionCode,parameterSnapshotHash,clientReference:dto.clientReference,confirmedAt:now,lines:{create:lines}},include:{lines:true}});
+      const attribution=await (this.retailAttributions??new RetailReferrerAttributionService(this.prisma,this.sponsors??new SponsorResolver(this.prisma))).resolveForRetailOrder(tx,{personId,candidateCode:dto.retailReferralCode,orderId:order.orderId,at:now,correlationId});
+      const profileById=new Map<string,any>();
+      for(const item of lines){const profileId=(item.ruleProfileSnapshot as any).profileId;if(!profileById.has(profileId))profileById.set(profileId,await tx.productRuleProfile.findUniqueOrThrow({where:{productRuleProfileId:profileId}}));}
+      await tx.retailReferralOrderLineSnapshot.createMany({
+        data: order.lines.map(line => {
+          const profile=profileById.get((line.ruleProfileSnapshot as any).profileId);
+          return {
+            orderLineId:line.orderLineId, orderId:order.orderId,
+            retailReferrerAttributionId:attribution?.retailReferrerAttributionId,
+            referrerQualificationId:attribution?.referrerQualificationId,
+            referrerBallNoSnapshot:attribution?.referrerBallNoSnapshot,
+            retailReferralEnabled:profile.retailReferralEnabled,
+            calculationType:profile.retailReferralCalculationType, rate:profile.retailReferralRate,
+            baseType:profile.retailReferralBaseType, netPaidItemAmount:line.lineAmount,
+            productRuleProfileId:profile.productRuleProfileId, productRuleVersion:profile.ruleVersionCode,
+            parameterSnapshotHash:profile.parameterSnapshotHash,
+            attributionEvidence:{attributionId:attribution?.retailReferrerAttributionId??null,source:attribution?.source??'NONE',asOf:now.toISOString()},
+          };
+        }),
+      });
+      await this.audit.write(tx,{actorType:'MEMBER',actorId:personId,action:'WEB_MEMBER_RETAIL_ORDER_CREATED',entityType:'ORDER',entityId:order.orderId,afterData:{orderId:order.orderId,personId,qualificationId:null,netAmount:order.netAmount.toString(),retailReferrerBallNo:attribution?.referrerBallNoSnapshot??null},requestId,correlationId});
+      await this.outbox.enqueue(tx,{eventType:'WEB_MEMBER_RETAIL_ORDER_CREATED',aggregateType:'ORDER',aggregateId:order.orderId,payload:{schemaVersion:1,orderId:order.orderId,personId,recognitionStatus:'PAYMENT_PENDING'},correlationId});
+      return order;
+    });}catch(error){if(['P2002','P2034','23P01'].includes((error as any).code))throw new ConflictException({code:'RETRYABLE_CONFLICT'});throw error;}
   }
 
   private async createPackageMember(dto:MemberOrderInput,key:string,requestId:string,personId:string){
@@ -257,9 +309,11 @@ export class OrderService {
       // Legacy unit harnesses predate the additive package delegate; production Prisma always provides it.
       const packageSnapshot=tx.packagePurchaseSnapshot?await tx.packagePurchaseSnapshot.findUnique({where:{orderId}}):null;
       if(packageSnapshot){
+        const packageQualificationId=order.qualificationId;
+        if(!packageQualificationId)throw new UnprocessableEntityException({code:'PACKAGE_ORDER_QUALIFICATION_MISSING'});
         let downstreamStatus='RECOGNITION_CONFIGURATION_PENDING';
         if(packageSnapshot.packageClass==='QUALIFICATION'){
-          const selected=tx.qualificationSponsorSelectionEvidence?await tx.qualificationSponsorSelectionEvidence.findFirst({where:{qualificationId:order.qualificationId},orderBy:{selectedAt:'desc'}}):null;
+          const selected=tx.qualificationSponsorSelectionEvidence?await tx.qualificationSponsorSelectionEvidence.findFirst({where:{qualificationId:packageQualificationId},orderBy:{selectedAt:'desc'}}):null;
           let sponsorQualificationId:string|undefined;
           if(selected){
             const selectedBall=await tx.qualification.findUnique({where:{qualificationId:selected.selectedSponsorQualificationId},select:{ballNo:true}});
@@ -268,15 +322,21 @@ export class OrderService {
             if(resolved.sponsorQualificationId!==selected.selectedSponsorQualificationId)throw new UnprocessableEntityException({code:'SPONSOR_EVIDENCE_INVALID'});
             sponsorQualificationId=resolved.sponsorQualificationId;
             const sponsorSequenceNo=await (this.organization??new OrganizationService(this.prisma)).allocateSponsorSequence(tx,sponsorQualificationId);
-            await tx.sponsorRelationship.create({data:{sponsorQualificationId,childQualificationId:order.qualificationId,sponsorSequenceNo,effectiveFrom:occurredAt}});
+            await tx.sponsorRelationship.create({data:{sponsorQualificationId,childQualificationId:packageQualificationId,sponsorSequenceNo,effectiveFrom:occurredAt}});
           }
           const placementDueAt=sponsorQualificationId?new Date(occurredAt.getTime()+72*60*60*1000):undefined;
-          await tx.qualificationSetup.create({data:{qualificationId:order.qualificationId,ownerPersonId:packageSnapshot.personId,qualifyingOrderId:orderId,packagePurchaseSnapshotId:packageSnapshot.packagePurchaseSnapshotId,packageType:packageSnapshot.packageCode,setupStatus:sponsorQualificationId?'PLACEMENT_PENDING':'BALL_SETUP_PENDING',finalSponsorQualificationId:sponsorQualificationId,placementRequestedAt:sponsorQualificationId?occurredAt:undefined,placementDueAt,setupPolicyVersion:'NR-DEC-004-V1'}});
+          await tx.qualificationSetup.create({data:{qualificationId:packageQualificationId,ownerPersonId:packageSnapshot.personId,qualifyingOrderId:orderId,packagePurchaseSnapshotId:packageSnapshot.packagePurchaseSnapshotId,packageType:packageSnapshot.packageCode,setupStatus:sponsorQualificationId?'PLACEMENT_PENDING':'BALL_SETUP_PENDING',finalSponsorQualificationId:sponsorQualificationId,placementRequestedAt:sponsorQualificationId?occurredAt:undefined,placementDueAt,setupPolicyVersion:'NR-DEC-004-V1'}});
           downstreamStatus=sponsorQualificationId?'PLACEMENT_PENDING':'BALL_SETUP_PENDING';
         }
         await this.outbox.enqueue(tx,{eventType:'PACKAGE_PAYMENT_CONFIRMED',aggregateType:'ORDER',aggregateId:orderId,correlationId,payload:{schemaVersion:1,eventType:'PACKAGE_PAYMENT_CONFIRMED',orderId,qualificationId:order.qualificationId,packagePurchaseSnapshotId:packageSnapshot.packagePurchaseSnapshotId,packageClass:packageSnapshot.packageClass,occurredAt:occurredAt.toISOString(),recognitionStatus:'CONFIGURATION_PENDING',downstreamStatus}});
         await this.audit.write(tx,{actorType:actorId?'USER':'SYSTEM',actorId,action:'PACKAGE_PAYMENT_CONFIRMED',entityType:'ORDER',entityId:orderId,afterData:{paymentEventId:payment.paymentEventId,packagePurchaseSnapshotId:packageSnapshot.packagePurchaseSnapshotId,downstreamStatus},requestId,correlationId});
         return {orderId,status:'PAID',paymentEventId:payment.paymentEventId,correlationId,packagePurchaseSnapshotId:packageSnapshot.packagePurchaseSnapshotId,downstreamStatus};
+      }
+
+      if(!order.qualificationId){
+        await this.outbox.enqueue(tx,{eventType:'WEB_MEMBER_RETAIL_PAYMENT_CONFIRMED',aggregateType:'ORDER',aggregateId:orderId,correlationId,payload:{schemaVersion:1,orderId,personId:order.purchaserPersonId,amount:order.netAmount.toString(),occurredAt:occurredAt.toISOString(),ruleVersionCode:order.ruleVersionCode,parameterSnapshotHash:order.parameterSnapshotHash,recognitionStatus:'RETAIL_REFERRAL_RECOGNITION_PENDING'}});
+        await this.audit.write(tx,{actorType:actorId?'USER':'SYSTEM',actorId,action:'WEB_MEMBER_RETAIL_PAYMENT_CONFIRMED',entityType:'ORDER',entityId:orderId,afterData:{paymentEventId:payment.paymentEventId,amount:amount.toString(),referenceNo:dto.referenceNo},requestId,correlationId});
+        return {orderId,status:'PAID',paymentEventId:payment.paymentEventId,correlationId};
       }
 
       await this.outbox.enqueue(tx, {

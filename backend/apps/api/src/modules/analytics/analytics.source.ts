@@ -30,7 +30,7 @@ export async function captureAnalyticsFacts(tx:Prisma.TransactionClient,at:Date)
     if(candidates.length!==1||!personIds.has(candidates[0].holderPersonId))throw new ServiceUnavailableException('ANALYTICS_EVENT_OWNER_UNAVAILABLE');
     activities.push({id,qualificationId,personId:candidates[0].holderPersonId,at:time.toISOString(),repurchase});
   };
-  for(const o of paid)push(`ORDER_PAID:${o.orderId}`,o.qualificationId,o.paidAt!,o.purpose==='REPURCHASE');
+  for(const o of paid)if(o.qualificationId)push(`ORDER_PAID:${o.orderId}`,o.qualificationId,o.paidAt!,o.purpose==='REPURCHASE');
   for(const r of recognized)push(`REPURCHASE_RECOGNIZED:${r.recognitionId}`,r.subscription.qualificationId,r.recognizedAt!,true);
   return {persons:persons.map(p=>({id:p.personId,joinedAt:p.createdAt.toISOString(),closed:p.status==='CLOSED',registered:p.membershipState!==null})),
     qualifications:qs.flatMap(q=>q.currentHolderPersonId===null?[]:[{id:q.qualificationId,personId:q.currentHolderPersonId,createdAt:q.createdAt.toISOString(),system:systemIds.has(q.qualificationId),active:q.status==='EFFECTIVE'&&activeIds.has(q.qualificationId)}]),

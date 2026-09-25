@@ -614,6 +614,9 @@ model Person {
   referralBindingHistory   ReferralAttributionHistory[]
   formalMemberApplications FormalMemberApplication[]
   accountRecoveryRequests  AccountRecoveryRequest[]
+  retailOrders             Order[]                 @relation("RetailOrderPurchaser")
+  retailReferrerAttributions RetailReferrerAttribution[]
+  retailReferrerCorrectionEvents RetailReferrerAttributionEvent[] @relation("RetailReferrerCorrectionActor")
 
   @@index([legalName])
   @@index([mobile])
@@ -812,6 +815,8 @@ model Qualification {
   globalRankHistory           QualificationGlobalRankHistory[]
   payoutLines                 PayoutLine[]
   payableEntries              PayableEntry[]
+  retailReferrerAttributions  RetailReferrerAttribution[]
+  retailReferralLineSnapshots RetailReferralOrderLineSnapshot[]
 
   @@index([currentHolderPersonId])
   @@index([status, effectiveAt])
@@ -1098,6 +1103,10 @@ model ProductRuleProfile {
   epvEligible           Boolean   @default(false) @map("epv_eligible")
   ruleVersionCode       String    @map("rule_version_code")
   parameterSnapshotHash String?   @map("parameter_snapshot_hash")
+  retailReferralEnabled Boolean   @default(false) @map("retail_referral_enabled")
+  retailReferralCalculationType String? @map("retail_referral_calculation_type")
+  retailReferralRate    Decimal?  @map("retail_referral_rate") @db.Decimal(10, 6)
+  retailReferralBaseType String? @map("retail_referral_base_type")
   createdAt             DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
 
   product                   ProductReference           @relation(fields: [productId], references: [productId])
@@ -1111,7 +1120,8 @@ model ProductRuleProfile {
 model Order {
   orderId                 String       @id @default(uuid()) @map("order_id") @db.Uuid
   orderNo                 BigInt       @unique @default(autoincrement()) @map("order_no")
-  qualificationId         String       @map("qualification_id") @db.Uuid
+  qualificationId         String?      @map("qualification_id") @db.Uuid
+  purchaserPersonId       String?      @map("purchaser_person_id") @db.Uuid
   purpose                 OrderPurpose @default(RETAIL)
   status                  OrderStatus  @default(DRAFT)
   currency                String       @default("TWD")
@@ -1127,7 +1137,8 @@ model Order {
   createdAt               DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt               DateTime     @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  qualification         Qualification          @relation(fields: [qualificationId], references: [qualificationId])
+  qualification         Qualification?         @relation(fields: [qualificationId], references: [qualificationId])
+  purchaser             Person?                @relation("RetailOrderPurchaser", fields: [purchaserPersonId], references: [personId])
   lines                 OrderLine[]
   paymentEvents         PaymentEvent[]
   payments              Payment[]
@@ -1135,8 +1146,11 @@ model Order {
   returns               ReturnCase[]
   invoices              Invoice[]
   fulfillments          Fulfillment[]
+  retailReferrerAttributionsCreated RetailReferrerAttribution[]
+  retailReferralLineSnapshots RetailReferralOrderLineSnapshot[]
 
   @@index([qualificationId, createdAt])
+  @@index([purchaserPersonId, createdAt])
   @@index([status, createdAt])
   @@map("order")
   @@schema("commerce")
@@ -1160,6 +1174,7 @@ model OrderLine {
   order                     Order                      @relation(fields: [orderId], references: [orderId])
   product                   ProductReference           @relation(fields: [productId], references: [productId])
   inventoryReservationLines InventoryReservationLine[]
+  retailReferralSnapshot    RetailReferralOrderLineSnapshot?
 
   @@index([orderId])
   @@map("order_line")
@@ -3366,6 +3381,86 @@ enum QualificationKind {
   MEMBER_ORIGIN
   COMPANY_BOOTSTRAP
   @@schema("membership")
+}
+
+/// The WEB_MEMBER retail referral binding is deliberately separate from
+/// SponsorRelationship and from the transient anonymous ReferralAttribution flow.
+/// Rows are temporal: corrections close the prior row and create a new row; orders
+/// retain their immutable line snapshots.
+model RetailReferrerAttribution {
+  retailReferrerAttributionId String @id @default(uuid()) @map("retail_referrer_attribution_id") @db.Uuid
+  personId                     String @map("person_id") @db.Uuid
+  referrerQualificationId      String @map("referrer_qualification_id") @db.Uuid
+  referrerBallNoSnapshot       String @map("referrer_ball_no_snapshot")
+  source                       String
+  effectiveFrom                DateTime @map("effective_from") @db.Timestamptz(6)
+  effectiveTo                  DateTime? @map("effective_to") @db.Timestamptz(6)
+  createdByOrderId             String? @map("created_by_order_id") @db.Uuid
+  correctionReason             String? @map("correction_reason")
+  createdAt                    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  person                       Person @relation(fields: [personId], references: [personId])
+  referrerQualification        Qualification @relation(fields: [referrerQualificationId], references: [qualificationId])
+  createdByOrder               Order? @relation(fields: [createdByOrderId], references: [orderId])
+  events                       RetailReferrerAttributionEvent[]
+  lineSnapshots                RetailReferralOrderLineSnapshot[]
+
+  @@unique([personId, effectiveFrom])
+  @@index([personId, effectiveFrom, effectiveTo])
+  @@index([referrerQualificationId, effectiveFrom])
+  @@map("retail_referrer_attribution")
+  @@schema("commerce")
+}
+
+model RetailReferrerAttributionEvent {
+  retailReferrerAttributionEventId String @id @default(uuid()) @map("retail_referrer_attribution_event_id") @db.Uuid
+  retailReferrerAttributionId      String @map("retail_referrer_attribution_id") @db.Uuid
+  action                           String
+  actorPersonId                    String? @map("actor_person_id") @db.Uuid
+  reason                           String? 
+  effectiveFrom                    DateTime @map("effective_from") @db.Timestamptz(6)
+  correlationId                    String @map("correlation_id") @db.Uuid
+  evidenceHash                     String @map("evidence_hash")
+  createdAt                        DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  attribution                      RetailReferrerAttribution @relation(fields: [retailReferrerAttributionId], references: [retailReferrerAttributionId])
+  actor                            Person? @relation("RetailReferrerCorrectionActor", fields: [actorPersonId], references: [personId])
+
+  @@index([retailReferrerAttributionId, createdAt])
+  @@index([actorPersonId, createdAt])
+  @@map("retail_referrer_attribution_event")
+  @@schema("commerce")
+}
+
+/// Immutable recognition input for a retail order line. This snapshot prevents a
+/// later SKU rule change or attribution correction from rewriting history.
+model RetailReferralOrderLineSnapshot {
+  retailReferralOrderLineSnapshotId String @id @default(uuid()) @map("retail_referral_order_line_snapshot_id") @db.Uuid
+  orderLineId                        String @unique @map("order_line_id") @db.Uuid
+  orderId                            String @map("order_id") @db.Uuid
+  retailReferrerAttributionId        String? @map("retail_referrer_attribution_id") @db.Uuid
+  referrerQualificationId            String? @map("referrer_qualification_id") @db.Uuid
+  referrerBallNoSnapshot             String? @map("referrer_ball_no_snapshot")
+  retailReferralEnabled              Boolean @map("retail_referral_enabled")
+  calculationType                    String? @map("calculation_type")
+  rate                               Decimal? @db.Decimal(10, 6)
+  baseType                           String? @map("base_type")
+  netPaidItemAmount                  Decimal @map("net_paid_item_amount") @db.Decimal(18, 2)
+  productRuleProfileId               String @map("product_rule_profile_id") @db.Uuid
+  productRuleVersion                 String @map("product_rule_version")
+  parameterSnapshotHash              String? @map("parameter_snapshot_hash")
+  attributionEvidence                Json @map("attribution_evidence")
+  createdAt                          DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  orderLine                          OrderLine @relation(fields: [orderLineId], references: [orderLineId])
+  order                              Order @relation(fields: [orderId], references: [orderId])
+  attribution                        RetailReferrerAttribution? @relation(fields: [retailReferrerAttributionId], references: [retailReferrerAttributionId])
+  referrerQualification              Qualification? @relation(fields: [referrerQualificationId], references: [qualificationId])
+
+  @@index([orderId])
+  @@index([referrerQualificationId, createdAt])
+  @@map("retail_referral_order_line_snapshot")
+  @@schema("commerce")
 }
 
 model LineMessagingEvent {
