@@ -19,7 +19,7 @@
     "test:analytics": "node scripts/management-analytics-test.mjs",
     "analytics:refresh": "node scripts/management-analytics-refresh.mjs",
     "build": "pnpm -r build",
-    "test": "pnpm -r --filter '!@ucell/api' test && pnpm test:api:isolated && pnpm test:todo:gate",
+    "test": "pnpm --filter @ucell/shared test && pnpm --filter @ucell/contracts test && pnpm --filter @ucell/database test && pnpm --filter @ucell/worker test && pnpm test:api:isolated && pnpm test:todo:gate",
     "lint": "pnpm -r lint",
     "db:generate": "pnpm --filter @ucell/database prisma generate",
     "db:migrate": "pnpm --filter @ucell/database prisma migrate dev",
