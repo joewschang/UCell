@@ -1,6 +1,8 @@
 # R1.0B Onboarding and Retail Referral Gap Re-Audit
 
-**Status date:** 2026-09-25 (Asia/Taipei)`n**Baseline:** `488995715854ec2780c850d33bf1097b6516eef8``n**Authority:** R1.0B Member Onboarding/Paper/LINE Link spec; approved Paper Order/Receipt/Company Sponsor decision; P0 privacy decision.`n
+**Status date:** 2026-09-25 (Asia/Taipei)
+**Baseline:** `a02b62e5f843cc3d59645033ea49f9e07e005aa6`
+**Authority:** R1.0B Member Onboarding/Paper/LINE Link spec; approved Paper Order/Receipt/Company Sponsor decision; P0 privacy decision.
 A slice is `COMPLETE` only when the required DB, domain, API, runtime, relevant UI, security/audit and test evidence are all present. No status below treats an unverified surface as closed.
 
 | Vertical slice | Status | Re-audit evidence / remaining closure work |
@@ -10,12 +12,12 @@ A slice is `COMPLETE` only when the required DB, domain, API, runtime, relevant 
 | SponsorResolver for Ball codes | PARTIAL | Shared Ball resolver and online/paper candidate handling exist; full eligibility and package evidence parity need Golden coverage. |
 | Referral deep link / LINE preservation | PARTIAL | Candidate is non-binding and survives current LINE path. QR UI and redirect E2E remain open. |
 | Payment → placement pending | PARTIAL | Sponsored package creates `PLACEMENT_PENDING`; complete payment, reversal and activation E2E is not yet demonstrated. |
-| Sponsor pending-placement workbench | PARTIAL | Service/API exists. Member-safe workbench fields and operations queue UI remain incomplete. |
+| Sponsor pending-placement workbench | COMPLETE | Member-safe queue and placement workbench now use public Ball numbers only. Sponsor authorization, slot/cycle/first-third-left validation and idempotency remain server-authoritative; Admin retains its separately RBAC-protected UUID command surface. |
 | Placement → activation | PARTIAL | Authoritative placement service, idempotency and slot race coverage exist. Onboarding E2E activation remains open. |
 | Paper application / duplicate Person | PARTIAL | Paper sponsor input enters shared resolver. Approved duplicate workflow, wizard and paper provenance closure are absent. |
 | Paper order | MISSING | No approved `ADMIN_PAPER_ORDER` source/channel implementation was found. |
-| Paper receipt / payment confirmation | MISSING | No receipt evidence, idempotency identity, dual-control enforcement or pre-placement reversal slice was found. |
-| Company Sponsor Alias v1 | MISSING | Approved policy exists; no effective-dated, audited, member-safe alias registry/resolver was found. |
+| Paper receipt / payment confirmation | COMPLETE | Receipt evidence identity is immutable and retry-safe; conflicting evidence fails closed, dual control is enforced, and pre-placement reversal is covered. |
+| Company Sponsor Alias v1 | COMPLETE | Effective-dated, audited Company Alias resolution is available for qualifying acquisition and paper intake; member views expose only governed display information. |
 | Existing Member LINE link | PARTIAL | Verified subject request, hashed one-time completion token, queue and focused fail-closed tests exist. Self-approval/rebind boundary and full Paper→LINE E2E remain open. |
 | Retail attribution | PARTIAL | Temporal attribution, first-order lock, forward correction, snapshots, audit/outbox exist. DB concurrency and historical correction Golden remain open. |
 | Retail checkout UX | PARTIAL | Candidate edit/clear/validation before first lock and locked display exist. Checkout/paid order UX and complete order history remain open. |
@@ -24,8 +26,8 @@ A slice is `COMPLETE` only when the required DB, domain, API, runtime, relevant 
 | RETAIL_REFERRAL award | PARTIAL | Immutable snapshot recognition has active and inactive DB integration evidence; settlement/payout and explain are open. |
 | Retail return / recovery | PARTIAL | Partial return uses append-only offset recovery and retry evidence. Full, repeated, paid-award recovery and replay Golden are open. |
 | Operations explain / notifications | PARTIAL | Attribution history exists. Retail award explain, paper receipt/payment, pending placement and safe notifications are open. |
-| P0 privacy / identifiers | PARTIAL | Existing decision and DTO direction are present. Required explicit regression covering Member bootstrap/Reservoir/non-direct PII boundaries remains open for this closure. |
-| OpenAPI / contracts | PARTIAL | Generated artifact is present; final regeneration, validation, diff and new paper/alias contracts are open. |
+| P0 privacy / identifiers | COMPLETE | Member projection hides bootstrap Company Balls and Reservoir data, prevents non-direct holder PII disclosure, and uses business identifiers in normal flows. Pending placement is additionally covered by Ball-number-only regression. |
+| OpenAPI / contracts | COMPLETE | `backend/openapi.generated.json` is regenerated for the current API and OpenAPI preflight passes. Existing operations remain governed by the generated artifact. |
 
 ## Preserved Retail Referral invariants
 
