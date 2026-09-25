@@ -2664,6 +2664,36 @@
         ]
       }
     },
+    "/api/v1/admin/existing-member-line-links": {
+      "get": {
+        "description": "Authorized queue for existing-member LINE link requests. Tokens and raw LINE credentials are never returned.",
+        "operationId": "adminListExistingMemberLineLinks",
+        "parameters": [
+          {
+            "name": "status",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "Admin - Existing Member LINE Link"
+        ]
+      }
+    },
     "/api/v1/admin/existing-member-line-links/{id}/approve": {
       "post": {
         "description": "Authorized admin approves a pending request and receives a token only for approved out-of-band delivery.",
@@ -8889,6 +8919,36 @@
         "summary": "取得訂單與付款事件",
         "tags": [
           "Admin - Commerce"
+        ]
+      }
+    },
+    "/api/v1/admin/retail-referrers/{personId}": {
+      "get": {
+        "description": "Authorized temporal retail attribution history; excludes consumer PII, Sponsor/Binary edges and payout data.",
+        "operationId": "adminReadRetailReferrerHistory",
+        "parameters": [
+          {
+            "name": "personId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "Admin - Retail referral"
         ]
       }
     },

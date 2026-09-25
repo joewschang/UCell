@@ -26,6 +26,7 @@ export class RetailReferrerAttributionService {
     });
   }
 
+  async history(personId:string){const rows=await this.db.retailReferrerAttribution.findMany({where:{personId},select:{referrerBallNoSnapshot:true,source:true,effectiveFrom:true,effectiveTo:true,correctionReason:true},orderBy:{effectiveFrom:'desc'},take:50});return rows.map(row=>({ballNo:row.referrerBallNoSnapshot,source:row.source,effectiveFrom:row.effectiveFrom.toISOString(),effectiveTo:row.effectiveTo?.toISOString()??null,reason:row.correctionReason??null}));}
   async resolveForRetailOrder(tx: any, input: { personId: string; candidateCode?: string; orderId: string; at: Date; correlationId: string }) {
     const current = await this.current(input.personId, input.at, tx);
     if (current) {
