@@ -1,6 +1,12 @@
 import {OrderService} from '../src/modules/order/order.service';
 
 describe('Paper qualification package order',()=>{
+ it('resolves the business paper application number before invoking the protected command',async()=>{
+  const service:any=new OrderService({paperApplication:{findUnique:jest.fn().mockResolvedValue({paperApplicationId:'paper-id'})}} as any,{} as any,{} as any,{} as any);
+  service.createPaperQualification=jest.fn().mockResolvedValue({value:{orderId:'order'}});
+  await service.createPaperQualificationByNo({packageVersionId:'version',selections:[{productRuleProfileId:'profile',quantity:1}]},'key','request','operator','PA-1');
+  expect(service.createPaperQualification).toHaveBeenCalledWith(expect.anything(),'key','request','operator','paper-id');
+ });
  it('uses the package path and binds one OPEN paper application without activating a qualification',async()=>{
   const tx:any={
    person:{findUnique:jest.fn().mockResolvedValue({status:'DRAFT'})},

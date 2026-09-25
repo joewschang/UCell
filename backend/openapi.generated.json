@@ -9146,7 +9146,7 @@
     },
     "/api/v1/admin/paper-applications/qualification-orders": {
       "post": {
-        "description": "Creates a Qualification package order through the same Package, Sponsor and Payment core. It never activates or places a Ball directly.",
+        "description": "Creates a Qualification package order through the same Package, Sponsor and Payment core. The paper application number is server-resolved; it never activates or places a Ball directly.",
         "operationId": "adminCreatePaperQualificationOrder",
         "parameters": [
           {

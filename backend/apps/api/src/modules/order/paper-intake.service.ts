@@ -25,5 +25,5 @@ export class PaperIntakeService {
   const rows=await this.db.paperApplication.findMany({where:input.status?{status:input.status}:undefined,include:{person:{select:{memberNo:true}},order:{select:{orderNo:true,status:true,purpose:true,netAmount:true,paidAt:true}}},orderBy:{receivedAt:'desc'},take});
   return rows.map(row=>({paperApplicationNo:row.paperApplicationNo,memberNo:row.person.memberNo,status:row.status,receivedAt:row.receivedAt.toISOString(),evidenceDocumentRef:row.evidenceDocumentRef,order:row.order?{orderNo:row.order.orderNo.toString(),status:row.order.status,purpose:row.order.purpose,total:row.order.netAmount.toString(),paidAt:row.order.paidAt?.toISOString()??null}:null,createdAt:row.createdAt.toISOString(),updatedAt:row.updatedAt.toISOString()}));
  }
- async createQualificationOrder(input:any){return this.orders.createPaperQualification(input,input.key,input.requestId,input.actorId,input.paperApplicationId);}
+ async createQualificationOrder(input:any){return this.orders.createPaperQualificationByNo(input,input.key,input.requestId,input.actorId,input.paperApplicationNo.trim());}
 }

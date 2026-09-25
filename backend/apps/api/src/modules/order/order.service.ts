@@ -96,6 +96,11 @@ export class OrderService {
     if(!application)throw new ConflictException({code:'PAPER_APPLICATION_NOT_FOUND'});
     return this.createPackageForPerson(dto,key,requestId,application.personId,{scope:`admin:paper-package-order:create:${paperApplicationId}`,actorId,paperApplicationId});
   }
+  async createPaperQualificationByNo(dto:MemberOrderInput,key:string,requestId:string,actorId:string,paperApplicationNo:string){
+    const application=await this.prisma.paperApplication.findUnique({where:{paperApplicationNo},select:{paperApplicationId:true}});
+    if(!application)throw new ConflictException({code:'PAPER_APPLICATION_NOT_FOUND'});
+    return this.createPaperQualification(dto,key,requestId,actorId,application.paperApplicationId);
+  }
 
   private async createPackageForPerson(dto:MemberOrderInput,key:string,requestId:string,personId:string,paper?:{scope:string;actorId:string;paperApplicationId:string}){
     if(dto.items?.length||!dto.selections?.length)throw new UnprocessableEntityException({code:'INVALID_PACKAGE_ORDER_SHAPE'});
