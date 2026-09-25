@@ -1,0 +1,28 @@
+{
+  "owner": "ragetech",
+  "api": "ucell-api",
+  "cloudVersion": "1.0.0",
+  "candidateVersion": "1.1.0",
+  "automaticSync": false,
+  "activationStatus": "IMPLEMENTED_NOT_ACTIVATED",
+  "workflow": ".github/workflows/swaggerhub-sync.yml",
+  "lastVerifiedManualSync": {
+    "organization": "ragetech",
+    "organizationId": "e091939f-9e70-46b2-a8e1-7cecf69daf4e",
+    "api": "ucell-api",
+    "version": "1.0.0",
+    "visibility": "private",
+    "published": false,
+    "url": "https://app.swaggerhub.com/apis/ragetech/ucell-api/1.0.0",
+    "mcpServer": "smartbear-swagger",
+    "mcpUrl": "https://swagger.mcp.smartbear.com/mcp",
+    "source": "backend/openapi.generated.json",
+    "sourceCommit": "755a2a0045f9b010a13e625c4cd34ce404014375",
+    "pathCount": 147,
+    "verifiedAt": "2026-09-18T06:00:01.389676+00:00",
+    "canonicalSha256": "4212f8927b3e946835089f6ad0eb4fd2c927cc2947428b75ac39c64503b609d1",
+    "cloudMatchesLocal": true,
+    "automaticSync": false
+  },
+  "note": "The compatible minor candidate has not been uploaded. CI environment secret, protected branch/environment controls and default-branch source promotion are outstanding."
+}

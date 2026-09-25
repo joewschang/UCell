@@ -21,7 +21,8 @@
     "UAT_P1_PASS",
     "INTEGRITY_ALERTS_ZERO_CRITICAL",
     "BACKUP_RESTORE_DRILL_PASS",
-    "RC_GATE_PASS"
+    "RC_GATE_PASS",
+    "SWAGGERHUB_SYNC_PASS"
   ],
   "policy": "No production cutover if any P0/security/database/backup gate is missing or failed."
 }

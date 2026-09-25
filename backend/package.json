@@ -64,6 +64,10 @@
     "provider:enablement:preflight": "ts-node scripts/provider-enablement-preflight.ts",
     "analytics:worker": "node scripts/period-projection-worker.mjs --watch",
     "test:scale:matrix": "node scripts/tree-scale-matrix.mjs",
-    "rc:isolated": "node scripts/rc-gate-isolated.mjs"
+    "rc:isolated": "node scripts/rc-gate-isolated.mjs",
+    "openapi:governance": "node scripts/openapi-governance.mjs gate",
+    "openapi:governance:test": "node --test scripts/openapi-governance.test.mjs",
+    "swaggerhub:publish": "node scripts/openapi-governance.mjs publish",
+    "swaggerhub:release:check": "node scripts/openapi-governance.mjs release-check"
   }
 }

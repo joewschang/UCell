@@ -59,10 +59,9 @@ jobs:
         run: pnpm db:golden
       - name: Tests
         working-directory: backend
-        # API suites share the test database; retain concurrency inside each suite.
         run: |
           pnpm -r --filter '!@ucell/api' test
-          pnpm --filter @ucell/api test --runInBand
+          pnpm test:api:isolated
           pnpm test:todo:gate
   admin:
     runs-on: ubuntu-latest

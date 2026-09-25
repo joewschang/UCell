@@ -14,7 +14,7 @@ async function main(){
   const config=new DocumentBuilder()
     .setTitle('UCell R1.0B API')
     .setDescription('UCell Core API — Rule Version R1.0B FROZEN')
-    .setVersion('1.0.0')
+    .setVersion('1.1.0')
     .addBearerAuth(undefined,'adminBearer')
     .addBearerAuth(undefined,'memberBearer')
     .build();

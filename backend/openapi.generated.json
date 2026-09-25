@@ -13104,6 +13104,14 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "orderId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -13606,7 +13614,7 @@
   "info": {
     "title": "UCell R1.0B API",
     "description": "UCell Core API — Rule Version R1.0B FROZEN",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "contact": {}
   },
   "tags": [],
