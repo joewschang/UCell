@@ -58,6 +58,7 @@ it('renders the complete safe authority preflight review and no internal sponsor
  const output=JSON.stringify(view.toJSON());
  expect(output).toContain('預檢可提交');expect(output).toContain('TREE-A');expect(output).toContain('TREE-AX000001');expect(output).toContain('Binary 位置 4');expect(output).toContain('RLL');expect(output).toContain('TREE-A000001');expect(output).toContain('Topology version');expect(output).toContain('這不是位置保留');
  expect(output).not.toContain('internal-sponsor-id');
+ expect(output).toContain('成功安置後依該樹序號配發');
  const rootBall=view.root.findAllByType('button').find(button=>String(button.props['aria-label']).includes('創始位置 #1'))!;
  expect(rootBall.props['aria-label']).toContain('Ball Number TREE-AX000001');expect(rootBall.props['aria-label']).toContain('Binary 位置 1');expect(rootBall.props['aria-label']).toContain('根位置');
  act(()=>view.unmount());
