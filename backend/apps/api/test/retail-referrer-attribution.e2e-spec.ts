@@ -26,4 +26,15 @@ describe('R1.0B retail referrer attribution boundary',()=>{
   const service=new RetailReferrerAttributionService({} as any,sponsor);
   await expect(service.resolveForRetailOrder(tx,{personId:'buyer',candidateCode:'A000005',orderId:'order-2',at,correlationId:'00000000-0000-0000-0000-000000000002'})).rejects.toBeInstanceOf(ConflictException);
  });
+ it('makes an admin correction forward-only and preserves the historical attribution evidence',async()=>{
+  const effectiveFrom=new Date('2040-01-01T00:00:00.000Z'),current:any={retailReferrerAttributionId:'old',referrerQualificationId:'q-ref',referrerBallNoSnapshot:'A000004'};
+  sponsor.resolveWithin.mockResolvedValueOnce({sponsorQualificationId:'q-next',sponsorBallNo:'A000005',ruleVersion:'R1.0B'});
+  const tx:any={retailReferrerAttribution:{findFirst:jest.fn().mockResolvedValue(current),update:jest.fn(),create:jest.fn().mockResolvedValue({retailReferrerAttributionId:'new',referrerBallNoSnapshot:'A000005',effectiveFrom})},retailReferrerAttributionEvent:{createMany:jest.fn()}};
+  const idempotency:any={execute:jest.fn(async(_scope:string,_key:string,_body:any,work:any)=>({value:await work(tx),replayed:false}))},audit:any={write:jest.fn()},outbox:any={enqueue:jest.fn()};
+  const service=new RetailReferrerAttributionService({} as any,sponsor,idempotency,audit,outbox);
+  await expect(service.correct({personId:'buyer',ballNo:'A000005',reason:'VERIFIED_CORRECTION',effectiveFrom,actorPersonId:'operator',key:'key',requestId:'request'})).resolves.toMatchObject({value:{ballNo:'A000005'}});
+  expect(tx.retailReferrerAttribution.update).toHaveBeenCalledWith({where:{retailReferrerAttributionId:'old'},data:{effectiveTo:effectiveFrom}});
+  expect(tx.retailReferrerAttribution.create).toHaveBeenCalledWith({data:expect.objectContaining({source:'ADMIN_FORWARD_CORRECTION',effectiveFrom,correctionReason:'VERIFIED_CORRECTION'})});
+  expect(tx.retailReferrerAttributionEvent.createMany).toHaveBeenCalledWith({data:expect.arrayContaining([expect.objectContaining({action:'CLOSED_BY_ADMIN_FORWARD_CORRECTION'}),expect.objectContaining({action:'CREATED_BY_ADMIN_FORWARD_CORRECTION'})])});
+ });
 });
