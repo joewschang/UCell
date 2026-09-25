@@ -2,6 +2,9 @@ import { ConflictException, Injectable, UnprocessableEntityException } from '@ne
 import { PrismaService } from '@ucell/database';
 import { createHash, randomUUID } from 'crypto';
 import { SponsorResolver } from '../qualification/sponsor-resolver.service';
+import { IdempotencyService } from '../../common/idempotency/idempotency.service';
+import { AuditService } from '../../common/audit/audit.service';
+import { OutboxService } from '../../common/outbox/outbox.service';
 
 /**
  * Authoritative retail attribution boundary. It deliberately never writes a
@@ -9,7 +12,7 @@ import { SponsorResolver } from '../qualification/sponsor-resolver.service';
  */
 @Injectable()
 export class RetailReferrerAttributionService {
-  constructor(private readonly db: PrismaService, private readonly sponsors: SponsorResolver) {}
+  constructor(private readonly db: PrismaService, private readonly sponsors: SponsorResolver, private readonly idempotency?:IdempotencyService, private readonly audit?:AuditService, private readonly outbox?:OutboxService) {}
 
   async candidate(code: string, at = new Date()) {
     const resolved = await this.sponsors.resolve({ code, effectiveAt: at, ruleVersion: 'R1.0B' });
@@ -52,6 +55,25 @@ export class RetailReferrerAttributionService {
       evidenceHash: this.hash({ personId: input.personId, ballNo: candidate.sponsorBallNo, orderId: input.orderId, effectiveAt: input.at.toISOString(), ruleVersion: candidate.ruleVersion }),
     }});
     return created;
+  }
+
+  async correct(input:{personId:string;ballNo:string;reason:string;effectiveFrom:Date;actorPersonId:string;key:string;requestId:string}){
+    if(input.effectiveFrom<=new Date())throw new UnprocessableEntityException({code:'RETAIL_REFERRER_CORRECTION_MUST_BE_FORWARD_ONLY'});
+    if(!this.idempotency||!this.audit||!this.outbox)throw new UnprocessableEntityException({code:'COMMAND_SERVICE_UNAVAILABLE'});
+    const audit=this.audit,outbox=this.outbox;
+    return this.idempotency.execute(`admin:retail-referrer-correction:${input.personId}`,input.key,{ballNo:input.ballNo,reason:input.reason,effectiveFrom:input.effectiveFrom.toISOString()},async tx=>{
+      const correlationId=randomUUID(),current=await this.current(input.personId,input.effectiveFrom,tx);
+      if(!current)throw new UnprocessableEntityException({code:'RETAIL_REFERRER_ATTRIBUTION_NOT_FOUND'});
+      const candidate=await this.sponsors.resolveWithin(tx,{code:input.ballNo,effectiveAt:input.effectiveFrom,ruleVersion:'R1.0B'});
+      if(candidate.sponsorQualificationId===current.referrerQualificationId)throw new UnprocessableEntityException({code:'RETAIL_REFERRER_CORRECTION_NO_CHANGE'});
+      await tx.retailReferrerAttribution.update({where:{retailReferrerAttributionId:current.retailReferrerAttributionId},data:{effectiveTo:input.effectiveFrom}});
+      const created=await tx.retailReferrerAttribution.create({data:{personId:input.personId,referrerQualificationId:candidate.sponsorQualificationId,referrerBallNoSnapshot:candidate.sponsorBallNo,source:'ADMIN_FORWARD_CORRECTION',effectiveFrom:input.effectiveFrom,correctionReason:input.reason}});
+      const evidenceHash=this.hash({personId:input.personId,from:current.referrerBallNoSnapshot,to:candidate.sponsorBallNo,effectiveFrom:input.effectiveFrom.toISOString(),reason:input.reason});
+      await tx.retailReferrerAttributionEvent.createMany({data:[{retailReferrerAttributionId:current.retailReferrerAttributionId,action:'CLOSED_BY_ADMIN_FORWARD_CORRECTION',actorPersonId:input.actorPersonId,reason:input.reason,effectiveFrom:input.effectiveFrom,correlationId,evidenceHash},{retailReferrerAttributionId:created.retailReferrerAttributionId,action:'CREATED_BY_ADMIN_FORWARD_CORRECTION',actorPersonId:input.actorPersonId,reason:input.reason,effectiveFrom:input.effectiveFrom,correlationId,evidenceHash}]});
+      await audit.write(tx,{actorType:'USER',actorId:input.actorPersonId,action:'RETAIL_REFERRER_ATTRIBUTION_CORRECTED_FORWARD',entityType:'RetailReferrerAttribution',entityId:created.retailReferrerAttributionId,beforeData:{ballNo:current.referrerBallNoSnapshot,effectiveTo:input.effectiveFrom.toISOString()},afterData:{ballNo:candidate.sponsorBallNo,effectiveFrom:input.effectiveFrom.toISOString(),reason:input.reason},requestId:input.requestId,correlationId});
+      await outbox.enqueue(tx,{eventType:'RETAIL_REFERRER_ATTRIBUTION_CORRECTED_FORWARD',aggregateType:'RetailReferrerAttribution',aggregateId:created.retailReferrerAttributionId,payload:{personId:input.personId,effectiveFrom:input.effectiveFrom.toISOString()},correlationId});
+      return {retailReferrerAttributionId:created.retailReferrerAttributionId,ballNo:created.referrerBallNoSnapshot,effectiveFrom:created.effectiveFrom.toISOString()};
+    });
   }
 
   private hash(value: unknown) { return createHash('sha256').update(JSON.stringify(value)).digest('hex'); }

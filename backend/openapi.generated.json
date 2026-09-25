@@ -8746,6 +8746,54 @@
         ]
       }
     },
+    "/api/v1/admin/retail-referrers/corrections": {
+      "post": {
+        "description": "Closes the current retail referrer attribution and creates a new one from a future effective time. Historical order-line snapshots, awards and settlements are never rewritten.",
+        "operationId": "adminCorrectRetailReferrerForward",
+        "parameters": [
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RetailReferrerCorrectionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "Admin - Retail referral"
+        ]
+      }
+    },
     "/api/v1/admin/packages": {
       "get": {
         "operationId": "AdminPackageConfigController_list",
@@ -15283,6 +15331,33 @@
           "paymentMethod",
           "referenceNo",
           "occurredAt"
+        ]
+      },
+      "RetailReferrerCorrectionDto": {
+        "type": "object",
+        "properties": {
+          "personId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "ballNo": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Z0-9_-]{0,39}(?:X\\d{6,}|\\d{6,})$"
+          },
+          "effectiveFrom": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 300
+          }
+        },
+        "required": [
+          "personId",
+          "ballNo",
+          "effectiveFrom",
+          "reason"
         ]
       },
       "CreatePackageProfileDto": {

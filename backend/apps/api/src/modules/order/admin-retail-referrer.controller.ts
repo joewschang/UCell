@@ -1,0 +1,9 @@
+import {Body,Controller,Headers,Post,Req,UseGuards} from '@nestjs/common';
+import {ApiBearerAuth,ApiHeader,ApiOperation,ApiProperty,ApiTags} from '@nestjs/swagger';
+import {IsDateString,IsString,IsUUID,Matches,MaxLength,MinLength} from 'class-validator';
+import {Roles} from '../auth/roles.decorator';
+import {IdempotencyGuard} from '../../common/guards/idempotency.guard';
+import {RetailReferrerAttributionService} from './retail-referrer-attribution.service';
+class RetailReferrerCorrectionDto { @ApiProperty({format:'uuid'}) @IsUUID() personId!:string; @ApiProperty({pattern:'^[A-Z][A-Z0-9_-]{0,39}(?:X\\d{6,}|\\d{6,})$'}) @Matches(/^[A-Z][A-Z0-9_-]{0,39}(?:X\d{6,}|\d{6,})$/) ballNo!:string; @ApiProperty({format:'date-time'}) @IsDateString() effectiveFrom!:string; @ApiProperty({maxLength:300}) @IsString() @MinLength(3) @MaxLength(300) reason!:string; }
+@ApiTags('Admin - Retail referral') @ApiBearerAuth('adminBearer') @Roles('SUPER_ADMIN','ORDER_OPS') @Controller('admin/retail-referrers')
+export class AdminRetailReferrerController { constructor(private readonly service:RetailReferrerAttributionService){} @Post('corrections') @UseGuards(IdempotencyGuard) @ApiHeader({name:'Idempotency-Key',required:true}) @ApiOperation({operationId:'adminCorrectRetailReferrerForward',description:'Closes the current retail referrer attribution and creates a new one from a future effective time. Historical order-line snapshots, awards and settlements are never rewritten.'}) correct(@Req() req:any,@Body() body:RetailReferrerCorrectionDto,@Headers('idempotency-key') key:string){return this.service.correct({...body,effectiveFrom:new Date(body.effectiveFrom),actorPersonId:req.user.personId,key,requestId:req.requestId});} }
