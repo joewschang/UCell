@@ -1,8 +1,27 @@
 # DB Fresh Migration Blocker — 20260925140000
 
-**Status:** BLOCKED — independent of functional closure
+**Status:** RESOLVED (local fresh migration) — 2026-09-25
 **Migration:** 20260925140000_fresh_migration_trigger_repair
 **Rule:** No historical migration is guessed, rewritten or modified.
+
+## Resolution and correction — 2026-09-25
+
+Verified source HEAD: `84b3d22eafb6f1b3af1a6a811f1f2dfa77665e0a`.
+
+The earlier claim below that the directory exists in the current branch/origin tree was incorrect. `git ls-tree -r HEAD -- backend/packages/database/prisma/migrations/20260925140000_fresh_migration_trigger_repair` returns no tracked entry; the available `git log --all -- <path>` likewise returns no entry. The directory was an empty local filesystem artifact, not a missing SQL file in the committed migration chain. Git status did not expose it because Git does not track empty directories.
+
+After verifying its resolved path and that it contained no files (including hidden files), the empty directory was moved out of Prisma's migration discovery path to `C:\UCell\Recovery\migration-orphan-20260925\20260925140000_fresh_migration_trigger_repair`. This is reversible local cleanup. No historical migration SQL, checksum, or database migration record was edited; no placeholder SQL or `migrate resolve` was used.
+
+Validation from `C:\UCell\next-generation\backend`:
+
+- `node scripts/migration-preflight.mjs`: `MIGRATION_PREFLIGHT_PASS`.
+- `node scripts/db-golden-isolated.mjs`: exit 0. All 83 migrations successfully applied from zero to a newly created isolated local database, `ucell_dev_golden_09e90679c4104982bbb0fe2b4a7cc881`.
+- Golden fixtures, DB E2E/timezone, concurrency, return/outbox, membership, RPV concurrency, system assignment, qualification/placement, package config/admin/checkout, member identity, content, formal application, and replay pool delta checks all passed.
+- Final markers: `DB_GOLDEN_ISOLATED_PASS` and `DB_GOLDEN_ISOLATED_CLEANUP_PASS`; the test database was removed by the runner.
+
+**DB_FRESH_MIGRATION:** PASS for the verified source HEAD. The P3015 blocker is closed. Full regression, cross-layer closure, Stage migration integrity and final-head freeze still require their own remaining gates; this local result does not certify them. Stage and Production were not accessed or modified.
+
+The original investigation and disposition below are retained as historical context and are superseded by this resolution.
 
 ## Investigation evidence
 
