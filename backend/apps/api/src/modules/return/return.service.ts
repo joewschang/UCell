@@ -101,6 +101,15 @@ export class ReturnService {
         data:{status:fullReturn?'RETURNED':'PARTIAL_RETURN'}
       });
 
+      if(fullReturn&&order.qualificationId){
+        const setup=await tx.qualificationSetup.findUnique({where:{qualificationId:order.qualificationId}});
+        if(setup&&['PLACEMENT_PENDING','PLACEMENT_OVERDUE'].includes(setup.setupStatus)){
+          await tx.qualificationSetup.update({where:{qualificationId:setup.qualificationId},data:{setupStatus:'REVERSED'}});
+          await this.outbox.enqueue(tx,{eventType:'QUALIFICATION_PRE_PLACEMENT_REVERSED',aggregateType:'Qualification',aggregateId:setup.qualificationId,correlationId,payload:{orderId,qualificationId:setup.qualificationId,returnCaseId:ret.returnCaseId}});
+          await this.audit.write(tx,{actorType:actorId?'USER':'SYSTEM',actorId,action:'QUALIFICATION_PRE_PLACEMENT_REVERSED',entityType:'Qualification',entityId:setup.qualificationId,afterData:{orderId,returnCaseId:ret.returnCaseId},requestId,correlationId});
+        }
+      }
+
       await this.outbox.enqueue(tx,{
         eventType:'RETURN_CONFIRMED',aggregateType:'RETURN',
         aggregateId:ret.returnCaseId,correlationId,
