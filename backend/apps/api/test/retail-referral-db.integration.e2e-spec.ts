@@ -7,10 +7,13 @@ describeDb('Retail Referral rollback integration harness',()=>{
  beforeAll(()=>{db=new PrismaClient({datasources:{db:{url:url!}}});});
  afterAll(()=>db?.$disconnect());
  it('runs fixtures only inside a serializable rollback transaction',async()=>{
+  const marker=`RETAIL_REFERRAL_ROLLBACK_${Date.now()}`;
   await expect(db.$transaction(async tx=>{
    const result=await tx.$queryRaw<{ok:number}[]>`SELECT 1 AS ok`;
-   expect(result[0].ok).toBe(1);
+    expect(result[0].ok).toBe(1);
+   await tx.person.create({data:{legalName:marker,status:'EFFECTIVE'}});
    throw new Error(ROLLBACK);
   },{isolationLevel:Prisma.TransactionIsolationLevel.Serializable,timeout:30000})).rejects.toThrow(ROLLBACK);
+  expect(await db.person.count({where:{legalName:marker}})).toBe(0);
  });
 });
