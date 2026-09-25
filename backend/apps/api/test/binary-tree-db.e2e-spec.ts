@@ -90,7 +90,7 @@ describe('Binary tree atomic bootstrap database boundary',()=>{
   const exit=await workflow.submit({qualificationId:q.qualificationId,workflowType:'EXIT',payload:{reviewFeePaid:true,companyPrincipalId:company.companyPrincipalId}});
   await expect(workflow.approve(exit.qualificationWorkflowId)).rejects.toMatchObject({response:{code:'TREE_ACCESS_DENIED'}});
   await workflow.approve(exit.qualificationWorkflowId,undefined,admin);
-  expect(await db.qualification.findUnique({where:{qualificationId:q.qualificationId}})).toMatchObject({kind:'MEMBER_ORIGIN',planLevelCode:'STARTER',currentHolderPersonId:null,currentCompanyPrincipalId:company.companyPrincipalId});
+  expect(await db.qualification.findUnique({where:{qualificationId:q.qualificationId}})).toMatchObject({ballNo:`${created.value.treeCode}000001`,kind:'MEMBER_ORIGIN',planLevelCode:'STARTER',currentHolderPersonId:null,currentCompanyPrincipalId:company.companyPrincipalId});
   expect(await db.qualificationHolderHistory.count({where:{qualificationId:q.qualificationId,effectiveTo:null}})).toBe(0);
   const reader=new BinaryTreeReadService(db,service),time={timezone:'Asia/Taipei' as const,asOf:new Date().toISOString(),knowledgeCutoff:new Date().toISOString(),periodStart:'2026-01-01T00:00:00.000Z',periodEnd:'2099-01-01T00:00:00.000Z'};
   expect((await reader.detail(admin,treeId,time)).result!.positions[3]).toMatchObject({ownerType:'COMPANY',activeLabel:'Always Active (Company Rule)'});
@@ -98,7 +98,7 @@ describe('Binary tree atomic bootstrap database boundary',()=>{
   const receiver=await db.person.create({data:{legalName:'SYNTHETIC RECEIVER '+randomUUID()}});
   const retransfer=await workflow.submit({qualificationId:q.qualificationId,workflowType:'COMPANY_RETRANSFER',receivingPersonId:receiver.personId,payload:{reviewFeePaid:true}});
   await workflow.approve(retransfer.qualificationWorkflowId,undefined,admin);
-  expect(await db.qualification.findUnique({where:{qualificationId:q.qualificationId}})).toMatchObject({kind:'MEMBER_ORIGIN',planLevelCode:'STARTER',currentHolderPersonId:receiver.personId,currentCompanyPrincipalId:null});
+  expect(await db.qualification.findUnique({where:{qualificationId:q.qualificationId}})).toMatchObject({ballNo:`${created.value.treeCode}000001`,kind:'MEMBER_ORIGIN',planLevelCode:'STARTER',currentHolderPersonId:receiver.personId,currentCompanyPrincipalId:null});
   expect(await db.binaryPlacement.findUnique({where:{childQualificationId:q.qualificationId}})).toEqual(originalEdge);
   expect(await db.qualificationOwnerInterval.count({where:{qualificationId:q.qualificationId}})).toBe(3);
   await expect(workflow.submit({qualificationId:created.value.companyQualificationIds[0],workflowType:'EXIT'})).rejects.toThrow('BOOTSTRAP_QUALIFICATION_LOCKED');
