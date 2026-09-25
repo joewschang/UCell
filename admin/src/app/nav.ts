@@ -2,6 +2,7 @@ export const nav=[
   ['總覽','/','dashboard'],
   ['會員／自然人','/people','people'],
   ['會員申請','/applications','applications'],
+  ['紙本申請 Intake','/paper-intake','paper-intake'],
   ['會員資格（球）','/qualifications','qualifications'],
   ['商品參照','/products','products'],
   ['套組與資格商品','/packages','packages'],
@@ -25,7 +26,7 @@ export const nav=[
 ] as const;
 export const navGroups=[
  {label:'Dashboard',paths:['/']},
- {label:'會員管理',paths:['/people','/qualifications','/applications','/workflows']},
+ {label:'會員管理',paths:['/people','/qualifications','/applications','/paper-intake','/workflows']},
  {label:'組織管理',paths:['/organization','/admin/organization/trees']},
  {label:'商務',paths:['/products','/packages','/orders','/subscriptions','/returns']},
  {label:'獎金中心',paths:['/bonuses']},
