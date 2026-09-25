@@ -21,8 +21,8 @@ export class SponsorResolver {
    return {kind:'BALL',sponsorQualificationId:row.qualificationId,sponsorBallNo:row.ballNo,planLevelCode:row.planLevelCode,effectiveAt:row.effectiveAt,ruleVersion,sponsorOwnerPersonId:row.currentHolderPersonId};
   }
   if(!db.companySponsorAlias)throw new UnprocessableEntityException({code:'SPONSOR_CODE_INVALID'});
-  const alias=await db.companySponsorAlias.findFirst({where:{aliasNormalized:code,effectiveFrom:{lte:at},OR:[{effectiveTo:null},{effectiveTo:{gt:at}}],targetQualification:{status:'EFFECTIVE',kind:'COMPANY_BOOTSTRAP'}},orderBy:{effectiveFrom:'desc'},select:{targetQualificationId:true,displayLabel:true,policyVersion:true,effectiveFrom:true}});
-  if(!alias)throw new UnprocessableEntityException({code:'SPONSOR_CODE_INELIGIBLE'});
-  return {kind:'COMPANY_ALIAS',sponsorQualificationId:alias.targetQualificationId,displayLabel:alias.displayLabel,effectiveAt:alias.effectiveFrom,ruleVersion,policyVersion:alias.policyVersion};
+  const alias=await db.companySponsorAlias.findFirst({where:{aliasNormalized:code,effectiveFrom:{lte:at},OR:[{effectiveTo:null},{effectiveTo:{gt:at}}],targetQualification:{status:'EFFECTIVE',kind:'COMPANY_BOOTSTRAP'}},orderBy:{effectiveFrom:'desc'},select:{targetQualificationId:true,displayLabel:true,policyVersion:true,effectiveFrom:true,targetQualification:{select:{currentHolderPersonId:true}}}});
+  if(!alias||!alias.targetQualification.currentHolderPersonId)throw new UnprocessableEntityException({code:'SPONSOR_CODE_INELIGIBLE'});
+  return {kind:'COMPANY_ALIAS',sponsorQualificationId:alias.targetQualificationId,displayLabel:alias.displayLabel,effectiveAt:alias.effectiveFrom,ruleVersion,policyVersion:alias.policyVersion,sponsorOwnerPersonId:alias.targetQualification.currentHolderPersonId};
  }
 }
