@@ -22,7 +22,9 @@ try{await prisma.$transaction(async tx=>{
   const columns=await tx.$queryRaw`SELECT column_name FROM information_schema.columns WHERE table_schema=${schema} AND table_name=${table} ORDER BY column_name`;
   check('Prisma DB column convergence '+name,columns.map(row=>row.column_name).sort(),model.fields.filter(field=>field.kind!=='object').map(field=>field.dbName??field.name).sort());
  }
- const person=await tx.person.findFirstOrThrow(),product=await tx.productReference.findFirstOrThrow();
+ // Isolated databases start empty. These fixtures live only inside this
+ // transaction and are always removed by the rollback below.
+ const person=await tx.person.create({data:{legalName:'PHASE2 DB TEST PERSON '+version,status:'EFFECTIVE'}}),product=await tx.productReference.create({data:{sku:'PHASE2-DB-'+version,displayName:'PHASE2 DB TEST PRODUCT',currentPrice:1600}});
  const parameters=await tx.runtimeRuleParameter.findMany({where:{ruleVersionCode:'R1.0B'}});
  for(const row of new Map(parameters.map(r=>[JSON.stringify([r.parameterCode,r.scopeKey]),r])).values()){
    if(['epv.calendar.timezone','accounting.timezone'].includes(row.parameterCode))continue; // Explicit TEST_ONLY UTC below.
