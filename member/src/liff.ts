@@ -8,6 +8,8 @@ async function request(path:string,init:RequestInit={}){
 }
 const transitionKey='ucell_referral_transition',bindingKey='ucell_referral_binding_key',anonymousKey='ucell_referral_anonymous_id';
 const intendedDestinationKey='ucell_line_intended_destination';
+const sponsorCandidateKey='ucell_sponsor_candidate';
+const sponsorCodePattern=/^[A-Z][A-Z0-9_-]{0,39}(?:X\d{6,}|\d{6,})$/;
 export function lineExchangeFailureMessage(status:number,code:unknown){
  if(status===401&&code==='LINE_ACCOUNT_UNBOUND')return '此 LINE 尚未完成會員帳號綁定，請聯絡客服完成公司核驗。';
  if(status===401&&code==='MEMBER_SECURITY_LOCKED')return '此會員帳號目前已安全鎖定，請聯絡客服協助重新綁定。';
@@ -19,6 +21,21 @@ export function lineExchangeFailureMessage(status:number,code:unknown){
 function intendedDestination(){
  const value=window.location.pathname+window.location.search+window.location.hash;
  return value.startsWith('/')&&!value.startsWith('//')?value:'/';
+}
+/** A referral query value is untrusted acquisition context, never a Sponsor relationship. */
+export function sponsorCandidateFromSearch(search:string){
+ const candidate=new URLSearchParams(search).get('ref')?.trim();
+ return candidate&&sponsorCodePattern.test(candidate)?candidate:undefined;
+}
+export function preserveSponsorCandidate(){
+ if(typeof window==='undefined')return;
+ const candidate=sponsorCandidateFromSearch(window.location.search);
+ if(candidate)sessionStorage.setItem(sponsorCandidateKey,candidate);
+}
+/** Exposed to the qualification checkout only; its server commit must resolve it again. */
+export function pendingSponsorCandidate(){
+ if(typeof window==='undefined')return undefined;
+ return sponsorCandidateFromSearch(window.location.search)??sessionStorage.getItem(sponsorCandidateKey)??undefined;
 }
 function uuid(value:string|null){return value&&/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)?value:undefined;}
 export async function prepareReferralLanding(){
@@ -63,6 +80,9 @@ export async function initLiff() {
         sessionStorage.setItem('ucell_member_token', token);
         return { mode: 'connected' as const };
     }
+    // Preserve only a syntactically valid Ball candidate before LINE leaves this origin.
+    // It is deliberately not sent to the relationship-binding endpoint.
+    preserveSponsorCandidate();
     await prepareReferralLanding();
     const id = import.meta.env.VITE_LIFF_ID;
     if (!id)
