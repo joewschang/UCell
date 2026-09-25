@@ -128,3 +128,264 @@ OA friend count is separate and requires LINE evidence; never equate OA friends 
 ERP_TRANSFER_PENDING_COUNT, ERP_TRANSFER_SUCCESS_COUNT, ERP_TRANSFER_FAILED_COUNT, ERP_TRANSFER_FAILURE_RATE source UCell handoff state only.
 Future manual/import facts: ERP_SHIPPED_COUNT, ERP_RETURN_POSTED_COUNT, ERP_IMPORT_BATCH_COUNT, ERP_IMPORT_REJECTED_ROWS.
 ERP imported/manual metrics MUST expose DATA_THROUGH/lastImportAt and UNKNOWN when not imported; never imply real-time fulfillment.
+
+
+## 17. Dataset registry v1 and security
+
+MEMBER_LIFECYCLE — grain one Person; Person + authoritative membership-state projection; C2 detail/C1 safe aggregate.
+BALL_ANALYTICS — grain one Ball; Qualification/Ball projection; C2; bootstrap policy mandatory.
+TREE_ANALYTICS — grain governed tree×period/as-of projection; C1/C2 by measures; no arbitrary raw join.
+ACTIVE_ANALYTICS — grain Ball×as-of/effective evidence or approved aggregate projection; source R1.0B Active Core.
+COMMERCE_ANALYTICS — grain one recognized Order Line; C2 detail/C1 aggregate; excludes payment secrets.
+PRODUCT_ANALYTICS — approved product/SKU dimensions over commerce projection.
+RETURN_ANALYTICS — grain posted return line/effect; Return/Replay authority.
+AWARD_ANALYTICS — grain Award Ledger entry; C2; beneficiary scope/RBAC.
+RETAIL_REFERRAL_ANALYTICS — grain Retail Referral award/evidence or approved line projection; C2.
+SETTLEMENT_ANALYTICS — grain Settlement entry; C2/C3 by fields.
+ONBOARDING_ANALYTICS — governed lifecycle events for LINE/Paper/Qualification/Placement; C2; no raw identity document.
+ERP_HANDOFF_ANALYTICS — grain ERP handoff/import fact; freshness mandatory.
+FINANCE_RESERVOIR_ANALYTICS — C3 RESTRICTED; Admin/Finance governed only; absent from every Member tool/surface.
+
+DatasetDefinition fields: datasetCode, description, grain, sourceProjection/view, allowedMeasures, allowedDimensions, allowedFilters, privacyClass, allowedRoles/policyRef, maxPeriodDays, maxRows, allowDetail, allowExport, freshnessSla, version/effective dates, lineageRef.
+
+## 18. Privacy classification
+
+C0 PUBLIC — approved public product/brand facts.
+C1 INTERNAL — safe aggregate operational KPI/tree aggregate without sensitive economics/PII.
+C2 CONFIDENTIAL — memberNo/ballNo linked operational detail, individual Ball performance/economics, order/award/settlement detail as governed.
+C3 RESTRICTED — identity documents, phone/email/address where sensitive, LINE subject/tokens, bank data, security/recovery evidence, Reservoir/company-sensitive economics, secrets.
+
+Rules:
+- Full secrets/tokens/passwords/recovery tokens/private keys are NEVER analytics fields.
+- Full bank/identity values are NEVER general analytics/AI fields.
+- PII detail uses separate authorized tools/datasets; aggregate analytics defaults to identifiers/minimal fields.
+- Member zero-disclosure for Reservoir and bootstrap #1–#3 is invariant.
+- Privacy class unresolved => deny.
+- Export permission cannot exceed interactive permission.
+
+## 19. Rule Registry
+
+RuleDefinition does not duplicate formulas where an authoritative service exists.
+Required refs include:
+R1_ACTIVE — authority existing R1.0B Active service/projection.
+R1_SPONSOR — authority Sponsor Core/evidence.
+R1_BINARY_PLACEMENT — authority Placement Core.
+R1_PERFORMANCE — authority current GPV/RPV/EPV performance projection.
+R1_CARRY — authority Carry Core/snapshot.
+R1_RANK — authority current Rank Core.
+R1_AWARD — authority Award engine/ledger.
+R1_SETTLEMENT — authority Settlement/Payout Core.
+R1_RETURN_REPLAY — authority Return/Replay/Recovery.
+R1_RETAIL_REFERRAL — authority approved Retail Referral SSOT + implemented Economic Core.
+P0_IDENTIFIER_PRIVACY — authority final P0 decision.
+COMPANY_BOOTSTRAP — authority approved Company LEADER binding/current runtime parameters.
+
+RuleDefinition fields: ruleCode, authorityType(SERVICE|PROJECTION|GOVERNANCE_SSOT), authorityRef, ruleVersion, effective dates, evidence/hash where available, semanticConsumers.
+Semantic Core must not store old prose percentages/thresholds as a substitute for current runtime rule authority.
+
+## 20. Data lineage
+
+Every approved metric has lineage:
+Metric → Dataset/Projection → authoritative fact/service → rule/evidence version.
+Lineage nodes record source kind, schema/view/service ref, grain, join key/business identifier, transformation class, version, privacy class.
+No approved metric may rely on undocumented arbitrary SQL.
+
+Examples:
+RETAIL_REFERRAL_AWARD_AMOUNT → AWARD_ANALYTICS → Award Ledger(RETAIL_REFERRAL) → Retail Referral rule/evidence → OrderLine snapshot + Active evidence.
+ACTIVE_BALL_COUNT → ACTIVE_ANALYTICS → authoritative Active projection/service → R1_ACTIVE version.
+BALL_COUNT → BALL_ANALYTICS → Ball/Qualification Core → P0 identifier/bootstrap scope.
+ERP_TRANSFER_SUCCESS_COUNT → ERP_HANDOFF_ANALYTICS → UCell ERP transfer fact; does not lineage into EzTooL fulfillment unless import exists.
+
+## 21. Definition dependency graph
+
+definition_dependency stores fromDefinition, toDefinition, dependencyType (USES_METRIC, USES_DIMENSION, USES_DATASET, USES_RULE, LINEAGE_SOURCE, PRIVACY_POLICY).
+Changing/deprecating a definition must enumerate impacted metrics, dashboards, exports and future AI tools.
+Breaking semantic changes require a new version/effective date, not silent mutation.
+
+## 22. Runtime storage design
+
+Preferred PostgreSQL schemas:
+- governance: definitions/versions/dependencies/approval metadata.
+- analytics: internal projections/materialized views/jobs.
+- analytics_ai (future): AI-safe approved views only; NOT part of Phase 1 runtime access until AI firewall is implemented.
+
+Phase-1 logical tables (names may adapt to repository conventions after schema audit):
+governance.definition
+governance.definition_version
+governance.metric_definition
+governance.dataset_definition
+governance.dimension_definition
+governance.rule_definition
+governance.privacy_definition
+governance.definition_dependency
+governance.data_lineage
+
+Avoid one table per trivial concept if repository patterns favor typed JSON metadata; however enforce DB constraints for code/version/status/effective intervals and immutable approved versions.
+
+## 23. Code-seeded vs DB-governed definitions
+
+Immutable/system semantics (PERSON, BALL, SPONSOR vs BINARY_PARENT, identifiers, privacy invariants) are version-controlled code/governance seeds and cannot be freely edited in Admin.
+Business metrics/datasets may be DB-registered/versioned but promotion to APPROVED requires governance workflow.
+Runtime DB and Git governance evidence must have deterministic seed/hash verification to prevent drift.
+Production must not allow arbitrary SQL/formula text to become APPROVED merely through UI.
+
+## 24. Governance workflow / RBAC
+
+Roles/capabilities should map to existing RBAC rather than create a parallel identity system:
+- Analytics Viewer: read approved definitions allowed by data policy.
+- Analytics Analyst: create DRAFT proposals.
+- Governance Approver: review/approve semantic definitions within authority.
+- Finance-governed approval for C3 finance/Reservoir definitions.
+- Super Admin does not bypass audit/evidence requirements.
+
+Approval:
+DRAFT → REVIEW → APPROVED.
+Requester should not self-approve high-risk C3/economic semantic changes where existing governance supports dual control.
+Every transition records actor, timestamp, reason, previous hash/new hash.
+
+## 25. Definition API v1
+
+Read endpoints for approved definitions:
+GET /api/v1/governance/definitions/terms
+GET /api/v1/governance/definitions/entities
+GET /api/v1/governance/definitions/relationships
+GET /api/v1/governance/definitions/dimensions
+GET /api/v1/governance/definitions/metrics
+GET /api/v1/governance/definitions/metrics/{code}
+GET /api/v1/governance/definitions/datasets
+GET /api/v1/governance/definitions/rules/{code}
+GET /api/v1/governance/definitions/lineage/{code}
+
+Admin mutation endpoints, if implemented in Phase 1, only manage DRAFT/REVIEW lifecycle and must use RBAC/audit/idempotency. System-seeded invariants cannot be overwritten.
+
+## 26. Semantic Golden suite
+
+A new Semantic Golden layer is required in addition to Economic Golden.
+
+Mandatory assertions:
+- PERSON_COUNT counts Persons, never Balls.
+- NEW_QUALIFIED_MEMBER_COUNT does not increment for a second Ball.
+- NEW_BALL_COUNT does increment for additional effective Ball.
+- default Member/business BALL_COUNT excludes bootstrap #1–#3; explicit governed Admin scope can include them.
+- non-direct PII/Reservoir/bootstrap privacy remains unchanged.
+- WEB_MEMBER and QUALIFIED_MEMBER derive from effective Qualification state, not login/LINE friendship.
+- Sponsor != Binary Parent.
+- Retail Referrer != Sponsor.
+- RETAIL_REFERRAL official amount equals authoritative Award result, not semantic recomputation.
+- inactive Retail Referrer historical eligibility is not reconstructed from current Active.
+- Return metrics use POSTED returns only.
+- Award/Settlement/Payout remain distinct.
+- ERP handoff success does not imply shipment.
+- ZERO/NULL/UNKNOWN behavior.
+- Rate storage/presentation convention.
+- Taipei time boundary for memberNo/calendar periods.
+- definition version/as-of reproducibility.
+- privacy classification fail-closed.
+- lineage exists for every APPROVED metric.
+
+Metrics explicitly marked DRAFT/DECISION_REQUIRED must not be exposed as official KPI.
+
+## 27. Freshness / quality metadata
+
+Every Dataset/metric result carries:
+definitionVersion, ruleVersion where applicable, asOf, dataThrough, refreshedAt, freshnessStatus.
+Freshness statuses: FRESH, STALE, UNKNOWN.
+Manual ERP imports expose lastImportAt.
+Quality checks: duplicate grain key, missing dimension key, orphan business ID, projection lag, invalid effective interval, definition hash drift.
+UNKNOWN/STALE must be visible to Admin consumers.
+
+## 28. Query safety contract for future AI
+
+Phase 1 prepares but does not implement LLM.
+Future consumers MUST:
+- use approved Metric/Dataset Registry only;
+- never receive Production DB credentials;
+- never execute free-form SQL;
+- use server-side governed query DSL/compiler;
+- enforce RBAC/privacy before retrieval;
+- cap rows/time/cardinality;
+- aggregate/mask before LLM;
+- treat retrieved text as untrusted DATA, never instructions;
+- keep first AI release read-only;
+- preserve evidence/asOf/dataThrough/definition versions;
+- separate Codex development workflow from Production AI runtime.
+
+## 29. Admin Data Governance Center (Phase 1 scope)
+
+Admin read UI should show:
+Business Terms, Entities, Relationships, Dimensions, Metrics, Datasets, Rules, Privacy, Lineage.
+Metric detail shows definition, status/version, grain, time basis, unit, source authority, rule reference, privacy, dimensions, freshness and Golden status.
+DRAFT items visibly marked non-official.
+C3/Reservoir metadata itself follows RBAC; Member has no route/tool/surface.
+
+## 30. Explicit unresolved decisions — DO NOT GUESS
+
+The following require mapping/approval before official metric status:
+- exact order statuses defining ORDER_COUNT/recognized sales;
+- exact sales recognition timestamp if not already explicit in Core;
+- NET_RECOGNIZED_SALES return timing/accounting semantics;
+- RETURN_UNIT_RATE and RETURN_AMOUNT_RATE cohort/period alignment;
+- WEB_TO_QUALIFIED_CONVERSION_RATE cohort/window/eligible denominator;
+- PLACEMENT_PENDING_AVG_HOURS start/end/exclusion policy;
+- any new Rank label/threshold not already authoritative in R1.0B runtime;
+- any old PV/BV/bonus prose not present in current R1.0B authority;
+- OA friend count until LINE source/evidence is available;
+- EzTooL shipment/invoice truth until imported or integrated.
+
+These definitions remain DRAFT/DECISION_REQUIRED. Their absence MUST NOT block Phase 1 registry foundation.
+
+## 31. Implementation order
+
+Phase SG-A1 — Audit existing schema/projections/metrics and map exact source authority. No migrations until audit.
+Phase SG-A2 — Governance registry schema + deterministic seeds + hashes + RBAC/audit.
+Phase SG-A3 — Dataset/Metric/Rule/Privacy registry APIs and Data Governance read UI.
+Phase SG-A4 — Semantic Golden + lineage/freshness/quality gates.
+Phase SG-A5 — Only after closure: governed Analytics Query Engine.
+AI Data Assistant starts only after Query Engine security closure.
+
+## 32. Release gates
+
+Required before Semantic Core Phase 1 closure:
+- forward-only migrations/fresh migration PASS;
+- deterministic seed/hash drift PASS;
+- no old R1.0B rules introduced;
+- P0 privacy Golden PASS;
+- existing Economic Golden unchanged;
+- Semantic Golden PASS;
+- definition lifecycle/RBAC/BOLA PASS;
+- C3/Reservoir denial PASS;
+- approved version immutability PASS;
+- OpenAPI regenerate/validate/diff PASS;
+- Backend/Admin/Shared full regression PASS;
+- no LLM/AI provider credentials;
+- no free SQL;
+- no Stage/Production mutation.
+
+## 33. Deliverables
+
+UCELL_SEMANTIC_GOVERNANCE_CORE_IMPLEMENTATION_REPORT.md
+UCELL_SEMANTIC_GOVERNANCE_CORE_PASS_FAIL_MATRIX.md
+UCELL_SEMANTIC_GOVERNANCE_CORE_DATA_DICTIONARY.md
+UCELL_SEMANTIC_GOLDEN_CATALOG.md
+UCELL_DATA_LINEAGE_CATALOG.md
+UCELL_ANALYTICS_DATASET_CATALOG.md
+Update IMPLEMENTATION_STATUS.md and OpenAPI artifacts.
+
+## 34. Self-review checklist
+
+Before closure verify:
+- no Person/Ball conflation;
+- no Sponsor/Binary Parent/Retail Referrer conflation;
+- no current-state reconstruction of historical Active/economic truth;
+- no bootstrap 1–3 Member leakage;
+- no Reservoir Member leakage;
+- no UUID promoted to operational identifier;
+- no LINE friend/login equated with formal member;
+- no payment equated with qualification activation before placement;
+- no Retail Referral double-award for QUALIFIED_MEMBER under v1 policy;
+- no stale ERP data described as current;
+- no rate stored inconsistently;
+- no money float;
+- no undefined denominator hidden inside a rate;
+- no unversioned approved metric;
+- no metric without lineage/privacy/grain/time basis/Golden.
