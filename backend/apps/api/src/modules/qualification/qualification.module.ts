@@ -3,6 +3,7 @@ import { OrganizationModule } from '../organization/organization.module';
 import { QualificationController } from './qualification.controller';
 import { QualificationService } from './qualification.service';
 import { SponsorResolver } from './sponsor-resolver.service';
+import { SponsorResolverController } from './sponsor-resolver.controller';
 import { QualificationStatusService } from './qualification-status.service';
 import { QualificationWorkflowController } from './qualification-workflow.controller';
 import { QualificationWorkflowService } from './qualification-workflow.service';
