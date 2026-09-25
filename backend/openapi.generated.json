@@ -11990,6 +11990,26 @@
         ]
       }
     },
+    "/api/v1/admin/products/retail-referral-profiles": {
+      "post": {
+        "operationId": "adminScheduleRetailReferralProfile",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "以有效期間建立商品推薦獎金 SKU 規則版本；既有版本不覆寫",
+        "tags": [
+          "Admin - Product Reference"
+        ]
+      }
+    },
     "/api/v1/admin/qualifications/{qualificationId}/ledger/pv": {
       "get": {
         "operationId": "adminListQualificationPv",
