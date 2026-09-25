@@ -15591,8 +15591,8 @@
           },
           "sponsorCode": {
             "type": "string",
-            "pattern": "^[A-Z][A-Z0-9_-]{0,39}(?:X\\d{6,}|\\d{6,})$",
-            "description": "Untrusted Sponsor Ball candidate. Accepted only for a qualification package; server resolves it again and records evidence. It never creates a relationship for retail orders."
+            "pattern": "^[A-Z][A-Z0-9_-]{1,39}$",
+            "description": "Untrusted Sponsor Ball or governed Company Alias candidate. Accepted only for a qualification package; server resolves it again and records evidence. It never creates a relationship for retail orders."
           },
           "retailReferralCode": {
             "type": "string",
