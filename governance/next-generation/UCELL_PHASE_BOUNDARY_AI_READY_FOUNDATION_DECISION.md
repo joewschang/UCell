@@ -1,9 +1,9 @@
 # UCell Phase Boundary Decision — AI-Ready Foundation First
 
-**Status:** AUTHORITATIVE / MANDATORY
+**Status:** SUPERSEDED / HISTORICAL
 **Date:** 2026-09-25 (Asia/Taipei)
 **Baseline:** R1.0B
-**Decision:** Admin natural-language AI query capability is explicitly deferred to the next phase. Current phase builds only the governed foundations required for future AI.
+**Superseded by:** `UCELL_PHASE_1_RELIABLE_MVP_SCOPE_DECISION.md`. Retained for history only; it no longer defines current Phase 1 scope.
 
 ## 1. Current phase
 
