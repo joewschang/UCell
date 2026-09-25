@@ -6,13 +6,15 @@ export class PaperReceiptService {
  constructor(private readonly db:PrismaService,private readonly orders:OrderService) {}
  async enter(input:any):Promise<any> {
   const receiptReference=input.receiptReference.trim();
+  const order=await this.db.order.findUnique({where:{orderNo:BigInt(input.orderNo)},select:{orderId:true}});
+  if(!order)throw new ConflictException({code:'RESOURCE_NOT_FOUND'});
   const where={receiptReference_paymentChannel_paymentNamespace:{receiptReference,paymentChannel:input.paymentChannel,paymentNamespace:input.paymentNamespace}};
   const amount=new Prisma.Decimal(input.amount);
   const receivedAt=new Date(input.receivedAt);
-  const sameReceipt=(receipt:any)=>receipt.orderId===input.orderId&&receipt.amount.equals(amount)&&receipt.currency===input.currency&&receipt.receivedAt.getTime()===receivedAt.getTime()&&(receipt.evidenceDocumentRef??null)===(input.evidenceDocumentRef??null)&&(receipt.note??null)===(input.note??null);
+  const sameReceipt=(receipt:any)=>receipt.orderId===order.orderId&&receipt.amount.equals(amount)&&receipt.currency===input.currency&&receipt.receivedAt.getTime()===receivedAt.getTime()&&(receipt.evidenceDocumentRef??null)===(input.evidenceDocumentRef??null)&&(receipt.note??null)===(input.note??null);
   const existing=await this.db.paperReceiptEvidence.findUnique({where});
   if(existing){if(!sameReceipt(existing))throw new ConflictException({code:'PAPER_RECEIPT_IDENTITY_CONFLICT'});return existing;}
-  try{return await this.db.paperReceiptEvidence.create({data:{orderId:input.orderId,receiptReference,paymentChannel:input.paymentChannel,paymentNamespace:input.paymentNamespace,amount,currency:input.currency,receivedAt,evidenceDocumentRef:input.evidenceDocumentRef,note:input.note,enteredBy:input.actorId}});}
+  try{return await this.db.paperReceiptEvidence.create({data:{orderId:order.orderId,receiptReference,paymentChannel:input.paymentChannel,paymentNamespace:input.paymentNamespace,amount,currency:input.currency,receivedAt,evidenceDocumentRef:input.evidenceDocumentRef,note:input.note,enteredBy:input.actorId}});}
   catch(error:any){
    if(error?.code!=='P2002')throw error;
    const raced=await this.db.paperReceiptEvidence.findUnique({where});
