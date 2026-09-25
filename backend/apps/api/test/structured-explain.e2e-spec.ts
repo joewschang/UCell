@@ -1,5 +1,6 @@
 import { Test } from '@nestjs/testing';
 import { ValidationPipe } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
 import { Prisma, PrismaService } from '@ucell/database';
 import { MemberStructuredExplainController } from '../src/modules/explain/member-structured-explain.controller';
@@ -16,7 +17,7 @@ const time={timezone:'Asia/Taipei',periodStart:'2026-01-01T00:00:00.000Z',period
 function fixture(){
  const session:any={authSessionId:sid,personId:pid,provider:'LINE',subject:'line-private',roleCode:null,status:'ACTIVE',revokedAt:null,expiresAt:new Date(Date.now()+60000)};
  const award:any={bonusAwardId:awardId,recipientQualificationId:qid,occurredAt:new Date('2026-01-12'),createdAt:new Date('2026-01-13'),parameterSnapshotHash:'a'.repeat(64),ruleVersionCode:'R1.0B',theoryAmount:new Prisma.Decimal(100),kFactor:new Prisma.Decimal('.5'),payableAmount:new Prisma.Decimal('49.1234'),awardType:'BINARY',calculationDetail:{bankAccount:'private',token:'secret'}};
- const db:any={authSession:{findUnique:jest.fn(async()=>session)},person:{findUnique:jest.fn(async()=>({status:'EFFECTIVE'}))},identityLink:{findUnique:jest.fn(async()=>({personId:pid}))},
+ const db:any={authSession:{findUnique:jest.fn(async()=>session)},person:{findUnique:jest.fn(async()=>({status:'EFFECTIVE',securityStatus:'NORMAL'}))},identityLink:{findUnique:jest.fn(async()=>({personId:pid}))},
  qualification:{findUnique:jest.fn(async(i:any)=>i.where.qualificationId===qid?{currentHolderPersonId:pid}:null)},
  qualificationHolderHistory:{findMany:jest.fn(async()=>[{holderPersonId:pid}]),findFirst:jest.fn(async(i:any)=>i.where.qualificationId===qid?{holderPersonId:pid}:null)},
  systemAssignmentPoolEntry:{findFirst:jest.fn(async()=>null)},bonusAward:{findUnique:jest.fn(async()=>award)},auditEvent:{create:jest.fn(async()=>({}))}};
@@ -28,7 +29,7 @@ describe('Train A structured Member Explain HTTP boundary',()=>{
  const url=(extra:Record<string,string>={})=>'/api/v1/member/explain/structured?'+new URLSearchParams({...time,qualificationId:qid,tool:'explainAward',resourceId:awardId,...extra});
  beforeEach(async()=>{
   data=fixture();const mod=await Test.createTestingModule({controllers:[MemberStructuredExplainController],providers:[MemberStructuredExplainService,MemberAuthenticationGuard,MemberContextGuard,QualificationAccessService,
-   {provide:PrismaService,useValue:data.db},{provide:IdentityTokenService,useValue:{authenticate:jest.fn(async()=>({sessionId:sid,personId:pid,provider:'LINE',subject:'line-private',role:null}))}},
+   {provide:PrismaService,useValue:data.db},{provide:ConfigService,useValue:{get:jest.fn()}},{provide:IdentityTokenService,useValue:{authenticate:jest.fn(async()=>({sessionId:sid,personId:pid,provider:'LINE',subject:'line-private',role:null}))}},
    {provide:LineIdentityService,useValue:{resolveVerifiedSubject:jest.fn(async()=>({provider:'LINE',providerSubject:'line-private',personId:pid}))}}]}).compile();
   app=mod.createNestApplication<NestFastifyApplication>(new FastifyAdapter(),{logger:false});app.setGlobalPrefix('api/v1');
   app.useGlobalPipes(new ValidationPipe({whitelist:true,forbidNonWhitelisted:true,transform:true}));app.useGlobalInterceptors(new EnvelopeInterceptor());

@@ -18,7 +18,7 @@ const target=new URL(base);target.pathname='/'+database;
 const cwd=fileURLToPath(new URL('../',import.meta.url));
 const evidencePath=join(cwd,`.phase2-${database}.json`);
 const admin=new PrismaClient({datasources:{db:{url:control.href}}});
-const env={...process.env,DATABASE_URL:target.href,PHASE2_TEST_DATABASE_URL:target.href,V3_GOLDEN_DATABASE_URL:target.href,PHASE2_SHARED_DB_EVIDENCE_PATH:evidencePath};
+const env={...process.env,DATABASE_URL:target.href,PHASE2_TEST_DATABASE_URL:target.href,V3_GOLDEN_DATABASE_URL:target.href,CALENDAR_PERSISTENCE_TEST_DATABASE_URL:target.href,GLOBAL_RESERVOIR_TEST_DATABASE_URL:target.href,GPV_IMMEDIATE_TEST_DATABASE_URL:target.href,INVENTORY_PERSISTENCE_TEST_DATABASE_URL:target.href,PAYMENT_INVENTORY_TEST_DATABASE_URL:target.href,PAYMENT_PERSISTENCE_TEST_DATABASE_URL:target.href,PROVIDER_RECONCILIATION_TEST_DATABASE_URL:target.href,PROVIDER_WEBHOOK_VERIFICATION_TEST_DATABASE_URL:target.href,RETAIL_REFERRAL_TEST_DATABASE_URL:target.href,PHASE2_SHARED_DB_EVIDENCE_PATH:evidencePath};
 function run(args,workdir=cwd){const result=spawnSync(process.execPath,args,{cwd:workdir,env,stdio:'inherit'});if(result.error)throw result.error;assert.equal(result.status,0,'isolated Jest child failed');}
 let created=false;
 try{
