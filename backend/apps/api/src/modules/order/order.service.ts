@@ -9,6 +9,7 @@ import { PaymentConfirmationDto } from './dto/payment-confirmation.dto';
 import { QualificationAccessService } from '../auth/qualification-access.service';
 import { PackageConfigService } from '../package-config/package-config.service';
 import { SponsorResolver } from '../qualification/sponsor-resolver.service';
+import { OrganizationService } from '../organization/organization.service';
 
 type MemberOrderInput=Partial<CreateOrderDto>&{packageVersionId?:string;targetQualificationId?:string;sponsorCode?:string;selections?:Array<{productRuleProfileId:string;quantity:number}>};
 
@@ -21,6 +22,7 @@ export class OrderService {
     private readonly outbox: OutboxService,
     private readonly packages?: PackageConfigService,
     private readonly sponsors?: SponsorResolver,
+    private readonly organization?: OrganizationService,
   ) {}
 
   async createMember(dto:MemberOrderInput,key:string,requestId:string,personId:string){
@@ -257,8 +259,20 @@ export class OrderService {
       if(packageSnapshot){
         let downstreamStatus='RECOGNITION_CONFIGURATION_PENDING';
         if(packageSnapshot.packageClass==='QUALIFICATION'){
-          await tx.qualificationSetup.create({data:{qualificationId:order.qualificationId,ownerPersonId:packageSnapshot.personId,qualifyingOrderId:orderId,packagePurchaseSnapshotId:packageSnapshot.packagePurchaseSnapshotId,packageType:packageSnapshot.packageCode,setupStatus:'BALL_SETUP_PENDING',setupPolicyVersion:'NR-DEC-004-V1'}});
-          downstreamStatus='BALL_SETUP_PENDING';
+          const selected=tx.qualificationSponsorSelectionEvidence?await tx.qualificationSponsorSelectionEvidence.findFirst({where:{qualificationId:order.qualificationId},orderBy:{selectedAt:'desc'}}):null;
+          let sponsorQualificationId:string|undefined;
+          if(selected){
+            const selectedBall=await tx.qualification.findUnique({where:{qualificationId:selected.selectedSponsorQualificationId},select:{ballNo:true}});
+            if(!selectedBall?.ballNo)throw new UnprocessableEntityException({code:'SPONSOR_EVIDENCE_INVALID'});
+            const resolved=await (this.sponsors??new SponsorResolver(this.prisma)).resolveWithin(tx as any,{code:selectedBall.ballNo,effectiveAt:occurredAt,ruleVersion:'R1.0B'});
+            if(resolved.sponsorQualificationId!==selected.selectedSponsorQualificationId)throw new UnprocessableEntityException({code:'SPONSOR_EVIDENCE_INVALID'});
+            sponsorQualificationId=resolved.sponsorQualificationId;
+            const sponsorSequenceNo=await (this.organization??new OrganizationService(this.prisma)).allocateSponsorSequence(tx,sponsorQualificationId);
+            await tx.sponsorRelationship.create({data:{sponsorQualificationId,childQualificationId:order.qualificationId,sponsorSequenceNo,effectiveFrom:occurredAt}});
+          }
+          const placementDueAt=sponsorQualificationId?new Date(occurredAt.getTime()+72*60*60*1000):undefined;
+          await tx.qualificationSetup.create({data:{qualificationId:order.qualificationId,ownerPersonId:packageSnapshot.personId,qualifyingOrderId:orderId,packagePurchaseSnapshotId:packageSnapshot.packagePurchaseSnapshotId,packageType:packageSnapshot.packageCode,setupStatus:sponsorQualificationId?'PLACEMENT_PENDING':'BALL_SETUP_PENDING',finalSponsorQualificationId:sponsorQualificationId,placementRequestedAt:sponsorQualificationId?occurredAt:undefined,placementDueAt,setupPolicyVersion:'NR-DEC-004-V1'}});
+          downstreamStatus=sponsorQualificationId?'PLACEMENT_PENDING':'BALL_SETUP_PENDING';
         }
         await this.outbox.enqueue(tx,{eventType:'PACKAGE_PAYMENT_CONFIRMED',aggregateType:'ORDER',aggregateId:orderId,correlationId,payload:{schemaVersion:1,eventType:'PACKAGE_PAYMENT_CONFIRMED',orderId,qualificationId:order.qualificationId,packagePurchaseSnapshotId:packageSnapshot.packagePurchaseSnapshotId,packageClass:packageSnapshot.packageClass,occurredAt:occurredAt.toISOString(),recognitionStatus:'CONFIGURATION_PENDING',downstreamStatus}});
         await this.audit.write(tx,{actorType:actorId?'USER':'SYSTEM',actorId,action:'PACKAGE_PAYMENT_CONFIRMED',entityType:'ORDER',entityId:orderId,afterData:{paymentEventId:payment.paymentEventId,packagePurchaseSnapshotId:packageSnapshot.packagePurchaseSnapshotId,downstreamStatus},requestId,correlationId});
