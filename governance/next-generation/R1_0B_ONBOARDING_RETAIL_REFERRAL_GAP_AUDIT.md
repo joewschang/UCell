@@ -24,7 +24,7 @@ A slice is `COMPLETE` only when the required DB, domain, API, runtime, relevant 
 | SKU retail referral parameters | PARTIAL | Effective-dated profile fields and product UI exist. Effective-version/history Golden and approval workflow remain open. |
 | Retail Active eligibility | PARTIAL | Worker evaluates recognition-time active evidence. Historical active/replay Golden remains open. |
 | RETAIL_REFERRAL award | PARTIAL | Immutable snapshot recognition has active and inactive DB integration evidence; settlement/payout and explain are open. |
-| Retail return / recovery | PARTIAL | Partial return uses append-only offset recovery and retry evidence. Full, repeated, paid-award recovery and replay Golden are open. |
+| Retail return / recovery | PARTIAL | Local rollback DB integration now verifies partial, full and repeated returns; it preserves the original Award, writes append-only recovery effects, and handles a paid-award clawback. Historical replay Golden remains open. |
 | Operations explain / notifications | PARTIAL | Attribution history exists. Retail award explain, paper receipt/payment, pending placement and safe notifications are open. |
 | P0 privacy / identifiers | COMPLETE | Member projection hides bootstrap Company Balls and Reservoir data, prevents non-direct holder PII disclosure, and uses business identifiers in normal flows. Pending placement is additionally covered by Ball-number-only regression. |
 | OpenAPI / contracts | COMPLETE | `backend/openapi.generated.json` is regenerated for the current API and OpenAPI preflight passes. Existing operations remain governed by the generated artifact. |
