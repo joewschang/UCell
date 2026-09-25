@@ -1,3 +1,11 @@
+# Phase 1 scope update — 2026-09-25
+
+**AUTHORITATIVE PHASE BOUNDARY:** Phase 1 is now **Reliable UCell MVP only**, governed by [UCELL_PHASE_1_RELIABLE_MVP_SCOPE_DECISION.md](UCELL_PHASE_1_RELIABLE_MVP_SCOPE_DECISION.md). Semantic/Data Governance Runtime, SG-A1 implementation program, Analytics Runtime and AI/LLM/Agent infrastructure are Phase 2+ and are not Phase 1 release gates. Current critical path is Functional Closure → Full Regression → Code/Documentation Closure → Stage RC → Business UAT → Operational Readiness → Production Go/No-Go → R1.0B GA.
+
+The historical 20260925140000 local empty-directory migration discovery blocker is resolved; fresh 0→current/DB Golden evidence is recorded in DB_FRESH_MIGRATION_BLOCKER_20260925140000.md. This does not by itself certify Full Regression or Stage/Production.
+
+---
+
 # Next Generation implementation status
 
 **2026-09-20 Train D Experience V2 local closure update:** current local candidate is at 70 migrations. Fresh 0→70 migration deployment, Prisma generate/validate, DB Golden, P0 identifier reconstruction, API 83 suites / 792 tests, Admin 30 / 110 plus production build, Member 26 / 149 plus production build, Shared 5 / 181 plus build, Decision v3 17/17, economic Golden, OpenAPI preflight, security-policy preflight, and RC isolated all PASS. OpenAPI remains 162 paths / 175 operations / 80 schemas (SHA-256 `146a98a788eefbdf96f2bc935e2077df3aa7c6735edc6a69067205b9ac2a0541`). Local UAT uses synthetic data and is running. Formal LINE/LIFF and Entra evidence remains `EXTERNAL_IDENTITY_PENDING`; native 200% zoom and human manual UAT remain pending. Stage deployment/migration remains STOP and Production remains BLOCKED. See [Train D closure](TRAIN_D_EXPERIENCE_V2_CLOSURE_REPORT.md) and [matrix](TRAIN_D_EXPERIENCE_V2_PASS_FAIL_MATRIX.md).
