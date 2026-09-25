@@ -620,6 +620,7 @@ model Person {
   retailReferrerAttributions RetailReferrerAttribution[]
   retailReferrerCorrectionEvents RetailReferrerAttributionEvent[] @relation("RetailReferrerCorrectionActor")
   paperApplications          PaperApplication[]
+  paperIdentityFingerprints  PaperPersonIdentityFingerprint[]
 
   @@index([legalName])
   @@index([mobile])
@@ -1188,6 +1189,41 @@ model OrderLine {
   @@schema("commerce")
 }
 
+model PaperPersonIdentityFingerprint {
+  paperPersonIdentityFingerprintId String @id @default(uuid()) @map("paper_person_identity_fingerprint_id") @db.Uuid
+  personId String @map("person_id") @db.Uuid
+  documentCountry String @map("document_country") @db.VarChar(8)
+  documentType String @map("document_type") @db.VarChar(64)
+  fingerprintAlgorithm String @map("fingerprint_algorithm") @db.VarChar(64)
+  fingerprintVersion String @map("fingerprint_version") @db.VarChar(32)
+  fingerprint String @map("fingerprint") @db.Char(64)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  person Person @relation(fields:[personId],references:[personId],onDelete:Restrict)
+  @@unique([fingerprintAlgorithm,fingerprintVersion,fingerprint])
+  @@index([personId])
+  @@map("paper_person_identity_fingerprint")
+  @@schema("identity")
+}
+
+model PaperIdentityDuplicateReview {
+  paperIdentityDuplicateReviewId String @id @default(uuid()) @map("paper_identity_duplicate_review_id") @db.Uuid
+  paperApplicationNo String @unique @map("paper_application_no") @db.VarChar(80)
+  fingerprintAlgorithm String @map("fingerprint_algorithm") @db.VarChar(64)
+  fingerprintVersion String @map("fingerprint_version") @db.VarChar(32)
+  fingerprint String @map("fingerprint") @db.Char(64)
+  status String @default("DUPLICATE_REVIEW_REQUIRED") @db.VarChar(64)
+  reasonCode String @map("reason_code") @db.VarChar(128)
+  evidenceDocumentRef String? @map("evidence_document_ref") @db.VarChar(500)
+  requestedBy String @map("requested_by") @db.Uuid
+  resolvedBy String? @map("resolved_by") @db.Uuid
+  resolvedAt DateTime? @map("resolved_at") @db.Timestamptz(6)
+  resolutionReasonCode String? @map("resolution_reason_code") @db.VarChar(128)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  @@index([status,createdAt])
+  @@map("paper_identity_duplicate_review")
+  @@schema("commerce")
+}
 model PaperApplication {
   paperApplicationId  String   @id @default(uuid()) @map("paper_application_id") @db.Uuid
   paperApplicationNo  String   @unique @map("paper_application_no") @db.VarChar(80)
@@ -3927,3 +3963,6 @@ model BallNoAllocation {
   @@map("ball_no_allocation")
   @@schema("organization")
 }
+
+
+

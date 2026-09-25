@@ -14,7 +14,7 @@ A slice is `COMPLETE` only when the required DB, domain, API, runtime, relevant 
 | Payment → placement pending | PARTIAL | Sponsored package creates `PLACEMENT_PENDING`; complete payment, reversal and activation E2E is not yet demonstrated. |
 | Sponsor pending-placement workbench | COMPLETE | Member-safe queue and placement workbench now use public Ball numbers only. Sponsor authorization, slot/cycle/first-third-left validation and idempotency remain server-authoritative; Admin retains its separately RBAC-protected UUID command surface. |
 | Placement → activation | PARTIAL | Authoritative placement service, idempotency and slot race coverage exist. Onboarding E2E activation remains open. |
-| Paper application / duplicate Person | PARTIAL | Admin API now records idempotent paper provenance for an existing Person only and exposes a business-identifier operations read model, without raw identity payloads. It fails closed when the Person is absent. New-Person intake remains open because the approved normalized identity fingerprint fields and duplicate-review policy are not implemented. |
+| Paper application / duplicate Person | PARTIAL | New Person intake now uses approved document-country/type policy, deterministic HMAC-SHA-256 fingerprint matching, unique fingerprint concurrency protection, safe audit events and a duplicate-review queue. Unconfigured document types fail closed. Review resolution and jurisdiction policy provisioning remain operational follow-up work. |
 | Paper order | PARTIAL | `adminCreatePaperQualificationOrder` binds one OPEN paper application to one Qualification package order and reuses PackageConfig, SponsorResolver, Payment and Placement core. Paper retail, Admin wizard/read model and end-to-end payment/activation evidence remain open. |
 | Paper receipt / payment confirmation | COMPLETE | Receipt evidence identity is immutable and retry-safe; conflicting evidence fails closed, dual control is enforced, and pre-placement reversal is covered. |
 | Company Sponsor Alias v1 | COMPLETE | Effective-dated, audited Company Alias resolution is available for qualifying acquisition and paper intake; member views expose only governed display information. |
@@ -48,3 +48,4 @@ A slice is `COMPLETE` only when the required DB, domain, API, runtime, relevant 
 - No historical migration is edited; schema work is forward-only.
 - Semantic DB, Analytics, LLM/RAG/Vector DB and deployment are outside this closure.
 - Google Drive is not modified without explicitly authorized Drive tooling; any final closure must remain `CODE_CLOSED_DRIVE_SYNC_PENDING` until synchronized.
+
