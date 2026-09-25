@@ -1,5 +1,6 @@
 import { ConflictException, UnauthorizedException } from '@nestjs/common';
 import { ExistingMemberLineLinkService } from '../src/modules/auth/existing-member-line-link.service';
+import {createHash} from 'crypto';
 
 describe('existing member LINE link boundary',()=>{
  const verifier:any={verify:jest.fn().mockResolvedValue({subject:'line-subject',expiresAt:Math.floor(Date.now()/1000)+3600})};
@@ -22,5 +23,15 @@ describe('existing member LINE link boundary',()=>{
   const service=new ExistingMemberLineLinkService({$transaction:(work:any)=>work(tx)} as any,verifier,{} as any,audit);
   await expect(service.complete({requestId:'r1',completionToken:'wrong-token',idToken:'token'})).rejects.toBeInstanceOf(UnauthorizedException);
   expect(tx.accountRecoveryRequest.update).toBeUndefined();
+ });
+ it('binds the approved LINE subject to the existing Person and returns the same memberNo',async()=>{
+  const token='approved-token-012345678901';
+  const request:any={accountRecoveryRequestId:'r1',personId:'person-1',type:'EXISTING_MEMBER_LINE_LINK',status:'APPROVED',completionTokenHash:createHash('sha256').update(token).digest('hex'),completionTokenExpiresAt:new Date(Date.now()+60000),requestedProviderSubject:'line-subject'};
+  const tx:any={accountRecoveryRequest:{findUnique:jest.fn().mockResolvedValue(request),update:jest.fn()},person:{findUnique:jest.fn().mockResolvedValue({personId:'person-1',memberNo:'2609250001',securityStatus:'NORMAL'})},identityLink:{findFirst:jest.fn().mockResolvedValue(null),findUnique:jest.fn().mockResolvedValue(null),create:jest.fn().mockResolvedValue({identityLinkId:'binding'})},authSession:{create:jest.fn().mockResolvedValue({authSessionId:'session'})}};
+  const service=new ExistingMemberLineLinkService({$transaction:(work:any)=>work(tx)} as any,verifier,{} as any,audit);
+  const result:any=await service.complete({requestId:'r1',completionToken:token,idToken:'token'});
+  expect(result.memberNo).toBe('2609250001');
+  expect(tx.identityLink.create).toHaveBeenCalledWith({data:expect.objectContaining({personId:'person-1',provider:'LINE',providerSubject:'line-subject',status:'ACTIVE'})});
+  expect(tx.accountRecoveryRequest.update).toHaveBeenCalledWith({where:{accountRecoveryRequestId:'r1'},data:expect.objectContaining({status:'COMPLETED'})});
  });
 });
