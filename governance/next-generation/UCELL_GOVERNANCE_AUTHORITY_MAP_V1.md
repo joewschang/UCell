@@ -119,3 +119,9 @@ Before any new Codex work package:
 3. confirm no newer conflicting authority;
 4. create/update Cross-Layer Impact Matrix;
 5. only then implement.
+
+
+## 11. Current AI phase boundary
+
+Authority: UCELL_PHASE_BOUNDARY_AI_READY_FOUNDATION_DECISION.md.
+Current phase is AI-READY FOUNDATION ONLY. Admin AI natural-language query, LLM runtime, RAG/vector/embedding, AI tool/memory/query-planner runtime and AI write actions are deferred to the next separately approved phase. AI Brain specifications are future design and MUST NOT be interpreted by Codex as current implementation scope.
