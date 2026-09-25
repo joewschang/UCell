@@ -9061,6 +9061,42 @@
       }
     },
     "/api/v1/admin/paper-applications": {
+      "get": {
+        "description": "Authorized paper-intake read model. Uses memberNo and paper application number; raw identity documents are never returned.",
+        "operationId": "adminListPaperApplications",
+        "parameters": [
+          {
+            "name": "status",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "take",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "Admin - Paper Intake"
+        ]
+      },
       "post": {
         "description": "Creates paper provenance for an existing Person only. New-person creation is fail-closed until approved duplicate identity matching is implemented.",
         "operationId": "adminCreatePaperApplication",

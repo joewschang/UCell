@@ -22,4 +22,11 @@ describe('PaperIntakeService',()=>{
   const service=new PaperIntakeService({} as any,run(tx) as any,{write:jest.fn()} as any,{} as any);
   await expect(service.create(base)).rejects.toMatchObject({response:{code:'PAPER_APPLICATION_IDENTITY_CONFLICT'}});
  });
+ it('returns an operations read model with business identifiers and no Person UUID',async()=>{
+  const db:any={paperApplication:{findMany:jest.fn().mockResolvedValue([{paperApplicationId:'internal-id',paperApplicationNo:'PA-1',status:'ORDER_CREATED',receivedAt:new Date('2026-09-26T00:00:00.000Z'),evidenceDocumentRef:'secure://paper/1',createdAt:new Date('2026-09-26T00:00:00.000Z'),updatedAt:new Date('2026-09-26T01:00:00.000Z'),person:{memberNo:'2609000001'},order:{orderNo:123n,status:'CONFIRMED',purpose:'ENTRY',netAmount:{toString:()=> '14400'},paidAt:null}}])}};
+  const service=new PaperIntakeService(db,{} as any,{} as any,{} as any);
+  const rows:any=await service.list({take:1});
+  expect(rows[0]).toMatchObject({paperApplicationNo:'PA-1',memberNo:'2609000001',order:{orderNo:'123',purpose:'ENTRY'}});
+  expect(rows[0]).not.toHaveProperty('paperApplicationId');
+ });
 });
