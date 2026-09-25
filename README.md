@@ -11,6 +11,10 @@ This repository is the consolidated **Production Release Candidate source packag
 
 It is intentionally **fail-closed**: production promotion is prohibited until the connected CI/DEV environment has produced a reviewed `pnpm-lock.yaml` and all database, security, UAT, backup/restore and RC gates pass.
 
+## Current Ball Number rule
+
+[Ball Number V2 — per-tree sequence](governance/next-generation/BALL_NUMBER_SEQUENCE_V2.md) supersedes the position-derived ordinary Ball numbering rule from 2026-09-25. Company bootstrap numbers and existing published numbers remain unchanged.
+
 ## SSOT governance
 
 Economic rules come from UCell R1.0B FROZEN. Source of truth order:

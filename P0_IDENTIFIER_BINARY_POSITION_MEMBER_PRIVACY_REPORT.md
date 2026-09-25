@@ -1,15 +1,17 @@
 # P0 identifier, binary position, and member privacy closure
 
+> Ball-number rules were amended on 2026-09-25. [Ball Number V2](governance/next-generation/BALL_NUMBER_SEQUENCE_V2.md) governs current behavior. Validation below records the historical P0 run, not V2 verification.
+
 ## Implemented boundary
 
 - `identity.person.member_no` is globally unique, immutable, and allocated by the database with a Taipei `YYMM` month plus a six-digit atomic sequence. The allocator uses an UPSERT counter, never `COUNT(*) + 1`.
 - The migration backfills legacy people with the governed cutover code `2609`, ordered by `created_at, person_id`. This is explicitly allocation evidence, not an assertion about historical enrollment dates.
-- `organization.binary_tree_membership.binary_position_no` is a bigint immutable binary-heap identity. `membership.qualification.ball_no` is the immutable public Ball identifier derived from tree code and position.
-- Tree creation and placement write the position, immutable placement evidence, and Ball number in the same transaction. The public derivation is `AX000001` through `AX000003` for bootstrap positions and `A000001` for position four; position width extends naturally beyond six digits.
+- `organization.binary_tree_membership.binary_position_no` is a bigint immutable binary-heap identity. `membership.qualification.ball_no` is the immutable public Ball identifier derived from tree code and its immutable allocation record (bootstrap uses position).
+- Tree creation and placement write the position, immutable placement evidence, and Ball number in the same transaction. Bootstrap positions retain `AX000001` through `AX000003`. New ordinary Balls start at `A000001` by successful allocation order, regardless of position; sequence width extends naturally beyond six digits. Legacy identifiers remain unchanged.
 - Member sponsor/referral and new bounded tree reads serialize Ball numbers only. Bootstrap Company positions #1–#3 are removed before the response is constructed. Anonymous nodes have no holder PII, owner classification, Company state, reservoir, or financial fields.
 - Admin Tree placement uses the public ten-digit Member Number for the unplaced member and the public parent Ball Number. A Member Number resolves only where exactly one unplaced Member-origin qualification exists; zero and multiple matches fail closed. A parent Ball Number is resolved only inside the selected Tree. The Tree Detail read model removes technical Qualification UUIDs before rendering; it never falls back to a UUID when Ball evidence is absent.
 - Tree pages use a database snapshot token bound to member, tree, and time context. A subsequent cursor or permitted child expansion without its snapshot is rejected. Member traversal is additionally limited to the subtree rooted at a Ball owned by the authenticated member, derived from immutable binary positions; a guessed Ball number cannot enumerate a sibling branch.
-- `qualification_ball_no_integrity` rejects a non-null Ball number unless it exactly matches the authoritative Tree Code and binary position. This complements unique and immutable constraints at the DB boundary.
+- `qualification_ball_no_integrity` rejects a non-null Ball number unless it matches the authoritative Tree Code and allocation record (or bootstrap position). This complements unique and immutable constraints at the DB boundary.
 
 ## Validation
 

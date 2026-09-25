@@ -22,9 +22,15 @@ export function childPosition(position: bigint, side: 'LEFT' | 'RIGHT'): bigint 
   return position * 2n + (side === 'RIGHT' ? 1n : 0n);
 }
 
-/** Minimum six display digits; it intentionally grows naturally past 999999. */
-export function ballNoFor(treeCode: string, position: bigint): string {
-  if (!/^[A-Z][A-Z0-9_-]{0,39}$/.test(treeCode) || position < 1n) throw new Error('BALL_IDENTIFIER_INVALID');
-  const suffix = position <= 3n ? `X${position.toString().padStart(6, '0')}` : (position - 3n).toString().padStart(6, '0');
-  return `${treeCode}${suffix}`;
+/** Ordinary Ball numbers use an allocated per-tree sequence, never a heap position. */
+export function ballNoFor(treeCode: string, sequence: bigint): string {
+  if (!/^[A-Z][A-Z0-9_-]{0,39}$/.test(treeCode) || sequence < 1n) throw new Error('BALL_IDENTIFIER_INVALID');
+  return `${treeCode}${sequence.toString().padStart(6, '0')}`;
+}
+
+/** Only the three original Company bootstrap Balls retain position-based numbers. */
+export function bootstrapBallNoFor(treeCode: string, position: bigint): string {
+  if (position < 1n || position > 3n) throw new Error('BOOTSTRAP_POSITION_INVALID');
+  ballNoFor(treeCode, position);
+  return `${treeCode}X${position.toString().padStart(6, '0')}`;
 }

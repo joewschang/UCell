@@ -785,6 +785,7 @@ model Qualification {
   qualificationId       String               @id @default(uuid()) @map("qualification_id") @db.Uuid
   qualificationNo       BigInt               @unique @default(autoincrement()) @map("qualification_no")
   /// Immutable business Ball identifier after Binary placement. It is never a relational key.
+  ballAllocation        BallNoAllocation?
   ballNo                String?              @unique @map("ball_no")
   currentHolderPersonId String?              @map("current_holder_person_id") @db.Uuid
   planLevelCode         String?              @map("plan_level_code")
@@ -3606,6 +3607,8 @@ model QualificationOwnerInterval {
   @@schema("membership")
 }
 model BinaryTree {
+  ballCounter BallNoCounter?
+  ballAllocations BallNoAllocation[]
  economicDestinations AwardEconomicDestination[]
  companyProfileBindings CompanyBootstrapProfileBinding[]
   binaryTreeId String @id @default(uuid()) @map("binary_tree_id") @db.Uuid
@@ -3880,4 +3883,25 @@ model ReportReadSnapshot {
  @@index([expiresAt],map:"report_read_snapshot_expiry_idx")
  @@map("report_read_snapshot")
  @@schema("ledger")
+}
+
+/// Transactional per-tree ordinary Ball sequence; never inferred from topology.
+model BallNoCounter {
+  binaryTreeId String @id @map("binary_tree_id") @db.Uuid
+  lastSequence BigInt @map("last_sequence")
+  tree BinaryTree @relation(fields: [binaryTreeId], references: [binaryTreeId], onDelete: Restrict, onUpdate: NoAction)
+  @@map("ball_no_counter")
+  @@schema("organization")
+}
+model BallNoAllocation {
+  qualificationId String @id @map("qualification_id") @db.Uuid
+  binaryTreeId String @map("binary_tree_id") @db.Uuid
+  sequenceNo BigInt @map("sequence_no")
+  ruleVersion String @map("rule_version")
+  allocatedAt DateTime @default(now()) @map("allocated_at") @db.Timestamptz(6)
+  qualification Qualification @relation(fields: [qualificationId], references: [qualificationId], onDelete: Restrict, onUpdate: NoAction)
+  tree BinaryTree @relation(fields: [binaryTreeId], references: [binaryTreeId], onDelete: Restrict, onUpdate: NoAction)
+  @@unique([binaryTreeId, sequenceNo], map: "ball_no_allocation_binary_tree_id_sequence_no_key")
+  @@map("ball_no_allocation")
+  @@schema("organization")
 }

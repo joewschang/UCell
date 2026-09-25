@@ -1,6 +1,6 @@
 # Final P0 identifier and member privacy decision
 
-**Effective date:** 2026-09-19 (Asia/Taipei)  
+**Effective date:** 2026-09-19 (Asia/Taipei); Ball Number amended 2026-09-25
 **Approval reference:** GitHub Issue #2, Product Owner P0 Consolidation and Train D Task Revision comments.
 
 This decision supersedes earlier wording that exposed Company bootstrap nodes to Members, used a technical Qualification identifier as a member-facing number, or inferred visibility from Company ownership alone.
@@ -8,7 +8,7 @@ This decision supersedes earlier wording that exposed Company bootstrap nodes to
 | Term | Final decision |
 |---|---|
 | memberNo | One immutable, globally unique `YYMM######` business number per Person. Taipei time defines the month. UUID remains the relational key. |
-| ballNo | Immutable public Ball number derived only from `treeCode` and `binaryPositionNo`. Bootstrap positions 1–3 use `TreeCode + X + PAD6(position)`; all later positions use `TreeCode + PAD6(position - 3)`. |
+| ballNo | Immutable public Ball number. Bootstrap positions 1–3 retain `TreeCode + X + PAD6(position)`. Ordinary Member/Company Balls use `TreeCode + PAD6(per-tree allocated sequence)` at successful placement, independent of topology. Existing published numbers remain unchanged. See [Ball Number V2](BALL_NUMBER_SEQUENCE_V2.md). |
 | binaryPositionNo / path | Authoritative bigint binary-heap position and derived `R/L` path. It survives holder and Company ownership changes. |
 | Bootstrap visibility | Positions 1–3 remain authoritative Company LEADER / Always Active Core and Admin nodes, but are absent from every Member DTO, search, explanation, export, notification, analytics surface, and accessibility metadata. |
 | Company-held position >=4 | It remains visible when otherwise within the Member's authorized scope. Company ownership alone never hides it. Company economics and Reservoir information remain excluded. |

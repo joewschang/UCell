@@ -53,7 +53,7 @@ it('renders the complete safe authority preflight review and no internal sponsor
  await act(async()=>memberInput.props.onChange({target:{value:'2609000001'}}));
  const parentInput=view.root.findAllByType('input').find(input=>input.props.placeholder==='例如 TREE-A000001')!;
  await act(async()=>parentInput.props.onChange({target:{value:'TREE-AX000001'}}));
- vi.mocked(get).mockResolvedValueOnce({data:{preflightToken:'p'.repeat(64),treeCode:'TREE-A',ballNo:'UNPLACED-2609000001',parentBallNo:'TREE-AX000001',expectedBinaryPositionNo:'4',expectedPath:'RLL',expectedBallNo:'TREE-A000001',expectedVersion:2,actualSponsorSequenceNo:3,sponsorQualificationId:'internal-sponsor-id'}});
+ vi.mocked(get).mockResolvedValueOnce({data:{preflightToken:'p'.repeat(64),treeCode:'TREE-A',ballNo:'UNPLACED-2609000001',parentBallNo:'TREE-AX000001',expectedBinaryPositionNo:'4',expectedPath:'RLL',expectedBallNo:null,expectedVersion:2,actualSponsorSequenceNo:3,sponsorQualificationId:'internal-sponsor-id'}});
  await act(async()=>view.root.findAllByType('button').find(button=>button.children.join('')==='預檢選定位置')!.props.onClick());
  const output=JSON.stringify(view.toJSON());
  expect(output).toContain('預檢可提交');expect(output).toContain('TREE-A');expect(output).toContain('TREE-AX000001');expect(output).toContain('Binary 位置 4');expect(output).toContain('RLL');expect(output).toContain('TREE-A000001');expect(output).toContain('Topology version');expect(output).toContain('這不是位置保留');
@@ -68,7 +68,7 @@ it('shows a safe receipt after placement and submits the preflight-bound version
  const parentInput=view.root.findAllByType('input').find(input=>input.props.placeholder==='例如 TREE-A000001')!;
  const reasonInput=view.root.findAllByType('input').find(input=>input.props.maxLength===500)!;
  await act(async()=>{memberInput.props.onChange({target:{value:'2609000001'}});parentInput.props.onChange({target:{value:'TREE-AX000001'}});reasonInput.props.onChange({target:{value:'UAT placement'}});});
- vi.mocked(get).mockResolvedValueOnce({data:{preflightToken:'p'.repeat(64),treeCode:'TREE-A',ballNo:'UNPLACED-2609000001',parentBallNo:'TREE-AX000001',expectedBinaryPositionNo:'4',expectedPath:'RLL',expectedBallNo:'TREE-A000001',expectedVersion:2,actualSponsorSequenceNo:3}});
+ vi.mocked(get).mockResolvedValueOnce({data:{preflightToken:'p'.repeat(64),treeCode:'TREE-A',ballNo:'UNPLACED-2609000001',parentBallNo:'TREE-AX000001',expectedBinaryPositionNo:'4',expectedPath:'RLL',expectedBallNo:null,expectedVersion:2,actualSponsorSequenceNo:3}});
  await act(async()=>view.root.findAllByType('button').find(button=>button.children.join('')==='預檢選定位置')!.props.onClick());
  vi.mocked(command).mockResolvedValueOnce({data:{binaryTreeId:id,treeCode:'TREE-A',ballNo:'TREE-A000001',parentBallNo:'TREE-AX000001',binaryPositionNo:'4',path:'RLL',topologyVersion:3,effectiveAt:'2026-09-19T01:02:03.000Z',binaryPlacementId:'internal-placement-id'}});
  await act(async()=>view.root.findAllByType('button').find(button=>button.children.join('')==='確認放置於選定位置')!.props.onClick());
@@ -83,7 +83,7 @@ it('clears a stale preflight on 409 and leaves the explicit parent choice untouc
  const parentInput=view.root.findAllByType('input').find(input=>input.props.placeholder==='例如 TREE-A000001')!;
  const reasonInput=view.root.findAllByType('input').find(input=>input.props.maxLength===500)!;
  await act(async()=>{memberInput.props.onChange({target:{value:'2609000001'}});parentInput.props.onChange({target:{value:'TREE-AX000001'}});reasonInput.props.onChange({target:{value:'UAT placement'}});});
- vi.mocked(get).mockResolvedValueOnce({data:{preflightToken:'p'.repeat(64),treeCode:'TREE-A',ballNo:'UNPLACED-2609000001',parentBallNo:'TREE-AX000001',expectedBinaryPositionNo:'4',expectedPath:'RLL',expectedBallNo:'TREE-A000001',expectedVersion:2,actualSponsorSequenceNo:3}});
+ vi.mocked(get).mockResolvedValueOnce({data:{preflightToken:'p'.repeat(64),treeCode:'TREE-A',ballNo:'UNPLACED-2609000001',parentBallNo:'TREE-AX000001',expectedBinaryPositionNo:'4',expectedPath:'RLL',expectedBallNo:null,expectedVersion:2,actualSponsorSequenceNo:3}});
  await act(async()=>view.root.findAllByType('button').find(button=>button.children.join('')==='預檢選定位置')!.props.onClick());
  vi.mocked(command).mockRejectedValueOnce(new ApiError(409,null,'conflict'));
  await act(async()=>view.root.findAllByType('button').find(button=>button.children.join('')==='確認放置於選定位置')!.props.onClick());

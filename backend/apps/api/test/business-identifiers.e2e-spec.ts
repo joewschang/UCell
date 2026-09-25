@@ -1,4 +1,4 @@
-import {ballNoFor,binaryParent,binaryPath,binarySide,childPosition} from '@ucell/database';
+import {ballNoFor,bootstrapBallNoFor,binaryParent,binaryPath,binarySide,childPosition} from '@ucell/database';
 import {memberSafeAnonymousNode} from '../src/modules/member/member-read.service';
 import {isDescendantOrSelf,memberSafeTreeNode} from '../src/modules/member/member-tree-read.service';
 
@@ -15,16 +15,16 @@ describe('P0 business identifiers',()=>{
   expect(childPosition(3n,'RIGHT')).toBe(7n);
  });
  it('derives Company bootstrap and member Ball numbers without a six-position ceiling',()=>{
-  expect(ballNoFor('A',1n)).toBe('AX000001');
-  expect(ballNoFor('A',2n)).toBe('AX000002');
-  expect(ballNoFor('A',3n)).toBe('AX000003');
-  expect(ballNoFor('A',4n)).toBe('A000001');
-  expect(ballNoFor('A',1000003n)).toBe('A1000000');
+  expect(bootstrapBallNoFor('A',1n)).toBe('AX000001');
+  expect(bootstrapBallNoFor('A',2n)).toBe('AX000002');
+  expect(bootstrapBallNoFor('A',3n)).toBe('AX000003');
+  expect(ballNoFor('A',1n)).toBe('A000001');
+  expect(ballNoFor('A',1000000n)).toBe('A1000000');
  });
- it('has the approved deterministic Tree A golden mapping through position fifteen',()=>{
+ it('keeps binary paths separate from ordinary sequence formatting',()=>{
   const expected=['AX000001','AX000002','AX000003','A000001','A000002','A000003','A000004','A000005','A000006','A000007','A000008','A000009','A000010','A000011','A000012'];
   const paths=['R','RL','RR','RLL','RLR','RRL','RRR','RLLL','RLLR','RLRL','RLRR','RRLL','RRLR','RRRL','RRRR'];
-  for(let n=1;n<=15;n++){expect(ballNoFor('A',BigInt(n))).toBe(expected[n-1]);expect(binaryPath(BigInt(n))).toBe(paths[n-1]);}
+  for(let n=1;n<=15;n++){expect(n<=3?bootstrapBallNoFor('A',BigInt(n)):ballNoFor('A',BigInt(n-3))).toBe(expected[n-1]);expect(binaryPath(BigInt(n))).toBe(paths[n-1]);}
  });
  it('round-trips parent, side and children through normal and precision-safe deep positions',()=>{
   for(const position of [1n,2n,3n,4n,5n,6n,7n,8n,9n,10n,11n,12n,13n,14n,15n,(1n<<60n)+12345n]){
@@ -34,10 +34,10 @@ describe('P0 business identifiers',()=>{
    expect(binaryPath(position)).toMatch(/^R[LR]*$/);
   }
  });
- it('does not use placement creation order to derive Ball numbers',()=>{
-  // The actual placements may occur in either order; their immutable topology position is the sole input.
-  expect(ballNoFor('A',6n)).toBe('A000003');
-  expect(ballNoFor('A',4n)).toBe('A000001');
+ it('formats allocated sequences without subtracting bootstrap positions',()=>{
+  // These inputs are allocated sequences, not binary positions.
+  expect(ballNoFor('A',6n)).toBe('A000006');
+  expect(ballNoFor('A',4n)).toBe('A000004');
  });
  it('serializes anonymous Member nodes without nullable or hidden holder PII fields',()=>{
   const topology=memberSafeTreeNode({ballNo:'A000050',binaryPositionNo:50n,side:'LEFT'});

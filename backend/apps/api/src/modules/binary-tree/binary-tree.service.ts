@@ -1,5 +1,5 @@
 import {ConflictException,ForbiddenException,Injectable,UnprocessableEntityException} from '@nestjs/common';
-import {binaryPath,Prisma,PrismaService,ballNoFor,childPosition,bindCompanyLeaderProfile,effectiveCompanyParameters} from '@ucell/database';
+import {binaryPath,Prisma,PrismaService,bootstrapBallNoFor,childPosition,bindCompanyLeaderProfile,effectiveCompanyParameters} from '@ucell/database';
 import {randomUUID} from 'node:crypto';
 import {IdempotencyService} from '../../common/idempotency/idempotency.service';
 import {OrganizationService} from '../organization/organization.service';
@@ -46,7 +46,7 @@ export class BinaryTreeService {
    const treeId=randomUUID(),correlationId=randomUUID(),balls=[randomUUID(),randomUUID(),randomUUID()];
    const tree=await tx.binaryTree.create({data:{binaryTreeId:treeId,treeCode,treeName:input.treeName.trim(),companyPrincipalId:company.companyPrincipalId,createdByActorId:actorId,effectiveAt:at}});
    for(let i=0;i<3;i++){
-    const binaryPositionNo=BigInt(i+1),ballNo=ballNoFor(treeCode,binaryPositionNo);
+    const binaryPositionNo=BigInt(i+1),ballNo=bootstrapBallNoFor(treeCode,binaryPositionNo);
     await tx.qualification.create({data:{qualificationId:balls[i],kind:'COMPANY_BOOTSTRAP',currentCompanyPrincipalId:company.companyPrincipalId,currentHolderPersonId:null,planLevelCode:null,status:'EFFECTIVE',activeFlag:false,effectiveAt:at}});
     const hash=treeHash({treeId,qualificationId:balls[i],owner:company.companyPrincipalId,effectiveAt:at.toISOString(),kind:'COMPANY_BOOTSTRAP'});
     await tx.qualificationOwnerInterval.create({data:{qualificationId:balls[i],ownerType:'COMPANY',companyPrincipalId:company.companyPrincipalId,effectiveFrom:at,sourceType:'TREE_BOOTSTRAP',sourceId:treeId,evidenceHash:hash}});
@@ -74,7 +74,7 @@ export class BinaryTreeService {
    await tx.binaryTreeStatusEvent.create({data:{binaryTreeId:treeId,status:'DRAFT',topologyVersion:1,treeName:tree.treeName,actorId,reason,effectiveAt:at,correlationId,evidenceHash}});
    await tx.binaryTreeProjectionCheckpoint.create({data:{binaryTreeId:treeId,sourceVersion:1,generation:randomUUID(),status:'READY',dataThrough:at}});
    await this.audit(tx,actorId,treeId,'BINARY_TREE_CREATED',{treeCode,balls,topologyVersion:1,evidenceHash},correlationId);
-   return {binaryTreeId:treeId,treeCode,treeName:tree.treeName,status:'DRAFT',topologyVersion:1,companyQualificationIds:balls,companyBallNos:[ballNoFor(treeCode,1n),ballNoFor(treeCode,2n),ballNoFor(treeCode,3n)],positions:7,economicActivation:'APPROVED_LEADER_BINDING',effectiveAt:at.toISOString(),evidenceHash};
+   return {binaryTreeId:treeId,treeCode,treeName:tree.treeName,status:'DRAFT',topologyVersion:1,companyQualificationIds:balls,companyBallNos:[bootstrapBallNoFor(treeCode,1n),bootstrapBallNoFor(treeCode,2n),bootstrapBallNoFor(treeCode,3n)],positions:7,economicActivation:'APPROVED_LEADER_BINDING',effectiveAt:at.toISOString(),evidenceHash};
   });
  }
  async change(p:TreePrincipal,treeId:string,input:{status?:'ACTIVE'|'CLOSED_TO_NEW'|'ARCHIVED';treeName?:string;expectedVersion:number;reason:string;effectiveAt?:string},key:string){
@@ -163,7 +163,7 @@ export class BinaryTreeService {
    const canonical=parentPosition&&positions.find(s=>s.parentPositionNo===parentPosition.positionNo&&s.side===input.side);
    if(canonical){const designation=await tx.companySponsorDesignation.findUniqueOrThrow({where:{binaryTreeId:treeId}});if(sponsor.sponsorQualificationId!==designation.qualificationId)throw new ConflictException({code:'FOUNDING_COMPANY_SPONSOR_REQUIRED'});}
    const proposedPosition=childPosition(parent.binaryPositionNo,input.side);
-   return {valid:true,binaryTreeId:treeId,treeCode:tree.treeCode,ballNo:target.ballNo,parentBallNo:(await tx.qualification.findUniqueOrThrow({where:{qualificationId:input.binaryParentQualificationId}})).ballNo,expectedBinaryPositionNo:proposedPosition.toString(),expectedPath:binaryPath(proposedPosition),expectedBallNo:ballNoFor(tree.treeCode,proposedPosition),expectedVersion:tree.topologyVersion,sponsorQualificationId:sponsor.sponsorQualificationId,actualSponsorSequenceNo:sponsor.sponsorSequenceNo,
+   return {valid:true,binaryTreeId:treeId,treeCode:tree.treeCode,ballNo:target.ballNo,parentBallNo:(await tx.qualification.findUniqueOrThrow({where:{qualificationId:input.binaryParentQualificationId}})).ballNo,expectedBinaryPositionNo:proposedPosition.toString(),expectedPath:binaryPath(proposedPosition),expectedBallNo:null,expectedVersion:tree.topologyVersion,sponsorQualificationId:sponsor.sponsorQualificationId,actualSponsorSequenceNo:sponsor.sponsorSequenceNo,
     preflightToken:treeHash({treeId,version:tree.topologyVersion,qualificationId:target.qualificationId,holder:target.currentHolderPersonId,parent:input.binaryParentQualificationId,side:input.side,sponsorId:sponsor.sponsorRelationshipId,sequence:sponsor.sponsorSequenceNo})};
   },{isolationLevel:Prisma.TransactionIsolationLevel.RepeatableRead});
   await this.authorize(p);return result;
