@@ -1,50 +1,48 @@
-# R1.0B Onboarding and Retail Referral Gap Audit
+# R1.0B Onboarding and Retail Referral Gap Re-Audit
 
-Status date: 2026-09-25. Scope is the R1.0B onboarding and retail referral closure request. A status is COMPLETE only where API, domain, database, UI, security, and tests form a usable vertical slice.
+**Status date:** 2026-09-25 (Asia/Taipei)`n**Baseline:** `488995715854ec2780c850d33bf1097b6516eef8``n**Authority:** R1.0B Member Onboarding/Paper/LINE Link spec; approved Paper Order/Receipt/Company Sponsor decision; P0 privacy decision.`n
+A slice is `COMPLETE` only when the required DB, domain, API, runtime, relevant UI, security/audit and test evidence are all present. No status below treats an unverified surface as closed.
 
-| Area | Status | Evidence and remaining gap |
+| Vertical slice | Status | Re-audit evidence / remaining closure work |
 |---|---|---|
-| A. WEB_MEMBER | PARTIAL | Zero-Ball WEB_MEMBER retail orders now reuse `commerce.order` with `purchaserPersonId`, and the Member shop supports their checkout. Account/order history read-model completion and end-to-end DB evidence remain required. |
-| B. Qualification Package Catalog | PARTIAL | Backend versioned package catalog and Member package shop exist; catalog seed/three current R1.0B package verification remains required. |
-| C. Pricing Context | PARTIAL | WEB_MEMBER orders use server-side list price and zero GPV/PV snapshots; qualified retail remains Qualification-scoped. Boundary regression evidence remains required. |
-| D. SponsorResolver | PARTIAL | Ball-number resolver, public minimal candidate read, invalid/UUID rejection and bootstrap fail-closed tests exist. Governed Company alias and full R1.0B sponsor eligibility policy are DECISION_REQUIRED. |
-| E. Referral deep link | PARTIAL | `?ref=` candidate survives LINE login and is not directly bound. QR is an equivalent URL form, but no generated QR UI test exists. |
-| F. Qualification Acquisition | PARTIAL | Qualification package checkout revalidates candidate and writes selection evidence. Full acquisition read model remains missing. |
-| G. Payment to Placement Pending | PARTIAL | Paid sponsored package creates Sponsor relationship and `PLACEMENT_PENDING`; unsponsored legacy path remains `BALL_SETUP_PENDING`. |
-| H. Sponsor Pending Placement | PARTIAL | Member and admin placement APIs exist; Member UX workbench with minimal identity/package/wait time is incomplete. |
-| I. Placement to Activation | PARTIAL | Existing placement service activates Qualification. End-to-end onboarding activation regression is missing. |
-| J. Paper Application | PARTIAL | Admin application accepts `sponsorCode` via the shared resolver. Wizard and duplicate prevention workflow are incomplete. |
-| K. Paper Order | MISSING | No authoritative `ADMIN_PAPER_ORDER` acquisition slice identified. |
-| L. Paper Payment Evidence | MISSING | Existing generic payment confirmation does not provide paper receipt evidence and dedicated authorization workflow. |
-| M. Existing Paper Member LINE Link | PARTIAL | LINE security/rebind foundation exists; the verified existing-member link request workflow and invariant golden are incomplete. |
-| N. Retail Referrer Attribution | PARTIAL | Separate temporal attribution, first-attributed-order lock, candidate revalidation, admin forward correction, immutable events and line snapshots exist. DB concurrency and correction integration tests remain required. |
-| O. Retail Referral Checkout UX | PARTIAL | Zero-Ball Member shop supports add/edit/clear/validate before the first attributed order and displays a locked referrer thereafter. Delivery/profile and order-history integration remain incomplete. |
-| P. SKU Retail Referral Parameters | PARTIAL | Effective-dated enabled/calculation/rate/base fields, DB constraints and Product Admin scheduling UI exist. Product rule approval workflow and DB history tests remain required. |
-| Q. Retail Referrer Active Eligibility | PARTIAL | Worker calls the existing Active/Company-always-active authority at payment recognition and records the result in Award detail. Historical Active evidence/replay tests remain required. |
-| R. RETAIL_REFERRAL Award | PARTIAL | `RETAIL_REFERRAL` uses existing BonusAward lifecycle from immutable line snapshots and isolated payment outbox handling. Award persistence/settlement/payout integration tests remain required. |
-| S. Retail Return / Recovery | PARTIAL | Worker adds append-only offset, reversal or recovery effects by paid-state and return amount. Multi-return and payout/recovery integration tests remain required. |
-| T. Admin/Member UX | PARTIAL | Member retail checkout and Product Admin SKU rule UI exist; Paper wizard, attribution correction UI and retail explain remain incomplete. |
-| U. Audit / Notification | PARTIAL | Retail attribution writes Audit/outbox; payment and return events are isolated. Operator notification and explain read models remain incomplete. |
-| V. OpenAPI | PARTIAL | Generated artifact includes Member retail candidate/read, admin correction and SKU profile APIs. Contract tests and final structural diff remain required. |
+| WEB_MEMBER retail order and delivery profile | PARTIAL | `commerce.order` supports zero-Ball purchaser orders; Member checkout and delivery requirement test exist. Payment/fulfilment E2E remains open. |
+| Qualification package / acquisition | PARTIAL | Versioned package path and sponsor candidate validation exist. Complete acquisition read model and E2E activation evidence remain open. |
+| SponsorResolver for Ball codes | PARTIAL | Shared Ball resolver and online/paper candidate handling exist; full eligibility and package evidence parity need Golden coverage. |
+| Referral deep link / LINE preservation | PARTIAL | Candidate is non-binding and survives current LINE path. QR UI and redirect E2E remain open. |
+| Payment → placement pending | PARTIAL | Sponsored package creates `PLACEMENT_PENDING`; complete payment, reversal and activation E2E is not yet demonstrated. |
+| Sponsor pending-placement workbench | PARTIAL | Service/API exists. Member-safe workbench fields and operations queue UI remain incomplete. |
+| Placement → activation | PARTIAL | Authoritative placement service, idempotency and slot race coverage exist. Onboarding E2E activation remains open. |
+| Paper application / duplicate Person | PARTIAL | Paper sponsor input enters shared resolver. Approved duplicate workflow, wizard and paper provenance closure are absent. |
+| Paper order | MISSING | No approved `ADMIN_PAPER_ORDER` source/channel implementation was found. |
+| Paper receipt / payment confirmation | MISSING | No receipt evidence, idempotency identity, dual-control enforcement or pre-placement reversal slice was found. |
+| Company Sponsor Alias v1 | MISSING | Approved policy exists; no effective-dated, audited, member-safe alias registry/resolver was found. |
+| Existing Member LINE link | PARTIAL | Verified subject request, hashed one-time completion token, queue and focused fail-closed tests exist. Self-approval/rebind boundary and full Paper→LINE E2E remain open. |
+| Retail attribution | PARTIAL | Temporal attribution, first-order lock, forward correction, snapshots, audit/outbox exist. DB concurrency and historical correction Golden remain open. |
+| Retail checkout UX | PARTIAL | Candidate edit/clear/validation before first lock and locked display exist. Checkout/paid order UX and complete order history remain open. |
+| SKU retail referral parameters | PARTIAL | Effective-dated profile fields and product UI exist. Effective-version/history Golden and approval workflow remain open. |
+| Retail Active eligibility | PARTIAL | Worker evaluates recognition-time active evidence. Historical active/replay Golden remains open. |
+| RETAIL_REFERRAL award | PARTIAL | Immutable snapshot recognition has active and inactive DB integration evidence; settlement/payout and explain are open. |
+| Retail return / recovery | PARTIAL | Partial return uses append-only offset recovery and retry evidence. Full, repeated, paid-award recovery and replay Golden are open. |
+| Operations explain / notifications | PARTIAL | Attribution history exists. Retail award explain, paper receipt/payment, pending placement and safe notifications are open. |
+| P0 privacy / identifiers | PARTIAL | Existing decision and DTO direction are present. Required explicit regression covering Member bootstrap/Reservoir/non-direct PII boundaries remains open for this closure. |
+| OpenAPI / contracts | PARTIAL | Generated artifact is present; final regeneration, validation, diff and new paper/alias contracts are open. |
 
-## Constraints and decisions
+## Preserved Retail Referral invariants
 
-- Reuse Person, Qualification, Order, Payment, Sponsor, Placement, Active, Award, Return, Replay, Recovery, Audit, and Notification infrastructure.
-- Retail Referrer Attribution is distinct from SponsorRelationship. Retail implementation must not create Sponsor/Binary edges or PV effects.
-- Company sponsor aliases are not implemented because no governed alias policy is present. Status: `DECISION_REQUIRED`.
-- Local PostgreSQL is available. The Phase 2 isolated DB regression is self-contained and passes after the fixture repair.
+- Inactive referrer recognition preserves theory, records `payableAmount = 0`, and creates no PV, Binary or organization effect.
+- Partial return preserves the original Award and appends one idempotent recovery effect.
+- Retail attribution is independent of Sponsor and Binary relationships.
+- Retail referral does not itself create GPV, PV, RPV, EPV, Binary, Sponsor or organization effects.
 
-## Implementation order
+## Implementation sequence
 
-1. Add forward-only Retail Referrer Attribution, effective correction, and immutable order-line snapshot foundation.
-2. Add effective-dated SKU retail referral parameters and contracts.
-3. Add WEB_MEMBER retail checkout boundary and attribution lock/verification UX.
-4. Add recognition-time Active adapter and `RETAIL_REFERRAL` award through existing award/replay/recovery infrastructure.
-5. Complete paper intake/order/payment/link workflows and end-to-end regressions.
+1. Implement Company Sponsor Alias v1 and Paper receipt/order core through existing Order, Payment, SponsorResolver and Placement authorities.
+2. Add Paper wizard/operations read models and complete Payment → Placement → Activation and Paper → LINE E2E evidence.
+3. Finish Retail Referral Golden coverage: effective SKU history, active history, full/multiple/paid return, settlement/payout, replay and explain.
+4. Regenerate OpenAPI, execute full gates and complete closure reports.
 
-## 2026-09-25 closure update
+## Explicit constraints
 
-- Existing-member LINE link now has verified-subject request, approved one-time completion token, binding/session completion, and focused fail-closed tests for bound subjects and token replay.
-- Admin can read the authorized link queue and Retail Referrer attribution history; Person 360 supports forward-only correction.
-- Retail focused regression: worker dispatch, attribution lock/candidate, zero-Ball delivery boundary and LINE-link boundary tests pass.
-- Remaining `DECISION_REQUIRED`: ADMIN_PAPER_ORDER/payment receipt authority and Company Sponsor alias policy. No implementation is inferred from these absent rules.
+- No historical migration is edited; schema work is forward-only.
+- Semantic DB, Analytics, LLM/RAG/Vector DB and deployment are outside this closure.
+- Google Drive is not modified without explicitly authorized Drive tooling; any final closure must remain `CODE_CLOSED_DRIVE_SYNC_PENDING` until synchronized.
