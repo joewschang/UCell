@@ -12,7 +12,7 @@ describeDb('Retail Referral rollback integration harness',()=>{
  beforeAll(()=>{db=new PrismaClient({datasources:{db:{url:url!}}});});
  afterAll(()=>db?.$disconnect());
 
- it('recognizes one active referrer award from the immutable line snapshot and is idempotent',async()=>{
+ it('recognizes one active referrer award from the immutable line snapshot after the SKU rate changes, and is idempotent',async()=>{
   const marker=`RETAIL_REFERRAL_ROLLBACK_${Date.now()}`;
   await expect(db.$transaction(async tx=>{
    const paidAt=new Date('2044-01-15T04:00:00.000Z');
@@ -32,6 +32,7 @@ describeDb('Retail Referral rollback integration harness',()=>{
    const order=await tx.order.create({data:{purchaserPersonId:purchaser.personId,purpose:'RETAIL',status:'PAID',grossAmount:d(100),netAmount:d(100),ruleVersionCode:rule,parameterSnapshotHash:'retail-referral-test-snapshot',paidAt}});
    const line=await tx.orderLine.create({data:{orderId:order.orderId,productId:product.productId,skuSnapshot:product.sku,productNameSnapshot:product.displayName,quantity:d(1),unitPrice:d(100),lineAmount:d(100),gpvRateSnapshot:d(0),gpvAmountSnapshot:d(0),ruleProfileSnapshot:{profileId:profile.productRuleProfileId,ruleVersionCode:rule}}});
    await tx.retailReferralOrderLineSnapshot.create({data:{orderLineId:line.orderLineId,orderId:order.orderId,referrerQualificationId:referrer.qualificationId,retailReferralEnabled:true,calculationType:'PERCENTAGE',rate:d('0.1'),baseType:'NET_PAID_ITEM_AMOUNT',netPaidItemAmount:d(100),productRuleProfileId:profile.productRuleProfileId,productRuleVersion:rule,parameterSnapshotHash:'retail-referral-test-snapshot',attributionEvidence:{kind:'SYNTHETIC_TEST'}}});
+   await tx.productRuleProfile.update({where:{productRuleProfileId:profile.productRuleProfileId},data:{retailReferralRate:d('0.05')}});
    const event=await tx.outboxEvent.create({data:{eventType:'WEB_MEMBER_RETAIL_PAYMENT_CONFIRMED',aggregateType:'ORDER',aggregateId:order.orderId,payload:{orderId:order.orderId},correlationId:randomUUID()}});
    const lease={outboxEventId:event.outboxEventId} as any;
    const deps={withOutboxLease:async (_db:any,_lease:any,work:any)=>work(tx)};
