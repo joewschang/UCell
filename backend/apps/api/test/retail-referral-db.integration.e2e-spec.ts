@@ -66,7 +66,7 @@ describeDb('Retail Referral rollback integration harness',()=>{
    const award=await tx.bonusAward.create({data:{awardType:'RETAIL_REFERRAL',recipientQualificationId:referrer.qualificationId,sourceEventId:line.orderLineId,theoryAmount:d(10),payableAmount:d(10),kFactor:d(1),activeSnapshot:true,planLevelSnapshot:'STARTER',ruleVersionCode:rule,occurredAt:at,pendingUntil:new Date('2044-04-15T04:00:00.000Z'),calculationDetail:{kind:'SYNTHETIC_TEST'}}});
    await tx.bonusAwardLifecycleEvent.create({data:{bonusAwardId:award.bonusAwardId,status:'PENDING_45D',occurredAt:at}});
    const returnCase=await tx.returnCase.create({data:{orderId:order.orderId,status:'POSTED',reasonCode:'SYNTHETIC_PARTIAL_RETURN',occurredAt:new Date('2044-03-02T04:00:00.000Z'),postedAt:new Date('2044-03-02T04:00:00.000Z'),idempotencyKey:randomUUID(),correlationId:randomUUID(),lines:{create:{orderLineId:line.orderLineId,quantity:d('.5'),returnAmount:d(40),gpvReversalAmount:d(0)}}}});
-   const event=await tx.outboxEvent.create({data:{eventType:'WEB_MEMBER_RETAIL_RETURN_POSTED',aggregateType:'RETURN_CASE',aggregateId:returnCase.returnCaseId,payload:{returnCaseId:returnCase.returnCaseId},correlationId:randomUUID()}});
+   const event=await tx.outboxEvent.create({data:{eventType:'RETURN_CONFIRMED',aggregateType:'RETURN',aggregateId:returnCase.returnCaseId,payload:{returnCaseId:returnCase.returnCaseId,qualificationId:null},correlationId:randomUUID()}});
    const deps={withOutboxLease:async (_db:any,_lease:any,work:any)=>work(tx)};
    await processRetailReferralReturn(db as any,{outboxEventId:event.outboxEventId} as any,deps as any);
    await processRetailReferralReturn(db as any,{outboxEventId:event.outboxEventId} as any,deps as any);
@@ -77,10 +77,10 @@ describeDb('Retail Referral rollback integration harness',()=>{
    expect(await tx.bonusAwardLifecycleEvent.count({where:{bonusAwardId:award.bonusAwardId,status:'REVERSED'}})).toBe(0);
    await tx.bonusAwardLifecycleEvent.create({data:{bonusAwardId:award.bonusAwardId,status:'PAID',occurredAt:new Date('2044-03-02T12:00:00.000Z')}});
    const secondReturn=await tx.returnCase.create({data:{orderId:order.orderId,status:'POSTED',reasonCode:'SYNTHETIC_SECOND_PARTIAL_RETURN',occurredAt:new Date('2044-03-03T04:00:00.000Z'),postedAt:new Date('2044-03-03T04:00:00.000Z'),idempotencyKey:randomUUID(),correlationId:randomUUID(),lines:{create:{orderLineId:line.orderLineId,quantity:d('.5'),returnAmount:d(30),gpvReversalAmount:d(0)}}}});
-   const secondEvent=await tx.outboxEvent.create({data:{eventType:'WEB_MEMBER_RETAIL_RETURN_POSTED',aggregateType:'RETURN_CASE',aggregateId:secondReturn.returnCaseId,payload:{returnCaseId:secondReturn.returnCaseId},correlationId:randomUUID()}});
+   const secondEvent=await tx.outboxEvent.create({data:{eventType:'RETURN_CONFIRMED',aggregateType:'RETURN',aggregateId:secondReturn.returnCaseId,payload:{returnCaseId:secondReturn.returnCaseId,qualificationId:null},correlationId:randomUUID()}});
    await processRetailReferralReturn(db as any,{outboxEventId:secondEvent.outboxEventId} as any,deps as any);
    const thirdReturn=await tx.returnCase.create({data:{orderId:order.orderId,status:'POSTED',reasonCode:'SYNTHETIC_THIRD_PARTIAL_RETURN',occurredAt:new Date('2044-03-04T04:00:00.000Z'),postedAt:new Date('2044-03-04T04:00:00.000Z'),idempotencyKey:randomUUID(),correlationId:randomUUID(),lines:{create:{orderLineId:line.orderLineId,quantity:d('.5'),returnAmount:d(30),gpvReversalAmount:d(0)}}}});
-   const thirdEvent=await tx.outboxEvent.create({data:{eventType:'WEB_MEMBER_RETAIL_RETURN_POSTED',aggregateType:'RETURN_CASE',aggregateId:thirdReturn.returnCaseId,payload:{returnCaseId:thirdReturn.returnCaseId},correlationId:randomUUID()}});
+   const thirdEvent=await tx.outboxEvent.create({data:{eventType:'RETURN_CONFIRMED',aggregateType:'RETURN',aggregateId:thirdReturn.returnCaseId,payload:{returnCaseId:thirdReturn.returnCaseId,qualificationId:null},correlationId:randomUUID()}});
    await processRetailReferralReturn(db as any,{outboxEventId:thirdEvent.outboxEventId} as any,deps as any);
    const cumulative=await tx.bonusRecoveryEvent.findMany({where:{bonusAwardId:award.bonusAwardId},orderBy:{occurredAt:'asc'}});
    expect(cumulative.map(row=>row.recoveryAmount)).toEqual([d(4),d(3),d(3)]);
@@ -105,7 +105,7 @@ describeDb('Retail Referral rollback integration harness',()=>{
    const award=await tx.bonusAward.create({data:{awardType:'RETAIL_REFERRAL',recipientQualificationId:referrer.qualificationId,sourceEventId:line.orderLineId,theoryAmount:d(10),payableAmount:d(10),kFactor:d(1),activeSnapshot:true,planLevelSnapshot:'STARTER',ruleVersionCode:rule,occurredAt:at,pendingUntil:new Date('2044-05-16T04:00:00.000Z'),calculationDetail:{kind:'SYNTHETIC_TEST'}}});
    await tx.bonusAwardLifecycleEvent.create({data:{bonusAwardId:award.bonusAwardId,status:'PENDING_45D',occurredAt:at}});
    const returnCase=await tx.returnCase.create({data:{orderId:order.orderId,status:'POSTED',reasonCode:'SYNTHETIC_FULL_RETURN',occurredAt:new Date('2044-04-02T04:00:00.000Z'),postedAt:new Date('2044-04-02T04:00:00.000Z'),idempotencyKey:randomUUID(),correlationId:randomUUID(),lines:{create:{orderLineId:line.orderLineId,quantity:d(1),returnAmount:d(100),gpvReversalAmount:d(0)}}}});
-   const event=await tx.outboxEvent.create({data:{eventType:'WEB_MEMBER_RETAIL_RETURN_POSTED',aggregateType:'RETURN_CASE',aggregateId:returnCase.returnCaseId,payload:{returnCaseId:returnCase.returnCaseId},correlationId:randomUUID()}});
+   const event=await tx.outboxEvent.create({data:{eventType:'RETURN_CONFIRMED',aggregateType:'RETURN',aggregateId:returnCase.returnCaseId,payload:{returnCaseId:returnCase.returnCaseId,qualificationId:null},correlationId:randomUUID()}});
    const deps={withOutboxLease:async (_db:any,_lease:any,work:any)=>work(tx)};
    await processRetailReferralReturn(db as any,{outboxEventId:event.outboxEventId} as any,deps as any);
    await processRetailReferralReturn(db as any,{outboxEventId:event.outboxEventId} as any,deps as any);
