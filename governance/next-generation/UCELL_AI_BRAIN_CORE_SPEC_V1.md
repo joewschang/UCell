@@ -445,3 +445,8 @@ AI write capability: NONE.
 Production AI deployment: NONE.
 
 Next dependency: finish R1.0B Operational Closure → freeze ONBOARDING_FINAL_HEAD → SG-A1 Source Authority Audit → Semantic Runtime/Certification → Governed Analytics Query Engine.
+
+
+## 31. Phase-boundary override / clarification
+
+Per UCELL_PHASE_BOUNDARY_AI_READY_FOUNDATION_DECISION.md, this document is **APPROVED_FUTURE_DESIGN — NOT CURRENT IMPLEMENTATION**. Current Phase 1 work may maintain compatibility metadata, semantic definitions, privacy/lineage/evidence and security design, but MUST NOT implement Admin AI Data Assistant, LLM/provider runtime, natural-language query, RAG/vector/embedding, AI tool/query-planner/memory runtime, Development Request Bridge runtime or AI write actions. Phase 2 requires separate approval after Operational Closure, SG-A1, Semantic Foundation and certification prerequisites.
