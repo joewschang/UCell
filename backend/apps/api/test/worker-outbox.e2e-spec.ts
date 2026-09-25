@@ -16,6 +16,8 @@ function harness(events:any[]){
   const deps={
     claimOutboxLease:jest.fn().mockResolvedValue(lease),
     processSaleConfirmed:jest.fn(),
+    processRetailReferralPayment:jest.fn(),
+    processRetailReferralReturn:jest.fn(),
     processMemberOrderNotification:jest.fn().mockResolvedValue({notificationId:'notice-1'}),
     processPaymentInventoryReservation:jest.fn(),
     processLeasedReplay:jest.fn(),processTreeProjectionEvent:jest.fn(),
@@ -53,6 +55,19 @@ describe('worker outbox poll entry',()=>{
     expect(h.deps.processPaymentInventoryReservation).toHaveBeenCalledWith(h.db,h.lease,{
       warehouseId:'20000000-0000-4000-8000-000000000001',policyVersion:'TEST_ONLY_V1'
     });
+  });
+  it('dispatches WEB_MEMBER retail payment only to the isolated retail award handler',async()=>{
+    const h=harness([event({eventType:'WEB_MEMBER_RETAIL_PAYMENT_CONFIRMED'})]);
+    await pollOutbox(h.db,h.deps as any);
+    expect(h.db.outboxEvent.findMany.mock.calls[0][0].where.eventType.in).toContain('WEB_MEMBER_RETAIL_PAYMENT_CONFIRMED');
+    expect(h.deps.processRetailReferralPayment).toHaveBeenCalledWith(h.db,h.lease);
+    expect(h.deps.processSaleConfirmed).not.toHaveBeenCalled();
+  });
+  it('dispatches an unqualified return to the isolated retail recovery handler',async()=>{
+    const h=harness([event({eventType:'RETURN_CONFIRMED',payload:{qualificationId:null}})]);
+    await pollOutbox(h.db,h.deps as any);
+    expect(h.deps.processRetailReferralReturn).toHaveBeenCalledWith(h.db,h.lease);
+    expect(h.deps.processLeasedReplay).not.toHaveBeenCalled();
   });
 
   it('does not redeliver when a duplicate poll loses the compare-and-swap lease claim',async()=>{
