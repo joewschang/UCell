@@ -784,8 +784,8 @@ model Qualification {
   memberNotifications   MemberNotification[]
   qualificationId       String               @id @default(uuid()) @map("qualification_id") @db.Uuid
   qualificationNo       BigInt               @unique @default(autoincrement()) @map("qualification_no")
-  /// Immutable business Ball identifier after Binary placement. It is never a relational key.
   ballAllocation        BallNoAllocation?
+  /// Immutable business Ball identifier allocated at Binary placement, independent of topology.
   ballNo                String?              @unique @map("ball_no")
   currentHolderPersonId String?              @map("current_holder_person_id") @db.Uuid
   planLevelCode         String?              @map("plan_level_code")

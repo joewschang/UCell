@@ -2,6 +2,7 @@ import {randomUUID} from 'node:crypto';
 import {spawnSync} from 'node:child_process';
 import {resolve} from 'node:path';
 import {readFileSync} from 'node:fs';
+import {createRequire} from 'node:module';
 import {PrismaService} from '@ucell/database';
 import {BinaryTreeService,TreePrincipal} from '../src/modules/binary-tree/binary-tree.service';
 import {OrganizationService} from '../src/modules/organization/organization.service';
@@ -115,7 +116,7 @@ describe('P0 identifier database boundary',()=>{
   // Re-run the actual upgrade SQL over existing published Balls. Everything in
   // this rehearsal rolls back, including the temporary removal of V2 tables.
   const migration=readFileSync(resolve(process.cwd(),'../../packages/database/prisma/migrations/20260925120000_ball_tree_sequence/migration.sql'),'utf8').replace(/^BEGIN;$/m,'').replace(/^COMMIT;$/m,'');
-  const upgrade=spawnSync(process.execPath,[require.resolve('prisma/build/index.js'),'db','execute','--stdin','--url',url],{
+  const upgrade=spawnSync(process.execPath,[createRequire(resolve(process.cwd(),'../../packages/database/package.json')).resolve('prisma/build/index.js'),'db','execute','--stdin','--url',url],{
    cwd:resolve(process.cwd(),'../..'),encoding:'utf8',input:`BEGIN;
     CREATE TEMP TABLE before_balls AS SELECT qualification_id,ball_no FROM membership.qualification;
     DROP FUNCTION organization.allocate_ball_no(uuid,uuid);
