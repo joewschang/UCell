@@ -3417,7 +3417,7 @@ model RetailReferrerAttributionEvent {
   retailReferrerAttributionId      String @map("retail_referrer_attribution_id") @db.Uuid
   action                           String
   actorPersonId                    String? @map("actor_person_id") @db.Uuid
-  reason                           String? 
+  reason                           String?
   effectiveFrom                    DateTime @map("effective_from") @db.Timestamptz(6)
   correlationId                    String @map("correlation_id") @db.Uuid
   evidenceHash                     String @map("evidence_hash")
