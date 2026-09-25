@@ -1,6 +1,6 @@
 # R1.0B Onboarding and Retail Referral Gap Re-Audit
 
-**Status date:** 2026-09-25 (Asia/Taipei)
+**Status date:** 2026-09-26 (Asia/Taipei)
 **Baseline:** `a02b62e5f843cc3d59645033ea49f9e07e005aa6`
 **Authority:** R1.0B Member Onboarding/Paper/LINE Link spec; approved Paper Order/Receipt/Company Sponsor decision; P0 privacy decision.
 A slice is `COMPLETE` only when the required DB, domain, API, runtime, relevant UI, security/audit and test evidence are all present. No status below treats an unverified surface as closed.
@@ -14,8 +14,8 @@ A slice is `COMPLETE` only when the required DB, domain, API, runtime, relevant 
 | Payment → placement pending | PARTIAL | Sponsored package creates `PLACEMENT_PENDING`; complete payment, reversal and activation E2E is not yet demonstrated. |
 | Sponsor pending-placement workbench | COMPLETE | Member-safe queue and placement workbench now use public Ball numbers only. Sponsor authorization, slot/cycle/first-third-left validation and idempotency remain server-authoritative; Admin retains its separately RBAC-protected UUID command surface. |
 | Placement → activation | PARTIAL | Authoritative placement service, idempotency and slot race coverage exist. Onboarding E2E activation remains open. |
-| Paper application / duplicate Person | PARTIAL | Paper sponsor input enters shared resolver. Approved duplicate workflow, wizard and paper provenance closure are absent. |
-| Paper order | MISSING | No approved `ADMIN_PAPER_ORDER` source/channel implementation was found. |
+| Paper application / duplicate Person | PARTIAL | Admin API now records idempotent paper provenance for an existing Person only, without raw identity payloads; it fails closed when the Person is absent. New-Person intake remains open because the approved normalized identity fingerprint fields and duplicate-review policy are not implemented. |
+| Paper order | PARTIAL | `adminCreatePaperQualificationOrder` binds one OPEN paper application to one Qualification package order and reuses PackageConfig, SponsorResolver, Payment and Placement core. Paper retail, Admin wizard/read model and end-to-end payment/activation evidence remain open. |
 | Paper receipt / payment confirmation | COMPLETE | Receipt evidence identity is immutable and retry-safe; conflicting evidence fails closed, dual control is enforced, and pre-placement reversal is covered. |
 | Company Sponsor Alias v1 | COMPLETE | Effective-dated, audited Company Alias resolution is available for qualifying acquisition and paper intake; member views expose only governed display information. |
 | Existing Member LINE link | PARTIAL | Verified subject request, hashed one-time completion token, queue and focused fail-closed tests exist. Self-approval/rebind boundary and full Paper→LINE E2E remain open. |
@@ -38,8 +38,8 @@ A slice is `COMPLETE` only when the required DB, domain, API, runtime, relevant 
 
 ## Implementation sequence
 
-1. Implement Company Sponsor Alias v1 and Paper receipt/order core through existing Order, Payment, SponsorResolver and Placement authorities.
-2. Add Paper wizard/operations read models and complete Payment → Placement → Activation and Paper → LINE E2E evidence.
+1. Add approved duplicate-identity fields/review before enabling new-Person paper intake; retain existing-Person flow fail-closed until then.
+2. Add Paper retail, wizard/operations read models and complete Payment → Placement → Activation and Paper → LINE E2E evidence.
 3. Finish Retail Referral Golden coverage: effective SKU history, active history, full/multiple/paid return, settlement/payout, replay and explain.
 4. Regenerate OpenAPI, execute full gates and complete closure reports.
 

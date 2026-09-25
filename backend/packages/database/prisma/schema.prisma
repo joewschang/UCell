@@ -619,6 +619,7 @@ model Person {
   retailOrders             Order[]                 @relation("RetailOrderPurchaser")
   retailReferrerAttributions RetailReferrerAttribution[]
   retailReferrerCorrectionEvents RetailReferrerAttributionEvent[] @relation("RetailReferrerCorrectionActor")
+  paperApplications          PaperApplication[]
 
   @@index([legalName])
   @@index([mobile])
@@ -1145,6 +1146,7 @@ model Order {
   purchaser             Person?                @relation("RetailOrderPurchaser", fields: [purchaserPersonId], references: [personId])
   lines                 OrderLine[]
   paperReceiptEvidence PaperReceiptEvidence[]
+  paperApplication     PaperApplication?
   paymentEvents         PaymentEvent[]
   payments              Payment[]
   inventoryReservations InventoryReservation[]
@@ -1183,6 +1185,26 @@ model OrderLine {
 
   @@index([orderId])
   @@map("order_line")
+  @@schema("commerce")
+}
+
+model PaperApplication {
+  paperApplicationId  String   @id @default(uuid()) @map("paper_application_id") @db.Uuid
+  paperApplicationNo  String   @unique @map("paper_application_no") @db.VarChar(80)
+  personId            String   @map("person_id") @db.Uuid
+  receivedAt          DateTime @map("received_at") @db.Timestamptz(6)
+  evidenceDocumentRef String?  @map("evidence_document_ref") @db.VarChar(500)
+  status              String   @default("OPEN") @db.VarChar(32)
+  createdBy           String   @map("created_by") @db.Uuid
+  orderId             String?  @unique @map("order_id") @db.Uuid
+  createdAt           DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  person Person @relation(fields: [personId], references: [personId])
+  order  Order? @relation(fields: [orderId], references: [orderId])
+
+  @@index([personId, receivedAt])
+  @@map("paper_application")
   @@schema("commerce")
 }
 

@@ -28,7 +28,7 @@ export class OrderService {
   ) {}
 
   async createMember(dto:MemberOrderInput,key:string,requestId:string,personId:string){
-    if(dto.packageVersionId)return this.createPackageMember(dto,key,requestId,personId);
+    if(dto.packageVersionId)return this.createPackageForPerson(dto,key,requestId,personId);
     if(!dto.items?.length||dto.selections?.length)throw new UnprocessableEntityException({code:'INVALID_ORDER_SHAPE'});
     if(!dto.qualificationId)return this.createWebRetailMember(dto,key,requestId,personId);
     await new QualificationAccessService(this.prisma).assertHolder(personId,dto.qualificationId);
@@ -91,11 +91,19 @@ export class OrderService {
     const orders=await this.prisma.order.findMany({where:{purchaserPersonId:personId,qualificationId:null,purpose:'RETAIL'},select:{orderNo:true,status:true,netAmount:true,createdAt:true,confirmedAt:true,lines:{select:{productNameSnapshot:true,quantity:true}}},orderBy:{createdAt:'desc'},take:100});
     return orders.map(order=>({orderNo:order.orderNo.toString(),status:order.status,total:order.netAmount.toString(),createdAt:order.createdAt.toISOString(),confirmedAt:order.confirmedAt?.toISOString()??null,itemCount:order.lines.reduce((count,line)=>count+Number(line.quantity),0),itemNames:order.lines.map(line=>line.productNameSnapshot)}));
   }
-  private async createPackageMember(dto:MemberOrderInput,key:string,requestId:string,personId:string){
+  async createPaperQualification(dto:MemberOrderInput,key:string,requestId:string,actorId:string,paperApplicationId:string){
+    const application=await this.prisma.paperApplication.findUnique({where:{paperApplicationId},select:{personId:true}});
+    if(!application)throw new ConflictException({code:'PAPER_APPLICATION_NOT_FOUND'});
+    return this.createPackageForPerson(dto,key,requestId,application.personId,{scope:`admin:paper-package-order:create:${paperApplicationId}`,actorId,paperApplicationId});
+  }
+
+  private async createPackageForPerson(dto:MemberOrderInput,key:string,requestId:string,personId:string,paper?:{scope:string;actorId:string;paperApplicationId:string}){
     if(dto.items?.length||!dto.selections?.length)throw new UnprocessableEntityException({code:'INVALID_PACKAGE_ORDER_SHAPE'});
     const correlationId=randomUUID();
-    try{return await this.idempotency.execute(`member:package-order:create:${personId}`,key,dto,async tx=>{
-      const person=await tx.person.findUnique({where:{personId}});if(person?.status!=='EFFECTIVE')throw new ConflictException({code:'MEMBER_PERSON_DISABLED'});
+    try{return await this.idempotency.execute(paper?.scope??`member:package-order:create:${personId}`,key,dto,async tx=>{
+      const person=await tx.person.findUnique({where:{personId}});
+      if(!person || (paper ? !['DRAFT','EFFECTIVE'].includes(person.status) : person.status!=='EFFECTIVE'))throw new ConflictException({code:paper?'PAPER_PERSON_NOT_ELIGIBLE':'MEMBER_PERSON_DISABLED'});
+      if(paper){const application=await tx.paperApplication.findUnique({where:{paperApplicationId:paper.paperApplicationId},select:{personId:true,orderId:true,status:true}});if(!application||application.personId!==personId||application.status!=='OPEN')throw new ConflictException({code:'PAPER_APPLICATION_NOT_OPEN'});if(application.orderId)throw new ConflictException({code:'PAPER_APPLICATION_ORDER_ALREADY_CREATED'});}
       const now=new Date(),prepared=await (this.packages??new PackageConfigService(this.prisma)).checkoutData(tx,personId,{packageVersionId:dto.packageVersionId!,targetQualificationId:dto.targetQualificationId,selections:dto.selections!},now),v=prepared.version;
       let qualificationId=dto.targetQualificationId;
       let sponsorEvidence:Awaited<ReturnType<SponsorResolver['resolveWithin']>>|undefined;
@@ -108,9 +116,10 @@ export class OrderService {
       }
       if(!qualificationId)throw new UnprocessableEntityException({code:'TARGET_QUALIFICATION_REQUIRED'});
       const order=await tx.order.create({data:{qualificationId,purpose:v.profile.packageClass==='QUALIFICATION'?'ENTRY':'REPURCHASE',status:'CONFIRMED',currency:v.currency,grossAmount:v.priceAmount,discountAmount:new Prisma.Decimal(0),netAmount:v.priceAmount,ruleVersionCode:v.recognitionConfigRef!,parameterSnapshotHash:v.configHash,confirmedAt:now,lines:{create:prepared.selections.map(s=>({productId:s.product.productId,skuSnapshot:s.product.sku,productNameSnapshot:s.product.displayName,quantity:new Prisma.Decimal(s.quantity),unitPrice:new Prisma.Decimal(0),lineAmount:new Prisma.Decimal(0),gpvRateSnapshot:new Prisma.Decimal(0),gpvAmountSnapshot:new Prisma.Decimal(0),pvRateSnapshot:new Prisma.Decimal(0),ruleProfileSnapshot:{profileId:s.profile.productRuleProfileId,packageSelection:true,recognitionConfigRef:v.recognitionConfigRef,packageConfigHash:v.configHash}}))}},include:{lines:true}});
+      if(paper)await tx.paperApplication.update({where:{paperApplicationId:paper.paperApplicationId},data:{orderId:order.orderId,status:'ORDER_CREATED'}});
       const snapshot=await tx.packagePurchaseSnapshot.create({data:{orderId:order.orderId,personId,targetQualificationId:dto.targetQualificationId,packageProfileVersionId:v.packageProfileVersionId,packageCode:v.profile.stableCode,packageName:v.displayName,packageClass:v.profile.packageClass,currency:v.currency,priceAmount:v.priceAmount,selectableProductQuantity:v.selectableProductQuantity,membershipEffect:v.membershipEffect,qualificationEffect:v.qualificationEffect,activeDurationUnit:v.activeDurationUnit,activeDurationValue:v.activeDurationValue,recognitionConfigRef:v.recognitionConfigRef!,packageConfigHash:v.configHash,purchasedAt:now,selections:{create:prepared.selections.map(s=>({productRuleProfileId:s.productRuleProfileId,productId:s.product.productId,skuSnapshot:s.product.sku,productDisplaySnapshot:s.product.displayName,quantity:s.quantity,productConfigHash:s.productConfigHash}))}}});
-      await this.audit.write(tx,{actorType:'MEMBER',actorId:personId,action:'PACKAGE_ORDER_CREATED',entityType:'ORDER',entityId:order.orderId,afterData:{orderId:order.orderId,qualificationId,packagePurchaseSnapshotId:snapshot.packagePurchaseSnapshotId,packageCode:v.profile.stableCode,packageClass:v.profile.packageClass,netAmount:v.priceAmount.toString(),sponsorEvidence:sponsorEvidence?(sponsorEvidence.kind==='COMPANY_ALIAS'?{kind:'COMPANY_ALIAS',displayLabel:sponsorEvidence.displayLabel,policyVersion:sponsorEvidence.policyVersion,ruleVersion:sponsorEvidence.ruleVersion,effectiveAt:sponsorEvidence.effectiveAt}:{kind:'BALL',sponsorBallNo:sponsorEvidence.sponsorBallNo,ruleVersion:sponsorEvidence.ruleVersion,effectiveAt:sponsorEvidence.effectiveAt}):null},requestId,correlationId});
-      await this.outbox.enqueue(tx,{eventType:'MEMBER_PACKAGE_ORDER_CREATED',aggregateType:'ORDER',aggregateId:order.orderId,payload:{schemaVersion:1,orderId:order.orderId,qualificationId,personId,packagePurchaseSnapshotId:snapshot.packagePurchaseSnapshotId,packageClass:v.profile.packageClass,recognitionStatus:'PAYMENT_PENDING'},correlationId});
+      await this.audit.write(tx,{actorType:paper?'USER':'MEMBER',actorId:paper?.actorId??personId,action:paper?'PAPER_ORDER_CREATED':'PACKAGE_ORDER_CREATED',entityType:'ORDER',entityId:order.orderId,afterData:{orderId:order.orderId,qualificationId,packagePurchaseSnapshotId:snapshot.packagePurchaseSnapshotId,packageCode:v.profile.stableCode,packageClass:v.profile.packageClass,netAmount:v.priceAmount.toString(),sponsorEvidence:sponsorEvidence?(sponsorEvidence.kind==='COMPANY_ALIAS'?{kind:'COMPANY_ALIAS',displayLabel:sponsorEvidence.displayLabel,policyVersion:sponsorEvidence.policyVersion,ruleVersion:sponsorEvidence.ruleVersion,effectiveAt:sponsorEvidence.effectiveAt}:{kind:'BALL',sponsorBallNo:sponsorEvidence.sponsorBallNo,ruleVersion:sponsorEvidence.ruleVersion,effectiveAt:sponsorEvidence.effectiveAt}):null},requestId,correlationId});
+      await this.outbox.enqueue(tx,{eventType:'MEMBER_PACKAGE_ORDER_CREATED',aggregateType:'ORDER',aggregateId:order.orderId,payload:{schemaVersion:1,orderId:order.orderId,qualificationId,personId,packagePurchaseSnapshotId:snapshot.packagePurchaseSnapshotId,packageClass:v.profile.packageClass,recognitionStatus:'PAYMENT_PENDING',source:paper?'ADMIN_PAPER_ORDER':'MEMBER'},correlationId});
       return {...order,packagePurchaseSnapshotId:snapshot.packagePurchaseSnapshotId,packageClass:v.profile.packageClass};
     });}catch(error){if(['P2002','P2034'].includes((error as any).code))throw new ConflictException({code:'RETRYABLE_CONFLICT',message:'Concurrent operation; retry the identical request with the same Idempotency-Key.'});throw error;}
   }
