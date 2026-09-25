@@ -15,9 +15,9 @@ export class CreateMembershipApplicationDto {
   @IsUUID()
   sponsorQualificationId?: string;
 
-  @ApiPropertyOptional({pattern:'^[A-Z][A-Z0-9_-]{0,39}(?:X\\d{6,}|\\d{6,})$',description:'Paper Sponsor Ball code. Resolved by the same server-side resolver as online qualification acquisition; UUID is never a public Sponsor Code.'})
+  @ApiPropertyOptional({pattern:'^[A-Z][A-Z0-9_-]{1,39}$',description:'Paper Sponsor Ball code or governed Company Alias. The server resolves it authoritatively; UUID is never a public Sponsor Code.'})
   @IsOptional()
-  @Matches(/^[A-Z][A-Z0-9_-]{0,39}(?:X\d{6,}|\d{6,})$/)
+  @Matches(/^[A-Z][A-Z0-9_-]{1,39}$/)
   sponsorCode?: string;
 
   @ApiPropertyOptional({ format:'uuid' })
