@@ -45,7 +45,7 @@ export class MembershipApplicationService {
         action:'MEMBERSHIP_APPLICATION_CREATED',
         entityType:'MEMBERSHIP_APPLICATION',
         entityId:application.applicationId,
-        afterData:{...application,sponsorEvidence:sponsorEvidence?{sponsorBallNo:sponsorEvidence.sponsorBallNo,ruleVersion:sponsorEvidence.ruleVersion,effectiveAt:sponsorEvidence.effectiveAt}:null},
+        afterData:{...application,sponsorEvidence:sponsorEvidence?(sponsorEvidence.kind==='COMPANY_ALIAS'?{kind:'COMPANY_ALIAS',displayLabel:sponsorEvidence.displayLabel,policyVersion:sponsorEvidence.policyVersion,ruleVersion:sponsorEvidence.ruleVersion,effectiveAt:sponsorEvidence.effectiveAt}:{kind:'BALL',sponsorBallNo:sponsorEvidence.sponsorBallNo,ruleVersion:sponsorEvidence.ruleVersion,effectiveAt:sponsorEvidence.effectiveAt}):null},
         requestId,correlationId
       });
       return application;
