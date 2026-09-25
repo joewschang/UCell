@@ -780,6 +780,7 @@ model Qualification {
   foundingOccupation FoundingOccupationEvidence?
   treePlacementEvidence PlacementTreeEvidence?
   companySponsorDesignation CompanySponsorDesignation?
+  companySponsorAliases CompanySponsorAlias[]
   memberNotifications   MemberNotification[]
   qualificationId       String               @id @default(uuid()) @map("qualification_id") @db.Uuid
   qualificationNo       BigInt               @unique @default(autoincrement()) @map("qualification_no")
@@ -3717,7 +3718,24 @@ model FoundingOccupationEvidence {
   @@map("founding_occupation_evidence")
   @@schema("organization")
 }
-model CompanySponsorDesignation {
+
+model CompanySponsorAlias {
+  companySponsorAliasId String @id @default(uuid()) @map("company_sponsor_alias_id") @db.Uuid
+  aliasNormalized String @map("alias_normalized")
+  displayLabel String @map("display_label")
+  targetQualificationId String @map("target_qualification_id") @db.Uuid
+  policyVersion String @map("policy_version")
+  effectiveFrom DateTime @map("effective_from") @db.Timestamptz(6)
+  effectiveTo DateTime? @map("effective_to") @db.Timestamptz(6)
+  evidenceHash String @map("evidence_hash")
+  createdBy String? @map("created_by") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  targetQualification Qualification @relation(fields:[targetQualificationId],references:[qualificationId])
+  @@unique([aliasNormalized,effectiveFrom])
+  @@index([aliasNormalized,effectiveFrom,effectiveTo])
+  @@map("company_sponsor_alias")
+  @@schema("organization")
+}model CompanySponsorDesignation {
  readSnapshots TreeReadSnapshot[]
   binaryTreeId String @id @map("binary_tree_id") @db.Uuid
   qualificationId String @unique @map("qualification_id") @db.Uuid

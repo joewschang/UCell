@@ -325,10 +325,10 @@ export class OrderService {
             const selectedBall=await tx.qualification.findUnique({where:{qualificationId:selected.selectedSponsorQualificationId},select:{ballNo:true}});
             if(!selectedBall?.ballNo)throw new UnprocessableEntityException({code:'SPONSOR_EVIDENCE_INVALID'});
             const resolved=await (this.sponsors??new SponsorResolver(this.prisma)).resolveWithin(tx as any,{code:selectedBall.ballNo,effectiveAt:occurredAt,ruleVersion:'R1.0B'});
-            if(resolved.sponsorQualificationId!==selected.selectedSponsorQualificationId)throw new UnprocessableEntityException({code:'SPONSOR_EVIDENCE_INVALID'});
-            sponsorQualificationId=resolved.sponsorQualificationId;
-            const sponsorSequenceNo=await (this.organization??new OrganizationService(this.prisma)).allocateSponsorSequence(tx,sponsorQualificationId);
-            await tx.sponsorRelationship.create({data:{sponsorQualificationId,childQualificationId:packageQualificationId,sponsorSequenceNo,effectiveFrom:occurredAt}});
+            const resolvedSponsorId=resolved.sponsorQualificationId; if(!resolvedSponsorId||resolvedSponsorId!==selected.selectedSponsorQualificationId)throw new UnprocessableEntityException({code:'SPONSOR_EVIDENCE_INVALID'});
+            sponsorQualificationId=resolvedSponsorId;
+            const sponsorSequenceNo=await (this.organization??new OrganizationService(this.prisma)).allocateSponsorSequence(tx,resolvedSponsorId);
+            await tx.sponsorRelationship.create({data:{sponsorQualificationId:resolvedSponsorId,childQualificationId:packageQualificationId,sponsorSequenceNo,effectiveFrom:occurredAt}});
           }
           const placementDueAt=sponsorQualificationId?new Date(occurredAt.getTime()+72*60*60*1000):undefined;
           await tx.qualificationSetup.create({data:{qualificationId:packageQualificationId,ownerPersonId:packageSnapshot.personId,qualifyingOrderId:orderId,packagePurchaseSnapshotId:packageSnapshot.packagePurchaseSnapshotId,packageType:packageSnapshot.packageCode,setupStatus:sponsorQualificationId?'PLACEMENT_PENDING':'BALL_SETUP_PENDING',finalSponsorQualificationId:sponsorQualificationId,placementRequestedAt:sponsorQualificationId?occurredAt:undefined,placementDueAt,setupPolicyVersion:'NR-DEC-004-V1'}});
