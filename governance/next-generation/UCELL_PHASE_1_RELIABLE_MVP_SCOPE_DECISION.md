@@ -327,3 +327,193 @@ Do NOT expand this into:
 Those require separate approval in later phases.
 
 Phase 1 goal: prove that the exact released UCell system and its critical business data can be identified, backed up, rebuilt/restored, verified, monitored and operationally recovered.
+
+
+## 13. Phase 1 Error Recording, Reporting & Codex Repairability Rules
+
+**Status:** MANDATORY G8 OPERATIONAL READINESS FOUNDATION.
+**Timing:** define now; implement in a separately authorized G8 Operational Readiness train after G1→G4 closure unless required earlier to fix a P0 defect.
+**Goal:** make runtime failures diagnosable and safely repairable without granting Codex autonomous Production mutation.
+
+### ER-1 Structured Error Event
+
+Backend, Worker and enabled external adapters MUST emit a common structured error envelope for material failures.
+
+Minimum fields:
+- errorId
+- traceId
+- occurredAt
+- environment
+- service/component
+- releaseVersion/gitHead
+- severity
+- errorCode
+- errorClass
+- operation/route/job
+- safe business references where necessary (memberNo, ballNo, orderNo; never unrestricted PII)
+- retryable
+- firstSeen/lastSeen/occurrenceCount where aggregation exists
+- sanitized message
+- sanitized stack/diagnostic reference
+
+MUST NOT log plaintext passwords, access tokens, private keys, LINE tokens, full banking data, unrestricted identity data, raw request bodies containing sensitive PII, or Production DB credentials.
+
+### ER-2 Trace Correlation
+
+Every material request/background operation MUST carry or create a traceId/correlation identifier sufficient to connect:
+request → API/service → worker/job → external adapter → business/audit/error evidence.
+
+The identifier MUST NOT itself encode sensitive business data.
+
+Member-facing errors may expose a safe support/error reference, not internal stack traces.
+
+### ER-3 Controlled Error Code Catalog
+
+Material business/technical failures MUST use stable controlled error codes instead of relying only on HTTP 500/free-text messages.
+
+Initial domains include:
+- PAYMENT_*
+- PLACEMENT_*
+- LINE_LINK_* / LINE_REBIND_*
+- RETAIL_REFERRAL_*
+- RETURN_REPLAY_* / RECOVERY_*
+- ERP_HANDOFF_*
+- AUTH_* / ACCESS_*
+- INTERNAL_*
+
+New codes require documentation and must preserve backward-safe API behavior where applicable.
+
+### ER-4 Error Fingerprint and Deduplication
+
+Monitoring/reporting SHOULD derive a privacy-safe fingerprint from stable diagnostic attributes such as:
+service + errorCode + exceptionClass + normalized stack location + release version.
+
+Repeated equivalent failures SHOULD update occurrence metadata rather than create unbounded duplicate incidents/issues.
+
+Fingerprint inputs MUST exclude raw PII/secrets.
+
+### ER-5 GitHub Issue Repair Contract
+
+GitHub is the Phase 1 engineering issue/repair SSOT.
+
+A repairable runtime issue SHOULD contain:
+- environment;
+- affected release/gitHead;
+- errorCode/fingerprint;
+- first/last seen;
+- occurrence count;
+- sanitized trace references;
+- expected vs actual behavior;
+- privacy classification;
+- sanitized diagnostic/log artifact reference;
+- reproduction status;
+- severity/priority;
+- affected Gate/domain.
+
+Issue content MUST NOT contain secrets or unrestricted Production data.
+
+### ER-6 Sanitized Diagnostic Package
+
+Codex MUST receive only the minimum diagnostic evidence required to reproduce/fix:
+- Issue metadata;
+- relevant code/test authority;
+- error code;
+- sanitized stack/log slice;
+- trace metadata;
+- release/version;
+- safe business references;
+- test/Golden evidence.
+
+Do NOT provide Codex unrestricted Production DB access, Production credentials, raw DB dumps, secrets or unnecessary member PII merely to speed diagnosis.
+
+### ER-7 Codex Repair Workflow
+
+Authorized Codex repair work MUST follow:
+1. read governing authority and issue evidence;
+2. reproduce the defect where feasible;
+3. create/update a regression test that fails for the defect;
+4. verify the test fails for the expected reason;
+5. implement the smallest safe fix;
+6. run focused tests;
+7. run affected Golden/security/privacy gates;
+8. run required broader regression according to impact;
+9. commit/push to authorized development branch or PR;
+10. report evidence and remaining risks.
+
+Codex MUST NOT weaken an approved assertion/Golden merely to make CI green.
+
+### ER-8 Repair Automation Classes
+
+AUTO_FIX_CANDIDATE:
+- deterministic null/serialization/rendering defect;
+- stale test assertion where current authority proves the expected contract changed;
+- retry/idempotency implementation defect with approved semantics;
+- other low-risk deterministic defects with an existing authoritative expected result.
+
+HUMAN_REVIEW_REQUIRED:
+- Payment;
+- Placement;
+- LINE identity/link/rebind;
+- Award/Settlement/Payout;
+- Return/Recovery;
+- Privacy/security;
+- migrations/schema/data repair;
+- any economic or identity-affecting behavior.
+
+DECISION_REQUIRED / NEVER_AUTO_DECIDE:
+- ambiguous R1.0B meaning;
+- bonus/rank/Active/Sponsor rule conflict;
+- Person merge/identity ownership decision;
+- bank-account ownership/change decision;
+- historical migration reconstruction;
+- bulk Production data correction;
+- authority conflict.
+
+Codex may analyze/propose for these classes but MUST NOT invent business truth.
+
+### ER-9 Production Mutation Boundary
+
+No runtime error may trigger direct Codex mutation of Production.
+
+The allowed automated target is at most:
+error/monitor → issue/evidence → Codex diagnosis/fix → development branch/PR → CI.
+
+Stage/Production deployment remains governed by release approval. Production data correction follows a separately approved business/data recovery procedure.
+
+### ER-10 Issue Creation Automation
+
+Phase 1 requires the Issue Contract and repairability foundation; automatic Issue creation and automatic Codex invocation are OPTIONAL until separately approved.
+
+If later enabled:
+- deduplicate by fingerprint;
+- apply severity/rate thresholds;
+- sanitize before GitHub;
+- prevent PII/secrets from issue body/artifacts;
+- rate-limit issue creation;
+- never auto-close a security/economic incident solely because errors stop.
+
+### ER-11 Minimum Monitoring Integration
+
+The OR-8 monitoring surfaces MUST produce enough structured evidence to identify:
+- service/operation;
+- release;
+- errorCode;
+- traceId;
+- occurrence trend;
+- actionable diagnostic reference.
+
+Monitoring products/vendors are implementation choices and are not mandated by this rule.
+
+### ER-12 G8 Repairability Acceptance
+
+Before G8 Operational Readiness can PASS:
+- ERROR_STRUCTURED_LOGGING = PASS
+- TRACE_CORRELATION = PASS
+- ERROR_CODE_CATALOG = PASS
+- ERROR_FINGERPRINT = PASS or explicitly DEFERRED_WITH_APPROVED_REASON if monitoring backend cannot yet aggregate
+- GITHUB_ISSUE_REPAIR_CONTRACT = PASS
+- SANITIZED_DIAGNOSTIC_PACKAGE = PASS
+- CODEX_REPAIR_RUNBOOK = PASS
+- PRODUCTION_AUTO_MUTATION = DISABLED
+
+AUTO_CREATE_ISSUE and AUTO_INVOKE_CODEX are not required for Phase 1 GA unless separately approved.
