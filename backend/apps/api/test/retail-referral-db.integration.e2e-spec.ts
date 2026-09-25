@@ -79,4 +79,27 @@ describeDb('Retail Referral rollback integration harness',()=>{
   },{isolationLevel:Prisma.TransactionIsolationLevel.Serializable,timeout:30000})).rejects.toThrow(ROLLBACK);
   expect(await db.person.count({where:{legalName:{startsWith:marker}}})).toBe(0);
  },40000);
+ it('records an inactive referrer as zero-payable without creating volume or organization effects',async()=>{
+  const marker=`RETAIL_REFERRAL_INACTIVE_${Date.now()}`;
+  await expect(db.$transaction(async tx=>{
+   const paidAt=new Date('2044-05-01T04:00:00.000Z'),effectiveFrom=new Date('2040-01-01T00:00:00.000Z'),rule=`TEST_RETAIL_INACTIVE_${randomUUID()}`;
+   await tx.runtimeRuleParameter.create({data:{ruleVersionCode:rule,parameterCode:'award.pending.days',scopeKey:'*',valueJson:'45',effectiveFrom}});
+   const owner=await tx.person.create({data:{legalName:`${marker}_OWNER`,status:'EFFECTIVE'}}),purchaser=await tx.person.create({data:{legalName:`${marker}_PURCHASER`,status:'EFFECTIVE'}});
+   const referrer=await tx.qualification.create({data:{currentHolderPersonId:owner.personId,planLevelCode:'STARTER',status:'EFFECTIVE',effectiveAt:effectiveFrom}});
+   await tx.qualificationPlanHistory.create({data:{qualificationId:referrer.qualificationId,planCode:'STARTER',effectiveFrom,sourceType:'RETAIL_REFERRAL_TEST'}});
+   const product=await tx.productReference.create({data:{sku:`${marker}_SKU`,displayName:'Synthetic inactive retail product',currentPrice:d(100)}});
+   const profile=await tx.productRuleProfile.create({data:{productId:product.productId,effectiveFrom,gpvRate:d(0),ruleVersionCode:rule}});
+   const order=await tx.order.create({data:{purchaserPersonId:purchaser.personId,purpose:'RETAIL',status:'PAID',grossAmount:d(100),netAmount:d(100),ruleVersionCode:rule,paidAt}});
+   const line=await tx.orderLine.create({data:{orderId:order.orderId,productId:product.productId,skuSnapshot:product.sku,productNameSnapshot:product.displayName,quantity:d(1),unitPrice:d(100),lineAmount:d(100),gpvRateSnapshot:d(0),gpvAmountSnapshot:d(0),ruleProfileSnapshot:{profileId:profile.productRuleProfileId}}});
+   await tx.retailReferralOrderLineSnapshot.create({data:{orderLineId:line.orderLineId,orderId:order.orderId,referrerQualificationId:referrer.qualificationId,retailReferralEnabled:true,calculationType:'PERCENTAGE',rate:d('.1'),baseType:'NET_PAID_ITEM_AMOUNT',netPaidItemAmount:d(100),productRuleProfileId:profile.productRuleProfileId,productRuleVersion:rule,attributionEvidence:{kind:'SYNTHETIC_TEST'}}});
+   const event=await tx.outboxEvent.create({data:{eventType:'WEB_MEMBER_RETAIL_PAYMENT_CONFIRMED',aggregateType:'ORDER',aggregateId:order.orderId,payload:{orderId:order.orderId},correlationId:randomUUID()}});
+   await processRetailReferralPayment(db as any,{outboxEventId:event.outboxEventId} as any,{withOutboxLease:async (_db:any,_lease:any,work:any)=>work(tx)} as any);
+   const award=await tx.bonusAward.findFirstOrThrow({where:{awardType:'RETAIL_REFERRAL',sourceEventId:line.orderLineId}});
+   expect(award).toMatchObject({theoryAmount:d(10),payableAmount:d(0),activeSnapshot:false});
+   expect(await tx.pvLedger.count({where:{qualificationId:referrer.qualificationId}})).toBe(0);
+   expect(await tx.binaryPlacement.count({where:{childQualificationId:referrer.qualificationId}})).toBe(0);
+   throw new Error(ROLLBACK);
+  },{isolationLevel:Prisma.TransactionIsolationLevel.Serializable,timeout:30000})).rejects.toThrow(ROLLBACK);
+  expect(await db.person.count({where:{legalName:{startsWith:marker}}})).toBe(0);
+ },40000);
 });
