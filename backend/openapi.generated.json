@@ -15573,6 +15573,11 @@
             "type": "string",
             "format": "uuid"
           },
+          "sponsorCode": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Z0-9_-]{0,39}(?:X\\d{6,}|\\d{6,})$",
+            "description": "Paper Sponsor Ball code. Resolved by the same server-side resolver as online qualification acquisition; UUID is never a public Sponsor Code."
+          },
           "binaryParentQualificationId": {
             "type": "string",
             "format": "uuid"
