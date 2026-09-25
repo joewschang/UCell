@@ -71,6 +71,29 @@ export async function processRetailReferralPayment(db:PrismaService,lease:Outbox
  });
 }
 
+export async function processRetailReferralReturn(db:PrismaService,lease:OutboxLease,deps={withOutboxLease}){
+ return deps.withOutboxLease(db,lease,async tx=>{
+  const event=await tx.outboxEvent.findUnique({where:{outboxEventId:lease.outboxEventId}});if(!event||event.processStatus==='PROCESSED')return;
+  const ret=await tx.returnCase.findUnique({where:{returnCaseId:(event.payload as any).returnCaseId},include:{order:{include:{retailReferralLineSnapshots:true}},lines:true}});
+  if(!ret||ret.status!=='POSTED'||ret.order.qualificationId||!ret.order.purchaserPersonId)throw new Error('WEB_RETAIL_RETURN_INVALID');
+  for(const returned of ret.lines){
+   const snapshot=ret.order.retailReferralLineSnapshots.find(row=>row.orderLineId===returned.orderLineId);if(!snapshot?.retailReferralEnabled||!snapshot.referrerQualificationId||!snapshot.rate)continue;
+   const award=await tx.bonusAward.findFirst({where:{awardType:'RETAIL_REFERRAL',recipientQualificationId:snapshot.referrerQualificationId,sourceEventId:returned.orderLineId}});if(!award||award.payableAmount.lte(0))continue;
+   const adjustment=returned.returnAmount.mul(snapshot.rate);if(adjustment.lte(0))continue;
+   const latest=await tx.bonusAwardLifecycleEvent.findFirst({where:{bonusAwardId:award.bonusAwardId},orderBy:{occurredAt:'desc'}});
+   if(latest&&['CALCULATED','PENDING_45D'].includes(latest.status)){
+    if(adjustment.gte(award.payableAmount))await tx.bonusAwardLifecycleEvent.create({data:{bonusAwardId:award.bonusAwardId,status:'REVERSED',occurredAt:ret.occurredAt,reasonCode:'RETAIL_RETURN_FULL_OFFSET'}});
+    else if(!await tx.bonusRecoveryEvent.findFirst({where:{bonusAwardId:award.bonusAwardId,returnCaseId:ret.returnCaseId,reasonCode:'RETAIL_RETURN_PENDING_OFFSET'}}))await tx.bonusRecoveryEvent.create({data:{bonusAwardId:award.bonusAwardId,returnCaseId:ret.returnCaseId,recoveryAmount:adjustment,outstandingAmount:adjustment,status:'OFFSETTING',reasonCode:'RETAIL_RETURN_PENDING_OFFSET',occurredAt:ret.occurredAt}});
+   }
+   else if(latest&&['EFFECTIVE','PAYABLE','PAID'].includes(latest.status)){
+    const recovery=await tx.bonusRecoveryEvent.findFirst({where:{bonusAwardId:award.bonusAwardId,returnCaseId:ret.returnCaseId,reasonCode:'RETAIL_RETURN'}});
+    if(!recovery){await tx.bonusRecoveryEvent.create({data:{bonusAwardId:award.bonusAwardId,returnCaseId:ret.returnCaseId,recoveryAmount:adjustment,outstandingAmount:adjustment,status:'OPEN',reasonCode:'RETAIL_RETURN',occurredAt:ret.occurredAt}});await tx.bonusAwardLifecycleEvent.create({data:{bonusAwardId:award.bonusAwardId,status:'CLAWBACK',occurredAt:ret.occurredAt,reasonCode:'RETAIL_RETURN'}});}
+   }
+  }
+  await tx.outboxEvent.update({where:{outboxEventId:lease.outboxEventId},data:{processStatus:'PROCESSED',processedAt:new Date()}});
+ });
+}
+
 async function processRecognition(recognitionId:string){
   return prisma.$transaction(async tx=>{
     const schedule=await tx.monthlyRecognitionSchedule.findUnique({
@@ -170,7 +193,7 @@ export async function processReplayEvent(lease:OutboxLease,db:PrismaService=pris
 
 export async function pollOutbox(
   db:PrismaService=prisma,
-  deps={claimOutboxLease,processSaleConfirmed,processRetailReferralPayment,processMemberOrderNotification,processPaymentInventoryReservation,processLeasedReplay,processTreeProjectionEvent,releaseFailedOutboxLease}
+  deps={claimOutboxLease,processSaleConfirmed,processRetailReferralPayment,processRetailReferralReturn,processMemberOrderNotification,processPaymentInventoryReservation,processLeasedReplay,processTreeProjectionEvent,releaseFailedOutboxLease}
 ){
   const events=await db.outboxEvent.findMany({
     where:{eventType:{in:['BINARY_TREE_CHANGED','SALE_CONFIRMED','WEB_MEMBER_RETAIL_PAYMENT_CONFIRMED','MEMBER_ORDER_CREATED','PAYMENT_STATE_TRANSITIONED','RETURN_CONFIRMED','RETURN_DEPENDENCY_REPLAY_REQUIRED','EPV_MONTH_RECALCULATION_REQUIRED','RPV_REVERSAL_REQUIRED']},processStatus:{in:['PENDING','PROCESSING']},availableAt:{lte:new Date()}},
@@ -184,6 +207,7 @@ export async function pollOutbox(
       if(event.eventType==='BINARY_TREE_CHANGED') await deps.processTreeProjectionEvent(db,lease);
       else if(event.eventType==='SALE_CONFIRMED') await deps.processSaleConfirmed(db,lease);
       else if(event.eventType==='WEB_MEMBER_RETAIL_PAYMENT_CONFIRMED') await deps.processRetailReferralPayment(db,lease);
+      else if(event.eventType==='RETURN_CONFIRMED'&&(event.payload as any)?.qualificationId===null) await deps.processRetailReferralReturn(db,lease);
       else if(event.eventType==='MEMBER_ORDER_CREATED') await deps.processMemberOrderNotification(db,lease);
       else if(event.eventType==='PAYMENT_STATE_TRANSITIONED') await deps.processPaymentInventoryReservation(db,lease,{
         warehouseId:process.env.UCELL_INVENTORY_WAREHOUSE_ID??'',
