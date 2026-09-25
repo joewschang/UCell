@@ -1,0 +1,17 @@
+import {useRef,useState} from 'react';
+import {ErrorState,EmptyState,LoadingState} from '@ucell/design-system';
+import {createWebRetailOrder,getProducts,getRetailReferrer,validateRetailReferrerCandidate} from './memberData';
+import {useResource} from './useResource';
+
+export default function WebMemberRetailShop(){
+ const catalog=useResource('web-retail-products',getProducts),referrer=useResource('retail-referrer',getRetailReferrer);
+ const [cart,setCart]=useState<Record<string,number>>({}),[code,setCode]=useState(''),[candidate,setCandidate]=useState<{ballNo:string;planLevelCode:string}|null>(null),[busy,setBusy]=useState(false),[error,setError]=useState(''),[receipt,setReceipt]=useState<string|null>(null); const pending=useRef<{body:string,key:string}|null>(null);
+ const count=Object.values(cart).reduce((a,b)=>a+b,0),locked=referrer.data!==undefined&&referrer.data!==null;
+ const change=(id:string,n:number)=>setCart(x=>{const next={...x};if(n<=0)delete next[id];else next[id]=Math.min(99,n);return next;});
+ async function verify(){setError('');try{const result=await validateRetailReferrerCandidate(code.trim().toUpperCase(),crypto.randomUUID());setCandidate(result);}catch(e){setCandidate(null);setError(e instanceof Error?e.message:'商品推薦碼無法核驗');}}
+ async function submit(){if(!count||busy)return;const items=Object.entries(cart).sort(([a],[b])=>a.localeCompare(b)).map(([productId,quantity])=>({productId,quantity:String(quantity)})),body=JSON.stringify({items,retailReferralCode:locked?undefined:candidate?.ballNo});if(pending.current?.body!==body)pending.current={body,key:crypto.randomUUID()};setBusy(true);setError('');try{const order=await createWebRetailOrder(items,pending.current.key,locked?undefined:candidate?.ballNo);setReceipt(order.id);setCart({});pending.current=null;referrer.retry();}catch(e){setError(e instanceof Error?e.message:'建立訂單失敗');}finally{setBusy(false);}}
+ if(catalog.error)return <ErrorState message={catalog.error} retry={catalog.retry}/>;
+ if(!catalog.data||referrer.data===undefined)return <LoadingState label="商城載入中…"/>;
+ const catalogData=catalog.data,lockedReferrer=referrer.data,products=catalogData.filter(x=>x.available);
+ return <section><h2>商品商城</h2><p>網路會員以正式零售價格購買一般商品；商品推薦與會員推薦、二元安置完全分離。</p>{!products.length?<EmptyState title="目前沒有可訂購商品"/>:products.map(p=><article className="card" key={p.id}><h3>{p.name}</h3><p>{p.price===null?'價格待確認':`NT$ ${p.price.toLocaleString('zh-TW')}`}</p><button disabled={busy} onClick={()=>change(p.id,(cart[p.id]??0)+1)}>加入購物車</button></article>)}<section className="card"><h3>購物車 · {count} 件</h3>{Object.entries(cart).map(([id,n])=><p key={id}>{catalogData.find(x=>x.id===id)?.name??'商品'} × {n} <button disabled={busy} onClick={()=>change(id,n-1)}>減少</button><button disabled={busy} onClick={()=>change(id,0)}>移除</button></p>)}{locked&&lockedReferrer?<p>商品推薦人：{lockedReferrer.ballNo}。首次有效推薦已鎖定，後續訂單沿用此歸因。</p>:<><label>商品推薦碼（選填）<input value={code} onChange={e=>{setCode(e.target.value.trim().toUpperCase());setCandidate(null);}} placeholder="例如 A001286"/></label><button disabled={busy||!code} onClick={verify}>驗證推薦碼</button>{candidate&&<p>已核驗推薦球：{candidate.ballNo}（{candidate.planLevelCode}）。結帳時會再次驗證。</p>}</>}<p>商品金額由伺服器建立訂單後確認；前台不計算獎金或業績。</p><button disabled={busy||!count||Boolean(code)&&!candidate&&!locked} onClick={submit}>{busy?'建立中…':'建立待付款訂單'}</button>{receipt&&<p role="status">待付款訂單已建立：{receipt}</p>}{error&&<p role="alert">{error}</p>}</section></section>;
+}

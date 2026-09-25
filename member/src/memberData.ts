@@ -67,7 +67,7 @@ export async function markNotificationRead(q:Qualification,notificationId:string
  if(result.qualificationId!==q.id||result.notificationId!==notificationId||typeof result.readAt!=='string'||!Number.isFinite(Date.parse(result.readAt)))throw new Error('通知已讀回應不符，已停止顯示');
  return result;
 }
-export type ConnectedOrder={qualificationId:string;id:string;status:string;total:string;createdAt:string;lines:{productId:string;name:string;quantity:string;unitPrice?:string;amount:string}[]};
+export type ConnectedOrder={qualificationId:string|null;id:string;status:string;total:string;createdAt:string;lines:{productId:string;name:string;quantity:string;unitPrice?:string;amount:string}[]};
 function parseConnectedOrder(value:unknown,q:Qualification):ConnectedOrder{
  const row=value as ConnectedOrder;
  if(!row||row.qualificationId!==q.id||typeof row.id!=='string'||typeof row.total!=='string'||!/^\d+(\.\d+)?$/.test(row.total)||typeof row.status!=='string'||!Array.isArray(row.lines)||!row.lines.every(line=>typeof line.name==='string'&&typeof line.quantity==='string'&&typeof line.amount==='string'))throw new Error('訂單格式或資格不符，已停止顯示');
@@ -76,6 +76,10 @@ function parseConnectedOrder(value:unknown,q:Qualification):ConnectedOrder{
 export async function createConnectedOrder(q:Qualification,items:{productId:string;quantity:string}[],key:string){
  return parseConnectedOrder(await api('/member/orders',{method:'POST',headers:{'Idempotency-Key':key},body:JSON.stringify({qualificationId:q.id,items})}),q);
 }
+export type RetailReferrer={ballNo:string;effectiveFrom:string;locked:true};
+export async function getRetailReferrer(signal:AbortSignal):Promise<RetailReferrer|null>{const row=await api<unknown>('/member/retail-referrer',{signal});if(row===null)return null;const value=row as RetailReferrer;if(!value||typeof value.ballNo!=='string'||!Number.isFinite(Date.parse(value.effectiveFrom))||value.locked!==true)throw new Error('商品推薦資料格式異常');return value;}
+export async function validateRetailReferrerCandidate(code:string,key:string){if(!/^[A-Z][A-Z0-9_-]{0,39}(?:X\d{6,}|\d{6,})$/.test(code))throw new Error('商品推薦碼格式不正確');const row=await api<{ballNo:string;planLevelCode:string;effectiveAt:string;ruleVersion:string}>('/member/retail-referrer/candidate',{method:'POST',headers:{'Idempotency-Key':key},body:JSON.stringify({code})});if(!row||row.ballNo!==code||typeof row.planLevelCode!=='string'||row.ruleVersion!=='R1.0B'||!Number.isFinite(Date.parse(row.effectiveAt)))throw new Error('商品推薦碼無法核驗');return row;}
+export async function createWebRetailOrder(items:{productId:string;quantity:string}[],key:string,retailReferralCode?:string){const row=await api<unknown>('/member/orders',{method:'POST',headers:{'Idempotency-Key':key},body:JSON.stringify({items,...(retailReferralCode?{retailReferralCode}:{})})}) as ConnectedOrder;if(!row||row.qualificationId!==null||typeof row.id!=='string'||row.status!=='CONFIRMED'||!decimal.test(row.total)||!Array.isArray(row.lines))throw new Error('零售訂單回應異常');return row;}
 export type PackageOffer={packageVersionId:string;packageCode:string;displayName:string;packageClass:'QUALIFICATION'|'ACTIVE_DURATION';version:number;currency:string;priceAmount:string;selectableProductQuantity:number;selectionMode:'EXACT_QUANTITY';membershipEffect:string;qualificationEffect:string;activeDurationUnit:string|null;activeDurationValue:number|null;targetQualificationRequired:boolean;effectiveFrom:string|null;effectiveTo:string|null;configHash:string};
 export type PackageProduct={productRuleProfileId:string;productId:string;sku:string;displayName:string;available:boolean;minQty:number|null;maxQty:number|null;selectionIncrement:number;sortOrder:number};
 export type SponsorCandidate={sponsorBallNo:string;planLevelCode:string;effectiveAt:string;ruleVersion:string};

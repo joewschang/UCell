@@ -19,6 +19,7 @@ import ReferralShare from './ReferralShare';
 import {ContentDetail,ContentList} from './Content';
 import FormalUpgrade from './FormalUpgrade';
 import QualificationPackageShop from './QualificationPackageShop';
+import WebMemberRetailShop from './WebMemberRetailShop';
 import MemberBinaryTree from './MemberBinaryTree';
 import MemberTodaySummary from './MemberTodaySummary';
 import MemberAwardJourney from './MemberAwardJourney';
@@ -168,7 +169,7 @@ function MemberApp() {
         <Route path="/notifications" element={<Notifications q={current}/>}/>
         <Route path="*" element={<section className="card"><h2>找不到頁面</h2><Link to="/">返回首頁</Link></section>}/>
       </Routes></div></> : <Routes>
-        <Route path="/shop" element={<QualificationPackageShop onCreated={retry}/>}/>
+        <Route path="/shop" element={<><WebMemberRetailShop/><QualificationPackageShop onCreated={retry}/></>}/>
         <Route path="/me" element={<Me/>}/>
         <Route path="*" element={<section className="card"><h2>尚未取得會員資格</h2><p>可先完成正式會員資料，再透過正式套組取得第一個會員資格。</p><Link className="text-link" to="/shop">選擇正式會員套組</Link><button onClick={retry}>重新查詢</button><Link className="text-link" to="/me">查看會員資料</Link><EndSession connected={!data.isMock}/></section>}/>
       </Routes>}</main>
