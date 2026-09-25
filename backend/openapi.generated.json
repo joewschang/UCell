@@ -2595,6 +2595,113 @@
         ]
       }
     },
+    "/api/v1/existing-member-line-links/requests": {
+      "post": {
+        "description": "A verified LINE subject requests an existing-member link. memberNo alone is insufficient; Support must review the verification reference.",
+        "operationId": "requestExistingMemberLineLink",
+        "parameters": [
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "summary": "",
+        "tags": [
+          "Existing Member LINE Link"
+        ]
+      }
+    },
+    "/api/v1/existing-member-line-links/complete": {
+      "post": {
+        "description": "Consumes one approved short-lived token only for the requesting verified LINE subject. It never creates a Person, Ball, Sponsor, placement or economic effect.",
+        "operationId": "completeExistingMemberLineLink",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompleteDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "summary": "",
+        "tags": [
+          "Existing Member LINE Link"
+        ]
+      }
+    },
+    "/api/v1/admin/existing-member-line-links/{id}/approve": {
+      "post": {
+        "description": "Authorized admin approves a pending request and receives a token only for approved out-of-band delivery.",
+        "operationId": "approveExistingMemberLineLink",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "Admin - Existing Member LINE Link"
+        ]
+      }
+    },
     "/api/v1/admin/analytics/policy": {
       "get": {
         "operationId": "adminAnalyticsPolicy",
@@ -13555,6 +13662,14 @@
         "properties": {}
       },
       "LineRebindRequestDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "RequestDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "CompleteDto": {
         "type": "object",
         "properties": {}
       },

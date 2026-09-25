@@ -515,6 +515,7 @@ enum IdentityLinkStatus {
 }
 
 enum AccountRecoveryType {
+  EXISTING_MEMBER_LINE_LINK
   LINE_REBIND
   BANK_ACCOUNT_CHANGE
 
