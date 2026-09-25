@@ -1143,6 +1143,7 @@ model Order {
   qualification         Qualification?         @relation(fields: [qualificationId], references: [qualificationId])
   purchaser             Person?                @relation("RetailOrderPurchaser", fields: [purchaserPersonId], references: [personId])
   lines                 OrderLine[]
+  paperReceiptEvidence PaperReceiptEvidence[]
   paymentEvents         PaymentEvent[]
   payments              Payment[]
   inventoryReservations InventoryReservation[]
@@ -1184,7 +1185,27 @@ model OrderLine {
   @@schema("commerce")
 }
 
-model PaymentEvent {
+model PaperReceiptEvidence {
+  paperReceiptEvidenceId String @id @default(uuid()) @map("paper_receipt_evidence_id") @db.Uuid
+  orderId String @map("order_id") @db.Uuid
+  receiptReference String @map("receipt_reference")
+  paymentChannel String @map("payment_channel")
+  paymentNamespace String @map("payment_namespace")
+  amount Decimal @db.Decimal(18,2)
+  currency String
+  receivedAt DateTime @map("received_at") @db.Timestamptz(6)
+  evidenceDocumentRef String? @map("evidence_document_ref")
+  note String? @db.VarChar(500)
+  enteredBy String @map("entered_by") @db.Uuid
+  confirmedBy String? @map("confirmed_by") @db.Uuid
+  confirmationAt DateTime? @map("confirmation_at") @db.Timestamptz(6)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  order Order @relation(fields:[orderId],references:[orderId])
+  @@unique([receiptReference,paymentChannel,paymentNamespace])
+  @@index([orderId,receivedAt])
+  @@map("paper_receipt_evidence")
+  @@schema("commerce")
+}model PaymentEvent {
   paymentEventId String   @id @default(uuid()) @map("payment_event_id") @db.Uuid
   orderId        String   @map("order_id") @db.Uuid
   eventType      String   @map("event_type")
