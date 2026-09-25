@@ -125,3 +125,12 @@ Before any new Codex work package:
 
 Authority: UCELL_PHASE_BOUNDARY_AI_READY_FOUNDATION_DECISION.md.
 Current phase is AI-READY FOUNDATION ONLY. Admin AI natural-language query, LLM runtime, RAG/vector/embedding, AI tool/memory/query-planner runtime and AI write actions are deferred to the next separately approved phase. AI Brain specifications are future design and MUST NOT be interpreted by Codex as current implementation scope.
+
+
+## 12. Phase 1 scope authority — 2026-09-25 update
+
+Current phase authority is `UCELL_PHASE_1_RELIABLE_MVP_SCOPE_DECISION.md`.
+Phase 1 is **Reliable UCell MVP only**. SG-A1 implementation program, Semantic/Data Governance Runtime, Analytics Runtime and all AI/LLM/Agent infrastructure are Phase 2+ and MUST NOT block R1.0B GA. The prior `UCELL_PHASE_BOUNDARY_AI_READY_FOUNDATION_DECISION.md` is SUPERSEDED/HISTORICAL.
+
+Current release routing:
+G1 Functional Closure → G2 Migration Integrity → G3 Fresh 0→current → G4 Full Regression → G5 Code/Documentation Closure → G6 Stage RC → G7 Business UAT → G8 Operational Readiness → G9 Production Go/No-Go → G10 R1.0B GA.
