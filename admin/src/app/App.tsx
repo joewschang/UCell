@@ -27,6 +27,7 @@ import {UatPage} from '../features/uat/UatPage';
 import {SystemPage} from '../features/system/SystemPage';
 import {ProviderOperationsPage} from '../features/provider-operations/ProviderOperationsPage';
 import {RequirePageRole} from '../features/auth/RequirePageRole';
+import {ExistingMemberLineLinksPage} from '../features/line-links/ExistingMemberLineLinksPage';
 
 function Protected(){const {user,ready}=useAuth();if(!ready)return <div className="app-loading">驗證管理員Session…</div>;return user?<AppShell/>:<Navigate to="/login" replace/>}
 export function App(){return <Routes>
@@ -34,6 +35,7 @@ export function App(){return <Routes>
  <Route element={<Protected/>}>
   <Route path="/" element={<DashboardPage/>}/>
   <Route path="/people" element={<RequirePageRole><PeoplePage/></RequirePageRole>}/>
+  <Route path="/line-links" element={<RequirePageRole><ExistingMemberLineLinksPage/></RequirePageRole>}/>
   <Route path="/applications" element={<RequirePageRole><ApplicationsPage/></RequirePageRole>}/>
   <Route path="/applications/new" element={<RequirePageRole><NewApplicationWizard/></RequirePageRole>}/>
   <Route path="/qualifications" element={<RequirePageRole><QualificationsPage/></RequirePageRole>}/>
