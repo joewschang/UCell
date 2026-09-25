@@ -133,6 +133,11 @@ describeDb('Retail Referral rollback integration harness',()=>{
    await processRetailReferralPayment(db as any,{outboxEventId:event.outboxEventId} as any,{withOutboxLease:async (_db:any,_lease:any,work:any)=>work(tx)} as any);
    const award=await tx.bonusAward.findFirstOrThrow({where:{awardType:'RETAIL_REFERRAL',sourceEventId:line.orderLineId}});
    expect(award).toMatchObject({theoryAmount:d(10),payableAmount:d(0),activeSnapshot:false});
+   await tx.activePeriod.create({data:{qualificationId:referrer.qualificationId,activeFrom:new Date('2044-05-02T04:00:00.000Z'),sourceType:'RETAIL_REFERRAL_TEST_LATER_ACTIVE',ruleVersionCode:rule}});
+   const replayEvent=await tx.outboxEvent.create({data:{eventType:'WEB_MEMBER_RETAIL_PAYMENT_CONFIRMED',aggregateType:'ORDER',aggregateId:order.orderId,payload:{orderId:order.orderId},correlationId:randomUUID()}});
+   await processRetailReferralPayment(db as any,{outboxEventId:replayEvent.outboxEventId} as any,{withOutboxLease:async (_db:any,_lease:any,work:any)=>work(tx)} as any);
+   expect(await tx.bonusAward.count({where:{awardType:'RETAIL_REFERRAL',sourceEventId:line.orderLineId}})).toBe(1);
+   expect(await tx.bonusAward.findUniqueOrThrow({where:{bonusAwardId:award.bonusAwardId}})).toMatchObject({payableAmount:d(0),activeSnapshot:false});
    expect(await tx.pvLedger.count({where:{qualificationId:referrer.qualificationId}})).toBe(0);
    expect(await tx.binaryPlacement.count({where:{childQualificationId:referrer.qualificationId}})).toBe(0);
    throw new Error(ROLLBACK);
