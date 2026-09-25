@@ -9193,10 +9193,10 @@
         ]
       }
     },
-    "/api/v1/admin/paper-applications/qualification-orders": {
+    "/api/v1/admin/paper-applications/duplicate-reviews/resolve": {
       "post": {
-        "description": "Creates a Qualification package order through the same Package, Sponsor and Payment core. The paper application number is server-resolved; it never activates or places a Ball directly.",
-        "operationId": "adminCreatePaperQualificationOrder",
+        "description": "Authorized manual duplicate review only. Reuses an explicitly selected Person or approves a new Person; it never merges Persons and revalidates the submitted identity fingerprint.",
+        "operationId": "adminResolvePaperDuplicateReview",
         "parameters": [
           {
             "name": "idempotency-key",
@@ -9220,7 +9220,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/PaperQualificationOrderDto"
+                "$ref": "#/components/schemas/ResolvePaperDuplicateDto"
               }
             }
           }
@@ -15920,6 +15920,10 @@
         "properties": {}
       },
       "NewPaperPersonDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "ResolvePaperDuplicateDto": {
         "type": "object",
         "properties": {}
       },

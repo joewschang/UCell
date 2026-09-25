@@ -33,6 +33,16 @@ export class PaperIntakeService {
    return {paperApplicationNo,memberNo:result.person.memberNo,status:application.status,matchOutcome:result.outcome};
   });
  }
+ async resolveDuplicateReview(input:any){
+  if(!this.identity)throw new UnprocessableEntityException({code:'PAPER_IDENTITY_CONFIGURATION_PENDING'});
+  return this.idempotency.execute(`admin:paper-duplicate-review:${input.reviewId}`,input.key,{reviewId:input.reviewId,decision:input.decision,existingMemberNo:input.existingMemberNo,reasonCode:input.reasonCode},async tx=>{
+   const person=await this.identity!.resolve(tx,input);
+   const existing=await tx.paperApplication.findUnique({where:{paperApplicationNo:input.paperApplicationNo}});
+   if(existing){if(existing.personId!==person.personId)throw new ConflictException({code:'PAPER_APPLICATION_IDENTITY_CONFLICT'});return {paperApplicationNo:input.paperApplicationNo,memberNo:person.memberNo,status:existing.status,decision:input.decision};}
+   const application=await tx.paperApplication.create({data:{paperApplicationNo:input.paperApplicationNo,personId:person.personId,receivedAt:new Date(input.receivedAt),evidenceDocumentRef:input.evidenceDocumentRef,createdBy:input.actorId}});
+   return {paperApplicationNo:application.paperApplicationNo,memberNo:person.memberNo,status:application.status,decision:input.decision};
+  });
+ }
  async list(input:{status?:string;take?:number}={}){
   const take=Math.min(Math.max(input.take??50,1),100);
   const rows=await this.db.paperApplication.findMany({where:input.status?{status:input.status}:undefined,include:{person:{select:{memberNo:true}},order:{select:{orderNo:true,status:true,purpose:true,netAmount:true,paidAt:true}}},orderBy:{receivedAt:'desc'},take});

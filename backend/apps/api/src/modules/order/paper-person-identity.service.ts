@@ -50,6 +50,27 @@ export class PaperPersonIdentityService {
   await this.audit.write(tx,{actorType:'USER',actorId:input.actorId,action:'PAPER_NEW_PERSON_CREATED',entityType:'Person',entityId:person.personId,afterData:{paperApplicationNo:input.paperApplicationNo,memberNo:person.memberNo,matchOutcome:'NO_MATCH'},requestId:input.requestId,correlationId:randomUUID()});
   return {outcome:'NO_MATCH' as const,person};
  }
+ async resolve(tx:Prisma.TransactionClient,input:Input&{reviewId:string;decision:'REUSE_EXISTING_PERSON'|'APPROVE_NEW_PERSON';existingMemberNo?:string;reasonCode:string}){
+  const review=await tx.paperIdentityDuplicateReview.findUnique({where:{paperIdentityDuplicateReviewId:input.reviewId}});
+  if(!review||review.status!=='DUPLICATE_REVIEW_REQUIRED')throw new ConflictException({code:'PAPER_DUPLICATE_REVIEW_NOT_OPEN'});
+  const identity=this.fingerprint(input);
+  if(review.fingerprintAlgorithm!==ALGORITHM||review.fingerprintVersion!==VERSION||review.fingerprint!==identity.fingerprint)throw new ConflictException({code:'PAPER_DUPLICATE_REVIEW_IDENTITY_MISMATCH'});
+  let person:any;
+  if(input.decision==='REUSE_EXISTING_PERSON'){
+   if(!input.existingMemberNo)throw new UnprocessableEntityException({code:'PAPER_EXISTING_MEMBER_NO_REQUIRED'});
+   person=await tx.person.findUnique({where:{memberNo:input.existingMemberNo},select:{personId:true,memberNo:true}});
+   if(!person)throw new ConflictException({code:'PAPER_PERSON_NOT_FOUND'});
+  }else{
+   const exact=await tx.paperPersonIdentityFingerprint.findUnique({where:{fingerprintAlgorithm_fingerprintVersion_fingerprint:{fingerprintAlgorithm:ALGORITHM,fingerprintVersion:VERSION,fingerprint:identity.fingerprint}}});
+   if(exact)throw new ConflictException({code:'PAPER_IDENTITY_ALREADY_BOUND'});
+   person=await tx.person.create({data:{legalName:input.legalName.trim(),birthDate:input.birthDate?new Date(input.birthDate):undefined,mobile:input.mobile?.trim()||undefined,email:input.email?.trim().toLowerCase()||undefined,status:'DRAFT'}});
+   await tx.paperPersonIdentityFingerprint.create({data:{personId:person.personId,documentCountry:identity.country,documentType:identity.type,fingerprintAlgorithm:ALGORITHM,fingerprintVersion:VERSION,fingerprint:identity.fingerprint}});
+   await this.audit.write(tx,{actorType:'USER',actorId:input.actorId,action:'PAPER_NEW_PERSON_CREATED',entityType:'Person',entityId:person.personId,afterData:{paperApplicationNo:input.paperApplicationNo,memberNo:person.memberNo,source:'DUPLICATE_REVIEW_APPROVAL'},requestId:input.requestId,correlationId:randomUUID()});
+  }
+  await tx.paperIdentityDuplicateReview.update({where:{paperIdentityDuplicateReviewId:review.paperIdentityDuplicateReviewId},data:{status:'RESOLVED',resolvedBy:input.actorId,resolvedAt:new Date(),resolutionReasonCode:input.reasonCode}});
+  await this.audit.write(tx,{actorType:'USER',actorId:input.actorId,action:'PAPER_DUPLICATE_REVIEW_RESOLVED',entityType:'PaperIdentityDuplicateReview',entityId:review.paperIdentityDuplicateReviewId,afterData:{paperApplicationNo:review.paperApplicationNo,decision:input.decision,memberNo:person.memberNo,reasonCode:input.reasonCode},requestId:input.requestId,correlationId:randomUUID()});
+  return person;
+ }
  private async review(tx:Prisma.TransactionClient,input:Input,identity:{fingerprint:string},reasonCode:string){
   const review=await tx.paperIdentityDuplicateReview.upsert({where:{paperApplicationNo:input.paperApplicationNo},create:{paperApplicationNo:input.paperApplicationNo,fingerprintAlgorithm:ALGORITHM,fingerprintVersion:VERSION,fingerprint:identity.fingerprint,reasonCode,evidenceDocumentRef:input.evidenceDocumentRef,requestedBy:input.actorId},update:{}});
   await this.audit.write(tx,{actorType:'USER',actorId:input.actorId,action:'PAPER_DUPLICATE_REVIEW_REQUIRED',entityType:'PaperIdentityDuplicateReview',entityId:review.paperIdentityDuplicateReviewId,afterData:{paperApplicationNo:input.paperApplicationNo,status:review.status,reasonCode},requestId:input.requestId,correlationId:randomUUID()});
