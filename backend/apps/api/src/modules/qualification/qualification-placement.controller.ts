@@ -8,14 +8,14 @@ import {QualificationPlacementService} from './qualification-placement.service';
 
 class PlaceQualificationDto { @ApiProperty({format:'uuid'}) @IsUUID() binaryParentQualificationId!:string; @ApiProperty({enum:['LEFT','RIGHT']}) @IsEnum(['LEFT','RIGHT']) side!:'LEFT'|'RIGHT'; }
 class AdminPlaceQualificationDto extends PlaceQualificationDto { @ApiProperty({maxLength:120}) @IsString() @MinLength(1) @MaxLength(120) reasonCode!:string; }
-class MemberPlaceQualificationDto { @ApiProperty({pattern:'^[A-Z][A-Z0-9]{5,58}$',description:'Public parent Ball number. UUIDs are not accepted in the member flow.'}) @Matches(/^[A-Z][A-Z0-9]{5,58}$/) binaryParentBallNo!:string; @ApiProperty({enum:['LEFT','RIGHT']}) @IsEnum(['LEFT','RIGHT']) side!:'LEFT'|'RIGHT'; }
+class MemberPlaceQualificationDto { @ApiProperty({pattern:'^[A-Z][A-Z0-9_-]{0,39}(?:X\\d{6}|\\d{6,19})$',description:'Public parent Ball number. UUIDs are not accepted in the member flow.'}) @Matches(/^[A-Z][A-Z0-9_-]{0,39}(?:X\d{6}|\d{6,19})$/) binaryParentBallNo!:string; @ApiProperty({enum:['LEFT','RIGHT']}) @IsEnum(['LEFT','RIGHT']) side!:'LEFT'|'RIGHT'; }
 
 @ApiTags('Member - Qualification Placement') @ApiBearerAuth('memberBearer') @UseGuards(MemberAuthenticationGuard)
 @Controller('member')
 export class MemberQualificationPlacementController {
  constructor(private readonly service:QualificationPlacementService){}
  @Get('placements/pending') @ApiOperation({operationId:'memberPendingQualificationPlacements',description:'Balls awaiting placement for which the authenticated Person owns the confirmed Sponsor Ball.'}) pending(@Req() req:any){return this.service.pendingForSponsorOwner(req.user.personId);}
- @Post('placements/pending/:placementReference/place') @UseGuards(IdempotencyGuard) @ApiHeader({name:'Idempotency-Key',required:true}) @ApiOperation({operationId:'memberPlaceQualification',description:'Serializable placement commit using an opaque pending-placement reference and public parent Ball number; Sponsor owner authorization and Binary legality are revalidated server-side.'}) place(@Req() req:any,@Param('placementReference') placementReference:string,@Body() body:MemberPlaceQualificationDto,@Headers('idempotency-key') key:string){return this.service.placeBySponsorOwnerBallNo(req.user.personId,{placementReference,...body},key,req.requestId);}
+ @Post('placements/pending/:placementReference/place') @UseGuards(IdempotencyGuard) @ApiHeader({name:'Idempotency-Key',required:true}) @ApiOperation({operationId:'memberPlaceQualification',description:'Serializable placement commit using a pending-placement reference and public parent Ball number; Sponsor owner authorization and Binary legality are revalidated server-side.'}) place(@Req() req:any,@Param('placementReference') placementReference:string,@Body() body:MemberPlaceQualificationDto,@Headers('idempotency-key') key:string){return this.service.placeBySponsorOwnerReference(req.user.personId,{placementReference,...body},key,req.requestId);}
 }
 
 @ApiTags('Admin - Qualification Placement') @ApiBearerAuth('adminBearer') @Roles('SUPER_ADMIN','MEMBERSHIP_OPS','COMPLIANCE_AUDIT')

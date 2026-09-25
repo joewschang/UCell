@@ -11,10 +11,10 @@ afterEach(() => vi.unstubAllGlobals());
 
 describe('grouped navigation access', () => {
   it.each([
-    ['CUSTOMER_SERVICE', ['營運中心'], ['/']],
-    ['PACKAGE_CONFIG_MANAGE', ['營運中心','商務'], ['/','/packages']],
-    ['PACKAGE_CONFIG_APPROVE', ['營運中心','商務'], ['/','/packages']],
-    ['MEMBERSHIP_OPS', ['營運中心','會員與資格','組織','分析中心','治理稽核'], ['/', '/people','/applications','/qualifications','/workflows','/organization','/analytics','/documents']],
+    ['CUSTOMER_SERVICE', ['Dashboard'], ['/']],
+    ['PACKAGE_CONFIG_MANAGE', ['Dashboard','商務'], ['/','/packages']],
+    ['PACKAGE_CONFIG_APPROVE', ['Dashboard','商務'], ['/','/packages']],
+    ['MEMBERSHIP_OPS', ['Dashboard','會員管理','組織管理','營運分析','系統治理'], ['/', '/people','/applications','/qualifications','/workflows','/organization','/admin/organization/trees','/analytics','/documents']],
   ])('renders only allowed links and nonempty groups for %s', (role, groups, paths) => {
     auth.role = role;
     vi.stubGlobal('sessionStorage', {getItem:() => null});

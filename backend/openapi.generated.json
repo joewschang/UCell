@@ -10060,13 +10060,13 @@
         ]
       }
     },
-    "/api/v1/member/placements/{ballNo}/place": {
+    "/api/v1/member/placements/pending/{placementReference}/place": {
       "post": {
-        "description": "Serializable placement commit using public Ball numbers only; Sponsor owner authorization and Binary legality are revalidated server-side.",
+        "description": "Serializable placement commit using a pending-placement reference and public parent Ball number; Sponsor owner authorization and Binary legality are revalidated server-side.",
         "operationId": "memberPlaceQualification",
         "parameters": [
           {
-            "name": "ballNo",
+            "name": "placementReference",
             "required": true,
             "in": "path",
             "schema": {
@@ -15891,7 +15891,7 @@
         "properties": {
           "binaryParentBallNo": {
             "type": "string",
-            "pattern": "^[A-Z][A-Z0-9]{5,58}$",
+            "pattern": "^[A-Z][A-Z0-9_-]{0,39}(?:X\\d{6}|\\d{6,19})$",
             "description": "Public parent Ball number. UUIDs are not accepted in the member flow."
           },
           "side": {

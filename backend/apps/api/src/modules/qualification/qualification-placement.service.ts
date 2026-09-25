@@ -7,7 +7,7 @@ import {OrganizationService} from '../organization/organization.service';
 
 type PlacementInput={qualificationId:string;binaryParentQualificationId:string;side:'LEFT'|'RIGHT';reasonCode?:string};
 type MemberPlacementInput={placementReference:string;binaryParentBallNo:string;side:'LEFT'|'RIGHT'};
-const publicBallNo=/^[A-Z][A-Z0-9]{5,58}$/;
+const publicBallNo=/^[A-Z][A-Z0-9_-]{0,39}(?:X\d{6}|\d{6,19})$/;
 
 @Injectable()
 export class QualificationPlacementService {
@@ -25,8 +25,8 @@ export class QualificationPlacementService {
  }
 
  async placeBySponsorOwner(personId:string,input:PlacementInput,key:string,requestId:string){return this.place(personId,'SPONSOR_OWNER',input,key,requestId);}
- async placeBySponsorOwnerBallNo(personId:string,input:MemberPlacementInput,key:string,requestId:string){
-  const match=/^P([1-9]\d*)$/.exec(input.placementReference);if(!match||!publicBallNo.test(input.binaryParentBallNo))throw new UnprocessableEntityException({code:'PLACEMENT_REFERENCE_INVALID'});
+ async placeBySponsorOwnerReference(personId:string,input:MemberPlacementInput,key:string,requestId:string){
+  const match=/^P([1-9]\d{0,18})$/.exec(input.placementReference);if(!match||BigInt(match[1])>9223372036854775807n||!publicBallNo.test(input.binaryParentBallNo))throw new UnprocessableEntityException({code:'PLACEMENT_REFERENCE_INVALID'});
   const [qualification,parent]=await Promise.all([this.db.qualification.findUnique({where:{qualificationNo:BigInt(match[1])},select:{qualificationId:true,ballNo:true}}),this.db.qualification.findUnique({where:{ballNo:input.binaryParentBallNo},select:{qualificationId:true,ballNo:true}})]);
   if(!qualification||!parent)throw new NotFoundException({code:'PLACEMENT_BALL_NOT_FOUND'});
   const placed=await this.place(personId,'SPONSOR_OWNER',{qualificationId:qualification.qualificationId,binaryParentQualificationId:parent.qualificationId,side:input.side},key,requestId);
