@@ -1,0 +1,9 @@
+matrixVersion: "1.0"
+baselineHead: "TO_BE_SET_TO_ONBOARDING_FINAL_HEAD"
+rule: "No physical mapping before SG-A1."
+columns: [definitionCode, definitionVersion, definitionType, semanticStatus, certificationStatus, businessDefinition, factKind, authoritativeDomain, authoritativeService, authoritativeProjectionOrView, physicalSourceMapping, grain, businessKey, timeBasis, asOfSemantics, ruleCode, ruleVersion, defaultScope, allowedScopes, privacyClass, approvedJoins, freshnessSource, truthSource, historicalEvidence, goldenEvidence, openApiSurface, knownLimitations, conflictId, auditNotes]
+mappingStates: [PENDING_SG_A1, MAPPED, CONFLICT, UNAVAILABLE]
+certificationStates: [UNMAPPED, SOURCE_MAPPED, GOLDEN_VERIFIED, CERTIFIED]
+conflictPolicy:
+  unresolved: BLOCK_CERTIFICATION
+  neverAutoFixEconomicCore: true
