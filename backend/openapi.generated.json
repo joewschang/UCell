@@ -9000,6 +9000,82 @@
         ]
       }
     },
+    "/api/v1/admin/paper-receipts": {
+      "post": {
+        "operationId": "adminEnterPaperReceipt",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReceiptDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "Admin - Paper Receipts"
+        ]
+      }
+    },
+    "/api/v1/admin/paper-receipts/approve": {
+      "post": {
+        "operationId": "adminApprovePaperReceipt",
+        "parameters": [
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "Admin - Paper Receipts"
+        ]
+      }
+    },
     "/api/v1/admin/packages": {
       "get": {
         "operationId": "AdminPackageConfigController_list",
@@ -15661,6 +15737,10 @@
           "effectiveFrom",
           "reason"
         ]
+      },
+      "ReceiptDto": {
+        "type": "object",
+        "properties": {}
       },
       "CreatePackageProfileDto": {
         "type": "object",
