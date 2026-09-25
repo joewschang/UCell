@@ -8082,6 +8082,45 @@
         ]
       }
     },
+    "/api/v1/member/retail-orders": {
+      "get": {
+        "description": "Returns only the authenticated WEB_MEMBER retail-order history, using business order numbers and excluding Qualification, recipient, referrer, payout, and UUID fields.",
+        "operationId": "memberWebRetailOrders",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "Validation failure; unknown identity/qualification/monetary fields rejected"
+          },
+          "401": {
+            "description": "Member LINE session required, expired/disabled sessions denied"
+          },
+          "403": {
+            "description": "Qualification not owned"
+          },
+          "404": {
+            "description": "Resource unavailable"
+          },
+          "409": {
+            "description": "Conflicting operation"
+          },
+          "422": {
+            "description": "Invalid input or pending domain decision"
+          }
+        },
+        "security": [
+          {
+            "memberBearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "Member"
+        ]
+      }
+    },
     "/api/v1/member/orders": {
       "get": {
         "operationId": "MemberController_orders",

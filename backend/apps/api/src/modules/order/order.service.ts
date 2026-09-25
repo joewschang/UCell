@@ -44,6 +44,8 @@ export class OrderService {
       if(person?.status!=='EFFECTIVE')throw new ConflictException({code:'MEMBER_PERSON_DISABLED'});
       const ownedEffective=await tx.qualification.count({where:{currentHolderPersonId:personId,status:'EFFECTIVE'}});
       if(ownedEffective)throw new ConflictException({code:'QUALIFIED_MEMBER_RETAIL_REQUIRES_BALL_CONTEXT'});
+      const delivery=await tx.deliveryProfile.findFirst({where:{personId,effectiveTo:null},select:{deliveryProfileId:true}});
+      if(!delivery)throw new UnprocessableEntityException({code:'DELIVERY_PROFILE_REQUIRED',message:'請先完成配送資料，再建立零售訂單。'});
       const now=new Date(),productIds=[...new Set(dto.items!.map(item=>item.productId))];
       const products=await tx.productReference.findMany({where:{productId:{in:productIds},isActive:true}});
       if(products.length!==productIds.length)throw new ConflictException({code:'RESOURCE_NOT_FOUND'});
@@ -85,6 +87,10 @@ export class OrderService {
     });}catch(error){if(['P2002','P2034','23P01'].includes((error as any).code))throw new ConflictException({code:'RETRYABLE_CONFLICT'});throw error;}
   }
 
+  async listWebRetailMember(personId:string){
+    const orders=await this.prisma.order.findMany({where:{purchaserPersonId:personId,qualificationId:null,purpose:'RETAIL'},select:{orderNo:true,status:true,netAmount:true,createdAt:true,confirmedAt:true,lines:{select:{productNameSnapshot:true,quantity:true}}},orderBy:{createdAt:'desc'},take:100});
+    return orders.map(order=>({orderNo:order.orderNo.toString(),status:order.status,total:order.netAmount.toString(),createdAt:order.createdAt.toISOString(),confirmedAt:order.confirmedAt?.toISOString()??null,itemCount:order.lines.reduce((count,line)=>count+Number(line.quantity),0),itemNames:order.lines.map(line=>line.productNameSnapshot)}));
+  }
   private async createPackageMember(dto:MemberOrderInput,key:string,requestId:string,personId:string){
     if(dto.items?.length||!dto.selections?.length)throw new UnprocessableEntityException({code:'INVALID_PACKAGE_ORDER_SHAPE'});
     const correlationId=randomUUID();
