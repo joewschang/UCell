@@ -5,6 +5,7 @@ export const pageRoles:Record<string,AdminRole[]>={
   '/people':['SUPER_ADMIN','MEMBERSHIP_OPS','COMPLIANCE_AUDIT'],
   '/applications':['SUPER_ADMIN','MEMBERSHIP_OPS','COMPLIANCE_AUDIT'],
   '/applications/new':['SUPER_ADMIN','MEMBERSHIP_OPS'],
+  '/line-links':['SUPER_ADMIN','MEMBERSHIP_OPS','CUSTOMER_SERVICE'],
   '/paper-intake':['SUPER_ADMIN','MEMBERSHIP_OPS','ORDER_OPS'],
   '/qualifications':['SUPER_ADMIN','MEMBERSHIP_OPS','COMPLIANCE_AUDIT'],
   '/products':['SUPER_ADMIN','ORDER_OPS','COMPLIANCE_AUDIT'],
