@@ -1,5 +1,5 @@
 import {effectiveSponsorDirectCount} from '@ucell/database';
-import { PrismaService, Prisma, companyAlwaysActiveAt, captureParameters, processMemberOrderNotification, processPaymentInventoryReservation, recognizeConsumption, applyGpvImmediateEffects, sealRpvEvent, pending, claimOutboxLease, withOutboxLease, processLeasedReplay, processTreeProjectionEvent, releaseFailedOutboxLease, OutboxLease, matureBonusAward } from '@ucell/database';
+import { PrismaService, Prisma, companyAlwaysActiveAt, captureParameters, snapshotDecimal, processMemberOrderNotification, processPaymentInventoryReservation, recognizeConsumption, applyGpvImmediateEffects, sealRpvEvent, pending, claimOutboxLease, withOutboxLease, processLeasedReplay, processTreeProjectionEvent, releaseFailedOutboxLease, OutboxLease, matureBonusAward } from '@ucell/database';
 import * as crypto from 'node:crypto';
 import { pollProviderWebhooks, type ProviderHandlerRegistration } from './provider-runtime';
 import { WorkerLoop, workerPollInterval } from './worker-loop';
@@ -28,7 +28,7 @@ export async function processSaleConfirmed(db:PrismaService,lease:OutboxLease,de
 
     const payload=event.payload as any;
     const order=await tx.order.findUnique({where:{orderId:payload.orderId},include:{lines:true}});
-    if(!order || !['PAID','FULFILLED','PARTIAL_RETURN','RETURNED'].includes(order.status)) throw new Error(`SALE_CONFIRMED order ${payload.orderId} is not PAID`);
+    if(!order || !order.qualificationId || !['PAID','FULFILLED','PARTIAL_RETURN','RETURNED'].includes(order.status)) throw new Error(`SALE_CONFIRMED order ${payload.orderId} is not a qualified paid order`);
 
     if(!order.paidAt) pending('HISTORICAL_SNAPSHOT_MISSING','Original sale recognition timestamp is missing');
     if(!order.parameterSnapshotHash) pending('HISTORICAL_SNAPSHOT_MISSING','Original sale Parameter snapshot hash is missing');
@@ -48,6 +48,27 @@ export async function processSaleConfirmed(db:PrismaService,lease:OutboxLease,de
       data:{processStatus:'PROCESSED',processedAt:new Date()}
     });
   });
+}
+
+/** Recognizes only immutable WEB_MEMBER retail line snapshots; it never emits PV or organization edges. */
+export async function processRetailReferralPayment(db:PrismaService,lease:OutboxLease,deps={withOutboxLease}){
+ return deps.withOutboxLease(db,lease,async tx=>{
+  const event=await tx.outboxEvent.findUnique({where:{outboxEventId:lease.outboxEventId}}); if(!event||event.processStatus==='PROCESSED')return;
+  const order=await tx.order.findUnique({where:{orderId:(event.payload as any).orderId},include:{retailReferralLineSnapshots:true}});
+  if(!order||order.qualificationId||!order.purchaserPersonId||order.status!=='PAID'||!order.paidAt)throw new Error('WEB_RETAIL_PAYMENT_INVALID');
+  const parameters=await captureParameters(tx,order.paidAt,order.ruleVersionCode),pendingUntil=new Date(order.paidAt.getTime()+Number(snapshotDecimal(parameters,'award.pending.days').toString())*86400000);
+  for(const line of order.retailReferralLineSnapshots){
+   if(!line.retailReferralEnabled||!line.referrerQualificationId||line.calculationType!=='PERCENTAGE'||line.baseType!=='NET_PAID_ITEM_AMOUNT'||!line.rate)continue;
+   const active=await companyAlwaysActiveAt(tx,line.referrerQualificationId,order.paidAt)||!!await tx.activePeriod.findFirst({where:{qualificationId:line.referrerQualificationId,activeFrom:{lte:order.paidAt},OR:[{activeTo:null},{activeTo:{gt:order.paidAt}}]}});
+   const plan=await tx.qualificationPlanHistory.findFirst({where:{qualificationId:line.referrerQualificationId,effectiveFrom:{lte:order.paidAt},OR:[{effectiveTo:null},{effectiveTo:{gt:order.paidAt}}]},orderBy:{effectiveFrom:'desc'}});
+   if(!plan)throw new Error('RETAIL_REFERRAL_PLAN_EVIDENCE_MISSING');
+   const theory=line.netPaidItemAmount.mul(line.rate),payable=active?theory:new Prisma.Decimal(0);
+   const existing=await tx.bonusAward.findFirst({where:{awardType:'RETAIL_REFERRAL',recipientQualificationId:line.referrerQualificationId,sourceEventId:line.orderLineId}});if(existing)continue;
+   const award=await tx.bonusAward.create({data:{awardType:'RETAIL_REFERRAL',recipientQualificationId:line.referrerQualificationId,sourceEventId:line.orderLineId,theoryAmount:theory,payableAmount:payable,kFactor:new Prisma.Decimal(1),activeSnapshot:active,planLevelSnapshot:plan.planCode,ruleVersionCode:line.productRuleVersion,parameterSnapshotHash:line.parameterSnapshotHash??parameters.hash,occurredAt:order.paidAt,pendingUntil,calculationDetail:{orderId:order.orderId,orderLineId:line.orderLineId,referrerBallNo:line.referrerBallNoSnapshot,baseType:line.baseType,baseAmount:line.netPaidItemAmount.toString(),rate:line.rate.toString(),activeAsOf:order.paidAt.toISOString(),activeEvidence:active?'ACTIVE':'INELIGIBLE'}}});
+   await tx.bonusAwardLifecycleEvent.createMany({data:[{bonusAwardId:award.bonusAwardId,status:'CALCULATED',occurredAt:new Date(),reasonCode:active?undefined:'INACTIVE_AT_RECOGNITION'},{bonusAwardId:award.bonusAwardId,status:'PENDING_45D',occurredAt:new Date(),reasonCode:active?undefined:'INACTIVE_AT_RECOGNITION'}]});
+  }
+  await tx.outboxEvent.update({where:{outboxEventId:lease.outboxEventId},data:{processStatus:'PROCESSED',processedAt:new Date()}});
+ });
 }
 
 async function processRecognition(recognitionId:string){
@@ -149,10 +170,10 @@ export async function processReplayEvent(lease:OutboxLease,db:PrismaService=pris
 
 export async function pollOutbox(
   db:PrismaService=prisma,
-  deps={claimOutboxLease,processSaleConfirmed,processMemberOrderNotification,processPaymentInventoryReservation,processLeasedReplay,processTreeProjectionEvent,releaseFailedOutboxLease}
+  deps={claimOutboxLease,processSaleConfirmed,processRetailReferralPayment,processMemberOrderNotification,processPaymentInventoryReservation,processLeasedReplay,processTreeProjectionEvent,releaseFailedOutboxLease}
 ){
   const events=await db.outboxEvent.findMany({
-    where:{eventType:{in:['BINARY_TREE_CHANGED','SALE_CONFIRMED','MEMBER_ORDER_CREATED','PAYMENT_STATE_TRANSITIONED','RETURN_CONFIRMED','RETURN_DEPENDENCY_REPLAY_REQUIRED','EPV_MONTH_RECALCULATION_REQUIRED','RPV_REVERSAL_REQUIRED']},processStatus:{in:['PENDING','PROCESSING']},availableAt:{lte:new Date()}},
+    where:{eventType:{in:['BINARY_TREE_CHANGED','SALE_CONFIRMED','WEB_MEMBER_RETAIL_PAYMENT_CONFIRMED','MEMBER_ORDER_CREATED','PAYMENT_STATE_TRANSITIONED','RETURN_CONFIRMED','RETURN_DEPENDENCY_REPLAY_REQUIRED','EPV_MONTH_RECALCULATION_REQUIRED','RPV_REVERSAL_REQUIRED']},processStatus:{in:['PENDING','PROCESSING']},availableAt:{lte:new Date()}},
     orderBy:{createdAt:'asc'},take:20
   });
   for(const event of events){
@@ -162,6 +183,7 @@ export async function pollOutbox(
       if(!lease)continue;
       if(event.eventType==='BINARY_TREE_CHANGED') await deps.processTreeProjectionEvent(db,lease);
       else if(event.eventType==='SALE_CONFIRMED') await deps.processSaleConfirmed(db,lease);
+      else if(event.eventType==='WEB_MEMBER_RETAIL_PAYMENT_CONFIRMED') await deps.processRetailReferralPayment(db,lease);
       else if(event.eventType==='MEMBER_ORDER_CREATED') await deps.processMemberOrderNotification(db,lease);
       else if(event.eventType==='PAYMENT_STATE_TRANSITIONED') await deps.processPaymentInventoryReservation(db,lease,{
         warehouseId:process.env.UCELL_INVENTORY_WAREHOUSE_ID??'',
