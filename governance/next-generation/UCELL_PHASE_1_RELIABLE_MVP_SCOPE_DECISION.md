@@ -517,3 +517,193 @@ Before G8 Operational Readiness can PASS:
 - PRODUCTION_AUTO_MUTATION = DISABLED
 
 AUTO_CREATE_ISSUE and AUTO_INVOKE_CODEX are not required for Phase 1 GA unless separately approved.
+
+
+## 14. Phase 1 User Activity Audit & Operational Audit Rules
+
+**Status:** MANDATORY G8 OPERATIONAL READINESS FOUNDATION.
+**Timing:** define now; implement in a separately authorized G8 Operational Readiness train after G1→G4 closure unless a P0 security/financial defect requires earlier implementation.
+**Goal:** provide a minimal, trustworthy, privacy-safe audit trail for high-risk user/admin actions and security events without expanding Phase 1 into a full SIEM or enterprise data-access governance platform.
+
+### UA-1 Audit domains and separation
+
+Maintain three logically distinct evidence classes:
+1. Application/Error Log — engineering diagnostics and failures.
+2. Security Audit — authentication, authorization, denied access, session/security events.
+3. Business Audit — authoritative evidence of high-risk business/admin actions.
+
+They MAY share traceId/correlation context but MUST NOT be treated as one undifferentiated log stream.
+
+### UA-2 AuditEvent core
+
+Implement a common append-oriented AuditEvent contract for Security/Business audit events.
+
+Minimum fields:
+- auditEventId
+- eventCode
+- occurredAt
+- environment
+- traceId
+- actorType (USER/SERVICE/SYSTEM)
+- actorRef
+- actorRole/capability snapshot where relevant
+- action
+- resourceType
+- safe business resourceRef
+- result (SUCCESS/DENIED/FAILED)
+- reasonCode
+- evidenceRef where applicable
+- changedFieldNames where applicable
+- beforeHash/afterHash or masked change evidence where justified
+- severity
+- privacyClass
+- retentionClass
+- createdAt
+
+Normal Admin/Member audit views SHOULD prefer business identifiers such as memberNo, ballNo, orderNo and paperApplicationNo rather than internal UUIDs.
+
+### UA-3 Mandatory Phase 1 business audit events
+
+At minimum audit successful and failed/denied high-risk mutations for:
+- Person/member creation and approved sensitive identity changes;
+- Paper Application creation;
+- Paper Receipt evidence entry/change attempt;
+- Payment confirmation/reversal;
+- Qualification state-changing admin operations;
+- Placement commit and Admin placement-on-behalf;
+- LINE link/rebind/recovery approval and completion;
+- Order cancellation/refund/return where operationally available;
+- Retail Referral attribution correction;
+- Award/Recovery/Settlement/Payout administrative corrections or approvals where available;
+- Company Sponsor Alias create/change/disable;
+- role/permission/security-sensitive configuration changes.
+
+Existing domain-specific immutable evidence remains authoritative where already defined; AuditEvent links to it rather than replacing or duplicating it.
+
+### UA-4 Mandatory Phase 1 security audit events
+
+At minimum:
+- LOGIN_SUCCEEDED
+- LOGIN_FAILED
+- LOGOUT or SESSION_REVOKED where observable
+- ACCESS_DENIED
+- BOLA/IDOR_BLOCKED where detected
+- SENSITIVE_ACTION_APPROVED/DENIED
+- LINE_LINK/REBIND security events
+- ROLE_OR_PERMISSION_CHANGED
+
+Security events MUST NOT store credentials, tokens or unrestricted PII.
+
+### UA-5 Read-access scope control
+
+Phase 1 does NOT require permanent audit of every ordinary page read.
+
+Required Phase 1 read/access audit is limited to high-risk cases such as:
+- restricted/security/finance views where implemented;
+- bulk export/download of sensitive operational data;
+- explicit privileged access to protected data.
+
+Comprehensive data-read/purpose/export/AI access governance is Phase 2+.
+
+### UA-6 Append-only and correction semantics
+
+Business/Security audit history MUST be append-oriented.
+Application code MUST NOT silently rewrite or delete historical audit events as a normal business operation.
+
+If audit metadata must be corrected, create a correction/superseding event referencing the original event.
+
+Retention/purge, if legally or operationally required, must use an approved retention process rather than arbitrary application DELETE.
+
+### UA-7 Privacy minimization
+
+Audit MUST NOT become a second PII database.
+
+Do not copy entire request/response payloads or full entity snapshots into AuditEvent.
+
+For changes:
+- store changed field names;
+- use beforeHash/afterHash where sufficient;
+- use masked before/after only where operationally justified;
+- link to authoritative evidence by evidenceRef.
+
+Never audit plaintext password, access token, private key, LINE token, full banking credential/account data, or raw sensitive identity documents.
+
+### UA-8 Trace linkage
+
+Audit events for a business operation MUST carry the same traceId/correlation context used by application/error diagnostics where feasible.
+
+This must allow an authorized operator to correlate:
+Business operation → security decision → runtime error → worker/external adapter evidence
+without exposing secrets.
+
+### UA-9 Audit search
+
+Before GA provide a minimal RBAC-protected Admin audit search/read model.
+
+At minimum support authorized lookup by applicable identifiers:
+- traceId
+- memberNo
+- ballNo
+- orderNo
+- paperApplicationNo
+- eventCode
+- actorRef
+- time range
+
+Search results MUST apply privacy/RBAC rules and MUST NOT expose hidden bootstrap/Reservoir/member PII contrary to existing P0 policy.
+
+### UA-10 Audit RBAC
+
+Audit visibility is itself protected data.
+
+Support/Operations/Finance/Security/Super Admin access MUST follow least privilege.
+The ability to perform an operation does not automatically grant unrestricted visibility into all audit domains.
+
+No role, including Super Admin, receives plaintext secrets through audit.
+
+### UA-11 Integrity baseline
+
+Phase 1 requires append-only application semantics and integrity evidence sufficient to detect unauthorized mutation.
+
+Hash chaining/daily immutable checkpoints MAY be implemented in G8 if low-risk and operationally justified, but are not mandatory for Phase 1 GA unless required by an approved security decision.
+
+A future Phase 2 may add stronger immutable storage/SIEM retention controls.
+
+### UA-12 Relationship to Error/Codex repair
+
+AuditEvent is not the error log and does not automatically create repair work.
+
+When an audited operation fails:
+Audit/security evidence + structured error evidence + traceId
+may form the sanitized diagnostic package defined by ER-6.
+
+Any GitHub Issue/Codex repair automation remains subject to ER-7 through ER-10 and may never mutate Production directly.
+
+### UA-13 G8 audit acceptance
+
+Before G8 Operational Readiness can PASS:
+- AUDIT_EVENT_CORE = PASS
+- HIGH_RISK_WRITE_AUDIT = PASS
+- SECURITY_EVENT_AUDIT = PASS
+- TRACE_LINKAGE = PASS
+- APPEND_ONLY_AUDIT = PASS
+- PII_MINIMIZATION = PASS
+- AUDIT_SEARCH = PASS
+- AUDIT_RBAC = PASS
+
+Any FAIL/BLOCKED item prevents G9 Production Go/No-Go from becoming GO.
+
+### UA-14 Scope control
+
+Do NOT expand Phase 1 audit into:
+- full user clickstream analytics;
+- permanent logging of every page read;
+- enterprise SIEM;
+- behavioral surveillance;
+- AI-agent audit;
+- comprehensive purpose-based data-access governance;
+- data lake/log warehouse.
+
+Those require separate later-phase approval.
+
+Phase 1 objective: reliably answer, for important operational/security actions, **who did what, when, to which business object, under what authority, with what result, and which evidence/trace proves it**.
