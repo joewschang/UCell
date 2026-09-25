@@ -37,9 +37,10 @@ for(const [route,method] of [['orders','post'],['profile','patch'],['notificatio
  if(!operation?.requestBody)failures.push('Mutation DTO missing: '+route);
 }
 const orderInput=doc.components?.schemas?.MemberCreateOrderDto;
-const approvedOrderFields=['qualificationId','items','packageVersionId','targetQualificationId','selections'];
+const approvedOrderFields=['qualificationId','items','packageVersionId','targetQualificationId','selections','sponsorCode'];
 const orderFields=Object.keys(orderInput?.properties??{});
 if(!orderInput||orderInput.additionalProperties!==false||approvedOrderFields.some(field=>!orderFields.includes(field))||orderFields.some(field=>!approvedOrderFields.includes(field)))failures.push('Member order input must contain exactly the approved retail/package checkout fields');
+if(orderInput?.properties?.sponsorCode?.pattern!=='^[A-Z][A-Z0-9_-]{0,39}(?:X\\d{6,}|\\d{6,})$')failures.push('Member qualification checkout Sponsor Ball candidate contract missing or invalid');
 const clientControlledMonetaryFields=['price','unitPrice','amount','lineAmount','grossAmount','discountAmount','netAmount','pv','bv','rpv','epv','bonus','carry'];
 for(const schemaName of ['MemberCreateOrderDto','CreateOrderItemDto','MemberPackageSelectionDto']){
  const fields=Object.keys(doc.components?.schemas?.[schemaName]?.properties??{});

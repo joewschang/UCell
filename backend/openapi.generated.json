@@ -9147,6 +9147,731 @@
         ]
       }
     },
+    "/api/v1/admin/qualifications": {
+      "get": {
+        "operationId": "adminSearchQualifications",
+        "parameters": [
+          {
+            "name": "q",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "take",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "搜尋 Qualification / Sponsor / Binary節點",
+        "tags": [
+          "Admin - Qualification"
+        ]
+      },
+      "post": {
+        "operationId": "adminCreateQualification",
+        "parameters": [
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateQualificationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "建立 Qualification + Sponsor/Binary 關係",
+        "tags": [
+          "Admin - Qualification"
+        ]
+      }
+    },
+    "/api/v1/admin/qualifications/system-assigned": {
+      "post": {
+        "operationId": "adminCreateSystemAssignedQualification",
+        "parameters": [
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SystemAssignedQualificationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "依核准版本化政策建立無有效推薦歸因的 Qualification",
+        "tags": [
+          "Admin - Qualification"
+        ]
+      }
+    },
+    "/api/v1/admin/qualifications/{qualificationId}": {
+      "get": {
+        "description": "Existing Ball detail plus a bounded admin360 server-side projection. Organization, owner, plan and global rank are returned only from their authoritative facts; unavailable evidence is not inferred.",
+        "operationId": "adminGetQualification",
+        "parameters": [
+          {
+            "name": "qualificationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Admin Ball 360 read model. admin360 contains no relationship UUIDs, evidence hashes, or parameter snapshots.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "qualificationId": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "qualificationNo": {
+                          "type": "string",
+                          "description": "Core BigInt serialized as decimal string"
+                        },
+                        "ballNo": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "planLevelCode": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "status": {
+                          "type": "string"
+                        },
+                        "activeFlag": {
+                          "type": "boolean"
+                        },
+                        "admin360": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "schemaVersion",
+                            "organization",
+                            "owner",
+                            "plan",
+                            "globalRank"
+                          ],
+                          "properties": {
+                            "schemaVersion": {
+                              "type": "string",
+                              "enum": [
+                                "ADMIN_QUALIFICATION_360_V1"
+                              ]
+                            },
+                            "organization": {
+                              "type": "object",
+                              "additionalProperties": false,
+                              "required": [
+                                "status",
+                                "reasonCode",
+                                "treeCode",
+                                "binaryPositionNo",
+                                "binaryPath",
+                                "canonicalPositionNo",
+                                "canonicalSide"
+                              ],
+                              "properties": {
+                                "status": {
+                                  "type": "string",
+                                  "enum": [
+                                    "AVAILABLE",
+                                    "UNAVAILABLE"
+                                  ]
+                                },
+                                "reasonCode": {
+                                  "type": "string",
+                                  "nullable": true
+                                },
+                                "treeCode": {
+                                  "type": "string",
+                                  "nullable": true
+                                },
+                                "binaryPositionNo": {
+                                  "type": "string",
+                                  "nullable": true,
+                                  "description": "Binary position serialized as a decimal string."
+                                },
+                                "binaryPath": {
+                                  "type": "string",
+                                  "nullable": true,
+                                  "description": "Server-calculated binary path."
+                                },
+                                "canonicalPositionNo": {
+                                  "type": "integer",
+                                  "nullable": true
+                                },
+                                "canonicalSide": {
+                                  "type": "string",
+                                  "enum": [
+                                    "LEFT",
+                                    "RIGHT"
+                                  ],
+                                  "nullable": true
+                                }
+                              }
+                            },
+                            "owner": {
+                              "type": "object",
+                              "additionalProperties": false,
+                              "required": [
+                                "status",
+                                "reasonCode",
+                                "ownerType",
+                                "memberNo",
+                                "companyCode"
+                              ],
+                              "properties": {
+                                "status": {
+                                  "type": "string",
+                                  "enum": [
+                                    "AVAILABLE",
+                                    "UNAVAILABLE"
+                                  ]
+                                },
+                                "reasonCode": {
+                                  "type": "string",
+                                  "nullable": true
+                                },
+                                "ownerType": {
+                                  "type": "string",
+                                  "enum": [
+                                    "MEMBER",
+                                    "COMPANY"
+                                  ],
+                                  "nullable": true
+                                },
+                                "memberNo": {
+                                  "type": "string",
+                                  "nullable": true
+                                },
+                                "companyCode": {
+                                  "type": "string",
+                                  "nullable": true
+                                }
+                              }
+                            },
+                            "plan": {
+                              "type": "object",
+                              "additionalProperties": false,
+                              "required": [
+                                "status",
+                                "reasonCode",
+                                "planCode",
+                                "source",
+                                "profileVersion",
+                                "effectiveFrom",
+                                "effectiveTo"
+                              ],
+                              "properties": {
+                                "status": {
+                                  "type": "string",
+                                  "enum": [
+                                    "AVAILABLE",
+                                    "UNAVAILABLE"
+                                  ]
+                                },
+                                "reasonCode": {
+                                  "type": "string",
+                                  "nullable": true
+                                },
+                                "planCode": {
+                                  "type": "string",
+                                  "nullable": true
+                                },
+                                "source": {
+                                  "type": "string",
+                                  "enum": [
+                                    "COMPANY_BOOTSTRAP_PROFILE_BINDING",
+                                    "QUALIFICATION_PLAN_HISTORY"
+                                  ],
+                                  "nullable": true
+                                },
+                                "profileVersion": {
+                                  "type": "string",
+                                  "nullable": true
+                                },
+                                "effectiveFrom": {
+                                  "type": "string",
+                                  "format": "date-time",
+                                  "nullable": true
+                                },
+                                "effectiveTo": {
+                                  "type": "string",
+                                  "format": "date-time",
+                                  "nullable": true
+                                }
+                              }
+                            },
+                            "globalRank": {
+                              "type": "object",
+                              "additionalProperties": false,
+                              "required": [
+                                "status",
+                                "reasonCode",
+                                "scope",
+                                "highestRank",
+                                "achievements"
+                              ],
+                              "properties": {
+                                "status": {
+                                  "type": "string",
+                                  "enum": [
+                                    "AVAILABLE",
+                                    "UNAVAILABLE"
+                                  ]
+                                },
+                                "reasonCode": {
+                                  "type": "string",
+                                  "nullable": true
+                                },
+                                "scope": {
+                                  "type": "string",
+                                  "enum": [
+                                    "GLOBAL_CUMULATIVE"
+                                  ]
+                                },
+                                "highestRank": {
+                                  "type": "string",
+                                  "enum": [
+                                    "NEW_STAR",
+                                    "EXCELLENCE",
+                                    "GLORY",
+                                    "DIAMOND",
+                                    "CROWN"
+                                  ],
+                                  "nullable": true
+                                },
+                                "achievements": {
+                                  "type": "array",
+                                  "maxItems": 5,
+                                  "items": {
+                                    "type": "object",
+                                    "additionalProperties": false,
+                                    "required": [
+                                      "rankCode",
+                                      "achievedAt",
+                                      "sourcePeriodEnd"
+                                    ],
+                                    "properties": {
+                                      "rankCode": {
+                                        "type": "string",
+                                        "enum": [
+                                          "NEW_STAR",
+                                          "EXCELLENCE",
+                                          "GLORY",
+                                          "DIAMOND",
+                                          "CROWN"
+                                        ]
+                                      },
+                                      "achievedAt": {
+                                        "type": "string",
+                                        "format": "date-time"
+                                      },
+                                      "sourcePeriodEnd": {
+                                        "type": "string",
+                                        "format": "date-time"
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Admin authentication required"
+          },
+          "403": {
+            "description": "Existing Qualification role policy denies access"
+          },
+          "404": {
+            "description": "Qualification not found"
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "取得 Qualification 詳情",
+        "tags": [
+          "Admin - Qualification"
+        ]
+      }
+    },
+    "/api/v1/onboarding/sponsor/candidate": {
+      "get": {
+        "description": "Resolves an untrusted Sponsor Code as a candidate only. It does not create a Sponsor relationship; acquisition commit must resolve again and persist authoritative evidence.",
+        "operationId": "onboardingResolveSponsorCandidate",
+        "parameters": [
+          {
+            "name": "code",
+            "required": true,
+            "in": "query",
+            "description": "Candidate Sponsor Ball number only; memberNo and UUID are rejected.",
+            "schema": {}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Minimal Sponsor Ball evidence without holder PII"
+          }
+        },
+        "summary": "",
+        "tags": [
+          "Onboarding - Sponsor"
+        ]
+      }
+    },
+    "/api/v1/admin/qualification-workflows": {
+      "post": {
+        "operationId": "QualificationWorkflowController_submit",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "建立並提交升級/轉讓/退出/公司再轉讓Workflow",
+        "tags": [
+          "Admin - Qualification Workflow"
+        ]
+      }
+    },
+    "/api/v1/admin/qualification-workflows/{id}/approve": {
+      "post": {
+        "operationId": "QualificationWorkflowController_approve",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "核准Workflow；僅向未來生效",
+        "tags": [
+          "Admin - Qualification Workflow"
+        ]
+      }
+    },
+    "/api/v1/member/placements/pending": {
+      "get": {
+        "description": "Balls awaiting placement for which the authenticated Person owns the confirmed Sponsor Ball.",
+        "operationId": "memberPendingQualificationPlacements",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "memberBearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "Member - Qualification Placement"
+        ]
+      }
+    },
+    "/api/v1/member/qualifications/{id}/place": {
+      "post": {
+        "description": "Serializable placement commit; Sponsor owner authorization and Binary legality are revalidated server-side.",
+        "operationId": "memberPlaceQualification",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlaceQualificationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "memberBearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "Member - Qualification Placement"
+        ]
+      }
+    },
+    "/api/v1/admin/qualification-placements": {
+      "get": {
+        "operationId": "adminQualificationPlacementMonitor",
+        "parameters": [
+          {
+            "name": "status",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "aging",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "take",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "Admin - Qualification Placement"
+        ]
+      }
+    },
+    "/api/v1/admin/qualification-placements/sweep-overdue": {
+      "post": {
+        "operationId": "adminSweepOverdueQualificationPlacements",
+        "parameters": [
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "Admin - Qualification Placement"
+        ]
+      }
+    },
+    "/api/v1/admin/qualification-placements/{id}/place": {
+      "post": {
+        "description": "Requires explicit placement override role and reason. Same legality/concurrency checks as Sponsor owner placement.",
+        "operationId": "adminOverrideQualificationPlacement",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminPlaceQualificationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "Admin - Qualification Placement"
+        ]
+      }
+    },
     "/api/v1/health": {
       "get": {
         "operationId": "HealthController_health",
@@ -11162,707 +11887,6 @@
         "summary": "商品Reference清單",
         "tags": [
           "Admin - Product Reference"
-        ]
-      }
-    },
-    "/api/v1/admin/qualifications": {
-      "get": {
-        "operationId": "adminSearchQualifications",
-        "parameters": [
-          {
-            "name": "q",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "status",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "take",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "adminBearer": []
-          }
-        ],
-        "summary": "搜尋 Qualification / Sponsor / Binary節點",
-        "tags": [
-          "Admin - Qualification"
-        ]
-      },
-      "post": {
-        "operationId": "adminCreateQualification",
-        "parameters": [
-          {
-            "name": "idempotency-key",
-            "required": true,
-            "in": "header",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateQualificationDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "adminBearer": []
-          }
-        ],
-        "summary": "建立 Qualification + Sponsor/Binary 關係",
-        "tags": [
-          "Admin - Qualification"
-        ]
-      }
-    },
-    "/api/v1/admin/qualifications/system-assigned": {
-      "post": {
-        "operationId": "adminCreateSystemAssignedQualification",
-        "parameters": [
-          {
-            "name": "idempotency-key",
-            "required": true,
-            "in": "header",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SystemAssignedQualificationDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "adminBearer": []
-          }
-        ],
-        "summary": "依核准版本化政策建立無有效推薦歸因的 Qualification",
-        "tags": [
-          "Admin - Qualification"
-        ]
-      }
-    },
-    "/api/v1/admin/qualifications/{qualificationId}": {
-      "get": {
-        "description": "Existing Ball detail plus a bounded admin360 server-side projection. Organization, owner, plan and global rank are returned only from their authoritative facts; unavailable evidence is not inferred.",
-        "operationId": "adminGetQualification",
-        "parameters": [
-          {
-            "name": "qualificationId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "format": "uuid",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Admin Ball 360 read model. admin360 contains no relationship UUIDs, evidence hashes, or parameter snapshots.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "required": [
-                    "data"
-                  ],
-                  "properties": {
-                    "data": {
-                      "type": "object",
-                      "properties": {
-                        "qualificationId": {
-                          "type": "string",
-                          "format": "uuid"
-                        },
-                        "qualificationNo": {
-                          "type": "string",
-                          "description": "Core BigInt serialized as decimal string"
-                        },
-                        "ballNo": {
-                          "type": "string",
-                          "nullable": true
-                        },
-                        "planLevelCode": {
-                          "type": "string",
-                          "nullable": true
-                        },
-                        "status": {
-                          "type": "string"
-                        },
-                        "activeFlag": {
-                          "type": "boolean"
-                        },
-                        "admin360": {
-                          "type": "object",
-                          "additionalProperties": false,
-                          "required": [
-                            "schemaVersion",
-                            "organization",
-                            "owner",
-                            "plan",
-                            "globalRank"
-                          ],
-                          "properties": {
-                            "schemaVersion": {
-                              "type": "string",
-                              "enum": [
-                                "ADMIN_QUALIFICATION_360_V1"
-                              ]
-                            },
-                            "organization": {
-                              "type": "object",
-                              "additionalProperties": false,
-                              "required": [
-                                "status",
-                                "reasonCode",
-                                "treeCode",
-                                "binaryPositionNo",
-                                "binaryPath",
-                                "canonicalPositionNo",
-                                "canonicalSide"
-                              ],
-                              "properties": {
-                                "status": {
-                                  "type": "string",
-                                  "enum": [
-                                    "AVAILABLE",
-                                    "UNAVAILABLE"
-                                  ]
-                                },
-                                "reasonCode": {
-                                  "type": "string",
-                                  "nullable": true
-                                },
-                                "treeCode": {
-                                  "type": "string",
-                                  "nullable": true
-                                },
-                                "binaryPositionNo": {
-                                  "type": "string",
-                                  "nullable": true,
-                                  "description": "Binary position serialized as a decimal string."
-                                },
-                                "binaryPath": {
-                                  "type": "string",
-                                  "nullable": true,
-                                  "description": "Server-calculated binary path."
-                                },
-                                "canonicalPositionNo": {
-                                  "type": "integer",
-                                  "nullable": true
-                                },
-                                "canonicalSide": {
-                                  "type": "string",
-                                  "enum": [
-                                    "LEFT",
-                                    "RIGHT"
-                                  ],
-                                  "nullable": true
-                                }
-                              }
-                            },
-                            "owner": {
-                              "type": "object",
-                              "additionalProperties": false,
-                              "required": [
-                                "status",
-                                "reasonCode",
-                                "ownerType",
-                                "memberNo",
-                                "companyCode"
-                              ],
-                              "properties": {
-                                "status": {
-                                  "type": "string",
-                                  "enum": [
-                                    "AVAILABLE",
-                                    "UNAVAILABLE"
-                                  ]
-                                },
-                                "reasonCode": {
-                                  "type": "string",
-                                  "nullable": true
-                                },
-                                "ownerType": {
-                                  "type": "string",
-                                  "enum": [
-                                    "MEMBER",
-                                    "COMPANY"
-                                  ],
-                                  "nullable": true
-                                },
-                                "memberNo": {
-                                  "type": "string",
-                                  "nullable": true
-                                },
-                                "companyCode": {
-                                  "type": "string",
-                                  "nullable": true
-                                }
-                              }
-                            },
-                            "plan": {
-                              "type": "object",
-                              "additionalProperties": false,
-                              "required": [
-                                "status",
-                                "reasonCode",
-                                "planCode",
-                                "source",
-                                "profileVersion",
-                                "effectiveFrom",
-                                "effectiveTo"
-                              ],
-                              "properties": {
-                                "status": {
-                                  "type": "string",
-                                  "enum": [
-                                    "AVAILABLE",
-                                    "UNAVAILABLE"
-                                  ]
-                                },
-                                "reasonCode": {
-                                  "type": "string",
-                                  "nullable": true
-                                },
-                                "planCode": {
-                                  "type": "string",
-                                  "nullable": true
-                                },
-                                "source": {
-                                  "type": "string",
-                                  "enum": [
-                                    "COMPANY_BOOTSTRAP_PROFILE_BINDING",
-                                    "QUALIFICATION_PLAN_HISTORY"
-                                  ],
-                                  "nullable": true
-                                },
-                                "profileVersion": {
-                                  "type": "string",
-                                  "nullable": true
-                                },
-                                "effectiveFrom": {
-                                  "type": "string",
-                                  "format": "date-time",
-                                  "nullable": true
-                                },
-                                "effectiveTo": {
-                                  "type": "string",
-                                  "format": "date-time",
-                                  "nullable": true
-                                }
-                              }
-                            },
-                            "globalRank": {
-                              "type": "object",
-                              "additionalProperties": false,
-                              "required": [
-                                "status",
-                                "reasonCode",
-                                "scope",
-                                "highestRank",
-                                "achievements"
-                              ],
-                              "properties": {
-                                "status": {
-                                  "type": "string",
-                                  "enum": [
-                                    "AVAILABLE",
-                                    "UNAVAILABLE"
-                                  ]
-                                },
-                                "reasonCode": {
-                                  "type": "string",
-                                  "nullable": true
-                                },
-                                "scope": {
-                                  "type": "string",
-                                  "enum": [
-                                    "GLOBAL_CUMULATIVE"
-                                  ]
-                                },
-                                "highestRank": {
-                                  "type": "string",
-                                  "enum": [
-                                    "NEW_STAR",
-                                    "EXCELLENCE",
-                                    "GLORY",
-                                    "DIAMOND",
-                                    "CROWN"
-                                  ],
-                                  "nullable": true
-                                },
-                                "achievements": {
-                                  "type": "array",
-                                  "maxItems": 5,
-                                  "items": {
-                                    "type": "object",
-                                    "additionalProperties": false,
-                                    "required": [
-                                      "rankCode",
-                                      "achievedAt",
-                                      "sourcePeriodEnd"
-                                    ],
-                                    "properties": {
-                                      "rankCode": {
-                                        "type": "string",
-                                        "enum": [
-                                          "NEW_STAR",
-                                          "EXCELLENCE",
-                                          "GLORY",
-                                          "DIAMOND",
-                                          "CROWN"
-                                        ]
-                                      },
-                                      "achievedAt": {
-                                        "type": "string",
-                                        "format": "date-time"
-                                      },
-                                      "sourcePeriodEnd": {
-                                        "type": "string",
-                                        "format": "date-time"
-                                      }
-                                    }
-                                  }
-                                }
-                              }
-                            }
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Admin authentication required"
-          },
-          "403": {
-            "description": "Existing Qualification role policy denies access"
-          },
-          "404": {
-            "description": "Qualification not found"
-          }
-        },
-        "security": [
-          {
-            "adminBearer": []
-          }
-        ],
-        "summary": "取得 Qualification 詳情",
-        "tags": [
-          "Admin - Qualification"
-        ]
-      }
-    },
-    "/api/v1/admin/qualification-workflows": {
-      "post": {
-        "operationId": "QualificationWorkflowController_submit",
-        "parameters": [],
-        "responses": {
-          "201": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "adminBearer": []
-          }
-        ],
-        "summary": "建立並提交升級/轉讓/退出/公司再轉讓Workflow",
-        "tags": [
-          "Admin - Qualification Workflow"
-        ]
-      }
-    },
-    "/api/v1/admin/qualification-workflows/{id}/approve": {
-      "post": {
-        "operationId": "QualificationWorkflowController_approve",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "201": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "adminBearer": []
-          }
-        ],
-        "summary": "核准Workflow；僅向未來生效",
-        "tags": [
-          "Admin - Qualification Workflow"
-        ]
-      }
-    },
-    "/api/v1/member/placements/pending": {
-      "get": {
-        "description": "Balls awaiting placement for which the authenticated Person owns the confirmed Sponsor Ball.",
-        "operationId": "memberPendingQualificationPlacements",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "memberBearer": []
-          }
-        ],
-        "summary": "",
-        "tags": [
-          "Member - Qualification Placement"
-        ]
-      }
-    },
-    "/api/v1/member/qualifications/{id}/place": {
-      "post": {
-        "description": "Serializable placement commit; Sponsor owner authorization and Binary legality are revalidated server-side.",
-        "operationId": "memberPlaceQualification",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "idempotency-key",
-            "required": true,
-            "in": "header",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "Idempotency-Key",
-            "in": "header",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/PlaceQualificationDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "memberBearer": []
-          }
-        ],
-        "summary": "",
-        "tags": [
-          "Member - Qualification Placement"
-        ]
-      }
-    },
-    "/api/v1/admin/qualification-placements": {
-      "get": {
-        "operationId": "adminQualificationPlacementMonitor",
-        "parameters": [
-          {
-            "name": "status",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "aging",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "take",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "adminBearer": []
-          }
-        ],
-        "summary": "",
-        "tags": [
-          "Admin - Qualification Placement"
-        ]
-      }
-    },
-    "/api/v1/admin/qualification-placements/sweep-overdue": {
-      "post": {
-        "operationId": "adminSweepOverdueQualificationPlacements",
-        "parameters": [
-          {
-            "name": "idempotency-key",
-            "required": true,
-            "in": "header",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "Idempotency-Key",
-            "in": "header",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "201": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "adminBearer": []
-          }
-        ],
-        "summary": "",
-        "tags": [
-          "Admin - Qualification Placement"
-        ]
-      }
-    },
-    "/api/v1/admin/qualification-placements/{id}/place": {
-      "post": {
-        "description": "Requires explicit placement override role and reason. Same legality/concurrency checks as Sponsor owner placement.",
-        "operationId": "adminOverrideQualificationPlacement",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "idempotency-key",
-            "required": true,
-            "in": "header",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "Idempotency-Key",
-            "in": "header",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AdminPlaceQualificationDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "adminBearer": []
-          }
-        ],
-        "summary": "",
-        "tags": [
-          "Admin - Qualification Placement"
         ]
       }
     },
@@ -15086,6 +15110,11 @@
             "items": {
               "$ref": "#/components/schemas/MemberPackageSelectionDto"
             }
+          },
+          "sponsorCode": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Z0-9_-]{0,39}(?:X\\d{6,}|\\d{6,})$",
+            "description": "Untrusted Sponsor Ball candidate. Accepted only for a qualification package; server resolves it again and records evidence. It never creates a relationship for retail orders."
           }
         },
         "additionalProperties": false
@@ -15245,6 +15274,129 @@
         "type": "object",
         "properties": {}
       },
+      "CreateQualificationDto": {
+        "type": "object",
+        "properties": {
+          "personId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "目前持有人 Person ID"
+          },
+          "planLevelCode": {
+            "type": "string",
+            "enum": [
+              "STARTER",
+              "ELITE",
+              "LEADER"
+            ],
+            "description": "方案級別"
+          },
+          "sponsorQualificationId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Sponsor Tree 推薦人 Qualification"
+          },
+          "binaryParentQualificationId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Binary Tree Parent Qualification"
+          },
+          "binarySide": {
+            "type": "string",
+            "enum": [
+              "LEFT",
+              "RIGHT"
+            ]
+          },
+          "effectiveAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "預設為目前時間"
+          }
+        },
+        "required": [
+          "personId",
+          "planLevelCode",
+          "sponsorQualificationId",
+          "binaryParentQualificationId",
+          "binarySide"
+        ]
+      },
+      "SystemAssignedQualificationDto": {
+        "type": "object",
+        "properties": {
+          "personId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "planLevelCode": {
+            "type": "string",
+            "enum": [
+              "STARTER",
+              "ELITE",
+              "LEADER"
+            ]
+          },
+          "policyVersion": {
+            "type": "string",
+            "maxLength": 80
+          },
+          "effectiveAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "personId",
+          "planLevelCode",
+          "policyVersion"
+        ]
+      },
+      "PlaceQualificationDto": {
+        "type": "object",
+        "properties": {
+          "binaryParentQualificationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "side": {
+            "type": "string",
+            "enum": [
+              "LEFT",
+              "RIGHT"
+            ]
+          }
+        },
+        "required": [
+          "binaryParentQualificationId",
+          "side"
+        ]
+      },
+      "AdminPlaceQualificationDto": {
+        "type": "object",
+        "properties": {
+          "binaryParentQualificationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "side": {
+            "type": "string",
+            "enum": [
+              "LEFT",
+              "RIGHT"
+            ]
+          },
+          "reasonCode": {
+            "type": "string",
+            "maxLength": 120
+          }
+        },
+        "required": [
+          "binaryParentQualificationId",
+          "side",
+          "reasonCode"
+        ]
+      },
       "V3EvidenceView": {
         "type": "object",
         "properties": {
@@ -15400,129 +15552,6 @@
         },
         "required": [
           "legalName"
-        ]
-      },
-      "CreateQualificationDto": {
-        "type": "object",
-        "properties": {
-          "personId": {
-            "type": "string",
-            "format": "uuid",
-            "description": "目前持有人 Person ID"
-          },
-          "planLevelCode": {
-            "type": "string",
-            "enum": [
-              "STARTER",
-              "ELITE",
-              "LEADER"
-            ],
-            "description": "方案級別"
-          },
-          "sponsorQualificationId": {
-            "type": "string",
-            "format": "uuid",
-            "description": "Sponsor Tree 推薦人 Qualification"
-          },
-          "binaryParentQualificationId": {
-            "type": "string",
-            "format": "uuid",
-            "description": "Binary Tree Parent Qualification"
-          },
-          "binarySide": {
-            "type": "string",
-            "enum": [
-              "LEFT",
-              "RIGHT"
-            ]
-          },
-          "effectiveAt": {
-            "type": "string",
-            "format": "date-time",
-            "description": "預設為目前時間"
-          }
-        },
-        "required": [
-          "personId",
-          "planLevelCode",
-          "sponsorQualificationId",
-          "binaryParentQualificationId",
-          "binarySide"
-        ]
-      },
-      "SystemAssignedQualificationDto": {
-        "type": "object",
-        "properties": {
-          "personId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "planLevelCode": {
-            "type": "string",
-            "enum": [
-              "STARTER",
-              "ELITE",
-              "LEADER"
-            ]
-          },
-          "policyVersion": {
-            "type": "string",
-            "maxLength": 80
-          },
-          "effectiveAt": {
-            "type": "string",
-            "format": "date-time"
-          }
-        },
-        "required": [
-          "personId",
-          "planLevelCode",
-          "policyVersion"
-        ]
-      },
-      "PlaceQualificationDto": {
-        "type": "object",
-        "properties": {
-          "binaryParentQualificationId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "side": {
-            "type": "string",
-            "enum": [
-              "LEFT",
-              "RIGHT"
-            ]
-          }
-        },
-        "required": [
-          "binaryParentQualificationId",
-          "side"
-        ]
-      },
-      "AdminPlaceQualificationDto": {
-        "type": "object",
-        "properties": {
-          "binaryParentQualificationId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "side": {
-            "type": "string",
-            "enum": [
-              "LEFT",
-              "RIGHT"
-            ]
-          },
-          "reasonCode": {
-            "type": "string",
-            "maxLength": 120
-          }
-        },
-        "required": [
-          "binaryParentQualificationId",
-          "side",
-          "reasonCode"
         ]
       },
       "CreateMembershipApplicationDto": {

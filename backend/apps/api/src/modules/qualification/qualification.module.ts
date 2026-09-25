@@ -13,8 +13,8 @@ import {AdminQualificationPlacementController,MemberQualificationPlacementContro
 
 @Module({
   imports:[OrganizationModule,AuthModule],
-  controllers:[QualificationController,QualificationWorkflowController,MemberQualificationPlacementController,AdminQualificationPlacementController],
-  providers:[QualificationService,QualificationStatusService,QualificationWorkflowService,SystemAssignmentService],
-  exports:[QualificationStatusService]
+  controllers:[QualificationController,SponsorResolverController,QualificationWorkflowController,MemberQualificationPlacementController,AdminQualificationPlacementController],
+  providers:[QualificationService,SponsorResolver,QualificationStatusService,QualificationWorkflowService,SystemAssignmentService],
+  exports:[QualificationStatusService,SponsorResolver]
 })
 export class QualificationModule {}
