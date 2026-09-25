@@ -9899,7 +9899,7 @@
             "name": "code",
             "required": true,
             "in": "query",
-            "description": "Candidate Sponsor Ball number only; memberNo and UUID are rejected.",
+            "description": "Candidate Sponsor Ball number or governed Company Alias; memberNo and UUID are rejected.",
             "schema": {}
           }
         ],
@@ -10175,6 +10175,74 @@
         "summary": "",
         "tags": [
           "Admin - Qualification Placement"
+        ]
+      }
+    },
+    "/api/v1/admin/company-sponsor-aliases": {
+      "get": {
+        "description": "Lists effective governed aliases without hidden Bootstrap target identifiers.",
+        "operationId": "adminListCompanySponsorAliases",
+        "parameters": [
+          {
+            "name": "asOf",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "Admin - Company Sponsor Alias"
+        ]
+      },
+      "post": {
+        "description": "Creates a future/effective governed Qualification Sponsor alias. Alias is never a Retail Referrer.",
+        "operationId": "adminCreateCompanySponsorAlias",
+        "parameters": [
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAliasDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "Admin - Company Sponsor Alias"
         ]
       }
     },
@@ -15774,6 +15842,10 @@
           "side",
           "reasonCode"
         ]
+      },
+      "CreateAliasDto": {
+        "type": "object",
+        "properties": {}
       },
       "V3EvidenceView": {
         "type": "object",
