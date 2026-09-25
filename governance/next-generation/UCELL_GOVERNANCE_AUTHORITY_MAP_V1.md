@@ -134,3 +134,9 @@ Phase 1 is **Reliable UCell MVP only**. SG-A1 implementation program, Semantic/D
 
 Current release routing:
 G1 Functional Closure → G2 Migration Integrity → G3 Fresh 0→current → G4 Full Regression → G5 Code/Documentation Closure → G6 Stage RC → G7 Business UAT → G8 Operational Readiness → G9 Production Go/No-Go → G10 R1.0B GA.
+
+
+## 13. Paper Person identity authority — 2026-09-26
+
+Authority: `PAPER_PERSON_IDENTITY_DUPLICATE_DECISION_V1.md`.
+Paper new-Person intake uses an exact normalized government-issued identity document keyed fingerprint as deterministic existing-Person match authority. Name/phone/email are secondary duplicate signals only. Ambiguity fails closed to DUPLICATE_REVIEW_REQUIRED. Automatic Person merge is not authorized in Phase 1. This decision resolves the prior Paper new-Person identity DECISION_REQUIRED blocker.
