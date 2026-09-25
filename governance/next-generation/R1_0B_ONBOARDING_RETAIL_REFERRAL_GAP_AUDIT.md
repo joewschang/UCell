@@ -4,9 +4,9 @@ Status date: 2026-09-25. Scope is the R1.0B onboarding and retail referral closu
 
 | Area | Status | Evidence and remaining gap |
 |---|---|---|
-| A. WEB_MEMBER | PARTIAL | `Person.membershipState` and LINE network registration exist. Retail shopping remains Qualification-scoped, so a zero-Ball WEB_MEMBER retail checkout is missing. |
+| A. WEB_MEMBER | PARTIAL | Zero-Ball WEB_MEMBER retail orders now reuse `commerce.order` with `purchaserPersonId`, and the Member shop supports their checkout. Account/order history read-model completion and end-to-end DB evidence remain required. |
 | B. Qualification Package Catalog | PARTIAL | Backend versioned package catalog and Member package shop exist; catalog seed/three current R1.0B package verification remains required. |
-| C. Pricing Context | PARTIAL | Package checkout is server priced. Retail pricing still requires explicit WEB_MEMBER versus QUALIFIED_MEMBER boundary coverage. |
+| C. Pricing Context | PARTIAL | WEB_MEMBER orders use server-side list price and zero GPV/PV snapshots; qualified retail remains Qualification-scoped. Boundary regression evidence remains required. |
 | D. SponsorResolver | PARTIAL | Ball-number resolver, public minimal candidate read, invalid/UUID rejection and bootstrap fail-closed tests exist. Governed Company alias and full R1.0B sponsor eligibility policy are DECISION_REQUIRED. |
 | E. Referral deep link | PARTIAL | `?ref=` candidate survives LINE login and is not directly bound. QR is an equivalent URL form, but no generated QR UI test exists. |
 | F. Qualification Acquisition | PARTIAL | Qualification package checkout revalidates candidate and writes selection evidence. Full acquisition read model remains missing. |
@@ -17,15 +17,15 @@ Status date: 2026-09-25. Scope is the R1.0B onboarding and retail referral closu
 | K. Paper Order | MISSING | No authoritative `ADMIN_PAPER_ORDER` acquisition slice identified. |
 | L. Paper Payment Evidence | MISSING | Existing generic payment confirmation does not provide paper receipt evidence and dedicated authorization workflow. |
 | M. Existing Paper Member LINE Link | PARTIAL | LINE security/rebind foundation exists; the verified existing-member link request workflow and invariant golden are incomplete. |
-| N. Retail Referrer Attribution | MISSING | No distinct attribution model, lock, correction, or order snapshot exists. |
-| O. Retail Referral Checkout UX | MISSING | Connected shop has checkout and delivery profile but no WEB_MEMBER retail referral input/verify/add-edit-clear flow. |
-| P. SKU Retail Referral Parameters | MISSING | ProductRuleProfile is effective-dated, but has no retail referral enabled/calculation/rate/base fields. |
-| Q. Retail Referrer Active Eligibility | MISSING | Existing Active evidence may be reused; no retail award adapter calls it at recognition as-of. |
-| R. RETAIL_REFERRAL Award | MISSING | Existing BonusAward infrastructure exists; no award type/recognizer/evidence slice exists. |
-| S. Retail Return / Recovery | MISSING | Existing return/replay/recovery infrastructure exists; no retail referral effect adapter exists. |
-| T. Admin/Member UX | PARTIAL | Package, delivery and existing admin applications are present. Paper wizard, retail attribution/correction, SKU parameters and retail explain views are missing. |
-| U. Audit / Notification | PARTIAL | Shared audit/outbox and notification delivery foundation exist. Onboarding and retail-specific event coverage is incomplete. |
-| V. OpenAPI | PARTIAL | Generated artifact and preflight exist; new missing vertical slices naturally have no contracts yet. |
+| N. Retail Referrer Attribution | PARTIAL | Separate temporal attribution, first-attributed-order lock, candidate revalidation, admin forward correction, immutable events and line snapshots exist. DB concurrency and correction integration tests remain required. |
+| O. Retail Referral Checkout UX | PARTIAL | Zero-Ball Member shop supports add/edit/clear/validate before the first attributed order and displays a locked referrer thereafter. Delivery/profile and order-history integration remain incomplete. |
+| P. SKU Retail Referral Parameters | PARTIAL | Effective-dated enabled/calculation/rate/base fields, DB constraints and Product Admin scheduling UI exist. Product rule approval workflow and DB history tests remain required. |
+| Q. Retail Referrer Active Eligibility | PARTIAL | Worker calls the existing Active/Company-always-active authority at payment recognition and records the result in Award detail. Historical Active evidence/replay tests remain required. |
+| R. RETAIL_REFERRAL Award | PARTIAL | `RETAIL_REFERRAL` uses existing BonusAward lifecycle from immutable line snapshots and isolated payment outbox handling. Award persistence/settlement/payout integration tests remain required. |
+| S. Retail Return / Recovery | PARTIAL | Worker adds append-only offset, reversal or recovery effects by paid-state and return amount. Multi-return and payout/recovery integration tests remain required. |
+| T. Admin/Member UX | PARTIAL | Member retail checkout and Product Admin SKU rule UI exist; Paper wizard, attribution correction UI and retail explain remain incomplete. |
+| U. Audit / Notification | PARTIAL | Retail attribution writes Audit/outbox; payment and return events are isolated. Operator notification and explain read models remain incomplete. |
+| V. OpenAPI | PARTIAL | Generated artifact includes Member retail candidate/read, admin correction and SKU profile APIs. Contract tests and final structural diff remain required. |
 
 ## Constraints and decisions
 
