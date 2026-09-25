@@ -41,3 +41,10 @@ Status date: 2026-09-25. Scope is the R1.0B onboarding and retail referral closu
 3. Add WEB_MEMBER retail checkout boundary and attribution lock/verification UX.
 4. Add recognition-time Active adapter and `RETAIL_REFERRAL` award through existing award/replay/recovery infrastructure.
 5. Complete paper intake/order/payment/link workflows and end-to-end regressions.
+
+## 2026-09-25 closure update
+
+- Existing-member LINE link now has verified-subject request, approved one-time completion token, binding/session completion, and focused fail-closed tests for bound subjects and token replay.
+- Admin can read the authorized link queue and Retail Referrer attribution history; Person 360 supports forward-only correction.
+- Retail focused regression: worker dispatch, attribution lock/candidate, zero-Ball delivery boundary and LINE-link boundary tests pass.
+- Remaining `DECISION_REQUIRED`: ADMIN_PAPER_ORDER/payment receipt authority and Company Sponsor alias policy. No implementation is inferred from these absent rules.
