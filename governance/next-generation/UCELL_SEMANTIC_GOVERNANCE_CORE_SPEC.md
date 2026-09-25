@@ -389,3 +389,151 @@ Before closure verify:
 - no undefined denominator hidden inside a rate;
 - no unversioned approved metric;
 - no metric without lineage/privacy/grain/time basis/Golden.
+
+
+## 35. Fact Registry — required semantic layer
+
+FactDefinition is added as a first-class registry between Core truth and Dataset/Metric. Metrics MUST NOT depend directly on accidental physical table names when a stable business fact can be defined.
+
+Fact kinds:
+- EVENT: something happened at a business timestamp.
+- STATE: effective state valid as-of a point/interval.
+- SNAPSHOT: authoritative captured state at a specific as-of.
+- LEDGER: append-only economic/accounting effect.
+
+FactDefinition fields:
+factCode, nameZh/nameEn, factKind, businessDefinition, authorityRef, grain, eventTime/effectiveTime/asOf semantics, businessKeys, requiredEvidence, ruleRef/ruleVersion, privacyClass, scopePolicyRef, sourceMapping, version/effective dates, status, lineageRef.
+
+Initial Fact Catalog (source mappings MUST be verified by SG-A1 before APPROVED):
+- PERSON_REGISTERED — EVENT — Person Core.
+- WEB_MEMBER_EFFECTIVE — EVENT — membership-state authority.
+- QUALIFICATION_ORDERED — EVENT — Order/Qualification Core.
+- PAYMENT_CONFIRMED — EVENT — Payment authority.
+- PLACEMENT_COMMITTED — EVENT — Binary Placement Core.
+- QUALIFICATION_ACTIVATED — EVENT — Qualification Core.
+- BALL_STATE — STATE — Ball/Qualification Core.
+- ACTIVE_STATE — STATE — R1.0B Active authority.
+- PERFORMANCE_SNAPSHOT — SNAPSHOT — R1.0B performance authority.
+- CARRY_SNAPSHOT — SNAPSHOT — Carry authority.
+- RANK_STATE — STATE — Rank authority.
+- ORDER_RECOGNIZED — EVENT — Commerce authority; exact recognition mapping must be audited.
+- RETURN_POSTED — EVENT — Return Core.
+- AWARD_RECOGNIZED — LEDGER/EVENT — Award authority.
+- AWARD_ADJUSTED — LEDGER — Award/Adjustment authority.
+- RECOVERY_RECOGNIZED — LEDGER — Recovery authority.
+- SETTLEMENT_FINALIZED — EVENT — Settlement authority.
+- PAYOUT_PAID — EVENT — Payout authority.
+- RETAIL_ATTRIBUTION_EFFECTIVE — STATE/EVENT — Retail attribution authority.
+- LINE_BINDING_EFFECTIVE — STATE — Identity authority; C3 details excluded from general analytics.
+- ERP_ORDER_TRANSFERRED — EVENT — UCell ERP Adapter.
+- ERP_STATUS_IMPORTED — EVENT — governed ERP import, if implemented.
+
+A Fact stays DRAFT if exact source event/state semantics cannot be proven from current Core.
+
+## 36. Scope Registry — meaning is not the same as permission
+
+ScopeDefinition is a first-class registry. Scope defines what population/data meaning is included; RBAC defines who may request it. A privileged role MUST NOT silently change the meaning of a named metric.
+
+Initial scopes:
+- MEMBER_VISIBLE — applies Member privacy semantics; bootstrap #1–#3 and Reservoir absent.
+- ADMIN_OPERATIONS — operational population approved for Operations.
+- ADMIN_SUPPORT — support-safe operational scope with minimized economics/PII.
+- ADMIN_FINANCE — finance-governed scope; C3 only where explicitly authorized.
+- ADMIN_AUDIT — audit/evidence scope; still no secret/token exposure.
+- SYSTEM_INTERNAL — service-only scope; never implies Member/Admin UI permission.
+
+MetricDefinition and DatasetDefinition MUST declare allowed/default scopes. Example: a metric explicitly named/member-scoped as MEMBER_VISIBLE_BALL_COUNT cannot include bootstrap nodes merely because a Finance user executes it.
+
+## 37. Metric kind firewall
+
+MetricKind is refined:
+- OBSERVED — deterministic aggregation of approved Fact/Dataset.
+- DERIVED — calculation using approved Metrics with declared dependency graph.
+- AUTHORITATIVE_ECONOMIC — value must come from R1.0B Core projection/service/ledger; semantic layer cannot recompute it.
+
+Examples:
+ORDER_COUNT = OBSERVED after order recognition mapping is approved.
+AOV = DERIVED from NET_PAID_PRODUCT_AMOUNT / ORDER_COUNT.
+ACTIVE_BALL_COUNT, TREE_GPV/RPV/EPV, LEFT/RIGHT_CARRY, authoritative Rank/Award values = AUTHORITATIVE_ECONOMIC.
+
+Query/AI consumers MUST be blocked from substituting an ad-hoc derived calculation for an AUTHORITATIVE_ECONOMIC metric.
+
+## 38. Semantic identity and naming
+
+Every definition has:
+- immutable code;
+- version;
+- stable canonical name;
+- localized labels;
+- optional approved aliases.
+
+Aliases do not create new metrics. Example "新球" may resolve to NEW_BALL_COUNT only after glossary approval.
+Codes are case-normalized and globally unique within definition type. Deprecated definitions remain resolvable for historical evidence but are not offered for new official analysis.
+
+## 39. Historical truth policy
+
+Historical analysis MUST prefer historical evidence/snapshot/effective version over current state reconstruction.
+Forbidden examples:
+- use current Active to decide a historical Retail Referral eligibility;
+- use current member status to classify an old retail order;
+- use current SKU referral rate to recompute an old order;
+- use current Rank thresholds to rewrite historical rank;
+- use current holder identity to imply historical holder if ownership history differs.
+
+If historical evidence is absent, result is UNKNOWN/UNAVAILABLE, not guessed.
+
+## 40. Join safety and fan-out firewall
+
+DatasetDefinition declares grain and approved joins. Query engines MUST prevent unsafe many-to-many fan-out.
+ApprovedJoin metadata:
+leftDataset, rightDataset, joinKey, cardinality(1:1,1:N,N:1), temporalJoinPolicy, allowedMeasuresAfterJoin, privacyImpact.
+
+Examples:
+- Person→Ball is 1:N; PERSON_COUNT after Ball join requires distinct Person-safe semantic aggregation.
+- Order→OrderLine is 1:N; ORDER_COUNT must remain distinct Order.
+- OrderLine→Award may be 1:N; product sales must not multiply by award rows.
+
+Unknown cardinality => query denied until mapped.
+
+## 41. Definition quality score / readiness
+
+Do not create subjective business rankings. Internally, implementation readiness is a deterministic checklist, not an evaluative score.
+A definition is OFFICIAL_READY only when all required booleans are true:
+authorityMapped, grainDefined, timeBasisDefined, scopeDefined, privacyDefined, lineageDefined, versioned, goldenCovered, freshnessDefined, RBACMapped.
+Otherwise status remains DRAFT/REVIEW/DECISION_REQUIRED as applicable.
+
+## 42. Consumer contract
+
+Every governed analytics response should carry:
+metricCode, metricVersion, value, unit, scopeCode, period/asOf, dataThrough, refreshedAt, freshnessStatus, ruleVersion where applicable, result/evidence reference.
+Dashboard, export and future AI must preserve these fields or equivalent metadata.
+A chart title alone is not a semantic contract.
+
+## 43. Audit of definition changes
+
+Definition audit events:
+DEFINITION_DRAFT_CREATED
+DEFINITION_SUBMITTED
+DEFINITION_APPROVED
+DEFINITION_DEPRECATED
+DEFINITION_RETIRED
+DEFINITION_SEED_DRIFT_DETECTED
+LINEAGE_CHANGED
+PRIVACY_CLASS_CHANGED
+SCOPE_CHANGED
+
+Audit stores actor, reason, old/new hashes, effective date and approval evidence; it must not store secrets or raw C3 payloads.
+
+## 44. Additional Semantic Golden cases
+
+Add:
+- EVENT vs STATE vs SNAPSHOT semantics cannot be interchanged.
+- current Active cannot answer historical ACTIVE_STATE without historical evidence.
+- MEMBER_VISIBLE scope remains invariant regardless caller privilege.
+- Finance role does not mutate a metric's scope.
+- Person→Ball join does not multiply PERSON_COUNT.
+- Order→OrderLine join does not multiply ORDER_COUNT.
+- OrderLine→Award join does not multiply sales.
+- AUTHORITATIVE_ECONOMIC metric cannot be overridden by ad-hoc formula.
+- missing historical evidence => UNKNOWN/UNAVAILABLE.
+- alias resolution cannot bypass metric version/status/privacy.
