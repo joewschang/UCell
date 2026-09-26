@@ -14,8 +14,9 @@ function Invoke-Az([string[]]$Arguments){
   return $out
 }
 function Json([string[]]$Arguments){return (Invoke-Az -Arguments $Arguments | ConvertFrom-Json)}
-function Require-ExistingSecretReference([string]$App,[string]$Name){
-  $state=Json @('containerapp','show','--resource-group',$ResourceGroup,'--name',$App,'-o','json')
+function Require-ExistingSecretReference([string]$App,[string]$Name,[switch]$Job){
+  $query=if($Job){@('containerapp','job','show','--resource-group',$ResourceGroup,'--name',$App,'-o','json')}else{@('containerapp','show','--resource-group',$ResourceGroup,'--name',$App,'-o','json')}
+  $state=Json $query
   $found=@($state.properties.template.containers[0].env|Where-Object {$_.name -eq $Name -and $_.secretRef})
   if($found.Count -ne 1){throw "$App must retain existing secret reference $Name; update is refused."}
   return $state
@@ -26,7 +27,7 @@ $api=Require-ExistingSecretReference 'ucell-stage-api' 'DATABASE_URL'
 [void](Require-ExistingSecretReference 'ucell-stage-api' 'STAGE_UAT_MEMBER_TOKEN')
 [void](Require-ExistingSecretReference 'ucell-stage-worker' 'DATABASE_URL')
 [void](Require-ExistingSecretReference 'ucell-stage-worker' 'PII_ENCRYPTION_KEY')
-[void](Require-ExistingSecretReference 'ucell-stage-migrate' 'DATABASE_URL')
+[void](Require-ExistingSecretReference 'ucell-stage-migrate' 'DATABASE_URL' -Job)
 
 foreach($item in @(@{repository='ucell-backend';dockerfile='deployment/Dockerfile.backend'},@{repository='ucell-worker';dockerfile='deployment/Dockerfile.worker'})){
   Invoke-Az @('acr','build','--registry',$Acr,'--image',"$($item.repository):$ImageTag",'--file',$item.dockerfile,'.','--no-logs')|Out-Null
