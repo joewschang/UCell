@@ -35,6 +35,7 @@
     "preflight": "node scripts/run-bash-gate.mjs ci-gate.sh",
     "schema:preflight": "node scripts/schema-preflight.mjs",
     "migration:preflight": "node scripts/migration-preflight.mjs",
+    "g8:migration87:recovery-golden": "node scripts/g8-audit-migration-recovery-golden.mjs",
     "source:preflight": "node scripts/source-preflight.mjs",
     "golden:r1b": "node scripts/golden-r1b-regression.mjs",
     "golden:v3:mandatory": "node scripts/v3-mandatory-golden.mjs",
