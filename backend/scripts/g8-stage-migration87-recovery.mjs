@@ -22,7 +22,7 @@ const expectedTriggers=['trg_audit_event_append_only','trg_audit_event_before_in
 const expectedIndexes=['ix_audit_event_trace_occurred','ix_audit_event_environment_code_occurred'];
 function runPrisma(args){const r=spawnSync(process.execPath,[require.resolve('prisma/build/index.js'),...args],{cwd:root,env:process.env,encoding:'utf8'});if(r.status!==0)throw new Error(`PRISMA_COMMAND_FAILED ${args.join(' ')}: ${(r.stderr||r.stdout).slice(-1000)}`);}
 async function auditFingerprint(){
- const rows=await db.$queryRawUnsafe("SELECT count(*)::int AS count,md5(coalesce(string_agg(md5(concat_ws('|',audit_event_id::text,actor_type,coalesce(actor_id::text,''),action,entity_type,coalesce(entity_id::text,''),coalesce(before_data::text,''),coalesce(after_data::text,''),coalesce(reason_code,''),request_id,correlation_id::text,occurred_at::text)),'') ORDER BY audit_event_id),'') AS fingerprint FROM audit.audit_event");
+ const rows=await db.$queryRawUnsafe("SELECT count(*)::int AS count,md5(coalesce(string_agg(md5(concat_ws('|',audit_event_id::text,actor_type,coalesce(actor_id::text,''),action,entity_type,coalesce(entity_id::text,''),coalesce(before_data::text,''),coalesce(after_data::text,''),coalesce(reason_code,''),request_id,correlation_id::text,occurred_at::text)),' ' ORDER BY audit_event_id),'')) AS fingerprint FROM audit.audit_event");
  return rows[0];
 }
 async function ledger(){return db.$queryRawUnsafe(`SELECT migration_name,finished_at IS NULL AS unfinished,rolled_back_at IS NULL AS not_rolled_back,finished_at IS NOT NULL AS finished,rolled_back_at IS NOT NULL AS rolled_back,checksum FROM public._prisma_migrations WHERE migration_name='${migration}' ORDER BY started_at DESC`);}
