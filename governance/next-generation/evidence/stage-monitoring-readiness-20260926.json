@@ -1,0 +1,46 @@
+{
+  "schemaVersion": "G8_MONITORING_READINESS_V1",
+  "collectedAt": "2026-09-26T07:39:40.8901807Z",
+  "resourceGroup": "rg-ucell-stage",
+  "applicationRevisionInventory": [
+    {
+      "name": "ucell-stage-api",
+      "latestRevision": "ucell-stage-api--r-6f5e340stageuatlocal",
+      "ingressFqdn": "ucell-stage-api.victoriousisland-9fc3593c.eastasia.azurecontainerapps.io",
+      "image": "ucellstageacr5mafbbsq33mgu.azurecr.io/ucell-backend@sha256:e578b0e2cf84ebc822fb911fe19bdbd945aebd2e927ff1690af0ad5468d0007c"
+    },
+    {
+      "name": "ucell-stage-worker",
+      "latestRevision": "ucell-stage-worker--r-6f5e340stageuatlocal",
+      "ingressFqdn": null,
+      "image": "ucellstageacr5mafbbsq33mgu.azurecr.io/ucell-worker@sha256:67a58c72c0cf1ca2204945d42114596276ab02bdd936c8499d0932f9c33b1674"
+    },
+    {
+      "name": "ucell-stage-admin",
+      "latestRevision": "ucell-stage-admin--r-6f5e340stageuatlocal",
+      "ingressFqdn": "ucell-stage-admin.victoriousisland-9fc3593c.eastasia.azurecontainerapps.io",
+      "image": "ucellstageacr5mafbbsq33mgu.azurecr.io/ucell-admin@sha256:8c50808209bcd23d638d07cef3c7c348277685cec2677ee36dc9b2270f49723c"
+    },
+    {
+      "name": "ucell-stage-member",
+      "latestRevision": "ucell-stage-member--r-6f5e340stageuatlocal",
+      "ingressFqdn": "ucell-stage-member.victoriousisland-9fc3593c.eastasia.azurecontainerapps.io",
+      "image": "ucellstageacr5mafbbsq33mgu.azurecr.io/ucell-member@sha256:48c277c89b66387ef8357c2d7682943e6e4a79e1cc772533299173933a63524a"
+    }
+  ],
+  "actionGroups": [
+    {
+      "name": "Application Insights Smart Detection",
+      "enabled": true,
+      "deliveryReceiverCount": 0,
+      "rbacReceiverCount": 2
+    }
+  ],
+  "checks": {
+    "applicationRevisionInventory": true,
+    "logAnalyticsPresent": true,
+    "applicationInsightsPresent": true,
+    "deliveryCapableActionGroup": false
+  },
+  "status": "PENDING_OPERATIONAL_OWNER"
+}
