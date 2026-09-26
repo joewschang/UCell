@@ -16,7 +16,7 @@ Formal LINE/LIFF and Entra credentials remain `OPERATIONAL_CREDENTIAL_PENDING`; 
 |---|---|---|
 | SOURCE_RECOVERY | PENDING | Independent full Git mirror/archive and restore drill have not yet been provisioned. |
 | DB_BACKUP_RESTORE | IN_PROGRESS | Azure Stage PostgreSQL has 7-day automated backup retention; a local disposable restore drill PASS is recorded in [G8_LOCAL_RESTORE_DRILL_20260926.md](G8_LOCAL_RESTORE_DRILL_20260926.md). Stage/Production drill and policy remain required. |
-| MIGRATION_REPRODUCIBILITY | PASS (local) | 86 forward-only migrations and fresh isolated DB evidence are frozen. Stage migration succeeded. |
+| MIGRATION_REPRODUCIBILITY | PASS (local candidate) | Frozen baseline has 86 migrations; current G8 candidate has 87 forward-only migrations and fresh isolated DB evidence. Stage remains on the prior 86-migration UAT revision until controlled G8 deployment. |
 | EVIDENCE_STORAGE_RECOVERY | PENDING | Storage inventory/retention and restored-object reference check must be executed. |
 | ENVIRONMENT_INVENTORY | IN_PROGRESS | Read-only `deployment/collect-environment-inventory.ps1` records non-secret environment metadata. Production inventory remains required. |
 | SECRET_RECOVERY | IN_PROGRESS | Stage uses Key Vault and managed identity. Owner/rotation/recovery metadata remains to be recorded without secret values. |
@@ -35,9 +35,6 @@ Formal LINE/LIFF and Entra credentials remain `OPERATIONAL_CREDENTIAL_PENDING`; 
 | AUDIT_EVENT_CORE | PASS (isolated DB) | Migration `20260926110000_g8_audit_event_core` adds event, environment, trace, result, privacy/retention, hash and evidence fields; isolated persistence test PASS. |
 | HIGH_RISK_WRITE_AUDIT | PARTIAL | Domain audit facts exist and now receive controlled event/trace fields; final coverage matrix and Stage exercise remain required. |
 | SECURITY_EVENT_AUDIT | PARTIAL | LINE/security/session audit exists; final catalog/coverage reconciliation and Stage exercise remain required. |
-| AUDIT_SEARCH / AUDIT_RBAC | PASS (implementation evidence) | RBAC-protected Admin audit search exists; final Stage verification remains required. |
+| AUDIT_SEARCH / AUDIT_RBAC | PASS (implementation evidence) | RBAC-protected Admin audit search exists; final Stage verification remains required. |`n| APPEND_ONLY_AUDIT | PASS (isolated DB) | Database trigger rejects audit rewrite/delete; isolated persistence evidence is recorded. |`n| PII_MINIMIZATION | PASS (focused test) | Audit service redacts sensitive fields and records hashes/field names instead. |
 
 **G8 OPERATIONAL_READINESS = NOT_YET_PASS.** The explicit `RPO_RTO=DECISION_REQUIRED` and independent-source/restore/monitoring evidence prevent a G8 pass. Independent actionable work continues.
-
-| APPEND_ONLY_AUDIT | PASS (isolated DB) | Database trigger rejects audit rewrite/delete; isolated persistence evidence is recorded. |
-| PII_MINIMIZATION | PASS (focused test) | Audit service redacts sensitive fields and records hashes/field names instead. |
