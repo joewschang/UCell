@@ -5,6 +5,7 @@ param(
   [ValidatePattern('^[A-Za-z0-9._-]{1,64}$')][string]$PiiEncryptionKeyVersion = 'STAGE_V1',
   [string]$LineLoginChannelId = '', [string]$LiffId = '',
   [string]$EntraTenantId = '', [string]$EntraClientId = '', [string]$EntraRedirectUri = '', [string]$ImageTag = '',
+  [string]$StageUatMemberToken = '', [switch]$EnableStageUatAdminDemo,
   [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$InventoryWarehouseId,
   [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$InventoryPolicyVersion,
   [ValidateRange(1,180)][int]$MigrationPollAttempts = 120,
@@ -14,6 +15,7 @@ param(
 $ErrorActionPreference = 'Stop'
 if($InventoryWarehouseId -notmatch '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$'){throw 'UCELL_INVENTORY_WAREHOUSE_ID must be a UUID.'}
 if($InventoryPolicyVersion -notmatch '^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$'){throw 'UCELL_INVENTORY_POLICY_VERSION is missing or invalid.'}
+if($EnableStageUatAdminDemo -and -not $StageUatMemberToken){throw 'Stage UAT requires a non-empty StageUatMemberToken.'}
 $windowsAzPython = 'C:\Program Files\Microsoft SDKs\Azure\CLI2\python.exe'
 if (Test-Path $windowsAzPython) { $script:AzExecutable=$windowsAzPython; $script:AzPrefix=@('-IBm','azure.cli') }
 else { $az=Get-Command az -ErrorAction SilentlyContinue; if(-not $az){throw 'Azure CLI is required.'}; $script:AzExecutable=$az.Source; $script:AzPrefix=@() }
@@ -93,7 +95,8 @@ foreach($r in @('ucell-backend','ucell-worker')){
   else{Invoke-AzChecked "build $r" @('acr','build','--registry',$acr,'--image',"${r}:$ImageTag",'--file',$df,'.','--only-show-errors')|Out-Null}
 }
 $backendImage=Resolve-Image 'ucell-backend'; $workerImage=Resolve-Image 'ucell-worker'
-$serverEnv=@('NODE_ENV=staging','ADMIN_AUTH_BYPASS=false','SWAGGER_ENABLED=true',"APPLICATIONINSIGHTS_CONNECTION_STRING=$insights",'UCELL_ENVIRONMENT=STAGE','DATABASE_URL=secretref:database-url','PII_ENCRYPTION_KEY=secretref:pii-encryption-key',"PII_ENCRYPTION_KEY_VERSION=$PiiEncryptionKeyVersion","UCELL_INVENTORY_WAREHOUSE_ID=$InventoryWarehouseId","UCELL_INVENTORY_POLICY_VERSION=$InventoryPolicyVersion")
+$adminAuthBypass=if($EnableStageUatAdminDemo){'true'}else{'false'}
+$serverEnv=@('NODE_ENV=staging',"ADMIN_AUTH_BYPASS=$adminAuthBypass",'SWAGGER_ENABLED=true',"APPLICATIONINSIGHTS_CONNECTION_STRING=$insights",'UCELL_ENVIRONMENT=STAGE','DATABASE_URL=secretref:database-url','PII_ENCRYPTION_KEY=secretref:pii-encryption-key',"PII_ENCRYPTION_KEY_VERSION=$PiiEncryptionKeyVersion","UCELL_INVENTORY_WAREHOUSE_ID=$InventoryWarehouseId","UCELL_INVENTORY_POLICY_VERSION=$InventoryPolicyVersion")
 $serverRemove=@()
 if($LineLoginChannelId){$serverEnv+="LINE_LOGIN_CHANNEL_ID=$LineLoginChannelId"}else{$serverRemove+='LINE_LOGIN_CHANNEL_ID'}
 if($EntraTenantId){$serverEnv+="ENTRA_TENANT_ID=$EntraTenantId"}else{$serverRemove+='ENTRA_TENANT_ID'}
@@ -111,14 +114,30 @@ $execution=(Invoke-AzChecked 'start migration' @('containerapp','job','start','-
 $migrationStatus=''; for($i=1;$i -le $MigrationPollAttempts;$i++){Start-Sleep 10; $migrationStatus=(Invoke-AzChecked 'poll migration' @('containerapp','job','execution','show','--name','ucell-stage-migrate','--resource-group',$ResourceGroup,'--job-execution-name',$execution,'--query','properties.status','-o','tsv','--only-show-errors')).Trim(); if($migrationStatus -notin @('Running','Processing','Pending')){break}}
 if($migrationStatus -ne 'Succeeded'){throw "Stage migration failed or timed out: $migrationStatus."}
 
-Set-App 'ucell-stage-api' $backendImage 1 3 $serverEnv -RemoveEnv $serverRemove -Secrets @("pii-encryption-key=$piiKey") -Ingress -Port 3000 -Database
+if($EnableStageUatAdminDemo){
+  $seedJob='ucell-stage-uat-seed'
+  $seedShow=@($script:AzPrefix)+@('containerapp','job','show','--name',$seedJob,'--resource-group',$ResourceGroup,'--only-show-errors')
+  & $script:AzExecutable @seedShow *> $null
+  if($LASTEXITCODE -eq 0){
+    Invoke-AzChecked 'set Stage UAT seed secret' @('containerapp','job','secret','set','--name',$seedJob,'--resource-group',$ResourceGroup,'--secrets',"database-url=$databaseUrl",'--only-show-errors')|Out-Null
+    Invoke-AzChecked 'update Stage UAT seed job' @('containerapp','job','update','--name',$seedJob,'--resource-group',$ResourceGroup,'--image',$backendImage,'--container-name',$seedJob,'--replica-timeout','600','--replica-retry-limit','0','--parallelism','1','--replica-completion-count','1','--set-env-vars','DATABASE_URL=secretref:database-url','NODE_ENV=staging','UCELL_ENVIRONMENT=STAGE','UCELL_STAGE_UAT_SEED_OPT_IN=SEED_STAGE_UAT_V1','--command','pnpm','--args','stage:uat:seed','--only-show-errors')|Out-Null
+  }else{
+    Invoke-AzChecked 'create Stage UAT seed job' @('containerapp','job','create','--name',$seedJob,'--resource-group',$ResourceGroup,'--environment',$environment,'--trigger-type','Manual','--replica-timeout','600','--replica-retry-limit','0','--parallelism','1','--replica-completion-count','1','--image',$backendImage,'--registry-server',$registryServer,'--registry-identity',$identity,'--mi-user-assigned',$identity,'--secrets',"database-url=$databaseUrl",'--env-vars','DATABASE_URL=secretref:database-url','NODE_ENV=staging','UCELL_ENVIRONMENT=STAGE','UCELL_STAGE_UAT_SEED_OPT_IN=SEED_STAGE_UAT_V1','--command','pnpm','--args','stage:uat:seed','--only-show-errors')|Out-Null
+  }
+  $seedExecution=(Invoke-AzChecked 'start Stage UAT seed' @('containerapp','job','start','--name',$seedJob,'--resource-group',$ResourceGroup,'--query','name','-o','tsv','--only-show-errors')).Trim(); if(-not $seedExecution){throw 'Stage UAT seed execution name is empty.'}
+  $seedStatus=''; for($i=1;$i -le 60;$i++){Start-Sleep 5; $seedStatus=(Invoke-AzChecked 'poll Stage UAT seed' @('containerapp','job','execution','show','--name',$seedJob,'--resource-group',$ResourceGroup,'--job-execution-name',$seedExecution,'--query','properties.status','-o','tsv','--only-show-errors')).Trim(); if($seedStatus -notin @('Running','Processing','Pending')){break}}
+  if($seedStatus -ne 'Succeeded'){throw "Stage UAT seed failed or timed out: $seedStatus."}
+}
+
+if($EnableStageUatAdminDemo){$apiEnv=@($serverEnv)+@('STAGE_UAT_MEMBER_TOKEN=secretref:stage-uat-member-token');$apiSecrets=@("pii-encryption-key=$piiKey","stage-uat-member-token=$StageUatMemberToken")}else{$apiEnv=$serverEnv;$apiSecrets=@("pii-encryption-key=$piiKey")}
+Set-App 'ucell-stage-api' $backendImage 1 3 $apiEnv -RemoveEnv $serverRemove -Secrets $apiSecrets -Ingress -Port 3000 -Database
 Set-App 'ucell-stage-worker' $workerImage 1 2 $serverEnv -RemoveEnv $serverRemove -Secrets @("pii-encryption-key=$piiKey") -Database
 $apiFqdn=(Invoke-AzChecked 'read API FQDN' @('containerapp','show','--name','ucell-stage-api','--resource-group',$ResourceGroup,'--query','properties.configuration.ingress.fqdn','-o','tsv','--only-show-errors')).Trim(); if(-not $apiFqdn){throw 'API FQDN is empty.'}
 $apiOrigin="https://$apiFqdn"; $apiBaseUrl="$apiOrigin/api/v1"
 
 $frontends=@(
-  @{r='ucell-admin';df='deployment/Dockerfile.admin';args=@("VITE_API_BASE_URL=$apiBaseUrl","VITE_ENTRA_TENANT_ID=$EntraTenantId","VITE_ENTRA_CLIENT_ID=$EntraClientId","VITE_ENTRA_REDIRECT_URI=$EntraRedirectUri","CSP_API_ORIGIN=$apiOrigin")},
-  @{r='ucell-member';df='deployment/Dockerfile.member';args=@("VITE_API_BASE_URL=$apiBaseUrl","VITE_LIFF_ID=$LiffId","CSP_API_ORIGIN=$apiOrigin")}
+  @{r='ucell-admin';df='deployment/Dockerfile.admin';args=@("VITE_API_BASE_URL=$apiBaseUrl","VITE_ENTRA_TENANT_ID=$EntraTenantId","VITE_ENTRA_CLIENT_ID=$EntraClientId","VITE_ENTRA_REDIRECT_URI=$EntraRedirectUri","VITE_ENABLE_DEMO_LOGIN=$($EnableStageUatAdminDemo.ToString().ToLowerInvariant())","VITE_STAGE_UAT_DEMO_LOGIN=$($EnableStageUatAdminDemo.ToString().ToLowerInvariant())","CSP_API_ORIGIN=$apiOrigin")},
+  @{r='ucell-member';df='deployment/Dockerfile.member';args=@("VITE_API_BASE_URL=$apiBaseUrl","VITE_LIFF_ID=$LiffId","VITE_STAGE_UAT_MEMBER_ENABLED=$($EnableStageUatAdminDemo.ToString().ToLowerInvariant())","VITE_STAGE_UAT_MEMBER_TOKEN=$StageUatMemberToken","CSP_API_ORIGIN=$apiOrigin")}
 )
 foreach($f in $frontends){
   if($ContainerBuildMode -eq 'Local'){$a=@('build','-t',"$registryServer/$($f.r):$ImageTag",'-f',$f.df); foreach($b in $f.args){$a+=@('--build-arg',$b)}; $a+='.'; Invoke-NativeChecked "build $($f.r)" docker $a; Invoke-NativeChecked "push $($f.r)" docker @('push',"$registryServer/$($f.r):$ImageTag")}
@@ -135,4 +154,4 @@ $evidence=@(); foreach($name in @('ucell-stage-api','ucell-stage-worker','ucell-
 }
 $healthy=$false; for($i=1;$i -le $HealthPollAttempts;$i++){try{$response=Invoke-WebRequest "$apiBaseUrl/health" -TimeoutSec 10 -UseBasicParsing; if($response.StatusCode -eq 200){$healthy=$true;break}}catch{if($i -eq $HealthPollAttempts){throw "Stage API health probe failed: $($_.Exception.Message)"}}; Start-Sleep 5}; if(-not $healthy){throw 'Stage API did not become healthy.'}
 $adminFqdn=($evidence|Where-Object Name -eq 'ucell-stage-admin').Fqdn; $memberFqdn=($evidence|Where-Object Name -eq 'ucell-stage-member').Fqdn
-[pscustomobject]@{ResourceGroup=$ResourceGroup;ImageTag=$ImageTag;MigrationExecution=$execution;MigrationStatus=$migrationStatus;Api=$apiOrigin;Admin="https://$adminFqdn";Member="https://$memberFqdn";ApiHealth='PASS';IdentityConfiguration=[pscustomobject]@{LineConfigured=([bool]$LineLoginChannelId -and [bool]$LiffId);EntraConfigured=([bool]$EntraTenantId -and [bool]$EntraClientId -and [bool]$EntraRedirectUri);VerificationStatus='OPERATIONAL_CREDENTIAL_PENDING'};Revisions=$evidence}|ConvertTo-Json -Depth 6
+[pscustomobject]@{ResourceGroup=$ResourceGroup;ImageTag=$ImageTag;MigrationExecution=$execution;MigrationStatus=$migrationStatus;Api=$apiOrigin;Admin="https://$adminFqdn";Member="https://$memberFqdn";ApiHealth='PASS';StageUat=[pscustomobject]@{Enabled=$EnableStageUatAdminDemo.IsPresent;AdminDemo=$EnableStageUatAdminDemo.IsPresent;MemberDirectEntry=$EnableStageUatAdminDemo.IsPresent;SeedStatus=if($EnableStageUatAdminDemo){$seedStatus}else{'NOT_REQUESTED'}};IdentityConfiguration=[pscustomobject]@{LineConfigured=([bool]$LineLoginChannelId -and [bool]$LiffId);EntraConfigured=([bool]$EntraTenantId -and [bool]$EntraClientId -and [bool]$EntraRedirectUri);VerificationStatus='OPERATIONAL_CREDENTIAL_PENDING'};Revisions=$evidence}|ConvertTo-Json -Depth 6

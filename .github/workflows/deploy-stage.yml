@@ -44,6 +44,7 @@ jobs:
           ENTRA_TENANT_ID: ${{ secrets.STAGE_ENTRA_TENANT_ID }}
           ENTRA_CLIENT_ID: ${{ secrets.STAGE_ENTRA_CLIENT_ID }}
           ENTRA_REDIRECT_URI: ${{ secrets.STAGE_ENTRA_REDIRECT_URI }}
+          STAGE_UAT_MEMBER_TOKEN: ${{ secrets.STAGE_UAT_MEMBER_TOKEN }}
           UCELL_INVENTORY_WAREHOUSE_ID: ${{ vars.UCELL_INVENTORY_WAREHOUSE_ID }}
           UCELL_INVENTORY_POLICY_VERSION: ${{ vars.UCELL_INVENTORY_POLICY_VERSION }}
         run: |
@@ -58,6 +59,8 @@ jobs:
             -EntraTenantId $env:ENTRA_TENANT_ID `
             -EntraClientId $env:ENTRA_CLIENT_ID `
             -EntraRedirectUri $env:ENTRA_REDIRECT_URI `
+            -StageUatMemberToken $env:STAGE_UAT_MEMBER_TOKEN `
+            -EnableStageUatAdminDemo `
             -InventoryWarehouseId $env:UCELL_INVENTORY_WAREHOUSE_ID `
             -InventoryPolicyVersion $env:UCELL_INVENTORY_POLICY_VERSION `
             -ImageTag '${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}' `
