@@ -1,7 +1,7 @@
 import { useQualificationFocus } from './useQualificationFocus';
 import { MemberNavigation, IncomeNavigation } from './MemberNavigation';
 import {MemberPageHeader} from './MemberPageHeader';
-import {MemberAppShell,QualificationSwitcher,MobileActionGrid,MetricCard,MoneyState,LoadingState,ErrorState,EmptyState} from '@ucell/design-system';
+import {MemberAppShell,QualificationSwitcher,MobileActionGrid,MetricCard,MoneyState,LoadingState,ErrorState,EmptyState,QualificationEmblem,UCellIcon} from '@ucell/design-system';
 import { Link, Route, Routes } from 'react-router-dom';
 import { useState, type KeyboardEvent, type ReactNode } from 'react';
 import { useQualification } from './QualificationContext';
@@ -59,7 +59,7 @@ function Home({ q }: {
         <section className="hero uc-member-identity" aria-labelledby="member-today-title">
             <div className="uc-orbit" aria-hidden="true"/>
             <div className="uc-identity-copy"><small>MY UCELL TODAY</small><h1 id="member-today-title">您好，{d.memberName}</h1><p><span>會員編號</span> {d.memberNo}</p></div>
-            <div className="uc-identity-badge"><span>球編號</span><strong>{q.code}</strong><small>方案 {data.displayPlanLevel(q.rank)}</small></div>
+            <div className="uc-identity-badge"><QualificationEmblem code={q.rank}/><span>球編號</span><strong>{q.code}</strong><small>方案 {data.displayPlanLevel(q.rank)}</small></div>
         </section>
         <section className="card uc-member-status"><div className="uc-status-block"><span>目前經營資格</span><strong>{qualificationActiveLabel(q.active)}</strong><small>{d.monthReference??'月份尚未提供'} · {d.activeInterval?`${d.activeInterval.activeFrom} ～ ${d.activeInterval.activeTo}`:'Active 區間尚未提供'}</small></div><div className="uc-status-block"><span>本月重購狀態</span><strong>{{ ACTIVE: '已完成', PENDING: '確認中', INACTIVE: '未完成' }[d.monthlyRepurchaseStatus]}</strong><i className="uc-status-signal" data-state={d.monthlyRepurchaseStatus} aria-hidden="true"/></div></section>
         <div className="uc-section-heading"><div><small>LIVE READ MODEL</small><h2>業績摘要</h2></div><span>{d.monthReference??'當期資料'}</span></div>
@@ -68,7 +68,7 @@ function Home({ q }: {
         <section className="card uc-bonus-summary"><div><span>本期獎金</span><small>{awardStatusLabels[d.bonusStatus]}</small></div><h2><MoneyState amount={d.bonusAmount} status={d.bonusAmount===null?'PENDING':d.bonusStatus}/></h2><Link to="/bonuses">查看結算明細</Link></section>
         <details id="repurchase-details" className="uc-repurchase-expander" open={repurchaseDetailsOpen} onToggle={event=>setRepurchaseDetailsOpen(event.currentTarget.open)}><summary>查看重購認列詳情</summary><RepurchaseDetails q={q}/></details>
         <div className="uc-section-heading"><div><small>MEMBER SERVICES</small><h2>快速服務</h2></div></div>
-        <MobileActionGrid>{[['/organization', '我的組織'], ['/performance', '我的業績'], ['/bonuses', '獎金明細'], ['/shop', '商品商城'], ['/orders', '我的訂單'], ['/content', '影音內容'], ['/me', '會員資料']].map(([path, title],index) => <Link key={path} to={path}><span aria-hidden="true">{String(index+1).padStart(2,'0')}</span>{title}</Link>)}</MobileActionGrid>
+        <MobileActionGrid>{([['/organization','我的組織','organization'],['/performance','我的業績','income'],['/bonuses','獎金明細','bonuses'],['/shop','商品商城','shop'],['/orders','我的訂單','orders'],['/content','影音內容','content'],['/me','會員資料','me']] as const).map(([path,title,icon]) => <Link key={path} to={path}><UCellIcon name={icon}/><span>{title}</span></Link>)}</MobileActionGrid>
     </div>}</Result>;
 }
 function Organization({ q }: {
@@ -144,7 +144,7 @@ function Me() {
   </>}</Result>
   <ProfileEditor refresh={state.retry}/>
   <h3>我的經營資格</h3>
-  {qualifications.map(q => <article key={q.id} className="card"><strong>球編號 {q.code}</strong><p>方案：{data.displayPlanLevel(q.rank)} · {qualificationActiveLabel(q.active)}</p></article>)}
+  {qualifications.map(q => <article key={q.id} className="card uc-emblem-card"><QualificationEmblem code={q.rank}/><div><strong>球編號 {q.code}</strong><p>方案：{data.displayPlanLevel(q.rank)} · {qualificationActiveLabel(q.active)}</p></div></article>)}
   <EndSession connected={!data.isMock}/>
  </>;
 }
