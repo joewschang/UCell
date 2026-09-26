@@ -14,7 +14,7 @@ Formal LINE/LIFF and Entra credentials remain `OPERATIONAL_CREDENTIAL_PENDING`; 
 
 | Requirement | Status | Evidence/disposition |
 |---|---|---|
-| SOURCE_RECOVERY | PENDING | Independent full Git mirror/archive and restore drill have not yet been provisioned. |
+| SOURCE_RECOVERY | EXTERNAL_ROLE_REQUIRED | Full-ref Git bundle and local bare restore verification PASS, but the approved private Azure Storage destination rejected data-plane upload because the operator lacks `Storage Blob Data Contributor`. See [G8_SOURCE_RECOVERY_BLOCKER_20260926.md](G8_SOURCE_RECOVERY_BLOCKER_20260926.md). |
 | DB_BACKUP_RESTORE | IN_PROGRESS | Azure Stage PostgreSQL has 7-day automated backup retention; a local disposable restore drill PASS is recorded in [G8_LOCAL_RESTORE_DRILL_20260926.md](G8_LOCAL_RESTORE_DRILL_20260926.md). Stage/Production drill and policy remain required. |
 | MIGRATION_REPRODUCIBILITY | PASS (local candidate) | Frozen baseline has 86 migrations; current G8 candidate has 87 forward-only migrations and fresh isolated DB evidence. Stage remains on the prior 86-migration UAT revision until controlled G8 deployment. |
 | EVIDENCE_STORAGE_RECOVERY | PENDING | Storage inventory/retention and restored-object reference check must be executed. |
