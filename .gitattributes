@@ -1,3 +1,5 @@
 # Preserve the approved baseline byte hash on every checkout.
 /governance/swaggerhub/baseline.openapi.json -text whitespace=cr-at-eol
 /governance/swaggerhub/oasdiff.yaml text eol=lf
+
+/governance/swaggerhub/baselines/*.json -text whitespace=cr-at-eol

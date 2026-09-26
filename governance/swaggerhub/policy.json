@@ -1,9 +1,9 @@
 {
+  "oasdiffVersion": "1.32.1",
   "owner": "ragetech",
-  "api": "ucell-api",
+  "breakingChanges": "deny; no automatic waivers; pre-GA promotions require explicit recorded Code Owner authority",
+  "baselineSha256": "b619d56a1406393eda95f949383b460913bb324aa146a988f387437ab22e56f2",
   "visibility": "private",
-  "baselineSha256": "4ca2023863cdc12dd767c0e63cf836394d2d12899681e33c7fd635fb26ef674c",
-  "baselineSource": "Previously cloud/local-verified 147-path UCell 1.0.0 contract accepted in this task",
-  "breakingChanges": "deny; no automatic waivers",
-  "oasdiffVersion": "1.32.1"
+  "baselineSource": "Controlled pre-GA promotion: reviewed UCell 1.1.0 Phase-1 contract",
+  "api": "ucell-api"
 }

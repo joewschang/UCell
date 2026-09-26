@@ -1,0 +1,17 @@
+{
+  "promotions": [
+    {
+      "phase": "PRE_GA",
+      "approvalDate": "2026-09-26",
+      "approvingDecision": "Phase 1 Release Closure explicit user decision: Controlled OpenAPI Baseline Promotion",
+      "candidateHead": "420ea21fbb8721543563b9beb273ad6cfac08515",
+      "previousBaselineVersion": "1.0.0",
+      "previousBaselineSha256": "4ca2023863cdc12dd767c0e63cf836394d2d12899681e33c7fd635fb26ef674c",
+      "newBaselineVersion": "1.1.0",
+      "newBaselineSha256": "b619d56a1406393eda95f949383b460913bb324aa146a988f387437ab22e56f2",
+      "decisionDocument": "governance/swaggerhub/OPENAPI_BASELINE_PROMOTION_DECISION_V1_1_0.md",
+      "archivedBaseline": "governance/swaggerhub/baselines/baseline.openapi.1.0.0-4ca2023863cdc12dd767c0e63cf836394d2d12899681e33c7fd635fb26ef674c.json",
+      "breakingDiffEvidence": "governance/swaggerhub/evidence/openapi-baseline-promotion-v1.1.0-breaking-diff.json"
+    }
+  ]
+}
