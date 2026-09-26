@@ -11,18 +11,15 @@ describeDb('isolated qualification package fixture', () => {
   afterAll(() => db.$disconnect());
 
   it('creates an active package accepted by the authoritative checkout read', async () => {
-    await expect(db.$transaction(async (tx) => {
-      const f = await createActiveQualificationPackage(tx as any);
-      const person = await tx.person.create({ data: { legalName: 'Package fixture purchaser', status: 'EFFECTIVE' } });
-      const read: any = await new PackageConfigService(tx as any).checkoutData(
-        tx as any,
-        person.personId,
-        { packageVersionId: f.version.packageProfileVersionId, selections: [{ productRuleProfileId: f.rule.productRuleProfileId, quantity: 1 }] },
-        new Date(),
-      );
-      expect(read.version.status).toBe('ACTIVE');
-      expect(read.selections).toHaveLength(1);
-      throw new Error('ROLLBACK');
-    })).rejects.toThrow('ROLLBACK');
+    const f = await createActiveQualificationPackage(db);
+    const person = await db.person.create({ data: { legalName: 'Package fixture purchaser', status: 'EFFECTIVE' } });
+    const read: any = await new PackageConfigService(db as any).checkoutData(
+      db as any,
+      person.personId,
+      { packageVersionId: f.version.packageProfileVersionId, selections: [{ productRuleProfileId: f.rule.productRuleProfileId, quantity: 1 }] },
+      new Date(),
+    );
+    expect(read.version.status).toBe('ACTIVE');
+    expect(read.selections).toHaveLength(1);
   });
 });
