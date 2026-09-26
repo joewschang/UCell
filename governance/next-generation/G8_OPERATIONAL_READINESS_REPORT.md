@@ -38,3 +38,6 @@ Formal LINE/LIFF and Entra credentials remain `OPERATIONAL_CREDENTIAL_PENDING`; 
 | AUDIT_SEARCH / AUDIT_RBAC | PASS (implementation evidence) | RBAC-protected Admin audit search exists; final Stage verification remains required. |
 
 **G8 OPERATIONAL_READINESS = NOT_YET_PASS.** The explicit `RPO_RTO=DECISION_REQUIRED` and independent-source/restore/monitoring evidence prevent a G8 pass. Independent actionable work continues.
+
+| APPEND_ONLY_AUDIT | PASS (isolated DB) | Database trigger rejects audit rewrite/delete; isolated persistence evidence is recorded. |
+| PII_MINIMIZATION | PASS (focused test) | Audit service redacts sensitive fields and records hashes/field names instead. |
