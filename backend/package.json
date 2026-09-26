@@ -39,6 +39,7 @@
     "g8:stage:migration87:precheck": "node scripts/g8-stage-migration87-recovery.mjs precheck",
     "g8:stage:migration87:recover": "node scripts/g8-stage-migration87-recovery.mjs recover",
     "g8:stage:restore:verify": "node scripts/g8-stage-restore-verify.mjs",
+    "g8:stage:role-grant-audit": "node scripts/g8-stage-role-grant-audit.mjs",
     "source:preflight": "node scripts/source-preflight.mjs",
     "golden:r1b": "node scripts/golden-r1b-regression.mjs",
     "golden:v3:mandatory": "node scripts/v3-mandatory-golden.mjs",
@@ -75,4 +76,5 @@
     "swaggerhub:release:check": "node scripts/openapi-governance.mjs release-check"
   }
 }
+
 
