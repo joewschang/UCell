@@ -1314,3 +1314,204 @@ Add the following mandatory CR-001 Golden evidence:
 - FOUNDER_COMPANY_REPLAY_STABLE = PASS
 
 Any prior CR-001 implementation or fixture that creates positions 1–7 without the LEADER_72000 qualification baseline is incomplete and must be corrected before CR-001 certification.
+
+
+## 20. R1.0B CR-002 — Unified Qualification Enrollment, Product Selection, Subscription & Paper Evidence
+
+**Status:** APPROVED REQUIREMENT / IMPLEMENTATION_PENDING
+**Approved date:** 2026-09-26 (Asia/Taipei)
+**Change ID:** R1.0B-CR-002
+**Implementation timing:** Hold for the current change-batch consolidation; do not implement until explicitly authorized.
+**Relationship:** Must be designed consistently with CR-001 seven-Founder-Company-Ball topology and current Paper/Person/Order/Placement authorities.
+
+### CR2-1 Channels and shared authority
+
+CR-002 establishes one shared qualification/product-selection authority for:
+1. Admin paper fast-enrollment workbench; and
+2. LINE OA / Member mobile enrollment and purchase flow.
+
+Admin and LINE/Member MUST NOT maintain independent package quantities, product eligibility, pricing, PV/BV, subscription rules, or Order semantics.
+
+Both channels must reuse authoritative PackageConfig/Product/Order/Person/Sponsor/Placement services where applicable.
+
+### CR2-2 Qualification package selection quantities
+
+Initial approved selectable qualification package quantities across the controlled five-product pool:
+
+- STARTER / 啟航: total exactly 3 units
+- ELITE / 菁英: total exactly 9 units
+- LEADER / 領袖: total exactly 15 units
+
+Controlled product pool:
+- TIP-363
+- TIP-999
+- TIP-580
+- TIP-696
+- TIP-777
+
+The operator/member selects the quantity of each product. The sum across the five products MUST equal the package-required quantity.
+
+Do not hard-code 3/9/15 independently in Admin or LINE UI. PackageConfig/versioned authority must provide requiredSelectionQty and eligible products.
+
+Unless separately approved, no per-SKU minimum/maximum is implied beyond total package quantity and product eligibility.
+
+### CR2-3 Additional purchase
+
+Additional Purchase is optional and semantically separate from Qualification Package selection.
+
+Order lines must distinguish at least:
+- QUALIFICATION_PACKAGE
+- ADDITIONAL_PURCHASE
+- SUBSCRIPTION
+
+Additional units MUST NOT alter the qualification package's required 3/9/15 count.
+
+Pricing, PV/BV and product rules remain server-authoritative from current SKU/rule configuration; Admin users must not manually invent PV/BV.
+
+### CR2-4 Subscription plans
+
+Approved initial subscription plan selection quantities:
+- QUARTERLY / 季重銷: 2 units
+- SEMI_ANNUAL / 半年重銷: 4 units
+- ANNUAL / 年重銷: 8 units
+
+Subscription product selection uses the same controlled five-product pool unless a versioned subscription rule later narrows eligibility.
+
+The following subscription semantics remain **DECISION_REQUIRED before implementation**:
+- whether 2/4/8 means units per shipment/period or total units across the entire subscription term;
+- whether the selected product mix is fixed for the whole subscription or may be changed for later deliveries;
+- scheduling/cutoff behavior for future subscription deliveries.
+
+Codex MUST NOT infer these rules.
+
+### CR2-5 Admin Paper Fast Enrollment Workbench
+
+The target Admin workbench must support, through one controlled workflow:
+- member/applicant information;
+- existing-Person reuse / duplicate-review safeguards;
+- Sponsor/recommending Ball using public Ball business identifier and server SponsorResolver;
+- placement parent/slot using approved public placement semantics;
+- qualification package selection;
+- five-product quantity detail;
+- optional additional purchase;
+- optional subscription plan and subscription product detail;
+- preview/confirmation;
+- document generation/printing.
+
+CR-001 applies to placement: Founder Company Balls occupy positions 1–7 and normal member placement begins under the approved position-8+ topology rules.
+
+Fast enrollment MUST NOT bypass Person identity, Sponsor, Order, Payment, Placement, privacy or idempotency authority.
+
+### CR2-6 LINE OA / Member mobile selection UX
+
+LINE OA / Member flow must use the same package/subscription validators and Order Core.
+
+Mobile UX should present stepwise selection and quantity controls suitable for touch use.
+
+For qualification package selection:
+- show required total (3/9/15);
+- show selected total;
+- prevent completion while under-selected;
+- prevent qualification allocation above the package total;
+- additional quantities must be explicitly classified as Additional Purchase rather than silently increasing qualification quantity.
+
+For subscription:
+- show selected plan and required product-selection quantity;
+- enforce the authoritative plan configuration.
+
+### CR2-7 Paper document set
+
+Paper enrollment must generate the applicable current-version documents for printing:
+1. Membership Application / 會員申請表
+2. Order Form / 訂購單
+3. Distributor Agreement / 經銷商合約
+
+The Order Form must preserve the confirmed breakdown of:
+- qualification;
+- qualification product selection;
+- additional purchase;
+- subscription plan;
+- subscription product selection;
+- authoritative pricing and other required transaction fields.
+
+Contract/application/order document versions must be captured so the system can identify what content/version was printed at the time.
+
+### CR2-8 Paper evidence policy
+
+**SIGNED PAPER ORIGINAL IS AUTHORITATIVE.**
+
+After system generation:
+- documents are printed;
+- member signs the physical paper originals;
+- the company retains the signed paper records.
+
+Phase-1 CR-002 does **NOT** require:
+- scanning signed documents;
+- uploading signed PDF/images;
+- OCR;
+- signature-image storage;
+- electronic signature capture;
+- PDF digital-signature validation.
+
+The system retains structured print-time/document-version evidence, not the member's signature image.
+
+At minimum retain, where applicable:
+- paperApplicationNo;
+- orderNo;
+- memberNo after authoritative creation;
+- applicant/member snapshot required for the printed document;
+- Sponsor/placement business-reference snapshot;
+- qualification/package/version;
+- product-selection snapshot;
+- additional-purchase snapshot;
+- subscription-plan/product-selection snapshot;
+- pricing/PV/BV/rule snapshot as required by the authoritative document;
+- applicationFormVersion;
+- orderFormVersion;
+- contractVersion;
+- generatedAt/printedAt;
+- generatedBy/printedBy;
+- print batch/reference;
+- paper evidence status.
+
+Recommended paper evidence states:
+- GENERATED
+- PRINTED
+- SIGNED_CONFIRMED
+- FILED
+
+SIGNED_CONFIRMED means an authorized operator confirms receipt of the signed physical paper. It is NOT an electronic-signature verification.
+
+### CR2-9 Paper cross-reference
+
+The three printed documents should carry common business references sufficient for controlled filing/retrieval, such as:
+- paperApplicationNo;
+- orderNo;
+- memberNo when available.
+
+A document barcode/QR may encode a safe business document/application reference for Admin retrieval. It MUST NOT expose internal UUIDs or sensitive identity data.
+
+### CR2-10 Snapshot/version authority
+
+Printed evidence must be reproducible as the historical confirmed business snapshot, not regenerated from today's current Package/Product/Contract rules.
+
+Historical document evidence must therefore reference/version the effective rules and document templates used at generation/confirmation time.
+
+### CR2-11 Scope exclusions
+
+CR-002 does not authorize:
+- a separate Paper economic engine;
+- a separate LINE package engine;
+- direct client authority over Sponsor/Placement;
+- manual Admin PV/BV invention;
+- signed-document image storage;
+- OCR/document AI;
+- electronic signature;
+- Phase-2 AI runtime.
+
+### CR2-12 Cross-layer implementation requirement
+
+When implementation is later authorized, assess/update all affected:
+Definition → Semantic/Core terminology → PackageConfig/Product rules → Subscription rules → Person/Paper → Sponsor/Placement → Order/Payment → API/OpenAPI → DB → Admin → Member/LINE → document templates/snapshots → tests/Golden → GitHub → Google Drive impact.
+
+Current status remains IMPLEMENTATION_PENDING until the change batch is explicitly released for development.
