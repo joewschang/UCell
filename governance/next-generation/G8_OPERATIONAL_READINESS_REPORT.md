@@ -16,7 +16,7 @@ Formal LINE/LIFF and Entra credentials remain `OPERATIONAL_CREDENTIAL_PENDING`; 
 
 | Requirement | Status | Evidence/disposition |
 |---|---|---|
-| SOURCE_RECOVERY | BLOCKED_STORAGE_PERMISSION | Full-ref Git bundle and local bare restore verification PASS, but the approved private Azure Storage destination rejected data-plane upload because the operator lacks `Storage Blob Data Contributor`. See [G8_SOURCE_RECOVERY_BLOCKER_20260926.md](G8_SOURCE_RECOVERY_BLOCKER_20260926.md). |
+| SOURCE_RECOVERY | BLOCKED_STORAGE_PERMISSION | Full-ref Git bundle and isolated bare restore verification PASS at `e3c954b`; Azure AD data-plane upload to the approved private destination was denied. The exact remaining prerequisite is `Storage Blob Data Contributor` for the recovery operator. See [G8 source recovery execution](G8_SOURCE_RECOVERY_EXECUTION_20260926.md). |
 | DB_BACKUP_RESTORE | PASS (Stage isolated drill) | A selected Stage PITR point was restored to a separate server and verified at its legitimate pre-87 86-migration point with original append-only audit protection. The target was deleted after verification. See [G8_STAGE_PITR_RESTORE_DRILL_20260926.md](G8_STAGE_PITR_RESTORE_DRILL_20260926.md). Production policy/drill remain later G9 work. |
 | MIGRATION_REPRODUCIBILITY | PASS (Stage) | Stage migration 87 reconciliation and post-deploy `migrate deploy` passed; Stage is current at 87 migrations. |
 | G8_STAGE_AUDIT_DEPLOYMENT | PASS (Stage) | Approved append-safe Stage recovery, postcondition verification, audit integrity checks, ledger reconciliation, normal migration deploy and digest-pinned API/Worker health are PASS. See [G8_STAGE_MIGRATION_87_RECOVERY_EXECUTION_20260926.md](G8_STAGE_MIGRATION_87_RECOVERY_EXECUTION_20260926.md). |
@@ -45,5 +45,4 @@ Formal LINE/LIFF and Entra credentials remain `OPERATIONAL_CREDENTIAL_PENDING`; 
 
 See [G8 final blocker matrix](G8_FINAL_BLOCKER_MATRIX_20260926.md) for the final independently-actionable disposition.
 
-**G8 OPERATIONAL_READINESS = NOT_YET_PASS.** The explicit `RPO_RTO=DECISION_REQUIRED` and independent-source/restore/monitoring evidence prevent a G8 pass. Independent actionable work continues.
-
+**G8 OPERATIONAL_READINESS = NOT_YET_PASS.** RPO/RTO capability is PASS. Mandatory external closure remains: controlled human Member BOLA UAT, Blob data-plane write permission, Action Group receivers with delivery proof, and formal LINE/Entra Stage credentials. No Production action is authorized.
