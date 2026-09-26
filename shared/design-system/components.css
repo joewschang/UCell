@@ -38,3 +38,8 @@
 .uc-member-identity .uc-qualification-emblem>svg{width:44px;height:44px;border-radius:14px}
 .uc-member-identity .uc-qualification-emblem{color:inherit}
 @media (prefers-reduced-motion:no-preference){.uc-emblem>svg{transition:transform var(--ucell-transition-fast),box-shadow var(--ucell-transition-fast)}.uc-emblem:hover>svg{transform:translateY(-2px) scale(1.03)}}
+
+
+[data-app=member] nav[aria-label="主要功能"] a{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px}
+[data-app=member] nav[aria-label="主要功能"] .uc-icon{width:21px;height:21px}
+[data-app=member] nav[aria-label="主要功能"] a.active .uc-icon{filter:drop-shadow(0 3px 7px color-mix(in srgb,var(--ucell-primary) 24%,transparent))}
