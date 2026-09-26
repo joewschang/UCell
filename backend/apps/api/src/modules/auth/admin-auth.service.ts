@@ -10,6 +10,15 @@ import { IdentityTokenService } from './identity-token.service';
 export class AdminAuthService{
   constructor(private readonly prisma:PrismaService,private readonly entra:EntraTokenVerifierService,private readonly sessions:IdentityTokenService,private readonly config:ConfigService,private readonly audit:AuditService){}
 
+  private async recordFailedLogin(input:{subjectPresent:boolean;reasonCode:string;requestId:string;correlationId:string}){
+    try{
+      await this.prisma.$transaction(tx=>this.audit.write(tx,{actorType:'SYSTEM',action:'LOGIN_FAILED',eventCode:'LOGIN_FAILED',entityType:'AdminAuthentication',afterData:{provider:'ENTRA',subjectPresent:input.subjectPresent},reasonCode:input.reasonCode,result:'DENIED',severity:'WARNING',requestId:input.requestId,correlationId:input.correlationId}));
+    }catch{
+      // Authentication remains fail-closed even when the append-only audit store is unavailable.
+      // The caller's original controlled authentication error must remain observable.
+    }
+  }
+
   async exchangeEntra(idToken:string,requestId=randomUUID(),correlationId=randomUUID()){
     let subject='UNVERIFIED';
     try{
@@ -24,7 +33,7 @@ export class AdminAuthService{
       return {...issued,user:{personId:grant.personId,legalName:grant.person.legalName,preferredName:grant.person.preferredName,role:grant.roleCode,provider:'ENTRA'}};
     }catch(error){
       const code=error && typeof error==='object' && 'getResponse' in error ? String(((error as any).getResponse()?.code) ?? 'AUTH_LOGIN_FAILED') : 'AUTH_LOGIN_FAILED';
-      await this.prisma.$transaction(tx=>this.audit.write(tx,{actorType:'SYSTEM',action:'LOGIN_FAILED',eventCode:'LOGIN_FAILED',entityType:'AdminAuthentication',afterData:{provider:'ENTRA',subjectPresent:subject!=='UNVERIFIED'},reasonCode:code,result:'DENIED',severity:'WARNING',requestId,correlationId}));
+      await this.recordFailedLogin({subjectPresent:subject!=='UNVERIFIED',reasonCode:code,requestId,correlationId});
       throw error;
     }
   }

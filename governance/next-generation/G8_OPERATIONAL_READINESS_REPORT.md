@@ -19,7 +19,7 @@ Formal LINE/LIFF and Entra credentials remain `OPERATIONAL_CREDENTIAL_PENDING`; 
 | MIGRATION_REPRODUCIBILITY | PASS (local candidate) | Frozen baseline has 86 migrations; current G8 candidate has 87 forward-only migrations and fresh isolated DB evidence. Stage remains on the prior 86-migration UAT revision until controlled G8 deployment. |
 | EVIDENCE_STORAGE_RECOVERY | PENDING | Storage inventory/retention and restored-object reference check must be executed. |
 | ENVIRONMENT_INVENTORY | IN_PROGRESS | Read-only `deployment/collect-environment-inventory.ps1` records non-secret environment metadata. Production inventory remains required. |
-| SECRET_RECOVERY | IN_PROGRESS | Stage uses Key Vault and managed identity. Owner/rotation/recovery metadata remains to be recorded without secret values. |
+| SECRET_RECOVERY | IN_PROGRESS | Non-secret Stage secret/service-identity inventory is recorded in [SECRET_SERVICE_IDENTITY_INVENTORY.md](../../deployment/SECRET_SERVICE_IDENTITY_INVENTORY.md). Named primary/backup owners, rotation cadence and controlled recovery exercise remain external operational work. |
 | MINIMUM_MONITORING | EXTERNAL_OWNER_REQUIRED | Stage has Application Insights/Log Analytics and healthy revision inventory; API health verifies database connectivity and structured errors are queryable. The sole Stage Action Group has zero delivery receivers, so alertability cannot PASS until an operational owner/receiver is approved. Evidence: [stage-monitoring-readiness-20260926.json](evidence/stage-monitoring-readiness-20260926.json). |
 | OPERATIONS_RUNBOOKS | IN_PROGRESS | `deployment/OPERATIONS_RUNBOOK.md` covers required recovery classes; controlled drill evidence remains required. |
 | INCIDENT_RELEASE_ROLLBACK_RUNBOOKS | IN_PROGRESS | Rollback and incident sections are present; owner/contact and drill evidence remain required. |
@@ -34,7 +34,7 @@ Formal LINE/LIFF and Entra credentials remain `OPERATIONAL_CREDENTIAL_PENDING`; 
 | PRODUCTION_AUTO_MUTATION | PASS | No runtime path is authorized to mutate Production. |
 | AUDIT_EVENT_CORE | PASS (isolated DB) | Migration `20260926110000_g8_audit_event_core` adds event, environment, trace, result, privacy/retention, hash and evidence fields; isolated persistence test PASS. |
 | HIGH_RISK_WRITE_AUDIT | PARTIAL | Domain audit facts exist and now receive controlled event/trace fields; final coverage matrix and Stage exercise remain required. |
-| SECURITY_EVENT_AUDIT | PARTIAL | Explicit Admin `LOGIN_SUCCEEDED`, `LOGIN_FAILED`, `LOGOUT`, LINE/security/session and controlled HTTP failure events are recorded. Admin authentication/role guards now persist `ACCESS_DENIED`; Member BOLA and role-change event coverage plus Stage exercise remain required. |
+| SECURITY_EVENT_AUDIT | PARTIAL | Explicit Admin `LOGIN_SUCCEEDED`, `LOGIN_FAILED`, `LOGOUT`, LINE/security/session and controlled HTTP failure events are recorded. A failed audit write cannot mask the original controlled Admin login denial. Admin authentication/role guards now persist `ACCESS_DENIED`; Member BOLA and role-change event coverage plus Stage exercise remain required. |
 | AUDIT_SEARCH / AUDIT_RBAC | PASS (implementation evidence) | RBAC-protected Admin audit search exists; final Stage verification remains required. |
 | APPEND_ONLY_AUDIT | PASS (isolated DB) | Database trigger rejects audit rewrite/delete; isolated persistence evidence is recorded. |
 | PII_MINIMIZATION | PASS (focused test) | Audit service redacts sensitive fields and records hashes/field names instead. |

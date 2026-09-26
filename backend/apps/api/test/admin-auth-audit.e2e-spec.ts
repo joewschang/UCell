@@ -14,4 +14,8 @@ describe('G8 Admin authentication audit evidence',()=>{
   await expect(new AdminAuthService(f.prisma as any,f.entra as any,f.sessions as any,f.config as any,audit as any).exchangeEntra('token','44444444-4444-4444-8444-444444444444','33333333-3333-4333-8333-333333333333')).rejects.toBeInstanceOf(UnauthorizedException);
   expect(audit.write).toHaveBeenCalledWith(f.tx,expect.objectContaining({action:'LOGIN_FAILED',result:'DENIED',reasonCode:'AUTH_TOKEN_INVALID'}));
  });
+ it('preserves the original controlled denial when audit persistence is unavailable',async()=>{
+  const f=base();f.entra.verify.mockRejectedValue(new UnauthorizedException({code:'AUTH_TOKEN_INVALID'}));f.prisma.$transaction.mockRejectedValue(new Error('audit database unavailable'));
+  await expect(new AdminAuthService(f.prisma as any,f.entra as any,f.sessions as any,f.config as any,audit as any).exchangeEntra('token','44444444-4444-4444-8444-444444444444','33333333-3333-4333-8333-333333333333')).rejects.toMatchObject({response:{code:'AUTH_TOKEN_INVALID'}});
+ });
 });
