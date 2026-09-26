@@ -5,6 +5,7 @@ param(
   [string]$ResourceGroup='rg-ucell-stage',
   [string]$Acr='ucellstageacr5mafbbsq33mgu',
   [Parameter(Mandatory)][ValidatePattern('^[a-z0-9][a-z0-9._-]{0,127}$')][string]$ImageTag,
+  [ValidateSet('Local','Acr')][string]$ContainerBuildMode='Local',
   [string]$OutputPath=''
 )
 $ErrorActionPreference='Stop'
@@ -29,10 +30,17 @@ $api=Require-ExistingSecretReference 'ucell-stage-api' 'DATABASE_URL'
 [void](Require-ExistingSecretReference 'ucell-stage-worker' 'PII_ENCRYPTION_KEY')
 [void](Require-ExistingSecretReference 'ucell-stage-migrate' 'DATABASE_URL' -Job)
 
-foreach($item in @(@{repository='ucell-backend';dockerfile='deployment/Dockerfile.backend'},@{repository='ucell-worker';dockerfile='deployment/Dockerfile.worker'})){
-  Invoke-Az @('acr','build','--registry',$Acr,'--image',"$($item.repository):$ImageTag",'--file',$item.dockerfile,'.','--no-logs')|Out-Null
-}
 $server=(Invoke-Az @('acr','show','--name',$Acr,'--query','loginServer','-o','tsv')).Trim()
+foreach($item in @(@{repository='ucell-backend';dockerfile='deployment/Dockerfile.backend'},@{repository='ucell-worker';dockerfile='deployment/Dockerfile.worker'})){
+  if($ContainerBuildMode -eq 'Acr'){
+    Invoke-Az @('acr','build','--registry',$Acr,'--image',"$($item.repository):$ImageTag",'--file',$item.dockerfile,'.','--no-logs')|Out-Null
+  }else{
+    & docker build -t "$server/$($item.repository):$ImageTag" -f $item.dockerfile .
+    if($LASTEXITCODE -ne 0){throw "Local Docker build failed for $($item.repository)."}
+    & docker push "$server/$($item.repository):$ImageTag"
+    if($LASTEXITCODE -ne 0){throw "ACR push failed for $($item.repository)."}
+  }
+}
 function Resolve-Digest([string]$Repository){
   $digest=(Invoke-Az @('acr','repository','show','--name',$Acr,'--image',"${Repository}:$ImageTag",'--query','digest','-o','tsv')).Trim()
   if($digest -notmatch '^sha256:[0-9a-f]{64}$'){throw "Invalid digest for ${Repository}:$ImageTag"}
