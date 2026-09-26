@@ -2204,3 +2204,290 @@ Before completion, verify:
 This is an approved UI foundation requirement within R1.0B-CR-BATCH-01.
 
 Current status remains **APPROVED DESIGN / IMPLEMENTATION_PENDING** until the integrated batch is explicitly released for implementation.
+
+
+## 24. R1.0B CR-BATCH-01 UI Foundation — Internationalization (i18n) Architecture
+
+**Status:** APPROVED DESIGN / IMPLEMENTATION_PENDING
+**Approved date:** 2026-09-26 (Asia/Taipei)
+**Scope:** Admin, Membership/Member, LINE/LIFF, Paper Workbench, commerce, fulfillment/scanner, audit/operations and future localized content/document surfaces.
+**Implementation timing:** Part of R1.0B-CR-BATCH-01; do not implement until the integrated batch is explicitly released for development.
+
+### I18N-1 Strategy
+
+UCell adopts **zh-TW First / i18n Ready** architecture.
+
+Current required published/default locale:
+- `zh-TW` — Traditional Chinese, complete and authoritative for normal Phase-1/CR-BATCH-01 UI.
+
+Future planned locales:
+- `id-ID` — Indonesian;
+- `en-US` / approved English locale.
+
+Future locale planning does not require complete Indonesian/English translation in the current batch unless separately authorized.
+
+### I18N-2 Canonical codes versus presentation
+
+DB, API, domain engines, Golden and integration contracts continue to use stable canonical codes.
+
+Do NOT store translated display labels as domain authority.
+
+Examples:
+- `LEADER`
+- `PLACEMENT_PENDING`
+- `EFFECTIVE`
+- `SHIPPED`
+- `RETURNED`
+- `QUALIFICATION_PACKAGE`
+
+Presentation resolves canonical code/message key through locale resources.
+
+Example:
+`PLACEMENT_PENDING`
+→ zh-TW: `待安置`
+→ future id-ID/en-US localized label.
+
+### I18N-3 No hard-coded UI prose
+
+New/modified UI components should not scatter Traditional Chinese strings directly through component logic.
+
+Use a shared message/label authority, conceptually:
+`t("order.confirm")`
+rather than embedding the visible text as component business logic.
+
+Traditional Chinese remains the visible result for the current published locale.
+
+Implementation may choose the repository-compatible i18n library/framework after technical assessment; this design does not authorize unnecessary framework replacement.
+
+### I18N-4 Localization layers
+
+UCell must distinguish three localization classes:
+
+**A. Static UI Messages**
+- navigation;
+- buttons;
+- labels;
+- validation;
+- status labels;
+- dialogs;
+- operational instructions.
+
+Stored in frontend/shared locale resources.
+
+**B. Dynamic Business Content**
+Examples:
+- product display name/description;
+- announcements;
+- managed content.
+
+Future multilingual content should use versioned/localized content data rather than requiring frontend redeploy for every content change where appropriate.
+
+**C. Legal / Controlled Documents**
+Examples:
+- Membership Application;
+- Order Form;
+- Distributor Agreement.
+
+Legal/controlled localized documents are independently versioned templates by document type + locale + version/effective period.
+
+A generic UI translation MUST NOT silently become a legally approved translated contract.
+
+### I18N-5 Shared terminology dictionary
+
+Maintain a shared UCell domain terminology/message authority.
+
+The same canonical concept must not receive unrelated translations in Admin, Member, LINE, Paper and Fulfillment surfaces.
+
+High-governance terms include:
+- Member / 會員;
+- Sponsor Ball / 推薦球;
+- Placement / 安置;
+- Ball Number / 球號;
+- Founder Company Ball / 創始公司球;
+- Qualification / 會員資格;
+- Starter / 啟航;
+- Elite / 菁英;
+- Leader / 領袖;
+- Reservoir B / 水庫B;
+- Qualification Package / 資格套組;
+- Additional Purchase / 加購商品;
+- Subscription / 重銷訂閱;
+- Fulfillment / 出貨履行/approved Chinese UI term;
+- Lot/Batch / 批號;
+- Serial Number / 商品序號;
+- Audit / 稽核紀錄;
+- Trace Reference / 追蹤編號.
+
+Translation of governed business/economic/legal terminology into future locales requires business review before publication.
+
+### I18N-6 Locale resolver
+
+Preferred locale resolution priority:
+
+1. authenticated user's explicit locale preference;
+2. account/user stored preference;
+3. supported LINE/LIFF locale hint where available;
+4. browser locale;
+5. `zh-TW` fallback.
+
+A host/browser locale is an initial/fallback signal and MUST NOT repeatedly override an authenticated user's explicit preference.
+
+If a requested locale is not published/available, fall back safely to `zh-TW`.
+
+### I18N-7 User preference separation
+
+Locale and Theme are independent presentation preferences.
+
+Conceptually:
+
+`locale = zh-TW | future id-ID | future en-US`
+
+`theme = SYSTEM | LIGHT | DARK`
+
+Do not place locale/theme into Person identity, Qualification, Ball, Order economic or other Business Core state.
+
+### I18N-8 Locale availability
+
+Having translation resources does not automatically make a locale publicly available.
+
+Maintain an approved locale-availability policy by surface.
+
+Initial:
+- Admin: zh-TW ENABLED;
+- Membership/LINE: zh-TW ENABLED;
+- id-ID/en-US: FUTURE / disabled until reviewed and published.
+
+This allows translations to be prepared/reviewed without accidentally exposing incomplete locales.
+
+### I18N-9 Formatting
+
+Use locale-aware formatting for presentation of:
+- dates/times;
+- numbers;
+- percentages;
+- currency display where applicable.
+
+Locale and currency are separate concepts.
+
+Do not infer transaction currency solely from UI language.
+
+Use platform-standard locale formatting facilities where practical (for example Intl APIs) instead of hand-built date/number strings.
+
+Canonical stored timestamps/numeric values remain independent of presentation locale.
+
+### I18N-10 Errors and diagnostics
+
+Backend/API should provide stable error/status codes and safe correlation/trace references.
+
+Normal UI resolves user-facing messages through locale resources.
+
+Do not expose raw English exception messages, database errors, stack traces or internal enum codes to ordinary users.
+
+Technical diagnostics remain in protected logs/audit/diagnostic evidence.
+
+### I18N-11 LINE/LIFF
+
+LINE/LIFF locale hints may initialize/fallback locale resolution, but:
+- Member explicit preference wins;
+- missing/unsupported LINE locale must not break Member functionality;
+- LINE does not get a separate translation architecture;
+- LINE/Member uses the shared UCell message/terminology authority.
+
+### I18N-12 Legal/document localization
+
+For future multilingual legal documents, model templates conceptually by:
+- documentType;
+- locale;
+- version;
+- effectiveFrom/effectiveTo where applicable;
+- approval/publication status.
+
+Example:
+`DISTRIBUTOR_AGREEMENT / zh-TW / vX`
+and a future Indonesian/English version are separate controlled legal artifacts.
+
+CR-002 paper snapshot/version rules remain authoritative.
+
+### I18N-13 Translation lifecycle
+
+Future governed translations, especially economic/product/legal content, should support a review lifecycle such as:
+- DRAFT
+- REVIEWED
+- APPROVED
+- PUBLISHED
+
+AI/LLM may assist future translation drafting only when separately authorized; AI-generated translations MUST NOT automatically publish governed economic/legal content.
+
+### I18N-14 Missing-key and fallback governance
+
+Implementation must provide deterministic missing-key behavior.
+
+Normal Production UI must not expose raw keys such as `fulfillment.packVerified`.
+
+Prefer development/CI checks that detect:
+- missing required zh-TW keys;
+- orphaned/invalid message references;
+- duplicate/conflicting governed terminology where feasible.
+
+zh-TW completeness is a release requirement for enabled CR-BATCH-01 UI surfaces.
+
+### I18N-15 Theme integration
+
+i18n and Adaptive Theme are orthogonal.
+
+Required combinations must remain functional, especially:
+- zh-TW + LIGHT;
+- zh-TW + DARK;
+- zh-TW + SYSTEM.
+
+Future locales must use the same Theme system.
+
+Verify Chinese typography, wrapping, spacing, button width, tables, dialogs and mobile layouts under all supported theme modes.
+
+### I18N-16 Accessibility and responsive layout
+
+Localization must not compromise accessibility.
+
+Components should tolerate text expansion without clipping or relying on fixed English-width assumptions.
+
+Member/LINE mobile flows should prioritize concise plain-language Traditional Chinese while preserving accessible labels and semantics.
+
+### I18N-17 Implementation sequencing
+
+When R1.0B-CR-BATCH-01 is explicitly released:
+
+1. establish shared i18n/message/terminology foundation;
+2. migrate affected Admin/Member existing visible strings to the shared authority;
+3. ensure zh-TW completeness;
+4. integrate Adaptive Theme;
+5. build new Paper/LINE/Fulfillment UI using the shared foundations from inception.
+
+Do not postpone i18n extraction until after the new batch UI is complete.
+
+### I18N-18 Required verification
+
+Before completion:
+- Admin enabled UI = zh-TW complete;
+- Member enabled UI = zh-TW complete;
+- LINE/LIFF enabled flow = zh-TW complete;
+- Paper Workbench = zh-TW complete;
+- product/package/subscription selection = zh-TW complete;
+- Fulfillment/serialized scanner = zh-TW complete;
+- no raw internal English enum/code appears as ordinary UI;
+- message-key/fallback tests PASS;
+- date/number/currency formatting tests PASS where applicable;
+- explicit locale preference persistence PASS;
+- locale fallback PASS;
+- Theme × locale PASS;
+- mobile Chinese layout PASS;
+- affected production builds PASS;
+- Business Core/API canonical-code behavior unchanged.
+
+### I18N-19 Scope control
+
+This establishes the Internationalization Foundation, not a requirement to publish a multilingual product immediately.
+
+Current release requirement:
+**Traditional Chinese complete; architecture ready for future Indonesian and English.**
+
+Current status remains **APPROVED DESIGN / IMPLEMENTATION_PENDING** until R1.0B-CR-BATCH-01 is explicitly released for implementation.
