@@ -1,12 +1,12 @@
 import { Link, NavLink, useLocation } from 'react-router-dom';
-import { MemberBottomNav } from '@ucell/design-system';
+import { MemberBottomNav, UCellIcon, type UCellIconName } from '@ucell/design-system';
 
-export const memberSections = [
-  { label: '首頁', to: '/', paths: ['/'] },
-  { label: '組織', to: '/organization', paths: ['/organization'] },
-  { label: '收益', to: '/bonuses', paths: ['/bonuses', '/performance'] },
-  { label: '商城', to: '/shop', paths: ['/shop', '/orders'] },
-  { label: '我的', to: '/me', paths: ['/me', '/content', '/notifications'] },
+export const memberSections: Array<{label:string;to:string;paths:string[];icon:UCellIconName}> = [
+  { label: '首頁', to: '/', paths: ['/'], icon:'home' },
+  { label: '組織', to: '/organization', paths: ['/organization'], icon:'organization' },
+  { label: '收益', to: '/bonuses', paths: ['/bonuses', '/performance'], icon:'income' },
+  { label: '商城', to: '/shop', paths: ['/shop', '/orders'], icon:'shop' },
+  { label: '我的', to: '/me', paths: ['/me', '/content', '/notifications'], icon:'me' },
 ];
 
 export function sectionMatches(pathname: string, paths: string[]) {
@@ -17,7 +17,7 @@ export function MemberNavigation() {
   const { pathname } = useLocation();
   return <MemberBottomNav>{memberSections.map(section => {
     const active = sectionMatches(pathname, section.paths);
-    return <Link key={section.to} to={section.to} className={active ? 'active' : undefined} aria-current={active ? 'page' : undefined}>{section.label}</Link>;
+    return <Link key={section.to} to={section.to} className={active ? 'active' : undefined} aria-current={active ? 'page' : undefined}><UCellIcon name={section.icon}/><span>{section.label}</span></Link>;
   })}</MemberBottomNav>;
 }
 
