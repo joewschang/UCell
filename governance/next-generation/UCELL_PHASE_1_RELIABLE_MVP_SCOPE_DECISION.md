@@ -1083,3 +1083,133 @@ Required before the revised R1.0B baseline can be frozen:
 - isolated RC/full regression according to impact.
 
 Stage deployment requires controlled authorization and a recovery point. Production remains NOT AUTHORIZED until the revised baseline completes the normal G8/G9 governance path.
+
+
+## 18. R1.0B CR-001 Amendment A — Company Ball Active & Reservoir-B Economic Routing
+
+**Status:** BOARD-APPROVED / AUTHORITATIVE / SUPERSEDING ECONOMIC RULE
+**Approved date:** 2026-09-26 (Asia/Taipei)
+**Change ID:** R1.0B-CR-001-A
+**Scope:** All Company-owned Balls, including the seven bootstrap Balls at positions 1–7 and Company Balls at any other binary positions.
+
+This amendment supersedes any conflicting language in CR-001, especially CR1-3 statements that Company bootstrap Balls do not participate in Award/economic entitlement.
+
+### CR1A-1 Company Ball Active authority
+
+Every Company-owned Ball is **ALWAYS_ACTIVE** for all approved bonus/award eligibility calculations.
+
+This applies to:
+- the seven Company bootstrap/reservoir Balls at binary positions 1–7; and
+- any Company-owned Ball located at other valid binary positions.
+
+Company Ball Active eligibility does not depend on member repurchase, rolling-30-day consumption, member Active qualification, or other member-maintenance conditions.
+
+A Company Ball is not a natural-person/member Active record merely because it is ALWAYS_ACTIVE. Person/member identity semantics remain separate.
+
+### CR1A-2 Award participation
+
+Company-owned Balls participate in the approved bonus distribution/award calculations wherever the applicable R1.0B award rule uses Ball/tree eligibility.
+
+They MUST NOT be filtered out merely because ownership is Company rather than Member.
+
+The seven bootstrap Balls therefore are structural nodes **and** eligible Company economic recipients under the approved award rules.
+
+This amendment does not by itself create new award formulas, rates, generations, pools, PV/BV generation rules, or traversal rules. Existing approved R1.0B calculation semantics remain authoritative except that Company Balls are always Active and eligible to receive applicable Awards.
+
+### CR1A-3 Reservoir B routing
+
+All monetary/economic Award results attributable to any Company-owned Ball MUST route to **Reservoir B / 水庫B** as the economic beneficiary/destination.
+
+Required invariant:
+
+`Company-owned Ball Award → Reservoir B`
+
+The Award engine MUST preserve source evidence sufficient to identify:
+- source Company Ball;
+- award type;
+- calculation period/event;
+- theoretical/final amount as applicable;
+- Reservoir B as beneficiary/destination;
+- trace/audit/economic evidence.
+
+Company Ball Awards MUST NOT create a personal member payable or be paid to a synthetic/bootstrap Person.
+
+### CR1A-4 Identity and accounting separation
+
+The system MUST distinguish:
+- Ball ownership = COMPANY;
+- Active eligibility = ALWAYS_ACTIVE;
+- Award source = Company Ball;
+- economic destination/beneficiary = Reservoir B.
+
+Do not model this by pretending the Company Ball is an ordinary member or by assigning a fake member consumption state.
+
+Reservoir B routing must use the approved company/reservoir accounting authority and must remain auditable.
+
+### CR1A-5 Volume-generation boundary
+
+This amendment authorizes Company Balls to be always Active and to participate as Award recipients.
+
+It does **not** independently authorize synthetic PV/BV/GPV/RPV/EPV production merely from the existence of a Company Ball.
+
+Any volume entering award calculations must still originate from the existing approved transaction/volume rules.
+
+If an existing award formula uses descendant/team volume, Company Balls may receive the resulting applicable Award under the normal formula; their existence alone does not manufacture volume.
+
+### CR1A-6 Placement and privacy unchanged
+
+CR-001 topology rules remain unchanged:
+- positions 1–7 are Company-only;
+- first member-eligible position is 8;
+- Company Balls may also exist at other valid positions under approved Company placement rules;
+- ballNo remains opaque;
+- binaryPositionNo/binaryPath remain topology authority;
+- protected bootstrap/reservoir topology remains hidden from normal Member projections.
+
+### CR1A-7 Required implementation impact
+
+CR-001 implementation MUST additionally inspect/update:
+- Active eligibility resolver;
+- Ball owner-type policy;
+- award recipient eligibility;
+- Binary/Matching/Equal-level/Global/Fund calculations as applicable;
+- payable/settlement routing;
+- Reservoir B ledger/accounting;
+- Explain/read models;
+- Admin economic evidence;
+- DB constraints/views/functions;
+- Golden/economic replay;
+- audit/trace evidence;
+- Stage reseed/UAT data.
+
+Do not hard-code Reservoir B routing separately in each award formula when a common authoritative beneficiary-routing layer can enforce it safely.
+
+### CR1A-8 Mandatory Golden evidence
+
+Replace conflicting CR1-8 economic-isolation expectations with:
+
+- COMPANY_BALL_ALWAYS_ACTIVE = PASS
+- BOOTSTRAP_1_TO_7_ALWAYS_ACTIVE = PASS
+- OTHER_COMPANY_BALL_ALWAYS_ACTIVE = PASS
+- COMPANY_BALL_PARTICIPATES_APPLICABLE_AWARDS = PASS
+- COMPANY_BALL_AWARD_ROUTES_RESERVOIR_B = PASS
+- COMPANY_BALL_NO_PERSONAL_MEMBER_PAYABLE = PASS
+- COMPANY_BALL_EXISTENCE_DOES_NOT_SYNTHESIZE_VOLUME = PASS
+- RESERVOIR_B_ROUTING_IDEMPOTENT = PASS
+- RESERVOIR_B_ROUTING_REPLAY_STABLE = PASS
+- COMPANY_BALL_AWARD_EXPLAIN_AUDIT = PASS
+
+The following prior CR1-8 expectations are explicitly **SUPERSEDED and MUST NOT be implemented**:
+- COMPANY_BOOTSTRAP_NO_PV_BV, to the extent it was interpreted as excluding Company Balls from award participation; the correct rule is no synthetic volume generation from mere existence.
+- COMPANY_BOOTSTRAP_NO_AWARD.
+- any test asserting Company Balls are economically ineligible solely because they are Company-owned.
+
+### CR1A-9 Re-certification consequence
+
+Any CR-001 implementation/test work based on the superseded economic-isolation assumption MUST be corrected before certification.
+
+Re-certification must prove both:
+1. seven-Company-Ball topology / member starts at position 8; and
+2. all Company Balls are ALWAYS_ACTIVE, participate in applicable Awards, and route resulting Company economic benefit to Reservoir B.
+
+Production remains NOT AUTHORIZED until the revised CR-001-A behavior completes Local and Stage re-certification.
