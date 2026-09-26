@@ -2491,3 +2491,136 @@ Current release requirement:
 **Traditional Chinese complete; architecture ready for future Indonesian and English.**
 
 Current status remains **APPROVED DESIGN / IMPLEMENTATION_PENDING** until R1.0B-CR-BATCH-01 is explicitly released for implementation.
+
+
+## 25. R1.0B CR-BATCH-01 UI Foundation — Channel Localization Simplification
+
+**Status:** APPROVED DESIGN / SUPERSEDING WHERE CONFLICTING / IMPLEMENTATION_PENDING
+**Approved date:** 2026-09-26 (Asia/Taipei)
+**Scope:** Clarifies and simplifies Sections 23–24 for Admin versus customer/member-facing channels.
+
+### CLS-1 Guiding principle
+
+UCell does NOT require every current and future frontend channel to share one centralized UI/i18n runtime.
+
+The shared authority across channels is:
+- stable backend/API canonical codes and business data;
+- stable business identifiers;
+- approved domain terminology/meaning;
+- security/privacy/business rules.
+
+Presentation implementation may differ by channel and region.
+
+### CLS-2 Admin
+
+The Admin management frontend SHOULD be designed as a multilingual-capable management application.
+
+Initial required/default locale remains:
+- zh-TW.
+
+Additional Admin locales may be added when operationally required.
+
+Admin should use a maintainable message/label mechanism rather than exposing raw backend enums or scattering uncontrolled visible strings.
+
+Admin Theme may support:
+- 跟隨系統;
+- 淺色模式;
+- 深色模式.
+
+### CLS-3 Customer/member-facing channels
+
+Customer/member-facing presentation is explicitly allowed to use channel-appropriate and region-appropriate design.
+
+This includes current/future:
+- Member Web;
+- WebApp/PWA;
+- LINE OA/LIFF;
+- native mobile APP;
+- WeChat Mini Program;
+- other approved regional digital channels.
+
+These channels do NOT need to share the same frontend framework, CSS system, i18n runtime, navigation pattern, or visual design.
+
+They MAY adapt:
+- language;
+- terminology presentation;
+- information density;
+- navigation;
+- interaction pattern;
+- theme behavior;
+- platform conventions;
+- regional UX;
+- local legal/commerce presentation requirements,
+
+provided that backend/domain authority and approved legal/business meaning are preserved.
+
+### CLS-4 API/domain language neutrality
+
+Backend/API/domain state remains presentation-language neutral.
+
+Canonical values such as:
+- LEADER;
+- PLACEMENT_PENDING;
+- SHIPPED;
+- RETURNED;
+- QUALIFICATION_PACKAGE
+
+remain stable machine/domain codes.
+
+Each frontend channel maps them to its approved user-facing presentation.
+
+Backend MUST NOT force all channels to consume Traditional Chinese display text as domain authority.
+
+### CLS-5 Chinese-first current release
+
+For the current Taiwan-facing Admin and Member/LINE implementation:
+- ordinary visible UI should be Traditional Chinese;
+- raw English internal enum/error/class/database terminology must not be exposed to normal users.
+
+This does not prohibit future localized/regional frontends from using other languages.
+
+### CLS-6 Minimal shared localization contract
+
+Do not build an enterprise-wide translation CMS merely for future possibility.
+
+For the current batch, the minimum shared contract is:
+1. canonical backend/domain codes remain stable;
+2. Admin is multilingual-ready;
+3. current Taiwan-facing UI is Chinese-first;
+4. raw internal codes are mapped to user-friendly labels;
+5. future channels may maintain their own locale resources;
+6. governed legal/business meaning must remain consistent.
+
+Centralized cross-channel message catalogs are optional, not mandatory.
+
+### CLS-7 Theme portability
+
+Adaptive Theme requirements apply where appropriate to the platform.
+
+Admin Web and current Member Web may support SYSTEM/LIGHT/DARK.
+
+Future native APP, LINE, WebApp or WeChat Mini Program may use their platform-native theme mechanisms.
+
+Do not require all channels to share one runtime theme engine.
+
+Shared brand/design guidance may exist without requiring identical technical implementation.
+
+### CLS-8 Regional/legal content
+
+Regional frontend freedom does not allow changing authoritative business rules.
+
+Localized legal documents, regulated product claims, prices/currencies, tax/shipping rules, consent and contractual text must follow the applicable approved regional authority before publication.
+
+A regional UI adaptation must not silently alter Qualification, Sponsor, Placement, Award, Order, Fulfillment or privacy semantics.
+
+### CLS-9 Implementation consequence
+
+When CR-BATCH-01 is released:
+- keep Admin multilingual-ready;
+- make current Admin/Member Taiwan UI Chinese-first;
+- avoid raw internal English codes in ordinary UI;
+- use a practical lightweight localization approach;
+- do not build unused cross-platform localization infrastructure;
+- allow future APP/WebApp/LINE/WeChat implementations to choose appropriate regional presentation architecture.
+
+Sections 23–24 remain useful design guidance, but any requirement implying one mandatory centralized i18n/theme runtime across all future frontend channels is superseded by this simplification.
