@@ -1515,3 +1515,319 @@ When implementation is later authorized, assess/update all affected:
 Definition → Semantic/Core terminology → PackageConfig/Product rules → Subscription rules → Person/Paper → Sponsor/Placement → Order/Payment → API/OpenAPI → DB → Admin → Member/LINE → document templates/snapshots → tests/Golden → GitHub → Google Drive impact.
 
 Current status remains IMPLEMENTATION_PENDING until the change batch is explicitly released for development.
+
+
+## 21. R1.0B CR-BATCH-01 — Membership, Fulfillment & Company-Ball Integrated Change Package
+
+**Status:** BOARD/OWNER-APPROVED REQUIREMENT BATCH / IMPLEMENTATION_PENDING
+**Approved date:** 2026-09-26 (Asia/Taipei)
+**Batch ID:** R1.0B-CR-BATCH-01
+**Implementation timing:** Requirements consolidation first. Do not implement until explicit batch-release authorization.
+**Supersession/relationship:** This batch groups and governs CR-001 (including Amendments A/B), CR-002, and the Serialized Fulfillment / Order-to-Fulfillment / ERP handoff requirement. Existing detailed sections remain authoritative source detail; this section is the integrated change-package control plane.
+
+### B01-1 Integrated scope
+
+This batch contains three coordinated workstreams:
+
+**A. Binary Tree / Company Ball policy**
+- seven Founder Company Balls at positions 1–7 of every Binary Tree;
+- normal member Balls begin at position 8;
+- Founder Company Balls carry LEADER_72000 qualification;
+- all Company-owned Balls are ALWAYS_ACTIVE;
+- all Company-owned Balls participate in applicable approved Awards;
+- Company-owned Ball economic Awards route to Reservoir B;
+- qualification/bootstrap existence alone does not synthesize transaction-derived volume;
+- BallNo remains opaque and topology authority remains binaryPositionNo/binaryPath.
+
+**B. Unified Enrollment / Product Selection / Subscription / Paper Evidence**
+- Admin Paper Fast Enrollment Workbench;
+- LINE OA / Member mobile selection using the same server authority;
+- qualification product selection across TIP-363/TIP-999/TIP-580/TIP-696/TIP-777;
+- STARTER 3, ELITE 9, LEADER 15 exact qualification selection quantities;
+- optional Additional Purchase;
+- QUARTERLY 2, SEMI_ANNUAL 4, ANNUAL 8 subscription selection quantities, with unresolved delivery semantics retained as DECISION_REQUIRED;
+- Membership Application, Order Form and Distributor Agreement printing;
+- signed physical paper original is authoritative;
+- no signed-document scanning/OCR/e-signature requirement;
+- structured historical document/version snapshot retained.
+
+**C. Serialized Fulfillment / Order-to-Fulfillment Projection / ERP Handoff**
+- physical-unit serial authority using the approved PBBBSSSS v1 format;
+- Product → SKU → Lot/Batch → Serialized Unit → Shipment traceability;
+- Business Order preserves why/how the customer selected products;
+- Fulfillment Projection determines what must physically ship now;
+- ERP receives executable SKU/quantity/shipping requirements, not UCell qualification/economic semantics;
+- warehouse scan verification binds actual serialized units to fulfillment/shipment;
+- ERP shipment result is reconciled back to UCell;
+- ERP adapter boundary must support EzTooL initially and preserve future Dynamics 365 BC replacement capability.
+
+### B01-2 Four-layer authority model
+
+The integrated design must preserve four distinct authorities:
+
+1. **Commercial Authority — UCell Order**
+   - member/customer selections;
+   - qualification package;
+   - additional purchase;
+   - subscription;
+   - price/PV/BV/rule snapshots;
+   - business order identity.
+
+2. **Fulfillment Authority — UCell Fulfillment Projection**
+   - which SKU/quantity must ship in a specific fulfillment cycle;
+   - source OrderLine allocation;
+   - ship window;
+   - fulfillment version/status;
+   - ERP handoff identity/idempotency.
+
+3. **Inventory/Warehouse Authority — ERP**
+   - inventory availability;
+   - pick/pack/ship execution;
+   - warehouse/shipment/tracking facts;
+   - ERP-side fulfillment status.
+
+4. **Physical Traceability Authority — Serialized Unit**
+   - exact physical unit/serial shipped;
+   - lot/batch;
+   - serialized lifecycle;
+   - Order/Shipment traceability.
+
+Do not collapse these authorities into a single ERP Order table or a single UCell OrderLine.
+
+### B01-3 Business Order versus Fulfillment
+
+Business OrderLine and FulfillmentLine are different concepts.
+
+Business OrderLine must preserve at least the source purpose:
+- QUALIFICATION_PACKAGE
+- ADDITIONAL_PURCHASE
+- SUBSCRIPTION
+
+Fulfillment Projection may aggregate identical SKU quantities for warehouse execution, but UCell MUST preserve allocation back to the source OrderLines.
+
+Example:
+ERP may receive TIP-580 x6 while UCell preserves:
+- Leader Qualification source x4;
+- Additional Purchase source x2.
+
+This allocation is mandatory for correct return/refund/qualification/economic recovery semantics.
+
+### B01-4 Multi-fulfillment authority
+
+One UCell Order may produce zero, one, or multiple Fulfillment Orders/Shipments.
+
+Supported reasons include:
+- immediate qualification/additional purchase shipment;
+- future subscription cycles;
+- partial/backorder shipment;
+- approved replacement/reshipment;
+- different fulfillment windows/warehouses.
+
+Order MUST NOT be modeled as permanently one-to-one with Shipment.
+
+### B01-5 Fulfillment Projection
+
+A paid/otherwise-authorized UCell Order does not automatically mean every ordered unit ships immediately.
+
+The Fulfillment Projection must convert confirmed commercial semantics into an executable physical request:
+- fulfillmentNo;
+- source orderNo;
+- source OrderLine allocations;
+- SKU;
+- required quantity;
+- fulfillment/ship window;
+- delivery snapshot/reference;
+- status/version;
+- idempotency identity.
+
+Subscription items generate fulfillment according to the approved subscription schedule semantics once those semantics are finalized.
+
+### B01-6 ERP handoff
+
+ERP must not become authoritative for:
+- member qualification;
+- Sponsor/Binary;
+- PV/BV;
+- Award;
+- subscription entitlement semantics;
+- qualification 3/9/15 interpretation.
+
+ERP handoff should contain only the physical/operational facts required for execution, using stable business identifiers such as:
+- fulfillmentNo/externalOrderNo;
+- orderNo reference;
+- SKU;
+- quantity;
+- recipient/delivery reference or approved delivery payload;
+- ship window;
+- warehouse where applicable;
+- idempotency key.
+
+Direct unsupported writes into ERP internal tables are prohibited.
+
+### B01-7 ERP adapter abstraction
+
+Integrate through an ERP Adapter boundary.
+
+Conceptual flow:
+
+UCell Core → Fulfillment Service → ERP Adapter → EzTooL
+
+Future:
+UCell Core → Fulfillment Service → ERP Adapter → Dynamics 365 BC
+
+Changing ERP should not require rewriting qualification/order/economic semantics.
+
+### B01-8 Integration reliability
+
+ERP handoff must use durable integration semantics, preferably an Outbox/Inbox or equivalent governed mechanism.
+
+Required properties:
+- idempotency;
+- retry-safe handoff;
+- no duplicate ERP fulfillment/order caused by timeout/retry;
+- external ERP identity captured;
+- request/result evidence;
+- reconciliation status;
+- exception handling.
+
+A transient ERP/API timeout MUST NOT cause UCell to guess whether a shipment/order exists.
+
+### B01-9 Fulfillment reconciliation
+
+ERP shipment result must be reconciled against the authoritative Fulfillment Projection.
+
+Minimum outcomes:
+- MATCHED;
+- PARTIAL;
+- MISMATCH / FULFILLMENT_EXCEPTION.
+
+UCell Order/Fulfillment must not be marked fully fulfilled merely because ERP reports a generic shipped status.
+
+Actual SKU/quantity/shipment evidence must reconcile.
+
+### B01-10 Fulfillment versioning and corrections
+
+Once an ERP handoff exists, do not silently overwrite historical fulfillment intent.
+
+If an authorized pre-shipment order change requires a new physical request:
+- supersede/cancel the prior Fulfillment version where allowed;
+- create a new version;
+- preserve actor/reason/evidence;
+- reconcile ERP cancellation/update capability.
+
+After pick/pack/ship, corrections must use exception/return/replacement flows rather than historical mutation.
+
+### B01-11 Serialized warehouse verification
+
+The approved serialized-unit rules remain:
+- product code mapping A–E;
+- PBBBSSSS serial format;
+- SKU barcode and Serial barcode are semantically distinct;
+- server-side serial validation is authoritative.
+
+Target warehouse workflow:
+Order/Fulfillment scan → SKU scan → Serial scan → exact quantity verification → PACK_VERIFIED → Shipment.
+
+Wrong SKU, duplicate serial, already-shipped serial, unknown/ineligible/expired/quarantined/recalled serial, and excess quantity fail closed.
+
+Shipment must bind the actual serialized units to Fulfillment/Order allocations.
+
+### B01-12 Returns and economic provenance
+
+Return of a serialized physical unit must be traceable:
+
+Serial → Shipment → FulfillmentLine/Allocation → source OrderLine → linePurpose.
+
+This is required so the system can distinguish, for example:
+- Additional Purchase return;
+- Qualification Package return;
+- Subscription return.
+
+Any resulting qualification/Award/recovery consequence remains governed by the existing authoritative economic/recovery engine, not ERP.
+
+RETURNED serial state must not automatically become AVAILABLE.
+
+### B01-13 Shared product-selection authority
+
+Admin Paper and LINE/Member must use the same versioned Product Selection authority.
+
+Do not duplicate:
+- eligible product pool;
+- 3/9/15 qualification counts;
+- 2/4/8 subscription counts;
+- price/PV/BV rules;
+- Order validation.
+
+Client/UI selection is a proposal; server validation is authoritative.
+
+### B01-14 Paper evidence
+
+The signed physical paper original remains authoritative for paper enrollment.
+
+System retains structured historical print/document snapshots and versions, but no signed image upload/OCR/e-signature is required by this batch.
+
+### B01-15 Subscription decisions still open
+
+Before implementation of subscription fulfillment, the business owner must decide:
+1. whether QUARTERLY 2 / SEMI_ANNUAL 4 / ANNUAL 8 means units per shipment/period or total units for the entire plan term;
+2. whether product mix is fixed at subscription creation or may change for future cycles;
+3. shipment cadence, cutoff/change deadline, skip/pause/cancel rules where applicable.
+
+Until resolved, subscription fulfillment scheduling remains DECISION_REQUIRED.
+
+### B01-16 Test/Stage data authority
+
+Current Local and Stage/UAT data is disposable test data under the prior approved authority.
+
+For this batch, controlled cleanup/reseed/rebuild is allowed where safer than preserving obsolete synthetic topology/order/fulfillment data.
+
+Production remains untouched.
+
+Do not encode destructive Stage cleanup as hidden Production migration behavior.
+
+### B01-17 Cross-layer synchronization
+
+When this batch is explicitly released for implementation, all affected layers must be updated together:
+
+Definition
+→ Semantic/Core terminology
+→ future AI Brain semantic preparation
+→ Package/Product/Subscription
+→ Binary/Company Ball
+→ Person/Paper/Sponsor/Placement
+→ Order/Payment
+→ Fulfillment Projection
+→ Serialized Unit
+→ ERP Adapter
+→ API/OpenAPI
+→ DB/migrations
+→ Admin
+→ Member/LINE
+→ Worker/integration jobs
+→ tests/Golden
+→ audit/trace
+→ GitHub
+→ Google Drive impact/formal documents.
+
+Phase-2 AI/LLM runtime remains out of scope.
+
+### B01-18 Implementation control
+
+CR-001, CR-002, and Serialized Fulfillment/ERP Handoff are now managed as one integrated requirement batch: **R1.0B-CR-BATCH-01**.
+
+Detailed prior CR sections remain source authority and are not deleted.
+
+Do NOT begin implementation merely because the batch is defined.
+
+Current batch status:
+**APPROVED_REQUIREMENTS / CONSOLIDATION_IN_PROGRESS / IMPLEMENTATION_PENDING**
+
+Before development authorization, perform:
+- conflict/inconsistency review across all batch rules;
+- unresolved-decision inventory;
+- complete cross-layer impact matrix;
+- implementation slicing and migration strategy;
+- revised Golden/re-certification plan;
+- Stage reseed/deployment plan.
+
+Only an explicit later instruction to release R1.0B-CR-BATCH-01 for implementation changes this status.
