@@ -1,6 +1,6 @@
-# Phase 1 Stage RC Plan — Ready, Not Deployed
+# Phase 1 Stage RC Plan — Deployed, Preliminary Manual UAT Passed
 
-Target source is frozen tag phase1-local-baseline-20260926 at $base. Stage remains STOP until separately authorized.
+Baseline source was `83947684c5d61c00db510e31fca83fa12e97081e` (`phase1-local-baseline-20260926`). Stage deployment was separately authorized and completed on 2026-09-26 from `6f5e340dc77b0188799a492aefc8cbba24a307ac`; migration and synthetic UAT-seed jobs succeeded, and API/Worker/Admin/Member revisions are healthy and digest-pinned. Preliminary human manual UAT is reported PASS. This plan remains the checklist for controlled scenario evidence; it does not authorize Production.
 
 Prerequisites: approved Stage change window; verified backup and rollback owner; Key Vault references for database, payment/provider, LINE and Entra configuration; no Production credentials; synthetic Stage UAT data; Stage LINE callback/LIFF allow-list confirmation.
 
