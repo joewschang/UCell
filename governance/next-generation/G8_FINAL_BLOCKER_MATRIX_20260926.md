@@ -12,6 +12,7 @@
 | Minimum monitoring alert delivery | DECISION_REQUIRED | Named owner and delivery-capable Action Group receiver are not approved. |
 | RPO/RTO | DECISION_REQUIRED | Candidate RPO <= 1 hour / RTO <= 4 hours are not business-approved values. |
 | LINE/Entra credential drill | BLOCKED_EXTERNAL | Approved Stage credentials, callback configuration and owner are unavailable. |
-| Role/grant change audit exercise | DECISION_REQUIRED | Requires named operator and governed authorization-change evidence; no application role-grant command exists. |
+| Role/grant change audit exercise | PASS | Controlled Stage synthetic immutable grant revoke/replacement/revoke drill recorded privacy-safe grant/change/revoke audit events with actor/target/trace evidence. |
 
 **G8 OPERATIONAL_READINESS = NOT_YET_PASS.** No Production action is authorized.
+
