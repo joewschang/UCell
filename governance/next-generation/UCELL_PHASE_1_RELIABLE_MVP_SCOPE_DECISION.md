@@ -740,3 +740,210 @@ Required G8 evidence:
 Codex MUST NOT weaken these targets or mark them PASS without evidence.
 
 Changes to these targets require a new explicit business-owner decision.
+
+
+## 16. Serialized Product Unit Identification v1.0 — Approved Future Fulfillment Rule
+
+**Status:** AUTHORITATIVE BUSINESS DEFINITION / FUTURE IMPLEMENTATION
+**Approved date:** 2026-09-26 (Asia/Taipei)
+**Implementation phase:** Post-R1.0B / Phase 1.1 Serialized Fulfillment unless separately promoted by authority.
+**Phase-1 freeze impact:** Definition only. This approval MUST NOT reopen the frozen R1.0B Business Core or block G8/G9.
+
+### SF-1 Purpose
+
+UCell physical fulfillment requires traceability from Order → SKU → Lot/Batch → individual serialized product unit → Shipment → customer/member.
+
+The serialized identifier is an individual physical-unit identity. It is not inventory quantity, PV/BV, order identity, Ball identity, or member identity.
+
+### SF-2 Product code authority
+
+Initial controlled product-code mapping:
+
+- A = TIP-363
+- B = TIP-999
+- C = TIP-580
+- D = TIP-696
+- E = TIP-777
+
+Product codes are controlled master data and MUST NOT be inferred from display names or freely assigned by warehouse operators.
+
+### SF-3 Serial format
+
+Approved v1 format:
+
+`PBBBSSSS`
+
+- P = product code, exactly 1 controlled alphanumeric character.
+- BBB = product-specific batch sequence, exactly 3 decimal digits, 001–999.
+- SSSS = unit sequence within that product batch, exactly 4 decimal digits, 0001–9999.
+- Total serialized unit identifier length = 8 characters.
+
+Examples:
+- A0010001 = TIP-363, batch 001, unit 0001.
+- A0012000 = TIP-363, batch 001, unit 2000.
+- A0010001 through A0012000 represents 2,000 individually serialized TIP-363 units in batch 001.
+
+The final 4 digits are formally named **unit sequence / 流水號**, not quantity.
+
+### SF-4 Capacity and overflow
+
+One product batch can contain at most 9,999 serialized units under v1.
+
+The system MUST NOT silently overflow, wrap, reuse, truncate, or extend SSSS beyond 9999.
+
+If a planned physical batch exceeds 9,999 units, implementation MUST require an explicit approved batch-splitting or serial-format-version decision before serial allocation. Codex MUST NOT silently change the identifier length.
+
+### SF-5 Batch semantics
+
+BBB is a product-specific batch sequence.
+
+Therefore A001 and C001 are valid independent batches for different products.
+
+For the same product code, a batch sequence MUST NOT be reused after allocation.
+
+Batch sequence is an identifier component, not a substitute for full manufacturing/lot metadata.
+
+The authoritative ProductLot/Batch record SHOULD separately retain applicable manufacturing and traceability attributes such as:
+- lotNo/manufacturer lot;
+- manufacturedAt;
+- expiryAt;
+- receivedAt;
+- manufacturer/supplier reference;
+- status.
+
+### SF-6 Database decomposition
+
+Do not store only an opaque serial string.
+
+The authoritative serialized-unit model MUST retain, at minimum:
+- serialNo;
+- productId/SKU reference;
+- productCode;
+- batch/lot reference;
+- batchSeq;
+- unitSeq;
+- status;
+- createdAt and provenance.
+
+Recommended integrity:
+- `serialNo UNIQUE`;
+- `(productCode, batchSeq, unitSeq) UNIQUE`;
+- controlled productCode → SKU mapping;
+- batchSeq/unitSeq range checks.
+
+Serial allocation MUST be server-authoritative. Warehouse users MUST NOT freely create arbitrary serial strings.
+
+### SF-7 Barcode payload
+
+The primary serialized-unit barcode MAY encode the canonical 8-character `serialNo` directly, e.g. `A0010001`.
+
+Barcode scanning does not itself establish business truth. Server-side lookup/validation remains authoritative for SKU, batch, status, shipment eligibility and order matching.
+
+SKU/product barcode and serialized-unit barcode are distinct concepts:
+- SKU barcode identifies product type;
+- serial barcode identifies one unique physical unit.
+
+If a future label combines them, the data model MUST still preserve this semantic distinction.
+
+### SF-8 Serialized-unit lifecycle
+
+Minimum lifecycle vocabulary for future implementation:
+
+- CREATED
+- AVAILABLE
+- ALLOCATED
+- PACKED
+- SHIPPED
+- DELIVERED where delivery confirmation exists
+
+Exception states include, as applicable:
+- RETURNED
+- QUARANTINED
+- DAMAGED
+- EXPIRED
+- RECALLED
+- VOID
+
+Return MUST NOT automatically imply AVAILABLE. Re-release requires an approved inspection/disposition rule.
+
+### SF-9 Fulfillment verification workflow
+
+Target warehouse workflow:
+
+1. scan/enter public Order barcode/orderNo;
+2. load authoritative shippable Order lines;
+3. for each physical unit, scan product/SKU barcode where required;
+4. scan serialized-unit barcode;
+5. server validates:
+   - serial exists;
+   - serial maps to the required SKU;
+   - serial is in an eligible status;
+   - serial is not already allocated/shipped;
+   - applicable lot/expiry/recall rules;
+   - scanned quantity does not exceed Order line quantity;
+6. accumulate verified units per Order line;
+7. shipment/pack completion is prohibited until every required serialized quantity exactly matches the authoritative Order quantities;
+8. successful fulfillment binds Order/OrderLine/Shipment to the serialized units.
+
+Wrong SKU, duplicate scan, already-shipped serial, unknown serial, excess quantity, ineligible/expired/quarantined/recalled unit MUST fail closed.
+
+### SF-10 Traceability
+
+Future implementation MUST support authorized traceability in both directions:
+
+Order/Shipment → serialized units
+
+and
+
+serialNo → Product/SKU → Lot/Batch → Shipment/Order → authorized customer/member reference.
+
+Privacy/RBAC applies to customer/member lookup; a serial lookup does not grant unrestricted member PII access.
+
+### SF-11 ERP boundary
+
+The existing architectural principle remains: UCell MUST NOT unnecessarily recreate ERP inventory/warehouse functions.
+
+Preferred implementation order:
+
+1. If EzTooL (or the approved ERP) natively supports authoritative per-unit serial management, scan-to-order verification, duplicate prevention, lot/expiry traceability and usable integration interfaces, use ERP authority and integrate UCell.
+2. If ERP supports inventory/shipment but not the required serialized verification, implement a narrowly scoped UCell Fulfillment Scanner / serialized verification layer integrated with ERP.
+3. Only if ERP integration cannot satisfy the approved requirements should a separate UCell warehouse serialized module be considered.
+
+Direct unsupported writes to ERP internal database tables are prohibited.
+
+### SF-12 Integration boundary
+
+UCell remains authoritative for approved UCell business domains such as member/person, UCell order identity, qualification/economic rules and member-facing history.
+
+ERP/fulfillment authority should own physical inventory/shipment facts where supported.
+
+Integration SHOULD use stable business identifiers such as orderNo, SKU, shipmentNo and serialNo, not internal UUID exposure.
+
+### SF-13 Required future implementation evidence
+
+Before Serialized Fulfillment can be considered complete, future implementation must prove at least:
+- serial generation uniqueness and concurrency;
+- batch/unit range enforcement;
+- exact order quantity matching;
+- wrong-SKU rejection;
+- duplicate scan rejection;
+- already-shipped serial rejection;
+- shipment exactly-once/idempotency;
+- return/disposition behavior;
+- lot/expiry/recall handling where applicable;
+- Order ↔ Serial traceability;
+- Serial ↔ Shipment/Order traceability;
+- RBAC/privacy;
+- audit evidence for high-risk fulfillment corrections;
+- ERP synchronization/retry behavior if integrated.
+
+### SF-14 Current scope control
+
+This decision establishes definitions and future implementation authority only.
+
+Do NOT modify the current frozen R1.0B runtime merely because this definition exists.
+Do NOT add Serialized Fulfillment to current G8 blockers.
+Do NOT delay G9 solely for this future capability unless separately promoted as a mandatory release requirement.
+
+Any implementation must update all affected layers under the UCell cross-layer rule:
+Definition → Semantic/Core terminology → API → DB → Program → Tests/Golden → GitHub → formal documentation/Drive impact.
