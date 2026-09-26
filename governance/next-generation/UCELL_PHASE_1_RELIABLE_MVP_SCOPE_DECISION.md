@@ -947,3 +947,139 @@ Do NOT delay G9 solely for this future capability unless separately promoted as 
 
 Any implementation must update all affected layers under the UCell cross-layer rule:
 Definition → Semantic/Core terminology → API → DB → Program → Tests/Golden → GitHub → formal documentation/Drive impact.
+
+
+## 17. R1.0B CR-001 — Seven Company Bootstrap Balls
+
+**Status:** BOARD-APPROVED / AUTHORITATIVE CHANGE REQUEST
+**Approved date:** 2026-09-26 (Asia/Taipei)
+**Change ID:** R1.0B-CR-001
+**Scope:** Binary Tree bootstrap, placement, test/stage data, affected economic/privacy/read-model/API/DB/test/documentation layers.
+**Effect on freeze:** This change intentionally reopens only the affected R1.0B scope. Unaffected Phase-1 capabilities remain frozen.
+
+### CR1-1 Board decision
+
+Every Binary Tree MUST begin with exactly seven Company-controlled bootstrap/reservoir Balls.
+
+Authoritative topology:
+- binary positions 1 through 7 = Company bootstrap/reservoir Balls only;
+- first member-eligible binary position = 8;
+- member-owned Balls MUST NOT occupy positions 1 through 7.
+
+This supersedes the prior three-Company-Ball bootstrap rule.
+
+### CR1-2 Topology authority and privacy
+
+- `binaryPositionNo` / `binaryPath` remain topology authority.
+- `ballNo` remains an opaque public business identifier and MUST NOT encode or permit derivation of topology.
+- Normal Member projections MUST NOT expose protected Company bootstrap/reservoir topology or internal UUIDs.
+- Server-side placement is authoritative and MUST reject member placement into reserved positions 1–7.
+
+### CR1-3 Company bootstrap economic isolation
+
+Company bootstrap/reservoir Balls are structural system/company nodes only.
+
+Creating or existing Company bootstrap Balls MUST NOT by themselves create:
+- member Qualification;
+- member Active status;
+- member count;
+- PV/BV/GPV/RPV/EPV;
+- Retail Referral Award;
+- Binary/Matching/Equal-level/Global/Fund entitlement;
+- member payout/payable;
+- other member economic entitlement.
+
+Any existing economic rule that traverses the tree must preserve its approved member/economic eligibility semantics and MUST NOT treat the four additional Company Balls as member production.
+
+### CR1-4 New-tree initialization
+
+A newly initialized Binary Tree MUST atomically establish the complete seven-Ball Company bootstrap structure at positions 1–7 before member placement is allowed.
+
+The first valid member placement position begins at 8, subject to all other approved placement/authorization/slot rules.
+
+### CR1-5 Existing test and Stage data disposition
+
+The current non-Production databases contain test/UAT data and are explicitly authorized for controlled transformation, cleanup, or rebuild for CR-001.
+
+For Local test databases and Stage/UAT only:
+- existing synthetic/test topology MAY be updated using controlled SQL/migration/reseed procedures;
+- inconsistent, obsolete, duplicate, or otherwise non-authoritative test data MAY be deleted;
+- affected synthetic/UAT trees MAY be rebuilt from approved seeds/fixtures;
+- test/UAT business journeys MAY be reseeded after transformation.
+
+Requirements:
+- Production remains untouched.
+- Do not rewrite committed historical migration files.
+- Use forward-only migration/reseed/reconciliation artifacts.
+- capture pre-change Stage evidence/recovery point before destructive cleanup;
+- preserve any evidence required for prior release/audit reports separately from disposable UAT data;
+- verify the resulting Stage/UAT database satisfies the new seven-bootstrap topology and all current schema/runtime invariants.
+
+Because Stage data is non-Production test data, CR-001 does NOT require preservation of obsolete synthetic member positions 4–7. They may be deleted/reseeded rather than historically reparented when that is safer and simpler.
+
+### CR1-6 Migration/reseed strategy
+
+Implementation MUST distinguish:
+1. schema/runtime rule changes;
+2. deterministic Company bootstrap creation;
+3. disposable Local/Stage test-data transformation/reseed.
+
+Do not encode arbitrary UAT cleanup as irreversible Production business-data migration logic.
+
+Production-capable migrations MUST remain safe for an empty/new Production environment. Stage-specific destructive reseed/cleanup SHOULD be implemented as controlled deployment/UAT tooling or explicitly scoped reconciliation, not as a hidden Production data mutation.
+
+### CR1-7 Affected-layer synchronization
+
+CR-001 implementation MUST perform impact assessment and update all affected layers:
+
+- business definition / terminology;
+- semantic/core constants and future AI Brain semantic preparation;
+- DB schema/constraints/functions/views/migrations/reseed tooling;
+- Binary Tree initialization;
+- Organization/Placement/Sponsor behavior;
+- Paper and WEB_MEMBER onboarding/placement;
+- economic traversal/eligibility;
+- Admin/Member read models and topology/privacy;
+- API/OpenAPI if contract behavior changes;
+- tests/Golden/fixtures;
+- release/UAT documentation;
+- GitHub governance/implementation status;
+- Google Drive impact assessment/formal documents where affected.
+
+Phase-2 AI/LLM runtime remains out of scope.
+
+### CR1-8 Mandatory Golden evidence
+
+At minimum:
+- NEW_TREE_BOOTSTRAP_7_COMPANY_BALLS = PASS
+- POSITIONS_1_TO_7_COMPANY_ONLY = PASS
+- FIRST_MEMBER_POSITION_8 = PASS
+- MEMBER_PLACEMENT_1_TO_7_REJECTED = PASS
+- COMPANY_BOOTSTRAP_NO_PV_BV = PASS
+- COMPANY_BOOTSTRAP_NO_AWARD = PASS
+- COMPANY_BOOTSTRAP_NO_QUALIFICATION = PASS
+- MEMBER_PROJECTION_BOOTSTRAP_PRIVACY = PASS
+- BALLNO_TOPOLOGY_PRIVACY = PASS
+- PARENT_CHILD_TOPOLOGY = PASS
+- PAPER_PLACEMENT_7_BOOTSTRAP = PASS
+- WEB_MEMBER_PLACEMENT_7_BOOTSTRAP = PASS
+- BINARY_ECONOMIC_GOLDEN = PASS
+- BOLA_SECURITY = PASS
+
+### CR1-9 Re-certification
+
+All prior certification materially affected by the three→seven bootstrap change is invalidated until impact-based re-certification completes.
+
+Required before the revised R1.0B baseline can be frozen:
+- fresh 0→current migration;
+- previous deployed Stage baseline → current upgrade/reseed evidence;
+- DB Golden;
+- affected economic Golden;
+- API/Worker/Admin/Member affected tests/builds;
+- OpenAPI governance if affected;
+- privacy/BOLA;
+- Paper/LINE;
+- Retail/Commerce;
+- isolated RC/full regression according to impact.
+
+Stage deployment requires controlled authorization and a recovery point. Production remains NOT AUTHORIZED until the revised baseline completes the normal G8/G9 governance path.
