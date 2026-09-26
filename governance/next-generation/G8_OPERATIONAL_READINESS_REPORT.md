@@ -20,7 +20,7 @@ Formal LINE/LIFF and Entra credentials remain `OPERATIONAL_CREDENTIAL_PENDING`; 
 | EVIDENCE_STORAGE_RECOVERY | PENDING | Storage inventory/retention and restored-object reference check must be executed. |
 | ENVIRONMENT_INVENTORY | IN_PROGRESS | Read-only `deployment/collect-environment-inventory.ps1` records non-secret environment metadata. Production inventory remains required. |
 | SECRET_RECOVERY | IN_PROGRESS | Stage uses Key Vault and managed identity. Owner/rotation/recovery metadata remains to be recorded without secret values. |
-| MINIMUM_MONITORING | IN_PROGRESS | Stage has Application Insights/Log Analytics and health probes. Alert rules, dashboard/query evidence and worker/domain failure coverage remain required. |
+| MINIMUM_MONITORING | IN_PROGRESS | Stage has Application Insights/Log Analytics; API health now verifies database connectivity and emits controlled 503 on failure. Alert rules, dashboard/query evidence and worker/domain failure coverage remain required. |
 | OPERATIONS_RUNBOOKS | IN_PROGRESS | `deployment/OPERATIONS_RUNBOOK.md` covers required recovery classes; controlled drill evidence remains required. |
 | INCIDENT_RELEASE_ROLLBACK_RUNBOOKS | IN_PROGRESS | Rollback and incident sections are present; owner/contact and drill evidence remain required. |
 | RPO_RTO | DECISION_REQUIRED | Business owner approval is required. Values must not be invented. |
