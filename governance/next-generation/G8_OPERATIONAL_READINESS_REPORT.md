@@ -32,9 +32,9 @@ Formal LINE/LIFF and Entra credentials remain `OPERATIONAL_CREDENTIAL_PENDING`; 
 | SANITIZED_DIAGNOSTIC_PACKAGE | PASS (policy) | Structured envelope and repair runbook prescribe only controlled code, trace, fingerprint and safe references. |
 | CODEX_REPAIR_RUNBOOK | PASS | [CODEX_REPAIR_RUNBOOK.md](../../backend/docs/CODEX_REPAIR_RUNBOOK.md) is versioned with the repair boundary. |
 | PRODUCTION_AUTO_MUTATION | PASS | No runtime path is authorized to mutate Production. |
-| AUDIT_EVENT_CORE | PARTIAL | Append-oriented audit store and RBAC search exist; G8 contract reconciliation remains required. |
-| HIGH_RISK_WRITE_AUDIT | PARTIAL | Domain audit facts exist; coverage matrix remains required. |
-| SECURITY_EVENT_AUDIT | PARTIAL | LINE/security/session audit exists; catalog/coverage reconciliation remains required. |
+| AUDIT_EVENT_CORE | PASS (isolated DB) | Migration `20260926110000_g8_audit_event_core` adds event, environment, trace, result, privacy/retention, hash and evidence fields; isolated persistence test PASS. |
+| HIGH_RISK_WRITE_AUDIT | PARTIAL | Domain audit facts exist and now receive controlled event/trace fields; final coverage matrix and Stage exercise remain required. |
+| SECURITY_EVENT_AUDIT | PARTIAL | LINE/security/session audit exists; final catalog/coverage reconciliation and Stage exercise remain required. |
 | AUDIT_SEARCH / AUDIT_RBAC | PASS (implementation evidence) | RBAC-protected Admin audit search exists; final Stage verification remains required. |
 
 **G8 OPERATIONAL_READINESS = NOT_YET_PASS.** The explicit `RPO_RTO=DECISION_REQUIRED` and independent-source/restore/monitoring evidence prevent a G8 pass. Independent actionable work continues.
