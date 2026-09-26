@@ -1213,3 +1213,104 @@ Re-certification must prove both:
 2. all Company Balls are ALWAYS_ACTIVE, participate in applicable Awards, and route resulting Company economic benefit to Reservoir B.
 
 Production remains NOT AUTHORIZED until the revised CR-001-A behavior completes Local and Stage re-certification.
+
+
+## 19. R1.0B CR-001 Amendment B — Founder Company Ball Qualification
+
+**Status:** BOARD-APPROVED / AUTHORITATIVE / SUPERSEDING WHERE CONFLICTING
+**Approved date:** 2026-09-26 (Asia/Taipei)
+**Change ID:** R1.0B-CR-001-B
+**Scope:** The first seven founder Company Balls of every Binary Tree.
+
+### CR1B-1 Founder Company Ball qualification
+
+Each Binary Tree's first seven Company Balls at binary positions 1 through 7 are formally classified as **Founder Company Balls / 創始公司球**.
+
+Every Founder Company Ball MUST carry the approved **NT$72,000 Leader Membership Qualification / 72,000 領袖會員資格**.
+
+Required invariant:
+
+`binaryPositionNo in 1..7 AND ownerType = COMPANY → qualification = LEADER_72000`
+
+This qualification is system/company bootstrap authority. It is not acquired through an ordinary natural-person member purchase or member consumption transaction.
+
+### CR1B-2 Relationship to Active and Award rules
+
+CR-001 Amendment A remains authoritative:
+
+- Founder Company Balls are ALWAYS_ACTIVE.
+- Founder Company Balls participate in all applicable approved Award calculations.
+- Award/economic benefit attributable to a Founder Company Ball routes to Reservoir B.
+- No personal/synthetic Member payable is created.
+
+The 72,000 Leader qualification therefore establishes the Founder Company Ball's qualification/rank baseline for applicable R1.0B eligibility calculations.
+
+### CR1B-3 No synthetic purchase/volume side effect
+
+Assigning the 72,000 Leader qualification to a Founder Company Ball MUST NOT be implemented as a fake member purchase, fake order, fake payment, or fake member consumption merely to manufacture qualification.
+
+Unless another approved rule explicitly states otherwise, bootstrap assignment of LEADER_72000 MUST NOT by itself synthesize transaction-derived PV/BV/GPV/RPV/EPV.
+
+The system must distinguish:
+- qualification/rank baseline = LEADER_72000;
+- Active eligibility = ALWAYS_ACTIVE;
+- Ball ownership = COMPANY;
+- economic beneficiary = RESERVOIR_B;
+- transaction/volume provenance = governed by actual approved volume rules.
+
+### CR1B-4 Scope distinction for other Company Balls
+
+This amendment specifically assigns the 72,000 Leader qualification to the **first seven Founder Company Balls of each Binary Tree**.
+
+Other Company-owned Balls at positions outside 1–7 remain subject to Amendment A's ALWAYS_ACTIVE and Reservoir-B routing rules, but MUST NOT automatically inherit LEADER_72000 solely because they are Company-owned unless separately authorized by an approved rule.
+
+### CR1B-5 Initialization and persistence
+
+New Binary Tree initialization MUST atomically establish positions 1–7 with:
+- ownerType = COMPANY;
+- founderCompanyBall = true or equivalent authoritative classification;
+- qualification/rank baseline = LEADER_72000;
+- Active eligibility = ALWAYS_ACTIVE;
+- economic beneficiary routing = RESERVOIR_B.
+
+The implementation should use controlled constants/policy/master data rather than duplicating literal 72000 logic throughout award engines.
+
+### CR1B-6 Test/Stage reseed
+
+Under the previously approved CR-001 test/UAT data authority, Local and Stage synthetic trees may be deleted/rebuilt/reseeded so that every tree's positions 1–7 conform to this Founder Company Ball qualification rule.
+
+Production remains untouched.
+
+### CR1B-7 Required implementation impact
+
+CR-001 implementation MUST additionally inspect/update:
+- qualification/rank model and controlled constants;
+- tree bootstrap initializer;
+- Company Ball policy;
+- Active resolver;
+- award/rank eligibility;
+- Reservoir B beneficiary routing;
+- Admin read/explain models;
+- DB constraints/views/functions if affected;
+- UAT seed/fixtures;
+- economic Golden/replay;
+- data dictionary and formal documentation.
+
+Do not create a fake Person/member record merely to represent the 72,000 Leader qualification if Company Ball qualification can be represented directly by the authoritative Company/Ball model.
+
+### CR1B-8 Mandatory Golden evidence
+
+Add the following mandatory CR-001 Golden evidence:
+
+- FOUNDER_COMPANY_BALL_COUNT_7 = PASS
+- FOUNDER_COMPANY_POSITIONS_1_TO_7 = PASS
+- FOUNDER_COMPANY_QUALIFICATION_LEADER_72000 = PASS
+- FOUNDER_COMPANY_ALWAYS_ACTIVE = PASS
+- FOUNDER_COMPANY_AWARD_ELIGIBILITY = PASS
+- FOUNDER_COMPANY_AWARD_ROUTES_RESERVOIR_B = PASS
+- FOUNDER_COMPANY_NO_FAKE_MEMBER_PURCHASE = PASS
+- FOUNDER_COMPANY_QUALIFICATION_NO_SYNTHETIC_VOLUME = PASS
+- OTHER_COMPANY_BALL_NO_IMPLICIT_LEADER_72000 = PASS
+- FOUNDER_COMPANY_REPLAY_STABLE = PASS
+
+Any prior CR-001 implementation or fixture that creates positions 1–7 without the LEADER_72000 qualification baseline is incomplete and must be corrected before CR-001 certification.
