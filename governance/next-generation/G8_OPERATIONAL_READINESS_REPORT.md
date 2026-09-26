@@ -24,13 +24,13 @@ Formal LINE/LIFF and Entra credentials remain `OPERATIONAL_CREDENTIAL_PENDING`; 
 | OPERATIONS_RUNBOOKS | IN_PROGRESS | `deployment/OPERATIONS_RUNBOOK.md` covers required recovery classes; controlled drill evidence remains required. |
 | INCIDENT_RELEASE_ROLLBACK_RUNBOOKS | IN_PROGRESS | Rollback and incident sections are present; owner/contact and drill evidence remain required. |
 | RPO_RTO | DECISION_REQUIRED | Business owner approval is required. Values must not be invented. |
-| ERROR_STRUCTURED_LOGGING | IN_PROGRESS | Current API/worker logging and request correlation exist; common G8 envelope remains to be completed. |
-| TRACE_CORRELATION | PARTIAL | Request/worker/domain correlation exists; cross-service verification remains required. |
-| ERROR_CODE_CATALOG | PARTIAL | Domain codes exist; controlled catalog/report must be consolidated. |
-| ERROR_FINGERPRINT | DEFERRED_WITH_APPROVED_REASON_PENDING | Monitoring backend aggregation policy/approval is not yet recorded. |
-| GITHUB_ISSUE_REPAIR_CONTRACT | IN_PROGRESS | Authority defines the contract; repository template/evidence must be completed. |
-| SANITIZED_DIAGNOSTIC_PACKAGE | IN_PROGRESS | Runbook requires sanitization; executable packaging/checklist remains required. |
-| CODEX_REPAIR_RUNBOOK | IN_PROGRESS | Authority workflow exists; repository runbook must be finalized. |
+| ERROR_STRUCTURED_LOGGING | PASS (local) | API and Worker emit the privacy-safe `UCELL_STRUCTURED_ERROR` JSON envelope; focused API test and API/Worker builds PASS. |
+| TRACE_CORRELATION | PASS (implementation evidence) | API request correlation headers and Worker-generated trace IDs are carried by structured operational events; cross-service Stage exercise remains part of monitoring evidence. |
+| ERROR_CODE_CATALOG | PASS | [PHASE_1_ERROR_CODE_CATALOG.md](PHASE_1_ERROR_CODE_CATALOG.md) governs controlled prefixes and operational action. |
+| ERROR_FINGERPRINT | PASS (event generation) | Structured events derive a privacy-safe SHA-256 fingerprint from service, controlled code, error class, operation and release; aggregation alert policy remains under monitoring. |
+| GITHUB_ISSUE_REPAIR_CONTRACT | PASS (runbook) | [CODEX_REPAIR_RUNBOOK.md](../../backend/docs/CODEX_REPAIR_RUNBOOK.md) requires the sanctioned Issue evidence. |
+| SANITIZED_DIAGNOSTIC_PACKAGE | PASS (policy) | Structured envelope and repair runbook prescribe only controlled code, trace, fingerprint and safe references. |
+| CODEX_REPAIR_RUNBOOK | PASS | [CODEX_REPAIR_RUNBOOK.md](../../backend/docs/CODEX_REPAIR_RUNBOOK.md) is versioned with the repair boundary. |
 | PRODUCTION_AUTO_MUTATION | PASS | No runtime path is authorized to mutate Production. |
 | AUDIT_EVENT_CORE | PARTIAL | Append-oriented audit store and RBAC search exist; G8 contract reconciliation remains required. |
 | HIGH_RISK_WRITE_AUDIT | PARTIAL | Domain audit facts exist; coverage matrix remains required. |
@@ -38,4 +38,3 @@ Formal LINE/LIFF and Entra credentials remain `OPERATIONAL_CREDENTIAL_PENDING`; 
 | AUDIT_SEARCH / AUDIT_RBAC | PASS (implementation evidence) | RBAC-protected Admin audit search exists; final Stage verification remains required. |
 
 **G8 OPERATIONAL_READINESS = NOT_YET_PASS.** The explicit `RPO_RTO=DECISION_REQUIRED` and independent-source/restore/monitoring evidence prevent a G8 pass. Independent actionable work continues.
-

@@ -1,4 +1,4 @@
-import {effectiveSponsorDirectCount} from '@ucell/database';
+import {effectiveSponsorDirectCount, emitStructuredOperationalError} from '@ucell/database';
 import { PrismaService, Prisma, companyAlwaysActiveAt, captureParameters, snapshotDecimal, processMemberOrderNotification, processPaymentInventoryReservation, recognizeConsumption, applyGpvImmediateEffects, sealRpvEvent, pending, claimOutboxLease, withOutboxLease, processLeasedReplay, processTreeProjectionEvent, releaseFailedOutboxLease, OutboxLease, matureBonusAward } from '@ucell/database';
 import * as crypto from 'node:crypto';
 import { pollProviderWebhooks, type ProviderHandlerRegistration } from './provider-runtime';
@@ -233,7 +233,7 @@ async function pollRecognitions(){
   });
   for(const row of rows){
     try{ await processRecognition(row.recognitionId); }
-    catch(e){ console.error('recognition failed',row.recognitionId,e); }
+    catch(e){ emitStructuredOperationalError({service:'worker',operation:'processRecognition',traceId:crypto.randomUUID(),error:e,errorCode:'RECOGNITION_PROCESSING_FAILED',retryable:true}); }
   }
 }
 
@@ -259,12 +259,13 @@ async function tick(){
     if(provider.enabled&&provider.result)console.log(JSON.stringify(providerMetrics.record(provider.result,Date.now()-providerStartedAt)));
   }catch(error){
     console.error(JSON.stringify({...providerMetrics.recordFailure(Date.now()-providerStartedAt),errorCode:'PROVIDER_WORKER_BATCH_FAILED'}));
+    emitStructuredOperationalError({service:'worker',operation:'pollProviderWebhooks',traceId:crypto.randomUUID(),error,errorCode:'PROVIDER_WORKER_BATCH_FAILED',retryable:true});
     throw error;
   }
 }
 
 async function main(){
-  const loop=new WorkerLoop({tick,disconnect:()=>prisma.$disconnect(),onError:error=>console.error('worker tick failed',error)},workerPollInterval());
+  const loop=new WorkerLoop({tick,disconnect:()=>prisma.$disconnect(),onError:error=>emitStructuredOperationalError({service:'worker',operation:'tick',traceId:crypto.randomUUID(),error,errorCode:'WORKER_TICK_FAILED',retryable:true})},workerPollInterval());
   const shutdown=(signal:string)=>{console.log(`UCell worker received ${signal}; draining current tick`);void loop.stop().then(()=>{process.exitCode=0;}).catch(error=>{console.error(error);process.exitCode=1;});};
   process.once('SIGTERM',()=>shutdown('SIGTERM'));
   process.once('SIGINT',()=>shutdown('SIGINT'));
@@ -272,5 +273,5 @@ async function main(){
   await loop.start();
 }
 if(require.main===module) main().catch(async error=>{
-  console.error(error);await prisma.$disconnect();process.exitCode=1;
+  emitStructuredOperationalError({service:'worker',operation:'bootstrap',traceId:crypto.randomUUID(),error,errorCode:'WORKER_BOOTSTRAP_FAILED',retryable:false});await prisma.$disconnect();process.exitCode=1;
 });

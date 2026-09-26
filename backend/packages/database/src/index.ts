@@ -44,3 +44,5 @@ export * from './reservoir-b';
 
 export * from './global-pool-calculation';
 export * from './business-identifiers';
+
+export * from './operational/structured-error';
