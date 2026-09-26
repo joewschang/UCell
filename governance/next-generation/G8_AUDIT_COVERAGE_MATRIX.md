@@ -13,7 +13,7 @@ This matrix maps the Phase 1 required audit domains to implemented authoritative
 | Retail attribution correction | `RETAIL_REFERRER_ATTRIBUTION_CORRECTED_FORWARD` plus immutable attribution history | IMPLEMENTED |
 | Award/recovery/settlement/payout operations | `PAYOUT_APPROVED`, `PAYOUT_EXPORTED`, `PAYOUT_PAID`; append-only domain evidence | IMPLEMENTED |
 | Company sponsor alias | `COMPANY_SPONSOR_ALIAS_CREATED` | IMPLEMENTED |
-| Security login/denied access/role change | `LOGIN_SUCCEEDED`, `LOGIN_FAILED`, `LOGOUT`, session/link/rebind and HTTP outcome evidence exist; access-denied/role-change coverage remains incomplete | PARTIAL |
+| Security login/denied access/role change | `LOGIN_SUCCEEDED`, `LOGIN_FAILED`, `LOGOUT`, session/link/rebind and HTTP outcome evidence exist; Admin access-denied exists; Member BOLA/role-change coverage remains incomplete | PARTIAL |
 | Restricted read/export | `PERIOD_EXPORT_REQUESTED`, `PERIOD_EXPORT_DOWNLOADED`, structured explain reads | IMPLEMENTED |
 
 The remaining partial row is tracked as `SECURITY_EVENT_AUDIT`; it must not be marked complete until explicit login/access-denied/role-change event evidence is added and verified.

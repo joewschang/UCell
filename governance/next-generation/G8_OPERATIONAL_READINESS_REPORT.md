@@ -34,7 +34,7 @@ Formal LINE/LIFF and Entra credentials remain `OPERATIONAL_CREDENTIAL_PENDING`; 
 | PRODUCTION_AUTO_MUTATION | PASS | No runtime path is authorized to mutate Production. |
 | AUDIT_EVENT_CORE | PASS (isolated DB) | Migration `20260926110000_g8_audit_event_core` adds event, environment, trace, result, privacy/retention, hash and evidence fields; isolated persistence test PASS. |
 | HIGH_RISK_WRITE_AUDIT | PARTIAL | Domain audit facts exist and now receive controlled event/trace fields; final coverage matrix and Stage exercise remain required. |
-| SECURITY_EVENT_AUDIT | PARTIAL | Explicit Admin `LOGIN_SUCCEEDED`, `LOGIN_FAILED`, `LOGOUT`, LINE/security/session and controlled HTTP failure events are recorded. Dedicated access-denied/BOLA and role-change event coverage plus Stage exercise remain required. |
+| SECURITY_EVENT_AUDIT | PARTIAL | Explicit Admin `LOGIN_SUCCEEDED`, `LOGIN_FAILED`, `LOGOUT`, LINE/security/session and controlled HTTP failure events are recorded. Admin authentication/role guards now persist `ACCESS_DENIED`; Member BOLA and role-change event coverage plus Stage exercise remain required. |
 | AUDIT_SEARCH / AUDIT_RBAC | PASS (implementation evidence) | RBAC-protected Admin audit search exists; final Stage verification remains required. |
 | APPEND_ONLY_AUDIT | PASS (isolated DB) | Database trigger rejects audit rewrite/delete; isolated persistence evidence is recorded. |
 | PII_MINIMIZATION | PASS (focused test) | Audit service redacts sensitive fields and records hashes/field names instead. |
