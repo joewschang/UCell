@@ -8,6 +8,8 @@
 
 Stage is deployed at source `6f5e340dc77b0188799a492aefc8cbba24a307ac`. The migration and synthetic UAT-seed jobs succeeded; API, worker, Admin and Member revisions are healthy and digest-pinned. Preliminary human UAT is reported PASS. The 2026-09-26 read-only refresh confirms all four current revisions, Log Analytics and Application Insights are present; see [stage-environment-inventory-20260926-g8-refresh.json](evidence/stage-environment-inventory-20260926-g8-refresh.json) and [stage-monitoring-readiness-20260926-g8-refresh.json](evidence/stage-monitoring-readiness-20260926-g8-refresh.json). This records Stage/G7 progress; it does not substitute for G8 or G9 evidence.
 
+The controlled G8 backend update was stopped at migration 87 before API/Worker update because its historical audit backfill conflicts with Stage's existing append-only audit trigger. The migration Job was restored to its prior digest-pinned image; no application traffic moved. See [G8_STAGE_AUDIT_MIGRATION_BLOCKER_20260926.md](G8_STAGE_AUDIT_MIGRATION_BLOCKER_20260926.md).
+
 Formal LINE/LIFF and Entra credentials remain `OPERATIONAL_CREDENTIAL_PENDING`; guarded Stage-only synthetic UAT access is not a Production identity substitute.
 
 ## G8 matrix
@@ -17,6 +19,7 @@ Formal LINE/LIFF and Entra credentials remain `OPERATIONAL_CREDENTIAL_PENDING`; 
 | SOURCE_RECOVERY | EXTERNAL_ROLE_REQUIRED | Full-ref Git bundle and local bare restore verification PASS, but the approved private Azure Storage destination rejected data-plane upload because the operator lacks `Storage Blob Data Contributor`. See [G8_SOURCE_RECOVERY_BLOCKER_20260926.md](G8_SOURCE_RECOVERY_BLOCKER_20260926.md). |
 | DB_BACKUP_RESTORE | IN_PROGRESS | Azure Stage PostgreSQL has 7-day automated backup retention; a local disposable restore drill PASS is recorded in [G8_LOCAL_RESTORE_DRILL_20260926.md](G8_LOCAL_RESTORE_DRILL_20260926.md). Stage/Production drill and policy remain required. |
 | MIGRATION_REPRODUCIBILITY | PASS (local candidate) | Frozen baseline has 86 migrations; current G8 candidate has 87 forward-only migrations and fresh isolated DB evidence. Stage remains on the prior 86-migration UAT revision until controlled G8 deployment. |
+| G8_STAGE_AUDIT_DEPLOYMENT | BLOCKED | Candidate migration 87 fails only when existing Stage audit rows are protected by the authoritative append-only trigger. Migration job recovered to the old digest; explicit forward-safe migration recovery decision required. |
 | EVIDENCE_STORAGE_RECOVERY | PENDING | Storage inventory/retention and restored-object reference check must be executed. |
 | ENVIRONMENT_INVENTORY | IN_PROGRESS | Read-only Stage inventory was refreshed on 2026-09-26 with non-secret resource, revision, backup and Key Vault metadata. Production inventory remains required before a Production readiness claim. |
 | SECRET_RECOVERY | IN_PROGRESS | Non-secret Stage secret/service-identity inventory is recorded in [SECRET_SERVICE_IDENTITY_INVENTORY.md](../../deployment/SECRET_SERVICE_IDENTITY_INVENTORY.md). Named primary/backup owners, rotation cadence and controlled recovery exercise remain external operational work. |

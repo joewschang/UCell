@@ -28,7 +28,9 @@ $api=Require-ExistingSecretReference 'ucell-stage-api' 'DATABASE_URL'
 [void](Require-ExistingSecretReference 'ucell-stage-api' 'STAGE_UAT_MEMBER_TOKEN')
 [void](Require-ExistingSecretReference 'ucell-stage-worker' 'DATABASE_URL')
 [void](Require-ExistingSecretReference 'ucell-stage-worker' 'PII_ENCRYPTION_KEY')
-[void](Require-ExistingSecretReference 'ucell-stage-migrate' 'DATABASE_URL' -Job)
+$migrationJob=Require-ExistingSecretReference 'ucell-stage-migrate' 'DATABASE_URL' -Job
+$previousMigrationImage=$migrationJob.properties.template.containers[0].image
+if($previousMigrationImage -notmatch '@sha256:[0-9a-f]{64}$'){throw 'Migration Job must start from a digest-pinned image.'}
 
 $server=(Invoke-Az @('acr','show','--name',$Acr,'--query','loginServer','-o','tsv')).Trim()
 foreach($item in @(@{repository='ucell-backend';dockerfile='deployment/Dockerfile.backend'},@{repository='ucell-worker';dockerfile='deployment/Dockerfile.worker'})){
@@ -49,15 +51,22 @@ function Resolve-Digest([string]$Repository){
 $backend=Resolve-Digest 'ucell-backend';$worker=Resolve-Digest 'ucell-worker'
 
 # The migration Job keeps its existing database secret reference. No password is read or replaced.
-Invoke-Az @('containerapp','job','update','--resource-group',$ResourceGroup,'--name','ucell-stage-migrate','--image',$backend,'--only-show-errors')|Out-Null
-$execution=(Invoke-Az @('containerapp','job','start','--resource-group',$ResourceGroup,'--name','ucell-stage-migrate','--query','name','-o','tsv')).Trim()
-if(-not $execution){throw 'Migration execution name is empty.'}
-$status='';for($i=1;$i -le 120;$i++){
- Start-Sleep 10
- $status=(Invoke-Az @('containerapp','job','execution','show','--resource-group',$ResourceGroup,'--name','ucell-stage-migrate','--job-execution-name',$execution,'--query','properties.status','-o','tsv')).Trim()
- if($status -notin @('Running','Processing','Pending')){break}
+$execution='';$status='';$migrationSucceeded=$false
+try{
+ Invoke-Az @('containerapp','job','update','--resource-group',$ResourceGroup,'--name','ucell-stage-migrate','--image',$backend,'--only-show-errors')|Out-Null
+ $execution=(Invoke-Az @('containerapp','job','start','--resource-group',$ResourceGroup,'--name','ucell-stage-migrate','--query','name','-o','tsv')).Trim()
+ if(-not $execution){throw 'Migration execution name is empty.'}
+ for($i=1;$i -le 120;$i++){
+  Start-Sleep 10
+  $status=(Invoke-Az @('containerapp','job','execution','show','--resource-group',$ResourceGroup,'--name','ucell-stage-migrate','--job-execution-name',$execution,'--query','properties.status','-o','tsv')).Trim()
+  if($status -notin @('Running','Processing','Pending')){break}
+ }
+ if($status -ne 'Succeeded'){throw "Stage migration did not succeed: $status"}
+ $migrationSucceeded=$true
+}catch{
+ if(-not $migrationSucceeded){Invoke-Az @('containerapp','job','update','--resource-group',$ResourceGroup,'--name','ucell-stage-migrate','--image',$previousMigrationImage,'--only-show-errors')|Out-Null}
+ throw
 }
-if($status -ne 'Succeeded'){throw "Stage migration did not succeed: $status"}
 
 $suffix=('g8'+($ImageTag -replace '[^a-z0-9]','')).Substring(0,[Math]::Min(45,2+($ImageTag -replace '[^a-z0-9]','').Length))
 Invoke-Az @('containerapp','update','--resource-group',$ResourceGroup,'--name','ucell-stage-api','--image',$backend,'--revision-suffix',$suffix)|Out-Null
