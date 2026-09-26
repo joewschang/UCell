@@ -8906,6 +8906,36 @@
         ]
       }
     },
+    "/api/v1/admin/retail-referrers/awards/{awardId}/explain": {
+      "get": {
+        "description": "Read-only stored Retail Referral attribution, SKU/rate snapshot, recognition-time Active, award, payable/payout and return recovery evidence. Historical values are never recalculated from current rules.",
+        "operationId": "adminExplainRetailReferralAward",
+        "parameters": [
+          {
+            "name": "awardId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "Admin - Retail referral"
+        ]
+      }
+    },
     "/api/v1/admin/retail-referrers/{personId}": {
       "get": {
         "description": "Authorized temporal retail attribution history; excludes consumer PII, Sponsor/Binary edges and payout data.",
