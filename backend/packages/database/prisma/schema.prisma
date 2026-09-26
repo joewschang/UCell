@@ -2140,21 +2140,36 @@ model BinaryVolumeLedger {
 }
 
 model AuditEvent {
-  auditEventId  String   @id @default(uuid()) @map("audit_event_id") @db.Uuid
-  actorType     String   @map("actor_type")
-  actorId       String?  @map("actor_id") @db.Uuid
-  action        String
-  entityType    String   @map("entity_type")
-  entityId      String?  @map("entity_id") @db.Uuid
-  beforeData    Json?    @map("before_data")
-  afterData     Json?    @map("after_data")
-  reasonCode    String?  @map("reason_code")
-  requestId     String   @map("request_id")
-  correlationId String   @map("correlation_id") @db.Uuid
-  occurredAt    DateTime @default(now()) @map("occurred_at") @db.Timestamptz(6)
+  auditEventId          String   @id @default(uuid()) @map("audit_event_id") @db.Uuid
+  actorType             String   @map("actor_type")
+  actorId               String?  @map("actor_id") @db.Uuid
+  action                String
+  eventCode             String   @default("") @map("event_code")
+  environment           String   @default("UNKNOWN")
+  traceId               String?  @map("trace_id")
+  actorRoleSnapshot     String?  @map("actor_role_snapshot")
+  entityType            String   @map("entity_type")
+  entityId              String?  @map("entity_id") @db.Uuid
+  result                String   @default("SUCCESS")
+  beforeData            Json?    @map("before_data")
+  afterData             Json?    @map("after_data")
+  changedFieldNames     String[] @default([]) @map("changed_field_names")
+  beforeHash            String?  @map("before_hash")
+  afterHash             String?  @map("after_hash")
+  reasonCode            String?  @map("reason_code")
+  evidenceRef           String?  @map("evidence_ref")
+  severity              String   @default("INFO")
+  privacyClass          String   @default("INTERNAL") @map("privacy_class")
+  retentionClass        String   @default("STANDARD") @map("retention_class")
+  requestId             String   @map("request_id")
+  correlationId         String   @map("correlation_id") @db.Uuid
+  occurredAt            DateTime @default(now()) @map("occurred_at") @db.Timestamptz(6)
+  createdAt             DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
   @@index([entityType, entityId, occurredAt])
   @@index([correlationId])
+  @@index([traceId, occurredAt])
+  @@index([environment, eventCode, occurredAt])
   @@map("audit_event")
   @@schema("audit")
 }
@@ -3963,6 +3978,3 @@ model BallNoAllocation {
   @@map("ball_no_allocation")
   @@schema("organization")
 }
-
-
-
