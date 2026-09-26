@@ -2009,3 +2009,198 @@ Before completion, verify at minimum:
 - production builds for affected frontends.
 
 Current status remains **APPROVED DESIGN / IMPLEMENTATION_PENDING** until the integrated change batch is explicitly released.
+
+
+## 23. R1.0B CR-BATCH-01 UI Foundation — Chinese-First User Interface
+
+**Status:** APPROVED DESIGN / IMPLEMENTATION_PENDING
+**Approved date:** 2026-09-26 (Asia/Taipei)
+**Scope:** All user-visible Admin, Membership/Member, LINE/LIFF, enrollment, commerce, fulfillment, audit/operations and related Phase-1/CR-BATCH-01 UI surfaces.
+**Implementation timing:** Part of R1.0B-CR-BATCH-01; do not implement until the integrated batch is explicitly released for development.
+
+### UI-ZH-1 Primary language authority
+
+UCell user-facing UI MUST use **Traditional Chinese (zh-TW) as the default and primary language**.
+
+Normal users and operators must not be required to understand English technical/business terms to operate the system.
+
+All ordinary visible:
+- page titles;
+- navigation;
+- menus;
+- buttons;
+- field labels;
+- placeholders;
+- helper text;
+- validation messages;
+- warnings;
+- confirmations;
+- empty states;
+- status labels;
+- table headers;
+- filters;
+- dialogs;
+- toast/notification messages;
+- printed operational UI labels;
+- Member/LINE prompts;
+- Admin operational descriptions
+
+must use clear Traditional Chinese.
+
+### UI-ZH-2 No raw English enum/code exposure
+
+Internal enum/code values MUST NOT be displayed directly as normal UI labels.
+
+Examples:
+- `PLACEMENT_PENDING` → `待安置`
+- `EFFECTIVE` → `已生效`
+- `ALWAYS_ACTIVE` → `永久活躍`
+- `QUALIFICATION_PACKAGE` → `資格套組`
+- `ADDITIONAL_PURCHASE` → `加購商品`
+- `SUBSCRIPTION` → `重銷訂閱`
+- `SYSTEM` → `跟隨系統`
+- `LIGHT` → `淺色模式`
+- `DARK` → `深色模式`
+- `PASS` → `通過`
+- `FAILED` → `失敗`
+
+The internal canonical code remains unchanged for API/DB/program authority; UI maps code → approved Chinese display text.
+
+### UI-ZH-3 Business terminology dictionary
+
+Create one shared Chinese UI terminology dictionary/semantic-label authority used by Admin and Membership.
+
+Do not let individual pages independently translate the same domain term.
+
+The dictionary must cover, at minimum:
+- 會員
+- 推薦球
+- 安置球／安置位置
+- 球號
+- 創始公司球
+- 會員資格
+- 啟航／菁英／領袖
+- 永久活躍
+- 水庫B
+- 資格套組
+- 加購商品
+- 重銷訂閱
+- 訂單
+- 待付款／已付款
+- 待安置／已生效
+- 配送資料
+- 出貨
+- 批號
+- 商品序號
+- 稽核紀錄
+- 權限
+- 角色
+- 錯誤／異常
+- 追蹤編號
+- 淺色模式／深色模式／跟隨系統
+
+Wording must prioritize ordinary Taiwan user comprehension over direct literal translation of implementation terminology.
+
+### UI-ZH-4 Technical identifiers
+
+Business identifiers may remain in their canonical values when they are themselves identifiers, for example:
+- memberNo;
+- orderNo;
+- ballNo;
+- paperApplicationNo;
+- fulfillmentNo;
+- serialNo;
+- tracking number.
+
+However, their field labels must be Chinese, for example:
+- `memberNo` displayed under `會員編號`;
+- `orderNo` under `訂單編號`;
+- `ballNo` under `球號`;
+- `serialNo` under `商品序號`.
+
+Internal UUIDs remain hidden from normal UI according to existing privacy rules.
+
+### UI-ZH-5 Product and controlled proper names
+
+Approved product/model identifiers such as TIP-363/TIP-999/TIP-580/TIP-696/TIP-777 may remain because they are controlled product codes, but the surrounding UI must be Chinese and should display the approved Chinese product name where available.
+
+External product/company proper names such as LINE, EzTooL, Microsoft Dynamics 365 BC may remain when they are official names.
+
+Do not expose internal English service/class/database terminology merely because it exists in code.
+
+### UI-ZH-6 Error and validation presentation
+
+User-visible errors must be Chinese and actionable.
+
+Do not display raw exception messages, Prisma/database errors, stack traces, internal enum names, or English developer diagnostics to ordinary users.
+
+Preferred presentation:
+- clear Chinese summary;
+- what the user should do next;
+- safe trace/reference number where support needs correlation.
+
+Technical details remain in protected logs/audit/diagnostic evidence.
+
+### UI-ZH-7 Admin versus Member language
+
+Admin may use more precise operational terminology than Member UI, but both remain Chinese-first.
+
+Admin:
+- may show approved technical business terms where operationally necessary;
+- must provide Chinese labels/explanations.
+
+Member/LINE:
+- prioritize short, plain Traditional Chinese;
+- avoid internal implementation vocabulary;
+- use step-by-step wording suitable for mobile users.
+
+### UI-ZH-8 Theme integration
+
+The Chinese-first rule applies equally to:
+- 跟隨系統;
+- 淺色模式;
+- 深色模式.
+
+Adaptive Theme must not introduce English-only controls or labels.
+
+Chinese typography, text wrapping, spacing, button width, table layout and mobile rendering must be verified in all three theme modes.
+
+### UI-ZH-9 Printing and paper workflow
+
+Admin-generated Membership Application, Order Form, Distributor Agreement and related operational print surfaces must use approved Traditional Chinese business terminology unless a separately approved bilingual/legal document version requires otherwise.
+
+CR-002 signed-paper evidence rules remain unchanged.
+
+### UI-ZH-10 Future localization architecture
+
+Chinese-first does not require hard-coding Chinese strings throughout components.
+
+Implementation should use a shared UI message/label layer so future localization remains possible.
+
+However, Phase-1/CR-BATCH-01 does NOT require building a full multilingual product.
+
+Default locale = `zh-TW`.
+
+English translation completeness is not a release requirement unless separately authorized.
+
+### UI-ZH-11 Required verification
+
+Before completion, verify:
+- Admin navigation/pages are Chinese-first;
+- Member navigation/pages are Chinese-first;
+- LINE/LIFF flows are Chinese-first;
+- Paper enrollment workbench is Chinese-first;
+- product/package/subscription selection is Chinese-first;
+- fulfillment/serialized scanner UI is Chinese-first;
+- validation/error/confirmation messages are Chinese-first;
+- status enums are mapped to approved Chinese labels;
+- no raw internal English enums appear in normal UI;
+- Chinese text works in LIGHT/DARK/SYSTEM themes;
+- mobile layout handles Chinese text without clipping;
+- protected technical diagnostics remain outside normal user UI.
+
+### UI-ZH-12 Scope control
+
+This is an approved UI foundation requirement within R1.0B-CR-BATCH-01.
+
+Current status remains **APPROVED DESIGN / IMPLEMENTATION_PENDING** until the integrated batch is explicitly released for implementation.
