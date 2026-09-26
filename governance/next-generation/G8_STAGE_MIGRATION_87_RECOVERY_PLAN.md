@@ -1,6 +1,6 @@
 # G8 Stage migration 87 recovery plan
 
-**Status:** `READY_FOR_APPROVAL` for the documented procedure only. It is not authorization to change Stage.  
+**Status:** `PASS` — executed on Stage on 2026-09-26 under explicit approval. See [G8_STAGE_MIGRATION_87_RECOVERY_EXECUTION_20260926.md](G8_STAGE_MIGRATION_87_RECOVERY_EXECUTION_20260926.md).  
 **Production:** out of scope and untouched.
 
 ## Local proof
@@ -35,6 +35,7 @@ pnpm db:deploy
 
 Before and after the sequence, record only safe evidence: migration ledger status/count, audit row count, integrity hashes of original authoritative audit fields, catalog comparison result, new-insert result, and rejected UPDATE/DELETE result. Do not record audit payloads, secrets, or database URLs.
 
-## Stage execution gate
+## Historical Stage execution gate
 
 Run the same sequence only after the isolated restored-copy drill passes for the exact Stage backup reference. If any check fails, stop before application deployment, retain the old Stage image/job configuration, and restore the isolated copy only. The existing Stage revision is the rollback target; no audit rows are to be edited, deleted, or recreated.
+

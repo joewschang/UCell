@@ -11,9 +11,9 @@ Frozen local baseline: `83947684c5d61c00db510e31fca83fa12e97081e` (`phase1-local
 - G5 CODE_AND_DOCUMENTATION_CLOSURE = PASS
 - G6 STAGE_RC = DEPLOYED_PASS (Stage revision evidence recorded 2026-09-26)
 - G7 BUSINESS_UAT = PRELIMINARY_MANUAL_PASS (human preliminary Stage UAT received; formal scenario checklist remains evidence-controlled)
-- G8 OPERATIONAL_READINESS = IN_PROGRESS
+- G8 OPERATIONAL_READINESS = IN_PROGRESS (Stage migration 87 recovery and G8 API/Worker deployment PASS; external operational blockers remain)
 
-Stage is deployed from `6f5e340dc77b0188799a492aefc8cbba24a307ac` with digest-pinned healthy API, Worker, Admin and Member revisions, successful migration and synthetic UAT-seed jobs. Production remains undeployed and blocked pending later G8/G9 authority. Completed Phase 1 work is recorded in the Phase 1 local baseline manifest. Google Drive synchronization is DRIVE_SYNC_PENDING; no Drive write is claimed. G8 readiness is tracked in [G8_OPERATIONAL_READINESS_REPORT.md](G8_OPERATIONAL_READINESS_REPORT.md); Phase 2 Semantic/Data Governance/Analytics Runtime/AI work remains deferred.
+`20260926110000_g8_audit_event_core` Stage recovery is PASS: Stage historical audit rows were preserved under append-only enforcement, Prisma ledger reconciliation is current at 87 migrations, and the G8 API/Worker revisions are healthy. See [G8 Stage Migration 87 recovery execution](G8_STAGE_MIGRATION_87_RECOVERY_EXECUTION_20260926.md). Production was not touched.\n\nStage is deployed from `6f5e340dc77b0188799a492aefc8cbba24a307ac` with digest-pinned healthy API, Worker, Admin and Member revisions, successful migration and synthetic UAT-seed jobs. Production remains undeployed and blocked pending later G8/G9 authority. Completed Phase 1 work is recorded in the Phase 1 local baseline manifest. Google Drive synchronization is DRIVE_SYNC_PENDING; no Drive write is claimed. G8 readiness is tracked in [G8_OPERATIONAL_READINESS_REPORT.md](G8_OPERATIONAL_READINESS_REPORT.md); Phase 2 Semantic/Data Governance/Analytics Runtime/AI work remains deferred.
 
 ---
 # Phase 1 scope update — 2026-09-25
@@ -65,3 +65,4 @@ Original attachment ends mid-section 37. Its missing continuation was requested.
 ## 2026-09-19 continuation checkpoint (not final)
 
 Working source: 67 migrations, 174 OpenAPI operations. Full API 12: 77 suites / 754 tests PASS; Company Golden 25 PASS; ordinary Member Global replay/recovery/payout PASS; complete App HTTP security PASS with synthetic identity and bypass disabled; Admin 81 tests/build PASS. Member baseline: 301 unchanged expectations and 36 Global vectors PASS. Latest typed OpenAPI/UUID validation changes require final rerun. Full populated scale matrix is running; no Stage action. Commit/push remains pending completion.
+
