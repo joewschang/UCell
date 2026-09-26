@@ -7,7 +7,7 @@ A slice is `COMPLETE` only when the required DB, domain, API, runtime, relevant 
 
 | Vertical slice | Status | Re-audit evidence / remaining closure work |
 |---|---|---|
-| WEB_MEMBER retail order and delivery profile | PARTIAL | `commerce.order` supports zero-Ball purchaser orders; Member checkout and delivery requirement test exist. Payment/fulfilment E2E remains open. |
+| WEB_MEMBER retail order and delivery profile | PARTIAL | Zero-Ball checkout enforces a current delivery profile and records immutable product/referral snapshots. Paid-order history and governed fulfilment handoff require the remaining end-to-end evidence. |
 | Qualification package / acquisition | PARTIAL | Versioned package path and sponsor candidate validation exist. Complete acquisition read model and E2E activation evidence remain open. |
 | SponsorResolver for Ball codes | PARTIAL | Shared Ball resolver and online/paper candidate handling exist; full eligibility and package evidence parity need Golden coverage. |
 | Referral deep link / LINE preservation | PARTIAL | Candidate is non-binding and survives current LINE path. QR UI and redirect E2E remain open. |
@@ -19,13 +19,13 @@ A slice is `COMPLETE` only when the required DB, domain, API, runtime, relevant 
 | Paper receipt / payment confirmation | COMPLETE | Receipt evidence identity is immutable and retry-safe; conflicting evidence fails closed, dual control is enforced, and pre-placement reversal is covered. |
 | Company Sponsor Alias v1 | COMPLETE | Effective-dated, audited Company Alias resolution is available for qualifying acquisition and paper intake; member views expose only governed display information. |
 | Existing Member LINE link | COMPLETE | Fresh isolated PostgreSQL Paper→LINE evidence proves authoritative Person/memberNo reuse, self-approval rejection, approved one-time completion, single binding and replay rejection without new Person creation. |
-| Retail attribution | PARTIAL | Temporal attribution, first-order lock, forward correction, snapshots, audit/outbox exist. Focused Golden proves a correction closes only the previous future interval and records both immutable correction events. DB concurrency coverage remains open. |
-| Retail checkout UX | PARTIAL | Candidate edit/clear/validation before first lock and locked display exist. Checkout/paid order UX and complete order history remain open. |
-| SKU retail referral parameters | PARTIAL | Effective-dated profile fields and product UI exist. Local rollback Golden proves a post-order SKU rate change cannot alter the snapshotted Award; approval workflow and replay evidence remain open. |
-| Retail Active eligibility | PARTIAL | Worker evaluates recognition-time active evidence. Local rollback Golden proves later reactivation cannot backfill an inactive-at-recognition Award; historical replay evidence remains open. |
-| RETAIL_REFERRAL award | PARTIAL | Immutable snapshot recognition has active and inactive DB integration evidence. Member Explain now returns the stored theory/final Award, recognition-time eligibility and append-only recovery evidence without recalculation; settlement/payout remain open. |
-| Retail return / recovery | PARTIAL | Local rollback DB integration now verifies partial, full and repeated returns; it preserves the original Award, writes append-only recovery effects, and handles a paid-award clawback. Historical replay Golden remains open. |
-| Operations explain / notifications | PARTIAL | Attribution history and member-safe Retail Award Explain exist. Admin presentation, paper receipt/payment, pending placement and safe notifications remain open. |
+| Retail attribution | COMPLETE | `retail-attribution-concurrency-db.e2e-spec.ts` runs two independently valid SponsorResolver candidates concurrently against one real PostgreSQL retail order. One authoritative temporal attribution/event persists; GiST/unique constraints reject the rival and a retry returns the survivor. |
+| Retail checkout UX | PARTIAL | Candidate edit/clear/validation before first lock and locked display exist. Member retail order history is privacy-safe; the complete paid-order/fulfilment E2E remains open. |
+| SKU retail referral parameters | COMPLETE | `retail-referral-db.integration.e2e-spec.ts` changes the current SKU rate after an immutable order-line snapshot, then recognizes exactly the original historical rate and Award. |
+| Retail Active eligibility | COMPLETE | The real DB Golden preserves the recognition-time Active decision; later activation/replay cannot alter the original inactive zero-payable Award. |
+| RETAIL_REFERRAL award | COMPLETE | Real DB recognition verifies immutable theory/payable amounts and no PV/Binary effects. Member and Admin Explain read stored evidence only; `retail-settlement-db.e2e-spec.ts` proves exactly-once UnifiedPayable materialization and zero-payable exclusion. |
+| Retail return / recovery | COMPLETE | Real DB Golden verifies partial, full, repeated and paid-award return paths. Original Award rows remain immutable; recovery/clawback evidence is append-only and idempotent. |
+| Operations explain / notifications | COMPLETE (Retail) | `adminExplainRetailReferralAward` exposes only stored attribution, SKU/rate, recognition-time Active, Award, payable/payout and recovery evidence under Admin RBAC; it does not expose consumer PII or recalculate historical economics. Paper and notification work is tracked in its respective rows. |
 | P0 privacy / identifiers | COMPLETE | Member projection hides bootstrap Company Balls and Reservoir data, prevents non-direct holder PII disclosure, and uses business identifiers in normal flows. Pending placement is additionally covered by Ball-number-only regression. |
 | OpenAPI / contracts | COMPLETE | `backend/openapi.generated.json` is regenerated for the current API and OpenAPI preflight passes. Existing operations remain governed by the generated artifact. |
 
@@ -50,4 +50,9 @@ A slice is `COMPLETE` only when the required DB, domain, API, runtime, relevant 
 - Google Drive is not modified without explicitly authorized Drive tooling; any final closure must remain `CODE_CLOSED_DRIVE_SYNC_PENDING` until synchronized.
 
 
+
+
+## Retail Referral closure
+
+RETAIL_REFERRAL_CLOSURE = PASS as of 2f7680 plus the focused commits that follow. The replay Golden reads immutable order-line and Award evidence: later SKU/rate and Active changes cannot rewrite the original Award; return/recovery remains forward-only. Retail is feature-frozen pending final regression.
 
