@@ -8,7 +8,7 @@
 
 The Stage migration Job used the digest-pinned candidate backend image and reached Prisma `migrate deploy`. It found 87 migrations and failed before any API or Worker revision update. PostgreSQL returned `P3018` / `P0001`: the migration's historical `UPDATE audit.audit_event` was rejected by the pre-existing `trg_audit_event_append_only` trigger.
 
-The failure is data-dependent: a fresh empty isolated database can add the columns and has no historical audit rows to update, while Stage correctly protects existing rows from rewrite. The G8 Stage update tool restored the migration Job image to the prior digest-pinned Stage backend image. API, Worker, Admin and Member remained on their previously healthy Stage revisions.
+The failure is data-dependent: a fresh empty isolated database can add the columns and has no historical audit rows to update, while Stage correctly protects existing rows from rewrite. The G8 Stage update tool restored the migration Job image to the prior digest-pinned Stage backend image. API, Worker, Admin and Member remained on their previously healthy Stage revisions. The controlled local reproduction and classification are recorded in [G8_AUDIT_MIGRATION_87_FORENSICS_20260926.md](G8_AUDIT_MIGRATION_87_FORENSICS_20260926.md).
 
 ## Boundary
 
