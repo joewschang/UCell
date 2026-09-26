@@ -11,9 +11,9 @@ A slice is `COMPLETE` only when the required DB, domain, API, runtime, relevant 
 | Qualification package / acquisition | PARTIAL | Versioned package path and sponsor candidate validation exist. Complete acquisition read model and E2E activation evidence remain open. |
 | SponsorResolver for Ball codes | PARTIAL | Shared Ball resolver and online/paper candidate handling exist; full eligibility and package evidence parity need Golden coverage. |
 | Referral deep link / LINE preservation | PARTIAL | Candidate is non-binding and survives current LINE path. QR UI and redirect E2E remain open. |
-| Payment → placement pending | PARTIAL | Sponsored package creates `PLACEMENT_PENDING`; complete payment, reversal and activation E2E is not yet demonstrated. |
+| Payment → placement pending | COMPLETE | Fresh isolated PostgreSQL Paper full-chain evidence covers Paper Application → Package Order → Receipt → Payment → `PLACEMENT_PENDING` → public placement reference → authorized placement → Ball allocation → `EFFECTIVE`. |
 | Sponsor pending-placement workbench | COMPLETE | Member-safe queue and placement workbench now use public Ball numbers only. Sponsor authorization, slot/cycle/first-third-left validation and idempotency remain server-authoritative; Admin retains its separately RBAC-protected UUID command surface. |
-| Placement → activation | PARTIAL | Authoritative placement service, idempotency and slot race coverage exist. Onboarding E2E activation remains open. |
+| Placement → activation | COMPLETE | Paper full-chain isolated PostgreSQL E2E proves no pre-placement Ball, member-safe reference, server-authorized placement, exactly-one allocation and final `EFFECTIVE` Qualification. |
 | Paper application / duplicate Person | PARTIAL | New Person intake now uses approved document-country/type policy, deterministic HMAC-SHA-256 fingerprint matching, unique fingerprint concurrency protection, safe audit events and a duplicate-review queue. Unconfigured document types fail closed. Review resolution and jurisdiction policy provisioning remain operational follow-up work. |
 | Paper order | PARTIAL | `adminCreatePaperQualificationOrder` binds one OPEN paper application to one Qualification package order and reuses PackageConfig, SponsorResolver, Payment and Placement core. Paper retail, Admin wizard/read model and end-to-end payment/activation evidence remain open. |
 | Paper receipt / payment confirmation | COMPLETE | Receipt evidence identity is immutable and retry-safe; conflicting evidence fails closed, dual control is enforced, and pre-placement reversal is covered. |
@@ -48,4 +48,5 @@ A slice is `COMPLETE` only when the required DB, domain, API, runtime, relevant 
 - No historical migration is edited; schema work is forward-only.
 - Semantic DB, Analytics, LLM/RAG/Vector DB and deployment are outside this closure.
 - Google Drive is not modified without explicitly authorized Drive tooling; any final closure must remain `CODE_CLOSED_DRIVE_SYNC_PENDING` until synchronized.
+
 

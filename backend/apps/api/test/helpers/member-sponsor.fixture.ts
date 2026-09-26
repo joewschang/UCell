@@ -9,8 +9,9 @@ export async function createEffectiveMemberSponsorFixture(db:PrismaClient){
  const actor:TreePrincipal={personId:actorPerson.personId,provider:'ENTRA',subject,role:'SUPER_ADMIN',sessionId:session.authSessionId};const trees=new BinaryTreeService(db as any,new IdempotencyService(db as any),new OrganizationService(db as any));
  const tree=(await trees.create(actor,{treeName:`Sponsor fixture ${randomUUID()}`,reason:'isolated sponsor fixture'},randomUUID())).value;await trees.change(actor,tree.binaryTreeId,{status:'ACTIVE',expectedVersion:1,reason:'activate fixture'},randomUUID());
  const holder=await db.person.create({data:{legalName:`Sponsor holder ${randomUUID()}`,status:'EFFECTIVE'}}),at=new Date();const qualification=await db.qualification.create({data:{currentHolderPersonId:holder.personId,planLevelCode:'STARTER',status:'EFFECTIVE',effectiveAt:at}});await db.qualificationHolderHistory.create({data:{qualificationId:qualification.qualificationId,holderPersonId:holder.personId,effectiveFrom:at,sourceType:'FIXTURE'}});
- await trees.confirmCompanySponsor(actor,tree.binaryTreeId,{qualificationId:qualification.qualificationId,reason:'fixture sponsor'},randomUUID());const placed=(await trees.place(actor,tree.binaryTreeId,{qualificationId:qualification.qualificationId,binaryParentQualificationId:tree.companyQualificationIds[0],side:'LEFT',expectedVersion:2,reason:'fixture member ball'},randomUUID())).value;
+ await trees.confirmCompanySponsor(actor,tree.binaryTreeId,{qualificationId:qualification.qualificationId,reason:'fixture sponsor'},randomUUID());const placed=(await trees.place(actor,tree.binaryTreeId,{qualificationId:qualification.qualificationId,binaryParentQualificationId:tree.companyQualificationIds[1],side:'LEFT',expectedVersion:2,reason:'fixture member ball'},randomUUID())).value;
  return {tree,holder,qualification:{...qualification,ballNo:placed.ballNo},actor};
 }
+
 
 
