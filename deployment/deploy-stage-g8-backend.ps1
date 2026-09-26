@@ -53,7 +53,7 @@ $backend=Resolve-Digest 'ucell-backend';$worker=Resolve-Digest 'ucell-worker'
 # The migration Job keeps its existing database secret reference. No password is read or replaced.
 $execution='';$status='';$migrationSucceeded=$false
 try{
- Invoke-Az @('containerapp','job','update','--resource-group',$ResourceGroup,'--name','ucell-stage-migrate','--image',$backend,'--only-show-errors')|Out-Null
+ Invoke-Az @('containerapp','job','update','--resource-group',$ResourceGroup,'--name','ucell-stage-migrate','--image',$backend,'--command','pnpm','--args','db:deploy','--only-show-errors')|Out-Null
  $execution=(Invoke-Az @('containerapp','job','start','--resource-group',$ResourceGroup,'--name','ucell-stage-migrate','--query','name','-o','tsv')).Trim()
  if(-not $execution){throw 'Migration execution name is empty.'}
  for($i=1;$i -le 120;$i++){
@@ -80,3 +80,4 @@ $healthy=$false;for($i=1;$i -le 30;$i++){
 if(-not $healthy){throw 'Stage API health probe failed.'}
 $result=[ordered]@{schemaVersion='G8_STAGE_BACKEND_UPDATE_V1';imageTag=$ImageTag;migrationExecution=$execution;migrationStatus=$status;apiImage=$backend;workerImage=$worker;apiHealth='PASS';adminMemberFrontend='UNCHANGED';completedAt=(Get-Date).ToUniversalTime().ToString('o')}
 if($OutputPath){$result|ConvertTo-Json -Depth 5|Set-Content -LiteralPath $OutputPath -Encoding utf8}else{$result|ConvertTo-Json -Depth 5}
+
