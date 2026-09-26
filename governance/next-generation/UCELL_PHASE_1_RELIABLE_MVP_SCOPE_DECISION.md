@@ -2624,3 +2624,122 @@ When CR-BATCH-01 is released:
 - allow future APP/WebApp/LINE/WeChat implementations to choose appropriate regional presentation architecture.
 
 Sections 23–24 remain useful design guidance, but any requirement implying one mandatory centralized i18n/theme runtime across all future frontend channels is superseded by this simplification.
+
+
+## 26. R1.0B CR-BATCH-01 UI Foundation — System Iconography & Achievement Emblems
+
+**Status:** APPROVED / INCLUDED_IN_BATCH / IMPLEMENTATION_SLICE_PRESENT
+**Approved date:** 2026-09-27 (Asia/Taipei)
+**Batch:** R1.0B-CR-BATCH-01
+**Scope:** Shared Design System, Admin, current Taiwan Member Web; future channels may reuse or redesign presentation while preserving canonical meanings.
+
+### ICON-1 Batch inclusion
+
+The System Iconography & Achievement Emblems work is formally included in **R1.0B-CR-BATCH-01** and must be carried through the batch impact review, tests, build/re-certification and Stage release plan together with the other approved changes.
+
+Existing implementation already present in the integration branch is treated as the initial implementation slice, not a separate release.
+
+### ICON-2 Source authority
+
+Icon/badge mapping must follow actual repository/domain authority, not conceptual marketing artwork.
+
+Current Qualification badge codes:
+- STARTER → 啟航
+- ELITE → 菁英
+- LEADER → 領袖
+
+Current Global Rank codes:
+- NEW_STAR → 新星
+- EXCELLENCE → 卓越
+- GLORY → 榮耀
+- DIAMOND → 鑽石
+- CROWN → 皇冠
+
+Any future change to qualification/global-rank codes must update domain rules/read models and Golden evidence before UI badges are changed to imply a new authoritative achievement.
+
+### ICON-3 Presentation-only boundary
+
+Icons and emblems are presentation metadata only.
+
+They MUST NOT calculate, infer or mutate:
+- Qualification;
+- Active;
+- Global Rank achievement;
+- Global Pool eligibility;
+- PV/BV;
+- Award/Payable;
+- Sponsor/Placement;
+- Order/Fulfillment;
+- authorization/privacy state.
+
+Unknown/unavailable canonical values fail safe and must not be converted into an invented badge.
+
+### ICON-4 Member Global Rank evidence boundary
+
+The shared design system may contain all authoritative GlobalRankCode emblem artwork.
+
+However, Member UI may display an emblem as **achieved** only after an authoritative member-safe Global Rank Achievement read model/API exists.
+
+Frontend inference from weak-side volume, PV, Award history or current display data is prohibited.
+
+Until that read authority exists, Global Rank emblems may be shown only as explanatory/reference artwork where the UI clearly does not assert member achievement.
+
+### ICON-5 Current integration
+
+The batch includes the current implementation slice in:
+- shared design-system icon/emblem components and styles;
+- Admin navigation icon mapping;
+- Admin Qualification/Ball badge presentation;
+- Admin Global Pool rank reference presentation;
+- Member bottom navigation;
+- Member quick-service actions;
+- Member Qualification badge presentation.
+
+### ICON-6 Visual direction
+
+Use refined vector/SVG presentation suitable for:
+- responsive web;
+- high-DPI displays;
+- future LIGHT/DARK adaptation;
+- accessible scaling.
+
+Current badges use distinct semantic visual identities for the three Qualification levels and five Global Rank achievements.
+
+Do not use decorative artwork as a substitute for text labels.
+
+### ICON-7 Localization/channel rule
+
+Current Taiwan Admin/Member labels are Traditional Chinese.
+
+Canonical codes remain language-neutral.
+
+Admin may later localize badge labels through its multilingual presentation layer. Future APP/WebApp/LINE/WeChat/regional channels may use channel-appropriate artwork while preserving the same canonical meaning.
+
+A single cross-channel icon runtime is not required.
+
+### ICON-8 Accessibility
+
+Where a visible text label already identifies the function, decorative icons should not create duplicate screen-reader announcements.
+
+Interactive controls must remain understandable without color/icon alone.
+
+Badge contrast and legibility must be verified with the batch Theme work.
+
+### ICON-9 Batch verification
+
+Before R1.0B-CR-BATCH-01 is released to Stage, this slice must be included in:
+- Admin typecheck/tests/production build;
+- Member typecheck/tests/production build;
+- navigation permission regression;
+- responsive/mobile verification;
+- LIGHT/DARK/SYSTEM verification when Theme foundation lands;
+- zh-TW label verification;
+- accessibility smoke;
+- canonical-code mapping tests for Qualification and Global Rank;
+- confirmation that no Member Global Rank achievement is inferred client-side.
+
+### ICON-10 Release control
+
+This inclusion does not authorize an independent Stage or Production deployment.
+
+The icon/badge implementation is now part of the integrated batch and follows the same batch release authorization, re-certification and Stage deployment decision as R1.0B-CR-BATCH-01.
