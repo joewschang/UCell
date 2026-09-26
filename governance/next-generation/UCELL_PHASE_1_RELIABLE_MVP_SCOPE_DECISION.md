@@ -707,3 +707,36 @@ Do NOT expand Phase 1 audit into:
 Those require separate later-phase approval.
 
 Phase 1 objective: reliably answer, for important operational/security actions, **who did what, when, to which business object, under what authority, with what result, and which evidence/trace proves it**.
+
+
+## 15. Phase 1 Operational Recovery Objectives — Business Approval
+
+**Status:** AUTHORITATIVE / APPROVED
+**Approved date:** 2026-09-26 (Asia/Taipei)
+**Scope:** Phase 1 Production operational readiness and disaster recovery.
+
+The business owner approves the following Phase-1 recovery objectives:
+
+- **RPO_TARGET = 1 hour maximum**
+- **RTO_TARGET = 4 hours maximum**
+
+Definitions:
+- RPO is the maximum acceptable data-loss window following a qualifying disaster/recovery event.
+- RTO is the target maximum elapsed time to restore the approved core UCell service following a qualifying major outage.
+
+These are operational objectives, not assumptions that current infrastructure automatically satisfies them.
+
+G8 MUST evaluate actual Azure PostgreSQL PITR capability, backup/restore procedures, application/environment rebuild dependencies, and measured restore-drill evidence against these targets.
+
+The configured PITR retention window (currently evidenced separately as 7 days on Stage) is NOT itself proof of RPO compliance.
+
+Required G8 evidence:
+- RPO_TARGET = 1H
+- RTO_TARGET = 4H
+- RPO_EVIDENCE = PASS / FAIL with basis
+- RTO_EVIDENCE = PASS / FAIL with basis
+- any remediation gap if current capability does not satisfy either objective.
+
+Codex MUST NOT weaken these targets or mark them PASS without evidence.
+
+Changes to these targets require a new explicit business-owner decision.
