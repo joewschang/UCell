@@ -3,3 +3,5 @@
 /governance/swaggerhub/oasdiff.yaml text eol=lf
 
 /governance/swaggerhub/baselines/*.json -text whitespace=cr-at-eol
+
+/backend/scripts/openapi-governance-linux-isolated.sh text eol=lf
