@@ -14,6 +14,9 @@
     "openapi:export": "ts-node src/openapi-export.ts"
   },
   "dependencies": {
+    "@fastify/cors": "*",
+    "@fastify/helmet": "*",
+    "@fastify/static": "^10.1.4",
     "@nestjs/common": "*",
     "@nestjs/config": "*",
     "@nestjs/core": "*",
@@ -25,17 +28,15 @@
     "class-transformer": "*",
     "class-validator": "*",
     "fastify": "*",
+    "jose": "^5.9.6",
     "pino": "*",
     "reflect-metadata": "*",
-    "rxjs": "*",
-    "@fastify/cors": "*",
-    "@fastify/helmet": "*",
-    "jose": "^5.9.6"
+    "rxjs": "*"
   },
   "devDependencies": {
-    "@types/jest": "^30.0.0",
     "@nestjs/cli": "*",
     "@nestjs/testing": "*",
+    "@types/jest": "^30.0.0",
     "@types/node": "*",
     "eslint": "*",
     "jest": "*",
