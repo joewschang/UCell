@@ -14,7 +14,7 @@ export function AppShell(){
     <a className="uc-skip-link" href="#admin-main">跳至主要內容</a>
     <AdminSidebar>
       <div className="brand"><div className="brand-mark small">U</div><div><strong>UCell</strong><span>Operations Console</span></div></div>
-      <nav aria-label="後台主要功能">{navGroups.map(group=>{const links=nav.filter(([,to])=>group.paths.includes(to)&&canOpen(user?.role,to));return links.length?<details className="uc-nav-group" key={group.label} open={group.paths.some(path=>pathname===path||path!=='/'&&pathname.startsWith(path+'/'))}><summary>{group.label}</summary>{links.map(([label,to,icon])=><NavLink end={to==='/'} key={to} to={to}><UCellIcon name={icon}/><span>{label}</span></NavLink>)}</details>:null})}</nav>
+      <nav aria-label="後台主要功能">{navGroups.map(group=>{const links=nav.filter(([,to])=>group.paths.includes(to)&&canOpen(user?.role,to));return links.length?<details className="uc-nav-group" key={group.label} open={group.paths.some(path=>pathname===path||path!=='/'&&pathname.startsWith(path+'/'))}><summary>{group.label}</summary>{links.map(([label,to,icon])=><NavLink end={to==='/'} key={to} to={to}><UCellIcon name={icon} className="uc-nav-icon"/><span>{label}</span></NavLink>)}</details>:null})}</nav>
       <div className="sidebar-foot"><span>{user?.name}</span><small>{user?.role}</small><button onClick={logout}>登出</button></div>
       {import.meta.env.DEV && import.meta.env.VITE_ADMIN_DEV_FULL_ACCESS==='true' && <label>DEV Actor Person ID（空白使用 ROOT fixture）<input value={devActor} onChange={e=>{setDevActor(e.target.value);sessionStorage.setItem('ucell_dev_actor_id',e.target.value.trim());queryClient.clear()}}/></label>}
     </AdminSidebar>
