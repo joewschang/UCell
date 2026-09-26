@@ -1831,3 +1831,181 @@ Before development authorization, perform:
 - Stage reseed/deployment plan.
 
 Only an explicit later instruction to release R1.0B-CR-BATCH-01 for implementation changes this status.
+
+
+## 22. R1.0B CR-BATCH-01 UI Foundation — Adaptive Theme System
+
+**Status:** APPROVED DESIGN / IMPLEMENTATION_PENDING
+**Approved date:** 2026-09-26 (Asia/Taipei)
+**Scope:** Admin and Membership/Member web frontends, including supported browser and LINE in-app webview/LIFF surfaces.
+**Implementation timing:** Part of R1.0B-CR-BATCH-01; do not implement until the integrated batch is explicitly released for development.
+
+### UI-THEME-1 Objective
+
+Admin and Membership MUST use one shared adaptive theme foundation rather than independent per-page dark-mode CSS.
+
+Supported user preferences:
+- SYSTEM
+- LIGHT
+- DARK
+
+Default = SYSTEM.
+
+SYSTEM follows the best available host/browser color-scheme preference. This controls application appearance only; UCell MUST NOT attempt to control physical device display brightness.
+
+### UI-THEME-2 Resolution priority
+
+Theme resolution priority:
+
+1. authenticated user's explicit LIGHT/DARK preference;
+2. supported LINE/LIFF host theme context where available and authoritative for the embedded experience;
+3. browser/OS `prefers-color-scheme`;
+4. LIGHT fallback.
+
+If authenticated preference = SYSTEM, continue to host/browser resolution.
+
+The resolver MUST fail safely when LINE/host theme information is unavailable.
+
+### UI-THEME-3 Shared semantic design tokens
+
+Admin and Membership must share semantic design tokens. Components/pages must consume semantic tokens rather than hard-coded light/dark colors.
+
+Minimum token categories:
+- surface.page
+- surface.card
+- surface.elevated
+- text.primary
+- text.secondary
+- text.disabled
+- border.default
+- input.background
+- input.border
+- action.primary
+- action.secondary
+- status.success
+- status.warning
+- status.danger
+- focus.ring
+
+Brand identity may define light/dark-compatible token values, but business/status meaning must remain consistent across themes.
+
+### UI-THEME-4 Preference persistence
+
+Before authentication:
+- local browser preference MAY be retained locally for UX continuity.
+
+After authentication:
+- UI theme preference should be stored in a dedicated UserPreference/UI-preference authority;
+- do not add theme state to Person identity or economic/member qualification models.
+
+Recommended value:
+`uiThemePreference = SYSTEM | LIGHT | DARK`.
+
+Admin Staff and Member may share the same preference vocabulary even if stored through different authenticated principals.
+
+### UI-THEME-5 Runtime switching
+
+Changing theme must not require logout or page reload.
+
+When SYSTEM is selected, the application should react to host/browser scheme changes during the active session where technically supported.
+
+Admin should expose an accessible theme control conceptually equivalent to:
+LIGHT / SYSTEM / DARK.
+
+Membership should default to SYSTEM and may expose the same override in an appropriate settings surface.
+
+### UI-THEME-6 Initial render / flash prevention
+
+Theme must be resolved as early as practical before the primary application UI renders.
+
+The implementation should apply a root-level theme marker (for example `data-theme` or equivalent) during bootstrap so a saved DARK preference does not first render a bright LIGHT frame.
+
+Server/client hydration must not cause visible theme oscillation where avoidable.
+
+### UI-THEME-7 LINE/LIFF behavior
+
+Membership opened inside LINE/LIFF must remain usable when host theme metadata is present, absent, delayed, or unsupported.
+
+Do not make core Member functionality depend on successful theme detection.
+
+LINE-specific adaptation must feed the same UCell Theme Resolver/design-token system; do not maintain a separate LINE color system.
+
+### UI-THEME-8 Accessibility
+
+Theme implementation must preserve accessibility in both LIGHT and DARK modes.
+
+At minimum validate:
+- text/background contrast;
+- form labels/inputs;
+- focus indicators;
+- disabled states;
+- success/warning/error states;
+- links/buttons;
+- tables/cards/dialogs;
+- charts/badges where present.
+
+Do not communicate business status by color alone.
+
+WCAG-compatible contrast targets should be used for normal UI text and interactive controls.
+
+### UI-THEME-9 Business and security isolation
+
+Theme preference is presentation metadata only.
+
+Changing theme MUST NOT affect:
+- Person/member identity;
+- qualification;
+- Active;
+- Ball/Sponsor/Placement;
+- PV/BV/Award;
+- Order/Fulfillment;
+- authorization/RBAC;
+- privacy/security behavior.
+
+Theme preference endpoints/read models, if introduced, must use authenticated principal authority and must not expose internal UUIDs unnecessarily.
+
+### UI-THEME-10 Architecture
+
+Preferred conceptual architecture:
+
+`ThemePreference → ThemeResolver → Root Theme Marker → Shared Semantic Tokens → Admin/Member Components`
+
+Avoid:
+- page-specific dark-mode forks;
+- duplicated Admin/Member palettes;
+- hard-coded component colors that bypass tokens;
+- CSS inversion/filter tricks;
+- physical screen-brightness control.
+
+### UI-THEME-11 Batch integration
+
+When R1.0B-CR-BATCH-01 is released for implementation, establish the Adaptive Theme foundation before or alongside major new UI work such as:
+- Paper Fast Enrollment Workbench;
+- LINE qualification/product selection;
+- subscription selection;
+- Fulfillment Scanner;
+- serialized-unit warehouse surfaces.
+
+This reduces duplicate styling work and ensures new batch UI is theme-aware from inception.
+
+### UI-THEME-12 Required verification
+
+Before completion, verify at minimum:
+- Admin LIGHT;
+- Admin DARK;
+- Admin SYSTEM;
+- Membership LIGHT;
+- Membership DARK;
+- Membership SYSTEM;
+- runtime theme switching;
+- persistence across refresh;
+- authenticated preference restore;
+- browser/OS SYSTEM change response where supported;
+- mobile viewport;
+- LINE/LIFF fallback behavior;
+- no initial light-flash for saved DARK preference where technically controllable;
+- accessibility/contrast;
+- no Business Core side effects;
+- production builds for affected frontends.
+
+Current status remains **APPROVED DESIGN / IMPLEMENTATION_PENDING** until the integrated change batch is explicitly released.
