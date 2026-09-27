@@ -4194,3 +4194,122 @@ Only the Foundation/V1 items in OME-2 are candidates for inclusion in the curren
 Learning/Event Center and Member-facing My Growth are approved planned enhancements but should not delay the current R1.0B release unless the pre-implementation dependency review identifies a required foundational dependency.
 
 Production remains untouched.
+
+
+## 33. R1.0B / Operations & Member Growth Amendment — Member Messaging vs LINE OA Broadcast
+
+**Status:** OWNER-APPROVED / SUPERSEDING CHANNEL-AMBIGUOUS NOTIFICATION GUIDANCE
+**Approved date:** 2026-09-27 (Asia/Taipei)
+
+### MSG-1 Primary member-message authority
+
+UCell's **Member System Messaging / 會員系統訊息** is the primary channel for ordinary member-directed operational and personalized messages.
+
+Examples include, where applicable:
+- order/payment status;
+- fulfillment/shipment status;
+- Repurchase Plan monthly recognition/Active information;
+- Award/Payable/Payout status;
+- Qualification/achievement information;
+- Task/service follow-up;
+- learning/course reminders;
+- event registration/attendance information;
+- member-specific operational notices.
+
+These messages are delivered and retained through UCell's member-facing message/notification experience and must respect authorization/privacy.
+
+### MSG-2 LINE Official Account role
+
+LINE Official Account is primarily for **large-scale/broadcast announcements** and approved mass communication.
+
+Examples:
+- company-wide announcements;
+- major campaign/activity announcements;
+- broad education/event promotion;
+- important service-wide notices.
+
+Do not use LINE OA as the default delivery mechanism for every member-specific transactional/operational notification.
+
+### MSG-3 Channel separation
+
+Business event/message intent and delivery channel remain separate concepts, but current channel policy is:
+
+- personalized/operational member message → Member System Messaging by default;
+- mass/broadcast announcement → LINE OA when approved/appropriate;
+- other future channels (APP push, WeChat, email, etc.) require separate channel policy and do not automatically inherit LINE behavior.
+
+A message may be intentionally published to more than one channel only when the communication policy explicitly requires it; avoid duplicate/noisy delivery by default.
+
+### MSG-4 Message Center
+
+Member-facing products should provide a clear **訊息中心** capable of showing at least:
+- unread/read state;
+- message category/type;
+- title/summary/body or safe linked detail;
+- created/published time;
+- related safe business reference/deep link where applicable;
+- expiry/archive behavior where applicable.
+
+Sensitive business detail should be retrieved under authenticated authorization rather than copied unnecessarily into notification payloads.
+
+### MSG-5 Broadcast governance
+
+Large-scale announcements should support controlled audience and publication evidence where practical:
+- announcement type;
+- target audience/segment;
+- content/version;
+- scheduled/published time;
+- publisher/approver where required;
+- channel = LINE OA and/or Member System announcement;
+- delivery/result evidence available from the channel.
+
+Do not send member-private financial/account information through a mass-broadcast path.
+
+### MSG-6 Operations integration
+
+Operations Control Center may show:
+- failed member-system message deliveries;
+- unread/queued message health where operationally useful;
+- LINE OA broadcast/provider failures separately.
+
+Exception Center must distinguish Member Messaging failures from LINE OA/provider failures.
+
+Task generation may be used for unresolved communication failures where human follow-up is required.
+
+### MSG-7 Learning/Event integration
+
+Learning and Event Center defaults:
+- member-specific enrollment, registration, reminder, attendance or completion information → Member System Messaging;
+- large public/member-wide event promotion or company announcement → LINE OA broadcast when approved.
+
+This keeps LINE OA usage focused on mass communication while Member System remains the authoritative personalized communication experience.
+
+### MSG-8 Existing LINE worker
+
+Existing LINE/provider worker capabilities remain valid infrastructure and may continue to support approved LINE workloads.
+
+This amendment changes the **product/channel policy**, not the reliability architecture.
+
+Implementation must review existing event-to-LINE mappings and avoid automatically sending ordinary member-specific messages through LINE merely because a LINE handler exists.
+
+### MSG-9 Privacy and audit
+
+Member messages follow normal Member authentication/BOLA.
+
+Broadcast targeting and publication actions require appropriate Admin authorization and audit.
+
+Do not expose internal UUIDs, raw exception text, protected banking data or another member's information in either channel.
+
+### MSG-10 Verification
+
+Plan verification for:
+- PERSONAL_OPERATIONAL_MESSAGE_DEFAULTS_TO_MEMBER_SYSTEM = PASS
+- MASS_ANNOUNCEMENT_CAN_ROUTE_TO_LINE_OA = PASS
+- PRIVATE_FINANCIAL_MESSAGE_NOT_BROADCAST = PASS
+- MEMBER_MESSAGE_READ_UNREAD_STATE = PASS
+- MEMBER_MESSAGE_AUTHORIZATION = PASS
+- LINE_AND_MEMBER_FAILURES_DISTINGUISHABLE = PASS
+- NO_UNINTENDED_DUPLICATE_CHANNEL_DELIVERY = PASS
+- LEARNING_EVENT_CHANNEL_POLICY = PASS.
+
+This amendment supersedes any earlier roadmap wording that could be read as requiring LINE delivery for ordinary member-specific notifications.
