@@ -3401,3 +3401,193 @@ Before coding R1.0B-CR-BATCH-01, produce one consolidated impact package contain
 Only after this package shows no unresolved material business decision should the batch status move from IMPLEMENTATION_PENDING to RELEASED_FOR_DEVELOPMENT.
 
 Production remains untouched.
+
+
+## 30. R1.0B CR-BATCH-01 — Commercial Offering & Product Classification Authority
+
+**Status:** OWNER-APPROVED / INCLUDED_IN_BATCH / IMPLEMENTATION_PENDING
+**Approved date:** 2026-09-27 (Asia/Taipei)
+**Batch:** R1.0B-CR-BATCH-01
+
+### CO-1 Five approved commercial categories
+
+The current approved commercial offering categories are:
+
+1. **會員資格套組（可自選）** — `QUALIFICATION_PACKAGE`
+2. **季／半年／年重銷套組（可自選）** — `REPURCHASE_PLAN`
+3. **主商品** — `CORE_PRODUCT`
+4. **普銷商品** — `RETAIL_PRODUCT`
+5. **促銷商品組合** — `PROMOTIONAL_BUNDLE`
+
+These are commercial-sale classifications and must not be confused with physical SKU identity.
+
+### CO-2 Four-layer semantic separation
+
+The implementation must distinguish:
+
+1. **Product / SKU** — what the physical product is;
+2. **Commercial Offering** — how the product(s) are being offered/sold;
+3. **Order Line Purpose / Purchase Context** — why this quantity appears in this specific Order;
+4. **Fulfillment** — what physical SKU/quantity must actually ship.
+
+Do not collapse these four concepts into one product category field.
+
+### CO-3 Product/SKU authority
+
+A physical product such as TIP-363/TIP-999/TIP-580/TIP-696/TIP-777 remains one Product/SKU authority.
+
+The same Product/SKU may be eligible for multiple Commercial Offerings without duplicating the physical product master.
+
+Example: TIP-580 may be eligible for a Qualification Package, a Repurchase Plan and direct sale where approved by the effective offering/rule version.
+
+### CO-4 Qualification Package
+
+`QUALIFICATION_PACKAGE` is a selectable Commercial Offering.
+
+Current approved selection rules:
+- STARTER / 啟航 = exactly 3 units;
+- ELITE / 菁英 = exactly 9 units;
+- LEADER / 領袖 = exactly 15 units;
+- selectable from the approved five-product pool unless a versioned PackageConfig rule changes eligibility.
+
+Qualification selection must be preserved as a business snapshot and must not be replaced by a fake generic ERP bundle SKU that loses the selected physical composition.
+
+### CO-5 Repurchase Plan
+
+`REPURCHASE_PLAN` is a selectable prepaid Commercial Offering and is **not a recurring subscription**.
+
+Current approved plans:
+- 季重銷 = 2 units, one payment, one shipment, 3 monthly accounting/Active recognition periods;
+- 半年重銷 = 4 units, one payment, one shipment, 6 monthly accounting/Active recognition periods;
+- 年重銷 = 8 units, one payment, one shipment, 12 monthly accounting/Active recognition periods.
+
+The selected physical composition is fixed in the confirmed Order snapshot. Monthly recognition operates on the captured economic entitlement/schedule and does not create new physical shipments.
+
+### CO-6 Core Product
+
+`CORE_PRODUCT` represents approved principal/core products sold as direct commercial items.
+
+A Core Product remains a physical Product/SKU and may also be eligible inside other Offering types when explicitly allowed by the effective rules.
+
+Core Product classification alone must not imply Qualification, Repurchase recognition, Promotion or Retail Referral economics.
+
+### CO-7 Retail Product
+
+`RETAIL_PRODUCT` represents products approved for ordinary retail/general-sale commerce.
+
+Retail eligibility, Retail Referral eligibility, PV/BV/GPV treatment and pricing remain versioned rule attributes; the label RETAIL_PRODUCT alone must not silently manufacture economic effects.
+
+### CO-8 Promotional Bundle
+
+`PROMOTIONAL_BUNDLE` represents a versioned promotional Commercial Offering.
+
+It may support:
+- a fixed product composition; or
+- a selectable composition only when an approved selection rule explicitly allows it.
+
+At minimum a promotion Offering should be capable of governing:
+- offering/version code;
+- effective sales window;
+- eligible channel;
+- price rule;
+- product composition/selection rule;
+- quantity/purchase limits where applicable;
+- PV/BV/GPV/economic rule reference;
+- status/approval evidence.
+
+A promotion must not rewrite the underlying Product/SKU master.
+
+### CO-9 Additional Purchase is not a sixth product category
+
+`ADDITIONAL_PURCHASE` is an **Order Line Purpose / Purchase Context**, not a Commercial Offering category.
+
+Example:
+- Product = TIP-580;
+- Commercial Offering = CORE_PRODUCT;
+- Order Line Purpose = ADDITIONAL_PURCHASE.
+
+This distinction preserves why the item was purchased without inventing another product class.
+
+### CO-10 Order snapshot/provenance
+
+Each confirmed Order/OrderLine must preserve sufficient immutable/versioned evidence to identify, where applicable:
+- Product/SKU;
+- Commercial Offering type/code/version;
+- source package/plan/promotion;
+- line purpose/purchase context;
+- selected quantity;
+- price/rule/PV/BV/GPV snapshots;
+- recognition profile/schedule reference for Repurchase Plan;
+- selection-group evidence for selectable offerings.
+
+Historical Orders must not be reinterpreted from today's current Offering configuration.
+
+### CO-11 Fulfillment projection
+
+Fulfillment consumes the confirmed physical SKU/quantity result of the Commercial Offering.
+
+ERP does not need to understand Qualification, Repurchase recognition or Promotion economics.
+
+Multiple OrderLines with the same SKU may be aggregated for physical execution, but UCell must preserve allocation/provenance back to each source OrderLine and Offering/Purpose.
+
+### CO-12 Return and lineage
+
+Return/Recovery must preserve:
+
+Serialized Unit where applicable
+→ Shipment
+→ Fulfillment Allocation
+→ OrderLine
+→ Commercial Offering
+→ Order Line Purpose
+→ economic/qualification/recognition consequences.
+
+This is required to distinguish a returned Qualification item, Repurchase Plan item, Core/Retail item or Promotion item even if the physical SKU is identical.
+
+### CO-13 Admin/Member presentation
+
+Current Taiwan UI uses Traditional Chinese labels:
+- 會員資格套組
+- 重銷方案
+- 主商品
+- 普銷商品
+- 促銷商品組合
+
+Do not expose internal English enum values as ordinary labels.
+
+Admin should clearly distinguish physical Product/SKU from Commercial Offering configuration.
+
+Member/LINE selection UI should show only Offerings valid for the current channel/effective period.
+
+### CO-14 Recommended implementation model
+
+Prefer extending/reusing the existing ProductReference, ProductRuleProfile and PackageConfig authorities with a lightweight versioned Commercial Offering layer/adapter rather than creating five unrelated sales engines.
+
+The exact schema is a technical design decision subject to the pre-implementation impact review.
+
+Do not introduce a new table merely because an enum can represent a concept; add persistence only where versioning, composition, effective period, channel or historical snapshot authority requires it.
+
+### CO-15 Required verification
+
+Add batch verification covering at minimum:
+- PRODUCT_SKU_NOT_DUPLICATED_BY_OFFERING = PASS
+- QUALIFICATION_PACKAGE_SELECTION_3_9_15 = PASS
+- REPURCHASE_PLAN_SELECTION_2_4_8 = PASS
+- REPURCHASE_PLAN_ONE_PAYMENT_ONE_SHIPMENT = PASS
+- REPURCHASE_PLAN_MONTHLY_RECOGNITION_3_6_12 = PASS
+- CORE_PRODUCT_DIRECT_SALE = PASS
+- RETAIL_PRODUCT_DIRECT_SALE = PASS
+- PROMOTIONAL_BUNDLE_VERSIONED_COMPOSITION = PASS
+- ADDITIONAL_PURCHASE_IS_PURPOSE_NOT_CATEGORY = PASS
+- ORDER_PRESERVES_OFFERING_VERSION_SNAPSHOT = PASS
+- FULFILLMENT_PRESERVES_SOURCE_ALLOCATION = PASS
+- RETURN_PRESERVES_OFFERING_PROVENANCE = PASS
+- ECONOMIC_LINEAGE_PRESERVES_OFFERING_SOURCE = PASS.
+
+### CO-16 Supersession
+
+Any earlier CR-BATCH-01 text that describes `SUBSCRIPTION` as the approved 季／半年／年 customer-facing commercial category is superseded by `REPURCHASE_PLAN`.
+
+Existing technical Subscription/RPV structures remain subject to implementation assessment and may be reused internally only where they preserve the approved Repurchase Plan business meaning.
+
+Current status remains **IMPLEMENTATION_PENDING** until the consolidated pre-implementation closure gate is passed.
