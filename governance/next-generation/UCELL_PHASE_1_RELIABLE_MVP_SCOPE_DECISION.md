@@ -3841,3 +3841,356 @@ Reuse current payout/recovery authority wherever possible.
 If an existing field/status cannot represent the approved lifecycle without ambiguity, use a forward-safe migration; do not reinterpret historical states silently.
 
 Current status remains **IMPLEMENTATION_PENDING** and follows the consolidated CR-BATCH-01 closure/re-certification/Stage authorization. Production remains untouched.
+
+
+## 32. R1.0B / Post-R1.0B Product Roadmap — Operations, Member 360, Tasks, Exceptions, Learning & Events
+
+**Status:** OWNER-APPROVED PLANNING / SCOPE-SLICED / IMPLEMENTATION_PENDING
+**Approved date:** 2026-09-27 (Asia/Taipei)
+
+This section establishes the product/system plan for five related capabilities while preventing uncontrolled expansion of the current R1.0B delivery.
+
+### OME-1 Product grouping
+
+The following capabilities form a shared **Operations & Member Growth Layer** above existing UCell domain authorities:
+
+1. 營運控制中心 — Admin
+2. 會員360與成長分析 — Admin + Member-facing
+3. 教育訓練與活動中心 — online/offline/hybrid
+4. 待辦事項中心 — Admin
+5. 異常中心 — Admin
+
+These capabilities consume authoritative Membership, Organization, Commerce, Economic, Fulfillment, Audit and future Learning/Event facts. They MUST NOT create a second source of truth for those domains.
+
+### OME-2 Delivery slicing
+
+To keep R1.0B bounded, approved delivery slicing is:
+
+**R1.0B Foundation / V1**
+- 營運控制中心 V1;
+- 待辦事項中心 V1;
+- 異常中心 V1;
+- Admin 會員360 V1;
+- shared Activity Timeline Projection.
+
+**Next enhancement slice**
+- Member-facing「我的成長」;
+- 教育訓練中心;
+- 活動中心;
+- course progress/completion;
+- event registration/check-in;
+- learning/event integration into Member 360;
+- server-authoritative rank/growth progress presentation.
+
+This roadmap classification may be revisited during the consolidated pre-implementation impact gate if the foundation dependency proves smaller/larger than expected.
+
+### OME-3 Operations Control Center V1
+
+Admin receives a role-aware operational cockpit focused on actionability, not decorative KPIs.
+
+Recommended sections:
+- 今日營運: new members, paid orders, fulfillment/shipment, returns, recognition;
+- 組織營運: new/effective Qualifications/Balls, pending placements, Binary Tree status, newly achieved Global ranks;
+- 獎金/財務: settlement readiness/status, matured Awards, Payables, payout batches, Recovery, bank-transfer failures;
+- 系統健康: Outbox backlog/failures, recognition delays, worker/provider/LINE/ERP/integration health;
+- 我的待辦;
+- 開放異常.
+
+Every aggregate should drill down to stored evidence/read models where authorized.
+
+The dashboard must not recompute economic truth in the browser.
+
+### OME-4 Admin Member 360 V1
+
+Provide one read-oriented Member 360 workspace aggregating, subject to RBAC/privacy:
+- basic member/business identity;
+- LINE/link status where applicable;
+- Qualifications/Balls;
+- Sponsor and Binary organization views;
+- Active and Repurchase Plan status;
+- Orders/Fulfillment/Shipment/Returns;
+- GPV/RPV/EPV summaries and links to Economic Value Lineage;
+- Awards/Payables/Payout status;
+- Global Rank achievement;
+- Tasks/Exceptions related to the member;
+- Activity Timeline.
+
+Member 360 is a composed read model/workspace, not a new mutable Member master.
+
+Sensitive bank/payment/internal UUID data remains protected.
+
+### OME-5 Growth analysis model
+
+Growth must be multi-dimensional and explainable, not a hidden AI score.
+
+Planned dimensions:
+- Qualification progression;
+- organization growth;
+- Active stability;
+- Global Rank achievement/progress;
+- learning progress;
+- event participation.
+
+Do not create a single opaque 0–100 member score in the initial design.
+
+Any future "distance to next level" or achievement progress must be calculated server-side from authoritative rules/read models; frontend inference is prohibited.
+
+### OME-6 Member-facing My Growth — next slice
+
+Future Member UI may present:
+- current Qualification;
+- Active status;
+- current/achieved Global Rank;
+- server-calculated next-achievement progress;
+- organization indicators appropriate for the member;
+- learning completion;
+- upcoming/attended events.
+
+Presentation may differ by Member Web/LINE/APP/WeChat/regional channel under the existing channel-localization authority.
+
+### OME-7 Activity Timeline Projection
+
+Create a lightweight, rebuildable Activity Timeline projection from authoritative events/facts.
+
+Candidate event types include:
+- MEMBER_JOINED;
+- LINE_LINKED;
+- QUALIFICATION_EFFECTIVE;
+- BALL_PLACED;
+- ORDER_CONFIRMED/PAID;
+- FULFILLMENT/SHIPMENT;
+- RETURN_POSTED;
+- GPV/RPV/EPV_RECOGNIZED;
+- GLOBAL_RANK_ACHIEVED;
+- AWARD/PAYOUT milestone;
+- COURSE_STARTED/COMPLETED;
+- EVENT_REGISTERED/ATTENDED;
+- operational Task/Exception milestones where useful.
+
+The timeline is a read projection. It MUST reference source evidence and MUST NOT become authority for the underlying business state.
+
+Projection rebuild must be deterministic/idempotent where feasible.
+
+### OME-8 Admin Task Center V1
+
+Tasks support two origins:
+
+**System-generated work items**
+Examples:
+- paper application review;
+- LINE-link review;
+- payout review;
+- return review;
+- ERP/integration follow-up;
+- failed bank-transfer follow-up.
+
+**Human-created work items**
+Examples:
+- follow up with a member;
+- verify approved operational information.
+
+Minimum task semantics:
+- task type;
+- Chinese title/summary;
+- source/origin;
+- related safe business entity/reference;
+- assignee user/role/team as supported;
+- priority;
+- dueAt;
+- status;
+- completion/closure evidence;
+- created/updated timestamps.
+
+A Task is NOT business authority.
+
+Marking a Task complete MUST NOT approve a Payout, alter a Qualification, resolve a Return, change an Award or mutate another governed workflow unless the user separately executes the authoritative domain action.
+
+### OME-9 Exception Center V1
+
+Exceptions represent detected abnormal conditions, not ordinary work.
+
+Recommended lifecycle:
+- OPEN
+- ACKNOWLEDGED
+- INVESTIGATING
+- RESOLVED
+
+Minimum semantics:
+- exception type/code;
+- severity;
+- source system/domain;
+- related safe business reference;
+- detectedAt;
+- evidence/diagnostic reference;
+- assigned owner where applicable;
+- status;
+- resolution evidence;
+- correlation/trace reference.
+
+Candidate exception families:
+- economic lineage/invariant gaps;
+- overdue RPV recognition;
+- settlement/job delay/failure;
+- Company Award destination mismatch;
+- Payable/Award/Payout reconciliation mismatch;
+- ERP/Fulfillment/Serial mismatch;
+- bank-transfer failure;
+- Outbox/provider/LINE failure;
+- projection/read-model staleness.
+
+Exceptions may generate Tasks. Tasks do not automatically imply an Exception.
+
+### OME-10 Invariant monitoring
+
+Prefer explicit invariant checks over generic log dashboards for business-critical integrity.
+
+Examples:
+- Payable must trace to authoritative Award/economic source;
+- Company Award routing must reconcile to Reservoir B where applicable;
+- Payout line totals must reconcile to Payables and Recovery offsets;
+- due monthly recognition must not remain unprocessed beyond an approved tolerance;
+- Fulfillment shipped quantities/serials must reconcile;
+- Economic Lineage must not contain broken required source edges.
+
+Exact thresholds and alert routing remain technical/operational configuration unless they change business meaning.
+
+### OME-11 Learning & Event Center — next slice
+
+Plan one center with two subdomains:
+
+**Learning**
+- course;
+- category;
+- module/lesson;
+- video/document/article/external-link content;
+- optional quiz;
+- audience/eligibility;
+- enrollment/assignment where needed;
+- started/progress/completed evidence;
+- completion timestamp/result.
+
+**Events**
+- ONLINE / OFFLINE / HYBRID;
+- event/session;
+- location or online joining information;
+- capacity where applicable;
+- registration;
+- cancellation/waitlist where later required;
+- QR or equivalent check-in;
+- attendance evidence.
+
+Do not build a proprietary video streaming platform in the first slice; support governed hosted/external content references.
+
+Learning completion does not affect Qualification/Active/Award unless a later explicit business rule authorizes that dependency.
+
+### OME-12 Learning/Event integration
+
+Learning and Event facts should feed:
+- Member 360;
+- Member My Growth;
+- Activity Timeline;
+- Operations Control Center aggregates where useful;
+- future notification workflows.
+
+They remain distinct domain facts and should not be encoded as arbitrary notes on Person.
+
+### OME-13 Notification readiness
+
+Design Learning/Event/Task/Exception milestones so they can emit canonical business notifications through the existing notification architecture.
+
+Business event and delivery channel remain separate.
+
+Future channels may include:
+- Web;
+- LINE;
+- APP Push;
+- email;
+- WeChat or other regional channels.
+
+This section does not require all channels in R1.0B.
+
+### OME-14 RBAC/privacy
+
+All five capabilities must respect existing RBAC/BOLA/privacy policy.
+
+Operations/Admin views are role-aware.
+
+Member-facing growth views expose only the authenticated member's authorized data.
+
+Member 360 must not become a shortcut around domain authorization.
+
+Task/Exception payloads must avoid copying unnecessary sensitive data; reference protected source evidence instead.
+
+### OME-15 Read-model freshness
+
+Operational dashboards must disclose meaningful freshness/data-through information for asynchronous projections where stale data could mislead operators.
+
+Do not present stale analytics projection as live economic authority.
+
+Critical operational actions must resolve against authoritative domain state at action time.
+
+### OME-16 UI principles
+
+Current Taiwan Admin:
+- Traditional-Chinese-first;
+- clear drill-down;
+- severity/status not communicated by color alone;
+- compatible with planned LIGHT/DARK/SYSTEM foundation;
+- refined shared system icons where appropriate.
+
+Member-facing future growth UI may use channel/region-appropriate design.
+
+### OME-17 Initial technical boundary
+
+Prefer:
+- server-side read models/projections;
+- existing Outbox/domain facts;
+- lightweight Task/Exception authorities;
+- deterministic Activity Timeline projection.
+
+Avoid:
+- duplicating domain tables into a CRM shadow database;
+- browser-side economic/rank calculations;
+- one giant generic "activity" table as the source of all business truth;
+- premature AI scoring;
+- premature full CRM/marketing automation;
+- premature custom video infrastructure.
+
+### OME-18 V1 verification expectations
+
+For the R1.0B Foundation slice, plan tests for:
+- OPERATIONS_CENTER_READS_AUTHORITATIVE_FACTS = PASS
+- OPERATIONS_CENTER_ROLE_FILTERING = PASS
+- MEMBER_360_NO_DUPLICATE_BUSINESS_AUTHORITY = PASS
+- MEMBER_360_RBAC_BOLA = PASS
+- ACTIVITY_TIMELINE_SOURCE_TRACEABLE = PASS
+- ACTIVITY_TIMELINE_REBUILD_IDEMPOTENT = PASS
+- TASK_COMPLETION_DOES_NOT_MUTATE_DOMAIN_AUTHORITY = PASS
+- SYSTEM_TASK_SOURCE_TRACEABLE = PASS
+- EXCEPTION_SOURCE_EVIDENCE_TRACEABLE = PASS
+- EXCEPTION_TO_TASK_LINK_OPTIONAL = PASS
+- INVARIANT_MONITOR_DETECTS_SEEDED_FAILURE = PASS
+- READ_MODEL_FRESHNESS_VISIBLE = PASS
+- NORMAL_UI_NO_INTERNAL_UUID_LEAK = PASS.
+
+### OME-19 Next-slice verification expectations
+
+For Learning/Event/My Growth later:
+- COURSE_PROGRESS_TRACEABLE;
+- COURSE_COMPLETION_IDEMPOTENT;
+- EVENT_REGISTRATION_IDEMPOTENT;
+- EVENT_CHECKIN_SINGLE_EFFECTIVE_ATTENDANCE;
+- MEMBER_GROWTH_SERVER_AUTHORITY;
+- LEARNING_EVENT_TIMELINE_INTEGRATION;
+- MEMBER_SELF_ONLY_PRIVACY;
+- CHANNEL_PRESENTATION_INDEPENDENCE.
+
+### OME-20 Scope control
+
+The five capabilities are approved as the product direction.
+
+Only the Foundation/V1 items in OME-2 are candidates for inclusion in the current R1.0B implementation impact package.
+
+Learning/Event Center and Member-facing My Growth are approved planned enhancements but should not delay the current R1.0B release unless the pre-implementation dependency review identifies a required foundational dependency.
+
+Production remains untouched.
