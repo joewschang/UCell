@@ -2910,3 +2910,235 @@ This design is included in **R1.0B-CR-BATCH-01**.
 Current status remains **IMPLEMENTATION_PENDING** until the integrated batch is explicitly released for development.
 
 No independent Stage or Production change is authorized by this amendment.
+
+
+## 28. R1.0B CR-BATCH-01 — End-to-End Economic Value Lineage (GPV/RPV/EPV/Referral)
+
+**Status:** APPROVED DESIGN / INCLUDED_IN_BATCH / IMPLEMENTATION_PENDING
+**Approved date:** 2026-09-27 (Asia/Taipei)
+**Batch:** R1.0B-CR-BATCH-01
+**Objective:** Every transaction-derived numeric effect must remain explainable from commercial source through recognition, volume/economic propagation, Award destination, settlement/payment and later reversal/recovery/replay.
+
+### EVL-1 Principle
+
+UCell must preserve a complete **Economic Value Lineage / 數值影響鏈**.
+
+Do not replace existing authoritative ledgers/evidence with a second accounting ledger.
+
+The lineage layer indexes/joins existing immutable or historical authorities and adds missing correlation/evidence edges only where required.
+
+A user with appropriate Admin authority should eventually be able to start from a safe business identifier such as orderNo, memberNo, ballNo, fulfillment/serial reference, Award reference or trace/correlation reference and explain the downstream numeric effects without recomputing history from current rules.
+
+### EVL-2 Required source-to-effect chain
+
+Where applicable, lineage must cover:
+
+Commercial source
+→ Order / OrderLine snapshots
+→ Payment / recognition event
+→ PV Ledger event(s)
+→ Active/eligibility evidence
+→ Sponsor/Binary historical relationship evidence
+→ GPV/RPV/EPV/Referral calculation inputs
+→ Carry/period/settlement evidence
+→ theory/eligibility/K or rate application
+→ Award
+→ Award lifecycle
+→ economic destination
+→ Member Payable/Payout OR Company Reservoir B
+→ Return/Reversal/Recovery/Replay append-only corrections.
+
+Each stage should preserve or expose the stable source/evidence identifiers, rule/parameter version, business effective time and recorded time needed to traverse the chain.
+
+### EVL-3 GPV
+
+GPV lineage must include:
+- source Order/OrderLine;
+- SKU/product/rate/rule snapshot;
+- GPV PV-ledger event;
+- historical sponsor/binary evidence used by each applicable calculation;
+- Referral/Equalization/Binary/Global or other downstream calculations that consume the GPV event;
+- settlement batch and K/pool evidence where applicable;
+- resulting Award/destination;
+- reversal/replay/recovery effects.
+
+Existing GPV historical replay snapshots remain authoritative; the lineage read model must not substitute current Sponsor/Active/Plan state for historical evidence.
+
+### EVL-4 RPV
+
+RPV lineage must explicitly cover the existing recognition chain:
+
+Subscription / MonthlyRecognitionSchedule
+→ RPV_CREATED PvLedger event
+→ source Qualification
+→ historical Binary ancestors/generation
+→ effective direct-count snapshot
+→ unlocked-depth snapshot
+→ Active snapshot, including Company ALWAYS_ACTIVE policy
+→ RpvUplineAwardEvent theory/payable
+→ economic destination
+→ Member payable/payout or Company Reservoir B
+→ reversal/replay/recovery where applicable.
+
+The lineage must preserve `recognitionId`, `pvLedgerEventId`, source/recipient Qualification, binary generation, direct-count/unlock/Active snapshots, rule version and parameter snapshot hash.
+
+Do not compress or skip generations in the lineage representation when the authoritative RPV calculation does not do so.
+
+### EVL-5 EPV
+
+EPV lineage must explicitly cover:
+
+Paid REPURCHASE Order
+→ month-recognition context and cumulative/base/rate evidence
+→ EPV_CREATED PvLedger event
+→ EPV self Award (generation 0)
+→ Sponsor-upline EPV Awards by fixed historical generation
+→ Active/Plan/direct-count snapshots and rate used
+→ Award lifecycle or Company Reservoir B routing
+→ payable/payout
+→ reversal/replay/recovery.
+
+The existing EPV audit/evidence such as monthStart/monthEnd/timezone/base/rate/cumulative/increment and parameter snapshot must be linkable from the lineage.
+
+A zero EPV recognition event remains meaningful evidence and must not disappear merely because the numeric increment is zero.
+
+### EVL-6 Referral and Equalization
+
+Referral lineage must distinguish at least:
+
+**Sponsor relationship authority**
+- SponsorRelationship / historical sponsor ancestry;
+- actual fixed generation;
+- no substitution with Binary parent.
+
+**GPV-driven Referral/Equalization economics**
+- source GPV event;
+- effective historical source volume;
+- G1 sponsor and G1 rate;
+- G1 referral theory;
+- recipient Active/Plan snapshots;
+- Equalization generation;
+- direct-count/unlock-depth evidence;
+- configured rate;
+- zero-entitlement/ineligible evidence;
+- SettlementBatch pool/K;
+- final BonusAward;
+- Member payout or Company Reservoir B;
+- reversal/replay/recovery.
+
+Inactive/locked recipients with theoretical value but zero entitlement must remain explainable through BonusCalculationEvidence rather than disappearing from the chain.
+
+### EVL-7 Retail Referral
+
+Retail Referral is a distinct attribution/economic path and must also participate in the common lineage UX/read model.
+
+Preserve:
+- ReferralLink/attribution evidence where applicable;
+- RetailReferrerAttribution and correction events;
+- immutable referrer Ball snapshot;
+- Order/OrderLine;
+- SKU/product rule version;
+- enabled/rate/base type;
+- net paid item amount;
+- Active-at-recognition snapshot;
+- RETAIL_REFERRAL Award;
+- Payable/Payout;
+- Return/Recovery.
+
+The existing Admin Retail Referral Explain remains authoritative and should be incorporated/reused rather than reimplemented with current-state recalculation.
+
+### EVL-8 Referral attribution versus Sponsor relationship
+
+Do not conflate:
+- membership SponsorRelationship;
+- web/anonymous ReferralAttribution;
+- RetailReferrerAttribution;
+- Binary parent/placement.
+
+The lineage graph may connect these when an authoritative source edge exists, but must retain their distinct semantic types.
+
+### EVL-9 Correlation and lineage identifiers
+
+Where existing correlation/source identifiers are sufficient, reuse them.
+
+If cross-module traversal has gaps, add minimal immutable lineage/evidence edges rather than duplicating monetary rows.
+
+Preferred lineage node identity includes:
+- node/evidence type;
+- authoritative source table/entity;
+- stable source ID/business reference;
+- occurred/effective time;
+- recorded time;
+- rule version;
+- parameter snapshot/hash;
+- correlation/trace reference where available.
+
+### EVL-10 Append-only correction semantics
+
+Historical numeric facts must not be rewritten merely to show the latest effective total.
+
+Return/reversal/recovery/replay should be represented as linked corrective effects.
+
+The lineage must be able to show:
+- original amount;
+- correction/reversal;
+- effective resulting amount;
+- reason/source;
+- replay revision/evidence where applicable.
+
+### EVL-11 Admin Transaction Impact Trace
+
+When implementation is released, provide an Admin read-only **交易影響追蹤** experience backed by server-side read models.
+
+Search/entry points may include safe business identifiers:
+- 訂單編號;
+- 會員編號;
+- 球號;
+- 商品序號/出貨參考 where available;
+- Award/settlement reference;
+- trace/correlation reference.
+
+The UI should present a chronological/causal graph or structured timeline in Traditional Chinese.
+
+It must read stored evidence; it must not rerun economic rules to invent an explanation.
+
+### EVL-12 Privacy/security
+
+Lineage access is privileged operational/audit functionality.
+
+Apply RBAC/BOLA and data minimization.
+
+Normal Member UI must not gain visibility into another member's economic graph, internal UUIDs, protected company topology, payout details or sensitive personal information.
+
+Use business identifiers in ordinary Admin display where practical; internal IDs may remain protected diagnostic evidence according to existing policy.
+
+### EVL-13 Required verification
+
+Before batch completion, add focused real-DB lineage Golden covering at minimum:
+
+- ORDER_TO_GPV_LINEAGE = PASS
+- GPV_TO_REFERRAL_AWARD_LINEAGE = PASS
+- GPV_TO_EQUALIZATION_LINEAGE = PASS
+- GPV_TO_BINARY_SETTLEMENT_LINEAGE = PASS
+- GPV_TO_GLOBAL_POOL_LINEAGE = PASS
+- RPV_RECOGNITION_TO_UPLINE_AWARD_LINEAGE = PASS
+- RPV_COMPANY_DESTINATION_RESERVOIR_B_LINEAGE = PASS
+- EPV_ORDER_TO_SELF_AWARD_LINEAGE = PASS
+- EPV_TO_SPONSOR_UPLINE_AWARD_LINEAGE = PASS
+- EPV_COMPANY_DESTINATION_RESERVOIR_B_LINEAGE = PASS
+- REFERRAL_INELIGIBLE_ZERO_ENTITLEMENT_EVIDENCE = PASS
+- RETAIL_REFERRAL_ORDER_TO_PAYOUT_LINEAGE = PASS
+- RETURN_TO_REVERSAL_RECOVERY_LINEAGE = PASS
+- REPLAY_CORRECTION_LINEAGE = PASS
+- LINEAGE_USES_HISTORICAL_SNAPSHOTS_NOT_CURRENT_STATE = PASS
+- LINEAGE_IDEMPOTENT_READ = PASS
+- LINEAGE_RBAC_BOLA = PASS
+- LINEAGE_NO_NORMAL_UI_UUID_LEAK = PASS.
+
+### EVL-14 Implementation control
+
+This is part of R1.0B-CR-BATCH-01 and follows the batch implementation/re-certification/Stage authorization.
+
+Do not create an independent Stage release.
+
+Production remains untouched until the full batch passes its normal release governance.
