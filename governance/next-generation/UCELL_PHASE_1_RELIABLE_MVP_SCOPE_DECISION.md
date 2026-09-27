@@ -2743,3 +2743,170 @@ Before R1.0B-CR-BATCH-01 is released to Stage, this slice must be included in:
 This inclusion does not authorize an independent Stage or Production deployment.
 
 The icon/badge implementation is now part of the integrated batch and follows the same batch release authorization, re-certification and Stage deployment decision as R1.0B-CR-BATCH-01.
+
+
+## 27. R1.0B CR-BATCH-01 Amendment — Profile-Driven Binary Tree Bootstrap
+
+**Status:** APPROVED DESIGN / SUPERSEDING FIXED-COUNT ASSUMPTIONS / IMPLEMENTATION_PENDING
+**Approved date:** 2026-09-27 (Asia/Taipei)
+**Batch:** R1.0B-CR-BATCH-01
+**Scope:** Binary Tree creation/bootstrap parameters, Company bootstrap qualification profile, placement eligibility, fixtures/Golden, Admin tree configuration and Stage/UAT reseed.
+
+### BT-PROFILE-1 Authority
+
+The Binary Tree engine MUST NOT hard-code seven Company bootstrap Balls as an immutable engine constant.
+
+Each Binary Tree is created from a versioned **Binary Tree Bootstrap Profile** (or equivalent authoritative parameter snapshot).
+
+The currently approved standard/default profile uses:
+
+- `companyBallCount = 7`
+- Founder/bootstrap Company Ball qualification = `LEADER_72000`
+- Company ownership = COMPANY
+- Company Active policy = ALWAYS_ACTIVE
+- Company Award eligibility = enabled according to applicable approved Award rules
+- Company economic destination = RESERVOIR_B
+
+Therefore, for the current standard profile:
+
+- positions 1..7 = bootstrap Company Balls;
+- first normal member-eligible position = 8.
+
+The prior CR-001 wording `BOOTSTRAP_COMPANY_BALL_COUNT = 7` is superseded where it implies an engine-wide immutable constant.
+
+Correct authority:
+
+`DEFAULT_BOOTSTRAP_COMPANY_BALL_COUNT = 7`
+
+and, for a contiguous bootstrap profile:
+
+`FIRST_MEMBER_ELIGIBLE_POSITION = companyBallCount + 1`.
+
+### BT-PROFILE-2 Per-tree parameter snapshot
+
+Each Binary Tree must retain the exact bootstrap profile/version and effective parameter snapshot used to create it.
+
+At minimum the profile/snapshot must be capable of representing:
+
+- profile code/version;
+- companyBallCount;
+- bootstrap Company qualification/plan profile;
+- Company Active policy;
+- Company Award eligibility policy/reference;
+- economic destination policy/reference;
+- effective/version/approval evidence required by current configuration governance.
+
+Do not scatter literal `7`, `72000`, `LEADER`, `ALWAYS_ACTIVE` or `RESERVOIR_B` conditions independently across services.
+
+### BT-PROFILE-3 Tree-specific configuration
+
+Different Binary Trees may be created with different approved bootstrap profiles.
+
+Conceptually, future approved configurations may include different Company bootstrap counts, for example A=7 and B=15, without changing the Binary Tree engine.
+
+This amendment does NOT itself approve arbitrary profile values for Production. Only approved/published profile versions may be selected.
+
+### BT-PROFILE-4 Immutability after activation/member placement
+
+Bootstrap topology parameters are creation-time structural authority.
+
+While a Tree is still in a safe pre-operational DRAFT state, an authorized configuration workflow may select/change the profile according to implementation rules.
+
+Once bootstrap has been materialized and/or the Tree is activated or accepts normal member placement, structural bootstrap parameters such as `companyBallCount` MUST NOT be edited in place.
+
+Changing a live Tree from 7 to 15 by rewriting historical positions is prohibited as an ordinary settings update.
+
+A materially different topology requires an approved new Tree/profile or a separately governed migration/rebuild process.
+
+### BT-PROFILE-5 Bootstrap materialization
+
+New-tree bootstrap must deterministically materialize exactly `companyBallCount` real Company bootstrap Qualifications/Balls according to the selected profile.
+
+For the standard profile, positions 1..7 are occupied by Company bootstrap Balls.
+
+No placeholder/fake natural-person member is created.
+
+The bootstrap Company qualification baseline is assigned by system/company profile authority and must not require fake member orders/payments/consumption.
+
+### BT-PROFILE-6 Member placement eligibility
+
+Normal member placement eligibility derives from the Tree's authoritative bootstrap snapshot, not a global literal position 8.
+
+For a contiguous bootstrap:
+- reserved Company bootstrap positions = `1..companyBallCount`;
+- first normal member position = `companyBallCount + 1`.
+
+Server-side placement must enforce the selected Tree's rule.
+
+UI may display the resulting eligible positions but is not authority.
+
+### BT-PROFILE-7 Company Ball economics
+
+CR-001 Amendments A/B remain authoritative for the currently approved standard profile:
+
+- bootstrap Company Balls are ALWAYS_ACTIVE;
+- they participate in applicable approved Awards;
+- Company economic Awards route to Reservoir B;
+- the standard profile assigns LEADER_72000 qualification to all of its bootstrap Company Balls;
+- bootstrap existence/qualification alone does not synthesize transaction-derived volume.
+
+Other Company Balls outside the bootstrap range remain governed by the previously approved Company ownership/economic rules and do not automatically inherit the bootstrap qualification profile solely because they are Company-owned.
+
+### BT-PROFILE-8 Sponsor model unchanged
+
+This amendment does NOT change the existing Sponsor architecture.
+
+The previously confirmed original rule remains:
+- Binary Tree is a tree-specific topology scope;
+- Sponsor relationships remain the existing Qualification-to-Qualification Sponsor model;
+- do not introduce a mandatory paired SponsorTreeId;
+- do not prohibit an otherwise valid Sponsor relationship solely because Binary Tree IDs differ.
+
+### BT-PROFILE-9 Admin
+
+When implementation is released, Admin multi-tree creation/configuration should display the selected bootstrap profile and its effective parameters in clear Chinese.
+
+Do not expose unrestricted numeric mutation of a live Tree.
+
+If profile selection is configurable in Admin, only approved/published profiles may be selectable.
+
+Tree detail should make the effective bootstrap count/profile visible for operational explanation and audit.
+
+### BT-PROFILE-10 Test/Stage data
+
+Current Local/Stage data remains disposable test/UAT data under the batch authority.
+
+During CR-BATCH-01 implementation, obsolete synthetic Trees may be deleted/rebuilt/reseeded to the approved profile rather than historically reparented.
+
+Production remains untouched.
+
+Stage-specific destructive cleanup must remain separate from Production-safe schema/runtime migration.
+
+### BT-PROFILE-11 Required Golden
+
+The batch Golden plan must be parameterized rather than proving only a literal seven-node engine.
+
+At minimum prove:
+
+- STANDARD_PROFILE_COMPANY_BALL_COUNT_7 = PASS
+- STANDARD_PROFILE_POSITIONS_1_TO_7_COMPANY = PASS
+- STANDARD_PROFILE_FIRST_MEMBER_POSITION_8 = PASS
+- STANDARD_PROFILE_BOOTSTRAP_LEADER_72000 = PASS
+- PROFILE_SNAPSHOT_PERSISTED = PASS
+- PLACEMENT_USES_TREE_BOOTSTRAP_COUNT = PASS
+- LIVE_TREE_BOOTSTRAP_COUNT_IMMUTABLE = PASS
+- UNAPPROVED_PROFILE_REJECTED = PASS
+- COMPANY_ALWAYS_ACTIVE = PASS
+- COMPANY_AWARD_ROUTES_RESERVOIR_B = PASS
+- BOOTSTRAP_DOES_NOT_SYNTHESIZE_VOLUME = PASS
+- SPONSOR_MODEL_UNCHANGED = PASS
+
+Also add a non-default test profile in isolated tests, if safe and implementation-supported, to prove the engine is genuinely profile-driven rather than a renamed hard-coded seven.
+
+### BT-PROFILE-12 Implementation timing
+
+This design is included in **R1.0B-CR-BATCH-01**.
+
+Current status remains **IMPLEMENTATION_PENDING** until the integrated batch is explicitly released for development.
+
+No independent Stage or Production change is authorized by this amendment.
