@@ -3142,3 +3142,262 @@ This is part of R1.0B-CR-BATCH-01 and follows the batch implementation/re-certif
 Do not create an independent Stage release.
 
 Production remains untouched until the full batch passes its normal release governance.
+
+
+## 29. R1.0B CR-BATCH-01 Decision Closure — Repurchase Plans, Global Pool & Remaining Design Defaults
+
+**Status:** OWNER-APPROVED / DECISION_CLOSURE / IMPLEMENTATION_PENDING
+**Approved date:** 2026-09-27 (Asia/Taipei)
+**Batch:** R1.0B-CR-BATCH-01
+
+This section closes the remaining business/design ambiguities discussed on 2026-09-27. Where this section conflicts with earlier CR-BATCH-01 text, this section supersedes it.
+
+### DC-1 Repurchase plans are NOT subscriptions
+
+The approved plans are prepaid **Repurchase Plans / 重銷方案**, not recurring subscriptions:
+
+- 季重銷：2盒
+- 半年重銷：4盒
+- 年重銷：8盒
+
+Each plan:
+- is purchased with one payment;
+- creates one confirmed commercial purchase;
+- ships the full selected physical quantity once after normal payment/fulfillment authorization;
+- does not automatically charge the customer again;
+- does not create recurring monthly shipment orders;
+- does not require skip/pause/cancel-renewal subscription semantics.
+
+Any earlier CR-BATCH-01 language treating these three plans as recurring `SUBSCRIPTION` delivery products is superseded.
+
+The existing technical Subscription/RPV runtime may be reused or migrated internally only if its semantics can represent this approved prepaid-plan authority without exposing false recurring-subscription behavior.
+
+### DC-2 Monthly accounting recognition and Active
+
+Although payment and physical shipment occur once, the purchased Repurchase Plan creates a fixed monthly recognition schedule across the plan term.
+
+Approved default interpretation for implementation:
+- 季重銷：3 monthly recognition periods;
+- 半年重銷：6 monthly recognition periods;
+- 年重銷：12 monthly recognition periods.
+
+The plan's approved total recognition entitlement is allocated across those monthly periods using a deterministic schedule captured at purchase time.
+
+Each monthly recognition:
+- is an accounting/economic recognition event, not a new sale;
+- does not create a new payment;
+- does not create a new physical shipment;
+- may create the approved RPV/economic effect for that recognition period;
+- may establish/extend Active according to the authoritative Active rule for that period;
+- must be idempotent and independently traceable.
+
+Do not infer monthly recognition from current product configuration after purchase. Persist the plan/rule/parameter snapshot and monthly schedule at purchase confirmation.
+
+### DC-3 Recognition allocation default
+
+Unless a later approved product rule specifies otherwise, split the plan's total recognized RPV/recognition entitlement evenly across its monthly periods.
+
+Because currency/volume rounding can produce a remainder, use deterministic remainder handling:
+- periods 1..N-1 receive the normalized rounded monthly amount;
+- the final period receives the exact remaining amount;
+- sum of all monthly recognition events MUST equal the original plan entitlement exactly.
+
+Do not split physical units fractionally. Product quantities are shipped once; only accounting/economic recognition is amortized.
+
+### DC-4 Recognition timing
+
+Recommended implementation default:
+- first recognition occurs at the authoritative paid/plan-effective date;
+- subsequent recognition occurs monthly on the same local calendar day in the approved business timezone;
+- if that day does not exist in a target month, use the last valid day of that month;
+- persist every due date when the plan is created so later timezone/calendar changes do not rewrite history.
+
+The existing business-calendar/timezone authority remains controlling where already defined.
+
+### DC-5 Returns/cancellation after one-time shipment
+
+Because goods ship once while recognition is monthly, return handling must distinguish:
+- recognition already posted;
+- future unrecognized entitlement;
+- Award/Payable already derived from recognized periods.
+
+Recommended default:
+- accepted full return cancels all future unrecognized monthly recognition and creates append-only reversal/recovery for already recognized economic effects according to existing return/recovery authority;
+- accepted partial return reduces future unrecognized entitlement proportionally to the returned eligible value/quantity and records any required reversal/recovery for already recognized attributable value;
+- never delete or rewrite prior recognition/Award history;
+- returned serialized units remain traceable to the original Order/Fulfillment/OrderLine.
+
+Exact return eligibility/window remains governed by the existing commerce/legal return policy; this section defines economic treatment after an accepted return.
+
+### DC-6 Commercial line purpose terminology
+
+For new CR-BATCH-01 UI/domain presentation, use:
+- 資格套組 / QUALIFICATION_PACKAGE
+- 加購商品 / ADDITIONAL_PURCHASE
+- 重銷方案 / REPURCHASE_PLAN
+
+Do not present the approved 季/半年/年 plans to users as 訂閱/Subscription.
+
+If existing internal schema/enums still use `SUBSCRIPTION`, implementation must assess a backward-compatible migration/adapter strategy rather than blindly renaming historical records.
+
+### DC-7 Global Pool authority reconciliation — APPROVED
+
+The current Runtime Global Pool rank model is approved as the R1.0B authority for this batch:
+
+- NEW_STAR → 新星
+- EXCELLENCE → 卓越
+- GLORY → 榮耀
+- DIAMOND → 鑽石
+- CROWN → 皇冠
+
+Current Runtime parameterized weak-side thresholds and rank pool rates remain authoritative unless a separately approved parameter change is made through normal rule governance.
+
+Global rank is historical achievement; once achieved it is not downgraded. Current-period distribution eligibility still follows the authoritative Active/current-period weak-side/rank-slice rules.
+
+UI badges, Admin Explain, Member-safe future achievement read models, DB enum/parameters, Golden and formal documents must be reconciled to this single authority.
+
+Conflicting older conceptual rank names must not be used as current Runtime authority.
+
+### DC-8 Sponsor and Binary Placement closure
+
+Approved:
+- SponsorRelationship is established by the designated Sponsor Qualification/Ball and is independent of Binary parentage;
+- Sponsor and Binary parent are not interchangeable concepts;
+- Binary Placement must be tree-local;
+- child and Binary parent must belong to the same Binary Tree for placement;
+- cross-tree Binary Placement is rejected;
+- placement must not rewrite SponsorRelationship.
+
+No new SponsorTree aggregate or mandatory SponsorTreeId is introduced.
+
+No additional cross-tree Sponsor restriction is introduced by this batch beyond existing Sponsor authority.
+
+### DC-9 Binary bootstrap profile closure
+
+Approved:
+- Binary Tree bootstrap is profile-driven;
+- current standard profile = 7 bootstrap Company Balls;
+- standard bootstrap qualification = LEADER_72000;
+- Company bootstrap Balls = ALWAYS_ACTIVE;
+- applicable Company Awards route to Reservoir B;
+- first normal member position derives from the selected contiguous profile, currently 8;
+- live/operational Tree bootstrap structural parameters are immutable;
+- Admin selects only approved/published profiles rather than entering arbitrary live topology numbers.
+
+### DC-10 Fulfillment/ERP closure
+
+Approved:
+- UCell Order is Commercial Authority;
+- UCell Fulfillment Projection is physical fulfillment authority;
+- ERP is inventory/pick/pack/ship execution authority;
+- Serialized Unit is physical traceability authority;
+- qualification/additional/repurchase-plan semantics remain in UCell;
+- ERP receives executable SKU/quantity/delivery requirements;
+- EzTooL integration uses an adapter boundary;
+- future Dynamics 365 BC may replace/add an adapter without rewriting UCell Business Core;
+- durable idempotent handoff and reconciliation are required;
+- one Order may produce multiple Fulfillments for operational exceptions, but an approved Repurchase Plan normally creates one immediate physical fulfillment because its goods ship once.
+
+### DC-11 Serialized fulfillment closure
+
+Approved:
+- preserve approved PBBBSSSS v1 serial semantics and A-E product mapping;
+- warehouse flow verifies Order/Fulfillment → SKU → Serial → exact quantity before shipment;
+- actual serials bind to Fulfillment allocations and source OrderLines;
+- wrong/duplicate/ineligible/already-shipped serials fail closed;
+- returns preserve Serial → Shipment → Fulfillment → OrderLine → business-purpose provenance.
+
+### DC-12 Economic Value Lineage closure
+
+Approved:
+- do not create a second accounting ledger;
+- reuse existing Order snapshots, PvLedger, historical replay snapshots, Active evidence, Carry, Settlement, Award, destination, Payable/Payout, Reservoir B and Recovery/Replay authorities;
+- add minimal missing immutable edges/correlation and a unified server-side read model;
+- cover GPV, RPV, EPV, REFERRAL, RETAIL_REFERRAL, EQUALIZATION, BINARY, MATCHING and GLOBAL;
+- zero-entitlement/zero-recognition evidence remains explainable;
+- historical Explain uses historical snapshots, never current-state recomputation;
+- Admin receives a read-only 交易影響追蹤 experience;
+- first UI version should be a structured chronological/causal timeline with expandable calculation details, not an unnecessarily complex graph visualization.
+
+### DC-13 Common Explain contract recommendation
+
+Implement a lightweight common read-model envelope where applicable:
+
+- effectType
+- sourceType
+- safe sourceBusinessRef
+- subjectBallNo/memberNo where authorized
+- inputAmount/baseAmount
+- rate
+- theoryAmount
+- adjustmentFactor/K where applicable
+- finalAmount
+- eligibility/result
+- reasonCode
+- ruleVersion
+- parameterSnapshotHash
+- occurredAt/effectiveAt
+- recordedAt
+- safe upstream/downstream references
+
+This is a presentation/read contract, not a new financial source of truth.
+
+### DC-14 UI/localization closure
+
+Approved:
+- current Taiwan Admin/Member ordinary UI is Traditional-Chinese-first;
+- Admin is multilingual-ready;
+- future Member WebApp/native APP/LINE/WeChat/regional channels may use channel/region-appropriate presentation;
+- Backend/API canonical business codes remain language-neutral;
+- do not build an enterprise translation CMS now;
+- current Admin/Member Web may support SYSTEM/LIGHT/DARK;
+- future channels may use platform-native theme mechanisms;
+- system icons and Qualification/Global Rank emblems remain presentation-only and follow canonical codes.
+
+### DC-15 Paper enrollment closure
+
+Approved:
+- Admin Paper Fast Enrollment and LINE/Member selection use the same server-side package/product/order authority;
+- STARTER=3, ELITE=9, LEADER=15 selectable units across the approved five-product pool;
+- additional purchases remain distinct;
+- Repurchase Plan selection remains distinct from Qualification Package and Additional Purchase;
+- signed physical Membership Application, Order Form and Distributor Agreement are authoritative paper evidence;
+- no signed-image scanning/OCR/e-signature requirement;
+- system preserves historical structured print/document/version snapshots.
+
+### DC-16 Remaining implementation details are technical, not business-decision blockers
+
+The following should be resolved during implementation by the least-complex design consistent with current authority and do not require a new business decision unless repository constraints reveal a material conflict:
+
+1. exact table naming for Bootstrap Profile/version snapshots;
+2. whether existing Subscription tables can safely represent prepaid Repurchase Plan schedules or require a dedicated/migrated model;
+3. exact API route/resource names for Repurchase Plan and Economic Lineage;
+4. exact Admin component/layout implementation;
+5. exact EzTooL transport/API mechanism after integration discovery;
+6. exact indexes/materialized/read projections needed for Lineage performance;
+7. exact internal event naming, provided canonical meaning and evidence remain stable;
+8. test fixture/reseed mechanics for disposable Local/Stage data.
+
+Implementation must prefer reuse over duplication, forward-safe migrations, server authority, append-only evidence and minimal complexity.
+
+If any of these technical choices would change approved business meaning, economic outcomes, legal obligations, privacy boundaries or historical replay, stop and return it as DECISION_REQUIRED.
+
+### DC-17 Pre-implementation closure gate
+
+Before coding R1.0B-CR-BATCH-01, produce one consolidated impact package containing:
+
+- final decision matrix;
+- conflict/supersession map for earlier CR text;
+- DB/schema/migration impact;
+- API/OpenAPI impact;
+- Admin/Member/LINE impact;
+- economic-engine impact;
+- Repurchase Plan recognition schedule design;
+- ERP/Fulfillment/Serial impact;
+- Golden/replay/reconstruction plan;
+- Local/Stage reseed plan;
+- rollback/recovery boundary.
+
+Only after this package shows no unresolved material business decision should the batch status move from IMPLEMENTATION_PENDING to RELEASED_FOR_DEVELOPMENT.
+
+Production remains untouched.
