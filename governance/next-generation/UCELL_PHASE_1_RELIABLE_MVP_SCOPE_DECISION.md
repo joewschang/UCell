@@ -3591,3 +3591,253 @@ Any earlier CR-BATCH-01 text that describes `SUBSCRIPTION` as the approved 季�
 Existing technical Subscription/RPV structures remain subject to implementation assessment and may be reused internally only where they preserve the approved Repurchase Plan business meaning.
 
 Current status remains **IMPLEMENTATION_PENDING** until the consolidated pre-implementation closure gate is passed.
+
+
+## 31. R1.0B CR-BATCH-01 — Manual Bank Transfer Payout Authority
+
+**Status:** OWNER-APPROVED / INCLUDED_IN_BATCH / IMPLEMENTATION_PENDING
+**Approved date:** 2026-09-27 (Asia/Taipei)
+**Batch:** R1.0B-CR-BATCH-01
+**Scope:** Payable materialization, payout batching, finance review/approval, bank-format export, company payment execution evidence, reconciliation and Economic Value Lineage.
+
+### MBP-1 Operating model
+
+Phase-1/R1.0B payout uses **manual/company-controlled bank transfer**, not direct bank API disbursement.
+
+UCell is responsible for:
+- authoritative Award/Payable amounts;
+- Recovery offsets;
+- payout batch preparation;
+- finance review/approval workflow;
+- bank-format transfer-list generation/export;
+- export evidence/version/hash;
+- payment-result recording/reconciliation;
+- audit and Economic Value Lineage.
+
+The company's existing banking/signature/payment process remains responsible for actual movement of funds.
+
+No automatic bank-transfer API is required by this batch.
+
+### MBP-2 End-to-end payout flow
+
+Approved operational flow:
+
+Settlement
+→ Award
+→ Award maturity
+→ Payable
+→ Recovery offset
+→ Payout Batch DRAFT
+→ Finance review
+→ Approval/lock
+→ Bank transfer file/list export
+→ Existing company bank/payment approval process
+→ Payment result confirmation/reconciliation
+→ PAID / PARTIALLY_PAID / FAILED evidence.
+
+Generating/downloading a bank file MUST NOT itself mark a payout as paid.
+
+### MBP-3 Human control boundary
+
+Period/worker automation may:
+- perform approved economic settlement jobs;
+- mature due Awards;
+- materialize eligible Payables;
+- prepare payable/payout candidates.
+
+A human Finance-authorized action is required before producing an approved final bank-payment export.
+
+Actual external payment remains outside automatic worker execution.
+
+High-risk corrections and payout-result confirmation remain governed Admin actions with audit evidence.
+
+### MBP-4 Payout batch lifecycle
+
+Implementation should provide an explicit governed lifecycle equivalent to:
+
+- DRAFT
+- REVIEWED
+- APPROVED
+- EXPORTED
+- PROCESSING
+- PAID
+- PARTIALLY_PAID
+- FAILED
+
+Exact internal enum naming may differ if existing schema can represent the same authority without ambiguity.
+
+At minimum:
+- APPROVED/locked batches cannot silently change economic lines;
+- EXPORTED means a bank-transfer artifact was generated, not that money moved;
+- PAID requires confirmed payment-result evidence;
+- failed lines remain reconcilable/retryable without recalculating their originating Awards.
+
+### MBP-5 Batch and line snapshots
+
+At approval/export time preserve immutable/versioned payout evidence sufficient to reproduce what Finance authorized.
+
+At minimum where applicable:
+- payoutBatch business reference;
+- payment period;
+- recipient memberNo/ballNo business references;
+- recipient Qualification authority;
+- gross payable amount;
+- Recovery offset;
+- net transfer amount;
+- payee name snapshot;
+- bank code/branch data required by the approved format;
+- bank account snapshot required for payment;
+- export adapter/format/version;
+- generated/exported timestamp;
+- generated/exported by;
+- approval evidence;
+- content/file hash;
+- source PayableEntry/PayoutLine references;
+- rule/economic lineage references.
+
+Do not regenerate a historical approved bank file from today's changed bank-account or member master data.
+
+### MBP-6 Sensitive banking data
+
+Bank account and payment identity data are sensitive operational data.
+
+Requirements:
+- least-privilege Finance access;
+- ordinary Admin/Member UI masks sensitive bank values;
+- complete bank details appear only where required for authorized payment/export;
+- no bank account data in ordinary logs, public traces or Member-facing URLs;
+- export/download action is audited;
+- exported artifacts follow approved retention/access handling.
+
+Normal Member UI should expose only safe payout status/reference information, not internal payout IDs or other members' banking data.
+
+### MBP-7 Bank export adapter
+
+Do not hard-code one bank's layout into the economic/Payout engine.
+
+Use a lightweight export adapter boundary:
+
+Payout Batch
+→ Bank Export Adapter
+→ approved bank-specific format and/or controlled generic finance CSV/XLSX.
+
+Initial implementation only needs the company's actually approved operational format(s).
+
+Adding/changing a bank format must not require changing Award calculation logic.
+
+### MBP-8 Finance review export
+
+In addition to any bank-specific machine/import format, provide a human-readable finance review export where operationally useful.
+
+It should reconcile at least:
+- recipient business reference;
+- gross payable;
+- Recovery offset;
+- net payable;
+- bank destination (appropriately protected);
+- exception/status.
+
+The review artifact and bank-import artifact may be separate outputs from the same approved locked batch.
+
+### MBP-9 Payment result and reconciliation
+
+After the company's bank/payment process, UCell must support recording actual results.
+
+Preferred:
+- import/parse an approved bank result file when the bank provides a stable format; or
+- controlled Finance confirmation with per-line failure handling when no reliable result format exists.
+
+Support at least:
+- successful line;
+- failed line;
+- partial batch success;
+- failure reason/reference where available.
+
+A failed transfer does not create a new Award and does not recalculate economics. The unpaid Payable/Payout obligation remains traceable for controlled retry/correction.
+
+### MBP-10 Idempotency and export identity
+
+Repeated export/download of the same locked batch must not create duplicate PayoutLines or new economic obligations.
+
+Every bank export artifact should have a stable export identity/version and content hash.
+
+If a corrected payment file is required, create a governed replacement/export revision rather than silently overwriting the historical approved artifact.
+
+### MBP-11 Recovery interaction
+
+Recovery offsets are applied before the net bank-transfer amount is finalized according to existing UnifiedPayable/Recovery authority.
+
+Lineage must explain:
+
+Gross Payable
+− Recovery Offset
+= Net Transfer Amount.
+
+Recovery after an already completed payment remains an append-only future recovery/clawback obligation; do not rewrite the historical paid amount.
+
+### MBP-12 Economic Value Lineage extension
+
+Extend Economic Value Lineage through the final operational payment evidence:
+
+Order/Recognition
+→ GPV/RPV/EPV
+→ Award
+→ Award lifecycle
+→ Payable
+→ Recovery offset
+→ PayoutLine
+→ PayoutBatch
+→ Bank Export Artifact
+→ Company payment result
+→ reconciliation/retry/recovery.
+
+An authorized Admin should be able to explain whether an amount is:
+- calculated;
+- pending;
+- effective;
+- payable;
+- included in a batch;
+- exported;
+- confirmed paid;
+- failed/unpaid;
+- subject to Recovery.
+
+### MBP-13 Scheduling/orchestration consequence
+
+Do not add a Cron that automatically sends money.
+
+The planned Period Close Orchestrator may automate safe preparation through eligible Payable/candidate preparation, but Finance review/approval/export remains a human gate.
+
+Existing Admin payout endpoints/UnifiedPayableService should be reused and extended rather than bypassed.
+
+### MBP-14 Required verification
+
+Add batch verification covering at minimum:
+- PAYABLE_TO_PAYOUT_BATCH_LINEAGE = PASS
+- RECOVERY_OFFSET_TO_NET_TRANSFER = PASS
+- PAYOUT_BATCH_REVIEW_APPROVAL_GATE = PASS
+- EXPORT_DOES_NOT_MARK_PAID = PASS
+- BANK_EXPORT_IDEMPOTENT = PASS
+- BANK_EXPORT_USES_LOCKED_SNAPSHOT = PASS
+- BANK_EXPORT_HASH_EVIDENCE = PASS
+- BANK_DATA_RBAC_MASKING = PASS
+- PARTIAL_BANK_RESULT_RECONCILIATION = PASS
+- FAILED_TRANSFER_REMAINS_UNPAID = PASS
+- FAILED_TRANSFER_RETRY_NO_DUPLICATE_AWARD = PASS
+- PAID_RESULT_LINEAGE = PASS
+- POST_PAYMENT_RECOVERY_APPEND_ONLY = PASS
+- NO_AUTOMATIC_BANK_DISBURSEMENT = PASS.
+
+### MBP-15 Implementation assessment
+
+Before implementation, inspect the existing PayoutBatch/PayoutLine/UnifiedPayable models and Admin payout UI to determine the minimum forward-safe extension needed for:
+- review/approval/lock;
+- bank export artifacts;
+- bank format adapters;
+- result reconciliation.
+
+Reuse current payout/recovery authority wherever possible.
+
+If an existing field/status cannot represent the approved lifecycle without ambiguity, use a forward-safe migration; do not reinterpret historical states silently.
+
+Current status remains **IMPLEMENTATION_PENDING** and follows the consolidated CR-BATCH-01 closure/re-certification/Stage authorization. Production remains untouched.
