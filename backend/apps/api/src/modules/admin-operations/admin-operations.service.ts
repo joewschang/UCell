@@ -243,14 +243,27 @@ export class AdminOperationsService {
 
   async invariantCandidates(input:{take?:number}={}){
     const requested=Number.isFinite(input.take)?input.take??100:100;
-    const batches=await this.prisma.payoutBatch.findMany({include:{lines:{select:{netAmount:true}}},orderBy:{periodEnd:'desc'},take:Math.min(Math.max(requested,1),200)});
-    return batches.flatMap(batch=>{
+    const take=Math.min(Math.max(requested,1),200);
+    const [batches,payables]=await Promise.all([
+      this.prisma.payoutBatch.findMany({include:{lines:{select:{netAmount:true}}},orderBy:{periodEnd:'desc'},take}),
+      this.prisma.payableEntry.findMany({where:{sourceType:'BONUS_AWARD'},include:{qualification:{select:{qualificationNo:true}}},orderBy:{createdAt:'desc'},take}),
+    ]);
+    const awardIds=payables.map(row=>row.sourceId);
+    const awards=awardIds.length?await this.prisma.bonusAward.findMany({where:{bonusAwardId:{in:awardIds}},select:{bonusAwardId:true}}):[];
+    const knownAwards=new Set(awards.map(row=>row.bonusAwardId));
+    const payoutCandidates=batches.flatMap(batch=>{
       const lineNet=batch.lines.reduce((sum,line)=>sum.add(line.netAmount),new Prisma.Decimal(0));
       if(lineNet.equals(batch.totalNet)) return [];
       const reference=`PAYOUT:${batch.periodStart.toISOString().slice(0,10)}:${batch.periodEnd.toISOString().slice(0,10)}`;
       const detail={declaredTotalNet:batch.totalNet.toString(),lineNetTotal:lineNet.toString(),status:batch.status};
       return [{code:'PAYOUT_BATCH_TOTAL_MISMATCH',severity:'CRITICAL',sourceType:'PAYOUT_BATCH',reference,evidenceHash:createHash('sha256').update(JSON.stringify({reference,...detail})).digest('hex'),detail}];
     });
+    const payableCandidates=payables.filter(row=>!knownAwards.has(row.sourceId)).map(row=>{
+      const reference=`QUALIFICATION:${row.qualification.qualificationNo.toString()}:PAYABLE_AWARD`;
+      const detail={sourceType:row.sourceType,awardType:row.awardType,status:row.status,grossAmount:row.grossAmount.toString()};
+      return {code:'PAYABLE_AWARD_SOURCE_MISSING',severity:'CRITICAL',sourceType:'PAYABLE_ENTRY',reference,evidenceHash:createHash('sha256').update(JSON.stringify({reference,...detail})).digest('hex'),detail};
+    });
+    return [...payoutCandidates,...payableCandidates].sort((left,right)=>left.code.localeCompare(right.code)||left.reference.localeCompare(right.reference));
   }
 
   async operationalExceptions(input:{status?:string;take?:number}={}){

@@ -23,4 +23,15 @@ describeDb('OPERATIONAL_INVARIANT_REAL_DB',()=>{
     expect(JSON.stringify(first)).not.toContain(batch.payoutBatchId);
     expect(await db.payoutBatch.findUniqueOrThrow({where:{payoutBatchId:batch.payoutBatchId}})).toMatchObject({totalNet:new Prisma.Decimal(100),status:'READY'});
   });
+
+  it('reports a BONUS_AWARD payable whose immutable award source is missing without changing payable state',async()=>{
+    const person=await db.person.create({data:{legalName:'Missing Award Recipient'}});
+    const qualification=await db.qualification.create({data:{currentHolderPersonId:person.personId,planLevelCode:'STARTER',status:'EFFECTIVE',effectiveAt:new Date()}});
+    const missingAwardId='00000000-0000-0000-0000-000000000777';
+    const payable=await db.payableEntry.create({data:{qualificationId:qualification.qualificationId,sourceType:'BONUS_AWARD',sourceId:missingAwardId,awardType:'REFERRAL',grossAmount:new Prisma.Decimal(17),availableAt:new Date(),ruleVersionCode:'R1'}});
+    const candidates=await new AdminOperationsService(db as any,new AuditService()).invariantCandidates();
+    expect(candidates).toContainEqual(expect.objectContaining({code:'PAYABLE_AWARD_SOURCE_MISSING',severity:'CRITICAL',reference:`QUALIFICATION:${qualification.qualificationNo.toString()}:PAYABLE_AWARD`,detail:expect.objectContaining({sourceType:'BONUS_AWARD',grossAmount:'17'})}));
+    expect(JSON.stringify(candidates)).not.toContain(payable.payableEntryId);
+    expect(await db.payableEntry.findUniqueOrThrow({where:{payableEntryId:payable.payableEntryId}})).toMatchObject({status:'OPEN',grossAmount:new Prisma.Decimal(17)});
+  });
 });
