@@ -214,6 +214,18 @@ export class AdminOperationsService {
     return {member:{memberNo:person.memberNo,legalName:person.legalName,preferredName:person.preferredName,status:person.status,membershipState:person.membershipState,securityStatus:person.securityStatus,createdAt:person.createdAt.toISOString()},lineLinks:lineLinks.map(link=>({provider:link.provider,status:link.status,createdAt:link.createdAt.toISOString(),revokedAt:link.revokedAt?.toISOString()??null})),qualifications:qualifications.map(q=>({qualificationNo:q.qualificationNo.toString(),ballNo:q.ballNo,planLevelCode:q.planLevelCode,status:q.status,active:q.activeFlag,effectiveAt:q.effectiveAt?.toISOString()??null,sponsorBallNo:q.sponsorRelation?.sponsor.ballNo??null,binaryParentBallNo:q.binaryPlacement?.parent.ballNo??null,binarySide:q.binaryPlacement?.side??null,subscriptions:q.subscriptions.map(s=>({status:s.status,startMonth:s.startMonth.toISOString(),endMonth:s.endMonth.toISOString(),activatedAt:s.activatedAt?.toISOString()??null,cancelledAt:s.cancelledAt?.toISOString()??null}))})),orders:orders.map(order=>({orderNo:order.orderNo.toString(),purpose:order.purpose,status:order.status,grossAmount:order.grossAmount.toString(),netAmount:order.netAmount.toString(),confirmedAt:order.confirmedAt?.toISOString()??null,paidAt:order.paidAt?.toISOString()??null,fulfillments:order.fulfillments})),payables:payables.map(row=>({status:row.status,grossAmount:row.grossAmount.toString(),availableAt:row.availableAt.toISOString(),payoutStatus:row.payoutLine?.payoutBatch.status??null,payoutPeriodEnd:row.payoutLine?.payoutBatch.periodEnd.toISOString()??null})),awards:awards.map(row=>({awardType:row.awardType,theoryAmount:row.theoryAmount.toString(),payableAmount:row.payableAmount.toString(),occurredAt:row.occurredAt.toISOString()})),tasks,exceptions,timeline:timeline.map(event=>({action:event.action,eventCode:event.eventCode,entityType:event.entityType,result:event.result,occurredAt:event.occurredAt.toISOString()}))};
   }
 
+  async invariantCandidates(input:{take?:number}={}){
+    const requested=Number.isFinite(input.take)?input.take??100:100;
+    const batches=await this.prisma.payoutBatch.findMany({include:{lines:{select:{netAmount:true}}},orderBy:{periodEnd:'desc'},take:Math.min(Math.max(requested,1),200)});
+    return batches.flatMap(batch=>{
+      const lineNet=batch.lines.reduce((sum,line)=>sum.add(line.netAmount),new Prisma.Decimal(0));
+      if(lineNet.equals(batch.totalNet)) return [];
+      const reference=`PAYOUT:${batch.periodStart.toISOString().slice(0,10)}:${batch.periodEnd.toISOString().slice(0,10)}`;
+      const detail={declaredTotalNet:batch.totalNet.toString(),lineNetTotal:lineNet.toString(),status:batch.status};
+      return [{code:'PAYOUT_BATCH_TOTAL_MISMATCH',severity:'CRITICAL',sourceType:'PAYOUT_BATCH',reference,evidenceHash:createHash('sha256').update(JSON.stringify({reference,...detail})).digest('hex'),detail}];
+    });
+  }
+
   async operationalExceptions(input:{status?:string;take?:number}={}){
     const allowed=['OPEN','ACKNOWLEDGED','INVESTIGATING','RESOLVED'];
     if(input.status&&!allowed.includes(input.status)) throw new UnprocessableEntityException('INVALID_OPERATIONAL_EXCEPTION_STATUS');

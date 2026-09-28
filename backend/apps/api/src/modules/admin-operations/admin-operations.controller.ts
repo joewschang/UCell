@@ -76,6 +76,11 @@ export class AdminOperationsController{
   @ApiOperation({operationId:'adminReadMember360ByMemberNo',summary:'以 memberNo 讀取授權的 Member 360 事實投影'} )
   member360(@Param('memberNo') memberNo:string){return this.service.member360(memberNo).then(data=>({data}));}
 
+  @Roles('SUPER_ADMIN','FINANCE','COMPLIANCE_AUDIT')
+  @Get('invariant-candidates')
+  @ApiOperation({operationId:'adminOperationalInvariantCandidates',summary:'讀取可稽核的營運不變量候選，不修改來源資料'} )
+  invariantCandidates(@Query('take') take?:string){return this.service.invariantCandidates({take:Number(take??100)}).then(data=>({data}));}
+
   @Roles('SUPER_ADMIN','ORDER_OPS','COMPLIANCE_AUDIT')
   @Get('exceptions')
   @ApiOperation({operationId:'adminOperationalExceptionQueue',summary:'營運例外唯讀佇列'})
