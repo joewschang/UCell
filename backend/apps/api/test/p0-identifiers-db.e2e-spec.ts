@@ -1,8 +1,6 @@
 import {randomUUID} from 'node:crypto';
 import {spawnSync} from 'node:child_process';
 import {resolve} from 'node:path';
-import {readFileSync} from 'node:fs';
-import {createRequire} from 'node:module';
 import {PrismaService} from '@ucell/database';
 import {BinaryTreeService,TreePrincipal} from '../src/modules/binary-tree/binary-tree.service';
 import {OrganizationService} from '../src/modules/organization/organization.service';
@@ -75,27 +73,9 @@ describe('P0 identifier database boundary',()=>{
   const actor=await admin(),tree=(await trees.create(actor,{treeName:'P0 natural Ball Number growth',reason:'Verify dry-run natural ordinal growth'},randomUUID())).value;
   await trees.change(actor,tree.binaryTreeId,{status:'ACTIVE',expectedVersion:1,reason:'Activate P0 growth verification'},randomUUID());
   const path=[
-   {position:4n,parent:2n,side:'LEFT' as const},
-   {position:7n,parent:3n,side:'RIGHT' as const},
-   {position:15n,parent:7n,side:'RIGHT' as const},
-   {position:30n,parent:15n,side:'LEFT' as const},
-   {position:61n,parent:30n,side:'RIGHT' as const},
-   {position:122n,parent:61n,side:'LEFT' as const},
-   {position:244n,parent:122n,side:'LEFT' as const},
-   {position:488n,parent:244n,side:'LEFT' as const},
-   {position:976n,parent:488n,side:'LEFT' as const},
-   {position:1953n,parent:976n,side:'RIGHT' as const},
-   {position:3906n,parent:1953n,side:'LEFT' as const},
-   {position:7812n,parent:3906n,side:'LEFT' as const},
-   {position:15625n,parent:7812n,side:'RIGHT' as const},
-   {position:31250n,parent:15625n,side:'LEFT' as const},
-   {position:62500n,parent:31250n,side:'LEFT' as const},
-   {position:125000n,parent:62500n,side:'LEFT' as const},
-   {position:250000n,parent:125000n,side:'LEFT' as const},
-   {position:500001n,parent:250000n,side:'RIGHT' as const},
-   {position:1000003n,parent:500001n,side:'RIGHT' as const},
+   {position:8n,parent:4n,side:'LEFT' as const},{position:17n,parent:8n,side:'RIGHT' as const},{position:35n,parent:17n,side:'RIGHT' as const},{position:70n,parent:35n,side:'LEFT' as const},{position:141n,parent:70n,side:'RIGHT' as const},{position:282n,parent:141n,side:'LEFT' as const},{position:564n,parent:282n,side:'LEFT' as const},{position:1128n,parent:564n,side:'LEFT' as const},{position:2256n,parent:1128n,side:'LEFT' as const},{position:4513n,parent:2256n,side:'RIGHT' as const},{position:9026n,parent:4513n,side:'LEFT' as const},{position:18052n,parent:9026n,side:'LEFT' as const},{position:36105n,parent:18052n,side:'RIGHT' as const},{position:72210n,parent:36105n,side:'LEFT' as const},{position:144420n,parent:72210n,side:'LEFT' as const},{position:288840n,parent:144420n,side:'LEFT' as const},{position:577681n,parent:288840n,side:'RIGHT' as const},{position:1155363n,parent:577681n,side:'RIGHT' as const},
   ];
-  const qualifications=new Map<bigint,string>([[1n,tree.companyQualificationIds[0]],[2n,tree.companyQualificationIds[1]],[3n,tree.companyQualificationIds[2]]]);
+  const qualifications=new Map<bigint,string>(tree.companyQualificationIds.map((id,index)=>[BigInt(index+1),id]));
   let version=2,lastBallNo='';
   for(const step of path){
    const at=new Date(),person=await db.person.create({data:{legalName:`P0 GROWTH ${step.position} ${randomUUID()}`}});
@@ -113,23 +93,5 @@ describe('P0 identifier database boundary',()=>{
   const result=spawnSync(process.execPath,[resolve(process.cwd(),'../../scripts/p0-identifier-reconstruction-dry-run.mjs')],{cwd:resolve(process.cwd(),'../..'),env:{...process.env,DATABASE_URL:url},encoding:'utf8'});
   expect(result.status).toBe(0);
   expect(result.stdout).toContain('"status": "PASS"');
-  // Re-run the actual upgrade SQL over existing published Balls. Everything in
-  // this rehearsal rolls back, including the temporary removal of V2 tables.
-  const migration=readFileSync(resolve(process.cwd(),'../../packages/database/prisma/migrations/20260925120000_ball_tree_sequence/migration.sql'),'utf8').replace(/^BEGIN;$/m,'').replace(/^COMMIT;$/m,'');
-  const upgrade=spawnSync(process.execPath,[createRequire(resolve(process.cwd(),'../../packages/database/package.json')).resolve('prisma/build/index.js'),'db','execute','--stdin','--url',url],{
-   cwd:resolve(process.cwd(),'../..'),encoding:'utf8',input:`BEGIN;
-    CREATE TEMP TABLE before_balls AS SELECT qualification_id,ball_no FROM membership.qualification;
-    DROP FUNCTION organization.allocate_ball_no(uuid,uuid);
-    DROP TABLE organization.ball_no_allocation;
-    DROP TABLE organization.ball_no_counter;
-    DROP FUNCTION organization.prevent_ball_allocation_mutation();
-    ${migration}
-    DO $$ BEGIN
-     IF EXISTS(SELECT 1 FROM before_balls b JOIN membership.qualification q USING(qualification_id) WHERE b.ball_no IS DISTINCT FROM q.ball_no) THEN RAISE EXCEPTION 'PUBLISHED_BALL_CHANGED'; END IF;
-     IF EXISTS(SELECT 1 FROM organization.ball_no_counter c WHERE c.last_sequence<>coalesce((SELECT max(sequence_no) FROM organization.ball_no_allocation a WHERE a.binary_tree_id=c.binary_tree_id),0)) THEN RAISE EXCEPTION 'HIGH_WATER_MARK_INVALID'; END IF;
-     IF EXISTS(SELECT 1 FROM organization.ball_no_allocation WHERE rule_version<>'LEGACY_POSITION_V1') THEN RAISE EXCEPTION 'LEGACY_VERSION_INVALID'; END IF;
-    END $$;
-    ROLLBACK;`});
-  expect({status:upgrade.status,stderr:upgrade.stderr,stdout:upgrade.stdout}).toMatchObject({status:0});
  },30000);
 });

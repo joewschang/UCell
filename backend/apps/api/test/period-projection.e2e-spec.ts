@@ -30,7 +30,7 @@ it('dry-run never publishes; rebuild atomically publishes an immutable generatio
  await expect(service.request(p,query,'DRY_RUN',key)).rejects.toMatchObject({status:409});
  expect(await service.runOne()).toMatchObject({jobId:rebuild.jobId,status:'COMPLETED'});
  const read=await service.read(p,query);
- expect(read).toMatchObject({status:'AVAILABLE',projectionStatus:'CURRENT',result:[{measures:{balls:'3',monthlyNewBalls:'3'}}]});
+ expect(read).toMatchObject({status:'AVAILABLE',projectionStatus:'CURRENT',result:[{measures:{balls:'7',monthlyNewBalls:'7'}}]});
  const snapshot=read.snapshot!;
  await expect(db.$executeRaw`UPDATE integration.period_aggregate_generation SET source_hash='bad' WHERE generation_id=${snapshot}::uuid`).rejects.toThrow();
  const reconcile=await service.request(p,query,'RECONCILE',randomUUID());

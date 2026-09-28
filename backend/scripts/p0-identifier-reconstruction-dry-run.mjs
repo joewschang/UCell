@@ -10,7 +10,7 @@ try{
   // V2 validates allocation identity independently of immutable topology.
   db.$queryRaw`WITH ball_positions AS (
     SELECT q.ball_no,q.kind,t.tree_code,m.binary_position_no,a.sequence_no,
-      CASE WHEN m.binary_position_no<=3 THEN m.binary_position_no::text ELSE a.sequence_no::text END AS ordinal
+      CASE WHEN q.kind='COMPANY_BOOTSTRAP' THEN m.binary_position_no::text ELSE a.sequence_no::text END AS ordinal
     FROM membership.qualification q
     JOIN organization.binary_tree_membership m USING(qualification_id)
     JOIN organization.binary_tree t USING(binary_tree_id)
@@ -18,7 +18,7 @@ try{
   )
   SELECT count(*)::int AS count FROM ball_positions
   WHERE ball_no IS NULL OR ordinal IS NULL OR (binary_position_no<=3 AND kind<>'COMPANY_BOOTSTRAP') OR ball_no<>tree_code
-    || CASE WHEN binary_position_no<=3 THEN 'X' ELSE '' END
+    || CASE WHEN kind='COMPANY_BOOTSTRAP' THEN 'X' ELSE '' END
     || CASE WHEN length(ordinal)<6 THEN lpad(ordinal,6,'0') ELSE ordinal END`,
   db.$queryRaw`SELECT count(*)::int AS count FROM (SELECT binary_tree_id,binary_position_no FROM organization.binary_tree_membership GROUP BY 1,2 HAVING count(*)>1) x`
  ]);
