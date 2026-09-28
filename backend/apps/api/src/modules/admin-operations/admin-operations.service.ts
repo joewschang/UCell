@@ -314,7 +314,7 @@ export class AdminOperationsService {
     return this.prisma.$transaction(async tx=>{
       const batch=await tx.payoutBatch.findUniqueOrThrow({where:{payoutBatchId:id},include:{lines:{include:{payableEntries:true}}}});
       if(!['EXPORTED','PROCESSING'].includes(batch.status)) {
-        const existing=await tx.payoutPaymentResult.findMany({where:{payoutBatchId:id,idempotencyKey:{in:input.results.map(result=>`payout-result:${id}:${result.payoutLineId}`)}}});
+        const existing=await tx.payoutPaymentResult.findMany({where:{payoutBatchId:id,idempotencyKey:{in:input.results.map(result=>`payout-result:${id}:${result.payoutLineId}:${result.status}:${new Prisma.Decimal(result.paidAmount).toFixed(4)}:${result.paymentReference?.trim()??''}`)}}});
         if(existing.length===input.results.length) return {batch,results:existing,replayed:true};
         throw new ConflictException('Only EXPORTED or PROCESSING payout batch can accept payment results');
       }
@@ -323,16 +323,18 @@ export class AdminOperationsService {
         const line=lineById.get(result.payoutLineId); if(!line) throw new ConflictException('PAYOUT_RESULT_LINE_NOT_IN_BATCH');
         const amount=new Prisma.Decimal(result.paidAmount);
         if(amount.lt(0)||amount.gt(line.netAmount)||(result.status==='FAILED'&&!amount.isZero())) throw new UnprocessableEntityException('INVALID_PAYOUT_RESULT_AMOUNT');
-        const key=`payout-result:${id}:${result.payoutLineId}`;
+        const key=`payout-result:${id}:${result.payoutLineId}:${result.status}:${amount.toFixed(4)}:${result.paymentReference?.trim()??''}`;
         const existing=await tx.payoutPaymentResult.findUnique({where:{idempotencyKey:key}});
         if(existing) continue;
         await tx.payoutPaymentResult.create({data:{payoutBatchId:id,payoutLineId:line.payoutLineId,resultStatus:result.status,paidAmount:amount,paymentReference:result.paymentReference?.trim()||null,reasonCode:result.reasonCode?.trim()||null,occurredAt:result.occurredAt??new Date(),recordedByActor:actorId,idempotencyKey:key}});
         if(result.status==='PAID'&&amount.equals(line.netAmount)) await tx.payableEntry.updateMany({where:{payoutLineId:line.payoutLineId,status:'ALLOCATED'},data:{status:'PAID'}});
       }
-      const results=await tx.payoutPaymentResult.findMany({where:{payoutBatchId:id}});
+      const results=await tx.payoutPaymentResult.findMany({where:{payoutBatchId:id},orderBy:{createdAt:'asc'}});
+      const latestByLine=new Map<string,typeof results[number]>(); for(const result of results)latestByLine.set(result.payoutLineId,result);
+      const latest=[...latestByLine.values()];
       const total=batch.lines.reduce((sum,line)=>sum.add(line.netAmount),new Prisma.Decimal(0));
-      const paid=results.filter(row=>row.resultStatus==='PAID').reduce((sum,row)=>sum.add(row.paidAmount),new Prisma.Decimal(0));
-      const failed=results.filter(row=>row.resultStatus==='FAILED').length;
+      const paid=latest.filter(row=>row.resultStatus==='PAID').reduce((sum,row)=>sum.add(row.paidAmount),new Prisma.Decimal(0));
+      const failed=latest.filter(row=>row.resultStatus==='FAILED').length;
       const status=paid.equals(total)?'PAID':paid.gt(0)?'PARTIALLY_PAID':failed===batch.lines.length?'FAILED':'PROCESSING';
       const updated=await tx.payoutBatch.update({where:{payoutBatchId:id},data:{status,paymentReference:status==='PAID'?'RECONCILED_BY_LINE_RESULTS':undefined,paidAt:status==='PAID'?new Date():undefined}});
       await this.audit.write(tx,{actorType:'USER',actorId,action:'PAYOUT_RESULT_RECORDED',entityType:'PAYOUT_BATCH',entityId:id,afterData:{status,paidAmount:paid.toString(),resultCount:results.length},requestId,correlationId});

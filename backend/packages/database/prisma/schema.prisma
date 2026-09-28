@@ -2888,8 +2888,8 @@ model PayoutPaymentResult {
   payoutBatch PayoutBatch @relation(fields:[payoutBatchId],references:[payoutBatchId])
   payoutLine PayoutLine @relation(fields:[payoutLineId],references:[payoutLineId])
 
-  @@unique([payoutBatchId,payoutLineId])
   @@index([payoutBatchId,createdAt])
+  @@index([payoutBatchId,payoutLineId,createdAt])
   @@map("payout_payment_result")
   @@schema("ledger")
 }
