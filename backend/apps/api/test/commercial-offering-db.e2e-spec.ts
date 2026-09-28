@@ -4,6 +4,7 @@ import { CommercialOfferingService } from '../src/modules/order/commercial-offer
 import { CommercialOfferingConfigService } from '../src/modules/order/commercial-offering-config.service';
 import { IdempotencyService } from '../src/common/idempotency/idempotency.service';
 import { AuditService } from '../src/common/audit/audit.service';
+import { OrderService } from '../src/modules/order/order.service';
 
 const url = process.env.PHASE2_TEST_DATABASE_URL;
 const describeDb = url ? describe : describe.skip;
@@ -62,5 +63,13 @@ describeDb('commercial offering foundation', () => {
     const memberOfferings=await service.memberList('WEB_MEMBER');expect(memberOfferings).toEqual(expect.arrayContaining([expect.objectContaining({ offeringCode: offering.value.offeringCode, offeringTypeLabel:'主商品', version: 1 })]));expect(JSON.stringify(memberOfferings)).not.toContain('commercialOfferingVersionId');expect(JSON.stringify(memberOfferings)).not.toContain('CORE_PRODUCT');
     expect(await service.memberList('ADMIN')).not.toEqual(expect.arrayContaining([expect.objectContaining({ offeringCode: offering.value.offeringCode })]));
     expect(await db.auditEvent.count({ where: { action: { in: ['COMMERCIAL_OFFERING_CREATED', 'COMMERCIAL_OFFERING_VERSION_CREATED', 'COMMERCIAL_OFFERING_VERSION_APPROVED', 'COMMERCIAL_OFFERING_VERSION_ACTIVATED'] } } })).toBeGreaterThanOrEqual(4);
+  });
+  it('does not allow an effective offering to cross an approved order-purpose boundary', () => {
+    const service = new OrderService({} as any, {} as any, {} as any, {} as any);
+    for (const [offeringType, purpose] of [['QUALIFICATION_PACKAGE', 'RETAIL'], ['REPURCHASE_PLAN', 'ENTRY']]) {
+      try { (service as any).assertOfferingPurpose({ offeringType }, purpose); fail('Expected offering-purpose rejection'); }
+      catch (error) { expect((error as any).response?.code).toBe('COMMERCIAL_OFFERING_PURPOSE_NOT_ALLOWED'); }
+    }
+    expect(() => (service as any).assertOfferingPurpose({ offeringType: 'PROMOTIONAL_BUNDLE' }, 'RETAIL')).not.toThrow();
   });
 });

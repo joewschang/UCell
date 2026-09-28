@@ -34,6 +34,20 @@ export class OrderService {
     return (this.commercialOfferings ?? new CommercialOfferingService()).resolveEffective(tx, { offeringCode, channel, at });
   }
 
+  private assertOfferingPurpose(offering: CommercialOfferingSnapshot | undefined, purpose: string) {
+    if (!offering) return;
+    const allowed: Record<string, string[]> = {
+      ENTRY: ['QUALIFICATION_PACKAGE'],
+      UPGRADE: ['QUALIFICATION_PACKAGE'],
+      REPURCHASE: ['REPURCHASE_PLAN'],
+      SUBSCRIPTION_PREPAY: ['REPURCHASE_PLAN'],
+      RETAIL: ['CORE_PRODUCT', 'RETAIL_PRODUCT', 'PROMOTIONAL_BUNDLE'],
+    };
+    if (!allowed[purpose]?.includes(offering.offeringType)) {
+      throw new UnprocessableEntityException({ code: 'COMMERCIAL_OFFERING_PURPOSE_NOT_ALLOWED' });
+    }
+  }
+
   async createMember(dto:MemberOrderInput,key:string,requestId:string,personId:string):Promise<any>{
     if(dto.packageVersionId)return this.createPackageForPerson(dto,key,requestId,personId);
     if(!dto.items?.length||dto.selections?.length)throw new UnprocessableEntityException({code:'INVALID_ORDER_SHAPE'});
@@ -54,6 +68,7 @@ export class OrderService {
       const delivery=await tx.deliveryProfile.findFirst({where:{personId,effectiveTo:null},select:{deliveryProfileId:true}});
       if(!delivery)throw new UnprocessableEntityException({code:'DELIVERY_PROFILE_REQUIRED',message:'請先完成配送資料，再建立零售訂單。'});
       const now=new Date(),offering=await this.resolveOfferingSnapshot(tx,dto.commercialOfferingCode,'WEB_MEMBER',now),productIds=[...new Set(dto.items!.map(item=>item.productId))];
+      this.assertOfferingPurpose(offering,'RETAIL');
       const products=await tx.productReference.findMany({where:{productId:{in:productIds},isActive:true}});
       if(products.length!==productIds.length)throw new ConflictException({code:'RESOURCE_NOT_FOUND'});
       const lines:any[]=[]; let gross=new Prisma.Decimal(0); let ruleVersionCode='R1.0B'; let parameterSnapshotHash:string|undefined;
@@ -117,6 +132,7 @@ export class OrderService {
       if(!person || (paper ? !['DRAFT','EFFECTIVE'].includes(person.status) : person.status!=='EFFECTIVE'))throw new ConflictException({code:paper?'PAPER_PERSON_NOT_ELIGIBLE':'MEMBER_PERSON_DISABLED'});
       if(paper){const application=await tx.paperApplication.findUnique({where:{paperApplicationId:paper.paperApplicationId},select:{personId:true,orderId:true,status:true}});if(!application||application.personId!==personId||application.status!=='OPEN')throw new ConflictException({code:'PAPER_APPLICATION_NOT_OPEN'});if(application.orderId)throw new ConflictException({code:'PAPER_APPLICATION_ORDER_ALREADY_CREATED'});}
       const now=new Date(),offering=await this.resolveOfferingSnapshot(tx,dto.commercialOfferingCode,paper?'ADMIN_PAPER':'WEB_MEMBER',now),prepared=await (this.packages??new PackageConfigService(this.prisma)).checkoutData(tx,personId,{packageVersionId:dto.packageVersionId!,targetQualificationId:dto.targetQualificationId,selections:dto.selections!},now),v=prepared.version;
+      this.assertOfferingPurpose(offering,v.profile.packageClass==='QUALIFICATION'?'ENTRY':'REPURCHASE');
       let qualificationId=dto.targetQualificationId;
       let sponsorEvidence:Awaited<ReturnType<SponsorResolver['resolveWithin']>>|undefined;
       if(v.profile.packageClass==='QUALIFICATION'){
@@ -168,6 +184,7 @@ export class OrderService {
 
       const now = new Date();
       const offering = await this.resolveOfferingSnapshot(tx, dto.commercialOfferingCode, member ? 'WEB_MEMBER' : 'ADMIN', now);
+      this.assertOfferingPurpose(offering, dto.purpose ?? 'RETAIL');
       const lines: Array<{
         productId: string;
         skuSnapshot: string;
