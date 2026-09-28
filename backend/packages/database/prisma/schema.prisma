@@ -2480,6 +2480,9 @@ model OperationalTask {
   taskCode String @map("task_code")
   priority String @default("NORMAL")
   status OperationalTaskStatus @default(OPEN)
+  assigneeActor String? @map("assignee_actor")
+  assigneeRole String? @map("assignee_role")
+  dueAt DateTime? @map("due_at") @db.Timestamptz(6)
   evidenceHash String? @map("evidence_hash") @db.Char(64)
   traceId String? @map("trace_id") @db.Uuid
   summary String @map("summary")

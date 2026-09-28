@@ -1,8 +1,9 @@
 import { Roles } from '../auth/roles.decorator';
-import { Body,Controller,Get,Headers,Param,Post,Query,Req } from '@nestjs/common';
-import { ApiBearerAuth,ApiOperation,ApiTags } from '@nestjs/swagger';
+import { Body,Controller,Get,Headers,Param,Post,Query,Req,UseGuards } from '@nestjs/common';
+import { ApiBearerAuth,ApiHeader,ApiOperation,ApiTags } from '@nestjs/swagger';
 import { randomUUID } from 'crypto';
 import { AdminOperationsService } from './admin-operations.service';
+import { IdempotencyGuard } from '../../common/guards/idempotency.guard';
 
 @ApiTags('Admin - Returns / Workflows / Payout Operations')
 @ApiBearerAuth('adminBearer')
@@ -84,6 +85,11 @@ export class AdminOperationsController{
   @Get('tasks')
   @ApiOperation({operationId:'adminOperationalTaskQueue',summary:'營運任務唯讀佇列'} )
   tasks(@Query('status') status?:string,@Query('take') take?:string){return this.service.operationalTasks({status,take:Number(take??100)}).then(data=>({data}));}
+
+  @Roles('SUPER_ADMIN','ORDER_OPS','COMPLIANCE_AUDIT')
+  @Post('tasks') @UseGuards(IdempotencyGuard) @ApiHeader({name:'Idempotency-Key',required:true})
+  @ApiOperation({operationId:'adminCreateOperationalTask',summary:'建立不改變來源工作流的營運任務'} )
+  createTask(@Body() body:{sourceType:string;sourceId:string;taskCode:string;summary:string;priority?:string;assigneeActor?:string;assigneeRole?:string;dueAt?:string;evidenceHash?:string;traceId?:string},@Headers('idempotency-key') key:string,@Req() req:any){return this.service.createOperationalTask(body,req.user?.personId,key,req.requestId,req.correlationId??randomUUID()).then(data=>({data}));}
 
   @Roles('SUPER_ADMIN','ORDER_OPS','COMPLIANCE_AUDIT')
   @Post('tasks/:id/:status')

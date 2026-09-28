@@ -1,11 +1,12 @@
 import { ConflictException,Injectable,UnprocessableEntityException } from '@nestjs/common';
 import { Prisma,PrismaService } from '@ucell/database';
 import { AuditService } from '../../common/audit/audit.service';
+import { IdempotencyService } from '../../common/idempotency/idempotency.service';
 import { createHash } from 'node:crypto';
 
 @Injectable()
 export class AdminOperationsService {
-  constructor(private readonly prisma:PrismaService,private readonly audit:AuditService){}
+  constructor(private readonly prisma:PrismaService,private readonly audit:AuditService,private readonly idempotency?:IdempotencyService){}
 
   async returns(input:{status?:string;q?:string;take?:number}={}){
     const take=Math.min(Math.max(input.take??50,1),200);
@@ -219,6 +220,22 @@ export class AdminOperationsService {
     if(input.status&&!allowed.includes(input.status)) throw new UnprocessableEntityException('INVALID_OPERATIONAL_TASK_STATUS');
     const requested=Number.isFinite(input.take)?input.take??100:100;
     return this.prisma.operationalTask.findMany({where:input.status?{status:input.status as any}:undefined,orderBy:[{createdAt:'desc'}],take:Math.min(Math.max(requested,1),200)});
+  }
+
+  async createOperationalTask(input:{sourceType:string;sourceId:string;taskCode:string;summary:string;priority?:string;assigneeActor?:string;assigneeRole?:string;dueAt?:string;evidenceHash?:string;traceId?:string},actorId:string|undefined,key:string,requestId:string,correlationId:string){
+    if(!actorId) throw new UnprocessableEntityException('Authenticated actor is required');
+    if(!this.idempotency) throw new UnprocessableEntityException('Operational task idempotency service is unavailable');
+    const sourceType=input.sourceType?.trim(),sourceId=input.sourceId?.trim(),taskCode=input.taskCode?.trim(),summary=input.summary?.trim();
+    if(!sourceType||!sourceId||!taskCode||!summary) throw new UnprocessableEntityException('OPERATIONAL_TASK_REQUIRED_FIELDS_MISSING');
+    const dueAt=input.dueAt?new Date(input.dueAt):undefined;
+    if(dueAt&&Number.isNaN(dueAt.getTime())) throw new UnprocessableEntityException('INVALID_OPERATIONAL_TASK_DUE_AT');
+    return this.idempotency.execute(`admin:operational-task:${actorId}`,key,input,async tx=>{
+      const existing=await tx.operationalTask.findUnique({where:{sourceType_sourceId_taskCode:{sourceType,sourceId,taskCode}}});
+      if(existing) return {task:existing,created:false};
+      const task=await tx.operationalTask.create({data:{sourceType,sourceId,taskCode,summary,priority:input.priority?.trim()||'NORMAL',assigneeActor:input.assigneeActor?.trim()||null,assigneeRole:input.assigneeRole?.trim()||null,dueAt,evidenceHash:input.evidenceHash?.trim()||null,traceId:input.traceId?.trim()||null}});
+      await this.audit.write(tx,{actorType:'USER',actorId,action:'OPERATIONAL_TASK_CREATED',entityType:'OPERATIONAL_TASK',entityId:task.operationalTaskId,afterData:{sourceType,sourceId,taskCode,priority:task.priority,assigneeRole:task.assigneeRole,dueAt:task.dueAt?.toISOString()??null},requestId,correlationId});
+      return {task,created:true};
+    });
   }
 
   async transitionOperationalTask(id:string,status:'ACKNOWLEDGED'|'COMPLETED',actorId:string|undefined,note:string|undefined,requestId:string,correlationId:string){
