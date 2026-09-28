@@ -214,6 +214,26 @@ export class AdminOperationsService {
     });
   }
 
+  async operationalTasks(input:{status?:string;take?:number}={}){
+    const allowed=['OPEN','ACKNOWLEDGED','COMPLETED'];
+    if(input.status&&!allowed.includes(input.status)) throw new UnprocessableEntityException('INVALID_OPERATIONAL_TASK_STATUS');
+    const requested=Number.isFinite(input.take)?input.take??100:100;
+    return this.prisma.operationalTask.findMany({where:input.status?{status:input.status as any}:undefined,orderBy:[{createdAt:'desc'}],take:Math.min(Math.max(requested,1),200)});
+  }
+
+  async transitionOperationalTask(id:string,status:'ACKNOWLEDGED'|'COMPLETED',actorId:string|undefined,note:string|undefined,requestId:string,correlationId:string){
+    if(!actorId) throw new UnprocessableEntityException('Authenticated actor is required');
+    if(!['ACKNOWLEDGED','COMPLETED'].includes(status)) throw new UnprocessableEntityException('INVALID_OPERATIONAL_TASK_STATUS');
+    return this.prisma.$transaction(async tx=>{
+      const row=await tx.operationalTask.findUniqueOrThrow({where:{operationalTaskId:id}});
+      if(row.status==='COMPLETED') throw new ConflictException('Operational task is already completed');
+      const now=new Date();
+      const updated=await tx.operationalTask.update({where:{operationalTaskId:id},data:{status,acknowledgedByActor:status==='ACKNOWLEDGED'?actorId:row.acknowledgedByActor,acknowledgedAt:status==='ACKNOWLEDGED'?now:row.acknowledgedAt,completedByActor:status==='COMPLETED'?actorId:undefined,completedAt:status==='COMPLETED'?now:undefined,completionNote:status==='COMPLETED'?note?.trim()||null:undefined}});
+      await this.audit.write(tx,{actorType:'USER',actorId,action:'OPERATIONAL_TASK_TRANSITIONED',entityType:'OPERATIONAL_TASK',entityId:id,afterData:{from:row.status,to:status,note:status==='COMPLETED'?note?.trim()||null:null},requestId,correlationId});
+      return updated;
+    });
+  }
+
   async approvePayout(
     id:string,
     stage:'FINANCE_REVIEW'|'COMPLIANCE_REVIEW',

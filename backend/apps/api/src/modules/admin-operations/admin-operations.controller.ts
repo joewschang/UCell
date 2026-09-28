@@ -80,6 +80,16 @@ export class AdminOperationsController{
   @ApiOperation({operationId:'adminTransitionOperationalException',summary:'記錄營運例外調查狀態；不修改來源領域資料'})
   transitionException(@Param('id') id:string,@Param('status') status:'ACKNOWLEDGED'|'INVESTIGATING'|'RESOLVED',@Body() body:{note?:string},@Req() req:any){return this.service.transitionOperationalException(id,status,req.user?.personId,body?.note,req.requestId,req.correlationId??randomUUID()).then(data=>({data}));}
 
+  @Roles('SUPER_ADMIN','ORDER_OPS','COMPLIANCE_AUDIT')
+  @Get('tasks')
+  @ApiOperation({operationId:'adminOperationalTaskQueue',summary:'營運任務唯讀佇列'} )
+  tasks(@Query('status') status?:string,@Query('take') take?:string){return this.service.operationalTasks({status,take:Number(take??100)}).then(data=>({data}));}
+
+  @Roles('SUPER_ADMIN','ORDER_OPS','COMPLIANCE_AUDIT')
+  @Post('tasks/:id/:status')
+  @ApiOperation({operationId:'adminTransitionOperationalTask',summary:'記錄營運任務處置；不修改來源領域資料'} )
+  transitionTask(@Param('id') id:string,@Param('status') status:'ACKNOWLEDGED'|'COMPLETED',@Body() body:{note?:string},@Req() req:any){return this.service.transitionOperationalTask(id,status,req.user?.personId,body?.note,req.requestId,req.correlationId??randomUUID()).then(data=>({data}));}
+
   @Roles('SUPER_ADMIN','FINANCE','COMPLIANCE_AUDIT')
   @Post('payout-batches/:id/approvals/:stage')
   @ApiOperation({operationId:'adminApprovePayoutStage',summary:'Finance/Compliance雙階段付款審核'})

@@ -473,6 +473,14 @@ enum OperationalExceptionStatus {
   @@schema("integration")
 }
 
+enum OperationalTaskStatus {
+  OPEN
+  ACKNOWLEDGED
+  COMPLETED
+
+  @@schema("integration")
+}
+
 enum GlobalRankCode {
   NEW_STAR
   EXCELLENCE
@@ -2459,6 +2467,33 @@ model OperationalException {
   @@unique([sourceType,sourceId,exceptionCode])
   @@index([status,severity,createdAt])
   @@map("operational_exception")
+  @@schema("integration")
+}
+
+/// A bounded Operations Center work item. Its lifecycle is deliberately
+/// separate from the source workflow so an operator cannot complete a task by
+/// mutating an Order, Qualification, Fulfillment, or economic fact.
+model OperationalTask {
+  operationalTaskId String @id @default(uuid()) @map("operational_task_id") @db.Uuid
+  sourceType String @map("source_type")
+  sourceId String @map("source_id")
+  taskCode String @map("task_code")
+  priority String @default("NORMAL")
+  status OperationalTaskStatus @default(OPEN)
+  evidenceHash String? @map("evidence_hash") @db.Char(64)
+  traceId String? @map("trace_id") @db.Uuid
+  summary String @map("summary")
+  acknowledgedByActor String? @map("acknowledged_by_actor")
+  acknowledgedAt DateTime? @map("acknowledged_at") @db.Timestamptz(6)
+  completedByActor String? @map("completed_by_actor")
+  completedAt DateTime? @map("completed_at") @db.Timestamptz(6)
+  completionNote String? @map("completion_note")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@unique([sourceType,sourceId,taskCode])
+  @@index([status,priority,createdAt])
+  @@map("operational_task")
   @@schema("integration")
 }
 
