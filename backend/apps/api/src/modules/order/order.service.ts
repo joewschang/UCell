@@ -49,7 +49,20 @@ export class OrderService {
   }
 
   private assertOfferingSelection(offering: CommercialOfferingSnapshot|undefined,selections:Array<{product:{sku:string};quantity:number}>) {
-    if(!offering || !['QUALIFICATION_PACKAGE','REPURCHASE_PLAN'].includes(offering.offeringType)) return;
+    if(!offering) return;
+    if(offering.offeringType==='PROMOTIONAL_BUNDLE') {
+      const rule=offering.selectionRule as Record<string,unknown>|null;
+      if(!rule) {
+        const composition=Array.isArray(offering.composition)?offering.composition as Array<{sku?:unknown;quantity?:unknown}>:[];
+        const actual=new Map<string,number>();
+        for(const row of selections)actual.set(row.product.sku,(actual.get(row.product.sku)??0)+Number(row.quantity));
+        const expected=new Map<string,number>();
+        for(const row of composition)if(typeof row.sku==='string')expected.set(row.sku,Number(row.quantity));
+        if(actual.size!==expected.size||[...expected].some(([sku,quantity])=>actual.get(sku)!==quantity))throw new UnprocessableEntityException({code:'PROMOTIONAL_BUNDLE_COMPOSITION_MISMATCH'});
+        return;
+      }
+    }
+    if(!['QUALIFICATION_PACKAGE','REPURCHASE_PLAN','PROMOTIONAL_BUNDLE'].includes(offering.offeringType)) return;
     const rule=offering.selectionRule as Record<string,unknown>|null;
     const required=Number(rule?.requiredTotalQuantity),eligible=Array.isArray(rule?.eligibleSkus)?rule!.eligibleSkus:[];
     const total=selections.reduce((sum,row)=>sum+Number(row.quantity),0);
@@ -80,6 +93,7 @@ export class OrderService {
       this.assertOfferingPurpose(offering,'RETAIL');
       const products=await tx.productReference.findMany({where:{productId:{in:productIds},isActive:true}});
       if(products.length!==productIds.length)throw new ConflictException({code:'RESOURCE_NOT_FOUND'});
+      this.assertOfferingSelection(offering,dto.items!.map(item=>({product:products.find(product=>product.productId===item.productId)!,quantity:Number(item.quantity)})));
       const lines:any[]=[]; let gross=new Prisma.Decimal(0); let ruleVersionCode='R1.0B'; let parameterSnapshotHash:string|undefined;
       for(const item of dto.items!){
         const product=products.find(row=>row.productId===item.productId)!;
@@ -195,6 +209,7 @@ export class OrderService {
       const now = new Date();
       const offering = await this.resolveOfferingSnapshot(tx, dto.commercialOfferingCode, member ? 'WEB_MEMBER' : 'ADMIN', now);
       this.assertOfferingPurpose(offering, dto.purpose ?? 'RETAIL');
+      this.assertOfferingSelection(offering, dto.items.map(item => ({ product: products.find(product => product.productId === item.productId)!, quantity: Number(item.quantity) })));
       const lines: Array<{
         productId: string;
         skuSnapshot: string;

@@ -16,7 +16,12 @@ export class CommercialOfferingConfigService {
     const selectable=['QUALIFICATION_PACKAGE','REPURCHASE_PLAN'].includes(offeringType);
     if(!selectable && offeringType!=='PROMOTIONAL_BUNDLE') return;
     if(!rule) {
-      if(offeringType==='PROMOTIONAL_BUNDLE' && Array.isArray(input.composition) && input.composition.length) return;
+      if(offeringType==='PROMOTIONAL_BUNDLE') {
+        const composition=Array.isArray(input.composition)?input.composition:[];
+        if(!composition.length || composition.some((item:any)=>typeof item?.sku!=='string'||!/^[A-Z0-9][A-Z0-9_-]{1,79}$/.test(item.sku)||!Number.isInteger(Number(item.quantity))||Number(item.quantity)<1)||new Set(composition.map((item:any)=>item.sku)).size!==composition.length)
+          throw new UnprocessableEntityException({code:'INVALID_PROMOTIONAL_BUNDLE_COMPOSITION'});
+        return;
+      }
       throw new UnprocessableEntityException({code:'COMMERCIAL_OFFERING_SELECTION_RULE_REQUIRED'});
     }
     const selectionGroup=typeof rule.selectionGroup==='string'?rule.selectionGroup.trim():'';
@@ -27,6 +32,8 @@ export class CommercialOfferingConfigService {
     const approvedTotals:Record<string,number[]>={QUALIFICATION_PACKAGE:[3,9,15],REPURCHASE_PLAN:[2,4,8]};
     if(selectable && !approvedTotals[offeringType].includes(requiredTotalQuantity))
       throw new UnprocessableEntityException({code:'COMMERCIAL_OFFERING_SELECTION_TOTAL_NOT_APPROVED'});
+    if(offeringType==='PROMOTIONAL_BUNDLE' && Array.isArray(input.composition) && input.composition.length)
+      throw new UnprocessableEntityException({code:'PROMOTIONAL_BUNDLE_COMPOSITION_MODE_AMBIGUOUS'});
   }
   async adminList() { return this.db.commercialOffering.findMany({include:{versions:{orderBy:{version:'desc'}}},orderBy:{offeringCode:'asc'}}); }
   async createOffering(input:{offeringCode:string;offeringType:any},key:string,requestId:string,actor:string) { const code=input.offeringCode.trim().toUpperCase(); if(!/^[A-Z][A-Z0-9_-]{1,79}$/.test(code)) throw new UnprocessableEntityException({code:'INVALID_COMMERCIAL_OFFERING_CODE'}); return this.idempotency.execute(`admin:commercial-offering:create:${actor}`,key,{...input,offeringCode:code},async tx=>{ const row=await tx.commercialOffering.create({data:{offeringCode:code,offeringType:input.offeringType,status:'ACTIVE'}}); await this.audit.write(tx,{actorType:'USER',actorId:actor,action:'COMMERCIAL_OFFERING_CREATED',entityType:'CommercialOffering',entityId:row.commercialOfferingId,afterData:{offeringCode:row.offeringCode,offeringType:row.offeringType},requestId,correlationId:randomUUID()}); return row; }); }

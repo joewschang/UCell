@@ -80,4 +80,18 @@ describeDb('commercial offering foundation', () => {
     const version:any=await service.addVersion(offering.value.commercialOfferingId,{channels:['WEB_MEMBER'],effectiveFrom:new Date(Date.now()-60_000).toISOString(),selectionRule:{selectionGroup:'QUALIFICATION_FIVE_PRODUCT_POOL',requiredTotalQuantity:3,eligibleSkus:['TIP-363','TIP-999','TIP-580','TIP-696','TIP-777']}},randomUUID(),randomUUID(),actor.personId);
     expect(version.value.selectionRule).toMatchObject({selectionGroup:'QUALIFICATION_FIVE_PRODUCT_POOL',requiredTotalQuantity:3});
   });
+  it('governs promotional fixed and selectable composition through the same order-side authority',async()=>{
+    const actor=await db.person.create({data:{legalName:`Promotion actor ${randomUUID()}`,status:'EFFECTIVE'}});
+    const config=new CommercialOfferingConfigService(db as any,new IdempotencyService(db as any),new AuditService());
+    const offering:any=await config.createOffering({offeringCode:`PROMO-${randomUUID()}`,offeringType:'PROMOTIONAL_BUNDLE'},randomUUID(),randomUUID(),actor.personId);
+    await expect(config.addVersion(offering.value.commercialOfferingId,{channels:['WEB_MEMBER'],effectiveFrom:new Date(Date.now()-60_000).toISOString(),composition:[{sku:'TIP-580',quantity:2},{sku:'TIP-999',quantity:1}]},randomUUID(),randomUUID(),actor.personId)).resolves.toMatchObject({value:{status:'DRAFT'}});
+    await expect(config.addVersion(offering.value.commercialOfferingId,{channels:['WEB_MEMBER'],effectiveFrom:new Date(Date.now()-60_000).toISOString(),composition:[{sku:'tip-invalid',quantity:1}]},randomUUID(),randomUUID(),actor.personId)).rejects.toMatchObject({response:{code:'INVALID_PROMOTIONAL_BUNDLE_COMPOSITION'}});
+    const order=new OrderService({} as any,{} as any,{} as any,{} as any);
+    const fixed={offeringType:'PROMOTIONAL_BUNDLE',composition:[{sku:'TIP-580',quantity:2},{sku:'TIP-999',quantity:1}],selectionRule:null};
+    expect(()=> (order as any).assertOfferingSelection(fixed,[{product:{sku:'TIP-580'},quantity:2},{product:{sku:'TIP-999'},quantity:1}])).not.toThrow();
+    expect(()=> (order as any).assertOfferingSelection(fixed,[{product:{sku:'TIP-580'},quantity:3}])).toThrow(expect.objectContaining({response:{code:'PROMOTIONAL_BUNDLE_COMPOSITION_MISMATCH'}}));
+    const selectable={offeringType:'PROMOTIONAL_BUNDLE',composition:[],selectionRule:{selectionGroup:'PROMO_POOL',requiredTotalQuantity:2,eligibleSkus:['TIP-580','TIP-999']}};
+    expect(()=> (order as any).assertOfferingSelection(selectable,[{product:{sku:'TIP-580'},quantity:1},{product:{sku:'TIP-999'},quantity:1}])).not.toThrow();
+    expect(()=> (order as any).assertOfferingSelection(selectable,[{product:{sku:'TIP-696'},quantity:2}])).toThrow(expect.objectContaining({response:{code:'COMMERCIAL_OFFERING_SELECTION_SKU_NOT_ELIGIBLE'}}));
+  });
 });
