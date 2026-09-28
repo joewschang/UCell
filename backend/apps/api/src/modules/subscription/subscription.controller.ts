@@ -1,6 +1,6 @@
 import { Roles } from '../auth/roles.decorator';
 import { Body, Controller, Get, Headers, Param, Post, Query, Req, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiHeader, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { IdempotencyGuard } from '../../common/guards/idempotency.guard';
 import { CreateSubscriptionDto } from './dto/create-subscription.dto';
 import { ListSubscriptionsQueryDto } from './dto/list-subscriptions-query.dto';
@@ -44,14 +44,17 @@ export class SubscriptionController {
   async get(@Param('id') id:string){ return {data:await this.service.get(id)}; }
 
   @Post(':id/cancel')
+  @UseGuards(IdempotencyGuard)
+  @ApiHeader({name:'Idempotency-Key',required:true})
   @ApiOperation({operationId:'adminCancelSubscription',summary:'取消預付重銷方案；未來認列取消，已認列月份排程 RPV reversal'})
   async cancel(
     @Param('id') id:string,
-    @Body() body:{effectiveAt:string;reasonCode:string;refundAmount?:string},
+    @Body() body:{effectiveAt:string;reasonCode:string;refundAmount?:string;sourceReturnCaseId?:string},
+    @Headers('idempotency-key') key:string,
   ){
     return {
       data:await this.cancellation.cancel(
-        id,new Date(body.effectiveAt),body.reasonCode,body.refundAmount ?? '0'
+        id,new Date(body.effectiveAt),body.reasonCode,body.refundAmount ?? '0',{sourceReturnCaseId:body.sourceReturnCaseId,idempotencyKey:key}
       )
     };
   }

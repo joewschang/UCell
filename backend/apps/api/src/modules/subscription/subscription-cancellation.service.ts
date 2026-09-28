@@ -6,12 +6,12 @@ import { randomUUID } from 'crypto';
 export class SubscriptionCancellationService {
   constructor(private readonly prisma:PrismaService){}
 
-  async cancel(subscriptionId:string,effectiveAt:Date,reasonCode:string,refundAmount='0'){
-    const existingWhere={subscriptionId_effectiveAt_reasonCode:{subscriptionId,effectiveAt,reasonCode}};
+  async cancel(subscriptionId:string,effectiveAt:Date,reasonCode:string,refundAmount='0',input:{sourceReturnCaseId?:string;idempotencyKey?:string}={}){
+    const existingWhere=input.sourceReturnCaseId
+      ?{sourceReturnCaseId:input.sourceReturnCaseId}
+      :input.idempotencyKey?{idempotencyKey:input.idempotencyKey}:null;
     try{return await this.prisma.$transaction(async tx=>{
-      const existing=await tx.subscriptionCancellation.findUnique({
-        where:existingWhere
-      });
+      const existing=existingWhere?await tx.subscriptionCancellation.findFirst({where:existingWhere}):null;
       if(existing) return {
         cancellation:existing,
         cancelledFutureCount:0,
@@ -21,12 +21,16 @@ export class SubscriptionCancellationService {
       const sub=await tx.subscription.findUniqueOrThrow({
         where:{subscriptionId},include:{schedules:true}
       });
+      if(input.sourceReturnCaseId){
+        const sourceReturn=await tx.returnCase.findUnique({where:{returnCaseId:input.sourceReturnCaseId}});
+        if(!sourceReturn||sourceReturn.status!=='POSTED'||sourceReturn.orderId!==sub.orderId) throw new Error('SUBSCRIPTION_CANCELLATION_RETURN_SOURCE_INVALID');
+      }
       const correlationId=randomUUID();
 
       const fact=await tx.subscriptionCancellation.create({
         data:{
           subscriptionId,requestedAt:new Date(),effectiveAt,reasonCode,
-          refundAmount,correlationId,status:'POSTED'
+          refundAmount,sourceReturnCaseId:input.sourceReturnCaseId,idempotencyKey:input.idempotencyKey,correlationId,status:'POSTED'
         }
       });
 
@@ -77,7 +81,8 @@ export class SubscriptionCancellationService {
       // the committed fact; no existing cancellation or recovery event is
       // mutated to make the retry succeed.
       if((error as any)?.code!=='P2002') throw error;
-      const existing=await this.prisma.subscriptionCancellation.findUnique({where:existingWhere});
+      if(!existingWhere) throw error;
+      const existing=await this.prisma.subscriptionCancellation.findFirst({where:existingWhere});
       if(!existing) throw error;
       return {cancellation:existing,cancelledFutureCount:0,queuedRpvReversalCount:0,replayed:true};
     }

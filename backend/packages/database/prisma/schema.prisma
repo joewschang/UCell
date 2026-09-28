@@ -2803,6 +2803,7 @@ model ReturnCase {
 
   order Order        @relation(fields: [orderId], references: [orderId])
   lines ReturnLine[]
+  subscriptionCancellations SubscriptionCancellation[]
 
   @@index([orderId, occurredAt])
   @@map("return_case")
@@ -3162,12 +3163,15 @@ model SubscriptionCancellation {
   effectiveAt                DateTime @map("effective_at") @db.Timestamptz(6)
   reasonCode                 String   @map("reason_code")
   refundAmount               Decimal  @default(0) @map("refund_amount") @db.Decimal(18, 2)
+  sourceReturnCaseId         String?  @unique @map("source_return_case_id") @db.Uuid
+  idempotencyKey             String?  @unique @map("idempotency_key")
   status                     String   @default("POSTED")
   correlationId              String   @map("correlation_id") @db.Uuid
   createdAt                  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
+  sourceReturnCase ReturnCase? @relation(fields: [sourceReturnCaseId], references: [returnCaseId])
+
   @@index([subscriptionId, effectiveAt])
-  @@unique([subscriptionId, effectiveAt, reasonCode])
   @@map("subscription_cancellation")
   @@schema("subscription")
 }

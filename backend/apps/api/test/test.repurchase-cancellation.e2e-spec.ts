@@ -5,7 +5,7 @@ describe('repurchase cancellation recovery boundary',()=>{
     const created:any[]=[];
     const tx:any={
       subscription:{findUniqueOrThrow:jest.fn().mockResolvedValue({subscriptionId:'sub',ruleVersionCode:'R1.0B',schedules:[{status:'SCHEDULED',dueAt:new Date('2026-11-01')},{status:'RECOGNIZED',dueAt:new Date('2026-09-01')}]}),update:jest.fn()},
-      subscriptionCancellation:{findUnique:jest.fn().mockResolvedValue(null),create:jest.fn().mockResolvedValue({subscriptionCancellationId:'cancel'})},
+      subscriptionCancellation:{findFirst:jest.fn().mockResolvedValue(null),create:jest.fn().mockResolvedValue({subscriptionCancellationId:'cancel'})},
       monthlyRecognitionSchedule:{updateMany:jest.fn(),findMany:jest.fn().mockResolvedValue([{recognitionId:'recognized-before-return'}])},
       outboxEvent:{create:jest.fn(async({data}:any)=>{created.push(data);return data;})},
     };
@@ -20,13 +20,13 @@ describe('repurchase cancellation recovery boundary',()=>{
   it('reuses the immutable cancellation fact and does not enqueue recovery twice',async()=>{
     const existing={subscriptionCancellationId:'existing',subscriptionId:'sub',effectiveAt:new Date('2026-10-15'),reasonCode:'FULL_RETURN'};
     const tx:any={
-      subscriptionCancellation:{findUnique:jest.fn().mockResolvedValue(existing),create:jest.fn()},
+      subscriptionCancellation:{findFirst:jest.fn().mockResolvedValue(existing),create:jest.fn()},
       subscription:{findUniqueOrThrow:jest.fn(),update:jest.fn()},
       monthlyRecognitionSchedule:{updateMany:jest.fn(),findMany:jest.fn()},
       outboxEvent:{create:jest.fn()},
     };
     const service=new SubscriptionCancellationService({$transaction:async(work:any)=>work(tx)} as any);
-    await expect(service.cancel('sub',new Date('2026-10-15'),'FULL_RETURN')).resolves.toMatchObject({cancellation:existing,replayed:true,queuedRpvReversalCount:0});
+    await expect(service.cancel('sub',new Date('2026-10-15'),'FULL_RETURN','0',{idempotencyKey:'cancel-key'})).resolves.toMatchObject({cancellation:existing,replayed:true,queuedRpvReversalCount:0});
     expect(tx.subscriptionCancellation.create).not.toHaveBeenCalled();
     expect(tx.outboxEvent.create).not.toHaveBeenCalled();
   });
@@ -35,10 +35,10 @@ describe('repurchase cancellation recovery boundary',()=>{
     const existing={subscriptionCancellationId:'existing',subscriptionId:'sub',effectiveAt:new Date('2026-10-15'),reasonCode:'FULL_RETURN'};
     const db:any={
       $transaction:jest.fn().mockRejectedValue({code:'P2002'}),
-      subscriptionCancellation:{findUnique:jest.fn().mockResolvedValue(existing)},
+      subscriptionCancellation:{findFirst:jest.fn().mockResolvedValue(existing)},
     };
     const service=new SubscriptionCancellationService(db);
-    await expect(service.cancel('sub',new Date('2026-10-15'),'FULL_RETURN')).resolves.toMatchObject({cancellation:existing,replayed:true,queuedRpvReversalCount:0});
-    expect(db.subscriptionCancellation.findUnique).toHaveBeenCalledWith({where:{subscriptionId_effectiveAt_reasonCode:{subscriptionId:'sub',effectiveAt:new Date('2026-10-15'),reasonCode:'FULL_RETURN'}}});
+    await expect(service.cancel('sub',new Date('2026-10-15'),'FULL_RETURN','0',{idempotencyKey:'cancel-key'})).resolves.toMatchObject({cancellation:existing,replayed:true,queuedRpvReversalCount:0});
+    expect(db.subscriptionCancellation.findFirst).toHaveBeenCalledWith({where:{idempotencyKey:'cancel-key'}});
   });
 });
