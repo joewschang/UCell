@@ -2709,13 +2709,29 @@ model PayoutBatch {
 
   lines     PayoutLine[]
   approvals PayoutApproval[]
+  exportArtifacts PayoutExportArtifact[]
 
   @@index([status, periodEnd])
   @@map("payout_batch")
   @@schema("ledger")
 }
 
-model PayoutLine {
+
+model PayoutExportArtifact {
+  payoutExportArtifactId String @id @default(uuid()) @map("payout_export_artifact_id") @db.Uuid
+  payoutBatchId String @map("payout_batch_id") @db.Uuid
+  exportReference String @unique @map("export_reference")
+  adapterCode String @map("adapter_code")
+  formatVersion String @map("format_version")
+  contentHash String @map("content_hash") @db.Char(64)
+  payloadSnapshot Json @map("payload_snapshot")
+  generatedByActor String @map("generated_by_actor")
+  generatedAt DateTime @default(now()) @map("generated_at") @db.Timestamptz(6)
+  payoutBatch PayoutBatch @relation(fields:[payoutBatchId],references:[payoutBatchId])
+  @@unique([payoutBatchId,formatVersion])
+  @@map("payout_export_artifact")
+  @@schema("ledger")
+}model PayoutLine {
   payoutLineId             String   @id @default(uuid()) @map("payout_line_id") @db.Uuid
   payoutBatchId            String   @map("payout_batch_id") @db.Uuid
   recipientQualificationId String   @map("recipient_qualification_id") @db.Uuid
