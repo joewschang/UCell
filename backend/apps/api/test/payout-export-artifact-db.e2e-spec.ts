@@ -36,4 +36,25 @@ describeDb('PAYOUT_EXPORT_ARTIFACT_REVISION',()=>{
     const resultReplay=await service.recordPayoutResults(batch.payoutBatchId,{results:[{payoutLineId:(await db.payoutLine.findFirstOrThrow({where:{payoutBatchId:batch.payoutBatchId}})).payoutLineId,status:'FAILED',paidAmount:'0',reasonCode:'BANK_REJECTED'}]},'00000000-0000-0000-0000-000000000101','FINANCE','00000000-0000-0000-0000-000000000207','00000000-0000-0000-0000-000000000208');
     expect(resultReplay.replayed).toBe(true);
   });
+
+  it('keeps partial payment evidence append-only until a later full reconciliation settles the line',async()=>{
+    const person=await db.person.create({data:{legalName:'Payout Partial Recipient'}});
+    const qualification=await db.qualification.create({data:{currentHolderPersonId:person.personId,planLevelCode:'STARTER',status:'EFFECTIVE',effectiveAt:new Date()}});
+    const batch=await db.payoutBatch.create({data:{periodStart:new Date('2026-10-01T00:00:00Z'),periodEnd:new Date('2026-10-31T00:00:00Z'),status:'READY',totalGross:new Prisma.Decimal(100),totalRecovery:new Prisma.Decimal(0),totalNet:new Prisma.Decimal(100)}});
+    const line=await db.payoutLine.create({data:{payoutBatchId:batch.payoutBatchId,recipientQualificationId:qualification.qualificationId,grossAmount:new Prisma.Decimal(100),netAmount:new Prisma.Decimal(100),detailJson:{source:'partial-result-isolated-test'}}});
+    const payable=await db.payableEntry.create({data:{qualificationId:qualification.qualificationId,sourceType:'MANUAL_TEST',sourceId:line.payoutLineId,awardType:'REFERRAL',grossAmount:new Prisma.Decimal(100),availableAt:new Date(),status:'ALLOCATED',payoutLineId:line.payoutLineId,ruleVersionCode:'ISOLATED_TEST'}});
+    await db.payoutApproval.createMany({data:[
+      {payoutBatchId:batch.payoutBatchId,stage:'FINANCE_REVIEW',decision:'APPROVED',actorId:'00000000-0000-0000-0000-000000000111'},
+      {payoutBatchId:batch.payoutBatchId,stage:'COMPLIANCE_REVIEW',decision:'APPROVED',actorId:'00000000-0000-0000-0000-000000000112'},
+    ]});
+    const service=new AdminOperationsService(db as any,new AuditService());
+    await service.exportPayout(batch.payoutBatchId,'PAYOUT-PARTIAL-EXPORT','00000000-0000-0000-0000-000000000111','FINANCE','00000000-0000-0000-0000-000000000211','00000000-0000-0000-0000-000000000212');
+    const partial=await service.recordPayoutResults(batch.payoutBatchId,{results:[{payoutLineId:line.payoutLineId,status:'PAID',paidAmount:'40',paymentReference:'BANK-PARTIAL-40'}]},'00000000-0000-0000-0000-000000000111','FINANCE','00000000-0000-0000-0000-000000000213','00000000-0000-0000-0000-000000000214');
+    expect(partial.batch.status).toBe('PARTIALLY_PAID');
+    expect((await db.payableEntry.findUniqueOrThrow({where:{payableEntryId:payable.payableEntryId}})).status).toBe('ALLOCATED');
+    const settled=await service.recordPayoutResults(batch.payoutBatchId,{results:[{payoutLineId:line.payoutLineId,status:'PAID',paidAmount:'100',paymentReference:'BANK-FINAL-100'}]},'00000000-0000-0000-0000-000000000111','FINANCE','00000000-0000-0000-0000-000000000215','00000000-0000-0000-0000-000000000216');
+    expect(settled.batch.status).toBe('PAID');
+    expect((await db.payableEntry.findUniqueOrThrow({where:{payableEntryId:payable.payableEntryId}})).status).toBe('PAID');
+    expect(await db.payoutPaymentResult.count({where:{payoutLineId:line.payoutLineId}})).toBe(2);
+  });
 });

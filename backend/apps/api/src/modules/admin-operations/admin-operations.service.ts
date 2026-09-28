@@ -346,7 +346,9 @@ export class AdminOperationsService {
     if(!input.results?.length) throw new UnprocessableEntityException('PAYOUT_RESULT_REQUIRED');
     return this.prisma.$transaction(async tx=>{
       const batch=await tx.payoutBatch.findUniqueOrThrow({where:{payoutBatchId:id},include:{lines:{include:{payableEntries:true}}}});
-      if(!['EXPORTED','PROCESSING'].includes(batch.status)) {
+      // A partially paid batch remains open for a later bank reconciliation.
+      // Each correction is a new append-only result; no prior result is edited.
+      if(!['EXPORTED','PROCESSING','PARTIALLY_PAID'].includes(batch.status)) {
         const existing=await tx.payoutPaymentResult.findMany({where:{payoutBatchId:id,idempotencyKey:{in:input.results.map(result=>`payout-result:${id}:${result.payoutLineId}:${result.status}:${new Prisma.Decimal(result.paidAmount).toFixed(4)}:${result.paymentReference?.trim()??''}`)}}});
         if(existing.length===input.results.length) return {batch,results:existing,replayed:true};
         throw new ConflictException('Only EXPORTED or PROCESSING payout batch can accept payment results');
