@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { ConflictException, Injectable } from '@nestjs/common';
 import { PrismaService } from '@ucell/database';
 import { randomUUID } from 'crypto';
 
@@ -23,7 +23,7 @@ export class SubscriptionCancellationService {
       });
       if(input.sourceReturnCaseId){
         const sourceReturn=await tx.returnCase.findUnique({where:{returnCaseId:input.sourceReturnCaseId}});
-        if(!sourceReturn||sourceReturn.status!=='POSTED'||sourceReturn.orderId!==sub.orderId) throw new Error('SUBSCRIPTION_CANCELLATION_RETURN_SOURCE_INVALID');
+        if(!sourceReturn||sourceReturn.status!=='POSTED'||sourceReturn.orderId!==sub.orderId) throw new ConflictException({code:'SUBSCRIPTION_CANCELLATION_RETURN_SOURCE_INVALID'});
       }
       const correlationId=randomUUID();
 

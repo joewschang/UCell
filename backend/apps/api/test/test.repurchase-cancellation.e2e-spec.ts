@@ -41,4 +41,15 @@ describe('repurchase cancellation recovery boundary',()=>{
     await expect(service.cancel('sub',new Date('2026-10-15'),'FULL_RETURN','0',{idempotencyKey:'cancel-key'})).resolves.toMatchObject({cancellation:existing,replayed:true,queuedRpvReversalCount:0});
     expect(db.subscriptionCancellation.findFirst).toHaveBeenCalledWith({where:{idempotencyKey:'cancel-key'}});
   });
+
+  it('accepts only a posted ReturnCase belonging to the subscription order',async()=>{
+    const tx:any={
+      subscriptionCancellation:{findFirst:jest.fn().mockResolvedValue(null),create:jest.fn()},
+      subscription:{findUniqueOrThrow:jest.fn().mockResolvedValue({subscriptionId:'sub',orderId:'order-a',schedules:[]})},
+      returnCase:{findUnique:jest.fn().mockResolvedValue({returnCaseId:'return-b',status:'POSTED',orderId:'order-b'})},
+    };
+    const service=new SubscriptionCancellationService({$transaction:async(work:any)=>work(tx)} as any);
+    await expect(service.cancel('sub',new Date('2026-10-15'),'PARTIAL_RETURN','50',{sourceReturnCaseId:'return-b',idempotencyKey:'return-b-key'})).rejects.toMatchObject({response:{code:'SUBSCRIPTION_CANCELLATION_RETURN_SOURCE_INVALID'}});
+    expect(tx.subscriptionCancellation.create).not.toHaveBeenCalled();
+  });
 });
