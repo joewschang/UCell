@@ -707,6 +707,54 @@
       ]
     },
     {
+      "label": "partial RPV cumulative recovery 0",
+      "result": "PASS",
+      "actual": "-240",
+      "expected": "-240"
+    },
+    {
+      "label": "partial RPV replay appends no duplicate 0",
+      "result": "PASS",
+      "actual": 2,
+      "expected": 2
+    },
+    {
+      "label": "partial cancellation retry is idempotent 0",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "label": "partial RPV cumulative recovery 1",
+      "result": "PASS",
+      "actual": "-600",
+      "expected": "-600"
+    },
+    {
+      "label": "partial RPV replay appends no duplicate 1",
+      "result": "PASS",
+      "actual": 3,
+      "expected": 3
+    },
+    {
+      "label": "partial cancellation retry is idempotent 1",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "label": "partial returns preserve original RPV awards",
+      "result": "PASS",
+      "actual": "UNCHANGED",
+      "expected": "UNCHANGED"
+    },
+    {
+      "label": "partial returns recover only half of original payable",
+      "result": "PASS",
+      "actual": "-50",
+      "expected": "-50"
+    },
+    {
       "label": "RPV missing recognitionMonth fails closed",
       "result": "PASS",
       "actual": true,
@@ -1099,14 +1147,14 @@
     {
       "label": "missing original return evidence appends no ledger",
       "result": "PASS",
-      "actual": 15,
-      "expected": 15
+      "actual": 17,
+      "expected": 17
     },
     {
       "label": "missing original return evidence appends no award posting",
       "result": "PASS",
-      "actual": 24,
-      "expected": 24
+      "actual": 28,
+      "expected": 28
     },
     {
       "label": "missing original return evidence publishes no success action",
@@ -1221,14 +1269,14 @@
     {
       "label": "duplicate RETURN_CONFIRMED appends no ledger",
       "result": "PASS",
-      "actual": 19,
-      "expected": 19
+      "actual": 21,
+      "expected": 21
     },
     {
       "label": "duplicate RETURN_CONFIRMED appends no entitlement posting",
       "result": "PASS",
-      "actual": 37,
-      "expected": 37
+      "actual": 41,
+      "expected": 41
     },
     {
       "label": "cross-event recalculation uses later original earning recipient",

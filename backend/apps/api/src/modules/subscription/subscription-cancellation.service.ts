@@ -11,6 +11,9 @@ export class SubscriptionCancellationService {
       ?{sourceReturnCaseId:input.sourceReturnCaseId}
       :input.idempotencyKey?{idempotencyKey:input.idempotencyKey}:null;
     try{return await this.prisma.$transaction(async tx=>{
+      // Serialize refunds against the same subscription before reading totals
+      // or schedules, including requests with different idempotency keys.
+      await tx.$queryRaw`SELECT subscription_id FROM subscription.subscription WHERE subscription_id = ${subscriptionId}::uuid FOR UPDATE`;
       const existing=existingWhere?await tx.subscriptionCancellation.findFirst({where:existingWhere}):null;
       if(existing) return {
         cancellation:existing,
@@ -54,16 +57,21 @@ export class SubscriptionCancellationService {
       });
       if(!full){
         const prior=await tx.subscriptionCancellation.aggregate({where:{subscriptionId,status:'POSTED'},_sum:{refundAmount:true}});
-        const remaining=sub.plan.prepaidAmount.sub(prior._sum.refundAmount??new Prisma.Decimal(0));
+        // The aggregate already includes the fact created in this transaction.
+        const remaining=sub.plan.prepaidAmount.sub(prior._sum.refundAmount??new Prisma.Decimal(0)).add(refund);
         if(remaining.lte(0)||refund.gt(remaining)) throw new ConflictException({code:'SUBSCRIPTION_RETURN_AMOUNT_EXCEEDED'});
         const rows=sub.schedules.filter(row=>row.status==='SCHEDULED'&&row.dueAt>=effectiveAt).sort((a,b)=>a.installmentNo-b.installmentNo);
         const futureTotal=rows.reduce((total,row)=>total.add(row.recognizedAmount),new Prisma.Decimal(0));
         const target=futureTotal.mul(remaining.sub(refund)).div(remaining).toDecimalPlaces(2,Prisma.Decimal.ROUND_HALF_UP);
+        const rpvTotal=rows.reduce((total,row)=>total.add(row.rpvAmount),new Prisma.Decimal(0));
+        const rpvTarget=rpvTotal.mul(remaining.sub(refund)).div(remaining).toDecimalPlaces(4,Prisma.Decimal.ROUND_HALF_UP);
         let allocated=new Prisma.Decimal(0);
+        let allocatedRpv=new Prisma.Decimal(0);
         for(const [index,row] of rows.entries()){
           const recognizedAmount=index===rows.length-1?target.sub(allocated):row.recognizedAmount.mul(remaining.sub(refund)).div(remaining).toDecimalPlaces(2,Prisma.Decimal.ROUND_HALF_UP);
           allocated=allocated.add(recognizedAmount);
-          const rpvAmount=row.rpvAmount.mul(remaining.sub(refund)).div(remaining).toDecimalPlaces(4,Prisma.Decimal.ROUND_HALF_UP);
+          const rpvAmount=index===rows.length-1?rpvTarget.sub(allocatedRpv):row.rpvAmount.mul(remaining.sub(refund)).div(remaining).toDecimalPlaces(4,Prisma.Decimal.ROUND_HALF_UP);
+          allocatedRpv=allocatedRpv.add(rpvAmount);
           await tx.monthlyRecognitionSchedule.update({where:{recognitionId:row.recognitionId},data:{recognizedAmount,rpvAmount}});
         }
       }

@@ -3,7 +3,7 @@ import {SubscriptionCancellationService} from '../src/modules/subscription/subsc
 describe('repurchase cancellation recovery boundary',()=>{
   it('cancels future schedules and queues append-only reversals for all already-recognized effects',async()=>{
     const created:any[]=[];
-    const tx:any={
+    const tx:any={$queryRaw:jest.fn(),
       subscription:{findUniqueOrThrow:jest.fn().mockResolvedValue({subscriptionId:'sub',ruleVersionCode:'R1.0B',plan:{prepaidAmount:100},schedules:[{status:'SCHEDULED',dueAt:new Date('2026-11-01')},{status:'RECOGNIZED',dueAt:new Date('2026-09-01')}]}),update:jest.fn()},
       subscriptionCancellation:{findFirst:jest.fn().mockResolvedValue(null),create:jest.fn().mockResolvedValue({subscriptionCancellationId:'cancel'})},
       monthlyRecognitionSchedule:{updateMany:jest.fn(),findMany:jest.fn().mockResolvedValue([{recognitionId:'recognized-before-return'}])},
@@ -19,7 +19,7 @@ describe('repurchase cancellation recovery boundary',()=>{
 
   it('reuses the immutable cancellation fact and does not enqueue recovery twice',async()=>{
     const existing={subscriptionCancellationId:'existing',subscriptionId:'sub',effectiveAt:new Date('2026-10-15'),reasonCode:'FULL_RETURN'};
-    const tx:any={
+    const tx:any={$queryRaw:jest.fn(),
       subscriptionCancellation:{findFirst:jest.fn().mockResolvedValue(existing),create:jest.fn()},
       subscription:{findUniqueOrThrow:jest.fn(),update:jest.fn()},
       monthlyRecognitionSchedule:{updateMany:jest.fn(),findMany:jest.fn()},
@@ -43,7 +43,7 @@ describe('repurchase cancellation recovery boundary',()=>{
   });
 
   it('accepts only a posted ReturnCase belonging to the subscription order',async()=>{
-    const tx:any={
+    const tx:any={$queryRaw:jest.fn(),
       subscriptionCancellation:{findFirst:jest.fn().mockResolvedValue(null),create:jest.fn()},
       subscription:{findUniqueOrThrow:jest.fn().mockResolvedValue({subscriptionId:'sub',orderId:'order-a',plan:{prepaidAmount:100},schedules:[]})},
       returnCase:{findUnique:jest.fn().mockResolvedValue({returnCaseId:'return-b',status:'POSTED',orderId:'order-b'})},

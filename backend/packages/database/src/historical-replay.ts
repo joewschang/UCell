@@ -509,7 +509,9 @@ export async function replayRpvCancellation(tx:Prisma.TransactionClient,recognit
   const previous=await tx.pvLedger.aggregate({where:{reversalOfEventId:original.eventId,pvType:'RPV'},_sum:{amount:true}});
   const delta=original.amount.mul(ratio).negated().sub(previous._sum.amount??dec(0));
   if(delta.gt(0)) pending('RETURN_AMOUNT_EXCEEDED','Original RPV was reversed beyond its effective volume');
-  if(!delta.eq(0)) await tx.pvLedger.create({data:{qualificationId:original.qualificationId,pvType:'RPV',amount:delta,sourceType:'MONTHLY_RECOGNITION_REVERSAL',sourceId:envelope.inputs.subscriptionId,sourceLineId:recognitionId,eventType:'RPV_REVERSAL',
+  // Each immutable cancellation can append its own delta to one recognition.
+  // Using the subscription here collides on the second legitimate return.
+  if(!delta.eq(0)) await tx.pvLedger.create({data:{qualificationId:original.qualificationId,pvType:'RPV',amount:delta,sourceType:'MONTHLY_RECOGNITION_REVERSAL',sourceId:cancellationId,sourceLineId:recognitionId,eventType:'RPV_REVERSAL',
     ruleVersionCode:envelope.ruleVersionCode,parameterSnapshotHash:envelope.parameters.hash,occurredAt:cancellation.effectiveAt,reversalOfEventId:original.eventId,correlationId}});
   await postPayables(tx,row,envelope,new Map(envelope.recipients.map(recipient=>[recipient.key,dec(recipient.posted).mul(dec(1).sub(ratio))])),actionKey,stateHash,cancellation.sourceReturnCaseId??undefined);
   if(ratio.eq(1)) await tx.monthlyRecognitionSchedule.update({where:{recognitionId},data:{status:'REVERSED'}});
