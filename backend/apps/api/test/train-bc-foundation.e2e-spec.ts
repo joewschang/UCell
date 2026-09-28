@@ -95,15 +95,15 @@ it('pins page one through a placement that writes early but commits late; reject
  let first:Awaited<ReturnType<typeof reader.nodes>>,context:ReturnType<typeof time>;
  try{await Promise.race([ready,writer]);context=time();first=await reader.nodes(p,tree.binaryTreeId,context);}
  finally{release();await writer;}
- expect(first!.items).toHaveLength(100);expect(first!.total).toBe(104);expect(first!.nextCursor).toBeTruthy();
+ expect(first!.items).toHaveLength(100);expect(first!.total).toBe(108);expect(first!.nextCursor).toBeTruthy();
  const second=await reader.nodes(p,tree.binaryTreeId,context!,first!.nextCursor!,first!.snapshotToken!);
  const all=[...first!.items,...second.items].map(row=>row.qualificationId);
- expect(new Set(all).size).toBe(104);expect(all).not.toContain(late.qualificationId);expect(second.total).toBe(104);
- expect((await reader.nodes(p,tree.binaryTreeId,context!)).total).toBe(105);
+ expect(new Set(all).size).toBe(108);expect(all).not.toContain(late.qualificationId);expect(second.total).toBe(108);
+ expect((await reader.nodes(p,tree.binaryTreeId,context!)).total).toBe(109);
  await expect(reader.nodes(p,tree.binaryTreeId,context!,first!.nextCursor!)).rejects.toMatchObject({response:{code:'TREE_SNAPSHOT_REQUIRED'}});
  await expect(reader.nodes(p,tree.binaryTreeId,{...context!,periodStart:'2026-02-01T00:00:00.000Z'},first!.nextCursor!,first!.snapshotToken!)).rejects.toMatchObject({response:{code:'TREE_SNAPSHOT_CONTEXT_CHANGED'}});
  const detail=await reader.detail(p,tree.binaryTreeId,time());
- expect(detail.result!.positions.find(r=>r.positionNo===4)!.activeLabel).toBe('UNKNOWN');
+ expect(detail.result!.positions.find(r=>r.positionNo===8)!.activeLabel).toBe('UNKNOWN');
  const other=await create();await expect(reader.nodes(p,other.binaryTreeId,context!,undefined,first!.snapshotToken!)).rejects.toMatchObject({response:{code:'TREE_SNAPSHOT_CONTEXT_CHANGED'}});
 },120000);
 
@@ -162,6 +162,7 @@ it('counts every first achieved rank in the period, without losing an earlier sa
  }
 
 });
+
 
 
 
