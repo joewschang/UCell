@@ -13,12 +13,13 @@ describeDb('PAYOUT_EXPORT_ARTIFACT_REVISION',()=>{
     const qualification=await db.qualification.create({data:{currentHolderPersonId:person.personId,planLevelCode:'STARTER',status:'EFFECTIVE',effectiveAt:new Date()}});
     const batch=await db.payoutBatch.create({data:{periodStart:new Date('2026-09-01T00:00:00Z'),periodEnd:new Date('2026-09-30T00:00:00Z'),status:'READY',totalGross:new Prisma.Decimal(100),totalRecovery:new Prisma.Decimal(0),totalNet:new Prisma.Decimal(100)}});
     await db.payoutLine.create({data:{payoutBatchId:batch.payoutBatchId,recipientQualificationId:qualification.qualificationId,grossAmount:new Prisma.Decimal(100),netAmount:new Prisma.Decimal(100),detailJson:{source:'isolated-test'}}});
-    await db.payoutApproval.createMany({data:[
-      {payoutBatchId:batch.payoutBatchId,stage:'FINANCE_REVIEW',decision:'APPROVED',actorId:'00000000-0000-0000-0000-000000000101'},
-      {payoutBatchId:batch.payoutBatchId,stage:'COMPLIANCE_REVIEW',decision:'APPROVED',actorId:'00000000-0000-0000-0000-000000000102'},
-    ]});
     const service=new AdminOperationsService(db as any,new AuditService());
-    const first=await service.exportPayout(batch.payoutBatchId,'PAYOUT-EXPORT-REVISION-1','00000000-0000-0000-0000-000000000101','FINANCE','00000000-0000-0000-0000-000000000201','00000000-0000-0000-0000-000000000202');
+    const finance=await service.approvePayout(batch.payoutBatchId,'FINANCE_REVIEW','00000000-0000-0000-0000-000000000101','FINANCE','Finance verified','00000000-0000-0000-0000-000000000201','00000000-0000-0000-0000-000000000202');
+    expect(finance.stage).toBe('FINANCE_REVIEW');
+    expect((await db.payoutBatch.findUniqueOrThrow({where:{payoutBatchId:batch.payoutBatchId}})).status).toBe('REVIEWED');
+    await service.approvePayout(batch.payoutBatchId,'COMPLIANCE_REVIEW','00000000-0000-0000-0000-000000000102','COMPLIANCE_AUDIT','Compliance verified','00000000-0000-0000-0000-000000000203','00000000-0000-0000-0000-000000000204');
+    expect((await db.payoutBatch.findUniqueOrThrow({where:{payoutBatchId:batch.payoutBatchId}})).status).toBe('APPROVED');
+    const first=await service.exportPayout(batch.payoutBatchId,'PAYOUT-EXPORT-REVISION-1','00000000-0000-0000-0000-000000000101','FINANCE','00000000-0000-0000-0000-000000000205','00000000-0000-0000-0000-000000000206');
     expect(first.replayed).toBe(false);
     expect(first.artifact.revision).toBe(1);
     expect(first.artifact.contentHash).toMatch(/^[a-f0-9]{64}$/);
@@ -43,11 +44,9 @@ describeDb('PAYOUT_EXPORT_ARTIFACT_REVISION',()=>{
     const batch=await db.payoutBatch.create({data:{periodStart:new Date('2026-10-01T00:00:00Z'),periodEnd:new Date('2026-10-31T00:00:00Z'),status:'READY',totalGross:new Prisma.Decimal(100),totalRecovery:new Prisma.Decimal(0),totalNet:new Prisma.Decimal(100)}});
     const line=await db.payoutLine.create({data:{payoutBatchId:batch.payoutBatchId,recipientQualificationId:qualification.qualificationId,grossAmount:new Prisma.Decimal(100),netAmount:new Prisma.Decimal(100),detailJson:{source:'partial-result-isolated-test'}}});
     const payable=await db.payableEntry.create({data:{qualificationId:qualification.qualificationId,sourceType:'MANUAL_TEST',sourceId:line.payoutLineId,awardType:'REFERRAL',grossAmount:new Prisma.Decimal(100),availableAt:new Date(),status:'ALLOCATED',payoutLineId:line.payoutLineId,ruleVersionCode:'ISOLATED_TEST'}});
-    await db.payoutApproval.createMany({data:[
-      {payoutBatchId:batch.payoutBatchId,stage:'FINANCE_REVIEW',decision:'APPROVED',actorId:'00000000-0000-0000-0000-000000000111'},
-      {payoutBatchId:batch.payoutBatchId,stage:'COMPLIANCE_REVIEW',decision:'APPROVED',actorId:'00000000-0000-0000-0000-000000000112'},
-    ]});
     const service=new AdminOperationsService(db as any,new AuditService());
+    await service.approvePayout(batch.payoutBatchId,'FINANCE_REVIEW','00000000-0000-0000-0000-000000000111','FINANCE',undefined,'00000000-0000-0000-0000-000000000221','00000000-0000-0000-0000-000000000222');
+    await service.approvePayout(batch.payoutBatchId,'COMPLIANCE_REVIEW','00000000-0000-0000-0000-000000000112','COMPLIANCE_AUDIT',undefined,'00000000-0000-0000-0000-000000000223','00000000-0000-0000-0000-000000000224');
     await service.exportPayout(batch.payoutBatchId,'PAYOUT-PARTIAL-EXPORT','00000000-0000-0000-0000-000000000111','FINANCE','00000000-0000-0000-0000-000000000211','00000000-0000-0000-0000-000000000212');
     const partial=await service.recordPayoutResults(batch.payoutBatchId,{results:[{payoutLineId:line.payoutLineId,status:'PAID',paidAmount:'40',paymentReference:'BANK-PARTIAL-40'}]},'00000000-0000-0000-0000-000000000111','FINANCE','00000000-0000-0000-0000-000000000213','00000000-0000-0000-0000-000000000214');
     expect(partial.batch.status).toBe('PARTIALLY_PAID');

@@ -288,7 +288,13 @@ export class AdminOperationsService {
 
     return this.prisma.$transaction(async tx=>{
       const batch=await tx.payoutBatch.findUniqueOrThrow({where:{payoutBatchId:id}});
-      if(batch.status!=='READY') throw new ConflictException('Only READY payout batch can be approved');
+      const existing=await tx.payoutApproval.findUnique({where:{payoutBatchId_stage:{payoutBatchId:id,stage}}});
+      if(existing){
+        if(existing.decision==='APPROVED'&&existing.actorId===actorId) return existing;
+        throw new ConflictException('Payout approval stage is immutable once recorded');
+      }
+      if(stage==='FINANCE_REVIEW'&&batch.status!=='READY') throw new ConflictException('Only READY payout batch can receive Finance review');
+      if(stage==='COMPLIANCE_REVIEW'&&batch.status!=='REVIEWED') throw new ConflictException('Compliance review requires completed Finance review');
 
       const other=await tx.payoutApproval.findFirst({
         where:{
@@ -300,11 +306,8 @@ export class AdminOperationsService {
       if(other?.actorId===actorId)
         throw new UnprocessableEntityException('Finance and Compliance approvals must be made by different actors');
 
-      const approval=await tx.payoutApproval.upsert({
-        where:{payoutBatchId_stage:{payoutBatchId:id,stage}},
-        update:{decision:'APPROVED',actorId,note},
-        create:{payoutBatchId:id,stage,decision:'APPROVED',actorId,note}
-      });
+      const approval=await tx.payoutApproval.create({data:{payoutBatchId:id,stage,decision:'APPROVED',actorId,note}});
+      await tx.payoutBatch.update({where:{payoutBatchId:id},data:{status:stage==='FINANCE_REVIEW'?'REVIEWED':'APPROVED'}});
       await this.audit.write(tx,{
         actorType:actorId?'USER':'SYSTEM',actorId,
         action:'PAYOUT_APPROVED',entityType:'PAYOUT_BATCH',entityId:id,
@@ -330,7 +333,7 @@ export class AdminOperationsService {
         if(replay?.payoutBatchId===id) return {batch,artifact:replay,replayed:true};
         throw new ConflictException('Payout batch is already exported; create a governed replacement revision before another export');
       }
-      if(batch.status!=='READY')throw new ConflictException('Only READY payout batch can be exported');
+      if(!['READY','APPROVED'].includes(batch.status))throw new ConflictException('Only APPROVED payout batch can be exported');
       const approved=new Set(batch.approvals.filter(x=>x.decision==='APPROVED').map(x=>x.stage));
       if(!approved.has('FINANCE_REVIEW')||!approved.has('COMPLIANCE_REVIEW'))
         throw new UnprocessableEntityException('Finance and Compliance approvals are both required');
