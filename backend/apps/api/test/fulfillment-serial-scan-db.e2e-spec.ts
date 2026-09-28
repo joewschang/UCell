@@ -4,6 +4,7 @@ import { FulfillmentSourceAllocationService } from '../src/modules/commerce/fulf
 import { FulfillmentSerialScanService } from '../src/modules/commerce/fulfillment-serial-scan.service';
 import { FulfillmentErpHandoffService } from '../src/modules/commerce/fulfillment-erp-handoff.service';
 import { AuditService } from '../src/common/audit/audit.service';
+import { AdminOperationsService } from '../src/modules/admin-operations/admin-operations.service';
 
 const url=process.env.PHASE2_TEST_DATABASE_URL;
 const describeDb=url?describe:describe.skip;
@@ -39,5 +40,9 @@ describeDb('serialized fulfillment scan',()=>{
   expect(JSON.stringify(handoff.handoff.payloadSnapshot)).not.toMatch(/qualification|member|person|award/i);
   expect((await handoffService.request({fulfillmentId:fulfillment.fulfillmentId,actorId:'00000000-0000-0000-0000-000000000301',requestId:'00000000-0000-0000-0000-000000000310',correlationId:'00000000-0000-0000-0000-000000000311'})).replayed).toBe(true);
   expect(await db.outboxEvent.count({where:{eventType:'FULFILLMENT_ERP_HANDOFF_REQUESTED'}})).toBe(1);
+  const lineage=await new AdminOperationsService(db as any,new AuditService()).economicLineageByOrderNo(order.orderNo.toString());
+  expect(lineage.order.orderNo).toBe(order.orderNo.toString());
+  expect(lineage.fulfillments[0].sourceAllocations[0].serialNos).toEqual([unit.serialNo]);
+  expect(JSON.stringify(lineage)).not.toMatch(/legalName|memberNo|qualificationId/i);
  });
 });

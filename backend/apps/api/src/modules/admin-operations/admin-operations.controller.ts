@@ -63,6 +63,13 @@ export class AdminOperationsController{
     return this.service.payoutBatchDetail(id).then(data=>({data}));
   }
 
+  @Roles('SUPER_ADMIN','FINANCE','COMPLIANCE_AUDIT','ORDER_OPS')
+  @Get('economic-lineage/orders/:orderNo')
+  @ApiOperation({operationId:'adminReadEconomicLineageByOrderNo',summary:'以 orderNo 讀取既有不可變經濟與履約來源鏈'})
+  economicLineage(@Param('orderNo') orderNo:string){
+    return this.service.economicLineageByOrderNo(orderNo).then(data=>({data}));
+  }
+
   @Roles('SUPER_ADMIN','FINANCE','COMPLIANCE_AUDIT')
   @Post('payout-batches/:id/approvals/:stage')
   @ApiOperation({operationId:'adminApprovePayoutStage',summary:'Finance/Compliance雙階段付款審核'})
