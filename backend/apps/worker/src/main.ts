@@ -100,12 +100,21 @@ export async function processRetailReferralReturn(db:PrismaService,lease:OutboxL
  });
 }
 
-async function processRecognition(recognitionId:string){
-  return prisma.$transaction(async tx=>{
-    const schedule=await tx.monthlyRecognitionSchedule.findUnique({
+export async function processRecognition(recognitionId:string,db:PrismaService=prisma){
+  return db.$transaction(async tx=>{
+    let schedule=await tx.monthlyRecognitionSchedule.findUnique({
       where:{recognitionId},include:{subscription:true}
     });
     if(!schedule || !['SCHEDULED','DUE'].includes(schedule.status) || schedule.dueAt>new Date()) return;
+
+    await tx.$queryRaw`SELECT subscription_id FROM subscription.subscription WHERE subscription_id=${schedule.subscriptionId}::uuid FOR UPDATE`;
+    schedule=await tx.monthlyRecognitionSchedule.findUniqueOrThrow({where:{recognitionId},include:{subscription:true}});
+    if(!['SCHEDULED','DUE'].includes(schedule.status)) return;
+    if(schedule.retainedEntitlementRatio==null){
+      const partials=await tx.subscriptionCancellation.count({where:{subscriptionId:schedule.subscriptionId,status:'POSTED',refundAmount:{gt:0},reasonCode:{not:'FULL_RETURN'}}});
+      if(partials) pending('SUBSCRIPTION_REFUND_BASIS_MISSING','Legacy schedule needs an explicit refund basis');
+      schedule.retainedEntitlementRatio=new Prisma.Decimal(1);
+    }
 
     const correlationId=crypto.randomUUID();
     const pvEvent=await tx.pvLedger.upsert({
@@ -155,7 +164,7 @@ async function processRecognition(recognitionId:string){
           OR:[{activeTo:null},{activeTo:{gt:schedule.dueAt}}]
         }
       });
-      const theory=new Prisma.Decimal('100.00');
+      const theory=new Prisma.Decimal('100.00').mul(schedule.retainedEntitlementRatio).toDecimalPlaces(4,Prisma.Decimal.ROUND_HALF_UP);
       await tx.rpvUplineAwardEvent.upsert({
         where:{
           recognitionId_recipientQualificationId_binaryGeneration:{

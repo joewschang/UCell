@@ -51,7 +51,7 @@ export class SubscriptionCancellationService {
         where:{
           subscriptionId,
           dueAt:{gte:effectiveAt},
-          status:'SCHEDULED'
+          status:{in:['SCHEDULED','DUE']}
         },
         data:{status:'CANCELLED'}
       });
@@ -60,7 +60,11 @@ export class SubscriptionCancellationService {
         // The aggregate already includes the fact created in this transaction.
         const remaining=sub.plan.prepaidAmount.sub(prior._sum.refundAmount??new Prisma.Decimal(0)).add(refund);
         if(remaining.lte(0)||refund.gt(remaining)) throw new ConflictException({code:'SUBSCRIPTION_RETURN_AMOUNT_EXCEEDED'});
-        const rows=sub.schedules.filter(row=>row.status==='SCHEDULED'&&row.dueAt>=effectiveAt).sort((a,b)=>a.installmentNo-b.installmentNo);
+        const rows=sub.schedules.filter(row=>['SCHEDULED','DUE'].includes(row.status)&&row.dueAt>=effectiveAt).sort((a,b)=>a.installmentNo-b.installmentNo);
+        if(rows.some(row=>row.retainedEntitlementRatio==null)){
+          const earlier=await tx.subscriptionCancellation.count({where:{subscriptionId,status:'POSTED',subscriptionCancellationId:{not:fact.subscriptionCancellationId},refundAmount:{gt:0},reasonCode:{not:'FULL_RETURN'}}});
+          if(earlier) throw new ConflictException({code:'SUBSCRIPTION_REFUND_BASIS_MISSING'});
+        }
         const futureTotal=rows.reduce((total,row)=>total.add(row.recognizedAmount),new Prisma.Decimal(0));
         const target=futureTotal.mul(remaining.sub(refund)).div(remaining).toDecimalPlaces(2,Prisma.Decimal.ROUND_HALF_UP);
         const rpvTotal=rows.reduce((total,row)=>total.add(row.rpvAmount),new Prisma.Decimal(0));
@@ -72,7 +76,8 @@ export class SubscriptionCancellationService {
           allocated=allocated.add(recognizedAmount);
           const rpvAmount=index===rows.length-1?rpvTarget.sub(allocatedRpv):row.rpvAmount.mul(remaining.sub(refund)).div(remaining).toDecimalPlaces(4,Prisma.Decimal.ROUND_HALF_UP);
           allocatedRpv=allocatedRpv.add(rpvAmount);
-          await tx.monthlyRecognitionSchedule.update({where:{recognitionId:row.recognitionId},data:{recognizedAmount,rpvAmount}});
+          const retainedEntitlementRatio=(row.retainedEntitlementRatio??new Prisma.Decimal(1)).mul(remaining.sub(refund)).div(remaining);
+          await tx.monthlyRecognitionSchedule.update({where:{recognitionId:row.recognitionId},data:{recognizedAmount,rpvAmount,retainedEntitlementRatio,...(retainedEntitlementRatio.eq(0)?{status:'CANCELLED' as const}:{})}});
         }
       }
 

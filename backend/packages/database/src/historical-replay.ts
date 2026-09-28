@@ -199,6 +199,8 @@ export async function sealEpvEvent(tx:Prisma.TransactionClient,event:any,paramet
     evidence:await captureHistoricalGraph(tx,event.qualificationId,event.occurredAt,parameters),inputs:{orderId:order.orderId,qualificationId:order.qualificationId,consumption:order.netAmount.toString(),volume:event.amount.toString(),monthStart:month.start.toISOString(),monthEnd:month.end.toISOString(),timezone:month.timezone,base:month.base.toString(),rate:month.rate.toString()}});
 }
 export async function sealRpvEvent(tx:Prisma.TransactionClient,event:any,schedule:any) {
+  const subscription=await tx.subscription.findUniqueOrThrow({where:{subscriptionId:schedule.subscriptionId},include:{plan:true}});
+  const refundBasis={prepaidAmount:subscription.plan.prepaidAmount.toString(),retainedRatio:dec(schedule.retainedEntitlementRatio??1).toString()};
   const parameters=await captureParameters(tx,event.occurredAt,event.ruleVersionCode);
   const timezone=historicalAccountingTimezone(parameters);
   const [period]=await tx.$queryRaw<Array<{start:Date;end:Date}>>`
@@ -212,7 +214,7 @@ export async function sealRpvEvent(tx:Prisma.TransactionClient,event:any,schedul
     recipients.push(await recipientFromAward(tx,award,true,parameters));
   }
   return storeReplaySnapshot(tx,{format:'UCELL_HISTORICAL_REPLAY_V1',kind:'RPV',sourceId:schedule.recognitionId,at:event.occurredAt.toISOString(),ruleVersionCode:event.ruleVersionCode,parameters,recipients,
-    evidence:await captureHistoricalGraph(tx,event.qualificationId,event.occurredAt,parameters),inputs:{eventId:event.eventId,subscriptionId:schedule.subscriptionId,volume:event.amount.toString(),recognitionMonth:json(schedule.recognitionMonth),recognitionPeriod:{start:period.start.toISOString(),end:period.end.toISOString(),timezone},recognizedAmount:schedule.recognizedAmount.toString(),entitlementMethod:'ORIGINAL_FIXED_AWARD_ON_VALID_RECOGNITION'}});
+    evidence:await captureHistoricalGraph(tx,event.qualificationId,event.occurredAt,parameters),inputs:{eventId:event.eventId,subscriptionId:schedule.subscriptionId,volume:event.amount.toString(),recognitionMonth:json(schedule.recognitionMonth),recognitionPeriod:{start:period.start.toISOString(),end:period.end.toISOString(),timezone},recognizedAmount:schedule.recognizedAmount.toString(),refundBasis,entitlementMethod:'ORIGINAL_FIXED_AWARD_ON_VALID_RECOGNITION'}});
 }
 export async function sealSettlement(tx:Prisma.TransactionClient,batch:any) {
   const parameters=verifySnapshot(batch.parameterSnapshot);
@@ -487,6 +489,7 @@ export async function appendQualificationMonthReplayEvidence(tx:Prisma.Transacti
   return {before,after,active:after.gte(prior.activeThreshold),accumulator};
 }
 export async function replayRpvCancellation(tx:Prisma.TransactionClient,recognitionId:string,cancellationId:string,actionKey:string,correlationId:string) {
+  await tx.$queryRaw`SELECT recognition_id FROM subscription.monthly_recognition_schedule WHERE recognition_id=${recognitionId}::uuid FOR UPDATE`;
   const prior=await tx.replayAction.findUnique({where:{actionKey}});if(prior) return prior.result;
   const {row,envelope}=await loadEnvelope(tx,'RPV',recognitionId);
   const cancellation=await tx.subscriptionCancellation.findUnique({where:{subscriptionCancellationId:cancellationId}});
@@ -495,19 +498,24 @@ export async function replayRpvCancellation(tx:Prisma.TransactionClient,recognit
   // append-only cancellation fact; source/subscription identity and POSTED
   // status remain the authority.
   if(!cancellation||cancellation.status!=='POSTED'||cancellation.subscriptionId!==envelope.inputs.subscriptionId) pending('RPV_CANCELLATION_INVALID','Posted original recognition cancellation evidence is required');
-  const stateHash=replayHash({recognitionId,valid:false});
   const original=await tx.pvLedger.findUnique({where:{eventId:envelope.inputs.eventId}});
   if(!original) pending('HISTORICAL_SNAPSHOT_MISSING','Original RPV event is missing');
   if(original.pvType!=='RPV'||original.eventType!=='RPV_CREATED'||original.sourceId!==envelope.inputs.subscriptionId||original.sourceLineId!==recognitionId||original.qualificationId!==envelope.evidence.sourceQualification.qualificationId||original.occurredAt.toISOString()!==envelope.at||original.ruleVersionCode!==envelope.ruleVersionCode||!original.amount.eq(envelope.inputs.volume))
     pending('HISTORICAL_SNAPSHOT_CORRUPT','RPV original event conflicts with sealed recognition evidence');
   const subscription=await tx.subscription.findUnique({where:{subscriptionId:cancellation.subscriptionId},include:{plan:true}});
   if(!subscription||subscription.plan.prepaidAmount.lte(0)) pending('RPV_CANCELLATION_INVALID','Original Repurchase Plan entitlement is required');
-  const refunds=await tx.subscriptionCancellation.aggregate({where:{subscriptionId:cancellation.subscriptionId,status:'POSTED'},_sum:{refundAmount:true}});
-  const ratio=cancellation.reasonCode==='FULL_RETURN'||cancellation.refundAmount.eq(0)
-    ?dec(1)
-    :Prisma.Decimal.min(dec(1),dec(refunds._sum.refundAmount??0).div(subscription.plan.prepaidAmount));
+  const facts=await tx.subscriptionCancellation.findMany({where:{subscriptionId:cancellation.subscriptionId,status:'POSTED'},orderBy:{subscriptionCancellationId:'asc'}});
+  const basis=envelope.inputs.refundBasis;
+  if(!basis&&facts.some(f=>f.refundAmount.gt(0)&&f.createdAt<row.createdAt)) pending('HISTORICAL_SNAPSHOT_MISSING','Recognition predates refund-basis evidence and requires explicit reconciliation');
+  const prepaid=dec(basis?.prepaidAmount??subscription.plan.prepaidAmount),retained=dec(basis?.retainedRatio??1);
+  if(prepaid.lte(0)||retained.lte(0)||retained.gt(1)) pending('HISTORICAL_SNAPSHOT_CORRUPT','Invalid sealed recognition refund basis');
+  const full=facts.some(f=>f.reasonCode==='FULL_RETURN'||f.refundAmount.eq(0));
+  const refunds=facts.reduce((sum,f)=>sum.add(f.refundAmount),dec(0));
+  const target=full?dec(0):Prisma.Decimal.max(dec(0),dec(1).sub(refunds.div(prepaid)));
+  const ratio=Prisma.Decimal.max(dec(0),dec(1).sub(target.div(retained)));
+  const stateHash=replayHash({recognitionId,refundBasis:basis??null,cancellations:facts.map(f=>f.subscriptionCancellationId),ratio:ratio.toString()});
   const previous=await tx.pvLedger.aggregate({where:{reversalOfEventId:original.eventId,pvType:'RPV'},_sum:{amount:true}});
-  const delta=original.amount.mul(ratio).negated().sub(previous._sum.amount??dec(0));
+  const delta=money(original.amount.mul(ratio)).negated().sub(previous._sum.amount??dec(0));
   if(delta.gt(0)) pending('RETURN_AMOUNT_EXCEEDED','Original RPV was reversed beyond its effective volume');
   // Each immutable cancellation can append its own delta to one recognition.
   // Using the subscription here collides on the second legitimate return.

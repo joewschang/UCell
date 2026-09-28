@@ -2586,6 +2586,7 @@ model Subscription {
 }
 
 model MonthlyRecognitionSchedule {
+  retainedEntitlementRatio Decimal? @default(1) @map("retained_entitlement_ratio") @db.Decimal(38, 18)
   recognitionId         String            @id @default(uuid()) @map("recognition_id") @db.Uuid
   subscriptionId        String            @map("subscription_id") @db.Uuid
   installmentNo         Int               @map("installment_no")

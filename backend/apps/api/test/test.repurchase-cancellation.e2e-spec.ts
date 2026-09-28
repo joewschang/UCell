@@ -11,7 +11,7 @@ describe('repurchase cancellation recovery boundary',()=>{
     };
     const service=new SubscriptionCancellationService({$transaction:async(work:any)=>work(tx)} as any);
     const result=await service.cancel('sub',new Date('2026-10-15'),'FULL_RETURN');
-    expect(tx.monthlyRecognitionSchedule.updateMany).toHaveBeenCalledWith(expect.objectContaining({where:expect.objectContaining({dueAt:{gte:new Date('2026-10-15')},status:'SCHEDULED'}),data:{status:'CANCELLED'}}));
+    expect(tx.monthlyRecognitionSchedule.updateMany).toHaveBeenCalledWith(expect.objectContaining({where:expect.objectContaining({dueAt:{gte:new Date('2026-10-15')},status:{in:['SCHEDULED','DUE']}}),data:{status:'CANCELLED'}}));
     expect(tx.monthlyRecognitionSchedule.findMany).toHaveBeenCalledWith({where:{subscriptionId:'sub',status:'RECOGNIZED'}});
     expect(created).toEqual([expect.objectContaining({eventType:'RPV_REVERSAL_REQUIRED',aggregateId:'recognized-before-return',payload:expect.objectContaining({subscriptionCancellationId:'cancel',reasonCode:'FULL_RETURN'})})]);
     expect(result).toMatchObject({cancelledFutureCount:1,queuedRpvReversalCount:1});
