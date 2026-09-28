@@ -34,4 +34,16 @@ describeDb('OPERATIONAL_INVARIANT_REAL_DB',()=>{
     expect(JSON.stringify(candidates)).not.toContain(payable.payableEntryId);
     expect(await db.payableEntry.findUniqueOrThrow({where:{payableEntryId:payable.payableEntryId}})).toMatchObject({status:'OPEN',grossAmount:new Prisma.Decimal(17)});
   });
+
+  it('reports overdue recognition as a privacy-safe read-only candidate',async()=>{
+    const person=await db.person.create({data:{legalName:'Overdue Recognition Holder'}});
+    const qualification=await db.qualification.create({data:{currentHolderPersonId:person.personId,planLevelCode:'STARTER',status:'EFFECTIVE',effectiveAt:new Date()}});
+    const plan=await db.subscriptionPlan.create({data:{planCode:`OVERDUE-${Date.now()}`,displayName:'Overdue invariant plan',durationMonths:3,prepaidAmount:new Prisma.Decimal(300),productBoxQty:2,monthlyRecognizedAmount:new Prisma.Decimal(100),monthlyRpv:new Prisma.Decimal(10)}});
+    const subscription=await db.subscription.create({data:{qualificationId:qualification.qualificationId,subscriptionPlanId:plan.subscriptionPlanId,status:'ACTIVE',startMonth:new Date('2026-01-01'),endMonth:new Date('2026-03-01'),ruleVersionCode:'R1.0B'}});
+    const schedule=await db.monthlyRecognitionSchedule.create({data:{subscriptionId:subscription.subscriptionId,installmentNo:1,recognitionMonth:new Date('2026-01-01'),recognizedAmount:new Prisma.Decimal(100),rpvAmount:new Prisma.Decimal(10),dueAt:new Date('2026-01-03'),ruleVersionCode:'R1.0B'}});
+    const candidates=await new AdminOperationsService(db as any,new AuditService()).invariantCandidates();
+    expect(candidates).toContainEqual(expect.objectContaining({code:'OVERDUE_RECOGNITION',severity:'HIGH',reference:`QUALIFICATION:${qualification.qualificationNo.toString()}:RECOGNITION:2026-01-03`,detail:expect.objectContaining({status:'SCHEDULED',installmentNo:1,ruleVersionCode:'R1.0B'})}));
+    expect(JSON.stringify(candidates)).not.toContain(schedule.recognitionId);
+    expect(await db.monthlyRecognitionSchedule.findUniqueOrThrow({where:{recognitionId:schedule.recognitionId}})).toMatchObject({status:'SCHEDULED'});
+  });
 });

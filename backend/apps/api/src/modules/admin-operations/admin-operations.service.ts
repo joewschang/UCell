@@ -244,9 +244,14 @@ export class AdminOperationsService {
   async invariantCandidates(input:{take?:number}={}){
     const requested=Number.isFinite(input.take)?input.take??100:100;
     const take=Math.min(Math.max(requested,1),200);
-    const [batches,payables]=await Promise.all([
+    const [batches,payables,overdueRecognitions]=await Promise.all([
       this.prisma.payoutBatch.findMany({include:{lines:{select:{netAmount:true}}},orderBy:{periodEnd:'desc'},take}),
       this.prisma.payableEntry.findMany({where:{sourceType:'BONUS_AWARD'},include:{qualification:{select:{qualificationNo:true}}},orderBy:{createdAt:'desc'},take}),
+      this.prisma.monthlyRecognitionSchedule.findMany({
+        where:{status:{in:['SCHEDULED','DUE']},dueAt:{lt:new Date()}},
+        include:{subscription:{include:{qualification:{select:{qualificationNo:true}}}}},
+        orderBy:{dueAt:'asc'},take,
+      }),
     ]);
     const awardIds=payables.map(row=>row.sourceId);
     const awards=awardIds.length?await this.prisma.bonusAward.findMany({where:{bonusAwardId:{in:awardIds}},select:{bonusAwardId:true}}):[];
@@ -263,7 +268,13 @@ export class AdminOperationsService {
       const detail={sourceType:row.sourceType,awardType:row.awardType,status:row.status,grossAmount:row.grossAmount.toString()};
       return {code:'PAYABLE_AWARD_SOURCE_MISSING',severity:'CRITICAL',sourceType:'PAYABLE_ENTRY',reference,evidenceHash:createHash('sha256').update(JSON.stringify({reference,...detail})).digest('hex'),detail};
     });
-    return [...payoutCandidates,...payableCandidates].sort((left,right)=>left.code.localeCompare(right.code)||left.reference.localeCompare(right.reference));
+    const recognitionCandidates=overdueRecognitions.map(row=>{
+      const dueDate=row.dueAt.toISOString();
+      const reference=`QUALIFICATION:${row.subscription.qualification.qualificationNo.toString()}:RECOGNITION:${dueDate.slice(0,10)}`;
+      const detail={status:row.status,dueAt:dueDate,recognitionMonth:row.recognitionMonth.toISOString(),installmentNo:row.installmentNo,ruleVersionCode:row.ruleVersionCode};
+      return {code:'OVERDUE_RECOGNITION',severity:'HIGH',sourceType:'MONTHLY_RECOGNITION',reference,evidenceHash:createHash('sha256').update(JSON.stringify({reference,...detail})).digest('hex'),detail};
+    });
+    return [...payoutCandidates,...payableCandidates,...recognitionCandidates].sort((left,right)=>left.code.localeCompare(right.code)||left.reference.localeCompare(right.reference));
   }
 
   async operationalExceptions(input:{status?:string;take?:number}={}){
