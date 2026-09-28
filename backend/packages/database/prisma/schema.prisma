@@ -3690,12 +3690,17 @@ model BinaryTree {
   status BinaryTreeStatus @default(DRAFT)
   topologyVersion Int @default(1) @map("topology_version")
   companyPrincipalId String @map("company_principal_id") @db.Uuid
-  bootstrapProfileVersion String @default("COMPANY_BOOTSTRAP_PROFILE_V1") @map("bootstrap_profile_version")
+  bootstrapProfileId String @map("bootstrap_profile_id") @db.Uuid
+  bootstrapProfileCode String @map("bootstrap_profile_code")
+  bootstrapProfileVersion Int @map("bootstrap_profile_version")
+  bootstrapCompanyBallCount Int @map("bootstrap_company_ball_count")
+  bootstrapProfileSnapshot Json @map("bootstrap_profile_snapshot")
   economicActivation String @default("PENDING_MAPPING") @map("economic_activation")
   createdByActorId String @map("created_by_actor_id") @db.Uuid
   effectiveAt DateTime @map("effective_at") @db.Timestamptz(6)
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   companyPrincipal CompanyPrincipal @relation(fields: [companyPrincipalId], references: [companyPrincipalId])
+  bootstrapProfile BinaryTreeBootstrapProfile @relation(fields: [bootstrapProfileId], references: [bootstrapProfileId])
   statusEvents BinaryTreeStatusEvent[]
   memberships BinaryTreeMembership[]
   positions TreeCanonicalPosition[]
@@ -3706,6 +3711,29 @@ model BinaryTree {
    projectionCheckpoint BinaryTreeProjectionCheckpoint?
   @@index([status, createdAt, binaryTreeId])
   @@map("binary_tree")
+  @@schema("organization")
+}
+model BinaryTreeBootstrapProfile {
+  bootstrapProfileId String @id @default(uuid()) @map("bootstrap_profile_id") @db.Uuid
+  profileCode String @map("profile_code")
+  version Int
+  status String
+  companyBallCount Int @map("company_ball_count")
+  companyPlanCode String @map("company_plan_code")
+  companyActivePolicy String @map("company_active_policy")
+  companyAwardPolicy String @map("company_award_policy")
+  economicDestination String @map("economic_destination")
+  effectiveFrom DateTime @map("effective_from") @db.Timestamptz(6)
+  effectiveTo DateTime? @map("effective_to") @db.Timestamptz(6)
+  approvalReference String @map("approval_reference")
+  snapshotHash String @map("snapshot_hash") @db.Char(64)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  trees BinaryTree[]
+
+  @@unique([profileCode, version])
+  @@index([status, effectiveFrom, effectiveTo])
+  @@map("binary_tree_bootstrap_profile")
   @@schema("organization")
 }
 model BinaryTreeStatusEvent {

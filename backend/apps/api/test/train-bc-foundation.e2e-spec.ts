@@ -18,16 +18,12 @@ beforeAll(async()=>{
 afterAll(()=>db.$disconnect());
 const create=async()=> (await commands.create(p,{treeName:'Closure '+randomUUID(),reason:'Synthetic test'},randomUUID())).value;
 const time=()=>{const now=new Date().toISOString();return {timezone:'Asia/Taipei' as const,asOf:now,knowledgeCutoff:now,periodStart:'2026-01-01T00:00:00.000Z',periodEnd:'2099-01-01T00:00:00.000Z'}};
-it('binds all three bootstrap Balls in independent trees to exact LEADER evidence, with no Global rank grants',async()=>{
+it('binds all seven bootstrap Balls in independent trees to exact LEADER evidence, with no Global rank grants',async()=>{
  for(let t=0;t<2;t++){
   const tree=await create();
   const detail=await reader.detail(p,tree.binaryTreeId,time());
-  expect(detail.result!.positions.slice(0,3).map(position=>position.companyProfile)).toEqual([
-   {status:'AVAILABLE',planCode:'LEADER',profileVersion:'COMPANY_BOOTSTRAP_PROFILE_V1'},
-   {status:'AVAILABLE',planCode:'LEADER',profileVersion:'COMPANY_BOOTSTRAP_PROFILE_V1'},
-   {status:'AVAILABLE',planCode:'LEADER',profileVersion:'COMPANY_BOOTSTRAP_PROFILE_V1'},
-  ]);
-  for(let i=0;i<3;i++){
+  expect(detail.result!.positions.slice(0,7).map(position=>position.companyProfile)).toEqual(Array.from({length:7},()=>({status:'AVAILABLE',planCode:'LEADER',profileVersion:'COMPANY_BOOTSTRAP_PROFILE_V1'})));
+  for(let i=0;i<7;i++){
    const binding=await db.companyBootstrapProfileBinding.findFirstOrThrow({where:{qualificationId:tree.companyQualificationIds[i]}});
    const snapshot=await captureParameters(db as unknown as Prisma.TransactionClient,binding.effectiveAt,'R1.0B');
    expect(binding).toMatchObject({planCode:'LEADER',binaryTreeId:tree.binaryTreeId,companyPosition:i+1,snapshotHash:snapshot.hash});
@@ -48,7 +44,7 @@ it('rejects missing, ambiguous and corrupt snapshots; old sealed profile does no
  expect(()=>resolveLeaderProfile({...snapshot,hash:'0'.repeat(64)})).toThrow();
  await expect(db.$transaction(tx=>bindCompanyLeaderProfile(tx,tree.companyQualificationIds[0],missing))).rejects.toMatchObject({response:{code:'CONFIGURATION_PENDING'}});
  await expect(db.$transaction(tx=>bindCompanyLeaderProfile(tx,tree.companyQualificationIds[0],ambiguous))).rejects.toMatchObject({response:{code:'COMPANY_PROFILE_AMBIGUOUS'}});
- expect(await db.companyBootstrapProfileBinding.count({where:{binaryTreeId:tree.binaryTreeId}})).toBe(3);
+ expect(await db.companyBootstrapProfileBinding.count({where:{binaryTreeId:tree.binaryTreeId}})).toBe(7);
  const changed=seal(snapshot.parameters.map(r=>r===row?{...r,id:randomUUID(),value:'1234567'}:r));
  expect(resolveLeaderProfile(changed).snapshotHash).not.toBe(before.snapshotHash);
  expect(resolveLeaderProfile(snapshot)).toEqual(before);
@@ -68,7 +64,7 @@ it('cannot bind a member-origin Ball to Company LEADER even when Company owns it
 it('pins page one through a placement that writes early but commits late; rejects changed context and missing tokens',async()=>{
  const tree=await create();await commands.change(p,tree.binaryTreeId,{status:'ACTIVE',expectedVersion:1,reason:'Synthetic'},randomUUID());
  const owner=await db.person.create({data:{legalName:'SYNTHETIC SNAPSHOT OWNER'}}),ids:string[]=[];
- let parent:string=tree.companyQualificationIds[1];
+ let parent:string=tree.companyQualificationIds[3];
  for(let i=0;i<101;i++){
   const q=await db.qualification.create({data:{currentHolderPersonId:owner.personId,planLevelCode:'STARTER',status:'EFFECTIVE',effectiveAt:new Date()}});
   await db.qualificationPlanHistory.create({data:{qualificationId:q.qualificationId,planCode:'STARTER',effectiveFrom:q.effectiveAt!,sourceType:'SYNTHETIC'}});
@@ -84,7 +80,7 @@ it('pins page one through a placement that writes early but commits late; reject
  }
  // Deep paths retain canonical ancestors plus self, rather than quadratic all-ancestor closure.
  const ancestryRows=await db.binaryTreeAncestry.count({where:{binaryTreeId:tree.binaryTreeId}});
- expect(ancestryRows).toBeLessThanOrEqual(5+101*4);
+ expect(ancestryRows).toBeLessThanOrEqual(17+101*5);
  expect(await db.binaryTreeAncestry.findUnique({where:{binaryTreeId_ancestorQualificationId_descendantQualificationId:{binaryTreeId:tree.binaryTreeId,ancestorQualificationId:tree.companyQualificationIds[0],descendantQualificationId:parent}}})).toMatchObject({depth:51,firstSide:'LEFT'});
  const late=await db.qualification.create({data:{currentHolderPersonId:owner.personId,planLevelCode:'STARTER',status:'EFFECTIVE',effectiveAt:new Date()}});
  await db.qualificationPlanHistory.create({data:{qualificationId:late.qualificationId,planCode:'STARTER',effectiveFrom:late.effectiveAt!,sourceType:'SYNTHETIC'}});
@@ -149,7 +145,7 @@ it('counts every first achieved rank in the period, without losing an earlier sa
  await db.qualificationStatusHistory.create({data:{qualificationId:qid,status:'EFFECTIVE',effectiveFrom:at,sourceType:'SYNTHETIC'}});
  await db.qualificationHolderHistory.create({data:{qualificationId:qid,holderPersonId:p.personId!,effectiveFrom:at,sourceType:'SYNTHETIC',sourceId:randomUUID()}});
  await commands.confirmCompanySponsor(p,tree.binaryTreeId,{qualificationId:qid,reason:'Synthetic rank'},randomUUID());
- await commands.place(p,tree.binaryTreeId,{qualificationId:qid,binaryParentQualificationId:tree.companyQualificationIds[1],side:'LEFT',expectedVersion:2,reason:'Synthetic rank'},randomUUID());
+ await commands.place(p,tree.binaryTreeId,{qualificationId:qid,binaryParentQualificationId:tree.companyQualificationIds[3],side:'LEFT',expectedVersion:2,reason:'Synthetic rank'},randomUUID());
  const achievedAt=new Date();
  for(const rankCode of ['NEW_STAR','EXCELLENCE'] as const)await db.qualificationGlobalRankHistory.create({data:{qualificationId:qid,rankCode,achievedAt,sourcePeriodEnd:achievedAt,ruleVersionCode:'R1.0B'}});
  await db.qualificationGlobalRankHistory.create({data:{qualificationId:tree.companyQualificationIds[0],rankCode:'NEW_STAR',achievedAt,sourcePeriodEnd:achievedAt,ruleVersionCode:'R1.0B'}});
@@ -166,3 +162,6 @@ it('counts every first achieved rank in the period, without losing an earlier sa
  }
 
 });
+
+
+

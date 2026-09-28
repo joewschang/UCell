@@ -34,7 +34,7 @@ export async function attachTreePlacement(tx:Prisma.TransactionClient,data:{pare
  const sponsor=await tx.sponsorRelationship.findUnique({where:{childQualificationId:q.qualificationId}});
  if(!sponsor || sponsor.effectiveFrom>data.effectiveFrom || (sponsor.effectiveTo && sponsor.effectiveTo<=data.effectiveFrom))throw new ConflictException({code:'SPONSOR_CONFIRMATION_MISSING'});
  const designation=await tx.companySponsorDesignation.findUniqueOrThrow({where:{binaryTreeId:tree.binaryTreeId}});
- if(position && (position.positionNo<4 || position.occupantQualificationId))throw new ConflictException({code:'BINARY_SLOT_OCCUPIED'});
+ if(position && (position.positionNo<=tree.bootstrapCompanyBallCount || position.occupantQualificationId))throw new ConflictException({code:'BINARY_SLOT_OCCUPIED'});
  if(position && sponsor.sponsorQualificationId!==designation.qualificationId)throw new ConflictException({code:'FOUNDING_COMPANY_SPONSOR_REQUIRED'});
  const [{ballNo}]=await tx.$queryRaw<Array<{ballNo:string}>>`SELECT organization.allocate_ball_no(${tree.binaryTreeId}::uuid,${q.qualificationId}::uuid) AS "ballNo"`;
  const id=randomUUID(),correlationId=meta.correlationId??randomUUID(),version=tree.topologyVersion+1;

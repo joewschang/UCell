@@ -28,9 +28,9 @@ export function ballNoFor(treeCode: string, sequence: bigint): string {
   return `${treeCode}${sequence.toString().padStart(6, '0')}`;
 }
 
-/** Only the three original Company bootstrap Balls retain position-based numbers. */
+/** Company bootstrap Balls retain position-based numbers within their approved Tree profile. */
 export function bootstrapBallNoFor(treeCode: string, position: bigint): string {
-  if (position < 1n || position > 3n) throw new Error('BOOTSTRAP_POSITION_INVALID');
+  if (position < 1n) throw new Error('BOOTSTRAP_POSITION_INVALID');
   ballNoFor(treeCode, position);
   return `${treeCode}X${position.toString().padStart(6, '0')}`;
 }

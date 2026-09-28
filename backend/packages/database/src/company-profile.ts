@@ -40,7 +40,7 @@ export async function bindCompanyLeaderProfile(tx:Prisma.TransactionClient,quali
  if(q.kind!=='COMPANY_BOOTSTRAP')pending('COMPANY_PROFILE_KIND_MISMATCH','Member-origin Qualifications retain their own historical plan');
  const slot=await tx.treeCanonicalPosition.findUnique({where:{occupantQualificationId:qualificationId},include:{binaryTree:true}});
  const owners=await tx.qualificationOwnerInterval.findMany({where:{qualificationId,effectiveFrom:{lte:at},OR:[{effectiveTo:null},{effectiveTo:{gt:at}}]},take:2});
- if(!slot||slot.positionNo<1||slot.positionNo>3||slot.binaryTree.effectiveAt>at||owners.length!==1||owners[0].ownerType!=='COMPANY'||owners[0].companyPrincipalId!==slot.binaryTree.companyPrincipalId)
+ if(!slot||slot.positionNo<1||slot.positionNo>slot.binaryTree.bootstrapCompanyBallCount||slot.binaryTree.effectiveAt>at||owners.length!==1||owners[0].ownerType!=='COMPANY'||owners[0].companyPrincipalId!==slot.binaryTree.companyPrincipalId)
   pending('COMPANY_PROFILE_IDENTITY_MISSING','Exact historical canonical position and company owner required');
  const from=new Date(Math.max(Date.parse(profile.effectiveFrom),slot.binaryTree.effectiveAt.getTime()));
  const stored=await tx.companyBootstrapProfileBinding.upsert({where:{qualificationId_snapshotHash:{qualificationId,snapshotHash:profile.snapshotHash}},update:{},
