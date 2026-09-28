@@ -195,6 +195,25 @@ export class AdminOperationsService {
     };
   }
 
+  async member360(memberNo:string){
+    if(!/^\d{10}$/.test(memberNo)) throw new UnprocessableEntityException('INVALID_MEMBER_NO');
+    const person=await this.prisma.person.findUnique({where:{memberNo},select:{personId:true,memberNo:true,legalName:true,preferredName:true,status:true,membershipState:true,securityStatus:true,createdAt:true}});
+    if(!person) throw new ConflictException('MEMBER_NOT_FOUND');
+    const qualifications=await this.prisma.qualification.findMany({where:{currentHolderPersonId:person.personId},include:{sponsorRelation:{include:{sponsor:{select:{ballNo:true}}}},binaryPlacement:{include:{parent:{select:{ballNo:true}}}},subscriptions:{orderBy:{createdAt:'desc'},take:10}}});
+    const qualificationIds=qualifications.map(q=>q.qualificationId);
+    const ballNos=qualifications.map(q=>q.ballNo).filter((value):value is string=>Boolean(value));
+    const [lineLinks,orders,payables,awards,tasks,exceptions,timeline]=await Promise.all([
+      this.prisma.identityLink.findMany({where:{personId:person.personId},select:{provider:true,status:true,createdAt:true,revokedAt:true}}),
+      this.prisma.order.findMany({where:{OR:[{purchaserPersonId:person.personId},{qualificationId:{in:qualificationIds}}]},select:{orderNo:true,purpose:true,status:true,grossAmount:true,netAmount:true,confirmedAt:true,paidAt:true,fulfillments:{select:{fulfillmentKey:true,status:true}}},orderBy:{createdAt:'desc'},take:50}),
+      qualificationIds.length?this.prisma.payableEntry.findMany({where:{qualificationId:{in:qualificationIds}},select:{status:true,grossAmount:true,availableAt:true,payoutLine:{select:{payoutBatch:{select:{status:true,periodEnd:true}}}}},orderBy:{createdAt:'desc'},take:50}):[],
+      qualificationIds.length?this.prisma.bonusAward.findMany({where:{recipientQualificationId:{in:qualificationIds}},select:{awardType:true,theoryAmount:true,payableAmount:true,occurredAt:true},orderBy:{occurredAt:'desc'},take:50}):[],
+      this.prisma.operationalTask.findMany({where:{sourceId:{in:[memberNo,...ballNos]}},select:{taskCode:true,priority:true,status:true,summary:true,dueAt:true,createdAt:true,completedAt:true},orderBy:{createdAt:'desc'},take:50}),
+      this.prisma.operationalException.findMany({where:{sourceId:{in:[memberNo,...ballNos]}},select:{exceptionCode:true,severity:true,status:true,summary:true,createdAt:true,resolvedAt:true},orderBy:{createdAt:'desc'},take:50}),
+      this.prisma.auditEvent.findMany({where:{entityId:{in:[person.personId,...qualificationIds]}},select:{action: true,eventCode:true,entityType:true,result:true,occurredAt:true},orderBy:{occurredAt:'desc'},take:100}),
+    ]);
+    return {member:{memberNo:person.memberNo,legalName:person.legalName,preferredName:person.preferredName,status:person.status,membershipState:person.membershipState,securityStatus:person.securityStatus,createdAt:person.createdAt.toISOString()},lineLinks:lineLinks.map(link=>({provider:link.provider,status:link.status,createdAt:link.createdAt.toISOString(),revokedAt:link.revokedAt?.toISOString()??null})),qualifications:qualifications.map(q=>({qualificationNo:q.qualificationNo.toString(),ballNo:q.ballNo,planLevelCode:q.planLevelCode,status:q.status,active:q.activeFlag,effectiveAt:q.effectiveAt?.toISOString()??null,sponsorBallNo:q.sponsorRelation?.sponsor.ballNo??null,binaryParentBallNo:q.binaryPlacement?.parent.ballNo??null,binarySide:q.binaryPlacement?.side??null,subscriptions:q.subscriptions.map(s=>({status:s.status,startMonth:s.startMonth.toISOString(),endMonth:s.endMonth.toISOString(),activatedAt:s.activatedAt?.toISOString()??null,cancelledAt:s.cancelledAt?.toISOString()??null}))})),orders:orders.map(order=>({orderNo:order.orderNo.toString(),purpose:order.purpose,status:order.status,grossAmount:order.grossAmount.toString(),netAmount:order.netAmount.toString(),confirmedAt:order.confirmedAt?.toISOString()??null,paidAt:order.paidAt?.toISOString()??null,fulfillments:order.fulfillments})),payables:payables.map(row=>({status:row.status,grossAmount:row.grossAmount.toString(),availableAt:row.availableAt.toISOString(),payoutStatus:row.payoutLine?.payoutBatch.status??null,payoutPeriodEnd:row.payoutLine?.payoutBatch.periodEnd.toISOString()??null})),awards:awards.map(row=>({awardType:row.awardType,theoryAmount:row.theoryAmount.toString(),payableAmount:row.payableAmount.toString(),occurredAt:row.occurredAt.toISOString()})),tasks,exceptions,timeline:timeline.map(event=>({action:event.action,eventCode:event.eventCode,entityType:event.entityType,result:event.result,occurredAt:event.occurredAt.toISOString()}))};
+  }
+
   async operationalExceptions(input:{status?:string;take?:number}={}){
     const allowed=['OPEN','ACKNOWLEDGED','INVESTIGATING','RESOLVED'];
     if(input.status&&!allowed.includes(input.status)) throw new UnprocessableEntityException('INVALID_OPERATIONAL_EXCEPTION_STATUS');

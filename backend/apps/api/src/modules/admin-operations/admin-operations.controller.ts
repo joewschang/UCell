@@ -71,6 +71,11 @@ export class AdminOperationsController{
     return this.service.economicLineageByOrderNo(orderNo).then(data=>({data}));
   }
 
+  @Roles('SUPER_ADMIN','MEMBERSHIP_OPS','FINANCE','COMPLIANCE_AUDIT')
+  @Get('members/:memberNo/360')
+  @ApiOperation({operationId:'adminReadMember360ByMemberNo',summary:'以 memberNo 讀取授權的 Member 360 事實投影'} )
+  member360(@Param('memberNo') memberNo:string){return this.service.member360(memberNo).then(data=>({data}));}
+
   @Roles('SUPER_ADMIN','ORDER_OPS','COMPLIANCE_AUDIT')
   @Get('exceptions')
   @ApiOperation({operationId:'adminOperationalExceptionQueue',summary:'營運例外唯讀佇列'})
