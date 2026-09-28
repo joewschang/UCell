@@ -59,7 +59,7 @@ describeDb('commercial offering foundation', () => {
     expect(approved.value.status).toBe('APPROVED');
     const active: any = await service.activate(draft.value.commercialOfferingVersionId, randomUUID(), randomUUID(), actor.personId);
     expect(active.value.status).toBe('ACTIVE');
-    expect(await service.memberList('WEB_MEMBER')).toEqual(expect.arrayContaining([expect.objectContaining({ offeringCode: offering.value.offeringCode, version: 1 })]));
+    const memberOfferings=await service.memberList('WEB_MEMBER');expect(memberOfferings).toEqual(expect.arrayContaining([expect.objectContaining({ offeringCode: offering.value.offeringCode, offeringTypeLabel:'主商品', version: 1 })]));expect(JSON.stringify(memberOfferings)).not.toContain('commercialOfferingVersionId');expect(JSON.stringify(memberOfferings)).not.toContain('CORE_PRODUCT');
     expect(await service.memberList('ADMIN')).not.toEqual(expect.arrayContaining([expect.objectContaining({ offeringCode: offering.value.offeringCode })]));
     expect(await db.auditEvent.count({ where: { action: { in: ['COMMERCIAL_OFFERING_CREATED', 'COMMERCIAL_OFFERING_VERSION_CREATED', 'COMMERCIAL_OFFERING_VERSION_APPROVED', 'COMMERCIAL_OFFERING_VERSION_ACTIVATED'] } } })).toBeGreaterThanOrEqual(4);
   });
