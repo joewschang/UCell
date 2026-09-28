@@ -49,5 +49,13 @@ describe('Paper qualification package order',()=>{
   expect(tx.qualification.update).not.toHaveBeenCalled();
   expect(outbox.enqueue).toHaveBeenCalledWith(tx,expect.objectContaining({eventType:'PACKAGE_PAYMENT_CONFIRMED',payload:expect.objectContaining({qualificationId:'qualification',downstreamStatus:'PLACEMENT_PENDING'})}));
  });
+ it('fails closed when the effective offering selection group does not match the checked-out package selection',async()=>{
+  const tx:any={person:{findUnique:jest.fn().mockResolvedValue({status:'EFFECTIVE'})}};
+  const packages:any={checkoutData:jest.fn().mockResolvedValue({version:{profile:{packageClass:'QUALIFICATION'},currency:'TWD',priceAmount:new Prisma.Decimal(1),recognitionConfigRef:'R1',configHash:'a'.repeat(64)},selections:[{quantity:3,product:{sku:'TIP-363'}}]})};
+  const offerings:any={resolveEffective:jest.fn().mockResolvedValue({offeringType:'QUALIFICATION_PACKAGE',selectionRule:{selectionGroup:'POOL',requiredTotalQuantity:3,eligibleSkus:['TIP-999']}})};
+  const idem={execute:jest.fn(async(_s:string,_k:string,_b:any,work:any)=>({value:await work(tx)}))};
+  const service=new OrderService({} as any,idem as any,{} as any,{} as any,packages,undefined,undefined,undefined,offerings);
+  await expect((service as any).createPackageForPerson({packageVersionId:'v',commercialOfferingCode:'QUAL-3',selections:[{productRuleProfileId:'p',quantity:3}]},'k','r','person')).rejects.toMatchObject({response:{code:'COMMERCIAL_OFFERING_SELECTION_SKU_NOT_ELIGIBLE'}});
+ });
 });
 

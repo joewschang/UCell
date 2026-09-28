@@ -48,6 +48,15 @@ export class OrderService {
     }
   }
 
+  private assertOfferingSelection(offering: CommercialOfferingSnapshot|undefined,selections:Array<{product:{sku:string};quantity:number}>) {
+    if(!offering || !['QUALIFICATION_PACKAGE','REPURCHASE_PLAN'].includes(offering.offeringType)) return;
+    const rule=offering.selectionRule as Record<string,unknown>|null;
+    const required=Number(rule?.requiredTotalQuantity),eligible=Array.isArray(rule?.eligibleSkus)?rule!.eligibleSkus:[];
+    const total=selections.reduce((sum,row)=>sum+Number(row.quantity),0);
+    if(!Number.isInteger(required)||required<1||total!==required) throw new UnprocessableEntityException({code:'COMMERCIAL_OFFERING_SELECTION_TOTAL_MISMATCH'});
+    if(!selections.every(row=>eligible.includes(row.product.sku))) throw new UnprocessableEntityException({code:'COMMERCIAL_OFFERING_SELECTION_SKU_NOT_ELIGIBLE'});
+  }
+
   async createMember(dto:MemberOrderInput,key:string,requestId:string,personId:string):Promise<any>{
     if(dto.packageVersionId)return this.createPackageForPerson(dto,key,requestId,personId);
     if(!dto.items?.length||dto.selections?.length)throw new UnprocessableEntityException({code:'INVALID_ORDER_SHAPE'});
@@ -133,6 +142,7 @@ export class OrderService {
       if(paper){const application=await tx.paperApplication.findUnique({where:{paperApplicationId:paper.paperApplicationId},select:{personId:true,orderId:true,status:true}});if(!application||application.personId!==personId||application.status!=='OPEN')throw new ConflictException({code:'PAPER_APPLICATION_NOT_OPEN'});if(application.orderId)throw new ConflictException({code:'PAPER_APPLICATION_ORDER_ALREADY_CREATED'});}
       const now=new Date(),offering=await this.resolveOfferingSnapshot(tx,dto.commercialOfferingCode,paper?'ADMIN_PAPER':'WEB_MEMBER',now),prepared=await (this.packages??new PackageConfigService(this.prisma)).checkoutData(tx,personId,{packageVersionId:dto.packageVersionId!,targetQualificationId:dto.targetQualificationId,selections:dto.selections!},now),v=prepared.version;
       this.assertOfferingPurpose(offering,v.profile.packageClass==='QUALIFICATION'?'ENTRY':'REPURCHASE');
+      this.assertOfferingSelection(offering,prepared.selections);
       let qualificationId=dto.targetQualificationId;
       let sponsorEvidence:Awaited<ReturnType<SponsorResolver['resolveWithin']>>|undefined;
       if(v.profile.packageClass==='QUALIFICATION'){
