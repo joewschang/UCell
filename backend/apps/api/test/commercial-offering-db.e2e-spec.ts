@@ -72,4 +72,12 @@ describeDb('commercial offering foundation', () => {
     }
     expect(() => (service as any).assertOfferingPurpose({ offeringType: 'PROMOTIONAL_BUNDLE' }, 'RETAIL')).not.toThrow();
   });
+  it('requires a governed selectable pool and approved total for qualification and repurchase offerings',async()=>{
+    const actor=await db.person.create({data:{legalName:`Selection actor ${randomUUID()}`,status:'EFFECTIVE'}});
+    const service=new CommercialOfferingConfigService(db as any,new IdempotencyService(db as any),new AuditService());
+    const offering:any=await service.createOffering({offeringCode:`QUAL-${randomUUID()}`,offeringType:'QUALIFICATION_PACKAGE'},randomUUID(),randomUUID(),actor.personId);
+    await expect(service.addVersion(offering.value.commercialOfferingId,{channels:['WEB_MEMBER'],effectiveFrom:new Date(Date.now()-60_000).toISOString()},randomUUID(),randomUUID(),actor.personId)).rejects.toMatchObject({response:{code:'COMMERCIAL_OFFERING_SELECTION_RULE_REQUIRED'}});
+    const version:any=await service.addVersion(offering.value.commercialOfferingId,{channels:['WEB_MEMBER'],effectiveFrom:new Date(Date.now()-60_000).toISOString(),selectionRule:{selectionGroup:'QUALIFICATION_FIVE_PRODUCT_POOL',requiredTotalQuantity:3,eligibleSkus:['TIP-363','TIP-999','TIP-580','TIP-696','TIP-777']}},randomUUID(),randomUUID(),actor.personId);
+    expect(version.value.selectionRule).toMatchObject({selectionGroup:'QUALIFICATION_FIVE_PRODUCT_POOL',requiredTotalQuantity:3});
+  });
 });
