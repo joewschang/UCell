@@ -13468,7 +13468,7 @@
         ],
         "summary": "重銷方案",
         "tags": [
-          "Admin - Subscription"
+          "Admin - Repurchase Plans"
         ]
       }
     },
@@ -13535,9 +13535,9 @@
             "adminBearer": []
           }
         ],
-        "summary": "訂閱清單與 Ball Number/status 篩選；只讀既存Core資料，不建立營運日曆",
+        "summary": "預付重銷方案清單與 Ball Number/status 篩選；一次付款、一次出貨，不建立營運日曆",
         "tags": [
-          "Admin - Subscription"
+          "Admin - Repurchase Plans"
         ]
       },
       "post": {
@@ -13572,9 +13572,9 @@
             "adminBearer": []
           }
         ],
-        "summary": "建立季/半年/年重銷訂閱與逐月排程",
+        "summary": "建立季/半年/年預付重銷方案與逐月認列排程；不建立自動續訂",
         "tags": [
-          "Admin - Subscription"
+          "Admin - Repurchase Plans"
         ]
       }
     },
@@ -13601,9 +13601,9 @@
             "adminBearer": []
           }
         ],
-        "summary": "訂閱與逐月認列排程",
+        "summary": "預付重銷方案與逐月認列排程",
         "tags": [
-          "Admin - Subscription"
+          "Admin - Repurchase Plans"
         ]
       }
     },
@@ -13630,9 +13630,9 @@
             "adminBearer": []
           }
         ],
-        "summary": "取消Subscription；未來Recognition取消，已認列月份排程RPV reversal",
+        "summary": "取消預付重銷方案；未來認列取消，已認列月份排程 RPV reversal",
         "tags": [
-          "Admin - Subscription"
+          "Admin - Repurchase Plans"
         ]
       }
     },
