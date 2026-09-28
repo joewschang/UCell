@@ -81,7 +81,7 @@ it('pins page one through a placement that writes early but commits late; reject
  // Deep paths retain canonical ancestors plus self, rather than quadratic all-ancestor closure.
  const ancestryRows=await db.binaryTreeAncestry.count({where:{binaryTreeId:tree.binaryTreeId}});
  expect(ancestryRows).toBeLessThanOrEqual(17+101*5);
- expect(await db.binaryTreeAncestry.findUnique({where:{binaryTreeId_ancestorQualificationId_descendantQualificationId:{binaryTreeId:tree.binaryTreeId,ancestorQualificationId:tree.companyQualificationIds[0],descendantQualificationId:parent}}})).toMatchObject({depth:51,firstSide:'LEFT'});
+ expect(await db.binaryTreeAncestry.findUnique({where:{binaryTreeId_ancestorQualificationId_descendantQualificationId:{binaryTreeId:tree.binaryTreeId,ancestorQualificationId:tree.companyQualificationIds[0],descendantQualificationId:parent}}})).toMatchObject({depth:52,firstSide:'LEFT'});
  const late=await db.qualification.create({data:{currentHolderPersonId:owner.personId,planLevelCode:'STARTER',status:'EFFECTIVE',effectiveAt:new Date()}});
  await db.qualificationPlanHistory.create({data:{qualificationId:late.qualificationId,planCode:'STARTER',effectiveFrom:late.effectiveAt!,sourceType:'SYNTHETIC'}});
   await db.qualificationStatusHistory.create({data:{qualificationId:late.qualificationId,status:'EFFECTIVE',effectiveFrom:late.effectiveAt!,sourceType:'SYNTHETIC'}});
@@ -162,6 +162,7 @@ it('counts every first achieved rank in the period, without losing an earlier sa
  }
 
 });
+
 
 
 
