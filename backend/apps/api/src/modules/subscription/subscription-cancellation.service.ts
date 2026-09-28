@@ -32,7 +32,6 @@ export class SubscriptionCancellationService {
       const recognized=await tx.monthlyRecognitionSchedule.findMany({
         where:{
           subscriptionId,
-          dueAt:{gte:effectiveAt},
           status:'RECOGNIZED'
         }
       });
