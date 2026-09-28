@@ -464,6 +464,15 @@ enum PayoutPaymentResultStatus {
   @@schema("ledger")
 }
 
+enum OperationalExceptionStatus {
+  OPEN
+  ACKNOWLEDGED
+  INVESTIGATING
+  RESOLVED
+
+  @@schema("integration")
+}
+
 enum GlobalRankCode {
   NEW_STAR
   EXCELLENCE
@@ -2424,6 +2433,32 @@ model OutboxEvent {
 
   @@index([processStatus, availableAt])
   @@map("outbox_event")
+  @@schema("integration")
+}
+
+/// Read-oriented operational exception. Closing it records an investigation
+/// outcome only; it never mutates the source business workflow.
+model OperationalException {
+  operationalExceptionId String @id @default(uuid()) @map("operational_exception_id") @db.Uuid
+  sourceType String @map("source_type")
+  sourceId String @map("source_id")
+  exceptionCode String @map("exception_code")
+  severity String @default("WARNING")
+  status OperationalExceptionStatus @default(OPEN)
+  evidenceHash String? @map("evidence_hash") @db.Char(64)
+  traceId String? @map("trace_id") @db.Uuid
+  summary String @map("summary")
+  acknowledgedByActor String? @map("acknowledged_by_actor")
+  acknowledgedAt DateTime? @map("acknowledged_at") @db.Timestamptz(6)
+  resolvedByActor String? @map("resolved_by_actor")
+  resolvedAt DateTime? @map("resolved_at") @db.Timestamptz(6)
+  resolutionNote String? @map("resolution_note")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@unique([sourceType,sourceId,exceptionCode])
+  @@index([status,severity,createdAt])
+  @@map("operational_exception")
   @@schema("integration")
 }
 

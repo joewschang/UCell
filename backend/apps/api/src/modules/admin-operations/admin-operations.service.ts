@@ -194,6 +194,26 @@ export class AdminOperationsService {
     };
   }
 
+  async operationalExceptions(input:{status?:string;take?:number}={}){
+    const allowed=['OPEN','ACKNOWLEDGED','INVESTIGATING','RESOLVED'];
+    if(input.status&&!allowed.includes(input.status)) throw new UnprocessableEntityException('INVALID_OPERATIONAL_EXCEPTION_STATUS');
+    const requested=Number.isFinite(input.take)?input.take??100:100;
+    return this.prisma.operationalException.findMany({where:input.status?{status:input.status as any}:undefined,orderBy:[{createdAt:'desc'}],take:Math.min(Math.max(requested,1),200)});
+  }
+
+  async transitionOperationalException(id:string,status:'ACKNOWLEDGED'|'INVESTIGATING'|'RESOLVED',actorId:string|undefined,note:string|undefined,requestId:string,correlationId:string){
+    if(!actorId) throw new UnprocessableEntityException('Authenticated actor is required');
+    if(!['ACKNOWLEDGED','INVESTIGATING','RESOLVED'].includes(status)) throw new UnprocessableEntityException('INVALID_OPERATIONAL_EXCEPTION_STATUS');
+    return this.prisma.$transaction(async tx=>{
+      const row=await tx.operationalException.findUniqueOrThrow({where:{operationalExceptionId:id}});
+      if(row.status==='RESOLVED') throw new ConflictException('Operational exception is already resolved');
+      const now=new Date();
+      const updated=await tx.operationalException.update({where:{operationalExceptionId:id},data:{status,acknowledgedByActor:status==='ACKNOWLEDGED'||status==='INVESTIGATING'?actorId:row.acknowledgedByActor,acknowledgedAt:status==='ACKNOWLEDGED'||status==='INVESTIGATING'?now:row.acknowledgedAt,resolvedByActor:status==='RESOLVED'?actorId:undefined,resolvedAt:status==='RESOLVED'?now:undefined,resolutionNote:status==='RESOLVED'?note?.trim()||null:undefined}});
+      await this.audit.write(tx,{actorType:'USER',actorId,action:'OPERATIONAL_EXCEPTION_TRANSITIONED',entityType:'OPERATIONAL_EXCEPTION',entityId:id,afterData:{from:row.status,to:status,note:status==='RESOLVED'?note?.trim()||null:null},requestId,correlationId});
+      return updated;
+    });
+  }
+
   async approvePayout(
     id:string,
     stage:'FINANCE_REVIEW'|'COMPLIANCE_REVIEW',
