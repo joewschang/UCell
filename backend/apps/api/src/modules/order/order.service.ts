@@ -11,6 +11,7 @@ import { PackageConfigService } from '../package-config/package-config.service';
 import { SponsorResolver } from '../qualification/sponsor-resolver.service';
 import { OrganizationService } from '../organization/organization.service';
 import { RetailReferrerAttributionService } from './retail-referrer-attribution.service';
+import { CommercialOfferingService, CommercialOfferingSnapshot } from './commercial-offering.service';
 
 type MemberOrderInput=Partial<CreateOrderDto>&{packageVersionId?:string;targetQualificationId?:string;sponsorCode?:string;retailReferralCode?:string;selections?:Array<{productRuleProfileId:string;quantity:number}>};
 
@@ -25,14 +26,20 @@ export class OrderService {
     private readonly sponsors?: SponsorResolver,
     private readonly organization?: OrganizationService,
     private readonly retailAttributions?: RetailReferrerAttributionService,
+    private readonly commercialOfferings?: CommercialOfferingService,
   ) {}
 
-  async createMember(dto:MemberOrderInput,key:string,requestId:string,personId:string){
+  private async resolveOfferingSnapshot(tx: Prisma.TransactionClient, offeringCode: string | undefined, channel: string, at: Date): Promise<CommercialOfferingSnapshot | undefined> {
+    if (!offeringCode) return undefined;
+    return (this.commercialOfferings ?? new CommercialOfferingService()).resolveEffective(tx, { offeringCode, channel, at });
+  }
+
+  async createMember(dto:MemberOrderInput,key:string,requestId:string,personId:string):Promise<any>{
     if(dto.packageVersionId)return this.createPackageForPerson(dto,key,requestId,personId);
     if(!dto.items?.length||dto.selections?.length)throw new UnprocessableEntityException({code:'INVALID_ORDER_SHAPE'});
     if(!dto.qualificationId)return this.createWebRetailMember(dto,key,requestId,personId);
     await new QualificationAccessService(this.prisma).assertHolder(personId,dto.qualificationId);
-    try{return await this.create({qualificationId:dto.qualificationId,items:dto.items,purpose:'RETAIL',sourceReferralToken:dto.sourceReferralToken,clientReference:dto.clientReference},key,requestId,personId,true);}
+    try{return await this.create({qualificationId:dto.qualificationId,items:dto.items,purpose:'RETAIL',sourceReferralToken:dto.sourceReferralToken,clientReference:dto.clientReference,commercialOfferingCode:dto.commercialOfferingCode,linePurpose:dto.linePurpose},key,requestId,personId,true);}
     catch(error){if(['P2002','P2034'].includes((error as any).code))throw new ConflictException({code:'RETRYABLE_CONFLICT',message:'Concurrent operation; retry the identical request with the same Idempotency-Key.'});throw error;}
   }
 
@@ -46,7 +53,7 @@ export class OrderService {
       if(ownedEffective)throw new ConflictException({code:'QUALIFIED_MEMBER_RETAIL_REQUIRES_BALL_CONTEXT'});
       const delivery=await tx.deliveryProfile.findFirst({where:{personId,effectiveTo:null},select:{deliveryProfileId:true}});
       if(!delivery)throw new UnprocessableEntityException({code:'DELIVERY_PROFILE_REQUIRED',message:'請先完成配送資料，再建立零售訂單。'});
-      const now=new Date(),productIds=[...new Set(dto.items!.map(item=>item.productId))];
+      const now=new Date(),offering=await this.resolveOfferingSnapshot(tx,dto.commercialOfferingCode,'WEB_MEMBER',now),productIds=[...new Set(dto.items!.map(item=>item.productId))];
       const products=await tx.productReference.findMany({where:{productId:{in:productIds},isActive:true}});
       if(products.length!==productIds.length)throw new ConflictException({code:'RESOURCE_NOT_FOUND'});
       const lines:any[]=[]; let gross=new Prisma.Decimal(0); let ruleVersionCode='R1.0B'; let parameterSnapshotHash:string|undefined;
@@ -58,7 +65,7 @@ export class OrderService {
         const quantity=new Prisma.Decimal(item.quantity);
         if(!quantity.isInteger()||quantity.lte(0)||quantity.gt(99)||product.currentPrice.lt(0))throw new UnprocessableEntityException({code:'INVALID_PRODUCT_QUANTITY_OR_PRICE'});
         const lineAmount=product.currentPrice.mul(quantity); gross=gross.add(lineAmount); ruleVersionCode=profile.ruleVersionCode; parameterSnapshotHash=profile.parameterSnapshotHash??parameterSnapshotHash;
-        lines.push({productId:product.productId,skuSnapshot:product.sku,productNameSnapshot:product.displayName,quantity,unitPrice:product.currentPrice,lineAmount,gpvRateSnapshot:new Prisma.Decimal(0),gpvAmountSnapshot:new Prisma.Decimal(0),pvRateSnapshot:new Prisma.Decimal(0),ruleProfileSnapshot:{profileId:profile.productRuleProfileId,ruleVersionCode:profile.ruleVersionCode,parameterSnapshotHash:profile.parameterSnapshotHash,pricingContext:'WEB_MEMBER_RETAIL_LIST_PRICE',retailReferral:{enabled:profile.retailReferralEnabled,calculationType:profile.retailReferralCalculationType,rate:profile.retailReferralRate?.toString()??null,baseType:profile.retailReferralBaseType}}});
+        lines.push({productId:product.productId,skuSnapshot:product.sku,productNameSnapshot:product.displayName,quantity,unitPrice:product.currentPrice,lineAmount,gpvRateSnapshot:new Prisma.Decimal(0),gpvAmountSnapshot:new Prisma.Decimal(0),pvRateSnapshot:new Prisma.Decimal(0),ruleProfileSnapshot:{profileId:profile.productRuleProfileId,ruleVersionCode:profile.ruleVersionCode,parameterSnapshotHash:profile.parameterSnapshotHash,pricingContext:'WEB_MEMBER_RETAIL_LIST_PRICE',retailReferral:{enabled:profile.retailReferralEnabled,calculationType:profile.retailReferralCalculationType,rate:profile.retailReferralRate?.toString()??null,baseType:profile.retailReferralBaseType}},commercialOfferingVersionId:offering?.commercialOfferingVersionId,commercialOfferingSnapshot:offering,linePurpose:dto.linePurpose});
       }
       const order=await tx.order.create({data:{purchaserPersonId:personId,purpose:'RETAIL',status:'CONFIRMED',grossAmount:gross,discountAmount:new Prisma.Decimal(0),netAmount:gross,ruleVersionCode,parameterSnapshotHash,clientReference:dto.clientReference,confirmedAt:now,lines:{create:lines}},include:{lines:true}});
       const attribution=await (this.retailAttributions??new RetailReferrerAttributionService(this.prisma,this.sponsors??new SponsorResolver(this.prisma))).resolveForRetailOrder(tx,{personId,candidateCode:dto.retailReferralCode,orderId:order.orderId,at:now,correlationId});
@@ -109,7 +116,7 @@ export class OrderService {
       const person=await tx.person.findUnique({where:{personId}});
       if(!person || (paper ? !['DRAFT','EFFECTIVE'].includes(person.status) : person.status!=='EFFECTIVE'))throw new ConflictException({code:paper?'PAPER_PERSON_NOT_ELIGIBLE':'MEMBER_PERSON_DISABLED'});
       if(paper){const application=await tx.paperApplication.findUnique({where:{paperApplicationId:paper.paperApplicationId},select:{personId:true,orderId:true,status:true}});if(!application||application.personId!==personId||application.status!=='OPEN')throw new ConflictException({code:'PAPER_APPLICATION_NOT_OPEN'});if(application.orderId)throw new ConflictException({code:'PAPER_APPLICATION_ORDER_ALREADY_CREATED'});}
-      const now=new Date(),prepared=await (this.packages??new PackageConfigService(this.prisma)).checkoutData(tx,personId,{packageVersionId:dto.packageVersionId!,targetQualificationId:dto.targetQualificationId,selections:dto.selections!},now),v=prepared.version;
+      const now=new Date(),offering=await this.resolveOfferingSnapshot(tx,dto.commercialOfferingCode,paper?'ADMIN_PAPER':'WEB_MEMBER',now),prepared=await (this.packages??new PackageConfigService(this.prisma)).checkoutData(tx,personId,{packageVersionId:dto.packageVersionId!,targetQualificationId:dto.targetQualificationId,selections:dto.selections!},now),v=prepared.version;
       let qualificationId=dto.targetQualificationId;
       let sponsorEvidence:Awaited<ReturnType<SponsorResolver['resolveWithin']>>|undefined;
       if(v.profile.packageClass==='QUALIFICATION'){
@@ -120,7 +127,7 @@ export class OrderService {
         if(sponsorEvidence)await tx.qualificationSponsorSelectionEvidence.create({data:{qualificationId,attributionReferrerQualificationId:sponsorEvidence.sponsorQualificationId,selectedSponsorQualificationId:sponsorEvidence.sponsorQualificationId,selectedSponsorOwnerPersonId:sponsorEvidence.sponsorOwnerPersonId,selectedByPersonId:personId,selectedAt:now,source:'MANUAL_INPUT',policyVersion:sponsorEvidence.kind==='COMPANY_ALIAS'?sponsorEvidence.policyVersion:sponsorEvidence.ruleVersion,correlationId}});
       }
       if(!qualificationId)throw new UnprocessableEntityException({code:'TARGET_QUALIFICATION_REQUIRED'});
-      const order=await tx.order.create({data:{qualificationId,purpose:v.profile.packageClass==='QUALIFICATION'?'ENTRY':'REPURCHASE',status:'CONFIRMED',currency:v.currency,grossAmount:v.priceAmount,discountAmount:new Prisma.Decimal(0),netAmount:v.priceAmount,ruleVersionCode:v.recognitionConfigRef!,parameterSnapshotHash:v.configHash,confirmedAt:now,lines:{create:prepared.selections.map(s=>({productId:s.product.productId,skuSnapshot:s.product.sku,productNameSnapshot:s.product.displayName,quantity:new Prisma.Decimal(s.quantity),unitPrice:new Prisma.Decimal(0),lineAmount:new Prisma.Decimal(0),gpvRateSnapshot:new Prisma.Decimal(0),gpvAmountSnapshot:new Prisma.Decimal(0),pvRateSnapshot:new Prisma.Decimal(0),ruleProfileSnapshot:{profileId:s.profile.productRuleProfileId,packageSelection:true,recognitionConfigRef:v.recognitionConfigRef,packageConfigHash:v.configHash}}))}},include:{lines:true}});
+      const order=await tx.order.create({data:{qualificationId,purpose:v.profile.packageClass==='QUALIFICATION'?'ENTRY':'REPURCHASE',status:'CONFIRMED',currency:v.currency,grossAmount:v.priceAmount,discountAmount:new Prisma.Decimal(0),netAmount:v.priceAmount,ruleVersionCode:v.recognitionConfigRef!,parameterSnapshotHash:v.configHash,confirmedAt:now,lines:{create:prepared.selections.map(s=>({productId:s.product.productId,skuSnapshot:s.product.sku,productNameSnapshot:s.product.displayName,quantity:new Prisma.Decimal(s.quantity),unitPrice:new Prisma.Decimal(0),lineAmount:new Prisma.Decimal(0),gpvRateSnapshot:new Prisma.Decimal(0),gpvAmountSnapshot:new Prisma.Decimal(0),pvRateSnapshot:new Prisma.Decimal(0),ruleProfileSnapshot:{profileId:s.profile.productRuleProfileId,packageSelection:true,recognitionConfigRef:v.recognitionConfigRef,packageConfigHash:v.configHash},commercialOfferingVersionId:offering?.commercialOfferingVersionId,commercialOfferingSnapshot:offering,linePurpose:dto.linePurpose})) as Prisma.OrderLineUncheckedCreateWithoutOrderInput[]}},include:{lines:true}});
       if(paper)await tx.paperApplication.update({where:{paperApplicationId:paper.paperApplicationId},data:{orderId:order.orderId,status:'ORDER_CREATED'}});
       const snapshot=await tx.packagePurchaseSnapshot.create({data:{orderId:order.orderId,personId,targetQualificationId:dto.targetQualificationId,packageProfileVersionId:v.packageProfileVersionId,packageCode:v.profile.stableCode,packageName:v.displayName,packageClass:v.profile.packageClass,currency:v.currency,priceAmount:v.priceAmount,selectableProductQuantity:v.selectableProductQuantity,membershipEffect:v.membershipEffect,qualificationEffect:v.qualificationEffect,activeDurationUnit:v.activeDurationUnit,activeDurationValue:v.activeDurationValue,recognitionConfigRef:v.recognitionConfigRef!,packageConfigHash:v.configHash,purchasedAt:now,selections:{create:prepared.selections.map(s=>({productRuleProfileId:s.productRuleProfileId,productId:s.product.productId,skuSnapshot:s.product.sku,productDisplaySnapshot:s.product.displayName,quantity:s.quantity,productConfigHash:s.productConfigHash}))}}});
       await this.audit.write(tx,{actorType:paper?'USER':'MEMBER',actorId:paper?.actorId??personId,action:paper?'PAPER_ORDER_CREATED':'PACKAGE_ORDER_CREATED',entityType:'ORDER',entityId:order.orderId,afterData:{orderId:order.orderId,qualificationId,packagePurchaseSnapshotId:snapshot.packagePurchaseSnapshotId,packageCode:v.profile.stableCode,packageClass:v.profile.packageClass,netAmount:v.priceAmount.toString(),sponsorEvidence:sponsorEvidence?(sponsorEvidence.kind==='COMPANY_ALIAS'?{kind:'COMPANY_ALIAS',displayLabel:sponsorEvidence.displayLabel,policyVersion:sponsorEvidence.policyVersion,ruleVersion:sponsorEvidence.ruleVersion,effectiveAt:sponsorEvidence.effectiveAt}:{kind:'BALL',sponsorBallNo:sponsorEvidence.sponsorBallNo,ruleVersion:sponsorEvidence.ruleVersion,effectiveAt:sponsorEvidence.effectiveAt}):null},requestId,correlationId});
@@ -160,6 +167,7 @@ export class OrderService {
       }
 
       const now = new Date();
+      const offering = await this.resolveOfferingSnapshot(tx, dto.commercialOfferingCode, member ? 'WEB_MEMBER' : 'ADMIN', now);
       const lines: Array<{
         productId: string;
         skuSnapshot: string;
@@ -171,6 +179,9 @@ export class OrderService {
         gpvAmountSnapshot: Prisma.Decimal;
         pvRateSnapshot?: Prisma.Decimal;
         ruleProfileSnapshot: Prisma.InputJsonValue;
+        commercialOfferingVersionId?: string;
+        commercialOfferingSnapshot?: Prisma.InputJsonValue;
+        linePurpose?: string;
       }> = [];
 
       let gross = new Prisma.Decimal(0);
@@ -228,6 +239,9 @@ export class OrderService {
             ruleVersionCode: profile.ruleVersionCode,
             parameterSnapshotHash: profile.parameterSnapshotHash,
           },
+          commercialOfferingVersionId: offering?.commercialOfferingVersionId,
+          commercialOfferingSnapshot: offering as Prisma.InputJsonValue | undefined,
+          linePurpose: dto.linePurpose,
         });
       }
 

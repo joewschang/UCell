@@ -12,8 +12,9 @@ import {PaperIntakeService} from './paper-intake.service';
 import {PaperPersonIdentityService} from './paper-person-identity.service';
 import { AdminRetailReferrerController } from './admin-retail-referrer.controller';
 import { RetailReferralExplainService } from './retail-referral-explain.service';
+import { CommercialOfferingService } from './commercial-offering.service';
 
-@Module({ imports:[PackageConfigModule,QualificationModule,OrganizationModule], controllers: [OrderController,AdminRetailReferrerController,PaperReceiptController,PaperIntakeController], providers: [OrderService,RetailReferrerAttributionService,PaperReceiptService,PaperIntakeService,PaperPersonIdentityService,RetailReferralExplainService], exports:[OrderService,RetailReferrerAttributionService] })
+@Module({ imports:[PackageConfigModule,QualificationModule,OrganizationModule], controllers: [OrderController,AdminRetailReferrerController,PaperReceiptController,PaperIntakeController], providers: [OrderService,RetailReferrerAttributionService,PaperReceiptService,PaperIntakeService,PaperPersonIdentityService,RetailReferralExplainService,CommercialOfferingService], exports:[OrderService,RetailReferrerAttributionService,CommercialOfferingService] })
 export class OrderModule {}
 
 

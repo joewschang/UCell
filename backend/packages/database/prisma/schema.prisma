@@ -40,6 +40,15 @@ enum OrderStatus {
   @@schema("commerce")
 }
 
+enum CommercialOfferingType {
+  QUALIFICATION_PACKAGE
+  REPURCHASE_PLAN
+  CORE_PRODUCT
+  RETAIL_PRODUCT
+  PROMOTIONAL_BUNDLE
+
+  @@schema("commerce")
+}
 enum PvType {
   GPV
   PV
@@ -1123,6 +1132,38 @@ model ProductRuleProfile {
   @@schema("commerce")
 }
 
+model CommercialOffering {
+  commercialOfferingId String @id @default(uuid()) @map("commercial_offering_id") @db.Uuid
+  offeringCode String @unique @map("offering_code")
+  offeringType CommercialOfferingType @map("offering_type")
+  status String @default("ACTIVE")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  versions CommercialOfferingVersion[]
+  @@index([offeringType,status])
+  @@map("commercial_offering")
+  @@schema("commerce")
+}
+
+model CommercialOfferingVersion {
+  commercialOfferingVersionId String @id @default(uuid()) @map("commercial_offering_version_id") @db.Uuid
+  commercialOfferingId String @map("commercial_offering_id") @db.Uuid
+  version Int
+  status String
+  effectiveFrom DateTime @map("effective_from") @db.Timestamptz(6)
+  effectiveTo DateTime? @map("effective_to") @db.Timestamptz(6)
+  channels Json @default("[]")
+  composition Json @default("[]")
+  selectionRule Json? @map("selection_rule")
+  recognitionProfile Json? @map("recognition_profile")
+  approvalReference String @map("approval_reference")
+  snapshotHash String @map("snapshot_hash") @db.Char(64)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  offering CommercialOffering @relation(fields:[commercialOfferingId],references:[commercialOfferingId])
+  @@unique([commercialOfferingId,version])
+  @@index([status,effectiveFrom,effectiveTo])
+  @@map("commercial_offering_version")
+  @@schema("commerce")
+}
 model Order {
   orderId                 String       @id @default(uuid()) @map("order_id") @db.Uuid
   orderNo                 BigInt       @unique @default(autoincrement()) @map("order_no")
@@ -1177,6 +1218,9 @@ model OrderLine {
   gpvAmountSnapshot   Decimal  @map("gpv_amount_snapshot") @db.Decimal(18, 4)
   pvRateSnapshot      Decimal? @map("pv_rate_snapshot") @db.Decimal(10, 6)
   ruleProfileSnapshot Json     @map("rule_profile_snapshot")
+  commercialOfferingVersionId String? @map("commercial_offering_version_id") @db.Uuid
+  commercialOfferingSnapshot Json? @map("commercial_offering_snapshot")
+  linePurpose String? @map("line_purpose")
   createdAt           DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
   order                     Order                      @relation(fields: [orderId], references: [orderId])
