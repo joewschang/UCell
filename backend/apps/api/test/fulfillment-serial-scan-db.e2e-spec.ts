@@ -2,6 +2,7 @@ import { Prisma, PrismaClient } from '@prisma/client';
 import { randomUUID } from 'node:crypto';
 import { FulfillmentSourceAllocationService } from '../src/modules/commerce/fulfillment-source-allocation.service';
 import { FulfillmentSerialScanService } from '../src/modules/commerce/fulfillment-serial-scan.service';
+import { FulfillmentErpHandoffService } from '../src/modules/commerce/fulfillment-erp-handoff.service';
 import { AuditService } from '../src/common/audit/audit.service';
 
 const url=process.env.PHASE2_TEST_DATABASE_URL;
@@ -31,5 +32,12 @@ describeDb('serialized fulfillment scan',()=>{
   expect(await db.fulfillmentSerialAllocation.count({where:{fulfillmentId:fulfillment.fulfillmentId}})).toBe(1);
   expect((await db.serializedUnit.findUniqueOrThrow({where:{serializedUnitId:unit.serializedUnitId}})).status).toBe('ALLOCATED');
   expect(await db.auditEvent.count({where:{action:'FULFILLMENT_SERIAL_SCANNED'}})).toBe(1);
+  const handoffService=new FulfillmentErpHandoffService(db as any,new AuditService());
+  const handoff=await handoffService.request({fulfillmentId:fulfillment.fulfillmentId,actorId:'00000000-0000-0000-0000-000000000301',requestId:'00000000-0000-0000-0000-000000000308',correlationId:'00000000-0000-0000-0000-000000000309'});
+  expect(handoff.replayed).toBe(false);
+  expect(JSON.stringify(handoff.handoff.payloadSnapshot)).toContain(unit.serialNo);
+  expect(JSON.stringify(handoff.handoff.payloadSnapshot)).not.toMatch(/qualification|member|person|award/i);
+  expect((await handoffService.request({fulfillmentId:fulfillment.fulfillmentId,actorId:'00000000-0000-0000-0000-000000000301',requestId:'00000000-0000-0000-0000-000000000310',correlationId:'00000000-0000-0000-0000-000000000311'})).replayed).toBe(true);
+  expect(await db.outboxEvent.count({where:{eventType:'FULFILLMENT_ERP_HANDOFF_REQUESTED'}})).toBe(1);
  });
 });

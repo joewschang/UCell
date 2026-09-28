@@ -1724,6 +1724,7 @@ model Fulfillment {
   shipments  Shipment[]
   sourceAllocations FulfillmentSourceAllocation[]
   serialAllocations FulfillmentSerialAllocation[]
+  erpHandoffs FulfillmentErpHandoff[]
 
   @@unique([orderId, fulfillmentKey])
   @@index([orderId, createdAt])
@@ -1812,6 +1813,26 @@ model FulfillmentSerialAllocation {
   @@unique([fulfillmentSourceAllocationId,serializedUnitId])
   @@index([fulfillmentId,scannedAt])
   @@map("fulfillment_serial_allocation")
+  @@schema("commerce")
+}
+
+/// Immutable UCell physical-execution request. An ERP adapter consumes its durable
+/// Outbox event; this record never exposes qualification or economic semantics.
+model FulfillmentErpHandoff {
+  fulfillmentErpHandoffId String @id @default(uuid()) @map("fulfillment_erp_handoff_id") @db.Uuid
+  fulfillmentId String @unique @map("fulfillment_id") @db.Uuid
+  outboxEventId String @unique @map("outbox_event_id") @db.Uuid
+  providerCode String @map("provider_code")
+  formatVersion String @map("format_version")
+  payloadHash String @map("payload_hash") @db.Char(64)
+  payloadSnapshot Json @map("payload_snapshot")
+  requestedByActor String @map("requested_by_actor")
+  requestedAt DateTime @default(now()) @map("requested_at") @db.Timestamptz(6)
+
+  fulfillment Fulfillment @relation(fields:[fulfillmentId],references:[fulfillmentId])
+  outboxEvent OutboxEvent @relation(fields:[outboxEventId],references:[outboxEventId])
+
+  @@map("fulfillment_erp_handoff")
   @@schema("commerce")
 }
 
@@ -2387,6 +2408,7 @@ model OutboxEvent {
   inventoryOperationClaim InventoryOperationClaim?
   invoiceOperationClaim   InvoiceOperationClaim?
   shipmentOperationClaim  ShipmentOperationClaim?
+  fulfillmentErpHandoff FulfillmentErpHandoff?
 
   @@index([processStatus, availableAt])
   @@map("outbox_event")
