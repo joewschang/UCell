@@ -7,7 +7,17 @@ export class SubscriptionCancellationService {
   constructor(private readonly prisma:PrismaService){}
 
   async cancel(subscriptionId:string,effectiveAt:Date,reasonCode:string,refundAmount='0'){
-    return this.prisma.$transaction(async tx=>{
+    const existingWhere={subscriptionId_effectiveAt_reasonCode:{subscriptionId,effectiveAt,reasonCode}};
+    try{return await this.prisma.$transaction(async tx=>{
+      const existing=await tx.subscriptionCancellation.findUnique({
+        where:existingWhere
+      });
+      if(existing) return {
+        cancellation:existing,
+        cancelledFutureCount:0,
+        queuedRpvReversalCount:0,
+        replayed:true
+      };
       const sub=await tx.subscription.findUniqueOrThrow({
         where:{subscriptionId},include:{schedules:true}
       });
@@ -59,8 +69,17 @@ export class SubscriptionCancellationService {
       return {
         cancellation:fact,
         cancelledFutureCount:sub.schedules.filter(s=>s.status==='SCHEDULED' && s.dueAt>=effectiveAt).length,
-        queuedRpvReversalCount:recognized.length
+        queuedRpvReversalCount:recognized.length,
+        replayed:false
       };
-    });
+    });}catch(error){
+      // Concurrent retries race only on the append-only natural key.  Re-read
+      // the committed fact; no existing cancellation or recovery event is
+      // mutated to make the retry succeed.
+      if((error as any)?.code!=='P2002') throw error;
+      const existing=await this.prisma.subscriptionCancellation.findUnique({where:existingWhere});
+      if(!existing) throw error;
+      return {cancellation:existing,cancelledFutureCount:0,queuedRpvReversalCount:0,replayed:true};
+    }
   }
 }

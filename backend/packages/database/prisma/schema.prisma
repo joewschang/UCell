@@ -3167,6 +3167,7 @@ model SubscriptionCancellation {
   createdAt                  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
   @@index([subscriptionId, effectiveAt])
+  @@unique([subscriptionId, effectiveAt, reasonCode])
   @@map("subscription_cancellation")
   @@schema("subscription")
 }
