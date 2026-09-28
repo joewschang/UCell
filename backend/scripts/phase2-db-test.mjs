@@ -216,7 +216,10 @@ try{await prisma.$transaction(async tx=>{
  const originalPlacement=await tx.binaryPlacement.findUniqueOrThrow({where:{childQualificationId:leftQ.qualificationId}});
  await tx.binaryPlacement.update({where:{binaryPlacementId:originalPlacement.binaryPlacementId},data:{effectiveTo:new Date('2020-01-04')}});
  await tx.binaryPlacement.update({where:{binaryPlacementId:originalPlacement.binaryPlacementId},data:{parentQualificationId:newSponsor.qualificationId,effectiveFrom:new Date('2020-01-04'),effectiveTo:null}});
- const cancellation=await new SubscriptionCancellationService(facade).cancel(sub.subscriptionId,new Date('2020-01-02'),'PHASE2_TEST');
+ // The return is accepted after the first recognition posted.  Its recovery
+ // must still consume the sealed historical recognition rather than treating
+ // the recognition date as a cancellation eligibility cutoff.
+ const cancellation=await new SubscriptionCancellationService(facade).cancel(sub.subscriptionId,new Date('2020-01-05'),'PHASE2_TEST');
  check('subscription future rows cancelled',(await tx.monthlyRecognitionSchedule.findUniqueOrThrow({where:{recognitionId:future.recognitionId}})).status,'CANCELLED');
  check('recognized affected event queued exactly once',cancellation.queuedRpvReversalCount,1);
  const outbox=await tx.outboxEvent.findFirstOrThrow({where:{aggregateId:recognized.recognitionId,eventType:'RPV_REVERSAL_REQUIRED'}});

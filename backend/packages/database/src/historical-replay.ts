@@ -490,7 +490,11 @@ export async function replayRpvCancellation(tx:Prisma.TransactionClient,recognit
   const prior=await tx.replayAction.findUnique({where:{actionKey}});if(prior) return prior.result;
   const {row,envelope}=await loadEnvelope(tx,'RPV',recognitionId);
   const cancellation=await tx.subscriptionCancellation.findUnique({where:{subscriptionCancellationId:cancellationId}});
-  if(!cancellation||cancellation.status!=='POSTED'||cancellation.subscriptionId!==envelope.inputs.subscriptionId||cancellation.effectiveAt>new Date(envelope.at)) pending('RPV_CANCELLATION_INVALID','Posted original recognition cancellation evidence is required');
+  // A return is normally accepted after a recognition has posted.  The sealed
+  // recognition date is therefore not an eligibility cutoff for its linked
+  // append-only cancellation fact; source/subscription identity and POSTED
+  // status remain the authority.
+  if(!cancellation||cancellation.status!=='POSTED'||cancellation.subscriptionId!==envelope.inputs.subscriptionId) pending('RPV_CANCELLATION_INVALID','Posted original recognition cancellation evidence is required');
   const stateHash=replayHash({recognitionId,valid:false});
   const original=await tx.pvLedger.findUnique({where:{eventId:envelope.inputs.eventId}});
   if(!original) pending('HISTORICAL_SNAPSHOT_MISSING','Original RPV event is missing');
@@ -598,7 +602,12 @@ export async function replayReturnDependencies(tx:Prisma.TransactionClient,retur
   for(const subscription of subscriptions) {
     const cancellations=await tx.subscriptionCancellation.findMany({where:{subscriptionId:subscription.subscriptionId,status:'POSTED'},orderBy:{effectiveAt:'asc'}});
     for(const schedule of subscription.schedules.filter(s=>['RECOGNIZED','REVERSED'].includes(s.status))) {
-      const cancellation=cancellations.find(c=>c.effectiveAt<=schedule.dueAt);
+      // A posted return can arrive after a monthly recognition.  Prefer a
+      // cancellation already effective at the scheduled recognition, then
+      // use the latest posted cancellation fact for the same subscription.
+      // Both paths use immutable cancellation evidence; replay never derives
+      // a cancellation from current subscription state.
+      const cancellation=cancellations.find(c=>c.effectiveAt<=schedule.dueAt)??cancellations.at(-1);
       if(!cancellation) pending('HISTORICAL_SNAPSHOT_MISSING','Affected subscription recognition lacks an explicit historical cancellation/allocation fact');
       await replayRpvCancellation(tx,schedule.recognitionId,cancellation.subscriptionCancellationId,'RPV:'+schedule.recognitionId+':'+cancellation.subscriptionCancellationId,ret.correlationId);
     }
