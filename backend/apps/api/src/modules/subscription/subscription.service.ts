@@ -41,6 +41,9 @@ export class SubscriptionService {
 
       const schedule=await this.calendar.schedule(tx,dto.startMonth,plan.durationMonths,ruleVersionCode);
       const start=schedule.rows[0].recognitionMonth,end=schedule.rows.at(-1)!.recognitionMonth;
+      const preceding=plan.monthlyRecognizedAmount.mul(plan.durationMonths-1);
+      const finalRecognizedAmount=plan.prepaidAmount.sub(preceding);
+      if(finalRecognizedAmount.lt(0)) throw new UnprocessableEntityException({code:'REPURCHASE_RECOGNITION_ENTITLEMENT_INVALID'});
 
       const subscription=await tx.subscription.create({
         data:{
@@ -63,7 +66,9 @@ export class SubscriptionService {
             subscriptionId:subscription.subscriptionId,
             installmentNo:i+1,
             recognitionMonth,
-            recognizedAmount:plan.monthlyRecognizedAmount,
+            // Persist the exact remainder in the final row. Recognition never
+            // re-derives this from a later plan revision.
+            recognizedAmount:i===plan.durationMonths-1?finalRecognizedAmount:plan.monthlyRecognizedAmount,
             rpvAmount:plan.monthlyRpv,
             status:'SCHEDULED',
             dueAt,
@@ -81,7 +86,9 @@ export class SubscriptionService {
           qualificationId:dto.qualificationId,
           planCode:dto.planCode,
           months:plan.durationMonths,
+          totalRecognitionEntitlement:plan.prepaidAmount.toString(),
           monthlyRecognizedAmount:plan.monthlyRecognizedAmount.toString(),
+          finalRecognizedAmount:finalRecognizedAmount.toString(),
           monthlyRpv:plan.monthlyRpv.toString()
         },
         requestId,correlationId
