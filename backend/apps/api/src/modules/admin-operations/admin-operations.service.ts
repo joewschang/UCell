@@ -214,6 +214,33 @@ export class AdminOperationsService {
     return {member:{memberNo:person.memberNo,legalName:person.legalName,preferredName:person.preferredName,status:person.status,membershipState:person.membershipState,securityStatus:person.securityStatus,createdAt:person.createdAt.toISOString()},lineLinks:lineLinks.map(link=>({provider:link.provider,status:link.status,createdAt:link.createdAt.toISOString(),revokedAt:link.revokedAt?.toISOString()??null})),qualifications:qualifications.map(q=>({qualificationNo:q.qualificationNo.toString(),ballNo:q.ballNo,planLevelCode:q.planLevelCode,status:q.status,active:q.activeFlag,effectiveAt:q.effectiveAt?.toISOString()??null,sponsorBallNo:q.sponsorRelation?.sponsor.ballNo??null,binaryParentBallNo:q.binaryPlacement?.parent.ballNo??null,binarySide:q.binaryPlacement?.side??null,subscriptions:q.subscriptions.map(s=>({status:s.status,startMonth:s.startMonth.toISOString(),endMonth:s.endMonth.toISOString(),activatedAt:s.activatedAt?.toISOString()??null,cancelledAt:s.cancelledAt?.toISOString()??null}))})),orders:orders.map(order=>({orderNo:order.orderNo.toString(),purpose:order.purpose,status:order.status,grossAmount:order.grossAmount.toString(),netAmount:order.netAmount.toString(),confirmedAt:order.confirmedAt?.toISOString()??null,paidAt:order.paidAt?.toISOString()??null,fulfillments:order.fulfillments})),payables:payables.map(row=>({status:row.status,grossAmount:row.grossAmount.toString(),availableAt:row.availableAt.toISOString(),payoutStatus:row.payoutLine?.payoutBatch.status??null,payoutPeriodEnd:row.payoutLine?.payoutBatch.periodEnd.toISOString()??null})),awards:awards.map(row=>({awardType:row.awardType,theoryAmount:row.theoryAmount.toString(),payableAmount:row.payableAmount.toString(),occurredAt:row.occurredAt.toISOString()})),tasks,exceptions,timeline:timeline.map(event=>({action:event.action,eventCode:event.eventCode,entityType:event.entityType,result:event.result,occurredAt:event.occurredAt.toISOString()}))};
   }
 
+  /**
+   * A deterministic, rebuildable read projection. It stores no parallel
+   * business state: every entry is derived from immutable audit or bounded
+   * operational authorities at read time.
+   */
+  async memberActivityTimeline(memberNo:string,input:{take?:number}={}){
+    if(!/^\d{10}$/.test(memberNo)) throw new UnprocessableEntityException('INVALID_MEMBER_NO');
+    const take=Math.min(Math.max(input.take??100,1),200);
+    const person=await this.prisma.person.findUnique({where:{memberNo},select:{personId:true}});
+    if(!person) throw new ConflictException('MEMBER_NOT_FOUND');
+    const qualifications=await this.prisma.qualification.findMany({where:{currentHolderPersonId:person.personId},select:{qualificationId:true,qualificationNo:true,ballNo:true}});
+    const qualificationIds=qualifications.map(row=>row.qualificationId);
+    const qualificationReference=new Map(qualifications.map(row=>[row.qualificationId,{qualificationNo:row.qualificationNo.toString(),ballNo:row.ballNo??null}]));
+    const sourceIds=[memberNo,...qualifications.map(row=>row.ballNo).filter((value):value is string=>Boolean(value))];
+    const [audits,tasks,exceptions]=await Promise.all([
+      this.prisma.auditEvent.findMany({where:{entityId:{in:[person.personId,...qualificationIds]}},select:{action:true,eventCode:true,entityId:true,result:true,occurredAt:true,beforeHash:true,afterHash:true},orderBy:{occurredAt:'desc'},take}),
+      this.prisma.operationalTask.findMany({where:{sourceId:{in:sourceIds}},select:{taskCode:true,priority:true,status:true,createdAt:true,updatedAt:true,evidenceHash:true},orderBy:{updatedAt:'desc'},take}),
+      this.prisma.operationalException.findMany({where:{sourceId:{in:sourceIds}},select:{exceptionCode:true,severity:true,status:true,createdAt:true,updatedAt:true,evidenceHash:true},orderBy:{updatedAt:'desc'},take}),
+    ]);
+    const entries=[
+      ...audits.map(event=>({source:'AUDIT_EVENT',eventType:event.action,eventCode:event.eventCode||event.action,sourceReference:event.entityId===person.personId?{memberNo}:qualificationReference.get(event.entityId??'')??{memberNo},result:event.result,occurredAt:event.occurredAt.toISOString(),evidence:{beforeHash:event.beforeHash??null,afterHash:event.afterHash??null}})),
+      ...tasks.map(task=>({source:'OPERATIONAL_TASK',eventType:`TASK_${task.status}`,eventCode:task.taskCode,sourceReference:{memberNo},result:task.status,occurredAt:task.updatedAt.toISOString(),evidence:{evidenceHash:task.evidenceHash??null,priority:task.priority,createdAt:task.createdAt.toISOString()}})),
+      ...exceptions.map(exception=>({source:'OPERATIONAL_EXCEPTION',eventType:`EXCEPTION_${exception.status}`,eventCode:exception.exceptionCode,sourceReference:{memberNo},result:exception.status,occurredAt:exception.updatedAt.toISOString(),evidence:{evidenceHash:exception.evidenceHash??null,severity:exception.severity,createdAt:exception.createdAt.toISOString()}})),
+    ];
+    return entries.sort((left,right)=>right.occurredAt.localeCompare(left.occurredAt)||left.source.localeCompare(right.source)||left.eventCode.localeCompare(right.eventCode)).slice(0,take);
+  }
+
   async invariantCandidates(input:{take?:number}={}){
     const requested=Number.isFinite(input.take)?input.take??100:100;
     const batches=await this.prisma.payoutBatch.findMany({include:{lines:{select:{netAmount:true}}},orderBy:{periodEnd:'desc'},take:Math.min(Math.max(requested,1),200)});

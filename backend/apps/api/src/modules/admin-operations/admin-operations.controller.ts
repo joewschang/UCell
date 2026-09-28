@@ -43,6 +43,13 @@ export class AdminOperationsController{
     return this.service.workflowDetail(id).then(data=>({data}));
   }
 
+  @Roles('SUPER_ADMIN','MEMBERSHIP_OPS','FINANCE','COMPLIANCE_AUDIT')
+  @Get('members/:memberNo/timeline')
+  @ApiOperation({operationId:'adminReadMemberActivityTimelineByMemberNo',summary:'以 memberNo 重建授權的會員活動時間線'} )
+  memberTimeline(@Param('memberNo') memberNo:string,@Query('take') take?:string){
+    return this.service.memberActivityTimeline(memberNo,{take:Number(take??100)}).then(data=>({data}));
+  }
+
   @Roles('SUPER_ADMIN','FINANCE','COMPLIANCE_AUDIT')
   @Get('recoveries')
   @ApiOperation({operationId:'adminRecoveryAging',summary:'Recovery Aging與抵扣履歷'})

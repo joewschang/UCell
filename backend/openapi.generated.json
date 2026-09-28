@@ -11414,6 +11414,43 @@
         ]
       }
     },
+    "/api/v1/admin/operations/members/{memberNo}/timeline": {
+      "get": {
+        "operationId": "adminReadMemberActivityTimelineByMemberNo",
+        "parameters": [
+          {
+            "name": "memberNo",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "take",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "以 memberNo 重建授權的會員活動時間線",
+        "tags": [
+          "Admin - Returns / Workflows / Payout Operations"
+        ]
+      }
+    },
     "/api/v1/admin/operations/recoveries": {
       "get": {
         "operationId": "adminRecoveryAging",
