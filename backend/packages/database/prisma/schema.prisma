@@ -445,9 +445,21 @@ enum RecoveryStatus {
 enum PayoutBatchStatus {
   DRAFT
   READY
+  REVIEWED
+  APPROVED
   EXPORTED
+  PROCESSING
   PAID
+  PARTIALLY_PAID
+  FAILED
   VOIDED
+
+  @@schema("ledger")
+}
+
+enum PayoutPaymentResultStatus {
+  PAID
+  FAILED
 
   @@schema("ledger")
 }
@@ -2812,6 +2824,7 @@ model PayoutBatch {
   lines     PayoutLine[]
   approvals PayoutApproval[]
   exportArtifacts PayoutExportArtifact[]
+  paymentResults PayoutPaymentResult[]
 
   @@index([status, periodEnd])
   @@map("payout_batch")
@@ -2850,9 +2863,34 @@ model PayoutLine {
   recipient            Qualification         @relation(fields: [recipientQualificationId], references: [qualificationId])
   payableEntries       PayableEntry[]
   recoveryApplications RecoveryApplication[]
+  paymentResults PayoutPaymentResult[]
 
   @@unique([payoutBatchId, recipientQualificationId])
   @@map("payout_line")
+  @@schema("ledger")
+}
+
+/// Append-only bank/company-payment reconciliation evidence. It records an
+/// external result; it never initiates a bank transfer or rewrites an export.
+model PayoutPaymentResult {
+  payoutPaymentResultId String @id @default(uuid()) @map("payout_payment_result_id") @db.Uuid
+  payoutBatchId String @map("payout_batch_id") @db.Uuid
+  payoutLineId String @map("payout_line_id") @db.Uuid
+  resultStatus PayoutPaymentResultStatus @map("result_status")
+  paidAmount Decimal @map("paid_amount") @db.Decimal(18,4)
+  paymentReference String? @map("payment_reference")
+  reasonCode String? @map("reason_code")
+  occurredAt DateTime @map("occurred_at") @db.Timestamptz(6)
+  recordedByActor String @map("recorded_by_actor")
+  idempotencyKey String @unique @map("idempotency_key")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  payoutBatch PayoutBatch @relation(fields:[payoutBatchId],references:[payoutBatchId])
+  payoutLine PayoutLine @relation(fields:[payoutLineId],references:[payoutLineId])
+
+  @@unique([payoutBatchId,payoutLineId])
+  @@index([payoutBatchId,createdAt])
+  @@map("payout_payment_result")
   @@schema("ledger")
 }
 

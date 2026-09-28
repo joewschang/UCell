@@ -107,4 +107,11 @@ export class AdminOperationsController{
       req.user?.personId,req.user?.role,req.requestId,req.correlationId??randomUUID()
     ).then(data=>({data}));
   }
+
+  @Roles('SUPER_ADMIN','FINANCE')
+  @Post('payout-batches/:id/payment-results')
+  @ApiOperation({operationId:'adminRecordPayoutPaymentResults',summary:'記錄公司銀行付款結果；不觸發銀行轉帳'})
+  paymentResults(@Param('id') id:string,@Body() body:{results:Array<{payoutLineId:string;status:'PAID'|'FAILED';paidAmount:string;paymentReference?:string;reasonCode?:string;occurredAt?:string}>},@Req() req:any){
+    return this.service.recordPayoutResults(id,{results:(body?.results??[]).map(row=>({...row,occurredAt:row.occurredAt?new Date(row.occurredAt):undefined}))},req.user?.personId,req.user?.role,req.requestId,req.correlationId??randomUUID()).then(data=>({data}));
+  }
 }

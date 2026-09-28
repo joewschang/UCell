@@ -30,5 +30,10 @@ describeDb('PAYOUT_EXPORT_ARTIFACT_REVISION',()=>{
     const saved=await db.payoutBatch.findUniqueOrThrow({where:{payoutBatchId:batch.payoutBatchId}});
     expect(saved.status).toBe('EXPORTED');
     expect(saved.paidAt).toBeNull();
+    const reconciled=await service.recordPayoutResults(batch.payoutBatchId,{results:[{payoutLineId:(await db.payoutLine.findFirstOrThrow({where:{payoutBatchId:batch.payoutBatchId}})).payoutLineId,status:'FAILED',paidAmount:'0',reasonCode:'BANK_REJECTED'}]},'00000000-0000-0000-0000-000000000101','FINANCE','00000000-0000-0000-0000-000000000205','00000000-0000-0000-0000-000000000206');
+    expect(reconciled.batch.status).toBe('FAILED');
+    expect(reconciled.results).toHaveLength(1);
+    const resultReplay=await service.recordPayoutResults(batch.payoutBatchId,{results:[{payoutLineId:(await db.payoutLine.findFirstOrThrow({where:{payoutBatchId:batch.payoutBatchId}})).payoutLineId,status:'FAILED',paidAmount:'0',reasonCode:'BANK_REJECTED'}]},'00000000-0000-0000-0000-000000000101','FINANCE','00000000-0000-0000-0000-000000000207','00000000-0000-0000-0000-000000000208');
+    expect(resultReplay.replayed).toBe(true);
   });
 });
