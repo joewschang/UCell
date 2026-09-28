@@ -11583,6 +11583,35 @@
         ]
       }
     },
+    "/api/v1/admin/operations/invariant-candidates": {
+      "get": {
+        "operationId": "adminOperationalInvariantCandidates",
+        "parameters": [
+          {
+            "name": "take",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "讀取可稽核的營運不變量候選，不修改來源資料",
+        "tags": [
+          "Admin - Returns / Workflows / Payout Operations"
+        ]
+      }
+    },
     "/api/v1/admin/operations/exceptions": {
       "get": {
         "operationId": "adminOperationalExceptionQueue",
