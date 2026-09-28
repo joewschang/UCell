@@ -1,6 +1,7 @@
 import { ConflictException,Injectable,UnprocessableEntityException } from '@nestjs/common';
 import { Prisma,PrismaService } from '@ucell/database';
 import { AuditService } from '../../common/audit/audit.service';
+import { createHash } from 'node:crypto';
 
 @Injectable()
 export class AdminOperationsService {
@@ -230,27 +231,28 @@ export class AdminOperationsService {
   ){
     if(!actorId || !actorRole || !['FINANCE','SUPER_ADMIN'].includes(actorRole))
       throw new UnprocessableEntityException('Finance role and authenticated actor are required to export payout');
+    if(!exportReference?.trim()) throw new UnprocessableEntityException('PAYOUT_EXPORT_REFERENCE_REQUIRED');
     return this.prisma.$transaction(async tx=>{
       const batch=await tx.payoutBatch.findUniqueOrThrow({
-        where:{payoutBatchId:id},include:{approvals:true}
+        where:{payoutBatchId:id},include:{approvals:true,lines:{include:{recipient:{include:{currentHolder:{select:{memberNo:true}}}}},orderBy:{payoutLineId:'asc'}}}
       });
+      if(batch.status==='EXPORTED'){
+        const replay=await tx.payoutExportArtifact.findUnique({where:{exportReference:exportReference.trim()}});
+        if(replay?.payoutBatchId===id) return {batch,artifact:replay,replayed:true};
+        throw new ConflictException('Payout batch is already exported; create a governed replacement revision before another export');
+      }
       if(batch.status!=='READY')throw new ConflictException('Only READY payout batch can be exported');
       const approved=new Set(batch.approvals.filter(x=>x.decision==='APPROVED').map(x=>x.stage));
       if(!approved.has('FINANCE_REVIEW')||!approved.has('COMPLIANCE_REVIEW'))
         throw new UnprocessableEntityException('Finance and Compliance approvals are both required');
-      const updated=await tx.payoutBatch.update({
-        where:{payoutBatchId:id},
-        data:{status:'EXPORTED',exportedAt:new Date(),exportReference}
-      });
-      await this.audit.write(tx,{
-        actorType:actorId?'USER':'SYSTEM',actorId,
-        action:'PAYOUT_EXPORTED',entityType:'PAYOUT_BATCH',entityId:id,
-        afterData:{exportReference},requestId,correlationId
-      });
-      return updated;
+      const payload={schemaVersion:1,format:'GENERIC_FINANCE_CSV_V1',payoutBatchId:batch.payoutBatchId,periodStart:batch.periodStart.toISOString(),periodEnd:batch.periodEnd.toISOString(),totalGross:batch.totalGross.toString(),totalRecovery:batch.totalRecovery.toString(),totalNet:batch.totalNet.toString(),lines:batch.lines.map(line=>({payoutLineId:line.payoutLineId,memberNo:line.recipient.currentHolder?.memberNo??null,ballNo:line.recipient.ballNo??null,grossAmount:line.grossAmount.toString(),recoveryOffset:line.recoveryOffset.toString(),netAmount:line.netAmount.toString()}))};
+      const contentHash=createHash('sha256').update(JSON.stringify(payload)).digest('hex');
+      const artifact=await tx.payoutExportArtifact.create({data:{payoutBatchId:id,exportReference:exportReference.trim(),adapterCode:'GENERIC_FINANCE_CSV',formatVersion:'GENERIC_FINANCE_CSV_V1',contentHash,payloadSnapshot:payload,generatedByActor:actorId}});
+      const updated=await tx.payoutBatch.update({where:{payoutBatchId:id},data:{status:'EXPORTED',exportedAt:new Date(),exportReference:exportReference.trim()}});
+      await this.audit.write(tx,{actorType:'USER',actorId,action:'PAYOUT_EXPORTED',entityType:'PAYOUT_BATCH',entityId:id,afterData:{exportReference:artifact.exportReference,adapterCode:artifact.adapterCode,formatVersion:artifact.formatVersion,contentHash:artifact.contentHash},requestId,correlationId});
+      return {batch:updated,artifact,replayed:false};
     });
   }
-
   async markPaid(
     id:string,input:{paymentReference:string;paymentMethod:string;paidAt?:Date},
     actorId:string|undefined,actorRole:string|undefined,requestId:string,correlationId:string
