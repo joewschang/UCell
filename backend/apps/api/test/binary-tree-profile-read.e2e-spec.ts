@@ -9,6 +9,7 @@ const input = {
   ownerType: 'COMPANY',
   ownerCompanyPrincipalId: 'company-internal-id',
   treeCompanyPrincipalId: 'company-internal-id',
+  bootstrapCompanyBallCount: 7,
   at,
   known: at,
 };
