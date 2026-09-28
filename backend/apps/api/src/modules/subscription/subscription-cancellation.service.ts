@@ -1,5 +1,5 @@
 import { ConflictException, Injectable } from '@nestjs/common';
-import { PrismaService } from '@ucell/database';
+import { Prisma, PrismaService } from '@ucell/database';
 import { randomUUID } from 'crypto';
 
 @Injectable()
@@ -19,11 +19,21 @@ export class SubscriptionCancellationService {
         replayed:true
       };
       const sub=await tx.subscription.findUniqueOrThrow({
-        where:{subscriptionId},include:{schedules:true}
+        where:{subscriptionId},include:{schedules:true,plan:true}
       });
+      let sourceReturn:any=null;
       if(input.sourceReturnCaseId){
-        const sourceReturn=await tx.returnCase.findUnique({where:{returnCaseId:input.sourceReturnCaseId}});
+        sourceReturn=await tx.returnCase.findUnique({where:{returnCaseId:input.sourceReturnCaseId},include:{lines:true}});
         if(!sourceReturn||sourceReturn.status!=='POSTED'||sourceReturn.orderId!==sub.orderId) throw new ConflictException({code:'SUBSCRIPTION_CANCELLATION_RETURN_SOURCE_INVALID'});
+      }
+      const refund=new Prisma.Decimal(refundAmount);
+      // Legacy full-return commands carried no amount.  A non-zero amount is
+      // therefore required before the partial-return path is selected.
+      const full=reasonCode==='FULL_RETURN'||refund.eq(0);
+      if(!full&&(!input.sourceReturnCaseId||refund.lte(0)||refund.gte(sub.plan.prepaidAmount))) throw new ConflictException({code:'SUBSCRIPTION_PARTIAL_RETURN_INVALID'});
+      if(sourceReturn){
+        const sourceAmount=sourceReturn.lines.reduce((total:any,line:any)=>total.add(line.returnAmount),new Prisma.Decimal(0));
+        if(!sourceAmount.eq(refund)) throw new ConflictException({code:'SUBSCRIPTION_CANCELLATION_REFUND_AMOUNT_MISMATCH'});
       }
       const correlationId=randomUUID();
 
@@ -34,7 +44,7 @@ export class SubscriptionCancellationService {
         }
       });
 
-      await tx.monthlyRecognitionSchedule.updateMany({
+      if(full) await tx.monthlyRecognitionSchedule.updateMany({
         where:{
           subscriptionId,
           dueAt:{gte:effectiveAt},
@@ -42,6 +52,21 @@ export class SubscriptionCancellationService {
         },
         data:{status:'CANCELLED'}
       });
+      if(!full){
+        const prior=await tx.subscriptionCancellation.aggregate({where:{subscriptionId,status:'POSTED'},_sum:{refundAmount:true}});
+        const remaining=sub.plan.prepaidAmount.sub(prior._sum.refundAmount??new Prisma.Decimal(0));
+        if(remaining.lte(0)||refund.gt(remaining)) throw new ConflictException({code:'SUBSCRIPTION_RETURN_AMOUNT_EXCEEDED'});
+        const rows=sub.schedules.filter(row=>row.status==='SCHEDULED'&&row.dueAt>=effectiveAt).sort((a,b)=>a.installmentNo-b.installmentNo);
+        const futureTotal=rows.reduce((total,row)=>total.add(row.recognizedAmount),new Prisma.Decimal(0));
+        const target=futureTotal.mul(remaining.sub(refund)).div(remaining).toDecimalPlaces(2,Prisma.Decimal.ROUND_HALF_UP);
+        let allocated=new Prisma.Decimal(0);
+        for(const [index,row] of rows.entries()){
+          const recognizedAmount=index===rows.length-1?target.sub(allocated):row.recognizedAmount.mul(remaining.sub(refund)).div(remaining).toDecimalPlaces(2,Prisma.Decimal.ROUND_HALF_UP);
+          allocated=allocated.add(recognizedAmount);
+          const rpvAmount=row.rpvAmount.mul(remaining.sub(refund)).div(remaining).toDecimalPlaces(4,Prisma.Decimal.ROUND_HALF_UP);
+          await tx.monthlyRecognitionSchedule.update({where:{recognitionId:row.recognitionId},data:{recognizedAmount,rpvAmount}});
+        }
+      }
 
       const recognized=await tx.monthlyRecognitionSchedule.findMany({
         where:{
@@ -66,9 +91,7 @@ export class SubscriptionCancellationService {
         });
       }
 
-      await tx.subscription.update({
-        where:{subscriptionId},data:{status:'CANCELLED',cancelledAt:effectiveAt}
-      });
+      if(full) await tx.subscription.update({where:{subscriptionId},data:{status:'CANCELLED',cancelledAt:effectiveAt}});
 
       return {
         cancellation:fact,

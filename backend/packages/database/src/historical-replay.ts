@@ -500,13 +500,19 @@ export async function replayRpvCancellation(tx:Prisma.TransactionClient,recognit
   if(!original) pending('HISTORICAL_SNAPSHOT_MISSING','Original RPV event is missing');
   if(original.pvType!=='RPV'||original.eventType!=='RPV_CREATED'||original.sourceId!==envelope.inputs.subscriptionId||original.sourceLineId!==recognitionId||original.qualificationId!==envelope.evidence.sourceQualification.qualificationId||original.occurredAt.toISOString()!==envelope.at||original.ruleVersionCode!==envelope.ruleVersionCode||!original.amount.eq(envelope.inputs.volume))
     pending('HISTORICAL_SNAPSHOT_CORRUPT','RPV original event conflicts with sealed recognition evidence');
+  const subscription=await tx.subscription.findUnique({where:{subscriptionId:cancellation.subscriptionId},include:{plan:true}});
+  if(!subscription||subscription.plan.prepaidAmount.lte(0)) pending('RPV_CANCELLATION_INVALID','Original Repurchase Plan entitlement is required');
+  const refunds=await tx.subscriptionCancellation.aggregate({where:{subscriptionId:cancellation.subscriptionId,status:'POSTED'},_sum:{refundAmount:true}});
+  const ratio=cancellation.reasonCode==='FULL_RETURN'||cancellation.refundAmount.eq(0)
+    ?dec(1)
+    :Prisma.Decimal.min(dec(1),dec(refunds._sum.refundAmount??0).div(subscription.plan.prepaidAmount));
   const previous=await tx.pvLedger.aggregate({where:{reversalOfEventId:original.eventId,pvType:'RPV'},_sum:{amount:true}});
-  const delta=original.amount.add(previous._sum.amount??dec(0)).negated();
+  const delta=original.amount.mul(ratio).negated().sub(previous._sum.amount??dec(0));
   if(delta.gt(0)) pending('RETURN_AMOUNT_EXCEEDED','Original RPV was reversed beyond its effective volume');
   if(!delta.eq(0)) await tx.pvLedger.create({data:{qualificationId:original.qualificationId,pvType:'RPV',amount:delta,sourceType:'MONTHLY_RECOGNITION_REVERSAL',sourceId:envelope.inputs.subscriptionId,sourceLineId:recognitionId,eventType:'RPV_REVERSAL',
     ruleVersionCode:envelope.ruleVersionCode,parameterSnapshotHash:envelope.parameters.hash,occurredAt:cancellation.effectiveAt,reversalOfEventId:original.eventId,correlationId}});
-  await postPayables(tx,row,envelope,new Map(envelope.recipients.map(recipient=>[recipient.key,dec(0)])),actionKey,stateHash);
-  await tx.monthlyRecognitionSchedule.update({where:{recognitionId},data:{status:'REVERSED'}});
+  await postPayables(tx,row,envelope,new Map(envelope.recipients.map(recipient=>[recipient.key,dec(recipient.posted).mul(dec(1).sub(ratio))])),actionKey,stateHash,cancellation.sourceReturnCaseId??undefined);
+  if(ratio.eq(1)) await tx.monthlyRecognitionSchedule.update({where:{recognitionId},data:{status:'REVERSED'}});
   const result={recognitionId,status:'REPLAYED',stateHash};
   await tx.replayAction.create({data:{actionKey,stateHash,result}});return result;
 }
