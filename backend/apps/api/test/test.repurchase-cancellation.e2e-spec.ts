@@ -4,7 +4,7 @@ describe('repurchase cancellation recovery boundary',()=>{
   it('cancels future schedules and queues append-only reversals for all already-recognized effects',async()=>{
     const created:any[]=[];
     const tx:any={
-      subscription:{findUniqueOrThrow:jest.fn().mockResolvedValue({subscriptionId:'sub',ruleVersionCode:'R1.0B',schedules:[{status:'SCHEDULED',dueAt:new Date('2026-10-01')},{status:'RECOGNIZED',dueAt:new Date('2026-09-01')}]}),update:jest.fn()},
+      subscription:{findUniqueOrThrow:jest.fn().mockResolvedValue({subscriptionId:'sub',ruleVersionCode:'R1.0B',schedules:[{status:'SCHEDULED',dueAt:new Date('2026-11-01')},{status:'RECOGNIZED',dueAt:new Date('2026-09-01')}]}),update:jest.fn()},
       subscriptionCancellation:{create:jest.fn().mockResolvedValue({subscriptionCancellationId:'cancel'})},
       monthlyRecognitionSchedule:{updateMany:jest.fn(),findMany:jest.fn().mockResolvedValue([{recognitionId:'recognized-before-return'}])},
       outboxEvent:{create:jest.fn(async({data}:any)=>{created.push(data);return data;})},
