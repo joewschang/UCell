@@ -1227,6 +1227,7 @@ model OrderLine {
   product                   ProductReference           @relation(fields: [productId], references: [productId])
   inventoryReservationLines InventoryReservationLine[]
   retailReferralSnapshot    RetailReferralOrderLineSnapshot?
+  fulfillmentSourceAllocations FulfillmentSourceAllocation[]
 
   @@index([orderId])
   @@map("order_line")
@@ -1709,6 +1710,7 @@ model Fulfillment {
   parcels    FulfillmentParcel[]
   qcEvidence FulfillmentQcEvidence[]
   shipments  Shipment[]
+  sourceAllocations FulfillmentSourceAllocation[]
 
   @@unique([orderId, fulfillmentKey])
   @@index([orderId, createdAt])
@@ -1717,7 +1719,23 @@ model Fulfillment {
   @@schema("commerce")
 }
 
-model FulfillmentParcel {
+
+model FulfillmentSourceAllocation {
+  fulfillmentSourceAllocationId String @id @default(uuid()) @map("fulfillment_source_allocation_id") @db.Uuid
+  fulfillmentId String @map("fulfillment_id") @db.Uuid
+  orderLineId String @map("order_line_id") @db.Uuid
+  allocatedQuantity Decimal @map("allocated_quantity") @db.Decimal(18,4)
+  skuSnapshot String @map("sku_snapshot")
+  commercialOfferingSnapshot Json? @map("commercial_offering_snapshot")
+  linePurpose String? @map("line_purpose")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  fulfillment Fulfillment @relation(fields:[fulfillmentId],references:[fulfillmentId])
+  orderLine OrderLine @relation(fields:[orderLineId],references:[orderLineId])
+  @@unique([fulfillmentId,orderLineId])
+  @@index([orderLineId])
+  @@map("fulfillment_source_allocation")
+  @@schema("commerce")
+}model FulfillmentParcel {
   fulfillmentParcelId String   @id @default(uuid()) @map("fulfillment_parcel_id") @db.Uuid
   fulfillmentId       String   @map("fulfillment_id") @db.Uuid
   parcelKey           String   @map("parcel_key")
