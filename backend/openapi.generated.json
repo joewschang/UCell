@@ -9271,6 +9271,240 @@
         ]
       }
     },
+    "/api/v1/admin/commercial-offerings": {
+      "get": {
+        "operationId": "AdminCommercialOfferingController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "tags": [
+          "Admin - Commercial Offerings"
+        ]
+      },
+      "post": {
+        "operationId": "AdminCommercialOfferingController_create",
+        "parameters": [
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OfferingDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "tags": [
+          "Admin - Commercial Offerings"
+        ]
+      }
+    },
+    "/api/v1/admin/commercial-offerings/{id}/versions": {
+      "post": {
+        "operationId": "AdminCommercialOfferingController_version",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OfferingVersionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "tags": [
+          "Admin - Commercial Offerings"
+        ]
+      }
+    },
+    "/api/v1/admin/commercial-offerings/versions/{id}/approve": {
+      "post": {
+        "operationId": "AdminCommercialOfferingController_approve",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApprovalDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "tags": [
+          "Admin - Commercial Offerings"
+        ]
+      }
+    },
+    "/api/v1/admin/commercial-offerings/versions/{id}/activate": {
+      "post": {
+        "operationId": "AdminCommercialOfferingController_activate",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "tags": [
+          "Admin - Commercial Offerings"
+        ]
+      }
+    },
+    "/api/v1/member/commercial-offerings": {
+      "get": {
+        "operationId": "MemberCommercialOfferingController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "memberBearer": []
+          }
+        ],
+        "tags": [
+          "Member - Commercial Offerings"
+        ]
+      }
+    },
     "/api/v1/admin/packages": {
       "get": {
         "operationId": "AdminPackageConfigController_list",
@@ -11291,6 +11525,247 @@
         ]
       }
     },
+    "/api/v1/admin/operations/economic-lineage/orders/{orderNo}": {
+      "get": {
+        "operationId": "adminReadEconomicLineageByOrderNo",
+        "parameters": [
+          {
+            "name": "orderNo",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "以 orderNo 讀取既有不可變經濟與履約來源鏈",
+        "tags": [
+          "Admin - Returns / Workflows / Payout Operations"
+        ]
+      }
+    },
+    "/api/v1/admin/operations/members/{memberNo}/360": {
+      "get": {
+        "operationId": "adminReadMember360ByMemberNo",
+        "parameters": [
+          {
+            "name": "memberNo",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "以 memberNo 讀取授權的 Member 360 事實投影",
+        "tags": [
+          "Admin - Returns / Workflows / Payout Operations"
+        ]
+      }
+    },
+    "/api/v1/admin/operations/exceptions": {
+      "get": {
+        "operationId": "adminOperationalExceptionQueue",
+        "parameters": [
+          {
+            "name": "status",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "take",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "營運例外唯讀佇列",
+        "tags": [
+          "Admin - Returns / Workflows / Payout Operations"
+        ]
+      }
+    },
+    "/api/v1/admin/operations/exceptions/{id}/{status}": {
+      "post": {
+        "operationId": "adminTransitionOperationalException",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "記錄營運例外調查狀態；不修改來源領域資料",
+        "tags": [
+          "Admin - Returns / Workflows / Payout Operations"
+        ]
+      }
+    },
+    "/api/v1/admin/operations/tasks": {
+      "get": {
+        "operationId": "adminOperationalTaskQueue",
+        "parameters": [
+          {
+            "name": "status",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "take",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "營運任務唯讀佇列",
+        "tags": [
+          "Admin - Returns / Workflows / Payout Operations"
+        ]
+      },
+      "post": {
+        "operationId": "adminCreateOperationalTask",
+        "parameters": [
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "建立不改變來源工作流的營運任務",
+        "tags": [
+          "Admin - Returns / Workflows / Payout Operations"
+        ]
+      }
+    },
+    "/api/v1/admin/operations/tasks/{id}/{status}": {
+      "post": {
+        "operationId": "adminTransitionOperationalTask",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "記錄營運任務處置；不修改來源領域資料",
+        "tags": [
+          "Admin - Returns / Workflows / Payout Operations"
+        ]
+      }
+    },
     "/api/v1/admin/operations/payout-batches/{id}/approvals/{stage}": {
       "post": {
         "operationId": "adminApprovePayoutStage",
@@ -11381,6 +11856,35 @@
           }
         ],
         "summary": "記錄外部付款/銀行對帳結果；本系統不直接執行銀行轉帳",
+        "tags": [
+          "Admin - Returns / Workflows / Payout Operations"
+        ]
+      }
+    },
+    "/api/v1/admin/operations/payout-batches/{id}/payment-results": {
+      "post": {
+        "operationId": "adminRecordPayoutPaymentResults",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "記錄公司銀行付款結果；不觸發銀行轉帳",
         "tags": [
           "Admin - Returns / Workflows / Payout Operations"
         ]
@@ -15801,6 +16305,16 @@
             "type": "string",
             "pattern": "^[A-Z][A-Z0-9_-]{0,39}(?:X\\d{6,}|\\d{6,})$",
             "description": "Optional WEB_MEMBER retail referral Ball candidate. Validation is non-binding; the server revalidates it only when the first attributed retail order is committed."
+          },
+          "commercialOfferingCode": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Z0-9_-]{1,39}$",
+            "description": "Optional governed Commercial Offering code. Server resolves one effective version for the requested channel and stores its immutable line snapshot."
+          },
+          "linePurpose": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Z0-9_]{1,39}$",
+            "description": "Optional line purpose. This describes purchase context and never changes Offering category."
           }
         },
         "additionalProperties": false
@@ -15871,6 +16385,14 @@
             "items": {
               "$ref": "#/components/schemas/CreateOrderItemDto"
             }
+          },
+          "commercialOfferingCode": {
+            "type": "string",
+            "description": "受治理的商業 Offering code；指定時會封存有效版本快照"
+          },
+          "linePurpose": {
+            "type": "string",
+            "description": "訂單列用途，例如 ADDITIONAL_PURCHASE；不作為 Offering 類別"
           },
           "sourceReferralToken": {
             "type": "string",
@@ -15961,6 +16483,65 @@
         "type": "object",
         "properties": {}
       },
+      "OfferingDto": {
+        "type": "object",
+        "properties": {
+          "offeringCode": {
+            "type": "string"
+          },
+          "offeringType": {
+            "type": "string",
+            "enum": [
+              "QUALIFICATION_PACKAGE",
+              "REPURCHASE_PLAN",
+              "CORE_PRODUCT",
+              "RETAIL_PRODUCT",
+              "PROMOTIONAL_BUNDLE"
+            ]
+          }
+        },
+        "required": [
+          "offeringCode",
+          "offeringType"
+        ]
+      },
+      "OfferingVersionDto": {
+        "type": "object",
+        "properties": {
+          "channels": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "composition": {
+            "type": "object"
+          },
+          "selectionRule": {
+            "type": "object"
+          },
+          "recognitionProfile": {
+            "type": "object"
+          },
+          "approvalReference": {
+            "type": "string"
+          },
+          "effectiveFrom": {
+            "type": "string"
+          },
+          "effectiveTo": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "channels",
+          "effectiveFrom"
+        ]
+      },
+      "ApprovalDto": {
+        "type": "object",
+        "properties": {}
+      },
       "CreatePackageProfileDto": {
         "type": "object",
         "properties": {}
@@ -16006,10 +16587,6 @@
         "required": [
           "products"
         ]
-      },
-      "ApprovalDto": {
-        "type": "object",
-        "properties": {}
       },
       "ScheduleDto": {
         "type": "object",

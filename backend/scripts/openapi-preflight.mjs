@@ -37,7 +37,7 @@ for(const [route,method] of [['orders','post'],['profile','patch'],['notificatio
  if(!operation?.requestBody)failures.push('Mutation DTO missing: '+route);
 }
 const orderInput=doc.components?.schemas?.MemberCreateOrderDto;
-const approvedOrderFields=['qualificationId','items','packageVersionId','targetQualificationId','selections','sponsorCode','retailReferralCode'];
+const approvedOrderFields=['qualificationId','items','packageVersionId','targetQualificationId','selections','sponsorCode','retailReferralCode','commercialOfferingCode','linePurpose'];
 const orderFields=Object.keys(orderInput?.properties??{});
 if(!orderInput||orderInput.additionalProperties!==false||approvedOrderFields.some(field=>!orderFields.includes(field))||orderFields.some(field=>!approvedOrderFields.includes(field)))failures.push('Member order input must contain exactly the approved retail/package checkout fields');
 if(orderInput?.properties?.sponsorCode?.pattern!=='^[A-Z][A-Z0-9_-]{1,39}$')failures.push('Member qualification checkout Sponsor Code candidate contract missing or invalid');
