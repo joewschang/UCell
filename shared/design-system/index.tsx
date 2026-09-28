@@ -44,3 +44,5 @@ export function AdminCommandBar({children}:{children:ReactNode}){return <div cla
 export function AdminAlertPanel({title,children}:{title:string;children:ReactNode}){return <section className="uc-state" aria-label={title}><h2>{title}</h2>{children}</section>}
 
 export * from './icons';
+
+export * from './theme';

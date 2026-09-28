@@ -1,4 +1,4 @@
-import {AdminAppShell,AdminSidebar,AdminHeader,UCellIcon} from '@ucell/design-system';
+import {AdminAppShell,AdminSidebar,AdminHeader,UCellIcon,ThemePreferenceControl} from '@ucell/design-system';
 import {NavLink,Outlet,useLocation} from 'react-router-dom';
 import {nav,navGroups} from './nav';
 import {useAuth} from '../features/auth/auth';
@@ -19,7 +19,7 @@ export function AppShell(){
       {import.meta.env.DEV && import.meta.env.VITE_ADMIN_DEV_FULL_ACCESS==='true' && <label>DEV Actor Person ID（空白使用 ROOT fixture）<input value={devActor} onChange={e=>{setDevActor(e.target.value);sessionStorage.setItem('ucell_dev_actor_id',e.target.value.trim());queryClient.clear()}}/></label>}
     </AdminSidebar>
     <main className="content" id="admin-main" tabIndex={-1}>
-      <AdminHeader><strong>UCell Operations Console</strong><span>{user?.role} · {import.meta.env.DEV?'Connected DEV':'Operations'}</span></AdminHeader>
+      <AdminHeader><strong>UCell 營運後台</strong><span>{user?.role} · {import.meta.env.DEV?'Connected DEV':'Operations'}</span><ThemePreferenceControl/></AdminHeader>
       {import.meta.env.DEV && import.meta.env.VITE_ADMIN_DEV_FULL_ACCESS==='true' &&
         <div className="callout warning" role="status">本機 Super Admin 完整操作測試：資料寫入獨立 ucell_admin_test；legacy settlement adjustment 未完成。Production / RC Gate 仍 BLOCKED。</div>}
       {import.meta.env.DEV && import.meta.env.VITE_ADMIN_DEV_READ_ONLY==='true' &&

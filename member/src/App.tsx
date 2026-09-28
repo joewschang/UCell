@@ -1,7 +1,7 @@
 import { useQualificationFocus } from './useQualificationFocus';
 import { MemberNavigation, IncomeNavigation } from './MemberNavigation';
 import {MemberPageHeader} from './MemberPageHeader';
-import {MemberAppShell,QualificationSwitcher,MobileActionGrid,MetricCard,MoneyState,LoadingState,ErrorState,EmptyState,QualificationEmblem,UCellIcon} from '@ucell/design-system';
+import {MemberAppShell,ThemePreferenceControl,QualificationSwitcher,MobileActionGrid,MetricCard,MoneyState,LoadingState,ErrorState,EmptyState,QualificationEmblem,UCellIcon} from '@ucell/design-system';
 import { Link, Route, Routes } from 'react-router-dom';
 import { useState, type KeyboardEvent, type ReactNode } from 'react';
 import { useQualification } from './QualificationContext';
@@ -142,7 +142,7 @@ function Me() {
    {!data.isMock&&p.membershipState===null&&<NetworkRegistration person={p} refresh={state.retry}/>}
    {!data.isMock&&['NETWORK_MEMBER','FORMAL_PENDING'].includes(p.membershipState??'')&&<FormalUpgrade/>}
   </>}</Result>
-  <ProfileEditor refresh={state.retry}/>
+  <ProfileEditor refresh={state.retry}/><section className="card"><h3>顯示設定</h3><ThemePreferenceControl/></section>
   <h3>我的經營資格</h3>
   {qualifications.map(q => <article key={q.id} className="card uc-emblem-card"><QualificationEmblem code={q.rank}/><div><strong>球編號 {q.code}</strong><p>方案：{data.displayPlanLevel(q.rank)} · {qualificationActiveLabel(q.active)}</p></div></article>)}
   <EndSession connected={!data.isMock}/>

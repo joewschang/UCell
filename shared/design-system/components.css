@@ -43,3 +43,4 @@
 [data-app=member] nav[aria-label="主要功能"] a{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px}
 [data-app=member] nav[aria-label="主要功能"] .uc-icon{width:21px;height:21px}
 [data-app=member] nav[aria-label="主要功能"] a.active .uc-icon{filter:drop-shadow(0 3px 7px color-mix(in srgb,var(--ucell-primary) 24%,transparent))}
+.uc-theme-control{display:inline-flex;align-items:center;gap:6px;color:var(--ucell-text-secondary);font-size:12px;font-weight:700}.uc-theme-control select{min-height:36px;border:1px solid var(--ucell-border);border-radius:var(--ucell-radius-sm);background:var(--ucell-surface);color:var(--ucell-text-primary);padding:4px 8px;font:inherit}

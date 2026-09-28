@@ -6,10 +6,12 @@ import { QualificationProvider } from './QualificationContext';
 import App from './App';
 import { SessionBoundary } from './SessionBoundary';
 import { AppErrorBoundary } from './AppErrorBoundary';
+import {ThemeProvider,initializeUiTheme} from '@ucell/design-system';
 import './styles.css';
 import 'bootstrap/dist/css/bootstrap-grid.min.css';
 import '@ucell/design-system/styles';
 import './ucell-theme.css';
+initializeUiTheme();
 function Bootstrap() {
     const [state, setState] = useState<'loading' | 'ready' | 'redirect'>('loading');
     const [error, setError] = useState('');
@@ -24,4 +26,4 @@ function Bootstrap() {
         return <main className="loading" role="status">{state === 'redirect' ? '正在前往 LINE 登入…' : 'UCell 會員中心載入中…'}</main>;
     return <SessionBoundary>{referralWarning&&<p role="alert" className="card">{referralWarning}</p>}<QualificationProvider><App /></QualificationProvider></SessionBoundary>;
 }
-createRoot(document.getElementById('root')!).render(<React.StrictMode><AppErrorBoundary><BrowserRouter><Bootstrap /></BrowserRouter></AppErrorBoundary></React.StrictMode>);
+createRoot(document.getElementById('root')!).render(<React.StrictMode><ThemeProvider><AppErrorBoundary><BrowserRouter><Bootstrap /></BrowserRouter></AppErrorBoundary></ThemeProvider></React.StrictMode>);
