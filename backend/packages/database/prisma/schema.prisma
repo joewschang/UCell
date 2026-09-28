@@ -385,6 +385,17 @@ enum InventoryTrackingMode {
   @@schema("commerce")
 }
 
+enum SerializedUnitStatus {
+  AVAILABLE
+  ALLOCATED
+  SHIPPED
+  RETURNED
+  QUARANTINED
+  RECALLED
+
+  @@schema("commerce")
+}
+
 enum InventoryReservationStatus {
   RESERVED
   PARTIALLY_RELEASED
@@ -1102,6 +1113,7 @@ model ProductReference {
   ruleProfiles   ProductRuleProfile[]
   orderLines     OrderLine[]
   inventoryItems InventoryItem[]
+  serialBatches  ProductSerialBatch[]
 
   @@map("product_reference")
   @@schema("commerce")
@@ -1711,11 +1723,55 @@ model Fulfillment {
   qcEvidence FulfillmentQcEvidence[]
   shipments  Shipment[]
   sourceAllocations FulfillmentSourceAllocation[]
+  serialAllocations FulfillmentSerialAllocation[]
 
   @@unique([orderId, fulfillmentKey])
   @@index([orderId, createdAt])
   @@index([status, createdAt])
   @@map("fulfillment")
+  @@schema("commerce")
+}
+
+/// Physical serial batch authority. The prefix and batch sequence form the PBBB
+/// portion of the approved PBBBSSSS v1 business serial; physical product identity
+/// remains the linked ProductReference rather than an inferred serial prefix.
+model ProductSerialBatch {
+  productSerialBatchId String @id @default(uuid()) @map("product_serial_batch_id") @db.Uuid
+  productId String @map("product_id") @db.Uuid
+  serialPrefix String @map("serial_prefix") @db.Char(1)
+  batchSequence Int @map("batch_sequence")
+  batchCode String @map("batch_code")
+  expiresAt DateTime? @map("expires_at") @db.Timestamptz(6)
+  status RecordStatus @default(EFFECTIVE)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  product ProductReference @relation(fields:[productId],references:[productId])
+  units SerializedUnit[]
+
+  @@unique([productId,batchSequence])
+  @@unique([productId,batchCode])
+  @@index([serialPrefix,batchSequence])
+  @@map("product_serial_batch")
+  @@schema("commerce")
+}
+
+/// Server-authoritative individual physical-unit identity. A serial never implies
+/// order, Person, qualification or topology identity.
+model SerializedUnit {
+  serializedUnitId String @id @default(uuid()) @map("serialized_unit_id") @db.Uuid
+  productSerialBatchId String @map("product_serial_batch_id") @db.Uuid
+  serialNo String @unique @map("serial_no") @db.Char(8)
+  serialSequence Int @map("serial_sequence")
+  status SerializedUnitStatus @default(AVAILABLE)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  batch ProductSerialBatch @relation(fields:[productSerialBatchId],references:[productSerialBatchId])
+  fulfillmentAllocations FulfillmentSerialAllocation[]
+
+  @@unique([productSerialBatchId,serialSequence])
+  @@index([status,productSerialBatchId])
+  @@map("serialized_unit")
   @@schema("commerce")
 }
 
@@ -1731,11 +1787,35 @@ model FulfillmentSourceAllocation {
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   fulfillment Fulfillment @relation(fields:[fulfillmentId],references:[fulfillmentId])
   orderLine OrderLine @relation(fields:[orderLineId],references:[orderLineId])
+  serialAllocations FulfillmentSerialAllocation[]
   @@unique([fulfillmentId,orderLineId])
   @@index([orderLineId])
   @@map("fulfillment_source_allocation")
   @@schema("commerce")
-}model FulfillmentParcel {
+}
+
+/// Immutable physical-unit bind to one fulfillment source line. The binding is
+/// separate from ERP handoff and is used for exact scan/quantity verification.
+model FulfillmentSerialAllocation {
+  fulfillmentSerialAllocationId String @id @default(uuid()) @map("fulfillment_serial_allocation_id") @db.Uuid
+  fulfillmentId String @map("fulfillment_id") @db.Uuid
+  fulfillmentSourceAllocationId String @map("fulfillment_source_allocation_id") @db.Uuid
+  serializedUnitId String @unique @map("serialized_unit_id") @db.Uuid
+  scannedByActor String @map("scanned_by_actor")
+  scannedAt DateTime @map("scanned_at") @db.Timestamptz(6)
+  correlationId String @map("correlation_id") @db.Uuid
+
+  fulfillment Fulfillment @relation(fields:[fulfillmentId],references:[fulfillmentId])
+  sourceAllocation FulfillmentSourceAllocation @relation(fields:[fulfillmentSourceAllocationId],references:[fulfillmentSourceAllocationId])
+  serializedUnit SerializedUnit @relation(fields:[serializedUnitId],references:[serializedUnitId])
+
+  @@unique([fulfillmentSourceAllocationId,serializedUnitId])
+  @@index([fulfillmentId,scannedAt])
+  @@map("fulfillment_serial_allocation")
+  @@schema("commerce")
+}
+
+model FulfillmentParcel {
   fulfillmentParcelId String   @id @default(uuid()) @map("fulfillment_parcel_id") @db.Uuid
   fulfillmentId       String   @map("fulfillment_id") @db.Uuid
   parcelKey           String   @map("parcel_key")

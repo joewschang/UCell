@@ -1,0 +1,35 @@
+import { Prisma, PrismaClient } from '@prisma/client';
+import { randomUUID } from 'node:crypto';
+import { FulfillmentSourceAllocationService } from '../src/modules/commerce/fulfillment-source-allocation.service';
+import { FulfillmentSerialScanService } from '../src/modules/commerce/fulfillment-serial-scan.service';
+import { AuditService } from '../src/common/audit/audit.service';
+
+const url=process.env.PHASE2_TEST_DATABASE_URL;
+const describeDb=url?describe:describe.skip;
+describeDb('serialized fulfillment scan',()=>{
+ let db:PrismaClient;
+ beforeAll(()=>db=new PrismaClient({datasources:{db:{url}}}));
+ afterAll(()=>db.$disconnect());
+ it('binds an exact physical serial once and rejects wrong SKU, duplicate and excess scans',async()=>{
+  const token=randomUUID().replace(/-/g,'').slice(0,12);
+  const purchaser=await db.person.create({data:{legalName:`Serial purchaser ${token}`,status:'EFFECTIVE'}});
+  const product=await db.productReference.create({data:{sku:`S${token}`,displayName:'Serialized product',currentPrice:new Prisma.Decimal(100)}});
+  const other=await db.productReference.create({data:{sku:`X${token}`,displayName:'Other product',currentPrice:new Prisma.Decimal(100)}});
+  const order=await db.order.create({data:{purchaserPersonId:purchaser.personId,purpose:'RETAIL',status:'CONFIRMED',grossAmount:new Prisma.Decimal(100),discountAmount:new Prisma.Decimal(0),netAmount:new Prisma.Decimal(100),ruleVersionCode:'R1.0B',lines:{create:{productId:product.productId,skuSnapshot:product.sku,productNameSnapshot:product.displayName,quantity:new Prisma.Decimal(1),unitPrice:new Prisma.Decimal(100),lineAmount:new Prisma.Decimal(100),gpvRateSnapshot:new Prisma.Decimal(0),gpvAmountSnapshot:new Prisma.Decimal(0),ruleProfileSnapshot:{}}}},include:{lines:true}});
+  const fulfillment=await db.fulfillment.create({data:{orderId:order.orderId,fulfillmentKey:`F-${token}`,allocationSnapshotRef:`A-${token}`,fulfillmentPolicySnapshotRef:`P-${token}`}});
+  const source=await db.$transaction(tx=>new FulfillmentSourceAllocationService(db as any).allocate(tx as any,{fulfillmentId:fulfillment.fulfillmentId,orderLineId:order.lines[0].orderLineId,quantity:'1'}));
+  const batch=await db.productSerialBatch.create({data:{productId:product.productId,serialPrefix:'A',batchSequence:1,batchCode:`B-${token}`}});
+  const unit=await db.serializedUnit.create({data:{productSerialBatchId:batch.productSerialBatchId,serialNo:'A0010001',serialSequence:1}});
+  const otherBatch=await db.productSerialBatch.create({data:{productId:other.productId,serialPrefix:'B',batchSequence:1,batchCode:`X-${token}`}});
+  const wrong=await db.serializedUnit.create({data:{productSerialBatchId:otherBatch.productSerialBatchId,serialNo:'B0010001',serialSequence:1}});
+  const service=new FulfillmentSerialScanService(db as any,new AuditService());
+  await expect(service.scan({fulfillmentSourceAllocationId:source.fulfillmentSourceAllocationId,serialNo:wrong.serialNo,actorId:'00000000-0000-0000-0000-000000000301',requestId:'00000000-0000-0000-0000-000000000302',correlationId:'00000000-0000-0000-0000-000000000303'})).rejects.toMatchObject({response:{code:'SERIAL_SKU_MISMATCH'}});
+  const first=await service.scan({fulfillmentSourceAllocationId:source.fulfillmentSourceAllocationId,serialNo:unit.serialNo,actorId:'00000000-0000-0000-0000-000000000301',requestId:'00000000-0000-0000-0000-000000000304',correlationId:'00000000-0000-0000-0000-000000000305'});
+  expect(first.replayed).toBe(false);
+  const replay=await service.scan({fulfillmentSourceAllocationId:source.fulfillmentSourceAllocationId,serialNo:unit.serialNo,actorId:'00000000-0000-0000-0000-000000000301',requestId:'00000000-0000-0000-0000-000000000306',correlationId:'00000000-0000-0000-0000-000000000307'});
+  expect(replay.replayed).toBe(true);
+  expect(await db.fulfillmentSerialAllocation.count({where:{fulfillmentId:fulfillment.fulfillmentId}})).toBe(1);
+  expect((await db.serializedUnit.findUniqueOrThrow({where:{serializedUnitId:unit.serializedUnitId}})).status).toBe('ALLOCATED');
+  expect(await db.auditEvent.count({where:{action:'FULFILLMENT_SERIAL_SCANNED'}})).toBe(1);
+ });
+});
