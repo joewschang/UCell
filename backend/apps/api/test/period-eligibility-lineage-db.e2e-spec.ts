@@ -2,6 +2,7 @@ import {PrismaClient,Prisma} from '@prisma/client';
 import {sealGpvEvent,verifyReplayEnvelope} from '@ucell/database';
 import {randomUUID} from 'node:crypto';
 import {BinaryBonusService} from '../src/modules/bonus/binary-bonus.service';
+import {ReferralBonusService} from '../src/modules/bonus/referral-bonus.service';
 import {BonusQueryService} from '../src/modules/bonus/bonus-query.service';
 import {RuntimeRuleService} from '../src/modules/rules/runtime-rule.service';
 import {SettlementCalendarService} from '../src/modules/settlement/settlement-calendar.service';
@@ -9,10 +10,68 @@ import {orderEconomicEvidence} from '../src/modules/admin-operations/order-econo
 
 const url=process.env.PHASE2_TEST_DATABASE_URL;
 const describeDb=url?describe:describe.skip;
-describeDb('sealed Binary eligibility writer-to-order lineage',()=>{
+describeDb('sealed period eligibility writer-to-order lineage',()=>{
   let db:PrismaClient;
   beforeAll(()=>db=new PrismaClient({datasources:{db:{url}}}));
   afterAll(()=>db.$disconnect());
+
+  it.each(['g1Inactive','g2Inactive','active'])('preserves recognition-time referral and fixed-generation equalization: %s',async mode=>{
+    const rollback='REFERRAL_LINEAGE_ROLLBACK';
+    await expect(db.$transaction(async tx=>{
+      const start=new Date('1901-01-01T00:00:00Z'),end=new Date('1901-01-08T00:00:00Z');
+      const effectiveFrom=new Date('1900-01-01T00:00:00Z'),at=new Date('1901-01-02T00:00:00Z');
+      const rule=`TEST_REFERRAL_${randomUUID()}`;
+      const parameters:Array<[string,string,Prisma.InputJsonValue]>=[
+        ['award.pending.days','*','45'],['pool.referral.rate','*','0.5'],['referral.g1.rate','STARTER','0.15'],
+        ['equalization.rate','STARTER:G2','0.1'],['equalization.rate','STARTER:G3','0.05'],['equalization.rate','STARTER:G4','0.02'],
+        ['settlement.timezone','REFERRAL_K0','UTC'],['settlement.period','REFERRAL_K0',{unit:'WEEK',count:1,anchorLocal:'1901-01-01T00:00:00'}],
+        ['settlement.cut_off','REFERRAL_K0',{localTime:'00:00:00',daysAfterPeriodEnd:0,approvalReference:'TEST_ONLY'}],
+      ];
+      for(const [parameterCode,scopeKey,valueJson] of parameters)await tx.runtimeRuleParameter.create({data:{ruleVersionCode:rule,parameterCode,scopeKey,valueJson,effectiveFrom}});
+      const person=await tx.person.create({data:{legalName:'PRIVATE-REFERRAL-HOLDER'}}),qualifications=[];
+      for(let generation=0;generation<=4;generation++){
+        const q=await tx.qualification.create({data:{currentHolderPersonId:person.personId,planLevelCode:'STARTER',status:'EFFECTIVE',effectiveAt:effectiveFrom}});
+        qualifications.push(q);
+        await tx.qualificationPlanHistory.create({data:{qualificationId:q.qualificationId,planCode:'STARTER',effectiveFrom,sourceType:'TEST_REFERRAL'}});
+        await tx.qualificationStatusHistory.create({data:{qualificationId:q.qualificationId,status:'EFFECTIVE',effectiveFrom,sourceType:'TEST_REFERRAL'}});
+        const inactive=(mode==='g1Inactive'&&generation===1)||(mode==='g2Inactive'&&generation===2);
+        if(!inactive)await tx.activePeriod.create({data:{qualificationId:q.qualificationId,activeFrom:effectiveFrom,sourceType:'TEST_REFERRAL',ruleVersionCode:rule}});
+        if(generation)await tx.sponsorRelationship.create({data:{sponsorQualificationId:q.qualificationId,childQualificationId:qualifications[generation-1].qualificationId,sponsorSequenceNo:1,effectiveFrom}});
+      }
+      const order=await tx.order.create({data:{qualificationId:qualifications[0].qualificationId,purpose:'RETAIL',grossAmount:100,netAmount:100,ruleVersionCode:rule}});
+      const product=await tx.productReference.create({data:{sku:randomUUID(),displayName:'Referral fixture',currentPrice:100}});
+      const line=await tx.orderLine.create({data:{orderId:order.orderId,productId:product.productId,skuSnapshot:product.sku,productNameSnapshot:'Referral fixture',quantity:1,unitPrice:100,lineAmount:100,gpvRateSnapshot:1,gpvAmountSnapshot:100,ruleProfileSnapshot:{}}});
+      const event=await tx.pvLedger.create({data:{qualificationId:qualifications[0].qualificationId,pvType:'GPV',amount:100,sourceType:'ORDER',sourceId:order.orderId,sourceLineId:line.orderLineId,eventType:'GPV_CREATED',ruleVersionCode:rule,occurredAt:at,correlationId:randomUUID()}});
+      await sealGpvEvent(tx,event);
+      // Later eligibility before period close cannot replace recognition-time eligibility.
+      if(mode!=='active')await tx.activePeriod.create({data:{qualificationId:qualifications[mode==='g1Inactive'?1:2].qualificationId,activeFrom:new Date('1901-01-03T00:00:00Z'),sourceType:'TEST_REFERRAL_LATER',ruleVersionCode:rule}});
+      const proxy=new Proxy(tx,{get(target,key){return key==='$transaction'?(callback:any)=>callback(proxy):Reflect.get(target,key);}}) as any;
+      const service=new ReferralBonusService(proxy,new RuntimeRuleService(proxy),new BonusQueryService(proxy),new SettlementCalendarService(proxy));
+      const batch=await service.settle(start,end,rule);
+      expect(batch.status).toBe('FINALIZED');expect(batch.totalGpv.toString()).toBe('100');expect(batch.kFactor.toString()).toBe('1');
+      const awards=await tx.bonusAward.findMany({where:{settlementBatchId:batch.settlementBatchId},orderBy:{generationNo:'asc'}});
+      const expectedAwards=[...(mode==='g1Inactive'?[]:[['REFERRAL',1,'15']]),...(mode==='g2Inactive'?[]:[['EQUALIZATION',2,'1.5']]),['EQUALIZATION',3,'0.75']];
+      expect(awards.map(row=>[row.awardType,row.generationNo,row.payableAmount.toString()])).toEqual(expectedAwards);
+      const decisions=await tx.bonusCalculationEvidence.findMany({where:{settlementBatchId:batch.settlementBatchId},orderBy:{bonusCalculationEvidenceId:'asc'}});
+      expect(decisions).toHaveLength(mode==='active'?1:2);
+      expect(decisions).toContainEqual(expect.objectContaining({recipientQualificationId:qualifications[4].qualificationId,evidenceType:'REFERRAL_MATCHING_ELIGIBILITY',reasonCode:'LOCKED'}));
+      const stored=await tx.historicalReplaySnapshot.findUniqueOrThrow({where:{kind_sourceId:{kind:'REFERRAL_K0',sourceId:batch.settlementBatchId}}});
+      expect(verifyReplayEnvelope(stored).evidence.eligibilityEvidence).toEqual(JSON.parse(JSON.stringify(decisions)));
+      const first=await orderEconomicEvidence(tx,order.orderId,[]),context=first.periodContributions[0].periodContext;
+      expect(context.eligibilityEvidenceStatus).toBe('RECORDED');expect(context.eligibilityDecisions).toHaveLength(decisions.length);
+      expect(context.eligibilityDecisions).toContainEqual(expect.objectContaining({eligibilityType:'REFERRAL_MATCHING_ELIGIBILITY',reasonCode:'LOCKED',theoryAmount:'0.3',entitlementAmount:'0'}));
+      if(mode!=='active')expect(context.eligibilityDecisions).toContainEqual(expect.objectContaining({eligibilityType:mode==='g1Inactive'?'REFERRAL_ELIGIBILITY':'REFERRAL_MATCHING_ELIGIBILITY',reasonCode:'INACTIVE',theoryAmount:mode==='g1Inactive'?'15':'1.5',entitlementAmount:'0'}));
+      expect(first.awards).toHaveLength(expectedAwards.length);expect(first.payables).toEqual([]);
+      expect(first.awards.map(row=>[row.awardType,row.payableAmount]).sort()).toEqual(expectedAwards.map(([kind,,amount])=>[kind,amount]).sort());
+      for(const secret of [person.personId,event.eventId,qualifications[1].qualificationId,'PRIVATE-REFERRAL-HOLDER','calculationDetail'])expect(JSON.stringify(first)).not.toContain(secret);
+      expect(await service.settle(start,end,rule)).toEqual(batch);
+      expect(await tx.bonusAward.findMany({where:{settlementBatchId:batch.settlementBatchId},orderBy:{generationNo:'asc'}})).toEqual(awards);
+      expect(await tx.bonusCalculationEvidence.findMany({where:{settlementBatchId:batch.settlementBatchId},orderBy:{bonusCalculationEvidenceId:'asc'}})).toEqual(decisions);
+      expect(await tx.historicalReplaySnapshot.findUniqueOrThrow({where:{snapshotId:stored.snapshotId}})).toEqual(stored);
+      expect(await orderEconomicEvidence(tx,order.orderId,[])).toEqual(first);
+      throw new Error(rollback);
+    },{isolationLevel:Prisma.TransactionIsolationLevel.Serializable,timeout:30000})).rejects.toThrow(rollback);
+  },40000);
 
   it.each([false,true])('preserves historical Active=%s through actual settlement, sealing and read',async active=>{
     const rollback='PERIOD_ELIGIBILITY_ROLLBACK';

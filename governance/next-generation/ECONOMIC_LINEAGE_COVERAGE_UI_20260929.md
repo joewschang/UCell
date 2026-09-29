@@ -23,6 +23,14 @@ The page presents dated events chronologically, with current/undated state separ
 
 ## Validation and limitations
 
+### Follow-up: actual Referral and Equalization settlement-to-lineage verification
+
+The real ReferralBonusService now has three rollback-only PostgreSQL writer-to-reader cases alongside the Binary cases. A sealed 100 GPV source uses fixed sponsor generations and historical STARTER rates: G1 theory 15, G2 theory 1.5, G3 theory 0.75, and locked G4 theory 0.3. Cases cover inactive G1, inactive G2, and active G1–G3 with G4 still locked by its recorded direct count. Inactive G1 does not erase the independent G2/G3 matching theory base. Later Active acquired after recognition but before settlement does not replace the source snapshot's eligibility.
+
+Actual awards, serialized eligibility rows, verified sealed snapshots and the order projection are compared. Referral/Equalization awards retain their direct GPV attribution, while zero/locked decisions remain whole-period context and do not imply payment. Finalized retries preserve award/evidence/snapshot rows and stable reads; private identifiers and calculation JSON stay excluded. These are fixture-level engine integrations using real calendar validation and historical graph capture, not browser or all-engine certification.
+
+Focused isolated **2 suites / 74 tests PASS**, fresh **0→107 migrations**, **162 baseline assertions**, cleanup PASS. Log: `C:/UCell/logs/referral-eligibility-writer-20260929.log`. This slice changes tests/docs only; full API regression was last 143 suites / 1,043 tests at 84c02c9 and was not repeated for these three additional rollback cases. Browser acceptance remains pending and Stage remains NOT READY.
+
 ### Follow-up: actual Binary settlement-to-lineage verification
 
 `period-eligibility-lineage-db.e2e-spec.ts` now drives the real BinaryBonusService, approved-calendar validator, historical graph capture, sealSettlement writer and orderEconomicEvidence reader in a rollback-only PostgreSQL transaction. Its unique rule version and past test calendar isolate the fixture from current qualifications and cut-off timing. No settlement, eligibility or sealing service is mocked; the transaction proxy only keeps nested service work inside the rollback transaction.
