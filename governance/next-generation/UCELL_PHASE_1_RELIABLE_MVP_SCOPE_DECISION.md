@@ -5096,3 +5096,206 @@ Those remain ERP/accounting responsibilities.
 Current R1.0B cannot declare local implementation closure or Stage RC readiness until the UCell compensation-control and ERP-reconciliation boundaries above are implemented and verified, except independently documented external EZTooL/account-mapping blockers.
 
 No Stage or Production deployment is authorized by this amendment.
+
+
+## 36. R1.0B CR-BATCH-01 — Same-Order Same-SKU Return Substitution Authority
+
+**Status:** OWNER-APPROVED / INCLUDED_IN_CURRENT_BATCH / SUPERSEDES STRICT OFFERING-SERIAL RETURN MATCHING
+**Approved date:** 2026-09-29 (Asia/Taipei)
+**Batch:** R1.0B-CR-BATCH-01
+
+This section clarifies serialized-return behavior when physically identical units of the same SKU were shipped together for multiple Commercial Offerings/Purposes in the same commerce/fulfillment context.
+
+### RSE-1 Business case
+
+Example authority case:
+
+- one member/order;
+- STARTER Qualification Package selects TIP-777 ×3;
+- Seasonal/quarter Repurchase Plan selects TIP-777 ×2;
+- one physical shipment contains TIP-777 ×5;
+- all five units receive serialized-unit scan/binding;
+- member later requests return of the Repurchase Plan TIP-777 ×2;
+- member cannot reasonably know which two physically identical boxes were originally allocated to which commercial source.
+
+The member may return any two otherwise eligible TIP-777 units from the approved same-order/same-shipment homogeneous pool to satisfy the Repurchase Plan return quantity.
+
+### RSE-2 Physical provenance versus economic return allocation
+
+Two concepts MUST remain separate.
+
+**Physical provenance is immutable:**
+
+Serialized Unit
+→ Product/SKU/Batch
+→ Shipment
+→ Fulfillment
+→ original Order
+→ original member/customer.
+
+Original fulfillment/source allocation evidence is not rewritten.
+
+**Economic Return Allocation is append-only:**
+
+ReturnCase
+→ requested return purpose/source Offering
+→ SKU/quantity entitlement being returned
+→ actual received Serialized Units
+→ approved substitution decision/evidence
+→ economic Return/Recovery consequences.
+
+A substituted unit is NOT retroactively rewritten as having originally belonged to the returned Offering.
+
+### RSE-3 Return economic authority
+
+The ReturnCase defines the economic meaning of the return.
+
+For a Repurchase Plan return, accepted physical units satisfy the approved Repurchase return entitlement and downstream consequences remain Repurchase consequences, including where applicable:
+- future recognition reduction/cancellation;
+- already-recognized RPV/related Recovery;
+- Payable offset/future Recovery.
+
+Do not infer return economic meaning solely from the originally assigned physical Serial→Offering allocation.
+
+### RSE-4 Initial substitution eligibility
+
+For R1.0B, automatic same-SKU substitution is permitted only when all required conditions are true:
+
+- same member/customer;
+- same original UCell Order;
+- same approved physical shipment/fulfillment substitution group;
+- same SKU;
+- same approved physical product specification for substitution;
+- unit was actually shipped under that eligible order/shipment context;
+- unit has not already been returned/consumed by another accepted return;
+- unit is returnable under current physical eligibility;
+- unit is not quarantined/recalled/ineligible;
+- accepted substituted quantity does not exceed the ReturnCase economic entitlement;
+- substitution does not violate a more restrictive stored Offering/Promotion/lot/return rule.
+
+Do not implement this as merely sameSku=true.
+
+### RSE-5 Non-substitutable cases
+
+Fail closed when the candidate unit belongs to:
+- another member/customer;
+- another order unless a later explicit cross-order rule is approved;
+- another SKU;
+- an unrelated shipment/fulfillment group;
+- an already-returned unit;
+- a recalled/quarantined/ineligible unit;
+- a product/lot/specification that is not equivalent for the governed return;
+- an Offering with a stored non-substitution restriction.
+
+No silent manual rebinding is permitted.
+
+### RSE-6 Homogeneous physical pool
+
+UCell may represent the physical shipment as a homogeneous same-SKU pool while retaining Commercial Offering/Purpose quantity provenance.
+
+Example:
+
+Order:
+- Qualification Package → TIP-777 ×3
+- Repurchase Plan → TIP-777 ×2
+
+Physical Shipment:
+- TIP-777 ×5 serialized units.
+
+The member/warehouse does not need to know which physical box was conceptually assigned to which commercial source when all substitution conditions are satisfied.
+
+The system still retains the original allocation evidence for audit/explain.
+
+### RSE-7 Return receiving UX
+
+Admin/Warehouse return receiving must show:
+- ReturnCase business reference;
+- member;
+- economic return source/purpose, e.g. 季重銷退貨;
+- required SKU/quantity;
+- received quantity;
+- candidate serial scan result;
+- substitution eligibility/result;
+- remaining quantity;
+- rejection reason when not eligible.
+
+Example:
+
+季重銷退貨
+TIP-777 應收 2
+已收 1 / 2
+
+E0010001 — 已接受（同訂單同SKU替代）
+E0010004 — 待掃描/已接受
+
+Do not require the member to identify the original Offering-assigned serial when homogeneous substitution is allowed.
+
+### RSE-8 Audit / lineage
+
+For each accepted substituted unit preserve evidence sufficient to explain:
+- original physical Shipment;
+- original serialized unit;
+- original Order/OrderLine/Offering/Purpose allocation where recorded;
+- ReturnCase;
+- requested economic return Offering/Purpose;
+- substitution rule/version;
+- eligibility result;
+- acceptedAt/actor;
+- resulting Return/Recovery lineage.
+
+Original allocation remains immutable.
+
+### RSE-9 Concurrency/idempotency
+
+Receiving must be concurrency-safe.
+
+Two ReturnCases cannot successfully consume the same Serialized Unit.
+
+Repeated scan/retry for the same accepted ReturnCase/unit replays the existing result without a second return effect.
+
+Concurrent different-unit receipt cannot exceed the ReturnCase remaining quantity.
+
+### RSE-10 ERP bridge consequence
+
+ERP return projection uses the actual received physical SKU/quantity/serial facts.
+
+UCell member-economic Return/Recovery uses the ReturnCase economic source/purpose.
+
+The ERP bridge must not reinterpret a substituted physical serial as changing the original UCell Offering history.
+
+Both projections link through the same accepted ReturnCase/business reference.
+
+### RSE-11 Required Golden/E2E
+
+Add at minimum:
+
+- SAME_ORDER_SAME_SKU_RETURN_SUBSTITUTION = PASS
+- RETURN_SUBSTITUTION_PRESERVES_ORIGINAL_PROVENANCE = PASS
+- RETURN_SUBSTITUTION_USES_RETURNCASE_ECONOMIC_PURPOSE = PASS
+- RETURN_SUBSTITUTION_SAME_MEMBER_REQUIRED = PASS
+- RETURN_SUBSTITUTION_SAME_ORDER_REQUIRED = PASS
+- RETURN_SUBSTITUTION_SAME_SKU_REQUIRED = PASS
+- RETURN_SUBSTITUTION_ALREADY_RETURNED_REJECTED = PASS
+- RETURN_SUBSTITUTION_RECALLED_QUARANTINED_REJECTED = PASS
+- RETURN_SUBSTITUTION_QUANTITY_LIMIT = PASS
+- RETURN_SUBSTITUTION_IDEMPOTENT = PASS
+- RETURN_SUBSTITUTION_CONCURRENT_SINGLE_CONSUMPTION = PASS
+- RETURN_SUBSTITUTION_ERP_PHYSICAL_FACTS_PRESERVED = PASS
+- RETURN_SUBSTITUTION_ECONOMIC_RECOVERY_CORRECT = PASS.
+
+The canonical Golden scenario MUST include:
+STARTER TIP-777 ×3 + quarter Repurchase TIP-777 ×2 → one shipment of five serialized TIP-777 units → any two eligible units from the governed homogeneous pool can satisfy the Repurchase return while original provenance remains unchanged.
+
+### RSE-12 Scope supersession
+
+Any earlier implementation assumption requiring a returned serialized unit to match the exact original Commercial Offering allocation is superseded for the governed homogeneous same-order/same-SKU substitution case defined here.
+
+Strict provenance remains mandatory; only the ReturnCase fulfillment substitution rule is relaxed.
+
+### RSE-13 Queue / closure
+
+Add this feature explicitly to the current autonomous implementation queue under Fulfillment/Return/ERP closure.
+
+R1.0B Fulfillment/Return closure cannot PASS until the Golden/E2E above are verified.
+
+No Stage or Production deployment is authorized by this amendment.
