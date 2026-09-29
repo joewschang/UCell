@@ -23,6 +23,12 @@ The page presents dated events chronologically, with current/undated state separ
 
 ## Validation and limitations
 
+### Follow-up: return Active supersession and persistence repairs
+
+The order read now follows exact ReturnCase → reversal decision → accumulator → Active replacement/superseded interval links, labels whole-month and cumulative-delta boundaries, and never claims current eligibility from historical intervals. The actual shared writer tests exposed and repaired the Taipei timestamp-versus-DATE month lookup and the database constraint that rejected typed zero-length removal records. Migration 107 preserves old rows and permits only explicitly superseding inactive removals. See [Active return replay evidence](ACTIVE_RETURN_REPLAY_20260929.md).
+
+Database/API/Worker builds and migration preflight PASS. Isolated 106→107 preservation/guard verification PASS. Final full isolated API **142 suites / 1027 tests PASS**, 107 migrations, 162 baseline assertions and cleanup PASS; Admin typecheck/build and **36 files / 139 tests PASS**. A shared-database test-fixture contamination found in the first full run was repaired with transaction rollback, without relaxing analytics completeness checks. Browser acceptance, exhaustive replay graphs and full business certification remain open.
+
 ### Follow-up: historical month and Active context
 
 Each recorded original consumption decision now joins its exact QualificationMonthAccumulatorEvidence and only ActiveIntervalEvidence sourced by that accumulator. The reader checks unique original linkage, qualification/month/rule, eligible delta, cumulative arithmetic and EPV balance; an original Active interval must belong to a threshold-crossing accumulator and agree with the historical decision timestamp and subject. Conflicts fail closed. Reads do not consult current Active flags or join other orders' accumulators by qualification coincidence.

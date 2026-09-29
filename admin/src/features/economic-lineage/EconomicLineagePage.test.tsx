@@ -52,9 +52,15 @@ it('distinguishes recorded zero consumption from missing eligible PV',async()=>{
 });
 it('labels monthly Active context as historical and separate from order totals',async()=>{
  vi.mocked(get).mockResolvedValue({data:{...fixture,economicEvidence:{consumptionRecognitions:[{basis:'RECORDED_CONSUMPTION_DECISION',monthContext:{basis:'HISTORICAL_MONTH_CONTEXT_NOT_ORDER_TOTAL',cumulativeBefore:'1000',eligibleDelta:'200',cumulativeAfter:'1200',activeThreshold:'1200',thresholdCrossed:true,activeIntervals:[{activeFrom:'2026-09-10T00:00:00Z',activeTo:'2026-09-30T16:00:00Z'}]}},{basis:'RECORDED_CONSUMPTION_DECISION',monthContext:null}]}}});
- const view=await render();await vi.waitFor(()=>expect(JSON.stringify(view.toJSON())).toContain('認列當時的月累計背景'));
+ const view=await render();await vi.waitFor(()=>expect(JSON.stringify(view.toJSON())).toContain('歷史月累計背景'));
  const output=JSON.stringify(view.toJSON());
  for(const label of ['本筆跨越門檻','歷史資格起始','不能全歸給本單','不代表目前 Active 狀態','缺少對應的歷史月累計證據'])expect(output).toContain(label);
+ act(()=>view.unmount());
+});
+it('shows superseded Active evidence without claiming current qualification',async()=>{
+ vi.mocked(get).mockResolvedValue({data:{...fixture,economicEvidence:{returnActiveReplays:[{basis:'RETURN_MONTH_REPLAY_NOT_CURRENT_ACTIVE',replacements:[{status:'HISTORICAL_INTERVAL_REMOVED',previousInterval:{activeFrom:'2026-09-01T00:00:00Z',activeTo:'2026-09-30T16:00:00Z'}}]}]}}});
+ const view=await render();await vi.waitFor(()=>expect(JSON.stringify(view.toJSON())).toContain('退貨後資格變更'));
+ for(const label of ['歷史資格區間已取消','被替代的歷史區間','不代表目前 Active 狀態','月差額不能相加'])expect(JSON.stringify(view.toJSON())).toContain(label);
  act(()=>view.unmount());
 });
 it('hides cached financial evidence after a failed refresh and allows retry',async()=>{

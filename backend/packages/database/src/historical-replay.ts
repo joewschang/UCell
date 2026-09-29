@@ -5,6 +5,7 @@ import {bindCompanyLeaderProfile,effectiveCompanyParameters} from './company-pro
 import { Prisma } from '@prisma/client';
 import { createHash, randomUUID } from 'node:crypto';
 import { captureParameters, ParameterSnapshot, pending, snapshotDecimal, verifySnapshot } from './parameter-snapshot';
+import { taipeiMonth } from './recognition-active';
 
 const dec=(value:string|number|Prisma.Decimal)=>new Prisma.Decimal(value);
 const money=(value:Prisma.Decimal)=>value.toDecimalPlaces(4,Prisma.Decimal.ROUND_HALF_UP);
@@ -446,11 +447,15 @@ export async function replayEpvMonth(tx:Prisma.TransactionClient,orderId:string,
  */
 export async function appendQualificationMonthReplayEvidence(tx:Prisma.TransactionClient,input:{marker:any;envelopes:ReplayEnvelope[];remaining:Map<string,Prisma.Decimal>;actionKey:string;returnCaseId:string;stateHash:string}) {
   const first=input.envelopes[0]??pending('HISTORICAL_SNAPSHOT_MISSING','EPV month has no sealed recognition evidence');
-  const monthStart=new Date(first.inputs.monthStart),monthEnd=new Date(first.inputs.monthEnd);
+  const month=taipeiMonth(new Date(first.at)),monthEnd=new Date(first.inputs.monthEnd);
+  // Recognition and accumulator columns are SQL DATE month keys, not instants.
+  const monthStart=month.calendarMonth;
   const originals=await tx.consumptionRecognitionEvent.findMany({where:{qualificationId:input.marker.qualificationId,recognitionMonth:monthStart,direction:'ORIGINAL'},orderBy:[{recognizedAt:'asc'},{consumptionRecognitionEventId:'asc'}]});
   // Migration 41 is prospective. Legacy sealed EPV snapshots remain replayable,
   // but cannot be backfilled by manufacturing recognition evidence.
   if(!originals.length) return {skipped:'PRE_V3_RECOGNITION'} as const;
+  if(month.start.getTime()!==new Date(first.inputs.monthStart).getTime()||month.end.getTime()!==monthEnd.getTime())
+    pending('HISTORICAL_SNAPSHOT_CORRUPT','Consumption replay month differs from its Taipei recognition period');
   const prior=await tx.qualificationMonthAccumulatorEvidence.findFirst({where:{qualificationId:input.marker.qualificationId,calendarMonth:monthStart},orderBy:{sequenceNo:'desc'}});
   if(!prior) return {skipped:'PRE_V3_ACCUMULATOR'} as const;
   const before=originals.reduce((sum:any,row:any)=>sum.add(row.eligibleAmount),dec(0));

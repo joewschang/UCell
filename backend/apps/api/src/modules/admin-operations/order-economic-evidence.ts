@@ -4,6 +4,7 @@ import { createHash } from 'node:crypto';
 import {orderReplayPostingEvidence} from './order-replay-posting-evidence';
 import {recognitionRetentionEvidence} from './recognition-retention-evidence';
 import {readOrderRetailSnapshots} from '../order/retail-referral-snapshot-read';
+import {returnActiveEvidence} from './return-active-evidence';
 
 // References join this projection without exposing internal UUIDs or identities.
 const reference = (kind:string,id:string) => `${kind}:${createHash('sha256').update(`${kind}:${id}`).digest('hex')}`;
@@ -234,6 +235,7 @@ export async function orderEconomicEvidence(tx:Prisma.TransactionClient,orderId:
     retailRecognitionInputs,
     consumptionRecognitions:await consumptionRecognitions(tx,orderId,pv,orderLines.map(row=>row.orderLineId)),
     returnReplays:await returnReplayEvidence(tx,returnIds),
+    returnActiveReplays:await returnActiveEvidence(tx,returnIds),
     pvEvents:pv.map(row=>({reference:reference('PV',row.eventId),pvType:row.pvType,eventType:row.eventType,amount:row.amount.toString(),occurredAt:row.occurredAt.toISOString()})),
     awards:[...awards.values()].sort((a,b)=>a.occurredAt.getTime()-b.occurredAt.getTime()||a.bonusAwardId.localeCompare(b.bonusAwardId)).map(row=>({reference:reference('AWARD',row.bonusAwardId),sourcePvReference:row.sourceEventId&&pv.some(p=>p.eventId===row.sourceEventId)?reference('PV',row.sourceEventId):null,sourceAwardReference:row.sourceAwardId&&awards.has(row.sourceAwardId)?reference('AWARD',row.sourceAwardId):null,sourceOrderLineReference:row.awardType==='RETAIL_REFERRAL'&&orderLines.some(line=>line.orderLineId===row.sourceEventId)?reference('ORDER_LINE',row.sourceEventId!):null,retailRecognition:row.awardType==='RETAIL_REFERRAL'?retailRecognition.get(row.bonusAwardId)??null:null,activeAtRecognition:row.activeSnapshot,kFactor:row.kFactor.toString(),awardType:row.awardType,theoryAmount:row.theoryAmount.toString(),payableAmount:row.payableAmount.toString(),occurredAt:row.occurredAt.toISOString(),ruleVersionCode:row.ruleVersionCode,parameterSnapshotHash:row.parameterSnapshotHash})),
     payables:payables.map(row=>({reference:reference('PAYABLE',row.payableEntryId),awardReference:reference('AWARD',row.sourceId),grossAmount:row.grossAmount.toString(),status:row.status,availableAt:row.availableAt.toISOString(),payout:row.payoutLine?{status:row.payoutLine.payoutBatch.status,periodStart:row.payoutLine.payoutBatch.periodStart.toISOString(),periodEnd:row.payoutLine.payoutBatch.periodEnd.toISOString()}:null})),

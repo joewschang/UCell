@@ -12,6 +12,14 @@ describeDb('ORDER_ECONOMIC_EVIDENCE_REAL_DB',()=>{
   let db:PrismaClient;
   beforeAll(()=>db=new PrismaClient({datasources:{db:{url}}}));
   afterAll(()=>db.$disconnect());
+  async function rollbackCase(work:()=>Promise<void>){
+    const client=db,marker='LINEAGE_FIXTURE_ROLLBACK';
+    await expect(client.$transaction(async tx=>{
+      const proxy=new Proxy(tx,{get(target,key){return key==='$transaction'?(callback:any)=>callback(proxy):Reflect.get(target,key);}});
+      db=proxy as any;
+      try{await work();throw new Error(marker);}finally{db=client;}
+    },{isolationLevel:Prisma.TransactionIsolationLevel.Serializable,timeout:30000})).rejects.toThrow(marker);
+  }
   async function fixture(ruleVersionCode='R1'){
     const person=await db.person.create({data:{legalName:'Private lineage holder'}});
     const q=await db.qualification.create({data:{currentHolderPersonId:person.personId,planLevelCode:'STARTER'}});
@@ -36,6 +44,7 @@ describeDb('ORDER_ECONOMIC_EVIDENCE_REAL_DB',()=>{
     expect(await db.payableEntry.findUniqueOrThrow({where:{payableEntryId:payable.payableEntryId}})).toEqual(payable);
   });
   it.each([['GPV',true],['GPV',false],['EPV',true],['EPV',false]] as const)('projects actual %s recognition with eligibility %s including zero decisions',async(purpose,eligible)=>{
+    await rollbackCase(async()=>{
     const f=await fixture(),other=await fixture();
     const product=await db.productReference.create({data:{sku:randomUUID(),displayName:'Recognition input',currentPrice:100}});
     const line=await db.orderLine.create({data:{orderId:f.order.orderId,productId:product.productId,skuSnapshot:product.sku,productNameSnapshot:'Recognition input',quantity:1,unitPrice:100,lineAmount:100,gpvRateSnapshot:1,gpvAmountSnapshot:100,ruleProfileSnapshot:{}}});
@@ -49,16 +58,20 @@ describeDb('ORDER_ECONOMIC_EVIDENCE_REAL_DB',()=>{
     expect((await f.read()).economicEvidence).toEqual(evidence);
     for(const secret of [f.q.qualificationId,line.orderLineId,original.recognition.consumptionRecognitionEventId,input.productProfileVersion,original.recognition.correlationId])expect(JSON.stringify(evidence.consumptionRecognitions)).not.toContain(secret);
     expect(await db.consumptionRecognitionEvent.findUnique({where:{consumptionRecognitionEventId:original.recognition.consumptionRecognitionEventId}})).toEqual(original.recognition);
+    });
   });
   it.each(['foreignLine','conflictingVolume','missingVolume'])('checks stored consumption evidence boundaries: %s',async mode=>{
+    await rollbackCase(async()=>{
     const f=await fixture(),other=await fixture();
     const product=await db.productReference.create({data:{sku:randomUUID(),displayName:'Recognition conflict',currentPrice:100}});
     const line=await db.orderLine.create({data:{orderId:mode==='foreignLine'?other.order.orderId:f.order.orderId,productId:product.productId,skuSnapshot:product.sku,productNameSnapshot:'Recognition conflict',quantity:1,unitPrice:100,lineAmount:100,gpvRateSnapshot:1,gpvAmountSnapshot:100,ruleProfileSnapshot:{}}});
     await db.consumptionRecognitionEvent.create({data:{qualificationId:f.q.qualificationId,sourceType:'ORDER',sourceId:f.order.orderId,sourceLineId:mode==='conflictingVolume'?null:line.orderLineId,eligible:mode==='missingVolume',eligibleAmount:mode==='missingVolume'?100:0,exclusionReasonCode:mode==='missingVolume'?null:'ZERO_ELIGIBLE_AMOUNT',recognitionPurpose:'GPV',productProfileVersion:'TEST',ruleVersionCode:'R1',parameterSnapshotHash:'a'.repeat(64),recognizedAt:f.pv.occurredAt,recognitionMonth:new Date('2026-09-01'),idempotencyKey:randomUUID(),correlationId:randomUUID(),evidenceHash:'b'.repeat(64)}});
     if(mode==='missingVolume')expect((await f.read()).economicEvidence.consumptionRecognitions).toEqual([expect.objectContaining({eligible:true,eligibleAmount:'100',volumeEvidence:'NO_RECORDED_VOLUME',sourcePvReference:null})]);
     else await expect(f.read()).rejects.toMatchObject({response:{code:'HISTORICAL_SNAPSHOT_CORRUPT'}});
+    });
   });
   it('shows exact original monthly context and crossing interval without claiming current Active',async()=>{
+    await rollbackCase(async()=>{
     const f=await fixture(),at=new Date('2026-09-10T00:00:00Z');
     const base={qualificationId:f.q.qualificationId,amount:1000,eligible:true,concreteVolumeType:'GPV' as const,productProfileVersion:'TEST',ruleVersionCode:'R1',parameterSnapshotHash:'a'.repeat(64),recognizedAt:at,activeThreshold:1200};
     await db.$transaction(tx=>recognizeConsumption(tx,{...base,sourceType:'OTHER_ORDER',sourceId:randomUUID()}),{isolationLevel:Prisma.TransactionIsolationLevel.Serializable});
@@ -76,12 +89,15 @@ describeDb('ORDER_ECONOMIC_EVIDENCE_REAL_DB',()=>{
       expect(await db.qualificationMonthAccumulatorEvidence.findUnique({where:{qualificationMonthAccumulatorEvidenceId:original.accumulator!.qualificationMonthAccumulatorEvidenceId}})).toEqual(original.accumulator);
       expect(JSON.stringify(evidence)).not.toContain(original.accumulator!.qualificationMonthAccumulatorEvidenceId);
     }
+    });
   });
   it('rejects an accumulator linked to the decision but owned by another qualification',async()=>{
+    await rollbackCase(async()=>{
     const f=await fixture(),other=await fixture();
     const decision=await db.consumptionRecognitionEvent.create({data:{qualificationId:f.q.qualificationId,sourceType:'ORDER',sourceId:f.order.orderId,eligible:true,eligibleAmount:100,recognitionPurpose:'GPV',productProfileVersion:'TEST',ruleVersionCode:'R1',parameterSnapshotHash:'a'.repeat(64),recognizedAt:f.pv.occurredAt,recognitionMonth:new Date('2026-09-01'),idempotencyKey:randomUUID(),correlationId:randomUUID(),evidenceHash:'b'.repeat(64)}});
     await db.qualificationMonthAccumulatorEvidence.create({data:{qualificationId:other.q.qualificationId,calendarMonth:decision.recognitionMonth,consumptionRecognitionEventId:decision.consumptionRecognitionEventId,cumulativeBefore:0,eligibleDelta:100,cumulativeAfter:100,activeThreshold:1200,thresholdCrossed:false,epvAfter:100,sequenceNo:1,ruleVersionCode:'R1',evidenceHash:'a'.repeat(64),idempotencyKey:randomUUID()}});
     await expect(f.read()).rejects.toMatchObject({response:{code:'HISTORICAL_SNAPSHOT_CORRUPT'}});
+    });
   });
   async function periodFixture(kind:string){
     const f=await fixture('R1.0B'),at=f.pv.occurredAt;

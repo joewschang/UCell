@@ -1,0 +1,40 @@
+import {PrismaClient,Prisma} from '@prisma/client';
+import {randomUUID} from 'node:crypto';
+import {recognizeConsumption} from '@ucell/database';
+import {appendQualificationMonthReplayEvidence} from '../../../packages/database/src/historical-replay';
+import {returnActiveEvidence} from '../src/modules/admin-operations/return-active-evidence';
+
+const url=process.env.PHASE2_TEST_DATABASE_URL;
+const describeDb=url?describe:describe.skip;
+describeDb('Active month replay persisted evidence',()=>{
+  let db:PrismaClient;
+  beforeAll(()=>db=new PrismaClient({datasources:{db:{url}}}));
+  afterAll(()=>db.$disconnect());
+  it.each([1300,1100])('replays Taipei September to %s and preserves original evidence',async retained=>{
+    const person=await db.person.create({data:{legalName:'Active replay fixture'}});
+    const q=await db.qualification.create({data:{currentHolderPersonId:person.personId,planLevelCode:'STARTER'}});
+    const at=new Date('2026-09-10T00:00:00Z'),orderId=randomUUID();
+    const original=await db.$transaction(tx=>recognizeConsumption(tx,{qualificationId:q.qualificationId,sourceType:'TEST_ORDER',sourceId:orderId,amount:1400,eligible:true,concreteVolumeType:'GPV',productProfileVersion:'TEST',ruleVersionCode:'R1',parameterSnapshotHash:'a'.repeat(64),recognizedAt:at,activeThreshold:1200}),{isolationLevel:Prisma.TransactionIsolationLevel.Serializable});
+    const active=await db.activeIntervalEvidence.findFirstOrThrow({where:{qualificationId:q.qualificationId}});
+    const input={marker:{qualificationId:q.qualificationId},envelopes:[{ruleVersionCode:'R1',at:at.toISOString(),parameters:{hash:'a'.repeat(64)},inputs:{monthStart:'2026-08-31T16:00:00.000Z',monthEnd:'2026-09-30T16:00:00.000Z',timezone:'Asia/Taipei',orderId}} as any],remaining:new Map([[orderId,new Prisma.Decimal(retained)]]),actionKey:randomUUID(),returnCaseId:randomUUID(),stateHash:'b'.repeat(64)};
+    const result=await db.$transaction(tx=>appendQualificationMonthReplayEvidence(tx,input));
+    expect(result).toMatchObject({active:retained>=1200});
+    const replacement=await db.activeIntervalEvidence.findFirstOrThrow({where:{supersedesActiveEvidenceId:active.activeIntervalEvidenceId}});
+    expect(replacement.calendarMonth.toISOString()).toBe('2026-09-01T00:00:00.000Z');
+    expect(replacement.reasonCode).toBe(retained>=1200?'HISTORICAL_RETURN_REPLAY':'HISTORICAL_RETURN_REPLAY_INACTIVE');
+    expect(replacement.activeFrom.toISOString()).toBe(retained>=1200?at.toISOString():'2026-09-30T16:00:00.000Z');
+    expect(replacement.activeTo.toISOString()).toBe('2026-09-30T16:00:00.000Z');
+    const read=()=>db.$transaction(tx=>returnActiveEvidence(tx,[input.returnCaseId]));
+    const evidence=await read();
+    expect(evidence).toEqual([expect.objectContaining({basis:'RETURN_MONTH_REPLAY_NOT_CURRENT_ACTIVE',monthContext:expect.objectContaining({cumulativeBefore:'1400',cumulativeAfter:String(retained),eligibleDelta:String(retained-1400)}),replacements:[expect.objectContaining({status:retained>=1200?'HISTORICAL_INTERVAL_REPLACED':'HISTORICAL_INTERVAL_REMOVED',previousInterval:expect.objectContaining({activeFrom:at.toISOString()})})]})]);
+    expect(await db.$transaction(tx=>returnActiveEvidence(tx,[randomUUID()]))).toEqual([]);
+    expect(await read()).toEqual(evidence);
+    for(const secret of [q.qualificationId,active.activeIntervalEvidenceId,replacement.activeIntervalEvidenceId,input.returnCaseId,input.actionKey])expect(JSON.stringify(evidence)).not.toContain(secret);
+    await db.$transaction(tx=>appendQualificationMonthReplayEvidence(tx,input));
+    expect(await db.activeIntervalEvidence.count({where:{qualificationId:q.qualificationId}})).toBe(2);
+    expect(await db.consumptionRecognitionEvent.findUnique({where:{consumptionRecognitionEventId:original.recognition.consumptionRecognitionEventId}})).toEqual(original.recognition);
+    expect(await db.activeIntervalEvidence.findUnique({where:{activeIntervalEvidenceId:active.activeIntervalEvidenceId}})).toEqual(active);
+    await db.activeIntervalEvidence.create({data:{...replacement,activeIntervalEvidenceId:randomUUID(),idempotencyKey:randomUUID()}});
+    await expect(read()).rejects.toMatchObject({response:{code:'HISTORICAL_SNAPSHOT_CORRUPT'}});
+  });
+});
