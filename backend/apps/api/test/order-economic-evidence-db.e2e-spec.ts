@@ -128,6 +128,16 @@ describeDb('ORDER_ECONOMIC_EVIDENCE_REAL_DB',()=>{
     await db.$transaction(tx=>storeReplaySnapshot(tx,{...envelope,evidence:{...envelope.evidence,eligibilityEvidence:fault==='shape'?{}:fault==='duplicate'?[decision,decision]:[decision]}}));
     await expect(f.read()).rejects.toMatchObject({response:{code:'HISTORICAL_SNAPSHOT_CORRUPT'}});
   });
+  it.each(['NaN','-0.1','1.1',null])('rejects invalid sealed settlement factor %s',async k=>{
+    const {f,envelope}=await periodFixture('BINARY_K1');
+    await db.$transaction(tx=>storeReplaySnapshot(tx,{...envelope,inputs:{...envelope.inputs,k}}));
+    await expect(f.read()).rejects.toMatchObject({response:{code:'HISTORICAL_SNAPSHOT_CORRUPT'}});
+  });
+  it('keeps absent legacy settlement factor unavailable',async()=>{
+    const {f,envelope}=await periodFixture('BINARY_K1');
+    await db.$transaction(tx=>storeReplaySnapshot(tx,envelope));
+    expect((await f.read()).economicEvidence.periodContributions[0].kFactor).toBeNull();
+  });
   async function periodFixture(kind:string){
     const f=await fixture('R1.0B'),at=f.pv.occurredAt;
     const parameters=await db.$transaction(tx=>captureParameters(tx,at,'R1.0B'));

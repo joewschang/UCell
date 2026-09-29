@@ -73,7 +73,13 @@ describeDb('sealed period eligibility writer-to-order lineage',()=>{
     },{isolationLevel:Prisma.TransactionIsolationLevel.Serializable,timeout:30000})).rejects.toThrow(rollback);
   },40000);
 
-  it.each([false,true])('preserves Binary Active=%s and subsequent Matching through settlement, sealing and read',async active=>{
+  it.each([
+    {name:'inactive',active:false,binaryPool:'0.2',matchingPool:'0.2',k1:'1',binaryPaid:'10',matchingTheory:'0.5',matchingPaid:'0.5',k2:'1',inactiveTheory:'1',lockedTheory:'0.2'},
+    {name:'full pools',active:true,binaryPool:'0.2',matchingPool:'0.2',k1:'1',binaryPaid:'10',matchingTheory:'0.5',matchingPaid:'0.5',k2:'1',inactiveTheory:'1',lockedTheory:'0.2'},
+    {name:'reduced Binary pool',active:true,binaryPool:'0.025',matchingPool:'0.2',k1:'0.5',binaryPaid:'5',matchingTheory:'0.25',matchingPaid:'0.25',k2:'1',inactiveTheory:'0.5',lockedTheory:'0.1'},
+    {name:'both pools reduced',active:true,binaryPool:'0.025',matchingPool:'0.000625',k1:'0.5',binaryPaid:'5',matchingTheory:'0.25',matchingPaid:'0.125',k2:'0.5',inactiveTheory:'0.5',lockedTheory:'0.1'},
+  ])('preserves Binary and Matching stages: $name',async scenario=>{
+    const {active}=scenario;
     const rollback='PERIOD_ELIGIBILITY_ROLLBACK';
     await expect(db.$transaction(async tx=>{
       // A past, isolated calendar avoids current cut-off assumptions and baseline qualifications.
@@ -81,11 +87,11 @@ describeDb('sealed period eligibility writer-to-order lineage',()=>{
       const effectiveFrom=new Date('1900-01-01T00:00:00Z'),at=new Date('1901-01-02T00:00:00Z');
       const rule=`TEST_PERIOD_${randomUUID()}`;
       const parameters:Array<[string,string,Prisma.InputJsonValue]>=[
-        ['award.pending.days','*','45'],['pool.binary.rate','*','0.2'],['binary.pair.rate','*','0.1'],['binary.weekly.cap','STARTER','10000'],
+        ['award.pending.days','*','45'],['pool.binary.rate','*',scenario.binaryPool],['binary.pair.rate','*','0.1'],['binary.weekly.cap','STARTER','10000'],
         ['settlement.timezone','BINARY_K1','UTC'],
         ['settlement.period','BINARY_K1',{unit:'WEEK',count:1,anchorLocal:'1901-01-01T00:00:00'}],
         ['settlement.cut_off','BINARY_K1',{localTime:'00:00:00',daysAfterPeriodEnd:0,approvalReference:'TEST_ONLY'}],
-        ['pool.matching.rate','*','0.2'],['matching.rate','1','0.1'],['matching.rate','2','0.05'],['matching.rate','3','0.02'],
+        ['pool.matching.rate','*',scenario.matchingPool],['matching.rate','1','0.1'],['matching.rate','2','0.05'],['matching.rate','3','0.02'],
         ['settlement.timezone','MATCHING_K2','UTC'],['settlement.period','MATCHING_K2',{unit:'WEEK',count:1,anchorLocal:'1901-01-01T00:00:00'}],
         ['settlement.cut_off','MATCHING_K2',{localTime:'00:00:00',daysAfterPeriodEnd:0,approvalReference:'TEST_ONLY'}],
       ];
@@ -118,7 +124,7 @@ describeDb('sealed period eligibility writer-to-order lineage',()=>{
       expect(await tx.settlementBatch.count({where:{ruleVersionCode:rule}})).toBe(0);
       const batch=await service.settleBinary(start,end,rule);
       expect(batch).toMatchObject({status:'FINALIZED'});
-      expect(batch.totalGpv.toString()).toBe('200');
+      expect(batch.totalGpv.toString()).toBe('200');expect(batch.kFactor.toString()).toBe(scenario.k1);
       const stored=await tx.historicalReplaySnapshot.findUniqueOrThrow({where:{kind_sourceId:{kind:'BINARY_K1',sourceId:batch.settlementBatchId}}});
       const envelope=verifyReplayEnvelope(stored);
       const decisions=await tx.bonusCalculationEvidence.findMany({where:{settlementBatchId:batch.settlementBatchId},orderBy:{bonusCalculationEvidenceId:'asc'}});
@@ -130,9 +136,9 @@ describeDb('sealed period eligibility writer-to-order lineage',()=>{
         expect(rootDecision!.theoreticalAmount.toString()).toBe('10');expect(rootDecision!.entitlementAmount.toString()).toBe('0');
       }
       const first=await orderEconomicEvidence(tx,orders[0].orderId,[]),period=first.periodContributions[0];
-      expect(period).toMatchObject({kind:'BINARY_K1',orderOriginalGpv:'100',periodContext:{attribution:'WHOLE_PERIOD_NOT_ORDER_ALLOCATION',eligibilityEvidenceStatus:'RECORDED'}});
+      expect(period).toMatchObject({kind:'BINARY_K1',orderOriginalGpv:'100',kFactor:scenario.k1,periodContext:{attribution:'WHOLE_PERIOD_NOT_ORDER_ALLOCATION',eligibilityEvidenceStatus:'RECORDED'}});
       expect(period.periodContext.eligibilityDecisions).toHaveLength(active?2:3);
-      if(active)expect(period.periodContext.recipients).toEqual([expect.objectContaining({awardType:'BINARY',theoryAmount:'10',originallyPosted:'10',active:true})]);
+      if(active)expect(period.periodContext.recipients).toEqual([expect.objectContaining({awardType:'BINARY',theoryAmount:'10',originallyPosted:scenario.binaryPaid,active:true})]);
       else{
         expect(period.periodContext.recipients).toEqual([]);
         expect(period.periodContext.eligibilityDecisions).toContainEqual(expect.objectContaining({eligibilityType:'BINARY_ELIGIBILITY',reasonCode:'INACTIVE',theoryAmount:'10',entitlementAmount:'0'}));
@@ -159,22 +165,23 @@ describeDb('sealed period eligibility writer-to-order lineage',()=>{
         }
         const sourceAward=await tx.bonusAward.findFirstOrThrow({where:{settlementBatchId:batch.settlementBatchId,awardType:'BINARY'}});
         const matching=await service.settleMatching(start,end,rule);
-        expect(matching.status).toBe('FINALIZED');expect(matching.kFactor.toString()).toBe('1');
+        expect(matching.status).toBe('FINALIZED');expect(matching.kFactor.toString()).toBe(scenario.k2);expect(sourceAward.payableAmount.toString()).toBe(scenario.binaryPaid);
         const matchingAwards=await tx.bonusAward.findMany({where:{settlementBatchId:matching.settlementBatchId}});
         expect(matchingAwards).toHaveLength(1);
         expect(matchingAwards[0]).toMatchObject({awardType:'MATCHING',sourceAwardId:sourceAward.bonusAwardId,recipientQualificationId:uplines[1].qualificationId,generationNo:2});
-        expect(matchingAwards[0].payableAmount.toString()).toBe('0.5');
+        expect(matchingAwards[0].theoryAmount.toString()).toBe(scenario.matchingTheory);expect(matchingAwards[0].payableAmount.toString()).toBe(scenario.matchingPaid);
         const matchingDecisions=await tx.bonusCalculationEvidence.findMany({where:{settlementBatchId:matching.settlementBatchId},orderBy:{bonusCalculationEvidenceId:'asc'}});
         expect(matchingDecisions).toHaveLength(2);
-        expect(matchingDecisions.map(row=>[row.reasonCode,row.theoreticalAmount.toString(),row.entitlementAmount.toString()]).sort()).toEqual([['INACTIVE','1','0'],['LOCKED','0.2','0']]);
+        expect(matchingDecisions.map(row=>[row.reasonCode,row.theoreticalAmount.toString(),row.entitlementAmount.toString()]).sort()).toEqual([['INACTIVE',scenario.inactiveTheory,'0'],['LOCKED',scenario.lockedTheory,'0']]);
         expect(matchingDecisions.every(row=>row.evidenceType==='BINARY_MATCHING_ELIGIBILITY')).toBe(true);
         const matchingSnapshot=await tx.historicalReplaySnapshot.findUniqueOrThrow({where:{kind_sourceId:{kind:'MATCHING_K2',sourceId:matching.settlementBatchId}}});
         const matchingEnvelope=verifyReplayEnvelope(matchingSnapshot);
         expect(matchingEnvelope.evidence.eligibilityEvidence).toEqual(JSON.parse(JSON.stringify(matchingDecisions)));
         expect(matchingEnvelope.evidence.matchingSources).toEqual([expect.objectContaining({sourceAwardId:sourceAward.bonusAwardId,sourceQualificationId:root.qualificationId})]);
         const after=await orderEconomicEvidence(tx,orders[0].orderId,[]),matchingContext=after.periodContributions.find(row=>row.kind==='MATCHING_K2')!.periodContext;
-        expect(matchingContext.recipients).toEqual([expect.objectContaining({awardType:'MATCHING',theoryAmount:'0.5',originallyPosted:'0.5'})]);
-        expect(matchingContext.eligibilityDecisions.map((row:any)=>[row.reasonCode,row.theoryAmount,row.entitlementAmount]).sort()).toEqual([['INACTIVE','1','0'],['LOCKED','0.2','0']]);
+        expect(matchingContext.recipients).toEqual([expect.objectContaining({awardType:'MATCHING',theoryAmount:scenario.matchingTheory,originallyPosted:scenario.matchingPaid})]);
+        expect(matchingContext.eligibilityDecisions.map((row:any)=>[row.reasonCode,row.theoryAmount,row.entitlementAmount]).sort()).toEqual([['INACTIVE',scenario.inactiveTheory,'0'],['LOCKED',scenario.lockedTheory,'0']]);
+        expect(after.periodContributions.find(row=>row.kind==='MATCHING_K2')!.kFactor).toBe(scenario.k2);
         expect(after.awards).toEqual([]);expect(after.payables).toEqual([]);
         for(const secret of [sourceAward.bonusAwardId,...uplines.map(q=>q.qualificationId),matchingAwards[0].bonusAwardId,'sourceBinaryPaid'])expect(JSON.stringify(after)).not.toContain(secret);
         expect(await service.settleMatching(start,end,rule)).toEqual(matching);

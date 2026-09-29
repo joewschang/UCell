@@ -23,6 +23,16 @@ The page presents dated events chronologically, with current/undated state separ
 
 ## Validation and limitations
 
+### Follow-up: reduced Binary/Matching pools and sealed K display
+
+Period contributions now include the sealed `inputs.k` as `kFactor`, using the existing Admin factor field. Missing historical K remains null/未提供; explicitly malformed, null or out-of-range K fails closed. The permitted decimal range is 0–1. This read does not derive a factor from current rules or amounts and adds no financial writes or migrations.
+
+The real Binary→Matching fixture now includes two reduced-pool scenarios. With total GPV 200 and Binary pool rate 0.025, theory 10 is reduced by K1=0.5 to original entitlement 5. Matching uses that recorded Binary entitlement: G2 theory becomes 0.25, inactive G1 theory 0.5 and locked G3 theory 0.1. A further Matching pool rate 0.000625 yields K2=0.5 and original G2 entitlement 0.125. Tests explicitly preserve theory versus posted amounts and expose both sealed factors, while retaining retry, privacy, source and whole-period attribution assertions.
+
+API build and focused isolated **2 suites / 81 tests PASS**, fresh **0→107 migrations**, **162 baseline assertions**, cleanup PASS (`C:/UCell/logs/pool-factor-lineage-20260929.log`). Admin typecheck and full **36 files / 142 tests PASS**, including separate factor/theory/posted labels and unavailable factors. Browser acceptance remains pending.
+
+Full isolated API regression **143 suites / 1,053 tests PASS**, with 107 migrations, 162 baseline assertions and cleanup PASS. Log: `C:/UCell/logs/pool-factor-full-20260929.log`. Stage remains NOT READY.
+
 ### Follow-up: actual Matching settlement-to-lineage verification
 
 The active Binary fixture now continues through the real Matching settlement service. Before Binary finalization, Matching rejects without creating a batch. After actual Binary entitlement 10, the Matching close-time sponsor graph yields an eligible G2 award 0.5 linked by sourceAwardId, inactive G1 theory 1 / entitlement 0, and locked G3 theory 0.2 / entitlement 0. Database eligibility rows exactly match the verified sealed list, and matchingSources points to the original Binary award and qualification. This fixture has K1=K2=1; it does not newly certify reduced-pool scenarios.

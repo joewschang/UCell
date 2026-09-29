@@ -78,6 +78,13 @@ it('distinguishes sealed period decisions from unavailable historical reasons',a
  for(const secret of ['PRIVATE-RECIPIENT','PRIVATE-DETAIL'])expect(output).not.toContain(secret);
  act(()=>view.unmount());
 });
+it('renders the sealed period factor separately from theory and posted entitlement',async()=>{
+ vi.mocked(get).mockResolvedValue({data:{...fixture,economicEvidence:{periodContributions:[{kFactor:'0.5',periodContext:{recipients:[{awardType:'MATCHING',theoryAmount:'0.25',originallyPosted:'0.125'}]}},{kFactor:null}]}}});
+ const view=await render();await vi.waitFor(()=>expect(JSON.stringify(view.toJSON())).toContain('調整係數 K'));
+ const output=JSON.stringify(view.toJSON());
+ for(const label of ['0.5','0.25','0.125','理論金額','原始權益','未提供','整期獎金不等於本單獎金'])expect(output).toContain(label);
+ act(()=>view.unmount());
+});
 it('hides cached financial evidence after a failed refresh and allows retry',async()=>{
  const view=await render();await vi.waitFor(()=>expect(JSON.stringify(view.toJSON())).toContain('零售推薦獎金'));
  vi.mocked(get).mockRejectedValueOnce(new Error('連線失敗'));

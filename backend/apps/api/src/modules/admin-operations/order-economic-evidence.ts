@@ -126,6 +126,8 @@ async function periodContributions(tx:Prisma.TransactionClient,orderId:string,pv
       return {reference:reference('PERIOD_ELIGIBILITY',decision.bonusCalculationEvidenceId),recipientReference:reference('ECONOMIC_RECIPIENT',decision.recipientQualificationId),
         eligibilityType:decision.evidenceType,reasonCode:decision.reasonCode,theoryAmount:amount(decision.theoreticalAmount),entitlementAmount:amount(decision.entitlementAmount),occurredAt:decision.occurredAt,ruleVersionCode:decision.ruleVersionCode};
     }).sort((a:any,b:any)=>a.reference.localeCompare(b.reference));
+    const kFactor=envelope.inputs.k===undefined?null:amount(envelope.inputs.k);
+    if(kFactor!==null&&(new Prisma.Decimal(kFactor).lt(0)||new Prisma.Decimal(kFactor).gt(1)))pending('HISTORICAL_SNAPSHOT_CORRUPT','Stored settlement factor is outside its range');
     const recipientKeys=new Set<string>();
     const recipients=envelope.recipients.map(recipient=>{
       if(!recipient.key||!recipient.qualificationId||recipientKeys.has(recipient.key)||!['REFERRAL','EQUALIZATION','BINARY','MATCHING','EPV','RPV','GLOBAL'].includes(recipient.awardType))pending('HISTORICAL_SNAPSHOT_CORRUPT','Stored period recipient is invalid');
@@ -138,7 +140,7 @@ async function periodContributions(tx:Prisma.TransactionClient,orderId:string,pv
       return {reference:reference('REPLAY_POSTING',posting.postingId),entitlementReference:reference('PERIOD_ENTITLEMENT',`${row.snapshotId}:${posting.entitlementKey}`),originallyPosted:posting.originallyPosted.toString(),recalculatedEntitlement:posting.recalculatedEntitlement.toString(),delta:posting.delta.toString(),stateHash:posting.stateHash};
     });
     return {reference:reference('REPLAY_SNAPSHOT',row.snapshotId),settlementReference:reference('SETTLEMENT',row.sourceId),
-      kind:row.kind,periodStart:start.toISOString(),periodEnd:end.toISOString(),ruleVersionCode:row.ruleVersionCode,snapshotHash:row.hash,
+      kind:row.kind,periodStart:start.toISOString(),periodEnd:end.toISOString(),ruleVersionCode:row.ruleVersionCode,snapshotHash:row.hash,kFactor,
       attribution:'SEALED_PERIOD_INPUT_ONLY',orderOriginalGpv:sources.reduce((sum,source)=>sum.add(source.originalGpv),new Prisma.Decimal(0)).toString(),sources,
       periodContext:{attribution:'WHOLE_PERIOD_NOT_ORDER_ALLOCATION',eligibilityEvidenceStatus:sealedDecisions===undefined?'UNAVAILABLE':'RECORDED',eligibilityDecisions,recipients,corrections}};
   });
