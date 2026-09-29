@@ -1,12 +1,14 @@
 import {createHash} from 'node:crypto';
-import {PrismaService,claimOutboxLease,withOutboxLease,releaseFailedOutboxLease,type OutboxLease} from '@ucell/database';
+import {Prisma,PrismaService,PiiCryptoService,claimOutboxLease,withOutboxLease,releaseFailedOutboxLease,type OutboxLease} from '@ucell/database';
 import {loadProviderEnablementManifest,validateProviderEnablementManifest} from './provider-enablement';
 import {providerDeploymentEnvironment} from './provider-runtime';
 
 export type PhysicalErpRequest=Readonly<{
  format:'UCELL_FULFILLMENT_ERP_V1';schemaVersion:1;orderNo:string;fulfillmentKey:string;
  lines:ReadonlyArray<Readonly<{sku:string;quantity:string;serialNos:readonly string[]}>>;
+ deliveryRequirementsRef:string;
 }>;
+export type ErpDeliveryRequirements=Readonly<{schemaVersion:1;shippingMethod:'HOME_DELIVERY';recipientName:string;phone:string;countryCode:string;postalCode?:string;address:string}>;
 export type ErpAcceptance=Readonly<{kind:'ACCEPTED';providerReference:string;requestHash:string}>;
 export type ErpLookup=ErpAcceptance|Readonly<{kind:'ABSENT'|'UNKNOWN'|'REJECTED'}>;
 /** A real adapter must prove stable-key deduplication and authoritative lookup
@@ -16,7 +18,7 @@ export interface PhysicalErpAdapter {
  readonly providerConnectionVersionId:string;
  readonly environment:'TEST'|'STAGE'|'PRODUCTION';
  lookup(input:{idempotencyKey:string;requestHash:string;signal:AbortSignal}):Promise<ErpLookup>;
- submit(input:{idempotencyKey:string;requestHash:string;request:PhysicalErpRequest;signal:AbortSignal}):Promise<Exclude<ErpLookup,{kind:'ABSENT'|'UNKNOWN'|'REJECTED'}>|{kind:'UNKNOWN'|'REJECTED'}>;
+ submit(input:{idempotencyKey:string;requestHash:string;request:PhysicalErpRequest;delivery:ErpDeliveryRequirements;signal:AbortSignal}):Promise<ErpAcceptance|{kind:'UNKNOWN'|'REJECTED'}>;
 }
 const hash=(value:unknown)=>createHash('sha256').update(JSON.stringify(value)).digest('hex');
 async function bounded<T>(signal:AbortSignal,work:()=>Promise<T>):Promise<T>{
@@ -25,7 +27,7 @@ async function bounded<T>(signal:AbortSignal,work:()=>Promise<T>):Promise<T>{
  try{return await Promise.race([Promise.resolve().then(work),new Promise<never>((_,reject)=>{listener=()=>reject(new Error('ERP_TRANSPORT_TIMEOUT'));signal.addEventListener('abort',listener,{once:true});})]);}
  finally{signal.removeEventListener('abort',listener);}
 }
-function physicalRequest(raw:any):PhysicalErpRequest{
+function physicalRequest(raw:any):Omit<PhysicalErpRequest,'deliveryRequirementsRef'>{
  if(raw?.format!=='UCELL_FULFILLMENT_ERP_V1'||raw.schemaVersion!==1||!/^\d+$/.test(raw.orderNo)||typeof raw.fulfillmentKey!=='string'||!Array.isArray(raw.lines)||!raw.lines.length)throw new Error('ERP_HANDOFF_SNAPSHOT_INVALID');
  const seen=new Set<string>();
  const lines=raw.lines.map((line:any)=>{
@@ -40,14 +42,20 @@ function physicalRequest(raw:any):PhysicalErpRequest{
 
 export async function processErpHandoff(db:PrismaService,lease:OutboxLease,adapter:PhysicalErpAdapter){
  const prepared=await withOutboxLease(db,lease,async tx=>{
-  const handoff=await tx.fulfillmentErpHandoff.findUnique({where:{outboxEventId:lease.outboxEventId},include:{dispatch:true}});
+  const handoff=await tx.fulfillmentErpHandoff.findUnique({where:{outboxEventId:lease.outboxEventId},include:{dispatch:{include:{deliverySnapshot:true}}}});
   if(!handoff)throw new Error('ERP_HANDOFF_NOT_FOUND');
+  await tx.$queryRaw`SELECT fulfillment_id FROM commerce.fulfillment WHERE fulfillment_id=${handoff.fulfillmentId}::uuid FOR UPDATE`;
   const version=await tx.providerConnectionVersion.findUnique({where:{providerConnectionVersionId:adapter.providerConnectionVersionId},include:{connection:true}}),now=new Date();
   if(!version||version.connection.domain!=='ERP'||version.connection.provider!==adapter.provider||version.connection.status!=='ACTIVE'||version.environment!==adapter.environment||!version.approvalReference||version.effectiveFrom>now||(version.effectiveTo&&version.effectiveTo<=now))throw new Error('ERP_CONNECTION_NOT_APPROVED');
   if(handoff.dispatch&&handoff.dispatch.providerConnectionVersionId!==version.providerConnectionVersionId)throw new Error('ERP_DISPATCH_CONNECTION_MISMATCH');
-  const request=physicalRequest(handoff.payloadSnapshot);
-  const dispatch=handoff.dispatch??await tx.fulfillmentErpDispatch.create({data:{fulfillmentErpHandoffId:handoff.fulfillmentErpHandoffId,providerConnectionVersionId:version.providerConnectionVersionId,idempotencyKey:'ucell-erp-'+hash(handoff.fulfillmentErpHandoffId)}});
-  return {dispatch,request,requestHash:handoff.payloadHash};
+  if(handoff.dispatch&&(!handoff.dispatch.deliverySnapshot||!handoff.dispatch.requestHash))throw new Error('ERP_HISTORICAL_DELIVERY_EVIDENCE_MISSING');
+  const deliverySnapshot=handoff.dispatch?.deliverySnapshot??await tx.fulfillmentDeliverySnapshot.findFirst({where:{fulfillmentId:handoff.fulfillmentId},orderBy:{version:'desc'}});
+  if(!deliverySnapshot)throw new Error('ERP_DELIVERY_REQUIREMENTS_MISSING');
+  if(createHash('sha256').update(deliverySnapshot.encryptedPayload).digest('hex')!==deliverySnapshot.snapshotHash)throw new Error('ERP_DELIVERY_SNAPSHOT_INVALID');
+  const request={...physicalRequest(handoff.payloadSnapshot),deliveryRequirementsRef:deliverySnapshot.snapshotHash},requestHash=hash(request);
+  if(handoff.dispatch&&handoff.dispatch.requestHash!==requestHash)throw new Error('ERP_DISPATCH_SNAPSHOT_MISMATCH');
+  const dispatch=handoff.dispatch??await tx.fulfillmentErpDispatch.create({data:{fulfillmentErpHandoffId:handoff.fulfillmentErpHandoffId,providerConnectionVersionId:version.providerConnectionVersionId,idempotencyKey:'ucell-erp-'+hash(handoff.fulfillmentErpHandoffId),deliverySnapshotId:deliverySnapshot.deliverySnapshotId,requestHash}});
+  return {dispatch,request,requestHash,deliverySnapshot,fulfillmentId:handoff.fulfillmentId};
  });
  if('lostLease' in prepared)return prepared;
  const input={idempotencyKey:prepared.dispatch.idempotencyKey,requestHash:prepared.requestHash};
@@ -57,7 +65,26 @@ export async function processErpHandoff(db:PrismaService,lease:OutboxLease,adapt
   result=await bounded(signal,()=>adapter.lookup({...input,signal}));
   // Unknown/timed-out lookups never trigger a blind send. The same stable key
   // remains pinned across restarts, claims and provider configuration changes.
-  if(result.kind==='ABSENT')result=await bounded(signal,()=>adapter.submit({...input,request:prepared.request,signal}));
+  if(result.kind==='ABSENT'){
+   const submitted=await withOutboxLease(db,lease,async tx=>{
+    await tx.$queryRaw`SELECT fulfillment_id FROM commerce.fulfillment WHERE fulfillment_id=${prepared.fulfillmentId}::uuid FOR UPDATE`;
+    await tx.$queryRaw`SELECT u.serialized_unit_id FROM commerce.fulfillment_serial_allocation a JOIN commerce.serialized_unit u ON u.serialized_unit_id=a.serialized_unit_id JOIN commerce.product_serial_batch b ON b.product_serial_batch_id=u.product_serial_batch_id WHERE a.fulfillment_id=${prepared.fulfillmentId}::uuid ORDER BY u.serialized_unit_id FOR SHARE OF u,b`;
+    const f=await tx.fulfillment.findUnique({where:{fulfillmentId:prepared.fulfillmentId}});
+    const allocations=await tx.fulfillmentSerialAllocation.findMany({where:{fulfillmentId:prepared.fulfillmentId},include:{sourceAllocation:{include:{orderLine:true}},serializedUnit:{include:{batch:true}}}});
+    const expected=new Map(prepared.request.lines.flatMap(line=>line.serialNos.map(serial=>[serial,line.sku] as const)));
+    if(!f||f.status!=='PACKED'||allocations.length!==expected.size||allocations.some(a=>{
+     const u=a.serializedUnit,s=a.sourceAllocation;
+     return u.status!=='ALLOCATED'||u.batch.status!=='EFFECTIVE'||u.batch.expiresAt&&u.batch.expiresAt<=new Date()||expected.get(u.serialNo)!==s.skuSnapshot||s.fulfillmentId!==f.fulfillmentId||s.orderLine.orderId!==f.orderId||u.batch.productId!==s.orderLine.productId;
+    }))return {kind:'REJECTED' as const};
+    const raw=new PiiCryptoService().decrypt<ErpDeliveryRequirements>(prepared.deliverySnapshot.encryptedPayload,prepared.deliverySnapshot.keyVersion);
+    if(raw.schemaVersion!==1||raw.shippingMethod!=='HOME_DELIVERY'||typeof raw.recipientName!=='string'||typeof raw.phone!=='string'||typeof raw.countryCode!=='string'||typeof raw.address!=='string')throw new Error('ERP_DELIVERY_SNAPSHOT_INVALID');
+    const delivery:ErpDeliveryRequirements={schemaVersion:1,shippingMethod:'HOME_DELIVERY',recipientName:raw.recipientName,phone:raw.phone,countryCode:raw.countryCode,postalCode:raw.postalCode,address:raw.address};
+    // PII exists only during this approved adapter call, never in Outbox/audit.
+    return bounded(signal,()=>adapter.submit({...input,request:prepared.request,delivery,signal}));
+   });
+   if('lostLease' in submitted)return submitted;
+   result=submitted;
+  }
  }catch{result={kind:'UNKNOWN'};}
  if(result.kind==='ACCEPTED'&&(!/^[A-Za-z0-9][A-Za-z0-9._:/-]{0,199}$/.test(result.providerReference)||result.requestHash!==prepared.requestHash))result={kind:'REJECTED'};
  if(!['ACCEPTED','UNKNOWN','REJECTED'].includes(result.kind))result={kind:'UNKNOWN'};

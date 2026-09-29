@@ -1,3 +1,6 @@
+import {FulfillmentShipmentService} from '../src/modules/commerce/fulfillment-shipment.service';
+import {PiiCryptoService} from '@ucell/database';
+import {FulfillmentDeliveryService} from '../src/modules/commerce/fulfillment-delivery.service';
 import {FulfillmentSerialProvenanceService} from '../src/modules/commerce/fulfillment-serial-provenance.service';
 import {Test} from '@nestjs/testing';
 import {ValidationPipe} from '@nestjs/common';
@@ -5,7 +8,7 @@ import {ConfigService} from '@nestjs/config';
 import {FastifyAdapter,NestFastifyApplication} from '@nestjs/platform-fastify';
 import {PrismaClient} from '@prisma/client';
 import {PrismaService} from '@ucell/database';
-import {randomUUID} from 'node:crypto';
+import {randomBytes,randomUUID} from 'node:crypto';
 import {FulfillmentOperationsController} from '../src/modules/commerce/fulfillment-operations.controller';
 import {FulfillmentOperationsService} from '../src/modules/commerce/fulfillment-operations.service';
 import {FulfillmentSerialScanService} from '../src/modules/commerce/fulfillment-serial-scan.service';
@@ -24,6 +27,7 @@ describeDb('FULFILLMENT_HTTP_REAL_DB',()=>{
  const base='/api/v1/admin/fulfillment/orders';
  const headers=(token:string)=>({authorization:`Bearer ${token}`});
  beforeAll(async()=>{
+  process.env.PII_ENCRYPTION_KEY=randomBytes(32).toString('base64');process.env.PII_ENCRYPTION_KEY_VERSION='warehouse-http-test';
   db=new PrismaClient({datasources:{db:{url}}});
   const tokens=new IdentityTokenService(db as any);
   async function actor(roleCode:string){
@@ -34,7 +38,7 @@ describeDb('FULFILLMENT_HTTP_REAL_DB',()=>{
   }
   ops=await actor('ORDER_OPS');auditor=await actor('COMPLIANCE_AUDIT');finance=await actor('FINANCE');
   const module=await Test.createTestingModule({controllers:[FulfillmentOperationsController],providers:[
-   {provide:PrismaService,useValue:db},AuditService,FulfillmentOperationsService,FulfillmentSerialScanService,FulfillmentPackVerificationService,FulfillmentErpHandoffService,FulfillmentSourceAllocationService,FulfillmentErpReconciliationService,FulfillmentSerialProvenanceService,
+   {provide:PrismaService,useValue:db},AuditService,FulfillmentOperationsService,FulfillmentSerialScanService,FulfillmentPackVerificationService,FulfillmentErpHandoffService,FulfillmentSourceAllocationService,FulfillmentErpReconciliationService,FulfillmentSerialProvenanceService,FulfillmentDeliveryService,PiiCryptoService,FulfillmentShipmentService,
    {provide:IdentityTokenService,useValue:tokens},{provide:ConfigService,useValue:{get:(name:string)=>name==='NODE_ENV'?'production':'false'}},AdminAuthenticationGuard,AdminRoleGuard]}).compile();
   app=module.createNestApplication<NestFastifyApplication>(new FastifyAdapter(),{logger:false});app.setGlobalPrefix('api/v1');
   app.useGlobalPipes(new ValidationPipe({whitelist:true,forbidNonWhitelisted:true,transform:true}));
@@ -151,5 +155,43 @@ describeDb('FULFILLMENT_HTTP_REAL_DB',()=>{
   await db.shipment.update({where:{shipmentId:shipment.shipmentId},data:{status:'PICKED_UP'}});
   expect((await app.inject({method:'POST',url:endpoint,headers:headers(ops),payload:body})).statusCode).toBe(201);
   const result=await app.inject({method:'POST',url:returnUrl,headers:headers(ops),payload:receipt});expect(result.statusCode).toBe(201);expect(result.json().data).toEqual({serialCount:1,replayed:false});
+ });
+ it('captures encrypted delivery versions and registers a labeled shipment atomically',async()=>{
+  const product=await db.productReference.create({data:{sku:'SHIPMENT-HTTP-'+randomUUID(),displayName:'Shipment HTTP fixture',currentPrice:100}});
+  const order=await db.order.create({data:{purchaserPersonId:personId,purpose:'RETAIL',status:'PAID',paidAt:new Date(),grossAmount:100,netAmount:100,ruleVersionCode:'R1',lines:{create:{productId:product.productId,skuSnapshot:product.sku,productNameSnapshot:product.displayName,quantity:1,unitPrice:100,lineAmount:100,gpvRateSnapshot:0,gpvAmountSnapshot:0,ruleProfileSnapshot:{}}}}});
+  const root=`${base}/${order.orderNo}`,prepared=await app.inject({method:'POST',url:`${root}/prepare`,headers:headers(ops)}),fKey=prepared.json().data.fulfillmentKey,path=`${root}/${fKey}`;
+  const source=(await app.inject({url:root,headers:headers(ops)})).json().data.fulfillments[0].sources[0];
+  const batch=await db.productSerialBatch.create({data:{productId:product.productId,serialPrefix:'C',batchSequence:604,batchCode:randomUUID()}});
+  await db.serializedUnit.create({data:{productSerialBatchId:batch.productSerialBatchId,serialSequence:1,serialNo:'C6040001'}});
+  expect((await app.inject({method:'POST',url:`${path}/scans`,headers:headers(ops),payload:{sourceReference:source.sourceReference,sku:product.sku,serialNo:'C6040001'}})).statusCode).toBe(201);
+  expect((await app.inject({method:'POST',url:`${path}/pack-verification`,headers:headers(ops)})).statusCode).toBe(201);
+  const connection=await db.providerConnection.create({data:{domain:'LOGISTICS',provider:'OTHER',connectionKey:'WAREHOUSE-'+randomUUID(),status:'ACTIVE',versions:{create:{version:1,environment:'TEST',credentialSecretRef:'secret://DO-NOT-EXPOSE',webhookVerificationRef:'secret://DO-NOT-EXPOSE',configHash:'f'.repeat(64),effectiveFrom:new Date(0),createdByActor:'fixture',approvalReference:'TEST-APPROVAL'}}},include:{versions:true}});
+  const options=await app.inject({url:`${base}/logistics/connections`,headers:headers(ops)});expect(options.statusCode).toBe(200);expect(options.body).not.toContain('secret://');expect(options.body).not.toContain(connection.versions[0].providerConnectionVersionId);
+  const selected=options.json().data.find((c:any)=>c.connectionKey===connection.connectionKey),command={connectionReference:selected.connectionReference,providerShipmentReference:'REG-'+randomUUID(),trackingNo:'TRACK-604',packageIntegrityConfirmed:true,labelVerified:true};
+  expect((await app.inject({method:'POST',url:`${path}/shipments`,headers:headers(ops),payload:command})).statusCode).toBe(409);
+  const delivery={expectedVersion:0,recipientName:'Synthetic private recipient',phone:'0900000000',countryCode:'TW',postalCode:'100',address:'Synthetic private delivery address'};
+  expect((await app.inject({method:'POST',url:`${path}/delivery-snapshot`,headers:headers(auditor),payload:delivery})).statusCode).toBe(403);
+  const captures=await Promise.all([1,2].map(()=>app.inject({method:'POST',url:`${path}/delivery-snapshot`,headers:headers(ops),payload:delivery})));
+  expect(captures.map(r=>r.statusCode)).toEqual([201,201]);expect(captures.map(r=>r.json().data.replayed).sort()).toEqual([false,true]);
+  const revised={...delivery,expectedVersion:1,address:'Synthetic revised private address'};
+  expect((await app.inject({method:'POST',url:`${path}/delivery-snapshot`,headers:headers(ops),payload:revised})).json().data.version).toBe(2);
+  const delayed=await app.inject({method:'POST',url:`${path}/delivery-snapshot`,headers:headers(ops),payload:delivery});
+  expect(delayed.json().data).toMatchObject({version:1,currentVersion:2,replayed:true});
+  expect((await app.inject({method:'POST',url:`${path}/delivery-snapshot`,headers:headers(ops),payload:{...delivery,address:'Different stale delivery address'}})).statusCode).toBe(409);
+  expect((await app.inject({method:'POST',url:`${path}/shipments`,headers:headers(auditor),payload:command})).statusCode).toBe(403);
+  expect((await app.inject({method:'POST',url:`${path}/shipments`,headers:headers(ops),payload:{...command,labelVerified:false}})).statusCode).toBe(400);
+  const registrations=await Promise.all([1,2].map(()=>app.inject({method:'POST',url:`${path}/shipments`,headers:headers(ops),payload:command})));
+  expect(registrations.map(r=>r.statusCode)).toEqual([201,201]);expect(registrations.map(r=>r.json().data.replayed).sort()).toEqual([false,true]);
+  const f=await db.fulfillment.findFirstOrThrow({where:{orderId:order.orderId},include:{deliverySnapshots:{orderBy:{version:'asc'}},shipments:{include:{serialBindings:true}}}});
+  expect(f.shipments).toHaveLength(1);expect(f.shipments[0].serialBindings).toHaveLength(1);expect(f.shipments[0].deliverySnapshotId).toBe(f.deliverySnapshots[1].deliverySnapshotId);expect(f.shipments[0].status).toBe('LABEL_CREATED');
+  expect(await db.serializedUnit.findUnique({where:{serialNo:'C6040001'}})).toMatchObject({status:'ALLOCATED'});
+  for(const snapshot of f.deliverySnapshots){expect(snapshot.encryptedPayload).not.toContain(delivery.phone);expect(snapshot.encryptedPayload).not.toContain('Synthetic');}
+  const read=await app.inject({url:root,headers:headers(auditor)});for(const value of [delivery.recipientName,delivery.phone,delivery.address,revised.address,f.deliverySnapshots[0].encryptedPayload])expect(read.body).not.toContain(value);
+  const audit=await db.auditEvent.findMany({where:{entityId:f.fulfillmentId}}),outbox=await db.outboxEvent.findMany({where:{aggregateId:f.fulfillmentId}});
+  expect(JSON.stringify({audit,outbox})).not.toContain('Synthetic private');expect(JSON.stringify({audit,outbox})).not.toContain(delivery.phone);
+  expect(audit.filter(a=>a.action==='FULFILLMENT_SHIPMENT_REGISTERED')).toHaveLength(1);
+  expect((await app.inject({method:'POST',url:`${path}/delivery-snapshot`,headers:headers(ops),payload:{...delivery,expectedVersion:2}})).statusCode).toBe(409);
+  expect((await app.inject({method:'POST',url:`${path}/delivery-snapshot`,headers:headers(ops),payload:revised})).json().data.replayed).toBe(true);
+  await expect(db.fulfillmentDeliverySnapshot.update({where:{deliverySnapshotId:f.deliverySnapshots[0].deliverySnapshotId},data:{encryptedPayload:'rewrite'}})).rejects.toThrow();
  });
 });

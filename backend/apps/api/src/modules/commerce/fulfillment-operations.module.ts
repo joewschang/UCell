@@ -1,3 +1,6 @@
+import {FulfillmentShipmentService} from './fulfillment-shipment.service';
+import {PiiCryptoService} from '@ucell/database';
+import {FulfillmentDeliveryService} from './fulfillment-delivery.service';
 import {FulfillmentSerialProvenanceService} from './fulfillment-serial-provenance.service';
 import {Module} from '@nestjs/common';
 import {FulfillmentOperationsController} from './fulfillment-operations.controller';
@@ -7,5 +10,5 @@ import {FulfillmentPackVerificationService} from './fulfillment-pack-verificatio
 import {FulfillmentErpHandoffService} from './fulfillment-erp-handoff.service';
 import {FulfillmentSourceAllocationService} from './fulfillment-source-allocation.service';
 import {FulfillmentErpReconciliationService} from './fulfillment-erp-reconciliation.service';
-@Module({controllers:[FulfillmentOperationsController],providers:[FulfillmentOperationsService,FulfillmentSerialScanService,FulfillmentPackVerificationService,FulfillmentErpHandoffService,FulfillmentSourceAllocationService,FulfillmentErpReconciliationService,FulfillmentSerialProvenanceService]})
+@Module({controllers:[FulfillmentOperationsController],providers:[FulfillmentOperationsService,FulfillmentSerialScanService,FulfillmentPackVerificationService,FulfillmentErpHandoffService,FulfillmentSourceAllocationService,FulfillmentErpReconciliationService,FulfillmentSerialProvenanceService,FulfillmentDeliveryService,PiiCryptoService,FulfillmentShipmentService]})
 export class FulfillmentOperationsModule{}

@@ -1756,6 +1756,7 @@ model Fulfillment {
   sourceAllocations FulfillmentSourceAllocation[]
   serialAllocations FulfillmentSerialAllocation[]
   erpHandoffs FulfillmentErpHandoff[]
+  deliverySnapshots FulfillmentDeliverySnapshot[]
 
   @@unique([orderId, fulfillmentKey])
   @@index([orderId, createdAt])
@@ -1877,6 +1878,9 @@ model FulfillmentErpDispatch {
   providerConnectionVersionId String @map("provider_connection_version_id") @db.Uuid
   idempotencyKey String @unique @map("idempotency_key")
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  deliverySnapshotId String? @map("delivery_snapshot_id") @db.Uuid
+  requestHash String? @map("request_hash") @db.Char(64)
+  deliverySnapshot FulfillmentDeliverySnapshot? @relation(fields:[deliverySnapshotId],references:[deliverySnapshotId])
   handoff FulfillmentErpHandoff @relation(fields:[fulfillmentErpHandoffId],references:[fulfillmentErpHandoffId])
   providerConnectionVersion ProviderConnectionVersion @relation(fields:[providerConnectionVersionId],references:[providerConnectionVersionId])
   attempts FulfillmentErpDispatchAttempt[]
@@ -1975,6 +1979,8 @@ model Shipment {
   status                      CanonicalShipmentStatus @default(READY)
   createdAt                   DateTime                @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt                   DateTime                @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deliverySnapshotId          String? @map("delivery_snapshot_id") @db.Uuid
+  deliverySnapshot            FulfillmentDeliverySnapshot? @relation(fields:[deliverySnapshotId],references:[deliverySnapshotId])
 
   fulfillment               Fulfillment                     @relation(fields: [fulfillmentId], references: [fulfillmentId])
   parcel                    FulfillmentParcel               @relation(fields: [fulfillmentParcelId, fulfillmentId], references: [fulfillmentParcelId, fulfillmentId])
@@ -1989,6 +1995,25 @@ model Shipment {
   @@index([fulfillmentId, createdAt])
   @@index([status, createdAt])
   @@map("shipment")
+  @@schema("commerce")
+}
+
+/// Explicit warehouse capture, encrypted at rest; never inferred historical order data.
+model FulfillmentDeliverySnapshot {
+  deliverySnapshotId String @id @default(uuid()) @map("delivery_snapshot_id") @db.Uuid
+  fulfillmentId String @map("fulfillment_id") @db.Uuid
+  version Int
+  shippingMethod ShippingMethod @map("shipping_method")
+  encryptedPayload String @map("encrypted_payload") @db.Text
+  keyVersion String @map("key_version")
+  snapshotHash String @unique @map("snapshot_hash") @db.Char(64)
+  capturedByActor String @map("captured_by_actor")
+  capturedAt DateTime @default(now()) @map("captured_at") @db.Timestamptz(6)
+  fulfillment Fulfillment @relation(fields:[fulfillmentId],references:[fulfillmentId])
+  shipments Shipment[]
+  erpDispatches FulfillmentErpDispatch[]
+  @@unique([fulfillmentId,version])
+  @@map("fulfillment_delivery_snapshot")
   @@schema("commerce")
 }
 

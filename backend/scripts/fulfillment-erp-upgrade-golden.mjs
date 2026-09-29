@@ -20,8 +20,11 @@ const db=new PrismaClient({datasources:{db:{url:target.href}}});
 const cwd=fileURLToPath(new URL('../',import.meta.url)),root=join(cwd,'packages/database/prisma');
 const scratch=mkdtempSync(join(tmpdir(),'ucell-erp-upgrade-'));
 const dispatchUpgrade=process.argv.includes('--dispatch');
-const provenanceUpgrade=process.argv.includes('--serial');
-const cutoff=provenanceUpgrade?'20260929070000_shipment_return_serial_provenance':dispatchUpgrade?'20260929060000_fulfillment_erp_dispatch':'20260929050000_fulfillment_erp_reconciliation';
+const deliveryUpgrade=process.argv.includes('--delivery');
+const provenanceUpgrade=process.argv.includes('--serial')||deliveryUpgrade;
+const cutoff=deliveryUpgrade?'20260929080000_fulfillment_delivery_snapshot':provenanceUpgrade?'20260929070000_shipment_return_serial_provenance':dispatchUpgrade?'20260929060000_fulfillment_erp_dispatch':'20260929050000_fulfillment_erp_reconciliation';
+const shipmentLegacySelect=Object.fromEntries(['shipmentId','fulfillmentId','fulfillmentParcelId','fulfillmentQcEvidenceId','provider','connectionId','providerConnectionVersionId','carrier','shippingMethod','recipientSnapshotRef','pickupStoreSnapshotRef','providerShipmentRef','trackingNo','status','createdAt','updatedAt'].map(k=>[k,true]));
+const dispatchLegacySelect=Object.fromEntries(['dispatchId','fulfillmentErpHandoffId','providerConnectionVersionId','idempotencyKey','createdAt'].map(k=>[k,true]));
 function deploy(schema){const r=spawnSync(process.execPath,[require.resolve('prisma/build/index.js'),'migrate','deploy','--schema',schema],{cwd,env:{...process.env,DATABASE_URL:target.href},stdio:'inherit'});if(r.error)throw r.error;assert.equal(r.status,0);}
 let created=false;
 try{
@@ -43,25 +46,37 @@ try{
  const outbox=await db.outboxEvent.create({data:{eventType:'FULFILLMENT_ERP_HANDOFF_REQUESTED',aggregateType:'FULFILLMENT',aggregateId:fulfillment.fulfillmentId,payload,correlationId}});
  const handoff=await db.fulfillmentErpHandoff.create({data:{fulfillmentId:fulfillment.fulfillmentId,outboxEventId:outbox.outboxEventId,providerCode:'ERP_PENDING',formatVersion:payload.format,payloadHash:createHash('sha256').update(JSON.stringify(payload)).digest('hex'),payloadSnapshot:payload,requestedByActor:person.personId}});
  const result=dispatchUpgrade||provenanceUpgrade?await db.fulfillmentErpReconciliation.create({data:{fulfillmentErpHandoffId:handoff.fulfillmentErpHandoffId,resultKey:'pre-existing-result',resultHash:'b'.repeat(64),outcome:'PARTIAL',reasonCode:'ERP_PHYSICAL_RESULT_INCOMPLETE',resultSnapshot:{schemaVersion:1,lines:[]},occurredAt:new Date(),reportedByActor:person.personId}}):null;
- let priorShipment=null,priorReturn=null;
+ let priorShipment=null,priorReturn=null,priorDispatch=null,priorAttempt=null;
  if(provenanceUpgrade){
   const connection=await db.providerConnection.create({data:{domain:'LOGISTICS',provider:'OTHER',connectionKey:'UPGRADE',status:'ACTIVE',versions:{create:{version:1,environment:'TEST',credentialSecretRef:'fixture',webhookVerificationRef:'fixture',configHash:'c'.repeat(64),effectiveFrom:new Date(0),createdByActor:'fixture'}}},include:{versions:true}});
   const parcel=await db.fulfillmentParcel.create({data:{fulfillmentId:fulfillment.fulfillmentId,parcelKey:'P1',contentSnapshotRef:'historical',packageSnapshotRef:'historical'}});
   const qc=await db.fulfillmentQcEvidence.create({data:{fulfillmentId:fulfillment.fulfillmentId,policyId:'HISTORICAL',policyVersion:'1',policySnapshotRef:'historical',result:'PASS',checks:{historical:true},inspectorActor:'fixture',reason:'HISTORICAL',occurredAt:new Date(),correlationId:randomUUID()}});
-  priorShipment=await db.shipment.create({data:{fulfillmentId:fulfillment.fulfillmentId,fulfillmentParcelId:parcel.fulfillmentParcelId,fulfillmentQcEvidenceId:qc.fulfillmentQcEvidenceId,provider:'OTHER',connectionId:'UPGRADE',providerConnectionVersionId:connection.versions[0].providerConnectionVersionId,carrier:'OTHER',shippingMethod:'HOME_DELIVERY',recipientSnapshotRef:'historical',providerShipmentRef:'UPGRADE-1',status:'PICKED_UP'}});
+  priorShipment=await db.shipment.create({data:{fulfillmentId:fulfillment.fulfillmentId,fulfillmentParcelId:parcel.fulfillmentParcelId,fulfillmentQcEvidenceId:qc.fulfillmentQcEvidenceId,provider:'OTHER',connectionId:'UPGRADE',providerConnectionVersionId:connection.versions[0].providerConnectionVersionId,carrier:'OTHER',shippingMethod:'HOME_DELIVERY',recipientSnapshotRef:'historical',providerShipmentRef:'UPGRADE-1',status:'PICKED_UP'},select:shipmentLegacySelect});
   priorReturn=await db.returnCase.create({data:{orderId:order.orderId,status:'POSTED',reasonCode:'HISTORICAL',occurredAt:new Date(),postedAt:new Date(),idempotencyKey:randomUUID(),correlationId:randomUUID(),lines:{create:{orderLineId:order.lines[0].orderLineId,quantity:1,returnAmount:100,gpvReversalAmount:0}}},include:{lines:true}});
+ }
+ if(deliveryUpgrade){
+  const erp=await db.providerConnection.create({data:{domain:'ERP',provider:'EZTOOL',connectionKey:'UPGRADE-ERP',status:'ACTIVE',versions:{create:{version:1,environment:'TEST',credentialSecretRef:'fixture',webhookVerificationRef:'fixture',configHash:'d'.repeat(64),effectiveFrom:new Date(0),createdByActor:'fixture',approvalReference:'SYNTHETIC-UPGRADE'}}},include:{versions:true}});
+  priorDispatch=await db.fulfillmentErpDispatch.create({data:{fulfillmentErpHandoffId:handoff.fulfillmentErpHandoffId,providerConnectionVersionId:erp.versions[0].providerConnectionVersionId,idempotencyKey:'ucell-erp-'+'e'.repeat(64)},select:dispatchLegacySelect});
+  priorAttempt=await db.fulfillmentErpDispatchAttempt.create({data:{dispatchId:priorDispatch.dispatchId,attemptNumber:1,outcome:'ACCEPTED',providerReference:'HISTORICAL-ERP',evidenceHash:'f'.repeat(64)}});
  }
  deploy(join(root,'schema.prisma'));
  assert.deepEqual(await db.fulfillmentErpHandoff.findUnique({where:{fulfillmentId:fulfillment.fulfillmentId}}),handoff);
  assert.deepEqual(await db.fulfillmentSourceAllocation.findUnique({where:{fulfillmentSourceAllocationId:source.fulfillmentSourceAllocationId}}),source);
  assert.deepEqual(await db.fulfillmentSerialAllocation.findUnique({where:{fulfillmentSerialAllocationId:allocation.fulfillmentSerialAllocationId}}),allocation);
  assert.equal(await db.fulfillmentErpReconciliation.count(),result?1:0,'Upgrade must not invent provider results');
- if(result){assert.deepEqual(await db.fulfillmentErpReconciliation.findUnique({where:{reconciliationId:result.reconciliationId}}),result);assert.equal(await db.fulfillmentErpDispatch.count(),0,'Upgrade must not invent transport acceptance');}
+ if(result){assert.deepEqual(await db.fulfillmentErpReconciliation.findUnique({where:{reconciliationId:result.reconciliationId}}),result);assert.equal(await db.fulfillmentErpDispatch.count(),priorDispatch?1:0,'Upgrade must not invent transport acceptance');}
  if(priorShipment&&priorReturn){
-  assert.deepEqual(await db.shipment.findUnique({where:{shipmentId:priorShipment.shipmentId}}),priorShipment);
+  assert.deepEqual(await db.shipment.findUnique({where:{shipmentId:priorShipment.shipmentId},select:shipmentLegacySelect}),priorShipment);
   assert.deepEqual(await db.returnCase.findUnique({where:{returnCaseId:priorReturn.returnCaseId},include:{lines:true}}),priorReturn);
   assert.equal(await db.shipmentSerialBinding.count(),0,'Upgrade must not infer historical serial shipment bindings');
   assert.equal(await db.returnSerialReceipt.count(),0,'Upgrade must not infer historical returned serials');
+ }
+ if(priorDispatch&&priorAttempt){
+  assert.deepEqual(await db.fulfillmentErpDispatch.findUnique({where:{dispatchId:priorDispatch.dispatchId},select:dispatchLegacySelect}),priorDispatch);
+  assert.deepEqual(await db.fulfillmentErpDispatchAttempt.findUnique({where:{attemptId:priorAttempt.attemptId}}),priorAttempt);
+  const upgraded=await db.fulfillmentErpDispatch.findUnique({where:{dispatchId:priorDispatch.dispatchId}});
+  assert.equal(upgraded.deliverySnapshotId,null);assert.equal(upgraded.requestHash,null);
+  assert.equal(await db.fulfillmentDeliverySnapshot.count(),0,'Upgrade must not invent historical recipients');
  }
  await assert.rejects(db.fulfillmentErpHandoff.update({where:{fulfillmentId:fulfillment.fulfillmentId},data:{payloadHash:'0'.repeat(64)}}));
  await assert.rejects(db.fulfillmentSourceAllocation.delete({where:{fulfillmentSourceAllocationId:source.fulfillmentSourceAllocationId}}));

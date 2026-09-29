@@ -1,6 +1,26 @@
 {
   "openapi": "3.0.0",
   "paths": {
+    "/api/v1/admin/fulfillment/orders/logistics/connections": {
+      "get": {
+        "operationId": "adminFulfillmentLogisticsConnections",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "列出目前環境已核准物流設定，隱藏憑證與內部識別碼",
+        "tags": [
+          "Admin - Fulfillment"
+        ]
+      }
+    },
     "/api/v1/admin/fulfillment/orders/{orderNo}": {
       "get": {
         "operationId": "adminFulfillmentOrder",
@@ -259,6 +279,100 @@
           }
         ],
         "summary": "重新排入失敗交付；固定原請求並先核對 ERP 受理狀態",
+        "tags": [
+          "Admin - Fulfillment"
+        ]
+      }
+    },
+    "/api/v1/admin/fulfillment/orders/{orderNo}/{fulfillmentKey}/delivery-snapshot": {
+      "post": {
+        "operationId": "adminCaptureFulfillmentDelivery",
+        "parameters": [
+          {
+            "name": "orderNo",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "fulfillmentKey",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FulfillmentDeliveryDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "明確保存宅配資料版本；加密保護且不推測歷史收件人",
+        "tags": [
+          "Admin - Fulfillment"
+        ]
+      }
+    },
+    "/api/v1/admin/fulfillment/orders/{orderNo}/{fulfillmentKey}/shipments": {
+      "post": {
+        "operationId": "adminRegisterFulfillmentShipment",
+        "parameters": [
+          {
+            "name": "orderNo",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "fulfillmentKey",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FulfillmentShipmentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "登錄已有的物流單與標籤檢查，原子綁定配送快照和產品序號",
         "tags": [
           "Admin - Fulfillment"
         ]
@@ -14830,6 +14944,65 @@
           "providerReference",
           "occurredAt",
           "lines"
+        ]
+      },
+      "FulfillmentDeliveryDto": {
+        "type": "object",
+        "properties": {
+          "expectedVersion": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 2147483646
+          },
+          "recipientName": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "countryCode": {
+            "type": "string"
+          },
+          "postalCode": {
+            "type": "string"
+          },
+          "address": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "expectedVersion",
+          "recipientName",
+          "phone",
+          "countryCode",
+          "address"
+        ]
+      },
+      "FulfillmentShipmentDto": {
+        "type": "object",
+        "properties": {
+          "connectionReference": {
+            "type": "string"
+          },
+          "providerShipmentReference": {
+            "type": "string"
+          },
+          "trackingNo": {
+            "type": "string"
+          },
+          "packageIntegrityConfirmed": {
+            "type": "boolean"
+          },
+          "labelVerified": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "connectionReference",
+          "providerShipmentReference",
+          "trackingNo",
+          "packageIntegrityConfirmed",
+          "labelVerified"
         ]
       },
       "ShipmentSerialBindingDto": {
