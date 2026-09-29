@@ -4,13 +4,33 @@ import {createHash} from 'node:crypto';
 import {FulfillmentSerialScanService} from './fulfillment-serial-scan.service';
 import {FulfillmentPackVerificationService,SERIAL_PACK_POLICY} from './fulfillment-pack-verification.service';
 import {FulfillmentErpHandoffService} from './fulfillment-erp-handoff.service';
+import {FulfillmentSourceAllocationService} from './fulfillment-source-allocation.service';
+import {AuditService} from '../../common/audit/audit.service';
 
 const sourceReference=(id:string)=>createHash('sha256').update(`FULFILLMENT_SOURCE:${id}`).digest('hex');
 type Context={actorId:string;requestId:string;correlationId:string};
 @Injectable()
 export class FulfillmentOperationsService{
- constructor(private readonly db:PrismaService,private readonly scanner:FulfillmentSerialScanService,private readonly packer:FulfillmentPackVerificationService,private readonly erp:FulfillmentErpHandoffService){}
+ constructor(private readonly db:PrismaService,private readonly scanner:FulfillmentSerialScanService,private readonly packer:FulfillmentPackVerificationService,private readonly erp:FulfillmentErpHandoffService,private readonly allocator:FulfillmentSourceAllocationService,private readonly audit:AuditService){}
  private orderNumber(value:string){if(!/^\d{1,19}$/.test(value)||BigInt(value)>9223372036854775807n)throw new UnprocessableEntityException({code:'INVALID_ORDER_NO'});return BigInt(value);}
+ async prepare(orderNo:string,context:Context){
+  const number=this.orderNumber(orderNo);
+  return this.db.$transaction(async tx=>{
+   await tx.$queryRaw`SELECT order_id FROM commerce."order" WHERE order_no=${number} FOR UPDATE`;
+   const order=await tx.order.findUnique({where:{orderNo:number},include:{lines:{orderBy:{orderLineId:'asc'}},fulfillments:true}});
+   if(!order)throw new ConflictException({code:'ORDER_NOT_FOUND'});
+   const fulfillmentKey=`F${number.toString()}-01`,existing=order.fulfillments.find(f=>f.fulfillmentKey===fulfillmentKey&&f.fulfillmentPolicySnapshotRef==='UCELL_IMMEDIATE_PAID_V1');
+   if(existing)return {fulfillmentKey,replayed:true};
+   if(order.status!=='PAID'||!order.paidAt)throw new ConflictException({code:'FULFILLMENT_PAID_ORDER_REQUIRED'});
+   if(order.fulfillments.length)throw new ConflictException({code:'FULFILLMENT_ALREADY_CONFIGURED'});
+   if(!order.lines.length||order.lines.some(line=>!line.quantity.isInteger()||line.quantity.lte(0)))throw new ConflictException({code:'FULFILLMENT_PHYSICAL_QUANTITY_INVALID'});
+   const allocationSnapshotRef=createHash('sha256').update(JSON.stringify(order.lines.map(line=>({line:line.orderLineId,sku:line.skuSnapshot,quantity:line.quantity.toString(),offering:line.commercialOfferingSnapshot,purpose:line.linePurpose})))).digest('hex');
+   const fulfillment=await tx.fulfillment.create({data:{orderId:order.orderId,fulfillmentKey,allocationSnapshotRef,fulfillmentPolicySnapshotRef:'UCELL_IMMEDIATE_PAID_V1'}});
+   for(const line of order.lines)await this.allocator.allocate(tx,{fulfillmentId:fulfillment.fulfillmentId,orderLineId:line.orderLineId,quantity:line.quantity.toString()});
+   await this.audit.write(tx,{actorType:'USER',actorId:context.actorId,action:'FULFILLMENT_PREPARED',entityType:'FULFILLMENT',entityId:fulfillment.fulfillmentId,afterData:{orderNo:number.toString(),fulfillmentKey,allocationSnapshotRef},requestId:context.requestId,correlationId:context.correlationId});
+   return {fulfillmentKey,replayed:false};
+  });
+ }
  async order(orderNo:string){
   const order=await this.db.order.findUnique({where:{orderNo:this.orderNumber(orderNo)},include:{fulfillments:{orderBy:{createdAt:'asc'},include:{sourceAllocations:{orderBy:{fulfillmentSourceAllocationId:'asc'},include:{serialAllocations:{include:{serializedUnit:true}}}},qcEvidence:{where:{policyId:SERIAL_PACK_POLICY},orderBy:{occurredAt:'asc'}},erpHandoffs:true}}}});
   if(!order)throw new ConflictException({code:'ORDER_NOT_FOUND'});

@@ -30,6 +30,35 @@
         ]
       }
     },
+    "/api/v1/admin/fulfillment/orders/{orderNo}/prepare": {
+      "post": {
+        "operationId": "adminPreparePaidOrderFulfillment",
+        "parameters": [
+          {
+            "name": "orderNo",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "依已付款訂單快照建立一次實體出貨配置",
+        "tags": [
+          "Admin - Fulfillment"
+        ]
+      }
+    },
     "/api/v1/admin/fulfillment/orders/{orderNo}/{fulfillmentKey}/scans": {
       "post": {
         "operationId": "adminScanFulfillmentSerial",

@@ -32,7 +32,7 @@ describeDb('FULFILLMENT_HTTP_REAL_DB',()=>{
   }
   ops=await actor('ORDER_OPS');auditor=await actor('COMPLIANCE_AUDIT');finance=await actor('FINANCE');
   const module=await Test.createTestingModule({controllers:[FulfillmentOperationsController],providers:[
-   {provide:PrismaService,useValue:db},AuditService,FulfillmentOperationsService,FulfillmentSerialScanService,FulfillmentPackVerificationService,FulfillmentErpHandoffService,
+   {provide:PrismaService,useValue:db},AuditService,FulfillmentOperationsService,FulfillmentSerialScanService,FulfillmentPackVerificationService,FulfillmentErpHandoffService,FulfillmentSourceAllocationService,
    {provide:IdentityTokenService,useValue:tokens},{provide:ConfigService,useValue:{get:(name:string)=>name==='NODE_ENV'?'production':'false'}},AdminAuthenticationGuard,AdminRoleGuard]}).compile();
   app=module.createNestApplication<NestFastifyApplication>(new FastifyAdapter(),{logger:false});app.setGlobalPrefix('api/v1');
   app.useGlobalPipes(new ValidationPipe({whitelist:true,forbidNonWhitelisted:true,transform:true}));
@@ -67,5 +67,20 @@ describeDb('FULFILLMENT_HTTP_REAL_DB',()=>{
   }
   const final=await app.inject({url:`${base}/${orderNo}`,headers:headers(ops)});
   expect(final.json().data.fulfillments[0]).toMatchObject({status:'PACKED',packVerification:{status:'PACK_VERIFIED'},erpHandoff:{providerCode:'ERP_PENDING'}});
+ });
+ it('prepares a paid order once under concurrent requests and preserves source purpose',async()=>{
+  const product=await db.productReference.create({data:{sku:'PREP-'+randomUUID(),displayName:'Preparation fixture',currentPrice:100}});
+  const order=await db.order.create({data:{purchaserPersonId:personId,purpose:'RETAIL',status:'DRAFT',grossAmount:100,netAmount:100,ruleVersionCode:'R1',lines:{create:{productId:product.productId,skuSnapshot:product.sku,productNameSnapshot:product.displayName,quantity:2,unitPrice:50,lineAmount:100,gpvRateSnapshot:0,gpvAmountSnapshot:0,linePurpose:'ADDITIONAL_PURCHASE',commercialOfferingSnapshot:{offeringCode:'TEST',version:1},ruleProfileSnapshot:{}}}},include:{lines:true}});
+  const url=`${base}/${order.orderNo}/prepare`;
+  expect((await app.inject({method:'POST',url,headers:headers(auditor)})).statusCode).toBe(403);
+  expect((await app.inject({method:'POST',url,headers:headers(ops)})).statusCode).toBe(409);
+  await db.order.update({where:{orderId:order.orderId},data:{status:'PAID',paidAt:new Date()}});
+  const results=await Promise.all([app.inject({method:'POST',url,headers:headers(ops)}),app.inject({method:'POST',url,headers:headers(ops)})]);
+  expect(results.map(r=>r.statusCode)).toEqual([201,201]);expect(results.map(r=>r.json().data.replayed).sort()).toEqual([false,true]);
+  const rows=await db.fulfillment.findMany({where:{orderId:order.orderId},include:{sourceAllocations:true}});
+  expect(rows).toHaveLength(1);expect(rows[0].sourceAllocations).toHaveLength(1);
+  expect(rows[0].sourceAllocations[0]).toMatchObject({orderLineId:order.lines[0].orderLineId,linePurpose:'ADDITIONAL_PURCHASE',commercialOfferingSnapshot:{offeringCode:'TEST',version:1}});
+  expect(rows[0].sourceAllocations[0].allocatedQuantity.toString()).toBe('2');
+  expect(await db.auditEvent.count({where:{entityId:rows[0].fulfillmentId,action:'FULFILLMENT_PREPARED'}})).toBe(1);
  });
 });

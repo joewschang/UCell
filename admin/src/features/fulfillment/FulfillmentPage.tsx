@@ -6,7 +6,7 @@ import {command,get,ApiError} from '../../lib/api';
 import {Card,ErrorBox,Field,PageHeader} from '../../components/ui';
 type Source={sourceReference:string;sku:string;quantity:string;serialNos:string[]};
 type Fulfillment={fulfillmentKey:string;status:string;sources:Source[];packVerification:null|{status:string;occurredAt:string};erpHandoff:null|{providerCode:string;requestedAt:string}};
-type Order={orderNo:string;fulfillments:Fulfillment[]};
+type Order={orderNo:string;status:string;fulfillments:Fulfillment[]};
 const statuses:Record<string,string>={READY:'待揀貨',ALLOCATED:'已配置',PICKING:'揀貨中',PICKED:'已揀貨',QC_PENDING:'待檢查',QC_PASSED:'檢查完成',PACKED:'已裝箱',SHIPPING_REQUESTED:'已提出出貨請求',SHIPPED:'已出貨',DELIVERED:'已送達',EXCEPTION:'待處理異常',CANCELLED:'已取消'};
 const errors:Record<string,string>={SERIAL_NOT_FOUND:'查無此序號，請核對標籤。',SERIAL_SKU_MISMATCH:'商品或序號不符合這筆出貨明細。',SERIAL_ALREADY_SHIPPED:'此序號已出貨，不能再次配置。',SERIAL_ALREADY_ALLOCATED:'此序號已配置給其他出貨單。',SERIAL_BATCH_INELIGIBLE:'此批次已停用或過期，請改用合格產品。',SERIAL_NOT_AVAILABLE:'此序號目前不可出貨。',FULFILLMENT_SOURCE_QUANTITY_EXCEEDED:'掃描數量已達需求，請勿再加入產品。',FULFILLMENT_SERIAL_SCAN_INCOMPLETE:'尚未完成全部序號核對，請檢查各品項數量。',SERIAL_PACK_UNIT_INELIGIBLE:'部分序號已不符合出貨資格，請交由主管處理。'};
 function warehouseError(error:unknown){
@@ -21,14 +21,14 @@ export function FulfillmentPage(){
  const canWrite=user?.role==='SUPER_ADMIN'||user?.role==='ORDER_OPS';
  async function run(key:string,action:string,body:unknown={}){
   setBusy(true);setError(null);setNotice('');
-  try{await command(`/admin/fulfillment/orders/${encodeURIComponent(orderNo)}/${encodeURIComponent(key)}/${action}`,body);await query.refetch();setNotice(action==='scans'?'序號已核對。':action==='pack-verification'?'裝箱驗證完成。':'交付請求已保存，等待 ERP 處理與對帳。');return true;}
+  try{await command(`/admin/fulfillment/orders/${encodeURIComponent(orderNo)}${key?'/'+encodeURIComponent(key):''}/${action}`,body);await query.refetch();setNotice(action==='prepare'?'出貨配置已建立。':action==='scans'?'序號已核對。':action==='pack-verification'?'裝箱驗證完成。':'交付請求已保存，等待 ERP 處理與對帳。');return true;}
   catch(e){setError(warehouseError(e));return false;}finally{setBusy(false);}
  }
  return <><PageHeader title="出貨與序號核對" subtitle="依訂單載入需求，掃描商品與序號，再確認裝箱。" actions={<Link to="/orders">返回訂單與收款</Link>}/>
-  <Card><form onSubmit={e=>{e.preventDefault();setError(null);setNotice('');setOrderNo(input.trim());}}><Field label="訂單號"><input required pattern="[0-9]{1,19}" value={input} onChange={e=>setInput(e.target.value)} inputMode="numeric" disabled={busy}/></Field><button disabled={busy||query.isFetching}>載入出貨明細</button></form></Card>
+  <Card><form onSubmit={e=>{e.preventDefault();setError(null);setNotice('');if(input.trim()===orderNo)void query.refetch();else setOrderNo(input.trim());}}><Field label="訂單號"><input required pattern="[0-9]{1,19}" value={input} onChange={e=>setInput(e.target.value)} inputMode="numeric" disabled={busy}/></Field><button disabled={busy||query.isFetching}>載入出貨明細</button></form></Card>
   <ErrorBox error={error||query.error}/>{query.isFetching&&<p role="status">正在載入出貨資料…</p>}{notice&&<p role="status">{notice}</p>}
   {!orderNo&&<p>輸入或掃描訂單號開始核對。</p>}
-  {query.data&&!query.error&&query.data.data.fulfillments.length===0&&<Card><p>此訂單尚無出貨配置，請先完成出貨安排。</p></Card>}
+  {query.data&&!query.error&&query.data.data.fulfillments.length===0&&<Card><p>此訂單尚無出貨配置。</p>{canWrite&&query.data.data.status==='PAID'?<button disabled={busy||query.isFetching} onClick={()=>run('','prepare')}>依付款明細建立出貨配置</button>:<p>完成付款後，由倉務人員建立出貨配置。</p>}</Card>}
   {!query.error&&query.data?.data.fulfillments.map(f=><Card key={f.fulfillmentKey} title={`出貨單 ${f.fulfillmentKey}`}>
    <p>狀態：{statuses[f.status]??'待確認'}{f.packVerification?' · 裝箱驗證完成':''}</p>
    {f.sources.map(s=><SourceScan key={s.sourceReference} source={s} disabled={busy||query.isFetching||!canWrite||!!f.packVerification||!!f.erpHandoff} scan={body=>run(f.fulfillmentKey,'scans',body)}/>)}

@@ -20,6 +20,8 @@ export class FulfillmentOperationsController{
  @Roles('SUPER_ADMIN','ORDER_OPS','COMPLIANCE_AUDIT')
  @Get(':orderNo') @ApiOperation({operationId:'adminFulfillmentOrder',summary:'依訂單號載入出貨明細與序號驗證證據'})
  order(@Param('orderNo') orderNo:string){return this.service.order(orderNo).then(data=>({data}));}
+ @Post(':orderNo/prepare') @ApiOperation({operationId:'adminPreparePaidOrderFulfillment',summary:'依已付款訂單快照建立一次實體出貨配置'})
+ prepare(@Param('orderNo') orderNo:string,@Req() req:any){return this.service.prepare(orderNo,this.context(req)).then(data=>({data}));}
  @Post(':orderNo/:fulfillmentKey/scans') @ApiOperation({operationId:'adminScanFulfillmentSerial',summary:'核對商品與序號並記錄一次有效配置'})
  scan(@Param('orderNo') orderNo:string,@Param('fulfillmentKey') key:string,@Body() body:FulfillmentScanDto,@Req() req:any){return this.service.scan(orderNo,key,body,this.context(req)).then(data=>({data}));}
  @Post(':orderNo/:fulfillmentKey/pack-verification') @ApiOperation({operationId:'adminVerifyFulfillmentPack',summary:'核對完整數量並保留不可變裝箱證據'})
