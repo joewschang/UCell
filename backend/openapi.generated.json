@@ -6833,6 +6833,45 @@
         ]
       }
     },
+    "/api/v1/member/my-growth": {
+      "get": {
+        "description": "Server-authoritative, member-safe multi-dimensional growth view. It does not infer rank, qualification, or economics in the browser.",
+        "operationId": "memberMyGrowth",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "Validation failure; unknown identity/qualification/monetary fields rejected"
+          },
+          "401": {
+            "description": "Member LINE session required, expired/disabled sessions denied"
+          },
+          "403": {
+            "description": "Qualification not owned"
+          },
+          "404": {
+            "description": "Resource unavailable"
+          },
+          "409": {
+            "description": "Conflicting operation"
+          },
+          "422": {
+            "description": "Invalid input or pending domain decision"
+          }
+        },
+        "security": [
+          {
+            "memberBearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "Member"
+        ]
+      }
+    },
     "/api/v1/member/me": {
       "get": {
         "operationId": "memberMe",
