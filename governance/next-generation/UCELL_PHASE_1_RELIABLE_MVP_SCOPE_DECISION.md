@@ -4313,3 +4313,340 @@ Plan verification for:
 - LEARNING_EVENT_CHANNEL_POLICY = PASS.
 
 This amendment supersedes any earlier roadmap wording that could be read as requiring LINE delivery for ordinary member-specific notifications.
+
+
+## 34. R1.0B CR-BATCH-01 Scope Expansion — Member Growth, Learning/Events & UX Refinement
+
+**Status:** OWNER-APPROVED / INCLUDED_IN_CURRENT_BATCH / SUPERSEDES DEFERRED-SLICE WORDING
+**Approved date:** 2026-09-29 (Asia/Taipei)
+**Batch:** R1.0B-CR-BATCH-01
+
+This amendment explicitly moves the previously planned Member Growth, Learning/Event and second-pass UX refinement capabilities into the **current R1.0B-CR-BATCH-01 formal implementation and acceptance scope**.
+
+Where §32 OME-2, OME-6, OME-11, OME-19 or OME-20 describe these items as a next enhancement slice or as non-blocking future work, this section supersedes that delivery timing.
+
+### EXP-1 Current-batch additions
+
+The current R1.0B formal queue now includes:
+
+1. **會員前台「我的成長」 / Member My Growth**
+2. **教育訓練中心 / Learning Center**
+3. **活動中心 / Event Center**
+4. **Learning/Event integration with Member 360 and Activity Timeline**
+5. **Member-system personalized learning/event messaging**
+6. **Second-pass UX Refinement & Experience Validation** across Admin and Member journeys.
+
+These are now required implementation/verification items for current-batch local closure and Stage RC readiness, subject only to genuine external blockers.
+
+### EXP-2 Member My Growth
+
+Implement a member-safe, server-authoritative growth experience.
+
+At minimum present, where authoritative data exists:
+- current Qualification;
+- Active status;
+- achieved Global Rank;
+- server-calculated next-achievement/progress indicators;
+- appropriate organization growth indicators;
+- Repurchase/recognition status where useful;
+- learning progress/completion;
+- event registration/attendance/upcoming-event indicators;
+- achievement/activity milestones.
+
+Rules:
+- no browser-side economic/rank/qualification inference;
+- no hidden opaque AI score;
+- no other-member/private economic data;
+- use member-safe business references;
+- explain progress inputs sufficiently for the member to understand the result.
+
+### EXP-3 Growth dimensions
+
+The initial growth model is multi-dimensional and explainable:
+- Qualification progression;
+- organization growth;
+- Active stability;
+- Global Rank achievement/progress;
+- learning growth;
+- event participation.
+
+Do not collapse these into one unexplained 0–100 score.
+
+### EXP-4 Learning Center
+
+Implement a bounded Learning domain suitable for current web/member operations.
+
+Minimum capabilities:
+- course;
+- category;
+- audience/eligibility;
+- module/lesson;
+- content types: video reference, document/PDF, article/rich text, governed external link;
+- optional quiz/assessment;
+- enrollment/assignment where required;
+- started/progress/completed status;
+- completion timestamp;
+- assessment result where applicable;
+- Admin create/publish/archive/read management;
+- Member browse/read/progress experience;
+- Member 360 and Activity Timeline integration.
+
+Do not build proprietary video streaming infrastructure. Use governed content/file/external media references.
+
+Learning completion MUST NOT affect Qualification, Active, Award or payout unless a separately approved business rule explicitly creates that dependency.
+
+### EXP-5 Event Center
+
+Implement one Event domain supporting:
+- ONLINE;
+- OFFLINE;
+- HYBRID.
+
+Minimum capabilities:
+- event/session;
+- title/description;
+- effective/published state;
+- start/end;
+- physical location and/or governed online joining information;
+- target audience/eligibility;
+- capacity where applicable;
+- member registration;
+- registration cancellation;
+- waitlist only if required by the simplest safe capacity implementation;
+- QR or equivalent safe check-in token;
+- check-in/attendance evidence;
+- Admin event/registration/attendance views;
+- Member event list/detail/registration/status;
+- Member 360 and Activity Timeline integration.
+
+Check-in must be idempotent and must not create duplicate effective attendance.
+
+### EXP-6 Learning/Event messaging
+
+Apply §33 channel policy:
+
+Personalized:
+- course assignment/reminder;
+- course completion;
+- event registration confirmation;
+- member-specific event reminder;
+- attendance-related member notice
+
+→ UCell Member Message Center by default.
+
+Large-scale:
+- company-wide training announcement;
+- major event promotion;
+- broad campaign/event notice
+
+→ LINE Official Account when approved/appropriate.
+
+Do not expose member-private registration, learning or financial information through mass broadcast.
+
+### EXP-7 Member 360 integration
+
+Extend Admin Member 360 to include:
+- course enrollments;
+- progress/completion;
+- assessment result where authorized;
+- event registrations;
+- attendance history;
+- upcoming registered events;
+- related Activity Timeline entries.
+
+Member 360 remains a composed read workspace, not Learning/Event source authority.
+
+### EXP-8 Activity Timeline integration
+
+Add traceable event types/equivalents for:
+- COURSE_ENROLLED;
+- COURSE_STARTED;
+- COURSE_COMPLETED;
+- ASSESSMENT_COMPLETED where applicable;
+- EVENT_REGISTERED;
+- EVENT_REGISTRATION_CANCELLED;
+- EVENT_CHECKED_IN;
+- EVENT_ATTENDED.
+
+Timeline projection remains rebuildable/idempotent and references authoritative Learning/Event facts.
+
+### EXP-9 UX Refinement & Experience Validation
+
+After primary functional slices are implemented, execute a dedicated second-pass UX refinement before Stage RC.
+
+This is not limited to visual styling.
+
+Review complete user tasks end-to-end.
+
+**Admin journeys**
+- Paper Fast Enrollment;
+- member search and Member 360;
+- Sponsor/Binary placement;
+- product/offering configuration;
+- Order/Fulfillment/serial scanning;
+- Repurchase operations;
+- Economic Lineage;
+- settlement/operations;
+- payout/bank export;
+- Task/Exception handling;
+- Learning management;
+- Event management;
+- Member messaging/broadcast controls.
+
+**Member journeys**
+- entry/login;
+- home/dashboard;
+- Qualification/package selection;
+- Repurchase Plan selection/status;
+- Orders/Fulfillment;
+- Sponsor/Binary organization;
+- Active;
+- Award/payout views where authorized;
+- Message Center;
+- My Growth;
+- Learning;
+- Events.
+
+Review and improve:
+- information hierarchy;
+- Traditional Chinese terminology;
+- navigation and back-paths;
+- number of steps;
+- sensible defaults;
+- search/filter/sort;
+- form validation/prevention;
+- loading;
+- empty state;
+- error state;
+- success/confirmation state;
+- retry/recovery affordance;
+- responsive/mobile behavior;
+- SYSTEM/LIGHT/DARK;
+- icon/badge consistency;
+- accessibility;
+- keyboard/focus where applicable;
+- permission-denied explanation;
+- no raw enum/internal UUID leakage;
+- consistency of dates, amounts, PV/BV/RPV/EPV and status terminology.
+
+### EXP-10 UX authority boundary
+
+UX refinement MUST NOT change approved business/economic meaning merely to simplify a screen.
+
+If UX review discovers that a flow requires a business-rule change, mark that specific issue DECISION_REQUIRED rather than silently changing the rule.
+
+Frontend must not reproduce server-side economic/rank/placement calculations.
+
+### EXP-11 Learning/Event data authority
+
+Learning/Event require their own bounded authoritative facts; do not store them as arbitrary Person notes or only as Activity Timeline rows.
+
+Prefer forward-safe, versioned publication/status semantics and immutable/historical completion/attendance evidence where appropriate.
+
+Exact table names are technical decisions.
+
+### EXP-12 Security/privacy
+
+Apply existing RBAC/BOLA/privacy:
+- Admin learning/event mutations require authorized roles;
+- members see only authorized courses/events and their own progress/registration;
+- QR/check-in token must not expose Person/Qualification UUID or sensitive data;
+- online joining information may require registration/authentication;
+- assessment/progress information is not public;
+- audit privileged Admin mutations.
+
+### EXP-13 Required Learning Golden/E2E
+
+Add at minimum:
+- COURSE_PUBLISH_LIFECYCLE = PASS
+- MEMBER_COURSE_ELIGIBILITY = PASS
+- COURSE_PROGRESS_TRACEABLE = PASS
+- COURSE_COMPLETION_IDEMPOTENT = PASS
+- COURSE_ACTIVITY_TIMELINE = PASS
+- LEARNING_MEMBER360_INTEGRATION = PASS
+- LEARNING_MEMBER_SELF_PRIVACY = PASS
+- LEARNING_DOES_NOT_MUTATE_ECONOMIC_AUTHORITY = PASS.
+
+### EXP-14 Required Event Golden/E2E
+
+Add at minimum:
+- EVENT_PUBLISH_LIFECYCLE = PASS
+- MEMBER_EVENT_ELIGIBILITY = PASS
+- EVENT_REGISTRATION_IDEMPOTENT = PASS
+- EVENT_CAPACITY_ENFORCED = PASS where capacity is configured
+- EVENT_CANCELLATION = PASS
+- EVENT_CHECKIN_SINGLE_EFFECTIVE_ATTENDANCE = PASS
+- EVENT_ACTIVITY_TIMELINE = PASS
+- EVENT_MEMBER360_INTEGRATION = PASS
+- EVENT_MEMBER_SELF_PRIVACY = PASS
+- CHECKIN_TOKEN_NO_INTERNAL_UUID_LEAK = PASS.
+
+### EXP-15 Required My Growth verification
+
+Add at minimum:
+- MEMBER_GROWTH_SERVER_AUTHORITY = PASS
+- MEMBER_GROWTH_QUALIFICATION = PASS
+- MEMBER_GROWTH_ACTIVE = PASS
+- MEMBER_GROWTH_GLOBAL_RANK = PASS
+- MEMBER_GROWTH_ORGANIZATION_INDICATORS = PASS
+- MEMBER_GROWTH_LEARNING = PASS
+- MEMBER_GROWTH_EVENTS = PASS
+- MEMBER_GROWTH_SELF_ONLY_BOLA = PASS
+- MEMBER_GROWTH_NO_BROWSER_RULE_INFERENCE = PASS.
+
+### EXP-16 Required UX acceptance
+
+Before current-batch Stage RC can be declared ready:
+- ADMIN_CRITICAL_JOURNEY_UX_REVIEW = PASS
+- MEMBER_CRITICAL_JOURNEY_UX_REVIEW = PASS
+- ZH_TW_TERMINOLOGY_REVIEW = PASS
+- RESPONSIVE_MOBILE_REVIEW = PASS
+- LIGHT_DARK_SYSTEM_REVIEW = PASS
+- ACCESSIBILITY_SMOKE = PASS
+- LOADING_EMPTY_ERROR_SUCCESS_STATES = PASS
+- NO_RAW_ENUM_OR_UUID_LEAK = PASS
+- NAVIGATION_BACK_PATH_REVIEW = PASS.
+
+UX acceptance must include actual production builds and focused functional regression after fixes.
+
+### EXP-17 Implementation order
+
+Do not interrupt a transactionally sensitive slice mid-migration.
+
+After the current safe checkpoint, add these queue items to the autonomous executor:
+
+- Learning domain/API/Admin/Member;
+- Event domain/API/Admin/Member/check-in;
+- Member My Growth;
+- Member360/Timeline learning-event integration;
+- learning/event Member Message integration;
+- second-pass Admin UX refinement;
+- second-pass Member UX refinement;
+- UX acceptance gate.
+
+Codex should continue automatically under the existing autonomous execution rules.
+
+### EXP-18 Scope boundary retained
+
+This expansion still does NOT authorize:
+- Native APP implementation;
+- WeChat Mini Program implementation;
+- full CRM/marketing automation;
+- AI member scoring;
+- AI Brain runtime;
+- custom video streaming platform;
+- Production deployment.
+
+Those remain separately governed.
+
+### EXP-19 Closure effect
+
+The following are no longer acceptable as reasons to declare the current R1.0B batch complete:
+- Learning Center deferred;
+- Event Center deferred;
+- Member My Growth deferred;
+- second-pass UX refinement deferred.
+
+They are now part of the current formal implementation/verification queue.
+
+Stage and Production deployment authorization remain unchanged.
