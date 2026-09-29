@@ -102,6 +102,18 @@ describeDb('FULFILLMENT_HTTP_REAL_DB',()=>{
   const allocation=await db.fulfillmentSerialAllocation.findFirstOrThrow({where:{fulfillmentSourceAllocationId:sourceId}});
   await expect(db.fulfillmentSerialAllocation.delete({where:{fulfillmentSerialAllocationId:allocation.fulfillmentSerialAllocationId}})).rejects.toThrow();
  });
+ it('allows warehouse retry of stopped dispatch once, retaining the original request',async()=>{
+  const handoff=await db.fulfillmentErpHandoff.findFirstOrThrow({where:{fulfillment:{fulfillmentKey:key,order:{orderNo:BigInt(orderNo)}}}});
+  await db.outboxEvent.update({where:{outboxEventId:handoff.outboxEventId},data:{processStatus:'DEAD',attemptCount:10,lastError:'ERP_ACCEPTANCE_UNKNOWN'}});
+  const endpoint=`${base}/${orderNo}/${key}/erp-retry`;
+  expect((await app.inject({method:'POST',url:endpoint,headers:headers(auditor)})).statusCode).toBe(403);
+  const results=await Promise.all([1,2].map(()=>app.inject({method:'POST',url:endpoint,headers:headers(ops)})));
+  expect(results.map(r=>r.statusCode)).toEqual([201,201]);expect(results.map(r=>r.json().data.replayed).sort()).toEqual([false,true]);
+  expect(await db.outboxEvent.findUnique({where:{outboxEventId:handoff.outboxEventId}})).toMatchObject({processStatus:'PENDING',attemptCount:10,lastError:null});
+  expect(await db.fulfillmentErpHandoff.findUnique({where:{fulfillmentId:handoff.fulfillmentId}})).toEqual(handoff);
+  expect(await db.auditEvent.count({where:{entityId:handoff.fulfillmentId,action:'FULFILLMENT_ERP_RETRY_REQUESTED'}})).toBe(1);
+  const read=await app.inject({url:`${base}/${orderNo}`,headers:headers(auditor)});expect(read.json().data.fulfillments[0].erpHandoff.deliveryState).toBe('PENDING');
+ });
  it('prepares a paid order once under concurrent requests and preserves source purpose',async()=>{
   const product=await db.productReference.create({data:{sku:'PREP-'+randomUUID(),displayName:'Preparation fixture',currentPrice:100}});
   const order=await db.order.create({data:{purchaserPersonId:personId,purpose:'RETAIL',status:'DRAFT',grossAmount:100,netAmount:100,ruleVersionCode:'R1',lines:{create:{productId:product.productId,skuSnapshot:product.sku,productNameSnapshot:product.displayName,quantity:2,unitPrice:50,lineAmount:100,gpvRateSnapshot:0,gpvAmountSnapshot:0,linePurpose:'ADDITIONAL_PURCHASE',commercialOfferingSnapshot:{offeringCode:'TEST',version:1},ruleProfileSnapshot:{}}}},include:{lines:true}});

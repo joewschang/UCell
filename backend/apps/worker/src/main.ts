@@ -5,6 +5,11 @@ import { pollProviderWebhooks, type ProviderHandlerRegistration } from './provid
 import { WorkerLoop, workerPollInterval } from './worker-loop';
 import { ProviderWorkloadMetrics } from './provider-workload-metrics';
 import { createLineMessagingObserverHandler } from './line-messaging-handler';
+import {pollErpHandoffs,type PhysicalErpAdapter} from './erp-handoff-runtime';
+
+// Actual transports are registered only after protocol/credential enablement.
+// An empty registry leaves durable ERP requests pending, never acknowledged.
+const erpAdapters:readonly PhysicalErpAdapter[]=Object.freeze([]);
 
 const prisma = new PrismaService();
 const providerHandlers: readonly ProviderHandlerRegistration[] = process.env.LINE_MESSAGING_WORKER_ENABLED==='true'
@@ -259,6 +264,7 @@ async function matureBonusAwards(){
 
 async function tick(){
   await pollOutbox();
+  await pollErpHandoffs(prisma,erpAdapters);
   await pollRecognitions();
   await matureBonusAwards();
   await expireNotificationDeliveries();

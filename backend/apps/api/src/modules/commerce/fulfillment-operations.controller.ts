@@ -42,4 +42,6 @@ export class FulfillmentOperationsController{
  handoff(@Param('orderNo') orderNo:string,@Param('fulfillmentKey') key:string,@Req() req:any){return this.service.handoff(orderNo,key,this.context(req)).then(data=>({data}));}
  @Post(':orderNo/:fulfillmentKey/erp-results') @ApiOperation({operationId:'adminRecordFulfillmentErpResult',summary:'記錄人工核對的 ERP 商品與序號結果；保留差異證據'})
  result(@Param('orderNo') orderNo:string,@Param('fulfillmentKey') key:string,@Body() body:FulfillmentErpResultDto,@Req() req:any){return this.service.reconcile(orderNo,key,{...body,occurredAt:new Date(body.occurredAt)},this.context(req)).then(data=>({data}));}
+ @Post(':orderNo/:fulfillmentKey/erp-retry') @ApiOperation({operationId:'adminRetryFulfillmentErpHandoff',summary:'重新排入失敗交付；固定原請求並先核對 ERP 受理狀態'})
+ retry(@Param('orderNo') orderNo:string,@Param('fulfillmentKey') key:string,@Req() req:any){return this.service.retryHandoff(orderNo,key,this.context(req)).then(data=>({data}));}
 }

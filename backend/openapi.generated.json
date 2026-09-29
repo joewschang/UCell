@@ -227,6 +227,43 @@
         ]
       }
     },
+    "/api/v1/admin/fulfillment/orders/{orderNo}/{fulfillmentKey}/erp-retry": {
+      "post": {
+        "operationId": "adminRetryFulfillmentErpHandoff",
+        "parameters": [
+          {
+            "name": "orderNo",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "fulfillmentKey",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "重新排入失敗交付；固定原請求並先核對 ERP 受理狀態",
+        "tags": [
+          "Admin - Fulfillment"
+        ]
+      }
+    },
     "/api/v1/admin/finance/reservoirs": {
       "get": {
         "description": "Finance-confidential immutable sources. Read-only; signed replay correction is not a payout. Stable UUID cursor within server snapshot. A rejects tree/position/awardType filters.",

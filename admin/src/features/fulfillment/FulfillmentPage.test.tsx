@@ -61,3 +61,11 @@ it('records actual ERP evidence separately and preserves its retry identity afte
  expect(vi.mocked(command).mock.calls[1]).toEqual(first);
  expect(JSON.stringify(view.toJSON())).toContain('ERP 回報已保存');act(()=>view.unmount());
 });
+it('offers controlled retry only for stopped ERP dispatch and hides it from auditors',async()=>{
+ vi.mocked(get).mockResolvedValue({data:{orderNo:'123',fulfillments:[{fulfillmentKey:'F-123',status:'PACKED',sources:[],packVerification:{status:'PACK_VERIFIED'},erpHandoff:{deliveryState:'DEAD',dispatch:{outcome:'UNKNOWN',attemptNumber:10},results:[]}}]}});
+ const view=await render('自動重試已停止');
+ await act(async()=>{await view.root.findAllByType('button').find(b=>b.children.join('')==='重新排程 ERP 受理核對')!.props.onClick();});
+ expect(command).toHaveBeenCalledWith('/admin/fulfillment/orders/123/F-123/erp-retry',{});act(()=>view.unmount());
+ auth.role='COMPLIANCE_AUDIT';const audit=await render('自動重試已停止');
+ expect(audit.root.findAllByType('button').map(b=>b.children.join(''))).toEqual(['載入出貨明細']);act(()=>audit.unmount());
+});

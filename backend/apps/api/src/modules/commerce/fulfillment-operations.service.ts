@@ -33,9 +33,9 @@ export class FulfillmentOperationsService{
   });
  }
  async order(orderNo:string){
-  const order=await this.db.order.findUnique({where:{orderNo:this.orderNumber(orderNo)},include:{fulfillments:{orderBy:{createdAt:'asc'},include:{sourceAllocations:{orderBy:{fulfillmentSourceAllocationId:'asc'},include:{serialAllocations:{include:{serializedUnit:true}}}},qcEvidence:{where:{policyId:SERIAL_PACK_POLICY},orderBy:{occurredAt:'asc'}},erpHandoffs:{include:{reconciliations:{orderBy:{recordedAt:'desc'},take:50}}}}}}});
+  const order=await this.db.order.findUnique({where:{orderNo:this.orderNumber(orderNo)},include:{fulfillments:{orderBy:{createdAt:'asc'},include:{sourceAllocations:{orderBy:{fulfillmentSourceAllocationId:'asc'},include:{serialAllocations:{include:{serializedUnit:true}}}},qcEvidence:{where:{policyId:SERIAL_PACK_POLICY},orderBy:{occurredAt:'asc'}},erpHandoffs:{include:{outboxEvent:{select:{processStatus:true}},reconciliations:{orderBy:{recordedAt:'desc'},take:50},dispatch:{include:{attempts:{orderBy:{attemptNumber:'desc'},take:1},providerConnectionVersion:{include:{connection:true}}}}}}}}}});
   if(!order)throw new ConflictException({code:'ORDER_NOT_FOUND'});
-  return {orderNo:order.orderNo.toString(),status:order.status,fulfillments:order.fulfillments.map(f=>({fulfillmentKey:f.fulfillmentKey,status:f.status,sources:f.sourceAllocations.map(s=>({sourceReference:sourceReference(s.fulfillmentSourceAllocationId),sku:s.skuSnapshot,quantity:s.allocatedQuantity.toString(),serialNos:s.serialAllocations.map(a=>a.serializedUnit.serialNo).sort()})),packVerification:f.qcEvidence[0]?{status:'PACK_VERIFIED',snapshotHash:f.qcEvidence[0].policySnapshotRef,occurredAt:f.qcEvidence[0].occurredAt.toISOString()}:null,erpHandoff:f.erpHandoffs[0]?{providerCode:f.erpHandoffs[0].providerCode,payloadHash:f.erpHandoffs[0].payloadHash,requestedAt:f.erpHandoffs[0].requestedAt.toISOString(),results:f.erpHandoffs[0].reconciliations.map(r=>({outcome:r.outcome,reasonCode:r.reasonCode,resultHash:r.resultHash,occurredAt:r.occurredAt.toISOString(),recordedAt:r.recordedAt.toISOString()}))}:null}))};
+  return {orderNo:order.orderNo.toString(),status:order.status,fulfillments:order.fulfillments.map(f=>({fulfillmentKey:f.fulfillmentKey,status:f.status,sources:f.sourceAllocations.map(s=>({sourceReference:sourceReference(s.fulfillmentSourceAllocationId),sku:s.skuSnapshot,quantity:s.allocatedQuantity.toString(),serialNos:s.serialAllocations.map(a=>a.serializedUnit.serialNo).sort()})),packVerification:f.qcEvidence[0]?{status:'PACK_VERIFIED',snapshotHash:f.qcEvidence[0].policySnapshotRef,occurredAt:f.qcEvidence[0].occurredAt.toISOString()}:null,erpHandoff:f.erpHandoffs[0]?{providerCode:f.erpHandoffs[0].providerCode,deliveryState:f.erpHandoffs[0].outboxEvent.processStatus,dispatch:f.erpHandoffs[0].dispatch?{provider:f.erpHandoffs[0].dispatch.providerConnectionVersion.connection.provider,outcome:f.erpHandoffs[0].dispatch.attempts[0]?.outcome??'PENDING',attemptNumber:f.erpHandoffs[0].dispatch.attempts[0]?.attemptNumber??0}:null,payloadHash:f.erpHandoffs[0].payloadHash,requestedAt:f.erpHandoffs[0].requestedAt.toISOString(),results:f.erpHandoffs[0].reconciliations.map(r=>({outcome:r.outcome,reasonCode:r.reasonCode,resultHash:r.resultHash,occurredAt:r.occurredAt.toISOString(),recordedAt:r.recordedAt.toISOString()}))}:null}))};
  }
  private async resolve(orderNo:string,fulfillmentKey:string){
   const row=await this.db.fulfillment.findFirst({where:{fulfillmentKey,order:{orderNo:this.orderNumber(orderNo)}},include:{sourceAllocations:true}});
@@ -58,4 +58,16 @@ export class FulfillmentOperationsService{
   return {fulfillmentKey:key,providerCode:result.handoff.providerCode,payloadHash:result.handoff.payloadHash,requestedAt:result.handoff.requestedAt.toISOString(),replayed:result.replayed};
  }
  async reconcile(orderNo:string,key:string,input:ErpPhysicalResult,context:Context){const f=await this.resolve(orderNo,key);return this.reconciler.record(f.fulfillmentId,input,context);}
+ async retryHandoff(orderNo:string,key:string,context:Context){
+  const f=await this.resolve(orderNo,key),handoff=await this.db.fulfillmentErpHandoff.findUnique({where:{fulfillmentId:f.fulfillmentId}});
+  if(!handoff)throw new ConflictException({code:'ERP_HANDOFF_REQUIRED'});
+  return this.db.$transaction(async tx=>{
+   await tx.$queryRaw`SELECT outbox_event_id FROM integration.outbox_event WHERE outbox_event_id=${handoff.outboxEventId}::uuid FOR UPDATE`;
+   const event=await tx.outboxEvent.findUniqueOrThrow({where:{outboxEventId:handoff.outboxEventId}});
+   if(event.processStatus!=='DEAD')return {fulfillmentKey:key,replayed:true};
+   await tx.outboxEvent.update({where:{outboxEventId:event.outboxEventId},data:{processStatus:'PENDING',availableAt:new Date(),lastError:null}});
+   await this.audit.write(tx,{actorType:'USER',actorId:context.actorId,action:'FULFILLMENT_ERP_RETRY_REQUESTED',entityType:'FULFILLMENT',entityId:f.fulfillmentId,afterData:{fulfillmentKey:key,priorAttemptCount:event.attemptCount},requestId:context.requestId,correlationId:context.correlationId});
+   return {fulfillmentKey:key,replayed:false};
+  });
+ }
 }

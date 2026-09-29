@@ -240,6 +240,7 @@ enum PaymentAttemptStatus {
 }
 
 enum ProviderIntegrationDomain {
+  ERP
   PAYMENT
   INVOICE
   LOGISTICS
@@ -1588,6 +1589,7 @@ model ProviderConnectionVersion {
   invoiceEvidence    InvoiceProviderEventEvidence[]
   shipments          Shipment[]
   trackingEvidence   ShipmentTrackingEventEvidence[]
+  erpDispatches      FulfillmentErpDispatch[]
 
   @@unique([providerConnectionId, version])
   @@index([providerConnectionId, environment, effectiveFrom, effectiveTo])
@@ -1861,12 +1863,40 @@ model FulfillmentErpHandoff {
   fulfillment Fulfillment @relation(fields:[fulfillmentId],references:[fulfillmentId])
   outboxEvent OutboxEvent @relation(fields:[outboxEventId],references:[outboxEventId])
   reconciliations FulfillmentErpReconciliation[]
+  dispatch FulfillmentErpDispatch?
 
   @@map("fulfillment_erp_handoff")
   @@schema("commerce")
 }
 
 /// Append-only normalized physical result evidence; never financial authority.
+model FulfillmentErpDispatch {
+  dispatchId String @id @default(uuid()) @map("dispatch_id") @db.Uuid
+  fulfillmentErpHandoffId String @unique @map("fulfillment_erp_handoff_id") @db.Uuid
+  providerConnectionVersionId String @map("provider_connection_version_id") @db.Uuid
+  idempotencyKey String @unique @map("idempotency_key")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  handoff FulfillmentErpHandoff @relation(fields:[fulfillmentErpHandoffId],references:[fulfillmentErpHandoffId])
+  providerConnectionVersion ProviderConnectionVersion @relation(fields:[providerConnectionVersionId],references:[providerConnectionVersionId])
+  attempts FulfillmentErpDispatchAttempt[]
+  @@map("fulfillment_erp_dispatch")
+  @@schema("commerce")
+}
+
+model FulfillmentErpDispatchAttempt {
+  attemptId String @id @default(uuid()) @map("attempt_id") @db.Uuid
+  dispatchId String @map("dispatch_id") @db.Uuid
+  attemptNumber Int @map("attempt_number")
+  outcome String
+  providerReference String? @map("provider_reference")
+  evidenceHash String @map("evidence_hash") @db.Char(64)
+  recordedAt DateTime @default(now()) @map("recorded_at") @db.Timestamptz(6)
+  dispatch FulfillmentErpDispatch @relation(fields:[dispatchId],references:[dispatchId])
+  @@unique([dispatchId,attemptNumber])
+  @@map("fulfillment_erp_dispatch_attempt")
+  @@schema("commerce")
+}
+
 model FulfillmentErpReconciliation {
   reconciliationId String @id @default(uuid()) @map("reconciliation_id") @db.Uuid
   fulfillmentErpHandoffId String @map("fulfillment_erp_handoff_id") @db.Uuid
