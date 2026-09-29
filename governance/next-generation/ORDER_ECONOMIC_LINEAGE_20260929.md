@@ -30,6 +30,8 @@ Exact OrderLine sources now also join RETAIL_REFERRAL awards, including zero pay
 
 ## Validation
 
+- Actual Binary settlement-to-lineage follow-up: real calendar, graph capture, settlement, sealing and order reader verify active 10 versus inactive theory 10 / entitlement 0, finalized retry idempotency, whole-period attribution, privacy and independence from later Active evidence. Focused 2 suites / 71 tests and full isolated API 143 suites / 1,043 tests PASS; 107 migrations, 162 baseline assertions and cleanup PASS. Log: C:/UCell/logs/period-eligibility-full-20260929.log. Tests/docs only; browser acceptance and other engines' Goldens remain pending. Stage NOT READY.
+
 - Sealed period eligibility follow-up: historical eligibility type/reason/theory/entitlement is exposed only in whole-period context, with legacy unavailable versus recorded-empty evidence and fail-closed source/amount checks. API build and isolated 1 suite / 69 tests, 107 migrations and 162 DB baseline assertions PASS; Admin typecheck/build and 36 files / 141 tests PASS. Full API/browser acceptance not rerun. See ECONOMIC_LINEAGE_COVERAGE_UI_20260929.md. Stage NOT READY.
 
 - GPV theory follow-up: API build and focused isolated **2 suites / 59 tests PASS**, 107 migrations, 162 baseline assertions and cleanup PASS; Admin typecheck/build and **36 files / 140 tests PASS**. Exact-source original theory now exposes generation, base/rate, Active/unlock and reason even without Awards. The real immediate-effects writer fixture verifies positive/zero theories and unchanged evidence. See [coverage and UI evidence](ECONOMIC_LINEAGE_COVERAGE_UI_20260929.md). The full API run below predates this addition; final settlement eligibility evidence remains open.

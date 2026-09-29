@@ -23,6 +23,14 @@ The page presents dated events chronologically, with current/undated state separ
 
 ## Validation and limitations
 
+### Follow-up: actual Binary settlement-to-lineage verification
+
+`period-eligibility-lineage-db.e2e-spec.ts` now drives the real BinaryBonusService, approved-calendar validator, historical graph capture, sealSettlement writer and orderEconomicEvidence reader in a rollback-only PostgreSQL transaction. Its unique rule version and past test calendar isolate the fixture from current qualifications and cut-off timing. No settlement, eligibility or sealing service is mocked; the transaction proxy only keeps nested service work inside the rollback transaction.
+
+Two cases contribute 100 GPV from each of two orders on opposite sides. Historical Active yields theory/entitlement 10; inactive preserves theory 10, entitlement 0 and INACTIVE in the sealed eligibility list. The serialized database decisions match the verified envelope. Both orders see the same whole-period context, while neither receives the period award as a direct order award/payable. Retrying finalized settlement leaves exactly one snapshot, three carry rows, and zero/one award as appropriate; later Active evidence does not alter the read, sealed row or original decisions. Private identities and calculation JSON remain excluded.
+
+Focused isolated **2 suites / 71 tests PASS**, fresh **0→107 migrations**, **162 baseline assertions**, cleanup PASS. Log: `C:/UCell/logs/period-eligibility-writer-20260929.log`. Full isolated API regression also passed **143 suites / 1,043 tests**, with 107 migrations, 162 baseline assertions and cleanup PASS (`C:/UCell/logs/period-eligibility-full-20260929.log`). This extends actual writer verification for Binary; it does not certify all award engines, concurrent close jobs, or browser acceptance.
+
 ### Follow-up: sealed period eligibility decisions
 
 Selected period snapshots now project their sealed `evidence.eligibilityEvidence` into whole-period `periodContext`, preserving historical reason, type, theory, zero entitlement and occurrence time. Batch/rule identity, unique evidence IDs, recipient presence, decimal amounts and time are validated after envelope verification. Raw calculation details and IDs remain excluded. Missing legacy evidence is explicitly UNAVAILABLE, distinct from a RECORDED empty list. These decisions do not enter direct order awards/payables or imply current eligibility, payment, or per-order allocation.
