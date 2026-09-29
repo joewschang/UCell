@@ -8,6 +8,8 @@ import {join,resolve,dirname,basename} from 'node:path';
 import {tmpdir} from 'node:os';
 const require=createRequire(new URL('../packages/database/package.json',import.meta.url));
 const {PrismaClient}=require('@prisma/client');
+const artifactMode=process.argv.includes('--artifact');
+const firstNewMigration=artifactMode?'20260929130000_payout_export_immutability':'20260929120000_payout_result_integrity';
 const base=new URL(process.env.DATABASE_URL??'postgresql://ucell:ucell_dev@127.0.0.1:5432/ucell');
 assert.ok(['localhost','127.0.0.1'].includes(base.hostname));
 const database='ucell_payout_upgrade_'+randomUUID().replaceAll('-','');
@@ -19,7 +21,7 @@ function deploy(schema){const r=spawnSync(process.execPath,[require.resolve('pri
 let created=false;
 try{
  mkdirSync(join(scratch,'migrations'));cpSync(join(root,'schema.prisma'),join(scratch,'schema.prisma'));
- for(const entry of readdirSync(join(root,'migrations'),{withFileTypes:true}))if(!entry.isDirectory()||entry.name<'20260929120000_payout_result_integrity')cpSync(join(root,'migrations',entry.name),join(scratch,'migrations',entry.name),{recursive:true});
+ for(const entry of readdirSync(join(root,'migrations'),{withFileTypes:true}))if(!entry.isDirectory()||entry.name<firstNewMigration)cpSync(join(root,'migrations',entry.name),join(scratch,'migrations',entry.name),{recursive:true});
  await admin.$executeRawUnsafe('CREATE DATABASE "'+database+'"');created=true;deploy(join(scratch,'schema.prisma'));
  const person=await db.person.create({data:{legalName:'Synthetic payout upgrade'}}),q=await db.qualification.create({data:{currentHolderPersonId:person.personId,planLevelCode:'STARTER'}});
  const batch=await db.payoutBatch.create({data:{periodStart:new Date('2026-01-01Z'),periodEnd:new Date('2026-02-01Z'),status:'EXPORTED',totalGross:100,totalRecovery:0,totalNet:100}});
@@ -32,6 +34,7 @@ try{
  assert.deepEqual(await db.payoutLine.findUnique({where:{payoutLineId:line.payoutLineId}}),line);
  assert.deepEqual(await db.payoutApproval.findUnique({where:{payoutApprovalId:approval.payoutApprovalId}}),approval);
  assert.deepEqual(await db.payoutExportArtifact.findUnique({where:{payoutExportArtifactId:artifact.payoutExportArtifactId}}),artifact);
+ if(artifactMode){await assert.rejects(db.payoutExportArtifact.update({where:{payoutExportArtifactId:artifact.payoutExportArtifactId},data:{contentHash:'b'.repeat(64)}}));await assert.rejects(db.payoutExportArtifact.delete({where:{payoutExportArtifactId:artifact.payoutExportArtifactId}}));}
  assert.deepEqual(await db.payoutPaymentResult.findUnique({where:{payoutPaymentResultId:result.payoutPaymentResultId}}),result);
  await assert.rejects(db.payoutPaymentResult.update({where:{payoutPaymentResultId:result.payoutPaymentResultId},data:{paidAmount:30}}));
  await assert.rejects(db.payoutApproval.update({where:{payoutApprovalId:approval.payoutApprovalId},data:{actorId:randomUUID()}}));
@@ -40,7 +43,8 @@ try{
  const retry={payoutBatchId:batch.payoutBatchId,payoutLineId:line.payoutLineId,resultStatus:'PAID',paidAmount:100,occurredAt:new Date(),recordedByActor:randomUUID(),idempotencyKey:randomUUID()};
  await assert.rejects(db.payoutPaymentResult.create({data:{...retry,paidAmount:30}}),/PAYOUT_PAID_AMOUNT_CANNOT_DECREASE/);
  await db.payoutPaymentResult.create({data:retry});
- console.log('PAYOUT_RESULT_UPGRADE_109_TO_110_PRESERVATION_AND_GUARDS_PASS');
+ const [{count}]=await db.$queryRawUnsafe('SELECT count(*)::int AS count FROM public._prisma_migrations WHERE finished_at IS NOT NULL AND rolled_back_at IS NULL');
+ console.log(`PAYOUT_RESULT_UPGRADE_${artifactMode?110:109}_TO_${count}_PRESERVATION_AND_GUARDS_PASS`);
 }finally{
  await db.$disconnect();if(created){await admin.$executeRawUnsafe('DROP DATABASE "'+database+'" WITH (FORCE)');console.log('PAYOUT_RESULT_UPGRADE_CLEANUP_PASS');}await admin.$disconnect();
  assert.equal(dirname(resolve(scratch)),resolve(tmpdir()));assert.ok(basename(scratch).startsWith('ucell-payout-upgrade-'));rmSync(scratch,{recursive:true,force:true});

@@ -1,6 +1,7 @@
 import {PrismaClient,Prisma} from '@prisma/client';
 import {AdminOperationsService} from '../src/modules/admin-operations/admin-operations.service';
 import {AuditService} from '../src/common/audit/audit.service';
+import {createHash,randomUUID} from 'node:crypto';
 
 const url=process.env.PHASE2_TEST_DATABASE_URL;
 const describeDb=url?describe:describe.skip;
@@ -31,6 +32,16 @@ describeDb('PAYOUT_EXPORT_ARTIFACT_REVISION',()=>{
     const saved=await db.payoutBatch.findUniqueOrThrow({where:{payoutBatchId:batch.payoutBatchId}});
     expect(saved.status).toBe('EXPORTED');
     expect(saved.paidAt).toBeNull();
+    const download=()=>service.downloadPayoutArtifact(batch.payoutBatchId,1,'00000000-0000-0000-0000-000000000101','FINANCE',randomUUID(),randomUUID());
+    const file=await download();expect(file.purpose).toBe('FINANCE_REVIEW_ONLY');expect(file.content).toContain(person.memberNo);expect(file.content).not.toContain(batch.payoutBatchId);expect(file.content).not.toContain(qualification.qualificationId);
+    expect(file.fileHash).toBe(createHash('sha256').update(file.content,'utf8').digest('hex'));expect(file.fileHash).toBe(first.artifact.contentHash);
+    const replacement=await db.person.create({data:{legalName:'Synthetic changed holder'}});
+    await db.qualification.update({where:{qualificationId:qualification.qualificationId},data:{currentHolderPersonId:replacement.personId}});
+    expect(await download()).toEqual(file);
+    expect(await db.auditEvent.count({where:{entityId:batch.payoutBatchId,action:'PAYOUT_ARTIFACT_DOWNLOADED'}})).toBe(2);
+    await expect(service.downloadPayoutArtifact(batch.payoutBatchId,1,randomUUID(),'COMPLIANCE_AUDIT',randomUUID(),randomUUID())).rejects.toMatchObject({status:422});
+    await expect(db.payoutExportArtifact.update({where:{payoutExportArtifactId:first.artifact.payoutExportArtifactId},data:{contentHash:'a'.repeat(64)}})).rejects.toThrow();
+    await expect(db.payoutExportArtifact.delete({where:{payoutExportArtifactId:first.artifact.payoutExportArtifactId}})).rejects.toThrow();
     const reconciled=await service.recordPayoutResults(batch.payoutBatchId,{results:[{payoutLineId:(await db.payoutLine.findFirstOrThrow({where:{payoutBatchId:batch.payoutBatchId}})).payoutLineId,status:'FAILED',paidAmount:'0',reasonCode:'BANK_REJECTED'}]},'00000000-0000-0000-0000-000000000101','FINANCE','00000000-0000-0000-0000-000000000205','00000000-0000-0000-0000-000000000206');
     expect(reconciled.batch.status).toBe('FAILED');
     expect(reconciled.results).toHaveLength(1);

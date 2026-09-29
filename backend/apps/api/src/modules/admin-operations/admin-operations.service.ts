@@ -5,6 +5,7 @@ import { IdempotencyService } from '../../common/idempotency/idempotency.service
 import { createHash } from 'node:crypto';
 import { companyReservoirCandidates } from './company-reservoir-invariants';
 import { orderEconomicEvidence } from './order-economic-evidence';
+import {createFinanceReviewArtifact,readFinanceReviewArtifact} from './payout-review-artifact';
 
 @Injectable()
 export class AdminOperationsService {
@@ -172,6 +173,8 @@ export class AdminOperationsService {
       where:{payoutBatchId:id},
       include:{
         approvals:{orderBy:{createdAt:'asc'}},
+        exportArtifacts:{select:{revision:true,formatVersion:true,contentHash:true,exportReference:true,generatedAt:true},orderBy:{revision:'desc'}},
+        paymentResults:{select:{payoutLineId:true,resultStatus:true,paidAmount:true,paymentReference:true,reasonCode:true,occurredAt:true},orderBy:{createdAt:'asc'}},
         lines:{
           include:{
             recipient:{include:{currentHolder:true}},
@@ -432,11 +435,22 @@ export class AdminOperationsService {
       const latestArtifact=await tx.payoutExportArtifact.aggregate({where:{payoutBatchId:id},_max:{revision:true}});
       const revision=(latestArtifact._max.revision??0)+1;
       const payload={schemaVersion:1,format:'GENERIC_FINANCE_CSV_V1',exportRevision:revision,payoutBatchId:batch.payoutBatchId,periodStart:batch.periodStart.toISOString(),periodEnd:batch.periodEnd.toISOString(),totalGross:batch.totalGross.toString(),totalRecovery:batch.totalRecovery.toString(),totalNet:batch.totalNet.toString(),lines:batch.lines.map(line=>({payoutLineId:line.payoutLineId,memberNo:line.recipient.currentHolder?.memberNo??null,ballNo:line.recipient.ballNo??null,grossAmount:line.grossAmount.toString(),recoveryOffset:line.recoveryOffset.toString(),netAmount:line.netAmount.toString()}))};
-      const contentHash=createHash('sha256').update(JSON.stringify(payload)).digest('hex');
-      const artifact=await tx.payoutExportArtifact.create({data:{payoutBatchId:id,exportReference:exportReference.trim(),adapterCode:'GENERIC_FINANCE_CSV',formatVersion:'GENERIC_FINANCE_CSV_V1',revision,contentHash,payloadSnapshot:payload,generatedByActor:actorId}});
+      const file=createFinanceReviewArtifact(payload,exportReference.trim());
+      const artifact=await tx.payoutExportArtifact.create({data:{payoutBatchId:id,exportReference:exportReference.trim(),adapterCode:'GENERIC_FINANCE_CSV',revision,...file,generatedByActor:actorId}});
       const updated=await tx.payoutBatch.update({where:{payoutBatchId:id},data:{status:'EXPORTED',exportedAt:new Date(),exportReference:exportReference.trim()}});
       await this.audit.write(tx,{actorType:'USER',actorId,action:'PAYOUT_EXPORTED',entityType:'PAYOUT_BATCH',entityId:id,afterData:{exportReference:artifact.exportReference,adapterCode:artifact.adapterCode,formatVersion:artifact.formatVersion,contentHash:artifact.contentHash},requestId,correlationId});
       return {batch:updated,artifact,replayed:false};
+    });
+  }
+  async downloadPayoutArtifact(id:string,revision:number,actorId:string|undefined,actorRole:string|undefined,requestId:string,correlationId:string){
+    if(!actorId||!actorRole||!['FINANCE','SUPER_ADMIN'].includes(actorRole))throw new UnprocessableEntityException('Finance role and authenticated actor are required to download payout artifacts');
+    if(!Number.isInteger(revision)||revision<1)throw new UnprocessableEntityException('INVALID_PAYOUT_EXPORT_REVISION');
+    return this.prisma.$transaction(async tx=>{
+      const artifact=await tx.payoutExportArtifact.findUnique({where:{payoutBatchId_revision:{payoutBatchId:id,revision}}});
+      if(!artifact)throw new ConflictException('PAYOUT_EXPORT_ARTIFACT_NOT_FOUND');
+      const file=readFinanceReviewArtifact(artifact);
+      await this.audit.write(tx,{actorType:'USER',actorId,action:'PAYOUT_ARTIFACT_DOWNLOADED',entityType:'PAYOUT_BATCH',entityId:id,afterData:{revision,fileHash:file.fileHash,artifactHash:file.artifactHash},requestId,correlationId});
+      return file;
     });
   }
   async markPaid(

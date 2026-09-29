@@ -1,9 +1,13 @@
 import { Roles } from '../auth/roles.decorator';
 import { Body,Controller,Get,Headers,Param,Post,Query,Req,UseGuards } from '@nestjs/common';
-import { ApiBearerAuth,ApiHeader,ApiOperation,ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth,ApiHeader,ApiOperation,ApiTags,ApiProperty } from '@nestjs/swagger';
+import {IsInt,Min,Max} from 'class-validator';
 import { randomUUID } from 'crypto';
 import { AdminOperationsService } from './admin-operations.service';
 import { IdempotencyGuard } from '../../common/guards/idempotency.guard';
+class PayoutArtifactDownloadDto{
+  @ApiProperty({minimum:1,maximum:2147483647}) @IsInt() @Min(1) @Max(2147483647) revision!:number;
+}
 
 @ApiTags('Admin - Returns / Workflows / Payout Operations')
 @ApiBearerAuth('adminBearer')
@@ -156,6 +160,13 @@ export class AdminOperationsController{
       },
       req.user?.personId,req.user?.role,req.requestId,req.correlationId??randomUUID()
     ).then(data=>({data}));
+  }
+
+  @Roles('SUPER_ADMIN','FINANCE')
+  @Post('payout-batches/:id/export-downloads')
+  @ApiOperation({operationId:'adminDownloadPayoutReviewArtifact',summary:'稽核並下載固定快照的財務覆核 CSV；非銀行匯款檔'})
+  download(@Param('id') id:string,@Body() body:PayoutArtifactDownloadDto,@Req() req:any){
+    return this.service.downloadPayoutArtifact(id,body.revision,req.user?.personId,req.user?.role,req.requestId??randomUUID(),req.correlationId??randomUUID()).then(data=>({data}));
   }
 
   @Roles('SUPER_ADMIN','FINANCE')

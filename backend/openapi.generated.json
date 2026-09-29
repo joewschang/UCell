@@ -12723,6 +12723,45 @@
         ]
       }
     },
+    "/api/v1/admin/operations/payout-batches/{id}/export-downloads": {
+      "post": {
+        "operationId": "adminDownloadPayoutReviewArtifact",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PayoutArtifactDownloadDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "稽核並下載固定快照的財務覆核 CSV；非銀行匯款檔",
+        "tags": [
+          "Admin - Returns / Workflows / Payout Operations"
+        ]
+      }
+    },
     "/api/v1/admin/operations/payout-batches/{id}/payment-results": {
       "post": {
         "operationId": "adminRecordPayoutPaymentResults",
@@ -18571,6 +18610,19 @@
           "effects",
           "limit",
           "truncated"
+        ]
+      },
+      "PayoutArtifactDownloadDto": {
+        "type": "object",
+        "properties": {
+          "revision": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 2147483647
+          }
+        },
+        "required": [
+          "revision"
         ]
       },
       "RetryProviderWebhookDto": {

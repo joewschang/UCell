@@ -6,13 +6,16 @@ import {PayoutsPage} from './PayoutsPage';
 import {PayoutResultForm} from './PayoutResultForm';
 import {Field} from '../../components/ui';
 import {get,command} from '../../lib/api';
+import {saveFinanceReviewDownload} from './payout-download';
 const state=vi.hoisted(()=>({role:'FINANCE',status:'APPROVED'}));
 vi.mock('../auth/auth',()=>({useAuth:()=>({user:{role:state.role,personId:'current-actor'}})}));
 vi.mock('../../components/ConfirmAction',()=>({ConfirmAction:({children,onConfirm,disabled}:any)=><button disabled={disabled} onClick={onConfirm}>{children}</button>}));
 vi.mock('../../lib/api',()=>({get:vi.fn(),command:vi.fn(),qs:()=>'',ApiError:class extends Error{}}));
+vi.mock('./payout-download',()=>({saveFinanceReviewDownload:vi.fn().mockResolvedValue(undefined)}));
 beforeEach(()=>{state.role='FINANCE';state.status='APPROVED';vi.mocked(command).mockReset().mockResolvedValue({data:{}});vi.mocked(get).mockReset().mockImplementation(async url=>{
  const data={payoutBatchId:'batch-a',status:state.status,periodStart:'2026-01-01Z',periodEnd:'2026-02-01Z',totalGross:'100',totalRecovery:'0',totalNet:'100',approvals:[{stage:'FINANCE_REVIEW',decision:'APPROVED',actorId:'another-finance'},...(state.status==='APPROVED'?[{stage:'COMPLIANCE_REVIEW',decision:'APPROVED',actorId:'another-auditor'}]:[])],lines:[{payoutLineId:'line-a',recipientQualificationId:'private-qualification',grossAmount:'100',recoveryOffset:'0',netAmount:'100',recipient:{ballNo:'BALL-100',currentHolder:{memberNo:'M100',legalName:'Synthetic member'}}}]};
- return {data:url.endsWith('/batch-a')?data:url.endsWith('/payout-batches')?[data]:[]};
+ const detail={...data,exportArtifacts:state.status==='EXPORTED'?[{revision:1,formatVersion:'GENERIC_FINANCE_CSV_V2',contentHash:'a'.repeat(64),exportReference:'EXPORT-1',generatedAt:'2026-02-01T00:00:00Z'}]:[]};
+ return {data:url.endsWith('/batch-a')?detail:url.endsWith('/payout-batches')?[data]:[]};
  });});
 async function render(){let view:ReturnType<typeof create>;await act(async()=>{view=create(<QueryClientProvider client={new QueryClient({defaultOptions:{queries:{retry:false}}})}><PayoutsPage/></QueryClientProvider>);});await vi.waitFor(()=>expect(view!.root.findAllByProps({className:'list-row '})).toHaveLength(1));await act(async()=>view!.root.findByProps({className:'list-row '}).props.onClick());await vi.waitFor(()=>expect(JSON.stringify(view!.toJSON())).toContain('BALL-100'));return view!;}
 it('allows independent compliance approval at REVIEWED and hides qualification UUID text',async()=>{
@@ -23,10 +26,15 @@ it('allows independent compliance approval at REVIEWED and hides qualification U
 });
 it('offers export at APPROVED with both recorded approvals',async()=>{
  const view=await render();act(()=>view.root.findAllByType(Field).find(f=>f.props.label==='匯出參考')!.findByType('input').props.onChange({target:{value:'EXPORT-1'}}));
- const button=view.root.findAllByType('button').find(b=>b.children.join('')==='建立受控匯出紀錄')!;expect(button.props.disabled).toBe(false);await act(async()=>button.props.onClick());
+ const button=view.root.findAllByType('button').find(b=>b.children.join('')==='建立財務覆核 CSV')!;expect(button.props.disabled).toBe(false);await act(async()=>button.props.onClick());
  expect(command).toHaveBeenCalledWith('/admin/operations/payout-batches/batch-a/export',{exportReference:'EXPORT-1'});act(()=>view.unmount());
 });
 it('shows failed-batch reconciliation only to Finance and preserves the same batch command scope',async()=>{
  state.status='FAILED';const view=await render();await act(async()=>view.root.findByType(PayoutResultForm).props.submit({results:[]}));expect(command).toHaveBeenCalledWith('/admin/operations/payout-batches/batch-a/payment-results',{results:[]});act(()=>view.unmount());
  state.role='COMPLIANCE_AUDIT';const audit=await render();expect(audit.root.findAllByType(PayoutResultForm)).toHaveLength(0);act(()=>audit.unmount());
+});
+it('downloads a specific immutable revision only through the Finance action',async()=>{
+ state.status='EXPORTED';const view=await render();const button=view.root.findAllByType('button').find(b=>b.children.join('')==='下載第 1 版覆核 CSV')!;expect(button).toBeDefined();
+ await act(async()=>button.props.onClick());expect(command).toHaveBeenCalledWith('/admin/operations/payout-batches/batch-a/export-downloads',{revision:1});expect(saveFinanceReviewDownload).toHaveBeenCalled();act(()=>view.unmount());
+ state.role='COMPLIANCE_AUDIT';const audit=await render();expect(audit.root.findAllByType('button').some(b=>b.children.join('')==='下載第 1 版覆核 CSV')).toBe(false);act(()=>audit.unmount());
 });
