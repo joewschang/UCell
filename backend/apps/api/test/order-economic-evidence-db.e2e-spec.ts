@@ -1,5 +1,6 @@
 import {PrismaClient} from '@prisma/client';
 import {randomUUID} from 'node:crypto';
+import {captureParameters,storeReplaySnapshot} from '@ucell/database';
 import {AdminOperationsService} from '../src/modules/admin-operations/admin-operations.service';
 import {AuditService} from '../src/common/audit/audit.service';
 
@@ -9,11 +10,11 @@ describeDb('ORDER_ECONOMIC_EVIDENCE_REAL_DB',()=>{
   let db:PrismaClient;
   beforeAll(()=>db=new PrismaClient({datasources:{db:{url}}}));
   afterAll(()=>db.$disconnect());
-  async function fixture(){
+  async function fixture(ruleVersionCode='R1'){
     const person=await db.person.create({data:{legalName:'Private lineage holder'}});
     const q=await db.qualification.create({data:{currentHolderPersonId:person.personId,planLevelCode:'STARTER'}});
-    const order=await db.order.create({data:{purchaserPersonId:person.personId,purpose:'RETAIL',grossAmount:100,netAmount:100,ruleVersionCode:'R1'}});
-    const pv=await db.pvLedger.create({data:{qualificationId:q.qualificationId,pvType:'GPV',amount:100,sourceType:'ORDER',sourceId:order.orderId,eventType:'GPV_CREATED',ruleVersionCode:'R1',occurredAt:new Date(),correlationId:randomUUID()}});
+    const order=await db.order.create({data:{purchaserPersonId:person.personId,purpose:'RETAIL',grossAmount:100,netAmount:100,ruleVersionCode}});
+    const pv=await db.pvLedger.create({data:{qualificationId:q.qualificationId,pvType:'GPV',amount:100,sourceType:'ORDER',sourceId:order.orderId,eventType:'GPV_CREATED',ruleVersionCode,occurredAt:new Date(),correlationId:randomUUID()}});
     const award=async(sourceEventId:string,sourceAwardId?:string)=>db.bonusAward.create({data:{recipientQualificationId:q.qualificationId,sourceEventId,sourceAwardId,awardType:'REFERRAL',theoryAmount:10,payableAmount:10,activeSnapshot:true,ruleVersionCode:'R1',occurredAt:new Date(),pendingUntil:new Date(),calculationDetail:{privateNote:'do not expose'}}});
     const service=new AdminOperationsService(db as any,new AuditService());
     return {person,q,order,pv,award,read:()=>service.economicLineageByOrderNo(order.orderNo.toString())};
@@ -31,6 +32,42 @@ describeDb('ORDER_ECONOMIC_EVIDENCE_REAL_DB',()=>{
     const json=JSON.stringify(first);
     for(const secret of [f.person.personId,f.q.qualificationId,f.order.orderId,direct.bonusAwardId,child.bonusAwardId,unrelated.bonusAwardId,payable.payableEntryId,'Private lineage holder','privateNote']) expect(json).not.toContain(secret);
     expect(await db.payableEntry.findUniqueOrThrow({where:{payableEntryId:payable.payableEntryId}})).toEqual(payable);
+  });
+  async function periodFixture(kind:string){
+    const f=await fixture('R1.0B'),at=f.pv.occurredAt;
+    const parameters=await db.$transaction(tx=>captureParameters(tx,at,'R1.0B'));
+    const source={format:'UCELL_HISTORICAL_REPLAY_V1' as const,kind:'GPV',sourceId:f.pv.eventId,ruleVersionCode:'R1.0B',at:at.toISOString(),parameters,recipients:[],evidence:{privateIdentity:f.person.personId},inputs:{eventId:f.pv.eventId,orderId:f.order.orderId,volume:'100'}};
+    const envelope={format:'UCELL_HISTORICAL_REPLAY_V1' as const,kind,sourceId:randomUUID(),ruleVersionCode:'R1.0B',at:new Date(at.getTime()+1000).toISOString(),parameters,recipients:[],evidence:{sources:[source]},inputs:{periodStart:at.toISOString(),periodEnd:new Date(at.getTime()+1000).toISOString(),totalGpv:'900000'}};
+    return {f,envelope,source};
+  }
+  it.each(['REFERRAL_K0','BINARY_K1','MATCHING_K2','GLOBAL'])('reports exact sealed %s period membership without allocating period awards',async kind=>{
+    const {f,envelope,source}=await periodFixture(kind);
+    const unrelated={...source,sourceId:randomUUID(),inputs:{eventId:randomUUID(),orderId:randomUUID(),volume:'899900'}};
+    envelope.evidence.sources.push(unrelated);
+    const snapshot=await db.$transaction(tx=>storeReplaySnapshot(tx,envelope));
+    const evidence=(await f.read()).economicEvidence;
+    expect(evidence.periodContributions).toEqual([expect.objectContaining({kind,attribution:'SEALED_PERIOD_INPUT_ONLY',orderOriginalGpv:'100',snapshotHash:snapshot.hash,periodStart:envelope.inputs.periodStart,periodEnd:envelope.inputs.periodEnd,sources:[{sourcePvReference:evidence.pvEvents[0].reference,originalGpv:'100'}]})]);
+    expect(evidence.awards).toEqual([]);
+    expect(evidence.payables).toEqual([]);
+    expect((await f.read()).economicEvidence).toEqual(evidence);
+    const json=JSON.stringify(evidence.periodContributions);
+    for(const internal of [snapshot.snapshotId,envelope.sourceId,f.pv.eventId,f.order.orderId,f.person.personId,unrelated.sourceId,'900000','899900','privateIdentity'])expect(json).not.toContain(internal);
+    expect(await db.historicalReplaySnapshot.findUniqueOrThrow({where:{snapshotId:snapshot.snapshotId}})).toEqual(snapshot);
+    const other=await fixture('R1.0B');
+    expect((await other.read()).economicEvidence.periodContributions).toEqual([]);
+  });
+  it.each(['order','volume','duplicate','endBoundary','hash'])('rejects inconsistent sealed period evidence: %s',async fault=>{
+    const {f,envelope,source}=await periodFixture('BINARY_K1');
+    if(fault==='order')source.inputs.orderId=randomUUID();
+    if(fault==='volume')source.inputs.volume='101';
+    if(fault==='duplicate')envelope.evidence.sources.push(source);
+    if(fault==='endBoundary'){
+      envelope.inputs.periodStart=new Date(f.pv.occurredAt.getTime()-1000).toISOString();
+      envelope.inputs.periodEnd=f.pv.occurredAt.toISOString();
+    }
+    if(fault==='hash')await db.historicalReplaySnapshot.create({data:{kind:envelope.kind,sourceId:envelope.sourceId,ruleVersionCode:envelope.ruleVersionCode,content:JSON.parse(JSON.stringify(envelope)),hash:'invalid'}});
+    else await db.$transaction(tx=>storeReplaySnapshot(tx,envelope));
+    await expect(f.read()).rejects.toMatchObject({response:{code:'HISTORICAL_SNAPSHOT_CORRUPT'}});
   });
   it('includes return-linked recovery without attributing its whole period award to the order',async()=>{
     const f=await fixture(),periodAward=await f.award(randomUUID());

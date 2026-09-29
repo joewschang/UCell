@@ -1,8 +1,38 @@
-import { Prisma } from '@prisma/client';
+import { Prisma, PvLedger } from '@prisma/client';
+import { pending, verifyReplayEnvelope } from '@ucell/database';
 import { createHash } from 'node:crypto';
 
 // References join this projection without exposing internal UUIDs or identities.
 const reference = (kind:string,id:string) => `${kind}:${createHash('sha256').update(`${kind}:${id}`).digest('hex')}`;
+
+/** Membership in a sealed period input cohort does not allocate its awards. */
+async function periodContributions(tx:Prisma.TransactionClient,orderId:string,pv:PvLedger[]){
+  const originals=pv.filter(row=>row.pvType==='GPV'&&row.eventType==='GPV_CREATED');
+  if(!originals.length)return [];
+  const snapshots=await tx.historicalReplaySnapshot.findMany({
+    where:{kind:{in:['REFERRAL_K0','BINARY_K1','MATCHING_K2','GLOBAL']},OR:originals.map(row=>({
+      content:{path:['evidence','sources'],array_contains:[{kind:'GPV',sourceId:row.eventId}]},
+    }))},orderBy:[{createdAt:'asc'},{snapshotId:'asc'}],
+  });
+  return snapshots.map(row=>{
+    const envelope=verifyReplayEnvelope(row);
+    const start=new Date(envelope.inputs.periodStart),end=new Date(envelope.inputs.periodEnd);
+    if(envelope.kind!==row.kind||envelope.sourceId!==row.sourceId||!Number.isFinite(start.getTime())||!Number.isFinite(end.getTime())||start>=end||!Array.isArray(envelope.evidence.sources))
+      pending('HISTORICAL_SNAPSHOT_CORRUPT','Period source identity or interval is invalid');
+    const sources: Array<{sourcePvReference:string;originalGpv:string}>=[];
+    for(const event of originals){
+      const matches=envelope.evidence.sources.filter((source:any)=>source.sourceId===event.eventId);
+      if(!matches.length)continue;
+      const source=matches[0];
+      if(matches.length!==1||source.kind!=='GPV'||source.inputs?.eventId!==event.eventId||source.inputs?.orderId!==orderId||source.ruleVersionCode!==event.ruleVersionCode||row.ruleVersionCode!==event.ruleVersionCode||source.at!==event.occurredAt.toISOString()||source.inputs?.volume!==event.amount.toString()||event.occurredAt<start||event.occurredAt>=end)
+        pending('HISTORICAL_SNAPSHOT_CORRUPT','Period source does not match its original order PV evidence');
+      sources.push({sourcePvReference:reference('PV',event.eventId),originalGpv:event.amount.toString()});
+    }
+    return {reference:reference('REPLAY_SNAPSHOT',row.snapshotId),settlementReference:reference('SETTLEMENT',row.sourceId),
+      kind:row.kind,periodStart:start.toISOString(),periodEnd:end.toISOString(),ruleVersionCode:row.ruleVersionCode,snapshotHash:row.hash,
+      attribution:'SEALED_PERIOD_INPUT_ONLY',orderOriginalGpv:sources.reduce((sum,source)=>sum.add(source.originalGpv),new Prisma.Decimal(0)).toString(),sources};
+  });
+}
 
 /** Only explicit order/PV/award/return edges establish attribution. Period totals
  * and other awards belonging to the same recipient are deliberately excluded. */
@@ -50,7 +80,8 @@ export async function orderEconomicEvidence(tx:Prisma.TransactionClient,orderId:
     orderBy:[{effectiveAt:'asc'},{destinationId:'asc'}],
   });
   return {
-    scope:'ORDER_PV_AWARD_RETURN_SUBSCRIPTION_RPV_REPLAY_AND_RESERVOIR_B',
+    scope:'ORDER_PV_AWARD_RETURN_SUBSCRIPTION_RPV_REPLAY_RESERVOIR_B_AND_PERIOD_INPUTS',
+    periodContributions:await periodContributions(tx,orderId,pv),
     pvEvents:pv.map(row=>({reference:reference('PV',row.eventId),pvType:row.pvType,eventType:row.eventType,amount:row.amount.toString(),occurredAt:row.occurredAt.toISOString()})),
     awards:[...awards.values()].sort((a,b)=>a.occurredAt.getTime()-b.occurredAt.getTime()||a.bonusAwardId.localeCompare(b.bonusAwardId)).map(row=>({reference:reference('AWARD',row.bonusAwardId),sourcePvReference:row.sourceEventId&&pv.some(p=>p.eventId===row.sourceEventId)?reference('PV',row.sourceEventId):null,sourceAwardReference:row.sourceAwardId&&awards.has(row.sourceAwardId)?reference('AWARD',row.sourceAwardId):null,awardType:row.awardType,theoryAmount:row.theoryAmount.toString(),payableAmount:row.payableAmount.toString(),occurredAt:row.occurredAt.toISOString(),ruleVersionCode:row.ruleVersionCode,parameterSnapshotHash:row.parameterSnapshotHash})),
     payables:payables.map(row=>({reference:reference('PAYABLE',row.payableEntryId),awardReference:reference('AWARD',row.sourceId),grossAmount:row.grossAmount.toString(),status:row.status,availableAt:row.availableAt.toISOString(),payout:row.payoutLine?{status:row.payoutLine.payoutBatch.status,periodStart:row.payoutLine.payoutBatch.periodStart.toISOString(),periodEnd:row.payoutLine.payoutBatch.periodEnd.toISOString()}:null})),
