@@ -216,7 +216,13 @@ describeDb('sealed period eligibility writer-to-order lineage',()=>{
         const globalSnapshot=await tx.historicalReplaySnapshot.findUniqueOrThrow({where:{kind_sourceId:{kind:'GLOBAL',sourceId:global.globalPoolSettlementId}}});
         expect(verifyReplayEnvelope(globalSnapshot).recipients).toHaveLength(globalAwards.length);
         const final=await orderEconomicEvidence(tx,orders[0].orderId,[]),globalPeriod=final.periodContributions.find(row=>row.kind==='GLOBAL')!;
-        expect(globalPeriod).toMatchObject({orderOriginalGpv:'100',kFactor:null,periodContext:{attribution:'WHOLE_PERIOD_NOT_ORDER_ALLOCATION',eligibilityEvidenceStatus:'UNAVAILABLE',eligibilityDecisions:[]}});
+        expect(globalPeriod).toMatchObject({orderOriginalGpv:'100',kFactor:null,periodContext:{attribution:'WHOLE_PERIOD_NOT_ORDER_ALLOCATION',eligibilityEvidenceStatus:'RECORDED'}});
+        const globalDecisions=globalPeriod.periodContext.eligibilityDecisions;
+        expect(globalDecisions).toHaveLength(active?30:15);
+        expect(globalDecisions).toContainEqual(expect.objectContaining({eligibilityType:'GLOBAL_ELIGIBILITY',rankLevel:'NEW_STAR',active,weakSidePv:'100',weakSideThreshold:'100',rankAchieved:true,eligible:active,reasonCode:active?'ELIGIBLE':'INACTIVE'}));
+        expect(globalDecisions).toContainEqual(expect.objectContaining({rankLevel:'CROWN',weakSidePv:'100',weakSideThreshold:'1000',rankAchieved:false,eligible:false,reasonCode:active?'WEAK_SIDE_BELOW_THRESHOLD':'INACTIVE'}));
+        expect(verifyReplayEnvelope(globalSnapshot).evidence.globalEligibilityDecisions).toHaveLength(globalDecisions.length);
+        for(const decision of globalDecisions){expect(decision).not.toHaveProperty('theoryAmount');expect(decision).not.toHaveProperty('entitlementAmount');}
         expect(globalPeriod.periodContext.recipients).toEqual(active?[expect.objectContaining({awardType:'GLOBAL',theoryAmount:'4',originallyPosted:'4',active:true})]:[]);
         expect(final.awards).toEqual([]);expect(final.payables).toEqual([]);
         for(const secret of [global.globalPoolSettlementId,globalSnapshot.snapshotId,root.qualificationId,...globalAwards.map(row=>row.globalPoolAwardId)])expect(JSON.stringify(final)).not.toContain(secret);

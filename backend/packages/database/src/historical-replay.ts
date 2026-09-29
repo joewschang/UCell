@@ -685,7 +685,11 @@ export async function capturedSideGpv(tx:Prisma.TransactionClient,root:string,si
 }
 
 /** Seal the exact graph and parameter evidence used by the shared Global engine. */
-export async function sealGlobalSettlement(tx:Prisma.TransactionClient,settlement:any,facts?:Awaited<ReturnType<typeof captureGlobalPeriod>>){
+export interface GlobalEligibilityDecision {
+ qualificationId:string;rankLevel:string;active:boolean;weakSidePv:string;threshold:string;rankAchieved:boolean;eligible:boolean;
+ reasonCode:'INACTIVE'|'WEAK_SIDE_BELOW_THRESHOLD'|'RANK_NOT_ACHIEVED'|'ELIGIBLE';
+}
+export async function sealGlobalSettlement(tx:Prisma.TransactionClient,settlement:any,facts?:Awaited<ReturnType<typeof captureGlobalPeriod>>,eligibilityDecisions?:GlobalEligibilityDecision[]){
  const parameters=verifySnapshot(settlement.parameterSnapshot);
  const {sources,binary,effective,total}=facts??await captureGlobalPeriod(tx,settlement.periodStart,settlement.periodEnd,settlement.ruleVersionCode);
  if(!total.eq(settlement.totalGpv))pending('GLOBAL_SOURCE_EVIDENCE_MISMATCH','Global source cohort does not reconcile to the finalized Core total');
@@ -698,7 +702,7 @@ export async function sealGlobalSettlement(tx:Prisma.TransactionClient,settlemen
    detail:{rank:award.rankLevel,weakSidePv:award.weakSidePvSnapshot.toString()},qualification});
  }
  const envelope:ReplayEnvelope={format:'UCELL_HISTORICAL_REPLAY_V1',kind:'GLOBAL',sourceId:settlement.globalPoolSettlementId,ruleVersionCode:settlement.ruleVersionCode,at:settlement.periodEnd.toISOString(),parameters,recipients,
-  evidence:{sources,binary},inputs:{periodStart:settlement.periodStart.toISOString(),periodEnd:settlement.periodEnd.toISOString(),totalGpv:total.toString(),undistributed:settlement.undistributedAmount.toString()}};
+  evidence:{sources,binary,...(eligibilityDecisions===undefined?{}:{globalEligibilityDecisions:eligibilityDecisions})},inputs:{periodStart:settlement.periodStart.toISOString(),periodEnd:settlement.periodEnd.toISOString(),totalGpv:total.toString(),undistributed:settlement.undistributedAmount.toString()}};
  const check=periodGlobal(envelope,effective);
  if(!check.calculation.undistributedAmount.eq(settlement.undistributedAmount)||recipients.some(r=>!check.payables.get(r.key)?.eq(r.posted)))
   pending('GLOBAL_SOURCE_EVIDENCE_MISMATCH','Sealed Global graph and parameters do not reproduce original entitlements');

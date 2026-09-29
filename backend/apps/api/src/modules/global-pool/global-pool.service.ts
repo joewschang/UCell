@@ -1,7 +1,7 @@
 import { SettlementCalendarService } from '../settlement/settlement-calendar.service';
 import { snapshotDecimal } from '../rules/parameter-snapshot';
 import { Injectable } from '@nestjs/common';
-import { GlobalRankCode, Prisma, PrismaService, sealGlobalSettlement, captureGlobalPeriod, globalWeakSide } from '@ucell/database';
+import { GlobalRankCode, GlobalEligibilityDecision, Prisma, PrismaService, sealGlobalSettlement, captureGlobalPeriod, globalWeakSide } from '@ucell/database';
 import { RuntimeRuleService } from '../rules/runtime-rule.service';
 import { BonusQueryService } from '../bonus/bonus-query.service';
 import { calculateGlobalPool, GlobalRankSliceInput } from './global-pool-calculation';
@@ -66,6 +66,7 @@ export class GlobalPoolService {
       }
 
       const sliceInputs:GlobalRankSliceInput[]=[];
+      const eligibilityDecisions:GlobalEligibilityDecision[]=[];
 
       for(const level of LEVELS){
         const rate=snapshotDecimal(parameterSnapshot,'global.rank.pool_rate',level);
@@ -74,13 +75,13 @@ export class GlobalPoolService {
         const eligible:string[]=[];
         for(const q of qs){
           const active=await this.query.isActiveAt(tx,q.qualificationId,periodEnd);
-          if(!active) continue;
           const weak=weakMap.get(q.qualificationId)!;
-          if(weak.lt(threshold)) continue;
           const achieved=await tx.qualificationGlobalRankHistory.findUnique({
             where:{qualificationId_rankCode:{qualificationId:q.qualificationId,rankCode:level}}
           });
-          if(achieved) eligible.push(q.qualificationId);
+          const reasonCode=!active?'INACTIVE':weak.lt(threshold)?'WEAK_SIDE_BELOW_THRESHOLD':!achieved?'RANK_NOT_ACHIEVED':'ELIGIBLE';
+          eligibilityDecisions.push({qualificationId:q.qualificationId,rankLevel:level,active,weakSidePv:weak.toString(),threshold:threshold.toString(),rankAchieved:!!achieved,eligible:reasonCode==='ELIGIBLE',reasonCode});
+          if(reasonCode==='ELIGIBLE') eligible.push(q.qualificationId);
         }
         sliceInputs.push({level,rate,eligibleQualificationIds:eligible});
       }
@@ -105,7 +106,7 @@ export class GlobalPoolService {
         parameterSnapshot:parameterSnapshot as unknown as Prisma.InputJsonValue,
         awards,
       });
-      await sealGlobalSettlement(tx,settlement,periodFacts);
+      await sealGlobalSettlement(tx,settlement,periodFacts,eligibilityDecisions);
       return settlement;
       },{isolationLevel:Prisma.TransactionIsolationLevel.Serializable});
     } catch (error) {

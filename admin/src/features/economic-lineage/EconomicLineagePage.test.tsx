@@ -85,6 +85,14 @@ it('renders the sealed period factor separately from theory and posted entitleme
  for(const label of ['0.5','0.25','0.125','理論金額','原始權益','未提供','整期獎金不等於本單獎金'])expect(output).toContain(label);
  act(()=>view.unmount());
 });
+it('shows historical Global threshold decisions without inventing entitlement',async()=>{
+ vi.mocked(get).mockResolvedValue({data:{...fixture,economicEvidence:{periodContributions:[{periodContext:{eligibilityEvidenceStatus:'RECORDED',eligibilityDecisions:[{eligibilityType:'GLOBAL_ELIGIBILITY',rankLevel:'NEW_STAR',active:true,weakSidePv:'100',weakSideThreshold:'1000',rankAchieved:false,eligible:false,reasonCode:'WEAK_SIDE_BELOW_THRESHOLD',recipientReference:'PRIVATE-GLOBAL'}]}}]}}});
+ const view=await render();await vi.waitFor(()=>expect(JSON.stringify(view.toJSON())).toContain('Global 資格'));
+ const output=JSON.stringify(view.toJSON());
+ for(const label of ['當時弱邊門檻','當時已達成位階','當期弱邊 PV 未達門檻','不提供假設獎金'])expect(output).toContain(label);
+ for(const absent of ['PRIVATE-GLOBAL','當時權益金額','理論金額'])expect(output).not.toContain(absent);
+ act(()=>view.unmount());
+});
 it('hides cached financial evidence after a failed refresh and allows retry',async()=>{
  const view=await render();await vi.waitFor(()=>expect(JSON.stringify(view.toJSON())).toContain('零售推薦獎金'));
  vi.mocked(get).mockRejectedValueOnce(new Error('連線失敗'));

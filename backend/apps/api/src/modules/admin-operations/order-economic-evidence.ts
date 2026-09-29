@@ -1,5 +1,5 @@
 import { Prisma, PvLedger } from '@prisma/client';
-import { pending, verifyReplayEnvelope } from '@ucell/database';
+import { pending, verifyReplayEnvelope, snapshotDecimal } from '@ucell/database';
 import { createHash } from 'node:crypto';
 import {orderReplayPostingEvidence} from './order-replay-posting-evidence';
 import {recognitionRetentionEvidence} from './recognition-retention-evidence';
@@ -114,6 +114,24 @@ async function periodContributions(tx:Prisma.TransactionClient,orderId:string,pv
         pending('HISTORICAL_SNAPSHOT_CORRUPT','Period source does not match its original order PV evidence');
       sources.push({sourcePvReference:reference('PV',event.eventId),originalGpv:event.amount.toString()});
     }
+    const globalDecisions=envelope.kind==='GLOBAL'?envelope.evidence.globalEligibilityDecisions:undefined;
+    if(globalDecisions!==undefined&&!Array.isArray(globalDecisions))pending('HISTORICAL_SNAPSHOT_CORRUPT','Stored Global eligibility evidence is invalid');
+    const globalKeys=new Set<string>();
+    const globalEligibilityDecisions=(globalDecisions??[]).map((decision:any)=>{
+      if(!decision||typeof decision.qualificationId!=='string'||!decision.qualificationId||!['NEW_STAR','EXCELLENCE','GLORY','DIAMOND','CROWN'].includes(decision.rankLevel)||
+        typeof decision.active!=='boolean'||typeof decision.rankAchieved!=='boolean'||typeof decision.eligible!=='boolean')pending('HISTORICAL_SNAPSHOT_CORRUPT','Stored Global eligibility identity is invalid');
+      const key=`${decision.qualificationId}:${decision.rankLevel}`,weakSidePv=amount(decision.weakSidePv),threshold=amount(decision.threshold);
+      const weak=new Prisma.Decimal(weakSidePv),required=new Prisma.Decimal(threshold);
+      const expected=!decision.active?'INACTIVE':weak.lt(required)?'WEAK_SIDE_BELOW_THRESHOLD':!decision.rankAchieved?'RANK_NOT_ACHIEVED':'ELIGIBLE';
+      const recipients=envelope.recipients.filter(item=>item.qualificationId===decision.qualificationId&&item.detail?.rank===decision.rankLevel);
+      if(globalKeys.has(key)||weak.lt(0)||required.lt(0)||!required.eq(snapshotDecimal(envelope.parameters,'global.rank.weak_threshold',decision.rankLevel))||
+        decision.reasonCode!==expected||decision.eligible!==(expected==='ELIGIBLE')||recipients.length!==(decision.eligible?1:0)||
+        recipients.some(item=>item.awardType!=='GLOBAL'||item.active!==decision.active||item.eligible!==decision.eligible||amount(item.detail.weakSidePv)!==weakSidePv))pending('HISTORICAL_SNAPSHOT_CORRUPT','Stored Global eligibility conflicts with its sealed result');
+      globalKeys.add(key);
+      return {reference:reference('PERIOD_ELIGIBILITY',`${row.snapshotId}:${key}`),recipientReference:reference('ECONOMIC_RECIPIENT',decision.qualificationId),eligibilityType:'GLOBAL_ELIGIBILITY',
+        rankLevel:decision.rankLevel,active:decision.active,weakSidePv,weakSideThreshold:threshold,rankAchieved:decision.rankAchieved,eligible:decision.eligible,reasonCode:decision.reasonCode,occurredAt:envelope.at};
+    }).sort((a:any,b:any)=>a.reference.localeCompare(b.reference));
+    if(globalDecisions!==undefined&&envelope.recipients.some(item=>!globalKeys.has(`${item.qualificationId}:${item.detail?.rank}`)))pending('HISTORICAL_SNAPSHOT_CORRUPT','Stored Global recipient lacks eligibility evidence');
     const sealedDecisions=envelope.evidence.eligibilityEvidence;
     if(sealedDecisions!==undefined&&!Array.isArray(sealedDecisions))pending('HISTORICAL_SNAPSHOT_CORRUPT','Stored period eligibility evidence is invalid');
     const decisionKeys=new Set<string>();
@@ -142,7 +160,7 @@ async function periodContributions(tx:Prisma.TransactionClient,orderId:string,pv
     return {reference:reference('REPLAY_SNAPSHOT',row.snapshotId),settlementReference:reference('SETTLEMENT',row.sourceId),
       kind:row.kind,periodStart:start.toISOString(),periodEnd:end.toISOString(),ruleVersionCode:row.ruleVersionCode,snapshotHash:row.hash,kFactor,
       attribution:'SEALED_PERIOD_INPUT_ONLY',orderOriginalGpv:sources.reduce((sum,source)=>sum.add(source.originalGpv),new Prisma.Decimal(0)).toString(),sources,
-      periodContext:{attribution:'WHOLE_PERIOD_NOT_ORDER_ALLOCATION',eligibilityEvidenceStatus:sealedDecisions===undefined?'UNAVAILABLE':'RECORDED',eligibilityDecisions,recipients,corrections}};
+      periodContext:{attribution:'WHOLE_PERIOD_NOT_ORDER_ALLOCATION',eligibilityEvidenceStatus:sealedDecisions===undefined&&globalDecisions===undefined?'UNAVAILABLE':'RECORDED',eligibilityDecisions:[...eligibilityDecisions,...globalEligibilityDecisions],recipients,corrections}};
   });
 }
 

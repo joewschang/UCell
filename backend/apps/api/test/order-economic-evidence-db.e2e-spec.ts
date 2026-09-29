@@ -138,6 +138,20 @@ describeDb('ORDER_ECONOMIC_EVIDENCE_REAL_DB',()=>{
     await db.$transaction(tx=>storeReplaySnapshot(tx,envelope));
     expect((await f.read()).economicEvidence.periodContributions[0].kFactor).toBeNull();
   });
+  it.each(['shape','duplicate','reason','threshold','amount','rank','recipient','recipient-metric'])('rejects invalid sealed Global eligibility %s',async fault=>{
+    const {f,envelope}=await periodFixture('GLOBAL');
+    const threshold=String(envelope.parameters.parameters.find(row=>row.code==='global.rank.weak_threshold'&&row.scope==='NEW_STAR')!.value);
+    const eligible=fault.startsWith('recipient');
+    const decision={qualificationId:f.q.qualificationId,rankLevel:fault==='rank'?'UNKNOWN':'NEW_STAR',active:eligible,weakSidePv:fault==='amount'?'NaN':threshold,threshold:fault==='threshold'?'0':threshold,rankAchieved:true,eligible,reasonCode:fault==='reason'||eligible?'ELIGIBLE':'INACTIVE'};
+    const recipients=fault==='recipient-metric'?[{key:randomUUID(),awardId:randomUUID(),awardType:'GLOBAL' as const,qualificationId:f.q.qualificationId,generation:0,active:true,eligible:true,theory:'1',posted:'1',pendingUntil:envelope.at,detail:{rank:'NEW_STAR',weakSidePv:new Prisma.Decimal(threshold).add(1).toString()},qualification:{at:envelope.at,plan:{planCode:'STARTER'},status:{status:'EFFECTIVE'},activeIntervals:[{activeFrom:envelope.inputs.periodStart}]}}]:[];
+    await db.$transaction(tx=>storeReplaySnapshot(tx,{...envelope,recipients,evidence:{...envelope.evidence,globalEligibilityDecisions:fault==='shape'?{}:fault==='duplicate'?[decision,decision]:[decision]}}));
+    await expect(f.read()).rejects.toMatchObject({response:{code:'HISTORICAL_SNAPSHOT_CORRUPT'}});
+  });
+  it.each([false,true])('preserves legacy versus recorded empty Global decisions: %s',async recorded=>{
+    const {f,envelope}=await periodFixture('GLOBAL');
+    await db.$transaction(tx=>storeReplaySnapshot(tx,{...envelope,evidence:{...envelope.evidence,...(recorded?{globalEligibilityDecisions:[]}:{})}}));
+    expect((await f.read()).economicEvidence.periodContributions[0].periodContext).toMatchObject({eligibilityEvidenceStatus:recorded?'RECORDED':'UNAVAILABLE',eligibilityDecisions:[]});
+  });
   async function periodFixture(kind:string){
     const f=await fixture('R1.0B'),at=f.pv.occurredAt;
     const parameters=await db.$transaction(tx=>captureParameters(tx,at,'R1.0B'));
