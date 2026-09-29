@@ -15,7 +15,9 @@ The view composes existing authoritative facts only:
 - payout approval/export/payment-result facts;
 - independent fulfillment ERP attention count.
 
-The derived lifecycle can report `OPEN`, `PRECHECK`, `READY_TO_CLOSE`, `SETTLING`, `BLOCKED`, `AWARD_FINALIZED`, `MATURING`, `PAYABLE_READY`, `PAYMENT_REVIEW`, `BANK_RECONCILING` or `FINANCIALLY_RECONCILED`. It is explicitly a read/control state. No hard-close flag is persisted, and `FINANCIALLY_RECONCILED` does not claim an ERP or statutory accounting close.
+The derived lifecycle can report `OPEN`, `PRECHECK`, `SOFT_CLOSED`, `SETTLING`, `BLOCKED`, `AWARD_FINALIZED`, `MATURING`, `PAYABLE_READY`, `PAYMENT_REVIEW`, `BANK_RECONCILING` or `FINANCIALLY_RECONCILED`. It is explicitly a read/control state. No duplicate hard-close flag is persisted, and `FINANCIALLY_RECONCILED` does not claim an ERP or statutory accounting close.
+
+`SOFT_CLOSED` is derived only when all four required immutable period-close requests exist and preserve their approved input, Rule Version and snapshot evidence before execution. Processing then advances to `SETTLING`. Completed receipts, Payable, payout and bank-result facts derive later stages. Historical returns/replay remain current append-only corrections linked to historical facts; the control read never reopens or rewrites a historical settlement.
 
 Where the repository lacks one sealed cross-volume completeness receipt, the checkpoint returns `NOT_AVAILABLE`; it does not infer completeness from current records. ERP accounting projection remains `BLOCKED_EXTERNAL / ERP_ACCOUNT_MAPPING_REQUIRED` until accounting authority supplies the mapping.
 
@@ -41,7 +43,7 @@ Referral K0, Binary K1, Matching K2 and Global each pass both boundaries for emp
 ## Evidence
 
 - `period-close-worker-crash-db.e2e-spec.ts`: 1 suite / 16 tests PASS against disposable PostgreSQL and real OS child processes.
-- `compensation-period-control.e2e-spec.ts`: 1 suite / 7 tests PASS, including raw-error privacy and parameterized aging bounds.
+- `compensation-period-control.e2e-spec.ts`: 1 suite / 8 tests PASS, including raw-error privacy, parameterized aging bounds and server-authoritative Soft Close derivation.
 - `compensation-period-control-db.e2e-spec.ts`: 1 suite / 1 real-DB test PASS after fresh 0→109; 162 baseline DB assertions and cleanup PASS.
 - Admin focused navigation/RBAC/control UI: 3 files / 11 tests PASS; full Admin regression: 39 files / 148 tests PASS.
 - API and Admin production builds PASS.
@@ -49,7 +51,7 @@ Referral K0, Binary K1, Matching K2 and Global each pass both boundaries for emp
 
 ## Remaining §35 work
 
-- No write command for Soft Close or Hard economic close has been introduced. Persisted close authority and late-input disposition require a separate governed design; the read model does not fake it.
+- Soft Close and later economic lifecycle states are server-derived from immutable requests/receipts and downstream authoritative facts. No duplicate mutable close flag is introduced; an explicit late-input disposition command remains separate governed work.
 - A single sealed GPV/RPV/EPV input-completeness receipt is not present.
 - ERP compensation/accounting projection and exact account mapping remain external.
 - Sales and Return bridge streams beyond currently persisted UCell/fulfillment evidence remain open.

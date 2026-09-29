@@ -77,11 +77,11 @@ export class CompensationPeriodControlService{
     tx.fulfillmentErpHandoff.count({where:{requestedAt:{gte:period.periodStart,lt:period.periodEnd},OR:[{outboxEvent:{processStatus:{in:['PENDING','PROCESSING','DEAD']}}},{reconciliations:{some:{outcome:{in:['PARTIAL','MISMATCH']}}}}]}}),
    ]);
    const kinds=['REFERRAL_K0','BINARY_K1','MATCHING_K2','GLOBAL'];
-   const byKind=new Map(jobs.map(row=>[row.kind,row])),dead=jobs.filter(row=>row.outbox.processStatus==='DEAD'),complete=jobs.filter(row=>!!row.receipt),payable=payables[0]??{total:0n,open:0n,gross:new Prisma.Decimal(0)};
+   const byKind=new Map(jobs.map(row=>[row.kind,row])),allKinds=kinds.every(kind=>byKind.has(kind)),dead=jobs.filter(row=>row.outbox.processStatus==='DEAD'),complete=jobs.filter(row=>!!row.receipt),payable=payables[0]??{total:0n,open:0n,gross:new Prisma.Decimal(0)};
    const payoutTotals=payouts.reduce((sum,row)=>({gross:sum.gross.add(row.totalGross),recovery:sum.recovery.add(row.totalRecovery),net:sum.net.add(row.totalNet),paid:sum.paid.add(row.paymentResults.filter(result=>result.resultStatus==='PAID').reduce((a,result)=>a.add(result.paidAmount),new Prisma.Decimal(0)))}),{gross:new Prisma.Decimal(0),recovery:new Prisma.Decimal(0),net:new Prisma.Decimal(0),paid:new Prisma.Decimal(0)});
    let lifecycle='OPEN';
-   if(jobs.length)lifecycle=jobs.length<kinds.length?'PRECHECK':'READY_TO_CLOSE';
-   if(dead.length)lifecycle='BLOCKED';else if(jobs.some(row=>!row.receipt))lifecycle='SETTLING';else if(complete.length===kinds.length)lifecycle=pendingAwards?'MATURING':'AWARD_FINALIZED';
+   if(jobs.length)lifecycle=!allKinds?'PRECHECK':'SOFT_CLOSED';
+   if(dead.length)lifecycle='BLOCKED';else if(jobs.some(row=>!row.receipt)&&jobs.some(row=>row.outbox.attemptCount>0||row.outbox.processStatus!=='PENDING'))lifecycle='SETTLING';else if(complete.length===kinds.length)lifecycle=pendingAwards?'MATURING':'AWARD_FINALIZED';
    if(complete.length===kinds.length&&!pendingAwards&&Number(payable.open)>0)lifecycle='PAYABLE_READY';
    if(payouts.some(row=>['DRAFT','READY','REVIEWED','APPROVED'].includes(row.status)))lifecycle='PAYMENT_REVIEW';
    if(payouts.some(row=>['EXPORTED','PROCESSING','PARTIALLY_PAID','FAILED'].includes(row.status)))lifecycle='BANK_RECONCILING';
@@ -91,9 +91,11 @@ export class CompensationPeriodControlService{
     checkpoint('INPUT_COMPLETENESS','交易與輸入完整性',jobs.length?'RECORDED':'PENDING',jobs.length?'Period-close requests preserve approved input and parameter snapshots.':'No approved close request is recorded.'),
     checkpoint('VOLUME_RECOGNITION','GPV／RPV／EPV 完整性','NOT_AVAILABLE','No single sealed cross-volume completeness receipt exists; the control view does not infer one.'),
     checkpoint('SNAPSHOT_READINESS','Active／組織／規則快照',jobs.length===kinds.length?'RECORDED':'PENDING',`${jobs.length}/${kinds.length} governed requests recorded.`),
+    checkpoint('SOFT_CLOSE','Soft Close／輸入封存',allKinds?'PASS':'PENDING',allKinds?'All four immutable period-close requests preserve their approved input, rule and snapshot evidence.':'The required immutable requests are not complete.'),
     ...kinds.map(kind=>{const job=byKind.get(kind);return checkpoint(kind,kind,job?.receipt?'PASS':job?.outbox.processStatus==='DEAD'?'FAILED':job?'RUNNING':'PENDING',job?`${job.outbox.processStatus}; attempts ${job.outbox.attemptCount}`:'Not requested.');}),
     checkpoint('COMPANY_RESERVOIR_B','Company／Reservoir B reconciliation',Number(reservoir._count)>0?'RECORDED':'NO_EFFECT_RECORDED',`${reservoir._count} append-only effects; amount ${amount(reservoir._sum.amount)}.`),
     checkpoint('RETURN_RECOVERY','Return／Recovery reconciliation',Number(recoveries._sum.outstandingAmount??0)>0?'ATTENTION':Number(recoveries._count)>0?'PASS':'NO_EFFECT_RECORDED',`${recoveries._count} recovery events; outstanding ${amount(recoveries._sum.outstandingAmount)}.`),
+    checkpoint('HISTORICAL_CORRECTION','Historical correction boundary','PASS','Later returns and replay remain append-only current effects linked to historical awards; this read never reopens or rewrites historical facts.'),
     checkpoint('AWARD_MATURITY','Award maturity',pendingAwards?'PENDING':'PASS',`${pendingAwards} awards remain before pendingUntil.`),
     checkpoint('PAYABLE','Payable materialization',Number(payable.open)>0?'READY':Number(payable.total)>0?'PASS':'PENDING',`${payable.total} entries; ${payable.open} open.`),
     checkpoint('PAYOUT','Payout review／export／bank result',payouts.some(row=>row.status==='FAILED'||row.status==='PARTIALLY_PAID')?'ATTENTION':payouts.length?'RECORDED':'PENDING',`${payouts.length} payout batches.`),
