@@ -47,3 +47,4 @@ export * from './business-identifiers';
 
 export * from './operational/structured-error';
 export * from './pii-crypto';
+export * from './period-close-job';

@@ -1,5 +1,5 @@
 import {PrismaClient,Prisma} from '@prisma/client';
-import {sealGpvEvent,verifyReplayEnvelope} from '@ucell/database';
+import {sealGpvEvent,verifyReplayEnvelope,enqueuePeriodCloseJob,claimPeriodCloseJob,processPeriodCloseJob} from '@ucell/database';
 import {randomUUID} from 'node:crypto';
 import {spawn} from 'node:child_process';
 import {join} from 'node:path';
@@ -135,6 +135,29 @@ describeDb('period settlement concurrent delivery and retry transaction boundary
     ])};
   }
   const cases=[['REFERRAL_K0',false],['BINARY_K1',false],['REFERRAL_K0',true],['BINARY_K1',true],['MATCHING_K2',true],['GLOBAL',true]] as const;
+  it.each(['REFERRAL_K0','BINARY_K1','MATCHING_K2','GLOBAL'] as const)('commits funded %s economic rows with its durable job receipt',async kind=>{
+    const rule=await fixture(kind,true),period=periods.get(rule)!;
+    async function admit(type:Kind,prerequisiteIds:string[]=[]){
+      return enqueuePeriodCloseJob(db,{kind:type,periodStart:period.start,periodEnd:period.end,ruleVersionCode:rule,prerequisiteIds,requestedBy:'TEST_FINANCE',approvalReference:'TEST_CLOSE'},tx=>new SettlementCalendarService(db as any).captureForPeriod(tx,period.start,period.end,type,rule));
+    }
+    async function run(job:any){
+      return processPeriodCloseJob(db,(await claimPeriodCloseJob(db,job.periodCloseJobId))!,async(tx,row)=>{
+        const client=new Proxy(tx,{get(target,key){return key==='$transaction'?(work:any)=>work(tx):Reflect.get(target,key);}});
+        const result=await settle(client,row.kind as Kind,rule);
+        return 'globalPoolSettlementId' in result?result.globalPoolSettlementId:result.settlementBatchId;
+      });
+    }
+    const prerequisites:string[]=[];
+    if(kind==='MATCHING_K2'){
+      const binary=await admit('BINARY_K1');await run(binary);prerequisites.push(binary.periodCloseJobId);
+    }
+    const job=await admit(kind,prerequisites),receipt=await run(job);
+    const result=await assertSingle(kind,rule);
+    expect(receipt).toMatchObject({periodCloseJobId:job.periodCloseJobId,snapshotId:result.snapshot.snapshotId});
+    const before=await economicState(rule);
+    expect(await claimPeriodCloseJob(db,job.periodCloseJobId)).toBeNull();
+    expect(await economicState(rule)).toEqual(before);
+  },30000);
   async function runProcess(kind:Kind,rule:string,boundary:'BEFORE_SEAL'|'AFTER_COMMIT'|'COMPLETE'){
     const period=periods.get(rule)!;
     const child=spawn(process.execPath,['-r',require.resolve('ts-node/register/transpile-only'),join(__dirname,'helpers/settlement-process.ts'),kind,rule,period.start.toISOString(),period.end.toISOString(),boundary],{

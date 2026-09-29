@@ -2516,9 +2516,40 @@ model OutboxEvent {
   invoiceOperationClaim   InvoiceOperationClaim?
   shipmentOperationClaim  ShipmentOperationClaim?
   fulfillmentErpHandoff FulfillmentErpHandoff?
+  periodCloseJob PeriodCloseJob?
 
   @@index([processStatus, availableAt])
   @@map("outbox_event")
+  @@schema("integration")
+}
+
+/// Immutable approved settlement request; delivery state belongs to its Outbox.
+model PeriodCloseJob {
+  periodCloseJobId String @id @default(uuid()) @map("period_close_job_id") @db.Uuid
+  kind String
+  periodStart DateTime @map("period_start") @db.Timestamptz(6)
+  periodEnd DateTime @map("period_end") @db.Timestamptz(6)
+  ruleVersionCode String @map("rule_version_code")
+  parameterSnapshot Json @map("parameter_snapshot")
+  prerequisiteIds Json @map("prerequisite_ids")
+  requestedBy String @map("requested_by")
+  approvalReference String @map("approval_reference")
+  outboxEventId String @unique @map("outbox_event_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  outbox OutboxEvent @relation(fields:[outboxEventId],references:[outboxEventId])
+  receipt PeriodCloseReceipt?
+  @@unique([kind,periodStart,periodEnd,ruleVersionCode])
+  @@map("period_close_job")
+  @@schema("integration")
+}
+
+model PeriodCloseReceipt {
+  periodCloseJobId String @id @map("period_close_job_id") @db.Uuid
+  sourceId String @map("source_id") @db.Uuid
+  snapshotId String @unique @map("snapshot_id") @db.Uuid
+  completedAt DateTime @default(now()) @map("completed_at") @db.Timestamptz(6)
+  job PeriodCloseJob @relation(fields:[periodCloseJobId],references:[periodCloseJobId])
+  @@map("period_close_receipt")
   @@schema("integration")
 }
 
