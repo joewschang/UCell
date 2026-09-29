@@ -23,6 +23,7 @@ export async function orderEconomicEvidence(tx:Prisma.TransactionClient,orderId:
   const recoveries=await tx.bonusRecoveryEvent.findMany({where:{OR:[{bonusAwardId:{in:ids}},{returnCaseId:{in:returnIds}}]},orderBy:[{occurredAt:'asc'},{bonusRecoveryEventId:'asc'}]});
   const subscriptions=await tx.subscription.findMany({where:{orderId},include:{plan:true,schedules:{orderBy:{installmentNo:'asc'}}},orderBy:{createdAt:'asc'}});
   const recognitions=[] as Array<Record<string,unknown>>;
+  const rpvAwardIds:string[]=[];
   for(const subscription of subscriptions){
     for(const schedule of subscription.schedules){
       const [rpvEvent,rpvAwards,snapshot]=await Promise.all([
@@ -40,14 +41,29 @@ export async function orderEconomicEvidence(tx:Prisma.TransactionClient,orderId:
         awards:rpvAwards.map(row=>({reference:reference('RPV_AWARD',row.rpvAwardEventId),generation:row.binaryGeneration,activeAtRecognition:row.activeSnapshot,theoryAmount:row.theoryAmount.toString(),payableAmount:row.payableAmount.toString(),ruleVersionCode:row.ruleVersionCode,parameterSnapshotHash:row.parameterSnapshotHash??null})),
         replay:snapshot?{reference:reference('REPLAY_SNAPSHOT',snapshot.snapshotId),hash:snapshot.hash,ruleVersionCode:snapshot.ruleVersionCode,corrections:snapshot.postings.map(row=>({reference:reference('REPLAY_POSTING',row.postingId),originallyPosted:row.originallyPosted.toString(),recalculatedEntitlement:row.recalculatedEntitlement.toString(),delta:row.delta.toString(),stateHash:row.stateHash}))}:null,
       });
+      rpvAwardIds.push(...rpvAwards.map(row=>row.rpvAwardEventId));
     }
   }
+  const destinations=await tx.awardEconomicDestination.findMany({
+    where:{OR:[{sourceBonusAwardId:{in:ids}},{sourceRpvAwardId:{in:rpvAwardIds}}]},
+    include:{effects:{orderBy:[{recordedAt:'asc'},{effectId:'asc'}]}},
+    orderBy:[{effectiveAt:'asc'},{destinationId:'asc'}],
+  });
   return {
-    scope:'ORDER_PV_AWARD_RETURN_AND_SUBSCRIPTION_RPV_REPLAY',
+    scope:'ORDER_PV_AWARD_RETURN_SUBSCRIPTION_RPV_REPLAY_AND_RESERVOIR_B',
     pvEvents:pv.map(row=>({reference:reference('PV',row.eventId),pvType:row.pvType,eventType:row.eventType,amount:row.amount.toString(),occurredAt:row.occurredAt.toISOString()})),
     awards:[...awards.values()].sort((a,b)=>a.occurredAt.getTime()-b.occurredAt.getTime()||a.bonusAwardId.localeCompare(b.bonusAwardId)).map(row=>({reference:reference('AWARD',row.bonusAwardId),sourcePvReference:row.sourceEventId&&pv.some(p=>p.eventId===row.sourceEventId)?reference('PV',row.sourceEventId):null,sourceAwardReference:row.sourceAwardId&&awards.has(row.sourceAwardId)?reference('AWARD',row.sourceAwardId):null,awardType:row.awardType,theoryAmount:row.theoryAmount.toString(),payableAmount:row.payableAmount.toString(),occurredAt:row.occurredAt.toISOString(),ruleVersionCode:row.ruleVersionCode,parameterSnapshotHash:row.parameterSnapshotHash})),
     payables:payables.map(row=>({reference:reference('PAYABLE',row.payableEntryId),awardReference:reference('AWARD',row.sourceId),grossAmount:row.grossAmount.toString(),status:row.status,availableAt:row.availableAt.toISOString(),payout:row.payoutLine?{status:row.payoutLine.payoutBatch.status,periodStart:row.payoutLine.payoutBatch.periodStart.toISOString(),periodEnd:row.payoutLine.payoutBatch.periodEnd.toISOString()}:null})),
     recoveries:recoveries.map(row=>({reference:reference('RECOVERY',row.bonusRecoveryEventId),awardReference:reference('AWARD',row.bonusAwardId),awardIncluded:awards.has(row.bonusAwardId),linkedToOrderReturn:row.returnCaseId!==null&&returnIds.includes(row.returnCaseId),recoveryAmount:row.recoveryAmount.toString(),recoveredAmount:row.recoveredAmount.toString(),outstandingAmount:row.outstandingAmount.toString(),status:row.status,reasonCode:row.reasonCode,occurredAt:row.occurredAt.toISOString()})),
     subscriptionRecognitions:recognitions,
+    reservoirBDestinations:destinations.map(row=>({
+      reference:reference('ECONOMIC_DESTINATION',row.destinationId),
+      sourceKind:row.sourceBonusAwardId?'BONUS_AWARD':'RPV_AWARD',
+      sourceReference:row.sourceBonusAwardId?reference('AWARD',row.sourceBonusAwardId):reference('RPV_AWARD',row.sourceRpvAwardId!),
+      destination:row.destination,awardType:row.awardType,companyPosition:row.companyPosition,
+      periodStart:row.periodStart.toISOString(),periodEnd:row.periodEnd.toISOString(),finalAmount:row.finalAmount.toString(),
+      ruleVersion:row.ruleVersion,parameterVersion:row.parameterVersion,snapshotHash:row.snapshotHash,effectiveAt:row.effectiveAt.toISOString(),
+      effects:row.effects.map(effect=>({reference:reference('RESERVOIR_B_EFFECT',effect.effectId),effectType:effect.effectType,amountDelta:effect.amountDelta.toString(),effectiveAt:effect.effectiveAt.toISOString(),recordedAt:effect.recordedAt.toISOString()})),
+    })),
   };
 }

@@ -1,10 +1,11 @@
 import {PrismaClient,Prisma} from '@prisma/client';
 import {randomUUID} from 'node:crypto';
-import {captureParameters,routeCompanyBonus} from '@ucell/database';
+import {captureParameters,routeCompanyBonus,routeCompanyFinal,accountingMonth} from '@ucell/database';
 import {companyReservoirCandidates} from '../src/modules/admin-operations/company-reservoir-invariants';
 import {BinaryTreeService,TreePrincipal} from '../src/modules/binary-tree/binary-tree.service';
 import {OrganizationService} from '../src/modules/organization/organization.service';
 import {IdempotencyService} from '../src/common/idempotency/idempotency.service';
+import {orderEconomicEvidence} from '../src/modules/admin-operations/order-economic-evidence';
 
 const url=process.env.PHASE2_TEST_DATABASE_URL;
 const describeDb=url?describe:describe.skip;
@@ -70,6 +71,48 @@ describeDb('Company Reservoir B integrity candidates',()=>{
     const legacy={...tx,payableEntry:{findMany:async()=>[{sourceId:source.bonusAwardId,grossAmount:new Prisma.Decimal(100)}]}};
     expect(await companyReservoirCandidates(legacy as any,200)).toEqual([expect.objectContaining({code:'RESERVOIR_B_MEMBER_PAYABLE_CONFLICT',detail:{payableCount:1,payableGross:'100'}})]);
     expect(await tx.payableEntry.count({where:{sourceId:source.bonusAwardId}})).toBe(0);
+  }));
+  it('projects only explicitly order-linked Company awards and Reservoir B effects without internal identifiers',()=>rollback(async tx=>{
+    const at=new Date(),snapshot=await captureParameters(tx,at,'R1.0B');
+    const order=await tx.order.create({data:{qualificationId:qid,purpose:'RETAIL',status:'PAID',paidAt:at,grossAmount:100,netAmount:100,ruleVersionCode:'R1.0B'}});
+    const pv=await tx.pvLedger.create({data:{qualificationId:qid,pvType:'GPV',amount:100,sourceType:'ORDER',sourceId:order.orderId,eventType:'GPV_CREATED',ruleVersionCode:'R1.0B',occurredAt:at,correlationId:randomUUID()}});
+    const source=await tx.bonusAward.create({data:{recipientQualificationId:qid,awardType:'REFERRAL',sourceEventId:pv.eventId,theoryAmount:25,payableAmount:25,activeSnapshot:true,planLevelSnapshot:'LEADER',ruleVersionCode:'R1.0B',parameterSnapshotHash:snapshot.hash,occurredAt:at,pendingUntil:at,calculationDetail:{}}});
+    await routeCompanyBonus(tx,source,snapshot);
+    const unrelated=await award(tx,75);
+    await routeCompanyBonus(tx,unrelated.source,unrelated.snapshot);
+    const evidence=await orderEconomicEvidence(tx,order.orderId,[]);
+    expect(await orderEconomicEvidence(tx,order.orderId,[])).toEqual(evidence);
+    expect(evidence.reservoirBDestinations).toEqual([expect.objectContaining({sourceKind:'BONUS_AWARD',sourceReference:evidence.awards[0].reference,destination:'RESERVOIR_B',awardType:'REFERRAL',finalAmount:'25',effects:[expect.objectContaining({effectType:'ENTITLEMENT',amountDelta:'25'})]})]);
+    const json=JSON.stringify(evidence.reservoirBDestinations);
+    const destination=await tx.awardEconomicDestination.findUniqueOrThrow({where:{sourceBonusAwardId:source.bonusAwardId},include:{effects:true}});
+    for(const internal of [qid,order.orderId,pv.eventId,source.bonusAwardId,destination.destinationId,destination.binaryTreeId,destination.ownerIntervalId,...destination.effects.map(effect=>effect.effectId)])expect(json).not.toContain(internal);
+    expect(await tx.awardEconomicDestination.findUniqueOrThrow({where:{destinationId:destination.destinationId},include:{effects:true}})).toEqual(destination);
+  }));
+  it('joins subscription RPV destinations and signed replay effects only to their source order',()=>rollback(async tx=>{
+    const at=new Date(),snapshot=await captureParameters(tx,at,'R1.0B'),period=await accountingMonth(tx,snapshot,at);
+    const order=await tx.order.create({data:{qualificationId:qid,purpose:'RETAIL',grossAmount:100,netAmount:100,ruleVersionCode:'R1.0B'}});
+    const otherOrder=await tx.order.create({data:{qualificationId:qid,purpose:'RETAIL',grossAmount:100,netAmount:100,ruleVersionCode:'R1.0B'}});
+    const plan=await tx.subscriptionPlan.create({data:{planCode:randomUUID(),displayName:'Lineage plan',durationMonths:1,prepaidAmount:100,productBoxQty:1,monthlyRecognizedAmount:100,monthlyRpv:10}});
+    for(const orderId of [order.orderId,otherOrder.orderId]){
+      const subscription=await tx.subscription.create({data:{orderId,qualificationId:qid,subscriptionPlanId:plan.subscriptionPlanId,status:'ACTIVE',startMonth:at,endMonth:at,ruleVersionCode:'R1.0B'}});
+      const schedule=await tx.monthlyRecognitionSchedule.create({data:{subscriptionId:subscription.subscriptionId,installmentNo:1,recognitionMonth:at,recognizedAmount:100,rpvAmount:10,dueAt:at,ruleVersionCode:'R1.0B'}});
+      const source=await tx.rpvUplineAwardEvent.create({data:{recognitionId:schedule.recognitionId,sourceQualificationId:qid,recipientQualificationId:qid,binaryGeneration:1,effectiveDirectCountSnapshot:0,unlockedDepthSnapshot:5,activeSnapshot:true,theoryAmount:100,payableAmount:100,ruleVersionCode:'R1.0B',parameterSnapshotHash:snapshot.hash,occurredAt:at}});
+      await routeCompanyFinal(tx,{sourceRpvAwardId:source.rpvAwardEventId,qualificationId:qid,awardType:'RPV',amount:source.payableAmount,at,periodStart:period.start,periodEnd:period.end},snapshot);
+      const destination=await tx.awardEconomicDestination.findUniqueOrThrow({where:{sourceRpvAwardId:source.rpvAwardEventId}});
+      const replay=await tx.historicalReplaySnapshot.create({data:{kind:'RPV',sourceId:schedule.recognitionId,ruleVersionCode:'R1.0B',content:{recipients:[{key:source.rpvAwardEventId,qualificationId:qid,posted:'100',eligible:true}]},hash:'a'.repeat(64)}});
+      const posting=await tx.entitlementReplayPosting.create({data:{actionKey:randomUUID(),snapshotId:replay.snapshotId,entitlementKey:source.rpvAwardEventId,recipientQualificationId:qid,originallyPosted:100,recalculatedEntitlement:80,delta:-20,stateHash:'b'.repeat(64)}});
+      await tx.reservoirBEffect.create({data:{destinationId:destination.destinationId,effectType:'REPLAY_ADJUSTMENT',replayPostingId:posting.postingId,amountDelta:-20,effectiveAt:at,idempotencyKey:randomUUID()}});
+    }
+    const before=await tx.awardEconomicDestination.findMany({include:{effects:true},orderBy:{destinationId:'asc'}});
+    const evidence=await orderEconomicEvidence(tx,order.orderId,[]);
+    expect(await orderEconomicEvidence(tx,order.orderId,[])).toEqual(evidence);
+    expect(evidence.reservoirBDestinations).toHaveLength(1);
+    const recognition=evidence.subscriptionRecognitions[0] as any;
+    expect(evidence.reservoirBDestinations[0]).toMatchObject({sourceKind:'RPV_AWARD',sourceReference:recognition.awards[0].reference,finalAmount:'100'});
+    expect(evidence.reservoirBDestinations[0].effects).toEqual(expect.arrayContaining([expect.objectContaining({effectType:'ENTITLEMENT',amountDelta:'100'}),expect.objectContaining({effectType:'REPLAY_ADJUSTMENT',amountDelta:'-20'})]));
+    const json=JSON.stringify(evidence);
+    for(const row of before)for(const internal of [row.destinationId,row.sourceRpvAwardId!,row.binaryTreeId,row.ownerIntervalId,...row.effects.flatMap(effect=>[effect.effectId,...(effect.replayPostingId?[effect.replayPostingId]:[])])])expect(json).not.toContain(internal);
+    expect(await tx.awardEconomicDestination.findMany({include:{effects:true},orderBy:{destinationId:'asc'}})).toEqual(before);
   }));
   it('also inspects RPV and Global award destinations',()=>rollback(async tx=>{
     const at=new Date();
