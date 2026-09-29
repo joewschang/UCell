@@ -15,5 +15,6 @@ const url=process.env.PHASE2_TEST_DATABASE_URL;
   const result=await new CompensationPeriodControlService(db as any).read({periodStart:periodStart.toISOString(),periodEnd:periodEnd.toISOString(),ruleVersionCode}),serialized=JSON.stringify(result);
   expect(result.lifecycle).toBe('AWARD_FINALIZED');expect(result.jobs).toHaveLength(4);expect(result.checkpoints.filter(row=>['REFERRAL_K0','BINARY_K1','MATCHING_K2','GLOBAL'].includes(row.code)).every(row=>row.status==='PASS')).toBe(true);expect(result.checkpoints.find(row=>row.code==='ERP_ACCOUNTING')).toMatchObject({status:'BLOCKED_EXTERNAL'});
   for(const id of ids)expect(serialized).not.toContain(id);expect(serialized).not.toContain('requestedBy');expect(serialized).not.toContain('parameterSnapshot');
+  const aging=await new CompensationPeriodControlService(db as any).aging({thresholdHours:24,asOf:'1894-01-10T00:00:00Z'});expect(aging.items).toHaveLength(6);expect(aging.thresholdHours).toBe(24);expect(JSON.stringify(aging)).not.toContain(ids[0]);
  });
 });

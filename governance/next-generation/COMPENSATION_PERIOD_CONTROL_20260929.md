@@ -19,6 +19,8 @@ The derived lifecycle can report `OPEN`, `PRECHECK`, `READY_TO_CLOSE`, `SETTLING
 
 Where the repository lacks one sealed cross-volume completeness receipt, the checkpoint returns `NOT_AVAILABLE`; it does not infer completeness from current records. ERP accounting projection remains `BLOCKED_EXTERNAL / ERP_ACCOUNT_MAPPING_REQUIRED` until accounting authority supplies the mapping.
 
+The bounded Aging／Outstanding read requires an explicit operator-supplied threshold from 1 through 8,760 hours. It aggregates matured Award without Payable, unbatched Payable, unresolved exported payouts, failed bank results, outstanding Recovery and ERP bridge attention from stored authoritative facts. It returns counts, applicable amounts and the oldest evidence time without member, payout or database identities. No default business threshold or workflow resolution is invented.
+
 ## Privacy and authority
 
 - RBAC: `SUPER_ADMIN`, `FINANCE`, `COMPLIANCE_AUDIT`.
@@ -39,11 +41,11 @@ Referral K0, Binary K1, Matching K2 and Global each pass both boundaries for emp
 ## Evidence
 
 - `period-close-worker-crash-db.e2e-spec.ts`: 1 suite / 16 tests PASS against disposable PostgreSQL and real OS child processes.
-- `compensation-period-control.e2e-spec.ts`: 1 suite / 5 tests PASS, including raw-error privacy regression.
+- `compensation-period-control.e2e-spec.ts`: 1 suite / 7 tests PASS, including raw-error privacy and parameterized aging bounds.
 - `compensation-period-control-db.e2e-spec.ts`: 1 suite / 1 real-DB test PASS after fresh 0→109; 162 baseline DB assertions and cleanup PASS.
 - Admin focused navigation/RBAC/control UI: 3 files / 11 tests PASS; full Admin regression: 39 files / 148 tests PASS.
 - API and Admin production builds PASS.
-- Generated OpenAPI and preflight PASS (**217 paths / 235 operations / 123 schemas**).
+- Generated OpenAPI and preflight PASS (**218 paths / 236 operations / 127 schemas**).
 
 ## Remaining §35 work
 
@@ -51,6 +53,6 @@ Referral K0, Binary K1, Matching K2 and Global each pass both boundaries for emp
 - A single sealed GPV/RPV/EPV input-completeness receipt is not present.
 - ERP compensation/accounting projection and exact account mapping remain external.
 - Sales and Return bridge streams beyond currently persisted UCell/fulfillment evidence remain open.
-- Aging thresholds must come from operational configuration before a parameterized aging dashboard can be certified.
+- Persisted environment-wide SLA defaults and escalation ownership remain operational configuration work; the current read requires the threshold explicitly and never hard-codes one.
 
 No Stage or Production resource was read or changed.

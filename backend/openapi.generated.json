@@ -181,6 +181,57 @@
         ]
       }
     },
+    "/api/v1/admin/compensation-period-control/aging": {
+      "get": {
+        "description": "Threshold is an explicit operational parameter. The read returns aggregate authoritative evidence without member, payout or database identities.",
+        "operationId": "adminCompensationAgingControl",
+        "parameters": [
+          {
+            "name": "thresholdHours",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 8760
+            }
+          },
+          {
+            "name": "asOf",
+            "required": false,
+            "in": "query",
+            "description": "ISO-8601 snapshot cutoff",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompensationAgingEnvelopeDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid threshold or cutoff"
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "Read bounded operational aging and outstanding controls",
+        "tags": [
+          "Admin - Compensation Period Control"
+        ]
+      }
+    },
     "/api/v1/admin/fulfillment/orders/logistics/connections": {
       "get": {
         "operationId": "adminFulfillmentLogisticsConnections",
@@ -15587,6 +15638,95 @@
         "properties": {
           "data": {
             "$ref": "#/components/schemas/CompensationPeriodControlDto"
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "CompensationAgingItemDto": {
+        "type": "object",
+        "properties": {
+          "category": {
+            "type": "string"
+          },
+          "count": {
+            "type": "number"
+          },
+          "amount": {
+            "type": "object",
+            "nullable": true
+          },
+          "oldestAt": {
+            "type": "object",
+            "nullable": true
+          },
+          "status": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "category",
+          "count",
+          "amount",
+          "oldestAt",
+          "status"
+        ]
+      },
+      "CompensationAgingAuthorityDto": {
+        "type": "object",
+        "properties": {
+          "threshold": {
+            "type": "string"
+          },
+          "facts": {
+            "type": "string"
+          },
+          "action": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "threshold",
+          "facts",
+          "action"
+        ]
+      },
+      "CompensationAgingDto": {
+        "type": "object",
+        "properties": {
+          "asOf": {
+            "type": "string"
+          },
+          "thresholdHours": {
+            "type": "number"
+          },
+          "cutoff": {
+            "type": "string"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CompensationAgingItemDto"
+            }
+          },
+          "authority": {
+            "$ref": "#/components/schemas/CompensationAgingAuthorityDto"
+          }
+        },
+        "required": [
+          "asOf",
+          "thresholdHours",
+          "cutoff",
+          "items",
+          "authority"
+        ]
+      },
+      "CompensationAgingEnvelopeDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/CompensationAgingDto"
           }
         },
         "required": [

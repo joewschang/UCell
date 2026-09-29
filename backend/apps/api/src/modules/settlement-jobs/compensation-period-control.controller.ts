@@ -13,6 +13,10 @@ class PeriodFreshnessDto{@ApiProperty() status!:string;@ApiProperty() projectedA
 class PeriodAuthorityDto{@ApiProperty() ucell!:string;@ApiProperty() erp!:string;@ApiProperty() hardClose!:string;}
 class CompensationPeriodControlDto{@ApiProperty({type:PeriodIdentityDto}) period!:PeriodIdentityDto;@ApiProperty() lifecycle!:string;@ApiProperty() dataThrough!:string;@ApiProperty({type:[PeriodCheckpointDto]}) checkpoints!:PeriodCheckpointDto[];@ApiProperty({type:[PeriodJobDto]}) jobs!:PeriodJobDto[];@ApiProperty({type:[PeriodSettlementDto]}) settlements!:PeriodSettlementDto[];@ApiProperty({type:PeriodAmountBridgeDto}) amountBridge!:PeriodAmountBridgeDto;@ApiProperty({type:[PeriodPayoutDto]}) payouts!:PeriodPayoutDto[];@ApiProperty({type:[PeriodBlockingDto]}) blockingExceptions!:PeriodBlockingDto[];@ApiProperty({type:PeriodFreshnessDto}) freshness!:PeriodFreshnessDto;@ApiProperty({type:PeriodAuthorityDto}) authority!:PeriodAuthorityDto;}
 class CompensationPeriodEnvelopeDto{@ApiProperty({type:CompensationPeriodControlDto}) data!:CompensationPeriodControlDto;}
+class CompensationAgingItemDto{@ApiProperty() category!:string;@ApiProperty() count!:number;@ApiProperty({nullable:true}) amount!:string|null;@ApiProperty({nullable:true}) oldestAt!:string|null;@ApiProperty() status!:string;}
+class CompensationAgingAuthorityDto{@ApiProperty() threshold!:string;@ApiProperty() facts!:string;@ApiProperty() action!:string;}
+class CompensationAgingDto{@ApiProperty() asOf!:string;@ApiProperty() thresholdHours!:number;@ApiProperty() cutoff!:string;@ApiProperty({type:[CompensationAgingItemDto]}) items!:CompensationAgingItemDto[];@ApiProperty({type:CompensationAgingAuthorityDto}) authority!:CompensationAgingAuthorityDto;}
+class CompensationAgingEnvelopeDto{@ApiProperty({type:CompensationAgingDto}) data!:CompensationAgingDto;}
 @ApiTags('Admin - Compensation Period Control')
 @ApiBearerAuth('adminBearer')
 @Roles('SUPER_ADMIN','FINANCE','COMPLIANCE_AUDIT')
@@ -29,4 +33,11 @@ export class CompensationPeriodControlController{
  @ApiResponse({status:401,description:'Admin authentication required'})
  @ApiResponse({status:403,description:'Finance or compliance role required'})
  read(@Query('periodStart') periodStart:string,@Query('periodEnd') periodEnd:string,@Query('ruleVersionCode') ruleVersionCode:string){return this.service.read({periodStart,periodEnd,ruleVersionCode}).then(data=>({data}));}
+ @Get('aging')
+ @ApiOperation({operationId:'adminCompensationAgingControl',summary:'Read bounded operational aging and outstanding controls',description:'Threshold is an explicit operational parameter. The read returns aggregate authoritative evidence without member, payout or database identities.'})
+ @ApiQuery({name:'thresholdHours',required:true,schema:{type:'integer',minimum:1,maximum:8760}})
+ @ApiQuery({name:'asOf',required:false,description:'ISO-8601 snapshot cutoff'})
+ @ApiOkResponse({type:CompensationAgingEnvelopeDto})
+ @ApiResponse({status:400,description:'Invalid threshold or cutoff'})
+ aging(@Query('thresholdHours') thresholdHours:string,@Query('asOf') asOf?:string){return this.service.aging({thresholdHours:Number(thresholdHours),asOf}).then(data=>({data}));}
 }

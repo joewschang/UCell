@@ -3,6 +3,7 @@ import {Prisma,PrismaService} from '@ucell/database';
 import {createHash} from 'node:crypto';
 
 type Input={periodStart:string;periodEnd:string;ruleVersionCode:string};
+type AgingInput={thresholdHours:number;asOf?:string};
 const safe=(kind:string,id:string)=>`${kind}-${createHash('sha256').update(`${kind}:${id}`).digest('hex').slice(0,20)}`;
 const amount=(value:Prisma.Decimal|null|undefined)=>value?.toFixed(4)??'0.0000';
 const failureCode=(value:string|null|undefined)=>value&&/^[A-Z][A-Z0-9_]{2,63}$/.test(value)?value:'PERIOD_CLOSE_FAILED';
@@ -16,6 +17,51 @@ function parse(input:Input){
 @Injectable()
 export class CompensationPeriodControlService{
  constructor(private readonly db:PrismaService){}
+ async aging(input:AgingInput){
+  if(!Number.isInteger(input.thresholdHours)||input.thresholdHours<1||input.thresholdHours>8760)throw new BadRequestException({code:'COMPENSATION_AGING_THRESHOLD_INVALID'});
+  const asOf=input.asOf?new Date(input.asOf):new Date();
+  if(!Number.isFinite(asOf.getTime()))throw new BadRequestException({code:'COMPENSATION_AGING_AS_OF_INVALID'});
+  const cutoff=new Date(asOf.getTime()-input.thresholdHours*3600000);
+  const rows=await this.db.$queryRaw<Array<{category:string;item_count:bigint;amount:Prisma.Decimal|null;oldest_at:Date|null}>>`
+   WITH aging_items AS (
+    SELECT 'MATURED_AWARD_NOT_PAYABLE'::text category,a.pending_until anchor_at,a.payable_amount amount
+    FROM ledger.bonus_award a WHERE a.pending_until<=${cutoff} AND a.payable_amount>0
+      AND EXISTS (SELECT 1 FROM ledger.bonus_award_lifecycle_event l WHERE l.bonus_award_id=a.bonus_award_id AND l.status='EFFECTIVE')
+      AND NOT EXISTS (SELECT 1 FROM ledger.award_economic_destination d WHERE d.source_bonus_award_id=a.bonus_award_id)
+      AND NOT EXISTS (SELECT 1 FROM ledger.payable_entry p WHERE p.source_type='BONUS_AWARD' AND p.source_id=a.bonus_award_id)
+    UNION ALL
+    SELECT 'MATURED_AWARD_NOT_PAYABLE',a.occurred_at,a.payable_amount FROM ledger.rpv_upline_award_event a
+      WHERE a.occurred_at<=${cutoff} AND a.payable_amount>0
+      AND NOT EXISTS (SELECT 1 FROM ledger.award_economic_destination d WHERE d.source_rpv_award_id=a.rpv_award_event_id)
+      AND NOT EXISTS (SELECT 1 FROM ledger.payable_entry p WHERE p.source_type='RPV_UPLINE_AWARD' AND p.source_id=a.rpv_award_event_id)
+    UNION ALL
+    SELECT 'MATURED_AWARD_NOT_PAYABLE',s.period_end,a.payable_amount FROM ledger.global_pool_award a
+      JOIN ledger.global_pool_settlement s ON s.global_pool_settlement_id=a.global_pool_settlement_id
+      WHERE s.period_end<=${cutoff} AND a.payable_amount>0
+      AND NOT EXISTS (SELECT 1 FROM ledger.award_economic_destination d WHERE d.source_global_award_id=a.global_pool_award_id)
+      AND NOT EXISTS (SELECT 1 FROM ledger.payable_entry p WHERE p.source_type='GLOBAL_POOL_AWARD' AND p.source_id=a.global_pool_award_id)
+    UNION ALL
+    SELECT 'PAYABLE_NOT_BATCHED',p.available_at,p.gross_amount FROM ledger.payable_entry p
+      WHERE p.status='OPEN' AND p.payout_line_id IS NULL AND p.available_at<=${cutoff}
+    UNION ALL
+    SELECT 'PAYOUT_EXPORTED_UNRESOLVED',b.exported_at,b.total_net FROM ledger.payout_batch b
+      WHERE b.exported_at IS NOT NULL AND b.exported_at<=${cutoff} AND b.status IN ('EXPORTED','PROCESSING','PARTIALLY_PAID','FAILED')
+    UNION ALL
+    SELECT 'BANK_TRANSFER_FAILED',r.occurred_at,r.paid_amount FROM ledger.payout_payment_result r
+      WHERE r.result_status='FAILED' AND r.occurred_at<=${cutoff}
+    UNION ALL
+    SELECT 'RECOVERY_OUTSTANDING',r.occurred_at,r.outstanding_amount FROM ledger.bonus_recovery_event r
+      WHERE r.outstanding_amount>0 AND r.occurred_at<=${cutoff}
+    UNION ALL
+    SELECT 'ERP_BRIDGE_ATTENTION',h.requested_at,NULL::numeric FROM commerce.fulfillment_erp_handoff h
+      JOIN integration.outbox_event o ON o.outbox_event_id=h.outbox_event_id
+      LEFT JOIN LATERAL (SELECT outcome FROM commerce.fulfillment_erp_reconciliation x WHERE x.fulfillment_erp_handoff_id=h.fulfillment_erp_handoff_id ORDER BY x.occurred_at DESC,x.recorded_at DESC LIMIT 1) latest ON true
+      WHERE h.requested_at<=${cutoff} AND (o.process_status IN ('PENDING','PROCESSING','DEAD') OR latest.outcome IN ('PARTIAL','MISMATCH'))
+   ) SELECT category,count(*) item_count,sum(amount) amount,min(anchor_at) oldest_at FROM aging_items GROUP BY category ORDER BY category`;
+  const all=['MATURED_AWARD_NOT_PAYABLE','PAYABLE_NOT_BATCHED','PAYOUT_EXPORTED_UNRESOLVED','BANK_TRANSFER_FAILED','RECOVERY_OUTSTANDING','ERP_BRIDGE_ATTENTION'];
+  const byCategory=new Map(rows.map(row=>[row.category,row]));
+  return {asOf:asOf.toISOString(),thresholdHours:input.thresholdHours,cutoff:cutoff.toISOString(),items:all.map(category=>{const row=byCategory.get(category);return {category,count:Number(row?.item_count??0),amount:row?.amount?.toFixed(4)??null,oldestAt:row?.oldest_at?.toISOString()??null,status:row?'ATTENTION':'CLEAR'};}),authority:{threshold:'Operator-supplied operational parameter',facts:'Authoritative stored UCell and ERP bridge evidence',action:'Read-only; resolution requires the owning domain workflow'}};
+ }
  async read(input:Input){
   const period=parse(input),now=new Date();
   return this.db.$transaction(async tx=>{
