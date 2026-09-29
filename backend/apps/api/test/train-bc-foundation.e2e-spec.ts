@@ -1,21 +1,34 @@
 import {randomUUID} from 'node:crypto';
+import {execFileSync} from 'node:child_process';
+import {join} from 'node:path';
 import {PrismaService,Prisma,captureParameters,bindCompanyLeaderProfile,resolveLeaderProfile,replayHash} from '@ucell/database';
 import {BinaryTreeService,TreePrincipal} from '../src/modules/binary-tree/binary-tree.service';
 import {BinaryTreeReadService} from '../src/modules/binary-tree/binary-tree-read.service';
 import {OrganizationService} from '../src/modules/organization/organization.service';
 import {IdempotencyService} from '../src/common/idempotency/idempotency.service';
 const url=process.env.PHASE2_TEST_DATABASE_URL;
-if(!url||!/^ucell_jest_[a-f0-9]{32}$/.test(new URL(url).pathname.slice(1)))throw Error('ISOLATED_DATABASE_REQUIRED');
-const db=new PrismaService(),organization=new OrganizationService(db),commands=new BinaryTreeService(db,new IdempotencyService(db),organization),reader=new BinaryTreeReadService(db,commands);
+if(!url||!['localhost','127.0.0.1'].includes(new URL(url).hostname)||!/^ucell_jest_[a-f0-9]{32}$/.test(new URL(url).pathname.slice(1)))throw Error('ISOLATED_DATABASE_REQUIRED');
+// Financial completeness intentionally inspects every downstream pool. Other
+// suites' pending returns must not become inputs to this no-pending-work fixture.
+const database='ucell_tree_foundation_'+randomUUID().replaceAll('-','');
+const target=new URL(url),admin=new URL(url);target.pathname='/'+database;admin.pathname='/postgres';
+const control=new PrismaService({datasources:{db:{url:admin.href}}});let created=false;
+const db=new PrismaService({datasources:{db:{url:target.href}}}),organization=new OrganizationService(db),commands=new BinaryTreeService(db,new IdempotencyService(db),organization),reader=new BinaryTreeReadService(db,commands);
 let p:TreePrincipal;
 beforeAll(async()=>{
+ await control.$executeRawUnsafe('CREATE DATABASE "'+database+'"');created=true;
+ const root=join(__dirname,'../../../packages/database');
+ execFileSync(process.execPath,[require.resolve('prisma/build/index.js',{paths:[root]}),'migrate','deploy','--schema',join(root,'prisma/schema.prisma')],{env:{...process.env,DATABASE_URL:target.href},stdio:'pipe',timeout:60000});
  const person=await db.person.create({data:{legalName:'SYNTHETIC CLOSURE '+randomUUID()}}),subject=randomUUID();
  await db.identityLink.create({data:{personId:person.personId,provider:'ENTRA',providerSubject:subject}});
  await db.adminAccessGrant.create({data:{personId:person.personId,provider:'ENTRA',providerSubject:subject,roleCode:'SUPER_ADMIN',validFrom:new Date(Date.now()-1000)}});
  const session=await db.authSession.create({data:{personId:person.personId,provider:'ENTRA',subject,roleCode:'SUPER_ADMIN',tokenHash:randomUUID(),issuedAt:new Date(),expiresAt:new Date(Date.now()+3600000)}});
  p={personId:person.personId,provider:'ENTRA',subject,role:'SUPER_ADMIN',sessionId:session.authSessionId};
-});
-afterAll(()=>db.$disconnect());
+},90000);
+afterAll(async()=>{
+ try{await db.$disconnect();if(created)await control.$executeRawUnsafe('DROP DATABASE "'+database+'" WITH (FORCE)');}
+ finally{await control.$disconnect();}
+},30000);
 const create=async()=> (await commands.create(p,{treeName:'Closure '+randomUUID(),reason:'Synthetic test'},randomUUID())).value;
 const time=()=>{const now=new Date().toISOString();return {timezone:'Asia/Taipei' as const,asOf:now,knowledgeCutoff:now,periodStart:'2026-01-01T00:00:00.000Z',periodEnd:'2099-01-01T00:00:00.000Z'}};
 it('binds all seven bootstrap Balls in independent trees to exact LEADER evidence, with no Global rank grants',async()=>{
@@ -162,7 +175,7 @@ it('counts every first achieved rank in the period, without losing an earlier sa
  await db.qualificationStatusHistory.create({data:{qualificationId:qid,status:'CLOSED',effectiveFrom:closedAt,sourceType:'SYNTHETIC'}});
  for(const metric of ['active.rate','rank.distribution','bonus.distribution']){
   const closed=await db.$transaction(tx=>projectPeriodFacts(tx,{metrics:[metric],time:stableTime(),filters:{binaryTreeId:tree.binaryTreeId},dimensions:['binaryTreeId'],groupBy:['binaryTreeId'],limit:100}));
-  expect(closed.status).toBe('CURRENT');expect(closed.manifest[metric==='bonus.distribution'?'populationCount':'eligibleCount']).toBe('0');
+  expect({metric,status:closed.status,manifest:closed.manifest}).toMatchObject({status:'CURRENT'});expect(closed.manifest[metric==='bonus.distribution'?'populationCount':'eligibleCount']).toBe('0');
  }
 
 });
