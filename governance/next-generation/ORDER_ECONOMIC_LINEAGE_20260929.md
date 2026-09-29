@@ -30,6 +30,8 @@ Exact OrderLine sources now also join RETAIL_REFERRAL awards, including zero pay
 
 ## Validation
 
+- Retail input-without-award follow-up: API build and focused isolated **3 suites / 46 tests PASS**, 106 migrations, 162 baseline assertions and cleanup PASS; Admin typecheck/build and **36 files / 136 tests PASS**. Exact order snapshots remain visible without awards; disabled/no-referrer/missing-rate/zero/normal input states never imply completed recognition or zero entitlement. Existing zero award references link back to those inputs. See [coverage and UI evidence](ECONOMIC_LINEAGE_COVERAGE_UI_20260929.md) for fixture repairs and scope. Full API and actual-browser acceptance were not rerun.
+
 - Retail historical Explain follow-up: API build and focused isolated **3 suites / 40 tests PASS**, fresh 106 migrations, 162 baseline assertions and cleanup PASS; Admin typecheck/build and **36 files / 135 tests PASS**. Shared historical snapshot reads preserve rate/base/SKU/attribution and reject order/recipient conflicts, with explicit missing-snapshot presentation. Existing Retail Explain and Worker retail suites passed; see [coverage and UI evidence](ECONOMIC_LINEAGE_COVERAGE_UI_20260929.md). Full API and actual-browser acceptance were not rerun.
 
 - Latest retail-source/UI slice: API build and focused isolated **2 suites / 41 tests PASS**, 106 migrations, 162 baseline assertions and cleanup PASS. Admin typecheck/build and **36 files / 134 tests PASS**. Actual browser visual inspection is unverified because both automation kernels failed before startup; see the coverage/UI evidence.

@@ -70,8 +70,28 @@ describeDb('ORDER_ECONOMIC_EVIDENCE_REAL_DB',()=>{
     const existing=await new RetailReferralExplainService(db as any).read(award.bonusAwardId);
     expect(result.awards[0].retailRecognition).toMatchObject({sku:existing.recognition.sku,rate:existing.recognition.rate,baseType:existing.recognition.baseType,productRuleVersion:existing.recognition.productRuleVersion,baseAmount:'100',attribution:{source:existing.recognition.attribution!.source,effectiveAt:at.toISOString()}});
     expect(result.awards[0].payableAmount).toBe('0');
+    expect(result.retailRecognitionInputs).toEqual([expect.objectContaining({awardEvidence:'RECORDED_AWARD',awardReferences:[result.awards[0].reference],inputConditions:[]})]);
     for(const secret of [attribution.retailReferrerAttributionId,f.q.qualificationId,'PRIVATE-BALL','NEVER-EXPOSE','Changed product'])expect(JSON.stringify(result)).not.toContain(secret);
     expect(await db.retailReferralOrderLineSnapshot.findUnique({where:{orderLineId:line.orderLineId}})).toEqual(snapshot);
+  });
+  it.each(['disabled','noReferrer','missingRate','zeroRate','zeroBase','ready'])('explains stored retail input without inventing an award result: %s',async mode=>{
+    const f=await fixture(),other=await fixture();
+    const product=await db.productReference.create({data:{sku:randomUUID(),displayName:'Input fixture',currentPrice:100}});
+    const profile=await db.productRuleProfile.create({data:{productId:product.productId,effectiveFrom:new Date('2020-01-01T00:00:00Z'),gpvRate:0,ruleVersionCode:'R1'}});
+    const snapshots=[];
+    for(const order of [f.order,other.order]){
+      const line=await db.orderLine.create({data:{orderId:order.orderId,productId:product.productId,skuSnapshot:product.sku,productNameSnapshot:'Input fixture',quantity:1,unitPrice:100,lineAmount:100,gpvRateSnapshot:0,gpvAmountSnapshot:0,ruleProfileSnapshot:{}}});
+      snapshots.push(await db.retailReferralOrderLineSnapshot.create({data:{orderLineId:line.orderLineId,orderId:order.orderId,referrerQualificationId:mode==='noReferrer'?null:f.q.qualificationId,retailReferralEnabled:mode!=='disabled',calculationType:mode==='disabled'?null:'PERCENTAGE',baseType:mode==='disabled'?null:'NET_PAID_ITEM_AMOUNT',rate:['disabled','missingRate'].includes(mode)?null:mode==='zeroRate'?0:0.1,netPaidItemAmount:mode==='zeroBase'?0:100,productRuleProfileId:profile.productRuleProfileId,productRuleVersion:'HISTORICAL-INPUT',attributionEvidence:{privateNote:'HIDDEN-INPUT'}}}));
+    }
+    const conditions:Record<string,string[]>={disabled:['RETAIL_REFERRAL_DISABLED'],noReferrer:['NO_STORED_REFERRER'],missingRate:['MISSING_RATE'],zeroRate:['ZERO_RATE'],zeroBase:['ZERO_BASE_AMOUNT'],unsupportedType:['UNSUPPORTED_CALCULATION_TYPE'],unsupportedBase:['UNSUPPORTED_BASE_TYPE'],ready:[]};
+    const result=(await f.read()).economicEvidence;
+    expect(result.retailRecognitionInputs).toEqual([expect.objectContaining({basis:'STORED_INPUT_NOT_RECOGNITION_RESULT',awardEvidence:'NO_RECORDED_AWARD',awardReferences:[],inputConditions:conditions[mode]})]);
+    expect(result.awards).toEqual([]);
+    expect(result.payables).toEqual([]);
+    expect((await f.read()).economicEvidence).toEqual(result);
+    const json=JSON.stringify(result.retailRecognitionInputs);
+    for(const secret of [f.q.qualificationId,...snapshots.map(row=>row.retailReferralOrderLineSnapshotId),'HIDDEN-INPUT','payableAmount','activeAtRecognition'])expect(json).not.toContain(secret);
+    expect(await db.retailReferralOrderLineSnapshot.findUnique({where:{orderLineId:snapshots[0].orderLineId}})).toEqual(snapshots[0]);
   });
   it.each([3,-2,-6])('reports recorded EPV adjustment %s without recomputing monthly eligibility',async delta=>{
     const f=await fixture();

@@ -13,8 +13,10 @@ const fields:Record<string,string>={sku:'認列時 SKU',baseAmount:'計算基礎
 const children:Record<string,string>={sources:'本單來源 PV',awards:'認列獎金',corrections:'重算調整',replayedEntitlements:'已重算權益',adjustments:'PV 調整',applications:'抵扣明細',payables:'應付款',paymentResults:'付款回報（累計金額，不相加）',effects:'入帳紀錄',recipients:'對象明細',postedCancellations:'已過帳取消',periods:'後續期間',carryChanges:'結轉差異',awardChanges:'獎金差異',postings:'實際分錄',carryProjections:'已記錄結轉'};
 const objects:Record<string,string>={retailRecognition:'零售推薦歷史認列',attribution:'歷史推薦歸屬',periodContext:'整期背景（不歸給單筆訂單）',recordedRetention:'已記錄保留權益',replay:'歷史重算',recordedEffects:'對應入帳證據',correctionAward:'追加獎金',recovery:'追回款',reservoirBEffect:'Reservoir B 調整',payout:'付款明細（包含其他來源，不全歸給本筆）'};
 const historicalLabels:Record<string,string>={NET_PAID_ITEM_AMOUNT:'商品實付淨額',PERCENTAGE:'按比例',RETAIL_CHECKOUT_CANDIDATE_REVALIDATED:'結帳時驗證推薦歸屬',ADMIN_FORWARD_CORRECTION:'管理員向後生效更正'};
+const inputConditionLabels:Record<string,string>={RETAIL_REFERRAL_DISABLED:'當時未啟用零售推薦',NO_STORED_REFERRER:'當時未記錄推薦人',UNSUPPORTED_CALCULATION_TYPE:'當時計算方式不受支援',UNSUPPORTED_BASE_TYPE:'當時計算基礎不受支援',MISSING_RATE:'缺少當時比例',ZERO_RATE:'當時比例為零',ZERO_BASE_AMOUNT:'當時計算基礎金額為零'};
 function value(key:string,item:unknown){if(item===null)return '未提供';if(typeof item==='boolean')return item?'是':'否';if(typeof item!=='string'&&typeof item!=='number')return '';if(['baseType','calculationType','source'].includes(key))return historicalLabels[String(item)]??'其他歷史設定';return key.toLowerCase().includes('status')?states[String(item)]??'待確認':String(item);}
 function Evidence({row}:{row:Row}){return <><dl className="lineage-facts">{Object.entries(fields).filter(([key])=>key in row).map(([key,label])=>typeof row[key]==='object'&&row[key]!==null?null:<div key={key}><dt>{label}</dt><dd>{value(key,row[key])}</dd></div>)}</dl>
+  {row.basis==='STORED_INPUT_NOT_RECOGNITION_RESULT'&&<><p>這是下單時保存的輸入，不代表已完成獎金認列。</p><p>{row.awardEvidence==='RECORDED_AWARD'?'已有對應獎金紀錄，金額請見獎金事件。':'尚無對應獎金紀錄；不推定為零金額或認列完成。'}</p>{row.inputConditions?.length?<ul>{row.inputConditions.map((code:string)=><li key={code}>{inputConditionLabels[code]??'其他歷史輸入條件'}</li>)}</ul>:<p>未發現上述輸入缺口；實際資格與處理結果仍須認列證據。</p>}</>}
   {row.awardType==='RETAIL_REFERRAL'&&row.retailRecognition===null&&<p>缺少歷史認列快照；無法提供當時的商品比例與歸屬。</p>}
   {row.basis==='RECORDED_PV_AND_ENTITLEMENT_STATE'&&<p>僅表示已記錄的調整；不表示所有退貨皆已完成重算。</p>}
   {row.evidenceType==='CALCULATION_CHECKPOINT_NOT_PAYMENT'&&<p>這是重算進度，不能視為已入帳或已付款。</p>}
@@ -29,7 +31,7 @@ export function lineageEvents(data:Lineage){
   (evidence.awards??[]).forEach((row,index)=>sourceLabels.set(row.reference,`${awards[row.awardType]??'獎金'} ${index+1}`));
   const add=(key:string,title:string,date:string,context?:string)=>{for(const row of evidence[key]??[])rows.push({title:awards[row.awardType]??title,at:row[date],row:{...row,...(row.sourcePvReference||row.sourceAwardReference||row.sourceOrderLineReference?{sourceDescription:sourceLabels.get(row.sourcePvReference??row.sourceAwardReference)??'本單明細'}:{})},context});};
   for(const row of data.payments??[])rows.push({title:'訂單收款',at:row.occurredAt,row});
-  add('pvEvents','PV 認列','occurredAt');add('awards','訂單獎金','occurredAt');add('subscriptionRecognitions','訂閱認列','recognizedAt');
+  add('retailRecognitionInputs','零售推薦認列輸入','recordedAt');add('pvEvents','PV 認列','occurredAt');add('awards','訂單獎金','occurredAt');add('subscriptionRecognitions','訂閱認列','recognizedAt');
   add('periodContributions','期間結算背景','periodEnd','本單曾納入此期計算；整期獎金不等於本單獎金。');
   add('payables','應付款','availableAt');add('recoveries','追回款','occurredAt');add('reservoirBDestinations','Reservoir B 入帳','effectiveAt');
   add('gpvRetention','目前 GPV 保留量','occurredAt','依目前已過帳退貨計算。');add('epvRetentions','已記錄 EPV 保留量','occurredAt');add('returnReplays','退貨後續重算','convergedAt','各期差異與實際入帳分開列示。');

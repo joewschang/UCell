@@ -3,7 +3,7 @@ import { pending, verifyReplayEnvelope } from '@ucell/database';
 import { createHash } from 'node:crypto';
 import {orderReplayPostingEvidence} from './order-replay-posting-evidence';
 import {recognitionRetentionEvidence} from './recognition-retention-evidence';
-import {readRetailReferralSnapshot} from '../order/retail-referral-snapshot-read';
+import {readOrderRetailSnapshots} from '../order/retail-referral-snapshot-read';
 
 // References join this projection without exposing internal UUIDs or identities.
 const reference = (kind:string,id:string) => `${kind}:${createHash('sha256').update(`${kind}:${id}`).digest('hex')}`;
@@ -120,18 +120,35 @@ export async function orderEconomicEvidence(tx:Prisma.TransactionClient,orderId:
   }
   const ids=[...awards.keys()];
   const retailRecognition=new Map<string,Record<string,unknown>>();
-  for(const award of awards.values()){
-    if(award.awardType!=='RETAIL_REFERRAL'||!award.sourceEventId)continue;
-    const snapshot=await readRetailReferralSnapshot(tx,award.sourceEventId);
-    if(!snapshot)continue; // Legacy absence is unavailable evidence, never current-rule fallback.
-    if(snapshot.orderId!==orderId||snapshot.orderLine.orderId!==orderId||snapshot.referrerQualificationId!==award.recipientQualificationId)
+  const retailRecognitionInputs=[];
+  for(const snapshot of await readOrderRetailSnapshots(tx,orderId)){
+    const linked=[...awards.values()].filter(award=>award.awardType==='RETAIL_REFERRAL'&&award.sourceEventId===snapshot.orderLineId);
+    if(snapshot.orderId!==orderId||snapshot.orderLine.orderId!==orderId||linked.some(award=>snapshot.referrerQualificationId!==award.recipientQualificationId))
       pending('HISTORICAL_SNAPSHOT_CORRUPT','Retail award conflicts with its stored order-line recognition');
-    retailRecognition.set(award.bonusAwardId,{
+    const recognition={
       basis:'STORED_RETAIL_RECOGNITION',sku:snapshot.orderLine.skuSnapshot,
       baseAmount:snapshot.netPaidItemAmount.toString(),baseType:snapshot.baseType,rate:snapshot.rate?.toString()??null,
       calculationType:snapshot.calculationType,retailReferralEnabled:snapshot.retailReferralEnabled,
       productRuleVersion:snapshot.productRuleVersion,recordedAt:snapshot.createdAt.toISOString(),
       attribution:snapshot.attribution?{source:snapshot.attribution.source,effectiveAt:snapshot.attribution.effectiveFrom.toISOString(),reference:reference('RETAIL_ATTRIBUTION',snapshot.attribution.retailReferrerAttributionId)}:null,
+    };
+    for(const award of linked)retailRecognition.set(award.bonusAwardId,recognition);
+    // These describe stored inputs, not a reconstructed recognition decision.
+    const inputConditions:string[]=[];
+    if(!snapshot.retailReferralEnabled)inputConditions.push('RETAIL_REFERRAL_DISABLED');
+    if(!snapshot.referrerQualificationId)inputConditions.push('NO_STORED_REFERRER');
+    if(snapshot.retailReferralEnabled){
+      if(snapshot.calculationType!=='PERCENTAGE')inputConditions.push('UNSUPPORTED_CALCULATION_TYPE');
+      if(snapshot.baseType!=='NET_PAID_ITEM_AMOUNT')inputConditions.push('UNSUPPORTED_BASE_TYPE');
+      if(snapshot.rate===null)inputConditions.push('MISSING_RATE');
+      else if(snapshot.rate.eq(0))inputConditions.push('ZERO_RATE');
+    }
+    if(snapshot.netPaidItemAmount.eq(0))inputConditions.push('ZERO_BASE_AMOUNT');
+    retailRecognitionInputs.push({
+      reference:reference('RETAIL_INPUT',snapshot.retailReferralOrderLineSnapshotId),sourceOrderLineReference:reference('ORDER_LINE',snapshot.orderLineId),
+      ...recognition,basis:'STORED_INPUT_NOT_RECOGNITION_RESULT',inputConditions,
+      awardEvidence:linked.length?'RECORDED_AWARD':'NO_RECORDED_AWARD',
+      awardReferences:linked.map(award=>reference('AWARD',award.bonusAwardId)).sort(),
     });
   }
   const payables=await tx.payableEntry.findMany({where:{sourceType:'BONUS_AWARD',sourceId:{in:ids}},include:{payoutLine:{include:{payoutBatch:true}}},orderBy:[{createdAt:'asc'},{payableEntryId:'asc'}]});
@@ -179,6 +196,7 @@ export async function orderEconomicEvidence(tx:Prisma.TransactionClient,orderId:
     periodContributions:await periodContributions(tx,orderId,pv),
     gpvRetention:await gpvRetention(tx,orderId,pv),
     epvRetentions,
+    retailRecognitionInputs,
     returnReplays:await returnReplayEvidence(tx,returnIds),
     pvEvents:pv.map(row=>({reference:reference('PV',row.eventId),pvType:row.pvType,eventType:row.eventType,amount:row.amount.toString(),occurredAt:row.occurredAt.toISOString()})),
     awards:[...awards.values()].sort((a,b)=>a.occurredAt.getTime()-b.occurredAt.getTime()||a.bonusAwardId.localeCompare(b.bonusAwardId)).map(row=>({reference:reference('AWARD',row.bonusAwardId),sourcePvReference:row.sourceEventId&&pv.some(p=>p.eventId===row.sourceEventId)?reference('PV',row.sourceEventId):null,sourceAwardReference:row.sourceAwardId&&awards.has(row.sourceAwardId)?reference('AWARD',row.sourceAwardId):null,sourceOrderLineReference:row.awardType==='RETAIL_REFERRAL'&&orderLines.some(line=>line.orderLineId===row.sourceEventId)?reference('ORDER_LINE',row.sourceEventId!):null,retailRecognition:row.awardType==='RETAIL_REFERRAL'?retailRecognition.get(row.bonusAwardId)??null:null,activeAtRecognition:row.activeSnapshot,kFactor:row.kFactor.toString(),awardType:row.awardType,theoryAmount:row.theoryAmount.toString(),payableAmount:row.payableAmount.toString(),occurredAt:row.occurredAt.toISOString(),ruleVersionCode:row.ruleVersionCode,parameterSnapshotHash:row.parameterSnapshotHash})),

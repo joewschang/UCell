@@ -36,6 +36,13 @@ it('renders historical retail inputs and distinguishes missing snapshots',async(
  for(const secret of ['PRIVATE-REFERENCE','PRIVATE-INPUT'])expect(output).not.toContain(secret);
  act(()=>view.unmount());
 });
+it('shows stored input conditions without claiming zero award or completed recognition',async()=>{
+ vi.mocked(get).mockResolvedValue({data:{...fixture,economicEvidence:{retailRecognitionInputs:[{basis:'STORED_INPUT_NOT_RECOGNITION_RESULT',awardEvidence:'NO_RECORDED_AWARD',inputConditions:['RETAIL_REFERRAL_DISABLED','NO_STORED_REFERRER'],recordedAt:'2026-09-01T00:00:00Z'},{basis:'STORED_INPUT_NOT_RECOGNITION_RESULT',awardEvidence:'NO_RECORDED_AWARD',inputConditions:[]}]}}});
+ const view=await render();await vi.waitFor(()=>expect(JSON.stringify(view.toJSON())).toContain('零售推薦認列輸入'));
+ const output=JSON.stringify(view.toJSON());
+ for(const label of ['當時未啟用零售推薦','當時未記錄推薦人','不推定為零金額或認列完成','實際資格與處理結果仍須認列證據'])expect(output).toContain(label);
+ expect(output).not.toContain('可得金額');act(()=>view.unmount());
+});
 it('hides cached financial evidence after a failed refresh and allows retry',async()=>{
  const view=await render();await vi.waitFor(()=>expect(JSON.stringify(view.toJSON())).toContain('零售推薦獎金'));
  vi.mocked(get).mockRejectedValueOnce(new Error('連線失敗'));
