@@ -144,7 +144,7 @@ export class AdminOperationsController{
     ).then(data=>({data}));
   }
 
-  @Roles('SUPER_ADMIN','FINANCE','COMPLIANCE_AUDIT')
+  @Roles('SUPER_ADMIN','FINANCE')
   @Post('payout-batches/:id/mark-paid')
   @ApiOperation({operationId:'adminMarkPayoutPaid',summary:'記錄外部付款/銀行對帳結果；本系統不直接執行銀行轉帳'})
   paid(

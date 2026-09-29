@@ -459,46 +459,26 @@ export class AdminOperationsService {
   ){
     if(!actorId || !actorRole || !['FINANCE','SUPER_ADMIN'].includes(actorRole))
       throw new UnprocessableEntityException('Finance role and authenticated actor are required to mark payout paid');
+    for(const value of [input?.paymentReference,input?.paymentMethod])if(typeof value!=='string'||!value.trim()||value.length>200||/[\u0000-\u001f\u007f]/.test(value))throw new UnprocessableEntityException('INVALID_PAYOUT_PAYMENT_REFERENCE');
+    if(input.paidAt!==undefined&&(!(input.paidAt instanceof Date)||!Number.isFinite(input.paidAt.getTime())))throw new UnprocessableEntityException('INVALID_PAYOUT_RESULT_TIME');
+    const paymentReference=input.paymentReference.trim(),paymentMethod=input.paymentMethod.trim();
     return this.prisma.$transaction(async tx=>{
-      const batch=await tx.payoutBatch.findUniqueOrThrow({where:{payoutBatchId:id}});
-      if(batch.status!=='EXPORTED')throw new ConflictException('Only EXPORTED payout batch can be marked PAID');
-      const paidAt=input.paidAt??new Date();
-      const updated=await tx.payoutBatch.update({
-        where:{payoutBatchId:id},
-        data:{
-          status:'PAID',paidAt,
-          paymentReference:input.paymentReference,
-          paymentMethod:input.paymentMethod
-        }
-      });
-      const paidAwardEntries=await tx.payableEntry.findMany({
-        where:{payoutLine:{payoutBatchId:id},status:'ALLOCATED',sourceType:'BONUS_AWARD'},
-        select:{sourceId:true}
-      });
-      for(const entry of paidAwardEntries){
-        const alreadyPaid=await tx.bonusAwardLifecycleEvent.findFirst({
-          where:{bonusAwardId:entry.sourceId,status:'PAID'},select:{lifecycleEventId:true}
-        });
-        if(!alreadyPaid) await tx.bonusAwardLifecycleEvent.create({
-          data:{bonusAwardId:entry.sourceId,status:'PAID',occurredAt:paidAt,reasonCode:'PAYOUT_PAID'}
-        });
+      await tx.$queryRaw`SELECT payout_batch_id FROM ledger.payout_batch WHERE payout_batch_id=${id}::uuid FOR UPDATE`;
+      const batch=await tx.payoutBatch.findUniqueOrThrow({where:{payoutBatchId:id},include:{lines:true}});
+      // Historical PAID batches replay without inventing missing historical results.
+      if(batch.status==='PAID'){
+        if(batch.paymentReference!==paymentReference||batch.paymentMethod!==paymentMethod||input.paidAt&&batch.paidAt?.getTime()!==input.paidAt.getTime())throw new ConflictException('PAYOUT_PAYMENT_REPLAY_CONFLICT');
+        return batch;
       }
-      await tx.payableEntry.updateMany({
-        where:{payoutLine:{payoutBatchId:id},status:'ALLOCATED'},
-        data:{status:'PAID'}
-      });
-      await this.audit.write(tx,{
-        actorType:actorId?'USER':'SYSTEM',actorId,
-        action:'PAYOUT_PAID',entityType:'PAYOUT_BATCH',entityId:id,
-        afterData:{
-          paymentReference:input.paymentReference,
-          paymentMethod:input.paymentMethod,
-          paidAt:paidAt.toISOString()
-        },
-        requestId,correlationId
-      });
+      if(batch.status!=='EXPORTED')throw new ConflictException('Only EXPORTED payout batch can be marked PAID');
+      if(!batch.lines.length)throw new ConflictException('PAYOUT_RESULT_REQUIRED');
+      const paidAt=input.paidAt??new Date();
+      const prepared=this.preparePayoutResults(id,{results:batch.lines.map(line=>({payoutLineId:line.payoutLineId,status:'PAID',paidAmount:line.netAmount.toFixed(4),paymentReference,reasonCode:'LEGACY_BATCH_CONFIRMATION',occurredAt:paidAt}))});
+      await this.writePayoutResults(tx,id,prepared,actorId,requestId,correlationId);
+      const updated=await tx.payoutBatch.update({where:{payoutBatchId:id},data:{paymentReference,paymentMethod,paidAt}});
+      await this.audit.write(tx,{actorType:'USER',actorId,action:'PAYOUT_PAID',entityType:'PAYOUT_BATCH',entityId:id,afterData:{paymentReference,paymentMethod,paidAt:paidAt.toISOString()},requestId,correlationId});
       return updated;
-    },{isolationLevel:Prisma.TransactionIsolationLevel.Serializable});
+    },{isolationLevel:Prisma.TransactionIsolationLevel.ReadCommitted});
   }
 
   async recordPayoutResults(
@@ -508,9 +488,17 @@ export class AdminOperationsService {
   ){
     if(!actorId || !actorRole || !['FINANCE','SUPER_ADMIN'].includes(actorRole))
       throw new UnprocessableEntityException('Finance role and authenticated actor are required to reconcile payout results');
+    const prepared=this.preparePayoutResults(id,input);
+    return this.prisma.$transaction(async tx=>{
+      await tx.$queryRaw`SELECT payout_batch_id FROM ledger.payout_batch WHERE payout_batch_id=${id}::uuid FOR UPDATE`;
+      return this.writePayoutResults(tx,id,prepared,actorId,requestId,correlationId);
+    },{isolationLevel:Prisma.TransactionIsolationLevel.ReadCommitted});
+  }
+
+  private preparePayoutResults(id:string,input:{results:Array<{payoutLineId:string;status:'PAID'|'FAILED';paidAmount:string;paymentReference?:string;reasonCode?:string;occurredAt?:Date}>}){
     if(!Array.isArray(input?.results)||!input.results.length) throw new UnprocessableEntityException('PAYOUT_RESULT_REQUIRED');
     const seen=new Set<string>();
-    const prepared=input.results.map(result=>{
+    return input.results.map(result=>{
       if(!result||typeof result.payoutLineId!=='string'||seen.has(result.payoutLineId)||!['PAID','FAILED'].includes(result.status)||typeof result.paidAmount!=='string'||!/^(0|[1-9][0-9]{0,13})(\.[0-9]{1,4})?$/.test(result.paidAmount))throw new UnprocessableEntityException('INVALID_PAYOUT_RESULT');
       seen.add(result.payoutLineId);
       if(result.occurredAt!==undefined&&(!(result.occurredAt instanceof Date)||!Number.isFinite(result.occurredAt.getTime())))throw new UnprocessableEntityException('INVALID_PAYOUT_RESULT_TIME');
@@ -518,8 +506,10 @@ export class AdminOperationsService {
       const amount=new Prisma.Decimal(result.paidAmount),paymentReference=result.paymentReference?.trim()||null,reasonCode=result.reasonCode?.trim()||null;
       return {...result,amount,paymentReference,reasonCode,key:`payout-result:${id}:${result.payoutLineId}:${result.status}:${amount.toFixed(4)}:${paymentReference??''}`};
     });
-    return this.prisma.$transaction(async tx=>{
-      await tx.$queryRaw`SELECT payout_batch_id FROM ledger.payout_batch WHERE payout_batch_id=${id}::uuid FOR UPDATE`;
+  }
+
+  // Both entry points hold the same batch lock before calling the shared writer.
+  private async writePayoutResults(tx:Prisma.TransactionClient,id:string,prepared:ReturnType<AdminOperationsService['preparePayoutResults']>,actorId:string,requestId:string,correlationId:string){
       const batch=await tx.payoutBatch.findUniqueOrThrow({where:{payoutBatchId:id},include:{lines:{include:{payableEntries:true}}}});
       const history=await tx.payoutPaymentResult.findMany({where:{payoutBatchId:id},orderBy:[{createdAt:'asc'},{payoutPaymentResultId:'asc'}]});
       const byKey=new Map(history.map(row=>[row.idempotencyKey,row]));
@@ -553,6 +543,5 @@ export class AdminOperationsService {
       const updated=await tx.payoutBatch.update({where:{payoutBatchId:id},data:{status,paymentReference:status==='PAID'?'RECONCILED_BY_LINE_RESULTS':undefined,paidAt:status==='PAID'?new Date():undefined}});
       await this.audit.write(tx,{actorType:'USER',actorId,action:'PAYOUT_RESULT_RECORDED',entityType:'PAYOUT_BATCH',entityId:id,afterData:{status,paidAmount:paid.toString(),resultCount:results.length},requestId,correlationId});
       return {batch:updated,results,replayed:false};
-    },{isolationLevel:Prisma.TransactionIsolationLevel.ReadCommitted});
   }
 }

@@ -4,7 +4,7 @@ import {act,create} from 'react-test-renderer';
 import {beforeEach,expect,it,vi} from 'vitest';
 import {PayoutsPage} from './PayoutsPage';
 import {PayoutResultForm} from './PayoutResultForm';
-import {Field} from '../../components/ui';
+import {Field,Metric} from '../../components/ui';
 import {get,command} from '../../lib/api';
 import {saveFinanceReviewDownload} from './payout-download';
 const state=vi.hoisted(()=>({role:'FINANCE',status:'APPROVED'}));
@@ -37,4 +37,24 @@ it('downloads a specific immutable revision only through the Finance action',asy
  state.status='EXPORTED';const view=await render();const button=view.root.findAllByType('button').find(b=>b.children.join('')==='下載第 1 版覆核 CSV')!;expect(button).toBeDefined();
  await act(async()=>button.props.onClick());expect(command).toHaveBeenCalledWith('/admin/operations/payout-batches/batch-a/export-downloads',{revision:1});expect(saveFinanceReviewDownload).toHaveBeenCalled();act(()=>view.unmount());
  state.role='COMPLIANCE_AUDIT';const audit=await render();expect(audit.root.findAllByType('button').some(b=>b.children.join('')==='下載第 1 版覆核 CSV')).toBe(false);act(()=>audit.unmount());
+});
+it('keeps unavailable amounts unknown and offers retry instead of claiming empty financial data',async()=>{
+ vi.mocked(get).mockRejectedValue(new Error('SYNTHETIC_OFFLINE'));let view:ReturnType<typeof create>;
+ await act(async()=>{view=create(<QueryClientProvider client={new QueryClient({defaultOptions:{queries:{retry:false}}})}><PayoutsPage/></QueryClientProvider>);});
+ await vi.waitFor(()=>expect(JSON.stringify(view!.toJSON())).toContain('無法取得付款批次'));
+ expect(view!.root.findAllByType(Metric).map(metric=>metric.props.value)).toEqual(['—','—']);
+ expect(JSON.stringify(view!.toJSON())).not.toContain('目前沒有符合狀態的付款批次');
+ vi.mocked(get).mockResolvedValue({data:[]});const retry=view!.root.findAllByType('button').find(button=>button.children.join('')==='重新載入')!;
+ expect(retry.props.disabled).toBe(false);await act(async()=>retry.props.onClick());
+ await vi.waitFor(()=>expect(view!.root.findAllByType(Metric).map(metric=>metric.props.value)).toEqual([0,0]));
+ expect(JSON.stringify(view!.toJSON())).toContain('目前沒有符合狀態的付款批次');act(()=>view!.unmount());
+});
+it('retains export input but disables financial actions until stale detail can be refreshed',async()=>{
+ const view=await render();act(()=>view.root.findAllByType(Field).find(f=>f.props.label==='匯出參考')!.findByType('input').props.onChange({target:{value:'KEEP-REFERENCE'}}));
+ vi.mocked(get).mockRejectedValue(new Error('SYNTHETIC_OFFLINE'));
+ const client=view.root.findByType(QueryClientProvider).props.client;await act(async()=>client.invalidateQueries({queryKey:['payout-detail','batch-a']}));
+ await vi.waitFor(()=>expect(JSON.stringify(view.toJSON())).toContain('批次明細更新失敗'));
+ expect(view.root.findAllByType('button').find(button=>button.children.join('')==='建立財務覆核 CSV')!.props.disabled).toBe(true);
+ expect(view.root.findAllByType(Field).find(field=>field.props.label==='匯出參考')!.findByType('input').props.value).toBe('KEEP-REFERENCE');
+ expect(view.root.findAllByType('button').find(button=>button.children.join('')==='重新載入')!.props.disabled).toBe(false);act(()=>view.unmount());
 });

@@ -48,12 +48,14 @@ describe('v0.5 payout lifecycle', () => {
   it('net payout cannot go below zero',()=>{expect(assertion('PAID clawback offset preserves nonnegative net 100')).toBe('0');expect(assertion('PAID clawback offset preserves nonnegative net 200')).toBe('0');});
   it('mark-paid writes append-only PAID lifecycle events',async()=>{
     const paidAt=new Date('2020-03-02T00:00:00Z'),create=jest.fn(),updateMany=jest.fn();
-    const tx:any={...memberEconomicMocks(),payoutBatch:{findUniqueOrThrow:jest.fn(async()=>({payoutBatchId:'batch-A',status:'EXPORTED'})),update:jest.fn(async({data}:any)=>data)},payableEntry:{findMany:jest.fn(async()=>[{sourceId:'award-A'}]),updateMany},bonusAwardLifecycleEvent:{findFirst:jest.fn(async()=>null),create}};
+    const history:any[]=[];
+    const tx:any={...memberEconomicMocks(),$queryRaw:jest.fn(async()=>[]),payoutBatch:{findUniqueOrThrow:jest.fn(async()=>({payoutBatchId:'batch-A',status:'EXPORTED',lines:[{payoutLineId:'line-A',netAmount:new Prisma.Decimal(125),payableEntries:[{sourceId:'award-A',sourceType:'BONUS_AWARD',status:'ALLOCATED'}]}]})),update:jest.fn(async({data}:any)=>data)},payoutPaymentResult:{findMany:jest.fn(async()=>[...history]),create:jest.fn(async({data}:any)=>{history.push(data);return data;})},payableEntry:{updateMany},bonusAwardLifecycleEvent:{findFirst:jest.fn(async()=>null),create}};
     const audit={write:jest.fn()};
     const service=new AdminOperationsService({$transaction:async(work:any)=>work(tx)} as any,audit as any);
     await service.markPaid('batch-A',{paymentReference:'bank-A',paymentMethod:'BANK',paidAt},'finance-A','FINANCE','request-A','correlation-A');
     expect(create).toHaveBeenCalledWith({data:{bonusAwardId:'award-A',status:'PAID',occurredAt:paidAt,reasonCode:'PAYOUT_PAID'}});
-    expect(updateMany).toHaveBeenCalledWith({where:{payoutLine:{payoutBatchId:'batch-A'},status:'ALLOCATED'},data:{status:'PAID'}});
+    expect(updateMany).toHaveBeenCalledWith({where:{payoutLineId:'line-A',status:'ALLOCATED'},data:{status:'PAID'}});
+    expect(history).toEqual([expect.objectContaining({payoutLineId:'line-A',paidAmount:new Prisma.Decimal(125),resultStatus:'PAID',occurredAt:paidAt,reasonCode:'LEGACY_BATCH_CONFIRMATION'})]);
     expect(audit.write).toHaveBeenCalledWith(tx,expect.objectContaining({action:'PAYOUT_PAID',entityId:'batch-A'}));
   });
 });

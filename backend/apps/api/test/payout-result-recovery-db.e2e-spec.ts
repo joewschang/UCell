@@ -7,19 +7,50 @@ const url=process.env.PHASE2_TEST_DATABASE_URL;
  let db:PrismaClient,service:AdminOperationsService;
  beforeAll(()=>{db=new PrismaClient({datasources:{db:{url}}});service=new AdminOperationsService(db as any,new AuditService());});
  afterAll(async()=>db?.$disconnect());
- async function fixture(){
+ async function fixture(extraLine=false){
   const person=await db.person.create({data:{legalName:'Synthetic payment recovery'}}),actor=randomUUID();
   const qualification=await db.qualification.create({data:{currentHolderPersonId:person.personId,planLevelCode:'STARTER',status:'EFFECTIVE',effectiveAt:new Date()}});
-  const batch=await db.payoutBatch.create({data:{periodStart:new Date('2026-01-01Z'),periodEnd:new Date('2026-02-01Z'),status:'READY',totalGross:100,totalRecovery:0,totalNet:100}});
+  const batch=await db.payoutBatch.create({data:{periodStart:new Date('2026-01-01Z'),periodEnd:new Date('2026-02-01Z'),status:'READY',totalGross:extraLine?200:100,totalRecovery:0,totalNet:extraLine?200:100}});
   const line=await db.payoutLine.create({data:{payoutBatchId:batch.payoutBatchId,recipientQualificationId:qualification.qualificationId,grossAmount:100,netAmount:100,detailJson:{source:'synthetic'}}});
   const payable=await db.payableEntry.create({data:{qualificationId:qualification.qualificationId,sourceType:'MANUAL_TEST',sourceId:line.payoutLineId,awardType:'REFERRAL',grossAmount:100,availableAt:new Date(),status:'ALLOCATED',payoutLineId:line.payoutLineId,ruleVersionCode:'SYNTHETIC'}});
+  if(extraLine){const recipient=await db.qualification.create({data:{currentHolderPersonId:person.personId,planLevelCode:'STARTER',status:'EFFECTIVE',effectiveAt:new Date()}});await db.payoutLine.create({data:{payoutBatchId:batch.payoutBatchId,recipientQualificationId:recipient.qualificationId,grossAmount:100,netAmount:100,detailJson:{source:'synthetic-second'}}});}
   await service.approvePayout(batch.payoutBatchId,'FINANCE_REVIEW',actor,'FINANCE',undefined,randomUUID(),randomUUID());
   await service.approvePayout(batch.payoutBatchId,'COMPLIANCE_REVIEW',randomUUID(),'COMPLIANCE_AUDIT',undefined,randomUUID(),randomUUID());
   await service.exportPayout(batch.payoutBatchId,randomUUID(),actor,'FINANCE',randomUUID(),randomUUID());
   const result=(paidAmount:string,status:'PAID'|'FAILED'='PAID')=>({payoutLineId:line.payoutLineId,status,paidAmount,paymentReference:`SYNTHETIC-${status}-${paidAmount}`,reasonCode:status==='FAILED'?'BANK_REJECTED':undefined});
   const post=(rows:ReturnType<typeof result>[])=>service.recordPayoutResults(batch.payoutBatchId,{results:rows},actor,'FINANCE',randomUUID(),randomUUID());
-  return {batch,line,payable,result,post};
+  return {batch,line,payable,result,post,actor};
  }
+ it('records and replays concurrent legacy whole-batch confirmation through line evidence',async()=>{
+  const f=await fixture(true),input={paymentReference:'SYNTHETIC-LEGACY',paymentMethod:'BANK',paidAt:new Date('2026-01-20Z')};
+  const mark=()=>service.markPaid(f.batch.payoutBatchId,input,f.actor,'FINANCE',randomUUID(),randomUUID());
+  expect((await Promise.all([mark(),mark()])).map(row=>row.status)).toEqual(['PAID','PAID']);await mark();
+  const results=await db.payoutPaymentResult.findMany({where:{payoutBatchId:f.batch.payoutBatchId}});
+  expect(results).toHaveLength(2);expect(results.find(row=>row.payoutLineId===f.line.payoutLineId)).toMatchObject({resultStatus:'PAID',reasonCode:'LEGACY_BATCH_CONFIRMATION',paymentReference:input.paymentReference,occurredAt:input.paidAt});expect(results.map(row=>row.paidAmount.toString())).toEqual(['100','100']);
+  expect((await db.payableEntry.findUniqueOrThrow({where:{payableEntryId:f.payable.payableEntryId}})).status).toBe('PAID');
+  for(const action of ['PAYOUT_PAID','PAYOUT_RESULT_RECORDED'])expect(await db.auditEvent.count({where:{entityId:f.batch.payoutBatchId,action}})).toBe(1);
+  for(const change of [{paymentReference:'OTHER'},{paymentMethod:'OTHER'},{paidAt:new Date('2026-01-21Z')}])await expect(service.markPaid(f.batch.payoutBatchId,{...input,...change},f.actor,'FINANCE',randomUUID(),randomUUID())).rejects.toMatchObject({status:409});
+ });
+ it('rejects invalid whole-batch confirmation without payment evidence',async()=>{
+  const f=await fixture();
+  for(const input of [{paymentReference:' ',paymentMethod:'BANK'},{paymentReference:'SYNTHETIC',paymentMethod:''},{paymentReference:'SYNTHETIC',paymentMethod:'BANK',paidAt:new Date('invalid')}])await expect(service.markPaid(f.batch.payoutBatchId,input,f.actor,'FINANCE',randomUUID(),randomUUID())).rejects.toMatchObject({status:422});
+  expect(await db.payoutPaymentResult.count({where:{payoutBatchId:f.batch.payoutBatchId}})).toBe(0);
+  expect((await db.payoutBatch.findUniqueOrThrow({where:{payoutBatchId:f.batch.payoutBatchId}})).status).toBe('EXPORTED');
+ });
+ it('rolls back line payment evidence when legacy confirmation audit fails',async()=>{
+  const f=await fixture(),audit=new AuditService(),failing=new AdminOperationsService(db as any,{write:async(tx:any,event:any)=>{if(event.action==='PAYOUT_PAID')throw new Error('SYNTHETIC_AUDIT_FAILURE');return audit.write(tx,event);}} as any);
+  await expect(failing.markPaid(f.batch.payoutBatchId,{paymentReference:'SYNTHETIC',paymentMethod:'BANK'},f.actor,'FINANCE',randomUUID(),randomUUID())).rejects.toThrow('SYNTHETIC_AUDIT_FAILURE');
+  expect(await db.payoutPaymentResult.count({where:{payoutBatchId:f.batch.payoutBatchId}})).toBe(0);
+  expect((await db.payableEntry.findUniqueOrThrow({where:{payableEntryId:f.payable.payableEntryId}})).status).toBe('ALLOCATED');
+  expect((await db.payoutBatch.findUniqueOrThrow({where:{payoutBatchId:f.batch.payoutBatchId}})).status).toBe('EXPORTED');
+ });
+ it('preserves historical already-paid batches without fabricating line results',async()=>{
+  const f=await fixture(),input={paymentReference:'HISTORICAL',paymentMethod:'BANK',paidAt:new Date('2026-01-20Z')};
+  await db.payoutBatch.update({where:{payoutBatchId:f.batch.payoutBatchId},data:{status:'PAID',...input}});
+  expect((await service.markPaid(f.batch.payoutBatchId,input,f.actor,'FINANCE',randomUUID(),randomUUID())).status).toBe('PAID');
+  expect(await db.payoutPaymentResult.count({where:{payoutBatchId:f.batch.payoutBatchId}})).toBe(0);
+  expect(await db.auditEvent.count({where:{entityId:f.batch.payoutBatchId,action:'PAYOUT_PAID'}})).toBe(0);
+ });
  it('reconciles a failed transfer followed by actual successful retry without another payable',async()=>{
   const f=await fixture();expect((await f.post([f.result('0','FAILED')])).batch.status).toBe('FAILED');
   expect((await f.post([f.result('100')])).batch.status).toBe('PAID');
