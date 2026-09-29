@@ -2,6 +2,7 @@ import { Prisma, PvLedger } from '@prisma/client';
 import { pending, verifyReplayEnvelope } from '@ucell/database';
 import { createHash } from 'node:crypto';
 import {orderReplayPostingEvidence} from './order-replay-posting-evidence';
+import {recognitionRetentionEvidence} from './recognition-retention-evidence';
 
 // References join this projection without exposing internal UUIDs or identities.
 const reference = (kind:string,id:string) => `${kind}:${createHash('sha256').update(`${kind}:${id}`).digest('hex')}`;
@@ -117,11 +118,18 @@ export async function orderEconomicEvidence(tx:Prisma.TransactionClient,orderId:
   }
   const ids=[...awards.keys()];
   const payables=await tx.payableEntry.findMany({where:{sourceType:'BONUS_AWARD',sourceId:{in:ids}},include:{payoutLine:{include:{payoutBatch:true}}},orderBy:[{createdAt:'asc'},{payableEntryId:'asc'}]});
-  const recoveries=await tx.bonusRecoveryEvent.findMany({where:{OR:[{bonusAwardId:{in:ids}},{returnCaseId:{in:returnIds}}]},orderBy:[{occurredAt:'asc'},{bonusRecoveryEventId:'asc'}]});
+  const recoveries=await tx.bonusRecoveryEvent.findMany({where:{OR:[{bonusAwardId:{in:ids}},{returnCaseId:{in:returnIds}}]},include:{bonusAward:true,applications:{include:{payoutLine:{include:{payoutBatch:true}}},orderBy:[{createdAt:'asc'},{recoveryApplicationId:'asc'}]}},orderBy:[{occurredAt:'asc'},{bonusRecoveryEventId:'asc'}]});
+  const epvRetentions=[];
+  if(recoveries.some(row=>row.applications.some(application=>application.amount.lte(0)||application.payoutLine.recipientQualificationId!==row.bonusAward.recipientQualificationId)))pending('HISTORICAL_SNAPSHOT_CORRUPT','Recovery application conflicts with its recipient');
+  for(const event of pv.filter(row=>row.pvType==='EPV'&&row.eventType==='EPV_CREATED')){
+    const snapshot=await tx.historicalReplaySnapshot.findUnique({where:{kind_sourceId:{kind:'EPV',sourceId:event.eventId}},include:{postings:{orderBy:{sequence:'asc'}}}});
+    epvRetentions.push(await recognitionRetentionEvidence(tx,event,snapshot?.postings??[]));
+  }
   const subscriptions=await tx.subscription.findMany({where:{orderId},include:{plan:true,schedules:{orderBy:{installmentNo:'asc'}}},orderBy:{createdAt:'asc'}});
   const recognitions=[] as Array<Record<string,unknown>>;
   const rpvAwardIds:string[]=[];
   for(const subscription of subscriptions){
+    const cancellations=await tx.subscriptionCancellation.findMany({where:{subscriptionId:subscription.subscriptionId,status:'POSTED'},orderBy:[{effectiveAt:'asc'},{subscriptionCancellationId:'asc'}]});
     for(const schedule of subscription.schedules){
       const [rpvEvent,rpvAwards,snapshot]=await Promise.all([
         tx.pvLedger.findFirst({where:{pvType:'RPV',sourceType:'SUBSCRIPTION',sourceId:subscription.subscriptionId,sourceLineId:schedule.recognitionId},orderBy:{occurredAt:'asc'}}),
@@ -133,6 +141,9 @@ export async function orderEconomicEvidence(tx:Prisma.TransactionClient,orderId:
         planCode:subscription.plan.planCode,installmentNo:schedule.installmentNo,status:schedule.status,
         recognitionMonth:schedule.recognitionMonth.toISOString(),recognizedAt:schedule.recognizedAt?.toISOString()??null,
         recognizedAmount:schedule.recognizedAmount.toString(),rpvAmount:schedule.rpvAmount.toString(),
+        scheduleRetainedEntitlementRatio:schedule.retainedEntitlementRatio?.toString()??null,
+        postedCancellations:cancellations.map(row=>({reference:reference('CANCELLATION',row.subscriptionCancellationId),refundAmount:row.refundAmount.toString(),fullCancellation:row.reasonCode==='FULL_RETURN'||row.refundAmount.eq(0),effectiveAt:row.effectiveAt.toISOString()})),
+        recordedRetention:rpvEvent?await recognitionRetentionEvidence(tx,rpvEvent,snapshot?.postings??[]):null,
         ruleVersionCode:schedule.ruleVersionCode,parameterSnapshotHash:schedule.parameterSnapshotHash??null,
         pvEvent:rpvEvent?{reference:reference('PV',rpvEvent.eventId),eventType:rpvEvent.eventType,amount:rpvEvent.amount.toString(),occurredAt:rpvEvent.occurredAt.toISOString()}:null,
         awards:rpvAwards.map(row=>({reference:reference('RPV_AWARD',row.rpvAwardEventId),generation:row.binaryGeneration,activeAtRecognition:row.activeSnapshot,theoryAmount:row.theoryAmount.toString(),payableAmount:row.payableAmount.toString(),ruleVersionCode:row.ruleVersionCode,parameterSnapshotHash:row.parameterSnapshotHash??null})),
@@ -150,11 +161,12 @@ export async function orderEconomicEvidence(tx:Prisma.TransactionClient,orderId:
     scope:'ORDER_PV_AWARD_RETURN_SUBSCRIPTION_RPV_REPLAY_RESERVOIR_B_AND_PERIOD_INPUTS',
     periodContributions:await periodContributions(tx,orderId,pv),
     gpvRetention:await gpvRetention(tx,orderId,pv),
+    epvRetentions,
     returnReplays:await returnReplayEvidence(tx,returnIds),
     pvEvents:pv.map(row=>({reference:reference('PV',row.eventId),pvType:row.pvType,eventType:row.eventType,amount:row.amount.toString(),occurredAt:row.occurredAt.toISOString()})),
     awards:[...awards.values()].sort((a,b)=>a.occurredAt.getTime()-b.occurredAt.getTime()||a.bonusAwardId.localeCompare(b.bonusAwardId)).map(row=>({reference:reference('AWARD',row.bonusAwardId),sourcePvReference:row.sourceEventId&&pv.some(p=>p.eventId===row.sourceEventId)?reference('PV',row.sourceEventId):null,sourceAwardReference:row.sourceAwardId&&awards.has(row.sourceAwardId)?reference('AWARD',row.sourceAwardId):null,awardType:row.awardType,theoryAmount:row.theoryAmount.toString(),payableAmount:row.payableAmount.toString(),occurredAt:row.occurredAt.toISOString(),ruleVersionCode:row.ruleVersionCode,parameterSnapshotHash:row.parameterSnapshotHash})),
     payables:payables.map(row=>({reference:reference('PAYABLE',row.payableEntryId),awardReference:reference('AWARD',row.sourceId),grossAmount:row.grossAmount.toString(),status:row.status,availableAt:row.availableAt.toISOString(),payout:row.payoutLine?{status:row.payoutLine.payoutBatch.status,periodStart:row.payoutLine.payoutBatch.periodStart.toISOString(),periodEnd:row.payoutLine.payoutBatch.periodEnd.toISOString()}:null})),
-    recoveries:recoveries.map(row=>({reference:reference('RECOVERY',row.bonusRecoveryEventId),awardReference:reference('AWARD',row.bonusAwardId),awardIncluded:awards.has(row.bonusAwardId),linkedToOrderReturn:row.returnCaseId!==null&&returnIds.includes(row.returnCaseId),recoveryAmount:row.recoveryAmount.toString(),recoveredAmount:row.recoveredAmount.toString(),outstandingAmount:row.outstandingAmount.toString(),status:row.status,reasonCode:row.reasonCode,occurredAt:row.occurredAt.toISOString()})),
+    recoveries:recoveries.map(row=>({reference:reference('RECOVERY',row.bonusRecoveryEventId),awardReference:reference('AWARD',row.bonusAwardId),awardIncluded:awards.has(row.bonusAwardId),linkedToOrderReturn:row.returnCaseId!==null&&returnIds.includes(row.returnCaseId),recoveryAmount:row.recoveryAmount.toString(),recoveredAmount:row.recoveredAmount.toString(),outstandingAmount:row.outstandingAmount.toString(),status:row.status,reasonCode:row.reasonCode,occurredAt:row.occurredAt.toISOString(),applications:row.applications.map(application=>({reference:reference('RECOVERY_APPLICATION',application.recoveryApplicationId),amount:application.amount.toString(),payoutLineReference:reference('PAYOUT_LINE',application.payoutLineId),payoutBatchStatus:application.payoutLine.payoutBatch.status,basis:'RECOVERY_OFFSET_NOT_CASH_PAYMENT'}))})),
     subscriptionRecognitions:recognitions,
     reservoirBDestinations:destinations.map(row=>({
       reference:reference('ECONOMIC_DESTINATION',row.destinationId),

@@ -3,6 +3,7 @@ import {randomUUID} from 'node:crypto';
 import {appendEntitlementDelta,captureParameters,storeReplaySnapshot} from '@ucell/database';
 import {AdminOperationsService} from '../src/modules/admin-operations/admin-operations.service';
 import {AuditService} from '../src/common/audit/audit.service';
+import {RecoveryBalanceService} from '../src/modules/payout/recovery-balance.service';
 
 const url=process.env.PHASE2_TEST_DATABASE_URL;
 const describeDb=url?describe:describe.skip;
@@ -40,6 +41,19 @@ describeDb('ORDER_ECONOMIC_EVIDENCE_REAL_DB',()=>{
     const envelope={format:'UCELL_HISTORICAL_REPLAY_V1' as const,kind,sourceId:String(randomUUID()),ruleVersionCode:'R1.0B',at:new Date(at.getTime()+1000).toISOString(),parameters,recipients:[],evidence:{sources:[source]},inputs:{periodStart:at.toISOString(),periodEnd:new Date(at.getTime()+1000).toISOString(),totalGpv:'900000'}};
     return {f,envelope,source};
   }
+  it.each([3,-2,-6])('reports recorded EPV adjustment %s without recomputing monthly eligibility',async delta=>{
+    const f=await fixture();
+    const event=await db.pvLedger.create({data:{qualificationId:f.q.qualificationId,pvType:'EPV',amount:5,sourceType:'ORDER',sourceId:f.order.orderId,eventType:'EPV_CREATED',ruleVersionCode:'R1',occurredAt:new Date(),correlationId:randomUUID()}});
+    const snapshot=await db.historicalReplaySnapshot.create({data:{kind:'EPV',sourceId:event.eventId,ruleVersionCode:'R1',content:{recipients:[{key:'self',qualificationId:f.q.qualificationId,posted:'10',eligible:true}]},hash:'a'.repeat(64)}});
+    await db.entitlementReplayPosting.create({data:{actionKey:randomUUID(),snapshotId:snapshot.snapshotId,entitlementKey:'self',recipientQualificationId:f.q.qualificationId,originallyPosted:10,recalculatedEntitlement:10+delta,delta,stateHash:'b'.repeat(64)}});
+    await db.pvLedger.create({data:{qualificationId:f.q.qualificationId,pvType:'EPV',amount:delta,sourceType:'RETURN',sourceId:randomUUID(),sourceLineId:event.eventId,eventType:'EPV_REPLAY_ADJUSTMENT',reversalOfEventId:event.eventId,ruleVersionCode:'R1',occurredAt:new Date(),correlationId:randomUUID()}});
+    if(delta===-6){await expect(f.read()).rejects.toMatchObject({response:{code:'HISTORICAL_SNAPSHOT_CORRUPT'}});return;}
+    const first=(await f.read()).economicEvidence;
+    expect(first.epvRetentions).toEqual([expect.objectContaining({basis:'RECORDED_PV_AND_ENTITLEMENT_STATE',originalVolume:'5',recordedDelta:String(delta),recordedRetainedVolume:String(5+delta),replayedEntitlements:[expect.objectContaining({originallyPosted:'10',recordedDelta:String(delta),recordedEntitlement:String(10+delta)})]})]);
+    expect((await f.read()).economicEvidence).toEqual(first);
+    for(const secret of [event.eventId,snapshot.snapshotId,f.q.qualificationId])expect(JSON.stringify(first.epvRetentions)).not.toContain(secret);
+    expect(await db.pvLedger.findUniqueOrThrow({where:{eventId:event.eventId}})).toEqual(event);
+  });
   it.each(['none','partial','full','excess'])('explains current retained GPV from exact posted return lines: %s',async mode=>{
     const f=await fixture();
     const product=await db.productReference.create({data:{sku:randomUUID(),displayName:'Retention fixture',currentPrice:100}});
@@ -148,6 +162,11 @@ describeDb('ORDER_ECONOMIC_EVIDENCE_REAL_DB',()=>{
       return;
     }
     const before=await db.entitlementReplayPosting.findMany({where:{actionKey}});
+    if(mode==='negative'){
+      const payout=await db.payoutBatch.create({data:{periodStart:start,periodEnd:end,status:'READY',totalGross:1,totalRecovery:1,totalNet:0}});
+      const line=await db.payoutLine.create({data:{payoutBatchId:payout.payoutBatchId,recipientQualificationId:f.q.qualificationId,grossAmount:1,recoveryOffset:1,netAmount:0,detailJson:{privateNote:'hidden offset detail'}}});
+      await db.$transaction(tx=>new RecoveryBalanceService(db as any).apply(tx,{qualificationId:f.q.qualificationId,payoutLineId:line.payoutLineId,maxAmount:new Prisma.Decimal(1)}));
+    }
     if(mode==='positive'){
       const initial=(await f.read()).economicEvidence.returnReplays[0].recordedEffects.periods[0].postings[0].correctionAward as any;
       expect(initial.payables).toEqual([]);
@@ -171,8 +190,14 @@ describeDb('ORDER_ECONOMIC_EVIDENCE_REAL_DB',()=>{
       expect(evidence.periods[0].carryProjections).toEqual([]);
     }else{
       expect(evidence.periods[0].postings).toHaveLength(1);
-      expect(evidence.periods[0].postings[0]).toMatchObject({entitlementReference:first.returnReplays[0].periods[0].awardChanges[0].entitlementReference,delta:mode==='positive'?'2':'-2',correctionAward:mode==='positive'?expect.objectContaining({amount:'2'}):null,recovery:mode==='negative'?expect.objectContaining({amount:'2',outstandingAmount:'2'}):null});
+      expect(evidence.periods[0].postings[0]).toMatchObject({entitlementReference:first.returnReplays[0].periods[0].awardChanges[0].entitlementReference,delta:mode==='positive'?'2':'-2',correctionAward:mode==='positive'?expect.objectContaining({amount:'2'}):null,recovery:mode==='negative'?expect.objectContaining({amount:'2',outstandingAmount:'1',recoveredAmount:'1',status:'OFFSETTING'}):null});
       expect(evidence.periods[0].carryProjections).toEqual([expect.objectContaining({recipients:[expect.objectContaining({left:'80',right:'0',pairedPv:'20'})]})]);
+      if(mode==='negative'){
+        const recovery=evidence.periods[0].postings[0].recovery as any;
+        expect(recovery.applications).toEqual([expect.objectContaining({amount:'1',payoutBatchStatus:'READY',basis:'RECOVERY_OFFSET_NOT_CASH_PAYMENT'})]);
+        expect(first.recoveries.find(row=>row.reference===recovery.reference)!.applications).toEqual(recovery.applications);
+        expect(JSON.stringify(recovery)).not.toContain('privateNote');
+      }
       if(mode==='positive'){
         const correction=evidence.periods[0].postings[0].correctionAward as any;
         expect(correction.payables).toHaveLength(1);
@@ -209,8 +234,11 @@ describeDb('ORDER_ECONOMIC_EVIDENCE_REAL_DB',()=>{
     const award=await db.rpvUplineAwardEvent.create({data:{recognitionId:schedule.recognitionId,sourceQualificationId:f.q.qualificationId,recipientQualificationId:f.q.qualificationId,binaryGeneration:1,effectiveDirectCountSnapshot:1,unlockedDepthSnapshot:5,activeSnapshot:true,theoryAmount:10,payableAmount:10,ruleVersionCode:'R1',occurredAt:new Date('2026-09-02')}});
     const snapshot=await db.historicalReplaySnapshot.create({data:{kind:'RPV',sourceId:schedule.recognitionId,ruleVersionCode:'R1',content:{sealed:true,recipients:[{key:'RPV:G1',qualificationId:f.q.qualificationId,posted:'10',eligible:true}]},hash:'a'.repeat(64)}});
     const posting=await db.entitlementReplayPosting.create({data:{actionKey:`TEST:${randomUUID()}`,snapshotId:snapshot.snapshotId,entitlementKey:'RPV:G1',recipientQualificationId:f.q.qualificationId,originallyPosted:10,recalculatedEntitlement:8,delta:-2,stateHash:'b'.repeat(64)}});
+    const cancellation=await db.subscriptionCancellation.create({data:{subscriptionId:subscription.subscriptionId,requestedAt:new Date(),effectiveAt:new Date(),reasonCode:'PARTIAL_RETURN',refundAmount:20,correlationId:randomUUID()}});
+    await db.pvLedger.create({data:{qualificationId:f.q.qualificationId,pvType:'RPV',amount:-2,sourceType:'MONTHLY_RECOGNITION_REVERSAL',sourceId:cancellation.subscriptionCancellationId,sourceLineId:schedule.recognitionId,eventType:'RPV_REVERSAL',reversalOfEventId:pv.eventId,ruleVersionCode:'R1',occurredAt:new Date(),correlationId:randomUUID()}});
     const evidence=(await f.read()).economicEvidence;
     expect(evidence.subscriptionRecognitions).toEqual([expect.objectContaining({planCode:plan.planCode,installmentNo:1,status:'RECOGNIZED',pvEvent:expect.objectContaining({amount:'10'}),awards:[expect.objectContaining({generation:1,theoryAmount:'10',payableAmount:'10'})],replay:expect.objectContaining({hash:'a'.repeat(64),corrections:[expect.objectContaining({delta:'-2'})]})})]);
+    expect(evidence.subscriptionRecognitions[0]).toMatchObject({scheduleRetainedEntitlementRatio:'1',postedCancellations:[expect.objectContaining({refundAmount:'20',fullCancellation:false})],recordedRetention:{originalVolume:'10',recordedDelta:'-2',recordedRetainedVolume:'8',replayedEntitlements:[expect.objectContaining({originallyPosted:'10',recordedEntitlement:'8'})]}});
     const json=JSON.stringify(evidence.subscriptionRecognitions);
     for(const internal of [subscription.subscriptionId,schedule.recognitionId,pv.eventId,award.rpvAwardEventId,snapshot.snapshotId,posting.postingId,f.q.qualificationId])expect(json).not.toContain(internal);
   });
