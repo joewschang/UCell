@@ -22,6 +22,13 @@ export class FulfillmentErpResultDto{
  @ApiProperty() @IsISO8601() occurredAt!:string;
  @ApiProperty({type:[ErpResultLineDto]}) @IsArray() @ArrayMaxSize(1000) @ValidateNested({each:true}) @Type(()=>ErpResultLineDto) lines!:ErpResultLineDto[];
 }
+export class ShipmentSerialBindingDto{
+ @ApiProperty() @Matches(/^[a-f0-9]{64}$/) shipmentReference!:string;
+}
+export class ReturnSerialReceiptDto{
+ @ApiProperty() @Matches(/^[a-f0-9]{64}$/) returnReference!:string;
+ @ApiProperty({type:[String]}) @IsArray() @ArrayMaxSize(10000) @Matches(/^[A-E][0-9]{7}$/,{each:true}) serialNos!:string[];
+}
 @ApiTags('Admin - Fulfillment')
 @ApiBearerAuth('adminBearer')
 @Roles('SUPER_ADMIN','ORDER_OPS')
@@ -44,4 +51,8 @@ export class FulfillmentOperationsController{
  result(@Param('orderNo') orderNo:string,@Param('fulfillmentKey') key:string,@Body() body:FulfillmentErpResultDto,@Req() req:any){return this.service.reconcile(orderNo,key,{...body,occurredAt:new Date(body.occurredAt)},this.context(req)).then(data=>({data}));}
  @Post(':orderNo/:fulfillmentKey/erp-retry') @ApiOperation({operationId:'adminRetryFulfillmentErpHandoff',summary:'重新排入失敗交付；固定原請求並先核對 ERP 受理狀態'})
  retry(@Param('orderNo') orderNo:string,@Param('fulfillmentKey') key:string,@Req() req:any){return this.service.retryHandoff(orderNo,key,this.context(req)).then(data=>({data}));}
+ @Post(':orderNo/:fulfillmentKey/shipment-serials') @ApiOperation({operationId:'adminBindShipmentSerials',summary:'依装箱與物流證據綁定實體序號，不以 ERP 受理代替出貨'})
+ shipmentSerials(@Param('orderNo') orderNo:string,@Param('fulfillmentKey') key:string,@Body() body:ShipmentSerialBindingDto,@Req() req:any){return this.service.bindShipment(orderNo,key,body.shipmentReference,this.context(req)).then(data=>({data}));}
+ @Post(':orderNo/:fulfillmentKey/return-serials') @ApiOperation({operationId:'adminReceiveReturnSerials',summary:'依已入帳退貨明細驗收原出貨序號，保留商業用途追溯'})
+ returnSerials(@Param('orderNo') orderNo:string,@Param('fulfillmentKey') key:string,@Body() body:ReturnSerialReceiptDto,@Req() req:any){return this.service.receiveReturn(orderNo,key,body,this.context(req)).then(data=>({data}));}
 }

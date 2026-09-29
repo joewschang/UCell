@@ -7,12 +7,14 @@ import {FulfillmentErpHandoffService} from './fulfillment-erp-handoff.service';
 import {FulfillmentSourceAllocationService} from './fulfillment-source-allocation.service';
 import {AuditService} from '../../common/audit/audit.service';
 import {FulfillmentErpReconciliationService,ErpPhysicalResult} from './fulfillment-erp-reconciliation.service';
+import {FulfillmentSerialProvenanceService} from './fulfillment-serial-provenance.service';
 
 const sourceReference=(id:string)=>createHash('sha256').update(`FULFILLMENT_SOURCE:${id}`).digest('hex');
+const physicalReference=(kind:string,id:string)=>createHash('sha256').update(`${kind}:${id}`).digest('hex');
 type Context={actorId:string;requestId:string;correlationId:string};
 @Injectable()
 export class FulfillmentOperationsService{
- constructor(private readonly db:PrismaService,private readonly scanner:FulfillmentSerialScanService,private readonly packer:FulfillmentPackVerificationService,private readonly erp:FulfillmentErpHandoffService,private readonly allocator:FulfillmentSourceAllocationService,private readonly audit:AuditService,private readonly reconciler:FulfillmentErpReconciliationService){}
+ constructor(private readonly db:PrismaService,private readonly scanner:FulfillmentSerialScanService,private readonly packer:FulfillmentPackVerificationService,private readonly erp:FulfillmentErpHandoffService,private readonly allocator:FulfillmentSourceAllocationService,private readonly audit:AuditService,private readonly reconciler:FulfillmentErpReconciliationService,private readonly provenance:FulfillmentSerialProvenanceService){}
  private orderNumber(value:string){if(!/^\d{1,19}$/.test(value)||BigInt(value)>9223372036854775807n)throw new UnprocessableEntityException({code:'INVALID_ORDER_NO'});return BigInt(value);}
  async prepare(orderNo:string,context:Context){
   const number=this.orderNumber(orderNo);
@@ -33,9 +35,9 @@ export class FulfillmentOperationsService{
   });
  }
  async order(orderNo:string){
-  const order=await this.db.order.findUnique({where:{orderNo:this.orderNumber(orderNo)},include:{fulfillments:{orderBy:{createdAt:'asc'},include:{sourceAllocations:{orderBy:{fulfillmentSourceAllocationId:'asc'},include:{serialAllocations:{include:{serializedUnit:true}}}},qcEvidence:{where:{policyId:SERIAL_PACK_POLICY},orderBy:{occurredAt:'asc'}},erpHandoffs:{include:{outboxEvent:{select:{processStatus:true}},reconciliations:{orderBy:{recordedAt:'desc'},take:50},dispatch:{include:{attempts:{orderBy:{attemptNumber:'desc'},take:1},providerConnectionVersion:{include:{connection:true}}}}}}}}}});
+  const order=await this.db.order.findUnique({where:{orderNo:this.orderNumber(orderNo)},include:{returns:{where:{status:'POSTED'},include:{lines:true},orderBy:{occurredAt:'desc'},take:200},lines:{select:{orderLineId:true,skuSnapshot:true}},fulfillments:{orderBy:{createdAt:'asc'},include:{shipments:{orderBy:{createdAt:'asc'},include:{serialBindings:{include:{allocation:{include:{serializedUnit:true}},returnReceipt:true}}}},sourceAllocations:{orderBy:{fulfillmentSourceAllocationId:'asc'},include:{serialAllocations:{include:{serializedUnit:true}}}},qcEvidence:{where:{policyId:SERIAL_PACK_POLICY},orderBy:{occurredAt:'asc'}},erpHandoffs:{include:{outboxEvent:{select:{processStatus:true}},reconciliations:{orderBy:{recordedAt:'desc'},take:50},dispatch:{include:{attempts:{orderBy:{attemptNumber:'desc'},take:1},providerConnectionVersion:{include:{connection:true}}}}}}}}}});
   if(!order)throw new ConflictException({code:'ORDER_NOT_FOUND'});
-  return {orderNo:order.orderNo.toString(),status:order.status,fulfillments:order.fulfillments.map(f=>({fulfillmentKey:f.fulfillmentKey,status:f.status,sources:f.sourceAllocations.map(s=>({sourceReference:sourceReference(s.fulfillmentSourceAllocationId),sku:s.skuSnapshot,quantity:s.allocatedQuantity.toString(),serialNos:s.serialAllocations.map(a=>a.serializedUnit.serialNo).sort()})),packVerification:f.qcEvidence[0]?{status:'PACK_VERIFIED',snapshotHash:f.qcEvidence[0].policySnapshotRef,occurredAt:f.qcEvidence[0].occurredAt.toISOString()}:null,erpHandoff:f.erpHandoffs[0]?{providerCode:f.erpHandoffs[0].providerCode,deliveryState:f.erpHandoffs[0].outboxEvent.processStatus,dispatch:f.erpHandoffs[0].dispatch?{provider:f.erpHandoffs[0].dispatch.providerConnectionVersion.connection.provider,outcome:f.erpHandoffs[0].dispatch.attempts[0]?.outcome??'PENDING',attemptNumber:f.erpHandoffs[0].dispatch.attempts[0]?.attemptNumber??0}:null,payloadHash:f.erpHandoffs[0].payloadHash,requestedAt:f.erpHandoffs[0].requestedAt.toISOString(),results:f.erpHandoffs[0].reconciliations.map(r=>({outcome:r.outcome,reasonCode:r.reasonCode,resultHash:r.resultHash,occurredAt:r.occurredAt.toISOString(),recordedAt:r.recordedAt.toISOString()}))}:null}))};
+  return {orderNo:order.orderNo.toString(),status:order.status,returns:order.returns.map(r=>({returnReference:physicalReference('RETURN',r.returnCaseId),occurredAt:r.occurredAt.toISOString(),lines:r.lines.map(l=>({sku:order.lines.find(x=>x.orderLineId===l.orderLineId)?.skuSnapshot??'待核對',quantity:l.quantity.toString()}))})),fulfillments:order.fulfillments.map(f=>({fulfillmentKey:f.fulfillmentKey,status:f.status,shipments:f.shipments.map(s=>({shipmentReference:physicalReference('SHIPMENT',s.shipmentId),status:s.status,trackingNo:s.trackingNo,serials:s.serialBindings.map(b=>({serialNo:b.allocation.serializedUnit.serialNo,returned:!!b.returnReceipt}))})),sources:f.sourceAllocations.map(s=>({sourceReference:sourceReference(s.fulfillmentSourceAllocationId),sku:s.skuSnapshot,quantity:s.allocatedQuantity.toString(),serialNos:s.serialAllocations.map(a=>a.serializedUnit.serialNo).sort()})),packVerification:f.qcEvidence[0]?{status:'PACK_VERIFIED',snapshotHash:f.qcEvidence[0].policySnapshotRef,occurredAt:f.qcEvidence[0].occurredAt.toISOString()}:null,erpHandoff:f.erpHandoffs[0]?{providerCode:f.erpHandoffs[0].providerCode,deliveryState:f.erpHandoffs[0].outboxEvent.processStatus,dispatch:f.erpHandoffs[0].dispatch?{provider:f.erpHandoffs[0].dispatch.providerConnectionVersion.connection.provider,outcome:f.erpHandoffs[0].dispatch.attempts[0]?.outcome??'PENDING',attemptNumber:f.erpHandoffs[0].dispatch.attempts[0]?.attemptNumber??0}:null,payloadHash:f.erpHandoffs[0].payloadHash,requestedAt:f.erpHandoffs[0].requestedAt.toISOString(),results:f.erpHandoffs[0].reconciliations.map(r=>({outcome:r.outcome,reasonCode:r.reasonCode,resultHash:r.resultHash,occurredAt:r.occurredAt.toISOString(),recordedAt:r.recordedAt.toISOString()}))}:null}))};
  }
  private async resolve(orderNo:string,fulfillmentKey:string){
   const row=await this.db.fulfillment.findFirst({where:{fulfillmentKey,order:{orderNo:this.orderNumber(orderNo)}},include:{sourceAllocations:true}});
@@ -58,6 +60,18 @@ export class FulfillmentOperationsService{
   return {fulfillmentKey:key,providerCode:result.handoff.providerCode,payloadHash:result.handoff.payloadHash,requestedAt:result.handoff.requestedAt.toISOString(),replayed:result.replayed};
  }
  async reconcile(orderNo:string,key:string,input:ErpPhysicalResult,context:Context){const f=await this.resolve(orderNo,key);return this.reconciler.record(f.fulfillmentId,input,context);}
+ async bindShipment(orderNo:string,key:string,reference:string,context:Context){
+  const f=await this.resolve(orderNo,key),shipments=await this.db.shipment.findMany({where:{fulfillmentId:f.fulfillmentId},select:{shipmentId:true}});
+  const shipment=shipments.find(s=>physicalReference('SHIPMENT',s.shipmentId)===reference);
+  if(!shipment)throw new ConflictException({code:'SHIPMENT_NOT_FOUND'});
+  return this.provenance.bindShipment(f.fulfillmentId,shipment.shipmentId,context);
+ }
+ async receiveReturn(orderNo:string,key:string,input:{returnReference:string;serialNos:string[]},context:Context){
+  const f=await this.resolve(orderNo,key),returns=await this.db.returnCase.findMany({where:{orderId:f.orderId,status:'POSTED'},select:{returnCaseId:true}});
+  const ret=returns.find(r=>physicalReference('RETURN',r.returnCaseId)===input.returnReference);
+  if(!ret)throw new ConflictException({code:'POSTED_RETURN_REQUIRED'});
+  return this.provenance.receiveReturn(f.fulfillmentId,ret.returnCaseId,input.serialNos,context);
+ }
  async retryHandoff(orderNo:string,key:string,context:Context){
   const f=await this.resolve(orderNo,key),handoff=await this.db.fulfillmentErpHandoff.findUnique({where:{fulfillmentId:f.fulfillmentId}});
   if(!handoff)throw new ConflictException({code:'ERP_HANDOFF_REQUIRED'});

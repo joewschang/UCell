@@ -1840,6 +1840,7 @@ model FulfillmentSerialAllocation {
   fulfillment Fulfillment @relation(fields:[fulfillmentId],references:[fulfillmentId])
   sourceAllocation FulfillmentSourceAllocation @relation(fields:[fulfillmentSourceAllocationId],references:[fulfillmentSourceAllocationId])
   serializedUnit SerializedUnit @relation(fields:[serializedUnitId],references:[serializedUnitId])
+  shipmentBinding ShipmentSerialBinding?
 
   @@unique([fulfillmentSourceAllocationId,serializedUnitId])
   @@index([fulfillmentId,scannedAt])
@@ -1982,6 +1983,7 @@ model Shipment {
   trackingEvidence          ShipmentTrackingEventEvidence[]
   stateTransitions          ShipmentStateTransition[]
   operationClaims           ShipmentOperationClaim[]
+  serialBindings            ShipmentSerialBinding[]
 
   @@unique([provider, connectionId, providerShipmentRef])
   @@index([fulfillmentId, createdAt])
@@ -2872,10 +2874,40 @@ model ReturnLine {
   createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
   returnCase ReturnCase @relation(fields: [returnCaseId], references: [returnCaseId])
+  serialReceipts ReturnSerialReceipt[]
 
   @@unique([returnCaseId, orderLineId])
   @@index([orderLineId])
   @@map("return_line")
+  @@schema("commerce")
+}
+
+/// Immutable physical provenance. Allocation already identifies serial/source/purpose.
+model ShipmentSerialBinding {
+  shipmentSerialBindingId String @id @default(uuid()) @map("shipment_serial_binding_id") @db.Uuid
+  shipmentId String @map("shipment_id") @db.Uuid
+  fulfillmentSerialAllocationId String @unique @map("fulfillment_serial_allocation_id") @db.Uuid
+  boundByActor String @map("bound_by_actor")
+  boundAt DateTime @default(now()) @map("bound_at") @db.Timestamptz(6)
+  shipment Shipment @relation(fields:[shipmentId],references:[shipmentId])
+  allocation FulfillmentSerialAllocation @relation(fields:[fulfillmentSerialAllocationId],references:[fulfillmentSerialAllocationId])
+  returnReceipt ReturnSerialReceipt?
+  @@index([shipmentId])
+  @@map("shipment_serial_binding")
+  @@schema("commerce")
+}
+
+/// Accepted return authority remains ReturnCase/ReturnLine; this only records units received.
+model ReturnSerialReceipt {
+  returnSerialReceiptId String @id @default(uuid()) @map("return_serial_receipt_id") @db.Uuid
+  returnLineId String @map("return_line_id") @db.Uuid
+  shipmentSerialBindingId String @unique @map("shipment_serial_binding_id") @db.Uuid
+  receivedByActor String @map("received_by_actor")
+  receivedAt DateTime @default(now()) @map("received_at") @db.Timestamptz(6)
+  returnLine ReturnLine @relation(fields:[returnLineId],references:[returnLineId])
+  shipmentBinding ShipmentSerialBinding @relation(fields:[shipmentSerialBindingId],references:[shipmentSerialBindingId])
+  @@index([returnLineId])
+  @@map("return_serial_receipt")
   @@schema("commerce")
 }
 

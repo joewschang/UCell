@@ -1,3 +1,4 @@
+import {FulfillmentSerialProvenanceService} from '../src/modules/commerce/fulfillment-serial-provenance.service';
 import {Test} from '@nestjs/testing';
 import {ValidationPipe} from '@nestjs/common';
 import {ConfigService} from '@nestjs/config';
@@ -33,7 +34,7 @@ describeDb('FULFILLMENT_HTTP_REAL_DB',()=>{
   }
   ops=await actor('ORDER_OPS');auditor=await actor('COMPLIANCE_AUDIT');finance=await actor('FINANCE');
   const module=await Test.createTestingModule({controllers:[FulfillmentOperationsController],providers:[
-   {provide:PrismaService,useValue:db},AuditService,FulfillmentOperationsService,FulfillmentSerialScanService,FulfillmentPackVerificationService,FulfillmentErpHandoffService,FulfillmentSourceAllocationService,FulfillmentErpReconciliationService,
+   {provide:PrismaService,useValue:db},AuditService,FulfillmentOperationsService,FulfillmentSerialScanService,FulfillmentPackVerificationService,FulfillmentErpHandoffService,FulfillmentSourceAllocationService,FulfillmentErpReconciliationService,FulfillmentSerialProvenanceService,
    {provide:IdentityTokenService,useValue:tokens},{provide:ConfigService,useValue:{get:(name:string)=>name==='NODE_ENV'?'production':'false'}},AdminAuthenticationGuard,AdminRoleGuard]}).compile();
   app=module.createNestApplication<NestFastifyApplication>(new FastifyAdapter(),{logger:false});app.setGlobalPrefix('api/v1');
   app.useGlobalPipes(new ValidationPipe({whitelist:true,forbidNonWhitelisted:true,transform:true}));
@@ -128,5 +129,27 @@ describeDb('FULFILLMENT_HTTP_REAL_DB',()=>{
   expect(rows[0].sourceAllocations[0]).toMatchObject({orderLineId:order.lines[0].orderLineId,linePurpose:'ADDITIONAL_PURCHASE',commercialOfferingSnapshot:{offeringCode:'TEST',version:1}});
   expect(rows[0].sourceAllocations[0].allocatedQuantity.toString()).toBe('2');
   expect(await db.auditEvent.count({where:{entityId:rows[0].fulfillmentId,action:'FULFILLMENT_PREPARED'}})).toBe(1);
+ });
+ it('exposes safe shipment/return references and enforces physical receipt authorization',async()=>{
+  const f=await db.fulfillment.findFirstOrThrow({where:{fulfillmentKey:key,order:{orderNo:BigInt(orderNo)}},include:{qcEvidence:true,sourceAllocations:true}});
+  const connection=await db.providerConnection.create({data:{domain:'LOGISTICS',provider:'OTHER',connectionKey:randomUUID(),status:'ACTIVE',versions:{create:{version:1,environment:'TEST',credentialSecretRef:'fixture',webhookVerificationRef:'fixture',configHash:'c'.repeat(64),effectiveFrom:new Date(0),createdByActor:'fixture'}}},include:{versions:true}});
+  const parcel=await db.fulfillmentParcel.create({data:{fulfillmentId:f.fulfillmentId,parcelKey:'HTTP-P1',contentSnapshotRef:f.qcEvidence[0].policySnapshotRef,packageSnapshotRef:'fixture'}});
+  const shipment=await db.shipment.create({data:{fulfillmentId:f.fulfillmentId,fulfillmentParcelId:parcel.fulfillmentParcelId,fulfillmentQcEvidenceId:f.qcEvidence[0].fulfillmentQcEvidenceId,provider:'OTHER',connectionId:connection.connectionKey,providerConnectionVersionId:connection.versions[0].providerConnectionVersionId,carrier:'OTHER',shippingMethod:'HOME_DELIVERY',recipientSnapshotRef:'fixture',providerShipmentRef:'HTTP-'+randomUUID(),status:'LABEL_CREATED'}});
+  const ret=await db.returnCase.create({data:{orderId:f.orderId,status:'POSTED',reasonCode:'TEST',occurredAt:new Date(),postedAt:new Date(),idempotencyKey:randomUUID(),correlationId:randomUUID(),lines:{create:{orderLineId:f.sourceAllocations[0].orderLineId,quantity:1,returnAmount:100,gpvReversalAmount:0}}}});
+  const read=await app.inject({url:`${base}/${orderNo}`,headers:headers(auditor)}),data=read.json().data;
+  for(const id of [shipment.shipmentId,ret.returnCaseId,personId])expect(read.body).not.toContain(id);
+  const body={shipmentReference:data.fulfillments[0].shipments[0].shipmentReference},endpoint=`${base}/${orderNo}/${key}/shipment-serials`;
+  expect((await app.inject({method:'POST',url:endpoint,headers:headers(auditor),payload:body})).statusCode).toBe(403);
+  expect((await app.inject({method:'POST',url:endpoint,headers:headers(ops),payload:{shipmentReference:'0'.repeat(64)}})).statusCode).toBe(409);
+  expect((await app.inject({method:'POST',url:endpoint,headers:headers(ops),payload:body})).statusCode).toBe(201);
+  const receipt={returnReference:data.returns[0].returnReference,serialNos:['C6010001']},returnUrl=`${base}/${orderNo}/${key}/return-serials`;
+  expect((await app.inject({method:'POST',url:returnUrl,headers:headers(auditor),payload:receipt})).statusCode).toBe(403);
+  expect((await app.inject({method:'POST',url:returnUrl,headers:headers(ops),payload:receipt})).statusCode).toBe(409);
+  const now=new Date(),correlationId=randomUUID();
+  const proof=await db.shipmentTrackingEventEvidence.create({data:{shipmentId:shipment.shipmentId,providerConnectionVersionId:shipment.providerConnectionVersionId,providerEventIdentity:randomUUID(),providerShipmentRef:shipment.providerShipmentRef!,rawStatusCode:'TEST_PICKED_UP',normalizedStatus:'PICKED_UP',mappingSnapshotRef:'fixture',payloadHash:'d'.repeat(64),safeEvidenceRef:'evidence://fixture',eventTime:now,verifiedAt:now,correlationId}});
+  await db.shipmentStateTransition.create({data:{shipmentId:shipment.shipmentId,shipmentTrackingEventEvidenceId:proof.shipmentTrackingEventEvidenceId,fromStatus:'LABEL_CREATED',toStatus:'PICKED_UP',businessEffectIdentity:randomUUID(),operationHash:'e'.repeat(64),occurredAt:now,correlationId}});
+  await db.shipment.update({where:{shipmentId:shipment.shipmentId},data:{status:'PICKED_UP'}});
+  expect((await app.inject({method:'POST',url:endpoint,headers:headers(ops),payload:body})).statusCode).toBe(201);
+  const result=await app.inject({method:'POST',url:returnUrl,headers:headers(ops),payload:receipt});expect(result.statusCode).toBe(201);expect(result.json().data).toEqual({serialCount:1,replayed:false});
  });
 });

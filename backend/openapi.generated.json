@@ -264,6 +264,100 @@
         ]
       }
     },
+    "/api/v1/admin/fulfillment/orders/{orderNo}/{fulfillmentKey}/shipment-serials": {
+      "post": {
+        "operationId": "adminBindShipmentSerials",
+        "parameters": [
+          {
+            "name": "orderNo",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "fulfillmentKey",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ShipmentSerialBindingDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "依装箱與物流證據綁定實體序號，不以 ERP 受理代替出貨",
+        "tags": [
+          "Admin - Fulfillment"
+        ]
+      }
+    },
+    "/api/v1/admin/fulfillment/orders/{orderNo}/{fulfillmentKey}/return-serials": {
+      "post": {
+        "operationId": "adminReceiveReturnSerials",
+        "parameters": [
+          {
+            "name": "orderNo",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "fulfillmentKey",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReturnSerialReceiptDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "依已入帳退貨明細驗收原出貨序號，保留商業用途追溯",
+        "tags": [
+          "Admin - Fulfillment"
+        ]
+      }
+    },
     "/api/v1/admin/finance/reservoirs": {
       "get": {
         "description": "Finance-confidential immutable sources. Read-only; signed replay correction is not a payout. Stable UUID cursor within server snapshot. A rejects tree/position/awardType filters.",
@@ -14736,6 +14830,35 @@
           "providerReference",
           "occurredAt",
           "lines"
+        ]
+      },
+      "ShipmentSerialBindingDto": {
+        "type": "object",
+        "properties": {
+          "shipmentReference": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "shipmentReference"
+        ]
+      },
+      "ReturnSerialReceiptDto": {
+        "type": "object",
+        "properties": {
+          "returnReference": {
+            "type": "string"
+          },
+          "serialNos": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "returnReference",
+          "serialNos"
         ]
       },
       "CreateTreeDto": {

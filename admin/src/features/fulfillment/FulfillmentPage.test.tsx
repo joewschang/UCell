@@ -69,3 +69,14 @@ it('offers controlled retry only for stopped ERP dispatch and hides it from audi
  auth.role='COMPLIANCE_AUDIT';const audit=await render('自動重試已停止');
  expect(audit.root.findAllByType('button').map(b=>b.children.join(''))).toEqual(['載入出貨明細']);act(()=>audit.unmount());
 });
+it('links shipment evidence and receives only the selected return with scanned serial',async()=>{
+ const shipmentReference='b'.repeat(64),returnReference='c'.repeat(64);
+ vi.mocked(get).mockResolvedValue({data:{orderNo:'123',returns:[{returnReference,occurredAt:'2026-09-29T00:00:00Z',lines:[{sku:'TIP-363',quantity:'1'}]}],fulfillments:[{fulfillmentKey:'F-123',status:'SHIPPED',sources:[],shipments:[{shipmentReference,status:'PICKED_UP',trackingNo:'T-123',serials:[{serialNo:'A0010001',returned:false}]}],packVerification:{status:'PACK_VERIFIED'},erpHandoff:null}]}});
+ const view=await render('物流已收件');
+ await act(async()=>{await view.root.findAllByType('button').find(b=>b.children.join('')==='核對序號與物流證據')!.props.onClick();});
+ expect(command).toHaveBeenCalledWith('/admin/fulfillment/orders/123/F-123/shipment-serials',{shipmentReference});
+ await act(async()=>{view.root.findByType('select').props.onChange({target:{value:returnReference}});view.root.findAllByType('input')[1].props.onChange({target:{value:'a0010001'}});});
+ await act(async()=>{await view.root.findAllByType('form')[1].props.onSubmit({preventDefault(){}});});
+ expect(command).toHaveBeenCalledWith('/admin/fulfillment/orders/123/F-123/return-serials',{returnReference,serialNos:['A0010001']});
+ expect(view.root.findAllByType('input')[1].props.value).toBe('');act(()=>view.unmount());
+});
