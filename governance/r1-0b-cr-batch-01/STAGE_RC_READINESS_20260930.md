@@ -23,6 +23,7 @@
 | `pnpm --dir member test` | PASS: 31 files, 175 tests |
 | `pnpm --dir backend test:api:isolated` | PASS: 159 suites, 1,177 tests; fresh migrations through `20260929150000_event_foundation`; 162 baseline DB assertions; cleanup PASS |
 | `pnpm --dir backend migration:preflight` | PASS |
+| `node --test deployment/stage-golden-journey.test.mjs` | PASS: 3 tests; includes secret-redacted missing-credential block behavior |
 
 The isolated API run emitted the pre-existing non-fatal AnalyticsRefreshWorker warning. It did not fail a test or leave test data behind.
 
@@ -34,5 +35,7 @@ The source is ready for Stage RC review. Promotion remains intentionally blocked
 2. Stage environment database and approved guarded seed/journey access.
 3. Stage Golden Journey and formal UAT execution/sign-off.
 4. Backup/restore drill and governed release evidence required by the production readiness matrix.
+
+The current local Stage Golden Journey preflight was executed without environment values. It returned `BLOCKED` before any network request because the Stage environment, allowlist, UAT seed bearer, and owner/outsider LINE ID tokens are absent. This is the expected fail-closed result and does not substitute for Stage execution.
 
 No Production deployment, credential change, Stage deployment, or release approval was performed by this checkpoint.
