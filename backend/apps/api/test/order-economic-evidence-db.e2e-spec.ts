@@ -106,6 +106,28 @@ describeDb('ORDER_ECONOMIC_EVIDENCE_REAL_DB',()=>{
       await expect(f.read()).rejects.toMatchObject({response:{code:'HISTORICAL_SNAPSHOT_CORRUPT'}});
     });
   });
+  it.each(['REFERRAL_ELIGIBILITY','REFERRAL_MATCHING_ELIGIBILITY','BINARY_ELIGIBILITY','BINARY_MATCHING_ELIGIBILITY'])('reads sealed %s zero entitlement without creating order awards',async eligibilityType=>{
+    const {f,envelope}=await periodFixture('BINARY_K1');
+    const decision={bonusCalculationEvidenceId:randomUUID(),settlementBatchId:envelope.sourceId,recipientQualificationId:f.q.qualificationId,evidenceType:eligibilityType,reasonCode:'INACTIVE',theoreticalAmount:'150.0000',entitlementAmount:'0',ruleVersionCode:envelope.ruleVersionCode,occurredAt:envelope.at,calculationDetail:{privateNote:'PRIVATE-DECISION'}};
+    const snapshot=await db.$transaction(tx=>storeReplaySnapshot(tx,{...envelope,evidence:{...envelope.evidence,eligibilityEvidence:[decision]}}));
+    const first=(await f.read()).economicEvidence;
+    expect(first.periodContributions[0].periodContext).toMatchObject({attribution:'WHOLE_PERIOD_NOT_ORDER_ALLOCATION',eligibilityEvidenceStatus:'RECORDED',eligibilityDecisions:[{eligibilityType,reasonCode:'INACTIVE',theoryAmount:'150',entitlementAmount:'0'}]});
+    expect(first.awards).toEqual([]);expect(first.payables).toEqual([]);
+    for(const secret of [decision.bonusCalculationEvidenceId,f.q.qualificationId,envelope.sourceId,'PRIVATE-DECISION','calculationDetail'])expect(JSON.stringify(first.periodContributions)).not.toContain(secret);
+    expect((await f.read()).economicEvidence).toEqual(first);
+    expect(await db.historicalReplaySnapshot.findUniqueOrThrow({where:{snapshotId:snapshot.snapshotId}})).toEqual(snapshot);
+  });
+  it.each([false,true])('distinguishes absent eligibility evidence from sealed empty evidence: %s',async recorded=>{
+    const {f,envelope}=await periodFixture('BINARY_K1');
+    await db.$transaction(tx=>storeReplaySnapshot(tx,{...envelope,evidence:{...envelope.evidence,...(recorded?{eligibilityEvidence:[]}:{})}}));
+    expect((await f.read()).economicEvidence.periodContributions[0].periodContext).toMatchObject({eligibilityEvidenceStatus:recorded?'RECORDED':'UNAVAILABLE',eligibilityDecisions:[]});
+  });
+  it.each(['batch','rule','amount','duplicate','shape','time'])('rejects corrupt sealed eligibility %s',async fault=>{
+    const {f,envelope}=await periodFixture('BINARY_K1');
+    const decision={bonusCalculationEvidenceId:randomUUID(),settlementBatchId:fault==='batch'?randomUUID():envelope.sourceId,recipientQualificationId:f.q.qualificationId,evidenceType:'BINARY_ELIGIBILITY',reasonCode:'INACTIVE',theoreticalAmount:fault==='amount'?'NaN':'150',entitlementAmount:'0',ruleVersionCode:fault==='rule'?'R1':envelope.ruleVersionCode,occurredAt:fault==='time'?'invalid':envelope.at};
+    await db.$transaction(tx=>storeReplaySnapshot(tx,{...envelope,evidence:{...envelope.evidence,eligibilityEvidence:fault==='shape'?{}:fault==='duplicate'?[decision,decision]:[decision]}}));
+    await expect(f.read()).rejects.toMatchObject({response:{code:'HISTORICAL_SNAPSHOT_CORRUPT'}});
+  });
   async function periodFixture(kind:string){
     const f=await fixture('R1.0B'),at=f.pv.occurredAt;
     const parameters=await db.$transaction(tx=>captureParameters(tx,at,'R1.0B'));

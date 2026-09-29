@@ -23,6 +23,12 @@ The page presents dated events chronologically, with current/undated state separ
 
 ## Validation and limitations
 
+### Follow-up: sealed period eligibility decisions
+
+Selected period snapshots now project their sealed `evidence.eligibilityEvidence` into whole-period `periodContext`, preserving historical reason, type, theory, zero entitlement and occurrence time. Batch/rule identity, unique evidence IDs, recipient presence, decimal amounts and time are validated after envelope verification. Raw calculation details and IDs remain excluded. Missing legacy evidence is explicitly UNAVAILABLE, distinct from a RECORDED empty list. These decisions do not enter direct order awards/payables or imply current eligibility, payment, or per-order allocation.
+
+API build and focused isolated **1 suite / 69 tests PASS**, fresh **0→107 migrations**, **162 baseline assertions**, cleanup PASS. Twelve added DB cases cover four stored eligibility types, missing/empty evidence and six semantic corruption cases; they use sealed snapshot fixtures matching the writer contract, not a new settlement engine execution. Repeated reads preserve snapshot rows and private data is excluded. Log: `C:/UCell/logs/period-eligibility-lineage-20260929.log`. Admin typecheck/build and full **36 files / 141 tests PASS**, including whole-period and unavailable-reason labels. Full API regression and browser acceptance were not rerun for this read-only addition. Stage remains NOT READY.
+
 ### Follow-up: GPV theory and zero-eligibility explanation
 
 `theoryCalculations` now joins TheoryCalculationEvidence through this order's exact original GPV event IDs, independently of Award existence. It exposes stored fixed generation, base, rate, theory amount, Active/unlock flags, reason, rule and timestamps with safe source/recipient references. Source qualification, rule and occurrence time must agree with the original GPV or the read fails closed. Historical path hashes, raw IDs and idempotency keys remain private. ORIGINAL_THEORY_NOT_FINAL_ENTITLEMENT prevents this read from implying final entitlement, settlement or payment. Equal-timestamp PV events appear before their theory details in the timeline.

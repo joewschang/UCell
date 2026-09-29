@@ -114,6 +114,18 @@ async function periodContributions(tx:Prisma.TransactionClient,orderId:string,pv
         pending('HISTORICAL_SNAPSHOT_CORRUPT','Period source does not match its original order PV evidence');
       sources.push({sourcePvReference:reference('PV',event.eventId),originalGpv:event.amount.toString()});
     }
+    const sealedDecisions=envelope.evidence.eligibilityEvidence;
+    if(sealedDecisions!==undefined&&!Array.isArray(sealedDecisions))pending('HISTORICAL_SNAPSHOT_CORRUPT','Stored period eligibility evidence is invalid');
+    const decisionKeys=new Set<string>();
+    const eligibilityDecisions=(sealedDecisions??[]).map((decision:any)=>{
+      if(!decision||typeof decision.bonusCalculationEvidenceId!=='string'||!decision.bonusCalculationEvidenceId||decisionKeys.has(decision.bonusCalculationEvidenceId)||
+        decision.settlementBatchId!==envelope.sourceId||decision.ruleVersionCode!==envelope.ruleVersionCode||
+        typeof decision.recipientQualificationId!=='string'||!decision.recipientQualificationId||typeof decision.evidenceType!=='string'||!decision.evidenceType||typeof decision.reasonCode!=='string'||!decision.reasonCode||
+        typeof decision.occurredAt!=='string'||!Number.isFinite(Date.parse(decision.occurredAt)))pending('HISTORICAL_SNAPSHOT_CORRUPT','Stored period eligibility decision conflicts with its settlement');
+      decisionKeys.add(decision.bonusCalculationEvidenceId);
+      return {reference:reference('PERIOD_ELIGIBILITY',decision.bonusCalculationEvidenceId),recipientReference:reference('ECONOMIC_RECIPIENT',decision.recipientQualificationId),
+        eligibilityType:decision.evidenceType,reasonCode:decision.reasonCode,theoryAmount:amount(decision.theoreticalAmount),entitlementAmount:amount(decision.entitlementAmount),occurredAt:decision.occurredAt,ruleVersionCode:decision.ruleVersionCode};
+    }).sort((a:any,b:any)=>a.reference.localeCompare(b.reference));
     const recipientKeys=new Set<string>();
     const recipients=envelope.recipients.map(recipient=>{
       if(!recipient.key||!recipient.qualificationId||recipientKeys.has(recipient.key)||!['REFERRAL','EQUALIZATION','BINARY','MATCHING','EPV','RPV','GLOBAL'].includes(recipient.awardType))pending('HISTORICAL_SNAPSHOT_CORRUPT','Stored period recipient is invalid');
@@ -128,7 +140,7 @@ async function periodContributions(tx:Prisma.TransactionClient,orderId:string,pv
     return {reference:reference('REPLAY_SNAPSHOT',row.snapshotId),settlementReference:reference('SETTLEMENT',row.sourceId),
       kind:row.kind,periodStart:start.toISOString(),periodEnd:end.toISOString(),ruleVersionCode:row.ruleVersionCode,snapshotHash:row.hash,
       attribution:'SEALED_PERIOD_INPUT_ONLY',orderOriginalGpv:sources.reduce((sum,source)=>sum.add(source.originalGpv),new Prisma.Decimal(0)).toString(),sources,
-      periodContext:{attribution:'WHOLE_PERIOD_NOT_ORDER_ALLOCATION',recipients,corrections}};
+      periodContext:{attribution:'WHOLE_PERIOD_NOT_ORDER_ALLOCATION',eligibilityEvidenceStatus:sealedDecisions===undefined?'UNAVAILABLE':'RECORDED',eligibilityDecisions,recipients,corrections}};
   });
 }
 

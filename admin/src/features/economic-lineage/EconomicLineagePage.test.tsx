@@ -70,6 +70,14 @@ it('shows zero historical theory and its reason separately from final entitlemen
  for(const label of ['平級','當時未符合 Active','當時代數已解鎖','不代表最終可領獎金'])expect(output).toContain(label);
  expect(output).not.toContain('PRIVATE-RECIPIENT');expect(output).not.toContain('可得金額');act(()=>view.unmount());
 });
+it('distinguishes sealed period decisions from unavailable historical reasons',async()=>{
+ vi.mocked(get).mockResolvedValue({data:{...fixture,economicEvidence:{periodContributions:[{periodContext:{eligibilityEvidenceStatus:'RECORDED',eligibilityDecisions:[{eligibilityType:'BINARY_ELIGIBILITY',reasonCode:'INACTIVE',theoryAmount:'150',entitlementAmount:'0',recipientReference:'PRIVATE-RECIPIENT',calculationDetail:'PRIVATE-DETAIL'}]}},{periodContext:{eligibilityEvidenceStatus:'UNAVAILABLE',eligibilityDecisions:[]}}]}}});
+ const view=await render();await vi.waitFor(()=>expect(JSON.stringify(view.toJSON())).toContain('期間資格判定'));
+ const output=JSON.stringify(view.toJSON());
+ for(const label of ['對碰資格','當時未符合 Active','當時權益金額','不代表本單的獎金分配或目前資格','此快照未保存期間資格判定'])expect(output).toContain(label);
+ for(const secret of ['PRIVATE-RECIPIENT','PRIVATE-DETAIL'])expect(output).not.toContain(secret);
+ act(()=>view.unmount());
+});
 it('hides cached financial evidence after a failed refresh and allows retry',async()=>{
  const view=await render();await vi.waitFor(()=>expect(JSON.stringify(view.toJSON())).toContain('零售推薦獎金'));
  vi.mocked(get).mockRejectedValueOnce(new Error('連線失敗'));
