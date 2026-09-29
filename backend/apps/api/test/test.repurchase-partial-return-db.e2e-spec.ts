@@ -4,6 +4,7 @@ import { SubscriptionCancellationService } from '../src/modules/subscription/sub
 import { RpvService } from '../src/modules/rpv/rpv.service';
 import { replayRpvCancellation } from '@ucell/database';
 import { processRecognition } from '../../worker/src/main';
+import { orderEconomicEvidence } from '../src/modules/admin-operations/order-economic-evidence';
 
 const url=process.env.PHASE2_TEST_DATABASE_URL;
 const describeDb=url?describe:describe.skip;
@@ -27,7 +28,7 @@ describeDb('repurchase cumulative partial returns',()=>{
       return ()=>service.cancel(sub.subscriptionId,effectiveAt,'PARTIAL_RETURN',amount,input);
     }
     const rows=()=>db.monthlyRecognitionSchedule.findMany({where:{subscriptionId:sub.subscriptionId},orderBy:{installmentNo:'asc'}});
-    return {sub,refund,rows,qualification};
+    return {sub,refund,rows,qualification,order};
   }
   const total=(rows:any[],key:string)=>rows.reduce((sum,row)=>sum.add(row[key]),new Prisma.Decimal(0)).toString();
   it('deduplicates concurrent legacy cancellation commands without a new required header',async()=>{
@@ -114,6 +115,8 @@ describeDb('repurchase cumulative partial returns',()=>{
     expect(reversal.map(r=>r.amount.toString())).toEqual(['-0.3']);
     const posting=await db.entitlementReplayPosting.findFirstOrThrow({where:{actionKey:'RPV:'+f.first.recognitionId+':'+second.cancellation.subscriptionCancellationId}});
     expect(posting.delta.toString()).toBe('-30');
+    const lineage=await db.$transaction(tx=>orderEconomicEvidence(tx,f.order.orderId,[]),{isolationLevel:Prisma.TransactionIsolationLevel.RepeatableRead});
+    expect(lineage.subscriptionRecognitions[0]).toMatchObject({status:'RECOGNIZED',pvEvent:{amount:'0.8'},recordedRetention:{originalVolume:'0.8',recordedDelta:'-0.3',recordedRetainedVolume:'0.5',replayedEntitlements:[expect.objectContaining({originallyPosted:'80',recordedEntitlement:'50'})]}});
     expect(await db.rpvUplineAwardEvent.findMany({where:{recognitionId:f.first.recognitionId}})).toEqual(awards);
     expect(await db.historicalReplaySnapshot.findUniqueOrThrow({where:{kind_sourceId:{kind:'RPV',sourceId:f.first.recognitionId}}})).toEqual(snapshot);
   });

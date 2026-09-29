@@ -165,11 +165,18 @@ export async function orderEconomicEvidence(tx:Prisma.TransactionClient,orderId:
   for(const subscription of subscriptions){
     const cancellations=await tx.subscriptionCancellation.findMany({where:{subscriptionId:subscription.subscriptionId,status:'POSTED'},orderBy:[{effectiveAt:'asc'},{subscriptionCancellationId:'asc'}]});
     for(const schedule of subscription.schedules){
-      const [rpvEvent,rpvAwards,snapshot]=await Promise.all([
-        tx.pvLedger.findFirst({where:{pvType:'RPV',sourceType:'SUBSCRIPTION',sourceId:subscription.subscriptionId,sourceLineId:schedule.recognitionId},orderBy:{occurredAt:'asc'}}),
+      const [rpvEvents,rpvAwards,snapshot]=await Promise.all([
+        tx.pvLedger.findMany({where:{OR:[{pvType:'RPV',eventType:'RPV_CREATED',sourceType:{in:['MONTHLY_RECOGNITION','SUBSCRIPTION']},sourceId:subscription.subscriptionId,sourceLineId:schedule.recognitionId},...(schedule.pvLedgerEventId?[{eventId:schedule.pvLedgerEventId}]:[])]},orderBy:[{occurredAt:'asc'},{eventId:'asc'}]}),
         tx.rpvUplineAwardEvent.findMany({where:{recognitionId:schedule.recognitionId},orderBy:[{binaryGeneration:'asc'},{rpvAwardEventId:'asc'}]}),
         tx.historicalReplaySnapshot.findUnique({where:{kind_sourceId:{kind:'RPV',sourceId:schedule.recognitionId}},include:{postings:{orderBy:{sequence:'asc'}}}}),
       ]);
+      const rpvEvent=rpvEvents[0]??null;
+      if(rpvEvents.length>1||(schedule.pvLedgerEventId&&!rpvEvent)||(rpvEvent&&(
+        rpvEvent.pvType!=='RPV'||rpvEvent.eventType!=='RPV_CREATED'||!['MONTHLY_RECOGNITION','SUBSCRIPTION'].includes(rpvEvent.sourceType)||
+        rpvEvent.sourceId!==subscription.subscriptionId||rpvEvent.sourceLineId!==schedule.recognitionId||rpvEvent.qualificationId!==subscription.qualificationId||
+        rpvEvent.ruleVersionCode!==schedule.ruleVersionCode||!rpvEvent.amount.eq(schedule.rpvAmount)||
+        (schedule.pvLedgerEventId&&schedule.pvLedgerEventId!==rpvEvent.eventId)
+      )))pending('HISTORICAL_SNAPSHOT_CORRUPT','RPV original conflicts with its recognition schedule');
       recognitions.push({
         reference:reference('RECOGNITION',schedule.recognitionId),
         planCode:subscription.plan.planCode,installmentNo:schedule.installmentNo,status:schedule.status,
