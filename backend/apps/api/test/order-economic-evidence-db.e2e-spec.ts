@@ -58,6 +58,31 @@ describeDb('ORDER_ECONOMIC_EVIDENCE_REAL_DB',()=>{
     if(mode==='missingVolume')expect((await f.read()).economicEvidence.consumptionRecognitions).toEqual([expect.objectContaining({eligible:true,eligibleAmount:'100',volumeEvidence:'NO_RECORDED_VOLUME',sourcePvReference:null})]);
     else await expect(f.read()).rejects.toMatchObject({response:{code:'HISTORICAL_SNAPSHOT_CORRUPT'}});
   });
+  it('shows exact original monthly context and crossing interval without claiming current Active',async()=>{
+    const f=await fixture(),at=new Date('2026-09-10T00:00:00Z');
+    const base={qualificationId:f.q.qualificationId,amount:1000,eligible:true,concreteVolumeType:'GPV' as const,productProfileVersion:'TEST',ruleVersionCode:'R1',parameterSnapshotHash:'a'.repeat(64),recognizedAt:at,activeThreshold:1200};
+    await db.$transaction(tx=>recognizeConsumption(tx,{...base,sourceType:'OTHER_ORDER',sourceId:randomUUID()}),{isolationLevel:Prisma.TransactionIsolationLevel.Serializable});
+    const product=await db.productReference.create({data:{sku:randomUUID(),displayName:'Monthly context',currentPrice:100}});
+    const originals=[];
+    for(const amount of [200,100]){
+      const line=await db.orderLine.create({data:{orderId:f.order.orderId,productId:product.productId,skuSnapshot:product.sku,productNameSnapshot:'Monthly context',quantity:1,unitPrice:amount,lineAmount:amount,gpvRateSnapshot:1,gpvAmountSnapshot:amount,ruleProfileSnapshot:{}}});
+      originals.push(await db.$transaction(tx=>recognizeConsumption(tx,{...base,amount,recognizedAt:new Date(at.getTime()+originals.length*1000),sourceType:'ORDER',sourceId:f.order.orderId,sourceLineId:line.orderLineId}),{isolationLevel:Prisma.TransactionIsolationLevel.Serializable}));
+    }
+    const evidence=(await f.read()).economicEvidence.consumptionRecognitions;
+    expect(evidence.map(row=>row.monthContext)).toEqual([expect.objectContaining({basis:'HISTORICAL_MONTH_CONTEXT_NOT_ORDER_TOTAL',cumulativeBefore:'1000',eligibleDelta:'200',cumulativeAfter:'1200',activeThreshold:'1200',thresholdCrossed:true,activeIntervals:[expect.objectContaining({activeFrom:at.toISOString(),activeTo:'2026-09-30T16:00:00.000Z'})]}),expect.objectContaining({cumulativeBefore:'1200',eligibleDelta:'100',cumulativeAfter:'1300',thresholdCrossed:false,activeIntervals:[]})]);
+    await db.qualification.update({where:{qualificationId:f.q.qualificationId},data:{activeFlag:false}});
+    expect((await f.read()).economicEvidence.consumptionRecognitions).toEqual(evidence);
+    for(const original of originals){
+      expect(await db.qualificationMonthAccumulatorEvidence.findUnique({where:{qualificationMonthAccumulatorEvidenceId:original.accumulator!.qualificationMonthAccumulatorEvidenceId}})).toEqual(original.accumulator);
+      expect(JSON.stringify(evidence)).not.toContain(original.accumulator!.qualificationMonthAccumulatorEvidenceId);
+    }
+  });
+  it('rejects an accumulator linked to the decision but owned by another qualification',async()=>{
+    const f=await fixture(),other=await fixture();
+    const decision=await db.consumptionRecognitionEvent.create({data:{qualificationId:f.q.qualificationId,sourceType:'ORDER',sourceId:f.order.orderId,eligible:true,eligibleAmount:100,recognitionPurpose:'GPV',productProfileVersion:'TEST',ruleVersionCode:'R1',parameterSnapshotHash:'a'.repeat(64),recognizedAt:f.pv.occurredAt,recognitionMonth:new Date('2026-09-01'),idempotencyKey:randomUUID(),correlationId:randomUUID(),evidenceHash:'b'.repeat(64)}});
+    await db.qualificationMonthAccumulatorEvidence.create({data:{qualificationId:other.q.qualificationId,calendarMonth:decision.recognitionMonth,consumptionRecognitionEventId:decision.consumptionRecognitionEventId,cumulativeBefore:0,eligibleDelta:100,cumulativeAfter:100,activeThreshold:1200,thresholdCrossed:false,epvAfter:100,sequenceNo:1,ruleVersionCode:'R1',evidenceHash:'a'.repeat(64),idempotencyKey:randomUUID()}});
+    await expect(f.read()).rejects.toMatchObject({response:{code:'HISTORICAL_SNAPSHOT_CORRUPT'}});
+  });
   async function periodFixture(kind:string){
     const f=await fixture('R1.0B'),at=f.pv.occurredAt;
     const parameters=await db.$transaction(tx=>captureParameters(tx,at,'R1.0B'));

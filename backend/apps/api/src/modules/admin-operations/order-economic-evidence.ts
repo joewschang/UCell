@@ -11,6 +11,8 @@ const reference = (kind:string,id:string) => `${kind}:${createHash('sha256').upd
 /** Recorded decisions exist even when eligibility excluded all volume. */
 async function consumptionRecognitions(tx:Prisma.TransactionClient,orderId:string,pv:PvLedger[],lineIds:string[]){
   const rows=await tx.consumptionRecognitionEvent.findMany({where:{sourceType:'ORDER',sourceId:orderId,direction:'ORIGINAL',recognitionPurpose:{in:['GPV','EPV']}},orderBy:[{recognizedAt:'asc'},{consumptionRecognitionEventId:'asc'}]});
+  const accumulators=await tx.qualificationMonthAccumulatorEvidence.findMany({where:{consumptionRecognitionEventId:{in:rows.map(row=>row.consumptionRecognitionEventId)}},orderBy:[{sequenceNo:'asc'},{qualificationMonthAccumulatorEvidenceId:'asc'}]});
+  const intervals=await tx.activeIntervalEvidence.findMany({where:{sourceAccumulatorEvidenceId:{in:accumulators.map(row=>row.qualificationMonthAccumulatorEvidenceId)}},orderBy:[{activeFrom:'asc'},{activeIntervalEvidenceId:'asc'}]});
   return rows.map(row=>{
     if(row.sourceLineId&&!lineIds.includes(row.sourceLineId))pending('HISTORICAL_SNAPSHOT_CORRUPT','Consumption recognition line belongs to another order');
     const volumes=pv.filter(event=>event.sourceLineId===row.sourceLineId&&event.pvType===row.recognitionPurpose&&event.eventType===`${row.recognitionPurpose}_CREATED`);
@@ -19,7 +21,14 @@ async function consumptionRecognitions(tx:Prisma.TransactionClient,orderId:strin
       (row.eligible&&(row.eligibleAmount.lte(0)||row.exclusionReasonCode!==null))||
       (volume&&(volume.qualificationId!==row.qualificationId||!volume.amount.eq(row.eligibleAmount)||volume.ruleVersionCode!==row.ruleVersionCode||volume.occurredAt.getTime()!==row.recognizedAt.getTime())))
       pending('HISTORICAL_SNAPSHOT_CORRUPT','Consumption decision conflicts with its original volume');
+    const linked=accumulators.filter(item=>item.consumptionRecognitionEventId===row.consumptionRecognitionEventId),accumulator=linked[0];
+    if(linked.length>1||(accumulator&&(accumulator.replayRunId!==null||accumulator.qualificationId!==row.qualificationId||accumulator.calendarMonth.getTime()!==row.recognitionMonth.getTime()||accumulator.ruleVersionCode!==row.ruleVersionCode||!accumulator.eligibleDelta.eq(row.eligibleAmount)||!accumulator.cumulativeBefore.add(accumulator.eligibleDelta).eq(accumulator.cumulativeAfter)||!accumulator.epvAfter.eq(accumulator.cumulativeAfter))))
+      pending('HISTORICAL_SNAPSHOT_CORRUPT','Original consumption accumulator conflicts with its decision');
+    const activeIntervals=accumulator?intervals.filter(item=>item.sourceAccumulatorEvidenceId===accumulator.qualificationMonthAccumulatorEvidenceId):[];
+    if(activeIntervals.length>1||activeIntervals.some(item=>!accumulator!.thresholdCrossed||item.replayRunId!==null||item.supersedesActiveEvidenceId!==null||item.qualificationId!==row.qualificationId||item.calendarMonth.getTime()!==row.recognitionMonth.getTime()||item.ruleVersionCode!==row.ruleVersionCode||item.activeFrom.getTime()!==row.recognizedAt.getTime()||item.activeTo<=item.activeFrom))
+      pending('HISTORICAL_SNAPSHOT_CORRUPT','Original Active interval conflicts with its accumulator');
     return {reference:reference('CONSUMPTION_RECOGNITION',row.consumptionRecognitionEventId),sourceOrderLineReference:row.sourceLineId?reference('ORDER_LINE',row.sourceLineId):null,
+      monthContext:accumulator?{basis:'HISTORICAL_MONTH_CONTEXT_NOT_ORDER_TOTAL',cumulativeBefore:accumulator.cumulativeBefore.toString(),eligibleDelta:accumulator.eligibleDelta.toString(),cumulativeAfter:accumulator.cumulativeAfter.toString(),activeThreshold:accumulator.activeThreshold.toString(),thresholdCrossed:accumulator.thresholdCrossed,epvAfter:accumulator.epvAfter.toString(),recordedAt:accumulator.recordedAt.toISOString(),activeIntervals:activeIntervals.map(item=>({reference:reference('ACTIVE_EVIDENCE',item.activeIntervalEvidenceId),activeFrom:item.activeFrom.toISOString(),activeTo:item.activeTo.toISOString(),recordedAt:item.createdAt.toISOString()}))}:null,
       sourcePvReference:volume?reference('PV',volume.eventId):null,basis:'RECORDED_CONSUMPTION_DECISION',pvType:row.recognitionPurpose,
       eligible:row.eligible,eligibleAmount:row.eligibleAmount.toString(),exclusionReasonCode:row.exclusionReasonCode,
       volumeEvidence:volume?'RECORDED_VOLUME':'NO_RECORDED_VOLUME',recognizedAt:row.recognizedAt.toISOString(),recordedAt:row.createdAt.toISOString(),

@@ -23,6 +23,14 @@ The page presents dated events chronologically, with current/undated state separ
 
 ## Validation and limitations
 
+### Follow-up: historical month and Active context
+
+Each recorded original consumption decision now joins its exact QualificationMonthAccumulatorEvidence and only ActiveIntervalEvidence sourced by that accumulator. The reader checks unique original linkage, qualification/month/rule, eligible delta, cumulative arithmetic and EPV balance; an original Active interval must belong to a threshold-crossing accumulator and agree with the historical decision timestamp and subject. Conflicts fail closed. Reads do not consult current Active flags or join other orders' accumulators by qualification coincidence.
+
+`HISTORICAL_MONTH_CONTEXT_NOT_ORDER_TOTAL` exposes the saved before/delta/after amounts, threshold, crossing flag and original resulting interval. Monthly totals can include other orders and cannot be allocated wholesale to this order. No interval for this decision does not mean the qualification was inactive: it may already have crossed the threshold earlier. Missing accumulator evidence remains null. This is original historical context, not the current interval or a replay-supersession history; no eligibility or financial amount is recalculated.
+
+API build and focused isolated **2 suites / 56 tests PASS**, fresh **0→106 migrations**, **162 baseline assertions**, cleanup PASS. A shared-writer scenario establishes another source's 1000, the selected order's 200 crossing 1200, and its next 100 without a new interval. The read preserves those original states after the current Active flag changes, hides accumulator IDs and leaves evidence unchanged. A wrong-qualification accumulator is rejected; existing eligible/excluded and missing-evidence cases remain green. Log: `C:/UCell/logs/active-context-lineage-20260929.log`. Admin typecheck/build and full **36 files / 138 tests PASS**, including whole-month/historical/missing-context wording. No full API rerun, browser acceptance, replay-interval certification or deployment is claimed.
+
 ### Follow-up: recorded GPV/EPV consumption decisions
 
 `consumptionRecognitions` projects original ORDER GPV/EPV ConsumptionRecognitionEvent rows independently of PvLedger existence. It exposes stored eligibility, eligible amount, exclusion code, recognition/recording time, month, rule and parameter identity with hashed source references. No current eligibility or profile calculation is performed. Exact source-line ownership is checked. Linked originals must agree on type, qualification, amount, rule and recognition time; duplicate or contradictory volume fails closed. Ineligible zero decisions have `NO_RECORDED_VOLUME` and no invented award/payable. Eligible decisions without PV remain explicitly incomplete evidence. The Admin timeline distinguishes both states and states that consumption recognition is not a bonus/payment result.

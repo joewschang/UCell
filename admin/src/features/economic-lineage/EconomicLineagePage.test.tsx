@@ -50,6 +50,13 @@ it('distinguishes recorded zero consumption from missing eligible PV',async()=>{
  for(const label of ['符合資格的認列量','符合資格的金額為零','已記錄為不符合認列資格，認列量為零。','尚無對應 PV 紀錄；不能推定已完成後續入帳。'])expect(output).toContain(label);
  expect(output).not.toContain('可得金額');act(()=>view.unmount());
 });
+it('labels monthly Active context as historical and separate from order totals',async()=>{
+ vi.mocked(get).mockResolvedValue({data:{...fixture,economicEvidence:{consumptionRecognitions:[{basis:'RECORDED_CONSUMPTION_DECISION',monthContext:{basis:'HISTORICAL_MONTH_CONTEXT_NOT_ORDER_TOTAL',cumulativeBefore:'1000',eligibleDelta:'200',cumulativeAfter:'1200',activeThreshold:'1200',thresholdCrossed:true,activeIntervals:[{activeFrom:'2026-09-10T00:00:00Z',activeTo:'2026-09-30T16:00:00Z'}]}},{basis:'RECORDED_CONSUMPTION_DECISION',monthContext:null}]}}});
+ const view=await render();await vi.waitFor(()=>expect(JSON.stringify(view.toJSON())).toContain('認列當時的月累計背景'));
+ const output=JSON.stringify(view.toJSON());
+ for(const label of ['本筆跨越門檻','歷史資格起始','不能全歸給本單','不代表目前 Active 狀態','缺少對應的歷史月累計證據'])expect(output).toContain(label);
+ act(()=>view.unmount());
+});
 it('hides cached financial evidence after a failed refresh and allows retry',async()=>{
  const view=await render();await vi.waitFor(()=>expect(JSON.stringify(view.toJSON())).toContain('零售推薦獎金'));
  vi.mocked(get).mockRejectedValueOnce(new Error('連線失敗'));
