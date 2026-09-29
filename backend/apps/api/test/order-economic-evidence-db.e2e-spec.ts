@@ -48,4 +48,18 @@ describeDb('ORDER_ECONOMIC_EVIDENCE_REAL_DB',()=>{
     expect(evidence.recoveries).toHaveLength(1);
     expect(evidence.recoveries[0]).toMatchObject({awardReference:evidence.awards[0].reference,awardIncluded:true,linkedToOrderReturn:true});
   });
+  it('joins only subscription recognition, RPV awards and replay postings explicitly linked to the order',async()=>{
+    const f=await fixture();
+    const plan=await db.subscriptionPlan.create({data:{planCode:`LINEAGE-${randomUUID()}`,displayName:'Lineage plan',durationMonths:1,prepaidAmount:100,productBoxQty:1,monthlyRecognizedAmount:100,monthlyRpv:10}});
+    const subscription=await db.subscription.create({data:{qualificationId:f.q.qualificationId,subscriptionPlanId:plan.subscriptionPlanId,orderId:f.order.orderId,status:'ACTIVE',startMonth:new Date('2026-09-01'),endMonth:new Date('2026-09-01'),ruleVersionCode:'R1'}});
+    const schedule=await db.monthlyRecognitionSchedule.create({data:{subscriptionId:subscription.subscriptionId,installmentNo:1,recognitionMonth:new Date('2026-09-01'),recognizedAmount:100,rpvAmount:10,status:'RECOGNIZED',dueAt:new Date('2026-09-01'),recognizedAt:new Date('2026-09-02'),ruleVersionCode:'R1'}});
+    const pv=await db.pvLedger.create({data:{qualificationId:f.q.qualificationId,pvType:'RPV',amount:10,sourceType:'SUBSCRIPTION',sourceId:subscription.subscriptionId,sourceLineId:schedule.recognitionId,eventType:'RPV_CREATED',ruleVersionCode:'R1',occurredAt:new Date('2026-09-02'),correlationId:randomUUID()}});
+    const award=await db.rpvUplineAwardEvent.create({data:{recognitionId:schedule.recognitionId,sourceQualificationId:f.q.qualificationId,recipientQualificationId:f.q.qualificationId,binaryGeneration:1,effectiveDirectCountSnapshot:1,unlockedDepthSnapshot:5,activeSnapshot:true,theoryAmount:10,payableAmount:10,ruleVersionCode:'R1',occurredAt:new Date('2026-09-02')}});
+    const snapshot=await db.historicalReplaySnapshot.create({data:{kind:'RPV',sourceId:schedule.recognitionId,ruleVersionCode:'R1',content:{sealed:true,recipients:[{key:'RPV:G1',qualificationId:f.q.qualificationId,posted:'10',eligible:true}]},hash:'a'.repeat(64)}});
+    const posting=await db.entitlementReplayPosting.create({data:{actionKey:`TEST:${randomUUID()}`,snapshotId:snapshot.snapshotId,entitlementKey:'RPV:G1',recipientQualificationId:f.q.qualificationId,originallyPosted:10,recalculatedEntitlement:8,delta:-2,stateHash:'b'.repeat(64)}});
+    const evidence=(await f.read()).economicEvidence;
+    expect(evidence.subscriptionRecognitions).toEqual([expect.objectContaining({planCode:plan.planCode,installmentNo:1,status:'RECOGNIZED',pvEvent:expect.objectContaining({amount:'10'}),awards:[expect.objectContaining({generation:1,theoryAmount:'10',payableAmount:'10'})],replay:expect.objectContaining({hash:'a'.repeat(64),corrections:[expect.objectContaining({delta:'-2'})]})})]);
+    const json=JSON.stringify(evidence.subscriptionRecognitions);
+    for(const internal of [subscription.subscriptionId,schedule.recognitionId,pv.eventId,award.rpvAwardEventId,snapshot.snapshotId,posting.postingId,f.q.qualificationId])expect(json).not.toContain(internal);
+  });
 });
