@@ -12,7 +12,8 @@ import {AdminRoleGuard} from '../src/modules/auth/admin-role.guard';
 describe('settlement job HTTP authorization and input contract',()=>{
   let app:NestFastifyApplication;
   const id='00000000-0000-4000-8000-000000000701';
-  const db={periodCloseJob:{findUnique:jest.fn(async()=>({periodCloseJobId:id,outbox:{processStatus:'PENDING'},receipt:null}))},$transaction:jest.fn(async()=>{})};
+  const row={periodCloseJobId:id,outbox:{processStatus:'PENDING'},receipt:null};
+  const db={periodCloseJob:{findUnique:jest.fn(async()=>row),findMany:jest.fn(async()=>[row])},$transaction:jest.fn(async()=>{})};
   beforeAll(async()=>{
     const module=await Test.createTestingModule({controllers:[SettlementJobsController],providers:[
       {provide:PrismaService,useValue:db},{provide:SettlementCalendarService,useValue:{}},{provide:AuditService,useValue:{write:jest.fn()}},
@@ -25,7 +26,9 @@ describe('settlement job HTTP authorization and input contract',()=>{
   it('requires a valid session',async()=>{expect((await app.inject({method:'GET',url:'/admin/settlement-jobs/'+id})).statusCode).toBe(401);});
   it('allows compliance reads but denies compliance and member submissions',async()=>{
     expect((await app.inject({method:'GET',url:'/admin/settlement-jobs/'+id,headers:{authorization:'Bearer COMPLIANCE_AUDIT'}})).statusCode).toBe(200);
+    expect((await app.inject({method:'GET',url:'/admin/settlement-jobs?take=25&status=PENDING',headers:{authorization:'Bearer COMPLIANCE_AUDIT'}})).statusCode).toBe(200);
     for(const role of ['COMPLIANCE_AUDIT','MEMBER'])expect((await app.inject({method:'POST',url:'/admin/settlement-jobs',headers:{authorization:'Bearer '+role},payload:{}})).statusCode).toBe(403);
+    expect((await app.inject({method:'POST',url:'/admin/settlement-jobs/'+id+'/retry',headers:{authorization:'Bearer COMPLIANCE_AUDIT'},payload:{reason:'reviewed'}})).statusCode).toBe(403);
   });
   it('rejects malformed periods and caller-supplied actor fields before admission',async()=>{
     const response=await app.inject({method:'POST',url:'/admin/settlement-jobs',headers:{authorization:'Bearer FINANCE'},payload:{kind:'REFERRAL_K0',periodStart:'invalid',periodEnd:'invalid',ruleVersionCode:'R1.0B',prerequisiteIds:[],approvalReference:'REF',requestedBy:id}});

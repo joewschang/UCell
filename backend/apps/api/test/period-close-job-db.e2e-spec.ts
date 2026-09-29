@@ -118,6 +118,16 @@ const url=process.env.PHASE2_TEST_DATABASE_URL;
     await processPeriodCloseJob(db,(await claimPeriodCloseJob(db,job.periodCloseJobId))!,execute);
     expect(await db.periodCloseReceipt.count({where:{periodCloseJobId:job.periodCloseJobId}})).toBe(1);
   });
+  it('allows Finance to requeue an incomplete dead job with immutable audit evidence',async()=>{
+    const job=await enqueue('REFERRAL_K0',await rule()),actor=randomUUID();
+    await db.outboxEvent.update({where:{outboxEventId:job.outboxEventId},data:{processStatus:'DEAD',attemptCount:10,lastError:'SYNTHETIC_FAILURE'}});
+    const controller=new SettlementJobsController(db as any,new SettlementCalendarService(db as any),new AuditService());
+    const result=await controller.retry(job.periodCloseJobId,{reason:'Synthetic source repaired'},{user:{personId:actor,role:'FINANCE'}});
+    expect(result.data).toMatchObject({status:'PENDING',attemptCount:10,lastError:null});
+    expect(await db.auditEvent.count({where:{entityId:job.periodCloseJobId,action:'PERIOD_CLOSE_RETRY_REQUESTED',actorId:actor}})).toBe(1);
+    await processPeriodCloseJob(db,(await claimPeriodCloseJob(db,job.periodCloseJobId))!,execute);
+    await expect(controller.retry(job.periodCloseJobId,{reason:'Must not duplicate'},{user:{personId:actor,role:'FINANCE'}})).rejects.toThrow('PERIOD_CLOSE_ALREADY_COMPLETED');
+  });
   it('fences expired owners and prevents their failure handler from overwriting recovery',async()=>{
     const job=await enqueue('BINARY_K1',await rule()),first=(await claimPeriodCloseJob(db,job.periodCloseJobId))!;
     await db.outboxEvent.update({where:{outboxEventId:job.outboxEventId},data:{availableAt:new Date(Date.now()-1000)}});

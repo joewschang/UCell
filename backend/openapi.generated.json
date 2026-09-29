@@ -1,6 +1,122 @@
 {
   "openapi": "3.0.0",
   "paths": {
+    "/api/v1/admin/settlement-jobs": {
+      "post": {
+        "operationId": "adminCreateSettlementJob",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSettlementJobDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "建立可追蹤的結算工作",
+        "tags": [
+          "Admin - Settlement Jobs"
+        ]
+      },
+      "get": {
+        "operationId": "adminListSettlementJobs",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "列出近期結算工作與執行狀態",
+        "tags": [
+          "Admin - Settlement Jobs"
+        ]
+      }
+    },
+    "/api/v1/admin/settlement-jobs/{id}": {
+      "get": {
+        "operationId": "adminGetSettlementJob",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "查看結算工作與完成憑證",
+        "tags": [
+          "Admin - Settlement Jobs"
+        ]
+      }
+    },
+    "/api/v1/admin/settlement-jobs/{id}/retry": {
+      "post": {
+        "operationId": "adminRetrySettlementJob",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RetrySettlementJobDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "重新排程失敗或等待中的結算工作",
+        "tags": [
+          "Admin - Settlement Jobs"
+        ]
+      }
+    },
     "/api/v1/admin/fulfillment/orders/logistics/connections": {
       "get": {
         "operationId": "adminFulfillmentLogisticsConnections",
@@ -14878,6 +14994,14 @@
       }
     },
     "schemas": {
+      "CreateSettlementJobDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "RetrySettlementJobDto": {
+        "type": "object",
+        "properties": {}
+      },
       "FulfillmentScanDto": {
         "type": "object",
         "properties": {
