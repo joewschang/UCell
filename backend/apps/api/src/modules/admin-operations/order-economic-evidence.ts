@@ -3,6 +3,7 @@ import { pending, verifyReplayEnvelope } from '@ucell/database';
 import { createHash } from 'node:crypto';
 import {orderReplayPostingEvidence} from './order-replay-posting-evidence';
 import {recognitionRetentionEvidence} from './recognition-retention-evidence';
+import {readRetailReferralSnapshot} from '../order/retail-referral-snapshot-read';
 
 // References join this projection without exposing internal UUIDs or identities.
 const reference = (kind:string,id:string) => `${kind}:${createHash('sha256').update(`${kind}:${id}`).digest('hex')}`;
@@ -118,6 +119,21 @@ export async function orderEconomicEvidence(tx:Prisma.TransactionClient,orderId:
     for(const row of children) if(!awards.has(row.bonusAwardId)){awards.set(row.bonusAwardId,row);frontier.push(row.bonusAwardId);}
   }
   const ids=[...awards.keys()];
+  const retailRecognition=new Map<string,Record<string,unknown>>();
+  for(const award of awards.values()){
+    if(award.awardType!=='RETAIL_REFERRAL'||!award.sourceEventId)continue;
+    const snapshot=await readRetailReferralSnapshot(tx,award.sourceEventId);
+    if(!snapshot)continue; // Legacy absence is unavailable evidence, never current-rule fallback.
+    if(snapshot.orderId!==orderId||snapshot.orderLine.orderId!==orderId||snapshot.referrerQualificationId!==award.recipientQualificationId)
+      pending('HISTORICAL_SNAPSHOT_CORRUPT','Retail award conflicts with its stored order-line recognition');
+    retailRecognition.set(award.bonusAwardId,{
+      basis:'STORED_RETAIL_RECOGNITION',sku:snapshot.orderLine.skuSnapshot,
+      baseAmount:snapshot.netPaidItemAmount.toString(),baseType:snapshot.baseType,rate:snapshot.rate?.toString()??null,
+      calculationType:snapshot.calculationType,retailReferralEnabled:snapshot.retailReferralEnabled,
+      productRuleVersion:snapshot.productRuleVersion,recordedAt:snapshot.createdAt.toISOString(),
+      attribution:snapshot.attribution?{source:snapshot.attribution.source,effectiveAt:snapshot.attribution.effectiveFrom.toISOString(),reference:reference('RETAIL_ATTRIBUTION',snapshot.attribution.retailReferrerAttributionId)}:null,
+    });
+  }
   const payables=await tx.payableEntry.findMany({where:{sourceType:'BONUS_AWARD',sourceId:{in:ids}},include:{payoutLine:{include:{payoutBatch:true}}},orderBy:[{createdAt:'asc'},{payableEntryId:'asc'}]});
   const recoveries=await tx.bonusRecoveryEvent.findMany({where:{OR:[{bonusAwardId:{in:ids}},{returnCaseId:{in:returnIds}}]},include:{bonusAward:true,applications:{include:{payoutLine:{include:{payoutBatch:true}}},orderBy:[{createdAt:'asc'},{recoveryApplicationId:'asc'}]}},orderBy:[{occurredAt:'asc'},{bonusRecoveryEventId:'asc'}]});
   const epvRetentions=[];
@@ -165,7 +181,7 @@ export async function orderEconomicEvidence(tx:Prisma.TransactionClient,orderId:
     epvRetentions,
     returnReplays:await returnReplayEvidence(tx,returnIds),
     pvEvents:pv.map(row=>({reference:reference('PV',row.eventId),pvType:row.pvType,eventType:row.eventType,amount:row.amount.toString(),occurredAt:row.occurredAt.toISOString()})),
-    awards:[...awards.values()].sort((a,b)=>a.occurredAt.getTime()-b.occurredAt.getTime()||a.bonusAwardId.localeCompare(b.bonusAwardId)).map(row=>({reference:reference('AWARD',row.bonusAwardId),sourcePvReference:row.sourceEventId&&pv.some(p=>p.eventId===row.sourceEventId)?reference('PV',row.sourceEventId):null,sourceAwardReference:row.sourceAwardId&&awards.has(row.sourceAwardId)?reference('AWARD',row.sourceAwardId):null,sourceOrderLineReference:row.awardType==='RETAIL_REFERRAL'&&orderLines.some(line=>line.orderLineId===row.sourceEventId)?reference('ORDER_LINE',row.sourceEventId!):null,activeAtRecognition:row.activeSnapshot,kFactor:row.kFactor.toString(),awardType:row.awardType,theoryAmount:row.theoryAmount.toString(),payableAmount:row.payableAmount.toString(),occurredAt:row.occurredAt.toISOString(),ruleVersionCode:row.ruleVersionCode,parameterSnapshotHash:row.parameterSnapshotHash})),
+    awards:[...awards.values()].sort((a,b)=>a.occurredAt.getTime()-b.occurredAt.getTime()||a.bonusAwardId.localeCompare(b.bonusAwardId)).map(row=>({reference:reference('AWARD',row.bonusAwardId),sourcePvReference:row.sourceEventId&&pv.some(p=>p.eventId===row.sourceEventId)?reference('PV',row.sourceEventId):null,sourceAwardReference:row.sourceAwardId&&awards.has(row.sourceAwardId)?reference('AWARD',row.sourceAwardId):null,sourceOrderLineReference:row.awardType==='RETAIL_REFERRAL'&&orderLines.some(line=>line.orderLineId===row.sourceEventId)?reference('ORDER_LINE',row.sourceEventId!):null,retailRecognition:row.awardType==='RETAIL_REFERRAL'?retailRecognition.get(row.bonusAwardId)??null:null,activeAtRecognition:row.activeSnapshot,kFactor:row.kFactor.toString(),awardType:row.awardType,theoryAmount:row.theoryAmount.toString(),payableAmount:row.payableAmount.toString(),occurredAt:row.occurredAt.toISOString(),ruleVersionCode:row.ruleVersionCode,parameterSnapshotHash:row.parameterSnapshotHash})),
     payables:payables.map(row=>({reference:reference('PAYABLE',row.payableEntryId),awardReference:reference('AWARD',row.sourceId),grossAmount:row.grossAmount.toString(),status:row.status,availableAt:row.availableAt.toISOString(),payout:row.payoutLine?{status:row.payoutLine.payoutBatch.status,periodStart:row.payoutLine.payoutBatch.periodStart.toISOString(),periodEnd:row.payoutLine.payoutBatch.periodEnd.toISOString()}:null})),
     recoveries:recoveries.map(row=>({reference:reference('RECOVERY',row.bonusRecoveryEventId),awardReference:reference('AWARD',row.bonusAwardId),awardIncluded:awards.has(row.bonusAwardId),linkedToOrderReturn:row.returnCaseId!==null&&returnIds.includes(row.returnCaseId),recoveryAmount:row.recoveryAmount.toString(),recoveredAmount:row.recoveredAmount.toString(),outstandingAmount:row.outstandingAmount.toString(),status:row.status,reasonCode:row.reasonCode,occurredAt:row.occurredAt.toISOString(),applications:row.applications.map(application=>({reference:reference('RECOVERY_APPLICATION',application.recoveryApplicationId),amount:application.amount.toString(),payoutLineReference:reference('PAYOUT_LINE',application.payoutLineId),payoutBatchStatus:application.payoutLine.payoutBatch.status,basis:'RECOVERY_OFFSET_NOT_CASH_PAYMENT'}))})),
     subscriptionRecognitions:recognitions,

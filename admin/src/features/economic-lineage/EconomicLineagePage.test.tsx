@@ -27,6 +27,15 @@ it('renders chronological, expandable zero-entitlement evidence and separate per
  expect(get).toHaveBeenCalledWith('/admin/operations/economic-lineage/orders/123',expect.objectContaining({signal:expect.any(AbortSignal)}));
  act(()=>view.unmount());
 });
+it('renders historical retail inputs and distinguishes missing snapshots',async()=>{
+ const evidence={...fixture,economicEvidence:{awards:[{awardType:'RETAIL_REFERRAL',retailRecognition:{sku:'HISTORICAL-SKU',baseAmount:'100',rate:'0.1',baseType:'NET_PAID_ITEM_AMOUNT',calculationType:'PERCENTAGE',attribution:{source:'RETAIL_CHECKOUT_CANDIDATE_REVALIDATED',reference:'PRIVATE-REFERENCE'},privateNote:'PRIVATE-INPUT'}},{awardType:'RETAIL_REFERRAL',retailRecognition:null}]}};
+ vi.mocked(get).mockResolvedValue({data:evidence});
+ const view=await render();await vi.waitFor(()=>expect(JSON.stringify(view.toJSON())).toContain('HISTORICAL-SKU'));
+ const output=JSON.stringify(view.toJSON());
+ for(const label of ['商品實付淨額','按比例','認列比例','結帳時驗證推薦歸屬','缺少歷史認列快照'])expect(output).toContain(label);
+ for(const secret of ['PRIVATE-REFERENCE','PRIVATE-INPUT'])expect(output).not.toContain(secret);
+ act(()=>view.unmount());
+});
 it('hides cached financial evidence after a failed refresh and allows retry',async()=>{
  const view=await render();await vi.waitFor(()=>expect(JSON.stringify(view.toJSON())).toContain('零售推薦獎金'));
  vi.mocked(get).mockRejectedValueOnce(new Error('連線失敗'));

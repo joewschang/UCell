@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '@ucell/database';
+import { readRetailReferralSnapshot } from './retail-referral-snapshot-read';
 
 /**
  * Administrative read model for a stored Retail Referral award.  It never calls
@@ -25,13 +26,7 @@ export class RetailReferralExplainService {
 
     const [snapshot, payable] = await Promise.all([
       award.sourceEventId
-        ? this.db.retailReferralOrderLineSnapshot.findUnique({
-            where: { orderLineId: award.sourceEventId },
-            include: {
-              attribution: true,
-              orderLine: { select: { skuSnapshot: true, order: { select: { orderNo: true } } } },
-            },
-          })
+        ? readRetailReferralSnapshot(this.db, award.sourceEventId)
         : null,
       this.db.payableEntry.findUnique({
         where: { sourceType_sourceId: { sourceType: 'BONUS_AWARD', sourceId: award.bonusAwardId } },

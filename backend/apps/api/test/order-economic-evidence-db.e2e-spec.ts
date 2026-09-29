@@ -4,6 +4,7 @@ import {appendEntitlementDelta,captureParameters,storeReplaySnapshot} from '@uce
 import {AdminOperationsService} from '../src/modules/admin-operations/admin-operations.service';
 import {AuditService} from '../src/common/audit/audit.service';
 import {RecoveryBalanceService} from '../src/modules/payout/recovery-balance.service';
+import {RetailReferralExplainService} from '../src/modules/order/retail-referral-explain.service';
 
 const url=process.env.PHASE2_TEST_DATABASE_URL;
 const describeDb=url?describe:describe.skip;
@@ -51,6 +52,26 @@ describeDb('ORDER_ECONOMIC_EVIDENCE_REAL_DB',()=>{
     const evidence=(await f.read()).economicEvidence;
     expect(evidence.awards).toEqual([expect.objectContaining({awardType:'RETAIL_REFERRAL',sourcePvReference:null,sourceOrderLineReference:expect.any(String),activeAtRecognition:payable>0,theoryAmount:'10',payableAmount:String(payable),kFactor:'1'})]);
     for(const internal of [line.orderLineId,otherLine.orderLineId,f.q.qualificationId,'privateNote'])expect(JSON.stringify(evidence.awards)).not.toContain(internal);
+  });
+  it.each(['stored','missing','wrongOrder','wrongRecipient'])('reads historical retail recognition with explicit source validation: %s',async mode=>{
+    const f=await fixture(),other=await fixture(),at=new Date('2020-01-01T00:00:00Z');
+    const product=await db.productReference.create({data:{sku:randomUUID(),displayName:'Historical product',currentPrice:100}});
+    const profile=await db.productRuleProfile.create({data:{productId:product.productId,effectiveFrom:at,gpvRate:0,ruleVersionCode:'R1',retailReferralEnabled:true,retailReferralCalculationType:'PERCENTAGE',retailReferralRate:0.1,retailReferralBaseType:'NET_PAID_ITEM_AMOUNT'}});
+    const line=await db.orderLine.create({data:{orderId:f.order.orderId,productId:product.productId,skuSnapshot:product.sku,productNameSnapshot:'Historical product',quantity:1,unitPrice:100,lineAmount:100,gpvRateSnapshot:0,gpvAmountSnapshot:0,ruleProfileSnapshot:{}}});
+    const attribution=await db.retailReferrerAttribution.create({data:{personId:f.person.personId,referrerQualificationId:f.q.qualificationId,referrerBallNoSnapshot:'PRIVATE-BALL',source:'RETAIL_CHECKOUT_CANDIDATE_REVALIDATED',effectiveFrom:at}});
+    const award=await db.bonusAward.create({data:{recipientQualificationId:f.q.qualificationId,awardType:'RETAIL_REFERRAL',sourceEventId:line.orderLineId,theoryAmount:10,payableAmount:0,activeSnapshot:false,ruleVersionCode:'R1',occurredAt:new Date(),pendingUntil:new Date(),calculationDetail:{}}});
+    const snapshot=mode==='missing'?null:await db.retailReferralOrderLineSnapshot.create({data:{orderLineId:line.orderLineId,orderId:mode==='wrongOrder'?other.order.orderId:f.order.orderId,referrerQualificationId:mode==='wrongRecipient'?other.q.qualificationId:f.q.qualificationId,retailReferrerAttributionId:attribution.retailReferrerAttributionId,retailReferralEnabled:true,calculationType:'PERCENTAGE',rate:0.1,baseType:'NET_PAID_ITEM_AMOUNT',netPaidItemAmount:100,productRuleProfileId:profile.productRuleProfileId,productRuleVersion:'HISTORICAL-V1',attributionEvidence:{privateNote:'NEVER-EXPOSE'}}});
+    await db.productRuleProfile.update({where:{productRuleProfileId:profile.productRuleProfileId},data:{retailReferralRate:0.5}});
+    await db.productReference.update({where:{productId:product.productId},data:{displayName:'Changed product',currentPrice:999}});
+    if(mode.startsWith('wrong')){await expect(f.read()).rejects.toMatchObject({response:{code:'HISTORICAL_SNAPSHOT_CORRUPT'}});return;}
+    const result=(await f.read()).economicEvidence;
+    expect((await f.read()).economicEvidence).toEqual(result);
+    if(mode==='missing'){expect(result.awards[0].retailRecognition).toBeNull();return;}
+    const existing=await new RetailReferralExplainService(db as any).read(award.bonusAwardId);
+    expect(result.awards[0].retailRecognition).toMatchObject({sku:existing.recognition.sku,rate:existing.recognition.rate,baseType:existing.recognition.baseType,productRuleVersion:existing.recognition.productRuleVersion,baseAmount:'100',attribution:{source:existing.recognition.attribution!.source,effectiveAt:at.toISOString()}});
+    expect(result.awards[0].payableAmount).toBe('0');
+    for(const secret of [attribution.retailReferrerAttributionId,f.q.qualificationId,'PRIVATE-BALL','NEVER-EXPOSE','Changed product'])expect(JSON.stringify(result)).not.toContain(secret);
+    expect(await db.retailReferralOrderLineSnapshot.findUnique({where:{orderLineId:line.orderLineId}})).toEqual(snapshot);
   });
   it.each([3,-2,-6])('reports recorded EPV adjustment %s without recomputing monthly eligibility',async delta=>{
     const f=await fixture();
