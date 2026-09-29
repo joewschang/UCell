@@ -24,6 +24,7 @@
 | `pnpm --dir backend test:api:isolated` | PASS: 159 suites, 1,177 tests; fresh migrations through `20260929150000_event_foundation`; 162 baseline DB assertions; cleanup PASS |
 | `pnpm --dir backend migration:preflight` | PASS |
 | `node --test deployment/stage-golden-journey.test.mjs` | PASS: 3 tests; includes secret-redacted missing-credential block behavior |
+| `node deployment/stage-preflight.mjs` | PASS: 25 static deployment assertions |
 
 The isolated API run emitted the pre-existing non-fatal AnalyticsRefreshWorker warning. It did not fail a test or leave test data behind.
 
