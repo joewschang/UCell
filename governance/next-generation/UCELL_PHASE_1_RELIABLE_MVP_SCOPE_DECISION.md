@@ -4650,3 +4650,449 @@ The following are no longer acceptable as reasons to declare the current R1.0B b
 They are now part of the current formal implementation/verification queue.
 
 Stage and Production deployment authorization remain unchanged.
+
+
+## 35. R1.0B CR-BATCH-01 — UCell Member-Economic Control vs EZTooL ERP Financial Authority
+
+**Status:** OWNER-APPROVED / INCLUDED_IN_CURRENT_BATCH / MANDATORY INTEGRATION & UX BOUNDARY
+**Approved date:** 2026-09-29 (Asia/Taipei)
+**Batch:** R1.0B-CR-BATCH-01
+
+This section defines the financial/operational division of responsibility between UCell Admin and EZTooL ERP and adds the required UX, progress-monitoring and reconciliation/interface work to the current formal implementation queue.
+
+### FER-1 Core authority split
+
+UCell MUST NOT become a second corporate ERP/accounting system.
+
+**UCell authority = Member / Compensation Economic Subledger and operational control.**
+
+UCell owns/explains:
+- member/Qualification/Ball economic identity;
+- GPV/RPV/EPV recognition;
+- historical Active/eligibility;
+- Sponsor/Binary/Global qualification evidence;
+- Referral/Retail Referral/Equalization/Binary/Matching/RPV/EPV/Global economic calculation;
+- K/pool adjustment evidence;
+- Award lifecycle;
+- Company Award economic destination / Reservoir B;
+- Return-driven member-economic Recovery;
+- Payable;
+- Payout batch/member-payment status;
+- bank-export evidence and payment-result reconciliation;
+- Economic Value Lineage;
+- Compensation Period operational status and exceptions.
+
+**EZTooL ERP authority = Corporate operational accounting / inventory / statutory-booking domain where enabled.**
+
+ERP is expected to own or execute, according to the approved deployment/configuration:
+- sales/inventory execution;
+- inventory movement and stock balance;
+- purchasing where used;
+- accounts receivable/payable where used;
+- accounting vouchers/journal posting;
+- inventory costing;
+- invoice/accounting documents;
+- corporate expense/general-ledger reporting;
+- profit/loss and balance-sheet accounting.
+
+UCell MUST NOT duplicate general ledger, statutory accounting close, inventory-cost accounting or corporate financial statements.
+
+### FER-2 Terminology
+
+Do not call UCell's period status a corporate accounting close.
+
+Use **獎金與會員經濟營運控制中心 / Compensation & Member Economic Operations Control** and **獎金週期 / Compensation Period**.
+
+A UCell period reaching CLOSED/FINANCIALLY_RECONCILED means the member-compensation/economic cycle is reconciled. It MUST NOT imply the ERP/accounting month is legally/accountingly closed.
+
+### FER-3 Three-authority model
+
+Target architecture:
+
+UCell Member/Economic Authority
+→ governed ERP Reconciliation Bridge
+→ EZTooL Corporate ERP/Accounting Authority
+→ external bank/payment process where applicable.
+
+The ERP bridge is an integration/reconciliation boundary, not a second economic engine.
+
+Future replacement/addition of Microsoft Dynamics 365 BC must be possible by replacing/adding ERP adapters and accounting projections without rewriting UCell compensation authority.
+
+### FER-4 Sales bridge
+
+UCell remains Commercial Order authority for UCell member/customer commerce.
+
+The Sales Bridge projects approved executable facts to ERP, at minimum where supported:
+- UCell business order reference;
+- customer/member-safe ERP mapping reference;
+- SKU;
+- quantity;
+- approved price/amount needed by ERP;
+- payment/settlement state needed for ERP workflow;
+- fulfillment/shipment references;
+- return/cancellation projection where applicable.
+
+ERP-side sales/order/invoice identifiers are returned/stored as external references.
+
+The bridge must not reinterpret Qualification, Repurchase Plan, Promotion, Sponsor or compensation meaning.
+
+### FER-5 Inventory / fulfillment bridge
+
+UCell owns what the approved UCell Order requires, Offering/Purpose provenance, serialized-unit traceability required by UCell, and fulfillment source allocation/validation.
+
+ERP owns actual inventory execution/state where integrated.
+
+Reconciliation compares expected SKU/quantity/serial set where serial is exchanged, ERP accepted/rejected quantities, shipment/outbound state, return/inbound state and external ERP references.
+
+Do not infer a physical shipment only from an accounting/inventory acceptance result. Shipment/carrier evidence remains separately governed.
+
+### FER-6 Compensation/accounting bridge
+
+UCell remains detailed compensation subledger authority.
+
+Do NOT send every Theory/Award calculation row to ERP merely because it exists.
+
+Provide an approved accounting projection suitable for ERP posting/reconciliation, with configurable aggregation dimensions such as compensation period, award/economic category, payout batch, accounting date and approved account/mapping code.
+
+The projection must preserve a deterministic drill-back reference/hash to the underlying UCell detail.
+
+Exact ERP account codes and journal mapping are configuration/external-accounting decisions and must not be invented by Codex.
+
+If unavailable, mark ERP_ACCOUNT_MAPPING_REQUIRED without blocking the UCell subledger/core bridge.
+
+### FER-7 Return bridge
+
+Return has two distinct consequences and MUST NOT be collapsed.
+
+**UCell member-economic consequence**
+- future Repurchase recognition reduction/cancellation;
+- Award Recovery;
+- Payable offset;
+- future Recovery outstanding.
+
+**ERP corporate consequence**
+- sales return/credit handling;
+- inventory return;
+- accounting/tax/invoice consequence;
+- inventory/cost adjustment.
+
+The same accepted ReturnCase/business reference links the two projections, but each authority records its own result.
+
+### FER-8 Payment bridge
+
+UCell determines gross member Payable, Recovery offset, net member transfer, payout batch/line and payment result.
+
+ERP receives only the approved accounting/payment projection required for corporate books.
+
+UCell bank-export/payment-result workflow remains governed by §31.
+
+Do not make ERP payment posting proof of UCell Award correctness, and do not make UCell PAID silently imply an ERP voucher was successfully posted.
+
+Reconciliation must show both statuses independently.
+
+### FER-9 ERP Reconciliation Bridge
+
+Add a first-class read/control capability: **ERP Reconciliation Bridge / ERP 對接與對帳**.
+
+At minimum expose four streams:
+1. Sales
+2. Inventory/Fulfillment
+3. Compensation/Accounting Projection
+4. Return
+
+Each bridge item should have, where applicable:
+- UCell business reference;
+- projection type/version;
+- immutable payload hash;
+- ERP adapter/connection identity;
+- external ERP reference;
+- created/queued/sent/acknowledged/reconciled timestamps;
+- expected amount/quantity;
+- ERP-reported amount/quantity;
+- status;
+- retry/attempt evidence;
+- mismatch code;
+- exception reference;
+- last successful data-through time.
+
+No raw credentials/secrets.
+
+### FER-10 Bridge lifecycle
+
+Use a controlled lifecycle equivalent to:
+NOT_REQUIRED / READY / QUEUED / SENT / ACKNOWLEDGED / RECONCILED / MISMATCH / FAILED / BLOCKED_EXTERNAL.
+
+Exact internal enum naming may reuse existing ERP handoff states if semantics are unambiguous.
+
+Retry must be idempotent. A retry must not duplicate ERP business effects.
+
+### FER-11 Compensation Period Control
+
+Add/extend the Operations Center with a dedicated UCell compensation-cycle control view.
+
+Recommended period lifecycle:
+
+OPEN
+→ PRECHECK
+→ READY_TO_CLOSE
+→ SOFT_CLOSED
+→ SETTLING
+→ RECONCILING
+→ AWARD_FINALIZED
+→ MATURING
+→ PAYABLE_READY
+→ PAYMENT_REVIEW
+→ EXPORTED
+→ BANK_RECONCILING
+→ FINANCIALLY_RECONCILED/CLOSED.
+
+A blocking exception may pause progression without rewriting prior completed stages.
+
+This state is a control/read model over authoritative facts and orchestrator jobs, not a new financial ledger.
+
+### FER-12 Period control checkpoints
+
+Expose at least:
+- transaction/input completeness;
+- GPV/RPV/EPV recognition completeness;
+- Active/organization/rule snapshot readiness;
+- K0/K1/K2 status;
+- Global/Welfare status where applicable;
+- Company/Reservoir B reconciliation;
+- Return/Recovery reconciliation;
+- Award maturity;
+- Payable materialization;
+- payout review/approval;
+- bank export;
+- bank result reconciliation;
+- ERP accounting projection status separately;
+- blocking exceptions/warnings;
+- data-through/freshness.
+
+A UCell compensation period may be economically reconciled while ERP accounting posting remains separately visible as pending/mismatch; do not conflate the two statuses.
+
+### FER-13 Amount bridge / reconciliation presentation
+
+For each compensation period, present explainable amount bridges where applicable:
+
+Gross Theory
+→ K/Pool Adjustment
+→ Award
+→ Company/Reservoir destination
+→ Recovery Offset
+→ Net Payable
+→ Exported
+→ Paid/Failed.
+
+Separately show ERP accounting projection/reconciliation totals.
+
+Do not use ERP totals as the source of UCell compensation calculations.
+
+### FER-14 Aging and outstanding controls
+
+Add bounded operational aging views for:
+- matured Award not materialized to Payable;
+- Payable not yet batched;
+- payout exported but unresolved;
+- failed bank transfer;
+- outstanding Recovery;
+- ERP bridge queued/stuck/failed/mismatch.
+
+Aging thresholds are operational parameters, not hard-coded business rules.
+
+### FER-15 Soft close / hard economic close
+
+Support Soft Close and Hard economic close / Financially Reconciled.
+
+Soft Close seals input cohort/rules/snapshots while settlement/reconciliation proceeds and governed correction/replay may still create append-only effects.
+
+Hard economic close requires UCell compensation reconciliations PASS and blocking exceptions resolved/dispositioned; the period is no longer silently recomputed.
+
+Later returns/corrections create current-period append-only Recovery/Replay linked to the historical period. They do not reopen and rewrite historical economic facts.
+
+This is distinct from ERP/accounting month close.
+
+### FER-16 UX — UCell Admin financial experience
+
+The UCell Admin financial UX must focus on member economics, not accounting screens copied from ERP.
+
+Primary experience should emphasize:
+- 獎金週期;
+- 結算進度;
+- 理論值 / K / Award;
+- 水庫B;
+- Recovery;
+- Payable;
+- 付款批次;
+- 銀行結果;
+- ERP對接狀態;
+- 異常;
+- Economic Explain.
+
+Provide clear drill-down:
+Period → settlement family → member/Company recipient → Award → Payable/Payout → Lineage evidence.
+
+Do not expose ordinary operators to general-ledger configuration unless explicitly authorized/configured for the bridge.
+
+### FER-17 UX — ERP collaboration
+
+ERP collaboration screens must clearly label which side is authoritative.
+
+Examples:
+- UCell應出數量
+- ERP已接受數量
+- UCell會員應付
+- ERP會計投影
+- UCell付款結果
+- ERP入帳狀態
+
+Never show one ambiguous status such as 完成 when only one side has completed.
+
+Use separate status chips/text, timestamps and mismatch explanations. Color alone is insufficient.
+
+### FER-18 Progress monitoring
+
+Operations Control Center must surface ERP bridge and compensation-period health.
+
+At minimum:
+- current compensation period stage;
+- elapsed time in stage;
+- expected SLA/threshold where configured;
+- blocking exceptions;
+- overdue jobs;
+- ERP queued/stuck/failed/mismatch counts;
+- bank failed/unreconciled counts;
+- Recovery outstanding;
+- latest successful ERP reconciliation/data-through.
+
+Drill-down must lead to actionable evidence/Task/Exception, not only charts.
+
+### FER-19 Task/Exception integration
+
+Automatically create or expose controlled Task/Exception candidates for conditions such as:
+- ERP handoff stuck beyond threshold;
+- ERP amount/quantity mismatch;
+- duplicate/rejected external reference;
+- compensation accounting projection mismatch;
+- UCell Payable/Payout mismatch;
+- Company→Reservoir B mismatch;
+- unresolved bank failure;
+- period close blocked;
+- overdue recognition/settlement job.
+
+Task completion does not alter ERP/UCell business authority. Resolution requires the relevant domain/reconciliation action.
+
+### FER-20 Interface design
+
+ERP adapter contracts must be provider-neutral.
+
+Define canonical contracts for:
+- sales-order projection;
+- fulfillment/inventory projection;
+- return projection;
+- compensation accounting projection;
+- ERP acknowledgement/result;
+- reconciliation status.
+
+Provider adapters:
+- EZTooL;
+- future Dynamics 365 BC;
+- other approved ERP.
+
+Canonical contract must use UCell business references and version/hash/idempotency evidence.
+
+Do not leak internal UUIDs where external business references suffice.
+
+### FER-21 EZTooL implementation boundary
+
+Current R1.0B must implement/test:
+- provider-neutral canonical bridge;
+- durable handoff/outbox;
+- idempotency;
+- retries/lease fencing;
+- reconciliation;
+- Admin monitoring UX;
+- mismatch/exception flow;
+- safe external-reference storage;
+- adapter contract/test double.
+
+Only concrete capabilities that can be verified from approved EZTooL specifications may be implemented in the live adapter.
+
+Unknown/unavailable live transport, credential, endpoint, accounting account mapping or bank integration must be marked independently:
+- EZTOOL_LIVE_TRANSPORT = BLOCKED_EXTERNAL where applicable;
+- ERP_ACCOUNT_MAPPING_REQUIRED where applicable.
+
+Do not invent undocumented endpoints or accounting behavior.
+
+### FER-22 Reconciliation invariants
+
+Add at minimum:
+- ERP_SALES_PROJECTION_IDEMPOTENT = PASS
+- ERP_FULFILLMENT_EXPECTED_ACTUAL_RECONCILES = PASS
+- ERP_RETURN_LINKS_ACCEPTED_RETURNCASE = PASS
+- ERP_RETRY_NO_DUPLICATE_EFFECT = PASS
+- ERP_MISMATCH_CREATES_EVIDENCE = PASS
+- COMPENSATION_PROJECTION_TOTAL_RECONCILES = PASS
+- COMPENSATION_PROJECTION_DRILLBACK_HASH = PASS
+- UCELL_PAID_DOES_NOT_IMPLY_ERP_POSTED = PASS
+- ERP_POSTED_DOES_NOT_IMPLY_UCELL_AWARD_CORRECT = PASS
+- ERP_BRIDGE_NO_UUID_OR_SECRET_LEAK = PASS.
+
+### FER-23 Compensation-period acceptance
+
+Add at minimum:
+- COMP_PERIOD_STAGE_SERVER_AUTHORITY = PASS
+- COMP_PERIOD_PRECHECK = PASS
+- COMP_PERIOD_SOFT_CLOSE = PASS
+- COMP_PERIOD_K0_K1_K2_DEPENDENCY = PASS
+- COMP_PERIOD_RESERVOIR_B_RECONCILIATION = PASS
+- COMP_PERIOD_RECOVERY_RECONCILIATION = PASS
+- COMP_PERIOD_PAYABLE_RECONCILIATION = PASS
+- COMP_PERIOD_BANK_RECONCILIATION = PASS
+- COMP_PERIOD_ERP_STATUS_SEPARATE = PASS
+- COMP_PERIOD_BLOCKING_EXCEPTION_PREVENTS_CLOSE = PASS
+- COMP_PERIOD_HISTORICAL_CORRECTION_APPEND_ONLY = PASS
+- COMP_PERIOD_DATA_FRESHNESS_VISIBLE = PASS.
+
+### FER-24 UX acceptance additions
+
+Extend §34 UX acceptance with:
+- ADMIN_COMPENSATION_PERIOD_JOURNEY = PASS
+- ADMIN_ERP_RECONCILIATION_JOURNEY = PASS
+- FINANCE_AMOUNT_BRIDGE_CLARITY = PASS
+- UCELL_VS_ERP_AUTHORITY_LABELING = PASS
+- ERP_MISMATCH_ACTIONABILITY = PASS
+- FINANCE_MOBILE_READABILITY = PASS where the Admin responsive contract applies.
+
+### FER-25 Progress-file queue addition
+
+The autonomous implementation progress/queue must add explicit rows/items for:
+- Compensation Period Control;
+- ERP Reconciliation Bridge;
+- Compensation Accounting Projection;
+- ERP Monitoring/Exception integration;
+- Finance/ERP UX refinement.
+
+These are current-batch requirements.
+
+### FER-26 Scope guard
+
+This section does NOT authorize UCell implementation of:
+- general ledger;
+- trial balance;
+- statutory accounting close;
+- corporate P&L;
+- balance sheet;
+- full accounts-receivable/account-payable replacement;
+- inventory costing engine;
+- tax engine;
+- ERP purchasing replacement;
+- automatic accounting-policy invention.
+
+Those remain ERP/accounting responsibilities.
+
+### FER-27 Closure
+
+Current R1.0B cannot declare local implementation closure or Stage RC readiness until the UCell compensation-control and ERP-reconciliation boundaries above are implemented and verified, except independently documented external EZTooL/account-mapping blockers.
+
+No Stage or Production deployment is authorized by this amendment.
