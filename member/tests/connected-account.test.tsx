@@ -1,4 +1,5 @@
 import React from 'react';
+import {ThemeProvider} from '@ucell/design-system';
 import {act,create,type ReactTestRenderer} from 'react-test-renderer';
 import {MemoryRouter} from 'react-router-dom';
 import {afterEach,beforeEach,expect,it,vi} from 'vitest';
@@ -16,7 +17,7 @@ beforeEach(()=>{vi.stubGlobal('sessionStorage',{getItem:()=>null,setItem:vi.fn()
 afterEach(()=>{if(tree)act(()=>tree!.unmount());tree=undefined;vi.unstubAllGlobals();vi.restoreAllMocks()});
 it('allows a Person without balls to access own profile and server logout without scoped queries',async()=>{
  const fetch=vi.fn(async(url:string)=>url.includes('/qualifications')?response([]):response({name:'Person only',alias:null,memberNo:'2609000002',email:null,phone:null,gender:null,birthDate:null,membershipState:'NETWORK_MEMBER',mobileVerifiedAt:null}));vi.stubGlobal('fetch',fetch);
- await act(async()=>{tree=create(<MemoryRouter initialEntries={['/me']}><QualificationProvider><App/></QualificationProvider></MemoryRouter>)});
+ await act(async()=>{tree=create(<ThemeProvider><MemoryRouter initialEntries={['/me']}><QualificationProvider><App/></QualificationProvider></MemoryRouter></ThemeProvider>)});
  const text=JSON.stringify(tree!.toJSON());expect(text).toContain('Person only');expect(text).toContain('更新聯絡資料');expect(text).toContain('登出會員服務');
  expect(fetch.mock.calls.every(([url])=>!url.includes('qualificationId'))).toBe(true);
 });

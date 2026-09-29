@@ -1,4 +1,5 @@
 import React from 'react';
+import {ThemeProvider} from '@ucell/design-system';
 import {act,create,type ReactTestRenderer} from 'react-test-renderer';
 import {MemoryRouter} from 'react-router-dom';
 import {afterEach,beforeEach,describe,expect,it,vi} from 'vitest';
@@ -15,7 +16,7 @@ const contract={id:'contract-1',type:'NETWORK_MEMBERSHIP',version:'V1',title:'ç¶
 beforeEach(()=>vi.stubGlobal('sessionStorage',{getItem:()=>null,setItem:vi.fn(),removeItem:vi.fn()}));
 afterEach(()=>{if(tree)act(()=>tree!.unmount());tree=undefined;vi.unstubAllGlobals();vi.restoreAllMocks();});
 
-async function mount(path:string){await act(async()=>{tree=create(<MemoryRouter initialEntries={[path]}><QualificationProvider><App/></QualificationProvider></MemoryRouter>);});}
+async function mount(path:string){await act(async()=>{tree=create(<ThemeProvider><MemoryRouter initialEntries={[path]}><QualificationProvider><App/></QualificationProvider></MemoryRouter></ThemeProvider>);});}
 
 describe('conditional member journeys',()=>{
  it('offers the first-Qualification package route without issuing Qualification-scoped reads',async()=>{

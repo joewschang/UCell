@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { create } from 'react-test-renderer';
+import { create, type ReactTestInstance } from 'react-test-renderer';
 import { MemoryRouter } from 'react-router-dom';
 import { MemberNavigation, memberSections, sectionMatches } from '../src/MemberNavigation';
+
+// Read nested label text while ignoring decorative icons.
+const labelText = (node: ReactTestInstance | string): string => typeof node === 'string'
+  ? node : node.props['aria-hidden'] === true || node.props['aria-hidden'] === 'true'
+    ? '' : node.children.map(labelText).join('');
 
 describe('Member navigation', () => {
   it.each([
@@ -11,8 +16,8 @@ describe('Member navigation', () => {
   ])('keeps %s under %s', (path, label) => {
     const renderer = create(<MemoryRouter initialEntries={[path]}><MemberNavigation/></MemoryRouter>);
     const links = renderer.root.findAllByType('a');
-    expect(links.map(link => link.children.join(''))).toEqual(['首頁', '組織', '收益', '商城', '我的']);
-    expect(links.filter(link => link.props['aria-current'] === 'page').map(link => link.children.join(''))).toEqual([label]);
+    expect(links.map(labelText)).toEqual(['首頁', '組織', '收益', '商城', '我的']);
+    expect(links.filter(link => link.props['aria-current'] === 'page').map(labelText)).toEqual([label]);
     renderer.unmount();
   });
   it('does not select a parent from a partial path or unknown route', () => {
