@@ -37,9 +37,19 @@ export async function orderReplayPostingEvidence(tx:Prisma.TransactionClient,run
     if(posting.recoveryId&&(!recovery||recovery.returnCaseId!==run.sourceReturnCaseId||recovery.bonusAwardId!==sealed[0].awardId||!posting.delta.lt(0)||!recovery.recoveryAmount.eq(posting.delta.abs())))corrupt();
     const effect=posting.reservoirBEffect;
     if(effect&&(effect.effectType!=='REPLAY_ADJUSTMENT'||!effect.amountDelta.eq(posting.delta)||effect.destination.sourceBonusAwardId!==sealed[0].awardId||effect.destination.qualificationId!==posting.recipientQualificationId||correction||recovery))corrupt();
+    const payables=correction?await tx.payableEntry.findMany({where:{sourceType:'BONUS_AWARD',sourceId:correction.bonusAwardId},include:{payoutLine:{include:{payoutBatch:true,paymentResults:{orderBy:[{createdAt:'asc'},{payoutPaymentResultId:'asc'}]}}}},orderBy:{payableEntryId:'asc'}}):[];
+    const payableEvidence=payables.map(payable=>{
+      if(payable.qualificationId!==posting.recipientQualificationId||!payable.grossAmount.eq(correction!.payableAmount))corrupt();
+      const line=payable.payoutLine;
+      if(line&&(line.recipientQualificationId!==payable.qualificationId||line.paymentResults.some(result=>result.payoutBatchId!==line.payoutBatchId)))corrupt();
+      return {reference:ref('PAYABLE',payable.payableEntryId),grossAmount:payable.grossAmount.toString(),status:payable.status,availableAt:payable.availableAt.toISOString(),
+        payout:line?{reference:ref('PAYOUT_LINE',line.payoutLineId),batchReference:ref('PAYOUT_BATCH',line.payoutBatchId),batchStatus:line.payoutBatch.status,
+          attribution:'WHOLE_PAYOUT_LINE_NOT_CORRECTION_ALLOCATION',paymentAmountBasis:'CUMULATIVE_LINE_REPORTS_NOT_ADDITIVE',grossAmount:line.grossAmount.toString(),recoveryOffset:line.recoveryOffset.toString(),netAmount:line.netAmount.toString(),
+          paymentResults:line.paymentResults.map(result=>({reference:ref('PAYMENT_RESULT',result.payoutPaymentResultId),status:result.resultStatus,reportedPaidAmount:result.paidAmount.toString(),occurredAt:result.occurredAt.toISOString()}))}:null};
+    });
     output[index].postings.push({reference:ref('REPLAY_POSTING',posting.postingId),snapshotReference:ref('REPLAY_SNAPSHOT',posting.snapshotId),entitlementReference:ref('CHECKPOINT_ENTITLEMENT',posting.entitlementKey),recipientReference:ref('ECONOMIC_RECIPIENT',posting.recipientQualificationId),
       originallyPosted:posting.originallyPosted.toString(),recalculatedEntitlement:posting.recalculatedEntitlement.toString(),delta:posting.delta.toString(),
-      correctionAward:correction?{reference:ref('AWARD',correction.bonusAwardId),amount:correction.payableAmount.toString()}:null,
+      correctionAward:correction?{reference:ref('AWARD',correction.bonusAwardId),amount:correction.payableAmount.toString(),payables:payableEvidence}:null,
       recovery:recovery?{reference:ref('RECOVERY',recovery.bonusRecoveryEventId),amount:recovery.recoveryAmount.toString(),recoveredAmount:recovery.recoveredAmount.toString(),outstandingAmount:recovery.outstandingAmount.toString(),status:recovery.status}:null,
       reservoirBEffect:effect?{reference:ref('RESERVOIR_B_EFFECT',effect.effectId),amountDelta:effect.amountDelta.toString()}:null});
   }

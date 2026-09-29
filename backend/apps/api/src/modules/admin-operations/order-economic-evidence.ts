@@ -6,6 +6,24 @@ import {orderReplayPostingEvidence} from './order-replay-posting-evidence';
 // References join this projection without exposing internal UUIDs or identities.
 const reference = (kind:string,id:string) => `${kind}:${createHash('sha256').update(`${kind}:${id}`).digest('hex')}`;
 
+async function gpvRetention(tx:Prisma.TransactionClient,orderId:string,pv:PvLedger[]){
+  const originals=pv.filter(row=>row.pvType==='GPV'&&row.eventType==='GPV_CREATED');
+  const lineIds=originals.flatMap(row=>row.sourceLineId?[row.sourceLineId]:[]);
+  const lines=await tx.orderLine.findMany({where:{orderLineId:{in:lineIds}}});
+  const returns=await tx.returnLine.findMany({where:{orderLineId:{in:lineIds},returnCase:{status:'POSTED'}},include:{returnCase:true},orderBy:[{createdAt:'asc'},{returnLineId:'asc'}]});
+  return originals.map(event=>{
+    const line=lines.find(row=>row.orderLineId===event.sourceLineId);
+    const base={sourcePvReference:reference('PV',event.eventId),originalGpv:event.amount.toString(),basis:'CURRENT_POSTED_RETURN_STATE'};
+    if(!line)return {...base,status:'SOURCE_LINE_UNAVAILABLE',reversedGpv:null,retainedGpv:null,returns:[]};
+    if(line.orderId!==orderId||originals.filter(row=>row.sourceLineId===line.orderLineId).length!==1)pending('HISTORICAL_SNAPSHOT_CORRUPT','Order GPV line attribution is ambiguous');
+    const linked=returns.filter(row=>row.orderLineId===line.orderLineId);
+    if(linked.some(row=>row.returnCase.orderId!==orderId||row.gpvReversalAmount.lt(0)))pending('HISTORICAL_SNAPSHOT_CORRUPT','Posted return conflicts with its order line');
+    const reversed=linked.reduce((sum,row)=>sum.add(row.gpvReversalAmount),new Prisma.Decimal(0)),retained=event.amount.sub(reversed);
+    if(retained.lt(0))pending('RETURN_AMOUNT_EXCEEDED','Cumulative reversal exceeds original GPV');
+    return {...base,status:'CALCULATED_FROM_POSTED_RETURNS',sourceLineReference:reference('ORDER_LINE',line.orderLineId),reversedGpv:reversed.toString(),retainedGpv:retained.toString(),returns:linked.map(row=>({reference:reference('RETURN_LINE',row.returnLineId),returnReference:reference('RETURN',row.returnCaseId),gpvReversalAmount:row.gpvReversalAmount.toString()}))};
+  });
+}
+
 function amount(value:unknown):string{
   if(typeof value!=='string'||!/^[-+]?\d+(\.\d+)?$/.test(value))pending('HISTORICAL_SNAPSHOT_CORRUPT','Stored economic amount is invalid');
   return new Prisma.Decimal(value).toString();
@@ -131,6 +149,7 @@ export async function orderEconomicEvidence(tx:Prisma.TransactionClient,orderId:
   return {
     scope:'ORDER_PV_AWARD_RETURN_SUBSCRIPTION_RPV_REPLAY_RESERVOIR_B_AND_PERIOD_INPUTS',
     periodContributions:await periodContributions(tx,orderId,pv),
+    gpvRetention:await gpvRetention(tx,orderId,pv),
     returnReplays:await returnReplayEvidence(tx,returnIds),
     pvEvents:pv.map(row=>({reference:reference('PV',row.eventId),pvType:row.pvType,eventType:row.eventType,amount:row.amount.toString(),occurredAt:row.occurredAt.toISOString()})),
     awards:[...awards.values()].sort((a,b)=>a.occurredAt.getTime()-b.occurredAt.getTime()||a.bonusAwardId.localeCompare(b.bonusAwardId)).map(row=>({reference:reference('AWARD',row.bonusAwardId),sourcePvReference:row.sourceEventId&&pv.some(p=>p.eventId===row.sourceEventId)?reference('PV',row.sourceEventId):null,sourceAwardReference:row.sourceAwardId&&awards.has(row.sourceAwardId)?reference('AWARD',row.sourceAwardId):null,awardType:row.awardType,theoryAmount:row.theoryAmount.toString(),payableAmount:row.payableAmount.toString(),occurredAt:row.occurredAt.toISOString(),ruleVersionCode:row.ruleVersionCode,parameterSnapshotHash:row.parameterSnapshotHash})),

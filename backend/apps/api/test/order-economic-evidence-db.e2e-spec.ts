@@ -40,6 +40,23 @@ describeDb('ORDER_ECONOMIC_EVIDENCE_REAL_DB',()=>{
     const envelope={format:'UCELL_HISTORICAL_REPLAY_V1' as const,kind,sourceId:String(randomUUID()),ruleVersionCode:'R1.0B',at:new Date(at.getTime()+1000).toISOString(),parameters,recipients:[],evidence:{sources:[source]},inputs:{periodStart:at.toISOString(),periodEnd:new Date(at.getTime()+1000).toISOString(),totalGpv:'900000'}};
     return {f,envelope,source};
   }
+  it.each(['none','partial','full','excess'])('explains current retained GPV from exact posted return lines: %s',async mode=>{
+    const f=await fixture();
+    const product=await db.productReference.create({data:{sku:randomUUID(),displayName:'Retention fixture',currentPrice:100}});
+    const line=await db.orderLine.create({data:{orderId:f.order.orderId,productId:product.productId,skuSnapshot:product.sku,productNameSnapshot:'Retention fixture',quantity:1,unitPrice:100,lineAmount:100,gpvRateSnapshot:1,gpvAmountSnapshot:100,ruleProfileSnapshot:{}}});
+    const pv=await db.pvLedger.create({data:{qualificationId:f.q.qualificationId,pvType:'GPV',amount:100,sourceType:'ORDER',sourceId:f.order.orderId,sourceLineId:line.orderLineId,eventType:'GPV_CREATED',ruleVersionCode:'R1',occurredAt:new Date(),correlationId:randomUUID()}});
+    for(const value of [999,...(mode==='none'?[]:mode==='partial'?[30,20]:mode==='full'?[30,70]:[101])]){
+      const ret=await db.returnCase.create({data:{orderId:f.order.orderId,status:value===999?'DRAFT':'POSTED',reasonCode:'TEST',occurredAt:new Date(),idempotencyKey:randomUUID(),correlationId:randomUUID()}});
+      await db.returnLine.create({data:{returnCaseId:ret.returnCaseId,orderLineId:line.orderLineId,quantity:0.1,returnAmount:1,gpvReversalAmount:value}});
+    }
+    if(mode==='excess'){await expect(f.read()).rejects.toMatchObject({response:{code:'RETURN_AMOUNT_EXCEEDED'}});return;}
+    const first=(await f.read()).economicEvidence;
+    expect(first.gpvRetention).toEqual(expect.arrayContaining([expect.objectContaining({status:'SOURCE_LINE_UNAVAILABLE',retainedGpv:null}),expect.objectContaining({status:'CALCULATED_FROM_POSTED_RETURNS',basis:'CURRENT_POSTED_RETURN_STATE',originalGpv:'100',reversedGpv:mode==='none'?'0':mode==='partial'?'50':'100',retainedGpv:mode==='none'?'100':mode==='partial'?'50':'0'})]));
+    expect(first.gpvRetention.find(row=>row.status==='CALCULATED_FROM_POSTED_RETURNS')!.returns).toHaveLength(mode==='none'?0:2);
+    expect((await f.read()).economicEvidence).toEqual(first);
+    for(const internal of [f.order.orderId,line.orderLineId,pv.eventId,f.q.qualificationId])expect(JSON.stringify(first.gpvRetention)).not.toContain(internal);
+    expect(await db.pvLedger.findUniqueOrThrow({where:{eventId:pv.eventId}})).toEqual(pv);
+  });
   it.each(['REFERRAL_K0','BINARY_K1','MATCHING_K2','GLOBAL'])('reports exact sealed %s period membership without allocating period awards',async kind=>{
     const {f,envelope,source}=await periodFixture(kind);
     const unrelated={...source,sourceId:randomUUID(),inputs:{eventId:randomUUID(),orderId:randomUUID(),volume:'899900'}};
@@ -131,6 +148,19 @@ describeDb('ORDER_ECONOMIC_EVIDENCE_REAL_DB',()=>{
       return;
     }
     const before=await db.entitlementReplayPosting.findMany({where:{actionKey}});
+    if(mode==='positive'){
+      const initial=(await f.read()).economicEvidence.returnReplays[0].recordedEffects.periods[0].postings[0].correctionAward as any;
+      expect(initial.payables).toEqual([]);
+      const payout=await db.payoutBatch.create({data:{periodStart:start,periodEnd:end,status:'READY',totalGross:12,totalRecovery:0,totalNet:12}});
+      const payoutLine=await db.payoutLine.create({data:{payoutBatchId:payout.payoutBatchId,recipientQualificationId:f.q.qualificationId,grossAmount:12,netAmount:12,detailJson:{privateBankDetail:'hidden'}}});
+      await db.payableEntry.create({data:{qualificationId:f.q.qualificationId,sourceType:'BONUS_AWARD',sourceId:before[0].correctionAwardId!,awardType:'BINARY',grossAmount:2,availableAt:start,status:'ALLOCATED',payoutLineId:payoutLine.payoutLineId,ruleVersionCode:'R1.0B'}});
+      await db.payableEntry.create({data:{qualificationId:f.q.qualificationId,sourceType:'MANUAL_TEST',sourceId:randomUUID(),awardType:'BINARY',grossAmount:10,availableAt:start,status:'ALLOCATED',payoutLineId:payoutLine.payoutLineId,ruleVersionCode:'R1.0B'}});
+      const service=new AdminOperationsService(db as any,new AuditService()),actor=randomUUID();
+      await service.approvePayout(payout.payoutBatchId,'FINANCE_REVIEW',actor,'FINANCE',undefined,randomUUID(),randomUUID());
+      await service.approvePayout(payout.payoutBatchId,'COMPLIANCE_REVIEW',randomUUID(),'COMPLIANCE_AUDIT',undefined,randomUUID(),randomUUID());
+      await service.exportPayout(payout.payoutBatchId,randomUUID(),actor,'FINANCE',randomUUID(),randomUUID());
+      for(const paidAmount of ['5','12'])await service.recordPayoutResults(payout.payoutBatchId,{results:[{payoutLineId:payoutLine.payoutLineId,status:'PAID',paidAmount,paymentReference:`PRIVATE-BANK-${paidAmount}`}]},actor,'FINANCE',randomUUID(),randomUUID());
+    }
     const first=(await f.read()).economicEvidence;
     const evidence=first.returnReplays[0].recordedEffects;
     expect(evidence.status).toBe(mode==='noEffects'?'NO_RECORDED_EFFECTS':'RECORDED_EFFECTS');
@@ -143,6 +173,12 @@ describeDb('ORDER_ECONOMIC_EVIDENCE_REAL_DB',()=>{
       expect(evidence.periods[0].postings).toHaveLength(1);
       expect(evidence.periods[0].postings[0]).toMatchObject({entitlementReference:first.returnReplays[0].periods[0].awardChanges[0].entitlementReference,delta:mode==='positive'?'2':'-2',correctionAward:mode==='positive'?expect.objectContaining({amount:'2'}):null,recovery:mode==='negative'?expect.objectContaining({amount:'2',outstandingAmount:'2'}):null});
       expect(evidence.periods[0].carryProjections).toEqual([expect.objectContaining({recipients:[expect.objectContaining({left:'80',right:'0',pairedPv:'20'})]})]);
+      if(mode==='positive'){
+        const correction=evidence.periods[0].postings[0].correctionAward as any;
+        expect(correction.payables).toHaveLength(1);
+        expect(correction.payables[0]).toMatchObject({grossAmount:'2',status:'PAID',payout:{attribution:'WHOLE_PAYOUT_LINE_NOT_CORRECTION_ALLOCATION',paymentAmountBasis:'CUMULATIVE_LINE_REPORTS_NOT_ADDITIVE',netAmount:'12',batchStatus:'PAID',paymentResults:[expect.objectContaining({reportedPaidAmount:'5'}),expect.objectContaining({reportedPaidAmount:'12'})]}});
+        expect(JSON.stringify(evidence)).not.toMatch(/PRIVATE-BANK|privateBankDetail/);
+      }
     }
     expect((await f.read()).economicEvidence).toEqual(first);
     expect(await db.entitlementReplayPosting.findMany({where:{actionKey}})).toEqual(before);
