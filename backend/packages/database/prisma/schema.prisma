@@ -137,6 +137,31 @@ enum LearningEnrollmentStatus {
   @@schema("learning")
 }
 
+enum MemberEventStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+
+  @@schema("learning")
+}
+
+enum MemberEventType {
+  ONLINE
+  OFFLINE
+  HYBRID
+
+  @@schema("learning")
+}
+
+enum MemberEventRegistrationStatus {
+  REGISTERED
+  CANCELLED
+  CHECKED_IN
+  ATTENDED
+
+  @@schema("learning")
+}
+
 enum ApplicationStatus {
   DRAFT
   SUBMITTED
@@ -689,6 +714,7 @@ model Person {
   paperApplications          PaperApplication[]
   paperIdentityFingerprints  PaperPersonIdentityFingerprint[]
   learningEnrollments        LearningEnrollment[]
+  eventRegistrations         MemberEventRegistration[]
 
   @@index([legalName])
   @@index([mobile])
@@ -1157,6 +1183,69 @@ model LearningProgressEvent {
 
   @@index([learningEnrollmentId, occurredAt])
   @@map("learning_progress_event")
+  @@schema("learning")
+}
+
+model MemberEvent {
+  memberEventId String            @id @default(uuid()) @map("member_event_id") @db.Uuid
+  eventCode     String            @unique @map("event_code")
+  status        MemberEventStatus @default(DRAFT)
+  createdByActor String           @map("created_by_actor")
+  createdAt     DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime          @updatedAt @map("updated_at") @db.Timestamptz(6)
+  versions      MemberEventVersion[]
+  registrations MemberEventRegistration[]
+
+  @@map("member_event")
+  @@schema("learning")
+}
+
+model MemberEventVersion {
+  memberEventVersionId String            @id @default(uuid()) @map("member_event_version_id") @db.Uuid
+  memberEventId        String            @map("member_event_id") @db.Uuid
+  version              Int
+  title                String
+  description          String?
+  eventType            MemberEventType   @map("event_type")
+  startsAt             DateTime          @map("starts_at") @db.Timestamptz(6)
+  endsAt               DateTime          @map("ends_at") @db.Timestamptz(6)
+  locationReference    String?           @map("location_reference")
+  onlineJoinReference  String?           @map("online_join_reference")
+  capacity             Int?
+  audiencePolicy       String            @default("NETWORK_MEMBER") @map("audience_policy")
+  approvalReference    String?
+  approvedByActor      String?
+  approvedAt           DateTime?         @db.Timestamptz(6)
+  contentHash          String            @map("content_hash")
+  status               MemberEventStatus @default(DRAFT)
+  createdAt            DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+  event                MemberEvent       @relation(fields:[memberEventId],references:[memberEventId])
+  registrationEvidence MemberEventRegistration[] @relation("EventRegistrationVersion")
+
+  @@unique([memberEventId, version])
+  @@index([status, startsAt])
+  @@map("member_event_version")
+  @@schema("learning")
+}
+
+model MemberEventRegistration {
+  memberEventRegistrationId String                        @id @default(uuid()) @map("member_event_registration_id") @db.Uuid
+  memberEventId             String                        @map("member_event_id") @db.Uuid
+  memberEventVersionId      String                        @map("member_event_version_id") @db.Uuid
+  personId                  String                        @map("person_id") @db.Uuid
+  status                    MemberEventRegistrationStatus @default(REGISTERED)
+  checkInTokenHash          String                        @unique @map("check_in_token_hash")
+  registeredAt              DateTime                      @default(now()) @map("registered_at") @db.Timestamptz(6)
+  cancelledAt               DateTime?                     @map("cancelled_at") @db.Timestamptz(6)
+  checkedInAt               DateTime?                     @map("checked_in_at") @db.Timestamptz(6)
+  attendedAt                DateTime?                     @map("attended_at") @db.Timestamptz(6)
+  event                     MemberEvent                   @relation(fields:[memberEventId],references:[memberEventId])
+  eventVersion              MemberEventVersion            @relation("EventRegistrationVersion",fields:[memberEventVersionId],references:[memberEventVersionId])
+  person                    Person                        @relation(fields:[personId],references:[personId])
+
+  @@unique([memberEventId, personId])
+  @@index([memberEventId, status, registeredAt])
+  @@map("member_event_registration")
   @@schema("learning")
 }
 
