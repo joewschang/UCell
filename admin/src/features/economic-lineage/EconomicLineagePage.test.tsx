@@ -43,6 +43,13 @@ it('shows stored input conditions without claiming zero award or completed recog
  for(const label of ['當時未啟用零售推薦','當時未記錄推薦人','不推定為零金額或認列完成','實際資格與處理結果仍須認列證據'])expect(output).toContain(label);
  expect(output).not.toContain('可得金額');act(()=>view.unmount());
 });
+it('distinguishes recorded zero consumption from missing eligible PV',async()=>{
+ vi.mocked(get).mockResolvedValue({data:{...fixture,economicEvidence:{consumptionRecognitions:[{basis:'RECORDED_CONSUMPTION_DECISION',pvType:'EPV',eligible:false,eligibleAmount:'0',exclusionReasonCode:'ZERO_ELIGIBLE_AMOUNT',volumeEvidence:'NO_RECORDED_VOLUME',recognizedAt:'2026-09-01T00:00:00Z'},{basis:'RECORDED_CONSUMPTION_DECISION',pvType:'GPV',eligible:true,eligibleAmount:'100',volumeEvidence:'NO_RECORDED_VOLUME'}]}}});
+ const view=await render();await vi.waitFor(()=>expect(JSON.stringify(view.toJSON())).toContain('消費認列結果'));
+ const output=JSON.stringify(view.toJSON());
+ for(const label of ['符合資格的認列量','符合資格的金額為零','已記錄為不符合認列資格，認列量為零。','尚無對應 PV 紀錄；不能推定已完成後續入帳。'])expect(output).toContain(label);
+ expect(output).not.toContain('可得金額');act(()=>view.unmount());
+});
 it('hides cached financial evidence after a failed refresh and allows retry',async()=>{
  const view=await render();await vi.waitFor(()=>expect(JSON.stringify(view.toJSON())).toContain('零售推薦獎金'));
  vi.mocked(get).mockRejectedValueOnce(new Error('連線失敗'));

@@ -8,6 +8,25 @@ import {readOrderRetailSnapshots} from '../order/retail-referral-snapshot-read';
 // References join this projection without exposing internal UUIDs or identities.
 const reference = (kind:string,id:string) => `${kind}:${createHash('sha256').update(`${kind}:${id}`).digest('hex')}`;
 
+/** Recorded decisions exist even when eligibility excluded all volume. */
+async function consumptionRecognitions(tx:Prisma.TransactionClient,orderId:string,pv:PvLedger[],lineIds:string[]){
+  const rows=await tx.consumptionRecognitionEvent.findMany({where:{sourceType:'ORDER',sourceId:orderId,direction:'ORIGINAL',recognitionPurpose:{in:['GPV','EPV']}},orderBy:[{recognizedAt:'asc'},{consumptionRecognitionEventId:'asc'}]});
+  return rows.map(row=>{
+    if(row.sourceLineId&&!lineIds.includes(row.sourceLineId))pending('HISTORICAL_SNAPSHOT_CORRUPT','Consumption recognition line belongs to another order');
+    const volumes=pv.filter(event=>event.sourceLineId===row.sourceLineId&&event.pvType===row.recognitionPurpose&&event.eventType===`${row.recognitionPurpose}_CREATED`);
+    const volume=volumes[0]??null;
+    if(volumes.length>1||(!row.eligible&&(!row.eligibleAmount.eq(0)||!row.exclusionReasonCode||volume))||
+      (row.eligible&&(row.eligibleAmount.lte(0)||row.exclusionReasonCode!==null))||
+      (volume&&(volume.qualificationId!==row.qualificationId||!volume.amount.eq(row.eligibleAmount)||volume.ruleVersionCode!==row.ruleVersionCode||volume.occurredAt.getTime()!==row.recognizedAt.getTime())))
+      pending('HISTORICAL_SNAPSHOT_CORRUPT','Consumption decision conflicts with its original volume');
+    return {reference:reference('CONSUMPTION_RECOGNITION',row.consumptionRecognitionEventId),sourceOrderLineReference:row.sourceLineId?reference('ORDER_LINE',row.sourceLineId):null,
+      sourcePvReference:volume?reference('PV',volume.eventId):null,basis:'RECORDED_CONSUMPTION_DECISION',pvType:row.recognitionPurpose,
+      eligible:row.eligible,eligibleAmount:row.eligibleAmount.toString(),exclusionReasonCode:row.exclusionReasonCode,
+      volumeEvidence:volume?'RECORDED_VOLUME':'NO_RECORDED_VOLUME',recognizedAt:row.recognizedAt.toISOString(),recordedAt:row.createdAt.toISOString(),
+      recognitionMonth:row.recognitionMonth.toISOString(),ruleVersionCode:row.ruleVersionCode,parameterSnapshotHash:row.parameterSnapshotHash};
+  });
+}
+
 async function gpvRetention(tx:Prisma.TransactionClient,orderId:string,pv:PvLedger[]){
   const originals=pv.filter(row=>row.pvType==='GPV'&&row.eventType==='GPV_CREATED');
   const lineIds=originals.flatMap(row=>row.sourceLineId?[row.sourceLineId]:[]);
@@ -204,6 +223,7 @@ export async function orderEconomicEvidence(tx:Prisma.TransactionClient,orderId:
     gpvRetention:await gpvRetention(tx,orderId,pv),
     epvRetentions,
     retailRecognitionInputs,
+    consumptionRecognitions:await consumptionRecognitions(tx,orderId,pv,orderLines.map(row=>row.orderLineId)),
     returnReplays:await returnReplayEvidence(tx,returnIds),
     pvEvents:pv.map(row=>({reference:reference('PV',row.eventId),pvType:row.pvType,eventType:row.eventType,amount:row.amount.toString(),occurredAt:row.occurredAt.toISOString()})),
     awards:[...awards.values()].sort((a,b)=>a.occurredAt.getTime()-b.occurredAt.getTime()||a.bonusAwardId.localeCompare(b.bonusAwardId)).map(row=>({reference:reference('AWARD',row.bonusAwardId),sourcePvReference:row.sourceEventId&&pv.some(p=>p.eventId===row.sourceEventId)?reference('PV',row.sourceEventId):null,sourceAwardReference:row.sourceAwardId&&awards.has(row.sourceAwardId)?reference('AWARD',row.sourceAwardId):null,sourceOrderLineReference:row.awardType==='RETAIL_REFERRAL'&&orderLines.some(line=>line.orderLineId===row.sourceEventId)?reference('ORDER_LINE',row.sourceEventId!):null,retailRecognition:row.awardType==='RETAIL_REFERRAL'?retailRecognition.get(row.bonusAwardId)??null:null,activeAtRecognition:row.activeSnapshot,kFactor:row.kFactor.toString(),awardType:row.awardType,theoryAmount:row.theoryAmount.toString(),payableAmount:row.payableAmount.toString(),occurredAt:row.occurredAt.toISOString(),ruleVersionCode:row.ruleVersionCode,parameterSnapshotHash:row.parameterSnapshotHash})),

@@ -1,6 +1,6 @@
 import {PrismaClient,Prisma} from '@prisma/client';
 import {randomUUID} from 'node:crypto';
-import {appendEntitlementDelta,captureParameters,storeReplaySnapshot} from '@ucell/database';
+import {appendEntitlementDelta,captureParameters,storeReplaySnapshot,recognizeConsumption} from '@ucell/database';
 import {AdminOperationsService} from '../src/modules/admin-operations/admin-operations.service';
 import {AuditService} from '../src/common/audit/audit.service';
 import {RecoveryBalanceService} from '../src/modules/payout/recovery-balance.service';
@@ -34,6 +34,29 @@ describeDb('ORDER_ECONOMIC_EVIDENCE_REAL_DB',()=>{
     const json=JSON.stringify(first);
     for(const secret of [f.person.personId,f.q.qualificationId,f.order.orderId,direct.bonusAwardId,child.bonusAwardId,unrelated.bonusAwardId,payable.payableEntryId,'Private lineage holder','privateNote']) expect(json).not.toContain(secret);
     expect(await db.payableEntry.findUniqueOrThrow({where:{payableEntryId:payable.payableEntryId}})).toEqual(payable);
+  });
+  it.each([['GPV',true],['GPV',false],['EPV',true],['EPV',false]] as const)('projects actual %s recognition with eligibility %s including zero decisions',async(purpose,eligible)=>{
+    const f=await fixture(),other=await fixture();
+    const product=await db.productReference.create({data:{sku:randomUUID(),displayName:'Recognition input',currentPrice:100}});
+    const line=await db.orderLine.create({data:{orderId:f.order.orderId,productId:product.productId,skuSnapshot:product.sku,productNameSnapshot:'Recognition input',quantity:1,unitPrice:100,lineAmount:100,gpvRateSnapshot:1,gpvAmountSnapshot:100,ruleProfileSnapshot:{}}});
+    const input={qualificationId:f.q.qualificationId,sourceType:'ORDER',sourceId:f.order.orderId,sourceLineId:line.orderLineId,amount:100,eligible,exclusionReasonCode:'ZERO_ELIGIBLE_AMOUNT',concreteVolumeType:purpose,productProfileVersion:randomUUID(),ruleVersionCode:'R1',parameterSnapshotHash:'a'.repeat(64),recognizedAt:new Date('2026-09-10T00:00:00Z'),activeThreshold:1200};
+    const original=await db.$transaction(tx=>recognizeConsumption(tx,input),{isolationLevel:Prisma.TransactionIsolationLevel.Serializable});
+    const otherLine=await db.orderLine.create({data:{orderId:other.order.orderId,productId:product.productId,skuSnapshot:product.sku,productNameSnapshot:'Other recognition input',quantity:1,unitPrice:100,lineAmount:100,gpvRateSnapshot:1,gpvAmountSnapshot:100,ruleProfileSnapshot:{}}});
+    await db.$transaction(tx=>recognizeConsumption(tx,{...input,sourceId:other.order.orderId,sourceLineId:otherLine.orderLineId}),{isolationLevel:Prisma.TransactionIsolationLevel.Serializable});
+    const evidence=(await f.read()).economicEvidence;
+    expect(evidence.consumptionRecognitions).toEqual([expect.objectContaining({basis:'RECORDED_CONSUMPTION_DECISION',pvType:purpose,eligible,eligibleAmount:eligible?'100':'0',exclusionReasonCode:eligible?null:'ZERO_ELIGIBLE_AMOUNT',volumeEvidence:eligible?'RECORDED_VOLUME':'NO_RECORDED_VOLUME',sourcePvReference:eligible?expect.any(String):null})]);
+    if(eligible)expect(evidence.pvEvents.map(row=>row.reference)).toContain(evidence.consumptionRecognitions[0].sourcePvReference);
+    expect((await f.read()).economicEvidence).toEqual(evidence);
+    for(const secret of [f.q.qualificationId,line.orderLineId,original.recognition.consumptionRecognitionEventId,input.productProfileVersion,original.recognition.correlationId])expect(JSON.stringify(evidence.consumptionRecognitions)).not.toContain(secret);
+    expect(await db.consumptionRecognitionEvent.findUnique({where:{consumptionRecognitionEventId:original.recognition.consumptionRecognitionEventId}})).toEqual(original.recognition);
+  });
+  it.each(['foreignLine','conflictingVolume','missingVolume'])('checks stored consumption evidence boundaries: %s',async mode=>{
+    const f=await fixture(),other=await fixture();
+    const product=await db.productReference.create({data:{sku:randomUUID(),displayName:'Recognition conflict',currentPrice:100}});
+    const line=await db.orderLine.create({data:{orderId:mode==='foreignLine'?other.order.orderId:f.order.orderId,productId:product.productId,skuSnapshot:product.sku,productNameSnapshot:'Recognition conflict',quantity:1,unitPrice:100,lineAmount:100,gpvRateSnapshot:1,gpvAmountSnapshot:100,ruleProfileSnapshot:{}}});
+    await db.consumptionRecognitionEvent.create({data:{qualificationId:f.q.qualificationId,sourceType:'ORDER',sourceId:f.order.orderId,sourceLineId:mode==='conflictingVolume'?null:line.orderLineId,eligible:mode==='missingVolume',eligibleAmount:mode==='missingVolume'?100:0,exclusionReasonCode:mode==='missingVolume'?null:'ZERO_ELIGIBLE_AMOUNT',recognitionPurpose:'GPV',productProfileVersion:'TEST',ruleVersionCode:'R1',parameterSnapshotHash:'a'.repeat(64),recognizedAt:f.pv.occurredAt,recognitionMonth:new Date('2026-09-01'),idempotencyKey:randomUUID(),correlationId:randomUUID(),evidenceHash:'b'.repeat(64)}});
+    if(mode==='missingVolume')expect((await f.read()).economicEvidence.consumptionRecognitions).toEqual([expect.objectContaining({eligible:true,eligibleAmount:'100',volumeEvidence:'NO_RECORDED_VOLUME',sourcePvReference:null})]);
+    else await expect(f.read()).rejects.toMatchObject({response:{code:'HISTORICAL_SNAPSHOT_CORRUPT'}});
   });
   async function periodFixture(kind:string){
     const f=await fixture('R1.0B'),at=f.pv.occurredAt;
