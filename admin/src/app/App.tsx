@@ -32,6 +32,7 @@ import {ExistingMemberLineLinksPage} from '../features/line-links/ExistingMember
 import {PaperIntakePage} from '../features/paper-intake/PaperIntakePage';
 import {FulfillmentPage} from '../features/fulfillment/FulfillmentPage';
 import {SettlementJobsPage} from '../features/settlement-jobs/SettlementJobsPage';
+import {ErpReconciliationPage} from '../features/erp-reconciliation/ErpReconciliationPage';
 
 function Protected(){const {user,ready}=useAuth();if(!ready)return <div className="app-loading">驗證管理員Session…</div>;return user?<AppShell/>:<Navigate to="/login" replace/>}
 export function App(){return <Routes>
@@ -49,6 +50,7 @@ export function App(){return <Routes>
   <Route path="/orders" element={<RequirePageRole><OrdersPage/></RequirePageRole>}/>
   <Route path="/economic-lineage" element={<RequirePageRole><EconomicLineagePage/></RequirePageRole>}/>
   <Route path="/fulfillment" element={<RequirePageRole><FulfillmentPage/></RequirePageRole>}/>
+  <Route path="/erp-reconciliation" element={<RequirePageRole><ErpReconciliationPage/></RequirePageRole>}/>
   <Route path="/admin/organization/trees/:id?" element={<RequirePageRole><BinaryTreesPage/></RequirePageRole>}/>
   <Route path="/organization" element={<RequirePageRole><OrganizationPage/></RequirePageRole>}/>
   <Route path="/subscriptions" element={<RequirePageRole><SubscriptionsPage/></RequirePageRole>}/>

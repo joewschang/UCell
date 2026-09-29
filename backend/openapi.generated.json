@@ -588,6 +588,100 @@
         ]
       }
     },
+    "/api/v1/admin/erp-reconciliation": {
+      "get": {
+        "description": "Snapshot-consistent, bounded operational view. ERP acceptance never implies UCell payment or physical shipment.",
+        "operationId": "adminErpReconciliationBridge",
+        "parameters": [
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "READY",
+                "QUEUED",
+                "SENT",
+                "ACKNOWLEDGED",
+                "RECONCILED",
+                "MISMATCH",
+                "FAILED",
+                "BLOCKED_EXTERNAL"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "orderNo",
+            "required": false,
+            "in": "query",
+            "description": "Public order number",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "take",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 50
+            }
+          },
+          {
+            "name": "asOf",
+            "required": false,
+            "in": "query",
+            "description": "ISO-8601 snapshot cutoff returned by the first page",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "Opaque continuation token returned by the previous page",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Privacy-safe authoritative reconciliation bridge page",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErpBridgeEnvelopeDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid filters, cutoff or cursor"
+          },
+          "401": {
+            "description": "Admin authentication required"
+          },
+          "403": {
+            "description": "Order, finance or compliance role required"
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "Read provider-neutral UCell, ERP and shipment reconciliation evidence",
+        "tags": [
+          "Admin - ERP Reconciliation Bridge"
+        ]
+      }
+    },
     "/api/v1/admin/finance/reservoirs": {
       "get": {
         "description": "Finance-confidential immutable sources. Read-only; signed replay correction is not a payout. Stable UUID cursor within server snapshot. A rejects tree/position/awardType filters.",
@@ -15156,6 +15250,301 @@
         "required": [
           "returnReference",
           "serialNos"
+        ]
+      },
+      "ErpBridgeUcellDto": {
+        "type": "object",
+        "properties": {
+          "orderStatus": {
+            "type": "string"
+          },
+          "fulfillmentStatus": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "orderStatus",
+          "fulfillmentStatus"
+        ]
+      },
+      "ErpBridgeLineDto": {
+        "type": "object",
+        "properties": {
+          "sku": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "string"
+          },
+          "serialCount": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "sku",
+          "quantity",
+          "serialCount"
+        ]
+      },
+      "ErpBridgeErpDto": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "type": "string"
+          },
+          "connection": {
+            "type": "object",
+            "nullable": true
+          },
+          "formatVersion": {
+            "type": "string"
+          },
+          "outboxStatus": {
+            "type": "string"
+          },
+          "attemptCount": {
+            "type": "number"
+          },
+          "latestAttemptOutcome": {
+            "type": "object",
+            "nullable": true
+          },
+          "providerReference": {
+            "type": "object",
+            "nullable": true
+          },
+          "expected": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ErpBridgeLineDto"
+            }
+          },
+          "actual": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ErpBridgeLineDto"
+            }
+          },
+          "reconciliationOutcome": {
+            "type": "object",
+            "nullable": true
+          },
+          "reasonCode": {
+            "type": "object",
+            "nullable": true
+          }
+        },
+        "required": [
+          "provider",
+          "connection",
+          "formatVersion",
+          "outboxStatus",
+          "attemptCount",
+          "latestAttemptOutcome",
+          "providerReference",
+          "expected",
+          "actual",
+          "reconciliationOutcome",
+          "reasonCode"
+        ]
+      },
+      "ErpBridgeShipmentDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string"
+          },
+          "count": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "status",
+          "count"
+        ]
+      },
+      "ErpBridgeEvidenceDto": {
+        "type": "object",
+        "properties": {
+          "payloadHash": {
+            "type": "string"
+          },
+          "resultHash": {
+            "type": "object",
+            "nullable": true
+          },
+          "exceptionReference": {
+            "type": "object",
+            "nullable": true
+          },
+          "exceptionCode": {
+            "type": "object",
+            "nullable": true
+          },
+          "exceptionSeverity": {
+            "type": "object",
+            "nullable": true
+          },
+          "exceptionStatus": {
+            "type": "object",
+            "nullable": true
+          }
+        },
+        "required": [
+          "payloadHash",
+          "resultHash",
+          "exceptionReference",
+          "exceptionCode",
+          "exceptionSeverity",
+          "exceptionStatus"
+        ]
+      },
+      "ErpBridgeTimestampsDto": {
+        "type": "object",
+        "properties": {
+          "queuedAt": {
+            "type": "string"
+          },
+          "sentAt": {
+            "type": "object",
+            "nullable": true
+          },
+          "acknowledgedAt": {
+            "type": "object",
+            "nullable": true
+          },
+          "reconciledAt": {
+            "type": "object",
+            "nullable": true
+          },
+          "dataThrough": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "queuedAt",
+          "sentAt",
+          "acknowledgedAt",
+          "reconciledAt",
+          "dataThrough"
+        ]
+      },
+      "ErpBridgeItemDto": {
+        "type": "object",
+        "properties": {
+          "orderNo": {
+            "type": "string"
+          },
+          "fulfillmentKey": {
+            "type": "string"
+          },
+          "bridgeStatus": {
+            "type": "string",
+            "enum": [
+              "READY",
+              "QUEUED",
+              "SENT",
+              "ACKNOWLEDGED",
+              "RECONCILED",
+              "MISMATCH",
+              "FAILED",
+              "BLOCKED_EXTERNAL"
+            ]
+          },
+          "ucell": {
+            "$ref": "#/components/schemas/ErpBridgeUcellDto"
+          },
+          "erp": {
+            "$ref": "#/components/schemas/ErpBridgeErpDto"
+          },
+          "shipment": {
+            "$ref": "#/components/schemas/ErpBridgeShipmentDto"
+          },
+          "evidence": {
+            "$ref": "#/components/schemas/ErpBridgeEvidenceDto"
+          },
+          "timestamps": {
+            "$ref": "#/components/schemas/ErpBridgeTimestampsDto"
+          }
+        },
+        "required": [
+          "orderNo",
+          "fulfillmentKey",
+          "bridgeStatus",
+          "ucell",
+          "erp",
+          "shipment",
+          "evidence",
+          "timestamps"
+        ]
+      },
+      "ErpBridgeAuthorityDto": {
+        "type": "object",
+        "properties": {
+          "ucell": {
+            "type": "string"
+          },
+          "erp": {
+            "type": "string"
+          },
+          "shipment": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "ucell",
+          "erp",
+          "shipment"
+        ]
+      },
+      "ErpBridgePageDto": {
+        "type": "object",
+        "properties": {
+          "asOf": {
+            "type": "string"
+          },
+          "dataThrough": {
+            "type": "string"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ErpBridgeItemDto"
+            }
+          },
+          "nextCursor": {
+            "type": "object",
+            "nullable": true
+          },
+          "limit": {
+            "type": "number"
+          },
+          "authority": {
+            "$ref": "#/components/schemas/ErpBridgeAuthorityDto"
+          },
+          "liveTransportStatus": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "asOf",
+          "dataThrough",
+          "items",
+          "nextCursor",
+          "limit",
+          "authority",
+          "liveTransportStatus"
+        ]
+      },
+      "ErpBridgeEnvelopeDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/ErpBridgePageDto"
+          }
+        },
+        "required": [
+          "data"
         ]
       },
       "CreateTreeDto": {

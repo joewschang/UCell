@@ -13,6 +13,7 @@ export const pageRoles:Record<string,AdminRole[]>={
   '/economic-lineage':['SUPER_ADMIN','ORDER_OPS','FINANCE','COMPLIANCE_AUDIT'],
   '/orders':['SUPER_ADMIN','ORDER_OPS','FINANCE','COMPLIANCE_AUDIT'],
   '/fulfillment':['SUPER_ADMIN','ORDER_OPS','COMPLIANCE_AUDIT'],
+  '/erp-reconciliation':['SUPER_ADMIN','ORDER_OPS','FINANCE','COMPLIANCE_AUDIT'],
   '/admin/organization/trees':['SUPER_ADMIN','MEMBERSHIP_OPS','QUALIFICATION_PLACEMENT_OVERRIDE','COMPLIANCE_AUDIT'],
   '/organization':['SUPER_ADMIN','MEMBERSHIP_OPS','COMPLIANCE_AUDIT'],
   '/subscriptions':['SUPER_ADMIN','ORDER_OPS','FINANCE','COMPLIANCE_AUDIT'],

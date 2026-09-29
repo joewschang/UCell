@@ -10,5 +10,7 @@ import {FulfillmentPackVerificationService} from './fulfillment-pack-verificatio
 import {FulfillmentErpHandoffService} from './fulfillment-erp-handoff.service';
 import {FulfillmentSourceAllocationService} from './fulfillment-source-allocation.service';
 import {FulfillmentErpReconciliationService} from './fulfillment-erp-reconciliation.service';
-@Module({controllers:[FulfillmentOperationsController],providers:[FulfillmentOperationsService,FulfillmentSerialScanService,FulfillmentPackVerificationService,FulfillmentErpHandoffService,FulfillmentSourceAllocationService,FulfillmentErpReconciliationService,FulfillmentSerialProvenanceService,FulfillmentDeliveryService,PiiCryptoService,FulfillmentShipmentService]})
+import {ErpReconciliationBridgeController} from './erp-reconciliation-bridge.controller';
+import {ErpReconciliationBridgeService} from './erp-reconciliation-bridge.service';
+@Module({controllers:[FulfillmentOperationsController,ErpReconciliationBridgeController],providers:[FulfillmentOperationsService,FulfillmentSerialScanService,FulfillmentPackVerificationService,FulfillmentErpHandoffService,FulfillmentSourceAllocationService,FulfillmentErpReconciliationService,FulfillmentSerialProvenanceService,FulfillmentDeliveryService,PiiCryptoService,FulfillmentShipmentService,ErpReconciliationBridgeService]})
 export class FulfillmentOperationsModule{}

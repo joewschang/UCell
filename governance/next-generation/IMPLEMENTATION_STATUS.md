@@ -1,5 +1,7 @@
 # Phase 1 Local Development Closure — 2026-09-26
 
+**2026-09-29 §35 ERP reconciliation bridge checkpoint:** a provider-neutral, read-only Admin API/page now separates UCell Order/Fulfillment, stored ERP handoff/dispatch/reconciliation, and Shipment authority. Snapshot-cutoff pagination uses only business-safe continuation data; responses exclude UUIDs, actors, delivery PII, credentials and raw payloads. Focused API **4 tests**, real PostgreSQL **1 test** after fresh **0→109** plus **162 DB assertions**, Admin focused **1 test** and full **38 files / 146 tests**, API/Admin builds and generated OpenAPI preflight PASS (**216 paths / 234 operations / 113 schemas**). `EZTOOL_LIVE_TRANSPORT=BLOCKED_EXTERNAL`; compensation period control and other §35 streams remain open. See [ERP reconciliation bridge evidence](ERP_RECONCILIATION_BRIDGE_20260929.md). No Stage/Production deployment.
+
 **2026-09-29 governed change record:** the approved §36 same-order/same-Shipment/same-SKU returned-unit substitution is implemented locally as migration 109. It preserves original physical provenance and ReturnCase economic authority, adds append-only rule/evidence receipts, fail-closed eligibility/concurrency checks and privacy-safe Admin evidence. Local focused DB/UI/build/preflight evidence is in `SAME_SKU_RETURN_SUBSTITUTION_20260929.md`. This is an approved post-baseline change candidate and has not been deployed to Stage or Production.
 
 **PHASE_1_LOCAL_DEVELOPMENT = CLOSED**  

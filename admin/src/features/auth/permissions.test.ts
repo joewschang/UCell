@@ -33,4 +33,9 @@ describe('Admin page access boundaries', () => {
     expect(canOpen('COMPLIANCE_AUDIT','/provider-operations')).toBe(true);
     expect(canOpen('MEMBERSHIP_OPS','/provider-operations')).toBe(false);
   });
+  it('matches ERP reconciliation read roles',()=>{
+    for(const role of ['SUPER_ADMIN','ORDER_OPS','FINANCE','COMPLIANCE_AUDIT'] as const)expect(canOpen(role,'/erp-reconciliation')).toBe(true);
+    expect(canOpen('MEMBERSHIP_OPS','/erp-reconciliation')).toBe(false);
+    expect(canOpen('CUSTOMER_SERVICE','/erp-reconciliation')).toBe(false);
+  });
 });
