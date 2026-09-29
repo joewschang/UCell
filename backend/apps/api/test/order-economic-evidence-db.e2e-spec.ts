@@ -99,6 +99,13 @@ describeDb('ORDER_ECONOMIC_EVIDENCE_REAL_DB',()=>{
     await expect(f.read()).rejects.toMatchObject({response:{code:'HISTORICAL_SNAPSHOT_CORRUPT'}});
     });
   });
+  it.each(['source','rule'])('rejects GPV theory with inconsistent %s evidence',async fault=>{
+    await rollbackCase(async()=>{
+      const f=await fixture(),other=await fixture();
+      await db.theoryCalculationEvidence.create({data:{theoryKind:'REFERRAL',sourceVolumeEventId:f.pv.eventId,sourceQualificationId:fault==='source'?other.q.qualificationId:f.q.qualificationId,recipientQualificationId:other.q.qualificationId,fixedGenerationNo:1,baseAmount:100,rateSnapshot:0.1,theoryAmount:10,activeSnapshot:true,unlockEligibleSnapshot:true,reasonCode:'ELIGIBLE',historicalSponsorPathHash:'a'.repeat(64),ruleVersionCode:fault==='rule'?'OTHER':'R1',parameterSnapshotHash:'b'.repeat(64),occurredAt:f.pv.occurredAt,idempotencyKey:randomUUID()}});
+      await expect(f.read()).rejects.toMatchObject({response:{code:'HISTORICAL_SNAPSHOT_CORRUPT'}});
+    });
+  });
   async function periodFixture(kind:string){
     const f=await fixture('R1.0B'),at=f.pv.occurredAt;
     const parameters=await db.$transaction(tx=>captureParameters(tx,at,'R1.0B'));

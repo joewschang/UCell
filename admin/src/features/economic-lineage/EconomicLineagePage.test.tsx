@@ -63,6 +63,13 @@ it('shows superseded Active evidence without claiming current qualification',asy
  for(const label of ['歷史資格區間已取消','被替代的歷史區間','不代表目前 Active 狀態','月差額不能相加'])expect(JSON.stringify(view.toJSON())).toContain(label);
  act(()=>view.unmount());
 });
+it('shows zero historical theory and its reason separately from final entitlement',async()=>{
+ vi.mocked(get).mockResolvedValue({data:{...fixture,economicEvidence:{theoryCalculations:[{basis:'ORIGINAL_THEORY_NOT_FINAL_ENTITLEMENT',theoryKind:'REFERRAL_MATCHING',generation:2,baseAmount:'150',rate:'0.1',theoryAmount:'0',activeAtRecognition:false,unlockEligible:true,reasonCode:'HISTORICAL_INACTIVE',recipientReference:'PRIVATE-RECIPIENT',occurredAt:'2026-09-01T00:00:00Z'}]}}});
+ const view=await render();await vi.waitFor(()=>expect(JSON.stringify(view.toJSON())).toContain('GPV 理論計算依據'));
+ const output=JSON.stringify(view.toJSON());
+ for(const label of ['平級','當時未符合 Active','當時代數已解鎖','不代表最終可領獎金'])expect(output).toContain(label);
+ expect(output).not.toContain('PRIVATE-RECIPIENT');expect(output).not.toContain('可得金額');act(()=>view.unmount());
+});
 it('hides cached financial evidence after a failed refresh and allows retry',async()=>{
  const view=await render();await vi.waitFor(()=>expect(JSON.stringify(view.toJSON())).toContain('零售推薦獎金'));
  vi.mocked(get).mockRejectedValueOnce(new Error('連線失敗'));

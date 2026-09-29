@@ -137,6 +137,16 @@ async function periodContributions(tx:Prisma.TransactionClient,orderId:string,pv
 export async function orderEconomicEvidence(tx:Prisma.TransactionClient,orderId:string,returnIds:string[]){
   const pv=await tx.pvLedger.findMany({where:{sourceType:'ORDER',sourceId:orderId},orderBy:[{occurredAt:'asc'},{eventId:'asc'}]});
   const orderLines=await tx.orderLine.findMany({where:{orderId},select:{orderLineId:true}});
+  const theorySources=pv.filter(row=>row.pvType==='GPV'&&row.eventType==='GPV_CREATED');
+  const theoryRows=await tx.theoryCalculationEvidence.findMany({where:{sourceVolumeEventId:{in:theorySources.map(row=>row.eventId)}},orderBy:[{occurredAt:'asc'},{fixedGenerationNo:'asc'},{theoryCalculationEvidenceId:'asc'}]});
+  const theoryCalculations=theoryRows.map(row=>{
+    const source=theorySources.find(event=>event.eventId===row.sourceVolumeEventId)!;
+    if(row.sourceQualificationId!==source.qualificationId||row.ruleVersionCode!==source.ruleVersionCode||row.occurredAt.getTime()!==source.occurredAt.getTime()||row.fixedGenerationNo<1)
+      pending('HISTORICAL_SNAPSHOT_CORRUPT','Theory evidence conflicts with its original GPV');
+    return {reference:reference('THEORY',row.theoryCalculationEvidenceId),sourcePvReference:reference('PV',row.sourceVolumeEventId),recipientReference:reference('ECONOMIC_RECIPIENT',row.recipientQualificationId),
+      basis:'ORIGINAL_THEORY_NOT_FINAL_ENTITLEMENT',theoryKind:row.theoryKind,generation:row.fixedGenerationNo,baseAmount:row.baseAmount.toString(),rate:row.rateSnapshot.toString(),theoryAmount:row.theoryAmount.toString(),
+      activeAtRecognition:row.activeSnapshot,unlockEligible:row.unlockEligibleSnapshot,reasonCode:row.reasonCode,ruleVersionCode:row.ruleVersionCode,parameterSnapshotHash:row.parameterSnapshotHash,occurredAt:row.occurredAt.toISOString(),recordedAt:row.createdAt.toISOString()};
+  });
   const direct=await tx.bonusAward.findMany({where:{OR:[{sourceEventId:{in:pv.map(row=>row.eventId)}},{awardType:'RETAIL_REFERRAL',sourceEventId:{in:orderLines.map(row=>row.orderLineId)}}]},orderBy:[{occurredAt:'asc'},{bonusAwardId:'asc'}]});
   const awards=new Map(direct.map(row=>[row.bonusAwardId,row]));
   let frontier=direct.map(row=>row.bonusAwardId);
@@ -233,6 +243,7 @@ export async function orderEconomicEvidence(tx:Prisma.TransactionClient,orderId:
     gpvRetention:await gpvRetention(tx,orderId,pv),
     epvRetentions,
     retailRecognitionInputs,
+    theoryCalculations,
     consumptionRecognitions:await consumptionRecognitions(tx,orderId,pv,orderLines.map(row=>row.orderLineId)),
     returnReplays:await returnReplayEvidence(tx,returnIds),
     returnActiveReplays:await returnActiveEvidence(tx,returnIds),

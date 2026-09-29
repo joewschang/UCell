@@ -23,6 +23,14 @@ The page presents dated events chronologically, with current/undated state separ
 
 ## Validation and limitations
 
+### Follow-up: GPV theory and zero-eligibility explanation
+
+`theoryCalculations` now joins TheoryCalculationEvidence through this order's exact original GPV event IDs, independently of Award existence. It exposes stored fixed generation, base, rate, theory amount, Active/unlock flags, reason, rule and timestamps with safe source/recipient references. Source qualification, rule and occurrence time must agree with the original GPV or the read fails closed. Historical path hashes, raw IDs and idempotency keys remain private. ORIGINAL_THEORY_NOT_FINAL_ENTITLEMENT prevents this read from implying final entitlement, settlement or payment. Equal-timestamp PV events appear before their theory details in the timeline.
+
+API build and focused isolated **2 suites / 59 tests PASS**, fresh **0→107 migrations**, **162 baseline assertions**, cleanup PASS. The actual applyGpvImmediateEffects DB fixture now reads its 150 / 0 / 7.5 fixed-generation theories, including the historical inactive reason, while awards/payables remain empty. It verifies unrelated same-recipient source exclusion, stable reads, privacy and unchanged theory rows. Two fault cases reject mismatched source qualification/rule. All new fixture work rolls back. Log: `C:/UCell/logs/theory-lineage-20260929.log`. Admin typecheck/build and full **36 files / 140 tests PASS**. Full API regression and browser acceptance were not rerun for this read-only addition.
+
+This projects immediate GPV theory evidence. Period settlement BonusCalculationEvidence, all-family final-entitlement certification and the complete common Explain contract remain separate work; REFERRAL_MATCHING is presented as the stored referral-derived equalization theory, not Binary Matching entitlement.
+
 ### Follow-up: return Active supersession and persistence repairs
 
 The order read now follows exact ReturnCase → reversal decision → accumulator → Active replacement/superseded interval links, labels whole-month and cumulative-delta boundaries, and never claims current eligibility from historical intervals. The actual shared writer tests exposed and repaired the Taipei timestamp-versus-DATE month lookup and the database constraint that rejected typed zero-length removal records. Migration 107 preserves old rows and permits only explicitly superseding inactive removals. See [Active return replay evidence](ACTIVE_RETURN_REPLAY_20260929.md).
