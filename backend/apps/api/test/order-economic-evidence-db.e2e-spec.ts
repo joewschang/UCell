@@ -348,6 +348,7 @@ describeDb('ORDER_ECONOMIC_EVIDENCE_REAL_DB',()=>{
       await service.approvePayout(payout.payoutBatchId,'COMPLIANCE_REVIEW',randomUUID(),'COMPLIANCE_AUDIT',undefined,randomUUID(),randomUUID());
       await service.exportPayout(payout.payoutBatchId,randomUUID(),actor,'FINANCE',randomUUID(),randomUUID());
       for(const paidAmount of ['5','12'])await service.recordPayoutResults(payout.payoutBatchId,{results:[{payoutLineId:payoutLine.payoutLineId,status:'PAID',paidAmount,paymentReference:`PRIVATE-BANK-${paidAmount}`}]},actor,'FINANCE',randomUUID(),randomUUID());
+      expect(await db.bonusAwardLifecycleEvent.count({where:{bonusAwardId:before[0].correctionAwardId!,status:'PAID'}})).toBe(1);
     }
     const first=(await f.read()).economicEvidence;
     const evidence=first.returnReplays[0].recordedEffects;
