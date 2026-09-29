@@ -1,6 +1,6 @@
-import {PrismaClient} from '@prisma/client';
+import {PrismaClient,Prisma} from '@prisma/client';
 import {randomUUID} from 'node:crypto';
-import {captureParameters,storeReplaySnapshot} from '@ucell/database';
+import {appendEntitlementDelta,captureParameters,storeReplaySnapshot} from '@ucell/database';
 import {AdminOperationsService} from '../src/modules/admin-operations/admin-operations.service';
 import {AuditService} from '../src/common/audit/audit.service';
 
@@ -37,7 +37,7 @@ describeDb('ORDER_ECONOMIC_EVIDENCE_REAL_DB',()=>{
     const f=await fixture('R1.0B'),at=f.pv.occurredAt;
     const parameters=await db.$transaction(tx=>captureParameters(tx,at,'R1.0B'));
     const source={format:'UCELL_HISTORICAL_REPLAY_V1' as const,kind:'GPV',sourceId:f.pv.eventId,ruleVersionCode:'R1.0B',at:at.toISOString(),parameters,recipients:[],evidence:{privateIdentity:f.person.personId},inputs:{eventId:f.pv.eventId,orderId:f.order.orderId,volume:'100'}};
-    const envelope={format:'UCELL_HISTORICAL_REPLAY_V1' as const,kind,sourceId:randomUUID(),ruleVersionCode:'R1.0B',at:new Date(at.getTime()+1000).toISOString(),parameters,recipients:[],evidence:{sources:[source]},inputs:{periodStart:at.toISOString(),periodEnd:new Date(at.getTime()+1000).toISOString(),totalGpv:'900000'}};
+    const envelope={format:'UCELL_HISTORICAL_REPLAY_V1' as const,kind,sourceId:String(randomUUID()),ruleVersionCode:'R1.0B',at:new Date(at.getTime()+1000).toISOString(),parameters,recipients:[],evidence:{sources:[source]},inputs:{periodStart:at.toISOString(),periodEnd:new Date(at.getTime()+1000).toISOString(),totalGpv:'900000'}};
     return {f,envelope,source};
   }
   it.each(['REFERRAL_K0','BINARY_K1','MATCHING_K2','GLOBAL'])('reports exact sealed %s period membership without allocating period awards',async kind=>{
@@ -105,6 +105,48 @@ describeDb('ORDER_ECONOMIC_EVIDENCE_REAL_DB',()=>{
     expect((await f.read()).economicEvidence).toEqual(first);
     for(const secret of [ownRun.settlementReplayRunId,ownRun.sourceReturnCaseId,f.q.qualificationId,f.person.personId,other.q.qualificationId,'privateNote','privateIdentity'])expect(JSON.stringify(first.returnReplays)).not.toContain(secret);
     expect(await db.settlementReplayRun.findUniqueOrThrow({where:{settlementReplayRunId:ownRun.settlementReplayRunId}})).toEqual(ownRun);
+  });
+  it.each(['positive','negative','wrongState','wrongCarry','noEffects'])('joins exact replay posting/carry evidence: %s',async mode=>{
+    const {f,envelope}=await periodFixture('BINARY_K1');
+    const start=new Date(envelope.inputs.periodStart),end=new Date(envelope.inputs.periodEnd),stateHash='c'.repeat(64);
+    const batch=await db.settlementBatch.create({data:{settlementType:'BINARY_K1',periodStart:start,periodEnd:end,ruleVersionCode:'R1.0B'}});
+    envelope.sourceId=batch.settlementBatchId;
+    const original=await db.bonusAward.create({data:{recipientQualificationId:f.q.qualificationId,awardType:'BINARY',sourceEventId:randomUUID(),theoryAmount:10,payableAmount:10,activeSnapshot:true,ruleVersionCode:'R1.0B',occurredAt:start,pendingUntil:start,calculationDetail:{}}});
+    const recipient={key:original.bonusAwardId,awardId:original.bonusAwardId,awardType:'BINARY' as const,qualificationId:f.q.qualificationId,generation:0,active:true,eligible:true,theory:'10',posted:'10',pendingUntil:start.toISOString(),detail:{},qualification:{at:envelope.at,plan:{planCode:'STARTER'},status:{status:'EFFECTIVE'},activeIntervals:[{activeFrom:start.toISOString()}]}};
+    const snapshot=await db.$transaction(tx=>storeReplaySnapshot(tx,{...envelope,recipients:[recipient]}));
+    const ret=await db.returnCase.create({data:{orderId:f.order.orderId,status:'POSTED',reasonCode:'TEST',occurredAt:start,idempotencyKey:randomUUID(),correlationId:randomUUID()}});
+    const actionKey=`RETURN:${ret.returnCaseId}`;
+    const run=await db.settlementReplayRun.create({data:{sourceReturnCaseId:ret.returnCaseId,initialPeriodStart:start,initialPeriodEnd:end,ruleVersionCode:'R1.0B',status:mode==='noEffects'?'MAX_HORIZON':'CONVERGED',processedWeeks:1,calculationSnapshot:{format:'UCELL_SETTLEMENT_REPLAY_RUN_V1',actionKey,stateHash,ruleVersionCode:'R1.0B'}}});
+    const target=mode==='positive'?'12':'8';
+    await db.settlementReplayPeriod.create({data:{settlementReplayRunId:run.settlementReplayRunId,periodNo:1,periodStart:start,periodEnd:end,originalK1:1,recomputedK1:1,impactedQualifications:[f.q.qualificationId],awardDeltaSnapshot:{binary:[{entitlementKey:recipient.key,qualificationId:f.q.qualificationId,original:'10',recomputed:target}],matching:[]},carryDeltaSnapshot:{[f.q.qualificationId]:{original:{left:'100',right:'0'},recomputed:{left:'80',right:'0'}}}}});
+    if(mode!=='noEffects'){
+      await db.$transaction(tx=>appendEntitlementDelta(tx,snapshot,recipient,new Prisma.Decimal(target),actionKey,mode==='wrongState'?'d'.repeat(64):stateHash,ret.returnCaseId));
+      await db.replayCarryProjection.create({data:{actionKey,settlementBatchId:batch.settlementBatchId,periodEnd:end,ruleVersionCode:'R1.0B',stateHash,carry:{[f.q.qualificationId]:{left:mode==='wrongCarry'?'81':'80',right:'0',pairedPv:'20'}}}});
+      await db.replayAction.create({data:{actionKey,stateHash,result:{returnCaseId:ret.returnCaseId,replayRunId:run.settlementReplayRunId,status:'REPLAYED',stateHash}}});
+    }
+    // Same batch, different action must never be attributed to this return.
+    await db.replayCarryProjection.create({data:{actionKey:randomUUID(),settlementBatchId:batch.settlementBatchId,periodEnd:end,ruleVersionCode:'R1.0B',stateHash,carry:{[f.q.qualificationId]:{left:'999',right:'0',pairedPv:'0'}}}});
+    if(mode==='wrongState'||mode==='wrongCarry'){
+      await expect(f.read()).rejects.toMatchObject({response:{code:'HISTORICAL_SNAPSHOT_CORRUPT'}});
+      return;
+    }
+    const before=await db.entitlementReplayPosting.findMany({where:{actionKey}});
+    const first=(await f.read()).economicEvidence;
+    const evidence=first.returnReplays[0].recordedEffects;
+    expect(evidence.status).toBe(mode==='noEffects'?'NO_RECORDED_EFFECTS':'RECORDED_EFFECTS');
+    expect(evidence.actionCompleted).toBe(mode!=='noEffects');
+    expect(evidence.periods[0].checkpointReference).toBe(first.returnReplays[0].periods[0].reference);
+    if(mode==='noEffects'){
+      expect(evidence.periods[0].postings).toEqual([]);
+      expect(evidence.periods[0].carryProjections).toEqual([]);
+    }else{
+      expect(evidence.periods[0].postings).toHaveLength(1);
+      expect(evidence.periods[0].postings[0]).toMatchObject({entitlementReference:first.returnReplays[0].periods[0].awardChanges[0].entitlementReference,delta:mode==='positive'?'2':'-2',correctionAward:mode==='positive'?expect.objectContaining({amount:'2'}):null,recovery:mode==='negative'?expect.objectContaining({amount:'2',outstandingAmount:'2'}):null});
+      expect(evidence.periods[0].carryProjections).toEqual([expect.objectContaining({recipients:[expect.objectContaining({left:'80',right:'0',pairedPv:'20'})]})]);
+    }
+    expect((await f.read()).economicEvidence).toEqual(first);
+    expect(await db.entitlementReplayPosting.findMany({where:{actionKey}})).toEqual(before);
+    for(const secret of [actionKey,ret.returnCaseId,run.settlementReplayRunId,original.bonusAwardId,f.q.qualificationId,batch.settlementBatchId,snapshot.snapshotId,...before.map(row=>row.postingId)])expect(JSON.stringify(evidence)).not.toContain(secret);
   });
   it('includes return-linked recovery without attributing its whole period award to the order',async()=>{
     const f=await fixture(),periodAward=await f.award(randomUUID());

@@ -1,6 +1,7 @@
 import { Prisma, PvLedger } from '@prisma/client';
 import { pending, verifyReplayEnvelope } from '@ucell/database';
 import { createHash } from 'node:crypto';
+import {orderReplayPostingEvidence} from './order-replay-posting-evidence';
 
 // References join this projection without exposing internal UUIDs or identities.
 const reference = (kind:string,id:string) => `${kind}:${createHash('sha256').update(`${kind}:${id}`).digest('hex')}`;
@@ -31,13 +32,14 @@ function awardChanges(value:Prisma.JsonValue){
 async function returnReplayEvidence(tx:Prisma.TransactionClient,returnIds:string[]){
   if(!returnIds.length)return [];
   const runs=await tx.settlementReplayRun.findMany({where:{sourceReturnCaseId:{in:returnIds}},include:{periods:{orderBy:[{periodNo:'asc'},{settlementReplayPeriodId:'asc'}]}},orderBy:[{createdAt:'asc'},{settlementReplayRunId:'asc'}]});
-  return runs.map(run=>({reference:reference('REPLAY_RUN',run.settlementReplayRunId),returnReference:reference('RETURN',run.sourceReturnCaseId),
+  return Promise.all(runs.map(async run=>({reference:reference('REPLAY_RUN',run.settlementReplayRunId),returnReference:reference('RETURN',run.sourceReturnCaseId),
+    recordedEffects:await orderReplayPostingEvidence(tx,run,run.periods),
     status:run.status,ruleVersionCode:run.ruleVersionCode,processedWeeks:run.processedWeeks,maxWeeks:run.maxWeeks,convergedAt:run.convergedAt?.toISOString()??null,
     evidenceType:'CALCULATION_CHECKPOINT_NOT_PAYMENT',
     periods:run.periods.map(period=>({reference:reference('REPLAY_PERIOD',period.settlementReplayPeriodId),periodNo:period.periodNo,periodStart:period.periodStart.toISOString(),periodEnd:period.periodEnd.toISOString(),
       originalK1:period.originalK1.toString(),recomputedK1:period.recomputedK1.toString(),originalK2:period.originalK2?.toString()??null,recomputedK2:period.recomputedK2?.toString()??null,
       carryChanges:carryChanges(period.carryDeltaSnapshot),awardChanges:awardChanges(period.awardDeltaSnapshot)})),
-  }));
+  })));
 }
 
 /** Membership in a sealed period input cohort does not allocate its awards. */

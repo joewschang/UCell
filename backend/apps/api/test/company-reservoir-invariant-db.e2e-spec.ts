@@ -1,11 +1,12 @@
 import {PrismaClient,Prisma} from '@prisma/client';
 import {randomUUID} from 'node:crypto';
-import {captureParameters,routeCompanyBonus,routeCompanyFinal,accountingMonth} from '@ucell/database';
+import {captureParameters,routeCompanyBonus,routeCompanyFinal,accountingMonth,storeReplaySnapshot,appendEntitlementDelta} from '@ucell/database';
 import {companyReservoirCandidates} from '../src/modules/admin-operations/company-reservoir-invariants';
 import {BinaryTreeService,TreePrincipal} from '../src/modules/binary-tree/binary-tree.service';
 import {OrganizationService} from '../src/modules/organization/organization.service';
 import {IdempotencyService} from '../src/common/idempotency/idempotency.service';
 import {orderEconomicEvidence} from '../src/modules/admin-operations/order-economic-evidence';
+import {orderReplayPostingEvidence} from '../src/modules/admin-operations/order-replay-posting-evidence';
 
 const url=process.env.PHASE2_TEST_DATABASE_URL;
 const describeDb=url?describe:describe.skip;
@@ -113,6 +114,25 @@ describeDb('Company Reservoir B integrity candidates',()=>{
     const json=JSON.stringify(evidence);
     for(const row of before)for(const internal of [row.destinationId,row.sourceRpvAwardId!,row.binaryTreeId,row.ownerIntervalId,...row.effects.flatMap(effect=>[effect.effectId,...(effect.replayPostingId?[effect.replayPostingId]:[])])])expect(json).not.toContain(internal);
     expect(await tx.awardEconomicDestination.findMany({include:{effects:true},orderBy:{destinationId:'asc'}})).toEqual(before);
+  }));
+  it('joins Company replay effects through their exact posting without member recovery',()=>rollback(async tx=>{
+    const at=new Date(),end=new Date(at.getTime()+1000),parameters=await captureParameters(tx,at,'R1.0B');
+    const source=await tx.bonusAward.create({data:{recipientQualificationId:qid,awardType:'BINARY',sourceEventId:randomUUID(),theoryAmount:100,payableAmount:100,activeSnapshot:true,ruleVersionCode:'R1.0B',parameterSnapshotHash:parameters.hash,occurredAt:at,pendingUntil:at,calculationDetail:{}}});
+    await routeCompanyBonus(tx,source,parameters);
+    const order=await tx.order.create({data:{qualificationId:qid,purpose:'RETAIL',grossAmount:100,netAmount:100,ruleVersionCode:'R1.0B'}});
+    const ret=await tx.returnCase.create({data:{orderId:order.orderId,status:'POSTED',reasonCode:'TEST',occurredAt:at,idempotencyKey:randomUUID(),correlationId:randomUUID()}});
+    const actionKey=`RETURN:${ret.returnCaseId}`,stateHash='a'.repeat(64);
+    const run=await tx.settlementReplayRun.create({data:{sourceReturnCaseId:ret.returnCaseId,initialPeriodStart:at,initialPeriodEnd:end,ruleVersionCode:'R1.0B',status:'CONVERGED',calculationSnapshot:{format:'UCELL_SETTLEMENT_REPLAY_RUN_V1',actionKey,stateHash,ruleVersionCode:'R1.0B'}}});
+    const period=await tx.settlementReplayPeriod.create({data:{settlementReplayRunId:run.settlementReplayRunId,periodNo:1,periodStart:at,periodEnd:end,originalK1:1,recomputedK1:1,impactedQualifications:[qid],carryDeltaSnapshot:{},awardDeltaSnapshot:{binary:[{entitlementKey:source.bonusAwardId,qualificationId:qid,original:'100',recomputed:'80'}],matching:[]}}});
+    const recipient={key:source.bonusAwardId,awardId:source.bonusAwardId,awardType:'BINARY' as const,qualificationId:qid,generation:0,active:true,eligible:true,theory:'100',posted:'100',pendingUntil:at.toISOString(),detail:{},qualification:{at:at.toISOString(),plan:{planCode:'LEADER'},status:{status:'EFFECTIVE'},activeIntervals:[{activeFrom:at.toISOString()}],economicOwner:{ownerType:'COMPANY'}}};
+    const snapshot=await storeReplaySnapshot(tx,{format:'UCELL_HISTORICAL_REPLAY_V1',kind:'BINARY_K1',sourceId:randomUUID(),ruleVersionCode:'R1.0B',at:end.toISOString(),parameters,recipients:[recipient],evidence:{},inputs:{periodStart:at.toISOString(),periodEnd:end.toISOString()}});
+    const posting=await appendEntitlementDelta(tx,snapshot,recipient,new Prisma.Decimal(80),actionKey,stateHash,ret.returnCaseId);
+    await tx.replayAction.create({data:{actionKey,stateHash,result:{status:'REPLAYED',returnCaseId:ret.returnCaseId,replayRunId:run.settlementReplayRunId,stateHash}}});
+    const evidence=await orderReplayPostingEvidence(tx,run,[period]);
+    expect(evidence.actionCompleted).toBe(true);
+    expect(evidence.periods[0].postings).toEqual([expect.objectContaining({delta:'-20',correctionAward:null,recovery:null,reservoirBEffect:expect.objectContaining({amountDelta:'-20'})})]);
+    expect(await orderReplayPostingEvidence(tx,run,[period])).toEqual(evidence);
+    for(const internal of [qid,actionKey,source.bonusAwardId,posting.postingId,run.settlementReplayRunId])expect(JSON.stringify(evidence)).not.toContain(internal);
   }));
   it('also inspects RPV and Global award destinations',()=>rollback(async tx=>{
     const at=new Date();
