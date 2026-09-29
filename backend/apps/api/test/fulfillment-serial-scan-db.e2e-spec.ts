@@ -32,7 +32,7 @@ describeDb('serialized fulfillment scan',()=>{
   expect(replay.replayed).toBe(true);
   expect(await db.fulfillmentSerialAllocation.count({where:{fulfillmentId:fulfillment.fulfillmentId}})).toBe(1);
   expect((await db.serializedUnit.findUniqueOrThrow({where:{serializedUnitId:unit.serializedUnitId}})).status).toBe('ALLOCATED');
-  expect(await db.auditEvent.count({where:{action:'FULFILLMENT_SERIAL_SCANNED'}})).toBe(1);
+  expect(await db.auditEvent.count({where:{action:'FULFILLMENT_SERIAL_SCANNED',entityId:fulfillment.fulfillmentId}})).toBe(1);
   const handoffService=new FulfillmentErpHandoffService(db as any,new AuditService());
   const handoff=await handoffService.request({fulfillmentId:fulfillment.fulfillmentId,actorId:'00000000-0000-0000-0000-000000000301',requestId:'00000000-0000-0000-0000-000000000308',correlationId:'00000000-0000-0000-0000-000000000309'});
   expect(handoff.replayed).toBe(false);

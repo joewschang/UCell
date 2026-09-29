@@ -9,6 +9,7 @@ export class FulfillmentErpHandoffService {
 
   async request(input: { fulfillmentId: string; actorId: string; requestId: string; correlationId: string; providerCode?: string }) {
     return this.prisma.$transaction(async tx => {
+      await tx.$queryRaw`SELECT fulfillment_id FROM commerce.fulfillment WHERE fulfillment_id=${input.fulfillmentId}::uuid FOR UPDATE`;
       const fulfillment = await tx.fulfillment.findUnique({
         where: { fulfillmentId: input.fulfillmentId },
         include: { order: { select: { orderNo: true } }, sourceAllocations: { include: { serialAllocations: { include: { serializedUnit: true } } }, orderBy: { fulfillmentSourceAllocationId: 'asc' } } },
@@ -34,6 +35,6 @@ export class FulfillmentErpHandoffService {
       const handoff = await tx.fulfillmentErpHandoff.create({ data: { fulfillmentId: fulfillment.fulfillmentId, outboxEventId: outbox.outboxEventId, providerCode: input.providerCode?.trim() || 'ERP_PENDING', formatVersion: 'UCELL_FULFILLMENT_ERP_V1', payloadHash, payloadSnapshot: payload, requestedByActor: input.actorId } });
       await this.audit.write(tx, { actorType: 'USER', actorId: input.actorId, action: 'FULFILLMENT_ERP_HANDOFF_REQUESTED', entityType: 'FULFILLMENT', entityId: fulfillment.fulfillmentId, afterData: { fulfillmentKey: fulfillment.fulfillmentKey, orderNo: fulfillment.order.orderNo.toString(), payloadHash, providerCode: handoff.providerCode }, requestId: input.requestId, correlationId: input.correlationId });
       return { handoff, replayed: false };
-    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+    }, { isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted });
   }
 }
