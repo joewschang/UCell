@@ -180,6 +180,53 @@
         ]
       }
     },
+    "/api/v1/admin/fulfillment/orders/{orderNo}/{fulfillmentKey}/erp-results": {
+      "post": {
+        "operationId": "adminRecordFulfillmentErpResult",
+        "parameters": [
+          {
+            "name": "orderNo",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "fulfillmentKey",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FulfillmentErpResultDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "記錄人工核對的 ERP 商品與序號結果；保留差異證據",
+        "tags": [
+          "Admin - Fulfillment"
+        ]
+      }
+    },
     "/api/v1/admin/finance/reservoirs": {
       "get": {
         "description": "Finance-confidential immutable sources. Read-only; signed replay correction is not a payout. Stable UUID cursor within server snapshot. A rejects tree/position/awardType filters.",
@@ -14604,6 +14651,54 @@
           "sourceReference",
           "sku",
           "serialNo"
+        ]
+      },
+      "ErpResultLineDto": {
+        "type": "object",
+        "properties": {
+          "sku": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "string"
+          },
+          "serialNos": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "sku",
+          "quantity",
+          "serialNos"
+        ]
+      },
+      "FulfillmentErpResultDto": {
+        "type": "object",
+        "properties": {
+          "resultKey": {
+            "type": "string"
+          },
+          "providerReference": {
+            "type": "string"
+          },
+          "occurredAt": {
+            "type": "string"
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ErpResultLineDto"
+            }
+          }
+        },
+        "required": [
+          "resultKey",
+          "providerReference",
+          "occurredAt",
+          "lines"
         ]
       },
       "CreateTreeDto": {

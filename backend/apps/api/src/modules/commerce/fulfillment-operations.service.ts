@@ -6,12 +6,13 @@ import {FulfillmentPackVerificationService,SERIAL_PACK_POLICY} from './fulfillme
 import {FulfillmentErpHandoffService} from './fulfillment-erp-handoff.service';
 import {FulfillmentSourceAllocationService} from './fulfillment-source-allocation.service';
 import {AuditService} from '../../common/audit/audit.service';
+import {FulfillmentErpReconciliationService,ErpPhysicalResult} from './fulfillment-erp-reconciliation.service';
 
 const sourceReference=(id:string)=>createHash('sha256').update(`FULFILLMENT_SOURCE:${id}`).digest('hex');
 type Context={actorId:string;requestId:string;correlationId:string};
 @Injectable()
 export class FulfillmentOperationsService{
- constructor(private readonly db:PrismaService,private readonly scanner:FulfillmentSerialScanService,private readonly packer:FulfillmentPackVerificationService,private readonly erp:FulfillmentErpHandoffService,private readonly allocator:FulfillmentSourceAllocationService,private readonly audit:AuditService){}
+ constructor(private readonly db:PrismaService,private readonly scanner:FulfillmentSerialScanService,private readonly packer:FulfillmentPackVerificationService,private readonly erp:FulfillmentErpHandoffService,private readonly allocator:FulfillmentSourceAllocationService,private readonly audit:AuditService,private readonly reconciler:FulfillmentErpReconciliationService){}
  private orderNumber(value:string){if(!/^\d{1,19}$/.test(value)||BigInt(value)>9223372036854775807n)throw new UnprocessableEntityException({code:'INVALID_ORDER_NO'});return BigInt(value);}
  async prepare(orderNo:string,context:Context){
   const number=this.orderNumber(orderNo);
@@ -32,9 +33,9 @@ export class FulfillmentOperationsService{
   });
  }
  async order(orderNo:string){
-  const order=await this.db.order.findUnique({where:{orderNo:this.orderNumber(orderNo)},include:{fulfillments:{orderBy:{createdAt:'asc'},include:{sourceAllocations:{orderBy:{fulfillmentSourceAllocationId:'asc'},include:{serialAllocations:{include:{serializedUnit:true}}}},qcEvidence:{where:{policyId:SERIAL_PACK_POLICY},orderBy:{occurredAt:'asc'}},erpHandoffs:true}}}});
+  const order=await this.db.order.findUnique({where:{orderNo:this.orderNumber(orderNo)},include:{fulfillments:{orderBy:{createdAt:'asc'},include:{sourceAllocations:{orderBy:{fulfillmentSourceAllocationId:'asc'},include:{serialAllocations:{include:{serializedUnit:true}}}},qcEvidence:{where:{policyId:SERIAL_PACK_POLICY},orderBy:{occurredAt:'asc'}},erpHandoffs:{include:{reconciliations:{orderBy:{recordedAt:'desc'},take:50}}}}}}});
   if(!order)throw new ConflictException({code:'ORDER_NOT_FOUND'});
-  return {orderNo:order.orderNo.toString(),status:order.status,fulfillments:order.fulfillments.map(f=>({fulfillmentKey:f.fulfillmentKey,status:f.status,sources:f.sourceAllocations.map(s=>({sourceReference:sourceReference(s.fulfillmentSourceAllocationId),sku:s.skuSnapshot,quantity:s.allocatedQuantity.toString(),serialNos:s.serialAllocations.map(a=>a.serializedUnit.serialNo).sort()})),packVerification:f.qcEvidence[0]?{status:'PACK_VERIFIED',snapshotHash:f.qcEvidence[0].policySnapshotRef,occurredAt:f.qcEvidence[0].occurredAt.toISOString()}:null,erpHandoff:f.erpHandoffs[0]?{providerCode:f.erpHandoffs[0].providerCode,payloadHash:f.erpHandoffs[0].payloadHash,requestedAt:f.erpHandoffs[0].requestedAt.toISOString()}:null}))};
+  return {orderNo:order.orderNo.toString(),status:order.status,fulfillments:order.fulfillments.map(f=>({fulfillmentKey:f.fulfillmentKey,status:f.status,sources:f.sourceAllocations.map(s=>({sourceReference:sourceReference(s.fulfillmentSourceAllocationId),sku:s.skuSnapshot,quantity:s.allocatedQuantity.toString(),serialNos:s.serialAllocations.map(a=>a.serializedUnit.serialNo).sort()})),packVerification:f.qcEvidence[0]?{status:'PACK_VERIFIED',snapshotHash:f.qcEvidence[0].policySnapshotRef,occurredAt:f.qcEvidence[0].occurredAt.toISOString()}:null,erpHandoff:f.erpHandoffs[0]?{providerCode:f.erpHandoffs[0].providerCode,payloadHash:f.erpHandoffs[0].payloadHash,requestedAt:f.erpHandoffs[0].requestedAt.toISOString(),results:f.erpHandoffs[0].reconciliations.map(r=>({outcome:r.outcome,reasonCode:r.reasonCode,resultHash:r.resultHash,occurredAt:r.occurredAt.toISOString(),recordedAt:r.recordedAt.toISOString()}))}:null}))};
  }
  private async resolve(orderNo:string,fulfillmentKey:string){
   const row=await this.db.fulfillment.findFirst({where:{fulfillmentKey,order:{orderNo:this.orderNumber(orderNo)}},include:{sourceAllocations:true}});
@@ -56,4 +57,5 @@ export class FulfillmentOperationsService{
   const f=await this.resolve(orderNo,key),result=await this.erp.request({fulfillmentId:f.fulfillmentId,...context});
   return {fulfillmentKey:key,providerCode:result.handoff.providerCode,payloadHash:result.handoff.payloadHash,requestedAt:result.handoff.requestedAt.toISOString(),replayed:result.replayed};
  }
+ async reconcile(orderNo:string,key:string,input:ErpPhysicalResult,context:Context){const f=await this.resolve(orderNo,key);return this.reconciler.record(f.fulfillmentId,input,context);}
 }

@@ -45,3 +45,19 @@ it('prepares a paid order from the empty state and can reload the same order',as
  await act(async()=>{await view.root.findAllByType('form')[0].props.onSubmit({preventDefault(){}});});
  expect(get).toHaveBeenCalledWith('/admin/fulfillment/orders/123');act(()=>view.unmount());
 });
+it('records actual ERP evidence separately and preserves its retry identity after failure',async()=>{
+ vi.mocked(get).mockResolvedValue({data:{orderNo:'123',status:'PAID',fulfillments:[{fulfillmentKey:'F-123',status:'PACKED',sources:[],packVerification:{status:'PACK_VERIFIED'},erpHandoff:{results:[{outcome:'PARTIAL',occurredAt:'2026-09-29T00:00:00Z',resultHash:'a'}]}}]}});
+ vi.mocked(command).mockRejectedValueOnce(new Error('暫時無法連線')).mockResolvedValueOnce({data:{outcome:'MATCHED'}});
+ const view=await render('部分回報，尚未完成');
+ const inputs=view.root.findAllByType('input');
+ expect(inputs[1].props.value).toBe('');expect(inputs[3].props.value).toBe('');
+ await act(async()=>{inputs[1].props.onChange({target:{value:'ERP-601'}});inputs[2].props.onChange({target:{value:'2026-09-29T08:00'}});inputs[3].props.onChange({target:{value:'TIP-363'}});view.root.findByType('textarea').props.onChange({target:{value:'a0010001\na0010002'}});});
+ await act(async()=>{await view.root.findAllByType('form')[1].props.onSubmit({preventDefault(){}});});
+ const first=vi.mocked(command).mock.calls[0];
+ expect(first[0]).toBe('/admin/fulfillment/orders/123/F-123/erp-results');
+ expect(first[1]).toMatchObject({providerReference:'ERP-601',lines:[{sku:'TIP-363',quantity:'2',serialNos:['A0010001','A0010002']}]});
+ expect(view.root.findByType('textarea').props.value).toContain('a0010001');
+ await act(async()=>{await view.root.findAllByType('form')[1].props.onSubmit({preventDefault(){}});});
+ expect(vi.mocked(command).mock.calls[1]).toEqual(first);
+ expect(JSON.stringify(view.toJSON())).toContain('ERP 回報已保存');act(()=>view.unmount());
+});

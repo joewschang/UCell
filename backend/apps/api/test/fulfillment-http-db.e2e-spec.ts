@@ -11,6 +11,7 @@ import {FulfillmentSerialScanService} from '../src/modules/commerce/fulfillment-
 import {FulfillmentPackVerificationService} from '../src/modules/commerce/fulfillment-pack-verification.service';
 import {FulfillmentErpHandoffService} from '../src/modules/commerce/fulfillment-erp-handoff.service';
 import {FulfillmentSourceAllocationService} from '../src/modules/commerce/fulfillment-source-allocation.service';
+import {FulfillmentErpReconciliationService} from '../src/modules/commerce/fulfillment-erp-reconciliation.service';
 import {AuditService} from '../src/common/audit/audit.service';
 import {IdentityTokenService} from '../src/modules/auth/identity-token.service';
 import {AdminAuthenticationGuard} from '../src/modules/auth/admin-authentication.guard';
@@ -32,7 +33,7 @@ describeDb('FULFILLMENT_HTTP_REAL_DB',()=>{
   }
   ops=await actor('ORDER_OPS');auditor=await actor('COMPLIANCE_AUDIT');finance=await actor('FINANCE');
   const module=await Test.createTestingModule({controllers:[FulfillmentOperationsController],providers:[
-   {provide:PrismaService,useValue:db},AuditService,FulfillmentOperationsService,FulfillmentSerialScanService,FulfillmentPackVerificationService,FulfillmentErpHandoffService,FulfillmentSourceAllocationService,
+   {provide:PrismaService,useValue:db},AuditService,FulfillmentOperationsService,FulfillmentSerialScanService,FulfillmentPackVerificationService,FulfillmentErpHandoffService,FulfillmentSourceAllocationService,FulfillmentErpReconciliationService,
    {provide:IdentityTokenService,useValue:tokens},{provide:ConfigService,useValue:{get:(name:string)=>name==='NODE_ENV'?'production':'false'}},AdminAuthenticationGuard,AdminRoleGuard]}).compile();
   app=module.createNestApplication<NestFastifyApplication>(new FastifyAdapter(),{logger:false});app.setGlobalPrefix('api/v1');
   app.useGlobalPipes(new ValidationPipe({whitelist:true,forbidNonWhitelisted:true,transform:true}));
@@ -67,6 +68,39 @@ describeDb('FULFILLMENT_HTTP_REAL_DB',()=>{
   }
   const final=await app.inject({url:`${base}/${orderNo}`,headers:headers(ops)});
   expect(final.json().data.fulfillments[0]).toMatchObject({status:'PACKED',packVerification:{status:'PACK_VERIFIED'},erpHandoff:{providerCode:'ERP_PENDING'}});
+ });
+ it('records ERP evidence idempotently, detects differences and never invents shipment',async()=>{
+  const read=await app.inject({url:`${base}/${orderNo}`,headers:headers(ops)}),source=read.json().data.fulfillments[0].sources[0];
+  const endpoint=`${base}/${orderNo}/${key}/erp-results`;
+  const payload={resultKey:'erp-result-exact',providerReference:'ERP-TEST-601',occurredAt:'2026-09-29T00:00:00.000Z',lines:[{sku:source.sku,quantity:'1',serialNos:['C6010001']}]};
+  expect((await app.inject({method:'POST',url:endpoint,headers:headers(auditor),payload})).statusCode).toBe(403);
+  expect((await app.inject({method:'POST',url:endpoint,headers:headers(ops),payload:{...payload,lines:[{...payload.lines[0],serialNos:['bad']}]}})).statusCode).toBe(400);
+  const concurrent=await Promise.all([1,2].map(()=>app.inject({method:'POST',url:endpoint,headers:headers(ops),payload})));
+  expect(concurrent.map(r=>r.statusCode)).toEqual([201,201]);
+  expect(concurrent.map(r=>r.json().data.replayed).sort()).toEqual([false,true]);
+  expect(concurrent[0].json().data.outcome).toBe('MATCHED');
+  expect((await app.inject({method:'POST',url:endpoint,headers:headers(ops),payload:{...payload,lines:[]}})).statusCode).toBe(409);
+  for(const [resultKey,lines,outcome] of [
+   ['erp-result-partial',[],'PARTIAL'],
+   ['erp-result-mismatch',[{sku:source.sku,quantity:'1',serialNos:['C6019999']}],'MISMATCH'],
+  ] as const){
+   const response=await app.inject({method:'POST',url:endpoint,headers:headers(ops),payload:{...payload,resultKey,lines}});
+   expect(response.statusCode).toBe(201);expect(response.json().data.outcome).toBe(outcome);
+   expect(response.body).not.toContain(personId);
+  }
+  const f=await db.fulfillment.findFirstOrThrow({where:{fulfillmentKey:key,order:{orderNo:BigInt(orderNo)}},include:{erpHandoffs:{include:{reconciliations:true}},shipments:true}});
+  expect(f.status).toBe('PACKED');expect(f.shipments).toHaveLength(0);
+  expect(f.erpHandoffs[0].reconciliations).toHaveLength(3);
+  expect(await db.serializedUnit.findUnique({where:{serialNo:'C6010001'}})).toMatchObject({status:'ALLOCATED'});
+  expect(await db.operationalException.count({where:{sourceType:'ERP_RECONCILIATION',sourceId:{startsWith:`${orderNo}:${key}:`}}})).toBe(2);
+  expect(await db.auditEvent.count({where:{entityId:f.fulfillmentId,action:'FULFILLMENT_ERP_RECONCILED'}})).toBe(3);
+  const evidence=f.erpHandoffs[0].reconciliations[0];
+  await expect(db.fulfillmentErpReconciliation.update({where:{reconciliationId:evidence.reconciliationId},data:{outcome:'MATCHED'}})).rejects.toThrow();
+  await expect(db.fulfillmentErpReconciliation.delete({where:{reconciliationId:evidence.reconciliationId}})).rejects.toThrow();
+  await expect(db.fulfillmentErpHandoff.update({where:{fulfillmentId:f.fulfillmentId},data:{payloadHash:'0'.repeat(64)}})).rejects.toThrow();
+  await expect(db.fulfillmentSourceAllocation.update({where:{fulfillmentSourceAllocationId:sourceId},data:{allocatedQuantity:2}})).rejects.toThrow();
+  const allocation=await db.fulfillmentSerialAllocation.findFirstOrThrow({where:{fulfillmentSourceAllocationId:sourceId}});
+  await expect(db.fulfillmentSerialAllocation.delete({where:{fulfillmentSerialAllocationId:allocation.fulfillmentSerialAllocationId}})).rejects.toThrow();
  });
  it('prepares a paid order once under concurrent requests and preserves source purpose',async()=>{
   const product=await db.productReference.create({data:{sku:'PREP-'+randomUUID(),displayName:'Preparation fixture',currentPrice:100}});

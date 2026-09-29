@@ -1,6 +1,7 @@
 import {Body,Controller,Get,Param,Post,Req,UnauthorizedException} from '@nestjs/common';
 import {ApiBearerAuth,ApiOperation,ApiProperty,ApiTags} from '@nestjs/swagger';
-import {IsString,Matches,MaxLength} from 'class-validator';
+import {ArrayMaxSize,IsArray,IsISO8601,IsString,Matches,MaxLength,MinLength,ValidateNested} from 'class-validator';
+import {Type} from 'class-transformer';
 import {randomUUID} from 'node:crypto';
 import {Roles} from '../auth/roles.decorator';
 import {FulfillmentOperationsService} from './fulfillment-operations.service';
@@ -9,6 +10,17 @@ export class FulfillmentScanDto{
  @ApiProperty() @Matches(/^[a-f0-9]{64}$/) sourceReference!:string;
  @ApiProperty() @IsString() @MaxLength(128) sku!:string;
  @ApiProperty({description:'PBBBSSSS：產品代碼、三位批號及四位序號'}) @Matches(/^[A-Ea-e][0-9]{7}$/) serialNo!:string;
+}
+export class ErpResultLineDto{
+ @ApiProperty() @IsString() @MinLength(1) @MaxLength(128) sku!:string;
+ @ApiProperty() @Matches(/^\d+(?:\.0+)?$/) @MaxLength(18) quantity!:string;
+ @ApiProperty({type:[String]}) @IsArray() @ArrayMaxSize(10000) @Matches(/^[A-E][0-9]{7}$/,{each:true}) serialNos!:string[];
+}
+export class FulfillmentErpResultDto{
+ @ApiProperty() @IsString() @MinLength(8) @MaxLength(200) resultKey!:string;
+ @ApiProperty() @Matches(/^[A-Za-z0-9][A-Za-z0-9._:/-]{0,199}$/) providerReference!:string;
+ @ApiProperty() @IsISO8601() occurredAt!:string;
+ @ApiProperty({type:[ErpResultLineDto]}) @IsArray() @ArrayMaxSize(1000) @ValidateNested({each:true}) @Type(()=>ErpResultLineDto) lines!:ErpResultLineDto[];
 }
 @ApiTags('Admin - Fulfillment')
 @ApiBearerAuth('adminBearer')
@@ -28,4 +40,6 @@ export class FulfillmentOperationsController{
  pack(@Param('orderNo') orderNo:string,@Param('fulfillmentKey') key:string,@Req() req:any){return this.service.pack(orderNo,key,this.context(req)).then(data=>({data}));}
  @Post(':orderNo/:fulfillmentKey/erp-handoff') @ApiOperation({operationId:'adminRequestFulfillmentErpHandoff',summary:'保留 ERP 交付快照與持久請求；不宣告已出貨'})
  handoff(@Param('orderNo') orderNo:string,@Param('fulfillmentKey') key:string,@Req() req:any){return this.service.handoff(orderNo,key,this.context(req)).then(data=>({data}));}
+ @Post(':orderNo/:fulfillmentKey/erp-results') @ApiOperation({operationId:'adminRecordFulfillmentErpResult',summary:'記錄人工核對的 ERP 商品與序號結果；保留差異證據'})
+ result(@Param('orderNo') orderNo:string,@Param('fulfillmentKey') key:string,@Body() body:FulfillmentErpResultDto,@Req() req:any){return this.service.reconcile(orderNo,key,{...body,occurredAt:new Date(body.occurredAt)},this.context(req)).then(data=>({data}));}
 }

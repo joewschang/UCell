@@ -1860,8 +1860,29 @@ model FulfillmentErpHandoff {
 
   fulfillment Fulfillment @relation(fields:[fulfillmentId],references:[fulfillmentId])
   outboxEvent OutboxEvent @relation(fields:[outboxEventId],references:[outboxEventId])
+  reconciliations FulfillmentErpReconciliation[]
 
   @@map("fulfillment_erp_handoff")
+  @@schema("commerce")
+}
+
+/// Append-only normalized physical result evidence; never financial authority.
+model FulfillmentErpReconciliation {
+  reconciliationId String @id @default(uuid()) @map("reconciliation_id") @db.Uuid
+  fulfillmentErpHandoffId String @map("fulfillment_erp_handoff_id") @db.Uuid
+  resultKey String @map("result_key")
+  resultHash String @map("result_hash") @db.Char(64)
+  outcome String
+  reasonCode String @map("reason_code")
+  resultSnapshot Json @map("result_snapshot")
+  occurredAt DateTime @map("occurred_at") @db.Timestamptz(6)
+  recordedAt DateTime @default(now()) @map("recorded_at") @db.Timestamptz(6)
+  reportedByActor String @map("reported_by_actor")
+  handoff FulfillmentErpHandoff @relation(fields:[fulfillmentErpHandoffId],references:[fulfillmentErpHandoffId])
+
+  @@unique([fulfillmentErpHandoffId,resultKey])
+  @@index([fulfillmentErpHandoffId,occurredAt])
+  @@map("fulfillment_erp_reconciliation")
   @@schema("commerce")
 }
 
