@@ -5,6 +5,41 @@ import { createHash } from 'node:crypto';
 // References join this projection without exposing internal UUIDs or identities.
 const reference = (kind:string,id:string) => `${kind}:${createHash('sha256').update(`${kind}:${id}`).digest('hex')}`;
 
+function amount(value:unknown):string{
+  if(typeof value!=='string'||!/^[-+]?\d+(\.\d+)?$/.test(value))pending('HISTORICAL_SNAPSHOT_CORRUPT','Stored economic amount is invalid');
+  return new Prisma.Decimal(value).toString();
+}
+function carryChanges(value:Prisma.JsonValue){
+  if(!value||typeof value!=='object'||Array.isArray(value))pending('HISTORICAL_SNAPSHOT_CORRUPT','Stored carry evidence is invalid');
+  return Object.entries(value).sort(([a],[b])=>a.localeCompare(b)).map(([qid,entry])=>{
+    const row=entry as any;
+    return {recipientReference:reference('ECONOMIC_RECIPIENT',qid),original:{left:amount(row?.original?.left),right:amount(row?.original?.right)},recomputed:{left:amount(row?.recomputed?.left),right:amount(row?.recomputed?.right)}};
+  });
+}
+function awardChanges(value:Prisma.JsonValue){
+  const snapshot=value as any;
+  return (['binary','matching'] as const).flatMap(kind=>{
+    if(!Array.isArray(snapshot?.[kind]))pending('HISTORICAL_SNAPSHOT_CORRUPT','Stored award checkpoint is invalid');
+    return snapshot[kind].map((row:any)=>{
+      if(typeof row?.entitlementKey!=='string'||typeof row?.qualificationId!=='string')pending('HISTORICAL_SNAPSHOT_CORRUPT','Stored award checkpoint recipient is invalid');
+      return {kind,entitlementReference:reference('CHECKPOINT_ENTITLEMENT',row.entitlementKey),recipientReference:reference('ECONOMIC_RECIPIENT',row.qualificationId),original:amount(row.original),recomputed:amount(row.recomputed)};
+    }).sort((a:any,b:any)=>a.entitlementReference.localeCompare(b.entitlementReference));
+  });
+}
+
+/** A return run can reach periods that do not contain the original order PV. */
+async function returnReplayEvidence(tx:Prisma.TransactionClient,returnIds:string[]){
+  if(!returnIds.length)return [];
+  const runs=await tx.settlementReplayRun.findMany({where:{sourceReturnCaseId:{in:returnIds}},include:{periods:{orderBy:[{periodNo:'asc'},{settlementReplayPeriodId:'asc'}]}},orderBy:[{createdAt:'asc'},{settlementReplayRunId:'asc'}]});
+  return runs.map(run=>({reference:reference('REPLAY_RUN',run.settlementReplayRunId),returnReference:reference('RETURN',run.sourceReturnCaseId),
+    status:run.status,ruleVersionCode:run.ruleVersionCode,processedWeeks:run.processedWeeks,maxWeeks:run.maxWeeks,convergedAt:run.convergedAt?.toISOString()??null,
+    evidenceType:'CALCULATION_CHECKPOINT_NOT_PAYMENT',
+    periods:run.periods.map(period=>({reference:reference('REPLAY_PERIOD',period.settlementReplayPeriodId),periodNo:period.periodNo,periodStart:period.periodStart.toISOString(),periodEnd:period.periodEnd.toISOString(),
+      originalK1:period.originalK1.toString(),recomputedK1:period.recomputedK1.toString(),originalK2:period.originalK2?.toString()??null,recomputedK2:period.recomputedK2?.toString()??null,
+      carryChanges:carryChanges(period.carryDeltaSnapshot),awardChanges:awardChanges(period.awardDeltaSnapshot)})),
+  }));
+}
+
 /** Membership in a sealed period input cohort does not allocate its awards. */
 async function periodContributions(tx:Prisma.TransactionClient,orderId:string,pv:PvLedger[]){
   const originals=pv.filter(row=>row.pvType==='GPV'&&row.eventType==='GPV_CREATED');
@@ -12,7 +47,7 @@ async function periodContributions(tx:Prisma.TransactionClient,orderId:string,pv
   const snapshots=await tx.historicalReplaySnapshot.findMany({
     where:{kind:{in:['REFERRAL_K0','BINARY_K1','MATCHING_K2','GLOBAL']},OR:originals.map(row=>({
       content:{path:['evidence','sources'],array_contains:[{kind:'GPV',sourceId:row.eventId}]},
-    }))},orderBy:[{createdAt:'asc'},{snapshotId:'asc'}],
+    }))},include:{postings:{orderBy:{sequence:'asc'}}},orderBy:[{createdAt:'asc'},{snapshotId:'asc'}],
   });
   return snapshots.map(row=>{
     const envelope=verifyReplayEnvelope(row);
@@ -28,9 +63,21 @@ async function periodContributions(tx:Prisma.TransactionClient,orderId:string,pv
         pending('HISTORICAL_SNAPSHOT_CORRUPT','Period source does not match its original order PV evidence');
       sources.push({sourcePvReference:reference('PV',event.eventId),originalGpv:event.amount.toString()});
     }
+    const recipientKeys=new Set<string>();
+    const recipients=envelope.recipients.map(recipient=>{
+      if(!recipient.key||!recipient.qualificationId||recipientKeys.has(recipient.key)||!['REFERRAL','EQUALIZATION','BINARY','MATCHING','EPV','RPV','GLOBAL'].includes(recipient.awardType))pending('HISTORICAL_SNAPSHOT_CORRUPT','Stored period recipient is invalid');
+      recipientKeys.add(recipient.key);
+      return {reference:reference('PERIOD_ENTITLEMENT',`${row.snapshotId}:${recipient.key}`),recipientReference:reference('ECONOMIC_RECIPIENT',recipient.qualificationId),awardReference:reference(recipient.awardType==='GLOBAL'?'GLOBAL_AWARD':'AWARD',recipient.awardId),awardType:recipient.awardType,active:recipient.active,eligible:recipient.eligible,theoryAmount:amount(recipient.theory),originallyPosted:amount(recipient.posted)};
+    }).sort((a,b)=>a.reference.localeCompare(b.reference));
+    const corrections=row.postings.map(posting=>{
+      const recipient=envelope.recipients.find(item=>item.key===posting.entitlementKey);
+      if(!recipient||recipient.qualificationId!==posting.recipientQualificationId||!posting.originallyPosted.eq(recipient.posted))pending('HISTORICAL_SNAPSHOT_CORRUPT','Replay posting conflicts with its sealed recipient');
+      return {reference:reference('REPLAY_POSTING',posting.postingId),entitlementReference:reference('PERIOD_ENTITLEMENT',`${row.snapshotId}:${posting.entitlementKey}`),originallyPosted:posting.originallyPosted.toString(),recalculatedEntitlement:posting.recalculatedEntitlement.toString(),delta:posting.delta.toString(),stateHash:posting.stateHash};
+    });
     return {reference:reference('REPLAY_SNAPSHOT',row.snapshotId),settlementReference:reference('SETTLEMENT',row.sourceId),
       kind:row.kind,periodStart:start.toISOString(),periodEnd:end.toISOString(),ruleVersionCode:row.ruleVersionCode,snapshotHash:row.hash,
-      attribution:'SEALED_PERIOD_INPUT_ONLY',orderOriginalGpv:sources.reduce((sum,source)=>sum.add(source.originalGpv),new Prisma.Decimal(0)).toString(),sources};
+      attribution:'SEALED_PERIOD_INPUT_ONLY',orderOriginalGpv:sources.reduce((sum,source)=>sum.add(source.originalGpv),new Prisma.Decimal(0)).toString(),sources,
+      periodContext:{attribution:'WHOLE_PERIOD_NOT_ORDER_ALLOCATION',recipients,corrections}};
   });
 }
 
@@ -82,6 +129,7 @@ export async function orderEconomicEvidence(tx:Prisma.TransactionClient,orderId:
   return {
     scope:'ORDER_PV_AWARD_RETURN_SUBSCRIPTION_RPV_REPLAY_RESERVOIR_B_AND_PERIOD_INPUTS',
     periodContributions:await periodContributions(tx,orderId,pv),
+    returnReplays:await returnReplayEvidence(tx,returnIds),
     pvEvents:pv.map(row=>({reference:reference('PV',row.eventId),pvType:row.pvType,eventType:row.eventType,amount:row.amount.toString(),occurredAt:row.occurredAt.toISOString()})),
     awards:[...awards.values()].sort((a,b)=>a.occurredAt.getTime()-b.occurredAt.getTime()||a.bonusAwardId.localeCompare(b.bonusAwardId)).map(row=>({reference:reference('AWARD',row.bonusAwardId),sourcePvReference:row.sourceEventId&&pv.some(p=>p.eventId===row.sourceEventId)?reference('PV',row.sourceEventId):null,sourceAwardReference:row.sourceAwardId&&awards.has(row.sourceAwardId)?reference('AWARD',row.sourceAwardId):null,awardType:row.awardType,theoryAmount:row.theoryAmount.toString(),payableAmount:row.payableAmount.toString(),occurredAt:row.occurredAt.toISOString(),ruleVersionCode:row.ruleVersionCode,parameterSnapshotHash:row.parameterSnapshotHash})),
     payables:payables.map(row=>({reference:reference('PAYABLE',row.payableEntryId),awardReference:reference('AWARD',row.sourceId),grossAmount:row.grossAmount.toString(),status:row.status,availableAt:row.availableAt.toISOString(),payout:row.payoutLine?{status:row.payoutLine.payoutBatch.status,periodStart:row.payoutLine.payoutBatch.periodStart.toISOString(),periodEnd:row.payoutLine.payoutBatch.periodEnd.toISOString()}:null})),

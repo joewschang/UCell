@@ -69,6 +69,43 @@ describeDb('ORDER_ECONOMIC_EVIDENCE_REAL_DB',()=>{
     else await db.$transaction(tx=>storeReplaySnapshot(tx,envelope));
     await expect(f.read()).rejects.toMatchObject({response:{code:'HISTORICAL_SNAPSHOT_CORRUPT'}});
   });
+  it.each(['BINARY_K1','GLOBAL'])('explains %s sealed recipients and exact postings as whole-period context',async kind=>{
+    const {f,envelope}=await periodFixture(kind),key=randomUUID(),awardId=randomUUID();
+    const recipient={key,awardId,awardType:kind==='GLOBAL'?'GLOBAL' as const:'BINARY' as const,qualificationId:f.q.qualificationId,generation:0,active:true,eligible:true,theory:'120',posted:'100',pendingUntil:envelope.at,detail:{privateNote:'secret recipient detail'},qualification:{at:envelope.at,plan:{planCode:'STARTER'},status:{status:'EFFECTIVE'},activeIntervals:[{activeFrom:envelope.inputs.periodStart}]}};
+    const snapshot=await db.$transaction(tx=>storeReplaySnapshot(tx,{...envelope,recipients:[recipient]}));
+    const posting=await db.entitlementReplayPosting.create({data:{actionKey:randomUUID(),snapshotId:snapshot.snapshotId,entitlementKey:key,recipientQualificationId:f.q.qualificationId,originallyPosted:100,recalculatedEntitlement:80,delta:-20,stateHash:'b'.repeat(64)}});
+    const first=(await f.read()).economicEvidence;
+    const context=first.periodContributions[0].periodContext;
+    expect(context.attribution).toBe('WHOLE_PERIOD_NOT_ORDER_ALLOCATION');
+    expect(context.recipients).toEqual([expect.objectContaining({awardType:recipient.awardType,active:true,eligible:true,theoryAmount:'120',originallyPosted:'100'})]);
+    expect(context.corrections).toEqual([expect.objectContaining({entitlementReference:context.recipients[0].reference,originallyPosted:'100',recalculatedEntitlement:'80',delta:'-20'})]);
+    expect(first.awards).toEqual([]);
+    expect(first.payables).toEqual([]);
+    expect((await f.read()).economicEvidence).toEqual(first);
+    for(const secret of [key,awardId,f.q.qualificationId,f.person.personId,snapshot.snapshotId,posting.postingId,'privateNote','secret recipient detail'])expect(JSON.stringify(context)).not.toContain(secret);
+    expect(await db.entitlementReplayPosting.findUniqueOrThrow({where:{postingId:posting.postingId}})).toEqual(posting);
+  });
+  it.each(['MAX_HORIZON','CONVERGED'] as const)('shows return-linked downstream carry checkpoints without inferring payment for %s',async status=>{
+    const f=await fixture(),other=await fixture();
+    let ownRun:any;
+    for(const current of [f,other]){
+      const ret=await db.returnCase.create({data:{orderId:current.order.orderId,status:'POSTED',reasonCode:'TEST',occurredAt:new Date(),idempotencyKey:randomUUID(),correlationId:randomUUID()}});
+      const run=await db.settlementReplayRun.create({data:{sourceReturnCaseId:ret.returnCaseId,initialPeriodStart:new Date('2026-01-01'),initialPeriodEnd:new Date('2026-01-08'),ruleVersionCode:'R1',status,maxWeeks:2,processedWeeks:2,calculationSnapshot:{privateIdentity:current.person.personId}}});
+      for(const periodNo of [2,1])await db.settlementReplayPeriod.create({data:{settlementReplayRunId:run.settlementReplayRunId,periodNo,periodStart:new Date(`2026-01-${periodNo===1?'01':'08'}`),periodEnd:new Date(`2026-01-${periodNo===1?'08':'15'}`),originalK1:1,recomputedK1:0.9,impactedQualifications:[current.q.qualificationId],awardDeltaSnapshot:{binary:[{entitlementKey:randomUUID(),qualificationId:current.q.qualificationId,original:'10',recomputed:'8',privateNote:'unprojected award detail'}],matching:[]},carryDeltaSnapshot:{[current.q.qualificationId]:{original:{left:'100',right:'0'},recomputed:{left:'80',right:'0'},privateNote:'unprojected carry detail'}}}});
+      if(current===f)ownRun=run;
+    }
+    const first=(await f.read()).economicEvidence;
+    expect(first.returnReplays).toHaveLength(1);
+    expect(first.returnReplays[0]).toMatchObject({status,evidenceType:'CALCULATION_CHECKPOINT_NOT_PAYMENT',processedWeeks:2,maxWeeks:2});
+    expect(first.returnReplays[0].periods.map(period=>period.periodNo)).toEqual([1,2]);
+    expect(first.returnReplays[0].periods[1].carryChanges).toEqual([expect.objectContaining({original:{left:'100',right:'0'},recomputed:{left:'80',right:'0'}})]);
+    expect(first.returnReplays[0].periods[1].awardChanges).toEqual([expect.objectContaining({kind:'binary',original:'10',recomputed:'8',recipientReference:first.returnReplays[0].periods[1].carryChanges[0].recipientReference})]);
+    expect(first.periodContributions).toEqual([]);
+    expect(first.payables).toEqual([]);
+    expect((await f.read()).economicEvidence).toEqual(first);
+    for(const secret of [ownRun.settlementReplayRunId,ownRun.sourceReturnCaseId,f.q.qualificationId,f.person.personId,other.q.qualificationId,'privateNote','privateIdentity'])expect(JSON.stringify(first.returnReplays)).not.toContain(secret);
+    expect(await db.settlementReplayRun.findUniqueOrThrow({where:{settlementReplayRunId:ownRun.settlementReplayRunId}})).toEqual(ownRun);
+  });
   it('includes return-linked recovery without attributing its whole period award to the order',async()=>{
     const f=await fixture(),periodAward=await f.award(randomUUID());
     const ret=await db.returnCase.create({data:{orderId:f.order.orderId,status:'POSTED',reasonCode:'TEST',occurredAt:new Date(),idempotencyKey:randomUUID(),correlationId:randomUUID()}});
