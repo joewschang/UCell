@@ -20,6 +20,9 @@ describeDb('ADMIN_MEMBER_360_REAL_DB',()=>{
     const version=await db.learningCourseVersion.create({data:{learningCourseId:course.learningCourseId,version:1,title:'Member 360 Learning',categoryCode:'ONBOARDING',contentHash:'a'.repeat(64),status:'PUBLISHED',approvalReference:'test',approvedByActor:'test',approvedAt:new Date()}});
     const enrollment=await db.learningEnrollment.create({data:{learningCourseId:course.learningCourseId,learningCourseVersionId:version.learningCourseVersionId,personId:person.personId,status:'COMPLETED',enrolledAt:new Date(Date.now()-3000),startedAt:new Date(Date.now()-2000),completedAt:new Date(Date.now()-1000)}});
     await db.learningProgressEvent.create({data:{learningEnrollmentId:enrollment.learningEnrollmentId,eventType:'COURSE_COMPLETED',idempotencyKey:'member360-learning',evidenceHash:'b'.repeat(64)}});
+    const event=await db.memberEvent.create({data:{eventCode:'MEMBER360-EVENT',status:'PUBLISHED',createdByActor:'test'}});
+    const eventVersion=await db.memberEventVersion.create({data:{memberEventId:event.memberEventId,version:1,title:'Member 360 Event',eventType:'ONLINE',startsAt:new Date(Date.now()+60_000),endsAt:new Date(Date.now()+3_600_000),onlineJoinReference:'https://example.test/member360',contentHash:'c'.repeat(64),status:'PUBLISHED',approvalReference:'test',approvedByActor:'test',approvedAt:new Date()}});
+    await db.memberEventRegistration.create({data:{memberEventId:event.memberEventId,memberEventVersionId:eventVersion.memberEventVersionId,personId:person.personId,status:'CHECKED_IN',checkInTokenHash:'d'.repeat(64),checkedInAt:new Date()}});
     const read=await new AdminOperationsService(db as any,new AuditService()).member360(person.memberNo);
     expect(read.member).toMatchObject({memberNo:person.memberNo,legalName:'Member 360 Subject'});
     expect(read.lineLinks).toEqual([expect.objectContaining({provider:'LINE',status:'ACTIVE'})]);
@@ -27,6 +30,7 @@ describeDb('ADMIN_MEMBER_360_REAL_DB',()=>{
     expect(read.tasks).toEqual([expect.objectContaining({taskCode:'MANUAL_FOLLOW_UP'})]);
     expect(read.timeline).toEqual([expect.objectContaining({action:'QUALIFICATION_EFFECTIVE'})]);
     expect(read.learning).toEqual([expect.objectContaining({courseCode:'MEMBER360-LEARN',status:'COMPLETED'})]);
+    expect(read.events).toEqual([expect.objectContaining({eventCode:'MEMBER360-EVENT',status:'CHECKED_IN'})]);
     const payload=JSON.stringify(read);
     expect(payload).not.toContain(person.personId);
     expect(payload).not.toContain(qualification.qualificationId);
