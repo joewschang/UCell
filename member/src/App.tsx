@@ -26,6 +26,7 @@ import MemberBinaryTree from './MemberBinaryTree';
 import MemberTodaySummary from './MemberTodaySummary';
 import MemberAwardJourney from './MemberAwardJourney';
 import PlacementWorkbench from './PlacementWorkbench';
+import GrowthCenter from './GrowthCenter';import LearningCenter from './LearningCenter';import EventCenter from './EventCenter';
 import {availabilityText,awardStatusLabels,formatNullableMoney,formatNullableNumber,qualificationActiveLabel} from './terminology';
 export const number = formatNullableNumber;
 export const money = formatNullableMoney;
@@ -68,7 +69,7 @@ function Home({ q }: {
         <section className="card uc-bonus-summary"><div><span>本期獎金</span><small>{awardStatusLabels[d.bonusStatus]}</small></div><h2><MoneyState amount={d.bonusAmount} status={d.bonusAmount===null?'PENDING':d.bonusStatus}/></h2><Link to="/bonuses">查看結算明細</Link></section>
         <details id="repurchase-details" className="uc-repurchase-expander" open={repurchaseDetailsOpen} onToggle={event=>setRepurchaseDetailsOpen(event.currentTarget.open)}><summary>查看重購認列詳情</summary><RepurchaseDetails q={q}/></details>
         <div className="uc-section-heading"><div><small>MEMBER SERVICES</small><h2>快速服務</h2></div></div>
-        <MobileActionGrid>{([['/organization','我的組織','organization'],['/performance','我的業績','income'],['/bonuses','獎金明細','bonuses'],['/shop','商品商城','shop'],['/orders','我的訂單','orders'],['/content','影音內容','content'],['/me','會員資料','me']] as const).map(([path,title,icon]) => <Link key={path} to={path}><UCellIcon name={icon}/><span>{title}</span></Link>)}</MobileActionGrid>
+        <MobileActionGrid>{([['/growth','我的成長','me'],['/learning','教育訓練','content'],['/events','活動中心','notification'],['/organization','我的組織','organization'],['/performance','我的業績','income'],['/bonuses','獎金明細','bonuses'],['/shop','商品商城','shop'],['/orders','我的訂單','orders'],['/content','影音內容','content'],['/me','會員資料','me']] as const).map(([path,title,icon]) => <Link key={path} to={path}><UCellIcon name={icon}/><span>{title}</span></Link>)}</MobileActionGrid>
     </div>}</Result>;
 }
 function Organization({ q }: {
@@ -159,6 +160,9 @@ function MemberApp() {
       <main ref={mainRef} id="member-main" tabIndex={-1}>{loading ? <LoadingState label={loadingLabel}/> : error ? <ErrorState message={error} retry={()=>{begin();retry()}}/> : current ? <><ContextBar beforeSelect={begin}/><div key={current.id}><Routes>
         <Route path="/" element={<Home q={current}/>}/>
         <Route path="/organization" element={<Organization q={current}/>}/>
+        <Route path="/growth" element={<GrowthCenter/>}/>
+        <Route path="/learning" element={<LearningCenter/>}/>
+        <Route path="/events" element={<EventCenter/>}/>
         <Route path="/performance" element={<Performance q={current}/>}/>
         <Route path="/bonuses" element={<Bonuses q={current}/>}/>
         <Route path="/shop" element={<Shop q={current}/>}/>

@@ -196,5 +196,14 @@ export const getBonuses = (q: Qualification, p: string, s: AbortSignal) => scope
 export const getLedger = (q: Qualification, p: string, s: AbortSignal) => scoped<Ledger>('bonuses/ledger', q, { qualificationId: q.id, period: p, entries: [] }, s, validate.parseLedger, p);
 export const getProducts = (signal: AbortSignal) => isMock ? Promise.resolve<Product[]>(demoProducts) : api<unknown>('/member/products', { signal }).then(validate.parseProducts);
 export const getOrders = (q: Qualification, s: AbortSignal) => scoped<Orders>('orders', q, { qualificationId: q.id, orders: q.id === 'q1' ? [{ id: 'DEMO-ORDER-001', createdAt: '2026-09-15', total: 4800, status: '處理中', paymentStatus: '待付款', shipmentStatus: '未出貨' }] : [] }, s, validate.parseOrders);
+export type Growth={asOf:string;dimensions:{qualification:{items:any[]};active:{activeQualificationCount:number;totalQualificationCount:number};globalRank:{achieved:any[];nextAchievement:{status:string;reason:string}};organization:{directQualifiedCount:number};repurchase:{items:any[]};learning:{enrolledCount:number;completedCount:number;items:any[]};events:{upcomingRegisteredCount:number;attendedCount:number;items:any[]}}};
+export const getGrowth=(signal:AbortSignal)=>api<Growth>('/member/my-growth',{signal});
+export type LearningCourse={courseCode:string;title:string;summary:string|null;categoryCode:string;lessonCount:number;status:string};
+export const getLearning=(signal:AbortSignal)=>api<LearningCourse[]>('/member/learning/courses',{signal});
+export const enrollCourse=(courseCode:string,key:string)=>api<any>(`/member/learning/courses/${encodeURIComponent(courseCode)}/enroll`,{method:'POST',headers:{'Idempotency-Key':key}});
+export type MemberEvent={eventCode:string;title:string;description:string|null;eventType:string;startsAt:string;endsAt:string;capacity:number|null;status:string};
+export const getEvents=(signal:AbortSignal)=>api<MemberEvent[]>('/member/events',{signal});
+export const registerEvent=(eventCode:string,key:string)=>api<any>(`/member/events/${encodeURIComponent(eventCode)}/register`,{method:'POST',headers:{'Idempotency-Key':key}});
+export const cancelEvent=(eventCode:string,key:string)=>api<any>(`/member/events/${encodeURIComponent(eventCode)}/cancel`,{method:'POST',headers:{'Idempotency-Key':key}});
 
 
