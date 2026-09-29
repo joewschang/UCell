@@ -3,6 +3,8 @@ import {sealGpvEvent,verifyReplayEnvelope} from '@ucell/database';
 import {randomUUID} from 'node:crypto';
 import {BinaryBonusService} from '../src/modules/bonus/binary-bonus.service';
 import {ReferralBonusService} from '../src/modules/bonus/referral-bonus.service';
+import {GlobalPoolService} from '../src/modules/global-pool/global-pool.service';
+import {GlobalPoolPersistence} from '../src/modules/global-pool/global-pool-persistence';
 import {BonusQueryService} from '../src/modules/bonus/bonus-query.service';
 import {RuntimeRuleService} from '../src/modules/rules/runtime-rule.service';
 import {SettlementCalendarService} from '../src/modules/settlement/settlement-calendar.service';
@@ -94,7 +96,14 @@ describeDb('sealed period eligibility writer-to-order lineage',()=>{
         ['pool.matching.rate','*',scenario.matchingPool],['matching.rate','1','0.1'],['matching.rate','2','0.05'],['matching.rate','3','0.02'],
         ['settlement.timezone','MATCHING_K2','UTC'],['settlement.period','MATCHING_K2',{unit:'WEEK',count:1,anchorLocal:'1901-01-01T00:00:00'}],
         ['settlement.cut_off','MATCHING_K2',{localTime:'00:00:00',daysAfterPeriodEnd:0,approvalReference:'TEST_ONLY'}],
+        ['pool.global.rate','*','0.05'],['settlement.timezone','GLOBAL','UTC'],
+        ['settlement.period','GLOBAL',{unit:'WEEK',count:1,anchorLocal:'1901-01-01T00:00:00'}],
+        ['settlement.cut_off','GLOBAL',{localTime:'00:00:00',daysAfterPeriodEnd:0,approvalReference:'TEST_ONLY'}],
       ];
+      for(const rank of ['NEW_STAR','EXCELLENCE','GLORY','DIAMOND','CROWN']){
+        parameters.push(['global.rank.weak_threshold',rank,rank==='NEW_STAR'?'100':'1000']);
+        parameters.push(['global.rank.pool_rate',rank,rank==='NEW_STAR'?'0.02':'0.0075']);
+      }
       for(const [parameterCode,scopeKey,valueJson] of parameters)await tx.runtimeRuleParameter.create({data:{ruleVersionCode:rule,parameterCode,scopeKey,valueJson,effectiveFrom}});
       const person=await tx.person.create({data:{legalName:'PRIVATE-PERIOD-HOLDER'}});
       const makeQualification=async()=>{
@@ -190,6 +199,33 @@ describeDb('sealed period eligibility writer-to-order lineage',()=>{
         expect(await tx.historicalReplaySnapshot.findUniqueOrThrow({where:{snapshotId:matchingSnapshot.snapshotId}})).toEqual(matchingSnapshot);
         expect(await orderEconomicEvidence(tx,orders[0].orderId,[])).toEqual(after);
         expect((await orderEconomicEvidence(tx,orders[1].orderId,[])).periodContributions.find(row=>row.kind==='MATCHING_K2')!.periodContext).toEqual(matchingContext);
+      }
+      if(scenario.name==='inactive'||scenario.name==='full pools'){
+        const globalService=new GlobalPoolService(proxy,new RuntimeRuleService(proxy),new BonusQueryService(proxy),new SettlementCalendarService(proxy),new GlobalPoolPersistence());
+        const global=await globalService.evaluateAndSettle(start,end,rule);
+        expect(global.totalGpv.toString()).toBe('200');expect(global.poolAvailable.toString()).toBe('10');
+        expect(global.distributedAmount.toString()).toBe(active?'4':'0');expect(global.undistributedAmount.toString()).toBe(active?'6':'10');
+        const globalAwards=await tx.globalPoolAward.findMany({where:{globalPoolSettlementId:global.globalPoolSettlementId}});
+        expect(globalAwards).toHaveLength(active?1:0);
+        if(active){
+          expect(globalAwards[0]).toMatchObject({qualificationId:root.qualificationId,rankLevel:'NEW_STAR',activeSnapshot:true});
+          expect(globalAwards[0].weakSidePvSnapshot.toString()).toBe('100');expect(globalAwards[0].payableAmount.toString()).toBe('4');
+        }
+        const reservoir=await tx.reservoirLedgerEffect.findMany({where:{sourceGlobalSettlementId:global.globalPoolSettlementId}});
+        expect(reservoir).toHaveLength(1);expect(reservoir[0].amount.toString()).toBe(active?'6':'10');
+        const globalSnapshot=await tx.historicalReplaySnapshot.findUniqueOrThrow({where:{kind_sourceId:{kind:'GLOBAL',sourceId:global.globalPoolSettlementId}}});
+        expect(verifyReplayEnvelope(globalSnapshot).recipients).toHaveLength(globalAwards.length);
+        const final=await orderEconomicEvidence(tx,orders[0].orderId,[]),globalPeriod=final.periodContributions.find(row=>row.kind==='GLOBAL')!;
+        expect(globalPeriod).toMatchObject({orderOriginalGpv:'100',kFactor:null,periodContext:{attribution:'WHOLE_PERIOD_NOT_ORDER_ALLOCATION',eligibilityEvidenceStatus:'UNAVAILABLE',eligibilityDecisions:[]}});
+        expect(globalPeriod.periodContext.recipients).toEqual(active?[expect.objectContaining({awardType:'GLOBAL',theoryAmount:'4',originallyPosted:'4',active:true})]:[]);
+        expect(final.awards).toEqual([]);expect(final.payables).toEqual([]);
+        for(const secret of [global.globalPoolSettlementId,globalSnapshot.snapshotId,root.qualificationId,...globalAwards.map(row=>row.globalPoolAwardId)])expect(JSON.stringify(final)).not.toContain(secret);
+        expect((await orderEconomicEvidence(tx,orders[1].orderId,[])).periodContributions.find(row=>row.kind==='GLOBAL')!.periodContext).toEqual(globalPeriod.periodContext);
+        expect(await globalService.evaluateAndSettle(start,end,rule)).toEqual(global);
+        expect(await tx.globalPoolAward.findMany({where:{globalPoolSettlementId:global.globalPoolSettlementId}})).toEqual(globalAwards);
+        expect(await tx.reservoirLedgerEffect.findMany({where:{sourceGlobalSettlementId:global.globalPoolSettlementId}})).toEqual(reservoir);
+        expect(await tx.historicalReplaySnapshot.findUniqueOrThrow({where:{snapshotId:globalSnapshot.snapshotId}})).toEqual(globalSnapshot);
+        expect(await orderEconomicEvidence(tx,orders[0].orderId,[])).toEqual(final);
       }
       throw new Error(rollback);
     },{isolationLevel:Prisma.TransactionIsolationLevel.Serializable,timeout:30000})).rejects.toThrow(rollback);

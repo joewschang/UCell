@@ -23,6 +23,14 @@ The page presents dated events chronologically, with current/undated state separ
 
 ## Validation and limitations
 
+### Follow-up: actual Global settlement-to-lineage verification
+
+The full-pool active/inactive fixtures now continue through the real GlobalPoolService, historical period capture, rank calculation, persistence, Reservoir A effect and sealGlobalSettlement writer. With total GPV 200 and pool 10, an active NEW_STAR recipient with weak-side PV 100 receives 4, leaving 6 in Reservoir A. The inactive fixture distributes 0 and leaves 10. Sealed recipients and the order reader agree, both contributing orders see the same whole-period context, and neither order receives that Global award as a direct award/payable.
+
+Global has no sealed eligibility-decision list in this writer contract. The read explicitly remains UNAVAILABLE with no inferred exclusion reason; absence of an award is not converted into a recorded zero-entitlement decision. Global also has no K coefficient and remains null. Finalized retries preserve Global awards, exactly one Reservoir effect, the original snapshot and stable private-data-safe reads. This extends existing parameterized cases, not the top-level test count.
+
+Focused isolated **3 suites / 84 tests PASS**, fresh **0→107 migrations**, **162 baseline assertions**, cleanup PASS. Log: `C:/UCell/logs/global-lineage-writer-20260929.log`. The run also includes existing Reservoir concurrency, rollback and immutable-source guard tests. This slice changes tests/docs only; full API regression and browser acceptance were not repeated. Stage remains NOT READY.
+
 ### Follow-up: reduced Binary/Matching pools and sealed K display
 
 Period contributions now include the sealed `inputs.k` as `kFactor`, using the existing Admin factor field. Missing historical K remains null/未提供; explicitly malformed, null or out-of-range K fails closed. The permitted decimal range is 0–1. This read does not derive a factor from current rules or amounts and adds no financial writes or migrations.

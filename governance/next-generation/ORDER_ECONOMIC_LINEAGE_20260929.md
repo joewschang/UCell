@@ -30,6 +30,8 @@ Exact OrderLine sources now also join RETAIL_REFERRAL awards, including zero pay
 
 ## Validation
 
+- Actual Global settlement-to-lineage follow-up: active NEW_STAR award 4 / Reservoir A 6 versus inactive no award / Reservoir A 10 from pool 10; real service, sealing, whole-period order read, private data exclusion and finalized retry stability verified. Global exclusion reasons remain unavailable in the existing sealed contract. Focused isolated 3 suites / 84 tests, 107 migrations, 162 baseline assertions and cleanup PASS; log C:/UCell/logs/global-lineage-writer-20260929.log. Tests/docs only; full API/browser acceptance not rerun. Stage NOT READY.
+
 - Reduced-pool and sealed K follow-up: period read exposes historical K with missing-versus-invalid handling; actual Binary K1=0.5 yields 5 from theory 10, Matching theory 0.25 uses that reduced entitlement, and K2=0.5 yields 0.125. API build, focused 2 suites / 81 tests, full isolated API 143 suites / 1,053 tests, 107 migrations, 162 baseline assertions and cleanup PASS. Admin typecheck and 36 files / 142 tests PASS. Log: C:/UCell/logs/pool-factor-full-20260929.log. Browser acceptance remains pending. Stage NOT READY.
 
 - Actual Matching settlement-to-lineage follow-up: extended Binary fixture verifies finalized-Binary prerequisite, exact source award, eligible G2 0.5 versus inactive G1 1/0 and locked G3 0.2/0, sealed evidence, whole-period attribution, privacy and retry stability. Focused isolated 2 suites / 74 tests, 107 migrations, 162 baseline assertions and cleanup PASS. Log: C:/UCell/logs/matching-eligibility-writer-20260929.log. Tests/docs only; full API/browser acceptance not rerun. Stage NOT READY.
