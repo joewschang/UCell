@@ -1,6 +1,7 @@
 import {PrismaClient,Prisma} from '@prisma/client';
 import {AdminOperationsService} from '../src/modules/admin-operations/admin-operations.service';
 import {AuditService} from '../src/common/audit/audit.service';
+import {randomUUID} from 'node:crypto';
 
 const url=process.env.PHASE2_TEST_DATABASE_URL;
 const describeDb=url?describe:describe.skip;
@@ -45,5 +46,59 @@ describeDb('OPERATIONAL_INVARIANT_REAL_DB',()=>{
     expect(candidates).toContainEqual(expect.objectContaining({code:'OVERDUE_RECOGNITION',severity:'HIGH',reference:`QUALIFICATION:${qualification.qualificationNo.toString()}:RECOGNITION:2026-01-03`,detail:expect.objectContaining({status:'SCHEDULED',installmentNo:1,ruleVersionCode:'R1.0B'})}));
     expect(JSON.stringify(candidates)).not.toContain(schedule.recognitionId);
     expect(await db.monthlyRecognitionSchedule.findUniqueOrThrow({where:{recognitionId:schedule.recognitionId}})).toMatchObject({status:'SCHEDULED'});
+  });
+
+  async function fulfillmentFixture(){
+    const token=randomUUID();
+    const purchaser=await db.person.create({data:{legalName:"Invariant purchaser"}});
+    const product=await db.productReference.create({data:{sku:`INV-${token}`,displayName:'Invariant product',currentPrice:10}});
+    const order=await db.order.create({data:{purchaserPersonId:purchaser.personId,purpose:'RETAIL',status:'CONFIRMED',grossAmount:20,netAmount:20,ruleVersionCode:'R1.0B',lines:{create:{productId:product.productId,skuSnapshot:product.sku,productNameSnapshot:product.displayName,quantity:2,unitPrice:10,lineAmount:20,gpvRateSnapshot:0,gpvAmountSnapshot:0,ruleProfileSnapshot:{}}}},include:{lines:true}});
+    const fulfillment=await db.fulfillment.create({data:{orderId:order.orderId,fulfillmentKey:`INV-${token}`,allocationSnapshotRef:'test',fulfillmentPolicySnapshotRef:'test'}});
+    const source=await db.fulfillmentSourceAllocation.create({data:{fulfillmentId:fulfillment.fulfillmentId,orderLineId:order.lines[0].orderLineId,allocatedQuantity:2,skuSnapshot:product.sku}});
+    return {product,order,fulfillment,source};
+  }
+  it('allows incomplete scans before handoff but flags a durable handoff with missing serials, without changing evidence',async()=>{
+    const f=await fulfillmentFixture(),monitor=new AdminOperationsService(db as any,new AuditService());
+    const own=(rows:any[])=>rows.filter(r=>r.reference.includes(f.fulfillment.fulfillmentKey));
+    expect(own(await monitor.invariantCandidates())).toEqual([]);
+    const event=await db.outboxEvent.create({data:{eventType:'FULFILLMENT_ERP_HANDOFF_REQUESTED',aggregateType:'FULFILLMENT',aggregateId:f.fulfillment.fulfillmentId,payload:{},correlationId:randomUUID()}});
+    const handoff=await db.fulfillmentErpHandoff.create({data:{fulfillmentId:f.fulfillment.fulfillmentId,outboxEventId:event.outboxEventId,providerCode:'TEST',formatVersion:'UCELL_FULFILLMENT_ERP_V1',payloadHash:'a'.repeat(64),payloadSnapshot:{},requestedByActor:'test'}});
+    const first=own(await monitor.invariantCandidates()),second=own(await monitor.invariantCandidates());
+    expect(first).toEqual(second);
+    expect(first).toEqual([expect.objectContaining({code:'FULFILLMENT_HANDOFF_SERIAL_QUANTITY_MISMATCH',detail:{allocatedQuantity:'2',serialCount:0}})]);
+    for(const id of [f.source.fulfillmentSourceAllocationId,f.fulfillment.fulfillmentId,f.order.orderId,event.outboxEventId]) expect(JSON.stringify(first)).not.toContain(id);
+    expect(await db.fulfillmentErpHandoff.findUniqueOrThrow({where:{fulfillmentId:f.fulfillment.fulfillmentId}})).toEqual(handoff);
+    expect(await db.outboxEvent.findUniqueOrThrow({where:{outboxEventId:event.outboxEventId}})).toEqual(event);
+  });
+  it('detects a wrong-product serial, cross-fulfillment binding and excessive scans using business references',async()=>{
+    const f=await fulfillmentFixture(),other=await fulfillmentFixture();
+    const batch=await db.productSerialBatch.create({data:{productId:other.product.productId,serialPrefix:'E',batchSequence:987,batchCode:randomUUID()}});
+    for(let i=1;i<=3;i++){
+      const unit=await db.serializedUnit.create({data:{productSerialBatchId:batch.productSerialBatchId,serialNo:`E987000${i}`,serialSequence:i}});
+      await db.fulfillmentSerialAllocation.create({data:{fulfillmentId:other.fulfillment.fulfillmentId,fulfillmentSourceAllocationId:f.source.fulfillmentSourceAllocationId,serializedUnitId:unit.serializedUnitId,scannedByActor:'test',scannedAt:new Date(),correlationId:randomUUID()}});
+    }
+    const before=await db.fulfillmentSerialAllocation.findMany({where:{fulfillmentSourceAllocationId:f.source.fulfillmentSourceAllocationId}});
+    const result=(await new AdminOperationsService(db as any,new AuditService()).invariantCandidates()).filter(r=>r.reference.includes(f.fulfillment.fulfillmentKey));
+    expect(result.map(r=>r.code)).toEqual(['FULFILLMENT_SERIAL_QUANTITY_EXCEEDED','FULFILLMENT_SERIAL_SOURCE_MISMATCH']);
+    expect(result[1].detail).toMatchObject({mismatchedSerialCount:3});
+    expect(await db.fulfillmentSerialAllocation.findMany({where:{fulfillmentSourceAllocationId:f.source.fulfillmentSourceAllocationId}})).toEqual(before);
+    expect(JSON.stringify(result)).not.toContain(f.source.fulfillmentSourceAllocationId);
+  });
+  it('reports source allocations that point to another order or contradict the captured order SKU',async()=>{
+    const f=await fulfillmentFixture(),other=await fulfillmentFixture();
+    const invalid=await db.fulfillmentSourceAllocation.create({data:{fulfillmentId:f.fulfillment.fulfillmentId,orderLineId:other.order.lines[0].orderLineId,allocatedQuantity:1,skuSnapshot:'WRONG-SNAPSHOT'}});
+    const result=(await new AdminOperationsService(db as any,new AuditService()).invariantCandidates()).filter(r=>r.reference.includes(f.fulfillment.fulfillmentKey));
+    expect(result).toEqual([expect.objectContaining({code:'FULFILLMENT_SOURCE_MISMATCH',detail:{orderMatches:false,skuMatches:false}})]);
+    expect(await db.fulfillmentSourceAllocation.findUniqueOrThrow({where:{fulfillmentSourceAllocationId:invalid.fulfillmentSourceAllocationId}})).toEqual(invalid);
+  });
+  it('does not flag a correctly bound, fully scanned fulfillment',async()=>{
+    const f=await fulfillmentFixture();
+    const batch=await db.productSerialBatch.create({data:{productId:f.product.productId,serialPrefix:'E',batchSequence:986,batchCode:randomUUID()}});
+    for(let i=1;i<=2;i++){
+      const unit=await db.serializedUnit.create({data:{productSerialBatchId:batch.productSerialBatchId,serialNo:`E986000${i}`,serialSequence:i,status:'ALLOCATED'}});
+      await db.fulfillmentSerialAllocation.create({data:{fulfillmentId:f.fulfillment.fulfillmentId,fulfillmentSourceAllocationId:f.source.fulfillmentSourceAllocationId,serializedUnitId:unit.serializedUnitId,scannedByActor:'test',scannedAt:new Date(),correlationId:randomUUID()}});
+    }
+    const result=(await new AdminOperationsService(db as any,new AuditService()).invariantCandidates()).filter(r=>r.reference.includes(f.fulfillment.fulfillmentKey));
+    expect(result).toEqual([]);
   });
 });

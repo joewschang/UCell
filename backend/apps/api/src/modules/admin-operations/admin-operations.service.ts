@@ -244,13 +244,17 @@ export class AdminOperationsService {
   async invariantCandidates(input:{take?:number}={}){
     const requested=Number.isFinite(input.take)?input.take??100:100;
     const take=Math.min(Math.max(requested,1),200);
-    const [batches,payables,overdueRecognitions]=await Promise.all([
+    const [batches,payables,overdueRecognitions,allocations]=await Promise.all([
       this.prisma.payoutBatch.findMany({include:{lines:{select:{netAmount:true}}},orderBy:{periodEnd:'desc'},take}),
       this.prisma.payableEntry.findMany({where:{sourceType:'BONUS_AWARD'},include:{qualification:{select:{qualificationNo:true}}},orderBy:{createdAt:'desc'},take}),
       this.prisma.monthlyRecognitionSchedule.findMany({
         where:{status:{in:['SCHEDULED','DUE']},dueAt:{lt:new Date()}},
         include:{subscription:{include:{qualification:{select:{qualificationNo:true}}}}},
         orderBy:{dueAt:'asc'},take,
+      }),
+      this.prisma.fulfillmentSourceAllocation.findMany({
+        include:{orderLine:true,fulfillment:{include:{order:{select:{orderNo:true}},erpHandoffs:{select:{fulfillmentErpHandoffId:true}}}},serialAllocations:{include:{serializedUnit:{include:{batch:{select:{productId:true}}}}}}},
+        orderBy:[{createdAt:'desc'},{fulfillmentSourceAllocationId:'asc'}],take,
       }),
     ]);
     const awardIds=payables.map(row=>row.sourceId);
@@ -274,7 +278,24 @@ export class AdminOperationsService {
       const detail={status:row.status,dueAt:dueDate,recognitionMonth:row.recognitionMonth.toISOString(),installmentNo:row.installmentNo,ruleVersionCode:row.ruleVersionCode};
       return {code:'OVERDUE_RECOGNITION',severity:'HIGH',sourceType:'MONTHLY_RECOGNITION',reference,evidenceHash:createHash('sha256').update(JSON.stringify({reference,...detail})).digest('hex'),detail};
     });
-    return [...payoutCandidates,...payableCandidates,...recognitionCandidates].sort((left,right)=>left.code.localeCompare(right.code)||left.reference.localeCompare(right.reference));
+    const fulfillmentCandidates=allocations.flatMap(row=>{
+      const reference=`ORDER:${row.fulfillment.order.orderNo}:FULFILLMENT:${row.fulfillment.fulfillmentKey}:SKU:${row.skuSnapshot}`;
+      const candidates:Array<{code:string;severity:string;sourceType:string;reference:string;evidenceHash:string;detail:Record<string,unknown>}>=[];
+      const add=(code:string,detail:Record<string,unknown>)=>candidates.push({code,severity:'CRITICAL',sourceType:'FULFILLMENT_SOURCE_ALLOCATION',reference,
+        evidenceHash:createHash('sha256').update(JSON.stringify({code,source:row.fulfillmentSourceAllocationId,reference,...detail})).digest('hex'),detail});
+      if(row.orderLine.orderId!==row.fulfillment.orderId||row.skuSnapshot!==row.orderLine.skuSnapshot)
+        add('FULFILLMENT_SOURCE_MISMATCH',{orderMatches:row.orderLine.orderId===row.fulfillment.orderId,skuMatches:row.skuSnapshot===row.orderLine.skuSnapshot});
+      const mismatches=row.serialAllocations.filter(serial=>serial.fulfillmentId!==row.fulfillmentId||serial.serializedUnit.batch.productId!==row.orderLine.productId);
+      if(mismatches.length) add('FULFILLMENT_SERIAL_SOURCE_MISMATCH',{mismatchedSerialCount:mismatches.length,serialCount:row.serialAllocations.length});
+      const serialCount=new Prisma.Decimal(row.serialAllocations.length);
+      if(serialCount.gt(row.allocatedQuantity)) add('FULFILLMENT_SERIAL_QUANTITY_EXCEEDED',{allocatedQuantity:row.allocatedQuantity.toString(),serialCount:row.serialAllocations.length});
+      // In-progress scanning is expected to be incomplete. A durable ERP
+      // handoff, however, certifies that the exact physical quantity was bound.
+      if(row.fulfillment.erpHandoffs.length&&!serialCount.eq(row.allocatedQuantity))
+        add('FULFILLMENT_HANDOFF_SERIAL_QUANTITY_MISMATCH',{allocatedQuantity:row.allocatedQuantity.toString(),serialCount:row.serialAllocations.length});
+      return candidates;
+    });
+    return [...payoutCandidates,...payableCandidates,...recognitionCandidates,...fulfillmentCandidates].sort((left,right)=>left.code.localeCompare(right.code)||left.reference.localeCompare(right.reference)||left.evidenceHash.localeCompare(right.evidenceHash));
   }
 
   async operationalExceptions(input:{status?:string;take?:number}={}){
