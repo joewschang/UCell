@@ -23,6 +23,14 @@ The page presents dated events chronologically, with current/undated state separ
 
 ## Validation and limitations
 
+### Follow-up: actual Matching settlement-to-lineage verification
+
+The active Binary fixture now continues through the real Matching settlement service. Before Binary finalization, Matching rejects without creating a batch. After actual Binary entitlement 10, the Matching close-time sponsor graph yields an eligible G2 award 0.5 linked by sourceAwardId, inactive G1 theory 1 / entitlement 0, and locked G3 theory 0.2 / entitlement 0. Database eligibility rows exactly match the verified sealed list, and matchingSources points to the original Binary award and qualification. This fixture has K1=K2=1; it does not newly certify reduced-pool scenarios.
+
+Both contributing orders expose the same whole-period Matching context; neither claims the period award as a direct order award/payable. Private source IDs and calculation details are excluded. Finalized Matching retries preserve awards, decisions, snapshot and stable reads. The existing Binary cases now include the precondition check, with the active case extended to Matching rather than adding another top-level test.
+
+Focused isolated **2 suites / 74 tests PASS**, fresh **0→107 migrations**, **162 baseline assertions**, cleanup PASS. Log: `C:/UCell/logs/matching-eligibility-writer-20260929.log`. Tests/docs only; full API regression and browser acceptance were not repeated for this extension. Stage remains NOT READY.
+
 ### Follow-up: actual Referral and Equalization settlement-to-lineage verification
 
 The real ReferralBonusService now has three rollback-only PostgreSQL writer-to-reader cases alongside the Binary cases. A sealed 100 GPV source uses fixed sponsor generations and historical STARTER rates: G1 theory 15, G2 theory 1.5, G3 theory 0.75, and locked G4 theory 0.3. Cases cover inactive G1, inactive G2, and active G1–G3 with G4 still locked by its recorded direct count. Inactive G1 does not erase the independent G2/G3 matching theory base. Later Active acquired after recognition but before settlement does not replace the source snapshot's eligibility.

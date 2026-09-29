@@ -73,7 +73,7 @@ describeDb('sealed period eligibility writer-to-order lineage',()=>{
     },{isolationLevel:Prisma.TransactionIsolationLevel.Serializable,timeout:30000})).rejects.toThrow(rollback);
   },40000);
 
-  it.each([false,true])('preserves historical Active=%s through actual settlement, sealing and read',async active=>{
+  it.each([false,true])('preserves Binary Active=%s and subsequent Matching through settlement, sealing and read',async active=>{
     const rollback='PERIOD_ELIGIBILITY_ROLLBACK';
     await expect(db.$transaction(async tx=>{
       // A past, isolated calendar avoids current cut-off assumptions and baseline qualifications.
@@ -85,6 +85,9 @@ describeDb('sealed period eligibility writer-to-order lineage',()=>{
         ['settlement.timezone','BINARY_K1','UTC'],
         ['settlement.period','BINARY_K1',{unit:'WEEK',count:1,anchorLocal:'1901-01-01T00:00:00'}],
         ['settlement.cut_off','BINARY_K1',{localTime:'00:00:00',daysAfterPeriodEnd:0,approvalReference:'TEST_ONLY'}],
+        ['pool.matching.rate','*','0.2'],['matching.rate','1','0.1'],['matching.rate','2','0.05'],['matching.rate','3','0.02'],
+        ['settlement.timezone','MATCHING_K2','UTC'],['settlement.period','MATCHING_K2',{unit:'WEEK',count:1,anchorLocal:'1901-01-01T00:00:00'}],
+        ['settlement.cut_off','MATCHING_K2',{localTime:'00:00:00',daysAfterPeriodEnd:0,approvalReference:'TEST_ONLY'}],
       ];
       for(const [parameterCode,scopeKey,valueJson] of parameters)await tx.runtimeRuleParameter.create({data:{ruleVersionCode:rule,parameterCode,scopeKey,valueJson,effectiveFrom}});
       const person=await tx.person.create({data:{legalName:'PRIVATE-PERIOD-HOLDER'}});
@@ -111,6 +114,8 @@ describeDb('sealed period eligibility writer-to-order lineage',()=>{
       // Keep the real service transaction inside this rollback-only test transaction.
       const proxy=new Proxy(tx,{get(target,key){return key==='$transaction'?(callback:any)=>callback(proxy):Reflect.get(target,key);}}) as any;
       const service=new BinaryBonusService(proxy,new RuntimeRuleService(proxy),new BonusQueryService(proxy),new SettlementCalendarService(proxy));
+      await expect(service.settleMatching(start,end,rule)).rejects.toThrow('Binary K1 must be finalized before Matching');
+      expect(await tx.settlementBatch.count({where:{ruleVersionCode:rule}})).toBe(0);
       const batch=await service.settleBinary(start,end,rule);
       expect(batch).toMatchObject({status:'FINALIZED'});
       expect(batch.totalGpv.toString()).toBe('200');
@@ -144,6 +149,41 @@ describeDb('sealed period eligibility writer-to-order lineage',()=>{
       expect(await orderEconomicEvidence(tx,orders[0].orderId,[])).toEqual(first);
       expect(await tx.historicalReplaySnapshot.findUniqueOrThrow({where:{snapshotId:stored.snapshotId}})).toEqual(stored);
       expect(await tx.bonusCalculationEvidence.findMany({where:{settlementBatchId:batch.settlementBatchId},orderBy:{bonusCalculationEvidenceId:'asc'}})).toEqual(decisions);
+      if(active){
+        // Matching captures the sponsor graph at close; Binary source snapshots remain sealed.
+        const uplines=[];
+        for(let generation=1;generation<=3;generation++){
+          const q=await makeQualification();uplines.push(q);
+          await tx.sponsorRelationship.create({data:{sponsorQualificationId:q.qualificationId,childQualificationId:generation===1?root.qualificationId:uplines[generation-2].qualificationId,sponsorSequenceNo:1,effectiveFrom}});
+          if(generation>1)await tx.activePeriod.create({data:{qualificationId:q.qualificationId,activeFrom:effectiveFrom,sourceType:'TEST_MATCHING',ruleVersionCode:rule}});
+        }
+        const sourceAward=await tx.bonusAward.findFirstOrThrow({where:{settlementBatchId:batch.settlementBatchId,awardType:'BINARY'}});
+        const matching=await service.settleMatching(start,end,rule);
+        expect(matching.status).toBe('FINALIZED');expect(matching.kFactor.toString()).toBe('1');
+        const matchingAwards=await tx.bonusAward.findMany({where:{settlementBatchId:matching.settlementBatchId}});
+        expect(matchingAwards).toHaveLength(1);
+        expect(matchingAwards[0]).toMatchObject({awardType:'MATCHING',sourceAwardId:sourceAward.bonusAwardId,recipientQualificationId:uplines[1].qualificationId,generationNo:2});
+        expect(matchingAwards[0].payableAmount.toString()).toBe('0.5');
+        const matchingDecisions=await tx.bonusCalculationEvidence.findMany({where:{settlementBatchId:matching.settlementBatchId},orderBy:{bonusCalculationEvidenceId:'asc'}});
+        expect(matchingDecisions).toHaveLength(2);
+        expect(matchingDecisions.map(row=>[row.reasonCode,row.theoreticalAmount.toString(),row.entitlementAmount.toString()]).sort()).toEqual([['INACTIVE','1','0'],['LOCKED','0.2','0']]);
+        expect(matchingDecisions.every(row=>row.evidenceType==='BINARY_MATCHING_ELIGIBILITY')).toBe(true);
+        const matchingSnapshot=await tx.historicalReplaySnapshot.findUniqueOrThrow({where:{kind_sourceId:{kind:'MATCHING_K2',sourceId:matching.settlementBatchId}}});
+        const matchingEnvelope=verifyReplayEnvelope(matchingSnapshot);
+        expect(matchingEnvelope.evidence.eligibilityEvidence).toEqual(JSON.parse(JSON.stringify(matchingDecisions)));
+        expect(matchingEnvelope.evidence.matchingSources).toEqual([expect.objectContaining({sourceAwardId:sourceAward.bonusAwardId,sourceQualificationId:root.qualificationId})]);
+        const after=await orderEconomicEvidence(tx,orders[0].orderId,[]),matchingContext=after.periodContributions.find(row=>row.kind==='MATCHING_K2')!.periodContext;
+        expect(matchingContext.recipients).toEqual([expect.objectContaining({awardType:'MATCHING',theoryAmount:'0.5',originallyPosted:'0.5'})]);
+        expect(matchingContext.eligibilityDecisions.map((row:any)=>[row.reasonCode,row.theoryAmount,row.entitlementAmount]).sort()).toEqual([['INACTIVE','1','0'],['LOCKED','0.2','0']]);
+        expect(after.awards).toEqual([]);expect(after.payables).toEqual([]);
+        for(const secret of [sourceAward.bonusAwardId,...uplines.map(q=>q.qualificationId),matchingAwards[0].bonusAwardId,'sourceBinaryPaid'])expect(JSON.stringify(after)).not.toContain(secret);
+        expect(await service.settleMatching(start,end,rule)).toEqual(matching);
+        expect(await tx.bonusAward.findMany({where:{settlementBatchId:matching.settlementBatchId}})).toEqual(matchingAwards);
+        expect(await tx.bonusCalculationEvidence.findMany({where:{settlementBatchId:matching.settlementBatchId},orderBy:{bonusCalculationEvidenceId:'asc'}})).toEqual(matchingDecisions);
+        expect(await tx.historicalReplaySnapshot.findUniqueOrThrow({where:{snapshotId:matchingSnapshot.snapshotId}})).toEqual(matchingSnapshot);
+        expect(await orderEconomicEvidence(tx,orders[0].orderId,[])).toEqual(after);
+        expect((await orderEconomicEvidence(tx,orders[1].orderId,[])).periodContributions.find(row=>row.kind==='MATCHING_K2')!.periodContext).toEqual(matchingContext);
+      }
       throw new Error(rollback);
     },{isolationLevel:Prisma.TransactionIsolationLevel.Serializable,timeout:30000})).rejects.toThrow(rollback);
   },40000);
