@@ -15466,6 +15466,34 @@
         ]
       }
     },
+    "/api/v1/admin/events/{eventCode}/registrations": {
+      "get": {
+        "operationId": "AdminEventsController_registrations",
+        "parameters": [
+          {
+            "name": "eventCode",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "tags": [
+          "Admin - Events"
+        ]
+      }
+    },
     "/api/v1/admin/events/{eventCode}/publish": {
       "post": {
         "operationId": "AdminEventsController_publish",
