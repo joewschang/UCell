@@ -7,15 +7,18 @@ import { ProviderWorkloadMetrics } from './provider-workload-metrics';
 import { createLineMessagingObserverHandler } from './line-messaging-handler';
 import {pollErpHandoffs,type PhysicalErpAdapter} from './erp-handoff-runtime';
 import {pollPeriodCloseJobs} from './period-close-runtime';
+import {createShipmentTrackingHandler,type VerifiedShipmentTrackingAdapter} from './shipment-tracking-handler';
 
 // Actual transports are registered only after protocol/credential enablement.
 // An empty registry leaves durable ERP requests pending, never acknowledged.
 const erpAdapters:readonly PhysicalErpAdapter[]=Object.freeze([]);
+const trackingAdapters:readonly VerifiedShipmentTrackingAdapter[]=Object.freeze([]);
 
 const prisma = new PrismaService();
-const providerHandlers: readonly ProviderHandlerRegistration[] = process.env.LINE_MESSAGING_WORKER_ENABLED==='true'
-  ? Object.freeze([{domain:'IDENTITY',provider:'LINE_MESSAGING',connectionId:'LINE_MESSAGING_DEFAULT',handler:createLineMessagingObserverHandler(prisma)}])
-  : Object.freeze([]);
+const providerHandlers: readonly ProviderHandlerRegistration[] = Object.freeze([
+ ...trackingAdapters.map(adapter=>({domain:'LOGISTICS' as const,provider:adapter.provider,connectionId:adapter.connectionId,providerConnectionVersionId:adapter.providerConnectionVersionId,handler:createShipmentTrackingHandler(prisma,adapter)})),
+ ...(process.env.LINE_MESSAGING_WORKER_ENABLED==='true'?[{domain:'IDENTITY' as const,provider:'LINE_MESSAGING',connectionId:'LINE_MESSAGING_DEFAULT',handler:createLineMessagingObserverHandler(prisma)}]:[]),
+]);
 const providerMetrics = new ProviderWorkloadMetrics();
 
 function unlockedDepth(count:number){
