@@ -2,6 +2,7 @@ import { ConflictException, Injectable } from '@nestjs/common';
 import { Prisma, PrismaService } from '@ucell/database';
 import { createHash } from 'node:crypto';
 import { AuditService } from '../../common/audit/audit.service';
+import { verifySerialPack } from './fulfillment-pack-verification.service';
 
 @Injectable()
 export class FulfillmentErpHandoffService {
@@ -17,6 +18,9 @@ export class FulfillmentErpHandoffService {
       if (!fulfillment) throw new ConflictException({ code: 'FULFILLMENT_NOT_FOUND' });
       const replay = await tx.fulfillmentErpHandoff.findUnique({ where: { fulfillmentId: fulfillment.fulfillmentId } });
       if (replay) return { handoff: replay, replayed: true };
+      // Verification and durable handoff commit together. Explicit warehouse
+      // verification is also available through the same immutable QC authority.
+      await verifySerialPack(tx,this.audit,input);
       if (!fulfillment.sourceAllocations.length) throw new ConflictException({ code: 'FULFILLMENT_SOURCE_ALLOCATION_REQUIRED' });
       for (const source of fulfillment.sourceAllocations) {
         if (!source.allocatedQuantity.isInteger() || source.serialAllocations.length !== source.allocatedQuantity.toNumber()) {

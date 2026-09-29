@@ -4,6 +4,7 @@ import {AuditService} from '../src/common/audit/audit.service';
 import {FulfillmentSerialScanService} from '../src/modules/commerce/fulfillment-serial-scan.service';
 import {FulfillmentSourceAllocationService} from '../src/modules/commerce/fulfillment-source-allocation.service';
 import {FulfillmentErpHandoffService} from '../src/modules/commerce/fulfillment-erp-handoff.service';
+import {FulfillmentPackVerificationService,SERIAL_PACK_POLICY} from '../src/modules/commerce/fulfillment-pack-verification.service';
 const url=process.env.PHASE2_TEST_DATABASE_URL;
 const describeDb=url?describe:describe.skip;
 describeDb('FULFILLMENT_CONCURRENCY_REAL_DB',()=>{
@@ -62,5 +63,28 @@ describeDb('FULFILLMENT_CONCURRENCY_REAL_DB',()=>{
   expect(results.map(r=>r.replayed).sort()).toEqual([false,true]);
   expect(results[0].handoff.payloadHash).toBe(results[1].handoff.payloadHash);
   expect(await db.outboxEvent.count({where:{aggregateId:f.fulfillment.fulfillmentId,eventType:'FULFILLMENT_ERP_HANDOFF_REQUESTED'}})).toBe(1);
+  expect(await db.fulfillmentQcEvidence.count({where:{fulfillmentId:f.fulfillment.fulfillmentId,policyId:SERIAL_PACK_POLICY}})).toBe(1);
+ });
+ it('requires exact scan quantity and atomically records immutable pack evidence once',async()=>{
+  const f=await fixture(),source=await f.allocate(f.fulfillment.fulfillmentId),unit=await f.unit(1);
+  const service=new FulfillmentPackVerificationService(db as any,new AuditService());
+  const verify=()=>service.verify({fulfillmentId:f.fulfillment.fulfillmentId,...context()});
+  await expect(verify()).rejects.toMatchObject({response:{code:'FULFILLMENT_SERIAL_SCAN_INCOMPLETE'}});
+  expect(await db.fulfillmentQcEvidence.count({where:{fulfillmentId:f.fulfillment.fulfillmentId}})).toBe(0);
+  await f.scan(source.fulfillmentSourceAllocationId,unit.serialNo);
+  const results=await Promise.all([verify(),verify()]);
+  expect(results.map(r=>r.replayed).sort()).toEqual([false,true]);
+  expect(results[0].evidence.policySnapshotRef).toBe(results[1].evidence.policySnapshotRef);
+  expect(JSON.stringify(results[0].evidence.checks)).toContain(unit.serialNo);
+  expect((await db.fulfillment.findUniqueOrThrow({where:{fulfillmentId:f.fulfillment.fulfillmentId}})).status).toBe('PACKED');
+  await expect(db.fulfillmentQcEvidence.update({where:{fulfillmentQcEvidenceId:results[0].evidence.fulfillmentQcEvidenceId},data:{reason:'rewrite'}})).rejects.toThrow();
+ });
+ it('blocks ERP handoff if a scanned unit is recalled before packing',async()=>{
+  const f=await fixture(),source=await f.allocate(f.fulfillment.fulfillmentId),unit=await f.unit(1);
+  await f.scan(source.fulfillmentSourceAllocationId,unit.serialNo);
+  await db.serializedUnit.update({where:{serializedUnitId:unit.serializedUnitId},data:{status:'RECALLED'}});
+  await expect(new FulfillmentErpHandoffService(db as any,new AuditService()).request({fulfillmentId:f.fulfillment.fulfillmentId,...context()})).rejects.toMatchObject({response:{code:'SERIAL_PACK_UNIT_INELIGIBLE'}});
+  expect(await db.fulfillmentErpHandoff.count({where:{fulfillmentId:f.fulfillment.fulfillmentId}})).toBe(0);
+  expect((await db.fulfillment.findUniqueOrThrow({where:{fulfillmentId:f.fulfillment.fulfillmentId}})).status).toBe('READY');
  });
 });
