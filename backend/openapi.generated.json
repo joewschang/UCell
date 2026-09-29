@@ -1,6 +1,156 @@
 {
   "openapi": "3.0.0",
   "paths": {
+    "/api/v1/admin/fulfillment/orders/{orderNo}": {
+      "get": {
+        "operationId": "adminFulfillmentOrder",
+        "parameters": [
+          {
+            "name": "orderNo",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "依訂單號載入出貨明細與序號驗證證據",
+        "tags": [
+          "Admin - Fulfillment"
+        ]
+      }
+    },
+    "/api/v1/admin/fulfillment/orders/{orderNo}/{fulfillmentKey}/scans": {
+      "post": {
+        "operationId": "adminScanFulfillmentSerial",
+        "parameters": [
+          {
+            "name": "orderNo",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "fulfillmentKey",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FulfillmentScanDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "核對商品與序號並記錄一次有效配置",
+        "tags": [
+          "Admin - Fulfillment"
+        ]
+      }
+    },
+    "/api/v1/admin/fulfillment/orders/{orderNo}/{fulfillmentKey}/pack-verification": {
+      "post": {
+        "operationId": "adminVerifyFulfillmentPack",
+        "parameters": [
+          {
+            "name": "orderNo",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "fulfillmentKey",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "核對完整數量並保留不可變裝箱證據",
+        "tags": [
+          "Admin - Fulfillment"
+        ]
+      }
+    },
+    "/api/v1/admin/fulfillment/orders/{orderNo}/{fulfillmentKey}/erp-handoff": {
+      "post": {
+        "operationId": "adminRequestFulfillmentErpHandoff",
+        "parameters": [
+          {
+            "name": "orderNo",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "fulfillmentKey",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "保留 ERP 交付快照與持久請求；不宣告已出貨",
+        "tags": [
+          "Admin - Fulfillment"
+        ]
+      }
+    },
     "/api/v1/admin/finance/reservoirs": {
       "get": {
         "description": "Finance-confidential immutable sources. Read-only; signed replay correction is not a payout. Stable UUID cursor within server snapshot. A rejects tree/position/awardType filters.",
@@ -13618,6 +13768,22 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -14398,6 +14564,26 @@
       }
     },
     "schemas": {
+      "FulfillmentScanDto": {
+        "type": "object",
+        "properties": {
+          "sourceReference": {
+            "type": "string"
+          },
+          "sku": {
+            "type": "string"
+          },
+          "serialNo": {
+            "type": "string",
+            "description": "PBBBSSSS：產品代碼、三位批號及四位序號"
+          }
+        },
+        "required": [
+          "sourceReference",
+          "sku",
+          "serialNo"
+        ]
+      },
       "CreateTreeDto": {
         "type": "object",
         "properties": {

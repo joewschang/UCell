@@ -40,9 +40,11 @@ import { AdminRoleGuard } from './modules/auth/admin-role.guard';
 import { ContentModule } from './modules/content/content.module';
 import {PackageConfigModule} from './modules/package-config/package-config.module';
 import { UatEvidenceModule } from './modules/uat-evidence/uat-evidence.module';
+import {FulfillmentOperationsModule} from './modules/commerce/fulfillment-operations.module';
 
 @Module({
   imports: [
+    FulfillmentOperationsModule,
     ReservoirModule,
     BinaryTreeModule,
     ExplainModule,

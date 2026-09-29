@@ -29,6 +29,7 @@ import {ProviderOperationsPage} from '../features/provider-operations/ProviderOp
 import {RequirePageRole} from '../features/auth/RequirePageRole';
 import {ExistingMemberLineLinksPage} from '../features/line-links/ExistingMemberLineLinksPage';
 import {PaperIntakePage} from '../features/paper-intake/PaperIntakePage';
+import {FulfillmentPage} from '../features/fulfillment/FulfillmentPage';
 
 function Protected(){const {user,ready}=useAuth();if(!ready)return <div className="app-loading">驗證管理員Session…</div>;return user?<AppShell/>:<Navigate to="/login" replace/>}
 export function App(){return <Routes>
@@ -44,6 +45,7 @@ export function App(){return <Routes>
   <Route path="/products" element={<RequirePageRole><ProductsPage/></RequirePageRole>}/>
   <Route path="/packages" element={<RequirePageRole><PackagesPage/></RequirePageRole>}/>
   <Route path="/orders" element={<RequirePageRole><OrdersPage/></RequirePageRole>}/>
+  <Route path="/fulfillment" element={<RequirePageRole><FulfillmentPage/></RequirePageRole>}/>
   <Route path="/admin/organization/trees/:id?" element={<RequirePageRole><BinaryTreesPage/></RequirePageRole>}/>
   <Route path="/organization" element={<RequirePageRole><OrganizationPage/></RequirePageRole>}/>
   <Route path="/subscriptions" element={<RequirePageRole><SubscriptionsPage/></RequirePageRole>}/>

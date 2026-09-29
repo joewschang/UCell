@@ -3,6 +3,7 @@ import {act, create, type ReactTestRenderer} from 'react-test-renderer';
 import {MemoryRouter} from 'react-router-dom';
 import {afterEach, describe, expect, it, vi} from 'vitest';
 import {AppShell} from './AppShell';
+import {ThemeProvider} from '@ucell/design-system';
 
 const auth = vi.hoisted(() => ({role:'CUSTOMER_SERVICE'}));
 vi.mock('../features/auth/auth', () => ({useAuth:() => ({user:{name:'Shell test',role:auth.role},logout:vi.fn()})}));
@@ -19,7 +20,7 @@ describe('grouped navigation access', () => {
     auth.role = role;
     vi.stubGlobal('sessionStorage', {getItem:() => null});
     let renderer!:ReactTestRenderer;
-    act(() => {renderer=create(<MemoryRouter initialEntries={['/']}><AppShell/></MemoryRouter>)});
+    act(() => {renderer=create(<ThemeProvider><MemoryRouter initialEntries={['/']}><AppShell/></MemoryRouter></ThemeProvider>)});
     try {
       const navigation=renderer.root.findByProps({'aria-label':'後台主要功能'});
       expect(navigation.findAllByType('summary').map(node=>node.children.join(''))).toEqual(groups);
