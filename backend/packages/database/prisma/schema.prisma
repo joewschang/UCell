@@ -2960,6 +2960,10 @@ model ReturnSerialReceipt {
   shipmentSerialBindingId String @unique @map("shipment_serial_binding_id") @db.Uuid
   receivedByActor String @map("received_by_actor")
   receivedAt DateTime @default(now()) @map("received_at") @db.Timestamptz(6)
+  receiptType String @default("EXACT_SOURCE") @map("receipt_type")
+  substitutionRuleVersion String? @map("substitution_rule_version")
+  eligibilityEvidence Json @default("{\"format\":\"UCELL_RETURN_SERIAL_ELIGIBILITY_V1\",\"legacy\":true}") @map("eligibility_evidence")
+  evidenceHash String @default("0000000000000000000000000000000000000000000000000000000000000000") @map("evidence_hash") @db.Char(64)
   returnLine ReturnLine @relation(fields:[returnLineId],references:[returnLineId])
   shipmentBinding ShipmentSerialBinding @relation(fields:[shipmentSerialBindingId],references:[shipmentSerialBindingId])
   @@index([returnLineId])

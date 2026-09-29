@@ -1,5 +1,7 @@
 # Phase 1 Local Development Closure — 2026-09-26
 
+**2026-09-29 governed change record:** the approved §36 same-order/same-Shipment/same-SKU returned-unit substitution is implemented locally as migration 109. It preserves original physical provenance and ReturnCase economic authority, adds append-only rule/evidence receipts, fail-closed eligibility/concurrency checks and privacy-safe Admin evidence. Local focused DB/UI/build/preflight evidence is in `SAME_SKU_RETURN_SUBSTITUTION_20260929.md`. This is an approved post-baseline change candidate and has not been deployed to Stage or Production.
+
 **PHASE_1_LOCAL_DEVELOPMENT = CLOSED**  
 **LOCAL_DEVELOPMENT_BASELINE = FROZEN**  
 Frozen local baseline: `83947684c5d61c00db510e31fca83fa12e97081e` (`phase1-local-baseline-20260926`).

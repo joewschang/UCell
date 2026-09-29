@@ -154,7 +154,7 @@ describeDb('FULFILLMENT_HTTP_REAL_DB',()=>{
   await db.shipmentStateTransition.create({data:{shipmentId:shipment.shipmentId,shipmentTrackingEventEvidenceId:proof.shipmentTrackingEventEvidenceId,fromStatus:'LABEL_CREATED',toStatus:'PICKED_UP',businessEffectIdentity:randomUUID(),operationHash:'e'.repeat(64),occurredAt:now,correlationId}});
   await db.shipment.update({where:{shipmentId:shipment.shipmentId},data:{status:'PICKED_UP'}});
   expect((await app.inject({method:'POST',url:endpoint,headers:headers(ops),payload:body})).statusCode).toBe(201);
-  const result=await app.inject({method:'POST',url:returnUrl,headers:headers(ops),payload:receipt});expect(result.statusCode).toBe(201);expect(result.json().data).toEqual({serialCount:1,replayed:false});
+  const result=await app.inject({method:'POST',url:returnUrl,headers:headers(ops),payload:receipt});expect(result.statusCode).toBe(201);expect(result.json().data).toMatchObject({serialCount:1,substitutedCount:0,replayed:false,results:[{serialNo:'C6010001',receiptType:'EXACT_SOURCE',replayed:false}]});
  });
  it('captures encrypted delivery versions and registers a labeled shipment atomically',async()=>{
   const product=await db.productReference.create({data:{sku:'SHIPMENT-HTTP-'+randomUUID(),displayName:'Shipment HTTP fixture',currentPrice:100}});

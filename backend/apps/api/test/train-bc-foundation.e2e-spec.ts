@@ -150,14 +150,18 @@ it('counts every first achieved rank in the period, without losing an earlier sa
  for(const rankCode of ['NEW_STAR','EXCELLENCE'] as const)await db.qualificationGlobalRankHistory.create({data:{qualificationId:qid,rankCode,achievedAt,sourcePeriodEnd:achievedAt,ruleVersionCode:'R1.0B'}});
  await db.qualificationGlobalRankHistory.create({data:{qualificationId:tree.companyQualificationIds[0],rankCode:'NEW_STAR',achievedAt,sourcePeriodEnd:achievedAt,ruleVersionCode:'R1.0B'}});
  const {projectPeriodFacts}=await import('../src/modules/analytics/period-projection-sources');
- const result=await db.$transaction(tx=>projectPeriodFacts(tx,{metrics:['rank.new_achievements'],time:time(),filters:{binaryTreeId:tree.binaryTreeId},dimensions:['binaryTreeId'],groupBy:['binaryTreeId'],limit:100}));
+ // This fixture reads rows written immediately above. Use an explicit future
+ // knowledge/as-of boundary so PostgreSQL microsecond timestamps cannot sit
+ // just beyond a millisecond-precision JavaScript clock under parallel load.
+ const stableTime=()=>({...time(),asOf:'2098-01-01T00:00:00.000Z',knowledgeCutoff:'2098-01-01T00:00:00.000Z'});
+ const result=await db.$transaction(tx=>projectPeriodFacts(tx,{metrics:['rank.new_achievements'],time:stableTime(),filters:{binaryTreeId:tree.binaryTreeId},dimensions:['binaryTreeId'],groupBy:['binaryTreeId'],limit:100}));
  expect(result.status).toBe('CURRENT');
  expect(result.rows.find(r=>r.key==='NEW_STAR')!.measures.newAchievements).toBe('1');
  expect(result.rows.find(r=>r.key==='EXCELLENCE')!.measures.newAchievements).toBe('1');
  const closedAt=new Date();await db.qualificationStatusHistory.updateMany({where:{qualificationId:qid,effectiveTo:null},data:{effectiveTo:closedAt}});
  await db.qualificationStatusHistory.create({data:{qualificationId:qid,status:'CLOSED',effectiveFrom:closedAt,sourceType:'SYNTHETIC'}});
  for(const metric of ['active.rate','rank.distribution','bonus.distribution']){
-  const closed=await db.$transaction(tx=>projectPeriodFacts(tx,{metrics:[metric],time:time(),filters:{binaryTreeId:tree.binaryTreeId},dimensions:['binaryTreeId'],groupBy:['binaryTreeId'],limit:100}));
+  const closed=await db.$transaction(tx=>projectPeriodFacts(tx,{metrics:[metric],time:stableTime(),filters:{binaryTreeId:tree.binaryTreeId},dimensions:['binaryTreeId'],groupBy:['binaryTreeId'],limit:100}));
   expect(closed.status).toBe('CURRENT');expect(closed.manifest[metric==='bonus.distribution'?'populationCount':'eligibleCount']).toBe('0');
  }
 
