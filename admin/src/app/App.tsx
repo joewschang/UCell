@@ -33,6 +33,7 @@ import {PaperIntakePage} from '../features/paper-intake/PaperIntakePage';
 import {FulfillmentPage} from '../features/fulfillment/FulfillmentPage';
 import {SettlementJobsPage} from '../features/settlement-jobs/SettlementJobsPage';
 import {ErpReconciliationPage} from '../features/erp-reconciliation/ErpReconciliationPage';
+import {CompensationPeriodControlPage} from '../features/compensation-period/CompensationPeriodControlPage';
 
 function Protected(){const {user,ready}=useAuth();if(!ready)return <div className="app-loading">驗證管理員Session…</div>;return user?<AppShell/>:<Navigate to="/login" replace/>}
 export function App(){return <Routes>
@@ -57,6 +58,7 @@ export function App(){return <Routes>
   <Route path="/admin/finance/reservoirs" element={<RequirePageRole><ReservoirCenterPage/></RequirePageRole>}/>
   <Route path="/bonuses" element={<RequirePageRole><BonusesPage/></RequirePageRole>}/>
   <Route path="/settlement-jobs" element={<RequirePageRole><SettlementJobsPage/></RequirePageRole>}/>
+  <Route path="/compensation-period-control" element={<RequirePageRole><CompensationPeriodControlPage/></RequirePageRole>}/>
   <Route path="/returns" element={<RequirePageRole><ReturnsPage/></RequirePageRole>}/>
   <Route path="/workflows" element={<RequirePageRole><WorkflowsPage/></RequirePageRole>}/>
   <Route path="/payouts" element={<RequirePageRole><PayoutsPage/></RequirePageRole>}/>

@@ -18,5 +18,6 @@ describe('admin navigation terminology',()=>{
     expect(Object.values(labels)).not.toContain('結算／付款');
     expect(labels['/provider-operations']).toBe('Provider Webhook 營運');
     expect(labels['/erp-reconciliation']).toBe('ERP 對接與對帳');
+    expect(labels['/compensation-period-control']).toBe('獎金週期控制');
   });
 });

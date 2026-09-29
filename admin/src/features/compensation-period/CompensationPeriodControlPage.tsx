@@ -1,0 +1,24 @@
+import {useState} from 'react';
+import {useQuery} from '@tanstack/react-query';
+import {Badge,Card,Field,Metric,PageHeader} from '../../components/ui';
+import {QueryFeedback} from '../../components/QueryFeedback';
+import {get,qs} from '../../lib/api';
+
+type Checkpoint={code:string;label:string;status:string;evidence:string};
+type Data={period:{periodStart:string;periodEnd:string;ruleVersionCode:string};lifecycle:string;dataThrough:string;checkpoints:Checkpoint[];jobs:{jobReference:string;kind:string;status:string;attemptCount:number;completedAt:string|null;blockingCode:string|null}[];settlements:{kind:string;status:string;totalTheory:string;poolAvailable:string;kFactor:string;finalizedAt:string|null}[];amountBridge:Record<string,string|null>;payouts:{payoutReference:string;status:string;totalGross:string;totalRecovery:string;totalNet:string;paymentResults:{paid:number;failed:number}}[];blockingExceptions:{reference:string;code:string;status:string}[];freshness:{status:string;dataThrough:string};authority:{ucell:string;erp:string;hardClose:string}};
+const tone=(status:string)=>['PASS','RECORDED','CURRENT','FINANCIALLY_RECONCILED'].includes(status)?'ok':['FAILED','BLOCKED','ATTENTION'].includes(status)?'danger':['PENDING','RUNNING','READY','BLOCKED_EXTERNAL','NOT_AVAILABLE'].includes(status)?'warn':'neutral';
+const money=(value:string|null|undefined)=>value===null||value===undefined?'未建立 ERP 會計投影':Number(value).toLocaleString('zh-TW',{minimumFractionDigits:2,maximumFractionDigits:4});
+export function CompensationPeriodControlPage(){
+ const [draft,setDraft]=useState({periodStart:'',periodEnd:'',ruleVersionCode:'R1.0B'}),[selection,setSelection]=useState<typeof draft|null>(null);
+ const query=useQuery({queryKey:['compensation-period-control',selection],queryFn:()=>get<{data:Data}>('/admin/compensation-period-control'+qs({periodStart:new Date(selection!.periodStart).toISOString(),periodEnd:new Date(selection!.periodEnd).toISOString(),ruleVersionCode:selection!.ruleVersionCode})),enabled:!!selection,refetchInterval:60_000});
+ const data=query.data?.data,bridge=data?.amountBridge;
+ return <><PageHeader title="獎金與會員經濟營運控制中心" subtitle="控制 UCell 獎金週期；不代表 ERP／法定會計月結。" actions={<button disabled={!selection||query.isFetching} onClick={()=>void query.refetch()}>重新整理</button>}/>
+  <Card title="選擇獎金週期"><form onSubmit={event=>{event.preventDefault();setSelection({...draft,ruleVersionCode:draft.ruleVersionCode.trim()})}}><div className="filter-grid"><Field label="期間開始"><input required type="datetime-local" value={draft.periodStart} onChange={event=>setDraft(value=>({...value,periodStart:event.target.value}))}/></Field><Field label="期間結束"><input required type="datetime-local" value={draft.periodEnd} onChange={event=>setDraft(value=>({...value,periodEnd:event.target.value}))}/></Field><Field label="Rule Version"><input required maxLength={100} value={draft.ruleVersionCode} onChange={event=>setDraft(value=>({...value,ruleVersionCode:event.target.value}))}/></Field></div><button className="primary" type="submit">載入控制狀態</button></form></Card>
+  {!selection&&<Card><p>選擇獎金週期後，系統以同一資料庫快照讀取結算、Award、Recovery、Payable 與付款證據。</p></Card>}<QueryFeedback query={query}/>
+  {data&&<><Card title="週期狀態"><div className="status-strip"><Badge tone={tone(data.lifecycle)}>{data.lifecycle}</Badge><span>Data through：{new Date(data.dataThrough).toLocaleString('zh-TW')}</span></div><p className="muted">FINANCIALLY_RECONCILED 只表示 UCell 會員經濟證據已對帳；ERP accounting projection 狀態仍獨立顯示。</p></Card>
+   {bridge&&<div className="metrics"><Metric label="Gross Theory" value={money(bridge.grossTheory)}/><Metric label="Award" value={money(bridge.awardAfterEligibilityAndK)}/><Metric label="Reservoir B" value={money(bridge.companyReservoirB)}/><Metric label="Recovery Outstanding" value={money(bridge.recoveryOutstanding)}/><Metric label="Net Payable" value={money(bridge.payoutNet)}/><Metric label="Bank Paid" value={money(bridge.bankPaid)}/><Metric label="ERP Accounting Projection" value={money(bridge.erpAccountingProjection)}/></div>}
+   <Card title="控制檢查點"><div className="table-wrap"><table><thead><tr><th>檢查點</th><th>狀態</th><th>權威證據</th></tr></thead><tbody>{data.checkpoints.map(row=><tr key={row.code}><td>{row.label}</td><td><Badge tone={tone(row.status)}>{row.status}</Badge></td><td>{row.evidence}</td></tr>)}</tbody></table></div></Card>
+   <Card title="結算工作"><ul>{data.jobs.map(row=><li key={row.jobReference}><code>{row.jobReference}</code> · {row.kind} · <Badge tone={tone(row.status)}>{row.status}</Badge> · attempts {row.attemptCount}{row.blockingCode?` · ${row.blockingCode}`:''}</li>)}</ul>{!data.jobs.length&&<p>尚無受治理的結算工作。</p>}</Card>
+   <Card title="權威邊界"><p><strong>UCell：</strong>{data.authority.ucell}</p><p><strong>ERP：</strong>{data.authority.erp}</p><p><strong>Hard close：</strong>{data.authority.hardClose}</p><p className="muted">本頁不顯示 Qualification、Job、Snapshot、Payout 的內部 UUID，也不提供一般會計分錄或科目設定。</p></Card></>}
+ </>;
+}

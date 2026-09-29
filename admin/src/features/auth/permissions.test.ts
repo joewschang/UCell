@@ -38,4 +38,8 @@ describe('Admin page access boundaries', () => {
     expect(canOpen('MEMBERSHIP_OPS','/erp-reconciliation')).toBe(false);
     expect(canOpen('CUSTOMER_SERVICE','/erp-reconciliation')).toBe(false);
   });
+  it('limits compensation period control to finance and compliance roles',()=>{
+    for(const role of ['SUPER_ADMIN','FINANCE','COMPLIANCE_AUDIT'] as const)expect(canOpen(role,'/compensation-period-control')).toBe(true);
+    expect(canOpen('ORDER_OPS','/compensation-period-control')).toBe(false);
+  });
 });

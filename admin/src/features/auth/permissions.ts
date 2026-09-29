@@ -20,6 +20,7 @@ export const pageRoles:Record<string,AdminRole[]>={
   '/admin/finance/reservoirs':['SUPER_ADMIN','FINANCE','COMPLIANCE_AUDIT'],
   '/bonuses':['SUPER_ADMIN','FINANCE','COMPLIANCE_AUDIT'],
   '/settlement-jobs':['SUPER_ADMIN','FINANCE','COMPLIANCE_AUDIT'],
+  '/compensation-period-control':['SUPER_ADMIN','FINANCE','COMPLIANCE_AUDIT'],
   '/returns':['SUPER_ADMIN','ORDER_OPS','FINANCE','COMPLIANCE_AUDIT'],
   '/workflows':['SUPER_ADMIN','MEMBERSHIP_OPS','COMPLIANCE_AUDIT'],
   '/payouts':['SUPER_ADMIN','FINANCE','COMPLIANCE_AUDIT'],
