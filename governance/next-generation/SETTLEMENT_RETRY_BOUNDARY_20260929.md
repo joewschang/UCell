@@ -2,7 +2,7 @@
 
 Scope: expanded autonomous queue item 3, period-close restart/concurrency evidence. This is a transaction-boundary checkpoint, not completion of a governed period-close job system.
 
-The current Referral K0 and Binary K1 services are called directly by Admin bonus API endpoints. No dedicated period-close worker was found in the inspected API settlement modules or Worker entry point. Automatic delivery/retry governance, durable scheduling, process-kill recovery and governed period-close dispatch remain pending. The Matching/Global follow-up below extends the transaction evidence.
+The current Referral K0 and Binary K1 services are called directly by Admin bonus API endpoints. No dedicated period-close worker was found in the inspected API settlement modules or Worker entry point. Automatic delivery/retry governance, durable scheduling and governed period-close dispatch remain pending. The follow-ups below extend the transaction evidence, including real process termination and restart against a surviving local PostgreSQL instance.
 
 `backend/apps/api/test/settlement-retry-db.e2e-spec.ts` initially added four real PostgreSQL cases using unique test rules and empty historical periods:
 
@@ -31,3 +31,13 @@ Global uses its current-placement capture contract with isolated test identities
 The synchronization gate now targets the requested settlement identity only, allowing prerequisite lookups and Global's existing-conflict read to proceed normally. The test harness does not add production retry behavior. Matching still surfaces a serialization/uniqueness conflict for caller retry; Global already handles that recovery internally. These cases do not certify a process kill, automatic scheduler, payout concurrency or deployment readiness.
 
 Focused isolated **2 suites / 19 tests PASS**, with 107 migrations / 162 baseline assertions / cleanup PASS. Log: `C:/UCell/logs/matching-global-retry-20260929.log`. Full isolated API regression **144 suites / 1,075 tests PASS**, with 107 migrations / 162 baseline assertions / cleanup PASS. Log: `C:/UCell/logs/matching-global-retry-full-20260929.log`. Tests/docs only; no deployment or browser acceptance was performed.
+
+## Real process termination and restart
+
+Eight additional funded cases cover Referral K0, Binary K1, Matching K2 and Global at two boundaries: inside the transaction immediately before sealed snapshot creation, and after the service's transaction commits but before the child returns completion. A dedicated Node process runs the actual services against the disposable database. The parent waits for an IPC boundary signal, force-terminates that exact child with SIGKILL (Windows forced process termination), observes its exit, and waits for its PostgreSQL backend session to disappear before checking state. This does not use an injected JavaScript exception or graceful disconnect.
+
+Before-seal termination restores the full pre-attempt economic state, preserving GPV inputs and Matching's finalized Binary prerequisites. After-commit termination preserves exactly one finalized result with its awards, sealed evidence, carry/lifecycle rows and Global rank/Reservoir effects as applicable. A new OS process then delivers the same settlement twice; exact state comparisons prove committed rows are unchanged. Monetary expectations remain Referral 15 + 15, Binary 10, Matching 1 sourced from Binary 10, and Global 4 distributed / 6 in Reservoir A.
+
+The helper refuses non-local or non-disposable database names and non-test rule identities. Interruption hooks remain entirely in test code. This certifies application-process failure with PostgreSQL still running; whole-machine power loss, PostgreSQL crash recovery, production infrastructure and a durable governed scheduler are outside this evidence. No production behavior or migration was changed.
+
+Focused isolated **2 suites / 27 tests PASS**, with 107 migrations / 162 baseline assertions / cleanup PASS. Log: `C:/UCell/logs/settlement-process-recovery-20260929.log`. Full isolated API regression **144 suites / 1,083 tests PASS**, with 107 migrations / 162 baseline assertions / cleanup PASS. Log: `C:/UCell/logs/settlement-process-full-20260929.log`. Stage remains NOT READY; no deployment or browser acceptance was performed.

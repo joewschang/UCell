@@ -1,6 +1,8 @@
 import {PrismaClient,Prisma} from '@prisma/client';
 import {sealGpvEvent,verifyReplayEnvelope} from '@ucell/database';
 import {randomUUID} from 'node:crypto';
+import {spawn} from 'node:child_process';
+import {join} from 'node:path';
 import {BinaryBonusService} from '../src/modules/bonus/binary-bonus.service';
 import {ReferralBonusService} from '../src/modules/bonus/referral-bonus.service';
 import {GlobalPoolService} from '../src/modules/global-pool/global-pool.service';
@@ -133,6 +135,56 @@ describeDb('period settlement concurrent delivery and retry transaction boundary
     ])};
   }
   const cases=[['REFERRAL_K0',false],['BINARY_K1',false],['REFERRAL_K0',true],['BINARY_K1',true],['MATCHING_K2',true],['GLOBAL',true]] as const;
+  async function runProcess(kind:Kind,rule:string,boundary:'BEFORE_SEAL'|'AFTER_COMMIT'|'COMPLETE'){
+    const period=periods.get(rule)!;
+    const child=spawn(process.execPath,['-r',require.resolve('ts-node/register/transpile-only'),join(__dirname,'helpers/settlement-process.ts'),kind,rule,period.start.toISOString(),period.end.toISOString(),boundary],{
+      env:{...process.env,TS_NODE_PROJECT:join(__dirname,'../tsconfig.json')},
+      stdio:['ignore','ignore','pipe','ipc'],windowsHide:true,
+    });
+    let stderr='',ready=false,completed=false,backendPid:number|undefined;
+    child.stderr!.on('data',chunk=>{stderr=(stderr+chunk.toString()).slice(-2000);});
+    await new Promise<void>((resolve,reject)=>{
+      const timeout=setTimeout(()=>{child.kill('SIGKILL');reject(new Error('Settlement child timed out'));},20000);
+      child.on('error',error=>{clearTimeout(timeout);reject(error);});
+      child.on('message',(message:any)=>{
+        if(message.type==='ERROR'){child.kill('SIGKILL');clearTimeout(timeout);reject(new Error(message.message));}
+        if(message.type==='COMPLETE')completed=true;
+        if(message.type==='READY'){
+          ready=message.boundary===boundary;backendPid=message.backendPid;
+          child.kill('SIGKILL');
+        }
+      });
+      child.on('exit',(code,signal)=>{
+        clearTimeout(timeout);
+        if(boundary==='COMPLETE'?completed&&code===0:ready&&child.killed&&(signal==='SIGKILL'||code!==0))resolve();
+        else reject(new Error(`Unexpected settlement child exit: ${code}/${signal}: ${stderr}`));
+      });
+    });
+    if(boundary!=='COMPLETE'){
+      expect(backendPid).toEqual(expect.any(Number));
+      // Wait for PostgreSQL to observe socket loss, not merely the OS exit event.
+      for(let attempt=0;attempt<100;attempt++){
+        const sessions=await db.$queryRaw<Array<{pid:number}>>`SELECT pid FROM pg_stat_activity WHERE pid=${backendPid!} AND datname=current_database()`;
+        if(sessions.length===0)return;
+        await new Promise(resolve=>setTimeout(resolve,50));
+      }
+      throw new Error('Terminated settlement database session remained open');
+    }
+  }
+  const crashCases=(['REFERRAL_K0','BINARY_K1','MATCHING_K2','GLOBAL'] as const).flatMap(kind=>(['BEFORE_SEAL','AFTER_COMMIT'] as const).map(boundary=>[kind,boundary] as const));
+  it.each(crashCases)('recovers %s after a real process kill at %s',async(kind,boundary)=>{
+    const rule=await fixture(kind,true),before=await economicState(rule);
+    await runProcess(kind,rule,boundary);
+    if(boundary==='BEFORE_SEAL')expect(await economicState(rule)).toEqual(before);
+    else await assertSingle(kind,rule);
+    const committed=boundary==='AFTER_COMMIT'?await economicState(rule):null;
+    await runProcess(kind,rule,'COMPLETE');
+    await assertSingle(kind,rule);
+    if(committed)expect(await economicState(rule)).toEqual(committed);
+    const recovered=await economicState(rule);
+    await runProcess(kind,rule,'COMPLETE');
+    expect(await economicState(rule)).toEqual(recovered);
+  },60000);
   it.each(cases)('retries concurrent %s requests (funded=%s) without duplicate economic rows',async(kind,funded)=>{
     const rule=await fixture(kind,funded);
     let arrived=0,release!:()=>void;
