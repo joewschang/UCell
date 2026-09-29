@@ -4,6 +4,7 @@ import { AuditService } from '../../common/audit/audit.service';
 import { IdempotencyService } from '../../common/idempotency/idempotency.service';
 import { createHash } from 'node:crypto';
 import { companyReservoirCandidates } from './company-reservoir-invariants';
+import { orderEconomicEvidence } from './order-economic-evidence';
 
 @Injectable()
 export class AdminOperationsService {
@@ -185,15 +186,18 @@ export class AdminOperationsService {
 
   async economicLineageByOrderNo(orderNo:string){
     if(!/^\d+$/.test(orderNo)) throw new UnprocessableEntityException('INVALID_ORDER_NO');
-    const order=await this.prisma.order.findUnique({where:{orderNo:BigInt(orderNo)},include:{lines:true,paymentEvents:true,returns:{include:{lines:true}},fulfillments:{include:{sourceAllocations:{include:{serialAllocations:{include:{serializedUnit:true}}}},erpHandoffs:true}}}});
+    return this.prisma.$transaction(async tx=>{
+    const order=await tx.order.findUnique({where:{orderNo:BigInt(orderNo)},include:{lines:true,paymentEvents:true,returns:{include:{lines:true}},fulfillments:{include:{sourceAllocations:{include:{serialAllocations:{include:{serializedUnit:true}}}},erpHandoffs:true}}}});
     if(!order) throw new ConflictException('ORDER_NOT_FOUND');
     return {
+      economicEvidence:await orderEconomicEvidence(tx,order.orderId,order.returns.map(row=>row.returnCaseId)),
       order:{orderNo:order.orderNo.toString(),purpose:order.purpose,status:order.status,confirmedAt:order.confirmedAt?.toISOString()??null,paidAt:order.paidAt?.toISOString()??null,ruleVersionCode:order.ruleVersionCode,parameterSnapshotHash:order.parameterSnapshotHash??null},
       lines:order.lines.map(line=>({sku:line.skuSnapshot,quantity:line.quantity.toString(),amount:line.lineAmount.toString(),offering:line.commercialOfferingSnapshot??null,purpose:line.linePurpose??null,ruleSnapshot:line.ruleProfileSnapshot})),
       payments:order.paymentEvents.map(event=>({eventType:event.eventType,paymentMethod:event.paymentMethod,amount:event.amount.toString(),occurredAt:event.occurredAt.toISOString()})),
       fulfillments:order.fulfillments.map(f=>({fulfillmentKey:f.fulfillmentKey,status:f.status,sourceAllocations:f.sourceAllocations.map(a=>({sku:a.skuSnapshot,quantity:a.allocatedQuantity.toString(),serialNos:a.serialAllocations.map(s=>s.serializedUnit.serialNo).sort()})),erpHandoff:f.erpHandoffs[0]?{formatVersion:f.erpHandoffs[0].formatVersion,payloadHash:f.erpHandoffs[0].payloadHash,requestedAt:f.erpHandoffs[0].requestedAt.toISOString()}:null})),
       returns:order.returns.map(ret=>({status:ret.status,reasonCode:ret.reasonCode,occurredAt:ret.occurredAt.toISOString(),lines:ret.lines.map(line=>({quantity:line.quantity.toString(),amount:line.returnAmount.toString()}))})),
     };
+    },{isolationLevel:Prisma.TransactionIsolationLevel.RepeatableRead});
   }
 
   async member360(memberNo:string){
