@@ -6,7 +6,7 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
-  schemas  = ["identity", "membership", "organization", "commerce", "ledger", "audit", "integration", "rules", "subscription"]
+  schemas  = ["identity", "membership", "organization", "commerce", "ledger", "audit", "integration", "rules", "subscription", "learning"]
 }
 
 enum RecordStatus {
@@ -118,6 +118,23 @@ enum EventProcessStatus {
   DEAD
 
   @@schema("integration")
+}
+
+enum LearningCourseStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+
+  @@schema("learning")
+}
+
+enum LearningEnrollmentStatus {
+  ENROLLED
+  STARTED
+  COMPLETED
+  CANCELLED
+
+  @@schema("learning")
 }
 
 enum ApplicationStatus {
@@ -671,6 +688,7 @@ model Person {
   retailReferrerCorrectionEvents RetailReferrerAttributionEvent[] @relation("RetailReferrerCorrectionActor")
   paperApplications          PaperApplication[]
   paperIdentityFingerprints  PaperPersonIdentityFingerprint[]
+  learningEnrollments        LearningEnrollment[]
 
   @@index([legalName])
   @@index([mobile])
@@ -1044,6 +1062,102 @@ model ContentVersion {
   @@index([status, publishFrom, publishTo])
   @@map("content_version")
   @@schema("integration")
+}
+
+model LearningCourse {
+  learningCourseId String               @id @default(uuid()) @map("learning_course_id") @db.Uuid
+  courseCode       String               @unique @map("course_code")
+  status           LearningCourseStatus @default(DRAFT)
+  createdByActor   String               @map("created_by_actor")
+  createdAt        DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime             @updatedAt @map("updated_at") @db.Timestamptz(6)
+  versions         LearningCourseVersion[]
+  enrollments      LearningEnrollment[]
+
+  @@index([status, createdAt])
+  @@map("learning_course")
+  @@schema("learning")
+}
+
+model LearningCourseVersion {
+  learningCourseVersionId String               @id @default(uuid()) @map("learning_course_version_id") @db.Uuid
+  learningCourseId        String               @map("learning_course_id") @db.Uuid
+  version                 Int
+  title                   String
+  summary                 String?
+  categoryCode            String               @map("category_code")
+  audiencePolicy          String               @default("NETWORK_MEMBER") @map("audience_policy")
+  publishFrom             DateTime?            @map("publish_from") @db.Timestamptz(6)
+  publishTo               DateTime?            @map("publish_to") @db.Timestamptz(6)
+  approvalReference       String?              @map("approval_reference")
+  approvedByActor         String?              @map("approved_by_actor")
+  approvedAt              DateTime?            @map("approved_at") @db.Timestamptz(6)
+  contentHash             String               @map("content_hash")
+  status                  LearningCourseStatus @default(DRAFT)
+  createdAt               DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
+  course                  LearningCourse       @relation(fields:[learningCourseId],references:[learningCourseId])
+  lessons                 LearningLesson[]
+  enrollmentEvidence      LearningEnrollment[] @relation("LearningEnrollmentVersion")
+
+  @@unique([learningCourseId, version])
+  @@index([status, audiencePolicy, publishFrom, publishTo])
+  @@map("learning_course_version")
+  @@schema("learning")
+}
+
+model LearningLesson {
+  learningLessonId        String                @id @default(uuid()) @map("learning_lesson_id") @db.Uuid
+  learningCourseVersionId String                @map("learning_course_version_id") @db.Uuid
+  sequenceNo              Int                   @map("sequence_no")
+  title                   String
+  contentType             String                @map("content_type")
+  contentReference        String                @map("content_reference")
+  required                Boolean               @default(true)
+  createdAt               DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
+  courseVersion           LearningCourseVersion @relation(fields:[learningCourseVersionId],references:[learningCourseVersionId])
+  progressEvents          LearningProgressEvent[]
+
+  @@unique([learningCourseVersionId, sequenceNo])
+  @@map("learning_lesson")
+  @@schema("learning")
+}
+
+model LearningEnrollment {
+  learningEnrollmentId        String                  @id @default(uuid()) @map("learning_enrollment_id") @db.Uuid
+  learningCourseId            String                  @map("learning_course_id") @db.Uuid
+  learningCourseVersionId     String                  @map("learning_course_version_id") @db.Uuid
+  personId                    String                  @map("person_id") @db.Uuid
+  status                      LearningEnrollmentStatus @default(ENROLLED)
+  assignedByActor             String?                 @map("assigned_by_actor")
+  enrolledAt                  DateTime                @default(now()) @map("enrolled_at") @db.Timestamptz(6)
+  startedAt                   DateTime?               @map("started_at") @db.Timestamptz(6)
+  completedAt                 DateTime?               @map("completed_at") @db.Timestamptz(6)
+  assessmentScore             Decimal?                @map("assessment_score") @db.Decimal(7,4)
+  course                      LearningCourse          @relation(fields:[learningCourseId],references:[learningCourseId])
+  courseVersion               LearningCourseVersion   @relation("LearningEnrollmentVersion",fields:[learningCourseVersionId],references:[learningCourseVersionId])
+  person                      Person                  @relation(fields:[personId],references:[personId])
+  progressEvents              LearningProgressEvent[]
+
+  @@unique([learningCourseId, personId])
+  @@index([personId, status, enrolledAt])
+  @@map("learning_enrollment")
+  @@schema("learning")
+}
+
+model LearningProgressEvent {
+  learningProgressEventId String             @id @default(uuid()) @map("learning_progress_event_id") @db.Uuid
+  learningEnrollmentId    String             @map("learning_enrollment_id") @db.Uuid
+  learningLessonId        String?            @map("learning_lesson_id") @db.Uuid
+  eventType               String             @map("event_type")
+  occurredAt              DateTime           @default(now()) @map("occurred_at") @db.Timestamptz(6)
+  idempotencyKey          String             @unique @map("idempotency_key")
+  evidenceHash            String             @map("evidence_hash")
+  enrollment              LearningEnrollment @relation(fields:[learningEnrollmentId],references:[learningEnrollmentId])
+  lesson                  LearningLesson?    @relation(fields:[learningLessonId],references:[learningLessonId])
+
+  @@index([learningEnrollmentId, occurredAt])
+  @@map("learning_progress_event")
+  @@schema("learning")
 }
 
 model MemberNotification {
