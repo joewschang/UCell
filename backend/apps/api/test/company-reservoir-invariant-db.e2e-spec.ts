@@ -1,0 +1,96 @@
+import {PrismaClient,Prisma} from '@prisma/client';
+import {randomUUID} from 'node:crypto';
+import {captureParameters,routeCompanyBonus} from '@ucell/database';
+import {companyReservoirCandidates} from '../src/modules/admin-operations/company-reservoir-invariants';
+import {BinaryTreeService,TreePrincipal} from '../src/modules/binary-tree/binary-tree.service';
+import {OrganizationService} from '../src/modules/organization/organization.service';
+import {IdempotencyService} from '../src/common/idempotency/idempotency.service';
+
+const url=process.env.PHASE2_TEST_DATABASE_URL;
+const describeDb=url?describe:describe.skip;
+describeDb('Company Reservoir B integrity candidates',()=>{
+  let db:PrismaClient,qid:string;
+  beforeAll(async()=>{
+    db=new PrismaClient({datasources:{db:{url}}});
+    const person=await db.person.create({data:{legalName:'Synthetic invariant operator'}}),subject=randomUUID();
+    await db.identityLink.create({data:{personId:person.personId,provider:'ENTRA',providerSubject:subject}});
+    await db.adminAccessGrant.create({data:{personId:person.personId,provider:'ENTRA',providerSubject:subject,roleCode:'SUPER_ADMIN',validFrom:new Date(Date.now()-1000)}});
+    const session=await db.authSession.create({data:{personId:person.personId,provider:'ENTRA',subject,roleCode:'SUPER_ADMIN',tokenHash:randomUUID(),issuedAt:new Date(),expiresAt:new Date(Date.now()+3600000)}});
+    const principal:TreePrincipal={personId:person.personId,provider:'ENTRA',subject,role:'SUPER_ADMIN',sessionId:session.authSessionId};
+    const trees=new BinaryTreeService(db as any,new IdempotencyService(db as any),new OrganizationService(db as any));
+    const tree=(await trees.create(principal,{treeName:'Reservoir invariant fixture',reason:'Synthetic test'},randomUUID())).value;
+    qid=tree.companyQualificationIds[0];
+  });
+  afterAll(()=>db.$disconnect());
+  // Corruption fixtures are inspected inside an uncommitted transaction and
+  // rolled back. Deferred economic guards are never disabled or bypassed.
+  async function rollback(work:(tx:Prisma.TransactionClient)=>Promise<void>){
+    const stop=new Error('ROLLBACK_INVARIANT_FIXTURE');
+    await expect(db.$transaction(async tx=>{await work(tx);throw stop;},{timeout:20000})).rejects.toBe(stop);
+  }
+  async function award(tx:Prisma.TransactionClient,amount=100){
+    const at=new Date(),snapshot=await captureParameters(tx,at,'R1.0B');
+    const source=await tx.bonusAward.create({data:{recipientQualificationId:qid,awardType:'REFERRAL',sourceEventId:randomUUID(),theoryAmount:amount,payableAmount:amount,activeSnapshot:true,planLevelSnapshot:'LEADER',ruleVersionCode:'R1.0B',parameterSnapshotHash:snapshot.hash,occurredAt:at,pendingUntil:at,calculationDetail:{}}});
+    return {source,snapshot};
+  }
+  it('reports a missing company destination without leaking source IDs or writing facts',()=>rollback(async tx=>{
+    const {source}=await award(tx);
+    const first=await companyReservoirCandidates(tx,200),second=await companyReservoirCandidates(tx,200);
+    expect(first).toEqual(second);
+    expect(first).toEqual([expect.objectContaining({code:'COMPANY_AWARD_DESTINATION_MISSING',sourceType:'BONUS_AWARD',detail:{awardType:'REFERRAL',amount:'100'}})]);
+    expect(JSON.stringify(first)).not.toContain(source.bonusAwardId);
+    expect(JSON.stringify(first)).not.toContain(qid);
+    expect(await tx.bonusAward.findUniqueOrThrow({where:{bonusAwardId:source.bonusAwardId}})).toEqual(source);
+  }));
+  it.each([0,100])('detects a missing original credit for entitlement %s',amount=>rollback(async tx=>{
+    const {source,snapshot}=await award(tx,amount);
+    // Inject failure at the application writer boundary after a valid
+    // destination insert, before its required original credit.
+    await routeCompanyBonus({...tx,reservoirBEffect:{create:async()=>null}} as any,source,snapshot);
+    const candidates=await companyReservoirCandidates(tx,200);
+    expect(candidates).toEqual([expect.objectContaining({code:'RESERVOIR_B_ENTITLEMENT_MISMATCH',detail:{awardType:'REFERRAL',expectedAmount:String(amount),originalAmount:'0',originalEffectCount:0}})]);
+  }));
+  it('detects a missing replay effect and accepts its exact signed adjustment without rewriting the original',()=>rollback(async tx=>{
+    const {source,snapshot}=await award(tx);await routeCompanyBonus(tx,source,snapshot);
+    expect(await companyReservoirCandidates(tx,200)).toEqual([]);
+    const destination=await tx.awardEconomicDestination.findUniqueOrThrow({where:{sourceBonusAwardId:source.bonusAwardId}});
+    const original=await tx.reservoirBEffect.findFirstOrThrow({where:{destinationId:destination.destinationId,effectType:'ENTITLEMENT'}});
+    const replaySnapshot=await tx.historicalReplaySnapshot.create({data:{kind:'INVARIANT_TEST',sourceId:randomUUID(),ruleVersionCode:'R1.0B',content:{recipients:[{key:source.bonusAwardId,qualificationId:qid,posted:'100',eligible:true}]},hash:'a'.repeat(64)}});
+    const posting=await tx.entitlementReplayPosting.create({data:{actionKey:randomUUID(),snapshotId:replaySnapshot.snapshotId,entitlementKey:source.bonusAwardId,recipientQualificationId:qid,originallyPosted:100,recalculatedEntitlement:80,delta:-20,stateHash:'b'.repeat(64)}});
+    expect(await companyReservoirCandidates(tx,200)).toEqual([expect.objectContaining({code:'RESERVOIR_B_REPLAY_MISMATCH',detail:expect.objectContaining({mismatchedPostingCount:1})})]);
+    await tx.reservoirBEffect.create({data:{destinationId:destination.destinationId,effectType:'REPLAY_ADJUSTMENT',replayPostingId:posting.postingId,amountDelta:-20,effectiveAt:destination.effectiveAt,idempotencyKey:randomUUID()}});
+    expect(await companyReservoirCandidates(tx,200)).toEqual([]);
+    expect(await tx.reservoirBEffect.findUniqueOrThrow({where:{effectId:original.effectId}})).toEqual(original);
+  }));
+  it('reports legacy member-payable read evidence without bypassing current database write guards',()=>rollback(async tx=>{
+    const {source,snapshot}=await award(tx);
+    await routeCompanyBonus(tx,source,snapshot);
+    // Such a write is forbidden by current DB guards. Supply legacy query
+    // evidence at the read boundary instead of disabling those protections.
+    const legacy={...tx,payableEntry:{findMany:async()=>[{sourceId:source.bonusAwardId,grossAmount:new Prisma.Decimal(100)}]}};
+    expect(await companyReservoirCandidates(legacy as any,200)).toEqual([expect.objectContaining({code:'RESERVOIR_B_MEMBER_PAYABLE_CONFLICT',detail:{payableCount:1,payableGross:'100'}})]);
+    expect(await tx.payableEntry.count({where:{sourceId:source.bonusAwardId}})).toBe(0);
+  }));
+  it('also inspects RPV and Global award destinations',()=>rollback(async tx=>{
+    const at=new Date();
+    const plan=await tx.subscriptionPlan.create({data:{planCode:randomUUID(),displayName:'Invariant plan',durationMonths:1,prepaidAmount:100,productBoxQty:1,monthlyRecognizedAmount:100,monthlyRpv:10}});
+    const subscription=await tx.subscription.create({data:{qualificationId:qid,subscriptionPlanId:plan.subscriptionPlanId,status:'ACTIVE',startMonth:at,endMonth:at,ruleVersionCode:'R1.0B'}});
+    const schedule=await tx.monthlyRecognitionSchedule.create({data:{subscriptionId:subscription.subscriptionId,installmentNo:1,recognitionMonth:at,recognizedAmount:100,rpvAmount:10,dueAt:at,ruleVersionCode:'R1.0B'}});
+    await tx.rpvUplineAwardEvent.create({data:{recognitionId:schedule.recognitionId,sourceQualificationId:qid,recipientQualificationId:qid,binaryGeneration:1,effectiveDirectCountSnapshot:0,unlockedDepthSnapshot:5,activeSnapshot:true,theoryAmount:100,payableAmount:100,ruleVersionCode:'R1.0B',occurredAt:at}});
+    const settlement=await tx.globalPoolSettlement.create({data:{periodStart:new Date(at.getTime()-1000),periodEnd:at,totalGpv:1000,poolRate:0.1,poolAvailable:100,distributedAmount:100,undistributedAmount:0,ruleVersionCode:'R1.0B'}});
+    await tx.globalPoolAward.create({data:{globalPoolSettlementId:settlement.globalPoolSettlementId,qualificationId:qid,rankLevel:'NEW_STAR',rankPoolRate:1,rankPoolAmount:100,eligibleCount:1,payableAmount:100,weakSidePvSnapshot:1000,activeSnapshot:true}});
+    const candidates=await companyReservoirCandidates(tx,200);
+    expect(candidates.map(c=>c.sourceType).sort()).toEqual(['GLOBAL_AWARD','RPV_AWARD']);
+    expect(candidates.every(c=>c.code==='COMPANY_AWARD_DESTINATION_MISSING')).toBe(true);
+  }));
+  it('uses ownership at award time and excludes awards after company ownership ends',()=>rollback(async tx=>{
+    const person=await tx.person.create({data:{legalName:'Historical owner fixture'}});
+    const company=await tx.companyPrincipal.create({data:{code:randomUUID(),displayName:'Historical company'}});
+    const q=await tx.qualification.create({data:{currentHolderPersonId:person.personId,planLevelCode:'STARTER',status:'EFFECTIVE',effectiveAt:new Date('2020-01-01')}});
+    await tx.qualificationOwnerInterval.create({data:{qualificationId:q.qualificationId,ownerType:'COMPANY',companyPrincipalId:company.companyPrincipalId,effectiveFrom:new Date('2024-01-01'),effectiveTo:new Date('2025-01-01'),closedRecordedAt:new Date(),sourceType:'TEST',sourceId:randomUUID(),evidenceHash:'a'.repeat(64)}});
+    for(const at of [new Date('2024-06-01'),new Date('2025-01-01')]) await tx.bonusAward.create({data:{recipientQualificationId:q.qualificationId,awardType:'REFERRAL',sourceEventId:randomUUID(),theoryAmount:100,payableAmount:100,activeSnapshot:true,ruleVersionCode:'R1.0B',occurredAt:at,pendingUntil:at,calculationDetail:{}}});
+    const candidates=await companyReservoirCandidates(tx,200);
+    expect(candidates).toHaveLength(1);
+    expect(candidates[0]).toMatchObject({code:'COMPANY_AWARD_DESTINATION_MISSING',reference:`QUALIFICATION:${q.qualificationNo}:REFERRAL:2024-06-01T00:00:00.000Z`});
+  }));
+});

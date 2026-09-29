@@ -3,6 +3,7 @@ import { Prisma,PrismaService } from '@ucell/database';
 import { AuditService } from '../../common/audit/audit.service';
 import { IdempotencyService } from '../../common/idempotency/idempotency.service';
 import { createHash } from 'node:crypto';
+import { companyReservoirCandidates } from './company-reservoir-invariants';
 
 @Injectable()
 export class AdminOperationsService {
@@ -244,7 +245,7 @@ export class AdminOperationsService {
   async invariantCandidates(input:{take?:number}={}){
     const requested=Number.isFinite(input.take)?input.take??100:100;
     const take=Math.min(Math.max(requested,1),200);
-    const [batches,payables,overdueRecognitions,allocations]=await Promise.all([
+    const [batches,payables,overdueRecognitions,allocations,companyCandidates]=await Promise.all([
       this.prisma.payoutBatch.findMany({include:{lines:{select:{netAmount:true}}},orderBy:{periodEnd:'desc'},take}),
       this.prisma.payableEntry.findMany({where:{sourceType:'BONUS_AWARD'},include:{qualification:{select:{qualificationNo:true}}},orderBy:{createdAt:'desc'},take}),
       this.prisma.monthlyRecognitionSchedule.findMany({
@@ -256,6 +257,7 @@ export class AdminOperationsService {
         include:{orderLine:true,fulfillment:{include:{order:{select:{orderNo:true}},erpHandoffs:{select:{fulfillmentErpHandoffId:true}}}},serialAllocations:{include:{serializedUnit:{include:{batch:{select:{productId:true}}}}}}},
         orderBy:[{createdAt:'desc'},{fulfillmentSourceAllocationId:'asc'}],take,
       }),
+      this.prisma.$transaction(tx=>companyReservoirCandidates(tx,take),{isolationLevel:Prisma.TransactionIsolationLevel.RepeatableRead}),
     ]);
     const awardIds=payables.map(row=>row.sourceId);
     const awards=awardIds.length?await this.prisma.bonusAward.findMany({where:{bonusAwardId:{in:awardIds}},select:{bonusAwardId:true}}):[];
@@ -295,7 +297,7 @@ export class AdminOperationsService {
         add('FULFILLMENT_HANDOFF_SERIAL_QUANTITY_MISMATCH',{allocatedQuantity:row.allocatedQuantity.toString(),serialCount:row.serialAllocations.length});
       return candidates;
     });
-    return [...payoutCandidates,...payableCandidates,...recognitionCandidates,...fulfillmentCandidates].sort((left,right)=>left.code.localeCompare(right.code)||left.reference.localeCompare(right.reference)||left.evidenceHash.localeCompare(right.evidenceHash));
+    return [...payoutCandidates,...payableCandidates,...recognitionCandidates,...fulfillmentCandidates,...companyCandidates].sort((left,right)=>left.code.localeCompare(right.code)||left.reference.localeCompare(right.reference)||left.evidenceHash.localeCompare(right.evidenceHash));
   }
 
   async operationalExceptions(input:{status?:string;take?:number}={}){
