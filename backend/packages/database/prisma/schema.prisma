@@ -1213,9 +1213,9 @@ model MemberEventVersion {
   onlineJoinReference  String?           @map("online_join_reference")
   capacity             Int?
   audiencePolicy       String            @default("NETWORK_MEMBER") @map("audience_policy")
-  approvalReference    String?
-  approvedByActor      String?
-  approvedAt           DateTime?         @db.Timestamptz(6)
+    approvalReference    String?           @map("approval_reference")
+    approvedByActor      String?           @map("approved_by_actor")
+    approvedAt           DateTime?         @map("approved_at") @db.Timestamptz(6)
   contentHash          String            @map("content_hash")
   status               MemberEventStatus @default(DRAFT)
   createdAt            DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)

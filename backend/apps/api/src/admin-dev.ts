@@ -3,6 +3,7 @@ import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { BinaryTreeModule } from './modules/binary-tree/binary-tree.module';
 import { ContentModule } from './modules/content/content.module';
 import { LearningModule } from './modules/learning/learning.module';
+import { MemberEventsModule } from './modules/events/events.module';
 import { ExplainModule } from './modules/explain/explain.module';
 import { MemberModule } from './modules/member/member.module';
 import { PackageConfigModule } from './modules/package-config/package-config.module';
@@ -158,7 +159,7 @@ export class AdminDevReadOnlyGuard implements CanActivate {
 // Separate DEV entrypoint; the production AppModule/build/release gates are unchanged.
 @Module({
   imports: [ConfigModule.forRoot({ isGlobal: true, ignoreEnvFile: true }), DatabaseModule,
-    BinaryTreeModule, ContentModule, LearningModule, ExplainModule, PackageConfigModule, ReservoirModule,
+    BinaryTreeModule, ContentModule, LearningModule, MemberEventsModule, ExplainModule, PackageConfigModule, ReservoirModule,
     AuditModule, IdempotencyModule, OutboxModule, AuthModule, HealthModule, MemberModule,
     PersonModule, ProductModule, OrganizationModule, QualificationModule, OrderModule,
     LedgerModule, ActiveModule, RpvModule, RuntimeRuleModule, BonusModule, ReturnModule,
