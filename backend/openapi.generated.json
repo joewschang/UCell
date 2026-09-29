@@ -15137,6 +15137,251 @@
         ]
       }
     },
+    "/api/v1/admin/learning/courses": {
+      "get": {
+        "operationId": "AdminLearningController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "tags": [
+          "Admin - Learning"
+        ]
+      },
+      "post": {
+        "operationId": "AdminLearningController_create",
+        "parameters": [
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "tags": [
+          "Admin - Learning"
+        ]
+      }
+    },
+    "/api/v1/admin/learning/courses/{courseCode}/publish": {
+      "post": {
+        "operationId": "AdminLearningController_publish",
+        "parameters": [
+          {
+            "name": "courseCode",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "tags": [
+          "Admin - Learning"
+        ]
+      }
+    },
+    "/api/v1/member/learning/courses": {
+      "get": {
+        "operationId": "memberLearningCourses",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "memberBearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "Member - Learning"
+        ]
+      }
+    },
+    "/api/v1/member/learning/courses/{courseCode}": {
+      "get": {
+        "operationId": "MemberLearningController_detail",
+        "parameters": [
+          {
+            "name": "courseCode",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "memberBearer": []
+          }
+        ],
+        "tags": [
+          "Member - Learning"
+        ]
+      }
+    },
+    "/api/v1/member/learning/courses/{courseCode}/enroll": {
+      "post": {
+        "operationId": "MemberLearningController_enroll",
+        "parameters": [
+          {
+            "name": "courseCode",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "memberBearer": []
+          }
+        ],
+        "tags": [
+          "Member - Learning"
+        ]
+      }
+    },
+    "/api/v1/member/learning/courses/{courseCode}/lessons/{sequenceNo}/complete": {
+      "post": {
+        "operationId": "MemberLearningController_lesson",
+        "parameters": [
+          {
+            "name": "courseCode",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sequenceNo",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "memberBearer": []
+          }
+        ],
+        "tags": [
+          "Member - Learning"
+        ]
+      }
+    },
+    "/api/v1/member/learning/courses/{courseCode}/complete": {
+      "post": {
+        "operationId": "MemberLearningController_complete",
+        "parameters": [
+          {
+            "name": "courseCode",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "memberBearer": []
+          }
+        ],
+        "tags": [
+          "Member - Learning"
+        ]
+      }
+    },
     "/api/v1/admin/uat-evidence": {
       "post": {
         "operationId": "adminRecordUatEvidence",

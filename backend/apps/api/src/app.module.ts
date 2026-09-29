@@ -39,6 +39,7 @@ import { AdminProviderOperationsModule } from './modules/admin-provider-operatio
 import { AdminAuthenticationGuard } from './modules/auth/admin-authentication.guard';
 import { AdminRoleGuard } from './modules/auth/admin-role.guard';
 import { ContentModule } from './modules/content/content.module';
+import { LearningModule } from './modules/learning/learning.module';
 import {PackageConfigModule} from './modules/package-config/package-config.module';
 import { UatEvidenceModule } from './modules/uat-evidence/uat-evidence.module';
 import {FulfillmentOperationsModule} from './modules/commerce/fulfillment-operations.module';
@@ -83,6 +84,7 @@ import {FulfillmentOperationsModule} from './modules/commerce/fulfillment-operat
     AuthModule,
     AdjustmentModule,
     ContentModule,
+    LearningModule,
     PackageConfigModule,
     UatEvidenceModule,
   ],
