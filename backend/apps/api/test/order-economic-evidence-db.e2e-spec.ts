@@ -41,6 +41,17 @@ describeDb('ORDER_ECONOMIC_EVIDENCE_REAL_DB',()=>{
     const envelope={format:'UCELL_HISTORICAL_REPLAY_V1' as const,kind,sourceId:String(randomUUID()),ruleVersionCode:'R1.0B',at:new Date(at.getTime()+1000).toISOString(),parameters,recipients:[],evidence:{sources:[source]},inputs:{periodStart:at.toISOString(),periodEnd:new Date(at.getTime()+1000).toISOString(),totalGpv:'900000'}};
     return {f,envelope,source};
   }
+  it.each([0,10])('includes exact order-line retail referral evidence, including zero entitlement %s',async payable=>{
+    const f=await fixture(),other=await fixture();
+    const product=await db.productReference.create({data:{sku:randomUUID(),displayName:'Retail fixture',currentPrice:100}});
+    const createLine=(orderId:string)=>db.orderLine.create({data:{orderId,productId:product.productId,skuSnapshot:product.sku,productNameSnapshot:'Retail fixture',quantity:1,unitPrice:100,lineAmount:100,gpvRateSnapshot:0,gpvAmountSnapshot:0,ruleProfileSnapshot:{}}});
+    const line=await createLine(f.order.orderId),otherLine=await createLine(other.order.orderId);
+    for(const sourceEventId of [line.orderLineId,otherLine.orderLineId])await db.bonusAward.create({data:{recipientQualificationId:f.q.qualificationId,awardType:'RETAIL_REFERRAL',sourceEventId,theoryAmount:10,payableAmount:payable,activeSnapshot:payable>0,ruleVersionCode:'R1',occurredAt:new Date(),pendingUntil:new Date(),calculationDetail:{privateNote:'hidden'}}});
+    await f.award(line.orderLineId); // An order-line UUID is not a PV source for other award kinds.
+    const evidence=(await f.read()).economicEvidence;
+    expect(evidence.awards).toEqual([expect.objectContaining({awardType:'RETAIL_REFERRAL',sourcePvReference:null,sourceOrderLineReference:expect.any(String),activeAtRecognition:payable>0,theoryAmount:'10',payableAmount:String(payable),kFactor:'1'})]);
+    for(const internal of [line.orderLineId,otherLine.orderLineId,f.q.qualificationId,'privateNote'])expect(JSON.stringify(evidence.awards)).not.toContain(internal);
+  });
   it.each([3,-2,-6])('reports recorded EPV adjustment %s without recomputing monthly eligibility',async delta=>{
     const f=await fixture();
     const event=await db.pvLedger.create({data:{qualificationId:f.q.qualificationId,pvType:'EPV',amount:5,sourceType:'ORDER',sourceId:f.order.orderId,eventType:'EPV_CREATED',ruleVersionCode:'R1',occurredAt:new Date(),correlationId:randomUUID()}});

@@ -1,3 +1,4 @@
+import {EconomicLineagePage} from '../features/economic-lineage/EconomicLineagePage';
 import {ReservoirCenterPage} from '../features/reservoir/ReservoirCenterPage';
 import {BinaryTreesPage} from '../features/organization/BinaryTreesPage';
 import {Link,Navigate,Route,Routes} from 'react-router-dom';
@@ -45,6 +46,7 @@ export function App(){return <Routes>
   <Route path="/products" element={<RequirePageRole><ProductsPage/></RequirePageRole>}/>
   <Route path="/packages" element={<RequirePageRole><PackagesPage/></RequirePageRole>}/>
   <Route path="/orders" element={<RequirePageRole><OrdersPage/></RequirePageRole>}/>
+  <Route path="/economic-lineage" element={<RequirePageRole><EconomicLineagePage/></RequirePageRole>}/>
   <Route path="/fulfillment" element={<RequirePageRole><FulfillmentPage/></RequirePageRole>}/>
   <Route path="/admin/organization/trees/:id?" element={<RequirePageRole><BinaryTreesPage/></RequirePageRole>}/>
   <Route path="/organization" element={<RequirePageRole><OrganizationPage/></RequirePageRole>}/>

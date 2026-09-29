@@ -1,0 +1,7 @@
+.lineage-timeline{list-style:none;padding:0 0 0 1rem;border-left:2px solid var(--bs-border-color,#ccc)}
+.lineage-timeline>li{margin:0 0 1.25rem;padding:1rem;border:1px solid var(--bs-border-color,#ccc);border-radius:.6rem}
+.lineage-timeline header{display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap}.lineage-timeline h3{margin:0}
+.lineage-timeline details{margin:.6rem 0}.lineage-timeline summary{cursor:pointer;padding:.4rem 0}
+.lineage-facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:.75rem;margin:.75rem 0}.lineage-facts dt{font-size:.85rem;opacity:.8}.lineage-facts dd{margin:0;overflow-wrap:anywhere}
+.lineage-child{border-left:2px solid var(--bs-border-color,#ccc);padding-left:1rem;margin:.75rem 0}.lineage-child h4{font-size:1rem}
+@media(max-width:520px){.lineage-timeline{padding-left:.5rem}.lineage-timeline>li{padding:.75rem}.lineage-facts{grid-template-columns:1fr}}

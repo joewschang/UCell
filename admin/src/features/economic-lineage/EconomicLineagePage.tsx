@@ -1,0 +1,46 @@
+import {useState} from 'react';
+import {useQuery} from '@tanstack/react-query';
+import {Link,useSearchParams} from 'react-router-dom';
+import {get} from '../../lib/api';
+import {Card,ErrorBox,Field,PageHeader} from '../../components/ui';
+import './economic-lineage.css';
+
+type Row=Record<string,any>;
+export type Lineage={order:{orderNo:string;status:string;paidAt?:string;confirmedAt?:string};payments?:Row[];economicEvidence?:Record<string,Row[]>};
+const awards:Record<string,string>={REFERRAL:'推薦獎金',RETAIL_REFERRAL:'零售推薦獎金',EQUALIZATION:'平級獎金',BINARY:'對碰獎金',MATCHING:'配對獎金',RPV:'RPV 獎金',EPV:'EPV 獎金',GLOBAL:'Global 獎金'};
+const states:Record<string,string>={OPEN:'待處理',PAID:'已付款',PARTIALLY_PAID:'部分付款',FAILED:'失敗',READY:'準備中',ALLOCATED:'已編入付款',EXPORTED:'已匯出',RECOGNIZED:'已認列',SCHEDULED:'待認列',REVERSED:'已沖回',OFFSETTING:'抵扣中',RECOVERED:'已追回',CONVERGED:'重算已收斂',MAX_HORIZON:'達重算週數上限',PENDING:'待處理',POSTED:'已過帳',CALCULATED_FROM_POSTED_RETURNS:'依已過帳退貨計算',SOURCE_LINE_UNAVAILABLE:'缺少原始明細關聯',SOURCE_LINK_UNAVAILABLE:'缺少歷史關聯',NO_RECORDED_EFFECTS:'尚無對應入帳紀錄',RECORDED_EFFECTS:'已有對應入帳紀錄'};
+const fields:Record<string,string>={sourceDescription:'來源',occurredAt:'發生時間',effectiveAt:'生效時間',recordedAt:'記錄時間',availableAt:'可用時間',recognitionMonth:'認列月份',planCode:'方案',installmentNo:'期數',generation:'代數',amount:'金額',pvType:'PV 類型',originalGpv:'原始 GPV',reversedGpv:'退貨扣減 GPV',retainedGpv:'保留 GPV',theoryAmount:'理論金額',payableAmount:'可得金額',kFactor:'調整係數 K',activeAtRecognition:'認列時有效',active:'認列時有效',eligible:'符合資格',status:'狀態',originallyPosted:'原始權益',recalculatedEntitlement:'重算權益',delta:'本次調整',originalVolume:'原始 PV',recordedDelta:'已記錄調整',recordedRetainedVolume:'已記錄 PV 餘額',recordedEntitlement:'已記錄權益餘額',grossAmount:'總額',netAmount:'淨額',recoveryOffset:'追回款抵扣',recoveryAmount:'應追回',recoveredAmount:'已追回',outstandingAmount:'待追回',finalAmount:'原始入帳',amountDelta:'入帳調整',reportedPaidAmount:'回報累計付款額',batchStatus:'付款批次狀態',payoutBatchStatus:'付款批次狀態',recognizedAmount:'認列金額',rpvAmount:'RPV',scheduleRetainedEntitlementRatio:'排程保留比例',refundAmount:'退款金額',fullCancellation:'全額取消',orderOriginalGpv:'本單原始 GPV',original:'原始金額',recomputed:'重算金額',left:'左側結轉',right:'右側結轉',pairedPv:'配對 PV',ruleVersionCode:'規則版本',ruleVersion:'規則版本',periodStart:'期間開始',periodEnd:'期間結束',processedWeeks:'已處理週數',maxWeeks:'週數上限',actionCompleted:'有重算完成紀錄',originalK1:'原始 K1',recomputedK1:'重算 K1',originalK2:'原始 K2',recomputedK2:'重算 K2'};
+const children:Record<string,string>={sources:'本單來源 PV',awards:'認列獎金',corrections:'重算調整',replayedEntitlements:'已重算權益',adjustments:'PV 調整',applications:'抵扣明細',payables:'應付款',paymentResults:'付款回報（累計金額，不相加）',effects:'入帳紀錄',recipients:'對象明細',postedCancellations:'已過帳取消',periods:'後續期間',carryChanges:'結轉差異',awardChanges:'獎金差異',postings:'實際分錄',carryProjections:'已記錄結轉'};
+const objects:Record<string,string>={periodContext:'整期背景（不歸給單筆訂單）',recordedRetention:'已記錄保留權益',replay:'歷史重算',recordedEffects:'對應入帳證據',correctionAward:'追加獎金',recovery:'追回款',reservoirBEffect:'Reservoir B 調整',payout:'付款明細（包含其他來源，不全歸給本筆）'};
+function value(key:string,item:unknown){if(item===null)return '未提供';if(typeof item==='boolean')return item?'是':'否';if(typeof item!=='string'&&typeof item!=='number')return '';return key.toLowerCase().includes('status')?states[String(item)]??'待確認':String(item);}
+function Evidence({row}:{row:Row}){return <><dl className="lineage-facts">{Object.entries(fields).filter(([key])=>key in row).map(([key,label])=>typeof row[key]==='object'&&row[key]!==null?null:<div key={key}><dt>{label}</dt><dd>{value(key,row[key])}</dd></div>)}</dl>
+  {row.basis==='RECORDED_PV_AND_ENTITLEMENT_STATE'&&<p>僅表示已記錄的調整；不表示所有退貨皆已完成重算。</p>}
+  {row.evidenceType==='CALCULATION_CHECKPOINT_NOT_PAYMENT'&&<p>這是重算進度，不能視為已入帳或已付款。</p>}
+  {row.basis==='RECOVERY_OFFSET_NOT_CASH_PAYMENT'&&<p>此筆為追回款抵扣，並非現金付款。</p>}
+  {(['original','recomputed'] as const).map(key=>row[key]&&typeof row[key]==='object'?<details key={key}><summary>{key==='original'?'原始結轉':'重算結轉'}</summary><Evidence row={row[key]}/></details>:null)}
+  {Object.entries(objects).map(([key,label])=>row[key]&&typeof row[key]==='object'?<details key={key}><summary>{label}</summary><Evidence row={row[key]}/></details>:null)}
+  {Object.entries(children).map(([key,label])=>Array.isArray(row[key])?<details key={key}><summary>{label}（{row[key].length}）</summary>{row[key].length?row[key].map((item:Row,index:number)=><section className="lineage-child" key={index}><h4>{awards[item.awardType]??`${label} ${index+1}`}</h4><Evidence row={item}/></section>):<p>尚無對應紀錄；不推定為零金額或已完成。</p>}</details>:null)}</>;}
+export function lineageEvents(data:Lineage){
+  const evidence=data.economicEvidence??{};const rows:Array<{title:string;at?:string;row:Row;context?:string}>=[];
+  const sourceLabels=new Map<string,string>();
+  (evidence.pvEvents??[]).forEach((row,index)=>sourceLabels.set(row.reference,`${row.pvType} 認列 ${index+1}`));
+  (evidence.awards??[]).forEach((row,index)=>sourceLabels.set(row.reference,`${awards[row.awardType]??'獎金'} ${index+1}`));
+  const add=(key:string,title:string,date:string,context?:string)=>{for(const row of evidence[key]??[])rows.push({title:awards[row.awardType]??title,at:row[date],row:{...row,...(row.sourcePvReference||row.sourceAwardReference||row.sourceOrderLineReference?{sourceDescription:sourceLabels.get(row.sourcePvReference??row.sourceAwardReference)??'本單明細'}:{})},context});};
+  for(const row of data.payments??[])rows.push({title:'訂單收款',at:row.occurredAt,row});
+  add('pvEvents','PV 認列','occurredAt');add('awards','訂單獎金','occurredAt');add('subscriptionRecognitions','訂閱認列','recognizedAt');
+  add('periodContributions','期間結算背景','periodEnd','本單曾納入此期計算；整期獎金不等於本單獎金。');
+  add('payables','應付款','availableAt');add('recoveries','追回款','occurredAt');add('reservoirBDestinations','Reservoir B 入帳','effectiveAt');
+  add('gpvRetention','目前 GPV 保留量','occurredAt','依目前已過帳退貨計算。');add('epvRetentions','已記錄 EPV 保留量','occurredAt');add('returnReplays','退貨後續重算','convergedAt','各期差異與實際入帳分開列示。');
+  return rows.map((row,index)=>({...row,index})).sort((a,b)=>(a.at?Date.parse(a.at):Infinity)-(b.at?Date.parse(b.at):Infinity)||a.index-b.index);
+}
+export function EconomicLineagePage(){
+  const [params]=useSearchParams(),initial=params.get('orderNo')??'';
+  const [input,setInput]=useState(initial),[orderNo,setOrderNo]=useState(/^\d{1,19}$/.test(initial)?initial:''),[error,setError]=useState<string|null>(null);
+  const query=useQuery({queryKey:['economic-lineage',orderNo],queryFn:({signal})=>get<{data:Lineage}>(`/admin/operations/economic-lineage/orders/${orderNo}`,{signal}),enabled:!!orderNo,retry:false});
+  const data=!error&&!query.error&&!query.isFetching?query.data?.data:undefined,events=data?lineageEvents(data):[];
+  return <><PageHeader title="交易影響追蹤" subtitle="依訂單查看認列、獎金、退貨重算與付款證據。此頁為唯讀。" actions={<Link to="/orders">返回訂單與收款</Link>}/>
+    <Card><form onSubmit={event=>{event.preventDefault();const next=input.trim();if(!/^\d{1,19}$/.test(next)){setError('請輸入 1 至 19 位數字的訂單號。');return;}setError(null);if(next===orderNo)void query.refetch();else setOrderNo(next);}}><Field label="訂單號"><input inputMode="numeric" value={input} onChange={event=>setInput(event.target.value)} required pattern="[0-9]{1,19}"/></Field><button disabled={query.isFetching}>查詢交易影響</button></form></Card>
+    <ErrorBox error={error||query.error}/>{query.isFetching&&<p role="status">正在讀取交易證據…</p>}{!orderNo&&<p>輸入訂單號開始查詢。</p>}
+    {data&&<Card title={`訂單 ${data.order.orderNo}`}><p>狀態：{states[data.order.status]??'待確認'}。金額為各階段紀錄，請勿跨階段加總。</p>{!events.length?<p>目前沒有可追溯的經濟紀錄；不表示獎金為零。</p>:<ol className="lineage-timeline">{events.map(item=><li key={item.index}><article><header><h3>{item.title}</h3><span>{item.at?new Date(item.at).toLocaleString('zh-TW'):'未提供事件時間／目前狀態'}</span></header>{item.context&&<p>{item.context}</p>}<details><summary>查看計算與來源明細</summary><Evidence row={item.row}/></details></article></li>)}</ol>}</Card>}
+  </>;
+}
