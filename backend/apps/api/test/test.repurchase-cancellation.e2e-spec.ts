@@ -1,4 +1,5 @@
 import {SubscriptionCancellationService} from '../src/modules/subscription/subscription-cancellation.service';
+import {Prisma} from '@prisma/client';
 
 describe('repurchase cancellation recovery boundary',()=>{
   it('cancels future schedules and queues append-only reversals for all already-recognized effects',async()=>{
@@ -18,7 +19,7 @@ describe('repurchase cancellation recovery boundary',()=>{
   });
 
   it('reuses the immutable cancellation fact and does not enqueue recovery twice',async()=>{
-    const existing={subscriptionCancellationId:'existing',subscriptionId:'sub',effectiveAt:new Date('2026-10-15'),reasonCode:'FULL_RETURN'};
+    const existing={subscriptionCancellationId:'existing',subscriptionId:'sub',effectiveAt:new Date('2026-10-15'),reasonCode:'FULL_RETURN',refundAmount:new Prisma.Decimal(0),sourceReturnCaseId:null};
     const tx:any={$queryRaw:jest.fn(),
       subscriptionCancellation:{findFirst:jest.fn().mockResolvedValue(existing),create:jest.fn()},
       subscription:{findUniqueOrThrow:jest.fn(),update:jest.fn()},
@@ -32,7 +33,7 @@ describe('repurchase cancellation recovery boundary',()=>{
   });
 
   it('reconciles a concurrent unique-key retry without mutating the cancellation fact',async()=>{
-    const existing={subscriptionCancellationId:'existing',subscriptionId:'sub',effectiveAt:new Date('2026-10-15'),reasonCode:'FULL_RETURN'};
+    const existing={subscriptionCancellationId:'existing',subscriptionId:'sub',effectiveAt:new Date('2026-10-15'),reasonCode:'FULL_RETURN',refundAmount:new Prisma.Decimal(0),sourceReturnCaseId:null};
     const db:any={
       $transaction:jest.fn().mockRejectedValue({code:'P2002'}),
       subscriptionCancellation:{findFirst:jest.fn().mockResolvedValue(existing)},

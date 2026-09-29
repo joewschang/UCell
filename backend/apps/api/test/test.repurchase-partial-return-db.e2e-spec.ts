@@ -30,6 +30,21 @@ describeDb('repurchase cumulative partial returns',()=>{
     return {sub,refund,rows,qualification};
   }
   const total=(rows:any[],key:string)=>rows.reduce((sum,row)=>sum.add(row[key]),new Prisma.Decimal(0)).toString();
+  it('deduplicates concurrent legacy cancellation commands without a new required header',async()=>{
+    const f=await fixture(),at=new Date('2026-09-28');
+    const results=await Promise.all([service.cancel(f.sub.subscriptionId,at,'FULL_RETURN'),service.cancel(f.sub.subscriptionId,at,'FULL_RETURN')]);
+    expect(results.map(r=>r.replayed).sort()).toEqual([false,true]);
+    expect(await db.subscriptionCancellation.count({where:{subscriptionId:f.sub.subscriptionId}})).toBe(1);
+  });
+  it('rejects reuse of a cancellation key for another subscription or command',async()=>{
+    const a=await fixture(),b=await fixture(),key=randomUUID(),at=new Date('2026-09-28');
+    await service.cancel(a.sub.subscriptionId,at,'FULL_RETURN','0',{idempotencyKey:key});
+    await expect(service.cancel(a.sub.subscriptionId,at,'FULL_RETURN')).resolves.toMatchObject({replayed:true});
+    await expect(service.cancel(a.sub.subscriptionId,at,'FULL_RETURN','0',{idempotencyKey:randomUUID()})).rejects.toMatchObject({response:{code:'SUBSCRIPTION_ALREADY_CANCELLED'}});
+    await expect(service.cancel(b.sub.subscriptionId,at,'FULL_RETURN','0',{idempotencyKey:key})).rejects.toMatchObject({response:{code:'SUBSCRIPTION_CANCELLATION_IDEMPOTENCY_CONFLICT'}});
+    await expect(service.cancel(a.sub.subscriptionId,new Date('2026-09-29'),'FULL_RETURN','0',{idempotencyKey:key})).rejects.toMatchObject({response:{code:'SUBSCRIPTION_CANCELLATION_IDEMPOTENCY_CONFLICT'}});
+    expect((await db.subscription.findUniqueOrThrow({where:{subscriptionId:b.sub.subscriptionId}})).status).toBe('ACTIVE');
+  });
   it('deducts each refund once, preserves rounding residuals and replays without another reduction',async()=>{
     const f=await fixture();
     const first=await f.refund('20');

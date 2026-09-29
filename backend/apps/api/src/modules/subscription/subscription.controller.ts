@@ -44,13 +44,12 @@ export class SubscriptionController {
   async get(@Param('id') id:string){ return {data:await this.service.get(id)}; }
 
   @Post(':id/cancel')
-  @UseGuards(IdempotencyGuard)
-  @ApiHeader({name:'Idempotency-Key',required:true})
+  @ApiHeader({name:'Idempotency-Key',required:false,description:'建議提供；舊版請求由伺服器建立穩定重送識別'})
   @ApiOperation({operationId:'adminCancelSubscription',summary:'取消預付重銷方案；未來認列取消，已認列月份排程 RPV reversal'})
   async cancel(
     @Param('id') id:string,
     @Body() body:{effectiveAt:string;reasonCode:string;refundAmount?:string;sourceReturnCaseId?:string},
-    @Headers('idempotency-key') key:string,
+    @Headers('idempotency-key') key:string|undefined,
   ){
     return {
       data:await this.cancellation.cancel(
