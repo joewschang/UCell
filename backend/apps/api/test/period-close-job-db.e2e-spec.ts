@@ -8,13 +8,35 @@ import {GlobalPoolService} from '../src/modules/global-pool/global-pool.service'
 import {GlobalPoolPersistence} from '../src/modules/global-pool/global-pool-persistence';
 import {RuntimeRuleService} from '../src/modules/rules/runtime-rule.service';
 import {BonusQueryService} from '../src/modules/bonus/bonus-query.service';
+import {executePeriodClose} from '@ucell/settlement';
+import {SettlementJobsController} from '../src/modules/settlement-jobs/settlement-jobs.controller';
+import {AuditService} from '../src/common/audit/audit.service';
+import {execFileSync} from 'node:child_process';
+import {join} from 'node:path';
+import {pollPeriodCloseJobs} from '../../worker/src/period-close-runtime';
 
 const url=process.env.PHASE2_TEST_DATABASE_URL;
 (url?describe:describe.skip)('durable period-close admission, dependencies and fenced execution',()=>{
   let db:PrismaClient;
+  let control:PrismaClient,created=false;
+  const database='ucell_job_worker_'+randomUUID().replaceAll('-','');
   const start=new Date('1893-01-01T00:00:00Z'),end=new Date('1893-01-08T00:00:00Z');
-  beforeAll(()=>db=new PrismaClient({datasources:{db:{url}}}));
-  afterAll(()=>db.$disconnect());
+  beforeAll(async()=>{
+    // The worker's conservative global-input barrier needs its own disposable DB.
+    const target=new URL(url!);
+    if(!['localhost','127.0.0.1'].includes(target.hostname)||!/^\/ucell_jest_[a-f0-9]{32}$/.test(target.pathname))throw new Error('ISOLATED_RUNNER_REQUIRED');
+    const admin=new URL(target);admin.pathname='/postgres';
+    control=new PrismaClient({datasources:{db:{url:admin.href}}});
+    await control.$executeRawUnsafe('CREATE DATABASE "'+database+'"');created=true;target.pathname='/'+database;
+    const root=join(__dirname,'../../../packages/database');
+    execFileSync(process.execPath,[require.resolve('prisma/build/index.js',{paths:[root]}),'migrate','deploy','--schema',join(root,'prisma/schema.prisma')],{env:{...process.env,DATABASE_URL:target.href},stdio:'pipe',timeout:60000});
+    db=new PrismaClient({datasources:{db:{url:target.href}}});
+  },90000);
+  afterAll(async()=>{
+    await db?.$disconnect();
+    if(created)await control.$executeRawUnsafe('DROP DATABASE "'+database+'" WITH (FORCE)');
+    await control?.$disconnect();
+  });
   async function rule(){
     const code=`TEST_CLOSE_JOB_${randomUUID()}`;
     const values:Array<[string,string,Prisma.InputJsonValue]>=[['award.pending.days','*','45'],['pool.referral.rate','*','0.5'],['pool.binary.rate','*','0.2'],['pool.matching.rate','*','0.2'],['binary.pair.rate','*','0.1'],['pool.global.rate','*','0.05']];
@@ -28,15 +50,31 @@ const url=process.env.PHASE2_TEST_DATABASE_URL;
   function enqueue(kind:PeriodCloseKind,code:string,prerequisiteIds:string[]=[],approvalReference='TEST_APPROVAL'){
     return enqueuePeriodCloseJob(db,{kind,periodStart:start,periodEnd:end,ruleVersionCode:code,prerequisiteIds,approvalReference,requestedBy:'TEST_FINANCE'},tx=>new SettlementCalendarService(db as any).captureForPeriod(tx,start,end,kind,code));
   }
-  async function execute(tx:Prisma.TransactionClient,job:any){
-    // Reuse actual engines within the lease transaction, never open a nested commit.
-    const client=new Proxy(tx,{get(target,key){return key==='$transaction'?(work:any)=>work(tx):Reflect.get(target,key);}}) as any;
-    const rules=new RuntimeRuleService(client),query=new BonusQueryService(client),calendar=new SettlementCalendarService(client);
-    if(job.kind==='GLOBAL')return (await new GlobalPoolService(client,rules,query,calendar,new GlobalPoolPersistence()).evaluateAndSettle(job.periodStart,job.periodEnd,job.ruleVersionCode)).globalPoolSettlementId;
-    if(job.kind==='REFERRAL_K0')return (await new ReferralBonusService(client,rules,query,calendar).settle(job.periodStart,job.periodEnd,job.ruleVersionCode)).settlementBatchId;
-    const binary=new BinaryBonusService(client,rules,query,calendar);
-    return (await (job.kind==='BINARY_K1'?binary.settleBinary(job.periodStart,job.periodEnd,job.ruleVersionCode):binary.settleMatching(job.periodStart,job.periodEnd,job.ruleVersionCode))).settlementBatchId;
-  }
+  const execute=executePeriodClose;
+  it('dispatches real Binary and dependent Matching jobs through the Worker poller',async()=>{
+    const code=await rule(),binary=await enqueue('BINARY_K1',code),matching=await enqueue('MATCHING_K2',code,[binary.periodCloseJobId]);
+    expect((await pollPeriodCloseJobs(db as any,{PERIOD_CLOSE_WORKER_ENABLED:'true'})).completed).toBe(1);
+    expect(await db.periodCloseReceipt.findUnique({where:{periodCloseJobId:matching.periodCloseJobId}})).toBeNull();
+    expect((await pollPeriodCloseJobs(db as any,{PERIOD_CLOSE_WORKER_ENABLED:'true'})).completed).toBe(1);
+    expect(await db.periodCloseReceipt.count()).toBe(2);
+    expect((await pollPeriodCloseJobs(db as any,{PERIOD_CLOSE_WORKER_ENABLED:'true'})).completed).toBe(0);
+  });
+  it('records authenticated admission and audit atomically, with one audit on replay',async()=>{
+    const code=await rule(),actor=randomUUID(),controller=new SettlementJobsController(db as any,new SettlementCalendarService(db as any),new AuditService());
+    const body={kind:'REFERRAL_K0' as const,periodStart:start.toISOString(),periodEnd:end.toISOString(),ruleVersionCode:code,prerequisiteIds:[],approvalReference:'TEST_FINANCE_APPROVAL'};
+    const req={user:{personId:actor,role:'FINANCE'}};
+    const first=await controller.create(body,req),again=await controller.create(body,req);
+    expect(again.data.id).toBe(first.data.id);expect(first.data.requestedBy).toBe(actor);
+    expect(first.data).not.toHaveProperty('parameterSnapshot');
+    const audits=await db.auditEvent.findMany({where:{entityId:first.data.id,action:'PERIOD_CLOSE_REQUESTED'}});
+    expect(audits).toHaveLength(1);expect(audits[0]).toMatchObject({actorId:actor,actorRoleSnapshot:'FINANCE'});
+    await expect(controller.create(body,{user:{role:'SUPER_ADMIN'}})).rejects.toThrow('AUTHENTICATED_ACTOR_REQUIRED');
+  });
+  it('does not leave a job or Outbox request if admission audit fails',async()=>{
+    const code=await rule(),controller=new SettlementJobsController(db as any,new SettlementCalendarService(db as any),{write:async()=>{throw new Error('AUDIT_FAILED');}} as any);
+    await expect(controller.create({kind:'REFERRAL_K0',periodStart:start.toISOString(),periodEnd:end.toISOString(),ruleVersionCode:code,prerequisiteIds:[],approvalReference:'TEST'}, {user:{personId:randomUUID(),role:'FINANCE'}})).rejects.toThrow('AUDIT_FAILED');
+    expect(await db.periodCloseJob.count({where:{ruleVersionCode:code}})).toBe(0);
+  });
   it('deduplicates simultaneous admission and rejects changed approval/dependencies',async()=>{
     const code=await rule();
     const jobs=await Promise.all([enqueue('REFERRAL_K0',code),enqueue('REFERRAL_K0',code)]);
@@ -93,7 +131,7 @@ const url=process.env.PHASE2_TEST_DATABASE_URL;
     const job=await enqueue('REFERRAL_K0',await rule());
     await expect(db.periodCloseJob.update({where:{periodCloseJobId:job.periodCloseJobId},data:{approvalReference:'MUTATED'}})).rejects.toThrow();
     await db.runtimeRuleParameter.updateMany({where:{ruleVersionCode:job.ruleVersionCode,parameterCode:'pool.referral.rate'},data:{valueJson:'0.4'}});
-    await expect(processPeriodCloseJob(db,(await claimPeriodCloseJob(db,job.periodCloseJobId))!,execute)).rejects.toThrow('PERIOD_CLOSE_RESULT_MISMATCH');
+    await expect(processPeriodCloseJob(db,(await claimPeriodCloseJob(db,job.periodCloseJobId))!,execute)).rejects.toThrow('PERIOD_CLOSE_PARAMETER_DRIFT');
     expect(await db.settlementBatch.count({where:{ruleVersionCode:job.ruleVersionCode}})).toBe(0);
     const clean=await enqueue('REFERRAL_K0',await rule());
     await processPeriodCloseJob(db,(await claimPeriodCloseJob(db,clean.periodCloseJobId))!,execute);

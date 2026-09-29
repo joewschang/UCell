@@ -1,4 +1,5 @@
 import {ReservoirModule} from './modules/reservoir/reservoir.module';
+import {SettlementJobsModule} from './modules/settlement-jobs/settlement-jobs.module';
 import { BinaryTreeModule } from './modules/binary-tree/binary-tree.module';
 import { ExplainModule } from './modules/explain/explain.module';
 import { Module } from '@nestjs/common';
@@ -44,6 +45,7 @@ import {FulfillmentOperationsModule} from './modules/commerce/fulfillment-operat
 
 @Module({
   imports: [
+    SettlementJobsModule,
     FulfillmentOperationsModule,
     ReservoirModule,
     BinaryTreeModule,

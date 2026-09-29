@@ -25,6 +25,7 @@
     "@nestjs/swagger": "*",
     "@ucell/database": "workspace:*",
     "@ucell/shared": "workspace:*",
+    "@ucell/settlement": "workspace:*",
     "class-transformer": "*",
     "class-validator": "*",
     "fastify": "*",

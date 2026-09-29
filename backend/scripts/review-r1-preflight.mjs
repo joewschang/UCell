@@ -2,8 +2,8 @@ import fs from 'node:fs';
 const failures=[];
 const qmod=fs.readFileSync('apps/api/src/modules/qualification/qualification.module.ts','utf8');
 const qwf=fs.readFileSync('apps/api/src/modules/qualification/qualification-workflow.service.ts','utf8');
-const bq=fs.readFileSync('apps/api/src/modules/bonus/bonus-query.service.ts','utf8');
-const bin=fs.readFileSync('apps/api/src/modules/bonus/binary-bonus.service.ts','utf8');
+const bq=fs.readFileSync('packages/settlement/src/bonus/bonus-query.service.ts','utf8');
+const bin=fs.readFileSync('packages/settlement/src/bonus/binary-bonus.service.ts','utf8');
 const migration=fs.readFileSync('packages/database/prisma/migrations/0013_review_r1_integrity_guards/migration.sql','utf8');
 
 if(!qmod.includes('QualificationWorkflowService')) failures.push('QualificationWorkflowService not wired');

@@ -6,6 +6,7 @@ import { WorkerLoop, workerPollInterval } from './worker-loop';
 import { ProviderWorkloadMetrics } from './provider-workload-metrics';
 import { createLineMessagingObserverHandler } from './line-messaging-handler';
 import {pollErpHandoffs,type PhysicalErpAdapter} from './erp-handoff-runtime';
+import {pollPeriodCloseJobs} from './period-close-runtime';
 
 // Actual transports are registered only after protocol/credential enablement.
 // An empty registry leaves durable ERP requests pending, never acknowledged.
@@ -266,6 +267,7 @@ async function tick(){
   await pollOutbox();
   await pollErpHandoffs(prisma,erpAdapters);
   await pollRecognitions();
+  await pollPeriodCloseJobs(prisma);
   await matureBonusAwards();
   await expireNotificationDeliveries();
   const providerStartedAt=Date.now();

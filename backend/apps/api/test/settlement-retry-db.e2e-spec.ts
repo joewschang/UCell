@@ -3,6 +3,7 @@ import {sealGpvEvent,verifyReplayEnvelope,enqueuePeriodCloseJob,claimPeriodClose
 import {randomUUID} from 'node:crypto';
 import {spawn} from 'node:child_process';
 import {join} from 'node:path';
+import {executePeriodClose} from '@ucell/settlement';
 import {BinaryBonusService} from '../src/modules/bonus/binary-bonus.service';
 import {ReferralBonusService} from '../src/modules/bonus/referral-bonus.service';
 import {GlobalPoolService} from '../src/modules/global-pool/global-pool.service';
@@ -141,11 +142,7 @@ describeDb('period settlement concurrent delivery and retry transaction boundary
       return enqueuePeriodCloseJob(db,{kind:type,periodStart:period.start,periodEnd:period.end,ruleVersionCode:rule,prerequisiteIds,requestedBy:'TEST_FINANCE',approvalReference:'TEST_CLOSE'},tx=>new SettlementCalendarService(db as any).captureForPeriod(tx,period.start,period.end,type,rule));
     }
     async function run(job:any){
-      return processPeriodCloseJob(db,(await claimPeriodCloseJob(db,job.periodCloseJobId))!,async(tx,row)=>{
-        const client=new Proxy(tx,{get(target,key){return key==='$transaction'?(work:any)=>work(tx):Reflect.get(target,key);}});
-        const result=await settle(client,row.kind as Kind,rule);
-        return 'globalPoolSettlementId' in result?result.globalPoolSettlementId:result.settlementBatchId;
-      });
+      return processPeriodCloseJob(db,(await claimPeriodCloseJob(db,job.periodCloseJobId))!,executePeriodClose);
     }
     const prerequisites:string[]=[];
     if(kind==='MATCHING_K2'){

@@ -10,7 +10,7 @@ const eventType='PERIOD_CLOSE_REQUESTED';
 const uuid=/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i;
 
 /** Internal admission boundary. prepare must enforce the approved calendar/cutoff. */
-export async function enqueuePeriodCloseJob(db:PrismaClient,input:PeriodCloseRequest,prepare:(tx:Prisma.TransactionClient)=>Promise<ParameterSnapshot>){
+export async function enqueuePeriodCloseJob(db:PrismaClient,input:PeriodCloseRequest,prepare:(tx:Prisma.TransactionClient)=>Promise<ParameterSnapshot>,onCreated?:(tx:Prisma.TransactionClient,job:PeriodCloseJob)=>Promise<unknown>){
   if(!['REFERRAL_K0','BINARY_K1','MATCHING_K2','GLOBAL'].includes(input.kind)||!Number.isFinite(input.periodStart.getTime())||!Number.isFinite(input.periodEnd.getTime())||input.periodStart>=input.periodEnd||!input.ruleVersionCode.trim()||!input.requestedBy.trim()||!input.approvalReference.trim()||input.prerequisiteIds.length>100||input.prerequisiteIds.some(id=>!uuid.test(id)))throw new Error('PERIOD_CLOSE_REQUEST_INVALID');
   const prerequisiteIds=[...new Set(input.prerequisiteIds)].sort();
   const identity={kind:input.kind,periodStart:input.periodStart,periodEnd:input.periodEnd,ruleVersionCode:input.ruleVersionCode};
@@ -29,7 +29,9 @@ export async function enqueuePeriodCloseJob(db:PrismaClient,input:PeriodCloseReq
     // Prerequisites must already exist; immutable manifests make cycles impossible.
     const periodCloseJobId=randomUUID();
     const outbox=await tx.outboxEvent.create({data:{eventType,aggregateType:'PERIOD_CLOSE_JOB',aggregateId:periodCloseJobId,payload:{periodCloseJobId},correlationId:randomUUID()}});
-    return tx.periodCloseJob.create({data:{...identity,periodCloseJobId,prerequisiteIds,requestedBy:input.requestedBy,approvalReference:input.approvalReference,parameterSnapshot:parameters as unknown as Prisma.InputJsonValue,outboxEventId:outbox.outboxEventId}});
+    const job=await tx.periodCloseJob.create({data:{...identity,periodCloseJobId,prerequisiteIds,requestedBy:input.requestedBy,approvalReference:input.approvalReference,parameterSnapshot:parameters as unknown as Prisma.InputJsonValue,outboxEventId:outbox.outboxEventId}});
+    if(onCreated)await onCreated(tx,job);
+    return job;
   },{isolationLevel:Prisma.TransactionIsolationLevel.Serializable});}
   catch(error){
     if(!['P2002','P2034'].includes((error as any).code))throw error;
