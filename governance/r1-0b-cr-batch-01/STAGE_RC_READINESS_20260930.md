@@ -3,6 +3,8 @@
 **Checkpoint:** `e460a534f25cc30da4b1f04154b1216715646a77` on `integration/member-backend-mvp`  
 **Scope:** Member My Growth, Learning Center, Event Center, Member 360 and Activity Timeline integration.
 
+> 2026-09-30 scope correction: this is a limited feature checkpoint, not full batch closure. Period Orchestrator, four-stream ERP bridge, messaging, Admin Learning/Event management and whole-journey UX remain internal work. See [Implementation Progress](../next-generation/R1.0B_CR_BATCH_01_IMPLEMENTATION_PROGRESS.md). STAGE_RC = NOT_READY until all required gates are evidenced.
+
 ## Local implementation evidence
 
 | Requirement | Status | Evidence |
@@ -30,7 +32,7 @@ The isolated API run emitted the pre-existing non-fatal AnalyticsRefreshWorker w
 
 ## Stage RC approval prerequisites
 
-The source is ready for Stage RC review. Promotion remains intentionally blocked until the following external evidence exists:
+This checkpoint alone is insufficient for Stage RC readiness. In addition to remaining internal acceptance, promotion requires the following external evidence:
 
 1. Formal Stage LINE/LIFF and Entra/RBAC credentials plus interactive identity evidence.
 2. Stage environment database and approved guarded seed/journey access.
