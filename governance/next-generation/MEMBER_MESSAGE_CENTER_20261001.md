@@ -21,3 +21,11 @@ Member UI supports personal/current-qualification messages, category/history fil
 - Member 31 files / 175 tests and production build passed. Backend builds and schema/migration/security/OpenAPI preflights passed. POST documentation records the actual HTTP 201 response.
 
 Logs are under `C:\UCell\logs\cr-batch-member-messages-*`. This is not latest full API isolated recertification or Stage approval.
+
+## Learning/Event producer integration
+
+Course enrollment/completion and event registration/cancellation/check-in now append personal messages in the same transaction as the authoritative action. Natural replay does not generate a second notice; renewed event registrations use a distinct credential cycle. Public bodies contain course/event business codes, never the check-in credential or private row identities. Message-write failure rolls back registration, audit and idempotency together. No historical backfill or scheduled reminders are inferred.
+
+Members without a qualification can reach Learning and Events as well as their personal inbox. Destination APIs continue to enforce membership eligibility. The current list pages still need the full detail/progress/check-in journeys tracked under Learning/Event scope.
+
+Three focused DB suites / eight tests passed on fresh 0→122 with 162 baseline assertions and cleanup. This includes actual producer replay, cancelled/re-registered event token isolation, private-person inbox isolation, unchanged LINE delivery count, and a real database failure injection proving transactional rollback. API build, Member 175 tests and build passed. Logs: `cr-batch-learning-event-messages-*`.
