@@ -49,3 +49,4 @@ export * from './operational/structured-error';
 export * from './pii-crypto';
 export * from './shipment-operation-decision';
 export * from './period-close-job';
+export * from './payable-materialization';

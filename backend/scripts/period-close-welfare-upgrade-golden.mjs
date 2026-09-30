@@ -8,7 +8,8 @@ import {join,resolve,dirname,basename} from 'node:path';
 import {tmpdir} from 'node:os';
 const require=createRequire(new URL('../packages/database/package.json',import.meta.url));
 const {PrismaClient}=require('@prisma/client');
-const firstNewMigration='20260930010000_period_close_welfare';
+const payableMode=process.argv.includes('--payable');
+const firstNewMigration=payableMode?'20260930020000_period_close_payable_preparation':'20260930010000_period_close_welfare';
 const base=new URL(process.env.DATABASE_URL??'postgresql://ucell:ucell_dev@127.0.0.1:5432/ucell');
 assert.ok(['localhost','127.0.0.1'].includes(base.hostname));
 const database='ucell_welfare_upgrade_'+randomUUID().replaceAll('-','');
@@ -23,7 +24,7 @@ try{
  for(const entry of readdirSync(join(root,'migrations'),{withFileTypes:true}))if(!entry.isDirectory()||entry.name<firstNewMigration)cpSync(join(root,'migrations',entry.name),join(scratch,'migrations',entry.name),{recursive:true});
  await admin.$executeRawUnsafe('CREATE DATABASE "'+database+'"');created=true;deploy(join(scratch,'schema.prisma'));
  const jobs=[],receipts=[],events=[];
- for(const kind of ['REFERRAL_K0','BINARY_K1','MATCHING_K2','GLOBAL']){
+ for(const kind of ['REFERRAL_K0','BINARY_K1','MATCHING_K2','GLOBAL',...(payableMode?['WELFARE']:[])]){
   const id=randomUUID();
   const event=await db.outboxEvent.create({data:{eventType:'PERIOD_CLOSE_REQUESTED',aggregateType:'PERIOD_CLOSE_JOB',aggregateId:id,payload:{periodCloseJobId:id},correlationId:randomUUID(),processStatus:'PROCESSED'}});events.push(event);
   const job=await db.periodCloseJob.create({data:{periodCloseJobId:id,kind,periodStart:new Date('2020-01-01Z'),periodEnd:new Date('2020-01-08Z'),ruleVersionCode:'TEST_UPGRADE',parameterSnapshot:{historical:'unchanged'},prerequisiteIds:[],requestedBy:'TEST',approvalReference:'TEST',outboxEventId:event.outboxEventId}});jobs.push(job);
@@ -39,10 +40,11 @@ try{
  await assert.rejects(db.periodCloseReceipt.delete({where:{periodCloseJobId:jobs[0].periodCloseJobId}}));
  const id=randomUUID(),event=await db.outboxEvent.create({data:{eventType:'PERIOD_CLOSE_REQUESTED',aggregateType:'PERIOD_CLOSE_JOB',aggregateId:id,payload:{periodCloseJobId:id},correlationId:randomUUID()}});
  const {createdAt,...template}=jobs[0];
- const welfare=await db.periodCloseJob.create({data:{...template,periodCloseJobId:id,kind:'WELFARE',prerequisiteIds:[jobs[3].periodCloseJobId],outboxEventId:event.outboxEventId}});
- assert.equal(welfare.kind,'WELFARE');
+ const kind=payableMode?'PAYABLE_PREPARATION':'WELFARE';
+ const added=await db.periodCloseJob.create({data:{...template,periodCloseJobId:id,kind,prerequisiteIds:payableMode?jobs.map(row=>row.periodCloseJobId):[jobs[3].periodCloseJobId],outboxEventId:event.outboxEventId}});
+ assert.equal(added.kind,kind);
  const [{count}]=await db.$queryRawUnsafe('SELECT count(*)::int AS count FROM public._prisma_migrations WHERE finished_at IS NOT NULL AND rolled_back_at IS NULL');
- console.log(`PERIOD_CLOSE_WELFARE_UPGRADE_113_TO_${count}_PRESERVATION_AND_GUARDS_PASS`);
+ console.log(`PERIOD_CLOSE_${kind}_UPGRADE_${payableMode?114:113}_TO_${count}_PRESERVATION_AND_GUARDS_PASS`);
 }finally{
  await db.$disconnect();if(created){await admin.$executeRawUnsafe('DROP DATABASE "'+database+'" WITH (FORCE)');console.log('PERIOD_CLOSE_WELFARE_UPGRADE_CLEANUP_PASS');}await admin.$disconnect();
  assert.equal(dirname(resolve(scratch)),resolve(tmpdir()));assert.ok(basename(scratch).startsWith('ucell-welfare-upgrade-'));rmSync(scratch,{recursive:true,force:true});

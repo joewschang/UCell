@@ -62,7 +62,7 @@ describe('R1.0B v0.6.3',()=>{
     const cutoff = new Date('2020-04-01T00:00:00Z');
     expect(await service.materialize(cutoff, 'TEST_ONLY')).toEqual({ created: 1 });
     expect(await service.materialize(cutoff, 'TEST_ONLY')).toEqual({ created: 0 });
-    expect(tx.bonusAward.findMany).toHaveBeenCalledWith({ where: { ruleVersionCode: 'TEST_ONLY', pendingUntil: { lte: cutoff }, lifecycleEvents: { some: { status: 'EFFECTIVE' } } } });
+    expect(tx.bonusAward.findMany).toHaveBeenCalledWith(expect.objectContaining({ where: { ruleVersionCode: 'TEST_ONLY', pendingUntil: { lte: cutoff }, lifecycleEvents: { some: { status: 'EFFECTIVE' } } } }));
     expect(tx.payableEntry.create).toHaveBeenCalledTimes(1);
     expect([...entries.values()]).toEqual([expect.objectContaining({ qualificationId: 'ball-A', sourceType: 'BONUS_AWARD', sourceId: 'award-A', awardType: 'REFERRAL', grossAmount: new Prisma.Decimal(100), status: 'OPEN' })]);
   });

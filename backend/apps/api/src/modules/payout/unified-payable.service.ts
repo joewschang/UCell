@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { Prisma, PrismaService, isReservoirBSource } from '@ucell/database';
+import { Prisma, PrismaService, materializePayableEntries } from '@ucell/database';
 import { RecoveryBalanceService } from './recovery-balance.service';
 
 @Injectable()
@@ -9,32 +9,7 @@ export class UnifiedPayableService {
   async materialize(cutoff:Date,ruleVersionCode='R1.0B'){
     if(!Number.isFinite(cutoff.getTime())) throw new BadRequestException('PAYOUT_CUTOFF_INVALID');
     return this.prisma.$transaction(async tx=>{
-      const awards=await tx.bonusAward.findMany({where:{ruleVersionCode,pendingUntil:{lte:cutoff},lifecycleEvents:{some:{status:'EFFECTIVE'}}}});
-      let created=0;
-      for(const a of awards){
-        if(await isReservoirBSource(tx,a.bonusAwardId))continue;
-        if(a.payableAmount.lte(0)) continue;
-        const exists=await tx.payableEntry.findUnique({where:{sourceType_sourceId:{sourceType:'BONUS_AWARD',sourceId:a.bonusAwardId}}});
-        if(exists) continue;
-        await tx.payableEntry.create({data:{qualificationId:a.recipientQualificationId,sourceType:'BONUS_AWARD',sourceId:a.bonusAwardId,awardType:a.awardType,grossAmount:a.payableAmount,availableAt:cutoff,status:'OPEN',ruleVersionCode}});
-        created++;
-      }
-      const globalAwards=await tx.globalPoolAward.findMany({where:{payableAmount:{gt:0},settlement:{ruleVersionCode,periodEnd:{lte:cutoff}}}});
-      for(const a of globalAwards){
-        if(await isReservoirBSource(tx,a.globalPoolAwardId))continue;
-        const exists=await tx.payableEntry.findUnique({where:{sourceType_sourceId:{sourceType:'GLOBAL_POOL_AWARD',sourceId:a.globalPoolAwardId}}});
-        if(exists) continue;
-        await tx.payableEntry.create({data:{qualificationId:a.qualificationId,sourceType:'GLOBAL_POOL_AWARD',sourceId:a.globalPoolAwardId,awardType:'GLOBAL',grossAmount:a.payableAmount,availableAt:cutoff,status:'OPEN',ruleVersionCode}});
-        created++;
-      }
-      const rpv=await tx.rpvUplineAwardEvent.findMany({where:{payableAmount:{gt:0},ruleVersionCode,occurredAt:{lte:cutoff}}});
-      for(const a of rpv){
-        if(await isReservoirBSource(tx,a.rpvAwardEventId))continue;
-        const exists=await tx.payableEntry.findUnique({where:{sourceType_sourceId:{sourceType:'RPV_UPLINE_AWARD',sourceId:a.rpvAwardEventId}}});
-        if(exists) continue;
-        await tx.payableEntry.create({data:{qualificationId:a.recipientQualificationId,sourceType:'RPV_UPLINE_AWARD',sourceId:a.rpvAwardEventId,awardType:'RPV',grossAmount:a.payableAmount,availableAt:cutoff,status:'OPEN',ruleVersionCode:a.ruleVersionCode}});
-        created++;
-      }
+      const {created}=await materializePayableEntries(tx,cutoff,ruleVersionCode);
       return {created};
     });
   }

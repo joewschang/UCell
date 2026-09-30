@@ -41,8 +41,8 @@ const url=process.env.PHASE2_TEST_DATABASE_URL;
   async function rule(){
     const code=`TEST_CLOSE_JOB_${randomUUID()}`;
     const values:Array<[string,string,Prisma.InputJsonValue]>=[['award.pending.days','*','45'],['pool.referral.rate','*','0.5'],['pool.binary.rate','*','0.2'],['pool.matching.rate','*','0.2'],['binary.pair.rate','*','0.1'],['pool.global.rate','*','0.05']];
-    values.push(['pool.welfare.rate','*','0.02']);
-    for(const kind of ['REFERRAL_K0','BINARY_K1','MATCHING_K2','GLOBAL','WELFARE'])values.push(
+    values.push(['pool.welfare.rate','*','0.02'],['binary.weekly.cap','STARTER','10000'],['referral.g1.rate','STARTER','0.15'],['matching.rate','1','0.1']);
+    for(const kind of ['REFERRAL_K0','BINARY_K1','MATCHING_K2','GLOBAL','WELFARE','PAYABLE_PREPARATION'])values.push(
       ['settlement.timezone',kind,'UTC'],['settlement.period',kind,{unit:'WEEK',count:1,anchorLocal:'1893-01-01T00:00:00'}],
       ['settlement.cut_off',kind,{localTime:'00:00:00',daysAfterPeriodEnd:0,approvalReference:'TEST_CALENDAR'}]);
     for(const rank of ['NEW_STAR','EXCELLENCE','GLORY','DIAMOND','CROWN'])values.push(['global.rank.weak_threshold',rank,'1000'],['global.rank.pool_rate',rank,'0.01']);
@@ -196,5 +196,56 @@ const url=process.env.PHASE2_TEST_DATABASE_URL;
     expect(verifyReplayEnvelope(snapshot).evidence.sources).toHaveLength(1);
     expect(await db.welfarePoolEffect.count({where:{ruleVersionCode:code}})).toBe(1);
     expect(await db.payableEntry.count({where:{ruleVersionCode:code}})).toBe(0);
+  });
+  async function preparation(code:string){
+    const ids:string[]=[];
+    for(const kind of ['REFERRAL_K0','BINARY_K1','MATCHING_K2','GLOBAL','WELFARE'] as const){
+      const prerequisites=kind==='MATCHING_K2'?[ids[1]]:kind==='WELFARE'?[ids[3]]:[];
+      const job=await enqueue(kind,code,prerequisites);
+      await processPeriodCloseJob(db,(await claimPeriodCloseJob(db,job.periodCloseJobId))!,execute);
+      ids.push(job.periodCloseJobId);
+    }
+    return enqueue('PAYABLE_PREPARATION',code,ids);
+  }
+  async function directAward(code:string,at:Date,pendingUntil:Date){
+    const person=await db.person.create({data:{legalName:'Synthetic preparation'}});
+    const q=await db.qualification.create({data:{currentHolderPersonId:person.personId,planLevelCode:'STARTER'}});
+    const award=await db.bonusAward.create({data:{awardType:'EPV',recipientQualificationId:q.qualificationId,theoryAmount:10,payableAmount:10,activeSnapshot:true,ruleVersionCode:code,occurredAt:at,pendingUntil,calculationDetail:{synthetic:true}}});
+    await db.bonusAwardLifecycleEvent.create({data:{bonusAwardId:award.bonusAwardId,status:'PENDING_45D',occurredAt:at}});
+    return award;
+  }
+  it('rejects incomplete preparation manifests and seals an empty preparation exactly once',async()=>{
+    const code=await rule();
+    await expect(enqueue('PAYABLE_PREPARATION',code)).rejects.toThrow('PERIOD_CLOSE_PAYABLE_COVERAGE_REQUIRED');
+    const job=await preparation(code),lease=(await claimPeriodCloseJob(db,job.periodCloseJobId))!;
+    await processPeriodCloseJob(db,lease,execute);
+    const receipt=await db.periodCloseReceipt.findUniqueOrThrow({where:{periodCloseJobId:job.periodCloseJobId}});
+    expect(verifyReplayEnvelope(await db.historicalReplaySnapshot.findUniqueOrThrow({where:{snapshotId:receipt.snapshotId}}))).toMatchObject({kind:'PAYABLE_PREPARATION',evidence:{payables:[],created:0}});
+    expect(await processPeriodCloseJob(db,lease,execute)).toEqual({lostLease:true});
+  });
+  it('waits for award maturity without a lease or retry attempt',async()=>{
+    const code=await rule(),job=await preparation(code);
+    await directAward(code,start,new Date(Date.now()+86400000));
+    for(let i=0;i<3;i++)expect(await claimPeriodCloseJob(db,job.periodCloseJobId)).toBeNull();
+    expect((await db.outboxEvent.findUniqueOrThrow({where:{outboxEventId:job.outboxEventId}})).attemptCount).toBe(0);
+    expect(await db.payableEntry.count({where:{ruleVersionCode:code}})).toBe(0);
+  });
+  it('atomically matures and materializes only this period/rule, with rollback and replay protection',async()=>{
+    const code=await rule(),job=await preparation(code);
+    const inside=await directAward(code,start,end),outside=await directAward(code,new Date(start.getTime()-86400000),start),foreign=await directAward(await rule(),start,end);
+    const lease=(await claimPeriodCloseJob(db,job.periodCloseJobId))!;
+    await expect(processPeriodCloseJob(db,lease,async(tx,row)=>{await execute(tx,row);throw new Error('PREPARATION_AFTER_SEAL');})).rejects.toThrow('PREPARATION_AFTER_SEAL');
+    expect(await db.payableEntry.count({where:{ruleVersionCode:code}})).toBe(0);
+    expect(await db.bonusAwardLifecycleEvent.count({where:{bonusAwardId:inside.bonusAwardId,status:'EFFECTIVE'}})).toBe(0);
+    expect(await db.historicalReplaySnapshot.count({where:{kind:'PAYABLE_PREPARATION',sourceId:job.periodCloseJobId}})).toBe(0);
+    await releaseFailedOutboxLease(db,lease,new Error('PREPARATION_AFTER_SEAL'),new Date(Date.now()-31000));
+    const next=(await claimPeriodCloseJob(db,job.periodCloseJobId))!;
+    await processPeriodCloseJob(db,next,execute);
+    const entries=await db.payableEntry.findMany({where:{ruleVersionCode:code}});
+    expect(entries).toHaveLength(1);expect(entries[0].sourceId).toBe(inside.bonusAwardId);
+    expect(await db.payableEntry.count({where:{sourceId:{in:[outside.bonusAwardId,foreign.bonusAwardId]}}})).toBe(0);
+    expect(await db.bonusAwardLifecycleEvent.count({where:{bonusAwardId:inside.bonusAwardId,status:'EFFECTIVE'}})).toBe(1);
+    expect(await processPeriodCloseJob(db,next,execute)).toEqual({lostLease:true});
+    expect(await db.payableEntry.findMany({where:{ruleVersionCode:code}})).toEqual(entries);
   });
 });

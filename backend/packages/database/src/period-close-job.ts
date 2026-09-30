@@ -3,15 +3,16 @@ import {randomUUID} from 'node:crypto';
 import {ParameterSnapshot,verifySnapshot} from './parameter-snapshot';
 import {verifyReplayEnvelope} from './historical-replay';
 import {OutboxLease,claimOutboxLease,withOutboxLease} from './outbox-lease';
+import {periodBonusAwardWhere} from './payable-materialization';
 
-export type PeriodCloseKind='REFERRAL_K0'|'BINARY_K1'|'MATCHING_K2'|'GLOBAL'|'WELFARE';
+export type PeriodCloseKind='REFERRAL_K0'|'BINARY_K1'|'MATCHING_K2'|'GLOBAL'|'WELFARE'|'PAYABLE_PREPARATION';
 export type PeriodCloseRequest={kind:PeriodCloseKind;periodStart:Date;periodEnd:Date;ruleVersionCode:string;prerequisiteIds:string[];requestedBy:string;approvalReference:string};
 const eventType='PERIOD_CLOSE_REQUESTED';
 const uuid=/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i;
 
 /** Internal admission boundary. prepare must enforce the approved calendar/cutoff. */
 export async function enqueuePeriodCloseJob(db:PrismaClient,input:PeriodCloseRequest,prepare:(tx:Prisma.TransactionClient)=>Promise<ParameterSnapshot>,onCreated?:(tx:Prisma.TransactionClient,job:PeriodCloseJob)=>Promise<unknown>){
-  if(!['REFERRAL_K0','BINARY_K1','MATCHING_K2','GLOBAL','WELFARE'].includes(input.kind)||!Number.isFinite(input.periodStart.getTime())||!Number.isFinite(input.periodEnd.getTime())||input.periodStart>=input.periodEnd||!input.ruleVersionCode.trim()||!input.requestedBy.trim()||!input.approvalReference.trim()||input.prerequisiteIds.length>100||input.prerequisiteIds.some(id=>!uuid.test(id)))throw new Error('PERIOD_CLOSE_REQUEST_INVALID');
+  if(!['REFERRAL_K0','BINARY_K1','MATCHING_K2','GLOBAL','WELFARE','PAYABLE_PREPARATION'].includes(input.kind)||!Number.isFinite(input.periodStart.getTime())||!Number.isFinite(input.periodEnd.getTime())||input.periodStart>=input.periodEnd||!input.ruleVersionCode.trim()||!input.requestedBy.trim()||!input.approvalReference.trim()||input.prerequisiteIds.length>100||input.prerequisiteIds.some(id=>!uuid.test(id)))throw new Error('PERIOD_CLOSE_REQUEST_INVALID');
   const prerequisiteIds=[...new Set(input.prerequisiteIds)].sort();
   const identity={kind:input.kind,periodStart:input.periodStart,periodEnd:input.periodEnd,ruleVersionCode:input.ruleVersionCode};
   function existing(job:PeriodCloseJob){
@@ -29,6 +30,14 @@ export async function enqueuePeriodCloseJob(db:PrismaClient,input:PeriodCloseReq
     if(dependencies.length!==prerequisiteIds.length||dependencies.some(row=>row.ruleVersionCode!==input.ruleVersionCode||row.periodStart<input.periodStart||row.periodEnd>input.periodEnd))throw new Error('PERIOD_CLOSE_PREREQUISITE_INVALID');
     if(input.kind==='MATCHING_K2'&&!dependencies.some(row=>row.kind==='BINARY_K1'&&row.periodStart.getTime()===input.periodStart.getTime()&&row.periodEnd.getTime()===input.periodEnd.getTime()))throw new Error('PERIOD_CLOSE_BINARY_REQUIRED');
     if(input.kind==='WELFARE'&&!dependencies.some(row=>row.kind==='GLOBAL'&&row.periodStart.getTime()===input.periodStart.getTime()&&row.periodEnd.getTime()===input.periodEnd.getTime()))throw new Error('PERIOD_CLOSE_GLOBAL_REQUIRED');
+    if(input.kind==='PAYABLE_PREPARATION')for(const kind of ['REFERRAL_K0','BINARY_K1','MATCHING_K2','GLOBAL','WELFARE']){
+      let through=input.periodStart.getTime();
+      for(const row of dependencies.filter(row=>row.kind===kind).sort((a,b)=>a.periodStart.getTime()-b.periodStart.getTime())){
+        if(row.periodStart.getTime()!==through)throw new Error('PERIOD_CLOSE_PAYABLE_COVERAGE_REQUIRED');
+        through=row.periodEnd.getTime();
+      }
+      if(through!==input.periodEnd.getTime())throw new Error('PERIOD_CLOSE_PAYABLE_COVERAGE_REQUIRED');
+    }
     // Prerequisites must already exist; immutable manifests make cycles impossible.
     const periodCloseJobId=randomUUID();
     const outbox=await tx.outboxEvent.create({data:{eventType,aggregateType:'PERIOD_CLOSE_JOB',aggregateId:periodCloseJobId,payload:{periodCloseJobId},correlationId:randomUUID()}});
@@ -52,7 +61,14 @@ export async function claimPeriodCloseJob(db:PrismaClient,jobId:string,now=new D
   if(!job)return null;
   const ids=job.prerequisiteIds as string[];
   if(await db.periodCloseReceipt.count({where:{periodCloseJobId:{in:ids}}})!==ids.length)return null;
+  if(!await periodCloseMaturityReady(db,job,now))return null;
   return claimOutboxLease(db,job.outbox,now,leaseMs);
+}
+
+/** Maturity waits are business prerequisites, not failed delivery attempts. */
+export async function periodCloseMaturityReady(db:Pick<Prisma.TransactionClient,'bonusAward'>,job:Pick<PeriodCloseJob,'kind'|'periodStart'|'periodEnd'|'ruleVersionCode'>,now=new Date()){
+  if(job.kind!=='PAYABLE_PREPARATION')return true;
+  return await db.bonusAward.count({where:{ruleVersionCode:job.ruleVersionCode,payableAmount:{gt:0},economicDestination:{is:null},pendingUntil:{gt:now},...periodBonusAwardWhere(job)}})===0;
 }
 
 /** Handler MUST use the supplied transaction; monetary work and receipt commit together. */

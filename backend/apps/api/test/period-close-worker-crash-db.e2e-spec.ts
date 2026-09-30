@@ -33,7 +33,7 @@ const url=process.env.PHASE2_TEST_DATABASE_URL;
     const values:Array<[string,string,Prisma.InputJsonValue]>=[['award.pending.days','*','45'],['pool.referral.rate','*','0.5'],['pool.binary.rate','*','0.2'],['pool.matching.rate','*','0.2'],['binary.pair.rate','*','0.1'],['pool.global.rate','*','0.05']];
     values.push(['binary.weekly.cap','STARTER','10000'],['referral.g1.rate','STARTER','0.15'],['matching.rate','1','0.1']);
     values.push(['pool.welfare.rate','*','0.02']);
-    for(const type of ['REFERRAL_K0','BINARY_K1','MATCHING_K2','GLOBAL','WELFARE'])values.push(['settlement.timezone',type,'UTC'],['settlement.period',type,{unit:'WEEK',count:1,anchorLocal:start.toISOString().slice(0,19)}],['settlement.cut_off',type,{localTime:'00:00:00',daysAfterPeriodEnd:0,approvalReference:'TEST'}]);
+    for(const type of ['REFERRAL_K0','BINARY_K1','MATCHING_K2','GLOBAL','WELFARE','PAYABLE_PREPARATION'])values.push(['settlement.timezone',type,'UTC'],['settlement.period',type,{unit:'WEEK',count:1,anchorLocal:start.toISOString().slice(0,19)}],['settlement.cut_off',type,{localTime:'00:00:00',daysAfterPeriodEnd:0,approvalReference:'TEST'}]);
     for(const rank of ['NEW_STAR','EXCELLENCE','GLORY','DIAMOND','CROWN'])values.push(['global.rank.weak_threshold',rank,rank==='NEW_STAR'?'100':'1000'],['global.rank.pool_rate',rank,rank==='NEW_STAR'?'0.02':'0.0075']);
     for(const [parameterCode,scopeKey,valueJson] of values)await db.runtimeRuleParameter.create({data:{ruleVersionCode:rule,parameterCode,scopeKey,valueJson,effectiveFrom:new Date('1890-01-01Z'),effectiveTo:new Date('1896-01-01Z')}});
     if(funded)await db.$transaction(async tx=>{
@@ -70,6 +70,14 @@ const url=process.env.PHASE2_TEST_DATABASE_URL;
       await processPeriodCloseJob(db,(await claimPeriodCloseJob(db,global.periodCloseJobId))!,executePeriodClose);
       prerequisites.push(global.periodCloseJobId);
     }
+    if(kind==='PAYABLE_PREPARATION'){
+      for(const type of ['REFERRAL_K0','BINARY_K1','MATCHING_K2','GLOBAL','WELFARE'] as const){
+        const deps=type==='MATCHING_K2'?[prerequisites[1]]:type==='WELFARE'?[prerequisites[3]]:[];
+        const job=await admit(type,deps);
+        await processPeriodCloseJob(db,(await claimPeriodCloseJob(db,job.periodCloseJobId))!,executePeriodClose);
+        prerequisites.push(job.periodCloseJobId);
+      }
+    }
     return admit(kind,prerequisites);
   }
   async function state(rule:string){
@@ -90,6 +98,7 @@ const url=process.env.PHASE2_TEST_DATABASE_URL;
       db.qualificationGlobalRankHistory.findMany({where:{ruleVersionCode:rule},orderBy:{qualificationGlobalRankHistoryId:'asc'}}),
       db.welfarePoolAccrual.findMany({where:{ruleVersionCode:rule},orderBy:{welfarePoolAccrualId:'asc'}}),
       db.welfarePoolEffect.findMany({where:{ruleVersionCode:rule},orderBy:{welfarePoolEffectId:'asc'}}),
+      db.payableEntry.findMany({where:{ruleVersionCode:rule},orderBy:{payableEntryId:'asc'}}),
     ]);
   }
   async function child(jobId:string,boundary:'BEFORE_SEAL'|'AFTER_COMMIT'|'ONCE'){
@@ -119,7 +128,7 @@ const url=process.env.PHASE2_TEST_DATABASE_URL;
     }
     throw new Error('WORKER_DATABASE_SESSION_NOT_CLOSED');
   }
-  const cases=(['REFERRAL_K0','BINARY_K1','MATCHING_K2','GLOBAL','WELFARE'] as const).flatMap(kind=>(['BEFORE_SEAL','AFTER_COMMIT'] as const).flatMap(boundary=>[false,true].map(funded=>[kind,boundary,funded] as const)));
+  const cases=(['REFERRAL_K0','BINARY_K1','MATCHING_K2','GLOBAL','WELFARE','PAYABLE_PREPARATION'] as const).flatMap(kind=>(['BEFORE_SEAL','AFTER_COMMIT'] as const).flatMap(boundary=>[false,true].map(funded=>[kind,boundary,funded] as const)));
   it.each(cases)('recovers %s Worker delivery killed at %s (funded=%s)',async(kind,boundary,funded)=>{
     const job=await fixture(kind,funded),before=await state(job.ruleVersionCode);
     await child(job.periodCloseJobId,boundary);
@@ -137,9 +146,15 @@ const url=process.env.PHASE2_TEST_DATABASE_URL;
     const receipt=await db.periodCloseReceipt.findUniqueOrThrow({where:{periodCloseJobId:job.periodCloseJobId}});
     const envelope=verifyReplayEnvelope(await db.historicalReplaySnapshot.findUniqueOrThrow({where:{snapshotId:receipt.snapshotId}}));
     expect(envelope).toMatchObject({kind,sourceId:receipt.sourceId,ruleVersionCode:job.ruleVersionCode});
-    expect(new Prisma.Decimal(envelope.inputs.totalGpv).toString()).toBe(funded?'200':'0');
+    if(kind!=='PAYABLE_PREPARATION')expect(new Prisma.Decimal(envelope.inputs.totalGpv).toString()).toBe(funded?'200':'0');
     expect(await db.historicalReplaySnapshot.count({where:{ruleVersionCode:job.ruleVersionCode,kind:'GPV'}})).toBe(funded?2:0);
-    if(kind==='WELFARE'){
+    if(kind==='PAYABLE_PREPARATION'){
+      const entries=await db.payableEntry.findMany({where:{ruleVersionCode:job.ruleVersionCode}});
+      expect(entries.length>0).toBe(funded);
+      expect(envelope.evidence.payables).toHaveLength(entries.length);
+      expect(new Set(entries.map(row=>row.sourceType+':'+row.sourceId)).size).toBe(entries.length);
+      expect(envelope.recipients).toEqual([]);
+    }else if(kind==='WELFARE'){
       const accrual=await db.welfarePoolAccrual.findUniqueOrThrow({where:{welfarePoolAccrualId:receipt.sourceId}});
       expect(accrual.accruedAmount.toString()).toBe(funded?'4':'0');
       const effects=await db.welfarePoolEffect.findMany({where:{welfarePoolAccrualId:receipt.sourceId}});
