@@ -1,3 +1,4 @@
+import {CompensationPeriodSources} from './CompensationPeriodSources';
 import {useState} from 'react';
 import {useQuery} from '@tanstack/react-query';
 import {Badge,Card,Field,Metric,PageHeader} from '../../components/ui';
@@ -33,6 +34,7 @@ export function CompensationPeriodControlPage(){
    <Card title="控制檢查點"><div className="table-wrap"><table><thead><tr><th>檢查點</th><th>狀態</th><th>權威證據</th></tr></thead><tbody>{data.checkpoints.map(row=><tr key={row.code}><td>{labels[row.code]??row.label}</td><td><Badge tone={tone(row.status)}>{label(row.status)}</Badge></td><td>{row.evidence}</td></tr>)}</tbody></table></div></Card>
    <Card title="結算工作"><ul>{data.jobs.map(row=><li key={row.jobReference}><strong>{label(row.kind)}</strong> · <Badge tone={tone(row.status)}>{label(row.status)}</Badge> · 已嘗試 {row.attemptCount} 次{row.periodStart&&row.periodEnd&&<p>{new Date(row.periodStart).toLocaleString('zh-TW')} → {new Date(row.periodEnd).toLocaleString('zh-TW')}</p>}<small>{row.jobReference}</small>{row.blockingCode&&<p>{problems[row.blockingCode]??'請查閱結算工作的待處理證據'}</p>}</li>)}</ul>{!data.jobs.length&&<p>尚無受治理的結算工作。</p>}</Card>
    {selection?.thresholdHours&&<QueryFeedback query={aging}/>}{aging.data?.data&&!aging.error&&<Card title={`目前全域未結項（${aging.data.data.thresholdHours} 小時門檻）`}><div className="table-wrap"><table><thead><tr><th>類別</th><th>狀態</th><th>筆數</th><th>金額</th><th>最早證據</th></tr></thead><tbody>{aging.data.data.items.map(row=><tr key={row.category}><td>{label(row.category)}</td><td><Badge tone={tone(row.status)}>{label(row.status)}</Badge></td><td>{row.count}</td><td>{row.amount===null?'不適用':money(row.amount)}</td><td>{row.oldestAt?new Date(row.oldestAt).toLocaleString('zh-TW'):'—'}</td></tr>)}</tbody></table></div><p className="muted">截至 {new Date(aging.data.data.asOf).toLocaleString('zh-TW')} 的全域待處理項目。門檻由本次查詢提供；處理仍須透過結算、付款、回收或 ERP 對帳流程。</p></Card>}
+   {selection&&<CompensationPeriodSources key={JSON.stringify(selection)} selection={{periodStart:new Date(selection.periodStart+'+08:00').toISOString(),periodEnd:new Date(selection.periodEnd+'+08:00').toISOString(),ruleVersionCode:selection.ruleVersionCode}}/>}
    <Card title="對帳範圍"><p><strong>UCell：</strong>會員獎金、應付、回收與銀行結果。</p><p><strong>ERP：</strong>公司會計、庫存與憑證的對接結果另行對帳。UCell 已付款不代表 ERP 已入帳。</p></Card></>}
  </>;
 }

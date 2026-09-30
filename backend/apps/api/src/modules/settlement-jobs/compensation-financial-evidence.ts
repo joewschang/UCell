@@ -8,7 +8,7 @@ const zero=()=>new Prisma.Decimal(0);
 const sum=(values:Prisma.Decimal[])=>values.reduce((total,value)=>total.add(value),zero());
 export const compensationReference=(type:string,id:string)=>`${type}-${createHash('sha256').update(`${type}:${id}`).digest('hex').slice(0,20)}`;
 export const compensationPeriodReference=(period:CompensationPeriod)=>compensationReference('COMPENSATION-PERIOD',`${period.ruleVersionCode}:${period.periodStart.toISOString()}:${period.periodEnd.toISOString()}`);
-type Source={id:string;type:string;awardType:string;qualificationId:string;theory:Prisma.Decimal|null;amount:Prisma.Decimal;company:boolean;mature:boolean;expected:boolean};
+type Source={createdAt:Date;id:string;type:string;awardType:string;qualificationId:string;theory:Prisma.Decimal|null;amount:Prisma.Decimal;company:boolean;mature:boolean;expected:boolean};
 
 /** Read-only reconciliation over original sources and recorded applications; no allocation policy is invented. */
 export async function compensationFinancialEvidence(tx:Prisma.TransactionClient,period:CompensationPeriod,cohort:Awaited<ReturnType<typeof compensationPeriodEvidence>>,now:Date){
@@ -18,9 +18,9 @@ export async function compensationFinancialEvidence(tx:Prisma.TransactionClient,
   tx.globalPoolAward.findMany({where:{globalPoolSettlementId:{in:cohort.sourcePeriod.globalSourceIds}},include:{economicDestination:{include:{effects:true}}},orderBy:{globalPoolAwardId:'asc'}}),
  ]);
  const sources:Source[]=[
-  ...bonuses.map(row=>{const hasEffective=row.lifecycleEvents.some(event=>event.status==='EFFECTIVE'),reversed=row.lifecycleEvents.some(event=>event.status==='REVERSED')&&!hasEffective;return {id:row.bonusAwardId,type:'BONUS_AWARD',awardType:row.awardType,qualificationId:row.recipientQualificationId,theory:row.theoryAmount,amount:row.payableAmount,company:Boolean(row.economicDestination),mature:reversed||row.pendingUntil<=now,expected:row.payableAmount.gt(0)&&!row.economicDestination&&!reversed};}),
-  ...rpvs.map(row=>({id:row.rpvAwardEventId,type:'RPV_UPLINE_AWARD',awardType:'RPV',qualificationId:row.recipientQualificationId,theory:row.theoryAmount,amount:row.payableAmount,company:Boolean(row.economicDestination),mature:true,expected:row.payableAmount.gt(0)&&!row.economicDestination})),
-  ...globals.map(row=>({id:row.globalPoolAwardId,type:'GLOBAL_POOL_AWARD',awardType:'GLOBAL',qualificationId:row.qualificationId,theory:null,amount:row.payableAmount,company:Boolean(row.economicDestination),mature:true,expected:row.payableAmount.gt(0)&&!row.economicDestination})),
+  ...bonuses.map(row=>{const hasEffective=row.lifecycleEvents.some(event=>event.status==='EFFECTIVE'),reversed=row.lifecycleEvents.some(event=>event.status==='REVERSED')&&!hasEffective;return {createdAt:row.createdAt,id:row.bonusAwardId,type:'BONUS_AWARD',awardType:row.awardType,qualificationId:row.recipientQualificationId,theory:row.theoryAmount,amount:row.payableAmount,company:Boolean(row.economicDestination),mature:reversed||row.pendingUntil<=now,expected:row.payableAmount.gt(0)&&!row.economicDestination&&!reversed};}),
+  ...rpvs.map(row=>({createdAt:row.createdAt,id:row.rpvAwardEventId,type:'RPV_UPLINE_AWARD',awardType:'RPV',qualificationId:row.recipientQualificationId,theory:row.theoryAmount,amount:row.payableAmount,company:Boolean(row.economicDestination),mature:true,expected:row.payableAmount.gt(0)&&!row.economicDestination})),
+  ...globals.map(row=>({createdAt:row.createdAt,id:row.globalPoolAwardId,type:'GLOBAL_POOL_AWARD',awardType:'GLOBAL',qualificationId:row.qualificationId,theory:null,amount:row.payableAmount,company:Boolean(row.economicDestination),mature:true,expected:row.payableAmount.gt(0)&&!row.economicDestination})),
  ];
  const scope={bonusIds:bonuses.map(row=>row.bonusAwardId),rpvIds:rpvs.map(row=>row.rpvAwardEventId),globalIds:globals.map(row=>row.globalPoolAwardId)};
  const [payables,postings,companyIssues]=await Promise.all([
@@ -90,7 +90,7 @@ export async function compensationFinancialEvidence(tx:Prisma.TransactionClient,
  const blocking=exceptions.filter(row=>['HIGH','CRITICAL'].includes(row.severity));
  const pending=sources.filter(row=>row.expected&&!row.mature).length,open=payables.filter(row=>row.status==='OPEN').length,unpaid=payables.filter(row=>row.status!=='PAID').length;
  const destinations=[...bonuses,...rpvs,...globals].flatMap(row=>row.economicDestination?[row.economicDestination]:[]);
- return {reference,sources,payables,payouts,recoveries,issues,exceptions,blocking,missingPayables,pending,open,unpaid,bankIncomplete,sharedLineCount,
+ return {reference,sources,postings,payables,payouts,recoveries,issues,exceptions,blocking,missingPayables,pending,open,unpaid,bankIncomplete,sharedLineCount,
   ready:issues.length===0&&blocking.length===0&&missingPayables===0&&pending===0&&unpaid===0&&bankIncomplete===0&&recoveries.every(row=>row.outstandingAmount.eq(0)),
   totals:{recordedTheory:sum(sources.flatMap(row=>row.theory?[row.theory]:[])),globalAllocated:sum(globals.map(row=>row.payableAmount)),award:sum(sources.map(row=>row.amount)),company:sum(destinations.flatMap(row=>row.effects.map(effect=>effect.amountDelta))),recoveryRequired:sum(recoveries.map(row=>row.recoveryAmount)),recoveryApplied:sum(recoveries.map(row=>row.recoveredAmount)),recoveryOutstanding:sum(recoveries.map(row=>row.outstandingAmount)),payable:sum(payables.map(row=>row.grossAmount)),payoutGross,payoutRecovery,payoutNet,bankPaid},
  };

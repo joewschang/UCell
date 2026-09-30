@@ -254,6 +254,98 @@
         ]
       }
     },
+    "/api/v1/admin/compensation-period-control/sources": {
+      "get": {
+        "operationId": "adminCompensationPeriodSources",
+        "parameters": [
+          {
+            "name": "periodStart",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "periodEnd",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ruleVersionCode",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "take",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "asOf",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "awardType",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "qualificationNo",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SourcesEnvelopeDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "按獎金類別及資格查閱原始來源、應付、回收和整筆付款證據",
+        "tags": [
+          "Admin - Compensation Period Control"
+        ]
+      }
+    },
     "/api/v1/admin/fulfillment/orders/logistics/connections": {
       "get": {
         "operationId": "adminFulfillmentLogisticsConnections",
@@ -17853,6 +17945,18 @@
         "properties": {
           "data": {
             "$ref": "#/components/schemas/CompensationAgingDto"
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "SourcesEnvelopeDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "additionalProperties": true
           }
         },
         "required": [

@@ -4,6 +4,7 @@ import {describe,expect,it,vi} from 'vitest';
 import {CompensationPeriodControlPage} from './CompensationPeriodControlPage';
 import * as api from '../../lib/api';
 vi.mock('../../lib/api');
+vi.mock('./CompensationPeriodSources',()=>({CompensationPeriodSources:()=>null}));
 it('preserves the exact linked period in Taipei fields without inventing an aging threshold',async()=>{
  const start='2026-09-09T16:00:00.000Z',end='2026-09-24T16:00:00.000Z';vi.stubGlobal('window',{location:{search:'?'+new URLSearchParams({periodStart:start,periodEnd:end,ruleVersionCode:'R1.0B'})}});vi.mocked(api.get).mockReset().mockResolvedValue({data:{lifecycle:'OPEN',dataThrough:end,checkpoints:[],jobs:[],settlements:[],payouts:[],blockingExceptions:[],freshness:{},authority:{}}} as any);vi.mocked(api.qs).mockImplementation(values=>'?'+new URLSearchParams(Object.entries(values).filter(([,value])=>value!=null).map(([key,value])=>[key,String(value)])).toString());
  let tree:any;try{await act(async()=>{tree=create(<QueryClientProvider client={new QueryClient({defaultOptions:{queries:{retry:false}}})}><CompensationPeriodControlPage/></QueryClientProvider>);await new Promise(resolve=>setTimeout(resolve,80));});expect(api.get).toHaveBeenCalledWith('/admin/compensation-period-control?'+new URLSearchParams({periodStart:start,periodEnd:end,ruleVersionCode:'R1.0B'}));expect(vi.mocked(api.get).mock.calls.some(([url])=>url.includes('/aging'))).toBe(false);expect(tree.root.findAllByType('input')[0].props.value).toBe('2026-09-10T00:00:00.000');}

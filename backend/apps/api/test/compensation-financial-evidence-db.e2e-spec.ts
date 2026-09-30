@@ -10,6 +10,7 @@ import {ErpPaymentProjectionService} from '../src/modules/commerce/erp-payment-p
 import {ErpBusinessProjectionService} from '../src/modules/commerce/erp-business-projection.service';
 import {ErpAccountingMappingService} from '../src/modules/commerce/erp-accounting-mapping.service';
 import {processErpBusinessProjection} from '../../worker/src/erp-business-runtime';
+import {CompensationPeriodSourcesService} from '../src/modules/settlement-jobs/compensation-period-sources.service';
 
 const url=process.env.PHASE2_TEST_DATABASE_URL;
 (url?describe:describe.skip)('COMPENSATION_FINANCIAL_EVIDENCE_REAL_DB',()=>{
@@ -47,6 +48,16 @@ const url=process.env.PHASE2_TEST_DATABASE_URL;
  });
  it('reports whole shared-line amounts without allocating bank money or recovery between award periods',async()=>{
   const f=await fixture(true),p=await f.pay();await p.post('150');const result=await f.read();expect(result.ready).toBe(true);expect(result.sharedLineCount).toBe(1);expect(result.totals.payable.toString()).toBe('100');expect(result.totals.payoutGross.toString()).toBe('150');expect(result.totals.bankPaid.toString()).toBe('150');
+  const service=new CompensationPeriodSourcesService(db as any),input={periodStart:f.period.periodStart.toISOString(),periodEnd:f.period.periodEnd.toISOString(),ruleVersionCode:f.period.ruleVersionCode},page=await service.list(input),item=page.items[0];
+  expect(page.items).toHaveLength(1);expect(item.originalAward).toBe('100.0000');expect(item.payable?.gross).toBe('100.0000');expect(item.payment).toMatchObject({gross:'150.0000',net:'150.0000',bankConfirmed:'150.0000',sharedSources:2,amountScope:'WHOLE_PAYOUT_LINE',link:'/payouts?reference='+erpBusinessReference('PAYOUT',p.batch.payoutBatchId)});
+  expect((await service.list({...input,qualificationNo:item.qualificationNo,awardType:'REFERRAL'})).items).toEqual(page.items);expect((await service.list({...input,awardType:'GLOBAL'})).items).toEqual([]);
+  for(const hidden of [p.line.payoutLineId,p.batch.payoutBatchId,f.original.bonusAwardId,f.original.recipientQualificationId,'Synthetic financial control','SYNTHETIC-150'])expect(JSON.stringify(page)).not.toContain(hidden);
+ });
+ it('keeps source pagination stable across later inserts while refreshing current payment evidence',async()=>{
+  const f=await fixture(),service=new CompensationPeriodSourcesService(db as any),create=()=>db.bonusAward.create({data:{recipientQualificationId:f.original.recipientQualificationId,awardType:'REFERRAL',sourceEventId:randomUUID(),theoryAmount:1,payableAmount:1,activeSnapshot:true,ruleVersionCode:f.period.ruleVersionCode,occurredAt:f.original.occurredAt,pendingUntil:f.original.pendingUntil,calculationDetail:{private:'HIDDEN'}}});
+  await create();const input={periodStart:f.period.periodStart.toISOString(),periodEnd:f.period.periodEnd.toISOString(),ruleVersionCode:f.period.ruleVersionCode,take:1},first=await service.list(input);expect(first.periodSourceCount).toBe(2);expect(first.nextCursor).not.toBeNull();await create();
+  const second=await service.list({...input,cursor:first.nextCursor!,asOf:first.asOf});expect(second.periodSourceCount).toBe(2);expect(second.items[0].reference).not.toBe(first.items[0].reference);expect(second.nextCursor).toBeNull();expect((await service.list(input)).periodSourceCount).toBe(3);
+  await expect(service.list({...input,cursor:'PERIOD-SOURCE-'+'f'.repeat(40)})).rejects.toMatchObject({response:{code:'COMPENSATION_SOURCE_CURSOR_INVALID'}});
  });
  it('seals a whole-batch payment aggregate with cumulative bank evidence and immutable source drillback',async()=>{
   const f=await fixture(true);await db.bonusRecoveryEvent.create({data:{bonusAwardId:f.original.bonusAwardId,recoveryAmount:20,outstandingAmount:20,reasonCode:'TEST_PAYMENT_PROJECTION',occurredAt:new Date()}});
