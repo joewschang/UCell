@@ -717,7 +717,7 @@
     },
     "/api/v1/admin/erp-reconciliation": {
       "get": {
-        "description": "Snapshot-consistent, bounded operational view. ERP acceptance never implies UCell payment or physical shipment.",
+        "description": "Each page uses one current database snapshot. asOf fixes the handoff creation horizon; dataThrough is the current read time. Filtered pages may be empty with a continuation token. ERP acceptance never implies UCell payment or physical shipment.",
         "operationId": "adminErpReconciliationBridge",
         "parameters": [
           {
@@ -762,7 +762,7 @@
             "name": "asOf",
             "required": false,
             "in": "query",
-            "description": "ISO-8601 snapshot cutoff returned by the first page",
+            "description": "ISO-8601 handoff creation cutoff returned by the first page; mutable statuses remain current",
             "schema": {
               "type": "string"
             }

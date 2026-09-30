@@ -21,11 +21,11 @@ class ErpBridgeEnvelopeDto{@ApiProperty({type:ErpBridgePageDto}) data!:ErpBridge
 export class ErpReconciliationBridgeController{
  constructor(private readonly service:ErpReconciliationBridgeService){}
  @Get()
- @ApiOperation({operationId:'adminErpReconciliationBridge',summary:'Read provider-neutral UCell, ERP and shipment reconciliation evidence',description:'Snapshot-consistent, bounded operational view. ERP acceptance never implies UCell payment or physical shipment.'})
+ @ApiOperation({operationId:'adminErpReconciliationBridge',summary:'Read provider-neutral UCell, ERP and shipment reconciliation evidence',description:'Each page uses one current database snapshot. asOf fixes the handoff creation horizon; dataThrough is the current read time. Filtered pages may be empty with a continuation token. ERP acceptance never implies UCell payment or physical shipment.'})
  @ApiQuery({name:'status',required:false,enum:ERP_BRIDGE_LIFECYCLES})
  @ApiQuery({name:'orderNo',required:false,description:'Public order number'})
  @ApiQuery({name:'take',required:false,schema:{type:'integer',minimum:1,maximum:200,default:50}})
- @ApiQuery({name:'asOf',required:false,description:'ISO-8601 snapshot cutoff returned by the first page'})
+ @ApiQuery({name:'asOf',required:false,description:'ISO-8601 handoff creation cutoff returned by the first page; mutable statuses remain current'})
  @ApiQuery({name:'cursor',required:false,description:'Opaque continuation token returned by the previous page'})
  @ApiOkResponse({type:ErpBridgeEnvelopeDto,description:'Privacy-safe authoritative reconciliation bridge page'})
  @ApiResponse({status:400,description:'Invalid filters, cutoff or cursor'})
