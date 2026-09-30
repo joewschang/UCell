@@ -51,3 +51,4 @@ export * from './shipment-operation-decision';
 export * from './period-close-job';
 export * from './payable-materialization';
 export * from './period-close-operational';
+export * from './erp-business-projection';

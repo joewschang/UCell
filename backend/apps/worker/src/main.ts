@@ -6,6 +6,7 @@ import { WorkerLoop, workerPollInterval } from './worker-loop';
 import { ProviderWorkloadMetrics } from './provider-workload-metrics';
 import { createLineMessagingObserverHandler } from './line-messaging-handler';
 import {pollErpHandoffs,type PhysicalErpAdapter} from './erp-handoff-runtime';
+import {pollErpBusinessProjections,type BusinessErpAdapter} from './erp-business-runtime';
 import {pollPeriodCloseJobs} from './period-close-runtime';
 import {pollPeriodClosePlanner} from './period-close-planner-runtime';
 import {createShipmentTrackingHandler,type VerifiedShipmentTrackingAdapter} from './shipment-tracking-handler';
@@ -13,6 +14,7 @@ import {createShipmentTrackingHandler,type VerifiedShipmentTrackingAdapter} from
 // Actual transports are registered only after protocol/credential enablement.
 // An empty registry leaves durable ERP requests pending, never acknowledged.
 const erpAdapters:readonly PhysicalErpAdapter[]=Object.freeze([]);
+const businessErpAdapters:readonly BusinessErpAdapter[]=Object.freeze([]);
 const trackingAdapters:readonly VerifiedShipmentTrackingAdapter[]=Object.freeze([]);
 
 const prisma = new PrismaService();
@@ -270,6 +272,7 @@ async function matureBonusAwards(){
 async function tick(){
   await pollOutbox();
   await pollErpHandoffs(prisma,erpAdapters);
+  await pollErpBusinessProjections(prisma,businessErpAdapters);
   await pollRecognitions();
   try{
     const planned=await pollPeriodClosePlanner(prisma);

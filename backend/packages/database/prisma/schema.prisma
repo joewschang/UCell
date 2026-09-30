@@ -1793,6 +1793,7 @@ model ProviderConnectionVersion {
   shipments          Shipment[]
   trackingEvidence   ShipmentTrackingEventEvidence[]
   erpDispatches      FulfillmentErpDispatch[]
+  businessErpDispatches ErpProjectionDispatch[]
 
   @@unique([providerConnectionId, version])
   @@index([providerConnectionId, environment, effectiveFrom, effectiveTo])
@@ -2720,13 +2721,86 @@ model OutboxEvent {
   shipmentOperationClaim  ShipmentOperationClaim?
   fulfillmentErpHandoff FulfillmentErpHandoff?
   periodCloseJob PeriodCloseJob?
+  erpProjection ErpBusinessProjection?
 
   @@index([processStatus, availableAt])
   @@map("outbox_event")
   @@schema("integration")
 }
 
-/// Immutable approved settlement request; delivery state belongs to its Outbox.
+/// Immutable provider-neutral projection; detailed source facts remain authoritative.
+model ErpBusinessProjection {
+  projectionId String @id @default(uuid()) @map("projection_id") @db.Uuid
+  projectionReference String @unique @map("projection_reference")
+  stream String
+  sourceIdentity String @map("source_identity")
+  revision Int @default(1)
+  formatVersion String @map("format_version")
+  payloadHash String @map("payload_hash") @db.Char(64)
+  payloadSnapshot Json @map("payload_snapshot")
+  drillbackHash String @map("drillback_hash") @db.Char(64)
+  drillbackSnapshot Json @map("drillback_snapshot")
+  approvalReference String? @map("approval_reference")
+  mappingReference String? @map("mapping_reference")
+  requestedByActor String @map("requested_by_actor")
+  requestedAt DateTime @default(now()) @map("requested_at") @db.Timestamptz(6)
+  outboxEventId String @unique @map("outbox_event_id") @db.Uuid
+  outboxEvent OutboxEvent @relation(fields:[outboxEventId],references:[outboxEventId])
+  dispatch ErpProjectionDispatch?
+  reconciliations ErpProjectionReconciliation[]
+  @@unique([stream,sourceIdentity,revision])
+  @@index([stream,requestedAt])
+  @@map("erp_business_projection")
+  @@schema("commerce")
+}
+
+model ErpProjectionDispatch {
+  dispatchId String @id @default(uuid()) @map("dispatch_id") @db.Uuid
+  projectionId String @unique @map("projection_id") @db.Uuid
+  providerConnectionVersionId String @map("provider_connection_version_id") @db.Uuid
+  idempotencyKey String @unique @map("idempotency_key")
+  requestHash String @map("request_hash") @db.Char(64)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  projection ErpBusinessProjection @relation(fields:[projectionId],references:[projectionId])
+  providerConnectionVersion ProviderConnectionVersion @relation(fields:[providerConnectionVersionId],references:[providerConnectionVersionId])
+  attempts ErpProjectionDispatchAttempt[]
+  @@map("erp_projection_dispatch")
+  @@schema("commerce")
+}
+
+model ErpProjectionDispatchAttempt {
+  attemptId String @id @default(uuid()) @map("attempt_id") @db.Uuid
+  dispatchId String @map("dispatch_id") @db.Uuid
+  attemptNumber Int @map("attempt_number")
+  outcome String
+  providerReference String? @map("provider_reference")
+  evidenceHash String @map("evidence_hash") @db.Char(64)
+  recordedAt DateTime @default(now()) @map("recorded_at") @db.Timestamptz(6)
+  dispatch ErpProjectionDispatch @relation(fields:[dispatchId],references:[dispatchId])
+  @@unique([dispatchId,attemptNumber])
+  @@map("erp_projection_dispatch_attempt")
+  @@schema("commerce")
+}
+
+model ErpProjectionReconciliation {
+  reconciliationId String @id @default(uuid()) @map("reconciliation_id") @db.Uuid
+  projectionId String @map("projection_id") @db.Uuid
+  resultKey String @map("result_key")
+  resultHash String @map("result_hash") @db.Char(64)
+  outcome String
+  reasonCode String @map("reason_code")
+  providerReference String @map("provider_reference")
+  resultSnapshot Json @map("result_snapshot")
+  occurredAt DateTime @map("occurred_at") @db.Timestamptz(6)
+  recordedAt DateTime @default(now()) @map("recorded_at") @db.Timestamptz(6)
+  reportedByActor String @map("reported_by_actor")
+  projection ErpBusinessProjection @relation(fields:[projectionId],references:[projectionId])
+  @@unique([projectionId,resultKey])
+  @@index([projectionId,recordedAt])
+  @@map("erp_projection_reconciliation")
+  @@schema("commerce")
+}
+
 model PeriodClosePlannerCursor {
   ruleVersionCode String @map("rule_version_code")
   kind String
