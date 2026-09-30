@@ -7,12 +7,13 @@ import {ErpReconciliationBridgeService} from '../commerce/erp-reconciliation-bri
 import {OperationsControlService} from './operations-control.service';
 import {requireOperationalExceptionResolution} from './operational-exception-resolution';
 import {FINANCIAL_WORK_SOURCES,FINANCIAL_CANDIDATE_CODES,financialWorkReference,OperationsFinancialHealthService} from './operations-financial-health.service';
+import {WORKFLOW_CODES,WORKFLOW_SOURCES,workflowReference,OperationsWorkflowHealthService} from './operations-workflow-health.service';
 type Kind='TASK'|'EXCEPTION';
 type Context={actorId:string;requestId:string;correlationId:string};
-const sourceTypes=['ERP_BUSINESS_PROJECTION','ERP_HANDOFF','ERP_RECONCILIATION',...Object.keys(FINANCIAL_WORK_SOURCES)];
+const sourceTypes=['ERP_BUSINESS_PROJECTION','ERP_HANDOFF','ERP_RECONCILIATION',...Object.keys(FINANCIAL_WORK_SOURCES),...Object.keys(WORKFLOW_SOURCES)];
 const roles=['FINANCE','COMPLIANCE_AUDIT','SUPER_ADMIN'];
 const proof=(value:unknown)=>typeof value==='string'&&/^[A-Za-z0-9][A-Za-z0-9._:/-]{7,99}$/.test(value);
-const codes=['ERP_TRANSPORT_FAILED','ERP_RESULT_MISMATCH','ERP_OPEN_EXCEPTION','ERP_RECONCILIATION_OVERDUE','ERP_HANDOFF_OVERDUE',...FINANCIAL_CANDIDATE_CODES];
+const codes=['ERP_TRANSPORT_FAILED','ERP_RESULT_MISMATCH','ERP_OPEN_EXCEPTION','ERP_RECONCILIATION_OVERDUE','ERP_HANDOFF_OVERDUE',...FINANCIAL_CANDIDATE_CODES,...WORKFLOW_CODES];
 const rowRef=(kind:Kind,id:string)=>erpBusinessReference('OPS-'+kind,id);
 @Injectable()
 export class OperationsWorkItemsService{
@@ -29,6 +30,7 @@ export class OperationsWorkItemsService{
   if(rows.length!==1)throw new ConflictException({code:'OPERATIONS_ITEM_NOT_FOUND'});return rows[0];
  }
  private async source(tx:Prisma.TransactionClient,type:string,id:string){
+  const workflow=workflowReference(type,id);if(workflow)return {reference:workflow.reference,link:`/operations-control?workflow=${workflow.scope}&reference=${workflow.reference}`,orderNo:null,fulfillmentKey:null};
   const financial=financialWorkReference(type,id);
   if(financial){
    try{const resolved=await new OperationsFinancialHealthService({} as any).resolve(tx,financial.scope,financial.reference),reference=erpBusinessReference(financial.scope,resolved.id);return {reference,link:`/operations-control?scope=${financial.scope}&reference=${reference}`,orderNo:null,fulfillmentKey:null};}
@@ -56,14 +58,17 @@ export class OperationsWorkItemsService{
    const where={sourceType:{in:sourceTypes},createdAt:{lte:asOf},...(input.status?{status:input.status as any}:{}),...(cursor?{OR:[{createdAt:{lt:cursor.createdAt}},{createdAt:cursor.createdAt,[idField]:{lt:cursor.id}}]}:{})};
    const rows=kind==='TASK'?await tx.operationalTask.findMany({where,orderBy:[{createdAt:'desc'},{operationalTaskId:'desc'}],take:take+1}):await tx.operationalException.findMany({where,orderBy:[{createdAt:'desc'},{operationalExceptionId:'desc'}],take:take+1});
    const items=await Promise.all(rows.slice(0,take).map(row=>this.publicRow(tx,kind,row)));
-   return {items,nextCursor:rows.length>take?items.at(-1)!.reference:null,asOf:asOf.toISOString(),dataThrough:new Date().toISOString(),scope:'ERP_AND_FINANCIAL_WORK_ITEMS'};
+   return {items,nextCursor:rows.length>take?items.at(-1)!.reference:null,asOf:asOf.toISOString(),dataThrough:new Date().toISOString(),scope:'CONTROLLED_OPERATIONS_WORK_ITEMS'};
   },{isolationLevel:Prisma.TransactionIsolationLevel.RepeatableRead,timeout:30000});
  }
  async createTask(input:{stream:string;reference:string;code:string;evidenceHash:string;thresholdHours?:number;cursor?:string;asOf?:string;assigneeRole:string;dueAt?:string},key:string,context:Context){
   const dueAt=input.dueAt?new Date(input.dueAt):null;if(!codes.includes(input.code)||!roles.includes(input.assigneeRole)||!/^[a-f0-9]{64}$/.test(input.evidenceHash)||dueAt&&!Number.isFinite(dueAt.getTime()))throw new UnprocessableEntityException({code:'OPERATIONS_TASK_INPUT_INVALID'});
   return this.command(key,{action:'CREATE_TASK',...input},context,async tx=>{
    let candidate:{sourceType:string;sourceId:string;reference:string;severity:string;evidenceHash:string;code:string}|undefined;
-   if(['PAYOUT','PAYABLE','RECOVERY'].includes(input.stream)){
+   if(['PERIOD_JOB','RECOGNITION'].includes(input.stream)){
+    const page=await new OperationsWorkflowHealthService({$transaction:(work:any)=>work(tx)} as any).list({scope:input.stream,reference:input.reference,asOf:input.asOf,take:1,thresholdHours:input.thresholdHours}),match=page.items[0]?.candidates.find(row=>row.code===input.code);
+    if(match)candidate={...match,sourceType:input.stream==='PERIOD_JOB'?'PERIOD_CLOSE_JOB':'MONTHLY_RECOGNITION',sourceId:input.reference};
+   }else if(['PAYOUT','PAYABLE','RECOVERY'].includes(input.stream)){
     const page=await new OperationsFinancialHealthService({$transaction:(work:any)=>work(tx)} as any).list({scope:input.stream,reference:input.reference,asOf:input.asOf,take:1}),item=page.items[0],match=item?.candidates.find(row=>row.code===input.code);
     if(match)candidate={...match,sourceType:Object.entries(FINANCIAL_WORK_SOURCES).find(([,scope])=>scope===input.stream)![0],sourceId:input.reference};
    }else{

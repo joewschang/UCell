@@ -20,6 +20,11 @@ import {compensationPeriodEvidence} from '../src/modules/settlement-jobs/compens
 import {ErpCompensationProjectionService} from '../src/modules/commerce/erp-compensation-projection.service';
 import {ErpBusinessProjectionService} from '../src/modules/commerce/erp-business-projection.service';
 import {CompensationPeriodControlService} from '../src/modules/settlement-jobs/compensation-period-control.service';
+import {OperationsWorkflowHealthService} from '../src/modules/admin-operations/operations-workflow-health.service';
+import {OperationsWorkItemsService} from '../src/modules/admin-operations/operations-work-items.service';
+import {AdminOperationsService} from '../src/modules/admin-operations/admin-operations.service';
+import {IdempotencyService} from '../src/common/idempotency/idempotency.service';
+import {erpBusinessReference} from '@ucell/database';
 
 const url=process.env.PHASE2_TEST_DATABASE_URL;
 (url?describe:describe.skip)('durable period-close admission, dependencies and fenced execution',()=>{
@@ -69,11 +74,24 @@ const url=process.env.PHASE2_TEST_DATABASE_URL;
     for(let index=0;index<3;index++)schedules.push(await db.monthlyRecognitionSchedule.create({data:{subscriptionId:subscription.subscriptionId,installmentNo:index+1,recognitionMonth:new Date(start.getTime()+index*31*86400000),recognizedAmount:100,rpvAmount:10,dueAt:index===1?end:start,ruleVersionCode:index===2?'OTHER_RULE':code}}));
     const read=()=>db.$transaction(async tx=>periodCloseOperationalState(tx,await tx.periodCloseJob.findUniqueOrThrow({where:{periodCloseJobId:job.periodCloseJobId},include:{receipt:true,outbox:true}})));
     expect(await read()).toMatchObject({state:'WAITING_RECOGNITION',waiting:{recognitions:1}});
+    const monitor=new OperationsWorkflowHealthService(db as any),work=new OperationsWorkItemsService(db as any,new AuditService(),new IdempotencyService(db as any)),reference=periodJobReference(job.periodCloseJobId),context={actorId:randomUUID(),requestId:randomUUID(),correlationId:randomUUID()},health=await monitor.list({scope:'PERIOD_JOB',reference});
+    expect(health.items[0]).toMatchObject({state:'WAITING_RECOGNITION',candidates:[{code:'PERIOD_CLOSE_BLOCKED'}],actionLink:'/settlement-jobs?reference='+reference,periodLink:null});
+    expect(JSON.stringify(health)).not.toContain(job.periodCloseJobId);expect(JSON.stringify(health)).not.toContain('TEST_FINANCE');
+    const candidate=health.items[0].candidates[0],task=(await work.createTask({stream:'PERIOD_JOB',reference,code:candidate.code,evidenceHash:candidate.evidenceHash,assigneeRole:'FINANCE'},randomUUID(),context)).value.item;
+    await work.transition('TASK',task.reference,{status:'COMPLETED',expectedStatus:'OPEN',noteReference:'PERIOD-CASE-01'},randomUUID(),context);expect((await monitor.list({scope:'PERIOD_JOB',reference})).items[0].state).toBe('WAITING_RECOGNITION');
+    const exception=await db.operationalException.create({data:{sourceType:'PERIOD_CLOSE_JOB',sourceId:job.periodCloseJobId,exceptionCode:'PERIOD_CLOSE_BLOCKED',severity:'HIGH',summary:'PRIVATE PERIOD'}}),exceptionRef=erpBusinessReference('OPS-EXCEPTION',exception.operationalExceptionId),resolve=()=>work.transition('EXCEPTION',exceptionRef,{status:'RESOLVED',expectedStatus:'OPEN',noteReference:'PERIOD-CASE-02'},randomUUID(),context);
+    await expect(resolve()).rejects.toMatchObject({response:{code:'OPERATIONS_WORKFLOW_COMPLETION_REQUIRED'}});
+    const ops=new AdminOperationsService(db as any,new AuditService());await expect(ops.transitionOperationalException(exception.operationalExceptionId,'RESOLVED',context.actorId,'PERIOD-CASE-02',context.requestId,context.correlationId)).rejects.toThrow();
+    const recognitionReference=erpBusinessReference('RECOGNITION',schedules[0].recognitionId),recognition=(await monitor.list({scope:'RECOGNITION',reference:recognitionReference})).items[0];expect(recognition.candidates[0].code).toBe('OVERDUE_RECOGNITION');
+    expect((await work.createTask({stream:'RECOGNITION',reference:recognitionReference,code:'OVERDUE_RECOGNITION',evidenceHash:recognition.candidates[0].evidenceHash,assigneeRole:'FINANCE'},randomUUID(),context)).value.created).toBe(true);
+    const newest=await monitor.list({scope:'RECOGNITION',take:1});expect(newest.nextCursor).toBeTruthy();const next=await monitor.list({scope:'RECOGNITION',take:1,cursor:newest.nextCursor!,asOf:newest.asOf});expect(next.items[0].reference).not.toBe(newest.items[0].reference);
     expect((await db.outboxEvent.findUniqueOrThrow({where:{outboxEventId:job.outboxEventId}})).attemptCount).toBe(0);
     await db.monthlyRecognitionSchedule.update({where:{recognitionId:schedules[0].recognitionId},data:{status:'CANCELLED'}});
     expect(await read()).toMatchObject({state:'READY',waiting:{recognitions:0}});
     await processPeriodCloseJob(db,(await claimPeriodCloseJob(db,job.periodCloseJobId))!,execute);
     expect(await read()).toMatchObject({state:'COMPLETED',overdue:false});
+    expect((await monitor.list({scope:'PERIOD_JOB',reference})).items[0]).toMatchObject({state:'COMPLETED',candidates:[]});expect((await resolve()).value.status).toBe('RESOLVED');
+    const controller=new SettlementJobsController(db as any,new SettlementCalendarService(db as any),new AuditService());expect((await controller.get(reference)).data.id).toBe(job.periodCloseJobId);expect((await controller.get(reference,'24')).data.operational.thresholdHours).toBe(24);await expect(controller.get(reference,'0')).rejects.toThrow('PERIOD_CLOSE_THRESHOLD_INVALID');
   });
   it('reads dependency/source waits, safe failure evidence and exact operator overdue boundaries',async()=>{
     const code=await rule(),binary=await enqueue('BINARY_K1',code),matching=await enqueue('MATCHING_K2',code,[binary.periodCloseJobId]);

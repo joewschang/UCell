@@ -2,17 +2,24 @@ import React from 'react';
 import {act,create} from 'react-test-renderer';
 import {describe,expect,it,vi} from 'vitest';
 import {SettlementJobsPage} from './SettlementJobsPage';
+import {get} from '../../lib/api';
+vi.mock('../../lib/api',async()=>({...await vi.importActual('../../lib/api'),get:vi.fn()}));
 
 const role=vi.hoisted(()=>({value:'COMPLIANCE_AUDIT'}));
-const feed=vi.hoisted(()=>({operational:undefined as any,queryKey:[] as unknown[]}));
+const feed=vi.hoisted(()=>({operational:undefined as any,queryKey:[] as unknown[],queryFn:null as any}));
 vi.mock('../auth/auth',()=>({useAuth:()=>({user:{role:role.value}})}));
 vi.mock('@tanstack/react-query',()=>({
  useQueryClient:()=>({invalidateQueries:vi.fn()}),
  useMutation:()=>({mutate:vi.fn(),isPending:false,error:null}),
- useQuery:(options:any)=>{feed.queryKey=options.queryKey;return {isPending:false,isFetching:false,error:null,refetch:vi.fn(),data:{data:[{id:'internal-job-uuid',kind:'BINARY_K1',periodStart:'2026-09-01T00:00:00.000Z',periodEnd:'2026-09-08T00:00:00.000Z',ruleVersionCode:'R1.0B',approvalReference:'FINANCE-APPROVED',createdAt:'2026-09-08T00:00:00.000Z',status:'DEAD',attemptCount:10,availableAt:'2026-09-08T00:00:00.000Z',lastError:'private stack with uuid',operational:feed.operational}]}};},
+ useQuery:(options:any)=>{feed.queryKey=options.queryKey;feed.queryFn=options.queryFn;return {isPending:false,isFetching:false,error:null,refetch:vi.fn(),data:{data:[{id:'internal-job-uuid',kind:'BINARY_K1',periodStart:'2026-09-01T00:00:00.000Z',periodEnd:'2026-09-08T00:00:00.000Z',ruleVersionCode:'R1.0B',approvalReference:'FINANCE-APPROVED',createdAt:'2026-09-08T00:00:00.000Z',status:'DEAD',attemptCount:10,availableAt:'2026-09-08T00:00:00.000Z',lastError:'private stack with uuid',operational:feed.operational}]}};},
 }));
 
 describe('SettlementJobsPage',()=>{
+ it('loads an exact public job reference without depending on the recent queue',async()=>{
+  const reference='PERIOD-JOB-'+'a'.repeat(16);vi.stubGlobal('window',{location:{search:'?reference='+reference}});vi.mocked(get).mockResolvedValue({data:{id:'private-job'}});const tree=create(<SettlementJobsPage/>);
+  try{expect(await feed.queryFn()).toEqual({data:[{id:'private-job'}]});expect(get).toHaveBeenCalledWith('/admin/settlement-jobs/'+reference);expect(JSON.stringify(tree.toJSON())).toContain('目前顯示指定結算工作');act(()=>tree.root.findAllByType('input').find(input=>input.props.type==='number')!.props.onChange({target:{value:'48'}}));act(()=>tree.root.findByType('form').props.onSubmit({preventDefault(){}}));await feed.queryFn();expect(get).toHaveBeenLastCalledWith('/admin/settlement-jobs/'+reference+'?thresholdHours=48');}
+  finally{tree.unmount();vi.unstubAllGlobals();}
+ });
  it('shows privacy-safe job status and keeps Compliance retry read-only',()=>{
   role.value='COMPLIANCE_AUDIT';const tree=create(<SettlementJobsPage/>),text=JSON.stringify(tree.toJSON());
   expect(text).toContain('雙軌獎金');expect(text).toContain('執行失敗');expect(text).toContain('上次執行失敗');

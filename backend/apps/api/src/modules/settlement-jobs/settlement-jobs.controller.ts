@@ -7,6 +7,7 @@ import {SettlementCalendarService} from '@ucell/settlement';
 import {randomUUID} from 'node:crypto';
 import {Roles} from '../auth/roles.decorator';
 import {AuditService} from '../../common/audit/audit.service';
+import {OperationsWorkflowHealthService} from '../admin-operations/operations-workflow-health.service';
 
 export class CreateSettlementJobDto {
   @IsIn(['REFERRAL_K0','BINARY_K1','MATCHING_K2','GLOBAL','WELFARE','PAYABLE_PREPARATION']) kind!:PeriodCloseKind;
@@ -56,11 +57,16 @@ export class SettlementJobsController {
   }
   @Get(':id')
   @ApiOperation({operationId:'adminGetSettlementJob',summary:'查看結算工作與完成憑證'})
-  async get(@Param('id',ParseUUIDPipe) id:string){
+  @ApiQuery({name:'thresholdHours',required:false,schema:{type:'integer',minimum:1,maximum:8760}})
+  async get(@Param('id') id:string,@Query('thresholdHours') thresholdHours?:string){
+    const threshold=thresholdHours===undefined?undefined:Number(thresholdHours);
+    if(threshold!==undefined&&(!Number.isInteger(threshold)||threshold<1||threshold>8760))throw new BadRequestException('PERIOD_CLOSE_THRESHOLD_INVALID');
     return this.db.$transaction(async tx=>{
+      if(id.startsWith('PERIOD-JOB-'))id=(await new OperationsWorkflowHealthService(this.db).resolve(tx,'PERIOD_JOB',id)).id;
+      else if(!/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(id))throw new BadRequestException('PERIOD_CLOSE_REFERENCE_INVALID');
       const row=await tx.periodCloseJob.findUnique({where:{periodCloseJobId:id},include:{receipt:true,outbox:true}});
       if(!row)throw new NotFoundException('PERIOD_CLOSE_JOB_NOT_FOUND');
-      return {data:await this.view(tx,row,new Date())};
+      return {data:await this.view(tx,row,new Date(),threshold)};
     },{isolationLevel:Prisma.TransactionIsolationLevel.RepeatableRead});
   }
   @Post(':id/retry')

@@ -4,9 +4,15 @@ import {AuditService} from '../../common/audit/audit.service';
 import {ErpBusinessProjectionService} from '../commerce/erp-business-projection.service';
 import {ErpReconciliationBridgeService} from '../commerce/erp-reconciliation-bridge.service';
 import {FINANCIAL_WORK_SOURCES,financialWorkReference,OperationsFinancialHealthService} from './operations-financial-health.service';
+import {WORKFLOW_SOURCES,workflowReference,OperationsWorkflowHealthService} from './operations-workflow-health.service';
 
 /** Shared by legacy and business-reference commands; no API may bypass the source gate. */
 export async function requireOperationalExceptionResolution(tx:Prisma.TransactionClient,row:{sourceType:string;sourceId:string}){
+ if(Object.hasOwn(WORKFLOW_SOURCES,row.sourceType)){
+  const source=workflowReference(row.sourceType,row.sourceId);if(!source)throw new ConflictException({code:'OPERATIONS_WORKFLOW_COMPLETION_REQUIRED'});
+  const item=(await new OperationsWorkflowHealthService({$transaction:(work:any)=>work(tx)} as any).list({...source,take:1})).items[0];
+  if(!item||item.scope==='PERIOD_JOB'&&item.state!=='COMPLETED'||item.scope==='RECOGNITION'&&!['RECOGNIZED','CANCELLED','REVERSED'].includes(item.state))throw new ConflictException({code:'OPERATIONS_WORKFLOW_COMPLETION_REQUIRED'});return;
+ }
  const financial=financialWorkReference(row.sourceType,row.sourceId);
  if(Object.hasOwn(FINANCIAL_WORK_SOURCES,row.sourceType)){
   if(!financial)throw new ConflictException({code:'OPERATIONS_FINANCIAL_RECONCILIATION_REQUIRED'});

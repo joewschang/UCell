@@ -1,3 +1,4 @@
+vi.mock('./OperationsWorkflowHealth',()=>({OperationsWorkflowHealth:()=>null}));
 vi.mock('./OperationsFinancialHealth',()=>({OperationsFinancialHealth:()=>null}));
 import {act,create} from 'react-test-renderer';
 import {QueryClient,QueryClientProvider} from '@tanstack/react-query';
