@@ -2,15 +2,16 @@ import {PrismaClient} from '@prisma/client';
 import {randomUUID} from 'node:crypto';
 import {AdminOperationsService} from '../src/modules/admin-operations/admin-operations.service';
 import {AuditService} from '../src/common/audit/audit.service';
+import {CompensationPeriodControlService} from '../src/modules/settlement-jobs/compensation-period-control.service';
 const url=process.env.PHASE2_TEST_DATABASE_URL;
 (url?describe:describe.skip)('controlled payout result recovery',()=>{
  let db:PrismaClient,service:AdminOperationsService;
  beforeAll(()=>{db=new PrismaClient({datasources:{db:{url}}});service=new AdminOperationsService(db as any,new AuditService());});
  afterAll(async()=>db?.$disconnect());
- async function fixture(extraLine=false){
+ async function fixture(extraLine=false,periodStart=new Date('2026-01-01Z'),periodEnd=new Date('2026-02-01Z')){
   const person=await db.person.create({data:{legalName:'Synthetic payment recovery'}}),actor=randomUUID();
   const qualification=await db.qualification.create({data:{currentHolderPersonId:person.personId,planLevelCode:'STARTER',status:'EFFECTIVE',effectiveAt:new Date()}});
-  const batch=await db.payoutBatch.create({data:{periodStart:new Date('2026-01-01Z'),periodEnd:new Date('2026-02-01Z'),status:'READY',totalGross:extraLine?200:100,totalRecovery:0,totalNet:extraLine?200:100}});
+  const batch=await db.payoutBatch.create({data:{periodStart,periodEnd,status:'READY',totalGross:extraLine?200:100,totalRecovery:0,totalNet:extraLine?200:100}});
   const line=await db.payoutLine.create({data:{payoutBatchId:batch.payoutBatchId,recipientQualificationId:qualification.qualificationId,grossAmount:100,netAmount:100,detailJson:{source:'synthetic'}}});
   const payable=await db.payableEntry.create({data:{qualificationId:qualification.qualificationId,sourceType:'MANUAL_TEST',sourceId:line.payoutLineId,awardType:'REFERRAL',grossAmount:100,availableAt:new Date(),status:'ALLOCATED',payoutLineId:line.payoutLineId,ruleVersionCode:'SYNTHETIC'}});
   if(extraLine){const recipient=await db.qualification.create({data:{currentHolderPersonId:person.personId,planLevelCode:'STARTER',status:'EFFECTIVE',effectiveAt:new Date()}});await db.payoutLine.create({data:{payoutBatchId:batch.payoutBatchId,recipientQualificationId:recipient.qualificationId,grossAmount:100,netAmount:100,detailJson:{source:'synthetic-second'}}});}
@@ -21,6 +22,17 @@ const url=process.env.PHASE2_TEST_DATABASE_URL;
   const post=(rows:ReturnType<typeof result>[])=>service.recordPayoutResults(batch.payoutBatchId,{results:rows},actor,'FINANCE',randomUUID(),randomUUID());
   return {batch,line,payable,result,post,actor};
  }
+ it('projects cumulative bank results once and keeps missing or failed period jobs open',async()=>{
+  const start=new Date('1895-01-01Z'),end=new Date('1895-02-01Z'),f=await fixture(false,start,end);
+  await f.post([f.result('40')]);await f.post([f.result('100')]);
+  const control=new CompensationPeriodControlService(db as any),input={periodStart:start.toISOString(),periodEnd:end.toISOString(),ruleVersionCode:'SYNTHETIC'};
+  const first=await control.read(input);expect(first.amountBridge.bankPaid).toBe('100.0000');expect(first.lifecycle).not.toBe('FINANCIALLY_RECONCILED');
+  const id=randomUUID(),outbox=await db.outboxEvent.create({data:{eventType:'PERIOD_CLOSE_REQUESTED',aggregateType:'PERIOD_CLOSE_JOB',aggregateId:id,payload:{periodCloseJobId:id},correlationId:randomUUID(),processStatus:'DEAD',lastError:'PERIOD_CLOSE_EXECUTION_FAILED'}});
+  await db.periodCloseJob.create({data:{periodCloseJobId:id,kind:'REFERRAL_K0',periodStart:start,periodEnd:end,ruleVersionCode:'SYNTHETIC',parameterSnapshot:{syntheticFault:true},prerequisiteIds:[],requestedBy:'TEST',approvalReference:'TEST',outboxEventId:outbox.outboxEventId}});
+  expect((await control.read(input)).lifecycle).toBe('BLOCKED');
+  expect(await db.payoutPaymentResult.count({where:{payoutBatchId:f.batch.payoutBatchId}})).toBe(2);
+  expect((await db.payoutBatch.findUniqueOrThrow({where:{payoutBatchId:f.batch.payoutBatchId}})).status).toBe('PAID');
+ });
  it('records and replays concurrent legacy whole-batch confirmation through line evidence',async()=>{
   const f=await fixture(true),input={paymentReference:'SYNTHETIC-LEGACY',paymentMethod:'BANK',paidAt:new Date('2026-01-20Z')};
   const mark=()=>service.markPaid(f.batch.payoutBatchId,input,f.actor,'FINANCE',randomUUID(),randomUUID());
