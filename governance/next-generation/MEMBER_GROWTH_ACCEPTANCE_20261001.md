@@ -10,7 +10,7 @@ The projection returns only currently held qualifications, historical achieved r
 
 Learning and event counters count all of the Person's records, independently of the 100-item preview. CHECKED_IN is separate from ATTENDED. Upcoming events require REGISTERED status, a published event and a future start. The 20 most recent saved learning/event milestones link to public course/event codes; no browser economic calculation is introduced.
 
-The next-rank projection remains explicitly unavailable. No invented threshold, inferred current achievement or unapproved progress percentage is shown. Required next-rank acceptance remains open.
+The next-rank projection now reads the latest unambiguous closed Global settlement and verifies its original replay seal, exact period/source identity and parameter snapshot. For each currently owned Qualification it presents only that Qualification's recorded next-level weak-side PV, the sealed approved threshold, server-calculated remaining PV/percentage and Active at original close. A recorded CROWN achievement has no next target. Missing, corrupt or ambiguous evidence remains unavailable; it does not fall back to an older period or current runtime thresholds. The UI explicitly distinguishes original closed-period progress from live progress, post-return balances and payable amounts.
 
 ## Verified evidence
 
@@ -28,4 +28,10 @@ The isolated runner now clones its migrated baseline into a separate disposable 
 
 ## Remaining scope
 
-Next-rank approved progress, full requirement-by-requirement matrix, additional empty/error/theme/accessibility journeys and whole-batch recertification remain open. No Stage/Production deployment was performed.
+Next-rank follow-up: actual Global settlement writer-to-Growth tests pass for both Active and inactive historical recipients. Later live threshold edits do not change the displayed snapshot, corrupt hashes and equal-date rule ambiguity fail closed, historical highest rank is retained, and private source/rule/recipient identifiers remain absent. Final affected run: **4 suites / 11 tests PASS**, 124 migrations, 162 baseline assertions and cleanup (`cr-batch-growth-rank-final-db.log`). API build and Member 181 tests/production build pass. This follow-up postdates the full 1,317-test baseline above.
+
+Actual-browser follow-up discovered a separate pre-existing unplaced-Qualification boundary: the Member API emits `UNPLACED`, while the Member Qualification parser requires a formal Ball number, blocking the shell. It is reproduced in `cr-batch-growth-rank-browser-diagnostic.log` and the local failure screenshot. It must be repaired before complete Growth/Member UX certification; a fixture's missing placement must not be presented as a ranking-data error.
+
+The full requirement matrix, unplaced Qualification experience, additional empty/error/theme/accessibility journeys and whole-batch recertification remain open. No Stage/Production deployment was performed.
+
+The placed-Qualification browser follow-up also passes (cr-batch-growth-rank-browser-placed.log): an actual Binary Tree service placement receives its Ball number, the real Global engine seals a zero-volume historical period, and the authenticated Member screen displays next rank, 0.0000 PV, 100.0000 threshold/difference and 0.00% with the explicit historical boundary. The dark mobile screenshot was visually inspected. This does not waive the separately reproduced unplaced-Qualification defect.

@@ -9,6 +9,7 @@ import {BonusQueryService} from '../src/modules/bonus/bonus-query.service';
 import {RuntimeRuleService} from '../src/modules/rules/runtime-rule.service';
 import {SettlementCalendarService} from '../src/modules/settlement/settlement-calendar.service';
 import {orderEconomicEvidence} from '../src/modules/admin-operations/order-economic-evidence';
+import {MemberGrowthService} from '../src/modules/member/member-growth.service';
 
 const url=process.env.PHASE2_TEST_DATABASE_URL;
 const describeDb=url?describe:describe.skip;
@@ -222,6 +223,20 @@ describeDb('sealed period eligibility writer-to-order lineage',()=>{
         expect(globalDecisions).toContainEqual(expect.objectContaining({eligibilityType:'GLOBAL_ELIGIBILITY',rankLevel:'NEW_STAR',active,weakSidePv:'100',weakSideThreshold:'100',rankAchieved:true,eligible:active,reasonCode:active?'ELIGIBLE':'INACTIVE'}));
         expect(globalDecisions).toContainEqual(expect.objectContaining({rankLevel:'CROWN',weakSidePv:'100',weakSideThreshold:'1000',rankAchieved:false,eligible:false,reasonCode:active?'WEAK_SIDE_BELOW_THRESHOLD':'INACTIVE'}));
         expect(verifyReplayEnvelope(globalSnapshot).evidence.globalEligibilityDecisions).toHaveLength(globalDecisions.length);
+        const growth=await new MemberGrowthService(proxy).read(person.personId);
+        const progress=growth.dimensions.globalRank.nextAchievement;
+        expect(progress).toMatchObject({status:'RECORDED',basis:'ORIGINAL_CLOSED_PERIOD'});
+        expect(progress.items.find(row=>row.qualificationNo===root.qualificationNo.toString())).toMatchObject({status:'RECORDED',rankCode:'EXCELLENCE',periodStart:start.toISOString(),periodEnd:end.toISOString(),weakSidePv:'100.0000',thresholdPv:'1000.0000',remainingPv:'900.0000',progressPercent:'10.00',activeAtClose:active});
+        for(const secret of [person.personId,root.qualificationId,global.globalPoolSettlementId,globalSnapshot.snapshotId,rule,'PRIVATE-PERIOD-HOLDER'])expect(JSON.stringify(growth)).not.toContain(secret);
+        // A later configured threshold cannot rewrite the sealed member progress.
+        await tx.runtimeRuleParameter.updateMany({where:{ruleVersionCode:rule,parameterCode:'global.rank.weak_threshold',scopeKey:'EXCELLENCE'},data:{valueJson:'2000'}});
+        expect((await new MemberGrowthService(proxy).read(person.personId)).dimensions.globalRank.nextAchievement).toEqual(progress);
+        const invalid=new Proxy(proxy,{get(target,key){return key==='historicalReplaySnapshot'?{findUnique:async()=>({...globalSnapshot,hash:'0'.repeat(64)})}:Reflect.get(target,key);}});
+        const invalidRead=new Proxy(invalid,{get(target,key){return key==='$transaction'?(callback:any)=>callback(invalid):Reflect.get(target,key);}});
+        expect((await new MemberGrowthService(invalidRead).read(person.personId)).dimensions.globalRank.nextAchievement).toMatchObject({status:'UNAVAILABLE'});
+        const ambiguous=new Proxy(proxy,{get(target,key){return key==='globalPoolSettlement'?{findMany:async()=>[global,{...global,globalPoolSettlementId:randomUUID(),ruleVersionCode:'OTHER_RULE'}]}:Reflect.get(target,key);}});
+        const ambiguousRead=new Proxy(ambiguous,{get(target,key){return key==='$transaction'?(callback:any)=>callback(ambiguous):Reflect.get(target,key);}});
+        expect((await new MemberGrowthService(ambiguousRead).read(person.personId)).dimensions.globalRank.nextAchievement).toMatchObject({status:'UNAVAILABLE'});
         for(const decision of globalDecisions){expect(decision).not.toHaveProperty('theoryAmount');expect(decision).not.toHaveProperty('entitlementAmount');}
         expect(globalPeriod.periodContext.recipients).toEqual(active?[expect.objectContaining({awardType:'GLOBAL',theoryAmount:'4',originallyPosted:'4',active:true})]:[]);
         expect(final.awards).toEqual([]);expect(final.payables).toEqual([]);
@@ -232,6 +247,9 @@ describeDb('sealed period eligibility writer-to-order lineage',()=>{
         expect(await tx.reservoirLedgerEffect.findMany({where:{sourceGlobalSettlementId:global.globalPoolSettlementId}})).toEqual(reservoir);
         expect(await tx.historicalReplaySnapshot.findUniqueOrThrow({where:{snapshotId:globalSnapshot.snapshotId}})).toEqual(globalSnapshot);
         expect(await orderEconomicEvidence(tx,orders[0].orderId,[])).toEqual(final);
+        // A recorded earlier highest achievement is retained even when a later period has lower volume.
+        await tx.qualificationGlobalRankHistory.create({data:{qualificationId:root.qualificationId,rankCode:'CROWN',achievedAt:effectiveFrom,sourcePeriodEnd:effectiveFrom,ruleVersionCode:rule}});
+        expect((await new MemberGrowthService(proxy).read(person.personId)).dimensions.globalRank.nextAchievement.items.find(row=>row.qualificationNo===root.qualificationNo.toString())).toMatchObject({status:'HIGHEST_ACHIEVED',rankCode:null,progressPercent:null});
       }
       throw new Error(rollback);
     },{isolationLevel:Prisma.TransactionIsolationLevel.Serializable,timeout:30000})).rejects.toThrow(rollback);
