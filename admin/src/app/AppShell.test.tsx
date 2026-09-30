@@ -15,7 +15,7 @@ describe('grouped navigation access', () => {
     ['CUSTOMER_SERVICE', ['Dashboard','會員管理'], ['/','/line-links']],
     ['PACKAGE_CONFIG_MANAGE', ['Dashboard','商務'], ['/','/packages']],
     ['PACKAGE_CONFIG_APPROVE', ['Dashboard','商務'], ['/','/packages']],
-    ['MEMBERSHIP_OPS', ['Dashboard','會員管理','組織管理','營運分析','系統治理'], ['/', '/people','/applications','/qualifications','/paper-intake','/line-links','/workflows','/organization','/admin/organization/trees','/analytics','/documents']],
+    ['MEMBERSHIP_OPS', ['Dashboard','會員管理','組織管理','營運分析','系統治理'], ['/', '/people','/applications','/qualifications','/paper-intake','/line-links','/workflows','/organization','/admin/organization/trees','/analytics','/documents','/learning']],
   ])('renders only allowed links and nonempty groups for %s', (role, groups, paths) => {
     auth.role = role;
     vi.stubGlobal('sessionStorage', {getItem:() => null});

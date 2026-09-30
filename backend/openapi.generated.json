@@ -17083,8 +17083,26 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CourseDto"
+              }
+            }
+          }
+        },
         "responses": {
           "201": {
             "description": ""
@@ -17119,8 +17137,26 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublishDto"
+              }
+            }
+          }
+        },
         "responses": {
           "201": {
             "description": ""
@@ -17131,6 +17167,61 @@
             "adminBearer": []
           }
         ],
+        "tags": [
+          "Admin - Learning"
+        ]
+      }
+    },
+    "/api/v1/admin/learning/courses/{courseCode}/archive": {
+      "post": {
+        "operationId": "adminArchiveLearningCourse",
+        "parameters": [
+          {
+            "name": "courseCode",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ArchiveDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "封存課程並保留歷史報名與完成證據",
         "tags": [
           "Admin - Learning"
         ]
@@ -17203,6 +17294,14 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -17247,6 +17346,14 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -17280,6 +17387,14 @@
             "name": "idempotency-key",
             "required": true,
             "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
             "schema": {
               "type": "string"
             }
@@ -22102,12 +22217,85 @@
         "type": "object",
         "properties": {
           "approvalReference": {
-            "type": "string",
-            "maxLength": 200
+            "type": "string"
           }
         },
         "required": [
           "approvalReference"
+        ]
+      },
+      "LessonDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "contentType": {
+            "type": "string",
+            "enum": [
+              "VIDEO_REFERENCE",
+              "DOCUMENT_REFERENCE",
+              "ARTICLE",
+              "EXTERNAL_LINK"
+            ]
+          },
+          "contentReference": {
+            "type": "string"
+          },
+          "required": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "title",
+          "contentType",
+          "contentReference"
+        ]
+      },
+      "CourseDto": {
+        "type": "object",
+        "properties": {
+          "courseCode": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "summary": {
+            "type": "string"
+          },
+          "categoryCode": {
+            "type": "string"
+          },
+          "publishFrom": {
+            "type": "string"
+          },
+          "publishTo": {
+            "type": "string"
+          },
+          "lessons": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LessonDto"
+            }
+          }
+        },
+        "required": [
+          "courseCode",
+          "title",
+          "categoryCode",
+          "lessons"
+        ]
+      },
+      "ArchiveDto": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "reason"
         ]
       },
       "RecordUatEvidenceDto": {

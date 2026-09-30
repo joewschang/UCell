@@ -20,7 +20,7 @@ const url=process.env.PHASE2_TEST_DATABASE_URL;
   await expect(learning.complete(p.personId,courseCode,randomUUID(),randomUUID())).rejects.toMatchObject({status:409});
   expect(await db.memberNotification.count({where:{personId:p.personId}})).toBe(1);
   await learning.lessonCompleted(p.personId,courseCode,1,randomUUID());await learning.complete(p.personId,courseCode,randomUUID(),randomUUID());await learning.complete(p.personId,courseCode,randomUUID(),randomUUID());
-  const page=await messages.list(p.personId,{category:'LEARNING'});expect(page.items).toHaveLength(2);expect(page.items.every(x=>x.deepLink==='/learning'&&x.sourceReference===`COURSE:${courseCode}`)).toBe(true);
+  const page=await messages.list(p.personId,{category:'LEARNING'});expect(page.items).toHaveLength(2);expect(page.items.every(x=>x.deepLink===`/learning?course=${courseCode}`&&x.sourceReference===`COURSE:${courseCode}`)).toBe(true);
   expect(JSON.stringify(page)).not.toContain(p.personId);expect(JSON.stringify(page)).not.toContain('Private learner');expect((await messages.list(other.personId,{})).items).toEqual([]);expect(await db.notificationDelivery.count()).toBe(before);
  });
  it('keeps registration cycles distinct and excludes check-in credentials from personal messages',async()=>{
