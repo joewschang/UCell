@@ -3,12 +3,12 @@ import {createHash} from 'node:crypto';
 
 // The caller supplies one repeatable-read snapshot. This is a bounded integrity
 // read, never a replacement for the transactional economic writers.
-export async function companyReservoirCandidates(tx:Prisma.TransactionClient,take:number){
+export async function companyReservoirCandidates(tx:Prisma.TransactionClient,take:number,scope?:{bonusIds:string[];rpvIds:string[];globalIds:string[]}){
   const [bonuses,rpvs,globals,destinations]=await Promise.all([
-    tx.bonusAward.findMany({include:{economicDestination:{select:{destinationId:true}}},orderBy:[{createdAt:'desc'},{bonusAwardId:'asc'}],take}),
-    tx.rpvUplineAwardEvent.findMany({include:{economicDestination:{select:{destinationId:true}}},orderBy:[{createdAt:'desc'},{rpvAwardEventId:'asc'}],take}),
-    tx.globalPoolAward.findMany({include:{settlement:{select:{periodEnd:true}},economicDestination:{select:{destinationId:true}}},orderBy:[{createdAt:'desc'},{globalPoolAwardId:'asc'}],take}),
-    tx.awardEconomicDestination.findMany({include:{qualification:{select:{qualificationNo:true}},effects:true},orderBy:[{recordedAt:'desc'},{destinationId:'asc'}],take}),
+    tx.bonusAward.findMany({where:scope?{bonusAwardId:{in:scope.bonusIds}}:undefined,include:{economicDestination:{select:{destinationId:true}}},orderBy:[{createdAt:'desc'},{bonusAwardId:'asc'}],take}),
+    tx.rpvUplineAwardEvent.findMany({where:scope?{rpvAwardEventId:{in:scope.rpvIds}}:undefined,include:{economicDestination:{select:{destinationId:true}}},orderBy:[{createdAt:'desc'},{rpvAwardEventId:'asc'}],take}),
+    tx.globalPoolAward.findMany({where:scope?{globalPoolAwardId:{in:scope.globalIds}}:undefined,include:{settlement:{select:{periodEnd:true}},economicDestination:{select:{destinationId:true}}},orderBy:[{createdAt:'desc'},{globalPoolAwardId:'asc'}],take}),
+    tx.awardEconomicDestination.findMany({where:scope?{OR:[{sourceBonusAwardId:{in:scope.bonusIds}},{sourceRpvAwardId:{in:scope.rpvIds}},{sourceGlobalAwardId:{in:scope.globalIds}}]}:undefined,include:{qualification:{select:{qualificationNo:true}},effects:true},orderBy:[{recordedAt:'desc'},{destinationId:'asc'}],take}),
   ]);
   const sources=[
     ...bonuses.map(a=>({id:a.bonusAwardId,qid:a.recipientQualificationId,at:a.occurredAt,type:a.awardType,sourceType:'BONUS_AWARD',amount:a.payableAmount,destination:a.economicDestination})),

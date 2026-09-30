@@ -15813,6 +15813,40 @@
         "type": "object",
         "properties": {}
       },
+      "PeriodReconciliationScopeDto": {
+        "type": "object",
+        "properties": {
+          "periodReference": {
+            "type": "string"
+          },
+          "payoutAmounts": {
+            "type": "string",
+            "enum": [
+              "RELATED_WHOLE_LINES"
+            ]
+          },
+          "sharedPayoutLines": {
+            "type": "number"
+          },
+          "missingPayables": {
+            "type": "number"
+          },
+          "unpaidPayables": {
+            "type": "number"
+          },
+          "bankIncompleteLines": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "periodReference",
+          "payoutAmounts",
+          "sharedPayoutLines",
+          "missingPayables",
+          "unpaidPayables",
+          "bankIncompleteLines"
+        ]
+      },
       "PeriodIdentityDto": {
         "type": "object",
         "properties": {
@@ -15931,8 +15965,16 @@
       "PeriodAmountBridgeDto": {
         "type": "object",
         "properties": {
-          "grossTheory": {
+          "globalAllocated": {
+            "type": "string",
+            "description": "Recorded Global allocation; no theoretical Global award is invented"
+          },
+          "recoveryApplied": {
             "type": "string"
+          },
+          "grossTheory": {
+            "type": "string",
+            "description": "Recorded Bonus/RPV theory subtotal, excluding Global allocation"
           },
           "awardAfterEligibilityAndK": {
             "type": "string"
@@ -15967,6 +16009,8 @@
           }
         },
         "required": [
+          "globalAllocated",
+          "recoveryApplied",
           "grossTheory",
           "awardAfterEligibilityAndK",
           "companyReservoirB",
@@ -16093,6 +16137,9 @@
       "CompensationPeriodControlDto": {
         "type": "object",
         "properties": {
+          "reconciliationScope": {
+            "$ref": "#/components/schemas/PeriodReconciliationScopeDto"
+          },
           "elapsedSeconds": {
             "type": "number",
             "minimum": 0
@@ -16147,6 +16194,7 @@
           }
         },
         "required": [
+          "reconciliationScope",
           "elapsedSeconds",
           "period",
           "lifecycle",
