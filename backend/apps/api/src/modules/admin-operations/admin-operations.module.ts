@@ -1,3 +1,5 @@
+import {OperationsFinancialHealthController} from './operations-financial-health.controller';
+import {OperationsFinancialHealthService} from './operations-financial-health.service';
 import { Module } from '@nestjs/common';
 import { AdminOperationsController } from './admin-operations.controller';
 import { AdminOperationsService } from './admin-operations.service';
@@ -10,7 +12,7 @@ import {OperationsWorkItemsService} from './operations-work-items.service';
 
 @Module({
   imports:[IdempotencyModule,FulfillmentOperationsModule],
-  controllers:[AdminOperationsController,OperationsControlController,OperationsWorkItemsController],
-  providers:[AdminOperationsService,OperationsControlService,OperationsWorkItemsService],
+  controllers:[OperationsFinancialHealthController,AdminOperationsController,OperationsControlController,OperationsWorkItemsController],
+  providers:[OperationsFinancialHealthService,AdminOperationsService,OperationsControlService,OperationsWorkItemsService],
 })
 export class AdminOperationsModule{}

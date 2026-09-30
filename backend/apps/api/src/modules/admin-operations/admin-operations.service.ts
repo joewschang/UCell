@@ -9,6 +9,7 @@ import { orderEconomicEvidence } from './order-economic-evidence';
 import {createFinanceReviewArtifact,readFinanceReviewArtifact} from './payout-review-artifact';
 import {lineageSourceSummary} from './lineage-source-summary';
 import {requireErpExceptionReconciliation} from './erp-exception-resolution';
+import {OperationsFinancialHealthService} from './operations-financial-health.service';
 
 @Injectable()
 export class AdminOperationsService {
@@ -172,6 +173,7 @@ export class AdminOperationsService {
   }
 
   async payoutBatchDetail(id:string){
+    if(id.startsWith('PAYOUT-'))id=(await this.prisma.$transaction(tx=>new OperationsFinancialHealthService(this.prisma).resolve(tx,'PAYOUT',id))).id;
     return this.prisma.payoutBatch.findUniqueOrThrow({
       where:{payoutBatchId:id},
       include:{

@@ -18,6 +18,12 @@ beforeEach(()=>{state.role='FINANCE';state.status='APPROVED';vi.mocked(command).
  return {data:url.endsWith('/batch-a')?detail:url.endsWith('/payout-batches')?[data]:[]};
  });});
 async function render(){let view:ReturnType<typeof create>;await act(async()=>{view=create(<QueryClientProvider client={new QueryClient({defaultOptions:{queries:{retry:false}}})}><PayoutsPage/></QueryClientProvider>);});await vi.waitFor(()=>expect(view!.root.findAllByProps({className:'list-row '})).toHaveLength(1));await act(async()=>view!.root.findByProps({className:'list-row '}).props.onClick());await vi.waitFor(()=>expect(JSON.stringify(view!.toJSON())).toContain('BALL-100'));return view!;}
+it('opens an exact business-reference deep link outside the first queue page',async()=>{
+ const reference='PAYOUT-'+'a'.repeat(40),original=vi.mocked(get).getMockImplementation()!;vi.stubGlobal('window',{location:{search:'?reference='+reference}});
+ vi.mocked(get).mockImplementation((url,options)=>original(url.endsWith(reference)?'/admin/operations/payout-batches/batch-a':url,options));let view:ReturnType<typeof create>|undefined;
+ try{await act(async()=>{view=create(<QueryClientProvider client={new QueryClient({defaultOptions:{queries:{retry:false}}})}><PayoutsPage/></QueryClientProvider>);});await vi.waitFor(()=>expect(JSON.stringify(view!.toJSON())).toContain('BALL-100'));expect(get).toHaveBeenCalledWith('/admin/operations/payout-batches/'+reference);}
+ finally{if(view)act(()=>view!.unmount());vi.unstubAllGlobals();}
+});
 it('allows independent compliance approval at REVIEWED and hides qualification UUID text',async()=>{
  state.role='COMPLIANCE_AUDIT';state.status='REVIEWED';const view=await render();
  const button=view.root.findAllByType('button').find(b=>b.children.join('')==='獨立合規核准')!;expect(button.props.disabled).toBe(false);

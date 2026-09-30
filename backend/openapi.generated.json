@@ -13045,6 +13045,79 @@
         ]
       }
     },
+    "/api/v1/admin/operations/control/financial-health": {
+      "get": {
+        "operationId": "adminOperationsFinancialHealth",
+        "parameters": [
+          {
+            "name": "scope",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "PAYOUT",
+                "PAYABLE",
+                "RECOVERY"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "take",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "asOf",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "reference",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopeDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "有界付款／三類可付款來源／追回證據檢查；金額與異常僅涵蓋本頁",
+        "tags": [
+          "Admin - Operations Financial Health"
+        ]
+      }
+    },
     "/api/v1/admin/operations/returns": {
       "get": {
         "operationId": "adminReturnQueue",

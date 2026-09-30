@@ -12,7 +12,7 @@ const statusLabels:Record<string,string>={DRAFT:'草稿',READY:'待財務覆核'
 
 export function PayoutsPage(){
  const qc=useQueryClient();const {user}=useAuth();
- const [status,setStatus]=useState(''),[selected,setSelected]=useState<string|null>(null),[cutoff,setCutoff]=useState('');
+ const [status,setStatus]=useState(''),[selected,setSelected]=useState<string|null>(()=>{const value=typeof window==='undefined'?null:new URLSearchParams(window.location.search).get('reference');return value&&/^PAYOUT-[a-f0-9]{40}$/.test(value)?value:null;}),[cutoff,setCutoff]=useState('');
  const [periodStart,setPeriodStart]=useState(''),[periodEnd,setPeriodEnd]=useState('');
  const [exportRef,setExportRef]=useState(''),[notice,setNotice]=useState('');
  const [error,setError]=useState<unknown>(null),[pending,setBusy]=useState(false);
