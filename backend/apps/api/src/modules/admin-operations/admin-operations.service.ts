@@ -429,9 +429,15 @@ export class AdminOperationsService {
       const batch=await tx.payoutBatch.findUniqueOrThrow({
         where:{payoutBatchId:id},include:{approvals:true,lines:{include:{recipient:{include:{currentHolder:{select:{memberNo:true}}}}},orderBy:{payoutLineId:'asc'}}}
       });
+      // An existing artifact remains the same export after bank results advance
+      // the batch. Replay must never reset that later payment state.
+      const replay=await tx.payoutExportArtifact.findUnique({where:{exportReference:exportReference.trim()}});
+      if(replay){
+        if(replay.payoutBatchId!==id)throw new ConflictException('PAYOUT_EXPORT_REFERENCE_CONFLICT');
+        readFinanceReviewArtifact(replay);
+        return {batch,artifact:replay,replayed:true};
+      }
       if(batch.status==='EXPORTED'){
-        const replay=await tx.payoutExportArtifact.findUnique({where:{exportReference:exportReference.trim()}});
-        if(replay?.payoutBatchId===id) return {batch,artifact:replay,replayed:true};
         throw new ConflictException('Payout batch is already exported; create a governed replacement revision before another export');
       }
       if(!['READY','APPROVED'].includes(batch.status))throw new ConflictException('Only APPROVED payout batch can be exported');

@@ -51,6 +51,20 @@ const url=process.env.PHASE2_TEST_DATABASE_URL;
   expect(await db.payoutPaymentResult.count({where:{payoutBatchId:f.batch.payoutBatchId}})).toBe(0);
   expect(await db.auditEvent.count({where:{entityId:f.batch.payoutBatchId,action:'PAYOUT_PAID'}})).toBe(0);
  });
+ it.each([['0','FAILED'],['40','PARTIALLY_PAID'],['100','PAID']] as const)('EXPORT_IDEMPOTENT preserves %s paid value and %s state after result reconciliation',async(paidAmount,status)=>{
+  const f=await fixture();await f.post([f.result(paidAmount,status==='FAILED'?'FAILED':'PAID')]);
+  const before=await db.payoutBatch.findUniqueOrThrow({where:{payoutBatchId:f.batch.payoutBatchId}});
+  const artifact=await db.payoutExportArtifact.findFirstOrThrow({where:{payoutBatchId:f.batch.payoutBatchId}});
+  const replay=()=>service.exportPayout(f.batch.payoutBatchId,artifact.exportReference,f.actor,'FINANCE',randomUUID(),randomUUID());
+  const results=await Promise.all([replay(),replay()]);
+  expect(results.every(row=>row.replayed)).toBe(true);
+  expect(results.every(row=>row.artifact.contentHash===artifact.contentHash)).toBe(true);
+  expect(await db.payoutBatch.findUniqueOrThrow({where:{payoutBatchId:f.batch.payoutBatchId}})).toEqual(before);
+  expect(before.status).toBe(status);
+  expect(await db.payoutExportArtifact.count({where:{payoutBatchId:f.batch.payoutBatchId}})).toBe(1);
+  expect(await db.auditEvent.count({where:{entityId:f.batch.payoutBatchId,action:'PAYOUT_EXPORTED'}})).toBe(1);
+  await expect(service.exportPayout(f.batch.payoutBatchId,'CHANGED-'+randomUUID(),f.actor,'FINANCE',randomUUID(),randomUUID())).rejects.toMatchObject({status:409});
+ });
  it('reconciles a failed transfer followed by actual successful retry without another payable',async()=>{
   const f=await fixture();expect((await f.post([f.result('0','FAILED')])).batch.status).toBe('FAILED');
   expect((await f.post([f.result('100')])).batch.status).toBe('PAID');
