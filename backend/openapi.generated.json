@@ -809,6 +809,316 @@
         ]
       }
     },
+    "/api/v1/admin/erp-projections": {
+      "get": {
+        "operationId": "adminErpBusinessProjectionList",
+        "parameters": [
+          {
+            "name": "stream",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "SALES",
+                "RETURN",
+                "COMPENSATION"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "take",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "asOf",
+            "required": false,
+            "in": "query",
+            "description": "Fixed projection creation horizon; statuses remain current",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErpBusinessEnvelopeDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "讀取 Sales、Return 與 Compensation 投影及獨立 ERP 對帳證據",
+        "tags": [
+          "Admin - ERP Business Projections"
+        ]
+      }
+    },
+    "/api/v1/admin/erp-projections/orders/{orderNo}/sources": {
+      "get": {
+        "operationId": "adminErpBusinessProjectionSources",
+        "parameters": [
+          {
+            "name": "orderNo",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErpBusinessEnvelopeDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "以訂單號取得可識別的退貨商業參考",
+        "tags": [
+          "Admin - ERP Business Projections"
+        ]
+      }
+    },
+    "/api/v1/admin/erp-projections/orders/{orderNo}/sales": {
+      "post": {
+        "operationId": "adminRequestErpSalesProjection",
+        "parameters": [
+          {
+            "name": "orderNo",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErpBusinessEnvelopeDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "從已付款訂單封存一次 Sales 投影，不執行 ERP 出貨或會計",
+        "tags": [
+          "Admin - ERP Business Projections"
+        ]
+      }
+    },
+    "/api/v1/admin/erp-projections/orders/{orderNo}/returns/{returnReference}": {
+      "post": {
+        "operationId": "adminRequestErpReturnProjection",
+        "parameters": [
+          {
+            "name": "orderNo",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "returnReference",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErpBusinessEnvelopeDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "封存正式入帳 ReturnCase 的 ERP 投影，不改寫會員回收",
+        "tags": [
+          "Admin - ERP Business Projections"
+        ]
+      }
+    },
+    "/api/v1/admin/erp-projections/{projectionReference}": {
+      "get": {
+        "operationId": "adminErpBusinessProjectionDetail",
+        "parameters": [
+          {
+            "name": "projectionReference",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErpBusinessEnvelopeDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "讀取投影、對帳及經 hash 驗證的商業來源追溯",
+        "tags": [
+          "Admin - ERP Business Projections"
+        ]
+      }
+    },
+    "/api/v1/admin/erp-projections/{projectionReference}/retry": {
+      "post": {
+        "operationId": "adminRetryErpBusinessProjection",
+        "parameters": [
+          {
+            "name": "projectionReference",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErpBusinessRetryDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErpBusinessEnvelopeDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "稽核後重新排入失敗投影；保留原版本、冪等鍵及歷次嘗試",
+        "tags": [
+          "Admin - ERP Business Projections"
+        ]
+      }
+    },
+    "/api/v1/admin/erp-projections/{projectionReference}/results": {
+      "post": {
+        "operationId": "adminReconcileErpBusinessProjection",
+        "parameters": [
+          {
+            "name": "projectionReference",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErpBusinessResultDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErpBusinessEnvelopeDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "核對已受理 ERP 單據的金額和數量，差異建立例外",
+        "tags": [
+          "Admin - ERP Business Projections"
+        ]
+      }
+    },
     "/api/v1/admin/finance/reservoirs": {
       "get": {
         "description": "Finance-confidential immutable sources. Read-only; signed replay correction is not a payout. Stable UUID cursor within server snapshot. A rejects tree/position/awardType filters.",
@@ -16758,6 +17068,86 @@
         },
         "required": [
           "data"
+        ]
+      },
+      "ErpBusinessEnvelopeDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "ErpBusinessRetryDto": {
+        "type": "object",
+        "properties": {
+          "retryKey": {
+            "type": "string"
+          },
+          "reasonReference": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "retryKey",
+          "reasonReference"
+        ]
+      },
+      "ErpBusinessResultLineDto": {
+        "type": "object",
+        "properties": {
+          "lineReference": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "lineReference",
+          "amount",
+          "quantity"
+        ]
+      },
+      "ErpBusinessResultDto": {
+        "type": "object",
+        "properties": {
+          "resultKey": {
+            "type": "string"
+          },
+          "providerReference": {
+            "type": "string"
+          },
+          "occurredAt": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "string"
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ErpBusinessResultLineDto"
+            }
+          }
+        },
+        "required": [
+          "resultKey",
+          "providerReference",
+          "occurredAt",
+          "currency",
+          "amount",
+          "lines"
         ]
       },
       "CreateTreeDto": {
