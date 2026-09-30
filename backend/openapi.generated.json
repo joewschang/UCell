@@ -13868,6 +13868,299 @@
         ]
       }
     },
+    "/api/v1/admin/operations/control/tasks": {
+      "get": {
+        "operationId": "adminOperationsControlTasks",
+        "parameters": [
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "take",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "asOf",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopeDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "以商業參考碼分頁讀取 ERP 任務，不回傳人員或來源內部識別碼",
+        "tags": [
+          "Admin - Operations Work Items"
+        ]
+      },
+      "post": {
+        "operationId": "adminCreateOperationsCandidateTask",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopeDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "重新驗證目前候選並建立一次有指派與到期日的任務",
+        "tags": [
+          "Admin - Operations Work Items"
+        ]
+      }
+    },
+    "/api/v1/admin/operations/control/exceptions": {
+      "get": {
+        "operationId": "adminOperationsControlExceptions",
+        "parameters": [
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "take",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "asOf",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopeDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "以商業參考碼分頁讀取 ERP 調查例外",
+        "tags": [
+          "Admin - Operations Work Items"
+        ]
+      }
+    },
+    "/api/v1/admin/operations/control/tasks/{reference}/transitions": {
+      "post": {
+        "operationId": "adminTransitionOperationsControlTask",
+        "parameters": [
+          {
+            "name": "reference",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TransitionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopeDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "稽核任務處理狀態，不改變 ERP 或 UCell 權威事實",
+        "tags": [
+          "Admin - Operations Work Items"
+        ]
+      }
+    },
+    "/api/v1/admin/operations/control/tasks/{reference}/assignment": {
+      "post": {
+        "operationId": "adminAssignOperationsControlTask",
+        "parameters": [
+          {
+            "name": "reference",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssignmentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopeDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "稽核未完成任務的角色改派與到期日；保留來源事實",
+        "tags": [
+          "Admin - Operations Work Items"
+        ]
+      }
+    },
+    "/api/v1/admin/operations/control/exceptions/{reference}/transitions": {
+      "post": {
+        "operationId": "adminTransitionOperationsControlException",
+        "parameters": [
+          {
+            "name": "reference",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TransitionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopeDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "稽核調查狀態；結案前要求目前 ERP 已對帳證據",
+        "tags": [
+          "Admin - Operations Work Items"
+        ]
+      }
+    },
     "/api/v1/admin/ops-ready/attachments": {
       "post": {
         "operationId": "adminRegisterAttachment",
@@ -20869,6 +21162,131 @@
         },
         "required": [
           "revision"
+        ]
+      },
+      "TaskDto": {
+        "type": "object",
+        "properties": {
+          "commandKey": {
+            "type": "string"
+          },
+          "stream": {
+            "type": "string",
+            "enum": [
+              "SALES",
+              "RETURN",
+              "COMPENSATION",
+              "FULFILLMENT"
+            ]
+          },
+          "reference": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "evidenceHash": {
+            "type": "string"
+          },
+          "thresholdHours": {
+            "type": "number"
+          },
+          "cursor": {
+            "type": "string"
+          },
+          "asOf": {
+            "type": "string"
+          },
+          "assigneeRole": {
+            "type": "string",
+            "enum": [
+              "FINANCE",
+              "COMPLIANCE_AUDIT",
+              "SUPER_ADMIN"
+            ]
+          },
+          "dueAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "commandKey",
+          "stream",
+          "reference",
+          "code",
+          "evidenceHash",
+          "assigneeRole"
+        ]
+      },
+      "TransitionDto": {
+        "type": "object",
+        "properties": {
+          "commandKey": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ACKNOWLEDGED",
+              "INVESTIGATING",
+              "COMPLETED",
+              "RESOLVED"
+            ]
+          },
+          "expectedStatus": {
+            "type": "string",
+            "enum": [
+              "OPEN",
+              "ACKNOWLEDGED",
+              "INVESTIGATING"
+            ]
+          },
+          "noteReference": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "commandKey",
+          "status",
+          "expectedStatus",
+          "noteReference"
+        ]
+      },
+      "AssignmentDto": {
+        "type": "object",
+        "properties": {
+          "commandKey": {
+            "type": "string"
+          },
+          "expectedStatus": {
+            "type": "string",
+            "enum": [
+              "OPEN",
+              "ACKNOWLEDGED"
+            ]
+          },
+          "assigneeRole": {
+            "type": "string",
+            "enum": [
+              "FINANCE",
+              "COMPLIANCE_AUDIT",
+              "SUPER_ADMIN"
+            ]
+          },
+          "dueAt": {
+            "type": "object",
+            "nullable": true
+          },
+          "noteReference": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "commandKey",
+          "expectedStatus",
+          "assigneeRole",
+          "dueAt",
+          "noteReference"
         ]
       },
       "RetryProviderWebhookDto": {

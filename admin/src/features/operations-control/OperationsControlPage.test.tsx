@@ -3,6 +3,7 @@ import {QueryClient,QueryClientProvider} from '@tanstack/react-query';
 import {expect,it,vi} from 'vitest';
 import {OperationsControlPage} from './OperationsControlPage';
 import * as api from '../../lib/api';
+vi.mock('./OperationsWorkItems',()=>({CandidateTaskForm:()=>null,OperationsWorkItems:()=>null}));
 vi.mock('../../lib/api',async()=>({...await vi.importActual('../../lib/api'),get:vi.fn()}));
 it('shows bounded coverage and actionable evidence, retaining the creation horizon on the next page',async()=>{
  const row={reference:'ERP-PROJECTION-'+'a'.repeat(40),stream:'SALES',state:'RECONCILED',orderNo:'100',fulfillmentKey:null,requestedAt:'2026-09-29T00:00:00Z',acknowledgedAt:null,reconciledAt:'2026-09-30T00:00:00Z',elapsedHours:24,thresholdHours:null,exceptionReferences:['ERP-EXCEPTION-abc'],blockedReason:null,link:'/erp-reconciliation?stream=SALES&projection=sample',candidate:{code:'ERP_OPEN_EXCEPTION',severity:'HIGH',evidenceHash:'b'.repeat(64)}};

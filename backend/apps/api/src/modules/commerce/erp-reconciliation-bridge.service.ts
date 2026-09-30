@@ -4,7 +4,7 @@ import {createHash} from 'node:crypto';
 
 export const ERP_BRIDGE_LIFECYCLES=['READY','QUEUED','SENT','ACKNOWLEDGED','RECONCILED','MISMATCH','FAILED','BLOCKED_EXTERNAL'] as const;
 type BridgeLifecycle=typeof ERP_BRIDGE_LIFECYCLES[number];
-type Query={status?:string;orderNo?:string;take?:number;asOf?:string;cursor?:string};
+type Query={status?:string;orderNo?:string;fulfillmentKey?:string;take?:number;asOf?:string;cursor?:string};
 type Cursor={requestedAt:string;orderNo:string;fulfillmentKey:string};
 
 const safeReference=(kind:string,value:string)=>`${kind}-${createHash('sha256').update(`${kind}:${value}`).digest('hex').slice(0,20)}`;
@@ -54,13 +54,14 @@ export class ErpReconciliationBridgeService{
  async list(query:Query){
   const take=positiveInteger(query.take),asOf=date(query.asOf),cursor=query.cursor?decode(query.cursor):undefined;
   if(query.orderNo&&!/^\d{1,19}$/.test(query.orderNo))throw new BadRequestException({code:'ERP_BRIDGE_ORDER_NO_INVALID'});
+  if(query.fulfillmentKey&&(!query.orderNo||query.fulfillmentKey.length>200))throw new BadRequestException({code:'ERP_BRIDGE_FULFILLMENT_KEY_INVALID'});
   if(query.status&&!ERP_BRIDGE_LIFECYCLES.includes(query.status as BridgeLifecycle))throw new BadRequestException({code:'ERP_BRIDGE_STATUS_INVALID'});
   // asOf fixes handoff admission across pages; mutable domain statuses are read
   // from the current transaction snapshot, not reconstructed historical state.
   return this.db.$transaction(async tx=>{
   const dataThrough=new Date().toISOString();
   const rows=await tx.fulfillmentErpHandoff.findMany({
-   where:{requestedAt:{lte:asOf},...(query.orderNo?{fulfillment:{order:{orderNo:BigInt(query.orderNo)}}}:{}),...(cursor?{OR:[{requestedAt:{lt:new Date(cursor.requestedAt)}},{requestedAt:new Date(cursor.requestedAt),fulfillment:{order:{orderNo:{lt:BigInt(cursor.orderNo)}}}},{requestedAt:new Date(cursor.requestedAt),fulfillment:{order:{orderNo:BigInt(cursor.orderNo)},fulfillmentKey:{lt:cursor.fulfillmentKey}}}]}:{})},
+   where:{requestedAt:{lte:asOf},...(query.orderNo?{fulfillment:{order:{orderNo:BigInt(query.orderNo)},...(query.fulfillmentKey?{fulfillmentKey:query.fulfillmentKey}:{})}}:{}),...(cursor?{OR:[{requestedAt:{lt:new Date(cursor.requestedAt)}},{requestedAt:new Date(cursor.requestedAt),fulfillment:{order:{orderNo:{lt:BigInt(cursor.orderNo)}}}},{requestedAt:new Date(cursor.requestedAt),fulfillment:{order:{orderNo:BigInt(cursor.orderNo)},fulfillmentKey:{lt:cursor.fulfillmentKey}}}]}:{})},
    include:{outboxEvent:{select:{processStatus:true,attemptCount:true,createdAt:true,processedAt:true,lastError:true}},dispatch:{include:{attempts:{orderBy:{attemptNumber:'desc'},take:1},providerConnectionVersion:{include:{connection:{select:{provider:true,connectionKey:true}}}}}},reconciliations:{orderBy:[{occurredAt:'desc'},{recordedAt:'desc'}],take:1},fulfillment:{include:{order:{select:{orderNo:true,status:true}},shipments:{select:{status:true}}}}},
    orderBy:[{requestedAt:'desc'},{fulfillment:{order:{orderNo:'desc'}}},{fulfillment:{fulfillmentKey:'desc'}}],take:take+1,
   });

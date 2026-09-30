@@ -1,6 +1,8 @@
 import {PrismaClient} from '@prisma/client';
 import {randomUUID} from 'node:crypto';
 import {ErpReconciliationBridgeService} from '../src/modules/commerce/erp-reconciliation-bridge.service';
+import {AdminOperationsService} from '../src/modules/admin-operations/admin-operations.service';
+import {AuditService} from '../src/common/audit/audit.service';
 
 const url=process.env.PHASE2_TEST_DATABASE_URL;
 const describeDb=url?describe:describe.skip;
@@ -20,6 +22,8 @@ describeDb('ERP_RECONCILIATION_BRIDGE_REAL_DB',()=>{
    const handoff=await tx.fulfillmentErpHandoff.create({data:{fulfillmentId:fulfillment.fulfillmentId,outboxEventId:event.outboxEventId,providerCode:'EZTOOL',formatVersion:'UCELL_FULFILLMENT_ERP_V1',payloadHash:'a'.repeat(64),payloadSnapshot:payload,requestedByActor:randomUUID()}});
    await tx.fulfillmentErpReconciliation.create({data:{fulfillmentErpHandoffId:handoff.fulfillmentErpHandoffId,resultKey:'bridge-result',resultHash:'b'.repeat(64),outcome:'MISMATCH',reasonCode:'ERP_SERIAL_MISMATCH',resultSnapshot:{schemaVersion:1,lines:[{sku:'BRIDGE-SKU',quantity:'1',serialNos:['A9010002']}]},occurredAt:new Date(),reportedByActor:randomUUID()}});
    await tx.operationalException.create({data:{sourceType:'ERP_RECONCILIATION',sourceId:`${order.orderNo}:${fulfillment.fulfillmentKey}:${'b'.repeat(64)}`,exceptionCode:'FULFILLMENT_ERP_MISMATCH',severity:'CRITICAL',summary:'Synthetic stored mismatch evidence',evidenceHash:'b'.repeat(64)}});
+   const operations=new AdminOperationsService({$transaction:(work:any)=>work(tx)} as any,new AuditService()),exception=await tx.operationalException.findFirstOrThrow({where:{sourceId:`${order.orderNo}:${fulfillment.fulfillmentKey}:${'b'.repeat(64)}`}});
+   await expect(operations.transitionOperationalException(exception.operationalExceptionId,'RESOLVED',randomUUID(),'CASE-BRIDGE-01',randomUUID(),randomUUID())).rejects.toMatchObject({response:{code:'OPERATIONS_SOURCE_RECONCILIATION_REQUIRED'}});
    const result=await new ErpReconciliationBridgeService({$transaction:(work:any)=>work(tx)} as any).list({orderNo:order.orderNo.toString(),status:'MISMATCH',asOf:new Date(Date.now()+1000).toISOString()}),serialized=JSON.stringify(result);
    expect(result.items).toHaveLength(1);expect(result.items[0]).toMatchObject({orderNo:order.orderNo.toString(),bridgeStatus:'MISMATCH',ucell:{orderStatus:'PAID',fulfillmentStatus:'PACKED'},erp:{expected:[{sku:'BRIDGE-SKU',quantity:'1',serialCount:1}],actual:[{sku:'BRIDGE-SKU',quantity:'1',serialCount:1}]},shipment:{status:'NOT_CREATED',count:0},evidence:{exceptionCode:'FULFILLMENT_ERP_MISMATCH',exceptionSeverity:'CRITICAL',exceptionStatus:'OPEN'}});
    for(const hidden of [person.personId,fulfillment.fulfillmentId,handoff.fulfillmentErpHandoffId,event.outboxEventId,privateName])expect(serialized).not.toContain(hidden);
@@ -32,6 +36,9 @@ describeDb('ERP_RECONCILIATION_BRIDGE_REAL_DB',()=>{
    const second=await service.list({...filter,cursor:first.nextCursor!});expect(second.items).toHaveLength(1);expect(second.items[0].fulfillmentKey).toBe(other.fulfillmentKey);expect(second.nextCursor).toBeNull();expect(second.items[0].erp.reasonCode).toBe('ERP_BRIDGE_REQUIRES_ATTENTION');expect(JSON.stringify(second)).not.toContain('secret-token');
    await tx.fulfillmentErpReconciliation.create({data:{fulfillmentErpHandoffId:handoff.fulfillmentErpHandoffId,resultKey:'bridge-matched',resultHash:'c'.repeat(64),outcome:'MATCHED',reasonCode:'ERP_EXACT_MATCH',resultSnapshot:{lines:payload.lines},occurredAt:new Date(Date.now()+100),reportedByActor:randomUUID()}});
    const matched=await service.list({orderNo:order.orderNo.toString(),status:'RECONCILED',asOf:new Date(Date.now()+1000).toISOString()});expect(matched.items[0].evidence.exceptionStatus).toBe('OPEN');expect(matched.items[0].evidence.exceptionCode).toBe('FULFILLMENT_ERP_MISMATCH');expect(await tx.operationalException.count({where:{sourceType:'ERP_RECONCILIATION',status:'OPEN',sourceId:`${order.orderNo}:${fulfillment.fulfillmentKey}:${'b'.repeat(64)}`}})).toBe(1);
+   const unrelated=await tx.operationalException.create({data:{sourceType:'ERP_HANDOFF',sourceId:`${order.orderNo}:${other.fulfillmentKey}`,exceptionCode:'ERP_HANDOFF_REQUIRES_RECONCILIATION',severity:'HIGH',summary:'Other handoff remains failed'}});
+   await expect(operations.transitionOperationalException(unrelated.operationalExceptionId,'RESOLVED',randomUUID(),'CASE-BRIDGE-02',randomUUID(),randomUUID())).rejects.toMatchObject({response:{code:'OPERATIONS_SOURCE_RECONCILIATION_REQUIRED'}});
+   expect((await operations.transitionOperationalException(exception.operationalExceptionId,'RESOLVED',randomUUID(),'CASE-BRIDGE-03',randomUUID(),randomUUID())).status).toBe('RESOLVED');
    throw new Error(ROLLBACK);
   })).rejects.toThrow(ROLLBACK);
  });

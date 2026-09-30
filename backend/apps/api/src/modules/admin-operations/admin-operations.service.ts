@@ -8,6 +8,7 @@ import { periodCloseCandidates } from './period-close-invariants';
 import { orderEconomicEvidence } from './order-economic-evidence';
 import {createFinanceReviewArtifact,readFinanceReviewArtifact} from './payout-review-artifact';
 import {lineageSourceSummary} from './lineage-source-summary';
+import {requireErpExceptionReconciliation} from './erp-exception-resolution';
 
 @Injectable()
 export class AdminOperationsService {
@@ -328,8 +329,10 @@ export class AdminOperationsService {
     if(!actorId) throw new UnprocessableEntityException('Authenticated actor is required');
     if(!['ACKNOWLEDGED','INVESTIGATING','RESOLVED'].includes(status)) throw new UnprocessableEntityException('INVALID_OPERATIONAL_EXCEPTION_STATUS');
     return this.prisma.$transaction(async tx=>{
+      await tx.$queryRaw`SELECT operational_exception_id FROM integration.operational_exception WHERE operational_exception_id=${id}::uuid FOR UPDATE`;
       const row=await tx.operationalException.findUniqueOrThrow({where:{operationalExceptionId:id}});
       if(row.status==='RESOLVED') throw new ConflictException('Operational exception is already resolved');
+      if(status==='RESOLVED')await requireErpExceptionReconciliation(tx,row);
       const now=new Date();
       const updated=await tx.operationalException.update({where:{operationalExceptionId:id},data:{status,acknowledgedByActor:status==='ACKNOWLEDGED'||status==='INVESTIGATING'?actorId:row.acknowledgedByActor,acknowledgedAt:status==='ACKNOWLEDGED'||status==='INVESTIGATING'?now:row.acknowledgedAt,resolvedByActor:status==='RESOLVED'?actorId:undefined,resolvedAt:status==='RESOLVED'?now:undefined,resolutionNote:status==='RESOLVED'?note?.trim()||null:undefined}});
       await this.audit.write(tx,{actorType:'USER',actorId,action:'OPERATIONAL_EXCEPTION_TRANSITIONED',entityType:'OPERATIONAL_EXCEPTION',entityId:id,afterData:{from:row.status,to:status,note:status==='RESOLVED'?note?.trim()||null:null},requestId,correlationId});
@@ -364,6 +367,7 @@ export class AdminOperationsService {
     if(!actorId) throw new UnprocessableEntityException('Authenticated actor is required');
     if(!['ACKNOWLEDGED','COMPLETED'].includes(status)) throw new UnprocessableEntityException('INVALID_OPERATIONAL_TASK_STATUS');
     return this.prisma.$transaction(async tx=>{
+      await tx.$queryRaw`SELECT operational_task_id FROM integration.operational_task WHERE operational_task_id=${id}::uuid FOR UPDATE`;
       const row=await tx.operationalTask.findUniqueOrThrow({where:{operationalTaskId:id}});
       if(row.status==='COMPLETED') throw new ConflictException('Operational task is already completed');
       const now=new Date();
