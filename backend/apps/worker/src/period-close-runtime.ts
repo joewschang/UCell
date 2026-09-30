@@ -1,11 +1,9 @@
-import {Prisma,PrismaService,claimPeriodCloseJob,processPeriodCloseJob,releaseFailedOutboxLease} from '@ucell/database';
+import {Prisma,PrismaService,claimPeriodCloseJob,processPeriodCloseJob,releaseFailedOutboxLease,periodCloseInputState} from '@ucell/database';
 import {executePeriodClose} from '@ucell/settlement';
 
-const sourceEvents=['SALE_CONFIRMED','WEB_MEMBER_RETAIL_PAYMENT_CONFIRMED','RETURN_CONFIRMED','RETURN_DEPENDENCY_REPLAY_REQUIRED','EPV_MONTH_RECALCULATION_REQUIRED','RPV_REVERSAL_REQUIRED'];
 async function inputsReady(db:Pick<Prisma.TransactionClient,'outboxEvent'|'monthlyRecognitionSchedule'>,job:{periodEnd:Date;ruleVersionCode:string}){
   // Conservative barrier: unresolved economic source events block all closes.
-  if(await db.outboxEvent.count({where:{eventType:{in:sourceEvents},processStatus:{not:'PROCESSED'}}}))return false;
-  return await db.monthlyRecognitionSchedule.count({where:{ruleVersionCode:job.ruleVersionCode,dueAt:{lt:job.periodEnd},status:{in:['SCHEDULED','DUE']}}})===0;
+  return (await periodCloseInputState(db,job)).ready;
 }
 
 export async function pollPeriodCloseJobs(db:PrismaService,environment:NodeJS.ProcessEnv=process.env,execute=executePeriodClose){

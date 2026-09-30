@@ -13,7 +13,7 @@ describe('settlement job HTTP authorization and input contract',()=>{
   let app:NestFastifyApplication;
   const id='00000000-0000-4000-8000-000000000701';
   const row={periodCloseJobId:id,outbox:{processStatus:'PENDING'},receipt:null};
-  const db={periodCloseJob:{findUnique:jest.fn(async()=>row),findMany:jest.fn(async()=>[row])},$transaction:jest.fn(async()=>{})};
+  const db:any={periodCloseJob:{findUnique:jest.fn(async()=>row),findMany:jest.fn(async()=>[row])},$transaction:jest.fn(async(work:any)=>work(db))};
   beforeAll(async()=>{
     const module=await Test.createTestingModule({controllers:[SettlementJobsController],providers:[
       {provide:PrismaService,useValue:db},{provide:SettlementCalendarService,useValue:{}},{provide:AuditService,useValue:{write:jest.fn()}},
@@ -33,5 +33,12 @@ describe('settlement job HTTP authorization and input contract',()=>{
   it('rejects malformed periods and caller-supplied actor fields before admission',async()=>{
     const response=await app.inject({method:'POST',url:'/admin/settlement-jobs',headers:{authorization:'Bearer FINANCE'},payload:{kind:'REFERRAL_K0',periodStart:'invalid',periodEnd:'invalid',ruleVersionCode:'R1.0B',prerequisiteIds:[],approvalReference:'REF',requestedBy:id}});
     expect(response.statusCode).toBe(400);
+  });
+  it('validates operator thresholds and exposes a bounded operational read',async()=>{
+    const headers={authorization:'Bearer FINANCE'};
+    for(const thresholdHours of ['0','-1','1.5','8761','invalid'])expect((await app.inject({method:'GET',url:'/admin/settlement-jobs?thresholdHours='+thresholdHours,headers})).statusCode).toBe(400);
+    const response=await app.inject({method:'GET',url:'/admin/settlement-jobs?thresholdHours=24',headers});
+    expect(response.statusCode).toBe(200);
+    expect(response.json().data[0].operational).toMatchObject({state:'EVIDENCE_INCONSISTENT',thresholdHours:24});
   });
 });

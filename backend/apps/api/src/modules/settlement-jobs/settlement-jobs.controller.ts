@@ -1,8 +1,8 @@
 import {Body,Controller,Get,Param,ParseUUIDPipe,Post,Query,Req,UsePipes,ValidationPipe,UnauthorizedException,NotFoundException,ConflictException,BadRequestException} from '@nestjs/common';
-import {ApiBearerAuth,ApiOperation,ApiTags} from '@nestjs/swagger';
+import {ApiBearerAuth,ApiOperation,ApiTags,ApiQuery} from '@nestjs/swagger';
 import {ArrayMaxSize,IsArray,IsIn,IsISO8601,IsInt,IsOptional,IsString,IsUUID,Length,Max,Min} from 'class-validator';
 import {Type} from 'class-transformer';
-import {PrismaService,enqueuePeriodCloseJob,PeriodCloseKind} from '@ucell/database';
+import {PrismaService,Prisma,enqueuePeriodCloseJob,PeriodCloseKind,periodCloseOperationalState} from '@ucell/database';
 import {SettlementCalendarService} from '@ucell/settlement';
 import {randomUUID} from 'node:crypto';
 import {Roles} from '../auth/roles.decorator';
@@ -19,6 +19,7 @@ export class CreateSettlementJobDto {
 export class ListSettlementJobsDto {
   @IsOptional() @IsIn(['PENDING','PROCESSING','PROCESSED','DEAD']) status?:'PENDING'|'PROCESSING'|'PROCESSED'|'DEAD';
   @IsOptional() @Type(()=>Number) @IsInt() @Min(1) @Max(200) take=50;
+  @IsOptional() @Type(()=>Number) @IsInt() @Min(1) @Max(8760) thresholdHours?:number;
 }
 export class RetrySettlementJobDto {@IsString() @Length(3,500) reason!:string;}
 @ApiTags('Admin - Settlement Jobs')
@@ -45,17 +46,22 @@ export class SettlementJobsController {
   }
   @Get()
   @ApiOperation({operationId:'adminListSettlementJobs',summary:'列出近期結算工作與執行狀態'})
+  @ApiQuery({name:'thresholdHours',required:false,schema:{type:'integer',minimum:1,maximum:8760},description:'Operator-selected overdue threshold from approved cutoff or award maturity, whichever is later. Omission leaves overdue unassessed.'})
   @UsePipes(new ValidationPipe({transform:true,whitelist:true,forbidNonWhitelisted:true}))
   async list(@Query() query:ListSettlementJobsDto){
-    const rows=await this.db.periodCloseJob.findMany({where:query.status?{outbox:{processStatus:query.status}}:undefined,include:{receipt:true,outbox:true},orderBy:{createdAt:'desc'},take:query.take});
-    return {data:rows.map(row=>this.view(row))};
+    return this.db.$transaction(async tx=>{
+      const rows=await tx.periodCloseJob.findMany({where:query.status?{outbox:{processStatus:query.status}}:undefined,include:{receipt:true,outbox:true},orderBy:[{createdAt:'desc'},{periodCloseJobId:'asc'}],take:query.take});
+      const now=new Date();return {data:await Promise.all(rows.map(row=>this.view(tx,row,now,query.thresholdHours)))};
+    },{isolationLevel:Prisma.TransactionIsolationLevel.RepeatableRead,timeout:30000});
   }
   @Get(':id')
   @ApiOperation({operationId:'adminGetSettlementJob',summary:'查看結算工作與完成憑證'})
   async get(@Param('id',ParseUUIDPipe) id:string){
-    const row=await this.db.periodCloseJob.findUnique({where:{periodCloseJobId:id},include:{receipt:true,outbox:true}});
-    if(!row)throw new NotFoundException('PERIOD_CLOSE_JOB_NOT_FOUND');
-    return {data:this.view(row)};
+    return this.db.$transaction(async tx=>{
+      const row=await tx.periodCloseJob.findUnique({where:{periodCloseJobId:id},include:{receipt:true,outbox:true}});
+      if(!row)throw new NotFoundException('PERIOD_CLOSE_JOB_NOT_FOUND');
+      return {data:await this.view(tx,row,new Date())};
+    },{isolationLevel:Prisma.TransactionIsolationLevel.RepeatableRead});
   }
   @Post(':id/retry')
   @Roles('SUPER_ADMIN','FINANCE')
@@ -74,5 +80,5 @@ export class SettlementJobsController {
     },{isolationLevel:'Serializable'});
     return this.get(id);
   }
-  private view(row:any){return {id:row.periodCloseJobId,kind:row.kind,periodStart:row.periodStart,periodEnd:row.periodEnd,ruleVersionCode:row.ruleVersionCode,prerequisiteIds:row.prerequisiteIds,approvalReference:row.approvalReference,requestedBy:row.requestedBy,createdAt:row.createdAt,status:row.outbox.processStatus,attemptCount:row.outbox.attemptCount,availableAt:row.outbox.availableAt,lastError:row.outbox.lastError,completedAt:row.receipt?.completedAt??null,receipt:row.receipt};}
+  private async view(tx:Prisma.TransactionClient,row:any,now:Date,thresholdHours?:number){return {id:row.periodCloseJobId,kind:row.kind,periodStart:row.periodStart,periodEnd:row.periodEnd,ruleVersionCode:row.ruleVersionCode,prerequisiteIds:row.prerequisiteIds,approvalReference:row.approvalReference,requestedBy:row.requestedBy,createdAt:row.createdAt,status:row.outbox.processStatus,attemptCount:row.outbox.attemptCount,availableAt:row.outbox.availableAt,lastError:row.outbox.lastError?'PERIOD_CLOSE_EXECUTION_FAILED':null,completedAt:row.receipt?.completedAt??null,receipt:row.receipt,operational:await periodCloseOperationalState(tx,row,{now,thresholdHours})};}
 }

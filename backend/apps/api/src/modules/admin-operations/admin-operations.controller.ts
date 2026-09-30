@@ -1,6 +1,6 @@
 import { Roles } from '../auth/roles.decorator';
 import { Body,Controller,Get,Headers,Param,Post,Query,Req,UseGuards } from '@nestjs/common';
-import { ApiBearerAuth,ApiHeader,ApiOperation,ApiTags,ApiProperty } from '@nestjs/swagger';
+import { ApiBearerAuth,ApiHeader,ApiOperation,ApiTags,ApiProperty,ApiQuery } from '@nestjs/swagger';
 import {IsInt,Min,Max} from 'class-validator';
 import { randomUUID } from 'crypto';
 import { AdminOperationsService } from './admin-operations.service';
@@ -90,7 +90,8 @@ export class AdminOperationsController{
   @Roles('SUPER_ADMIN','FINANCE','COMPLIANCE_AUDIT')
   @Get('invariant-candidates')
   @ApiOperation({operationId:'adminOperationalInvariantCandidates',summary:'讀取可稽核的營運不變量候選，不修改來源資料'} )
-  invariantCandidates(@Query('take') take?:string){return this.service.invariantCandidates({take:Number(take??100)}).then(data=>({data}));}
+  @ApiQuery({name:'thresholdHours',required:false,schema:{type:'integer',minimum:1,maximum:8760},description:'Explicit operational threshold for incomplete period jobs; omit to assess only failure and evidence invariants.'})
+  invariantCandidates(@Query('take') take?:string,@Query('thresholdHours') thresholdHours?:string){return this.service.invariantCandidates({take:Number(take??100),thresholdHours:thresholdHours===undefined?undefined:Number(thresholdHours)}).then(data=>({data}));}
 
   @Roles('SUPER_ADMIN','ORDER_OPS','COMPLIANCE_AUDIT')
   @Get('exceptions')

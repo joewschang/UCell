@@ -14,6 +14,8 @@ import {AuditService} from '../src/common/audit/audit.service';
 import {execFileSync} from 'node:child_process';
 import {join} from 'node:path';
 import {pollPeriodCloseJobs} from '../../worker/src/period-close-runtime';
+import {periodCloseOperationalState,periodJobReference} from '@ucell/database';
+import {periodCloseCandidates} from '../src/modules/admin-operations/period-close-invariants';
 
 const url=process.env.PHASE2_TEST_DATABASE_URL;
 (url?describe:describe.skip)('durable period-close admission, dependencies and fenced execution',()=>{
@@ -53,12 +55,47 @@ const url=process.env.PHASE2_TEST_DATABASE_URL;
     return enqueuePeriodCloseJob(db,{kind,periodStart:start,periodEnd:end,ruleVersionCode:code,prerequisiteIds,approvalReference,requestedBy:'TEST_FINANCE'},tx=>new SettlementCalendarService(db as any).captureForPeriod(tx,start,end,kind,code));
   }
   const execute=executePeriodClose;
+  it('projects due monthly-recognition waits without including another rule or the next period',async()=>{
+    const code=await rule(),job=await enqueue('REFERRAL_K0',code);
+    const person=await db.person.create({data:{legalName:'Synthetic recognition dependency'}});
+    const q=await db.qualification.create({data:{currentHolderPersonId:person.personId,planLevelCode:'STARTER'}});
+    const plan=await db.subscriptionPlan.create({data:{planCode:randomUUID(),displayName:'Dependency fixture',durationMonths:3,prepaidAmount:300,productBoxQty:2,monthlyRecognizedAmount:100,monthlyRpv:10}});
+    const subscription=await db.subscription.create({data:{qualificationId:q.qualificationId,subscriptionPlanId:plan.subscriptionPlanId,status:'ACTIVE',startMonth:start,endMonth:end,ruleVersionCode:code}});
+    const schedules=[];
+    for(let index=0;index<3;index++)schedules.push(await db.monthlyRecognitionSchedule.create({data:{subscriptionId:subscription.subscriptionId,installmentNo:index+1,recognitionMonth:new Date(start.getTime()+index*31*86400000),recognizedAmount:100,rpvAmount:10,dueAt:index===1?end:start,ruleVersionCode:index===2?'OTHER_RULE':code}}));
+    const read=()=>db.$transaction(async tx=>periodCloseOperationalState(tx,await tx.periodCloseJob.findUniqueOrThrow({where:{periodCloseJobId:job.periodCloseJobId},include:{receipt:true,outbox:true}})));
+    expect(await read()).toMatchObject({state:'WAITING_RECOGNITION',waiting:{recognitions:1}});
+    expect((await db.outboxEvent.findUniqueOrThrow({where:{outboxEventId:job.outboxEventId}})).attemptCount).toBe(0);
+    await db.monthlyRecognitionSchedule.update({where:{recognitionId:schedules[0].recognitionId},data:{status:'CANCELLED'}});
+    expect(await read()).toMatchObject({state:'READY',waiting:{recognitions:0}});
+    await processPeriodCloseJob(db,(await claimPeriodCloseJob(db,job.periodCloseJobId))!,execute);
+    expect(await read()).toMatchObject({state:'COMPLETED',overdue:false});
+  });
+  it('reads dependency/source waits, safe failure evidence and exact operator overdue boundaries',async()=>{
+    const code=await rule(),binary=await enqueue('BINARY_K1',code),matching=await enqueue('MATCHING_K2',code,[binary.periodCloseJobId]);
+    const read=(id:string,now=new Date(),thresholdHours?:number)=>db.$transaction(async tx=>periodCloseOperationalState(tx,await tx.periodCloseJob.findUniqueOrThrow({where:{periodCloseJobId:id},include:{receipt:true,outbox:true}}),{now,thresholdHours}),{isolationLevel:'RepeatableRead'});
+    expect(await read(matching.periodCloseJobId)).toMatchObject({state:'WAITING_PREREQUISITE',overdue:null,waiting:{prerequisites:1},dependencies:[{reference:periodJobReference(binary.periodCloseJobId),kind:'BINARY_K1',complete:false}]});
+    expect((await read(binary.periodCloseJobId,new Date(end.getTime()+3600000-1),1)).overdue).toBe(false);
+    expect((await read(binary.periodCloseJobId,new Date(end.getTime()+3600000),1)).overdue).toBe(true);
+    const event=await db.outboxEvent.create({data:{eventType:'SALE_CONFIRMED',aggregateType:'TEST',aggregateId:randomUUID(),payload:{},correlationId:randomUUID()}});
+    expect(await read(binary.periodCloseJobId)).toMatchObject({state:'WAITING_SOURCE_INPUTS',waiting:{sourceEvents:1}});
+    await db.outboxEvent.update({where:{outboxEventId:event.outboxEventId},data:{processStatus:'PROCESSED'}});
+    await db.outboxEvent.update({where:{outboxEventId:binary.outboxEventId},data:{processStatus:'DEAD',lastError:'private-token=secret@example.test'}});
+    const controller=new SettlementJobsController(db as any,new SettlementCalendarService(db as any),new AuditService());
+    const response=await controller.get(binary.periodCloseJobId);
+    expect(response.data.operational.state).toBe('FAILED');expect(JSON.stringify(response)).not.toContain('secret@example.test');
+    const candidates=await db.$transaction(tx=>periodCloseCandidates(tx,200,24));
+    expect(candidates).toEqual(expect.arrayContaining([expect.objectContaining({code:'PERIOD_CLOSE_DEAD',reference:periodJobReference(binary.periodCloseJobId)}),expect.objectContaining({code:'PERIOD_CLOSE_OVERDUE',reference:periodJobReference(matching.periodCloseJobId)})]));
+    expect(JSON.stringify(candidates)).not.toContain(binary.periodCloseJobId);expect(JSON.stringify(candidates)).not.toContain('private-token');
+    await db.outboxEvent.update({where:{outboxEventId:binary.outboxEventId},data:{processStatus:'PROCESSED'}});
+    expect((await read(binary.periodCloseJobId)).state).toBe('EVIDENCE_INCONSISTENT');
+  });
   it('dispatches real Binary and dependent Matching jobs through the Worker poller',async()=>{
     const code=await rule(),binary=await enqueue('BINARY_K1',code),matching=await enqueue('MATCHING_K2',code,[binary.periodCloseJobId]);
     expect((await pollPeriodCloseJobs(db as any,{PERIOD_CLOSE_WORKER_ENABLED:'true'})).completed).toBe(1);
     expect(await db.periodCloseReceipt.findUnique({where:{periodCloseJobId:matching.periodCloseJobId}})).toBeNull();
     expect((await pollPeriodCloseJobs(db as any,{PERIOD_CLOSE_WORKER_ENABLED:'true'})).completed).toBe(1);
-    expect(await db.periodCloseReceipt.count()).toBe(2);
+    expect(await db.periodCloseReceipt.count({where:{periodCloseJobId:{in:[binary.periodCloseJobId,matching.periodCloseJobId]}}})).toBe(2);
     expect((await pollPeriodCloseJobs(db as any,{PERIOD_CLOSE_WORKER_ENABLED:'true'})).completed).toBe(0);
   });
   it('records authenticated admission and audit atomically, with one audit on replay',async()=>{
@@ -225,10 +262,13 @@ const url=process.env.PHASE2_TEST_DATABASE_URL;
   });
   it('waits for award maturity without a lease or retry attempt',async()=>{
     const code=await rule(),job=await preparation(code);
-    await directAward(code,start,new Date(Date.now()+86400000));
+    const maturesAt=new Date(Date.now()+86400000);
+    await directAward(code,start,maturesAt);
     for(let i=0;i<3;i++)expect(await claimPeriodCloseJob(db,job.periodCloseJobId)).toBeNull();
     expect((await db.outboxEvent.findUniqueOrThrow({where:{outboxEventId:job.outboxEventId}})).attemptCount).toBe(0);
     expect(await db.payableEntry.count({where:{ruleVersionCode:code}})).toBe(0);
+    const state=await db.$transaction(async tx=>periodCloseOperationalState(tx,await tx.periodCloseJob.findUniqueOrThrow({where:{periodCloseJobId:job.periodCloseJobId},include:{receipt:true,outbox:true}}),{thresholdHours:1}));
+    expect(state).toMatchObject({state:'WAITING_MATURITY',overdue:false,maturesAt:maturesAt.toISOString(),eligibleAt:maturesAt.toISOString()});
   });
   it('atomically matures and materializes only this period/rule, with rollback and replay protection',async()=>{
     const code=await rule(),job=await preparation(code);

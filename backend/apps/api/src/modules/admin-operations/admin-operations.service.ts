@@ -4,6 +4,7 @@ import { AuditService } from '../../common/audit/audit.service';
 import { IdempotencyService } from '../../common/idempotency/idempotency.service';
 import { createHash } from 'node:crypto';
 import { companyReservoirCandidates } from './company-reservoir-invariants';
+import { periodCloseCandidates } from './period-close-invariants';
 import { orderEconomicEvidence } from './order-economic-evidence';
 import {createFinanceReviewArtifact,readFinanceReviewArtifact} from './payout-review-artifact';
 import {lineageSourceSummary} from './lineage-source-summary';
@@ -256,10 +257,11 @@ export class AdminOperationsService {
     return entries.sort((left,right)=>right.occurredAt.localeCompare(left.occurredAt)||left.source.localeCompare(right.source)||left.eventCode.localeCompare(right.eventCode)).slice(0,take);
   }
 
-  async invariantCandidates(input:{take?:number}={}){
+  async invariantCandidates(input:{take?:number;thresholdHours?:number}={}){
+    if(input.thresholdHours!==undefined&&(!Number.isInteger(input.thresholdHours)||input.thresholdHours<1||input.thresholdHours>8760))throw new UnprocessableEntityException('PERIOD_CLOSE_THRESHOLD_INVALID');
     const requested=Number.isFinite(input.take)?input.take??100:100;
     const take=Math.min(Math.max(requested,1),200);
-    const [batches,payables,overdueRecognitions,allocations,companyCandidates]=await Promise.all([
+    const [batches,payables,overdueRecognitions,allocations,companyCandidates,periodCandidates]=await Promise.all([
       this.prisma.payoutBatch.findMany({include:{lines:{select:{netAmount:true}}},orderBy:{periodEnd:'desc'},take}),
       this.prisma.payableEntry.findMany({where:{sourceType:'BONUS_AWARD'},include:{qualification:{select:{qualificationNo:true}}},orderBy:{createdAt:'desc'},take}),
       this.prisma.monthlyRecognitionSchedule.findMany({
@@ -272,6 +274,7 @@ export class AdminOperationsService {
         orderBy:[{createdAt:'desc'},{fulfillmentSourceAllocationId:'asc'}],take,
       }),
       this.prisma.$transaction(tx=>companyReservoirCandidates(tx,take),{isolationLevel:Prisma.TransactionIsolationLevel.RepeatableRead}),
+      this.prisma.$transaction(tx=>periodCloseCandidates(tx,take,input.thresholdHours),{isolationLevel:Prisma.TransactionIsolationLevel.RepeatableRead,timeout:30000}),
     ]);
     const awardIds=payables.map(row=>row.sourceId);
     const awards=awardIds.length?await this.prisma.bonusAward.findMany({where:{bonusAwardId:{in:awardIds}},select:{bonusAwardId:true}}):[];
@@ -311,7 +314,7 @@ export class AdminOperationsService {
         add('FULFILLMENT_HANDOFF_SERIAL_QUANTITY_MISMATCH',{allocatedQuantity:row.allocatedQuantity.toString(),serialCount:row.serialAllocations.length});
       return candidates;
     });
-    return [...payoutCandidates,...payableCandidates,...recognitionCandidates,...fulfillmentCandidates,...companyCandidates].sort((left,right)=>left.code.localeCompare(right.code)||left.reference.localeCompare(right.reference)||left.evidenceHash.localeCompare(right.evidenceHash));
+    return [...payoutCandidates,...payableCandidates,...recognitionCandidates,...fulfillmentCandidates,...companyCandidates,...periodCandidates].sort((left,right)=>left.code.localeCompare(right.code)||left.reference.localeCompare(right.reference)||left.evidenceHash.localeCompare(right.evidenceHash));
   }
 
   async operationalExceptions(input:{status?:string;take?:number}={}){
