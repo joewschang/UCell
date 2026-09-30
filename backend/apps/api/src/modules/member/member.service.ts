@@ -1,5 +1,5 @@
 import { ConflictException, ForbiddenException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
-import { PrismaService } from '@ucell/database';
+import { PrismaService,memberMessageText } from '@ucell/database';
 import { createHash, randomUUID } from 'crypto';
 import { AuditService } from '../../common/audit/audit.service';
 import { IdentityTokenService } from '../auth/identity-token.service';
@@ -51,7 +51,7 @@ export class MemberService {
   await this.context(personId,qualificationId);
   const result=await this.mutation(`member:notification:read:${personId}`,key,{qualificationId,notificationId},async tx=>{
    await new QualificationAccessService(tx as any).assertHolder(personId,qualificationId);
-   const notice=await tx.memberNotification.findFirst({where:{notificationId,personId,OR:[{qualificationId:null},{qualificationId}]}});
+   const notice=await tx.memberNotification.findFirst({where:{notificationId,personId,publishedAt:{lte:new Date()},archives:{none:{personId}},AND:[{OR:[{expiresAt:null},{expiresAt:{gt:new Date()}}]},{OR:[{retiredAt:null},{retiredAt:{gt:new Date()}}]}],OR:[{qualificationId:null},{qualificationId}]}});
    if(!notice)throw new NotFoundException({code:'NOTIFICATION_NOT_FOUND'});
    const existing=await tx.memberNotificationRead.findUnique({where:{notificationId_personId:{notificationId,personId}}});
    const read=existing??await tx.memberNotificationRead.create({data:{notificationId,personId}});
@@ -63,8 +63,8 @@ export class MemberService {
   await this.context(personId,qualificationId);
   return this.db.$transaction(async tx=>{
    await new QualificationAccessService(tx as any).assertHolder(personId,qualificationId);
-   const rows=await tx.memberNotification.findMany({where:{personId,OR:[{qualificationId:null},{qualificationId}]},include:{reads:{where:{personId}}},orderBy:[{createdAt:'desc'},{notificationId:'desc'}],take:100});
-   return {qualificationId,notices:rows.map(row=>({id:row.notificationId,qualificationId:row.qualificationId,category:row.category,title:row.title,body:row.body,timeLabel:row.createdAt.toISOString(),readAt:row.reads[0]?.readAt.toISOString()??null})),pagination:{limit:100,truncated:rows.length===100}};
+   const rows=await tx.memberNotification.findMany({where:{personId,publishedAt:{lte:new Date()},archives:{none:{personId}},AND:[{OR:[{expiresAt:null},{expiresAt:{gt:new Date()}}]},{OR:[{retiredAt:null},{retiredAt:{gt:new Date()}}]}],OR:[{qualificationId:null},{qualificationId}]},include:{reads:{where:{personId}}},orderBy:[{createdAt:'desc'},{notificationId:'desc'}],take:100});
+   return {qualificationId,notices:rows.map(row=>({id:row.notificationId,qualificationId:row.qualificationId,category:['SERVICE','ORDER','ACCOUNT'].includes(row.category)?row.category:'SERVICE',title:memberMessageText(row.title),body:memberMessageText(row.body),timeLabel:row.createdAt.toISOString(),readAt:row.reads[0]?.readAt.toISOString()??null})),pagination:{limit:100,truncated:rows.length===100}};
   },{isolationLevel:'RepeatableRead'});
  }
  async qualifications(personId:string){

@@ -1250,6 +1250,14 @@ model MemberEventRegistration {
 }
 
 model MemberNotification {
+  messageKey      String?                  @unique @map("message_key")
+  sourceType      String?                  @map("source_type")
+  sourceReference String?                  @map("source_reference")
+  deepLink        String?                  @map("deep_link")
+  publishedAt     DateTime                 @default(now()) @map("published_at") @db.Timestamptz(6)
+  expiresAt       DateTime?                @map("expires_at") @db.Timestamptz(6)
+  retiredAt       DateTime?                @map("retired_at") @db.Timestamptz(6)
+  archives        MemberNotificationArchive[]
   sourceEventId   String?                  @unique @map("source_event_id") @db.Uuid
   reads           MemberNotificationRead[]
   notificationId  String                   @id @default(uuid()) @map("notification_id") @db.Uuid
@@ -1276,6 +1284,16 @@ model MemberNotificationRead {
 
   @@id([notificationId, personId])
   @@map("member_notification_read")
+  @@schema("integration")
+}
+
+model MemberNotificationArchive {
+  notificationId String @map("notification_id") @db.Uuid
+  personId String @map("person_id") @db.Uuid
+  archivedAt DateTime @default(now()) @map("archived_at") @db.Timestamptz(6)
+  notification MemberNotification @relation(fields:[notificationId,personId],references:[notificationId,personId])
+  @@id([notificationId,personId])
+  @@map("member_notification_archive")
   @@schema("integration")
 }
 

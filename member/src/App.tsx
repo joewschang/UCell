@@ -1,3 +1,4 @@
+import MemberMessages from './MemberMessages';
 import { useQualificationFocus } from './useQualificationFocus';
 import { MemberNavigation, IncomeNavigation } from './MemberNavigation';
 import {MemberPageHeader} from './MemberPageHeader';
@@ -155,7 +156,7 @@ function MemberApp() {
     const memberIdentityLabel=memberNo?`會員編號 ${memberNo}`:memberNoStatus==='loading'?'會員編號確認中':'會員編號尚未提供（帳戶資料尚未同步）';
     const {mainRef,begin}=useQualificationFocus(loading,error,current?.id);
     return <MemberAppShell><a className="uc-skip-link" href="#member-main">跳至主要內容</a>
-      <header><div><b>UCell</b><small>{memberIdentityLabel}</small></div>{current && <Link className="notification-link" to="/notifications" aria-label={data.isMock ? `通知中心，${unread} 則未讀` : '通知中心'}>通知{data.isMock ? ` ${unread}` : ''}</Link>}</header>
+      <header><div><b>UCell</b><small>{memberIdentityLabel}</small></div>{(!data.isMock||current) && <Link className="notification-link" to="/notifications" aria-label={data.isMock ? `通知中心，${unread} 則未讀` : '通知中心'}>通知{data.isMock ? ` ${unread}` : ''}</Link>}</header>
       {data.isMock && <aside className="demo-banner" data-environment="mock-visual-only"><strong>DEV 示範模式 · </strong><span>目前為示範資料，不代表真實業績、獎金或訂單。</span></aside>}
       <main ref={mainRef} id="member-main" tabIndex={-1}>{loading ? <LoadingState label={loadingLabel}/> : error ? <ErrorState message={error} retry={()=>{begin();retry()}}/> : current ? <><ContextBar beforeSelect={begin}/><div key={current.id}><Routes>
         <Route path="/" element={<Home q={current}/>}/>
@@ -173,6 +174,7 @@ function MemberApp() {
         <Route path="/notifications" element={<Notifications q={current}/>}/>
         <Route path="*" element={<section className="card"><h2>找不到頁面</h2><Link to="/">返回首頁</Link></section>}/>
       </Routes></div></> : <Routes>
+        <Route path="/notifications" element={<MemberMessages/>}/>
         <Route path="/shop" element={<><WebMemberRetailShop/><QualificationPackageShop onCreated={retry}/></>}/>
         <Route path="/me" element={<Me/>}/>
         <Route path="*" element={<section className="card"><h2>尚未取得會員資格</h2><p>可先完成正式會員資料，再透過正式套組取得第一個會員資格。</p><Link className="text-link" to="/shop">選擇正式會員套組</Link><button onClick={retry}>重新查詢</button><Link className="text-link" to="/me">查看會員資料</Link><EndSession connected={!data.isMock}/></section>}/>
