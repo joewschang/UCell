@@ -13793,6 +13793,81 @@
         ]
       }
     },
+    "/api/v1/admin/operations/control/erp-health": {
+      "get": {
+        "operationId": "adminOperationsErpHealth",
+        "parameters": [
+          {
+            "name": "stream",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "SALES",
+                "RETURN",
+                "COMPENSATION",
+                "FULFILLMENT"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "take",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "asOf",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "thresholdHours",
+            "required": false,
+            "in": "query",
+            "description": "Explicit operational threshold, 1–8760 hours. Omit to detect only failure, mismatch and open exceptions.",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopeDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "分流分頁讀取 ERP 健康與逾期候選；狀態以目前證據為準",
+        "tags": [
+          "Admin - Operations Control"
+        ]
+      }
+    },
     "/api/v1/admin/ops-ready/attachments": {
       "post": {
         "operationId": "adminRegisterAttachment",

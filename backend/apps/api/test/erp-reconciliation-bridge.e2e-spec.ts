@@ -2,7 +2,7 @@ import {BadRequestException} from '@nestjs/common';
 import {ErpReconciliationBridgeController} from '../src/modules/commerce/erp-reconciliation-bridge.controller';
 import {ErpReconciliationBridgeService} from '../src/modules/commerce/erp-reconciliation-bridge.service';
 
-const snapshotDb=(db:any)=>({$transaction:jest.fn((work:any)=>work(db))});
+const snapshotDb=(db:any)=>({$transaction:jest.fn((work:any)=>work({...db,$queryRaw:async()=>((await db.operationalException.findMany())??[]).map((row:any)=>({...row,handoffId:uuid}))}))});
 const uuid='11111111-1111-4111-8111-111111111111';
 const base=(overrides:any={})=>({
  fulfillmentErpHandoffId:uuid,providerCode:'EZTOOL',formatVersion:'UCELL_FULFILLMENT_ERP_V1',payloadHash:'a'.repeat(64),payloadSnapshot:{format:'UCELL_FULFILLMENT_ERP_V1',lines:[{sku:'SKU-1',quantity:'1',serialNos:['A0010001']}]},requestedAt:new Date('2026-09-29T01:00:00Z'),
@@ -12,6 +12,11 @@ const base=(overrides:any={})=>({
 });
 
 describe('ERP_RECONCILIATION_BRIDGE',()=>{
+ it('does not present dispatch preparation or an unknown response as actual sending or acknowledgement',async()=>{
+  const row=base();row.dispatch.attempts[0].outcome='UNKNOWN';row.outboxEvent.processStatus='PENDING';
+  const db={fulfillmentErpHandoff:{findMany:jest.fn().mockResolvedValue([row])},operationalException:{findMany:jest.fn().mockResolvedValue([])}};
+  const result=await new ErpReconciliationBridgeService(snapshotDb(db) as any).list({});expect(result.items[0].timestamps).toMatchObject({sentAt:null,dispatchPreparedAt:row.dispatch.createdAt.toISOString(),acknowledgedAt:null});
+ });
  it('never exposes raw worker errors in the operational reason',async()=>{
   const row=base();row.outboxEvent.lastError='password secret-token member@example.test' as any;row.outboxEvent.processStatus='DEAD';
   const db={fulfillmentErpHandoff:{findMany:jest.fn().mockResolvedValue([row])},operationalException:{findMany:jest.fn().mockResolvedValue([])}};

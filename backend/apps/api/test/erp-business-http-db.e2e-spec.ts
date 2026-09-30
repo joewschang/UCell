@@ -13,6 +13,9 @@ import {ErpPaymentProjectionService} from '../src/modules/commerce/erp-payment-p
 import {ErpPaymentProjectionController} from '../src/modules/commerce/erp-payment-projection.controller';
 import {ErpAccountingMappingController} from '../src/modules/commerce/erp-accounting-mapping.controller';
 import {ErpAccountingMappingService} from '../src/modules/commerce/erp-accounting-mapping.service';
+import {OperationsControlController} from '../src/modules/admin-operations/operations-control.controller';
+import {OperationsControlService} from '../src/modules/admin-operations/operations-control.service';
+import {ErpReconciliationBridgeService} from '../src/modules/commerce/erp-reconciliation-bridge.service';
 import {AuditService} from '../src/common/audit/audit.service';
 import {IdentityTokenService} from '../src/modules/auth/identity-token.service';
 import {AdminAuthenticationGuard} from '../src/modules/auth/admin-authentication.guard';
@@ -26,7 +29,7 @@ const url=process.env.PHASE2_TEST_DATABASE_URL;
   db=new PrismaClient({datasources:{db:{url}}});const tokens=new IdentityTokenService(db as any);
   async function actor(roleCode:string){const person=await db.person.create({data:{legalName:'Synthetic ERP '+roleCode}}),subject=randomUUID();await db.identityLink.create({data:{personId:person.personId,provider:'ENTRA',providerSubject:subject}});await db.adminAccessGrant.create({data:{personId:person.personId,provider:'ENTRA',providerSubject:subject,roleCode,validFrom:new Date(Date.now()-1000)}});return (await tokens.issue({provider:'ENTRA',subject,personId:person.personId,roleCode})).accessToken;}
   finance=await actor('FINANCE');auditor=await actor('COMPLIANCE_AUDIT');orderOps=await actor('ORDER_OPS');
-  const module=await Test.createTestingModule({controllers:[ErpBusinessProjectionController,ErpCompensationProjectionController,ErpPaymentProjectionController,ErpAccountingMappingController],providers:[{provide:PrismaService,useValue:db},AuditService,ErpBusinessProjectionService,ErpCompensationProjectionService,ErpPaymentProjectionService,ErpAccountingMappingService,{provide:IdentityTokenService,useValue:tokens},{provide:ConfigService,useValue:{get:(name:string)=>name==='NODE_ENV'?'production':'false'}},AdminAuthenticationGuard,AdminRoleGuard]}).compile();
+  const module=await Test.createTestingModule({controllers:[ErpBusinessProjectionController,ErpCompensationProjectionController,ErpPaymentProjectionController,ErpAccountingMappingController,OperationsControlController],providers:[{provide:PrismaService,useValue:db},AuditService,ErpBusinessProjectionService,ErpCompensationProjectionService,ErpPaymentProjectionService,ErpAccountingMappingService,OperationsControlService,ErpReconciliationBridgeService,{provide:IdentityTokenService,useValue:tokens},{provide:ConfigService,useValue:{get:(name:string)=>name==='NODE_ENV'?'production':'false'}},AdminAuthenticationGuard,AdminRoleGuard]}).compile();
   app=module.createNestApplication<NestFastifyApplication>(new FastifyAdapter(),{logger:false});app.setGlobalPrefix('api/v1');app.useGlobalPipes(new ValidationPipe({whitelist:true,forbidNonWhitelisted:true,transform:true}));app.useGlobalGuards(module.get(AdminAuthenticationGuard),module.get(AdminRoleGuard));await app.init();await app.getHttpAdapter().getInstance().ready();
  });
  afterAll(async()=>{await app?.close();await db?.$disconnect();});
@@ -114,6 +117,12 @@ const url=process.env.PHASE2_TEST_DATABASE_URL;
   expect((await send()).json().data.replayed).toBe(true);expect((await db.outboxEvent.findUniqueOrThrow({where:{outboxEventId:row.outboxEventId}})).processStatus).toBe('DEAD');
   expect(await db.erpBusinessProjection.findUniqueOrThrow({where:{projectionReference}})).toEqual(row);
   expect(await db.auditEvent.count({where:{entityId:row.projectionId,action:'ERP_PROJECTION_RETRY_REQUESTED'}})).toBe(1);
+ });
+ it('serves ERP health to authenticated financial operations readers with bounded current evidence',async()=>{
+  const f=await fixture(),created=await sales(f.order.orderNo.toString()),projection=await db.erpBusinessProjection.findUniqueOrThrow({where:{projectionReference:created.projectionReference}});await db.outboxEvent.update({where:{outboxEventId:projection.outboxEventId},data:{processStatus:'DEAD',lastError:'SECRET-WORKER-ERROR'}});
+  const route='/api/v1/admin/operations/control/erp-health?stream=SALES&take=200';expect((await app.inject({method:'GET',url:route})).statusCode).toBe(401);expect((await app.inject({method:'GET',url:route,headers:headers(orderOps)})).statusCode).toBe(403);
+  for(const token of [finance,auditor]){const result=await app.inject({method:'GET',url:route,headers:headers(token)});expect(result.statusCode).toBe(200);const body=result.json().data;expect(body.coverage).toBe('CURRENT_PAGE_ONLY');expect(body.items.find((row:any)=>row.reference===created.projectionReference)).toMatchObject({state:'FAILED',candidate:{code:'ERP_TRANSPORT_FAILED'}});expect(result.body).not.toContain('SECRET');expect(result.body).not.toContain(projection.projectionId);}
+  expect((await app.inject({method:'GET',url:route+'&thresholdHours=0',headers:headers(finance)})).statusCode).toBe(422);
  });
  it('protects mapping approval and history with financial roles and publishes no private connection fields',async()=>{
   const route='/api/v1/admin/erp-accounting-mappings',groupReference=erpBusinessReference('COMPENSATION-GROUP',randomUUID());

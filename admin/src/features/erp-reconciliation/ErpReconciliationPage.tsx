@@ -24,8 +24,9 @@ const columns:GridColumn<Item>[]=[
  {key:'updated',label:'Data through',value:r=>r.timestamps.dataThrough,render:r=><>{time(r.timestamps.reconciledAt??r.timestamps.acknowledgedAt??r.timestamps.queuedAt)}<br/><span className="muted">截點 {time(r.timestamps.dataThrough)}</span></>},
 ];
 
+const initialOrder=()=>{const value=typeof window==='undefined'?'':new URLSearchParams(window.location.search).get('orderNo')??'';return /^[0-9]{1,19}$/.test(value)?value:'';};
 export function ErpReconciliationPage(){
- const [draftOrder,setDraftOrder]=useState(''),[draftStatus,setDraftStatus]=useState(''),[orderNo,setOrderNo]=useState(''),[status,setStatus]=useState(''),[cursor,setCursor]=useState<string|undefined>(),[asOf,setAsOf]=useState<string|undefined>();
+ const [draftOrder,setDraftOrder]=useState(initialOrder),[draftStatus,setDraftStatus]=useState(''),[orderNo,setOrderNo]=useState(initialOrder),[status,setStatus]=useState(''),[cursor,setCursor]=useState<string|undefined>(),[asOf,setAsOf]=useState<string|undefined>();
  const query=useQuery({queryKey:['erp-reconciliation',orderNo,status,cursor,asOf],queryFn:()=>get<{data:Page}>('/admin/erp-reconciliation'+qs({orderNo,status,cursor,asOf,take:50})),refetchInterval:60_000});
  const data=query.data?.data,counts=(data?.items??[]).reduce<Record<string,number>>((sum,row)=>(sum[row.bridgeStatus]=(sum[row.bridgeStatus]??0)+1,sum),{});
  function apply(){setOrderNo(draftOrder.trim());setStatus(draftStatus);setCursor(undefined);setAsOf(undefined);}

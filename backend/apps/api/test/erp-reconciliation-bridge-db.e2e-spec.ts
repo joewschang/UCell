@@ -30,6 +30,8 @@ describeDb('ERP_RECONCILIATION_BRIDGE_REAL_DB',()=>{
    const service=new ErpReconciliationBridgeService({$transaction:(work:any)=>work(tx)} as any),filter={orderNo:order.orderNo.toString(),status:'FAILED',take:1,asOf:new Date(Date.now()+1000).toISOString()};
    const first=await service.list(filter);expect(first.items).toEqual([]);expect(first.nextCursor).toBeTruthy();
    const second=await service.list({...filter,cursor:first.nextCursor!});expect(second.items).toHaveLength(1);expect(second.items[0].fulfillmentKey).toBe(other.fulfillmentKey);expect(second.nextCursor).toBeNull();expect(second.items[0].erp.reasonCode).toBe('ERP_BRIDGE_REQUIRES_ATTENTION');expect(JSON.stringify(second)).not.toContain('secret-token');
+   await tx.fulfillmentErpReconciliation.create({data:{fulfillmentErpHandoffId:handoff.fulfillmentErpHandoffId,resultKey:'bridge-matched',resultHash:'c'.repeat(64),outcome:'MATCHED',reasonCode:'ERP_EXACT_MATCH',resultSnapshot:{lines:payload.lines},occurredAt:new Date(Date.now()+100),reportedByActor:randomUUID()}});
+   const matched=await service.list({orderNo:order.orderNo.toString(),status:'RECONCILED',asOf:new Date(Date.now()+1000).toISOString()});expect(matched.items[0].evidence.exceptionStatus).toBe('OPEN');expect(matched.items[0].evidence.exceptionCode).toBe('FULFILLMENT_ERP_MISMATCH');expect(await tx.operationalException.count({where:{sourceType:'ERP_RECONCILIATION',status:'OPEN',sourceId:`${order.orderNo}:${fulfillment.fulfillmentKey}:${'b'.repeat(64)}`}})).toBe(1);
    throw new Error(ROLLBACK);
   })).rejects.toThrow(ROLLBACK);
  });

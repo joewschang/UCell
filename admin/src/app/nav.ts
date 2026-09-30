@@ -17,6 +17,7 @@ export const nav=[
   ['獎金與結算證據','/bonuses','bonuses'],
   ['結算工作','/settlement-jobs','bonuses'],
   ['獎金週期控制','/compensation-period-control','bonuses'],
+  ['營運控制中心','/operations-control','dashboard'],
   ['退貨／重算','/returns','returns'],
   ['升級／轉讓／退出','/workflows','workflows'],
   ['Reservoir Center','/admin/finance/reservoirs','reservoirs'],
@@ -37,6 +38,6 @@ export const navGroups=[
  {label:'商務',paths:['/products','/packages','/orders','/fulfillment','/erp-reconciliation','/subscriptions','/returns']},
  {label:'獎金中心',paths:['/bonuses','/settlement-jobs','/compensation-period-control','/economic-lineage']},
  {label:'財務／治理',paths:['/payouts','/admin/finance/reservoirs']},
- {label:'營運分析',paths:['/reports','/analytics']},
+ {label:'營運分析',paths:['/operations-control','/reports','/analytics']},
  {label:'系統治理',paths:['/content','/documents','/audit','/uat','/system','/provider-operations']},
 ];
