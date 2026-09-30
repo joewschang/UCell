@@ -1,6 +1,12 @@
 import {PrismaClient,Prisma} from '@prisma/client';
 import {randomUUID} from 'node:crypto';
 import {processRetailReferralPayment,processRetailReferralReturn} from '../../worker/src/main';
+import {matureBonusAward} from '@ucell/database';
+import {UnifiedPayableService} from '../src/modules/payout/unified-payable.service';
+import {RecoveryBalanceService} from '../src/modules/payout/recovery-balance.service';
+import {AdminOperationsService} from '../src/modules/admin-operations/admin-operations.service';
+import {AuditService} from '../src/common/audit/audit.service';
+import {orderEconomicEvidence} from '../src/modules/admin-operations/order-economic-evidence';
 
 const ROLLBACK='RETAIL_REFERRAL_TEST_ROLLBACK';
 const url=process.env.RETAIL_REFERRAL_TEST_DATABASE_URL??process.env.DATABASE_URL;
@@ -47,6 +53,24 @@ describeDb('Retail Referral rollback integration harness',()=>{
    expect(await tx.pvLedger.count({where:{qualificationId:referrer.qualificationId}})).toBe(0);
    expect(await tx.binaryPlacement.count({where:{childQualificationId:referrer.qualificationId}})).toBe(0);
    expect(await tx.outboxEvent.findUniqueOrThrow({where:{outboxEventId:event.outboxEventId}})).toMatchObject({processStatus:'PROCESSED'});
+   // RETAIL_REFERRAL_ORDER_TO_PAYOUT_LINEAGE: exercise real maturity,
+   // materialization, review, export and payment before reading the source chain.
+   const proxy=new Proxy(tx,{get(target,key){return key==='$transaction'?(work:any)=>work(proxy):Reflect.get(target,key);}}) as any;
+   await matureBonusAward(proxy,awards[0].bonusAwardId,awards[0].pendingUntil);
+   const payable=new UnifiedPayableService(proxy,new RecoveryBalanceService(proxy));
+   await payable.materialize(awards[0].pendingUntil,rule);
+   const batch=await payable.createPayoutBatch(new Date('2044-01-01'),new Date('2044-03-01'),rule);
+   const finance=randomUUID(),admin=new AdminOperationsService(proxy,new AuditService());
+   await admin.approvePayout(batch.payoutBatchId,'FINANCE_REVIEW',finance,'FINANCE',undefined,randomUUID(),randomUUID());
+   await admin.approvePayout(batch.payoutBatchId,'COMPLIANCE_REVIEW',randomUUID(),'COMPLIANCE_AUDIT',undefined,randomUUID(),randomUUID());
+   await admin.exportPayout(batch.payoutBatchId,'RETAIL-LINEAGE-'+randomUUID(),finance,'FINANCE',randomUUID(),randomUUID());
+   const payoutLine=await tx.payoutLine.findFirstOrThrow({where:{payoutBatchId:batch.payoutBatchId}});
+   await admin.recordPayoutResults(batch.payoutBatchId,{results:[{payoutLineId:payoutLine.payoutLineId,status:'PAID',paidAmount:'10',paymentReference:'SYNTHETIC-RETAIL-PAID'}]},finance,'FINANCE',randomUUID(),randomUUID());
+   const lineage=await orderEconomicEvidence(tx,order.orderId,[]);
+   expect(lineage.awards).toEqual([expect.objectContaining({awardType:'RETAIL_REFERRAL',sourceOrderLineReference:expect.any(String),payableAmount:'10'})]);
+   expect(lineage.payables).toEqual([expect.objectContaining({awardReference:lineage.awards[0].reference,grossAmount:'10',status:'PAID',payout:expect.objectContaining({status:'PAID'})})]);
+   expect(await orderEconomicEvidence(tx,order.orderId,[])).toEqual(lineage);
+   for(const privateValue of [order.orderId,line.orderLineId,referrer.qualificationId,payoutLine.payoutLineId,batch.payoutBatchId,'SYNTHETIC-RETAIL-PAID'])expect(JSON.stringify(lineage)).not.toContain(privateValue);
    throw new Error(ROLLBACK);
   },{isolationLevel:Prisma.TransactionIsolationLevel.Serializable,timeout:30000})).rejects.toThrow(ROLLBACK);
   expect(await db.person.count({where:{legalName:{startsWith:marker}}})).toBe(0);

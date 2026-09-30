@@ -73,17 +73,17 @@ describeDb('Company Reservoir B integrity candidates',()=>{
     expect(await companyReservoirCandidates(legacy as any,200)).toEqual([expect.objectContaining({code:'RESERVOIR_B_MEMBER_PAYABLE_CONFLICT',detail:{payableCount:1,payableGross:'100'}})]);
     expect(await tx.payableEntry.count({where:{sourceId:source.bonusAwardId}})).toBe(0);
   }));
-  it('projects only explicitly order-linked Company awards and Reservoir B effects without internal identifiers',()=>rollback(async tx=>{
+  it.each(['REFERRAL','EPV'] as const)('projects explicitly order-linked Company %s awards and Reservoir B effects without internal identifiers',awardType=>rollback(async tx=>{
     const at=new Date(),snapshot=await captureParameters(tx,at,'R1.0B');
     const order=await tx.order.create({data:{qualificationId:qid,purpose:'RETAIL',status:'PAID',paidAt:at,grossAmount:100,netAmount:100,ruleVersionCode:'R1.0B'}});
-    const pv=await tx.pvLedger.create({data:{qualificationId:qid,pvType:'GPV',amount:100,sourceType:'ORDER',sourceId:order.orderId,eventType:'GPV_CREATED',ruleVersionCode:'R1.0B',occurredAt:at,correlationId:randomUUID()}});
-    const source=await tx.bonusAward.create({data:{recipientQualificationId:qid,awardType:'REFERRAL',sourceEventId:pv.eventId,theoryAmount:25,payableAmount:25,activeSnapshot:true,planLevelSnapshot:'LEADER',ruleVersionCode:'R1.0B',parameterSnapshotHash:snapshot.hash,occurredAt:at,pendingUntil:at,calculationDetail:{}}});
+    const pv=await tx.pvLedger.create({data:{qualificationId:qid,pvType:awardType==='EPV'?'EPV':'GPV',amount:100,sourceType:'ORDER',sourceId:order.orderId,eventType:awardType==='EPV'?'EPV_CREATED':'GPV_CREATED',ruleVersionCode:'R1.0B',occurredAt:at,correlationId:randomUUID()}});
+    const source=await tx.bonusAward.create({data:{recipientQualificationId:qid,awardType,sourceEventId:pv.eventId,theoryAmount:25,payableAmount:25,activeSnapshot:true,planLevelSnapshot:'LEADER',ruleVersionCode:'R1.0B',parameterSnapshotHash:snapshot.hash,occurredAt:at,pendingUntil:at,calculationDetail:{}}});
     await routeCompanyBonus(tx,source,snapshot);
     const unrelated=await award(tx,75);
     await routeCompanyBonus(tx,unrelated.source,unrelated.snapshot);
     const evidence=await orderEconomicEvidence(tx,order.orderId,[]);
     expect(await orderEconomicEvidence(tx,order.orderId,[])).toEqual(evidence);
-    expect(evidence.reservoirBDestinations).toEqual([expect.objectContaining({sourceKind:'BONUS_AWARD',sourceReference:evidence.awards[0].reference,destination:'RESERVOIR_B',awardType:'REFERRAL',finalAmount:'25',effects:[expect.objectContaining({effectType:'ENTITLEMENT',amountDelta:'25'})]})]);
+    expect(evidence.reservoirBDestinations).toEqual([expect.objectContaining({sourceKind:'BONUS_AWARD',sourceReference:evidence.awards[0].reference,destination:'RESERVOIR_B',awardType,finalAmount:'25',effects:[expect.objectContaining({effectType:'ENTITLEMENT',amountDelta:'25'})]})]);
     const json=JSON.stringify(evidence.reservoirBDestinations);
     const destination=await tx.awardEconomicDestination.findUniqueOrThrow({where:{sourceBonusAwardId:source.bonusAwardId},include:{effects:true}});
     for(const internal of [qid,order.orderId,pv.eventId,source.bonusAwardId,destination.destinationId,destination.binaryTreeId,destination.ownerIntervalId,...destination.effects.map(effect=>effect.effectId)])expect(json).not.toContain(internal);

@@ -6,6 +6,7 @@ import { createHash } from 'node:crypto';
 import { companyReservoirCandidates } from './company-reservoir-invariants';
 import { orderEconomicEvidence } from './order-economic-evidence';
 import {createFinanceReviewArtifact,readFinanceReviewArtifact} from './payout-review-artifact';
+import {lineageSourceSummary} from './lineage-source-summary';
 
 @Injectable()
 export class AdminOperationsService {
@@ -195,7 +196,7 @@ export class AdminOperationsService {
     return {
       economicEvidence:await orderEconomicEvidence(tx,order.orderId,order.returns.map(row=>row.returnCaseId)),
       order:{orderNo:order.orderNo.toString(),purpose:order.purpose,status:order.status,confirmedAt:order.confirmedAt?.toISOString()??null,paidAt:order.paidAt?.toISOString()??null,ruleVersionCode:order.ruleVersionCode,parameterSnapshotHash:order.parameterSnapshotHash??null},
-      lines:order.lines.map(line=>({sku:line.skuSnapshot,quantity:line.quantity.toString(),amount:line.lineAmount.toString(),offering:line.commercialOfferingSnapshot??null,purpose:line.linePurpose??null,ruleSnapshot:line.ruleProfileSnapshot})),
+      lines:order.lines.map(line=>({sku:line.skuSnapshot,quantity:line.quantity.toString(),amount:line.lineAmount.toString(),offering:lineageSourceSummary(line.commercialOfferingSnapshot,'OFFERING'),purpose:line.linePurpose??null,ruleSnapshot:lineageSourceSummary(line.ruleProfileSnapshot,'RULE')})),
       payments:order.paymentEvents.map(event=>({eventType:event.eventType,paymentMethod:event.paymentMethod,amount:event.amount.toString(),occurredAt:event.occurredAt.toISOString()})),
       fulfillments:order.fulfillments.map(f=>({fulfillmentKey:f.fulfillmentKey,status:f.status,sourceAllocations:f.sourceAllocations.map(a=>({sku:a.skuSnapshot,quantity:a.allocatedQuantity.toString(),serialNos:a.serialAllocations.map(s=>s.serializedUnit.serialNo).sort()})),erpHandoff:f.erpHandoffs[0]?{formatVersion:f.erpHandoffs[0].formatVersion,payloadHash:f.erpHandoffs[0].payloadHash,requestedAt:f.erpHandoffs[0].requestedAt.toISOString()}:null})),
       returns:order.returns.map(ret=>({status:ret.status,reasonCode:ret.reasonCode,occurredAt:ret.occurredAt.toISOString(),lines:ret.lines.map(line=>({quantity:line.quantity.toString(),amount:line.returnAmount.toString()}))})),
