@@ -5,12 +5,18 @@ import { RpvService } from '../src/modules/rpv/rpv.service';
 import { replayRpvCancellation } from '@ucell/database';
 import { processRecognition } from '../../worker/src/main';
 import { orderEconomicEvidence } from '../src/modules/admin-operations/order-economic-evidence';
+import {compensationFinancialEvidence} from '../src/modules/settlement-jobs/compensation-financial-evidence';
+import {UnifiedPayableService} from '../src/modules/payout/unified-payable.service';
+import {RecoveryBalanceService} from '../src/modules/payout/recovery-balance.service';
+import {AdminOperationsService} from '../src/modules/admin-operations/admin-operations.service';
+import {AuditService} from '../src/common/audit/audit.service';
 
 const url=process.env.PHASE2_TEST_DATABASE_URL;
 const describeDb=url?describe:describe.skip;
 describeDb('repurchase cumulative partial returns',()=>{
   let db:PrismaClient;
   let service:SubscriptionCancellationService;
+  let recognitionSequence=0;
   beforeAll(()=>{db=new PrismaClient({datasources:{db:{url}}});service=new SubscriptionCancellationService(db as any);});
   afterAll(()=>db.$disconnect());
   async function fixture(){
@@ -95,7 +101,7 @@ describeDb('repurchase cumulative partial returns',()=>{
     }
     await db.binaryPlacement.create({data:{parentQualificationId:parent.qualificationId,childQualificationId:f.qualification.qualificationId,side:'LEFT',effectiveFrom:at}});
     const first=(await f.rows())[0];
-    await db.monthlyRecognitionSchedule.update({where:{recognitionId:first.recognitionId},data:{recognitionMonth:at,dueAt:new Date('2026-09-16')}});
+    await db.monthlyRecognitionSchedule.update({where:{recognitionId:first.recognitionId},data:{recognitionMonth:at,dueAt:new Date(Date.parse('2026-09-16')+(++recognitionSequence))}});
     const recognize=()=>new RpvService(db as any,{} as any).recognize(first.recognitionId);
     const replay=(fact:any)=>db.$transaction(tx=>replayRpvCancellation(tx,first.recognitionId,fact.subscriptionCancellationId,'RPV:'+first.recognitionId+':'+fact.subscriptionCancellationId,randomUUID()),{timeout:15000});
     return {...f,first,recognize,replay};
@@ -115,6 +121,13 @@ describeDb('repurchase cumulative partial returns',()=>{
     expect(reversal.map(r=>r.amount.toString())).toEqual(['-0.3']);
     const posting=await db.entitlementReplayPosting.findFirstOrThrow({where:{actionKey:'RPV:'+f.first.recognitionId+':'+second.cancellation.subscriptionCancellationId}});
     expect(posting.delta.toString()).toBe('-30');
+    const at=awards[0].occurredAt,period={periodStart:at,periodEnd:new Date(at.getTime()+1),ruleVersionCode:'R1.0B'},cohort={jobs:[],sourcePeriod:{...period,settlementSourceIds:[],globalSourceIds:[]}} as any;
+    const financial=()=>db.$transaction(tx=>compensationFinancialEvidence(tx,period,cohort,new Date()),{isolationLevel:Prisma.TransactionIsolationLevel.RepeatableRead});
+    const outstanding=await financial();expect(outstanding.recoveries.map(row=>row.bonusRecoveryEventId)).toContain(posting.recoveryId);expect(outstanding.totals.recoveryOutstanding.toString()).toBe('30');expect(outstanding.ready).toBe(false);
+    const payout=new UnifiedPayableService(db as any,new RecoveryBalanceService(db as any));await payout.materialize(new Date());const batch=await payout.createPayoutBatch(at,new Date()),line=await db.payoutLine.findFirstOrThrow({where:{payoutBatchId:batch.payoutBatchId,recipientQualificationId:awards[0].recipientQualificationId}});
+    expect(line.recoveryOffset.toString()).toBe('30');expect(line.netAmount.toString()).toBe('50');const offset=await financial();expect(offset.totals.recoveryApplied.toString()).toBe('30');expect(offset.totals.recoveryOutstanding.toString()).toBe('0');expect(offset.ready).toBe(false);
+    const ops=new AdminOperationsService(db as any,new AuditService());await ops.approvePayout(batch.payoutBatchId,'FINANCE_REVIEW',randomUUID(),'FINANCE',undefined,randomUUID(),randomUUID());await ops.approvePayout(batch.payoutBatchId,'COMPLIANCE_REVIEW',randomUUID(),'COMPLIANCE_AUDIT',undefined,randomUUID(),randomUUID());await ops.exportPayout(batch.payoutBatchId,randomUUID(),randomUUID(),'FINANCE',randomUUID(),randomUUID());await ops.recordPayoutResults(batch.payoutBatchId,{results:[{payoutLineId:line.payoutLineId,status:'PAID',paidAmount:'50',paymentReference:'SYNTHETIC-RPV-BANK'}]},randomUUID(),'FINANCE',randomUUID(),randomUUID());
+    const reconciled=await financial();expect(reconciled.issues).toEqual([]);expect(reconciled.ready).toBe(true);expect(reconciled.totals.bankPaid.toString()).toBe('50');
     const lineage=await db.$transaction(tx=>orderEconomicEvidence(tx,f.order.orderId,[]),{isolationLevel:Prisma.TransactionIsolationLevel.RepeatableRead});
     expect(lineage.subscriptionRecognitions[0]).toMatchObject({status:'RECOGNIZED',pvEvent:{amount:'0.8'},recordedRetention:{originalVolume:'0.8',recordedDelta:'-0.3',recordedRetainedVolume:'0.5',replayedEntitlements:[expect.objectContaining({originallyPosted:'80',recordedEntitlement:'50'})]}});
     expect(await db.rpvUplineAwardEvent.findMany({where:{recognitionId:f.first.recognitionId}})).toEqual(awards);

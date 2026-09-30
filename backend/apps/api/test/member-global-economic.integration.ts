@@ -5,6 +5,9 @@ import {GlobalPoolPersistence} from '../src/modules/global-pool/global-pool-pers
 import {BonusQueryService} from '../src/modules/bonus/bonus-query.service';
 import {UnifiedPayableService} from '../src/modules/payout/unified-payable.service';
 import {RecoveryBalanceService} from '../src/modules/payout/recovery-balance.service';
+import {compensationFinancialEvidence} from '../src/modules/settlement-jobs/compensation-financial-evidence';
+import {AdminOperationsService} from '../src/modules/admin-operations/admin-operations.service';
+import {AuditService} from '../src/common/audit/audit.service';
 const url=process.env.PHASE2_TEST_DATABASE_URL;
 if(!url||!/^ucell_jest_[a-f0-9]{32}$/.test(new URL(url).pathname.slice(1)))throw Error('ISOLATED_DATABASE_REQUIRED');
 const db=new PrismaService();afterAll(()=>db.$disconnect());
@@ -37,6 +40,9 @@ it('ordinary Member Global remains payable, with one signed replay recovery and 
  expect(postings).toHaveLength(1);expect(postings[0].delta.eq(new Prisma.Decimal(-20000).mul(rate))).toBe(true);expect(postings[0].recoveryId).toBeTruthy();
  const recovery=await db.bonusRecoveryEvent.findUniqueOrThrow({where:{bonusRecoveryEventId:postings[0].recoveryId!},include:{bonusAward:true}});
  expect(recovery.bonusAward.awardType).toBe('GLOBAL');expect(recovery.bonusAward.payableAmount.eq(0)).toBe(true);expect((recovery.bonusAward.calculationDetail as any).originalAwardId).toBe(award.globalPoolAwardId);
+ const period={periodStart:start,periodEnd:end,ruleVersionCode:'R1.0B'},cohort={jobs:[],sourcePeriod:{...period,settlementSourceIds:[],globalSourceIds:[settled.globalPoolSettlementId]}} as any;
+ const financial=()=>db.$transaction(tx=>compensationFinancialEvidence(tx,period,cohort,new Date()),{isolationLevel:Prisma.TransactionIsolationLevel.RepeatableRead});
+ const outstanding=await financial();expect(outstanding.recoveries.map(row=>row.bonusRecoveryEventId)).toContain(recovery.bonusRecoveryEventId);expect(outstanding.totals.recoveryOutstanding.eq(new Prisma.Decimal(20000).mul(rate))).toBe(true);expect(outstanding.ready).toBe(false);
  await db.$transaction(tx=>processHistoricalReturn(tx,ret.returnCaseId),{timeout:30000});
  expect(await db.entitlementReplayPosting.count({where:{recipientQualificationId:ids[0],snapshot:{kind:'GLOBAL'}}})).toBe(1);
  expect((await db.globalPoolAward.findUniqueOrThrow({where:{globalPoolAwardId:award.globalPoolAwardId}})).payableAmount.eq(award.payableAmount)).toBe(true);
@@ -45,4 +51,8 @@ it('ordinary Member Global remains payable, with one signed replay recovery and 
  expect(await db.recoveryApplication.count({where:{bonusRecoveryEventId:recovery.bonusRecoveryEventId}})).toBe(1);
  await payout.materialize(new Date());expect(await db.payableEntry.count({where:{sourceType:'GLOBAL_POOL_AWARD',sourceId:award.globalPoolAwardId}})).toBe(1);
  expect(await db.reservoirBEffect.count()).toBe(0);
+ const offset=await financial();expect(offset.totals.recoveryApplied.eq(new Prisma.Decimal(20000).mul(rate))).toBe(true);expect(offset.totals.recoveryOutstanding.eq(0)).toBe(true);expect(offset.ready).toBe(false);
+ const ops=new AdminOperationsService(db,new AuditService());await ops.approvePayout(paid.payoutBatchId,'FINANCE_REVIEW',randomUUID(),'FINANCE',undefined,randomUUID(),randomUUID());await ops.approvePayout(paid.payoutBatchId,'COMPLIANCE_REVIEW',randomUUID(),'COMPLIANCE_AUDIT',undefined,randomUUID(),randomUUID());await ops.exportPayout(paid.payoutBatchId,randomUUID(),randomUUID(),'FINANCE',randomUUID(),randomUUID());
+ await ops.recordPayoutResults(paid.payoutBatchId,{results:[{payoutLineId:line.payoutLineId,status:'PAID',paidAmount:line.netAmount.toString(),paymentReference:'SYNTHETIC-GLOBAL-BANK'}]},randomUUID(),'FINANCE',randomUUID(),randomUUID());
+ const reconciled=await financial();expect(reconciled.issues).toEqual([]);expect(reconciled.ready).toBe(true);expect(reconciled.totals.bankPaid.eq(line.netAmount)).toBe(true);expect(reconciled.sources.filter(row=>row.type==='GLOBAL_POOL_AWARD').map(row=>row.id)).toContain(award.globalPoolAwardId);
 },120000);
