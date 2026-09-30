@@ -3,6 +3,8 @@ import {randomUUID} from 'node:crypto';
 import {planDuePeriodJobs,SettlementCalendarService,executePeriodClose} from '@ucell/settlement';
 import {claimPeriodCloseJob,processPeriodCloseJob,sealGpvEvent} from '@ucell/database';
 import {pollPeriodClosePlanner} from '../../worker/src/period-close-planner-runtime';
+import {compensationPeriodEvidence} from '../src/modules/settlement-jobs/compensation-period-evidence';
+import {CompensationPeriodControlService} from '../src/modules/settlement-jobs/compensation-period-control.service';
 
 const url=process.env.PHASE2_TEST_DATABASE_URL;
 const kinds=['REFERRAL_K0','BINARY_K1','MATCHING_K2','GLOBAL','WELFARE','PAYABLE_PREPARATION'];
@@ -109,6 +111,11 @@ const kinds=['REFERRAL_K0','BINARY_K1','MATCHING_K2','GLOBAL','WELFARE','PAYABLE
   const award=await db.bonusAward.findUniqueOrThrow({where:{bonusAwardId:entries[0].sourceId}});
   const batch=await db.settlementBatch.findUniqueOrThrow({where:{settlementBatchId:award.settlementBatchId!}});
   expect(batch.periodStart).toEqual(firstWeek.periodStart);expect(batch.periodEnd).toEqual(input.from);
+  const cohort=await db.$transaction(tx=>compensationPeriodEvidence(tx,{periodStart:input.from,periodEnd:input.through,ruleVersionCode:input.ruleVersionCode}));
+  expect(cohort.allComplete).toBe(true);expect(cohort.required).toHaveLength(8);expect(cohort.sourcePeriod.settlementSourceIds).toContain(batch.settlementBatchId);expect(cohort.sourcePeriod.globalSourceIds).toEqual([]);
+  const control=await new CompensationPeriodControlService(db as any).read({periodStart:input.from.toISOString(),periodEnd:input.through.toISOString(),ruleVersionCode:input.ruleVersionCode});
+  expect(control.lifecycle).toBe('PAYABLE_READY');expect(control.amountBridge).toMatchObject({awardAfterEligibilityAndK:'10.0000',payableMaterialized:'10.0000'});
+  expect(control.checkpoints.find(row=>row.code==='BINARY_K1')).toMatchObject({status:'PASS'});expect(control.checkpoints.find(row=>row.code==='GLOBAL')).toMatchObject({status:'NOT_APPLICABLE'});
   const calendar=new SettlementCalendarService(db as any);
   const parameters=await calendar.captureForPeriod(db,input.from,input.through,'PAYABLE_PREPARATION',input.ruleVersionCode);
   expect((await calendar.periodFor(db,new Date(input.from.getTime()-1),parameters,'REFERRAL_K0')).end).toEqual(input.from);

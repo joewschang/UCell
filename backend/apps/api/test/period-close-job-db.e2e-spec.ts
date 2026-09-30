@@ -16,6 +16,7 @@ import {join} from 'node:path';
 import {pollPeriodCloseJobs} from '../../worker/src/period-close-runtime';
 import {periodCloseOperationalState,periodJobReference} from '@ucell/database';
 import {periodCloseCandidates} from '../src/modules/admin-operations/period-close-invariants';
+import {compensationPeriodEvidence} from '../src/modules/settlement-jobs/compensation-period-evidence';
 
 const url=process.env.PHASE2_TEST_DATABASE_URL;
 (url?describe:describe.skip)('durable period-close admission, dependencies and fenced execution',()=>{
@@ -259,6 +260,8 @@ const url=process.env.PHASE2_TEST_DATABASE_URL;
     const receipt=await db.periodCloseReceipt.findUniqueOrThrow({where:{periodCloseJobId:job.periodCloseJobId}});
     expect(verifyReplayEnvelope(await db.historicalReplaySnapshot.findUniqueOrThrow({where:{snapshotId:receipt.snapshotId}}))).toMatchObject({kind:'PAYABLE_PREPARATION',evidence:{payables:[],created:0}});
     expect(await processPeriodCloseJob(db,lease,execute)).toEqual({lostLease:true});
+    const cohort=await db.$transaction(tx=>compensationPeriodEvidence(tx,{periodStart:start,periodEnd:end,ruleVersionCode:code}));
+    expect(cohort.allComplete).toBe(true);expect(cohort.required).toHaveLength(6);expect(cohort.sealed.size).toBe(6);expect(cohort.inputSealedAt).toBeInstanceOf(Date);
   });
   it('waits for award maturity without a lease or retry attempt',async()=>{
     const code=await rule(),job=await preparation(code);

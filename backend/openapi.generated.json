@@ -15855,124 +15855,45 @@
           "evidence"
         ]
       },
-      "PeriodJobDto": {
+      "CompensationPeriodJobDto": {
         "type": "object",
         "properties": {
-          "query": {
-            "type": "object",
-            "required": [
-              "metrics",
-              "time"
-            ],
-            "additionalProperties": false,
-            "properties": {
-              "metrics": {
-                "type": "array",
-                "minItems": 1,
-                "maxItems": 1,
-                "items": {
-                  "type": "string",
-                  "enum": [
-                    "rank.bonus",
-                    "rank.gpv",
-                    "rank.new_achievements",
-                    "binary.left_carry",
-                    "binary.right_carry",
-                    "binary.pairpv",
-                    "tree.comparison",
-                    "bonus.distribution",
-                    "founding.statistics",
-                    "return.cohort_rates",
-                    "rank.distribution",
-                    "active.rate",
-                    "tree.monthly_new_balls",
-                    "reservoir.a",
-                    "reservoir.b",
-                    "pool.k0",
-                    "pool.k1",
-                    "pool.k2"
-                  ]
-                }
-              },
-              "time": {
-                "type": "object",
-                "required": [
-                  "timezone",
-                  "asOf",
-                  "knowledgeCutoff",
-                  "periodStart",
-                  "periodEnd"
-                ],
-                "additionalProperties": false,
-                "properties": {
-                  "timezone": {
-                    "type": "string",
-                    "enum": [
-                      "Asia/Taipei"
-                    ]
-                  },
-                  "asOf": {
-                    "type": "string",
-                    "format": "date-time"
-                  },
-                  "knowledgeCutoff": {
-                    "type": "string",
-                    "format": "date-time"
-                  },
-                  "periodStart": {
-                    "type": "string",
-                    "format": "date-time"
-                  },
-                  "periodEnd": {
-                    "type": "string",
-                    "format": "date-time"
-                  },
-                  "settlementId": {
-                    "type": "string",
-                    "format": "uuid"
-                  },
-                  "ruleVersion": {
-                    "type": "string"
-                  }
-                }
-              },
-              "dimensions": {
-                "type": "array",
-                "items": {
-                  "type": "string"
-                }
-              },
-              "groupBy": {
-                "type": "array",
-                "items": {
-                  "type": "string"
-                }
-              },
-              "filters": {
-                "type": "object",
-                "additionalProperties": {
-                  "type": "string"
-                }
-              },
-              "limit": {
-                "type": "integer",
-                "minimum": 1,
-                "maximum": 100,
-                "default": 50
-              }
-            }
+          "periodStart": {
+            "type": "string"
           },
-          "mode": {
-            "type": "string",
-            "enum": [
-              "DRY_RUN",
-              "REBUILD",
-              "RECONCILE"
-            ]
+          "periodEnd": {
+            "type": "string"
+          },
+          "jobReference": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "attemptCount": {
+            "type": "number"
+          },
+          "completedAt": {
+            "type": "object",
+            "nullable": true
+          },
+          "blockingCode": {
+            "type": "object",
+            "nullable": true
           }
         },
         "required": [
-          "mode"
+          "periodStart",
+          "periodEnd",
+          "jobReference",
+          "kind",
+          "status",
+          "attemptCount",
+          "completedAt",
+          "blockingCode"
         ]
       },
       "PeriodSettlementDto": {
@@ -16172,6 +16093,10 @@
       "CompensationPeriodControlDto": {
         "type": "object",
         "properties": {
+          "elapsedSeconds": {
+            "type": "number",
+            "minimum": 0
+          },
           "period": {
             "$ref": "#/components/schemas/PeriodIdentityDto"
           },
@@ -16190,7 +16115,7 @@
           "jobs": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/PeriodJobDto"
+              "$ref": "#/components/schemas/CompensationPeriodJobDto"
             }
           },
           "settlements": {
@@ -16222,6 +16147,7 @@
           }
         },
         "required": [
+          "elapsedSeconds",
           "period",
           "lifecycle",
           "dataThrough",
@@ -17037,6 +16963,126 @@
       "CompleteDto": {
         "type": "object",
         "properties": {}
+      },
+      "PeriodJobDto": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "object",
+            "required": [
+              "metrics",
+              "time"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "metrics": {
+                "type": "array",
+                "minItems": 1,
+                "maxItems": 1,
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "rank.bonus",
+                    "rank.gpv",
+                    "rank.new_achievements",
+                    "binary.left_carry",
+                    "binary.right_carry",
+                    "binary.pairpv",
+                    "tree.comparison",
+                    "bonus.distribution",
+                    "founding.statistics",
+                    "return.cohort_rates",
+                    "rank.distribution",
+                    "active.rate",
+                    "tree.monthly_new_balls",
+                    "reservoir.a",
+                    "reservoir.b",
+                    "pool.k0",
+                    "pool.k1",
+                    "pool.k2"
+                  ]
+                }
+              },
+              "time": {
+                "type": "object",
+                "required": [
+                  "timezone",
+                  "asOf",
+                  "knowledgeCutoff",
+                  "periodStart",
+                  "periodEnd"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "timezone": {
+                    "type": "string",
+                    "enum": [
+                      "Asia/Taipei"
+                    ]
+                  },
+                  "asOf": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "knowledgeCutoff": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "periodStart": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "periodEnd": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "settlementId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "ruleVersion": {
+                    "type": "string"
+                  }
+                }
+              },
+              "dimensions": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "groupBy": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "filters": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "string"
+                }
+              },
+              "limit": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 100,
+                "default": 50
+              }
+            }
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "DRY_RUN",
+              "REBUILD",
+              "RECONCILE"
+            ]
+          }
+        },
+        "required": [
+          "mode"
+        ]
       },
       "PeriodReadDto": {
         "type": "object",

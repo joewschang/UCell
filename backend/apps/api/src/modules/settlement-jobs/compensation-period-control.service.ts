@@ -1,6 +1,8 @@
 import {BadRequestException,Injectable} from '@nestjs/common';
-import {Prisma,PrismaService} from '@ucell/database';
+import {Prisma,PrismaService,periodBonusAwardWhere,periodCloseInputState} from '@ucell/database';
 import {createHash} from 'node:crypto';
+import {compensationPeriodEvidence} from './compensation-period-evidence';
+import {compensationVolumeEvidence} from './compensation-volume-evidence';
 
 type Input={periodStart:string;periodEnd:string;ruleVersionCode:string};
 type AgingInput={thresholdHours:number;asOf?:string};
@@ -70,25 +72,36 @@ export class CompensationPeriodControlService{
  async read(input:Input){
   const period=parse(input),now=new Date();
   return this.db.$transaction(async tx=>{
+   const cohort=await compensationPeriodEvidence(tx,period),awardScope={ruleVersionCode:period.ruleVersionCode,...periodBonusAwardWhere(cohort.sourcePeriod)};
+   const inputs=await periodCloseInputState(tx,period);
+   const volume=await compensationVolumeEvidence(tx,period,cohort);
    const [jobs,batches,awards,pendingAwards,recoveries,reservoir,payouts,payables,erp]=await Promise.all([
-    tx.periodCloseJob.findMany({where:period,include:{outbox:true,receipt:true},orderBy:{kind:'asc'}}),
-    tx.settlementBatch.findMany({where:period,select:{settlementBatchId:true,settlementType:true,status:true,totalTheory:true,poolAvailable:true,kFactor:true,finalizedAt:true},orderBy:{settlementType:'asc'}}),
-    tx.bonusAward.aggregate({where:{settlementBatch:{is:period}},_count:true,_sum:{theoryAmount:true,payableAmount:true}}),
-    tx.bonusAward.count({where:{settlementBatch:{is:period},pendingUntil:{gt:now}}}),
-    tx.bonusRecoveryEvent.aggregate({where:{bonusAward:{settlementBatch:{is:period}}},_count:true,_sum:{recoveryAmount:true,recoveredAmount:true,outstandingAmount:true}}),
-    tx.reservoirLedgerEffect.aggregate({where:{sourcePeriodStart:period.periodStart,sourcePeriodEnd:period.periodEnd,ruleVersionCode:period.ruleVersionCode,reservoirCode:'B'},_count:true,_sum:{amount:true}}),
+    Promise.resolve(cohort.jobs),
+    tx.settlementBatch.findMany({where:{settlementBatchId:{in:cohort.sourcePeriod.settlementSourceIds}},select:{settlementBatchId:true,settlementType:true,status:true,totalTheory:true,poolAvailable:true,kFactor:true,finalizedAt:true},orderBy:[{settlementType:'asc'},{periodStart:'asc'}]}),
+    tx.bonusAward.aggregate({where:awardScope,_count:true,_sum:{theoryAmount:true,payableAmount:true}}),
+    tx.bonusAward.count({where:{...awardScope,payableAmount:{gt:0},economicDestination:{is:null},pendingUntil:{gt:now}}}),
+    tx.bonusRecoveryEvent.aggregate({where:{bonusAward:awardScope},_count:true,_sum:{recoveryAmount:true,recoveredAmount:true,outstandingAmount:true}}),
+    tx.reservoirLedgerEffect.aggregate({where:{OR:cohort.required.map(row=>({sourcePeriodStart:row.periodStart,sourcePeriodEnd:row.periodEnd})),ruleVersionCode:period.ruleVersionCode,reservoirCode:'B'},_count:true,_sum:{amount:true}}),
     tx.payoutBatch.findMany({where:{periodStart:period.periodStart,periodEnd:period.periodEnd},include:{approvals:{select:{stage:true,decision:true}},exportArtifacts:{select:{exportReference:true,revision:true,generatedAt:true},orderBy:{revision:'asc'}},paymentResults:{select:{payoutLineId:true,resultStatus:true,paidAmount:true,occurredAt:true}}},orderBy:{createdAt:'asc'}}),
-    tx.$queryRaw<Array<{total:bigint;open:bigint;gross:Prisma.Decimal|null}>>`SELECT count(*) AS total,count(*) FILTER (WHERE p.status='OPEN') AS open,coalesce(sum(p.gross_amount),0) AS gross FROM ledger.payable_entry p JOIN ledger.bonus_award a ON a.bonus_award_id=p.source_id JOIN ledger.settlement_batch b ON b.settlement_batch_id=a.settlement_batch_id WHERE p.source_type='BONUS_AWARD' AND b.period_start=${period.periodStart} AND b.period_end=${period.periodEnd} AND b.rule_version_code=${period.ruleVersionCode}`,
+    tx.$queryRaw<Array<{total:bigint;open:bigint;gross:Prisma.Decimal|null}>>`
+     SELECT count(*) AS total,count(*) FILTER (WHERE p.status='OPEN') AS open,coalesce(sum(p.gross_amount),0) AS gross FROM ledger.payable_entry p
+     WHERE p.rule_version_code=${period.ruleVersionCode} AND (
+      (p.source_type='BONUS_AWARD' AND EXISTS (SELECT 1 FROM ledger.bonus_award a WHERE a.bonus_award_id=p.source_id AND a.rule_version_code=${period.ruleVersionCode}
+       AND (a.settlement_batch_id IN (SELECT value::uuid FROM jsonb_array_elements_text(${JSON.stringify(cohort.sourcePeriod.settlementSourceIds)}::jsonb)) OR (a.settlement_batch_id IS NULL AND a.occurred_at>=${period.periodStart} AND a.occurred_at<${period.periodEnd}))))
+      OR (p.source_type='RPV_UPLINE_AWARD' AND EXISTS (SELECT 1 FROM ledger.rpv_upline_award_event a WHERE a.rpv_award_event_id=p.source_id AND a.rule_version_code=${period.ruleVersionCode} AND a.occurred_at>=${period.periodStart} AND a.occurred_at<${period.periodEnd}))
+      OR (p.source_type='GLOBAL_POOL_AWARD' AND EXISTS (SELECT 1 FROM ledger.global_pool_award a WHERE a.global_pool_award_id=p.source_id AND a.global_pool_settlement_id IN (SELECT value::uuid FROM jsonb_array_elements_text(${JSON.stringify(cohort.sourcePeriod.globalSourceIds)}::jsonb)))))`,
     tx.fulfillmentErpHandoff.count({where:{requestedAt:{gte:period.periodStart,lt:period.periodEnd},OR:[{outboxEvent:{processStatus:{in:['PENDING','PROCESSING','DEAD']}}},{reconciliations:{some:{outcome:{in:['PARTIAL','MISMATCH']}}}}]}}),
    ]);
-   const kinds=['REFERRAL_K0','BINARY_K1','MATCHING_K2','GLOBAL'];
-   const byKind=new Map(jobs.map(row=>[row.kind,row])),allKinds=kinds.every(kind=>byKind.has(kind)),dead=jobs.filter(row=>row.outbox.processStatus==='DEAD'),complete=jobs.filter(row=>!!row.receipt),payable=payables[0]??{total:0n,open:0n,gross:new Prisma.Decimal(0)};
+   const kinds=['REFERRAL_K0','BINARY_K1','MATCHING_K2','GLOBAL','WELFARE','PAYABLE_PREPARATION'];
+   const allKinds=cohort.configured&&cohort.missing.length===0,dead=jobs.filter(row=>row.outbox.processStatus==='DEAD'),complete=jobs.filter(row=>cohort.sealed.has(row.periodCloseJobId)),payable=payables[0]??{total:0n,open:0n,gross:new Prisma.Decimal(0)};
    const payoutTotals=payouts.reduce((sum,row)=>({gross:sum.gross.add(row.totalGross),recovery:sum.recovery.add(row.totalRecovery),net:sum.net.add(row.totalNet),paid:sum.paid.add(confirmedPaid(row.paymentResults))}),{gross:new Prisma.Decimal(0),recovery:new Prisma.Decimal(0),net:new Prisma.Decimal(0),paid:new Prisma.Decimal(0)});
    let lifecycle='OPEN';
-   if(jobs.length)lifecycle=!allKinds?'PRECHECK':'SOFT_CLOSED';
-   if(dead.length)lifecycle='BLOCKED';else if(jobs.some(row=>!row.receipt)&&jobs.some(row=>row.outbox.attemptCount>0||row.outbox.processStatus!=='PENDING'))lifecycle='SETTLING';else if(complete.length===kinds.length)lifecycle=pendingAwards?'MATURING':'AWARD_FINALIZED';
-   if(complete.length===kinds.length&&!pendingAwards&&Number(payable.open)>0)lifecycle='PAYABLE_READY';
-   const settlementReady=allKinds&&kinds.every(kind=>Boolean(byKind.get(kind)?.receipt)&&byKind.get(kind)?.outbox.processStatus==='PROCESSED')&&!pendingAwards;
+   if(jobs.length||!cohort.configured)lifecycle=!allKinds||!inputs.ready?'PRECHECK':'READY_TO_CLOSE';
+   if(cohort.inputSealedAt)lifecycle='SOFT_CLOSED';
+   if(jobs.some(row=>!row.receipt)&&jobs.some(row=>row.outbox.attemptCount>0||row.outbox.processStatus!=='PENDING'))lifecycle='SETTLING';
+   if(cohort.allComplete)lifecycle=pendingAwards?'MATURING':'AWARD_FINALIZED';
+   if(cohort.allComplete&&!pendingAwards&&Number(payable.open)>0)lifecycle='PAYABLE_READY';
+   const settlementReady=cohort.allComplete&&inputs.ready&&volume.ready&&!pendingAwards;
    if(settlementReady&&!dead.length){
     if(payouts.some(row=>['DRAFT','READY','REVIEWED','APPROVED'].includes(row.status)))lifecycle='PAYMENT_REVIEW';
     if(payouts.some(row=>['EXPORTED','PROCESSING','PARTIALLY_PAID','FAILED'].includes(row.status)))lifecycle='BANK_RECONCILING';
@@ -97,13 +110,14 @@ export class CompensationPeriodControlService{
      if(Number(payable.open)===0&&payoutTotals.paid.equals(payoutTotals.net)&&Number(recoveries._sum.outstandingAmount??0)===0)lifecycle='FINANCIALLY_RECONCILED';
     }
    }
+   if(dead.length||!volume.ready||cohort.problems.some(problem=>problem.code!=='COMPENSATION_APPROVED_CALENDAR_UNAVAILABLE'))lifecycle='BLOCKED';
    const checkpoint=(code:string,label:string,status:string,evidence:string)=>({code,label,status,evidence});
-   return {period:{periodStart:period.periodStart.toISOString(),periodEnd:period.periodEnd.toISOString(),ruleVersionCode:period.ruleVersionCode},lifecycle,dataThrough:now.toISOString(),checkpoints:[
-    checkpoint('INPUT_COMPLETENESS','交易與輸入完整性',jobs.length?'RECORDED':'PENDING',jobs.length?'Period-close requests preserve approved input and parameter snapshots.':'No approved close request is recorded.'),
-    checkpoint('VOLUME_RECOGNITION','GPV／RPV／EPV 完整性','NOT_AVAILABLE','No single sealed cross-volume completeness receipt exists; the control view does not infer one.'),
-    checkpoint('SNAPSHOT_READINESS','Active／組織／規則快照',jobs.length===kinds.length?'RECORDED':'PENDING',`${jobs.length}/${kinds.length} governed requests recorded.`),
-    checkpoint('SOFT_CLOSE','Soft Close／輸入封存',allKinds?'PASS':'PENDING',allKinds?'All four immutable period-close requests preserve their approved input, rule and snapshot evidence.':'The required immutable requests are not complete.'),
-    ...kinds.map(kind=>{const job=byKind.get(kind);return checkpoint(kind,kind,job?.receipt?'PASS':job?.outbox.processStatus==='DEAD'?'FAILED':job?'RUNNING':'PENDING',job?`${job.outbox.processStatus}; attempts ${job.outbox.attemptCount}`:'Not requested.');}),
+   return {period:{periodStart:period.periodStart.toISOString(),periodEnd:period.periodEnd.toISOString(),ruleVersionCode:period.ruleVersionCode},lifecycle,dataThrough:now.toISOString(),elapsedSeconds:Math.max(0,Math.floor((now.getTime()-period.periodEnd.getTime())/1000)),checkpoints:[
+    checkpoint('INPUT_COMPLETENESS','交易與輸入完整性',inputs.ready?'PASS':'PENDING',`${inputs.sourceEvents} unresolved source events; ${inputs.recognitions} due recognitions.`),
+    checkpoint('VOLUME_RECOGNITION','GPV／RPV／EPV 完整性',volume.ready&&inputs.ready?'PASS':volume.ready?'PENDING':'FAILED',`Verified original snapshots GPV ${volume.counts.GPV-volume.invalid.GPV}/${volume.counts.GPV}, RPV ${volume.counts.RPV-volume.invalid.RPV}/${volume.counts.RPV}, EPV ${volume.counts.EPV-volume.invalid.EPV}/${volume.counts.EPV}; ${volume.lateOriginals} originals recorded after the input seal.`),
+    checkpoint('SNAPSHOT_READINESS','Active／組織／規則快照',cohort.allComplete?'PASS':cohort.problems.length?'ATTENTION':'PENDING',`${complete.length}/${cohort.required.length} verified sealed results; ${cohort.missing.length} missing requests.`),
+    checkpoint('SOFT_CLOSE','Soft Close／輸入封存',cohort.inputSealedAt?(volume.ready?'PASS':'FAILED'):'PENDING',cohort.inputSealedAt?'Verified full-window Referral receipt protects original volume admission; recognition evidence must also pass. Linked corrections remain append-only.':'Requests alone do not prove that inputs were sealed.'),
+    ...kinds.map(kind=>{const required=cohort.required.filter(row=>row.kind===kind),found=jobs.filter(row=>row.kind===kind),sealed=found.filter(row=>cohort.sealed.has(row.periodCloseJobId));return checkpoint(kind,kind,!required.length?'NOT_APPLICABLE':sealed.length===required.length?'PASS':found.some(row=>row.outbox.processStatus==='DEAD'||cohort.problems.some(problem=>problem.jobId===row.periodCloseJobId))?'FAILED':found.length?'RUNNING':'PENDING',`${sealed.length}/${required.length} approved source periods have verified receipts.`);}),
     checkpoint('COMPANY_RESERVOIR_B','Company／Reservoir B reconciliation',Number(reservoir._count)>0?'RECORDED':'NO_EFFECT_RECORDED',`${reservoir._count} append-only effects; amount ${amount(reservoir._sum.amount)}.`),
     checkpoint('RETURN_RECOVERY','Return／Recovery reconciliation',Number(recoveries._sum.outstandingAmount??0)>0?'ATTENTION':Number(recoveries._count)>0?'PASS':'NO_EFFECT_RECORDED',`${recoveries._count} recovery events; outstanding ${amount(recoveries._sum.outstandingAmount)}.`),
     checkpoint('HISTORICAL_CORRECTION','Historical correction boundary','PASS','Later returns and replay remain append-only current effects linked to historical awards; this read never reopens or rewrites historical facts.'),
@@ -113,7 +127,7 @@ export class CompensationPeriodControlService{
     checkpoint('ERP_ACCOUNTING','ERP accounting projection','BLOCKED_EXTERNAL',`ERP_ACCOUNT_MAPPING_REQUIRED; ${erp} fulfillment bridge items currently require attention in this period.`),
    ],
    jobs:jobs.map(row=>({
-    jobReference:safe('PERIOD-JOB',row.periodCloseJobId),kind:row.kind,status:row.outbox.processStatus,
+    jobReference:safe('PERIOD-JOB',row.periodCloseJobId),kind:row.kind,status:row.outbox.processStatus,periodStart:row.periodStart.toISOString(),periodEnd:row.periodEnd.toISOString(),
     attemptCount:row.outbox.attemptCount,completedAt:row.receipt?.completedAt.toISOString()??null,blockingCode:row.outbox.processStatus==='DEAD'?failureCode(row.outbox.lastError):null,
    })),
    settlements:batches.map(row=>({kind:row.settlementType,status:row.status,totalTheory:amount(row.totalTheory),poolAvailable:amount(row.poolAvailable),kFactor:row.kFactor.toString(),finalizedAt:row.finalizedAt?.toISOString()??null})),
@@ -126,10 +140,10 @@ export class CompensationPeriodControlService{
     payoutReference:safe('PAYOUT',row.payoutBatchId),status:row.status,totalGross:amount(row.totalGross),totalRecovery:amount(row.totalRecovery),totalNet:amount(row.totalNet),
     approvals:row.approvals,latestExport:row.exportArtifacts.at(-1)??null,paymentResults:{paid:row.paymentResults.filter(result=>result.resultStatus==='PAID').length,failed:row.paymentResults.filter(result=>result.resultStatus==='FAILED').length},
    })),
-   blockingExceptions:dead.map(row=>({reference:safe('PERIOD-JOB',row.periodCloseJobId),code:failureCode(row.outbox.lastError),status:'OPEN'})),
+   blockingExceptions:[...dead.map(row=>({reference:safe('PERIOD-JOB',row.periodCloseJobId),code:failureCode(row.outbox.lastError),status:'OPEN'})),...cohort.problems.map(problem=>({reference:problem.jobId?safe('PERIOD-JOB',problem.jobId):'PERIOD-CONFIGURATION',code:problem.code,status:'OPEN'})),...(!volume.ready?[{reference:'PERIOD-RECOGNITION',code:'COMPENSATION_VOLUME_EVIDENCE_INVALID',status:'OPEN'}]:[])],
    freshness:{status:'CURRENT',projectedAt:now.toISOString(),dataThrough:now.toISOString()},
    authority:{ucell:'Member compensation/economic control only',erp:'Corporate accounting projection remains independent',hardClose:'Not persisted by this read model'},
   };
-  },{isolationLevel:Prisma.TransactionIsolationLevel.RepeatableRead});
+  },{isolationLevel:Prisma.TransactionIsolationLevel.RepeatableRead,timeout:30000});
  }
 }
