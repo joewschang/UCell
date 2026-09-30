@@ -11,6 +11,8 @@ import {ErpCompensationProjectionService} from '../src/modules/commerce/erp-comp
 import {ErpCompensationProjectionController} from '../src/modules/commerce/erp-compensation-projection.controller';
 import {ErpPaymentProjectionService} from '../src/modules/commerce/erp-payment-projection.service';
 import {ErpPaymentProjectionController} from '../src/modules/commerce/erp-payment-projection.controller';
+import {ErpAccountingMappingController} from '../src/modules/commerce/erp-accounting-mapping.controller';
+import {ErpAccountingMappingService} from '../src/modules/commerce/erp-accounting-mapping.service';
 import {AuditService} from '../src/common/audit/audit.service';
 import {IdentityTokenService} from '../src/modules/auth/identity-token.service';
 import {AdminAuthenticationGuard} from '../src/modules/auth/admin-authentication.guard';
@@ -24,7 +26,7 @@ const url=process.env.PHASE2_TEST_DATABASE_URL;
   db=new PrismaClient({datasources:{db:{url}}});const tokens=new IdentityTokenService(db as any);
   async function actor(roleCode:string){const person=await db.person.create({data:{legalName:'Synthetic ERP '+roleCode}}),subject=randomUUID();await db.identityLink.create({data:{personId:person.personId,provider:'ENTRA',providerSubject:subject}});await db.adminAccessGrant.create({data:{personId:person.personId,provider:'ENTRA',providerSubject:subject,roleCode,validFrom:new Date(Date.now()-1000)}});return (await tokens.issue({provider:'ENTRA',subject,personId:person.personId,roleCode})).accessToken;}
   finance=await actor('FINANCE');auditor=await actor('COMPLIANCE_AUDIT');orderOps=await actor('ORDER_OPS');
-  const module=await Test.createTestingModule({controllers:[ErpBusinessProjectionController,ErpCompensationProjectionController,ErpPaymentProjectionController],providers:[{provide:PrismaService,useValue:db},AuditService,ErpBusinessProjectionService,ErpCompensationProjectionService,ErpPaymentProjectionService,{provide:IdentityTokenService,useValue:tokens},{provide:ConfigService,useValue:{get:(name:string)=>name==='NODE_ENV'?'production':'false'}},AdminAuthenticationGuard,AdminRoleGuard]}).compile();
+  const module=await Test.createTestingModule({controllers:[ErpBusinessProjectionController,ErpCompensationProjectionController,ErpPaymentProjectionController,ErpAccountingMappingController],providers:[{provide:PrismaService,useValue:db},AuditService,ErpBusinessProjectionService,ErpCompensationProjectionService,ErpPaymentProjectionService,ErpAccountingMappingService,{provide:IdentityTokenService,useValue:tokens},{provide:ConfigService,useValue:{get:(name:string)=>name==='NODE_ENV'?'production':'false'}},AdminAuthenticationGuard,AdminRoleGuard]}).compile();
   app=module.createNestApplication<NestFastifyApplication>(new FastifyAdapter(),{logger:false});app.setGlobalPrefix('api/v1');app.useGlobalPipes(new ValidationPipe({whitelist:true,forbidNonWhitelisted:true,transform:true}));app.useGlobalGuards(module.get(AdminAuthenticationGuard),module.get(AdminRoleGuard));await app.init();await app.getHttpAdapter().getInstance().ready();
  });
  afterAll(async()=>{await app?.close();await db?.$disconnect();});
@@ -112,6 +114,18 @@ const url=process.env.PHASE2_TEST_DATABASE_URL;
   expect((await send()).json().data.replayed).toBe(true);expect((await db.outboxEvent.findUniqueOrThrow({where:{outboxEventId:row.outboxEventId}})).processStatus).toBe('DEAD');
   expect(await db.erpBusinessProjection.findUniqueOrThrow({where:{projectionReference}})).toEqual(row);
   expect(await db.auditEvent.count({where:{entityId:row.projectionId,action:'ERP_PROJECTION_RETRY_REQUESTED'}})).toBe(1);
+ });
+ it('protects mapping approval and history with financial roles and publishes no private connection fields',async()=>{
+  const route='/api/v1/admin/erp-accounting-mappings',groupReference=erpBusinessReference('COMPENSATION-GROUP',randomUUID());
+  const projection=(await db.$transaction(tx=>sealErpBusinessProjection(tx,{stream:'COMPENSATION',sourceIdentity:randomUUID(),body:{projectionPurpose:'SUBLEDGER_ACCOUNTING_REVIEW',currency:'TWD',configuration:{accountingDate:'2026-09-30'},aggregates:[{groupReference,metric:'MEMBER_PAYABLE_GROSS',economicCategory:'BINARY',amount:'10'}]},drillback:{private:'SECRET-SOURCE'},context:{actorId:randomUUID(),correlationId:randomUUID(),approvalReference:'SYNTHETIC-REVIEW'}}))).projection;
+  const connection=await db.providerConnection.create({data:{domain:'ERP',provider:'EZTOOL',connectionKey:'HTTP-'+randomUUID(),status:'ACTIVE',versions:{create:{version:1,environment:'TEST',credentialSecretRef:'SECRET-CREDENTIAL',webhookVerificationRef:'SECRET-WEBHOOK',configHash:'a'.repeat(64),effectiveFrom:new Date(0),approvalReference:'SYNTHETIC-APPROVED',createdByActor:randomUUID()}}},include:{versions:true}});
+  const input={connectionKey:connection.connectionKey,connectionVersion:1,policyReference:'SYNTHETIC-POLICY',policyVersion:1,previousMappingReference:null,entries:[{groupReference,treatment:'MAP',mappingCode:'SYNTHETIC-CODE'}]},url=`${route}/${projection.projectionReference}`;
+  expect((await app.inject({method:'GET',url,headers:headers(orderOps)})).statusCode).toBe(403);
+  for(const token of [auditor,orderOps]){expect((await app.inject({method:'POST',url:url+'/preview',headers:headers(token),payload:input})).statusCode).toBe(403);expect((await app.inject({method:'POST',url:url+'/approve',headers:headers(token),payload:{...input,reviewHash:'a'.repeat(64),approvalReference:'SYNTHETIC-APPROVAL'}})).statusCode).toBe(403);}
+  const preview=await app.inject({method:'POST',url:url+'/preview',headers:headers(finance),payload:input});expect(preview.statusCode).toBe(201);
+  const approved=await app.inject({method:'POST',url:url+'/approve',headers:headers(finance),payload:{...input,reviewHash:preview.json().data.reviewHash,approvalReference:'SYNTHETIC-APPROVAL'}});expect(approved.statusCode).toBe(201);
+  const history=await app.inject({method:'GET',url,headers:headers(auditor)});expect(history.statusCode).toBe(200);expect(history.json().data.items).toHaveLength(1);expect(history.body).not.toContain('SECRET');expect(history.body).not.toContain(connection.versions[0].providerConnectionVersionId);expect(history.body).not.toContain(projection.projectionId);
+  expect((await app.inject({method:'GET',url:route+'/connections',headers:headers(auditor)})).body).not.toContain('SECRET');
  });
  it('rolls back a retry if its audit fails and never retries an accepted document',async()=>{
   const f=await fixture(),created=await sales(f.order.orderNo.toString()),projectionReference=created.projectionReference,row=await db.erpBusinessProjection.findUniqueOrThrow({where:{projectionReference}}),input={retryKey:randomUUID(),reasonReference:'CASE-ERP-AUDIT'},context={actorId:randomUUID(),requestId:randomUUID(),correlationId:randomUUID()};

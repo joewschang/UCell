@@ -1540,6 +1540,169 @@
         ]
       }
     },
+    "/api/v1/admin/erp-accounting-mappings/connections": {
+      "get": {
+        "operationId": "adminErpAccountingMappingConnections",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopeDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "讀取可核准映射的 ERP 連線版本，不回傳憑證",
+        "tags": [
+          "Admin - ERP Accounting Mapping"
+        ]
+      }
+    },
+    "/api/v1/admin/erp-accounting-mappings/{reference}": {
+      "get": {
+        "operationId": "adminErpAccountingMappingHistory",
+        "parameters": [
+          {
+            "name": "reference",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "before",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopeDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "讀取不可變更的映射核准歷史",
+        "tags": [
+          "Admin - ERP Accounting Mapping"
+        ]
+      }
+    },
+    "/api/v1/admin/erp-accounting-mappings/{reference}/preview": {
+      "post": {
+        "operationId": "adminPreviewErpAccountingMapping",
+        "parameters": [
+          {
+            "name": "reference",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MappingDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopeDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "預覽完整群組映射或僅供報表的明確決策",
+        "tags": [
+          "Admin - ERP Accounting Mapping"
+        ]
+      }
+    },
+    "/api/v1/admin/erp-accounting-mappings/{reference}/approve": {
+      "post": {
+        "operationId": "adminApproveErpAccountingMapping",
+        "parameters": [
+          {
+            "name": "reference",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApprovalDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopeDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "核准並封存映射版本；傳送建立後不得修改映射",
+        "tags": [
+          "Admin - ERP Accounting Mapping"
+        ]
+      }
+    },
     "/api/v1/admin/finance/reservoirs": {
       "get": {
         "description": "Finance-confidential immutable sources. Read-only; signed replay correction is not a payout. Stable UUID cursor within server snapshot. A rejects tree/position/awardType filters.",
@@ -17945,6 +18108,81 @@
           "approvalReference"
         ]
       },
+      "EnvelopeDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "EntryDto": {
+        "type": "object",
+        "properties": {
+          "groupReference": {
+            "type": "string"
+          },
+          "treatment": {
+            "type": "string",
+            "enum": [
+              "MAP",
+              "REPORT_ONLY"
+            ]
+          },
+          "mappingCode": {
+            "type": "object",
+            "nullable": true
+          }
+        },
+        "required": [
+          "groupReference",
+          "treatment",
+          "mappingCode"
+        ]
+      },
+      "MappingDto": {
+        "type": "object",
+        "properties": {
+          "connectionKey": {
+            "type": "string"
+          },
+          "connectionVersion": {
+            "type": "number"
+          },
+          "policyReference": {
+            "type": "string"
+          },
+          "policyVersion": {
+            "type": "number"
+          },
+          "previousMappingReference": {
+            "type": "object",
+            "nullable": true
+          },
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EntryDto"
+            }
+          }
+        },
+        "required": [
+          "connectionKey",
+          "connectionVersion",
+          "policyReference",
+          "policyVersion",
+          "previousMappingReference",
+          "entries"
+        ]
+      },
+      "ApprovalDto": {
+        "type": "object",
+        "properties": {}
+      },
       "CreateTreeDto": {
         "type": "object",
         "properties": {
@@ -20150,10 +20388,6 @@
           "channels",
           "effectiveFrom"
         ]
-      },
-      "ApprovalDto": {
-        "type": "object",
-        "properties": {}
       },
       "CreatePackageProfileDto": {
         "type": "object",

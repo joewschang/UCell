@@ -1795,6 +1795,7 @@ model ProviderConnectionVersion {
   trackingEvidence   ShipmentTrackingEventEvidence[]
   erpDispatches      FulfillmentErpDispatch[]
   businessErpDispatches ErpProjectionDispatch[]
+  accountingMappings ErpAccountingMapping[]
 
   @@unique([providerConnectionId, version])
   @@index([providerConnectionId, environment, effectiveFrom, effectiveTo])
@@ -2750,9 +2751,31 @@ model ErpBusinessProjection {
   dispatch ErpProjectionDispatch?
   externalReference ErpProjectionExternalReference?
   reconciliations ErpProjectionReconciliation[]
+  accountingMappings ErpAccountingMapping[]
   @@unique([stream,sourceIdentity,revision])
   @@index([stream,requestedAt])
   @@map("erp_business_projection")
+  @@schema("commerce")
+}
+
+/// Finance-approved mapping attachment; original review evidence is never rewritten.
+model ErpAccountingMapping {
+  mappingId String @id @default(uuid()) @map("mapping_id") @db.Uuid
+  mappingReference String @unique @map("mapping_reference")
+  projectionId String @map("projection_id") @db.Uuid
+  revision Int
+  previousMappingReference String? @map("previous_mapping_reference")
+  providerConnectionVersionId String @map("provider_connection_version_id") @db.Uuid
+  reviewHash String @map("review_hash") @db.Char(64)
+  requestHash String @map("request_hash") @db.Char(64)
+  requestSnapshot Json @map("request_snapshot")
+  approvalReference String @map("approval_reference")
+  approvedByActor String @map("approved_by_actor")
+  approvedAt DateTime @default(now()) @map("approved_at") @db.Timestamptz(6)
+  projection ErpBusinessProjection @relation(fields:[projectionId],references:[projectionId])
+  providerConnectionVersion ProviderConnectionVersion @relation(fields:[providerConnectionVersionId],references:[providerConnectionVersionId])
+  @@unique([projectionId,revision])
+  @@map("erp_accounting_mapping")
   @@schema("commerce")
 }
 

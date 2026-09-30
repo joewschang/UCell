@@ -8,10 +8,12 @@ import {join,resolve,dirname,basename} from 'node:path';
 import {tmpdir} from 'node:os';
 const require=createRequire(new URL('../packages/database/package.json',import.meta.url));
 const {PrismaClient}=require('@prisma/client');
-const {requestErpSalesProjection,requestErpReturnProjection,verifyErpBusinessProjection,sealErpBusinessProjection}=require(fileURLToPath(new URL('../packages/database/dist/index.js',import.meta.url)));
+const {requestErpSalesProjection,requestErpReturnProjection,verifyErpBusinessProjection,sealErpBusinessProjection,erpBusinessReference,previewErpAccountingMapping,approveErpAccountingMapping}=require(fileURLToPath(new URL('../packages/database/dist/index.js',import.meta.url)));
 const referenceMode=process.argv.includes('--external-reference');
-const revisionMode=process.argv.includes('--revision');
-const firstNew=revisionMode?'20260930070000_erp_projection_revision':referenceMode?'20260930060000_erp_external_reference':'20260930050000_erp_business_projection',base=new URL(process.env.DATABASE_URL??'postgresql://ucell:ucell_dev@127.0.0.1:5432/ucell');
+const mappingMode=process.argv.includes('--mapping');
+const revisionMode=process.argv.includes('--revision')||mappingMode;
+assert.ok(!(referenceMode&&revisionMode),'Choose one upgrade baseline');
+const firstNew=mappingMode?'20260930080000_erp_accounting_mapping':revisionMode?'20260930070000_erp_projection_revision':referenceMode?'20260930060000_erp_external_reference':'20260930050000_erp_business_projection',base=new URL(process.env.DATABASE_URL??'postgresql://ucell:ucell_dev@127.0.0.1:5432/ucell');
 assert.ok(['localhost','127.0.0.1'].includes(base.hostname));
 const database='ucell_erp_upgrade_'+randomUUID().replaceAll('-','');assert.match(database,/^ucell_erp_upgrade_[a-f0-9]{32}$/);
 const control=new URL(base);control.pathname='/postgres';const target=new URL(base);target.pathname='/'+database;
@@ -31,7 +33,7 @@ try{
  const handoff=await db.fulfillmentErpHandoff.create({data:{fulfillmentId:fulfillment.fulfillmentId,outboxEventId:event.outboxEventId,providerCode:'ERP_PENDING',formatVersion:'UCELL_FULFILLMENT_ERP_V1',payloadHash:'a'.repeat(64),payloadSnapshot:{historical:true},requestedByActor:'TEST'}});
  const context={actorId:'TEST',correlationId:randomUUID()},legacy=[];
  let originalReview;
- if(revisionMode)originalReview=(await db.$transaction(tx=>sealErpBusinessProjection(tx,{stream:'COMPENSATION',sourceIdentity:'SYNTHETIC-UPGRADE-COMP',body:{amount:'100'},drillback:{source:'historical'},context:{...context,approvalReference:'TEST-APPROVAL'}}))).projection;
+ if(revisionMode)originalReview=(await db.$transaction(tx=>sealErpBusinessProjection(tx,{stream:'COMPENSATION',sourceIdentity:'SYNTHETIC-UPGRADE-COMP',body:{projectionPurpose:'SUBLEDGER_ACCOUNTING_REVIEW',currency:'TWD',configuration:{accountingDate:'2026-09-30'},aggregates:[{groupReference:erpBusinessReference('COMPENSATION-GROUP','SYNTHETIC-UPGRADE'),metric:'MEMBER_PAYABLE_GROSS',economicCategory:'BINARY',amount:'100'}]},drillback:{source:'historical'},context:{...context,approvalReference:'TEST-APPROVAL'}}))).projection;
  if(referenceMode||revisionMode){
   const sale=await db.$transaction(tx=>requestErpSalesProjection(tx,order.orderNo.toString(),context)),returned=await db.$transaction(tx=>requestErpReturnProjection(tx,ret.returnCaseId,context));
   const extraOrder=await db.order.create({data:{purchaserPersonId:person.personId,purpose:'RETAIL',status:'PAID',paidAt:new Date('2020-01-01Z'),grossAmount:100,netAmount:100,ruleVersionCode:'TEST_UPGRADE',lines:{create:{productId:product.productId,skuSnapshot:product.sku,productNameSnapshot:product.displayName,quantity:1,unitPrice:100,lineAmount:100,gpvRateSnapshot:0,gpvAmountSnapshot:0,ruleProfileSnapshot:{}}}}});
@@ -48,6 +50,15 @@ try{
  deploy(join(root,'schema.prisma'));
  if(revisionMode){
   for(const {projection,dispatch,claim,attempt} of legacy){assert.deepEqual(await db.erpBusinessProjection.findUnique({where:{projectionId:projection.projectionId}}),projection);assert.deepEqual(await db.erpProjectionDispatch.findUnique({where:{dispatchId:dispatch.dispatchId}}),dispatch);assert.deepEqual(await db.erpProjectionExternalReference.findUnique({where:{projectionId:projection.projectionId}}),claim);assert.deepEqual(await db.erpProjectionDispatchAttempt.findUnique({where:{attemptId:attempt.attemptId}}),attempt);}
+  if(mappingMode){
+   assert.equal(await db.erpAccountingMapping.count(),0);
+   const input={connectionKey:'SYNTHETIC-UPGRADE',connectionVersion:1,policyReference:'SYNTHETIC-POLICY',policyVersion:1,previousMappingReference:null,entries:[{groupReference:erpBusinessReference('COMPENSATION-GROUP','SYNTHETIC-UPGRADE'),treatment:'MAP',mappingCode:'SYNTHETIC-MAPPING'}]};
+   const preview=await db.$transaction(tx=>previewErpAccountingMapping(tx,originalReview.projectionReference,input));
+   const approved=await db.$transaction(tx=>approveErpAccountingMapping(tx,originalReview.projectionReference,{...input,reviewHash:preview.reviewHash,approvalReference:'SYNTHETIC-APPROVAL'},'TEST'));
+   assert.equal(approved.mapping.revision,1);assert.notEqual(approved.mapping.requestHash,originalReview.payloadHash);
+   await assert.rejects(db.erpAccountingMapping.update({where:{mappingId:approved.mapping.mappingId},data:{approvalReference:'TEST-MUTATION'}}));
+   assert.deepEqual(await db.erpBusinessProjection.findUnique({where:{projectionId:originalReview.projectionId}}),originalReview);
+  }
   const supplement=await db.$transaction(tx=>sealErpBusinessProjection(tx,{stream:'COMPENSATION',sourceIdentity:originalReview.sourceIdentity,revision:2,previousProjectionReference:originalReview.projectionReference,body:{amount:'90'},drillback:{source:'supplemental'},context:{...context,approvalReference:'TEST-SUPPLEMENT'}}));
   assert.equal(supplement.projection.revision,2);verifyErpBusinessProjection(supplement.projection);assert.deepEqual(await db.erpBusinessProjection.findUnique({where:{projectionId:originalReview.projectionId}}),originalReview);
   await assert.rejects(db.$transaction(tx=>sealErpBusinessProjection(tx,{stream:'COMPENSATION',sourceIdentity:originalReview.sourceIdentity,revision:4,previousProjectionReference:supplement.projection.projectionReference,body:{amount:'80'},drillback:{},context:{...context,approvalReference:'TEST-INVALID'}})));
@@ -65,7 +76,7 @@ try{
  for(const row of [sales.projection,returned.projection]){verifyErpBusinessProjection(row);await assert.rejects(db.erpBusinessProjection.update({where:{projectionId:row.projectionId},data:{payloadHash:'b'.repeat(64)}}));}
  assert.equal((await db.$transaction(tx=>requestErpSalesProjection(tx,order.orderNo.toString(),context))).replayed,true);
  const [{count}]=await db.$queryRawUnsafe('SELECT count(*)::int AS count FROM public._prisma_migrations WHERE finished_at IS NOT NULL AND rolled_back_at IS NULL');
- console.log(`ERP_PROJECTION_UPGRADE_${revisionMode?119:referenceMode?118:117}_TO_${count}_PRESERVATION_AND_GUARDS_PASS`);
+ console.log(`ERP_PROJECTION_UPGRADE_${mappingMode?120:revisionMode?119:referenceMode?118:117}_TO_${count}_PRESERVATION_AND_GUARDS_PASS`);
 }finally{
  await db.$disconnect();if(created){await admin.$executeRawUnsafe('DROP DATABASE "'+database+'" WITH (FORCE)');console.log('ERP_PROJECTION_UPGRADE_CLEANUP_PASS');}await admin.$disconnect();
  assert.equal(dirname(resolve(scratch)),resolve(tmpdir()));assert.ok(basename(scratch).startsWith('ucell-erp-upgrade-'));rmSync(scratch,{recursive:true,force:true});

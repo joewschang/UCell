@@ -1,4 +1,4 @@
-import {PrismaService,OutboxLease,withOutboxLease,claimOutboxLease,releaseFailedOutboxLease,verifyErpBusinessProjection,replayHash} from '@ucell/database';
+import {PrismaService,OutboxLease,withOutboxLease,claimOutboxLease,releaseFailedOutboxLease,verifyErpBusinessProjection,verifyErpAccountingMapping,replayHash} from '@ucell/database';
 import {loadProviderEnablementManifest,validateProviderEnablementManifest} from './provider-enablement';
 import {providerDeploymentEnvironment} from './provider-runtime';
 
@@ -19,13 +19,20 @@ async function bounded<T>(signal:AbortSignal,work:()=>Promise<T>):Promise<T>{
 }
 export async function processErpBusinessProjection(db:PrismaService,lease:OutboxLease,adapter:BusinessErpAdapter){
  const prepared=await withOutboxLease(db,lease,async tx=>{
-  const projection=await tx.erpBusinessProjection.findUnique({where:{outboxEventId:lease.outboxEventId},include:{dispatch:true}});if(!projection)throw new Error('ERP_PROJECTION_NOT_FOUND');
-  const request=verifyErpBusinessProjection(projection);
-  if(projection.stream==='COMPENSATION'&&!projection.mappingReference)throw new Error('ERP_ACCOUNT_MAPPING_REQUIRED');
+  await tx.$queryRaw`SELECT projection_id FROM commerce.erp_business_projection WHERE outbox_event_id=${lease.outboxEventId}::uuid FOR UPDATE`;
+  const projection=await tx.erpBusinessProjection.findUnique({where:{outboxEventId:lease.outboxEventId},include:{dispatch:true,accountingMappings:{orderBy:{revision:'desc'},take:1}}});if(!projection)throw new Error('ERP_PROJECTION_NOT_FOUND');
+  let request=verifyErpBusinessProjection(projection),requestHash=projection.payloadHash;
+  const mapping=projection.accountingMappings[0];
+  if(projection.stream==='COMPENSATION'){
+   if(!mapping)throw new Error('ERP_ACCOUNT_MAPPING_REQUIRED');
+   request=verifyErpAccountingMapping(projection,mapping);requestHash=mapping.requestHash;
+   if(mapping.providerConnectionVersionId!==adapter.providerConnectionVersionId)throw new Error('ERP_MAPPING_CONNECTION_MISMATCH');
+  }
   const version=await tx.providerConnectionVersion.findUnique({where:{providerConnectionVersionId:adapter.providerConnectionVersionId},include:{connection:true}}),now=new Date();
   if(!version||version.connection.domain!=='ERP'||version.connection.provider!==adapter.provider||version.connection.status!=='ACTIVE'||version.environment!==adapter.environment||!version.approvalReference||version.effectiveFrom>now||(version.effectiveTo&&version.effectiveTo<=now))throw new Error('ERP_CONNECTION_NOT_APPROVED');
-  if(projection.dispatch&&(projection.dispatch.providerConnectionVersionId!==version.providerConnectionVersionId||projection.dispatch.requestHash!==projection.payloadHash))throw new Error('ERP_PROJECTION_DISPATCH_MISMATCH');
-  const dispatch=projection.dispatch??await tx.erpProjectionDispatch.create({data:{projectionId:projection.projectionId,providerConnectionVersionId:version.providerConnectionVersionId,idempotencyKey:'ucell-erp-projection-'+replayHash(projection.projectionReference),requestHash:projection.payloadHash}});
+  if(mapping&&request.providerConfigHash!==version.configHash)throw new Error('ERP_MAPPING_CONNECTION_MISMATCH');
+  if(projection.dispatch&&(projection.dispatch.providerConnectionVersionId!==version.providerConnectionVersionId||projection.dispatch.requestHash!==requestHash))throw new Error('ERP_PROJECTION_DISPATCH_MISMATCH');
+  const dispatch=projection.dispatch??await tx.erpProjectionDispatch.create({data:{projectionId:projection.projectionId,providerConnectionVersionId:version.providerConnectionVersionId,idempotencyKey:'ucell-erp-projection-'+replayHash(projection.projectionReference),requestHash}});
   return {dispatch,request,projectionReference:projection.projectionReference,providerConnectionId:version.providerConnectionId};
  });
  if('lostLease' in prepared)return prepared;
@@ -64,9 +71,23 @@ export async function pollErpBusinessProjections(db:PrismaService,adapters:reado
  const manifest=loadProviderEnablementManifest(environment);validateProviderEnablementManifest(manifest,providerDeploymentEnvironment(environment),new Date());
  const entry=manifest.entries.find(row=>row.domain==='ERP'&&row.provider===adapter.provider&&row.connectionId===version.connection.connectionKey&&row.providerConnectionVersionId===version.providerConnectionVersionId);
  if(!entry||entry.connectionEnvironment!==adapter.environment||entry.configHash!==version.configHash||entry.credentialSecretRef!==version.credentialSecretRef||entry.webhookVerificationRef!==version.webhookVerificationRef||entry.approvalReference!==version.approvalReference)throw new Error('ERP_ENABLEMENT_VERSION_MISMATCH');
- const events=await db.outboxEvent.findMany({where:{eventType:'ERP_BUSINESS_PROJECTION_REQUESTED',processStatus:{in:['PENDING','PROCESSING']},availableAt:{lte:new Date()},erpProjection:{is:{OR:[{stream:{in:['SALES','RETURN']}},{stream:'COMPENSATION',mappingReference:{not:null}}]}}},orderBy:{createdAt:'asc'},take:20});
+ const events=await erpBusinessProjectionCandidates(db,adapter.providerConnectionVersionId);
  let claimed=0;for(const event of events){const lease=await claimOutboxLease(db,event);if(!lease)continue;claimed++;
   try{await processErpBusinessProjection(db,lease,adapter);}catch{await releaseFailedOutboxLease(db,lease,new Error('ERP_PROJECTION_PROCESSING_FAILED'));}
  }
  return {configured:true,claimed};
+}
+
+/** Bounded routing uses the latest mapping, never an older matching attachment. */
+export async function erpBusinessProjectionCandidates(db:PrismaService,providerConnectionVersionId:string){
+ const candidates=await db.$queryRaw<{outbox_event_id:string}[]>`
+  SELECT o.outbox_event_id FROM integration.outbox_event o
+  JOIN commerce.erp_business_projection p ON p.outbox_event_id=o.outbox_event_id
+  LEFT JOIN commerce.erp_projection_dispatch d ON d.projection_id=p.projection_id
+  WHERE o.event_type='ERP_BUSINESS_PROJECTION_REQUESTED' AND o.process_status::text IN ('PENDING','PROCESSING') AND o.available_at<=now()
+  AND (d.dispatch_id IS NULL OR d.provider_connection_version_id=${providerConnectionVersionId}::uuid)
+  AND (p.stream IN ('SALES','RETURN') OR (p.stream='COMPENSATION' AND
+   (SELECT m.provider_connection_version_id FROM commerce.erp_accounting_mapping m WHERE m.projection_id=p.projection_id ORDER BY m.revision DESC LIMIT 1)=${providerConnectionVersionId}::uuid))
+  ORDER BY o.created_at,o.outbox_event_id LIMIT 20`;
+ return db.outboxEvent.findMany({where:{outboxEventId:{in:candidates.map(row=>row.outbox_event_id)}},orderBy:[{createdAt:'asc'},{outboxEventId:'asc'}]});
 }
