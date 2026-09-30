@@ -12,7 +12,7 @@ export class MemberContextGuard implements CanActivate {
  }
  async canActivate(context:ExecutionContext){
   const request=context.switchToHttp().getRequest(),path=request.url.split('?')[0];
-  if(['/api/v1/member/me','/api/v1/member/qualifications','/api/v1/member/products','/api/v1/member/profile','/api/v1/member/delivery-profile','/api/v1/member/logout','/api/v1/member/organization/tree','/api/v1/member/retail-orders'].includes(path)||path.startsWith('/api/v1/member/contracts/')||(path==='/api/v1/member/orders'&&request.method==='POST'&&request.body?.packageVersionId))return true;
+  if(['/api/v1/member/my-growth','/api/v1/member/me','/api/v1/member/qualifications','/api/v1/member/products','/api/v1/member/profile','/api/v1/member/delivery-profile','/api/v1/member/logout','/api/v1/member/organization/tree','/api/v1/member/retail-orders'].includes(path)||path.startsWith('/api/v1/member/contracts/')||(path==='/api/v1/member/orders'&&request.method==='POST'&&request.body?.packageVersionId))return true;
   const id=['POST','PATCH'].includes(request.method)?request.body?.qualificationId:request.query?.qualificationId;
   if(typeof id!=='string'||!id){await this.denied(request,'QUALIFICATION_CONTEXT_REQUIRED');throw new UnprocessableEntityException({code:'QUALIFICATION_CONTEXT_REQUIRED'});}
   if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)){await this.denied(request,'QUALIFICATION_NOT_OWNED');throw new ForbiddenException({code:'QUALIFICATION_NOT_OWNED'});}

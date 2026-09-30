@@ -22,3 +22,5 @@ Member360 includes preserved cycle history. Activity Timeline reads participatio
 - Backend builds, Admin/Member builds and OpenAPI/security/schema/migration preflights PASS. Admin **56 files / 188 tests**, Member **33 files / 180 tests PASS**, including credential display/cancellation/retry and Admin roster/attendance controls.
 
 Logs: `C:\UCell\logs\cr-batch-event-lifecycle-*`. This is not full isolated batch recertification or browser/Stage approval. Growth attendance counting is audited separately; previously conflated check-in/attendance totals are not covered by this increment.
+
+Follow-up: real Edge Admin create/publish and Member registration/credential rotation/cancellation plus personal message read/archive now pass. Growth separates CHECKED_IN from ATTENDED and counts all records beyond the preview limit. See MEMBER_GROWTH_ACCEPTANCE_20261001.md; attendance-window browser flow and remaining full-scope acceptance are still open.

@@ -28,7 +28,10 @@ try{
   try{await fixture.person.create({data:{legalName:'ISOLATED TEST PERSON'}});await fixture.productReference.create({data:{sku:'ISOLATED-TEST',displayName:'ISOLATED TEST PRODUCT',currentPrice:1}});}finally{await fixture.$disconnect();}
   run([join(cwd,'scripts','phase2-db-test.mjs')]);
   if(process.argv.length===3&&process.argv[2]==='--decision-v3')run([join(cwd,'scripts','v3-mandatory-golden.mjs')]);
-  else run([join(dirname(apiRequire.resolve('jest/package.json')),'bin','jest.js'),'--config','./test/jest-e2e.json','--runInBand',...process.argv.slice(2)],join(cwd,'apps','api'));
+  else {
+    env.API_JEST_TEMPLATE_DATABASE_URL=target.href;
+    run([join(dirname(apiRequire.resolve('jest/package.json')),'bin','jest.js'),'--config','./test/jest-e2e.json','--env',join(cwd,'scripts','api-jest-database-environment.cjs'),'--runInBand',...process.argv.slice(2)],join(cwd,'apps','api'));
+  }
   console.log('API_JEST_ISOLATED_PASS');
 }finally{
   try{unlinkSync(evidencePath);}catch(error){if(error?.code!=='ENOENT')throw error;}

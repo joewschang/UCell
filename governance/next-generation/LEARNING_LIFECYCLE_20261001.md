@@ -21,3 +21,5 @@ This increment implements bounded course management and preserves enrollment aut
 Logs: `C:\UCell\logs\cr-batch-learning-lifecycle-*`. An intermediate run overlapped the deep-link change and failed the old link expectation; the final frozen-code 11-test run supersedes it. The Admin navigation expectation was updated to include the newly authorized Learning entry, followed by the full 187-test pass.
 
 This does not certify all §34 Learning/Event integration, all rich-content/optional-assessment or assignment/reminder cases, actual-browser accessibility/themes/mobile, full-batch isolated recertification, or Stage readiness. No Stage/Production deployment was performed.
+
+Follow-up: the real Edge Admin publish → no-qualification Member enrollment/lesson/completion → Growth journey now passes, including production assets and disposable PostgreSQL cleanup. See MEMBER_GROWTH_ACCEPTANCE_20261001.md for bounded browser evidence and remaining scope.

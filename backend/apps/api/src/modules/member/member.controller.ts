@@ -19,6 +19,7 @@ import {MemberGrowthService} from './member-growth.service';
 export class LineExchangeDto {
  @ApiProperty({description:'LINE ID token; verified server-side, never logged or persisted raw'}) @IsString() @MinLength(1) @MaxLength(16384) idToken!:string;
 }
+export class MemberGrowthQueryDto {}
 export class MemberContextDto {
  @ApiProperty({format:'uuid',description:'Selected Qualification; server checks authenticated Person ownership on every request'}) @IsUUID() qualificationId!:string;
 }
@@ -100,7 +101,7 @@ export class MemberAuthController {
 @Controller('member')
 export class MemberController {
  constructor(private readonly service:MemberService,private readonly reads:MemberReadService,private readonly trees:MemberTreeReadService,private readonly orderService:OrderService,private readonly shareLinks:MemberShareLinkService,private readonly contracts:MemberContractService,private readonly delivery:DeliveryProfileService,private readonly formalApplications:FormalMemberApplicationService,private readonly growth:MemberGrowthService){}
- @Get('my-growth') @ApiOperation({operationId:'memberMyGrowth',description:'Server-authoritative, member-safe multi-dimensional growth view. It does not infer rank, qualification, or economics in the browser.'}) myGrowth(@Req() req:any){return this.growth.read(req.user.personId);}
+ @Get('my-growth') @ApiOperation({operationId:'memberMyGrowth',description:'Server-authoritative, member-safe multi-dimensional growth view. It does not infer rank, qualification, or economics in the browser.'}) myGrowth(@Req() req:any,@Query() _query:MemberGrowthQueryDto){return this.growth.read(req.user.personId);}
  @Get('me') @ApiResponse({status:200,schema:views.memberEnvelope(views.PersonView)}) @ApiOperation({operationId:'memberMe'}) me(@Req() req:any){return this.service.me(req.user.personId);}
  @Get('contracts/required') @ApiOperation({operationId:'memberRequiredContracts',description:'Return currently effective required Network Member contract versions and immutable consent status.'}) requiredContracts(@Req() req:any){return this.contracts.required(req.user.personId);}
  @Get('contracts/formal-required') @ApiOperation({operationId:'memberFormalRequiredContracts',description:'Effective Formal Member contracts and own immutable consent status.'}) formalRequiredContracts(@Req() req:any){return this.contracts.formalRequired(req.user.personId);}

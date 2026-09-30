@@ -174,6 +174,7 @@ function MemberApp() {
         <Route path="/notifications" element={<Notifications q={current}/>}/>
         <Route path="*" element={<section className="card"><h2>找不到頁面</h2><Link to="/">返回首頁</Link></section>}/>
       </Routes></div></> : <Routes>
+        <Route path="/growth" element={<GrowthCenter/>}/>
         <Route path="/notifications" element={<MemberMessages/>}/>
         <Route path="/learning" element={<LearningCenter/>}/>
         <Route path="/events" element={<EventCenter/>}/>
