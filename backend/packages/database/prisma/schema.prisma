@@ -2727,6 +2727,18 @@ model OutboxEvent {
 }
 
 /// Immutable approved settlement request; delivery state belongs to its Outbox.
+model PeriodClosePlannerCursor {
+  ruleVersionCode String @map("rule_version_code")
+  kind String
+  configuredFrom DateTime @map("configured_from") @db.Timestamptz(6)
+  approvalReference String @map("approval_reference")
+  nextPeriodStart DateTime @map("next_period_start") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  @@id([ruleVersionCode,kind])
+  @@map("period_close_planner_cursor")
+  @@schema("integration")
+}
+
 model PeriodCloseJob {
   periodCloseJobId String @id @default(uuid()) @map("period_close_job_id") @db.Uuid
   kind String

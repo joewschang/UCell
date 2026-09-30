@@ -7,6 +7,7 @@ import { ProviderWorkloadMetrics } from './provider-workload-metrics';
 import { createLineMessagingObserverHandler } from './line-messaging-handler';
 import {pollErpHandoffs,type PhysicalErpAdapter} from './erp-handoff-runtime';
 import {pollPeriodCloseJobs} from './period-close-runtime';
+import {pollPeriodClosePlanner} from './period-close-planner-runtime';
 import {createShipmentTrackingHandler,type VerifiedShipmentTrackingAdapter} from './shipment-tracking-handler';
 
 // Actual transports are registered only after protocol/credential enablement.
@@ -270,6 +271,10 @@ async function tick(){
   await pollOutbox();
   await pollErpHandoffs(prisma,erpAdapters);
   await pollRecognitions();
+  try{
+    const planned=await pollPeriodClosePlanner(prisma);
+    if(planned.enabled&&('failures' in planned)&&planned.failures.length)console.error(JSON.stringify({event:'PERIOD_CLOSE_PLANNER_ATTENTION',failures:planned.failures}));
+  }catch(error){emitStructuredOperationalError({service:'worker',operation:'planPeriodClose',traceId:crypto.randomUUID(),error,errorCode:'PERIOD_CLOSE_PLANNER_FAILED',retryable:true});}
   await pollPeriodCloseJobs(prisma);
   await matureBonusAwards();
   await expireNotificationDeliveries();

@@ -24,7 +24,8 @@ export async function pollPeriodCloseJobs(db:PrismaService,environment:NodeJS.Pr
         SELECT 1 FROM ledger.bonus_award a LEFT JOIN ledger.settlement_batch b ON b.settlement_batch_id=a.settlement_batch_id
         WHERE a.rule_version_code=j.rule_version_code AND a.payable_amount>0 AND a.pending_until>now()
           AND NOT EXISTS (SELECT 1 FROM ledger.award_economic_destination d WHERE d.source_bonus_award_id=a.bonus_award_id)
-          AND ((b.period_start>=j.period_start AND b.period_end<=j.period_end)
+          AND ((b.settlement_batch_id IN (SELECT r.source_id FROM integration.period_close_receipt r
+              WHERE r.period_close_job_id IN (SELECT p.id::uuid FROM jsonb_array_elements_text(j.prerequisite_ids) p(id))))
             OR (a.settlement_batch_id IS NULL AND a.occurred_at>=j.period_start AND a.occurred_at<j.period_end))))
     ORDER BY o.available_at,j.period_close_job_id LIMIT 20`;
   const result={enabled:true,completed:0,blocked:0,failed:0};

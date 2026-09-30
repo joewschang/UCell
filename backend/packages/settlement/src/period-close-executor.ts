@@ -1,4 +1,4 @@
-import {Prisma,PrismaService,verifySnapshot,periodBonusAwardWhere,periodCloseMaturityReady,matureBonusAward,materializePayableEntries,storeReplaySnapshot} from '@ucell/database';
+import {Prisma,PrismaService,verifySnapshot,periodBonusAwardWhere,periodCloseMaturityReady,matureBonusAward,materializePayableEntries,storeReplaySnapshot,preparationSourcePeriod} from '@ucell/database';
 import {BinaryBonusService} from './bonus/binary-bonus.service';
 import {ReferralBonusService} from './bonus/referral-bonus.service';
 import {BonusQueryService} from './bonus/bonus-query.service';
@@ -18,9 +18,10 @@ export async function executePeriodClose(tx:Prisma.TransactionClient,job:Prisma.
   if(job.kind==='PAYABLE_PREPARATION'){
     const now=new Date();
     if(!await periodCloseMaturityReady(tx,job,now))throw new Error('PERIOD_CLOSE_MATURITY_PENDING');
-    const awards=await tx.bonusAward.findMany({where:{ruleVersionCode:job.ruleVersionCode,pendingUntil:{lte:now},...periodBonusAwardWhere(job)},orderBy:{bonusAwardId:'asc'}});
+    const period=await preparationSourcePeriod(tx,job);
+    const awards=await tx.bonusAward.findMany({where:{ruleVersionCode:job.ruleVersionCode,pendingUntil:{lte:now},...periodBonusAwardWhere(period)},orderBy:{bonusAwardId:'asc'}});
     for(const award of awards)await matureBonusAward(client,award.bonusAwardId,now);
-    const result=await materializePayableEntries(tx,now,job.ruleVersionCode,job);
+    const result=await materializePayableEntries(tx,now,job.ruleVersionCode,period);
     await storeReplaySnapshot(tx,{format:'UCELL_HISTORICAL_REPLAY_V1',kind:job.kind,sourceId:job.periodCloseJobId,ruleVersionCode:job.ruleVersionCode,
       at:now.toISOString(),parameters:pinned,recipients:[],
       inputs:{periodStart:job.periodStart.toISOString(),periodEnd:job.periodEnd.toISOString(),cutoff:now.toISOString()},

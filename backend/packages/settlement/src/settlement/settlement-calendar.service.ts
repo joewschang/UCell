@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma, PrismaService } from '@ucell/database';
 import { captureParameters, ParameterSnapshot, pending, snapshotValue } from '../rules/parameter-snapshot';
+import {resolveSettlementWindow,resolveBinaryWeekBatch} from '@ucell/shared';
 
 @Injectable()
 export class SettlementCalendarService {
@@ -12,7 +13,8 @@ export class SettlementCalendarService {
     const cutoff=snapshotValue(snapshot,'settlement.cut_off',type) as any;
     if(typeof timezone!=='string') pending('CONFIGURATION_PENDING','Explicit settlement timezone required');
     try {new Intl.DateTimeFormat('en',{timeZone:timezone});} catch {pending('INVALID_TIMEZONE','Invalid settlement timezone');}
-    if(!period || !['DAY','WEEK','MONTH'].includes(period.unit) || !Number.isInteger(period.count)||period.count<1 || typeof period.anchorLocal!=='string' || !/^\d{4}-\d{2}-\d{2}T00:00:00$/.test(period.anchorLocal)) pending('CONFIGURATION_PENDING','Configure period unit/count/local midnight anchor');
+    if(!period || !['DAY','WEEK','MONTH','SETTLEMENT_10_25'].includes(period.unit) || !Number.isInteger(period.count)||period.count<1 || typeof period.anchorLocal!=='string' || !/^\d{4}-\d{2}-\d{2}T00:00:00$/.test(period.anchorLocal)) pending('CONFIGURATION_PENDING','Configure period unit/count/local midnight anchor');
+    if(period.unit==='SETTLEMENT_10_25'&&(timezone!=='Asia/Taipei'||period.count!==1))pending('INVALID_PERIOD','Approved 10/25 periods use Asia/Taipei and count 1');
     if(period.unit==='MONTH' && !period.anchorLocal.slice(0,10).endsWith('-01')) pending('INVALID_PERIOD','Monthly anchor must be first calendar day');
     if(!cutoff || typeof cutoff.approvalReference!=='string' || !cutoff.approvalReference.trim() || !/^([01]\d|2[0-3]):[0-5]\d:[0-5]\d$/.test(cutoff.localTime??'') || !Number.isInteger(cutoff.daysAfterPeriodEnd) || cutoff.daysAfterPeriodEnd<0) pending('CONFIGURATION_PENDING','Approved cut-off localTime/daysAfterPeriodEnd/approvalReference required; no default');
     return {timezone,period,cutoff};
@@ -20,6 +22,10 @@ export class SettlementCalendarService {
 
   async periodFor(tx:Prisma.TransactionClient,eventAt:Date,snapshot:ParameterSnapshot,type:string) {
     const {timezone,period}=this.validate(snapshot,type);
+    if(period.unit==='SETTLEMENT_10_25'){
+      const resolved=resolveSettlementWindow(eventAt);
+      return {start:resolved.start,end:resolved.end,timezone};
+    }
     const width=period.count*(period.unit==='WEEK'?7:1);
     const interval=period.unit==='MONTH'?`${width} months`:`${width} days`;
     const [row]=await tx.$queryRaw<Array<{start:Date;end:Date}>>`
@@ -53,5 +59,34 @@ export class SettlementCalendarService {
     const snapshot=await captureParameters(db,eventAt,version);
     const period=await this.periodFor(db,eventAt,snapshot,'BINARY_K1');
     return {...period,parameterSnapshot:snapshot};
+  }
+
+  /** Canonical 10/25 preparation includes intact weeks assigned by their closing timestamp. */
+  async preparationWindows(tx:Prisma.TransactionClient,start:Date,end:Date,parameters:ParameterSnapshot){
+    if(this.validate(parameters,'PAYABLE_PREPARATION').period.unit!=='SETTLEMENT_10_25')return null;
+    const result:Array<{kind:string;periodStart:Date;periodEnd:Date}>=[];
+    const referral=await this.periodFor(tx,start,parameters,'REFERRAL_K0');
+    if(referral.start.getTime()!==start.getTime()||referral.end.getTime()!==end.getTime())pending('PERIOD_CLOSE_PAYABLE_CALENDAR_REQUIRED','Referral must use the approved 10/25 window');
+    result.push({kind:'REFERRAL_K0',periodStart:start,periodEnd:end});
+    for(const kind of ['BINARY_K1','MATCHING_K2','GLOBAL','WELFARE']){
+      let period=await this.periodFor(tx,new Date(start.getTime()-1),parameters,kind),count=0;
+      while(period.end<end){
+        if(++count>366)pending('PERIOD_CLOSE_PAYABLE_CALENDAR_REQUIRED','Too many prerequisite periods');
+        if(period.end>=start){
+          if(['BINARY_K1','MATCHING_K2'].includes(kind)&&resolveBinaryWeekBatch(period.end).getTime()!==end.getTime())pending('PERIOD_CLOSE_PAYABLE_CALENDAR_REQUIRED','Weekly close does not map to this approved batch');
+          result.push({kind,periodStart:period.start,periodEnd:period.end});
+        }
+        period=await this.periodFor(tx,period.end,parameters,kind);
+      }
+    }
+    return result;
+  }
+
+  async validatePreparationDependencies(tx:Prisma.TransactionClient,input:{kind:string;periodStart:Date;periodEnd:Date},parameters:ParameterSnapshot,dependencies:Array<{kind:string;periodStart:Date;periodEnd:Date}>){
+    if(input.kind!=='PAYABLE_PREPARATION')return;
+    const expected=await this.preparationWindows(tx,input.periodStart,input.periodEnd,parameters);
+    if(!expected)return;
+    const key=(row:{kind:string;periodStart:Date;periodEnd:Date})=>`${row.kind}:${row.periodStart.toISOString()}:${row.periodEnd.toISOString()}`;
+    if(JSON.stringify(expected.map(key).sort())!==JSON.stringify(dependencies.map(key).sort()))pending('PERIOD_CLOSE_PAYABLE_COVERAGE_REQUIRED','Every approved prerequisite close must be present, with no split weeks or missing periods');
   }
 }

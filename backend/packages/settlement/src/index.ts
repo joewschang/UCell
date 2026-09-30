@@ -6,3 +6,4 @@ export * from './settlement/settlement-calendar.service';
 export * from './global-pool/global-pool.service';
 export * from './global-pool/global-pool-persistence';
 export * from './period-close-executor';
+export * from './period-close-planner';
