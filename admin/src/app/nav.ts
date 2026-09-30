@@ -24,6 +24,7 @@ export const nav=[
   ['付款批次與對帳','/payouts','payouts'],
   ['影音／連結內容','/content','content'],
   ['教育訓練','/learning','content'],
+  ['活動管理','/events','content'],
   ['文件／附件','/documents','documents'],
   ['稽核紀錄','/audit','audit'],
   ['報表／完整性','/reports','reports'],
@@ -34,7 +35,7 @@ export const nav=[
 ] as const;
 export const navGroups=[
  {label:'Dashboard',paths:['/']},
- {label:'會員管理',paths:['/people','/qualifications','/applications','/paper-intake','/line-links','/workflows','/learning']},
+ {label:'會員管理',paths:['/people','/qualifications','/applications','/paper-intake','/line-links','/workflows','/learning','/events']},
  {label:'組織管理',paths:['/organization','/admin/organization/trees']},
  {label:'商務',paths:['/products','/packages','/orders','/fulfillment','/erp-reconciliation','/subscriptions','/returns']},
  {label:'獎金中心',paths:['/bonuses','/settlement-jobs','/compensation-period-control','/economic-lineage']},

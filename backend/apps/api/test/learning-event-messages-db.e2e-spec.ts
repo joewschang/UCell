@@ -10,7 +10,7 @@ const url=process.env.PHASE2_TEST_DATABASE_URL;
  let db:PrismaClient,learning:LearningService,events:MemberEventsService,messages:MemberMessagesService;
  const actor=randomUUID();
  beforeAll(()=>{db=new PrismaClient({datasources:{db:{url}}});const idempotency=new IdempotencyService(db as any),audit=new AuditService();learning=new LearningService(db as any,idempotency,audit);events=new MemberEventsService(db as any,idempotency,audit);messages=new MemberMessagesService(db as any,audit,idempotency);});
- afterAll(()=>db.$disconnect());
+ afterAll(()=>db.$disconnect());afterEach(()=>jest.restoreAllMocks());
  const person=()=>db.person.create({data:{legalName:'Private learner',membershipState:'NETWORK_MEMBER'}});
  it('delivers enrollment/completion once, only after committed progress, without qualification or LINE delivery',async()=>{
   const p=await person(),other=await person(),courseCode=`COURSE-${randomUUID().slice(0,8).toUpperCase()}`,before=await db.notificationDelivery.count();
@@ -29,9 +29,9 @@ const url=process.env.PHASE2_TEST_DATABASE_URL;
   const key=randomUUID(),first=await events.register(p.personId,eventCode,key,randomUUID());await events.register(p.personId,eventCode,key,randomUUID());await events.register(p.personId,eventCode,randomUUID(),randomUUID());
   await events.cancel(p.personId,eventCode,randomUUID(),randomUUID());await events.cancel(p.personId,eventCode,randomUUID(),randomUUID());const renewed=await events.register(p.personId,eventCode,randomUUID(),randomUUID());
   await expect(events.checkIn(first.checkInToken!,actor,randomUUID(),randomUUID())).rejects.toMatchObject({status:404});
-  const r=await db.memberEventRegistration.findFirstOrThrow({where:{personId:p.personId}});await db.memberEventVersion.update({where:{memberEventVersionId:r.memberEventVersionId},data:{startsAt:new Date(Date.now()-1000)}});
+  const r=await db.memberEventRegistration.findFirstOrThrow({where:{personId:p.personId}});const version=await db.memberEventVersion.findUniqueOrThrow({where:{memberEventVersionId:r.memberEventVersionId}});jest.spyOn(events as any,'now').mockReturnValue(new Date(version.startsAt.getTime()+1000));
   await events.checkIn(renewed.checkInToken!,actor,randomUUID(),randomUUID());await events.checkIn(renewed.checkInToken!,actor,randomUUID(),randomUUID());
-  const page=await messages.list(p.personId,{category:'EVENT'});expect(page.items).toHaveLength(4);expect(page.items.every(x=>x.sourceReference===`EVENT:${eventCode}`&&x.deepLink==='/events')).toBe(true);
+  const page=await messages.list(p.personId,{category:'EVENT'});expect(page.items).toHaveLength(4);expect(page.items.every(x=>x.sourceReference===`EVENT:${eventCode}`&&x.deepLink===`/events?event=${eventCode}`)).toBe(true);
   for(const hidden of [p.personId,r.memberEventRegistrationId,first.checkInToken!,renewed.checkInToken!,r.checkInTokenHash!])expect(JSON.stringify(page)).not.toContain(hidden);expect(await db.notificationDelivery.count()).toBe(before);
  });
  it('rolls back event registration and idempotency when transactional message delivery fails',async()=>{

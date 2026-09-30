@@ -17443,8 +17443,26 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EventDto"
+              }
+            }
+          }
+        },
         "responses": {
           "201": {
             "description": ""
@@ -17507,8 +17525,80 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublishDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "tags": [
+          "Admin - Events"
+        ]
+      }
+    },
+    "/api/v1/admin/events/{eventCode}/archive": {
+      "post": {
+        "operationId": "AdminEventsController_archive",
+        "parameters": [
+          {
+            "name": "eventCode",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ArchiveDto"
+              }
+            }
+          }
+        },
         "responses": {
           "201": {
             "description": ""
@@ -17535,8 +17625,80 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CheckInDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "tags": [
+          "Admin - Events"
+        ]
+      }
+    },
+    "/api/v1/admin/events/{eventCode}/attend": {
+      "post": {
+        "operationId": "AdminEventsController_attend",
+        "parameters": [
+          {
+            "name": "eventCode",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AttendanceDto"
+              }
+            }
+          }
+        },
         "responses": {
           "201": {
             "description": ""
@@ -17618,6 +17780,14 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -17651,6 +17821,58 @@
             "name": "idempotency-key",
             "required": true,
             "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "memberBearer": []
+          }
+        ],
+        "tags": [
+          "Member - Events"
+        ]
+      }
+    },
+    "/api/v1/member/events/{eventCode}/credential": {
+      "post": {
+        "operationId": "MemberEventsController_credential",
+        "parameters": [
+          {
+            "name": "eventCode",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
             "schema": {
               "type": "string"
             }
@@ -22296,6 +22518,72 @@
         },
         "required": [
           "reason"
+        ]
+      },
+      "EventDto": {
+        "type": "object",
+        "properties": {
+          "eventCode": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "eventType": {
+            "type": "string",
+            "enum": [
+              "ONLINE",
+              "OFFLINE",
+              "HYBRID"
+            ]
+          },
+          "startsAt": {
+            "type": "string"
+          },
+          "endsAt": {
+            "type": "string"
+          },
+          "locationReference": {
+            "type": "string"
+          },
+          "onlineJoinReference": {
+            "type": "string"
+          },
+          "capacity": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "eventCode",
+          "title",
+          "eventType",
+          "startsAt",
+          "endsAt"
+        ]
+      },
+      "CheckInDto": {
+        "type": "object",
+        "properties": {
+          "checkInToken": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "checkInToken"
+        ]
+      },
+      "AttendanceDto": {
+        "type": "object",
+        "properties": {
+          "memberNo": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "memberNo"
         ]
       },
       "RecordUatEvidenceDto": {

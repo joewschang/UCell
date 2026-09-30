@@ -36,6 +36,7 @@ import {ErpReconciliationPage} from '../features/erp-reconciliation/ErpReconcili
 import {CompensationPeriodControlPage} from '../features/compensation-period/CompensationPeriodControlPage';
 import {OperationsControlPage} from '../features/operations-control/OperationsControlPage';
 import {LearningPage} from '../features/learning/LearningPage';
+import {EventsPage} from '../features/events/EventsPage';
 
 function Protected(){const {user,ready}=useAuth();if(!ready)return <div className="app-loading">驗證管理員Session…</div>;return user?<AppShell/>:<Navigate to="/login" replace/>}
 export function App(){return <Routes>
@@ -67,6 +68,7 @@ export function App(){return <Routes>
   <Route path="/payouts" element={<RequirePageRole><PayoutsPage/></RequirePageRole>}/>
   <Route path="/content" element={<RequirePageRole><ContentPage/></RequirePageRole>}/>
   <Route path="/learning" element={<RequirePageRole><LearningPage/></RequirePageRole>}/>
+  <Route path="/events" element={<RequirePageRole><EventsPage/></RequirePageRole>}/>
   <Route path="/documents" element={<RequirePageRole><DocumentsPage/></RequirePageRole>}/>
   <Route path="/audit" element={<RequirePageRole><AuditPage/></RequirePageRole>}/>
   <Route path="/reports" element={<RequirePageRole><ReportsPage/></RequirePageRole>}/>

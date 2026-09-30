@@ -1221,6 +1221,7 @@ model MemberEventVersion {
   createdAt            DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
   event                MemberEvent       @relation(fields:[memberEventId],references:[memberEventId])
   registrationEvidence MemberEventRegistration[] @relation("EventRegistrationVersion")
+  participationEvidence MemberEventParticipationEvidence[]
 
   @@unique([memberEventId, version])
   @@index([status, startsAt])
@@ -1229,6 +1230,7 @@ model MemberEventVersion {
 }
 
 model MemberEventRegistration {
+  registrationCycleId       String                        @default(uuid()) @map("registration_cycle_id") @db.Uuid
   memberEventRegistrationId String                        @id @default(uuid()) @map("member_event_registration_id") @db.Uuid
   memberEventId             String                        @map("member_event_id") @db.Uuid
   memberEventVersionId      String                        @map("member_event_version_id") @db.Uuid
@@ -1242,10 +1244,27 @@ model MemberEventRegistration {
   event                     MemberEvent                   @relation(fields:[memberEventId],references:[memberEventId])
   eventVersion              MemberEventVersion            @relation("EventRegistrationVersion",fields:[memberEventVersionId],references:[memberEventVersionId])
   person                    Person                        @relation(fields:[personId],references:[personId])
+  participationEvidence     MemberEventParticipationEvidence[]
 
   @@unique([memberEventId, personId])
   @@index([memberEventId, status, registeredAt])
   @@map("member_event_registration")
+  @@schema("learning")
+}
+
+model MemberEventParticipationEvidence {
+  participationEvidenceId String @id @default(uuid()) @map("participation_evidence_id") @db.Uuid
+  memberEventRegistrationId String @map("member_event_registration_id") @db.Uuid
+  memberEventVersionId String @map("member_event_version_id") @db.Uuid
+  registrationCycleId String @map("registration_cycle_id") @db.Uuid
+  eventType String @map("event_type")
+  occurredAt DateTime @map("occurred_at") @db.Timestamptz(6)
+  origin String
+  registration MemberEventRegistration @relation(fields:[memberEventRegistrationId],references:[memberEventRegistrationId])
+  eventVersion MemberEventVersion @relation(fields:[memberEventVersionId],references:[memberEventVersionId])
+  @@unique([memberEventRegistrationId,registrationCycleId,eventType])
+  @@index([occurredAt,participationEvidenceId])
+  @@map("member_event_participation_evidence")
   @@schema("learning")
 }
 
