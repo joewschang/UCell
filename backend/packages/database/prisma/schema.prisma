@@ -1763,6 +1763,7 @@ model ProviderConnection {
   createdAt            DateTime                    @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt            DateTime                    @updatedAt @map("updated_at") @db.Timestamptz(6)
   versions             ProviderConnectionVersion[]
+  erpExternalReferences ErpProjectionExternalReference[]
 
   @@unique([domain, provider, connectionKey])
   @@index([domain, provider, status])
@@ -2747,10 +2748,23 @@ model ErpBusinessProjection {
   outboxEventId String @unique @map("outbox_event_id") @db.Uuid
   outboxEvent OutboxEvent @relation(fields:[outboxEventId],references:[outboxEventId])
   dispatch ErpProjectionDispatch?
+  externalReference ErpProjectionExternalReference?
   reconciliations ErpProjectionReconciliation[]
   @@unique([stream,sourceIdentity,revision])
   @@index([stream,requestedAt])
   @@map("erp_business_projection")
+  @@schema("commerce")
+}
+
+model ErpProjectionExternalReference {
+  projectionId String @id @map("projection_id") @db.Uuid
+  providerConnectionId String @map("provider_connection_id") @db.Uuid
+  providerReference String @map("provider_reference")
+  recordedAt DateTime @default(now()) @map("recorded_at") @db.Timestamptz(6)
+  projection ErpBusinessProjection @relation(fields:[projectionId],references:[projectionId])
+  providerConnection ProviderConnection @relation(fields:[providerConnectionId],references:[providerConnectionId])
+  @@unique([providerConnectionId,providerReference])
+  @@map("erp_projection_external_reference")
   @@schema("commerce")
 }
 

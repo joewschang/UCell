@@ -9,7 +9,8 @@ import {tmpdir} from 'node:os';
 const require=createRequire(new URL('../packages/database/package.json',import.meta.url));
 const {PrismaClient}=require('@prisma/client');
 const {requestErpSalesProjection,requestErpReturnProjection,verifyErpBusinessProjection}=require(fileURLToPath(new URL('../packages/database/dist/index.js',import.meta.url)));
-const firstNew='20260930050000_erp_business_projection',base=new URL(process.env.DATABASE_URL??'postgresql://ucell:ucell_dev@127.0.0.1:5432/ucell');
+const referenceMode=process.argv.includes('--external-reference');
+const firstNew=referenceMode?'20260930060000_erp_external_reference':'20260930050000_erp_business_projection',base=new URL(process.env.DATABASE_URL??'postgresql://ucell:ucell_dev@127.0.0.1:5432/ucell');
 assert.ok(['localhost','127.0.0.1'].includes(base.hostname));
 const database='ucell_erp_upgrade_'+randomUUID().replaceAll('-','');assert.match(database,/^ucell_erp_upgrade_[a-f0-9]{32}$/);
 const control=new URL(base);control.pathname='/postgres';const target=new URL(base);target.pathname='/'+database;
@@ -27,18 +28,33 @@ try{
  const fulfillment=await db.fulfillment.create({data:{orderId:order.orderId,fulfillmentKey:'UPGRADE-F1',status:'PACKED',allocationSnapshotRef:'historical',fulfillmentPolicySnapshotRef:'historical'}});
  const event=await db.outboxEvent.create({data:{eventType:'FULFILLMENT_ERP_HANDOFF_REQUESTED',aggregateType:'FULFILLMENT',aggregateId:fulfillment.fulfillmentId,payload:{historical:true},correlationId:randomUUID()}});
  const handoff=await db.fulfillmentErpHandoff.create({data:{fulfillmentId:fulfillment.fulfillmentId,outboxEventId:event.outboxEventId,providerCode:'ERP_PENDING',formatVersion:'UCELL_FULFILLMENT_ERP_V1',payloadHash:'a'.repeat(64),payloadSnapshot:{historical:true},requestedByActor:'TEST'}});
+ const context={actorId:'TEST',correlationId:randomUUID()},legacy=[];
+ if(referenceMode){
+  const sale=await db.$transaction(tx=>requestErpSalesProjection(tx,order.orderNo.toString(),context)),returned=await db.$transaction(tx=>requestErpReturnProjection(tx,ret.returnCaseId,context));
+  const extraOrder=await db.order.create({data:{purchaserPersonId:person.personId,purpose:'RETAIL',status:'PAID',paidAt:new Date('2020-01-01Z'),grossAmount:100,netAmount:100,ruleVersionCode:'TEST_UPGRADE',lines:{create:{productId:product.productId,skuSnapshot:product.sku,productNameSnapshot:product.displayName,quantity:1,unitPrice:100,lineAmount:100,gpvRateSnapshot:0,gpvAmountSnapshot:0,ruleProfileSnapshot:{}}}}});
+  const extra=await db.$transaction(tx=>requestErpSalesProjection(tx,extraOrder.orderNo.toString(),context));
+  const connection=await db.providerConnection.create({data:{domain:'ERP',provider:'EZTOOL',connectionKey:'SYNTHETIC-UPGRADE',status:'ACTIVE',versions:{create:{version:1,environment:'TEST',credentialSecretRef:'synthetic',webhookVerificationRef:'synthetic',configHash:'a'.repeat(64),effectiveFrom:new Date(0),approvalReference:'TEST',createdByActor:'TEST'}}},include:{versions:true}});
+  for(const [index,{projection}] of [sale,returned,extra].entries()){
+   const dispatch=await db.erpProjectionDispatch.create({data:{projectionId:projection.projectionId,providerConnectionVersionId:connection.versions[0].providerConnectionVersionId,idempotencyKey:'ucell-erp-projection-'+String(index).repeat(64),requestHash:projection.payloadHash}});
+   const attempt=await db.erpProjectionDispatchAttempt.create({data:{dispatchId:dispatch.dispatchId,attemptNumber:1,outcome:'ACCEPTED',providerReference:index===0?'ERP-UNIQUE':'ERP-DUPLICATE',evidenceHash:'b'.repeat(64)}});
+   legacy.push({projection,attempt});
+  }
+ }
  deploy(join(root,'schema.prisma'));
+ if(referenceMode){
+  for(const {projection,attempt} of legacy){assert.deepEqual(await db.erpProjectionDispatchAttempt.findUnique({where:{attemptId:attempt.attemptId}}),attempt);const claim=await db.erpProjectionExternalReference.findUnique({where:{projectionId:projection.projectionId}});if(attempt.providerReference==='ERP-UNIQUE')assert.equal(claim?.providerReference,'ERP-UNIQUE');else assert.equal(claim,null);}
+  assert.equal(await db.erpProjectionExternalReference.count(),1);
+ }
  assert.deepEqual(await db.order.findUnique({where:{orderId:order.orderId},include:{lines:true}}),order);
  assert.deepEqual(await db.returnCase.findUnique({where:{returnCaseId:ret.returnCaseId},include:{lines:true}}),ret);
  assert.deepEqual(await db.fulfillment.findUnique({where:{fulfillmentId:fulfillment.fulfillmentId}}),fulfillment);
  assert.deepEqual(await db.fulfillmentErpHandoff.findUnique({where:{fulfillmentErpHandoffId:handoff.fulfillmentErpHandoffId}}),handoff);
  assert.deepEqual(await db.outboxEvent.findUnique({where:{outboxEventId:event.outboxEventId}}),event);
- const context={actorId:'TEST',correlationId:randomUUID()};
  const sales=await db.$transaction(tx=>requestErpSalesProjection(tx,order.orderNo.toString(),context)),returned=await db.$transaction(tx=>requestErpReturnProjection(tx,ret.returnCaseId,context));
  for(const row of [sales.projection,returned.projection]){verifyErpBusinessProjection(row);await assert.rejects(db.erpBusinessProjection.update({where:{projectionId:row.projectionId},data:{payloadHash:'b'.repeat(64)}}));}
  assert.equal((await db.$transaction(tx=>requestErpSalesProjection(tx,order.orderNo.toString(),context))).replayed,true);
  const [{count}]=await db.$queryRawUnsafe('SELECT count(*)::int AS count FROM public._prisma_migrations WHERE finished_at IS NOT NULL AND rolled_back_at IS NULL');
- console.log(`ERP_PROJECTION_UPGRADE_117_TO_${count}_PRESERVATION_AND_GUARDS_PASS`);
+ console.log(`ERP_PROJECTION_UPGRADE_${referenceMode?118:117}_TO_${count}_PRESERVATION_AND_GUARDS_PASS`);
 }finally{
  await db.$disconnect();if(created){await admin.$executeRawUnsafe('DROP DATABASE "'+database+'" WITH (FORCE)');console.log('ERP_PROJECTION_UPGRADE_CLEANUP_PASS');}await admin.$disconnect();
  assert.equal(dirname(resolve(scratch)),resolve(tmpdir()));assert.ok(basename(scratch).startsWith('ucell-erp-upgrade-'));rmSync(scratch,{recursive:true,force:true});

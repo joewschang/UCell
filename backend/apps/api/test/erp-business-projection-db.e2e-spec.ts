@@ -47,6 +47,28 @@ const url=process.env.PHASE2_TEST_DATABASE_URL;
   expect(f.submit).not.toHaveBeenCalled();expect((await db.outboxEvent.findUniqueOrThrow({where:{outboxEventId:f.projection.outboxEventId}})).processStatus).toBe('DEAD');
   expect(await db.operationalException.findFirst({where:{sourceType:'ERP_BUSINESS_PROJECTION',sourceId:f.projection.projectionReference}})).toMatchObject({exceptionCode:'ERP_PROJECTION_REQUIRES_RECONCILIATION',severity:'CRITICAL'});
  });
+ it('prevents another projection from claiming the same external document across connection versions',async()=>{
+  const first=await dispatchFixture();await processErpBusinessProjection(db as any,await first.claim(),first.adapter);
+  const firstVersion=await db.providerConnectionVersion.findUniqueOrThrow({where:{providerConnectionVersionId:first.adapter.providerConnectionVersionId}});
+  const nextVersion=await db.providerConnectionVersion.create({data:{providerConnectionId:firstVersion.providerConnectionId,version:2,environment:'TEST',credentialSecretRef:'synthetic-reference',webhookVerificationRef:'synthetic-reference',configHash:'b'.repeat(64),effectiveFrom:new Date(0),approvalReference:'SYNTHETIC_APPROVAL',createdByActor:randomUUID()}});
+  const second=await dispatchFixture(),adapter={...second.adapter,providerConnectionVersionId:nextVersion.providerConnectionVersionId};
+  second.lookup.mockResolvedValueOnce({kind:'ACCEPTED',providerReference:'ERP-'+first.order.orderNo,requestHash:second.projection.payloadHash});
+  expect(await processErpBusinessProjection(db as any,await second.claim(),adapter)).toEqual({outcome:'REJECTED'});
+  expect(await db.erpProjectionExternalReference.count({where:{providerConnectionId:firstVersion.providerConnectionId}})).toBe(1);
+  expect((await db.outboxEvent.findUniqueOrThrow({where:{outboxEventId:second.projection.outboxEventId}})).lastError).toBe('ERP_PROJECTION_EXTERNAL_REFERENCE_CONFLICT');
+  await expect(db.erpProjectionExternalReference.create({data:{projectionId:second.projection.projectionId,providerConnectionId:firstVersion.providerConnectionId,providerReference:'ERP-'+first.order.orderNo}})).rejects.toThrow();
+  await expect(db.erpProjectionExternalReference.delete({where:{projectionId:first.projection.projectionId}})).rejects.toThrow();
+ });
+ it('allows only one concurrent claim and diagnoses the losing receipt on fresh delivery',async()=>{
+  const first=await dispatchFixture(),second=await dispatchFixture(),reference='ERP-CONCURRENT-'+first.order.orderNo;
+  for(const f of [first,second])f.lookup.mockResolvedValue({kind:'ACCEPTED',providerReference:reference,requestHash:f.projection.payloadHash});
+  const secondAdapter={...second.adapter,providerConnectionVersionId:first.adapter.providerConnectionVersionId};
+  const results=await Promise.allSettled([processErpBusinessProjection(db as any,await first.claim(),first.adapter),processErpBusinessProjection(db as any,await second.claim(),secondAdapter)]);
+  for(const [index,result] of results.entries())if(result.status==='rejected'){const f=index===0?first:second;expect(await processErpBusinessProjection(db as any,await f.retry(),index===0?first.adapter:secondAdapter)).toEqual({outcome:'REJECTED'});}
+  expect(await db.erpProjectionExternalReference.count({where:{providerReference:reference}})).toBe(1);
+  const events=await db.outboxEvent.findMany({where:{outboxEventId:{in:[first.projection.outboxEventId,second.projection.outboxEventId]}}});expect(events.map(row=>row.processStatus).sort()).toEqual(['DEAD','PROCESSED']);
+  expect(events.find(row=>row.processStatus==='DEAD')!.lastError).toBe('ERP_PROJECTION_EXTERNAL_REFERENCE_CONFLICT');
+ });
  it('seals one Sales payload/outbox concurrently and preserves private drillback separately',async()=>{
   const f=await fixture(),ctx=context(),call=()=>db.$transaction(tx=>requestErpSalesProjection(tx,f.order.orderNo.toString(),ctx));
   const results=await Promise.all([call(),call()]);expect(results.map(row=>row.replayed).sort()).toEqual([false,true]);

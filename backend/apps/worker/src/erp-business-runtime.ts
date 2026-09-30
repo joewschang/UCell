@@ -26,7 +26,7 @@ export async function processErpBusinessProjection(db:PrismaService,lease:Outbox
   if(!version||version.connection.domain!=='ERP'||version.connection.provider!==adapter.provider||version.connection.status!=='ACTIVE'||version.environment!==adapter.environment||!version.approvalReference||version.effectiveFrom>now||(version.effectiveTo&&version.effectiveTo<=now))throw new Error('ERP_CONNECTION_NOT_APPROVED');
   if(projection.dispatch&&(projection.dispatch.providerConnectionVersionId!==version.providerConnectionVersionId||projection.dispatch.requestHash!==projection.payloadHash))throw new Error('ERP_PROJECTION_DISPATCH_MISMATCH');
   const dispatch=projection.dispatch??await tx.erpProjectionDispatch.create({data:{projectionId:projection.projectionId,providerConnectionVersionId:version.providerConnectionVersionId,idempotencyKey:'ucell-erp-projection-'+replayHash(projection.projectionReference),requestHash:projection.payloadHash}});
-  return {dispatch,request,projectionReference:projection.projectionReference};
+  return {dispatch,request,projectionReference:projection.projectionReference,providerConnectionId:version.providerConnectionId};
  });
  if('lostLease' in prepared)return prepared;
  const input={idempotencyKey:prepared.dispatch.idempotencyKey,requestHash:prepared.dispatch.requestHash};let result:BusinessErpLookup={kind:'UNKNOWN'};
@@ -41,11 +41,18 @@ export async function processErpBusinessProjection(db:PrismaService,lease:Outbox
  if(!['ACCEPTED','UNKNOWN','REJECTED'].includes(result.kind))result={kind:'UNKNOWN'};
  const outcome=result.kind as 'ACCEPTED'|'UNKNOWN'|'REJECTED',providerReference=result.kind==='ACCEPTED'?result.providerReference:null;
  return withOutboxLease(db,lease,async tx=>{
-  await tx.erpProjectionDispatchAttempt.create({data:{dispatchId:prepared.dispatch.dispatchId,attemptNumber:lease.attemptCount,outcome,providerReference,evidenceHash:replayHash({...input,outcome,providerReference})}});
-  const dead=outcome==='REJECTED'||lease.attemptCount>=10;
-  await tx.outboxEvent.update({where:{outboxEventId:lease.outboxEventId},data:outcome==='ACCEPTED'?{processStatus:'PROCESSED',processedAt:new Date(),lastError:null}:{processStatus:dead?'DEAD':'PENDING',lastError:outcome==='REJECTED'?'ERP_PROJECTION_ACCEPTANCE_REJECTED':'ERP_PROJECTION_ACCEPTANCE_UNKNOWN',availableAt:new Date(Date.now()+30000)}});
-  if(outcome!=='ACCEPTED'&&dead){const source={sourceType:'ERP_BUSINESS_PROJECTION',sourceId:prepared.projectionReference,exceptionCode:'ERP_PROJECTION_REQUIRES_RECONCILIATION'};await tx.operationalException.upsert({where:{sourceType_sourceId_exceptionCode:source},update:{},create:{...source,severity:'CRITICAL',summary:'ERP 投影受理尚未確認，請核對外部證據。',evidenceHash:prepared.dispatch.requestHash}});}
-  return {outcome};
+  let recordedOutcome=outcome,recordedReference=providerReference,referenceConflict=false;
+  if(outcome==='ACCEPTED'){
+   const claims=await tx.erpProjectionExternalReference.findMany({where:{OR:[{projectionId:prepared.dispatch.projectionId},{providerConnectionId:prepared.providerConnectionId,providerReference:providerReference!}]}});
+   referenceConflict=claims.some(row=>row.projectionId!==prepared.dispatch.projectionId||row.providerConnectionId!==prepared.providerConnectionId||row.providerReference!==providerReference);
+   if(referenceConflict){recordedOutcome='REJECTED';recordedReference=null;}
+   else if(!claims.length)await tx.erpProjectionExternalReference.create({data:{projectionId:prepared.dispatch.projectionId,providerConnectionId:prepared.providerConnectionId,providerReference:providerReference!}});
+  }
+  await tx.erpProjectionDispatchAttempt.create({data:{dispatchId:prepared.dispatch.dispatchId,attemptNumber:lease.attemptCount,outcome:recordedOutcome,providerReference:recordedReference,evidenceHash:replayHash({...input,outcome:recordedOutcome,providerReference:recordedReference})}});
+  const dead=recordedOutcome==='REJECTED'||lease.attemptCount>=10;
+  await tx.outboxEvent.update({where:{outboxEventId:lease.outboxEventId},data:recordedOutcome==='ACCEPTED'?{processStatus:'PROCESSED',processedAt:new Date(),lastError:null}:{processStatus:dead?'DEAD':'PENDING',lastError:referenceConflict?'ERP_PROJECTION_EXTERNAL_REFERENCE_CONFLICT':recordedOutcome==='REJECTED'?'ERP_PROJECTION_ACCEPTANCE_REJECTED':'ERP_PROJECTION_ACCEPTANCE_UNKNOWN',availableAt:new Date(Date.now()+30000)}});
+  if(recordedOutcome!=='ACCEPTED'&&dead){const source={sourceType:'ERP_BUSINESS_PROJECTION',sourceId:prepared.projectionReference,exceptionCode:referenceConflict?'ERP_PROJECTION_EXTERNAL_REFERENCE_CONFLICT':'ERP_PROJECTION_REQUIRES_RECONCILIATION'};await tx.operationalException.upsert({where:{sourceType_sourceId_exceptionCode:source},update:{},create:{...source,severity:'CRITICAL',summary:'ERP 投影受理尚未確認，請核對外部證據。',evidenceHash:prepared.dispatch.requestHash}});}
+  return {outcome:recordedOutcome};
  });
 }
 
