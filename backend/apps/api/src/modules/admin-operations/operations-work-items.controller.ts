@@ -1,3 +1,4 @@
+import {COMPANY_CODES} from './operations-company-health.service';
 import {WORKFLOW_CODES} from './operations-workflow-health.service';
 import {FINANCIAL_CANDIDATE_CODES} from './operations-financial-health.service';
 import {Body,Controller,Get,Param,Post,Query,Req,UnauthorizedException} from '@nestjs/common';
@@ -8,9 +9,9 @@ import {Roles} from '../auth/roles.decorator';
 import {OperationsWorkItemsService} from './operations-work-items.service';
 class TaskDto{
  @ApiProperty() @IsUUID() commandKey!:string;
- @ApiProperty({enum:['SALES','RETURN','COMPENSATION','FULFILLMENT','PAYOUT','PAYABLE','RECOVERY','PERIOD_JOB','RECOGNITION']}) @IsIn(['SALES','RETURN','COMPENSATION','FULFILLMENT','PAYOUT','PAYABLE','RECOVERY','PERIOD_JOB','RECOGNITION']) stream!:string;
- @ApiProperty() @Matches(/^(?:(ERP-PROJECTION|ERP-HANDOFF|PAYOUT|PAYABLE|RECOVERY|RECOGNITION)-[a-f0-9]{40}|PERIOD-JOB-[a-f0-9]{16})$/) reference!:string;
- @ApiProperty() @IsIn(['ERP_TRANSPORT_FAILED','ERP_RESULT_MISMATCH','ERP_OPEN_EXCEPTION','ERP_RECONCILIATION_OVERDUE','ERP_HANDOFF_OVERDUE',...FINANCIAL_CANDIDATE_CODES,...WORKFLOW_CODES]) code!:string;
+ @ApiProperty({enum:['SALES','RETURN','COMPENSATION','FULFILLMENT','PAYOUT','PAYABLE','RECOVERY','PERIOD_JOB','RECOGNITION','COMPANY_BONUS','COMPANY_RPV','COMPANY_GLOBAL']}) @IsIn(['SALES','RETURN','COMPENSATION','FULFILLMENT','PAYOUT','PAYABLE','RECOVERY','PERIOD_JOB','RECOGNITION','COMPANY_BONUS','COMPANY_RPV','COMPANY_GLOBAL']) stream!:string;
+ @ApiProperty() @Matches(/^(?:(ERP-PROJECTION|ERP-HANDOFF|PAYOUT|PAYABLE|RECOVERY|RECOGNITION|COMPANY-BONUS|COMPANY-RPV|COMPANY-GLOBAL)-[a-f0-9]{40}|PERIOD-JOB-[a-f0-9]{16})$/) reference!:string;
+ @ApiProperty() @IsIn(['ERP_TRANSPORT_FAILED','ERP_RESULT_MISMATCH','ERP_OPEN_EXCEPTION','ERP_RECONCILIATION_OVERDUE','ERP_HANDOFF_OVERDUE',...FINANCIAL_CANDIDATE_CODES,...WORKFLOW_CODES,...COMPANY_CODES]) code!:string;
  @ApiProperty() @Matches(/^[a-f0-9]{64}$/) evidenceHash!:string;
  @ApiProperty({required:false}) @IsOptional() @IsInt() @Min(1) @Max(8760) thresholdHours?:number;
  @ApiProperty({required:false}) @IsOptional() @IsString() @MaxLength(2000) cursor?:string;

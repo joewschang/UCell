@@ -5,9 +5,15 @@ import {ErpBusinessProjectionService} from '../commerce/erp-business-projection.
 import {ErpReconciliationBridgeService} from '../commerce/erp-reconciliation-bridge.service';
 import {FINANCIAL_WORK_SOURCES,financialWorkReference,OperationsFinancialHealthService} from './operations-financial-health.service';
 import {WORKFLOW_SOURCES,workflowReference,OperationsWorkflowHealthService} from './operations-workflow-health.service';
+import {COMPANY_WORK_SOURCES,companyWorkReference,OperationsCompanyHealthService} from './operations-company-health.service';
 
 /** Shared by legacy and business-reference commands; no API may bypass the source gate. */
 export async function requireOperationalExceptionResolution(tx:Prisma.TransactionClient,row:{sourceType:string;sourceId:string}){
+ if(Object.hasOwn(COMPANY_WORK_SOURCES,row.sourceType)){
+  const source=companyWorkReference(row.sourceType,row.sourceId);if(!source)throw new ConflictException({code:'OPERATIONS_COMPANY_RECONCILIATION_REQUIRED'});
+  const item=(await new OperationsCompanyHealthService({$transaction:(work:any)=>work(tx)} as any).list({...source,take:1})).items[0];
+  if(!item||item.candidates.length)throw new ConflictException({code:'OPERATIONS_COMPANY_RECONCILIATION_REQUIRED'});return;
+ }
  if(Object.hasOwn(WORKFLOW_SOURCES,row.sourceType)){
   const source=workflowReference(row.sourceType,row.sourceId);if(!source)throw new ConflictException({code:'OPERATIONS_WORKFLOW_COMPLETION_REQUIRED'});
   const item=(await new OperationsWorkflowHealthService({$transaction:(work:any)=>work(tx)} as any).list({...source,take:1})).items[0];

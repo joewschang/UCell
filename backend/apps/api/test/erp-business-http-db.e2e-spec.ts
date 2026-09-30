@@ -1,3 +1,5 @@
+import {OperationsCompanyHealthController} from '../src/modules/admin-operations/operations-company-health.controller';
+import {OperationsCompanyHealthService} from '../src/modules/admin-operations/operations-company-health.service';
 import {OperationsWorkflowHealthController} from '../src/modules/admin-operations/operations-workflow-health.controller';
 import {OperationsWorkflowHealthService} from '../src/modules/admin-operations/operations-workflow-health.service';
 import {OperationsFinancialHealthController} from '../src/modules/admin-operations/operations-financial-health.controller';
@@ -36,7 +38,7 @@ const url=process.env.PHASE2_TEST_DATABASE_URL;
   db=new PrismaClient({datasources:{db:{url}}});const tokens=new IdentityTokenService(db as any);
   async function actor(roleCode:string){const person=await db.person.create({data:{legalName:'Synthetic ERP '+roleCode}}),subject=randomUUID();await db.identityLink.create({data:{personId:person.personId,provider:'ENTRA',providerSubject:subject}});await db.adminAccessGrant.create({data:{personId:person.personId,provider:'ENTRA',providerSubject:subject,roleCode,validFrom:new Date(Date.now()-1000)}});return (await tokens.issue({provider:'ENTRA',subject,personId:person.personId,roleCode})).accessToken;}
   finance=await actor('FINANCE');auditor=await actor('COMPLIANCE_AUDIT');orderOps=await actor('ORDER_OPS');
-  const module=await Test.createTestingModule({controllers:[OperationsWorkflowHealthController,OperationsFinancialHealthController,ErpBusinessProjectionController,ErpCompensationProjectionController,ErpPaymentProjectionController,ErpAccountingMappingController,OperationsControlController,OperationsWorkItemsController],providers:[OperationsWorkflowHealthService,OperationsFinancialHealthService,{provide:PrismaService,useValue:db},AuditService,ErpBusinessProjectionService,ErpCompensationProjectionService,ErpPaymentProjectionService,ErpAccountingMappingService,OperationsControlService,OperationsWorkItemsService,IdempotencyService,ErpReconciliationBridgeService,{provide:IdentityTokenService,useValue:tokens},{provide:ConfigService,useValue:{get:(name:string)=>name==='NODE_ENV'?'production':'false'}},AdminAuthenticationGuard,AdminRoleGuard]}).compile();
+  const module=await Test.createTestingModule({controllers:[OperationsCompanyHealthController,OperationsWorkflowHealthController,OperationsFinancialHealthController,ErpBusinessProjectionController,ErpCompensationProjectionController,ErpPaymentProjectionController,ErpAccountingMappingController,OperationsControlController,OperationsWorkItemsController],providers:[OperationsCompanyHealthService,OperationsWorkflowHealthService,OperationsFinancialHealthService,{provide:PrismaService,useValue:db},AuditService,ErpBusinessProjectionService,ErpCompensationProjectionService,ErpPaymentProjectionService,ErpAccountingMappingService,OperationsControlService,OperationsWorkItemsService,IdempotencyService,ErpReconciliationBridgeService,{provide:IdentityTokenService,useValue:tokens},{provide:ConfigService,useValue:{get:(name:string)=>name==='NODE_ENV'?'production':'false'}},AdminAuthenticationGuard,AdminRoleGuard]}).compile();
   app=module.createNestApplication<NestFastifyApplication>(new FastifyAdapter(),{logger:false});app.setGlobalPrefix('api/v1');app.useGlobalPipes(new ValidationPipe({whitelist:true,forbidNonWhitelisted:true,transform:true}));app.useGlobalGuards(module.get(AdminAuthenticationGuard),module.get(AdminRoleGuard));await app.init();await app.getHttpAdapter().getInstance().ready();
  });
  afterAll(async()=>{await app?.close();await db?.$disconnect();});
@@ -58,6 +60,18 @@ const url=process.env.PHASE2_TEST_DATABASE_URL;
   const health=(await app.inject({url:path+'/financial-health?scope=PAYOUT&reference='+reference,headers:headers(finance)})).json().data,candidate=health.items[0].candidates[0],payload={stream:'PAYOUT',reference,code:candidate.code,evidenceHash:candidate.evidenceHash,assigneeRole:'FINANCE',commandKey:randomUUID()};
   const created=await app.inject({method:'POST',url:path+'/tasks',payload,headers:headers(finance)});expect(created.statusCode).toBe(201);expect(created.json().data.value.item.source.reference).toBe(reference);expect(created.body).not.toContain(batch.payoutBatchId);
   const stale=await app.inject({method:'POST',url:path+'/tasks',payload:{...payload,commandKey:randomUUID(),evidenceHash:'0'.repeat(64)},headers:headers(auditor)});expect(stale.statusCode).toBe(409);expect(stale.json().code).toBe('OPERATIONS_CANDIDATE_STALE');
+ });
+ it('protects Company monitoring and resolves validated task references against actual sources',async()=>{
+  const path='/api/v1/admin/operations/control';
+  expect((await app.inject({url:path+'/company-health?scope=COMPANY_BONUS'})).statusCode).toBe(401);
+  expect((await app.inject({url:path+'/company-health?scope=COMPANY_RPV',headers:headers(orderOps)})).statusCode).toBe(403);
+  for(const scope of ['COMPANY_BONUS','COMPANY_RPV','COMPANY_GLOBAL']){
+   expect((await app.inject({url:path+'/company-health?scope='+scope,headers:headers(auditor)})).statusCode).toBe(200);
+   const result=await app.inject({method:'POST',url:path+'/tasks',headers:headers(finance),payload:{commandKey:randomUUID(),stream:scope,reference:scope.replace('_','-')+'-'+'a'.repeat(40),code:'COMPANY_AWARD_DESTINATION_MISSING',evidenceHash:'a'.repeat(64),assigneeRole:'FINANCE'}});
+   expect(result.statusCode).toBe(409);expect(result.json().code).toBe('OPERATIONS_COMPANY_SOURCE_NOT_FOUND');
+  }
+  expect((await app.inject({url:path+'/company-health?scope=COMPANY_BONUS&take=101',headers:headers(finance)})).statusCode).toBe(422);
+  expect((await app.inject({url:path+'/company-health?scope=__proto__',headers:headers(finance)})).statusCode).toBe(422);
  });
  it('protects workflow monitoring and validates workflow command references before source resolution',async()=>{
   const path='/api/v1/admin/operations/control';expect((await app.inject({url:path+'/workflow-health?scope=PERIOD_JOB'})).statusCode).toBe(401);expect((await app.inject({url:path+'/workflow-health?scope=RECOGNITION',headers:headers(orderOps)})).statusCode).toBe(403);

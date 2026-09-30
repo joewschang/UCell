@@ -1,3 +1,4 @@
+vi.mock('./OperationsCompanyHealth',()=>({OperationsCompanyHealth:()=>null}));
 vi.mock('./OperationsWorkflowHealth',()=>({OperationsWorkflowHealth:()=>null}));
 vi.mock('./OperationsFinancialHealth',()=>({OperationsFinancialHealth:()=>null}));
 import {act,create} from 'react-test-renderer';

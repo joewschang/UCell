@@ -1,4 +1,4 @@
-import {Prisma} from '@ucell/database';
+import {Prisma,erpBusinessReference} from '@ucell/database';
 import {createHash} from 'node:crypto';
 
 // The caller supplies one repeatable-read snapshot. This is a bounded integrity
@@ -22,8 +22,8 @@ export async function companyReservoirCandidates(tx:Prisma.TransactionClient,tak
     tx.entitlementReplayPosting.findMany({where:{entitlementKey:{in:ids}}}),
     tx.payableEntry.findMany({where:{sourceId:{in:ids}}}),
   ]);
-  const candidates:Array<{code:string;severity:string;sourceType:string;reference:string;evidenceHash:string;detail:Record<string,unknown>}>=[];
-  const add=(code:string,sourceType:string,id:string,reference:string,detail:Record<string,unknown>)=>candidates.push({code,severity:'CRITICAL',sourceType,reference,
+  const candidates:Array<{code:string;severity:string;sourceType:string;reference:string;sourceReference:string;evidenceHash:string;detail:Record<string,unknown>}>=[];
+  const add=(code:string,sourceType:string,id:string,reference:string,detail:Record<string,unknown>)=>candidates.push({code,severity:'CRITICAL',sourceType,reference,sourceReference:erpBusinessReference(sourceType,id),
     evidenceHash:createHash('sha256').update(JSON.stringify({code,source:id,reference,...detail})).digest('hex'),detail});
   for(const source of sources){
     const q=byQualification.get(source.qid);

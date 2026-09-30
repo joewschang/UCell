@@ -17,7 +17,7 @@ function useWorkCommand(){
   const fingerprint=JSON.stringify([path,input]);if(last.current?.fingerprint!==fingerprint)last.current={fingerprint,key:crypto.randomUUID()};
   setBusy(true);setMessage('');
   try{const response=await post<{data:{value:any;replayed:boolean}}>(path,{...input,commandKey:last.current.key});setMessage(response.data.value.created===false?'相同證據的任務已存在，請在任務佇列檢視。':'已保存處理紀錄。');last.current=undefined;await Promise.all([client.invalidateQueries({queryKey:['operations-work-items']}),client.invalidateQueries({queryKey:['operations-erp-health']})]);return true;}
-  catch(error){const code=error instanceof ApiError?(error.body as any)?.code:null;setMessage(code==='OPERATIONS_WORKFLOW_COMPLETION_REQUIRED'?'來源工作尚未完成，請先處理結算或月認列，再重新結案。':code==='OPERATIONS_FINANCIAL_RECONCILIATION_REQUIRED'?'來源仍有財務對帳或追回問題，請先完成來源處理再結案。':code==='OPERATIONS_SOURCE_RECONCILIATION_REQUIRED'?'來源尚未完成 ERP 對帳，請先開啟來源證據處理差異，再重新結案。':code==='OPERATIONS_CANDIDATE_STALE'||code==='OPERATIONS_TRANSITION_STALE'?'目前證據或處理狀態已變更，請重新讀取後確認。':error instanceof Error?error.message:'無法保存，請保留輸入後重試。');return false;}
+  catch(error){const code=error instanceof ApiError?(error.body as any)?.code:null;setMessage(code==='OPERATIONS_COMPANY_RECONCILIATION_REQUIRED'?'Company／Reservoir B 證據仍有不一致，請先完成來源對帳再結案。':code==='OPERATIONS_WORKFLOW_COMPLETION_REQUIRED'?'來源工作尚未完成，請先處理結算或月認列，再重新結案。':code==='OPERATIONS_FINANCIAL_RECONCILIATION_REQUIRED'?'來源仍有財務對帳或追回問題，請先完成來源處理再結案。':code==='OPERATIONS_SOURCE_RECONCILIATION_REQUIRED'?'來源尚未完成 ERP 對帳，請先開啟來源證據處理差異，再重新結案。':code==='OPERATIONS_CANDIDATE_STALE'||code==='OPERATIONS_TRANSITION_STALE'?'目前證據或處理狀態已變更，請重新讀取後確認。':error instanceof Error?error.message:'無法保存，請保留輸入後重試。');return false;}
   finally{setBusy(false);}
  }
  return {submit,busy,message};

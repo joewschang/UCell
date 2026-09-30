@@ -13055,6 +13055,79 @@
         ]
       }
     },
+    "/api/v1/admin/operations/control/company-health": {
+      "get": {
+        "operationId": "adminOperationsCompanyHealth",
+        "parameters": [
+          {
+            "name": "scope",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "COMPANY_BONUS",
+                "COMPANY_RPV",
+                "COMPANY_GLOBAL"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "take",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "asOf",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "reference",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopeDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "分頁檢查三類獎金的 Company／Reservoir B 歷史去向與原始及 Replay 權益",
+        "tags": [
+          "Admin - Operations Company Health"
+        ]
+      }
+    },
     "/api/v1/admin/operations/control/workflow-health": {
       "get": {
         "operationId": "adminOperationsWorkflowHealth",
@@ -21344,7 +21417,10 @@
               "PAYABLE",
               "RECOVERY",
               "PERIOD_JOB",
-              "RECOGNITION"
+              "RECOGNITION",
+              "COMPANY_BONUS",
+              "COMPANY_RPV",
+              "COMPANY_GLOBAL"
             ]
           },
           "reference": {
