@@ -5,22 +5,24 @@ import {replayHash} from './historical-replay';
 export type ErpProjectionStream='SALES'|'RETURN'|'COMPENSATION';
 export type ErpProjectionContext={actorId:string;correlationId:string;approvalReference?:string};
 export const erpBusinessReference=(kind:string,id:string)=>`${kind}-${replayHash({kind,id}).slice(0,40)}`;
-export const erpProjectionReference=(stream:ErpProjectionStream,sourceIdentity:string)=>erpBusinessReference('ERP-PROJECTION',`${stream}:${sourceIdentity}:1`);
+export const erpProjectionReference=(stream:ErpProjectionStream,sourceIdentity:string,revision=1)=>erpBusinessReference('ERP-PROJECTION',`${stream}:${sourceIdentity}:${revision}`);
 const json=(value:unknown)=>JSON.parse(JSON.stringify(value)) as Prisma.InputJsonValue;
 function fail(code:string):never{throw new Error(code);}
 
 /** Internal writers only. Callers own source validation and the transaction. */
-export async function sealErpBusinessProjection(tx:Prisma.TransactionClient,input:{stream:ErpProjectionStream;sourceIdentity:string;body:Record<string,unknown>;drillback:Record<string,unknown>;context:ErpProjectionContext}){
- const projectionReference=erpProjectionReference(input.stream,input.sourceIdentity);
- await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${projectionReference},0))`;
+export async function sealErpBusinessProjection(tx:Prisma.TransactionClient,input:{stream:ErpProjectionStream;sourceIdentity:string;revision?:number;previousProjectionReference?:string;body:Record<string,unknown>;drillback:Record<string,unknown>;context:ErpProjectionContext}){
+ const revision=input.revision??1;if(!Number.isInteger(revision)||revision<1||revision>2147483647)fail('ERP_PROJECTION_REVISION_INVALID');
+ const projectionReference=erpProjectionReference(input.stream,input.sourceIdentity,revision),rootReference=erpProjectionReference(input.stream,input.sourceIdentity);
+ await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${rootReference},0))`;
  const existing=await tx.erpBusinessProjection.findUnique({where:{projectionReference}});
  if(existing){verifyErpBusinessProjection(existing);return {projection:existing,replayed:true};}
+ if(revision>1){const previous=await tx.erpBusinessProjection.findFirst({where:{stream:input.stream,sourceIdentity:input.sourceIdentity},orderBy:{revision:'desc'}});if(input.stream!=='COMPENSATION'||!previous||previous.revision!==revision-1||previous.projectionReference!==input.previousProjectionReference)fail('ERP_PROJECTION_PREVIOUS_REVISION_REQUIRED');verifyErpBusinessProjection(previous);}
  if(input.stream==='COMPENSATION'&&!input.context.approvalReference?.trim())fail('ERP_COMPENSATION_PROJECTION_APPROVAL_REQUIRED');
  const drillbackSnapshot=json(input.drillback),drillbackHash=replayHash(drillbackSnapshot),formatVersion='UCELL_ERP_BUSINESS_PROJECTION_V1';
- const payloadSnapshot=json({...input.body,schemaVersion:1,format:formatVersion,projectionReference,stream:input.stream,revision:1,drillbackHash});
+ const payloadSnapshot=json({...input.body,...(revision>1?{previousProjectionReference:input.previousProjectionReference}:{}),schemaVersion:1,format:formatVersion,projectionReference,stream:input.stream,revision,drillbackHash});
  const payloadHash=replayHash(payloadSnapshot),projectionId=randomUUID();
  const outbox=await tx.outboxEvent.create({data:{eventType:'ERP_BUSINESS_PROJECTION_REQUESTED',aggregateType:'ERP_BUSINESS_PROJECTION',aggregateId:projectionId,payload:{projectionReference,payloadHash,stream:input.stream},correlationId:input.context.correlationId}});
- const projection=await tx.erpBusinessProjection.create({data:{projectionId,projectionReference,stream:input.stream,sourceIdentity:input.sourceIdentity,revision:1,formatVersion,payloadSnapshot,payloadHash,drillbackSnapshot,drillbackHash,approvalReference:input.context.approvalReference?.trim()??null,requestedByActor:input.context.actorId,outboxEventId:outbox.outboxEventId}});
+ const projection=await tx.erpBusinessProjection.create({data:{projectionId,projectionReference,stream:input.stream,sourceIdentity:input.sourceIdentity,revision,formatVersion,payloadSnapshot,payloadHash,drillbackSnapshot,drillbackHash,approvalReference:input.context.approvalReference?.trim()??null,requestedByActor:input.context.actorId,outboxEventId:outbox.outboxEventId}});
  return {projection,replayed:false};
 }
 

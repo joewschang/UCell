@@ -1,9 +1,10 @@
-import {Prisma,erpProjectionReference,verifyErpBusinessProjection} from '@ucell/database';
+import {Prisma,verifyErpBusinessProjection} from '@ucell/database';
 
 /** ERP is an independent checkpoint; a sealed review is not a posted voucher. */
 export async function compensationErpEvidence(tx:Prisma.TransactionClient,periodReference:string,current:{payable:Prisma.Decimal;recoveryRequired:Prisma.Decimal;recoveryApplied:Prisma.Decimal;recoveryOutstanding:Prisma.Decimal}){
- const projectionReference=erpProjectionReference('COMPENSATION',periodReference),row=await tx.erpBusinessProjection.findUnique({where:{projectionReference},include:{outboxEvent:true,externalReference:true,reconciliations:{orderBy:[{recordedAt:'desc'},{reconciliationId:'desc'}],take:1}}});
+ const row=await tx.erpBusinessProjection.findFirst({where:{stream:'COMPENSATION',sourceIdentity:periodReference},orderBy:{revision:'desc'},include:{outboxEvent:true,externalReference:true,reconciliations:{orderBy:[{recordedAt:'desc'},{reconciliationId:'desc'}],take:1}}});
  if(!row)return {projectionReference:null,status:'BLOCKED_EXTERNAL',state:'NOT_CREATED',code:'ERP_ACCOUNT_MAPPING_REQUIRED',memberPayableGross:null,currency:null,payloadHash:null,drillbackHash:null,sourceChanged:false};
+ const projectionReference=row.projectionReference;
  try{
   const payload=verifyErpBusinessProjection(row);
   if(payload.projectionPurpose!=='SUBLEDGER_ACCOUNTING_REVIEW'||payload.periodReference!==periodReference)throw new Error('UNSUPPORTED_PROJECTION');

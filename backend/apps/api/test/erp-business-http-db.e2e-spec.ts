@@ -71,6 +71,8 @@ const url=process.env.PHASE2_TEST_DATABASE_URL;
   const payload={payoutReference:'PAYOUT-'+'a'.repeat(40),periodStart:'1888-01-01T00:00:00Z',periodEnd:'1888-02-01T00:00:00Z',accountingDate:'1888-02-02',currency:'TWD',currencyBasisReference:'TEST-LEDGER-TWD',groupByEconomicCategory:true};
   expect((await app.inject({method:'POST',url:`${base}/payment/preview`,payload,headers:headers(auditor)})).statusCode).toBe(403);expect((await app.inject({method:'POST',url:`${base}/payment/preview`,payload,headers:headers(finance)})).statusCode).toBe(409);
   expect((await app.inject({method:'POST',url:`${base}/payment/approve`,payload:{...payload,reviewHash:'a'.repeat(64),approvalReference:'TEST-APPROVAL'},headers:headers(orderOps)})).statusCode).toBe(403);
+  expect((await app.inject({method:'POST',url:`${base}/payment/supplement-preview`,payload:{...payload,previousProjectionReference:'ERP-PROJECTION-'+'a'.repeat(40)},headers:headers(auditor)})).statusCode).toBe(403);
+  expect((await app.inject({method:'POST',url:`${base}/payment/supplement-approve`,payload:{...payload,previousProjectionReference:'ERP-PROJECTION-'+'a'.repeat(40),reviewHash:'a'.repeat(64),approvalReference:'TEST-APPROVAL',reasonReference:'TEST-SUPPLEMENT'},headers:headers(orderOps)})).statusCode).toBe(403);
  });
  it('requires actual ERP acceptance and keeps partial, mismatched and matched results append-only',async()=>{
   const f=await fixture(),created=await sales(f.order.orderNo.toString()),projection=created.projectionReference;

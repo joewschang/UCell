@@ -1,12 +1,19 @@
 import {PrismaClient} from '@prisma/client';
 import {randomUUID} from 'node:crypto';
-import {requestErpSalesProjection,requestErpReturnProjection,verifyErpBusinessProjection,sealErpBusinessProjection,claimOutboxLease} from '@ucell/database';
+import {requestErpSalesProjection,requestErpReturnProjection,verifyErpBusinessProjection,sealErpBusinessProjection,claimOutboxLease,erpProjectionReference,replayHash} from '@ucell/database';
 import {processErpBusinessProjection,pollErpBusinessProjections,BusinessErpAdapter} from '../../worker/src/erp-business-runtime';
 const url=process.env.PHASE2_TEST_DATABASE_URL;
 (url?describe:describe.skip)('ERP_BUSINESS_PROJECTION_REAL_DB',()=>{
  let db:PrismaClient;
  beforeAll(()=>{db=new PrismaClient({datasources:{db:{url}}});});afterAll(()=>db?.$disconnect());
  const context=()=>({actorId:randomUUID(),correlationId:randomUUID()});
+ it('enforces contiguous source-bound financial revisions in PostgreSQL without changing old evidence',async()=>{
+  const sourceIdentity='REVISION-'+randomUUID(),ctx={...context(),approvalReference:'TEST-REVISION-APPROVAL'},root=(await db.$transaction(tx=>sealErpBusinessProjection(tx,{stream:'COMPENSATION',sourceIdentity,body:{amount:'100'},drillback:{source:'original'},context:ctx}))).projection;
+  async function direct(revision:number,previousProjectionReference:string){return db.$transaction(async tx=>{const projectionId=randomUUID(),projectionReference=erpProjectionReference('COMPENSATION',sourceIdentity,revision),payloadSnapshot={...(root.payloadSnapshot as any),projectionReference,revision,previousProjectionReference};const event=await tx.outboxEvent.create({data:{eventType:'ERP_BUSINESS_PROJECTION_REQUESTED',aggregateType:'ERP_BUSINESS_PROJECTION',aggregateId:projectionId,payload:{projectionReference,stream:'COMPENSATION'},correlationId:randomUUID()}});return tx.erpBusinessProjection.create({data:{...root,drillbackSnapshot:root.drillbackSnapshot as any,projectionId,projectionReference,revision,payloadSnapshot,payloadHash:replayHash(payloadSnapshot),outboxEventId:event.outboxEventId}});});}
+  const count=await db.outboxEvent.count();await expect(direct(3,root.projectionReference)).rejects.toThrow();await expect(direct(2,'ERP-PROJECTION-'+'0'.repeat(40))).rejects.toThrow();expect(await db.outboxEvent.count()).toBe(count);
+  const input={stream:'COMPENSATION' as const,sourceIdentity,revision:2,previousProjectionReference:root.projectionReference,body:{amount:'90'},drillback:{source:'supplement'},context:ctx},results=await Promise.all([db.$transaction(tx=>sealErpBusinessProjection(tx,input)),db.$transaction(tx=>sealErpBusinessProjection(tx,input))]);expect(results.map(row=>row.replayed).sort()).toEqual([false,true]);expect(results[0].projection.revision).toBe(2);verifyErpBusinessProjection(results[0].projection);
+  expect(await db.erpBusinessProjection.findUniqueOrThrow({where:{projectionId:root.projectionId}})).toEqual(root);await expect(db.erpBusinessProjection.update({where:{projectionId:root.projectionId},data:{revision:3}})).rejects.toThrow();await expect(direct(3,root.projectionReference)).rejects.toThrow();
+ });
  async function fixture(paid=true){
   const person=await db.person.create({data:{legalName:'Private synthetic projection name'}});
   const product=await db.productReference.create({data:{sku:'P-'+randomUUID().slice(0,8),displayName:'Projection fixture',currentPrice:100}});

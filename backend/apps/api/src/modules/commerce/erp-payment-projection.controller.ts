@@ -17,6 +17,13 @@ class PaymentProjectionApprovalDto extends PaymentProjectionDto{
  @ApiProperty() @Matches(/^[a-f0-9]{64}$/) reviewHash!:string;
  @ApiProperty() @Matches(/^[A-Za-z0-9][A-Za-z0-9._:/-]{7,99}$/) approvalReference!:string;
 }
+class PaymentSupplementDto extends PaymentProjectionDto{
+ @ApiProperty() @Matches(/^ERP-PROJECTION-[a-f0-9]{40}$/) previousProjectionReference!:string;
+}
+class PaymentSupplementApprovalDto extends PaymentProjectionApprovalDto{
+ @ApiProperty() @Matches(/^ERP-PROJECTION-[a-f0-9]{40}$/) previousProjectionReference!:string;
+ @ApiProperty() @Matches(/^[A-Za-z0-9][A-Za-z0-9._:/-]{7,99}$/) reasonReference!:string;
+}
 class PaymentProjectionEnvelopeDto{@ApiProperty({type:'object',additionalProperties:true}) data!:Record<string,unknown>;}
 @ApiTags('Admin - ERP Payment Projection') @ApiBearerAuth('adminBearer') @Roles('SUPER_ADMIN','FINANCE') @Controller('admin/erp-projections/payment')
 export class ErpPaymentProjectionController{
@@ -27,6 +34,10 @@ export class ErpPaymentProjectionController{
  batches(@Query('periodStart') periodStart:string,@Query('periodEnd') periodEnd:string,@Query('cursor') cursor?:string,@Query('take') take?:string){return this.service.batches({periodStart,periodEnd,cursor,take:take===undefined?undefined:Number(take)}).then(data=>({data}));}
  @Post('preview') @ApiOperation({operationId:'adminPreviewErpPaymentProjection',summary:'以雙階核准、不可變匯出與銀行證據預覽整批付款投影'}) @ApiOkResponse({type:PaymentProjectionEnvelopeDto})
  preview(@Body() input:PaymentProjectionDto){return this.service.preview(input).then(data=>({data}));}
+ @Post('supplement-preview') @ApiOperation({operationId:'adminPreviewErpPaymentSupplement',summary:'預覽銀行結果或核准設定變更後的整批付款補充快照'}) @ApiOkResponse({type:PaymentProjectionEnvelopeDto})
+ supplementPreview(@Body() input:PaymentSupplementDto){return this.service.previewSupplement(input).then(data=>({data}));}
+ @Post('supplement-approve') @ApiOperation({operationId:'adminApproveErpPaymentSupplement',summary:'核准整批付款補充版本，保留原付款投影与受理證據'}) @ApiOkResponse({type:PaymentProjectionEnvelopeDto})
+ supplementApprove(@Body() input:PaymentSupplementApprovalDto,@Req() req:any){if(!req.user?.personId)throw new UnauthorizedException({code:'ERP_PROJECTION_ACTOR_REQUIRED'});return this.service.approveSupplement(input,{actorId:req.user.personId,requestId:req.requestId??randomUUID(),correlationId:req.correlationId??randomUUID()}).then(data=>({data}));}
  @Post('approve') @ApiOperation({operationId:'adminApproveErpPaymentProjection',summary:'核准 hash 完全相符的整批付款投影；不分攤跨期款項'}) @ApiOkResponse({type:PaymentProjectionEnvelopeDto})
  approve(@Body() input:PaymentProjectionApprovalDto,@Req() req:any){if(!req.user?.personId)throw new UnauthorizedException({code:'ERP_PROJECTION_ACTOR_REQUIRED'});return this.service.approve(input,{actorId:req.user.personId,requestId:req.requestId??randomUUID(),correlationId:req.correlationId??randomUUID()}).then(data=>({data}));}
 }

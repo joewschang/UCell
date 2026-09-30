@@ -3,6 +3,7 @@ import {Prisma,PrismaService,erpBusinessReference,erpProjectionReference,replayH
 import {AuditService} from '../../common/audit/audit.service';
 import {readFinanceReviewArtifact} from '../admin-operations/payout-review-artifact';
 import {compensationReference} from '../settlement-jobs/compensation-financial-evidence';
+import {approveAccountingSupplement,previewAccountingSupplement} from './erp-accounting-supplement';
 
 export type PaymentProjectionInput={payoutReference:string;periodStart:string;periodEnd:string;accountingDate:string;currency:string;currencyBasisReference:string;groupByEconomicCategory:boolean};
 type Context={actorId:string;requestId:string;correlationId:string};
@@ -18,6 +19,8 @@ function configuration(input:PaymentProjectionInput){const range=period(input);i
 @Injectable()
 export class ErpPaymentProjectionService{
  constructor(private readonly db:PrismaService,private readonly audit:AuditService){}
+ previewSupplement(input:PaymentProjectionInput&{previousProjectionReference:string}){const config=configuration(input);return previewAccountingSupplement(this.db,{sourceIdentity:`PAYMENT:${input.payoutReference}`,configurationHash:replayHash(config),purpose:'PAYOUT_ACCOUNTING_REVIEW',previousProjectionReference:input.previousProjectionReference},tx=>this.candidate(tx,input));}
+ approveSupplement(input:PaymentProjectionInput&{previousProjectionReference:string;reviewHash:string;approvalReference:string;reasonReference:string},context:Context){const config=configuration(input);return approveAccountingSupplement(this.db,this.audit,{sourceIdentity:`PAYMENT:${input.payoutReference}`,configurationHash:replayHash(config),purpose:'PAYOUT_ACCOUNTING_REVIEW',previousProjectionReference:input.previousProjectionReference,reviewHash:input.reviewHash,approvalReference:input.approvalReference,reasonReference:input.reasonReference},context,tx=>this.candidate(tx,input));}
  async batches(input:{periodStart:string;periodEnd:string;cursor?:string;take?:number}){
   const range=period(input),take=input.take??50;if(!Number.isInteger(take)||take<1||take>200||input.cursor&&!/^PAYOUT-[a-f0-9]{40}$/.test(input.cursor))throw new UnprocessableEntityException({code:'ERP_PAYOUT_QUERY_INVALID'});
   const rows=await this.db.$queryRaw<Array<{reference:string;periodStart:Date;periodEnd:Date;status:string;gross:Prisma.Decimal;recovery:Prisma.Decimal;net:Prisma.Decimal}>>`SELECT ${payoutRefSql} AS reference,period_start AS "periodStart",period_end AS "periodEnd",status::text,gross.total_gross AS gross,total_recovery AS recovery,total_net AS net FROM ledger.payout_batch gross WHERE period_start=${range.periodStart} AND period_end=${range.periodEnd} AND (${payoutRefSql})>${input.cursor??''} ORDER BY (${payoutRefSql}) COLLATE "C" LIMIT ${take+1}`;
@@ -64,7 +67,7 @@ export class ErpPaymentProjectionService{
   const drillback={configurationHash,payoutBatchId:batch.payoutBatchId,approvalIds:[finance!.payoutApprovalId,compliance!.payoutApprovalId].sort(),artifact:{artifactId:artifact.payoutExportArtifactId,hash:artifact.contentHash,revision:artifact.revision},lines,payables:lines.flatMap(line=>line.payables.map(row=>({...row,payoutLineId:line.payoutLineId,payoutBatchId:batch.payoutBatchId}))),recoveries:[]};
   return {body,drillback,sourceIdentity,configurationHash,reviewHash:replayHash({body,drillback}),drillbackHash:replayHash(drillback)};
  }
- async preview(input:PaymentProjectionInput){configuration(input);return this.db.$transaction(async tx=>{const value=await this.candidate(tx,input);return {projectionReference:erpProjectionReference('COMPENSATION',value.sourceIdentity),reviewHash:value.reviewHash,drillbackHash:value.drillbackHash,expected:value.body};},{isolationLevel:Prisma.TransactionIsolationLevel.RepeatableRead,timeout:30000});}
+ async preview(input:PaymentProjectionInput){configuration(input);return this.db.$transaction(async tx=>{const value=await this.candidate(tx,input);return {existingProjectionReference:(await tx.erpBusinessProjection.findFirst({where:{stream:'COMPENSATION',sourceIdentity:value.sourceIdentity},orderBy:{revision:'desc'},select:{projectionReference:true}}))?.projectionReference??null,projectionReference:erpProjectionReference('COMPENSATION',value.sourceIdentity),reviewHash:value.reviewHash,drillbackHash:value.drillbackHash,expected:value.body};},{isolationLevel:Prisma.TransactionIsolationLevel.RepeatableRead,timeout:30000});}
  async approve(input:PaymentProjectionInput&{reviewHash:string;approvalReference:string},context:Context){
   const config=configuration(input);if(!/^[a-f0-9]{64}$/.test(input.reviewHash)||!validReference(input.approvalReference))throw new UnprocessableEntityException({code:'ERP_PAYMENT_APPROVAL_INVALID'});
   for(let attempt=0;;attempt++)try{return await this.db.$transaction(async tx=>{

@@ -4,6 +4,7 @@ import {compensationPeriodEvidence} from '../settlement-jobs/compensation-period
 import {compensationVolumeEvidence} from '../settlement-jobs/compensation-volume-evidence';
 import {compensationFinancialEvidence,compensationPeriodReference} from '../settlement-jobs/compensation-financial-evidence';
 import {AuditService} from '../../common/audit/audit.service';
+import {approveAccountingSupplement,previewAccountingSupplement} from './erp-accounting-supplement';
 
 export type CompensationProjectionInput={periodStart:string;periodEnd:string;ruleVersionCode:string;accountingDate:string;currency:string;currencyBasisReference:string;groupByPayoutBatch:boolean};
 type Context={actorId:string;requestId:string;correlationId:string};
@@ -19,6 +20,8 @@ function parse(input:CompensationProjectionInput){
 @Injectable()
 export class ErpCompensationProjectionService{
  constructor(private readonly db:PrismaService,private readonly audit:AuditService){}
+ previewSupplement(input:CompensationProjectionInput&{previousProjectionReference:string}){const parsed=parse(input);return previewAccountingSupplement(this.db,{...parsed,purpose:'SUBLEDGER_ACCOUNTING_REVIEW',previousProjectionReference:input.previousProjectionReference},tx=>this.candidate(tx,input));}
+ approveSupplement(input:CompensationProjectionInput&{previousProjectionReference:string;reviewHash:string;approvalReference:string;reasonReference:string},context:Context){const parsed=parse(input);return approveAccountingSupplement(this.db,this.audit,{...parsed,purpose:'SUBLEDGER_ACCOUNTING_REVIEW',previousProjectionReference:input.previousProjectionReference,reviewHash:input.reviewHash,approvalReference:input.approvalReference,reasonReference:input.reasonReference},context,tx=>this.candidate(tx,input));}
  private async candidate(tx:Prisma.TransactionClient,input:CompensationProjectionInput){
   const parsed=parse(input),{period,configuration,configurationHash,sourceIdentity}=parsed;
   const cohort=await compensationPeriodEvidence(tx,period),inputs=await periodCloseInputState(tx,period),volume=await compensationVolumeEvidence(tx,period,cohort);
@@ -50,7 +53,7 @@ export class ErpCompensationProjectionService{
   return {...parsed,body,drillback,reviewHash:replayHash({body,drillback}),drillbackHash:replayHash(drillback)};
  }
  async preview(input:CompensationProjectionInput){
-  parse(input);return this.db.$transaction(async tx=>{const value=await this.candidate(tx,input);return {projectionReference:erpProjectionReference('COMPENSATION',value.sourceIdentity),reviewHash:value.reviewHash,drillbackHash:value.drillbackHash,expected:value.body};},{isolationLevel:Prisma.TransactionIsolationLevel.RepeatableRead,timeout:30000});
+  parse(input);return this.db.$transaction(async tx=>{const value=await this.candidate(tx,input);return {existingProjectionReference:(await tx.erpBusinessProjection.findFirst({where:{stream:'COMPENSATION',sourceIdentity:value.sourceIdentity},orderBy:{revision:'desc'},select:{projectionReference:true}}))?.projectionReference??null,projectionReference:erpProjectionReference('COMPENSATION',value.sourceIdentity),reviewHash:value.reviewHash,drillbackHash:value.drillbackHash,expected:value.body};},{isolationLevel:Prisma.TransactionIsolationLevel.RepeatableRead,timeout:30000});
  }
  async approve(input:CompensationProjectionInput&{reviewHash:string;approvalReference:string},context:Context){
   const parsed=parse(input);if(!/^[a-f0-9]{64}$/.test(input.reviewHash)||!businessReference(input.approvalReference))throw new UnprocessableEntityException({code:'ERP_COMPENSATION_APPROVAL_INVALID'});

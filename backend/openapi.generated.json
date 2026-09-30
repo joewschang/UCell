@@ -1221,6 +1221,80 @@
         ]
       }
     },
+    "/api/v1/admin/erp-projections/compensation/supplement-preview": {
+      "post": {
+        "operationId": "adminPreviewErpCompensationSupplement",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompensationSupplementDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompensationProjectionEnvelopeDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "預覽目前獎金來源對前一封存版本的補充快照",
+        "tags": [
+          "Admin - ERP Compensation Projection"
+        ]
+      }
+    },
+    "/api/v1/admin/erp-projections/compensation/supplement-approve": {
+      "post": {
+        "operationId": "adminApproveErpCompensationSupplement",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompensationSupplementApprovalDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompensationProjectionEnvelopeDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "核准補充版本與前版連結，不改寫歷史核准或 ERP 證據",
+        "tags": [
+          "Admin - ERP Compensation Projection"
+        ]
+      }
+    },
     "/api/v1/admin/erp-projections/compensation/approve": {
       "post": {
         "operationId": "adminApproveErpCompensationProjection",
@@ -1350,6 +1424,80 @@
           }
         ],
         "summary": "以雙階核准、不可變匯出與銀行證據預覽整批付款投影",
+        "tags": [
+          "Admin - ERP Payment Projection"
+        ]
+      }
+    },
+    "/api/v1/admin/erp-projections/payment/supplement-preview": {
+      "post": {
+        "operationId": "adminPreviewErpPaymentSupplement",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PaymentSupplementDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentProjectionEnvelopeDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "預覽銀行結果或核准設定變更後的整批付款補充快照",
+        "tags": [
+          "Admin - ERP Payment Projection"
+        ]
+      }
+    },
+    "/api/v1/admin/erp-projections/payment/supplement-approve": {
+      "post": {
+        "operationId": "adminApproveErpPaymentSupplement",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PaymentSupplementApprovalDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentProjectionEnvelopeDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "核准整批付款補充版本，保留原付款投影与受理證據",
         "tags": [
           "Admin - ERP Payment Projection"
         ]
@@ -17478,6 +17626,100 @@
           "data"
         ]
       },
+      "CompensationSupplementDto": {
+        "type": "object",
+        "properties": {
+          "periodStart": {
+            "type": "string"
+          },
+          "periodEnd": {
+            "type": "string"
+          },
+          "ruleVersionCode": {
+            "type": "string"
+          },
+          "accountingDate": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string",
+            "description": "Finance-approved ledger denomination; no currency conversion is performed"
+          },
+          "currencyBasisReference": {
+            "type": "string",
+            "description": "Business reference supporting the approved ledger denomination"
+          },
+          "groupByPayoutBatch": {
+            "type": "boolean"
+          },
+          "previousProjectionReference": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "periodStart",
+          "periodEnd",
+          "ruleVersionCode",
+          "accountingDate",
+          "currency",
+          "currencyBasisReference",
+          "groupByPayoutBatch",
+          "previousProjectionReference"
+        ]
+      },
+      "CompensationSupplementApprovalDto": {
+        "type": "object",
+        "properties": {
+          "periodStart": {
+            "type": "string"
+          },
+          "periodEnd": {
+            "type": "string"
+          },
+          "ruleVersionCode": {
+            "type": "string"
+          },
+          "accountingDate": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string",
+            "description": "Finance-approved ledger denomination; no currency conversion is performed"
+          },
+          "currencyBasisReference": {
+            "type": "string",
+            "description": "Business reference supporting the approved ledger denomination"
+          },
+          "groupByPayoutBatch": {
+            "type": "boolean"
+          },
+          "reviewHash": {
+            "type": "string"
+          },
+          "approvalReference": {
+            "type": "string"
+          },
+          "previousProjectionReference": {
+            "type": "string"
+          },
+          "reasonReference": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "periodStart",
+          "periodEnd",
+          "ruleVersionCode",
+          "accountingDate",
+          "currency",
+          "currencyBasisReference",
+          "groupByPayoutBatch",
+          "reviewHash",
+          "approvalReference",
+          "previousProjectionReference",
+          "reasonReference"
+        ]
+      },
       "CompensationProjectionApprovalDto": {
         "type": "object",
         "properties": {
@@ -17568,6 +17810,96 @@
           "currency",
           "currencyBasisReference",
           "groupByEconomicCategory"
+        ]
+      },
+      "PaymentSupplementDto": {
+        "type": "object",
+        "properties": {
+          "payoutReference": {
+            "type": "string"
+          },
+          "periodStart": {
+            "type": "string"
+          },
+          "periodEnd": {
+            "type": "string"
+          },
+          "accountingDate": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "currencyBasisReference": {
+            "type": "string"
+          },
+          "groupByEconomicCategory": {
+            "type": "boolean"
+          },
+          "previousProjectionReference": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "payoutReference",
+          "periodStart",
+          "periodEnd",
+          "accountingDate",
+          "currency",
+          "currencyBasisReference",
+          "groupByEconomicCategory",
+          "previousProjectionReference"
+        ]
+      },
+      "PaymentSupplementApprovalDto": {
+        "type": "object",
+        "properties": {
+          "payoutReference": {
+            "type": "string"
+          },
+          "periodStart": {
+            "type": "string"
+          },
+          "periodEnd": {
+            "type": "string"
+          },
+          "accountingDate": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "currencyBasisReference": {
+            "type": "string"
+          },
+          "groupByEconomicCategory": {
+            "type": "boolean"
+          },
+          "reviewHash": {
+            "type": "string"
+          },
+          "approvalReference": {
+            "type": "string"
+          },
+          "previousProjectionReference": {
+            "type": "string"
+          },
+          "reasonReference": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "payoutReference",
+          "periodStart",
+          "periodEnd",
+          "accountingDate",
+          "currency",
+          "currencyBasisReference",
+          "groupByEconomicCategory",
+          "reviewHash",
+          "approvalReference",
+          "previousProjectionReference",
+          "reasonReference"
         ]
       },
       "PaymentProjectionApprovalDto": {

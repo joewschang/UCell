@@ -307,6 +307,7 @@ const url=process.env.PHASE2_TEST_DATABASE_URL;
     await expect(service.approve({...request,accountingDate:'1893-01-10'},context)).rejects.toMatchObject({response:{code:'ERP_COMPENSATION_APPROVAL_CONFLICT'}});
     await db.bonusRecoveryEvent.create({data:{bonusAwardId:award.bonusAwardId,recoveryAmount:5,outstandingAmount:5,reasonCode:'TEST_AFTER_APPROVAL',occurredAt:new Date()}});
     expect((await control.read(input)).erpAccounting).toMatchObject({state:'SUPPLEMENT_REQUIRED',status:'ATTENTION',sourceChanged:true});
+    const supplemental=await service.previewSupplement({...input,previousProjectionReference:first.projectionReference});await service.approveSupplement({...input,previousProjectionReference:first.projectionReference,reviewHash:supplemental.reviewHash,approvalReference:'TEST-SUPPLEMENT-FINANCE',reasonReference:'TEST-RETURN-RECOVERY'},context);expect((await control.read(input)).erpAccounting).toMatchObject({projectionReference:supplemental.projectionReference,state:'SEALED_MAPPING_REQUIRED',sourceChanged:false});
     expect((await service.approve(request,context)).replayed).toBe(true);expect(await db.erpBusinessProjection.findUniqueOrThrow({where:{projectionReference:first.projectionReference}})).toEqual(stored);
   });
   it('invalidates an aggregate preview on a new recovery and rolls back failed approval audit',async()=>{
