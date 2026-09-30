@@ -17,6 +17,9 @@ import {pollPeriodCloseJobs} from '../../worker/src/period-close-runtime';
 import {periodCloseOperationalState,periodJobReference} from '@ucell/database';
 import {periodCloseCandidates} from '../src/modules/admin-operations/period-close-invariants';
 import {compensationPeriodEvidence} from '../src/modules/settlement-jobs/compensation-period-evidence';
+import {ErpCompensationProjectionService} from '../src/modules/commerce/erp-compensation-projection.service';
+import {ErpBusinessProjectionService} from '../src/modules/commerce/erp-business-projection.service';
+import {CompensationPeriodControlService} from '../src/modules/settlement-jobs/compensation-period-control.service';
 
 const url=process.env.PHASE2_TEST_DATABASE_URL;
 (url?describe:describe.skip)('durable period-close admission, dependencies and fenced execution',()=>{
@@ -290,5 +293,35 @@ const url=process.env.PHASE2_TEST_DATABASE_URL;
     expect(await db.bonusAwardLifecycleEvent.count({where:{bonusAwardId:inside.bonusAwardId,status:'EFFECTIVE'}})).toBe(1);
     expect(await processPeriodCloseJob(db,next,execute)).toEqual({lostLease:true});
     expect(await db.payableEntry.findMany({where:{ruleVersionCode:code}})).toEqual(entries);
+  });
+  it('approves a deterministic aggregate after real six-kind settlement and preserves immutable replay',async()=>{
+    const code=await rule(),award=await directAward(code,start,end),job=await preparation(code);await processPeriodCloseJob(db,(await claimPeriodCloseJob(db,job.periodCloseJobId))!,execute);
+    const service=new ErpCompensationProjectionService(db as any,new AuditService()),input={periodStart:start.toISOString(),periodEnd:end.toISOString(),ruleVersionCode:code,accountingDate:'1893-01-09',currency:'TWD',currencyBasisReference:'TEST-LEDGER-TWD',groupByPayoutBatch:true},context={actorId:randomUUID(),requestId:randomUUID(),correlationId:randomUUID()};
+    const first=await service.preview(input);expect(await service.preview(input)).toEqual(first);expect(first.expected.aggregates).toEqual([expect.objectContaining({metric:'MEMBER_PAYABLE_GROSS',economicCategory:'EPV',amount:'10.0000',sourceCount:1,payoutReference:'UNBATCHED'})]);
+    expect(JSON.stringify(first)).not.toContain(award.bonusAwardId);expect(JSON.stringify(first)).not.toContain(award.recipientQualificationId);
+    const request={...input,reviewHash:first.reviewHash,approvalReference:'TEST-FINANCE-APPROVAL'},results=await Promise.all([service.approve(request,context),service.approve(request,context)]);expect(results.map(row=>row.replayed).sort()).toEqual([false,true]);
+    const stored=await db.erpBusinessProjection.findUniqueOrThrow({where:{projectionReference:first.projectionReference}});expect(stored.mappingReference).toBeNull();expect(stored.drillbackHash).toBe(first.drillbackHash);expect(await db.erpProjectionDispatch.count({where:{projectionId:stored.projectionId}})).toBe(0);expect(await db.auditEvent.count({where:{entityId:stored.projectionId,action:'ERP_COMPENSATION_PROJECTION_APPROVED'}})).toBe(1);
+    const reader=new ErpBusinessProjectionService(db as any,new AuditService()),detail=await reader.detail(first.projectionReference);expect(detail.blockedReason).toBe('ERP_ACCOUNT_MAPPING_REQUIRED');expect((detail.expected as any).totals.memberPayableGross).toBe('10.0000');expect(JSON.stringify(detail)).not.toContain(award.bonusAwardId);expect(JSON.stringify(detail)).not.toContain(context.actorId);
+    const sourcePage=await reader.sources(first.projectionReference,{kind:'PAYABLE',take:1});expect(sourcePage).toMatchObject({verified:true,total:1,nextCursor:null,drillbackHash:stored.drillbackHash,items:[{economicCategory:'EPV',amount:'10.0000'}]});expect(JSON.stringify(sourcePage)).not.toContain(award.bonusAwardId);await expect(reader.sources(first.projectionReference,{kind:'PAYABLE',cursor:'PAYABLE-'+'0'.repeat(40)})).rejects.toMatchObject({response:{code:'ERP_PROJECTION_SOURCE_CURSOR_INVALID'}});
+    const control=new CompensationPeriodControlService(db as any);expect((await control.read(input)).erpAccounting).toMatchObject({state:'SEALED_MAPPING_REQUIRED',status:'BLOCKED_EXTERNAL',memberPayableGross:'10.0000',sourceChanged:false});
+    await expect(service.approve({...request,accountingDate:'1893-01-10'},context)).rejects.toMatchObject({response:{code:'ERP_COMPENSATION_APPROVAL_CONFLICT'}});
+    await db.bonusRecoveryEvent.create({data:{bonusAwardId:award.bonusAwardId,recoveryAmount:5,outstandingAmount:5,reasonCode:'TEST_AFTER_APPROVAL',occurredAt:new Date()}});
+    expect((await control.read(input)).erpAccounting).toMatchObject({state:'SUPPLEMENT_REQUIRED',status:'ATTENTION',sourceChanged:true});
+    expect((await service.approve(request,context)).replayed).toBe(true);expect(await db.erpBusinessProjection.findUniqueOrThrow({where:{projectionReference:first.projectionReference}})).toEqual(stored);
+  });
+  it('invalidates an aggregate preview on a new recovery and rolls back failed approval audit',async()=>{
+    const code=await rule(),award=await directAward(code,start,end),job=await preparation(code);await processPeriodCloseJob(db,(await claimPeriodCloseJob(db,job.periodCloseJobId))!,execute);
+    const service=new ErpCompensationProjectionService(db as any,new AuditService()),input={periodStart:start.toISOString(),periodEnd:end.toISOString(),ruleVersionCode:code,accountingDate:'1893-01-09',currency:'TWD',currencyBasisReference:'TEST-LEDGER-TWD',groupByPayoutBatch:false},context={actorId:randomUUID(),requestId:randomUUID(),correlationId:randomUUID()},first=await service.preview(input);
+    await db.bonusRecoveryEvent.create({data:{bonusAwardId:award.bonusAwardId,recoveryAmount:4,outstandingAmount:4,reasonCode:'TEST_BEFORE_APPROVAL',occurredAt:new Date()}});
+    await expect(service.approve({...input,reviewHash:first.reviewHash,approvalReference:'TEST-FINANCE-APPROVAL'},context)).rejects.toMatchObject({response:{code:'ERP_COMPENSATION_PREVIEW_STALE'}});
+    const fresh=await service.preview(input);expect(fresh.reviewHash).not.toBe(first.reviewHash);expect(fresh.expected.totals).toMatchObject({memberPayableGross:'10.0000',recoveryRequired:'4.0000',recoveryApplied:'0.0000',recoveryOutstanding:'4.0000'});expect(fresh.expected.paymentScope).toBe('NO_BANK_OR_NET_PAYMENT_ALLOCATION');
+    const broken=new ErpCompensationProjectionService(db as any,{write:async()=>{throw new Error('SYNTHETIC_COMPENSATION_AUDIT_FAILURE');}} as any),count=await db.outboxEvent.count();
+    await expect(broken.approve({...input,reviewHash:fresh.reviewHash,approvalReference:'TEST-FINANCE-APPROVAL'},context)).rejects.toThrow('SYNTHETIC_COMPENSATION_AUDIT_FAILURE');expect(await db.erpBusinessProjection.count({where:{projectionReference:fresh.projectionReference}})).toBe(0);expect(await db.outboxEvent.count()).toBe(count);
+  });
+  it('does not project an unsealed compensation period or invent invalid date and currency configuration',async()=>{
+    const code=await rule(),service=new ErpCompensationProjectionService(db as any,new AuditService()),input={periodStart:start.toISOString(),periodEnd:end.toISOString(),ruleVersionCode:code,accountingDate:'1893-01-09',currency:'TWD',currencyBasisReference:'TEST-LEDGER-TWD',groupByPayoutBatch:false};
+    await expect(service.preview(input)).rejects.toMatchObject({response:{code:'ERP_COMPENSATION_SEALED_PERIOD_REQUIRED'}});
+    await expect(service.preview({...input,accountingDate:'1893-02-30'})).rejects.toMatchObject({response:{code:'ERP_COMPENSATION_CONFIGURATION_INVALID'}});
+    await expect(service.preview({...input,currencyBasisReference:''})).rejects.toMatchObject({response:{code:'ERP_COMPENSATION_CONFIGURATION_INVALID'}});
   });
 });

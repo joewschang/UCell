@@ -1027,6 +1027,70 @@
         ]
       }
     },
+    "/api/v1/admin/erp-projections/{projectionReference}/sources": {
+      "get": {
+        "operationId": "adminErpCompensationProjectionSources",
+        "parameters": [
+          {
+            "name": "projectionReference",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "kind",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "PAYABLE",
+                "RECOVERY"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "take",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErpBusinessEnvelopeDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "分頁讀取核准聚合快照的應付及回收來源商業參考，不改用目前交易狀態",
+        "tags": [
+          "Admin - ERP Business Projections"
+        ]
+      }
+    },
     "/api/v1/admin/erp-projections/{projectionReference}/retry": {
       "post": {
         "operationId": "adminRetryErpBusinessProjection",
@@ -1116,6 +1180,80 @@
         "summary": "核對已受理 ERP 單據的金額和數量，差異建立例外",
         "tags": [
           "Admin - ERP Business Projections"
+        ]
+      }
+    },
+    "/api/v1/admin/erp-projections/compensation/preview": {
+      "post": {
+        "operationId": "adminPreviewErpCompensationProjection",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompensationProjectionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompensationProjectionEnvelopeDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "預覽已封存週期的會員應付及回收聚合；不產生 ERP 分錄",
+        "tags": [
+          "Admin - ERP Compensation Projection"
+        ]
+      }
+    },
+    "/api/v1/admin/erp-projections/compensation/approve": {
+      "post": {
+        "operationId": "adminApproveErpCompensationProjection",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompensationProjectionApprovalDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompensationProjectionEnvelopeDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "核准完全相符的聚合快照並封存追溯證據；缺會計映射時保持外部阻擋",
+        "tags": [
+          "Admin - ERP Compensation Projection"
         ]
       }
     },
@@ -16447,6 +16585,11 @@
       "CompensationPeriodControlDto": {
         "type": "object",
         "properties": {
+          "erpAccounting": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "Independent ERP aggregate snapshot status; source changes require a supplemental projection"
+          },
           "reconciliationScope": {
             "$ref": "#/components/schemas/PeriodReconciliationScopeDto"
           },
@@ -16504,6 +16647,7 @@
           }
         },
         "required": [
+          "erpAccounting",
           "reconciliationScope",
           "elapsedSeconds",
           "period",
@@ -17148,6 +17292,100 @@
           "currency",
           "amount",
           "lines"
+        ]
+      },
+      "CompensationProjectionDto": {
+        "type": "object",
+        "properties": {
+          "periodStart": {
+            "type": "string"
+          },
+          "periodEnd": {
+            "type": "string"
+          },
+          "ruleVersionCode": {
+            "type": "string"
+          },
+          "accountingDate": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string",
+            "description": "Finance-approved ledger denomination; no currency conversion is performed"
+          },
+          "currencyBasisReference": {
+            "type": "string",
+            "description": "Business reference supporting the approved ledger denomination"
+          },
+          "groupByPayoutBatch": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "periodStart",
+          "periodEnd",
+          "ruleVersionCode",
+          "accountingDate",
+          "currency",
+          "currencyBasisReference",
+          "groupByPayoutBatch"
+        ]
+      },
+      "CompensationProjectionEnvelopeDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "CompensationProjectionApprovalDto": {
+        "type": "object",
+        "properties": {
+          "periodStart": {
+            "type": "string"
+          },
+          "periodEnd": {
+            "type": "string"
+          },
+          "ruleVersionCode": {
+            "type": "string"
+          },
+          "accountingDate": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string",
+            "description": "Finance-approved ledger denomination; no currency conversion is performed"
+          },
+          "currencyBasisReference": {
+            "type": "string",
+            "description": "Business reference supporting the approved ledger denomination"
+          },
+          "groupByPayoutBatch": {
+            "type": "boolean"
+          },
+          "reviewHash": {
+            "type": "string"
+          },
+          "approvalReference": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "periodStart",
+          "periodEnd",
+          "ruleVersionCode",
+          "accountingDate",
+          "currency",
+          "currencyBasisReference",
+          "groupByPayoutBatch",
+          "reviewHash",
+          "approvalReference"
         ]
       },
       "CreateTreeDto": {

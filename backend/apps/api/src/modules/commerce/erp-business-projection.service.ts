@@ -1,14 +1,15 @@
-import {ConflictException,Injectable,UnprocessableEntityException} from '@nestjs/common';
+import {ConflictException,ForbiddenException,Injectable,UnprocessableEntityException} from '@nestjs/common';
 import {Prisma,PrismaService,erpBusinessReference,requestErpSalesProjection,requestErpReturnProjection,verifyErpBusinessProjection,replayHash} from '@ucell/database';
 import {AuditService} from '../../common/audit/audit.service';
 
-type Context={actorId:string;requestId:string;correlationId:string};
+type Context={actorId:string;requestId:string;correlationId:string;role?:string};
 type ResultInput={resultKey:string;providerReference:string;occurredAt:string;currency:string;amount:string;lines:Array<{lineReference:string;amount:string;quantity:string}>};
 const reference=(value:string)=>/^ERP-PROJECTION-[a-f0-9]{40}$/.test(value);
 const decimal=(value:string)=>typeof value==='string'&&/^(0|[1-9][0-9]{0,13})(\.[0-9]{1,4})?$/.test(value);
 function number(value:string){if(!/^\d{1,19}$/.test(value)||BigInt(value)>9223372036854775807n)throw new UnprocessableEntityException({code:'ERP_ORDER_REFERENCE_INVALID'});return BigInt(value);}
 function publicPayload(payload:any){
  const common={schemaVersion:payload.schemaVersion,format:payload.format,projectionReference:payload.projectionReference,stream:payload.stream,revision:payload.revision,drillbackHash:payload.drillbackHash};
+ if(payload.stream==='COMPENSATION'&&payload.projectionPurpose==='SUBLEDGER_ACCOUNTING_REVIEW')return {...common,projectionPurpose:payload.projectionPurpose,periodReference:payload.periodReference,currency:payload.currency,configurationHash:payload.configurationHash,reviewHash:payload.reviewHash,dimensions:payload.dimensions,configuration:{periodStart:payload.configuration.periodStart,periodEnd:payload.configuration.periodEnd,ruleVersionCode:payload.configuration.ruleVersionCode,accountingDate:payload.configuration.accountingDate,currency:payload.configuration.currency,currencyBasisReference:payload.configuration.currencyBasisReference,groupByPayoutBatch:payload.configuration.groupByPayoutBatch},aggregates:payload.aggregates.map((row:any)=>({groupReference:row.groupReference,metric:row.metric,economicCategory:row.economicCategory,payoutReference:row.payoutReference,amount:row.amount,sourceCount:row.sourceCount})),totals:{memberPayableGross:payload.totals.memberPayableGross,recoveryRequired:payload.totals.recoveryRequired,recoveryApplied:payload.totals.recoveryApplied,recoveryOutstanding:payload.totals.recoveryOutstanding},paymentScope:payload.paymentScope,mappingStatus:payload.mappingStatus};
  if(!['SALES','RETURN'].includes(payload.stream))return common;
  return {...common,orderNo:payload.orderNo,currency:payload.currency,...(payload.stream==='SALES'?{paidAt:payload.paidAt,grossAmount:payload.grossAmount,discountAmount:payload.discountAmount,netAmount:payload.netAmount}:{returnReference:payload.returnReference,acceptedAt:payload.acceptedAt,amount:payload.amount}),lines:payload.lines.map((line:any)=>({lineReference:line.lineReference,sku:line.sku,quantity:line.quantity,amount:line.amount,...(payload.stream==='SALES'?{unitPrice:line.unitPrice}:{originalLineReference:line.originalLineReference,receivedSerialNos:line.receivedSerialNos})}))};
 }
@@ -58,18 +59,20 @@ export class ErpBusinessProjectionService{
    return {projectionReference:result.projection.projectionReference,payloadHash:result.projection.payloadHash,replayed:result.replayed};
   });
  }
- async list(input:{stream?:string;take?:number;cursor?:string;asOf?:string}){
+ async list(input:{stream?:string;take?:number;cursor?:string;asOf?:string},allowCompensation=true){
+  if(input.stream==='COMPENSATION'&&!allowCompensation)throw new ForbiddenException({code:'ERP_COMPENSATION_READ_FORBIDDEN'});
   const take=input.take??50,asOf=input.asOf?new Date(input.asOf):new Date();if(!Number.isFinite(asOf.getTime())||!Number.isInteger(take)||take<1||take>200||input.stream&&!['SALES','RETURN','COMPENSATION'].includes(input.stream)||input.cursor&&!reference(input.cursor))throw new UnprocessableEntityException({code:'ERP_PROJECTION_QUERY_INVALID'});
   return this.db.$transaction(async tx=>{
-   const rows=await tx.erpBusinessProjection.findMany({where:{requestedAt:{lte:asOf},...(input.stream?{stream:input.stream}:{}),...(input.cursor?{projectionReference:{gt:input.cursor}}:{})},include:evidenceInclude,orderBy:{projectionReference:'asc'},take:take+1});
+   const rows=await tx.erpBusinessProjection.findMany({where:{requestedAt:{lte:asOf},...(input.stream?{stream:input.stream}:!allowCompensation?{stream:{in:['SALES','RETURN']}}:{}),...(input.cursor?{projectionReference:{gt:input.cursor}}:{})},include:evidenceInclude,orderBy:{projectionReference:'asc'},take:take+1});
    const items=rows.slice(0,take).map(safeProjection),exceptions=await tx.operationalException.findMany({where:{sourceType:'ERP_BUSINESS_PROJECTION',sourceId:{in:items.map(row=>row.projectionReference)},status:{not:'RESOLVED'}}});
    return {items:items.map(row=>({...row,exceptions:exceptions.filter(item=>item.sourceId===row.projectionReference).map(item=>({reference:erpBusinessReference('ERP-EXCEPTION',item.operationalExceptionId),code:['ERP_PROJECTION_REQUIRES_RECONCILIATION','ERP_PROJECTION_EXTERNAL_REFERENCE_CONFLICT','ERP_PROJECTION_RESULT_MISMATCH'].includes(item.exceptionCode)?item.exceptionCode:'ERP_PROJECTION_REQUIRES_ATTENTION',severity:item.severity,status:item.status}))})),nextCursor:rows.length>take?items.at(-1)!.projectionReference:null,asOf:asOf.toISOString(),dataThrough:new Date().toISOString(),liveTransportStatus:'BLOCKED_EXTERNAL'};
   },{isolationLevel:Prisma.TransactionIsolationLevel.RepeatableRead});
  }
- async detail(projectionReference:string){
+ async detail(projectionReference:string,allowCompensation=true){
   if(!reference(projectionReference))throw new UnprocessableEntityException({code:'ERP_PROJECTION_REFERENCE_INVALID'});
   return this.db.$transaction(async tx=>{
    const row=await tx.erpBusinessProjection.findUnique({where:{projectionReference},include:evidenceInclude});if(!row)throw new ConflictException({code:'ERP_PROJECTION_NOT_FOUND'});
+   if(row.stream==='COMPENSATION'&&!allowCompensation)throw new ForbiddenException({code:'ERP_COMPENSATION_READ_FORBIDDEN'});
    const output=safeProjection(row),drillback=row.drillbackSnapshot as any;
    const exceptions=await tx.operationalException.findMany({where:{sourceType:'ERP_BUSINESS_PROJECTION',sourceId:projectionReference,status:{not:'RESOLVED'}}});
    return {...output,exceptions:exceptions.map(publicException),drillback:{verified:true,hash:row.drillbackHash,orderNo:(output.expected as any).orderNo??null,sourceReference:erpBusinessReference(row.stream==='SALES'?'ORDER':row.stream==='RETURN'?'RETURN':'COMPENSATION-SOURCE',row.sourceIdentity),lines:Array.isArray(drillback.lines)?drillback.lines.map((line:any)=>({lineReference:line.lineReference,originalLineReference:line.originalLineReference??null,sku:line.sku,quantity:line.quantity,amount:line.amount})):[]},dataThrough:new Date().toISOString()};
@@ -80,6 +83,7 @@ export class ErpBusinessProjectionService{
   return this.command(async tx=>{
    await tx.$queryRaw`SELECT projection_id FROM commerce.erp_business_projection WHERE projection_reference=${projectionReference} FOR UPDATE`;
    const row=await tx.erpBusinessProjection.findUnique({where:{projectionReference},include:{outboxEvent:true,externalReference:true}});if(!row)throw new ConflictException({code:'ERP_PROJECTION_NOT_FOUND'});
+   if(row.stream==='COMPENSATION'&&context.role==='ORDER_OPS')throw new ForbiddenException({code:'ERP_COMPENSATION_WRITE_FORBIDDEN'});
    verifyErpBusinessProjection(row);
    const previous=await tx.auditEvent.findFirst({where:{entityType:'ERP_BUSINESS_PROJECTION',entityId:row.projectionId,action:'ERP_PROJECTION_RETRY_REQUESTED',afterData:{path:['retryKey'],equals:input.retryKey}}});
    if(previous){if((previous.afterData as any)?.reasonReference!==input.reasonReference)throw new ConflictException({code:'ERP_PROJECTION_RETRY_CONFLICT'});return {projectionReference,replayed:true};}
@@ -89,6 +93,15 @@ export class ErpBusinessProjectionService{
    await this.audit.write(tx,{actorType:'USER',actorId:context.actorId,action:'ERP_PROJECTION_RETRY_REQUESTED',entityType:'ERP_BUSINESS_PROJECTION',entityId:row.projectionId,afterData:{projectionReference,retryKey:input.retryKey,reasonReference:input.reasonReference,previousAttemptCount:row.outboxEvent.attemptCount},requestId:context.requestId,correlationId:context.correlationId});
    return {projectionReference,replayed:false};
   });
+ }
+ async sources(projectionReference:string,input:{kind?:string;take?:number;cursor?:string}){
+  const kind=input.kind??'PAYABLE',take=input.take??50;
+  if(!reference(projectionReference)||!['PAYABLE','RECOVERY'].includes(kind)||!Number.isInteger(take)||take<1||take>200||input.cursor&&!/^(PAYABLE|RECOVERY)-[a-f0-9]{40}$/.test(input.cursor))throw new UnprocessableEntityException({code:'ERP_PROJECTION_SOURCE_QUERY_INVALID'});
+  const row=await this.db.erpBusinessProjection.findUnique({where:{projectionReference}});if(!row)throw new ConflictException({code:'ERP_PROJECTION_NOT_FOUND'});verifyErpBusinessProjection(row);
+  const snapshot=row.drillbackSnapshot as any,raw=kind==='PAYABLE'?snapshot.payables:snapshot.recoveries;
+  const rows=(Array.isArray(raw)?raw:[]).map((item:any)=>kind==='PAYABLE'?{reference:erpBusinessReference('PAYABLE',item.payableEntryId),economicCategory:item.economicCategory,sourceType:item.sourceType,sourceReference:erpBusinessReference(item.sourceType,item.sourceId),amount:item.amount,payoutReference:item.payoutBatchId?erpBusinessReference('PAYOUT',item.payoutBatchId):null}:{reference:erpBusinessReference('RECOVERY',item.recoveryId),economicCategory:item.economicCategory,required:item.required,applied:item.applied,outstanding:item.outstanding,applicationCount:item.applications.length}).sort((a:any,b:any)=>a.reference.localeCompare(b.reference));
+  const offset=input.cursor?rows.findIndex((item:any)=>item.reference===input.cursor)+1:0;if(input.cursor&&offset===0)throw new UnprocessableEntityException({code:'ERP_PROJECTION_SOURCE_CURSOR_INVALID'});
+  const items=rows.slice(offset,offset+take);return {projectionReference,kind,drillbackHash:row.drillbackHash,verified:true,items,total:rows.length,nextCursor:offset+take<rows.length?items.at(-1)!.reference:null,asOf:row.requestedAt.toISOString()};
  }
  async reconcile(projectionReference:string,input:ResultInput,context:Context){
   if(!reference(projectionReference)||!input||!input.resultKey||input.resultKey.length>200||!/^[A-Za-z0-9][A-Za-z0-9._:/-]{0,199}$/.test(input.providerReference)||!Number.isFinite(Date.parse(input.occurredAt))||!/^[A-Z]{3}$/.test(input.currency)||!decimal(input.amount)||!Array.isArray(input.lines)||input.lines.length>1000||input.lines.some(row=>!row||!/^(ORDER|RETURN)-LINE-[a-f0-9]{40}$/.test(row.lineReference)||!decimal(row.amount)||!decimal(row.quantity))||new Set(input.lines.map(row=>row.lineReference)).size!==input.lines.length)throw new UnprocessableEntityException({code:'ERP_PROJECTION_RESULT_INVALID'});

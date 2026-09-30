@@ -30,11 +30,12 @@ class ErpBusinessRetryDto{
 @Controller('admin/erp-projections')
 export class ErpBusinessProjectionController{
  constructor(private readonly service:ErpBusinessProjectionService){}
- private context(req:any){if(!req.user?.personId)throw new UnauthorizedException({code:'ERP_PROJECTION_ACTOR_REQUIRED'});return {actorId:req.user.personId,requestId:req.requestId??randomUUID(),correlationId:req.correlationId??randomUUID()};}
+ private context(req:any){if(!req.user?.personId)throw new UnauthorizedException({code:'ERP_PROJECTION_ACTOR_REQUIRED'});return {actorId:req.user.personId,role:req.user.role,requestId:req.requestId??randomUUID(),correlationId:req.correlationId??randomUUID()};}
+ private canReadCompensation(req:any){return ['SUPER_ADMIN','FINANCE','COMPLIANCE_AUDIT'].includes(req.user?.role);}
  @Get() @ApiOperation({operationId:'adminErpBusinessProjectionList',summary:'讀取 Sales、Return 與 Compensation 投影及獨立 ERP 對帳證據'})
  @ApiQuery({name:'stream',required:false,enum:['SALES','RETURN','COMPENSATION']}) @ApiQuery({name:'take',required:false,type:Number}) @ApiQuery({name:'cursor',required:false}) @ApiQuery({name:'asOf',required:false,description:'Fixed projection creation horizon; statuses remain current'})
  @ApiOkResponse({type:ErpBusinessEnvelopeDto})
- list(@Query('stream') stream?:string,@Query('take') take?:string,@Query('cursor') cursor?:string,@Query('asOf') asOf?:string){return this.service.list({stream,take:take===undefined?undefined:Number(take),cursor,asOf}).then(data=>({data}));}
+ list(@Req() req:any,@Query('stream') stream?:string,@Query('take') take?:string,@Query('cursor') cursor?:string,@Query('asOf') asOf?:string){return this.service.list({stream,take:take===undefined?undefined:Number(take),cursor,asOf},this.canReadCompensation(req)).then(data=>({data}));}
  @Get('orders/:orderNo/sources') @ApiOperation({operationId:'adminErpBusinessProjectionSources',summary:'以訂單號取得可識別的退貨商業參考'}) @ApiOkResponse({type:ErpBusinessEnvelopeDto})
  sources(@Param('orderNo') orderNo:string){return this.service.orderSources(orderNo).then(data=>({data}));}
  @Roles('SUPER_ADMIN','ORDER_OPS','FINANCE')
@@ -44,7 +45,11 @@ export class ErpBusinessProjectionController{
  @Post('orders/:orderNo/returns/:returnReference') @ApiOperation({operationId:'adminRequestErpReturnProjection',summary:'封存正式入帳 ReturnCase 的 ERP 投影，不改寫會員回收'}) @ApiOkResponse({type:ErpBusinessEnvelopeDto})
  returned(@Param('orderNo') orderNo:string,@Param('returnReference') returnReference:string,@Req() req:any){return this.service.returned(orderNo,returnReference,this.context(req)).then(data=>({data}));}
  @Get(':projectionReference') @ApiOperation({operationId:'adminErpBusinessProjectionDetail',summary:'讀取投影、對帳及經 hash 驗證的商業來源追溯'}) @ApiOkResponse({type:ErpBusinessEnvelopeDto})
- detail(@Param('projectionReference') projectionReference:string){return this.service.detail(projectionReference).then(data=>({data}));}
+ detail(@Param('projectionReference') projectionReference:string,@Req() req:any){return this.service.detail(projectionReference,this.canReadCompensation(req)).then(data=>({data}));}
+ @Roles('SUPER_ADMIN','FINANCE','COMPLIANCE_AUDIT')
+ @Get(':projectionReference/sources') @ApiOperation({operationId:'adminErpCompensationProjectionSources',summary:'分頁讀取核准聚合快照的應付及回收來源商業參考，不改用目前交易狀態'}) @ApiOkResponse({type:ErpBusinessEnvelopeDto})
+ @ApiQuery({name:'kind',required:false,enum:['PAYABLE','RECOVERY']}) @ApiQuery({name:'take',required:false,type:Number}) @ApiQuery({name:'cursor',required:false})
+ sourceDetail(@Param('projectionReference') projectionReference:string,@Query('kind') kind?:string,@Query('take') take?:string,@Query('cursor') cursor?:string){return this.service.sources(projectionReference,{kind,take:take===undefined?undefined:Number(take),cursor}).then(data=>({data}));}
  @Roles('SUPER_ADMIN','ORDER_OPS','FINANCE')
  @Post(':projectionReference/retry') @ApiOperation({operationId:'adminRetryErpBusinessProjection',summary:'稽核後重新排入失敗投影；保留原版本、冪等鍵及歷次嘗試'}) @ApiOkResponse({type:ErpBusinessEnvelopeDto})
  retry(@Param('projectionReference') projectionReference:string,@Body() input:ErpBusinessRetryDto,@Req() req:any){return this.service.retry(projectionReference,input,this.context(req)).then(data=>({data}));}

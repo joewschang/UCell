@@ -4,6 +4,7 @@ import {createHash} from 'node:crypto';
 import {compensationPeriodEvidence} from './compensation-period-evidence';
 import {compensationVolumeEvidence} from './compensation-volume-evidence';
 import {compensationFinancialEvidence} from './compensation-financial-evidence';
+import {compensationErpEvidence} from './compensation-erp-evidence';
 
 type Input={periodStart:string;periodEnd:string;ruleVersionCode:string};
 type AgingInput={thresholdHours:number;asOf?:string};
@@ -72,10 +73,11 @@ export class CompensationPeriodControlService{
    const inputs=await periodCloseInputState(tx,period);
    const volume=await compensationVolumeEvidence(tx,period,cohort);
    const finance=await compensationFinancialEvidence(tx,period,cohort,now),jobs=cohort.jobs,payouts=finance.payouts,pendingAwards=finance.pending;
-   const [batches,reservoir,erp]=await Promise.all([
+   const [batches,reservoir,erp,erpAccounting]=await Promise.all([
     tx.settlementBatch.findMany({where:{settlementBatchId:{in:cohort.sourcePeriod.settlementSourceIds}},select:{settlementBatchId:true,settlementType:true,status:true,totalTheory:true,poolAvailable:true,kFactor:true,finalizedAt:true},orderBy:[{settlementType:'asc'},{periodStart:'asc'}]}),
     tx.reservoirLedgerEffect.aggregate({where:{OR:cohort.required.map(row=>({sourcePeriodStart:row.periodStart,sourcePeriodEnd:row.periodEnd})),ruleVersionCode:period.ruleVersionCode,reservoirCode:'B'},_count:true,_sum:{amount:true}}),
     tx.fulfillmentErpHandoff.count({where:{requestedAt:{gte:period.periodStart,lt:period.periodEnd},OR:[{outboxEvent:{processStatus:{in:['PENDING','PROCESSING','DEAD']}}},{reconciliations:{some:{outcome:{in:['PARTIAL','MISMATCH']}}}}]}}),
+    compensationErpEvidence(tx,finance.reference,finance.totals),
    ]);
    const companyTotal=finance.totals.company.add(reservoir._sum.amount??0);
    const kinds=['REFERRAL_K0','BINARY_K1','MATCHING_K2','GLOBAL','WELFARE','PAYABLE_PREPARATION'];
@@ -107,7 +109,7 @@ export class CompensationPeriodControlService{
     checkpoint('AWARD_MATURITY','Award maturity',pendingAwards?'PENDING':'PASS',`${pendingAwards} awards remain before pendingUntil.`),
     checkpoint('PAYABLE','Payable materialization',finance.missingPayables?'ATTENTION':finance.open?'READY':pendingAwards?'PENDING':cohort.allComplete?'PASS':'PENDING',`${finance.payables.length} entries; ${finance.open} open; ${finance.missingPayables} matured sources missing a payable.`),
     checkpoint('PAYOUT','Payout review／export／bank result',payouts.some(row=>row.status==='FAILED'||row.status==='PARTIALLY_PAID')?'ATTENTION':payouts.length?'RECORDED':'PENDING',`${payouts.length} payout batches.`),
-    checkpoint('ERP_ACCOUNTING','ERP accounting projection','BLOCKED_EXTERNAL',`ERP_ACCOUNT_MAPPING_REQUIRED; ${erp} fulfillment bridge items currently require attention in this period.`),
+    checkpoint('ERP_ACCOUNTING','ERP accounting projection',erpAccounting.status,`${erpAccounting.state}; ${erpAccounting.code??'ERP evidence recorded independently'}; ${erp} fulfillment bridge items currently require attention in this period.`),
    ],
    jobs:jobs.map(row=>({
     jobReference:safe('PERIOD-JOB',row.periodCloseJobId),kind:row.kind,status:row.outbox.processStatus,periodStart:row.periodStart.toISOString(),periodEnd:row.periodEnd.toISOString(),
@@ -118,8 +120,9 @@ export class CompensationPeriodControlService{
    amountBridge:{
     grossTheory:amount(finance.totals.recordedTheory),globalAllocated:amount(finance.totals.globalAllocated),awardAfterEligibilityAndK:amount(finance.totals.award),companyReservoirB:amount(companyTotal),
     recoveryRequired:amount(finance.totals.recoveryRequired),recoveryApplied:amount(finance.totals.recoveryApplied),recoveryOutstanding:amount(finance.totals.recoveryOutstanding),payableMaterialized:amount(finance.totals.payable),
-    payoutGross:amount(finance.totals.payoutGross),payoutRecoveryOffset:amount(finance.totals.payoutRecovery),payoutNet:amount(finance.totals.payoutNet),bankPaid:amount(finance.totals.bankPaid),erpAccountingProjection:null,
+    payoutGross:amount(finance.totals.payoutGross),payoutRecoveryOffset:amount(finance.totals.payoutRecovery),payoutNet:amount(finance.totals.payoutNet),bankPaid:amount(finance.totals.bankPaid),erpAccountingProjection:erpAccounting.memberPayableGross,
    },
+   erpAccounting,
    payouts:payouts.map(row=>({
     payoutReference:safe('PAYOUT',row.payoutBatchId),status:row.status,totalGross:amount(row.totalGross),totalRecovery:amount(row.totalRecovery),totalNet:amount(row.totalNet),
     approvals:row.approvals.map(item=>({stage:item.stage,decision:item.decision})),latestExport:row.exportArtifacts.length?{revision:row.exportArtifacts.at(-1)!.revision,generatedAt:row.exportArtifacts.at(-1)!.generatedAt.toISOString(),reference:safe('PAYOUT-EXPORT',row.exportArtifacts.at(-1)!.payoutExportArtifactId)}:null,paymentResults:{paid:row.paymentResults.filter(result=>result.resultStatus==='PAID').length,failed:row.paymentResults.filter(result=>result.resultStatus==='FAILED').length},

@@ -3,10 +3,12 @@ import {ValidationPipe} from '@nestjs/common';
 import {ConfigService} from '@nestjs/config';
 import {FastifyAdapter,NestFastifyApplication} from '@nestjs/platform-fastify';
 import {PrismaClient} from '@prisma/client';
-import {PrismaService,claimOutboxLease,erpBusinessReference} from '@ucell/database';
+import {PrismaService,claimOutboxLease,erpBusinessReference,sealErpBusinessProjection} from '@ucell/database';
 import {randomUUID} from 'node:crypto';
 import {ErpBusinessProjectionController} from '../src/modules/commerce/erp-business-projection.controller';
 import {ErpBusinessProjectionService} from '../src/modules/commerce/erp-business-projection.service';
+import {ErpCompensationProjectionService} from '../src/modules/commerce/erp-compensation-projection.service';
+import {ErpCompensationProjectionController} from '../src/modules/commerce/erp-compensation-projection.controller';
 import {AuditService} from '../src/common/audit/audit.service';
 import {IdentityTokenService} from '../src/modules/auth/identity-token.service';
 import {AdminAuthenticationGuard} from '../src/modules/auth/admin-authentication.guard';
@@ -14,13 +16,13 @@ import {AdminRoleGuard} from '../src/modules/auth/admin-role.guard';
 import {processErpBusinessProjection} from '../../worker/src/erp-business-runtime';
 const url=process.env.PHASE2_TEST_DATABASE_URL;
 (url?describe:describe.skip)('ERP_BUSINESS_HTTP_REAL_DB',()=>{
- let db:PrismaClient,app:NestFastifyApplication,finance:string,auditor:string;
+ let db:PrismaClient,app:NestFastifyApplication,finance:string,auditor:string,orderOps:string;
  const base='/api/v1/admin/erp-projections',headers=(token:string)=>({authorization:`Bearer ${token}`});
  beforeAll(async()=>{
   db=new PrismaClient({datasources:{db:{url}}});const tokens=new IdentityTokenService(db as any);
   async function actor(roleCode:string){const person=await db.person.create({data:{legalName:'Synthetic ERP '+roleCode}}),subject=randomUUID();await db.identityLink.create({data:{personId:person.personId,provider:'ENTRA',providerSubject:subject}});await db.adminAccessGrant.create({data:{personId:person.personId,provider:'ENTRA',providerSubject:subject,roleCode,validFrom:new Date(Date.now()-1000)}});return (await tokens.issue({provider:'ENTRA',subject,personId:person.personId,roleCode})).accessToken;}
-  finance=await actor('FINANCE');auditor=await actor('COMPLIANCE_AUDIT');
-  const module=await Test.createTestingModule({controllers:[ErpBusinessProjectionController],providers:[{provide:PrismaService,useValue:db},AuditService,ErpBusinessProjectionService,{provide:IdentityTokenService,useValue:tokens},{provide:ConfigService,useValue:{get:(name:string)=>name==='NODE_ENV'?'production':'false'}},AdminAuthenticationGuard,AdminRoleGuard]}).compile();
+  finance=await actor('FINANCE');auditor=await actor('COMPLIANCE_AUDIT');orderOps=await actor('ORDER_OPS');
+  const module=await Test.createTestingModule({controllers:[ErpBusinessProjectionController,ErpCompensationProjectionController],providers:[{provide:PrismaService,useValue:db},AuditService,ErpBusinessProjectionService,ErpCompensationProjectionService,{provide:IdentityTokenService,useValue:tokens},{provide:ConfigService,useValue:{get:(name:string)=>name==='NODE_ENV'?'production':'false'}},AdminAuthenticationGuard,AdminRoleGuard]}).compile();
   app=module.createNestApplication<NestFastifyApplication>(new FastifyAdapter(),{logger:false});app.setGlobalPrefix('api/v1');app.useGlobalPipes(new ValidationPipe({whitelist:true,forbidNonWhitelisted:true,transform:true}));app.useGlobalGuards(module.get(AdminAuthenticationGuard),module.get(AdminRoleGuard));await app.init();await app.getHttpAdapter().getInstance().ready();
  });
  afterAll(async()=>{await app?.close();await db?.$disconnect();});
@@ -44,6 +46,21 @@ const url=process.env.PHASE2_TEST_DATABASE_URL;
   const read=await app.inject({url:`${base}/${first.projectionReference}`,headers:headers(auditor)});expect(read.statusCode).toBe(200);expect(read.json().data.status).toBe('BLOCKED_EXTERNAL');expect(read.json().data.drillback.verified).toBe(true);
   for(const hidden of [f.person.personId,f.order.orderId,f.order.lines[0].orderLineId,'Private ERP buyer','secret-token','requestedByActor'])expect(read.body).not.toContain(hidden);
   const row=await db.erpBusinessProjection.findUniqueOrThrow({where:{projectionReference:first.projectionReference}});expect(await db.auditEvent.count({where:{entityId:row.projectionId,action:'ERP_SALES_PROJECTION_REQUESTED'}})).toBe(1);
+ });
+ it('requires Finance and complete approved-period evidence for compensation preview and approval',async()=>{
+  const payload={periodStart:'1899-01-01T00:00:00Z',periodEnd:'1899-02-01T00:00:00Z',ruleVersionCode:'NO_APPROVED_RULE',accountingDate:'1899-02-02',currency:'TWD',currencyBasisReference:'TEST-CURRENCY',groupByPayoutBatch:false},url=`${base}/compensation/preview`;
+  expect((await app.inject({method:'POST',url,payload})).statusCode).toBe(401);expect((await app.inject({method:'POST',url,payload,headers:headers(auditor)})).statusCode).toBe(403);
+  const result=await app.inject({method:'POST',url,payload,headers:headers(finance)});expect(result.statusCode).toBe(409);expect(result.json().code).toBe('ERP_COMPENSATION_SEALED_PERIOD_REQUIRED');
+  expect((await app.inject({method:'POST',url,payload:{...payload,accountCode:'INVENTED'},headers:headers(finance)})).statusCode).toBe(400);
+  expect((await app.inject({method:'POST',url:`${base}/compensation/approve`,payload:{...payload,reviewHash:'a'.repeat(64),approvalReference:'TEST-APPROVAL'},headers:headers(auditor)})).statusCode).toBe(403);
+ });
+ it('keeps compensation reads out of Order Operations while allowing its Sales stream',async()=>{
+  const sealed=await db.$transaction(tx=>sealErpBusinessProjection(tx,{stream:'COMPENSATION',sourceIdentity:'TEST-PRIVATE-COMP-'+randomUUID(),body:{amount:'987.6543'},drillback:{private:'TEST-SUBLEDGER'},context:{actorId:randomUUID(),correlationId:randomUUID(),approvalReference:'TEST-APPROVAL'}})),reference=sealed.projection.projectionReference;
+  expect((await app.inject({url:`${base}?stream=COMPENSATION`,headers:headers(orderOps)})).statusCode).toBe(403);
+  const list=await app.inject({url:base,headers:headers(orderOps)});expect(list.statusCode).toBe(200);expect(list.body).not.toContain(reference);expect(list.body).not.toContain('987.6543');
+  expect((await app.inject({url:`${base}/${reference}`,headers:headers(orderOps)})).statusCode).toBe(403);expect((await app.inject({url:`${base}/${reference}/sources`,headers:headers(orderOps)})).statusCode).toBe(403);
+  expect((await app.inject({url:`${base}/${reference}`,headers:headers(auditor)})).statusCode).toBe(200);
+  const f=await fixture();expect((await app.inject({method:'POST',url:`${base}/orders/${f.order.orderNo}/sales`,headers:headers(orderOps)})).statusCode).toBe(201);
  });
  it('requires actual ERP acceptance and keeps partial, mismatched and matched results append-only',async()=>{
   const f=await fixture(),created=await sales(f.order.orderNo.toString()),projection=created.projectionReference;
