@@ -9,6 +9,8 @@ import {ErpBusinessProjectionController} from '../src/modules/commerce/erp-busin
 import {ErpBusinessProjectionService} from '../src/modules/commerce/erp-business-projection.service';
 import {ErpCompensationProjectionService} from '../src/modules/commerce/erp-compensation-projection.service';
 import {ErpCompensationProjectionController} from '../src/modules/commerce/erp-compensation-projection.controller';
+import {ErpPaymentProjectionService} from '../src/modules/commerce/erp-payment-projection.service';
+import {ErpPaymentProjectionController} from '../src/modules/commerce/erp-payment-projection.controller';
 import {AuditService} from '../src/common/audit/audit.service';
 import {IdentityTokenService} from '../src/modules/auth/identity-token.service';
 import {AdminAuthenticationGuard} from '../src/modules/auth/admin-authentication.guard';
@@ -22,7 +24,7 @@ const url=process.env.PHASE2_TEST_DATABASE_URL;
   db=new PrismaClient({datasources:{db:{url}}});const tokens=new IdentityTokenService(db as any);
   async function actor(roleCode:string){const person=await db.person.create({data:{legalName:'Synthetic ERP '+roleCode}}),subject=randomUUID();await db.identityLink.create({data:{personId:person.personId,provider:'ENTRA',providerSubject:subject}});await db.adminAccessGrant.create({data:{personId:person.personId,provider:'ENTRA',providerSubject:subject,roleCode,validFrom:new Date(Date.now()-1000)}});return (await tokens.issue({provider:'ENTRA',subject,personId:person.personId,roleCode})).accessToken;}
   finance=await actor('FINANCE');auditor=await actor('COMPLIANCE_AUDIT');orderOps=await actor('ORDER_OPS');
-  const module=await Test.createTestingModule({controllers:[ErpBusinessProjectionController,ErpCompensationProjectionController],providers:[{provide:PrismaService,useValue:db},AuditService,ErpBusinessProjectionService,ErpCompensationProjectionService,{provide:IdentityTokenService,useValue:tokens},{provide:ConfigService,useValue:{get:(name:string)=>name==='NODE_ENV'?'production':'false'}},AdminAuthenticationGuard,AdminRoleGuard]}).compile();
+  const module=await Test.createTestingModule({controllers:[ErpBusinessProjectionController,ErpCompensationProjectionController,ErpPaymentProjectionController],providers:[{provide:PrismaService,useValue:db},AuditService,ErpBusinessProjectionService,ErpCompensationProjectionService,ErpPaymentProjectionService,{provide:IdentityTokenService,useValue:tokens},{provide:ConfigService,useValue:{get:(name:string)=>name==='NODE_ENV'?'production':'false'}},AdminAuthenticationGuard,AdminRoleGuard]}).compile();
   app=module.createNestApplication<NestFastifyApplication>(new FastifyAdapter(),{logger:false});app.setGlobalPrefix('api/v1');app.useGlobalPipes(new ValidationPipe({whitelist:true,forbidNonWhitelisted:true,transform:true}));app.useGlobalGuards(module.get(AdminAuthenticationGuard),module.get(AdminRoleGuard));await app.init();await app.getHttpAdapter().getInstance().ready();
  });
  afterAll(async()=>{await app?.close();await db?.$disconnect();});
@@ -46,6 +48,7 @@ const url=process.env.PHASE2_TEST_DATABASE_URL;
   const read=await app.inject({url:`${base}/${first.projectionReference}`,headers:headers(auditor)});expect(read.statusCode).toBe(200);expect(read.json().data.status).toBe('BLOCKED_EXTERNAL');expect(read.json().data.drillback.verified).toBe(true);
   for(const hidden of [f.person.personId,f.order.orderId,f.order.lines[0].orderLineId,'Private ERP buyer','secret-token','requestedByActor'])expect(read.body).not.toContain(hidden);
   const row=await db.erpBusinessProjection.findUniqueOrThrow({where:{projectionReference:first.projectionReference}});expect(await db.auditEvent.count({where:{entityId:row.projectionId,action:'ERP_SALES_PROJECTION_REQUESTED'}})).toBe(1);
+  expect((await app.inject({url:`${base}/${first.projectionReference}/sources?kind=PAYMENT`,headers:headers(finance)})).statusCode).toBe(422);
  });
  it('requires Finance and complete approved-period evidence for compensation preview and approval',async()=>{
   const payload={periodStart:'1899-01-01T00:00:00Z',periodEnd:'1899-02-01T00:00:00Z',ruleVersionCode:'NO_APPROVED_RULE',accountingDate:'1899-02-02',currency:'TWD',currencyBasisReference:'TEST-CURRENCY',groupByPayoutBatch:false},url=`${base}/compensation/preview`;
@@ -61,6 +64,13 @@ const url=process.env.PHASE2_TEST_DATABASE_URL;
   expect((await app.inject({url:`${base}/${reference}`,headers:headers(orderOps)})).statusCode).toBe(403);expect((await app.inject({url:`${base}/${reference}/sources`,headers:headers(orderOps)})).statusCode).toBe(403);
   expect((await app.inject({url:`${base}/${reference}`,headers:headers(auditor)})).statusCode).toBe(200);
   const f=await fixture();expect((await app.inject({method:'POST',url:`${base}/orders/${f.order.orderNo}/sales`,headers:headers(orderOps)})).statusCode).toBe(201);
+ });
+ it('restricts payment preview and approval to Finance while allowing Compliance batch discovery',async()=>{
+  const url=`${base}/payment/batches?periodStart=1888-01-01T00:00:00Z&periodEnd=1888-02-01T00:00:00Z`;
+  expect((await app.inject({url,headers:headers(orderOps)})).statusCode).toBe(403);expect((await app.inject({url,headers:headers(auditor)})).statusCode).toBe(200);
+  const payload={payoutReference:'PAYOUT-'+'a'.repeat(40),periodStart:'1888-01-01T00:00:00Z',periodEnd:'1888-02-01T00:00:00Z',accountingDate:'1888-02-02',currency:'TWD',currencyBasisReference:'TEST-LEDGER-TWD',groupByEconomicCategory:true};
+  expect((await app.inject({method:'POST',url:`${base}/payment/preview`,payload,headers:headers(auditor)})).statusCode).toBe(403);expect((await app.inject({method:'POST',url:`${base}/payment/preview`,payload,headers:headers(finance)})).statusCode).toBe(409);
+  expect((await app.inject({method:'POST',url:`${base}/payment/approve`,payload:{...payload,reviewHash:'a'.repeat(64),approvalReference:'TEST-APPROVAL'},headers:headers(orderOps)})).statusCode).toBe(403);
  });
  it('requires actual ERP acceptance and keeps partial, mismatched and matched results append-only',async()=>{
   const f=await fixture(),created=await sales(f.order.orderNo.toString()),projection=created.projectionReference;

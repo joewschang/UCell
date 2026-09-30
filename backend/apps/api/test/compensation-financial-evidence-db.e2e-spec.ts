@@ -5,6 +5,9 @@ import {UnifiedPayableService} from '../src/modules/payout/unified-payable.servi
 import {RecoveryBalanceService} from '../src/modules/payout/recovery-balance.service';
 import {AdminOperationsService} from '../src/modules/admin-operations/admin-operations.service';
 import {AuditService} from '../src/common/audit/audit.service';
+import {erpBusinessReference} from '@ucell/database';
+import {ErpPaymentProjectionService} from '../src/modules/commerce/erp-payment-projection.service';
+import {ErpBusinessProjectionService} from '../src/modules/commerce/erp-business-projection.service';
 
 const url=process.env.PHASE2_TEST_DATABASE_URL;
 (url?describe:describe.skip)('COMPENSATION_FINANCIAL_EVIDENCE_REAL_DB',()=>{
@@ -42,6 +45,33 @@ const url=process.env.PHASE2_TEST_DATABASE_URL;
  });
  it('reports whole shared-line amounts without allocating bank money or recovery between award periods',async()=>{
   const f=await fixture(true),p=await f.pay();await p.post('150');const result=await f.read();expect(result.ready).toBe(true);expect(result.sharedLineCount).toBe(1);expect(result.totals.payable.toString()).toBe('100');expect(result.totals.payoutGross.toString()).toBe('150');expect(result.totals.bankPaid.toString()).toBe('150');
+ });
+ it('seals a whole-batch payment aggregate with cumulative bank evidence and immutable source drillback',async()=>{
+  const f=await fixture(true);await db.bonusRecoveryEvent.create({data:{bonusAwardId:f.original.bonusAwardId,recoveryAmount:20,outstandingAmount:20,reasonCode:'TEST_PAYMENT_PROJECTION',occurredAt:new Date()}});
+  const p=await f.pay();await p.post('40');
+  const service=new ErpPaymentProjectionService(db as any,new AuditService()),input={payoutReference:erpBusinessReference('PAYOUT',p.batch.payoutBatchId),periodStart:p.batch.periodStart.toISOString(),periodEnd:p.batch.periodEnd.toISOString(),accountingDate:'1891-03-02',currency:'TWD',currencyBasisReference:'TEST-LEDGER-TWD',groupByEconomicCategory:true},context={actorId:randomUUID(),requestId:randomUUID(),correlationId:randomUUID()};
+  expect((await service.batches(input)).items).toEqual(expect.arrayContaining([expect.objectContaining({payoutReference:input.payoutReference,gross:'150.0000',net:'130.0000'})]));
+  const partial=await service.preview(input);expect(partial.expected.totals).toEqual({memberPayableGross:'150.0000',payoutRecoveryOffset:'20.0000',payoutNet:'130.0000',bankPaid:'40.0000'});
+  await p.post('130');await expect(service.approve({...input,reviewHash:partial.reviewHash,approvalReference:'TEST-PAYMENT-APPROVAL'},context)).rejects.toMatchObject({response:{code:'ERP_PAYMENT_PREVIEW_STALE'}});
+  const preview=await service.preview(input);expect(await service.preview(input)).toEqual(preview);expect(preview.expected.totals.bankPaid).toBe('130.0000');expect(preview.expected.paymentScope).toBe('WHOLE_PAYOUT_BATCH_NO_AWARD_PERIOD_ALLOCATION');expect((await f.read()).totals.payable.toString()).toBe('100');
+  for(const hidden of [p.batch.payoutBatchId,p.line.payoutLineId,f.original.bonusAwardId,f.original.recipientQualificationId])expect(JSON.stringify(preview)).not.toContain(hidden);
+  const request={...input,reviewHash:preview.reviewHash,approvalReference:'TEST-PAYMENT-APPROVAL'},approved=await Promise.all([service.approve(request,context),service.approve(request,context)]);expect(approved.map(row=>row.replayed).sort()).toEqual([false,true]);
+  const projection=await db.erpBusinessProjection.findUniqueOrThrow({where:{projectionReference:preview.projectionReference}});expect(projection.mappingReference).toBeNull();expect(projection.drillbackHash).toBe(preview.drillbackHash);expect(await db.auditEvent.count({where:{entityId:projection.projectionId,action:'ERP_PAYMENT_PROJECTION_APPROVED'}})).toBe(1);
+  const read=new ErpBusinessProjectionService(db as any,new AuditService()),detail=await read.detail(preview.projectionReference);expect((detail.expected as any).totals.bankPaid).toBe('130.0000');const page=await read.sources(preview.projectionReference,{take:1});expect(page.total).toBe(2);expect(page.nextCursor).not.toBeNull();const second=await read.sources(preview.projectionReference,{take:1,cursor:page.nextCursor!});expect(second.items[0].reference).not.toBe(page.items[0].reference);expect(second.nextCursor).toBeNull();
+  expect((await read.sources(preview.projectionReference,{kind:'PAYMENT'})).items).toEqual([expect.objectContaining({amount:'150.0000',recovery:'20.0000',net:'130.0000',bankPaid:'130.0000',bankResultCount:2})]);
+  await expect(service.approve({...request,accountingDate:'1891-03-03'},context)).rejects.toMatchObject({response:{code:'ERP_PAYMENT_APPROVAL_CONFLICT'}});
+ });
+ it('rolls back a payment projection when audit fails and rejects an unapproved payout',async()=>{
+  const f=await fixture(),p=await f.pay(),service=new ErpPaymentProjectionService(db as any,new AuditService()),input={payoutReference:erpBusinessReference('PAYOUT',p.batch.payoutBatchId),periodStart:p.batch.periodStart.toISOString(),periodEnd:p.batch.periodEnd.toISOString(),accountingDate:'1891-03-02',currency:'TWD',currencyBasisReference:'TEST-LEDGER-TWD',groupByEconomicCategory:false},preview=await service.preview(input),count=await db.outboxEvent.count();
+  const broken=new ErpPaymentProjectionService(db as any,{write:async()=>{throw new Error('SYNTHETIC_PAYMENT_AUDIT_FAILURE');}} as any);
+  await expect(broken.approve({...input,reviewHash:preview.reviewHash,approvalReference:'TEST-PAYMENT-APPROVAL'},{actorId:randomUUID(),requestId:randomUUID(),correlationId:randomUUID()})).rejects.toThrow('SYNTHETIC_PAYMENT_AUDIT_FAILURE');expect(await db.outboxEvent.count()).toBe(count);expect(await db.erpBusinessProjection.count({where:{projectionReference:preview.projectionReference}})).toBe(0);
+  const unapproved=await db.payoutBatch.create({data:{periodStart:p.batch.periodStart,periodEnd:p.batch.periodEnd}});await expect(service.preview({...input,payoutReference:erpBusinessReference('PAYOUT',unapproved.payoutBatchId)})).rejects.toMatchObject({response:{code:'ERP_PAYOUT_APPROVAL_REQUIRED'}});
+ });
+ it('distinguishes absent bank results from a confirmed zero-net payment and honors blocking payout exceptions',async()=>{
+  const f=await fixture();await db.bonusRecoveryEvent.create({data:{bonusAwardId:f.original.bonusAwardId,recoveryAmount:100,outstandingAmount:100,reasonCode:'TEST_ZERO_PAYMENT_PROJECTION',occurredAt:new Date()}});const p=await f.pay(),service=new ErpPaymentProjectionService(db as any,new AuditService()),input={payoutReference:erpBusinessReference('PAYOUT',p.batch.payoutBatchId),periodStart:p.batch.periodStart.toISOString(),periodEnd:p.batch.periodEnd.toISOString(),accountingDate:'1891-03-02',currency:'TWD',currencyBasisReference:'TEST-LEDGER-TWD',groupByEconomicCategory:true};
+  const pending=await service.preview(input);expect(pending.expected.totals.bankPaid).toBe('0.0000');expect(pending.expected.paymentEvidence).toMatchObject({confirmedLines:0,pendingLines:1});await p.post('0');const paid=await service.preview(input);expect(paid.expected.paymentEvidence).toMatchObject({confirmedLines:1,pendingLines:0});expect(paid.reviewHash).not.toBe(pending.reviewHash);
+  await db.operationalException.create({data:{sourceType:'PAYOUT_BATCH',sourceId:p.batch.payoutBatchId,exceptionCode:'TEST_PAYMENT_BLOCK',severity:'HIGH',summary:'Synthetic blocking payout'}});await expect(service.preview(input)).rejects.toMatchObject({response:{code:'ERP_PAYOUT_BLOCKING_EXCEPTION'}});
+  const listed=await service.batches({...input,take:1});expect(listed.items).toHaveLength(1);expect(listed.nextCursor).not.toBeNull();const next=await service.batches({...input,take:1,cursor:listed.nextCursor!});expect(next.items[0].payoutReference).not.toBe(listed.items[0].payoutReference);
  });
  it('reconciles actual complete recovery and still requires confirmation for a zero-net line',async()=>{
   const f=await fixture();await db.bonusRecoveryEvent.create({data:{bonusAwardId:f.original.bonusAwardId,recoveryAmount:100,outstandingAmount:100,reasonCode:'SYNTHETIC_RECOVERY',occurredAt:new Date()}});

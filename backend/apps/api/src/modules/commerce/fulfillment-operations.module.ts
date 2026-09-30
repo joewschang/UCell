@@ -1,3 +1,5 @@
+import {ErpPaymentProjectionController} from './erp-payment-projection.controller';
+import {ErpPaymentProjectionService} from './erp-payment-projection.service';
 import {FulfillmentShipmentService} from './fulfillment-shipment.service';
 import {PiiCryptoService} from '@ucell/database';
 import {FulfillmentDeliveryService} from './fulfillment-delivery.service';
@@ -16,5 +18,5 @@ import {ErpBusinessProjectionService} from './erp-business-projection.service';
 import {ErpBusinessProjectionController} from './erp-business-projection.controller';
 import {ErpCompensationProjectionController} from './erp-compensation-projection.controller';
 import {ErpCompensationProjectionService} from './erp-compensation-projection.service';
-@Module({controllers:[FulfillmentOperationsController,ErpReconciliationBridgeController,ErpBusinessProjectionController,ErpCompensationProjectionController],providers:[FulfillmentOperationsService,FulfillmentSerialScanService,FulfillmentPackVerificationService,FulfillmentErpHandoffService,FulfillmentSourceAllocationService,FulfillmentErpReconciliationService,FulfillmentSerialProvenanceService,FulfillmentDeliveryService,PiiCryptoService,FulfillmentShipmentService,ErpReconciliationBridgeService,ErpBusinessProjectionService,ErpCompensationProjectionService]})
+@Module({controllers:[FulfillmentOperationsController,ErpReconciliationBridgeController,ErpBusinessProjectionController,ErpCompensationProjectionController,ErpPaymentProjectionController],providers:[FulfillmentOperationsService,FulfillmentSerialScanService,FulfillmentPackVerificationService,FulfillmentErpHandoffService,FulfillmentSourceAllocationService,FulfillmentErpReconciliationService,FulfillmentSerialProvenanceService,FulfillmentDeliveryService,PiiCryptoService,FulfillmentShipmentService,ErpReconciliationBridgeService,ErpBusinessProjectionService,ErpCompensationProjectionService,ErpPaymentProjectionService]})
 export class FulfillmentOperationsModule{}

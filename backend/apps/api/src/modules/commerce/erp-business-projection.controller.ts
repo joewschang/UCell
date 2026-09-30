@@ -48,7 +48,7 @@ export class ErpBusinessProjectionController{
  detail(@Param('projectionReference') projectionReference:string,@Req() req:any){return this.service.detail(projectionReference,this.canReadCompensation(req)).then(data=>({data}));}
  @Roles('SUPER_ADMIN','FINANCE','COMPLIANCE_AUDIT')
  @Get(':projectionReference/sources') @ApiOperation({operationId:'adminErpCompensationProjectionSources',summary:'分頁讀取核准聚合快照的應付及回收來源商業參考，不改用目前交易狀態'}) @ApiOkResponse({type:ErpBusinessEnvelopeDto})
- @ApiQuery({name:'kind',required:false,enum:['PAYABLE','RECOVERY']}) @ApiQuery({name:'take',required:false,type:Number}) @ApiQuery({name:'cursor',required:false})
+ @ApiQuery({name:'kind',required:false,enum:['PAYABLE','RECOVERY','PAYMENT']}) @ApiQuery({name:'take',required:false,type:Number}) @ApiQuery({name:'cursor',required:false})
  sourceDetail(@Param('projectionReference') projectionReference:string,@Query('kind') kind?:string,@Query('take') take?:string,@Query('cursor') cursor?:string){return this.service.sources(projectionReference,{kind,take:take===undefined?undefined:Number(take),cursor}).then(data=>({data}));}
  @Roles('SUPER_ADMIN','ORDER_OPS','FINANCE')
  @Post(':projectionReference/retry') @ApiOperation({operationId:'adminRetryErpBusinessProjection',summary:'稽核後重新排入失敗投影；保留原版本、冪等鍵及歷次嘗試'}) @ApiOkResponse({type:ErpBusinessEnvelopeDto})

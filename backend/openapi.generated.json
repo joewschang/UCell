@@ -1046,7 +1046,8 @@
             "schema": {
               "enum": [
                 "PAYABLE",
-                "RECOVERY"
+                "RECOVERY",
+                "PAYMENT"
               ],
               "type": "string"
             }
@@ -1254,6 +1255,140 @@
         "summary": "核准完全相符的聚合快照並封存追溯證據；缺會計映射時保持外部阻擋",
         "tags": [
           "Admin - ERP Compensation Projection"
+        ]
+      }
+    },
+    "/api/v1/admin/erp-projections/payment/batches": {
+      "get": {
+        "operationId": "adminErpPaymentProjectionBatches",
+        "parameters": [
+          {
+            "name": "periodStart",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "periodEnd",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "take",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentProjectionEnvelopeDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "依付款批次期間取得商業參考與整批金額",
+        "tags": [
+          "Admin - ERP Payment Projection"
+        ]
+      }
+    },
+    "/api/v1/admin/erp-projections/payment/preview": {
+      "post": {
+        "operationId": "adminPreviewErpPaymentProjection",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PaymentProjectionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentProjectionEnvelopeDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "以雙階核准、不可變匯出與銀行證據預覽整批付款投影",
+        "tags": [
+          "Admin - ERP Payment Projection"
+        ]
+      }
+    },
+    "/api/v1/admin/erp-projections/payment/approve": {
+      "post": {
+        "operationId": "adminApproveErpPaymentProjection",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PaymentProjectionApprovalDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentProjectionEnvelopeDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "核准 hash 完全相符的整批付款投影；不分攤跨期款項",
+        "tags": [
+          "Admin - ERP Payment Projection"
         ]
       }
     },
@@ -17384,6 +17519,96 @@
           "currency",
           "currencyBasisReference",
           "groupByPayoutBatch",
+          "reviewHash",
+          "approvalReference"
+        ]
+      },
+      "PaymentProjectionEnvelopeDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "PaymentProjectionDto": {
+        "type": "object",
+        "properties": {
+          "payoutReference": {
+            "type": "string"
+          },
+          "periodStart": {
+            "type": "string"
+          },
+          "periodEnd": {
+            "type": "string"
+          },
+          "accountingDate": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "currencyBasisReference": {
+            "type": "string"
+          },
+          "groupByEconomicCategory": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "payoutReference",
+          "periodStart",
+          "periodEnd",
+          "accountingDate",
+          "currency",
+          "currencyBasisReference",
+          "groupByEconomicCategory"
+        ]
+      },
+      "PaymentProjectionApprovalDto": {
+        "type": "object",
+        "properties": {
+          "payoutReference": {
+            "type": "string"
+          },
+          "periodStart": {
+            "type": "string"
+          },
+          "periodEnd": {
+            "type": "string"
+          },
+          "accountingDate": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "currencyBasisReference": {
+            "type": "string"
+          },
+          "groupByEconomicCategory": {
+            "type": "boolean"
+          },
+          "reviewHash": {
+            "type": "string"
+          },
+          "approvalReference": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "payoutReference",
+          "periodStart",
+          "periodEnd",
+          "accountingDate",
+          "currency",
+          "currencyBasisReference",
+          "groupByEconomicCategory",
           "reviewHash",
           "approvalReference"
         ]
