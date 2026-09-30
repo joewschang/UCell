@@ -1,6 +1,6 @@
 import {Body,Controller,Get,Param,Post,Query,Req,UnauthorizedException} from '@nestjs/common';
 import {ApiBearerAuth,ApiOkResponse,ApiOperation,ApiProperty,ApiQuery,ApiTags} from '@nestjs/swagger';
-import {ArrayMaxSize,IsArray,IsIn,IsInt,IsOptional,Matches,Max,Min,ValidateNested} from 'class-validator';
+import {ArrayMaxSize,IsArray,IsIn,IsInt,IsOptional,IsISO8601,Matches,Max,Min,ValidateNested} from 'class-validator';
 import {Type} from 'class-transformer';
 import {randomUUID} from 'node:crypto';
 import {Roles} from '../auth/roles.decorator';
@@ -23,6 +23,18 @@ class ApprovalDto extends MappingDto{
  @ApiProperty() @Matches(/^[A-Za-z0-9][A-Za-z0-9._:/-]{7,99}$/) approvalReference!:string;
 }
 class EnvelopeDto{@ApiProperty({type:'object',additionalProperties:true}) data!:Record<string,unknown>;}
+class ResultGroupDto{
+ @ApiProperty() @Matches(/^(COMPENSATION|PAYMENT)-GROUP-[a-f0-9]{40}$/) groupReference!:string;
+ @ApiProperty() @Matches(/^(0|[1-9][0-9]{0,13})(\.[0-9]{1,4})?$/) amount!:string;
+}
+class ResultDto{
+ @ApiProperty() @Matches(/^[A-Za-z0-9][A-Za-z0-9._:/-]{7,199}$/) resultKey!:string;
+ @ApiProperty() @Matches(/^[A-Za-z0-9][A-Za-z0-9._:/-]{0,199}$/) providerReference!:string;
+ @ApiProperty() @Matches(/^[a-f0-9]{64}$/) requestHash!:string;
+ @ApiProperty() @Matches(/^[A-Z]{3}$/) currency!:string;
+ @ApiProperty() @IsISO8601() occurredAt!:string;
+ @ApiProperty({type:[ResultGroupDto]}) @IsArray() @ArrayMaxSize(1000) @ValidateNested({each:true}) @Type(()=>ResultGroupDto) groups!:ResultGroupDto[];
+}
 @ApiTags('Admin - ERP Accounting Mapping') @ApiBearerAuth('adminBearer')
 @Roles('SUPER_ADMIN','FINANCE','COMPLIANCE_AUDIT') @Controller('admin/erp-accounting-mappings')
 export class ErpAccountingMappingController{
@@ -35,4 +47,6 @@ export class ErpAccountingMappingController{
  preview(@Param('reference') reference:string,@Body() body:MappingDto){return this.service.preview(reference,body).then(data=>({data}));}
  @Roles('SUPER_ADMIN','FINANCE') @Post(':reference/approve') @ApiOperation({operationId:'adminApproveErpAccountingMapping',summary:'核准並封存映射版本；傳送建立後不得修改映射'}) @ApiOkResponse({type:EnvelopeDto})
  approve(@Param('reference') reference:string,@Body() body:ApprovalDto,@Req() req:any){if(!req.user?.personId)throw new UnauthorizedException({code:'ERP_MAPPING_ACTOR_REQUIRED'});return this.service.approve(reference,body,{actorId:req.user.personId,requestId:req.requestId??randomUUID(),correlationId:req.correlationId??randomUUID()}).then(data=>({data}));}
+ @Roles('SUPER_ADMIN','FINANCE') @Post(':reference/results') @ApiOperation({operationId:'adminReconcileErpAccountingProjection',summary:'核對已受理映射版本的實際 ERP 聚合金額，保留獨立例外'}) @ApiOkResponse({type:EnvelopeDto})
+ result(@Param('reference') reference:string,@Body() body:ResultDto,@Req() req:any){if(!req.user?.personId)throw new UnauthorizedException({code:'ERP_MAPPING_ACTOR_REQUIRED'});return this.service.reconcile(reference,body,{actorId:req.user.personId,requestId:req.requestId??randomUUID(),correlationId:req.correlationId??randomUUID()}).then(data=>({data}));}
 }

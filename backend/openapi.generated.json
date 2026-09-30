@@ -1703,6 +1703,52 @@
         ]
       }
     },
+    "/api/v1/admin/erp-accounting-mappings/{reference}/results": {
+      "post": {
+        "operationId": "adminReconcileErpAccountingProjection",
+        "parameters": [
+          {
+            "name": "reference",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResultDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopeDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "核對已受理映射版本的實際 ERP 聚合金額，保留獨立例外",
+        "tags": [
+          "Admin - ERP Accounting Mapping"
+        ]
+      }
+    },
     "/api/v1/admin/finance/reservoirs": {
       "get": {
         "description": "Finance-confidential immutable sources. Read-only; signed replay correction is not a payout. Stable UUID cursor within server snapshot. A rejects tree/position/awardType filters.",
@@ -18182,6 +18228,55 @@
       "ApprovalDto": {
         "type": "object",
         "properties": {}
+      },
+      "ResultGroupDto": {
+        "type": "object",
+        "properties": {
+          "groupReference": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "groupReference",
+          "amount"
+        ]
+      },
+      "ResultDto": {
+        "type": "object",
+        "properties": {
+          "resultKey": {
+            "type": "string"
+          },
+          "providerReference": {
+            "type": "string"
+          },
+          "requestHash": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "occurredAt": {
+            "type": "string"
+          },
+          "groups": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ResultGroupDto"
+            }
+          }
+        },
+        "required": [
+          "resultKey",
+          "providerReference",
+          "requestHash",
+          "currency",
+          "occurredAt",
+          "groups"
+        ]
       },
       "CreateTreeDto": {
         "type": "object",

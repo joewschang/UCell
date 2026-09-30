@@ -18,15 +18,15 @@ const publicException=(item:any)=>({reference:erpBusinessReference('ERP-EXCEPTIO
 function safeProjection(row:any){
  const payload=verifyErpBusinessProjection(row),result=row.reconciliations?.[0],attempt=row.dispatch?.attempts?.[0];
  const actual=result?.resultSnapshot as any;
- const mapping=row.accountingMappings?.[0];if(mapping)verifyErpAccountingMapping(row,mapping);
+ const mapping=row.accountingMappings?.[0],mapped=mapping?verifyErpAccountingMapping(row,mapping) as any:null;
  const status=result?.outcome==='MATCHED'?'RECONCILED':result?'MISMATCH':row.outboxEvent?.processStatus==='DEAD'?'FAILED':attempt?.outcome==='ACCEPTED'?'ACKNOWLEDGED':row.dispatch?'QUEUED':'BLOCKED_EXTERNAL';
  return {projectionReference:row.projectionReference,stream:row.stream,revision:row.revision,formatVersion:row.formatVersion,payloadHash:row.payloadHash,drillbackHash:row.drillbackHash,status,
-  expected:publicPayload(payload),actual:actual?{currency:actual.currency,amount:actual.amount,occurredAt:actual.occurredAt,requestPayloadHash:actual.requestPayloadHash,lines:Array.isArray(actual.lines)?actual.lines.map((line:any)=>({lineReference:line.lineReference,amount:line.amount,quantity:line.quantity})):[]}:null,
+  expected:publicPayload(payload),actual:actual?{currency:actual.currency,amount:actual.amount,occurredAt:actual.occurredAt,requestPayloadHash:actual.requestPayloadHash,groups:Array.isArray(actual.groups)?actual.groups.map((group:any)=>({groupReference:group.groupReference,amount:group.amount})):[],lines:Array.isArray(actual.lines)?actual.lines.map((line:any)=>({lineReference:line.lineReference,amount:line.amount,quantity:line.quantity})):[]}:null,
   provider:row.dispatch?.providerConnectionVersion?.connection?.provider??null,connection:row.dispatch?.providerConnectionVersion?.connection?.connectionKey??null,
   providerReference:row.externalReference?.providerReference??attempt?.providerReference??null,
   attemptCount:row.outboxEvent?.attemptCount??0,outboxStatus:row.outboxEvent?.processStatus??'PENDING',
-  mismatchCode:result&&result.outcome!=='MATCHED'?['ERP_PROJECTION_AMOUNT_QUANTITY_MISMATCH','ERP_PROJECTION_RESULT_INCOMPLETE'].includes(result.reasonCode)?result.reasonCode:'ERP_PROJECTION_REQUIRES_ATTENTION':null,
-  mapping:mapping?{mappingReference:mapping.mappingReference,revision:mapping.revision,requestHash:mapping.requestHash,approvedAt:mapping.approvedAt.toISOString()}:null,dispatchPinned:!!row.dispatch,
+  mismatchCode:result&&result.outcome!=='MATCHED'?['ERP_PROJECTION_AMOUNT_QUANTITY_MISMATCH','ERP_ACCOUNTING_GROUP_MISMATCH','ERP_PROJECTION_RESULT_INCOMPLETE'].includes(result.reasonCode)?result.reasonCode:'ERP_PROJECTION_REQUIRES_ATTENTION':null,
+  mapping:mapping?{mappingReference:mapping.mappingReference,revision:mapping.revision,requestHash:mapping.requestHash,approvedAt:mapping.approvedAt.toISOString(),groups:mapped.aggregates.map((group:any)=>({groupReference:group.groupReference,metric:group.metric,economicCategory:group.economicCategory,amount:group.amount,treatment:group.treatment,mappingCode:group.mappingCode}))}:null,dispatchPinned:!!row.dispatch,
   blockedReason:row.stream==='COMPENSATION'&&!mapping?'ERP_ACCOUNT_MAPPING_REQUIRED':!row.dispatch?'EZTOOL_LIVE_TRANSPORT_UNAVAILABLE':null,
   requestedAt:row.requestedAt.toISOString(),acknowledgedAt:attempt?.outcome==='ACCEPTED'?attempt.recordedAt.toISOString():null,reconciledAt:result?.recordedAt.toISOString()??null,
  };

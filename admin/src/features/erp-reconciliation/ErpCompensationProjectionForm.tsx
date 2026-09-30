@@ -6,7 +6,7 @@ import {QueryFeedback} from '../../components/QueryFeedback';
 type Input={periodStart:string;periodEnd:string;ruleVersionCode:string;accountingDate:string;currency:string;currencyBasisReference:string;groupByPayoutBatch:boolean};
 type Aggregate={metric:string;economicCategory:string;payoutReference:string|null;amount:string;sourceCount:number};
 type Preview={existingProjectionReference?:string|null;projectionReference:string;reviewHash:string;drillbackHash:string;expected:{aggregates:Aggregate[];currency:string;totals:{memberPayableGross:string;recoveryRequired:string;recoveryApplied:string;recoveryOutstanding:string}}};
-const categoryLabels:Record<string,string>={REFERRAL:'推薦獎金',RETAIL_REFERRAL:'零售推薦獎金',EQUALIZATION:'平級獎金',BINARY:'對碰獎金',MATCHING:'配對獎金',RPV:'RPV 獎金',EPV:'EPV 獎金',GLOBAL:'Global 獎金',ALL:'所有獎金類別',WHOLE_LINE:'完整付款明細'};
+export const categoryLabels:Record<string,string>={REFERRAL:'推薦獎金',RETAIL_REFERRAL:'零售推薦獎金',EQUALIZATION:'平級獎金',BINARY:'對碰獎金',MATCHING:'配對獎金',RPV:'RPV 獎金',EPV:'EPV 獎金',GLOBAL:'Global 獎金',ALL:'所有獎金類別',WHOLE_LINE:'完整付款明細'};
 export const erpMetricLabel:Record<string,string>={PAYOUT_RECOVERY_OFFSET:'整批回收抵扣',PAYOUT_NET:'整批付款淨額',BANK_PAID:'銀行累計已付',MEMBER_PAYABLE_GROSS:'會員應付毛額',RECOVERY_REQUIRED:'應回收',RECOVERY_APPLIED:'已回收',RECOVERY_OUTSTANDING:'待回收'};
 export function ErpCompensationProjectionForm({canApprove,onCreated}:{canApprove:boolean;onCreated:(reference:string)=>void}){
  const [input,setInput]=useState<Input>({periodStart:'',periodEnd:'',ruleVersionCode:'',accountingDate:'',currency:'',currencyBasisReference:'',groupByPayoutBatch:false}),[preview,setPreview]=useState<Preview|null>(null),[approvalReference,setApprovalReference]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState<unknown>();

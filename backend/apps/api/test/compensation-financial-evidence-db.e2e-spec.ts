@@ -5,9 +5,11 @@ import {UnifiedPayableService} from '../src/modules/payout/unified-payable.servi
 import {RecoveryBalanceService} from '../src/modules/payout/recovery-balance.service';
 import {AdminOperationsService} from '../src/modules/admin-operations/admin-operations.service';
 import {AuditService} from '../src/common/audit/audit.service';
-import {erpBusinessReference} from '@ucell/database';
+import {erpBusinessReference,claimOutboxLease} from '@ucell/database';
 import {ErpPaymentProjectionService} from '../src/modules/commerce/erp-payment-projection.service';
 import {ErpBusinessProjectionService} from '../src/modules/commerce/erp-business-projection.service';
+import {ErpAccountingMappingService} from '../src/modules/commerce/erp-accounting-mapping.service';
+import {processErpBusinessProjection} from '../../worker/src/erp-business-runtime';
 
 const url=process.env.PHASE2_TEST_DATABASE_URL;
 (url?describe:describe.skip)('COMPENSATION_FINANCIAL_EVIDENCE_REAL_DB',()=>{
@@ -59,6 +61,14 @@ const url=process.env.PHASE2_TEST_DATABASE_URL;
   const projection=await db.erpBusinessProjection.findUniqueOrThrow({where:{projectionReference:preview.projectionReference}});expect(projection.mappingReference).toBeNull();expect(projection.drillbackHash).toBe(preview.drillbackHash);expect(await db.auditEvent.count({where:{entityId:projection.projectionId,action:'ERP_PAYMENT_PROJECTION_APPROVED'}})).toBe(1);
   const read=new ErpBusinessProjectionService(db as any,new AuditService()),detail=await read.detail(preview.projectionReference);expect((detail.expected as any).totals.bankPaid).toBe('130.0000');const page=await read.sources(preview.projectionReference,{take:1});expect(page.total).toBe(2);expect(page.nextCursor).not.toBeNull();const second=await read.sources(preview.projectionReference,{take:1,cursor:page.nextCursor!});expect(second.items[0].reference).not.toBe(page.items[0].reference);expect(second.nextCursor).toBeNull();
   expect((await read.sources(preview.projectionReference,{kind:'PAYMENT'})).items).toEqual([expect.objectContaining({amount:'150.0000',recovery:'20.0000',net:'130.0000',bankPaid:'130.0000',bankResultCount:2})]);
+  const payoutBefore=await db.payoutBatch.findUniqueOrThrow({where:{payoutBatchId:p.batch.payoutBatchId},include:{lines:true}}),mappingService=new ErpAccountingMappingService(db as any,new AuditService());
+  const connection=await db.providerConnection.create({data:{domain:'ERP',provider:'EZTOOL',connectionKey:'PAYMENT-ERP-'+randomUUID(),status:'ACTIVE',versions:{create:{version:1,environment:'TEST',credentialSecretRef:'synthetic',webhookVerificationRef:'synthetic',configHash:'a'.repeat(64),effectiveFrom:new Date(0),approvalReference:'SYNTHETIC-CONNECTION',createdByActor:context.actorId}}},include:{versions:true}});
+  const mappingInput={connectionKey:connection.connectionKey,connectionVersion:1,policyReference:'SYNTHETIC-PAYMENT-POLICY',policyVersion:1,previousMappingReference:null,entries:preview.expected.aggregates.map(row=>({groupReference:row.groupReference,treatment:'MAP' as const,mappingCode:'SYNTHETIC-'+row.metric}))};
+  const mappedPreview=await mappingService.preview(preview.projectionReference,mappingInput);expect(mappedPreview.request.scope).toMatchObject({payoutReference:input.payoutReference,periodStart:input.periodStart,periodEnd:input.periodEnd,paymentScope:'WHOLE_PAYOUT_BATCH_NO_AWARD_PERIOD_ALLOCATION'});
+  const mapped=await mappingService.approve(preview.projectionReference,{...mappingInput,reviewHash:mappedPreview.reviewHash,approvalReference:'SYNTHETIC-PAYMENT-MAPPING'},context),event=await db.outboxEvent.findUniqueOrThrow({where:{outboxEventId:projection.outboxEventId}}),external='SYNTHETIC-PAID-'+randomUUID();
+  await processErpBusinessProjection(db as any,(await claimOutboxLease(db,event))!,{provider:'EZTOOL',providerConnectionVersionId:connection.versions[0].providerConnectionVersionId,environment:'TEST',lookup:async()=>({kind:'ABSENT'}),submit:async()=>({kind:'ACCEPTED',providerReference:external,requestHash:mapped.requestHash})});
+  expect((await mappingService.reconcile(preview.projectionReference,{resultKey:randomUUID(),providerReference:external,requestHash:mapped.requestHash,currency:'TWD',occurredAt:new Date().toISOString(),groups:preview.expected.aggregates.map(row=>({groupReference:row.groupReference,amount:row.amount}))},context)).outcome).toBe('MATCHED');
+  expect((await read.detail(preview.projectionReference)).status).toBe('RECONCILED');expect(await db.payoutBatch.findUniqueOrThrow({where:{payoutBatchId:p.batch.payoutBatchId},include:{lines:true}})).toEqual(payoutBefore);
   await expect(service.approve({...request,accountingDate:'1891-03-03'},context)).rejects.toMatchObject({response:{code:'ERP_PAYMENT_APPROVAL_CONFLICT'}});
  });
  it('rolls back a payment projection when audit fails and rejects an unapproved payout',async()=>{

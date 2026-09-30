@@ -1,9 +1,10 @@
-import {PrismaClient} from '@prisma/client';
+import {PrismaClient,Prisma} from '@prisma/client';
 import {randomUUID} from 'node:crypto';
 import {sealErpBusinessProjection,erpBusinessReference,claimOutboxLease,verifyErpAccountingMapping} from '@ucell/database';
 import {AuditService} from '../src/common/audit/audit.service';
 import {ErpAccountingMappingService} from '../src/modules/commerce/erp-accounting-mapping.service';
 import {processErpBusinessProjection,erpBusinessProjectionCandidates} from '../../worker/src/erp-business-runtime';
+import {compensationErpEvidence} from '../src/modules/settlement-jobs/compensation-erp-evidence';
 const url=process.env.PHASE2_TEST_DATABASE_URL;
 (url?describe:describe.skip)('ERP_ACCOUNTING_MAPPING_REAL_DB',()=>{
  let db:PrismaClient,service:ErpAccountingMappingService;
@@ -11,7 +12,7 @@ const url=process.env.PHASE2_TEST_DATABASE_URL;
  beforeAll(()=>{db=new PrismaClient({datasources:{db:{url}}});service=new ErpAccountingMappingService(db as any,new AuditService());});afterAll(()=>db?.$disconnect());
  async function fixture(){
   const sourceIdentity=randomUUID(),group=erpBusinessReference('COMPENSATION-GROUP',sourceIdentity),report=erpBusinessReference('COMPENSATION-GROUP',sourceIdentity+'report');
-  const projection=(await db.$transaction(tx=>sealErpBusinessProjection(tx,{stream:'COMPENSATION',sourceIdentity,body:{projectionPurpose:'SUBLEDGER_ACCOUNTING_REVIEW',currency:'TWD',configuration:{accountingDate:'2026-09-30'},aggregates:[{groupReference:group,metric:'MEMBER_PAYABLE_GROSS',economicCategory:'BINARY',amount:'100.0000',privateNote:'PRIVATE-MUST-NOT-EXPORT'},{groupReference:report,metric:'RECOVERY_OUTSTANDING',economicCategory:'BINARY',amount:'10.0000'}],privateActorId:randomUUID()},drillback:{privateSource:'PRIVATE-MUST-NOT-EXPORT'},context:{...context(),approvalReference:'SYNTHETIC-REVIEW-APPROVED'}}))).projection;
+  const projection=(await db.$transaction(tx=>sealErpBusinessProjection(tx,{stream:'COMPENSATION',sourceIdentity,body:{projectionPurpose:'SUBLEDGER_ACCOUNTING_REVIEW',periodReference:sourceIdentity,currency:'TWD',configuration:{accountingDate:'2026-09-30'},totals:{memberPayableGross:'100',recoveryRequired:'10',recoveryApplied:'0',recoveryOutstanding:'10'},aggregates:[{groupReference:group,metric:'MEMBER_PAYABLE_GROSS',economicCategory:'BINARY',amount:'100.0000',privateNote:'PRIVATE-MUST-NOT-EXPORT'},{groupReference:report,metric:'RECOVERY_OUTSTANDING',economicCategory:'BINARY',amount:'10.0000'}],privateActorId:randomUUID()},drillback:{privateSource:'PRIVATE-MUST-NOT-EXPORT'},context:{...context(),approvalReference:'SYNTHETIC-REVIEW-APPROVED'}}))).projection;
   const connection=await db.providerConnection.create({data:{domain:'ERP',provider:'EZTOOL',connectionKey:'SYNTHETIC-'+randomUUID(),status:'ACTIVE',versions:{create:{version:1,environment:'TEST',credentialSecretRef:'PRIVATE-CREDENTIAL-REF',webhookVerificationRef:'PRIVATE-VERIFY-REF',configHash:'a'.repeat(64),effectiveFrom:new Date(0),approvalReference:'SYNTHETIC-CONNECTION-APPROVED',createdByActor:randomUUID()}}},include:{versions:true}});
   const input={connectionKey:connection.connectionKey,connectionVersion:1,policyReference:'SYNTHETIC-ACCOUNT-POLICY',policyVersion:1,previousMappingReference:null as string|null,entries:[{groupReference:group,treatment:'MAP' as const,mappingCode:'SYNTHETIC-MAPPING-CODE'},{groupReference:report,treatment:'REPORT_ONLY' as const,mappingCode:null}]};
   return {projection,connection,input,group};
@@ -37,6 +38,28 @@ const url=process.env.PHASE2_TEST_DATABASE_URL;
   await expect(service.approve(ref,{...input,approvalReference:'SYNTHETIC-CONFLICT'},context())).rejects.toThrow();
   const row=await db.erpAccountingMapping.findFirstOrThrow({where:{projectionId:f.projection.projectionId}});await expect(db.erpAccountingMapping.update({where:{mappingId:row.mappingId},data:{approvalReference:'SYNTHETIC-MUTATION'}})).rejects.toThrow();
   expect(await db.erpBusinessProjection.findUnique({where:{projectionId:f.projection.projectionId}})).toEqual(f.projection);
+ });
+ it('reconciles acknowledged mapped groups independently and retains open exceptions after an exact result',async()=>{
+  const f=await fixture(),ref=f.projection.projectionReference,preview=await service.preview(ref,f.input),approved=await service.approve(ref,{...f.input,reviewHash:preview.reviewHash,approvalReference:'SYNTHETIC-MAPPING'},context());
+  const input={resultKey:randomUUID(),providerReference:'SYNTHETIC-VOUCHER',requestHash:approved.requestHash,currency:'TWD',occurredAt:new Date().toISOString(),groups:[{groupReference:f.group,amount:'100'}]};
+  await expect(service.reconcile(ref,input,context())).rejects.toThrow();
+  const event=await db.outboxEvent.findUniqueOrThrow({where:{outboxEventId:f.projection.outboxEventId}}),lease=(await claimOutboxLease(db,event))!;
+  await processErpBusinessProjection(db as any,lease,{provider:'EZTOOL',providerConnectionVersionId:f.connection.versions[0].providerConnectionVersionId,environment:'TEST',lookup:async()=>({kind:'ABSENT'}),submit:async()=>({kind:'ACCEPTED',providerReference:input.providerReference,requestHash:approved.requestHash})});
+  await expect(service.reconcile(ref,{...input,requestHash:f.projection.payloadHash},context())).rejects.toMatchObject({response:{code:'ERP_ACCOUNTING_RESULT_REQUEST_MISMATCH'}});
+  await expect(service.reconcile(ref,{...input,providerReference:'WRONG-VOUCHER'},context())).rejects.toMatchObject({response:{code:'ERP_ACKNOWLEDGED_REFERENCE_REQUIRED'}});
+  await expect(service.reconcile(ref,{...input,groups:[input.groups[0],input.groups[0]]},context())).rejects.toMatchObject({response:{code:'ERP_ACCOUNTING_RESULT_INVALID'}});
+  const broken=new ErpAccountingMappingService(db as any,{write:async()=>{throw new Error('audit unavailable');}} as any);
+  await expect(broken.reconcile(ref,{...input,groups:[]},context())).rejects.toThrow('audit unavailable');expect(await db.erpProjectionReconciliation.count({where:{projectionId:f.projection.projectionId}})).toBe(0);expect(await db.operationalException.count({where:{sourceId:ref}})).toBe(0);
+  expect((await service.reconcile(ref,{...input,resultKey:randomUUID(),groups:[]},context())).outcome).toBe('PARTIAL');
+  expect((await service.reconcile(ref,{...input,resultKey:randomUUID(),groups:[{groupReference:f.group,amount:'101'}]},context())).outcome).toBe('MISMATCH');
+  expect((await service.reconcile(ref,{...input,resultKey:randomUUID(),currency:'USD'},context())).outcome).toBe('MISMATCH');
+  expect((await service.reconcile(ref,{...input,resultKey:randomUUID(),groups:[{groupReference:f.input.entries[1].groupReference,amount:'10'}]},context())).outcome).toBe('MISMATCH');
+  const matched=await Promise.all([service.reconcile(ref,input,context()),service.reconcile(ref,input,context())]);expect(matched.map(row=>row.replayed).sort()).toEqual([false,true]);expect(matched.every(row=>row.outcome==='MATCHED')).toBe(true);
+  expect((await db.operationalException.findFirstOrThrow({where:{sourceId:ref}})).status).toBe('OPEN');
+  const erp=await db.$transaction(tx=>compensationErpEvidence(tx,f.projection.sourceIdentity,{payable:new Prisma.Decimal(100),recoveryRequired:new Prisma.Decimal(10),recoveryApplied:new Prisma.Decimal(0),recoveryOutstanding:new Prisma.Decimal(10)}));expect(erp).toMatchObject({status:'ATTENTION',state:'OPEN_EXCEPTION'});
+  await expect(service.reconcile(ref,{...input,groups:[{groupReference:f.group,amount:'99'}]},context())).rejects.toMatchObject({response:{code:'ERP_PROJECTION_RESULT_CONFLICT'}});
+  const saved=await db.erpProjectionReconciliation.findUniqueOrThrow({where:{projectionId_resultKey:{projectionId:f.projection.projectionId,resultKey:input.resultKey}}});expect(saved.resultSnapshot).toMatchObject({mappingReference:approved.mappingReference,sourcePayloadHash:f.projection.payloadHash,groups:[{groupReference:f.group,amount:'100.0000'}]});expect(JSON.stringify(saved.resultSnapshot)).not.toContain('PRIVATE');
+  await expect(db.erpProjectionReconciliation.update({where:{reconciliationId:saved.reconciliationId},data:{outcome:'MISMATCH'}})).rejects.toThrow();expect(await db.erpBusinessProjection.findUnique({where:{projectionId:f.projection.projectionId}})).toEqual(f.projection);
  });
  it('routes only the latest mapping connection and rejects mapping an obsolete source revision',async()=>{
   const f=await fixture(),ref=f.projection.projectionReference,first=await service.preview(ref,f.input),approved=await service.approve(ref,{...f.input,reviewHash:first.reviewHash,approvalReference:'SYNTHETIC-FIRST-MAPPING'},context());
