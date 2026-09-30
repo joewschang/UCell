@@ -1,5 +1,5 @@
 import {PrismaClient,Prisma} from '@prisma/client';
-import {enqueuePeriodCloseJob,claimPeriodCloseJob,processPeriodCloseJob,releaseFailedOutboxLease,PeriodCloseKind} from '@ucell/database';
+import {enqueuePeriodCloseJob,claimPeriodCloseJob,processPeriodCloseJob,releaseFailedOutboxLease,PeriodCloseKind,sealGpvEvent,verifyReplayEnvelope} from '@ucell/database';
 import {randomUUID} from 'node:crypto';
 import {SettlementCalendarService} from '../src/modules/settlement/settlement-calendar.service';
 import {ReferralBonusService} from '../src/modules/bonus/referral-bonus.service';
@@ -33,14 +33,16 @@ const url=process.env.PHASE2_TEST_DATABASE_URL;
     db=new PrismaClient({datasources:{db:{url:target.href}}});
   },90000);
   afterAll(async()=>{
-    await db?.$disconnect();
-    if(created)await control.$executeRawUnsafe('DROP DATABASE "'+database+'" WITH (FORCE)');
-    await control?.$disconnect();
-  });
+    try{
+      await db?.$disconnect();
+      if(created)await control.$executeRawUnsafe('DROP DATABASE "'+database+'" WITH (FORCE)');
+    }finally{await control?.$disconnect();}
+  },30000);
   async function rule(){
     const code=`TEST_CLOSE_JOB_${randomUUID()}`;
     const values:Array<[string,string,Prisma.InputJsonValue]>=[['award.pending.days','*','45'],['pool.referral.rate','*','0.5'],['pool.binary.rate','*','0.2'],['pool.matching.rate','*','0.2'],['binary.pair.rate','*','0.1'],['pool.global.rate','*','0.05']];
-    for(const kind of ['REFERRAL_K0','BINARY_K1','MATCHING_K2','GLOBAL'])values.push(
+    values.push(['pool.welfare.rate','*','0.02']);
+    for(const kind of ['REFERRAL_K0','BINARY_K1','MATCHING_K2','GLOBAL','WELFARE'])values.push(
       ['settlement.timezone',kind,'UTC'],['settlement.period',kind,{unit:'WEEK',count:1,anchorLocal:'1893-01-01T00:00:00'}],
       ['settlement.cut_off',kind,{localTime:'00:00:00',daysAfterPeriodEnd:0,approvalReference:'TEST_CALENDAR'}]);
     for(const rank of ['NEW_STAR','EXCELLENCE','GLORY','DIAMOND','CROWN'])values.push(['global.rank.weak_threshold',rank,'1000'],['global.rank.pool_rate',rank,'0.01']);
@@ -77,8 +79,8 @@ const url=process.env.PHASE2_TEST_DATABASE_URL;
   });
   it('deduplicates simultaneous admission and rejects changed approval/dependencies',async()=>{
     const code=await rule();
-    const jobs=await Promise.all([enqueue('REFERRAL_K0',code),enqueue('REFERRAL_K0',code)]);
-    expect(jobs[0]).toEqual(jobs[1]);
+    const jobs=await Promise.all(Array.from({length:4},()=>enqueue('REFERRAL_K0',code)));
+    expect(jobs.every(job=>job.periodCloseJobId===jobs[0].periodCloseJobId)).toBe(true);
     expect(await db.outboxEvent.count({where:{aggregateId:jobs[0].periodCloseJobId}})).toBe(1);
     await expect(enqueue('REFERRAL_K0',code,[],'CHANGED')).rejects.toThrow('PERIOD_CLOSE_REQUEST_CONFLICT');
     await expect(enqueue('REFERRAL_K0',code,[randomUUID()])).rejects.toThrow('PERIOD_CLOSE_REQUEST_CONFLICT');
@@ -146,5 +148,53 @@ const url=process.env.PHASE2_TEST_DATABASE_URL;
     const clean=await enqueue('REFERRAL_K0',await rule());
     await processPeriodCloseJob(db,(await claimPeriodCloseJob(db,clean.periodCloseJobId))!,execute);
     await expect(db.periodCloseReceipt.delete({where:{periodCloseJobId:clean.periodCloseJobId}})).rejects.toThrow();
+  });
+  it('requires same-period Global, waits without consuming retries, and seals Welfare exactly once',async()=>{
+    const code=await rule();
+    await expect(enqueue('WELFARE',code)).rejects.toThrow('PERIOD_CLOSE_GLOBAL_REQUIRED');
+    const global=await enqueue('GLOBAL',code),welfare=await enqueue('WELFARE',code,[global.periodCloseJobId]);
+    expect(await claimPeriodCloseJob(db,welfare.periodCloseJobId)).toBeNull();
+    expect((await db.outboxEvent.findUniqueOrThrow({where:{outboxEventId:welfare.outboxEventId}})).attemptCount).toBe(0);
+    await processPeriodCloseJob(db,(await claimPeriodCloseJob(db,global.periodCloseJobId))!,execute);
+    const lease=(await claimPeriodCloseJob(db,welfare.periodCloseJobId))!;
+    await processPeriodCloseJob(db,lease,execute);
+    const accrual=await db.welfarePoolAccrual.findFirstOrThrow({where:{ruleVersionCode:code}});
+    const snapshot=await db.historicalReplaySnapshot.findUniqueOrThrow({where:{kind_sourceId:{kind:'WELFARE',sourceId:accrual.welfarePoolAccrualId}}});
+    expect(verifyReplayEnvelope(snapshot)).toMatchObject({kind:'WELFARE',inputs:{totalGpv:'0.0000',accruedAmount:'0.0000'},recipients:[]});
+    expect(await db.welfarePoolEffect.count({where:{welfarePoolAccrualId:accrual.welfarePoolAccrualId}})).toBe(1);
+    expect(await processPeriodCloseJob(db,lease,execute)).toEqual({lostLease:true});
+    expect(await enqueue('WELFARE',code,[global.periodCloseJobId])).toEqual(welfare);
+  });
+  it('rolls back funded Welfare and its sealed evidence together, excludes other rules, then recovers once',async()=>{
+    const code=await rule(),foreign=await rule();
+    await db.$transaction(async tx=>{
+      const person=await tx.person.create({data:{legalName:'Synthetic Welfare source'}});
+      const q=await tx.qualification.create({data:{currentHolderPersonId:person.personId,planLevelCode:'STARTER',status:'EFFECTIVE',effectiveAt:start}});
+      await tx.qualificationPlanHistory.create({data:{qualificationId:q.qualificationId,planCode:'STARTER',effectiveFrom:start,sourceType:'TEST_WELFARE'}});
+      await tx.qualificationStatusHistory.create({data:{qualificationId:q.qualificationId,status:'EFFECTIVE',effectiveFrom:start,sourceType:'TEST_WELFARE'}});
+      const product=await tx.productReference.create({data:{sku:randomUUID(),displayName:'Synthetic Welfare',currentPrice:100}});
+      for(const ruleVersionCode of [code,foreign]){
+        const order=await tx.order.create({data:{qualificationId:q.qualificationId,purpose:'RETAIL',grossAmount:100,netAmount:100,ruleVersionCode}});
+        const line=await tx.orderLine.create({data:{orderId:order.orderId,productId:product.productId,skuSnapshot:product.sku,productNameSnapshot:'Synthetic Welfare',quantity:1,unitPrice:100,lineAmount:100,gpvRateSnapshot:1,gpvAmountSnapshot:100,ruleProfileSnapshot:{}}});
+        const event=await tx.pvLedger.create({data:{qualificationId:q.qualificationId,pvType:'GPV',amount:100,sourceType:'ORDER',sourceId:order.orderId,sourceLineId:line.orderLineId,eventType:'GPV_CREATED',ruleVersionCode,occurredAt:start,correlationId:randomUUID()}});
+        await sealGpvEvent(tx,event);
+      }
+    });
+    const global=await enqueue('GLOBAL',code),job=await enqueue('WELFARE',code,[global.periodCloseJobId]);
+    await processPeriodCloseJob(db,(await claimPeriodCloseJob(db,global.periodCloseJobId))!,execute);
+    const first=(await claimPeriodCloseJob(db,job.periodCloseJobId))!;
+    await expect(processPeriodCloseJob(db,first,async(tx,row)=>{await execute(tx,row);throw new Error('WELFARE_AFTER_SEAL');})).rejects.toThrow('WELFARE_AFTER_SEAL');
+    expect(await db.welfarePoolAccrual.count({where:{ruleVersionCode:code}})).toBe(0);
+    expect(await db.welfarePoolEffect.count({where:{ruleVersionCode:code}})).toBe(0);
+    expect(await db.historicalReplaySnapshot.count({where:{kind:'WELFARE',ruleVersionCode:code}})).toBe(0);
+    expect(await db.periodCloseReceipt.count({where:{periodCloseJobId:job.periodCloseJobId}})).toBe(0);
+    await releaseFailedOutboxLease(db,first,new Error('WELFARE_AFTER_SEAL'),new Date(Date.now()-31000));
+    await processPeriodCloseJob(db,(await claimPeriodCloseJob(db,job.periodCloseJobId))!,execute);
+    const accrual=await db.welfarePoolAccrual.findFirstOrThrow({where:{ruleVersionCode:code}});
+    expect(accrual.totalGpv.toString()).toBe('100');expect(accrual.accruedAmount.toString()).toBe('2');
+    const snapshot=await db.historicalReplaySnapshot.findUniqueOrThrow({where:{kind_sourceId:{kind:'WELFARE',sourceId:accrual.welfarePoolAccrualId}}});
+    expect(verifyReplayEnvelope(snapshot).evidence.sources).toHaveLength(1);
+    expect(await db.welfarePoolEffect.count({where:{ruleVersionCode:code}})).toBe(1);
+    expect(await db.payableEntry.count({where:{ruleVersionCode:code}})).toBe(0);
   });
 });

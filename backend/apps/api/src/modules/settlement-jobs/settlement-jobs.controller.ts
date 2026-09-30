@@ -9,7 +9,7 @@ import {Roles} from '../auth/roles.decorator';
 import {AuditService} from '../../common/audit/audit.service';
 
 export class CreateSettlementJobDto {
-  @IsIn(['REFERRAL_K0','BINARY_K1','MATCHING_K2','GLOBAL']) kind!:PeriodCloseKind;
+  @IsIn(['REFERRAL_K0','BINARY_K1','MATCHING_K2','GLOBAL','WELFARE']) kind!:PeriodCloseKind;
   @IsISO8601({strict:true}) periodStart!:string;
   @IsISO8601({strict:true}) periodEnd!:string;
   @IsString() @Length(1,100) ruleVersionCode!:string;
@@ -38,7 +38,7 @@ export class SettlementJobsController {
     const job=await enqueuePeriodCloseJob(this.db,{...body,periodStart:start,periodEnd:end,requestedBy:actor},tx=>this.calendar.captureForPeriod(tx,start,end,body.kind,body.ruleVersionCode),
       (tx,row)=>this.audit.write(tx,{actorType:'USER',actorId:actor,actorRoleSnapshot:req.user.role,action:'PERIOD_CLOSE_REQUESTED',entityType:'PeriodCloseJob',entityId:row.periodCloseJobId,afterData:{kind:row.kind,periodStart:start,periodEnd:end,ruleVersionCode:row.ruleVersionCode,prerequisiteIds:body.prerequisiteIds,approvalReference:body.approvalReference},requestId:req.requestId??randomUUID(),correlationId:req.correlationId??randomUUID()})).catch(error=>{
         if(error.message==='PERIOD_CLOSE_REQUEST_CONFLICT')throw new ConflictException(error.message);
-        if(['PERIOD_CLOSE_REQUEST_INVALID','PERIOD_CLOSE_PREREQUISITE_INVALID','PERIOD_CLOSE_BINARY_REQUIRED','PERIOD_CLOSE_RULE_MISMATCH'].includes(error.message))throw new BadRequestException(error.message);
+        if(['PERIOD_CLOSE_REQUEST_INVALID','PERIOD_CLOSE_PREREQUISITE_INVALID','PERIOD_CLOSE_BINARY_REQUIRED','PERIOD_CLOSE_GLOBAL_REQUIRED','PERIOD_CLOSE_RULE_MISMATCH'].includes(error.message))throw new BadRequestException(error.message);
         throw error;
       });
     return this.get(job.periodCloseJobId);

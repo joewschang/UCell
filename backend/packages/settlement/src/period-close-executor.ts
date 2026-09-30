@@ -16,6 +16,7 @@ export async function executePeriodClose(tx:Prisma.TransactionClient,job:Prisma.
   const current=await calendar.captureForPeriod(tx,job.periodStart,job.periodEnd,job.kind,job.ruleVersionCode);
   if(current.hash!==pinned.hash)throw new Error('PERIOD_CLOSE_PARAMETER_DRIFT');
   if(job.kind==='GLOBAL')return (await new GlobalPoolService(client,rules,query,calendar,new GlobalPoolPersistence()).evaluateAndSettle(job.periodStart,job.periodEnd,job.ruleVersionCode)).globalPoolSettlementId;
+  if(job.kind==='WELFARE')return (await new GlobalPoolService(client,rules,query,calendar,new GlobalPoolPersistence()).accrueWelfare(job.periodStart,job.periodEnd,job.ruleVersionCode)).welfarePoolAccrualId;
   if(job.kind==='REFERRAL_K0')return (await new ReferralBonusService(client,rules,query,calendar).settle(job.periodStart,job.periodEnd,job.ruleVersionCode)).settlementBatchId;
   const binary=new BinaryBonusService(client,rules,query,calendar);
   if(job.kind==='BINARY_K1')return (await binary.settleBinary(job.periodStart,job.periodEnd,job.ruleVersionCode)).settlementBatchId;

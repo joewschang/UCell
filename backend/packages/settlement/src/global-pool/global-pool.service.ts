@@ -1,7 +1,7 @@
 import { SettlementCalendarService } from '../settlement/settlement-calendar.service';
 import { snapshotDecimal } from '../rules/parameter-snapshot';
 import { Injectable } from '@nestjs/common';
-import { GlobalRankCode, GlobalEligibilityDecision, Prisma, PrismaService, sealGlobalSettlement, captureGlobalPeriod, globalWeakSide } from '@ucell/database';
+import { GlobalRankCode, GlobalEligibilityDecision, Prisma, PrismaService, sealGlobalSettlement, captureGlobalPeriod, globalWeakSide, storeReplaySnapshot } from '@ucell/database';
 import { RuntimeRuleService } from '../rules/runtime-rule.service';
 import { BonusQueryService } from '../bonus/bonus-query.service';
 import { calculateGlobalPool, GlobalRankSliceInput } from './global-pool-calculation';
@@ -125,14 +125,19 @@ export class GlobalPoolService {
       });
       if(existing) return existing;
       const parameterSnapshot=await this.calendar.captureForPeriod(tx,periodStart,periodEnd,'WELFARE',ruleVersionCode);
-      const totalGpv=await this.query.totalGpv(tx,periodStart,periodEnd);
+      const sources=await tx.pvLedger.findMany({where:{pvType:'GPV',ruleVersionCode,occurredAt:{gte:periodStart,lt:periodEnd}},orderBy:{eventId:'asc'}});
+      const totalGpv=sources.reduce((total,row)=>total.add(row.amount),new Prisma.Decimal(0));
       const rate=snapshotDecimal(parameterSnapshot,'pool.welfare.rate','*');
       const accrual=await tx.welfarePoolAccrual.create({
         data:{periodStart,periodEnd,totalGpv,poolRate:rate,accruedAmount:totalGpv.mul(rate),ruleVersionCode,parameterSnapshot:parameterSnapshot as unknown as Prisma.InputJsonValue}
       });
       const idempotencyKey=`welfare:initial:${accrual.welfarePoolAccrualId}`;
-      await tx.welfarePoolEffect.create({data:{welfarePoolAccrualId:accrual.welfarePoolAccrualId,effectType:'INITIAL_ACCRUAL',amount:accrual.accruedAmount,
+      const effect=await tx.welfarePoolEffect.create({data:{welfarePoolAccrualId:accrual.welfarePoolAccrualId,effectType:'INITIAL_ACCRUAL',amount:accrual.accruedAmount,
         ruleVersionCode,idempotencyKey,evidenceHash:createHash('sha256').update(JSON.stringify({kind:'WELFARE_INITIAL_ACCRUAL',sourceId:accrual.welfarePoolAccrualId,amount:accrual.accruedAmount.toFixed(4),ruleVersionCode})).digest('hex')}});
+      await storeReplaySnapshot(tx,{format:'UCELL_HISTORICAL_REPLAY_V1',kind:'WELFARE',sourceId:accrual.welfarePoolAccrualId,
+        ruleVersionCode,at:periodEnd.toISOString(),parameters:parameterSnapshot,recipients:[],
+        inputs:{periodStart:periodStart.toISOString(),periodEnd:periodEnd.toISOString(),totalGpv:totalGpv.toFixed(4),poolRate:rate.toString(),accruedAmount:accrual.accruedAmount.toFixed(4)},
+        evidence:{sources:sources.map(row=>({eventId:row.eventId,amount:row.amount.toFixed(4),occurredAt:row.occurredAt.toISOString(),ruleVersionCode:row.ruleVersionCode})),initialEffect:JSON.parse(JSON.stringify(effect))}});
       return accrual;
     });
   }
