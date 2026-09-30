@@ -1,4 +1,4 @@
-import {Prisma,periodBonusAwardWhere,periodJobReference} from '@ucell/database';
+import {Prisma,periodBonusAwardWhere,periodJobReference,erpBusinessReference} from '@ucell/database';
 import {createHash} from 'node:crypto';
 import {CompensationPeriod,compensationPeriodEvidence} from './compensation-period-evidence';
 import {companyReservoirCandidates} from '../admin-operations/company-reservoir-invariants';
@@ -73,8 +73,20 @@ export async function compensationFinancialEvidence(tx:Prisma.TransactionClient,
    payoutGross=payoutGross.add(line.grossAmount);payoutRecovery=payoutRecovery.add(line.recoveryOffset);payoutNet=payoutNet.add(line.netAmount);bankPaid=bankPaid.add(paid);
   }
  }
- const reference=compensationPeriodReference(period),jobIds=cohort.jobs.flatMap(row=>[row.periodCloseJobId,periodJobReference(row.periodCloseJobId),compensationReference('PERIOD-JOB',row.periodCloseJobId)]),batchIds=payouts.flatMap(row=>[row.payoutBatchId,compensationReference('PAYOUT',row.payoutBatchId)]);
- const exceptions=await tx.operationalException.findMany({where:{status:{not:'RESOLVED'},OR:[{sourceType:'COMPENSATION_PERIOD',sourceId:reference},{sourceType:'PERIOD_CLOSE_JOB',sourceId:{in:jobIds}},{sourceType:'PAYOUT_BATCH',sourceId:{in:batchIds}}]},orderBy:{operationalExceptionId:'asc'}});
+ const reference=compensationPeriodReference(period),jobIds=cohort.jobs.flatMap(row=>[row.periodCloseJobId,periodJobReference(row.periodCloseJobId),compensationReference('PERIOD-JOB',row.periodCloseJobId)]);
+ // Resolve stored old and canonical references against exact source membership.
+ // A matching period date or recipient is not enough to import another source's exception.
+ const references=(kind:string,ids:string[])=>ids.flatMap(id=>[id,compensationReference(kind,id),erpBusinessReference(kind,id)]);
+ const exceptions=await tx.operationalException.findMany({where:{status:{not:'RESOLVED'},OR:[
+  {sourceType:'COMPENSATION_PERIOD',sourceId:reference},
+  {sourceType:'PERIOD_CLOSE_JOB',sourceId:{in:jobIds}},
+  {sourceType:'PAYOUT_BATCH',sourceId:{in:references('PAYOUT',payouts.map(row=>row.payoutBatchId))}},
+  {sourceType:'PAYABLE_ENTRY',sourceId:{in:references('PAYABLE',payables.map(row=>row.payableEntryId))}},
+  {sourceType:'BONUS_RECOVERY',sourceId:{in:references('RECOVERY',recoveries.map(row=>row.bonusRecoveryEventId))}},
+  {sourceType:'COMPANY_BONUS_AWARD',sourceId:{in:references('COMPANY-BONUS',scope.bonusIds)}},
+  {sourceType:'COMPANY_RPV_AWARD',sourceId:{in:references('COMPANY-RPV',scope.rpvIds)}},
+  {sourceType:'COMPANY_GLOBAL_AWARD',sourceId:{in:references('COMPANY-GLOBAL',scope.globalIds)}},
+ ]},orderBy:{operationalExceptionId:'asc'}});
  const blocking=exceptions.filter(row=>['HIGH','CRITICAL'].includes(row.severity));
  const pending=sources.filter(row=>row.expected&&!row.mature).length,open=payables.filter(row=>row.status==='OPEN').length,unpaid=payables.filter(row=>row.status!=='PAID').length;
  const destinations=[...bonuses,...rpvs,...globals].flatMap(row=>row.economicDestination?[row.economicDestination]:[]);

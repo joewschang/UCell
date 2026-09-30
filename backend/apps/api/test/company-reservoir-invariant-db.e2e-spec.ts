@@ -12,6 +12,7 @@ import {OperationsWorkItemsService} from '../src/modules/admin-operations/operat
 import {AdminOperationsService} from '../src/modules/admin-operations/admin-operations.service';
 import {AuditService} from '../src/common/audit/audit.service';
 import {erpBusinessReference} from '@ucell/database';
+import {compensationFinancialEvidence} from '../src/modules/settlement-jobs/compensation-financial-evidence';
 
 const url=process.env.PHASE2_TEST_DATABASE_URL;
 const describeDb=url?describe:describe.skip;
@@ -53,7 +54,10 @@ describeDb('Company Reservoir B integrity candidates',()=>{
     const task=(await work.createTask({stream:'COMPANY_BONUS',reference,code:candidate.code,evidenceHash:candidate.evidenceHash,assigneeRole:'FINANCE'},randomUUID(),context)).value.item;await work.transition('TASK',task.reference,{status:'COMPLETED',expectedStatus:'OPEN',noteReference:'COMPANY-CASE-01'},randomUUID(),context);expect(await tx.awardEconomicDestination.count({where:{sourceBonusAwardId:source.bonusAwardId}})).toBe(0);
     const exception=await tx.operationalException.create({data:{sourceType:'COMPANY_BONUS_AWARD',sourceId:reference,exceptionCode:candidate.code,severity:'CRITICAL',summary:'PRIVATE COMPANY'}}),exceptionRef=erpBusinessReference('OPS-EXCEPTION',exception.operationalExceptionId),resolve=()=>work.transition('EXCEPTION',exceptionRef,{status:'RESOLVED',expectedStatus:'OPEN',noteReference:'COMPANY-CASE-02'},randomUUID(),context);
     await expect(resolve()).rejects.toMatchObject({response:{code:'OPERATIONS_COMPANY_RECONCILIATION_REQUIRED'}});await expect(new AdminOperationsService(proxy,new AuditService()).transitionOperationalException(exception.operationalExceptionId,'RESOLVED',context.actorId,'COMPANY-CASE-02',context.requestId,context.correlationId)).rejects.toThrow();
-    await routeCompanyBonus(tx,source,snapshot);expect((await monitor.list({scope:'COMPANY_BONUS',reference})).items[0].candidates).toEqual([]);expect((await resolve()).value.status).toBe('RESOLVED');
+    await routeCompanyBonus(tx,source,snapshot);expect((await monitor.list({scope:'COMPANY_BONUS',reference})).items[0].candidates).toEqual([]);
+    const period={periodStart:new Date(source.occurredAt.getTime()-1),periodEnd:new Date(source.occurredAt.getTime()+1),ruleVersionCode:source.ruleVersionCode},cohort={jobs:[],sourcePeriod:{...period,settlementSourceIds:[],globalSourceIds:[]}} as any;
+    const finance=await compensationFinancialEvidence(tx,period,cohort,new Date());expect(finance.blocking.map(row=>row.operationalExceptionId)).toContain(exception.operationalExceptionId);expect(finance.ready).toBe(false);
+    expect((await resolve()).value.status).toBe('RESOLVED');expect((await compensationFinancialEvidence(tx,period,cohort,new Date())).ready).toBe(true);
     for(const hidden of [source.bonusAwardId,qid,context.actorId,'PRIVATE COMPANY'])expect(JSON.stringify(await monitor.list({scope:'COMPANY_BONUS',reference}))).not.toContain(hidden);
   }));
   it.each([0,100])('detects a missing original credit for entitlement %s',amount=>rollback(async tx=>{
@@ -159,6 +163,9 @@ describeDb('Company Reservoir B integrity candidates',()=>{
     expect(candidates.map(c=>c.sourceType).sort()).toEqual(['GLOBAL_AWARD','RPV_AWARD']);
     expect(candidates.every(c=>c.code==='COMPANY_AWARD_DESTINATION_MISSING')).toBe(true);
     const monitor=new OperationsCompanyHealthService({$transaction:(work:any)=>work(tx)} as any);for(const scope of ['COMPANY_RPV','COMPANY_GLOBAL']){const page=await monitor.list({scope});expect(page.items).toHaveLength(1);expect(page.items[0].evidence.historicalCompany).toBe(true);expect(page.items[0].candidates[0].code).toBe('COMPANY_AWARD_DESTINATION_MISSING');expect(JSON.stringify(page)).not.toContain(qid);}
+    const issues=[];for(const scope of ['COMPANY_RPV','COMPANY_GLOBAL']){const item=(await monitor.list({scope})).items[0];issues.push(await tx.operationalException.create({data:{sourceType:scope+'_AWARD',sourceId:item.reference,exceptionCode:'COMPANY_AWARD_DESTINATION_MISSING',severity:'CRITICAL',summary:'Private Company source issue'}}));}
+    const period={periodStart:new Date(at.getTime()-1),periodEnd:new Date(at.getTime()+1),ruleVersionCode:'R1.0B'},cohort={jobs:[],sourcePeriod:{...period,settlementSourceIds:[],globalSourceIds:[settlement.globalPoolSettlementId]}} as any;
+    const financial=await compensationFinancialEvidence(tx,period,cohort,new Date());expect(financial.blocking.map(row=>row.operationalExceptionId).sort()).toEqual(issues.map(row=>row.operationalExceptionId).sort());expect(financial.ready).toBe(false);
   }));
   it('uses ownership at award time and excludes awards after company ownership ends',()=>rollback(async tx=>{
     const person=await tx.person.create({data:{legalName:'Historical owner fixture'}});

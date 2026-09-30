@@ -108,6 +108,16 @@ const url=process.env.PHASE2_TEST_DATABASE_URL;
   });
   expect(result.ready).toBe(false);expect(result.issues).toEqual(expect.arrayContaining([expect.objectContaining({code:'COMPENSATION_BANK_EVIDENCE_MISMATCH'}),expect.objectContaining({code:'COMPENSATION_PAYABLE_SOURCE_MISMATCH'})]));
  });
+ it.each(['PAYOUT_BATCH','PAYABLE_ENTRY','BONUS_RECOVERY'] as const)('blocks canonical %s exceptions on exact period sources without importing unrelated sources',async sourceType=>{
+  const f=await fixture();const recovery=await db.bonusRecoveryEvent.create({data:{bonusAwardId:f.original.bonusAwardId,recoveryAmount:20,outstandingAmount:20,reasonCode:'TEST_SOURCE_EXCEPTION',occurredAt:new Date()}}),p=await f.pay();await p.post('80');
+  const before=await f.read();expect(before.ready).toBe(true);
+  const kind={PAYOUT_BATCH:'PAYOUT',PAYABLE_ENTRY:'PAYABLE',BONUS_RECOVERY:'RECOVERY'}[sourceType],id={PAYOUT_BATCH:p.batch.payoutBatchId,PAYABLE_ENTRY:before.payables[0].payableEntryId,BONUS_RECOVERY:recovery.bonusRecoveryEventId}[sourceType];
+  await db.operationalException.create({data:{sourceType,sourceId:erpBusinessReference(kind,randomUUID()),exceptionCode:'TEST_UNRELATED',severity:'CRITICAL',summary:'Unrelated source'}});expect((await f.read()).ready).toBe(true);
+  const issue=await db.operationalException.create({data:{sourceType,sourceId:erpBusinessReference(kind,id),exceptionCode:'TEST_SOURCE_BLOCK',severity:'HIGH',summary:'Private canonical source issue'}});
+  const blocked=await f.read();expect(blocked.ready).toBe(false);expect(blocked.blocking.map(row=>row.operationalExceptionId)).toContain(issue.operationalExceptionId);
+  await new AdminOperationsService(db as any,new AuditService()).transitionOperationalException(issue.operationalExceptionId,'RESOLVED',randomUUID(),'TEST-SOURCE-RESOLVED',randomUUID(),randomUUID());
+  expect((await f.read()).ready).toBe(true);
+ });
  it('blocks unresolved high-severity exceptions and accepts only their governed resolution',async()=>{
   const f=await fixture(),p=await f.pay();await p.post('100');const issue=await db.operationalException.create({data:{sourceType:'COMPENSATION_PERIOD',sourceId:compensationPeriodReference(f.period),exceptionCode:'SYNTHETIC_MISMATCH',severity:'HIGH',summary:'Sensitive text must never become public control evidence'}});
   expect((await f.read()).ready).toBe(false);await db.operationalException.update({where:{operationalExceptionId:issue.operationalExceptionId},data:{status:'ACKNOWLEDGED'}});expect((await f.read()).ready).toBe(false);
