@@ -13995,7 +13995,7 @@
             "adminBearer": []
           }
         ],
-        "summary": "以商業參考碼分頁讀取 ERP 任務，不回傳人員或來源內部識別碼",
+        "summary": "以商業參考碼分頁讀取 ERP／財務任務，不回傳人員或來源內部識別碼",
         "tags": [
           "Admin - Operations Work Items"
         ]
@@ -14090,7 +14090,7 @@
             "adminBearer": []
           }
         ],
-        "summary": "以商業參考碼分頁讀取 ERP 調查例外",
+        "summary": "以商業參考碼分頁讀取 ERP／財務調查例外",
         "tags": [
           "Admin - Operations Work Items"
         ]
@@ -14228,7 +14228,7 @@
             "adminBearer": []
           }
         ],
-        "summary": "稽核調查狀態；結案前要求目前 ERP 已對帳證據",
+        "summary": "稽核調查狀態；結案前要求目前來源已對帳證據",
         "tags": [
           "Admin - Operations Work Items"
         ]
@@ -21249,7 +21249,10 @@
               "SALES",
               "RETURN",
               "COMPENSATION",
-              "FULFILLMENT"
+              "FULFILLMENT",
+              "PAYOUT",
+              "PAYABLE",
+              "RECOVERY"
             ]
           },
           "reference": {

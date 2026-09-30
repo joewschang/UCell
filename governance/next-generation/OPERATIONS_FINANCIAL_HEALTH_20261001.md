@@ -16,4 +16,12 @@ Admin production build and **6 files / 15 tests PASS** cover bounded labels, cum
 
 Logs: `C:\UCell\logs\cr-batch-operations-financial-final-db.log`, `cr-batch-operations-financial-maturity-db.log`, `cr-batch-operations-financial-admin-test.log` and corresponding build/OpenAPI/security logs.
 
-Controlled financial candidate-to-task integration, broader period/recognition/Company views, detailed source drilldown, browser journeys and full recertification remain in progress. The new monitor complements period financial reconciliation; it does not replace approved export integrity checks or certify a compensation period.
+Broader period/recognition/Company views, detailed source drilldown, browser journeys and full recertification remain in progress. The new monitor complements period financial reconciliation; it does not replace approved export integrity checks or certify a compensation period.
+
+## Controlled financial work-item integration
+
+- The same authenticated work-item command now admits Payout, Payable and Recovery candidates after re-reading the exact source and candidate hash in the Serializable command transaction. Stale or cleared evidence is rejected; task completion does not repair a failed bank result or recovery balance.
+- Task/Exception queues include these financial source types and use canonical public evidence links. Both the new command and legacy exception transition require the current source checks to be clear before resolution. Partial payment remains unresolved. Legacy resolution reads a Repeatable Read snapshot so source and payment facts cannot come from different statement snapshots.
+- Existing internal source IDs and historical 20-character financial references remain resolvable privately. Public queue output canonicalizes them to the 40-character business reference, preserving old investigations without leaking their IDs or summaries.
+- Actual failed→partial→full bank tests now create and finish a controlled task, reject stale re-creation, reject resolution through both APIs until full reconciliation, and then explicitly resolve the exception. HTTP DTO tests admit Finance financial candidates and reject stale hashes. Historical-reference compatibility and private-field suppression are verified.
+- Integration verification: **4 suites / 22 tests PASS**; final command/HTTP/legacy-reference run **3 suites / 22 tests PASS**; final snapshot-resolution run **2 suites / 5 tests PASS**, all on fresh 0→121 with 162 baseline assertions and cleanup PASS. Admin **6 files / 15 tests PASS**, API/Admin builds and OpenAPI/security preflights PASS. Logs use `cr-batch-operations-financial-work-*` and `cr-batch-operations-financial-resolution-final-db.log`.

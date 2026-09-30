@@ -51,6 +51,12 @@ const url=process.env.PHASE2_TEST_DATABASE_URL;
   await processErpBusinessProjection(db as any,lease,{provider:'EZTOOL',providerConnectionVersionId:connection.versions[0].providerConnectionVersionId,environment:'TEST',lookup:async()=>({kind:'ABSENT'}),submit:async()=>({kind:'ACCEPTED',providerReference,requestHash:projection.payloadHash})});
   return providerReference;
  }
+ it('accepts a financial candidate only after current source verification through the authenticated work-item DTO',async()=>{
+  const batch=await db.payoutBatch.create({data:{periodStart:new Date('1886-01-01Z'),periodEnd:new Date('1886-02-01Z'),totalNet:1}}),reference=erpBusinessReference('PAYOUT',batch.payoutBatchId),path='/api/v1/admin/operations/control';
+  const health=(await app.inject({url:path+'/financial-health?scope=PAYOUT&reference='+reference,headers:headers(finance)})).json().data,candidate=health.items[0].candidates[0],payload={stream:'PAYOUT',reference,code:candidate.code,evidenceHash:candidate.evidenceHash,assigneeRole:'FINANCE',commandKey:randomUUID()};
+  const created=await app.inject({method:'POST',url:path+'/tasks',payload,headers:headers(finance)});expect(created.statusCode).toBe(201);expect(created.json().data.value.item.source.reference).toBe(reference);expect(created.body).not.toContain(batch.payoutBatchId);
+  const stale=await app.inject({method:'POST',url:path+'/tasks',payload:{...payload,commandKey:randomUUID(),evidenceHash:'0'.repeat(64)},headers:headers(auditor)});expect(stale.statusCode).toBe(409);expect(stale.json().code).toBe('OPERATIONS_CANDIDATE_STALE');
+ });
  it('authenticates Operations commands, enforces roles and stale-state checks, and returns business references only',async()=>{
   const path='/api/v1/admin/operations/control',f=await fixture(),projection=await sales(f.order.orderNo.toString()),stored=await db.erpBusinessProjection.findUniqueOrThrow({where:{projectionReference:projection.projectionReference}});
   await db.outboxEvent.update({where:{outboxEventId:stored.outboxEventId},data:{processStatus:'DEAD'}});

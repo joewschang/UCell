@@ -1,6 +1,14 @@
 import {ConflictException,Injectable,UnprocessableEntityException} from '@nestjs/common';
 import {Prisma,PrismaService,erpBusinessReference,replayHash} from '@ucell/database';
 type Scope='PAYOUT'|'PAYABLE'|'RECOVERY';
+export const FINANCIAL_WORK_SOURCES={PAYOUT_BATCH:'PAYOUT',PAYABLE_ENTRY:'PAYABLE',BONUS_RECOVERY:'RECOVERY'} as const;
+export const FINANCIAL_CANDIDATE_CODES=['PAYOUT_BATCH_TOTAL_MISMATCH','PAYOUT_LINE_SOURCE_MISMATCH','BANK_RESULT_FAILED','BANK_RESULT_INCOMPLETE','BANK_PAID_EVIDENCE_MISSING','PAYABLE_SOURCE_TYPE_UNSUPPORTED','PAYABLE_SOURCE_MISSING','PAYABLE_SOURCE_MISMATCH','PAYABLE_MATURITY_EVIDENCE_MISSING','PAYABLE_PAYOUT_LINK_MISMATCH','RECOVERY_BALANCE_MISMATCH','RECOVERY_OUTSTANDING'];
+export function financialWorkReference(sourceType:string,sourceId:string){
+ const scope=FINANCIAL_WORK_SOURCES[sourceType as keyof typeof FINANCIAL_WORK_SOURCES];
+ if(!scope)return null;
+ if(new RegExp(`^${scope}-(?:[a-f0-9]{40}|[a-f0-9]{20})$`).test(sourceId))return {scope,reference:sourceId};
+ return /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(sourceId)?{scope,reference:erpBusinessReference(scope,sourceId)}:null;
+}
 const tables={PAYOUT:['payout_batch','payout_batch_id'],PAYABLE:['payable_entry','payable_entry_id'],RECOVERY:['bonus_recovery_event','bonus_recovery_event_id']} as const;
 const amount=(value:any)=>new Prisma.Decimal(value??0).toFixed(4);
 const sum=(rows:any[],key:string)=>rows.reduce((total,row)=>total.add(row[key]),new Prisma.Decimal(0));
@@ -9,8 +17,10 @@ const ref=(scope:string,id:string)=>erpBusinessReference(scope,id);
 export class OperationsFinancialHealthService{
  constructor(private readonly db:PrismaService){}
  async resolve(tx:Prisma.TransactionClient,scope:Scope,reference:string){
-  if(!new RegExp(`^${scope}-[a-f0-9]{40}$`).test(reference))throw new UnprocessableEntityException({code:'OPERATIONS_FINANCIAL_REFERENCE_INVALID'});
-  const [table,column]=tables[scope],rows=await tx.$queryRaw<{id:string;createdAt:Date}[]>`SELECT ${Prisma.raw(column)} AS id,created_at AS "createdAt" FROM ledger.${Prisma.raw(table)} WHERE ${scope+'-'} || substr(encode(sha256(convert_to('{"id":"' || ${Prisma.raw(column)}::text || '","kind":"' || ${scope} || '"}','UTF8')),'hex'),1,40)=${reference} LIMIT 2`;
+  if(!new RegExp(`^${scope}-(?:[a-f0-9]{40}|[a-f0-9]{20})$`).test(reference))throw new UnprocessableEntityException({code:'OPERATIONS_FINANCIAL_REFERENCE_INVALID'});
+  const [table,column]=tables[scope],legacy=reference.length===scope.length+21;
+  const hash=legacy?Prisma.sql`substr(encode(sha256(convert_to(${scope+':'} || ${Prisma.raw(column)}::text,'UTF8')),'hex'),1,20)`:Prisma.sql`substr(encode(sha256(convert_to('{"id":"' || ${Prisma.raw(column)}::text || '","kind":"' || ${scope} || '"}','UTF8')),'hex'),1,40)`;
+  const rows=await tx.$queryRaw<{id:string;createdAt:Date}[]>`SELECT ${Prisma.raw(column)} AS id,created_at AS "createdAt" FROM ledger.${Prisma.raw(table)} WHERE ${scope+'-'} || ${hash}=${reference} LIMIT 2`;
   if(rows.length!==1)throw new ConflictException({code:'OPERATIONS_FINANCIAL_SOURCE_NOT_FOUND'});return rows[0];
  }
  async list(input:{scope:string;take?:number;cursor?:string;asOf?:string;reference?:string}){

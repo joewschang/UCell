@@ -8,7 +8,7 @@ import { periodCloseCandidates } from './period-close-invariants';
 import { orderEconomicEvidence } from './order-economic-evidence';
 import {createFinanceReviewArtifact,readFinanceReviewArtifact} from './payout-review-artifact';
 import {lineageSourceSummary} from './lineage-source-summary';
-import {requireErpExceptionReconciliation} from './erp-exception-resolution';
+import {requireOperationalExceptionResolution} from './operational-exception-resolution';
 import {OperationsFinancialHealthService} from './operations-financial-health.service';
 
 @Injectable()
@@ -334,12 +334,12 @@ export class AdminOperationsService {
       await tx.$queryRaw`SELECT operational_exception_id FROM integration.operational_exception WHERE operational_exception_id=${id}::uuid FOR UPDATE`;
       const row=await tx.operationalException.findUniqueOrThrow({where:{operationalExceptionId:id}});
       if(row.status==='RESOLVED') throw new ConflictException('Operational exception is already resolved');
-      if(status==='RESOLVED')await requireErpExceptionReconciliation(tx,row);
+      if(status==='RESOLVED')await requireOperationalExceptionResolution(tx,row);
       const now=new Date();
       const updated=await tx.operationalException.update({where:{operationalExceptionId:id},data:{status,acknowledgedByActor:status==='ACKNOWLEDGED'||status==='INVESTIGATING'?actorId:row.acknowledgedByActor,acknowledgedAt:status==='ACKNOWLEDGED'||status==='INVESTIGATING'?now:row.acknowledgedAt,resolvedByActor:status==='RESOLVED'?actorId:undefined,resolvedAt:status==='RESOLVED'?now:undefined,resolutionNote:status==='RESOLVED'?note?.trim()||null:undefined}});
       await this.audit.write(tx,{actorType:'USER',actorId,action:'OPERATIONAL_EXCEPTION_TRANSITIONED',entityType:'OPERATIONAL_EXCEPTION',entityId:id,afterData:{from:row.status,to:status,note:status==='RESOLVED'?note?.trim()||null:null},requestId,correlationId});
       return updated;
-    });
+    },{isolationLevel:Prisma.TransactionIsolationLevel.RepeatableRead,timeout:30000});
   }
 
   async operationalTasks(input:{status?:string;take?:number}={}){

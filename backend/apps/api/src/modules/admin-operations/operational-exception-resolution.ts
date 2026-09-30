@@ -3,9 +3,17 @@ import {Prisma} from '@ucell/database';
 import {AuditService} from '../../common/audit/audit.service';
 import {ErpBusinessProjectionService} from '../commerce/erp-business-projection.service';
 import {ErpReconciliationBridgeService} from '../commerce/erp-reconciliation-bridge.service';
+import {FINANCIAL_WORK_SOURCES,financialWorkReference,OperationsFinancialHealthService} from './operations-financial-health.service';
 
 /** Shared by legacy and business-reference commands; no API may bypass the source gate. */
-export async function requireErpExceptionReconciliation(tx:Prisma.TransactionClient,row:{sourceType:string;sourceId:string}){
+export async function requireOperationalExceptionResolution(tx:Prisma.TransactionClient,row:{sourceType:string;sourceId:string}){
+ const financial=financialWorkReference(row.sourceType,row.sourceId);
+ if(Object.hasOwn(FINANCIAL_WORK_SOURCES,row.sourceType)){
+  if(!financial)throw new ConflictException({code:'OPERATIONS_FINANCIAL_RECONCILIATION_REQUIRED'});
+  const page=await new OperationsFinancialHealthService({$transaction:(work:any)=>work(tx)} as any).list({scope:financial.scope,reference:financial.reference,take:1});
+  if(page.items.length!==1||page.items[0].candidates.length)throw new ConflictException({code:'OPERATIONS_FINANCIAL_RECONCILIATION_REQUIRED'});
+  return;
+ }
  if(!['ERP_BUSINESS_PROJECTION','ERP_HANDOFF','ERP_RECONCILIATION'].includes(row.sourceType))return;
  const db={$transaction:(work:any)=>work(tx)} as any;let matched=false;
  if(row.sourceType==='ERP_BUSINESS_PROJECTION'&&/^ERP-PROJECTION-[a-f0-9]{40}$/.test(row.sourceId))matched=(await new ErpBusinessProjectionService(db,new AuditService()).detail(row.sourceId)).status==='RECONCILED';
