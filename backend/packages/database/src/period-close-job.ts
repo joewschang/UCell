@@ -96,5 +96,5 @@ export async function processPeriodCloseJob(db:PrismaClient,lease:OutboxLease,ex
     const receipt=await tx.periodCloseReceipt.create({data:{periodCloseJobId:job.periodCloseJobId,sourceId,snapshotId:snapshot!.snapshotId}});
     await tx.outboxEvent.update({where:{outboxEventId:lease.outboxEventId},data:{processStatus:'PROCESSED',processedAt:new Date(),lastError:null}});
     return receipt;
-  });
+  },{lockPeriodInputs:true});
 }

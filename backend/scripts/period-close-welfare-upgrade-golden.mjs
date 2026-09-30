@@ -10,7 +10,8 @@ const require=createRequire(new URL('../packages/database/package.json',import.m
 const {PrismaClient}=require('@prisma/client');
 const payableMode=process.argv.includes('--payable');
 const plannerMode=process.argv.includes('--planner');
-const firstNewMigration=plannerMode?'20260930030000_period_close_planner':payableMode?'20260930020000_period_close_payable_preparation':'20260930010000_period_close_welfare';
+const lateInputMode=process.argv.includes('--late-input');
+const firstNewMigration=lateInputMode?'20260930040000_period_close_late_input':plannerMode?'20260930030000_period_close_planner':payableMode?'20260930020000_period_close_payable_preparation':'20260930010000_period_close_welfare';
 const base=new URL(process.env.DATABASE_URL??'postgresql://ucell:ucell_dev@127.0.0.1:5432/ucell');
 assert.ok(['localhost','127.0.0.1'].includes(base.hostname));
 const database='ucell_welfare_upgrade_'+randomUUID().replaceAll('-','');
@@ -25,11 +26,17 @@ try{
  for(const entry of readdirSync(join(root,'migrations'),{withFileTypes:true}))if(!entry.isDirectory()||entry.name<firstNewMigration)cpSync(join(root,'migrations',entry.name),join(scratch,'migrations',entry.name),{recursive:true});
  await admin.$executeRawUnsafe('CREATE DATABASE "'+database+'"');created=true;deploy(join(scratch,'schema.prisma'));
  const jobs=[],receipts=[],events=[];
- for(const kind of ['REFERRAL_K0','BINARY_K1','MATCHING_K2','GLOBAL',...(payableMode||plannerMode?['WELFARE']:[]),...(plannerMode?['PAYABLE_PREPARATION']:[])]){
+ for(const kind of ['REFERRAL_K0','BINARY_K1','MATCHING_K2','GLOBAL',...(payableMode||plannerMode||lateInputMode?['WELFARE']:[]),...(plannerMode||lateInputMode?['PAYABLE_PREPARATION']:[])]){
   const id=randomUUID();
   const event=await db.outboxEvent.create({data:{eventType:'PERIOD_CLOSE_REQUESTED',aggregateType:'PERIOD_CLOSE_JOB',aggregateId:id,payload:{periodCloseJobId:id},correlationId:randomUUID(),processStatus:'PROCESSED'}});events.push(event);
   const job=await db.periodCloseJob.create({data:{periodCloseJobId:id,kind,periodStart:new Date('2020-01-01Z'),periodEnd:new Date('2020-01-08Z'),ruleVersionCode:'TEST_UPGRADE',parameterSnapshot:{historical:'unchanged'},prerequisiteIds:[],requestedBy:'TEST',approvalReference:'TEST',outboxEventId:event.outboxEventId}});jobs.push(job);
   receipts.push(await db.periodCloseReceipt.create({data:{periodCloseJobId:id,sourceId:randomUUID(),snapshotId:randomUUID()}}));
+ }
+ let historicalVolume;
+ if(lateInputMode){
+  const person=await db.person.create({data:{legalName:'Synthetic upgrade'}});
+  const qualification=await db.qualification.create({data:{currentHolderPersonId:person.personId,planLevelCode:'STARTER',status:'EFFECTIVE'}});
+  historicalVolume=await db.pvLedger.create({data:{qualificationId:qualification.qualificationId,pvType:'GPV',amount:100,sourceType:'TEST_UPGRADE',sourceId:randomUUID(),sourceLineId:randomUUID(),eventType:'GPV_CREATED',ruleVersionCode:'TEST_UPGRADE',occurredAt:new Date('2020-01-02Z'),correlationId:randomUUID()}});
  }
  deploy(join(root,'schema.prisma'));
  for(let index=0;index<jobs.length;index++){
@@ -41,8 +48,13 @@ try{
  await assert.rejects(db.periodCloseReceipt.delete({where:{periodCloseJobId:jobs[0].periodCloseJobId}}));
  const id=randomUUID(),event=await db.outboxEvent.create({data:{eventType:'PERIOD_CLOSE_REQUESTED',aggregateType:'PERIOD_CLOSE_JOB',aggregateId:id,payload:{periodCloseJobId:id},correlationId:randomUUID()}});
  const {createdAt,...template}=jobs[0];
- const kind=plannerMode?'PLANNER':payableMode?'PAYABLE_PREPARATION':'WELFARE';
- if(plannerMode){
+ const kind=lateInputMode?'LATE_INPUT':plannerMode?'PLANNER':payableMode?'PAYABLE_PREPARATION':'WELFARE';
+ if(lateInputMode){
+  assert.deepEqual(await db.pvLedger.findUnique({where:{eventId:historicalVolume.eventId}}),historicalVolume);
+  const {eventId,createdAt,...volume}=historicalVolume;
+  await assert.rejects(db.pvLedger.create({data:{...volume,sourceId:randomUUID()}}),/PERIOD_CLOSE_LATE_INPUT_REQUIRES_CORRECTION/);
+  assert.equal((await db.pvLedger.createMany({data:[volume],skipDuplicates:true})).count,0);
+ }else if(plannerMode){
   const cursor=await db.periodClosePlannerCursor.create({data:{ruleVersionCode:'TEST_UPGRADE',kind:'REFERRAL_K0',configuredFrom:template.periodStart,approvalReference:'TEST',nextPeriodStart:template.periodStart}});
   await db.periodClosePlannerCursor.update({where:{ruleVersionCode_kind:{ruleVersionCode:cursor.ruleVersionCode,kind:cursor.kind}},data:{nextPeriodStart:template.periodEnd}});
   await assert.rejects(db.periodClosePlannerCursor.updateMany({where:{ruleVersionCode:cursor.ruleVersionCode},data:{approvalReference:'MUTATED'}}));
@@ -52,7 +64,7 @@ try{
   assert.equal(added.kind,kind);
  }
  const [{count}]=await db.$queryRawUnsafe('SELECT count(*)::int AS count FROM public._prisma_migrations WHERE finished_at IS NOT NULL AND rolled_back_at IS NULL');
- console.log(`PERIOD_CLOSE_${kind}_UPGRADE_${plannerMode?115:payableMode?114:113}_TO_${count}_PRESERVATION_AND_GUARDS_PASS`);
+ console.log(`PERIOD_CLOSE_${kind}_UPGRADE_${lateInputMode?116:plannerMode?115:payableMode?114:113}_TO_${count}_PRESERVATION_AND_GUARDS_PASS`);
 }finally{
  await db.$disconnect();if(created){await admin.$executeRawUnsafe('DROP DATABASE "'+database+'" WITH (FORCE)');console.log('PERIOD_CLOSE_WELFARE_UPGRADE_CLEANUP_PASS');}await admin.$disconnect();
  assert.equal(dirname(resolve(scratch)),resolve(tmpdir()));assert.ok(basename(scratch).startsWith('ucell-welfare-upgrade-'));rmSync(scratch,{recursive:true,force:true});

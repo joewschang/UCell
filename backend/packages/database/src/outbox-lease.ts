@@ -8,8 +8,12 @@ export async function claimOutboxLease(db:PrismaClient,event:{outboxEventId:stri
   const claim=await db.outboxEvent.updateMany({where:{outboxEventId:event.outboxEventId,processStatus:event.processStatus as Prisma.EnumEventProcessStatusFilter['equals'],attemptCount:event.attemptCount,availableAt:event.availableAt},data:{processStatus:'PROCESSING',attemptCount:{increment:1},availableAt}});
   return claim.count===1?{outboxEventId:event.outboxEventId,attemptCount:event.attemptCount+1,availableAt}:null;
 }
-export async function withOutboxLease<T>(db:PrismaClient,lease:OutboxLease,work:(tx:Prisma.TransactionClient)=>Promise<T>):Promise<T|{lostLease:true}>{
+export async function withOutboxLease<T>(db:PrismaClient,lease:OutboxLease,work:(tx:Prisma.TransactionClient)=>Promise<T>,options:{lockPeriodInputs?:boolean}={}):Promise<T|{lostLease:true}>{
   return db.$transaction(async tx=>{
+    // LOCK is a utility statement: acquire it before the first MVCC read so an
+    // in-flight volume writer finishes before the Serializable snapshot exists.
+    // Close holds the lock through its receipt; later writers encounter the DB guard.
+    if(options.lockPeriodInputs)await tx.$executeRaw`LOCK TABLE ledger.pv_ledger IN SHARE MODE`;
     // Row ownership is checked and retained through monetary posting and acknowledgement.
     await tx.$queryRaw`SELECT outbox_event_id FROM integration.outbox_event WHERE outbox_event_id=${lease.outboxEventId}::uuid FOR UPDATE`;
     const event=await tx.outboxEvent.findUnique({where:{outboxEventId:lease.outboxEventId}});
