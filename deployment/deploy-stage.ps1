@@ -3,7 +3,6 @@ param(
   [string]$Location = 'eastasia', [string]$ResourceGroup = 'rg-ucell-stage',
   [string]$PostgresAdminUser = 'ucellstageadmin', [SecureString]$PostgresAdminPassword,
   [string]$LineLoginChannelId = '', [string]$LiffId = '', [string]$GoogleOidcClientId = '',
-  [string]$SmsOtpProviderWebhookUrl = '', [string]$SmsOtpProviderWebhookToken = '', [string]$OtpHashSecret = '',
   [string]$PasswordResetEmailWebhookUrl = '', [string]$PasswordResetEmailWebhookToken = '',
   [string]$EntraTenantId = '', [string]$EntraClientId = '', [string]$EntraRedirectUri = '', [string]$ImageTag = '',
   [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$InventoryWarehouseId,
@@ -96,19 +95,10 @@ if($migrationStatus -ne 'Succeeded'){throw "Stage migration failed or timed out:
 Set-App 'ucell-stage-api' $backendImage 1 3 $serverEnv -RemoveEnv $serverRemove -Ingress -Port 3000 -Database
 Set-App 'ucell-stage-worker' $workerImage 1 2 $serverEnv -RemoveEnv $serverRemove -Database
 
-# Optional Web-member auth providers. Secrets are stored as Container App secrets and
-# referenced from the API environment; missing configuration remains fail-closed.
-$authEnv=@()
-$authRemove=@()
+# Web-member auth providers. SMS OTP remains explicitly disabled until the supplier API is approved.
+$authEnv=@('AUTH_CHANNEL_ENABLE_SMS_OTP=false')
+$authRemove=@('OTP_HASH_SECRET','SMS_OTP_PROVIDER_WEBHOOK_URL','SMS_OTP_PROVIDER_WEBHOOK_TOKEN')
 $authSecrets=@()
-if($OtpHashSecret){$authSecrets+="otp-hash-secret=$OtpHashSecret";$authEnv+='OTP_HASH_SECRET=secretref:otp-hash-secret'}else{$authRemove+='OTP_HASH_SECRET'}
-if($SmsOtpProviderWebhookUrl -and $SmsOtpProviderWebhookToken -and $OtpHashSecret){
-  $authSecrets+="sms-otp-provider-token=$SmsOtpProviderWebhookToken"
-  $authEnv+=@("SMS_OTP_PROVIDER_WEBHOOK_URL=$SmsOtpProviderWebhookUrl",'SMS_OTP_PROVIDER_WEBHOOK_TOKEN=secretref:sms-otp-provider-token','AUTH_CHANNEL_ENABLE_SMS_OTP=true')
-}else{
-  $authEnv+='AUTH_CHANNEL_ENABLE_SMS_OTP=false'
-  $authRemove+=@('SMS_OTP_PROVIDER_WEBHOOK_URL','SMS_OTP_PROVIDER_WEBHOOK_TOKEN')
-}
 if($PasswordResetEmailWebhookUrl -and $PasswordResetEmailWebhookToken){
   $authSecrets+="password-reset-email-token=$PasswordResetEmailWebhookToken"
   $authEnv+=@("PASSWORD_RESET_EMAIL_WEBHOOK_URL=$PasswordResetEmailWebhookUrl",'PASSWORD_RESET_EMAIL_WEBHOOK_TOKEN=secretref:password-reset-email-token')
