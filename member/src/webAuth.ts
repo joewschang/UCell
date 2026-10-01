@@ -49,7 +49,7 @@ export async function registrationOtpChallenge(registrationSessionId:string,mobi
 export async function verifyRegistrationOtp(challengeId:string,code:string){
  return request('/auth/otp/challenges/'+encodeURIComponent(challengeId)+'/verify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code})});
 }
-export async function completeRegistration(input:{registrationSessionId:string;challengeId:string;contractVersionId:string;legalName:string;alias:string;gender:string;birthDate:string;mobile:string;email:string;password:string}){
+export async function completeRegistration(input:{registrationSessionId:string;challengeId:string;contractVersionId:string;legalName:string;alias:string;gender:string;birthDate:string;mobile:string;email:string;password:string;googleIdToken?:string}){
  return storeSession(await request('/auth/member/register/complete',{method:'POST',headers:{'Content-Type':'application/json','Idempotency-Key':crypto.randomUUID()},body:JSON.stringify({...input,accepted:true})}));
 }
 
@@ -66,13 +66,13 @@ function loadGoogle(){
  });
  return googleScript;
 }
-export async function renderGoogleButton(element:HTMLElement,onAuthenticated:()=>void,onError:(message:string)=>void){
+export async function renderGoogleButton(element:HTMLElement,onAuthenticated:()=>void,onUnbound:(idToken:string)=>void,onError:(message:string)=>void){
  const clientId=import.meta.env.VITE_GOOGLE_OIDC_CLIENT_ID;
  if(!clientId){onError('Google 登入尚未設定');return;}
  try{
   await loadGoogle();
   window.google.accounts.id.initialize({client_id:clientId,callback:async(result:{credential?:string})=>{
-   try{if(!result.credential)throw new Error('GOOGLE_CREDENTIAL_MISSING');await googleExchange(result.credential);onAuthenticated();}catch(e){onError(e instanceof Error?e.message:'Google 登入失敗');}
+   try{if(!result.credential)throw new Error('GOOGLE_CREDENTIAL_MISSING');await googleExchange(result.credential);onAuthenticated();}catch(e){if(e instanceof Error&&e.message==='GOOGLE_ACCOUNT_UNBOUND'){onUnbound(result.credential);return;}onError(e instanceof Error?e.message:'Google 登入失敗');}
   }});
   element.replaceChildren();
   window.google.accounts.id.renderButton(element,{theme:'outline',size:'large',shape:'rectangular',text:'continue_with',width:320});
