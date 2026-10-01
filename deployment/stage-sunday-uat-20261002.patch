@@ -208,10 +208,10 @@ index 5de3ced..e345d50 100644
 +
  createRoot(document.getElementById('root')!).render(<React.StrictMode><ThemeProvider><AppErrorBoundary><BrowserRouter><Bootstrap /></BrowserRouter></AppErrorBoundary></ThemeProvider></React.StrictMode>);
 diff --git a/member/src/ucell-theme.css b/member/src/ucell-theme.css
-index be5efb9..060a3ac 100644
+index be5efb9..98781c0 100644
 --- a/member/src/ucell-theme.css
 +++ b/member/src/ucell-theme.css
-@@ -31,3 +31,86 @@ header{height:56px;padding:10px 18px}header small{font-size:11px;color:var(--uce
+@@ -31,3 +31,89 @@ header{height:56px;padding:10px 18px}header small{font-size:11px;color:var(--uce
  @media(max-width:767px){.app main{padding-inline:14px}.uc-member-title{grid-template-columns:1fr;gap:8px}.uc-member-title .uc-header,.uc-member-title>.uc-status,.uc-member-identity-context{grid-column:1;justify-self:start}.uc-member-identity{min-height:0;align-items:flex-start;flex-wrap:wrap;gap:12px;padding:18px}.uc-identity-badge{min-width:0;margin-left:auto}.uc-member-status{grid-template-columns:1fr;gap:12px;margin-inline:0}.uc-status-block+ .uc-status-block{padding:14px 0 0;border-top:1px solid var(--uc-tech-line);border-left:0}.uc-section-heading{align-items:flex-start;flex-wrap:wrap}.uc-section-heading>span{max-width:100%}.uc-today-facts,.uc-today-binary dl,.uc-award-journey-grid,.uc-member-explain .uc-audit-grid,.uc-binary-summary{grid-template-columns:1fr}.uc-award-journey-grid>div:nth-last-child(1){grid-column:auto}.uc-today-task{align-items:flex-start;flex-wrap:wrap}.uc-bonus-summary{grid-template-columns:1fr}.uc-bonus-summary h2{grid-column:1;grid-row:auto;text-align:left}.uc-tree-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.uc-tree-actions button{min-width:0}.uc-tree-actions button:last-child{margin-left:0}.uc-tree-context,.uc-tree-boundary{overflow-wrap:anywhere}.uc-repurchase-expander summary{min-height:44px;display:flex;align-items:center}nav a{font-size:12px}}
  @media(max-width:480px){.uc-member-status{grid-template-columns:1fr;margin-inline:0}.uc-status-block+ .uc-status-block{padding:14px 0 0;border-top:1px solid var(--uc-tech-line);border-left:0}.uc-member-identity{flex-wrap:wrap}.uc-identity-badge{margin-left:0}.uc-tree-actions{grid-template-columns:1fr}.uc-today-facts,.uc-today-binary dl{grid-template-columns:1fr}.uc-section-heading{margin-top:20px}.uc-bonus-summary{grid-template-columns:1fr}.uc-bonus-summary h2{grid-column:1;grid-row:auto;text-align:left}}
  .member-message-filters{display:grid;gap:12px}.member-message-filters label{display:grid;gap:6px}.member-message-filters select{width:100%;min-height:44px;padding:8px;border:1px solid var(--ucell-border);border-radius:8px;background:var(--ucell-surface);color:var(--ucell-text-primary)}
@@ -298,6 +298,9 @@ index be5efb9..060a3ac 100644
 +
 +.uc-segmented button[aria-pressed=true]{background:var(--ucell-primary);color:var(--ucell-on-primary)}
 +.uc-referral-card .uc-card-heading>strong{color:var(--ucell-primary)}
++.app .uc-member-identity .uc-identity-copy :is(h1,h2,h3){color:#f3fbfb}
++.app .uc-member-identity .uc-identity-copy>small{color:#d9f7f2}
++
 diff --git a/admin/src/styles/ucell-theme.css b/admin/src/styles/ucell-theme.css
 index b8047b1..6eac75e 100644
 --- a/admin/src/styles/ucell-theme.css

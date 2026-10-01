@@ -114,3 +114,6 @@ button,input,select,textarea{
 
 .uc-segmented button[aria-pressed=true]{background:var(--ucell-primary);color:var(--ucell-on-primary)}
 .uc-referral-card .uc-card-heading>strong{color:var(--ucell-primary)}
+.app .uc-member-identity .uc-identity-copy :is(h1,h2,h3){color:#f3fbfb}
+.app .uc-member-identity .uc-identity-copy>small{color:#d9f7f2}
+
