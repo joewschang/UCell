@@ -512,6 +512,31 @@ enum PersonMembershipState {
   @@schema("identity")
 }
 
+enum FormalApplicantType {
+  INDIVIDUAL
+  LEGAL_ENTITY
+
+  @@schema("identity")
+}
+
+enum SpouseVerificationStatus {
+  NOT_APPLICABLE
+  PENDING
+  VERIFIED
+  REJECTED
+
+  @@schema("identity")
+}
+
+enum LegalEntityStatus {
+  DRAFT
+  ACTIVE
+  SUSPENDED
+  TERMINATED
+
+  @@schema("identity")
+}
+
 enum OtpPurpose {
   NETWORK_REGISTRATION
   MOBILE_CHANGE
@@ -568,6 +593,9 @@ model Person {
   referralAttributions     ReferralAttribution[]
   referralBindingHistory   ReferralAttributionHistory[]
   formalMemberApplications FormalMemberApplication[]
+  legalEntityRepresentations LegalEntityRepresentative[]
+  spouseRelationships       SpouseRelationship[]
+  formalIdentityIndex       FormalIdentityIndex?
 
   @@index([legalName])
   @@index([mobile])
@@ -575,9 +603,89 @@ model Person {
   @@schema("identity")
 }
 
+model LegalEntity {
+  legalEntityId         String                @id @default(uuid()) @map("legal_entity_id") @db.Uuid
+  registeredName        String                @map("registered_name")
+  registrationNo        String                @unique @map("registration_no")
+  registeredAddress     String?               @map("registered_address")
+  membershipState       PersonMembershipState? @map("membership_state")
+  status                LegalEntityStatus     @default(DRAFT)
+  createdAt             DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt             DateTime              @updatedAt @map("updated_at") @db.Timestamptz(6)
+  representatives       LegalEntityRepresentative[]
+  formalApplications    FormalMemberApplication[]
+
+  @@index([status])
+  @@map("legal_entity")
+  @@schema("identity")
+}
+
+model LegalEntityRepresentative {
+  legalEntityRepresentativeId String      @id @default(uuid()) @map("legal_entity_representative_id") @db.Uuid
+  legalEntityId               String      @map("legal_entity_id") @db.Uuid
+  personId                    String      @map("person_id") @db.Uuid
+  roleCode                    String      @default("PRIMARY_OPERATING_REPRESENTATIVE") @map("role_code")
+  effectiveFrom               DateTime    @default(now()) @map("effective_from") @db.Timestamptz(6)
+  effectiveTo                 DateTime?   @map("effective_to") @db.Timestamptz(6)
+  verifiedAt                  DateTime?   @map("verified_at") @db.Timestamptz(6)
+  verifiedBy                  String?     @map("verified_by") @db.Uuid
+  createdAt                   DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+  legalEntity                 LegalEntity @relation(fields: [legalEntityId], references: [legalEntityId])
+  person                      Person      @relation(fields: [personId], references: [personId])
+
+  @@index([legalEntityId, effectiveFrom, effectiveTo])
+  @@index([personId, effectiveFrom, effectiveTo])
+  @@map("legal_entity_representative")
+  @@schema("identity")
+}
+
+model SpouseRelationship {
+  spouseRelationshipId        String                    @id @default(uuid()) @map("spouse_relationship_id") @db.Uuid
+  personId                    String                    @map("person_id") @db.Uuid
+  spouseIdentityFingerprint   String                    @map("spouse_identity_fingerprint")
+  spouseNameMasked            String                    @map("spouse_name_masked")
+  verificationStatus          SpouseVerificationStatus  @default(PENDING) @map("verification_status")
+  effectiveFrom               DateTime                  @default(now()) @map("effective_from") @db.Timestamptz(6)
+  effectiveTo                 DateTime?                 @map("effective_to") @db.Timestamptz(6)
+  verifiedAt                  DateTime?                 @map("verified_at") @db.Timestamptz(6)
+  verifiedBy                  String?                   @map("verified_by") @db.Uuid
+  sourceFormalApplicationId   String?                   @map("source_formal_application_id") @db.Uuid
+  createdAt                   DateTime                  @default(now()) @map("created_at") @db.Timestamptz(6)
+  person                      Person                    @relation(fields: [personId], references: [personId])
+  sourceFormalApplication     FormalMemberApplication?  @relation(fields: [sourceFormalApplicationId], references: [formalMemberApplicationId])
+
+  @@index([personId, effectiveFrom, effectiveTo])
+  @@index([spouseIdentityFingerprint, verificationStatus])
+  @@map("spouse_relationship")
+  @@schema("identity")
+}
+
+model FormalIdentityIndex {
+  formalIdentityIndexId       String                   @id @default(uuid()) @map("formal_identity_index_id") @db.Uuid
+  personId                    String                   @unique @map("person_id") @db.Uuid
+  nationalIdFingerprint       String                   @unique @map("national_id_fingerprint")
+  verifiedAt                  DateTime                 @map("verified_at") @db.Timestamptz(6)
+  verifiedBy                  String?                  @map("verified_by") @db.Uuid
+  sourceFormalApplicationId   String                   @map("source_formal_application_id") @db.Uuid
+  createdAt                   DateTime                 @default(now()) @map("created_at") @db.Timestamptz(6)
+  person                      Person                   @relation(fields: [personId], references: [personId])
+  sourceFormalApplication     FormalMemberApplication  @relation(fields: [sourceFormalApplicationId], references: [formalMemberApplicationId])
+
+  @@index([nationalIdFingerprint])
+  @@map("formal_identity_index")
+  @@schema("identity")
+}
+
 model FormalMemberApplication {
   formalMemberApplicationId String                            @id @default(uuid()) @map("formal_member_application_id") @db.Uuid
   personId                  String                            @map("person_id") @db.Uuid
+  applicantType             FormalApplicantType               @default(INDIVIDUAL) @map("applicant_type")
+  legalEntityId             String?                           @map("legal_entity_id") @db.Uuid
+  applicantIdentityFingerprint String?                        @map("applicant_identity_fingerprint")
+  spouseIdentityFingerprint String?                           @map("spouse_identity_fingerprint")
+  spouseVerificationStatus  SpouseVerificationStatus          @default(NOT_APPLICABLE) @map("spouse_verification_status")
+  crossLineReviewStatus     String                            @default("NOT_EVALUATED") @map("cross_line_review_status")
+  crossLineConflictCode     String?                           @map("cross_line_conflict_code")
   status                    String                            @default("DRAFT")
   currentSnapshotHash       String                            @map("current_snapshot_hash")
   createdAt                 DateTime                          @default(now()) @map("created_at") @db.Timestamptz(6)
@@ -587,9 +695,15 @@ model FormalMemberApplication {
   reviewerId                String?                           @map("reviewer_id") @db.Uuid
   decisionReasonCode        String?                           @map("decision_reason_code")
   person                    Person                            @relation(fields: [personId], references: [personId])
+  legalEntity               LegalEntity?                      @relation(fields: [legalEntityId], references: [legalEntityId])
   snapshots                 FormalMemberApplicationSnapshot[]
+  spouseRelationships       SpouseRelationship[]
+  identityIndexes           FormalIdentityIndex[]
 
   @@index([personId, status])
+  @@index([applicantType, status])
+  @@index([spouseIdentityFingerprint])
+  @@index([applicantIdentityFingerprint])
   @@map("formal_member_application")
   @@schema("identity")
 }
