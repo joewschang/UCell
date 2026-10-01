@@ -13588,7 +13588,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EnvelopeDto"
+                  "$ref": "#/components/schemas/MaturedPayableSourcesEnvelopeDto"
                 }
               }
             }
@@ -23315,7 +23315,7 @@
           "truncated"
         ]
       },
-      "SourceDto": {
+      "MaturedPayableSourceDto": {
         "type": "object",
         "properties": {
           "reference": {
@@ -23362,13 +23362,13 @@
           "recordedAt"
         ]
       },
-      "PageDto": {
+      "MaturedPayableSourcesPageDto": {
         "type": "object",
         "properties": {
           "items": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/SourceDto"
+              "$ref": "#/components/schemas/MaturedPayableSourceDto"
             }
           },
           "nextCursor": {
@@ -23405,6 +23405,17 @@
           "cutoff",
           "thresholdHours",
           "coverage"
+        ]
+      },
+      "MaturedPayableSourcesEnvelopeDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/MaturedPayableSourcesPageDto"
+          }
+        },
+        "required": [
+          "data"
         ]
       },
       "WorkflowCandidateDto": {

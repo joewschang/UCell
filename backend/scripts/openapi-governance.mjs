@@ -163,7 +163,7 @@ export async function main(mode){
    save('breaking-diff.json',JSON.parse(diff.stdout||'[]'));
    assertSecurityCompatibility(JSON.parse(baseline),JSON.parse(bytes));
    if(diff.status!==0)throw Error('UNAPPROVED_BREAKING_CHANGE');report.gates.breakingDiff='PASS';
-   command(process.execPath,['--test','scripts/openapi-governance.test.mjs']);report.gates.publisherTests='PASS';
+   command(process.execPath,['--test','scripts/openapi-governance.test.mjs','scripts/matured-payable-openapi.test.mjs']);report.gates.publisherTests='PASS';
    command(process.execPath,['scripts/test-todo-gate.mjs']);
    command(process.execPath,['scripts/security-policy-preflight.mjs']);
    command(process.execPath,['scripts/api-jest-isolated.mjs']);
