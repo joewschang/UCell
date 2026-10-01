@@ -1,0 +1,116 @@
+{
+  "date": "2026-10-02",
+  "scope": "Sunday UAT targeted Member/Admin frontend recovery and contrast fixes; continuity overlay, not wholesale main deployment",
+  "codeReadyForThisScope": true,
+  "patchCommit": "d809feb0cbcee2253fa9111ea903998fb602cd11",
+  "adminPatchCommit": "6041c0df5e85c7978d277964931e4e28c6f07ae5",
+  "source": {
+    "baseline": "C:/UCell/tools/stage-line-login-20261001",
+    "context": "C:/UCell/tools/sunday-uat-stage-20261002",
+    "manifest": "C:/UCell/tools/sunday-uat-stage-20261002/deployment-source-manifest.json",
+    "manifestSha256": "06c55eb60ea71ac8b1c83de702369b84f4ec7a5de715909681374cb2542e67f3",
+    "verifiedFileCount": 322,
+    "overlayPatch": "deployment/stage-sunday-uat-20261002.patch",
+    "overlayPatchSha256": "d5948d418af5183461559dc31e58aea626e0b31b9057555376f127857783d566",
+    "packaging": "deployment/Dockerfile.frontend-artifact",
+    "buildMethod": "Verified local builds packaged in pinned existing nginx runtime; ACR cloud context download failed before deployment"
+  },
+  "stageApps": [
+    {
+      "image": "ucellstageacr5mafbbsq33mgu.azurecr.io/ucell-backend@sha256:8d12c8872b102ee8f102542e34630b4cf72b6befe0afd7aee2ae97260185cec6",
+      "name": "ucell-stage-api",
+      "revision": "ucell-stage-api--line-uat-cors-20261001"
+    },
+    {
+      "image": "ucellstageacr5mafbbsq33mgu.azurecr.io/ucell-backend@sha256:8d12c8872b102ee8f102542e34630b4cf72b6befe0afd7aee2ae97260185cec6",
+      "name": "ucell-stage-worker",
+      "revision": "ucell-stage-worker--line-active-20261001"
+    },
+    {
+      "image": "ucellstageacr5mafbbsq33mgu.azurecr.io/ucell-admin@sha256:5d51f0e668b5884c31134e1532b7edd9cb7c685f1d1fc90159bbaa1e5372a71e",
+      "name": "ucell-stage-admin",
+      "revision": "ucell-stage-admin--sunday-uat-6041c0d-20261002"
+    },
+    {
+      "image": "ucellstageacr5mafbbsq33mgu.azurecr.io/ucell-member@sha256:8bfec748c0e2febbe35b68cc02fa72def744cfe3e9daf33738b0248bf471e337",
+      "name": "ucell-stage-member",
+      "revision": "ucell-stage-member--sunday-uat-d809feb-20261002"
+    }
+  ],
+  "frontendHealth": "Healthy / Running",
+  "assets": [
+    {
+      "status": 200,
+      "sha256": "9ed85c41824c8df12e3f2e7282b37dc8ea79715cc6792591ece5de5f9b9df716",
+      "asset": "/assets/index-CYStd0mC.js",
+      "url": "https://stage.ucell.life/",
+      "name": "member",
+      "localMatch": true
+    },
+    {
+      "status": 200,
+      "sha256": "ec50566d54d396477430208c5768d2f5ea43022540305827ae45515b02e4e4b2",
+      "asset": "/assets/index-yxGUQdDu.css",
+      "url": "https://stage.ucell.life/",
+      "name": "member",
+      "localMatch": true
+    },
+    {
+      "status": 200,
+      "sha256": "d1e77f74a9b1bc48d48ec7e222868d9a61a4b7109d3561156ac89c14cbc1f324",
+      "asset": "/assets/index-DhN_eWM8.js",
+      "url": "https://admin-stage.ucell.life/",
+      "name": "admin",
+      "localMatch": true
+    },
+    {
+      "status": 200,
+      "sha256": "8f20366220fdcef40db29c1d758f9e16eec29fd236bd6b9738df2e560b6152ec",
+      "asset": "/assets/index-yF16BHDL.css",
+      "url": "https://admin-stage.ucell.life/",
+      "name": "admin",
+      "localMatch": true
+    }
+  ],
+  "validation": {
+    "mainTargetedTests": "37 passed (auth/session/entry CORS)",
+    "stageOverlayTargetedTests": "46 passed (web entry/session/LINE binding/deep links)",
+    "memberAdminTypecheckBuild": "PASS; final Member CSS build includes typecheck",
+    "apiBuild": "PASS after database generation and dependency builds",
+    "nativeFastifyCors": "1 passed",
+    "stageCors": "Actual Member origins GET/PATCH preflight allowed",
+    "nginxConfig": "PASS",
+    "sourceManifest": "All recorded file hashes verified",
+    "backendContinuity": "API/Worker image and revision unchanged",
+    "liveLine": {
+      "ordinaryWebLoginRecovery": "PASS",
+      "desktopLiffEntry": "PASS",
+      "callbackQueryCleanup": "PASS",
+      "memberNo": "2609000001",
+      "balls": [
+        "A000014",
+        "A000015",
+        "A000016"
+      ],
+      "ballStatus": "All three Active/effective; selection verified",
+      "cachedSessionReload": "PASS; selected A000016 preserved",
+      "heroHeadingComputedColor": "rgb(243, 251, 251)",
+      "screenshot": "C:/UCell/logs/sunday-uat-member-stage-20261002.png"
+    },
+    "liveAdmin": "Reloaded new frontend; existing DEV Admin Stage session and Person list preserved; not Entra identity certification"
+  },
+  "remaining": [
+    "Actual mobile LINE client/OA rich-menu and full Sunday business UAT not executed",
+    "Carry/volume/payout read models remain explicitly unavailable where backend has no projection",
+    "Newly merged multi-auth decision: Google, member password, mobile OTP, registration and password reset remain unimplemented in this deployment",
+    "Formal Admin Entra/roles evidence and full R1.0B closure remain outside this targeted frontend release"
+  ],
+  "boundaries": [
+    "No Production deployment",
+    "No R1.1 implementation",
+    "No full backend/browser/screenshot suites rerun",
+    "No database migrations or financial/order writes by this release",
+    "Existing Stage LINE binding and business pages preserved",
+    "No raw OAuth credentials or secrets recorded"
+  ]
+}
