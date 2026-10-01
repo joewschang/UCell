@@ -79,6 +79,29 @@ resource storage 'Microsoft.Storage/storageAccounts@2023-05-01' = {
   }
 }
 
+resource storageBlobDataContributor 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(storage.id, workloadIdentity.id, 'StorageBlobDataContributor')
+  scope: storage
+  properties: {
+    principalId: workloadIdentity.properties.principalId
+    principalType: 'ServicePrincipal'
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'ba92f5b4-2d11-453d-a403-e96b0029c9fe')
+  }
+}
+
+resource blobService 'Microsoft.Storage/storageAccounts/blobServices@2023-05-01' = {
+  parent: storage
+  name: 'default'
+}
+
+resource kycContainer 'Microsoft.Storage/storageAccounts/blobServices/containers@2023-05-01' = {
+  parent: blobService
+  name: 'formal-kyc'
+  properties: {
+    publicAccess: 'None'
+  }
+}
+
 resource databaseServer 'Microsoft.DBforPostgreSQL/flexibleServers@2024-08-01' = {
   name: '${compactPrefix}-pg-${suffix}'
   location: location
@@ -135,10 +158,12 @@ resource containerEnvironment 'Microsoft.App/managedEnvironments@2024-03-01' = {
 
 output acrName string = registry.name
 output workloadIdentityId string = workloadIdentity.id
+output workloadIdentityClientId string = workloadIdentity.properties.clientId
 output containerEnvironmentName string = containerEnvironment.name
 output postgresHost string = databaseServer.properties.fullyQualifiedDomainName
 output postgresDatabase string = database.name
 output postgresAdminUser string = postgresAdminUser
 output keyVaultName string = vault.name
 output storageAccountName string = storage.name
+output kycStorageContainerName string = kycContainer.name
 output applicationInsightsConnectionString string = insights.properties.ConnectionString
