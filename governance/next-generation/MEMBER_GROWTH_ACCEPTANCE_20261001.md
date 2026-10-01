@@ -35,3 +35,8 @@ Actual-browser follow-up discovered a separate pre-existing unplaced-Qualificati
 The full requirement matrix, unplaced Qualification experience, additional empty/error/theme/accessibility journeys and whole-batch recertification remain open. No Stage/Production deployment was performed.
 
 The placed-Qualification browser follow-up also passes (cr-batch-growth-rank-browser-placed.log): an actual Binary Tree service placement receives its Ball number, the real Global engine seals a zero-volume historical period, and the authenticated Member screen displays next rank, 0.0000 PV, 100.0000 threshold/difference and 0.00% with the explicit historical boundary. The dark mobile screenshot was visually inspected. This does not waive the separately reproduced unplaced-Qualification defect.
+
+
+## Superseding UNPLACED repair evidence
+
+The previously reproduced unplaced-Qualification defect above is resolved by the preserved cda80e1 implementation and final 5629b07 evidence checkpoint. The Member DTO uses a positive lossless public qualificationNo for UNPLACED, shared labels explain pending placement and organization reads skip nonexistent Ball numbers. Formal Ball validation remains strict. Full API 182 suites / 1,324 tests, Member 182 tests and actual pending-placement → service placement → sealed Global browser journey PASS. See STAGE_RECOVERY_LINE_UAT_20261001.md. The remaining full Growth acceptance matrix and whole-batch UX are still IN_PROGRESS; the historical defect text is not a current coding blocker.
