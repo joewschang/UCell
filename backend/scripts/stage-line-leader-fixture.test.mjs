@@ -1,0 +1,15 @@
+import assert from 'node:assert/strict';
+import {validateEnvironment,ids,personId,seed} from './stage-line-leader-fixture.mjs';
+const env={UCELL_ENVIRONMENT:'STAGE',UCELL_STAGE_LEADER_OPT_IN:'STAGE-LINE-LEADER-UAT-20261001',DATABASE_URL:'postgresql://test:test@ucellstage-pg-5mafbbsq33mgu.postgres.database.azure.com/ucell_stage'};
+validateEnvironment(env);
+for(const override of [{UCELL_ENVIRONMENT:'PRODUCTION'},{UCELL_STAGE_LEADER_OPT_IN:''},{DATABASE_URL:env.DATABASE_URL.replace('/ucell_stage','/ucell_prod')},{DATABASE_URL:env.DATABASE_URL.replace('ucellstage-pg','another-pg')}])assert.throws(()=>validateEnvironment({...env,...override}));
+assert.equal(new Set(ids).size,3);
+assert.ok(ids.every(id=>/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(id)));
+const person={memberNo:'2609000001',legalName:'Stage UAT Member',status:'EFFECTIVE',membershipState:'FORMAL_MEMBER',securityStatus:'NORMAL'};
+const existing=ids.map(qualificationId=>({qualificationId,currentHolderPersonId:personId,planLevelCode:'LEADER',ballNo:'A000014',binaryTreeMembership:{},holderHistory:[{holderPersonId:personId,effectiveTo:null}]}));
+const tx={$executeRaw:async()=>0,person:{findUniqueOrThrow:async()=>person},qualification:{findMany:async()=>existing}};
+const db={$transaction:async(fn,options)=>{assert.equal(options.isolationLevel,'Serializable');return fn(tx);}};
+assert.equal((await seed(db,{})).replayed,true);
+existing.pop(); await assert.rejects(()=>seed(db,{}),/FIXTURE_CONFLICT/);
+person.memberNo='0000000000'; await assert.rejects(()=>seed(db,{}),/FIXTURE_PERSON_MISMATCH/);
+console.log('PASS: exact Stage guard, fixed IDs, idempotent replay, partial/cross-member conflict rejection');

@@ -76,11 +76,13 @@ Execute [the ten-step LINE manual checklist](../../deployment/LINE_STAGE_MANUAL_
 
 ## NEXT ACTIONS ONLY
 
-2026-10-01 最新使用者決議覆蓋上方歷史狀態：Messaging webhook **https://api-stage.ucell.life/api/v1/integrations/line/webhook** 已 Verify SUCCESS / Use webhook ON。歷史部署記錄保留，webhook 不再是 backlog，不改 URL、不重做。
+2026-10-01 最新進度：Messaging webhook 維持使用者確認 DONE。LINE Login Channel2011813061 / LIFF2011813061-Qt3d2jmo 已建立、OA已連結、API/Member scoped release 已部署且 Healthy/Running，真實 LINE 登入已抵達受控會員綁定頁。詳見 [最新 Gate](../../deployment/LINE_STAGE_MANUAL_GATE.md) 及 [Console/deploy evidence](evidence/line-liff-console-20261001.json)。已完成項目不再列回 backlog。
 
-1. 人工在「宇生國際股份有限公司」Provider 建立 **UCell Member Login - Stage** LINE Login Channel 及 LIFF，提供真實 Channel ID / LIFF ID / LIFF URL；依 [最新人工 Gate](../../deployment/LINE_STAGE_MANUAL_GATE.md)。不得在 Messaging Channel 新增 LIFF。
-2. 真實 ID 到位後更新 API runtime Channel ID 並重建 Member LIFF image，沿用既有 Stage release；Worker 無新增 Login 設定。当前 SDK flow 不使用 Login Channel Secret。
-3. 完成人工 Gate 後執行 OA → Login → Binding → Member Center → Products → Orders → PV/BV → Sponsor/Placement → Qualification → Bonus → Wallet → Admin → Return/Reversal 真人 UAT。ERP / 正式銀行付款 OUT OF SCOPE；只補真實 findings。
-4. 既有 lint 設定缺失仍待處理；Rich Menu 是核心驗收後的可選工作。
+補充完成：使用者明確確認 Stage 測試資料及授權選擇正式會員後，已透過既有審核 API／單次憑證完成 Joe Chang → 2609000001（Stage UAT Member）綁定並進入會員中心，實際會員頁顯示 FORMAL_MEMBER。測試授權參考 STAGE-UAT-USER-AUTH-20261001，不宣稱正式公司 KYC 或 Production Admin 身分驗證。證據見上述 JSON 及 C:/UCell/logs/line-member-binding-completed-20261001.png。
 
-本次程式差異及驗證見 [LINE Login audit](LINE_LOGIN_LIFF_READINESS_20261001.md)。其他進行中的 Master Task 工作不變，未 reset/clean、未部署。
+1. 已補三顆 LEADER（A000014–A000016）並通過真實 LINE 資格切換、推薦及左右計數；原 STARTER 保留。繼續追查完整 tree snapshot recovery，PATCH CORS、配送儲存與 A000016 待付款訂單及 A000015 隔離已由交接 UAT 記錄完成；後段付款／認列／退貨仍待驗收，不重做已完成 login/binding/建球。SYSTEM Stage fixture 證據見 evidence/line-three-leader-fixture-20261001.json。
+2. 接續 Products 至 return/reversal 的第一輪真人 UAT及綁定安全負向案例；ERP 與銀行正式付款 OUT OF SCOPE。
+3. 新增測試者需先提供真實帳號；目前登入者 Admin 已可測試 Developing channel。
+4. 既有 lint 設定缺失仍待處理；Rich Menu 為可選工作。
+
+Master 其他工作保留。此次部署使用已部署6c86adb加85ee88a的必要 LINE 檔案快照，不帶入進行中的 payout 變更，無 DB migration，Worker/Admin unchanged。

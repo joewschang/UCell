@@ -1,12 +1,16 @@
 # Stage LINE Login / LIFF 人工 Gate（2026-10-01 最新決議）
 
-此清單屬於既有 UCell Stage Master Task。程式準備完成不代表真人 LINE UAT 通過。既有工作與已完成項目保留；本次不部署、不改 Production。
+此清單屬於既有 UCell Stage Master Task。程式準備完成不代表整體真人 LINE UAT 通過。既有工作與已完成項目保留；Stage scoped release 已部署，不改 Production。
 
 ## 已完成基礎（不列回待辦）
 
 使用者確認：Provider **宇生國際股份有限公司**、OA **@258vmvsa**；Webhook **https://api-stage.ucell.life/api/v1/integrations/line/webhook**，Developers Verify **SUCCESS**，Use webhook **ON**。此為使用者提供的完成證據，不是本次重新執行 Verify。不要更改 URL、重建 Messaging Channel 或重做 secret/Verify；本文件取代舊十步 webhook 設定清單。
 
-## 人工設定
+## 2026-10-01 Console 已完成
+
+經使用者明確同意協議及建立授權，已建立 **UCell Login - Stage**（Console 上限 20 字元），Channel ID **2011813061**，LIFF ID **2011813061-Qt3d2jmo**，入口 **https://liff.line.me/2011813061-Qt3d2jmo**。Endpoint / openid / Full / OA link 已核實；Developing，Joe Chang 為 Admin 可測試。此建置 Gate 已完成，不需重建。
+
+## 人工設定參考（已完成項目不重做）
 
 1. 在上述既有 Provider 下建立 **LINE Login** Channel，名稱 **UCell Member Login - Stage**，Application type 選 **Web app**。公司聯絡信箱、描述、隱私政策及使用條款填真實公司資料，不使用範例值。
 2. Stage 保持 **Developing**；將 UAT 人員設為 Admin 或 Tester，且其 Developers 帳號連結實際測試 LINE。非測試角色不能使用 Developing Channel。發布給一般使用者是另一個人工決定。
@@ -44,9 +48,18 @@
 
 ## NEXT ACTIONS ONLY
 
-1. 人工建立上述 Login Channel + LIFF，回覆 **Channel ID、LIFF ID、實際 LIFF URL、測試角色已設好**。不要傳 Secret。缺少真實 ID 前停在此 Gate。
-2. 取得 ID 後，在既有 Stage release 流程套用 API config、重建 Member，檢查健康 revision 與入口；不要重跑已完成 webhook setup。
-3. 真人第一輪 UAT：OA → LINE Login → Member Binding → Member Center → Products → Orders → PV/BV → Sponsor / Placement Tree → Qualification → Bonus → Wallet → Admin verification → Return / Reversal。先測外部瀏覽器及 LINE 內開啟，核對已綁定/未綁定、拒絕授權、錯誤/過期 token、換帳號、未核准/過期/重用/異人完成、停用會員、rebind/unbind 舊 session 失效，再走業務閉環。使用核准測試會員；synthetic UAT 入口不能作為真實 LINE 成功證據。
-4. 保存真人 UAT 結果後只補實際 findings。**ERP、銀行正式付款 OUT OF SCOPE**。
+追加完成：使用者授權 Stage 必要調整後，以限定 Stage／固定會員／固定三個 ID 的 SYSTEM fixture runner 建立 **A000014、A000015、A000016** 三顆 LEADER 球。重用原有安置檢查及 tree writer，完整持有／方案／推薦／安置／稽核紀錄；未改 HTTP 身分驗證。原 STARTER 保留。真實 LINE 頁面已顯示三球且切換成功，A000014 左右各一球。已部署 ORM TEXT 型別修正及 retail-orders Promise 修正；既有 Stage 測試商品已補 ProductRuleProfile，商城可購買。證據見 `../governance/next-generation/evidence/line-three-leader-fixture-20261001.json`。不將無活躍期／無金流認列宣稱為 Active 或獎金 UAT 通過。
+
+2026-10-01 已完成：Console 建立、OA 連結、Stage API/Member 部署、健康驗證，以及 Joe Chang 真實 LINE login/consent → Stage → 後端驗證 → 未綁定會員畫面。API/Member revision suffix 為 line-login-20261001，證據見 governance/next-generation/evidence/line-liff-console-20261001.json。這些已完成步驟不重做。
+
+補充完成：使用者確認全為測試資料並授權選擇正式測試會員後，已使用既有 Stage 審核 API 與單次憑證完成 Joe Chang → **2609000001 / Stage UAT Member** 綁定；實際會員頁確認 **FORMAL_MEMBER**。測試授權參考為 `STAGE-UAT-USER-AUTH-20261001`，不代表正式公司 KYC 或 Production Admin 身分驗證。未新增會員或改綁其他 LINE；一次性憑證暫存已刪除。
+
+已完成 PATCH CORS 部署（line-uat-cors-20261001，Healthy/Running）及真實 LINE 配送儲存／NT$4800待付款訂單。A000016 訂單歷程可見、A000015 無訂單，跨球隔離 PASS；無收款／出貨。
+
+1. 循正常測試認列流程接續訂單後段；目前測試訂單為 PENDING／FULFILLMENT_PENDING，不能視為已付款或已出貨。
+2. 追查完整二元樹的 snapshot recovery 錯誤；推薦關係與二元左右計數已通過。後續配置經核准的有效期套組並循正式服務驗證 Active／認列，不直接填造金流 ledger。
+3. 資料及部署阻礙排除後接續真人 UAT：Products → Orders → PV/BV → Sponsor / Placement Tree → Qualification → Bonus → Wallet → Admin verification → Return / Reversal，包含異人/過期/重用憑證及撤銷隔離案例。Login → Member Binding → Member Center 已完成，不重做；整體 UAT 尚未通過。
+4. 如新增測試人員，需指定真實帳號再授權 Tester；目前 Joe Chang 已為 Admin。Channel 維持 Developing。
+5. 只修實際 findings；ERP / 正式銀行付款 OUT OF SCOPE。本機空間不足已用 ACR 雲端建置繞過，未清理任何既有成果。
 
 官方依據（2026-10-01 查核）：[LIFF registration](https://developers.line.biz/en/docs/liff/registering-liff-apps/)、[SDK init/login](https://developers.line.biz/en/reference/liff/)、[server ID-token verification](https://developers.line.biz/en/docs/line-login/verify-id-token/)、[Developing/tester roles](https://developers.line.biz/en/docs/line-login/getting-started/)、[MINI App Console](https://developers.line.biz/en/docs/line-mini-app/discover/console-guide/)。
