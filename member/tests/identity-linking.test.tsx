@@ -13,7 +13,7 @@ it('links Google to the current authenticated member instead of creating another
  let submit:(token:string)=>void=()=>{};
  auth.renderGoogleRegistrationButton.mockImplementation(async(_el:any,onCredential:(token:string)=>void)=>{submit=onCredential;});
  auth.linkGoogleIdentity.mockResolvedValue({provider:'GOOGLE',linked:true});
- await act(async()=>{tree=create(<IdentityLinking/>);});
+ await act(async()=>{tree=create(<IdentityLinking/>,{createNodeMock:element=>element.type==='div'?{}:null});});
  await act(async()=>{await Promise.resolve();});
  expect(auth.renderGoogleRegistrationButton).toHaveBeenCalled();
  await act(async()=>submit('GOOGLE_LINK_TOKEN'));
@@ -27,7 +27,7 @@ it('shows a linking error without changing the member session',async()=>{
  let submit:(token:string)=>void=()=>{};
  auth.renderGoogleRegistrationButton.mockImplementation(async(_el:any,onCredential:(token:string)=>void)=>{submit=onCredential;});
  auth.linkGoogleIdentity.mockRejectedValue(new Error('GOOGLE_IDENTITY_ALREADY_LINKED'));
- await act(async()=>{tree=create(<IdentityLinking/>);});
+ await act(async()=>{tree=create(<IdentityLinking/>,{createNodeMock:element=>element.type==='div'?{}:null});});
  await act(async()=>{await Promise.resolve();});
  expect(auth.renderGoogleRegistrationButton).toHaveBeenCalled();
  await act(async()=>submit('CONFLICT_TOKEN'));
