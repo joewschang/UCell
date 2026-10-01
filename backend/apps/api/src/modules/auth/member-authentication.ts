@@ -1,5 +1,5 @@
 /** Server session authentication only; qualification ownership is a separate check. */
-export type MemberProvider='LINE'|'GOOGLE'|'MEMBER_LOCAL'|'SMS_OTP';
+export type MemberProvider='LINE'|'GOOGLE'|'MEMBER_LOCAL';
 export type MemberPrincipal = {
   sessionId: string;
   personId: string;
@@ -26,7 +26,7 @@ const record = (value: unknown): value is Record<string, unknown> =>
 const nonempty = (value: unknown): value is string =>
   typeof value === 'string' && value.length > 0 && value.trim() === value;
 const provider = (value: unknown): value is MemberProvider =>
-  value === 'LINE' || value === 'GOOGLE' || value === 'MEMBER_LOCAL' || value === 'SMS_OTP';
+  value === 'LINE' || value === 'GOOGLE' || value === 'MEMBER_LOCAL';
 
 export async function authenticateMemberRequest(
   request: { headers?: { authorization?: unknown }; user?: unknown },
