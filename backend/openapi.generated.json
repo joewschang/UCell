@@ -17125,6 +17125,61 @@
         ]
       }
     },
+    "/api/v1/admin/learning/courses/{courseCode}/outreach": {
+      "post": {
+        "operationId": "adminLearningOutreach",
+        "parameters": [
+          {
+            "name": "courseCode",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LearningOutreachDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "個別課程指派或學習提醒，僅存入 UCell 個人訊息中心",
+        "tags": [
+          "Admin - Learning"
+        ]
+      }
+    },
     "/api/v1/admin/learning/courses": {
       "get": {
         "operationId": "AdminLearningController_list",
@@ -17482,6 +17537,61 @@
         ],
         "tags": [
           "Member - Learning"
+        ]
+      }
+    },
+    "/api/v1/admin/events/{eventCode}/remind": {
+      "post": {
+        "operationId": "adminEventReminder",
+        "parameters": [
+          {
+            "name": "eventCode",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EventReminderDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "已報名會員的個別活動提醒，僅存入 UCell 個人訊息中心",
+        "tags": [
+          "Admin - Events"
         ]
       }
     },
@@ -23486,6 +23596,31 @@
           "approvalReference"
         ]
       },
+      "LearningOutreachDto": {
+        "type": "object",
+        "properties": {
+          "memberNo": {
+            "type": "string",
+            "pattern": "^[0-9]{10}$"
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "ASSIGN",
+              "REMIND"
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 500
+          }
+        },
+        "required": [
+          "memberNo",
+          "action",
+          "reason"
+        ]
+      },
       "LessonDto": {
         "type": "object",
         "properties": {
@@ -23557,6 +23692,23 @@
           }
         },
         "required": [
+          "reason"
+        ]
+      },
+      "EventReminderDto": {
+        "type": "object",
+        "properties": {
+          "memberNo": {
+            "type": "string",
+            "pattern": "^[0-9]{10}$"
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 500
+          }
+        },
+        "required": [
+          "memberNo",
           "reason"
         ]
       },

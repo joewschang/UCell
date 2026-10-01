@@ -1,0 +1,211 @@
+{
+  "timestamp": "2026-10-01T04:09:32.418Z",
+  "baseCommit": "b9a51aa5a12ac5c597516feffe4008130a4dbc76",
+  "executionContext": "local-working-tree",
+  "sourceFiles": [
+    {
+      "path": "admin/src/components/EngagementOutreach.tsx",
+      "sha256": "5d34f83bb8d9dace664c8eaae384bccce54264eff1de90b36eea2abb41a4fcec"
+    },
+    {
+      "path": "admin/src/components/EngagementOutreach.test.tsx",
+      "sha256": "4536019286305eabb1a49b0201e7c8204a7e7e5cb92adc1c05c3037a3e523665"
+    },
+    {
+      "path": "admin/src/features/events/EventsPage.tsx",
+      "sha256": "24b0a345cce2103ab246f51989d0a72f0d3ba6ee2e7d40449c255009882a839a"
+    },
+    {
+      "path": "admin/src/features/events/EventsPage.test.tsx",
+      "sha256": "2d9ccb308e419746ef9b4344ec7696ff813ca187ff79d1dfd65dc3f1bea5d320"
+    },
+    {
+      "path": "admin/src/features/learning/LearningPage.tsx",
+      "sha256": "95296c8e0fb176fda20c1d7c3c4ec2e7b653542290e9cb5243eb691844a6bfa3"
+    },
+    {
+      "path": "backend/apps/api/src/modules/events/events.controller.ts",
+      "sha256": "d2fd9626bffa42202b68b136f22cc0073d2f59efb9819e6b02f267bb803ba4dd"
+    },
+    {
+      "path": "backend/apps/api/src/modules/events/events.service.ts",
+      "sha256": "8d8543fceedbf1d9ba5122f3b4865cb46b0f5fd135a865f4215d2fbc34f18e30"
+    },
+    {
+      "path": "backend/apps/api/src/modules/learning/learning.controller.ts",
+      "sha256": "9af9391f38f34d637ef1e1f54313f199b82f9353bff5a7068dcfae3cc28b7366"
+    },
+    {
+      "path": "backend/apps/api/src/modules/learning/learning.service.ts",
+      "sha256": "d6bfaae668a64ce341fde46f8f7f2e909e82c8f8bdf0d5b373fc04da6a2dcbec"
+    },
+    {
+      "path": "backend/apps/api/src/modules/member/member-growth.service.ts",
+      "sha256": "390588967f6bf5dc5d6ed28b254d2475f5700c2cb25350373d91957cbf347011"
+    },
+    {
+      "path": "backend/apps/api/test/engagement-outreach-db.e2e-spec.ts",
+      "sha256": "1f45f903d2076acbdcd7dba75c84c847df13ba49a460890487059977fffbaabb"
+    },
+    {
+      "path": "backend/apps/api/test/events-http-db.e2e-spec.ts",
+      "sha256": "2430417a1532be0711a3597e35ec3496bd0b3ce4800a20f39af6fa3f3af624dd"
+    },
+    {
+      "path": "backend/apps/api/test/learning-http-db.e2e-spec.ts",
+      "sha256": "cb887811553a920f3975d49d36c4f16d6d85d16279f8fd67e92998fb2962fc5a"
+    },
+    {
+      "path": "backend/packages/database/prisma/migrations/20261001050000_learning_assignment_evidence/migration.sql",
+      "sha256": "31705acd961c52353b9f0b2007bf0c31656afc7a49f9c6b348998d2a05b700c8"
+    },
+    {
+      "path": "backend/scripts/learning-assignment-upgrade-golden.mjs",
+      "sha256": "6e2b0e4be901491c8f75dda036ab521a7b360862db3489747e3c7cc4a6008978"
+    },
+    {
+      "path": "backend/openapi.generated.json",
+      "sha256": "94b986de7cd5a12e8c1348168355807246c16026603633bbfa9e889a59ead3e2"
+    },
+    {
+      "path": "member/src/GrowthCenter.tsx",
+      "sha256": "66c412386678e33c8f01bc26ba93838b9d22e346ac17cd865f04492fbb082fb8"
+    }
+  ],
+  "logs": [
+    {
+      "path": "C:/UCell/logs/cr-batch-outreach-full-governance.log",
+      "sha256": "461a8ff2c9b3ed59e04a6af5bae181a13ff1247253159cd33aa04519faf51482"
+    },
+    {
+      "path": "C:/UCell/logs/cr-batch-outreach-db-verified.log",
+      "sha256": "8f24a45432b41e82cd2133b553d3438e1b83ac11f5a19cf19b3d3ae842c8d963"
+    },
+    {
+      "path": "C:/UCell/logs/cr-batch-outreach-upgrade.log",
+      "sha256": "dfe09e039fded09096cf006f4605a129b0243a3de41d902e5b44c3e5e65f6199"
+    },
+    {
+      "path": "C:/UCell/logs/cr-batch-outreach-build-final.log",
+      "sha256": "c9bbb792e87e76102443f726d9d61fcec8c7f422fb97cc739cf187013632726f"
+    },
+    {
+      "path": "C:/UCell/logs/cr-batch-outreach-admin-test-final.log",
+      "sha256": "42f8409e58b6e80d0dbd38d46bbf692b3ef018f3d2af611ce32976aeeb45ba5c"
+    },
+    {
+      "path": "C:/UCell/logs/cr-batch-outreach-admin-all-tests.log",
+      "sha256": "50cad0b5a6643be891e2f86c3b826cc4221f51c0f8b67efc0569147da4fd41e7"
+    },
+    {
+      "path": "C:/UCell/logs/cr-batch-outreach-admin-typecheck.log",
+      "sha256": "5a3973f79ed9becd5f23c4feff467513814de7ea381d75a4d2e339aa8b8edca9"
+    },
+    {
+      "path": "C:/UCell/logs/cr-batch-outreach-admin-build-final.log",
+      "sha256": "2114def1aee0f685efcefd27503b2f586a7bdcdf62e218eb96d58562d1e4a43d"
+    },
+    {
+      "path": "C:/UCell/logs/cr-batch-outreach-member-test.log",
+      "sha256": "2e66c8e79fefc523e093a5be4b74c3cd7a3190ef847953cbcdbb6c7d6c81d501"
+    },
+    {
+      "path": "C:/UCell/logs/cr-batch-outreach-member-build.log",
+      "sha256": "070d14fe7ffd7d74ec1e69898150e08c1e70f5758a130846f3ecd63c192dcc57"
+    },
+    {
+      "path": "C:/UCell/logs/cr-batch-outreach-artifact-tests.log",
+      "sha256": "6eee58cc5ba7b08f9743ddbab59220b1bc29c9eabe0df9249caf6f5621610fa5"
+    },
+    {
+      "path": "C:/UCell/logs/cr-batch-outreach-schema-preflight.mjs.log",
+      "sha256": "8d8a4eb4481e11eb026ea98e64a390d79b8b0e8d76823658e5a43163954a63b9"
+    },
+    {
+      "path": "C:/UCell/logs/cr-batch-outreach-migration-preflight.mjs.log",
+      "sha256": "7aee1d19f93f2926882b18484e68a5e494b31973c660a94a97db42d1c91def85"
+    },
+    {
+      "path": "C:/UCell/logs/cr-batch-outreach-prisma-relation-preflight.mjs.log",
+      "sha256": "23cb0c73675726c9db02696eedabda8c5bb7b14be5203d117468afdd4e896d38"
+    },
+    {
+      "path": "C:/UCell/logs/cr-batch-outreach-enum-migration-preflight.mjs.log",
+      "sha256": "edd3e1ed68833362006557f10b4e86bfb2d4f758e5244c4ceb2e461abc2e9844"
+    }
+  ],
+  "gateReport": {
+    "status": "PASS",
+    "commit": "b9a51aa5a12ac5c597516feffe4008130a4dbc76",
+    "executionContext": "local-working-tree",
+    "gates": {
+      "generated": "PASS",
+      "secretScan": "PASS",
+      "validation": "PASS",
+      "breakingDiff": "PASS",
+      "publisherTests": "PASS",
+      "contractTests": "PASS",
+      "securityTests": "PASS"
+    },
+    "baselineSha256": "b619d56a1406393eda95f949383b460913bb324aa146a988f387437ab22e56f2",
+    "generated": {
+      "version": "1.1.0",
+      "pathCount": 277,
+      "operationCount": 298,
+      "schemaCount": 189,
+      "artifactSha256": "94b986de7cd5a12e8c1348168355807246c16026603633bbfa9e889a59ead3e2",
+      "canonicalSha256": "9f5f4b2ea7df9f3d79c56699ac2759868a4e991b84df071697c3c8ebabeb8fb1"
+    },
+    "comparison": {
+      "normalization": "case-insensitive identical header deduplication; inferred missing URI placeholder declarations",
+      "baselineSha256": "2621a3a08500a18c38e918281624425437e3762abae39f75d1a6793ccdd8bcaf",
+      "candidateSha256": "bcfab2278459abdd17582832ea909f400f09d7a16c8273486a126087c8733b52"
+    }
+  },
+  "results": {
+    "fullApi": {
+      "suites": 185,
+      "tests": 1333,
+      "migrations": 126,
+      "baselineAssertions": 162,
+      "cleanup": "PASS"
+    },
+    "focused": {
+      "suites": 12,
+      "tests": 28,
+      "status": "PASS"
+    },
+    "upgrade": "125_TO_126_PRESERVATION_AND_CLEANUP_PASS",
+    "admin": {
+      "files": 57,
+      "tests": 191,
+      "typecheck": "PASS",
+      "build": "PASS"
+    },
+    "member": {
+      "growthTests": 1,
+      "build": "PASS"
+    },
+    "artifactTests": 5,
+    "pinnedPublisherTests": 25,
+    "build": "PASS",
+    "preflights": "PASS"
+  },
+  "supersededAttempts": [
+    "cr-batch-outreach-build.log: malformed local DTO insertion repaired",
+    "cr-batch-outreach-db.log: fixture enum typing repaired",
+    "cr-batch-outreach-db-final.log: nullable fixture typing and retained mock time repaired",
+    "cr-batch-outreach-diagnostic.log: missing assignment whitelist reproduced; migration 126 added"
+  ],
+  "limitations": [
+    "Actual-browser assignment/reminder acceptance remains open",
+    "Remaining personalized domain producers and full routing matrix remain open",
+    "Other unclosed batch requirements remain open"
+  ],
+  "overall": {
+    "localImplementation": "IN_PROGRESS",
+    "fullIsolatedRecertification": "IN_PROGRESS",
+    "stageRc": "NOT_READY"
+  },
+  "deployment": "NONE"
+}

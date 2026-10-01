@@ -4,7 +4,7 @@ import {getGrowth} from './memberData';
 import {useResource} from './useResource';
 import {ErrorState,LoadingState,MetricCard} from '@ucell/design-system';
 const rank=(code:string)=>({NEW_STAR:'新星',EXCELLENCE:'卓越',GLORY:'榮耀',DIAMOND:'鑽石',CROWN:'皇冠'}[code]??'階級待確認');
-const state=(code:string)=>({DRAFT:'草稿',PENDING:'待啟用',EFFECTIVE:'已生效',ACTIVE:'有效',INACTIVE:'未啟用',SUSPENDED:'已暫停',TERMINATED:'已終止',NONE:'尚無有效重銷方案',ENROLLED:'已報名',STARTED:'學習中',COMPLETED:'已完成',CANCELLED:'已取消',REGISTERED:'已報名',CHECKED_IN:'已報到',ATTENDED:'已確認出席',COURSE_ENROLLED:'加入課程',COURSE_STARTED:'開始學習',COURSE_COMPLETED:'完成課程',ASSESSMENT_COMPLETED:'完成評量',EVENT_REGISTERED:'活動報名',EVENT_REGISTRATION_CANCELLED:'取消活動報名',EVENT_CHECKED_IN:'活動報到',EVENT_ATTENDED:'活動出席確認'}[code]??'狀態待確認');
+const state=(code:string)=>({DRAFT:'草稿',PENDING:'待啟用',EFFECTIVE:'已生效',ACTIVE:'有效',INACTIVE:'未啟用',SUSPENDED:'已暫停',TERMINATED:'已終止',NONE:'尚無有效重銷方案',ENROLLED:'已報名',STARTED:'學習中',COMPLETED:'已完成',CANCELLED:'已取消',REGISTERED:'已報名',CHECKED_IN:'已報到',ATTENDED:'已確認出席',COURSE_ASSIGNED:'課程指派',COURSE_ENROLLED:'加入課程',COURSE_STARTED:'開始學習',COURSE_COMPLETED:'完成課程',ASSESSMENT_COMPLETED:'完成評量',EVENT_REGISTERED:'活動報名',EVENT_REGISTRATION_CANCELLED:'取消活動報名',EVENT_CHECKED_IN:'活動報到',EVENT_ATTENDED:'活動出席確認'}[code]??'狀態待確認');
 const recognitionState=(code:string)=>({SCHEDULED:'已排程',DUE:'待認列',RECOGNIZED:'已認列',CANCELLED:'已取消',REVERSED:'已沖回'}[code]??'狀態待確認');
 const plan=(code:string)=>({MEMBER:'會員',STARTER:'啟航',ELITE:'菁英',LEADER:'領袖'}[code]??'方案待確認');
 const time=(value:string|null)=>value?new Date(value).toLocaleString('zh-TW',{timeZone:'Asia/Taipei'}):'尚無';

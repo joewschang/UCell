@@ -1,6 +1,6 @@
 import {randomUUID} from 'node:crypto';
 import {Body,Controller,Get,Headers,Param,Post,Req,UseGuards} from '@nestjs/common';
-import {ApiBearerAuth,ApiHeader,ApiProperty,ApiPropertyOptional,ApiTags} from '@nestjs/swagger';
+import {ApiBearerAuth,ApiHeader,ApiOperation,ApiProperty,ApiPropertyOptional,ApiTags} from '@nestjs/swagger';
 import {IsDateString,IsIn,IsInt,IsOptional,IsString,Length,Matches,Max,MaxLength,Min} from 'class-validator';
 import {Roles} from '../auth/roles.decorator';
 import {MemberAuthenticationGuard} from '../auth/member-authentication.guard';
@@ -20,10 +20,13 @@ class EventDto{
 class PublishDto{@ApiProperty() @IsString() @Length(1,200) approvalReference!:string;}
 class ArchiveDto{@ApiProperty() @IsString() @Length(1,500) reason!:string;}
 class CheckInDto{@ApiProperty() @Matches(/^[A-Za-z0-9_-]{43}$/) checkInToken!:string;}
+class EventReminderDto{ @ApiProperty({pattern:'^[0-9]{10}$'}) @Matches(/^\d{10}$/) memberNo!:string; @ApiProperty({maxLength:500}) @IsString() @Length(1,500) reason!:string; }
 class AttendanceDto{@ApiProperty() @Matches(/^\d{10}$/) memberNo!:string;}
 @ApiTags('Admin - Events') @ApiBearerAuth('adminBearer') @Roles('SUPER_ADMIN','MEMBERSHIP_OPS','ORDER_OPS') @Controller('admin/events')
 export class AdminEventsController{
  constructor(private s:MemberEventsService){}
+ @Post(':eventCode/remind') @Roles('SUPER_ADMIN','MEMBERSHIP_OPS') @UseGuards(IdempotencyGuard) @ApiHeader({name:'Idempotency-Key',required:true}) @ApiOperation({operationId:'adminEventReminder',summary:'已報名會員的個別活動提醒，僅存入 UCell 個人訊息中心'})
+ remind(@Param('eventCode') eventCode:string,@Body() body:EventReminderDto,@Headers('idempotency-key') key:string,@Req() req:any){return this.s.remind(eventCode,body.memberNo,body.reason,req.user?.personId??req.user?.subject,key,req.requestId??randomUUID()).then(data=>({data}));}
  @Get() list(){return this.s.adminList().then(data=>({data}));}
  @Get(':eventCode/registrations') registrations(@Param('eventCode') eventCode:string){return this.s.adminRegistrations(eventCode).then(data=>({data}));}
  @Post() @UseGuards(IdempotencyGuard) @ApiHeader({name:'Idempotency-Key',required:true})

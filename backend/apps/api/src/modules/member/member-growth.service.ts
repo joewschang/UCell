@@ -14,7 +14,7 @@ export class MemberGrowthService{
    tx.learningEnrollment.count({where:{personId}}),tx.learningEnrollment.count({where:{personId,status:'COMPLETED'}}),
    tx.memberEventRegistration.count({where:{personId,status:'REGISTERED',event:{status:'PUBLISHED'},eventVersion:{startsAt:{gt:now}}}}),
    tx.memberEventRegistration.count({where:{personId,status:'ATTENDED'}}),tx.memberEventRegistration.count({where:{personId,status:'CHECKED_IN'}}),
-   tx.learningProgressEvent.findMany({where:{enrollment:{personId},eventType:{in:['COURSE_ENROLLED','COURSE_STARTED','COURSE_COMPLETED','ASSESSMENT_COMPLETED']}},include:{enrollment:{include:{course:{select:{courseCode:true}},courseVersion:{select:{title:true}}}}},orderBy:[{occurredAt:'desc'},{learningProgressEventId:'asc'}],take:20}),
+   tx.learningProgressEvent.findMany({where:{enrollment:{personId},eventType:{in:['COURSE_ENROLLED','COURSE_ASSIGNED','COURSE_STARTED','COURSE_COMPLETED','ASSESSMENT_COMPLETED']}},include:{enrollment:{include:{course:{select:{courseCode:true}},courseVersion:{select:{title:true}}}}},orderBy:[{occurredAt:'desc'},{learningProgressEventId:'asc'}],take:20}),
    tx.memberEventParticipationEvidence.findMany({where:{registration:{personId}},include:{registration:{include:{event:{select:{eventCode:true}}}},eventVersion:{select:{title:true}}},orderBy:[{occurredAt:'desc'},{participationEvidenceId:'asc'}],take:20}),
   ]);
   const recognitionWhere={subscription:{qualification:{currentHolderPersonId:personId}}};
