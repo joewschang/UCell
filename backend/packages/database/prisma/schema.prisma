@@ -482,6 +482,7 @@ enum ReplayRunStatus {
 enum IdentityProvider {
   ADMIN_LOCAL
   MEMBER_LOCAL
+  SMS_OTP
   ENTRA
   LINE
   GOOGLE
