@@ -1,4 +1,4 @@
-import {effectiveSponsorDirectCount, emitStructuredOperationalError} from '@ucell/database';
+import {effectiveSponsorDirectCount, appendRecognitionMemberMessage, emitStructuredOperationalError} from '@ucell/database';
 import { PrismaService, Prisma, companyAlwaysActiveAt, captureParameters, snapshotDecimal, processMemberOrderNotification, processPaymentInventoryReservation, recognizeConsumption, applyGpvImmediateEffects, sealRpvEvent, pending, claimOutboxLease, withOutboxLease, processLeasedReplay, processTreeProjectionEvent, releaseFailedOutboxLease, OutboxLease, matureBonusAward } from '@ucell/database';
 import * as crypto from 'node:crypto';
 import { pollProviderWebhooks, type ProviderHandlerRegistration } from './provider-runtime';
@@ -208,6 +208,7 @@ export async function processRecognition(recognitionId:string,db:PrismaService=p
       where:{recognitionId},
       data:{status:'RECOGNIZED',recognizedAt:new Date(),pvLedgerEventId:pvEvent.eventId}
     });
+    await appendRecognitionMemberMessage(tx,recognitionId);
   },{isolationLevel:Prisma.TransactionIsolationLevel.Serializable});
 }
 

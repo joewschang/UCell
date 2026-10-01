@@ -1,4 +1,4 @@
-import {effectiveSponsorDirectCount} from '@ucell/database';
+import {effectiveSponsorDirectCount,appendRecognitionMemberMessage} from '@ucell/database';
 import { ConflictException, Injectable } from '@nestjs/common';
 import { Prisma, PrismaService, sealRpvEvent, companyAlwaysActiveAt, captureParameters } from '@ucell/database';
 import { randomUUID } from 'crypto';
@@ -124,6 +124,7 @@ export class RpvService {
         data:{status:'RECOGNIZED',recognizedAt:now,pvLedgerEventId:pvEvent.eventId}
       });
 
+      await appendRecognitionMemberMessage(tx,recognitionId);
       return {
         recognitionId,
         pvLedgerEventId:pvEvent.eventId,

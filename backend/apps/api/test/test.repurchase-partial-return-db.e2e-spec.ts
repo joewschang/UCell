@@ -1,3 +1,6 @@
+import {appendRecognitionMemberMessage} from '@ucell/database';
+import {MemberMessagesService} from '../src/modules/member/member-messages.service';
+import {IdempotencyService} from '../src/common/idempotency/idempotency.service';
 import {MemberGrowthService} from '../src/modules/member/member-growth.service';
 import { Prisma, PrismaClient } from '@prisma/client';
 import { randomUUID } from 'node:crypto';
@@ -23,6 +26,7 @@ describeDb('repurchase cumulative partial returns',()=>{
   async function fixture(){
     const person=await db.person.create({data:{legalName:'Partial return '+randomUUID()}});
     const qualification=await db.qualification.create({data:{currentHolderPersonId:person.personId,planLevelCode:'STARTER'}});
+    await db.qualificationHolderHistory.create({data:{qualificationId:qualification.qualificationId,holderPersonId:person.personId,effectiveFrom:new Date(0),sourceType:'TEST'}});
     const order=await db.order.create({data:{qualificationId:qualification.qualificationId,purpose:'RETAIL',status:'PAID',grossAmount:100,netAmount:100,ruleVersionCode:'R1.0B'}});
     const product=await db.productReference.create({data:{sku:randomUUID(),displayName:'Return fixture',currentPrice:100}});
     const line=await db.orderLine.create({data:{orderId:order.orderId,productId:product.productId,skuSnapshot:product.sku,productNameSnapshot:product.displayName,quantity:100,unitPrice:1,lineAmount:100,gpvRateSnapshot:0,gpvAmountSnapshot:0,ruleProfileSnapshot:{}}});
@@ -111,6 +115,16 @@ describeDb('repurchase cumulative partial returns',()=>{
     const f=await recognitionFixture();
     await (await f.refund('20',new Date('2026-09-15')))();
     if(path==='Worker') await processRecognition(f.first.recognitionId,db as any);else await f.recognize();
+    const notice=await db.memberNotification.findUniqueOrThrow({where:{messageKey:'repurchase:recognized:'+f.first.recognitionId}});
+    expect(notice).toMatchObject({personId:f.personId,qualificationId:f.qualification.qualificationId,category:'REPURCHASE',title:'重銷逐期認列已完成',deepLink:'/repurchase'});
+    expect(notice.body).toContain('不代表獎金或付款完成');
+    if(path==='Worker')await processRecognition(f.first.recognitionId,db as any);else await f.recognize();
+    expect(await db.memberNotification.count({where:{messageKey:'repurchase:recognized:'+f.first.recognitionId}})).toBe(1);
+    const messages=new MemberMessagesService(db as any,new AuditService(),new IdempotencyService(db as any));
+    expect((await messages.list(f.personId,{})).items.some(x=>x.title===notice.title)).toBe(false);
+    const scoped=await messages.list(f.personId,{qualificationId:f.qualification.qualificationId});expect(scoped.items.some(x=>x.title===notice.title&&x.deepLink==='/repurchase')).toBe(true);
+    for(const hidden of [f.first.recognitionId,f.personId,f.qualification.qualificationId])expect(JSON.stringify(scoped)).not.toContain(hidden);
+    expect(await db.notificationDelivery.count()).toBe(0);
     const growth=new MemberGrowthService(db as any);
     const beforeGrowth=await growth.read(f.personId);
     expect(beforeGrowth.dimensions.repurchase.recognition.counts).toEqual({SCHEDULED:2,DUE:0,RECOGNIZED:1,CANCELLED:0,REVERSED:0});
@@ -146,6 +160,17 @@ describeDb('repurchase cumulative partial returns',()=>{
     for(const hidden of [f.qualification.qualificationId,f.qualification.currentHolderPersonId,f.sub.subscriptionId,f.first.recognitionId])expect(JSON.stringify(afterGrowth)).not.toContain(hidden);
     expect(await db.rpvUplineAwardEvent.findMany({where:{recognitionId:f.first.recognitionId}})).toEqual(awards);
     expect(await db.historicalReplaySnapshot.findUniqueOrThrow({where:{kind_sourceId:{kind:'RPV',sourceId:f.first.recognitionId}}})).toEqual(snapshot);
+  });
+  it('message audience stays immutable after holder change and foreign contexts remain denied',async()=>{
+    const f=await recognitionFixture();await f.recognize();const notice=await db.memberNotification.findUniqueOrThrow({where:{messageKey:'repurchase:recognized:'+f.first.recognitionId}}),next=await db.person.create({data:{legalName:'PRIVATE NEXT HOLDER'}});
+    const transferredAt=new Date();await db.$transaction(async tx=>{await tx.qualificationHolderHistory.updateMany({where:{qualificationId:f.qualification.qualificationId,effectiveTo:null},data:{effectiveTo:transferredAt}});await tx.qualificationHolderHistory.create({data:{qualificationId:f.qualification.qualificationId,holderPersonId:next.personId,effectiveFrom:transferredAt,sourceType:'TEST'}});await tx.qualification.update({where:{qualificationId:f.qualification.qualificationId},data:{currentHolderPersonId:next.personId}});});
+    await db.$transaction(tx=>appendRecognitionMemberMessage(tx,f.first.recognitionId));
+    expect(await db.memberNotification.findUniqueOrThrow({where:{notificationId:notice.notificationId}})).toEqual(notice);
+    const messages=new MemberMessagesService(db as any,new AuditService(),new IdempotencyService(db as any));expect((await messages.list(next.personId,{qualificationId:f.qualification.qualificationId})).items).toEqual([]);await expect(messages.list(f.personId,{qualificationId:f.qualification.qualificationId})).rejects.toThrow();
+  });
+  it('conflicting notice binding rolls back recognition economics and its seal atomically',async()=>{
+    const f=await recognitionFixture();await db.memberNotification.create({data:{personId:f.personId,messageKey:'repurchase:recognized:'+f.first.recognitionId,category:'SERVICE',title:'Conflicting fixture',body:'Fixture',sourceType:'TEST',sourceReference:'TEST:CONFLICT'}});
+    await expect(f.recognize()).rejects.toThrow('RECOGNITION_MESSAGE_AUDIENCE_CONFLICT');expect((await db.monthlyRecognitionSchedule.findUniqueOrThrow({where:{recognitionId:f.first.recognitionId}})).status).toBe('SCHEDULED');expect(await db.pvLedger.count({where:{sourceLineId:f.first.recognitionId}})).toBe(0);expect(await db.rpvUplineAwardEvent.count({where:{recognitionId:f.first.recognitionId}})).toBe(0);expect(await db.historicalReplaySnapshot.count({where:{kind:'RPV',sourceId:f.first.recognitionId}})).toBe(0);
   });
   it('concurrent recovery deliveries apply the cumulative reduction once',async()=>{
     const f=await recognitionFixture();await f.recognize();

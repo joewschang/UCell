@@ -54,3 +54,5 @@ export * from './period-close-operational';
 export * from './erp-business-projection';
 export * from './erp-accounting-mapping';
 export * from './member-message';
+
+export * from './recognition-member-message';

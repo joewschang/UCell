@@ -1,0 +1,88 @@
+{
+  "timestamp": "2026-10-01T04:27:39.338Z",
+  "baseCommit": "21c98f5e876f658146cfdc23efe0ff33121b6861",
+  "executionContext": "local-working-tree",
+  "sourceFiles": [
+    {
+      "path": "backend/apps/api/src/modules/rpv/rpv.service.ts",
+      "sha256": "42365aef909633e23fdee85670d252627f0b2e794c998ba14277bfd56c4ebbbc"
+    },
+    {
+      "path": "backend/apps/api/test/test.repurchase-partial-return-db.e2e-spec.ts",
+      "sha256": "80f50e70e83e72fe5e10238f2954b584618e84a6b6f64d596cc329138862e643"
+    },
+    {
+      "path": "backend/apps/worker/src/main.ts",
+      "sha256": "35281f32c4322df40c8cef66659b5cef5d6e4182da70260f5c6b2ffc0e4d103f"
+    },
+    {
+      "path": "backend/packages/database/src/index.ts",
+      "sha256": "8deadc01981fc07856254778b1ff35814166a02b621dd4a7d7a72a01e99ac9d2"
+    },
+    {
+      "path": "backend/packages/database/src/recognition-member-message.ts",
+      "sha256": "eea7c50b9b5c138e02f1789afb0930f0edcacdfd58b027af4edd733efe4bac18"
+    }
+  ],
+  "focused": {
+    "suites": 4,
+    "tests": 29,
+    "status": "PASS",
+    "migrations": 126,
+    "baselineAssertions": 162,
+    "cleanup": "PASS"
+  },
+  "artifactTests": 5,
+  "builds": [
+    "database",
+    "api",
+    "worker"
+  ],
+  "fullGate": {
+    "status": "PASS",
+    "exitCode": 0,
+    "suites": 185,
+    "tests": 1339,
+    "migrations": 126,
+    "baselineAssertions": 162,
+    "cleanup": "PASS",
+    "log": "C:/UCell/logs/cr-batch-recognition-message-full-gate.log",
+    "report": {
+      "status": "PASS",
+      "commit": "21c98f5e876f658146cfdc23efe0ff33121b6861",
+      "executionContext": "local-working-tree",
+      "gates": {
+        "generated": "PASS",
+        "secretScan": "PASS",
+        "validation": "PASS",
+        "breakingDiff": "PASS",
+        "publisherTests": "PASS",
+        "contractTests": "PASS",
+        "securityTests": "PASS"
+      },
+      "baselineSha256": "b619d56a1406393eda95f949383b460913bb324aa146a988f387437ab22e56f2",
+      "generated": {
+        "version": "1.1.0",
+        "pathCount": 277,
+        "operationCount": 298,
+        "schemaCount": 189,
+        "artifactSha256": "94b986de7cd5a12e8c1348168355807246c16026603633bbfa9e889a59ead3e2",
+        "canonicalSha256": "9f5f4b2ea7df9f3d79c56699ac2759868a4e991b84df071697c3c8ebabeb8fb1"
+      },
+      "comparison": {
+        "normalization": "case-insensitive identical header deduplication; inferred missing URI placeholder declarations",
+        "baselineSha256": "2621a3a08500a18c38e918281624425437e3762abae39f75d1a6793ccdd8bcaf",
+        "candidateSha256": "bcfab2278459abdd17582832ea909f400f09d7a16c8273486a126087c8733b52"
+      }
+    },
+    "limitation": "Concurrent chat edited auth/LIFF and added four LINE tests during execution. This is terminal runner evidence, not frozen whole-working-tree recertification. Recognition source hashes remained unchanged."
+  },
+  "batch": {
+    "localImplementation": "IN_PROGRESS",
+    "fullIsolatedRecertification": "IN_PROGRESS",
+    "stageRC": "NOT_READY"
+  },
+  "deployment": false,
+  "artifactLog": "C:/UCell/logs/cr-batch-recognition-message-artifacts.log",
+  "sourceHashesVerifiedAt": "2026-10-01T04:32:09.906Z"
+}
