@@ -70,6 +70,12 @@ export class MemberWebAuthService{
   const normalized=identifier.trim();
   const person=normalized.includes('@')?await this.db.person.findFirst({where:{email:{equals:normalized,mode:'insensitive'},status:'EFFECTIVE'}}):await this.db.person.findFirst({where:{memberNo:normalized,status:'EFFECTIVE'}});
   if(person?.email){
+    const now=new Date(),minuteAgo=new Date(now.getTime()-60_000),hourAgo=new Date(now.getTime()-3_600_000);
+    const [latest,hourCount]=await Promise.all([
+      this.db.passwordResetToken.findFirst({where:{personId:person.personId},orderBy:{createdAt:'desc'}}),
+      this.db.passwordResetToken.count({where:{personId:person.personId,createdAt:{gte:hourAgo}}}),
+    ]);
+    if((latest&&latest.createdAt>=minuteAgo)||hourCount>=5)return {accepted:true};
     const raw=randomBytes(32).toString('base64url'),tokenHash=createHash('sha256').update(raw).digest('hex'),expiresAt=new Date(Date.now()+30*60*1000);
     const reset=await this.db.passwordResetToken.create({data:{personId:person.personId,tokenHash,expiresAt}});
     const base=this.config.get<string>('MEMBER_WEB_PUBLIC_ORIGIN');if(!base)throw new ConflictException({code:'MEMBER_WEB_ORIGIN_NOT_CONFIGURED'});
