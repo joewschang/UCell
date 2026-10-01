@@ -1,0 +1,45 @@
+{
+  "timestamp": "2026-10-01T06:05:09.889Z",
+  "baseCommit": "1e570f637e8682e03f1ff2f6ea23ad481e6f1121",
+  "sourceFiles": [
+    {
+      "path": "admin/src/lib/stored-decimal.ts",
+      "sha256": "0ff460f87f1c13467fc167d2b0c78dc7a6e74513e3c30ebd1f4f412e640df6b1"
+    },
+    {
+      "path": "admin/src/lib/stored-decimal.test.ts",
+      "sha256": "df2db2f6a387346046a512e661c47eaec5d3638b145ffdb787d4b88797987f40"
+    },
+    {
+      "path": "admin/src/features/compensation-period/CompensationPeriodControlPage.tsx",
+      "sha256": "5befa55986ccb32d1042f11c1ed4386901b86b09bfc7c78725bd9dcd5dee1245"
+    },
+    {
+      "path": "admin/src/features/compensation-period/CompensationPeriodControlPage.test.tsx",
+      "sha256": "4676c2c0b5602b70e5cceadc34946eb6c5255a26502ee7fa18670b94a950eca6"
+    }
+  ],
+  "change": "Display stored compensation period decimal amounts by string grouping, preserving every fractional digit without Number conversion or rounding",
+  "verification": {
+    "adminFiles": 58,
+    "adminTests": 205,
+    "status": "PASS",
+    "productionBuild": "PASS",
+    "testsLog": "C:/UCell/logs/compensation-exact-decimal-admin-tests-20261001.log",
+    "buildLog": "C:/UCell/logs/compensation-exact-decimal-admin-build-20261001.log"
+  },
+  "coverage": [
+    "component renders 10000000000000.0001 as 10,000,000,000,000.0001",
+    "exact values above Number safe integer",
+    "negative/zero/long fractional strings",
+    "numeric and malformed sources show format error rather than zero"
+  ],
+  "limits": [
+    "not all Admin amount displays audited",
+    "not full period lifecycle, browser or ERP acceptance",
+    "existing chunk-size build warning retained"
+  ],
+  "overall": "IN_PROGRESS",
+  "stageRc": "NOT_READY",
+  "deployment": false
+}
