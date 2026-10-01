@@ -13,9 +13,10 @@ import { MemberContextGuard } from './member-context.guard';
 import { MemberAuthController, MemberController } from './member.controller';
 import { DeliveryProfileService } from './delivery-profile.service';
 import { PiiCryptoService } from '../../common/security/pii-crypto.service';
+import { IdentityMatchFingerprintService } from '../../common/security/identity-match-fingerprint.service';
 import { MemberReferralAttributionController, ReferralAttributionController } from './referral-attribution.controller';
 import { ReferralAttributionService } from './referral-attribution.service';
 import { FormalMemberApplicationService } from './formal-member-application.service';
 import { AdminFormalMemberApplicationController } from './admin-formal-member-application.controller';
-@Module({imports:[AuthModule,OrderModule],controllers:[MemberExplainController,MemberAuthController,MemberController,ReferralAttributionController,MemberReferralAttributionController,AdminFormalMemberApplicationController],providers:[MemberExplainService,MemberService,MemberReadService,MemberTreeReadService,MemberShareLinkService,ReferralAttributionService,FormalMemberApplicationService,MemberContractService,DeliveryProfileService,PiiCryptoService,MemberContextGuard,LineTokenVerifierService]})
+@Module({imports:[AuthModule,OrderModule],controllers:[MemberExplainController,MemberAuthController,MemberController,ReferralAttributionController,MemberReferralAttributionController,AdminFormalMemberApplicationController],providers:[MemberExplainService,MemberService,MemberReadService,MemberTreeReadService,MemberShareLinkService,ReferralAttributionService,FormalMemberApplicationService,MemberContractService,DeliveryProfileService,PiiCryptoService,IdentityMatchFingerprintService,MemberContextGuard,LineTokenVerifierService]})
 export class MemberModule {}
