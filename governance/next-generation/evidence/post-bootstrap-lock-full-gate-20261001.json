@@ -1,0 +1,66 @@
+{
+  "timestamp": "2026-10-01T05:54:41.090Z",
+  "sourceCommit": "f81bc8f9e1eb016289668d7944ce403905faed9d",
+  "executionContext": "shared-local-working-tree",
+  "gate": {
+    "status": "PASS",
+    "commit": "f81bc8f9e1eb016289668d7944ce403905faed9d",
+    "executionContext": "local-working-tree",
+    "gates": {
+      "generated": "PASS",
+      "secretScan": "PASS",
+      "validation": "PASS",
+      "breakingDiff": "PASS",
+      "publisherTests": "PASS",
+      "contractTests": "PASS",
+      "securityTests": "PASS"
+    },
+    "baselineSha256": "b619d56a1406393eda95f949383b460913bb324aa146a988f387437ab22e56f2",
+    "generated": {
+      "version": "1.1.0",
+      "pathCount": 278,
+      "operationCount": 299,
+      "schemaCount": 191,
+      "artifactSha256": "4b1ed939c7350ddd5850b4af917a214a9d6f1bc9c1d571a2a2867f84cb106de1",
+      "canonicalSha256": "c469c33c891ef7e7e810de3bd493634551f4a0692c2daa881cd8901deb4506e5"
+    },
+    "comparison": {
+      "normalization": "case-insensitive identical header deduplication; inferred missing URI placeholder declarations",
+      "baselineSha256": "2621a3a08500a18c38e918281624425437e3762abae39f75d1a6793ccdd8bcaf",
+      "candidateSha256": "c78e045a4fb0e204679ca499a5772a9a09d4513c5aa3e78a779bf48f0b8b4ede"
+    }
+  },
+  "apiTests": {
+    "exitCode": 0,
+    "suites": 186,
+    "tests": 1350,
+    "durationSeconds": 576.219,
+    "migrations": 126,
+    "baselineAssertions": 162,
+    "cleanup": "PASS"
+  },
+  "log": "C:/UCell/logs/cr-batch-post-bootstrap-lock-full-gate-20261001.log",
+  "logSha256": "f0176c36036e9b5d77c5ee0206cd51aeb30d2d6186c4c9595b93fcd2f2f31006",
+  "sourceAudit": {
+    "manifestPath": "C:/UCell/logs/cr-batch-post-bootstrap-lock-source-hashes-20261001.json",
+    "trackedFiles": 963,
+    "changed": [
+      {
+        "path": "backend/apps/api/src/main.ts",
+        "before": "c618ffeffe571d68b121cb1ea8e834ebe9f19814994c479e46e69e5def838178",
+        "after": "50c0a17bbad6cd74b290e5b6144fcf73bbd48f1ddd7ef944dd2d84e2b0ad5329"
+      }
+    ],
+    "concurrentUntracked": [
+      "backend/apps/api/src/common/http-methods.ts",
+      "backend/apps/api/test/member-cors-preflight.e2e-spec.ts",
+      "backend/scripts/stage-line-leader-fixture.mjs",
+      "backend/scripts/stage-line-leader-fixture.test.mjs"
+    ]
+  },
+  "limitation": "Concurrent main.ts CORS edit and newly added tests/scripts prevent certification of the final shared working tree. API suite count includes retail regression and payout lock regression, not newly added CORS suite. Re-run final frozen source after reconciliation.",
+  "overall": "IN_PROGRESS",
+  "fullBatchRecertification": "IN_PROGRESS",
+  "stageRc": "NOT_READY",
+  "deployment": false
+}
