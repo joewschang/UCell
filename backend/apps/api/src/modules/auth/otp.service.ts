@@ -11,7 +11,7 @@ export class OtpService {
  private assertEnabled(){if(process.env.AUTH_CHANNEL_ENABLE_SMS_OTP!=='true')throw new ServiceUnavailableException({code:'SMS_OTP_FEATURE_DISABLED'});}
  private secret(){const value=process.env.OTP_HASH_SECRET;if(!value||value.length<32)throw new ServiceUnavailableException({code:'OTP_CONFIGURATION_PENDING'});return value;}
  private hash(value:string){return createHmac('sha256',this.secret()).update(value).digest('hex');}
- async create(input:{purpose:'NETWORK_REGISTRATION'|'MOBILE_CHANGE'|'ACCOUNT_RECOVERY';destination:string;registrationSessionId?:string;personId?:string},key:string){
+ async create(input:{purpose:'NETWORK_REGISTRATION'|'LOGIN'|'MOBILE_CHANGE'|'ACCOUNT_RECOVERY';destination:string;registrationSessionId?:string;personId?:string},key:string){
   this.assertEnabled();
   if(input.purpose==='NETWORK_REGISTRATION'){
    if(!input.registrationSessionId||input.personId)throw new UnprocessableEntityException({code:'OTP_REGISTRATION_SUBJECT_REQUIRED'});
