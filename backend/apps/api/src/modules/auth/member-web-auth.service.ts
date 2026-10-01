@@ -51,13 +51,14 @@ export class MemberWebAuthService{
  }
 
  async forgotPassword(identifier:string){
+  this.email.assertConfigured();
   const normalized=identifier.trim();
   const person=normalized.includes('@')?await this.db.person.findFirst({where:{email:{equals:normalized,mode:'insensitive'},status:'EFFECTIVE'}}):await this.db.person.findFirst({where:{memberNo:normalized,status:'EFFECTIVE'}});
   if(person?.email){
     const raw=randomBytes(32).toString('base64url'),tokenHash=createHash('sha256').update(raw).digest('hex'),expiresAt=new Date(Date.now()+30*60*1000);
-    await this.db.passwordResetToken.create({data:{personId:person.personId,tokenHash,expiresAt}});
+    const reset=await this.db.passwordResetToken.create({data:{personId:person.personId,tokenHash,expiresAt}});
     const base=this.config.get<string>('MEMBER_WEB_PUBLIC_ORIGIN');if(!base)throw new ConflictException({code:'MEMBER_WEB_ORIGIN_NOT_CONFIGURED'});
-    await this.email.send({to:person.email,resetUrl:`${base.replace(/\/$/,'')}/reset-password?token=${encodeURIComponent(raw)}`});
+    try{await this.email.send({to:person.email,resetUrl:`${base.replace(/\/$/,'')}/reset-password?token=${encodeURIComponent(raw)}`});}catch{await this.db.passwordResetToken.update({where:{passwordResetTokenId:reset.passwordResetTokenId},data:{consumedAt:new Date()}});}
   }
   return {accepted:true};
  }
