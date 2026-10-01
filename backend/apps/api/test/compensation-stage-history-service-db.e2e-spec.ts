@@ -24,4 +24,15 @@ const url=process.env.PHASE2_TEST_DATABASE_URL;
   expect((await service.list({...input,asOf:'2020-01-01T00:00:00Z'})).items).toEqual([]);
   for(const query of [{take:101},{cursor:0},{asOf:'2999-01-01T00:00:00Z'}])await expect(service.list({...input,...query})).rejects.toThrow();
  });
+ it('captures an actual recognition-evidence failure without manufacturing stages or rewriting its source',async()=>{
+  const selected={periodStart:'1896-01-01T00:00:00Z',periodEnd:'1896-01-08T00:00:00Z',ruleVersionCode:'STAGE_VOLUME_'+randomUUID()};
+  const before=await service.refresh(selected,context());expect(before.item.stage).toBe('PRECHECK');
+  const person=await db.person.create({data:{legalName:'Synthetic stage missing recognition'}}),qualification=await db.qualification.create({data:{currentHolderPersonId:person.personId,planLevelCode:'STARTER'}});
+  const volume=await db.pvLedger.create({data:{qualificationId:qualification.qualificationId,pvType:'GPV',amount:100,sourceType:'ORDER',sourceId:randomUUID(),sourceLineId:randomUUID(),eventType:'GPV_CREATED',ruleVersionCode:selected.ruleVersionCode,occurredAt:new Date('1896-01-02Z'),correlationId:randomUUID()}});
+  const facts=await control.read(selected);expect(facts.lifecycle).toBe('BLOCKED');expect(facts.blockingExceptions.some(row=>row.code==='COMPENSATION_VOLUME_EVIDENCE_INVALID')).toBe(true);
+  const after=await service.refresh(selected,context());expect(after.item).toMatchObject({revision:2,previousStage:'PRECHECK',stage:'BLOCKED',businessEnteredAt:null});expect(after.item.evidenceHash).not.toBe(before.item.evidenceHash);
+  const history=await service.list(selected);expect(history.items.map(row=>row.stage)).toEqual(['BLOCKED','PRECHECK']);expect(history.items[1].reference).toBe(before.item.reference);
+  for(const privateId of [person.personId,qualification.qualificationId,volume.eventId,volume.sourceId])expect(JSON.stringify(history)).not.toContain(privateId);
+  expect(await db.pvLedger.findUnique({where:{eventId:volume.eventId}})).toEqual(volume);
+ });
 });
