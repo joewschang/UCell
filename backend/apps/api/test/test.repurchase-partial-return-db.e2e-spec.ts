@@ -1,3 +1,4 @@
+import {MemberGrowthService} from '../src/modules/member/member-growth.service';
 import { Prisma, PrismaClient } from '@prisma/client';
 import { randomUUID } from 'node:crypto';
 import { SubscriptionCancellationService } from '../src/modules/subscription/subscription-cancellation.service';
@@ -34,7 +35,7 @@ describeDb('repurchase cumulative partial returns',()=>{
       return ()=>service.cancel(sub.subscriptionId,effectiveAt,'PARTIAL_RETURN',amount,input);
     }
     const rows=()=>db.monthlyRecognitionSchedule.findMany({where:{subscriptionId:sub.subscriptionId},orderBy:{installmentNo:'asc'}});
-    return {sub,refund,rows,qualification,order};
+    return {sub,refund,rows,qualification,order,personId:person.personId};
   }
   const total=(rows:any[],key:string)=>rows.reduce((sum,row)=>sum.add(row[key]),new Prisma.Decimal(0)).toString();
   it('deduplicates concurrent legacy cancellation commands without a new required header',async()=>{
@@ -110,6 +111,12 @@ describeDb('repurchase cumulative partial returns',()=>{
     const f=await recognitionFixture();
     await (await f.refund('20',new Date('2026-09-15')))();
     if(path==='Worker') await processRecognition(f.first.recognitionId,db as any);else await f.recognize();
+    const growth=new MemberGrowthService(db as any);
+    const beforeGrowth=await growth.read(f.personId);
+    expect(beforeGrowth.dimensions.repurchase.recognition.counts).toEqual({SCHEDULED:2,DUE:0,RECOGNIZED:1,CANCELLED:0,REVERSED:0});
+    const recognizedGrowth=beforeGrowth.dimensions.repurchase.recognition.items.find(x=>x.installmentNo===1)!;
+    expect(recognizedGrowth).toMatchObject({qualificationNo:f.qualification.qualificationNo.toString(),status:'RECOGNIZED',recordConsistency:'RECORDED'});
+    expect(recognizedGrowth.recognizedAt).not.toBeNull();
     const awards=await db.rpvUplineAwardEvent.findMany({where:{recognitionId:f.first.recognitionId}});
     expect(awards.map(a=>a.payableAmount.toString())).toEqual(['80']);
     const snapshot=await db.historicalReplaySnapshot.findUniqueOrThrow({where:{kind_sourceId:{kind:'RPV',sourceId:f.first.recognitionId}}});
@@ -130,6 +137,13 @@ describeDb('repurchase cumulative partial returns',()=>{
     const reconciled=await financial();expect(reconciled.issues).toEqual([]);expect(reconciled.ready).toBe(true);expect(reconciled.totals.bankPaid.toString()).toBe('50');
     const lineage=await db.$transaction(tx=>orderEconomicEvidence(tx,f.order.orderId,[]),{isolationLevel:Prisma.TransactionIsolationLevel.RepeatableRead});
     expect(lineage.subscriptionRecognitions[0]).toMatchObject({status:'RECOGNIZED',pvEvent:{amount:'0.8'},recordedRetention:{originalVolume:'0.8',recordedDelta:'-0.3',recordedRetainedVolume:'0.5',replayedEntitlements:[expect.objectContaining({originallyPosted:'80',recordedEntitlement:'50'})]}});
+    const rowsBeforeRead=await f.rows(),afterGrowth=await growth.read(f.personId);
+    const historicalGrowth=afterGrowth.dimensions.repurchase.recognition.items.find(x=>x.installmentNo===1)!;
+    expect(historicalGrowth.recognizedAt).toBe(recognizedGrowth.recognizedAt);
+    expect(historicalGrowth.status).toBe('RECOGNIZED');
+    for(const item of afterGrowth.dimensions.repurchase.recognition.items){const row=rowsBeforeRead.find(x=>x.installmentNo===item.installmentNo)!;expect(item.scheduledAmount).toBe(row.recognizedAmount.toString());expect(item.scheduledRpv).toBe(row.rpvAmount.toString());}
+    expect(await f.rows()).toEqual(rowsBeforeRead);
+    for(const hidden of [f.qualification.qualificationId,f.qualification.currentHolderPersonId,f.sub.subscriptionId,f.first.recognitionId])expect(JSON.stringify(afterGrowth)).not.toContain(hidden);
     expect(await db.rpvUplineAwardEvent.findMany({where:{recognitionId:f.first.recognitionId}})).toEqual(awards);
     expect(await db.historicalReplaySnapshot.findUniqueOrThrow({where:{kind_sourceId:{kind:'RPV',sourceId:f.first.recognitionId}}})).toEqual(snapshot);
   });

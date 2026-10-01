@@ -1,10 +1,11 @@
+import {MemberGrowthView} from './member-growth.dto';
 import {memberGrowthRankProgress} from './member-growth-rank';
 import {Injectable} from '@nestjs/common';
 import {Prisma,PrismaService} from '@ucell/database';
 @Injectable()
 export class MemberGrowthService{
  constructor(private db:PrismaService){}
- async read(personId:string){return this.db.$transaction(async tx=>{
+ async read(personId:string):Promise<MemberGrowthView>{return this.db.$transaction(async tx=>{
   const now=new Date(),monthReference=new Date(now.getTime()+8*3600000).toISOString().slice(0,7);
   const qualifications=await tx.qualification.findMany({where:{currentHolderPersonId:personId},orderBy:{qualificationNo:'asc'},select:{qualificationId:true,qualificationNo:true,ballNo:true,planLevelCode:true,status:true,effectiveAt:true,globalRankHistory:{select:{rankCode:true,achievedAt:true,sourcePeriodEnd:true},orderBy:[{achievedAt:'desc'},{rankCode:'asc'}]},activePeriods:{where:{activeFrom:{lte:now},OR:[{activeTo:null},{activeTo:{gt:now}}]},select:{activeFrom:true,activeTo:true},orderBy:{activeFrom:'desc'},take:1},sponsoredChildren:{where:{effectiveFrom:{lte:now},OR:[{effectiveTo:null},{effectiveTo:{gt:now}}]},select:{childQualificationId:true}},subscriptions:{where:{status:{in:['ACTIVE','PENDING']}},select:{status:true,startMonth:true,endMonth:true},orderBy:[{endMonth:'desc'},{subscriptionId:'asc'}],take:1}}});
   const [learning,events,enrolledCount,completedCount,upcomingRegisteredCount,attendedCount,checkedInCount,learningMilestones,eventMilestones]=await Promise.all([

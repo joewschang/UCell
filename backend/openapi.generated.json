@@ -8145,7 +8145,46 @@
         "parameters": [],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/MemberGrowthView"
+                    },
+                    "meta": {
+                      "type": "object",
+                      "required": [
+                        "request_id",
+                        "timestamp",
+                        "api_version"
+                      ],
+                      "properties": {
+                        "request_id": {
+                          "type": "string"
+                        },
+                        "timestamp": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "api_version": {
+                          "type": "string",
+                          "enum": [
+                            "v1"
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
           },
           "400": {
             "description": "Validation failure; unknown identity/qualification/monetary fields rejected"
@@ -21355,6 +21394,756 @@
           "idToken"
         ],
         "additionalProperties": false
+      },
+      "GrowthCoverage": {
+        "type": "object",
+        "properties": {
+          "learningItems": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "eventItems": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "itemLimit": {
+            "type": "integer",
+            "minimum": 0,
+            "enum": [
+              100
+            ]
+          },
+          "milestoneLimit": {
+            "type": "integer",
+            "minimum": 0,
+            "enum": [
+              20
+            ]
+          },
+          "counts": {
+            "type": "string",
+            "enum": [
+              "ALL_PERSON_RECORDS"
+            ]
+          }
+        },
+        "required": [
+          "learningItems",
+          "eventItems",
+          "itemLimit",
+          "milestoneLimit",
+          "counts"
+        ]
+      },
+      "GrowthMilestone": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "occurredAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "reference": {
+            "type": "string"
+          },
+          "link": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "title",
+          "occurredAt",
+          "reference",
+          "link"
+        ]
+      },
+      "GrowthQualificationItem": {
+        "type": "object",
+        "properties": {
+          "qualificationNo": {
+            "type": "string",
+            "pattern": "^[0-9]+$",
+            "description": "Public lossless qualification number; never an internal UUID."
+          },
+          "ballNo": {
+            "type": "string",
+            "nullable": true
+          },
+          "planLevelCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "string"
+          },
+          "effectiveAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "required": [
+          "qualificationNo",
+          "ballNo",
+          "planLevelCode",
+          "status",
+          "effectiveAt"
+        ]
+      },
+      "GrowthQualification": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GrowthQualificationItem"
+            }
+          },
+          "explanation": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "items",
+          "explanation"
+        ]
+      },
+      "GrowthActiveItem": {
+        "type": "object",
+        "properties": {
+          "qualificationNo": {
+            "type": "string",
+            "pattern": "^[0-9]+$",
+            "description": "Public lossless qualification number; never an internal UUID."
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "activeFrom": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "activeTo": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "required": [
+          "qualificationNo",
+          "active",
+          "activeFrom",
+          "activeTo"
+        ]
+      },
+      "GrowthActive": {
+        "type": "object",
+        "properties": {
+          "activeQualificationCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "totalQualificationCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "monthReference": {
+            "type": "string",
+            "pattern": "^[0-9]{4}-[0-9]{2}$"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GrowthActiveItem"
+            }
+          },
+          "explanation": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "activeQualificationCount",
+          "totalQualificationCount",
+          "monthReference",
+          "items",
+          "explanation"
+        ]
+      },
+      "GrowthRankAchievement": {
+        "type": "object",
+        "properties": {
+          "qualificationNo": {
+            "type": "string",
+            "pattern": "^[0-9]+$",
+            "description": "Public lossless qualification number; never an internal UUID."
+          },
+          "rankCode": {
+            "type": "string"
+          },
+          "achievedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "sourcePeriodEnd": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "qualificationNo",
+          "rankCode",
+          "achievedAt",
+          "sourcePeriodEnd"
+        ]
+      },
+      "GrowthRankProgressItem": {
+        "type": "object",
+        "properties": {
+          "qualificationNo": {
+            "type": "string",
+            "pattern": "^[0-9]+$",
+            "description": "Public lossless qualification number; never an internal UUID."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "RECORDED",
+              "UNAVAILABLE",
+              "HIGHEST_ACHIEVED"
+            ]
+          },
+          "rankCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "periodStart": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "periodEnd": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "weakSidePv": {
+            "type": "string",
+            "pattern": "^-?[0-9]+(?:\\.[0-9]+)?$",
+            "description": "Server projection from verified original closed-period evidence; never a browser economic calculation.",
+            "nullable": true
+          },
+          "thresholdPv": {
+            "type": "string",
+            "pattern": "^-?[0-9]+(?:\\.[0-9]+)?$",
+            "description": "Server projection from verified original closed-period evidence; never a browser economic calculation.",
+            "nullable": true
+          },
+          "remainingPv": {
+            "type": "string",
+            "pattern": "^-?[0-9]+(?:\\.[0-9]+)?$",
+            "description": "Server projection from verified original closed-period evidence; never a browser economic calculation.",
+            "nullable": true
+          },
+          "progressPercent": {
+            "type": "string",
+            "pattern": "^-?[0-9]+(?:\\.[0-9]+)?$",
+            "description": "Server projection from verified original closed-period evidence; never a browser economic calculation.",
+            "nullable": true
+          },
+          "activeAtClose": {
+            "type": "boolean",
+            "nullable": true
+          }
+        },
+        "required": [
+          "qualificationNo",
+          "status",
+          "rankCode",
+          "periodStart",
+          "periodEnd",
+          "weakSidePv",
+          "thresholdPv",
+          "remainingPv",
+          "progressPercent",
+          "activeAtClose"
+        ]
+      },
+      "GrowthRankProgress": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "RECORDED",
+              "UNAVAILABLE",
+              "HIGHEST_ACHIEVED"
+            ]
+          },
+          "basis": {
+            "type": "string",
+            "enum": [
+              "ORIGINAL_CLOSED_PERIOD"
+            ]
+          },
+          "reason": {
+            "type": "string"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GrowthRankProgressItem"
+            }
+          }
+        },
+        "required": [
+          "status",
+          "basis",
+          "reason",
+          "items"
+        ]
+      },
+      "GrowthGlobalRank": {
+        "type": "object",
+        "properties": {
+          "achieved": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GrowthRankAchievement"
+            }
+          },
+          "nextAchievement": {
+            "$ref": "#/components/schemas/GrowthRankProgress"
+          },
+          "explanation": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "achieved",
+          "nextAchievement",
+          "explanation"
+        ]
+      },
+      "GrowthOrganization": {
+        "type": "object",
+        "properties": {
+          "directQualifiedCount": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Distinct current effective sponsor relationships; no child identity or volume disclosure."
+          },
+          "explanation": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "directQualifiedCount",
+          "explanation"
+        ]
+      },
+      "GrowthScheme": {
+        "type": "object",
+        "properties": {
+          "qualificationNo": {
+            "type": "string",
+            "pattern": "^[0-9]+$",
+            "description": "Public lossless qualification number; never an internal UUID."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ACTIVE",
+              "PENDING",
+              "NONE"
+            ]
+          },
+          "startMonth": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "endMonth": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "required": [
+          "qualificationNo",
+          "status",
+          "startMonth",
+          "endMonth"
+        ]
+      },
+      "GrowthRecognitionCounts": {
+        "type": "object",
+        "properties": {
+          "SCHEDULED": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Count of stored schedule status across all schemes of currently held Qualifications; not independent economic recertification."
+          },
+          "DUE": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Count of stored schedule status across all schemes of currently held Qualifications; not independent economic recertification."
+          },
+          "RECOGNIZED": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Count of stored schedule status across all schemes of currently held Qualifications; not independent economic recertification."
+          },
+          "CANCELLED": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Count of stored schedule status across all schemes of currently held Qualifications; not independent economic recertification."
+          },
+          "REVERSED": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Count of stored schedule status across all schemes of currently held Qualifications; not independent economic recertification."
+          }
+        },
+        "required": [
+          "SCHEDULED",
+          "DUE",
+          "RECOGNIZED",
+          "CANCELLED",
+          "REVERSED"
+        ]
+      },
+      "GrowthRecognitionItem": {
+        "type": "object",
+        "properties": {
+          "qualificationNo": {
+            "type": "string",
+            "pattern": "^[0-9]+$",
+            "description": "Public lossless qualification number; never an internal UUID."
+          },
+          "schemeStatus": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "ACTIVE",
+              "SUSPENDED",
+              "CANCELLED",
+              "COMPLETED"
+            ]
+          },
+          "startMonth": {
+            "type": "string"
+          },
+          "endMonth": {
+            "type": "string"
+          },
+          "installmentNo": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "month": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "SCHEDULED",
+              "DUE",
+              "RECOGNIZED",
+              "CANCELLED",
+              "REVERSED"
+            ]
+          },
+          "dueAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "recognizedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "Stored timestamp, not inferred from scheme status. Consult recordConsistency."
+          },
+          "recordConsistency": {
+            "type": "string",
+            "enum": [
+              "RECORDED",
+              "UNAVAILABLE"
+            ],
+            "description": "RECOGNIZED with missing/future timestamp is unavailable. RECORDED describes schedule record consistency, not a ledger seal."
+          },
+          "scheduledAmount": {
+            "type": "string",
+            "pattern": "^-?[0-9]+(?:\\.[0-9]+)?$",
+            "description": "Stored decimal string; never a browser economic calculation."
+          },
+          "scheduledRpv": {
+            "type": "string",
+            "pattern": "^-?[0-9]+(?:\\.[0-9]+)?$",
+            "description": "Stored decimal string; never a browser economic calculation."
+          }
+        },
+        "required": [
+          "qualificationNo",
+          "schemeStatus",
+          "startMonth",
+          "endMonth",
+          "installmentNo",
+          "month",
+          "status",
+          "dueAt",
+          "recognizedAt",
+          "recordConsistency",
+          "scheduledAmount",
+          "scheduledRpv"
+        ]
+      },
+      "GrowthRecognition": {
+        "type": "object",
+        "properties": {
+          "counts": {
+            "$ref": "#/components/schemas/GrowthRecognitionCounts"
+          },
+          "itemLimit": {
+            "type": "integer",
+            "minimum": 0,
+            "enum": [
+              100
+            ]
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GrowthRecognitionItem"
+            }
+          }
+        },
+        "required": [
+          "counts",
+          "itemLimit",
+          "items"
+        ]
+      },
+      "GrowthRepurchase": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GrowthScheme"
+            }
+          },
+          "recognition": {
+            "$ref": "#/components/schemas/GrowthRecognition"
+          },
+          "explanation": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "items",
+          "recognition",
+          "explanation"
+        ]
+      },
+      "GrowthLearningItem": {
+        "type": "object",
+        "properties": {
+          "courseCode": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "completedLessonCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "completedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "required": [
+          "courseCode",
+          "title",
+          "status",
+          "completedLessonCount",
+          "completedAt"
+        ]
+      },
+      "GrowthLearning": {
+        "type": "object",
+        "properties": {
+          "enrolledCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "completedCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GrowthLearningItem"
+            }
+          },
+          "explanation": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "enrolledCount",
+          "completedCount",
+          "items",
+          "explanation"
+        ]
+      },
+      "GrowthEventItem": {
+        "type": "object",
+        "properties": {
+          "eventCode": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "eventStatus": {
+            "type": "string"
+          },
+          "startsAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "checkedInAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "attendedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "required": [
+          "eventCode",
+          "title",
+          "status",
+          "eventStatus",
+          "startsAt",
+          "checkedInAt",
+          "attendedAt"
+        ]
+      },
+      "GrowthEvents": {
+        "type": "object",
+        "properties": {
+          "upcomingRegisteredCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "attendedCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "checkedInCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GrowthEventItem"
+            }
+          },
+          "explanation": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "upcomingRegisteredCount",
+          "attendedCount",
+          "checkedInCount",
+          "items",
+          "explanation"
+        ]
+      },
+      "GrowthDimensions": {
+        "type": "object",
+        "properties": {
+          "qualification": {
+            "$ref": "#/components/schemas/GrowthQualification"
+          },
+          "active": {
+            "$ref": "#/components/schemas/GrowthActive"
+          },
+          "globalRank": {
+            "$ref": "#/components/schemas/GrowthGlobalRank"
+          },
+          "organization": {
+            "$ref": "#/components/schemas/GrowthOrganization"
+          },
+          "repurchase": {
+            "$ref": "#/components/schemas/GrowthRepurchase"
+          },
+          "learning": {
+            "$ref": "#/components/schemas/GrowthLearning"
+          },
+          "events": {
+            "$ref": "#/components/schemas/GrowthEvents"
+          }
+        },
+        "required": [
+          "qualification",
+          "active",
+          "globalRank",
+          "organization",
+          "repurchase",
+          "learning",
+          "events"
+        ]
+      },
+      "MemberGrowthView": {
+        "type": "object",
+        "properties": {
+          "asOf": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "coverage": {
+            "$ref": "#/components/schemas/GrowthCoverage"
+          },
+          "milestones": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GrowthMilestone"
+            }
+          },
+          "dimensions": {
+            "$ref": "#/components/schemas/GrowthDimensions"
+          }
+        },
+        "required": [
+          "asOf",
+          "coverage",
+          "milestones",
+          "dimensions"
+        ]
       },
       "MemberContractConsentDto": {
         "type": "object",
