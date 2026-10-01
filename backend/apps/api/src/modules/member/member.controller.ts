@@ -53,10 +53,23 @@ export class DeliveryProfileDto {
 }
 export class FormalMemberDraftDto implements FormalDraftInput {
  @ApiProperty({format:'uuid'}) @IsUUID() formalContractVersionId!:string;
- @ApiProperty({maxLength:120}) @IsString() @Matches(/\S/) @MaxLength(120) legalName!:string;
- @ApiProperty({maxLength:32}) @IsString() @Matches(/\S/) @MaxLength(32) gender!:string;
- @ApiProperty({format:'date'}) @IsDateString() birthDate!:string;
- @ApiProperty({maxLength:32}) @IsString() @Matches(/\S/) @MaxLength(32) nationalId!:string;
+ @ApiProperty({enum:['INDIVIDUAL','LEGAL_ENTITY'],default:'INDIVIDUAL'}) @IsIn(['INDIVIDUAL','LEGAL_ENTITY']) applicantType:'INDIVIDUAL'|'LEGAL_ENTITY'='INDIVIDUAL';
+
+ @ApiProperty({required:false,maxLength:120}) @ValidateIf(o=>o.applicantType==='INDIVIDUAL') @IsString() @Matches(/\S/) @MaxLength(120) legalName?:string;
+ @ApiProperty({required:false,maxLength:32}) @ValidateIf(o=>o.applicantType==='INDIVIDUAL') @IsString() @Matches(/\S/) @MaxLength(32) gender?:string;
+ @ApiProperty({required:false,format:'date'}) @ValidateIf(o=>o.applicantType==='INDIVIDUAL') @IsDateString() birthDate?:string;
+ @ApiProperty({required:false,maxLength:32}) @ValidateIf(o=>o.applicantType==='INDIVIDUAL') @IsString() @Matches(/\S/) @MaxLength(32) nationalId?:string;
+
+ @ApiProperty({required:false,maxLength:160}) @ValidateIf(o=>o.applicantType==='LEGAL_ENTITY') @IsString() @Matches(/\S/) @MaxLength(160) legalEntityName?:string;
+ @ApiProperty({required:false,maxLength:40}) @ValidateIf(o=>o.applicantType==='LEGAL_ENTITY') @IsString() @Matches(/^[A-Za-z0-9._-]{2,40}$/) legalEntityRegistrationNo?:string;
+ @ApiProperty({required:false,maxLength:500}) @ValidateIf(o=>o.applicantType==='LEGAL_ENTITY') @IsString() @Matches(/\S/) @MaxLength(500) legalEntityRegisteredAddress?:string;
+ @ApiProperty({required:false,maxLength:120}) @ValidateIf(o=>o.applicantType==='LEGAL_ENTITY') @IsString() @Matches(/\S/) @MaxLength(120) representativeLegalName?:string;
+ @ApiProperty({required:false,maxLength:32}) @ValidateIf(o=>o.applicantType==='LEGAL_ENTITY') @IsString() @Matches(/\S/) @MaxLength(32) representativeNationalId?:string;
+
+ @ApiProperty({default:false,description:'Whether the individual applicant or legal-entity primary representative currently has a spouse.'}) @IsBoolean() hasSpouse:boolean=false;
+ @ApiProperty({required:false,maxLength:120}) @ValidateIf(o=>o.hasSpouse===true) @IsString() @Matches(/\S/) @MaxLength(120) spouseName?:string;
+ @ApiProperty({required:false,maxLength:32}) @ValidateIf(o=>o.hasSpouse===true) @IsString() @Matches(/\S/) @MaxLength(32) spouseNationalId?:string;
+
  @ApiProperty({maxLength:500}) @IsString() @Matches(/\S/) @MaxLength(500) communicationAddress!:string;
  @ApiProperty({maxLength:32}) @Matches(/^(?=.*[0-9])\+?[0-9 ()-]{6,32}$/) phone!:string;
  @ApiProperty({format:'email',maxLength:254}) @IsEmail() @MaxLength(254) email!:string;
