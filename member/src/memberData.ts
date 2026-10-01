@@ -37,16 +37,15 @@ export async function getRequiredContracts(signal:AbortSignal){
 export async function getFormalRequiredContracts(signal:AbortSignal){const rows=await api<unknown>('/member/contracts/formal-required',{signal});if(!Array.isArray(rows)||!rows.every(value=>{const row=value as RequiredContract;return row&&typeof row.id==='string'&&typeof row.title==='string'&&typeof row.content==='string'&&/^[a-f0-9]{64}$/.test(row.contentHash)&&(row.acceptedAt===null||typeof row.acceptedAt==='string');}))throw new Error('正式會員合約格式異常，已停止升級');return rows as RequiredContract[];}
 export async function consentFormalContract(versionId:string,key:string){const result=await api<{contractVersionId:string;acceptedAt:string}>(`/member/contracts/${encodeURIComponent(versionId)}/consent`,{method:'POST',headers:{'Idempotency-Key':key},body:JSON.stringify({accepted:true,channel:'MEMBER_WEB'})});if(result?.contractVersionId!==versionId||!Number.isFinite(Date.parse(result.acceptedAt)))throw new Error('正式會員合約同意結果異常');return result;}
 export type FormalDraftInput={
- formalContractVersionId:string;applicantType:'INDIVIDUAL'|'LEGAL_ENTITY';
+ formalContractVersionId:string;applicantType:'INDIVIDUAL';
  communicationAddress:string;phone:string;email:string;bankCode:string;bankAccount:string;accountHolder:string;
- legalName?:string;gender?:string;birthDate?:string;nationalId?:string;
- legalEntityName?:string;legalEntityRegistrationNo?:string;legalEntityRegisteredAddress?:string;
- representativeLegalName?:string;representativeNationalId?:string;
- hasSpouse:boolean;spouseName?:string;spouseNationalId?:string;
+ legalName:string;gender:string;birthDate:string;nationalityCode:string;
+ identityDocumentType:'NATIONAL_ID'|'RESIDENCE_PERMIT'|'PASSPORT'|'OTHER';identityDocumentNumber:string;
+ hasSpouse:boolean;spouseName?:string;spouseNationalityCode?:string;spouseIdentityDocumentType?:'NATIONAL_ID'|'RESIDENCE_PERMIT'|'PASSPORT'|'OTHER';spouseIdentityDocumentNumber?:string;
 };
 export async function saveFormalDraft(input:FormalDraftInput,key:string){
- const result=await api<{id:string;status:string;version:number;applicantType:string;nationalIdMasked:string|null;spouseNationalIdMasked:string|null;bankAccountMasked:string;replayed:boolean}>('/member/formal-applications',{method:'POST',headers:{'Idempotency-Key':key},body:JSON.stringify(input)});
- if(!result||typeof result.id!=='string'||result.status!=='DRAFT'||!Number.isInteger(result.version)||!['INDIVIDUAL','LEGAL_ENTITY'].includes(result.applicantType)||!(result.nationalIdMasked===null||result.nationalIdMasked.startsWith('***'))||!(result.spouseNationalIdMasked===null||result.spouseNationalIdMasked.startsWith('***'))||!result.bankAccountMasked.startsWith('***'))throw new Error('正式會員草稿結果異常');
+ const result=await api<{id:string;status:string;version:number;applicantType:string;nationalityCode:string|null;identityDocumentType:string|null;identityDocumentNumberMasked:string|null;spouseIdentityDocumentNumberMasked:string|null;bankAccountMasked:string;replayed:boolean}>('/member/formal-applications',{method:'POST',headers:{'Idempotency-Key':key},body:JSON.stringify(input)});
+ if(!result||typeof result.id!=='string'||result.status!=='DRAFT'||!Number.isInteger(result.version)||result.applicantType!=='INDIVIDUAL'||!(result.identityDocumentNumberMasked===null||result.identityDocumentNumberMasked.startsWith('***'))||!(result.spouseIdentityDocumentNumberMasked===null||result.spouseIdentityDocumentNumberMasked.startsWith('***'))||!result.bankAccountMasked.startsWith('***'))throw new Error('正式會員草稿結果異常');
  return result;
 }export type NetworkRegistrationInput={contractVersionId:string;accepted:true;legalName:string;alias:string;gender:string;birthDate:string;nationalityCode:string;identityDocumentType:'NATIONAL_ID'|'RESIDENCE_PERMIT'|'PASSPORT'|'OTHER';identityDocumentNumber:string;mobile:string;email:string};
 export async function registerNetworkMember(input:NetworkRegistrationInput,key:string){
