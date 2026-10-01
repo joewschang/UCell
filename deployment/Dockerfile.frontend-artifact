@@ -1,0 +1,11 @@
+ARG RUNTIME_IMAGE
+FROM ${RUNTIME_IMAGE}
+ARG FRONTEND
+ARG PATCH_COMMIT
+ARG SOURCE_MANIFEST_SHA256
+ARG CSP_API_ORIGIN
+LABEL life.ucell.patch-commit=${PATCH_COMMIT} life.ucell.source-manifest-sha256=${SOURCE_MANIFEST_SHA256}
+RUN rm -rf /usr/share/nginx/html/*
+COPY ${FRONTEND}/dist/ /usr/share/nginx/html/
+COPY deployment/nginx.${FRONTEND}.conf /etc/nginx/conf.d/default.conf
+RUN test -n "$CSP_API_ORIGIN" && sed -i "s|__API_ORIGIN__|${CSP_API_ORIGIN}|g" /etc/nginx/conf.d/default.conf

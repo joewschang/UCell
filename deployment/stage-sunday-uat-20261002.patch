@@ -1,5 +1,5 @@
 diff --git a/member/src/liff.ts b/member/src/liff.ts
-index 5e75aa3..f4dc740 100644
+index 5e75aa3..8559f46 100644
 --- a/member/src/liff.ts
 +++ b/member/src/liff.ts
 @@ -11,6 +11,7 @@ const intendedDestinationKey='ucell_line_intended_destination';
@@ -10,10 +10,20 @@ index 5e75aa3..f4dc740 100644
  export function lineExchangeFailureMessage(status:number,code:unknown){
   if(status===401&&code==='LINE_ACCOUNT_UNBOUND')return '此 LINE 尚未完成會員帳號綁定，請聯絡客服完成公司核驗。';
   if(status===401&&code==='MEMBER_SECURITY_LOCKED')return '此會員帳號目前已安全鎖定，請聯絡客服協助重新綁定。';
-@@ -60,6 +61,30 @@ async function bindPendingReferral(accessToken:string){
+@@ -60,6 +61,40 @@ async function bindPendingReferral(accessToken:string){
   if(!response.ok)return '推薦歸因未能綁定；會員登入仍有效，推薦關係尚未建立。';
   sessionStorage.removeItem(transitionKey);sessionStorage.removeItem(bindingKey);return undefined;
  }
++export function clearLineCallbackQuery(){
++ if(typeof window==='undefined')return;
++ const query=new URLSearchParams(window.location.search);
++ // Only remove a callback recognized by the SDK markers, after init has verified it.
++ if(!query.has('liffClientId')||!query.has('liffRedirectUri'))return;
++ for(const key of ['code','state','liffClientId','liffRedirectUri'])query.delete(key);
++ const suffix=query.toString();
++ window.history.replaceState({},'',window.location.pathname+(suffix?'?'+suffix:'')+(window.location.hash??''));
++}
++
 +async function resumeCachedSession(){
 + const cached=sessionStorage.getItem('ucell_member_token');
 + if(!cached)return undefined;
@@ -41,7 +51,7 @@ index 5e75aa3..f4dc740 100644
  /** Client LINE profile is never identity proof; backend verifies exchange and session. */
  export async function initLiff() {
      // Remove raw credentials persisted by the previous prototype.
-@@ -81,6 +106,8 @@ export async function initLiff() {
+@@ -81,16 +116,20 @@ export async function initLiff() {
          sessionStorage.setItem('ucell_member_token', token);
          return { mode: 'connected' as const };
      }
@@ -50,7 +60,11 @@ index 5e75aa3..f4dc740 100644
      // Preserve only a syntactically valid Ball candidate before LINE leaves this origin.
      // It is deliberately not sent to the relationship-binding endpoint.
      const id = import.meta.env.VITE_LIFF_ID;
-@@ -91,6 +118,7 @@ export async function initLiff() {
+     if (!id)
+         throw new Error('LINE 登入尚未設定，請聯絡客服');
+     await liff.init({ liffId: id });
++    clearLineCallbackQuery();
+     // SDK owns the authorization response/PKCE. Never rewrite its callback first.
      preserveSponsorCandidate();
      await prepareReferralLanding();
      if (!liff.isLoggedIn()) {
@@ -58,7 +72,7 @@ index 5e75aa3..f4dc740 100644
        // Keep only an internal relative route; no external redirect can be supplied.
          if(typeof window!=='undefined'){
            const destination=intendedDestination();
-@@ -99,18 +127,10 @@ export async function initLiff() {
+@@ -99,18 +138,10 @@ export async function initLiff() {
          }else liff.login();
          return { mode: 'redirect' as const };
      }
@@ -79,7 +93,7 @@ index 5e75aa3..f4dc740 100644
      const data=unwrapMemberEnvelope(response.body) as {accessToken?:unknown;expiresAt?:unknown};
      if(typeof data.accessToken!=='string'||!data.accessToken||typeof data.expiresAt!=='string'||Date.parse(data.expiresAt)<=Date.now()||!Number.isFinite(Date.parse(data.expiresAt)))throw new Error('會員登入回應格式異常');
      sessionStorage.setItem('ucell_member_token',data.accessToken);
-@@ -119,5 +139,32 @@ export async function initLiff() {
+@@ -119,5 +150,32 @@ export async function initLiff() {
      if(destination&&destination!==window.location.pathname+window.location.search+window.location.hash)window.history.replaceState({},'',destination);
      return {mode:'connected' as const,referralWarning:await bindPendingReferral(data.accessToken)};
  }

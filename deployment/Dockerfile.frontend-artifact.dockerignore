@@ -1,0 +1,11 @@
+*
+!member/
+!member/dist/
+!member/dist/**
+!admin/
+!admin/dist/
+!admin/dist/**
+!deployment/
+!deployment/Dockerfile.frontend-artifact
+!deployment/nginx.member.conf
+!deployment/nginx.admin.conf

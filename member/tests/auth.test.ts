@@ -1,7 +1,7 @@
 import { afterEach, expect, it, vi } from 'vitest';
 const liff = vi.hoisted(() => ({ init: vi.fn(), isLoggedIn: vi.fn(), isInClient:vi.fn(), login: vi.fn(), getIDToken:vi.fn(),logout:vi.fn() }));
 vi.mock('@line/liff', () => ({ default: liff }));
-import { bootstrapLiff, initLiff, startWebLineLogin, restartLineLogin, LineReauthenticationRequired } from '../src/liff';
+import { bootstrapLiff, initLiff, startWebLineLogin, restartLineLogin, LineReauthenticationRequired, clearLineCallbackQuery } from '../src/liff';
 afterEach(() => { vi.unstubAllEnvs(); vi.unstubAllGlobals(); vi.clearAllMocks(); });
 it('requires an explicit mock flag', async () => {
     vi.stubGlobal('sessionStorage', { removeItem: vi.fn(),getItem:vi.fn() });
@@ -130,4 +130,18 @@ it('explicit recovery clears only owned session/ball, preserves referral and dee
  vi.stubGlobal('window',{location:{href:'https://stage.example.test/orders?ref=A000014#detail'}});liff.isLoggedIn.mockReturnValue(true);
  await expect(restartLineLogin()).resolves.toEqual({mode:'redirect'});expect(liff.logout).toHaveBeenCalledOnce();expect(liff.login).toHaveBeenCalledWith({redirectUri:'https://stage.example.test/orders?ref=A000014#detail'});
  expect(session.has('ucell_member_token')).toBe(false);expect(session.has('ucell_qualification_id')).toBe(false);expect(session.get('ucell_referral_transition')).toBe('keep-referral');
+});
+
+it('clears only consumed SDK callback parameters while preserving business query and hash',()=>{
+ const replaceState=vi.fn();vi.stubGlobal('window',{location:{pathname:'/orders',search:'?code=ONE_USE_CODE&state=SDK_STATE&liffClientId=2011813061&liffRedirectUri=https%3A%2F%2Fstage.example.test%2Forders&ref=A000014',hash:'#detail'},history:{replaceState}});
+ clearLineCallbackQuery();expect(replaceState).toHaveBeenCalledWith({},'','/orders?ref=A000014#detail');
+});
+it('does not rewrite ordinary business query parameters as an OAuth callback',()=>{
+ const replaceState=vi.fn();vi.stubGlobal('window',{location:{pathname:'/orders',search:'?code=business&state=business',hash:''},history:{replaceState}});clearLineCallbackQuery();expect(replaceState).not.toHaveBeenCalled();
+});
+
+it('leaves SDK callback/referral URL untouched when SDK authorization fails',async()=>{
+ vi.stubGlobal('sessionStorage',{getItem:()=>null,removeItem:vi.fn()});vi.stubEnv('VITE_ENABLE_MOCK','false');vi.stubEnv('VITE_LIFF_ID','TEST_ONLY');
+ const replaceState=vi.fn(),fetcher=vi.fn();vi.stubGlobal('fetch',fetcher);vi.stubGlobal('window',{location:{pathname:'/r/share',search:'?code=untrusted&state=wrong&liffClientId=2011813061&liffRedirectUri=https%3A%2F%2Fstage.example.test%2F',hash:''},history:{replaceState}});
+ liff.init.mockRejectedValueOnce(new Error('SDK authorization rejected'));await expect(initLiff()).rejects.toThrow('SDK authorization rejected');expect(fetcher).not.toHaveBeenCalled();expect(replaceState).not.toHaveBeenCalled();
 });

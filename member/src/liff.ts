@@ -44,6 +44,16 @@ async function bindPendingReferral(accessToken:string){
  sessionStorage.removeItem(transitionKey);sessionStorage.removeItem(bindingKey);return undefined;
 }
 
+export function clearLineCallbackQuery(){
+ if(typeof window==='undefined')return;
+ const query=new URLSearchParams(window.location.search);
+ // Only remove a callback recognized by the SDK markers, after init has verified it.
+ if(!query.has('liffClientId')||!query.has('liffRedirectUri'))return;
+ for(const key of ['code','state','liffClientId','liffRedirectUri'])query.delete(key);
+ const suffix=query.toString();
+ window.history.replaceState({},'',window.location.pathname+(suffix?'?'+suffix:'')+(window.location.hash??''));
+}
+
 async function resumeCachedSession(){
  const cached=sessionStorage.getItem('ucell_member_token');
  if(!cached)return undefined;
@@ -81,6 +91,7 @@ export async function initLiff() {
  if (!id) throw new Error('LINE 登入尚未設定，請聯絡客服');
 
  await liff.init({ liffId: id });
+    clearLineCallbackQuery();
  // Let the SDK consume its callback before a referral landing rewrites the URL.
  await prepareReferralLanding();
 
