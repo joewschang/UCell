@@ -1,5 +1,7 @@
 import {Injectable,NotFoundException} from '@nestjs/common';
 import {PrismaService} from '@ucell/database';
+import {AuditService} from '../../common/audit/audit.service';
+import {randomUUID} from 'node:crypto';
 
 export type CrossLineConflictResult={
   applicationId:string;
@@ -9,7 +11,7 @@ export type CrossLineConflictResult={
 
 @Injectable()
 export class FormalMembershipConflictService {
-  constructor(private readonly db:PrismaService){}
+  constructor(private readonly db:PrismaService,private readonly audit?:AuditService){}
 
   async evaluate(applicationId:string):Promise<CrossLineConflictResult>{
     const application=await this.db.formalMemberApplication.findUnique({
@@ -68,5 +70,18 @@ export class FormalMembershipConflictService {
     const unique=[...new Set(codes)];
     const status=unique.length?'BLOCKED':'CLEAR';
     return {applicationId,status,codes:unique};
+  }
+  async review(applicationId:string,actorId:string,requestId:string){
+    const result=await this.evaluate(applicationId);
+    if(!actorId)throw new NotFoundException({code:'ADMIN_PERSON_ID_REQUIRED'});
+    const correlationId=randomUUID();
+    await this.db.$transaction(async tx=>{
+      await tx.formalMemberApplication.update({where:{formalMemberApplicationId:applicationId},data:{
+        crossLineReviewStatus:result.status,
+        crossLineConflictCode:result.codes[0]??null,
+      }});
+      if(this.audit)await this.audit.write(tx,{actorType:'ADMIN',actorId,action:'FORMAL_CROSS_LINE_REVIEW',entityType:'FormalMemberApplication',entityId:applicationId,afterData:{status:result.status,codes:result.codes},requestId,correlationId});
+    });
+    return result;
   }
 }
