@@ -519,6 +519,15 @@ enum FormalApplicantType {
   @@schema("identity")
 }
 
+enum IdentityDocumentType {
+  NATIONAL_ID
+  RESIDENCE_PERMIT
+  PASSPORT
+  OTHER
+
+  @@schema("identity")
+}
+
 enum SpouseVerificationStatus {
   NOT_APPLICABLE
   PENDING
@@ -621,6 +630,11 @@ model Person {
   mobile           String?
   email            String?
   genderCode       String?                @map("gender_code")
+  nationalityCode  String?                @map("nationality_code")
+  identityDocumentType IdentityDocumentType? @map("identity_document_type")
+  identityDocumentNumberCiphertext String? @map("identity_document_number_ciphertext") @db.Text
+  identityDocumentKeyVersion String?       @map("identity_document_key_version")
+  identityDocumentFingerprint String?      @unique @map("identity_document_fingerprint")
   membershipState  PersonMembershipState? @map("membership_state")
   mobileVerifiedAt DateTime?              @map("mobile_verified_at") @db.Timestamptz(6)
   status           RecordStatus           @default(DRAFT)
@@ -655,6 +669,7 @@ model LegalEntity {
   legalEntityId         String                @id @default(uuid()) @map("legal_entity_id") @db.Uuid
   memberNo              String                @unique @default(dbgenerated("identity.allocate_member_no()")) @map("member_no")
   registeredName        String                @map("registered_name")
+  registrationCountryCode String?              @map("registration_country_code")
   registrationNo        String                @unique @map("registration_no")
   registeredAddress     String?               @map("registered_address")
   membershipState       PersonMembershipState? @map("membership_state")
@@ -662,6 +677,10 @@ model LegalEntity {
   createdAt             DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt             DateTime              @updatedAt @map("updated_at") @db.Timestamptz(6)
   representatives       LegalEntityRepresentative[]
+  qualifications        Qualification[]
+  holderHistory         QualificationHolderHistory[]
+  ownerIntervals        QualificationOwnerInterval[]
+  membershipApplications MembershipApplication[]
   formalApplications    FormalMemberApplication[]
 
   @@index([status])
@@ -735,7 +754,9 @@ model FormalMemberApplication {
   enteredAt                 DateTime?                          @map("entered_at") @db.Timestamptz(6)
   legalEntityId             String?                           @map("legal_entity_id") @db.Uuid
   legalEntityRegistrationNo String?                           @map("legal_entity_registration_no")
-  applicantIdentityFingerprint String?                        @map("applicant_identity_fingerprint")
+  applicantNationalityCode   String?                        @map("applicant_nationality_code")
+  applicantIdentityDocumentType IdentityDocumentType?       @map("applicant_identity_document_type")
+  applicantIdentityFingerprint String?                       @map("applicant_identity_fingerprint")
   spouseIdentityFingerprint String?                           @map("spouse_identity_fingerprint")
   spouseVerificationStatus  SpouseVerificationStatus          @default(NOT_APPLICABLE) @map("spouse_verification_status")
   crossLineReviewStatus     String                            @default("NOT_EVALUATED") @map("cross_line_review_status")
@@ -757,6 +778,7 @@ model FormalMemberApplication {
   paperEvidence             FormalPaperEvidence[]
 
   @@index([personId, status])
+  @@index([legalEntityId, status])
   @@index([applicantType, sourceChannel, status])
   @@index([legalEntityRegistrationNo])
   @@index([spouseIdentityFingerprint])
@@ -947,6 +969,7 @@ model Qualification {
   /// Immutable business Ball identifier after Binary placement. It is never a relational key.
   ballNo                String?              @unique @map("ball_no")
   currentHolderPersonId String?              @map("current_holder_person_id") @db.Uuid
+  currentHolderLegalEntityId String?          @map("current_holder_legal_entity_id") @db.Uuid
   planLevelCode         String?              @map("plan_level_code")
   status                RecordStatus         @default(DRAFT)
   activeFlag            Boolean              @default(false) @map("active_flag")
@@ -955,6 +978,7 @@ model Qualification {
   updatedAt             DateTime             @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   currentHolder               Person?                          @relation(fields: [currentHolderPersonId], references: [personId], onDelete: Restrict)
+  currentHolderLegalEntity     LegalEntity?                     @relation(fields: [currentHolderLegalEntityId], references: [legalEntityId], onDelete: Restrict)
   holderHistory               QualificationHolderHistory[]
   sponsoredChildren           SponsorRelationship[]            @relation("Sponsor")
   sponsorRelation             SponsorRelationship?             @relation("SponsoredChild")
@@ -980,6 +1004,7 @@ model Qualification {
   payableEntries              PayableEntry[]
 
   @@index([currentHolderPersonId])
+  @@index([currentHolderLegalEntityId])
   @@index([status, effectiveAt])
   @@map("qualification")
   @@schema("membership")
@@ -1184,7 +1209,8 @@ model MemberNotificationRead {
 model QualificationHolderHistory {
   holderHistoryId String    @id @default(uuid()) @map("holder_history_id") @db.Uuid
   qualificationId String    @map("qualification_id") @db.Uuid
-  holderPersonId  String    @map("holder_person_id") @db.Uuid
+  holderPersonId  String?   @map("holder_person_id") @db.Uuid
+  holderLegalEntityId String? @map("holder_legal_entity_id") @db.Uuid
   effectiveFrom   DateTime  @map("effective_from") @db.Timestamptz(6)
   effectiveTo     DateTime? @map("effective_to") @db.Timestamptz(6)
   sourceType      String    @map("source_type")
@@ -1192,10 +1218,12 @@ model QualificationHolderHistory {
   createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
 
   qualification Qualification @relation(fields: [qualificationId], references: [qualificationId])
-  holder        Person        @relation(fields: [holderPersonId], references: [personId])
+  holder        Person?       @relation(fields: [holderPersonId], references: [personId])
+  holderLegalEntity LegalEntity? @relation(fields: [holderLegalEntityId], references: [legalEntityId])
 
   @@index([qualificationId, effectiveFrom])
   @@index([holderPersonId, effectiveFrom])
+  @@index([holderLegalEntityId, effectiveFrom])
   @@map("qualification_holder_history")
   @@schema("membership")
 }
@@ -2305,7 +2333,8 @@ model OutboxEvent {
 
 model MembershipApplication {
   applicationId               String            @id @default(uuid()) @map("application_id") @db.Uuid
-  personId                    String            @map("person_id") @db.Uuid
+  personId                    String?           @map("person_id") @db.Uuid
+  legalEntityId               String?           @map("legal_entity_id") @db.Uuid
   requestedPlanLevelCode      String            @map("requested_plan_level_code")
   sponsorQualificationId      String?           @map("sponsor_qualification_id") @db.Uuid
   binaryParentQualificationId String?           @map("binary_parent_qualification_id") @db.Uuid
@@ -2321,7 +2350,8 @@ model MembershipApplication {
   createdAt                   DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt                   DateTime          @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  person        Person         @relation(fields: [personId], references: [personId])
+  person        Person?        @relation(fields: [personId], references: [personId])
+  legalEntity   LegalEntity?    @relation(fields: [legalEntityId], references: [legalEntityId])
   qualification Qualification? @relation(fields: [createdQualificationId], references: [qualificationId])
 
   @@index([personId, status])
@@ -3528,6 +3558,7 @@ enum QualificationKind {
 }
 enum QualificationOwnerType {
   MEMBER
+  LEGAL_ENTITY
   COMPANY
   @@schema("membership")
 }
@@ -3558,6 +3589,7 @@ model QualificationOwnerInterval {
   qualificationId String @map("qualification_id") @db.Uuid
   ownerType QualificationOwnerType @map("owner_type")
   personId String? @map("person_id") @db.Uuid
+  legalEntityId String? @map("legal_entity_id") @db.Uuid
   companyPrincipalId String? @map("company_principal_id") @db.Uuid
   effectiveFrom DateTime @map("effective_from") @db.Timestamptz(6)
   effectiveTo DateTime? @map("effective_to") @db.Timestamptz(6)
@@ -3568,6 +3600,7 @@ model QualificationOwnerInterval {
   evidenceHash String @map("evidence_hash")
   qualification Qualification @relation(fields: [qualificationId], references: [qualificationId])
   person Person? @relation(fields: [personId], references: [personId])
+  legalEntity LegalEntity? @relation(fields: [legalEntityId], references: [legalEntityId])
   companyPrincipal CompanyPrincipal? @relation(fields: [companyPrincipalId], references: [companyPrincipalId])
   @@index([qualificationId, effectiveFrom, effectiveTo])
   @@unique([qualificationId, sourceType, sourceId])
