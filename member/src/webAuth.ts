@@ -72,7 +72,8 @@ export async function renderGoogleButton(element:HTMLElement,onAuthenticated:()=
  try{
   await loadGoogle();
   window.google.accounts.id.initialize({client_id:clientId,callback:async(result:{credential?:string})=>{
-   try{if(!result.credential)throw new Error('GOOGLE_CREDENTIAL_MISSING');await googleExchange(result.credential);onAuthenticated();}catch(e){if(e instanceof Error&&e.message==='GOOGLE_ACCOUNT_UNBOUND'){onUnbound(result.credential);return;}onError(e instanceof Error?e.message:'Google 登入失敗');}
+   const credential=result.credential;
+   try{if(!credential)throw new Error('GOOGLE_CREDENTIAL_MISSING');await googleExchange(credential);onAuthenticated();}catch(e){if(credential&&e instanceof Error&&e.message==='GOOGLE_ACCOUNT_UNBOUND'){onUnbound(credential);return;}onError(e instanceof Error?e.message:'Google 登入失敗');}
   }});
   element.replaceChildren();
   window.google.accounts.id.renderButton(element,{theme:'outline',size:'large',shape:'rectangular',text:'continue_with',width:320});
