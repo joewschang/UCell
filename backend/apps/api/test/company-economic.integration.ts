@@ -14,6 +14,7 @@ import {BonusQueryService} from '../src/modules/bonus/bonus-query.service';
 import {ReferralBonusService} from '../src/modules/bonus/referral-bonus.service';
 import {BinaryBonusService} from '../src/modules/bonus/binary-bonus.service';
 import {UnifiedPayableService} from '../src/modules/payout/unified-payable.service';
+import {maturedPayableSourceSql} from '../src/modules/settlement-jobs/matured-payable-source-query';
 const url=process.env.PHASE2_TEST_DATABASE_URL;
 if(!url||!/^ucell_jest_[a-f0-9]{32}$/.test(new URL(url).pathname.slice(1)))throw Error('ISOLATED_DATABASE_REQUIRED');
 const db=new PrismaService(),org=new OrganizationService(db),treeService=new BinaryTreeService(db,new IdempotencyService(db),org);
@@ -36,7 +37,9 @@ it('Company Golden: existing Core Referral/Equalization/Binary/Matching/Carry, a
   await db.qualificationHolderHistory.create({data:{qualificationId:q.qualificationId,holderPersonId:person.personId,effectiveFrom:at,sourceType:'SYNTHETIC_GOLDEN',sourceId:randomUUID()}});
   if(i<4)await treeService.confirmCompanySponsor(p,tree.binaryTreeId,{qualificationId:q.qualificationId,reason:'Synthetic Golden'},randomUUID());
   else await db.sponsorRelationship.create({data:{childQualificationId:q.qualificationId,sponsorQualificationId:members[0],sponsorSequenceNo:1,effectiveFrom:new Date()}});
-  await treeService.place(p,tree.binaryTreeId,{qualificationId:q.qualificationId,binaryParentQualificationId:i<4?tree.companyQualificationIds[1+Math.floor(i/2)]:members[0],side:i%2?'RIGHT':'LEFT',expectedVersion:2+i,reason:'Synthetic Golden'},randomUUID());
+  // Published seven-ball bootstrap occupies both children of balls 2 and 3.
+  // Place under a free leaf in each root side, retaining the original volume split.
+  await treeService.place(p,tree.binaryTreeId,{qualificationId:q.qualificationId,binaryParentQualificationId:i<4?tree.companyQualificationIds[i<2?3:5]:members[0],side:i%2?'RIGHT':'LEFT',expectedVersion:2+i,reason:'Synthetic Golden'},randomUUID());
  }
  const product=await db.productReference.create({data:{sku:'COMPANY-GOLDEN-'+randomUUID(),displayName:'Synthetic GPV',currentPrice:20000}});
  const orders:Array<any>=[];
@@ -58,7 +61,7 @@ it('Company Golden: existing Core Referral/Equalization/Binary/Matching/Carry, a
  const unfinalizedDistribution=await db.$transaction(tx=>projectPeriodFacts(tx,{metrics:['bonus.distribution'],time:{timezone:'Asia/Taipei',periodStart:start.toISOString(),periodEnd:new Date(end.getTime()+1).toISOString(),asOf:pendingNow,knowledgeCutoff:pendingNow},dimensions:['binaryTreeId'],groupBy:['binaryTreeId'],filters:{binaryTreeId:tree.binaryTreeId},limit:100}));
  expect(unfinalizedDistribution).toMatchObject({status:'STALE',rows:[],manifest:{pendingSourceCount:'5'}});
  const k0=await referral.settle(start,end),k1=await binary.settleBinary(start,end),k2=await binary.settleMatching(start,end);
- const companyIds=tree.companyQualificationIds;
+ const companyIds:string[]=tree.companyQualificationIds;
  const destinations=await db.awardEconomicDestination.findMany({where:{binaryTreeId:tree.binaryTreeId},include:{effects:true}});
  expect(new Set(destinations.map(d=>d.awardType))).toEqual(new Set(['REFERRAL','EQUALIZATION','BINARY','MATCHING']));
  for(const qid of companyIds){
@@ -66,7 +69,7 @@ it('Company Golden: existing Core Referral/Equalization/Binary/Matching/Carry, a
   expect(profile.planCode).toBe('LEADER');
   expect(await db.qualificationGlobalRankHistory.count({where:{qualificationId:qid}})).toBe(0);
   expect(await db.bonusAwardLifecycleEvent.count({where:{bonusAwardId:{in:destinations.filter(d=>d.qualificationId===qid).map(d=>d.sourceBonusAwardId!)}}})).toBe(0);
-  expect(destinations.some(d=>d.qualificationId===qid&&d.awardType==='BINARY')).toBe(true);
+  if(companyIds.slice(0,3).includes(qid))expect(destinations.some(d=>d.qualificationId===qid&&d.awardType==='BINARY')).toBe(true);
  }
  expect((await db.binaryCarry.findUniqueOrThrow({where:{qualificationId_periodEnd_ruleVersionCode:{qualificationId:companyIds[0],periodEnd:end,ruleVersionCode:'R1.0B'}}})).leftCarryOut.toString()).toBe('100000');
  for(const d of destinations){expect(d.effects).toHaveLength(1);expect(d.effects[0].amountDelta.eq(d.finalAmount)).toBe(true);}
@@ -75,6 +78,7 @@ it('Company Golden: existing Core Referral/Equalization/Binary/Matching/Carry, a
  for(const mutation of [{awardType:'GLOBAL'},{sourceSettlementId:randomUUID()},{periodStart:new Date(destinations[0].periodStart.getTime()+1)}]){
   await expect(db.awardEconomicDestination.create({data:{...destinationCopy,parameterSnapshot:destinationCopy.parameterSnapshot as Prisma.InputJsonValue,destinationId:randomUUID(),...mutation}})).rejects.toThrow('RESERVOIR_B_PERIOD_SOURCE_MISMATCH');
  }
+ for(const companyPosition of [0,8])await expect(db.awardEconomicDestination.create({data:{...destinationCopy,parameterSnapshot:destinationCopy.parameterSnapshot as Prisma.InputJsonValue,destinationId:randomUUID(),companyPosition}})).rejects.toThrow();
  const original=JSON.stringify(await db.bonusAward.findMany({where:{settlementBatchId:{in:[k0.settlementBatchId,k1.settlementBatchId,k2.settlementBatchId]}},orderBy:{bonusAwardId:'asc'}}));
  const target=orders[3],source=await db.pvLedger.findFirstOrThrow({where:{sourceId:target.orderId,pvType:'GPV'}});
  const anchor=await db.bonusAward.findFirstOrThrow({where:{sourceEventId:source.eventId,awardType:'REFERRAL',recipientQualificationId:companyIds[0]}});
@@ -105,6 +109,19 @@ it('Company Golden: existing Core Referral/Equalization/Binary/Matching/Carry, a
  expect(await db.qualificationGlobalRankHistory.count({where:{qualificationId:companyIds[1]}})).toBe(0);
  expect(await db.qualificationGlobalRankHistory.count({where:{qualificationId:companyIds[2]}})).toBe(0);
  expect(await db.reservoirLedgerEffect.count({where:{sourceGlobalSettlementId:global.globalPoolSettlementId}})).toBe(1);
+ // Inspect the shared predicate with an advanced synthetic maturity cutoff.
+ // No clock override, source timestamp mutation or HTTP future-asOf bypass.
+ const controlQualification=await db.qualification.create({data:{currentHolderPersonId:person.personId,planLevelCode:'STARTER'}});
+ const controlAward=await db.bonusAward.create({data:{recipientQualificationId:controlQualification.qualificationId,awardType:'REFERRAL',sourceEventId:randomUUID(),theoryAmount:1,payableAmount:1,activeSnapshot:true,planLevelSnapshot:'STARTER',ruleVersionCode:'QUEUE_SYNTHETIC_CONTROL',parameterSnapshotHash:'a'.repeat(64),occurredAt:start,pendingUntil:start,calculationDetail:{synthetic:true}}});
+ await db.bonusAwardLifecycleEvent.create({data:{bonusAwardId:controlAward.bonusAwardId,status:'EFFECTIVE',occurredAt:start}});
+ const queueAt=new Date(),queueCutoff=new Date(queueAt.getTime()+365*86400000);
+ const excludedSources=await db.awardEconomicDestination.findMany({where:{binaryTreeId:tree.binaryTreeId},select:{sourceBonusAwardId:true,sourceGlobalAwardId:true}});
+ expect(excludedSources.some(row=>row.sourceBonusAwardId)).toBe(true);
+ expect(excludedSources.some(row=>row.sourceGlobalAwardId)).toBe(true);
+ const missingSources=await db.$queryRaw<Array<{source_type:string;source_id:string;qualification_id:string}>>`${maturedPayableSourceSql(queueCutoff,queueAt)}`;
+ expect(missingSources.some(row=>row.source_id===controlAward.bonusAwardId&&row.qualification_id===controlQualification.qualificationId)).toBe(true);
+ expect(missingSources.filter(row=>companyIds.includes(row.qualification_id))).toEqual([]);
+ for(const excluded of excludedSources)expect(missingSources.some(row=>row.source_id===excluded.sourceBonusAwardId||row.source_id===excluded.sourceGlobalAwardId)).toBe(false);
  await new UnifiedPayableService(db,{} as any).materialize(new Date(Date.now()+365*86400000));
  expect(await db.payableEntry.count({where:{qualificationId:{in:companyIds}}})).toBe(0);
  const sealed=verifyReplayEnvelope(await db.historicalReplaySnapshot.findUniqueOrThrow({where:{kind_sourceId:{kind:'BINARY_K1',sourceId:k1.settlementBatchId}}}));
@@ -125,20 +142,23 @@ it('Company Golden: existing Core Referral/Equalization/Binary/Matching/Carry, a
  const returns=await db.$transaction(tx=>projectPeriodFacts(tx,queryFor('return.cohort_rates')));
  expect(returns).toMatchObject({status:'CURRENT',rows:[{measures:{orderNumerator:'2',orderDenominator:'5',orderRate:'0.40000000',amountNumerator:'90000.00',amountDenominator:'900000.0000',unitNumerator:'5.0000',unitDenominator:'50.0000'}}]});
  const founding=await db.$transaction(tx=>projectPeriodFacts(tx,queryFor('founding.statistics')));
- expect(founding.status).toBe('CURRENT');const fourth=founding.rows.find(r=>r.key==='4')!;
+ expect(founding.status).toBe('CURRENT');const fourth=founding.rows.find(r=>r.key==='8')!;
  expect(fourth.measures).toMatchObject({descendantBalls:'1',leftBalls:'1',rightBalls:'0',monthlyNewBalls:'1',leftCarry:'90000.0000',rightCarry:'0.0000',pairPv:'0.0000'});
  expect(new Prisma.Decimal(fourth.measures.cumulativeGpv!).eq(90000)).toBe(true);
- expect(founding.rows.filter(r=>r.key!=='4').every(r=>new Prisma.Decimal(r.measures.cumulativeGpv!).eq(0))).toBe(true);
+ for(const row of founding.rows.filter(r=>r.key!=='8')){
+  if(row.measures.occupation==='AVAILABLE'){expect(row.measures.cumulativeGpv).toBeNull();expect(row.evidence.quality).toBe('VERIFIED_EMPTY_POSITION');}
+  else expect(new Prisma.Decimal(row.measures.cumulativeGpv!).eq(0)).toBe(true);
+ }
  const distribution=await db.$transaction(tx=>projectPeriodFacts(tx,queryFor('bonus.distribution')));
  expect(distribution.status).toBe('CURRENT');expect(distribution.rows).toHaveLength(8);
- expect(distribution.manifest).toMatchObject({populationCount:'5',excludedCompanyCount:'3',unknownOwnerCount:'0'});
+ expect(distribution.manifest).toMatchObject({populationCount:'5',excludedCompanyCount:'7',unknownOwnerCount:'0'});
  expect(distribution.rows.reduce((n,r)=>n+Number(r.measures.count),0)).toBe(5);
  const carryMetric=await db.$transaction(tx=>projectPeriodFacts(tx,{...queryFor('binary.left_carry'),dimensions:['qualificationId'],groupBy:['qualificationId'],filters:{qualificationId:members[0]}}));
  expect(carryMetric).toMatchObject({status:'CURRENT',rows:[{measures:{value:'90000.0000'}}]});
  const comparison=await db.$transaction(tx=>projectPeriodFacts(tx,queryFor('tree.comparison')));
- expect(comparison).toMatchObject({status:'CURRENT',rows:[{measures:{balls:'8',monthlyNewBalls:'8'}}]});
+ expect(comparison).toMatchObject({status:'CURRENT',rows:[{measures:{balls:'12',monthlyNewBalls:'12'}}]});
  const ranks=await db.$transaction(tx=>projectPeriodFacts(tx,queryFor('rank.distribution')));
- expect(ranks.manifest).toMatchObject({eligibleCount:'5',excludedCompanyCount:'3'});
+ expect(ranks.manifest).toMatchObject({eligibleCount:'5',excludedCompanyCount:'7'});
  const rankGpv=await db.$transaction(tx=>projectPeriodFacts(tx,queryFor('rank.gpv')));
  expect(rankGpv.status).toBe('CURRENT');expect(new Prisma.Decimal(rankGpv.rows.find(r=>r.key==='UNRANKED')!.measures.gpv!).eq(810000)).toBe(true);
  const rankBonus=await db.$transaction(tx=>projectPeriodFacts(tx,queryFor('rank.bonus')));
@@ -211,16 +231,16 @@ it('Company Golden: existing Core Referral/Equalization/Binary/Matching/Carry, a
  expect(transferDetail.result!.positions.find(r=>r.positionNo===4)!.activeLabel).toBe('Always Active (Company Rule)');
  expect(transferDetail.result!.positions.find(r=>r.positionNo===1)!.activeLabel).toBe('Always Active (Company Rule)');
  const transferProjection=await db.$transaction(tx=>projectPeriodFacts(tx,{...queryFor('founding.statistics'),time:transferReadTime}));
- expect(transferProjection.rows.find(r=>r.key==='4')!.measures.active).toBe('ALWAYS_ACTIVE');
+ expect(transferProjection.rows.find(r=>r.key==='8')!.measures.active).toBe('ALWAYS_ACTIVE');
  const foundingScope={...queryFor('founding.statistics'),time:transferReadTime,filters:{binaryTreeId:tree.binaryTreeId,foundingBallId:members[0]}};
  const scopedFounding=await db.$transaction(tx=>projectPeriodFacts(tx,foundingScope));
- expect(scopedFounding.rows).toHaveLength(1);expect(scopedFounding.rows[0].key).toBe('4');
+ expect(scopedFounding.rows).toHaveLength(1);expect(scopedFounding.rows[0].key).toBe('8');
  const scopedWorker=new PeriodProjectionService(db),scopedJob=await scopedWorker.request(p,foundingScope,'REBUILD',randomUUID());
  expect(await scopedWorker.runOne()).toMatchObject({jobId:scopedJob.jobId,status:'COMPLETED'});
  expect((await scopedWorker.read(p,foundingScope)).result).toHaveLength(1);
  await expect(db.$transaction(tx=>projectPeriodFacts(tx,{...foundingScope,filters:{binaryTreeId:tree.binaryTreeId,foundingBallId:randomUUID()}}))).rejects.toThrow('FOUNDING_SCOPE_NOT_IN_TREE');
  expect(new Date(transferDetail.result!.positions.find(r=>r.positionNo===4)!.lastUpdated!).getTime()).toBeGreaterThanOrEqual(transferAt.getTime());
- expect(new Date(String(transferProjection.rows.find(r=>r.key==='4')!.evidence.lastUpdated)).getTime()).toBeGreaterThanOrEqual(transferAt.getTime());
+ expect(new Date(String(transferProjection.rows.find(r=>r.key==='8')!.evidence.lastUpdated)).getTime()).toBeGreaterThanOrEqual(transferAt.getTime());
  const nextAt=new Date(),nextSnapshot=await captureParameters(db as unknown as Prisma.TransactionClient,nextAt,'R1.0B');
  const nextOrder=await db.order.create({data:{qualificationId:members[4],purpose:'RETAIL',status:'PAID',paidAt:nextAt,grossAmount:2000,netAmount:2000,ruleVersionCode:'R1.0B',parameterSnapshotHash:nextSnapshot.hash,
   lines:{create:{productId:product.productId,skuSnapshot:product.sku,productNameSnapshot:product.displayName,quantity:1,unitPrice:2000,lineAmount:2000,gpvRateSnapshot:1,gpvAmountSnapshot:2000,ruleProfileSnapshot:{synthetic:true}}}},include:{lines:true}});

@@ -1,0 +1,33 @@
+{
+  "date": "2026-10-01",
+  "status": "BOUNDED_PASS",
+  "defect": "Published seven-ball tree produces Company Binary destination position 4, rejected by legacy destination CHECK limiting positions to 1..3",
+  "fix": "New additive migration 127 aligns positive position range with profile-derived binding; existing owner/tree/source/binding triggers retained; no historical migration edits",
+  "verification": {
+    "isolatedGolden": {
+      "suites": 1,
+      "tests": 1,
+      "migrations": 127,
+      "baselineAssertions": 162,
+      "cleanup": "PASS",
+      "log": "C:/UCell/logs/company-economic-profile-empty-20261001.log"
+    },
+    "coverage": [
+      "Actual published seven-ball tree creation and member placements",
+      "Core Referral/Equalization/Binary/Matching/Carry and Global settlement",
+      "Real Bonus and Global economic destinations excluded by common missing-payable source SQL",
+      "Separate effective ordinary-member positive source included",
+      "Invalid position 0 and mismatched position 8 rejected",
+      "Return/replay append-only guards, Company transfer and payout isolation",
+      "Profile-derived population and verified empty founding positions"
+    ]
+  },
+  "discovery": "Existing .integration.ts file was not discovered by default API Jest regex; explicit e2e wrapper now includes it",
+  "limits": [
+    "Advanced synthetic cutoff verifies shared SQL, not future-asOf HTTP acceptance",
+    "Company RPV destination exclusion not newly fixture-certified",
+    "Existing-data 126-to-127 preservation and final full isolated recertification pending",
+    "Whole batch remains IN_PROGRESS"
+  ],
+  "deployment": "NONE"
+}
