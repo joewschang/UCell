@@ -543,6 +543,12 @@ export class AdminOperationsService {
       if(prepared.every(result=>byKey.has(result.key)))return {batch,results:history,replayed:true};
       if(!['EXPORTED','PROCESSING','PARTIALLY_PAID','FAILED'].includes(batch.status))throw new ConflictException('Only exported unpaid payout batches can accept new payment results');
       const lineById=new Map(batch.lines.map(line=>[line.payoutLineId,line]));
+      // Different batches may share recipients. Lock every new-result recipient in
+      // the same order before writing results, independent of client line order.
+      const recipientIds=new Set<string>();
+      for(const result of prepared){const line=lineById.get(result.payoutLineId);if(!line)throw new ConflictException('PAYOUT_RESULT_LINE_NOT_IN_BATCH');if(!byKey.has(result.key))recipientIds.add(line.recipientQualificationId);}
+      for(const qualificationId of [...recipientIds].sort())await tx.$queryRaw`SELECT qualification_id FROM membership.qualification WHERE qualification_id=${qualificationId}::uuid FOR UPDATE`;
+
       for(const result of prepared){
         const line=lineById.get(result.payoutLineId); if(!line) throw new ConflictException('PAYOUT_RESULT_LINE_NOT_IN_BATCH');
         const {amount}=result;
@@ -552,7 +558,6 @@ export class AdminOperationsService {
         if(previousPaid.some(row=>row.paidAmount.gt(amount)||row.paidAmount.equals(line.netAmount)&&result.status==='FAILED'))throw new ConflictException('PAYOUT_PAID_AMOUNT_CANNOT_DECREASE');
         const occurredAt=result.occurredAt??new Date();
         const recordedResult=await tx.payoutPaymentResult.create({data:{payoutBatchId:id,payoutLineId:line.payoutLineId,resultStatus:result.status,paidAmount:amount,paymentReference:result.paymentReference,reasonCode:result.reasonCode,occurredAt,recordedByActor:actorId,idempotencyKey:result.key}});
-        await tx.$queryRaw`SELECT qualification_id FROM membership.qualification WHERE qualification_id=${line.recipientQualificationId}::uuid FOR UPDATE`;
         const recipient=await tx.qualification.findUniqueOrThrow({where:{qualificationId:line.recipientQualificationId},select:{kind:true,currentHolderPersonId:true,qualificationNo:true}});
         if(recipient.kind==='MEMBER_ORIGIN'&&recipient.currentHolderPersonId)await appendMemberMessage(tx,{messageKey:'payout:result:'+recordedResult.payoutPaymentResultId,personId:recipient.currentHolderPersonId,qualificationId:line.recipientQualificationId,category:'PAYOUT',title:result.status==='FAILED'?'付款失敗紀錄已登錄':amount.equals(line.netAmount)?'付款完成紀錄已登錄':'付款結果已更新',body:result.status==='FAILED'?`資格 ${recipient.qualificationNo} 的付款結果已有失敗紀錄，請至付款紀錄查看目前狀態。此通知不代表付款完成。`:`資格 ${recipient.qualificationNo} 的付款結果已登錄，請至付款紀錄查看目前狀態。單筆結果不代表整個批次已完成。`,sourceType:'PAYOUT_PAYMENT_RESULT',sourceReference:erpBusinessReference('PAYMENT_RESULT',recordedResult.payoutPaymentResultId),deepLink:'/payouts'});
         if(result.status==='PAID'&&amount.equals(line.netAmount)){

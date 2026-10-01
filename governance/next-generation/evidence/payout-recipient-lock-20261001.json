@@ -1,0 +1,36 @@
+{
+  "timestamp": "2026-10-01T05:43:27.560Z",
+  "baseCommit": "8598c2be995d9f6aeb52b92ee9e2da0ab30cb508",
+  "executionContext": "local-working-tree",
+  "sourceFiles": [
+    {
+      "path": "backend/apps/api/src/modules/admin-operations/admin-operations.service.ts",
+      "sha256": "d3f5c1ab8e0789ab9a4caac015986ed67eb5e79a55844787f39e20c1c02a05a8"
+    },
+    {
+      "path": "backend/apps/api/test/payout-result-recovery-db.e2e-spec.ts",
+      "sha256": "9b6d0382f0ba8fafa49bc4f7656bd227b653fbaaa43ce2d8a5403d8f643a7df3"
+    }
+  ],
+  "verification": {
+    "status": "PASS",
+    "suites": 2,
+    "tests": 32,
+    "migrations": 126,
+    "baselineAssertions": 162,
+    "cleanup": "PASS",
+    "log": "C:/UCell/logs/payout-recipient-lock-isolated-fixed-20261001.log",
+    "apiBuild": "PASS"
+  },
+  "proved": [
+    "opposite-order concurrent batches acquire identical sorted recipient locks",
+    "both batches finish PAID with four result records and four qualification messages",
+    "exact replay takes no recipient lock and creates no duplicate notice"
+  ],
+  "limits": [
+    "not universal concurrency certification",
+    "whole batch implementation and full recertification remain IN_PROGRESS"
+  ],
+  "stageRc": "NOT_READY",
+  "deployment": false
+}

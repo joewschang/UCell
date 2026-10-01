@@ -62,6 +62,35 @@ const url=process.env.PHASE2_TEST_DATABASE_URL;
   for(const hidden of [f.person.personId,f.qualification.qualificationId,f.batch.payoutBatchId,f.line.payoutLineId,'SYNTHETIC-PAID-40','SYNTHETIC-PAID-100'])expect(JSON.stringify(view)).not.toContain(hidden);
   const foreign=await db.person.create({data:{legalName:'Foreign payout context'}});await expect(messages.list(foreign.personId,{qualificationId:f.qualification.qualificationId})).rejects.toThrow();expect(await db.notificationDelivery.count()).toBe(0);
  });
+ it('locks shared recipients in stable order across opposite-order concurrent batches',async()=>{
+  const f=await fixture(true),lines=await db.payoutLine.findMany({where:{payoutBatchId:f.batch.payoutBatchId},orderBy:{recipientQualificationId:'asc'}});
+  const batch=await db.payoutBatch.create({data:{periodStart:f.batch.periodStart,periodEnd:f.batch.periodEnd,status:'READY',totalGross:200,totalRecovery:0,totalNet:200}});
+  const other=[];for(const line of lines)other.push(await db.payoutLine.create({data:{payoutBatchId:batch.payoutBatchId,recipientQualificationId:line.recipientQualificationId,grossAmount:100,netAmount:100,detailJson:{source:'concurrent-fixture'}}}));
+  await service.approvePayout(batch.payoutBatchId,'FINANCE_REVIEW',f.actor,'FINANCE',undefined,randomUUID(),randomUUID());
+  await service.approvePayout(batch.payoutBatchId,'COMPLIANCE_REVIEW',randomUUID(),'COMPLIANCE_AUDIT',undefined,randomUUID(),randomUUID());
+  await service.exportPayout(batch.payoutBatchId,randomUUID(),f.actor,'FINANCE',randomUUID(),randomUUID());
+  const traces:string[][]=[];
+  const wrapped={$transaction:async(work:any,options:any)=>db.$transaction(async tx=>{
+   const trace:string[]=[];traces.push(trace);
+   const proxy=new Proxy(tx,{get(t,k){
+    if(k!=='$queryRaw')return Reflect.get(t,k);
+    return async(strings:TemplateStringsArray,...values:any[])=>{
+     const result=await (t.$queryRaw as any)(strings,...values);
+     if(strings.join('').includes('FROM membership.qualification')){trace.push(values[0]);if(trace.length===1)await new Promise(resolve=>setTimeout(resolve,40));}
+     return result;
+    };
+   }});
+   return work(proxy);
+  },options)};
+  const concurrent=new AdminOperationsService(wrapped as any,new AuditService());
+  const rows=(items:typeof lines)=>items.map(line=>({payoutLineId:line.payoutLineId,status:'PAID' as const,paidAmount:'100',paymentReference:'CONCURRENT-'+line.payoutLineId}));
+  const outcomes=await Promise.all([concurrent.recordPayoutResults(f.batch.payoutBatchId,{results:rows([...lines].reverse())},f.actor,'FINANCE',randomUUID(),randomUUID()),concurrent.recordPayoutResults(batch.payoutBatchId,{results:rows(other)},f.actor,'FINANCE',randomUUID(),randomUUID())]);
+  expect(outcomes.map(row=>row.batch.status)).toEqual(['PAID','PAID']);
+  const expected=lines.map(line=>line.recipientQualificationId);expect(traces).toEqual([expected,expected]);
+  expect(await db.payoutPaymentResult.count({where:{payoutBatchId:{in:[f.batch.payoutBatchId,batch.payoutBatchId]}}})).toBe(4);
+  const again=await concurrent.recordPayoutResults(f.batch.payoutBatchId,{results:rows([...lines].reverse())},f.actor,'FINANCE',randomUUID(),randomUUID());expect(again.replayed).toBe(true);expect(traces[2]).toEqual([]);
+  expect(await db.memberNotification.count({where:{qualificationId:{in:expected},category:'PAYOUT'}})).toBe(4);
+ });
  it('keeps a failed-result notice factual when a later confirmation completes payment',async()=>{
   const f=await fixture();await f.post([f.result('0','FAILED')]);await f.post([f.result('100')]);
   const messages=new MemberMessagesService(db as any,new AuditService(),new IdempotencyService(db as any)),view=await messages.list(f.person.personId,{qualificationId:f.qualification.qualificationId});
