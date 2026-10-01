@@ -5,12 +5,12 @@ import {useResource} from './useResource';
 
 export default function NetworkRegistration({person,refresh}:{person:Person;refresh:()=>void}){
  const contracts=useResource('network-registration-contracts',getRequiredContracts);
- const [legalName,setLegalName]=useState(''),[alias,setAlias]=useState(person.alias??person.name),[gender,setGender]=useState(''),[birthDate,setBirthDate]=useState(''),[mobile,setMobile]=useState(person.phone??''),[email,setEmail]=useState(person.email??''),[accepted,setAccepted]=useState(false),[busy,setBusy]=useState(false),[error,setError]=useState(''),[done,setDone]=useState(false);
+ const [legalName,setLegalName]=useState(''),[alias,setAlias]=useState(person.alias??person.name),[gender,setGender]=useState(''),[birthDate,setBirthDate]=useState(''),[nationalityCode,setNationalityCode]=useState('TW'),[identityDocumentType,setIdentityDocumentType]=useState<'NATIONAL_ID'|'RESIDENCE_PERMIT'|'PASSPORT'|'OTHER'>('NATIONAL_ID'),[identityDocumentNumber,setIdentityDocumentNumber]=useState(''),[mobile,setMobile]=useState(person.phone??''),[email,setEmail]=useState(person.email??''),[accepted,setAccepted]=useState(false),[busy,setBusy]=useState(false),[error,setError]=useState(''),[done,setDone]=useState(false);
  const pending=useRef<{body:string;key:string}|null>(null),flight=useRef(false);
  const contract=contracts.data?.[0];
  async function submit(event:FormEvent){
   event.preventDefault();if(flight.current||!contract)return;
-  const input={contractVersionId:contract.id,accepted:true as const,legalName:legalName.trim(),alias:alias.trim(),gender,birthDate,mobile:mobile.trim(),email:email.trim()};
+  const input={contractVersionId:contract.id,accepted:true as const,legalName:legalName.trim(),alias:alias.trim(),gender,birthDate,nationalityCode:nationalityCode.trim().toUpperCase(),identityDocumentType,identityDocumentNumber:identityDocumentNumber.trim(),mobile:mobile.trim(),email:email.trim()};
   if(!accepted){setError('請先閱讀並同意合約與隱私告知');return;}
   if(!input.legalName||!input.alias||!input.gender||!input.birthDate||!/^\+[1-9][0-9]{7,14}$/.test(input.mobile)||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.email)){setError('請完整填寫姓名、別名、性別、出生日期、手機與 Email');return;}
   const body=JSON.stringify(input);if(pending.current?.body!==body)pending.current={body,key:crypto.randomUUID()};
@@ -28,6 +28,9 @@ export default function NetworkRegistration({person,refresh}:{person:Person;refr
   <label>別名<input value={alias} maxLength={80} onChange={e=>setAlias(e.target.value)} disabled={busy}/></label>
   <label>性別<select value={gender} onChange={e=>setGender(e.target.value)} disabled={busy}><option value="">請選擇</option><option value="FEMALE">女性</option><option value="MALE">男性</option><option value="OTHER">其他／自行描述</option><option value="UNDISCLOSED">不揭露</option></select></label>
   <label>出生年月日<input type="date" value={birthDate} onChange={e=>setBirthDate(e.target.value)} disabled={busy}/></label>
+  <label>國籍<select value={nationalityCode} onChange={e=>setNationalityCode(e.target.value)} disabled={busy}><option value="TW">台灣</option><option value="CN">中國</option><option value="HK">香港</option><option value="MO">澳門</option><option value="JP">日本</option><option value="US">美國</option><option value="ID">印尼</option><option value="SG">新加坡</option><option value="MY">馬來西亞</option></select></label>
+  <label>身分證明文件類型<select value={identityDocumentType} onChange={e=>setIdentityDocumentType(e.target.value as typeof identityDocumentType)} disabled={busy}><option value="NATIONAL_ID">身分證號</option><option value="RESIDENCE_PERMIT">居留證號</option><option value="PASSPORT">護照號碼</option><option value="OTHER">其他</option></select></label>
+  <label>身分證明號碼<input value={identityDocumentNumber} maxLength={64} autoComplete="off" onChange={e=>setIdentityDocumentNumber(e.target.value)} disabled={busy}/></label>
   <label>手機（含國碼）<input type="tel" value={mobile} placeholder="+886912345678" autoComplete="tel" onChange={e=>setMobile(e.target.value)} disabled={busy}/></label>
   <label>Email<input type="email" value={email} maxLength={254} autoComplete="email" onChange={e=>setEmail(e.target.value)} disabled={busy}/></label>
   <details><summary>{contract.title}（{contract.version}）</summary><p>{contract.content}</p><small>內容雜湊：{contract.contentHash}</small></details>
