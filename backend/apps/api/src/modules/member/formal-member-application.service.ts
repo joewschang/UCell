@@ -112,6 +112,7 @@ export class FormalMemberApplicationService {
     const encrypted=this.pii.encrypt(normalized),version=(current?.snapshots[0]?.version??0)+1;
     const metadata={
      applicantType:normalized.applicantType,
+     legalEntityRegistrationNo:normalized.applicantType==='LEGAL_ENTITY'?normalized.legalEntityRegistrationNo:null,
      applicantIdentityFingerprint,
      spouseIdentityFingerprint,
      spouseVerificationStatus:normalized.hasSpouse?'PENDING':'NOT_APPLICABLE',
