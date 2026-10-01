@@ -14,6 +14,13 @@ export type WebRegistrationInput={
 export class MemberWebRegistrationService{
  constructor(private readonly db:PrismaService,private readonly otp:OtpService,private readonly idempotency:IdempotencyService){}
 
+ async requiredContract(){
+  const now=new Date();
+  const contract=await this.db.contractDocumentVersion.findFirst({where:{required:true,audience:{in:['NETWORK_MEMBER','ALL_MEMBERS']},effectiveFrom:{lte:now},OR:[{effectiveTo:null},{effectiveTo:{gt:now}}]},orderBy:{effectiveFrom:'desc'}});
+  if(!contract)throw new UnprocessableEntityException({code:'NETWORK_CONTRACT_NOT_CONFIGURED'});
+  return {contractVersionId:contract.contractDocumentVersionId,title:contract.title,versionCode:contract.versionCode,contentText:contract.contentText,contentHash:contract.contentHash};
+ }
+
  async start(registrationSessionId:string,mobile:string,key:string){
   return this.otp.create({purpose:'NETWORK_REGISTRATION',destination:mobile,registrationSessionId},key);
  }
