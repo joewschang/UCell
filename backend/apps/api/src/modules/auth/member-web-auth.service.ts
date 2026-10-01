@@ -1,13 +1,13 @@
 import { ConflictException,Injectable,UnauthorizedException,UnprocessableEntityException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '@ucell/database';
-import { createHash,randomBytes,scrypt as scryptCallback,timingSafeEqual } from 'node:crypto';
+import { createHash,randomBytes,scryptSync,timingSafeEqual } from 'node:crypto';
 import { IdentityTokenService } from './identity-token.service';
 import { GoogleTokenVerifierService } from './google-token-verifier.service';
 import { PasswordResetEmailService } from './password-reset-email.service';
 
 const PASSWORD_MIN=12,MAX_ATTEMPTS=5,LOCK_MS=15*60*1000;
-function derive(password:string,salt:string,length:number,N:number,r:number,p:number){return new Promise<Buffer>((resolve,reject)=>scryptCallback(password,salt,length,{N,r,p,maxmem:64*1024*1024},(error,key)=>error?reject(error):resolve(key as Buffer)));}
+function derive(password:string,salt:string,length:number,N:number,r:number,p:number){return scryptSync(password,salt,length,{N,r,p,maxmem:64*1024*1024});}
 
 @Injectable()
 export class MemberWebAuthService{
@@ -15,12 +15,12 @@ export class MemberWebAuthService{
 
  private async hashPassword(password:string,salt=randomBytes(16).toString('base64url')){
   if(password.length<PASSWORD_MIN||password.length>256)throw new UnprocessableEntityException({code:'PASSWORD_POLICY'});
-  const key=await derive(password,salt,32,16384,8,1);
+  const key=derive(password,salt,32,16384,8,1);
   return `scrypt$16384$8$1$${salt}$${key.toString('base64url')}`;
  }
  private async verifyPassword(password:string,encoded:string){
   const [kind,n,r,p,salt,value]=encoded.split('$');if(kind!=='scrypt'||!n||!r||!p||!salt||!value)return false;
-  const expected=Buffer.from(value,'base64url'),actual=await derive(password,salt,expected.length,Number(n),Number(r),Number(p));
+  const expected=Buffer.from(value,'base64url'),actual=derive(password,salt,expected.length,Number(n),Number(r),Number(p));
   return expected.length===actual.length&&timingSafeEqual(expected,actual);
  }
  private eligible(person:{status:string}){if(person.status!=='EFFECTIVE')throw new UnauthorizedException({code:'MEMBER_PERSON_DISABLED'});}
