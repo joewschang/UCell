@@ -40,6 +40,7 @@ jobs:
           STAGE_DB_PASSWORD: ${{ secrets.STAGE_POSTGRES_ADMIN_PASSWORD }}
           LINE_LOGIN_CHANNEL_ID: ${{ secrets.STAGE_LINE_LOGIN_CHANNEL_ID }}
           LIFF_ID: ${{ secrets.STAGE_LIFF_ID }}
+          GOOGLE_OIDC_CLIENT_ID: ${{ secrets.STAGE_GOOGLE_OIDC_CLIENT_ID }}
           ENTRA_TENANT_ID: ${{ secrets.STAGE_ENTRA_TENANT_ID }}
           ENTRA_CLIENT_ID: ${{ secrets.STAGE_ENTRA_CLIENT_ID }}
           ENTRA_REDIRECT_URI: ${{ secrets.STAGE_ENTRA_REDIRECT_URI }}
@@ -53,6 +54,7 @@ jobs:
             -PostgresAdminPassword $securePassword `
             -LineLoginChannelId $env:LINE_LOGIN_CHANNEL_ID `
             -LiffId $env:LIFF_ID `
+            -GoogleOidcClientId $env:GOOGLE_OIDC_CLIENT_ID `
             -EntraTenantId $env:ENTRA_TENANT_ID `
             -EntraClientId $env:ENTRA_CLIENT_ID `
             -EntraRedirectUri $env:ENTRA_REDIRECT_URI `
