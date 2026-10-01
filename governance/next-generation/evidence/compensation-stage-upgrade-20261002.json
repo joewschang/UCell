@@ -1,0 +1,36 @@
+{
+  "date": "2026-10-02",
+  "status": "UPGRADE_BOUNDED_PASS",
+  "sourceCommit": "6023c66969b77daa1917208cb109420e3cf146ef",
+  "verification": {
+    "stageUpgrade": {
+      "command": "node scripts/compensation-stage-upgrade-test.mjs",
+      "log": "C:/UCell/logs/compensation-stage-upgrade-20261002.log",
+      "from": 127,
+      "to": 128,
+      "scope": "13 existing identity/tree/qualification/owner/binding/economic tables; exact JSON rows preserved before and after first new observation",
+      "legacyObservations": 0,
+      "legacyWatermarks": 0,
+      "firstRevision": 1,
+      "previousStage": null,
+      "deleteRejected": true,
+      "cleanup": "PASS"
+    },
+    "economicRegression": {
+      "command": "node scripts/company-economic-upgrade-test.mjs",
+      "log": "C:/UCell/logs/company-economic-upgrade-bounded-20261002.log",
+      "from": 126,
+      "to": 127,
+      "scope": "Reproduced position 4 rejection, preserved existing rows, verified new atomic position 4 destination and immutability",
+      "cleanup": "PASS"
+    }
+  },
+  "implementation": "Upgrade runners copy only the named next migration into the prior schema, avoiding accidental later-version scope drift; synthetic fixture supports real current position 1/4 destinations without trigger bypass",
+  "limits": [
+    "Synthetic prior-version fixture does not cover every historical data shape",
+    "The direct first observation is a migration storage fixture, not domain stage evidence",
+    "Actual stage entry/duration, browser journeys and final full recertification remain pending",
+    "Whole batch IN_PROGRESS"
+  ],
+  "deployment": "NONE"
+}
