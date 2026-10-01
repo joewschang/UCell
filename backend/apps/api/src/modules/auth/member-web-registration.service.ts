@@ -25,7 +25,6 @@ export class MemberWebRegistrationService{
  }
 
  async complete(input:WebRegistrationInput,key:string){
-  try{await this.otp.verify(input.challengeId,'000000');}catch{/* verification state is checked below; code itself is verified by dedicated endpoint before completion */ }
   const birthDate=new Date(`${input.birthDate}T00:00:00.000Z`);
   if(!Number.isFinite(birthDate.getTime())||birthDate>=new Date())throw new UnprocessableEntityException({code:'INVALID_BIRTH_DATE'});
   const result=await this.idempotency.execute(`registration:web:${input.registrationSessionId}`,key,input,async tx=>{
