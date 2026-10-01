@@ -19,7 +19,7 @@ beforeEach(()=>{
 afterEach(()=>{if(tree)act(()=>tree!.unmount());tree=undefined;vi.clearAllMocks();vi.unstubAllGlobals();});
 
 it('shows active Web login methods and keeps SMS OTP explicitly deferred',async()=>{
- await act(async()=>{tree=create(<WebMemberEntry onLineLogin={vi.fn()} onAuthenticated={vi.fn()}/>);});
+ await act(async()=>{tree=create(<WebMemberEntry onLineLogin={vi.fn()} onAuthenticated={vi.fn()}/>,{createNodeMock:element=>element.type==='div'?{}:null});});
  const text=JSON.stringify(tree!.toJSON());
  expect(text).toContain('使用 LINE 登入');
  expect(text).toContain('會員編號 + 密碼登入');
@@ -29,7 +29,7 @@ it('shows active Web login methods and keeps SMS OTP explicitly deferred',async(
 });
 
 it('requires Google identity before Web registration and submits no OTP fields',async()=>{
- await act(async()=>{tree=create(<WebMemberEntry onLineLogin={vi.fn()} onAuthenticated={vi.fn()}/>);});
+ await act(async()=>{tree=create(<WebMemberEntry onLineLogin={vi.fn()} onAuthenticated={vi.fn()}/>,{createNodeMock:element=>element.type==='div'?{}:null});});
  const register=tree!.root.findAllByType('button').find(n=>n.children.includes('註冊會員'))!;
  await act(async()=>register.props.onClick());
  expect(auth.registrationContract).toHaveBeenCalledOnce();
@@ -43,7 +43,7 @@ it('registers with Google, contract consent and password without OTP fields',asy
  let googleCredential:(token:string)=>void=()=>{};
  auth.renderGoogleRegistrationButton.mockImplementation(async(_el:any,onCredential:(token:string)=>void)=>{googleCredential=onCredential;});
  const authenticated=vi.fn();
- await act(async()=>{tree=create(<WebMemberEntry onLineLogin={vi.fn()} onAuthenticated={authenticated}/>);});
+ await act(async()=>{tree=create(<WebMemberEntry onLineLogin={vi.fn()} onAuthenticated={authenticated}/>,{createNodeMock:element=>element.type==='div'?{}:null});});
  const register=tree!.root.findAllByType('button').find(n=>n.children.includes('註冊會員'))!;
  await act(async()=>register.props.onClick());
  await act(async()=>{await Promise.resolve();});
