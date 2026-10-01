@@ -12,6 +12,7 @@ const uatManifest = JSON.parse(read('backend/scripts/stage-uat-seed-manifest.jso
 const assertions = [
   ['backend LINE configuration name', deploy.includes('LINE_LOGIN_CHANNEL_ID=$LineLoginChannelId')],
   ['backend Entra tenant wiring', deploy.includes('ENTRA_TENANT_ID=$EntraTenantId')],
+  ['backend Google member auth wiring', deploy.includes('GOOGLE_OIDC_CLIENT_ID=$GoogleOidcClientId') && deploy.includes('VITE_GOOGLE_OIDC_CLIENT_ID=$GoogleOidcClientId')],
   ['backend Entra client wiring', deploy.includes('ENTRA_CLIENT_ID=$EntraClientId')],
   ['inventory warehouse fails closed and is wired', deploy.includes("Parameter(Mandatory)") && deploy.includes('UCELL_INVENTORY_WAREHOUSE_ID=$InventoryWarehouseId') && workflow.includes('vars.UCELL_INVENTORY_WAREHOUSE_ID')],
   ['inventory policy fails closed and is wired', deploy.includes('UCELL_INVENTORY_POLICY_VERSION=$InventoryPolicyVersion') && workflow.includes('vars.UCELL_INVENTORY_POLICY_VERSION')],
@@ -28,7 +29,7 @@ const assertions = [
   ['admin image uses admin CSP', adminDockerfile.includes('nginx.admin.conf') && adminDockerfile.includes('CSP_API_ORIGIN')],
   ['member image uses member CSP', memberDockerfile.includes('nginx.member.conf') && memberDockerfile.includes('CSP_API_ORIGIN')],
   ['admin CSP permits configured API and Entra only', adminNginx.includes('__API_ORIGIN__') && adminNginx.includes('login.microsoftonline.com') && !adminNginx.includes('api.line.me')],
-  ['member CSP permits configured API and LINE only', memberNginx.includes('__API_ORIGIN__') && memberNginx.includes('api.line.me') && memberNginx.includes('access.line.me') && !memberNginx.includes('microsoftonline.com')],
+  ['member CSP permits configured API, LINE and Google only', memberNginx.includes('__API_ORIGIN__') && memberNginx.includes('api.line.me') && memberNginx.includes('access.line.me') && memberNginx.includes('accounts.google.com') && !memberNginx.includes('microsoftonline.com')],
 ];
 
 const failures = assertions.filter(([, pass]) => !pass).map(([name]) => name);
