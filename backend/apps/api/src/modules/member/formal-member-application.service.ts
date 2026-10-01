@@ -90,6 +90,7 @@ export class FormalMemberApplicationService {
 
  async save(personId:string,input:FormalDraftInput,key:string,requestId:string){
   const normalized=this.normalize(input) as any;
+  if(normalized.applicantType==='LEGAL_ENTITY')throw new UnprocessableEntityException({code:'LEGAL_ENTITY_PAPER_APPLICATION_REQUIRED'});
   const primaryId=normalized.applicantType==='LEGAL_ENTITY'?normalized.representativeNationalId:normalized.nationalId;
   const applicantIdentityFingerprint=this.fingerprint.fingerprintNationalId(primaryId);
   const spouseIdentityFingerprint=normalized.hasSpouse?this.fingerprint.fingerprintNationalId(normalized.spouseNationalId):null;
@@ -112,6 +113,7 @@ export class FormalMemberApplicationService {
     const encrypted=this.pii.encrypt(normalized),version=(current?.snapshots[0]?.version??0)+1;
     const metadata={
      applicantType:normalized.applicantType,
+     sourceChannel:'MEMBER_WEB',
      legalEntityRegistrationNo:normalized.applicantType==='LEGAL_ENTITY'?normalized.legalEntityRegistrationNo:null,
      applicantIdentityFingerprint,
      spouseIdentityFingerprint,
