@@ -5,7 +5,7 @@ Source authority: §33 MSG-1 examples apply where the corresponding governed dom
 | Family | Actual current producer / proof | Remaining acceptance |
 |---|---|---|
 | Order/payment | MEMBER_ORDER_CREATED Outbox → processMemberOrderNotification posts order creation only | Commerce payment-status producer and full source/browser routing |
-| Fulfillment/shipment | Verified serial bindShipment dispatch/delivery → personal purchaser message; 4 suites/31 tests | Wider provider-to-source/browser and Person-only retail order routing |
+| Fulfillment/shipment | Verified serial bindShipment dispatch/delivery → personal purchaser message; 4 suites/31 tests | Person-only /orders routing now serves protected retail history with/without Qualification (retail-message-source-route-20261001.json); wider actual provider-to-source/browser and per-unit delivery detail remain open |
 | Repurchase monthly recognition / Active | Actual API + Worker sealed RPV recognition → qualification message; 4 suites/29 tests; /repurchase route/month control now exists | Other Active-source producer events and full actual backend/browser acceptance |
 | Award/Payable/Payout | Governed payment-result writer → qualification message, real protected payout history endpoint; 7 suites/53 tests, full gate185/1346 | Award/Payable readiness producers and complete notification-to-source actual backend/browser journey |
 | Qualification/achievement | Growth renders stored facts and milestones; no dedicated Qualification message producer found in current writer search | Governed producer, dedupe/privacy/source and browser acceptance |

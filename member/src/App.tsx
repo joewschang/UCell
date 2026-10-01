@@ -25,6 +25,7 @@ import {ContentDetail,ContentList} from './Content';
 import FormalUpgrade from './FormalUpgrade';
 import QualificationPackageShop from './QualificationPackageShop';
 import WebMemberRetailShop from './WebMemberRetailShop';
+import WebRetailOrders from './WebRetailOrders';
 import MemberBinaryTree from './MemberBinaryTree';
 import MemberTodaySummary from './MemberTodaySummary';
 import MemberAwardJourney from './MemberAwardJourney';
@@ -171,13 +172,14 @@ function MemberApp() {
         <Route path="/payouts" element={<MemberPayouts key={current.id} q={current}/>}/>
         <Route path="/bonuses" element={<Bonuses q={current}/>}/>
         <Route path="/shop" element={<Shop q={current}/>}/>
-        <Route path="/orders" element={<Orders q={current}/>}/>
+        <Route path="/orders" element={<><Orders q={current}/><WebRetailOrders/></>}/>
         <Route path="/content" element={<ContentList q={current}/>}/>
         <Route path="/content/:id" element={<ContentDetail q={current}/>}/>
         <Route path="/me" element={<Me />}/>
         <Route path="/notifications" element={<Notifications q={current}/>}/>
         <Route path="*" element={<section className="card"><h2>找不到頁面</h2><Link to="/">返回首頁</Link></section>}/>
       </Routes></div></> : <Routes>
+        <Route path="/orders" element={<WebRetailOrders/>}/>
         <Route path="/growth" element={<GrowthCenter/>}/>
         <Route path="/notifications" element={<MemberMessages/>}/>
         <Route path="/learning" element={<LearningCenter/>}/>

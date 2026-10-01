@@ -58,3 +58,26 @@ describe('conditional member journeys',()=>{
   expect(fetch.mock.calls.every(([,init])=>(init?.method??'GET')==='GET')).toBe(true);
  });
 });
+
+it.each([false,true])('routes person retail history without qualification (%s)',async(hasQualification)=>{
+ const q={id:'51000000-0000-4000-8000-000000000101',code:'A000014',rank:'LEADER',active:false,ballLabel:'球1'};
+ const fetch=vi.fn(async(input:string)=>{
+  if(input.includes('/member/qualifications'))return response(hasQualification?[q]:[]);
+  if(input.includes('/member/me'))return response(person);
+  if(input.includes('/member/retail-orders'))return response([{orderNo:'202610010001',status:'CONFIRMED',total:'10000000000000.0001',createdAt:'2026-10-01T00:00:00Z',confirmedAt:null,itemCount:1,itemNames:['本人零售商品']}]);
+  if(input.includes('/member/orders?'))return response({qualificationId:q.id,orders:[]});
+  throw Error('unexpected request '+input);
+ });
+ vi.stubGlobal('fetch',fetch);await mount('/orders');
+ const rendered=JSON.stringify(tree!.toJSON());expect(rendered).toContain('我的零售訂單');expect(rendered).toContain('202610010001');expect(rendered).toContain('10000000000000.0001');expect(rendered).toContain('已建立');expect(rendered).not.toContain('CONFIRMED');expect(rendered).not.toContain('尚未取得會員資格');
+ const reads=fetch.mock.calls.filter(([url])=>url.includes('/member/retail-orders'));expect(reads).toHaveLength(1);expect(reads[0][0]).not.toContain('qualificationId');
+});
+it('retail history retries failure and renders an empty state',async()=>{
+ let failed=true;vi.stubGlobal('fetch',vi.fn(async(input:string)=>{
+  if(input.includes('/member/qualifications'))return response([]);
+  if(input.includes('/member/me'))return response(person);
+  if(input.includes('/member/retail-orders'))return failed?new Response(JSON.stringify({error:{message:'unavailable'}}),{status:503}):response([]);
+  throw Error('unexpected request '+input);
+ }));await mount('/orders');expect(JSON.stringify(tree!.toJSON())).not.toContain('尚無零售訂單');failed=false;
+ const refresh=tree!.root.findAllByType('button').find(button=>button.children.join('')==='重新整理零售訂單');expect(refresh).toBeDefined();await act(async()=>refresh!.props.onClick());expect(JSON.stringify(tree!.toJSON())).toContain('尚無零售訂單');
+});
