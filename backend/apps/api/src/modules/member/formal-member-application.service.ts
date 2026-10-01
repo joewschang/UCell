@@ -135,6 +135,30 @@ export class FormalMemberApplicationService {
   }
  }
 
+ async verifySpouse(applicationId:string,actorId:string,key:string,requestId:string){
+  const result=await this.idempotency.execute('admin:formal-spouse-verify:'+applicationId,key,{applicationId},async tx=>{
+   const application=await tx.formalMemberApplication.findUnique({where:{formalMemberApplicationId:applicationId},include:{snapshots:{orderBy:{version:'desc'},take:1}}});
+   if(!application||!application.snapshots[0])throw new NotFoundException({code:'FORMAL_APPLICATION_NOT_FOUND'});
+   if(!application.spouseIdentityFingerprint)throw new UnprocessableEntityException({code:'FORMAL_SPOUSE_NOT_DECLARED'});
+   const payload=this.pii.decrypt<any>(application.snapshots[0].payloadCiphertext,application.snapshots[0].keyVersion);
+   if(!payload.hasSpouse||!payload.spouseName)throw new UnprocessableEntityException({code:'FORMAL_SPOUSE_DATA_INCOMPLETE'});
+   const now=new Date(),current=await tx.spouseRelationship.findFirst({where:{personId:application.personId,effectiveTo:null,verificationStatus:'VERIFIED'},orderBy:{effectiveFrom:'desc'}});
+   if(current&&current.spouseIdentityFingerprint!==application.spouseIdentityFingerprint){
+    await tx.spouseRelationship.update({where:{spouseRelationshipId:current.spouseRelationshipId},data:{effectiveTo:now}});
+   }
+   let relationship=current&&current.spouseIdentityFingerprint===application.spouseIdentityFingerprint?current:null;
+   if(!relationship){
+    const masked=payload.spouseName.slice(0,1)+'*'.repeat(Math.max(payload.spouseName.length-1,1));
+    relationship=await tx.spouseRelationship.create({data:{personId:application.personId,spouseIdentityFingerprint:application.spouseIdentityFingerprint,spouseNameMasked:masked,verificationStatus:'VERIFIED',effectiveFrom:now,verifiedAt:now,verifiedBy:actorId,sourceFormalApplicationId:applicationId}});
+   }
+   await tx.formalMemberApplication.update({where:{formalMemberApplicationId:applicationId},data:{spouseVerificationStatus:'VERIFIED',crossLineReviewStatus:'NOT_EVALUATED',crossLineConflictCode:null}});
+   const correlationId=randomUUID();
+   await this.audit.write(tx,{actorType:'ADMIN',actorId,action:'FORMAL_SPOUSE_VERIFIED',entityType:'FormalMemberApplication',entityId:applicationId,afterData:{spouseVerificationStatus:'VERIFIED',relationshipId:relationship.spouseRelationshipId},requestId,correlationId});
+   return {applicationId,status:'VERIFIED',verifiedAt:(relationship.verifiedAt??now).toISOString()};
+  });
+  return {...result.value,replayed:result.replayed};
+ }
+
  async current(personId:string){
   const application=await this.db.formalMemberApplication.findFirst({where:{personId,status:{in:['DRAFT','SUBMITTED','UNDER_REVIEW','NEEDS_MORE_INFO'] as any}},include:{snapshots:{orderBy:{version:'desc'},take:1}}});
   if(!application||!application.snapshots[0])throw new NotFoundException({code:'FORMAL_APPLICATION_NOT_FOUND'});
