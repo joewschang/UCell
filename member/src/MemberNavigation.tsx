@@ -4,9 +4,9 @@ import { MemberBottomNav, UCellIcon, type UCellIconName } from '@ucell/design-sy
 export const memberSections: Array<{label:string;to:string;paths:string[];icon:UCellIconName}> = [
   { label: '首頁', to: '/', paths: ['/'], icon:'home' },
   { label: '組織', to: '/organization', paths: ['/organization'], icon:'organization' },
-  { label: '收益', to: '/bonuses', paths: ['/bonuses', '/performance'], icon:'income' },
+  { label: '收益', to: '/bonuses', paths: ['/bonuses', '/performance', '/payouts'], icon:'income' },
   { label: '商城', to: '/shop', paths: ['/shop', '/orders'], icon:'shop' },
-  { label: '我的', to: '/me', paths: ['/me', '/content', '/notifications'], icon:'me' },
+  { label: '我的', to: '/me', paths: ['/me', '/content', '/notifications', '/repurchase'], icon:'me' },
 ];
 
 export function sectionMatches(pathname: string, paths: string[]) {
@@ -24,6 +24,7 @@ export function MemberNavigation() {
 export function IncomeNavigation() {
   return <div className="uc-income-nav" role="navigation" aria-label="收益分類">
     <NavLink to="/bonuses">獎金明細</NavLink>
+    <NavLink to="/payouts">付款紀錄</NavLink>
     <NavLink to="/performance">我的業績</NavLink>
   </div>;
 }

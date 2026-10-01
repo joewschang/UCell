@@ -21,10 +21,10 @@ export async function selectQualification(q:Qualification,signal:AbortSignal):Pr
  return selected;
 }
 export type Repurchase={qualificationId:string;period:string;status:'ACTIVE'|'PENDING'|'INACTIVE';recognitions:{id:string;status:string;dueAt:string}[]};
-export async function getRepurchaseStatus(q:Qualification,signal:AbortSignal):Promise<Repurchase>{
- if(isMock)return {qualificationId:q.id,period:'DEMO',status:q.active?'ACTIVE':'INACTIVE',recognitions:[]};
- const result=await api<Repurchase>('/member/repurchase/status?'+new URLSearchParams({qualificationId:q.id}),{signal});
- if(result?.qualificationId!==q.id||!/^\d{4}-(0[1-9]|1[0-2])$/.test(result.period)||!['ACTIVE','PENDING','INACTIVE'].includes(result.status)||!Array.isArray(result.recognitions)||!result.recognitions.every(row=>typeof row.id==='string'&&['SCHEDULED','DUE','RECOGNIZED','CANCELLED','REVERSED'].includes(row.status)&&Number.isFinite(Date.parse(row.dueAt))))throw new Error('重購資料格式或資格不符，已停止顯示');
+export async function getRepurchaseStatus(q:Qualification,signal:AbortSignal,period?:string):Promise<Repurchase>{
+ if(isMock)return {qualificationId:q.id,period:period??'DEMO',status:q.active?'ACTIVE':'INACTIVE',recognitions:[]};
+ const result=await api<Repurchase>('/member/repurchase/status?'+new URLSearchParams({qualificationId:q.id,...(period?{period}:{})}),{signal});
+ if(result?.qualificationId!==q.id||period&&result.period!==period||!/^\d{4}-(0[1-9]|1[0-2])$/.test(result.period)||!['ACTIVE','PENDING','INACTIVE'].includes(result.status)||!Array.isArray(result.recognitions)||!result.recognitions.every(row=>typeof row.id==='string'&&['SCHEDULED','DUE','RECOGNIZED','CANCELLED','REVERSED'].includes(row.status)&&Number.isFinite(Date.parse(row.dueAt))))throw new Error('重銷資料格式或資格不符，已停止顯示');
  return result;
 }
 export const getPerson = (signal: AbortSignal) => isMock ? Promise.resolve<Person>({ name:'示範會員',alias:null,memberNo:'2609000001',email:null,phone:null,gender:null,birthDate:null,membershipState:'NETWORK_MEMBER',mobileVerifiedAt:null }) : api<unknown>('/member/me', { signal }).then(validate.parsePerson);

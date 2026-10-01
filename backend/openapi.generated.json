@@ -7462,6 +7462,107 @@
         ]
       }
     },
+    "/api/v1/member/payouts": {
+      "get": {
+        "description": "Own current Qualification payment-result history; decimal strings, safe references and creation-time pagination. No bank identifiers or transfer initiation.",
+        "operationId": "memberPayoutResults",
+        "parameters": [
+          {
+            "name": "qualificationId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "offset",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 0,
+              "maximum": 1000000,
+              "type": "number"
+            }
+          },
+          {
+            "name": "asOf",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/MemberPayoutView"
+                    },
+                    "meta": {
+                      "type": "object",
+                      "required": [
+                        "request_id",
+                        "timestamp",
+                        "api_version"
+                      ],
+                      "properties": {
+                        "request_id": {
+                          "type": "string"
+                        },
+                        "timestamp": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "api_version": {
+                          "type": "string",
+                          "enum": [
+                            "v1"
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid pagination/query; unknown fields rejected"
+          },
+          "401": {
+            "description": "Authenticated Member session required"
+          },
+          "403": {
+            "description": "Selected Qualification not held"
+          },
+          "422": {
+            "description": "Qualification context required"
+          }
+        },
+        "security": [
+          {
+            "memberBearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "Member"
+        ]
+      }
+    },
     "/api/v1/member/messages": {
       "get": {
         "operationId": "memberMessages",
@@ -20370,6 +20471,109 @@
         },
         "required": [
           "snapshot"
+        ]
+      },
+      "MemberPaymentResultView": {
+        "type": "object",
+        "properties": {
+          "reference": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PAID",
+              "FAILED"
+            ]
+          },
+          "paidAmount": {
+            "type": "string",
+            "description": "Stored cumulative confirmation for this result; decimal string, not a sum of reports"
+          },
+          "netAmount": {
+            "type": "string"
+          },
+          "grossAmount": {
+            "type": "string"
+          },
+          "recoveryOffset": {
+            "type": "string"
+          },
+          "occurredAt": {
+            "type": "string"
+          },
+          "recordedAt": {
+            "type": "string"
+          },
+          "periodStart": {
+            "type": "string"
+          },
+          "periodEnd": {
+            "type": "string"
+          },
+          "batchStatus": {
+            "type": "string",
+            "enum": [
+              "DRAFT",
+              "READY",
+              "REVIEWED",
+              "APPROVED",
+              "EXPORTED",
+              "PROCESSING",
+              "PAID",
+              "PARTIALLY_PAID",
+              "FAILED",
+              "VOIDED"
+            ]
+          }
+        },
+        "required": [
+          "reference",
+          "status",
+          "paidAmount",
+          "netAmount",
+          "grossAmount",
+          "recoveryOffset",
+          "occurredAt",
+          "recordedAt",
+          "periodStart",
+          "periodEnd",
+          "batchStatus"
+        ]
+      },
+      "MemberPayoutView": {
+        "type": "object",
+        "properties": {
+          "qualificationNo": {
+            "type": "string"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MemberPaymentResultView"
+            }
+          },
+          "total": {
+            "type": "number"
+          },
+          "offset": {
+            "type": "number"
+          },
+          "nextOffset": {
+            "type": "number",
+            "nullable": true
+          },
+          "asOf": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "qualificationNo",
+          "items",
+          "total",
+          "offset",
+          "nextOffset",
+          "asOf"
         ]
       },
       "ContextDto": {

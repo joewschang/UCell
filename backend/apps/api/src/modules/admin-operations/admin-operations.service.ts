@@ -1,3 +1,4 @@
+import {appendMemberMessage,erpBusinessReference} from '@ucell/database';
 import { ConflictException,Injectable,UnprocessableEntityException } from '@nestjs/common';
 import { Prisma,PrismaService } from '@ucell/database';
 import { AuditService } from '../../common/audit/audit.service';
@@ -550,7 +551,10 @@ export class AdminOperationsService {
         const previousPaid=history.filter(row=>row.payoutLineId===line.payoutLineId&&row.resultStatus==='PAID');
         if(previousPaid.some(row=>row.paidAmount.gt(amount)||row.paidAmount.equals(line.netAmount)&&result.status==='FAILED'))throw new ConflictException('PAYOUT_PAID_AMOUNT_CANNOT_DECREASE');
         const occurredAt=result.occurredAt??new Date();
-        await tx.payoutPaymentResult.create({data:{payoutBatchId:id,payoutLineId:line.payoutLineId,resultStatus:result.status,paidAmount:amount,paymentReference:result.paymentReference,reasonCode:result.reasonCode,occurredAt,recordedByActor:actorId,idempotencyKey:result.key}});
+        const recordedResult=await tx.payoutPaymentResult.create({data:{payoutBatchId:id,payoutLineId:line.payoutLineId,resultStatus:result.status,paidAmount:amount,paymentReference:result.paymentReference,reasonCode:result.reasonCode,occurredAt,recordedByActor:actorId,idempotencyKey:result.key}});
+        await tx.$queryRaw`SELECT qualification_id FROM membership.qualification WHERE qualification_id=${line.recipientQualificationId}::uuid FOR UPDATE`;
+        const recipient=await tx.qualification.findUniqueOrThrow({where:{qualificationId:line.recipientQualificationId},select:{kind:true,currentHolderPersonId:true,qualificationNo:true}});
+        if(recipient.kind==='MEMBER_ORIGIN'&&recipient.currentHolderPersonId)await appendMemberMessage(tx,{messageKey:'payout:result:'+recordedResult.payoutPaymentResultId,personId:recipient.currentHolderPersonId,qualificationId:line.recipientQualificationId,category:'PAYOUT',title:result.status==='FAILED'?'付款失敗紀錄已登錄':amount.equals(line.netAmount)?'付款完成紀錄已登錄':'付款結果已更新',body:result.status==='FAILED'?`資格 ${recipient.qualificationNo} 的付款結果已有失敗紀錄，請至付款紀錄查看目前狀態。此通知不代表付款完成。`:`資格 ${recipient.qualificationNo} 的付款結果已登錄，請至付款紀錄查看目前狀態。單筆結果不代表整個批次已完成。`,sourceType:'PAYOUT_PAYMENT_RESULT',sourceReference:erpBusinessReference('PAYMENT_RESULT',recordedResult.payoutPaymentResultId),deepLink:'/payouts'});
         if(result.status==='PAID'&&amount.equals(line.netAmount)){
           for(const entry of line.payableEntries.filter(entry=>entry.status==='ALLOCATED'&&entry.sourceType==='BONUS_AWARD'))if(!await tx.bonusAwardLifecycleEvent.findFirst({where:{bonusAwardId:entry.sourceId,status:'PAID'},select:{lifecycleEventId:true}}))await tx.bonusAwardLifecycleEvent.create({data:{bonusAwardId:entry.sourceId,status:'PAID',occurredAt,reasonCode:'PAYOUT_PAID'}});
           await tx.payableEntry.updateMany({where:{payoutLineId:line.payoutLineId,status:'ALLOCATED'},data:{status:'PAID'}});

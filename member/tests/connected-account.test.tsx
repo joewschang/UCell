@@ -28,9 +28,9 @@ it('posts selected ball for server authorization and rejects mismatched response
  await expect(selectQualification(q,new AbortController().signal)).rejects.toThrow('資格確認回應不符');
 });
 it('shows Core repurchase status without deriving it from Qualification Active',async()=>{
- vi.stubGlobal('fetch',vi.fn().mockResolvedValue(response({qualificationId:q.id,period:'2026-09',status:'ACTIVE',recognitions:[{id:'recognition',status:'RECOGNIZED',dueAt:'2026-09-15T16:00:00Z'}]})));
- await act(async()=>{tree=create(<RepurchaseDetails q={q}/>)});
- const text=JSON.stringify(tree!.toJSON());expect(text).toContain('已完成');expect(text).toContain('已認列');expect(text).toContain(new Intl.DateTimeFormat('zh-TW',{timeZone:'Asia/Taipei',dateStyle:'medium',timeStyle:'short'}).format(new Date('2026-09-15T16:00:00Z')));
+ vi.stubGlobal('fetch',vi.fn(async(url:string)=>response({qualificationId:q.id,period:new URL(url,'http://localhost').searchParams.get('period')??'2026-09',status:'ACTIVE',recognitions:[{id:'recognition',status:'RECOGNIZED',dueAt:'2026-09-15T16:00:00Z'}]})));
+ await act(async()=>{tree=create(<MemoryRouter><RepurchaseDetails q={q}/></MemoryRouter>)});
+ const text=JSON.stringify(tree!.toJSON());expect(text).toContain('已有認列紀錄');expect(text).toContain('已認列');expect(text).toContain(new Intl.DateTimeFormat('zh-TW',{timeZone:'Asia/Taipei',dateStyle:'medium',timeStyle:'short'}).format(new Date('2026-09-15T16:00:00Z')));
 });
 it('rejects foreign repurchase and malformed dates without substituting zero or Active',async()=>{
  const fetch=vi.fn().mockResolvedValueOnce(response({qualificationId:'foreign',period:'2026-09',status:'ACTIVE',recognitions:[]})).mockResolvedValueOnce(response({qualificationId:q.id,period:'2026-09',status:'PENDING',recognitions:[{id:'r',status:'DUE',dueAt:'invalid'}]}));vi.stubGlobal('fetch',fetch);
@@ -45,4 +45,11 @@ it('retries server logout with same key and locks UI only after confirmed revoca
  await act(async()=>button().props.onClick());expect(guard.getReason()).toBe('revoked');expect(JSON.stringify(tree!.toJSON())).toContain('已登出會員服務');
  const headers=fetch.mock.calls.map(row=>new Headers(row[1].headers));expect(headers[0].get('Idempotency-Key')).toBe(headers[1].get('Idempotency-Key'));
  expect(JSON.parse(fetch.mock.calls[0][1].body)).toEqual({intent:'LOGOUT'});
+});
+
+it('queries the selected historical recognition month without treating it as Active',async()=>{
+ const fetch=vi.fn(async(url:string)=>response({qualificationId:q.id,period:new URL(url,'http://localhost').searchParams.get('period')??'2026-10',status:'ACTIVE',recognitions:[]}));vi.stubGlobal('fetch',fetch);
+ await act(async()=>{tree=create(<MemoryRouter><RepurchaseDetails q={q}/></MemoryRouter>)});
+ await act(async()=>tree!.root.findByType('input').props.onChange({target:{value:'2026-09'}}));
+ expect(fetch.mock.calls.at(-1)![0]).toContain('period=2026-09');expect(JSON.stringify(tree!.toJSON())).toContain('已有認列紀錄');expect(JSON.stringify(tree!.toJSON())).toContain('不判定 Active');
 });

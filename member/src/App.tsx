@@ -1,3 +1,4 @@
+import MemberPayouts from './MemberPayouts';
 import { qualificationReferenceLabel } from './terminology';
 import MemberMessages from './MemberMessages';
 import { useQualificationFocus } from './useQualificationFocus';
@@ -166,6 +167,8 @@ function MemberApp() {
         <Route path="/learning" element={<LearningCenter/>}/>
         <Route path="/events" element={<EventCenter/>}/>
         <Route path="/performance" element={<Performance q={current}/>}/>
+        <Route path="/repurchase" element={<RepurchaseDetails key={current.id} q={current}/>}/>
+        <Route path="/payouts" element={<MemberPayouts key={current.id} q={current}/>}/>
         <Route path="/bonuses" element={<Bonuses q={current}/>}/>
         <Route path="/shop" element={<Shop q={current}/>}/>
         <Route path="/orders" element={<Orders q={current}/>}/>

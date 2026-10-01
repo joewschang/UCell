@@ -1,3 +1,4 @@
+import {MemberPayoutController} from './member-payout.controller';
 import {MemberMessagesController} from './member-messages.controller';
 import {MemberMessagesService} from './member-messages.service';
 import {IdempotencyService} from '../../common/idempotency/idempotency.service';
@@ -22,5 +23,5 @@ import { FormalMemberApplicationService } from './formal-member-application.serv
 import { AdminFormalMemberApplicationController } from './admin-formal-member-application.controller';
 import { MemberRetailReferrerController } from './member-retail-referrer.controller';
 import {MemberGrowthService} from './member-growth.service';
-@Module({imports:[AuthModule,OrderModule],controllers:[MemberMessagesController,MemberExplainController,MemberAuthController,MemberController,ReferralAttributionController,MemberReferralAttributionController,AdminFormalMemberApplicationController,MemberRetailReferrerController],providers:[MemberMessagesService,IdempotencyService,MemberExplainService,MemberService,MemberReadService,MemberTreeReadService,MemberShareLinkService,ReferralAttributionService,FormalMemberApplicationService,MemberContractService,DeliveryProfileService,MemberGrowthService,PiiCryptoService,MemberContextGuard,LineTokenVerifierService]})
+@Module({imports:[AuthModule,OrderModule],controllers:[MemberPayoutController,MemberMessagesController,MemberExplainController,MemberAuthController,MemberController,ReferralAttributionController,MemberReferralAttributionController,AdminFormalMemberApplicationController,MemberRetailReferrerController],providers:[MemberMessagesService,IdempotencyService,MemberExplainService,MemberService,MemberReadService,MemberTreeReadService,MemberShareLinkService,ReferralAttributionService,FormalMemberApplicationService,MemberContractService,DeliveryProfileService,MemberGrowthService,PiiCryptoService,MemberContextGuard,LineTokenVerifierService]})
 export class MemberModule {}

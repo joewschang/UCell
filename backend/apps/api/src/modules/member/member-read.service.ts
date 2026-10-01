@@ -1,3 +1,6 @@
+import {Prisma,erpBusinessReference} from '@ucell/database';
+import {BadRequestException,ForbiddenException} from '@nestjs/common';
+import {MemberPayoutView} from './member-payout.dto';
 import { Injectable, NotFoundException, UnprocessableEntityException } from '@nestjs/common';
 import { PrismaService, captureParameters, snapshotValue, pending, verifyReplayEnvelope } from '@ucell/database';
 import { QualificationAccessService } from '../auth/qualification-access.service';
@@ -127,5 +130,16 @@ export class MemberReadService {
   },{isolationLevel:'RepeatableRead'});
  }
  async products(){const now=new Date();const rows=await this.db.productReference.findMany({where:{isActive:true},include:{ruleProfiles:{where:{effectiveFrom:{lte:now},OR:[{effectiveTo:null},{effectiveTo:{gt:now}}]}}},orderBy:{sku:'asc'},take:100});return rows.map(row=>{const profile=row.ruleProfiles[0],available=row.ruleProfiles.length===1&&profile.ruleVersionCode==='R1.0B'&&!!profile.parameterSnapshotHash&&/^[a-f0-9]{64}$/.test(profile.parameterSnapshotHash);return {id:row.productId,name:row.displayName,price:row.currentPrice.toNumber(),pv:null,available,reason:available?null:'RULE_PROFILE_CONFIGURATION_PENDING',fulfillmentStatus:'ERP_PENDING',availabilityMeaning:'ORDERABLE_NOT_STOCK_CONFIRMATION'};});}
+ async payouts(personId:string,id:string,input:{offset?:number;asOf?:string}={}):Promise<MemberPayoutView>{
+  await this.identity.context(personId,id);const now=new Date(),asOf=input.asOf?new Date(input.asOf):now,offset=input.offset??0;
+  if(!Number.isInteger(offset)||offset<0||offset>1000000||!Number.isFinite(asOf.getTime())||asOf>now)throw new BadRequestException({code:'PAYOUT_PAGE_INVALID'});
+  return this.db.$transaction(async tx=>{
+   await new QualificationAccessService(tx as any).assertHolder(personId,id);
+   const q=await tx.qualification.findUniqueOrThrow({where:{qualificationId:id},select:{qualificationNo:true,currentHolderPersonId:true}});if(q.currentHolderPersonId!==personId)throw new ForbiddenException({code:'PAYOUT_CONTEXT_DENIED'});
+   const where={payoutLine:{recipientQualificationId:id},createdAt:{lte:asOf}};
+   const [total,rows]=await Promise.all([tx.payoutPaymentResult.count({where}),tx.payoutPaymentResult.findMany({where,include:{payoutLine:true,payoutBatch:true},orderBy:[{createdAt:'desc'},{payoutPaymentResultId:'desc'}],skip:offset,take:50})]);
+   return {qualificationNo:q.qualificationNo.toString(),total,offset,nextOffset:offset+rows.length<total?offset+rows.length:null,asOf:asOf.toISOString(),items:rows.map(row=>({reference:erpBusinessReference('PAYMENT_RESULT',row.payoutPaymentResultId),status:row.resultStatus,paidAmount:row.paidAmount.toString(),grossAmount:row.payoutLine.grossAmount.toString(),recoveryOffset:row.payoutLine.recoveryOffset.toString(),netAmount:row.payoutLine.netAmount.toString(),occurredAt:row.occurredAt.toISOString(),recordedAt:row.createdAt.toISOString(),periodStart:row.payoutBatch.periodStart.toISOString(),periodEnd:row.payoutBatch.periodEnd.toISOString(),batchStatus:row.payoutBatch.status}))};
+  },{isolationLevel:Prisma.TransactionIsolationLevel.RepeatableRead});
+ }
  async order(personId:string,id:string,orderId:string){await this.identity.context(personId,id);const order=await this.db.order.findFirst({where:{orderId,qualificationId:id},include:{lines:true}});if(!order)throw new NotFoundException({code:'ORDER_NOT_FOUND'});return {qualificationId:id,id:order.orderId,orderNo:order.orderNo.toString(),status:order.status,total:order.netAmount.toString(),createdAt:order.createdAt,lines:order.lines.map(line=>({productId:line.productId,name:line.productNameSnapshot,quantity:line.quantity.toString(),amount:line.lineAmount.toString()}))};}
 }

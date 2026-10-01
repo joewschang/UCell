@@ -37,3 +37,6 @@ header{height:56px;padding:10px 18px}header small{font-size:11px;color:var(--uce
 .app button:disabled{background:var(--ucell-surface-secondary);color:var(--ucell-text-secondary)}
 .app nav{background:var(--ucell-surface)}
 :root[data-theme=dark] .tabs button[aria-pressed=true]{color:var(--ucell-bg)}
+
+:root[data-theme=dark] .app .uc-income-nav a{background:var(--ucell-surface);color:var(--ucell-text-primary)}
+:root[data-theme=dark] .app .uc-income-nav a.active{background:var(--ucell-surface-secondary);color:var(--ucell-text-primary)}
