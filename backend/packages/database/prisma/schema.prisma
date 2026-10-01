@@ -481,6 +481,8 @@ enum ReplayRunStatus {
 
 enum IdentityProvider {
   ADMIN_LOCAL
+  MEMBER_LOCAL
+  SMS_OTP
   ENTRA
   LINE
   GOOGLE
@@ -514,6 +516,7 @@ enum PersonMembershipState {
 
 enum OtpPurpose {
   NETWORK_REGISTRATION
+  LOGIN
   MOBILE_CHANGE
   ACCOUNT_RECOVERY
 
@@ -568,6 +571,8 @@ model Person {
   referralAttributions     ReferralAttribution[]
   referralBindingHistory   ReferralAttributionHistory[]
   formalMemberApplications FormalMemberApplication[]
+  memberPasswordCredential  MemberPasswordCredential?
+  passwordResetTokens       PasswordResetToken[]
 
   @@index([legalName])
   @@index([mobile])
@@ -2819,6 +2824,35 @@ model SettlementReplayPeriod {
   @@index([periodEnd])
   @@map("settlement_replay_period")
   @@schema("ledger")
+}
+
+model MemberPasswordCredential {
+  personId             String   @id @map("person_id") @db.Uuid
+  passwordHash         String   @map("password_hash")
+  passwordChangedAt    DateTime @default(now()) @map("password_changed_at") @db.Timestamptz(6)
+  failedAttemptCount   Int      @default(0) @map("failed_attempt_count")
+  lockedUntil          DateTime? @map("locked_until") @db.Timestamptz(6)
+  credentialVersion    Int      @default(1) @map("credential_version")
+  createdAt            DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt            DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  person               Person   @relation(fields: [personId], references: [personId])
+
+  @@map("member_password_credential")
+  @@schema("identity")
+}
+
+model PasswordResetToken {
+  passwordResetTokenId String    @id @default(uuid()) @map("password_reset_token_id") @db.Uuid
+  personId             String    @map("person_id") @db.Uuid
+  tokenHash            String    @unique @map("token_hash")
+  expiresAt            DateTime  @map("expires_at") @db.Timestamptz(6)
+  consumedAt           DateTime? @map("consumed_at") @db.Timestamptz(6)
+  createdAt            DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  person               Person    @relation(fields: [personId], references: [personId])
+
+  @@index([personId, expiresAt])
+  @@map("password_reset_token")
+  @@schema("identity")
 }
 
 model IdentityLink {
