@@ -7,7 +7,7 @@ import { IdentityTokenService } from './identity-token.service';
 
 export type WebRegistrationInput={
  registrationSessionId:string;challengeId:string;contractVersionId:string;accepted:true;
- legalName:string;alias:string;gender:string;birthDate:string;mobile:string;email:string;
+ legalName:string;alias:string;gender:string;birthDate:string;mobile:string;email:string;password:string;
 };
 
 @Injectable()
