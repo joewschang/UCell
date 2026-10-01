@@ -1,10 +1,20 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEnum, IsOptional, IsString, IsUUID } from 'class-validator';
+import { IsEnum, IsIn, IsOptional, IsString, IsUUID, ValidateIf } from 'class-validator';
 
 export class CreateMembershipApplicationDto {
-  @ApiProperty({ format:'uuid' })
+  @ApiProperty({ enum:['PERSON','LEGAL_ENTITY'] })
+  @IsIn(['PERSON','LEGAL_ENTITY'])
+  holderType!: 'PERSON'|'LEGAL_ENTITY';
+
+  @ApiPropertyOptional({ format:'uuid' })
+  @ValidateIf(o=>o.holderType==='PERSON')
   @IsUUID()
-  personId!: string;
+  personId?: string;
+
+  @ApiPropertyOptional({ format:'uuid' })
+  @ValidateIf(o=>o.holderType==='LEGAL_ENTITY')
+  @IsUUID()
+  legalEntityId?: string;
 
   @ApiProperty({ enum:['STARTER','ELITE','LEADER'] })
   @IsEnum(['STARTER','ELITE','LEADER'])
