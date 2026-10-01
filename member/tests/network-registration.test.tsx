@@ -9,9 +9,9 @@ const contract={id:'contract-1',type:'NETWORK_MEMBERSHIP',version:'V1',title:'�
 const response=(data:unknown,status=200)=>new Response(JSON.stringify({data,meta:{request_id:'registration-test',api_version:'v1',timestamp:'2026-09-17T00:00:00Z'}}),{status});
 beforeEach(()=>vi.stubGlobal('sessionStorage',{getItem:()=>null}));
 afterEach(()=>{if(tree)act(()=>tree!.unmount());tree=undefined;vi.unstubAllGlobals();vi.restoreAllMocks();});
-const field=(label:string)=>tree!.root.findAllByType('label').find(node=>node.children.some(child=>typeof child==='string'&&child.includes(label)))!.findByType(label==='性別'?'select':'input');
+const field=(label:string)=>{const node=tree!.root.findAllByType('label').find(item=>item.children.some(child=>typeof child==='string'&&child.includes(label)))!;const selects=node.findAllByType('select');return selects[0]??node.findByType('input');};
 const submit=()=>tree!.root.findByType('form').props.onSubmit({preventDefault(){}});
-function complete(){act(()=>{field('姓名').props.onChange({target:{value:'王小明'}});field('別名').props.onChange({target:{value:'小明'}});field('性別').props.onChange({target:{value:'UNDISCLOSED'}});field('出生年月日').props.onChange({target:{value:'1990-01-02'}});field('手機').props.onChange({target:{value:'+886912345678'}});field('Email').props.onChange({target:{value:'member@example.invalid'}});tree!.root.findAllByType('input').find(node=>node.props.type==='checkbox')!.props.onChange({target:{checked:true}});});}
+function complete(){act(()=>{field('姓名').props.onChange({target:{value:'王小明'}});field('別名').props.onChange({target:{value:'小明'}});field('性別').props.onChange({target:{value:'UNDISCLOSED'}});field('出生年月日').props.onChange({target:{value:'1990-01-02'}});field('國籍').props.onChange({target:{value:'TW'}});field('身分證明文件類型').props.onChange({target:{value:'NATIONAL_ID'}});field('身分證明號碼').props.onChange({target:{value:'TEST-ID-0001'}});field('手機').props.onChange({target:{value:'+886912345678'}});field('Email').props.onChange({target:{value:'member@example.invalid'}});tree!.root.findAllByType('input').find(node=>node.props.type==='checkbox')!.props.onChange({target:{checked:true}});});}
 
 it('registers the authenticated LINE Person with explicit contract acceptance and no OTP fields',async()=>{
  const fetch=vi.fn(async(_url:string,init:RequestInit)=>init.method==='POST'?response({personId:'person-1',membershipState:'NETWORK_MEMBER',enabledAuthenticationProvider:'LINE',qualificationCreated:false,replayed:false},201):response([contract]));vi.stubGlobal('fetch',fetch);
@@ -19,7 +19,7 @@ it('registers the authenticated LINE Person with explicit contract acceptance an
  complete();
  await act(async()=>submit());
  const post=fetch.mock.calls.find(([,init])=>init.method==='POST')!;expect(post[0]).toContain('/member/registration/network');expect(new Headers(post[1].headers).get('Idempotency-Key')).toBeTruthy();
- expect(JSON.parse(post[1].body as string)).toEqual({contractVersionId:'contract-1',accepted:true,legalName:'王小明',alias:'小明',gender:'UNDISCLOSED',birthDate:'1990-01-02',mobile:'+886912345678',email:'member@example.invalid'});
+ expect(JSON.parse(post[1].body as string)).toEqual({contractVersionId:'contract-1',accepted:true,legalName:'王小明',alias:'小明',gender:'UNDISCLOSED',birthDate:'1990-01-02',nationalityCode:'TW',identityDocumentType:'NATIONAL_ID',identityDocumentNumber:'TEST-ID-0001',mobile:'+886912345678',email:'member@example.invalid'});
  expect(JSON.stringify(post[1].body)).not.toContain('otp');expect(JSON.stringify(tree!.toJSON())).toContain('網路會員註冊完成');expect(refresh).toHaveBeenCalledOnce();
 });
 
