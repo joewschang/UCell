@@ -62,6 +62,8 @@ First cloud migration execution `ucell-stage-migrate-ex1b7oh` failed at `2026092
 
 Local upgrade regression **PASS**: reproduced the failure on synthetic ACTIVE and ARCHIVED legacy rows at migration 87, verified rollback, recovered through all 124 migrations, preserved every original tree field and Person, verified update/delete guards reject mutations, and cleaned the disposable database. Evidence: `C:\UCell\logs\stage-profile-upgrade-test.log`. The test's minimal legacy fixture bypasses only bootstrap-completeness during fixture creation; lifecycle/evidence guards are active for failure reproduction and recovery. This is an upgrade regression, not a new business-tree acceptance claim.
 
+Second execution `ucell-stage-migrate-ge5ooku` stopped before writes on checksum verification. Read-only execution `ucell-stage-migrate-t3l3hjh` recovered the actual migration ledger. Nine historical mixed-LF/CRLF files were found byte-for-byte in preserved `C:/UCell/UCell` and `C:/UCell/next-generation` workspaces; every historical SHA matches Stage and every normalized SQL byte matches the current repository. `backend/scripts/stage-migration-eol-evidence.json` pins both legacy and normalized hashes; the validator accepts only these proven formatting variants and leaves database checksum records unchanged. All actual Stage ledger checks now verify. Nine positive/negative checksum tests PASS, including rejection of added SQL and wrong migration identity. Ledger evidence is `evidence/stage-line-migration-ledger-20261001.json`.
+
 Stage URLs: https://stage.ucell.life · https://admin-stage.ucell.life · https://api-stage.ucell.life/api/v1/health.
 
 ## L–N. Manual gate and readiness

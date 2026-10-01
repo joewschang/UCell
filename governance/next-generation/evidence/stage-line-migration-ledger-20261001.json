@@ -1,0 +1,602 @@
+{
+  "rows": [
+    {
+      "migration_name": "0001_vertical_slice",
+      "checksum": "e7e130870a7fc8dd532d85a4a25af2d07796798c2b70bce92cbc368d5ac8c08a",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "0002_membership_active_subscription_rpv",
+      "checksum": "3af57deb18fe425166373449f3d61093565b89c47a8e5c07b4e8ab955d3ff5a2",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "0003_bonus_engine_core",
+      "checksum": "2810e180112c47283d0cfdc5ea3aef365419971da5d2d77c592e1f029d5e612c",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "0004_reversal_epv_global_payout",
+      "checksum": "b9b6ec99ed12ae19810abcbee2daf68073a0ca4a6fb08311e9673dc0a8aeee7b",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "0005_adjustment_lifecycle",
+      "checksum": "b2313ceb496e4680dca672412c9d2d7ae7202c300f2cbd3957002ca7fd8f3650",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "0006_v061_closure",
+      "checksum": "3dc646d4823199235ade1a181e673f6e6691bad7a3d2f80bd9d4ecdd74798d96",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "0007_v062_carry_chain_replay",
+      "checksum": "789dc460519433f15791cf8463ec52da186734b87dca2d328f034e399988a279",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "0008_v063_calendar_payable",
+      "checksum": "60b3fcd4cb12a1eb411cc5531918a9aeff18f8222f42f4c292f7a05b8315fd86",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "0009_v064_recovery_auth_audit_golden",
+      "checksum": "7ba88783e1881e72812e5391bd3264380496b1b67201399331ffe559c2e47def",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "0010_v065_global_payable_schema",
+      "checksum": "803914fa37b9422785480f5a82c534899b380df92989387c8821111e7f19e45a",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "0011_v066_convergence_guards",
+      "checksum": "e02f911c58872926f3f33f3d12a186650a12456ea989d5e24fd2ee5107683e95",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "0012_v069_schema_relation_convergence",
+      "checksum": "a39f57af8bf37345c6d057da8cdfbc9c3d77b1bd4e4360cac64114f93fc60caf",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "0013_review_r1_integrity_guards",
+      "checksum": "716df53aead8b67b39a9c3f44c1e7790f452969e9263a90676f3af3db4902498",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "0014_r4_payout_approval_recovery_integrity",
+      "checksum": "099d233fedb5cc30013dc5fe2ee9de4d516a5c750f49d7a7eda8c7898bf40729",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "0015_r5_operations_ready",
+      "checksum": "8f8a0bf2d36b5f6a1bf3931a02d6ce06e60133fe09932c00bcc45d15722346bc",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "0016_r6_admin_access_grant",
+      "checksum": "f1ab4acba29b7ce5b7cff8b93bb21cd1216fe2fe8ab47f867cd35c58792204e3",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260915110000_sa_parameter_snapshots",
+      "checksum": "3283f551e3162560417466264bf3c36b53855036ba4fbc1702423c63701bc133",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260915120000_phase2_historical_replay",
+      "checksum": "fd391d290763d2a9ff535fdf993fcf9b6f0ab016c45670081154ca6d25eaaeb8",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260915150000_replay_entitlement_baseline_guards",
+      "checksum": "4ac86221ef835e4544823da2b10a464eaa900e69ec840fc4bc133a586753929e",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260915160000_sa_phase3_business_timezone",
+      "checksum": "d219f0f037fef8efb7d99702dd86925623cb8bae9077c1545a89c2db326d110f",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260916030000_member_notification",
+      "checksum": "6d64735755589944e315bc52bc5074d02a9883964d488b49f277cd272d99f200",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260916040000_member_notification_reads",
+      "checksum": "03e9271b18345efe7431ed93a591fc133b03cc0cb59a5af9de9344f0dd0058f8",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260916120000_binary_zero_entitlement_evidence",
+      "checksum": "2a93eceb7f05130c65c27377e090133a10c2d6159c6e1fa4731df86d6b1428d7",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260916170000_replay_horizon_alignment",
+      "checksum": "ce650e5fbea364e3941129ec60de16b8410aa170472b6fe54819cd9e670aaa3b",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260916171000_return_recalculation_idempotency",
+      "checksum": "8b67d976a9df64540c5419ffdef9332e69312ba0531cbe597e5ffab860d6b683",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260916233000_v11_contract_consent_foundation",
+      "checksum": "ba222c8000b2a12a7535d963cdc7795e197128b23ff14b707c3e1d0ef98e6f89",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260916234000_v11_contract_version_immutability",
+      "checksum": "3ad322993c64c1845c911d606932da665d412bd90268f81c66af7f4c3476579a",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260917010000_v11_network_member_profile",
+      "checksum": "bb2598bb4aa3b11acc1ccbed9f005033556db461427527bf5aa837657462afd2",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260917013000_v11_otp_domain",
+      "checksum": "9c702d3e9cc45e6c443d6a9e5af72660c9f3a3c42e20d12102b3f5fb5c31338c",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260917020000_v11_network_registration",
+      "checksum": "2241369234409da4ffe3a76dc44527c71cd7a46414a2dde5b98cd26bc45f8841",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260917030000_v11_delivery_profile",
+      "checksum": "5df79f9005026aaf9f77ac40f9f9fdb7761ca355b680e37878d81a45c9c04502",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260917040000_v12_referral_attribution",
+      "checksum": "001e687beb5eaa9a6886a486c7eca64ca2ccaa2e8a7fa92c4edfdcef380ce9a5",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260917041000_v12_referral_person_binding",
+      "checksum": "886307e09f248abc9e613db3b540ad3571b7dca7525e7ba8ef00e2ae73e9d896",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260917042000_v12_system_assignment",
+      "checksum": "a4aff27aef7eb344fb5b0f025cf8a0aca185839e081cc6cd67fc3cf6812e19ae",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260917043000_v12_external_content",
+      "checksum": "dde343654f419bd80fb2fadff85c3568fe1eb6ce2e8836b88160acd67276a71a",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260917050000_v11_formal_application_draft",
+      "checksum": "15d4e3d6c83ba29f8104f3d755b218f9eaf5ff96e977a195a6af0bc5fd7859a1",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260917060000_v13_qualification_placement",
+      "checksum": "65f39a9a34d3e6b1f4dc6ff9014af0756ff8396b2f583b910b1a4df68bf239f6",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260917070000_v14_configurable_packages",
+      "checksum": "b6e0fe3924643b8626ed1a3a7cb01aef465bcdffdeb8dcce522a4e246a91307d",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260917080000_v15_package_checkout",
+      "checksum": "4e672af22a15cd990d86b0bc5bb9faf73f8ceb85aefca148e51fa69d3d612dce",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260917210000_v16_payment_inventory_persistence",
+      "checksum": "92c6959160fff863f291227b09e35cd9c5007d69de07f33f9eee17a28484a719",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260917220000_r1_0b_v3_evidence",
+      "checksum": "3de4e42fd3b29e5b76fd6608a736bef94a866b34175afffa73597646aabe9c2b",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260917230000_r1_0b_v3_replay_pool_deltas",
+      "checksum": "1957f5285f5f4cd4fec5ea9adf792959f75071e42aab7f4c6c15ab3f22c25537",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260918150000_uat_evidence_foundation",
+      "checksum": "f23fba844915aab729d6ea9ebbf7f2bbb7822430321d79fffeeeb51bc2e7a704",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260918193000_provider_integration_foundation",
+      "checksum": "85db8b37b1d2005934b93b9cd1516ac3369690c966c9710356b8908ec466d344",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260918210000_provider_connection_invoice_persistence",
+      "checksum": "d8b25900fd5bc070f8b7bb9dc5c22f8dff72cf400cc31d0d9e8f9632eb414dc8",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260918223000_fulfillment_shipment_persistence",
+      "checksum": "eab93b5dc7c58863a3ea8a9dd553e21f4eb2c879cfeb91b6d6a5731814e78fd5",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260918233000_provider_webhook_verification_evidence",
+      "checksum": "83596ba7f585a12978d4e9d433512cdaa6398a422cd1383a9a14ebdf7ca99878",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260918235000_shipment_aggregate_integrity",
+      "checksum": "1ea0a1ec77a8f5e038b0d9c8b4ca7be18b76dd828317f24d109990f9785619f5",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260919010000_management_analytics_projection",
+      "checksum": "e233fe0c4efd36362d91943229c16e90b0e601c1fa3ba4dbc5d2b79e2bb3b971",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260919013000_provider_webhook_inbox_lifecycle",
+      "checksum": "c15c70f71f2c0afa771a21a5e7d6b109817a12f66a55aa41437af4c7fba4184c",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260919020000_provider_ingress_connection_identity",
+      "checksum": "01afed6fd8c3f80101f45e2978260bdc9d6102ed908b21efd9773f5db5700a09",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260919023000_provider_webhook_worker_lease",
+      "checksum": "fadb8a6e9e22427844e2e8a128698854f4cad49a5e8b91cc1c293bac02555eff",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260919030000_provider_webhook_manual_retry",
+      "checksum": "c43d180478c83186589f02b39cfeb9f33db466641df6f3e927eb8a99c7cdfa6f",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260919040000_multi_tree_nonmonetary",
+      "checksum": "450edc8207d3bf82bc334d99c515fe7cf8db5973cb5f5414442d1fefccd68e84",
+      "finished": false,
+      "rolled_back": true
+    },
+    {
+      "migration_name": "20260919040000_multi_tree_nonmonetary",
+      "checksum": "450edc8207d3bf82bc334d99c515fe7cf8db5973cb5f5414442d1fefccd68e84",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260919050000_tree_read_snapshot",
+      "checksum": "e7d5d8642c51e3f8b59ed0910caff4658359fef18300f7795dc5e1144dcca41f",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260919060000_company_leader_binding",
+      "checksum": "7651d51094e16cde5a9af9c638bc2c7a490bd0332f203b0cda7a1c7f8bfa880b",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260919070000_reservoir_b_destination",
+      "checksum": "3f579265a7a7c1071c549fa13ef1deacc395321e1b71f5d8364f118f6ca721a9",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260919080000_matching_source_identity",
+      "checksum": "ef97fe53c669aa7b8e25f3aa4f7aa851285a5754e9ffca76e46d92814fa2e068",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260919090000_report_read_snapshot",
+      "checksum": "945c234d483a6f50d55a2bc11efe21b50f3a6166e8a5137082aaa9bd92280bd2",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260919100000_period_aggregate_jobs",
+      "checksum": "fd20de2627dbd15fbd84794a379d7f1c327670a85f68e081c7b410195495a2e7",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260919110000_tree_leaf_cycle_guard",
+      "checksum": "612af4883ef5464761bfa2db3e24d2d003bd7fb32e10f8cdc54627337e12ce62",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260919120000_owner_interval_temporal_guard",
+      "checksum": "5e29ced9d5aa0b7be56991abf7c36641e48c7f35e42025871d7c7dbc14bc0716",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260919130000_tree_parent_expansion",
+      "checksum": "e3f217c5ee66a62bc95b364e2e8ab6f63b0a1911d67bdbbbeada64e78dacf347",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260919140000_projection_publication_fence",
+      "checksum": "48fc474ec3af67c36e7b744e00d64ef2124eb07f79387f1556001d1ca6b3f06b",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260919150000_settlement_replay_metrics",
+      "checksum": "1a72616f8e91ea71f3b8199444642cc1668f60886d16a147e4a5f9b72edd739b",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260919160000_pv_reversal_lookup",
+      "checksum": "ad34927da2b21d5addb5ae374dd3364b9ba76a3746f0103eef1e6eda4702499f",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260919170000_projection_job_identity",
+      "checksum": "08664262f8698c4c56141fc76de01abe81b63db3402257fb1896e9c418f72c32",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260919180000_member_ball_identifier_position",
+      "checksum": "4c788ecad70aa6823322c5b8d80e4a754b4dc95f03a9be5ee44875551fb0f45e",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260919190000_ball_identifier_growth_integrity",
+      "checksum": "2b88bd3e392e9f2f17ce6b38aecb9edef88ab96f883c0f4c8e104094ddf0c673",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260920100000_allow_single_char_tree_code",
+      "checksum": "ac158a90a30be229fe83cca34477a54dbea04f208c0c8bc44279e7777655ef32",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260924110000_line_account_security_lite",
+      "checksum": "132ded8c94fd7a863e92f023e8421d159f175be69ac631542b58c73506d97344",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260924120000_line_messaging_identity_webhook_domain",
+      "checksum": "188062e14e6805da4ddbe278df36069416dd4fd7f12798c7796e1e09b2c209c8",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260924130000_line_messaging_normalized_event",
+      "checksum": "8b9a9d24231ff5b7dca5c54a6d957016adcae080909a96802635484f34f0c7d7",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260924140000_notification_delivery_foundation",
+      "checksum": "4a73f355076b3b793efd1329e349b47c55149848685642949d37152299c9546b",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260924150000_line_messaging_event_lifecycle",
+      "checksum": "709d9f6a77ee64225ddedc2374ad3ed40fb5c74a52a7ee27fb412f41aa75e030",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260924160000_notification_delivery_idempotency",
+      "checksum": "02df35fdc420e7136ad708a5bf9a83929bbd4d4ef7c421ce66381a0a52ee0131",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260924170000_notification_delivery_evidence",
+      "checksum": "1b9cd6ccb646602f90724590cd2d9743a2cf1a31988fd2e45919270fb1c58d47",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260925100000_retail_referral_foundation",
+      "checksum": "014201aa0550868160685e5404bac0be3162cfaa51d47da0de91d314a92b3fd7",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260925110000_retail_referral_award",
+      "checksum": "36c90da73a5af12403b0748b68dc3c89987b205a191824af44feb879f32ba71a",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260925120000_ball_tree_sequence",
+      "checksum": "3a16e3c9c9163145b99b74d336524b06dd1e5d207a8252c3b4ead5ccb16b34bc",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260925130000_existing_member_line_link",
+      "checksum": "376abe4073daf9535bb87a6f7f6f142c7029a294e7b6f05cd4b72a42ffadc630",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260925130100_existing_member_line_link_index",
+      "checksum": "9d1f669c75fcd25adbd2804a9ff56b6756edd539806a68e5f1a880da2b268972",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260925150000_company_sponsor_alias",
+      "checksum": "c3acee29431cd0c68bc8ca00e9fcb2c9e8f3eb04937762fc70077c8b724be0cd",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260925160000_paper_receipt_evidence",
+      "checksum": "fbbec452d40ebfa0d0126310d1fbe0fc4469fe801afe6c7c3f644cd2610481f0",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260925170000_paper_application_intake",
+      "checksum": "bcefcea4a0f721862892b10f5898b773dfe497e67e9224f09e887c29091b4604",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260926100000_paper_person_identity_duplicate_prevention",
+      "checksum": "863049cbcf576f59bfa922738998133066a83c0e011e88147242dac0754dbc90",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260926110000_g8_audit_event_core",
+      "checksum": "aa599e41022c6bbfb8bbedb2fe5619f9fb9cbdab64aff1551b60b9bbe8a67de3",
+      "finished": false,
+      "rolled_back": true
+    },
+    {
+      "migration_name": "20260926110000_g8_audit_event_core",
+      "checksum": "aa599e41022c6bbfb8bbedb2fe5619f9fb9cbdab64aff1551b60b9bbe8a67de3",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260928100000_binary_tree_bootstrap_profile",
+      "checksum": "4a8ab133bccb8a1f0fcd5070fde9fcaae318daf1828d3ca23466fcf388e9e49a",
+      "finished": false,
+      "rolled_back": false
+    }
+  ],
+  "initialUnmatchedBeforeEolRecovery": [
+    {
+      "migration_name": "20260916030000_member_notification",
+      "checksum": "6d64735755589944e315bc52bc5074d02a9883964d488b49f277cd272d99f200",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260916040000_member_notification_reads",
+      "checksum": "03e9271b18345efe7431ed93a591fc133b03cc0cb59a5af9de9344f0dd0058f8",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260917080000_v15_package_checkout",
+      "checksum": "4e672af22a15cd990d86b0bc5bb9faf73f8ceb85aefca148e51fa69d3d612dce",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260917210000_v16_payment_inventory_persistence",
+      "checksum": "92c6959160fff863f291227b09e35cd9c5007d69de07f33f9eee17a28484a719",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260919040000_multi_tree_nonmonetary",
+      "checksum": "450edc8207d3bf82bc334d99c515fe7cf8db5973cb5f5414442d1fefccd68e84",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260925110000_retail_referral_award",
+      "checksum": "36c90da73a5af12403b0748b68dc3c89987b205a191824af44feb879f32ba71a",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260925130100_existing_member_line_link_index",
+      "checksum": "9d1f669c75fcd25adbd2804a9ff56b6756edd539806a68e5f1a880da2b268972",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260925150000_company_sponsor_alias",
+      "checksum": "c3acee29431cd0c68bc8ca00e9fcb2c9e8f3eb04937762fc70077c8b724be0cd",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260926100000_paper_person_identity_duplicate_prevention",
+      "checksum": "863049cbcf576f59bfa922738998133066a83c0e011e88147242dac0754dbc90",
+      "finished": true,
+      "rolled_back": false
+    }
+  ],
+  "allChecksumsVerifiedAfterEolRecovery": true,
+  "readOnlyExecution": "ucell-stage-migrate-t3l3hjh"
+}
