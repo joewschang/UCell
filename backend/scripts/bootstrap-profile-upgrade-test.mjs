@@ -39,14 +39,20 @@ try{
  pass(run(['db','execute','--stdin'],undefined,profileUpgradeSql()));
  const after=await db.$queryRawUnsafe("SELECT to_jsonb(t)-ARRAY['bootstrap_profile_id','bootstrap_profile_code','bootstrap_company_ball_count','bootstrap_profile_snapshot'] AS row FROM organization.binary_tree t ORDER BY tree_code");assert.deepEqual(after,before);
  assert.deepEqual(await db.person.findUnique({where:{personId:person.personId}}),person);
+ // Raw SQL preservation alone cannot prove the generated Prisma client can read legacy identity.
+ const typedTrees=await db.binaryTree.findMany({orderBy:{treeCode:'asc'}});
+ assert.equal(typedTrees.length,2);
+ for(const tree of typedTrees){assert.equal(tree.bootstrapProfileVersion,'COMPANY_BOOTSTRAP_PROFILE_V1');assert.equal(tree.bootstrapProfileCode,'LEGACY_THREE_COMPANY_BALLS');assert.equal(tree.bootstrapProfileSnapshot.version,1);assert.equal(tree.bootstrapCompanyBallCount,3);}
+ console.log('BOOTSTRAP_PROFILE_TYPED_LEGACY_READ_PASS');
+
  await assert.rejects(db.$executeRawUnsafe("UPDATE organization.binary_tree SET tree_name='Invalid' WHERE status='ACTIVE'"),/TREE_IMMUTABLE_IDENTITY_OR_VERSION/);
  await assert.rejects(db.$executeRawUnsafe("UPDATE organization.binary_tree SET topology_version=topology_version+1 WHERE status='ARCHIVED'"),/TREE_IMMUTABLE_IDENTITY_OR_VERSION/);
  await assert.rejects(db.$executeRawUnsafe('DELETE FROM organization.binary_tree'),/TREE_DELETE_FORBIDDEN/);
  pass(run(['migrate','resolve','--rolled-back',profileMigration]));pass(run(['migrate','resolve','--applied',profileMigration]));pass(run(['migrate','deploy']));
  assert.deepEqual(await db.$queryRawUnsafe("SELECT to_jsonb(t)-ARRAY['bootstrap_profile_id','bootstrap_profile_code','bootstrap_company_ball_count','bootstrap_profile_snapshot'] AS row FROM organization.binary_tree t ORDER BY tree_code"),before);
  assert.deepEqual(await db.person.findUnique({where:{personId:person.personId}}),person);
- const ledger=await db.$queryRawUnsafe('SELECT count(*)::int AS count FROM public._prisma_migrations WHERE finished_at IS NOT NULL AND rolled_back_at IS NULL');assert.equal(ledger[0].count,124);
- console.log('BOOTSTRAP_PROFILE_UPGRADE_PASS: reproduced failed migration; 87 to 124; legacy/archived identity, topology versions and Person preserved; lifecycle/delete guards remain enforced');
+ const ledger=await db.$queryRawUnsafe('SELECT count(*)::int AS count FROM public._prisma_migrations WHERE finished_at IS NOT NULL AND rolled_back_at IS NULL');assert.equal(ledger[0].count,readdirSync(join(prismaRoot,'migrations'),{withFileTypes:true}).filter(e=>e.isDirectory()).length);
+ console.log('BOOTSTRAP_PROFILE_UPGRADE_PASS: reproduced failed migration; legacy to current; legacy/archived identity, topology versions and Person preserved; lifecycle/delete guards remain enforced');
 }finally{
  await db.$disconnect();if(created){assert.match(database,/^ucell_profile_upgrade_[a-f0-9]{32}$/);await admin.$executeRawUnsafe('DROP DATABASE "'+database+'" WITH (FORCE)');}await admin.$disconnect();
  assert.equal(dirname(resolve(scratch)),resolve(tmpdir()));assert.ok(basename(scratch).startsWith('ucell-profile-upgrade-'));rmSync(scratch,{recursive:true,force:true});console.log('BOOTSTRAP_PROFILE_UPGRADE_CLEANUP_PASS');

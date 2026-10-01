@@ -4513,7 +4513,8 @@ model BinaryTree {
   companyPrincipalId String @map("company_principal_id") @db.Uuid
   bootstrapProfileId String @map("bootstrap_profile_id") @db.Uuid
   bootstrapProfileCode String @map("bootstrap_profile_code")
-  bootstrapProfileVersion Int @map("bootstrap_profile_version")
+  // Legacy tree identity is immutable TEXT; profile.version remains an Int on the related profile.
+  bootstrapProfileVersion String @map("bootstrap_profile_version")
   bootstrapCompanyBallCount Int @map("bootstrap_company_ball_count")
   bootstrapProfileSnapshot Json @map("bootstrap_profile_snapshot")
   economicActivation String @default("PENDING_MAPPING") @map("economic_activation")
