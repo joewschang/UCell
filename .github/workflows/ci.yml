@@ -56,8 +56,21 @@ jobs:
       - name: DB golden
         working-directory: backend
         run: pnpm db:golden
+      - name: Prepare isolated test database
+        working-directory: backend
+        env:
+          PGPASSWORD: ucell
+          TEST_DATABASE_URL: postgresql://ucell:ucell@localhost:5432/ucell_admin_test
+        run: |
+          psql -h localhost -U ucell -d postgres -v ON_ERROR_STOP=1 -c "DROP DATABASE IF EXISTS ucell_admin_test WITH (FORCE);"
+          psql -h localhost -U ucell -d postgres -v ON_ERROR_STOP=1 -c "CREATE DATABASE ucell_admin_test;"
+          DATABASE_URL="$TEST_DATABASE_URL" pnpm --filter @ucell/database exec prisma migrate deploy
       - name: Tests
         working-directory: backend
+        env:
+          DATABASE_URL: postgresql://ucell:ucell@localhost:5432/ucell_admin_test
+          PHASE2_TEST_DATABASE_URL: postgresql://ucell:ucell@localhost:5432/ucell_admin_test
+          INVENTORY_PERSISTENCE_TEST_DATABASE_URL: postgresql://ucell:ucell@localhost:5432/ucell_admin_test
         run: pnpm test
   admin:
     runs-on: ubuntu-latest
