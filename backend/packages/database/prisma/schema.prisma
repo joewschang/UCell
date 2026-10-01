@@ -681,6 +681,7 @@ model FormalMemberApplication {
   personId                  String                            @map("person_id") @db.Uuid
   applicantType             FormalApplicantType               @default(INDIVIDUAL) @map("applicant_type")
   legalEntityId             String?                           @map("legal_entity_id") @db.Uuid
+  legalEntityRegistrationNo String?                           @map("legal_entity_registration_no")
   applicantIdentityFingerprint String?                        @map("applicant_identity_fingerprint")
   spouseIdentityFingerprint String?                           @map("spouse_identity_fingerprint")
   spouseVerificationStatus  SpouseVerificationStatus          @default(NOT_APPLICABLE) @map("spouse_verification_status")
@@ -702,6 +703,7 @@ model FormalMemberApplication {
 
   @@index([personId, status])
   @@index([applicantType, status])
+  @@index([legalEntityRegistrationNo])
   @@index([spouseIdentityFingerprint])
   @@index([applicantIdentityFingerprint])
   @@map("formal_member_application")
