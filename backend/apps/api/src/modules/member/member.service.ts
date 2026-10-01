@@ -68,7 +68,16 @@ export class MemberService {
  }
  async qualifications(personId:string){
   const now=new Date();
-  const rows=await this.db.qualification.findMany({where:{currentHolderPersonId:personId,holderHistory:{some:{holderPersonId:personId,effectiveFrom:{lte:now},OR:[{effectiveTo:null},{effectiveTo:{gt:now}}]}}},include:{activePeriods:{where:{activeFrom:{lte:now},OR:[{activeTo:null},{activeTo:{gt:now}}]}}},orderBy:{qualificationNo:'asc'}});
+  const rows=await this.db.qualification.findMany({where:{
+   holderHistory:{some:{
+    effectiveFrom:{lte:now},
+    OR:[
+     {holderPersonId:personId},
+     {holderLegalEntity:{representatives:{some:{personId,roleCode:'PRIMARY_OPERATING_REPRESENTATIVE',effectiveFrom:{lte:now},OR:[{effectiveTo:null},{effectiveTo:{gt:now}}]}}}}
+    ],
+    AND:[{OR:[{effectiveTo:null},{effectiveTo:{gt:now}}]}]
+   }}
+  },include:{activePeriods:{where:{activeFrom:{lte:now},OR:[{activeTo:null},{activeTo:{gt:now}}]}}},orderBy:{qualificationNo:'asc'}});
   const monthReference=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Taipei',year:'numeric',month:'2-digit'}).format(now);
   const evidence=await this.db.activeIntervalEvidence.findMany({where:{qualificationId:{in:rows.map(row=>row.qualificationId)},calendarMonth:new Date(monthReference+'-01')},orderBy:{createdAt:'desc'}});
   const latest=new Map<string,typeof evidence[number]>();for(const row of evidence)if(!latest.has(row.qualificationId))latest.set(row.qualificationId,row);
