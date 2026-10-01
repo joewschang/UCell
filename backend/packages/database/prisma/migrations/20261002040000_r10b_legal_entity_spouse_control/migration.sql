@@ -17,6 +17,7 @@ CREATE INDEX legal_entity_status_idx ON identity.legal_entity(status);
 ALTER TABLE identity.formal_member_application
   ADD COLUMN applicant_type identity."FormalApplicantType" NOT NULL DEFAULT 'INDIVIDUAL',
   ADD COLUMN legal_entity_id uuid,
+  ADD COLUMN legal_entity_registration_no text,
   ADD COLUMN applicant_identity_fingerprint text,
   ADD COLUMN spouse_identity_fingerprint text,
   ADD COLUMN spouse_verification_status identity."SpouseVerificationStatus" NOT NULL DEFAULT 'NOT_APPLICABLE',
@@ -26,6 +27,8 @@ ALTER TABLE identity.formal_member_application
 
 CREATE INDEX formal_member_application_applicant_type_status_idx
   ON identity.formal_member_application(applicant_type,status);
+CREATE INDEX formal_member_application_legal_entity_registration_idx
+  ON identity.formal_member_application(legal_entity_registration_no);
 CREATE INDEX formal_member_application_spouse_fingerprint_idx
   ON identity.formal_member_application(spouse_identity_fingerprint);
 CREATE INDEX formal_member_application_applicant_fingerprint_idx
