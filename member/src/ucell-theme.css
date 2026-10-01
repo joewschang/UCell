@@ -79,3 +79,24 @@ button,input,select,textarea{
     border-color:var(--ucell-border);
   }
 }
+
+
+/* Direct Web member entry. Uses the same Member session and application after authentication. */
+.uc-web-entry{
+  width:min(460px,calc(100vw - 32px));
+  margin:32px auto;
+  padding:28px;
+  text-align:left;
+  background:var(--ucell-surface);
+  color:var(--ucell-text-primary);
+  border:1px solid var(--ucell-border);
+  border-radius:var(--ucell-radius-lg);
+  box-shadow:var(--ucell-shadow-md);
+}
+.uc-web-entry>small{display:block;margin-bottom:8px;color:var(--ucell-primary);font-weight:800;letter-spacing:.14em}
+.uc-web-entry h1{margin:0 0 12px;font-size:28px;color:var(--ucell-text-primary)}
+.uc-web-entry p{color:var(--ucell-text-secondary)}
+.uc-web-entry button{width:100%;margin:10px 0 6px}
+.uc-web-entry .primary{background:var(--ucell-primary);color:#fff;border-color:var(--ucell-primary)}
+.uc-web-entry .primary:hover:not(:disabled){background:var(--ucell-primary-hover)}
+@media(max-width:480px){.uc-web-entry{margin:20px auto;padding:22px}}
