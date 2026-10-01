@@ -537,6 +537,54 @@ enum LegalEntityStatus {
   @@schema("identity")
 }
 
+enum FormalApplicationSourceChannel {
+  MEMBER_WEB
+  ADMIN_PAPER
+
+  @@schema("identity")
+}
+
+enum FormalDocumentType {
+  IDENTITY_FRONT
+  IDENTITY_BACK
+  BANKBOOK_COVER
+  CORPORATE_REGISTRATION
+  REPRESENTATIVE_IDENTITY_FRONT
+  REPRESENTATIVE_IDENTITY_BACK
+  CORPORATE_BANK_PROOF
+  TAX_REGISTRATION
+  OTHER
+
+  @@schema("identity")
+}
+
+enum FormalDocumentStatus {
+  PENDING_UPLOAD
+  PRESENT
+  REJECTED
+  SUPERSEDED
+
+  @@schema("identity")
+}
+
+enum MalwareScanStatus {
+  PENDING
+  CLEAN
+  INFECTED
+  FAILED
+
+  @@schema("identity")
+}
+
+enum PaperEvidenceStatus {
+  PENDING
+  REVIEWED
+  REJECTED
+  NOT_APPLICABLE
+
+  @@schema("identity")
+}
+
 enum OtpPurpose {
   NETWORK_REGISTRATION
   MOBILE_CHANGE
@@ -681,6 +729,10 @@ model FormalMemberApplication {
   formalMemberApplicationId String                            @id @default(uuid()) @map("formal_member_application_id") @db.Uuid
   personId                  String                            @map("person_id") @db.Uuid
   applicantType             FormalApplicantType               @default(INDIVIDUAL) @map("applicant_type")
+  sourceChannel             FormalApplicationSourceChannel    @default(MEMBER_WEB) @map("source_channel")
+  paperApplicationReference String?                            @map("paper_application_reference")
+  enteredBy                 String?                            @map("entered_by") @db.Uuid
+  enteredAt                 DateTime?                          @map("entered_at") @db.Timestamptz(6)
   legalEntityId             String?                           @map("legal_entity_id") @db.Uuid
   legalEntityRegistrationNo String?                           @map("legal_entity_registration_no")
   applicantIdentityFingerprint String?                        @map("applicant_identity_fingerprint")
@@ -701,13 +753,57 @@ model FormalMemberApplication {
   snapshots                 FormalMemberApplicationSnapshot[]
   spouseRelationships       SpouseRelationship[]
   identityIndexes           FormalIdentityIndex[]
+  documents                 FormalApplicationDocument[]
+  paperEvidence             FormalPaperEvidence[]
 
   @@index([personId, status])
-  @@index([applicantType, status])
+  @@index([applicantType, sourceChannel, status])
   @@index([legalEntityRegistrationNo])
   @@index([spouseIdentityFingerprint])
   @@index([applicantIdentityFingerprint])
   @@map("formal_member_application")
+  @@schema("identity")
+}
+
+model FormalApplicationDocument {
+  formalApplicationDocumentId String                  @id @default(uuid()) @map("formal_application_document_id") @db.Uuid
+  formalMemberApplicationId   String                  @map("formal_member_application_id") @db.Uuid
+  documentType                FormalDocumentType      @map("document_type")
+  status                      FormalDocumentStatus    @default(PENDING_UPLOAD)
+  storageObjectKey            String?                 @map("storage_object_key")
+  contentSha256               String?                 @map("content_sha256")
+  mimeType                    String?                 @map("mime_type")
+  sizeBytes                   Int?                    @map("size_bytes")
+  malwareScanStatus           MalwareScanStatus       @default(PENDING) @map("malware_scan_status")
+  uploadedByPersonId          String?                 @map("uploaded_by_person_id") @db.Uuid
+  uploadedAt                  DateTime?               @map("uploaded_at") @db.Timestamptz(6)
+  reviewedBy                  String?                 @map("reviewed_by") @db.Uuid
+  reviewedAt                  DateTime?               @map("reviewed_at") @db.Timestamptz(6)
+  createdAt                   DateTime                @default(now()) @map("created_at") @db.Timestamptz(6)
+  application                 FormalMemberApplication @relation(fields: [formalMemberApplicationId], references: [formalMemberApplicationId])
+
+  @@unique([formalMemberApplicationId, documentType, status], map: "formal_application_document_type_status_uq")
+  @@index([formalMemberApplicationId, documentType])
+  @@index([malwareScanStatus, status])
+  @@map("formal_application_document")
+  @@schema("identity")
+}
+
+model FormalPaperEvidence {
+  formalPaperEvidenceId      String                  @id @default(uuid()) @map("formal_paper_evidence_id") @db.Uuid
+  formalMemberApplicationId  String                  @map("formal_member_application_id") @db.Uuid
+  evidenceType               FormalDocumentType      @map("evidence_type")
+  status                     PaperEvidenceStatus     @default(PENDING)
+  sourceReference            String?                 @map("source_reference")
+  reviewedBy                 String?                 @map("reviewed_by") @db.Uuid
+  reviewedAt                 DateTime?               @map("reviewed_at") @db.Timestamptz(6)
+  note                       String?
+  createdAt                  DateTime                @default(now()) @map("created_at") @db.Timestamptz(6)
+  application                FormalMemberApplication @relation(fields: [formalMemberApplicationId], references: [formalMemberApplicationId])
+
+  @@unique([formalMemberApplicationId, evidenceType])
+  @@index([formalMemberApplicationId, status])
+  @@map("formal_paper_evidence")
   @@schema("identity")
 }
 
