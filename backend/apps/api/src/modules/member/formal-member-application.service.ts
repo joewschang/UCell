@@ -136,6 +136,7 @@ export class FormalMemberApplicationService {
  }
 
  async verifySpouse(applicationId:string,actorId:string,key:string,requestId:string){
+  if(!actorId)throw new ConflictException({code:'ADMIN_PERSON_ID_REQUIRED'});
   const result=await this.idempotency.execute('admin:formal-spouse-verify:'+applicationId,key,{applicationId},async tx=>{
    const application=await tx.formalMemberApplication.findUnique({where:{formalMemberApplicationId:applicationId},include:{snapshots:{orderBy:{version:'desc'},take:1}}});
    if(!application||!application.snapshots[0])throw new NotFoundException({code:'FORMAL_APPLICATION_NOT_FOUND'});
