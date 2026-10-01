@@ -9,7 +9,7 @@ export default function FormalUpgrade(){
  const [saved,setSaved]=useState<{version:number;nationalIdMasked:string|null;spouseNationalIdMasked:string|null;bankAccountMasked:string;applicantType:string}|null>(null);
  const key=useRef(crypto.randomUUID());
  const [form,setForm]=useState({
-  applicantType:'INDIVIDUAL' as 'INDIVIDUAL'|'LEGAL_ENTITY',
+  applicantType:'INDIVIDUAL' as const,
   legalName:'',gender:'',birthDate:'',nationalId:'',
   legalEntityName:'',legalEntityRegistrationNo:'',legalEntityRegisteredAddress:'',representativeLegalName:'',representativeNationalId:'',
   hasSpouse:false,spouseName:'',spouseNationalId:'',
@@ -32,9 +32,7 @@ export default function FormalUpgrade(){
     hasSpouse:form.hasSpouse,
     ...(form.hasSpouse?{spouseName:form.spouseName,spouseNationalId:form.spouseNationalId}:{})
    };
-   const identity=form.applicantType==='INDIVIDUAL'
-    ?{legalName:form.legalName,gender:form.gender,birthDate:form.birthDate,nationalId:form.nationalId}
-    :{legalEntityName:form.legalEntityName,legalEntityRegistrationNo:form.legalEntityRegistrationNo,legalEntityRegisteredAddress:form.legalEntityRegisteredAddress,representativeLegalName:form.representativeLegalName,representativeNationalId:form.representativeNationalId};
+   const identity={legalName:form.legalName,gender:form.gender,birthDate:form.birthDate,nationalId:form.nationalId};
    const result=await saveFormalDraft({...common,...identity},key.current);
    setSaved(result);key.current=crypto.randomUUID();contracts.retry();
   }catch(reason){setError(reason instanceof Error?reason.message:'草稿儲存失敗');}
@@ -42,27 +40,15 @@ export default function FormalUpgrade(){
  }
 
  return <form className="card" onSubmit={submit}><h3>升級正式會員：加密草稿</h3>
- <p>正式會員申請可由自然人或法人提出。草稿不會送審、核准、建立球位或改變會員狀態；配偶與身分資料僅供 KYC 與跨線審查。</p>
+ <p>線上正式會員申請限自然人。草稿不會送審、核准、建立球位或改變會員狀態；配偶與身分資料僅供 KYC 與跨線審查。</p>
  <details><summary>{contract.title}（{contract.version}）</summary><p>{contract.content}</p><small>內容雜湊：{contract.contentHash}</small></details>
  <label><input type="checkbox" checked={accepted||!!contract.acceptedAt} disabled={!!contract.acceptedAt||busy} onChange={e=>setAccepted(e.target.checked)}/> 我已閱讀並同意上述正式會員合約與隱私告知</label>
 
- <fieldset><legend>申請身分</legend>
-  <label><input type="radio" name="applicantType" checked={form.applicantType==='INDIVIDUAL'} onChange={()=>set('applicantType','INDIVIDUAL')}/> 自然人</label>
-  <label><input type="radio" name="applicantType" checked={form.applicantType==='LEGAL_ENTITY'} onChange={()=>set('applicantType','LEGAL_ENTITY')}/> 法人</label>
- </fieldset>
-
- {form.applicantType==='INDIVIDUAL'?<>
-  <label>姓名<input required maxLength={120} autoComplete="name" value={form.legalName} onChange={e=>set('legalName',e.target.value)}/></label>
-  <label>性別<input required maxLength={32} value={form.gender} onChange={e=>set('gender',e.target.value)}/></label>
-  <label>出生年月日<input required type="date" value={form.birthDate} onChange={e=>set('birthDate',e.target.value)}/></label>
-  <label>身分證號<input required maxLength={32} autoComplete="off" value={form.nationalId} onChange={e=>set('nationalId',e.target.value)}/></label>
- </>:<>
-  <label>法人名稱<input required maxLength={160} value={form.legalEntityName} onChange={e=>set('legalEntityName',e.target.value)}/></label>
-  <label>統一編號／法人登記號碼<input required maxLength={40} value={form.legalEntityRegistrationNo} onChange={e=>set('legalEntityRegistrationNo',e.target.value)}/></label>
-  <label>法人登記地址<textarea required maxLength={500} value={form.legalEntityRegisteredAddress} onChange={e=>set('legalEntityRegisteredAddress',e.target.value)}/></label>
-  <label>主要經營代表人姓名<input required maxLength={120} value={form.representativeLegalName} onChange={e=>set('representativeLegalName',e.target.value)}/></label>
-  <label>主要經營代表人身分證號<input required maxLength={32} autoComplete="off" value={form.representativeNationalId} onChange={e=>set('representativeNationalId',e.target.value)}/></label>
- </>}
+ <section className="card"><strong>線上申請限自然人</strong><p>法人正式會員目前採紙本申請，由公司後台建立並審查公司登記、代表人、銀行與其他法人文件。</p></section>
+ <label>姓名<input required maxLength={120} autoComplete="name" value={form.legalName} onChange={e=>set('legalName',e.target.value)}/></label>
+ <label>性別<input required maxLength={32} value={form.gender} onChange={e=>set('gender',e.target.value)}/></label>
+ <label>出生年月日<input required type="date" value={form.birthDate} onChange={e=>set('birthDate',e.target.value)}/></label>
+ <label>身分證號<input required maxLength={32} autoComplete="off" value={form.nationalId} onChange={e=>set('nationalId',e.target.value)}/></label>
 
  <fieldset><legend>配偶資料／跨線審查</legend>
   <label><input type="checkbox" checked={form.hasSpouse} onChange={e=>set('hasSpouse',e.target.checked)}/> 有配偶</label>
