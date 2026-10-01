@@ -1,14 +1,14 @@
 import { CanActivate, ExecutionContext, Injectable, ServiceUnavailableException, UnauthorizedException } from '@nestjs/common';
 import { IdentityTokenService } from './identity-token.service';
 import { PrismaService } from '@ucell/database';
-import { LineIdentityService } from './line-identity.service';
+import { MemberIdentityService } from './member-identity.service';
 import { authenticateMemberRequest, MemberAuthenticationError } from './member-authentication';
 
 @Injectable()
 export class MemberAuthenticationGuard implements CanActivate {
   constructor(
     private readonly tokens: IdentityTokenService,
-    private readonly identities: LineIdentityService,
+    private readonly identities: MemberIdentityService,
     private readonly db: PrismaService,
   ) {}
 
@@ -17,7 +17,7 @@ export class MemberAuthenticationGuard implements CanActivate {
     try {
       await authenticateMemberRequest(request, {
         authenticate: token => this.tokens.authenticate(token),
-        resolveLineSubject: lineSubject => this.identities.resolveVerifiedSubject({ lineSubject }),
+        resolveIdentity: (provider,subject,personId) => this.identities.resolve({provider,subject,personId}),
       });
       const person=await this.db.person.findUnique({where:{personId:request.user.personId}});
       if(!person||person.status!=='EFFECTIVE')throw new MemberAuthenticationError('MEMBER_PERSON_DISABLED');
