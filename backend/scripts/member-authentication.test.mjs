@@ -89,3 +89,27 @@ test('rechecks the binding on subsequent requests instead of caching a previous 
   await assert.rejects(authenticateMemberRequest(req, deps), /MEMBER_IDENTITY_MISMATCH/);
   assert.equal(req.user, undefined);
 });
+
+
+test('accepts linked Google and local/OTP Member sessions through the provider-neutral resolver', async () => {
+  for (const provider of ['GOOGLE','MEMBER_LOCAL','SMS_OTP']) {
+    const s={...session,provider,subject:provider==='MEMBER_LOCAL'?'2609000001':provider==='SMS_OTP'?'+886912345678':'google-sub'};
+    const expected={provider,providerSubject:s.subject,personId:s.personId};
+    const req=request();
+    const principal=await authenticateMemberRequest(req,{
+      authenticate:async()=>s,
+      resolveIdentity:async(p,subject,personId)=>{assert.equal(p,provider);assert.equal(subject,s.subject);assert.equal(personId,s.personId);return expected;}
+    });
+    assert.equal(principal.provider,provider);
+    assert.equal(principal.subject,s.subject);
+  }
+});
+
+test('fails closed when a non-LINE provider has no provider-neutral identity resolver', async () => {
+  const req=request();
+  await assert.rejects(authenticateMemberRequest(req,{
+    authenticate:async()=>({...session,provider:'GOOGLE',subject:'google-sub'}),
+    resolveLineSubject:async()=>assert.fail('LINE resolver must not be used for Google')
+  }),/MEMBER_IDENTITY_UNAVAILABLE/);
+  assert.equal(req.user,undefined);
+});
