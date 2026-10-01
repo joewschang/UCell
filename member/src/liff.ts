@@ -12,6 +12,8 @@ async function request(path:string,init:RequestInit={}){
  } finally {clearTimeout(timer);}
 }
 
+export class LineReauthenticationRequired extends Error {}
+
 const transitionKey='ucell_referral_transition',bindingKey='ucell_referral_binding_key',anonymousKey='ucell_referral_anonymous_id';
 
 function uuid(value:string|null){
@@ -61,6 +63,7 @@ async function resumeCachedSession(){
   }
   throw error;
  }
+ await prepareReferralLanding();
  return {mode:'connected' as const,referralWarning:await bindPendingReferral(cached)};
 }
 
@@ -68,8 +71,6 @@ async function resumeCachedSession(){
 export async function initLiff() {
  sessionStorage.removeItem('ucell_line_id_token');
  if (import.meta.env.VITE_ENABLE_MOCK === 'true') return { mode: 'mock' as const };
-
- await prepareReferralLanding();
 
  // A valid UCell Member session is entry-channel neutral. Validate it before
  // requiring LIFF so a normal browser can resume the same authenticated session.
@@ -80,6 +81,8 @@ export async function initLiff() {
  if (!id) throw new Error('LINE 登入尚未設定，請聯絡客服');
 
  await liff.init({ liffId: id });
+ // Let the SDK consume its callback before a referral landing rewrites the URL.
+ await prepareReferralLanding();
 
  if (!liff.isLoggedIn()) {
   // Preserve the existing LINE OA / LIFF behavior: inside LINE, login continues
@@ -92,10 +95,11 @@ export async function initLiff() {
  }
 
  const idToken=liff.getIDToken();
- if(!idToken)throw new Error('LINE 登入憑證不存在，請重新登入');
+ if(!idToken)throw new LineReauthenticationRequired('LINE 登入憑證不存在，請重新登入');
  const response=await request('/auth/member/line/exchange',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({idToken})});
  if(!response.ok){
   const code=(response.body as {code?:string}|undefined)?.code;
+  if((response.status===401&&['LINE_TOKEN_INVALID','LINE_TOKEN_EXPIRED'].includes(code??''))||(response.status===409&&code==='LINE_TOKEN_REPLAYED'))throw new LineReauthenticationRequired('LINE 登入憑證已失效，請重新登入 LINE');
   throw new Error(response.status===409?(code==='RETRYABLE_CONFLICT'?'登入遇到操作衝突，請重試':'登入憑證已使用，請重新 LINE 登入'):'會員登入驗證失敗，請確認帳號已綁定');
  }
  const data=unwrapMemberEnvelope(response.body) as {accessToken?:unknown;expiresAt?:unknown};
@@ -113,6 +117,19 @@ export async function startWebLineLogin(){
   boot=undefined;
   return {mode:'connected' as const};
  }
+ const redirectUri=typeof window!=='undefined'?window.location.href:undefined;
+ liff.login(redirectUri?{redirectUri}:undefined);
+ return {mode:'redirect' as const};
+}
+
+/** Explicit credential refresh; does not revoke other UCell sessions or lose referral state. */
+export async function restartLineLogin(){
+ const id=import.meta.env.VITE_LIFF_ID;
+ if(!id)throw new Error('LINE 登入尚未設定，請聯絡客服');
+ await liff.init({liffId:id});
+ if(liff.isLoggedIn())liff.logout();
+ for(const key of ['ucell_member_token','ucell_qualification_id'])sessionStorage.removeItem(key);
+ boot=undefined;
  const redirectUri=typeof window!=='undefined'?window.location.href:undefined;
  liff.login(redirectUri?{redirectUri}:undefined);
  return {mode:'redirect' as const};

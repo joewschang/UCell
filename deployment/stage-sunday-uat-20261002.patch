@@ -1,0 +1,365 @@
+diff --git a/member/src/liff.ts b/member/src/liff.ts
+index 5e75aa3..f4dc740 100644
+--- a/member/src/liff.ts
++++ b/member/src/liff.ts
+@@ -11,6 +11,7 @@ const intendedDestinationKey='ucell_line_intended_destination';
+ const sponsorCandidateKey='ucell_sponsor_candidate';
+ const sponsorCodePattern=/^[A-Z][A-Z0-9_-]{0,39}(?:X\d{6,}|\d{6,})$/;
+ export class LineBindingRequired extends Error {}
++export class LineReauthenticationRequired extends Error {}
+ export function lineExchangeFailureMessage(status:number,code:unknown){
+  if(status===401&&code==='LINE_ACCOUNT_UNBOUND')return '此 LINE 尚未完成會員帳號綁定，請聯絡客服完成公司核驗。';
+  if(status===401&&code==='MEMBER_SECURITY_LOCKED')return '此會員帳號目前已安全鎖定，請聯絡客服協助重新綁定。';
+@@ -60,6 +61,30 @@ async function bindPendingReferral(accessToken:string){
+  if(!response.ok)return '推薦歸因未能綁定；會員登入仍有效，推薦關係尚未建立。';
+  sessionStorage.removeItem(transitionKey);sessionStorage.removeItem(bindingKey);return undefined;
+ }
++async function resumeCachedSession(){
++ const cached=sessionStorage.getItem('ucell_member_token');
++ if(!cached)return undefined;
++ try{
++  const response=await request('/member/me',{headers:{Authorization:'Bearer '+cached}});
++  if(response.ok){
++   parsePerson(unwrapMemberEnvelope(response.body));
++  }else{
++   if(response.status!==401)throw new Error('會員登入驗證暫時無法使用，請稍後重試');
++   sessionStorage.removeItem('ucell_member_token');
++   sessionStorage.removeItem('ucell_qualification_id');
++   return undefined;
++  }
++ }catch(error){
++  for(const key of ['ucell_member_token','ucell_qualification_id']){
++   try{sessionStorage.removeItem(key);}catch{/* Keep authentication failed even when storage is unavailable. */}
++  }
++  throw error;
++ }
++ preserveSponsorCandidate();
++ await prepareReferralLanding();
++ return {mode:'connected' as const,referralWarning:await bindPendingReferral(cached)};
++}
++
+ /** Client LINE profile is never identity proof; backend verifies exchange and session. */
+ export async function initLiff() {
+     // Remove raw credentials persisted by the previous prototype.
+@@ -81,6 +106,8 @@ export async function initLiff() {
+         sessionStorage.setItem('ucell_member_token', token);
+         return { mode: 'connected' as const };
+     }
++    const resumed=await resumeCachedSession();
++    if(resumed)return resumed;
+     // Preserve only a syntactically valid Ball candidate before LINE leaves this origin.
+     // It is deliberately not sent to the relationship-binding endpoint.
+     const id = import.meta.env.VITE_LIFF_ID;
+@@ -91,6 +118,7 @@ export async function initLiff() {
+     preserveSponsorCandidate();
+     await prepareReferralLanding();
+     if (!liff.isLoggedIn()) {
++        if(!liff.isInClient())return {mode:'web-login' as const};
+       // Keep only an internal relative route; no external redirect can be supplied.
+         if(typeof window!=='undefined'){
+           const destination=intendedDestination();
+@@ -99,18 +127,10 @@ export async function initLiff() {
+         }else liff.login();
+         return { mode: 'redirect' as const };
+     }
+-    const cached=sessionStorage.getItem('ucell_member_token');
+-    if(cached){
+-        const response=await request('/member/me',{headers:{Authorization:'Bearer '+cached}});
+-        if(response.ok){parsePerson(unwrapMemberEnvelope(response.body));return {mode:'connected' as const,referralWarning:await bindPendingReferral(cached)};}
+-        sessionStorage.removeItem('ucell_member_token');
+-        sessionStorage.removeItem('ucell_qualification_id');
+-        if(response.status!==401)throw new Error('會員登入驗證暫時無法使用，請稍後重試');
+-    }
+     const idToken=liff.getIDToken();
+-    if(!idToken)throw new Error('LINE 登入憑證不存在，請重新登入');
++    if(!idToken)throw new LineReauthenticationRequired('LINE 登入憑證不存在，請重新登入');
+     const response=await request('/auth/member/line/exchange',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({idToken})});
+-    if(!response.ok){const code=(response.body as {code?:string}|undefined)?.code;if(response.status===401&&code==='LINE_ACCOUNT_UNBOUND')throw new LineBindingRequired(lineExchangeFailureMessage(response.status,code));throw new Error(lineExchangeFailureMessage(response.status,code));}
++    if(!response.ok){const code=(response.body as {code?:string}|undefined)?.code;if((response.status===401&&['LINE_TOKEN_INVALID','LINE_TOKEN_EXPIRED'].includes(code??''))||(response.status===409&&code==='LINE_TOKEN_REPLAYED'))throw new LineReauthenticationRequired('LINE 登入憑證已失效，請重新登入 LINE');if(response.status===401&&code==='LINE_ACCOUNT_UNBOUND')throw new LineBindingRequired(lineExchangeFailureMessage(response.status,code));throw new Error(lineExchangeFailureMessage(response.status,code));}
+     const data=unwrapMemberEnvelope(response.body) as {accessToken?:unknown;expiresAt?:unknown};
+     if(typeof data.accessToken!=='string'||!data.accessToken||typeof data.expiresAt!=='string'||Date.parse(data.expiresAt)<=Date.now()||!Number.isFinite(Date.parse(data.expiresAt)))throw new Error('會員登入回應格式異常');
+     sessionStorage.setItem('ucell_member_token',data.accessToken);
+@@ -119,5 +139,32 @@ export async function initLiff() {
+     if(destination&&destination!==window.location.pathname+window.location.search+window.location.hash)window.history.replaceState({},'',destination);
+     return {mode:'connected' as const,referralWarning:await bindPendingReferral(data.accessToken)};
+ }
++export async function startWebLineLogin(){
++ const id=import.meta.env.VITE_LIFF_ID;
++ if(!id)throw new Error('LINE 登入尚未設定，請聯絡客服');
++ await liff.init({liffId:id});
++ if(liff.isLoggedIn()){
++  // Re-run backend exchange rather than reusing the cached Web entry result.
++  boot=undefined;
++  return {mode:'connected' as const};
++ }
++ const redirectUri=typeof window!=='undefined'?window.location.href:undefined;
++ liff.login(redirectUri?{redirectUri}:undefined);
++ return {mode:'redirect' as const};
++}
++
++/** Explicit credential refresh; does not revoke other UCell sessions or lose referral state. */
++export async function restartLineLogin(){
++ const id=import.meta.env.VITE_LIFF_ID;
++ if(!id)throw new Error('LINE 登入尚未設定，請聯絡客服');
++ await liff.init({liffId:id});
++ if(liff.isLoggedIn())liff.logout();
++ for(const key of ['ucell_member_token','ucell_qualification_id'])sessionStorage.removeItem(key);
++ boot=undefined;
++ const redirectUri=typeof window!=='undefined'?window.location.href:undefined;
++ liff.login(redirectUri?{redirectUri}:undefined);
++ return {mode:'redirect' as const};
++}
++
+ let boot: ReturnType<typeof initLiff> | undefined;
+ export function bootstrapLiff() { return boot ??= initLiff().catch(error => { boot = undefined; throw error; }); }
+diff --git a/member/src/main.tsx b/member/src/main.tsx
+index 5de3ced..e345d50 100644
+--- a/member/src/main.tsx
++++ b/member/src/main.tsx
+@@ -1,32 +1,68 @@
+ import React, { useEffect, useState } from 'react';
+ import { createRoot } from 'react-dom/client';
+ import { BrowserRouter } from 'react-router-dom';
+-import { bootstrapLiff, LineBindingRequired } from './liff';
+-import { LineBinding } from './LineBindingPage';
++import { bootstrapLiff, startWebLineLogin, restartLineLogin, LineReauthenticationRequired, LineBindingRequired } from './liff';
++import {LineBinding} from './LineBindingPage';
++import {ThemeProvider,initializeUiTheme} from '@ucell/design-system';
+ import { QualificationProvider } from './QualificationContext';
+ import App from './App';
+ import { SessionBoundary } from './SessionBoundary';
+ import { AppErrorBoundary } from './AppErrorBoundary';
+-import {ThemeProvider,initializeUiTheme} from '@ucell/design-system';
+ import './styles.css';
+ import 'bootstrap/dist/css/bootstrap-grid.min.css';
+ import '@ucell/design-system/styles';
+ import './ucell-theme.css';
++
+ initializeUiTheme();
+ function Bootstrap() {
+-    const [state, setState] = useState<'loading' | 'ready' | 'redirect'>('loading');
++    const [state, setState] = useState<'loading' | 'ready' | 'redirect' | 'web-login'>('loading');
+     const [error, setError] = useState('');
+     const [bindingRequired,setBindingRequired]=useState(false);
++    const [reauthRequired,setReauthRequired]=useState(false);
+     const [referralWarning,setReferralWarning]=useState<string|undefined>();
+     const [attempt, setAttempt] = useState(0);
+-    useEffect(() => { let alive = true; setError(''); setBindingRequired(false); setReferralWarning(undefined); setState('loading'); bootstrapLiff().then(result => { if (alive){
+-        setReferralWarning('referralWarning' in result?result.referralWarning:undefined);setState(result.mode === 'redirect' ? 'redirect' : 'ready');} }).catch(e => { if (alive)
+-        {setBindingRequired(e instanceof LineBindingRequired);setError(e instanceof Error ? e.message : '登入失敗');} }); return () => { alive = false; }; }, [attempt]);
++    const [startingWebLogin,setStartingWebLogin]=useState(false);
++
++    useEffect(() => {
++        let alive = true;
++        setError('');
++        setReauthRequired(false);setBindingRequired(false);
++        setReferralWarning(undefined);
++        setState('loading');
++        bootstrapLiff().then(result => {
++            if (!alive) return;
++            setReferralWarning('referralWarning' in result?result.referralWarning:undefined);
++            setState(result.mode === 'redirect' ? 'redirect' : result.mode === 'web-login' ? 'web-login' : 'ready');
++        }).catch(e => {
++            if (alive){setBindingRequired(e instanceof LineBindingRequired);setReauthRequired(e instanceof LineReauthenticationRequired);setError(e instanceof Error ? e.message : '登入失敗');}
++        });
++        return () => { alive = false; };
++    }, [attempt]);
++
++    const webLogin=async(forceRefresh=false)=>{
++        setStartingWebLogin(true);setError('');
++        try{
++            const result=await (forceRefresh?restartLineLogin():startWebLineLogin());
++            setState(result.mode==='redirect'?'redirect':'loading');
++            if(result.mode==='connected')setAttempt(n=>n+1);
++        }catch(e){
++            setError(e instanceof Error?e.message:'登入失敗');
++        }finally{
++            setStartingWebLogin(false);
++        }
++    };
++
+     if(bindingRequired)return <LineBinding onComplete={()=>setAttempt(n=>n+1)} onRecheck={()=>setAttempt(n=>n+1)}/>;
+     if (error)
+-        return <main className="loading" role="alert"><h1>UCell 會員中心</h1><p>{error}</p><button onClick={() => setAttempt(n => n + 1)}>重新連線</button></main>;
++        return <main className="loading" role="alert"><section className="card uc-web-entry"><h1>UCell 會員中心</h1><p>{error}</p><button disabled={startingWebLogin} onClick={() => reauthRequired?void webLogin(true):setAttempt(n => n + 1)}>{reauthRequired?'重新登入 LINE':'重新連線'}</button></section></main>;
++
++    if (state === 'web-login')
++        return <main className="loading"><section className="card uc-web-entry" aria-labelledby="ucell-web-login-title"><small>WEB MEMBER ENTRY</small><h1 id="ucell-web-login-title">UCell 會員中心</h1><p>您正在使用網頁版入口。請使用已綁定 UCell 會員帳號的 LINE 完成身分驗證；登入後將進入與 LINE OA 相同的會員中心與球資料。</p><button className="primary" onClick={()=>void webLogin()} disabled={startingWebLogin}>{startingWebLogin?'正在前往 LINE 登入…':'使用 LINE 登入'}</button><p className="muted">LINE OA 入口維持原有 LIFF 流程；網頁入口不會建立第二個會員帳號。</p></section></main>;
++
+     if (state !== 'ready')
+         return <main className="loading" role="status">{state === 'redirect' ? '正在前往 LINE 登入…' : 'UCell 會員中心載入中…'}</main>;
++
+     return <SessionBoundary>{referralWarning&&<p role="alert" className="card">{referralWarning}</p>}<QualificationProvider><App /></QualificationProvider></SessionBoundary>;
+ }
++
+ createRoot(document.getElementById('root')!).render(<React.StrictMode><ThemeProvider><AppErrorBoundary><BrowserRouter><Bootstrap /></BrowserRouter></AppErrorBoundary></ThemeProvider></React.StrictMode>);
+diff --git a/member/src/ucell-theme.css b/member/src/ucell-theme.css
+index be5efb9..060a3ac 100644
+--- a/member/src/ucell-theme.css
++++ b/member/src/ucell-theme.css
+@@ -31,3 +31,86 @@ header{height:56px;padding:10px 18px}header small{font-size:11px;color:var(--uce
+ @media(max-width:767px){.app main{padding-inline:14px}.uc-member-title{grid-template-columns:1fr;gap:8px}.uc-member-title .uc-header,.uc-member-title>.uc-status,.uc-member-identity-context{grid-column:1;justify-self:start}.uc-member-identity{min-height:0;align-items:flex-start;flex-wrap:wrap;gap:12px;padding:18px}.uc-identity-badge{min-width:0;margin-left:auto}.uc-member-status{grid-template-columns:1fr;gap:12px;margin-inline:0}.uc-status-block+ .uc-status-block{padding:14px 0 0;border-top:1px solid var(--uc-tech-line);border-left:0}.uc-section-heading{align-items:flex-start;flex-wrap:wrap}.uc-section-heading>span{max-width:100%}.uc-today-facts,.uc-today-binary dl,.uc-award-journey-grid,.uc-member-explain .uc-audit-grid,.uc-binary-summary{grid-template-columns:1fr}.uc-award-journey-grid>div:nth-last-child(1){grid-column:auto}.uc-today-task{align-items:flex-start;flex-wrap:wrap}.uc-bonus-summary{grid-template-columns:1fr}.uc-bonus-summary h2{grid-column:1;grid-row:auto;text-align:left}.uc-tree-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.uc-tree-actions button{min-width:0}.uc-tree-actions button:last-child{margin-left:0}.uc-tree-context,.uc-tree-boundary{overflow-wrap:anywhere}.uc-repurchase-expander summary{min-height:44px;display:flex;align-items:center}nav a{font-size:12px}}
+ @media(max-width:480px){.uc-member-status{grid-template-columns:1fr;margin-inline:0}.uc-status-block+ .uc-status-block{padding:14px 0 0;border-top:1px solid var(--uc-tech-line);border-left:0}.uc-member-identity{flex-wrap:wrap}.uc-identity-badge{margin-left:0}.uc-tree-actions{grid-template-columns:1fr}.uc-today-facts,.uc-today-binary dl{grid-template-columns:1fr}.uc-section-heading{margin-top:20px}.uc-bonus-summary{grid-template-columns:1fr}.uc-bonus-summary h2{grid-column:1;grid-row:auto;text-align:left}}
+ .member-message-filters{display:grid;gap:12px}.member-message-filters label{display:grid;gap:6px}.member-message-filters select{width:100%;min-height:44px;padding:8px;border:1px solid var(--ucell-border);border-radius:8px;background:var(--ucell-surface);color:var(--ucell-text-primary)}
++
++/* R1.0B dark-theme contrast guard.
++   Pair every light/dark surface with an explicit text color instead of inheriting
++   a foreground from an ancestor. */
++.app,main{color:var(--ucell-text-primary)}
++header,nav,.card,.grid article,.period,.actions a,.uc-section,.uc-metric,.uc-state{
++  background:var(--ucell-surface);
++  color:var(--ucell-text-primary);
++  border-color:var(--ucell-border);
++}
++button,input,select,textarea{
++  background:var(--ucell-surface);
++  color:var(--ucell-text-primary);
++  border-color:var(--ucell-border);
++}
++.card h1,.card h2,.card h3,.grid article strong,.period strong,.actions a{
++  color:var(--ucell-text-primary);
++}
++.card span,.grid span,.muted,.period small,.uc-system-note{
++  color:var(--ucell-text-secondary);
++}
++.notification-link,.badge{background:var(--ucell-surface-secondary);color:var(--ucell-primary)}
++.uc-member-identity,.uc-bonus-summary,.uc-sponsor-card{
++  color:#f3fbfb;
++}
++.uc-member-identity :where(h1,h2,h3,strong),.uc-bonus-summary :where(h1,h2,h3,strong),.uc-sponsor-card :where(h1,h2,h3,strong){
++  color:#f3fbfb;
++}
++@media(prefers-color-scheme:dark){
++  :root:not([data-theme="light"]) .uc-dashboard .uc-metric,
++  :root:not([data-theme="light"]) .uc-dashboard .uc-actions a,
++  :root:not([data-theme="light"]) .uc-bonuses .period,
++  :root:not([data-theme="light"]) .uc-sponsor-card,
++  :root:not([data-theme="light"]) .uc-referral-card,
++  :root:not([data-theme="light"]) .uc-binary-card,
++  :root:not([data-theme="light"]) .uc-tree-status,
++  :root:not([data-theme="light"]) .uc-award-card{
++    background:var(--ucell-surface-elevated);
++    border-color:var(--ucell-border-subtle);
++  }
++  :root:not([data-theme="light"]) .uc-dashboard .uc-metric strong{
++    color:var(--ucell-text-primary);
++  }
++  :root:not([data-theme="light"]) .uc-segmented{
++    background:var(--ucell-surface-secondary);
++    border-color:var(--ucell-border);
++  }
++}
++
++
++/* Direct Web member entry. Uses the same Member session and application after authentication. */
++.uc-web-entry{
++  width:min(460px,calc(100vw - 32px));
++  margin:32px auto;
++  padding:28px;
++  text-align:left;
++  background:var(--ucell-surface);
++  color:var(--ucell-text-primary);
++  border:1px solid var(--ucell-border);
++  border-radius:var(--ucell-radius-lg);
++  box-shadow:var(--ucell-shadow-md);
++}
++.uc-web-entry>small{display:block;margin-bottom:8px;color:var(--ucell-primary);font-weight:800;letter-spacing:.14em}
++.uc-web-entry h1{margin:0 0 12px;font-size:28px;color:var(--ucell-text-primary)}
++.uc-web-entry p{color:var(--ucell-text-secondary)}
++.uc-web-entry button{width:100%;margin:10px 0 6px}
++.uc-web-entry .primary{background:var(--ucell-primary);color:#fff;border-color:var(--ucell-primary)}
++.uc-web-entry .primary:hover:not(:disabled){background:var(--ucell-primary-hover)}
++@media(max-width:480px){.uc-web-entry{margin:20px auto;padding:22px}}
++
++/* Pair selected and fixed dark surfaces with their own foreground. */
++.uc-web-entry .primary,.tabs button[aria-pressed=true]{color:var(--ucell-on-primary)}
++.card.uc-member-identity{background:radial-gradient(circle at 78% 16%,#1d6b72 0,transparent 38%),linear-gradient(145deg,#092a3c,#075747)}
++.card.uc-bonus-summary,.card.uc-sponsor-card{background:linear-gradient(135deg,#0b2c3f,#104e50)}
++.card.uc-member-identity :is(h1,h2,h3,strong,span),.card.uc-bonus-summary :is(h1,h2,h3,strong,span),.card.uc-sponsor-card :is(h1,h2,h3,strong,span){color:#f3fbfb}
++.uc-member-status,.uc-today-summary,.uc-today-facts>div,.uc-today-binary dl>div,.uc-award-journey-grid>div,.uc-audit-grid p,.uc-member-explain .uc-audit-grid>div{background:var(--ucell-surface);color:var(--ucell-text-primary)}
++.uc-dashboard .uc-metric,.uc-dashboard .uc-actions a,.uc-bonuses .period,.uc-referral-card,.uc-binary-card,.uc-tree-status,.uc-award-card{background:var(--ucell-surface-elevated);color:var(--ucell-text-primary)}
++.uc-dashboard .uc-metric strong,.uc-award-heading .uc-money,.uc-ledger-card>strong{color:var(--ucell-text-primary)}
++.uc-award-card .uc-award-timeline,.uc-tree-context,.uc-tree-node:hover,.uc-segmented{background:var(--ucell-surface-secondary)}
++.uc-card-heading small,.uc-award-heading>div>small,.uc-award-context span,.uc-today-binary small,.uc-today-task small,.uc-domain-detail summary,.uc-tree-node>b{color:var(--ucell-primary)}
++
++.uc-segmented button[aria-pressed=true]{background:var(--ucell-primary);color:var(--ucell-on-primary)}
++.uc-referral-card .uc-card-heading>strong{color:var(--ucell-primary)}
+diff --git a/admin/src/styles/ucell-theme.css b/admin/src/styles/ucell-theme.css
+index b8047b1..6eac75e 100644
+--- a/admin/src/styles/ucell-theme.css
++++ b/admin/src/styles/ucell-theme.css
+@@ -21,3 +21,50 @@
+ :where(.content) button:where(:hover){background:var(--ucell-surface-secondary)}
+ .content button.primary,.content .button-link{background:var(--ucell-primary);color:#fff}
+ :root[data-theme=dark] .content button.primary,:root[data-theme=dark] .content .button-link,:root[data-theme=dark] .sidebar nav a.active,:root[data-theme=dark] .sidebar nav a:hover{color:var(--ucell-bg)}
++
++/* R1.0B dark-theme contrast guard.
++   Legacy admin CSS contains many hard-coded white surfaces; force paired foreground
++   colors here so nested dark panels cannot produce white-on-white content. */
++.content,.page-header,.card,.metric,.login-card,.search-menu,.search-option,.list-row,.sticky-actions,.tree-node,.uat-case,.composition,.dashboard-stat-grid>div{
++  color:var(--ucell-text-primary);
++}
++.card,.metric,.login-card,.search-menu,.search-option,.list-row,.sticky-actions,.tree-node,.uat-case,.composition,.dashboard-stat-grid>div{
++  background:var(--ucell-surface);
++  border-color:var(--ucell-border);
++}
++input,select,textarea,button{
++  background:var(--ucell-surface);
++  color:var(--ucell-text-primary);
++  border-color:var(--ucell-border);
++}
++th{background:var(--ucell-surface-secondary);color:var(--ucell-text-secondary)}
++td{color:var(--ucell-text-primary);border-color:var(--ucell-border-subtle)}
++.search-option span,.list-row span,.list-row small,.detail-grid dt,.timeline-item span,.timeline-item small,.uat-head small{
++  color:var(--ucell-text-secondary);
++}
++.app-loading{background:var(--ucell-bg);color:var(--ucell-text-secondary)}
++.dashboard-unavailable{background:var(--ucell-surface-secondary);border-color:var(--ucell-border)}
++.dashboard-stat-grid{background:var(--ucell-border-subtle)}
++.composition{background:var(--ucell-surface-elevated)}
++.composition-track,.composition-empty{background:var(--ucell-surface-secondary)}
++.composition-source{border-color:var(--ucell-border-subtle);color:var(--ucell-text-muted)}
++/* Dark-owned surfaces retain explicit light foreground regardless of the global palette. */
++.dashboard-hero,.dashboard-latest,.json,.nasl-overview,.nasl-panel,.nasl-history-panel{
++  color:#eef5fc;
++}
++.dashboard-hero :where(h1,h2,h3,strong),.dashboard-latest :where(h1,h2,h3,strong),.nasl-overview :where(h1,h2,h3,strong),.nasl-panel :where(h1,h2,h3,strong),.nasl-history-panel :where(h1,h2,h3,strong){
++  color:#eef5fc;
++}
++@media(prefers-color-scheme:dark){
++  :root:not([data-theme="light"]) .dashboard-stat-grid div,
++  :root:not([data-theme="light"]) .composition{
++    background:var(--ucell-surface-elevated);
++  }
++}
++
++.primary,.button-link,.sidebar nav a.active,.sidebar nav a:hover{color:var(--ucell-on-primary)}
++.content .card h2{color:var(--ucell-text-primary)}
++.uc-pipeline button:hover{color:#f3fbfb}
++.uc-pipeline button:hover span,.uc-pipeline button:hover small{color:#c8d6da}
++.search-option:hover,.list-row:hover{background:var(--ucell-surface-secondary)}
++.uc-dialog{background:var(--ucell-surface);color:var(--ucell-text-primary)}
+diff --git a/shared/design-system/tokens.css b/shared/design-system/tokens.css
+index fac2e11..920a8bd 100644
+--- a/shared/design-system/tokens.css
++++ b/shared/design-system/tokens.css
+@@ -4,3 +4,8 @@
+ 
+ :root[data-theme=dark]{--ucell-primary:#53c6af;--ucell-primary-hover:#83dac8;--ucell-secondary:#c3e0e8;--ucell-bg:#0d1820;--ucell-surface:#14242d;--ucell-surface-secondary:#1b343b;--ucell-surface-elevated:#1a2c35;--ucell-canvas-deep:#071218;--ucell-text-primary:#edf8f8;--ucell-text-secondary:#bdd0d3;--ucell-text-muted:#9bb3b7;--ucell-border:#3a555d;--ucell-border-subtle:#29434b;--ucell-success:#70d3a2;--ucell-warning:#f1c56c;--ucell-danger:#ff9ca3;--ucell-info:#79c7ee;--ucell-neutral:#bfd0d3;--ucell-success-bg:#173c30;--ucell-warning-bg:#493916;--ucell-danger-bg:#4a2028;--ucell-info-bg:#193b4c;--ucell-navy:#102f43;--ucell-gold:#dfb75a;--ucell-shadow-sm:0 3px 12px #00000038;--ucell-shadow-md:0 18px 48px #00000066;--ucell-shadow-glow:0 18px 46px #0000004d,0 2px 8px #00000042}
+ :root[data-theme=dark] .uc-dialog::backdrop{background:#000000a8}
++
++
++:root{--ucell-on-primary:#fff}
++:root[data-theme="dark"]{--ucell-on-primary:#071b27}
++@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--ucell-on-primary:#071b27}}
+diff --git a/shared/design-system/components.css b/shared/design-system/components.css
+index 778af2c..600533d 100644
+--- a/shared/design-system/components.css
++++ b/shared/design-system/components.css
+@@ -44,3 +44,6 @@
+ [data-app=member] nav[aria-label="主要功能"] .uc-icon{width:21px;height:21px}
+ [data-app=member] nav[aria-label="主要功能"] a.active .uc-icon{filter:drop-shadow(0 3px 7px color-mix(in srgb,var(--ucell-primary) 24%,transparent))}
+ .uc-theme-control{display:inline-flex;align-items:center;gap:6px;color:var(--ucell-text-secondary);font-size:12px;font-weight:700}.uc-theme-control select{min-height:36px;border:1px solid var(--ucell-border);border-radius:var(--ucell-radius-sm);background:var(--ucell-surface);color:var(--ucell-text-primary);padding:4px 8px;font:inherit}
++
++
++.uc-button[data-variant=primary]{background:var(--ucell-primary);color:var(--ucell-on-primary)}
