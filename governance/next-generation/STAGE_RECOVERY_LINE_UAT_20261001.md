@@ -17,7 +17,7 @@ Recovery classifications: **A completed** learning/event/message/growth and seal
 | Area | Status | Evidence / remaining boundary |
 |---|---|---|
 | Backend/API/database | DONE baseline | Nest API, worker, Prisma; 124 existing migrations; isolated baseline and per-suite DB runner. No new schema in this release. |
-| Member/Admin | DONE baseline, PARTIAL repaired here | Existing product/order/account/organization/bonus surfaces; unplaced qualification parser and labels repaired; real browser rerun. |
+| Member/Admin | DONE after repair | Existing product/order/account/organization/bonus surfaces; unplaced qualification parser and labels repaired; real browser rerun. |
 | Authentication/members | DONE code, BLOCKED live LINE configuration | Verified LINE ID-token exchange, IdentityLink, sessions, effective/security-state guards; company-approved linking and one-use rebind with revocation. |
 | Products/orders | DONE baseline | Catalog/package checkout, order economic evidence, idempotent writes and existing Admin operations. |
 | PV/BV and sponsor/placement | DONE baseline | Authoritative volume/economic ledgers and sponsor/tree services with ownership isolation; no client-side economic calculation. |
@@ -25,7 +25,7 @@ Recovery classifications: **A completed** learning/event/message/growth and seal
 | Bonus/wallet | DONE scoped baseline | Calculation, recorded status/read models and reversal/recovery; real transfer deliberately excluded. |
 | Return/refund/reversal/audit | DONE baseline, regression rechecked | `a-decision-return`, `return-substitution-closure-db`, `test.repurchase-partial-return-db`, `gpv-immediate-effects-db`, `epv-lineage-closure-db`, order evidence and recovery tests exercise volume, qualification, award and wallet/recovery effects. Append-only historical audit preserved. |
 | OpenAPI | DONE update | Canonical webhook and public qualification number exported; legacy route retained. |
-| CI/CD/Azure | DONE foundation; incremental release pending verification | Existing workflow and G8 incremental script retained/extended for frontends; no new pipeline, DNS or TLS. Before-state evidence saved separately. |
+| CI/CD/Azure | DONE scoped release | Existing G8 incremental script completed all four healthy revisions; migration 124 and three HTTP 200 checks verified. No new pipeline, DNS or TLS. |
 | Tests | PARTIAL tooling | Builds, unit/DB/HTTP/browser checks run below; pre-existing lint script has Windows glob quoting issue and repository lacks ESLint configuration. This is reported, not represented as lint PASS. |
 | Governance/release | UPDATED | Current domains, narrowed scope, manual LINE gate and evidence recorded here. |
 | LINE webhook | DONE code, BLOCKED real secret | Exact raw HMAC, durable metadata receipt, follow/unfollow/text, malformed rejection, retry deduplication; official verify with empty events supported. |
@@ -54,7 +54,7 @@ Deployment domains/runbook updated and existing incremental script extended; exi
 
 ## J–K. Stage deployment/status
 
-Existing before revisions and image digests: `evidence/stage-line-before-20261001.json`. Azure PostgreSQL is Ready with seven-day backup retention. Existing incremental migration/app update is used; no seed/reset or foundation recreation. Completion evidence to be appended after deployment.
+Existing before revisions and image digests: `evidence/stage-line-before-20261001.json`. Azure PostgreSQL is Ready with seven-day backup retention. Existing incremental migration/app update is used; no seed/reset or foundation recreation. Completed deployment evidence: `evidence/stage-line-deployment-20261001.json`; final health/digests/domains: `evidence/stage-line-health-20261001.json`.
 
 Direct read-only migration inventory from the local host could not initialize a Prisma connection to the Stage database. No firewall changes were made. Source comparison against the deployed `0eeb814` backend identifies 37 added migration files and zero modified/deleted existing migrations. Cloud migration-job completion remains the deployment gate. Existing historical ERP-named migrations are retained for repository/schema consistency; this release authors no ERP schema or integration.
 
@@ -66,6 +66,8 @@ Second execution `ucell-stage-migrate-ge5ooku` stopped before writes on checksum
 
 Stage URLs: https://stage.ucell.life · https://admin-stage.ucell.life · https://api-stage.ucell.life/api/v1/health.
 
+Final execution **ucell-stage-migrate-j7oljia SUCCEEDED**: one legacy tree preserved, lifecycle guard restored, all **124 migrations applied**. Deployment tag **6c86adb-line-20261001**. API, Worker, Admin and Member revisions are **Healthy / Running**, digest-pinned, with unchanged custom domains. Final verification at **2026-10-01 11:09 Asia/Taipei**: Member **200**, Admin **200**, API health **200 / database ok**. Canonical webhook is externally reachable and returns **503 LINE_MESSAGING_CONFIGURATION_PENDING** until the operator installs the new secret; this is not a successful LINE Verify claim. Existing fixed synthetic Stage entries are retained. No real phone UAT was run.
+
 ## L–N. Manual gate and readiness
 
 Execute [the ten-step LINE manual checklist](../../deployment/LINE_STAGE_MANUAL_GATE.md) after healthy deployment: reissue secret → Azure secret ref → issue access token → Azure ref → new revisions → webhook URL → Verify → enable → adjust auto replies → phone test. Then supply Login Channel ID and LIFF ID if not already configured, using the same Provider. IDs are configuration, not interchangeable with Messaging Channel ID. Never paste the secrets into chat.
@@ -74,9 +76,8 @@ Execute [the ten-step LINE manual checklist](../../deployment/LINE_STAGE_MANUAL_
 
 ## NEXT ACTIONS ONLY
 
-1. Complete current regression and Stage incremental release evidence.
-2. Operator performs Messaging secret/token configuration, webhook Verify/enable and phone test.
-3. Supply/configure Login Channel ID and LIFF ID, then verify real login and controlled member binding.
-4. After human confirmation, execute scoped first-round UAT. Resolve findings only; exclude ERP and real bank payment.
-5. Repair missing repository lint configuration in a separately explicit tooling change; keep this validation limitation visible.
-6. Rich Menu after core LINE acceptance, optional.
+1. Operator reissues/configures the Messaging secret and access token, creates required revisions, then runs webhook Verify/enable and the phone test using the linked ten-step checklist.
+2. Supply/configure the LINE Login Channel ID and LIFF ID, then verify real login and controlled member binding.
+3. After human confirmation, execute scoped first-round UAT and resolve actual findings. Exclude ERP and real bank payment.
+4. Restore the missing repository ESLint configuration and rerun lint; the existing lint limitation remains visible.
+5. Rich Menu after core LINE acceptance, optional.
