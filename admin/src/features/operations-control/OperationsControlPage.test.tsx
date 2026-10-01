@@ -16,3 +16,9 @@ it('shows bounded coverage and actionable evidence, retaining the creation horiz
  await act(async()=>tree.root.findAllByType('button').find((button:any)=>button.children.includes('下一頁')).props.onClick());expect(api.get).toHaveBeenLastCalledWith(expect.stringContaining('cursor=next-page&asOf=2026-09-29T00%3A00%3A00Z'));
  await act(async()=>tree.unmount());
 });
+
+it('loads the linked ERP fulfillment stream with the original operational threshold',async()=>{
+ vi.stubGlobal('window',{location:{search:'?stream=FULFILLMENT&thresholdHours=48'}});
+ vi.mocked(api.get).mockClear().mockResolvedValue({data:{items:[],counts:{},observed:0,candidateCount:0,latestSuccessfulReconciliation:null,nextCursor:null,asOf:'2026-10-01T00:00:00Z',dataThrough:'2026-10-01T00:00:00Z'}} as any);
+ let tree:any;try{await act(async()=>{tree=create(<QueryClientProvider client={new QueryClient({defaultOptions:{queries:{retry:false}}})}><OperationsControlPage/></QueryClientProvider>);await new Promise(resolve=>setTimeout(resolve,80));});expect(api.get).toHaveBeenCalledWith('/admin/operations/control/erp-health?stream=FULFILLMENT&thresholdHours=48&take=25');expect(tree.root.findByType('select').props.value).toBe('FULFILLMENT');expect(tree.root.findByType('input').props.value).toBe('48');}finally{if(tree)act(()=>tree.unmount());vi.unstubAllGlobals();}
+});

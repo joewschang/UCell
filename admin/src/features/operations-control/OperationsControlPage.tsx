@@ -1,3 +1,4 @@
+import {linkedErpHealth} from './linked-erp-health';
 import {OperationsCompanyHealth} from './OperationsCompanyHealth';
 import {OperationsWorkflowHealth} from './OperationsWorkflowHealth';
 import {OperationsFinancialHealth} from './OperationsFinancialHealth';
@@ -12,7 +13,8 @@ type Page={items:Item[];counts:Record<string,number>;observed:number;candidateCo
 const labels:Record<string,string>={SALES:'銷售',RETURN:'退貨',COMPENSATION:'獎金／付款會計',FULFILLMENT:'履約交付',READY:'已準備',QUEUED:'等待處理',SENT:'傳送中',ACKNOWLEDGED:'ERP 已受理',RECONCILED:'ERP 已對帳',MISMATCH:'ERP 有差異',FAILED:'處理失敗',BLOCKED_EXTERNAL:'等待外部條件',ERP_TRANSPORT_FAILED:'ERP 傳送失敗',ERP_RESULT_MISMATCH:'ERP 回報與封存資料不符',ERP_OPEN_EXCEPTION:'仍有未結案例外',ERP_RECONCILIATION_OVERDUE:'已受理但對帳等待超過門檻',ERP_HANDOFF_OVERDUE:'交付等待超過門檻'};
 const time=(value:string|null)=>value?new Date(value).toLocaleString('zh-TW',{timeZone:'Asia/Taipei'}):'尚無';
 export function OperationsControlPage(){
- const [stream,setStream]=useState('SALES'),[draft,setDraft]=useState(''),[threshold,setThreshold]=useState<number|undefined>(),[cursor,setCursor]=useState<string|undefined>(),[asOf,setAsOf]=useState<string|undefined>();
+ const [linked]=useState(()=>linkedErpHealth(typeof window==='undefined'?'':window.location.search));
+ const [stream,setStream]=useState(linked.stream),[draft,setDraft]=useState(linked.threshold?.toString()??''),[threshold,setThreshold]=useState<number|undefined>(linked.threshold),[cursor,setCursor]=useState<string|undefined>(),[asOf,setAsOf]=useState<string|undefined>();
  const query=useQuery({queryKey:['operations-erp-health',stream,threshold,cursor,asOf],queryFn:()=>get<{data:Page}>('/admin/operations/control/erp-health'+qs({stream,thresholdHours:threshold,cursor,asOf,take:25})),refetchInterval:60_000});
  const data=query.data?.data,reset=()=>{setCursor(undefined);setAsOf(undefined);};
  return <><PageHeader title="營運控制中心" subtitle="從目前證據追蹤 ERP 健康、差異與待處理事項。ERP、付款與會員經濟狀態各自保留。"/><Card title="ERP 分流健康"><form onSubmit={event=>{event.preventDefault();setThreshold(draft===''?undefined:Number(draft));reset();}}><div className="filter-grid"><Field label="ERP 資料流"><select value={stream} onChange={event=>{setStream(event.target.value);reset();}}>{['SALES','FULFILLMENT','COMPENSATION','RETURN'].map(value=><option key={value} value={value}>{labels[value]}</option>)}</select></Field><Field label="作業等待門檻（小時，可留白）"><input type="number" min="1" max="8760" step="1" value={draft} onChange={event=>setDraft(event.target.value)}/></Field></div><button type="submit">套用等待門檻</button> <button type="button" onClick={()=>void query.refetch()} disabled={query.isFetching}>重新讀取目前狀態</button></form><p>留白時僅列出失敗、差異與未結案例外，不推定逾期。門檻是作業檢查參數。</p></Card>
