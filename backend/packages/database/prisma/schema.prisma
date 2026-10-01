@@ -482,7 +482,6 @@ enum ReplayRunStatus {
 enum IdentityProvider {
   ADMIN_LOCAL
   MEMBER_LOCAL
-  SMS_OTP
   ENTRA
   LINE
   GOOGLE
@@ -516,7 +515,6 @@ enum PersonMembershipState {
 
 enum OtpPurpose {
   NETWORK_REGISTRATION
-  LOGIN
   MOBILE_CHANGE
   ACCOUNT_RECOVERY
 
