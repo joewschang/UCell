@@ -15,6 +15,9 @@ export class AdminFormalMemberApplicationController {
  list(@Query('status') status?:string,@Query('take') take?:string){return this.service.adminList({status:status||undefined,take:Number(take??50)});}
  @Get(':id/cross-line-conflicts') @ApiOperation({operationId:'adminFormalMemberCrossLineConflicts',description:'Evaluate spouse, identity, representative and legal-entity duplicate conflicts from privacy-preserving indexes. Returns codes only; no raw national ID.'})
  conflictsFor(@Param('id',new ParseUUIDPipe()) id:string){return this.conflicts.evaluate(id);}
+ @Post(':id/cross-line-review')
+ @ApiOperation({operationId:'adminReviewFormalMemberCrossLine',description:'Evaluate and persist the formal membership anti-cross-line result. BLOCKED conflicts must be resolved before any future approval workflow may proceed.'})
+ reviewCrossLine(@Param('id',new ParseUUIDPipe()) id:string,@Req() req:any){return this.conflicts.review(id,req.user?.personId,req.requestId);}
  @Post(':id/spouse-verification') @UseGuards(IdempotencyGuard) @ApiHeader({name:'Idempotency-Key',required:true})
  @ApiOperation({operationId:'adminVerifyFormalMemberSpouse',description:'Confirm spouse data against authorized KYC evidence. Persists only a masked spouse name and keyed identity fingerprint; raw spouse ID is never returned.'})
  verifySpouse(@Param('id',new ParseUUIDPipe()) id:string,@Headers('idempotency-key') key:string,@Req() req:any){return this.service.verifySpouse(id,req.user?.personId,key,req.requestId);}
