@@ -4,15 +4,16 @@ import { createHash,createHmac,randomBytes,randomUUID,scryptSync } from 'node:cr
 import { IdempotencyService } from '../../common/idempotency/idempotency.service';
 import { OtpService } from './otp.service';
 import { IdentityTokenService } from './identity-token.service';
+import { GoogleTokenVerifierService } from './google-token-verifier.service';
 
 export type WebRegistrationInput={
  registrationSessionId:string;challengeId:string;contractVersionId:string;accepted:true;
- legalName:string;alias:string;gender:string;birthDate:string;mobile:string;email:string;password:string;
+ legalName:string;alias:string;gender:string;birthDate:string;mobile:string;email:string;password:string;googleIdToken?:string;
 };
 
 @Injectable()
 export class MemberWebRegistrationService{
- constructor(private readonly db:PrismaService,private readonly otp:OtpService,private readonly idempotency:IdempotencyService){}
+ constructor(private readonly db:PrismaService,private readonly otp:OtpService,private readonly idempotency:IdempotencyService,private readonly google:GoogleTokenVerifierService){}
 
  async requiredContract(){
   const now=new Date();
@@ -39,6 +40,7 @@ export class MemberWebRegistrationService{
  }
 
  async complete(input:WebRegistrationInput,key:string){
+  const googleIdentity=input.googleIdToken?await this.google.verify(input.googleIdToken):undefined;
   const birthDate=new Date(`${input.birthDate}T00:00:00.000Z`);
   if(!Number.isFinite(birthDate.getTime())||birthDate>=new Date())throw new UnprocessableEntityException({code:'INVALID_BIRTH_DATE'});
   const result=await this.idempotency.execute(`registration:web:${input.registrationSessionId}`,key,input,async tx=>{
@@ -52,7 +54,12 @@ export class MemberWebRegistrationService{
     if(await tx.person.findFirst({where:{email:{equals:input.email,mode:'insensitive'}},select:{personId:true}}))throw new ConflictException({code:'EMAIL_ALREADY_REGISTERED'});
     const contract=await tx.contractDocumentVersion.findFirst({where:{contractDocumentVersionId:input.contractVersionId,required:true,audience:{in:['NETWORK_MEMBER','ALL_MEMBERS']},effectiveFrom:{lte:now},OR:[{effectiveTo:null},{effectiveTo:{gt:now}}]}});
     if(!contract||input.accepted!==true)throw new UnprocessableEntityException({code:'REQUIRED_CONTRACT_VERSION_INVALID'});
+    if(googleIdentity){
+      const existingGoogle=await tx.identityLink.findUnique({where:{provider_providerSubject:{provider:'GOOGLE',providerSubject:googleIdentity.subject}}});
+      if(existingGoogle)throw new ConflictException({code:'GOOGLE_IDENTITY_ALREADY_LINKED'});
+    }
     const person=await tx.person.create({data:{legalName:input.legalName,preferredName:input.alias,genderCode:input.gender,birthDate,mobile:input.mobile,email:input.email,membershipState:'NETWORK_MEMBER',mobileVerifiedAt:now,status:'EFFECTIVE'}});
+    if(googleIdentity)await tx.identityLink.create({data:{personId:person.personId,provider:'GOOGLE',providerSubject:googleIdentity.subject,email:googleIdentity.email,displayName:googleIdentity.displayName}});
     await tx.memberPasswordCredential.create({data:{personId:person.personId,passwordHash:this.passwordHash(input.password)}});
     const evidenceHash=createHash('sha256').update(JSON.stringify({personId:person.personId,contractVersionId:contract.contractDocumentVersionId,contentHash:contract.contentHash,channel:'MEMBER_WEB',correlationId})).digest('hex');
     await tx.consentEvidence.create({data:{personId:person.personId,contractDocumentVersionId:contract.contractDocumentVersionId,contentHashSnapshot:contract.contentHash,channel:'MEMBER_WEB',requestId:correlationId,correlationId,evidenceHash}});
