@@ -31,17 +31,18 @@ export class MemberWebRegistrationService{
  async complete(input:WebRegistrationInput,key:string){
   if(!input.googleIdToken)throw new UnauthorizedException({code:'GOOGLE_REGISTRATION_REQUIRED'});
   const googleIdentity=await this.google.verify(input.googleIdToken);
+  if(!googleIdentity.email||googleIdentity.emailVerified!==true)throw new UnauthorizedException({code:'GOOGLE_VERIFIED_EMAIL_REQUIRED'});
+  if(googleIdentity.email.trim().toLowerCase()!==input.email.trim().toLowerCase())throw new UnprocessableEntityException({code:'GOOGLE_EMAIL_MISMATCH'});
   const birthDate=new Date(`${input.birthDate}T00:00:00.000Z`);
   if(!Number.isFinite(birthDate.getTime())||birthDate>=new Date())throw new UnprocessableEntityException({code:'INVALID_BIRTH_DATE'});
   const result=await this.idempotency.execute(`registration:web:google:${googleIdentity.subject}`,key,{...input,googleIdToken:'[REDACTED]'},async tx=>{
     const now=new Date(),correlationId=randomUUID();
-    if(await tx.person.findFirst({where:{mobile:input.mobile},select:{personId:true}}))throw new ConflictException({code:'MOBILE_ALREADY_REGISTERED'});
     if(await tx.person.findFirst({where:{email:{equals:input.email,mode:'insensitive'}},select:{personId:true}}))throw new ConflictException({code:'EMAIL_ALREADY_REGISTERED'});
     const existingGoogle=await tx.identityLink.findUnique({where:{provider_providerSubject:{provider:'GOOGLE',providerSubject:googleIdentity.subject}}});
     if(existingGoogle)throw new ConflictException({code:'GOOGLE_IDENTITY_ALREADY_LINKED'});
     const contract=await tx.contractDocumentVersion.findFirst({where:{contractDocumentVersionId:input.contractVersionId,required:true,audience:{in:['NETWORK_MEMBER','ALL_MEMBERS']},effectiveFrom:{lte:now},OR:[{effectiveTo:null},{effectiveTo:{gt:now}}]}});
     if(!contract||input.accepted!==true)throw new UnprocessableEntityException({code:'REQUIRED_CONTRACT_VERSION_INVALID'});
-    const person=await tx.person.create({data:{legalName:input.legalName,preferredName:input.alias,genderCode:input.gender,birthDate,mobile:input.mobile,email:input.email,membershipState:'NETWORK_MEMBER',mobileVerifiedAt:null,status:'EFFECTIVE'}});
+    const person=await tx.person.create({data:{legalName:input.legalName,preferredName:input.alias,genderCode:input.gender,birthDate,mobile:input.mobile,email:googleIdentity.email,membershipState:'NETWORK_MEMBER',mobileVerifiedAt:null,status:'EFFECTIVE'}});
     await tx.identityLink.create({data:{personId:person.personId,provider:'GOOGLE',providerSubject:googleIdentity.subject,email:googleIdentity.email,displayName:googleIdentity.displayName}});
     await tx.memberPasswordCredential.create({data:{personId:person.personId,passwordHash:this.passwordHash(input.password)}});
     const evidenceHash=createHash('sha256').update(JSON.stringify({personId:person.personId,contractVersionId:contract.contractDocumentVersionId,contentHash:contract.contentHash,channel:'MEMBER_WEB',correlationId})).digest('hex');
