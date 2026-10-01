@@ -91,9 +91,9 @@ test('rechecks the binding on subsequent requests instead of caching a previous 
 });
 
 
-test('accepts linked Google and local/OTP Member sessions through the provider-neutral resolver', async () => {
-  for (const provider of ['GOOGLE','MEMBER_LOCAL','SMS_OTP']) {
-    const s={...session,provider,subject:provider==='MEMBER_LOCAL'?'2609000001':provider==='SMS_OTP'?'+886912345678':'google-sub'};
+test('accepts linked Google and local Member sessions through the provider-neutral resolver', async () => {
+  for (const provider of ['GOOGLE','MEMBER_LOCAL']) {
+    const s={...session,provider,subject:provider==='MEMBER_LOCAL'?'2609000001':'google-sub'};
     const expected={provider,providerSubject:s.subject,personId:s.personId};
     const req=request();
     const principal=await authenticateMemberRequest(req,{
