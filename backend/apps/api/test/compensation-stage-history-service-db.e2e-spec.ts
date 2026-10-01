@@ -12,8 +12,20 @@ const url=process.env.PHASE2_TEST_DATABASE_URL;
  it('refreshes actual control facts, audits both checks and avoids financial writes or duplicate stage rows',async()=>{
   const facts=await control.read(input),before={payables:await db.payableEntry.count(),settlements:await db.settlementBatch.count(),orders:await db.order.count()};
   const first=await service.refresh(input,context()),again=await service.refresh(input,context());expect(first.item.stage).toBe(facts.lifecycle);expect(first.item.businessEnteredAt).toBeNull();expect(first.item.basis).toBe('AUTHORITATIVE_CONTROL_OBSERVATION');expect(first.item.reference).toMatch(/^PERIOD-STAGE-[a-f0-9]{40}$/);expect(again.item.reference).toBe(first.item.reference);expect(again.checkedThrough>=first.checkedThrough).toBe(true);
+  expect(first.disposition).toBe('RECORDED');expect(again.disposition).toBe('UNCHANGED');
   expect(await db.auditEvent.count({where:{action:'COMPENSATION_STAGE_REFRESHED'}})).toBe(2);expect(await service.list(input)).toMatchObject({items:[{reference:first.item.reference}],nextCursor:null});
   expect({payables:await db.payableEntry.count(),settlements:await db.settlementBatch.count(),orders:await db.order.count()}).toEqual(before);
+ });
+ it('reports a delayed real read as superseded after a newer source-driven observation',async()=>{
+  const selected={periodStart:'1897-01-01T00:00:00Z',periodEnd:'1897-01-08T00:00:00Z',ruleVersionCode:'STAGE_DELAY_'+randomUUID()};let release!:()=>void,ready!:()=>void;
+  const captured=new Promise<void>(resolve=>{ready=resolve;}),wait=new Promise<void>(resolve=>{release=resolve;});
+  const delayed=new CompensationStageHistoryService(db,{read:async(value:any)=>{const facts=await control.read(value);ready();await wait;return facts;}} as any,new AuditService());
+  const older=delayed.refresh(selected,context());await captured;
+  try{
+   const person=await db.person.create({data:{legalName:'Synthetic delayed observation'}}),q=await db.qualification.create({data:{currentHolderPersonId:person.personId,planLevelCode:'STARTER'}});
+   await db.pvLedger.create({data:{qualificationId:q.qualificationId,pvType:'GPV',amount:100,sourceType:'ORDER',sourceId:randomUUID(),sourceLineId:randomUUID(),eventType:'GPV_CREATED',ruleVersionCode:selected.ruleVersionCode,occurredAt:new Date('1897-01-02Z'),correlationId:randomUUID()}});
+   const newer=await service.refresh(selected,context());expect(newer.item.stage).toBe('BLOCKED');release();const stale=await older;expect(stale.disposition).toBe('SUPERSEDED');expect(stale.item.reference).toBe(newer.item.reference);expect((await service.list(selected)).items).toHaveLength(1);
+  }finally{release();await older;}
  });
  it('rolls back observation and watermark if audit fails',async()=>{
   const unique={...input,ruleVersionCode:'AUDIT-ROLLBACK-'+randomUUID()},failed=new CompensationStageHistoryService(db,control,{write:async()=>{throw Error('SYNTHETIC_AUDIT_FAILURE');}} as any);

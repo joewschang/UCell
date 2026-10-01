@@ -17,10 +17,13 @@ export class CompensationStageHistoryService{
   const facts=await this.control.read({periodStart:identity.start.toISOString(),periodEnd:identity.end.toISOString(),ruleVersionCode:identity.rule});
   const hash=replayHash({period:facts.period,lifecycle:facts.lifecycle,checkpoints:facts.checkpoints,amountBridge:facts.amountBridge,reconciliationScope:facts.reconciliationScope,blockingExceptions:facts.blockingExceptions,settlements:facts.settlements,payouts:facts.payouts,jobs:facts.jobs.map(({processTiming,...job})=>job)});
   return this.db.$transaction(async tx=>{
+   await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(extract(epoch from ${identity.start}::timestamptz)::text||':'||extract(epoch from ${identity.end}::timestamptz)::text||':'||${identity.rule},0))`;
+   const [prior]=await tx.$queryRaw<Array<{observation_id:string}>>`SELECT observation_id FROM integration.compensation_stage_observation WHERE period_start=${identity.start} AND period_end=${identity.end} AND rule_version_code=${identity.rule} ORDER BY revision DESC LIMIT 1`;
    const [row]=await tx.$queryRaw<Observation[]>`SELECT * FROM integration.ucell_observe_compensation_stage(${identity.start},${identity.end},${identity.rule},${facts.lifecycle},${new Date(facts.dataThrough)},${hash})`;
    const [watermark]=await tx.$queryRaw<Array<{source_as_of:Date}>>`SELECT source_as_of FROM integration.compensation_stage_watermark WHERE period_start=${identity.start} AND period_end=${identity.end} AND rule_version_code=${identity.rule}`;
-   await this.audit.write(tx,{actorType:'USER',actorId:context.actorId,actorRoleSnapshot:context.actorRole,action:'COMPENSATION_STAGE_REFRESHED',entityType:'CompensationStageObservation',entityId:row.observation_id,afterData:{period:facts.period,stage:row.stage,revision:row.revision,evidenceHash:row.evidence_hash,checkedThrough:watermark.source_as_of.toISOString()},requestId:context.requestId,correlationId:context.correlationId});
-   return {item:projection(row),checkedThrough:watermark.source_as_of.toISOString(),authority:'Observation only; no payment, settlement or financial-close command' as const};
+   const disposition=row.observation_id!==prior?.observation_id?'RECORDED':watermark.source_as_of.getTime()>Date.parse(facts.dataThrough)?'SUPERSEDED':'UNCHANGED';
+   await this.audit.write(tx,{actorType:'USER',actorId:context.actorId,actorRoleSnapshot:context.actorRole,action:'COMPENSATION_STAGE_REFRESHED',entityType:'CompensationStageObservation',entityId:row.observation_id,afterData:{disposition,requestedSourceAsOf:facts.dataThrough,period:facts.period,stage:row.stage,revision:row.revision,evidenceHash:row.evidence_hash,checkedThrough:watermark.source_as_of.toISOString()},requestId:context.requestId,correlationId:context.correlationId});
+   return {disposition,item:projection(row),checkedThrough:watermark.source_as_of.toISOString(),authority:'Observation only; no payment, settlement or financial-close command' as const};
   });
  }
  async list(input:Period&{take?:number;cursor?:number;asOf?:string}){

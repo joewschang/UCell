@@ -28,7 +28,7 @@ class CompensationStageHistoryPageDto{
  @ApiProperty({type:Number,nullable:true}) nextCursor!:number|null; @ApiProperty({format:'date-time'}) asOf!:string;
  @ApiProperty({enum:['CURRENT_PAGE_ONLY']}) coverage!:string; @ApiProperty() authority!:string;
 }
-class CompensationStageRefreshDto{@ApiProperty({type:CompensationStageObservationDto}) item!:CompensationStageObservationDto;@ApiProperty({format:'date-time'}) checkedThrough!:string;@ApiProperty() authority!:string;}
+class CompensationStageRefreshDto{@ApiProperty({enum:['RECORDED','UNCHANGED','SUPERSEDED']}) disposition!:string;@ApiProperty({type:CompensationStageObservationDto}) item!:CompensationStageObservationDto;@ApiProperty({format:'date-time'}) checkedThrough!:string;@ApiProperty() authority!:string;}
 class CompensationStageHistoryEnvelopeDto{@ApiProperty({type:CompensationStageHistoryPageDto}) data!:CompensationStageHistoryPageDto;}
 class CompensationStageRefreshEnvelopeDto{@ApiProperty({type:CompensationStageRefreshDto}) data!:CompensationStageRefreshDto;}
 @ApiTags('Admin - Compensation Stage History') @ApiBearerAuth('adminBearer')

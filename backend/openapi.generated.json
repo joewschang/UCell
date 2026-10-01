@@ -19185,6 +19185,14 @@
       "CompensationStageRefreshDto": {
         "type": "object",
         "properties": {
+          "disposition": {
+            "type": "string",
+            "enum": [
+              "RECORDED",
+              "UNCHANGED",
+              "SUPERSEDED"
+            ]
+          },
           "item": {
             "$ref": "#/components/schemas/CompensationStageObservationDto"
           },
@@ -19197,6 +19205,7 @@
           }
         },
         "required": [
+          "disposition",
           "item",
           "checkedThrough",
           "authority"
