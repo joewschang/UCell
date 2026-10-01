@@ -1,4 +1,5 @@
 ALTER TYPE identity."IdentityProvider" ADD VALUE IF NOT EXISTS 'MEMBER_LOCAL';
+ALTER TYPE identity."IdentityProvider" ADD VALUE IF NOT EXISTS 'SMS_OTP';
 ALTER TYPE identity."OtpPurpose" ADD VALUE IF NOT EXISTS 'LOGIN';
 
 CREATE TABLE identity.member_password_credential (
