@@ -1,5 +1,5 @@
 import {ConflictException,Injectable} from '@nestjs/common';
-import {Prisma,PrismaService} from '@ucell/database';
+import {Prisma,PrismaService,appendMemberMessage,erpBusinessReference} from '@ucell/database';
 import {AuditService} from '../../common/audit/audit.service';
 import {SERIAL_PACK_POLICY,verifySerialPack} from './fulfillment-pack-verification.service';
 import {createHash} from 'node:crypto';
@@ -14,6 +14,12 @@ function hasDispatchEvidence(shipment:any,states=['PICKED_UP','IN_TRANSIT','DELI
 @Injectable()
 export class FulfillmentSerialProvenanceService{
  constructor(private readonly db:PrismaService,private readonly audit:AuditService){}
+ private async notifyShipment(tx:Prisma.TransactionClient,fulfillmentId:string,stage:'SHIPPED'|'DELIVERED'){
+  const source=await tx.fulfillment.findUniqueOrThrow({where:{fulfillmentId},include:{order:true}});
+  // The saved purchaser is the audience; qualification transfers never retarget an order notice.
+  if(!source.order.purchaserPersonId)return;
+  await appendMemberMessage(tx,{messageKey:'fulfillment:'+stage.toLowerCase()+':'+fulfillmentId,personId:source.order.purchaserPersonId,category:'SHIPMENT',title:stage==='DELIVERED'?'商品配送已完成':'商品已出貨',body:stage==='DELIVERED'?'訂單商品已有配送完成紀錄，請至訂單查詢查看目前物流資訊。配送紀錄不代表退貨或退款已完成。':'訂單商品已有出貨確認紀錄，請至訂單查詢查看目前物流資訊。出貨不代表已送達。',sourceType:'FULFILLMENT',sourceReference:erpBusinessReference('FULFILLMENT',fulfillmentId),deepLink:'/orders'});
+ }
  async bindShipment(fulfillmentId:string,shipmentId:string,context:Context){
   return this.db.$transaction(async tx=>{
    await tx.$queryRaw`SELECT fulfillment_id FROM commerce.fulfillment WHERE fulfillment_id=${fulfillmentId}::uuid FOR UPDATE`;
@@ -43,10 +49,12 @@ export class FulfillmentSerialProvenanceService{
     const changed=await tx.serializedUnit.updateMany({where:{serializedUnitId:{in:unitIds},status:'ALLOCATED'},data:{status:'SHIPPED'}});
     if(changed.count){
      await tx.fulfillment.update({where:{fulfillmentId},data:{status:'SHIPPED'}});
+     if(shipment.status!=='DELIVERED')await this.notifyShipment(tx,fulfillmentId,'SHIPPED');
      await this.audit.write(tx,{actorType:'USER',actorId:context.actorId,action:'SHIPMENT_SERIAL_DISPATCH_CONFIRMED',entityType:'FULFILLMENT',entityId:fulfillmentId,afterData:{serialCount:changed.count},requestId:context.requestId,correlationId:context.correlationId});
     }
     if(shipment.status==='DELIVERED'&&hasDispatchEvidence(shipment,['DELIVERED'])&&fulfillment.status!=='DELIVERED'){
      await tx.fulfillment.update({where:{fulfillmentId},data:{status:'DELIVERED'}});
+     await this.notifyShipment(tx,fulfillmentId,'DELIVERED');
      await this.audit.write(tx,{actorType:'USER',actorId:context.actorId,action:'SHIPMENT_SERIAL_DELIVERY_CONFIRMED',entityType:'FULFILLMENT',entityId:fulfillmentId,afterData:{serialCount:allocations.length},requestId:context.requestId,correlationId:context.correlationId});
     }
    }

@@ -1,3 +1,5 @@
+import {MemberMessagesService} from '../src/modules/member/member-messages.service';
+import {IdempotencyService} from '../src/common/idempotency/idempotency.service';
 import {PrismaClient} from '@prisma/client';
 import {randomUUID} from 'node:crypto';
 import {AuditService} from '../src/common/audit/audit.service';
@@ -33,11 +35,11 @@ describeDb('shipment and return physical serial provenance',()=>{
   const parcel=await db.fulfillmentParcel.create({data:{fulfillmentId:f.fulfillmentId,parcelKey:'P1',contentSnapshotRef:wrongContents?'wrong':pack.evidence.policySnapshotRef,packageSnapshotRef:'synthetic'}});
   const shipment=await db.shipment.create({data:{fulfillmentId:f.fulfillmentId,fulfillmentParcelId:parcel.fulfillmentParcelId,fulfillmentQcEvidenceId:pack.evidence.fulfillmentQcEvidenceId,provider:'OTHER',connectionId:connection.connectionKey,providerConnectionVersionId:connection.versions[0].providerConnectionVersionId,carrier:'OTHER',shippingMethod:'HOME_DELIVERY',recipientSnapshotRef:'snapshot://synthetic',providerShipmentRef:randomUUID(),status:'LABEL_CREATED'}});
   const bind=()=>service.bindShipment(f.fulfillmentId,shipment.shipmentId,context());
-  const dispatch=async()=>db.$transaction(async tx=>{
-   const now=new Date(),correlationId=randomUUID();
-   const evidence=await tx.shipmentTrackingEventEvidence.create({data:{shipmentId:shipment.shipmentId,providerConnectionVersionId:shipment.providerConnectionVersionId,providerEventIdentity:randomUUID(),providerShipmentRef:shipment.providerShipmentRef!,rawStatusCode:'TEST_PICKED_UP',normalizedStatus:'PICKED_UP',mappingSnapshotRef:'snapshot://synthetic-mapping',payloadHash:'b'.repeat(64),safeEvidenceRef:'evidence://synthetic',eventTime:now,verifiedAt:now,correlationId}});
-   await tx.shipmentStateTransition.create({data:{shipmentId:shipment.shipmentId,shipmentTrackingEventEvidenceId:evidence.shipmentTrackingEventEvidenceId,fromStatus:'LABEL_CREATED',toStatus:'PICKED_UP',businessEffectIdentity:randomUUID(),operationHash:'c'.repeat(64),occurredAt:now,correlationId}});
-   await tx.shipment.update({where:{shipmentId:shipment.shipmentId},data:{status:'PICKED_UP'}});
+  const dispatch=async(status:'PICKED_UP'|'DELIVERED'='PICKED_UP')=>db.$transaction(async tx=>{
+   const now=new Date(),correlationId=randomUUID(),current=await tx.shipment.findUniqueOrThrow({where:{shipmentId:shipment.shipmentId}});
+   const evidence=await tx.shipmentTrackingEventEvidence.create({data:{shipmentId:shipment.shipmentId,providerConnectionVersionId:shipment.providerConnectionVersionId,providerEventIdentity:randomUUID(),providerShipmentRef:shipment.providerShipmentRef!,rawStatusCode:'TEST_'+status,normalizedStatus:status,mappingSnapshotRef:'snapshot://synthetic-mapping',payloadHash:'b'.repeat(64),safeEvidenceRef:'evidence://synthetic',eventTime:now,verifiedAt:now,correlationId}});
+   await tx.shipmentStateTransition.create({data:{shipmentId:shipment.shipmentId,shipmentTrackingEventEvidenceId:evidence.shipmentTrackingEventEvidenceId,fromStatus:current.status,toStatus:status,businessEffectIdentity:randomUUID(),operationHash:'c'.repeat(64),occurredAt:now,correlationId}});
+   await tx.shipment.update({where:{shipmentId:shipment.shipmentId},data:{status}});
   });
   const acceptedReturn=async(quantity=1,lineIndex=0)=>db.returnCase.create({data:{orderId:order.orderId,status:'POSTED',reasonCode:'TEST',occurredAt:new Date(),postedAt:new Date(),idempotencyKey:randomUUID(),correlationId:randomUUID(),lines:{create:{orderLineId:order.lines[lineIndex].orderLineId,quantity,returnAmount:100*quantity,gpvReversalAmount:0}}},include:{lines:true}});
   return {f,order,source,sources,serialNos,shipment,bind,dispatch,acceptedReturn};
@@ -60,11 +62,16 @@ describeDb('shipment and return physical serial provenance',()=>{
   const f=await fixture();await db.shipment.update({where:{shipmentId:f.shipment.shipmentId},data:{status:'PICKED_UP'}});
   await expect(f.bind()).rejects.toMatchObject({response:{code:'SHIPMENT_DISPATCH_EVIDENCE_REQUIRED'}});
   expect(await db.shipmentSerialBinding.count({where:{shipmentId:f.shipment.shipmentId}})).toBe(0);
+  expect(await db.memberNotification.count({where:{personId:f.order.purchaserPersonId!}})).toBe(0);
  });
  it('applies verified dispatch once and preserves physical provenance through partial return',async()=>{
   const f=await fixture();await f.bind();await f.dispatch();await f.bind();await f.bind();
   expect((await db.serializedUnit.findMany({where:{serialNo:{in:f.serialNos}}})).map(u=>u.status)).toEqual(['SHIPPED','SHIPPED']);
   expect(await db.auditEvent.count({where:{entityId:f.f.fulfillmentId,action:'SHIPMENT_SERIAL_DISPATCH_CONFIRMED'}})).toBe(1);
+  const messages=new MemberMessagesService(db as any,new AuditService(),new IdempotencyService(db as any)),own=await messages.list(f.order.purchaserPersonId!,{});
+  expect(own.items).toHaveLength(1);expect(own.items[0]).toMatchObject({category:'SHIPMENT',title:'商品已出貨',deepLink:'/orders'});
+  for(const id of [f.f.fulfillmentId,f.shipment.shipmentId,f.order.orderId,f.order.purchaserPersonId!])expect(JSON.stringify(own)).not.toContain(id);
+  const foreign=await db.person.create({data:{legalName:'Foreign shipment audience'}});expect((await messages.list(foreign.personId,{})).items).toEqual([]);expect(await db.notificationDelivery.count()).toBe(0);
   const ret=await f.acceptedReturn(),before=JSON.stringify(ret);
   const receive=()=>service.receiveReturn(f.f.fulfillmentId,ret.returnCaseId,[f.serialNos[0]],context());
   const results=await Promise.all([receive(),receive()]);expect(results.map(r=>r.replayed).sort()).toEqual([false,true]);
@@ -80,6 +87,20 @@ describeDb('shipment and return physical serial provenance',()=>{
   await expect(db.orderLine.update({where:{orderLineId:f.order.lines[0].orderLineId},data:{linePurpose:'REPURCHASE_PLAN'}})).rejects.toThrow();
   await expect(db.shipment.update({where:{shipmentId:f.shipment.shipmentId},data:{recipientSnapshotRef:'replacement'}})).rejects.toThrow();
   const otherReturn=await f.acceptedReturn();await expect(service.receiveReturn(f.f.fulfillmentId,otherReturn.returnCaseId,[f.serialNos[0]],context())).rejects.toMatchObject({response:{code:'SERIAL_ALREADY_RETURNED'}});
+ });
+ it.each([true,false])('notifies verified delivery once; direct delivery=%s',async direct=>{
+  const f=await fixture();await f.bind();expect(await db.memberNotification.count({where:{personId:f.order.purchaserPersonId!}})).toBe(0);
+  if(!direct){await f.dispatch();await f.bind();}await f.dispatch('DELIVERED');await f.bind();await f.bind();
+  const notices=await db.memberNotification.findMany({where:{personId:f.order.purchaserPersonId!}});expect(notices).toHaveLength(direct?1:2);expect(notices.filter(row=>row.title==='商品配送已完成')).toHaveLength(1);
+  expect((await db.fulfillment.findUniqueOrThrow({where:{fulfillmentId:f.f.fulfillmentId}})).status).toBe('DELIVERED');
+ });
+ it('rolls back physical dispatch when its personal notice conflicts',async()=>{
+  const f=await fixture();await f.bind();await f.dispatch();const before=await db.fulfillment.findUniqueOrThrow({where:{fulfillmentId:f.f.fulfillmentId}});
+  await db.memberNotification.create({data:{messageKey:'fulfillment:shipped:'+f.f.fulfillmentId,personId:f.order.purchaserPersonId!,category:'SERVICE',title:'Conflict',body:'Fixture',sourceType:'TEST',sourceReference:'TEST:CONFLICT'}});
+  await expect(f.bind()).rejects.toThrow('conflicting personal message evidence');
+  expect((await db.fulfillment.findUniqueOrThrow({where:{fulfillmentId:f.f.fulfillmentId}})).status).toBe(before.status);
+  expect((await db.serializedUnit.findMany({where:{serialNo:{in:f.serialNos}}})).every(unit=>unit.status==='ALLOCATED')).toBe(true);
+  expect(await db.auditEvent.count({where:{entityId:f.f.fulfillmentId,action:'SHIPMENT_SERIAL_DISPATCH_CONFIRMED'}})).toBe(0);
  });
  it('rejects unshipped, duplicate and foreign-order return serials',async()=>{
   const f=await fixture(),other=await fixture(),ret=await f.acceptedReturn();await f.bind();
