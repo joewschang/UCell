@@ -45,15 +45,23 @@ async function bindPendingReferral(accessToken:string){
 async function resumeCachedSession(){
  const cached=sessionStorage.getItem('ucell_member_token');
  if(!cached)return undefined;
- const response=await request('/member/me',{headers:{Authorization:'Bearer '+cached}});
- if(response.ok){
-  parsePerson(unwrapMemberEnvelope(response.body));
-  return {mode:'connected' as const,referralWarning:await bindPendingReferral(cached)};
+ try{
+  const response=await request('/member/me',{headers:{Authorization:'Bearer '+cached}});
+  if(response.ok){
+   parsePerson(unwrapMemberEnvelope(response.body));
+  }else{
+   if(response.status!==401)throw new Error('會員登入驗證暫時無法使用，請稍後重試');
+   sessionStorage.removeItem('ucell_member_token');
+   sessionStorage.removeItem('ucell_qualification_id');
+   return undefined;
+  }
+ }catch(error){
+  for(const key of ['ucell_member_token','ucell_qualification_id']){
+   try{sessionStorage.removeItem(key);}catch{/* Keep authentication failed even when storage is unavailable. */}
+  }
+  throw error;
  }
- sessionStorage.removeItem('ucell_member_token');
- sessionStorage.removeItem('ucell_qualification_id');
- if(response.status!==401)throw new Error('會員登入驗證暫時無法使用，請稍後重試');
- return undefined;
+ return {mode:'connected' as const,referralWarning:await bindPendingReferral(cached)};
 }
 
 /** Client LINE profile is never identity proof; backend verifies exchange and session. */
@@ -100,7 +108,11 @@ export async function startWebLineLogin(){
  const id=import.meta.env.VITE_LIFF_ID;
  if(!id)throw new Error('LINE 登入尚未設定，請聯絡客服');
  await liff.init({liffId:id});
- if(liff.isLoggedIn())return {mode:'connected' as const};
+ if(liff.isLoggedIn()){
+  // Re-run backend exchange rather than reusing the cached Web entry result.
+  boot=undefined;
+  return {mode:'connected' as const};
+ }
  const redirectUri=typeof window!=='undefined'?window.location.href:undefined;
  liff.login(redirectUri?{redirectUri}:undefined);
  return {mode:'redirect' as const};

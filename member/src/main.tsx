@@ -41,6 +41,7 @@ function Bootstrap() {
             if(result.mode==='connected')setAttempt(n=>n+1);
         }catch(e){
             setError(e instanceof Error?e.message:'登入失敗');
+        }finally{
             setStartingWebLogin(false);
         }
     };

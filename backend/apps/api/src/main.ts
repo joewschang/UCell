@@ -5,6 +5,7 @@ import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from '@fastify/helmet';
 import cors from '@fastify/cors';
+import { memberEntryCors } from './member-entry-cors';
 import { AppModule } from './app.module';
 import { ApiExceptionFilter } from './common/filters/api-exception.filter';
 import { EnvelopeInterceptor } from './common/interceptors/envelope.interceptor';
@@ -18,12 +19,7 @@ async function bootstrap() {
 
   const config = app.get(ConfigService);
   await app.register(helmet);
-  await app.register(cors, {
-    origin: process.env.NODE_ENV === 'production'
-      ? ['https://admin.ucell.life', 'https://app.ucell.life']
-      : true,
-    credentials: true,
-  });
+  await app.register(cors, memberEntryCors(process.env));
 
   app.setGlobalPrefix('api/v1');
   app.useGlobalPipes(new ValidationPipe({

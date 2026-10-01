@@ -106,6 +106,14 @@ foreach($f in $frontends){
 $adminImage=Resolve-Image 'ucell-admin'; $memberImage=Resolve-Image 'ucell-member'
 Set-App 'ucell-stage-admin' $adminImage 1 2 -Ingress -Port 80
 Set-App 'ucell-stage-member' $memberImage 1 2 -Ingress -Port 80
+$frontendOrigins=@(); foreach($name in @('ucell-stage-admin','ucell-stage-member')){
+  $ingress=Invoke-AzChecked "read $name CORS origins" @('containerapp','show','--name',$name,'--resource-group',$ResourceGroup,'--query','properties.configuration.ingress','-o','json','--only-show-errors')|ConvertFrom-Json
+  if(-not $ingress.fqdn){throw 'Frontend FQDNs are required for exact CORS origins.'}
+  $frontendOrigins+="https://$($ingress.fqdn)"
+  foreach($domain in $ingress.customDomains){if($domain.name){$frontendOrigins+="https://$($domain.name)"}}
+}
+$frontendOrigins=($frontendOrigins|Select-Object -Unique)-join ','
+Invoke-AzChecked 'configure frontend CORS origins' @('containerapp','update','--name','ucell-stage-api','--resource-group',$ResourceGroup,'--set-env-vars',"CORS_ALLOWED_ORIGINS=$frontendOrigins",'--only-show-errors')|Out-Null
 
 $evidence=@(); foreach($name in @('ucell-stage-api','ucell-stage-worker','ucell-stage-admin','ucell-stage-member')){
   $state=(Invoke-AzChecked "read $name state" @('containerapp','show','--name',$name,'--resource-group',$ResourceGroup,'--query','{revision:properties.latestRevisionName,image:properties.template.containers[0].image,fqdn:properties.configuration.ingress.fqdn}','-o','json','--only-show-errors')|ConvertFrom-Json); if($state.image -notmatch '@sha256:[0-9a-f]{64}$'){throw "$name is not digest pinned."}
@@ -114,4 +122,6 @@ $evidence=@(); foreach($name in @('ucell-stage-api','ucell-stage-worker','ucell-
 }
 $healthy=$false; for($i=1;$i -le $HealthPollAttempts;$i++){try{$response=Invoke-WebRequest "$apiBaseUrl/health" -TimeoutSec 10 -UseBasicParsing; if($response.StatusCode -eq 200){$healthy=$true;break}}catch{if($i -eq $HealthPollAttempts){throw "Stage API health probe failed: $($_.Exception.Message)"}}; Start-Sleep 5}; if(-not $healthy){throw 'Stage API did not become healthy.'}
 $adminFqdn=($evidence|Where-Object Name -eq 'ucell-stage-admin').Fqdn; $memberFqdn=($evidence|Where-Object Name -eq 'ucell-stage-member').Fqdn
+if(-not $adminFqdn -or -not $memberFqdn){throw 'Frontend FQDNs are required for exact CORS origins.'}
+Invoke-AzChecked 'configure frontend CORS origins' @('containerapp','update','--name','ucell-stage-api','--resource-group',$ResourceGroup,'--set-env-vars',"CORS_ALLOWED_ORIGINS=https://$adminFqdn,https://$memberFqdn",'--only-show-errors')|Out-Null
 [pscustomobject]@{ResourceGroup=$ResourceGroup;ImageTag=$ImageTag;MigrationExecution=$execution;MigrationStatus=$migrationStatus;Api=$apiOrigin;Admin="https://$adminFqdn";Member="https://$memberFqdn";ApiHealth='PASS';IdentityConfiguration=[pscustomobject]@{LineConfigured=([bool]$LineLoginChannelId -and [bool]$LiffId);EntraConfigured=([bool]$EntraTenantId -and [bool]$EntraClientId -and [bool]$EntraRedirectUri);VerificationStatus='OPERATIONAL_CREDENTIAL_PENDING'};Revisions=$evidence}|ConvertTo-Json -Depth 6

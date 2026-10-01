@@ -55,3 +55,10 @@ td{color:var(--ucell-text-primary);border-color:var(--ucell-border-subtle)}
     background:var(--ucell-surface-elevated);
   }
 }
+
+.primary,.button-link,.sidebar nav a.active,.sidebar nav a:hover{color:var(--ucell-on-primary)}
+.content .card h2{color:var(--ucell-text-primary)}
+.uc-pipeline button:hover{color:#f3fbfb}
+.uc-pipeline button:hover span,.uc-pipeline button:hover small{color:#c8d6da}
+.search-option:hover,.list-row:hover{background:var(--ucell-surface-secondary)}
+.uc-dialog{background:var(--ucell-surface);color:var(--ucell-text-primary)}

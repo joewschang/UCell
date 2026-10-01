@@ -100,3 +100,17 @@ button,input,select,textarea{
 .uc-web-entry .primary{background:var(--ucell-primary);color:#fff;border-color:var(--ucell-primary)}
 .uc-web-entry .primary:hover:not(:disabled){background:var(--ucell-primary-hover)}
 @media(max-width:480px){.uc-web-entry{margin:20px auto;padding:22px}}
+
+/* Pair selected and fixed dark surfaces with their own foreground. */
+.uc-web-entry .primary,.tabs button[aria-pressed=true]{color:var(--ucell-on-primary)}
+.card.uc-member-identity{background:radial-gradient(circle at 78% 16%,#1d6b72 0,transparent 38%),linear-gradient(145deg,#092a3c,#075747)}
+.card.uc-bonus-summary,.card.uc-sponsor-card{background:linear-gradient(135deg,#0b2c3f,#104e50)}
+.card.uc-member-identity :is(h1,h2,h3,strong,span),.card.uc-bonus-summary :is(h1,h2,h3,strong,span),.card.uc-sponsor-card :is(h1,h2,h3,strong,span){color:#f3fbfb}
+.uc-member-status,.uc-today-summary,.uc-today-facts>div,.uc-today-binary dl>div,.uc-award-journey-grid>div,.uc-audit-grid p,.uc-member-explain .uc-audit-grid>div{background:var(--ucell-surface);color:var(--ucell-text-primary)}
+.uc-dashboard .uc-metric,.uc-dashboard .uc-actions a,.uc-bonuses .period,.uc-referral-card,.uc-binary-card,.uc-tree-status,.uc-award-card{background:var(--ucell-surface-elevated);color:var(--ucell-text-primary)}
+.uc-dashboard .uc-metric strong,.uc-award-heading .uc-money,.uc-ledger-card>strong{color:var(--ucell-text-primary)}
+.uc-award-card .uc-award-timeline,.uc-tree-context,.uc-tree-node:hover,.uc-segmented{background:var(--ucell-surface-secondary)}
+.uc-card-heading small,.uc-award-heading>div>small,.uc-award-context span,.uc-today-binary small,.uc-today-task small,.uc-domain-detail summary,.uc-tree-node>b{color:var(--ucell-primary)}
+
+.uc-segmented button[aria-pressed=true]{background:var(--ucell-primary);color:var(--ucell-on-primary)}
+.uc-referral-card .uc-card-heading>strong{color:var(--ucell-primary)}

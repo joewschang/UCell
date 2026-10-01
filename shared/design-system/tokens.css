@@ -32,3 +32,7 @@
     --ucell-shadow-sm:0 3px 12px #00000033;--ucell-shadow-md:0 18px 48px #00000066;--ucell-shadow-glow:0 18px 46px #00000052,0 2px 8px #00000040
   }
 }
+
+:root{--ucell-on-primary:#fff}
+:root[data-theme="dark"]{--ucell-on-primary:#071b27}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--ucell-on-primary:#071b27}}
