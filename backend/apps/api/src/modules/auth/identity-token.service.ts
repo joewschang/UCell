@@ -6,7 +6,7 @@ import { PrismaService } from '@ucell/database';
 export class IdentityTokenService{
   constructor(private readonly prisma:PrismaService){}
   hash(raw:string){return createHash('sha256').update(raw).digest('hex');}
-  async issue(input:{provider:'ADMIN_LOCAL'|'MEMBER_LOCAL'|'SMS_OTP'|'ENTRA'|'LINE'|'GOOGLE';subject:string;personId?:string;roleCode?:string;ttlSeconds?:number}){
+  async issue(input:{provider:'ADMIN_LOCAL'|'MEMBER_LOCAL'|'ENTRA'|'LINE'|'GOOGLE';subject:string;personId?:string;roleCode?:string;ttlSeconds?:number}){
     const raw=randomBytes(32).toString('base64url');
     const now=new Date(); const expiresAt=new Date(now.getTime()+(input.ttlSeconds??3600)*1000);
     const session=await this.prisma.authSession.create({data:{personId:input.personId,provider:input.provider,subject:input.subject,roleCode:input.roleCode,tokenHash:this.hash(raw),status:'ACTIVE',issuedAt:now,expiresAt}});
