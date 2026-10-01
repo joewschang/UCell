@@ -20,9 +20,11 @@ import { GoogleTokenVerifierService } from './google-token-verifier.service';
 import { PasswordResetEmailService } from './password-reset-email.service';
 import { MemberWebAuthService } from './member-web-auth.service';
 import { MemberWebAuthController } from './member-web-auth.controller';
+import { MemberOtpAuthService } from './member-otp-auth.service';
+import { MemberOtpAuthController } from './member-otp-auth.controller';
 @Module({
-  controllers:[AdminAuthController,OtpController,NetworkRegistrationController,MemberWebAuthController],
-  providers:[QualificationAccessService,AdminRoleGuard,IdentityTokenService,LineIdentityService,MemberIdentityService,GoogleTokenVerifierService,PasswordResetEmailService,MemberWebAuthService,AuthenticationGuard,MemberAuthenticationGuard,AdminAuthenticationGuard,EntraTokenVerifierService,AdminAuthService,OtpService,OtpCodeService,SmsOtpProviderService,NetworkRegistrationService],
+  controllers:[AdminAuthController,OtpController,NetworkRegistrationController,MemberWebAuthController,MemberOtpAuthController],
+  providers:[QualificationAccessService,AdminRoleGuard,IdentityTokenService,LineIdentityService,MemberIdentityService,GoogleTokenVerifierService,PasswordResetEmailService,MemberWebAuthService,MemberOtpAuthService,AuthenticationGuard,MemberAuthenticationGuard,AdminAuthenticationGuard,EntraTokenVerifierService,AdminAuthService,OtpService,OtpCodeService,SmsOtpProviderService,NetworkRegistrationService],
   exports:[QualificationAccessService,AdminRoleGuard,IdentityTokenService,LineIdentityService,MemberIdentityService,AuthenticationGuard,MemberAuthenticationGuard,AdminAuthenticationGuard,EntraTokenVerifierService,AdminAuthService]
 })
 export class AuthModule {}
