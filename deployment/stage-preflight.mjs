@@ -13,6 +13,7 @@ const assertions = [
   ['backend LINE configuration name', deploy.includes('LINE_LOGIN_CHANNEL_ID=$LineLoginChannelId')],
   ['backend Entra tenant wiring', deploy.includes('ENTRA_TENANT_ID=$EntraTenantId')],
   ['backend Entra client wiring', deploy.includes('ENTRA_CLIENT_ID=$EntraClientId')],
+  ['identity-match HMAC is secret-backed', deploy.includes('IDENTITY_MATCH_HMAC_SECRET=secretref:identity-match-hmac-secret') && workflow.includes('STAGE_IDENTITY_MATCH_HMAC_SECRET')],
   ['inventory warehouse fails closed and is wired', deploy.includes("Parameter(Mandatory)") && deploy.includes('UCELL_INVENTORY_WAREHOUSE_ID=$InventoryWarehouseId') && workflow.includes('vars.UCELL_INVENTORY_WAREHOUSE_ID')],
   ['inventory policy fails closed and is wired', deploy.includes('UCELL_INVENTORY_POLICY_VERSION=$InventoryPolicyVersion') && workflow.includes('vars.UCELL_INVENTORY_POLICY_VERSION')],
   ['UAT manifest warehouse is a valid configured warehouse candidate', /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-8[0-9a-f]{3}-[0-9a-f]{12}$/i.test(uatManifest.warehouse.warehouseId)],
