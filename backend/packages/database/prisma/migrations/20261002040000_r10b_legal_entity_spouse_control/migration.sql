@@ -4,6 +4,7 @@ CREATE TYPE identity."LegalEntityStatus" AS ENUM ('DRAFT','ACTIVE','SUSPENDED','
 
 CREATE TABLE identity.legal_entity (
   legal_entity_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  member_no text NOT NULL DEFAULT identity.allocate_member_no() UNIQUE,
   registered_name text NOT NULL,
   registration_no text NOT NULL UNIQUE,
   registered_address text,
@@ -89,3 +90,34 @@ CREATE TABLE identity.formal_identity_index (
 );
 CREATE INDEX formal_identity_index_fingerprint_idx
   ON identity.formal_identity_index(national_id_fingerprint);
+
+CREATE OR REPLACE FUNCTION identity.prevent_legal_entity_member_no_mutation()
+RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+  IF NEW.member_no IS DISTINCT FROM OLD.member_no THEN RAISE EXCEPTION 'MEMBER_NO_IMMUTABLE'; END IF;
+  RETURN NEW;
+END $$;
+CREATE TRIGGER legal_entity_member_no_immutable
+BEFORE UPDATE ON identity.legal_entity
+FOR EACH ROW EXECUTE FUNCTION identity.prevent_legal_entity_member_no_mutation();
+
+CREATE OR REPLACE FUNCTION identity.prevent_cross_party_member_no_collision()
+RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+  IF TG_TABLE_NAME='person' THEN
+    IF EXISTS(SELECT 1 FROM identity.legal_entity le WHERE le.member_no=NEW.member_no) THEN
+      RAISE EXCEPTION 'MEMBER_NO_CROSS_PARTY_COLLISION';
+    END IF;
+  ELSE
+    IF EXISTS(SELECT 1 FROM identity.person p WHERE p.member_no=NEW.member_no) THEN
+      RAISE EXCEPTION 'MEMBER_NO_CROSS_PARTY_COLLISION';
+    END IF;
+  END IF;
+  RETURN NEW;
+END $$;
+CREATE TRIGGER person_member_no_cross_party_guard
+BEFORE INSERT ON identity.person
+FOR EACH ROW EXECUTE FUNCTION identity.prevent_cross_party_member_no_collision();
+CREATE TRIGGER legal_entity_member_no_cross_party_guard
+BEFORE INSERT ON identity.legal_entity
+FOR EACH ROW EXECUTE FUNCTION identity.prevent_cross_party_member_no_collision();
