@@ -605,6 +605,7 @@ model Person {
 
 model LegalEntity {
   legalEntityId         String                @id @default(uuid()) @map("legal_entity_id") @db.Uuid
+  memberNo              String                @unique @default(dbgenerated("identity.allocate_member_no()")) @map("member_no")
   registeredName        String                @map("registered_name")
   registrationNo        String                @unique @map("registration_no")
   registeredAddress     String?               @map("registered_address")
