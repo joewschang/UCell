@@ -2760,6 +2760,7 @@ model OutboxEvent {
   shipmentOperationClaim  ShipmentOperationClaim?
   fulfillmentErpHandoff FulfillmentErpHandoff?
   periodCloseJob PeriodCloseJob?
+  periodProcessTransitions PeriodJobProcessTransition[]
   erpProjection ErpBusinessProjection?
 
   @@index([processStatus, availableAt])
@@ -2873,6 +2874,20 @@ model ErpProjectionReconciliation {
   @@index([projectionId,recordedAt])
   @@map("erp_projection_reconciliation")
   @@schema("commerce")
+}
+
+model PeriodJobProcessTransition {
+  transitionId String @id @default(uuid()) @map("transition_id") @db.Uuid
+  outboxEventId String @map("outbox_event_id") @db.Uuid
+  revision Int
+  fromStatus EventProcessStatus? @map("from_status")
+  toStatus EventProcessStatus @map("to_status")
+  enteredAt DateTime? @map("entered_at") @db.Timestamptz(6)
+  recordedAt DateTime @default(now()) @map("recorded_at") @db.Timestamptz(6)
+  outbox OutboxEvent @relation(fields:[outboxEventId],references:[outboxEventId])
+  @@unique([outboxEventId,revision])
+  @@map("period_job_process_transition")
+  @@schema("integration")
 }
 
 model PeriodClosePlannerCursor {

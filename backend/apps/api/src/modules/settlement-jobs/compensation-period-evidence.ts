@@ -31,7 +31,7 @@ export async function compensationPeriodEvidence(tx:Prisma.TransactionClient,per
   }
  }catch{configured=false;windows=families.map(kind=>({kind,periodStart:period.periodStart,periodEnd:period.periodEnd}));problems.push({code:'COMPENSATION_APPROVED_CALENDAR_UNAVAILABLE'});}
  const required=[...windows,{kind:'PAYABLE_PREPARATION',periodStart:period.periodStart,periodEnd:period.periodEnd}];
- const jobs=await tx.periodCloseJob.findMany({where:{ruleVersionCode:period.ruleVersionCode,OR:required},include:{receipt:true,outbox:true},orderBy:[{kind:'asc'},{periodStart:'asc'}]});
+ const jobs=await tx.periodCloseJob.findMany({where:{ruleVersionCode:period.ruleVersionCode,OR:required},include:{receipt:true,outbox:{include:{periodProcessTransitions:{orderBy:{revision:'desc'},take:1}}}},orderBy:[{kind:'asc'},{periodStart:'asc'}]});
  const byWindow=new Map(jobs.map(job=>[identity(job),job]));
  const missing=required.filter(window=>!byWindow.has(identity(window)));
  if(preparation&&configured){

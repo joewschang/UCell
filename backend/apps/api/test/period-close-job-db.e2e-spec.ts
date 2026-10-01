@@ -75,6 +75,8 @@ const url=process.env.PHASE2_TEST_DATABASE_URL;
     const read=()=>db.$transaction(async tx=>periodCloseOperationalState(tx,await tx.periodCloseJob.findUniqueOrThrow({where:{periodCloseJobId:job.periodCloseJobId},include:{receipt:true,outbox:true}})));
     expect(await read()).toMatchObject({state:'WAITING_RECOGNITION',waiting:{recognitions:1}});
     const monitor=new OperationsWorkflowHealthService(db as any),work=new OperationsWorkItemsService(db as any,new AuditService(),new IdempotencyService(db as any)),reference=periodJobReference(job.periodCloseJobId),context={actorId:randomUUID(),requestId:randomUUID(),correlationId:randomUUID()},health=await monitor.list({scope:'PERIOD_JOB',reference});
+    expect(health.items[0].processTiming).toMatchObject({status:'RECORDED',basis:'DURABLE_PROCESS_TRANSITION'});
+    expect(health.items[0].processTiming!.elapsedSeconds).toBeGreaterThanOrEqual(0);
     expect(health.items[0]).toMatchObject({state:'WAITING_RECOGNITION',candidates:[{code:'PERIOD_CLOSE_BLOCKED'}],actionLink:'/settlement-jobs?reference='+reference,periodLink:null});
     expect(JSON.stringify(health)).not.toContain(job.periodCloseJobId);expect(JSON.stringify(health)).not.toContain('TEST_FINANCE');
     const candidate=health.items[0].candidates[0],task=(await work.createTask({stream:'PERIOD_JOB',reference,code:candidate.code,evidenceHash:candidate.evidenceHash,assigneeRole:'FINANCE'},randomUUID(),context)).value.item;

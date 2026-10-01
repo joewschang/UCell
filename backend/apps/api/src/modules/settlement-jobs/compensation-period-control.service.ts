@@ -5,6 +5,7 @@ import {compensationPeriodEvidence} from './compensation-period-evidence';
 import {compensationVolumeEvidence} from './compensation-volume-evidence';
 import {compensationFinancialEvidence} from './compensation-financial-evidence';
 import {compensationErpEvidence} from './compensation-erp-evidence';
+import {periodProcessTiming} from './period-process-timing';
 
 type Input={periodStart:string;periodEnd:string;ruleVersionCode:string};
 type AgingInput={thresholdHours:number;asOf?:string};
@@ -114,6 +115,7 @@ export class CompensationPeriodControlService{
    jobs:jobs.map(row=>({
     jobReference:safe('PERIOD-JOB',row.periodCloseJobId),kind:row.kind,status:row.outbox.processStatus,periodStart:row.periodStart.toISOString(),periodEnd:row.periodEnd.toISOString(),
     attemptCount:row.outbox.attemptCount,completedAt:row.receipt?.completedAt.toISOString()??null,blockingCode:row.outbox.processStatus==='DEAD'?failureCode(row.outbox.lastError):null,
+    processTiming:periodProcessTiming(row.outbox.processStatus,row.outbox.periodProcessTransitions,now),
    })),
    settlements:batches.map(row=>({kind:row.settlementType,status:row.status,totalTheory:amount(row.totalTheory),poolAvailable:amount(row.poolAvailable),kFactor:row.kFactor.toString(),finalizedAt:row.finalizedAt?.toISOString()??null})),
    reconciliationScope:{periodReference:finance.reference,payoutAmounts:'RELATED_WHOLE_LINES',sharedPayoutLines:finance.sharedLineCount,missingPayables:finance.missingPayables,unpaidPayables:finance.unpaid,bankIncompleteLines:finance.bankIncomplete},
