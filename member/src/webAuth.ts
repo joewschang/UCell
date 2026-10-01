@@ -49,7 +49,7 @@ export async function registrationOtpChallenge(registrationSessionId:string,mobi
 export async function verifyRegistrationOtp(challengeId:string,code:string){
  return request('/auth/otp/challenges/'+encodeURIComponent(challengeId)+'/verify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code})});
 }
-export async function completeRegistration(input:{registrationSessionId:string;challengeId:string;contractVersionId:string;legalName:string;alias:string;gender:string;birthDate:string;mobile:string;email:string}){
+export async function completeRegistration(input:{registrationSessionId:string;challengeId:string;contractVersionId:string;legalName:string;alias:string;gender:string;birthDate:string;mobile:string;email:string;password:string}){
  return storeSession(await request('/auth/member/register/complete',{method:'POST',headers:{'Content-Type':'application/json','Idempotency-Key':crypto.randomUUID()},body:JSON.stringify({...input,accepted:true})}));
 }
 
