@@ -3,6 +3,8 @@ param(
   [string]$Location = 'eastasia', [string]$ResourceGroup = 'rg-ucell-stage',
   [string]$PostgresAdminUser = 'ucellstageadmin', [SecureString]$PostgresAdminPassword,
   [string]$LineLoginChannelId = '', [string]$LiffId = '', [string]$GoogleOidcClientId = '',
+  [string]$SmsOtpProviderWebhookUrl = '', [string]$SmsOtpProviderWebhookToken = '', [string]$OtpHashSecret = '',
+  [string]$PasswordResetEmailWebhookUrl = '', [string]$PasswordResetEmailWebhookToken = '',
   [string]$EntraTenantId = '', [string]$EntraClientId = '', [string]$EntraRedirectUri = '', [string]$ImageTag = '',
   [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$InventoryWarehouseId,
   [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$InventoryPolicyVersion,
@@ -93,6 +95,29 @@ if($migrationStatus -ne 'Succeeded'){throw "Stage migration failed or timed out:
 
 Set-App 'ucell-stage-api' $backendImage 1 3 $serverEnv -RemoveEnv $serverRemove -Ingress -Port 3000 -Database
 Set-App 'ucell-stage-worker' $workerImage 1 2 $serverEnv -RemoveEnv $serverRemove -Database
+
+# Optional Web-member auth providers. Secrets are stored as Container App secrets and
+# referenced from the API environment; missing configuration remains fail-closed.
+$authEnv=@('AUTH_CHANNEL_ENABLE_SMS_OTP=false')
+$authRemove=@()
+$authSecrets=@()
+if($OtpHashSecret){$authSecrets+="otp-hash-secret=$OtpHashSecret";$authEnv+='OTP_HASH_SECRET=secretref:otp-hash-secret'}else{$authRemove+='OTP_HASH_SECRET'}
+if($SmsOtpProviderWebhookUrl -and $SmsOtpProviderWebhookToken -and $OtpHashSecret){
+  $authSecrets+="sms-otp-provider-token=$SmsOtpProviderWebhookToken"
+  $authEnv+=@("SMS_OTP_PROVIDER_WEBHOOK_URL=$SmsOtpProviderWebhookUrl",'SMS_OTP_PROVIDER_WEBHOOK_TOKEN=secretref:sms-otp-provider-token','AUTH_CHANNEL_ENABLE_SMS_OTP=true')
+}else{
+  $authRemove+=@('SMS_OTP_PROVIDER_WEBHOOK_URL','SMS_OTP_PROVIDER_WEBHOOK_TOKEN')
+}
+if($PasswordResetEmailWebhookUrl -and $PasswordResetEmailWebhookToken){
+  $authSecrets+="password-reset-email-token=$PasswordResetEmailWebhookToken"
+  $authEnv+=@("PASSWORD_RESET_EMAIL_WEBHOOK_URL=$PasswordResetEmailWebhookUrl",'PASSWORD_RESET_EMAIL_WEBHOOK_TOKEN=secretref:password-reset-email-token')
+}else{
+  $authRemove+=@('PASSWORD_RESET_EMAIL_WEBHOOK_URL','PASSWORD_RESET_EMAIL_WEBHOOK_TOKEN')
+}
+if($authSecrets.Count){Invoke-AzChecked 'configure member auth provider secrets' @('containerapp','secret','set','--name','ucell-stage-api','--resource-group',$ResourceGroup,'--secrets')+$authSecrets+@('--only-show-errors')|Out-Null}
+$authUpdate=@('containerapp','update','--name','ucell-stage-api','--resource-group',$ResourceGroup,'--set-env-vars')+$authEnv
+if($authRemove.Count){$authUpdate+=@('--remove-env-vars')+$authRemove}
+$authUpdate+='--only-show-errors';Invoke-AzChecked 'configure member auth provider environment' $authUpdate|Out-Null
 $apiFqdn=(Invoke-AzChecked 'read API FQDN' @('containerapp','show','--name','ucell-stage-api','--resource-group',$ResourceGroup,'--query','properties.configuration.ingress.fqdn','-o','tsv','--only-show-errors')).Trim(); if(-not $apiFqdn){throw 'API FQDN is empty.'}
 $apiOrigin="https://$apiFqdn"; $apiBaseUrl="$apiOrigin/api/v1"
 
