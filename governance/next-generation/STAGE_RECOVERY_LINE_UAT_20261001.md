@@ -76,8 +76,11 @@ Execute [the ten-step LINE manual checklist](../../deployment/LINE_STAGE_MANUAL_
 
 ## NEXT ACTIONS ONLY
 
-1. Operator reissues/configures the Messaging secret and access token, creates required revisions, then runs webhook Verify/enable and the phone test using the linked ten-step checklist.
-2. Supply/configure the LINE Login Channel ID and LIFF ID, then verify real login and controlled member binding.
-3. After human confirmation, execute scoped first-round UAT and resolve actual findings. Exclude ERP and real bank payment.
-4. Restore the missing repository ESLint configuration and rerun lint; the existing lint limitation remains visible.
-5. Rich Menu after core LINE acceptance, optional.
+2026-10-01 最新使用者決議覆蓋上方歷史狀態：Messaging webhook **https://api-stage.ucell.life/api/v1/integrations/line/webhook** 已 Verify SUCCESS / Use webhook ON。歷史部署記錄保留，webhook 不再是 backlog，不改 URL、不重做。
+
+1. 人工在「宇生國際股份有限公司」Provider 建立 **UCell Member Login - Stage** LINE Login Channel 及 LIFF，提供真實 Channel ID / LIFF ID / LIFF URL；依 [最新人工 Gate](../../deployment/LINE_STAGE_MANUAL_GATE.md)。不得在 Messaging Channel 新增 LIFF。
+2. 真實 ID 到位後更新 API runtime Channel ID 並重建 Member LIFF image，沿用既有 Stage release；Worker 無新增 Login 設定。当前 SDK flow 不使用 Login Channel Secret。
+3. 完成人工 Gate 後執行 OA → Login → Binding → Member Center → Products → Orders → PV/BV → Sponsor/Placement → Qualification → Bonus → Wallet → Admin → Return/Reversal 真人 UAT。ERP / 正式銀行付款 OUT OF SCOPE；只補真實 findings。
+4. 既有 lint 設定缺失仍待處理；Rich Menu 是核心驗收後的可選工作。
+
+本次程式差異及驗證見 [LINE Login audit](LINE_LOGIN_LIFF_READINESS_20261001.md)。其他進行中的 Master Task 工作不變，未 reset/clean、未部署。

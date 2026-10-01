@@ -10,6 +10,7 @@ const transitionKey='ucell_referral_transition',bindingKey='ucell_referral_bindi
 const intendedDestinationKey='ucell_line_intended_destination';
 const sponsorCandidateKey='ucell_sponsor_candidate';
 const sponsorCodePattern=/^[A-Z][A-Z0-9_-]{0,39}(?:X\d{6,}|\d{6,})$/;
+export class LineBindingRequired extends Error {}
 export function lineExchangeFailureMessage(status:number,code:unknown){
  if(status===401&&code==='LINE_ACCOUNT_UNBOUND')return '此 LINE 尚未完成會員帳號綁定，請聯絡客服完成公司核驗。';
  if(status===401&&code==='MEMBER_SECURITY_LOCKED')return '此會員帳號目前已安全鎖定，請聯絡客服協助重新綁定。';
@@ -82,18 +83,19 @@ export async function initLiff() {
     }
     // Preserve only a syntactically valid Ball candidate before LINE leaves this origin.
     // It is deliberately not sent to the relationship-binding endpoint.
-    preserveSponsorCandidate();
-    await prepareReferralLanding();
     const id = import.meta.env.VITE_LIFF_ID;
     if (!id)
         throw new Error('LINE 登入尚未設定，請聯絡客服');
     await liff.init({ liffId: id });
+    // SDK owns the authorization response/PKCE. Never rewrite its callback first.
+    preserveSponsorCandidate();
+    await prepareReferralLanding();
     if (!liff.isLoggedIn()) {
       // Keep only an internal relative route; no external redirect can be supplied.
         if(typeof window!=='undefined'){
           const destination=intendedDestination();
           sessionStorage.setItem(intendedDestinationKey,destination);
-          liff.login({redirectUri:window.location.origin+destination});
+          liff.login({redirectUri:window.location.origin+'/'});
         }else liff.login();
         return { mode: 'redirect' as const };
     }
@@ -108,7 +110,7 @@ export async function initLiff() {
     const idToken=liff.getIDToken();
     if(!idToken)throw new Error('LINE 登入憑證不存在，請重新登入');
     const response=await request('/auth/member/line/exchange',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({idToken})});
-    if(!response.ok){const code=(response.body as {code?:string}|undefined)?.code;throw new Error(lineExchangeFailureMessage(response.status,code));}
+    if(!response.ok){const code=(response.body as {code?:string}|undefined)?.code;if(response.status===401&&code==='LINE_ACCOUNT_UNBOUND')throw new LineBindingRequired(lineExchangeFailureMessage(response.status,code));throw new Error(lineExchangeFailureMessage(response.status,code));}
     const data=unwrapMemberEnvelope(response.body) as {accessToken?:unknown;expiresAt?:unknown};
     if(typeof data.accessToken!=='string'||!data.accessToken||typeof data.expiresAt!=='string'||Date.parse(data.expiresAt)<=Date.now()||!Number.isFinite(Date.parse(data.expiresAt)))throw new Error('會員登入回應格式異常');
     sessionStorage.setItem('ucell_member_token',data.accessToken);

@@ -1,8 +1,30 @@
 import { afterEach, expect, it, vi } from 'vitest';
 const liff = vi.hoisted(() => ({ init: vi.fn(), isLoggedIn: vi.fn(), login: vi.fn(), getIDToken:vi.fn() }));
 vi.mock('@line/liff', () => ({ default: liff }));
-import { initLiff } from '../src/liff';
+import { initLiff, LineBindingRequired } from '../src/liff';
 afterEach(() => { vi.unstubAllEnvs(); vi.unstubAllGlobals(); vi.clearAllMocks(); });
+it('does not rewrite or process a callback if SDK authorization validation fails',async()=>{
+ vi.stubGlobal('sessionStorage',{removeItem:vi.fn()});
+ const replaceState=vi.fn(),fetcher=vi.fn();vi.stubGlobal('fetch',fetcher);
+ vi.stubGlobal('window',{location:{pathname:'/r/share',search:'?code=untrusted&state=wrong',hash:''},history:{replaceState}});
+ vi.stubEnv('VITE_ENABLE_MOCK','false');vi.stubEnv('VITE_LIFF_ID','TEST_ONLY');
+ liff.init.mockRejectedValueOnce(new Error('SDK authorization rejected'));
+ await expect(initLiff()).rejects.toThrow('SDK authorization rejected');
+ expect(fetcher).not.toHaveBeenCalled();expect(replaceState).not.toHaveBeenCalled();
+});
+it('uses a fixed same-origin SDK return URL and preserves the member destination',async()=>{
+ const storage={removeItem:vi.fn(),setItem:vi.fn()};vi.stubGlobal('sessionStorage',storage);
+ vi.stubGlobal('window',{location:{origin:'https://stage.ucell.life',pathname:'/orders',search:'',hash:''}});
+ vi.stubEnv('VITE_ENABLE_MOCK','false');vi.stubEnv('VITE_LIFF_ID','TEST_ONLY');liff.isLoggedIn.mockReturnValue(false);
+ await initLiff();expect(liff.login).toHaveBeenCalledWith({redirectUri:'https://stage.ucell.life/'});
+ expect(storage.setItem).toHaveBeenCalledWith('ucell_line_intended_destination','/orders');
+});
+it('routes only server-confirmed unbound identity into the controlled binding flow',async()=>{
+ vi.stubGlobal('sessionStorage',{removeItem:vi.fn(),getItem:vi.fn()});vi.stubEnv('VITE_ENABLE_MOCK','false');vi.stubEnv('VITE_LIFF_ID','TEST_ONLY');
+ liff.isLoggedIn.mockReturnValue(true);liff.getIDToken.mockReturnValue('TEST_ONLY');
+ vi.stubGlobal('fetch',vi.fn().mockResolvedValue(new Response(JSON.stringify({code:'LINE_ACCOUNT_UNBOUND'}),{status:401})));
+ await expect(initLiff()).rejects.toBeInstanceOf(LineBindingRequired);
+});
 it('requires an explicit mock flag', async () => {
     vi.stubGlobal('sessionStorage', { removeItem: vi.fn(),getItem:vi.fn() });
     vi.stubEnv('VITE_ENABLE_MOCK', 'false');

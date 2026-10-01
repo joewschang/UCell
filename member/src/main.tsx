@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
-import { bootstrapLiff } from './liff';
+import { bootstrapLiff, LineBindingRequired } from './liff';
+import { LineBinding } from './LineBindingPage';
 import { QualificationProvider } from './QualificationContext';
 import App from './App';
 import { SessionBoundary } from './SessionBoundary';
@@ -15,11 +16,13 @@ initializeUiTheme();
 function Bootstrap() {
     const [state, setState] = useState<'loading' | 'ready' | 'redirect'>('loading');
     const [error, setError] = useState('');
+    const [bindingRequired,setBindingRequired]=useState(false);
     const [referralWarning,setReferralWarning]=useState<string|undefined>();
     const [attempt, setAttempt] = useState(0);
-    useEffect(() => { let alive = true; setError(''); setReferralWarning(undefined); setState('loading'); bootstrapLiff().then(result => { if (alive){
+    useEffect(() => { let alive = true; setError(''); setBindingRequired(false); setReferralWarning(undefined); setState('loading'); bootstrapLiff().then(result => { if (alive){
         setReferralWarning('referralWarning' in result?result.referralWarning:undefined);setState(result.mode === 'redirect' ? 'redirect' : 'ready');} }).catch(e => { if (alive)
-        setError(e instanceof Error ? e.message : '登入失敗'); }); return () => { alive = false; }; }, [attempt]);
+        {setBindingRequired(e instanceof LineBindingRequired);setError(e instanceof Error ? e.message : '登入失敗');} }); return () => { alive = false; }; }, [attempt]);
+    if(bindingRequired)return <LineBinding onComplete={()=>setAttempt(n=>n+1)} onRecheck={()=>setAttempt(n=>n+1)}/>;
     if (error)
         return <main className="loading" role="alert"><h1>UCell 會員中心</h1><p>{error}</p><button onClick={() => setAttempt(n => n + 1)}>重新連線</button></main>;
     if (state !== 'ready')

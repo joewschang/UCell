@@ -24,10 +24,21 @@ describe('existing member LINE link boundary',()=>{
   await expect(service.complete({requestId:'r1',completionToken:'wrong-token',idToken:'token'})).rejects.toBeInstanceOf(UnauthorizedException);
   expect(tx.accountRecoveryRequest.update).toBeUndefined();
  });
+ it.each(['foreign-subject','expired','used','disabled-person'])('rejects %s at completion before any binding/session writes',async(kind)=>{
+  const token='approved-token-012345678901';
+  const request:any={accountRecoveryRequestId:'r1',personId:'person-1',type:'EXISTING_MEMBER_LINE_LINK',status:'APPROVED',completionTokenHash:createHash('sha256').update(token).digest('hex'),completionTokenExpiresAt:new Date(Date.now()+60000),requestedProviderSubject:'line-subject'};
+  if(kind==='foreign-subject')request.requestedProviderSubject='other-subject';
+  if(kind==='expired')request.completionTokenExpiresAt=new Date(0);
+  if(kind==='used')request.completionTokenUsedAt=new Date();
+  const tx:any={accountRecoveryRequest:{findUnique:jest.fn().mockResolvedValue(request)},person:{findUnique:jest.fn().mockResolvedValue({personId:'person-1',status:'DISABLED',securityStatus:'NORMAL'})},identityLink:{create:jest.fn()},authSession:{create:jest.fn()}};
+  const service=new ExistingMemberLineLinkService({$transaction:(work:any)=>work(tx)} as any,verifier,{} as any,audit);
+  await expect(service.complete({requestId:'r1',completionToken:token,idToken:'token'})).rejects.toThrow();
+  expect(tx.identityLink.create).not.toHaveBeenCalled();expect(tx.authSession.create).not.toHaveBeenCalled();
+ });
  it('binds the approved LINE subject to the existing Person and returns the same memberNo',async()=>{
   const token='approved-token-012345678901';
   const request:any={accountRecoveryRequestId:'r1',personId:'person-1',type:'EXISTING_MEMBER_LINE_LINK',status:'APPROVED',completionTokenHash:createHash('sha256').update(token).digest('hex'),completionTokenExpiresAt:new Date(Date.now()+60000),requestedProviderSubject:'line-subject'};
-  const tx:any={accountRecoveryRequest:{findUnique:jest.fn().mockResolvedValue(request),update:jest.fn()},person:{findUnique:jest.fn().mockResolvedValue({personId:'person-1',memberNo:'2609250001',securityStatus:'NORMAL'})},identityLink:{findFirst:jest.fn().mockResolvedValue(null),findUnique:jest.fn().mockResolvedValue(null),create:jest.fn().mockResolvedValue({identityLinkId:'binding'})},authSession:{create:jest.fn().mockResolvedValue({authSessionId:'session'})},qualification:{create:jest.fn()},sponsorRelationship:{create:jest.fn()},binaryPlacement:{create:jest.fn()},order:{create:jest.fn()}};
+  const tx:any={accountRecoveryRequest:{findUnique:jest.fn().mockResolvedValue(request),update:jest.fn()},person:{findUnique:jest.fn().mockResolvedValue({personId:'person-1',memberNo:'2609250001',status:'EFFECTIVE',securityStatus:'NORMAL'})},identityLink:{findFirst:jest.fn().mockResolvedValue(null),findUnique:jest.fn().mockResolvedValue(null),create:jest.fn().mockResolvedValue({identityLinkId:'binding'})},authSession:{create:jest.fn().mockResolvedValue({authSessionId:'session'})},qualification:{create:jest.fn()},sponsorRelationship:{create:jest.fn()},binaryPlacement:{create:jest.fn()},order:{create:jest.fn()}};
   const service=new ExistingMemberLineLinkService({$transaction:(work:any)=>work(tx)} as any,verifier,{} as any,audit);
   const result:any=await service.complete({requestId:'r1',completionToken:token,idToken:'token'});
   expect(result.memberNo).toBe('2609250001');
