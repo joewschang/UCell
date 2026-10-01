@@ -4042,6 +4042,7 @@
             "name": "x-line-signature",
             "required": true,
             "in": "header",
+            "description": "LINE raw-body HMAC-SHA256 signature; verified before durable receipt",
             "schema": {
               "type": "string"
             }
@@ -13533,7 +13534,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EnvelopeDto"
+                  "$ref": "#/components/schemas/WorkflowHealthEnvelopeDto"
                 }
               }
             }
@@ -18112,6 +18113,43 @@
           "evidence"
         ]
       },
+      "PeriodProcessTimingDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "RECORDED",
+              "UNAVAILABLE"
+            ],
+            "description": "Availability of actual durable Outbox process-status entry evidence; not overall compensation-stage or dependency-wait timing"
+          },
+          "enteredAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "Actual database-recorded status entry; null for unknown legacy, missing or inconsistent evidence"
+          },
+          "elapsedSeconds": {
+            "type": "integer",
+            "minimum": 0,
+            "nullable": true,
+            "description": "Whole seconds in the current process status at dataThrough; null when entry evidence is unavailable"
+          },
+          "basis": {
+            "type": "string",
+            "enum": [
+              "DURABLE_PROCESS_TRANSITION"
+            ]
+          }
+        },
+        "required": [
+          "status",
+          "enteredAt",
+          "elapsedSeconds",
+          "basis"
+        ]
+      },
       "CompensationPeriodJobDto": {
         "type": "object",
         "properties": {
@@ -18140,6 +18178,9 @@
           "blockingCode": {
             "type": "object",
             "nullable": true
+          },
+          "processTiming": {
+            "$ref": "#/components/schemas/PeriodProcessTimingDto"
           }
         },
         "required": [
@@ -18150,7 +18191,8 @@
           "status",
           "attemptCount",
           "completedAt",
-          "blockingCode"
+          "blockingCode",
+          "processTiming"
         ]
       },
       "PeriodSettlementDto": {
@@ -18370,7 +18412,8 @@
           },
           "elapsedSeconds": {
             "type": "number",
-            "minimum": 0
+            "minimum": 0,
+            "description": "Whole seconds since period end; not actual current-stage entry or duration"
           },
           "period": {
             "$ref": "#/components/schemas/PeriodIdentityDto"
@@ -22091,6 +22134,178 @@
           "effects",
           "limit",
           "truncated"
+        ]
+      },
+      "WorkflowCandidateDto": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "reference": {
+            "type": "string"
+          },
+          "severity": {
+            "type": "string"
+          },
+          "evidenceHash": {
+            "type": "string"
+          },
+          "link": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "reference",
+          "severity",
+          "evidenceHash",
+          "link"
+        ]
+      },
+      "WorkflowHealthItemDto": {
+        "type": "object",
+        "properties": {
+          "reference": {
+            "type": "string"
+          },
+          "scope": {
+            "type": "string",
+            "enum": [
+              "PERIOD_JOB",
+              "RECOGNITION"
+            ]
+          },
+          "state": {
+            "type": "string"
+          },
+          "processTiming": {
+            "nullable": true,
+            "description": "Period-job process timing only; null for recognition records. Does not time the derived wait or overall financial stage.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PeriodProcessTimingDto"
+              }
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "evidence": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "Whitelisted scope-specific source evidence; excludes payloads, private actors and internal IDs"
+          },
+          "elapsedSinceEligibleHours": {
+            "type": "integer",
+            "minimum": 0,
+            "nullable": true,
+            "description": "Whole hours since approved eligibility/due time, not actual stage entry"
+          },
+          "link": {
+            "type": "string"
+          },
+          "actionLink": {
+            "type": "string",
+            "nullable": true
+          },
+          "periodLink": {
+            "type": "string",
+            "nullable": true
+          },
+          "candidates": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WorkflowCandidateDto"
+            }
+          }
+        },
+        "required": [
+          "reference",
+          "scope",
+          "state",
+          "processTiming",
+          "createdAt",
+          "evidence",
+          "elapsedSinceEligibleHours",
+          "link",
+          "actionLink",
+          "periodLink",
+          "candidates"
+        ]
+      },
+      "WorkflowHealthPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WorkflowHealthItemDto"
+            }
+          },
+          "scope": {
+            "type": "string",
+            "enum": [
+              "PERIOD_JOB",
+              "RECOGNITION"
+            ]
+          },
+          "observed": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "attention": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "coverage": {
+            "type": "string",
+            "enum": [
+              "CURRENT_PAGE_ONLY"
+            ]
+          },
+          "thresholdHours": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 8760,
+            "nullable": true
+          },
+          "asOf": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "dataThrough": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "items",
+          "scope",
+          "observed",
+          "attention",
+          "coverage",
+          "thresholdHours",
+          "asOf",
+          "dataThrough",
+          "nextCursor"
+        ]
+      },
+      "WorkflowHealthEnvelopeDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/WorkflowHealthPageDto"
+          }
+        },
+        "required": [
+          "data"
         ]
       },
       "PayoutArtifactDownloadDto": {

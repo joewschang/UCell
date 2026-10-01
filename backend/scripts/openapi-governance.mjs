@@ -32,7 +32,14 @@ export function scan(spec,secrets=[]){
  if(JSON.stringify(spec).includes('SECRET_NEVER_AI'))throw Error('OPENAPI_SECRET_SCAN_FAIL');
  walk(spec);
  if(!spec.openapi?.startsWith('3.0.')||!/^1\.\d+\.\d+$/.test(spec.info?.version??''))throw Error('OPENAPI_V1_VERSION_REQUIRED');
- if(!Object.keys(spec.paths??{}).length||Object.keys(spec.paths).some(p=>!p.startsWith('/api/v1/')))throw Error('OPENAPI_V1_PREFIX_REQUIRED');
+ // User-authorized provider ingress is not a versioned UCell client operation.
+ // Keep it in the validated/scanned/diffed artifact; no arbitrary prefix bypass.
+ const providerIngress=(path,item)=>path==='/api/line/webhook'
+  &&methods.filter(method=>item[method]).join(',')==='post'
+  &&item.post.operationId==='lineStageWebhook'
+  &&item.post.parameters?.some(parameter=>parameter.in==='header'&&parameter.name.toLowerCase()==='x-line-signature'&&parameter.required===true)
+  &&[200,401,503].every(status=>item.post.responses?.[status]);
+ if(!Object.keys(spec.paths??{}).length||Object.entries(spec.paths).some(([path,item])=>!path.startsWith('/api/v1/')&&!providerIngress(path,item)))throw Error('OPENAPI_V1_PREFIX_REQUIRED');
 }
 // Comparison-only normalization; never rewrite the approved/source artifact.
 // Header names are case-insensitive. URI placeholders were always mandatory.

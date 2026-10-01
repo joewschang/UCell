@@ -51,6 +51,8 @@ Do not roll back or migrate application data because documentation publication f
 ## Local verification
 Install the checksum-pinned oasdiff 1.32.1 executable and set OASDIFF_BIN to its absolute path. From backend run node --test scripts/openapi-governance.test.mjs, then node scripts/openapi-governance.mjs gate with a local disposable PostgreSQL control connection. gate may create/drop only uniquely named local test databases through the existing isolated test runner. Local runs cannot invoke the CI publisher.
 
+The explicitly user-authorized canonical LINE provider POST `/api/line/webhook` remains in the scanned, validated and diffed contract. Its exact route, operation identity, required signature header and response outcomes are checked; all other non-v1 routes are rejected. See [provider ingress scope](OPENAPI_PROVIDER_INGRESS_SCOPE_20261001.md). This does not waive breaking findings or authorize another API version.
+
 
 ## Tooling references
 - SwaggerHub Registry API (private visibility and create/update semantics): https://api.swaggerhub.com/apis/swagger-hub/registry-api/1.4.0

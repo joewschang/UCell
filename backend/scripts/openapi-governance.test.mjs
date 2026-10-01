@@ -15,6 +15,13 @@ for(const secret of ['SECRET_NEVER_AI','-----BEGIN PRIVATE KEY-----','Bearer abc
  test('rejects forbidden pattern '+secret.slice(0,8),()=>{const s=make();s.info.description=secret;assert.throws(()=>scan(s),/SECRET_SCAN/);});
 }
 test('rejects external refs and v2 paths',()=>{const s=make();s.components.schemas.Item={$ref:'https://example.org/schema'};assert.throws(()=>scan(s),/EXTERNAL_REF/);const t=make();t.paths['/api/v2/items']=t.paths['/api/v1/items'];assert.throws(()=>scan(t),/V1_PREFIX/);});
+test('accepts only the authorized signed canonical provider POST, retaining all other prefix checks',()=>{
+ const s=make();s.paths['/api/line/webhook']={post:{operationId:'lineStageWebhook',parameters:[{in:'header',name:'x-line-signature',required:true,schema:{type:'string'}}],responses:{200:{description:'accepted'},401:{description:'invalid signature'},503:{description:'configuration pending'}}}};
+ assert.doesNotThrow(()=>scan(s));
+ for(const mutate of [v=>v.paths['/api/line/webhook'].get={responses:{200:{description:'unapproved'}}},v=>v.paths['/api/line/webhook'].post.operationId='other',v=>v.paths['/api/line/webhook'].post.parameters[0].required=false,v=>delete v.paths['/api/line/webhook'].post.responses[401],v=>{v.paths['/api/line/other']=v.paths['/api/line/webhook'];delete v.paths['/api/line/webhook'];},v=>v.paths['/api/other']={post:{responses:{200:{description:'unapproved'}}}}]){
+  const changed=structuredClone(s);mutate(changed);assert.throws(()=>scan(changed),/V1_PREFIX/);
+ }
+});
 test('rejects credential examples resembling numeric examples',()=>{const s=make();s.components.schemas.Item.properties.password={type:'string',example:'123456'};assert.throws(()=>scan(s));});
 test('rejects arbitrary examples and exact environment credential',()=>{const s=make();s.components.schemas.Item.example='not-reviewed';assert.throws(()=>scan(s));const t=make();t.info.description='synthetic-test-only';assert.throws(()=>scan(t,['synthetic-test-only']));});
 test('failed, missing, stale or tampered gates prevent all network calls',async()=>{for(const mutate of [f=>f.evidence.gates.securityTests='FAIL',f=>delete f.evidence.gates.breakingDiff,f=>f.evidence.commit='other',f=>f.bytes=Buffer.from(JSON.stringify({...make(),info:{title:'changed',version:'1.0.0'}}))]){const f=fixture();mutate(f);await assert.rejects(publish({...f,requestFn:()=>assert.fail('network must not run')}),/PUBLISH_/);}});

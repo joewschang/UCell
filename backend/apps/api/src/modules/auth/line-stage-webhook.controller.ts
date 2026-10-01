@@ -1,5 +1,5 @@
 import { Controller, Headers, HttpCode, Post, Req } from '@nestjs/common';
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiHeader, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
 import { LineMessagingIngressService } from './line-messaging-ingress.service';
 
@@ -9,6 +9,7 @@ export class LineStageWebhookController {
   constructor(private readonly ingress:LineMessagingIngressService,private readonly config:ConfigService){}
   @Post('webhook') @HttpCode(200)
   @ApiOperation({operationId:'lineStageWebhook',summary:'LINE OA raw-body webhook; metadata-only durable receipt'})
+  @ApiHeader({name:'x-line-signature',required:true,description:'LINE raw-body HMAC-SHA256 signature; verified before durable receipt'})
   @ApiResponse({status:200,description:'Verified events or empty verification accepted'})
   @ApiResponse({status:401,description:'Invalid signature or payload'})
   @ApiResponse({status:503,description:'Channel secret is not configured'})
