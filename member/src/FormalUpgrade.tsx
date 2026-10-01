@@ -2,6 +2,7 @@ import {useRef,useState} from 'react';
 import {ErrorState,LoadingState} from '@ucell/design-system';
 import {consentFormalContract,getFormalRequiredContracts,saveFormalDraft} from './memberData';
 import {useResource} from './useResource';
+import {countryOptions} from './countryOptions';
 
 export default function FormalUpgrade(){
  const contracts=useResource('formal-contracts',getFormalRequiredContracts);
@@ -47,13 +48,13 @@ export default function FormalUpgrade(){
  <label>姓名<input required maxLength={120} autoComplete="name" value={form.legalName} onChange={e=>set('legalName',e.target.value)}/></label>
  <label>性別<input required maxLength={32} value={form.gender} onChange={e=>set('gender',e.target.value)}/></label>
  <label>出生年月日<input required type="date" value={form.birthDate} onChange={e=>set('birthDate',e.target.value)}/></label>
- <label>國籍<select value={form.nationalityCode} onChange={e=>set('nationalityCode',e.target.value)}><option value="TW">台灣</option><option value="CN">中國</option><option value="HK">香港</option><option value="MO">澳門</option><option value="JP">日本</option><option value="US">美國</option><option value="ID">印尼</option><option value="SG">新加坡</option><option value="MY">馬來西亞</option></select></label>
+ <label>國籍<select value={form.nationalityCode} onChange={e=>set('nationalityCode',e.target.value)}>{countryOptions.map(option=><option key={option.code} value={option.code}>{option.label}</option>)}</select></label>
  <label>身分證明文件類型<select value={form.identityDocumentType} onChange={e=>set('identityDocumentType',e.target.value)}><option value="NATIONAL_ID">身分證號</option><option value="RESIDENCE_PERMIT">居留證號</option><option value="PASSPORT">護照號碼</option><option value="OTHER">其他</option></select></label>
  <label>身分證明號碼<input required maxLength={64} autoComplete="off" value={form.identityDocumentNumber} onChange={e=>set('identityDocumentNumber',e.target.value)}/></label>
 
  <fieldset><legend>配偶資料／跨線審查</legend>
   <label><input type="checkbox" checked={form.hasSpouse} onChange={e=>set('hasSpouse',e.target.checked)}/> 有配偶</label>
-  {form.hasSpouse&&<><label>配偶姓名<input required maxLength={120} value={form.spouseName} onChange={e=>set('spouseName',e.target.value)}/></label><label>配偶國籍<select value={form.spouseNationalityCode} onChange={e=>set('spouseNationalityCode',e.target.value)}><option value="TW">台灣</option><option value="CN">中國</option><option value="HK">香港</option><option value="MO">澳門</option><option value="JP">日本</option><option value="US">美國</option><option value="ID">印尼</option><option value="SG">新加坡</option><option value="MY">馬來西亞</option></select></label><label>配偶身分證明文件類型<select value={form.spouseIdentityDocumentType} onChange={e=>set('spouseIdentityDocumentType',e.target.value)}><option value="NATIONAL_ID">身分證號</option><option value="RESIDENCE_PERMIT">居留證號</option><option value="PASSPORT">護照號碼</option><option value="OTHER">其他</option></select></label><label>配偶身分證明號碼<input required maxLength={64} autoComplete="off" value={form.spouseIdentityDocumentNumber} onChange={e=>set('spouseIdentityDocumentNumber',e.target.value)}/></label></>}
+  {form.hasSpouse&&<><label>配偶姓名<input required maxLength={120} value={form.spouseName} onChange={e=>set('spouseName',e.target.value)}/></label><label>配偶國籍<select value={form.spouseNationalityCode} onChange={e=>set('spouseNationalityCode',e.target.value)}>{countryOptions.map(option=><option key={option.code} value={option.code}>{option.label}</option>)}</select></label><label>配偶身分證明文件類型<select value={form.spouseIdentityDocumentType} onChange={e=>set('spouseIdentityDocumentType',e.target.value)}><option value="NATIONAL_ID">身分證號</option><option value="RESIDENCE_PERMIT">居留證號</option><option value="PASSPORT">護照號碼</option><option value="OTHER">其他</option></select></label><label>配偶身分證明號碼<input required maxLength={64} autoComplete="off" value={form.spouseIdentityDocumentNumber} onChange={e=>set('spouseIdentityDocumentNumber',e.target.value)}/></label></>}
   <small>夫妻於婚姻關係存續期間視為單一正式經營單位；配偶仍可保有一般會員／消費者資格，但不得另行取得獨立正式傳銷經營權。</small>
  </fieldset>
 
