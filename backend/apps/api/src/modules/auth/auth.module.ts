@@ -24,8 +24,9 @@ import { MemberOtpAuthService } from './member-otp-auth.service';
 import { MemberOtpAuthController } from './member-otp-auth.controller';
 import { MemberWebRegistrationService } from './member-web-registration.service';
 import { MemberWebRegistrationController } from './member-web-registration.controller';
+import { MemberIdentityLinkController } from './member-identity-link.controller';
 @Module({
-  controllers:[AdminAuthController,OtpController,NetworkRegistrationController,MemberWebAuthController,MemberOtpAuthController,MemberWebRegistrationController],
+  controllers:[AdminAuthController,OtpController,NetworkRegistrationController,MemberWebAuthController,MemberOtpAuthController,MemberWebRegistrationController,MemberIdentityLinkController],
   providers:[QualificationAccessService,AdminRoleGuard,IdentityTokenService,LineIdentityService,MemberIdentityService,GoogleTokenVerifierService,PasswordResetEmailService,MemberWebAuthService,MemberOtpAuthService,MemberWebRegistrationService,AuthenticationGuard,MemberAuthenticationGuard,AdminAuthenticationGuard,EntraTokenVerifierService,AdminAuthService,OtpService,OtpCodeService,SmsOtpProviderService,NetworkRegistrationService],
   exports:[QualificationAccessService,AdminRoleGuard,IdentityTokenService,LineIdentityService,MemberIdentityService,AuthenticationGuard,MemberAuthenticationGuard,AdminAuthenticationGuard,EntraTokenVerifierService,AdminAuthService]
 })
