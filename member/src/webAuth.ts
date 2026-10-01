@@ -34,6 +34,11 @@ export async function forgotPassword(identifier:string){
 export async function resetPassword(token:string,newPassword:string){
  return request('/auth/member/password/reset',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token,newPassword})});
 }
+export async function linkGoogleIdentity(idToken:string){
+ const token=sessionStorage.getItem('ucell_member_token');
+ if(!token)throw new Error('MEMBER_SESSION_REQUIRED');
+ return request('/member/identity/google/link',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},body:JSON.stringify({idToken})});
+}
 
 export type RegistrationContract={contractVersionId:string;title:string;versionCode:string;contentText:string;contentHash:string};
 export async function registrationContract(){return request('/auth/member/register/contract') as Promise<RegistrationContract>;}
