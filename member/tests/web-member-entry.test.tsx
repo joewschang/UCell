@@ -46,6 +46,8 @@ it('registers with Google, contract consent and password without OTP fields',asy
  await act(async()=>{tree=create(<WebMemberEntry onLineLogin={vi.fn()} onAuthenticated={authenticated}/>);});
  const register=tree!.root.findAllByType('button').find(n=>n.children.includes('註冊會員'))!;
  await act(async()=>register.props.onClick());
+ await act(async()=>{await Promise.resolve();});
+ expect(auth.renderGoogleRegistrationButton).toHaveBeenCalled();
  await act(async()=>googleCredential('GOOGLE_ID_TOKEN_TEST_ONLY'));
 
  const labels=tree!.root.findAllByType('label');
