@@ -1,6 +1,6 @@
 import { Body,Controller,Get,Headers,Post,UseGuards } from '@nestjs/common';
 import { ApiHeader,ApiOperation,ApiProperty,ApiTags } from '@nestjs/swagger';
-import { Equals,IsDateString,IsEmail,IsString,IsUUID,Matches,MaxLength,MinLength } from 'class-validator';
+import { Equals,IsDateString,IsEmail,IsOptional,IsString,IsUUID,Matches,MaxLength,MinLength } from 'class-validator';
 import { IdempotencyGuard } from '../../common/guards/idempotency.guard';
 import { MemberWebRegistrationService } from './member-web-registration.service';
 
@@ -20,6 +20,7 @@ class CompleteWebRegistrationDto{
  @ApiProperty({example:'+886912345678'}) @Matches(/^\+[1-9][0-9]{7,14}$/) mobile!:string;
  @ApiProperty({format:'email',maxLength:254}) @IsEmail() @MaxLength(254) email!:string;
  @ApiProperty({minLength:12,maxLength:256}) @IsString() @MinLength(12) @MaxLength(256) password!:string;
+ @ApiProperty({required:false,maxLength:16384,description:'Optional Google ID token explicitly presented during registration; verified server-side and linked to the newly created Person only after all registration checks pass.'}) @IsOptional() @IsString() @MaxLength(16384) googleIdToken?:string;
 }
 
 @ApiTags('Member - Web Registration') @Controller('auth/member/register')
