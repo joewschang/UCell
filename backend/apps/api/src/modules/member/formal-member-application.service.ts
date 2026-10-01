@@ -10,10 +10,13 @@ export type FormalDraftInput={
  formalContractVersionId:string;
  applicantType?:'INDIVIDUAL'|'LEGAL_ENTITY';
  communicationAddress:string;phone:string;email:string;bankCode:string;bankAccount:string;accountHolder:string;
- legalName?:string;gender?:string;birthDate?:string;nationalId?:string;
- legalEntityName?:string;legalEntityRegistrationNo?:string;legalEntityRegisteredAddress?:string;
- representativeLegalName?:string;representativeNationalId?:string;
- hasSpouse?:boolean;spouseName?:string;spouseNationalId?:string;
+ legalName?:string;gender?:string;birthDate?:string;nationalityCode?:string;
+ identityDocumentType?:'NATIONAL_ID'|'RESIDENCE_PERMIT'|'PASSPORT'|'OTHER';identityDocumentNumber?:string;
+ legalEntityName?:string;legalEntityRegistrationNo?:string;legalEntityRegisteredAddress?:string;legalEntityRegistrationCountryCode?:string;
+ representativeLegalName?:string;representativeNationalityCode?:string;
+ representativeIdentityDocumentType?:'NATIONAL_ID'|'RESIDENCE_PERMIT'|'PASSPORT'|'OTHER';representativeIdentityDocumentNumber?:string;
+ hasSpouse?:boolean;spouseName?:string;spouseNationalityCode?:string;
+ spouseIdentityDocumentType?:'NATIONAL_ID'|'RESIDENCE_PERMIT'|'PASSPORT'|'OTHER';spouseIdentityDocumentNumber?:string;
 };
 
 @Injectable()
@@ -45,14 +48,18 @@ export class FormalMemberApplicationService {
    accountHolder:this.required(input.accountHolder,'FORMAL_ACCOUNT_HOLDER_REQUIRED'),
    hasSpouse,
    spouseName:hasSpouse?this.required(input.spouseName,'FORMAL_SPOUSE_NAME_REQUIRED'):undefined,
-   spouseNationalId:hasSpouse?this.fingerprint.normalizeNationalId(this.required(input.spouseNationalId,'FORMAL_SPOUSE_ID_REQUIRED')):undefined,
+   spouseNationalityCode:hasSpouse?this.required(input.spouseNationalityCode,'FORMAL_SPOUSE_NATIONALITY_REQUIRED').toUpperCase():undefined,
+   spouseIdentityDocumentType:hasSpouse?this.required(input.spouseIdentityDocumentType,'FORMAL_SPOUSE_DOCUMENT_TYPE_REQUIRED') as any:undefined,
+   spouseIdentityDocumentNumber:hasSpouse?this.fingerprint.normalizeIdentityDocumentNumber(this.required(input.spouseIdentityDocumentNumber,'FORMAL_SPOUSE_DOCUMENT_NUMBER_REQUIRED')):undefined,
   };
   if(applicantType==='INDIVIDUAL'){
    return {...common,
     legalName:this.required(input.legalName,'FORMAL_LEGAL_NAME_REQUIRED'),
     gender:this.required(input.gender,'FORMAL_GENDER_REQUIRED'),
     birthDate:this.required(input.birthDate,'FORMAL_BIRTH_DATE_REQUIRED'),
-    nationalId:this.fingerprint.normalizeNationalId(this.required(input.nationalId,'FORMAL_NATIONAL_ID_REQUIRED')),
+    nationalityCode:this.required(input.nationalityCode,'FORMAL_NATIONALITY_REQUIRED').toUpperCase(),
+    identityDocumentType:this.required(input.identityDocumentType,'FORMAL_IDENTITY_DOCUMENT_TYPE_REQUIRED') as any,
+    identityDocumentNumber:this.fingerprint.normalizeIdentityDocumentNumber(this.required(input.identityDocumentNumber,'FORMAL_IDENTITY_DOCUMENT_NUMBER_REQUIRED')),
    };
   }
   if(applicantType==='LEGAL_ENTITY'){
@@ -60,8 +67,11 @@ export class FormalMemberApplicationService {
     legalEntityName:this.required(input.legalEntityName,'FORMAL_LEGAL_ENTITY_NAME_REQUIRED'),
     legalEntityRegistrationNo:this.required(input.legalEntityRegistrationNo,'FORMAL_LEGAL_ENTITY_REGISTRATION_NO_REQUIRED').toUpperCase().replace(/\s+/g,''),
     legalEntityRegisteredAddress:this.required(input.legalEntityRegisteredAddress,'FORMAL_LEGAL_ENTITY_ADDRESS_REQUIRED'),
+    legalEntityRegistrationCountryCode:this.required(input.legalEntityRegistrationCountryCode,'FORMAL_LEGAL_ENTITY_COUNTRY_REQUIRED').toUpperCase(),
     representativeLegalName:this.required(input.representativeLegalName,'FORMAL_REPRESENTATIVE_NAME_REQUIRED'),
-    representativeNationalId:this.fingerprint.normalizeNationalId(this.required(input.representativeNationalId,'FORMAL_REPRESENTATIVE_ID_REQUIRED')),
+    representativeNationalityCode:this.required(input.representativeNationalityCode,'FORMAL_REPRESENTATIVE_NATIONALITY_REQUIRED').toUpperCase(),
+    representativeIdentityDocumentType:this.required(input.representativeIdentityDocumentType,'FORMAL_REPRESENTATIVE_DOCUMENT_TYPE_REQUIRED') as any,
+    representativeIdentityDocumentNumber:this.fingerprint.normalizeIdentityDocumentNumber(this.required(input.representativeIdentityDocumentNumber,'FORMAL_REPRESENTATIVE_DOCUMENT_NUMBER_REQUIRED')),
    };
   }
   throw new UnprocessableEntityException({code:'FORMAL_APPLICANT_TYPE_INVALID'});
@@ -69,7 +79,7 @@ export class FormalMemberApplicationService {
 
  private mask(value:string|undefined){return value?'***'+value.slice(-4):null;}
  private view(application:any,payload:any,version:number){
-  const primaryId=payload.applicantType==='LEGAL_ENTITY'?payload.representativeNationalId:payload.nationalId;
+  const primaryId=payload.applicantType==='LEGAL_ENTITY'?payload.representativeIdentityDocumentNumber:payload.identityDocumentNumber;
   return {
    id:application.formalMemberApplicationId,status:application.status,version,
    applicantType:payload.applicantType??'INDIVIDUAL',
@@ -78,9 +88,9 @@ export class FormalMemberApplicationService {
    legalEntityName:payload.legalEntityName??null,legalEntityRegistrationNo:payload.legalEntityRegistrationNo??null,
    legalEntityRegisteredAddress:payload.legalEntityRegisteredAddress??null,representativeLegalName:payload.representativeLegalName??null,
    communicationAddress:payload.communicationAddress,phone:payload.phone,email:payload.email,
-   nationalIdMasked:this.mask(primaryId),hasSpouse:payload.hasSpouse===true,
+   nationalityCode:payload.nationalityCode??payload.representativeNationalityCode??null,identityDocumentType:payload.identityDocumentType??payload.representativeIdentityDocumentType??null,identityDocumentNumberMasked:this.mask(primaryId),hasSpouse:payload.hasSpouse===true,
    spouseNameMasked:payload.spouseName?(payload.spouseName.slice(0,1)+'*'.repeat(Math.max(payload.spouseName.length-1,1))):null,
-   spouseNationalIdMasked:this.mask(payload.spouseNationalId),
+   spouseNationalityCode:payload.spouseNationalityCode??null,spouseIdentityDocumentType:payload.spouseIdentityDocumentType??null,spouseIdentityDocumentNumberMasked:this.mask(payload.spouseIdentityDocumentNumber),
    spouseVerificationStatus:application.spouseVerificationStatus,
    crossLineReviewStatus:application.crossLineReviewStatus,
    bankCode:payload.bankCode,bankAccountMasked:this.mask(payload.bankAccount),accountHolder:payload.accountHolder,
@@ -91,13 +101,15 @@ export class FormalMemberApplicationService {
  async save(personId:string,input:FormalDraftInput,key:string,requestId:string){
   const normalized=this.normalize(input) as any;
   if(normalized.applicantType==='LEGAL_ENTITY')throw new UnprocessableEntityException({code:'LEGAL_ENTITY_PAPER_APPLICATION_REQUIRED'});
-  const primaryId=normalized.applicantType==='LEGAL_ENTITY'?normalized.representativeNationalId:normalized.nationalId;
-  const applicantIdentityFingerprint=this.fingerprint.fingerprintNationalId(primaryId);
-  const spouseIdentityFingerprint=normalized.hasSpouse?this.fingerprint.fingerprintNationalId(normalized.spouseNationalId):null;
+  const primaryId=normalized.applicantType==='LEGAL_ENTITY'?normalized.representativeIdentityDocumentNumber:normalized.identityDocumentNumber;
+  const primaryNationality=normalized.applicantType==='LEGAL_ENTITY'?normalized.representativeNationalityCode:normalized.nationalityCode;
+  const primaryDocumentType=normalized.applicantType==='LEGAL_ENTITY'?normalized.representativeIdentityDocumentType:normalized.identityDocumentType;
+  const applicantIdentityFingerprint=this.fingerprint.fingerprintIdentityDocument(primaryNationality,primaryDocumentType,primaryId);
+  const spouseIdentityFingerprint=normalized.hasSpouse?this.fingerprint.fingerprintIdentityDocument(normalized.spouseNationalityCode,normalized.spouseIdentityDocumentType,normalized.spouseIdentityDocumentNumber):null;
   const hash=createHash('sha256').update(JSON.stringify(normalized)).digest('hex');
   const idempotentRequest={
    ...normalized,
-   nationalId:undefined,representativeNationalId:undefined,spouseNationalId:undefined,bankAccount:undefined,
+   identityDocumentNumber:undefined,representativeIdentityDocumentNumber:undefined,spouseIdentityDocumentNumber:undefined,bankAccount:undefined,
    applicantIdentityFingerprint,spouseIdentityFingerprint,
    bankAccountHash:createHash('sha256').update(normalized.bankAccount).digest('hex'),
   };
@@ -114,6 +126,8 @@ export class FormalMemberApplicationService {
     const metadata={
      applicantType:normalized.applicantType,
      sourceChannel:'MEMBER_WEB',
+     applicantNationalityCode:primaryNationality,
+     applicantIdentityDocumentType:primaryDocumentType,
      legalEntityRegistrationNo:normalized.applicantType==='LEGAL_ENTITY'?normalized.legalEntityRegistrationNo:null,
      applicantIdentityFingerprint,
      spouseIdentityFingerprint,
