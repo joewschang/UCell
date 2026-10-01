@@ -2,6 +2,7 @@ import {useRef,useState,type FormEvent} from 'react';
 import type {Person} from './api';
 import {getRequiredContracts,registerNetworkMember} from './memberData';
 import {useResource} from './useResource';
+import {countryOptions} from './countryOptions';
 
 export default function NetworkRegistration({person,refresh}:{person:Person;refresh:()=>void}){
  const contracts=useResource('network-registration-contracts',getRequiredContracts);
@@ -28,7 +29,7 @@ export default function NetworkRegistration({person,refresh}:{person:Person;refr
   <label>別名<input value={alias} maxLength={80} onChange={e=>setAlias(e.target.value)} disabled={busy}/></label>
   <label>性別<select value={gender} onChange={e=>setGender(e.target.value)} disabled={busy}><option value="">請選擇</option><option value="FEMALE">女性</option><option value="MALE">男性</option><option value="OTHER">其他／自行描述</option><option value="UNDISCLOSED">不揭露</option></select></label>
   <label>出生年月日<input type="date" value={birthDate} onChange={e=>setBirthDate(e.target.value)} disabled={busy}/></label>
-  <label>國籍<select value={nationalityCode} onChange={e=>setNationalityCode(e.target.value)} disabled={busy}><option value="TW">台灣</option><option value="CN">中國</option><option value="HK">香港</option><option value="MO">澳門</option><option value="JP">日本</option><option value="US">美國</option><option value="ID">印尼</option><option value="SG">新加坡</option><option value="MY">馬來西亞</option></select></label>
+  <label>國籍<select value={nationalityCode} onChange={e=>setNationalityCode(e.target.value)} disabled={busy}>{countryOptions.map(option=><option key={option.code} value={option.code}>{option.label}</option>)}</select></label>
   <label>身分證明文件類型<select value={identityDocumentType} onChange={e=>setIdentityDocumentType(e.target.value as typeof identityDocumentType)} disabled={busy}><option value="NATIONAL_ID">身分證號</option><option value="RESIDENCE_PERMIT">居留證號</option><option value="PASSPORT">護照號碼</option><option value="OTHER">其他</option></select></label>
   <label>身分證明號碼<input value={identityDocumentNumber} maxLength={64} autoComplete="off" onChange={e=>setIdentityDocumentNumber(e.target.value)} disabled={busy}/></label>
   <label>手機（含國碼）<input type="tel" value={mobile} placeholder="+886912345678" autoComplete="tel" onChange={e=>setMobile(e.target.value)} disabled={busy}/></label>
