@@ -98,7 +98,7 @@ Set-App 'ucell-stage-worker' $workerImage 1 2 $serverEnv -RemoveEnv $serverRemov
 
 # Optional Web-member auth providers. Secrets are stored as Container App secrets and
 # referenced from the API environment; missing configuration remains fail-closed.
-$authEnv=@('AUTH_CHANNEL_ENABLE_SMS_OTP=false')
+$authEnv=@()
 $authRemove=@()
 $authSecrets=@()
 if($OtpHashSecret){$authSecrets+="otp-hash-secret=$OtpHashSecret";$authEnv+='OTP_HASH_SECRET=secretref:otp-hash-secret'}else{$authRemove+='OTP_HASH_SECRET'}
@@ -106,6 +106,7 @@ if($SmsOtpProviderWebhookUrl -and $SmsOtpProviderWebhookToken -and $OtpHashSecre
   $authSecrets+="sms-otp-provider-token=$SmsOtpProviderWebhookToken"
   $authEnv+=@("SMS_OTP_PROVIDER_WEBHOOK_URL=$SmsOtpProviderWebhookUrl",'SMS_OTP_PROVIDER_WEBHOOK_TOKEN=secretref:sms-otp-provider-token','AUTH_CHANNEL_ENABLE_SMS_OTP=true')
 }else{
+  $authEnv+='AUTH_CHANNEL_ENABLE_SMS_OTP=false'
   $authRemove+=@('SMS_OTP_PROVIDER_WEBHOOK_URL','SMS_OTP_PROVIDER_WEBHOOK_TOKEN')
 }
 if($PasswordResetEmailWebhookUrl -and $PasswordResetEmailWebhookToken){
@@ -114,7 +115,10 @@ if($PasswordResetEmailWebhookUrl -and $PasswordResetEmailWebhookToken){
 }else{
   $authRemove+=@('PASSWORD_RESET_EMAIL_WEBHOOK_URL','PASSWORD_RESET_EMAIL_WEBHOOK_TOKEN')
 }
-if($authSecrets.Count){Invoke-AzChecked 'configure member auth provider secrets' @('containerapp','secret','set','--name','ucell-stage-api','--resource-group',$ResourceGroup,'--secrets')+$authSecrets+@('--only-show-errors')|Out-Null}
+if($authSecrets.Count){
+  $authSecretArgs=@('containerapp','secret','set','--name','ucell-stage-api','--resource-group',$ResourceGroup,'--secrets')+$authSecrets+@('--only-show-errors')
+  Invoke-AzChecked 'configure member auth provider secrets' $authSecretArgs|Out-Null
+}
 $authUpdate=@('containerapp','update','--name','ucell-stage-api','--resource-group',$ResourceGroup,'--set-env-vars')+$authEnv
 if($authRemove.Count){$authUpdate+=@('--remove-env-vars')+$authRemove}
 $authUpdate+='--only-show-errors';Invoke-AzChecked 'configure member auth provider environment' $authUpdate|Out-Null
