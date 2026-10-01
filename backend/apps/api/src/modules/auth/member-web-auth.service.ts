@@ -27,7 +27,11 @@ export class MemberWebAuthService{
 
  async passwordLogin(memberNo:string,password:string){
   const person=await this.db.person.findUnique({where:{memberNo},include:{memberPasswordCredential:true}});
-  if(!person||!person.memberPasswordCredential)throw new UnauthorizedException({code:'MEMBER_LOGIN_INVALID'});
+  if(!person||!person.memberPasswordCredential){
+    // Equalize the dominant password-derivation cost for unknown/unconfigured accounts.
+    derive(password,'ucell-member-login-dummy',32,16384,8,1);
+    throw new UnauthorizedException({code:'MEMBER_LOGIN_INVALID'});
+  }
   this.eligible(person);
   const credential=person.memberPasswordCredential,now=new Date();
   if(credential.lockedUntil&&credential.lockedUntil>now)throw new UnauthorizedException({code:'MEMBER_LOGIN_INVALID'});
