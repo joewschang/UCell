@@ -15,15 +15,30 @@ export class MembershipApplicationService {
     private readonly organization: OrganizationService,
   ) {}
 
+  private applicant(dto:CreateMembershipApplicationDto){
+    if(dto.holderType==='PERSON'){
+      if(!dto.personId||dto.legalEntityId)throw new UnprocessableEntityException({code:'MEMBERSHIP_PERSON_APPLICANT_REQUIRED'});
+      return {personId:dto.personId,legalEntityId:undefined};
+    }
+    if(!dto.legalEntityId||dto.personId)throw new UnprocessableEntityException({code:'MEMBERSHIP_LEGAL_ENTITY_APPLICANT_REQUIRED'});
+    return {personId:undefined,legalEntityId:dto.legalEntityId};
+  }
+
   async create(dto:CreateMembershipApplicationDto,key:string,requestId:string,actorId?:string) {
-    const correlationId=randomUUID();
+    const correlationId=randomUUID(),applicant=this.applicant(dto);
     return this.idempotency.execute(`admin:membership-application:create:${actorId ?? 'system'}`,key,dto,async tx=>{
-      const person=await tx.person.findUnique({where:{personId:dto.personId}});
-      if(!person) throw new ConflictException({code:'RESOURCE_NOT_FOUND',message:'Person不存在。'});
+      if(dto.holderType==='PERSON'){
+        const person=await tx.person.findUnique({where:{personId:applicant.personId!}});
+        if(!person)throw new ConflictException({code:'RESOURCE_NOT_FOUND',message:'Person不存在。'});
+      }else{
+        const entity=await tx.legalEntity.findUnique({where:{legalEntityId:applicant.legalEntityId!}});
+        if(!entity)throw new ConflictException({code:'RESOURCE_NOT_FOUND',message:'LegalEntity不存在。'});
+        if(entity.membershipState!=='FORMAL_MEMBER'||entity.status!=='ACTIVE')throw new ConflictException({code:'LEGAL_ENTITY_FORMAL_MEMBERSHIP_REQUIRED'});
+      }
 
       const application=await tx.membershipApplication.create({
         data:{
-          personId:dto.personId,
+          ...applicant,
           requestedPlanLevelCode:dto.requestedPlanLevelCode,
           sponsorQualificationId:dto.sponsorQualificationId,
           binaryParentQualificationId:dto.binaryParentQualificationId,
@@ -41,7 +56,7 @@ export class MembershipApplicationService {
         action:'MEMBERSHIP_APPLICATION_CREATED',
         entityType:'MEMBERSHIP_APPLICATION',
         entityId:application.applicationId,
-        afterData:application,
+        afterData:{applicationId:application.applicationId,holderType:dto.holderType,personId:application.personId,legalEntityId:application.legalEntityId,requestedPlanLevelCode:application.requestedPlanLevelCode},
         requestId,correlationId
       });
       return application;
@@ -60,6 +75,11 @@ export class MembershipApplicationService {
           code:'DOMAIN_RULE_VIOLATION',
           message:'提交前必須完成Sponsor與Binary安置資料。'
         });
+      }
+
+      if(app.legalEntityId){
+        const entity=await tx.legalEntity.findUnique({where:{legalEntityId:app.legalEntityId}});
+        if(!entity||entity.membershipState!=='FORMAL_MEMBER'||entity.status!=='ACTIVE')throw new ConflictException({code:'LEGAL_ENTITY_FORMAL_MEMBERSHIP_REQUIRED'});
       }
 
       const updated=await tx.membershipApplication.update({
@@ -86,6 +106,11 @@ export class MembershipApplicationService {
       if(!app.sponsorQualificationId || !app.binaryParentQualificationId || !app.binarySide){
         throw new UnprocessableEntityException({code:'DOMAIN_RULE_VIOLATION',message:'組織資料未完整。'});
       }
+      if((app.personId?1:0)+(app.legalEntityId?1:0)!==1)throw new ConflictException({code:'MEMBERSHIP_APPLICANT_INVALID'});
+      if(app.legalEntityId){
+        const entity=await tx.legalEntity.findUnique({where:{legalEntityId:app.legalEntityId}});
+        if(!entity||entity.membershipState!=='FORMAL_MEMBER'||entity.status!=='ACTIVE')throw new ConflictException({code:'LEGAL_ENTITY_FORMAL_MEMBERSHIP_REQUIRED'});
+      }
 
       const sponsorSequenceNo=await this.organization.allocateSponsorSequence(tx,app.sponsorQualificationId);
       const side=app.binarySide as SideCode;
@@ -96,6 +121,7 @@ export class MembershipApplicationService {
       const qualification=await tx.qualification.create({
         data:{
           currentHolderPersonId:app.personId,
+          currentHolderLegalEntityId:app.legalEntityId,
           planLevelCode:app.requestedPlanLevelCode,
           status:'EFFECTIVE',
           activeFlag:false,
@@ -119,9 +145,24 @@ export class MembershipApplicationService {
         data:{
           qualificationId:qualification.qualificationId,
           holderPersonId:app.personId,
+          holderLegalEntityId:app.legalEntityId,
           effectiveFrom:effectiveAt,
           sourceType:'MEMBERSHIP_APPLICATION',
           sourceId:applicationId
+        }
+      });
+
+      await tx.qualificationOwnerInterval.create({
+        data:{
+          qualificationId:qualification.qualificationId,
+          ownerType:app.legalEntityId?'LEGAL_ENTITY':'MEMBER',
+          personId:app.personId,
+          legalEntityId:app.legalEntityId,
+          companyPrincipalId:null,
+          effectiveFrom:effectiveAt,
+          sourceType:'MEMBERSHIP_APPLICATION',
+          sourceId:applicationId,
+          evidenceHash:createHash('sha256').update(JSON.stringify({applicationId,personId:app.personId,legalEntityId:app.legalEntityId,effectiveAt:effectiveAt.toISOString()})).digest('hex')
         }
       });
 
@@ -165,8 +206,11 @@ export class MembershipApplicationService {
         entityType:'MEMBERSHIP_APPLICATION',entityId:applicationId,
         beforeData:app,
         afterData:{
-          application:updated,
+          applicationId:updated.applicationId,
           qualificationId:qualification.qualificationId,
+          holderType:app.legalEntityId?'LEGAL_ENTITY':'PERSON',
+          personId:app.personId,
+          legalEntityId:app.legalEntityId,
           sponsorSequenceNo,
           binaryParentQualificationId:app.binaryParentQualificationId,
           binarySide:side
@@ -177,7 +221,6 @@ export class MembershipApplicationService {
       return {application:updated,qualification};
     });
   }
-
 
   async search(input:{status?:string;q?:string;take?:number}={}){
     const take=Math.min(Math.max(input.take ?? 50,1),100);
@@ -190,15 +233,14 @@ export class MembershipApplicationService {
           OR:[
             {person:{legalName:{contains:q,mode:'insensitive'}}},
             {person:{preferredName:{contains:q,mode:'insensitive'}}},
-            {person:{mobile:{contains:q}}},
-            {person:{email:{contains:q,mode:'insensitive'}}},
+            {person:{memberNo:{contains:q}}},
+            {legalEntity:{registeredName:{contains:q,mode:'insensitive'}}},
+            {legalEntity:{memberNo:{contains:q}}},
+            {legalEntity:{registrationNo:{contains:q,mode:'insensitive'}}},
           ]
         }:{})
       },
-      include:{
-        person:true,
-        qualification:true,
-      },
+      include:{person:true,legalEntity:true,qualification:true},
       orderBy:{createdAt:'desc'},
       take,
     });
@@ -207,13 +249,13 @@ export class MembershipApplicationService {
   async get(applicationId:string){
     const app=await this.prisma.membershipApplication.findUniqueOrThrow({
       where:{applicationId},
-      include:{person:true,qualification:true}
+      include:{person:true,legalEntity:true,qualification:true}
     });
 
     const ids=[app.sponsorQualificationId,app.binaryParentQualificationId].filter(Boolean) as string[];
     const related=ids.length?await this.prisma.qualification.findMany({
       where:{qualificationId:{in:ids}},
-      include:{currentHolder:true}
+      include:{currentHolder:true,currentHolderLegalEntity:true}
     }):[];
 
     return {
