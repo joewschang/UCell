@@ -6,6 +6,7 @@ param(
   [string]$Acr='ucellstageacr5mafbbsq33mgu',
   [Parameter(Mandatory)][ValidatePattern('^[a-z0-9][a-z0-9._-]{0,127}$')][string]$ImageTag,
   [ValidateSet('Local','Acr')][string]$ContainerBuildMode='Local',
+  [switch]$UseExistingImages,
   [switch]$IncludeFrontends,
   [string]$LiffId='',
   [string]$LineLoginChannelId='',
@@ -13,7 +14,6 @@ param(
 )
 $ErrorActionPreference='Stop'
 if($ResourceGroup -ne 'rg-ucell-stage'){throw 'Incremental update is restricted to rg-ucell-stage.'}
-if($IncludeFrontends -and $ContainerBuildMode -ne 'Acr'){throw 'Frontend incremental update requires ACR build mode.'}
 if($LineLoginChannelId -and $LineLoginChannelId -notmatch '^\d+$'){throw 'Invalid LINE Login Channel ID.'}
 if($LiffId -and $LiffId -notmatch '^\d+-[A-Za-z0-9]+$'){throw 'Invalid LIFF ID.'}
 function Invoke-Az([string[]]$Arguments){
@@ -45,6 +45,7 @@ if($previousMigrationImage -notmatch '@sha256:[0-9a-f]{64}$'){throw 'Migration J
 
 $server=(Invoke-Az @('acr','show','--name',$Acr,'--query','loginServer','-o','tsv')).Trim()
 foreach($item in @(@{repository='ucell-backend';dockerfile='deployment/Dockerfile.backend'},@{repository='ucell-worker';dockerfile='deployment/Dockerfile.worker'})){
+  if($UseExistingImages){continue} # Resolve-Digest below still requires both exact tags to exist.
   if($ContainerBuildMode -eq 'Acr'){
     Invoke-Az @('acr','build','--registry',$Acr,'--image',"$($item.repository):$ImageTag",'--file',$item.dockerfile,'.','--no-logs')|Out-Null
   }else{
@@ -87,7 +88,6 @@ Invoke-Az @('containerapp','update','--resource-group',$ResourceGroup,'--name','
 Invoke-Az @('containerapp','update','--resource-group',$ResourceGroup,'--name','ucell-stage-worker','--set-env-vars','LINE_MESSAGING_WORKER_ENABLED=true')|Out-Null
 if($LineLoginChannelId){Invoke-Az @('containerapp','update','--resource-group',$ResourceGroup,'--name','ucell-stage-api','--set-env-vars',"LINE_LOGIN_CHANNEL_ID=$LineLoginChannelId")|Out-Null}
 if($IncludeFrontends){
- if($ContainerBuildMode -ne 'Acr'){throw 'Frontend incremental update requires ACR build mode.'}
  # Preserve the existing synthetic Stage entry. Never print or persist the token.
  $uatToken=(Invoke-Az @('containerapp','secret','list','--resource-group',$ResourceGroup,'--name','ucell-stage-api','--show-values','--query',"[?name=='stage-uat-member-token'].value | [0]",'-o','tsv')).Trim()
  if(-not $uatToken){throw 'Existing Stage UAT token is unavailable; frontend update refused.'}
@@ -98,16 +98,22 @@ if($IncludeFrontends){
  )
  try{
   foreach($item in $frontends){
-   $build=@('acr','build','--registry',$Acr,'--image',"$($item.repository):$ImageTag",'--file',$item.dockerfile,'--build-arg',"VITE_API_BASE_URL=$apiOrigin/api/v1",'--build-arg',"CSP_API_ORIGIN=$apiOrigin")
+   $build=if($ContainerBuildMode -eq 'Acr'){@('acr','build','--registry',$Acr,'--image',"$($item.repository):$ImageTag",'--file',$item.dockerfile)}else{@('build','-t',"$server/$($item.repository):$ImageTag",'-f',$item.dockerfile)}
+   $build+=@('--build-arg',"VITE_API_BASE_URL=$apiOrigin/api/v1",'--build-arg',"CSP_API_ORIGIN=$apiOrigin")
    foreach($arg in $item.args){$build+=@('--build-arg',$arg)}
-   if($item.repository -eq 'ucell-member'){$build+=@('--secret-build-arg',"VITE_STAGE_UAT_MEMBER_TOKEN=$uatToken")}
+   if($item.repository -eq 'ucell-member'){
+    if($ContainerBuildMode -eq 'Acr'){$build+=@('--secret-build-arg',"VITE_STAGE_UAT_MEMBER_TOKEN=$uatToken")}
+    else{$env:UCELL_STAGE_BUILD_TOKEN=$uatToken;$build+=@('--secret','id=stage-uat-member-token,env=UCELL_STAGE_BUILD_TOKEN')}
+   }
    # Suppress build output and avoid the general error helper, which prints arguments.
-   & az @build . --no-logs --only-show-errors *> $null
-   if($LASTEXITCODE -ne 0){throw "ACR frontend build failed for $($item.repository); inspect ACR run status."}
+   if($ContainerBuildMode -eq 'Acr'){& az @build . --no-logs --only-show-errors *> $null}
+   else{& docker @build .}
+   if($LASTEXITCODE -ne 0){throw "Frontend build failed for $($item.repository)."}
+   if($ContainerBuildMode -eq 'Local'){& docker push "$server/$($item.repository):$ImageTag";if($LASTEXITCODE -ne 0){throw 'Frontend image push failed.'}}
    $image=Resolve-Digest $item.repository
    Invoke-Az @('containerapp','update','--resource-group',$ResourceGroup,'--name',$item.app,'--image',$image,'--revision-suffix',$suffix)|Out-Null
   }
- }finally{$uatToken=$null;$build=$null}
+ }finally{$uatToken=$null;$build=$null;$env:UCELL_STAGE_BUILD_TOKEN=$null}
 }
 
 $fqdn=(Json @('containerapp','show','--resource-group',$ResourceGroup,'--name','ucell-stage-api','-o','json')).properties.configuration.ingress.fqdn

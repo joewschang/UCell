@@ -35,6 +35,8 @@ Reverse chain evidence is automated with synthetic/disposable data: cancellation
 
 ## G–H. Changes
 
+Exact implementation file list: [change manifest](evidence/stage-line-change-manifest-20261001.json), committed as `cda80e1`. Subsequent deployment-only adjustments add reuse of already-built images and a local Docker/BuildKit-secret fallback within the same script.
+
 Auth transport/controller/ingress/adapter/status and worker metadata observer; canonical `LINE_CHANNEL_SECRET` / `LINE_CHANNEL_ACCESS_TOKEN` with legacy aliases. Shared bootstrap prefix exception exposes **POST /api/line/webhook**, retains **POST /api/v1/integrations/line/messaging/webhook**, uses raw request bytes and constant-time comparison before persistence. Empty verification and duplicates are successful no-ops. Metadata contains event identity/type/time, hashed source subject and payload hash; no text, raw payload, token or secret is persisted. Worker acknowledgement does not create/bind members or monetary effects. Supported text messages are received/observed, not automatically replied to.
 
 Member qualification DTO/parser and public labels support `UNPLACED` only with a positive public qualification number; tree lookup skips a nonexistent Ball number and explains the pending placement. Ball-number validation remains strict elsewhere. Browser test covers the unplaced-to-placed transition.
@@ -46,7 +48,7 @@ Deployment domains/runbook updated and existing incremental script extended; exi
 - Initial baseline: full API 181 suites / 1,317 tests, 124 migrations, 162 DB assertions (previous committed checkpoint).
 - This release focused LINE/security/linking: **8 suites / 27 tests PASS**, including actual Fastify HTTP and PostgreSQL persistence; isolated cleanup PASS.
 - Backend build, Member **182 tests/build**, Admin **188 tests/build**, OpenAPI preflight, security policy preflight and deployment preflight **25 assertions PASS**.
-- Full current API regression, browser and Stage evidence: completion results appended below.
+- Full API regression: **182 suites / 1,324 tests PASS**, 124 migrations, 162 baseline DB assertions and isolated cleanup PASS (`C:\UCell\logs\stage-line-full-api.log`).
 - Final real Edge browser verification PASS, including unplaced Growth → binary-organization pending-placement explanation → actual placement → sealed Global progress, plus existing engagement journeys; disposable DB/temp cleanup PASS. Public qualification numbers are lossless decimal strings, matching the BigInt database field.
 - Lint: attempted existing `pnpm lint`; quoted glob is passed literally on Windows. Direct ESLint invocation is also checked and its actual diagnostic retained in `C:\UCell\logs\stage-line-lint-direct.log`. No lint standards were disabled or replaced to manufacture a pass.
 
