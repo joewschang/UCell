@@ -41,6 +41,8 @@ if($IncludeFrontends){
 [void](Require-ExistingSecretReference 'ucell-stage-worker' 'PII_ENCRYPTION_KEY')
 $migrationJob=Require-ExistingSecretReference 'ucell-stage-migrate' 'DATABASE_URL' -Job
 $previousMigrationImage=$migrationJob.properties.template.containers[0].image
+$previousMigrationCommand=@($migrationJob.properties.template.containers[0].command)
+$previousMigrationArgs=@($migrationJob.properties.template.containers[0].args)
 if($previousMigrationImage -notmatch '@sha256:[0-9a-f]{64}$'){throw 'Migration Job must start from a digest-pinned image.'}
 
 $server=(Invoke-Az @('acr','show','--name',$Acr,'--query','loginServer','-o','tsv')).Trim()
@@ -65,7 +67,7 @@ $backend=Resolve-Digest 'ucell-backend';$worker=Resolve-Digest 'ucell-worker'
 # The migration Job keeps its existing database secret reference. No password is read or replaced.
 $execution='';$status='';$migrationSucceeded=$false
 try{
- Invoke-Az @('containerapp','job','update','--resource-group',$ResourceGroup,'--name','ucell-stage-migrate','--image',$backend,'--command','pnpm','--args','db:deploy','--only-show-errors')|Out-Null
+ Invoke-Az @('containerapp','job','update','--resource-group',$ResourceGroup,'--name','ucell-stage-migrate','--image',$backend,'--set-env-vars','UCELL_ENVIRONMENT=STAGE','NODE_ENV=staging','--command','node','--args','scripts/stage-profile-migration-recovery.mjs','--only-show-errors')|Out-Null
  $execution=(Invoke-Az @('containerapp','job','start','--resource-group',$ResourceGroup,'--name','ucell-stage-migrate','--query','name','-o','tsv')).Trim()
  if(-not $execution){throw 'Migration execution name is empty.'}
  for($i=1;$i -le 120;$i++){
@@ -76,7 +78,10 @@ try{
  if($status -ne 'Succeeded'){throw "Stage migration did not succeed: $status"}
  $migrationSucceeded=$true
 }catch{
- if(-not $migrationSucceeded){Invoke-Az @('containerapp','job','update','--resource-group',$ResourceGroup,'--name','ucell-stage-migrate','--image',$previousMigrationImage,'--only-show-errors')|Out-Null}
+ if(-not $migrationSucceeded){
+  $restore=@('containerapp','job','update','--resource-group',$ResourceGroup,'--name','ucell-stage-migrate','--image',$previousMigrationImage,'--command')+$previousMigrationCommand+@('--args')+$previousMigrationArgs
+  Invoke-Az $restore|Out-Null
+ }
  throw
 }
 
