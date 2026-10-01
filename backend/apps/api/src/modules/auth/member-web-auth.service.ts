@@ -68,7 +68,13 @@ export class MemberWebAuthService{
  async forgotPassword(identifier:string){
   this.email.assertConfigured();
   const normalized=identifier.trim();
-  const person=normalized.includes('@')?await this.db.person.findFirst({where:{email:{equals:normalized,mode:'insensitive'},status:'EFFECTIVE'}}):await this.db.person.findFirst({where:{memberNo:normalized,status:'EFFECTIVE'}});
+  let person;
+  if(normalized.includes('@')){
+    const matches=await this.db.person.findMany({where:{email:{equals:normalized,mode:'insensitive'},status:'EFFECTIVE'},take:2});
+    person=matches.length===1?matches[0]:undefined;
+  }else{
+    person=await this.db.person.findFirst({where:{memberNo:normalized,status:'EFFECTIVE'}});
+  }
   if(person?.email){
     const now=new Date(),minuteAgo=new Date(now.getTime()-60_000),hourAgo=new Date(now.getTime()-3_600_000);
     const [latest,hourCount]=await Promise.all([
