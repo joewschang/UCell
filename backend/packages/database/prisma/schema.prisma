@@ -782,7 +782,6 @@ model FormalApplicationDocument {
   createdAt                   DateTime                @default(now()) @map("created_at") @db.Timestamptz(6)
   application                 FormalMemberApplication @relation(fields: [formalMemberApplicationId], references: [formalMemberApplicationId])
 
-  @@unique([formalMemberApplicationId, documentType, status], map: "formal_application_document_type_status_uq")
   @@index([formalMemberApplicationId, documentType])
   @@index([malwareScanStatus, status])
   @@map("formal_application_document")
