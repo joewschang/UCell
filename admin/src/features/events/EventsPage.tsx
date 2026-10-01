@@ -7,7 +7,7 @@ import {QueryFeedback} from '../../components/QueryFeedback';
 import {get,post} from '../../lib/api';
 type Event={eventCode:string;status:string;registrationCount:number;versions:{version:number;title:string;description:string|null;eventType:string;status:string;startsAt:string;endsAt:string;capacity:number|null;locationReference:string|null;onlineJoinReference:string|null}[]};
 type Registrations={eventCode:string;registrations:{memberNo:string;status:string;registeredAt:string;checkedInAt:string|null;attendedAt:string|null;history:{eventType:string;occurredAt:string;version:number}[]}[]};
-const state=(value:string)=>({DRAFT:'草稿',PUBLISHED:'已發布',ARCHIVED:'已封存',REGISTERED:'已報名',CANCELLED:'已取消',CHECKED_IN:'已報到',ATTENDED:'已確認出席',EVENT_REGISTERED:'報名',EVENT_REGISTRATION_CANCELLED:'取消報名',EVENT_CHECKED_IN:'報到',EVENT_ATTENDED:'確認出席'}[value]??'狀態待確認');
+const state=(value:string)=>({REMINDER_CREATED:'已建立個別提醒',ALREADY_NOTIFIED:'本次提醒已存在，未重複建立',DRAFT:'草稿',PUBLISHED:'已發布',ARCHIVED:'已封存',REGISTERED:'已報名',CANCELLED:'已取消',CHECKED_IN:'已報到',ATTENDED:'已確認出席',EVENT_REGISTERED:'報名',EVENT_REGISTRATION_CANCELLED:'取消報名',EVENT_CHECKED_IN:'報到',EVENT_ATTENDED:'確認出席'}[value]??'狀態待確認');
 const time=(value:string|null)=>value?new Date(value).toLocaleString('zh-TW',{timeZone:'Asia/Taipei'}):'尚無';
 type Command=(path:string,body:unknown)=>Promise<boolean>;
 export function EventsPage(){
