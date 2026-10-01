@@ -346,6 +346,148 @@
         ]
       }
     },
+    "/api/v1/admin/compensation-period-control/stage-history": {
+      "get": {
+        "description": "Read only; reverse revision pagination retains recorded observation cutoff. Unobserved transitions and actual business stage entry are not reconstructed.",
+        "operationId": "adminCompensationStageHistory",
+        "parameters": [
+          {
+            "name": "periodStart",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "periodEnd",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "ruleVersionCode",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "minLength": 1,
+              "maxLength": 100,
+              "type": "string"
+            }
+          },
+          {
+            "name": "take",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "type": "number"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 2147483647,
+              "type": "number"
+            }
+          },
+          {
+            "name": "asOf",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompensationStageHistoryEnvelopeDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid period or query"
+          },
+          "401": {
+            "description": "Authenticated Admin actor required"
+          },
+          "403": {
+            "description": "Role denied"
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "查閱期別階段觀察歷程",
+        "tags": [
+          "Admin - Compensation Stage History"
+        ]
+      }
+    },
+    "/api/v1/admin/compensation-period-control/stage-history/refresh": {
+      "post": {
+        "description": "Determines stage from authoritative control facts and records actor audit atomically. No settlement, payment, ERP submission or financial close. Caller cannot supply stage/time.",
+        "operationId": "adminRefreshCompensationStageHistory",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompensationStagePeriodDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompensationStageRefreshEnvelopeDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid period or query"
+          },
+          "401": {
+            "description": "Authenticated Admin actor required"
+          },
+          "403": {
+            "description": "Role denied"
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "查核並保存期別階段觀察",
+        "tags": [
+          "Admin - Compensation Stage History"
+        ]
+      }
+    },
     "/api/v1/admin/fulfillment/orders/logistics/connections": {
       "get": {
         "operationId": "adminFulfillmentLogisticsConnections",
@@ -18913,6 +19055,158 @@
           "data": {
             "type": "object",
             "additionalProperties": true
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "CompensationStageObservationDto": {
+        "type": "object",
+        "properties": {
+          "reference": {
+            "type": "string"
+          },
+          "revision": {
+            "type": "number",
+            "minimum": 1
+          },
+          "previousStage": {
+            "type": "string",
+            "nullable": true
+          },
+          "stage": {
+            "type": "string"
+          },
+          "sourceAsOf": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "observedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "evidenceHash": {
+            "type": "string"
+          },
+          "businessEnteredAt": {
+            "type": "string",
+            "nullable": true,
+            "description": "Unavailable. Observation time does not reconstruct business stage entry."
+          },
+          "basis": {
+            "type": "string",
+            "enum": [
+              "AUTHORITATIVE_CONTROL_OBSERVATION"
+            ]
+          }
+        },
+        "required": [
+          "reference",
+          "revision",
+          "previousStage",
+          "stage",
+          "sourceAsOf",
+          "observedAt",
+          "evidenceHash",
+          "businessEnteredAt",
+          "basis"
+        ]
+      },
+      "CompensationStageHistoryPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CompensationStageObservationDto"
+            }
+          },
+          "nextCursor": {
+            "type": "number",
+            "nullable": true
+          },
+          "asOf": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "coverage": {
+            "type": "string",
+            "enum": [
+              "CURRENT_PAGE_ONLY"
+            ]
+          },
+          "authority": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "items",
+          "nextCursor",
+          "asOf",
+          "coverage",
+          "authority"
+        ]
+      },
+      "CompensationStageHistoryEnvelopeDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/CompensationStageHistoryPageDto"
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "CompensationStagePeriodDto": {
+        "type": "object",
+        "properties": {
+          "periodStart": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "periodEnd": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "ruleVersionCode": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          }
+        },
+        "required": [
+          "periodStart",
+          "periodEnd",
+          "ruleVersionCode"
+        ]
+      },
+      "CompensationStageRefreshDto": {
+        "type": "object",
+        "properties": {
+          "item": {
+            "$ref": "#/components/schemas/CompensationStageObservationDto"
+          },
+          "checkedThrough": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "authority": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "item",
+          "checkedThrough",
+          "authority"
+        ]
+      },
+      "CompensationStageRefreshEnvelopeDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/CompensationStageRefreshDto"
           }
         },
         "required": [
