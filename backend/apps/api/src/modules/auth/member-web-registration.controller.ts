@@ -19,6 +19,7 @@ class CompleteWebRegistrationDto{
  @ApiProperty({format:'date'}) @IsDateString() birthDate!:string;
  @ApiProperty({example:'+886912345678'}) @Matches(/^\+[1-9][0-9]{7,14}$/) mobile!:string;
  @ApiProperty({format:'email',maxLength:254}) @IsEmail() @MaxLength(254) email!:string;
+ @ApiProperty({minLength:12,maxLength:256}) @IsString() @MinLength(12) @MaxLength(256) password!:string;
 }
 
 @ApiTags('Member - Web Registration') @Controller('auth/member/register')
