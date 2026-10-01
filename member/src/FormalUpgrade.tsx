@@ -4,12 +4,79 @@ import {consentFormalContract,getFormalRequiredContracts,saveFormalDraft} from '
 import {useResource} from './useResource';
 
 export default function FormalUpgrade(){
- const contracts=useResource('formal-contracts',getFormalRequiredContracts),[accepted,setAccepted]=useState(false),[busy,setBusy]=useState(false),[error,setError]=useState(''),[saved,setSaved]=useState<{version:number;nationalIdMasked:string;bankAccountMasked:string}|null>(null),key=useRef(crypto.randomUUID());
- const [form,setForm]=useState({legalName:'',gender:'',birthDate:'',nationalId:'',communicationAddress:'',phone:'',email:'',bankCode:'',bankAccount:'',accountHolder:''});
- if(contracts.error)return <ErrorState message={contracts.error} retry={contracts.retry}/>;if(!contracts.data)return <LoadingState/>;const contract=contracts.data[0];if(!contract)return <section className="card"><h3>升級正式會員</h3><p>正式會員合約與隱私告知尚未完成正式配置，因此目前無法建立申請草稿。</p></section>;
- const set=(name:keyof typeof form,value:string)=>setForm(current=>({...current,[name]:value}));
- async function submit(event:React.FormEvent){event.preventDefault();if(!accepted||busy)return;setBusy(true);setError('');try{if(!contract.acceptedAt)await consentFormalContract(contract.id,key.current);const result=await saveFormalDraft({formalContractVersionId:contract.id,...form},key.current);setSaved(result);key.current=crypto.randomUUID();contracts.retry();}catch(reason){setError(reason instanceof Error?reason.message:'草稿儲存失敗');}finally{setBusy(false);}}
- return <form className="card" onSubmit={submit}><h3>升級正式會員：加密草稿</h3><p>目前只保存加密草稿，不會送審、核准、建立球位或改變會員狀態。身分證與存摺檔案須等待私有儲存及掃毒政策完成。</p><details><summary>{contract.title}（{contract.version}）</summary><p>{contract.content}</p><small>內容雜湊：{contract.contentHash}</small></details><label><input type="checkbox" checked={accepted||!!contract.acceptedAt} disabled={!!contract.acceptedAt||busy} onChange={e=>setAccepted(e.target.checked)}/> 我已閱讀並同意上述正式會員合約與隱私告知</label>
- <label>姓名<input required maxLength={120} autoComplete="name" value={form.legalName} onChange={e=>set('legalName',e.target.value)}/></label><label>性別<input required maxLength={32} value={form.gender} onChange={e=>set('gender',e.target.value)}/></label><label>出生年月日<input required type="date" value={form.birthDate} onChange={e=>set('birthDate',e.target.value)}/></label><label>身分證號<input required maxLength={32} autoComplete="off" value={form.nationalId} onChange={e=>set('nationalId',e.target.value)}/></label><label>通訊地址<textarea required maxLength={500} autoComplete="street-address" value={form.communicationAddress} onChange={e=>set('communicationAddress',e.target.value)}/></label><label>電話<input required maxLength={32} autoComplete="tel" value={form.phone} onChange={e=>set('phone',e.target.value)}/></label><label>Email<input required type="email" maxLength={254} autoComplete="email" value={form.email} onChange={e=>set('email',e.target.value)}/></label><label>銀行別／代碼<input required maxLength={16} value={form.bankCode} onChange={e=>set('bankCode',e.target.value)}/></label><label>銀行帳號<input required maxLength={34} autoComplete="off" value={form.bankAccount} onChange={e=>set('bankAccount',e.target.value)}/></label><label>帳戶名<input required maxLength={120} value={form.accountHolder} onChange={e=>set('accountHolder',e.target.value)}/></label>
- <button className="primary" disabled={busy||!(accepted||!!contract.acceptedAt)}>{busy?'加密儲存中…':'儲存加密草稿'}</button>{saved&&<p role="status">已保存第 {saved.version} 版草稿；身分證 {saved.nationalIdMasked}，帳號 {saved.bankAccountMasked}。</p>}{error&&<p role="alert">{error}</p>}</form>;
+ const contracts=useResource('formal-contracts',getFormalRequiredContracts);
+ const [accepted,setAccepted]=useState(false),[busy,setBusy]=useState(false),[error,setError]=useState('');
+ const [saved,setSaved]=useState<{version:number;nationalIdMasked:string|null;spouseNationalIdMasked:string|null;bankAccountMasked:string;applicantType:string}|null>(null);
+ const key=useRef(crypto.randomUUID());
+ const [form,setForm]=useState({
+  applicantType:'INDIVIDUAL' as 'INDIVIDUAL'|'LEGAL_ENTITY',
+  legalName:'',gender:'',birthDate:'',nationalId:'',
+  legalEntityName:'',legalEntityRegistrationNo:'',legalEntityRegisteredAddress:'',representativeLegalName:'',representativeNationalId:'',
+  hasSpouse:false,spouseName:'',spouseNationalId:'',
+  communicationAddress:'',phone:'',email:'',bankCode:'',bankAccount:'',accountHolder:''
+ });
+ if(contracts.error)return <ErrorState message={contracts.error} retry={contracts.retry}/>;
+ if(!contracts.data)return <LoadingState/>;
+ const contract=contracts.data[0];
+ if(!contract)return <section className="card"><h3>升級正式會員</h3><p>正式會員合約與隱私告知尚未完成正式配置，因此目前無法建立申請草稿。</p></section>;
+
+ const set=(name:keyof typeof form,value:string|boolean)=>setForm(current=>({...current,[name]:value}));
+ async function submit(event:React.FormEvent){
+  event.preventDefault();if(!accepted||busy)return;setBusy(true);setError('');
+  try{
+   if(!contract.acceptedAt)await consentFormalContract(contract.id,key.current);
+   const common={
+    formalContractVersionId:contract.id,applicantType:form.applicantType,
+    communicationAddress:form.communicationAddress,phone:form.phone,email:form.email,
+    bankCode:form.bankCode,bankAccount:form.bankAccount,accountHolder:form.accountHolder,
+    hasSpouse:form.hasSpouse,
+    ...(form.hasSpouse?{spouseName:form.spouseName,spouseNationalId:form.spouseNationalId}:{})
+   };
+   const identity=form.applicantType==='INDIVIDUAL'
+    ?{legalName:form.legalName,gender:form.gender,birthDate:form.birthDate,nationalId:form.nationalId}
+    :{legalEntityName:form.legalEntityName,legalEntityRegistrationNo:form.legalEntityRegistrationNo,legalEntityRegisteredAddress:form.legalEntityRegisteredAddress,representativeLegalName:form.representativeLegalName,representativeNationalId:form.representativeNationalId};
+   const result=await saveFormalDraft({...common,...identity},key.current);
+   setSaved(result);key.current=crypto.randomUUID();contracts.retry();
+  }catch(reason){setError(reason instanceof Error?reason.message:'草稿儲存失敗');}
+  finally{setBusy(false);}
+ }
+
+ return <form className="card" onSubmit={submit}><h3>升級正式會員：加密草稿</h3>
+ <p>正式會員申請可由自然人或法人提出。草稿不會送審、核准、建立球位或改變會員狀態；配偶與身分資料僅供 KYC 與跨線審查。</p>
+ <details><summary>{contract.title}（{contract.version}）</summary><p>{contract.content}</p><small>內容雜湊：{contract.contentHash}</small></details>
+ <label><input type="checkbox" checked={accepted||!!contract.acceptedAt} disabled={!!contract.acceptedAt||busy} onChange={e=>setAccepted(e.target.checked)}/> 我已閱讀並同意上述正式會員合約與隱私告知</label>
+
+ <fieldset><legend>申請身分</legend>
+  <label><input type="radio" name="applicantType" checked={form.applicantType==='INDIVIDUAL'} onChange={()=>set('applicantType','INDIVIDUAL')}/> 自然人</label>
+  <label><input type="radio" name="applicantType" checked={form.applicantType==='LEGAL_ENTITY'} onChange={()=>set('applicantType','LEGAL_ENTITY')}/> 法人</label>
+ </fieldset>
+
+ {form.applicantType==='INDIVIDUAL'?<>
+  <label>姓名<input required maxLength={120} autoComplete="name" value={form.legalName} onChange={e=>set('legalName',e.target.value)}/></label>
+  <label>性別<input required maxLength={32} value={form.gender} onChange={e=>set('gender',e.target.value)}/></label>
+  <label>出生年月日<input required type="date" value={form.birthDate} onChange={e=>set('birthDate',e.target.value)}/></label>
+  <label>身分證號<input required maxLength={32} autoComplete="off" value={form.nationalId} onChange={e=>set('nationalId',e.target.value)}/></label>
+ </>:<>
+  <label>法人名稱<input required maxLength={160} value={form.legalEntityName} onChange={e=>set('legalEntityName',e.target.value)}/></label>
+  <label>統一編號／法人登記號碼<input required maxLength={40} value={form.legalEntityRegistrationNo} onChange={e=>set('legalEntityRegistrationNo',e.target.value)}/></label>
+  <label>法人登記地址<textarea required maxLength={500} value={form.legalEntityRegisteredAddress} onChange={e=>set('legalEntityRegisteredAddress',e.target.value)}/></label>
+  <label>主要經營代表人姓名<input required maxLength={120} value={form.representativeLegalName} onChange={e=>set('representativeLegalName',e.target.value)}/></label>
+  <label>主要經營代表人身分證號<input required maxLength={32} autoComplete="off" value={form.representativeNationalId} onChange={e=>set('representativeNationalId',e.target.value)}/></label>
+ </>}
+
+ <fieldset><legend>配偶資料／跨線審查</legend>
+  <label><input type="checkbox" checked={form.hasSpouse} onChange={e=>set('hasSpouse',e.target.checked)}/> 有配偶</label>
+  {form.hasSpouse&&<><label>配偶姓名<input required maxLength={120} value={form.spouseName} onChange={e=>set('spouseName',e.target.value)}/></label><label>配偶身分證號<input required maxLength={32} autoComplete="off" value={form.spouseNationalId} onChange={e=>set('spouseNationalId',e.target.value)}/></label></>}
+  <small>夫妻於婚姻關係存續期間視為單一正式經營單位；配偶仍可保有一般會員／消費者資格，但不得另行取得獨立正式傳銷經營權。</small>
+ </fieldset>
+
+ <label>通訊地址<textarea required maxLength={500} autoComplete="street-address" value={form.communicationAddress} onChange={e=>set('communicationAddress',e.target.value)}/></label>
+ <label>電話<input required maxLength={32} autoComplete="tel" value={form.phone} onChange={e=>set('phone',e.target.value)}/></label>
+ <label>Email<input required type="email" maxLength={254} autoComplete="email" value={form.email} onChange={e=>set('email',e.target.value)}/></label>
+ <label>銀行別／代碼<input required maxLength={16} value={form.bankCode} onChange={e=>set('bankCode',e.target.value)}/></label>
+ <label>銀行帳號<input required maxLength={34} autoComplete="off" value={form.bankAccount} onChange={e=>set('bankAccount',e.target.value)}/></label>
+ <label>帳戶名<input required maxLength={120} value={form.accountHolder} onChange={e=>set('accountHolder',e.target.value)}/></label>
+ <button className="primary" disabled={busy||!(accepted||!!contract.acceptedAt)}>{busy?'加密儲存中…':'儲存加密草稿'}</button>
+ {saved&&<p role="status">已保存第 {saved.version} 版 {saved.applicantType==='LEGAL_ENTITY'?'法人':'自然人'} 草稿；主要身分證 {saved.nationalIdMasked??'未提供'}{saved.spouseNationalIdMasked?'，配偶身分證 '+saved.spouseNationalIdMasked:''}，帳號 {saved.bankAccountMasked}。</p>}
+ {error&&<p role="alert">{error}</p>}</form>;
 }
