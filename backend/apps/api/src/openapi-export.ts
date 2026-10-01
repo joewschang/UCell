@@ -1,3 +1,4 @@
+import { lineWebhookPrefixOptions } from './modules/auth/line-webhook-transport';
 import { NestFactory } from '@nestjs/core';
 import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
@@ -9,7 +10,7 @@ async function main(){
   const app=await NestFactory.create<NestFastifyApplication>(
     AppModule,new FastifyAdapter(),{logger:false}
   );
-  app.setGlobalPrefix('api/v1');
+  app.setGlobalPrefix('api/v1',lineWebhookPrefixOptions);
 
   const config=new DocumentBuilder()
     .setTitle('UCell R1.0B API')

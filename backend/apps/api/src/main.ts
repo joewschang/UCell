@@ -9,7 +9,7 @@ import { AppModule } from './app.module';
 import { ApiExceptionFilter } from './common/filters/api-exception.filter';
 import { EnvelopeInterceptor } from './common/interceptors/envelope.interceptor';
 import { RequestContextInterceptor } from './common/interceptors/request-context.interceptor';
-import { captureLineWebhookRawBody } from './modules/auth/line-webhook-raw-body';
+import { configureLineWebhookTransport } from './modules/auth/line-webhook-transport';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
@@ -18,12 +18,7 @@ async function bootstrap() {
   );
 
   const config = app.get(ConfigService);
-  const fastify:any=app.getHttpAdapter().getInstance();
-  fastify.addHook('preParsing', (request:any, _reply:any, payload:any, done:any) => {
-    const url=String(request.raw?.url??request.url??'').split('?')[0];
-    if (url==='/api/v1/integrations/line/messaging/webhook') return done(null,captureLineWebhookRawBody(request,payload));
-    done(null,payload);
-  });
+  configureLineWebhookTransport(app);
   await app.register(helmet);
   await app.register(cors, {
     origin: process.env.NODE_ENV === 'production'
@@ -32,7 +27,6 @@ async function bootstrap() {
     credentials: true,
   });
 
-  app.setGlobalPrefix('api/v1');
   app.useGlobalPipes(new ValidationPipe({
     whitelist: true,
     forbidNonWhitelisted: true,

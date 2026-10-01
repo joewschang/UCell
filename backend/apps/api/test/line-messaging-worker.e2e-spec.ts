@@ -6,6 +6,6 @@ describe('LINE Messaging worker observer',()=>{
   const updateMany=jest.fn().mockResolvedValue({count:1}),handler=createLineMessagingObserverHandler({lineMessagingEvent:{updateMany}} as any);
   await expect(handler.process({...base,domain:'IDENTITY',provider:'LINE_MESSAGING',connectionId:'LINE_MESSAGING_DEFAULT'})).resolves.toBe('SUCCESS');
   await expect(handler.process({...base,domain:'PAYMENT',provider:'LINE_MESSAGING',connectionId:'LINE_MESSAGING_DEFAULT'})).resolves.toBe('PERMANENT_FAILURE');
-  expect(updateMany).toHaveBeenCalledWith(expect.objectContaining({where:expect.objectContaining({eventType:{in:['follow','unfollow','postback']},status:'PENDING'})}));
+  expect(updateMany).toHaveBeenCalledWith(expect.objectContaining({where:expect.objectContaining({eventType:{in:['follow','unfollow','postback','message']},status:'PENDING'})}));
  });
 });

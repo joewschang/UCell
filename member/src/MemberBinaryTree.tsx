@@ -95,14 +95,14 @@ export default function MemberBinaryTree({q}:{q:Qualification}){
   </div>
   <p>這是依目前球位與授權顯示的範圍，不代表整棵樹的根。</p>
   <div className="uc-tree-context" role="status" aria-live="polite">
-   <span>目前檢視</span><strong>球編號 {page?.parentBallNo??parentBallNo??q.code}</strong>
+   <span>目前檢視</span><strong>{q.code==='UNPLACED'?'尚未安置':`球編號 ${page?.parentBallNo??parentBallNo??q.code}`}</strong>
    {snapshotToken&&<small>此檢視已固定在同一查詢快照；資料時間 {time.asOf}，記錄截點 {time.knowledgeCutoff}。重新整理後才會取得新資料。</small>}
   </div>
   {protectedBoundary&&<p className="uc-tree-boundary" role="status">此範圍有受保護的上游邊界，未在會員檢視中顯示。</p>}
   {snapshotRecoveryRequired?<section className="uc-tree-recovery" role="alert"><h4>組織快照已失效</h4><p>為避免混用不同時間點的組織資料，先前節點與分頁已清除。請明確建立新的快照後再查看。</p><button type="button" onClick={createNewSnapshot}>重新整理並建立新的快照</button></section>:<>
   {loadingFirstPage&&<LoadingState label="正在載入獎金相關組織…"/>}
   {state.error&&<ErrorState message={state.error} retry={state.retry}/>}
-  {unavailable&&<EmptyState title="目前沒有可顯示的獎金相關組織"><p>資料尚未提供或不在目前授權範圍內。</p></EmptyState>}
+  {unavailable&&<EmptyState title="目前沒有可顯示的獎金相關組織"><p>{q.code==='UNPLACED'?'此資格尚未安置，取得球編號後即可查看組織。':'資料尚未提供或不在目前授權範圍內。'}</p></EmptyState>}
   {!loadingFirstPage&&!state.error&&!unavailable&&<>
    {items.length?<div className="uc-node-list" aria-label="可展開的球編號">
     {items.map(node=><button type="button" className="uc-person-node uc-tree-node" key={node.ballNo} onClick={()=>selectParent(node.ballNo)} aria-label={`展開球編號 ${node.ballNo} 的下一層`}>

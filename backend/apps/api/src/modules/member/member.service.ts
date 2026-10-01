@@ -73,7 +73,7 @@ export class MemberService {
   const monthReference=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Taipei',year:'numeric',month:'2-digit'}).format(now);
   const evidence=await this.db.activeIntervalEvidence.findMany({where:{qualificationId:{in:rows.map(row=>row.qualificationId)},calendarMonth:new Date(monthReference+'-01')},orderBy:{createdAt:'desc'}});
   const latest=new Map<string,typeof evidence[number]>();for(const row of evidence)if(!latest.has(row.qualificationId))latest.set(row.qualificationId,row);
-  return rows.map(row=>{const interval=latest.get(row.qualificationId),ballNo=row.ballNo??'UNPLACED';return {id:row.qualificationId,code:ballNo,rank:row.planLevelCode,active:!!interval&&interval.activeFrom<=now&&interval.activeTo>now,ballLabel:'球 '+ballNo,monthReference,activeInterval:interval?{activeFrom:interval.activeFrom.toISOString(),activeTo:interval.activeTo.toISOString()}:null};});
+  return rows.map(row=>{const interval=latest.get(row.qualificationId),ballNo=row.ballNo??'UNPLACED';return {id:row.qualificationId,qualificationNo:row.qualificationNo.toString(),code:ballNo,rank:row.planLevelCode,active:!!interval&&interval.activeFrom<=now&&interval.activeTo>now,ballLabel:row.ballNo?'球 '+ballNo:'資格 '+row.qualificationNo+'（尚未安置）',monthReference,activeInterval:interval?{activeFrom:interval.activeFrom.toISOString(),activeTo:interval.activeTo.toISOString()}:null};});
  }
  async context(personId:string,qualificationId:string){
   await this.access.assertHolder(personId,qualificationId);

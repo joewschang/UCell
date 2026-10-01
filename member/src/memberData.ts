@@ -186,6 +186,7 @@ function safeMemberTreePage(value:unknown,expectedParentBallNo:string,requestedS
  return {status,snapshotToken,snapshotExpiresAt,parentBallNo,hiddenBootstrapBoundary,items,nextCursor};
 }
 export async function getMemberTree(q:Qualification,parentBallNo:string|undefined,snapshotToken:string|undefined,time:MemberTreeTime,after:string|undefined,s:AbortSignal):Promise<MemberTreePage>{
+ if(q.code==='UNPLACED')return {status:'UNAVAILABLE',snapshotToken:null,snapshotExpiresAt:null,parentBallNo:null,items:[],nextCursor:null};
  if(isMock)return {status:'AVAILABLE',snapshotToken:'mock-safe-tree',snapshotExpiresAt:null,parentBallNo:parentBallNo??q.code,hiddenBootstrapBoundary:(parentBallNo??q.code)==='A000001',items:parentBallNo?[{ballNo:'A000020',binaryPositionNo:'20',side:'LEFT',nodeKind:'AnonymousBallNode'}]:[{ballNo:'A000005',binaryPositionNo:'8',side:'LEFT',nodeKind:'AnonymousBallNode'},{ballNo:'A000006',binaryPositionNo:'9',side:'RIGHT',nodeKind:'AnonymousBallNode'}],nextCursor:null};
  const query=new URLSearchParams({...time,ballNo:q.code,...(parentBallNo?{parentBallNo}:{}),...(snapshotToken?{snapshotToken}:{}),...(after?{after}:{})});
  const value=await api<unknown>(`/member/organization/tree?${query}`,{signal:s});

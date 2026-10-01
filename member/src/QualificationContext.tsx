@@ -1,3 +1,4 @@
+import { qualificationReferenceLabel } from './terminology';
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import * as data from './memberData';
 import type { Qualification } from './api';
@@ -83,12 +84,12 @@ export function QualificationProvider({ children }: {
         selection.current.controller?.abort();const controller=new AbortController();
         const sequence=++selection.current.sequence;selection.current.controller=controller;
         setLoading(true);setError(null);setId('');setFeedback('');
-        setLoadingLabel(`正在確認球編號 ${q.code}，請稍候…`);
+        setLoadingLabel(`正在確認${qualificationReferenceLabel(q)}，請稍候…`);
         try{
           const confirmed=await data.selectQualification(q,controller.signal);
           if(sequence!==selection.current.sequence||controller.signal.aborted)return;
           setItems(rows=>rows.map(row=>row.id===confirmed.id?confirmed:row));setId(confirmed.id);
-          setFeedback(`已切換至球編號 ${confirmed.code}`);
+          setFeedback(`已切換至${qualificationReferenceLabel(confirmed)}`);
           try { sessionStorage.setItem('ucell_qualification_id', confirmed.id); } catch { /* Selection memory is optional. */ }
         }catch(error){if(sequence===selection.current.sequence&&!controller.signal.aborted)setError(error instanceof Error?error.message:'無法確認資格，請重新查詢');}
         finally{if(sequence===selection.current.sequence&&!controller.signal.aborted)setLoading(false);}

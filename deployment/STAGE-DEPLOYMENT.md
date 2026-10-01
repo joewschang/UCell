@@ -1,5 +1,17 @@
 # Stage deployment contract
 
+## Current Stage domains (2026-10-01)
+
+- Member: https://stage.ucell.life
+- Admin: https://admin-stage.ucell.life
+- API: https://api-stage.ucell.life (`/api/v1/health`)
+- LINE webhook: `POST https://api-stage.ucell.life/api/line/webhook`
+- Resource group: `rg-ucell-stage`; apps: `ucell-stage-member`, `ucell-stage-admin`, `ucell-stage-api` (and existing worker).
+
+DNS, custom domains and managed TLS are already configured. Preserve them. For an incremental release use the existing `deploy-stage-g8-backend.ps1 -ContainerBuildMode Acr -IncludeFrontends -ImageTag <commit-run>` path; it preserves existing secrets and migrates before updating API/worker. Optional `-LiffId` and `-LineLoginChannelId` use the existing LINE Login architecture. Until real login is configured it preserves the existing synthetic Stage UAT entry; this is not evidence of real LINE login.
+
+Canonical Messaging variables are `LINE_CHANNEL_SECRET` and `LINE_CHANNEL_ACCESS_TOKEN`, supplied by Container Apps secret references. Legacy `LINE_MESSAGING_CHANNEL_*` names remain compatible; canonical values take precedence. Never reuse the previously exposed channel secret. The metadata observer uses `LINE_MESSAGING_WORKER_ENABLED=true`; no automatic reply or real payout is introduced. See [LINE manual gate](LINE_STAGE_MANUAL_GATE.md).
+
 `deploy-stage.ps1` provisions or updates the isolated Azure Stage environment. It does not promote Production.
 
 The GitHub `stage` environment must provide these secrets:

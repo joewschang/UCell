@@ -133,7 +133,7 @@ if($EnableStageUatAdminDemo){$apiEnv=@($serverEnv)+@('STAGE_UAT_MEMBER_TOKEN=sec
 Set-App 'ucell-stage-api' $backendImage 1 3 $apiEnv -RemoveEnv $serverRemove -Secrets $apiSecrets -Ingress -Port 3000 -Database
 Set-App 'ucell-stage-worker' $workerImage 1 2 $serverEnv -RemoveEnv $serverRemove -Secrets @("pii-encryption-key=$piiKey") -Database
 $apiFqdn=(Invoke-AzChecked 'read API FQDN' @('containerapp','show','--name','ucell-stage-api','--resource-group',$ResourceGroup,'--query','properties.configuration.ingress.fqdn','-o','tsv','--only-show-errors')).Trim(); if(-not $apiFqdn){throw 'API FQDN is empty.'}
-$apiOrigin="https://$apiFqdn"; $apiBaseUrl="$apiOrigin/api/v1"
+$apiOrigin='https://api-stage.ucell.life'; $apiBaseUrl="$apiOrigin/api/v1"
 
 $frontends=@(
   @{r='ucell-admin';df='deployment/Dockerfile.admin';args=@("VITE_API_BASE_URL=$apiBaseUrl","VITE_ENTRA_TENANT_ID=$EntraTenantId","VITE_ENTRA_CLIENT_ID=$EntraClientId","VITE_ENTRA_REDIRECT_URI=$EntraRedirectUri","VITE_ENABLE_DEMO_LOGIN=$($EnableStageUatAdminDemo.ToString().ToLowerInvariant())","VITE_STAGE_UAT_DEMO_LOGIN=$($EnableStageUatAdminDemo.ToString().ToLowerInvariant())","CSP_API_ORIGIN=$apiOrigin")},

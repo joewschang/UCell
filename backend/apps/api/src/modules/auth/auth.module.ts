@@ -1,3 +1,4 @@
+import { LineStageWebhookController } from './line-stage-webhook.controller';
 import { AdminAuthController } from './admin-auth.controller';
 import { AdminAuthService } from './admin-auth.service';
 import { EntraTokenVerifierService } from './entra-token-verifier.service';
@@ -30,7 +31,7 @@ import { ExistingMemberLineLinkService } from './existing-member-line-link.servi
 import { LineTokenVerifierService } from './line-token-verifier.service';
 @Module({
   imports:[AuditModule,PaymentHubModule],
-  controllers:[AdminAuthController,OtpController,NetworkRegistrationController,AccountSecurityController,LineMessagingWebhookController,LineIntegrationStatusController,ExistingMemberLineLinkController,AdminExistingMemberLineLinkController],
+  controllers:[LineStageWebhookController,AdminAuthController,OtpController,NetworkRegistrationController,AccountSecurityController,LineMessagingWebhookController,LineIntegrationStatusController,ExistingMemberLineLinkController,AdminExistingMemberLineLinkController],
   providers:[QualificationAccessService,AdminRoleGuard,IdentityTokenService,LineIdentityService,AuthenticationGuard,MemberAuthenticationGuard,AdminAuthenticationGuard,EntraTokenVerifierService,AdminAuthService,OtpService,OtpCodeService,SmsOtpProviderService,NetworkRegistrationService,AccountSecurityService,LineMessagingAdapter,LineMessagingIngressService,NotificationDeliveryService,LineIntegrationStatusService,ExistingMemberLineLinkService,LineTokenVerifierService],
   exports:[QualificationAccessService,AdminRoleGuard,IdentityTokenService,LineIdentityService,AuthenticationGuard,MemberAuthenticationGuard,AdminAuthenticationGuard,EntraTokenVerifierService,AdminAuthService,AccountSecurityService]
 })

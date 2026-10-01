@@ -4034,6 +4034,36 @@
         ]
       }
     },
+    "/api/line/webhook": {
+      "post": {
+        "operationId": "lineStageWebhook",
+        "parameters": [
+          {
+            "name": "x-line-signature",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Verified events or empty verification accepted"
+          },
+          "401": {
+            "description": "Invalid signature or payload"
+          },
+          "503": {
+            "description": "Channel secret is not configured"
+          }
+        },
+        "summary": "LINE OA raw-body webhook; metadata-only durable receipt",
+        "tags": [
+          "Integrations - LINE Messaging"
+        ]
+      }
+    },
     "/api/v1/auth/admin/entra/exchange": {
       "post": {
         "operationId": "adminEntraExchange",
@@ -20204,7 +20234,12 @@
           },
           "code": {
             "type": "string",
-            "description": "Member-authorized immutable business Ball number; never a UUID."
+            "description": "Member-authorized immutable business Ball number, or UNPLACED before placement; never a UUID."
+          },
+          "qualificationNo": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]*$",
+            "description": "Public qualification number as lossless decimal text, including before placement."
           },
           "rank": {
             "type": "string"
@@ -20234,6 +20269,7 @@
         "required": [
           "id",
           "code",
+          "qualificationNo",
           "rank",
           "active",
           "ballLabel",

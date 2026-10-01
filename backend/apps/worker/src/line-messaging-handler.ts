@@ -6,7 +6,8 @@ import type { PrismaService, ProviderWebhookHandler } from '@ucell/database';
 export function createLineMessagingObserverHandler(db:Pick<PrismaService,'lineMessagingEvent'>):ProviderWebhookHandler{return Object.freeze({
   async process(lease){
     if(lease.domain!=='IDENTITY'||lease.provider!=='LINE_MESSAGING'||lease.connectionId!=='LINE_MESSAGING_DEFAULT')return 'PERMANENT_FAILURE';
-    const changed=await (db.lineMessagingEvent as any).updateMany({where:{providerWebhookInboxId:lease.providerWebhookInboxId,status:'PENDING',eventType:{in:['follow','unfollow','postback']}},data:{status:'PROCESSED',processedAt:new Date(),attemptCount:{increment:1},lastErrorCode:null}});
-    return changed.count?'SUCCESS':'PERMANENT_FAILURE';
+    const changed=await (db.lineMessagingEvent as any).updateMany({where:{providerWebhookInboxId:lease.providerWebhookInboxId,status:'PENDING',eventType:{in:['follow','unfollow','postback','message']}},data:{status:'PROCESSED',processedAt:new Date(),attemptCount:{increment:1},lastErrorCode:null}});
+    // Empty verification, duplicate retry and unsupported event types are safe no-ops.
+    return 'SUCCESS';
   }
 });}

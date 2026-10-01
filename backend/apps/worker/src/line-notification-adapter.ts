@@ -3,7 +3,7 @@ export type LineSendOutcome={kind:'SENT';providerCorrelation:string}|{kind:'RETR
 export type LineNotificationSender={configured:boolean;send(input:{recipient:string;notificationType:string;correlationId:string}):Promise<LineSendOutcome>};
 /** Deliberate fail-closed boundary: no access token means no outbound network request. */
 export function lineNotificationSender(environment:NodeJS.ProcessEnv=process.env,request:typeof fetch=fetch):LineNotificationSender{
- const token=environment.LINE_MESSAGING_CHANNEL_ACCESS_TOKEN;
+ const token=environment.LINE_CHANNEL_ACCESS_TOKEN??environment.LINE_MESSAGING_CHANNEL_ACCESS_TOKEN;
  if(!token)return {configured:false,async send(){return {kind:'FAILED',code:'LINE_SENDER_CONFIGURATION_PENDING'};}};
  return {configured:true,async send(input){
   const templateKey=lineNotificationTemplate(input.notificationType);

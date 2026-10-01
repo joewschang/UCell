@@ -1,3 +1,4 @@
+import { qualificationReferenceLabel } from './terminology';
 import type {Qualification} from './api';
 import * as data from './memberData';
 import {useResource} from './useResource';
@@ -17,7 +18,7 @@ export default function MemberTodaySummary({q,monthlyRepurchaseStatus,repurchase
  const binary=useResource(`today-binary:${q.id}`,signal=>data.getBinary(q,signal));
  const task=taskCopy[monthlyRepurchaseStatus];
  return <section className="card uc-today-summary" aria-labelledby="today-summary-title">
-  <div className="uc-card-heading"><div><small>MY UCELL TODAY</small><h3 id="today-summary-title">目前球摘要</h3></div><span>球編號 {q.code}</span></div>
+  <div className="uc-card-heading"><div><small>MY UCELL TODAY</small><h3 id="today-summary-title">目前球摘要</h3></div><span>{qualificationReferenceLabel(q)}</span></div>
   <dl className="uc-today-facts">
    <div><dt>方案</dt><dd>{data.displayPlanLevel(q.rank)}</dd></div>
    <div><dt>資格</dt><dd>{qualificationActiveLabel(q.active)}</dd></div>

@@ -12,8 +12,8 @@ export class LineIntegrationStatusService {
     const lastWebhook=await this.db.providerWebhookInbox.findFirst({where:{domain:'IDENTITY',provider:'LINE_MESSAGING',connectionId:'LINE_MESSAGING_DEFAULT'},orderBy:{receivedAt:'desc'},select:{receivedAt:true,status:true}});
     return {
       messaging:{
-        webhookConfigured:!!this.config.get<string>('LINE_MESSAGING_CHANNEL_SECRET')&&!!this.config.get<string>('LINE_MESSAGING_CONFIG_VERSION'),
-        senderConfigured:!!this.config.get<string>('LINE_MESSAGING_CHANNEL_ACCESS_TOKEN'),
+        webhookConfigured:!!(this.config.get<string>('LINE_CHANNEL_SECRET')??this.config.get<string>('LINE_MESSAGING_CHANNEL_SECRET')),
+        senderConfigured:!!(this.config.get<string>('LINE_CHANNEL_ACCESS_TOKEN')??this.config.get<string>('LINE_MESSAGING_CHANNEL_ACCESS_TOKEN')),
         workerEnabled:this.config.get<string>('LINE_MESSAGING_WORKER_ENABLED')==='true',
         lastWebhook:lastWebhook?{receivedAt:lastWebhook.receivedAt,status:lastWebhook.status}:null,
       },

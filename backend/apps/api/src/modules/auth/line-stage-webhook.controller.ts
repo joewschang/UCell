@@ -4,14 +4,14 @@ import { ConfigService } from '@nestjs/config';
 import { LineMessagingIngressService } from './line-messaging-ingress.service';
 
 @ApiTags('Integrations - LINE Messaging')
-@Controller('integrations/line/messaging')
-export class LineMessagingWebhookController {
+@Controller('api/line')
+export class LineStageWebhookController {
   constructor(private readonly ingress:LineMessagingIngressService,private readonly config:ConfigService){}
   @Post('webhook') @HttpCode(200)
-  @ApiOperation({operationId:'lineMessagingWebhook',summary:'LINE Messaging raw-body webhook ingress',description:'Validates x-line-signature over untouched UTF-8 bytes, deduplicates metadata into the IDENTITY inbox, then returns quickly. Raw payloads and secrets are never persisted.'})
-  @ApiResponse({status:200,description:'Verified webhook accepted for asynchronous processing'})
-  @ApiResponse({status:401,description:'Signature or payload invalid'})
-  @ApiResponse({status:503,description:'LINE Messaging configuration is unavailable'})
+  @ApiOperation({operationId:'lineStageWebhook',summary:'LINE OA raw-body webhook; metadata-only durable receipt'})
+  @ApiResponse({status:200,description:'Verified events or empty verification accepted'})
+  @ApiResponse({status:401,description:'Invalid signature or payload'})
+  @ApiResponse({status:503,description:'Channel secret is not configured'})
   async receive(@Req() req:any,@Headers('x-line-signature') signature?:string){
     await this.ingress.receive({rawBody:req.rawBody,signature,channelSecret:this.config.get<string>('LINE_CHANNEL_SECRET')??this.config.get<string>('LINE_MESSAGING_CHANNEL_SECRET'),configVersion:this.config.get<string>('LINE_MESSAGING_CONFIG_VERSION')??'LINE_WEBHOOK_V1'});
     return {data:{accepted:true}};
