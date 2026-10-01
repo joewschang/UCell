@@ -3,6 +3,7 @@ param(
   [string]$Location = 'eastasia', [string]$ResourceGroup = 'rg-ucell-stage',
   [string]$PostgresAdminUser = 'ucellstageadmin', [SecureString]$PostgresAdminPassword,
   [string]$LineLoginChannelId = '', [string]$LiffId = '',
+  [string]$IdentityMatchHmacSecret = '',
   [string]$EntraTenantId = '', [string]$EntraClientId = '', [string]$EntraRedirectUri = '', [string]$ImageTag = '',
   [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$InventoryWarehouseId,
   [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$InventoryPolicyVersion,
@@ -92,6 +93,13 @@ if($migrationStatus -ne 'Succeeded'){throw "Stage migration failed or timed out:
 
 Set-App 'ucell-stage-api' $backendImage 1 3 $serverEnv -RemoveEnv $serverRemove -Ingress -Port 3000 -Database
 Set-App 'ucell-stage-worker' $workerImage 1 2 $serverEnv -RemoveEnv $serverRemove -Database
+if($IdentityMatchHmacSecret){
+  if($IdentityMatchHmacSecret.Length -lt 32){throw 'IDENTITY_MATCH_HMAC_SECRET must contain at least 32 characters.'}
+  Invoke-AzChecked 'set identity match secret' @('containerapp','secret','set','--name','ucell-stage-api','--resource-group',$ResourceGroup,'--secrets',"identity-match-hmac-secret=$IdentityMatchHmacSecret",'--only-show-errors')|Out-Null
+  Invoke-AzChecked 'wire identity match secret' @('containerapp','update','--name','ucell-stage-api','--resource-group',$ResourceGroup,'--set-env-vars','IDENTITY_MATCH_HMAC_SECRET=secretref:identity-match-hmac-secret','--only-show-errors')|Out-Null
+}else{
+  Invoke-AzChecked 'remove identity match env' @('containerapp','update','--name','ucell-stage-api','--resource-group',$ResourceGroup,'--remove-env-vars','IDENTITY_MATCH_HMAC_SECRET','--only-show-errors')|Out-Null
+}
 $apiFqdn=(Invoke-AzChecked 'read API FQDN' @('containerapp','show','--name','ucell-stage-api','--resource-group',$ResourceGroup,'--query','properties.configuration.ingress.fqdn','-o','tsv','--only-show-errors')).Trim(); if(-not $apiFqdn){throw 'API FQDN is empty.'}
 $apiOrigin="https://$apiFqdn"; $apiBaseUrl="$apiOrigin/api/v1"
 
