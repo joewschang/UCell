@@ -1,6 +1,6 @@
 import { ConflictException,Injectable,UnauthorizedException,UnprocessableEntityException } from '@nestjs/common';
 import { Prisma,PrismaService } from '@ucell/database';
-import { createHash,createHmac,randomUUID } from 'node:crypto';
+import { createHash,createHmac,randomBytes,randomUUID,scryptSync } from 'node:crypto';
 import { IdempotencyService } from '../../common/idempotency/idempotency.service';
 import { OtpService } from './otp.service';
 import { IdentityTokenService } from './identity-token.service';
@@ -25,6 +25,13 @@ export class MemberWebRegistrationService{
   return this.otp.create({purpose:'NETWORK_REGISTRATION',destination:mobile,registrationSessionId},key);
  }
 
+ private passwordHash(password:string){
+  if(password.length<12||password.length>256)throw new UnprocessableEntityException({code:'PASSWORD_POLICY'});
+  const salt=randomBytes(16).toString('base64url');
+  const key=scryptSync(password,salt,32,{N:16384,r:8,p:1,maxmem:64*1024*1024});
+  return `scrypt$16384$8$1${salt}${key.toString('base64url')}`;
+ }
+
  private destinationFingerprint(mobile:string){
   const secret=process.env.OTP_HASH_SECRET;
   if(!secret||secret.length<32)throw new UnprocessableEntityException({code:'OTP_CONFIGURATION_PENDING'});
@@ -42,9 +49,11 @@ export class MemberWebRegistrationService{
     const otp=rows[0];
     if(!otp||otp.purpose!=='NETWORK_REGISTRATION'||otp.status!=='VERIFIED'||otp.registrationSessionId!==input.registrationSessionId||otp.personId||otp.consumedAt||otp.expiresAt<=now||otp.destinationFingerprint!==this.destinationFingerprint(input.mobile))throw new UnauthorizedException({code:'REGISTRATION_OTP_INVALID'});
     if(await tx.person.findFirst({where:{mobile:input.mobile},select:{personId:true}}))throw new ConflictException({code:'MOBILE_ALREADY_REGISTERED'});
+    if(await tx.person.findFirst({where:{email:{equals:input.email,mode:'insensitive'}},select:{personId:true}}))throw new ConflictException({code:'EMAIL_ALREADY_REGISTERED'});
     const contract=await tx.contractDocumentVersion.findFirst({where:{contractDocumentVersionId:input.contractVersionId,required:true,audience:{in:['NETWORK_MEMBER','ALL_MEMBERS']},effectiveFrom:{lte:now},OR:[{effectiveTo:null},{effectiveTo:{gt:now}}]}});
     if(!contract||input.accepted!==true)throw new UnprocessableEntityException({code:'REQUIRED_CONTRACT_VERSION_INVALID'});
     const person=await tx.person.create({data:{legalName:input.legalName,preferredName:input.alias,genderCode:input.gender,birthDate,mobile:input.mobile,email:input.email,membershipState:'NETWORK_MEMBER',mobileVerifiedAt:now,status:'EFFECTIVE'}});
+    await tx.memberPasswordCredential.create({data:{personId:person.personId,passwordHash:this.passwordHash(input.password)}});
     const evidenceHash=createHash('sha256').update(JSON.stringify({personId:person.personId,contractVersionId:contract.contractDocumentVersionId,contentHash:contract.contentHash,channel:'MEMBER_WEB',correlationId})).digest('hex');
     await tx.consentEvidence.create({data:{personId:person.personId,contractDocumentVersionId:contract.contractDocumentVersionId,contentHashSnapshot:contract.contentHash,channel:'MEMBER_WEB',requestId:correlationId,correlationId,evidenceHash}});
     await tx.personMembershipStateEvent.create({data:{personId:person.personId,toState:'NETWORK_MEMBER',reasonCode:'WEB_OTP_NETWORK_REGISTRATION_COMPLETED',sourceType:'WEB_OTP_REGISTRATION',correlationId}});
