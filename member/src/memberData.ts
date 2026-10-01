@@ -81,7 +81,17 @@ export async function getRetailReferrer(signal:AbortSignal):Promise<RetailReferr
 export async function validateRetailReferrerCandidate(code:string,key:string){if(!/^[A-Z][A-Z0-9_-]{0,39}(?:X\d{6,}|\d{6,})$/.test(code))throw new Error('商品推薦碼格式不正確');const row=await api<{ballNo:string;planLevelCode:string;effectiveAt:string;ruleVersion:string}>('/member/retail-referrer/candidate',{method:'POST',headers:{'Idempotency-Key':key},body:JSON.stringify({code})});if(!row||row.ballNo!==code||typeof row.planLevelCode!=='string'||row.ruleVersion!=='R1.0B'||!Number.isFinite(Date.parse(row.effectiveAt)))throw new Error('商品推薦碼無法核驗');return row;}
 export async function createWebRetailOrder(items:{productId:string;quantity:string}[],key:string,retailReferralCode?:string){const row=await api<unknown>('/member/orders',{method:'POST',headers:{'Idempotency-Key':key},body:JSON.stringify({items,...(retailReferralCode?{retailReferralCode}:{})})}) as ConnectedOrder;if(!row||row.qualificationId!==null||typeof row.id!=='string'||!/^\d+$/.test(row.orderNo)||row.status!=='CONFIRMED'||!decimal.test(row.total)||!Array.isArray(row.lines))throw new Error('零售訂單回應異常');return row;}
 export type WebRetailOrder={orderNo:string;status:string;total:string;createdAt:string;confirmedAt:string|null;itemCount:number;itemNames:string[]};
-export async function getWebRetailOrders(signal?:AbortSignal):Promise<WebRetailOrder[]>{const rows=await api<unknown>('/member/retail-orders',{signal});if(!Array.isArray(rows)||!rows.every((row:any)=>row&&/^\d+$/.test(row.orderNo)&&typeof row.status==='string'&&decimal.test(row.total)&&Number.isFinite(Date.parse(row.createdAt))&&(row.confirmedAt===null||Number.isFinite(Date.parse(row.confirmedAt)))&&Number.isSafeInteger(row.itemCount)&&Array.isArray(row.itemNames)&&row.itemNames.every((name:any)=>typeof name==='string')))throw new Error('零售訂單歷程格式異常');return rows as WebRetailOrder[];}
+export function parseWebRetailOrders(rows:unknown):WebRetailOrder[]{
+ const statuses=new Set(['DRAFT','CONFIRMED','PAID','FULFILLED','PARTIAL_RETURN','RETURNED','VOIDED']),seen=new Set<string>();
+ if(!Array.isArray(rows))throw new Error('零售訂單歷程格式異常');
+ return rows.map((row:any)=>{
+  if(!row||typeof row.orderNo!=='string'||!/^\d+$/.test(row.orderNo)||seen.has(row.orderNo)||typeof row.status!=='string'||!statuses.has(row.status)||typeof row.total!=='string'||!decimal.test(row.total)||typeof row.createdAt!=='string'||!Number.isFinite(Date.parse(row.createdAt))||(row.confirmedAt!==null&&(typeof row.confirmedAt!=='string'||!Number.isFinite(Date.parse(row.confirmedAt))))||!Number.isSafeInteger(row.itemCount)||row.itemCount<0||!Array.isArray(row.itemNames)||!row.itemNames.every((name:any)=>typeof name==='string'))throw new Error('零售訂單歷程格式異常');
+  seen.add(row.orderNo);
+  return {orderNo:row.orderNo,status:row.status,total:row.total,createdAt:row.createdAt,confirmedAt:row.confirmedAt,itemCount:row.itemCount,itemNames:[...row.itemNames]};
+ });
+}
+export async function getWebRetailOrders(signal?:AbortSignal):Promise<WebRetailOrder[]>{return parseWebRetailOrders(await api<unknown>('/member/retail-orders',{signal}));}
+
 export type PendingPlacement={pendingBallNo:string|null;placementReference:string;pendingMemberNo:string|null;packageType:string;sponsorBallNo:string|null;paymentState:'CONFIRMED';requestedAt:string|null;dueAt:string|null;placedAt:string|null;status:'PLACEMENT_PENDING'|'PLACEMENT_OVERDUE';agingBucket:'0_24H'|'24_48H'|'48_72H'|'OVERDUE';policyVersion:string};
 const ballNo=/^[A-Z][A-Z0-9_-]{0,39}(?:X\d{6}|\d{6,19})$/;
 export async function getPendingPlacements(signal:AbortSignal):Promise<PendingPlacement[]>{
