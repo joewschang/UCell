@@ -64,3 +64,13 @@ it('retains export input but disables financial actions until stale detail can b
  expect(view.root.findAllByType(Field).find(field=>field.props.label==='匯出參考')!.findByType('input').props.value).toBe('KEEP-REFERENCE');
  expect(view.root.findAllByType('button').find(button=>button.children.join('')==='重新載入')!.props.disabled).toBe(false);act(()=>view.unmount());
 });
+
+it('preserves exact decimal amounts in the actual payout queue and detail',async()=>{
+ const original=vi.mocked(get).getMockImplementation()!;
+ vi.mocked(get).mockImplementation(async(url,options)=>{
+  const result=await original(url,options) as any;
+  for(const row of Array.isArray(result.data)?result.data:[result.data])if(row?.payoutBatchId){row.totalGross='10000000000000.0001';row.totalNet='9999999999999.1234';for(const line of row.lines??[]){line.grossAmount='10000000000000.0001';line.netAmount='9999999999999.1234';}}
+  return result;
+ });
+ const view=await render();try{const text=JSON.stringify(view.toJSON());expect(text).toContain('NT$ 10,000,000,000,000.0001');expect(text).toContain('NT$ 9,999,999,999,999.1234');}finally{act(()=>view.unmount());}
+});
