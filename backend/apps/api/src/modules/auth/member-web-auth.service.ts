@@ -54,6 +54,17 @@ export class MemberWebAuthService{
   return this.sessions.issue({provider:'GOOGLE',subject:verified.subject,personId:link.personId,ttlSeconds:ttl});
  }
 
+ async linkGoogle(personId:string,idToken:string){
+  const verified=await this.google.verify(idToken);
+  const person=await this.db.person.findUnique({where:{personId}});
+  if(!person)throw new UnauthorizedException({code:'MEMBER_PERSON_DISABLED'});
+  this.eligible(person);
+  const existing=await this.db.identityLink.findUnique({where:{provider_providerSubject:{provider:'GOOGLE',providerSubject:verified.subject}}});
+  if(existing&&existing.personId!==personId)throw new ConflictException({code:'GOOGLE_IDENTITY_ALREADY_LINKED'});
+  if(!existing)await this.db.identityLink.create({data:{personId,provider:'GOOGLE',providerSubject:verified.subject,email:verified.email,displayName:verified.displayName}});
+  return {provider:'GOOGLE',linked:true};
+ }
+
  async forgotPassword(identifier:string){
   this.email.assertConfigured();
   const normalized=identifier.trim();
