@@ -32,7 +32,7 @@ export class MemberService {
  }
  async logout(personId:string,sessionId:string,key:string,requestId:string){
   const result=await this.mutation(`member:logout:${sessionId}`,key,{},async tx=>{
-   const changed=await tx.authSession.updateMany({where:{authSessionId:sessionId,personId,provider:'LINE',status:'ACTIVE'},data:{status:'REVOKED',revokedAt:new Date()}});
+   const changed=await tx.authSession.updateMany({where:{authSessionId:sessionId,personId,roleCode:null,status:'ACTIVE'},data:{status:'REVOKED',revokedAt:new Date()}});
    if(changed.count)await this.audit.write(tx,{actorType:'MEMBER',actorId:personId,action:'MEMBER_SESSION_REVOKED',entityType:'AuthSession',entityId:sessionId,requestId,correlationId:randomUUID()});
    return {status:'REVOKED',sessionId};
   });return result.value;
