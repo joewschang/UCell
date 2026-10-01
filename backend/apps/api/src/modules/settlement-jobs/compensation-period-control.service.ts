@@ -53,7 +53,11 @@ export class CompensationPeriodControlService{
       WHERE b.exported_at IS NOT NULL AND b.exported_at<=${cutoff} AND b.status IN ('EXPORTED','PROCESSING','PARTIALLY_PAID','FAILED')
     UNION ALL
     SELECT 'BANK_TRANSFER_FAILED',r.occurred_at,r.paid_amount FROM ledger.payout_payment_result r
-      WHERE r.result_status='FAILED' AND r.occurred_at<=${cutoff}
+      JOIN ledger.payout_line l ON l.payout_line_id=r.payout_line_id
+      JOIN ledger.payout_batch b ON b.payout_batch_id=r.payout_batch_id
+      WHERE r.result_status='FAILED' AND r.occurred_at<=${cutoff} AND b.status<>'VOIDED'
+      AND NOT EXISTS (SELECT 1 FROM ledger.payout_payment_result paid WHERE paid.payout_line_id=l.payout_line_id
+        AND paid.payout_batch_id=b.payout_batch_id AND paid.result_status='PAID' AND paid.paid_amount=l.net_amount)
     UNION ALL
     SELECT 'RECOVERY_OUTSTANDING',r.occurred_at,r.outstanding_amount FROM ledger.bonus_recovery_event r
       WHERE r.outstanding_amount>0 AND r.occurred_at<=${cutoff}

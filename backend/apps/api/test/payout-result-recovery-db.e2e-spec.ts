@@ -96,6 +96,20 @@ const url=process.env.PHASE2_TEST_DATABASE_URL;
   const messages=new MemberMessagesService(db as any,new AuditService(),new IdempotencyService(db as any)),view=await messages.list(f.person.personId,{qualificationId:f.qualification.qualificationId});
   expect(view.items).toHaveLength(2);expect(view.items.find(row=>row.title==='付款失敗紀錄已登錄')?.content).toContain('此通知不代表付款完成');expect(view.items.some(row=>row.title==='付款完成紀錄已登錄')).toBe(true);expect((await db.payoutBatch.findUniqueOrThrow({where:{payoutBatchId:f.batch.payoutBatchId}})).status).toBe('PAID');
  });
+ it('keeps historical failures but clears aging only after full payment evidence',async()=>{
+  const f=await fixture(),control=new CompensationPeriodControlService(db as any),occurredAt=new Date(Date.now()-48*3600000);
+  const failed={...f.result('0','FAILED'),occurredAt};
+  const read=()=>control.aging({thresholdHours:24});
+  const count=async()=>((await read()).items.find(row=>row.category==='BANK_TRANSFER_FAILED')?.count??0);
+  const baseline=await count();
+  await service.recordPayoutResults(f.batch.payoutBatchId,{results:[failed]},f.actor,'FINANCE',randomUUID(),randomUUID());expect(await count()).toBe(baseline+1);
+  await f.post([f.result('40')]);expect(await count()).toBe(baseline+1);
+  await db.payoutBatch.update({where:{payoutBatchId:f.batch.payoutBatchId},data:{status:'PAID'}});expect(await count()).toBe(baseline+1);
+  await db.payoutBatch.update({where:{payoutBatchId:f.batch.payoutBatchId},data:{status:'PARTIALLY_PAID'}});
+  await f.post([f.result('100')]);expect(await count()).toBe(baseline);
+  expect(await db.payoutPaymentResult.count({where:{payoutBatchId:f.batch.payoutBatchId,resultStatus:'FAILED'}})).toBe(1);
+  expect(await db.memberNotification.count({where:{qualificationId:f.qualification.qualificationId,title:'付款失敗紀錄已登錄'}})).toBe(1);
+ });
  it('rolls back payment result, payable state and message together on confirmation audit failure',async()=>{
   const f=await fixture(),audit=new AuditService();jest.spyOn(audit,'write').mockRejectedValue(new Error('SYNTHETIC_AUDIT_FAILURE'));
   const failing=new AdminOperationsService(db as any,audit);await expect(failing.recordPayoutResults(f.batch.payoutBatchId,{results:[f.result('100')]},f.actor,'FINANCE',randomUUID(),randomUUID())).rejects.toThrow('SYNTHETIC_AUDIT_FAILURE');
