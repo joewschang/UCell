@@ -18,5 +18,6 @@ import { MemberReferralAttributionController, ReferralAttributionController } fr
 import { ReferralAttributionService } from './referral-attribution.service';
 import { FormalMemberApplicationService } from './formal-member-application.service';
 import { AdminFormalMemberApplicationController } from './admin-formal-member-application.controller';
-@Module({imports:[AuthModule,OrderModule],controllers:[MemberExplainController,MemberAuthController,MemberController,ReferralAttributionController,MemberReferralAttributionController,AdminFormalMemberApplicationController],providers:[MemberExplainService,MemberService,MemberReadService,MemberTreeReadService,MemberShareLinkService,ReferralAttributionService,FormalMemberApplicationService,MemberContractService,DeliveryProfileService,PiiCryptoService,IdentityMatchFingerprintService,MemberContextGuard,LineTokenVerifierService]})
+import { FormalMembershipConflictService } from './formal-membership-conflict.service';
+@Module({imports:[AuthModule,OrderModule],controllers:[MemberExplainController,MemberAuthController,MemberController,ReferralAttributionController,MemberReferralAttributionController,AdminFormalMemberApplicationController],providers:[MemberExplainService,MemberService,MemberReadService,MemberTreeReadService,MemberShareLinkService,ReferralAttributionService,FormalMemberApplicationService,FormalMembershipConflictService,MemberContractService,DeliveryProfileService,PiiCryptoService,IdentityMatchFingerprintService,MemberContextGuard,LineTokenVerifierService]})
 export class MemberModule {}
