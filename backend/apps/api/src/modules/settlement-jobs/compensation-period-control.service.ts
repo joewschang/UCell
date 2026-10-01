@@ -1,3 +1,4 @@
+import {maturedPayableSourceSql} from './matured-payable-source-query';
 import {BadRequestException,Injectable} from '@nestjs/common';
 import {Prisma,PrismaService,periodCloseInputState} from '@ucell/database';
 import {createHash} from 'node:crypto';
@@ -29,22 +30,7 @@ export class CompensationPeriodControlService{
   const cutoff=new Date(asOf.getTime()-input.thresholdHours*3600000);
   const rows=await this.db.$queryRaw<Array<{category:string;item_count:bigint;amount:Prisma.Decimal|null;oldest_at:Date|null}>>`
    WITH aging_items AS (
-    SELECT 'MATURED_AWARD_NOT_PAYABLE'::text category,a.pending_until anchor_at,a.payable_amount amount
-    FROM ledger.bonus_award a WHERE a.pending_until<=${cutoff} AND a.payable_amount>0
-      AND EXISTS (SELECT 1 FROM ledger.bonus_award_lifecycle_event l WHERE l.bonus_award_id=a.bonus_award_id AND l.status='EFFECTIVE')
-      AND NOT EXISTS (SELECT 1 FROM ledger.award_economic_destination d WHERE d.source_bonus_award_id=a.bonus_award_id)
-      AND NOT EXISTS (SELECT 1 FROM ledger.payable_entry p WHERE p.source_type='BONUS_AWARD' AND p.source_id=a.bonus_award_id)
-    UNION ALL
-    SELECT 'MATURED_AWARD_NOT_PAYABLE',a.occurred_at,a.payable_amount FROM ledger.rpv_upline_award_event a
-      WHERE a.occurred_at<=${cutoff} AND a.payable_amount>0
-      AND NOT EXISTS (SELECT 1 FROM ledger.award_economic_destination d WHERE d.source_rpv_award_id=a.rpv_award_event_id)
-      AND NOT EXISTS (SELECT 1 FROM ledger.payable_entry p WHERE p.source_type='RPV_UPLINE_AWARD' AND p.source_id=a.rpv_award_event_id)
-    UNION ALL
-    SELECT 'MATURED_AWARD_NOT_PAYABLE',s.period_end,a.payable_amount FROM ledger.global_pool_award a
-      JOIN ledger.global_pool_settlement s ON s.global_pool_settlement_id=a.global_pool_settlement_id
-      WHERE s.period_end<=${cutoff} AND a.payable_amount>0
-      AND NOT EXISTS (SELECT 1 FROM ledger.award_economic_destination d WHERE d.source_global_award_id=a.global_pool_award_id)
-      AND NOT EXISTS (SELECT 1 FROM ledger.payable_entry p WHERE p.source_type='GLOBAL_POOL_AWARD' AND p.source_id=a.global_pool_award_id)
+    SELECT 'MATURED_AWARD_NOT_PAYABLE'::text category,s.matures_at anchor_at,s.amount FROM (${maturedPayableSourceSql(cutoff,asOf)}) s
     UNION ALL
     SELECT 'PAYABLE_NOT_BATCHED',p.available_at,p.gross_amount FROM ledger.payable_entry p
       WHERE p.status='OPEN' AND p.payout_line_id IS NULL AND p.available_at<=${cutoff}

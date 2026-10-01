@@ -1,0 +1,42 @@
+{
+  "date": "2026-10-01",
+  "scope": "LOCAL_MATURED_PAYABLE_SOURCE_QUEUE",
+  "status": "BOUNDED_PASS",
+  "sources": [
+    "BONUS_AWARD",
+    "RPV_UPLINE_AWARD",
+    "GLOBAL_POOL_AWARD"
+  ],
+  "tests": {
+    "admin": {
+      "files": 61,
+      "tests": 221,
+      "status": "PASS"
+    },
+    "apiBuild": "PASS",
+    "adminBuild": "PASS",
+    "isolatedDatabase": {
+      "suites": 1,
+      "tests": 2,
+      "baselineAssertions": 162,
+      "cleanup": "PASS"
+    },
+    "relatedCompensation": {
+      "suites": 2,
+      "tests": 17,
+      "status": "PASS"
+    },
+    "openapiExport": "PASS"
+  },
+  "semantics": {
+    "asOf": "Source creation admission horizon; current payable and economic destination rechecked",
+    "money": "Stored decimal strings; no floating point formatting",
+    "actions": "Read only; link to existing payout preparation, no automatic financial mutation"
+  },
+  "limits": [
+    "Company/Reservoir B exclusion source predicate reviewed; no new company destination fixture in this checkpoint",
+    "No real Entra session or browser end-to-end certification",
+    "Full strict OpenAPI governance and final frozen whole-batch recertification still pending",
+    "Whole LOCAL_IMPLEMENTATION and STAGE_RC remain IN_PROGRESS; no deployment"
+  ]
+}

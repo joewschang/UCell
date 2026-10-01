@@ -1,3 +1,5 @@
+import {MaturedPayableSourcesController} from './matured-payable-sources.controller';
+import {MaturedPayableSourcesService} from './matured-payable-sources.service';
 import {OperationsCompanyHealthController} from './operations-company-health.controller';
 import {OperationsCompanyHealthService} from './operations-company-health.service';
 import {OperationsWorkflowHealthController} from './operations-workflow-health.controller';
@@ -16,7 +18,7 @@ import {OperationsWorkItemsService} from './operations-work-items.service';
 
 @Module({
   imports:[IdempotencyModule,FulfillmentOperationsModule],
-  controllers:[OperationsCompanyHealthController,OperationsWorkflowHealthController,OperationsFinancialHealthController,AdminOperationsController,OperationsControlController,OperationsWorkItemsController],
-  providers:[OperationsCompanyHealthService,OperationsWorkflowHealthService,OperationsFinancialHealthService,AdminOperationsService,OperationsControlService,OperationsWorkItemsService],
+  controllers:[MaturedPayableSourcesController,OperationsCompanyHealthController,OperationsWorkflowHealthController,OperationsFinancialHealthController,AdminOperationsController,OperationsControlController,OperationsWorkItemsController],
+  providers:[MaturedPayableSourcesService,OperationsCompanyHealthService,OperationsWorkflowHealthService,OperationsFinancialHealthService,AdminOperationsService,OperationsControlService,OperationsWorkItemsService],
 })
 export class AdminOperationsModule{}

@@ -13538,6 +13538,82 @@
         ]
       }
     },
+    "/api/v1/admin/operations/control/matured-payable-sources": {
+      "get": {
+        "description": "Read only. Company/Reservoir B destinations excluded. asOf bounds row admission; current payable/destination state is rechecked on each page, not a frozen historical financial snapshot.",
+        "operationId": "adminMaturedPayableSources",
+        "parameters": [
+          {
+            "name": "thresholdHours",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 8760,
+              "type": "number"
+            }
+          },
+          {
+            "name": "take",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "type": "number"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "pattern": "^MATURED-AWARD-[a-f0-9]{40}$",
+              "type": "string"
+            }
+          },
+          {
+            "name": "asOf",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopeDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid threshold, cursor, cutoff or query"
+          },
+          "401": {
+            "description": "Admin authentication required"
+          },
+          "403": {
+            "description": "Finance or compliance role required"
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "查閱已成熟且逾作業門檻但尚未建立應付的三類來源",
+        "tags": [
+          "Admin - Matured Payable Sources"
+        ]
+      }
+    },
     "/api/v1/admin/operations/control/company-health": {
       "get": {
         "operationId": "adminOperationsCompanyHealth",
@@ -23237,6 +23313,98 @@
           "effects",
           "limit",
           "truncated"
+        ]
+      },
+      "SourceDto": {
+        "type": "object",
+        "properties": {
+          "reference": {
+            "type": "string"
+          },
+          "sourceType": {
+            "type": "string",
+            "enum": [
+              "BONUS_AWARD",
+              "RPV_UPLINE_AWARD",
+              "GLOBAL_POOL_AWARD"
+            ]
+          },
+          "awardType": {
+            "type": "string"
+          },
+          "qualificationNo": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "string",
+            "description": "Stored payable decimal in canonical four fractional digits; no frontend computation"
+          },
+          "maturesAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "ruleVersionCode": {
+            "type": "string"
+          },
+          "recordedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "reference",
+          "sourceType",
+          "awardType",
+          "qualificationNo",
+          "amount",
+          "maturesAt",
+          "ruleVersionCode",
+          "recordedAt"
+        ]
+      },
+      "PageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SourceDto"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true
+          },
+          "asOf": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "dataThrough": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "cutoff": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "thresholdHours": {
+            "type": "number"
+          },
+          "coverage": {
+            "type": "string",
+            "enum": [
+              "CURRENT_PAGE_ONLY"
+            ]
+          }
+        },
+        "required": [
+          "items",
+          "nextCursor",
+          "asOf",
+          "dataThrough",
+          "cutoff",
+          "thresholdHours",
+          "coverage"
         ]
       },
       "WorkflowCandidateDto": {
