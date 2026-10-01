@@ -16,7 +16,9 @@ export class MemberAuthenticationError extends Error {
 
 type Dependencies = {
   authenticate: (token: string) => Promise<unknown>;
-  resolveIdentity: (provider: MemberProvider, subject: string, personId: string) => Promise<unknown>;
+  resolveIdentity?: (provider: MemberProvider, subject: string, personId: string) => Promise<unknown>;
+  /** Backward-compatible LINE-only dependency retained for the isolated auth-core tests. */
+  resolveLineSubject?: (subject: string) => Promise<unknown>;
 };
 
 const record = (value: unknown): value is Record<string, unknown> =>
@@ -46,8 +48,15 @@ export async function authenticateMemberRequest(
   }
 
   let binding: unknown;
-  try { binding = await dependencies.resolveIdentity(session.provider,session.subject,session.personId); }
-  catch { throw new MemberAuthenticationError('MEMBER_IDENTITY_UNAVAILABLE'); }
+  try {
+    if(dependencies.resolveIdentity){
+      binding=await dependencies.resolveIdentity(session.provider,session.subject,session.personId);
+    }else if(session.provider==='LINE'&&dependencies.resolveLineSubject){
+      binding=await dependencies.resolveLineSubject(session.subject);
+    }else{
+      throw new Error('resolver unavailable');
+    }
+  } catch { throw new MemberAuthenticationError('MEMBER_IDENTITY_UNAVAILABLE'); }
 
   if (!record(binding) || binding.provider !== session.provider ||
       binding.providerSubject !== session.subject || binding.personId !== session.personId) {
