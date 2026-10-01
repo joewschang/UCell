@@ -1,0 +1,32 @@
+{
+  "timestamp": "2026-10-01T05:56:26.902Z",
+  "baseCommit": "42bac4afae571ba1c524062777d68a39b39d91e4",
+  "sourceFiles": [
+    {
+      "path": "backend/apps/api/src/main.ts",
+      "sha256": "50c0a17bbad6cd74b290e5b6144fcf73bbd48f1ddd7ef944dd2d84e2b0ad5329"
+    },
+    {
+      "path": "backend/apps/api/src/common/http-methods.ts",
+      "sha256": "1dbfa8c7686d7b222c8cd5ac5156df2336e5031d4cde32fafd9cec00ca1348b7"
+    },
+    {
+      "path": "backend/apps/api/test/member-cors-preflight.e2e-spec.ts",
+      "sha256": "2f10468936e4b5c6a67ba8f5e8e8fb2a4963f4a0f1f355e0803a41952161ecc9"
+    }
+  ],
+  "change": "Allow PATCH for Member updates and PUT for the existing Admin selectable-products route",
+  "verification": {
+    "apiBuild": "PASS",
+    "isolatedSuites": 2,
+    "isolatedTests": 3,
+    "migrations": 126,
+    "baselineAssertions": 162,
+    "cleanup": "PASS",
+    "log": "C:/UCell/logs/cors-member-admin-isolated-20261001.log"
+  },
+  "scope": "Real Fastify CORS preflight plus existing package-config fixture suite; not production bootstrap origin policy or authenticated full browser checkout",
+  "overall": "IN_PROGRESS",
+  "stageRc": "NOT_READY",
+  "deployment": false
+}
