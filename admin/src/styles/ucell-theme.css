@@ -14,3 +14,44 @@
 @media(max-width:1023px){.app[data-app=admin]{display:block}.app[data-app=admin] .sidebar{position:relative;height:auto;padding:12px 14px}.app[data-app=admin] .brand{padding-bottom:10px}.app[data-app=admin] .sidebar nav{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:6px;align-items:start}.app[data-app=admin] .uc-nav-group{margin:0}.app[data-app=admin] .sidebar-foot{margin-top:12px;padding-top:10px;display:flex;flex-direction:row;align-items:center;gap:10px}.app[data-app=admin] .sidebar-foot button{margin:0 0 0 auto}.app[data-app=admin] .content{padding:22px 18px}}
 @media(max-width:600px){.app[data-app=admin] .sidebar nav{grid-template-columns:repeat(2,minmax(0,1fr))}.app[data-app=admin] .sidebar-foot{display:none}.app[data-app=admin] .content{padding:16px 12px}}
 .content :where(button,input,select,textarea,a):focus-visible{outline:3px solid var(--ucell-info);outline-offset:2px}.canonical-tree{margin:0;overflow-x:auto}.canonical-tree button{min-height:112px;transition:box-shadow var(--ucell-transition-fast),transform var(--ucell-transition-fast)}.canonical-tree button[aria-pressed=true]{box-shadow:0 0 0 4px var(--ucell-info-bg);transform:translateY(-1px)}.tree-error,.tree-notice,.tree-loading{border-radius:var(--ucell-radius-md);padding:var(--ucell-space-3);margin:0 0 var(--ucell-space-4)}.tree-error{border:1px solid var(--ucell-danger);background:var(--ucell-danger-bg)}.tree-notice{border:1px solid var(--ucell-success);background:var(--ucell-success-bg);color:var(--ucell-success)}.tree-loading{border:1px solid var(--ucell-info);background:var(--ucell-info-bg);color:var(--ucell-info)}.tree-summary{display:grid;gap:var(--ucell-space-2);margin-bottom:var(--ucell-space-3)}.tree-summary p{margin:0}.placement-flow{display:grid;gap:var(--ucell-space-3)}.placement-step{border-left:3px solid var(--ucell-primary);background:var(--ucell-surface-secondary);padding:var(--ucell-space-3);border-radius:0 var(--ucell-radius-md) var(--ucell-radius-md) 0}.placement-step h3,.placement-review h4{margin:0 0 var(--ucell-space-2)}.placement-review{border:1px solid var(--ucell-success);background:var(--ucell-success-bg);padding:var(--ucell-space-3);border-radius:var(--ucell-radius-md)}.placement-review dl{display:grid;grid-template-columns:minmax(7rem,auto) 1fr;gap:var(--ucell-space-1) var(--ucell-space-3);margin:0}.placement-review dt{color:var(--ucell-text-secondary)}.placement-review dd{margin:0;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}.placement-review p{margin:var(--ucell-space-3) 0 0}.list-row[aria-pressed=true]{box-shadow:inset 3px 0 0 var(--ucell-primary)}.uc-master-detail .uc-state{margin-bottom:0}@media(max-width:720px){.canonical-tree button{min-height:104px}.placement-review dl{grid-template-columns:1fr}.placement-review dt{margin-top:var(--ucell-space-2)}}
+
+
+/* R1.0B dark-theme contrast guard.
+   Legacy admin CSS contains many hard-coded white surfaces; force paired foreground
+   colors here so nested dark panels cannot produce white-on-white content. */
+.content,.page-header,.card,.metric,.login-card,.search-menu,.search-option,.list-row,.sticky-actions,.tree-node,.uat-case,.composition,.dashboard-stat-grid>div{
+  color:var(--ucell-text-primary);
+}
+.card,.metric,.login-card,.search-menu,.search-option,.list-row,.sticky-actions,.tree-node,.uat-case,.composition,.dashboard-stat-grid>div{
+  background:var(--ucell-surface);
+  border-color:var(--ucell-border);
+}
+input,select,textarea,button{
+  background:var(--ucell-surface);
+  color:var(--ucell-text-primary);
+  border-color:var(--ucell-border);
+}
+th{background:var(--ucell-surface-secondary);color:var(--ucell-text-secondary)}
+td{color:var(--ucell-text-primary);border-color:var(--ucell-border-subtle)}
+.search-option span,.list-row span,.list-row small,.detail-grid dt,.timeline-item span,.timeline-item small,.uat-head small{
+  color:var(--ucell-text-secondary);
+}
+.app-loading{background:var(--ucell-bg);color:var(--ucell-text-secondary)}
+.dashboard-unavailable{background:var(--ucell-surface-secondary);border-color:var(--ucell-border)}
+.dashboard-stat-grid{background:var(--ucell-border-subtle)}
+.composition{background:var(--ucell-surface-elevated)}
+.composition-track,.composition-empty{background:var(--ucell-surface-secondary)}
+.composition-source{border-color:var(--ucell-border-subtle);color:var(--ucell-text-muted)}
+/* Dark-owned surfaces retain explicit light foreground regardless of the global palette. */
+.dashboard-hero,.dashboard-latest,.json,.nasl-overview,.nasl-panel,.nasl-history-panel{
+  color:#eef5fc;
+}
+.dashboard-hero :where(h1,h2,h3,strong),.dashboard-latest :where(h1,h2,h3,strong),.nasl-overview :where(h1,h2,h3,strong),.nasl-panel :where(h1,h2,h3,strong),.nasl-history-panel :where(h1,h2,h3,strong){
+  color:#eef5fc;
+}
+@media(prefers-color-scheme:dark){
+  :root:not([data-theme="light"]) .dashboard-stat-grid div,
+  :root:not([data-theme="light"]) .composition{
+    background:var(--ucell-surface-elevated);
+  }
+}
