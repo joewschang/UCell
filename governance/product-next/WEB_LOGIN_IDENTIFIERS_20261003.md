@@ -15,3 +15,5 @@ Stage deployment and public artifact/health/negative login probes: deployment/we
 UI screenshots use an anonymous local preview of the identical verified frontend artifact because the in-app Stage browser already has an authenticated member session; that session was preserved. Screenshots: C:/UCell/logs/web-login-identifier-preview-20261003.png and C:/UCell/logs/web-register-confirm-preview-20261003.png. Preview contract load failure is due to the localhost origin and does not represent the deployed Stage contract state.
 
 No database migration, Stage ownership/financial mutation, OTP activation or Production deployment.
+
+Local full isolated API regression also completed: 207 suites / 1441 tests PASS, API_JEST_ISOLATED_PASS and API_JEST_ISOLATED_CLEANUP_PASS; log C:/UCell/logs/web-login-api-full-20261003.log. Its counts agree with the remote source-commit CI.
