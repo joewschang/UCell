@@ -1,4 +1,4 @@
-import {Body,Controller,Get,Headers,Param,ParseUUIDPipe,Post,Query,Req,StreamableFile,UseGuards} from '@nestjs/common';
+import {Body,Controller,Get,Header,Headers,Param,ParseUUIDPipe,Post,Query,Req,StreamableFile,UseGuards} from '@nestjs/common';
 import {ApiBearerAuth,ApiHeader,ApiOperation,ApiProperty,ApiPropertyOptional,ApiTags} from '@nestjs/swagger';
 import {Roles} from '../auth/roles.decorator';
 import {FormalMemberApplicationService,type AdminPaperFormalInput} from './formal-member-application.service';
@@ -82,9 +82,9 @@ export class AdminFormalMemberApplicationController {
  approve(@Param('id',new ParseUUIDPipe()) id:string,@Req() req:any){return this.service.approve(id,req.user?.personId,req.requestId);}
  @Get(':id/documents') @ApiOperation({operationId:'adminFormalApplicationDocuments',description:'List KYC document metadata for review; private storage object keys/URLs are not returned.'})
  documents(@Param('id',new ParseUUIDPipe()) id:string){return this.kyc.adminList(id);}
- @Get('documents/:documentId/content') @ApiOperation({operationId:'adminFormalApplicationDocumentContent',description:'Audited role-restricted read of one private KYC document image.'})
+ @Get('documents/:documentId/content') @Header('Cache-Control','private, no-store') @Header('X-Content-Type-Options','nosniff') @Header('Referrer-Policy','no-referrer') @ApiOperation({operationId:'adminFormalApplicationDocumentContent',description:'Audited role-restricted read of one private KYC document image.'})
  async documentContent(@Param('documentId',new ParseUUIDPipe()) documentId:string,@Req() req:any){const blob=await this.kyc.adminContent(documentId,req.user?.personId,req.requestId);return new StreamableFile(blob.bytes,{type:blob.mimeType});}
- @Get(':id/detail') @ApiOperation({operationId:'adminFormalMemberApplicationDetail',description:'Audited KYC review detail for authorized membership/compliance staff. This dedicated endpoint may return decrypted application PII and must not be used by ordinary queues/analytics.'})
+ @Get(':id/detail') @Header('Cache-Control','private, no-store') @ApiOperation({operationId:'adminFormalMemberApplicationDetail',description:'Audited KYC review detail for authorized membership/compliance staff. This dedicated endpoint may return decrypted application PII and must not be used by ordinary queues/analytics.'})
  detail(@Param('id',new ParseUUIDPipe()) id:string,@Req() req:any){return this.service.adminDetail(id,req.user?.personId,req.requestId);}
  @Get(':id/cross-line-conflicts') @ApiOperation({operationId:'adminFormalMemberCrossLineConflicts',description:'Evaluate spouse, identity, representative and legal-entity duplicate conflicts from privacy-preserving indexes. Returns codes only; no raw national ID.'})
  conflictsFor(@Param('id',new ParseUUIDPipe()) id:string){return this.conflicts.evaluate(id);}

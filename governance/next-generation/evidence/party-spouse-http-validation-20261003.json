@@ -1,0 +1,24 @@
+{
+  "date": "2026-10-03",
+  "baselineCommit": "20fabbd24b4fc8fd4d4ae651376b34a9e5dca05e",
+  "changes": ["KYC image and decrypted application detail responses use private, no-store", "KYC image responses use nosniff and no-referrer"],
+  "validation": {
+    "command": "pnpm test -- --runTestsByPath test/formal-kyc-http.e2e-spec.ts (backend/apps/api)",
+    "httpTests": "1 suite / 6 tests PASS; actual Nest/Fastify HTTP adapters and production authentication/role guards; token verification and document services are synthetic mocks",
+    "coverage": ["Exact image bytes survive production envelope interceptor", "Authorized membership/compliance reads", "Invalid or absent session and Finance rejected before content service", "Scan gate rejection streams no bytes", "Private decrypted detail response", "Manual CLEAN scan route absent"],
+    "apiBuild": "PASS",
+    "browser": "NOT RUN: reset and initialization still fail with missing kernel-assets path"
+  },
+  "stageReadOnlyInspection": {
+    "resourceGroup": "rg-ucell-stage",
+    "storageAccount": "ucellst5mafbbsq33mgu",
+    "allowBlobPublicAccess": false,
+    "httpsOnly": true,
+    "minimumTlsVersion": "TLS1_2",
+    "containers": ["ucell-source-recovery (publicAccess None)"],
+    "kycContainer": "Not present in returned container inventory",
+    "securityPricingQuery": "Unavailable: subscription not registered to Microsoft.Security; cannot confirm trusted malware scanning",
+    "credentials": "Not printed or committed"
+  },
+  "release": {"draft": true, "stageDeployed": false, "productionDeployed": false, "existingStage": "unchanged"}
+}
