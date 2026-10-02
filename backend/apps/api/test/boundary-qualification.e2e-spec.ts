@@ -17,6 +17,7 @@ function packageHarness(){
     person:{findUnique:jest.fn(async()=>({status:'EFFECTIVE'}))},
     qualification:{create:jest.fn(async({data}:any)=>({qualificationId:`ball-${++sequence}`,...data}))},
     qualificationHolderHistory:{create:jest.fn()},qualificationStatusHistory:{create:jest.fn()},
+    qualificationOwnerInterval:{create:jest.fn()},
     order:{create:jest.fn(async({data}:any)=>({orderId:`order-${sequence}`,qualificationId:data.qualificationId,lines:[]}))},
     packagePurchaseSnapshot:{create:jest.fn(async()=>({packagePurchaseSnapshotId:`snapshot-${sequence}`}))},
   };

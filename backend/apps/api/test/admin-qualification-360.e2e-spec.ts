@@ -22,7 +22,7 @@ function source(overrides: Record<string, unknown> = {}) {
     ownerIntervals: [{
       ownerType: 'MEMBER' as const,
       person: { memberNo: '0000000001' },
-      companyPrincipal: null,
+      legalEntity: null, companyPrincipal: null,
     }],
     companyProfileBindings: [],
     globalRankHistory: [],
@@ -74,7 +74,7 @@ describe('Admin Qualification 360 projection', () => {
       ownerIntervals: [{
         ownerType: 'COMPANY',
         person: null,
-        companyPrincipal: { code: 'UCELL_COMPANY' },
+        legalEntity: null, companyPrincipal: { code: 'UCELL_COMPANY' },
       }],
       companyProfileBindings: [{
         binaryTreeId: 'binary-tree-internal-id',
@@ -133,7 +133,7 @@ describe('Admin Qualification 360 projection', () => {
   it('preserves a member-origin plan even while the current owner is Company', () => {
     const memberOriginCompanyHeld = source({
       ownerIntervals: [{
-        ownerType: 'COMPANY', person: null, companyPrincipal: { code: 'UCELL_COMPANY' },
+        ownerType: 'COMPANY', person: null, legalEntity: null, companyPrincipal: { code: 'UCELL_COMPANY' },
       }],
       companyProfileBindings: [{
         binaryTreeId: 'binary-tree-internal-id', companyPosition: 4,
@@ -151,8 +151,8 @@ describe('Admin Qualification 360 projection', () => {
       status: 'UNAVAILABLE', reasonCode: 'OWNER_EVIDENCE_UNAVAILABLE', ownerType: null,
     });
     expect(toAdminQualification360(source({ ownerIntervals: [
-      { ownerType: 'MEMBER', person: { memberNo: '0000000001' }, companyPrincipal: null },
-      { ownerType: 'COMPANY', person: null, companyPrincipal: { code: 'UCELL_COMPANY' } },
+      { ownerType: 'MEMBER', person: { memberNo: '0000000001' }, legalEntity: null, companyPrincipal: null },
+      { ownerType: 'COMPANY', person: null, legalEntity: null, companyPrincipal: { code: 'UCELL_COMPANY' } },
     ] }), starterPlan).owner).toMatchObject({
       status: 'UNAVAILABLE', reasonCode: 'OWNER_EVIDENCE_UNAVAILABLE', ownerType: null,
     });

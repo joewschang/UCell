@@ -67,9 +67,10 @@ describe('Vertical Slice 02 - Membership / Active / Subscription / RPV', () => {
   });
   it('creates DRAFT membership application', async () => {
     const { tx, idempotency, audit, service } = applicationHarness();
-    const dto = { personId: 'person-A', requestedPlanLevelCode: 'STARTER' as const, sponsorQualificationId: 'sponsor-A', binaryParentQualificationId: 'parent-B', binarySide: 'LEFT' as const };
+    const dto = { holderType: 'PERSON' as const, personId: 'person-A', requestedPlanLevelCode: 'STARTER' as const, sponsorQualificationId: 'sponsor-A', binaryParentQualificationId: 'parent-B', binarySide: 'LEFT' as const };
     const result = (await service.create(dto, 'create-key', 'request-A', 'admin-A')).value;
-    expect(result).toMatchObject({ applicationId: 'application-A', status: 'DRAFT', ...dto });
+    const {holderType, ...applicationFields}=dto;
+    expect(result).toMatchObject({ applicationId: 'application-A', status: 'DRAFT', ...applicationFields });
     expect(tx.person.findUnique).toHaveBeenCalledWith({ where: { personId: 'person-A' } });
     expect(idempotency.execute).toHaveBeenCalledWith('admin:membership-application:create:admin-A', 'create-key', dto, expect.any(Function));
     expect(audit.write).toHaveBeenCalledWith(tx, expect.objectContaining({ action: 'MEMBERSHIP_APPLICATION_CREATED', entityId: 'application-A', requestId: 'request-A' }));
@@ -91,7 +92,7 @@ describe('Vertical Slice 02 - Membership / Active / Subscription / RPV', () => {
   it('APPROVE creates Qualification + Holder + Sponsor + Binary atomically', async () => {
     const app = { applicationId: 'application-A', personId: 'person-A', requestedPlanLevelCode: 'STARTER', status: 'SUBMITTED', sponsorQualificationId: 'sponsor-A', binaryParentQualificationId: 'parent-B', binarySide: 'LEFT' };
     const tx: any = { membershipApplication: { findUnique: jest.fn(async () => app), update: jest.fn(async ({ data }: any) => ({ ...app, ...data })) } };
-    for (const model of ['qualification', 'qualificationPlanHistory', 'qualificationHolderHistory', 'qualificationStatusHistory', 'sponsorRelationship', 'binaryPlacement']) {
+    for (const model of ['qualification', 'qualificationOwnerInterval', 'qualificationPlanHistory', 'qualificationHolderHistory', 'qualificationStatusHistory', 'sponsorRelationship', 'binaryPlacement']) {
       tx[model] = { create: jest.fn(async ({ data }: any) => ({ qualificationId: 'ball-new', ...data })) };
     }
     const organization = {
@@ -117,7 +118,7 @@ describe('Vertical Slice 02 - Membership / Active / Subscription / RPV', () => {
   });
   it('1st and 3rd direct-left rule is enforced during approval', async () => {
     for (const sequence of [1, 3]) {
-      const app = { status: 'SUBMITTED', sponsorQualificationId: 'sponsor-A', binaryParentQualificationId: 'sponsor-A', binarySide: 'RIGHT' };
+      const app = { personId:'person-A', legalEntityId:null, status: 'SUBMITTED', sponsorQualificationId: 'sponsor-A', binaryParentQualificationId: 'sponsor-A', binarySide: 'RIGHT' };
       const tx = { membershipApplication: { findUnique: jest.fn(async () => app), update: jest.fn() }, qualification: { create: jest.fn() } };
       const organization = { allocateSponsorSequence: jest.fn(async () => sequence), assertBinarySlotAvailable: jest.fn(), assertFirstThirdLeftRule: jest.fn(async () => { throw new Error('LEFT_SUBTREE_REJECTED'); }) };
       const audit = { write: jest.fn() };

@@ -134,18 +134,18 @@ describe('R1.0B v0.6.3',()=>{
     const findFirst = jest.fn(async ({ where }: any) => {
       if (where.qualificationId !== 'ball-A') return null;
       const time = where.effectiveFrom.lte;
-      if (where.holderPersonId === 'former' && time < boundary && where.OR[1].effectiveTo.gt < boundary) return { holderHistoryId: 'old' };
-      if (where.holderPersonId === 'new' && time >= boundary) return { holderHistoryId: 'new' };
+      if (where.OR[0].holderPersonId === 'former' && time < boundary && where.AND[0].OR[1].effectiveTo.gt < boundary) return { holderPersonId: 'former', holderLegalEntityId: null };
+      if (where.OR[0].holderPersonId === 'new' && time >= boundary) return { holderPersonId: 'new', holderLegalEntityId: null };
       return null;
     });
     const qualification = { findUnique: jest.fn(async () => ({ currentHolderPersonId: 'new' })) };
     const service = new QualificationAccessService({ qualificationHolderHistory: { findFirst }, qualification } as any);
-    await expect(service.assertHolder('former', 'ball-A', new Date('2020-01-31T23:59:59Z'))).resolves.toBeUndefined();
+    await expect(service.assertHolder('former', 'ball-A', new Date('2020-01-31T23:59:59Z'))).resolves.toEqual({ownerType:'PERSON',personId:'former',legalEntityId:null});
     await expect(service.assertHolder('former', 'ball-A', boundary)).rejects.toMatchObject({ status: 403 });
-    await expect(service.assertHolder('new', 'ball-A', boundary)).resolves.toBeUndefined();
+    await expect(service.assertHolder('new', 'ball-A', boundary)).resolves.toEqual({ownerType:'PERSON',personId:'new',legalEntityId:null});
     await expect(service.assertHolder('new', 'ball-A', new Date('2020-01-31T23:59:59Z'))).rejects.toMatchObject({ status: 403 });
     await expect(service.assertHolder('new', 'ball-B', boundary)).rejects.toMatchObject({ status: 403 });
-    expect(findFirst).toHaveBeenCalledWith({ where: { qualificationId: 'ball-A', holderPersonId: 'former', effectiveFrom: { lte: boundary }, OR: [{ effectiveTo: null }, { effectiveTo: { gt: boundary } }] } });
+    expect(findFirst).toHaveBeenCalledWith(expect.objectContaining({where:expect.objectContaining({qualificationId:'ball-A',effectiveFrom:{lte:boundary},OR:expect.arrayContaining([{holderPersonId:'former'}]),AND:[{OR:[{effectiveTo:null},{effectiveTo:{gt:boundary}}]}]})}));
     expect(qualification.findUnique).not.toHaveBeenCalled();
   });
   it('RBAC denies unauthorized admin operation', () => {
