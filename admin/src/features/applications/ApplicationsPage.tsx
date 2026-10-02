@@ -24,7 +24,7 @@ export function ApplicationsPage(){
   catch(e){setError(e)}finally{setBusy(false)}
  }
  return <>
-  <PageHeader title="會員申請待審" subtitle="Draft → Submitted → Effective；Approve時才正式建立Qualification、Sponsor Relationship與Binary Placement。" actions={<Link className="button-link" to="/applications/new">＋ 新增會員申請</Link>}/>
+  <PageHeader title="會員申請待審" subtitle="Draft → Submitted → Effective；Approve時才正式建立Qualification、Sponsor Relationship與Binary Placement。" actions={<div className="button-row"><Link className="button-link" to="/applications/new">＋ 新增球位申請</Link><Link className="button-link" to="/applications/formal-paper">＋ 紙本正式會員建檔</Link></div>}/>
   <div className="toolbar"><select aria-label="申請狀態" value={status} onChange={e=>setStatus(e.target.value)}><option value="">全部狀態</option><option>DRAFT</option><option>SUBMITTED</option><option>EFFECTIVE</option></select><input value={search} onChange={e=>setSearch(e.target.value)} aria-label="姓名／手機／Email" placeholder="姓名／手機／Email"/></div>
   <ErrorBox error={list.error}/><ErrorBox error={error}/>
   <div className="split-view"><Card title={`申請佇列 (${rows.length})`}><div>{rows.map(x=><button className={`list-row ${selected===x.applicationId?'selected':''}`} key={x.applicationId} onClick={()=>setSelected(x.applicationId)}><strong>{x.person?.legalName??x.personId}</strong><span>{x.requestedPlanLevelCode} · <Badge tone={tone(x.status) as any}>{x.status}</Badge></span><small>{dateTime(x.createdAt)} · {x.applicationId}</small></button>)}</div></Card>
@@ -44,7 +44,7 @@ export function ApplicationsPage(){
    </div>
   </>}</Card></div>
   <Card title="正式會員補件草稿（唯讀）">
-   <p className="muted">僅顯示狀態與不可逆證據；加密申請內容不會為佇列解密。KYC 文件、送審與核准仍待正式政策與權限配置。</p>
+   <p className="muted">僅顯示狀態與不可逆證據；加密申請內容不會為佇列解密。KYC 文件、紙本 Evidence、配偶核驗與跨線審查皆由專用流程處理；核准正式會員本身不自動建立 Ball。</p>
    <div className="toolbar"><select aria-label="正式會員申請狀態" value={formalStatus} onChange={e=>setFormalStatus(e.target.value)}><option value="">全部狀態</option><option>DRAFT</option><option>SUBMITTED</option><option>UNDER_REVIEW</option><option>NEEDS_MORE_INFO</option></select></div>
    <ErrorBox error={formalList.error}/>
    <div className="table-wrap"><AdminTable><thead><tr><th>申請人</th><th>會員狀態</th><th>申請狀態</th><th>版本</th><th>Evidence Hash</th><th>更新時間</th></tr></thead><tbody>{formalRows.map(row=><tr key={row.id}><td>{row.personNameMasked}<br/><small className="mono">{row.id}</small></td><td>{row.membershipState??'—'}</td><td><Badge tone={row.status==='DRAFT'?'neutral':'warn'}>{row.status}</Badge></td><td>{row.version===null?'—':`v${row.version}`}</td><td className="mono">{row.payloadHash}</td><td>{dateTime(row.updatedAt)}</td></tr>)}</tbody></AdminTable></div>
