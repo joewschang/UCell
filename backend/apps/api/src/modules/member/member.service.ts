@@ -66,6 +66,14 @@ export class MemberService {
    return {qualificationId,notices:rows.map(row=>({id:row.notificationId,qualificationId:row.qualificationId,category:row.category,title:row.title,body:row.body,timeLabel:row.createdAt.toISOString(),readAt:row.reads[0]?.readAt.toISOString()??null})),pagination:{limit:100,truncated:rows.length===100}};
   },{isolationLevel:'RepeatableRead'});
  }
+ async representedLegalEntities(personId:string,at=new Date()){
+  const rows=await this.db.legalEntityRepresentative.findMany({
+   where:{personId,roleCode:'PRIMARY_OPERATING_REPRESENTATIVE',effectiveFrom:{lte:at},OR:[{effectiveTo:null},{effectiveTo:{gt:at}}],legalEntity:{status:'ACTIVE',membershipState:'FORMAL_MEMBER'}},
+   include:{legalEntity:true},
+   orderBy:{effectiveFrom:'desc'}
+  });
+  return rows.map(row=>({legalEntityId:row.legalEntityId,memberNo:row.legalEntity.memberNo,registeredName:row.legalEntity.registeredName,registrationNo:row.legalEntity.registrationNo,registrationCountryCode:row.legalEntity.registrationCountryCode,authorityRole:row.roleCode,effectiveFrom:row.effectiveFrom.toISOString(),effectiveTo:row.effectiveTo?.toISOString()??null}));
+ }
  async qualifications(personId:string){
   const now=new Date();
   const rows=await this.db.qualification.findMany({where:{
