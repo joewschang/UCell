@@ -18,7 +18,7 @@ Authority: Product Owner request on 2026-10-03 to include R1.1 and continue comp
 - Communication address currently exists inside encrypted formal application payloads; delivery profiles are a different purpose. Historical normalization must bind to source snapshot/version and record time, not current mutable application data.
 - Administrative seed source: NLSC county/town code services, https://data.gov.tw/dataset/102011. Pin downloaded bytes/checksum/date. No live external calls per dashboard read.
 - OpenAPI baseline remains unchanged until recorded Code Owner authority; intentional differences must remain visible.
-- Google OAuth project/client ID, email provider and trusted KYC scanner configuration await user input; do not invent credentials or claim provider completion.
+- Google OAuth Stage project/client ID is configured and deployed; completed registration/member-homepage UAT remains pending. Email delivery and trusted KYC scanner configuration remain pending; do not invent credentials or claim provider completion.
 
 ## Acceptance
 

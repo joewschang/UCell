@@ -34,10 +34,15 @@ const url=process.env.PHASE2_TEST_DATABASE_URL;
   const rule='PAGING-'+randomUUID(),base=Date.now()-10000;
   const record=(stage:string,time:number)=>db.$queryRaw`SELECT * FROM integration.ucell_observe_compensation_stage(${new Date(period.periodStart)},${new Date(period.periodEnd)},${rule},${stage},${new Date(time)},${'a'.repeat(64)})`;
   for(const [i,stage] of ['OPEN','PRECHECK','BLOCKED'].entries())await record(stage,base+i);
+  // PostgreSQL records microseconds; establish a later millisecond cutoff before
+  // expecting all three committed observations in the first snapshot.
+  await new Promise(resolve=>setTimeout(resolve,5));
   const q='?'+new URLSearchParams({...period,ruleVersionCode:rule,take:'1'}),first=await read(q,'FINANCE'),page=first.json().data;expect(first.statusCode).toBe(200);expect(page.items.map((r:any)=>r.revision)).toEqual([3]);expect(page.nextCursor).toBe(3);
   await new Promise(resolve=>setTimeout(resolve,5));await record('PRECHECK',base+3);
   const second=(await read(q+'&cursor=3&asOf='+encodeURIComponent(page.asOf),'FINANCE')).json().data;expect(second.items.map((r:any)=>r.revision)).toEqual([2]);expect(second.nextCursor).toBe(2);
   const last=(await read(q+'&cursor=2&asOf='+encodeURIComponent(page.asOf),'FINANCE')).json().data;expect(last.items.map((r:any)=>r.revision)).toEqual([1]);expect(last.nextCursor).toBeNull();
-  expect((await read(q+'&asOf='+encodeURIComponent(page.asOf),'FINANCE')).json().data.items[0].revision).toBe(3);expect((await read(q,'FINANCE')).json().data.items[0].revision).toBe(4);
+  expect((await read(q+'&asOf='+encodeURIComponent(page.asOf),'FINANCE')).json().data.items[0].revision).toBe(3);
+  await new Promise(resolve=>setTimeout(resolve,5));
+  expect((await read(q,'FINANCE')).json().data.items[0].revision).toBe(4);
  });
 });
