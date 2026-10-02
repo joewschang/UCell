@@ -733,7 +733,7 @@ model SpouseRelationship {
 model FormalIdentityIndex {
   formalIdentityIndexId       String                   @id @default(uuid()) @map("formal_identity_index_id") @db.Uuid
   personId                    String                   @unique @map("person_id") @db.Uuid
-  nationalIdFingerprint       String                   @unique @map("national_id_fingerprint")
+  identityDocumentFingerprint       String                   @unique @map("identity_document_fingerprint")
   verifiedAt                  DateTime                 @map("verified_at") @db.Timestamptz(6)
   verifiedBy                  String?                  @map("verified_by") @db.Uuid
   sourceFormalApplicationId   String                   @map("source_formal_application_id") @db.Uuid
@@ -741,7 +741,7 @@ model FormalIdentityIndex {
   person                      Person                   @relation(fields: [personId], references: [personId])
   sourceFormalApplication     FormalMemberApplication  @relation(fields: [sourceFormalApplicationId], references: [formalMemberApplicationId])
 
-  @@index([nationalIdFingerprint])
+  @@index([identityDocumentFingerprint])
   @@map("formal_identity_index")
   @@schema("identity")
 }
