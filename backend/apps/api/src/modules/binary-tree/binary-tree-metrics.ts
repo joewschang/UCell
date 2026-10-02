@@ -4,7 +4,7 @@ import {treeHash} from '../organization/tree-placement';
 const LIMIT=2000;
 const unavailable=(reason:string)=>({status:'UNAVAILABLE' as const,reason,value:null,unit:'GPV_POINT',basisVersion:'TREE_GPV_SOURCE_V1'});
 /** Report stored GPV once per source; never run entitlement or settlement calculators. */
-export async function readFoundingPerformance(tx:Prisma.TransactionClient,treeId:string,root:string,time:AsOfContext){
+export async function readFoundingPerformance(tx:Prisma.TransactionClient,treeId:string,root:string,time:AsOfContext,includeSourceFacts=false){
  const known=new Date(time.knowledgeCutoff),at=new Date(time.asOf);
  const ids=await tx.$queryRaw<Array<{event_id:string;first_side:string}>>`
   SELECT e.event_id,a.first_side FROM ledger.pv_ledger e
@@ -19,6 +19,7 @@ export async function readFoundingPerformance(tx:Prisma.TransactionClient,treeId
  if(corrections.length>20000)return unavailable('SOURCE_LIMIT_REQUIRES_PROJECTION');
  const totals={cumulative:new Prisma.Decimal(0),month:new Prisma.Decimal(0),leftMonth:new Prisma.Decimal(0),rightMonth:new Prisma.Decimal(0)};
  const refs:Array<{type:string;id:string;revision:string}>=[];
+ const sourceFacts:Array<{eventId:string;qualificationId:string;firstSide:string;occurredAt:string;netGpv:string}>=[];
  for(const row of rows){
   const stored=snapshots.find(s=>s.sourceId===row.eventId);if(!stored)return unavailable('HISTORICAL_GPV_EVIDENCE_MISSING');
   let envelope:ReturnType<typeof verifyReplayEnvelope>;try{envelope=verifyReplayEnvelope(stored);}catch{return unavailable('HISTORICAL_GPV_EVIDENCE_INVALID');}
@@ -43,6 +44,7 @@ export async function readFoundingPerformance(tx:Prisma.TransactionClient,treeId
    net=net.add(correction.amount);refs.push({type:'PvLedger',id:correction.eventId,revision:correction.recordedAt.toISOString()});
   }
   if(net.isNegative())return unavailable('NEGATIVE_EFFECTIVE_GPV');
+  if(includeSourceFacts)sourceFacts.push({eventId:row.eventId,qualificationId:row.qualificationId,firstSide:capturedSide!,occurredAt:row.occurredAt.toISOString(),netGpv:net.toFixed(4)});
   totals.cumulative=totals.cumulative.add(net);
   if(row.occurredAt>=new Date(time.periodStart)&&row.occurredAt<new Date(time.periodEnd)){
    totals.month=totals.month.add(net);if(capturedSide==='LEFT')totals.leftMonth=totals.leftMonth.add(net);else totals.rightMonth=totals.rightMonth.add(net);
@@ -50,7 +52,7 @@ export async function readFoundingPerformance(tx:Prisma.TransactionClient,treeId
   refs.push({type:'HistoricalReplaySnapshot',id:stored.snapshotId,revision:stored.hash});
  }
  const lastUpdated=[...rows.map(r=>r.recordedAt),...corrections.map(r=>r.recordedAt),...snapshots.map(r=>r.createdAt)].filter((d):d is Date=>d instanceof Date).sort((a,b)=>b.getTime()-a.getTime())[0]?.toISOString()??null;
- return {status:'AVAILABLE' as const,lastUpdated,reason:null,unit:'GPV_POINT',basisVersion:'TREE_GPV_SOURCE_V1',value:{cumulative:totals.cumulative.toFixed(4),month:totals.month.toFixed(4),leftMonth:totals.leftMonth.toFixed(4),rightMonth:totals.rightMonth.toFixed(4)},sourceEvents:rows.length,sourceHash:treeHash(refs),sourceWatermark:time.knowledgeCutoff,evidenceRefs:refs};
+ return {status:'AVAILABLE' as const,lastUpdated,reason:null,unit:'GPV_POINT',basisVersion:'TREE_GPV_SOURCE_V1',value:{cumulative:totals.cumulative.toFixed(4),month:totals.month.toFixed(4),leftMonth:totals.leftMonth.toFixed(4),rightMonth:totals.rightMonth.toFixed(4)},sourceEvents:rows.length,sourceHash:treeHash(refs),sourceWatermark:time.knowledgeCutoff,evidenceRefs:refs,...(includeSourceFacts?{sourceFacts}:{})};
 }
 export async function readFoundingCarry(tx:Prisma.TransactionClient,root:string,time:AsOfContext){
  const at=new Date(time.asOf),known=new Date(time.knowledgeCutoff);
