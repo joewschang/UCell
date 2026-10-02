@@ -10,7 +10,7 @@ import {QualificationAccessService} from '../src/modules/auth/qualification-acce
 import {MemberAuthenticationGuard} from '../src/modules/auth/member-authentication.guard';
 import {MemberContextGuard} from '../src/modules/member/member-context.guard';
 import {IdentityTokenService} from '../src/modules/auth/identity-token.service';
-import {LineIdentityService} from '../src/modules/auth/line-identity.service';
+import {MemberIdentityService} from '../src/modules/auth/member-identity.service';
 import {EnvelopeInterceptor} from '../src/common/interceptors/envelope.interceptor';
 import {MemberMessagesService} from '../src/modules/member/member-messages.service';
 import {IdempotencyService} from '../src/common/idempotency/idempotency.service';
@@ -44,7 +44,7 @@ const url=process.env.PHASE2_TEST_DATABASE_URL;
   async function token(personId:string){const subject=randomUUID();await db.identityLink.create({data:{provider:'LINE',providerSubject:subject,personId}});return (await tokens.issue({provider:'LINE',subject,personId})).accessToken;}
   const own=await token(f.person.personId),foreignPerson=await db.person.create({data:{legalName:'Foreign payout HTTP',status:'EFFECTIVE'}}),foreign=await token(foreignPerson.personId);
   await db.payoutPaymentResult.createMany({data:Array.from({length:51},()=>({payoutBatchId:f.batch.payoutBatchId,payoutLineId:f.line.payoutLineId,resultStatus:'PAID' as const,paidAmount:'40',paymentReference:'SENSITIVE_BANK_REFERENCE',occurredAt:new Date(),recordedByActor:f.actor,idempotencyKey:randomUUID()}))});
-  const module=await Test.createTestingModule({controllers:[MemberPayoutController],providers:[MemberReadService,MemberAuthenticationGuard,MemberContextGuard,LineIdentityService,AuditService,QualificationAccessService,{provide:PrismaService,useValue:db},{provide:MemberService,useValue:identity},{provide:IdentityTokenService,useValue:tokens},{provide:ConfigService,useValue:{get:()=>undefined}}]}).compile();const app=module.createNestApplication<NestFastifyApplication>(new FastifyAdapter(),{logger:false});app.setGlobalPrefix('api/v1');app.useGlobalPipes(new ValidationPipe({whitelist:true,forbidNonWhitelisted:true,transform:true}));app.useGlobalInterceptors(new EnvelopeInterceptor());await app.init();await app.getHttpAdapter().getInstance().ready();
+  const module=await Test.createTestingModule({controllers:[MemberPayoutController],providers:[MemberReadService,MemberAuthenticationGuard,MemberContextGuard,MemberIdentityService,AuditService,QualificationAccessService,{provide:PrismaService,useValue:db},{provide:MemberService,useValue:identity},{provide:IdentityTokenService,useValue:tokens},{provide:ConfigService,useValue:{get:()=>undefined}}]}).compile();const app=module.createNestApplication<NestFastifyApplication>(new FastifyAdapter(),{logger:false});app.setGlobalPrefix('api/v1');app.useGlobalPipes(new ValidationPipe({whitelist:true,forbidNonWhitelisted:true,transform:true}));app.useGlobalInterceptors(new EnvelopeInterceptor());await app.init();await app.getHttpAdapter().getInstance().ready();
   try{
    const path='/api/v1/member/payouts?qualificationId='+f.qualification.qualificationId,headers={authorization:'Bearer '+own};
    expect((await app.inject({url:path})).statusCode).toBe(401);expect((await app.inject({url:path,headers:{authorization:'Bearer '+foreign}})).statusCode).toBe(403);expect((await app.inject({url:path+'&personId='+f.person.personId,headers})).statusCode).toBe(400);expect((await app.inject({url:path+'&offset=-1',headers})).statusCode).toBe(400);
