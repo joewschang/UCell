@@ -15,6 +15,7 @@ import { MemberShareLinkService } from './member-share-link.service';
 import { MemberContractService } from './member-contract.service';
 import { DeliveryProfileService } from './delivery-profile.service';
 import { FormalMemberApplicationService,FormalDraftInput } from './formal-member-application.service';
+import { FormalKycDocumentService } from './formal-kyc-document.service';
 export class LineExchangeDto {
  @ApiProperty({description:'LINE ID token; verified server-side, never logged or persisted raw'}) @IsString() @MinLength(1) @MaxLength(16384) idToken!:string;
 }
@@ -38,6 +39,11 @@ export class MemberCreateOrderDto {
  @ApiProperty({required:false,format:'uuid',description:'Optional represented formal LegalEntity purchasing/operating context. Backend verifies current primary representative authority.'}) @IsOptional() @IsUUID() legalEntityId?:string;
  @ApiProperty({required:false,type:[CreateOrderItemDto],description:'Retail product IDs and quantities. Mutually exclusive with packageVersionId.'}) @IsOptional() @IsArray() @ArrayMinSize(1) @ArrayMaxSize(100) @ValidateNested({each:true}) @Type(()=>CreateOrderItemDto) items?:CreateOrderItemDto[];
  @ApiProperty({required:false,type:[MemberPackageSelectionDto],description:'Exact package selection by versioned product rule profile.'}) @IsOptional() @IsArray() @ArrayMinSize(1) @ArrayMaxSize(200) @ValidateNested({each:true}) @Type(()=>MemberPackageSelectionDto) selections?:MemberPackageSelectionDto[];
+}
+export class FormalKycUploadDto {
+ @ApiProperty({enum:['IDENTITY_FRONT','IDENTITY_BACK','BANKBOOK_COVER']}) @IsIn(['IDENTITY_FRONT','IDENTITY_BACK','BANKBOOK_COVER']) documentType!:'IDENTITY_FRONT'|'IDENTITY_BACK'|'BANKBOOK_COVER';
+ @ApiProperty({enum:['image/jpeg','image/png']}) @IsIn(['image/jpeg','image/png']) mimeType!:'image/jpeg'|'image/png';
+ @ApiProperty({description:'Base64-encoded image bytes. Temporary server-mediated upload path; private Blob storage remains authoritative.'}) @IsString() @MinLength(8) contentBase64!:string;
 }
 export class MemberContractConsentDto {
  @ApiProperty({enum:[true],description:'Explicit acceptance is required; false is never recorded as consent.'}) @IsBoolean() @Equals(true) accepted!:true;
@@ -106,7 +112,7 @@ export class MemberAuthController {
 @ApiResponse({status:409,description:'Conflicting operation'}) @ApiResponse({status:422,description:'Invalid input or pending domain decision'})
 @Controller('member')
 export class MemberController {
- constructor(private readonly service:MemberService,private readonly reads:MemberReadService,private readonly trees:MemberTreeReadService,private readonly orderService:OrderService,private readonly shareLinks:MemberShareLinkService,private readonly contracts:MemberContractService,private readonly delivery:DeliveryProfileService,private readonly formalApplications:FormalMemberApplicationService){}
+ constructor(private readonly service:MemberService,private readonly reads:MemberReadService,private readonly trees:MemberTreeReadService,private readonly orderService:OrderService,private readonly shareLinks:MemberShareLinkService,private readonly contracts:MemberContractService,private readonly delivery:DeliveryProfileService,private readonly formalApplications:FormalMemberApplicationService,private readonly formalKyc:FormalKycDocumentService){}
  @Get('me') @ApiResponse({status:200,schema:views.memberEnvelope(views.PersonView)}) @ApiOperation({operationId:'memberMe'}) me(@Req() req:any){return this.service.me(req.user.personId);}
  @Get('contracts/required') @ApiOperation({operationId:'memberRequiredContracts',description:'Return currently effective required Network Member contract versions and immutable consent status.'}) requiredContracts(@Req() req:any){return this.contracts.required(req.user.personId);}
  @Get('contracts/formal-required') @ApiOperation({operationId:'memberFormalRequiredContracts',description:'Effective Formal Member contracts and own immutable consent status.'}) formalRequiredContracts(@Req() req:any){return this.contracts.formalRequired(req.user.personId);}
@@ -115,6 +121,10 @@ export class MemberController {
  @Patch('profile') @ApiResponse({status:200,schema:views.memberEnvelope(views.PersonView)}) @UseGuards(IdempotencyGuard) @ApiHeader({name:'Idempotency-Key',required:true}) @ApiOperation({operationId:'memberUpdateProfile',description:'Own display/contact fields only. No legal identity, status, qualification or monetary mutation. Audited idempotent transaction.'}) profile(@Req() req:any,@Body() body:MemberProfileDto,@Headers('idempotency-key') key:string){if(!Object.values(body).some(v=>typeof v==='string'&&v.trim()))throw new UnprocessableEntityException({code:'PROFILE_FIELDS_REQUIRED'});return this.service.profile(req.user.personId,body,req.requestId,key);}
  @Get('delivery-profile') @ApiOperation({operationId:'memberDeliveryProfile',description:'Reads only the authenticated Person current encrypted delivery profile. No Qualification context required.'}) deliveryProfile(@Req() req:any){return this.delivery.get(req.user.personId);}
  @Patch('delivery-profile') @UseGuards(IdempotencyGuard) @ApiHeader({name:'Idempotency-Key',required:true}) @ApiOperation({operationId:'memberUpdateDeliveryProfile',description:'Creates a new encrypted delivery-profile version and closes the prior version. Audit/outbox contain no address or phone.'}) updateDeliveryProfile(@Req() req:any,@Body() body:DeliveryProfileDto,@Headers('idempotency-key') key:string){return this.delivery.update(req.user.personId,body,key,req.requestId);}
+ @Get('formal-applications/:id/documents') @ApiOperation({operationId:'memberFormalApplicationDocuments',description:'List only the authenticated Person formal-application KYC document metadata; no private object URLs are returned.'})
+ formalDocuments(@Req() req:any,@Param('id',new ParseUUIDPipe()) id:string){return this.formalKyc.listOwn(req.user.personId,id);}
+ @Post('formal-applications/:id/documents') @ApiOperation({operationId:'memberUploadFormalApplicationDocument',description:'Upload required natural-person formal KYC image into private storage. Application must remain editable; malware scan starts PENDING.'})
+ uploadFormalDocument(@Req() req:any,@Param('id',new ParseUUIDPipe()) id:string,@Body() body:FormalKycUploadDto){return this.formalKyc.upload(req.user.personId,id,body.documentType,body.mimeType,body.contentBase64,req.requestId);}
  @Get('formal-applications/current') @ApiOperation({operationId:'memberCurrentFormalApplication',description:'Own current Formal Member application with masked national ID and bank account.'}) currentFormalApplication(@Req() req:any){return this.formalApplications.current(req.user.personId);}
  @Post('formal-applications') @UseGuards(IdempotencyGuard) @ApiHeader({name:'Idempotency-Key',required:true}) @ApiOperation({operationId:'memberSaveFormalApplicationDraft',description:'Encrypt and append a Formal Member application draft snapshot. Does not submit, approve, create Qualification, or change membership state.'}) saveFormalApplication(@Req() req:any,@Body() body:FormalMemberDraftDto,@Headers('idempotency-key') key:string){return this.formalApplications.save(req.user.personId,body,key,req.requestId);}
  @Get('notifications') @ApiResponse({status:200,schema:views.memberEnvelope(views.NoticesView)}) @ApiOperation({operationId:'memberNotifications',description:'Person-addressed notices plus selected owned Qualification notices, newest first, bounded 100. No LINE push or server read-state mutation.'}) notifications(@Req() req:any,@Query() q:MemberContextDto){return this.service.notifications(req.user.personId,q.qualificationId);}
