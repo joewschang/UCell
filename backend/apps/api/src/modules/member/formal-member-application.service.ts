@@ -321,6 +321,14 @@ export class FormalMemberApplicationService {
   return this.view(application,payload,snapshot.version);
  }
 
+ async adminRequiredContracts(at=new Date()){
+  const rows=await this.db.contractDocumentVersion.findMany({
+   where:{required:true,audience:{in:['FORMAL_MEMBER','ALL_MEMBERS']},effectiveFrom:{lte:at},OR:[{effectiveTo:null},{effectiveTo:{gt:at}}]},
+   orderBy:[{effectiveFrom:'desc'},{versionCode:'desc'}]
+  });
+  return rows.map(row=>({id:row.contractDocumentVersionId,type:row.contractType,version:row.versionCode,title:row.title,contentHash:row.contentHash,effectiveFrom:row.effectiveFrom.toISOString(),effectiveTo:row.effectiveTo?.toISOString()??null}));
+ }
+
  async adminDetail(applicationId:string,actorId:string,requestId:string){
   if(!actorId)throw new ConflictException({code:'ADMIN_PERSON_ID_REQUIRED'});
   const application=await this.db.formalMemberApplication.findUnique({
