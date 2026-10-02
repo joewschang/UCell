@@ -48,5 +48,11 @@
     "Authenticated Entra desktop/mobile UAT and live aggregate validation",
     "Google OAuth, password-reset mail transport, private KYC storage and trusted scan integration"
   ],
-  "browserBlocker": "Native Chrome safety check cannot verify current URL; Stage IAB UI is accessible"
+  "browserBlocker": "Native Chrome safety check cannot verify current URL; Stage IAB UI is accessible",
+  "sourceReconciliation": {
+    "status": "PASS",
+    "tests": 13,
+    "scope": "Sealed GPV source-reader and Geo aggregation reconciliation; mocked stored source rows; real DB return/ownership matrix remains pending",
+    "logSha256": "22de8aa117d2dee623925d09fff1ab319b59203c05c799e7e8b9ee10cefac057"
+  }
 }
