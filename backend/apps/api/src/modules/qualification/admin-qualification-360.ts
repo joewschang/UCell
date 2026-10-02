@@ -11,8 +11,9 @@ export const ADMIN_QUALIFICATION_360_SCHEMA_VERSION = 'ADMIN_QUALIFICATION_360_V
 const GLOBAL_RANK_ORDER = ['NEW_STAR', 'EXCELLENCE', 'GLORY', 'DIAMOND', 'CROWN'] as const;
 
 type OwnerInterval = {
-  ownerType: 'MEMBER' | 'COMPANY';
+  ownerType: 'MEMBER' | 'LEGAL_ENTITY' | 'COMPANY';
   person: { memberNo: string | null } | null;
+  legalEntity: { memberNo: string | null; registeredName: string } | null;
   companyPrincipal: { code: string } | null;
 };
 
@@ -71,6 +72,7 @@ const unavailableOwner = () => ({
   ownerType: null,
   memberNo: null,
   companyCode: null,
+  legalEntityName: null,
 });
 
 const unavailablePlan = (reasonCode: string) => ({
@@ -135,15 +137,27 @@ function owner(source: AdminQualification360Source) {
       ownerType: 'MEMBER' as const,
       memberNo: interval.person.memberNo,
       companyCode: null,
+      legalEntityName: null,
     };
   }
-  if (interval.ownerType === 'COMPANY' && interval.companyPrincipal?.code && !interval.person) {
+  if (interval.ownerType === 'LEGAL_ENTITY' && interval.legalEntity?.memberNo && !interval.person && !interval.companyPrincipal) {
+    return {
+      status: 'AVAILABLE' as const,
+      reasonCode: null,
+      ownerType: 'LEGAL_ENTITY' as const,
+      memberNo: interval.legalEntity.memberNo,
+      companyCode: null,
+      legalEntityName: interval.legalEntity.registeredName,
+    };
+  }
+  if (interval.ownerType === 'COMPANY' && interval.companyPrincipal?.code && !interval.person && !interval.legalEntity) {
     return {
       status: 'AVAILABLE' as const,
       reasonCode: null,
       ownerType: 'COMPANY' as const,
       memberNo: null,
       companyCode: interval.companyPrincipal.code,
+      legalEntityName: null,
     };
   }
   return unavailableOwner();
@@ -271,6 +285,7 @@ export function adminQualification360Include(at: Date) {
       select: {
         ownerType: true,
         person: { select: { memberNo: true } },
+        legalEntity: { select: { memberNo: true, registeredName: true } },
         companyPrincipal: { select: { code: true } },
       },
     },
@@ -364,13 +379,14 @@ export const adminQualification360Schema: any = {
     },
     owner: {
       type: 'object', additionalProperties: false,
-      required: ['status', 'reasonCode', 'ownerType', 'memberNo', 'companyCode'],
+      required: ['status', 'reasonCode', 'ownerType', 'memberNo', 'companyCode', 'legalEntityName'],
       properties: {
         status: { type: 'string', enum: ['AVAILABLE', 'UNAVAILABLE'] },
         reasonCode: { type: 'string', nullable: true },
-        ownerType: { type: 'string', enum: ['MEMBER', 'COMPANY'], nullable: true },
+        ownerType: { type: 'string', enum: ['MEMBER', 'LEGAL_ENTITY', 'COMPANY'], nullable: true },
         memberNo: { type: 'string', nullable: true },
         companyCode: { type: 'string', nullable: true },
+        legalEntityName: { type: 'string', nullable: true },
       },
     },
     plan: {
