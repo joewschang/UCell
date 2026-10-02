@@ -29,7 +29,7 @@ export class FormalMembershipConflictService {
     }
 
     if(applicantFingerprint){
-      const owner=await this.db.formalIdentityIndex.findUnique({where:{nationalIdFingerprint:applicantFingerprint}});
+      const owner=await this.db.formalIdentityIndex.findUnique({where:{identityDocumentFingerprint:applicantFingerprint}});
       if(owner&&owner.personId!==application.personId)codes.push('IDENTITY_ALREADY_HELD_BY_OTHER_FORMAL_MEMBER');
 
       const spouseOfFormal=await this.db.spouseRelationship.findFirst({
@@ -45,7 +45,7 @@ export class FormalMembershipConflictService {
     }
 
     if(spouseFingerprint){
-      const spouseFormal=await this.db.formalIdentityIndex.findUnique({where:{nationalIdFingerprint:spouseFingerprint}});
+      const spouseFormal=await this.db.formalIdentityIndex.findUnique({where:{identityDocumentFingerprint:spouseFingerprint}});
       if(spouseFormal&&spouseFormal.personId!==application.personId)codes.push('SPOUSE_ALREADY_FORMAL_MEMBER');
     }
 
