@@ -62,6 +62,9 @@ class AdminDocumentScanDto {
 @Controller('admin/formal-member-applications')
 export class AdminFormalMemberApplicationController {
  constructor(private readonly service:FormalMemberApplicationService,private readonly conflicts:FormalMembershipConflictService,private readonly kyc:FormalKycDocumentService){}
+ @Get('contracts/required')
+ @ApiOperation({operationId:'adminFormalRequiredContracts',description:'List currently effective required Formal Member contract versions for back-office paper intake.'})
+ requiredContracts(){return this.service.adminRequiredContracts();}
  @Post('paper') @UseGuards(IdempotencyGuard) @ApiHeader({name:'Idempotency-Key',required:true})
  @ApiOperation({operationId:'adminCreatePaperFormalMemberApplication',description:'Back-office entry for paper INDIVIDUAL or LEGAL_ENTITY formal applications. Corporate applications are paper-only. Creates no Qualification/Ball.'})
  createPaper(@Body() body:AdminPaperFormalApplicationDto,@Headers('idempotency-key') key:string,@Req() req:any){return this.service.createPaper(body,req.user?.personId,key,req.requestId);}
