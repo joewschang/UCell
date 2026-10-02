@@ -162,7 +162,7 @@ try{
  equal(Boolean(immutableContract),true,'database rejects contract version mutation');
  const qualificationCountBeforeRegistration=await db.qualification.count({where:{currentHolderPersonId:person.personId}});
  const verifiedOtpConsumedBeforeRegistration=await db.otpChallenge.count({where:{status:'VERIFIED',consumedAt:{not:null}}});
- const registrationBody={contractVersionId:contract.contractDocumentVersionId,accepted:true,legalName:person.legalName,alias:person.legalName,gender:'UNSPECIFIED',birthDate:'1990-01-02',mobile:'+886912345680',email:'network.test@example.invalid'};
+ const registrationBody={contractVersionId:contract.contractDocumentVersionId,accepted:true,legalName:person.legalName,alias:person.legalName,gender:'UNSPECIFIED',birthDate:'1990-01-02',nationalityCode:'TW',identityDocumentType:'NATIONAL_ID',identityDocumentNumber:'TEST-NETWORK-ID-0001',mobile:'+886912345680',email:'network.test@example.invalid'};
  let registration=await call('POST','member/registration/network',token,registrationBody,'TEST_ONLY_NETWORK_REGISTER');
  equal(registration.statusCode,201,'authenticated LINE network registration commits');
  const registered=registration.json().data;

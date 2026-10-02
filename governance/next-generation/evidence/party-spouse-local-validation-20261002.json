@@ -1,0 +1,59 @@
+{
+  "date": "2026-10-02",
+  "issue": "https://github.com/joewschang/UCell/issues/18",
+  "pullRequest": "https://github.com/joewschang/UCell/pull/19",
+  "branch": "feature/r1.0b-party-spouse-control",
+  "baselineCommit": "a65302e76cffe33f2929d6498eb3c011c4d1ff82",
+  "validatedCodeCheckpoint": "bee6132094e9e9938ace5de4ccf8300e965c040e",
+  "fixes": [
+    "Forward-only migration extends legacy exact-owner constraints to LegalEntity, preserving Person/company exclusivity and historical range/overlap protections",
+    "Regression fixtures use explicit Person holder type, authoritative holder history and owner intervals",
+    "Temporal access mocks retain former/new-holder boundary coverage under represented legal-entity query shape",
+    "Admin Ball 360 fixtures represent nullable LegalEntity owners",
+    "Formal application privacy assertions use current identity-document and spouse-document fields",
+    "Network registration HTTP fixture includes approved nationality and identity-document fields"
+  ],
+  "validation": {
+    "backendWorkspaceBuild": "PASS",
+    "finalApiBuild": "PASS after concurrent upstream KYC security changes merged",
+    "memberBuild": "PASS",
+    "memberTests": "27 suites / 165 tests PASS",
+    "finalAdminBuild": "PASS",
+    "finalAdminTests": "30 suites / 110 tests PASS",
+    "sharedTests": "5 suites / 181 tests PASS",
+    "databaseContractsWorkerScripts": "PASS; these package scripts declare no tests",
+    "isolatedApi": "84 suites / 796 tests PASS",
+    "dbGolden": "PASS; fresh local random database, all migrations applied, deterministic fixtures, cleanup PASS",
+    "packageCheckout": "34 actual DB assertions PASS, including corporate Ball/snapshot/setup ownership and invalid zero/multiple-owner rejection",
+    "memberIdentity": "356 HTTP/DB assertions PASS; synthetic LINE evidence only",
+    "memberAdminIntegration": "59 HTTP/DB assertions PASS",
+    "formalApplication": "16 DB assertions PASS",
+    "stageStatic": "21 assertions PASS",
+    "adminStatic": "Preflight and self-audit PASS",
+    "todoGate": "PASS"
+  },
+  "logs": [
+    "C:/UCell/logs/party-spouse-backend-build-20261002.log",
+    "C:/UCell/logs/party-spouse-api-build-final-20261002.log",
+    "C:/UCell/logs/party-spouse-api-verified-20261002.log",
+    "C:/UCell/logs/party-spouse-db-golden-verified-20261002.log",
+    "C:/UCell/logs/party-spouse-member-tests-20261002.log",
+    "C:/UCell/logs/party-spouse-admin-tests-final-20261002.log",
+    "C:/UCell/logs/party-spouse-shared-tests-20261002.log"
+  ],
+  "knownValidationFailures": [],
+  "pending": [
+    "Admin paper-intake/KYC browser interaction has not been exercised in this local checkpoint",
+    "Private KYC object storage and trusted malware scanner connected configuration/evidence remain required before online KYC can be enabled",
+    "Formal approval cross-line revalidation/concurrency and KYC authorization/privacy deserve focused security review before feature promotion",
+    "PR #17 multi-auth integration and full Sunday UAT remain separate streams"
+  ],
+  "release": {
+    "draft": true,
+    "merged": false,
+    "stageDeployed": false,
+    "productionDeployed": false,
+    "existingStage": "unchanged",
+    "r11": "untouched"
+  }
+}
