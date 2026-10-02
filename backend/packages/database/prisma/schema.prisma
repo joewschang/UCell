@@ -681,6 +681,7 @@ model LegalEntity {
   holderHistory         QualificationHolderHistory[]
   ownerIntervals        QualificationOwnerInterval[]
   membershipApplications MembershipApplication[]
+  packagePurchases       PackagePurchaseSnapshot[]
   formalApplications    FormalMemberApplication[]
 
   @@index([status])
@@ -3300,7 +3301,8 @@ model AdminAccessGrant {
 
 model QualificationSetup {
   qualificationId             String    @id @map("qualification_id") @db.Uuid
-  ownerPersonId               String    @map("owner_person_id") @db.Uuid
+  ownerPersonId               String?   @map("owner_person_id") @db.Uuid
+  ownerLegalEntityId          String?   @map("owner_legal_entity_id") @db.Uuid
   qualifyingOrderId           String    @map("qualifying_order_id") @db.Uuid
   packagePurchaseSnapshotId   String?   @unique @map("package_purchase_snapshot_id") @db.Uuid
   packageType                 String    @map("package_type")
@@ -3315,6 +3317,7 @@ model QualificationSetup {
   updatedAt                   DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   @@index([ownerPersonId, setupStatus])
+  @@index([ownerLegalEntityId, setupStatus])
   @@index([finalSponsorQualificationId, setupStatus, placementDueAt])
   @@map("qualification_setup")
   @@schema("membership")
@@ -3474,7 +3477,8 @@ model PackageSelectableProduct {
 model PackagePurchaseSnapshot {
   packagePurchaseSnapshotId String                     @id @default(uuid()) @map("package_purchase_snapshot_id") @db.Uuid
   orderId                   String                     @unique @map("order_id") @db.Uuid
-  personId                  String                     @map("person_id") @db.Uuid
+  personId                  String?                    @map("person_id") @db.Uuid
+  legalEntityId             String?                    @map("legal_entity_id") @db.Uuid
   targetQualificationId     String?                    @map("target_qualification_id") @db.Uuid
   packageProfileVersionId   String                     @map("package_profile_version_id") @db.Uuid
   packageCode               String                     @map("package_code")
@@ -3492,9 +3496,11 @@ model PackagePurchaseSnapshot {
   purchasedAt               DateTime                   @map("purchased_at") @db.Timestamptz(6)
   createdAt                 DateTime                   @default(now()) @map("created_at") @db.Timestamptz(6)
   packageVersion            PackageProfileVersion      @relation(fields: [packageProfileVersionId], references: [packageProfileVersionId])
+  legalEntity               LegalEntity?                @relation(fields: [legalEntityId], references: [legalEntityId])
   selections                PackagePurchaseSelection[]
 
   @@index([personId, purchasedAt])
+  @@index([legalEntityId, purchasedAt])
   @@index([targetQualificationId, purchasedAt])
   @@map("package_purchase_snapshot")
   @@schema("commerce")
