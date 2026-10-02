@@ -265,10 +265,10 @@ export class FormalMemberApplicationService {
    if(!app||app.status!=='UNDER_REVIEW')throw new ConflictException({code:'FORMAL_APPLICATION_NOT_APPROVABLE'});
    if(!app.applicantIdentityFingerprint)throw new UnprocessableEntityException({code:'FORMAL_IDENTITY_FINGERPRINT_REQUIRED'});
 
-   const existingIdentity=await tx.formalIdentityIndex.findUnique({where:{nationalIdFingerprint:app.applicantIdentityFingerprint}});
+   const existingIdentity=await tx.formalIdentityIndex.findUnique({where:{identityDocumentFingerprint:app.applicantIdentityFingerprint}});
    if(existingIdentity&&existingIdentity.personId!==app.personId)throw new ConflictException({code:'FORMAL_IDENTITY_ALREADY_OWNED'});
 
-   if(!existingIdentity)await tx.formalIdentityIndex.create({data:{personId:app.personId,nationalIdFingerprint:app.applicantIdentityFingerprint,verifiedAt:now,verifiedBy:actorId,sourceFormalApplicationId:applicationId}});
+   if(!existingIdentity)await tx.formalIdentityIndex.create({data:{personId:app.personId,identityDocumentFingerprint:app.applicantIdentityFingerprint,verifiedAt:now,verifiedBy:actorId,sourceFormalApplicationId:applicationId}});
 
    if(app.applicantType==='INDIVIDUAL'){
     const person=await tx.person.findUniqueOrThrow({where:{personId:app.personId}});
