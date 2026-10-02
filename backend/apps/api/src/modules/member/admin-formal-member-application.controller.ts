@@ -65,36 +65,36 @@ export class AdminFormalMemberApplicationController {
  @Get('contracts/required')
  @ApiOperation({operationId:'adminFormalRequiredContracts',description:'List currently effective required Formal Member contract versions for back-office paper intake.'})
  requiredContracts(){return this.service.adminRequiredContracts();}
- @Post('paper') @UseGuards(IdempotencyGuard) @ApiHeader({name:'Idempotency-Key',required:true})
+ @Post('paper') @Roles('SUPER_ADMIN','MEMBERSHIP_OPS') @UseGuards(IdempotencyGuard) @ApiHeader({name:'Idempotency-Key',required:true})
  @ApiOperation({operationId:'adminCreatePaperFormalMemberApplication',description:'Back-office entry for paper INDIVIDUAL or LEGAL_ENTITY formal applications. Corporate applications are paper-only. Creates no Qualification/Ball.'})
  createPaper(@Body() body:AdminPaperFormalApplicationDto,@Headers('idempotency-key') key:string,@Req() req:any){return this.service.createPaper(body,req.user?.personId,key,req.requestId);}
  @Get() @ApiOperation({operationId:'adminListFormalMemberApplications',description:'Read-only metadata queue. The encrypted application payload is never decrypted or returned.'})
  list(@Query('status') status?:string,@Query('take') take?:string){return this.service.adminList({status:status||undefined,take:Number(take??50)});}
- @Post(':id/paper-evidence') @UseGuards(IdempotencyGuard) @ApiHeader({name:'Idempotency-Key',required:true})
+ @Post(':id/paper-evidence') @Roles('SUPER_ADMIN','MEMBERSHIP_OPS') @UseGuards(IdempotencyGuard) @ApiHeader({name:'Idempotency-Key',required:true})
  @ApiOperation({operationId:'adminReviewPaperFormalEvidence',description:'Record that an authorized operator reviewed a physical paper evidence item. Does not fabricate a digital upload.'})
  reviewPaperEvidence(@Param('id',new ParseUUIDPipe()) id:string,@Body() body:AdminPaperEvidenceReviewDto,@Req() req:any){
   return this.service.reviewPaperEvidence(id,body.evidenceType,body.decision,body.sourceReference,body.note,req.user?.personId,req.requestId);
  }
- @Post(':id/begin-review')
+ @Post(':id/begin-review') @Roles('SUPER_ADMIN','MEMBERSHIP_OPS')
  @ApiOperation({operationId:'adminBeginFormalMemberReview',description:'Move a formal application into UNDER_REVIEW only after document/evidence, spouse and cross-line gates pass.'})
  beginReview(@Param('id',new ParseUUIDPipe()) id:string,@Req() req:any){return this.service.beginReview(id,req.user?.personId,req.requestId);}
- @Post(':id/approve')
+ @Post(':id/approve') @Roles('SUPER_ADMIN','MEMBERSHIP_OPS')
  @ApiOperation({operationId:'adminApproveFormalMember',description:'Approve a fully reviewed Person or LegalEntity as FORMAL_MEMBER. Does not create a Qualification/Ball; packages are purchased separately.'})
  approve(@Param('id',new ParseUUIDPipe()) id:string,@Req() req:any){return this.service.approve(id,req.user?.personId,req.requestId);}
  @Get(':id/documents') @ApiOperation({operationId:'adminFormalApplicationDocuments',description:'List KYC document metadata for review; private storage object keys/URLs are not returned.'})
  documents(@Param('id',new ParseUUIDPipe()) id:string){return this.kyc.adminList(id);}
  @Get('documents/:documentId/content') @ApiOperation({operationId:'adminFormalApplicationDocumentContent',description:'Audited role-restricted read of one private KYC document image.'})
  async documentContent(@Param('documentId',new ParseUUIDPipe()) documentId:string,@Req() req:any){const blob=await this.kyc.adminContent(documentId,req.user?.personId,req.requestId);return new StreamableFile(blob.bytes,{type:blob.mimeType});}
- @Post('documents/:documentId/scan-result') @ApiOperation({operationId:'adminFormalApplicationDocumentScanResult',description:'Record malware/content-safety scan result. CLEAN is required by the Web formal-review gate.'})
+ @Post('documents/:documentId/scan-result') @Roles('SUPER_ADMIN','MEMBERSHIP_OPS','COMPLIANCE_AUDIT') @ApiOperation({operationId:'adminFormalApplicationDocumentScanResult',description:'Record malware/content-safety scan result. CLEAN is required by the Web formal-review gate.'})
  scanResult(@Param('documentId',new ParseUUIDPipe()) documentId:string,@Body() body:AdminDocumentScanDto,@Req() req:any){return this.kyc.recordScan(documentId,body.status,req.user?.personId,req.requestId);}
  @Get(':id/detail') @ApiOperation({operationId:'adminFormalMemberApplicationDetail',description:'Audited KYC review detail for authorized membership/compliance staff. This dedicated endpoint may return decrypted application PII and must not be used by ordinary queues/analytics.'})
  detail(@Param('id',new ParseUUIDPipe()) id:string,@Req() req:any){return this.service.adminDetail(id,req.user?.personId,req.requestId);}
  @Get(':id/cross-line-conflicts') @ApiOperation({operationId:'adminFormalMemberCrossLineConflicts',description:'Evaluate spouse, identity, representative and legal-entity duplicate conflicts from privacy-preserving indexes. Returns codes only; no raw national ID.'})
  conflictsFor(@Param('id',new ParseUUIDPipe()) id:string){return this.conflicts.evaluate(id);}
- @Post(':id/cross-line-review')
+ @Post(':id/cross-line-review') @Roles('SUPER_ADMIN','MEMBERSHIP_OPS','COMPLIANCE_AUDIT')
  @ApiOperation({operationId:'adminReviewFormalMemberCrossLine',description:'Evaluate and persist the formal membership anti-cross-line result. BLOCKED conflicts must be resolved before any future approval workflow may proceed.'})
  reviewCrossLine(@Param('id',new ParseUUIDPipe()) id:string,@Req() req:any){return this.conflicts.review(id,req.user?.personId,req.requestId);}
- @Post(':id/spouse-verification') @UseGuards(IdempotencyGuard) @ApiHeader({name:'Idempotency-Key',required:true})
+ @Post(':id/spouse-verification') @Roles('SUPER_ADMIN','MEMBERSHIP_OPS','COMPLIANCE_AUDIT') @UseGuards(IdempotencyGuard) @ApiHeader({name:'Idempotency-Key',required:true})
  @ApiOperation({operationId:'adminVerifyFormalMemberSpouse',description:'Confirm spouse data against authorized KYC evidence. Persists only a masked spouse name and keyed identity fingerprint; raw spouse ID is never returned.'})
  verifySpouse(@Param('id',new ParseUUIDPipe()) id:string,@Headers('idempotency-key') key:string,@Req() req:any){return this.service.verifySpouse(id,req.user?.personId,key,req.requestId);}
 }
