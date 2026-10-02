@@ -29,7 +29,7 @@ export class FormalKycStorageService{
     const response=await fetch(this.url(objectKey),{
       method:'PUT',
       headers:{Authorization:'Bearer '+await this.accessToken(),'x-ms-version':'2023-11-03','x-ms-date':new Date().toUTCString(),'x-ms-blob-type':'BlockBlob','Content-Type':mimeType},
-      body:bytes,
+      body:new Uint8Array(bytes),
     });
     if(!response.ok)throw new ServiceUnavailableException({code:'KYC_STORAGE_WRITE_FAILED'});
   }
