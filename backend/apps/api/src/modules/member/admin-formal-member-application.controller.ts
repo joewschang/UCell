@@ -42,6 +42,15 @@ class AdminPaperFormalApplicationDto implements AdminPaperFormalInput {
  @ApiProperty({maxLength:120}) @IsString() @Matches(/\S/) @MaxLength(120) accountHolder!:string;
 }
 
+class AdminPaperEvidenceReviewDto {
+ @ApiProperty({enum:['SIGNED_APPLICATION_AGREEMENT','IDENTITY_FRONT','IDENTITY_BACK','BANKBOOK_COVER','CORPORATE_REGISTRATION','REPRESENTATIVE_IDENTITY_FRONT','REPRESENTATIVE_IDENTITY_BACK','CORPORATE_BANK_PROOF','TAX_REGISTRATION','OTHER']})
+ @IsIn(['SIGNED_APPLICATION_AGREEMENT','IDENTITY_FRONT','IDENTITY_BACK','BANKBOOK_COVER','CORPORATE_REGISTRATION','REPRESENTATIVE_IDENTITY_FRONT','REPRESENTATIVE_IDENTITY_BACK','CORPORATE_BANK_PROOF','TAX_REGISTRATION','OTHER'])
+ evidenceType!:string;
+ @ApiProperty({enum:['REVIEWED','REJECTED']}) @IsIn(['REVIEWED','REJECTED']) decision!:'REVIEWED'|'REJECTED';
+ @ApiPropertyOptional({maxLength:200}) @IsOptional() @IsString() @MaxLength(200) sourceReference?:string;
+ @ApiPropertyOptional({maxLength:500}) @IsOptional() @IsString() @MaxLength(500) note?:string;
+}
+
 @ApiTags('Admin - Formal Member Application')
 @ApiBearerAuth('adminBearer')
 @Roles('SUPER_ADMIN','MEMBERSHIP_OPS','COMPLIANCE_AUDIT')
@@ -53,6 +62,17 @@ export class AdminFormalMemberApplicationController {
  createPaper(@Body() body:AdminPaperFormalApplicationDto,@Headers('idempotency-key') key:string,@Req() req:any){return this.service.createPaper(body,req.user?.personId,key,req.requestId);}
  @Get() @ApiOperation({operationId:'adminListFormalMemberApplications',description:'Read-only metadata queue. The encrypted application payload is never decrypted or returned.'})
  list(@Query('status') status?:string,@Query('take') take?:string){return this.service.adminList({status:status||undefined,take:Number(take??50)});}
+ @Post(':id/paper-evidence') @UseGuards(IdempotencyGuard) @ApiHeader({name:'Idempotency-Key',required:true})
+ @ApiOperation({operationId:'adminReviewPaperFormalEvidence',description:'Record that an authorized operator reviewed a physical paper evidence item. Does not fabricate a digital upload.'})
+ reviewPaperEvidence(@Param('id',new ParseUUIDPipe()) id:string,@Body() body:AdminPaperEvidenceReviewDto,@Req() req:any){
+  return this.service.reviewPaperEvidence(id,body.evidenceType,body.decision,body.sourceReference,body.note,req.user?.personId,req.requestId);
+ }
+ @Post(':id/begin-review')
+ @ApiOperation({operationId:'adminBeginFormalMemberReview',description:'Move a formal application into UNDER_REVIEW only after document/evidence, spouse and cross-line gates pass.'})
+ beginReview(@Param('id',new ParseUUIDPipe()) id:string,@Req() req:any){return this.service.beginReview(id,req.user?.personId,req.requestId);}
+ @Post(':id/approve')
+ @ApiOperation({operationId:'adminApproveFormalMember',description:'Approve a fully reviewed Person or LegalEntity as FORMAL_MEMBER. Does not create a Qualification/Ball; packages are purchased separately.'})
+ approve(@Param('id',new ParseUUIDPipe()) id:string,@Req() req:any){return this.service.approve(id,req.user?.personId,req.requestId);}
  @Get(':id/cross-line-conflicts') @ApiOperation({operationId:'adminFormalMemberCrossLineConflicts',description:'Evaluate spouse, identity, representative and legal-entity duplicate conflicts from privacy-preserving indexes. Returns codes only; no raw national ID.'})
  conflictsFor(@Param('id',new ParseUUIDPipe()) id:string){return this.conflicts.evaluate(id);}
  @Post(':id/cross-line-review')
