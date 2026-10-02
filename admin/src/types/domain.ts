@@ -20,11 +20,21 @@ export interface Person {
   status?:string;
   createdAt?:string;
 }
+export interface LegalEntity {
+  legalEntityId:UUID;
+  memberNo?:string;
+  registeredName:string;
+  registrationNo:string;
+  registrationCountryCode?:string|null;
+  status?:string;
+  membershipState?:string|null;
+}
 export interface Qualification {
   qualificationId:UUID;
   ballNo?:string|null;
   qualificationNo?:string|number;
   currentHolderPersonId:UUID|null;
+  currentHolderLegalEntityId?:UUID|null;
   currentCompanyPrincipalId?:UUID|null;
   kind?:'MEMBER_ORIGIN'|'COMPANY_BOOTSTRAP';
   planLevelCode:PlanLevel|null;
@@ -32,12 +42,14 @@ export interface Qualification {
   activeFlag:boolean;
   effectiveAt?:string|null;
   currentHolder?:Person|null;
+  currentHolderLegalEntity?:LegalEntity|null;
   sponsorRelation?:any;
   binaryPlacement?:any;
 }
 export interface MembershipApplication {
   applicationId:UUID;
-  personId:UUID;
+  personId?:UUID|null;
+  legalEntityId?:UUID|null;
   requestedPlanLevelCode:PlanLevel;
   sponsorQualificationId?:UUID|null;
   binaryParentQualificationId?:UUID|null;
@@ -49,7 +61,8 @@ export interface MembershipApplication {
   createdQualificationId?:UUID|null;
   note?:string|null;
   createdAt:string;
-  person:Person;
+  person?:Person|null;
+  legalEntity?:LegalEntity|null;
   qualification?:Qualification|null;
   sponsorQualification?:Qualification|null;
   binaryParentQualification?:Qualification|null;
