@@ -29,7 +29,7 @@ Order lifecycle and economic recognition are separated:
 - VolumeRecognition: immutable PV/BV/RPV/EPV-related recognition facts, scoped to source line, Qualification, period/time and parameter snapshot.
 - Return POSTED creates linked reversal events; original recognition rows remain unchanged.
 
-PV and BV are independent values/fields. A product may configure them equal, but code must never hardcode equality. Existing historical GPV/RPV/EPV facts are not renamed/migrated by inference.
+PV and BV are abstract volume classes under the approved 2026-09-17 clarification. GPV/RPV/EPV are concrete R1.0B PV-class volumes; BV has no active R1.0B monetary formula. Historical GPV remains GPV: no duplicate PV/BV recognition or economic migration. This replaces the earlier independent concrete PV/BV-field wording only.
 
 ## 3. Eligible personal consumption
 
@@ -69,7 +69,7 @@ All production scheduling must use `OperationalCalendarVersion` (logical model) 
 - approvalReference
 - immutable snapshot/hash where applicable
 
-No production service may hardcode weekday/hour/month-end policy. Exact production cut-off clock values remain Product Owner configuration pending and affected production posting stays fail-closed until approved.
+Calendar policies remain versioned. Decision Register v3 and 2026-09-17 boundary decisions resolve the former clock-value question: Asia/Taipei, Sunday 00:00 weekly close; 10th/25th 00:00 batch cut-offs; half-open windows; exact cut-off belongs to the new period. A Binary week is not split and enters the next applicable batch after weekly close. Effective calendar/version evidence is still required.
 
 ## 5. Binary inactive evidence
 
@@ -86,7 +86,7 @@ When historical Binary eligibility is inactive/ineligible:
 - Never substitute another Ball owned by the same Person.
 - Historical Active/eligibility snapshots determine recipient eligibility.
 - Existing higher-authority generation/depth rules remain authoritative.
-- If an edge case does not specify skip/stop/compression behavior, fail closed; do not invent compression.
+- Approved 2026-09-17 fixed-generation ruling: ineligible/inactive recipient receives zero; traversal continues to subsequent specified historical generations; no compression, substitution, redistribution or backfill. Unsupported cases still fail closed.
 
 ## 7. Carry lifecycle
 
@@ -111,7 +111,7 @@ Lifecycle remains conceptually:
 
 `CALCULATED -> PENDING_45D -> EFFECTIVE -> PAYABLE -> PAID`
 
-The 45D anchor derives from the authoritative settlement period end/cut-off policy captured in the applicable OperationalCalendarVersion, not from delayed job execution time. `pendingUntil` is persisted as historical evidence and is not moved merely by replay execution delay.
+The approved payout calendar uses fixed batches, not settlement + 45*24h: 10th settlement -> 25th of following month; 25th settlement -> 10th of month after next. Non-business dates move to the next business day under the effective BusinessCalendarVersion. Persist settlement, nominal/adjusted payout dates and version; delayed execution/replay does not shift the authoritative anchor.
 
 - Adjustment during hold: append-only entitlement delta.
 - Adjustment after PAID: recovery/clawback/offset.
@@ -146,29 +146,32 @@ Return/reversal replay must:
 
 Missing historical evidence must never be reconstructed from current state.
 
-## 11. Remaining configuration/SSOT blockers
+## 11. Supersession and current activation gates
 
-The following remain fail-closed for Production until separately approved/resolved:
+The original 2026-09-16 blockers about exact cut-off clocks, historical GPV-to-PV/BV migration and Matching skip/compression were resolved by Decision Register v3 and the approved 2026-09-17 boundary/volume decisions. They must not remain pending business questions or trigger a fabricated economic migration.
 
-1. Exact weekly/monthly recognition and settlement cut-off clock values.
-2. Deterministic migration mapping for pre-existing GPV facts into formal PV/BV fields/events.
-3. Any Matching depth-specific skip/stop/compression edge case absent from higher-authority R1.0B rules.
-
-These blockers do not prevent unrelated engineering, UX, infrastructure or tests from continuing.
+The approved `R1_0B_RULE_ALIGNMENT_MEMBERSHIP_LIFECYCLE_20261003.md` supplements formal membership, NT$600 admission, pre-placement reservations and per-Ball twelve consecutive inactive months. Its section 6 records unresolved policy parameters and activation evidence. Higher-authority contract/filing conflicts, missing historical evidence and normal Production release obligations remain scoped blockers. Do not infer deployment or business effectiveness from specification approval.
 
 ## 12. Required engineering follow-through
 
 Backend Codex must convert this addendum into versioned configuration/domain events/tests rather than scattered constants. Required coverage includes:
 
 - ConsumptionRecognition eligibility/exclusion matrix;
-- PV/BV independence test;
+- abstract PV/BV classification/no duplicate historical GPV recognition test;
 - Return POSTED recognition reversal and monthly EPV recomputation;
 - zero-entitlement Binary evidence;
 - historical Sponsor traversal/no cross-Ball substitution;
 - carry suspend/reactivate/transfer/convergence/resume;
 - 45D anchor stability under delayed execution/replay;
 - return state machine and multi-return bounds;
-- fail-closed missing historical/calendar/mapping evidence;
+- fail-closed missing historical/effective-calendar evidence;
 - idempotency/concurrency/rollback/outbox tests.
 
 Production Promotion remains BLOCKED until normal Release Gates, operational credentials, UAT, backup/restore and outstanding engineering obligations pass.
+
+
+## 13. Amendment history
+
+- 2026-09-16: original approved v2 addendum.
+- 2026-09-17: Decision Register v3 and boundary/volume decisions resolve calendar, abstract volume and fixed-generation questions.
+- 2026-10-03: documentation alignment applied; membership/lifecycle amendment linked. Original dated decisions remain separately traceable. No economic-core implementation or deployment is represented by these edits.
