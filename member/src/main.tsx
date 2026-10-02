@@ -7,6 +7,7 @@ import { QualificationProvider } from './QualificationContext';
 import App from './App';
 import { SessionBoundary } from './SessionBoundary';
 import { AppErrorBoundary } from './AppErrorBoundary';
+import WebMemberEntry from './WebMemberEntry';
 import './styles.css';
 import 'bootstrap/dist/css/bootstrap-grid.min.css';
 import '@ucell/design-system/styles';
@@ -53,7 +54,7 @@ function Bootstrap() {
         return <main className="loading" role="alert"><section className="card uc-web-entry"><CompanyLogo className="uc-company-logo-entry"/><h1>UCell 會員中心</h1><p>{error}</p><button disabled={startingWebLogin} onClick={() => reauthRequired?void webLogin(true):setAttempt(n => n + 1)}>{reauthRequired?'重新登入 LINE':'重新連線'}</button></section></main>;
 
     if (state === 'web-login')
-        return <main className="loading"><section className="card uc-web-entry" aria-labelledby="ucell-web-login-title"><CompanyLogo className="uc-company-logo-entry"/><small>WEB MEMBER ENTRY</small><h1 id="ucell-web-login-title">UCell 會員中心</h1><p>您正在使用網頁版入口。請使用已綁定 UCell 會員帳號的 LINE 完成身分驗證；登入後將進入與 LINE OA 相同的會員中心與球資料。</p><button className="primary" onClick={()=>void webLogin()} disabled={startingWebLogin}>{startingWebLogin?'正在前往 LINE 登入…':'使用 LINE 登入'}</button><p className="muted">LINE OA 入口維持原有 LIFF 流程；網頁入口不會建立第二個會員帳號。</p></section></main>;
+        return <WebMemberEntry onLineLogin={async()=>{await webLogin();}} onAuthenticated={()=>setAttempt(n=>n+1)}/>;
 
     if (state !== 'ready')
         return <main className="loading" role="status">{state === 'redirect' ? '正在前往 LINE 登入…' : 'UCell 會員中心載入中…'}</main>;

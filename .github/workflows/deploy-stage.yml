@@ -41,6 +41,9 @@ jobs:
           LINE_LOGIN_CHANNEL_ID: ${{ secrets.STAGE_LINE_LOGIN_CHANNEL_ID }}
           LIFF_ID: ${{ secrets.STAGE_LIFF_ID }}
           IDENTITY_MATCH_HMAC_SECRET: ${{ secrets.STAGE_IDENTITY_MATCH_HMAC_SECRET }}
+          GOOGLE_OIDC_CLIENT_ID: ${{ secrets.STAGE_GOOGLE_OIDC_CLIENT_ID }}
+          PASSWORD_RESET_EMAIL_WEBHOOK_URL: ${{ secrets.STAGE_PASSWORD_RESET_EMAIL_WEBHOOK_URL }}
+          PASSWORD_RESET_EMAIL_WEBHOOK_TOKEN: ${{ secrets.STAGE_PASSWORD_RESET_EMAIL_WEBHOOK_TOKEN }}
           ENTRA_TENANT_ID: ${{ secrets.STAGE_ENTRA_TENANT_ID }}
           ENTRA_CLIENT_ID: ${{ secrets.STAGE_ENTRA_CLIENT_ID }}
           ENTRA_REDIRECT_URI: ${{ secrets.STAGE_ENTRA_REDIRECT_URI }}
@@ -55,6 +58,9 @@ jobs:
             -LineLoginChannelId $env:LINE_LOGIN_CHANNEL_ID `
             -LiffId $env:LIFF_ID `
             -IdentityMatchHmacSecret $env:IDENTITY_MATCH_HMAC_SECRET `
+            -GoogleOidcClientId $env:GOOGLE_OIDC_CLIENT_ID `
+            -PasswordResetEmailWebhookUrl $env:PASSWORD_RESET_EMAIL_WEBHOOK_URL `
+            -PasswordResetEmailWebhookToken $env:PASSWORD_RESET_EMAIL_WEBHOOK_TOKEN `
             -EntraTenantId $env:ENTRA_TENANT_ID `
             -EntraClientId $env:ENTRA_CLIENT_ID `
             -EntraRedirectUri $env:ENTRA_REDIRECT_URI `

@@ -2,8 +2,9 @@
 param(
   [string]$Location = 'eastasia', [string]$ResourceGroup = 'rg-ucell-stage',
   [string]$PostgresAdminUser = 'ucellstageadmin', [SecureString]$PostgresAdminPassword,
-  [string]$LineLoginChannelId = '', [string]$LiffId = '',
   [string]$IdentityMatchHmacSecret = '',
+  [string]$LineLoginChannelId = '', [string]$LiffId = '', [string]$GoogleOidcClientId = '',
+  [string]$PasswordResetEmailWebhookUrl = '', [string]$PasswordResetEmailWebhookToken = '',
   [string]$EntraTenantId = '', [string]$EntraClientId = '', [string]$EntraRedirectUri = '', [string]$ImageTag = '',
   [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$InventoryWarehouseId,
   [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$InventoryPolicyVersion,
@@ -73,9 +74,10 @@ foreach($r in @('ucell-backend','ucell-worker')){
   else{Invoke-AzChecked "build $r" @('acr','build','--registry',$acr,'--image',"${r}:$ImageTag",'--file',$df,'.','--only-show-errors')|Out-Null}
 }
 $backendImage=Resolve-Image 'ucell-backend'; $workerImage=Resolve-Image 'ucell-worker'
-$serverEnv=@('NODE_ENV=staging','ADMIN_AUTH_BYPASS=false','SWAGGER_ENABLED=true',"APPLICATIONINSIGHTS_CONNECTION_STRING=$insights",'UCELL_ENVIRONMENT=STAGE','DATABASE_URL=secretref:database-url',"UCELL_INVENTORY_WAREHOUSE_ID=$InventoryWarehouseId","UCELL_INVENTORY_POLICY_VERSION=$InventoryPolicyVersion","KYC_STORAGE_ACCOUNT_NAME=$storageAccount","KYC_STORAGE_CONTAINER=$kycContainer","KYC_STORAGE_MANAGED_IDENTITY_CLIENT_ID=$identityClientId")
+$serverEnv=@('NODE_ENV=staging','AUTH_CHANNEL_ENABLE_SMS_OTP=false','ADMIN_AUTH_BYPASS=false','SWAGGER_ENABLED=true',"APPLICATIONINSIGHTS_CONNECTION_STRING=$insights",'UCELL_ENVIRONMENT=STAGE','DATABASE_URL=secretref:database-url',"UCELL_INVENTORY_WAREHOUSE_ID=$InventoryWarehouseId","UCELL_INVENTORY_POLICY_VERSION=$InventoryPolicyVersion","KYC_STORAGE_ACCOUNT_NAME=$storageAccount","KYC_STORAGE_CONTAINER=$kycContainer","KYC_STORAGE_MANAGED_IDENTITY_CLIENT_ID=$identityClientId")
 $serverRemove=@()
 if($LineLoginChannelId){$serverEnv+="LINE_LOGIN_CHANNEL_ID=$LineLoginChannelId"}else{$serverRemove+='LINE_LOGIN_CHANNEL_ID'}
+if($GoogleOidcClientId){$serverEnv+="GOOGLE_OIDC_CLIENT_ID=$GoogleOidcClientId"}else{$serverRemove+='GOOGLE_OIDC_CLIENT_ID'}
 if($EntraTenantId){$serverEnv+="ENTRA_TENANT_ID=$EntraTenantId"}else{$serverRemove+='ENTRA_TENANT_ID'}
 if($EntraClientId){$serverEnv+="ENTRA_CLIENT_ID=$EntraClientId"}else{$serverRemove+='ENTRA_CLIENT_ID'}
 
@@ -100,12 +102,30 @@ if($IdentityMatchHmacSecret){
 }else{
   Invoke-AzChecked 'remove identity match env' @('containerapp','update','--name','ucell-stage-api','--resource-group',$ResourceGroup,'--remove-env-vars','IDENTITY_MATCH_HMAC_SECRET','--only-show-errors')|Out-Null
 }
+
+# Web-member auth providers. SMS OTP remains explicitly disabled until the supplier API is approved.
+$authEnv=@('AUTH_CHANNEL_ENABLE_SMS_OTP=false')
+$authRemove=@('OTP_HASH_SECRET','SMS_OTP_PROVIDER_WEBHOOK_URL','SMS_OTP_PROVIDER_WEBHOOK_TOKEN')
+$authSecrets=@()
+if($PasswordResetEmailWebhookUrl -and $PasswordResetEmailWebhookToken){
+  $authSecrets+="password-reset-email-token=$PasswordResetEmailWebhookToken"
+  $authEnv+=@("PASSWORD_RESET_EMAIL_WEBHOOK_URL=$PasswordResetEmailWebhookUrl",'PASSWORD_RESET_EMAIL_WEBHOOK_TOKEN=secretref:password-reset-email-token')
+}else{
+  $authRemove+=@('PASSWORD_RESET_EMAIL_WEBHOOK_URL','PASSWORD_RESET_EMAIL_WEBHOOK_TOKEN')
+}
+if($authSecrets.Count){
+  $authSecretArgs=@('containerapp','secret','set','--name','ucell-stage-api','--resource-group',$ResourceGroup,'--secrets')+$authSecrets+@('--only-show-errors')
+  Invoke-AzChecked 'configure member auth provider secrets' $authSecretArgs|Out-Null
+}
+$authUpdate=@('containerapp','update','--name','ucell-stage-api','--resource-group',$ResourceGroup,'--set-env-vars')+$authEnv
+if($authRemove.Count){$authUpdate+=@('--remove-env-vars')+$authRemove}
+$authUpdate+='--only-show-errors';Invoke-AzChecked 'configure member auth provider environment' $authUpdate|Out-Null
 $apiFqdn=(Invoke-AzChecked 'read API FQDN' @('containerapp','show','--name','ucell-stage-api','--resource-group',$ResourceGroup,'--query','properties.configuration.ingress.fqdn','-o','tsv','--only-show-errors')).Trim(); if(-not $apiFqdn){throw 'API FQDN is empty.'}
 $apiOrigin="https://$apiFqdn"; $apiBaseUrl="$apiOrigin/api/v1"
 
 $frontends=@(
   @{r='ucell-admin';df='deployment/Dockerfile.admin';args=@("VITE_API_BASE_URL=$apiBaseUrl","VITE_ENTRA_TENANT_ID=$EntraTenantId","VITE_ENTRA_CLIENT_ID=$EntraClientId","VITE_ENTRA_REDIRECT_URI=$EntraRedirectUri","CSP_API_ORIGIN=$apiOrigin")},
-  @{r='ucell-member';df='deployment/Dockerfile.member';args=@("VITE_API_BASE_URL=$apiBaseUrl","VITE_LIFF_ID=$LiffId","CSP_API_ORIGIN=$apiOrigin")}
+  @{r='ucell-member';df='deployment/Dockerfile.member';args=@("VITE_API_BASE_URL=$apiBaseUrl","VITE_LIFF_ID=$LiffId","VITE_GOOGLE_OIDC_CLIENT_ID=$GoogleOidcClientId","CSP_API_ORIGIN=$apiOrigin")}
 )
 foreach($f in $frontends){
   if($ContainerBuildMode -eq 'Local'){$a=@('build','-t',"$registryServer/$($f.r):$ImageTag",'-f',$f.df); foreach($b in $f.args){$a+=@('--build-arg',$b)}; $a+='.'; Invoke-NativeChecked "build $($f.r)" docker $a; Invoke-NativeChecked "push $($f.r)" docker @('push',"$registryServer/$($f.r):$ImageTag")}
@@ -131,5 +151,6 @@ $evidence=@(); foreach($name in @('ucell-stage-api','ucell-stage-worker','ucell-
 $healthy=$false; for($i=1;$i -le $HealthPollAttempts;$i++){try{$response=Invoke-WebRequest "$apiBaseUrl/health" -TimeoutSec 10 -UseBasicParsing; if($response.StatusCode -eq 200){$healthy=$true;break}}catch{if($i -eq $HealthPollAttempts){throw "Stage API health probe failed: $($_.Exception.Message)"}}; Start-Sleep 5}; if(-not $healthy){throw 'Stage API did not become healthy.'}
 $adminFqdn=($evidence|Where-Object Name -eq 'ucell-stage-admin').Fqdn; $memberFqdn=($evidence|Where-Object Name -eq 'ucell-stage-member').Fqdn
 if(-not $adminFqdn -or -not $memberFqdn){throw 'Frontend FQDNs are required for exact CORS origins.'}
+Invoke-AzChecked 'configure member public origin' @('containerapp','update','--name','ucell-stage-api','--resource-group',$ResourceGroup,'--set-env-vars',"MEMBER_WEB_PUBLIC_ORIGIN=https://$memberFqdn",'--only-show-errors')|Out-Null
 Invoke-AzChecked 'configure frontend CORS origins' @('containerapp','update','--name','ucell-stage-api','--resource-group',$ResourceGroup,'--set-env-vars',"CORS_ALLOWED_ORIGINS=https://$adminFqdn,https://$memberFqdn",'--only-show-errors')|Out-Null
 [pscustomobject]@{ResourceGroup=$ResourceGroup;ImageTag=$ImageTag;MigrationExecution=$execution;MigrationStatus=$migrationStatus;Api=$apiOrigin;Admin="https://$adminFqdn";Member="https://$memberFqdn";ApiHealth='PASS';IdentityConfiguration=[pscustomobject]@{LineConfigured=([bool]$LineLoginChannelId -and [bool]$LiffId);EntraConfigured=([bool]$EntraTenantId -and [bool]$EntraClientId -and [bool]$EntraRedirectUri);VerificationStatus='OPERATIONAL_CREDENTIAL_PENDING'};Revisions=$evidence}|ConvertTo-Json -Depth 6

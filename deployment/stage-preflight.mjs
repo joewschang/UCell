@@ -12,6 +12,10 @@ const uatManifest = JSON.parse(read('backend/scripts/stage-uat-seed-manifest.jso
 const assertions = [
   ['backend LINE configuration name', deploy.includes('LINE_LOGIN_CHANNEL_ID=$LineLoginChannelId')],
   ['backend Entra tenant wiring', deploy.includes('ENTRA_TENANT_ID=$EntraTenantId')],
+  ['backend Google member auth wiring', deploy.includes('GOOGLE_OIDC_CLIENT_ID=$GoogleOidcClientId') && deploy.includes('VITE_GOOGLE_OIDC_CLIENT_ID=$GoogleOidcClientId')],
+  ['member SMS OTP stays deferred and disabled', deploy.includes('AUTH_CHANNEL_ENABLE_SMS_OTP=false') && !workflow.includes('STAGE_SMS_OTP_PROVIDER_WEBHOOK_TOKEN') && !workflow.includes('STAGE_OTP_HASH_SECRET')],
+  ['password reset email provider is optional and secret-backed', deploy.includes('PASSWORD_RESET_EMAIL_WEBHOOK_TOKEN=secretref:password-reset-email-token')],
+  ['workflow passes active Web member auth provider secrets', workflow.includes('STAGE_GOOGLE_OIDC_CLIENT_ID') && workflow.includes('STAGE_PASSWORD_RESET_EMAIL_WEBHOOK_TOKEN')],
   ['backend Entra client wiring', deploy.includes('ENTRA_CLIENT_ID=$EntraClientId')],
   ['identity-match HMAC is secret-backed', deploy.includes('IDENTITY_MATCH_HMAC_SECRET=secretref:identity-match-hmac-secret') && workflow.includes('STAGE_IDENTITY_MATCH_HMAC_SECRET')],
   ['private KYC storage is runtime-wired', deploy.includes('KYC_STORAGE_ACCOUNT_NAME=$storageAccount') && deploy.includes('KYC_STORAGE_CONTAINER=$kycContainer') && deploy.includes('KYC_STORAGE_MANAGED_IDENTITY_CLIENT_ID=$identityClientId')],
@@ -30,7 +34,7 @@ const assertions = [
   ['admin image uses admin CSP', adminDockerfile.includes('nginx.admin.conf') && adminDockerfile.includes('CSP_API_ORIGIN')],
   ['member image uses member CSP', memberDockerfile.includes('nginx.member.conf') && memberDockerfile.includes('CSP_API_ORIGIN')],
   ['admin CSP permits configured API and Entra only', adminNginx.includes('__API_ORIGIN__') && adminNginx.includes('login.microsoftonline.com') && !adminNginx.includes('api.line.me')],
-  ['member CSP permits configured API and LINE only', memberNginx.includes('__API_ORIGIN__') && memberNginx.includes('api.line.me') && memberNginx.includes('access.line.me') && !memberNginx.includes('microsoftonline.com')],
+  ['member CSP permits configured API, LINE and Google only', memberNginx.includes('__API_ORIGIN__') && memberNginx.includes('api.line.me') && memberNginx.includes('access.line.me') && memberNginx.includes('accounts.google.com') && !memberNginx.includes('microsoftonline.com')],
 ];
 
 const failures = assertions.filter(([, pass]) => !pass).map(([name]) => name);

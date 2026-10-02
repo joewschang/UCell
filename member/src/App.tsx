@@ -21,6 +21,7 @@ import FormalUpgrade from './FormalUpgrade';
 import QualificationPackageShop from './QualificationPackageShop';
 import MemberBinaryTree from './MemberBinaryTree';
 import MemberTodaySummary from './MemberTodaySummary';
+import IdentityLinking from './IdentityLinking';
 import MemberAwardJourney from './MemberAwardJourney';
 import {availabilityText,awardStatusLabels,formatNullableMoney,formatNullableNumber,qualificationActiveLabel} from './terminology';
 export const number = formatNullableNumber;
@@ -139,6 +140,7 @@ function Me() {
    {!data.isMock&&['NETWORK_MEMBER','FORMAL_PENDING'].includes(p.membershipState??'')&&<FormalUpgrade/>}
   </>}</Result>
   <ProfileEditor refresh={state.retry}/>
+  {!data.isMock&&<IdentityLinking/>}
   <h3>我的經營資格</h3>
   {qualifications.map(q => <article key={q.id} className="card"><strong>球編號 {q.code}</strong><p>方案：{data.displayPlanLevel(q.rank)} · {qualificationActiveLabel(q.active)}</p></article>)}
   <EndSession connected={!data.isMock}/>
