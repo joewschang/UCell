@@ -193,12 +193,99 @@ export class FormalMemberApplicationService {
    }});
    await tx.formalMemberApplicationSnapshot.create({data:{formalMemberApplicationId:app.formalMemberApplicationId,version:1,payloadCiphertext:encrypted.ciphertext,keyVersion:encrypted.keyVersion,payloadHash}});
    const required=normalized.applicantType==='LEGAL_ENTITY'
-    ?['CORPORATE_REGISTRATION','REPRESENTATIVE_IDENTITY_FRONT','REPRESENTATIVE_IDENTITY_BACK','CORPORATE_BANK_PROOF']
-    :['IDENTITY_FRONT','IDENTITY_BACK','BANKBOOK_COVER'];
+    ?['SIGNED_APPLICATION_AGREEMENT','CORPORATE_REGISTRATION','REPRESENTATIVE_IDENTITY_FRONT','REPRESENTATIVE_IDENTITY_BACK','CORPORATE_BANK_PROOF']
+    :['SIGNED_APPLICATION_AGREEMENT','IDENTITY_FRONT','IDENTITY_BACK','BANKBOOK_COVER'];
    await tx.formalPaperEvidence.createMany({data:required.map((evidenceType:any)=>({formalMemberApplicationId:app.formalMemberApplicationId,evidenceType,status:'PENDING'}))});
    const correlationId=randomUUID();
    await this.audit.write(tx,{actorType:'ADMIN',actorId,action:'FORMAL_PAPER_APPLICATION_ENTERED',entityType:'FormalMemberApplication',entityId:app.formalMemberApplicationId,afterData:{applicantType:normalized.applicantType,sourceChannel:'ADMIN_PAPER',paperApplicationReference:paperReference,legalEntityId},requestId,correlationId});
    return {id:app.formalMemberApplicationId,status:app.status,applicantType:app.applicantType,sourceChannel:app.sourceChannel,legalEntityId,memberNo:legalEntityId?(await tx.legalEntity.findUniqueOrThrow({where:{legalEntityId}})).memberNo:representative.memberNo,paperApplicationReference:paperReference};
+  });
+ }
+
+ async reviewPaperEvidence(applicationId:string,evidenceType:string,decision:'REVIEWED'|'REJECTED',sourceReference:string|undefined,note:string|undefined,actorId:string,requestId:string){
+  if(!actorId)throw new ConflictException({code:'ADMIN_PERSON_ID_REQUIRED'});
+  const allowed=['SIGNED_APPLICATION_AGREEMENT','IDENTITY_FRONT','IDENTITY_BACK','BANKBOOK_COVER','CORPORATE_REGISTRATION','REPRESENTATIVE_IDENTITY_FRONT','REPRESENTATIVE_IDENTITY_BACK','CORPORATE_BANK_PROOF','TAX_REGISTRATION','OTHER'];
+  if(!allowed.includes(evidenceType))throw new UnprocessableEntityException({code:'PAPER_EVIDENCE_TYPE_INVALID'});
+  const now=new Date();
+  return this.db.$transaction(async tx=>{
+   const app=await tx.formalMemberApplication.findUnique({where:{formalMemberApplicationId:applicationId}});
+   if(!app||app.sourceChannel!=='ADMIN_PAPER')throw new NotFoundException({code:'PAPER_FORMAL_APPLICATION_NOT_FOUND'});
+   const row=await tx.formalPaperEvidence.upsert({
+    where:{formalMemberApplicationId_evidenceType:{formalMemberApplicationId:applicationId,evidenceType:evidenceType as any}},
+    create:{formalMemberApplicationId:applicationId,evidenceType:evidenceType as any,status:decision,sourceReference,reviewedBy:actorId,reviewedAt:now,note},
+    update:{status:decision,sourceReference,reviewedBy:actorId,reviewedAt:now,note},
+   });
+   const correlationId=randomUUID();
+   await this.audit.write(tx,{actorType:'ADMIN',actorId,action:'FORMAL_PAPER_EVIDENCE_REVIEWED',entityType:'FormalPaperEvidence',entityId:row.formalPaperEvidenceId,afterData:{applicationId,evidenceType,status:decision,sourceReference:sourceReference??null},requestId,correlationId});
+   return {applicationId,evidenceType:row.evidenceType,status:row.status,reviewedAt:row.reviewedAt?.toISOString()??null};
+  });
+ }
+
+ private async evidenceGate(applicationId:string){
+  const app=await this.db.formalMemberApplication.findUnique({where:{formalMemberApplicationId:applicationId}});
+  if(!app)throw new NotFoundException({code:'FORMAL_APPLICATION_NOT_FOUND'});
+  if(app.spouseIdentityFingerprint&&app.spouseVerificationStatus!=='VERIFIED')return {ready:false,codes:['SPOUSE_VERIFICATION_REQUIRED']};
+  if(app.crossLineReviewStatus!=='CLEAR')return {ready:false,codes:['CROSS_LINE_REVIEW_CLEAR_REQUIRED']};
+
+  if(app.sourceChannel==='ADMIN_PAPER'){
+   const required=app.applicantType==='LEGAL_ENTITY'
+    ?['SIGNED_APPLICATION_AGREEMENT','CORPORATE_REGISTRATION','REPRESENTATIVE_IDENTITY_FRONT','REPRESENTATIVE_IDENTITY_BACK','CORPORATE_BANK_PROOF']
+    :['SIGNED_APPLICATION_AGREEMENT','IDENTITY_FRONT','IDENTITY_BACK','BANKBOOK_COVER'];
+   const rows=await this.db.formalPaperEvidence.findMany({where:{formalMemberApplicationId:applicationId,evidenceType:{in:required as any}}});
+   const status=new Map(rows.map(row=>[row.evidenceType,row.status]));
+   const codes=required.filter(type=>status.get(type as any)!=='REVIEWED').map(type=>type+'_REVIEW_REQUIRED');
+   return {ready:codes.length===0,codes};
+  }
+
+  if(app.applicantType!=='INDIVIDUAL')return {ready:false,codes:['LEGAL_ENTITY_PAPER_APPLICATION_REQUIRED']};
+  const required=['IDENTITY_FRONT','IDENTITY_BACK','BANKBOOK_COVER'];
+  const docs=await this.db.formalApplicationDocument.findMany({where:{formalMemberApplicationId:applicationId,status:'PRESENT',documentType:{in:required as any}}});
+  const status=new Map(docs.map(row=>[row.documentType,row.malwareScanStatus]));
+  const codes=required.flatMap(type=>!status.has(type as any)?[type+'_MISSING']:status.get(type as any)!=='CLEAN'?[type+'_SCAN_CLEAN_REQUIRED']:[]);
+  return {ready:codes.length===0,codes};
+ }
+
+ async beginReview(applicationId:string,actorId:string,requestId:string){
+  if(!actorId)throw new ConflictException({code:'ADMIN_PERSON_ID_REQUIRED'});
+  const gate=await this.evidenceGate(applicationId);
+  if(!gate.ready)throw new UnprocessableEntityException({code:'FORMAL_REVIEW_GATE_BLOCKED',details:{codes:gate.codes}});
+  const now=new Date(),app=await this.db.formalMemberApplication.findUnique({where:{formalMemberApplicationId:applicationId}});
+  if(!app||!['DRAFT','NEEDS_MORE_INFO'].includes(app.status))throw new ConflictException({code:'FORMAL_APPLICATION_NOT_REVIEWABLE'});
+  const updated=await this.db.formalMemberApplication.update({where:{formalMemberApplicationId:applicationId},data:{status:'UNDER_REVIEW'}});
+  await this.db.$transaction(tx=>this.audit.write(tx,{actorType:'ADMIN',actorId,action:'FORMAL_APPLICATION_REVIEW_STARTED',entityType:'FormalMemberApplication',entityId:applicationId,afterData:{status:'UNDER_REVIEW'},requestId,correlationId:randomUUID()}));
+  return {applicationId,status:updated.status,reviewStartedAt:now.toISOString()};
+ }
+
+ async approve(applicationId:string,actorId:string,requestId:string){
+  if(!actorId)throw new ConflictException({code:'ADMIN_PERSON_ID_REQUIRED'});
+  const gate=await this.evidenceGate(applicationId);
+  if(!gate.ready)throw new UnprocessableEntityException({code:'FORMAL_APPROVAL_GATE_BLOCKED',details:{codes:gate.codes}});
+  return this.db.$transaction(async tx=>{
+   const now=new Date(),app=await tx.formalMemberApplication.findUnique({where:{formalMemberApplicationId:applicationId}});
+   if(!app||app.status!=='UNDER_REVIEW')throw new ConflictException({code:'FORMAL_APPLICATION_NOT_APPROVABLE'});
+   if(!app.applicantIdentityFingerprint)throw new UnprocessableEntityException({code:'FORMAL_IDENTITY_FINGERPRINT_REQUIRED'});
+
+   const existingIdentity=await tx.formalIdentityIndex.findUnique({where:{nationalIdFingerprint:app.applicantIdentityFingerprint}});
+   if(existingIdentity&&existingIdentity.personId!==app.personId)throw new ConflictException({code:'FORMAL_IDENTITY_ALREADY_OWNED'});
+
+   if(!existingIdentity)await tx.formalIdentityIndex.create({data:{personId:app.personId,nationalIdFingerprint:app.applicantIdentityFingerprint,verifiedAt:now,verifiedBy:actorId,sourceFormalApplicationId:applicationId}});
+
+   if(app.applicantType==='INDIVIDUAL'){
+    const person=await tx.person.findUniqueOrThrow({where:{personId:app.personId}});
+    if(person.membershipState!=='FORMAL_MEMBER'){
+     await tx.person.update({where:{personId:app.personId},data:{membershipState:'FORMAL_MEMBER',status:'EFFECTIVE'}});
+     await tx.personMembershipStateEvent.create({data:{personId:app.personId,fromState:person.membershipState,toState:'FORMAL_MEMBER',reasonCode:'FORMAL_APPLICATION_APPROVED',sourceType:'FORMAL_APPLICATION',sourceId:applicationId,correlationId:randomUUID()}});
+    }
+   }else{
+    if(!app.legalEntityId)throw new UnprocessableEntityException({code:'LEGAL_ENTITY_REQUIRED'});
+    await tx.legalEntity.update({where:{legalEntityId:app.legalEntityId},data:{membershipState:'FORMAL_MEMBER',status:'ACTIVE'}});
+    await tx.legalEntityRepresentative.updateMany({where:{legalEntityId:app.legalEntityId,personId:app.personId,effectiveTo:null,roleCode:'PRIMARY_OPERATING_REPRESENTATIVE'},data:{verifiedAt:now,verifiedBy:actorId}});
+   }
+
+   const updated=await tx.formalMemberApplication.update({where:{formalMemberApplicationId:applicationId},data:{status:'APPROVED',reviewedAt:now,reviewerId:actorId}});
+   const correlationId=randomUUID();
+   await this.audit.write(tx,{actorType:'ADMIN',actorId,action:'FORMAL_APPLICATION_APPROVED',entityType:'FormalMemberApplication',entityId:applicationId,afterData:{status:'APPROVED',applicantType:app.applicantType,personId:app.personId,legalEntityId:app.legalEntityId},requestId,correlationId});
+   return {applicationId,status:updated.status,applicantType:app.applicantType,personId:app.personId,legalEntityId:app.legalEntityId,qualificationCreated:false};
   });
  }
 
