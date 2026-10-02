@@ -8,6 +8,7 @@ import {DashboardPage} from '../features/dashboard/DashboardPage';
 import {PeoplePage} from '../features/people/PeoplePage';
 import {ApplicationsPage} from '../features/applications/ApplicationsPage';
 import {NewApplicationWizard} from '../features/applications/NewApplicationWizard';
+import {PaperFormalApplicationPage} from '../features/applications/PaperFormalApplicationPage';
 import {QualificationsPage} from '../features/qualifications/QualificationsPage';
 import {ProductsPage} from '../features/products/ProductsPage';
 import {PackagesPage} from '../features/packages/PackagesPage';
@@ -36,6 +37,7 @@ export function App(){return <Routes>
   <Route path="/people" element={<RequirePageRole><PeoplePage/></RequirePageRole>}/>
   <Route path="/applications" element={<RequirePageRole><ApplicationsPage/></RequirePageRole>}/>
   <Route path="/applications/new" element={<RequirePageRole><NewApplicationWizard/></RequirePageRole>}/>
+  <Route path="/applications/formal-paper" element={<RequirePageRole><PaperFormalApplicationPage/></RequirePageRole>}/>
   <Route path="/qualifications" element={<RequirePageRole><QualificationsPage/></RequirePageRole>}/>
   <Route path="/products" element={<RequirePageRole><ProductsPage/></RequirePageRole>}/>
   <Route path="/packages" element={<RequirePageRole><PackagesPage/></RequirePageRole>}/>
