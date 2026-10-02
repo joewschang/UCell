@@ -62,3 +62,43 @@ The system may derive a keyed cryptographic fingerprint solely for duplicate-ide
 The application form, agreement, business manual, privacy notice and system fields must all use the same applicant-type and spouse-control definitions before Production approval.
 
 This draft does not modify R1.0B compensation formulas or historical monetary facts.
+
+
+## Addendum — nationality and identity-document terminology
+
+All natural-person identity fields shall use the following terminology:
+
+- 國籍 / Nationality
+- 身分證明文件類型 / Identity document type
+- 身分證明號碼 / Identity document number
+
+Allowed document types:
+- 身分證號 / NATIONAL_ID
+- 居留證號 / RESIDENCE_PERMIT
+- 護照號碼 / PASSPORT
+- 其他 / OTHER
+
+The application must not assume every applicant or spouse holds a Taiwan national ID.
+
+Identity duplicate/cross-line matching is based on the approved nationality/country context + identity-document type + normalized identity-document number.
+
+## Addendum — legal-entity formal member operating rights
+
+A legal entity that completes paper application, KYC, spouse/representative anti-cross-line review and formal approval is a full formal-member operating subject.
+
+An approved legal entity may purchase approved qualification packages and hold Qualification/Ball ownership directly in the legal entity's name.
+
+The primary operating representative is authorized to operate on behalf of the legal entity but is not the legal/economic owner of the legal entity's Ball.
+
+Changing the representative does not transfer the Ball, Sponsor position, Binary position, Carry, historical award or settlement evidence to the representative.
+
+## Addendum — intake and evidence channels
+
+Current allowed combinations:
+- INDIVIDUAL + MEMBER_WEB
+- INDIVIDUAL + ADMIN_PAPER
+- LEGAL_ENTITY + ADMIN_PAPER
+
+LEGAL_ENTITY + MEMBER_WEB is not allowed in the current release.
+
+Online individual applicants must upload the required identity-document front/back images and bankbook cover image. Paper applicants are reviewed through explicit evidence checklist records; the system shall not fabricate a digital upload record for physical documents.
