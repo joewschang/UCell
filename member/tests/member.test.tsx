@@ -137,7 +137,7 @@ it('handles members with no qualifications without loading scoped data', async (
     const fetch = vi.fn().mockResolvedValue(response([]));
     vi.stubGlobal('fetch', fetch);
     await mount();
-    expect(JSON.stringify(renderer.toJSON())).toContain('尚未取得會員資格');
+    expect(JSON.stringify(renderer.toJSON())).toContain('會員首頁');
     expect(fetch.mock.calls.some(([url])=>String(url).includes('/member/me'))).toBe(true);
     expect(fetch.mock.calls.every(([url])=>!String(url).includes('qualificationId'))).toBe(true);
 });

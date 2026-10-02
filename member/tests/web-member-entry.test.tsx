@@ -75,3 +75,14 @@ it('registers with Google, contract consent and password without OTP fields',asy
  expect(payload).not.toHaveProperty('otpCode');
  expect(authenticated).toHaveBeenCalledOnce();
 });
+
+it('shows an actionable contract failure, disables registration and allows retry',async()=>{
+ auth.registrationContract.mockRejectedValueOnce(new Error('NETWORK_CONTRACT_NOT_CONFIGURED'));
+ await act(async()=>{tree=create(<WebMemberEntry onLineLogin={vi.fn()} onAuthenticated={vi.fn()}/>,{createNodeMock:element=>element.type==='div'?{}:null});});
+ await act(async()=>tree!.root.findAllByType('button').find(n=>n.children.includes('註冊會員'))!.props.onClick());
+ expect(JSON.stringify(tree!.toJSON())).toContain('會員契約尚未開放');
+ expect(JSON.stringify(tree!.toJSON())).not.toContain('NETWORK_CONTRACT_NOT_CONFIGURED');
+ expect(tree!.root.findAllByType('button').find(n=>n.children.includes('完成登錄並進入會員首頁'))!.props.disabled).toBe(true);
+ await act(async()=>tree!.root.findAllByType('button').find(n=>n.children.includes('重新載入會員契約'))!.props.onClick());
+ expect(JSON.stringify(tree!.toJSON())).toContain('TEST CONTRACT');
+});

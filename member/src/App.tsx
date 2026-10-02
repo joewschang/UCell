@@ -181,6 +181,7 @@ function MemberApp() {
         <Route path="/notifications" element={<Notifications q={current}/>}/>
         <Route path="*" element={<section className="card"><h2>找不到頁面</h2><Link to="/">返回首頁</Link></section>}/>
       </Routes></div></> : <Routes>
+        <Route path="/" element={<section className="card"><h1>會員首頁</h1><p>{memberIdentityLabel}</p><p>歡迎使用 UCell 會員中心。您可以購物、查看訂單、參與活動及管理會員資料。</p><MobileActionGrid><Link to="/shop">商品商城</Link><Link to="/orders">我的訂單</Link><Link to="/learning">教育訓練</Link><Link to="/events">活動中心</Link><Link to="/me">會員資料</Link></MobileActionGrid></section>}/>
         <Route path="/orders" element={<WebRetailOrders/>}/>
         <Route path="/growth" element={<GrowthCenter/>}/>
         <Route path="/notifications" element={<MemberMessages/>}/>
