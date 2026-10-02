@@ -47,7 +47,20 @@ export async function saveFormalDraft(input:FormalDraftInput,key:string){
  const result=await api<{id:string;status:string;version:number;applicantType:string;nationalityCode:string|null;identityDocumentType:string|null;identityDocumentNumberMasked:string|null;spouseIdentityDocumentNumberMasked:string|null;bankAccountMasked:string;replayed:boolean}>('/member/formal-applications',{method:'POST',headers:{'Idempotency-Key':key},body:JSON.stringify(input)});
  if(!result||typeof result.id!=='string'||result.status!=='DRAFT'||!Number.isInteger(result.version)||result.applicantType!=='INDIVIDUAL'||!(result.identityDocumentNumberMasked===null||result.identityDocumentNumberMasked.startsWith('***'))||!(result.spouseIdentityDocumentNumberMasked===null||result.spouseIdentityDocumentNumberMasked.startsWith('***'))||!result.bankAccountMasked.startsWith('***'))throw new Error('正式會員草稿結果異常');
  return result;
-}export type NetworkRegistrationInput={contractVersionId:string;accepted:true;legalName:string;alias:string;gender:string;birthDate:string;nationalityCode:string;identityDocumentType:'NATIONAL_ID'|'RESIDENCE_PERMIT'|'PASSPORT'|'OTHER';identityDocumentNumber:string;mobile:string;email:string};
+}export type FormalDocumentType='IDENTITY_FRONT'|'IDENTITY_BACK'|'BANKBOOK_COVER';
+export async function uploadFormalDocument(applicationId:string,documentType:FormalDocumentType,file:File){
+ if(!uuid.test(applicationId))throw new Error('正式會員申請識別碼異常');
+ if(!['image/jpeg','image/png'].includes(file.type))throw new Error('文件僅接受 JPG 或 PNG');
+ if(file.size<=0||file.size>10*1024*1024)throw new Error('單一文件大小須介於 1 byte 至 10 MB');
+ const bytes=new Uint8Array(await file.arrayBuffer());
+ let binary='';const chunk=0x8000;for(let i=0;i<bytes.length;i+=chunk)binary+=String.fromCharCode(...bytes.subarray(i,i+chunk));
+ const contentBase64=btoa(binary);
+ return api<{id:string;type:FormalDocumentType;status:string;scanStatus:string;mimeType:string;sizeBytes:number;uploadedAt:string|null}>(`/member/formal-applications/${encodeURIComponent(applicationId)}/documents`,{method:'POST',body:JSON.stringify({documentType,mimeType:file.type,contentBase64})});
+}
+export async function getFormalDocuments(applicationId:string,signal?:AbortSignal){
+ return api<{applicationId:string;required:FormalDocumentType[];documents:{id:string;type:FormalDocumentType;status:string;scanStatus:string;mimeType:string|null;sizeBytes:number|null;uploadedAt:string|null}[]}>(`/member/formal-applications/${encodeURIComponent(applicationId)}/documents`,{signal});
+}
+export type NetworkRegistrationInput={contractVersionId:string;accepted:true;legalName:string;alias:string;gender:string;birthDate:string;nationalityCode:string;identityDocumentType:'NATIONAL_ID'|'RESIDENCE_PERMIT'|'PASSPORT'|'OTHER';identityDocumentNumber:string;mobile:string;email:string};
 export async function registerNetworkMember(input:NetworkRegistrationInput,key:string){
  const result=await api<{personId:string;membershipState:string;enabledAuthenticationProvider:string;qualificationCreated:boolean;replayed:boolean}>('/member/registration/network',{method:'POST',headers:{'Idempotency-Key':key},body:JSON.stringify(input)});
  if(typeof result?.personId==='string'&&result.personId&&result.membershipState==='NETWORK_MEMBER'&&result.enabledAuthenticationProvider==='LINE'&&result.qualificationCreated===false)return result;
