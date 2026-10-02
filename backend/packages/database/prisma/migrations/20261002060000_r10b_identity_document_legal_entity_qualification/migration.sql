@@ -1,5 +1,3 @@
-ALTER TYPE membership."QualificationOwnerType" ADD VALUE IF NOT EXISTS 'LEGAL_ENTITY';
-
 CREATE TYPE identity."IdentityDocumentType" AS ENUM ('NATIONAL_ID','RESIDENCE_PERMIT','PASSPORT','OTHER');
 
 ALTER TABLE identity.person
