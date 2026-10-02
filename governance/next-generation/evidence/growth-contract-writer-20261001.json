@@ -1,0 +1,100 @@
+{
+  "timestamp": "2026-10-01T03:52:11.930Z",
+  "baseCommit": "9ef80caec5daecfad45ad0e8579b006a3931967b",
+  "executionContext": "local-working-tree",
+  "sourceFiles": [
+    {
+      "path": "backend/apps/api/src/modules/member/member-growth.dto.ts",
+      "sha256": "fd2061b47ed2df06147382d94d013e75c9725752dc100acdd2cb72c4ea2ba7d0"
+    },
+    {
+      "path": "backend/apps/api/src/modules/member/member-growth.service.ts",
+      "sha256": "3e351571969153c5819e109eeaa608eec080fa6ee791e67ec7caf25d8ba8df4f"
+    },
+    {
+      "path": "backend/apps/api/src/modules/member/member.controller.ts",
+      "sha256": "394d7550830c7bce41cfac87f9d7a29f738f3042388c43312b08374ab391679b"
+    },
+    {
+      "path": "backend/apps/api/test/test.repurchase-partial-return-db.e2e-spec.ts",
+      "sha256": "55907c766e23d28cc75c4b279e7963bdbe6cb81067e4bec844766d6177d2bedb"
+    },
+    {
+      "path": "backend/scripts/member-growth-contract.test.mjs",
+      "sha256": "724dc777efb8fcf376bb26d1f9c20e91102dfc53f2b50fa0240d076948760213"
+    },
+    {
+      "path": "backend/openapi.generated.json",
+      "sha256": "8227aaaa31b25801b936bc6964bd25d87ad3b3e7cf5cdf418a0d41062ea0d512"
+    }
+  ],
+  "logs": [
+    {
+      "path": "C:/UCell/logs/cr-batch-growth-contract-build-final.log",
+      "sha256": "c9bbb792e87e76102443f726d9d61fcec8c7f422fb97cc739cf187013632726f"
+    },
+    {
+      "path": "C:/UCell/logs/cr-batch-growth-writer-db-final.log",
+      "sha256": "44133369c1347ecdcf3f8caa8242a4c6c0bfbc9dad2f519d93bcb344d027f07d"
+    },
+    {
+      "path": "C:/UCell/logs/cr-batch-growth-contract-openapi-final.log",
+      "sha256": "71d9e03207bb6c377cba3f9e9533b2abe57342df5ba4110073d5f59034c06e74"
+    },
+    {
+      "path": "C:/UCell/logs/cr-batch-growth-contract-schema-final.log",
+      "sha256": "7b69a541ba3447bed835c890606d13b81a9d9aebc44786e96c9635fbd19ab6a9"
+    },
+    {
+      "path": "C:/UCell/logs/cr-batch-growth-contract-preflight-final.log",
+      "sha256": "6e63f97a80841cad2222849c17f7829b45e03c1f7cc7640ea847a5becd6c4ccd"
+    },
+    {
+      "path": "C:/UCell/logs/cr-batch-growth-contract-pinned.log",
+      "sha256": "63b248e84b747bacb2063e4b0626f6dd3a703a2e678d7944b390211025122efd"
+    },
+    {
+      "path": "C:/UCell/logs/cr-batch-growth-contract-validate-final.log",
+      "sha256": "313a29ca925237d3e3e66aff60abbcabdfb566da2bc165b662b027744b89b817"
+    },
+    {
+      "path": "C:/UCell/logs/cr-batch-growth-contract-breaking-final.log",
+      "sha256": "a5338d955b09046ec0b16f3a9625b7955c763aae07dc722e474e6078745f932f"
+    }
+  ],
+  "results": {
+    "apiBuild": "PASS",
+    "focusedIsolated": {
+      "suites": 5,
+      "tests": 15,
+      "migrations": 125,
+      "baselineAssertions": 162,
+      "cleanup": "PASS"
+    },
+    "schemaTests": {
+      "tests": 2,
+      "pass": 2
+    },
+    "openapiPreflight": "PASS",
+    "pinnedVersion": "1.32.1",
+    "pinnedValidation": "PASS",
+    "strictBreakingFindings": 0,
+    "approvedBaselineSha256": "b619d56a1406393eda95f949383b460913bb324aa146a988f387437ab22e56f2"
+  },
+  "supersededAttempts": [
+    "C:/UCell/logs/cr-batch-growth-contract-build.log (nullable planLevelCode type mismatch)",
+    "C:/UCell/logs/cr-batch-growth-writer-db.log (fixture holder nullable typing)"
+  ],
+  "scope": "Concrete Growth response contract plus actual API/Worker recognition and cumulative partial-return reads",
+  "limitations": [
+    "Full governance gate not run for this increment",
+    "No new actual-browser acceptance",
+    "Other open batch domains unchanged"
+  ],
+  "overall": {
+    "localImplementation": "IN_PROGRESS",
+    "fullIsolatedRecertification": "IN_PROGRESS",
+    "stageRc": "NOT_READY"
+  },
+  "deployment": "NONE"
+}

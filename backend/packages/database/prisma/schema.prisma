@@ -6,7 +6,7 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
-  schemas  = ["identity", "membership", "organization", "commerce", "ledger", "audit", "integration", "rules", "subscription"]
+  schemas  = ["identity", "membership", "organization", "commerce", "ledger", "audit", "integration", "rules", "subscription", "learning"]
 }
 
 enum RecordStatus {
@@ -40,6 +40,15 @@ enum OrderStatus {
   @@schema("commerce")
 }
 
+enum CommercialOfferingType {
+  QUALIFICATION_PACKAGE
+  REPURCHASE_PLAN
+  CORE_PRODUCT
+  RETAIL_PRODUCT
+  PROMOTIONAL_BUNDLE
+
+  @@schema("commerce")
+}
 enum PvType {
   GPV
   PV
@@ -111,6 +120,48 @@ enum EventProcessStatus {
   @@schema("integration")
 }
 
+enum LearningCourseStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+
+  @@schema("learning")
+}
+
+enum LearningEnrollmentStatus {
+  ENROLLED
+  STARTED
+  COMPLETED
+  CANCELLED
+
+  @@schema("learning")
+}
+
+enum MemberEventStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+
+  @@schema("learning")
+}
+
+enum MemberEventType {
+  ONLINE
+  OFFLINE
+  HYBRID
+
+  @@schema("learning")
+}
+
+enum MemberEventRegistrationStatus {
+  REGISTERED
+  CANCELLED
+  CHECKED_IN
+  ATTENDED
+
+  @@schema("learning")
+}
+
 enum ApplicationStatus {
   DRAFT
   SUBMITTED
@@ -144,6 +195,7 @@ enum RecognitionStatus {
 
 enum BonusAwardType {
   REFERRAL
+  RETAIL_REFERRAL
   EQUALIZATION
   BINARY
   MATCHING
@@ -230,9 +282,11 @@ enum PaymentAttemptStatus {
 }
 
 enum ProviderIntegrationDomain {
+  ERP
   PAYMENT
   INVOICE
   LOGISTICS
+  IDENTITY
 
   @@schema("commerce")
 }
@@ -374,6 +428,17 @@ enum InventoryTrackingMode {
   @@schema("commerce")
 }
 
+enum SerializedUnitStatus {
+  AVAILABLE
+  ALLOCATED
+  SHIPPED
+  RETURNED
+  QUARANTINED
+  RECALLED
+
+  @@schema("commerce")
+}
+
 enum InventoryReservationStatus {
   RESERVED
   PARTIALLY_RELEASED
@@ -423,11 +488,40 @@ enum RecoveryStatus {
 enum PayoutBatchStatus {
   DRAFT
   READY
+  REVIEWED
+  APPROVED
   EXPORTED
+  PROCESSING
   PAID
+  PARTIALLY_PAID
+  FAILED
   VOIDED
 
   @@schema("ledger")
+}
+
+enum PayoutPaymentResultStatus {
+  PAID
+  FAILED
+
+  @@schema("ledger")
+}
+
+enum OperationalExceptionStatus {
+  OPEN
+  ACKNOWLEDGED
+  INVESTIGATING
+  RESOLVED
+
+  @@schema("integration")
+}
+
+enum OperationalTaskStatus {
+  OPEN
+  ACKNOWLEDGED
+  COMPLETED
+
+  @@schema("integration")
 }
 
 enum GlobalRankCode {
@@ -485,6 +579,48 @@ enum IdentityProvider {
   ENTRA
   LINE
   GOOGLE
+
+  @@schema("identity")
+}
+
+enum NotificationDeliveryStatus {
+  PENDING
+  CONFIGURATION_PENDING
+  SENT
+  FAILED
+  EXPIRED
+
+  @@schema("integration")
+}
+
+enum PersonSecurityStatus {
+  NORMAL
+  SECURITY_LOCKED
+
+  @@schema("identity")
+}
+
+enum IdentityLinkStatus {
+  ACTIVE
+  REVOKED
+
+  @@schema("identity")
+}
+
+enum AccountRecoveryType {
+  EXISTING_MEMBER_LINE_LINK
+  LINE_REBIND
+  BANK_ACCOUNT_CHANGE
+
+  @@schema("identity")
+}
+
+enum AccountRecoveryStatus {
+  PENDING
+  APPROVED
+  COMPLETED
+  REJECTED
+  CANCELLED
 
   @@schema("identity")
 }
@@ -639,6 +775,9 @@ model Person {
   identityDocumentFingerprint String?      @unique @map("identity_document_fingerprint")
   membershipState  PersonMembershipState? @map("membership_state")
   mobileVerifiedAt DateTime?              @map("mobile_verified_at") @db.Timestamptz(6)
+  securityStatus   PersonSecurityStatus   @default(NORMAL) @map("security_status")
+  securityLockedAt DateTime?              @map("security_locked_at") @db.Timestamptz(6)
+  securityLockedReason String?            @map("security_locked_reason")
   status           RecordStatus           @default(DRAFT)
   createdAt        DateTime               @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt        DateTime               @updatedAt @map("updated_at") @db.Timestamptz(6)
@@ -662,6 +801,14 @@ model Person {
   formalIdentityIndex       FormalIdentityIndex?
   memberPasswordCredential  MemberPasswordCredential?
   passwordResetTokens       PasswordResetToken[]
+  accountRecoveryRequests  AccountRecoveryRequest[]
+  retailOrders             Order[]                 @relation("RetailOrderPurchaser")
+  retailReferrerAttributions RetailReferrerAttribution[]
+  retailReferrerCorrectionEvents RetailReferrerAttributionEvent[] @relation("RetailReferrerCorrectionActor")
+  paperApplications          PaperApplication[]
+  paperIdentityFingerprints  PaperPersonIdentityFingerprint[]
+  learningEnrollments        LearningEnrollment[]
+  eventRegistrations         MemberEventRegistration[]
 
   @@index([legalName])
   @@index([mobile])
@@ -968,10 +1115,12 @@ model Qualification {
   foundingOccupation FoundingOccupationEvidence?
   treePlacementEvidence PlacementTreeEvidence?
   companySponsorDesignation CompanySponsorDesignation?
+  companySponsorAliases CompanySponsorAlias[]
   memberNotifications   MemberNotification[]
   qualificationId       String               @id @default(uuid()) @map("qualification_id") @db.Uuid
   qualificationNo       BigInt               @unique @default(autoincrement()) @map("qualification_no")
-  /// Immutable business Ball identifier after Binary placement. It is never a relational key.
+  ballAllocation        BallNoAllocation?
+  /// Immutable business Ball identifier allocated at Binary placement, independent of topology.
   ballNo                String?              @unique @map("ball_no")
   currentHolderPersonId String?              @map("current_holder_person_id") @db.Uuid
   currentHolderLegalEntityId String?          @map("current_holder_legal_entity_id") @db.Uuid
@@ -1007,6 +1156,8 @@ model Qualification {
   globalRankHistory           QualificationGlobalRankHistory[]
   payoutLines                 PayoutLine[]
   payableEntries              PayableEntry[]
+  retailReferrerAttributions  RetailReferrerAttribution[]
+  retailReferralLineSnapshots RetailReferralOrderLineSnapshot[]
 
   @@index([currentHolderPersonId])
   @@index([currentHolderLegalEntityId])
@@ -1181,7 +1332,193 @@ model ContentVersion {
   @@schema("integration")
 }
 
+model LearningCourse {
+  learningCourseId String               @id @default(uuid()) @map("learning_course_id") @db.Uuid
+  courseCode       String               @unique @map("course_code")
+  status           LearningCourseStatus @default(DRAFT)
+  createdByActor   String               @map("created_by_actor")
+  createdAt        DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime             @updatedAt @map("updated_at") @db.Timestamptz(6)
+  versions         LearningCourseVersion[]
+  enrollments      LearningEnrollment[]
+
+  @@index([status, createdAt])
+  @@map("learning_course")
+  @@schema("learning")
+}
+
+model LearningCourseVersion {
+  learningCourseVersionId String               @id @default(uuid()) @map("learning_course_version_id") @db.Uuid
+  learningCourseId        String               @map("learning_course_id") @db.Uuid
+  version                 Int
+  title                   String
+  summary                 String?
+  categoryCode            String               @map("category_code")
+  audiencePolicy          String               @default("NETWORK_MEMBER") @map("audience_policy")
+  publishFrom             DateTime?            @map("publish_from") @db.Timestamptz(6)
+  publishTo               DateTime?            @map("publish_to") @db.Timestamptz(6)
+  approvalReference       String?              @map("approval_reference")
+  approvedByActor         String?              @map("approved_by_actor")
+  approvedAt              DateTime?            @map("approved_at") @db.Timestamptz(6)
+  contentHash             String               @map("content_hash")
+  status                  LearningCourseStatus @default(DRAFT)
+  createdAt               DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
+  course                  LearningCourse       @relation(fields:[learningCourseId],references:[learningCourseId])
+  lessons                 LearningLesson[]
+  enrollmentEvidence      LearningEnrollment[] @relation("LearningEnrollmentVersion")
+
+  @@unique([learningCourseId, version])
+  @@index([status, audiencePolicy, publishFrom, publishTo])
+  @@map("learning_course_version")
+  @@schema("learning")
+}
+
+model LearningLesson {
+  learningLessonId        String                @id @default(uuid()) @map("learning_lesson_id") @db.Uuid
+  learningCourseVersionId String                @map("learning_course_version_id") @db.Uuid
+  sequenceNo              Int                   @map("sequence_no")
+  title                   String
+  contentType             String                @map("content_type")
+  contentReference        String                @map("content_reference")
+  required                Boolean               @default(true)
+  createdAt               DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
+  courseVersion           LearningCourseVersion @relation(fields:[learningCourseVersionId],references:[learningCourseVersionId])
+  progressEvents          LearningProgressEvent[]
+
+  @@unique([learningCourseVersionId, sequenceNo])
+  @@map("learning_lesson")
+  @@schema("learning")
+}
+
+model LearningEnrollment {
+  learningEnrollmentId        String                  @id @default(uuid()) @map("learning_enrollment_id") @db.Uuid
+  learningCourseId            String                  @map("learning_course_id") @db.Uuid
+  learningCourseVersionId     String                  @map("learning_course_version_id") @db.Uuid
+  personId                    String                  @map("person_id") @db.Uuid
+  status                      LearningEnrollmentStatus @default(ENROLLED)
+  assignedByActor             String?                 @map("assigned_by_actor")
+  enrolledAt                  DateTime                @default(now()) @map("enrolled_at") @db.Timestamptz(6)
+  startedAt                   DateTime?               @map("started_at") @db.Timestamptz(6)
+  completedAt                 DateTime?               @map("completed_at") @db.Timestamptz(6)
+  assessmentScore             Decimal?                @map("assessment_score") @db.Decimal(7,4)
+  course                      LearningCourse          @relation(fields:[learningCourseId],references:[learningCourseId])
+  courseVersion               LearningCourseVersion   @relation("LearningEnrollmentVersion",fields:[learningCourseVersionId],references:[learningCourseVersionId])
+  person                      Person                  @relation(fields:[personId],references:[personId])
+  progressEvents              LearningProgressEvent[]
+
+  @@unique([learningCourseId, personId])
+  @@index([personId, status, enrolledAt])
+  @@map("learning_enrollment")
+  @@schema("learning")
+}
+
+model LearningProgressEvent {
+  learningProgressEventId String             @id @default(uuid()) @map("learning_progress_event_id") @db.Uuid
+  learningEnrollmentId    String             @map("learning_enrollment_id") @db.Uuid
+  learningLessonId        String?            @map("learning_lesson_id") @db.Uuid
+  eventType               String             @map("event_type")
+  occurredAt              DateTime           @default(now()) @map("occurred_at") @db.Timestamptz(6)
+  idempotencyKey          String             @unique @map("idempotency_key")
+  evidenceHash            String             @map("evidence_hash")
+  enrollment              LearningEnrollment @relation(fields:[learningEnrollmentId],references:[learningEnrollmentId])
+  lesson                  LearningLesson?    @relation(fields:[learningLessonId],references:[learningLessonId])
+
+  @@index([learningEnrollmentId, occurredAt])
+  @@map("learning_progress_event")
+  @@schema("learning")
+}
+
+model MemberEvent {
+  memberEventId String            @id @default(uuid()) @map("member_event_id") @db.Uuid
+  eventCode     String            @unique @map("event_code")
+  status        MemberEventStatus @default(DRAFT)
+  createdByActor String           @map("created_by_actor")
+  createdAt     DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime          @updatedAt @map("updated_at") @db.Timestamptz(6)
+  versions      MemberEventVersion[]
+  registrations MemberEventRegistration[]
+
+  @@map("member_event")
+  @@schema("learning")
+}
+
+model MemberEventVersion {
+  memberEventVersionId String            @id @default(uuid()) @map("member_event_version_id") @db.Uuid
+  memberEventId        String            @map("member_event_id") @db.Uuid
+  version              Int
+  title                String
+  description          String?
+  eventType            MemberEventType   @map("event_type")
+  startsAt             DateTime          @map("starts_at") @db.Timestamptz(6)
+  endsAt               DateTime          @map("ends_at") @db.Timestamptz(6)
+  locationReference    String?           @map("location_reference")
+  onlineJoinReference  String?           @map("online_join_reference")
+  capacity             Int?
+  audiencePolicy       String            @default("NETWORK_MEMBER") @map("audience_policy")
+    approvalReference    String?           @map("approval_reference")
+    approvedByActor      String?           @map("approved_by_actor")
+    approvedAt           DateTime?         @map("approved_at") @db.Timestamptz(6)
+  contentHash          String            @map("content_hash")
+  status               MemberEventStatus @default(DRAFT)
+  createdAt            DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+  event                MemberEvent       @relation(fields:[memberEventId],references:[memberEventId])
+  registrationEvidence MemberEventRegistration[] @relation("EventRegistrationVersion")
+  participationEvidence MemberEventParticipationEvidence[]
+
+  @@unique([memberEventId, version])
+  @@index([status, startsAt])
+  @@map("member_event_version")
+  @@schema("learning")
+}
+
+model MemberEventRegistration {
+  registrationCycleId       String                        @default(uuid()) @map("registration_cycle_id") @db.Uuid
+  memberEventRegistrationId String                        @id @default(uuid()) @map("member_event_registration_id") @db.Uuid
+  memberEventId             String                        @map("member_event_id") @db.Uuid
+  memberEventVersionId      String                        @map("member_event_version_id") @db.Uuid
+  personId                  String                        @map("person_id") @db.Uuid
+  status                    MemberEventRegistrationStatus @default(REGISTERED)
+  checkInTokenHash          String                        @unique @map("check_in_token_hash")
+  registeredAt              DateTime                      @default(now()) @map("registered_at") @db.Timestamptz(6)
+  cancelledAt               DateTime?                     @map("cancelled_at") @db.Timestamptz(6)
+  checkedInAt               DateTime?                     @map("checked_in_at") @db.Timestamptz(6)
+  attendedAt                DateTime?                     @map("attended_at") @db.Timestamptz(6)
+  event                     MemberEvent                   @relation(fields:[memberEventId],references:[memberEventId])
+  eventVersion              MemberEventVersion            @relation("EventRegistrationVersion",fields:[memberEventVersionId],references:[memberEventVersionId])
+  person                    Person                        @relation(fields:[personId],references:[personId])
+  participationEvidence     MemberEventParticipationEvidence[]
+
+  @@unique([memberEventId, personId])
+  @@index([memberEventId, status, registeredAt])
+  @@map("member_event_registration")
+  @@schema("learning")
+}
+
+model MemberEventParticipationEvidence {
+  participationEvidenceId String @id @default(uuid()) @map("participation_evidence_id") @db.Uuid
+  memberEventRegistrationId String @map("member_event_registration_id") @db.Uuid
+  memberEventVersionId String @map("member_event_version_id") @db.Uuid
+  registrationCycleId String @map("registration_cycle_id") @db.Uuid
+  eventType String @map("event_type")
+  occurredAt DateTime @map("occurred_at") @db.Timestamptz(6)
+  origin String
+  registration MemberEventRegistration @relation(fields:[memberEventRegistrationId],references:[memberEventRegistrationId])
+  eventVersion MemberEventVersion @relation(fields:[memberEventVersionId],references:[memberEventVersionId])
+  @@unique([memberEventRegistrationId,registrationCycleId,eventType])
+  @@index([occurredAt,participationEvidenceId])
+  @@map("member_event_participation_evidence")
+  @@schema("learning")
+}
+
 model MemberNotification {
+  messageKey      String?                  @unique @map("message_key")
+  sourceType      String?                  @map("source_type")
+  sourceReference String?                  @map("source_reference")
+  deepLink        String?                  @map("deep_link")
+  publishedAt     DateTime                 @default(now()) @map("published_at") @db.Timestamptz(6)
+  expiresAt       DateTime?                @map("expires_at") @db.Timestamptz(6)
+  retiredAt       DateTime?                @map("retired_at") @db.Timestamptz(6)
+  archives        MemberNotificationArchive[]
   sourceEventId   String?                  @unique @map("source_event_id") @db.Uuid
   reads           MemberNotificationRead[]
   notificationId  String                   @id @default(uuid()) @map("notification_id") @db.Uuid
@@ -1208,6 +1545,16 @@ model MemberNotificationRead {
 
   @@id([notificationId, personId])
   @@map("member_notification_read")
+  @@schema("integration")
+}
+
+model MemberNotificationArchive {
+  notificationId String @map("notification_id") @db.Uuid
+  personId String @map("person_id") @db.Uuid
+  archivedAt DateTime @default(now()) @map("archived_at") @db.Timestamptz(6)
+  notification MemberNotification @relation(fields:[notificationId,personId],references:[notificationId,personId])
+  @@id([notificationId,personId])
+  @@map("member_notification_archive")
   @@schema("integration")
 }
 
@@ -1281,6 +1628,7 @@ model ProductReference {
   ruleProfiles   ProductRuleProfile[]
   orderLines     OrderLine[]
   inventoryItems InventoryItem[]
+  serialBatches  ProductSerialBatch[]
 
   @@map("product_reference")
   @@schema("commerce")
@@ -1297,6 +1645,10 @@ model ProductRuleProfile {
   epvEligible           Boolean   @default(false) @map("epv_eligible")
   ruleVersionCode       String    @map("rule_version_code")
   parameterSnapshotHash String?   @map("parameter_snapshot_hash")
+  retailReferralEnabled Boolean   @default(false) @map("retail_referral_enabled")
+  retailReferralCalculationType String? @map("retail_referral_calculation_type")
+  retailReferralRate    Decimal?  @map("retail_referral_rate") @db.Decimal(10, 6)
+  retailReferralBaseType String? @map("retail_referral_base_type")
   createdAt             DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
 
   product                   ProductReference           @relation(fields: [productId], references: [productId])
@@ -1307,10 +1659,43 @@ model ProductRuleProfile {
   @@schema("commerce")
 }
 
+model CommercialOffering {
+  commercialOfferingId String @id @default(uuid()) @map("commercial_offering_id") @db.Uuid
+  offeringCode String @unique @map("offering_code")
+  offeringType CommercialOfferingType @map("offering_type")
+  status String @default("ACTIVE")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  versions CommercialOfferingVersion[]
+  @@index([offeringType,status])
+  @@map("commercial_offering")
+  @@schema("commerce")
+}
+
+model CommercialOfferingVersion {
+  commercialOfferingVersionId String @id @default(uuid()) @map("commercial_offering_version_id") @db.Uuid
+  commercialOfferingId String @map("commercial_offering_id") @db.Uuid
+  version Int
+  status String
+  effectiveFrom DateTime @map("effective_from") @db.Timestamptz(6)
+  effectiveTo DateTime? @map("effective_to") @db.Timestamptz(6)
+  channels Json @default("[]")
+  composition Json @default("[]")
+  selectionRule Json? @map("selection_rule")
+  recognitionProfile Json? @map("recognition_profile")
+  approvalReference String @map("approval_reference")
+  snapshotHash String @map("snapshot_hash") @db.Char(64)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  offering CommercialOffering @relation(fields:[commercialOfferingId],references:[commercialOfferingId])
+  @@unique([commercialOfferingId,version])
+  @@index([status,effectiveFrom,effectiveTo])
+  @@map("commercial_offering_version")
+  @@schema("commerce")
+}
 model Order {
   orderId                 String       @id @default(uuid()) @map("order_id") @db.Uuid
   orderNo                 BigInt       @unique @default(autoincrement()) @map("order_no")
-  qualificationId         String       @map("qualification_id") @db.Uuid
+  qualificationId         String?      @map("qualification_id") @db.Uuid
+  purchaserPersonId       String?      @map("purchaser_person_id") @db.Uuid
   purpose                 OrderPurpose @default(RETAIL)
   status                  OrderStatus  @default(DRAFT)
   currency                String       @default("TWD")
@@ -1326,16 +1711,22 @@ model Order {
   createdAt               DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt               DateTime     @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  qualification         Qualification          @relation(fields: [qualificationId], references: [qualificationId])
+  qualification         Qualification?         @relation(fields: [qualificationId], references: [qualificationId])
+  purchaser             Person?                @relation("RetailOrderPurchaser", fields: [purchaserPersonId], references: [personId])
   lines                 OrderLine[]
+  paperReceiptEvidence PaperReceiptEvidence[]
+  paperApplication     PaperApplication?
   paymentEvents         PaymentEvent[]
   payments              Payment[]
   inventoryReservations InventoryReservation[]
   returns               ReturnCase[]
   invoices              Invoice[]
   fulfillments          Fulfillment[]
+  retailReferrerAttributionsCreated RetailReferrerAttribution[]
+  retailReferralLineSnapshots RetailReferralOrderLineSnapshot[]
 
   @@index([qualificationId, createdAt])
+  @@index([purchaserPersonId, createdAt])
   @@index([status, createdAt])
   @@map("order")
   @@schema("commerce")
@@ -1354,18 +1745,98 @@ model OrderLine {
   gpvAmountSnapshot   Decimal  @map("gpv_amount_snapshot") @db.Decimal(18, 4)
   pvRateSnapshot      Decimal? @map("pv_rate_snapshot") @db.Decimal(10, 6)
   ruleProfileSnapshot Json     @map("rule_profile_snapshot")
+  commercialOfferingVersionId String? @map("commercial_offering_version_id") @db.Uuid
+  commercialOfferingSnapshot Json? @map("commercial_offering_snapshot")
+  linePurpose String? @map("line_purpose")
   createdAt           DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
   order                     Order                      @relation(fields: [orderId], references: [orderId])
   product                   ProductReference           @relation(fields: [productId], references: [productId])
   inventoryReservationLines InventoryReservationLine[]
+  retailReferralSnapshot    RetailReferralOrderLineSnapshot?
+  fulfillmentSourceAllocations FulfillmentSourceAllocation[]
 
   @@index([orderId])
   @@map("order_line")
   @@schema("commerce")
 }
 
-model PaymentEvent {
+model PaperPersonIdentityFingerprint {
+  paperPersonIdentityFingerprintId String @id @default(uuid()) @map("paper_person_identity_fingerprint_id") @db.Uuid
+  personId String @map("person_id") @db.Uuid
+  documentCountry String @map("document_country") @db.VarChar(8)
+  documentType String @map("document_type") @db.VarChar(64)
+  fingerprintAlgorithm String @map("fingerprint_algorithm") @db.VarChar(64)
+  fingerprintVersion String @map("fingerprint_version") @db.VarChar(32)
+  fingerprint String @map("fingerprint") @db.Char(64)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  person Person @relation(fields:[personId],references:[personId],onDelete:Restrict)
+  @@unique([fingerprintAlgorithm,fingerprintVersion,fingerprint])
+  @@index([personId])
+  @@map("paper_person_identity_fingerprint")
+  @@schema("identity")
+}
+
+model PaperIdentityDuplicateReview {
+  paperIdentityDuplicateReviewId String @id @default(uuid()) @map("paper_identity_duplicate_review_id") @db.Uuid
+  paperApplicationNo String @unique @map("paper_application_no") @db.VarChar(80)
+  fingerprintAlgorithm String @map("fingerprint_algorithm") @db.VarChar(64)
+  fingerprintVersion String @map("fingerprint_version") @db.VarChar(32)
+  fingerprint String @map("fingerprint") @db.Char(64)
+  status String @default("DUPLICATE_REVIEW_REQUIRED") @db.VarChar(64)
+  reasonCode String @map("reason_code") @db.VarChar(128)
+  evidenceDocumentRef String? @map("evidence_document_ref") @db.VarChar(500)
+  requestedBy String @map("requested_by") @db.Uuid
+  resolvedBy String? @map("resolved_by") @db.Uuid
+  resolvedAt DateTime? @map("resolved_at") @db.Timestamptz(6)
+  resolutionReasonCode String? @map("resolution_reason_code") @db.VarChar(128)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  @@index([status,createdAt])
+  @@map("paper_identity_duplicate_review")
+  @@schema("commerce")
+}
+model PaperApplication {
+  paperApplicationId  String   @id @default(uuid()) @map("paper_application_id") @db.Uuid
+  paperApplicationNo  String   @unique @map("paper_application_no") @db.VarChar(80)
+  personId            String   @map("person_id") @db.Uuid
+  receivedAt          DateTime @map("received_at") @db.Timestamptz(6)
+  evidenceDocumentRef String?  @map("evidence_document_ref") @db.VarChar(500)
+  status              String   @default("OPEN") @db.VarChar(32)
+  createdBy           String   @map("created_by") @db.Uuid
+  orderId             String?  @unique @map("order_id") @db.Uuid
+  createdAt           DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  person Person @relation(fields: [personId], references: [personId])
+  order  Order? @relation(fields: [orderId], references: [orderId])
+
+  @@index([personId, receivedAt])
+  @@map("paper_application")
+  @@schema("commerce")
+}
+
+model PaperReceiptEvidence {
+  paperReceiptEvidenceId String @id @default(uuid()) @map("paper_receipt_evidence_id") @db.Uuid
+  orderId String @map("order_id") @db.Uuid
+  receiptReference String @map("receipt_reference")
+  paymentChannel String @map("payment_channel")
+  paymentNamespace String @map("payment_namespace")
+  amount Decimal @db.Decimal(18,2)
+  currency String
+  receivedAt DateTime @map("received_at") @db.Timestamptz(6)
+  evidenceDocumentRef String? @map("evidence_document_ref")
+  note String? @db.VarChar(500)
+  enteredBy String @map("entered_by") @db.Uuid
+  confirmedBy String? @map("confirmed_by") @db.Uuid
+  confirmationAt DateTime? @map("confirmation_at") @db.Timestamptz(6)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  order Order @relation(fields:[orderId],references:[orderId])
+  @@unique([receiptReference,paymentChannel,paymentNamespace])
+  @@index([orderId,receivedAt])
+  @@map("paper_receipt_evidence")
+  @@schema("commerce")
+}model PaymentEvent {
   paymentEventId String   @id @default(uuid()) @map("payment_event_id") @db.Uuid
   orderId        String   @map("order_id") @db.Uuid
   eventType      String   @map("event_type")
@@ -1525,6 +1996,7 @@ model ProviderWebhookInbox {
   correlationId               String                     @map("correlation_id") @db.Uuid
   providerConnectionVersionId String?                    @map("provider_connection_version_id") @db.Uuid
   providerConnectionVersion   ProviderConnectionVersion? @relation(fields: [providerConnectionVersionId], references: [providerConnectionVersionId])
+  lineMessagingEvents         LineMessagingEvent[]
 
   @@unique([domain, provider, connectionId, ingressKey])
   @@unique([domain, provider, connectionId, providerEventIdentity])
@@ -1573,6 +2045,7 @@ model ProviderConnection {
   createdAt            DateTime                    @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt            DateTime                    @updatedAt @map("updated_at") @db.Timestamptz(6)
   versions             ProviderConnectionVersion[]
+  erpExternalReferences ErpProjectionExternalReference[]
 
   @@unique([domain, provider, connectionKey])
   @@index([domain, provider, status])
@@ -1602,6 +2075,9 @@ model ProviderConnectionVersion {
   invoiceEvidence    InvoiceProviderEventEvidence[]
   shipments          Shipment[]
   trackingEvidence   ShipmentTrackingEventEvidence[]
+  erpDispatches      FulfillmentErpDispatch[]
+  businessErpDispatches ErpProjectionDispatch[]
+  accountingMappings ErpAccountingMapping[]
 
   @@unique([providerConnectionId, version])
   @@index([providerConnectionId, environment, effectiveFrom, effectiveTo])
@@ -1765,11 +2241,171 @@ model Fulfillment {
   parcels    FulfillmentParcel[]
   qcEvidence FulfillmentQcEvidence[]
   shipments  Shipment[]
+  sourceAllocations FulfillmentSourceAllocation[]
+  serialAllocations FulfillmentSerialAllocation[]
+  erpHandoffs FulfillmentErpHandoff[]
+  deliverySnapshots FulfillmentDeliverySnapshot[]
 
   @@unique([orderId, fulfillmentKey])
   @@index([orderId, createdAt])
   @@index([status, createdAt])
   @@map("fulfillment")
+  @@schema("commerce")
+}
+
+/// Physical serial batch authority. The prefix and batch sequence form the PBBB
+/// portion of the approved PBBBSSSS v1 business serial; physical product identity
+/// remains the linked ProductReference rather than an inferred serial prefix.
+model ProductSerialBatch {
+  productSerialBatchId String @id @default(uuid()) @map("product_serial_batch_id") @db.Uuid
+  productId String @map("product_id") @db.Uuid
+  serialPrefix String @map("serial_prefix") @db.Char(1)
+  batchSequence Int @map("batch_sequence")
+  batchCode String @map("batch_code")
+  expiresAt DateTime? @map("expires_at") @db.Timestamptz(6)
+  status RecordStatus @default(EFFECTIVE)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  product ProductReference @relation(fields:[productId],references:[productId])
+  units SerializedUnit[]
+
+  @@unique([productId,batchSequence])
+  @@unique([productId,batchCode])
+  @@index([serialPrefix,batchSequence])
+  @@map("product_serial_batch")
+  @@schema("commerce")
+}
+
+/// Server-authoritative individual physical-unit identity. A serial never implies
+/// order, Person, qualification or topology identity.
+model SerializedUnit {
+  serializedUnitId String @id @default(uuid()) @map("serialized_unit_id") @db.Uuid
+  productSerialBatchId String @map("product_serial_batch_id") @db.Uuid
+  serialNo String @unique @map("serial_no") @db.Char(8)
+  serialSequence Int @map("serial_sequence")
+  status SerializedUnitStatus @default(AVAILABLE)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  batch ProductSerialBatch @relation(fields:[productSerialBatchId],references:[productSerialBatchId])
+  fulfillmentAllocations FulfillmentSerialAllocation[]
+
+  @@unique([productSerialBatchId,serialSequence])
+  @@index([status,productSerialBatchId])
+  @@map("serialized_unit")
+  @@schema("commerce")
+}
+
+
+model FulfillmentSourceAllocation {
+  fulfillmentSourceAllocationId String @id @default(uuid()) @map("fulfillment_source_allocation_id") @db.Uuid
+  fulfillmentId String @map("fulfillment_id") @db.Uuid
+  orderLineId String @map("order_line_id") @db.Uuid
+  allocatedQuantity Decimal @map("allocated_quantity") @db.Decimal(18,4)
+  skuSnapshot String @map("sku_snapshot")
+  commercialOfferingSnapshot Json? @map("commercial_offering_snapshot")
+  linePurpose String? @map("line_purpose")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  fulfillment Fulfillment @relation(fields:[fulfillmentId],references:[fulfillmentId])
+  orderLine OrderLine @relation(fields:[orderLineId],references:[orderLineId])
+  serialAllocations FulfillmentSerialAllocation[]
+  @@unique([fulfillmentId,orderLineId])
+  @@index([orderLineId])
+  @@map("fulfillment_source_allocation")
+  @@schema("commerce")
+}
+
+/// Immutable physical-unit bind to one fulfillment source line. The binding is
+/// separate from ERP handoff and is used for exact scan/quantity verification.
+model FulfillmentSerialAllocation {
+  fulfillmentSerialAllocationId String @id @default(uuid()) @map("fulfillment_serial_allocation_id") @db.Uuid
+  fulfillmentId String @map("fulfillment_id") @db.Uuid
+  fulfillmentSourceAllocationId String @map("fulfillment_source_allocation_id") @db.Uuid
+  serializedUnitId String @unique @map("serialized_unit_id") @db.Uuid
+  scannedByActor String @map("scanned_by_actor")
+  scannedAt DateTime @map("scanned_at") @db.Timestamptz(6)
+  correlationId String @map("correlation_id") @db.Uuid
+
+  fulfillment Fulfillment @relation(fields:[fulfillmentId],references:[fulfillmentId])
+  sourceAllocation FulfillmentSourceAllocation @relation(fields:[fulfillmentSourceAllocationId],references:[fulfillmentSourceAllocationId])
+  serializedUnit SerializedUnit @relation(fields:[serializedUnitId],references:[serializedUnitId])
+  shipmentBinding ShipmentSerialBinding?
+
+  @@unique([fulfillmentSourceAllocationId,serializedUnitId])
+  @@index([fulfillmentId,scannedAt])
+  @@map("fulfillment_serial_allocation")
+  @@schema("commerce")
+}
+
+/// Immutable UCell physical-execution request. An ERP adapter consumes its durable
+/// Outbox event; this record never exposes qualification or economic semantics.
+model FulfillmentErpHandoff {
+  fulfillmentErpHandoffId String @id @default(uuid()) @map("fulfillment_erp_handoff_id") @db.Uuid
+  fulfillmentId String @unique @map("fulfillment_id") @db.Uuid
+  outboxEventId String @unique @map("outbox_event_id") @db.Uuid
+  providerCode String @map("provider_code")
+  formatVersion String @map("format_version")
+  payloadHash String @map("payload_hash") @db.Char(64)
+  payloadSnapshot Json @map("payload_snapshot")
+  requestedByActor String @map("requested_by_actor")
+  requestedAt DateTime @default(now()) @map("requested_at") @db.Timestamptz(6)
+
+  fulfillment Fulfillment @relation(fields:[fulfillmentId],references:[fulfillmentId])
+  outboxEvent OutboxEvent @relation(fields:[outboxEventId],references:[outboxEventId])
+  reconciliations FulfillmentErpReconciliation[]
+  dispatch FulfillmentErpDispatch?
+
+  @@map("fulfillment_erp_handoff")
+  @@schema("commerce")
+}
+
+/// Append-only normalized physical result evidence; never financial authority.
+model FulfillmentErpDispatch {
+  dispatchId String @id @default(uuid()) @map("dispatch_id") @db.Uuid
+  fulfillmentErpHandoffId String @unique @map("fulfillment_erp_handoff_id") @db.Uuid
+  providerConnectionVersionId String @map("provider_connection_version_id") @db.Uuid
+  idempotencyKey String @unique @map("idempotency_key")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  deliverySnapshotId String? @map("delivery_snapshot_id") @db.Uuid
+  requestHash String? @map("request_hash") @db.Char(64)
+  deliverySnapshot FulfillmentDeliverySnapshot? @relation(fields:[deliverySnapshotId],references:[deliverySnapshotId])
+  handoff FulfillmentErpHandoff @relation(fields:[fulfillmentErpHandoffId],references:[fulfillmentErpHandoffId])
+  providerConnectionVersion ProviderConnectionVersion @relation(fields:[providerConnectionVersionId],references:[providerConnectionVersionId])
+  attempts FulfillmentErpDispatchAttempt[]
+  @@map("fulfillment_erp_dispatch")
+  @@schema("commerce")
+}
+
+model FulfillmentErpDispatchAttempt {
+  attemptId String @id @default(uuid()) @map("attempt_id") @db.Uuid
+  dispatchId String @map("dispatch_id") @db.Uuid
+  attemptNumber Int @map("attempt_number")
+  outcome String
+  providerReference String? @map("provider_reference")
+  evidenceHash String @map("evidence_hash") @db.Char(64)
+  recordedAt DateTime @default(now()) @map("recorded_at") @db.Timestamptz(6)
+  dispatch FulfillmentErpDispatch @relation(fields:[dispatchId],references:[dispatchId])
+  @@unique([dispatchId,attemptNumber])
+  @@map("fulfillment_erp_dispatch_attempt")
+  @@schema("commerce")
+}
+
+model FulfillmentErpReconciliation {
+  reconciliationId String @id @default(uuid()) @map("reconciliation_id") @db.Uuid
+  fulfillmentErpHandoffId String @map("fulfillment_erp_handoff_id") @db.Uuid
+  resultKey String @map("result_key")
+  resultHash String @map("result_hash") @db.Char(64)
+  outcome String
+  reasonCode String @map("reason_code")
+  resultSnapshot Json @map("result_snapshot")
+  occurredAt DateTime @map("occurred_at") @db.Timestamptz(6)
+  recordedAt DateTime @default(now()) @map("recorded_at") @db.Timestamptz(6)
+  reportedByActor String @map("reported_by_actor")
+  handoff FulfillmentErpHandoff @relation(fields:[fulfillmentErpHandoffId],references:[fulfillmentErpHandoffId])
+
+  @@unique([fulfillmentErpHandoffId,resultKey])
+  @@index([fulfillmentErpHandoffId,occurredAt])
+  @@map("fulfillment_erp_reconciliation")
   @@schema("commerce")
 }
 
@@ -1831,6 +2467,8 @@ model Shipment {
   status                      CanonicalShipmentStatus @default(READY)
   createdAt                   DateTime                @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt                   DateTime                @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deliverySnapshotId          String? @map("delivery_snapshot_id") @db.Uuid
+  deliverySnapshot            FulfillmentDeliverySnapshot? @relation(fields:[deliverySnapshotId],references:[deliverySnapshotId])
 
   fulfillment               Fulfillment                     @relation(fields: [fulfillmentId], references: [fulfillmentId])
   parcel                    FulfillmentParcel               @relation(fields: [fulfillmentParcelId, fulfillmentId], references: [fulfillmentParcelId, fulfillmentId])
@@ -1839,11 +2477,31 @@ model Shipment {
   trackingEvidence          ShipmentTrackingEventEvidence[]
   stateTransitions          ShipmentStateTransition[]
   operationClaims           ShipmentOperationClaim[]
+  serialBindings            ShipmentSerialBinding[]
 
   @@unique([provider, connectionId, providerShipmentRef])
   @@index([fulfillmentId, createdAt])
   @@index([status, createdAt])
   @@map("shipment")
+  @@schema("commerce")
+}
+
+/// Explicit warehouse capture, encrypted at rest; never inferred historical order data.
+model FulfillmentDeliverySnapshot {
+  deliverySnapshotId String @id @default(uuid()) @map("delivery_snapshot_id") @db.Uuid
+  fulfillmentId String @map("fulfillment_id") @db.Uuid
+  version Int
+  shippingMethod ShippingMethod @map("shipping_method")
+  encryptedPayload String @map("encrypted_payload") @db.Text
+  keyVersion String @map("key_version")
+  snapshotHash String @unique @map("snapshot_hash") @db.Char(64)
+  capturedByActor String @map("captured_by_actor")
+  capturedAt DateTime @default(now()) @map("captured_at") @db.Timestamptz(6)
+  fulfillment Fulfillment @relation(fields:[fulfillmentId],references:[fulfillmentId])
+  shipments Shipment[]
+  erpDispatches FulfillmentErpDispatch[]
+  @@unique([fulfillmentId,version])
+  @@map("fulfillment_delivery_snapshot")
   @@schema("commerce")
 }
 
@@ -2240,21 +2898,36 @@ model BinaryVolumeLedger {
 }
 
 model AuditEvent {
-  auditEventId  String   @id @default(uuid()) @map("audit_event_id") @db.Uuid
-  actorType     String   @map("actor_type")
-  actorId       String?  @map("actor_id") @db.Uuid
-  action        String
-  entityType    String   @map("entity_type")
-  entityId      String?  @map("entity_id") @db.Uuid
-  beforeData    Json?    @map("before_data")
-  afterData     Json?    @map("after_data")
-  reasonCode    String?  @map("reason_code")
-  requestId     String   @map("request_id")
-  correlationId String   @map("correlation_id") @db.Uuid
-  occurredAt    DateTime @default(now()) @map("occurred_at") @db.Timestamptz(6)
+  auditEventId          String   @id @default(uuid()) @map("audit_event_id") @db.Uuid
+  actorType             String   @map("actor_type")
+  actorId               String?  @map("actor_id") @db.Uuid
+  action                String
+  eventCode             String   @default("") @map("event_code")
+  environment           String   @default("UNKNOWN")
+  traceId               String?  @map("trace_id")
+  actorRoleSnapshot     String?  @map("actor_role_snapshot")
+  entityType            String   @map("entity_type")
+  entityId              String?  @map("entity_id") @db.Uuid
+  result                String   @default("SUCCESS")
+  beforeData            Json?    @map("before_data")
+  afterData             Json?    @map("after_data")
+  changedFieldNames     String[] @default([]) @map("changed_field_names")
+  beforeHash            String?  @map("before_hash")
+  afterHash             String?  @map("after_hash")
+  reasonCode            String?  @map("reason_code")
+  evidenceRef           String?  @map("evidence_ref")
+  severity              String   @default("INFO")
+  privacyClass          String   @default("INTERNAL") @map("privacy_class")
+  retentionClass        String   @default("STANDARD") @map("retention_class")
+  requestId             String   @map("request_id")
+  correlationId         String   @map("correlation_id") @db.Uuid
+  occurredAt            DateTime @default(now()) @map("occurred_at") @db.Timestamptz(6)
+  createdAt             DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
   @@index([entityType, entityId, occurredAt])
   @@index([correlationId])
+  @@index([traceId, occurredAt])
+  @@index([environment, eventCode, occurredAt])
   @@map("audit_event")
   @@schema("audit")
 }
@@ -2330,9 +3003,232 @@ model OutboxEvent {
   inventoryOperationClaim InventoryOperationClaim?
   invoiceOperationClaim   InvoiceOperationClaim?
   shipmentOperationClaim  ShipmentOperationClaim?
+  fulfillmentErpHandoff FulfillmentErpHandoff?
+  periodCloseJob PeriodCloseJob?
+  periodProcessTransitions PeriodJobProcessTransition[]
+  erpProjection ErpBusinessProjection?
 
   @@index([processStatus, availableAt])
   @@map("outbox_event")
+  @@schema("integration")
+}
+
+/// Immutable provider-neutral projection; detailed source facts remain authoritative.
+model ErpBusinessProjection {
+  projectionId String @id @default(uuid()) @map("projection_id") @db.Uuid
+  projectionReference String @unique @map("projection_reference")
+  stream String
+  sourceIdentity String @map("source_identity")
+  revision Int @default(1)
+  formatVersion String @map("format_version")
+  payloadHash String @map("payload_hash") @db.Char(64)
+  payloadSnapshot Json @map("payload_snapshot")
+  drillbackHash String @map("drillback_hash") @db.Char(64)
+  drillbackSnapshot Json @map("drillback_snapshot")
+  approvalReference String? @map("approval_reference")
+  mappingReference String? @map("mapping_reference")
+  requestedByActor String @map("requested_by_actor")
+  requestedAt DateTime @default(now()) @map("requested_at") @db.Timestamptz(6)
+  outboxEventId String @unique @map("outbox_event_id") @db.Uuid
+  outboxEvent OutboxEvent @relation(fields:[outboxEventId],references:[outboxEventId])
+  dispatch ErpProjectionDispatch?
+  externalReference ErpProjectionExternalReference?
+  reconciliations ErpProjectionReconciliation[]
+  accountingMappings ErpAccountingMapping[]
+  @@unique([stream,sourceIdentity,revision])
+  @@index([stream,requestedAt])
+  @@map("erp_business_projection")
+  @@schema("commerce")
+}
+
+/// Finance-approved mapping attachment; original review evidence is never rewritten.
+model ErpAccountingMapping {
+  mappingId String @id @default(uuid()) @map("mapping_id") @db.Uuid
+  mappingReference String @unique @map("mapping_reference")
+  projectionId String @map("projection_id") @db.Uuid
+  revision Int
+  previousMappingReference String? @map("previous_mapping_reference")
+  providerConnectionVersionId String @map("provider_connection_version_id") @db.Uuid
+  reviewHash String @map("review_hash") @db.Char(64)
+  requestHash String @map("request_hash") @db.Char(64)
+  requestSnapshot Json @map("request_snapshot")
+  approvalReference String @map("approval_reference")
+  approvedByActor String @map("approved_by_actor")
+  approvedAt DateTime @default(now()) @map("approved_at") @db.Timestamptz(6)
+  projection ErpBusinessProjection @relation(fields:[projectionId],references:[projectionId])
+  providerConnectionVersion ProviderConnectionVersion @relation(fields:[providerConnectionVersionId],references:[providerConnectionVersionId])
+  @@unique([projectionId,revision])
+  @@map("erp_accounting_mapping")
+  @@schema("commerce")
+}
+
+model ErpProjectionExternalReference {
+  projectionId String @id @map("projection_id") @db.Uuid
+  providerConnectionId String @map("provider_connection_id") @db.Uuid
+  providerReference String @map("provider_reference")
+  recordedAt DateTime @default(now()) @map("recorded_at") @db.Timestamptz(6)
+  projection ErpBusinessProjection @relation(fields:[projectionId],references:[projectionId])
+  providerConnection ProviderConnection @relation(fields:[providerConnectionId],references:[providerConnectionId])
+  @@unique([providerConnectionId,providerReference])
+  @@map("erp_projection_external_reference")
+  @@schema("commerce")
+}
+
+model ErpProjectionDispatch {
+  dispatchId String @id @default(uuid()) @map("dispatch_id") @db.Uuid
+  projectionId String @unique @map("projection_id") @db.Uuid
+  providerConnectionVersionId String @map("provider_connection_version_id") @db.Uuid
+  idempotencyKey String @unique @map("idempotency_key")
+  requestHash String @map("request_hash") @db.Char(64)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  projection ErpBusinessProjection @relation(fields:[projectionId],references:[projectionId])
+  providerConnectionVersion ProviderConnectionVersion @relation(fields:[providerConnectionVersionId],references:[providerConnectionVersionId])
+  attempts ErpProjectionDispatchAttempt[]
+  @@map("erp_projection_dispatch")
+  @@schema("commerce")
+}
+
+model ErpProjectionDispatchAttempt {
+  attemptId String @id @default(uuid()) @map("attempt_id") @db.Uuid
+  dispatchId String @map("dispatch_id") @db.Uuid
+  attemptNumber Int @map("attempt_number")
+  outcome String
+  providerReference String? @map("provider_reference")
+  evidenceHash String @map("evidence_hash") @db.Char(64)
+  recordedAt DateTime @default(now()) @map("recorded_at") @db.Timestamptz(6)
+  dispatch ErpProjectionDispatch @relation(fields:[dispatchId],references:[dispatchId])
+  @@unique([dispatchId,attemptNumber])
+  @@map("erp_projection_dispatch_attempt")
+  @@schema("commerce")
+}
+
+model ErpProjectionReconciliation {
+  reconciliationId String @id @default(uuid()) @map("reconciliation_id") @db.Uuid
+  projectionId String @map("projection_id") @db.Uuid
+  resultKey String @map("result_key")
+  resultHash String @map("result_hash") @db.Char(64)
+  outcome String
+  reasonCode String @map("reason_code")
+  providerReference String @map("provider_reference")
+  resultSnapshot Json @map("result_snapshot")
+  occurredAt DateTime @map("occurred_at") @db.Timestamptz(6)
+  recordedAt DateTime @default(now()) @map("recorded_at") @db.Timestamptz(6)
+  reportedByActor String @map("reported_by_actor")
+  projection ErpBusinessProjection @relation(fields:[projectionId],references:[projectionId])
+  @@unique([projectionId,resultKey])
+  @@index([projectionId,recordedAt])
+  @@map("erp_projection_reconciliation")
+  @@schema("commerce")
+}
+
+model PeriodJobProcessTransition {
+  transitionId String @id @default(uuid()) @map("transition_id") @db.Uuid
+  outboxEventId String @map("outbox_event_id") @db.Uuid
+  revision Int
+  fromStatus EventProcessStatus? @map("from_status")
+  toStatus EventProcessStatus @map("to_status")
+  enteredAt DateTime? @map("entered_at") @db.Timestamptz(6)
+  recordedAt DateTime @default(now()) @map("recorded_at") @db.Timestamptz(6)
+  outbox OutboxEvent @relation(fields:[outboxEventId],references:[outboxEventId])
+  @@unique([outboxEventId,revision])
+  @@map("period_job_process_transition")
+  @@schema("integration")
+}
+
+model PeriodClosePlannerCursor {
+  ruleVersionCode String @map("rule_version_code")
+  kind String
+  configuredFrom DateTime @map("configured_from") @db.Timestamptz(6)
+  approvalReference String @map("approval_reference")
+  nextPeriodStart DateTime @map("next_period_start") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  @@id([ruleVersionCode,kind])
+  @@map("period_close_planner_cursor")
+  @@schema("integration")
+}
+
+model PeriodCloseJob {
+  periodCloseJobId String @id @default(uuid()) @map("period_close_job_id") @db.Uuid
+  kind String
+  periodStart DateTime @map("period_start") @db.Timestamptz(6)
+  periodEnd DateTime @map("period_end") @db.Timestamptz(6)
+  ruleVersionCode String @map("rule_version_code")
+  parameterSnapshot Json @map("parameter_snapshot")
+  prerequisiteIds Json @map("prerequisite_ids")
+  requestedBy String @map("requested_by")
+  approvalReference String @map("approval_reference")
+  outboxEventId String @unique @map("outbox_event_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  outbox OutboxEvent @relation(fields:[outboxEventId],references:[outboxEventId])
+  receipt PeriodCloseReceipt?
+  @@unique([kind,periodStart,periodEnd,ruleVersionCode])
+  @@map("period_close_job")
+  @@schema("integration")
+}
+
+model PeriodCloseReceipt {
+  periodCloseJobId String @id @map("period_close_job_id") @db.Uuid
+  sourceId String @map("source_id") @db.Uuid
+  snapshotId String @unique @map("snapshot_id") @db.Uuid
+  completedAt DateTime @default(now()) @map("completed_at") @db.Timestamptz(6)
+  job PeriodCloseJob @relation(fields:[periodCloseJobId],references:[periodCloseJobId])
+  @@map("period_close_receipt")
+  @@schema("integration")
+}
+
+/// Read-oriented operational exception. Closing it records an investigation
+/// outcome only; it never mutates the source business workflow.
+model OperationalException {
+  operationalExceptionId String @id @default(uuid()) @map("operational_exception_id") @db.Uuid
+  sourceType String @map("source_type")
+  sourceId String @map("source_id")
+  exceptionCode String @map("exception_code")
+  severity String @default("WARNING")
+  status OperationalExceptionStatus @default(OPEN)
+  evidenceHash String? @map("evidence_hash") @db.Char(64)
+  traceId String? @map("trace_id") @db.Uuid
+  summary String @map("summary")
+  acknowledgedByActor String? @map("acknowledged_by_actor")
+  acknowledgedAt DateTime? @map("acknowledged_at") @db.Timestamptz(6)
+  resolvedByActor String? @map("resolved_by_actor")
+  resolvedAt DateTime? @map("resolved_at") @db.Timestamptz(6)
+  resolutionNote String? @map("resolution_note")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@unique([sourceType,sourceId,exceptionCode])
+  @@index([status,severity,createdAt])
+  @@map("operational_exception")
+  @@schema("integration")
+}
+
+/// A bounded Operations Center work item. Its lifecycle is deliberately
+/// separate from the source workflow so an operator cannot complete a task by
+/// mutating an Order, Qualification, Fulfillment, or economic fact.
+model OperationalTask {
+  operationalTaskId String @id @default(uuid()) @map("operational_task_id") @db.Uuid
+  sourceType String @map("source_type")
+  sourceId String @map("source_id")
+  taskCode String @map("task_code")
+  priority String @default("NORMAL")
+  status OperationalTaskStatus @default(OPEN)
+  assigneeActor String? @map("assignee_actor")
+  assigneeRole String? @map("assignee_role")
+  dueAt DateTime? @map("due_at") @db.Timestamptz(6)
+  evidenceHash String? @map("evidence_hash") @db.Char(64)
+  traceId String? @map("trace_id") @db.Uuid
+  summary String @map("summary")
+  acknowledgedByActor String? @map("acknowledged_by_actor")
+  acknowledgedAt DateTime? @map("acknowledged_at") @db.Timestamptz(6)
+  completedByActor String? @map("completed_by_actor")
+  completedAt DateTime? @map("completed_at") @db.Timestamptz(6)
+  completionNote String? @map("completion_note")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@unique([sourceType,sourceId,taskCode])
+  @@index([status,priority,createdAt])
+  @@map("operational_task")
   @@schema("integration")
 }
 
@@ -2424,6 +3320,7 @@ model Subscription {
 }
 
 model MonthlyRecognitionSchedule {
+  retainedEntitlementRatio Decimal? @default(1) @map("retained_entitlement_ratio") @db.Decimal(38, 18)
   recognitionId         String            @id @default(uuid()) @map("recognition_id") @db.Uuid
   subscriptionId        String            @map("subscription_id") @db.Uuid
   installmentNo         Int               @map("installment_no")
@@ -2641,6 +3538,7 @@ model ReturnCase {
 
   order Order        @relation(fields: [orderId], references: [orderId])
   lines ReturnLine[]
+  subscriptionCancellations SubscriptionCancellation[]
 
   @@index([orderId, occurredAt])
   @@map("return_case")
@@ -2657,10 +3555,44 @@ model ReturnLine {
   createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
   returnCase ReturnCase @relation(fields: [returnCaseId], references: [returnCaseId])
+  serialReceipts ReturnSerialReceipt[]
 
   @@unique([returnCaseId, orderLineId])
   @@index([orderLineId])
   @@map("return_line")
+  @@schema("commerce")
+}
+
+/// Immutable physical provenance. Allocation already identifies serial/source/purpose.
+model ShipmentSerialBinding {
+  shipmentSerialBindingId String @id @default(uuid()) @map("shipment_serial_binding_id") @db.Uuid
+  shipmentId String @map("shipment_id") @db.Uuid
+  fulfillmentSerialAllocationId String @unique @map("fulfillment_serial_allocation_id") @db.Uuid
+  boundByActor String @map("bound_by_actor")
+  boundAt DateTime @default(now()) @map("bound_at") @db.Timestamptz(6)
+  shipment Shipment @relation(fields:[shipmentId],references:[shipmentId])
+  allocation FulfillmentSerialAllocation @relation(fields:[fulfillmentSerialAllocationId],references:[fulfillmentSerialAllocationId])
+  returnReceipt ReturnSerialReceipt?
+  @@index([shipmentId])
+  @@map("shipment_serial_binding")
+  @@schema("commerce")
+}
+
+/// Accepted return authority remains ReturnCase/ReturnLine; this only records units received.
+model ReturnSerialReceipt {
+  returnSerialReceiptId String @id @default(uuid()) @map("return_serial_receipt_id") @db.Uuid
+  returnLineId String @map("return_line_id") @db.Uuid
+  shipmentSerialBindingId String @unique @map("shipment_serial_binding_id") @db.Uuid
+  receivedByActor String @map("received_by_actor")
+  receivedAt DateTime @default(now()) @map("received_at") @db.Timestamptz(6)
+  receiptType String @default("EXACT_SOURCE") @map("receipt_type")
+  substitutionRuleVersion String? @map("substitution_rule_version")
+  eligibilityEvidence Json @default("{\"format\":\"UCELL_RETURN_SERIAL_ELIGIBILITY_V1\",\"legacy\":true}") @map("eligibility_evidence")
+  evidenceHash String @default("0000000000000000000000000000000000000000000000000000000000000000") @map("evidence_hash") @db.Char(64)
+  returnLine ReturnLine @relation(fields:[returnLineId],references:[returnLineId])
+  shipmentBinding ShipmentSerialBinding @relation(fields:[shipmentSerialBindingId],references:[shipmentSerialBindingId])
+  @@index([returnLineId])
+  @@map("return_serial_receipt")
   @@schema("commerce")
 }
 
@@ -2734,9 +3666,29 @@ model PayoutBatch {
 
   lines     PayoutLine[]
   approvals PayoutApproval[]
+  exportArtifacts PayoutExportArtifact[]
+  paymentResults PayoutPaymentResult[]
 
   @@index([status, periodEnd])
   @@map("payout_batch")
+  @@schema("ledger")
+}
+
+
+model PayoutExportArtifact {
+  payoutExportArtifactId String @id @default(uuid()) @map("payout_export_artifact_id") @db.Uuid
+  payoutBatchId String @map("payout_batch_id") @db.Uuid
+  exportReference String @unique @map("export_reference")
+  adapterCode String @map("adapter_code")
+  formatVersion String @map("format_version")
+  revision Int @default(1)
+  contentHash String @map("content_hash") @db.Char(64)
+  payloadSnapshot Json @map("payload_snapshot")
+  generatedByActor String @map("generated_by_actor")
+  generatedAt DateTime @default(now()) @map("generated_at") @db.Timestamptz(6)
+  payoutBatch PayoutBatch @relation(fields:[payoutBatchId],references:[payoutBatchId])
+  @@unique([payoutBatchId,revision])
+  @@map("payout_export_artifact")
   @@schema("ledger")
 }
 
@@ -2754,9 +3706,34 @@ model PayoutLine {
   recipient            Qualification         @relation(fields: [recipientQualificationId], references: [qualificationId])
   payableEntries       PayableEntry[]
   recoveryApplications RecoveryApplication[]
+  paymentResults PayoutPaymentResult[]
 
   @@unique([payoutBatchId, recipientQualificationId])
   @@map("payout_line")
+  @@schema("ledger")
+}
+
+/// Append-only bank/company-payment reconciliation evidence. It records an
+/// external result; it never initiates a bank transfer or rewrites an export.
+model PayoutPaymentResult {
+  payoutPaymentResultId String @id @default(uuid()) @map("payout_payment_result_id") @db.Uuid
+  payoutBatchId String @map("payout_batch_id") @db.Uuid
+  payoutLineId String @map("payout_line_id") @db.Uuid
+  resultStatus PayoutPaymentResultStatus @map("result_status")
+  paidAmount Decimal @map("paid_amount") @db.Decimal(18,4)
+  paymentReference String? @map("payment_reference")
+  reasonCode String? @map("reason_code")
+  occurredAt DateTime @map("occurred_at") @db.Timestamptz(6)
+  recordedByActor String @map("recorded_by_actor")
+  idempotencyKey String @unique @map("idempotency_key")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  payoutBatch PayoutBatch @relation(fields:[payoutBatchId],references:[payoutBatchId])
+  payoutLine PayoutLine @relation(fields:[payoutLineId],references:[payoutLineId])
+
+  @@index([payoutBatchId,createdAt])
+  @@index([payoutBatchId,payoutLineId,createdAt])
+  @@map("payout_payment_result")
   @@schema("ledger")
 }
 
@@ -2955,9 +3932,13 @@ model SubscriptionCancellation {
   effectiveAt                DateTime @map("effective_at") @db.Timestamptz(6)
   reasonCode                 String   @map("reason_code")
   refundAmount               Decimal  @default(0) @map("refund_amount") @db.Decimal(18, 2)
+  sourceReturnCaseId         String?  @unique @map("source_return_case_id") @db.Uuid
+  idempotencyKey             String?  @unique @map("idempotency_key")
   status                     String   @default("POSTED")
   correlationId              String   @map("correlation_id") @db.Uuid
   createdAt                  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  sourceReturnCase ReturnCase? @relation(fields: [sourceReturnCaseId], references: [returnCaseId])
 
   @@index([subscriptionId, effectiveAt])
   @@map("subscription_cancellation")
@@ -3104,12 +4085,18 @@ model IdentityLink {
   providerSubject String           @map("provider_subject")
   email           String?
   displayName     String?          @map("display_name")
+  status          IdentityLinkStatus @default(ACTIVE)
+  revokedAt       DateTime?        @map("revoked_at") @db.Timestamptz(6)
+  revokeReason    String?          @map("revoke_reason")
+  replacedByBindingId String?      @map("replaced_by_binding_id") @db.Uuid
   createdAt       DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt       DateTime         @updatedAt @map("updated_at") @db.Timestamptz(6)
   person          Person           @relation(fields: [personId], references: [personId])
+  replacedByBinding IdentityLink?  @relation("IdentityLinkReplacement",fields:[replacedByBindingId],references:[identityLinkId])
+  replacedBindings IdentityLink[]  @relation("IdentityLinkReplacement")
 
   @@unique([provider, providerSubject])
-  @@index([personId, provider])
+  @@index([personId, provider, status])
   @@map("identity_link")
   @@schema("identity")
 }
@@ -3595,6 +4582,157 @@ enum QualificationKind {
   COMPANY_BOOTSTRAP
   @@schema("membership")
 }
+
+/// The WEB_MEMBER retail referral binding is deliberately separate from
+/// SponsorRelationship and from the transient anonymous ReferralAttribution flow.
+/// Rows are temporal: corrections close the prior row and create a new row; orders
+/// retain their immutable line snapshots.
+model RetailReferrerAttribution {
+  retailReferrerAttributionId String @id @default(uuid()) @map("retail_referrer_attribution_id") @db.Uuid
+  personId                     String @map("person_id") @db.Uuid
+  referrerQualificationId      String @map("referrer_qualification_id") @db.Uuid
+  referrerBallNoSnapshot       String @map("referrer_ball_no_snapshot")
+  source                       String
+  effectiveFrom                DateTime @map("effective_from") @db.Timestamptz(6)
+  effectiveTo                  DateTime? @map("effective_to") @db.Timestamptz(6)
+  createdByOrderId             String? @map("created_by_order_id") @db.Uuid
+  correctionReason             String? @map("correction_reason")
+  createdAt                    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  person                       Person @relation(fields: [personId], references: [personId])
+  referrerQualification        Qualification @relation(fields: [referrerQualificationId], references: [qualificationId])
+  createdByOrder               Order? @relation(fields: [createdByOrderId], references: [orderId])
+  events                       RetailReferrerAttributionEvent[]
+  lineSnapshots                RetailReferralOrderLineSnapshot[]
+
+  @@unique([personId, effectiveFrom])
+  @@index([personId, effectiveFrom, effectiveTo])
+  @@index([referrerQualificationId, effectiveFrom])
+  @@map("retail_referrer_attribution")
+  @@schema("commerce")
+}
+
+model RetailReferrerAttributionEvent {
+  retailReferrerAttributionEventId String @id @default(uuid()) @map("retail_referrer_attribution_event_id") @db.Uuid
+  retailReferrerAttributionId      String @map("retail_referrer_attribution_id") @db.Uuid
+  action                           String
+  actorPersonId                    String? @map("actor_person_id") @db.Uuid
+  reason                           String?
+  effectiveFrom                    DateTime @map("effective_from") @db.Timestamptz(6)
+  correlationId                    String @map("correlation_id") @db.Uuid
+  evidenceHash                     String @map("evidence_hash")
+  createdAt                        DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  attribution                      RetailReferrerAttribution @relation(fields: [retailReferrerAttributionId], references: [retailReferrerAttributionId])
+  actor                            Person? @relation("RetailReferrerCorrectionActor", fields: [actorPersonId], references: [personId])
+
+  @@index([retailReferrerAttributionId, createdAt])
+  @@index([actorPersonId, createdAt])
+  @@map("retail_referrer_attribution_event")
+  @@schema("commerce")
+}
+
+/// Immutable recognition input for a retail order line. This snapshot prevents a
+/// later SKU rule change or attribution correction from rewriting history.
+model RetailReferralOrderLineSnapshot {
+  retailReferralOrderLineSnapshotId String @id @default(uuid()) @map("retail_referral_order_line_snapshot_id") @db.Uuid
+  orderLineId                        String @unique @map("order_line_id") @db.Uuid
+  orderId                            String @map("order_id") @db.Uuid
+  retailReferrerAttributionId        String? @map("retail_referrer_attribution_id") @db.Uuid
+  referrerQualificationId            String? @map("referrer_qualification_id") @db.Uuid
+  referrerBallNoSnapshot             String? @map("referrer_ball_no_snapshot")
+  retailReferralEnabled              Boolean @map("retail_referral_enabled")
+  calculationType                    String? @map("calculation_type")
+  rate                               Decimal? @db.Decimal(10, 6)
+  baseType                           String? @map("base_type")
+  netPaidItemAmount                  Decimal @map("net_paid_item_amount") @db.Decimal(18, 2)
+  productRuleProfileId               String @map("product_rule_profile_id") @db.Uuid
+  productRuleVersion                 String @map("product_rule_version")
+  parameterSnapshotHash              String? @map("parameter_snapshot_hash")
+  attributionEvidence                Json @map("attribution_evidence")
+  createdAt                          DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  orderLine                          OrderLine @relation(fields: [orderLineId], references: [orderLineId])
+  order                              Order @relation(fields: [orderId], references: [orderId])
+  attribution                        RetailReferrerAttribution? @relation(fields: [retailReferrerAttributionId], references: [retailReferrerAttributionId])
+  referrerQualification              Qualification? @relation(fields: [referrerQualificationId], references: [qualificationId])
+
+  @@index([orderId])
+  @@index([referrerQualificationId, createdAt])
+  @@map("retail_referral_order_line_snapshot")
+  @@schema("commerce")
+}
+
+model LineMessagingEvent {
+  lineMessagingEventId     String               @id @default(uuid()) @map("line_messaging_event_id") @db.Uuid
+  providerWebhookInboxId   String               @map("provider_webhook_inbox_id") @db.Uuid
+  providerEventIdentity    String               @unique @map("provider_event_identity")
+  eventType                String               @map("event_type")
+  occurredAt               DateTime             @map("occurred_at") @db.Timestamptz(6)
+  sourceSubjectHash        String?              @map("source_subject_hash")
+  payloadHash              String               @map("payload_hash")
+  status                   EventProcessStatus   @default(PENDING)
+  attemptCount             Int                  @default(0) @map("attempt_count")
+  processedAt              DateTime?            @map("processed_at") @db.Timestamptz(6)
+  lastErrorCode            String?              @map("last_error_code")
+  createdAt                DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
+  inbox                    ProviderWebhookInbox @relation(fields:[providerWebhookInboxId],references:[providerWebhookInboxId])
+
+  @@index([providerWebhookInboxId])
+  @@index([eventType, occurredAt])
+  @@index([status, createdAt])
+  @@map("line_messaging_event")
+  @@schema("integration")
+}
+
+model NotificationDelivery {
+  notificationDeliveryId String                     @id @default(uuid()) @map("notification_delivery_id") @db.Uuid
+  personId               String                     @map("person_id") @db.Uuid
+  channel                String
+  notificationType       String                     @map("notification_type")
+  destinationBindingId   String?                    @map("destination_binding_id") @db.Uuid
+  status                 NotificationDeliveryStatus @default(PENDING)
+  attemptCount           Int                        @default(0) @map("attempt_count")
+  evidenceHash           String                     @map("evidence_hash")
+  expiresAt              DateTime?                  @map("expires_at") @db.Timestamptz(6)
+  sentAt                 DateTime?                  @map("sent_at") @db.Timestamptz(6)
+  lastAttemptAt          DateTime?                  @map("last_attempt_at") @db.Timestamptz(6)
+  providerCorrelation    String?                    @map("provider_correlation")
+  failureCode            String?                    @map("failure_code")
+  createdAt              DateTime                   @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@unique([personId, channel, notificationType, evidenceHash])
+  @@index([personId, createdAt])
+  @@index([status, expiresAt])
+  @@map("notification_delivery")
+  @@schema("integration")
+}
+
+model AccountRecoveryRequest {
+  accountRecoveryRequestId String                @id @default(uuid()) @map("account_recovery_request_id") @db.Uuid
+  personId                 String                @map("person_id") @db.Uuid
+  type                     AccountRecoveryType
+  status                   AccountRecoveryStatus @default(PENDING)
+  requesterActorId         String?               @map("requester_actor_id") @db.Uuid
+  approverActorId          String?               @map("approver_actor_id") @db.Uuid
+  verificationEvidence     Json?                 @map("verification_evidence")
+  requestedProviderSubject String?               @map("requested_provider_subject")
+  completionTokenHash      String?               @unique @map("completion_token_hash")
+  completionTokenExpiresAt DateTime?             @map("completion_token_expires_at") @db.Timestamptz(6)
+  completionTokenUsedAt    DateTime?             @map("completion_token_used_at") @db.Timestamptz(6)
+  approvedAt               DateTime?             @map("approved_at") @db.Timestamptz(6)
+  completedAt              DateTime?             @map("completed_at") @db.Timestamptz(6)
+  rejectedAt               DateTime?             @map("rejected_at") @db.Timestamptz(6)
+  reasonCode               String?               @map("reason_code")
+  idempotencyKey           String                @unique @map("idempotency_key")
+  createdAt                DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt                DateTime              @updatedAt @map("updated_at") @db.Timestamptz(6)
+  person                   Person                @relation(fields: [personId], references: [personId])
+
+  @@index([personId, type, status, createdAt])
+  @@map("account_recovery_request")
+  @@schema("identity")
+}
 enum QualificationOwnerType {
   MEMBER
   LEGAL_ENTITY
@@ -3647,6 +4785,8 @@ model QualificationOwnerInterval {
   @@schema("membership")
 }
 model BinaryTree {
+  ballCounter BallNoCounter?
+  ballAllocations BallNoAllocation[]
  economicDestinations AwardEconomicDestination[]
  companyProfileBindings CompanyBootstrapProfileBinding[]
   binaryTreeId String @id @default(uuid()) @map("binary_tree_id") @db.Uuid
@@ -3655,12 +4795,18 @@ model BinaryTree {
   status BinaryTreeStatus @default(DRAFT)
   topologyVersion Int @default(1) @map("topology_version")
   companyPrincipalId String @map("company_principal_id") @db.Uuid
-  bootstrapProfileVersion String @default("COMPANY_BOOTSTRAP_PROFILE_V1") @map("bootstrap_profile_version")
+  bootstrapProfileId String @map("bootstrap_profile_id") @db.Uuid
+  bootstrapProfileCode String @map("bootstrap_profile_code")
+  // Legacy tree identity is immutable TEXT; profile.version remains an Int on the related profile.
+  bootstrapProfileVersion String @map("bootstrap_profile_version")
+  bootstrapCompanyBallCount Int @map("bootstrap_company_ball_count")
+  bootstrapProfileSnapshot Json @map("bootstrap_profile_snapshot")
   economicActivation String @default("PENDING_MAPPING") @map("economic_activation")
   createdByActorId String @map("created_by_actor_id") @db.Uuid
   effectiveAt DateTime @map("effective_at") @db.Timestamptz(6)
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   companyPrincipal CompanyPrincipal @relation(fields: [companyPrincipalId], references: [companyPrincipalId])
+  bootstrapProfile BinaryTreeBootstrapProfile @relation(fields: [bootstrapProfileId], references: [bootstrapProfileId])
   statusEvents BinaryTreeStatusEvent[]
   memberships BinaryTreeMembership[]
   positions TreeCanonicalPosition[]
@@ -3671,6 +4817,29 @@ model BinaryTree {
    projectionCheckpoint BinaryTreeProjectionCheckpoint?
   @@index([status, createdAt, binaryTreeId])
   @@map("binary_tree")
+  @@schema("organization")
+}
+model BinaryTreeBootstrapProfile {
+  bootstrapProfileId String @id @default(uuid()) @map("bootstrap_profile_id") @db.Uuid
+  profileCode String @map("profile_code")
+  version Int
+  status String
+  companyBallCount Int @map("company_ball_count")
+  companyPlanCode String @map("company_plan_code")
+  companyActivePolicy String @map("company_active_policy")
+  companyAwardPolicy String @map("company_award_policy")
+  economicDestination String @map("economic_destination")
+  effectiveFrom DateTime @map("effective_from") @db.Timestamptz(6)
+  effectiveTo DateTime? @map("effective_to") @db.Timestamptz(6)
+  approvalReference String @map("approval_reference")
+  snapshotHash String @map("snapshot_hash") @db.Char(64)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  trees BinaryTree[]
+
+  @@unique([profileCode, version])
+  @@index([status, effectiveFrom, effectiveTo])
+  @@map("binary_tree_bootstrap_profile")
   @@schema("organization")
 }
 model BinaryTreeStatusEvent {
@@ -3780,7 +4949,24 @@ model FoundingOccupationEvidence {
   @@map("founding_occupation_evidence")
   @@schema("organization")
 }
-model CompanySponsorDesignation {
+
+model CompanySponsorAlias {
+  companySponsorAliasId String @id @default(uuid()) @map("company_sponsor_alias_id") @db.Uuid
+  aliasNormalized String @map("alias_normalized")
+  displayLabel String @map("display_label")
+  targetQualificationId String @map("target_qualification_id") @db.Uuid
+  policyVersion String @map("policy_version")
+  effectiveFrom DateTime @map("effective_from") @db.Timestamptz(6)
+  effectiveTo DateTime? @map("effective_to") @db.Timestamptz(6)
+  evidenceHash String @map("evidence_hash")
+  createdBy String? @map("created_by") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  targetQualification Qualification @relation(fields:[targetQualificationId],references:[qualificationId])
+  @@unique([aliasNormalized,effectiveFrom])
+  @@index([aliasNormalized,effectiveFrom,effectiveTo])
+  @@map("company_sponsor_alias")
+  @@schema("organization")
+}model CompanySponsorDesignation {
  readSnapshots TreeReadSnapshot[]
   binaryTreeId String @id @map("binary_tree_id") @db.Uuid
   qualificationId String @unique @map("qualification_id") @db.Uuid
@@ -3904,4 +5090,25 @@ model ReportReadSnapshot {
  @@index([expiresAt],map:"report_read_snapshot_expiry_idx")
  @@map("report_read_snapshot")
  @@schema("ledger")
+}
+
+/// Transactional per-tree ordinary Ball sequence; never inferred from topology.
+model BallNoCounter {
+  binaryTreeId String @id @map("binary_tree_id") @db.Uuid
+  lastSequence BigInt @map("last_sequence")
+  tree BinaryTree @relation(fields: [binaryTreeId], references: [binaryTreeId], onDelete: Restrict, onUpdate: NoAction)
+  @@map("ball_no_counter")
+  @@schema("organization")
+}
+model BallNoAllocation {
+  qualificationId String @id @map("qualification_id") @db.Uuid
+  binaryTreeId String @map("binary_tree_id") @db.Uuid
+  sequenceNo BigInt @map("sequence_no")
+  ruleVersion String @map("rule_version")
+  allocatedAt DateTime @default(now()) @map("allocated_at") @db.Timestamptz(6)
+  qualification Qualification @relation(fields: [qualificationId], references: [qualificationId], onDelete: Restrict, onUpdate: NoAction)
+  tree BinaryTree @relation(fields: [binaryTreeId], references: [binaryTreeId], onDelete: Restrict, onUpdate: NoAction)
+  @@unique([binaryTreeId, sequenceNo], map: "ball_no_allocation_binary_tree_id_sequence_no_key")
+  @@map("ball_no_allocation")
+  @@schema("organization")
 }

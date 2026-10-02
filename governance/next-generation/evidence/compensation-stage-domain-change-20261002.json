@@ -1,0 +1,29 @@
+{
+  "date": "2026-10-02",
+  "status": "DOMAIN_CHANGE_BOUNDED_PASS",
+  "sourceCommit": "76f49c957fac28df22f0a19db709f087222d858c",
+  "verification": {
+    "command": "node scripts/api-jest-isolated.mjs --testPathPatterns='compensation-stage-history-service-db|compensation-period-control-db'",
+    "log": "C:/UCell/logs/compensation-stage-domain-change-20261002.log",
+    "suites": 2,
+    "tests": 6,
+    "migrations": 128,
+    "baselineAssertions": 162,
+    "cleanup": "PASS",
+    "coverage": [
+      "Real initial period read returns PRECHECK and is observed",
+      "Stored GPV source missing authoritative original recognition snapshot produces actual BLOCKED lifecycle and COMPENSATION_VOLUME_EVIDENCE_INVALID",
+      "Refresh captures PRECHECK→BLOCKED through actual control reader, not supplied lifecycle or direct observation fixture",
+      "Original stage reference retained and evidence hash changes",
+      "Source PV row remains unchanged; public history omits Person/Qualification/event/source UUIDs",
+      "Actual businessEnteredAt remains null"
+    ]
+  },
+  "limits": [
+    "Synthetic corrupt recognition source is a negative domain fixture, not a successful Worker recognition journey",
+    "This one actual source-driven transition does not prove all settlement/payment/ERP lifecycle transitions",
+    "True stage entry time, upgrade preservation, actual browser and final full isolated recertification remain pending",
+    "Whole batch IN_PROGRESS"
+  ],
+  "deployment": "NONE"
+}

@@ -4,6 +4,7 @@ import { createHash, randomUUID } from 'crypto';
 import { AuditService } from '../../common/audit/audit.service';
 import { IdempotencyService } from '../../common/idempotency/idempotency.service';
 import { OrganizationService } from '../organization/organization.service';
+import { SponsorResolver } from '../qualification/sponsor-resolver.service';
 import { CreateMembershipApplicationDto } from './dto/create-membership-application.dto';
 
 @Injectable()
@@ -13,6 +14,7 @@ export class MembershipApplicationService {
     private readonly idempotency: IdempotencyService,
     private readonly audit: AuditService,
     private readonly organization: OrganizationService,
+    private readonly sponsors?: SponsorResolver,
   ) {}
 
   private applicant(dto:CreateMembershipApplicationDto){
@@ -35,12 +37,14 @@ export class MembershipApplicationService {
         if(!entity)throw new ConflictException({code:'RESOURCE_NOT_FOUND',message:'LegalEntity不存在。'});
         if(entity.membershipState!=='FORMAL_MEMBER'||entity.status!=='ACTIVE')throw new ConflictException({code:'LEGAL_ENTITY_FORMAL_MEMBERSHIP_REQUIRED'});
       }
+      if(dto.sponsorCode&&dto.sponsorQualificationId)throw new UnprocessableEntityException({code:'SPONSOR_INPUT_AMBIGUOUS'});
+      const sponsorEvidence=dto.sponsorCode?await (this.sponsors??new SponsorResolver(this.prisma)).resolveWithin(tx as any,{code:dto.sponsorCode,effectiveAt:new Date(),ruleVersion:'R1.0B'}):undefined;
 
       const application=await tx.membershipApplication.create({
         data:{
           ...applicant,
           requestedPlanLevelCode:dto.requestedPlanLevelCode,
-          sponsorQualificationId:dto.sponsorQualificationId,
+          sponsorQualificationId:sponsorEvidence?.sponsorQualificationId??dto.sponsorQualificationId,
           binaryParentQualificationId:dto.binaryParentQualificationId,
           binarySide:dto.binarySide,
           status:'DRAFT',
@@ -56,7 +60,7 @@ export class MembershipApplicationService {
         action:'MEMBERSHIP_APPLICATION_CREATED',
         entityType:'MEMBERSHIP_APPLICATION',
         entityId:application.applicationId,
-        afterData:{applicationId:application.applicationId,holderType:dto.holderType,personId:application.personId,legalEntityId:application.legalEntityId,requestedPlanLevelCode:application.requestedPlanLevelCode},
+        afterData:{applicationId:application.applicationId,holderType:dto.holderType,personId:application.personId,legalEntityId:application.legalEntityId,requestedPlanLevelCode:application.requestedPlanLevelCode,sponsorEvidence:sponsorEvidence?(sponsorEvidence.kind==='COMPANY_ALIAS'?{kind:'COMPANY_ALIAS',displayLabel:sponsorEvidence.displayLabel,policyVersion:sponsorEvidence.policyVersion,ruleVersion:sponsorEvidence.ruleVersion,effectiveAt:sponsorEvidence.effectiveAt}:{kind:'BALL',sponsorBallNo:sponsorEvidence.sponsorBallNo,ruleVersion:sponsorEvidence.ruleVersion,effectiveAt:sponsorEvidence.effectiveAt}):null},
         requestId,correlationId
       });
       return application;

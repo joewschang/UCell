@@ -1,5 +1,5 @@
 import { ConflictException, ForbiddenException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
-import { PrismaService } from '@ucell/database';
+import { PrismaService,memberMessageText } from '@ucell/database';
 import { createHash, randomUUID } from 'crypto';
 import { AuditService } from '../../common/audit/audit.service';
 import { IdentityTokenService } from '../auth/identity-token.service';
@@ -13,8 +13,9 @@ export class MemberService {
   const identity=await this.verifier.verify(idToken),key=createHash('sha256').update(idToken).digest('hex');
   try{return await this.db.$transaction(async tx=>{
    const binding=await tx.identityLink.findUnique({where:{provider_providerSubject:{provider:'LINE',providerSubject:identity.subject}},include:{person:true}});
-   if(!binding)throw new UnauthorizedException({code:'LINE_ACCOUNT_UNBOUND'});
+   if(!binding||binding.status!=='ACTIVE')throw new UnauthorizedException({code:'LINE_ACCOUNT_UNBOUND'});
    if(binding.person.status!=='EFFECTIVE')throw new UnauthorizedException({code:'MEMBER_PERSON_DISABLED'});
+   if(binding.person.securityStatus!=='NORMAL')throw new UnauthorizedException({code:'MEMBER_SECURITY_LOCKED'});
    await tx.idempotencyRecord.create({data:{actorScope:'member:line:exchange',idempotencyKey:key,requestHash:key,responseBody:{consumed:true},statusCode:200,expiresAt:new Date(identity.expiresAt*1000)}});
    const ttlSeconds=Math.min(3600,identity.expiresAt-Math.floor(Date.now()/1000));
    if(ttlSeconds<=0)throw new UnauthorizedException({code:'LINE_TOKEN_EXPIRED'});
@@ -50,7 +51,7 @@ export class MemberService {
   await this.context(personId,qualificationId);
   const result=await this.mutation(`member:notification:read:${personId}`,key,{qualificationId,notificationId},async tx=>{
    await new QualificationAccessService(tx as any).assertHolder(personId,qualificationId);
-   const notice=await tx.memberNotification.findFirst({where:{notificationId,personId,OR:[{qualificationId:null},{qualificationId}]}});
+   const notice=await tx.memberNotification.findFirst({where:{notificationId,personId,publishedAt:{lte:new Date()},archives:{none:{personId}},AND:[{OR:[{expiresAt:null},{expiresAt:{gt:new Date()}}]},{OR:[{retiredAt:null},{retiredAt:{gt:new Date()}}]}],OR:[{qualificationId:null},{qualificationId}]}});
    if(!notice)throw new NotFoundException({code:'NOTIFICATION_NOT_FOUND'});
    const existing=await tx.memberNotificationRead.findUnique({where:{notificationId_personId:{notificationId,personId}}});
    const read=existing??await tx.memberNotificationRead.create({data:{notificationId,personId}});
@@ -62,8 +63,8 @@ export class MemberService {
   await this.context(personId,qualificationId);
   return this.db.$transaction(async tx=>{
    await new QualificationAccessService(tx as any).assertHolder(personId,qualificationId);
-   const rows=await tx.memberNotification.findMany({where:{personId,OR:[{qualificationId:null},{qualificationId}]},include:{reads:{where:{personId}}},orderBy:[{createdAt:'desc'},{notificationId:'desc'}],take:100});
-   return {qualificationId,notices:rows.map(row=>({id:row.notificationId,qualificationId:row.qualificationId,category:row.category,title:row.title,body:row.body,timeLabel:row.createdAt.toISOString(),readAt:row.reads[0]?.readAt.toISOString()??null})),pagination:{limit:100,truncated:rows.length===100}};
+   const rows=await tx.memberNotification.findMany({where:{personId,publishedAt:{lte:new Date()},archives:{none:{personId}},AND:[{OR:[{expiresAt:null},{expiresAt:{gt:new Date()}}]},{OR:[{retiredAt:null},{retiredAt:{gt:new Date()}}]}],OR:[{qualificationId:null},{qualificationId}]},include:{reads:{where:{personId}}},orderBy:[{createdAt:'desc'},{notificationId:'desc'}],take:100});
+   return {qualificationId,notices:rows.map(row=>({id:row.notificationId,qualificationId:row.qualificationId,category:['SERVICE','ORDER','ACCOUNT'].includes(row.category)?row.category:'SERVICE',title:memberMessageText(row.title),body:memberMessageText(row.body),timeLabel:row.createdAt.toISOString(),readAt:row.reads[0]?.readAt.toISOString()??null})),pagination:{limit:100,truncated:rows.length===100}};
   },{isolationLevel:'RepeatableRead'});
  }
  async representedLegalEntities(personId:string,at=new Date()){
@@ -89,7 +90,7 @@ export class MemberService {
   const monthReference=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Taipei',year:'numeric',month:'2-digit'}).format(now);
   const evidence=await this.db.activeIntervalEvidence.findMany({where:{qualificationId:{in:rows.map(row=>row.qualificationId)},calendarMonth:new Date(monthReference+'-01')},orderBy:{createdAt:'desc'}});
   const latest=new Map<string,typeof evidence[number]>();for(const row of evidence)if(!latest.has(row.qualificationId))latest.set(row.qualificationId,row);
-  return rows.map(row=>{const interval=latest.get(row.qualificationId),ballNo=row.ballNo??'UNPLACED';return {id:row.qualificationId,code:ballNo,rank:row.planLevelCode,active:!!interval&&interval.activeFrom<=now&&interval.activeTo>now,ballLabel:'球 '+ballNo,monthReference,activeInterval:interval?{activeFrom:interval.activeFrom.toISOString(),activeTo:interval.activeTo.toISOString()}:null};});
+  return rows.map(row=>{const interval=latest.get(row.qualificationId),ballNo=row.ballNo??'UNPLACED';return {id:row.qualificationId,qualificationNo:row.qualificationNo.toString(),code:ballNo,rank:row.planLevelCode,active:!!interval&&interval.activeFrom<=now&&interval.activeTo>now,ballLabel:row.ballNo?'球 '+ballNo:'資格 '+row.qualificationNo+'（尚未安置）',monthReference,activeInterval:interval?{activeFrom:interval.activeFrom.toISOString(),activeTo:interval.activeTo.toISOString()}:null};});
  }
  async context(personId:string,qualificationId:string){
   await this.access.assertHolder(personId,qualificationId);

@@ -7,12 +7,12 @@ import {Injectable,UnprocessableEntityException} from '@nestjs/common';
 import {binaryPath,COMPANY_PROFILE,Prisma,PrismaService} from '@ucell/database';
 import {AsOfContext,parseAsOfContext} from '@ucell/shared';
 import {BinaryTreeService,TreePrincipal} from './binary-tree.service';
-type CompanyProfileReadInput={binaryTreeId:string;qualificationId:string;positionNo:number;qualificationKind:string;ownerType:string;ownerCompanyPrincipalId:string|null;treeCompanyPrincipalId:string;at:Date;known:Date};
+type CompanyProfileReadInput={binaryTreeId:string;qualificationId:string;positionNo:number;qualificationKind:string;ownerType:string;ownerCompanyPrincipalId:string|null;treeCompanyPrincipalId:string;bootstrapCompanyBallCount:number;at:Date;known:Date};
 
 /** Read an already-sealed Company profile binding. This never creates a binding during an Admin read. */
 export async function readCompanyProfileStatus(tx:Pick<Prisma.TransactionClient,'companyBootstrapProfileBinding'>,input:CompanyProfileReadInput){
  const unavailable={status:'UNAVAILABLE' as const,planCode:null,profileVersion:null};
- if(input.positionNo<1||input.positionNo>3||input.qualificationKind!=='COMPANY_BOOTSTRAP'||input.ownerType!=='COMPANY'||input.ownerCompanyPrincipalId!==input.treeCompanyPrincipalId)return unavailable;
+ if(input.positionNo<1||input.positionNo>input.bootstrapCompanyBallCount||input.qualificationKind!=='COMPANY_BOOTSTRAP'||input.ownerType!=='COMPANY'||input.ownerCompanyPrincipalId!==input.treeCompanyPrincipalId)return unavailable;
  const bindings=await tx.companyBootstrapProfileBinding.findMany({where:{qualificationId:input.qualificationId,binaryTreeId:input.binaryTreeId,companyPosition:input.positionNo,
   effectiveAt:{lte:input.at},effectiveFrom:{lte:input.at},recordedAt:{lte:input.known},OR:[{effectiveTo:null},{effectiveTo:{gt:input.at}}]},take:2,
   select:{profileVersion:true,planCode:true,ruleVersion:true,parameterVersion:true,snapshotHash:true}});
@@ -65,7 +65,7 @@ export class BinaryTreeReadService {
    const owners=await tx.qualificationOwnerInterval.findMany({where:{qualificationId:membership.qualificationId,effectiveFrom:{lte:at},recordedAt:{lte:known},OR:[{effectiveTo:null},{effectiveTo:{gt:at}},{closedRecordedAt:{gt:known}}]},take:2});
    if(owners.length!==1)return {status:'UNAVAILABLE',explainCode:'OWNER_EVIDENCE_UNAVAILABLE',time,result:null};
    const owner=owners[0];
-   const companyProfile=await readCompanyProfileStatus(tx,{binaryTreeId:id,qualificationId:membership.qualificationId,positionNo:slot.positionNo,qualificationKind:qualification?.kind??'UNKNOWN',ownerType:owner.ownerType,ownerCompanyPrincipalId:owner.companyPrincipalId,treeCompanyPrincipalId:tree.companyPrincipalId,at,known});
+   const companyProfile=await readCompanyProfileStatus(tx,{binaryTreeId:id,qualificationId:membership.qualificationId,positionNo:slot.positionNo,qualificationKind:qualification?.kind??'UNKNOWN',ownerType:owner.ownerType,ownerCompanyPrincipalId:owner.companyPrincipalId,treeCompanyPrincipalId:tree.companyPrincipalId,bootstrapCompanyBallCount:tree.bootstrapCompanyBallCount,at,known});
    const activeEvidence=owner.ownerType==='COMPANY'?{state:'ALWAYS_ACTIVE',lastUpdated:owner.recordedAt}:await readBallActiveEvidence(tx,membership.qualificationId,time);
    const active=activeEvidence.state;
    const projected=statistics.rows.find(r=>r.row_key===String(slot.positionNo));
@@ -85,10 +85,10 @@ export class BinaryTreeReadService {
     WHERE a.binary_tree_id=${id}::uuid AND a.ancestor_qualification_id=${membership.qualificationId}::uuid AND a.depth>0
       AND a.effective_from<=${at} AND a.recorded_at<=${known} AND m.effective_from<=${at} AND m.recorded_at<=${known}`;
    const founding=await tx.foundingOccupationEvidence.findFirst({where:{qualificationId:membership.qualificationId,effectiveAt:{lte:at},recordedAt:{lte:known}}});
-   const performance=projected?{status:m.cumulativeGpv===null?'UNAVAILABLE':'AVAILABLE',reason:null,value:m.cumulativeGpv===null?null:{cumulative:String(m.cumulativeGpv),month:String(m.monthlyGpv),leftMonth:String(m.leftMonthlyGpv),rightMonth:String(m.rightMonthlyGpv)}}:slot.positionNo>=4?(statistics.required?{status:'UNAVAILABLE',reason:'BACKGROUND_PROJECTION_REQUIRED',value:null}:await readFoundingPerformance(tx,id,membership.qualificationId,time)):null;
-   const carry=projected?.evidence.carry??(slot.positionNo>=4?await readFoundingCarry(tx,membership.qualificationId,time):null);
+   const performance=projected?{status:m.cumulativeGpv===null?'UNAVAILABLE':'AVAILABLE',reason:null,value:m.cumulativeGpv===null?null:{cumulative:String(m.cumulativeGpv),month:String(m.monthlyGpv),leftMonth:String(m.leftMonthlyGpv),rightMonth:String(m.rightMonthlyGpv)}}:slot.positionNo>tree.bootstrapCompanyBallCount?(statistics.required?{status:'UNAVAILABLE',reason:'BACKGROUND_PROJECTION_REQUIRED',value:null}:await readFoundingPerformance(tx,id,membership.qualificationId,time)):null;
+   const carry=projected?.evidence.carry??(slot.positionNo>tree.bootstrapCompanyBallCount?await readFoundingCarry(tx,membership.qualificationId,time):null);
    const lastUpdated=[membership.recordedAt,owner.recordedAt,activeEvidence.lastUpdated,(counts[0] as any).updated,(performance as any)?.lastUpdated,(carry as any)?.lastUpdated,projected?.evidence.lastUpdated].filter(v=>v!=null).map(v=>new Date(v).toISOString()).sort().at(-1)!;
-   positions.push({performance,carry,companyProfile,holderId:owner.personId??owner.companyPrincipalId,occupationStatus:'OCCUPIED',lastUpdated,dataThrough:statistics.dataThrough??time.knowledgeCutoff,evidenceQuality:slot.positionNo<4?'AUTHORITATIVE':performance?.status==='AVAILABLE'&&carry?.status==='AVAILABLE'&&active!=='UNKNOWN'?'AUTHORITATIVE':'PARTIAL',leftDescendantBalls:numberOrNull(counts[0].left_balls),rightDescendantBalls:numberOrNull(counts[0].right_balls),leftNewBallsInPeriod:numberOrNull(counts[0].left_new),rightNewBallsInPeriod:numberOrNull(counts[0].right_new),positionNo:slot.positionNo,binaryPositionNo:membership.binaryPositionNo.toString(),path:binaryPath(membership.binaryPositionNo),ballNo:qualification?.ballNo??null,parentPositionNo:slot.parentPositionNo,side:slot.side,qualificationId:membership.qualificationId,ownerType:owner.ownerType,
+   positions.push({performance,carry,companyProfile,holderId:owner.personId??owner.companyPrincipalId,occupationStatus:'OCCUPIED',lastUpdated,dataThrough:statistics.dataThrough??time.knowledgeCutoff,evidenceQuality:slot.positionNo<=tree.bootstrapCompanyBallCount?'AUTHORITATIVE':performance?.status==='AVAILABLE'&&carry?.status==='AVAILABLE'&&active!=='UNKNOWN'?'AUTHORITATIVE':'PARTIAL',leftDescendantBalls:numberOrNull(counts[0].left_balls),rightDescendantBalls:numberOrNull(counts[0].right_balls),leftNewBallsInPeriod:numberOrNull(counts[0].left_new),rightNewBallsInPeriod:numberOrNull(counts[0].right_new),positionNo:slot.positionNo,binaryPositionNo:membership.binaryPositionNo.toString(),path:binaryPath(membership.binaryPositionNo),ballNo:qualification?.ballNo??null,parentPositionNo:slot.parentPositionNo,side:slot.side,qualificationId:membership.qualificationId,ownerType:owner.ownerType,
     activeLabel:active==='ALWAYS_ACTIVE'?'Always Active (Company Rule)':m?.active??active,actualSponsorSequenceNo:founding?.actualSponsorSequenceNo??(slot.positionNo===2?1:slot.positionNo===3?2:null),
     descendantBalls:numberOrNull(counts[0].balls),distinctMemberPersons:numberOrNull(counts[0].persons),newBallsInPeriod:numberOrNull(counts[0].new_balls)});
   }
@@ -98,3 +98,4 @@ export class BinaryTreeReadService {
    evidenceRefs:[{type:'BinaryTreeStatusEvent',id:status.binaryTreeStatusEventId,revision:String(status.topologyVersion)},...evidence.map(e=>({type:'PlacementTreeEvidence',id:e.placementTreeEvidenceId,revision:String(e.topologyVersion)}))]};
  }
 }
+

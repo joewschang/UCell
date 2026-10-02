@@ -9,8 +9,11 @@ export async function projectFoundingFacts(tx:Prisma.TransactionClient,q:Analyti
  const t=q.time,id=q.filters.binaryTreeId,at=new Date(t.asOf),known=new Date(t.knowledgeCutoff),start=new Date(t.periodStart),end=new Date(t.periodEnd);
  const invalidAncestry=await treeAncestryCompleteness(tx,id,t);
  if(invalidAncestry!=='0')return {status:'STALE',manifest:{metric:q.metrics[0],unavailableReason:'CANONICAL_ANCESTRY_EVIDENCE_INCOMPLETE',invalidMemberships:invalidAncestry},rows:[]};
- const roots=await tx.treeCanonicalPosition.findMany({where:{binaryTreeId:id,positionNo:{gte:4,lte:7}},orderBy:{positionNo:'asc'}});
- if(roots.length!==4)throw Error('FOUNDING_POSITIONS_UNAVAILABLE');
+ const tree=await tx.binaryTree.findUnique({where:{binaryTreeId:id},select:{bootstrapCompanyBallCount:true}});
+ if(!tree)throw Error('FOUNDING_TREE_UNAVAILABLE');
+ const firstMemberPosition=tree.bootstrapCompanyBallCount+1,lastCanonicalPosition=tree.bootstrapCompanyBallCount*2+1;
+ const roots=await tx.treeCanonicalPosition.findMany({where:{binaryTreeId:id,positionNo:{gte:firstMemberPosition,lte:lastCanonicalPosition}},orderBy:{positionNo:'asc'}});
+ if(roots.length!==tree.bootstrapCompanyBallCount+1)throw Error('FOUNDING_POSITIONS_UNAVAILABLE');
  const scopedRoots=q.filters.foundingBallId?roots.filter(r=>r.occupantQualificationId===q.filters.foundingBallId):roots;
  if(!scopedRoots.length)throw Error('FOUNDING_SCOPE_NOT_IN_TREE');
  const counts=await tx.$queryRaw<any[]>`SELECT a.ancestor_qualification_id::text root,count(*)::text balls,
@@ -20,7 +23,7 @@ export async function projectFoundingFacts(tx:Prisma.TransactionClient,q:Analyti
   count(*) FILTER(WHERE a.first_side='RIGHT' AND m.effective_from>=${start} AND m.effective_from<${end} AND m.effective_from<${at})::text right_new,
   max(greatest(a.recorded_at,m.recorded_at)) updated
   FROM organization.binary_tree_ancestry a
-  JOIN organization.tree_canonical_position c ON c.binary_tree_id=a.binary_tree_id AND c.occupant_qualification_id=a.ancestor_qualification_id AND c.position_no BETWEEN 4 AND 7
+  JOIN organization.tree_canonical_position c ON c.binary_tree_id=a.binary_tree_id AND c.occupant_qualification_id=a.ancestor_qualification_id AND c.position_no BETWEEN ${firstMemberPosition} AND ${lastCanonicalPosition}
   JOIN organization.binary_tree_membership m ON m.binary_tree_id=a.binary_tree_id AND m.qualification_id=a.descendant_qualification_id
   WHERE a.binary_tree_id=${id}::uuid AND a.depth>0 AND a.effective_from<=${at} AND a.recorded_at<=${known}
    AND m.effective_from<=${at} AND m.recorded_at<=${known}
@@ -31,7 +34,7 @@ export async function projectFoundingFacts(tx:Prisma.TransactionClient,q:Analyti
    coalesce(returns.lines,0) expected_returns,correction.updated correction_updated
   FROM ledger.pv_ledger e JOIN organization.binary_tree_membership m ON m.qualification_id=e.qualification_id
   JOIN organization.binary_tree_ancestry a ON a.binary_tree_id=m.binary_tree_id AND a.descendant_qualification_id=m.qualification_id AND a.depth>0
-  JOIN organization.tree_canonical_position c ON c.binary_tree_id=a.binary_tree_id AND c.occupant_qualification_id=a.ancestor_qualification_id AND c.position_no BETWEEN 4 AND 7
+  JOIN organization.tree_canonical_position c ON c.binary_tree_id=a.binary_tree_id AND c.occupant_qualification_id=a.ancestor_qualification_id AND c.position_no BETWEEN ${firstMemberPosition} AND ${lastCanonicalPosition}
   LEFT JOIN LATERAL(SELECT count(*) lines FROM commerce.return_line l JOIN commerce.return_case r ON r.return_case_id=l.return_case_id
    WHERE l.order_line_id=e.source_line_id AND l.gpv_reversal_amount>0 AND r.status='POSTED' AND r.posted_at<=${known} AND l.created_at<=${known}) returns ON true
   LEFT JOIN LATERAL(SELECT sum(v.amount) delta,count(*) effects,max(v.recorded_at) updated,
@@ -73,3 +76,5 @@ export async function projectFoundingFacts(tx:Prisma.TransactionClient,q:Analyti
  }
  return {status:stale?'STALE':'CURRENT',manifest:{metric:q.metrics[0],grain:'FOUNDING_POSITION_PERIOD',coverage:partial?'PARTIAL':'COMPLETE',population:'BINARY_DESCENDANTS_EXCLUDE_SELF',newBallDefinition:'FIRST_EFFECTIVE_BINARY_PLACEMENT',gpvBasis:'IMMUTABLE_TREE_MEMBERSHIP_AND_SIGNED_PV_LEDGER',correctionPolicy:'LATEST_KNOWN_RESTATED_ORIGINAL_PERIOD',carryBasis:'SEALED_ORIGINAL_OR_REPLAY_CARRY',source:'BinaryTreeAncestry/Membership/PvLedger/POSTED Return+Replay Audit'},rows};
 }
+
+

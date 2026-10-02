@@ -58,6 +58,7 @@ export function createApiClient(guard: SessionGuard) {
 export const api = createApiClient(sessionGuard);
 export type Qualification = {
     id: string;
+    qualificationNo?: string;
     code: string;
     rank: string;
     active: boolean;

@@ -20,6 +20,8 @@ export class EpvService {
       const order=await tx.order.findUnique({where:{orderId},include:{lines:true}});
       if(!order || !order.paidAt) return {skipped:'ORDER_NOT_PAID'};
       if(order.purpose!=='REPURCHASE') return {skipped:'NOT_REPURCHASE'};
+      if(!order.qualificationId) return {skipped:'WEB_MEMBER_ORDER'};
+      const qualificationId=order.qualificationId;
       if(order.ruleVersionCode!==ruleVersionCode) pending('RULE_VERSION_MISMATCH','Recognition must use the original order rule version');
 
       const already=await tx.pvLedger.findFirst({
@@ -29,7 +31,7 @@ export class EpvService {
 
       const at=order.paidAt;
       const snapshot=await captureParameters(tx,at,ruleVersionCode);
-      const month=await this.months.recognition(tx,order,snapshot);
+      const month=await this.months.recognition(tx,{...order,qualificationId},snapshot);
       const {base,rate:epvRate,epv}=month;
       const excess=Prisma.Decimal.max(new Prisma.Decimal(0),month.cumulative.sub(base));
       const correlationId=randomUUID();

@@ -9,7 +9,7 @@ class ReasonDto {
 }
 class CreateTreeDto extends ReasonDto {
  @ApiProperty({maxLength:120}) @IsString() @MinLength(1) @MaxLength(120) treeName!:string;
- @ApiPropertyOptional() @IsOptional() @Matches(/^[A-Z][A-Z0-9_-]{2,39}$/) treeCode?:string;
+ @ApiPropertyOptional() @IsOptional() @Matches(/^[A-Z][A-Z0-9_-]{0,39}$/) treeCode?:string;
 }
 class ChangeTreeDto extends ReasonDto {
  @ApiPropertyOptional({enum:['ACTIVE','CLOSED_TO_NEW','ARCHIVED']}) @IsOptional() @IsIn(['ACTIVE','CLOSED_TO_NEW','ARCHIVED']) status?:'ACTIVE'|'CLOSED_TO_NEW'|'ARCHIVED';

@@ -1,6 +1,17 @@
-import { handlerResolver, pollProviderWebhooks, providerRuntimeConfig } from '../../worker/src/provider-runtime';
+import { handlerResolver, pollProviderWebhooks, providerRuntimeConfig,validatePinnedProviderConnections } from '../../worker/src/provider-runtime';
 
 describe('Provider worker runtime wiring',()=>{
+  it('pins logistics handlers to the approved manifest and database connection version',async()=>{
+    const item:any={domain:'LOGISTICS',provider:'OTHER',connectionId:'primary',providerConnectionVersionId:'version-1',handler:{process:jest.fn()}};
+    const entry:any={...item,connectionEnvironment:'STAGE',configHash:'hash',credentialSecretRef:'secret-ref',webhookVerificationRef:'verify-ref',approvalReference:'approval-ref'};
+    const version:any={...entry,environment:'STAGE',effectiveFrom:new Date(0),effectiveTo:null,connection:{domain:'LOGISTICS',provider:'OTHER',connectionKey:'primary',status:'ACTIVE'}};
+    const db:any={providerConnectionVersion:{findUnique:jest.fn().mockResolvedValue(version)}},manifest:any={entries:[entry]},now=new Date();
+    await expect(validatePinnedProviderConnections(db,[item],manifest,now)).resolves.toBeUndefined();
+    await expect(validatePinnedProviderConnections(db,[{...item,providerConnectionVersionId:undefined}],manifest,now)).rejects.toThrow('PROVIDER_HANDLER_VERSION_REQUIRED');
+    await expect(validatePinnedProviderConnections(db,[{...item,providerConnectionVersionId:'foreign'}],manifest,now)).rejects.toThrow('PROVIDER_HANDLER_VERSION_MISMATCH');
+    db.providerConnectionVersion.findUnique.mockResolvedValue({...version,configHash:'changed'});
+    await expect(validatePinnedProviderConnections(db,[item],manifest,now)).rejects.toThrow('PROVIDER_HANDLER_VERSION_MISMATCH');
+  });
   const lease:any={domain:'PAYMENT',provider:'ACME',connectionId:'primary'};
 
   it('is disabled by default without touching the database',async()=>{

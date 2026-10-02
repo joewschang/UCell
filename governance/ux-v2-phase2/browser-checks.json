@@ -1,0 +1,17 @@
+{
+  "mode": "Local mock Member / intercepted Admin API; not UAT",
+  "checks": [
+    "Member 375px: income deep link and no horizontal overflow",
+    "Member 390px: income deep link and no horizontal overflow",
+    "Member 430px: income deep link and no horizontal overflow",
+    "Member 768px: income deep link and no horizontal overflow",
+    "Member skip focus, income links, history, reload and Ball persistence",
+    "Admin 768px: eight groups, 21 links, current group open and no horizontal overflow",
+    "Admin 1366px: eight groups, 21 links, current group open and no horizontal overflow",
+    "Admin 1440px: eight groups, 21 links, current group open and no horizontal overflow",
+    "Admin skip link moves keyboard focus to content",
+    "Member 200% CSS zoom reflow: no horizontal overflow (not browser UI zoom certification)",
+    "Admin 200% CSS zoom reflow: no horizontal overflow (not browser UI zoom certification)"
+  ],
+  "errors": []
+}

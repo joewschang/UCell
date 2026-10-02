@@ -1,0 +1,11 @@
+{
+  "schemaVersion": "G8_STAGE_BACKEND_UPDATE_V1",
+  "imageTag": "6c86adb-line-20261001",
+  "migrationExecution": "ucell-stage-migrate-j7oljia",
+  "migrationStatus": "Succeeded",
+  "apiImage": "ucellstageacr5mafbbsq33mgu.azurecr.io/ucell-backend@sha256:f3f38c510da1d9c771af8bcdfa672c37e811ea129e5b8952782d94fbea4d6981",
+  "workerImage": "ucellstageacr5mafbbsq33mgu.azurecr.io/ucell-worker@sha256:803dc42c90657d2444f44a71edf9bf0ad73eec0f09b2924c4641f775f9a9f497",
+  "apiHealth": "PASS",
+  "adminMemberFrontend": "UPDATED",
+  "completedAt": "2026-10-01T03:08:14.0701173Z"
+}

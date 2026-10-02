@@ -1,0 +1,17 @@
+{
+  "execution": "ucell-stage-migrate-j7oljia",
+  "status": "Succeeded",
+  "records": [
+    {
+      "recovery": "PASS",
+      "migration": "20260928100000_binary_tree_bootstrap_profile",
+      "preservedTrees": 1,
+      "immutableTreeFieldsPreserved": true,
+      "lifecycleGuardRestored": true
+    },
+    {
+      "stageMigration": "PASS",
+      "applied": 124
+    }
+  ]
+}

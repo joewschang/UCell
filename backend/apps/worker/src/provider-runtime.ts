@@ -6,12 +6,13 @@ import {
   type ProviderWebhookWorkerLease,
   type ProviderWebhookWorkerRunResult,
 } from '@ucell/database';
-import { loadProviderEnablementManifest, validateProviderEnablementManifest, type ProviderDeploymentEnvironment } from './provider-enablement';
+import { loadProviderEnablementManifest, validateProviderEnablementManifest, type ProviderDeploymentEnvironment,type ProviderEnablementManifest } from './provider-enablement';
 
 export type ProviderHandlerRegistration = Readonly<{
   domain: ProviderWebhookWorkerLease['domain'];
   provider: string;
   connectionId: string;
+  providerConnectionVersionId?:string;
   handler: ProviderWebhookHandler;
 }>;
 
@@ -42,9 +43,21 @@ export async function pollProviderWebhooks(
   if (!config.enabled) return Object.freeze({ enabled: false, result: null });
   const resolve = handlerResolver(registrations);
   const deploymentEnvironment=providerDeploymentEnvironment(environment);
-  validateProviderEnablementManifest(loadProviderEnablementManifest(environment),deploymentEnvironment,now,registrations);
+  const manifest=loadProviderEnablementManifest(environment);
+  validateProviderEnablementManifest(manifest,deploymentEnvironment,now,registrations);
+  await validatePinnedProviderConnections(db,registrations,manifest,now);
   const result = await runProviderWebhookBatch(new ProviderWebhookWorkerLeaseService(db), resolve, config, now);
   return Object.freeze({ enabled: true, result });
+}
+
+export async function validatePinnedProviderConnections(db:PrismaService,registrations:readonly ProviderHandlerRegistration[],manifest:ProviderEnablementManifest,now:Date){
+ for(const item of registrations){
+  if(item.domain!=='LOGISTICS'&&!item.providerConnectionVersionId)continue;
+  if(!item.providerConnectionVersionId)throw new Error('PROVIDER_HANDLER_VERSION_REQUIRED');
+  const entry=manifest.entries.find(e=>e.domain===item.domain&&e.provider===item.provider&&e.connectionId===item.connectionId&&e.providerConnectionVersionId===item.providerConnectionVersionId);
+  const version=entry&&await db.providerConnectionVersion.findUnique({where:{providerConnectionVersionId:item.providerConnectionVersionId},include:{connection:true}});
+  if(!entry||!version||version.connection.status!=='ACTIVE'||version.connection.domain!==item.domain||version.connection.provider!==item.provider||version.connection.connectionKey!==item.connectionId||version.environment!==entry.connectionEnvironment||version.configHash!==entry.configHash||version.credentialSecretRef!==entry.credentialSecretRef||version.webhookVerificationRef!==entry.webhookVerificationRef||version.approvalReference!==entry.approvalReference||version.effectiveFrom>now||version.effectiveTo&&version.effectiveTo<=now)throw new Error('PROVIDER_HANDLER_VERSION_MISMATCH');
+ }
 }
 
 export function providerDeploymentEnvironment(environment:NodeJS.ProcessEnv):ProviderDeploymentEnvironment{

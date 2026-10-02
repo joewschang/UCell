@@ -29,6 +29,15 @@ export class CreateOrderDto {
   @Type(() => CreateOrderItemDto)
   items!: CreateOrderItemDto[];
 
+  @ApiPropertyOptional({ description: '受治理的商業 Offering code；指定時會封存有效版本快照' })
+  @IsOptional()
+  @IsString()
+  commercialOfferingCode?: string;
+
+  @ApiPropertyOptional({ description: '訂單列用途，例如 ADDITIONAL_PURCHASE；不作為 Offering 類別' })
+  @IsOptional()
+  @IsString()
+  linePurpose?: string;
   @ApiPropertyOptional({ description: '分享歸因Token，Server只存Hash/解析結果' })
   @IsOptional()
   @IsString()

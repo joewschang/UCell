@@ -22,7 +22,9 @@ const period: Check = v => typeof v === 'string' && /^\d{4}-(0[1-9]|1[0-2])$/.te
 const date = (v:unknown) => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v) && Number.isFinite(Date.parse(v+'T00:00:00Z'));
 const unique = (check: Check, key: string): Check => v => list(check)(v) && new Set((v as Record<string, unknown>[]).map(x => x[key])).size === (v as unknown[]).length;
 const activeInterval=object({activeFrom:string,activeTo:string});
-const qualification = object({ id, code: ballNo, rank: id, active: boolean, ballLabel: string,monthReference:optional(period),activeInterval:optional(nullable(activeInterval)) });
+const publicQualificationNo:Check = value => typeof value==='string' && /^[1-9][0-9]*$/.test(value);
+const qualificationFields = object({ id, code: string, qualificationNo:optional(publicQualificationNo), rank: id, active: boolean, ballLabel: string,monthReference:optional(period),activeInterval:optional(nullable(activeInterval)) });
+const qualification:Check = value => qualificationFields(value) && (isBallNo((value as Qualification).code) || ((value as Qualification).code==='UNPLACED' && publicQualificationNo((value as Qualification).qualificationNo)));
 const status = enumOf('PENDING', 'CALCULATED', 'PENDING45D', 'EFFECTIVE', 'PAYABLE', 'PAID', 'REVERSED', 'CLAWBACK');
 const metric = nullable(number);
 const member = object({ code: id, name: string });

@@ -1,0 +1,24 @@
+{
+  "date": "2026-10-02",
+  "status": "RECOVERY_PASS",
+  "problem": "Both current branch and remote tracking loose refs contained 41 NUL bytes; HEAD unresolved and 2765 index entries appeared added",
+  "backup": "C:/UCell/Recovery/git-metadata-20261002-1790870957664",
+  "verifiedCommit": "da7a680e4164b25de1dbeec772da9c1cca09f347",
+  "repair": "Replaced only the two verified corrupt ref files with the SHA confirmed by local commit history and remote ls-remote; working files and index untouched",
+  "indexSha256": "f0707ca3f218bf1e3b71975177494cec63eeb303722aa6084adbd332c90f7c07",
+  "connectivity": {
+    "exitCode": 0,
+    "scope": "git fsck --no-reflogs --connectivity-only; not full blob contents verification"
+  },
+  "retainedHistoricalObjects": [
+    "refs/recovery/20261002-period-close-admin-wip",
+    "refs/recovery/20261002-return-substitution"
+  ],
+  "remainingForeignWork": [
+    "backend/scripts/stage-line-leader-fixture.mjs",
+    "deployment/LINE_STAGE_MANUAL_GATE.md",
+    "Stage repair scripts and LINE evidence"
+  ],
+  "scopeStatus": "Whole batch IN_PROGRESS; business-stage durable history remains incomplete",
+  "deployment": "NONE"
+}

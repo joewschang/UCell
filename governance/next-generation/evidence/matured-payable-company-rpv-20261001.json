@@ -1,0 +1,27 @@
+{
+  "date": "2026-10-01",
+  "status": "BOUNDED_PASS",
+  "sourceCommit": "f99a8a7864b3b129354bbbd8ef5311d2f0a3c9a1",
+  "verification": {
+    "command": "node scripts/api-jest-isolated.mjs --testPathPatterns='matured-payable-company-rpv'",
+    "log": "C:/UCell/logs/matured-payable-company-rpv-20261001.log",
+    "suites": 1,
+    "tests": 1,
+    "migrations": 127,
+    "baselineAssertions": 162,
+    "cleanup": "PASS",
+    "coverage": [
+      "Real authorized seven-ball tree creation and activation",
+      "Actual RPV award pair sharing recognition source, distinct recipients",
+      "Company position 4 routed using authoritative parameter snapshot/accounting month and persisted Reservoir B destination/effect",
+      "Shared missing-payable source SQL includes ordinary award and excludes Company award",
+      "Existing payable materialization produces exactly one ordinary RPV Payable and no Company RPV Payable"
+    ]
+  },
+  "limits": [
+    "Advanced synthetic maturity cutoff used directly in shared SQL; future-asOf HTTP remains rejected",
+    "Synthetic source fixtures do not substitute for full Worker/provider/browser certification",
+    "Whole batch and full final isolated recertification remain IN_PROGRESS"
+  ],
+  "deployment": "NONE"
+}

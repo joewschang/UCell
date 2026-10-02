@@ -1,5 +1,5 @@
 import {ConflictException,UnprocessableEntityException} from '@nestjs/common';
-import {Prisma,ballNoFor,childPosition} from '@ucell/database';
+import {Prisma,childPosition} from '@ucell/database';
 import {createHash,randomUUID} from 'node:crypto';
 export type TreePlacementMeta={sourceType:string;actorId?:string;actorType?:'ADMIN'|'MEMBER'|'SYSTEM';reason?:string;correlationId?:string};
 export const treeHash=(value:unknown)=>createHash('sha256').update(JSON.stringify(value)).digest('hex');
@@ -34,9 +34,10 @@ export async function attachTreePlacement(tx:Prisma.TransactionClient,data:{pare
  const sponsor=await tx.sponsorRelationship.findUnique({where:{childQualificationId:q.qualificationId}});
  if(!sponsor || sponsor.effectiveFrom>data.effectiveFrom || (sponsor.effectiveTo && sponsor.effectiveTo<=data.effectiveFrom))throw new ConflictException({code:'SPONSOR_CONFIRMATION_MISSING'});
  const designation=await tx.companySponsorDesignation.findUniqueOrThrow({where:{binaryTreeId:tree.binaryTreeId}});
- if(position && (position.positionNo<4 || position.occupantQualificationId))throw new ConflictException({code:'BINARY_SLOT_OCCUPIED'});
+ if(position && (position.positionNo<=tree.bootstrapCompanyBallCount || position.occupantQualificationId))throw new ConflictException({code:'BINARY_SLOT_OCCUPIED'});
  if(position && sponsor.sponsorQualificationId!==designation.qualificationId)throw new ConflictException({code:'FOUNDING_COMPANY_SPONSOR_REQUIRED'});
- const id=randomUUID(),correlationId=meta.correlationId??randomUUID(),version=tree.topologyVersion+1,ballNo=ballNoFor(tree.treeCode,binaryPositionNo);
+ const [{ballNo}]=await tx.$queryRaw<Array<{ballNo:string}>>`SELECT organization.allocate_ball_no(${tree.binaryTreeId}::uuid,${q.qualificationId}::uuid) AS "ballNo"`;
+ const id=randomUUID(),correlationId=meta.correlationId??randomUUID(),version=tree.topologyVersion+1;
  const body={binaryTreeId:tree.binaryTreeId,qualificationId:q.qualificationId,parentQualificationId:data.parentQualificationId,side:data.side,binaryPositionNo:binaryPositionNo.toString(),ballNo,effectiveAt:data.effectiveFrom.toISOString(),topologyVersion:version,sourceType:meta.sourceType};
  const evidenceHash=treeHash(body);
  await tx.placementTreeEvidence.create({data:{placementTreeEvidenceId:id,binaryTreeId:tree.binaryTreeId,qualificationId:q.qualificationId,parentQualificationId:data.parentQualificationId,side:data.side,

@@ -1,0 +1,2 @@
+ALTER TABLE ledger.payout_payment_result DROP CONSTRAINT payout_payment_result_batch_line_key;
+CREATE INDEX payout_payment_result_batch_line_created_idx ON ledger.payout_payment_result(payout_batch_id,payout_line_id,created_at);

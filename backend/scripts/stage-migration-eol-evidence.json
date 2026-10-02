@@ -1,0 +1,59 @@
+{
+  "reason": "Historical LF/CRLF mixtures recovered byte-for-byte; normalization proves SQL identity. Never changes persisted migration checksums.",
+  "rows": [
+    {
+      "migration": "20260916030000_member_notification",
+      "legacyChecksum": "6d64735755589944e315bc52bc5074d02a9883964d488b49f277cd272d99f200",
+      "normalizedSha256": "874cb9b5df48020c7bad1304b40f26be02788bbd58afc59a8e86b193f0c7e1ff",
+      "recoveredSource": "C:/UCell/UCell/backend/packages/database/prisma/migrations/20260916030000_member_notification/migration.sql"
+    },
+    {
+      "migration": "20260916040000_member_notification_reads",
+      "legacyChecksum": "03e9271b18345efe7431ed93a591fc133b03cc0cb59a5af9de9344f0dd0058f8",
+      "normalizedSha256": "b7ddaafc1e4827e6d97e902b8880ee4e910905a9f9284020022176a528e89780",
+      "recoveredSource": "C:/UCell/UCell/backend/packages/database/prisma/migrations/20260916040000_member_notification_reads/migration.sql"
+    },
+    {
+      "migration": "20260917080000_v15_package_checkout",
+      "legacyChecksum": "4e672af22a15cd990d86b0bc5bb9faf73f8ceb85aefca148e51fa69d3d612dce",
+      "normalizedSha256": "95d96dd7bc4a6acf4980cb446f9b2737c12e1b76f09ad32ebadc550c469ad7b7",
+      "recoveredSource": "C:/UCell/UCell/backend/packages/database/prisma/migrations/20260917080000_v15_package_checkout/migration.sql"
+    },
+    {
+      "migration": "20260917210000_v16_payment_inventory_persistence",
+      "legacyChecksum": "92c6959160fff863f291227b09e35cd9c5007d69de07f33f9eee17a28484a719",
+      "normalizedSha256": "cc2d260f8a78b4504a35cf6fa33efbce64ab57febdfd103a5a724f5d1bbed735",
+      "recoveredSource": "C:/UCell/UCell/backend/packages/database/prisma/migrations/20260917210000_v16_payment_inventory_persistence/migration.sql"
+    },
+    {
+      "migration": "20260919040000_multi_tree_nonmonetary",
+      "legacyChecksum": "450edc8207d3bf82bc334d99c515fe7cf8db5973cb5f5414442d1fefccd68e84",
+      "normalizedSha256": "bb319d3950fd1577c722ff26e868b5b6917c37cf03a1f1c74060b09e603d6a27",
+      "recoveredSource": "C:/UCell/next-generation/backend/packages/database/prisma/migrations/20260919040000_multi_tree_nonmonetary/migration.sql"
+    },
+    {
+      "migration": "20260925110000_retail_referral_award",
+      "legacyChecksum": "36c90da73a5af12403b0748b68dc3c89987b205a191824af44feb879f32ba71a",
+      "normalizedSha256": "9a3bd5de4ebfa68657faabbf013b604c51b890bdaace388dcb8e545a83d7daa4",
+      "recoveredSource": "C:/UCell/next-generation/backend/packages/database/prisma/migrations/20260925110000_retail_referral_award/migration.sql"
+    },
+    {
+      "migration": "20260925130100_existing_member_line_link_index",
+      "legacyChecksum": "9d1f669c75fcd25adbd2804a9ff56b6756edd539806a68e5f1a880da2b268972",
+      "normalizedSha256": "bc2d13656ed2380e90f117944b07333b491515c309b1d56328b8412ae3e181dd",
+      "recoveredSource": "C:/UCell/next-generation/backend/packages/database/prisma/migrations/20260925130100_existing_member_line_link_index/migration.sql"
+    },
+    {
+      "migration": "20260925150000_company_sponsor_alias",
+      "legacyChecksum": "c3acee29431cd0c68bc8ca00e9fcb2c9e8f3eb04937762fc70077c8b724be0cd",
+      "normalizedSha256": "a9a2e2f2939e3780a657cf59f8aa7b694e995166181157ae8899f8c8746efdf8",
+      "recoveredSource": "C:/UCell/next-generation/backend/packages/database/prisma/migrations/20260925150000_company_sponsor_alias/migration.sql"
+    },
+    {
+      "migration": "20260926100000_paper_person_identity_duplicate_prevention",
+      "legacyChecksum": "863049cbcf576f59bfa922738998133066a83c0e011e88147242dac0754dbc90",
+      "normalizedSha256": "8d84e62632464f8ed7952af654c1f76d26f9ff056c739705694b752a75445894",
+      "recoveredSource": "C:/UCell/next-generation/backend/packages/database/prisma/migrations/20260926100000_paper_person_identity_duplicate_prevention/migration.sql"
+    }
+  ]
+}

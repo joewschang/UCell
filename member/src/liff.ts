@@ -15,11 +15,38 @@ async function request(path:string,init:RequestInit={}){
 export class LineReauthenticationRequired extends Error {}
 
 const transitionKey='ucell_referral_transition',bindingKey='ucell_referral_binding_key',anonymousKey='ucell_referral_anonymous_id';
-
-function uuid(value:string|null){
- return value&&/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)?value:undefined;
+const intendedDestinationKey='ucell_line_intended_destination';
+const sponsorCandidateKey='ucell_sponsor_candidate';
+const sponsorCodePattern=/^[A-Z][A-Z0-9_-]{0,39}(?:X\d{6,}|\d{6,})$/;
+export class LineBindingRequired extends Error {}
+export function lineExchangeFailureMessage(status:number,code:unknown){
+ if(status===401&&code==='LINE_ACCOUNT_UNBOUND')return '此 LINE 尚未完成會員帳號綁定，請聯絡客服完成公司核驗。';
+ if(status===401&&code==='MEMBER_SECURITY_LOCKED')return '此會員帳號目前已安全鎖定，請聯絡客服協助重新綁定。';
+ if(status===401&&code==='MEMBER_PERSON_DISABLED')return '此會員帳號目前無法登入，請聯絡客服。';
+ if(status===503)return 'LINE 登入服務尚未設定或暫時無法使用，請稍後再試。';
+ if(status===409)return code==='RETRYABLE_CONFLICT'?'登入遇到操作衝突，請重試':'登入憑證已使用，請重新 LINE 登入';
+ return '會員登入驗證失敗，請確認帳號已綁定。';
 }
-
+function intendedDestination(){
+ const value=window.location.pathname+window.location.search+window.location.hash;
+ return value.startsWith('/')&&!value.startsWith('//')?value:'/';
+}
+/** A referral query value is untrusted acquisition context, never a Sponsor relationship. */
+export function sponsorCandidateFromSearch(search:string){
+ const candidate=new URLSearchParams(search).get('ref')?.trim();
+ return candidate&&sponsorCodePattern.test(candidate)?candidate:undefined;
+}
+export function preserveSponsorCandidate(){
+ if(typeof window==='undefined')return;
+ const candidate=sponsorCandidateFromSearch(window.location.search);
+ if(candidate)sessionStorage.setItem(sponsorCandidateKey,candidate);
+}
+/** Exposed to the qualification checkout only; its server commit must resolve it again. */
+export function pendingSponsorCandidate(){
+ if(typeof window==='undefined')return undefined;
+ return sponsorCandidateFromSearch(window.location.search)??sessionStorage.getItem(sponsorCandidateKey)??undefined;
+}
+function uuid(value:string|null){return value&&/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)?value:undefined;}
 export async function prepareReferralLanding(){
  if(typeof window==='undefined')return;
  const match=window.location.pathname.match(/^\/r\/([A-Za-z0-9_-]+)$/);if(!match)return;
@@ -93,13 +120,14 @@ export async function initLiff() {
  await liff.init({ liffId: id });
     clearLineCallbackQuery();
  // Let the SDK consume its callback before a referral landing rewrites the URL.
+ preserveSponsorCandidate();
  await prepareReferralLanding();
 
  if (!liff.isLoggedIn()) {
   // Preserve the existing LINE OA / LIFF behavior: inside LINE, login continues
   // automatically. In a normal browser, present an explicit Web entry screen.
   if(liff.isInClient()){
-   liff.login();
+   if(typeof window!=='undefined'&&window.location.origin){sessionStorage.setItem(intendedDestinationKey,intendedDestination());liff.login({redirectUri:window.location.origin+'/'});}else liff.login();
    return { mode: 'redirect' as const };
   }
   return { mode: 'web-login' as const };
@@ -111,11 +139,13 @@ export async function initLiff() {
  if(!response.ok){
   const code=(response.body as {code?:string}|undefined)?.code;
   if((response.status===401&&['LINE_TOKEN_INVALID','LINE_TOKEN_EXPIRED'].includes(code??''))||(response.status===409&&code==='LINE_TOKEN_REPLAYED'))throw new LineReauthenticationRequired('LINE 登入憑證已失效，請重新登入 LINE');
+  if(response.status===401&&code==='LINE_ACCOUNT_UNBOUND')throw new LineBindingRequired(lineExchangeFailureMessage(response.status,code));
   throw new Error(response.status===409?(code==='RETRYABLE_CONFLICT'?'登入遇到操作衝突，請重試':'登入憑證已使用，請重新 LINE 登入'):'會員登入驗證失敗，請確認帳號已綁定');
  }
  const data=unwrapMemberEnvelope(response.body) as {accessToken?:unknown;expiresAt?:unknown};
  if(typeof data.accessToken!=='string'||!data.accessToken||typeof data.expiresAt!=='string'||Date.parse(data.expiresAt)<=Date.now()||!Number.isFinite(Date.parse(data.expiresAt)))throw new Error('會員登入回應格式異常');
  sessionStorage.setItem('ucell_member_token',data.accessToken);
+ if(typeof window!=='undefined'){const destination=sessionStorage.getItem(intendedDestinationKey);if(destination){sessionStorage.removeItem(intendedDestinationKey);if(destination.startsWith('/')&&!destination.startsWith('//'))window.history.replaceState({},'',destination);}}
  return {mode:'connected' as const,referralWarning:await bindPendingReferral(data.accessToken)};
 }
 
@@ -128,7 +158,8 @@ export async function startWebLineLogin(){
   boot=undefined;
   return {mode:'connected' as const};
  }
- const redirectUri=typeof window!=='undefined'?window.location.href:undefined;
+ if(typeof window!=='undefined')sessionStorage.setItem(intendedDestinationKey,intendedDestination());
+ const redirectUri=typeof window!=='undefined'?window.location.origin+'/':undefined;
  liff.login(redirectUri?{redirectUri}:undefined);
  return {mode:'redirect' as const};
 }
@@ -141,7 +172,8 @@ export async function restartLineLogin(){
  if(liff.isLoggedIn())liff.logout();
  for(const key of ['ucell_member_token','ucell_qualification_id'])sessionStorage.removeItem(key);
  boot=undefined;
- const redirectUri=typeof window!=='undefined'?window.location.href:undefined;
+ if(typeof window!=='undefined')sessionStorage.setItem(intendedDestinationKey,intendedDestination());
+ const redirectUri=typeof window!=='undefined'?window.location.origin+'/':undefined;
  liff.login(redirectUri?{redirectUri}:undefined);
  return {mode:'redirect' as const};
 }

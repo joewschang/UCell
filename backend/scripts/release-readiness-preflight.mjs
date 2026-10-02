@@ -18,7 +18,7 @@ for(const k of ['ENTRA_TENANT_ID','ENTRA_CLIENT_ID','ADMIN_AUTH_BYPASS']){
 }
 
 const gate=JSON.parse(fs.readFileSync('release/R6_RELEASE_GATE.json','utf8'));
-for(const x of ['DEPENDENCY_GATE_PASS','SECURITY_E2E_PASS','UAT_P0_PASS','RC_GATE_PASS']){
+for(const x of ['DEPENDENCY_GATE_PASS','SECURITY_E2E_PASS','UAT_P0_PASS','RC_GATE_PASS','SWAGGERHUB_SYNC_PASS']){
   if(!gate.required.includes(x))failures.push(`release gate missing ${x}`);
 }
 

@@ -1,0 +1,38 @@
+import {MemberGrowthView} from './member-growth.dto';
+import {memberGrowthRankProgress} from './member-growth-rank';
+import {Injectable} from '@nestjs/common';
+import {Prisma,PrismaService} from '@ucell/database';
+@Injectable()
+export class MemberGrowthService{
+ constructor(private db:PrismaService){}
+ async read(personId:string):Promise<MemberGrowthView>{return this.db.$transaction(async tx=>{
+  const now=new Date(),monthReference=new Date(now.getTime()+8*3600000).toISOString().slice(0,7);
+  const qualifications=await tx.qualification.findMany({where:{currentHolderPersonId:personId},orderBy:{qualificationNo:'asc'},select:{qualificationId:true,qualificationNo:true,ballNo:true,planLevelCode:true,status:true,effectiveAt:true,globalRankHistory:{select:{rankCode:true,achievedAt:true,sourcePeriodEnd:true},orderBy:[{achievedAt:'desc'},{rankCode:'asc'}]},activePeriods:{where:{activeFrom:{lte:now},OR:[{activeTo:null},{activeTo:{gt:now}}]},select:{activeFrom:true,activeTo:true},orderBy:{activeFrom:'desc'},take:1},sponsoredChildren:{where:{effectiveFrom:{lte:now},OR:[{effectiveTo:null},{effectiveTo:{gt:now}}]},select:{childQualificationId:true}},subscriptions:{where:{status:{in:['ACTIVE','PENDING']}},select:{status:true,startMonth:true,endMonth:true},orderBy:[{endMonth:'desc'},{subscriptionId:'asc'}],take:1}}});
+  const [learning,events,enrolledCount,completedCount,upcomingRegisteredCount,attendedCount,checkedInCount,learningMilestones,eventMilestones]=await Promise.all([
+   tx.learningEnrollment.findMany({where:{personId},include:{course:{select:{courseCode:true}},courseVersion:{select:{title:true}},progressEvents:{where:{eventType:'LESSON_COMPLETED'},select:{eventType:true}}},orderBy:[{enrolledAt:'desc'},{learningEnrollmentId:'asc'}],take:100}),
+   tx.memberEventRegistration.findMany({where:{personId},include:{event:{select:{eventCode:true,status:true}},eventVersion:{select:{title:true,startsAt:true}}},orderBy:[{registeredAt:'desc'},{memberEventRegistrationId:'asc'}],take:100}),
+   tx.learningEnrollment.count({where:{personId}}),tx.learningEnrollment.count({where:{personId,status:'COMPLETED'}}),
+   tx.memberEventRegistration.count({where:{personId,status:'REGISTERED',event:{status:'PUBLISHED'},eventVersion:{startsAt:{gt:now}}}}),
+   tx.memberEventRegistration.count({where:{personId,status:'ATTENDED'}}),tx.memberEventRegistration.count({where:{personId,status:'CHECKED_IN'}}),
+   tx.learningProgressEvent.findMany({where:{enrollment:{personId},eventType:{in:['COURSE_ENROLLED','COURSE_ASSIGNED','COURSE_STARTED','COURSE_COMPLETED','ASSESSMENT_COMPLETED']}},include:{enrollment:{include:{course:{select:{courseCode:true}},courseVersion:{select:{title:true}}}}},orderBy:[{occurredAt:'desc'},{learningProgressEventId:'asc'}],take:20}),
+   tx.memberEventParticipationEvidence.findMany({where:{registration:{personId}},include:{registration:{include:{event:{select:{eventCode:true}}}},eventVersion:{select:{title:true}}},orderBy:[{occurredAt:'desc'},{participationEvidenceId:'asc'}],take:20}),
+  ]);
+  const recognitionWhere={subscription:{qualification:{currentHolderPersonId:personId}}};
+  const [recognitionRows,recognitionGroups]=await Promise.all([
+   tx.monthlyRecognitionSchedule.findMany({where:recognitionWhere,select:{installmentNo:true,recognitionMonth:true,status:true,dueAt:true,recognizedAt:true,recognizedAmount:true,rpvAmount:true,subscription:{select:{status:true,startMonth:true,endMonth:true,qualification:{select:{qualificationNo:true}}}}},orderBy:[{recognitionMonth:'desc'},{recognitionId:'asc'}],take:100}),
+   tx.monthlyRecognitionSchedule.groupBy({by:['status'],where:recognitionWhere,_count:{_all:true}}),
+  ]);
+  const recognitionCounts={SCHEDULED:0,DUE:0,RECOGNIZED:0,CANCELLED:0,REVERSED:0};
+  for(const group of recognitionGroups)recognitionCounts[group.status]=group._count._all;
+  const active=qualifications.filter(x=>x.activePeriods.length>0),milestones=[...learningMilestones.map(x=>({type:x.eventType,title:x.enrollment.courseVersion.title,occurredAt:x.occurredAt.toISOString(),reference:'COURSE:'+x.enrollment.course.courseCode,link:'/learning?course='+encodeURIComponent(x.enrollment.course.courseCode)})),...eventMilestones.map(x=>({type:x.eventType,title:x.eventVersion.title,occurredAt:x.occurredAt.toISOString(),reference:'EVENT:'+x.registration.event.eventCode,link:'/events?event='+encodeURIComponent(x.registration.event.eventCode)}))].sort((a,b)=>b.occurredAt.localeCompare(a.occurredAt)||a.reference.localeCompare(b.reference)||a.type.localeCompare(b.type)).slice(0,20);
+  return {asOf:now.toISOString(),coverage:{learningItems:learning.length,eventItems:events.length,itemLimit:100,milestoneLimit:20,counts:'ALL_PERSON_RECORDS'},milestones,dimensions:{
+   qualification:{items:qualifications.map(x=>({qualificationNo:x.qualificationNo.toString(),ballNo:x.ballNo,planLevelCode:x.planLevelCode,status:x.status,effectiveAt:x.effectiveAt?.toISOString()??null})),explanation:'目前由本人持有的資格紀錄。'},
+   active:{activeQualificationCount:active.length,totalQualificationCount:qualifications.length,monthReference,items:qualifications.map(x=>({qualificationNo:x.qualificationNo.toString(),active:x.activePeriods.length>0,activeFrom:x.activePeriods[0]?.activeFrom.toISOString()??null,activeTo:x.activePeriods[0]?.activeTo?.toISOString()??null})),explanation:'依現在有效的 Active 區間判斷；到期時間不包含在有效區間內。'},
+   globalRank:{achieved:qualifications.flatMap(x=>x.globalRankHistory.map(r=>({qualificationNo:x.qualificationNo.toString(),rankCode:r.rankCode,achievedAt:r.achievedAt.toISOString(),sourcePeriodEnd:r.sourcePeriodEnd.toISOString()}))),nextAchievement:await memberGrowthRankProgress(tx,qualifications,now),explanation:'已達成階級取自伺服器保存的歷史紀錄。'},
+   organization:{directQualifiedCount:new Set(qualifications.flatMap(x=>x.sponsoredChildren.map(c=>c.childQualificationId))).size,explanation:'僅統計目前有效的直推資格關係，不提供其他會員的私人資料。'},
+   repurchase:{items:qualifications.map(x=>({qualificationNo:x.qualificationNo.toString(),status:x.subscriptions[0]?.status??'NONE',startMonth:x.subscriptions[0]?.startMonth?.toISOString()??null,endMonth:x.subscriptions[0]?.endMonth?.toISOString()??null})),recognition:{counts:recognitionCounts,itemLimit:100,items:recognitionRows.map(r=>({qualificationNo:r.subscription.qualification.qualificationNo.toString(),schemeStatus:r.subscription.status,startMonth:r.subscription.startMonth.toISOString().slice(0,7),endMonth:r.subscription.endMonth.toISOString().slice(0,7),installmentNo:r.installmentNo,month:r.recognitionMonth.toISOString().slice(0,7),status:r.status,dueAt:r.dueAt.toISOString(),recognizedAt:r.recognizedAt?.toISOString()??null,recordConsistency:r.status==='RECOGNIZED'&&(!r.recognizedAt||r.recognizedAt>now)?'UNAVAILABLE':'RECORDED',scheduledAmount:r.recognizedAmount.toString(),scheduledRpv:r.rpvAmount.toString()}))},explanation:'方案狀態與逐期認列分開呈現；計數涵蓋本人目前持有資格的全部方案，包含已取消及已完成方案。明細最多最近 100 筆；排程金額及 RPV 不代表可領獎金。'},
+   learning:{enrolledCount,completedCount,items:learning.map(x=>({courseCode:x.course.courseCode,title:x.courseVersion.title,status:x.status,completedLessonCount:x.progressEvents.length,completedAt:x.completedAt?.toISOString()??null})),explanation:'總數涵蓋本人的全部報名紀錄，明細最多顯示最近 100 筆。'},
+   events:{upcomingRegisteredCount,attendedCount,checkedInCount,items:events.map(x=>({eventCode:x.event.eventCode,title:x.eventVersion.title,status:x.status,eventStatus:x.event.status,startsAt:x.eventVersion.startsAt.toISOString(),checkedInAt:x.checkedInAt?.toISOString()??null,attendedAt:x.attendedAt?.toISOString()??null})),explanation:'已報到與已確認出席分別計數；即將參加只包含已發布且尚未開始的已報名活動。總數涵蓋本人全部紀錄，明細最多 100 筆。'},
+  }};
+ },{isolationLevel:Prisma.TransactionIsolationLevel.RepeatableRead,timeout:30000});}
+}

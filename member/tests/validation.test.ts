@@ -2,6 +2,12 @@ import { expect, it } from 'vitest';
 import * as v from '../src/validation';
 const q = { id: 'q1', code: 'A000001', rank: 'NEW_RANK', active: true, ballLabel: '球1' };
 const product = { id: 'p1', name: 'Test', price: 4800, pv: 2880, available: true };
+it('accepts an owned unplaced qualification only with its public qualification number',()=>{
+  const unplaced={...q,code:'UNPLACED',qualificationNo:'42'};
+  expect(v.parseQualifications([unplaced])).toEqual([unplaced]);
+  for(const qualificationNo of [undefined,0,-1,42,1.5,'0','-1','1.5'])expect(()=>v.parseQualifications([{...unplaced,qualificationNo}])).toThrow();
+  expect(v.isBallNo('UNPLACED')).toBe(false);
+});
 it('accepts new rank strings, nulls and legitimate zero without coercion', () => {
   expect(v.parseQualifications([q])).toEqual([q]);
   expect(v.parseProducts([{ ...product, price: null, pv: 0 }])[0]).toMatchObject({ price: null, pv: 0 });

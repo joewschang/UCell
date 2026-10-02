@@ -1,7 +1,8 @@
 import {ApiProperty,getSchemaPath} from '@nestjs/swagger';
 export class QualificationView {
  @ApiProperty({format:'uuid'}) id!:string;
- @ApiProperty({description:'Member-authorized immutable business Ball number; never a UUID.'}) code!:string;
+ @ApiProperty({description:'Member-authorized immutable business Ball number, or UNPLACED before placement; never a UUID.'}) code!:string;
+ @ApiProperty({type:String,pattern:'^[1-9][0-9]*$',description:'Public qualification number as lossless decimal text, including before placement.'}) qualificationNo!:string;
  @ApiProperty() rank!:string;
  @ApiProperty() active!:boolean;
  @ApiProperty() ballLabel!:string;

@@ -167,7 +167,7 @@ function plan(source: AdminQualification360Source, planHistory: PlanHistory[]) {
   if (source.kind === 'COMPANY_BOOTSTRAP') {
     const membership = source.binaryTreeMembership;
     const binding = source.companyProfileBindings.length === 1 ? source.companyProfileBindings[0] : null;
-    const companyPosition = membership && membership.binaryPositionNo >= 1n && membership.binaryPositionNo <= 3n
+    const companyPosition = membership && membership.binaryPositionNo >= 1n
       ? Number(membership.binaryPositionNo)
       : null;
     if (
@@ -178,7 +178,6 @@ function plan(source: AdminQualification360Source, planHistory: PlanHistory[]) {
       || binding.binaryTreeId !== membership.binaryTreeId
       || binding.companyPosition !== companyPosition
       || binding.companyPosition < 1
-      || binding.companyPosition > 3
       || !binding.planCode
     ) {
       return unavailablePlan('COMPANY_BOOTSTRAP_PROFILE_UNAVAILABLE');
@@ -426,3 +425,6 @@ export const adminQualification360Schema: any = {
     },
   },
 };
+
+
+

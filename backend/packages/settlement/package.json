@@ -1,0 +1,10 @@
+{
+  "name": "@ucell/settlement",
+  "version": "0.6.10",
+  "private": true,
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {"build": "tsc -p tsconfig.json"},
+  "dependencies": {"@ucell/database": "workspace:*", "@ucell/shared": "workspace:*", "@nestjs/common": "*"},
+  "devDependencies": {"typescript": "*", "@types/node": "^24.0.0"}
+}

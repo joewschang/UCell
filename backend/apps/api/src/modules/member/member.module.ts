@@ -1,3 +1,7 @@
+import {MemberPayoutController} from './member-payout.controller';
+import {MemberMessagesController} from './member-messages.controller';
+import {MemberMessagesService} from './member-messages.service';
+import {IdempotencyService} from '../../common/idempotency/idempotency.service';
 import { MemberExplainController } from './member-explain.controller';
 import { MemberExplainService } from './member-explain.service';
 import { Module } from '@nestjs/common';
@@ -21,5 +25,11 @@ import { AdminFormalMemberApplicationController } from './admin-formal-member-ap
 import { FormalMembershipConflictService } from './formal-membership-conflict.service';
 import { FormalKycStorageService } from './formal-kyc-storage.service';
 import { FormalKycDocumentService } from './formal-kyc-document.service';
-@Module({imports:[AuthModule,OrderModule],controllers:[MemberExplainController,MemberAuthController,MemberController,ReferralAttributionController,MemberReferralAttributionController,AdminFormalMemberApplicationController],providers:[MemberExplainService,MemberService,MemberReadService,MemberTreeReadService,MemberShareLinkService,ReferralAttributionService,FormalMemberApplicationService,FormalMembershipConflictService,FormalKycStorageService,FormalKycDocumentService,MemberContractService,DeliveryProfileService,PiiCryptoService,IdentityMatchFingerprintService,MemberContextGuard,LineTokenVerifierService]})
+import { MemberRetailReferrerController } from './member-retail-referrer.controller';
+import {MemberGrowthService} from './member-growth.service';
+@Module({
+ imports:[AuthModule,OrderModule],
+ controllers:[MemberExplainController,MemberAuthController,MemberController,ReferralAttributionController,MemberReferralAttributionController,AdminFormalMemberApplicationController,MemberPayoutController,MemberMessagesController,MemberRetailReferrerController],
+ providers:[MemberExplainService,MemberService,MemberReadService,MemberTreeReadService,MemberShareLinkService,ReferralAttributionService,FormalMemberApplicationService,FormalMembershipConflictService,FormalKycStorageService,FormalKycDocumentService,MemberContractService,DeliveryProfileService,PiiCryptoService,IdentityMatchFingerprintService,MemberContextGuard,LineTokenVerifierService,MemberMessagesService,IdempotencyService,MemberGrowthService]
+})
 export class MemberModule {}

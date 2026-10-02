@@ -1,0 +1,72 @@
+{
+  "baseline": "18916fd12026630400f897172f2e75554d03b33a",
+  "scope": "Period job process-status timing; overall compensation business-stage history remains incomplete",
+  "status": "PASS_FOR_NAMED_SLICE",
+  "migrationCount": 125,
+  "apiSuites": 10,
+  "apiTests": 116,
+  "baselineAssertions": 162,
+  "workerProcessDeathCases": 24,
+  "adminTestFiles": 2,
+  "adminTests": 5,
+  "upgrade": "124_TO_125_PRESERVATION_PASS",
+  "cleanup": "PASS",
+  "deployment": "NONE",
+  "overallLocalImplementation": "IN_PROGRESS",
+  "fullIsolatedRecertification": "IN_PROGRESS",
+  "stageRc": "NOT_READY",
+  "logs": [
+    {
+      "path": "C:\\UCell\\logs\\cr-batch-period-process-timing-frozen-db.log",
+      "sha256": "89eec5ea634921670e63f6894f4f8ed6404ac6ef6068c71b10592253a0437b40"
+    },
+    {
+      "path": "C:\\UCell\\logs\\cr-batch-period-process-timing-upgrade-final.log",
+      "sha256": "29b33685577c7daf4b78be5ad369d2e992dceef81bde314087724f7c1c44239a"
+    },
+    {
+      "path": "C:\\UCell\\logs\\cr-batch-period-process-timing-admin-verified.log",
+      "sha256": "d7d2b7f2e8382ad38c79f43562b8f752b6f674746facb5ed32a9033ab9031864"
+    },
+    {
+      "path": "C:\\UCell\\logs\\cr-batch-period-process-timing-admin-typecheck-final.log",
+      "sha256": "5a3973f79ed9becd5f23c4feff467513814de7ea381d75a4d2e339aa8b8edca9"
+    },
+    {
+      "path": "C:\\UCell\\logs\\cr-batch-period-process-timing-admin-build-final.log",
+      "sha256": "12b55d8a142e49189d263d53602f2e1d9f409533b19e1eb4e71cebd593d80940"
+    },
+    {
+      "path": "C:\\UCell\\logs\\cr-batch-period-process-timing-api-build-final.log",
+      "sha256": "c9bbb792e87e76102443f726d9d61fcec8c7f422fb97cc739cf187013632726f"
+    },
+    {
+      "path": "C:\\UCell\\logs\\cr-batch-period-process-timing-worker-build.log",
+      "sha256": "f876ec7553e281fa587d8701697920d525b114d9d39b68dbbc592bcfec6b09ce"
+    },
+    {
+      "path": "C:\\UCell\\logs\\cr-batch-period-process-timing-schema.log",
+      "sha256": "bd34a65dcf7caa99ab322f388b996eed6c48289635a54032098b83487710ba63"
+    },
+    {
+      "path": "C:\\UCell\\logs\\cr-batch-period-process-timing-migration.log",
+      "sha256": "8f6f776013a899f5bbe9fe04cd7a240145ae5d4dfbc626c72ce66de5b6f55d82"
+    },
+    {
+      "path": "C:\\UCell\\logs\\cr-batch-period-process-timing-security.log",
+      "sha256": "2e3f557f93cc9eec33f9eee42cd97075b11f805796e3204e14ba866d2e4a1605"
+    },
+    {
+      "path": "C:\\UCell\\logs\\cr-batch-period-process-timing-relations.log",
+      "sha256": "9a340550e6b0e36015bef797528bef7ba49128f66693140440f87372798293f3"
+    },
+    {
+      "path": "C:\\UCell\\logs\\cr-batch-period-process-timing-enum.log",
+      "sha256": "06d84dd4ae3772bda782f493e68eee9a62ddb88d491c58108682068b2f66a091"
+    },
+    {
+      "path": "C:\\UCell\\logs\\cr-batch-period-process-timing-openapi-preflight-final.log",
+      "sha256": "6e63f97a80841cad2222849c17f7829b45e03c1f7cc7640ea847a5becd6c4ccd"
+    }
+  ]
+}

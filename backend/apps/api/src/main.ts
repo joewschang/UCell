@@ -10,6 +10,7 @@ import { AppModule } from './app.module';
 import { ApiExceptionFilter } from './common/filters/api-exception.filter';
 import { EnvelopeInterceptor } from './common/interceptors/envelope.interceptor';
 import { RequestContextInterceptor } from './common/interceptors/request-context.interceptor';
+import { configureLineWebhookTransport } from './modules/auth/line-webhook-transport';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
@@ -18,10 +19,10 @@ async function bootstrap() {
   );
 
   const config = app.get(ConfigService);
+  configureLineWebhookTransport(app);
   await app.register(helmet);
   await app.register(cors, memberEntryCors(process.env));
 
-  app.setGlobalPrefix('api/v1');
   app.useGlobalPipes(new ValidationPipe({
     whitelist: true,
     forbidNonWhitelisted: true,

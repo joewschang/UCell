@@ -6,6 +6,7 @@ import {command,get} from '../../lib/api';
 
 vi.mock('../../lib/api',()=>({get:vi.fn(),command:vi.fn(),qs:(values:Record<string,string|number|undefined>)=>{const query=new URLSearchParams();Object.entries(values).forEach(([key,value])=>{if(value!==undefined)query.set(key,String(value))});return '?'+query.toString()}}));
 vi.mock('../qualifications/QualificationDetail',()=>({QualificationDetail:()=>null}));
+vi.mock('../../components/ConfirmAction',()=>({ConfirmAction:({children,onConfirm,disabled}:any)=><button disabled={disabled} onClick={()=>onConfirm('TEST_REASON')}>{children}</button>}));
 
 const person={personId:'person-internal-uuid',memberNo:'2609000001',legalName:'王小明',preferredName:'小明',mobile:'0912345678',email:'member@example.test',status:'ACTIVE'};
 

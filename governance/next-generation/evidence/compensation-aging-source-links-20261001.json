@@ -1,0 +1,65 @@
+{
+  "timestamp": "2026-10-01T06:12:00.457Z",
+  "baseCommit": "be75a41c3b36d5db242dc084b05478374ea9ff25",
+  "sourceFiles": [
+    {
+      "path": "admin/src/features/compensation-period/aging-evidence-link.ts",
+      "sha256": "6cf117e4d2407604f7ed8bd83f49115709141e4666aa4945e7290f08b21515a3"
+    },
+    {
+      "path": "admin/src/features/compensation-period/aging-evidence-link.test.ts",
+      "sha256": "2acbb7f8eeb1604e9a810cd03a22199fc02539bb7dddd2fece51fc8a1c585a98"
+    },
+    {
+      "path": "admin/src/features/compensation-period/CompensationPeriodControlPage.tsx",
+      "sha256": "a58eb4f378de1013cc6f496d36c622a20746fadd2b2993e307b7d74fadd307e0"
+    },
+    {
+      "path": "admin/src/features/compensation-period/CompensationPeriodControlPage.test.tsx",
+      "sha256": "e723ffd203c451b64aab0800eaebcfc6d22694adf4b8fa59de7178c0e1d02f6d"
+    },
+    {
+      "path": "admin/src/features/operations-control/linked-erp-health.ts",
+      "sha256": "2627d2a535c136a498273e07dab0f4d96a6597733904ed685b5756d58e5341ec"
+    },
+    {
+      "path": "admin/src/features/operations-control/linked-erp-health.test.ts",
+      "sha256": "f82df73baa257f0e0c65cb45319bbc9effa0348164600ec4c9b7295195ab7074"
+    },
+    {
+      "path": "admin/src/features/operations-control/OperationsControlPage.tsx",
+      "sha256": "d0114993c55684b869e87b48e8319a1ed7ae322f74e4e308611a25250c5ae12f"
+    },
+    {
+      "path": "admin/src/features/operations-control/OperationsControlPage.test.tsx",
+      "sha256": "9c9926e5dba8f64ca1c5e22cbb17978a4de600d43ee24b38c81174aca6ad3e47"
+    },
+    {
+      "path": "admin/src/features/operations-control/OperationsFinancialHealth.tsx",
+      "sha256": "c10ae45e364f9590f1fb297fa43b37e3a40b4158aee5e3f88ddb6e7279b3c887"
+    }
+  ],
+  "verification": {
+    "adminFiles": 60,
+    "adminTests": 220,
+    "status": "PASS",
+    "build": "PASS",
+    "testLog": "C:/UCell/logs/compensation-aging-source-links-admin-tests-20261001.log",
+    "buildLog": "C:/UCell/logs/compensation-aging-source-links-admin-build-20261001.log"
+  },
+  "coverage": [
+    "recovery link to existing financial evidence queue section",
+    "bank/exported/payable categories route to proper financial scope",
+    "ERP fulfillment link preserves operator threshold in actual component query",
+    "invalid thresholds discarded, no invented SLA",
+    "missing-payable awards explicitly lack global source entry"
+  ],
+  "limits": [
+    "queues contain healthy records; links do not certify a filtered global-total result set",
+    "matured-award-without-payable global source queue remains open",
+    "full browser/backend-to-task and period stage history remain open"
+  ],
+  "overall": "IN_PROGRESS",
+  "stageRc": "NOT_READY",
+  "deployment": false
+}

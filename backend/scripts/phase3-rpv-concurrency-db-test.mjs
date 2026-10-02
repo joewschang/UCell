@@ -56,14 +56,13 @@ try{
  await db.activePeriod.updateMany({where:{qualificationId:ancestors[1].qualificationId},data:{activeTo:new Date(at.getTime()+1)}});
  const cancellation=await db.subscriptionCancellation.create({data:{subscriptionId:sub.subscriptionId,requestedAt:at,effectiveAt:at,reasonCode:'TEST_ONLY',correlationId:randomUUID()}});
  const actionKey='RPV:'+schedule.recognitionId+':'+cancellation.subscriptionCancellationId;
- let readers=0,unlock;const replayBarrier=new Promise(resolve=>{unlock=resolve;});
- const run=controlled=>db.$transaction(tx=>replayRpvCancellation(controlled?{...tx,replayAction:{...tx.replayAction,findUnique:async args=>{
-  const row=await tx.replayAction.findUnique(args);if(++readers===2)unlock();await replayBarrier;return row;
- }}}:tx,schedule.recognitionId,cancellation.subscriptionCancellationId,actionKey,randomUUID()),{isolationLevel:'Serializable',timeout:15000});
- const replayAttempts=await Promise.allSettled([run(true),run(true)]);
- equal(replayAttempts.filter(item=>item.status==='fulfilled').length,1,'one concurrent historical recipient replay commits');
- equal(['P2034','P2002'].includes(replayAttempts.find(item=>item.status==='rejected')?.reason.code),true,'losing historical replay requires external redelivery');
- equal((await run(false)).status,'REPLAYED','historical replay external retry succeeds');
+ // The replay now locks the recognition before reading its idempotency fact;
+ // a barrier after that lock would deadlock the test itself.
+ const run=()=>db.$transaction(tx=>replayRpvCancellation(tx,schedule.recognitionId,cancellation.subscriptionCancellationId,actionKey,randomUUID()),{isolationLevel:'Serializable',timeout:15000});
+ const replayAttempts=await Promise.allSettled([run(),run()]);
+ equal(replayAttempts.some(item=>item.status==='fulfilled'),true,'concurrent historical recipient replay makes progress');
+ equal(replayAttempts.filter(item=>item.status==='rejected').every(item=>['P2034','P2002'].includes(item.reason.code)||(item.reason.code==='P2010'&&item.reason.meta?.code==='40001')),true,'any Serializable loser requires external redelivery');
+ equal((await run()).status,'REPLAYED','historical replay external retry succeeds');
  const posts=await db.entitlementReplayPosting.findMany({where:{actionKey}});
  equal(posts.length,2,'one posting per original historical recipient including inactive');
  equal(posts.find(row=>row.recipientQualificationId===ancestors[0].qualificationId).delta.toString(),'0','original inactive recipient remains zero despite current Active');

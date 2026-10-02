@@ -1,0 +1,51 @@
+[
+  {
+    "domains": [
+      "api-stage.ucell.life"
+    ],
+    "image": "ucellstageacr5mafbbsq33mgu.azurecr.io/ucell-backend@sha256:39c99785d83cfafa86a971fdb3e00cef63356d212ca7c858873384e928c4af89",
+    "name": "ucell-stage-api",
+    "revision": "ucell-stage-api--g8g80eeb814",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "weight": 100
+      }
+    ]
+  },
+  {
+    "domains": null,
+    "image": "ucellstageacr5mafbbsq33mgu.azurecr.io/ucell-worker@sha256:1166b557bbe780d888639e541edab4ca6f67d612c502732ec406c4b5fc947eac",
+    "name": "ucell-stage-worker",
+    "revision": "ucell-stage-worker--g8g80eeb814",
+    "traffic": null
+  },
+  {
+    "domains": [
+      "admin-stage.ucell.life"
+    ],
+    "image": "ucellstageacr5mafbbsq33mgu.azurecr.io/ucell-admin@sha256:8c50808209bcd23d638d07cef3c7c348277685cec2677ee36dc9b2270f49723c",
+    "name": "ucell-stage-admin",
+    "revision": "ucell-stage-admin--r-6f5e340stageuatlocal",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "weight": 100
+      }
+    ]
+  },
+  {
+    "domains": [
+      "stage.ucell.life"
+    ],
+    "image": "ucellstageacr5mafbbsq33mgu.azurecr.io/ucell-member@sha256:48c277c89b66387ef8357c2d7682943e6e4a79e1cc772533299173933a63524a",
+    "name": "ucell-stage-member",
+    "revision": "ucell-stage-member--r-6f5e340stageuatlocal",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "weight": 100
+      }
+    ]
+  }
+]

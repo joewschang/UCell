@@ -8,7 +8,7 @@ import {
 
 export type ProviderWebhookWorkerLease = Readonly<{
   providerWebhookInboxId: string;
-  domain: 'PAYMENT' | 'INVOICE' | 'LOGISTICS';
+  domain: 'PAYMENT' | 'INVOICE' | 'LOGISTICS' | 'IDENTITY';
   provider: string;
   connectionId: string;
   providerEventIdentity: string | null;

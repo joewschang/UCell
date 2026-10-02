@@ -36,7 +36,7 @@ export class PeriodExportDto{
 @Controller('admin/analytics/period-projections')
 export class PeriodProjectionController{
  constructor(private readonly service:PeriodProjectionService,private readonly exports:PeriodExportService){}
-@ApiHeader({name:'Idempotency-Key',required:true,schema:{type:'string',maxLength:128,pattern:'^[-a-zA-Z0-9_:]{1,128}$'}})
+@ApiHeader({name:'idempotency-key',required:true,schema:{type:'string',maxLength:128,pattern:'^[-a-zA-Z0-9_:]{1,128}$'}})
  @Post('jobs') @Header('Cache-Control','no-store')
  @ApiOperation({operationId:'adminRequestPeriodProjection',summary:'建立 dry-run／rebuild／reconcile 背景工作',description:'Derived read models only. Requires Idempotency-Key. Never writes economic facts.'})
  @ApiResponse({status:201,description:'Actor-bound idempotent projection job',schema:periodJobAccepted('jobId') as any})
@@ -49,7 +49,7 @@ export class PeriodProjectionController{
  @ApiOperation({operationId:'adminQueryPeriodAggregate',summary:'讀取固定 generation 的分析資料',description:'Finance-confidential. Maximum 100 rows. STALE/REBUILDING/UPDATING/FAILED is not authoritative current data. No SQL input; monetary values remain source decimal strings.'})
  @ApiResponse({status:201,description:'Standard HTTP envelope containing projection evidence and fixed generation cursor',schema:PERIOD_QUERY_RESPONSE as any})
  async read(@Req() req:{user:TreePrincipal},@Body() body:PeriodReadDto){return this.service.read(req.user,body.query,body.snapshot,body.after);}
-@ApiHeader({name:'Idempotency-Key',required:true,schema:{type:'string',maxLength:128,pattern:'^[-a-zA-Z0-9_:]{1,128}$'}})
+@ApiHeader({name:'idempotency-key',required:true,schema:{type:'string',maxLength:128,pattern:'^[-a-zA-Z0-9_:]{1,128}$'}})
  @Post('exports') @Header('Cache-Control','no-store')
  @ApiOperation({operationId:'adminRequestPeriodExport',summary:'建立相同查詢與 snapshot 的背景 CSV 匯出',description:'Requires Idempotency-Key. Expires after 24 hours. Actor-bound private download; authorization rechecked by worker and download.'})
  @ApiResponse({status:201,description:'Actor-bound idempotent export job',schema:periodJobAccepted('exportId') as any})

@@ -1,8 +1,30 @@
 import { afterEach, expect, it, vi } from 'vitest';
 const liff = vi.hoisted(() => ({ init: vi.fn(), isLoggedIn: vi.fn(), isInClient:vi.fn(), login: vi.fn(), getIDToken:vi.fn(),logout:vi.fn() }));
 vi.mock('@line/liff', () => ({ default: liff }));
-import { bootstrapLiff, initLiff, startWebLineLogin, restartLineLogin, LineReauthenticationRequired, clearLineCallbackQuery } from '../src/liff';
+import { LineBindingRequired, bootstrapLiff, initLiff, startWebLineLogin, restartLineLogin, LineReauthenticationRequired, clearLineCallbackQuery } from '../src/liff';
 afterEach(() => { vi.unstubAllEnvs(); vi.unstubAllGlobals(); vi.clearAllMocks(); });
+it('does not rewrite or process a callback if SDK authorization validation fails',async()=>{
+ vi.stubGlobal('sessionStorage',{removeItem:vi.fn(),getItem:vi.fn()});
+ const replaceState=vi.fn(),fetcher=vi.fn();vi.stubGlobal('fetch',fetcher);
+ vi.stubGlobal('window',{location:{pathname:'/r/share',search:'?code=untrusted&state=wrong',hash:''},history:{replaceState}});
+ vi.stubEnv('VITE_ENABLE_MOCK','false');vi.stubEnv('VITE_LIFF_ID','TEST_ONLY');
+ liff.init.mockRejectedValueOnce(new Error('SDK authorization rejected'));
+ await expect(initLiff()).rejects.toThrow('SDK authorization rejected');
+ expect(fetcher).not.toHaveBeenCalled();expect(replaceState).not.toHaveBeenCalled();
+});
+it('uses a fixed same-origin SDK return URL and preserves the member destination',async()=>{
+ const storage={removeItem:vi.fn(),setItem:vi.fn(),getItem:vi.fn()};vi.stubGlobal('sessionStorage',storage);
+ vi.stubGlobal('window',{location:{origin:'https://stage.ucell.life',pathname:'/orders',search:'',hash:''}});
+ vi.stubEnv('VITE_ENABLE_MOCK','false');vi.stubEnv('VITE_LIFF_ID','TEST_ONLY');liff.isLoggedIn.mockReturnValue(false);liff.isInClient.mockReturnValue(true);
+ await initLiff();expect(liff.login).toHaveBeenCalledWith({redirectUri:'https://stage.ucell.life/'});
+ expect(storage.setItem).toHaveBeenCalledWith('ucell_line_intended_destination','/orders');
+});
+it('routes only server-confirmed unbound identity into the controlled binding flow',async()=>{
+ vi.stubGlobal('sessionStorage',{removeItem:vi.fn(),getItem:vi.fn()});vi.stubEnv('VITE_ENABLE_MOCK','false');vi.stubEnv('VITE_LIFF_ID','TEST_ONLY');
+ liff.isLoggedIn.mockReturnValue(true);liff.getIDToken.mockReturnValue('TEST_ONLY');
+ vi.stubGlobal('fetch',vi.fn().mockResolvedValue(new Response(JSON.stringify({code:'LINE_ACCOUNT_UNBOUND'}),{status:401})));
+ await expect(initLiff()).rejects.toBeInstanceOf(LineBindingRequired);
+});
 it('requires an explicit mock flag', async () => {
     vi.stubGlobal('sessionStorage', { removeItem: vi.fn(),getItem:vi.fn() });
     vi.stubEnv('VITE_ENABLE_MOCK', 'false');
@@ -57,13 +79,13 @@ it('records a referral landing before LINE redirect and keeps only opaque transi
  vi.stubGlobal('localStorage',{getItem:(key:string)=>local.get(key)??null,setItem:(key:string,value:string)=>local.set(key,value)});
  vi.stubGlobal('window',{location:{pathname:'/r/OPAQUE_SHARE_TOKEN',search:''},history:{replaceState}});
  vi.stubGlobal('crypto',{randomUUID:()=> '11111111-1111-4111-8111-111111111111'});
- vi.stubEnv('VITE_ENABLE_MOCK','false');vi.stubEnv('VITE_LIFF_ID','TEST_ONLY');liff.isLoggedIn.mockReturnValue(false);liff.isInClient.mockReturnValue(true);
+ vi.stubEnv('VITE_ENABLE_MOCK','false');vi.stubEnv('VITE_LIFF_ID','TEST_ONLY');liff.isLoggedIn.mockReturnValue(false);liff.isInClient.mockReturnValue(true);liff.isInClient.mockReturnValue(true);
  vi.stubGlobal('fetch',vi.fn(async()=>new Response(JSON.stringify({data:{anonymousId:'22222222-2222-4222-8222-222222222222',transitionState:'OPAQUE_TRANSITION_STATE',transitionExpiresAt:new Date(Date.now()+60000).toISOString()},meta:{api_version:'v1',request_id:'fixture',timestamp:new Date().toISOString()}}),{status:201})));
  await expect(initLiff()).resolves.toEqual({mode:'redirect'});
  expect(session.get('ucell_referral_transition')).toBe('OPAQUE_TRANSITION_STATE');expect(local.get('ucell_referral_anonymous_id')).toBe('22222222-2222-4222-8222-222222222222');expect(replaceState).toHaveBeenCalledWith({},'','/');expect(liff.login).toHaveBeenCalledTimes(1);
 });
 it('routes an accepted referral landing to its published content destination',async()=>{
- const session=new Map<string,string>(),replaceState=vi.fn();vi.stubGlobal('sessionStorage',{getItem:(key:string)=>session.get(key)??null,setItem:(key:string,value:string)=>session.set(key,value),removeItem:(key:string)=>session.delete(key)});vi.stubGlobal('localStorage',{getItem:()=>null,setItem:vi.fn()});vi.stubGlobal('window',{location:{pathname:'/r/OPAQUE_SHARE_TOKEN',search:'?content=aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'},history:{replaceState}});vi.stubGlobal('crypto',{randomUUID:()=> '11111111-1111-4111-8111-111111111111'});vi.stubEnv('VITE_ENABLE_MOCK','false');vi.stubEnv('VITE_LIFF_ID','TEST_ONLY');liff.isLoggedIn.mockReturnValue(false);liff.isInClient.mockReturnValue(true);vi.stubGlobal('fetch',vi.fn(async()=>new Response(JSON.stringify({data:{anonymousId:'22222222-2222-4222-8222-222222222222',transitionState:'OPAQUE_TRANSITION_STATE',transitionExpiresAt:new Date(Date.now()+60000).toISOString()},meta:{api_version:'v1',request_id:'fixture',timestamp:new Date().toISOString()}}),{status:201})));await initLiff();expect(replaceState).toHaveBeenCalledWith({},'','/content/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa');
+ const session=new Map<string,string>(),replaceState=vi.fn();vi.stubGlobal('sessionStorage',{getItem:(key:string)=>session.get(key)??null,setItem:(key:string,value:string)=>session.set(key,value),removeItem:(key:string)=>session.delete(key)});vi.stubGlobal('localStorage',{getItem:()=>null,setItem:vi.fn()});vi.stubGlobal('window',{location:{pathname:'/r/OPAQUE_SHARE_TOKEN',search:'?content=aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'},history:{replaceState}});vi.stubGlobal('crypto',{randomUUID:()=> '11111111-1111-4111-8111-111111111111'});vi.stubEnv('VITE_ENABLE_MOCK','false');vi.stubEnv('VITE_LIFF_ID','TEST_ONLY');liff.isLoggedIn.mockReturnValue(false);liff.isInClient.mockReturnValue(true);liff.isInClient.mockReturnValue(true);vi.stubGlobal('fetch',vi.fn(async()=>new Response(JSON.stringify({data:{anonymousId:'22222222-2222-4222-8222-222222222222',transitionState:'OPAQUE_TRANSITION_STATE',transitionExpiresAt:new Date(Date.now()+60000).toISOString()},meta:{api_version:'v1',request_id:'fixture',timestamp:new Date().toISOString()}}),{status:201})));await initLiff();expect(replaceState).toHaveBeenCalledWith({},'','/content/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa');
 });it('binds pending referral state after backend LINE exchange without sending it to LINE',async()=>{
  const session=new Map<string,string>([['ucell_referral_transition','OPAQUE_TRANSITION_STATE'],['ucell_referral_binding_key','11111111-1111-4111-8111-111111111111']]);
  vi.stubGlobal('sessionStorage',{getItem:(key:string)=>session.get(key)??null,setItem:(key:string,value:string)=>session.set(key,value),removeItem:(key:string)=>session.delete(key)});
@@ -81,11 +103,12 @@ it('presents an explicit Web entry instead of auto-redirecting in a normal brows
  await expect(initLiff()).resolves.toEqual({mode:'web-login'});
  expect(liff.login).not.toHaveBeenCalled();
 });
-it('starts LINE Login explicitly from the Web entry and preserves the current URL',async()=>{
- vi.stubEnv('VITE_LIFF_ID','TEST_ONLY');vi.stubGlobal('window',{location:{href:'https://member.example.test/organization'}});
+it('starts LINE Login explicitly with a fixed return URL and preserves the destination',async()=>{
+ vi.stubGlobal('sessionStorage',{setItem:vi.fn()});
+ vi.stubEnv('VITE_LIFF_ID','TEST_ONLY');vi.stubGlobal('window',{location:{origin:'https://member.example.test',pathname:'/organization',search:'',hash:''}});
  liff.isLoggedIn.mockReturnValue(false);
  await expect(startWebLineLogin()).resolves.toEqual({mode:'redirect'});
- expect(liff.login).toHaveBeenCalledWith({redirectUri:'https://member.example.test/organization'});
+ expect(liff.login).toHaveBeenCalledWith({redirectUri:'https://member.example.test/'});
 });
 it('resumes an existing opaque Member session before requiring LIFF configuration',async()=>{
  const storage=new Map<string,string>([['ucell_member_token','opaque']]);
@@ -112,7 +135,7 @@ it('exchanges after explicit login when LINE became logged in after the Web entr
 it.each(['unauthorized','malformed','network'])('clears cached session and selected ball on %s validation failure',async failure=>{
  const session=new Map<string,string>([['ucell_member_token','expired'],['ucell_qualification_id','old-ball'],['ucell_referral_transition','keep-referral']]);
  vi.stubGlobal('sessionStorage',{getItem:(key:string)=>session.get(key)??null,setItem:(key:string,value:string)=>session.set(key,value),removeItem:(key:string)=>session.delete(key)});
- vi.stubEnv('VITE_ENABLE_MOCK','false');vi.stubEnv('VITE_LIFF_ID','TEST_ONLY');liff.isLoggedIn.mockReturnValue(false);liff.isInClient.mockReturnValue(false);
+ vi.stubEnv('VITE_ENABLE_MOCK','false');vi.stubEnv('VITE_LIFF_ID','TEST_ONLY');liff.isLoggedIn.mockReturnValue(false);liff.isInClient.mockReturnValue(true);liff.isInClient.mockReturnValue(false);
  vi.stubGlobal('fetch',vi.fn(async()=>{if(failure==='network')throw Error('network unavailable');return new Response(JSON.stringify({data:{}}),{status:failure==='unauthorized'?401:200});}));
  if(failure==='unauthorized')await expect(initLiff()).resolves.toEqual({mode:'web-login'});else await expect(initLiff()).rejects.toThrow();
  expect(session.has('ucell_member_token')).toBe(false);expect(session.has('ucell_qualification_id')).toBe(false);expect(session.get('ucell_referral_transition')).toBe('keep-referral');
@@ -126,9 +149,9 @@ it.each([[401,'LINE_TOKEN_INVALID'],[401,'LINE_TOKEN_EXPIRED'],[409,'LINE_TOKEN_
 });
 it('explicit recovery clears only owned session/ball, preserves referral and deep URL, and requests fresh LINE login',async()=>{
  const session=new Map([['ucell_member_token','expired'],['ucell_qualification_id','old-ball'],['ucell_referral_transition','keep-referral']]);
- vi.stubGlobal('sessionStorage',{getItem:(key:string)=>session.get(key)??null,removeItem:(key:string)=>session.delete(key)});vi.stubEnv('VITE_LIFF_ID','TEST_ONLY');
- vi.stubGlobal('window',{location:{href:'https://stage.example.test/orders?ref=A000014#detail'}});liff.isLoggedIn.mockReturnValue(true);
- await expect(restartLineLogin()).resolves.toEqual({mode:'redirect'});expect(liff.logout).toHaveBeenCalledOnce();expect(liff.login).toHaveBeenCalledWith({redirectUri:'https://stage.example.test/orders?ref=A000014#detail'});
+ vi.stubGlobal('sessionStorage',{getItem:(key:string)=>session.get(key)??null,setItem:(key:string,value:string)=>session.set(key,value),removeItem:(key:string)=>session.delete(key)});vi.stubEnv('VITE_LIFF_ID','TEST_ONLY');
+ vi.stubGlobal('window',{location:{origin:'https://stage.example.test',pathname:'/orders',search:'?ref=A000014',hash:'#detail'}});liff.isLoggedIn.mockReturnValue(true);
+ await expect(restartLineLogin()).resolves.toEqual({mode:'redirect'});expect(liff.logout).toHaveBeenCalledOnce();expect(liff.login).toHaveBeenCalledWith({redirectUri:'https://stage.example.test/'});
  expect(session.has('ucell_member_token')).toBe(false);expect(session.has('ucell_qualification_id')).toBe(false);expect(session.get('ucell_referral_transition')).toBe('keep-referral');
 });
 

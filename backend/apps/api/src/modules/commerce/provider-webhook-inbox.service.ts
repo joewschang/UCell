@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@ucell/database';
 import { createHash } from 'node:crypto';
 
-export type ProviderIntegrationDomain = 'PAYMENT' | 'INVOICE' | 'LOGISTICS';
+export type ProviderIntegrationDomain = 'PAYMENT' | 'INVOICE' | 'LOGISTICS' | 'IDENTITY';
 
 export type ReceiveProviderWebhookInput = Readonly<{
   domain: ProviderIntegrationDomain;
@@ -21,7 +21,7 @@ export type ReceiveProviderWebhookInput = Readonly<{
 export class ProviderWebhookInboxService {
   constructor(private readonly db: PrismaService) {}
 
-  async receive(input: ReceiveProviderWebhookInput) {
+  async receive(input: ReceiveProviderWebhookInput, client:any=this.db) {
     assertToken(input.provider, 'provider');
     assertToken(input.connectionId, 'connectionId');
     assertToken(input.safeEvidenceRef, 'safeEvidenceRef');
@@ -30,7 +30,7 @@ export class ProviderWebhookInboxService {
     if (!(input.rawBody instanceof Uint8Array) || input.rawBody.byteLength === 0) throw new Error('PROVIDER_WEBHOOK_BODY_REQUIRED');
     const payloadHash = sha256(input.rawBody);
     const ingressKey = sha256(Buffer.from(`${input.domain}\n${input.provider}\n${input.connectionId}\n${payloadHash}`, 'utf8'));
-    return this.db.providerWebhookInbox.upsert({
+    return client.providerWebhookInbox.upsert({
       where: { domain_provider_connectionId_ingressKey: {
         domain: input.domain,
         provider: input.provider,

@@ -1,0 +1,9 @@
+{
+  "oasdiffVersion": "1.32.1",
+  "owner": "ragetech",
+  "breakingChanges": "deny; no automatic waivers; pre-GA promotions require explicit recorded Code Owner authority",
+  "baselineSha256": "b619d56a1406393eda95f949383b460913bb324aa146a988f387437ab22e56f2",
+  "visibility": "private",
+  "baselineSource": "Controlled pre-GA promotion: reviewed UCell 1.1.0 Phase-1 contract",
+  "api": "ucell-api"
+}

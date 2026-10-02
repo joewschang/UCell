@@ -1,0 +1,45 @@
+{
+  "timestamp": "2026-10-01T05:58:57.049Z",
+  "baseCommit": "35155e1ecd6200646865a13eed8e9712f4da3275",
+  "sourceFiles": [
+    {
+      "path": "member/src/App.tsx",
+      "sha256": "ed741e2b5a251368775d2996e133e92b98e709d2178cb149529f7a794023abf2"
+    },
+    {
+      "path": "member/src/WebRetailOrders.tsx",
+      "sha256": "7bb4397629fbc0c1e0c5f7928421ebbf29c349b23861e084f06acfd4fe004270"
+    },
+    {
+      "path": "member/src/WebMemberRetailShop.tsx",
+      "sha256": "e968c781b020213750677e8ac858345c9662304304c2f9e0ecef1015f020bdfd"
+    },
+    {
+      "path": "member/tests/conditional-journeys.test.tsx",
+      "sha256": "93b69edd25fc35c8a58e97962c92c5243536822a58c478e78a5c170052524650"
+    }
+  ],
+  "change": "Expose person-only retail history at /orders with or without Qualification; keep Qualification order history separate; reuse retail history in shop",
+  "verification": {
+    "memberFiles": 37,
+    "memberTests": 201,
+    "status": "PASS",
+    "typescriptAndProductionBuild": "PASS",
+    "testsLog": "C:/UCell/logs/retail-message-route-member-tests-final-20261001.log",
+    "buildLog": "C:/UCell/logs/retail-message-route-member-build-final-20261001.log"
+  },
+  "coverage": [
+    "actual App route in both Qualification contexts under controlled API responses",
+    "stored decimal string without Number conversion",
+    "Chinese stored-status labels",
+    "503 retry to empty history"
+  ],
+  "limits": [
+    "component route tests, not actual API-to-browser message journey",
+    "source returns latest 100 rows, not complete paginated history",
+    "no per-unit tracking/delivery detail in this projection"
+  ],
+  "overall": "IN_PROGRESS",
+  "stageRc": "NOT_READY",
+  "deployment": false
+}

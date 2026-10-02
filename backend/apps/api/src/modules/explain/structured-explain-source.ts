@@ -35,8 +35,18 @@ export async function readStructuredExplanation(tx: Prisma.TransactionClient, to
       try {parameter=verifySnapshot(detail?.parameterSnapshot).hash;} catch {return missing();}
     }
     // This is the original immutable Award, not a recomputed or net-after-replay entitlement.
+    const refs=[{type:'BonusAward',id:row.bonusAwardId,revision:parameter!}];
+    if(row.awardType==='RETAIL_REFERRAL') {
+      const recoveries=tx.bonusRecoveryEvent?await tx.bonusRecoveryEvent.findMany({where:{bonusAwardId:row.bonusAwardId,createdAt:{lte:cutoff}},orderBy:{occurredAt:'asc'},take:101}):[];
+      if(recoveries.length>100) return missing();
+      const recovery=recoveries.map((entry:any)=>({amount:entry.recoveryAmount.toString(),recovered:entry.recoveredAmount.toString(),outstanding:entry.outstandingAmount.toString(),status:entry.status,occurredAt:entry.occurredAt.toISOString()}));
+      refs.push(...recoveries.map((entry:any)=>({type:'BonusRecoveryEvent',id:entry.bonusRecoveryEventId,revision:entry.createdAt.toISOString()})));
+      return envelope(q,{theory:row.theoryAmount.toString(),k:row.kFactor.toString(),final:row.payableAmount.toString(),awardType:row.awardType,
+        eligibility:row.activeSnapshot?'ELIGIBLE':'INELIGIBLE',plan:row.planLevelSnapshot??'UNAVAILABLE',pendingUntil:row.pendingUntil.toISOString(),recovery},
+        row.ruleVersionCode,parameter!,row.createdAt,row.occurredAt,refs);
+    }
     return envelope(q,{theory:row.theoryAmount.toString(),k:row.kFactor.toString(),final:row.payableAmount.toString(),awardType:row.awardType},
-      row.ruleVersionCode,parameter!,row.createdAt,row.occurredAt,[{type:'BonusAward',id:row.bonusAwardId,revision:parameter!}]);
+      row.ruleVersionCode,parameter!,row.createdAt,row.occurredAt,refs);
   }
   if(tool==='explainSettlement' || tool==='explainBinaryCarry') {
     if(!q.resourceId || !q.qualificationId || (q.time.settlementId && q.time.settlementId!==q.resourceId)) return missing();

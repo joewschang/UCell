@@ -11,6 +11,14 @@ function payout(){
  return {line,audit,db};
 }
 describe('Train A persisted payment and return evidence',()=>{
+ it('explains a retail referral from stored Award and recovery evidence without recalculation',async()=>{
+  const award:any={bonusAwardId:'source',recipientQualificationId:'ball',occurredAt:date,createdAt:date,parameterSnapshotHash:'c'.repeat(64),ruleVersionCode:'R1.0B',theoryAmount:new Prisma.Decimal(10),kFactor:new Prisma.Decimal(1),payableAmount:new Prisma.Decimal(10),awardType:'RETAIL_REFERRAL',activeSnapshot:false,planLevelSnapshot:'STARTER',pendingUntil:new Date('2026-03-01T00:00:00.000Z')};
+  const recovery:any={bonusRecoveryEventId:'recovery',recoveryAmount:new Prisma.Decimal(4),recoveredAmount:new Prisma.Decimal(0),outstandingAmount:new Prisma.Decimal(4),status:'OFFSETTING',occurredAt:new Date('2026-01-20T00:00:00.000Z'),createdAt:date};
+  const db:any={bonusAward:{findUnique:jest.fn(async()=>award)},bonusRecoveryEvent:{findMany:jest.fn(async()=>[recovery])}};
+  const result:any=await readStructuredExplanation(db,'explainAward',query);
+  expect(result.result).toEqual({theory:'10',k:'1',final:'10',awardType:'RETAIL_REFERRAL',eligibility:'INELIGIBLE',plan:'STARTER',pendingUntil:'2026-03-01T00:00:00.000Z',recovery:[{amount:'4',recovered:'0',outstanding:'4',status:'OFFSETTING',occurredAt:'2026-01-20T00:00:00.000Z'}]});
+  expect(result.evidenceRefs).toEqual(expect.arrayContaining([{type:'BonusAward',id:'source',revision:'c'.repeat(64)},{type:'BonusRecoveryEvent',id:'recovery',revision:date.toISOString()}]));
+ });
  it('reads stored paid net without recalculating gross minus recovery or exposing payment references',async()=>{const f=payout();const r:any=await readStructuredExplanation(f.db,'explainPayout',query);expect(r.result).toEqual({amount:'19.4321',status:'PAID'});expect(r.finality).toBe('PAID');expect(JSON.stringify(r)).not.toMatch(/private|secret|paymentReference/);});
  it('does not infer PAID from READY status',async()=>{const f=payout();f.line.payoutBatch.status='READY';expect(await readStructuredExplanation(f.db,'explainPayout',query)).toMatchObject({status:'UNAVAILABLE',result:null});});
  it('requires a recorded payment audit, not only backdated paidAt',async()=>{const f=payout();f.db.auditEvent.findMany.mockResolvedValue([]);expect(await readStructuredExplanation(f.db,'explainPayout',query)).toMatchObject({status:'UNAVAILABLE'});expect(f.db.auditEvent.findMany).toHaveBeenCalledWith(expect.objectContaining({where:expect.objectContaining({occurredAt:{lte:new Date(time.knowledgeCutoff)}})}));});

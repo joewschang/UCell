@@ -1,3 +1,4 @@
+import { qualificationReferenceLabel } from './terminology';
 import {AwardLifecycle,MoneyState} from '@ucell/design-system';
 import {useId} from 'react';
 import type {Award,Qualification} from './api';
@@ -19,7 +20,7 @@ export default function MemberAwardJourney({award,q,period}:{award:Award;q:Quali
  const paid=award.status==='PAID'?'已支付':availabilityText.fieldMissing;
  return <article className="card uc-award-card" aria-labelledby={titleId}>
   <div className="uc-award-heading"><div><small>AWARD JOURNEY</small><h3 id={titleId}>{award.name}</h3><p className="uc-award-status">{awardStatusLabels[award.status]}</p></div><MoneyState amount={award.finalAmount??null} status={award.finalAmount==null?'PENDING':award.status}/></div>
-  <p className="uc-award-context"><span>球編號</span> {q.code}<span aria-hidden="true"> · </span><span>查詢月份</span> {period}</p>
+  <p className="uc-award-context"><span>目前資格</span> {qualificationReferenceLabel(q)}<span aria-hidden="true"> · </span><span>查詢月份</span> {period}</p>
   <AwardLifecycle status={award.status}/>
   <dl className="uc-award-journey-grid">
    <div><dt>獎項類型</dt><dd>{award.name}</dd></div>
@@ -37,7 +38,7 @@ export default function MemberAwardJourney({award,q,period}:{award:Award;q:Quali
    <summary>查看可用的結算說明</summary>
    <p>這份說明只使用伺服器回傳的本球、月份、結算狀態與版本資料；未提供的來源、調整或金額不會由網頁自行推算。</p>
    <dl className="uc-audit-grid">
-    <div><dt>球編號</dt><dd>{q.code}</dd></div>
+    <div><dt>目前資格</dt><dd>{qualificationReferenceLabel(q)}</dd></div>
     <div><dt>月份</dt><dd>{period}</dd></div>
     <div><dt>結算</dt><dd>{field(award.settlementStatus)}{award.pendingReason?` · ${pendingReasonText(award.pendingReason)}`:''}</dd></div>
     <div><dt>制度版本</dt><dd>{field(award.ruleVersion)}</dd></div>

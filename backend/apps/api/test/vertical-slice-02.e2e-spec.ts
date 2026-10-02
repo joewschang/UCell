@@ -7,6 +7,7 @@ import { execFileSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { resolve, join } from 'node:path';
+import { Prisma } from '@ucell/database';
 
 let rpvEvidence:any[];
 beforeAll(()=>{
@@ -38,7 +39,7 @@ function applicationHarness(application: any = {}) {
 
 function subscriptionHarness(durationMonths:number,planCode:'QUARTER'|'HALF_YEAR'|'YEAR') {
   const schedules:any[]=[],subscription={subscriptionId:'subscription-A'};
-  const plan={subscriptionPlanId:'plan-A',planCode,durationMonths,isActive:true,monthlyRecognizedAmount:{toString:()=> '1200'},monthlyRpv:{toString:()=> '1200'}};
+  const plan={subscriptionPlanId:'plan-A',planCode,durationMonths,isActive:true,prepaidAmount:new Prisma.Decimal(1200*durationMonths),monthlyRecognizedAmount:new Prisma.Decimal(1200),monthlyRpv:new Prisma.Decimal(1200)};
   const tx:any={
     qualification:{findUnique:jest.fn(async()=>({qualificationId:'ball-A',status:'EFFECTIVE'}))},
     subscriptionPlan:{findUnique:jest.fn(async()=>plan)},
@@ -167,6 +168,8 @@ describe('Vertical Slice 02 - Membership / Active / Subscription / RPV', () => {
       expect(h.schedules.map(row=>row.recognitionMonth.toISOString())).toEqual(Array.from({length:months},(_,i)=>new Date(Date.UTC(2026,8+i,1)).toISOString()));
       expect(h.schedules[0].dueAt.toISOString()).toBe('2026-08-31T16:00:00.000Z');
       expect(h.schedules.every(row=>row.parameterSnapshotHash==='TEST_ONLY_SUBSCRIPTION_CALENDAR_HASH')).toBe(true);
+      expect(h.schedules.map(row=>row.recognizedAmount.toString())).toEqual(Array.from({length:months},()=> '1200'));
+      expect(h.schedules.reduce((sum,row)=>sum.add(row.recognizedAmount),new Prisma.Decimal(0)).toString()).toBe(String(1200*months));
       expect(result.schedules).toBe(h.schedules);
       expect(h.audit.write).toHaveBeenCalledWith(h.tx,expect.objectContaining({action:'SUBSCRIPTION_CREATED',afterData:expect.objectContaining({planCode,months})}));
     });

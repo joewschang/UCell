@@ -1,0 +1,32 @@
+{
+  "date": "2026-10-01",
+  "status": "BOUNDED_PASS",
+  "sourceCommit": "a2a1b5defa7d4e05f0e683c238397016c17328b8",
+  "defect": "Generated 200 response referred to colliding EnvelopeDto with arbitrary object data instead of its typed source page",
+  "fix": "Unique endpoint-specific query/source/page/envelope DTO names; direct generated contract assertions included in strict governance runner",
+  "verification": {
+    "apiBuild": "PASS",
+    "generatedContractAndGovernance": {
+      "tests": 26,
+      "passed": 26,
+      "skipped": 0,
+      "pinnedOasdiff": "1.32.1"
+    },
+    "openapiPreflight": "PASS",
+    "oasdiffValidation": "PASS",
+    "http": {
+      "suites": 1,
+      "tests": 3,
+      "migrations": 127,
+      "baselineAssertions": 162,
+      "cleanup": "PASS"
+    },
+    "artifactSha256": "5102eb6699bc4c15a5cc59725429b3bcaec21d91c2d900255ad7f21a34a39d3f"
+  },
+  "limits": [
+    "This focused contract validation is not the final full strict API/OpenAPI governance gate",
+    "Controlled token transport remains distinct from external provider certification",
+    "Whole batch IN_PROGRESS"
+  ],
+  "deployment": "NONE"
+}

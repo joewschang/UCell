@@ -5,13 +5,14 @@ import { IdempotencyGuard } from '../../common/guards/idempotency.guard';
 import { adminQualification360Schema } from '../qualification/admin-qualification-360';
 import { CreatePersonDto } from './dto/create-person.dto';
 import { PersonService } from './person.service';
+import { AccountSecurityService } from '../auth/account-security.service';
 
 @ApiTags('Admin - Person')
 @ApiBearerAuth('adminBearer')
 @Roles('SUPER_ADMIN','MEMBERSHIP_OPS','COMPLIANCE_AUDIT')
 @Controller('admin/persons')
 export class PersonController {
-  constructor(private readonly service: PersonService) {}
+  constructor(private readonly service: PersonService,private readonly accountSecurityService:AccountSecurityService) {}
 
   @Post()
   @UseGuards(IdempotencyGuard)
@@ -54,4 +55,11 @@ export class PersonController {
   async get(@Param('personId') personId: string) {
     return { data: await this.service.get(personId) };
   }
+
+  @Get(':personId/account-security')
+  @ApiOperation({operationId:'adminGetPersonAccountSecurity',summary:'讀取 Person LINE 綁定與帳號安全狀態',description:'Returns server-authoritative security lifecycle data. Raw recovery tokens, bank details and LINE access tokens are never returned.'})
+  @ApiParam({name:'personId',format:'uuid'})
+  @ApiResponse({status:200,description:'Account security status, LINE binding lifecycle and bounded rebind history'})
+  @ApiResponse({status:404,description:'PERSON_NOT_FOUND'})
+  async accountSecurity(@Param('personId') personId:string){return {data:await this.accountSecurityService.readPersonSecurity(personId)};}
 }
