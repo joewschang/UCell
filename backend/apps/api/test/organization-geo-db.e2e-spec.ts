@@ -93,6 +93,37 @@ describe('Geo authorized historical subtree real DB',()=>{
   expect(after.distribution).toEqual([expect.objectContaining({areaCode:'UNLOCATED',gpv:'280.1234'})]);
   expect((await geo.capture(admin,query)).summary?.gpv).toBe('280.1234');
  });
+ it('deduplicates a two-ball member and preserves ownership across effective and knowledge checkpoints',async()=>{
+  const tree=(await trees.create(admin,{treeName:'TEST ONLY OWNER HISTORY',reason:'Isolated ownership fixture'},randomUUID())).value;
+  await trees.change(admin,tree.binaryTreeId,{status:'ACTIVE',expectedVersion:1,reason:'TEST ONLY'},randomUUID());
+  const first=await db.person.create({data:{legalName:'TEST ONLY TWO BALL MEMBER'}}),second=await db.person.create({data:{legalName:'TEST ONLY NEW HOLDER'}});
+  const balls=[];
+  for(let i=0;i<2;i++){
+   const at=new Date(),q=await db.qualification.create({data:{currentHolderPersonId:first.personId,planLevelCode:'STARTER',status:'EFFECTIVE',effectiveAt:at}});
+   await db.qualificationPlanHistory.create({data:{qualificationId:q.qualificationId,planCode:'STARTER',effectiveFrom:at,sourceType:'TEST_ONLY'}});
+   await db.qualificationStatusHistory.create({data:{qualificationId:q.qualificationId,status:'EFFECTIVE',effectiveFrom:at,sourceType:'TEST_ONLY'}});
+   await db.qualificationHolderHistory.create({data:{qualificationId:q.qualificationId,holderPersonId:first.personId,effectiveFrom:at,sourceType:'TEST_ONLY',sourceId:randomUUID()}});
+   await trees.confirmCompanySponsor(admin,tree.binaryTreeId,{qualificationId:q.qualificationId,reason:'TEST ONLY'},randomUUID());
+   await trees.place(admin,tree.binaryTreeId,{qualificationId:q.qualificationId,binaryParentQualificationId:tree.companyQualificationIds[i===0?3:5],side:'LEFT',expectedVersion:2+i,reason:'TEST ONLY'},randomUUID());
+   balls.push(q.qualificationId);
+  }
+  await new Promise(resolve=>setTimeout(resolve,5));
+  const before=new Date();
+  await new Promise(resolve=>setTimeout(resolve,5));
+  const transferredAt=new Date();
+  await db.$transaction(async tx=>{
+   const owner=await tx.qualificationOwnerInterval.findFirstOrThrow({where:{qualificationId:balls[0],effectiveTo:null}});
+   await tx.qualificationOwnerInterval.update({where:{ownerIntervalId:owner.ownerIntervalId},data:{effectiveTo:transferredAt,closedRecordedAt:transferredAt}});
+   await tx.qualificationOwnerInterval.create({data:{qualificationId:balls[0],ownerType:'MEMBER',personId:second.personId,effectiveFrom:transferredAt,sourceType:'TEST_ONLY_TRANSFER',sourceId:randomUUID(),evidenceHash:'b'.repeat(64)}});
+  });
+  await new Promise(resolve=>setTimeout(resolve,5));
+  const after=new Date(),query:GeoQuery={rootQualificationId:tree.companyQualificationIds[0],dateFrom:new Date(before.getTime()-86400000).toISOString(),dateTo:after.toISOString(),asOf:after.toISOString(),knowledgeCutoff:after.toISOString()};
+  const current=await geo.capture(admin,query),pastEffective=await geo.capture(admin,{...query,asOf:before.toISOString(),dateTo:before.toISOString()}),pastKnown=await geo.capture(admin,{...query,knowledgeCutoff:before.toISOString()});
+  expect(current.summary).toMatchObject({descendantBalls:8,uniqueMembers:2,eligibleMemberBalls:2,unlocatedBalls:8,unknownActiveBalls:2,activeRate:null});
+  for(const result of [pastEffective,pastKnown])expect(result.summary).toMatchObject({descendantBalls:8,uniqueMembers:1,eligibleMemberBalls:2,unlocatedBalls:8});
+  expect(current.summary?.leftBalls).toBe(4);expect(current.summary?.rightBalls).toBe(4);
+  expect(JSON.stringify(current)).not.toMatch(/TEST ONLY TWO BALL MEMBER|TEST ONLY NEW HOLDER|personId/);
+ });
  it('rejects revoked sessions and does not trust the client role',async()=>{
   await db.authSession.update({where:{authSessionId:admin.sessionId},data:{status:'REVOKED',revokedAt:new Date()}});
   await expect(geo.capture(admin,input)).rejects.toMatchObject({response:{code:'TREE_ACCESS_DENIED'}});

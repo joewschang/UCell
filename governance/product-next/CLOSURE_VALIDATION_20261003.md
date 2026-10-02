@@ -12,7 +12,9 @@ Validation: isolated suites organization-geo-db.e2e-spec.ts and compensation-sta
 
 ## Remaining acceptance
 
-- Geo: sealed Carry/Pair reconciliation, historical owner/address and member/ball grain fixtures, scale projection beyond existing safe bounds, and formal Entra desktop/mobile UAT remain outstanding. The added company source fixture does not close all GEO-01–GEO-15 gates.
+Additional ownership validation: the real DB fixture places two member balls in opposite root branches under one Person, then records an effective holder transfer for one ball. Current context reports eight descendant balls / two distinct members; either a pre-transfer asOf or a pre-transfer knowledgeCutoff reports the same eight balls / one distinct member. Both member balls remain Active UNKNOWN with activeRate null; LEFT/RIGHT remain 4/4. Response excludes person identifiers and names. This fixture is an isolated history test, not a Stage ownership command. Validation: organization-geo-db.e2e-spec.ts **9 tests PASS**, existing **162 DB assertions PASS**, cleanup PASS; log C:/UCell/logs/geo-owner-history-20261003.log.
+
+- Geo: sealed Carry/Pair reconciliation, approved address-history fixtures, broader owner types, scale projection beyond existing safe bounds, and formal Entra desktop/mobile UAT remain outstanding. The added source and member-owner fixtures do not close all GEO-01–GEO-15 gates.
 - OpenAPI run 37057571159 failed with UNAPPROVED_BREAKING_CHANGE. Policy requires explicit recorded Code Owner authority for pre-GA baseline promotion. Baseline and gate remain unchanged.
 - Actual completed Google registration/member-homepage UAT remains pending; Stage Google configuration and gender/mobile validation fixes are deployed.
 - Formal Stage Entra app/access grants, password-reset email delivery and trusted KYC scanning remain pending external integration.
