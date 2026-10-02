@@ -27,9 +27,11 @@ import { FormalKycStorageService } from './formal-kyc-storage.service';
 import { FormalKycDocumentService } from './formal-kyc-document.service';
 import { MemberRetailReferrerController } from './member-retail-referrer.controller';
 import {MemberGrowthService} from './member-growth.service';
+import {FormalEnrollmentService} from './formal-enrollment.service';
+import {FormalEnrollmentController} from './formal-enrollment.controller';
 @Module({
  imports:[AuthModule,OrderModule],
- controllers:[MemberExplainController,MemberAuthController,MemberController,ReferralAttributionController,MemberReferralAttributionController,AdminFormalMemberApplicationController,MemberPayoutController,MemberMessagesController,MemberRetailReferrerController],
- providers:[MemberExplainService,MemberService,MemberReadService,MemberTreeReadService,MemberShareLinkService,ReferralAttributionService,FormalMemberApplicationService,FormalMembershipConflictService,FormalKycStorageService,FormalKycDocumentService,MemberContractService,DeliveryProfileService,PiiCryptoService,IdentityMatchFingerprintService,MemberContextGuard,LineTokenVerifierService,MemberMessagesService,IdempotencyService,MemberGrowthService]
+ controllers:[FormalEnrollmentController,MemberExplainController,MemberAuthController,MemberController,ReferralAttributionController,MemberReferralAttributionController,AdminFormalMemberApplicationController,MemberPayoutController,MemberMessagesController,MemberRetailReferrerController],
+ providers:[FormalEnrollmentService,MemberExplainService,MemberService,MemberReadService,MemberTreeReadService,MemberShareLinkService,ReferralAttributionService,FormalMemberApplicationService,FormalMembershipConflictService,FormalKycStorageService,FormalKycDocumentService,MemberContractService,DeliveryProfileService,PiiCryptoService,IdentityMatchFingerprintService,MemberContextGuard,LineTokenVerifierService,MemberMessagesService,IdempotencyService,MemberGrowthService]
 })
 export class MemberModule {}

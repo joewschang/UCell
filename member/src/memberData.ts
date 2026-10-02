@@ -3,6 +3,11 @@ import * as validate from './validation';
 import { type Dashboard, type Qualification, type Scoped, type Person, type Organization, type Binary, type Performance, type Bonus, type Ledger, type Product, type Orders } from './api';
 import { memberApi as api } from './memberApi';
 export const isMock = import.meta.env.VITE_ENABLE_MOCK === 'true';
+export type FormalEnrollmentState={membershipState:string|null;feeAmount:string;currency:string;stagePaymentEnabled:boolean;feeReceipt:{orderId:string;amount:string;paidAt:string|null}|null;application:{id:string;status:string}|null;paidPackages:{orderId:string;packageName:string}[]};
+export async function getFormalEnrollment(signal?:AbortSignal){return api<FormalEnrollmentState>('/member/formal-enrollment',{signal});}
+export async function payFormalEnrollmentFee(key:string){return api('/member/formal-enrollment/fee-payment',{method:'POST',headers:{'Idempotency-Key':key}});}
+export async function payEnrollmentPackage(orderId:string,key:string){return api(`/member/formal-enrollment/package-payments/${encodeURIComponent(orderId)}`,{method:'POST',headers:{'Idempotency-Key':key}});}
+export async function submitFormalEnrollment(applicationId:string,key:string){return api(`/member/formal-enrollment/applications/${encodeURIComponent(applicationId)}/submit`,{method:'POST',headers:{'Idempotency-Key':key}});}
 const qualifications: Qualification[] = [
     { id: 'q1', code: 'A000001', rank: 'LEADER', active: true, ballLabel: '球 A000001' },
     { id: 'q2', code: 'A000002', rank: 'ELITE', active: false, ballLabel: '球 A000002' },

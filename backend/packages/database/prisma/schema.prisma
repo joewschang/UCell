@@ -249,6 +249,7 @@ enum QualificationLifecycleStatus {
 }
 
 enum OrderPurpose {
+  FORMAL_MEMBERSHIP_FEE
   ENTRY
   RETAIL
   REPURCHASE
