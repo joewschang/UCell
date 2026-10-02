@@ -11,6 +11,7 @@ export const nav=[
   ['出貨與序號核對','/fulfillment','orders'],
   ['ERP 對接與對帳','/erp-reconciliation','orders'],
   ['多樹管理','/admin/organization/trees','binary-trees'],
+  ['地理組織分析','/organization/geo','organization'],
   ['組織／安置','/organization','organization'],
   ['重購訂閱','/subscriptions','subscriptions'],
   ['交易影響追蹤','/economic-lineage','orders'],
@@ -36,7 +37,7 @@ export const nav=[
 export const navGroups=[
  {label:'Dashboard',paths:['/']},
  {label:'會員管理',paths:['/people','/qualifications','/applications','/paper-intake','/line-links','/workflows','/learning','/events']},
- {label:'組織管理',paths:['/organization','/admin/organization/trees']},
+ {label:'組織管理',paths:['/organization','/organization/geo','/admin/organization/trees']},
  {label:'商務',paths:['/products','/packages','/orders','/fulfillment','/erp-reconciliation','/subscriptions','/returns']},
  {label:'獎金中心',paths:['/bonuses','/settlement-jobs','/compensation-period-control','/economic-lineage']},
  {label:'財務／治理',paths:['/payouts','/admin/finance/reservoirs']},

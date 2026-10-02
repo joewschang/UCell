@@ -1,6 +1,987 @@
 {
   "openapi": "3.0.0",
   "paths": {
+    "/api/v1/admin/organization/geo/summary": {
+      "get": {
+        "operationId": "adminGeoSummary",
+        "parameters": [
+          {
+            "name": "rootBallNo",
+            "required": false,
+            "in": "query",
+            "description": "Immutable business Ball number; preferred over technical UUID.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "rootQualificationId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "side",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ALL",
+                "LEFT",
+                "RIGHT"
+              ]
+            }
+          },
+          {
+            "name": "level",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "CITY",
+                "DISTRICT"
+              ]
+            }
+          },
+          {
+            "name": "parentAreaCode",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "metric",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "BALLS",
+                "MEMBERS",
+                "ACTIVE_BALLS",
+                "NEW_BALLS",
+                "GPV"
+              ]
+            }
+          },
+          {
+            "name": "dateFrom",
+            "required": true,
+            "in": "query",
+            "description": "Inclusive period start, canonical UTC ISO with milliseconds.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "dateTo",
+            "required": true,
+            "in": "query",
+            "description": "Exclusive period end.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "asOf",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "knowledgeCutoff",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "interval",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "DAY",
+                "WEEK",
+                "MONTH"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "401": {
+            "description": "Admin session required"
+          },
+          "403": {
+            "description": "Geo capability denied"
+          },
+          "422": {
+            "description": "Invalid context or source unavailable"
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "歷史 Binary 子樹地理彙總；GPV 為唯一一般業績單位",
+        "tags": [
+          "Admin - Organization Geo"
+        ]
+      }
+    },
+    "/api/v1/admin/organization/geo/distribution": {
+      "get": {
+        "operationId": "adminGeoDistribution",
+        "parameters": [
+          {
+            "name": "rootBallNo",
+            "required": false,
+            "in": "query",
+            "description": "Immutable business Ball number; preferred over technical UUID.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "rootQualificationId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "side",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ALL",
+                "LEFT",
+                "RIGHT"
+              ]
+            }
+          },
+          {
+            "name": "level",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "CITY",
+                "DISTRICT"
+              ]
+            }
+          },
+          {
+            "name": "parentAreaCode",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "metric",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "BALLS",
+                "MEMBERS",
+                "ACTIVE_BALLS",
+                "NEW_BALLS",
+                "GPV"
+              ]
+            }
+          },
+          {
+            "name": "dateFrom",
+            "required": true,
+            "in": "query",
+            "description": "Inclusive period start, canonical UTC ISO with milliseconds.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "dateTo",
+            "required": true,
+            "in": "query",
+            "description": "Exclusive period end.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "asOf",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "knowledgeCutoff",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "interval",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "DAY",
+                "WEEK",
+                "MONTH"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "401": {
+            "description": "Admin session required"
+          },
+          "403": {
+            "description": "Geo capability denied"
+          },
+          "422": {
+            "description": "Invalid context or source unavailable"
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "縣市／行政區彙總，不含地址或座標",
+        "tags": [
+          "Admin - Organization Geo"
+        ]
+      }
+    },
+    "/api/v1/admin/organization/geo/branch-comparison": {
+      "get": {
+        "operationId": "adminGeoBranchComparison",
+        "parameters": [
+          {
+            "name": "rootBallNo",
+            "required": false,
+            "in": "query",
+            "description": "Immutable business Ball number; preferred over technical UUID.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "rootQualificationId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "side",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ALL",
+                "LEFT",
+                "RIGHT"
+              ]
+            }
+          },
+          {
+            "name": "level",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "CITY",
+                "DISTRICT"
+              ]
+            }
+          },
+          {
+            "name": "parentAreaCode",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "metric",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "BALLS",
+                "MEMBERS",
+                "ACTIVE_BALLS",
+                "NEW_BALLS",
+                "GPV"
+              ]
+            }
+          },
+          {
+            "name": "dateFrom",
+            "required": true,
+            "in": "query",
+            "description": "Inclusive period start, canonical UTC ISO with milliseconds.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "dateTo",
+            "required": true,
+            "in": "query",
+            "description": "Exclusive period end.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "asOf",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "knowledgeCutoff",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "interval",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "DAY",
+                "WEEK",
+                "MONTH"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "401": {
+            "description": "Admin session required"
+          },
+          "403": {
+            "description": "Geo capability denied"
+          },
+          "422": {
+            "description": "Invalid context or source unavailable"
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "以歷史 firstSide 比較左右區地理分布",
+        "tags": [
+          "Admin - Organization Geo"
+        ]
+      }
+    },
+    "/api/v1/admin/organization/geo/top-markets": {
+      "get": {
+        "operationId": "adminGeoTopMarkets",
+        "parameters": [
+          {
+            "name": "rootBallNo",
+            "required": false,
+            "in": "query",
+            "description": "Immutable business Ball number; preferred over technical UUID.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "rootQualificationId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "side",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ALL",
+                "LEFT",
+                "RIGHT"
+              ]
+            }
+          },
+          {
+            "name": "level",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "CITY",
+                "DISTRICT"
+              ]
+            }
+          },
+          {
+            "name": "parentAreaCode",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "metric",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "BALLS",
+                "MEMBERS",
+                "ACTIVE_BALLS",
+                "NEW_BALLS",
+                "GPV"
+              ]
+            }
+          },
+          {
+            "name": "dateFrom",
+            "required": true,
+            "in": "query",
+            "description": "Inclusive period start, canonical UTC ISO with milliseconds.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "dateTo",
+            "required": true,
+            "in": "query",
+            "description": "Exclusive period end.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "asOf",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "knowledgeCutoff",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "interval",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "DAY",
+                "WEEK",
+                "MONTH"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "401": {
+            "description": "Admin session required"
+          },
+          "403": {
+            "description": "Geo capability denied"
+          },
+          "422": {
+            "description": "Invalid context or source unavailable"
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "依相同授權時間條件排名最多 20 個市場",
+        "tags": [
+          "Admin - Organization Geo"
+        ]
+      }
+    },
+    "/api/v1/admin/organization/geo/trend": {
+      "get": {
+        "operationId": "adminGeoTrend",
+        "parameters": [
+          {
+            "name": "rootBallNo",
+            "required": false,
+            "in": "query",
+            "description": "Immutable business Ball number; preferred over technical UUID.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "rootQualificationId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "side",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ALL",
+                "LEFT",
+                "RIGHT"
+              ]
+            }
+          },
+          {
+            "name": "level",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "CITY",
+                "DISTRICT"
+              ]
+            }
+          },
+          {
+            "name": "parentAreaCode",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "metric",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "BALLS",
+                "MEMBERS",
+                "ACTIVE_BALLS",
+                "NEW_BALLS",
+                "GPV"
+              ]
+            }
+          },
+          {
+            "name": "dateFrom",
+            "required": true,
+            "in": "query",
+            "description": "Inclusive period start, canonical UTC ISO with milliseconds.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "dateTo",
+            "required": true,
+            "in": "query",
+            "description": "Exclusive period end.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "asOf",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "knowledgeCutoff",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "interval",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "DAY",
+                "WEEK",
+                "MONTH"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "401": {
+            "description": "Admin session required"
+          },
+          "403": {
+            "description": "Geo capability denied"
+          },
+          "422": {
+            "description": "Invalid context or source unavailable"
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "每個時間桶重新取歷史持有人／地址／Active 證據",
+        "tags": [
+          "Admin - Organization Geo"
+        ]
+      }
+    },
+    "/api/v1/admin/organization/geo/export": {
+      "get": {
+        "operationId": "adminGeoExport",
+        "parameters": [
+          {
+            "name": "rootBallNo",
+            "required": false,
+            "in": "query",
+            "description": "Immutable business Ball number; preferred over technical UUID.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "rootQualificationId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "side",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ALL",
+                "LEFT",
+                "RIGHT"
+              ]
+            }
+          },
+          {
+            "name": "level",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "CITY",
+                "DISTRICT"
+              ]
+            }
+          },
+          {
+            "name": "parentAreaCode",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "metric",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "BALLS",
+                "MEMBERS",
+                "ACTIVE_BALLS",
+                "NEW_BALLS",
+                "GPV"
+              ]
+            }
+          },
+          {
+            "name": "dateFrom",
+            "required": true,
+            "in": "query",
+            "description": "Inclusive period start, canonical UTC ISO with milliseconds.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "dateTo",
+            "required": true,
+            "in": "query",
+            "description": "Exclusive period end.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "asOf",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "knowledgeCutoff",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "interval",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "DAY",
+                "WEEK",
+                "MONTH"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "401": {
+            "description": "Admin session required"
+          },
+          "403": {
+            "description": "Geo capability denied"
+          },
+          "422": {
+            "description": "Invalid context or source unavailable"
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "與圖表相同條件及粒度的行政區 CSV；無 PII",
+        "tags": [
+          "Admin - Organization Geo"
+        ]
+      }
+    },
+    "/api/v1/admin/organization/geo/profiles/refresh": {
+      "post": {
+        "operationId": "adminGeoRefreshProfiles",
+        "parameters": [
+          {
+            "name": "after",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          },
+          "401": {
+            "description": "Admin session required"
+          },
+          "403": {
+            "description": "Geo capability denied"
+          },
+          "422": {
+            "description": "Invalid context or source unavailable"
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "分批從已核准的不可變通訊地址版本建立地理投影",
+        "tags": [
+          "Admin - Organization Geo"
+        ]
+      }
+    },
     "/api/v1/admin/settlement-jobs": {
       "post": {
         "operationId": "adminCreateSettlementJob",

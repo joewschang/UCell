@@ -1,4 +1,4 @@
-import {Controller,Get,Post,Header,Query,Req,UnprocessableEntityException} from '@nestjs/common';
+import {Controller,Get,Post,Header,Query,Req,StreamableFile,UnprocessableEntityException} from '@nestjs/common';
 import {ApiBearerAuth,ApiOperation,ApiProperty,ApiPropertyOptional,ApiResponse,ApiTags} from '@nestjs/swagger';
 import {IsIn,IsOptional,IsString,IsUUID,IsInt,Min,Max,Matches} from 'class-validator';
 import {Type} from 'class-transformer';
@@ -35,7 +35,7 @@ export class OrganizationGeoController {
  @Get('summary') @Header('Cache-Control','private, no-store') @ApiOperation({operationId:'adminGeoSummary',summary:'歷史 Binary 子樹地理彙總；GPV 為唯一一般業績單位'})
  async summary(@Req() req:{user:TreePrincipal},@Query() input:GeoQueryDto){return {data:await this.service.capture(req.user,input)};}
  @Get('distribution') @Header('Cache-Control','private, no-store') @ApiOperation({operationId:'adminGeoDistribution',summary:'縣市／行政區彙總，不含地址或座標'})
- @Roles('SUPER_ADMIN','ORG_GEO_DRILLDOWN','ORG_GEO_EXPORT')
+ @Roles('SUPER_ADMIN','ORG_GEO_VIEW','ORG_GEO_DRILLDOWN','ORG_GEO_EXPORT')
  async distribution(@Req() req:{user:TreePrincipal},@Query() input:GeoQueryDto){return {data:await this.service.capture(req.user,input)};}
  @Get('branch-comparison') @Header('Cache-Control','private, no-store') @ApiOperation({operationId:'adminGeoBranchComparison',summary:'以歷史 firstSide 比較左右區地理分布'})
  async branches(@Req() req:{user:TreePrincipal},@Query() input:GeoQueryDto){return {data:await this.service.capture(req.user,input)};}
@@ -50,7 +50,7 @@ export class OrganizationGeoController {
   if(result.status==='UNAVAILABLE')throw new UnprocessableEntityException({code:result.reason});
   const headers=['areaCode','areaName','balls','members','activeBalls','activeRate','newBalls','gpv','status'];
   const quote=(value:unknown)=>'"'+String(value??'').replace(/"/g,'""')+'"';
-  return '\uFEFF'+[headers.map(quote).join(','),...result.distribution.map(row=>headers.map(key=>quote((row as any)[key])).join(','))].join('\r\n');
+  return new StreamableFile(Buffer.from('\uFEFF'+[headers.map(quote).join(','),...result.distribution.map(row=>headers.map(key=>quote((row as any)[key])).join(','))].join('\r\n'),'utf8'),{type:'text/csv; charset=utf-8',disposition:'attachment; filename="ucell-geo.csv"'});
  }
  @Post('profiles/refresh') @Roles('SUPER_ADMIN') @Header('Cache-Control','private, no-store') @ApiOperation({operationId:'adminGeoRefreshProfiles',summary:'分批從已核准的不可變通訊地址版本建立地理投影'})
  async refresh(@Req() req:{user:TreePrincipal},@Query() input:GeoRefreshQuery){
