@@ -17,15 +17,20 @@ const display=(value:unknown)=>value==null?'資料不足':String(value);
 export function OrganizationGeoPage(){
  const {user}=useAuth(),serial=useRef(0),drillSerial=useRef(0);
  const [root,setRoot]=useState(''),[side,setSide]=useState('ALL'),[period,setPeriod]=useState('30'),[metric,setMetric]=useState<MetricKey>('balls');
+ const [customFrom,setCustomFrom]=useState(''),[customTo,setCustomTo]=useState(''),[checkpoint,setCheckpoint]=useState(''),[knownAt,setKnownAt]=useState('');
  const [result,setResult]=useState<Result|null>(null),[district,setDistrict]=useState<Result|null>(null),[busy,setBusy]=useState(false),[error,setError]=useState<unknown>(null);
  const [context,setContext]=useState<Record<string,string>|null>(null),[trend,setTrend]=useState<Array<{periodStart:string;summary:Summary|null;status:string}>|null>(null);
  const [districtCode,setDistrictCode]=useState<string|null>(null);
  const canDrill=['SUPER_ADMIN','ORG_GEO_DRILLDOWN','ORG_GEO_EXPORT'].includes(user?.role??''),canExport=['SUPER_ADMIN','ORG_GEO_EXPORT'].includes(user?.role??'');
+ const canQuery=user?.provider==='ENTRA';
  function clear(){serial.current++;setResult(null);setDistrict(null);setDistrictCode(null);setTrend(null);setContext(null);setError(null);setBusy(false);}
  async function load(event:React.FormEvent){
+  if(!canQuery){event.preventDefault();return;}
   event.preventDefault();const id=++serial.current;setBusy(true);setError(null);setResult(null);setDistrict(null);setDistrictCode(null);setTrend(null);
-  const now=new Date(),from=period==='YTD'?new Date(`${now.toLocaleDateString('en-CA',{timeZone:'Asia/Taipei',year:'numeric'})}-01-01T00:00:00+08:00`):period==='ALL'?new Date('1970-01-01T00:00:00.000Z'):new Date(now.getTime()-Number(period)*86400000);
-  const query={rootBallNo:root.trim().toUpperCase(),side,level:'CITY',dateFrom:from.toISOString(),dateTo:now.toISOString(),asOf:now.toISOString(),knowledgeCutoff:now.toISOString()};
+  const now=checkpoint?new Date(checkpoint+':00+08:00'):new Date(),knowledge=knownAt?new Date(knownAt+':00+08:00'):new Date();
+  const from=period==='CUSTOM'?new Date(customFrom+'T00:00:00+08:00'):period==='YTD'?new Date(`${now.toLocaleDateString('en-CA',{timeZone:'Asia/Taipei',year:'numeric'})}-01-01T00:00:00+08:00`):period==='ALL'?new Date('1970-01-01T00:00:00.000Z'):new Date(now.getTime()-Number(period)*86400000);
+  const until=period==='CUSTOM'?new Date(customTo+'T00:00:00+08:00'):now;
+  const query={rootBallNo:root.trim().toUpperCase(),side,level:'CITY',dateFrom:from.toISOString(),dateTo:until.toISOString(),asOf:now.toISOString(),knowledgeCutoff:knowledge.toISOString()};
   try{const response=await get<{data:Result}>('/admin/organization/geo/summary'+qs(query));if(id!==serial.current)return;setResult(response.data);setContext(query);}
   catch(e){if(id===serial.current)setError(e);}finally{if(id===serial.current)setBusy(false);}
  }
@@ -57,10 +62,13 @@ export function OrganizationGeoPage(){
   <Card title="查詢範圍"><form onSubmit={load} className="geo-filters">
    <Field label="根球號"><input required placeholder="例如 A000001" value={root} onChange={e=>{clear();setRoot(e.target.value);}}/></Field>
    <Field label="分區"><select value={side} onChange={e=>{clear();setSide(e.target.value);}}><option value="ALL">全部後代</option><option value="LEFT">左區</option><option value="RIGHT">右區</option></select></Field>
-   <Field label="期間"><select value={period} onChange={e=>{clear();setPeriod(e.target.value);}}><option value="30">近 30 天</option><option value="90">近 90 天</option><option value="YTD">今年</option><option value="ALL">全部期間</option></select></Field>
+   <Field label="期間"><select value={period} onChange={e=>{clear();setPeriod(e.target.value);}}><option value="30">近 30 天</option><option value="90">近 90 天</option><option value="YTD">今年</option><option value="ALL">全部期間</option><option value="CUSTOM">自訂期間</option></select></Field>
+   {period==='CUSTOM'&&<><Field label="開始日期"><input type="date" required value={customFrom} onChange={e=>{clear();setCustomFrom(e.target.value);}}/></Field><Field label="結束日期（不含當日）"><input type="date" required value={customTo} min={customFrom||undefined} onChange={e=>{clear();setCustomTo(e.target.value);}}/></Field></>}
+   <Field label="歷史時間（台北；留空為現在）"><input type="datetime-local" value={checkpoint} onChange={e=>{clear();setCheckpoint(e.target.value);}}/></Field>
+   <Field label="已知資料截止（台北；留空為現在）"><input type="datetime-local" value={knownAt} onChange={e=>{clear();setKnownAt(e.target.value);}}/></Field>
    <Field label="指標"><select value={metric} onChange={e=>setMetric(e.target.value as MetricKey)}>{Object.entries(labels).map(([key,label])=><option value={key} key={key}>{label}</option>)}</select></Field>
-   <button disabled={busy}>{busy?'查詢中…':'查詢'}</button>
-  </form><p>不含根球本身；同一會員多球會分別計入球數，會員人數則去重。</p></Card>
+   <button disabled={busy||!canQuery}>{busy?'查詢中…':'查詢'}</button>
+  </form>{!canQuery&&<p role="status">請使用正式 Microsoft 管理員帳號登入後查詢地理資料。</p>}<p>不含根球本身；同一會員多球會分別計入球數，會員人數則去重。</p></Card>
   {error!=null&&<ErrorBox error={error}/>}
   {result&&<><p role="status">球號 {result.rootBallNo} · {result.status==='AVAILABLE'?'資料完整':result.status==='PARTIAL'?'部分證據待補':'目前無法提供'}{result.reason?' · '+result.reason:''} · 截至 {result.time.asOf}</p>
    {summary&&<><div className="geo-metrics"><Metric label="後代球數" value={summary.descendantBalls}/><Metric label="不重複會員" value={summary.uniqueMembers}/><Metric label="Active 球數" value={summary.activeBalls} helper={summary.unknownActiveBalls?`${summary.unknownActiveBalls} 球缺少 Active 證據`:undefined}/><Metric label="期間 GPV" value={display(summary.gpv)}/><Metric label="未定位球數" value={summary.unlocatedBalls}/></div>
