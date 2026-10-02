@@ -13,7 +13,7 @@ export type CrossLineConflictResult={
 export class FormalMembershipConflictService {
   constructor(private readonly db:PrismaService,private readonly audit?:AuditService){}
 
-  async evaluate(applicationId:string):Promise<CrossLineConflictResult>{
+  async evaluate(applicationId:string,at=new Date()):Promise<CrossLineConflictResult>{
     const application=await this.db.formalMemberApplication.findUnique({
       where:{formalMemberApplicationId:applicationId},
       include:{person:true,legalEntity:true},
@@ -23,6 +23,15 @@ export class FormalMembershipConflictService {
     const codes:string[]=[];
     const applicantFingerprint=application.applicantIdentityFingerprint;
     const spouseFingerprint=application.spouseIdentityFingerprint;
+    const activeRepresentation={
+      roleCode:'PRIMARY_OPERATING_REPRESENTATIVE',effectiveFrom:{lte:at},
+      OR:[{effectiveTo:null},{effectiveTo:{gt:at}}],
+      legalEntity:{membershipState:'FORMAL_MEMBER' as const},
+    };
+    const operatingPerson={OR:[
+      {membershipState:'FORMAL_MEMBER' as const},
+      {legalEntityRepresentations:{some:activeRepresentation}},
+    ]};
 
     if(application.person.membershipState==='FORMAL_MEMBER'){
       codes.push(application.applicantType==='LEGAL_ENTITY'?'REPRESENTATIVE_ALREADY_FORMAL':'APPLICANT_ALREADY_FORMAL');
@@ -36,8 +45,9 @@ export class FormalMembershipConflictService {
         where:{
           spouseIdentityFingerprint:applicantFingerprint,
           verificationStatus:'VERIFIED',
-          effectiveTo:null,
-          person:{membershipState:'FORMAL_MEMBER'},
+          effectiveFrom:{lte:at},
+          OR:[{effectiveTo:null},{effectiveTo:{gt:at}}],
+          person:operatingPerson,
         },
         select:{personId:true},
       });
@@ -49,22 +59,21 @@ export class FormalMembershipConflictService {
       if(spouseFormal&&spouseFormal.personId!==application.personId)codes.push('SPOUSE_ALREADY_FORMAL_MEMBER');
     }
 
+    // Representation is an operating right even when the Person remains a
+    // NETWORK_MEMBER. Check the reverse direction for individual applications.
+    const otherControlled=await this.db.legalEntityRepresentative.findFirst({
+      where:{personId:application.personId,...activeRepresentation,
+        ...(application.applicantType==='LEGAL_ENTITY'&&application.legalEntityId?{legalEntityId:{not:application.legalEntityId}}:{}),
+      },select:{legalEntityId:true},
+    });
+    if(otherControlled)codes.push('REPRESENTATIVE_CONTROLS_OTHER_FORMAL_ENTITY');
+
     if(application.applicantType==='LEGAL_ENTITY'){
       const registrationNo=application.legalEntityRegistrationNo;
       if(registrationNo){
         const existingEntity=await this.db.legalEntity.findUnique({where:{registrationNo}});
-        if(existingEntity?.membershipState==='FORMAL_MEMBER'&&existingEntity.legalEntityId!==application.legalEntityId)codes.push('LEGAL_ENTITY_ALREADY_FORMAL');
+        if(existingEntity?.membershipState==='FORMAL_MEMBER')codes.push('LEGAL_ENTITY_ALREADY_FORMAL');
       }
-      const otherControlled=await this.db.legalEntityRepresentative.findFirst({
-        where:{
-          personId:application.personId,
-          effectiveTo:null,
-          legalEntity:{membershipState:'FORMAL_MEMBER'},
-          ...(application.legalEntityId?{legalEntityId:{not:application.legalEntityId}}:{}),
-        },
-        select:{legalEntityId:true},
-      });
-      if(otherControlled)codes.push('REPRESENTATIVE_CONTROLS_OTHER_FORMAL_ENTITY');
     }
 
     const unique=[...new Set(codes)];

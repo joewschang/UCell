@@ -43,9 +43,9 @@
   ],
   "knownValidationFailures": [],
   "pending": [
-    "Admin paper-intake/KYC browser interaction has not been exercised in this local checkpoint",
-    "Private KYC object storage and trusted malware scanner connected configuration/evidence remain required before online KYC can be enabled",
-    "Formal approval cross-line revalidation/concurrency and KYC authorization/privacy deserve focused security review before feature promotion",
+    "Admin paper-intake/KYC browser interaction not exercised",
+    "Trusted private storage and machine malware scanner evidence required before enabling online KYC",
+    "Approved signed upload/download transport remains pending",
     "PR #17 multi-auth integration and full Sunday UAT remain separate streams"
   ],
   "release": {
@@ -55,5 +55,31 @@
     "productionDeployed": false,
     "existingStage": "unchanged",
     "r11": "untouched"
+  },
+  "securityCheckpoint": {
+    "baselineCommit": "1a253ed9dab9c272320e46a455789d841b8b33ba",
+    "changes": [
+      "Serializable review and approval revalidate current evidence and cross-line conflicts atomically with audit",
+      "Concurrent spouse approvals commit at most one formal membership; conflict retry rechecks current state",
+      "Reverse corporate representative and spouse checks include effective formal-entity representation",
+      "Canonical base64 and PNG/JPEG container validation precede private storage; validation never marks scan CLEAN",
+      "Private document reads require CLEAN and verify size, hash and MIME; upload metadata rechecks application state"
+    ],
+    "targetedTests": "3 suites / 23 tests PASS",
+    "fullApiTests": "86 suites / 815 tests PASS",
+    "apiBuild": "PASS",
+    "database": "Fresh local isolated random database; 154 fixture assertions PASS; cleanup PASS",
+    "logs": [
+      "C:/UCell/logs/party-spouse-security-targeted-20261002.log",
+      "C:/UCell/logs/party-spouse-security-full-api-20261002.log",
+      "C:/UCell/logs/party-spouse-security-final-build-20261002.log"
+    ],
+    "limitations": [
+      "Image container validation is not full decoding or malware scanning",
+      "No trusted machine malware scan producer configured; documents remain PENDING and review is blocked",
+      "Signed upload/download transport remains pending; current server-mediated transport is temporary UAT only",
+      "Private storage may retain an orphan object when post-upload metadata transaction fails; lifecycle cleanup pending",
+      "Admin paper/KYC browser flow not exercised in this checkpoint"
+    ]
   }
 }

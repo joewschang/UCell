@@ -1,5 +1,6 @@
 import {ConflictException,Injectable,NotFoundException,UnprocessableEntityException} from '@nestjs/common';
-import {PrismaService} from '@ucell/database';
+import {Prisma,PrismaService} from '@ucell/database';
+import {FormalMembershipConflictService} from './formal-membership-conflict.service';
 import {createHash,randomUUID} from 'node:crypto';
 import {AuditService} from '../../common/audit/audit.service';
 import {IdempotencyService} from '../../common/idempotency/idempotency.service';
@@ -221,8 +222,8 @@ export class FormalMemberApplicationService {
   });
  }
 
- private async evidenceGate(applicationId:string){
-  const app=await this.db.formalMemberApplication.findUnique({where:{formalMemberApplicationId:applicationId}});
+ private async evidenceGate(applicationId:string,db:Prisma.TransactionClient|PrismaService=this.db){
+  const app=await db.formalMemberApplication.findUnique({where:{formalMemberApplicationId:applicationId}});
   if(!app)throw new NotFoundException({code:'FORMAL_APPLICATION_NOT_FOUND'});
   if(app.spouseIdentityFingerprint&&app.spouseVerificationStatus!=='VERIFIED')return {ready:false,codes:['SPOUSE_VERIFICATION_REQUIRED']};
   if(app.crossLineReviewStatus!=='CLEAR')return {ready:false,codes:['CROSS_LINE_REVIEW_CLEAR_REQUIRED']};
@@ -231,7 +232,7 @@ export class FormalMemberApplicationService {
    const required=app.applicantType==='LEGAL_ENTITY'
     ?['SIGNED_APPLICATION_AGREEMENT','CORPORATE_REGISTRATION','REPRESENTATIVE_IDENTITY_FRONT','REPRESENTATIVE_IDENTITY_BACK','CORPORATE_BANK_PROOF']
     :['SIGNED_APPLICATION_AGREEMENT','IDENTITY_FRONT','IDENTITY_BACK','BANKBOOK_COVER'];
-   const rows=await this.db.formalPaperEvidence.findMany({where:{formalMemberApplicationId:applicationId,evidenceType:{in:required as any}}});
+   const rows=await db.formalPaperEvidence.findMany({where:{formalMemberApplicationId:applicationId,evidenceType:{in:required as any}}});
    const status=new Map(rows.map(row=>[row.evidenceType,row.status]));
    const codes=required.filter(type=>status.get(type as any)!=='REVIEWED').map(type=>type+'_REVIEW_REQUIRED');
    return {ready:codes.length===0,codes};
@@ -239,7 +240,7 @@ export class FormalMemberApplicationService {
 
   if(app.applicantType!=='INDIVIDUAL')return {ready:false,codes:['LEGAL_ENTITY_PAPER_APPLICATION_REQUIRED']};
   const required=['IDENTITY_FRONT','IDENTITY_BACK','BANKBOOK_COVER'];
-  const docs=await this.db.formalApplicationDocument.findMany({where:{formalMemberApplicationId:applicationId,status:'PRESENT',documentType:{in:required as any}}});
+  const docs=await db.formalApplicationDocument.findMany({where:{formalMemberApplicationId:applicationId,status:'PRESENT',documentType:{in:required as any}}});
   const status=new Map(docs.map(row=>[row.documentType,row.malwareScanStatus]));
   const codes=required.flatMap(type=>!status.has(type as any)?[type+'_MISSING']:status.get(type as any)!=='CLEAN'?[type+'_SCAN_CLEAN_REQUIRED']:[]);
   return {ready:codes.length===0,codes};
@@ -247,23 +248,32 @@ export class FormalMemberApplicationService {
 
  async beginReview(applicationId:string,actorId:string,requestId:string){
   if(!actorId)throw new ConflictException({code:'ADMIN_PERSON_ID_REQUIRED'});
-  const gate=await this.evidenceGate(applicationId);
-  if(!gate.ready)throw new UnprocessableEntityException({code:'FORMAL_REVIEW_GATE_BLOCKED',details:{codes:gate.codes}});
-  const now=new Date(),app=await this.db.formalMemberApplication.findUnique({where:{formalMemberApplicationId:applicationId}});
-  if(!app||!['DRAFT','NEEDS_MORE_INFO'].includes(app.status))throw new ConflictException({code:'FORMAL_APPLICATION_NOT_REVIEWABLE'});
-  const updated=await this.db.formalMemberApplication.update({where:{formalMemberApplicationId:applicationId},data:{status:'UNDER_REVIEW'}});
-  await this.db.$transaction(tx=>this.audit.write(tx,{actorType:'ADMIN',actorId,action:'FORMAL_APPLICATION_REVIEW_STARTED',entityType:'FormalMemberApplication',entityId:applicationId,afterData:{status:'UNDER_REVIEW'},requestId,correlationId:randomUUID()}));
-  return {applicationId,status:updated.status,reviewStartedAt:now.toISOString()};
+  try{return await this.db.$transaction(async tx=>{
+   const gate=await this.evidenceGate(applicationId,tx);
+   if(!gate.ready)throw new UnprocessableEntityException({code:'FORMAL_REVIEW_GATE_BLOCKED',details:{codes:gate.codes}});
+   const now=new Date(),app=await tx.formalMemberApplication.findUnique({where:{formalMemberApplicationId:applicationId}});
+   if(!app||!['DRAFT','NEEDS_MORE_INFO'].includes(app.status))throw new ConflictException({code:'FORMAL_APPLICATION_NOT_REVIEWABLE'});
+   const conflicts=await new FormalMembershipConflictService(tx as PrismaService).evaluate(applicationId,now);
+   if(conflicts.status!=='CLEAR')throw new UnprocessableEntityException({code:'FORMAL_REVIEW_GATE_BLOCKED',details:{codes:conflicts.codes}});
+   const updated=await tx.formalMemberApplication.update({where:{formalMemberApplicationId:applicationId},data:{status:'UNDER_REVIEW'}});
+   await this.audit.write(tx,{actorType:'ADMIN',actorId,action:'FORMAL_APPLICATION_REVIEW_STARTED',entityType:'FormalMemberApplication',entityId:applicationId,afterData:{status:'UNDER_REVIEW'},requestId,correlationId:randomUUID()});
+   return {applicationId,status:updated.status,reviewStartedAt:now.toISOString()};
+  },{isolationLevel:Prisma.TransactionIsolationLevel.Serializable});}catch(error){
+   if((error as any).code==='P2034')throw new ConflictException({code:'RETRYABLE_CONFLICT'});
+   throw error;
+  }
  }
 
  async approve(applicationId:string,actorId:string,requestId:string){
   if(!actorId)throw new ConflictException({code:'ADMIN_PERSON_ID_REQUIRED'});
-  const gate=await this.evidenceGate(applicationId);
-  if(!gate.ready)throw new UnprocessableEntityException({code:'FORMAL_APPROVAL_GATE_BLOCKED',details:{codes:gate.codes}});
-  return this.db.$transaction(async tx=>{
+  try{return await this.db.$transaction(async tx=>{
+   const gate=await this.evidenceGate(applicationId,tx);
+   if(!gate.ready)throw new UnprocessableEntityException({code:'FORMAL_APPROVAL_GATE_BLOCKED',details:{codes:gate.codes}});
    const now=new Date(),app=await tx.formalMemberApplication.findUnique({where:{formalMemberApplicationId:applicationId}});
    if(!app||app.status!=='UNDER_REVIEW')throw new ConflictException({code:'FORMAL_APPLICATION_NOT_APPROVABLE'});
    if(!app.applicantIdentityFingerprint)throw new UnprocessableEntityException({code:'FORMAL_IDENTITY_FINGERPRINT_REQUIRED'});
+   const conflicts=await new FormalMembershipConflictService(tx as PrismaService).evaluate(applicationId,now);
+   if(conflicts.status!=='CLEAR')throw new UnprocessableEntityException({code:'FORMAL_APPROVAL_GATE_BLOCKED',details:{codes:conflicts.codes}});
 
    const existingIdentity=await tx.formalIdentityIndex.findUnique({where:{identityDocumentFingerprint:app.applicantIdentityFingerprint}});
    if(existingIdentity&&existingIdentity.personId!==app.personId)throw new ConflictException({code:'FORMAL_IDENTITY_ALREADY_OWNED'});
@@ -286,7 +296,10 @@ export class FormalMemberApplicationService {
    const correlationId=randomUUID();
    await this.audit.write(tx,{actorType:'ADMIN',actorId,action:'FORMAL_APPLICATION_APPROVED',entityType:'FormalMemberApplication',entityId:applicationId,afterData:{status:'APPROVED',applicantType:app.applicantType,personId:app.personId,legalEntityId:app.legalEntityId},requestId,correlationId});
    return {applicationId,status:updated.status,applicantType:app.applicantType,personId:app.personId,legalEntityId:app.legalEntityId,qualificationCreated:false};
-  });
+  },{isolationLevel:Prisma.TransactionIsolationLevel.Serializable});}catch(error){
+   if(['P2034','P2002'].includes((error as any).code))throw new ConflictException({code:'RETRYABLE_CONFLICT'});
+   throw error;
+  }
  }
 
  async verifySpouse(applicationId:string,actorId:string,key:string,requestId:string){
