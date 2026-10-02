@@ -1,0 +1,12 @@
+[
+  {
+    "image": "ucellstageacr5mafbbsq33mgu.azurecr.io/ucell-api@sha256:f48dc7c9275f746a1569ae12b34aeff00af5018968ee9d1e89f1c6ec14a4d3c0",
+    "name": "ucell-stage-api",
+    "revision": "ucell-stage-api--google-20261003"
+  },
+  {
+    "image": "ucellstageacr5mafbbsq33mgu.azurecr.io/ucell-member@sha256:b8e341b71bfc91298667cbe215c05535136d83f6310e276759b970d411b4dd8e",
+    "name": "ucell-stage-member",
+    "revision": "ucell-stage-member--validation-20261003"
+  }
+]
