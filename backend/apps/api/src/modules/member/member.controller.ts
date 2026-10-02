@@ -66,7 +66,7 @@ export class DeliveryProfileDto {
 }
 export class FormalMemberDraftDto implements FormalDraftInput {
  @ApiProperty({format:'uuid'}) @IsUUID() formalContractVersionId!:string;
- @ApiProperty({enum:['INDIVIDUAL'],default:'INDIVIDUAL'}) @IsIn(['INDIVIDUAL']) applicantType:'INDIVIDUAL'='INDIVIDUAL';
+ @ApiPropertyOptional({enum:['INDIVIDUAL'],description:'Applicant type; omitted input defaults to INDIVIDUAL.'}) @IsIn(['INDIVIDUAL']) applicantType:'INDIVIDUAL'='INDIVIDUAL';
  @ApiProperty({maxLength:120}) @IsString() @Matches(/\S/) @MaxLength(120) legalName!:string;
  @ApiProperty({maxLength:32}) @IsString() @Matches(/\S/) @MaxLength(32) gender!:string;
  @ApiProperty({format:'date'}) @IsDateString() birthDate!:string;

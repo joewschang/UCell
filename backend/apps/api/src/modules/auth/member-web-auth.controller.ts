@@ -5,7 +5,7 @@ import { MemberWebAuthService } from './member-web-auth.service';
 
 class GoogleExchangeDto{ @ApiProperty() @IsString() @MinLength(1) @MaxLength(16384) idToken!:string; }
 class PasswordLoginDto{
- @ApiProperty({example:'2609000001'}) @Matches(/^\d{10}$/) memberNo!:string;
+ @ApiProperty({description:'Immutable ten-digit Member number'}) @Matches(/^\d{10}$/) memberNo!:string;
  @ApiProperty({minLength:12,maxLength:256}) @IsString() @MinLength(12) @MaxLength(256) password!:string;
 }
 class ForgotPasswordDto{ @ApiProperty() @IsString() @MinLength(3) @MaxLength(254) identifier!:string; }
