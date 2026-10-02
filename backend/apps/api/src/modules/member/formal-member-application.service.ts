@@ -321,6 +321,18 @@ export class FormalMemberApplicationService {
   return this.view(application,payload,snapshot.version);
  }
 
+ async adminLegalEntities(input:{q?:string;take?:number}={}){
+  const take=Math.min(Math.max(input.take??20,1),100),q=input.q?.trim();
+  const rows=await this.db.legalEntity.findMany({
+   where:{
+    status:'ACTIVE',membershipState:'FORMAL_MEMBER',
+    ...(q?{OR:[{registeredName:{contains:q,mode:'insensitive'}},{registrationNo:{contains:q,mode:'insensitive'}},{memberNo:{contains:q}}]}:{})
+   },
+   orderBy:{registeredName:'asc'},take
+  });
+  return rows.map(row=>({legalEntityId:row.legalEntityId,memberNo:row.memberNo,registeredName:row.registeredName,registrationNo:row.registrationNo,registrationCountryCode:row.registrationCountryCode,status:row.status,membershipState:row.membershipState}));
+ }
+
  async adminRequiredContracts(at=new Date()){
   const rows=await this.db.contractDocumentVersion.findMany({
    where:{required:true,audience:{in:['FORMAL_MEMBER','ALL_MEMBERS']},effectiveFrom:{lte:at},OR:[{effectiveTo:null},{effectiveTo:{gt:at}}]},
