@@ -1,24 +1,196 @@
 {
-  "recordVersion": 3,
-  "recordedOn": "2026-09-17",
-  "authority": "Product Owner explicitly instructed SA to execute the approved R1.0B rule/core-logic clarifications. These rulings extend R1.0B FROZEN where prior SSOT was silent and do not supersede higher-authority filed/formally-approved documents.",
+  "recordVersion": 4,
+  "recordedOn": "2026-10-03",
+  "authority": "Product Owner explicitly instructed SA to execute the approved R1.0B rule/core-logic clarifications. These rulings extend R1.0B FROZEN where prior SSOT was silent and do not supersede higher-authority filed/formally-approved documents. Product Owner approved the rule-alignment recommendations and instructed GitHub/Google Drive specification updates on 2026-10-03. New membership/lifecycle rules are approved specifications with business activation gates; this record is not deployment or filing evidence.",
   "baseline": "R1.0B FROZEN",
-  "ssotPrecedence": ["Filed documents","Formally approved company documents","R1.0/R1.0B system specifications","Approved SA Decision Register","Discussion/posters/legacy tests"],
-  "decisions": [
-    {"id":"SA-20260915-01","subject":"Return/Settlement Replay","ruling":"Append-only reversal/clawback; do not overwrite historical Ledger or PAID. Reverse recognized volume/economic events and deterministically replay affected settlement and K0/K1/K2 downstream dependencies using historically effective snapshots. Re-derive carry from replayed effective volume; never reset it mechanically."},
-    {"id":"SA-20260915-02","subject":"EPV monthly threshold","ruling":"Qualification + calendar month cumulative eligible personal consumption; max(0, consumption - NT$2000) * 60%. 4800 => 1680. Returns recompute that month's cumulative threshold; never subtract return amount * 60% mechanically."},
-    {"id":"SA-20260915-04","subject":"SSOT / legacy drift","ruling":"Filed documents > formally approved company documents > R1.0/R1.0B system specifications > approved SA decisions > discussion/posters/legacy. Formal pools 42/36/15/5/2 and EPV 4800 => 1680. Conflicting legacy tests/fixtures are Legacy Test Drift; do not alter formal rules to satisfy them."},
-    {"id":"SA-20260916-05","subject":"Eligible Consumption Recognition","ruling":"Eligibility is determined by a versioned ConsumptionRecognitionEvent, not by Order existence alone. Only paid/confirmed, non-gift, non-replacement, non-company-subsidy personal-consumption lines explicitly eligible under the effective rule may enter the monthly eligible-consumption accumulator. Gifts, free replacements, company compensation/subsidy and zero-consideration fulfillment do not generate eligible consumption. Points-only redemption does not create new eligible consumption; mixed points+cash recognizes only authoritative eligible cash consideration unless a later formally approved rule provides otherwise. Tax, freight and payment fees are excluded unless formally approved. Return POSTED reverses the original recognition event in its historical recognition period and triggers replay."},
-    {"id":"SA-20260916-08","subject":"Binary inactive evidence","ruling":"An ineligible/inactive Binary recipient must leave deterministic calculation evidence with zero entitlement and reason code; absence of an Award row alone is not sufficient audit evidence. Zero evidence must not create payable or monetary Ledger credit. Historical replay uses the historical Active snapshot."},
-    {"id":"SA-20260916-10","subject":"Carry lifecycle","ruling":"Carry belongs to Qualification/Binary position, not Person. Suspend does not erase carry. Reactivation resumes preserved/replayed carry. Holder transfer does not move carry to another Qualification. Historical reversal replays forward until carry converges; maxWeeks is an engineering safety guard, not a business truncation rule."},
-    {"id":"SA-20260916-12","subject":"Return state and economic recognition","ruling":"Return workflow is REQUESTED -> APPROVED -> RECEIVED -> POSTED -> REFUNDED (or equivalent states preserving these semantics). REQUESTED/APPROVED/RECEIVED do not reverse official volume. POSTED is the authoritative economic/volume reversal event and triggers linked historical replay. REFUNDED records payment refund completion separately. Multiple returns are bounded by remaining reversible quantity/value and each return has a unique idempotency key."},
-    {"id":"SA-20260917-13","subject":"PV/BV abstract volume classes","ruling":"PV and BV are abstract Volume Classes/Concepts. Under R1.0B, GPV, RPV and EPV are the concrete PV-class business volume types used by active economic rules. BV is a reserved abstract Business Volume class and has no active R1.0B bonus-calculation formula. Abstract PV/BV must not independently create monetary entitlement. Historical GPV remains GPV and requires no economic migration or duplicate PV/BV recognition; semantic classification is non-monetary. This supersedes only the prior wording that treated PV/BV as independent concrete bonus-bearing values/fields."},
-    {"id":"SA-20260917-14","subject":"Operational calendar and settlement cadence","ruling":"Timezone is Asia/Taipei. GPV recognition immediately calculates Referral Theory and Referral Matching Theory and immediately propagates eligible GPV to historical Binary ancestors' left/right ledgers. Binary weekly settlement runs every Sunday 00:00 Asia/Taipei using half-open weekly boundaries [previous Sunday 00:00, current Sunday 00:00). RPV and EPV recognition/calculation occur immediately when their authoritative recognition events occur. Award settlement batches close on the 10th and 25th of every calendar month. Theory may be calculated earlier, but final pool/K materialization occurs at the applicable settlement batch."},
-    {"id":"SA-20260917-15","subject":"Payout calendar replacing literal 45x24h arithmetic","ruling":"The business meaning of the 45-day award hold is implemented by fixed payout batches, not literal settlement timestamp + 45*24 hours. Awards in the 10th settlement batch have nominal payout on the 25th of the following month. Awards in the 25th settlement batch have nominal payout on the 10th of the month after next. If the nominal payout date is not a business day, payout moves to the next business day according to the effective BusinessCalendarVersion. The system persists settlement date, nominal payout date, adjusted payout date and calendar version. Historical replay must preserve the original authoritative payout-calendar anchor unless the underlying settlement classification itself changes."},
-    {"id":"SA-20260917-16","subject":"Qualification-scoped Active effective interval","ruling":"Active is independently determined per Qualification/Ball and calendar month. When that Qualification's cumulative eligible monthly consumption first reaches NT$2,000, it becomes Active immediately at the authoritative recognition timestamp and remains Active through the end of that same calendar month in Asia/Taipei. Active is not retroactive: awards/events before the threshold timestamp remain Inactive and are not backfilled. At the start of the next calendar month the Qualification is Inactive until that month's threshold is reached. The threshold-crossing ConsumptionRecognition is processed before award eligibility derived from that same transaction, so the threshold-crossing transaction may use the newly created Active snapshot for its own eligible downstream awards. Returns POSTED replay the original month and may revise historical Active intervals and downstream entitlement."},
-    {"id":"SA-20260917-17","subject":"Multiple Qualifications per Person","ruling":"A Person may own multiple Qualifications/Balls. Each Qualification is an independent economic and organizational calculation scope for Active, GPV/RPV/EPV, Sponsor/Binary position, Carry, Bonus, Global eligibility, Ledger and Settlement. Active, volume, Carry or eligibility of one Qualification must never be borrowed by another Qualification. Ownership cardinality is explicit system functionality, not an inference from a single-ball model."},
-    {"id":"SA-20260917-18","subject":"Global Pool undistributed balance","ruling":"Global Pool is 5% under the effective R1.0B pool rules. After calculating eligible recipients/rights, any Global Pool amount not distributed for the period flows to Reservoir A. It is not redistributed to other recipients and does not alter their established rights. The transfer to Reservoir A must be append-only, source-period linked, idempotent and independently auditable."},
-    {"id":"SA-20260917-19","subject":"Matching inactive/invalid generation semantics","ruling":"Referral Matching and Binary Matching traverse fixed historical Sponsor generations. If an intermediate recipient is Inactive or otherwise fails the applicable unlock/eligibility rule, that fixed generation receives zero; traversal continues to the next specified historical generation. There is no stop, no compression, no substitution and no redistribution/backfill to another recipient. Historical Active/eligibility and Qualification evidence remain authoritative."}
+  "ssotPrecedence": [
+    "Filed documents",
+    "Formally approved company documents",
+    "R1.0/R1.0B system specifications",
+    "Approved SA Decision Register",
+    "Discussion/posters/legacy tests"
   ],
-  "pendingDecisions": []
+  "decisions": [
+    {
+      "id": "SA-20260915-01",
+      "subject": "Return/Settlement Replay",
+      "ruling": "Append-only reversal/clawback; do not overwrite historical Ledger or PAID. Reverse recognized volume/economic events and deterministically replay affected settlement and K0/K1/K2 downstream dependencies using historically effective snapshots. Re-derive carry from replayed effective volume; never reset it mechanically."
+    },
+    {
+      "id": "SA-20260915-02",
+      "subject": "EPV monthly threshold",
+      "ruling": "Qualification + calendar month cumulative eligible personal consumption; max(0, consumption - NT$2000) * 60%. 4800 => 1680. Returns recompute that month's cumulative threshold; never subtract return amount * 60% mechanically."
+    },
+    {
+      "id": "SA-20260915-04",
+      "subject": "SSOT / legacy drift",
+      "ruling": "Filed documents > formally approved company documents > R1.0/R1.0B system specifications > approved SA decisions > discussion/posters/legacy. Formal pools 42/36/15/5/2 and EPV 4800 => 1680. Conflicting legacy tests/fixtures are Legacy Test Drift; do not alter formal rules to satisfy them."
+    },
+    {
+      "id": "SA-20260916-05",
+      "subject": "Eligible Consumption Recognition",
+      "ruling": "Eligibility is determined by a versioned ConsumptionRecognitionEvent, not by Order existence alone. Only paid/confirmed, non-gift, non-replacement, non-company-subsidy personal-consumption lines explicitly eligible under the effective rule may enter the monthly eligible-consumption accumulator. Gifts, free replacements, company compensation/subsidy and zero-consideration fulfillment do not generate eligible consumption. Points-only redemption does not create new eligible consumption; mixed points+cash recognizes only authoritative eligible cash consideration unless a later formally approved rule provides otherwise. Tax, freight and payment fees are excluded unless formally approved. Return POSTED reverses the original recognition event in its historical recognition period and triggers replay."
+    },
+    {
+      "id": "SA-20260916-08",
+      "subject": "Binary inactive evidence",
+      "ruling": "An ineligible/inactive Binary recipient must leave deterministic calculation evidence with zero entitlement and reason code; absence of an Award row alone is not sufficient audit evidence. Zero evidence must not create payable or monetary Ledger credit. Historical replay uses the historical Active snapshot."
+    },
+    {
+      "id": "SA-20260916-10",
+      "subject": "Carry lifecycle",
+      "ruling": "Carry belongs to Qualification/Binary position, not Person. Suspend does not erase carry. Reactivation resumes preserved/replayed carry. Holder transfer does not move carry to another Qualification. Historical reversal replays forward until carry converges; maxWeeks is an engineering safety guard, not a business truncation rule."
+    },
+    {
+      "id": "SA-20260916-12",
+      "subject": "Return state and economic recognition",
+      "ruling": "Return workflow is REQUESTED -> APPROVED -> RECEIVED -> POSTED -> REFUNDED (or equivalent states preserving these semantics). REQUESTED/APPROVED/RECEIVED do not reverse official volume. POSTED is the authoritative economic/volume reversal event and triggers linked historical replay. REFUNDED records payment refund completion separately. Multiple returns are bounded by remaining reversible quantity/value and each return has a unique idempotency key."
+    },
+    {
+      "id": "SA-20260917-13",
+      "subject": "PV/BV abstract volume classes",
+      "ruling": "PV and BV are abstract Volume Classes/Concepts. Under R1.0B, GPV, RPV and EPV are the concrete PV-class business volume types used by active economic rules. BV is a reserved abstract Business Volume class and has no active R1.0B bonus-calculation formula. Abstract PV/BV must not independently create monetary entitlement. Historical GPV remains GPV and requires no economic migration or duplicate PV/BV recognition; semantic classification is non-monetary. This supersedes only the prior wording that treated PV/BV as independent concrete bonus-bearing values/fields."
+    },
+    {
+      "id": "SA-20260917-14",
+      "subject": "Operational calendar and settlement cadence",
+      "ruling": "Timezone is Asia/Taipei. GPV recognition immediately calculates Referral Theory and Referral Matching Theory and immediately propagates eligible GPV to historical Binary ancestors' left/right ledgers. Binary weekly settlement runs every Sunday 00:00 Asia/Taipei using half-open weekly boundaries [previous Sunday 00:00, current Sunday 00:00). RPV and EPV recognition/calculation occur immediately when their authoritative recognition events occur. Award settlement batches close on the 10th and 25th of every calendar month. Theory may be calculated earlier, but final pool/K materialization occurs at the applicable settlement batch."
+    },
+    {
+      "id": "SA-20260917-15",
+      "subject": "Payout calendar replacing literal 45x24h arithmetic",
+      "ruling": "The business meaning of the 45-day award hold is implemented by fixed payout batches, not literal settlement timestamp + 45*24 hours. Awards in the 10th settlement batch have nominal payout on the 25th of the following month. Awards in the 25th settlement batch have nominal payout on the 10th of the month after next. If the nominal payout date is not a business day, payout moves to the next business day according to the effective BusinessCalendarVersion. The system persists settlement date, nominal payout date, adjusted payout date and calendar version. Historical replay must preserve the original authoritative payout-calendar anchor unless the underlying settlement classification itself changes."
+    },
+    {
+      "id": "SA-20260917-16",
+      "subject": "Qualification-scoped Active effective interval",
+      "ruling": "Active is independently determined per Qualification/Ball and calendar month. When that Qualification's cumulative eligible monthly consumption first reaches NT$2,000, it becomes Active immediately at the authoritative recognition timestamp and remains Active through the end of that same calendar month in Asia/Taipei. Active is not retroactive: awards/events before the threshold timestamp remain Inactive and are not backfilled. At the start of the next calendar month the Qualification is Inactive until that month's threshold is reached. The threshold-crossing ConsumptionRecognition is processed before award eligibility derived from that same transaction, so the threshold-crossing transaction may use the newly created Active snapshot for its own eligible downstream awards. Returns POSTED replay the original month and may revise historical Active intervals and downstream entitlement."
+    },
+    {
+      "id": "SA-20260917-17",
+      "subject": "Multiple Qualifications per Person",
+      "ruling": "A Person may own multiple Qualifications/Balls. Each Qualification is an independent economic and organizational calculation scope for Active, GPV/RPV/EPV, Sponsor/Binary position, Carry, Bonus, Global eligibility, Ledger and Settlement. Active, volume, Carry or eligibility of one Qualification must never be borrowed by another Qualification. Ownership cardinality is explicit system functionality, not an inference from a single-ball model."
+    },
+    {
+      "id": "SA-20260917-18",
+      "subject": "Global Pool undistributed balance",
+      "ruling": "Global Pool is 5% under the effective R1.0B pool rules. After calculating eligible recipients/rights, any Global Pool amount not distributed for the period flows to Reservoir A. It is not redistributed to other recipients and does not alter their established rights. The transfer to Reservoir A must be append-only, source-period linked, idempotent and independently auditable."
+    },
+    {
+      "id": "SA-20260917-19",
+      "subject": "Matching inactive/invalid generation semantics",
+      "ruling": "Referral Matching and Binary Matching traverse fixed historical Sponsor generations. If an intermediate recipient is Inactive or otherwise fails the applicable unlock/eligibility rule, that fixed generation receives zero; traversal continues to the next specified historical generation. There is no stop, no compression, no substitution and no redistribution/backfill to another recipient. Historical Active/eligibility and Qualification evidence remain authoritative."
+    },
+    {
+      "id": "SA-20261003-20",
+      "subject": "Formal membership and NT$600 admission",
+      "ruling": "Approved application + NT$600 admission fee grants formal membership after required consent/KYC/cross-line gates. Shopping and pre-placement are permitted; no formal Ball or organization compensation until approved qualification-package purchase and operating qualification approval. Admission/upgrade/transfer fees are separate types; admission fee does not generate eligible consumption or volume.",
+      "status": "PRODUCT_OWNER_APPROVED_SPECIFICATION",
+      "approvedOn": "2026-10-03",
+      "documentReference": "governance/sa-decisions/R1_0B_RULE_ALIGNMENT_MEMBERSHIP_LIFECYCLE_20261003.md",
+      "businessEffectiveFrom": null,
+      "activationStatus": "BLOCKED_PENDING_APPLICABLE_POLICY_AND_EVIDENCE_GATES",
+      "implementationStatus": "NOT_VERIFIED",
+      "deploymentStatus": "NOT_DEPLOYED_BY_THIS_UPDATE"
+    },
+    {
+      "id": "SA-20261003-21",
+      "subject": "Pre-placement reservation is not a Ball",
+      "ruling": "Reservations do not create authoritative Sponsor/Binary edges, volume or monetary rights. Conversion requires effective package/approval and atomic, idempotent position revalidation. Reservation duration, conflict/expiry and refund policies are activation prerequisites; do not infer the future 72-hour design.",
+      "status": "PRODUCT_OWNER_APPROVED_SPECIFICATION",
+      "approvedOn": "2026-10-03",
+      "documentReference": "governance/sa-decisions/R1_0B_RULE_ALIGNMENT_MEMBERSHIP_LIFECYCLE_20261003.md",
+      "businessEffectiveFrom": null,
+      "activationStatus": "BLOCKED_PENDING_APPLICABLE_POLICY_AND_EVIDENCE_GATES",
+      "implementationStatus": "NOT_VERIFIED",
+      "deploymentStatus": "NOT_DEPLOYED_BY_THIS_UPDATE"
+    },
+    {
+      "id": "SA-20261003-22",
+      "subject": "Twelve consecutive inactive months per Ball",
+      "ruling": "Count per Qualification/Ball in Asia/Taipei. Start at the first complete calendar month after operating activation (month-start 00:00 may include that month). Monthly eligible consumption >= NT$2000 resets count; otherwise increment. Twelve adjacent eligible counting months trigger reclaim review, not immediate deletion. Other Balls and the consumer account remain unaffected.",
+      "status": "PRODUCT_OWNER_APPROVED_SPECIFICATION",
+      "approvedOn": "2026-10-03",
+      "documentReference": "governance/sa-decisions/R1_0B_RULE_ALIGNMENT_MEMBERSHIP_LIFECYCLE_20261003.md",
+      "businessEffectiveFrom": null,
+      "activationStatus": "BLOCKED_PENDING_APPLICABLE_POLICY_AND_EVIDENCE_GATES",
+      "implementationStatus": "NOT_VERIFIED",
+      "deploymentStatus": "NOT_DEPLOYED_BY_THIS_UPDATE"
+    },
+    {
+      "id": "SA-20261003-23",
+      "subject": "Prospective transition, notice and return replay",
+      "ruling": "Existing Balls count only the first complete applicable month on/after adopted business effectiveFrom, never pre-effective months. Monthly notices and month-11/12 reminders are evidenced/idempotent. Return POSTED replays original consumption/Active/count; newly created reclaim conditions require notice/manual review; do not instantly reclaim on refund posting.",
+      "status": "PRODUCT_OWNER_APPROVED_SPECIFICATION",
+      "approvedOn": "2026-10-03",
+      "documentReference": "governance/sa-decisions/R1_0B_RULE_ALIGNMENT_MEMBERSHIP_LIFECYCLE_20261003.md",
+      "businessEffectiveFrom": null,
+      "activationStatus": "BLOCKED_PENDING_APPLICABLE_POLICY_AND_EVIDENCE_GATES",
+      "implementationStatus": "NOT_VERIFIED",
+      "deploymentStatus": "NOT_DEPLOYED_BY_THIS_UPDATE"
+    },
+    {
+      "id": "SA-20261003-24",
+      "subject": "Company succession and historical rights",
+      "ruling": "After required review/notice/objection process, explicit effectiveAt changes holder to designated company subject. Preserve Ball identity, Sponsor/Binary position, Carry and history. Existing pending/paid awards and recovery follow original effective rules, not automatic zero/transfer. Company future eligibility is not automatically Active; missing recovery/objection/rights policies block affected succession.",
+      "status": "PRODUCT_OWNER_APPROVED_SPECIFICATION",
+      "approvedOn": "2026-10-03",
+      "documentReference": "governance/sa-decisions/R1_0B_RULE_ALIGNMENT_MEMBERSHIP_LIFECYCLE_20261003.md",
+      "businessEffectiveFrom": null,
+      "activationStatus": "BLOCKED_PENDING_APPLICABLE_POLICY_AND_EVIDENCE_GATES",
+      "implementationStatus": "NOT_VERIFIED",
+      "deploymentStatus": "NOT_DEPLOYED_BY_THIS_UPDATE"
+    },
+    {
+      "id": "SA-20261003-25",
+      "subject": "Rule alignment and scoped supersession",
+      "ruling": "Preserve R1.0B 42/36/15/5/2 pools, K0 disclosure, B-profile RPV 100 per generation 5/8/12, Sponsor EPV 50%+5x6%, monthly threshold and fixed payout batches. RPV A applicability and contract single-organization wording require verified alignment, not implicit repeal. Apply 10/2 corporate/spouse/multi-auth decisions and keep product-next future designs scoped.",
+      "status": "PRODUCT_OWNER_APPROVED_SPECIFICATION",
+      "approvedOn": "2026-10-03",
+      "documentReference": "governance/sa-decisions/R1_0B_RULE_ALIGNMENT_MEMBERSHIP_LIFECYCLE_20261003.md",
+      "businessEffectiveFrom": null,
+      "activationStatus": "BLOCKED_PENDING_APPLICABLE_POLICY_AND_EVIDENCE_GATES",
+      "implementationStatus": "NOT_VERIFIED",
+      "deploymentStatus": "NOT_DEPLOYED_BY_THIS_UPDATE"
+    }
+  ],
+  "pendingDecisions": [],
+  "previousRecordVersion": 3,
+  "activationPrerequisites": [
+    {
+      "id": "GATE-01",
+      "documentReference": "governance/sa-decisions/R1_0B_RULE_ALIGNMENT_MEMBERSHIP_LIFECYCLE_20261003.md#6-啟用前待補事項",
+      "status": "OPEN"
+    },
+    {
+      "id": "GATE-02",
+      "documentReference": "governance/sa-decisions/R1_0B_RULE_ALIGNMENT_MEMBERSHIP_LIFECYCLE_20261003.md#6-啟用前待補事項",
+      "status": "OPEN"
+    },
+    {
+      "id": "GATE-03",
+      "documentReference": "governance/sa-decisions/R1_0B_RULE_ALIGNMENT_MEMBERSHIP_LIFECYCLE_20261003.md#6-啟用前待補事項",
+      "status": "OPEN"
+    },
+    {
+      "id": "GATE-04",
+      "documentReference": "governance/sa-decisions/R1_0B_RULE_ALIGNMENT_MEMBERSHIP_LIFECYCLE_20261003.md#6-啟用前待補事項",
+      "status": "OPEN"
+    },
+    {
+      "id": "GATE-05",
+      "documentReference": "governance/sa-decisions/R1_0B_RULE_ALIGNMENT_MEMBERSHIP_LIFECYCLE_20261003.md#6-啟用前待補事項",
+      "status": "OPEN"
+    },
+    {
+      "id": "GATE-06",
+      "documentReference": "governance/sa-decisions/R1_0B_RULE_ALIGNMENT_MEMBERSHIP_LIFECYCLE_20261003.md#6-啟用前待補事項",
+      "status": "OPEN"
+    },
+    {
+      "id": "GATE-07",
+      "documentReference": "governance/sa-decisions/R1_0B_RULE_ALIGNMENT_MEMBERSHIP_LIFECYCLE_20261003.md#6-啟用前待補事項",
+      "status": "OPEN"
+    }
+  ]
 }

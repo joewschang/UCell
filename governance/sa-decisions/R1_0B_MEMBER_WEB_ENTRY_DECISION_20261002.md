@@ -1,5 +1,7 @@
 # UCell R1.0B Member Web Entry Decision — 2026-10-02
 
+> 2026-10-03 alignment note: the LINE-only authentication restriction below is superseded by `R1_0B_WEB_MEMBER_MULTI_AUTH_DECISION_20261002.md`. Other entry/identity boundaries remain applicable unless expressly superseded. Approved multi-auth capability is not deployment evidence.
+
 Status: PRODUCT OWNER APPROVED RELEASE-SCOPE CLARIFICATION
 Baseline: R1.0B
 Target: Sunday 2026-10-04 UAT / Production Go-No-Go
@@ -101,3 +103,4 @@ This clarification supersedes only the prior assumption that direct Web Member e
 The prior multi-provider architecture remains valid. LINE remains the only enabled Member authentication provider for this release.
 
 Any later independent Web credential requires a separate reviewed decision and implementation.
+
