@@ -55,6 +55,17 @@ describe('Integrated Web identity and password lifecycle (real isolated DB, synt
   await expect(registration.complete({...input(),identityDocumentNumber:first.identityDocumentNumber},randomUUID())).rejects.toMatchObject({response:{code:'IDENTITY_DOCUMENT_ALREADY_REGISTERED'}});
   expect(await db.person.count()).toBe(before);
  });
+ it('denies revoked Google bindings and security-locked members across Web entry methods',async()=>{
+  const payload=input(),result=await registration.complete(payload,randomUUID());
+  const person=await db.person.findUniqueOrThrow({where:{memberNo:result.memberNo}});
+  await db.identityLink.update({where:{provider_providerSubject:{provider:'GOOGLE',providerSubject:payload.googleIdToken}},data:{status:'REVOKED'}});
+  await expect(auth.googleExchange(payload.googleIdToken)).rejects.toMatchObject({response:{code:'GOOGLE_ACCOUNT_UNBOUND'}});
+  await expect(identities.resolve({provider:'GOOGLE',subject:payload.googleIdToken,personId:person.personId})).rejects.toThrow('MEMBER_IDENTITY_MISMATCH');
+  await db.identityLink.update({where:{provider_providerSubject:{provider:'GOOGLE',providerSubject:payload.googleIdToken}},data:{status:'ACTIVE'}});
+  await db.person.update({where:{personId:person.personId},data:{securityStatus:'SECURITY_LOCKED'}});
+  await expect(auth.googleExchange(payload.googleIdToken)).rejects.toMatchObject({response:{code:'MEMBER_SECURITY_LOCKED'}});
+  await expect(auth.passwordLogin(person.memberNo,payload.password)).rejects.toMatchObject({response:{code:'MEMBER_SECURITY_LOCKED'}});
+ });
  it('consumes a reset token once under concurrent attempts and revokes all Member sessions atomically',async()=>{
   const payload=input(),result=await registration.complete(payload,randomUUID());
   const person=await db.person.findUniqueOrThrow({where:{memberNo:result.memberNo}});

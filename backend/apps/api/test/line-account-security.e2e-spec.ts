@@ -23,7 +23,7 @@ describe('LINE account security lite',()=>{
   it('rejects an otherwise valid session while the Person is security locked',async()=>{
     const guard=new MemberAuthenticationGuard(
       {authenticate:jest.fn().mockResolvedValue({sessionId:'session-1',personId:'person-1',provider:'LINE',subject:'line-1',role:null})} as any,
-      {resolveVerifiedSubject:jest.fn().mockResolvedValue({personId:'person-1',provider:'LINE',providerSubject:'line-1'})} as any,
+      {resolve:jest.fn().mockResolvedValue({personId:'person-1',provider:'LINE',providerSubject:'line-1'})} as any,
       {person:{findUnique:jest.fn().mockResolvedValue({personId:'person-1',status:'EFFECTIVE',securityStatus:'SECURITY_LOCKED'})}} as any,
       {get:jest.fn().mockReturnValue(undefined)} as any,
     );
@@ -34,7 +34,7 @@ describe('LINE account security lite',()=>{
 
   it('does not let the existing isolated Stage UAT path bypass a security lock',async()=>{
     const guard=new MemberAuthenticationGuard(
-      {authenticate:jest.fn()} as any,{resolveVerifiedSubject:jest.fn()} as any,
+      {authenticate:jest.fn()} as any,{resolve:jest.fn()} as any,
       {person:{findUnique:jest.fn().mockResolvedValue({status:'EFFECTIVE',securityStatus:'SECURITY_LOCKED'})}} as any,
       {get:jest.fn((key:string)=>({STAGE_UAT_MEMBER_TOKEN:'test-token',UCELL_ENVIRONMENT:'STAGE',NODE_ENV:'staging'}[key]))} as any,
     );

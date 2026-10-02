@@ -19,7 +19,7 @@ export class MemberIdentityService{
 
 
     const link=await this.db.identityLink.findUnique({where:{provider_providerSubject:{provider:input.provider,providerSubject:input.subject}}});
-    if(!link||link.personId!==input.personId)throw new UnauthorizedException('MEMBER_IDENTITY_MISMATCH');
+    if(!link||link.status!=='ACTIVE'||link.personId!==input.personId)throw new UnauthorizedException('MEMBER_IDENTITY_MISMATCH');
     return {provider:input.provider,providerSubject:link.providerSubject,personId:link.personId};
   }
 }

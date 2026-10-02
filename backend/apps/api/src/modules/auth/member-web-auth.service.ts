@@ -23,7 +23,7 @@ export class MemberWebAuthService{
   const expected=Buffer.from(value,'base64url'),actual=derive(password,salt,expected.length,Number(n),Number(r),Number(p));
   return expected.length===actual.length&&timingSafeEqual(expected,actual);
  }
- private eligible(person:{status:string}){if(person.status!=='EFFECTIVE')throw new UnauthorizedException({code:'MEMBER_PERSON_DISABLED'});}
+ private eligible(person:{status:string;securityStatus?:string}){if(person.status!=='EFFECTIVE')throw new UnauthorizedException({code:'MEMBER_PERSON_DISABLED'});if(person.securityStatus&&person.securityStatus!=='NORMAL')throw new UnauthorizedException({code:'MEMBER_SECURITY_LOCKED'});}
 
  async passwordLogin(memberNo:string,password:string){
   const person=await this.db.person.findUnique({where:{memberNo},include:{memberPasswordCredential:true}});
@@ -48,7 +48,7 @@ export class MemberWebAuthService{
  async googleExchange(idToken:string){
   const verified=await this.google.verify(idToken);
   const link=await this.db.identityLink.findUnique({where:{provider_providerSubject:{provider:'GOOGLE',providerSubject:verified.subject}},include:{person:true}});
-  if(!link)throw new UnauthorizedException({code:'GOOGLE_ACCOUNT_UNBOUND'});
+  if(!link||link.status!=='ACTIVE')throw new UnauthorizedException({code:'GOOGLE_ACCOUNT_UNBOUND'});
   this.eligible(link.person);
   const ttl=Math.max(1,Math.min(3600,verified.expiresAt-Math.floor(Date.now()/1000)));
   return this.sessions.issue({provider:'GOOGLE',subject:verified.subject,personId:link.personId,ttlSeconds:ttl});

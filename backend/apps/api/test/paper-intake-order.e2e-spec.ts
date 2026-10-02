@@ -13,7 +13,7 @@ describe('Paper qualification package order',()=>{
    person:{findUnique:jest.fn().mockResolvedValue({status:'DRAFT'})},
    paperApplication:{findUnique:jest.fn().mockResolvedValue({personId:'person',orderId:null,status:'OPEN'}),update:jest.fn()},
    qualification:{create:jest.fn().mockResolvedValue({qualificationId:'qualification'}),findUnique:jest.fn()},
-   qualificationHolderHistory:{create:jest.fn()},qualificationStatusHistory:{create:jest.fn()},
+   qualificationOwnerInterval:{create:jest.fn()},qualificationHolderHistory:{create:jest.fn()},qualificationStatusHistory:{create:jest.fn()},
    order:{create:jest.fn().mockImplementation(async({data}:any)=>({orderId:'order',qualificationId:data.qualificationId,lines:[]}))},
    packagePurchaseSnapshot:{create:jest.fn().mockResolvedValue({packagePurchaseSnapshotId:'snapshot'})},
   };
