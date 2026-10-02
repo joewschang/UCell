@@ -1,0 +1,30 @@
+{
+  "date": "2026-10-03",
+  "baselineCommit": "f1e557345e95a1293ddccc8e73637bd9b3a2d57d",
+  "pullRequest": "https://github.com/joewschang/UCell/pull/19",
+  "changes": [
+    "Private KYC document popup is reserved synchronously during click, detached from opener, then navigated only after authenticated download",
+    "Failed authorization/download, closed popup, unexpected MIME and failed navigation close/revoke private content safely",
+    "Document view button is disabled unless document is PRESENT and scanner status is CLEAN; backend remains authoritative"
+  ],
+  "validation": {
+    "targetedCommand": "pnpm test src/lib/privateDocument.test.ts src/features/applications/PaperFormalApplicationPage.test.tsx",
+    "targetedTests": "2 files / 8 tests PASS",
+    "buildCommand": "pnpm build (admin)",
+    "adminBuild": "PASS, existing bundle-size warning",
+    "paperInteractionCoverage": "Synthetic component interactions: corporation retains selected representative and excludes stale individual identity; cleared spouse declaration is not transmitted; absent selected Person blocks creation",
+    "browserUat": "NOT RUN: both cua_repl and node_repl initialization failed with missing kernel-assets path"
+  },
+  "pending": [
+    "Actual browser paper/KYC interaction and visual verification",
+    "Trusted machine malware scanner and private-storage configuration/evidence",
+    "Approved short-lived signed upload/download transport"
+  ],
+  "release": {
+    "draft": true,
+    "stageDeployed": false,
+    "productionDeployed": false,
+    "existingStage": "unchanged",
+    "r11": "untouched"
+  }
+}

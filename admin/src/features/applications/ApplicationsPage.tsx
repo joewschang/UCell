@@ -7,6 +7,7 @@ import {Badge,Card,ErrorBox,PageHeader} from '../../components/ui';
 import {dateTime,holderName} from '../../lib/format';
 import {Link} from 'react-router-dom';
 import {AdminTable} from '../../components/AdminTable';
+import {openPrivateDocument} from '../../lib/privateDocument';
 
 function tone(s:string){return s==='EFFECTIVE'?'ok':s==='SUBMITTED'?'warn':s==='DRAFT'?'neutral':'danger'}
 
@@ -28,10 +29,7 @@ export function ApplicationsPage(){
  async function viewKycDocument(documentId:string){
   setBusy(true);setError(null);
   try{
-   const blob=await getBlob(`/admin/formal-member-applications/documents/${documentId}/content`);
-   const url=URL.createObjectURL(blob),popup=window.open(url,'_blank','noopener,noreferrer');
-   if(!popup)throw new Error('瀏覽器阻擋文件檢視視窗');
-   setTimeout(()=>URL.revokeObjectURL(url),60_000);
+   await openPrivateDocument(()=>getBlob(`/admin/formal-member-applications/documents/${documentId}/content`));
   }catch(e){setError(e)}finally{setBusy(false)}
  }
  async function reviewPaperEvidence(type:string){
@@ -86,7 +84,7 @@ export function ApplicationsPage(){
      <dt>配偶核驗</dt><dd>{d.spouseVerificationStatus}</dd>
      <dt>跨線審查</dt><dd>{d.crossLineReviewStatus}{d.crossLineConflictCode?' · '+d.crossLineConflictCode:''}</dd>
     </dl>
-    {d.sourceChannel==='ADMIN_PAPER'?<section><h3>紙本 Evidence</h3>{(d.paperEvidence??[]).map((x:any)=><p key={x.id}>{x.type} · <Badge tone={x.status==='REVIEWED'?'ok':x.status==='REJECTED'?'danger':'warn'}>{x.status}</Badge> {x.status==='PENDING'&&<button disabled={busy} onClick={()=>reviewPaperEvidence(x.type)}>確認已核對</button>}</p>)}</section>:<section><h3>線上 KYC 文件</h3>{docs.map((x:any)=><div className="list-row" key={x.id}><strong>{x.type}</strong><span>{x.status} · 安全檢查 <Badge tone={x.scanStatus==='CLEAN'?'ok':x.scanStatus==='INFECTED'?'danger':'warn'}>{x.scanStatus}</Badge></span><small>{x.mimeType??'—'} · {x.sizeBytes??'—'} bytes</small><div className="button-row"><button disabled={busy} onClick={()=>viewKycDocument(x.id)}>檢視文件</button></div>{x.scanStatus!=='CLEAN'&&<small>文件尚未通過安全掃描，系統不得進入正式審查。</small>}</div>)}</section>}
+    {d.sourceChannel==='ADMIN_PAPER'?<section><h3>紙本 Evidence</h3>{(d.paperEvidence??[]).map((x:any)=><p key={x.id}>{x.type} · <Badge tone={x.status==='REVIEWED'?'ok':x.status==='REJECTED'?'danger':'warn'}>{x.status}</Badge> {x.status==='PENDING'&&<button disabled={busy} onClick={()=>reviewPaperEvidence(x.type)}>確認已核對</button>}</p>)}</section>:<section><h3>線上 KYC 文件</h3>{docs.map((x:any)=><div className="list-row" key={x.id}><strong>{x.type}</strong><span>{x.status} · 安全檢查 <Badge tone={x.scanStatus==='CLEAN'?'ok':x.scanStatus==='INFECTED'?'danger':'warn'}>{x.scanStatus}</Badge></span><small>{x.mimeType??'—'} · {x.sizeBytes??'—'} bytes</small><div className="button-row"><button disabled={busy||x.status!=='PRESENT'||x.scanStatus!=='CLEAN'} onClick={()=>viewKycDocument(x.id)}>檢視文件</button></div>{x.scanStatus!=='CLEAN'&&<small>文件尚未通過安全掃描，系統不得進入正式審查。</small>}</div>)}</section>}
     <div className="sticky-actions button-row">
      {p.hasSpouse&&d.spouseVerificationStatus!=='VERIFIED'&&<button disabled={busy} onClick={()=>formalAction('spouse-verification')}>確認配偶資料</button>}
      {d.crossLineReviewStatus!=='CLEAR'&&<button disabled={busy} onClick={()=>formalAction('cross-line-review')}>執行跨線審查</button>}
