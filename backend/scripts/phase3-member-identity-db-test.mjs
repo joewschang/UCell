@@ -274,8 +274,12 @@ try{
  ]});
  const notices1=(await call('GET','member/notifications?qualificationId='+ids[0],token)).json().data;
  const notices2=(await call('GET','member/notifications?qualificationId='+ids[1],token)).json().data;
- equal(notices1.notices.map(n=>n.body).sort(),['BALL1','PERSON'],'notice audience Ball1');
- equal(notices2.notices.map(n=>n.body).sort(),['BALL2','PERSON'],'notice audience Ball2');
+ // Recognition fixtures also emit real notices; check the seeded audience independently.
+ const seededNoticeBodies=notices=>notices.filter(n=>n.title.startsWith('TEST_ONLY ')).map(n=>n.body).sort();
+ equal(seededNoticeBodies(notices1.notices),['BALL1','PERSON'],'notice audience Ball1');
+ equal(seededNoticeBodies(notices2.notices),['BALL2','PERSON'],'notice audience Ball2');
+ equal(notices1.notices.every(n=>n.qualificationId===null||n.qualificationId===ids[0]),true,'all Ball1 notices respect qualification audience');
+ equal(notices2.notices.every(n=>n.qualificationId===null||n.qualificationId===ids[1]),true,'all Ball2 notices respect qualification audience');
  equal((await call('GET','member/notifications?qualificationId='+ids[2],token)).statusCode,403,'foreign notice scope denied');
  equal((await call('GET','member/notifications',token)).statusCode,422,'notice context required');
  const monetaryBeforeProfile=[await db.pvLedger.count(),await db.bonusAward.count(),await db.bonusRecoveryEvent.count()];

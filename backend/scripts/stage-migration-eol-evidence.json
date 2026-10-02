@@ -54,6 +54,36 @@
       "legacyChecksum": "863049cbcf576f59bfa922738998133066a83c0e011e88147242dac0754dbc90",
       "normalizedSha256": "8d84e62632464f8ed7952af654c1f76d26f9ff056c739705694b752a75445894",
       "recoveredSource": "C:/UCell/next-generation/backend/packages/database/prisma/migrations/20260926100000_paper_person_identity_duplicate_prevention/migration.sql"
+    },
+    {
+      "migration": "20260928150000_serialized_fulfillment_foundation",
+      "legacyChecksum": "14ba4c466bf13850a187d5c0ace8e82d47b7f285c1e6029460cc32c7a3fce0c2",
+      "normalizedSha256": "4cdab422533159b7a7d98ed977ade79b9a1427c3d3f82596f96c45f001b8dfa7",
+      "recoveredSource": "ucellstageacr5mafbbsq33mgu.azurecr.io/ucell-backend:6c86adb-line-20261001"
+    },
+    {
+      "migration": "20260928160000_fulfillment_erp_handoff",
+      "legacyChecksum": "8d4aaa7ca0993c77b3c1dc8d7a2696b53eb5aac5f764db76c7b619cda1a141a6",
+      "normalizedSha256": "084b7c56742af36bda180765468a2ba810d8960cc64c5a5e98d81e196a0e5da7",
+      "recoveredSource": "ucellstageacr5mafbbsq33mgu.azurecr.io/ucell-backend:6c86adb-line-20261001"
+    },
+    {
+      "migration": "20260928170000_payout_payment_result",
+      "legacyChecksum": "4698202cf6b8b5f4404e00bb7529338fc3c5615fb965bda670b91d023c569e0d",
+      "normalizedSha256": "72956f5aa90a418009039f45d5f0d5efdf25bd1bce66282a220b22f5afe9938f",
+      "recoveredSource": "ucellstageacr5mafbbsq33mgu.azurecr.io/ucell-backend:6c86adb-line-20261001"
+    },
+    {
+      "migration": "20260928180000_payout_result_retry_reconciliation",
+      "legacyChecksum": "17951bea0d004580eecc49bf895f319d0e9172619048e962a32bffecdf7c4c20",
+      "normalizedSha256": "c96d3593a863d14510d550c437c510c9eacfe001633e20c32d55dffe43138264",
+      "recoveredSource": "ucellstageacr5mafbbsq33mgu.azurecr.io/ucell-backend:6c86adb-line-20261001"
+    },
+    {
+      "migration": "20260928190000_operational_exception_foundation",
+      "legacyChecksum": "f0532171e872ea72730bb0f03cce40aa0080d90ad664a4221410ba7f59febba7",
+      "normalizedSha256": "7dd98e18043ee303f3b00ee6702ba8c62d8154a8738e9c1b3dcf9e8a3bbf575b",
+      "recoveredSource": "ucellstageacr5mafbbsq33mgu.azurecr.io/ucell-backend:6c86adb-line-20261001"
     }
   ]
 }
