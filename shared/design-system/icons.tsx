@@ -5,7 +5,8 @@ export type UCellIconName =
   | 'products'|'packages'|'orders'|'binary-trees'|'organization'|'subscriptions'
   | 'bonuses'|'returns'|'workflows'|'reservoirs'|'payouts'|'content'|'documents'
   | 'audit'|'reports'|'analytics'|'uat'|'system'|'provider-operations'
-  | 'home'|'income'|'shop'|'me'|'notification'|'scan'|'shipment';
+  | 'home'|'income'|'shop'|'me'|'notification'|'scan'|'shipment'
+  | 'geo'|'reconciliation'|'lineage'|'settlement'|'calendar'|'control'|'learning'|'events';
 
 type PathDef={d:string;fill?:boolean};
 const P:Record<UCellIconName,PathDef[]>={
@@ -41,6 +42,14 @@ const P:Record<UCellIconName,PathDef[]>={
  notification:[{d:'M6 17h12l-2-3V9a4 4 0 0 0-8 0v5z M10 20h4'}],
  scan:[{d:'M4 9V4h5 M15 4h5v5 M20 15v5h-5 M9 20H4v-5 M8 8v8 M11 8v8 M14 8v8 M17 8v8'}],
  shipment:[{d:'M3 6h11v11H3z M14 10h4l3 4v3h-7z M7 20a2 2 0 1 0 0-4 2 2 0 0 0 0 4Zm10 0a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z'}],
+ geo:[{d:'m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3z M9 3v15 M15 6v15'}],
+ reconciliation:[{d:'M3 5h7v14H3z M14 5h7v14h-7z M6 9h1 M6 13h1 M17 9h1 M17 13h1 M10 8h4m-2-2 2 2-2 2 M14 16h-4m2-2-2 2 2 2'}],
+ lineage:[{d:'M3 10h4v4H3z M17 3h4v4h-4z M17 17h4v4h-4z M7 12h5 M12 5v14 M12 5h5 M12 19h5'}],
+ settlement:[{d:'M5 3h14v18H5z M8 6h8 M8 10h2 M14 10h2 M8 14h2 M14 14h2 M8 18h2 M14 18h2'}],
+ calendar:[{d:'M4 5h16v16H4z M8 3v4 M16 3v4 M4 10h16 M8 14h2 M14 14h2 M8 18h2'}],
+ control:[{d:'M5 3v18 M12 3v18 M19 3v18 M3 8h4 M10 16h4 M17 10h4'}],
+ learning:[{d:'m2 8 10-5 10 5-10 5z M6 10v7c4 3 8 3 12 0v-7 M22 8v8'}],
+ events:[{d:'M4 5h16v16H4z M8 3v4 M16 3v4 M4 10h16 m8 2 1.2 2.5 2.8.4-2 2 .5 2.8-2.5-1.3-2.5 1.3.5-2.8-2-2 2.8-.4z'}],
 };
 
 export function UCellIcon({name,size=20,title,className,...props}:{name:UCellIconName;size?:number;title?:string;className?:string}&Omit<SVGProps<SVGSVGElement>,'name'>){

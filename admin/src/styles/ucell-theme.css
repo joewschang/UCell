@@ -68,3 +68,12 @@ td{color:var(--ucell-text-primary);border-color:var(--ucell-border-subtle)}
 .uc-pipeline button:hover span,.uc-pipeline button:hover small{color:#c8d6da}
 .search-option:hover,.list-row:hover{background:var(--ucell-surface-secondary)}
 .uc-dialog{background:var(--ucell-surface);color:var(--ucell-text-primary)}
+
+/* Keep every sidebar row aligned and reserve the solid accent for one current page. */
+.app[data-app=admin] .sidebar nav .uc-nav-link{display:flex;align-items:center;gap:10px;min-height:48px;text-align:left;line-height:1.4;background:transparent;color:#dbe6e9}
+.app[data-app=admin] .sidebar nav .uc-nav-link>span{min-width:0;overflow-wrap:anywhere}
+.app[data-app=admin] .sidebar nav .uc-nav-link .uc-nav-icon{flex:0 0 20px;color:#84e4c8;background:#84e4c81a}
+.app[data-app=admin] .sidebar nav .uc-nav-link:hover{background:#84e4c81a;color:#fff}
+.app[data-app=admin] .sidebar nav .uc-nav-link[aria-current=page]{background:var(--ucell-primary);color:var(--ucell-on-primary);font-weight:600}
+.app[data-app=admin] .sidebar nav .uc-nav-link[aria-current=page] .uc-nav-icon{color:inherit;background:transparent}
+.app[data-app=admin] .sidebar nav .uc-nav-link:focus-visible{outline:2px solid #84e4c8;outline-offset:2px}
