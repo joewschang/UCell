@@ -24,6 +24,6 @@ export default function FormalEnrollment(){
  {enrollment.paidPackages.map(p=><p key={p.orderId}>已付款套組：{p.packageName}</p>)}
  {(route==='PACKAGE'||enrollment.membershipState==='FORMAL_MEMBER')&&<QualificationPackageShop onCreated={state.retry}/>}
  {enrollment.application&&<p>申請進度：{({DRAFT:'資料草稿',SUBMITTED:'已送出，等待審核',UNDER_REVIEW:'審核中',NEEDS_MORE_INFO:'請補件',APPROVED:'已核准',REJECTED:'未通過'} as Record<string,string>)[enrollment.application.status]??enrollment.application.status}</p>}
- {paid&&['NETWORK_MEMBER','FORMAL_PENDING'].includes(enrollment.membershipState??'')&&<FormalUpgrade onSubmitted={state.retry}/>}
+ {paid&&['NETWORK_MEMBER','FORMAL_PENDING'].includes(enrollment.membershipState??'')&&(!enrollment.application||['DRAFT','NEEDS_MORE_INFO'].includes(enrollment.application.status))&&<FormalUpgrade onSubmitted={state.retry}/>}
  <Link to="/">返回會員首頁</Link></section>;
 }
