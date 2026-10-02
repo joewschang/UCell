@@ -1,0 +1,11 @@
+{
+  "apiSourceCommit": "94d0f918514061016e8d40381da8db22ba97b6d8",
+  "adminSourceCommit": "a3270fd32f17cb6cbfff0ec1ac80c606311f0f28",
+  "apiImage": "ucellstageacr5mafbbsq33mgu.azurecr.io/ucell-api@sha256:f48dc7c9275f746a1569ae12b34aeff00af5018968ee9d1e89f1c6ec14a4d3c0",
+  "adminImage": "ucellstageacr5mafbbsq33mgu.azurecr.io/ucell-admin@sha256:046097fd71e4d2abe783012a4d7f4dc28086d764fadb21bd40b0b754a1737a63",
+  "migrationExecution": "ucell-stage-migrate-s2b5wlz",
+  "migrationStatus": "Succeeded",
+  "stagePreviewOnly": true,
+  "pr": "https://github.com/joewschang/UCell/pull/23",
+  "deployedAtUtc": "2026-10-02T19:04:17.9260840Z"
+}
