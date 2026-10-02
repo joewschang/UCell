@@ -35,6 +35,7 @@ export class MemberCreateOrderDto {
  @ApiProperty({required:false,format:'uuid',description:'Required for retail orders; for active packages this must match targetQualificationId.'}) @IsOptional() @IsUUID() qualificationId?:string;
  @ApiProperty({required:false,format:'uuid',description:'Published package version. When supplied, items are rejected and immutable package snapshots are created.'}) @IsOptional() @IsUUID() packageVersionId?:string;
  @ApiProperty({required:false,format:'uuid'}) @IsOptional() @IsUUID() targetQualificationId?:string;
+ @ApiProperty({required:false,format:'uuid',description:'Optional represented formal LegalEntity purchasing/operating context. Backend verifies current primary representative authority.'}) @IsOptional() @IsUUID() legalEntityId?:string;
  @ApiProperty({required:false,type:[CreateOrderItemDto],description:'Retail product IDs and quantities. Mutually exclusive with packageVersionId.'}) @IsOptional() @IsArray() @ArrayMinSize(1) @ArrayMaxSize(100) @ValidateNested({each:true}) @Type(()=>CreateOrderItemDto) items?:CreateOrderItemDto[];
  @ApiProperty({required:false,type:[MemberPackageSelectionDto],description:'Exact package selection by versioned product rule profile.'}) @IsOptional() @IsArray() @ArrayMinSize(1) @ArrayMaxSize(200) @ValidateNested({each:true}) @Type(()=>MemberPackageSelectionDto) selections?:MemberPackageSelectionDto[];
 }
