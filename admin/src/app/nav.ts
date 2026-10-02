@@ -1,3 +1,5 @@
+import type {UCellIconName} from '@ucell/design-system';
+
 export const nav=[
   ['總覽','/','dashboard'],
   ['會員／自然人','/people','people'],
@@ -8,24 +10,24 @@ export const nav=[
   ['商品參照','/products','products'],
   ['套組與資格商品','/packages','packages'],
   ['訂單與收款','/orders','orders'],
-  ['出貨與序號核對','/fulfillment','orders'],
-  ['ERP 對接與對帳','/erp-reconciliation','orders'],
+  ['出貨與序號核對','/fulfillment','shipment'],
+  ['ERP 對接與對帳','/erp-reconciliation','reconciliation'],
   ['多樹管理','/admin/organization/trees','binary-trees'],
-  ['地理組織分析','/organization/geo','organization'],
+  ['地理組織分析','/organization/geo','geo'],
   ['組織／安置','/organization','organization'],
   ['重購訂閱','/subscriptions','subscriptions'],
-  ['交易影響追蹤','/economic-lineage','orders'],
+  ['交易影響追蹤','/economic-lineage','lineage'],
   ['獎金與結算證據','/bonuses','bonuses'],
-  ['結算工作','/settlement-jobs','bonuses'],
-  ['獎金週期控制','/compensation-period-control','bonuses'],
-  ['營運控制中心','/operations-control','dashboard'],
+  ['結算工作','/settlement-jobs','settlement'],
+  ['獎金週期控制','/compensation-period-control','calendar'],
+  ['營運控制中心','/operations-control','control'],
   ['退貨／重算','/returns','returns'],
   ['升級／轉讓／退出','/workflows','workflows'],
   ['Reservoir Center','/admin/finance/reservoirs','reservoirs'],
   ['付款批次與對帳','/payouts','payouts'],
   ['影音／連結內容','/content','content'],
-  ['教育訓練','/learning','content'],
-  ['活動管理','/events','content'],
+  ['教育訓練','/learning','learning'],
+  ['活動管理','/events','events'],
   ['文件／附件','/documents','documents'],
   ['稽核紀錄','/audit','audit'],
   ['報表／完整性','/reports','reports'],
@@ -33,7 +35,14 @@ export const nav=[
   ['UAT／上線驗證','/uat','uat'],
   ['系統就緒度','/system','system'],
   ['Provider Webhook 營運','/provider-operations','provider-operations'],
-] as const;
+] as const satisfies ReadonlyArray<readonly [string,string,UCellIconName]>;
+
+/** A child route selects its most specific menu, while detail pages retain their parent. */
+export function activeNavPath(pathname:string):string|undefined{
+  return nav.map(([,path])=>path)
+    .filter(path=>pathname===path || path!=='/'&&pathname.startsWith(path+'/'))
+    .sort((a,b)=>b.length-a.length)[0];
+}
 export const navGroups=[
  {label:'Dashboard',paths:['/']},
  {label:'會員管理',paths:['/people','/qualifications','/applications','/paper-intake','/line-links','/workflows','/learning','/events']},
