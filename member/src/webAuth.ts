@@ -42,7 +42,7 @@ export async function linkGoogleIdentity(idToken:string){
 
 export type RegistrationContract={contractVersionId:string;title:string;versionCode:string;contentText:string;contentHash:string};
 export async function registrationContract(){return request('/auth/member/register/contract') as Promise<RegistrationContract>;}
-export async function completeRegistration(input:{contractVersionId:string;legalName:string;alias:string;gender:string;birthDate:string;mobile:string;email:string;password:string;googleIdToken:string}){
+export async function completeRegistration(input:{contractVersionId:string;legalName:string;alias:string;gender:string;birthDate:string;nationalityCode:string;identityDocumentType:string;identityDocumentNumber:string;mobile:string;email:string;password:string;googleIdToken:string}){
  return storeSession(await request('/auth/member/register/complete',{method:'POST',headers:{'Content-Type':'application/json','Idempotency-Key':crypto.randomUUID()},body:JSON.stringify({...input,accepted:true})}));
 }
 

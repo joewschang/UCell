@@ -1,6 +1,6 @@
 import { Body,Controller,Get,Headers,Post,UseGuards } from '@nestjs/common';
 import { ApiHeader,ApiOperation,ApiProperty,ApiTags } from '@nestjs/swagger';
-import { Equals,IsDateString,IsEmail,IsString,IsUUID,Matches,MaxLength,MinLength } from 'class-validator';
+import { Equals,IsDateString,IsEmail,IsIn,IsString,IsUUID,Matches,MaxLength,MinLength } from 'class-validator';
 import { IdempotencyGuard } from '../../common/guards/idempotency.guard';
 import { MemberWebRegistrationService } from './member-web-registration.service';
 
@@ -11,6 +11,9 @@ class CompleteWebRegistrationDto{
  @ApiProperty({maxLength:80}) @IsString() @MinLength(1) @MaxLength(80) alias!:string;
  @ApiProperty({maxLength:32}) @Matches(/^[A-Za-z0-9_-]{1,32}$/) gender!:string;
  @ApiProperty({format:'date'}) @IsDateString() birthDate!:string;
+ @ApiProperty({example:'TW'}) @Matches(/^[A-Z]{2}$/) nationalityCode!:string;
+ @ApiProperty({enum:['NATIONAL_ID','RESIDENCE_PERMIT','PASSPORT','OTHER']}) @IsIn(['NATIONAL_ID','RESIDENCE_PERMIT','PASSPORT','OTHER']) identityDocumentType!:'NATIONAL_ID'|'RESIDENCE_PERMIT'|'PASSPORT'|'OTHER';
+ @ApiProperty({maxLength:64}) @IsString() @Matches(/\S/) @MaxLength(64) identityDocumentNumber!:string;
  @ApiProperty({example:'+886912345678'}) @Matches(/^\+[1-9][0-9]{7,14}$/) mobile!:string;
  @ApiProperty({format:'email',maxLength:254}) @IsEmail() @MaxLength(254) email!:string;
  @ApiProperty({minLength:12,maxLength:256}) @IsString() @MinLength(12) @MaxLength(256) password!:string;

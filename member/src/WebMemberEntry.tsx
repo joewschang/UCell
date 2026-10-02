@@ -1,4 +1,6 @@
 import React,{FormEvent,useEffect,useRef,useState} from 'react';
+import {CompanyLogo} from '@ucell/design-system';
+import {countryOptions} from './countryOptions';
 import {completeRegistration,forgotPassword,passwordLogin,registrationContract,renderGoogleButton,renderGoogleRegistrationButton,resetPassword,type RegistrationContract} from './webAuth';
 
 type Mode='login'|'forgot'|'register'|'reset';
@@ -12,6 +14,7 @@ export default function WebMemberEntry({onLineLogin,onAuthenticated}:{onLineLogi
  const [contract,setContract]=useState<RegistrationContract>();
  const [accepted,setAccepted]=useState(false),[pendingGoogleIdToken,setPendingGoogleIdToken]=useState('');
  const [legalName,setLegalName]=useState(''),[alias,setAlias]=useState(''),[gender,setGender]=useState('UNSPECIFIED'),[birthDate,setBirthDate]=useState(''),[mobile,setMobile]=useState(''),[email,setEmail]=useState(''),[registerPassword,setRegisterPassword]=useState('');
+ const [nationalityCode,setNationalityCode]=useState('TW'),[identityDocumentType,setIdentityDocumentType]=useState('NATIONAL_ID'),[identityDocumentNumber,setIdentityDocumentNumber]=useState('');
 
  useEffect(()=>{if(mode==='login'&&googleRef.current)void renderGoogleButton(googleRef.current,onAuthenticated,(token)=>{setPendingGoogleIdToken(token);setMessage('此 Google 帳號尚未綁定 UCell，請完成會員註冊。');setMode('register');},setError);},[mode,onAuthenticated]);
  useEffect(()=>{if(mode==='register'&&!contract)registrationContract().then(setContract).catch(e=>setError(e instanceof Error?e.message:'無法載入契約'));},[mode,contract]);
@@ -21,10 +24,10 @@ export default function WebMemberEntry({onLineLogin,onAuthenticated}:{onLineLogi
  const submitPassword=(e:FormEvent)=>{e.preventDefault();void run(async()=>{await passwordLogin(memberNo,password);onAuthenticated();});};
  const submitForgot=(e:FormEvent)=>{e.preventDefault();void run(()=>forgotPassword(identifier),'若帳號資料符合條件，系統將寄送密碼重設信。');};
  const submitReset=(e:FormEvent)=>{e.preventDefault();void run(async()=>{await resetPassword(resetToken,newPassword);window.history.replaceState({},'',window.location.pathname);setMode('login');setNewPassword('');},'密碼已更新，請重新登入。');};
- const submitRegister=(e:FormEvent)=>{e.preventDefault();if(!contract){setError('契約尚未載入');return;}if(!pendingGoogleIdToken){setError('請先完成 Google 身分驗證');return;}if(!accepted){setError('請先同意會員契約與隱私條款');return;}void run(async()=>{await completeRegistration({contractVersionId:contract.contractVersionId,legalName,alias,gender,birthDate,mobile,email,password:registerPassword,googleIdToken:pendingGoogleIdToken});onAuthenticated();});};
+ const submitRegister=(e:FormEvent)=>{e.preventDefault();if(!contract){setError('契約尚未載入');return;}if(!pendingGoogleIdToken){setError('請先完成 Google 身分驗證');return;}if(!accepted){setError('請先同意會員契約與隱私條款');return;}void run(async()=>{await completeRegistration({contractVersionId:contract.contractVersionId,legalName,alias,gender,birthDate,nationalityCode,identityDocumentType,identityDocumentNumber,mobile,email,password:registerPassword,googleIdToken:pendingGoogleIdToken});onAuthenticated();});};
 
  return <main className="loading"><section className="card uc-web-entry" aria-labelledby="ucell-web-login-title">
-  <small>WEB MEMBER ENTRY</small><h1 id="ucell-web-login-title">UCell 會員中心</h1>
+  <CompanyLogo className="uc-company-logo-entry"/><small>WEB MEMBER ENTRY</small><h1 id="ucell-web-login-title">UCell 會員中心</h1>
   {error&&<p role="alert" className="uc-auth-error">{error}</p>}{message&&<p role="status" className="uc-auth-message">{message}</p>}
   {mode==='login'&&<>
    <p>請選擇登入方式。所有方式登入後都會進入同一個會員帳號與球資料。</p>
@@ -39,7 +42,7 @@ export default function WebMemberEntry({onLineLogin,onAuthenticated}:{onLineLogi
   {mode==='reset'&&<form onSubmit={submitReset} className="uc-auth-form"><h2>設定新密碼</h2><label>新密碼<input type="password" minLength={12} maxLength={256} value={newPassword} onChange={e=>setNewPassword(e.target.value)} required/></label><button disabled={busy}>更新密碼</button></form>}
   {mode==='register'&&<form onSubmit={submitRegister} className="uc-auth-form"><h2>Web 會員註冊</h2><p>目前以 Google 完成 Web 身分驗證；完成註冊只建立會員帳號，不會自動建立資格球。</p>
    {!pendingGoogleIdToken?<div ref={googleRegisterRef} className="uc-google-button" aria-label="使用 Google 註冊"/>:<p className="uc-auth-message">Google 身分已驗證</p>}
-   <label>姓名<input value={legalName} onChange={e=>setLegalName(e.target.value)} required/></label><label>顯示名稱<input value={alias} onChange={e=>setAlias(e.target.value)} required/></label><label>性別代碼<input value={gender} onChange={e=>setGender(e.target.value)} required/></label><label>生日<input type="date" value={birthDate} onChange={e=>setBirthDate(e.target.value)} required/></label><label>手機號碼（聯絡資料）<input placeholder="+886912345678" value={mobile} onChange={e=>setMobile(e.target.value)} required/></label><label>Email（需與 Google 已驗證 Email 相同）<input type="email" value={email} onChange={e=>setEmail(e.target.value)} required/></label><label>設定登入密碼<input type="password" minLength={12} maxLength={256} value={registerPassword} onChange={e=>setRegisterPassword(e.target.value)} required/></label>
+   <label>姓名<input value={legalName} onChange={e=>setLegalName(e.target.value)} required/></label><label>顯示名稱<input value={alias} onChange={e=>setAlias(e.target.value)} required/></label><label>性別代碼<input value={gender} onChange={e=>setGender(e.target.value)} required/></label><label>生日<input type="date" value={birthDate} onChange={e=>setBirthDate(e.target.value)} required/></label><label>國籍<select value={nationalityCode} onChange={e=>setNationalityCode(e.target.value)}>{countryOptions.map(x=><option key={x.code} value={x.code}>{x.label}</option>)}</select></label><label>身分證明文件類型<select value={identityDocumentType} onChange={e=>setIdentityDocumentType(e.target.value)}><option value="NATIONAL_ID">身分證號</option><option value="RESIDENCE_PERMIT">居留證號</option><option value="PASSPORT">護照號碼</option><option value="OTHER">其他</option></select></label><label>身分證明號碼<input required maxLength={64} value={identityDocumentNumber} autoComplete="off" onChange={e=>setIdentityDocumentNumber(e.target.value)}/></label><label>手機號碼（聯絡資料）<input placeholder="+886912345678" value={mobile} onChange={e=>setMobile(e.target.value)} required/></label><label>Email（需與 Google 已驗證 Email 相同）<input type="email" value={email} onChange={e=>setEmail(e.target.value)} required/></label><label>設定登入密碼<input type="password" minLength={12} maxLength={256} value={registerPassword} onChange={e=>setRegisterPassword(e.target.value)} required/></label>
    {contract?<details className="uc-contract"><summary>{contract.title}（{contract.versionCode}）</summary><div>{contract.contentText}</div></details>:<p>正在載入會員契約…</p>}
    <label className="uc-auth-check"><input type="checkbox" checked={accepted} onChange={e=>setAccepted(e.target.checked)}/>我已閱讀並同意上述契約與隱私條款</label>
    <button disabled={busy||!pendingGoogleIdToken||!accepted}>完成會員註冊</button><button type="button" onClick={()=>setMode('login')}>返回登入</button>

@@ -118,7 +118,7 @@ button,input,select,textarea{
 .app .uc-member-identity .uc-identity-copy>small{color:#d9f7f2}
 
 .uc-member-brand{display:flex;align-items:center;gap:10px;min-width:0}
-.uc-member-brand span.uc-company-logo{width:104px}
+.uc-member-brand span.uc-company-logo{width:80px}
 .uc-member-brand small{max-width:140px;overflow-wrap:anywhere;line-height:1.3}
 
 

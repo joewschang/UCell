@@ -56,6 +56,7 @@ it('registers with Google, contract consent and password without OTP fields',asy
   input('姓名').props.onChange({target:{value:'王小明'}});
   input('顯示名稱').props.onChange({target:{value:'小明'}});
   input('生日').props.onChange({target:{value:'1990-01-01'}});
+  input('身分證明號碼').props.onChange({target:{value:'TEST ONLY ID'}});
   input('手機號碼').props.onChange({target:{value:'+886912345678'}});
   input('Email').props.onChange({target:{value:'member@example.invalid'}});
   input('設定登入密碼').props.onChange({target:{value:'LongPassword123!'}});
@@ -66,7 +67,7 @@ it('registers with Google, contract consent and password without OTP fields',asy
  expect(auth.completeRegistration).toHaveBeenCalledWith(expect.objectContaining({
   contractVersionId:'11111111-1111-4111-8111-111111111111',
   legalName:'王小明',alias:'小明',mobile:'+886912345678',email:'member@example.invalid',
-  password:'LongPassword123!',googleIdToken:'GOOGLE_ID_TOKEN_TEST_ONLY'
+  password:'LongPassword123!',googleIdToken:'GOOGLE_ID_TOKEN_TEST_ONLY',nationalityCode:'TW',identityDocumentType:'NATIONAL_ID',identityDocumentNumber:'TEST ONLY ID'
  }));
  const payload=auth.completeRegistration.mock.calls[0][0];
  expect(payload).not.toHaveProperty('challengeId');

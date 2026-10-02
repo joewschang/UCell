@@ -42,5 +42,5 @@ export function AdminCommandBar({children}:{children:ReactNode}){return <div cla
 export function AdminAlertPanel({title,children}:{title:string;children:ReactNode}){return <section className="uc-state" aria-label={title}><h2>{title}</h2>{children}</section>}
 /** Original company artwork, cropped in layout without altering its gold U sphere. */
 export function CompanyLogo({className=''}:{className?:string}){
- return <span className={`uc-company-logo ${className}`}><img src="/ucell-logo.jpg" alt="UCell 宇生國際股份有限公司" width={512} height={288}/></span>;
+ return <span className={`uc-company-logo ${className}`}><img src="/ucell-logo-transparent.png" alt="UCell 宇生國際股份有限公司" width={2128} height={739}/></span>;
 }
