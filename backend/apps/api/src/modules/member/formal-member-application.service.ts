@@ -18,6 +18,11 @@ export type FormalDraftInput={
  hasSpouse?:boolean;spouseName?:string;spouseNationalityCode?:string;
  spouseIdentityDocumentType?:'NATIONAL_ID'|'RESIDENCE_PERMIT'|'PASSPORT'|'OTHER';spouseIdentityDocumentNumber?:string;
 };
+export type AdminPaperFormalInput=FormalDraftInput&{
+ representativePersonId:string;
+ paperApplicationReference:string;
+};
+
 
 @Injectable()
 export class FormalMemberApplicationService {
@@ -149,6 +154,52 @@ export class FormalMemberApplicationService {
    if(['P2002','P2034'].includes((error as any).code))throw new ConflictException({code:'RETRYABLE_CONFLICT'});
    throw error;
   }
+ }
+
+ async createPaper(input:AdminPaperFormalInput,actorId:string,key:string,requestId:string){
+  if(!actorId)throw new ConflictException({code:'ADMIN_PERSON_ID_REQUIRED'});
+  const normalized=this.normalize(input) as any;
+  const paperReference=this.required(input.paperApplicationReference,'PAPER_APPLICATION_REFERENCE_REQUIRED');
+  const representative=await this.db.person.findUnique({where:{personId:input.representativePersonId}});
+  if(!representative)throw new NotFoundException({code:'REPRESENTATIVE_PERSON_NOT_FOUND'});
+  const primaryId=normalized.applicantType==='LEGAL_ENTITY'?normalized.representativeIdentityDocumentNumber:normalized.identityDocumentNumber;
+  const primaryNationality=normalized.applicantType==='LEGAL_ENTITY'?normalized.representativeNationalityCode:normalized.nationalityCode;
+  const primaryDocumentType=normalized.applicantType==='LEGAL_ENTITY'?normalized.representativeIdentityDocumentType:normalized.identityDocumentType;
+  const applicantIdentityFingerprint=this.fingerprint.fingerprintIdentityDocument(primaryNationality,primaryDocumentType,primaryId);
+  const spouseIdentityFingerprint=normalized.hasSpouse?this.fingerprint.fingerprintIdentityDocument(normalized.spouseNationalityCode,normalized.spouseIdentityDocumentType,normalized.spouseIdentityDocumentNumber):null;
+  const safeRequest={paperReference,representativePersonId:input.representativePersonId,applicantType:normalized.applicantType,applicantIdentityFingerprint,spouseIdentityFingerprint,legalEntityRegistrationNo:normalized.legalEntityRegistrationNo??null};
+  return this.idempotency.execute('admin:formal-paper:create:'+actorId,key,safeRequest,async tx=>{
+   const now=new Date();
+   const contract=await tx.contractDocumentVersion.findFirst({where:{contractDocumentVersionId:normalized.formalContractVersionId,required:true,audience:{in:['FORMAL_MEMBER','ALL_MEMBERS']},effectiveFrom:{lte:now},OR:[{effectiveTo:null},{effectiveTo:{gt:now}}]}});
+   if(!contract)throw new UnprocessableEntityException({code:'FORMAL_CONTRACT_VERSION_INVALID'});
+   let legalEntityId:string|null=null;
+   if(normalized.applicantType==='LEGAL_ENTITY'){
+    let entity=await tx.legalEntity.findUnique({where:{registrationNo:normalized.legalEntityRegistrationNo}});
+    if(entity&&entity.registeredName!==normalized.legalEntityName)throw new ConflictException({code:'LEGAL_ENTITY_REGISTRATION_CONFLICT'});
+    if(!entity)entity=await tx.legalEntity.create({data:{registeredName:normalized.legalEntityName,registrationNo:normalized.legalEntityRegistrationNo,registeredAddress:normalized.legalEntityRegisteredAddress,registrationCountryCode:normalized.legalEntityRegistrationCountryCode,status:'DRAFT'}});
+    legalEntityId=entity.legalEntityId;
+    const currentRep=await tx.legalEntityRepresentative.findFirst({where:{legalEntityId,effectiveTo:null,roleCode:'PRIMARY_OPERATING_REPRESENTATIVE'}});
+    if(currentRep&&currentRep.personId!==representative.personId)throw new ConflictException({code:'LEGAL_ENTITY_REPRESENTATIVE_CONFLICT'});
+    if(!currentRep)await tx.legalEntityRepresentative.create({data:{legalEntityId,personId:representative.personId,roleCode:'PRIMARY_OPERATING_REPRESENTATIVE',effectiveFrom:now}});
+   }
+   const open=await tx.formalMemberApplication.findFirst({where:{personId:representative.personId,status:{in:['DRAFT','SUBMITTED','UNDER_REVIEW','NEEDS_MORE_INFO'] as any}}});
+   if(open)throw new ConflictException({code:'FORMAL_APPLICATION_ALREADY_OPEN'});
+   const encrypted=this.pii.encrypt(normalized),payloadHash=createHash('sha256').update(JSON.stringify(normalized)).digest('hex');
+   const app=await tx.formalMemberApplication.create({data:{
+    personId:representative.personId,applicantType:normalized.applicantType,sourceChannel:'ADMIN_PAPER',paperApplicationReference:paperReference,enteredBy:actorId,enteredAt:now,
+    legalEntityId,legalEntityRegistrationNo:normalized.applicantType==='LEGAL_ENTITY'?normalized.legalEntityRegistrationNo:null,
+    applicantNationalityCode:primaryNationality,applicantIdentityDocumentType:primaryDocumentType,applicantIdentityFingerprint,spouseIdentityFingerprint,
+    spouseVerificationStatus:normalized.hasSpouse?'PENDING':'NOT_APPLICABLE',crossLineReviewStatus:'NOT_EVALUATED',currentSnapshotHash:payloadHash,status:'DRAFT'
+   }});
+   await tx.formalMemberApplicationSnapshot.create({data:{formalMemberApplicationId:app.formalMemberApplicationId,version:1,payloadCiphertext:encrypted.ciphertext,keyVersion:encrypted.keyVersion,payloadHash}});
+   const required=normalized.applicantType==='LEGAL_ENTITY'
+    ?['CORPORATE_REGISTRATION','REPRESENTATIVE_IDENTITY_FRONT','REPRESENTATIVE_IDENTITY_BACK','CORPORATE_BANK_PROOF']
+    :['IDENTITY_FRONT','IDENTITY_BACK','BANKBOOK_COVER'];
+   await tx.formalPaperEvidence.createMany({data:required.map((evidenceType:any)=>({formalMemberApplicationId:app.formalMemberApplicationId,evidenceType,status:'PENDING'}))});
+   const correlationId=randomUUID();
+   await this.audit.write(tx,{actorType:'ADMIN',actorId,action:'FORMAL_PAPER_APPLICATION_ENTERED',entityType:'FormalMemberApplication',entityId:app.formalMemberApplicationId,afterData:{applicantType:normalized.applicantType,sourceChannel:'ADMIN_PAPER',paperApplicationReference:paperReference,legalEntityId},requestId,correlationId});
+   return {id:app.formalMemberApplicationId,status:app.status,applicantType:app.applicantType,sourceChannel:app.sourceChannel,legalEntityId,memberNo:legalEntityId?(await tx.legalEntity.findUniqueOrThrow({where:{legalEntityId}})).memberNo:representative.memberNo,paperApplicationReference:paperReference};
+  });
  }
 
  async verifySpouse(applicationId:string,actorId:string,key:string,requestId:string){
