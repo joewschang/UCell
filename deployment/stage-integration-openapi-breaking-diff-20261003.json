@@ -1,0 +1,125 @@
+[
+  {
+    "id": "new-required-request-property",
+    "text": "added the new required request property `holderType`",
+    "level": 3,
+    "operation": "POST",
+    "operationId": "adminCreateMembershipApplication",
+    "path": "/api/v1/admin/membership-applications",
+    "section": "paths",
+    "fingerprint": "63ca0ce97e23"
+  },
+  {
+    "id": "response-property-enum-value-added",
+    "text": "added the new `LEGAL_ENTITY` enum value to the `data/items/admin360/owner/ownerType` response property for the response status `200`",
+    "comment": "The server may now return a value the previous contract excluded, so a client written against it may not handle the response. If the value set is meant to grow, declare it with x-extensible-enum.",
+    "level": 3,
+    "operation": "GET",
+    "operationId": "adminListPersonQualifications",
+    "path": "/api/v1/admin/persons/{personId}/qualifications",
+    "section": "paths",
+    "fingerprint": "c207eb974cc3"
+  },
+  {
+    "id": "new-required-request-property",
+    "text": "added the new required request property `holderType`",
+    "level": 3,
+    "operation": "POST",
+    "operationId": "adminCreateQualification",
+    "path": "/api/v1/admin/qualifications",
+    "section": "paths",
+    "fingerprint": "5b3340e8384a"
+  },
+  {
+    "id": "response-property-enum-value-added",
+    "text": "added the new `LEGAL_ENTITY` enum value to the `data/admin360/owner/ownerType` response property for the response status `200`",
+    "comment": "The server may now return a value the previous contract excluded, so a client written against it may not handle the response. If the value set is meant to grow, declare it with x-extensible-enum.",
+    "level": 3,
+    "operation": "GET",
+    "operationId": "adminGetQualification",
+    "path": "/api/v1/admin/qualifications/{qualificationId}",
+    "section": "paths",
+    "fingerprint": "b2db469931e3"
+  },
+  {
+    "id": "new-required-request-property",
+    "text": "added the new required request property `identityDocumentNumber`",
+    "level": 3,
+    "operation": "POST",
+    "operationId": "memberSaveFormalApplicationDraft",
+    "path": "/api/v1/member/formal-applications",
+    "section": "paths",
+    "fingerprint": "1a42e8a3f12b"
+  },
+  {
+    "id": "new-required-request-property",
+    "text": "added the new required request property `identityDocumentType`",
+    "level": 3,
+    "operation": "POST",
+    "operationId": "memberSaveFormalApplicationDraft",
+    "path": "/api/v1/member/formal-applications",
+    "section": "paths",
+    "fingerprint": "76ef50157f2c"
+  },
+  {
+    "id": "new-required-request-property",
+    "text": "added the new required request property `nationalityCode`",
+    "level": 3,
+    "operation": "POST",
+    "operationId": "memberSaveFormalApplicationDraft",
+    "path": "/api/v1/member/formal-applications",
+    "section": "paths",
+    "fingerprint": "e3bea22c0587"
+  },
+  {
+    "id": "new-required-request-property-with-default",
+    "text": "added the new required request property `hasSpouse` with a default value",
+    "comment": "A request that omits this required property is invalid under the new contract, even though the property has a default. The default is a server-side fallback, it does not make the omitted property valid. Downgrade this check with --severity-levels if omitting the property is safe for your clients.",
+    "level": 3,
+    "operation": "POST",
+    "operationId": "memberSaveFormalApplicationDraft",
+    "path": "/api/v1/member/formal-applications",
+    "section": "paths",
+    "fingerprint": "6d4fe9871fb6"
+  },
+  {
+    "id": "new-required-request-property",
+    "text": "added the new required request property `identityDocumentNumber`",
+    "level": 3,
+    "operation": "POST",
+    "operationId": "registerLineNetworkMember",
+    "path": "/api/v1/member/registration/network",
+    "section": "paths",
+    "fingerprint": "46b44a9e5904"
+  },
+  {
+    "id": "new-required-request-property",
+    "text": "added the new required request property `identityDocumentType`",
+    "level": 3,
+    "operation": "POST",
+    "operationId": "registerLineNetworkMember",
+    "path": "/api/v1/member/registration/network",
+    "section": "paths",
+    "fingerprint": "50203ad399a1"
+  },
+  {
+    "id": "new-required-request-property",
+    "text": "added the new required request property `nationalityCode`",
+    "level": 3,
+    "operation": "POST",
+    "operationId": "registerLineNetworkMember",
+    "path": "/api/v1/member/registration/network",
+    "section": "paths",
+    "fingerprint": "786f9972dfbe"
+  },
+  {
+    "id": "request-property-removed",
+    "text": "removed the request property `nationalId`",
+    "level": 2,
+    "operation": "POST",
+    "operationId": "memberSaveFormalApplicationDraft",
+    "path": "/api/v1/member/formal-applications",
+    "section": "paths",
+    "fingerprint": "fba5d2daa0f6"
+  }
+]

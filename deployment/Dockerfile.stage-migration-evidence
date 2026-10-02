@@ -1,0 +1,2 @@
+FROM ucellstageacr5mafbbsq33mgu.azurecr.io/ucell-api@sha256:324222a587b7f870d3b45bb76fe30a8d03c24fcdd6b48dc230a3cb6c708294f4
+COPY backend/scripts/stage-migration-eol-evidence.json /app/scripts/stage-migration-eol-evidence.json

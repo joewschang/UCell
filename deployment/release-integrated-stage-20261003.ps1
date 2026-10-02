@@ -7,12 +7,13 @@ if(-not (Select-String -LiteralPath $apiTestLog -Pattern '^API_JEST_ISOLATED_PAS
 $rg='rg-ucell-stage'
 $registry='ucellstageacr5mafbbsq33mgu.azurecr.io'
 $backendImage="$registry/ucell-api@sha256:324222a587b7f870d3b45bb76fe30a8d03c24fcdd6b48dc230a3cb6c708294f4"
+$migrationImage="$registry/ucell-api@sha256:e4e7a608df566b57a4146ea6c6db06369294a8ef4c8b03042e2532043410e0d2"
 $adminImage="$registry/ucell-admin@sha256:3cfab35ff427ec696d26ec8ac9136a9246abd05516aede83b03d5050bd6c257f"
 $memberImage="$registry/ucell-member@sha256:0976b4d3316021d1ac4088eadcbb6e9a365673886a4184b086783bf4720d65bf"
 function Az-Checked([string[]]$Arguments){$result=& az @Arguments;if($LASTEXITCODE -ne 0){throw "Azure operation failed: $($Arguments[0..1] -join ' ')"};$result}
 $before=@();foreach($appName in @('ucell-stage-api','ucell-stage-worker','ucell-stage-admin','ucell-stage-member')){$before+=Az-Checked @('containerapp','show','--name',$appName,'--resource-group',$rg,'--query','{name:name,image:properties.template.containers[0].image,revision:properties.latestReadyRevisionName}','-o','json','--only-show-errors')|ConvertFrom-Json}
 $before|ConvertTo-Json -Depth 5|Set-Content (Join-Path $PSScriptRoot 'stage-integration-before-20261003.json') -Encoding utf8
-Az-Checked @('containerapp','job','update','--name','ucell-stage-migrate','--resource-group',$rg,'--image',$backendImage,'--container-name','ucell-stage-migrate','--command','node','--args','scripts/stage-profile-migration-recovery.mjs','--query','name','-o','tsv','--only-show-errors')|Out-Null
+Az-Checked @('containerapp','job','update','--name','ucell-stage-migrate','--resource-group',$rg,'--image',$migrationImage,'--container-name','ucell-stage-migrate','--command','node','--args','scripts/stage-profile-migration-recovery.mjs','--query','name','-o','tsv','--only-show-errors')|Out-Null
 # The existing recovery runner checks every applied SQL checksum before forward migrations.
 $execution=(Az-Checked @('containerapp','job','start','--name','ucell-stage-migrate','--resource-group',$rg,'--query','name','-o','tsv','--only-show-errors')).Trim()
 if(-not $execution){throw 'Migration execution name missing.'}
