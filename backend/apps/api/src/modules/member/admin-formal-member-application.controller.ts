@@ -62,6 +62,9 @@ class AdminDocumentScanDto {
 @Controller('admin/formal-member-applications')
 export class AdminFormalMemberApplicationController {
  constructor(private readonly service:FormalMemberApplicationService,private readonly conflicts:FormalMembershipConflictService,private readonly kyc:FormalKycDocumentService){}
+ @Get('legal-entities/search')
+ @ApiOperation({operationId:'adminSearchFormalLegalEntities',description:'Search active formal LegalEntity owners for Qualification/Ball application creation.'})
+ searchLegalEntities(@Query('q') q?:string,@Query('take') take?:string){return this.service.adminLegalEntities({q:q||undefined,take:Number(take??20)});}
  @Get('contracts/required')
  @ApiOperation({operationId:'adminFormalRequiredContracts',description:'List currently effective required Formal Member contract versions for back-office paper intake.'})
  requiredContracts(){return this.service.adminRequiredContracts();}
