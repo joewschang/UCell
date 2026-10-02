@@ -1,0 +1,31 @@
+{
+  "verifiedAtUtc": "2026-10-02T19:38:40.0032597Z",
+  "memberSource": "d3b4c10b87a070e36bcf88b67af77a5f12c2e394",
+  "memberImage": "ucellstageacr5mafbbsq33mgu.azurecr.io/ucell-member@sha256:77410bc6bb7521b8839e3fc9e87b00cac271420d9ac439331fb58c8dbc65086c",
+  "memberTests": 235,
+  "adminTests": 238,
+  "stageContractVersion": "STAGE-EMPTY-20261003",
+  "stageContractId": "788a0692-13ad-420b-b56e-465ffcece744",
+  "contractJob": "ucell-stage-migrate-7ikjv6d",
+  "contractJobStatus": "Succeeded",
+  "contractContentHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "productionContractDocuments": "BLOCKED: user must supply approved documents before Production",
+  "realRegistrationCompletion": "PENDING: user to enter own details and password",
+  "assets": [
+    {
+      "sha256": "1204ec96d24dd7951b92e9fa6a6f9526ea1b4ba227e5606fbb338ba954149d5c",
+      "asset": "/assets/index-B7xlPjcS.js",
+      "frontend": "member"
+    },
+    {
+      "sha256": "66c5ce98d8193b3d364f6e89ef095a037d589bd014a8edd7df5f6b4d98461e18",
+      "asset": "/assets/index-DxR5XhEb.css",
+      "frontend": "member"
+    },
+    {
+      "sha256": "e3d6bb9456117bafb3860cd99a5dfab29bb30b0c1a0dca4b7433a5550a1de75c",
+      "asset": "/ucell-logo-transparent.png",
+      "frontend": "member"
+    }
+  ]
+}
