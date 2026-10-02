@@ -4,6 +4,7 @@ import {createHash,randomUUID} from 'node:crypto';
 import {AuditService} from '../../common/audit/audit.service';
 import {IdempotencyService} from '../../common/idempotency/idempotency.service';
 import {OrganizationService} from '../organization/organization.service';
+import {QualificationAccessService} from '../auth/qualification-access.service';
 
 type PlacementInput={qualificationId:string;binaryParentQualificationId:string;side:'LEFT'|'RIGHT';reasonCode?:string};
 
@@ -12,7 +13,10 @@ export class QualificationPlacementService {
  constructor(private readonly db:PrismaService,private readonly idempotency:IdempotencyService,private readonly audit:AuditService,private readonly organization:OrganizationService){}
 
  async pendingForSponsorOwner(personId:string,now=new Date()){
-  const owned=await this.db.qualification.findMany({where:{currentHolderPersonId:personId},select:{qualificationId:true}}),sponsorIds=owned.map(x=>x.qualificationId);
+  const owned=await this.db.qualification.findMany({where:{OR:[
+   {currentHolderPersonId:personId},
+   {currentHolderLegalEntity:{representatives:{some:{personId,roleCode:'PRIMARY_OPERATING_REPRESENTATIVE',effectiveFrom:{lte:now},OR:[{effectiveTo:null},{effectiveTo:{gt:now}}]}}}}
+  ]},select:{qualificationId:true}}),sponsorIds=owned.map(x=>x.qualificationId);
   const rows=await this.db.qualificationSetup.findMany({where:{setupStatus:{in:['PLACEMENT_PENDING','PLACEMENT_OVERDUE']},finalSponsorQualificationId:{in:sponsorIds}},orderBy:{placementDueAt:'asc'},take:100});
   return rows.map(x=>this.view(x,now));
  }
@@ -45,7 +49,7 @@ export class QualificationPlacementService {
    if(!qualification||!sponsor||!parent)throw new NotFoundException({code:'PLACEMENT_RESOURCE_NOT_FOUND'});
    if(existingPlacement)throw new ConflictException({code:'PLACEMENT_CONFLICT'});
    if(!sponsorEdge||sponsorEdge.sponsorQualificationId!==setup.finalSponsorQualificationId)throw new ConflictException({code:'SPONSOR_CONFIRMATION_MISSING'});
-   if(placedByType==='SPONSOR_OWNER'&&sponsor.currentHolderPersonId!==actorPersonId)throw new ForbiddenException({code:'PLACEMENT_AUTHORITY_DENIED'});
+   if(placedByType==='SPONSOR_OWNER'){if(!actorPersonId)throw new ForbiddenException({code:'PLACEMENT_AUTHORITY_DENIED'});try{await new QualificationAccessService(tx as any).assertHolder(actorPersonId,sponsor.qualificationId);}catch{throw new ForbiddenException({code:'PLACEMENT_AUTHORITY_DENIED'});}}
    if(parent.status!=='EFFECTIVE')throw new UnprocessableEntityException({code:'BINARY_PARENT_NOT_ELIGIBLE'});
    const side=input.side as SideCode;await this.organization.assertBinarySlotAvailable(tx,input.binaryParentQualificationId,side);await this.organization.assertNoBinaryCycle(tx,input.qualificationId,input.binaryParentQualificationId);await this.organization.assertFirstThirdLeftRule(tx,setup.finalSponsorQualificationId,sponsorEdge.sponsorSequenceNo,input.binaryParentQualificationId,side);
    const placedAt=new Date(),correlationId=randomUUID(),evidenceBody={qualificationId:input.qualificationId,sponsorQualificationId:setup.finalSponsorQualificationId,binaryParentQualificationId:input.binaryParentQualificationId,side,placedByType,placedByPersonId:actorPersonId??null,placedAt:placedAt.toISOString(),reasonCode:input.reasonCode??null,policyVersion:setup.setupPolicyVersion,previousStatus:setup.setupStatus},evidenceHash=createHash('sha256').update(JSON.stringify(evidenceBody)).digest('hex');
@@ -57,5 +61,5 @@ export class QualificationPlacementService {
   });}catch(error){if(['P2002','P2034'].includes((error as any).code)||((error as any).code==='P2010'&&(error as any).meta?.code==='40001'))throw new ConflictException({code:'PLACEMENT_CONFLICT'});throw error;}
  }
 
- private view(row:any,now:Date){const status=row.setupStatus==='PLACEMENT_PENDING'&&row.placementDueAt&&row.placementDueAt<=now?'PLACEMENT_OVERDUE':row.setupStatus,ageMs=row.placementRequestedAt?Math.max(0,now.getTime()-row.placementRequestedAt.getTime()):0,h=Math.floor(ageMs/3600000),agingBucket=status==='PLACEMENT_OVERDUE'||h>=72?'OVERDUE':h>=48?'48_72H':h>=24?'24_48H':'0_24H';return {qualificationId:row.qualificationId,ownerPersonId:row.ownerPersonId,packageType:row.packageType,sponsorQualificationId:row.finalSponsorQualificationId,requestedAt:row.placementRequestedAt?.toISOString()??null,dueAt:row.placementDueAt?.toISOString()??null,placedAt:row.placedAt?.toISOString()??null,status,agingBucket,policyVersion:row.setupPolicyVersion};}
+ private view(row:any,now:Date){const status=row.setupStatus==='PLACEMENT_PENDING'&&row.placementDueAt&&row.placementDueAt<=now?'PLACEMENT_OVERDUE':row.setupStatus,ageMs=row.placementRequestedAt?Math.max(0,now.getTime()-row.placementRequestedAt.getTime()):0,h=Math.floor(ageMs/3600000),agingBucket=status==='PLACEMENT_OVERDUE'||h>=72?'OVERDUE':h>=48?'48_72H':h>=24?'24_48H':'0_24H';return {qualificationId:row.qualificationId,ownerPersonId:row.ownerPersonId,ownerLegalEntityId:row.ownerLegalEntityId,packageType:row.packageType,sponsorQualificationId:row.finalSponsorQualificationId,requestedAt:row.placementRequestedAt?.toISOString()??null,dueAt:row.placementDueAt?.toISOString()??null,placedAt:row.placedAt?.toISOString()??null,status,agingBucket,policyVersion:row.setupPolicyVersion};}
 }
