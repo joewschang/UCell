@@ -20,7 +20,7 @@ describe('R1.0B formal membership spouse/corporate controls',()=>{
         legalEntityRegistrationNo:null,legalEntityId:null,
         person:{personId:'person-a',membershipState:'NETWORK_MEMBER'},legalEntity:null,
       }))},
-      formalIdentityIndex:{findUnique:jest.fn(async({where}:any)=>where.nationalIdFingerprint==='b'.repeat(64)?{personId:'person-b'}:null)},
+      formalIdentityIndex:{findUnique:jest.fn(async({where}:any)=>where.identityDocumentFingerprint==='b'.repeat(64)?{personId:'person-b'}:null)},
       spouseRelationship:{findFirst:jest.fn(async()=>null)},
       legalEntity:{findUnique:jest.fn(async()=>null)},
       legalEntityRepresentative:{findFirst:jest.fn(async()=>null)},
