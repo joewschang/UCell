@@ -5,7 +5,7 @@ import { MemberWebAuthService } from './member-web-auth.service';
 
 class GoogleExchangeDto{ @ApiProperty() @IsString() @MinLength(1) @MaxLength(16384) idToken!:string; }
 class PasswordLoginDto{
- @ApiProperty({description:'Immutable ten-digit Member number'}) @Matches(/^\d{10}$/) memberNo!:string;
+ @ApiProperty({description:'Member number, email or mobile login identifier; field name retained for existing clients'}) @IsString() @MinLength(3) @MaxLength(254) memberNo!:string;
  @ApiProperty({minLength:12,maxLength:256}) @IsString() @MinLength(12) @MaxLength(256) password!:string;
 }
 class ForgotPasswordDto{ @ApiProperty() @IsString() @MinLength(3) @MaxLength(254) identifier!:string; }
@@ -21,7 +21,7 @@ export class MemberWebAuthController{
  @Post('google/exchange') @ApiOperation({operationId:'memberGoogleExchange',description:'Verify Google OIDC server-side, resolve an explicitly linked GOOGLE ProviderIdentity and issue the standard opaque Member session.'})
  google(@Body() body:GoogleExchangeDto){return this.service.googleExchange(body.idToken);}
 
- @Post('password/login') @ApiOperation({operationId:'memberPasswordLogin',description:'Login using immutable memberNo plus a dedicated Member password credential. Generic failures do not disclose account existence.'})
+ @Post('password/login') @ApiOperation({operationId:'memberPasswordLogin',description:'Login using member number, email or mobile plus a dedicated Member password credential. Ambiguous identifiers and invalid credentials fail without selecting an arbitrary account.'})
  password(@Body() body:PasswordLoginDto){return this.service.passwordLogin(body.memberNo,body.password);}
 
  @Post('password/forgot') @ApiOperation({operationId:'memberForgotPassword',description:'Always returns accepted. If an eligible account/email exists, sends a short-lived single-use reset link through the configured provider.'})

@@ -45,6 +45,16 @@ describe('Integrated Web identity and password lifecycle (real isolated DB, synt
   expect(await identities.resolve({provider:'MEMBER_LOCAL',subject:person.memberNo,personId:person.personId})).toMatchObject({personId:person.personId});
   expect(await db.qualification.count()).toBe(before);
  });
+ it('accepts member number, case-insensitive email and Taiwan local/international mobile with the same password',async()=>{
+  const payload=input(),registered=await registration.complete(payload,randomUUID());
+  for(const identifier of [registered.memberNo,' '+payload.email.toUpperCase()+' ',payload.mobile,'0'+payload.mobile.slice(4)]){
+   const session=await auth.passwordLogin(identifier,payload.password);
+   expect((await sessions.authenticate(session.accessToken)).subject).toBe(registered.memberNo);
+  }
+  await expect(auth.passwordLogin(payload.email,'INCORRECT_PASSWORD')).rejects.toMatchObject({response:{code:'MEMBER_LOGIN_INVALID'}});
+  await db.person.create({data:{legalName:'TEST ONLY DUPLICATE',email:payload.email,mobile:payload.mobile}});
+  for(const identifier of [payload.email,payload.mobile])await expect(auth.passwordLogin(identifier,payload.password)).rejects.toMatchObject({response:{code:'MEMBER_LOGIN_INVALID'}});
+ });
  it('rejects a Google email mismatch before creating any Person',async()=>{
   const payload=input(),before=await db.person.count();
   await expect(registration.complete({...payload,email:'different@example.invalid'},randomUUID())).rejects.toMatchObject({response:{code:'GOOGLE_EMAIL_MISMATCH'}});
