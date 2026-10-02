@@ -321,13 +321,32 @@ export class FormalMemberApplicationService {
   return this.view(application,payload,snapshot.version);
  }
 
+ async adminDetail(applicationId:string,actorId:string,requestId:string){
+  if(!actorId)throw new ConflictException({code:'ADMIN_PERSON_ID_REQUIRED'});
+  const application=await this.db.formalMemberApplication.findUnique({
+   where:{formalMemberApplicationId:applicationId},
+   include:{person:{select:{personId:true,memberNo:true,legalName:true,membershipState:true}},legalEntity:true,snapshots:{orderBy:{version:'desc'},take:1},paperEvidence:{orderBy:{evidenceType:'asc'}}}
+  });
+  if(!application||!application.snapshots[0])throw new NotFoundException({code:'FORMAL_APPLICATION_NOT_FOUND'});
+  const snapshot=application.snapshots[0],payload=this.pii.decrypt<any>(snapshot.payloadCiphertext,snapshot.keyVersion);
+  await this.db.$transaction(tx=>this.audit.write(tx,{actorType:'ADMIN',actorId,action:'FORMAL_APPLICATION_PII_VIEWED',entityType:'FormalMemberApplication',entityId:applicationId,afterData:{version:snapshot.version,applicantType:application.applicantType,sourceChannel:application.sourceChannel},requestId,correlationId:randomUUID()}));
+  return {
+   id:application.formalMemberApplicationId,status:application.status,applicantType:application.applicantType,sourceChannel:application.sourceChannel,
+   paperApplicationReference:application.paperApplicationReference,enteredAt:application.enteredAt?.toISOString()??null,
+   person:application.person,
+   legalEntity:application.legalEntity?{legalEntityId:application.legalEntity.legalEntityId,memberNo:application.legalEntity.memberNo,registeredName:application.legalEntity.registeredName,registrationNo:application.legalEntity.registrationNo,registrationCountryCode:application.legalEntity.registrationCountryCode,status:application.legalEntity.status,membershipState:application.legalEntity.membershipState}:null,
+   spouseVerificationStatus:application.spouseVerificationStatus,crossLineReviewStatus:application.crossLineReviewStatus,crossLineConflictCode:application.crossLineConflictCode,
+   version:snapshot.version,payload,paperEvidence:application.paperEvidence.map(row=>({id:row.formalPaperEvidenceId,type:row.evidenceType,status:row.status,sourceReference:row.sourceReference,reviewedAt:row.reviewedAt?.toISOString()??null,note:row.note}))
+  };
+ }
+
  async adminList(input:{status?:string;take?:number}={}){
   const take=Math.min(Math.max(input.take??50,1),100);
   const rows=await this.db.formalMemberApplication.findMany({where:input.status?{status:input.status}:undefined,include:{person:{select:{legalName:true,membershipState:true}},snapshots:{select:{version:true,payloadHash:true},orderBy:{version:'desc'},take:1}},orderBy:{updatedAt:'desc'},take});
   return rows.map(row=>({
    id:row.formalMemberApplicationId,
    personNameMasked:row.person.legalName?(row.person.legalName.slice(0,1)+'*'.repeat(Math.max(row.person.legalName.length-1,1))):'**',
-   applicantType:row.applicantType,membershipState:row.person.membershipState,status:row.status,
+   applicantType:row.applicantType,sourceChannel:row.sourceChannel,paperApplicationReference:row.paperApplicationReference,membershipState:row.person.membershipState,status:row.status,
    spouseVerificationStatus:row.spouseVerificationStatus,crossLineReviewStatus:row.crossLineReviewStatus,crossLineConflictCode:row.crossLineConflictCode,
    version:row.snapshots[0]?.version??null,payloadHash:row.snapshots[0]?.payloadHash??row.currentSnapshotHash,
    createdAt:row.createdAt.toISOString(),updatedAt:row.updatedAt.toISOString(),submittedAt:row.submittedAt?.toISOString()??null,reviewedAt:row.reviewedAt?.toISOString()??null,decisionReasonCode:row.decisionReasonCode,
