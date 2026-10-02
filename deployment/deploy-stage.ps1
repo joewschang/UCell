@@ -64,7 +64,7 @@ Invoke-AzChecked 'install Container Apps extension' @('extension','add','--name'
 foreach($p in @('Microsoft.App','Microsoft.ContainerRegistry','Microsoft.DBforPostgreSQL','Microsoft.Insights','Microsoft.KeyVault','Microsoft.ManagedIdentity','Microsoft.OperationalInsights','Microsoft.Storage')){Invoke-AzChecked "register $p" @('provider','register','--namespace',$p,'--wait','--only-show-errors')|Out-Null}
 Invoke-AzChecked 'create Stage resource group' @('group','create','--name',$ResourceGroup,'--location',$Location,'--only-show-errors')|Out-Null
 $deployment=(Invoke-AzChecked 'deploy Stage foundation' @('deployment','group','create','--resource-group',$ResourceGroup,'--template-file','infra/stage/foundation.bicep','--parameters',"postgresAdminUser=$PostgresAdminUser", "postgresAdminPassword=$password",'--query','properties.outputs','-o','json','--only-show-errors')|ConvertFrom-Json)
-$acr=$deployment.acrName.value; $identity=$deployment.workloadIdentityId.value; $environment=$deployment.containerEnvironmentName.value; $hostName=$deployment.postgresHost.value; $insights=$deployment.applicationInsightsConnectionString.value
+$acr=$deployment.acrName.value; $identity=$deployment.workloadIdentityId.value; $identityClientId=$deployment.workloadIdentityClientId.value; $environment=$deployment.containerEnvironmentName.value; $hostName=$deployment.postgresHost.value; $storageAccount=$deployment.storageAccountName.value; $kycContainer=$deployment.kycStorageContainerName.value; $insights=$deployment.applicationInsightsConnectionString.value
 $databaseUrl="postgresql://$([Uri]::EscapeDataString($PostgresAdminUser)):$([Uri]::EscapeDataString($password))@${hostName}:5432/ucell_stage?sslmode=require"; $registryServer="$acr.azurecr.io"
 
 foreach($r in @('ucell-backend','ucell-worker')){
@@ -73,7 +73,7 @@ foreach($r in @('ucell-backend','ucell-worker')){
   else{Invoke-AzChecked "build $r" @('acr','build','--registry',$acr,'--image',"${r}:$ImageTag",'--file',$df,'.','--only-show-errors')|Out-Null}
 }
 $backendImage=Resolve-Image 'ucell-backend'; $workerImage=Resolve-Image 'ucell-worker'
-$serverEnv=@('NODE_ENV=staging','ADMIN_AUTH_BYPASS=false','SWAGGER_ENABLED=true',"APPLICATIONINSIGHTS_CONNECTION_STRING=$insights",'UCELL_ENVIRONMENT=STAGE','DATABASE_URL=secretref:database-url',"UCELL_INVENTORY_WAREHOUSE_ID=$InventoryWarehouseId","UCELL_INVENTORY_POLICY_VERSION=$InventoryPolicyVersion")
+$serverEnv=@('NODE_ENV=staging','ADMIN_AUTH_BYPASS=false','SWAGGER_ENABLED=true',"APPLICATIONINSIGHTS_CONNECTION_STRING=$insights",'UCELL_ENVIRONMENT=STAGE','DATABASE_URL=secretref:database-url',"UCELL_INVENTORY_WAREHOUSE_ID=$InventoryWarehouseId","UCELL_INVENTORY_POLICY_VERSION=$InventoryPolicyVersion","KYC_STORAGE_ACCOUNT_NAME=$storageAccount","KYC_STORAGE_CONTAINER=$kycContainer","KYC_STORAGE_MANAGED_IDENTITY_CLIENT_ID=$identityClientId")
 $serverRemove=@()
 if($LineLoginChannelId){$serverEnv+="LINE_LOGIN_CHANNEL_ID=$LineLoginChannelId"}else{$serverRemove+='LINE_LOGIN_CHANNEL_ID'}
 if($EntraTenantId){$serverEnv+="ENTRA_TENANT_ID=$EntraTenantId"}else{$serverRemove+='ENTRA_TENANT_ID'}
