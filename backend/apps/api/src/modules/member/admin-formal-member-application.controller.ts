@@ -1,8 +1,9 @@
-import {Body,Controller,Get,Headers,Param,ParseUUIDPipe,Post,Query,Req,UseGuards} from '@nestjs/common';
+import {Body,Controller,Get,Headers,Param,ParseUUIDPipe,Post,Query,Req,StreamableFile,UseGuards} from '@nestjs/common';
 import {ApiBearerAuth,ApiHeader,ApiOperation,ApiProperty,ApiPropertyOptional,ApiTags} from '@nestjs/swagger';
 import {Roles} from '../auth/roles.decorator';
 import {FormalMemberApplicationService,type AdminPaperFormalInput} from './formal-member-application.service';
 import {FormalMembershipConflictService} from './formal-membership-conflict.service';
+import {FormalKycDocumentService} from './formal-kyc-document.service';
 import {IdempotencyGuard} from '../../common/guards/idempotency.guard';
 import {IsBoolean,IsDateString,IsEmail,IsIn,IsOptional,IsString,IsUUID,Matches,MaxLength,ValidateIf} from 'class-validator';
 
@@ -51,12 +52,16 @@ class AdminPaperEvidenceReviewDto {
  @ApiPropertyOptional({maxLength:500}) @IsOptional() @IsString() @MaxLength(500) note?:string;
 }
 
+class AdminDocumentScanDto {
+ @ApiProperty({enum:['CLEAN','INFECTED','FAILED']}) @IsIn(['CLEAN','INFECTED','FAILED']) status!:'CLEAN'|'INFECTED'|'FAILED';
+}
+
 @ApiTags('Admin - Formal Member Application')
 @ApiBearerAuth('adminBearer')
 @Roles('SUPER_ADMIN','MEMBERSHIP_OPS','COMPLIANCE_AUDIT')
 @Controller('admin/formal-member-applications')
 export class AdminFormalMemberApplicationController {
- constructor(private readonly service:FormalMemberApplicationService,private readonly conflicts:FormalMembershipConflictService){}
+ constructor(private readonly service:FormalMemberApplicationService,private readonly conflicts:FormalMembershipConflictService,private readonly kyc:FormalKycDocumentService){}
  @Post('paper') @UseGuards(IdempotencyGuard) @ApiHeader({name:'Idempotency-Key',required:true})
  @ApiOperation({operationId:'adminCreatePaperFormalMemberApplication',description:'Back-office entry for paper INDIVIDUAL or LEGAL_ENTITY formal applications. Corporate applications are paper-only. Creates no Qualification/Ball.'})
  createPaper(@Body() body:AdminPaperFormalApplicationDto,@Headers('idempotency-key') key:string,@Req() req:any){return this.service.createPaper(body,req.user?.personId,key,req.requestId);}
@@ -73,6 +78,12 @@ export class AdminFormalMemberApplicationController {
  @Post(':id/approve')
  @ApiOperation({operationId:'adminApproveFormalMember',description:'Approve a fully reviewed Person or LegalEntity as FORMAL_MEMBER. Does not create a Qualification/Ball; packages are purchased separately.'})
  approve(@Param('id',new ParseUUIDPipe()) id:string,@Req() req:any){return this.service.approve(id,req.user?.personId,req.requestId);}
+ @Get(':id/documents') @ApiOperation({operationId:'adminFormalApplicationDocuments',description:'List KYC document metadata for review; private storage object keys/URLs are not returned.'})
+ documents(@Param('id',new ParseUUIDPipe()) id:string){return this.kyc.adminList(id);}
+ @Get('documents/:documentId/content') @ApiOperation({operationId:'adminFormalApplicationDocumentContent',description:'Audited role-restricted read of one private KYC document image.'})
+ async documentContent(@Param('documentId',new ParseUUIDPipe()) documentId:string,@Req() req:any){const blob=await this.kyc.adminContent(documentId,req.user?.personId,req.requestId);return new StreamableFile(blob.bytes,{type:blob.mimeType});}
+ @Post('documents/:documentId/scan-result') @ApiOperation({operationId:'adminFormalApplicationDocumentScanResult',description:'Record malware/content-safety scan result. CLEAN is required by the Web formal-review gate.'})
+ scanResult(@Param('documentId',new ParseUUIDPipe()) documentId:string,@Body() body:AdminDocumentScanDto,@Req() req:any){return this.kyc.recordScan(documentId,body.status,req.user?.personId,req.requestId);}
  @Get(':id/cross-line-conflicts') @ApiOperation({operationId:'adminFormalMemberCrossLineConflicts',description:'Evaluate spouse, identity, representative and legal-entity duplicate conflicts from privacy-preserving indexes. Returns codes only; no raw national ID.'})
  conflictsFor(@Param('id',new ParseUUIDPipe()) id:string){return this.conflicts.evaluate(id);}
  @Post(':id/cross-line-review')
