@@ -1,3 +1,4 @@
+import {CompanyLogo} from '@ucell/design-system';
 import {useState} from 'react';
 import {Navigate} from 'react-router-dom';
 import {useAuth} from './auth';
@@ -13,7 +14,7 @@ export function LoginPage(){
 
   return <main className="login-shell">
     <section className="login-card">
-      <div className="brand-mark">U</div>
+      <CompanyLogo className="uc-company-logo-entry"/>
       <h1>UCell Admin</h1>
       <p className="muted">R1.0B FROZEN · Admin MVP v0.6.0</p>
 

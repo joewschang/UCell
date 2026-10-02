@@ -1,5 +1,5 @@
 import {MemberPageHeader} from './MemberPageHeader';
-import {MemberAppShell,MemberBottomNav,QualificationSwitcher,MobileActionGrid,MetricCard,MoneyState,LoadingState,ErrorState,EmptyState} from '@ucell/design-system';
+import {CompanyLogo,MemberAppShell,MemberBottomNav,QualificationSwitcher,MobileActionGrid,MetricCard,MoneyState,LoadingState,ErrorState,EmptyState} from '@ucell/design-system';
 import { Link, NavLink, Route, Routes } from 'react-router-dom';
 import { useState, type KeyboardEvent, type ReactNode } from 'react';
 import { useQualification } from './QualificationContext';
@@ -153,7 +153,7 @@ function MemberApp() {
     if (error)
         return <main className="loading"><ErrorState message={error} retry={retry}/></main>;
     return <MemberAppShell>
-      <header><div><b>UCell</b><small>{memberIdentityLabel}</small></div>{current && <Link className="notification-link" to="/notifications" aria-label={data.isMock ? `通知中心，${unread} 則未讀` : '通知中心'}>通知{data.isMock ? ` ${unread}` : ''}</Link>}</header>
+      <header><div className="uc-member-brand"><CompanyLogo/><small>{memberIdentityLabel}</small></div>{current && <Link className="notification-link" to="/notifications" aria-label={data.isMock ? `通知中心，${unread} 則未讀` : '通知中心'}>通知{data.isMock ? ` ${unread}` : ''}</Link>}</header>
       {data.isMock && <aside className="demo-banner" data-environment="mock-visual-only"><strong>DEV 示範模式 · </strong><span>目前為示範資料，不代表真實業績、獎金或訂單。</span></aside>}
       <main>{current ? <><ContextBar /><div key={current.id}><Routes>
         <Route path="/" element={<Home q={current}/>}/>

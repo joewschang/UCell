@@ -40,3 +40,7 @@ export const AdminMetricCard=MetricCard;
 export const AdminDetailDrawer=DetailDrawer;
 export function AdminCommandBar({children}:{children:ReactNode}){return <div className="button-row" role="group" aria-label="營運操作">{children}</div>}
 export function AdminAlertPanel({title,children}:{title:string;children:ReactNode}){return <section className="uc-state" aria-label={title}><h2>{title}</h2>{children}</section>}
+/** Original company artwork, cropped in layout without altering its gold U sphere. */
+export function CompanyLogo({className=''}:{className?:string}){
+ return <span className={`uc-company-logo ${className}`}><img src="/ucell-logo.jpg" alt="UCell 宇生國際股份有限公司" width={512} height={288}/></span>;
+}

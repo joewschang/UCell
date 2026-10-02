@@ -3,3 +3,7 @@
 @import './typography.css';
 @import './components.css';
 @import './utilities.css';
+/* Viewport crop of the supplied 512x288 official company artwork. */
+span.uc-company-logo{display:inline-block;position:relative;overflow:hidden;width:120px;aspect-ratio:326/122;flex-shrink:0;background:#fff;border-radius:6px;vertical-align:middle}
+.uc-company-logo img{position:absolute;width:157.055215%;max-width:none;height:auto;left:-29.141104%;top:-30.327869%;display:block}
+span.uc-company-logo.uc-company-logo-entry{width:200px;max-width:100%;margin-bottom:16px}
