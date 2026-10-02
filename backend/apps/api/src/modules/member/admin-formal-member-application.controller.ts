@@ -1,9 +1,46 @@
-import {Controller,Get,Headers,Param,ParseUUIDPipe,Post,Query,Req,UseGuards} from '@nestjs/common';
-import {ApiBearerAuth,ApiHeader,ApiOperation,ApiTags} from '@nestjs/swagger';
+import {Body,Controller,Get,Headers,Param,ParseUUIDPipe,Post,Query,Req,UseGuards} from '@nestjs/common';
+import {ApiBearerAuth,ApiHeader,ApiOperation,ApiProperty,ApiPropertyOptional,ApiTags} from '@nestjs/swagger';
 import {Roles} from '../auth/roles.decorator';
-import {FormalMemberApplicationService} from './formal-member-application.service';
+import {FormalMemberApplicationService,type AdminPaperFormalInput} from './formal-member-application.service';
 import {FormalMembershipConflictService} from './formal-membership-conflict.service';
 import {IdempotencyGuard} from '../../common/guards/idempotency.guard';
+import {IsBoolean,IsDateString,IsEmail,IsIn,IsOptional,IsString,IsUUID,Matches,MaxLength,ValidateIf} from 'class-validator';
+
+class AdminPaperFormalApplicationDto implements AdminPaperFormalInput {
+ @ApiProperty({format:'uuid'}) @IsUUID() representativePersonId!:string;
+ @ApiProperty({maxLength:120}) @IsString() @Matches(/\S/) @MaxLength(120) paperApplicationReference!:string;
+ @ApiProperty({format:'uuid'}) @IsUUID() formalContractVersionId!:string;
+ @ApiProperty({enum:['INDIVIDUAL','LEGAL_ENTITY']}) @IsIn(['INDIVIDUAL','LEGAL_ENTITY']) applicantType!:'INDIVIDUAL'|'LEGAL_ENTITY';
+
+ @ApiPropertyOptional({maxLength:120}) @ValidateIf(o=>o.applicantType==='INDIVIDUAL') @IsString() @Matches(/\S/) @MaxLength(120) legalName?:string;
+ @ApiPropertyOptional({maxLength:32}) @ValidateIf(o=>o.applicantType==='INDIVIDUAL') @IsString() @Matches(/\S/) @MaxLength(32) gender?:string;
+ @ApiPropertyOptional({format:'date'}) @ValidateIf(o=>o.applicantType==='INDIVIDUAL') @IsDateString() birthDate?:string;
+ @ApiPropertyOptional({example:'TW'}) @ValidateIf(o=>o.applicantType==='INDIVIDUAL') @Matches(/^[A-Z]{2}$/) nationalityCode?:string;
+ @ApiPropertyOptional({enum:['NATIONAL_ID','RESIDENCE_PERMIT','PASSPORT','OTHER']}) @ValidateIf(o=>o.applicantType==='INDIVIDUAL') @IsIn(['NATIONAL_ID','RESIDENCE_PERMIT','PASSPORT','OTHER']) identityDocumentType?:'NATIONAL_ID'|'RESIDENCE_PERMIT'|'PASSPORT'|'OTHER';
+ @ApiPropertyOptional({maxLength:64}) @ValidateIf(o=>o.applicantType==='INDIVIDUAL') @IsString() @Matches(/\S/) @MaxLength(64) identityDocumentNumber?:string;
+
+ @ApiPropertyOptional({maxLength:160}) @ValidateIf(o=>o.applicantType==='LEGAL_ENTITY') @IsString() @Matches(/\S/) @MaxLength(160) legalEntityName?:string;
+ @ApiPropertyOptional({maxLength:40}) @ValidateIf(o=>o.applicantType==='LEGAL_ENTITY') @IsString() @Matches(/\S/) @MaxLength(40) legalEntityRegistrationNo?:string;
+ @ApiPropertyOptional({maxLength:500}) @ValidateIf(o=>o.applicantType==='LEGAL_ENTITY') @IsString() @Matches(/\S/) @MaxLength(500) legalEntityRegisteredAddress?:string;
+ @ApiPropertyOptional({example:'TW'}) @ValidateIf(o=>o.applicantType==='LEGAL_ENTITY') @Matches(/^[A-Z]{2}$/) legalEntityRegistrationCountryCode?:string;
+ @ApiPropertyOptional({maxLength:120}) @ValidateIf(o=>o.applicantType==='LEGAL_ENTITY') @IsString() @Matches(/\S/) @MaxLength(120) representativeLegalName?:string;
+ @ApiPropertyOptional({example:'TW'}) @ValidateIf(o=>o.applicantType==='LEGAL_ENTITY') @Matches(/^[A-Z]{2}$/) representativeNationalityCode?:string;
+ @ApiPropertyOptional({enum:['NATIONAL_ID','RESIDENCE_PERMIT','PASSPORT','OTHER']}) @ValidateIf(o=>o.applicantType==='LEGAL_ENTITY') @IsIn(['NATIONAL_ID','RESIDENCE_PERMIT','PASSPORT','OTHER']) representativeIdentityDocumentType?:'NATIONAL_ID'|'RESIDENCE_PERMIT'|'PASSPORT'|'OTHER';
+ @ApiPropertyOptional({maxLength:64}) @ValidateIf(o=>o.applicantType==='LEGAL_ENTITY') @IsString() @Matches(/\S/) @MaxLength(64) representativeIdentityDocumentNumber?:string;
+
+ @ApiProperty({default:false}) @IsBoolean() hasSpouse:boolean=false;
+ @ApiPropertyOptional({maxLength:120}) @ValidateIf(o=>o.hasSpouse===true) @IsString() @Matches(/\S/) @MaxLength(120) spouseName?:string;
+ @ApiPropertyOptional({example:'TW'}) @ValidateIf(o=>o.hasSpouse===true) @Matches(/^[A-Z]{2}$/) spouseNationalityCode?:string;
+ @ApiPropertyOptional({enum:['NATIONAL_ID','RESIDENCE_PERMIT','PASSPORT','OTHER']}) @ValidateIf(o=>o.hasSpouse===true) @IsIn(['NATIONAL_ID','RESIDENCE_PERMIT','PASSPORT','OTHER']) spouseIdentityDocumentType?:'NATIONAL_ID'|'RESIDENCE_PERMIT'|'PASSPORT'|'OTHER';
+ @ApiPropertyOptional({maxLength:64}) @ValidateIf(o=>o.hasSpouse===true) @IsString() @Matches(/\S/) @MaxLength(64) spouseIdentityDocumentNumber?:string;
+
+ @ApiProperty({maxLength:500}) @IsString() @Matches(/\S/) @MaxLength(500) communicationAddress!:string;
+ @ApiProperty({maxLength:32}) @IsString() @Matches(/\S/) @MaxLength(32) phone!:string;
+ @ApiProperty({format:'email',maxLength:254}) @IsEmail() @MaxLength(254) email!:string;
+ @ApiProperty({maxLength:16}) @IsString() @Matches(/\S/) @MaxLength(16) bankCode!:string;
+ @ApiProperty({maxLength:34}) @IsString() @Matches(/\S/) @MaxLength(34) bankAccount!:string;
+ @ApiProperty({maxLength:120}) @IsString() @Matches(/\S/) @MaxLength(120) accountHolder!:string;
+}
 
 @ApiTags('Admin - Formal Member Application')
 @ApiBearerAuth('adminBearer')
@@ -11,6 +48,9 @@ import {IdempotencyGuard} from '../../common/guards/idempotency.guard';
 @Controller('admin/formal-member-applications')
 export class AdminFormalMemberApplicationController {
  constructor(private readonly service:FormalMemberApplicationService,private readonly conflicts:FormalMembershipConflictService){}
+ @Post('paper') @UseGuards(IdempotencyGuard) @ApiHeader({name:'Idempotency-Key',required:true})
+ @ApiOperation({operationId:'adminCreatePaperFormalMemberApplication',description:'Back-office entry for paper INDIVIDUAL or LEGAL_ENTITY formal applications. Corporate applications are paper-only. Creates no Qualification/Ball.'})
+ createPaper(@Body() body:AdminPaperFormalApplicationDto,@Headers('idempotency-key') key:string,@Req() req:any){return this.service.createPaper(body,req.user?.personId,key,req.requestId);}
  @Get() @ApiOperation({operationId:'adminListFormalMemberApplications',description:'Read-only metadata queue. The encrypted application payload is never decrypted or returned.'})
  list(@Query('status') status?:string,@Query('take') take?:string){return this.service.adminList({status:status||undefined,take:Number(take??50)});}
  @Get(':id/cross-line-conflicts') @ApiOperation({operationId:'adminFormalMemberCrossLineConflicts',description:'Evaluate spouse, identity, representative and legal-entity duplicate conflicts from privacy-preserving indexes. Returns codes only; no raw national ID.'})
