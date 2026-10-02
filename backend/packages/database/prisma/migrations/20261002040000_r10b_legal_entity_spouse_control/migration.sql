@@ -81,15 +81,15 @@ CREATE UNIQUE INDEX spouse_relationship_one_current_verified_uq
 CREATE TABLE identity.formal_identity_index (
   formal_identity_index_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   person_id uuid NOT NULL UNIQUE REFERENCES identity.person(person_id) ON DELETE RESTRICT,
-  national_id_fingerprint text NOT NULL UNIQUE,
+  identity_document_fingerprint text NOT NULL UNIQUE,
   verified_at timestamptz(6) NOT NULL,
   verified_by uuid,
   source_formal_application_id uuid NOT NULL REFERENCES identity.formal_member_application(formal_member_application_id) ON DELETE RESTRICT,
   created_at timestamptz(6) NOT NULL DEFAULT now(),
-  CONSTRAINT formal_identity_fingerprint_check CHECK (national_id_fingerprint ~ '^[0-9a-f]{64}$')
+  CONSTRAINT formal_identity_fingerprint_check CHECK (identity_document_fingerprint ~ '^[0-9a-f]{64}$')
 );
 CREATE INDEX formal_identity_index_fingerprint_idx
-  ON identity.formal_identity_index(national_id_fingerprint);
+  ON identity.formal_identity_index(identity_document_fingerprint);
 
 CREATE OR REPLACE FUNCTION identity.prevent_legal_entity_member_no_mutation()
 RETURNS trigger LANGUAGE plpgsql AS $$
