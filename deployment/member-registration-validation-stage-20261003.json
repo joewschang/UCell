@@ -1,0 +1,10 @@
+{
+  "sourceCommit": "0e3b063a",
+  "assetSha256": "b437e367e52412f32613e2bee4ad6f267f1b7cab990b5e7e3d860bbe466af23a",
+  "realRegistrationCompletion": "PENDING_USER_RETRY",
+  "image": "ucellstageacr5mafbbsq33mgu.azurecr.io/ucell-member@sha256:b8e341b71bfc91298667cbe215c05535136d83f6310e276759b970d411b4dd8e",
+  "revision": "ucell-stage-member--validation-20261003",
+  "verifiedAtUtc": "2026-10-02T19:48:55.1323829Z",
+  "health": "Healthy",
+  "targetedTests": 6
+}
