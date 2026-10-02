@@ -1,0 +1,22 @@
+{
+  "sourceCommit": "51a94960d962e77fde4194097ab7c2084e8fab11",
+  "apiImage": "ucellstageacr5mafbbsq33mgu.azurecr.io/ucell-api@sha256:839d23bebd06033e29117a3a7bca948ca680e10616586e15c6628fe5752d91d8",
+  "memberImage": "ucellstageacr5mafbbsq33mgu.azurecr.io/ucell-member@sha256:5b68ec14822b15aaf047b4c6101ff65b5643c580061cf52e2bff4fe0f1de1dbb",
+  "apiHealth": {
+    "health": "Healthy",
+    "running": "Running"
+  },
+  "memberHealth": {
+    "health": "Healthy",
+    "running": "Running"
+  },
+  "migrationExecution": "ucell-stage-migrate-7m2ebao",
+  "migrationStatus": "Succeeded",
+  "catalogSeedExecution": "ucell-stage-migrate-s0hq5yf",
+  "privateStorageProbeExecution": "ucell-stage-migrate-oo04ova",
+  "stagePaymentMode": "ASSUME_PAID",
+  "realCharge": false,
+  "automaticFormalApproval": false,
+  "stagePreviewOnly": true,
+  "deployedAtUtc": "2026-10-02T20:58:06.2093043Z"
+}
