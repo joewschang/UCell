@@ -52,10 +52,6 @@ class AdminPaperEvidenceReviewDto {
  @ApiPropertyOptional({maxLength:500}) @IsOptional() @IsString() @MaxLength(500) note?:string;
 }
 
-class AdminDocumentScanDto {
- @ApiProperty({enum:['CLEAN','INFECTED','FAILED']}) @IsIn(['CLEAN','INFECTED','FAILED']) status!:'CLEAN'|'INFECTED'|'FAILED';
-}
-
 @ApiTags('Admin - Formal Member Application')
 @ApiBearerAuth('adminBearer')
 @Roles('SUPER_ADMIN','MEMBERSHIP_OPS','COMPLIANCE_AUDIT')
@@ -88,8 +84,6 @@ export class AdminFormalMemberApplicationController {
  documents(@Param('id',new ParseUUIDPipe()) id:string){return this.kyc.adminList(id);}
  @Get('documents/:documentId/content') @ApiOperation({operationId:'adminFormalApplicationDocumentContent',description:'Audited role-restricted read of one private KYC document image.'})
  async documentContent(@Param('documentId',new ParseUUIDPipe()) documentId:string,@Req() req:any){const blob=await this.kyc.adminContent(documentId,req.user?.personId,req.requestId);return new StreamableFile(blob.bytes,{type:blob.mimeType});}
- @Post('documents/:documentId/scan-result') @Roles('SUPER_ADMIN','MEMBERSHIP_OPS','COMPLIANCE_AUDIT') @ApiOperation({operationId:'adminFormalApplicationDocumentScanResult',description:'Record malware/content-safety scan result. CLEAN is required by the Web formal-review gate.'})
- scanResult(@Param('documentId',new ParseUUIDPipe()) documentId:string,@Body() body:AdminDocumentScanDto,@Req() req:any){return this.kyc.recordScan(documentId,body.status,req.user?.personId,req.requestId);}
  @Get(':id/detail') @ApiOperation({operationId:'adminFormalMemberApplicationDetail',description:'Audited KYC review detail for authorized membership/compliance staff. This dedicated endpoint may return decrypted application PII and must not be used by ordinary queues/analytics.'})
  detail(@Param('id',new ParseUUIDPipe()) id:string,@Req() req:any){return this.service.adminDetail(id,req.user?.personId,req.requestId);}
  @Get(':id/cross-line-conflicts') @ApiOperation({operationId:'adminFormalMemberCrossLineConflicts',description:'Evaluate spouse, identity, representative and legal-entity duplicate conflicts from privacy-preserving indexes. Returns codes only; no raw national ID.'})
