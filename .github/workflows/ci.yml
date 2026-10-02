@@ -44,6 +44,7 @@ jobs:
         run: |
           bash scripts/ci-gate.sh
           pnpm provider:enablement:preflight
+          node scripts/r11-foundation-test.mjs
       - name: Prisma validate/generate/migrate
         working-directory: backend
         run: |

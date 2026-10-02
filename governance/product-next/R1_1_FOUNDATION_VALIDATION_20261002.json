@@ -1,0 +1,32 @@
+{
+  "baselineCommit": "6c4878acd8bb406ad88744cc477f36910f92da6f",
+  "scope": "R1.1 Geo foundation + approved Qualification inactivity evaluator",
+  "checks": [
+    {"command": "node backend/scripts/r11-foundation-test.mjs", "result": "PASS", "cases": 25},
+    {"command": "corepack pnpm --filter @ucell/api exec jest --config test/jest-e2e.json --runInBand --testPathPatterns r11-geo-profile", "result": "PASS", "tests": 8},
+    {"command": "prisma validate --schema prisma/schema.prisma", "result": "PASS"},
+    {"command": "prisma generate --schema prisma/schema.prisma", "result": "PASS"},
+    {"command": "corepack pnpm -r build", "result": "PASS", "projects": ["database", "contracts", "shared", "api", "worker"]},
+    {"command": "node scripts/golden-r1b-regression.mjs", "result": "PASS"},
+    {"command": "node scripts/golden-economic-cases.mjs", "result": "PASS"},
+    {"command": "node scripts/static-validate.mjs", "result": "PASS"},
+    {"command": "node scripts/schema-preflight.mjs", "result": "PASS"},
+    {"command": "node scripts/migration-preflight.mjs", "result": "PASS"},
+    {"command": "node scripts/prisma-relation-preflight.mjs", "result": "PASS"},
+    {"command": "git diff --check", "result": "PASS"},
+    {"check": "isolated new migration on PGlite PostgreSQL engine", "result": "PASS", "assertions": ["DDL applies against minimal identity baseline", "district parent foreign key enforced", "source event uniqueness enforced", "normalization events reject update/delete", "referenced Person cannot be deleted"], "limitation": "Not a full migration deployment or Prisma integration test against PostgreSQL server"}
+  ],
+  "pending": [
+    "Complete official administrative catalog import",
+    "Trusted address outbox integration and HMAC key configuration",
+    "Authorized bounded Binary/Active/GPV evidence adapter and HTTP APIs",
+    "Admin dashboard/map/export and scale tests",
+    "Inactivity worker, versioned notification outbox and transactional recovery command",
+    "Full real PostgreSQL migrations and R1.0B DB Golden/Replay/Return/Carry regression",
+    "Stage and desktop/mobile UAT"
+  ],
+  "deployments": [],
+  "economicRuleChanges": false,
+  "runtimeRoutesEnabled": false,
+  "automaticOwnershipTransfersEnabled": false
+}

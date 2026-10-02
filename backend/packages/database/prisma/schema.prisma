@@ -538,6 +538,8 @@ enum AuthSessionStatus {
 }
 
 model Person {
+  geoProfile MemberGeoProfile?
+  geoProfileEvents MemberGeoProfileEvent[]
   qualificationOwnerIntervals QualificationOwnerInterval[]
   personId         String                 @id @default(uuid()) @map("person_id") @db.Uuid
   /// Immutable business identifier. Allocated in PostgreSQL using Asia/Taipei YYMM month counters.
@@ -573,6 +575,66 @@ model Person {
   @@index([mobile])
   @@map("person")
   @@schema("identity")
+}
+
+/// Administrative aggregates only. Residential address bytes remain in restricted delivery storage.
+model MemberGeoProfile {
+  personId String @id @map("person_id") @db.Uuid
+  person Person @relation(fields: [personId], references: [personId], onDelete: Restrict)
+  countryCode String @map("country_code") @db.VarChar(2)
+  cityCode String? @map("city_code")
+  districtCode String? @map("district_code")
+  geoStatus String @map("geo_status")
+  reason String?
+  addressHash String @map("address_hash") @db.VarChar(64)
+  hashKeyVersion String @map("hash_key_version")
+  catalogVersion String @map("catalog_version")
+  geoSource String @map("geo_source")
+  normalizedAt DateTime @map("normalized_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  @@index([cityCode, districtCode])
+  @@map("member_geo_profile")
+  @@schema("organization")
+}
+
+/// Append-only normalization history for asOf / knowledgeCutoff reads.
+model MemberGeoProfileEvent {
+  eventId String @id @default(uuid()) @map("event_id") @db.Uuid
+  personId String @map("person_id") @db.Uuid
+  person Person @relation(fields: [personId], references: [personId], onDelete: Restrict)
+  sourceEventId String @unique @map("source_event_id") @db.Uuid
+  countryCode String @map("country_code") @db.VarChar(2)
+  cityCode String? @map("city_code")
+  districtCode String? @map("district_code")
+  geoStatus String @map("geo_status")
+  reason String?
+  addressHash String @map("address_hash") @db.VarChar(64)
+  hashKeyVersion String @map("hash_key_version")
+  catalogVersion String @map("catalog_version")
+  geoSource String @map("geo_source")
+  effectiveAt DateTime @map("effective_at") @db.Timestamptz(6)
+  recordedAt DateTime @default(now()) @map("recorded_at") @db.Timestamptz(6)
+  @@index([personId, effectiveAt, recordedAt])
+  @@map("member_geo_profile_event")
+  @@schema("organization")
+}
+
+model GeoAdminArea {
+  catalogVersion String @map("catalog_version")
+  countryCode String @map("country_code") @db.VarChar(2)
+  areaCode String @map("area_code")
+  level String
+  parentAreaCode String? @map("parent_area_code")
+  areaNameZh String @map("area_name_zh")
+  areaNameEn String? @map("area_name_en")
+  aliases Json @default("[]")
+  regionGroup String @map("region_group")
+  sortOrder Int @default(0) @map("sort_order")
+  isActive Boolean @default(true) @map("is_active")
+  @@id([catalogVersion, countryCode, areaCode])
+  @@index([catalogVersion, countryCode, parentAreaCode])
+  @@map("geo_admin_area")
+  @@schema("organization")
 }
 
 model FormalMemberApplication {
