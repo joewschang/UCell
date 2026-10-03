@@ -59,7 +59,7 @@ export async function loginMethods(){
  return request('/member/identity',{headers:{Authorization:'Bearer '+token}}) as Promise<{google:boolean;line:boolean}>;
 }
 export async function registrationContract(){return request('/auth/member/register/contract') as Promise<RegistrationContract>;}
-export async function completeRegistration(input:{contractVersionId:string;legalName:string;alias:string;gender:string;birthDate:string;nationalityCode:string;identityDocumentType:string;identityDocumentNumber:string;mobile:string;email:string;password:string;googleIdToken?:string;lineIdToken?:string}){
+export async function completeRegistration(input:{contractVersionId:string;legalName:string;alias:string;gender:string;birthDate:string;nationalityCode:string;identityDocumentType:string;identityDocumentNumber:string;mobile:string;email:string;password:string;googleIdToken?:string;lineIdToken?:string;mobileVerificationProof?:string;emailVerificationProof?:string}){
  const mobile=normalizeRegistrationMobile(input.mobile,input.nationalityCode);
  if(!/^\+[1-9][0-9]{7,14}$/.test(mobile))throw new Error('手機號碼請使用 +國碼格式，台灣可輸入 09 開頭的十碼號碼。');
  if(input.password.length<12||input.password.length>256)throw new Error('密碼長度須為 12 至 256 字元。');
@@ -72,6 +72,12 @@ export function normalizeRegistrationMobile(value:string,nationalityCode:string)
 }
 
 declare global{interface Window{google?:any}}
+export async function contactVerificationRequest(path:'challenges'|'verify',input:Record<string,string>,registration:boolean,key?:string){
+ const token=sessionStorage.getItem('ucell_member_token');
+ const hints:Record<string,string>={SMS_PROVIDER_CONFIGURATION_PENDING:'手機簡訊驗證尚未開通，請稍後再試。',EMAIL_PROVIDER_CONFIGURATION_PENDING:'Email 驗證寄信服務尚未開通，請稍後再試。',OTP_CONFIGURATION_PENDING:'驗證服務尚未設定完成，請稍後再試。',OTP_RESEND_COOLDOWN:'請稍候 60 秒後再重送驗證碼。',OTP_RATE_LIMITED:'驗證碼發送次數已達上限，請稍後再試。',OTP_CODE_INVALID:'驗證碼不正確，請重新輸入。',OTP_CHALLENGE_LOCKED:'驗證碼錯誤次數過多，請重新申請。',OTP_CHALLENGE_EXPIRED_OR_UNAVAILABLE:'驗證碼已過期或無法使用，請重新申請。',CONTACT_DESTINATION_INVALID:'請輸入有效的手機號碼或 Email。'};
+ try{return await request((registration?'/auth/member':'/member')+'/contact-verification/'+path,{method:'POST',headers:{'Content-Type':'application/json',...(!registration&&token?{Authorization:'Bearer '+token}:{}),...(key?{'Idempotency-Key':key}:{})},body:JSON.stringify(input)});}
+ catch(e){const code=e instanceof Error?e.message:'';throw new Error(hints[code]||'驗證服務暫時無法使用，請稍後重試。');}
+}
 let googleScript:Promise<void>|undefined;
 function loadGoogle(){
  if(window.google?.accounts?.id)return Promise.resolve();

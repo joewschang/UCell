@@ -1,11 +1,13 @@
 import { Body, Controller, Headers, Post, Req, UseGuards } from '@nestjs/common';
 import { ApiHeader, ApiOperation, ApiProperty, ApiTags } from '@nestjs/swagger';
-import { Equals, IsDateString, IsEmail, IsString, IsUUID, Matches, MaxLength, MinLength } from 'class-validator';
+import { Equals, IsDateString, IsEmail, IsString, IsUUID, IsOptional, Matches, MaxLength, MinLength } from 'class-validator';
 import { IdempotencyGuard } from '../../common/guards/idempotency.guard';
 import { NetworkRegistrationService } from './network-registration.service';
 import { MemberAuthenticationGuard } from './member-authentication.guard';
 
 class NetworkRegistrationDto {
+ @ApiProperty({required:false}) @IsOptional() @Matches(/^[a-f0-9]{64}$/) mobileVerificationProof?:string;
+ @ApiProperty({required:false}) @IsOptional() @Matches(/^[a-f0-9]{64}$/) emailVerificationProof?:string;
  @ApiProperty({format:'uuid'}) @IsUUID() contractVersionId!:string;
  @ApiProperty({enum:[true]}) @Equals(true) accepted!:true;
  @ApiProperty({minLength:1,maxLength:80}) @IsString() @MinLength(1) @MaxLength(80) legalName!:string;
@@ -22,6 +24,6 @@ class NetworkRegistrationDto {
 @ApiTags('Member - Registration') @UseGuards(MemberAuthenticationGuard) @Controller('member/registration')
 export class NetworkRegistrationController {
  constructor(private readonly service:NetworkRegistrationService){}
- @Post('network') @UseGuards(IdempotencyGuard) @ApiHeader({name:'Idempotency-Key',required:true}) @ApiOperation({operationId:'registerLineNetworkMember',description:'Requires authenticated LINE-backed UCell session, records contract consent and completes NETWORK_MEMBER profile. Mobile/email are contact data. No OTP or Qualification is created.'})
+ @Post('network') @UseGuards(IdempotencyGuard) @ApiHeader({name:'Idempotency-Key',required:true}) @ApiOperation({operationId:'registerLineNetworkMember',description:'Requires authenticated LINE-backed UCell session and verified mobile/email proofs, records contract consent and completes NETWORK_MEMBER profile. Contact verification is not KYC. No Qualification is created.'})
  register(@Body() body:NetworkRegistrationDto,@Headers('idempotency-key') key:string,@Req() req:any){return this.service.registerLinePerson(req.user.personId,body,key,req.requestId);}
 }

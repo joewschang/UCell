@@ -147,7 +147,7 @@ function Me() {
  return <>
   <MemberPageHeader title="我的帳戶"/>
   <Result state={state}>{p => <>
-   <section className="card"><h3>{p.name}</h3><p><span>會員編號</span> {p.memberNo}</p><p>會員狀態：{p.membershipState??'尚未完成網路會員註冊'}</p><p>電子郵件：{p.email ?? availabilityText.fieldMissing}</p><p>電話：{p.phone ?? availabilityText.fieldMissing}</p></section>
+   <section className="card"><h3>{p.name}</h3><p><span>會員編號</span> {p.memberNo}</p><p>會員狀態：{p.membershipState??'尚未完成網路會員註冊'}</p><p>電子郵件：{p.email ?? availabilityText.fieldMissing}（{p.emailVerifiedAt?'已驗證':'尚未驗證'}）</p><p>電話：{p.phone ?? availabilityText.fieldMissing}（{p.mobileVerifiedAt?'已驗證':'尚未驗證'}）</p></section>
    {!data.isMock&&p.membershipState===null&&<NetworkRegistration person={p} refresh={state.retry}/>}
    {!data.isMock&&['NETWORK_MEMBER','FORMAL_PENDING'].includes(p.membershipState??'')&&<section className="card"><h3>申請正式會員</h3><Link to="/membership/upgrade">選購資格套組或繳交 600 元申請</Link></section>}
   </>}</Result>

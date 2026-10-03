@@ -38,7 +38,7 @@ function schema<T>(check: Check) {
   };
 }
 export const parseQualifications = schema<Qualification[]>(unique(qualification, 'id'));
-export const parsePerson = schema<Person>(object({ name: string, alias:nullable(string),memberNo, email: nullable(string), phone: nullable(string),gender:nullable(string),birthDate:nullable(date),membershipState:nullable(enumOf('NETWORK_MEMBER','FORMAL_PENDING','FORMAL_MEMBER')),mobileVerifiedAt:nullable(string) }));
+export const parsePerson = schema<Person>(object({ name: string, alias:nullable(string),memberNo, email: nullable(string), phone: nullable(string),gender:nullable(string),birthDate:nullable(date),membershipState:nullable(enumOf('NETWORK_MEMBER','FORMAL_PENDING','FORMAL_MEMBER')),mobileVerifiedAt:nullable(string),emailVerifiedAt:optional(nullable(string)) }));
 export const parseDashboard = schema<Dashboard>(object({ memberName: string, memberNo, qualification,
   monthlyRepurchaseStatus: enumOf('ACTIVE', 'PENDING', 'INACTIVE'), pv: metric, rpv: metric, epv: metric, bonusAmount: metric, bonusStatus: status,monthReference:optional(period),activeInterval:optional(nullable(activeInterval)) }));
 export const parseOrganization = schema<Organization>(object({ qualificationId: id, sponsor: nullable(member), referrals: unique(member, 'code') }));

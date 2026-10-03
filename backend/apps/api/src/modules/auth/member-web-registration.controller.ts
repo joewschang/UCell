@@ -5,6 +5,8 @@ import { IdempotencyGuard } from '../../common/guards/idempotency.guard';
 import { MemberWebRegistrationService } from './member-web-registration.service';
 
 class CompleteWebRegistrationDto{
+ @ApiPropertyOptional() @IsOptional() @Matches(/^[a-f0-9]{64}$/) mobileVerificationProof?:string;
+ @ApiPropertyOptional() @IsOptional() @Matches(/^[a-f0-9]{64}$/) emailVerificationProof?:string;
  @ApiProperty({format:'uuid'}) @IsUUID() contractVersionId!:string;
  @ApiProperty({enum:[true]}) @Equals(true) accepted!:true;
  @ApiProperty({maxLength:80}) @IsString() @MinLength(1) @MaxLength(80) legalName!:string;

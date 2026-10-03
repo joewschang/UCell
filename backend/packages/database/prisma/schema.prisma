@@ -778,6 +778,7 @@ model Person {
   identityDocumentFingerprint String?      @unique @map("identity_document_fingerprint")
   membershipState  PersonMembershipState? @map("membership_state")
   mobileVerifiedAt DateTime?              @map("mobile_verified_at") @db.Timestamptz(6)
+  emailVerifiedAt DateTime?               @map("email_verified_at") @db.Timestamptz(6)
   securityStatus   PersonSecurityStatus   @default(NORMAL) @map("security_status")
   securityLockedAt DateTime?              @map("security_locked_at") @db.Timestamptz(6)
   securityLockedReason String?            @map("security_locked_reason")
@@ -1091,6 +1092,29 @@ model DeliveryProfile {
 
   @@index([personId, effectiveFrom, effectiveTo])
   @@map("delivery_profile")
+  @@schema("identity")
+}
+
+model ContactVerificationChallenge {
+  id String @id @default(uuid()) @db.Uuid
+  subjectHash String @map("subject_hash")
+  destinationHash String @map("destination_hash")
+  channel String
+  purpose String
+  requestKey String @map("request_key") @db.Uuid
+  codeHash String @map("code_hash")
+  status String @default("SENDING")
+  attempts Int @default(0)
+  proofHash String? @unique @map("proof_hash")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  expiresAt DateTime @map("expires_at") @db.Timestamptz(6)
+  resendAt DateTime @map("resend_at") @db.Timestamptz(6)
+  verifiedAt DateTime? @map("verified_at") @db.Timestamptz(6)
+  consumedAt DateTime? @map("consumed_at") @db.Timestamptz(6)
+  @@unique([subjectHash, requestKey])
+  @@index([destinationHash, createdAt], map: "contact_verification_destination_created")
+  @@index([subjectHash, createdAt], map: "contact_verification_subject_created")
+  @@map("contact_verification_challenge")
   @@schema("identity")
 }
 

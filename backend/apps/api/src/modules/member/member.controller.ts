@@ -27,6 +27,8 @@ export class MemberContextDto {
 }
 export class MemberLogoutDto { @ApiProperty({required:false,description:'Optional fixed intent marker; no Person, session or Qualification identifiers accepted.'}) @IsOptional() @Matches(/^LOGOUT$/) intent?:string; }
 export class MemberProfileDto {
+ @ApiProperty({required:false}) @ValidateIf((_o,v)=>v!==undefined) @Matches(/^[a-f0-9]{64}$/) mobileVerificationProof?:string;
+ @ApiProperty({required:false}) @ValidateIf((_o,v)=>v!==undefined) @Matches(/^[a-f0-9]{64}$/) emailVerificationProof?:string;
  @ApiProperty({required:false,maxLength:80,description:'Display name only; legal identity is immutable through Member API'}) @ValidateIf((_o,v)=>v!==undefined) @IsString() @Matches(/\S/) @MinLength(1) @MaxLength(80) name?:string;
  @ApiProperty({required:false,format:'email',maxLength:254}) @ValidateIf((_o,v)=>v!==undefined) @IsEmail() @MaxLength(254) email?:string;
  @ApiProperty({required:false,maxLength:32,description:'Contact data only; does not bind or authenticate an identity'}) @ValidateIf((_o,v)=>v!==undefined) @Matches(/^(?=.*[0-9])\+?[0-9 ()-]{6,32}$/) phone?:string;

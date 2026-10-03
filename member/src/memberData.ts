@@ -66,7 +66,7 @@ export async function uploadFormalDocument(applicationId:string,documentType:For
 export async function getFormalDocuments(applicationId:string,signal?:AbortSignal){
  return api<{applicationId:string;required:FormalDocumentType[];documents:{id:string;type:FormalDocumentType;status:string;scanStatus:string;mimeType:string|null;sizeBytes:number|null;uploadedAt:string|null}[]}>(`/member/formal-applications/${encodeURIComponent(applicationId)}/documents`,{signal});
 }
-export type NetworkRegistrationInput={contractVersionId:string;accepted:true;legalName:string;alias:string;gender:string;birthDate:string;nationalityCode:string;identityDocumentType:'NATIONAL_ID'|'RESIDENCE_PERMIT'|'PASSPORT'|'OTHER';identityDocumentNumber:string;mobile:string;email:string};
+export type NetworkRegistrationInput={contractVersionId:string;accepted:true;legalName:string;alias:string;gender:string;birthDate:string;nationalityCode:string;identityDocumentType:'NATIONAL_ID'|'RESIDENCE_PERMIT'|'PASSPORT'|'OTHER';identityDocumentNumber:string;mobile:string;email:string;mobileVerificationProof?:string;emailVerificationProof?:string};
 export async function registerNetworkMember(input:NetworkRegistrationInput,key:string){
  const result=await api<{personId:string;membershipState:string;enabledAuthenticationProvider:string;qualificationCreated:boolean;replayed:boolean}>('/member/registration/network',{method:'POST',headers:{'Idempotency-Key':key},body:JSON.stringify(input)});
  if(typeof result?.personId==='string'&&result.personId&&result.membershipState==='NETWORK_MEMBER'&&result.enabledAuthenticationProvider==='LINE'&&result.qualificationCreated===false)return result;
@@ -83,7 +83,7 @@ export async function createReferralShareLink(q:Qualification,contentId?:string)
 export type MemberContent={id:string;versionId:string;type:'VIDEO_EXTERNAL'|'EXTERNAL_LINK';title:string;summary:string|null;url:string;thumbnailUrl:string|null;shareable:boolean;publishedAt:string};
 export async function getContent(signal:AbortSignal):Promise<MemberContent[]>{const rows=await api<unknown>('/member/content',{signal});if(!Array.isArray(rows)||!rows.every(value=>{const row=value as MemberContent;return row&&/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(row.id)&&/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(row.versionId)&&['VIDEO_EXTERNAL','EXTERNAL_LINK'].includes(row.type)&&typeof row.title==='string'&&(row.summary===null||typeof row.summary==='string')&&typeof row.url==='string'&&row.url.startsWith('https://')&&(row.thumbnailUrl===null||typeof row.thumbnailUrl==='string'&&row.thumbnailUrl.startsWith('https://'))&&typeof row.shareable==='boolean'&&typeof row.publishedAt==='string'&&Number.isFinite(Date.parse(row.publishedAt));}))throw new Error('內容資料格式異常，已停止顯示');return rows as MemberContent[];}
 export async function getContentDetail(id:string,signal:AbortSignal):Promise<MemberContent>{const rows=await getContent(signal),row=rows.find(value=>value.id===id);if(!row)throw new Error('內容不存在或尚未發布');return row;}
-export async function updateProfile(input:{name?:string;email?:string;phone?:string},key:string) {
+export async function updateProfile(input:{name?:string;email?:string;phone?:string;mobileVerificationProof?:string;emailVerificationProof?:string},key:string) {
  if(isMock)throw new Error('示範模式不修改會員資料');
  return validate.parsePerson(await api('/member/profile',{method:'PATCH',headers:{'Idempotency-Key':key},body:JSON.stringify(input)}));
 }

@@ -8,6 +8,7 @@ const auth=vi.hoisted(()=>({
 }));
 vi.mock('../src/webAuth',()=>auth);
 import WebMemberEntry from '../src/WebMemberEntry';
+import ContactVerifier from '../src/ContactVerifier';
 
 let tree:ReactTestRenderer|undefined;
 it('authenticates the original Google member before linking current LINE and never creates another member',async()=>{
@@ -39,6 +40,7 @@ it('opens new LINE friends directly on profile registration and preserves an exi
   for(const [name,value] of Object.entries({'姓名':'測試新好友','顯示名稱':'新好友','生日':'1990-01-01','身分證明號碼':'TEST-LINE-ID','手機號碼':'+886912345678','Email':'line-friend@example.invalid','設定登入密碼':'LongPassword123!','確認密碼':'LongPassword123!'}))input(name).props.onChange({target:{value}});
   labels.find(l=>l.children.some(c=>typeof c==='string'&&c.includes('我已閱讀')))!.findByType('input').props.onChange({target:{checked:true}});
  });
+ act(()=>tree!.root.findAllByType(ContactVerifier).forEach(v=>v.props.onVerified('a'.repeat(64))));
  await act(async()=>tree!.root.findByType('form').props.onSubmit({preventDefault(){}}));
  expect(auth.completeRegistration).toHaveBeenCalledWith(expect.objectContaining({lineIdToken:'LINE_ID_TOKEN_TEST_ONLY'}));
  expect(auth.completeRegistration.mock.calls[0][0]).not.toHaveProperty('googleIdToken');
@@ -104,6 +106,7 @@ it('registers with Google, contract consent and password without OTP fields',asy
  expect(JSON.stringify(tree!.toJSON())).toContain('兩次輸入的密碼不一致');
  await act(async()=>input('確認密碼').props.onChange({target:{value:'LongPassword123!'}}));
  auth.completeRegistration.mockResolvedValue({accessToken:'opaque',expiresAt:new Date(Date.now()+60000).toISOString()});
+ act(()=>tree!.root.findAllByType(ContactVerifier).forEach(v=>v.props.onVerified('a'.repeat(64))));
  await act(async()=>tree!.root.findByType('form').props.onSubmit({preventDefault(){}}));
  expect(auth.completeRegistration).toHaveBeenCalledWith(expect.objectContaining({
   contractVersionId:'11111111-1111-4111-8111-111111111111',

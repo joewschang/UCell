@@ -13,9 +13,10 @@ describe('Integrated Web identity and password lifecycle (real isolated DB, synt
  const db=new PrismaService(),pii=new PiiCryptoService(),fingerprint=new IdentityMatchFingerprintService();
  const sessions=new IdentityTokenService(db),identities=new MemberIdentityService(db);
  const google={verify:jest.fn(async(token:string)=>({subject:token,email:token+'@example.invalid',emailVerified:true,expiresAt:Math.floor(Date.now()/1000)+3600}))};
- const registration=new MemberWebRegistrationService(db,new IdempotencyService(db),google as any,pii,fingerprint);
+ const contacts={consume:jest.fn(async()=>new Date())}; // Identity lifecycle fixture; contact enforcement has its own real-DB suite.
+ const registration=new MemberWebRegistrationService(db,new IdempotencyService(db),google as any,pii,fingerprint,undefined,contacts as any);
  const line={verify:jest.fn(async(token:string)=>({subject:token,expiresAt:Math.floor(Date.now()/1000)+3600}))};
- const lineRegistration=new MemberWebRegistrationService(db,new IdempotencyService(db),google as any,pii,fingerprint,line as any);
+ const lineRegistration=new MemberWebRegistrationService(db,new IdempotencyService(db),google as any,pii,fingerprint,line as any,contacts as any);
  const auth=new MemberWebAuthService(db,sessions,google as any,{} as any,new ConfigService({MEMBER_SESSION_TTL_SECONDS:3600}));
  const linking=new MemberWebAuthService(db,sessions,google as any,{} as any,new ConfigService({MEMBER_SESSION_TTL_SECONDS:3600}),line as any);
  const original={key:process.env.PII_ENCRYPTION_KEY,version:process.env.PII_ENCRYPTION_KEY_VERSION};
@@ -61,7 +62,7 @@ describe('Integrated Web identity and password lifecycle (real isolated DB, synt
   const identity=await sessions.authenticate(result.accessToken);
   expect(identity).toMatchObject({provider:'LINE',subject:lineIdToken});
   const person=await db.person.findUniqueOrThrow({where:{memberNo:result.memberNo}});
-  expect(person.email).toBe(fields.email);expect(person.mobileVerifiedAt).toBeNull();
+  expect(person.email).toBe(fields.email);expect(person.mobileVerifiedAt).toBeInstanceOf(Date);expect(person.emailVerifiedAt).toBeInstanceOf(Date);
   const link=await db.identityLink.findUniqueOrThrow({where:{provider_providerSubject:{provider:'LINE',providerSubject:lineIdToken}}});
   expect(link.personId).toBe(person.personId);expect(link.email).toBeNull();
   expect(await lineRegistration.complete({...fields,lineIdToken},key)).toMatchObject({replayed:true,memberNo:result.memberNo});
@@ -78,7 +79,8 @@ describe('Integrated Web identity and password lifecycle (real isolated DB, synt
   const payload=input(),before=await db.qualification.count();
   const result=await registration.complete(payload,randomUUID());
   const person=await db.person.findUniqueOrThrow({where:{memberNo:result.memberNo},include:{memberPasswordCredential:true}});
-  expect(person).toMatchObject({nationalityCode:'TW',identityDocumentType:'NATIONAL_ID',membershipState:'NETWORK_MEMBER',mobileVerifiedAt:null});
+  expect(person).toMatchObject({nationalityCode:'TW',identityDocumentType:'NATIONAL_ID',membershipState:'NETWORK_MEMBER'});
+  expect(person.mobileVerifiedAt).toBeInstanceOf(Date);
   expect(person.identityDocumentFingerprint).toBe(fingerprint.fingerprintIdentityDocument('TW','NATIONAL_ID',payload.identityDocumentNumber));
   expect(pii.decrypt(person.identityDocumentNumberCiphertext!,person.identityDocumentKeyVersion!)).toBe(fingerprint.normalizeIdentityDocumentNumber(payload.identityDocumentNumber));
   expect(person.memberPasswordCredential!.passwordHash).not.toContain(payload.password);
