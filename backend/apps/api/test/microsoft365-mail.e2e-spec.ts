@@ -85,7 +85,8 @@ describe('Microsoft 365 transactional delivery', () => {
   });
   it('does not silently fallback when Graph config is missing or provider is misspelled', async () => {
     const fetch = mock(), webhook = { CONTACT_VERIFICATION_EMAIL_WEBHOOK_URL: 'https://example.invalid/send', CONTACT_VERIFICATION_EMAIL_WEBHOOK_TOKEN: 'TEST' };
-    await expect(new ContactVerificationEmailService(new ConfigService({ ...webhook, TRANSACTIONAL_EMAIL_PROVIDER: 'microsoft365_graph' })).send(message.to, '123456')).rejects.toThrow();
+    await expect(new ContactVerificationEmailService(new ConfigService({ ...webhook, TRANSACTIONAL_EMAIL_PROVIDER: 'microsoft365_graph' })).send(message.to, '123456')).rejects.toMatchObject({ response: { code: 'EMAIL_PROVIDER_CONFIGURATION_PENDING' } });
+    await expect(new PasswordResetEmailService(new ConfigService({ TRANSACTIONAL_EMAIL_PROVIDER: 'microsoft365_graph' })).send({to:message.to,resetUrl:'https://stage.ucell.life/reset-password'})).rejects.toMatchObject({ response: { code: 'PASSWORD_RESET_EMAIL_PROVIDER_NOT_CONFIGURED' } });
     expect(() => new Microsoft365MailService(new ConfigService({ TRANSACTIONAL_EMAIL_PROVIDER: 'microsft365_graph' })).isSelected()).toThrow();
     expect(fetch).not.toHaveBeenCalled();
   });
