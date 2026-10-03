@@ -50,7 +50,11 @@ The GoDaddy domain page identifies **Cloudflare** as the DNS provider. Microsoft
 
 The existing SPF is `v=spf1 include:secureserver.net -all`. Public DNS confirmed `secureserver.net` includes `spf-0.secureserver.net`, which already includes `spf.protection.outlook.com`. The Microsoft record contains address mechanisms only: this chain uses three include lookups, below the limit of ten. SPF was retained, with exactly one SPF TXT record at the root. Existing DMARC is `v=DMARC1; p=quarantine; adkim=r; aspf=r; rua=mailto:dmarc_rua@onsecureserver.net;` and was retained. MX, nameservers and Stage host records were not changed.
 
-The service mailbox's authenticated SMTP checkbox was disabled, consistent with the real SMTP test returning 535. Graph avoids requiring that switch or weakening organization security defaults. DNS correction is complete; app authorization and real inbox delivery remain outstanding. The application list was empty; the dedicated registration form is prepared but not submitted.
+The service mailbox's authenticated SMTP checkbox was disabled, consistent with the real SMTP test returning 535. Graph avoids requiring that switch or weakening organization security defaults. DNS correction and mailbox-scoped app authorization are complete; dedicated credential configuration and real inbox delivery remain outstanding.
+
+After explicit owner approval, `UCell Stage Transactional Mail` was registered as single-tenant. Client ID: `afed58af-a413-4fb8-b298-6d7a883118cf`; tenant: `3401a3be-fd5f-43c9-ac34-c32241af4e95`; enterprise service-principal Object ID: `caa1ca0d-d3eb-4b53-9a6a-e9ef3b0d33aa`. The default delegated `User.Read` request was removed; the Entra API-permission list is empty. Exchange contains only the named `Application Mail.Send` assignment above for this principal. The scope preview contained exactly `service@ucell.life`. `Test-ServicePrincipalAuthorization` returned `InScope=True` for the service mailbox and `False` for the tenant's existing DiscoveryMailbox. The negative test was authorization-only and sent no message.
+
+Exchange's device-code login was blocked with 530035. Standard modern browser authentication succeeded using official ExchangeOnlineManagement 3.10.1 and `-DisableWAM`; no tenant security setting was weakened. No app secret has yet been created. The browser credential-creation step is left for the owner to complete under its confirmation policy; subsequent handling must place it directly into server secret storage without disclosing it in chat or evidence.
 
 ## Activation and UAT
 
