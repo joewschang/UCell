@@ -4,6 +4,7 @@ import { createRoot } from 'react-dom/client';
 import { BrowserRouter, useNavigate } from 'react-router-dom';
 import { LineBindingRequired, bootstrapLiff, startWebLineLogin, restartLineLogin, LineReauthenticationRequired } from './liff';
 import { LineBinding } from './LineBindingPage';
+import {getLineRegistrationIdToken} from './lineBinding';
 import { QualificationProvider } from './QualificationContext';
 import App from './App';
 import { SessionBoundary } from './SessionBoundary';
@@ -20,6 +21,7 @@ function Bootstrap() {
     const [state, setState] = useState<'loading' | 'ready' | 'redirect' | 'web-login'>('loading');
     const [error, setError] = useState('');
     const [bindingRequired,setBindingRequired]=useState(false);
+    const [existingMemberBinding,setExistingMemberBinding]=useState(false);
     const [reauthRequired,setReauthRequired]=useState(false);
     const [referralWarning,setReferralWarning]=useState<string|undefined>();
     const [attempt, setAttempt] = useState(0);
@@ -54,7 +56,7 @@ function Bootstrap() {
         }
     };
 
-    if(bindingRequired)return <LineBinding onComplete={()=>setAttempt(n=>n+1)} onRecheck={()=>setAttempt(n=>n+1)}/>;
+    if(bindingRequired)return existingMemberBinding?<LineBinding onComplete={()=>setAttempt(n=>n+1)} onRecheck={()=>setAttempt(n=>n+1)}/>:<WebMemberEntry lineRegistrationToken={getLineRegistrationIdToken} onExistingMemberBinding={()=>setExistingMemberBinding(true)} onLineLogin={async()=>{await webLogin();}} onAuthenticated={()=>{navigate('/',{replace:true});setAttempt(n=>n+1)}}/>;
     if (error)
         return <main className="loading" role="alert"><section className="card uc-web-entry"><CompanyLogo className="uc-company-logo-entry"/><h1>UCell 會員中心</h1><p>{error}</p><button disabled={startingWebLogin} onClick={() => reauthRequired?void webLogin(true):setAttempt(n => n + 1)}>{reauthRequired?'重新登入 LINE':'重新連線'}</button></section></main>;
 

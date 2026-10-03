@@ -14,6 +14,8 @@ describe('Integrated Web identity and password lifecycle (real isolated DB, synt
  const sessions=new IdentityTokenService(db),identities=new MemberIdentityService(db);
  const google={verify:jest.fn(async(token:string)=>({subject:token,email:token+'@example.invalid',emailVerified:true,expiresAt:Math.floor(Date.now()/1000)+3600}))};
  const registration=new MemberWebRegistrationService(db,new IdempotencyService(db),google as any,pii,fingerprint);
+ const line={verify:jest.fn(async(token:string)=>({subject:token,expiresAt:Math.floor(Date.now()/1000)+3600}))};
+ const lineRegistration=new MemberWebRegistrationService(db,new IdempotencyService(db),google as any,pii,fingerprint,line as any);
  const auth=new MemberWebAuthService(db,sessions,google as any,{} as any,new ConfigService({MEMBER_SESSION_TTL_SECONDS:3600}));
  const original={key:process.env.PII_ENCRYPTION_KEY,version:process.env.PII_ENCRYPTION_KEY_VERSION};
  let contractId:string;
@@ -30,6 +32,26 @@ describe('Integrated Web identity and password lifecycle (real isolated DB, synt
   await db.$disconnect();
  });
  function input(){const token='synthetic-'+randomUUID();return {contractVersionId:contractId,accepted:true as const,legalName:'TEST ONLY APPLICANT',alias:'TEST',gender:'UNDISCLOSED',birthDate:'1990-01-02',nationalityCode:'TW',identityDocumentType:'NATIONAL_ID' as const,identityDocumentNumber:'TEST-ID-'+randomUUID(),mobile:'+8869'+String(Math.floor(Math.random()*1e8)).padStart(8,'0'),email:token+'@example.invalid',password:'TEST_ONLY_PASSWORD_123!',googleIdToken:token};}
+ it('registers a verified new LINE identity as Network Member with no qualification and an immediately usable LINE session',async()=>{
+  const {googleIdToken,...fields}=input(),lineIdToken='U'+randomUUID().replaceAll('-',''),key=randomUUID();
+  const result=await lineRegistration.complete({...fields,lineIdToken},key);
+  expect(result).toMatchObject({membershipState:'NETWORK_MEMBER',qualificationCreated:false,replayed:false});
+  const identity=await sessions.authenticate(result.accessToken);
+  expect(identity).toMatchObject({provider:'LINE',subject:lineIdToken});
+  const person=await db.person.findUniqueOrThrow({where:{memberNo:result.memberNo}});
+  expect(person.email).toBe(fields.email);expect(person.mobileVerifiedAt).toBeNull();
+  const link=await db.identityLink.findUniqueOrThrow({where:{provider_providerSubject:{provider:'LINE',providerSubject:lineIdToken}}});
+  expect(link.personId).toBe(person.personId);expect(link.email).toBeNull();
+  expect(await lineRegistration.complete({...fields,lineIdToken},key)).toMatchObject({replayed:true,memberNo:result.memberNo});
+  await expect(lineRegistration.complete({...input(),googleIdToken:undefined,lineIdToken},randomUUID())).rejects.toMatchObject({response:{code:'LINE_IDENTITY_ALREADY_LINKED'}});
+ });
+ it('rejects an invalid LINE token or ambiguous identity before any registration writes',async()=>{
+  const before=await db.person.count(),{googleIdToken,...fields}=input();
+  line.verify.mockRejectedValueOnce(new Error('LINE_TOKEN_INVALID'));
+  await expect(lineRegistration.complete({...fields,lineIdToken:'invalid'},randomUUID())).rejects.toThrow('LINE_TOKEN_INVALID');
+  await expect(lineRegistration.complete({...fields,googleIdToken,lineIdToken:'U'+'a'.repeat(32)},randomUUID())).rejects.toMatchObject({response:{code:'REGISTRATION_IDENTITY_AMBIGUOUS'}});
+  expect(await db.person.count()).toBe(before);
+ });
  it('stores the same encrypted document identity as LINE registration, issues provider-neutral sessions and creates no Ball',async()=>{
   const payload=input(),before=await db.qualification.count();
   const result=await registration.complete(payload,randomUUID());
