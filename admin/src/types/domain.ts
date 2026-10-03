@@ -68,6 +68,7 @@ export interface MembershipApplication {
   binaryParentQualification?:Qualification|null;
 }
 export interface ProductReference {
+  iconUrl?:string|null;
   productId:UUID;
   sku:string;
   displayName:string;

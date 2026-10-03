@@ -8,24 +8,28 @@ export class ProductService {
   async upsertReference(input: {
     sku: string;
     displayName: string;
+    iconUrl?: string | null;
     price: string;
     gpvRate?: string;
     ruleVersionCode?: string;
   }) {
     if(!input||typeof input.sku!=='string'||!input.sku.trim()||typeof input.displayName!=='string'||!input.displayName.trim()||typeof input.price!=='string'||!/^\d{1,16}(\.\d{1,2})?$/.test(input.price))throw new UnprocessableEntityException({code:'INVALID_PRODUCT_REFERENCE'});
     if(input.ruleVersionCode&&input.ruleVersionCode!=='R1.0B')throw new UnprocessableEntityException({code:'RULE_VERSION_CONFIGURATION_PENDING'});
+    if(input.iconUrl!==undefined&&input.iconUrl!==null&&input.iconUrl!==''&&(typeof input.iconUrl!=='string'||input.iconUrl.length>512||!/^\/products\/[a-zA-Z0-9_-]+\.(png|jpe?g|webp)$/.test(input.iconUrl)))throw new UnprocessableEntityException({code:'INVALID_PRODUCT_ICON_URL',message:'Use a local /products/ PNG, JPEG or WebP image path.'});
     if(input.gpvRate!==undefined&&(!/^\d+(\.\d{1,6})?$/.test(input.gpvRate)||new Prisma.Decimal(input.gpvRate).gt(1)))throw new UnprocessableEntityException({code:'INVALID_PRODUCT_RATE'});
     return this.prisma.$transaction(async (tx) => {
       const product = await tx.productReference.upsert({
         where: { sku: input.sku },
         update: {
           displayName: input.displayName,
+          ...(input.iconUrl!==undefined?{iconUrl:input.iconUrl||null}:{}),
           currentPrice: new Prisma.Decimal(input.price),
           isActive: true,
         },
         create: {
           sku: input.sku,
           displayName: input.displayName,
+          iconUrl: input.iconUrl||null,
           currentPrice: new Prisma.Decimal(input.price),
         },
       });
