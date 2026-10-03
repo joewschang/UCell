@@ -20,6 +20,7 @@ export class PersonView {
  @ApiProperty({type:String,format:'date',nullable:true}) birthDate!:string|null;
  @ApiProperty({enum:['NETWORK_MEMBER','FORMAL_PENDING','FORMAL_MEMBER'],nullable:true,description:'Null means pre-V1.1 legacy state has not been classified; never inferred from Qualification.'}) membershipState!:string|null;
  @ApiProperty({type:String,format:'date-time',nullable:true}) mobileVerifiedAt!:string|null;
+ @ApiProperty({type:String,format:'date-time',nullable:true,required:false}) emailVerifiedAt?:string|null;
 }
 export class PaginationView {
  @ApiProperty({example:100}) limit!:number;

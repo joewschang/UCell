@@ -94,6 +94,7 @@ export type Person = {
     birthDate: string | null;
     membershipState: 'NETWORK_MEMBER' | 'FORMAL_PENDING' | 'FORMAL_MEMBER' | null;
     mobileVerifiedAt: string | null;
+    emailVerifiedAt?: string | null;
 };
 export type Organization = Scoped & {
     sponsor: {

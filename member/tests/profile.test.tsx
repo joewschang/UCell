@@ -4,6 +4,7 @@ import {it,expect,vi,afterEach} from 'vitest';
 const update=vi.hoisted(()=>vi.fn());
 vi.mock('../src/memberData',()=>({isMock:false,updateProfile:update}));
 import ProfileEditor from '../src/ProfileEditor';
+import ContactVerifier from '../src/ContactVerifier';
 let tree:ReactTestRenderer;
 afterEach(()=>{if(tree)act(()=>tree.unmount());update.mockReset();});
 it('submits only edited contact fields, refreshes and clears submitted values',async()=>{
@@ -27,6 +28,7 @@ it('keeps entered values when Backend rejects the update',async()=>{
  update.mockRejectedValue(new Error('登入已失效'));const refresh=vi.fn();
  await act(async()=>{tree=create(<ProfileEditor refresh={refresh}/>);});
  act(()=>tree.root.findAllByType('input')[1].props.onChange({target:{value:'test@example.invalid'}}));
+ act(()=>tree.root.findAllByType(ContactVerifier).find(v=>v.props.channel==='EMAIL')!.props.onVerified('a'.repeat(64)));
  await act(async()=>{await tree.root.findByType('form').props.onSubmit({preventDefault(){}});});
  expect(refresh).not.toHaveBeenCalled();expect(tree.root.findAllByType('input')[1].props.value).toBe('test@example.invalid');
  expect(tree.root.findByProps({role:'alert'}).children).toEqual(['登入已失效']);

@@ -2,6 +2,7 @@ import React from 'react';
 import {act,create,type ReactTestRenderer} from 'react-test-renderer';
 import {afterEach,beforeEach,expect,it,vi} from 'vitest';
 import NetworkRegistration from '../src/NetworkRegistration';
+import ContactVerifier from '../src/ContactVerifier';
 
 let tree:ReactTestRenderer|undefined;
 const person={name:'LINE 使用者',alias:null,memberNo:'person-1',email:null,phone:null,gender:null,birthDate:null,membershipState:null,mobileVerifiedAt:null} as const;
@@ -17,15 +18,16 @@ it('registers the authenticated LINE Person with explicit contract acceptance an
  const fetch=vi.fn(async(_url:string,init:RequestInit)=>init.method==='POST'?response({personId:'person-1',membershipState:'NETWORK_MEMBER',enabledAuthenticationProvider:'LINE',qualificationCreated:false,replayed:false},201):response([contract]));vi.stubGlobal('fetch',fetch);
  const refresh=vi.fn();await act(async()=>{tree=create(<NetworkRegistration person={person} refresh={refresh}/>);});
  complete();
+ act(()=>tree!.root.findAllByType(ContactVerifier).forEach(v=>v.props.onVerified('a'.repeat(64))));
  await act(async()=>submit());
  const post=fetch.mock.calls.find(([,init])=>init.method==='POST')!;expect(post[0]).toContain('/member/registration/network');expect(new Headers(post[1].headers).get('Idempotency-Key')).toBeTruthy();
- expect(JSON.parse(post[1].body as string)).toEqual({contractVersionId:'contract-1',accepted:true,legalName:'王小明',alias:'小明',gender:'UNDISCLOSED',birthDate:'1990-01-02',nationalityCode:'TW',identityDocumentType:'NATIONAL_ID',identityDocumentNumber:'TEST-ID-0001',mobile:'+886912345678',email:'member@example.invalid'});
+ expect(JSON.parse(post[1].body as string)).toEqual({contractVersionId:'contract-1',accepted:true,legalName:'王小明',alias:'小明',gender:'UNDISCLOSED',birthDate:'1990-01-02',nationalityCode:'TW',identityDocumentType:'NATIONAL_ID',identityDocumentNumber:'TEST-ID-0001',mobile:'+886912345678',email:'member@example.invalid',mobileVerificationProof:'a'.repeat(64),emailVerificationProof:'a'.repeat(64)});
  expect(JSON.stringify(post[1].body)).not.toContain('otp');expect(JSON.stringify(tree!.toJSON())).toContain('網路會員註冊完成');expect(refresh).toHaveBeenCalledOnce();
 });
 
 it('preserves the registration body and idempotency key across a retryable conflict',async()=>{
  let posts=0;const fetch=vi.fn(async(_url:string,init:RequestInit)=>{if(init.method!=='POST')return response([contract]);if(posts++===0)return response({code:'RETRYABLE_CONFLICT'},409);return response({personId:'person-1',membershipState:'NETWORK_MEMBER',enabledAuthenticationProvider:'LINE',qualificationCreated:false,replayed:true},201);});vi.stubGlobal('fetch',fetch);
- await act(async()=>{tree=create(<NetworkRegistration person={person} refresh={()=>{}}/>);});complete();
+ await act(async()=>{tree=create(<NetworkRegistration person={person} refresh={()=>{}}/>);});complete();act(()=>tree!.root.findAllByType(ContactVerifier).forEach(v=>v.props.onVerified('a'.repeat(64))));
  await act(async()=>submit());expect(JSON.stringify(tree!.toJSON())).toContain('保留原資料重試');await act(async()=>submit());
  const calls=fetch.mock.calls.filter(([,init])=>init.method==='POST');expect(calls).toHaveLength(2);expect(calls[0][1].body).toBe(calls[1][1].body);expect(new Headers(calls[0][1].headers).get('Idempotency-Key')).toBe(new Headers(calls[1][1].headers).get('Idempotency-Key'));
 });

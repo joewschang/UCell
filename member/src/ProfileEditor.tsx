@@ -1,13 +1,16 @@
 import { useState, useRef } from 'react';
 import { isMock, updateProfile } from './memberData';
+import ContactVerifier from './ContactVerifier';
 export default function ProfileEditor({refresh}:{refresh:()=>void}){
  const [name,setName]=useState(''),[email,setEmail]=useState(''),[phone,setPhone]=useState('');
+ const [mobileProof,setMobileProof]=useState<string>(),[emailProof,setEmailProof]=useState<string>();
  const [busy,setBusy]=useState(false),[message,setMessage]=useState(''),[error,setError]=useState('');
  const pending=useRef<{body:string;key:string}|null>(null),inFlight=useRef(false);
  if(isMock)return null;
  async function submit(e:React.FormEvent){
   e.preventDefault();if(inFlight.current)return;
-  const input={...(name.trim()?{name:name.trim()}:{}),...(email.trim()?{email:email.trim()}:{}),...(phone.trim()?{phone:phone.trim()}: {})};
+  if(email.trim()&&!emailProof||phone.trim()&&!mobileProof){setError('請先完成要修改的手機或 Email 驗證。');return;}
+  const input={...(name.trim()?{name:name.trim()}:{}),...(email.trim()?{email:email.trim(),emailVerificationProof:emailProof}:{}),...(phone.trim()?{phone:phone.trim(),mobileVerificationProof:mobileProof}: {})};
   if(!Object.keys(input).length){setError('請至少填寫一個要更新的欄位');return;}
   const body=JSON.stringify(input);if(pending.current?.body!==body)pending.current={body,key:crypto.randomUUID()};
   inFlight.current=true;setBusy(true);setError('');setMessage('');
@@ -15,5 +18,5 @@ export default function ProfileEditor({refresh}:{refresh:()=>void}){
   catch(e){setError(e instanceof Error?e.message:'更新失敗，請稍後重試');}
   finally{inFlight.current=false;setBusy(false);}
  }
- return <form className="card" onSubmit={submit}><h3>更新聯絡資料</h3><p>空白欄位保留原資料。顯示名稱不變更法定姓名；聯絡資料不作為登入身分。</p><label>顯示名稱<input maxLength={80} value={name} onChange={e=>setName(e.target.value)} disabled={busy}/></label><label>電子郵件<input type="email" maxLength={254} value={email} onChange={e=>setEmail(e.target.value)} disabled={busy}/></label><label>電話<input type="tel" maxLength={32} value={phone} onChange={e=>setPhone(e.target.value)} disabled={busy}/></label>{error&&<p role="alert">{error}</p>}{message&&<p role="status">{message}</p>}<button disabled={busy}>{busy?'更新中…':'儲存聯絡資料'}</button></form>;
+ return <form className="card" onSubmit={submit}><h3>更新聯絡資料</h3><p>空白欄位保留原資料。顯示名稱不變更法定姓名；聯絡資料不作為登入身分。</p><label>顯示名稱<input maxLength={80} value={name} onChange={e=>setName(e.target.value)} disabled={busy}/></label><label>電子郵件<input type="email" maxLength={254} value={email} onChange={e=>setEmail(e.target.value)} disabled={busy}/></label><label>電話<input type="tel" maxLength={32} value={phone} onChange={e=>setPhone(e.target.value)} disabled={busy}/></label><ContactVerifier channel="SMS" value={phone} purpose="PROFILE" onVerified={setMobileProof} disabled={busy}/><ContactVerifier channel="EMAIL" value={email} purpose="PROFILE" onVerified={setEmailProof} disabled={busy}/>{error&&<p role="alert">{error}</p>}{message&&<p role="status">{message}</p>}<button disabled={busy}>{busy?'更新中…':'儲存聯絡資料'}</button></form>;
 }

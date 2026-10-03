@@ -23,6 +23,7 @@ const {MemberShareLinkService}=require('./apps/api/dist/modules/member/member-sh
 const {ReferralAttributionService}=require('./apps/api/dist/modules/member/referral-attribution.service.js');
 const {OtpCodeService}=require('./apps/api/dist/modules/auth/otp-code.service.js');
 const {SmsOtpProviderService}=require('./apps/api/dist/modules/auth/sms-otp-provider.service.js');
+const {ContactVerificationEmailService}=require('./apps/api/dist/modules/auth/contact-verification-email.service.js');
 const {AuditService}=require('./apps/api/dist/common/audit/audit.service.js');
 const {claimOutboxLease,processMemberOrderNotification,captureParameters,releaseFailedOutboxLease}=require('./packages/database/dist/index.js');
 const {EnvelopeInterceptor}=require('./apps/api/dist/common/interceptors/envelope.interceptor.js');
@@ -163,13 +164,25 @@ try{
  const qualificationCountBeforeRegistration=await db.qualification.count({where:{currentHolderPersonId:person.personId}});
  const verifiedOtpConsumedBeforeRegistration=await db.otpChallenge.count({where:{status:'VERIFIED',consumedAt:{not:null}}});
  const registrationBody={contractVersionId:contract.contractDocumentVersionId,accepted:true,legalName:person.legalName,alias:person.legalName,gender:'UNSPECIFIED',birthDate:'1990-01-02',nationalityCode:'TW',identityDocumentType:'NATIONAL_ID',identityDocumentNumber:'TEST-NETWORK-ID-0001',mobile:'+886912345680',email:'network.test@example.invalid'};
+ equal((await call('POST','member/registration/network',token,registrationBody,'TEST_ONLY_MISSING_CONTACT_PROOFS')).statusCode,422,'registration rejects missing contact proofs');
+ const contactCodes=new Map();
+ app.get(SmsOtpProviderService).assertConfigured=()=>({});
+ app.get(SmsOtpProviderService).send=async(destination,code)=>{contactCodes.set(destination,code);return {providerRef:'TEST_ONLY_CONTACT'}};
+ app.get(ContactVerificationEmailService).assertConfigured=()=>({});
+ app.get(ContactVerificationEmailService).send=async(destination,code)=>{contactCodes.set(destination,code)};
+ for(const [channel,destination,field] of [['SMS',registrationBody.mobile,'mobileVerificationProof'],['EMAIL',registrationBody.email,'emailVerificationProof']]){
+  const response=await server.inject({method:'POST',url:'/api/v1/member/contact-verification/challenges',headers:{authorization:'Bearer '+token,'idempotency-key':randomUUID()},payload:{purpose:'REGISTRATION',channel,destination}});
+  equal(response.statusCode,201,'contact challenge accepted '+channel);
+  const verified=await call('POST','member/contact-verification/verify',token,{purpose:'REGISTRATION',channel,destination,challengeId:response.json().data.challengeId,code:contactCodes.get(destination)});
+  equal(verified.statusCode,201,'contact verified '+channel);registrationBody[field]=verified.json().data.proof;
+ }
  let registration=await call('POST','member/registration/network',token,registrationBody,'TEST_ONLY_NETWORK_REGISTER');
  equal(registration.statusCode,201,'authenticated LINE network registration commits');
  const registered=registration.json().data;
  equal([registered.personId,registered.membershipState,registered.enabledAuthenticationProvider,registered.qualificationCreated],[person.personId,'NETWORK_MEMBER','LINE',false],'registration completes existing LINE Person without Qualification');
  equal(await db.qualification.count({where:{currentHolderPersonId:person.personId}}),qualificationCountBeforeRegistration,'network registration creates no Qualification');
  const registeredPerson=await db.person.findUniqueOrThrow({where:{personId:person.personId}});
- equal([registeredPerson.membershipState,registeredPerson.mobileVerifiedAt],['NETWORK_MEMBER',null],'network Person persists contact mobile without SMS verification');
+ equal([registeredPerson.membershipState,registeredPerson.mobileVerifiedAt instanceof Date,registeredPerson.emailVerifiedAt instanceof Date],['NETWORK_MEMBER',true,true],'network Person persists separately verified contacts');
  equal(await db.personMembershipStateEvent.count({where:{personId:person.personId,toState:'NETWORK_MEMBER'}}),1,'network state evidence appended once');
  equal(await db.consentEvidence.count({where:{personId:person.personId,contractDocumentVersionId:contract.contractDocumentVersionId}}),1,'registration reuses immutable consent evidence');
  equal(await db.otpChallenge.count({where:{status:'VERIFIED',consumedAt:{not:null}}}),verifiedOtpConsumedBeforeRegistration,'LINE-first registration consumes no OTP evidence');
@@ -283,7 +296,8 @@ try{
  equal((await call('GET','member/notifications?qualificationId='+ids[2],token)).statusCode,403,'foreign notice scope denied');
  equal((await call('GET','member/notifications',token)).statusCode,422,'notice context required');
  const monetaryBeforeProfile=[await db.pvLedger.count(),await db.bonusAward.count(),await db.bonusRecoveryEvent.count()];
- const profile=await call('PATCH','member/profile',token,{name:'MEMBER DISPLAY TEST',email:'member-test@example.invalid',phone:'0912345678'});
+ equal((await call('PATCH','member/profile',token,{email:'member-test@example.invalid',phone:'0912345678'})).statusCode,422,'unverified contact change denied');
+ const profile=await call('PATCH','member/profile',token,{name:'MEMBER DISPLAY TEST'});
  equal(profile.statusCode,200,'own profile update');
  equal(profile.json().data.name,'MEMBER DISPLAY TEST','profile returns persisted display name');
  equal((await db.person.findUnique({where:{personId:person.personId}})).legalName,'MEMBER A TEST ONLY','legal name not changed');

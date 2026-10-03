@@ -1,4 +1,5 @@
-import { ConflictException, ForbiddenException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { ConflictException, ForbiddenException, Injectable, NotFoundException, UnauthorizedException,UnprocessableEntityException } from '@nestjs/common';
+import {ContactVerificationService,normalizeContact} from '../auth/contact-verification.service';
 import { PrismaService,memberMessageText } from '@ucell/database';
 import { createHash, randomUUID } from 'crypto';
 import { AuditService } from '../../common/audit/audit.service';
@@ -8,7 +9,7 @@ import { QualificationAccessService } from '../auth/qualification-access.service
 import { IdempotencyService } from '../../common/idempotency/idempotency.service';
 @Injectable()
 export class MemberService {
- constructor(private readonly db:PrismaService,private readonly verifier:LineTokenVerifierService,private readonly access:QualificationAccessService,private readonly audit:AuditService){}
+ constructor(private readonly db:PrismaService,private readonly verifier:LineTokenVerifierService,private readonly access:QualificationAccessService,private readonly audit:AuditService,private readonly contacts?:ContactVerificationService){}
  async exchange(idToken:string){
   const identity=await this.verifier.verify(idToken),key=createHash('sha256').update(idToken).digest('hex');
   try{return await this.db.$transaction(async tx=>{
@@ -25,7 +26,7 @@ export class MemberService {
  }
  async me(personId:string){
   const person=await this.db.person.findUniqueOrThrow({where:{personId}});
-  return {name:person.preferredName??person.legalName,alias:person.preferredName,memberNo:person.memberNo,email:person.email,phone:person.mobile,gender:person.genderCode,birthDate:person.birthDate?.toISOString().slice(0,10)??null,membershipState:person.membershipState,mobileVerifiedAt:person.mobileVerifiedAt?.toISOString()??null};
+  return {name:person.preferredName??person.legalName,alias:person.preferredName,memberNo:person.memberNo,email:person.email,phone:person.mobile,gender:person.genderCode,birthDate:person.birthDate?.toISOString().slice(0,10)??null,membershipState:person.membershipState,mobileVerifiedAt:person.mobileVerifiedAt?.toISOString()??null,emailVerifiedAt:person.emailVerifiedAt?.toISOString()??null};
  }
  private async mutation<T>(scope:string,key:string,input:unknown,work:Parameters<IdempotencyService['execute']>[3]){
   try{return await new IdempotencyService(this.db).execute(scope,key,input,work);}
@@ -38,13 +39,17 @@ export class MemberService {
    return {status:'REVOKED',sessionId};
   });return result.value;
  }
- async profile(personId:string,input:{name?:string;email?:string;phone?:string},requestId:string,key:string){
+ async profile(personId:string,input:{name?:string;email?:string;phone?:string;mobileVerificationProof?:string;emailVerificationProof?:string},requestId:string,key:string){
   const result=await this.mutation(`member:profile:${personId}`,key,input,async tx=>{
    const before=await tx.person.findUniqueOrThrow({where:{personId}});
    if(before.status!=='EFFECTIVE')throw new UnauthorizedException({code:'MEMBER_PERSON_DISABLED'});
-   const after=await tx.person.update({where:{personId},data:{preferredName:input.name,email:input.email,mobile:input.phone}});
+   const email=input.email===undefined?undefined:normalizeContact('EMAIL',input.email),mobile=input.phone===undefined?undefined:normalizeContact('SMS',input.phone);
+   let mobileVerifiedAt=before.mobileVerifiedAt,emailVerifiedAt=before.emailVerifiedAt;
+   if(email!==undefined&&(!before.emailVerifiedAt||email!==before.email?.trim().toLowerCase())){if(!this.contacts)throw new UnprocessableEntityException({code:'CONTACT_VERIFICATION_REQUIRED'});emailVerifiedAt=await this.contacts.consume(tx,'PERSON:'+personId,'PROFILE','EMAIL',email,input.emailVerificationProof);}
+   if(mobile!==undefined&&(!before.mobileVerifiedAt||mobile!==before.mobile)){if(!this.contacts)throw new UnprocessableEntityException({code:'CONTACT_VERIFICATION_REQUIRED'});mobileVerifiedAt=await this.contacts.consume(tx,'PERSON:'+personId,'PROFILE','SMS',mobile,input.mobileVerificationProof);}
+   const after=await tx.person.update({where:{personId},data:{preferredName:input.name,email,mobile,mobileVerifiedAt,emailVerifiedAt}});
    await this.audit.write(tx,{actorType:'MEMBER',actorId:personId,action:'MEMBER_PROFILE_UPDATED',entityType:'Person',entityId:personId,beforeData:{name:before.preferredName,email:before.email,phone:before.mobile},afterData:{name:after.preferredName,email:after.email,phone:after.mobile},requestId,correlationId:randomUUID()});
-   return {name:after.preferredName??after.legalName,alias:after.preferredName,memberNo:after.memberNo,email:after.email,phone:after.mobile,gender:after.genderCode,birthDate:after.birthDate?.toISOString().slice(0,10)??null,membershipState:after.membershipState,mobileVerifiedAt:after.mobileVerifiedAt?.toISOString()??null};
+   return {name:after.preferredName??after.legalName,alias:after.preferredName,memberNo:after.memberNo,email:after.email,phone:after.mobile,gender:after.genderCode,birthDate:after.birthDate?.toISOString().slice(0,10)??null,membershipState:after.membershipState,mobileVerifiedAt:after.mobileVerifiedAt?.toISOString()??null,emailVerifiedAt:after.emailVerifiedAt?.toISOString()??null};
   });return result.value;
  }
  async markNotificationRead(personId:string,qualificationId:string,notificationId:string,key:string,requestId:string){

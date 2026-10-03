@@ -5,6 +5,7 @@ import { IdempotencyService } from '../../common/idempotency/idempotency.service
 import { IdentityTokenService } from './identity-token.service';
 import { GoogleTokenVerifierService } from './google-token-verifier.service';
 import {LineTokenVerifierService} from './line-token-verifier.service';
+import {ContactVerificationService} from './contact-verification.service';
 import {PiiCryptoService} from '../../common/security/pii-crypto.service';
 import {IdentityMatchFingerprintService} from '../../common/security/identity-match-fingerprint.service';
 
@@ -12,11 +13,12 @@ export type WebRegistrationInput={
  contractVersionId:string;accepted:true;legalName:string;alias:string;gender:string;
  birthDate:string;mobile:string;email:string;password:string;googleIdToken?:string;lineIdToken?:string;
  nationalityCode:string;identityDocumentType:'NATIONAL_ID'|'RESIDENCE_PERMIT'|'PASSPORT'|'OTHER';identityDocumentNumber:string;
+ mobileVerificationProof?:string;emailVerificationProof?:string;
 };
 
 @Injectable()
 export class MemberWebRegistrationService{
- constructor(private readonly db:PrismaService,private readonly idempotency:IdempotencyService,private readonly google:GoogleTokenVerifierService,private readonly pii:PiiCryptoService,private readonly fingerprint:IdentityMatchFingerprintService,private readonly line?:LineTokenVerifierService){}
+ constructor(private readonly db:PrismaService,private readonly idempotency:IdempotencyService,private readonly google:GoogleTokenVerifierService,private readonly pii:PiiCryptoService,private readonly fingerprint:IdentityMatchFingerprintService,private readonly line?:LineTokenVerifierService,private readonly contacts?:ContactVerificationService){}
 
  async requiredContract(){
   const now=new Date();
@@ -50,6 +52,10 @@ export class MemberWebRegistrationService{
   const encrypted=this.pii.encrypt(identityDocumentNumber);
   const result=await this.idempotency.execute(`registration:web:${provider.toLowerCase()}:${identity.subject}`,key,{...input,identityDocumentNumber:undefined,identityDocumentFingerprint,googleIdToken:input.googleIdToken?'[REDACTED]':undefined,lineIdToken:input.lineIdToken?'[REDACTED]':undefined},async tx=>{
     const now=new Date(),correlationId=randomUUID();
+    if(!this.contacts)throw new UnprocessableEntityException({code:'CONTACT_VERIFICATION_REQUIRED'});
+    const owner=provider+':'+identity.subject;
+    const mobileVerifiedAt=await this.contacts.consume(tx,owner,'REGISTRATION','SMS',input.mobile,input.mobileVerificationProof);
+    const emailVerifiedAt=await this.contacts.consume(tx,owner,'REGISTRATION','EMAIL',input.email,input.emailVerificationProof);
     if(await tx.person.findFirst({where:{email:{equals:input.email,mode:'insensitive'}},select:{personId:true}}))throw new ConflictException({code:'EMAIL_ALREADY_REGISTERED'});
     const existingIdentity=await tx.identityLink.findUnique({where:{provider_providerSubject:{provider,providerSubject:identity.subject}}});
     if(existingIdentity)throw new ConflictException({code:`${provider}_IDENTITY_ALREADY_LINKED`});
@@ -57,7 +63,7 @@ export class MemberWebRegistrationService{
     if(await tx.person.findFirst({where:{mobile:input.mobile},select:{personId:true}}))throw new ConflictException({code:'MOBILE_ALREADY_REGISTERED'});
     const contract=await tx.contractDocumentVersion.findFirst({where:{contractDocumentVersionId:input.contractVersionId,required:true,audience:{in:['NETWORK_MEMBER','ALL_MEMBERS']},effectiveFrom:{lte:now},OR:[{effectiveTo:null},{effectiveTo:{gt:now}}]}});
     if(!contract||input.accepted!==true)throw new UnprocessableEntityException({code:'REQUIRED_CONTRACT_VERSION_INVALID'});
-    const person=await tx.person.create({data:{legalName:input.legalName,preferredName:input.alias,genderCode:input.gender,birthDate,nationalityCode,identityDocumentType:input.identityDocumentType,identityDocumentNumberCiphertext:encrypted.ciphertext,identityDocumentKeyVersion:encrypted.keyVersion,identityDocumentFingerprint,mobile:input.mobile,email:provider==='GOOGLE'?identity.email!:input.email.trim(),membershipState:'NETWORK_MEMBER',mobileVerifiedAt:null,status:'EFFECTIVE'}});
+    const person=await tx.person.create({data:{legalName:input.legalName,preferredName:input.alias,genderCode:input.gender,birthDate,nationalityCode,identityDocumentType:input.identityDocumentType,identityDocumentNumberCiphertext:encrypted.ciphertext,identityDocumentKeyVersion:encrypted.keyVersion,identityDocumentFingerprint,mobile:input.mobile,email:input.email.trim().toLowerCase(),membershipState:'NETWORK_MEMBER',mobileVerifiedAt,emailVerifiedAt,status:'EFFECTIVE'}});
     await tx.identityLink.create({data:{personId:person.personId,provider,providerSubject:identity.subject,email:identity.email,displayName:identity.displayName}});
     await tx.memberPasswordCredential.create({data:{personId:person.personId,passwordHash:this.passwordHash(input.password)}});
     const evidenceHash=createHash('sha256').update(JSON.stringify({personId:person.personId,contractVersionId:contract.contractDocumentVersionId,contentHash:contract.contentHash,channel:'MEMBER_WEB',correlationId})).digest('hex');
