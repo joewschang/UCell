@@ -4,12 +4,29 @@ import {afterEach,beforeEach,expect,it,vi} from 'vitest';
 
 const auth=vi.hoisted(()=>({
  passwordLogin:vi.fn(),forgotPassword:vi.fn(),resetPassword:vi.fn(),completeRegistration:vi.fn(),
- registrationContract:vi.fn(),renderGoogleButton:vi.fn(),renderGoogleRegistrationButton:vi.fn()
+ registrationContract:vi.fn(),renderGoogleButton:vi.fn(),renderGoogleRegistrationButton:vi.fn(),linkLineIdentity:vi.fn()
 }));
 vi.mock('../src/webAuth',()=>auth);
 import WebMemberEntry from '../src/WebMemberEntry';
 
 let tree:ReactTestRenderer|undefined;
+it('authenticates the original Google member before linking current LINE and never creates another member',async()=>{
+ const done=vi.fn(),token=vi.fn(()=> 'TEST_LINE_PROOF');
+ await act(async()=>{tree=create(<WebMemberEntry onLineLogin={vi.fn()} onAuthenticated={done} lineRegistrationToken={token}/>,{createNodeMock:e=>e.type==='div'?{}:null});});
+ await act(async()=>tree!.root.findAllByType('button').find(b=>b.children.includes('已用 Google 或 Web 註冊，登入並連結 LINE'))!.props.onClick());
+ expect(auth.linkLineIdentity).not.toHaveBeenCalled();
+ const callback=auth.renderGoogleButton.mock.calls.at(-1)![1];
+ await act(async()=>{callback();});
+ expect(auth.linkLineIdentity).toHaveBeenCalledWith('TEST_LINE_PROOF');expect(done).toHaveBeenCalledOnce();
+ expect(auth.completeRegistration).not.toHaveBeenCalled();
+});
+it('stays on the linking screen on conflict instead of entering the wrong member account',async()=>{
+ auth.linkLineIdentity.mockRejectedValueOnce(new Error('此 LINE 已連結其他會員'));
+ const done=vi.fn();await act(async()=>{tree=create(<WebMemberEntry onLineLogin={vi.fn()} onAuthenticated={done} lineRegistrationToken={()=>'TEST_LINE_PROOF'}/>,{createNodeMock:e=>e.type==='div'?{}:null});});
+ await act(async()=>tree!.root.findAllByType('button').find(b=>b.children.includes('已用 Google 或 Web 註冊，登入並連結 LINE'))!.props.onClick());
+ await act(async()=>auth.renderGoogleButton.mock.calls.at(-1)![1]());
+ expect(done).not.toHaveBeenCalled();expect(JSON.stringify(tree!.toJSON())).toContain('此 LINE 已連結其他會員');
+});
 it('opens new LINE friends directly on profile registration and preserves an existing-member binding choice',async()=>{
  const authenticated=vi.fn(),existing=vi.fn(),token=vi.fn(()=> 'LINE_ID_TOKEN_TEST_ONLY');
  await act(async()=>{tree=create(<WebMemberEntry onLineLogin={vi.fn()} onAuthenticated={authenticated} lineRegistrationToken={token} onExistingMemberBinding={existing}/>,{createNodeMock:element=>element.type==='div'?{}:null});});

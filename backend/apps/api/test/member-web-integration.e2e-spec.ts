@@ -17,6 +17,7 @@ describe('Integrated Web identity and password lifecycle (real isolated DB, synt
  const line={verify:jest.fn(async(token:string)=>({subject:token,expiresAt:Math.floor(Date.now()/1000)+3600}))};
  const lineRegistration=new MemberWebRegistrationService(db,new IdempotencyService(db),google as any,pii,fingerprint,line as any);
  const auth=new MemberWebAuthService(db,sessions,google as any,{} as any,new ConfigService({MEMBER_SESSION_TTL_SECONDS:3600}));
+ const linking=new MemberWebAuthService(db,sessions,google as any,{} as any,new ConfigService({MEMBER_SESSION_TTL_SECONDS:3600}),line as any);
  const original={key:process.env.PII_ENCRYPTION_KEY,version:process.env.PII_ENCRYPTION_KEY_VERSION};
  let contractId:string;
  beforeAll(async()=>{
@@ -32,6 +33,27 @@ describe('Integrated Web identity and password lifecycle (real isolated DB, synt
   await db.$disconnect();
  });
  function input(){const token='synthetic-'+randomUUID();return {contractVersionId:contractId,accepted:true as const,legalName:'TEST ONLY APPLICANT',alias:'TEST',gender:'UNDISCLOSED',birthDate:'1990-01-02',nationalityCode:'TW',identityDocumentType:'NATIONAL_ID' as const,identityDocumentNumber:'TEST-ID-'+randomUUID(),mobile:'+8869'+String(Math.floor(Math.random()*1e8)).padStart(8,'0'),email:token+'@example.invalid',password:'TEST_ONLY_PASSWORD_123!',googleIdToken:token};}
+ it('links LINE to the same Google member, is retry-safe, preserves member count and refuses transfer or replacement',async()=>{
+  const a=input(),b=input();await registration.complete(a,randomUUID());await registration.complete(b,randomUUID());
+  const first=await db.identityLink.findUniqueOrThrow({where:{provider_providerSubject:{provider:'GOOGLE',providerSubject:a.googleIdToken}}});
+  const second=await db.identityLink.findUniqueOrThrow({where:{provider_providerSubject:{provider:'GOOGLE',providerSubject:b.googleIdToken}}});
+  const count=await db.person.count(),subject='link-'+randomUUID();
+  await expect(linking.linkLine(first.personId,subject)).resolves.toMatchObject({linked:true});
+  await expect(linking.linkLine(first.personId,subject)).resolves.toMatchObject({linked:true});
+  expect(await db.person.count()).toBe(count);
+  expect(await linking.loginMethods(first.personId)).toEqual({google:true,line:true});
+  expect((await identities.resolve({provider:'LINE',subject,personId:first.personId})).personId).toBe(first.personId);
+  await expect(linking.linkLine(second.personId,subject)).rejects.toMatchObject({response:{code:'LINE_IDENTITY_ALREADY_LINKED'}});
+  await expect(linking.linkLine(first.personId,'other-'+randomUUID())).rejects.toMatchObject({response:{code:'MEMBER_LINE_ALREADY_LINKED'}});
+  await db.identityLink.update({where:{provider_providerSubject:{provider:'LINE',providerSubject:subject}},data:{status:'REVOKED'}});
+  await expect(linking.linkLine(first.personId,subject)).rejects.toMatchObject({response:{code:'LINE_IDENTITY_ALREADY_LINKED'}});
+ });
+ it('serializes concurrent LINE additions to one member so only one identity wins',async()=>{
+  const a=input();await registration.complete(a,randomUUID());const identity=await db.identityLink.findUniqueOrThrow({where:{provider_providerSubject:{provider:'GOOGLE',providerSubject:a.googleIdToken}}});
+  const results=await Promise.allSettled([linking.linkLine(identity.personId,'race-'+randomUUID()),linking.linkLine(identity.personId,'race-'+randomUUID())]);
+  expect(results.filter(r=>r.status==='fulfilled')).toHaveLength(1);
+  expect(await db.identityLink.count({where:{personId:identity.personId,provider:'LINE'}})).toBe(1);
+ });
  it('registers a verified new LINE identity as Network Member with no qualification and an immediately usable LINE session',async()=>{
   const {googleIdToken,...fields}=input(),lineIdToken='U'+randomUUID().replaceAll('-',''),key=randomUUID();
   const result=await lineRegistration.complete({...fields,lineIdToken},key);

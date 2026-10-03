@@ -2,11 +2,26 @@ import React from 'react';
 import {act,create,type ReactTestRenderer} from 'react-test-renderer';
 import {afterEach,expect,it,vi} from 'vitest';
 
-const auth=vi.hoisted(()=>({linkGoogleIdentity:vi.fn(),renderGoogleRegistrationButton:vi.fn()}));
+const auth=vi.hoisted(()=>({linkGoogleIdentity:vi.fn(),renderGoogleRegistrationButton:vi.fn(),linkLineIdentity:vi.fn(),loginMethods:vi.fn(async()=>({google:true,line:false}))}));
+const line=vi.hoisted(()=>({prepareLineIdentityLink:vi.fn()}));
+vi.mock('../src/lineBinding',()=>line);
 vi.mock('../src/webAuth',()=>auth);
 import IdentityLinking from '../src/IdentityLinking';
 
 let tree:ReactTestRenderer|undefined;
+it('requires verified LINE proof and refreshes linked statuses without creating a member',async()=>{
+ line.prepareLineIdentityLink.mockResolvedValue('TEST_LINE_TOKEN');auth.linkLineIdentity.mockResolvedValue({linked:true});
+ await act(async()=>{tree=create(<IdentityLinking/>,{createNodeMock:e=>e.type==='div'?{}:null});});
+ await act(async()=>tree!.root.findByType('button').props.onClick());
+ expect(auth.linkLineIdentity).toHaveBeenCalledWith('TEST_LINE_TOKEN');
+ expect(JSON.stringify(tree!.toJSON())).toContain('LINE 已連結，可用 LINE 或 Google');
+});
+it('does not link before LINE authentication redirects back',async()=>{
+ line.prepareLineIdentityLink.mockResolvedValue(null);
+ await act(async()=>{tree=create(<IdentityLinking/>,{createNodeMock:e=>e.type==='div'?{}:null});});
+ await act(async()=>tree!.root.findByType('button').props.onClick());
+ expect(auth.linkLineIdentity).not.toHaveBeenCalled();
+});
 afterEach(()=>{if(tree)act(()=>tree!.unmount());tree=undefined;vi.clearAllMocks();});
 
 it('links Google to the current authenticated member instead of creating another account',async()=>{
