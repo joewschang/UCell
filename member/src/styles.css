@@ -11,3 +11,5 @@
 .mall-offer-grid > .card > button { margin-top:auto; }
 
 .package-product-list{display:grid;gap:10px;margin:16px 0}.package-product-row{display:flex;align-items:center;gap:12px;padding:12px;border:1px solid #ded8c9;border-radius:10px}.package-product-icon{width:48px;height:48px;object-fit:contain;flex:0 0 48px}.package-product-description{flex:1;min-width:0}.package-product-description h4,.package-product-description p{margin:0}.package-product-description p{font-size:.85rem;color:#666}.package-product-row .quantity{flex-shrink:0}@media(max-width:480px){.package-product-row{flex-wrap:wrap}.package-product-row .quantity{margin-left:auto}}
+
+.uc-art-emblem{display:inline-flex;align-items:center;gap:8px;vertical-align:middle;flex-shrink:0}.uc-art-emblem img{width:48px;height:48px;object-fit:contain;border-radius:8px}.uc-art-emblem span{font-size:.85rem;font-weight:700}.uc-ball-rank,.uc-ball-identity-emblems{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.uc-ball-rank-state{display:block;font-size:.8rem}.uc-identity-badge .uc-ball-rank{justify-content:center}.uc-identity-badge .uc-art-emblem span{color:inherit}

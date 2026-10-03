@@ -1,10 +1,11 @@
+import {MembershipPlanEmblem as QualificationEmblem,BallRankBadge} from './MembershipEmblems';
 import MemberPayouts from './MemberPayouts';
 import { qualificationReferenceLabel } from './terminology';
 import MemberMessages from './MemberMessages';
 import { useQualificationFocus } from './useQualificationFocus';
 import { MemberNavigation, IncomeNavigation } from './MemberNavigation';
 import {MemberPageHeader} from './MemberPageHeader';
-import {CompanyLogo,MemberAppShell,ThemePreferenceControl,QualificationSwitcher,MobileActionGrid,MetricCard,MoneyState,LoadingState,ErrorState,EmptyState,QualificationEmblem,UCellIcon} from '@ucell/design-system';
+import {CompanyLogo,MemberAppShell,ThemePreferenceControl,QualificationSwitcher,MobileActionGrid,MetricCard,MoneyState,LoadingState,ErrorState,EmptyState,UCellIcon} from '@ucell/design-system';
 import { Link, Route, Routes } from 'react-router-dom';
 import { useState, type KeyboardEvent, type ReactNode } from 'react';
 import { useQualification } from './QualificationContext';
@@ -67,7 +68,7 @@ function Home({ q }: {
         <section className="hero uc-member-identity" aria-labelledby="member-today-title">
             <div className="uc-orbit" aria-hidden="true"/>
             <div className="uc-identity-copy"><small>MY UCELL TODAY</small><h1 id="member-today-title">您好，{d.memberName}</h1><p><span>會員編號</span> {d.memberNo}</p></div>
-            <div className="uc-identity-badge"><QualificationEmblem code={q.rank}/><span>目前資格</span><strong>{qualificationReferenceLabel(q)}</strong><small>方案 {data.displayPlanLevel(q.rank)}</small></div>
+            <div className="uc-identity-badge"><QualificationEmblem code={q.rank}/><span>目前資格</span><strong>{qualificationReferenceLabel(q)}</strong><small>方案 {data.displayPlanLevel(q.rank)}</small><BallRankBadge qualificationNo={q.qualificationNo}/></div>
         </section>
         <section className="card uc-member-status"><div className="uc-status-block"><span>目前經營資格</span><strong>{qualificationActiveLabel(q.active)}</strong><small>{d.monthReference??'月份尚未提供'} · {d.activeInterval?`${d.activeInterval.activeFrom} ～ ${d.activeInterval.activeTo}`:'Active 區間尚未提供'}</small></div><div className="uc-status-block"><span>本月重購狀態</span><strong>{{ ACTIVE: '已完成', PENDING: '確認中', INACTIVE: '未完成' }[d.monthlyRepurchaseStatus]}</strong><i className="uc-status-signal" data-state={d.monthlyRepurchaseStatus} aria-hidden="true"/></div></section>
         <div className="uc-section-heading"><div><small>LIVE READ MODEL</small><h2>業績摘要</h2></div><span>{d.monthReference??'當期資料'}</span></div>
@@ -153,7 +154,7 @@ function Me() {
   <ProfileEditor refresh={state.retry}/><section className="card"><h3>顯示設定</h3><ThemePreferenceControl/></section>
   {!data.isMock&&<IdentityLinking/>}
   <h3>我的經營資格</h3>
-  {qualifications.map(q => <article key={q.id} className="card uc-emblem-card"><QualificationEmblem code={q.rank}/><div><strong>{qualificationReferenceLabel(q)}</strong><p>方案：{data.displayPlanLevel(q.rank)} · {qualificationActiveLabel(q.active)}</p></div></article>)}
+  {qualifications.map(q => <article key={q.id} className="card uc-emblem-card"><QualificationEmblem code={q.rank}/><div><strong>{qualificationReferenceLabel(q)}</strong><p>方案：{data.displayPlanLevel(q.rank)} · {qualificationActiveLabel(q.active)}</p><BallRankBadge qualificationNo={q.qualificationNo}/></div></article>)}
   <EndSession connected={!data.isMock}/>
  </>;
 }
