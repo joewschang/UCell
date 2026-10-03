@@ -5,6 +5,7 @@ import { pollProviderWebhooks, type ProviderHandlerRegistration } from './provid
 import { WorkerLoop, workerPollInterval } from './worker-loop';
 import { ProviderWorkloadMetrics } from './provider-workload-metrics';
 import { createLineMessagingObserverHandler } from './line-messaging-handler';
+import {LineRichMenuClient,LineRichMenuReconciler} from './line-rich-menu-reconciliation';
 import {pollErpHandoffs,type PhysicalErpAdapter} from './erp-handoff-runtime';
 import {pollErpBusinessProjections,type BusinessErpAdapter} from './erp-business-runtime';
 import {pollPeriodCloseJobs} from './period-close-runtime';
@@ -18,9 +19,15 @@ const businessErpAdapters:readonly BusinessErpAdapter[]=Object.freeze([]);
 const trackingAdapters:readonly VerifiedShipmentTrackingAdapter[]=Object.freeze([]);
 
 const prisma = new PrismaService();
+const richMenus=process.env.LINE_RICH_MENU_ENABLED==='true'?new LineRichMenuReconciler(prisma as any,new LineRichMenuClient({token:process.env.LINE_MESSAGING_CHANNEL_ACCESS_TOKEN??process.env.LINE_CHANNEL_ACCESS_TOKEN??'',basicId:process.env.LINE_EXPECTED_BASIC_ID??'',defaultMenuId:process.env.LINE_DEFAULT_RICH_MENU_ID??'',memberMenuId:process.env.LINE_MEMBER_RICH_MENU_ID??''}),process.env.LINE_MEMBER_RICH_MENU_ID??''):undefined;
+let nextRichMenuScan=0;
+let richMenuFlight:Promise<void>|undefined;
+// Follow/unblock requests the next maintenance pass, without extending a
+// webhook lease or resetting pagination for other known friends.
+const richMenuWake=richMenus?{async followHashes(hashes:string[]){if(hashes.length)nextRichMenuScan=0;}}:undefined;
 const providerHandlers: readonly ProviderHandlerRegistration[] = Object.freeze([
  ...trackingAdapters.map(adapter=>({domain:'LOGISTICS' as const,provider:adapter.provider,connectionId:adapter.connectionId,providerConnectionVersionId:adapter.providerConnectionVersionId,handler:createShipmentTrackingHandler(prisma,adapter)})),
- ...(process.env.LINE_MESSAGING_WORKER_ENABLED==='true'?[{domain:'IDENTITY' as const,provider:'LINE_MESSAGING',connectionId:'LINE_MESSAGING_DEFAULT',handler:createLineMessagingObserverHandler(prisma)}]:[]),
+ ...(process.env.LINE_MESSAGING_WORKER_ENABLED==='true'?[{domain:'IDENTITY' as const,provider:'LINE_MESSAGING',connectionId:'LINE_MESSAGING_DEFAULT',handler:createLineMessagingObserverHandler(prisma,richMenuWake)}]:[]),
 ]);
 const providerMetrics = new ProviderWorkloadMetrics();
 
@@ -271,6 +278,14 @@ async function matureBonusAwards(){
 }
 
 async function tick(){
+  if(richMenus&&!richMenuFlight&&Date.now()>=nextRichMenuScan){
+    nextRichMenuScan=Date.now()+60000;
+    // Presentation network calls must not hold up order/settlement processing.
+    richMenuFlight=richMenus.batch()
+     .then(result=>{console.log(JSON.stringify({event:'LINE_RICH_MENU_RECONCILIATION',...result}));})
+     .catch(()=>{console.error(JSON.stringify({event:'LINE_RICH_MENU_RECONCILIATION_FAILED',errorCode:'LINE_RICH_MENU_UNAVAILABLE'}));})
+     .finally(()=>{richMenuFlight=undefined;});
+  }
   await pollOutbox();
   await pollErpHandoffs(prisma,erpAdapters);
   await pollErpBusinessProjections(prisma,businessErpAdapters);
@@ -294,7 +309,7 @@ async function tick(){
 }
 
 async function main(){
-  const loop=new WorkerLoop({tick,disconnect:()=>prisma.$disconnect(),onError:error=>emitStructuredOperationalError({service:'worker',operation:'tick',traceId:crypto.randomUUID(),error,errorCode:'WORKER_TICK_FAILED',retryable:true})},workerPollInterval());
+  const loop=new WorkerLoop({tick,disconnect:async()=>{await richMenuFlight;await prisma.$disconnect();},onError:error=>emitStructuredOperationalError({service:'worker',operation:'tick',traceId:crypto.randomUUID(),error,errorCode:'WORKER_TICK_FAILED',retryable:true})},workerPollInterval());
   const shutdown=(signal:string)=>{console.log(`UCell worker received ${signal}; draining current tick`);void loop.stop().then(()=>{process.exitCode=0;}).catch(error=>{console.error(error);process.exitCode=1;});};
   process.once('SIGTERM',()=>shutdown('SIGTERM'));
   process.once('SIGINT',()=>shutdown('SIGINT'));
