@@ -22,7 +22,9 @@ try{await prisma.$transaction(async tx=>{
   const columns=await tx.$queryRaw`SELECT column_name FROM information_schema.columns WHERE table_schema=${schema} AND table_name=${table} ORDER BY column_name`;
   check('Prisma DB column convergence '+name,columns.map(row=>row.column_name).sort(),model.fields.filter(field=>field.kind!=='object').map(field=>field.dbName??field.name).sort());
  }
- const person=await tx.person.findFirstOrThrow(),product=await tx.productReference.findFirstOrThrow();
+ // Isolated databases start empty. These fixtures live only inside this
+ // transaction and are always removed by the rollback below.
+ const person=await tx.person.create({data:{legalName:'PHASE2 DB TEST PERSON '+version,status:'EFFECTIVE'}}),product=await tx.productReference.create({data:{sku:'PHASE2-DB-'+version,displayName:'PHASE2 DB TEST PRODUCT',currentPrice:1600}});
  const parameters=await tx.runtimeRuleParameter.findMany({where:{ruleVersionCode:'R1.0B'}});
  for(const row of new Map(parameters.map(r=>[JSON.stringify([r.parameterCode,r.scopeKey]),r])).values()){
    if(['epv.calendar.timezone','accounting.timezone'].includes(row.parameterCode))continue; // Explicit TEST_ONLY UTC below.
@@ -193,12 +195,34 @@ try{await prisma.$transaction(async tx=>{
  const rpvSource=await qualification(),rpvInactiveG1=await qualification(false),rpvActiveG2=await qualification();
  await tx.binaryPlacement.create({data:{parentQualificationId:rpvInactiveG1.qualificationId,childQualificationId:rpvSource.qualificationId,side:'LEFT',effectiveFrom:new Date('2020-01-01')}});
  await tx.binaryPlacement.create({data:{parentQualificationId:rpvActiveG2.qualificationId,childQualificationId:rpvInactiveG1.qualificationId,side:'LEFT',effectiveFrom:new Date('2020-01-01')}});
- const traversalSub=await tx.subscription.create({data:{qualificationId:rpvSource.qualificationId,subscriptionPlanId:plan.subscriptionPlanId,orderId:economic[1].order.orderId,status:'ACTIVE',startMonth:new Date('2020-01-01'),endMonth:new Date('2020-01-01'),ruleVersionCode:version}});
+ const traversalOrder=await tx.order.create({data:{qualificationId:rpvSource.qualificationId,purpose:'REPURCHASE',status:'PAID',grossAmount:4000,netAmount:4000,ruleVersionCode:version,lines:{create:{productId:product.productId,skuSnapshot:product.sku,productNameSnapshot:'Partial RPV fixture',quantity:4,unitPrice:1000,lineAmount:4000,gpvRateSnapshot:0,gpvAmountSnapshot:0,ruleProfileSnapshot:{}}}},include:{lines:true}});
+ const traversalSub=await tx.subscription.create({data:{qualificationId:rpvSource.qualificationId,subscriptionPlanId:plan.subscriptionPlanId,orderId:traversalOrder.orderId,status:'ACTIVE',startMonth:new Date('2020-01-01'),endMonth:new Date('2020-01-01'),ruleVersionCode:version}});
  const traversalRecognition=await tx.monthlyRecognitionSchedule.create({data:{subscriptionId:traversalSub.subscriptionId,installmentNo:1,recognitionMonth:new Date('2020-01-01'),recognizedAmount:2000,rpvAmount:1200,dueAt:new Date('2020-01-03'),ruleVersionCode:version}});
  await new RpvService(facade,{}).recognize(traversalRecognition.recognitionId);
  const traversalAwards=await tx.rpvUplineAwardEvent.findMany({where:{recognitionId:traversalRecognition.recognitionId},orderBy:{binaryGeneration:'asc'}});
  check('inactive RPV upline receives zero without compression',[traversalAwards[0].recipientQualificationId,traversalAwards[0].binaryGeneration,traversalAwards[0].activeSnapshot,traversalAwards[0].payableAmount.toString()],[rpvInactiveG1.qualificationId,1,false,'0'],{actual:[true,1,false,'0'],expected:[true,1,false,'0']});
  check('higher RPV generation evaluated independently',[traversalAwards[1].recipientQualificationId,traversalAwards[1].binaryGeneration,traversalAwards[1].activeSnapshot,traversalAwards[1].payableAmount.toString()],[rpvActiveG2.qualificationId,2,true,'100'],{actual:[true,2,true,'100'],expected:[true,2,true,'100']});
+ // Two accepted partial returns recover cumulative proportions without
+ // changing the sealed recognition or the original upline award facts.
+ const partialService=new SubscriptionCancellationService(facade);
+ const partialFacts=[];
+ for(const [index,amount] of ['800','1200'].entries()){
+   const ret=await tx.returnCase.create({data:{orderId:traversalSub.orderId,status:'POSTED',reasonCode:'PARTIAL_RETURN',occurredAt:new Date('2020-01-05'),idempotencyKey:randomUUID(),correlationId:randomUUID(),lines:{create:{orderLineId:traversalOrder.lines[0].orderLineId,quantity:1,returnAmount:amount,gpvReversalAmount:0}}}});
+   const input={sourceReturnCaseId:ret.returnCaseId,idempotencyKey:randomUUID()};
+   const cancelled=await partialService.cancel(traversalSub.subscriptionId,new Date('2020-01-05'),'PARTIAL_RETURN',amount,input);
+   partialFacts.push(cancelled.cancellation);
+   const key='RPV:'+traversalRecognition.recognitionId+':'+cancelled.cancellation.subscriptionCancellationId;
+   await replay.replayRpvCancellation(tx,traversalRecognition.recognitionId,cancelled.cancellation.subscriptionCancellationId,key,randomUUID());
+   const reversals=await tx.pvLedger.aggregate({where:{sourceLineId:traversalRecognition.recognitionId,eventType:'RPV_REVERSAL'},_sum:{amount:true}});
+   check('partial RPV cumulative recovery '+index,reversals._sum.amount.toString(),index===0?'-240':'-600');
+   const count=await tx.pvLedger.count({where:{sourceLineId:traversalRecognition.recognitionId}});
+   await replay.replayRpvCancellation(tx,traversalRecognition.recognitionId,cancelled.cancellation.subscriptionCancellationId,key,randomUUID());
+   check('partial RPV replay appends no duplicate '+index,await tx.pvLedger.count({where:{sourceLineId:traversalRecognition.recognitionId}}),count);
+   check('partial cancellation retry is idempotent '+index,(await partialService.cancel(traversalSub.subscriptionId,new Date('2020-01-05'),'PARTIAL_RETURN',amount,input)).replayed,true);
+ }
+ check('partial returns preserve original RPV awards',await tx.rpvUplineAwardEvent.findMany({where:{recognitionId:traversalRecognition.recognitionId},orderBy:{binaryGeneration:'asc'}}),traversalAwards,{actual:'UNCHANGED',expected:'UNCHANGED'});
+ const partialPostings=await tx.entitlementReplayPosting.findMany({where:{actionKey:{in:partialFacts.map(f=>'RPV:'+traversalRecognition.recognitionId+':'+f.subscriptionCancellationId)}}});
+ check('partial returns recover only half of original payable',partialPostings.reduce((sum,p)=>sum.add(p.delta),new Prisma.Decimal(0)).toString(),'-50');
  for(const field of ['recognitionMonth','recognitionPeriod','eventId']){
    const content=JSON.parse(JSON.stringify(rpvSnapshot.content));delete content.inputs[field];
    await rejected('RPV missing '+field+' fails closed',()=>replay.verifyReplayEnvelope({...rpvSnapshot,content,hash:replay.replayHash(content)}),'HISTORICAL_SNAPSHOT_MISSING');
@@ -214,7 +238,10 @@ try{await prisma.$transaction(async tx=>{
  const originalPlacement=await tx.binaryPlacement.findUniqueOrThrow({where:{childQualificationId:leftQ.qualificationId}});
  await tx.binaryPlacement.update({where:{binaryPlacementId:originalPlacement.binaryPlacementId},data:{effectiveTo:new Date('2020-01-04')}});
  await tx.binaryPlacement.update({where:{binaryPlacementId:originalPlacement.binaryPlacementId},data:{parentQualificationId:newSponsor.qualificationId,effectiveFrom:new Date('2020-01-04'),effectiveTo:null}});
- const cancellation=await new SubscriptionCancellationService(facade).cancel(sub.subscriptionId,new Date('2020-01-02'),'PHASE2_TEST');
+ // The return is accepted after the first recognition posted.  Its recovery
+ // must still consume the sealed historical recognition rather than treating
+ // the recognition date as a cancellation eligibility cutoff.
+ const cancellation=await new SubscriptionCancellationService(facade).cancel(sub.subscriptionId,new Date('2020-01-05'),'PHASE2_TEST');
  check('subscription future rows cancelled',(await tx.monthlyRecognitionSchedule.findUniqueOrThrow({where:{recognitionId:future.recognitionId}})).status,'CANCELLED');
  check('recognized affected event queued exactly once',cancellation.queuedRpvReversalCount,1);
  const outbox=await tx.outboxEvent.findFirstOrThrow({where:{aggregateId:recognized.recognitionId,eventType:'RPV_REVERSAL_REQUIRED'}});

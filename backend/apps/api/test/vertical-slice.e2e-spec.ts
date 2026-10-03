@@ -48,7 +48,7 @@ function qualificationFixture(){
   $queryRaw:jest.fn(async()=>[]),
   person:{findUnique:jest.fn(async()=>({personId:'person'}))},
   qualification:{findUnique:jest.fn(async({where}:any)=>({qualificationId:where.qualificationId})),create:jest.fn(async({data}:any)=>({...data,qualificationId:'created-'+(++sequence)}))},
-  qualificationHolderHistory:{create:jest.fn(async({data}:any)=>data)},qualificationPlanHistory:{create:jest.fn(async({data}:any)=>data)},
+  qualificationOwnerInterval:{create:jest.fn(async({data}:any)=>data)},qualificationHolderHistory:{create:jest.fn(async({data}:any)=>data)},qualificationPlanHistory:{create:jest.fn(async({data}:any)=>data)},
   sponsorRelationship:{aggregate:jest.fn(async(_query:any)=>({_max:{sponsorSequenceNo:relationships.length?Math.max(...relationships.map(row=>row.sponsorSequenceNo)):null}})),create:jest.fn(async({data}:any)=>{relationships.push({...data});return data;})},
   binaryPlacement:{findFirst:jest.fn(async()=>null),create:jest.fn(async({data}:any)=>data)}
  };
@@ -67,7 +67,7 @@ describe('UCell first vertical slice', () => {
     expect(f.audit.write.mock.calls[0][0]).toBe(f.tx);
   });
   it('creates Qualification with permanent sponsor sequence', async () => {
-    const f=qualificationFixture(), dto={personId:'person',planLevelCode:'STARTER' as const,sponsorQualificationId:'sponsor',binaryParentQualificationId:'sponsor',binarySide:'LEFT' as const,effectiveAt:'2020-01-01T00:00:00.000Z'};
+    const f=qualificationFixture(), dto={holderType:'PERSON' as const,personId:'person',planLevelCode:'STARTER' as const,sponsorQualificationId:'sponsor',binaryParentQualificationId:'sponsor',binarySide:'LEFT' as const,effectiveAt:'2020-01-01T00:00:00.000Z'};
     const first=await f.service.create(dto,'first','request');
     expect(first.value.sponsor).toEqual({sponsorQualificationId:'sponsor',sponsorSequenceNo:1});
     expect(await f.service.create(dto,'first','retry')).toMatchObject({replayed:true,value:{qualification:{qualificationId:first.value.qualification.qualificationId}}});
@@ -84,7 +84,7 @@ describe('UCell first vertical slice', () => {
   });
   it('rejects 1st direct placed on RIGHT', async () => {
     const f=qualificationFixture();
-    await expect(f.service.create({personId:'person',planLevelCode:'STARTER',sponsorQualificationId:'sponsor',binaryParentQualificationId:'sponsor',binarySide:'RIGHT'},'invalid','request')).rejects.toMatchObject({response:{code:'BINARY_LEFT_SUBTREE_REQUIRED'}});
+    await expect(f.service.create({holderType:'PERSON' as const,personId:'person',planLevelCode:'STARTER',sponsorQualificationId:'sponsor',binaryParentQualificationId:'sponsor',binarySide:'RIGHT'},'invalid','request')).rejects.toMatchObject({response:{code:'BINARY_LEFT_SUBTREE_REQUIRED'}});
     for(const model of [f.tx.qualification,f.tx.qualificationHolderHistory,f.tx.qualificationPlanHistory,f.tx.sponsorRelationship,f.tx.binaryPlacement])expect(model.create).not.toHaveBeenCalled();
     expect(f.audit.write).not.toHaveBeenCalled();
     expect(f.tx.idempotencyRecord.update).not.toHaveBeenCalled();

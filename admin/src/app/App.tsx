@@ -1,3 +1,5 @@
+import {EconomicLineagePage} from '../features/economic-lineage/EconomicLineagePage';
+import {OrganizationGeoPage} from '../features/organization-geo/OrganizationGeoPage';
 import {ReservoirCenterPage} from '../features/reservoir/ReservoirCenterPage';
 import {BinaryTreesPage} from '../features/organization/BinaryTreesPage';
 import {Link,Navigate,Route,Routes} from 'react-router-dom';
@@ -8,6 +10,7 @@ import {DashboardPage} from '../features/dashboard/DashboardPage';
 import {PeoplePage} from '../features/people/PeoplePage';
 import {ApplicationsPage} from '../features/applications/ApplicationsPage';
 import {NewApplicationWizard} from '../features/applications/NewApplicationWizard';
+import {PaperFormalApplicationPage} from '../features/applications/PaperFormalApplicationPage';
 import {QualificationsPage} from '../features/qualifications/QualificationsPage';
 import {ProductsPage} from '../features/products/ProductsPage';
 import {PackagesPage} from '../features/packages/PackagesPage';
@@ -27,6 +30,15 @@ import {UatPage} from '../features/uat/UatPage';
 import {SystemPage} from '../features/system/SystemPage';
 import {ProviderOperationsPage} from '../features/provider-operations/ProviderOperationsPage';
 import {RequirePageRole} from '../features/auth/RequirePageRole';
+import {ExistingMemberLineLinksPage} from '../features/line-links/ExistingMemberLineLinksPage';
+import {PaperIntakePage} from '../features/paper-intake/PaperIntakePage';
+import {FulfillmentPage} from '../features/fulfillment/FulfillmentPage';
+import {SettlementJobsPage} from '../features/settlement-jobs/SettlementJobsPage';
+import {ErpReconciliationPage} from '../features/erp-reconciliation/ErpReconciliationPage';
+import {CompensationPeriodControlPage} from '../features/compensation-period/CompensationPeriodControlPage';
+import {OperationsControlPage} from '../features/operations-control/OperationsControlPage';
+import {LearningPage} from '../features/learning/LearningPage';
+import {EventsPage} from '../features/events/EventsPage';
 
 function Protected(){const {user,ready}=useAuth();if(!ready)return <div className="app-loading">驗證管理員Session…</div>;return user?<AppShell/>:<Navigate to="/login" replace/>}
 export function App(){return <Routes>
@@ -34,21 +46,33 @@ export function App(){return <Routes>
  <Route element={<Protected/>}>
   <Route path="/" element={<DashboardPage/>}/>
   <Route path="/people" element={<RequirePageRole><PeoplePage/></RequirePageRole>}/>
+  <Route path="/line-links" element={<RequirePageRole><ExistingMemberLineLinksPage/></RequirePageRole>}/>
+  <Route path="/paper-intake" element={<RequirePageRole><PaperIntakePage/></RequirePageRole>}/>
   <Route path="/applications" element={<RequirePageRole><ApplicationsPage/></RequirePageRole>}/>
   <Route path="/applications/new" element={<RequirePageRole><NewApplicationWizard/></RequirePageRole>}/>
+  <Route path="/applications/formal-paper" element={<RequirePageRole><PaperFormalApplicationPage/></RequirePageRole>}/>
   <Route path="/qualifications" element={<RequirePageRole><QualificationsPage/></RequirePageRole>}/>
   <Route path="/products" element={<RequirePageRole><ProductsPage/></RequirePageRole>}/>
   <Route path="/packages" element={<RequirePageRole><PackagesPage/></RequirePageRole>}/>
   <Route path="/orders" element={<RequirePageRole><OrdersPage/></RequirePageRole>}/>
+  <Route path="/economic-lineage" element={<RequirePageRole><EconomicLineagePage/></RequirePageRole>}/>
+  <Route path="/fulfillment" element={<RequirePageRole><FulfillmentPage/></RequirePageRole>}/>
+  <Route path="/erp-reconciliation" element={<RequirePageRole><ErpReconciliationPage/></RequirePageRole>}/>
   <Route path="/admin/organization/trees/:id?" element={<RequirePageRole><BinaryTreesPage/></RequirePageRole>}/>
   <Route path="/organization" element={<RequirePageRole><OrganizationPage/></RequirePageRole>}/>
+  <Route path="/organization/geo" element={<RequirePageRole><OrganizationGeoPage/></RequirePageRole>}/>
   <Route path="/subscriptions" element={<RequirePageRole><SubscriptionsPage/></RequirePageRole>}/>
   <Route path="/admin/finance/reservoirs" element={<RequirePageRole><ReservoirCenterPage/></RequirePageRole>}/>
   <Route path="/bonuses" element={<RequirePageRole><BonusesPage/></RequirePageRole>}/>
+  <Route path="/settlement-jobs" element={<RequirePageRole><SettlementJobsPage/></RequirePageRole>}/>
+  <Route path="/compensation-period-control" element={<RequirePageRole><CompensationPeriodControlPage/></RequirePageRole>}/>
+  <Route path="/operations-control" element={<RequirePageRole><OperationsControlPage/></RequirePageRole>}/>
   <Route path="/returns" element={<RequirePageRole><ReturnsPage/></RequirePageRole>}/>
   <Route path="/workflows" element={<RequirePageRole><WorkflowsPage/></RequirePageRole>}/>
   <Route path="/payouts" element={<RequirePageRole><PayoutsPage/></RequirePageRole>}/>
   <Route path="/content" element={<RequirePageRole><ContentPage/></RequirePageRole>}/>
+  <Route path="/learning" element={<RequirePageRole><LearningPage/></RequirePageRole>}/>
+  <Route path="/events" element={<RequirePageRole><EventsPage/></RequirePageRole>}/>
   <Route path="/documents" element={<RequirePageRole><DocumentsPage/></RequirePageRole>}/>
   <Route path="/audit" element={<RequirePageRole><AuditPage/></RequirePageRole>}/>
   <Route path="/reports" element={<RequirePageRole><ReportsPage/></RequirePageRole>}/>

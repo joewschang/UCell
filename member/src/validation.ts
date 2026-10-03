@@ -22,7 +22,9 @@ const period: Check = v => typeof v === 'string' && /^\d{4}-(0[1-9]|1[0-2])$/.te
 const date = (v:unknown) => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v) && Number.isFinite(Date.parse(v+'T00:00:00Z'));
 const unique = (check: Check, key: string): Check => v => list(check)(v) && new Set((v as Record<string, unknown>[]).map(x => x[key])).size === (v as unknown[]).length;
 const activeInterval=object({activeFrom:string,activeTo:string});
-const qualification = object({ id, code: ballNo, rank: id, active: boolean, ballLabel: string,monthReference:optional(period),activeInterval:optional(nullable(activeInterval)) });
+const publicQualificationNo:Check = value => typeof value==='string' && /^[1-9][0-9]*$/.test(value);
+const qualificationFields = object({ id, code: string, qualificationNo:optional(publicQualificationNo), rank: id, active: boolean, ballLabel: string,monthReference:optional(period),activeInterval:optional(nullable(activeInterval)) });
+const qualification:Check = value => qualificationFields(value) && (isBallNo((value as Qualification).code) || ((value as Qualification).code==='UNPLACED' && publicQualificationNo((value as Qualification).qualificationNo)));
 const status = enumOf('PENDING', 'CALCULATED', 'PENDING45D', 'EFFECTIVE', 'PAYABLE', 'PAID', 'REVERSED', 'CLAWBACK');
 const metric = nullable(number);
 const member = object({ code: id, name: string });
@@ -44,5 +46,5 @@ export const parseBinary = schema<Binary>(object({ qualificationId: id, left: si
 export const parsePerformance = schema<Performance>(object({ qualificationId: id, period, pv: metric, rpv: metric, epv: metric, left: metric, right: metric, asOf: nullable(string) }));
 export const parseBonus = schema<Bonus>(object({ qualificationId: id, period, awards: unique(object({ id, name: string, status, amount: metric,theoryAmount:optional(metric),finalAmount:optional(metric),payableAmount:optional(metric),settlementStatus:optional(enumOf('PENDING','FINALIZED')),pendingReason:optional(nullable(string)),settlementDate:optional(nullable(date)),nominalPayoutDate:optional(nullable(date)),adjustedPayoutDate:optional(nullable(date)),businessCalendarVersion:optional(nullable(string)),ruleVersion:optional(nullable(string)),parameterSnapshotHash:optional(nullable(string)) }), 'id') }));
 export const parseLedger = schema<Ledger>(object({ qualificationId: id, period, entries: unique(object({ id, label: string, amount: metric, postedAt: string, sourceId: id }), 'id') }));
-export const parseProducts = schema<Product[]>(unique(object({ id, name: string, price: nullable(nonnegative), pv: nullable(nonnegative), available: boolean }), 'id'));
+export const parseProducts = schema<Product[]>(unique(object({ id, sku:optional(string), name: string, price: nullable(nonnegative), pv: nullable(nonnegative), available: boolean }), 'id'));
 export const parseOrders = schema<Orders>(object({ qualificationId: id, orders: unique(object({ id, createdAt: string, total: metric, status: id, paymentStatus: id, shipmentStatus: id }), 'id') }));

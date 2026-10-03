@@ -48,7 +48,7 @@ try{
   for(let i=0;i<readModels.length;i++)equal(await db[readModels[i]].count(),beforeRead[i],readModels[i]+' repeated Person detail reads have no mutation');
   const sponsor=roots[0].qualificationId,parent=roots[1].qualificationId;
   async function submitted(binaryParentQualificationId,binarySide){
-    const created=await service.create({personId:owner.personId,requestedPlanLevelCode:'STARTER',sponsorQualificationId:sponsor,binaryParentQualificationId,binarySide},randomUUID(),randomUUID());
+    const created=await service.create({holderType:'PERSON',personId:owner.personId,requestedPlanLevelCode:'STARTER',sponsorQualificationId:sponsor,binaryParentQualificationId,binarySide},randomUUID(),randomUUID());
     equal(created.value.status,'DRAFT','application starts DRAFT');
     const app=created.value.applicationId;
     equal((await service.submit(app,randomUUID(),randomUUID())).value.status,'SUBMITTED','complete placement submits');
@@ -177,7 +177,7 @@ try{
     equal(created.value.schedules[0].dueAt.toISOString(),'2026-08-31T16:00:00.000Z',planCode+' first dueAt is Asia/Taipei local month start');
     equal(created.value.schedules.every(row=>row.parameterSnapshotHash===created.value.parameterSnapshotHash),true,planCode+' schedule retains calendar snapshot hash');
   }
-  const directDto={personId:owner.personId,planLevelCode:'STARTER',sponsorQualificationId:directRoot.qualificationId,binaryParentQualificationId:directRoot.qualificationId,binarySide:'LEFT',effectiveAt:'2020-01-01T00:00:00.000Z'};
+  const directDto={holderType:'PERSON',personId:owner.personId,planLevelCode:'STARTER',sponsorQualificationId:directRoot.qualificationId,binaryParentQualificationId:directRoot.qualificationId,binarySide:'LEFT',effectiveAt:'2020-01-01T00:00:00.000Z'};
   const directCount=await db.qualification.count();
   await rejected(direct.create({...directDto,binarySide:'RIGHT'},'direct-invalid',randomUUID()),'BINARY_LEFT_SUBTREE_REQUIRED');
   equal(await db.qualification.count(),directCount,'direct invalid first RIGHT creates no qualification');

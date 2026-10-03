@@ -1,7 +1,8 @@
 import {ApiProperty,getSchemaPath} from '@nestjs/swagger';
 export class QualificationView {
  @ApiProperty({format:'uuid'}) id!:string;
- @ApiProperty({description:'Member-authorized immutable business Ball number; never a UUID.'}) code!:string;
+ @ApiProperty({description:'Member-authorized immutable business Ball number, or UNPLACED before placement; never a UUID.'}) code!:string;
+ @ApiProperty({type:String,pattern:'^[1-9][0-9]*$',description:'Public qualification number as lossless decimal text, including before placement.'}) qualificationNo!:string;
  @ApiProperty() rank!:string;
  @ApiProperty() active!:boolean;
  @ApiProperty() ballLabel!:string;
@@ -64,6 +65,7 @@ export class OrderView {
 }
 export class ProductView {
  @ApiProperty({format:'uuid'}) id!:string;
+ @ApiProperty({required:false}) sku?:string;
  @ApiProperty() name!:string;
  @ApiProperty({type:Number,nullable:true,description:'Display only; Create Order revalidates Core price.'}) price!:number|null;
  @ApiProperty({type:Number,nullable:true}) pv!:number|null;

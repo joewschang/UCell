@@ -10,3 +10,6 @@ dist-admin-dev/
 .DS_Store
 *.dump
 *.dump.sha256
+.tools/
+governance/swaggerhub/evidence/
+backend/release/SWAGGERHUB_SYNC_EVIDENCE.json

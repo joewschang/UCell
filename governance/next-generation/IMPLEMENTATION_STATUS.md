@@ -1,4 +1,44 @@
+# Phase 1 Local Development Closure — 2026-09-26
+
+**2026-09-29 §35 Compensation Period Control checkpoint:** the read-only Admin control view composes governed period-close jobs/receipts, settlement/Award totals, Reservoir B, Recovery, Payable and payout/bank-result facts in one Repeatable Read snapshot while keeping ERP accounting projection separate. `SOFT_CLOSED` derives only from all four immutable governed requests; later stages derive from receipts and downstream facts, while historical corrections remain append-only. Unknown cross-volume completeness is `NOT_AVAILABLE`; ERP mapping is `BLOCKED_EXTERNAL`, and no ERP/statutory close is invented. Its separate Aging／Outstanding read requires an explicit operator threshold and aggregates six governed categories without identity leakage or a hard-coded SLA. Real Worker process death/redelivery covers four settlement kinds, empty/funded periods and before-seal/after-commit boundaries (**16/16 PASS**); focused API **8 tests**, real PostgreSQL control **1 test** after fresh **0→109** plus **162 DB assertions**, Admin control/navigation/RBAC **3 files / 11 tests**, full Admin **39 files / 148 tests**, API/Admin builds and OpenAPI preflight PASS (**218 paths / 236 operations / 127 schemas**). See [Compensation Period evidence](COMPENSATION_PERIOD_CONTROL_20260929.md). No Stage/Production deployment.
+
+**2026-09-29 §35 ERP reconciliation bridge checkpoint:** a provider-neutral, read-only Admin API/page now separates UCell Order/Fulfillment, stored ERP handoff/dispatch/reconciliation, and Shipment authority. Snapshot-cutoff pagination uses only business-safe continuation data; responses exclude UUIDs, actors, delivery PII, credentials and raw payloads. Focused API **4 tests**, real PostgreSQL **1 test** after fresh **0→109** plus **162 DB assertions**, Admin focused **1 test** and full **38 files / 146 tests**, API/Admin builds and generated OpenAPI preflight PASS (**216 paths / 234 operations / 113 schemas**). `EZTOOL_LIVE_TRANSPORT=BLOCKED_EXTERNAL`; compensation period control and other §35 streams remain open. See [ERP reconciliation bridge evidence](ERP_RECONCILIATION_BRIDGE_20260929.md). No Stage/Production deployment.
+
+**2026-09-29 governed change record:** the approved §36 same-order/same-Shipment/same-SKU returned-unit substitution is implemented locally as migration 109. It preserves original physical provenance and ReturnCase economic authority, adds append-only rule/evidence receipts, fail-closed eligibility/concurrency checks and privacy-safe Admin evidence. Local focused DB/UI/build/preflight evidence is in `SAME_SKU_RETURN_SUBSTITUTION_20260929.md`. This is an approved post-baseline change candidate and has not been deployed to Stage or Production.
+
+**PHASE_1_LOCAL_DEVELOPMENT = CLOSED**  
+**LOCAL_DEVELOPMENT_BASELINE = FROZEN**  
+Frozen local baseline: `83947684c5d61c00db510e31fca83fa12e97081e` (`phase1-local-baseline-20260926`).
+
+- G1 FUNCTIONAL_CLOSURE = PASS
+- G2 MIGRATION_INTEGRITY = PASS
+- G3 FRESH_0_TO_CURRENT = PASS
+- G4 FULL_REGRESSION = PASS
+- G5 CODE_AND_DOCUMENTATION_CLOSURE = PASS
+- G6 STAGE_RC = DEPLOYED_PASS (Stage revision evidence recorded 2026-09-26)
+- G7 BUSINESS_UAT = PRELIMINARY_MANUAL_PASS (human preliminary Stage UAT received; formal scenario checklist remains evidence-controlled)
+- G8 OPERATIONAL_READINESS = IN_PROGRESS (Stage migration 87 recovery and G8 API/Worker deployment PASS; external operational blockers remain)
+
+Stage isolated PITR restore verification is PASS at a pre-Migration-87 86-migration restore point; see [G8 Stage PITR restore drill](G8_STAGE_PITR_RESTORE_DRILL_20260926.md).
+
+20260926110000_g8_audit_event_core` Stage recovery is PASS: Stage historical audit rows were preserved under append-only enforcement, Prisma ledger reconciliation is current at 87 migrations, and the G8 API/Worker revisions are healthy. See [G8 Stage Migration 87 recovery execution](G8_STAGE_MIGRATION_87_RECOVERY_EXECUTION_20260926.md). Production was not touched.
+
+Stage Admin/Member UAT frontends remain on the prior `6f5e340dc77b0188799a492aefc8cbba24a307ac` revision; the recovered 87-migration Stage database now serves digest-pinned healthy G8 API/Worker revisions built from `0eeb81481b033677c338c81b6edf55de1a8fead0`. Production remains undeployed and blocked pending later G8/G9 authority. Completed Phase 1 work is recorded in the Phase 1 local baseline manifest. Google Drive synchronization is DRIVE_SYNC_PENDING; no Drive write is claimed. G8 readiness is tracked in [G8_OPERATIONAL_READINESS_REPORT.md](G8_OPERATIONAL_READINESS_REPORT.md); Phase 2 Semantic/Data Governance/Analytics Runtime/AI work remains deferred.
+
+---
+# Phase 1 scope update — 2026-09-25
+
+**AUTHORITATIVE PHASE BOUNDARY:** Phase 1 is now **Reliable UCell MVP only**, governed by [UCELL_PHASE_1_RELIABLE_MVP_SCOPE_DECISION.md](UCELL_PHASE_1_RELIABLE_MVP_SCOPE_DECISION.md). Semantic/Data Governance Runtime, SG-A1 implementation program, Analytics Runtime and AI/LLM/Agent infrastructure are Phase 2+ and are not Phase 1 release gates. Current critical path is Functional Closure → Full Regression → Code/Documentation Closure → Stage RC → Business UAT → Operational Readiness → Production Go/No-Go → R1.0B GA.
+
+The historical 20260925140000 local empty-directory migration discovery blocker is resolved; fresh 0→current/DB Golden evidence is recorded in DB_FRESH_MIGRATION_BLOCKER_20260925140000.md. This does not by itself certify Full Regression or Stage/Production.
+
+---
+
 # Next Generation implementation status
+
+
+**2026-09-26 G8 external closure update:** `ROLE_GRANT_AUDIT_STAGE`, `RPO_TARGET=1H`, `RPO_EVIDENCE`, `RTO_TARGET=4H`, `RTO_EVIDENCE`, Migration 87 Stage recovery and isolated PITR restore drill are PASS. A new full-ref Git bundle at `e3c954b` passed native verification and isolated mirror restore, but Azure rejected upload to the approved private Blob container because the recovery operator lacks Blob data-plane write permission; `SOURCE_RECOVERY = BLOCKED_STORAGE_PERMISSION`. `MEMBER_BOLA_AUDIT_STAGE = CONTROLLED_MANUAL_STAGE_UAT`; `MONITORING_ACTION_GROUP = DECISION_REQUIRED_RECEIVER_OWNER`; `LINE_ENTRA_CREDENTIAL_DRILL = BLOCKED_EXTERNAL_CREDENTIALS`. G8 remains not yet pass. Production is untouched.
+**2026-09-20 Train D Experience V2 local closure update:** current local candidate is at 70 migrations. Fresh 0→70 migration deployment, Prisma generate/validate, DB Golden, P0 identifier reconstruction, API 83 suites / 792 tests, Admin 30 / 110 plus production build, Member 26 / 149 plus production build, Shared 5 / 181 plus build, Decision v3 17/17, economic Golden, OpenAPI preflight, security-policy preflight, and RC isolated all PASS. OpenAPI remains 162 paths / 175 operations / 80 schemas (SHA-256 `146a98a788eefbdf96f2bc935e2077df3aa7c6735edc6a69067205b9ac2a0541`). Local UAT uses synthetic data and is running. Formal LINE/LIFF and Entra evidence remains `EXTERNAL_IDENTITY_PENDING`; native 200% zoom and human manual UAT remain pending. Stage deployment/migration remains STOP and Production remains BLOCKED. See [Train D closure](TRAIN_D_EXPERIENCE_V2_CLOSURE_REPORT.md) and [matrix](TRAIN_D_EXPERIENCE_V2_PASS_FAIL_MATRIX.md).
 
 **2026-09-19 P0 regression / UX Golden update:** local and isolated P0 regression is current through 69 migrations and 175 OpenAPI operations. The final fresh API suite passes 83 / 792, Decision v3 passes 17 / 17, DB Golden and RC isolated pass, Admin passes 30 / 110 with a production build, and Member passes 26 / 149 with a production build. The Admin subscription filter now accepts public Ball Number (`ballNo`) with a 59-character authoritative ceiling, preserves optional legacy UUID compatibility, and fails closed on ambiguity; Admin no longer displays the Qualification UUID in that journey. Tree response races and mounted Admin 401 cleanup are covered. Browser evidence covers 390 / 768 / 1440 and the 200%-layout-width equivalent; native browser 200% zoom remains a manual UAT check because the local browser automation API does not expose browser zoom. Formal Security E2E tokens, formal identity credentials, Stage deployment, Production, and the excluded scale matrix remain outside this local result. See [P0_REGRESSION_AND_UX_V2_GOLDEN_REPORT.md](P0_REGRESSION_AND_UX_V2_GOLDEN_REPORT.md).
 

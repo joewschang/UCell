@@ -1,0 +1,30 @@
+{
+  "date": "2026-10-01",
+  "status": "BOUNDED_PASS",
+  "sourceCommit": "90d9f25053b14ab2e6f82ae8065242fe012c4dca",
+  "verification": {
+    "http": "Actual Nest/Fastify controller, global authentication and role guards, validation pipe, envelope interceptor, real service and isolated PostgreSQL",
+    "authentication": "Controlled token transport; bypass disabled with production config; not real Entra/session cryptographic proof",
+    "isolated": {
+      "suites": 2,
+      "tests": 5,
+      "baselineAssertions": 162,
+      "cleanup": "PASS"
+    },
+    "admin": {
+      "files": 61,
+      "tests": 223,
+      "status": "PASS",
+      "coverage": "Explicit threshold, exact decimal display, retained paging horizon, failed read retry to empty"
+    },
+    "openapiPreflight": "PASS",
+    "oasdiffValidation": "PASS"
+  },
+  "remaining": [
+    "Whole batch IN_PROGRESS",
+    "Company exclusion new real destination fixture still pending",
+    "Full strict OpenAPI governance and final frozen full recertification pending",
+    "Real provider and browser end-to-end certification pending"
+  ],
+  "deployment": "NONE"
+}

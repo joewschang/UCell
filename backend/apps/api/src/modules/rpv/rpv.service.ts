@@ -1,5 +1,5 @@
-import {effectiveSponsorDirectCount} from '@ucell/database';
-import { Injectable } from '@nestjs/common';
+import {effectiveSponsorDirectCount,appendRecognitionMemberMessage} from '@ucell/database';
+import { ConflictException, Injectable } from '@nestjs/common';
 import { Prisma, PrismaService, sealRpvEvent, companyAlwaysActiveAt, captureParameters } from '@ucell/database';
 import { randomUUID } from 'crypto';
 import { ActiveService } from '../active/active.service';
@@ -19,7 +19,7 @@ export class RpvService {
   async recognize(recognitionId:string){
     const correlationId=randomUUID();
     return this.prisma.$transaction(async tx=>{
-      const schedule=await tx.monthlyRecognitionSchedule.findUnique({
+      let schedule=await tx.monthlyRecognitionSchedule.findUnique({
         where:{recognitionId},
         include:{subscription:true}
       });
@@ -28,6 +28,15 @@ export class RpvService {
 
       const now=new Date();
       if(schedule.dueAt>now) return {skipped:'NOT_DUE'};
+
+      await tx.$queryRaw`SELECT subscription_id FROM subscription.subscription WHERE subscription_id=${schedule.subscriptionId}::uuid FOR UPDATE`;
+      schedule=await tx.monthlyRecognitionSchedule.findUniqueOrThrow({where:{recognitionId},include:{subscription:true}});
+      if(!['SCHEDULED','DUE'].includes(schedule.status)) return {skipped:'ALREADY_RECOGNIZED'};
+      if(schedule.retainedEntitlementRatio==null){
+        const partials=await tx.subscriptionCancellation.count({where:{subscriptionId:schedule.subscriptionId,status:'POSTED',refundAmount:{gt:0},reasonCode:{not:'FULL_RETURN'}}});
+        if(partials) throw new ConflictException({code:'SUBSCRIPTION_REFUND_BASIS_MISSING'});
+        schedule.retainedEntitlementRatio=new Prisma.Decimal(1);
+      }
 
       const pvEvent=await tx.pvLedger.create({
         data:{
@@ -80,7 +89,7 @@ export class RpvService {
         const active=company||!!activeRow;
         const companySnapshot=company?await captureParameters(tx,schedule.dueAt,schedule.ruleVersionCode):null;
         const eligible=a.generation<=depth && active;
-        const theory=new Prisma.Decimal('100.00');
+        const theory=new Prisma.Decimal('100.00').mul(schedule.retainedEntitlementRatio).toDecimalPlaces(4,Prisma.Decimal.ROUND_HALF_UP);
         const payable=eligible?theory:new Prisma.Decimal('0.00');
 
         await tx.rpvUplineAwardEvent.upsert({
@@ -115,6 +124,7 @@ export class RpvService {
         data:{status:'RECOGNIZED',recognizedAt:now,pvLedgerEventId:pvEvent.eventId}
       });
 
+      await appendRecognitionMemberMessage(tx,recognitionId);
       return {
         recognitionId,
         pvLedgerEventId:pvEvent.eventId,

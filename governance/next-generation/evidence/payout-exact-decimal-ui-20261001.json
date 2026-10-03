@@ -1,0 +1,35 @@
+{
+  "timestamp": "2026-10-01T06:06:49.509Z",
+  "baseCommit": "bc8988df23ba0461448995c066855c6f860954d8",
+  "sourceFiles": [
+    {
+      "path": "admin/src/features/payouts/PayoutsPage.tsx",
+      "sha256": "66a18f711688db6eaf60e1190fb1dfa273317f972444e7959b509ee6f5840696"
+    },
+    {
+      "path": "admin/src/features/payouts/PayoutsPage.test.tsx",
+      "sha256": "779e25fcd18fb6a436c21525de85f98c1e4efc58ce2c6c44d27a683daf8ac4f8"
+    }
+  ],
+  "change": "Payout queue, summary, detail and recovery amount calls now display saved decimal strings using exact grouping rather than integer-rounded Number currency formatting",
+  "verification": {
+    "adminFiles": 58,
+    "adminTests": 206,
+    "status": "PASS",
+    "build": "PASS",
+    "testLog": "C:/UCell/logs/payout-exact-decimal-admin-tests-final-20261001.log",
+    "buildLog": "C:/UCell/logs/payout-exact-decimal-admin-build-20261001.log"
+  },
+  "componentRegression": {
+    "gross": "10000000000000.0001",
+    "net": "9999999999999.1234",
+    "preservedFractionalDigits": true
+  },
+  "limits": [
+    "not a live bank/ERP or full browser acceptance",
+    "shared legacy format helper and other Admin pages remain separately auditable"
+  ],
+  "overall": "IN_PROGRESS",
+  "stageRc": "NOT_READY",
+  "deployment": false
+}

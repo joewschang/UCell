@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const schema=fs.readFileSync('packages/database/prisma/schema.prisma','utf8');
-const models=[...schema.matchAll(/^model\s+([A-Za-z0-9_]+)/gm)].map(m=>m[1]);
+const models=[...schema.matchAll(/(?:^|})\s*model\s+([A-Za-z0-9_]+)/gm)].map(m=>m[1]);
 const clientNames=new Set(models.map(x=>x[0].toLowerCase()+x.slice(1)));
 const ignored=new Set(['getClass','getHandler','switchToHttp']);
 

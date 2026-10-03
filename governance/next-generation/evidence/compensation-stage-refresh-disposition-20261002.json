@@ -1,0 +1,39 @@
+{
+  "date": "2026-10-02",
+  "status": "BOUNDED_PASS",
+  "sourceCommit": "531a45583eeb55a1e1d4e03ad99a01b3733f8d65",
+  "problem": "An ignored stale refresh or unchanged stage could be reported by Admin as a newly saved observation",
+  "fix": "Serialize prior identity check with the same period advisory lock; return and audit RECORDED/UNCHANGED/SUPERSEDED; display distinct factual Chinese results",
+  "verification": {
+    "isolated": {
+      "suites": 3,
+      "tests": 10,
+      "migrations": 128,
+      "baselineAssertions": 162,
+      "cleanup": "PASS",
+      "log": "C:/UCell/logs/compensation-stage-disposition-20261002.log"
+    },
+    "admin": {
+      "files": 62,
+      "tests": 227,
+      "build": "PASS"
+    },
+    "apiBuild": "PASS",
+    "openapiExport": "PASS",
+    "openapiPreflight": "PASS",
+    "oasdiffValidation": "PASS",
+    "coverage": [
+      "Delayed actual control read suspended before observation; real recognition-evidence source change makes newer read BLOCKED",
+      "Older PRECHECK response is SUPERSEDED, retains newer reference and does not create an extra stage row",
+      "First actual refresh is RECORDED; same-stage repeat is UNCHANGED",
+      "Audit includes disposition and requested source time under same transaction",
+      "Admin does not claim a saved new observation when superseded"
+    ]
+  },
+  "limits": [
+    "Controlled suspension schedules actual reader; not universal concurrency certification",
+    "True business entry duration, browser journeys and final full recertification remain open",
+    "Whole batch IN_PROGRESS"
+  ],
+  "deployment": "NONE"
+}

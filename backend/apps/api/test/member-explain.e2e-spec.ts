@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { Test } from '@nestjs/testing';
 import { ValidationPipe } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
 import { Prisma, PrismaService, replayHash, taipeiMonth } from '@ucell/database';
 import { MemberExplainController } from '../src/modules/member/member-explain.controller';
@@ -9,7 +10,7 @@ import { MemberAuthenticationGuard } from '../src/modules/auth/member-authentica
 import { MemberContextGuard } from '../src/modules/member/member-context.guard';
 import { QualificationAccessService } from '../src/modules/auth/qualification-access.service';
 import { IdentityTokenService } from '../src/modules/auth/identity-token.service';
-import { LineIdentityService } from '../src/modules/auth/line-identity.service';
+import { MemberIdentityService } from '../src/modules/auth/member-identity.service';
 import { EnvelopeInterceptor } from '../src/common/interceptors/envelope.interceptor';
 
 const qid = '11111111-1111-4111-8111-111111111111', pid = '22222222-2222-4222-8222-222222222222';
@@ -44,7 +45,7 @@ function fixture() {
   const session: any = { authSessionId: sid, personId: pid, provider: 'LINE', subject: 'line-subject', status: 'ACTIVE', roleCode: null,
     expiresAt: new Date(now.getTime() + 60000), revokedAt: null };
   const db: any = {
-    authSession: { findUnique: jest.fn(async () => session) }, person: { findUnique: jest.fn(async () => ({ status: 'EFFECTIVE' })) },
+    authSession: { findUnique: jest.fn(async () => session) }, person: { findUnique: jest.fn(async () => ({ status: 'EFFECTIVE', securityStatus: 'NORMAL' })) },
     identityLink: { findUnique: jest.fn(async () => ({ personId: pid })) },
     qualification: { findUnique: jest.fn(async (input: any) => input.where.qualificationId === qid ? { currentHolderPersonId: pid } : null) },
     qualificationHolderHistory: {
@@ -72,8 +73,9 @@ describe('Member Explain HTTP adapters', () => {
     const module = await Test.createTestingModule({ controllers: [MemberExplainController],
       providers: [MemberExplainService, MemberAuthenticationGuard, MemberContextGuard, QualificationAccessService,
         { provide: PrismaService, useValue: data.db },
+        { provide: ConfigService, useValue: { get: jest.fn() } },
         { provide: IdentityTokenService, useValue: { authenticate: jest.fn(async () => ({ sessionId: sid, personId: pid, provider: 'LINE', subject: 'line-subject', role: null })) } },
-        { provide: LineIdentityService, useValue: { resolveVerifiedSubject: jest.fn(async () => ({ provider: 'LINE', providerSubject: 'line-subject', personId: pid })) } },
+        { provide: MemberIdentityService, useValue: { resolve: jest.fn(async () => ({ provider: 'LINE', providerSubject: 'line-subject', personId: pid })) } },
       ] }).compile();
     app = module.createNestApplication<NestFastifyApplication>(new FastifyAdapter(), { logger: false });
     app.setGlobalPrefix('api/v1'); app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }));

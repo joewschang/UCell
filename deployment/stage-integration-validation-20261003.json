@@ -1,0 +1,72 @@
+{
+  "date": "2026-10-03",
+  "integrationBranch": "integration/r1.0b-stage-20261003",
+  "runtimeSourceCommit": "fdbd08606ad665be4ddd85ff6550c06463978aa3",
+  "frontendSourceCommit": "0fdfb454bdd4abeacdb31e2397d591cdba2911e0",
+  "sources": {
+    "partySpouse": "cb9e72de81eb3d27e74586eb19783efcaf431049",
+    "webAuth": "8664893f2d1820c2f46a516c6776254d9108eae5",
+    "main": "c9be22dbcbe800cb6dc2b050bdd54952f0117b23",
+    "previousStage": "9d29bf918d3ef238462c03845f44003b514c149d"
+  },
+  "validation": {
+    "member": {
+      "suites": 41,
+      "tests": 233,
+      "status": "PASS"
+    },
+    "shared": {
+      "suites": 5,
+      "tests": 181,
+      "status": "PASS"
+    },
+    "realDatabaseAssertions": 162,
+    "openapiGovernanceUnit": {
+      "passed": 24,
+      "skipReason": "Pinned oasdiff executable is supplied by GitHub CI",
+      "skipped": 1
+    },
+    "openapiScanner": "PASS",
+    "fullApiBootstrap": "PASS",
+    "api": {
+      "suites": 199,
+      "tests": 1404,
+      "logSha256": "c35d82e604958edd634d2bbbd8aa5ce36afc3d114a99c668a17aa10690b53c2e",
+      "status": "PASS"
+    },
+    "stagePreflightAssertions": 31,
+    "admin": {
+      "suites": 64,
+      "tests": 235,
+      "status": "PASS"
+    },
+    "dbGolden": "PASS",
+    "migrationChecksumTests": 14,
+    "openapiBreakingCompatibility": "BLOCKED: 12 intentional integrated contract changes require recorded Code Owner baseline approval; baseline unchanged",
+    "githubRcCi": {
+      "jobs": [
+        "backend",
+        "admin",
+        "stage-static"
+      ],
+      "status": "PASS",
+      "runId": 37043172761,
+      "commit": "8a1beb9b5538095d770318d999a9af27c3ffa136"
+    },
+    "githubMemberCi": {
+      "status": "PASS",
+      "runId": 37043172934
+    }
+  },
+  "browserVisualValidation": "Not executed: CUA runtime kernel assets path error",
+  "externalConfigurationPending": [
+    "Google OIDC operational configuration",
+    "Password reset email delivery provider",
+    "Private KYC storage and trusted malware scan configuration"
+  ],
+  "boundaries": [
+    "No Production rollout",
+    "No R1.1 business-rule activation",
+    "Preserve existing Stage LINE credentials and encryption key"
+  ]
+}

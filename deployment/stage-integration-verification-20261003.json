@@ -1,0 +1,95 @@
+{
+  "verifiedAtUtc": "2026-10-02T17:55:29.2128928Z",
+  "health": {
+    "data": {
+      "status": "ok",
+      "service": "ucell-api",
+      "database": "ok",
+      "release": "fdbd08606ad665be4ddd85ff6550c06463978aa3",
+      "timestamp": "2026-10-02T17:55:14.178Z"
+    },
+    "meta": {
+      "request_id": "c628611a-4ff8-4da0-95a3-8609f8e89710",
+      "timestamp": "2026-10-02T17:55:14.178Z",
+      "api_version": "v1"
+    }
+  },
+  "cors": "PASS",
+  "unauthenticatedMemberStatus": 401,
+  "unknownPasswordLoginStatus": 401,
+  "revisions": [
+    {
+      "name": "ucell-stage-api",
+      "revision": "ucell-stage-api--r10b-integrated-20261003",
+      "image": "ucellstageacr5mafbbsq33mgu.azurecr.io/ucell-api@sha256:324222a587b7f870d3b45bb76fe30a8d03c24fcdd6b48dc230a3cb6c708294f4",
+      "health": "Healthy",
+      "running": "Running"
+    },
+    {
+      "name": "ucell-stage-worker",
+      "revision": "ucell-stage-worker--r10b-integrated-20261003",
+      "image": "ucellstageacr5mafbbsq33mgu.azurecr.io/ucell-api@sha256:324222a587b7f870d3b45bb76fe30a8d03c24fcdd6b48dc230a3cb6c708294f4",
+      "health": "Healthy",
+      "running": "Running"
+    },
+    {
+      "name": "ucell-stage-admin",
+      "revision": "ucell-stage-admin--r10b-integrated-20261003",
+      "image": "ucellstageacr5mafbbsq33mgu.azurecr.io/ucell-admin@sha256:3cfab35ff427ec696d26ec8ac9136a9246abd05516aede83b03d5050bd6c257f",
+      "health": "Healthy",
+      "running": "Running"
+    },
+    {
+      "name": "ucell-stage-member",
+      "revision": "ucell-stage-member--r10b-integrated-20261003",
+      "image": "ucellstageacr5mafbbsq33mgu.azurecr.io/ucell-member@sha256:0976b4d3316021d1ac4088eadcbb6e9a365673886a4184b086783bf4720d65bf",
+      "health": "Healthy",
+      "running": "Running"
+    }
+  ],
+  "assets": [
+    {
+      "frontend": "member",
+      "asset": "/assets/index-B-_Oqp50.js",
+      "status": 200,
+      "sha256": "dbb4eec5772c375ef3e2d069e4306597d0855ffeca9fa466ea960b1a108c1692",
+      "match": true
+    },
+    {
+      "frontend": "member",
+      "asset": "/assets/index-DxR5XhEb.css",
+      "status": 200,
+      "sha256": "66c5ce98d8193b3d364f6e89ef095a037d589bd014a8edd7df5f6b4d98461e18",
+      "match": true
+    },
+    {
+      "frontend": "member",
+      "asset": "/ucell-logo-transparent.png",
+      "status": 200,
+      "sha256": "e3d6bb9456117bafb3860cd99a5dfab29bb30b0c1a0dca4b7433a5550a1de75c",
+      "match": true
+    },
+    {
+      "frontend": "admin",
+      "asset": "/assets/index-C5UTyezX.js",
+      "status": 200,
+      "sha256": "8feea79bc8a53d55cf1c7d33de995b39f2149c2a0c92d36d4b19a00ad3a9b2e9",
+      "match": true
+    },
+    {
+      "frontend": "admin",
+      "asset": "/assets/index-UKIArNTD.css",
+      "status": 200,
+      "sha256": "1d296abf096b45745a72728effd57569cbcfd5bfc502965b4a7b5f720517f41b",
+      "match": true
+    },
+    {
+      "frontend": "admin",
+      "asset": "/ucell-logo-transparent.png",
+      "status": 200,
+      "sha256": "e3d6bb9456117bafb3860cd99a5dfab29bb30b0c1a0dca4b7433a5550a1de75c",
+      "match": true
+    }
+  ],
+  "browserVisualValidation": "Unavailable: CUA runtime kernel assets path error"
+}

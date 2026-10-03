@@ -1,0 +1,13 @@
+{
+  "migrationExecution": "ucell-stage-migrate-gms1i5z",
+  "migrationStatus": "Succeeded",
+  "appliedMigrationCount": 135,
+  "migrationImage": "ucellstageacr5mafbbsq33mgu.azurecr.io/ucell-api@sha256:e4e7a608df566b57a4146ea6c6db06369294a8ef4c8b03042e2532043410e0d2",
+  "runtimeSourceCommit": "fdbd08606ad665be4ddd85ff6550c06463978aa3",
+  "frontendSourceCommit": "0fdfb454bdd4abeacdb31e2397d591cdba2911e0",
+  "integrationCommit": "8a1beb9b5538095d770318d999a9af27c3ffa136",
+  "pr": "https://github.com/joewschang/UCell/pull/22",
+  "deployedAtUtc": "2026-10-02T17:55:29.2396624Z",
+  "rolloutMethod": "Verified migration, then individual pinned Azure Container App updates after local disk recovery",
+  "verificationEvidence": "deployment/stage-integration-verification-20261003.json"
+}

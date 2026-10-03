@@ -24,5 +24,5 @@ export class AdminAuthController{
   @ApiBearerAuth('adminBearer')
   @UseGuards(AuthenticationGuard)
   @ApiOperation({operationId:'adminLogout',summary:'撤銷目前Admin Session'})
-  logout(@Req() req:any){return this.service.logout(req.user.sessionId).then(()=>({data:{ok:true}}));}
+  logout(@Req() req:any){return this.service.logout(req.user.sessionId,req.requestId,req.correlationId).then(()=>({data:{ok:true}}));}
 }

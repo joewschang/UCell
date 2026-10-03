@@ -1,0 +1,36 @@
+{
+  "timestamp": "2026-10-01T06:00:10.181Z",
+  "baseCommit": "64743d3c9bdd8acfe6a71c6351cd17f22c699889",
+  "sourceFiles": [
+    {
+      "path": "member/src/memberData.ts",
+      "sha256": "bdd2b89f58524398375e97ef4dfba6ea956de3d005fb5016f6abf66ff72d711e"
+    },
+    {
+      "path": "member/tests/retail-orders.test.ts",
+      "sha256": "80fa5f6c634324a56297325c383a13f86ff1a02f42d7f2f44bab26391e083d29"
+    }
+  ],
+  "verification": {
+    "memberFiles": 38,
+    "memberTests": 212,
+    "status": "PASS",
+    "typescriptAndBuild": "PASS",
+    "testsLog": "C:/UCell/logs/retail-order-projection-tests-20261001.log",
+    "buildLog": "C:/UCell/logs/retail-order-projection-build-20261001.log"
+  },
+  "coverage": [
+    "exact stored monetary strings",
+    "reject numeric money or business orderNo",
+    "reject duplicate orderNo and negative/fractional count",
+    "reject unknown status/invalid dates",
+    "map only public fields, copy itemNames array",
+    "empty history retained"
+  ],
+  "limitations": [
+    "adapter regression and existing App component tests; not full API/notification/browser recertification"
+  ],
+  "overall": "IN_PROGRESS",
+  "stageRc": "NOT_READY",
+  "deployment": false
+}

@@ -36,3 +36,4 @@
 :root{--ucell-on-primary:#fff}
 :root[data-theme="dark"]{--ucell-on-primary:#071b27}
 @media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--ucell-on-primary:#071b27}}
+:root[data-theme=dark] .uc-dialog::backdrop{background:#000000a8}

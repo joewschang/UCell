@@ -42,7 +42,7 @@ describe('Admin Person current Qualifications read model', () => {
   it('keeps existing Person roles and controller forwards validated pagination', async () => {
     expect(Reflect.getMetadata('roles', PersonController)).toEqual(['SUPER_ADMIN', 'MEMBERSHIP_OPS', 'COMPLIANCE_AUDIT']);
     const service = { qualifications: jest.fn(async () => ({ data: [], meta: { total: 0, take: 20, skip: 0 } })) };
-    await new PersonController(service as any).qualifications(personId);
+    await new PersonController(service as any,{} as any).qualifications(personId);
     expect(service.qualifications).toHaveBeenCalledWith(personId, 20, 0);
   });
 });

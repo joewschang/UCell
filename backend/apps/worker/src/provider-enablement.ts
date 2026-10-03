@@ -2,7 +2,7 @@ import * as fs from 'node:fs';
 
 export type ProviderDeploymentEnvironment='LOCAL'|'CONNECTED_DEV'|'UAT'|'PRODUCTION';
 export type ProviderEnablementEntry=Readonly<{
-  domain:'PAYMENT'|'INVOICE'|'LOGISTICS'|'IDENTITY'; provider:string; connectionId:string;
+  domain:'PAYMENT'|'INVOICE'|'LOGISTICS'|'IDENTITY'|'ERP'; provider:string; connectionId:string;
   providerConnectionVersionId:string; connectionEnvironment:'TEST'|'STAGE'|'PRODUCTION';
   credentialSecretRef:string; webhookVerificationRef:string; configHash:string;
   effectiveFrom:string; effectiveTo?:string|null; approvalReference:string;
@@ -32,7 +32,7 @@ export function validateProviderEnablementManifest(manifest:ProviderEnablementMa
   if(!['LOCAL','CONNECTED_DEV','UAT','PRODUCTION'].includes(expected)||Number.isNaN(now.getTime()))fail('PROVIDER_ENABLEMENT_MANIFEST_INVALID');
   const seen=new Set<string>();
   for(const item of manifest.entries){
-    if(!item||!['PAYMENT','INVOICE','LOGISTICS','IDENTITY'].includes(item.domain)||!token.test(item.provider)||!token.test(item.connectionId)||!uuid.test(item.providerConnectionVersionId))fail('PROVIDER_ENABLEMENT_MANIFEST_INVALID');
+    if(!item||!['PAYMENT','INVOICE','LOGISTICS','IDENTITY','ERP'].includes(item.domain)||!token.test(item.provider)||!token.test(item.connectionId)||!uuid.test(item.providerConnectionVersionId))fail('PROVIDER_ENABLEMENT_MANIFEST_INVALID');
     const key=`${item.domain}\u0000${item.provider}\u0000${item.connectionId}`;
     if(seen.has(key))fail('PROVIDER_ENABLEMENT_DUPLICATE'); seen.add(key);
     if(!hash.test(item.configHash)||!keyVault.test(item.credentialSecretRef)||!keyVault.test(item.webhookVerificationRef))fail('PROVIDER_ENABLEMENT_SECRET_REFERENCE_INVALID');

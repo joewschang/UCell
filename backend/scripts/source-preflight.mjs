@@ -13,8 +13,10 @@ const ctx=read('apps/api/src/common/interceptors/request-context.interceptor.ts'
 if(!ctx.includes('UUID_RE')) failures.push('Correlation ID UUID normalization missing');
 
 const payout=read('apps/api/src/modules/payout/unified-payable.service.ts');
-if(!payout.includes("awardType:'GLOBAL'")) failures.push('Global Pool -> Payable adapter missing');
-if(!payout.includes("awardType:'RPV'")) failures.push('RPV -> Payable adapter missing');
+const adapters=read('packages/database/src/payable-materialization.ts');
+if(!payout.includes('materializePayableEntries(tx,cutoff,ruleVersionCode)')) failures.push('Unified Payable materialization adapter is not wired');
+if(!adapters.includes("materialize('GLOBAL_POOL_AWARD'")||!adapters.includes("'GLOBAL',row.payableAmount")) failures.push('Global Pool -> Payable adapter missing');
+if(!adapters.includes("materialize('RPV_UPLINE_AWARD'")||!adapters.includes("'RPV',row.payableAmount")) failures.push('RPV -> Payable adapter missing');
 
 const recovery=read('apps/api/src/modules/payout/recovery-balance.service.ts');
 if(!recovery.includes('outstandingAmount')) failures.push('Partial recovery balance logic missing');

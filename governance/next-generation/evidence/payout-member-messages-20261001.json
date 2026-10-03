@@ -1,0 +1,152 @@
+{
+  "timestamp": "2026-10-01T04:56:18.910Z",
+  "baseCommit": "0c58fb91df52f66d0accee63c77e8dfd8db88e13",
+  "executionContext": "local-working-tree",
+  "sourceFiles": [
+    {
+      "path": "backend/apps/api/src/modules/admin-operations/admin-operations.service.ts",
+      "sha256": "362db7a2d7b69daa70e3fb917c9e7a9ed017b3942fe8fbc1ebbc9cfb45c388be"
+    },
+    {
+      "path": "backend/apps/api/src/modules/member/member-read.service.ts",
+      "sha256": "16894e4df481caf225005d5a83cdfe05aaa082de9a361c6557d20c5f66332fbd"
+    },
+    {
+      "path": "backend/apps/api/src/modules/member/member-payout.controller.ts",
+      "sha256": "257a1429b5acc8927b491a01fdae4251cde224a1b5a5146667f8e0ebafd87a6f"
+    },
+    {
+      "path": "backend/apps/api/src/modules/member/member-payout.dto.ts",
+      "sha256": "ea92f917359790c74bcb9fd184d47651967f64b4946f3c8a67dd7f5954db0f4b"
+    },
+    {
+      "path": "backend/apps/api/src/modules/member/member.module.ts",
+      "sha256": "2ce382453be1fd228ec3c7e90b10b897c0f4ccc26ae5a45c8bb71954fc0fc9ba"
+    },
+    {
+      "path": "backend/apps/api/test/negative-flow-v05.e2e-spec.ts",
+      "sha256": "6ef76aefe69b7e96f1144dac78909f2793ff0f1ed6a7b42417b8ade417f0d140"
+    },
+    {
+      "path": "backend/apps/api/test/payout-result-recovery-db.e2e-spec.ts",
+      "sha256": "5ac0d4ce79dda4cce92c7513e80af1fe2d7690f49cb93987e0cefab551ec0d57"
+    },
+    {
+      "path": "member/src/App.tsx",
+      "sha256": "faeacbc7241200c867ffbdc95d38af571855d7a5bc406262e2e739684682c01e"
+    },
+    {
+      "path": "member/src/MemberNavigation.tsx",
+      "sha256": "f0f643ac7e15fab8b63fb6fd242bdc83fecfd43a855534ff799dfafc2ed57f88"
+    },
+    {
+      "path": "member/src/MemberPayouts.tsx",
+      "sha256": "0e43986e5d60c75694a3efe69b368d625c1b63f5288b5d5cbf3fa0ed2ccb3749"
+    },
+    {
+      "path": "member/tests/payouts.test.ts",
+      "sha256": "d84bada3465677c5cd639a0113a295d2c8732dbbb98052ecf07b400e51e4dbf0"
+    },
+    {
+      "path": "member/src/ucell-theme.css",
+      "sha256": "cd5383954ff6bd2fa0a6135e09a18ae5a3d3c012c982bcba94923e3b0275faf1"
+    },
+    {
+      "path": "member/src/memberData.ts",
+      "sha256": "6a3afd1973a5d252a9e304c6f8b2b6986c2506eaaa7ec86890c0939d101710f4"
+    },
+    {
+      "path": "member/src/RepurchaseDetails.tsx",
+      "sha256": "07d02205765c0884f1e64a9afce5e3f196137797a80496c209d3677a7410eb1f"
+    },
+    {
+      "path": "member/tests/connected-account.test.tsx",
+      "sha256": "5875dfe1b137472c0d03679458e3a42491fa5d3e666ad2b5ff463a69ab05f485"
+    },
+    {
+      "path": "member/tests/payouts-browser.mjs",
+      "sha256": "b847e897cac1df8e703bba386407dc2808017b16414f3f451aaf8e544ee11223"
+    },
+    {
+      "path": "backend/scripts/member-payout-contract.test.mjs",
+      "sha256": "734479405a04ea8296ccb502da1301c2108c9d40504cab28df177727f3455e37"
+    }
+  ],
+  "focused": {
+    "suites": 7,
+    "tests": 53,
+    "status": "PASS",
+    "migrations": 126,
+    "baselineAssertions": 162,
+    "cleanup": "PASS",
+    "log": "C:/UCell/logs/cr-batch-payout-view-focused.log"
+  },
+  "fullGate": {
+    "status": "PASS",
+    "exitCode": 0,
+    "suites": 185,
+    "tests": 1346,
+    "cleanup": "PASS",
+    "migrations": 126,
+    "baselineAssertions": 162,
+    "log": "C:/UCell/logs/cr-batch-payout-message-full-gate.log",
+    "report": {
+      "status": "PASS",
+      "commit": "0c58fb91df52f66d0accee63c77e8dfd8db88e13",
+      "executionContext": "local-working-tree",
+      "gates": {
+        "generated": "PASS",
+        "secretScan": "PASS",
+        "validation": "PASS",
+        "breakingDiff": "PASS",
+        "publisherTests": "PASS",
+        "contractTests": "PASS",
+        "securityTests": "PASS"
+      },
+      "baselineSha256": "b619d56a1406393eda95f949383b460913bb324aa146a988f387437ab22e56f2",
+      "generated": {
+        "version": "1.1.0",
+        "pathCount": 278,
+        "operationCount": 299,
+        "schemaCount": 191,
+        "artifactSha256": "4b1ed939c7350ddd5850b4af917a214a9d6f1bc9c1d571a2a2867f84cb106de1",
+        "canonicalSha256": "c469c33c891ef7e7e810de3bd493634551f4a0692c2daa881cd8901deb4506e5"
+      },
+      "comparison": {
+        "normalization": "case-insensitive identical header deduplication; inferred missing URI placeholder declarations",
+        "baselineSha256": "2621a3a08500a18c38e918281624425437e3762abae39f75d1a6793ccdd8bcaf",
+        "candidateSha256": "c78e045a4fb0e204679ca499a5772a9a09d4513c5aa3e78a779bf48f0b8b4ede"
+      }
+    },
+    "scope": "Frozen API/runtime/contract sources verified unchanged. Member route/theme improvements were tested independently after their final changes."
+  },
+  "overall": {
+    "localImplementation": "IN_PROGRESS",
+    "fullIsolatedRecertification": "IN_PROGRESS",
+    "stageRC": "NOT_READY"
+  },
+  "deployment": false,
+  "member": {
+    "files": 37,
+    "tests": 198,
+    "status": "PASS",
+    "build": "PASS",
+    "logs": [
+      "C:/UCell/logs/cr-batch-payout-source-member-tests-final-terms.log",
+      "C:/UCell/logs/cr-batch-payout-source-member-build-final-terms.log"
+    ]
+  },
+  "browser": {
+    "status": "PASS",
+    "cleanup": "PASS",
+    "log": "C:/UCell/logs/cr-batch-payout-source-browser-source-time-final.log",
+    "screens": "C:/UCell/logs/payouts-browser-20261001",
+    "scope": "Actual payout/recognition components with controlled envelopes, not live bank/LINE or full notification-to-source/backend browser UAT; income-link text contrast >=4.5:1 in exercised themes."
+  },
+  "artifactTests": {
+    "status": "PASS",
+    "tests": 7,
+    "log": "C:/UCell/logs/cr-batch-payout-view-artifacts.log"
+  },
+  "sourceHashesVerifiedAt": "2026-10-01T05:26:47.162Z"
+}

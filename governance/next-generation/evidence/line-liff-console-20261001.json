@@ -1,0 +1,70 @@
+{
+  "date": "2026-10-01",
+  "provider": "宇生國際股份有限公司",
+  "providerId": "2005588493",
+  "channelName": "UCell Login - Stage",
+  "channelId": "2011813061",
+  "channelStatus": "Developing",
+  "liffId": "2011813061-Qt3d2jmo",
+  "liffUrl": "https://liff.line.me/2011813061-Qt3d2jmo",
+  "endpoint": "https://stage.ucell.life/",
+  "scopes": [
+    "openid"
+  ],
+  "size": "Full",
+  "addFriend": "On (normal)",
+  "linkedOa": "@258vmvsa",
+  "currentDeveloperRole": "Admin",
+  "webhookChanged": false,
+  "channelSecretStored": false,
+  "stageDeployed": true,
+  "buildStatus": "ACR cka API SUCCEEDED; ckb Member failed (BuildKit unsupported); ckc compatible Member SUCCEEDED",
+  "screenshot": "C:/UCell/logs/line-liff-created-20261001.png",
+  "apiImage": "sha256:a85bdefe890335a58c79376b622198af7aacb0c628a8d76aaedc9790fbc6856a",
+  "memberImage": "sha256:f0b0d33d2ce55ec5ee061e7b0e5dfdad575fc648b31cfb1c0010f0d988f46fae",
+  "releaseSuffix": "line-login-20261001",
+  "snapshot": {
+    "baseline": "6c86adb",
+    "linePatch": "85ee88a",
+    "path": "C:/UCell/tools/stage-line-login-20261001",
+    "migration": "NONE"
+  },
+  "verification": {
+    "apiHealth": "Healthy/Running; database ok",
+    "memberHealth": "Healthy/Running; HTTP200; bundle contains actual LIFF ID and binding UI",
+    "invalidIdToken": "401 LINE_TOKEN_INVALID",
+    "realBrowser": "Actual account login and openid consent → stage → server-confirmed LINE_ACCOUNT_UNBOUND → reviewed binding form",
+    "binding": "COMPLETED: same real LINE account completed approved single-use proof and entered member center; /me confirms 2609000001 Stage UAT Member FORMAL_MEMBER"
+  },
+  "realLoginScreenshot": "C:/UCell/logs/line-real-login-binding-gate-20261001.png",
+  "secrets": "No Login Channel Secret persisted; existing synthetic Stage build value reused without output",
+  "unrelatedWork": "Dirty Master checkout preserved; Worker/Admin unchanged",
+  "bindingUat": {
+    "memberNo": "2609000001",
+    "memberName": "Stage UAT Member",
+    "membershipState": "FORMAL_MEMBER",
+    "requestId": "25eaca42-729f-4cac-b833-69db425e2d45",
+    "authorizationReference": "STAGE-UAT-USER-AUTH-20261001",
+    "approvalBasis": "User explicitly identified all data as test and authorized selecting a formal Stage member; existing Stage Admin API approval, not production company KYC",
+    "screenshot": "C:/UCell/logs/line-member-binding-completed-20261001.png",
+    "credentialHandling": "Single-use approval proof not logged or committed; temporary file removed after browser entry",
+    "remainingFinding": "Home reports no membership qualification; /me confirms FORMAL_MEMBER. Business qualification UAT remains open."
+  },
+  "iabContinuationUat": {
+    "date": "2026-10-01",
+    "authenticatedMember": "2609000001",
+    "account": "PASS: Stage UAT Member FORMAL_MEMBER in user-signed-in IAB",
+    "notifications": "PASS: loaded empty-state without error",
+    "organizationAndBonuses": "BLOCKED: qualification empty-state",
+    "shop": "BLOCKED: no orderable products or published qualification packages",
+    "retailOrders": "FAIL: history format error; controller returned nested Promise; source corrected to return service promise directly",
+    "regression": "3 tests PASS: empty history, populated history, rejected query propagation",
+    "deployment": "Fix not deployed; remains for next scoped API release",
+    "qualificationDiagnosis": "Source seed creates currentHolderPersonId but no holderHistory; MemberService requires temporal holder evidence. Likely fixture gap, live history not yet confirmed. No ownership checks relaxed or DB updates made.",
+    "untested": "Orders/payment/PV/BV/trees/qualification/bonus/wallet/return reversal not passed; no transactions created",
+    "screenshots": [
+      "C:/UCell/logs/line-uat-shop-20261001.png",
+      "C:/UCell/logs/line-uat-account-20261001.png"
+    ]
+  }
+}

@@ -1,0 +1,6 @@
+import {useState} from 'react';
+import {Field} from './ui';
+export function EngagementOutreach({path,learning,busy,command}:{path:string;learning?:boolean;busy:boolean;command:(path:string,body:unknown)=>Promise<unknown>}){
+ const [memberNo,setMemberNo]=useState(''),[reason,setReason]=useState(''),[action,setAction]=useState('REMIND');
+ return <form onSubmit={event=>{event.preventDefault();void command(path,{memberNo,reason,...(learning?{action}:{})});}}><fieldset disabled={busy}><legend>{learning?'個別課程指派／提醒':'個別活動提醒'}</legend><Field label="目標會員編號"><input required inputMode="numeric" pattern="[0-9]{10}" maxLength={10} value={memberNo} onChange={e=>setMemberNo(e.target.value)}/></Field>{learning&&<Field label="處理方式"><select value={action} onChange={e=>setAction(e.target.value)}><option value="REMIND">提醒尚未完成的學習</option><option value="ASSIGN">指派已發布課程</option></select></Field>}<Field label="處理原因"><input required maxLength={500} value={reason} onChange={e=>setReason(e.target.value)}/></Field><p>只送至該會員的 UCell 個人訊息中心。同一學習紀錄或活動報名週期，每個臺北日期最多一則提醒；已完成、已取消或已封存的項目不再新增提醒。</p><button disabled={!/^[0-9]{10}$/.test(memberNo)||!reason.trim()}>{learning&&action==='ASSIGN'?'確認指派課程':'建立個別提醒'}</button></fieldset></form>;
+}

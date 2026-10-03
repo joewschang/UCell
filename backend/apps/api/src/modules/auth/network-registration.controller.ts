@@ -12,6 +12,9 @@ class NetworkRegistrationDto {
  @ApiProperty({minLength:1,maxLength:80}) @IsString() @MinLength(1) @MaxLength(80) alias!:string;
  @ApiProperty({description:'Version-neutral gender code; display labels are client/localization concerns.',maxLength:32}) @Matches(/^[A-Za-z0-9_-]{1,32}$/) gender!:string;
  @ApiProperty({format:'date'}) @IsDateString() birthDate!:string;
+ @ApiProperty({description:'ISO-style nationality/country code',example:'TW'}) @Matches(/^[A-Z]{2}$/) nationalityCode!:string;
+ @ApiProperty({enum:['NATIONAL_ID','RESIDENCE_PERMIT','PASSPORT','OTHER']}) @Matches(/^(NATIONAL_ID|RESIDENCE_PERMIT|PASSPORT|OTHER)$/) identityDocumentType!:'NATIONAL_ID'|'RESIDENCE_PERMIT'|'PASSPORT'|'OTHER';
+ @ApiProperty({description:'Identity document number corresponding to the selected type',minLength:2,maxLength:64}) @IsString() @MinLength(2) @MaxLength(64) identityDocumentNumber!:string;
  @ApiProperty({example:'+886912345678'}) @Matches(/^\+[1-9][0-9]{7,14}$/) mobile!:string;
  @ApiProperty({format:'email',maxLength:254}) @IsEmail() @MaxLength(254) email!:string;
 }

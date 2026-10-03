@@ -77,6 +77,18 @@ export async function api<T>(path:string,init:RequestOptions={}):Promise<T>{
 
 export const get=<T>(p:string,options:RequestOptions={})=>api<T>(p,options);
 
+export async function getBlob(path:string):Promise<Blob>{
+  const headers=new Headers();headers.set('x-request-id',crypto.randomUUID());
+  const t=adminToken();if(t)headers.set('Authorization',`Bearer ${t}`);
+  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),15000);
+  try{
+    const res=await fetch(`${API_BASE}${path}`,{headers,signal:controller.signal,cache:'no-store'});
+    if(res.status===401)window.dispatchEvent(new CustomEvent('ucell:admin-unauthorized'));
+    if(!res.ok)throw new ApiError(res.status,null,res.status===403?'沒有 KYC 文件檢視權限':'無法讀取 KYC 文件');
+    return await res.blob();
+  }finally{clearTimeout(timer);}
+}
+
 const commands=createCommandClient((path,data,idempotencyKey)=>api(path,{
     method:'POST',
     body:data===undefined?undefined:JSON.stringify(data),

@@ -1,4 +1,6 @@
 import {ReservoirModule} from './modules/reservoir/reservoir.module';
+import {OrganizationGeoModule} from './modules/organization-geo/organization-geo.module';
+import {SettlementJobsModule} from './modules/settlement-jobs/settlement-jobs.module';
 import { BinaryTreeModule } from './modules/binary-tree/binary-tree.module';
 import { ExplainModule } from './modules/explain/explain.module';
 import { Module } from '@nestjs/common';
@@ -38,11 +40,17 @@ import { AdminProviderOperationsModule } from './modules/admin-provider-operatio
 import { AdminAuthenticationGuard } from './modules/auth/admin-authentication.guard';
 import { AdminRoleGuard } from './modules/auth/admin-role.guard';
 import { ContentModule } from './modules/content/content.module';
+import { LearningModule } from './modules/learning/learning.module';
+import { MemberEventsModule } from './modules/events/events.module';
 import {PackageConfigModule} from './modules/package-config/package-config.module';
 import { UatEvidenceModule } from './modules/uat-evidence/uat-evidence.module';
+import {FulfillmentOperationsModule} from './modules/commerce/fulfillment-operations.module';
 
 @Module({
   imports: [
+    OrganizationGeoModule,
+    SettlementJobsModule,
+    FulfillmentOperationsModule,
     ReservoirModule,
     BinaryTreeModule,
     ExplainModule,
@@ -79,6 +87,8 @@ import { UatEvidenceModule } from './modules/uat-evidence/uat-evidence.module';
     AuthModule,
     AdjustmentModule,
     ContentModule,
+    LearningModule,
+    MemberEventsModule,
     PackageConfigModule,
     UatEvidenceModule,
   ],

@@ -18,6 +18,8 @@ async function globalHarness(input:{total?:string;weak?:Record<string,string>;ac
  (captureGlobalPeriod as jest.Mock).mockResolvedValue({total:new Prisma.Decimal(input.total??'10000000')});
  const qualifications=Object.keys(input.weak??{}).map(qualificationId=>({qualificationId})),ranks=new Set<string>(),awards:any[]=[],settlements:any[]=[],reservoir:any[]=[],accruals:any[]=[],welfareEffects:any[]=[];
  const tx:any={...memberEconomicMocks(),
+  pvLedger:{findMany:jest.fn(async()=>[{eventId:'synthetic-gpv',amount:new Prisma.Decimal(input.total??'10000000'),occurredAt:new Date('2020-01-01'),ruleVersionCode:'TEST_ONLY'}])},
+  historicalReplaySnapshot:{findUnique:jest.fn(async()=>null),create:jest.fn(async({data}:any)=>data)},
   qualification:{...memberEconomicMocks().qualification,findMany:jest.fn(async()=>qualifications)},
   qualificationGlobalRankHistory:{
    upsert:jest.fn(async({where,create}:any)=>{ranks.add(`${where.qualificationId_rankCode.qualificationId}:${where.qualificationId_rankCode.rankCode}`);return create;}),

@@ -16,6 +16,7 @@ afterEach(()=>{if(tree)act(()=>tree.unmount());vi.unstubAllGlobals();});
 
 it('creates the first-qualification order from exact product selections without client monetary fields',async()=>{
  const onCreated=vi.fn(),fetch=vi.fn(async(url:string,init:RequestInit={})=>{
+  if(url.includes('legal-entities'))return envelope([]);
   if(url.endsWith('/delivery-profile'))return envelope(completeDelivery);
   if(url.includes('/member/packages/')&&url.endsWith('/products'))return envelope({package:offer,products:[product]});
   if(init.method==='POST')return envelope({qualificationId:'44444444-4444-4444-8444-444444444444',id:'55555555-5555-4555-8555-555555555555',status:'CONFIRMED',total:'4800',paymentStatus:'PENDING',shipmentStatus:'FULFILLMENT_PENDING',createdAt:'2026-09-17T01:00:00.000Z',replayed:false,lines:[]});
@@ -32,9 +33,11 @@ it('creates the first-qualification order from exact product selections without 
  const rendered=JSON.stringify(tree.toJSON());expect(rendered).toContain('待付款套組訂單已建立');expect(rendered).toContain('4800');expect(onCreated).toHaveBeenCalledOnce();
 });
 
-it('keeps package selection disabled until authoritative delivery data is complete',async()=>{
- const fetch=vi.fn(async(url:string)=>url.endsWith('/delivery-profile')?envelope({...completeDelivery,recipientName:null,complete:false}):envelope([offer]));vi.stubGlobal('fetch',fetch);
+it('allows selecting products first but blocks checkout until delivery data is complete',async()=>{
+ const fetch=vi.fn(async(url:string)=>url.includes('legal-entities')?envelope([]):url.endsWith('/delivery-profile')?envelope({...completeDelivery,recipientName:null,complete:false}):url.endsWith('/products')?envelope({package:offer,products:[product]}):envelope([offer]));vi.stubGlobal('fetch',fetch);
  await act(async()=>{tree=create(<QualificationPackageShop onCreated={()=>undefined}/>);});
- expect(button('請先完成配送資料').props.disabled).toBe(true);
+ expect(button('選擇套組商品').props.disabled).toBe(false);
  expect(fetch.mock.calls.some(([url])=>url.includes('/products'))).toBe(false);
+ await act(async()=>button('選擇套組商品').props.onClick());
+ expect(button('建立待付款套組訂單').props.disabled).toBe(true);
 });

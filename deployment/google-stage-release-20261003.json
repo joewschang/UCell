@@ -1,0 +1,25 @@
+{
+  "verifiedAtUtc": "2026-10-02T19:25:50.8195391Z",
+  "googleClientId": "624267916918-10vr4skhkfdtcc9f708sppios9s01tn1.apps.googleusercontent.com",
+  "authorizedOrigin": "https://stage.ucell.life",
+  "memberImage": "ucellstageacr5mafbbsq33mgu.azurecr.io/ucell-member@sha256:0742ebc7c1f1ce20151ee1009867956b2fb8938911d167d0b0199b42c54015a4",
+  "apiRevision": "ucell-stage-api--google-20261003",
+  "memberRevision": "ucell-stage-member--google-20261003",
+  "apiHealthStatus": 200,
+  "invalidGoogleTokenStatus": 401,
+  "assets": [
+    {
+      "sha256": "11e03fbca9d9831fe7b87b502c275fe2f8993e0da2efd32ad9e8ec6e3544b88a",
+      "path": "/assets/index-CYa6_cK6.js"
+    },
+    {
+      "sha256": "66c5ce98d8193b3d364f6e89ef095a037d589bd014a8edd7df5f6b4d98461e18",
+      "path": "/assets/index-DxR5XhEb.css"
+    },
+    {
+      "sha256": "e3d6bb9456117bafb3860cd99a5dfab29bb30b0c1a0dca4b7433a5550a1de75c",
+      "path": "/ucell-logo-transparent.png"
+    }
+  ],
+  "realGoogleAccountUat": "PENDING"
+}

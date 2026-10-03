@@ -1,6 +1,6 @@
 import { ConflictException, Injectable } from '@nestjs/common';
 import { Prisma, PrismaService, SideCode } from '@ucell/database';
-import { randomUUID } from 'crypto';
+import { createHash, randomUUID } from 'crypto';
 import { AuditService } from '../../common/audit/audit.service';
 import { IdempotencyService } from '../../common/idempotency/idempotency.service';
 import { OrganizationService } from '../organization/organization.service';
@@ -21,14 +21,18 @@ export class QualificationService {
     const effectiveAt = dto.effectiveAt ? new Date(dto.effectiveAt) : new Date();
 
     return this.idempotency.execute(`admin:qualification:create:${actorId ?? 'system'}`, key, dto, async (tx) => {
-      const [person, sponsor, binaryParent] = await Promise.all([
-        tx.person.findUnique({ where: { personId: dto.personId } }),
+      if((dto.personId?1:0)+(dto.legalEntityId?1:0)!==1)throw new ConflictException({code:'QUALIFICATION_HOLDER_INVALID'});
+      const [person,legalEntity,sponsor,binaryParent] = await Promise.all([
+        dto.personId?tx.person.findUnique({where:{personId:dto.personId}}):Promise.resolve(null),
+        dto.legalEntityId?tx.legalEntity.findUnique({where:{legalEntityId:dto.legalEntityId}}):Promise.resolve(null),
         tx.qualification.findUnique({ where: { qualificationId: dto.sponsorQualificationId } }),
         tx.qualification.findUnique({ where: { qualificationId: dto.binaryParentQualificationId } }),
       ]);
 
-      if (!person) {
-        throw new ConflictException({ code: 'RESOURCE_NOT_FOUND', message: 'Person不存在。' });
+      if(dto.holderType==='PERSON'&&!person)throw new ConflictException({code:'RESOURCE_NOT_FOUND',message:'Person不存在。'});
+      if(dto.holderType==='LEGAL_ENTITY'){
+        if(!legalEntity)throw new ConflictException({code:'RESOURCE_NOT_FOUND',message:'LegalEntity不存在。'});
+        if(legalEntity.membershipState!=='FORMAL_MEMBER'||legalEntity.status!=='ACTIVE')throw new ConflictException({code:'LEGAL_ENTITY_FORMAL_MEMBERSHIP_REQUIRED'});
       }
       if (!sponsor) {
         throw new ConflictException({ code: 'RESOURCE_NOT_FOUND', message: 'Sponsor Qualification不存在。' });
@@ -52,6 +56,7 @@ export class QualificationService {
       const qualification = await tx.qualification.create({
         data: {
           currentHolderPersonId: dto.personId,
+          currentHolderLegalEntityId: dto.legalEntityId,
           planLevelCode: dto.planLevelCode,
           status: 'EFFECTIVE',
           activeFlag: false,
@@ -79,9 +84,24 @@ export class QualificationService {
         data: {
           qualificationId: qualification.qualificationId,
           holderPersonId: dto.personId,
+          holderLegalEntityId: dto.legalEntityId,
           effectiveFrom: effectiveAt,
           sourceType: 'INITIAL_APPLICATION',
         },
+      });
+
+      await tx.qualificationOwnerInterval.create({
+        data:{
+          qualificationId:qualification.qualificationId,
+          ownerType:dto.legalEntityId?'LEGAL_ENTITY':'MEMBER',
+          personId:dto.personId,
+          legalEntityId:dto.legalEntityId,
+          companyPrincipalId:null,
+          effectiveFrom:effectiveAt,
+          sourceType:'INITIAL_APPLICATION',
+          sourceId:qualification.qualificationId,
+          evidenceHash:createHash('sha256').update(JSON.stringify({qualificationId:qualification.qualificationId,personId:dto.personId,legalEntityId:dto.legalEntityId,effectiveAt:effectiveAt.toISOString()})).digest('hex')
+        }
       });
 
       await tx.sponsorRelationship.create({
@@ -105,6 +125,9 @@ export class QualificationService {
         entityId: qualification.qualificationId,
         afterData: {
           qualification,
+          holderType:dto.holderType,
+          holderPersonId:dto.personId??null,
+          holderLegalEntityId:dto.legalEntityId??null,
           sponsorQualificationId: dto.sponsorQualificationId,
           sponsorSequenceNo,
           binaryParentQualificationId: dto.binaryParentQualificationId,
@@ -145,13 +168,17 @@ export class QualificationService {
             {currentHolder:{preferredName:{contains:q,mode:'insensitive'}}},
             {currentHolder:{mobile:{contains:q}}},
             {currentHolder:{email:{contains:q,mode:'insensitive'}}},
+            {currentHolderLegalEntity:{memberNo:{contains:q}}},
+            {currentHolderLegalEntity:{registeredName:{contains:q,mode:'insensitive'}}},
+            {currentHolderLegalEntity:{registrationNo:{contains:q,mode:'insensitive'}}},
           ].filter(Boolean) as any
         }:{})
       },
       include:{
         currentHolder:true,
-        sponsorRelation:{include:{sponsor:{include:{currentHolder:true}}}},
-        binaryPlacement:{include:{parent:{include:{currentHolder:true}}}},
+        currentHolderLegalEntity:true,
+        sponsorRelation:{include:{sponsor:{include:{currentHolder:true,currentHolderLegalEntity:true}}}},
+        binaryPlacement:{include:{parent:{include:{currentHolder:true,currentHolderLegalEntity:true}}}},
       },
       orderBy:{createdAt:'desc'},
       take,
@@ -165,8 +192,9 @@ export class QualificationService {
         where: { qualificationId },
         include: {
           currentHolder: true,
-          sponsorRelation:{include:{sponsor:{include:{currentHolder:true}}}},
-          binaryPlacement:{include:{parent:{include:{currentHolder:true}}}},
+          currentHolderLegalEntity: true,
+          sponsorRelation:{include:{sponsor:{include:{currentHolder:true,currentHolderLegalEntity:true}}}},
+          binaryPlacement:{include:{parent:{include:{currentHolder:true,currentHolderLegalEntity:true}}}},
           holderHistory:{orderBy:{effectiveFrom:'desc'},take:20},
           qualificationStatusHistory:{orderBy:{effectiveFrom:'desc'},take:20},
           activePeriods:{orderBy:{activeFrom:'desc'},take:20},

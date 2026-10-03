@@ -1,0 +1,60 @@
+{
+  "timestamp": "2026-10-01T05:39:44.702Z",
+  "sourceCommit": "a70984e8f1bd0fa95da9861b3e7c3d3d8bb08d91",
+  "scope": "local bootstrap profile ORM compatibility and retail/payout regression",
+  "sourceFiles": [
+    {
+      "path": "backend/packages/database/prisma/schema.prisma",
+      "sha256": "ad02741d5e3a3660a833766e8e3261f4ca75c434e50d316c80464675ad10dcc3"
+    },
+    {
+      "path": "backend/apps/api/src/modules/binary-tree/binary-tree.service.ts",
+      "sha256": "ad93ec7a25bc03ed2f0237f199f50559c5c37882c897a88df85b81547a874fc8"
+    },
+    {
+      "path": "backend/apps/api/src/modules/member/member.controller.ts",
+      "sha256": "633460db96b45b4e02b8afd014984d8cc2551e0ffef845fceba28d1c0efaf5b6"
+    },
+    {
+      "path": "backend/scripts/bootstrap-profile-upgrade-test.mjs",
+      "sha256": "b22c4f8bb059d10dd2d8bec3d2d0852321b32aacab0620612e1ccdd9a66bf778"
+    },
+    {
+      "path": "backend/scripts/bootstrap-profile-client-contract.test.mjs",
+      "sha256": "12a453df1d83e7d269b33166c5a207a3232a6f1d844dadee6191acd00f7f4229"
+    }
+  ],
+  "logs": [
+    {
+      "path": "C:/UCell/logs/bootstrap-profile-typed-upgrade-healthy-20261001.log",
+      "sha256": "cfef18632835db22e08431d02396678d1ac6253ff8dbd22acef6867b4385335d"
+    },
+    {
+      "path": "C:/UCell/logs/bootstrap-profile-and-payout-isolated-20261001.log",
+      "sha256": "4eba0dcdf0eabfad65513ce51304696b7621844379edcdc2640382d5c3dfa22e"
+    }
+  ],
+  "upgrade": {
+    "status": "PASS",
+    "typedLegacyRead": true,
+    "historicalTreeAndPersonPreservation": true,
+    "lifecycleGuardsEnforced": true,
+    "cleanup": "PASS"
+  },
+  "isolated": {
+    "status": "PASS",
+    "suites": 5,
+    "tests": 67,
+    "baselineAssertions": 162,
+    "cleanup": "PASS"
+  },
+  "environmentRecovery": {
+    "existingPostgresVolumeRetained": true,
+    "reset": false,
+    "seed": false
+  },
+  "overall": "IN_PROGRESS",
+  "fullBatchRecertification": "IN_PROGRESS",
+  "stageRc": "NOT_READY",
+  "deployment": false
+}

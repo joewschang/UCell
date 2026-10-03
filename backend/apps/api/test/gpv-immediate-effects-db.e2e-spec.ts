@@ -1,6 +1,7 @@
 import {applyGpvImmediateEffects, Prisma} from '@ucell/database';
 import {PrismaClient} from '@prisma/client';
 import {randomUUID} from 'node:crypto';
+import {orderEconomicEvidence} from '../src/modules/admin-operations/order-economic-evidence';
 
 const ROLLBACK='GPV_IMMEDIATE_TEST_ROLLBACK';
 const d=(value:string|number)=>new Prisma.Decimal(value);
@@ -56,7 +57,8 @@ describe('v3 GPV immediate economic evidence',()=>{
         {parentQualificationId:g1.qualificationId,childQualificationId:source.qualificationId,side:'RIGHT',effectiveFrom},
         {parentQualificationId:g2.qualificationId,childQualificationId:g1.qualificationId,side:'LEFT',effectiveFrom},
       ]});
-      const event=await tx.pvLedger.create({data:{qualificationId:source.qualificationId,pvType:'GPV',amount:d(1000),sourceType:'TEST_ORDER',sourceId:randomUUID(),
+      const order=await tx.order.create({data:{qualificationId:source.qualificationId,purpose:'RETAIL',grossAmount:1000,netAmount:1000,ruleVersionCode:rule}});
+      const event=await tx.pvLedger.create({data:{qualificationId:source.qualificationId,pvType:'GPV',amount:d(1000),sourceType:'ORDER',sourceId:order.orderId,
         eventType:'GPV_CREATED',ruleVersionCode:rule,parameterSnapshotHash:'test-input-snapshot',occurredAt:at,correlationId:randomUUID()}});
 
       await applyGpvImmediateEffects(tx,event);
@@ -69,6 +71,17 @@ describe('v3 GPV immediate economic evidence',()=>{
         ['REFERRAL_MATCHING',g2.qualificationId,2,'0','HISTORICAL_INACTIVE'],
         ['REFERRAL_MATCHING',g3.qualificationId,3,'7.5','ELIGIBLE'],
       ]);
+      const unrelated=await tx.pvLedger.create({data:{...event,eventId:randomUUID(),sourceId:randomUUID()}});
+      await tx.theoryCalculationEvidence.create({data:{...theories[0],theoryCalculationEvidenceId:randomUUID(),sourceVolumeEventId:unrelated.eventId,idempotencyKey:randomUUID()}});
+      const evidence=await orderEconomicEvidence(tx,order.orderId,[]);
+      expect(evidence.theoryCalculations.map(row=>[row.theoryKind,row.generation,row.theoryAmount,row.reasonCode])).toEqual([
+        ['REFERRAL',1,'150','ELIGIBLE'],['REFERRAL_MATCHING',2,'0','HISTORICAL_INACTIVE'],['REFERRAL_MATCHING',3,'7.5','ELIGIBLE'],
+      ]);
+      expect(evidence.theoryCalculations[1]).toMatchObject({basis:'ORIGINAL_THEORY_NOT_FINAL_ENTITLEMENT',baseAmount:'150',rate:'0.1',activeAtRecognition:false});
+      expect(evidence.awards).toEqual([]);expect(evidence.payables).toEqual([]);
+      expect((await orderEconomicEvidence(tx,order.orderId,[])).theoryCalculations).toEqual(evidence.theoryCalculations);
+      for(const secret of [source.qualificationId,g2.qualificationId,event.eventId,theories[0].theoryCalculationEvidenceId,theories[0].historicalSponsorPathHash])expect(JSON.stringify(evidence.theoryCalculations)).not.toContain(secret);
+      expect(await tx.theoryCalculationEvidence.findMany({where:{sourceVolumeEventId:event.eventId},orderBy:{fixedGenerationNo:'asc'}})).toEqual(theories);
 
       const binary=await tx.binaryVolumeLedger.findMany({where:{sourceVolumeEventId:event.eventId},orderBy:{binaryGenerationNo:'asc'}});
       expect(binary.map(row=>[row.ancestorQualificationId,row.binaryGenerationNo,row.side,row.amount.toString()])).toEqual([

@@ -1,0 +1,50 @@
+{
+  "schemaVersion": "G8_STAGE_MIGRATION_87_RECOVERY_EXECUTION_V1",
+  "executedAt": "2026-09-26T09:30:50Z",
+  "environment": "STAGE",
+  "productionTouched": false,
+  "preRecoveryBackup": {
+    "provider": "Azure PostgreSQL Flexible Server",
+    "automatedPitrRetentionDays": 7,
+    "onDemandBackup": "UNAVAILABLE_ON_BURSTABLE_SKU",
+    "disposition": "AUTOMATED_PITR_AVAILABLE"
+  },
+  "preRecoveryLedger": {
+    "migration": "20260926110000_g8_audit_event_core",
+    "failed": true,
+    "auditRowCount": 287,
+    "historicalFingerprint": "062f705639b594277728454248ebda59"
+  },
+  "recovery": {
+    "procedure": "prisma-resolve-rolled-back + append-safe-reconciliation + verified-postcondition + prisma-resolve-applied + migrate-deploy",
+    "result": "PASS"
+  },
+  "postcondition": {
+    "columns": 13,
+    "indexes": ["ix_audit_event_trace_occurred", "ix_audit_event_environment_code_occurred"],
+    "triggers": ["trg_audit_event_append_only", "trg_audit_event_before_insert", "trg_audit_event_no_update", "trg_audit_event_no_delete"],
+    "newAuditInsert": "PASS",
+    "eventCodePopulation": "PASS",
+    "traceIdPopulation": "PASS"
+  },
+  "historicalAuditIntegrity": {
+    "preExistingFingerprintUnchanged": true,
+    "updateBlocked": true,
+    "deleteBlocked": true
+  },
+  "prismaLedger": {
+    "migrationFinished": true,
+    "migrationRolledBackRecordRetained": true,
+    "migrateDeploy": "87 migrations; no pending migrations"
+  },
+  "deployment": {
+    "sourceHead": "0eeb81481b033677c338c81b6edf55de1a8fead0",
+    "apiImage": "ucellstageacr5mafbbsq33mgu.azurecr.io/ucell-backend@sha256:39c99785d83cfafa86a971fdb3e00cef63356d212ca7c858873384e928c4af89",
+    "workerImage": "ucellstageacr5mafbbsq33mgu.azurecr.io/ucell-worker@sha256:1166b557bbe780d888639e541edab4ca6f67d612c502732ec406c4b5fc947eac",
+    "apiHealth": "PASS",
+    "workerHealth": "PASS",
+    "adminMemberFrontend": "UNCHANGED",
+    "adminLoginFailureAudit": "PASS",
+    "memberBolaDeniedAudit": "PENDING_AUTHENTICATED_STAGE_UAT_EXERCISE"
+  }
+}

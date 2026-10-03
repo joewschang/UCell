@@ -1,0 +1,31 @@
+{
+  "date": "2026-10-02",
+  "status": "FOUNDATION_BOUNDED_PASS",
+  "sourceCommit": "5214f796ae979665df0a54d43ca113c993ada8d7",
+  "implementation": "Migration 128: immutable operational stage observations and separate projection watermark; serialized period identity, source cutoff monotonicity and same-stage dedupe",
+  "semantics": "Observed stage history only. Database observation timestamp is not an invented business-stage entry time. No financial ledger effects.",
+  "verification": {
+    "isolatedSuites": 1,
+    "tests": 2,
+    "migrations": 128,
+    "baselineAssertions": 162,
+    "cleanup": "PASS",
+    "log": "C:/UCell/logs/compensation-stage-observation-20261002.log",
+    "coverage": [
+      "OPEN/PRECHECK/BLOCKED/resume history remains append-only",
+      "Unchanged refresh advances watermark; older different-state read cannot create a false transition",
+      "Concurrent identical observations yield one row",
+      "Unknown stage and future source cutoff rejected",
+      "Existing observations cannot update/delete"
+    ]
+  },
+  "remaining": [
+    "Authoritative CompensationPeriodControl observation producer and audited refresh",
+    "Read API and bounded history pagination",
+    "Admin history and observed-duration presentation",
+    "Actual writer-to-control integration, migration preservation and browser acceptance",
+    "Actual historical entry time remains unavailable without source transition evidence",
+    "Whole batch IN_PROGRESS; not full stage duration acceptance"
+  ],
+  "deployment": "NONE"
+}

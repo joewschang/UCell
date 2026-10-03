@@ -1,6 +1,9 @@
 name: RC Promotion Gate
 on:
   workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
 jobs:
   promote:
     runs-on: ubuntu-latest
@@ -22,5 +25,42 @@ jobs:
           test -f backend/release/R6_RELEASE_GATE.json
       - name: Block unreviewed dependency state
         run: test -f backend/pnpm-lock.yaml && test -f admin/pnpm-lock.yaml
+
+      - name: Fetch same-commit SwaggerHub release evidence
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('node:fs');
+            const {owner, repo} = context.repo;
+            const runs = await github.paginate(github.rest.actions.listWorkflowRuns, {
+              owner, repo, workflow_id: 'swaggerhub-sync.yml', head_sha: context.sha,
+              status: 'success', per_page: 100
+            });
+            const run = runs.find(r => r.head_sha === context.sha &&
+              ['push','workflow_dispatch'].includes(r.event) &&
+              r.head_branch === context.payload.repository.default_branch);
+            if (!run) throw new Error('No successful same-commit SwaggerHub publishing run');
+            const artifacts = await github.paginate(github.rest.actions.listWorkflowRunArtifacts, {
+              owner, repo, run_id: run.id, per_page: 100
+            });
+            for (const [name, filename] of [
+              ['swaggerhub-release-' + context.sha + '-' + run.id + '-' + run.run_attempt, 'swaggerhub-receipt.zip'],
+              ['openapi-gated-' + context.sha, 'swaggerhub-spec.zip']
+            ]) {
+              const artifact = artifacts.find(a => a.name === name && !a.expired);
+              if (!artifact) throw new Error('Missing trusted publication artifact: ' + name);
+              const archive = await github.rest.actions.downloadArtifact({
+                owner, repo, artifact_id: artifact.id, archive_format: 'zip'
+              });
+              fs.writeFileSync(filename, Buffer.from(archive.data));
+            }
+      - name: Verify SwaggerHub synchronization receipt
+        shell: bash
+        run: |
+          set -euo pipefail
+          unzip -p swaggerhub-receipt.zip backend/release/SWAGGERHUB_SYNC_EVIDENCE.json > backend/release/SWAGGERHUB_SYNC_EVIDENCE.json
+          unzip -p swaggerhub-spec.zip backend/openapi.generated.json > backend/openapi.generated.json
+          node backend/scripts/openapi-governance.mjs release-check
+
       - name: Human approval reminder
         run: echo "Production deployment is allowed only after all R6 gate evidence is PASS and backup/restore drill is signed off."

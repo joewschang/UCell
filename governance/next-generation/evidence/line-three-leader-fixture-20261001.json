@@ -1,0 +1,54 @@
+{
+  "memberNo": "2609000001",
+  "personId": "51000000-0000-4000-8000-000000000001",
+  "environment": "STAGE",
+  "requestedLeaderBalls": 3,
+  "created": 3,
+  "existingStarterQualificationPreserved": "51000000-0000-4000-8000-000000000002",
+  "intendedPlacement": "First new LEADER under A000013 LEFT; second under first new ball LEFT; third under first new ball RIGHT. Revalidate preview before each commit.",
+  "preflightFinding": "bootstrap_profile_version TEXT / Prisma Int mismatch",
+  "fix": "Prisma String, new trees String(profile.version); no DB migration",
+  "localValidation": "prisma generate, API build, 2 suites / 5 tests PASS",
+  "acrRun": "cke SUCCEEDED (ckd failed snapshot dependency; corrected without changing Master checkout)",
+  "status": "COMPLETE: three LEADER balls created; real LINE member UI and switching verified",
+  "noMutations": "Original STARTER preserved. Added only authorized Stage fixtures via SYSTEM audit; no Production or bank payment changes.",
+  "apiImage": "sha256:2c1aab6f40149e4cee8fb1feb984af497f3d326caa698f2070572be80d69cbfc",
+  "revision": "ucell-stage-api--line-uat-fix-20261001",
+  "browserRetest": "Blocked: IAB Emulation.setFocusEmulationEnabled timed out twice; no UI pass claimed",
+  "adminUiCheck": "Current login is DEV Admin / Super Admin. Login page Microsoft button disabled; VITE_ENTRA_CLIENT_ID / VITE_ENTRA_TENANT_ID not configured. Restored DEV Super Admin after inspection. No balls created.",
+  "adminUiScreenshot": "C:/UCell/logs/stage-admin-entra-unconfigured-20261001.png",
+  "fixtureExecution": "ucell-stage-uat-seed-9i195i0 SUCCEEDED",
+  "balls": [
+    "A000014",
+    "A000015",
+    "A000016"
+  ],
+  "screenshot": "C:/UCell/logs/line-three-leader-balls-20261001.png",
+  "testResults": "3 qualification switches PASS; A14 sponsor A13, children A15/A16, binary 1 left/1 right. Bonus/ledger/performance empty states loaded. Full tree snapshot recovery remains a finding. No Active interval fabricated.",
+  "replayVerification": "Local replay/conflict guard tests PASS; additional live job replay rejected by automatic policy review (blocked by policy), not retried.",
+  "corsFix": {
+    "revision": "ucell-stage-api--line-uat-cors-20261001",
+    "image": "sha256:8d12c8872b102ee8f102542e34630b4cf72b6befe0afd7aee2ae97260185cec6",
+    "acrRun": "ckf SUCCEEDED",
+    "health": "Healthy/Running",
+    "preflight": "GET, HEAD, POST, PATCH",
+    "test": "Fastify allowed-origin + PATCH + auth/idempotency header + untrusted-origin test PASS",
+    "delivery": "Real LINE browser synthetic delivery profile saved successfully; explicitly DO NOT SHIP"
+  },
+  "productFixture": "Existing STAGE-UAT-PRODUCT-001 kept at TWD4800; added missing R1.0B rule profile via normal ProductService (GPV 0.60), no parameter edits",
+  "orderUat": {
+    "qualification": "A000016",
+    "amount": "4800",
+    "currency": "TWD",
+    "orderStatus": "CONFIRMED",
+    "paymentStatus": "PENDING",
+    "shipmentStatus": "FULFILLMENT_PENDING",
+    "browser": "Real LINE authenticated session created order and viewed history",
+    "isolation": "A000015 order history empty after switching",
+    "createdAt": "2026-10-01T05:56:35.795Z",
+    "screenshots": [
+      "C:/UCell/logs/line-uat-order-created-20261001.png",
+      "C:/UCell/logs/line-order-ball-isolation-20261001.png"
+    ]
+  }
+}

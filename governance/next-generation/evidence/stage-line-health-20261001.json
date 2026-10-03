@@ -1,0 +1,71 @@
+{
+  "verifiedAt": "2026-10-01T03:09:11.4989750Z",
+  "resourceGroup": "rg-ucell-stage",
+  "revisions": [
+    {
+      "name": "ucell-stage-api",
+      "revision": "ucell-stage-api--g86c86adbline20261001",
+      "image": "ucellstageacr5mafbbsq33mgu.azurecr.io/ucell-backend@sha256:f3f38c510da1d9c771af8bcdfa672c37e811ea129e5b8952782d94fbea4d6981",
+      "health": "Healthy",
+      "running": "Running",
+      "domains": [
+        "api-stage.ucell.life"
+      ],
+      "domainsPreserved": true
+    },
+    {
+      "name": "ucell-stage-worker",
+      "revision": "ucell-stage-worker--0000001",
+      "image": "ucellstageacr5mafbbsq33mgu.azurecr.io/ucell-worker@sha256:803dc42c90657d2444f44a71edf9bf0ad73eec0f09b2924c4641f775f9a9f497",
+      "health": "Healthy",
+      "running": "Running",
+      "domains": null,
+      "domainsPreserved": true
+    },
+    {
+      "name": "ucell-stage-admin",
+      "revision": "ucell-stage-admin--g86c86adbline20261001",
+      "image": "ucellstageacr5mafbbsq33mgu.azurecr.io/ucell-admin@sha256:26d261f092663df1c47ae1a56dd5729e9f662a87fb49e898470a165ddf603403",
+      "health": "Healthy",
+      "running": "Running",
+      "domains": [
+        "admin-stage.ucell.life"
+      ],
+      "domainsPreserved": true
+    },
+    {
+      "name": "ucell-stage-member",
+      "revision": "ucell-stage-member--g86c86adbline20261001",
+      "image": "ucellstageacr5mafbbsq33mgu.azurecr.io/ucell-member@sha256:bd6d9caeccd99e35e2af3d279b17215672495e4815214035c656d5f5f0baeb2e",
+      "health": "Healthy",
+      "running": "Running",
+      "domains": [
+        "stage.ucell.life"
+      ],
+      "domainsPreserved": true
+    }
+  ],
+  "urls": [
+    {
+      "url": "https://stage.ucell.life",
+      "status": 200
+    },
+    {
+      "url": "https://admin-stage.ucell.life",
+      "status": 200
+    },
+    {
+      "url": "https://api-stage.ucell.life/api/v1/health",
+      "status": 200
+    }
+  ],
+  "webhook": {
+    "url": "https://api-stage.ucell.life/api/line/webhook",
+    "method": "POST",
+    "status": 503,
+    "code": "LINE_MESSAGING_CONFIGURATION_PENDING",
+    "externallyReachable": true,
+    "realLineVerification": "PENDING_MANUAL_SECRET"
+  },
+  "uat": "WAITING_FOR_HUMAN_LINE_GATE"
+}

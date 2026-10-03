@@ -16,6 +16,10 @@ export class ProductController {
     return { data: await this.service.upsertReference(dto) };
   }
 
+  @Post('retail-referral-profiles')
+  @ApiOperation({operationId:'adminScheduleRetailReferralProfile',summary:'以有效期間建立商品推薦獎金 SKU 規則版本；既有版本不覆寫'})
+  async scheduleRetailReferral(@Body() dto:{productId:string;effectiveFrom:string;enabled:boolean;rate?:string}) { return {data:await this.service.scheduleRetailReferralProfile(dto)}; }
+
   @Get()
   @ApiOperation({ operationId: 'adminListProducts', summary: '商品Reference清單' })
   async list() {

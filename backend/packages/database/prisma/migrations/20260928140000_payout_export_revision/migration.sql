@@ -1,0 +1,3 @@
+ALTER TABLE ledger.payout_export_artifact ADD COLUMN revision integer NOT NULL DEFAULT 1;
+ALTER TABLE ledger.payout_export_artifact DROP CONSTRAINT payout_export_artifact_payout_batch_id_format_version_key;
+ALTER TABLE ledger.payout_export_artifact ADD CONSTRAINT payout_export_artifact_payout_batch_id_revision_key UNIQUE (payout_batch_id, revision);

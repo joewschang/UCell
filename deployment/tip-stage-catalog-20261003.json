@@ -1,0 +1,118 @@
+{
+  "status": "STAGE_TIP_MAIN_PRODUCTS_PUBLISHED",
+  "mainProducts": [
+    {
+      "code": "STAGE_CORE_TIP_363",
+      "name": "TIP-363 晶萃源力飲",
+      "cover": "/products/tip-363.png",
+      "pricing": "Stage 測試價：NT$ 4800／盒；正式售價待確認"
+    },
+    {
+      "code": "STAGE_CORE_TIP_580",
+      "name": "TIP-580 淨衡順",
+      "cover": "/products/tip-580.png",
+      "pricing": "Stage 測試價：NT$ 4800／盒；正式售價待確認"
+    },
+    {
+      "code": "STAGE_CORE_TIP_696",
+      "name": "TIP-696 活力芯",
+      "cover": "/products/tip-696.png",
+      "pricing": "Stage 測試價：NT$ 4800／盒；正式售價待確認"
+    },
+    {
+      "code": "STAGE_CORE_TIP_777",
+      "name": "TIP-777 肽時光膠原飲",
+      "cover": "/products/tip-777.png",
+      "pricing": "Stage 測試價：NT$ 4800／盒；正式售價待確認"
+    },
+    {
+      "code": "STAGE_CORE_TIP_999",
+      "name": "TIP-999 禦力源",
+      "cover": "/products/tip-999.png",
+      "pricing": "Stage 測試價：NT$ 4800／盒；正式售價待確認"
+    }
+  ],
+  "packages": [
+    {
+      "code": "STARTER",
+      "status": "ACTIVE",
+      "price": "14400.00",
+      "quantity": 3,
+      "productPool": [
+        "TIP-363",
+        "TIP-580",
+        "TIP-696",
+        "TIP-777",
+        "TIP-999"
+      ]
+    },
+    {
+      "code": "ELITE",
+      "status": "ACTIVE",
+      "price": "43200.00",
+      "quantity": 9,
+      "productPool": [
+        "TIP-363",
+        "TIP-580",
+        "TIP-696",
+        "TIP-777",
+        "TIP-999"
+      ]
+    },
+    {
+      "code": "LEADER",
+      "status": "ACTIVE",
+      "price": "72000.00",
+      "quantity": 15,
+      "productPool": [
+        "TIP-363",
+        "TIP-580",
+        "TIP-696",
+        "TIP-777",
+        "TIP-999"
+      ]
+    },
+    {
+      "code": "ACTIVE_QUARTER",
+      "status": "ACTIVE",
+      "price": "6000.00",
+      "quantity": 2,
+      "productPool": [
+        "TIP-363",
+        "TIP-580",
+        "TIP-696",
+        "TIP-777",
+        "TIP-999"
+      ]
+    },
+    {
+      "code": "ACTIVE_HALF_YEAR",
+      "status": "ACTIVE",
+      "price": "12000.00",
+      "quantity": 4,
+      "productPool": [
+        "TIP-363",
+        "TIP-580",
+        "TIP-696",
+        "TIP-777",
+        "TIP-999"
+      ]
+    },
+    {
+      "code": "ACTIVE_YEAR",
+      "status": "ACTIVE",
+      "price": "24000.00",
+      "quantity": 8,
+      "productPool": [
+        "TIP-363",
+        "TIP-580",
+        "TIP-696",
+        "TIP-777",
+        "TIP-999"
+      ]
+    }
+  ],
+  "pricing": "STAGE_TEST_ONLY",
+  "expiresAt": "2026-10-10T00:00:00Z",
+  "automaticFormalApproval": false
+}

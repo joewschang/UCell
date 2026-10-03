@@ -1,0 +1,5 @@
+FROM ucellstageacr5mafbbsq33mgu.azurecr.io/ucell-admin@sha256:3cfab35ff427ec696d26ec8ac9136a9246abd05516aede83b03d5050bd6c257f
+ARG SOURCE_COMMIT
+LABEL life.ucell.source-commit=${SOURCE_COMMIT}
+RUN rm -rf /usr/share/nginx/html/*
+COPY admin-dist/ /usr/share/nginx/html/

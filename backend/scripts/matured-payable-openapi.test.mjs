@@ -1,0 +1,24 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+const spec=JSON.parse(readFileSync(new URL('../openapi.generated.json',import.meta.url),'utf8'));
+test('generated matured source response retains its specific page and exact decimal schema',()=>{
+ const operation=spec.paths['/api/v1/admin/operations/control/matured-payable-sources'].get;
+ assert.equal(operation.operationId,'adminMaturedPayableSources');
+ const ref=operation.responses['200'].content['application/json'].schema.$ref;
+ assert.equal(ref,'#/components/schemas/MaturedPayableSourcesEnvelopeDto');
+ const envelope=spec.components.schemas.MaturedPayableSourcesEnvelopeDto;
+ assert.equal(envelope.properties.data.$ref,'#/components/schemas/MaturedPayableSourcesPageDto');
+ const page=spec.components.schemas.MaturedPayableSourcesPageDto;
+ assert.equal(page.properties.items.items.$ref,'#/components/schemas/MaturedPayableSourceDto');
+ assert.equal(page.properties.nextCursor.nullable,true);
+ assert.equal(page.properties.asOf.format,'date-time');
+ assert.deepEqual(page.properties.coverage.enum,['CURRENT_PAGE_ONLY']);
+ const source=spec.components.schemas.MaturedPayableSourceDto;
+ for(const field of ['reference','sourceType','awardType','qualificationNo','amount','maturesAt','ruleVersionCode','recordedAt'])assert.ok(source.required.includes(field),field);
+ assert.equal(source.properties.amount.type,'string');assert.equal(source.properties.qualificationNo.type,'string');
+ assert.deepEqual(source.properties.sourceType.enum,['BONUS_AWARD','RPV_UPLINE_AWARD','GLOBAL_POOL_AWARD']);
+ assert.ok(operation.security.some(row=>'adminBearer' in row));
+ for(const status of ['400','401','403'])assert.ok(operation.responses[status]);
+ const threshold=operation.parameters.find(row=>row.name==='thresholdHours');assert.equal(threshold.required,true);assert.equal(threshold.schema.minimum,1);assert.equal(threshold.schema.maximum,8760);
+});

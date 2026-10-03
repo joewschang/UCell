@@ -1,0 +1,123 @@
+{
+  "baseline": "f4fadc87847870044439d21cd0a2e3d16dff5580",
+  "executionContext": "local-working-tree",
+  "scope": "Timing response contracts, exact canonical provider ingress validation and limited Growth terminology",
+  "openapiGovernance": {
+    "status": "PASS",
+    "commit": "f4fadc87847870044439d21cd0a2e3d16dff5580",
+    "executionContext": "local-working-tree",
+    "gates": {
+      "generated": "PASS",
+      "secretScan": "PASS",
+      "validation": "PASS",
+      "breakingDiff": "PASS",
+      "publisherTests": "PASS",
+      "contractTests": "PASS",
+      "securityTests": "PASS"
+    },
+    "baselineSha256": "b619d56a1406393eda95f949383b460913bb324aa146a988f387437ab22e56f2",
+    "generated": {
+      "version": "1.1.0",
+      "pathCount": 275,
+      "operationCount": 296,
+      "schemaCount": 165,
+      "artifactSha256": "892cdce59070743461f2e4a741b34fb8ce82c0395b6d339515c7f6687520bc82",
+      "canonicalSha256": "7fada57a1b6885a005fa6188a4206a14fa8b63261a98e3af588724ac68a280d3"
+    },
+    "comparison": {
+      "normalization": "case-insensitive identical header deduplication; inferred missing URI placeholder declarations",
+      "baselineSha256": "2621a3a08500a18c38e918281624425437e3762abae39f75d1a6793ccdd8bcaf",
+      "candidateSha256": "5e269de6db00271aadcebb99c6420b901cf8a65a8f154725a1dd564eb5e5b722"
+    }
+  },
+  "apiSuites": 183,
+  "apiTests": 1327,
+  "migrationCount": 125,
+  "baselineAssertions": 162,
+  "contractTests": 3,
+  "publisherAndGovernanceTests": 25,
+  "focusedHttpSuites": 3,
+  "focusedHttpTests": 33,
+  "memberFocusedTests": 1,
+  "cleanup": "PASS",
+  "deployment": "NONE",
+  "localImplementation": "IN_PROGRESS",
+  "fullIsolatedRecertification": "IN_PROGRESS",
+  "stageRc": "NOT_READY",
+  "files": [
+    {
+      "path": "backend/apps/api/src/modules/admin-operations/operations-workflow-health.controller.ts",
+      "sha256": "bd3cc9d5d931c282c146039683d65b69eab8b6d619b218f8b68ab078c82ebca0"
+    },
+    {
+      "path": "backend/apps/api/src/modules/auth/line-stage-webhook.controller.ts",
+      "sha256": "dc088b025f3c328841e2e72d59173fcee98d5cf1e8c4b125e0bd094168f3eb91"
+    },
+    {
+      "path": "backend/apps/api/src/modules/settlement-jobs/compensation-period-control.controller.ts",
+      "sha256": "2f782c818f6a37c389e264aa366b4d5f13c806bb79696feec74abeb02e389eb5"
+    },
+    {
+      "path": "backend/apps/api/src/modules/settlement-jobs/period-process-timing.dto.ts",
+      "sha256": "0305af94b81db59a7806e59ee957c680f11b8f890a4e869503942df4aaae86ed"
+    },
+    {
+      "path": "backend/scripts/openapi-governance.mjs",
+      "sha256": "2d6657928547866f4408e41bedb4efd08d238a520bfcac53ee4b07eed3fe54d7"
+    },
+    {
+      "path": "backend/scripts/openapi-governance.test.mjs",
+      "sha256": "d7fa9595f5c399810e332dcbcd9063ea38f1c1291d2b0df6c99444d80ab016ba"
+    },
+    {
+      "path": "backend/scripts/period-process-timing-contract.test.mjs",
+      "sha256": "93b4bcd6919ebc4b8f57549626ed05e7885054ac3b3a0e5d6dca177613372092"
+    },
+    {
+      "path": "backend/openapi.generated.json",
+      "sha256": "892cdce59070743461f2e4a741b34fb8ce82c0395b6d339515c7f6687520bc82"
+    },
+    {
+      "path": "member/src/GrowthCenter.tsx",
+      "sha256": "203e44dbeabdfd365c3ce45ff4320e8d240779fe74cb90c96b17c0bd0d080618"
+    }
+  ],
+  "logs": [
+    {
+      "path": "C:\\UCell\\logs\\cr-batch-timing-contract-governance-final.log",
+      "sha256": "b1e633971796b455c24f9179e39e5cff45e79f579745db8160fdfbff6e2046ca"
+    },
+    {
+      "path": "C:\\UCell\\logs\\cr-batch-timing-contract-governance-tests.log",
+      "sha256": "69802edf0ed403ca3876a01f16c308d8fac1a6d5eaac9b918d805681aa4f3c8d"
+    },
+    {
+      "path": "C:\\UCell\\logs\\cr-batch-timing-contract-schema-tests-final.log",
+      "sha256": "535fd81eabdacc0fd6eb5fea26274a16e0b7d303cd42bdff98b6df4877b6c495"
+    },
+    {
+      "path": "C:\\UCell\\logs\\cr-batch-timing-contract-http-db.log",
+      "sha256": "13614311462789be77e6a794c8b081aab2b0d97c5a03301ecc7b420018829666"
+    },
+    {
+      "path": "C:\\UCell\\logs\\cr-batch-timing-contract-build.log",
+      "sha256": "c9bbb792e87e76102443f726d9d61fcec8c7f422fb97cc739cf187013632726f"
+    },
+    {
+      "path": "C:\\UCell\\logs\\cr-batch-timing-contract-preflight.log",
+      "sha256": "6e63f97a80841cad2222849c17f7829b45e03c1f7cc7640ea847a5becd6c4ccd"
+    },
+    {
+      "path": "C:\\UCell\\logs\\cr-batch-timing-contract-security.log",
+      "sha256": "2e3f557f93cc9eec33f9eee42cd97075b11f805796e3204e14ba866d2e4a1605"
+    },
+    {
+      "path": "C:\\UCell\\logs\\cr-batch-growth-terminology-test.log",
+      "sha256": "e858ae42e3f95296df00002a31c5b6c15186ec49f37328ab6bbd68ef01bebfa3"
+    },
+    {
+      "path": "C:\\UCell\\logs\\cr-batch-growth-terminology-build.log",
+      "sha256": "c362de44d9c051d59a3f5f3231981577380bb8e07131f8e63deab39c8a7a64b7"
+    }
+  ]
+}

@@ -1,10 +1,20 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEnum, IsISO8601, IsOptional, IsUUID } from 'class-validator';
+import { IsEnum, IsIn, IsISO8601, IsOptional, IsUUID, ValidateIf } from 'class-validator';
 
 export class CreateQualificationDto {
-  @ApiProperty({ format: 'uuid', description: '目前持有人 Person ID' })
+  @ApiProperty({enum:['PERSON','LEGAL_ENTITY']})
+  @IsIn(['PERSON','LEGAL_ENTITY'])
+  holderType!: 'PERSON'|'LEGAL_ENTITY';
+
+  @ApiPropertyOptional({ format: 'uuid', description: '自然人持有人 Person ID' })
+  @ValidateIf(o=>o.holderType==='PERSON')
   @IsUUID()
-  personId!: string;
+  personId?: string;
+
+  @ApiPropertyOptional({ format: 'uuid', description: '法人持有人 LegalEntity ID' })
+  @ValidateIf(o=>o.holderType==='LEGAL_ENTITY')
+  @IsUUID()
+  legalEntityId?: string;
 
   @ApiProperty({ enum: ['STARTER', 'ELITE', 'LEADER'], description: '方案級別' })
   @IsEnum(['STARTER', 'ELITE', 'LEADER'])

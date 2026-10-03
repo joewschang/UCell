@@ -20,6 +20,33 @@ async function admin():Promise<TreePrincipal>{
 
 describe('P0 identifier database boundary',()=>{
  afterAll(async()=>db.$disconnect());
+ it('allocates per-tree sequences concurrently, replays identities, rolls back and grows beyond six digits',async()=>{
+  const actor=await admin(),a=(await trees.create(actor,{treeName:'Sequence A',reason:'Sequence integration test'},randomUUID())).value,
+   b=(await trees.create(actor,{treeName:'Sequence B',reason:'Sequence integration test'},randomUUID())).value;
+  const person=await db.person.create({data:{legalName:'SEQUENCE HOLDER'}});
+  const make=()=>db.qualification.create({data:{currentHolderPersonId:person.personId,planLevelCode:'STARTER',status:'EFFECTIVE',effectiveAt:new Date()}});
+  const qualifications=await Promise.all(Array.from({length:16},make));
+  const allocate=(tree:string,q:string)=>db.$queryRaw<Array<{ballNo:string}>>`SELECT organization.allocate_ball_no(${tree}::uuid,${q}::uuid) AS "ballNo"`;
+  const numbers=(await Promise.all(qualifications.map(q=>allocate(a.binaryTreeId,q.qualificationId)))).map(rows=>rows[0].ballNo);
+  expect(new Set(numbers).size).toBe(16);
+  expect(numbers.sort()).toEqual(Array.from({length:16},(_,i)=>`${a.treeCode}${String(i+1).padStart(6,'0')}`));
+  const original=(await db.ballNoAllocation.findUniqueOrThrow({where:{qualificationId:qualifications[0].qualificationId}})).sequenceNo;
+  expect((await allocate(a.binaryTreeId,qualifications[0].qualificationId))[0].ballNo).toBe(`${a.treeCode}${original.toString().padStart(6,'0')}`);
+  expect(await db.ballNoCounter.findUniqueOrThrow({where:{binaryTreeId:a.binaryTreeId}})).toMatchObject({lastSequence:16n});
+  await expect(allocate(b.binaryTreeId,qualifications[0].qualificationId)).rejects.toThrow('BALL_ALLOCATION_TREE_MISMATCH');
+  await expect(allocate(a.binaryTreeId,a.companyQualificationIds[0])).rejects.toThrow('ORDINARY_BALL_QUALIFICATION_REQUIRED');
+  await expect(db.ballNoAllocation.delete({where:{qualificationId:qualifications[0].qualificationId}})).rejects.toThrow('BALL_ALLOCATION_IMMUTABLE');
+  const rolledBack=await make();
+  await expect(db.$transaction(async tx=>{
+   await tx.$queryRaw`SELECT organization.allocate_ball_no(${a.binaryTreeId}::uuid,${rolledBack.qualificationId}::uuid)`;
+   throw new Error('TEST_ROLLBACK');
+  })).rejects.toThrow('TEST_ROLLBACK');
+  expect(await db.ballNoAllocation.findUnique({where:{qualificationId:rolledBack.qualificationId}})).toBeNull();
+  expect((await allocate(a.binaryTreeId,rolledBack.qualificationId))[0].ballNo).toBe(`${a.treeCode}000017`);
+  const other=await make();expect((await allocate(b.binaryTreeId,other.qualificationId))[0].ballNo).toBe(`${b.treeCode}000001`);
+  await db.ballNoCounter.update({where:{binaryTreeId:b.binaryTreeId},data:{lastSequence:999999n}});
+  expect((await allocate(b.binaryTreeId,(await make()).qualificationId))[0].ballNo).toBe(`${b.treeCode}1000000`);
+ });
  it('allocates globally unique Taipei YYMM member numbers under concurrent Person creation',async()=>{
   const persons=await Promise.all(Array.from({length:32},(_,index)=>db.person.create({data:{legalName:`P0 CONCURRENT ${index} ${randomUUID()}`}})));
   const memberNos=persons.map(person=>person.memberNo);
@@ -42,42 +69,26 @@ describe('P0 identifier database boundary',()=>{
   await db.qualification.create({data:{currentHolderPersonId:person.personId,planLevelCode:'ELITE',status:'EFFECTIVE',effectiveAt:new Date()}});
   await expect(trees.resolveUnplacedMemberQualification(actor,person.memberNo)).rejects.toMatchObject({response:{code:'MEMBER_NO_QUALIFICATION_AMBIGUOUS'}});
  });
- it('keeps the reconstruction dry run correct when a Ball ordinal grows past six digits',async()=>{
+ it('allocates sequential Ball numbers even when topology grows past six digits',async()=>{
   const actor=await admin(),tree=(await trees.create(actor,{treeName:'P0 natural Ball Number growth',reason:'Verify dry-run natural ordinal growth'},randomUUID())).value;
   await trees.change(actor,tree.binaryTreeId,{status:'ACTIVE',expectedVersion:1,reason:'Activate P0 growth verification'},randomUUID());
   const path=[
-   {position:4n,parent:2n,side:'LEFT' as const},
-   {position:7n,parent:3n,side:'RIGHT' as const},
-   {position:15n,parent:7n,side:'RIGHT' as const},
-   {position:30n,parent:15n,side:'LEFT' as const},
-   {position:61n,parent:30n,side:'RIGHT' as const},
-   {position:122n,parent:61n,side:'LEFT' as const},
-   {position:244n,parent:122n,side:'LEFT' as const},
-   {position:488n,parent:244n,side:'LEFT' as const},
-   {position:976n,parent:488n,side:'LEFT' as const},
-   {position:1953n,parent:976n,side:'RIGHT' as const},
-   {position:3906n,parent:1953n,side:'LEFT' as const},
-   {position:7812n,parent:3906n,side:'LEFT' as const},
-   {position:15625n,parent:7812n,side:'RIGHT' as const},
-   {position:31250n,parent:15625n,side:'LEFT' as const},
-   {position:62500n,parent:31250n,side:'LEFT' as const},
-   {position:125000n,parent:62500n,side:'LEFT' as const},
-   {position:250000n,parent:125000n,side:'LEFT' as const},
-   {position:500001n,parent:250000n,side:'RIGHT' as const},
-   {position:1000003n,parent:500001n,side:'RIGHT' as const},
+   {position:8n,parent:4n,side:'LEFT' as const},{position:17n,parent:8n,side:'RIGHT' as const},{position:35n,parent:17n,side:'RIGHT' as const},{position:70n,parent:35n,side:'LEFT' as const},{position:141n,parent:70n,side:'RIGHT' as const},{position:282n,parent:141n,side:'LEFT' as const},{position:564n,parent:282n,side:'LEFT' as const},{position:1128n,parent:564n,side:'LEFT' as const},{position:2256n,parent:1128n,side:'LEFT' as const},{position:4513n,parent:2256n,side:'RIGHT' as const},{position:9026n,parent:4513n,side:'LEFT' as const},{position:18052n,parent:9026n,side:'LEFT' as const},{position:36105n,parent:18052n,side:'RIGHT' as const},{position:72210n,parent:36105n,side:'LEFT' as const},{position:144420n,parent:72210n,side:'LEFT' as const},{position:288840n,parent:144420n,side:'LEFT' as const},{position:577681n,parent:288840n,side:'RIGHT' as const},{position:1155363n,parent:577681n,side:'RIGHT' as const},
   ];
-  const qualifications=new Map<bigint,string>([[1n,tree.companyQualificationIds[0]],[2n,tree.companyQualificationIds[1]],[3n,tree.companyQualificationIds[2]]]);
+  const qualifications=new Map<bigint,string>(tree.companyQualificationIds.map((id,index)=>[BigInt(index+1),id]));
   let version=2,lastBallNo='';
   for(const step of path){
    const at=new Date(),person=await db.person.create({data:{legalName:`P0 GROWTH ${step.position} ${randomUUID()}`}});
    const qualification=await db.qualification.create({data:{currentHolderPersonId:person.personId,planLevelCode:'STARTER',status:'EFFECTIVE',effectiveAt:at}});
    await db.qualificationHolderHistory.create({data:{qualificationId:qualification.qualificationId,holderPersonId:person.personId,effectiveFrom:at,sourceType:'P0_GROWTH_TEST',sourceId:randomUUID()}});
    await trees.confirmCompanySponsor(actor,tree.binaryTreeId,{qualificationId:qualification.qualificationId,reason:'Confirm P0 growth test sponsor'},randomUUID());
+   const preview=await trees.preview(actor,tree.binaryTreeId,{qualificationId:qualification.qualificationId,binaryParentQualificationId:qualifications.get(step.parent)!,side:step.side,expectedVersion:version});
+   expect(preview.expectedBallNo).toBeNull();
    const placed=await trees.place(actor,tree.binaryTreeId,{qualificationId:qualification.qualificationId,binaryParentQualificationId:qualifications.get(step.parent)!,side:step.side,expectedVersion:version++,reason:'Place P0 growth test Ball'},randomUUID());
    expect(placed.value.binaryPositionNo).toBe(step.position.toString());
    qualifications.set(step.position,qualification.qualificationId);lastBallNo=placed.value.ballNo!;
   }
-  expect(lastBallNo).toBe(`${tree.treeCode}1000000`);
+  expect(lastBallNo).toBe(`${tree.treeCode}${String(path.length).padStart(6,'0')}`);
   const url=process.env.PHASE2_TEST_DATABASE_URL!;
   const result=spawnSync(process.execPath,[resolve(process.cwd(),'../../scripts/p0-identifier-reconstruction-dry-run.mjs')],{cwd:resolve(process.cwd(),'../..'),env:{...process.env,DATABASE_URL:url},encoding:'utf8'});
   expect(result.status).toBe(0);

@@ -1,0 +1,9 @@
+{
+  "oasdiffVersion": "1.32.1",
+  "owner": "ragetech",
+  "breakingChanges": "deny; no automatic waivers; pre-GA promotions require explicit recorded Code Owner authority",
+  "baselineSha256": "3b99a0207611c55c5d85e4e4d743c51c6b7013ac18b19a254942bdc312259ec3",
+  "visibility": "private",
+  "baselineSource": "Controlled pre-GA selective promotion: owner-approved twelve formal enrollment corrections; unrelated contracts retained",
+  "api": "ucell-api"
+}

@@ -1,0 +1,19 @@
+{
+  "date": "2026-10-01",
+  "status": "BOUNDED_PASS",
+  "sourceCommit": "fa2a98a7c9765a807a91d8f7bc2556ae780502ce",
+  "command": "node scripts/company-economic-upgrade-test.mjs",
+  "log": "C:/UCell/logs/company-economic-upgrade-preservation-20261001.log",
+  "verification": {
+    "before": "Real migration 126 database; real authorized tree creation/activation; atomic source+destination writer; root destination persisted, position 4 CHECK failure reproduced and rolled back",
+    "upgrade": "Only migration 127 applied",
+    "preservation": "Exact to_jsonb row snapshots across 13 tables: Person, IdentityLink, AuthSession, BinaryTree, status history, memberships, canonical positions, Qualification, owner interval, binding, BonusAward, destination and Reservoir B effect",
+    "after": "Atomic position 4 award/destination/effect write succeeded with exact amount 123.4567; immutable destination update rejected",
+    "cleanup": "PASS"
+  },
+  "limits": [
+    "Synthetic isolated local fixture, no Stage/Production changes",
+    "Not all possible historical data shapes",
+    "Whole batch and final full isolated recertification remain IN_PROGRESS"
+  ]
+}

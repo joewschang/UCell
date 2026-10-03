@@ -1,8 +1,13 @@
 import { Roles } from '../auth/roles.decorator';
-import { Body,Controller,Get,Headers,Param,Post,Query,Req } from '@nestjs/common';
-import { ApiBearerAuth,ApiOperation,ApiTags } from '@nestjs/swagger';
+import { Body,Controller,Get,Headers,Param,Post,Query,Req,UseGuards } from '@nestjs/common';
+import { ApiBearerAuth,ApiHeader,ApiOperation,ApiTags,ApiProperty,ApiQuery } from '@nestjs/swagger';
+import {IsInt,Min,Max} from 'class-validator';
 import { randomUUID } from 'crypto';
 import { AdminOperationsService } from './admin-operations.service';
+import { IdempotencyGuard } from '../../common/guards/idempotency.guard';
+class PayoutArtifactDownloadDto{
+  @ApiProperty({minimum:1,maximum:2147483647}) @IsInt() @Min(1) @Max(2147483647) revision!:number;
+}
 
 @ApiTags('Admin - Returns / Workflows / Payout Operations')
 @ApiBearerAuth('adminBearer')
@@ -42,6 +47,13 @@ export class AdminOperationsController{
     return this.service.workflowDetail(id).then(data=>({data}));
   }
 
+  @Roles('SUPER_ADMIN','MEMBERSHIP_OPS','FINANCE','COMPLIANCE_AUDIT')
+  @Get('members/:memberNo/timeline')
+  @ApiOperation({operationId:'adminReadMemberActivityTimelineByMemberNo',summary:'以 memberNo 重建授權的會員活動時間線'} )
+  memberTimeline(@Param('memberNo') memberNo:string,@Query('take') take?:string){
+    return this.service.memberActivityTimeline(memberNo,{take:Number(take??100)}).then(data=>({data}));
+  }
+
   @Roles('SUPER_ADMIN','FINANCE','COMPLIANCE_AUDIT')
   @Get('recoveries')
   @ApiOperation({operationId:'adminRecoveryAging',summary:'Recovery Aging與抵扣履歷'})
@@ -62,6 +74,49 @@ export class AdminOperationsController{
   payoutDetail(@Param('id') id:string){
     return this.service.payoutBatchDetail(id).then(data=>({data}));
   }
+
+  @Roles('SUPER_ADMIN','FINANCE','COMPLIANCE_AUDIT','ORDER_OPS')
+  @Get('economic-lineage/orders/:orderNo')
+  @ApiOperation({operationId:'adminReadEconomicLineageByOrderNo',summary:'以 orderNo 讀取既有不可變經濟與履約來源鏈'})
+  economicLineage(@Param('orderNo') orderNo:string){
+    return this.service.economicLineageByOrderNo(orderNo).then(data=>({data}));
+  }
+
+  @Roles('SUPER_ADMIN','MEMBERSHIP_OPS','FINANCE','COMPLIANCE_AUDIT')
+  @Get('members/:memberNo/360')
+  @ApiOperation({operationId:'adminReadMember360ByMemberNo',summary:'以 memberNo 讀取授權的 Member 360 事實投影'} )
+  member360(@Param('memberNo') memberNo:string){return this.service.member360(memberNo).then(data=>({data}));}
+
+  @Roles('SUPER_ADMIN','FINANCE','COMPLIANCE_AUDIT')
+  @Get('invariant-candidates')
+  @ApiOperation({operationId:'adminOperationalInvariantCandidates',summary:'讀取可稽核的營運不變量候選，不修改來源資料'} )
+  @ApiQuery({name:'thresholdHours',required:false,schema:{type:'integer',minimum:1,maximum:8760},description:'Explicit operational threshold for incomplete period jobs; omit to assess only failure and evidence invariants.'})
+  invariantCandidates(@Query('take') take?:string,@Query('thresholdHours') thresholdHours?:string){return this.service.invariantCandidates({take:Number(take??100),thresholdHours:thresholdHours===undefined?undefined:Number(thresholdHours)}).then(data=>({data}));}
+
+  @Roles('SUPER_ADMIN','ORDER_OPS','COMPLIANCE_AUDIT')
+  @Get('exceptions')
+  @ApiOperation({operationId:'adminOperationalExceptionQueue',summary:'營運例外唯讀佇列'})
+  exceptions(@Query('status') status?:string,@Query('take') take?:string){return this.service.operationalExceptions({status,take:Number(take??100)}).then(data=>({data}));}
+
+  @Roles('SUPER_ADMIN','ORDER_OPS','COMPLIANCE_AUDIT')
+  @Post('exceptions/:id/:status')
+  @ApiOperation({operationId:'adminTransitionOperationalException',summary:'記錄營運例外調查狀態；不修改來源領域資料'})
+  transitionException(@Param('id') id:string,@Param('status') status:'ACKNOWLEDGED'|'INVESTIGATING'|'RESOLVED',@Body() body:{note?:string},@Req() req:any){return this.service.transitionOperationalException(id,status,req.user?.personId,body?.note,req.requestId,req.correlationId??randomUUID()).then(data=>({data}));}
+
+  @Roles('SUPER_ADMIN','ORDER_OPS','COMPLIANCE_AUDIT')
+  @Get('tasks')
+  @ApiOperation({operationId:'adminOperationalTaskQueue',summary:'營運任務唯讀佇列'} )
+  tasks(@Query('status') status?:string,@Query('take') take?:string){return this.service.operationalTasks({status,take:Number(take??100)}).then(data=>({data}));}
+
+  @Roles('SUPER_ADMIN','ORDER_OPS','COMPLIANCE_AUDIT')
+  @Post('tasks') @UseGuards(IdempotencyGuard) @ApiHeader({name:'Idempotency-Key',required:true})
+  @ApiOperation({operationId:'adminCreateOperationalTask',summary:'建立不改變來源工作流的營運任務'} )
+  createTask(@Body() body:{sourceType:string;sourceId:string;taskCode:string;summary:string;priority?:string;assigneeActor?:string;assigneeRole?:string;dueAt?:string;evidenceHash?:string;traceId?:string},@Headers('idempotency-key') key:string,@Req() req:any){return this.service.createOperationalTask(body,req.user?.personId,key,req.requestId,req.correlationId??randomUUID()).then(data=>({data}));}
+
+  @Roles('SUPER_ADMIN','ORDER_OPS','COMPLIANCE_AUDIT')
+  @Post('tasks/:id/:status')
+  @ApiOperation({operationId:'adminTransitionOperationalTask',summary:'記錄營運任務處置；不修改來源領域資料'} )
+  transitionTask(@Param('id') id:string,@Param('status') status:'ACKNOWLEDGED'|'COMPLETED',@Body() body:{note?:string},@Req() req:any){return this.service.transitionOperationalTask(id,status,req.user?.personId,body?.note,req.requestId,req.correlationId??randomUUID()).then(data=>({data}));}
 
   @Roles('SUPER_ADMIN','FINANCE','COMPLIANCE_AUDIT')
   @Post('payout-batches/:id/approvals/:stage')
@@ -90,7 +145,7 @@ export class AdminOperationsController{
     ).then(data=>({data}));
   }
 
-  @Roles('SUPER_ADMIN','FINANCE','COMPLIANCE_AUDIT')
+  @Roles('SUPER_ADMIN','FINANCE')
   @Post('payout-batches/:id/mark-paid')
   @ApiOperation({operationId:'adminMarkPayoutPaid',summary:'記錄外部付款/銀行對帳結果；本系統不直接執行銀行轉帳'})
   paid(
@@ -106,5 +161,19 @@ export class AdminOperationsController{
       },
       req.user?.personId,req.user?.role,req.requestId,req.correlationId??randomUUID()
     ).then(data=>({data}));
+  }
+
+  @Roles('SUPER_ADMIN','FINANCE')
+  @Post('payout-batches/:id/export-downloads')
+  @ApiOperation({operationId:'adminDownloadPayoutReviewArtifact',summary:'稽核並下載固定快照的財務覆核 CSV；非銀行匯款檔'})
+  download(@Param('id') id:string,@Body() body:PayoutArtifactDownloadDto,@Req() req:any){
+    return this.service.downloadPayoutArtifact(id,body.revision,req.user?.personId,req.user?.role,req.requestId??randomUUID(),req.correlationId??randomUUID()).then(data=>({data}));
+  }
+
+  @Roles('SUPER_ADMIN','FINANCE')
+  @Post('payout-batches/:id/payment-results')
+  @ApiOperation({operationId:'adminRecordPayoutPaymentResults',summary:'記錄公司銀行付款結果；不觸發銀行轉帳'})
+  paymentResults(@Param('id') id:string,@Body() body:{results:Array<{payoutLineId:string;status:'PAID'|'FAILED';paidAmount:string;paymentReference?:string;reasonCode?:string;occurredAt?:string}>},@Req() req:any){
+    return this.service.recordPayoutResults(id,{results:(body?.results??[]).map(row=>({...row,occurredAt:row.occurredAt?new Date(row.occurredAt):undefined}))},req.user?.personId,req.user?.role,req.requestId,req.correlationId??randomUUID()).then(data=>({data}));
   }
 }

@@ -1,0 +1,46 @@
+{
+  "timestamp": "2026-10-01T06:03:46.938Z",
+  "baseCommit": "2858c558a9493abfeb77eee355b593720a73504e",
+  "sourceFiles": [
+    {
+      "path": "backend/apps/api/src/modules/settlement-jobs/compensation-period-control.service.ts",
+      "sha256": "7981f0787499f90da58fa3424e0997083336b6ccb5295e3c87204928f3738521"
+    },
+    {
+      "path": "backend/apps/api/test/payout-result-recovery-db.e2e-spec.ts",
+      "sha256": "b4360ce737530a5788ab286fa602fa73c77db48772b43f9ea1e1dc6e3e972de8"
+    },
+    {
+      "path": "admin/src/features/compensation-period/CompensationPeriodControlPage.tsx",
+      "sha256": "a49654143c702d5a48023e7291b83b2a90f00507b042fc54401ae63cf058b063"
+    }
+  ],
+  "change": "Operational bank failure aging excludes a failed result after full PAID evidence on the same line and batch, or after batch VOIDED; preserves historical records",
+  "verification": {
+    "apiSuites": 3,
+    "apiTests": 38,
+    "migrations": 126,
+    "baselineAssertions": 162,
+    "cleanup": "PASS",
+    "apiBuild": "PASS",
+    "adminTests": 3,
+    "adminBuild": "PASS",
+    "apiLog": "C:/UCell/logs/compensation-bank-failure-aging-isolated-final-20261001.log",
+    "adminLog": "C:/UCell/logs/compensation-bank-failure-aging-admin-tests-20261001.log"
+  },
+  "directRegression": [
+    "aged failed result increases pending count",
+    "partial PAID result keeps failed aging pending",
+    "batch PAID status alone cannot clear absent full evidence",
+    "full payment evidence clears the aged failure",
+    "historical failure result and member message retained"
+  ],
+  "limitations": [
+    "VOIDED filter source-reviewed, no separate fixture regression in this checkpoint",
+    "aging uses current stored state with operator-supplied time threshold, not historical financial snapshot",
+    "not full business-stage history or full-batch recertification"
+  ],
+  "overall": "IN_PROGRESS",
+  "stageRc": "NOT_READY",
+  "deployment": false
+}

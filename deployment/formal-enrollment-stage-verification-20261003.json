@@ -1,0 +1,19 @@
+{
+  "sourceCommit": "51a94960d962e77fde4194097ab7c2084e8fab11",
+  "apiHealth": "ok",
+  "database": "ok",
+  "enrollmentUnauthenticated": 401,
+  "feePaymentUnauthenticated": 401,
+  "asset": "/assets/index-Ow7kkdJf.js",
+  "sha256": "d7d03ead29613a9a618cf1ad02ce73248718c0e61031816a0dca55dfe077e0d0",
+  "assetMatches": true,
+  "backendTests": 1445,
+  "backendSuites": 208,
+  "memberTests": 239,
+  "memberSuites": 44,
+  "uiEvidence": "Isolated visual preview of actual enrollment component; authenticated Stage journey not performed",
+  "stageOnly": true,
+  "scanProviderPending": true,
+  "productionContractsPending": true,
+  "verifiedAtUtc": "2026-10-02T20:57:46.4596020Z"
+}

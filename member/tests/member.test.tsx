@@ -28,6 +28,15 @@ it('ignores slow results after qualification switch', async () => {
     await act(async () => first('ball 1'));
     expect(renderer.root.findByType('p').children).toEqual(['ball 2']);
 });
+it('keeps the latest A response after an A to B to A switch', async () => {
+    let oldA!: (value: string) => void;
+    let oldB!: (value: string) => void;
+    await act(async () => { renderer = create(<Probe id="A" load={() => new Promise(resolve => { oldA = resolve; })}/>); });
+    await act(async () => { renderer.update(<Probe id="B" load={() => new Promise(resolve => { oldB = resolve; })}/>); });
+    await act(async () => { renderer.update(<Probe id="A" load={async () => 'latest A'}/>); });
+    await act(async () => { oldB('stale B'); oldA('stale A'); });
+    expect(renderer.root.findByType('p').children).toEqual(['latest A']);
+});
 it('clears the previous month while next month loads', async () => {
     await act(async () => { renderer = create(<Probe id="q1:2026-08" load={async () => 'August'}/>); });
     await act(async () => renderer.update(<Probe id="q1:2026-09" load={() => new Promise(() => { })}/>));
@@ -81,6 +90,36 @@ it('replaces a saved qualification no longer owned by the member', async () => {
     expect(renderer.root.findByType('select').props.value).toBe('q1');
     expect(storage.getItem('ucell_qualification_id')).toBe('q1');
 });
+it('keeps navigation during initial qualification loading and failure', async () => {
+    let finish!: (value: Response) => void;
+    vi.stubGlobal('fetch', vi.fn((input:string) => input.includes('/qualifications') ? new Promise<Response>(resolve => { finish = resolve; }) : Promise.resolve(response(person))));
+    await mount('/bonuses');
+    expect(renderer.root.findByProps({'aria-label':'主要功能'}).findAllByType('a')).toHaveLength(5);
+    expect(JSON.stringify(renderer.toJSON())).toContain('資格資料載入中');
+    await act(async () => finish(new Response('', {status:503})));
+    expect(renderer.root.findByProps({'aria-label':'主要功能'}).findAllByType('a')).toHaveLength(5);
+    expect(renderer.root.findByProps({role:'alert'})).toBeDefined();
+    expect(renderer.root.findAllByType('button').some(button=>button.children.join('')==='重新載入')).toBe(true);
+});
+it('names the pending ball without exposing old data, and recovers after denied selection', async () => {
+    fakeAPI();
+    const normalFetch=globalThis.fetch;
+    let finish!: (value: Response) => void;
+    vi.stubGlobal('fetch', vi.fn((input:string, init?:RequestInit)=>input.includes('/context/qualification')
+        ? new Promise<Response>(resolve=>{finish=resolve;}) : normalFetch(input,init)));
+    await mount();
+    expect(JSON.stringify(renderer.toJSON())).toContain('結算中');
+    await act(async () => {void renderer.root.findByType('select').props.onChange({target:{value:'q2'}});});
+    expect(JSON.stringify(renderer.toJSON())).toContain('正在確認球編號 A000002');
+    expect(JSON.stringify(renderer.toJSON())).not.toContain('結算中');
+    expect(renderer.root.findByProps({'aria-label':'主要功能'}).findAllByType('a')).toHaveLength(5);
+    await act(async () => finish(new Response('', {status:403})));
+    expect(JSON.stringify(renderer.toJSON())).not.toContain('結算中');
+    expect(renderer.root.findAllByType('select')).toHaveLength(0);
+    await act(async () => renderer.root.findAllByType('button').find(button=>button.children.join('')==='重新載入')!.props.onClick());
+    expect(renderer.root.findByType('select').props.value).toBe('q1');
+    expect(JSON.stringify(renderer.toJSON())).not.toContain('正在確認 Q2');
+});
 it('rejects tampered qualification selection', async () => {
     fakeAPI();
     await mount();
@@ -98,7 +137,7 @@ it('handles members with no qualifications without loading scoped data', async (
     const fetch = vi.fn().mockResolvedValue(response([]));
     vi.stubGlobal('fetch', fetch);
     await mount();
-    expect(JSON.stringify(renderer.toJSON())).toContain('尚未取得會員資格');
+    expect(JSON.stringify(renderer.toJSON())).toContain('會員首頁');
     expect(fetch.mock.calls.some(([url])=>String(url).includes('/member/me'))).toBe(true);
     expect(fetch.mock.calls.every(([url])=>!String(url).includes('qualificationId'))).toBe(true);
 });
@@ -109,20 +148,22 @@ it('renders a useful not-found page', async () => {
 });
 it('requires explicit cart selection before real checkout and performs no eager mutation', async () => {
     const delivery={recipientName:'Member',phone:'+886223456789',countryCode:'TW',postalCode:'100',region:'Taipei',city:'Zhongzheng',address:'Test Road 1',complete:true,updatedAt:'2026-09-17T00:00:00Z'};
-    const fetch = vi.fn(async (input: string) => response(input.includes('/qualifications') ? [q] : input.includes('/member/me') ? person : input.includes('/delivery-profile')?delivery:input.includes('class=ACTIVE_DURATION')?[]:[{ id: 'live-product', name: 'Real catalog', price: 4800, pv: 2880, available: true }]));
+    const fetch = vi.fn(async (input: string) => response(input.includes('/qualifications') ? [q] : input.includes('/member/me') ? person : input.includes('/delivery-profile')?delivery:input.includes('/commercial-offerings')?[{offeringCode:'CORE',offeringType:'CORE_PRODUCT',composition:[],selectionRule:{eligibleSkus:['TEST'],requiredTotalQuantity:1}}]:input.includes('class=ACTIVE_DURATION')?[]:[{ sku:'TEST',id: 'live-product', name: 'Real catalog', price: 4800, pv: 2880, available: true }]));
     vi.stubGlobal('fetch', fetch);
     await mount('/shop');
-    expect(renderer.root.findAllByType('button').find(b => b.children.join('') === '加入購物車')?.props.disabled).toBe(false);
-    expect(renderer.root.findAllByType('button').find(b => b.children.join('') === '建立待付款訂單')?.props.disabled).toBe(true);
-    expect(renderer.root.findAllByType('form')).toHaveLength(1);
+    await act(async()=>renderer.root.findAllByType('button').find(b=>b.children.join('')==='主商品')!.props.onClick());
+    expect(renderer.root.findAllByType('form')).toHaveLength(0);
+    await act(async()=>renderer.root.findAllByType('button').find(b=>b.children.join('')==='選擇商品細節')!.props.onClick());
+    expect(renderer.root.findAllByType('button').find(b => b.children.join('') === '確認商品細節並建立訂單')?.props.disabled).toBe(true);
     expect(fetch.mock.calls.some(([url])=>String(url).includes('/member/me'))).toBe(true);
     expect(fetch.mock.calls.every(([,init])=>(init?.method??'GET')==='GET')).toBe(true);
 });
 it('renders a recoverable catalog error for malformed API data instead of crashing', async () => {
     const delivery={recipientName:'Member',phone:'+886223456789',countryCode:'TW',postalCode:'100',region:'Taipei',city:'Zhongzheng',address:'Test Road 1',complete:true,updatedAt:'2026-09-17T00:00:00Z'};
-    vi.stubGlobal('fetch', vi.fn(async (input: string) => response(input.includes('/qualifications') ? [q] : input.includes('/member/me') ? person : input.includes('/delivery-profile')?delivery:input.includes('class=ACTIVE_DURATION')?[]:[{ id: 'p1', name: 'Invalid', price: '4800', pv: 2880, available: true }])));
+    vi.stubGlobal('fetch', vi.fn(async (input: string) => response(input.includes('/qualifications') ? [q] : input.includes('/member/me') ? person : input.includes('/delivery-profile')?delivery:input.includes('/commercial-offerings')?[]:input.includes('class=ACTIVE_DURATION')?[]:[{ id: 'p1', name: 'Invalid', price: '4800', pv: 2880, available: true }])));
     await mount('/shop');
+    await act(async()=>renderer.root.findAllByType('button').find(b=>b.children.join('')==='主商品')!.props.onClick());
     expect(JSON.stringify(renderer.toJSON())).toContain('資料格式異常');
-    expect(renderer.root.findAllByType('button').some(b => b.children.join('') === '重新載入商品')).toBe(true);
+    expect(renderer.root.findAllByType('button').some(b => typeof b.props.onClick==='function')).toBe(true);
     expect(JSON.stringify(renderer.toJSON())).not.toContain('NT$ 4,800');
 });

@@ -1,0 +1,199 @@
+{
+  "timestamp": "2026-10-01T04:15:45.598Z",
+  "baseCommit": "017d9914e40b9a10e07fe7d3afbaebf51decce5b",
+  "executionContext": "local-working-tree",
+  "sourceFiles": [
+    {
+      "path": "admin/src/features/events/EventsPage.tsx",
+      "sha256": "0134c5b575a0627e29de1e049a14b0ccbc739730e126306fbe5b906eaf30fb83"
+    },
+    {
+      "path": "admin/src/features/learning/LearningPage.tsx",
+      "sha256": "18b908bc4a2eade695479bfaaae1f0774184f68f96eecf4299c86852c725944d"
+    },
+    {
+      "path": "backend/scripts/member-engagement-browser.mjs",
+      "sha256": "730869676abffa783a0b90c1df72575f1bafcadfe81abbcf13d285a545b60729"
+    },
+    {
+      "path": "member/src/ucell-theme.css",
+      "sha256": "4418e600e173363738efad6e44b563d5c0b7cab1842c5884d7ccc4380f8afa18"
+    }
+  ],
+  "logs": [
+    {
+      "path": "C:/UCell/logs/cr-batch-outreach-browser-final.log",
+      "sha256": "50bb695236b9a4c3facf86ab4d1424e0a56e30c8cafa30ad87cc4948532ca20f"
+    },
+    {
+      "path": "C:/UCell/logs/cr-batch-outreach-browser-admin-tests.log",
+      "sha256": "347cd4dac892bdb48ffa914e315265fc4c5566e1fbab3ae14122686f32262b2e"
+    },
+    {
+      "path": "C:/UCell/logs/cr-batch-outreach-browser-admin-typecheck.log",
+      "sha256": "5a3973f79ed9becd5f23c4feff467513814de7ea381d75a4d2e339aa8b8edca9"
+    },
+    {
+      "path": "C:/UCell/logs/cr-batch-outreach-browser-admin-build.log",
+      "sha256": "cf3d3cb1014fcaf3cd34f26204cdac310831bf70786a2518fa435712d59272e2"
+    },
+    {
+      "path": "C:/UCell/logs/cr-batch-outreach-browser-member-tests.log",
+      "sha256": "8475f92ecf46303563f2b518a4bc914218e51786c77299db81840e1abb8c6635"
+    },
+    {
+      "path": "C:/UCell/logs/cr-batch-outreach-browser-member-all-tests.log",
+      "sha256": "523d724c3a71fd400ca2ae0d71e41213f646f2a16d6f58752aad111e4d7d9cf5"
+    },
+    {
+      "path": "C:/UCell/logs/cr-batch-outreach-browser-member-build.log",
+      "sha256": "1a2f5efc57441c7003b6c2c8dab93f95a857eb6e403c45ba4e23d2a64961e061"
+    }
+  ],
+  "screenshots": [
+    {
+      "path": "C:/UCell/logs/engagement-outreach-browser-final/admin-events-dark.png",
+      "sha256": "323cdd36d21605e3052274fd14f1d8251c300a326a9baa038626272e94f102e7"
+    },
+    {
+      "path": "C:/UCell/logs/engagement-outreach-browser-final/admin-learning.png",
+      "sha256": "e0d2e52ef2f50fd7184824a8ccc6bfc215c426e5fa2cb2e6b07da954987f4b20"
+    },
+    {
+      "path": "C:/UCell/logs/engagement-outreach-browser-final/admin-outreach-mobile-dark.png",
+      "sha256": "48f704514c8ca4cdfb146c66e7eb4c96b81bfa8e110ab7b72e2e519b9a81b84a"
+    },
+    {
+      "path": "C:/UCell/logs/engagement-outreach-browser-final/member-course-outreach.png",
+      "sha256": "b73144cf6d436a438b0c6c887ddda37051fc0226075dde9c473e8ea65549d92b"
+    },
+    {
+      "path": "C:/UCell/logs/engagement-outreach-browser-final/member-event-cancelled.png",
+      "sha256": "208d4830d6d0e625457608118e0a11467301860b4a43e0caa79a2d6189ae3df0"
+    },
+    {
+      "path": "C:/UCell/logs/engagement-outreach-browser-final/member-growth-dark.png",
+      "sha256": "1598bbf6e0723d747e00753d8c88a8ba343d8e2370e451c1c0c17c7e7a5ac596"
+    },
+    {
+      "path": "C:/UCell/logs/engagement-outreach-browser-final/member-growth-desktop.png",
+      "sha256": "8be8197563cf6ebeb40840cca0730dba69205f9526028b84db6abf0bbd4f3e71"
+    },
+    {
+      "path": "C:/UCell/logs/engagement-outreach-browser-final/member-growth-mobile.png",
+      "sha256": "7f65549d07d1608ff51ff641f0585424705499cf91240becec87fe00033a7124"
+    },
+    {
+      "path": "C:/UCell/logs/engagement-outreach-browser-final/member-growth-sealed-rank.png",
+      "sha256": "9c41e3a3e60d279f5d764ecbe1668715f43b24ec1f193529e73783773c78c0d8"
+    },
+    {
+      "path": "C:/UCell/logs/engagement-outreach-browser-final/member-growth-unplaced.png",
+      "sha256": "c8f6b801eafd686b7bc9b969cfd35960101903127abc219896b0ec651eab1cac"
+    },
+    {
+      "path": "C:/UCell/logs/engagement-outreach-browser-final/member-learning.png",
+      "sha256": "ca346233da6bb49484ed1d2bbdc162f049ea0333d3874117d8d9e37eb9a131df"
+    },
+    {
+      "path": "C:/UCell/logs/engagement-outreach-browser-final/member-message-history.png",
+      "sha256": "aee48cd6a9aa4c4de5cd159a6f3229cc105e40b55d4cfaf300e56233bae3d36d"
+    },
+    {
+      "path": "C:/UCell/logs/engagement-outreach-browser-final/member-outreach-retired-light.png",
+      "sha256": "92fad937f0956bcd3105d5f5bf0e40979073782af59f54ff34c9cc8fbc26d6e1"
+    },
+    {
+      "path": "C:/UCell/logs/engagement-outreach-browser-final/member-outreach-retired.png",
+      "sha256": "265f225d16063de4484e7a969b39adf8ee584c663e500a9f878d870aed884431"
+    }
+  ],
+  "results": {
+    "actualEdgeApiPostgres": "PASS",
+    "isolatedBrowserCleanup": "PASS",
+    "pageErrors": 0,
+    "member": {
+      "files": 34,
+      "tests": 182,
+      "build": "PASS"
+    },
+    "admin": {
+      "focusedFiles": 2,
+      "focusedTests": 2,
+      "typecheck": "PASS",
+      "build": "PASS"
+    },
+    "memberMessageControlContrast": {
+      "threshold": 4.5,
+      "modes": [
+        "LIGHT",
+        "DARK"
+      ],
+      "elements": "Visible enabled buttons and navigation links in exercised message views",
+      "status": "PASS"
+    },
+    "mobileHorizontalOverflow": "NONE"
+  },
+  "preservedBackendEvidence": {
+    "path": "governance/next-generation/evidence/engagement-outreach-20261001.json",
+    "sha256": "10b49a79d8296144bbb837cc8beaa4d0da1931c837d11d41d8b6b532a49cce47",
+    "comparedFiles": [
+      {
+        "path": "backend/apps/api/src/modules/events/events.controller.ts",
+        "sha256": "d2fd9626bffa42202b68b136f22cc0073d2f59efb9819e6b02f267bb803ba4dd"
+      },
+      {
+        "path": "backend/apps/api/src/modules/events/events.service.ts",
+        "sha256": "8d8543fceedbf1d9ba5122f3b4865cb46b0f5fd135a865f4215d2fbc34f18e30"
+      },
+      {
+        "path": "backend/apps/api/src/modules/learning/learning.controller.ts",
+        "sha256": "9af9391f38f34d637ef1e1f54313f199b82f9353bff5a7068dcfae3cc28b7366"
+      },
+      {
+        "path": "backend/apps/api/src/modules/learning/learning.service.ts",
+        "sha256": "d6bfaae668a64ce341fde46f8f7f2e909e82c8f8bdf0d5b373fc04da6a2dcbec"
+      },
+      {
+        "path": "backend/apps/api/src/modules/member/member-growth.service.ts",
+        "sha256": "390588967f6bf5dc5d6ed28b254d2475f5700c2cb25350373d91957cbf347011"
+      },
+      {
+        "path": "backend/apps/api/test/engagement-outreach-db.e2e-spec.ts",
+        "sha256": "1f45f903d2076acbdcd7dba75c84c847df13ba49a460890487059977fffbaabb"
+      },
+      {
+        "path": "backend/apps/api/test/events-http-db.e2e-spec.ts",
+        "sha256": "2430417a1532be0711a3597e35ec3496bd0b3ce4800a20f39af6fa3f3af624dd"
+      },
+      {
+        "path": "backend/apps/api/test/learning-http-db.e2e-spec.ts",
+        "sha256": "cb887811553a920f3975d49d36c4f16d6d85d16279f8fd67e92998fb2962fc5a"
+      },
+      {
+        "path": "backend/packages/database/prisma/migrations/20261001050000_learning_assignment_evidence/migration.sql",
+        "sha256": "31705acd961c52353b9f0b2007bf0c31656afc7a49f9c6b348998d2a05b700c8"
+      },
+      {
+        "path": "backend/openapi.generated.json",
+        "sha256": "94b986de7cd5a12e8c1348168355807246c16026603633bbfa9e889a59ead3e2"
+      }
+    ],
+    "scope": "Backend/migration/OpenAPI unchanged from preceding 185-suite gate; not a new full API gate"
+  },
+  "initialVisualEvidence": {
+    "directory": "C:/UCell/logs/engagement-outreach-browser",
+    "observation": "White button/nav backgrounds under dark-theme text identified, then repaired and final screenshots inspected"
+  },
+  "remaining": [
+    "Broader source routing and remaining domain message producers",
+    "Complete Learning/Event/Growth acceptance matrices including repurchase browser presentation",
+    "Overall financial-stage history and full batch UX"
+  ],
+  "overall": {
+    "localImplementation": "IN_PROGRESS",
+    "fullIsolatedRecertification": "IN_PROGRESS",
+    "stageRc": "NOT_READY"
+  },
+  "deployment": "NONE"
+}

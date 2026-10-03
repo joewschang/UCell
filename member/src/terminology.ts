@@ -1,4 +1,6 @@
-import type {AwardStatus} from './api';
+import type {AwardStatus, Qualification} from './api';
+
+export const qualificationReferenceLabel = (q:Qualification) => q.code==='UNPLACED' ? `資格 ${q.qualificationNo}（尚未安置）` : `球編號 ${q.code}`;
 
 export const availabilityText = {
   fieldMissing: '尚未提供',
@@ -31,6 +33,7 @@ export const qualificationActiveLabel = (active: boolean) =>
   active ? '資格狀態：有效' : '資格狀態：未有效';
 
 const planLevelLabels: Record<string,string> = {
+  STARTER: '啟航',
   MEMBER: '會員',
   ELITE: '菁英',
   LEADER: '領袖',

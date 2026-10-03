@@ -1,6 +1,6 @@
 import {useMemo,useState} from 'react';
 import {command,get,qs} from '../../lib/api';
-import {Person,PlacementPreview,PlanLevel,Qualification,SideCode} from '../../types/domain';
+import {LegalEntity,Person,PlacementPreview,PlanLevel,Qualification,SideCode} from '../../types/domain';
 import {Card,ErrorBox,Field,JsonResult,PageHeader,Badge} from '../../components/ui';
 import {SearchOption,SearchSelect} from '../../components/SearchSelect';
 
@@ -12,7 +12,8 @@ const plans:{code:PlanLevel;name:string}[]=[
 
 export function NewApplicationWizard(){
  const [step,setStep]=useState(1);
- const [person,setPerson]=useState<SearchOption|null>(null);
+ const [holderType,setHolderType]=useState<'PERSON'|'LEGAL_ENTITY'>('PERSON');
+ const [person,setPerson]=useState<SearchOption|null>(null);const [legalEntity,setLegalEntity]=useState<SearchOption|null>(null);
  const [plan,setPlan]=useState<PlanLevel>('STARTER');
  const [sponsor,setSponsor]=useState<SearchOption|null>(null);
  const [parent,setParent]=useState<SearchOption|null>(null);
@@ -26,6 +27,10 @@ export function NewApplicationWizard(){
  async function personSearch(q:string){
   const r:any=await get('/admin/persons'+qs({q,take:20}));
   return (r.data as Person[]).map(x=>({id:x.personId,primary:x.legalName,secondary:[x.mobile,x.email,x.personId].filter(Boolean).join(' · '),meta:x}));
+ }
+ async function legalEntitySearch(q:string){
+  const r:any=await get('/admin/formal-member-applications/legal-entities/search'+qs({q,take:20}));
+  return (r.data as LegalEntity[]).map(x=>({id:x.legalEntityId,primary:x.registeredName,secondary:[x.memberNo,x.registrationNo,x.registrationCountryCode].filter(Boolean).join(' · '),meta:x}));
  }
  async function qualSearch(q:string){
   const r:any=await get('/admin/qualifications'+qs({q,status:'EFFECTIVE',take:20}));
@@ -42,11 +47,12 @@ export function NewApplicationWizard(){
   }catch(e){setError(e)}finally{setBusy(false)}
  }
  async function createDraft(){
-  if(!person||!sponsor||!parent||!preview?.valid)return;
+  if((holderType==='PERSON'&&!person)||(holderType==='LEGAL_ENTITY'&&!legalEntity)||!sponsor||!parent||!preview?.valid)return;
   setBusy(true);setError(null);
   try{
    const r:any=await command('/admin/membership-applications',{
-    personId:person.id,
+    holderType,
+    ...(holderType==='PERSON'?{personId:person!.id}:{legalEntityId:legalEntity!.id}),
     requestedPlanLevelCode:plan,
     sponsorQualificationId:sponsor.id,
     binaryParentQualificationId:parent.id,
@@ -57,15 +63,15 @@ export function NewApplicationWizard(){
   }catch(e){setError(e)}finally{setBusy(false)}
  }
 
- const steps=['選Person','方案與Sponsor','Binary安置','確認','建立完成'];
+ const steps=['選權利主體','方案與Sponsor','Binary安置','確認','建立完成'];
  return <>
   <PageHeader title="新增會員申請" subtitle="正式Membership Vertical Slice：推薦與Binary資料在Application Draft建立，Submit/Approve再由後端做最終制度檢核。"/>
   <div className="wizard-steps">{steps.map((x,i)=><span key={x} className={`wizard-step ${step===i+1?'active':''} ${step>i+1?'done':''}`}>{i+1}. {x}</span>)}</div>
   <ErrorBox error={error}/>
-  {step===1&&<Card title="1. 選擇既有Person">
-   <SearchSelect label="搜尋Person" value={person} onChange={setPerson} search={personSearch}/>
-   <p className="muted">若Person不存在，請先至「會員／自然人」建立，避免同一自然人因重複建檔而失去多球治理的一致性。</p>
-   <div className="button-row"><button className="primary" disabled={!person} onClick={()=>setStep(2)}>下一步</button></div>
+  {step===1&&<Card title="1. 選擇資格權利主體">
+   <label>權利主體<select value={holderType} onChange={e=>{setHolderType(e.target.value as 'PERSON'|'LEGAL_ENTITY');setPerson(null);setLegalEntity(null)}}><option value="PERSON">自然人會員</option><option value="LEGAL_ENTITY">法人會員</option></select></label>
+   {holderType==='PERSON'?<><SearchSelect label="搜尋 Person" value={person} onChange={setPerson} search={personSearch}/><p className="muted">自然人必須先完成正式會員資格。</p></>:<><SearchSelect label="搜尋正式法人會員" value={legalEntity} onChange={setLegalEntity} search={legalEntitySearch}/><p className="muted">法人必須已完成紙本 KYC 與正式核准。建立 Ball 後，法人本身是權利主體，主要經營代表人只是授權操作人。</p></>}
+   <div className="button-row"><button className="primary" disabled={holderType==='PERSON'?!person:!legalEntity} onClick={()=>setStep(2)}>下一步</button></div>
   </Card>}
   {step===2&&<Card title="2. 方案與推薦人">
    <div className="form"><Field label="申請方案"><select value={plan} onChange={e=>setPlan(e.target.value as PlanLevel)}>{plans.map(p=><option key={p.code} value={p.code}>{p.name}</option>)}</select></Field>
@@ -84,7 +90,7 @@ export function NewApplicationWizard(){
    <div className="button-row"><button onClick={()=>setStep(2)}>上一步</button><button className="primary" disabled={!preview?.valid} onClick={()=>setStep(4)}>下一步</button></div></div>
   </Card>}
   {step===4&&<Card title="4. 確認申請Draft">
-   <dl className="detail-grid"><dt>Person</dt><dd>{person?.primary}</dd><dt>Plan</dt><dd>{plan}</dd><dt>Sponsor</dt><dd>{sponsor?.primary}</dd><dt>Binary Parent</dt><dd>{parent?.primary}</dd><dt>Side</dt><dd>{side}</dd><dt>預計直推序號</dt><dd>{preview?.nextSponsorSequenceNo}</dd></dl>
+   <dl className="detail-grid"><dt>權利主體</dt><dd>{holderType==='PERSON'?person?.primary:legalEntity?.primary}</dd><dt>Plan</dt><dd>{plan}</dd><dt>Sponsor</dt><dd>{sponsor?.primary}</dd><dt>Binary Parent</dt><dd>{parent?.primary}</dd><dt>Side</dt><dd>{side}</dd><dt>預計直推序號</dt><dd>{preview?.nextSponsorSequenceNo}</dd></dl>
    <Field label="內部備註"><textarea rows={4} value={note} onChange={e=>setNote(e.target.value)}/></Field>
    <div className="callout warning">預檢不等於核准。Approve時Backend會在Serializable/交易流程再次配置永久Sponsor sequence、檢查Binary slot與第1/3直推左子樹規則。</div>
    <div className="button-row"><button onClick={()=>setStep(3)}>上一步</button><button className="primary" disabled={busy} onClick={createDraft}>建立Application Draft</button></div>

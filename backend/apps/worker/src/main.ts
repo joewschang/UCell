@@ -1,12 +1,27 @@
-import {effectiveSponsorDirectCount} from '@ucell/database';
-import { PrismaService, Prisma, companyAlwaysActiveAt, captureParameters, processMemberOrderNotification, processPaymentInventoryReservation, recognizeConsumption, applyGpvImmediateEffects, sealRpvEvent, pending, claimOutboxLease, withOutboxLease, processLeasedReplay, processTreeProjectionEvent, releaseFailedOutboxLease, OutboxLease, matureBonusAward } from '@ucell/database';
+import {effectiveSponsorDirectCount, appendRecognitionMemberMessage, emitStructuredOperationalError} from '@ucell/database';
+import { PrismaService, Prisma, companyAlwaysActiveAt, captureParameters, snapshotDecimal, processMemberOrderNotification, processPaymentInventoryReservation, recognizeConsumption, applyGpvImmediateEffects, sealRpvEvent, pending, claimOutboxLease, withOutboxLease, processLeasedReplay, processTreeProjectionEvent, releaseFailedOutboxLease, OutboxLease, matureBonusAward } from '@ucell/database';
 import * as crypto from 'node:crypto';
 import { pollProviderWebhooks, type ProviderHandlerRegistration } from './provider-runtime';
 import { WorkerLoop, workerPollInterval } from './worker-loop';
 import { ProviderWorkloadMetrics } from './provider-workload-metrics';
+import { createLineMessagingObserverHandler } from './line-messaging-handler';
+import {pollErpHandoffs,type PhysicalErpAdapter} from './erp-handoff-runtime';
+import {pollErpBusinessProjections,type BusinessErpAdapter} from './erp-business-runtime';
+import {pollPeriodCloseJobs} from './period-close-runtime';
+import {pollPeriodClosePlanner} from './period-close-planner-runtime';
+import {createShipmentTrackingHandler,type VerifiedShipmentTrackingAdapter} from './shipment-tracking-handler';
+
+// Actual transports are registered only after protocol/credential enablement.
+// An empty registry leaves durable ERP requests pending, never acknowledged.
+const erpAdapters:readonly PhysicalErpAdapter[]=Object.freeze([]);
+const businessErpAdapters:readonly BusinessErpAdapter[]=Object.freeze([]);
+const trackingAdapters:readonly VerifiedShipmentTrackingAdapter[]=Object.freeze([]);
 
 const prisma = new PrismaService();
-const providerHandlers: readonly ProviderHandlerRegistration[] = Object.freeze([]);
+const providerHandlers: readonly ProviderHandlerRegistration[] = Object.freeze([
+ ...trackingAdapters.map(adapter=>({domain:'LOGISTICS' as const,provider:adapter.provider,connectionId:adapter.connectionId,providerConnectionVersionId:adapter.providerConnectionVersionId,handler:createShipmentTrackingHandler(prisma,adapter)})),
+ ...(process.env.LINE_MESSAGING_WORKER_ENABLED==='true'?[{domain:'IDENTITY' as const,provider:'LINE_MESSAGING',connectionId:'LINE_MESSAGING_DEFAULT',handler:createLineMessagingObserverHandler(prisma)}]:[]),
+]);
 const providerMetrics = new ProviderWorkloadMetrics();
 
 function unlockedDepth(count:number){
@@ -25,7 +40,7 @@ export async function processSaleConfirmed(db:PrismaService,lease:OutboxLease,de
 
     const payload=event.payload as any;
     const order=await tx.order.findUnique({where:{orderId:payload.orderId},include:{lines:true}});
-    if(!order || !['PAID','FULFILLED','PARTIAL_RETURN','RETURNED'].includes(order.status)) throw new Error(`SALE_CONFIRMED order ${payload.orderId} is not PAID`);
+    if(!order || !order.qualificationId || !['PAID','FULFILLED','PARTIAL_RETURN','RETURNED'].includes(order.status)) throw new Error(`SALE_CONFIRMED order ${payload.orderId} is not a qualified paid order`);
 
     if(!order.paidAt) pending('HISTORICAL_SNAPSHOT_MISSING','Original sale recognition timestamp is missing');
     if(!order.parameterSnapshotHash) pending('HISTORICAL_SNAPSHOT_MISSING','Original sale Parameter snapshot hash is missing');
@@ -47,12 +62,71 @@ export async function processSaleConfirmed(db:PrismaService,lease:OutboxLease,de
   });
 }
 
-async function processRecognition(recognitionId:string){
-  return prisma.$transaction(async tx=>{
-    const schedule=await tx.monthlyRecognitionSchedule.findUnique({
+/** Recognizes only immutable WEB_MEMBER retail line snapshots; it never emits PV or organization edges. */
+export async function processRetailReferralPayment(db:PrismaService,lease:OutboxLease,deps={withOutboxLease}){
+ return deps.withOutboxLease(db,lease,async tx=>{
+  const event=await tx.outboxEvent.findUnique({where:{outboxEventId:lease.outboxEventId}}); if(!event||event.processStatus==='PROCESSED')return;
+  const order=await tx.order.findUnique({where:{orderId:(event.payload as any).orderId},include:{retailReferralLineSnapshots:true}});
+  if(!order||order.qualificationId||!order.purchaserPersonId||order.status!=='PAID'||!order.paidAt)throw new Error('WEB_RETAIL_PAYMENT_INVALID');
+  const parameters=await captureParameters(tx,order.paidAt,order.ruleVersionCode),pendingUntil=new Date(order.paidAt.getTime()+Number(snapshotDecimal(parameters,'award.pending.days').toString())*86400000);
+  for(const line of order.retailReferralLineSnapshots){
+   if(!line.retailReferralEnabled||!line.referrerQualificationId||line.calculationType!=='PERCENTAGE'||line.baseType!=='NET_PAID_ITEM_AMOUNT'||!line.rate)continue;
+   const active=await companyAlwaysActiveAt(tx,line.referrerQualificationId,order.paidAt)||!!await tx.activePeriod.findFirst({where:{qualificationId:line.referrerQualificationId,activeFrom:{lte:order.paidAt},OR:[{activeTo:null},{activeTo:{gt:order.paidAt}}]}});
+   const plan=await tx.qualificationPlanHistory.findFirst({where:{qualificationId:line.referrerQualificationId,effectiveFrom:{lte:order.paidAt},OR:[{effectiveTo:null},{effectiveTo:{gt:order.paidAt}}]},orderBy:{effectiveFrom:'desc'}});
+   if(!plan)throw new Error('RETAIL_REFERRAL_PLAN_EVIDENCE_MISSING');
+   const theory=line.netPaidItemAmount.mul(line.rate),payable=active?theory:new Prisma.Decimal(0);
+   const existing=await tx.bonusAward.findFirst({where:{awardType:'RETAIL_REFERRAL',recipientQualificationId:line.referrerQualificationId,sourceEventId:line.orderLineId}});if(existing)continue;
+   const award=await tx.bonusAward.create({data:{awardType:'RETAIL_REFERRAL',recipientQualificationId:line.referrerQualificationId,sourceEventId:line.orderLineId,theoryAmount:theory,payableAmount:payable,kFactor:new Prisma.Decimal(1),activeSnapshot:active,planLevelSnapshot:plan.planCode,ruleVersionCode:line.productRuleVersion,parameterSnapshotHash:line.parameterSnapshotHash??parameters.hash,occurredAt:order.paidAt,pendingUntil,calculationDetail:{orderId:order.orderId,orderLineId:line.orderLineId,referrerBallNo:line.referrerBallNoSnapshot,baseType:line.baseType,baseAmount:line.netPaidItemAmount.toString(),rate:line.rate.toString(),activeAsOf:order.paidAt.toISOString(),activeEvidence:active?'ACTIVE':'INELIGIBLE'}}});
+   await tx.bonusAwardLifecycleEvent.createMany({data:[{bonusAwardId:award.bonusAwardId,status:'CALCULATED',occurredAt:new Date(),reasonCode:active?undefined:'INACTIVE_AT_RECOGNITION'},{bonusAwardId:award.bonusAwardId,status:'PENDING_45D',occurredAt:new Date(),reasonCode:active?undefined:'INACTIVE_AT_RECOGNITION'}]});
+  }
+  await tx.outboxEvent.update({where:{outboxEventId:lease.outboxEventId},data:{processStatus:'PROCESSED',processedAt:new Date()}});
+ });
+}
+
+export async function processRetailReferralReturn(db:PrismaService,lease:OutboxLease,deps={withOutboxLease}){
+ return deps.withOutboxLease(db,lease,async tx=>{
+  const event=await tx.outboxEvent.findUnique({where:{outboxEventId:lease.outboxEventId}});if(!event||event.processStatus==='PROCESSED')return;
+  const ret=await tx.returnCase.findUnique({where:{returnCaseId:(event.payload as any).returnCaseId},include:{order:{include:{retailReferralLineSnapshots:true}},lines:true}});
+  if(!ret||ret.status!=='POSTED'||ret.order.qualificationId||!ret.order.purchaserPersonId)throw new Error('WEB_RETAIL_RETURN_INVALID');
+  for(const returned of ret.lines){
+   const snapshot=ret.order.retailReferralLineSnapshots.find(row=>row.orderLineId===returned.orderLineId);if(!snapshot?.retailReferralEnabled||!snapshot.referrerQualificationId||!snapshot.rate)continue;
+   const award=await tx.bonusAward.findFirst({where:{awardType:'RETAIL_REFERRAL',recipientQualificationId:snapshot.referrerQualificationId,sourceEventId:returned.orderLineId}});if(!award||award.payableAmount.lte(0))continue;
+   const requestedAdjustment=returned.returnAmount.mul(snapshot.rate);if(requestedAdjustment.lte(0))continue;
+   const priorRecovery=await tx.bonusRecoveryEvent.aggregate({where:{bonusAwardId:award.bonusAwardId},_sum:{recoveryAmount:true}});
+   const remaining=Prisma.Decimal.max(new Prisma.Decimal(0),award.payableAmount.sub(priorRecovery._sum.recoveryAmount??0));
+   const adjustment=Prisma.Decimal.min(requestedAdjustment,remaining);if(adjustment.lte(0))continue;
+   const latest=await tx.bonusAwardLifecycleEvent.findFirst({where:{bonusAwardId:award.bonusAwardId},orderBy:{occurredAt:'desc'}});
+   if(latest&&['CALCULATED','PENDING_45D'].includes(latest.status)){
+    if(priorRecovery._sum.recoveryAmount===null&&adjustment.gte(remaining))await tx.bonusAwardLifecycleEvent.create({data:{bonusAwardId:award.bonusAwardId,status:'REVERSED',occurredAt:ret.occurredAt,reasonCode:'RETAIL_RETURN_FULL_OFFSET'}});
+    else if(!await tx.bonusRecoveryEvent.findFirst({where:{bonusAwardId:award.bonusAwardId,returnCaseId:ret.returnCaseId,reasonCode:'RETAIL_RETURN_PENDING_OFFSET'}}))await tx.bonusRecoveryEvent.create({data:{bonusAwardId:award.bonusAwardId,returnCaseId:ret.returnCaseId,recoveryAmount:adjustment,outstandingAmount:adjustment,status:'OFFSETTING',reasonCode:'RETAIL_RETURN_PENDING_OFFSET',occurredAt:ret.occurredAt}});
+   }
+   else if(latest&&['EFFECTIVE','PAYABLE','PAID','CLAWBACK'].includes(latest.status)){
+    const recovery=await tx.bonusRecoveryEvent.findFirst({where:{bonusAwardId:award.bonusAwardId,returnCaseId:ret.returnCaseId,reasonCode:'RETAIL_RETURN'}});
+    if(!recovery){
+     await tx.bonusRecoveryEvent.create({data:{bonusAwardId:award.bonusAwardId,returnCaseId:ret.returnCaseId,recoveryAmount:adjustment,outstandingAmount:adjustment,status:'OPEN',reasonCode:'RETAIL_RETURN',occurredAt:ret.occurredAt}});
+     if(latest.status!=='CLAWBACK')await tx.bonusAwardLifecycleEvent.create({data:{bonusAwardId:award.bonusAwardId,status:'CLAWBACK',occurredAt:ret.occurredAt,reasonCode:'RETAIL_RETURN'}});
+    }
+   }
+  }
+  await tx.outboxEvent.update({where:{outboxEventId:lease.outboxEventId},data:{processStatus:'PROCESSED',processedAt:new Date()}});
+ });
+}
+
+export async function processRecognition(recognitionId:string,db:PrismaService=prisma){
+  return db.$transaction(async tx=>{
+    let schedule=await tx.monthlyRecognitionSchedule.findUnique({
       where:{recognitionId},include:{subscription:true}
     });
     if(!schedule || !['SCHEDULED','DUE'].includes(schedule.status) || schedule.dueAt>new Date()) return;
+
+    await tx.$queryRaw`SELECT subscription_id FROM subscription.subscription WHERE subscription_id=${schedule.subscriptionId}::uuid FOR UPDATE`;
+    schedule=await tx.monthlyRecognitionSchedule.findUniqueOrThrow({where:{recognitionId},include:{subscription:true}});
+    if(!['SCHEDULED','DUE'].includes(schedule.status)) return;
+    if(schedule.retainedEntitlementRatio==null){
+      const partials=await tx.subscriptionCancellation.count({where:{subscriptionId:schedule.subscriptionId,status:'POSTED',refundAmount:{gt:0},reasonCode:{not:'FULL_RETURN'}}});
+      if(partials) pending('SUBSCRIPTION_REFUND_BASIS_MISSING','Legacy schedule needs an explicit refund basis');
+      schedule.retainedEntitlementRatio=new Prisma.Decimal(1);
+    }
 
     const correlationId=crypto.randomUUID();
     const pvEvent=await tx.pvLedger.upsert({
@@ -102,7 +176,7 @@ async function processRecognition(recognitionId:string){
           OR:[{activeTo:null},{activeTo:{gt:schedule.dueAt}}]
         }
       });
-      const theory=new Prisma.Decimal('100.00');
+      const theory=new Prisma.Decimal('100.00').mul(schedule.retainedEntitlementRatio).toDecimalPlaces(4,Prisma.Decimal.ROUND_HALF_UP);
       await tx.rpvUplineAwardEvent.upsert({
         where:{
           recognitionId_recipientQualificationId_binaryGeneration:{
@@ -134,9 +208,12 @@ async function processRecognition(recognitionId:string){
       where:{recognitionId},
       data:{status:'RECOGNIZED',recognizedAt:new Date(),pvLedgerEventId:pvEvent.eventId}
     });
+    await appendRecognitionMemberMessage(tx,recognitionId);
   },{isolationLevel:Prisma.TransactionIsolationLevel.Serializable});
 }
 
+
+export async function expireNotificationDeliveries(db:Pick<PrismaService,'notificationDelivery'>=prisma,now=new Date()){return (db.notificationDelivery as any).updateMany({where:{status:{in:['PENDING','CONFIGURATION_PENDING']},expiresAt:{lte:now}},data:{status:'EXPIRED'}});}
 
 export async function processReplayEvent(lease:OutboxLease,db:PrismaService=prisma) {
   return processLeasedReplay(db,lease);
@@ -144,10 +221,10 @@ export async function processReplayEvent(lease:OutboxLease,db:PrismaService=pris
 
 export async function pollOutbox(
   db:PrismaService=prisma,
-  deps={claimOutboxLease,processSaleConfirmed,processMemberOrderNotification,processPaymentInventoryReservation,processLeasedReplay,processTreeProjectionEvent,releaseFailedOutboxLease}
+  deps={claimOutboxLease,processSaleConfirmed,processRetailReferralPayment,processRetailReferralReturn,processMemberOrderNotification,processPaymentInventoryReservation,processLeasedReplay,processTreeProjectionEvent,releaseFailedOutboxLease}
 ){
   const events=await db.outboxEvent.findMany({
-    where:{eventType:{in:['BINARY_TREE_CHANGED','SALE_CONFIRMED','MEMBER_ORDER_CREATED','PAYMENT_STATE_TRANSITIONED','RETURN_CONFIRMED','RETURN_DEPENDENCY_REPLAY_REQUIRED','EPV_MONTH_RECALCULATION_REQUIRED','RPV_REVERSAL_REQUIRED']},processStatus:{in:['PENDING','PROCESSING']},availableAt:{lte:new Date()}},
+    where:{eventType:{in:['BINARY_TREE_CHANGED','SALE_CONFIRMED','WEB_MEMBER_RETAIL_PAYMENT_CONFIRMED','MEMBER_ORDER_CREATED','PAYMENT_STATE_TRANSITIONED','RETURN_CONFIRMED','RETURN_DEPENDENCY_REPLAY_REQUIRED','EPV_MONTH_RECALCULATION_REQUIRED','RPV_REVERSAL_REQUIRED']},processStatus:{in:['PENDING','PROCESSING']},availableAt:{lte:new Date()}},
     orderBy:{createdAt:'asc'},take:20
   });
   for(const event of events){
@@ -157,6 +234,8 @@ export async function pollOutbox(
       if(!lease)continue;
       if(event.eventType==='BINARY_TREE_CHANGED') await deps.processTreeProjectionEvent(db,lease);
       else if(event.eventType==='SALE_CONFIRMED') await deps.processSaleConfirmed(db,lease);
+      else if(event.eventType==='WEB_MEMBER_RETAIL_PAYMENT_CONFIRMED') await deps.processRetailReferralPayment(db,lease);
+      else if(event.eventType==='RETURN_CONFIRMED'&&(event.payload as any)?.qualificationId===null) await deps.processRetailReferralReturn(db,lease);
       else if(event.eventType==='MEMBER_ORDER_CREATED') await deps.processMemberOrderNotification(db,lease);
       else if(event.eventType==='PAYMENT_STATE_TRANSITIONED') await deps.processPaymentInventoryReservation(db,lease,{
         warehouseId:process.env.UCELL_INVENTORY_WAREHOUSE_ID??'',
@@ -176,7 +255,7 @@ async function pollRecognitions(){
   });
   for(const row of rows){
     try{ await processRecognition(row.recognitionId); }
-    catch(e){ console.error('recognition failed',row.recognitionId,e); }
+    catch(e){ emitStructuredOperationalError({service:'worker',operation:'processRecognition',traceId:crypto.randomUUID(),error:e,errorCode:'RECOGNITION_PROCESSING_FAILED',retryable:true}); }
   }
 }
 
@@ -193,20 +272,29 @@ async function matureBonusAwards(){
 
 async function tick(){
   await pollOutbox();
+  await pollErpHandoffs(prisma,erpAdapters);
+  await pollErpBusinessProjections(prisma,businessErpAdapters);
   await pollRecognitions();
+  try{
+    const planned=await pollPeriodClosePlanner(prisma);
+    if(planned.enabled&&('failures' in planned)&&planned.failures.length)console.error(JSON.stringify({event:'PERIOD_CLOSE_PLANNER_ATTENTION',failures:planned.failures}));
+  }catch(error){emitStructuredOperationalError({service:'worker',operation:'planPeriodClose',traceId:crypto.randomUUID(),error,errorCode:'PERIOD_CLOSE_PLANNER_FAILED',retryable:true});}
+  await pollPeriodCloseJobs(prisma);
   await matureBonusAwards();
+  await expireNotificationDeliveries();
   const providerStartedAt=Date.now();
   try{
     const provider=await pollProviderWebhooks(prisma,providerHandlers);
     if(provider.enabled&&provider.result)console.log(JSON.stringify(providerMetrics.record(provider.result,Date.now()-providerStartedAt)));
   }catch(error){
     console.error(JSON.stringify({...providerMetrics.recordFailure(Date.now()-providerStartedAt),errorCode:'PROVIDER_WORKER_BATCH_FAILED'}));
+    emitStructuredOperationalError({service:'worker',operation:'pollProviderWebhooks',traceId:crypto.randomUUID(),error,errorCode:'PROVIDER_WORKER_BATCH_FAILED',retryable:true});
     throw error;
   }
 }
 
 async function main(){
-  const loop=new WorkerLoop({tick,disconnect:()=>prisma.$disconnect(),onError:error=>console.error('worker tick failed',error)},workerPollInterval());
+  const loop=new WorkerLoop({tick,disconnect:()=>prisma.$disconnect(),onError:error=>emitStructuredOperationalError({service:'worker',operation:'tick',traceId:crypto.randomUUID(),error,errorCode:'WORKER_TICK_FAILED',retryable:true})},workerPollInterval());
   const shutdown=(signal:string)=>{console.log(`UCell worker received ${signal}; draining current tick`);void loop.stop().then(()=>{process.exitCode=0;}).catch(error=>{console.error(error);process.exitCode=1;});};
   process.once('SIGTERM',()=>shutdown('SIGTERM'));
   process.once('SIGINT',()=>shutdown('SIGINT'));
@@ -214,5 +302,5 @@ async function main(){
   await loop.start();
 }
 if(require.main===module) main().catch(async error=>{
-  console.error(error);await prisma.$disconnect();process.exitCode=1;
+  emitStructuredOperationalError({service:'worker',operation:'bootstrap',traceId:crypto.randomUUID(),error,errorCode:'WORKER_BOOTSTRAP_FAILED',retryable:false});await prisma.$disconnect();process.exitCode=1;
 });

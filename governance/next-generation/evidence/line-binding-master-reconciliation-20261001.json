@@ -1,0 +1,83 @@
+{
+  "timestamp": "2026-10-01T04:36:25.542Z",
+  "baseCommit": "6ffc4d48189c7f492e8c28aa7cfbae511c74b394",
+  "executionContext": "local-working-tree",
+  "sourceFiles": [
+    {
+      "path": "backend/apps/api/src/modules/auth/existing-member-line-link.service.ts",
+      "sha256": "813f62ecff66c99ecdd6a2c7629f67f075ec3d3f980389c193110d3ecb12b0d6"
+    },
+    {
+      "path": "backend/apps/api/test/existing-member-line-link.e2e-spec.ts",
+      "sha256": "74ff23c9e0c1378d4a0f11670fff0568f8c76b9093c9ce621822c9899b503a71"
+    },
+    {
+      "path": "member/src/liff.ts",
+      "sha256": "78fe762319f5cae82f5b2d71ba688db22be14dcbe7ad3518aa354f92a82b7dad"
+    },
+    {
+      "path": "member/src/main.tsx",
+      "sha256": "ddd2ae03b9eec4a788fcf09fede8b46411844e988c1475e63ef724bbcc1e3646"
+    },
+    {
+      "path": "member/src/lineBinding.ts",
+      "sha256": "5045d32b283cefec9851b7922aa515ac19f5fa9a9244c775e72e468955e1c5d0"
+    },
+    {
+      "path": "member/src/LineBindingPage.tsx",
+      "sha256": "0c0c4c4a76f9d19ebf3843b0e0a0e6fac5b7f98d60329329ac1205bc28138480"
+    },
+    {
+      "path": "member/src/line-binding.css",
+      "sha256": "c879c7dc64b92c2103d3d07b202f5f474f7e401ca19e1449d8652ad629e0cfb9"
+    },
+    {
+      "path": "member/tests/auth.test.ts",
+      "sha256": "d5df4fa947d10638f2228c9fce9de87f391db2571209f7bfb2f52a213303d450"
+    },
+    {
+      "path": "member/tests/line-binding.test.ts",
+      "sha256": "e4e2558f97e4470cc4b8f639d142bcda82d9d4d453e68cda0454f246ae223647"
+    },
+    {
+      "path": "member/tests/line-binding-page.test.tsx",
+      "sha256": "e327169d674e795f3019f4fdd7b383df64797cffb149918d9f44e6fd2a034c93"
+    },
+    {
+      "path": "member/tests/line-binding-browser.mjs",
+      "sha256": "2374d814c08b5220e2b81403a3e40cbe223a82ebf0cc4b6cb1726a29749134cc"
+    }
+  ],
+  "member": {
+    "files": 36,
+    "tests": 194,
+    "status": "PASS",
+    "build": "PASS",
+    "logs": [
+      "C:/UCell/logs/master-line-binding-member-tests-final-20261001.log",
+      "C:/UCell/logs/master-line-binding-member-build-final-20261001.log"
+    ]
+  },
+  "browser": {
+    "status": "PASS",
+    "cleanup": "PASS",
+    "log": "C:/UCell/logs/master-line-binding-browser-fixed-20261001.log",
+    "screens": "C:/UCell/logs/line-binding-browser-20261001",
+    "scope": "Actual binding component at light/dark and 390/1280 px; no horizontal overflow, no page errors, missing SDK/token denial, recheck callback; not real LINE auth/session E2E"
+  },
+  "api": {
+    "status": "PASS",
+    "suites": 4,
+    "tests": 18,
+    "migrations": 126,
+    "baselineAssertions": 162,
+    "cleanup": "PASS",
+    "log": "C:/UCell/logs/master-line-binding-focused-final-20261001.log",
+    "buildLog": "C:/UCell/logs/stage-login-api-build-20261001.log"
+  },
+  "deployment": false,
+  "realLineUAT": "PENDING",
+  "stageRC": "NOT_READY",
+  "fullBatch": "IN_PROGRESS",
+  "sourceHashesVerifiedAt": "2026-10-01T04:37:07.218Z"
+}

@@ -4,17 +4,23 @@ import {createHash,randomUUID} from 'node:crypto';
 import {AuditService} from '../../common/audit/audit.service';
 import {IdempotencyService} from '../../common/idempotency/idempotency.service';
 import {OrganizationService} from '../organization/organization.service';
+import {QualificationAccessService} from '../auth/qualification-access.service';
 
 type PlacementInput={qualificationId:string;binaryParentQualificationId:string;side:'LEFT'|'RIGHT';reasonCode?:string};
+type MemberPlacementInput={placementReference:string;binaryParentBallNo:string;side:'LEFT'|'RIGHT'};
+const publicBallNo=/^[A-Z][A-Z0-9_-]{0,39}(?:X\d{6}|\d{6,19})$/;
 
 @Injectable()
 export class QualificationPlacementService {
  constructor(private readonly db:PrismaService,private readonly idempotency:IdempotencyService,private readonly audit:AuditService,private readonly organization:OrganizationService){}
 
  async pendingForSponsorOwner(personId:string,now=new Date()){
-  const owned=await this.db.qualification.findMany({where:{currentHolderPersonId:personId},select:{qualificationId:true}}),sponsorIds=owned.map(x=>x.qualificationId);
+  const owned=await this.db.qualification.findMany({where:{OR:[
+   {currentHolderPersonId:personId},
+   {currentHolderLegalEntity:{representatives:{some:{personId,roleCode:'PRIMARY_OPERATING_REPRESENTATIVE',effectiveFrom:{lte:now},OR:[{effectiveTo:null},{effectiveTo:{gt:now}}]}}}}
+  ]},select:{qualificationId:true}}),sponsorIds=owned.map(x=>x.qualificationId);
   const rows=await this.db.qualificationSetup.findMany({where:{setupStatus:{in:['PLACEMENT_PENDING','PLACEMENT_OVERDUE']},finalSponsorQualificationId:{in:sponsorIds}},orderBy:{placementDueAt:'asc'},take:100});
-  return rows.map(x=>this.view(x,now));
+  const personIds=[...new Set(rows.map(x=>x.ownerPersonId).filter((id):id is string=>!!id))],qualificationIds=[...new Set(rows.flatMap(x=>[x.qualificationId,x.finalSponsorQualificationId].filter((id):id is string=>!!id)))]; const [people,qualifications]=await Promise.all([this.db.person.findMany({where:{personId:{in:personIds}},select:{personId:true,memberNo:true}}),this.db.qualification.findMany({where:{qualificationId:{in:qualificationIds}},select:{qualificationId:true,qualificationNo:true,ballNo:true}})]); const memberNoByPerson=new Map(people.map(x=>[x.personId,x.memberNo])),qualificationById=new Map(qualifications.map(x=>[x.qualificationId,x])); return rows.map(x=>{const pending=qualificationById.get(x.qualificationId);return this.view(x,now,{memberNo:(x.ownerPersonId?memberNoByPerson.get(x.ownerPersonId):null)??null,pendingBallNo:pending?.ballNo??null,placementReference:pending?`P${pending.qualificationNo}`:null,sponsorBallNo:x.finalSponsorQualificationId?qualificationById.get(x.finalSponsorQualificationId)?.ballNo??null:null});});
  }
 
  async monitor(input:{status?:string;aging?:string;take?:number}={},now=new Date()){
@@ -23,6 +29,14 @@ export class QualificationPlacementService {
  }
 
  async placeBySponsorOwner(personId:string,input:PlacementInput,key:string,requestId:string){return this.place(personId,'SPONSOR_OWNER',input,key,requestId);}
+ async placeBySponsorOwnerReference(personId:string,input:MemberPlacementInput,key:string,requestId:string){
+  const match=/^P([1-9]\d{0,18})$/.exec(input.placementReference);if(!match||BigInt(match[1])>9223372036854775807n||!publicBallNo.test(input.binaryParentBallNo))throw new UnprocessableEntityException({code:'PLACEMENT_REFERENCE_INVALID'});
+  const [qualification,parent]=await Promise.all([this.db.qualification.findUnique({where:{qualificationNo:BigInt(match[1])},select:{qualificationId:true,ballNo:true}}),this.db.qualification.findUnique({where:{ballNo:input.binaryParentBallNo},select:{qualificationId:true,ballNo:true}})]);
+  if(!qualification||!parent)throw new NotFoundException({code:'PLACEMENT_BALL_NOT_FOUND'});
+  const placed=await this.place(personId,'SPONSOR_OWNER',{qualificationId:qualification.qualificationId,binaryParentQualificationId:parent.qualificationId,side:input.side},key,requestId);
+  const placedQualification=await this.db.qualification.findUniqueOrThrow({where:{qualificationId:qualification.qualificationId},select:{ballNo:true}});
+  return {ballNo:placedQualification.ballNo,binaryParentBallNo:parent.ballNo,side:placed.value.side,placedAt:placed.value.placedAt,evidenceHash:placed.value.evidenceHash};
+ }
  async placeByAdmin(actorPersonId:string|undefined,input:PlacementInput,key:string,requestId:string){if(!input.reasonCode?.trim())throw new UnprocessableEntityException({code:'PLACEMENT_OVERRIDE_REASON_REQUIRED'});return this.place(actorPersonId,'ADMIN_OVERRIDE',input,key,requestId);}
 
  async sweepOverdue(actorPersonId:string|undefined,key:string,requestId:string,now=new Date()){
@@ -45,7 +59,7 @@ export class QualificationPlacementService {
    if(!qualification||!sponsor||!parent)throw new NotFoundException({code:'PLACEMENT_RESOURCE_NOT_FOUND'});
    if(existingPlacement)throw new ConflictException({code:'PLACEMENT_CONFLICT'});
    if(!sponsorEdge||sponsorEdge.sponsorQualificationId!==setup.finalSponsorQualificationId)throw new ConflictException({code:'SPONSOR_CONFIRMATION_MISSING'});
-   if(placedByType==='SPONSOR_OWNER'&&sponsor.currentHolderPersonId!==actorPersonId)throw new ForbiddenException({code:'PLACEMENT_AUTHORITY_DENIED'});
+   if(placedByType==='SPONSOR_OWNER'){if(!actorPersonId)throw new ForbiddenException({code:'PLACEMENT_AUTHORITY_DENIED'});try{await new QualificationAccessService(tx as any).assertHolder(actorPersonId,sponsor.qualificationId);}catch{throw new ForbiddenException({code:'PLACEMENT_AUTHORITY_DENIED'});}}
    if(parent.status!=='EFFECTIVE')throw new UnprocessableEntityException({code:'BINARY_PARENT_NOT_ELIGIBLE'});
    const side=input.side as SideCode;await this.organization.assertBinarySlotAvailable(tx,input.binaryParentQualificationId,side);await this.organization.assertNoBinaryCycle(tx,input.qualificationId,input.binaryParentQualificationId);await this.organization.assertFirstThirdLeftRule(tx,setup.finalSponsorQualificationId,sponsorEdge.sponsorSequenceNo,input.binaryParentQualificationId,side);
    const placedAt=new Date(),correlationId=randomUUID(),evidenceBody={qualificationId:input.qualificationId,sponsorQualificationId:setup.finalSponsorQualificationId,binaryParentQualificationId:input.binaryParentQualificationId,side,placedByType,placedByPersonId:actorPersonId??null,placedAt:placedAt.toISOString(),reasonCode:input.reasonCode??null,policyVersion:setup.setupPolicyVersion,previousStatus:setup.setupStatus},evidenceHash=createHash('sha256').update(JSON.stringify(evidenceBody)).digest('hex');
@@ -57,5 +71,5 @@ export class QualificationPlacementService {
   });}catch(error){if(['P2002','P2034'].includes((error as any).code)||((error as any).code==='P2010'&&(error as any).meta?.code==='40001'))throw new ConflictException({code:'PLACEMENT_CONFLICT'});throw error;}
  }
 
- private view(row:any,now:Date){const status=row.setupStatus==='PLACEMENT_PENDING'&&row.placementDueAt&&row.placementDueAt<=now?'PLACEMENT_OVERDUE':row.setupStatus,ageMs=row.placementRequestedAt?Math.max(0,now.getTime()-row.placementRequestedAt.getTime()):0,h=Math.floor(ageMs/3600000),agingBucket=status==='PLACEMENT_OVERDUE'||h>=72?'OVERDUE':h>=48?'48_72H':h>=24?'24_48H':'0_24H';return {qualificationId:row.qualificationId,ownerPersonId:row.ownerPersonId,packageType:row.packageType,sponsorQualificationId:row.finalSponsorQualificationId,requestedAt:row.placementRequestedAt?.toISOString()??null,dueAt:row.placementDueAt?.toISOString()??null,placedAt:row.placedAt?.toISOString()??null,status,agingBucket,policyVersion:row.setupPolicyVersion};}
+ private view(row:any,now:Date,identity?:{memberNo:string|null;pendingBallNo:string|null;placementReference:string|null;sponsorBallNo:string|null}){const status=row.setupStatus==='PLACEMENT_PENDING'&&row.placementDueAt&&row.placementDueAt<=now?'PLACEMENT_OVERDUE':row.setupStatus,ageMs=row.placementRequestedAt?Math.max(0,now.getTime()-row.placementRequestedAt.getTime()):0,h=Math.floor(ageMs/3600000),agingBucket=status==='PLACEMENT_OVERDUE'||h>=72?'OVERDUE':h>=48?'48_72H':h>=24?'24_48H':'0_24H';return {pendingBallNo:identity?.pendingBallNo??null,placementReference:identity?.placementReference??null,pendingMemberNo:identity?.memberNo??null,packageType:row.packageType,sponsorBallNo:identity?.sponsorBallNo??null,paymentState:'CONFIRMED',requestedAt:row.placementRequestedAt?.toISOString()??null,dueAt:row.placementDueAt?.toISOString()??null,placedAt:row.placedAt?.toISOString()??null,status,agingBucket,policyVersion:row.setupPolicyVersion};}
 }

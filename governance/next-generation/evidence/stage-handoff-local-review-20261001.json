@@ -1,0 +1,47 @@
+{
+  "timestamp": "2026-10-01T06:08:51.150Z",
+  "baseCommit": "298b27ec3c4c21a3b9c06afaeef03f13cbf022bc",
+  "sourceFiles": [
+    {
+      "path": "backend/scripts/stage-line-leader-fixture.mjs",
+      "sha256": "ea1a8ad7dc90a11055fa43cadd202cbefaba93ae2534feadb7b2e60123cf7fd8"
+    },
+    {
+      "path": "backend/scripts/stage-line-leader-fixture.test.mjs",
+      "sha256": "1e30ff63b51ea6dd45c65860645dd99fbd482cc37d74770d1f0a81e60ba9cb72"
+    },
+    {
+      "path": "deployment/LINE_STAGE_MANUAL_GATE.md",
+      "sha256": "9bbe516942518e74b0efc25776812bc549c41c1a277d023216a38d6c02ce65c8"
+    },
+    {
+      "path": "governance/next-generation/STAGE_RECOVERY_LINE_UAT_20261001.md",
+      "sha256": "e83ab540d8415831f5601651bddbe09919e56c68911d241589f56f39e314a0dd"
+    },
+    {
+      "path": "governance/next-generation/evidence/line-liff-console-20261001.json",
+      "sha256": "aac3bf5e698bb314429d396fea62577da2dc98164cf069851a2412118278c177"
+    },
+    {
+      "path": "governance/next-generation/evidence/line-three-leader-fixture-20261001.json",
+      "sha256": "ca43f24e33734a07077f399ecb8ac096647d2134f204f9c4e54e5f567c1ff604"
+    }
+  ],
+  "localVerification": {
+    "offlineFixtureAssertions": "PASS",
+    "log": "C:/UCell/logs/stage-line-leader-fixture-local-review-20261001.log",
+    "referencedScreenshotsExist": 9,
+    "jwtBearerPatternScan": "NO_FINDINGS",
+    "stageRunnerInvoked": false
+  },
+  "handoffScope": "Preserve the other chat reported Stage deployments/UAT as source evidence; no independent cloud or browser recertification in this local review",
+  "remaining": [
+    "complete tree snapshot recovery",
+    "normal payment/recognition and return/reversal journeys",
+    "negative binding/session cases",
+    "full R1.0B local scope and frozen final recertification"
+  ],
+  "overall": "IN_PROGRESS",
+  "stageRc": "NOT_READY",
+  "deployment": false
+}

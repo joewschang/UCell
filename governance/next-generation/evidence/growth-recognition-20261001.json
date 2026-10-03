@@ -1,0 +1,75 @@
+{
+  "timestamp": "2026-10-01T03:47:04.249Z",
+  "baseCommit": "5a2ecfffbbc51715e8229d08bf118ef39668b393",
+  "executionContext": "local-working-tree",
+  "scope": "Owner-scoped stored repurchase recognition projection, not full economic or batch certification",
+  "sourceFiles": [
+    {
+      "path": "backend/apps/api/src/modules/member/member-growth.service.ts",
+      "sha256": "297240e2d6301bd06cddc9307f50329ab859c05a15cc703e4a9c715cae59bdab"
+    },
+    {
+      "path": "backend/apps/api/test/member-growth-recognition-db.e2e-spec.ts",
+      "sha256": "35876dce6c11bbf93dbebf17de7d0334beba107f32bc68ac84778e2dd49f80fb"
+    },
+    {
+      "path": "member/src/GrowthCenter.tsx",
+      "sha256": "b70a80afdc2e91641e9a8ef471088080e0860c259e872269f973e6c181d688ed"
+    },
+    {
+      "path": "member/src/memberData.ts",
+      "sha256": "d354dee122ddc717408d1bc17ae8441abbef79828c6132df367fe52587bc2532"
+    },
+    {
+      "path": "member/tests/growth.test.tsx",
+      "sha256": "34f1661dd54d5e4497bed7dfebcc5ab77cc7cee606109671bbe1cccb9d47cd7c"
+    }
+  ],
+  "logs": [
+    {
+      "path": "C:/UCell/logs/cr-batch-growth-recognition-build.log",
+      "sha256": "c9bbb792e87e76102443f726d9d61fcec8c7f422fb97cc739cf187013632726f"
+    },
+    {
+      "path": "C:/UCell/logs/cr-batch-growth-recognition-db-final.log",
+      "sha256": "0e5f033c4784667788db1df392b3b9c4fe050c885727730eea77365877f08a72"
+    },
+    {
+      "path": "C:/UCell/logs/cr-batch-growth-recognition-member-test-final.log",
+      "sha256": "3f35ee8e8a55eaac6dd9b1eb89cf53acf0c222e2515d2d310c161b6e9c7a0788"
+    },
+    {
+      "path": "C:/UCell/logs/cr-batch-growth-recognition-member-build-final.log",
+      "sha256": "9032d0341ee49c62ce58f1d7ad3294e6afb00a078d9b1e302993a8f057efcc9e"
+    }
+  ],
+  "results": {
+    "apiBuild": "PASS",
+    "isolatedGrowth": {
+      "suites": 4,
+      "tests": 5,
+      "migrations": 125,
+      "baselineAssertions": 162,
+      "cleanup": "PASS"
+    },
+    "memberTest": {
+      "files": 1,
+      "tests": 1,
+      "status": "PASS"
+    },
+    "memberBuild": "PASS"
+  },
+  "remaining": [
+    "actual writer/return-to-Growth journeys",
+    "typed Growth OpenAPI response",
+    "actual-browser/theme/accessibility/empty/error acceptance",
+    "all other unclosed batch domains",
+    "whole-batch isolated recertification"
+  ],
+  "overall": {
+    "localImplementation": "IN_PROGRESS",
+    "fullIsolatedRecertification": "IN_PROGRESS",
+    "stageRc": "NOT_READY"
+  },
+  "deployment": "NONE"
+}

@@ -1,0 +1,32 @@
+{
+  "timestamp": "2026-10-01T04:41:39.375Z",
+  "baseCommit": "85ee88aaf2ee366fc20ffdad33309fddc9f67300",
+  "executionContext": "local-working-tree",
+  "sourceFiles": [
+    {
+      "path": "backend/apps/api/src/modules/commerce/fulfillment-serial-provenance.service.ts",
+      "sha256": "3bd3e999dd61a3f43ae83e5f11cdd89722426db402b31f9a4aa9f82919a5286b"
+    },
+    {
+      "path": "backend/apps/api/test/fulfillment-serial-provenance-db.e2e-spec.ts",
+      "sha256": "6d1c33d2abcb7857a62110d458a4bfaa597e31a9bc2f976bfa7d18115362daf9"
+    }
+  ],
+  "focused": {
+    "status": "PASS",
+    "suites": 4,
+    "tests": 31,
+    "migrations": 126,
+    "baselineAssertions": 162,
+    "cleanup": "PASS",
+    "log": "C:/UCell/logs/cr-batch-shipment-message-focused.log"
+  },
+  "apiBuild": {
+    "status": "PASS",
+    "log": "C:/UCell/logs/cr-batch-shipment-message-api-build.log"
+  },
+  "newFullGate": false,
+  "fullBatch": "IN_PROGRESS",
+  "stageRC": "NOT_READY",
+  "deployment": false
+}

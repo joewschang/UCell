@@ -12,12 +12,24 @@ const uatManifest = JSON.parse(read('backend/scripts/stage-uat-seed-manifest.jso
 const assertions = [
   ['backend LINE configuration name', deploy.includes('LINE_LOGIN_CHANNEL_ID=$LineLoginChannelId')],
   ['backend Entra tenant wiring', deploy.includes('ENTRA_TENANT_ID=$EntraTenantId')],
+  ['backend Google member auth wiring', deploy.includes('GOOGLE_OIDC_CLIENT_ID=$GoogleOidcClientId') && deploy.includes('VITE_GOOGLE_OIDC_CLIENT_ID=$GoogleOidcClientId')],
+  ['member SMS OTP stays deferred and disabled', deploy.includes('AUTH_CHANNEL_ENABLE_SMS_OTP=false') && !workflow.includes('STAGE_SMS_OTP_PROVIDER_WEBHOOK_TOKEN') && !workflow.includes('STAGE_OTP_HASH_SECRET')],
+  ['password reset email provider is optional and secret-backed', deploy.includes('PASSWORD_RESET_EMAIL_WEBHOOK_TOKEN=secretref:password-reset-email-token')],
+  ['workflow passes active Web member auth provider secrets', workflow.includes('STAGE_GOOGLE_OIDC_CLIENT_ID') && workflow.includes('STAGE_PASSWORD_RESET_EMAIL_WEBHOOK_TOKEN')],
   ['backend Entra client wiring', deploy.includes('ENTRA_CLIENT_ID=$EntraClientId')],
+  ['identity-match HMAC is secret-backed', deploy.includes('IDENTITY_MATCH_HMAC_SECRET=secretref:identity-match-hmac-secret') && workflow.includes('STAGE_IDENTITY_MATCH_HMAC_SECRET')],
+  ['private KYC storage is runtime-wired', deploy.includes('KYC_STORAGE_ACCOUNT_NAME=$storageAccount') && deploy.includes('KYC_STORAGE_CONTAINER=$kycContainer') && deploy.includes('KYC_STORAGE_MANAGED_IDENTITY_CLIENT_ID=$identityClientId')],
+  ['PII key is secret-referenced and never a frontend build argument', deploy.includes('PII_ENCRYPTION_KEY=secretref:pii-encryption-key') && deploy.includes('pii-encryption-key=$piiKey') && workflow.includes('STAGE_PII_ENCRYPTION_KEY')],
+  ['Stage permits btree_gist before temporal-tree migration', deploy.includes("'allow Stage btree_gist extension'") && deploy.includes("'azure.extensions'")],
   ['inventory warehouse fails closed and is wired', deploy.includes("Parameter(Mandatory)") && deploy.includes('UCELL_INVENTORY_WAREHOUSE_ID=$InventoryWarehouseId') && workflow.includes('vars.UCELL_INVENTORY_WAREHOUSE_ID')],
   ['inventory policy fails closed and is wired', deploy.includes('UCELL_INVENTORY_POLICY_VERSION=$InventoryPolicyVersion') && workflow.includes('vars.UCELL_INVENTORY_POLICY_VERSION')],
   ['UAT manifest warehouse is a valid configured warehouse candidate', /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-8[0-9a-f]{3}-[0-9a-f]{12}$/i.test(uatManifest.warehouse.warehouseId)],
+  ['Stage-only UAT member token is secret-referenced by the API', deploy.includes('STAGE_UAT_MEMBER_TOKEN=secretref:stage-uat-member-token') && deploy.includes('stage-uat-member-token=$StageUatMemberToken') && workflow.includes('STAGE_UAT_MEMBER_TOKEN')],
+  ['Stage UAT fixture is an explicit non-destructive job', deploy.includes("'ucell-stage-uat-seed'") && deploy.includes('UCELL_STAGE_UAT_SEED_OPT_IN=SEED_STAGE_UAT_V1') && deploy.includes("'stage:uat:seed'")],
+  ['Stage UAT Admin demo is explicit and staging-scoped', deploy.includes('EnableStageUatAdminDemo') && deploy.includes('ADMIN_AUTH_BYPASS=$adminAuthBypass') && deploy.includes('VITE_STAGE_UAT_DEMO_LOGIN')],
   ['omitted identity configuration is removed on update', deploy.includes("'--remove-env-vars'") && deploy.includes("$serverRemove+='LINE_LOGIN_CHANNEL_ID'")],
   ['immutable ACR digest resolution', deploy.includes('Resolve-Image') && deploy.includes('@$digest')],
+  ['local build resolves pushed Docker RepoDigest', deploy.includes('docker image inspect') && deploy.includes('RepoDigests')],
   ['existing Container App update path', deploy.includes("'containerapp','update'")],
   ['unique revision suffix', deploy.includes("'--revision-suffix',$revisionSuffix")],
   ['bounded migration polling', deploy.includes('$MigrationPollAttempts') && !deploy.includes('do {')],
@@ -28,7 +40,7 @@ const assertions = [
   ['admin image uses admin CSP', adminDockerfile.includes('nginx.admin.conf') && adminDockerfile.includes('CSP_API_ORIGIN')],
   ['member image uses member CSP', memberDockerfile.includes('nginx.member.conf') && memberDockerfile.includes('CSP_API_ORIGIN')],
   ['admin CSP permits configured API and Entra only', adminNginx.includes('__API_ORIGIN__') && adminNginx.includes('login.microsoftonline.com') && !adminNginx.includes('api.line.me')],
-  ['member CSP permits configured API and LINE only', memberNginx.includes('__API_ORIGIN__') && memberNginx.includes('api.line.me') && memberNginx.includes('access.line.me') && !memberNginx.includes('microsoftonline.com')],
+  ['member CSP permits configured API, LINE and Google only', memberNginx.includes('__API_ORIGIN__') && memberNginx.includes('api.line.me') && memberNginx.includes('access.line.me') && memberNginx.includes('accounts.google.com') && !memberNginx.includes('microsoftonline.com')],
 ];
 
 const failures = assertions.filter(([, pass]) => !pass).map(([name]) => name);
