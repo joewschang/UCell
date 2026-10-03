@@ -1,4 +1,5 @@
-import { ConflictException,Injectable,UnauthorizedException,UnprocessableEntityException } from '@nestjs/common';
+import { ConflictException,Injectable,Optional,UnauthorizedException,UnprocessableEntityException } from '@nestjs/common';
+import { LineTokenVerifierService } from './line-token-verifier.service';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '@ucell/database';
 import { createHash,randomBytes,scryptSync,timingSafeEqual } from 'node:crypto';
@@ -11,7 +12,33 @@ function derive(password:string,salt:string,length:number,N:number,r:number,p:nu
 
 @Injectable()
 export class MemberWebAuthService{
- constructor(private readonly db:PrismaService,private readonly sessions:IdentityTokenService,private readonly google:GoogleTokenVerifierService,private readonly email:PasswordResetEmailService,private readonly config:ConfigService){}
+ constructor(private readonly db:PrismaService,private readonly sessions:IdentityTokenService,private readonly google:GoogleTokenVerifierService,private readonly email:PasswordResetEmailService,private readonly config:ConfigService,@Optional() private readonly line?:LineTokenVerifierService){}
+
+ async linkLine(personId:string,idToken:string){
+  if(!this.line)throw new UnauthorizedException({code:'LINE_TOKEN_INVALID'});
+  const verified=await this.line.verify(idToken);
+  const person=await this.db.person.findUnique({where:{personId}});
+  if(!person)throw new UnauthorizedException({code:'MEMBER_PERSON_DISABLED'});
+  this.eligible(person);
+  try{return await this.db.$transaction(async tx=>{
+   const locked=await tx.$queryRaw<Array<{status:string;securityStatus:string}>>`SELECT status,security_status AS "securityStatus" FROM identity.person WHERE person_id=${personId}::uuid FOR UPDATE`;
+   if(!locked[0])throw new UnauthorizedException({code:'MEMBER_PERSON_DISABLED'});
+   this.eligible(locked[0]);
+   const existing=await tx.identityLink.findUnique({where:{provider_providerSubject:{provider:'LINE',providerSubject:verified.subject}}});
+   if(existing&&(existing.personId!==personId||existing.status!=='ACTIVE'))throw new ConflictException({code:'LINE_IDENTITY_ALREADY_LINKED'});
+   const other=await tx.identityLink.findFirst({where:{personId,provider:'LINE',providerSubject:{not:verified.subject}}});
+   if(other)throw new ConflictException({code:'MEMBER_LINE_ALREADY_LINKED'});
+   if(!existing)await tx.identityLink.create({data:{personId,provider:'LINE',providerSubject:verified.subject}});
+   return {provider:'LINE',linked:true};
+  });}catch(error){
+   if(error&&typeof error==='object'&&'code' in error&&error.code==='P2002')throw new ConflictException({code:'LINE_IDENTITY_ALREADY_LINKED'});
+   throw error;
+  }
+ }
+ async loginMethods(personId:string){
+  const links=await this.db.identityLink.findMany({where:{personId,status:'ACTIVE',provider:{in:['GOOGLE','LINE']}},select:{provider:true}});
+  return {google:links.some(x=>x.provider==='GOOGLE'),line:links.some(x=>x.provider==='LINE')};
+ }
 
  private async hashPassword(password:string,salt=randomBytes(16).toString('base64url')){
   if(password.length<PASSWORD_MIN||password.length>256)throw new UnprocessableEntityException({code:'PASSWORD_POLICY'});

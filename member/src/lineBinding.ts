@@ -5,6 +5,17 @@ export function getLineRegistrationIdToken(){
  if(!token)throw new Error('LINE 登入已失效，請重新開啟會員中心。');
  return token;
 }
+/** Keeps the authenticated UCell session while independently proving the LINE account. */
+export async function prepareLineIdentityLink(){
+ const id=import.meta.env.VITE_LIFF_ID;
+ if(!id)throw new Error('LINE 登入尚未設定');
+ await liff.init({liffId:id});
+ if(!liff.isLoggedIn()){
+  liff.login({redirectUri:window.location.origin+'/me'});
+  return null;
+ }
+ return getLineRegistrationIdToken();
+}
 
 async function command(path:string,body:Record<string,string>,key?:string){
  let idToken:string|null=null;try{idToken=liff.getIDToken();}catch{throw new Error('LINE 登入已失效，請重新開啟會員中心。');}

@@ -47,6 +47,17 @@ export async function linkGoogleIdentity(idToken:string){
 }
 
 export type RegistrationContract={contractVersionId:string;title:string;versionCode:string;contentText:string;contentHash:string};
+export async function linkLineIdentity(idToken:string){
+ const token=sessionStorage.getItem('ucell_member_token');
+ if(!token)throw new Error('請先登入既有會員帳號。');
+ try{return await request('/member/identity/line/link',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},body:JSON.stringify({idToken})});}
+ catch(e){const code=e instanceof Error?e.message:'';throw new Error(code==='LINE_IDENTITY_ALREADY_LINKED'?'此 LINE 已連結會員或已停用，請聯絡客服；不能合併或轉移帳號。':code==='MEMBER_LINE_ALREADY_LINKED'?'此會員已綁定另一個 LINE，請聯絡客服辦理復原。':code==='LINE_TOKEN_INVALID'?'LINE 驗證已失效，請重新開啟會員中心。':'LINE 連結未完成，請重試或聯絡客服。');}
+}
+export async function loginMethods(){
+ const token=sessionStorage.getItem('ucell_member_token');
+ if(!token)throw new Error('MEMBER_SESSION_REQUIRED');
+ return request('/member/identity',{headers:{Authorization:'Bearer '+token}}) as Promise<{google:boolean;line:boolean}>;
+}
 export async function registrationContract(){return request('/auth/member/register/contract') as Promise<RegistrationContract>;}
 export async function completeRegistration(input:{contractVersionId:string;legalName:string;alias:string;gender:string;birthDate:string;nationalityCode:string;identityDocumentType:string;identityDocumentNumber:string;mobile:string;email:string;password:string;googleIdToken?:string;lineIdToken?:string}){
  const mobile=normalizeRegistrationMobile(input.mobile,input.nationalityCode);
