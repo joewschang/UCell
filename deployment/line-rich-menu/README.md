@@ -49,7 +49,10 @@ The worker verifies the expected OA, default definition and uploaded image,
 sets/readbacks the default when necessary, then maintains links for active
 verified LINE identities belonging to effective people with normal security
 status. It never grants membership, writes identity links, or changes orders.
-Follow wakes the next cursor pass; new bindings are picked up by periodic scans
+When the separately gated provider webhook processor is enabled, follow wakes
+the next cursor pass. On the audited Stage runtime that processor is disabled;
+the independent periodic scan still reads ingress follow/unfollow history and
+repairs on its next pass. New bindings are picked up by periodic scans
 without any LINE call inside the login/binding transaction.
 
 Maintenance runs at most one pass concurrently, every minute, in pages of 20.
@@ -102,7 +105,7 @@ time, result and screenshot without publishing LINE userIds.
 3. Bound member: confirm member center/shop/orders personalized menu; test that
    member center reaches the member flow with the correct authenticated state.
 4. Block then unblock a test account: confirm default or personalized entry on
-   reopening; allow the follow wake/maintenance pass to restore eligible links.
+   reopening; allow the periodic maintenance pass to restore eligible links.
    Blocking itself must not create membership or monetary changes.
 5. With a designated test identity only, remove its per-user link using LINE's
    unlink endpoint. Confirm default immediately/as chat reopens, then run
