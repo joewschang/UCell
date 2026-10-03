@@ -5361,7 +5361,7 @@
     },
     "/api/v1/auth/member/password/login": {
       "post": {
-        "description": "Login using immutable memberNo plus a dedicated Member password credential. Generic failures do not disclose account existence.",
+        "description": "Login using member number, email or mobile plus a dedicated Member password credential. Ambiguous identifiers and invalid credentials fail without selecting an arbitrary account.",
         "operationId": "memberPasswordLogin",
         "parameters": [],
         "requestBody": {
@@ -8776,6 +8776,156 @@
         "summary": "串流下載本人未到期 CSV",
         "tags": [
           "Admin - Period Analytics"
+        ]
+      }
+    },
+    "/api/v1/member/formal-enrollment": {
+      "get": {
+        "operationId": "memberFormalEnrollment",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "memberBearer": []
+          }
+        ],
+        "summary": "正式會員升級狀態與申請費",
+        "tags": [
+          "Member - Formal enrollment"
+        ]
+      }
+    },
+    "/api/v1/member/formal-enrollment/fee-payment": {
+      "post": {
+        "description": "Stage database/environment allowlist only. Server-fixed fee, one payment per member, no Qualification or approval.",
+        "operationId": "memberStageFormalEnrollmentFee",
+        "parameters": [
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "memberBearer": []
+          }
+        ],
+        "summary": "Stage 模擬支付 600 元正式會員申請費",
+        "tags": [
+          "Member - Formal enrollment"
+        ]
+      }
+    },
+    "/api/v1/member/formal-enrollment/package-payments/{id}": {
+      "post": {
+        "description": "Owned formal-eligibility package only. Uses canonical order payment writer; no extra 600 fee and no automatic formal approval.",
+        "operationId": "memberStageFormalEnrollmentPackagePayment",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "memberBearer": []
+          }
+        ],
+        "summary": "Stage 模擬支付本人資格套組",
+        "tags": [
+          "Member - Formal enrollment"
+        ]
+      }
+    },
+    "/api/v1/member/formal-enrollment/applications/{id}/submit": {
+      "post": {
+        "description": "Own encrypted application only. Payment and required files must exist. Submission grants neither malware clearance, formal approval nor Qualification.",
+        "operationId": "memberSubmitFormalEnrollment",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "memberBearer": []
+          }
+        ],
+        "summary": "送出已付款且附文件的正式會員申請",
+        "tags": [
+          "Member - Formal enrollment"
         ]
       }
     },
@@ -22261,7 +22411,7 @@
         "properties": {
           "memberNo": {
             "type": "string",
-            "description": "Immutable ten-digit Member number"
+            "description": "Member number, email or mobile login identifier; field name retained for existing clients"
           },
           "password": {
             "type": "string",
@@ -24811,7 +24961,7 @@
           },
           "hasSpouse": {
             "type": "boolean",
-            "default": false
+            "description": "是否有配偶，請明確傳入 true 或 false"
           },
           "spouseName": {
             "type": "string",
@@ -25107,7 +25257,7 @@
           },
           "hasSpouse": {
             "type": "boolean",
-            "default": false
+            "description": "是否有配偶，請明確傳入 true 或 false"
           },
           "spouseName": {
             "type": "string",
