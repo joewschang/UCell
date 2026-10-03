@@ -30,11 +30,12 @@
     "run": 37088130838,
     "conclusion": "failure",
     "reason": "UNAPPROVED_BREAKING_CHANGE",
-    "waiver": false
+    "waiver": false,
+    "ownerApprovalRecord": "governance/swaggerhub/FORMAL_ENROLLMENT_API_CHANGE_APPROVAL_20261003.md"
   },
   "remainingProductionGates": [
     "Approved contract/privacy documents",
     "Trusted malware scanner and reviewer UAT",
-    "Recorded OpenAPI baseline approval"
+    "Technical OpenAPI baseline maintenance following recorded owner approval"
   ]
 }
