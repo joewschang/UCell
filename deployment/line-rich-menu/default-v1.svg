@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2400" height="800" viewBox="0 0 2400 800">
+ <rect width="2400" height="800" fill="#102d42"/>
+ <path d="M800 70V730M1600 70V730" stroke="#57707d" stroke-width="3"/>
+ <g fill="none" stroke="#e6bb68" stroke-width="16" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M320 190a80 80 0 1 0 160 0a80 80 0 1 0 -160 0M270 440v-45q0-100 130-100t130 100v45"/>
+  <path d="M1070 250q0-100 130-100t130 100v70q0 100-130 100h-30l-75 50v-80q-25-25-25-70z"/>
+  <path d="M1900 150h200v285h-200zM1970 185h60M1980 400h40M1830 290h190M1970 240l50 50-50 50"/>
+ </g>
+ <g fill="#fff" font-family="Microsoft JhengHei, Noto Sans CJK TC, sans-serif" font-size="68" font-weight="700" text-anchor="middle">
+  <text x="400" y="565">UCell 會員中心</text><text x="1200" y="565">客服</text><text x="2000" y="565">Web 登入</text>
+ </g>
+ <g fill="#cfdeea" font-family="Microsoft JhengHei, Noto Sans CJK TC, sans-serif" font-size="36" text-anchor="middle">
+  <text x="400" y="640">登入・註冊・會員服務</text><text x="1200" y="640">在 LINE 留言聯繫我們</text><text x="2000" y="640">使用瀏覽器進入 UCell</text>
+ </g>
+ <rect y="775" width="2400" height="25" fill="#e6bb68"/>
+</svg>

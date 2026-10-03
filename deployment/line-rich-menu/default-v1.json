@@ -1,0 +1,11 @@
+{
+ "size":{"width":2400,"height":800},
+ "selected":true,
+ "name":"UCell Default Entry 20261003",
+ "chatBarText":"進入 UCell",
+ "areas":[
+  {"bounds":{"x":0,"y":0,"width":800,"height":800},"action":{"type":"uri","label":"UCell 會員中心","uri":"https://liff.line.me/2011813061-Qt3d2jmo"}},
+  {"bounds":{"x":800,"y":0,"width":800,"height":800},"action":{"type":"message","label":"客服","text":"客服"}},
+  {"bounds":{"x":1600,"y":0,"width":800,"height":800},"action":{"type":"uri","label":"Web 登入","uri":"https://stage.ucell.life/login"}}
+ ]
+}
