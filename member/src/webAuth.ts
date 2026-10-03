@@ -48,7 +48,7 @@ export async function linkGoogleIdentity(idToken:string){
 
 export type RegistrationContract={contractVersionId:string;title:string;versionCode:string;contentText:string;contentHash:string};
 export async function registrationContract(){return request('/auth/member/register/contract') as Promise<RegistrationContract>;}
-export async function completeRegistration(input:{contractVersionId:string;legalName:string;alias:string;gender:string;birthDate:string;nationalityCode:string;identityDocumentType:string;identityDocumentNumber:string;mobile:string;email:string;password:string;googleIdToken:string}){
+export async function completeRegistration(input:{contractVersionId:string;legalName:string;alias:string;gender:string;birthDate:string;nationalityCode:string;identityDocumentType:string;identityDocumentNumber:string;mobile:string;email:string;password:string;googleIdToken?:string;lineIdToken?:string}){
  const mobile=normalizeRegistrationMobile(input.mobile,input.nationalityCode);
  if(!/^\+[1-9][0-9]{7,14}$/.test(mobile))throw new Error('手機號碼請使用 +國碼格式，台灣可輸入 09 開頭的十碼號碼。');
  if(input.password.length<12||input.password.length>256)throw new Error('密碼長度須為 12 至 256 字元。');

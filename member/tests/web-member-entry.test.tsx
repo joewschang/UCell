@@ -10,6 +10,25 @@ vi.mock('../src/webAuth',()=>auth);
 import WebMemberEntry from '../src/WebMemberEntry';
 
 let tree:ReactTestRenderer|undefined;
+it('opens new LINE friends directly on profile registration and preserves an existing-member binding choice',async()=>{
+ const authenticated=vi.fn(),existing=vi.fn(),token=vi.fn(()=> 'LINE_ID_TOKEN_TEST_ONLY');
+ await act(async()=>{tree=create(<WebMemberEntry onLineLogin={vi.fn()} onAuthenticated={authenticated} lineRegistrationToken={token} onExistingMemberBinding={existing}/>,{createNodeMock:element=>element.type==='div'?{}:null});});
+ expect(JSON.stringify(tree!.toJSON())).toContain('登錄會員資料');
+ expect(JSON.stringify(tree!.toJSON())).toContain('Email（聯絡資料）');
+ expect(auth.renderGoogleRegistrationButton).not.toHaveBeenCalled();
+ const labels=tree!.root.findAllByType('label');
+ const input=(name:string)=>labels.find(l=>l.children.some(c=>typeof c==='string'&&c.includes(name)))!.findByType('input');
+ act(()=>{
+  for(const [name,value] of Object.entries({'姓名':'測試新好友','顯示名稱':'新好友','生日':'1990-01-01','身分證明號碼':'TEST-LINE-ID','手機號碼':'+886912345678','Email':'line-friend@example.invalid','設定登入密碼':'LongPassword123!','確認密碼':'LongPassword123!'}))input(name).props.onChange({target:{value}});
+  labels.find(l=>l.children.some(c=>typeof c==='string'&&c.includes('我已閱讀')))!.findByType('input').props.onChange({target:{checked:true}});
+ });
+ await act(async()=>tree!.root.findByType('form').props.onSubmit({preventDefault(){}}));
+ expect(auth.completeRegistration).toHaveBeenCalledWith(expect.objectContaining({lineIdToken:'LINE_ID_TOKEN_TEST_ONLY'}));
+ expect(auth.completeRegistration.mock.calls[0][0]).not.toHaveProperty('googleIdToken');
+ expect(token).toHaveBeenCalledOnce();expect(authenticated).toHaveBeenCalledOnce();
+ const choose=tree!.root.findAllByType('button').find(n=>n.children.includes('我是既有會員，改用安全綁定'))!;
+ act(()=>choose.props.onClick());expect(existing).toHaveBeenCalledOnce();
+});
 beforeEach(()=>{
  auth.registrationContract.mockResolvedValue({contractVersionId:'11111111-1111-4111-8111-111111111111',title:'會員契約',versionCode:'R1',contentText:'TEST CONTRACT',contentHash:'a'.repeat(64)});
  auth.renderGoogleButton.mockImplementation(async()=>{});

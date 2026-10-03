@@ -1,5 +1,10 @@
 import liff from '@line/liff';
 import { unwrapMemberEnvelope } from './memberApi';
+export function getLineRegistrationIdToken(){
+ const token=liff.getIDToken();
+ if(!token)throw new Error('LINE 登入已失效，請重新開啟會員中心。');
+ return token;
+}
 
 async function command(path:string,body:Record<string,string>,key?:string){
  let idToken:string|null=null;try{idToken=liff.getIDToken();}catch{throw new Error('LINE 登入已失效，請重新開啟會員中心。');}
