@@ -12,6 +12,7 @@ import * as data from './memberData';
 import type { Qualification } from './api';
 import { useResource } from './useResource';
 import Mall from './Mall';
+import Shop from './Shop';
 import { CommerceProvider, useCommerce } from './commerce';
 import Notifications from './Notifications';
 import EndSession from './EndSession';
@@ -174,7 +175,7 @@ function MemberApp() {
         <Route path="/repurchase" element={<RepurchaseDetails key={current.id} q={current}/>}/>
         <Route path="/payouts" element={<MemberPayouts key={current.id} q={current}/>}/>
         <Route path="/bonuses" element={<Bonuses q={current}/>}/>
-        <Route path="/shop" element={<Mall q={current} onCreated={retry}/>}/>
+        <Route path="/shop" element={data.isMock?<Shop q={current}/>:<Mall q={current} onCreated={retry}/>}/>
         <Route path="/orders" element={<><Orders q={current}/><WebRetailOrders/></>}/>
         <Route path="/content" element={<ContentList q={current}/>}/>
         <Route path="/content/:id" element={<ContentDetail q={current}/>}/>
