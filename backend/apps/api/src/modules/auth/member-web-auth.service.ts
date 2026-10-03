@@ -99,7 +99,7 @@ export class MemberWebAuthService{
   if(!person)throw new UnauthorizedException({code:'MEMBER_PERSON_DISABLED'});
   this.eligible(person);
   const existing=await this.db.identityLink.findUnique({where:{provider_providerSubject:{provider:'GOOGLE',providerSubject:verified.subject}}});
-  if(existing&&existing.personId!==personId)throw new ConflictException({code:'GOOGLE_IDENTITY_ALREADY_LINKED'});
+  if(existing&&(existing.personId!==personId||existing.status!=='ACTIVE'))throw new ConflictException({code:'GOOGLE_IDENTITY_ALREADY_LINKED'});
   if(!existing)await this.db.identityLink.create({data:{personId,provider:'GOOGLE',providerSubject:verified.subject,email:verified.email,displayName:verified.displayName}});
   return {provider:'GOOGLE',linked:true};
  }

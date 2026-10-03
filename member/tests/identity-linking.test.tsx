@@ -9,6 +9,14 @@ vi.mock('../src/webAuth',()=>auth);
 import IdentityLinking from '../src/IdentityLinking';
 
 let tree:ReactTestRenderer|undefined;
+it('recovers login method controls after a transient status failure',async()=>{
+ auth.loginMethods.mockRejectedValueOnce(new Error('NETWORK_FAILED'));
+ await act(async()=>{tree=create(<IdentityLinking/>,{createNodeMock:e=>e.type==='div'?{}:null});});
+ expect(JSON.stringify(tree!.toJSON())).toContain('無法讀取登入方式');
+ await act(async()=>tree!.root.findAllByType('button').find(b=>b.children.includes('重新載入登入方式'))!.props.onClick());
+ expect(JSON.stringify(tree!.toJSON())).toContain('Google：');
+ expect(tree!.root.findAllByType('button').find(b=>b.children.includes('驗證並連結我的 LINE'))!.props.disabled).toBe(false);
+});
 it('requires verified LINE proof and refreshes linked statuses without creating a member',async()=>{
  line.prepareLineIdentityLink.mockResolvedValue('TEST_LINE_TOKEN');auth.linkLineIdentity.mockResolvedValue({linked:true});
  await act(async()=>{tree=create(<IdentityLinking/>,{createNodeMock:e=>e.type==='div'?{}:null});});

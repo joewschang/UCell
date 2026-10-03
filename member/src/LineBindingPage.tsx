@@ -2,7 +2,7 @@ import React,{useRef,useState} from 'react';
 import {completeLineBinding,requestLineBinding} from './lineBinding';
 import './line-binding.css';
 
-export function LineBinding({onComplete,onRecheck}:{onComplete:()=>void;onRecheck:()=>void}){
+export function LineBinding({onComplete,onRecheck,onBack}:{onComplete:()=>void;onRecheck:()=>void;onBack?:()=>void}){
  const [memberNo,setMemberNo]=useState(''),[reference,setReference]=useState(''),[requestId,setRequestId]=useState(''),[token,setToken]=useState('');
  const [busy,setBusy]=useState(false),[message,setMessage]=useState('');
  const pending=useRef<{input:string;key:string}>();
@@ -20,6 +20,7 @@ export function LineBinding({onComplete,onRecheck}:{onComplete:()=>void;onRechec
  }
  return <div className="line-binding-shell"><main className="card line-binding">
   <h1>綁定 UCell 會員</h1><p>此 LINE 尚未綁定會員。既有會員須經公司核驗及核准；會員編號本身不會完成綁定。</p>
+  {onBack&&<><p>新會員可直接登錄；已用 Google 或 Web 註冊的會員，可登入原帳號自助連結 LINE。</p><button type="button" disabled={busy} onClick={onBack}>返回會員登錄與 Google／Web 連結</button></>}
   <form onSubmit={event=>void submit(event,false)}>
    <label>會員編號<input required inputMode="numeric" pattern="[0-9]{10}" maxLength={10} value={memberNo} onChange={e=>setMemberNo(e.target.value)}/></label>
    <label>客服核驗案件參考<input required minLength={8} maxLength={160} value={reference} onChange={e=>setReference(e.target.value)}/></label>

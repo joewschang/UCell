@@ -56,7 +56,7 @@ function Bootstrap() {
         }
     };
 
-    if(bindingRequired)return existingMemberBinding?<LineBinding onComplete={()=>setAttempt(n=>n+1)} onRecheck={()=>setAttempt(n=>n+1)}/>:<WebMemberEntry lineRegistrationToken={getLineRegistrationIdToken} onExistingMemberBinding={()=>setExistingMemberBinding(true)} onLineLogin={async()=>{await webLogin();}} onAuthenticated={()=>{navigate('/',{replace:true});setAttempt(n=>n+1)}}/>;
+    if(bindingRequired)return existingMemberBinding?<LineBinding onBack={()=>setExistingMemberBinding(false)} onComplete={()=>setAttempt(n=>n+1)} onRecheck={()=>setAttempt(n=>n+1)}/>:<WebMemberEntry lineRegistrationToken={getLineRegistrationIdToken} onExistingMemberBinding={()=>setExistingMemberBinding(true)} onLineLogin={async()=>{await webLogin();}} onAuthenticated={()=>{navigate('/',{replace:true});setAttempt(n=>n+1)}}/>;
     if (error)
         return <main className="loading" role="alert"><section className="card uc-web-entry"><CompanyLogo className="uc-company-logo-entry"/><h1>UCell 會員中心</h1><p>{error}</p><button disabled={startingWebLogin} onClick={() => reauthRequired?void webLogin(true):setAttempt(n => n + 1)}>{reauthRequired?'重新登入 LINE':'重新連線'}</button></section></main>;
 

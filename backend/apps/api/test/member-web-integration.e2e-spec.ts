@@ -113,6 +113,7 @@ describe('Integrated Web identity and password lifecycle (real isolated DB, synt
   const payload=input(),result=await registration.complete(payload,randomUUID());
   const person=await db.person.findUniqueOrThrow({where:{memberNo:result.memberNo}});
   await db.identityLink.update({where:{provider_providerSubject:{provider:'GOOGLE',providerSubject:payload.googleIdToken}},data:{status:'REVOKED'}});
+  await expect(auth.linkGoogle(person.personId,payload.googleIdToken)).rejects.toMatchObject({response:{code:'GOOGLE_IDENTITY_ALREADY_LINKED'}});
   await expect(auth.googleExchange(payload.googleIdToken)).rejects.toMatchObject({response:{code:'GOOGLE_ACCOUNT_UNBOUND'}});
   await expect(identities.resolve({provider:'GOOGLE',subject:payload.googleIdToken,personId:person.personId})).rejects.toThrow('MEMBER_IDENTITY_MISMATCH');
   await db.identityLink.update({where:{provider_providerSubject:{provider:'GOOGLE',providerSubject:payload.googleIdToken}},data:{status:'ACTIVE'}});
