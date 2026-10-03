@@ -24,7 +24,7 @@ export default function FormalUpgrade({onSubmitted}:{onSubmitted?:()=>void}={}){
  const set=(name:keyof typeof form,value:string|boolean)=>setForm(current=>({...current,[name]:value}));
  const setFile=(type:FormalDocumentType,file?:File)=>{setFiles(current=>({...current,[type]:file}));setUploaded(current=>{const next={...current};delete next[type];return next;});};
  async function submit(event:React.FormEvent){
-  event.preventDefault();if(!accepted||busy)return;setBusy(true);setError('');
+  event.preventDefault();if(!(accepted||contract.acceptedAt)||busy)return;setBusy(true);setError('');
   try{
    if(!contract.acceptedAt)await consentFormalContract(contract.id,key.current);
    const common={
