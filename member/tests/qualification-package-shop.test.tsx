@@ -41,3 +41,12 @@ it('allows selecting products first but blocks checkout until delivery data is c
  await act(async()=>button('選擇套組商品').props.onClick());
  expect(button('建立待付款套組訂單').props.disabled).toBe(true);
 });
+
+it('uses the configured icon in a compact product row and retains quantity selection',async()=>{
+ vi.stubGlobal('fetch',vi.fn(async(url:string)=>url.includes('legal-entities')?envelope([]):url.endsWith('/delivery-profile')?envelope(completeDelivery):url.endsWith('/products')?envelope({package:offer,products:[{...product,iconUrl:'/products/tip-363.png'}]}):envelope([offer])));
+ await act(async()=>{tree=create(<QualificationPackageShop onCreated={()=>undefined}/>);});
+ await act(async()=>button('選擇套組商品').props.onClick());
+ const image=tree.root.findByType('img');expect(image.props.src).toBe('/products/tip-363.png');expect(image.props.width).toBe('48');expect(image.props.className).toBe('package-product-icon');
+ expect(tree.root.findAllByProps({className:'mall-product-cover'})).toHaveLength(0);
+ act(()=>button('增加').props.onClick());expect(tree.root.findByType('output').children).toEqual(['1']);
+});

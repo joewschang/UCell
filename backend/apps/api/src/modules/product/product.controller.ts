@@ -12,7 +12,7 @@ export class ProductController {
 
   @Post()
   @ApiOperation({ operationId: 'adminUpsertProductReference', summary: '建立/更新Pre-ERP商品Reference與Rule Profile' })
-  async upsert(@Body() dto: { sku: string; displayName: string; price: string; gpvRate?: string; ruleVersionCode?: string }) {
+  async upsert(@Body() dto: { sku: string; displayName: string; iconUrl?: string | null; price: string; gpvRate?: string; ruleVersionCode?: string }) {
     return { data: await this.service.upsertReference(dto) };
   }
 

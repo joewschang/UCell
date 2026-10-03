@@ -9,3 +9,5 @@
 .mall-offer-grid > .card { margin:0; display:flex; flex-direction:column; gap:8px; }
 .mall-product-cover { display:block; width:100%; aspect-ratio:4/3; object-fit:contain; border-radius:12px; background:#fff; }
 .mall-offer-grid > .card > button { margin-top:auto; }
+
+.package-product-list{display:grid;gap:10px;margin:16px 0}.package-product-row{display:flex;align-items:center;gap:12px;padding:12px;border:1px solid #ded8c9;border-radius:10px}.package-product-icon{width:48px;height:48px;object-fit:contain;flex:0 0 48px}.package-product-description{flex:1;min-width:0}.package-product-description h4,.package-product-description p{margin:0}.package-product-description p{font-size:.85rem;color:#666}.package-product-row .quantity{flex-shrink:0}@media(max-width:480px){.package-product-row{flex-wrap:wrap}.package-product-row .quantity{margin-left:auto}}

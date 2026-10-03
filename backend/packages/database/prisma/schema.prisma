@@ -1698,6 +1698,7 @@ model ProductReference {
   productId    String   @id @default(uuid()) @map("product_id") @db.Uuid
   sku          String   @unique
   displayName  String   @map("display_name")
+  iconUrl      String?  @map("icon_url") @db.VarChar(512)
   currentPrice Decimal  @map("current_price") @db.Decimal(18, 2)
   currency     String   @default("TWD")
   isActive     Boolean  @default(true) @map("is_active")
