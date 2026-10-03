@@ -1,0 +1,7 @@
+FROM ucellstageacr5mafbbsq33mgu.azurecr.io/ucell-api@sha256:e4e7a608df566b57a4146ea6c6db06369294a8ef4c8b03042e2532043410e0d2
+ARG SOURCE_COMMIT
+LABEL life.ucell.source-commit=${SOURCE_COMMIT}
+WORKDIR /app
+COPY api-dist/ apps/api/dist/
+COPY prisma/ packages/database/prisma/
+RUN pnpm --filter @ucell/database exec prisma generate

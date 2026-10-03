@@ -1,0 +1,62 @@
+[
+  {
+    "sku": "TIP-363",
+    "name": "晶萃源力飲",
+    "sourceFile": "Docs/TIP-363.pdf",
+    "sourceSha256": "ac8a4f834f2990a689cc90afa6afa4c7f30b993d54a00999eacd3e20836ca4b2",
+    "coverSourcePage": 1,
+    "coverSha256": "c0e1f2199d5977ee2616cd933409ab4a552e49ee75025c946a39f67a82be6625",
+    "stageTestPrice": "4800.00",
+    "currency": "TWD",
+    "unit": "盒",
+    "formalPriceConfirmed": false
+  },
+  {
+    "sku": "TIP-580",
+    "name": "淨衡順",
+    "sourceFile": "Docs/TIP-580.pdf",
+    "sourceSha256": "b2975f07b3c657babc71dfa706252655aa398994c0d439a3cb3cd3aa0ce2f90a",
+    "coverSourcePage": 1,
+    "coverSha256": "36e6fd09b1bc973927276516e80b096b77f8436540b1df64e99dd44418987f16",
+    "stageTestPrice": "4800.00",
+    "currency": "TWD",
+    "unit": "盒",
+    "formalPriceConfirmed": false
+  },
+  {
+    "sku": "TIP-696",
+    "name": "活力芯",
+    "sourceFile": "Docs/TIP-696.pdf",
+    "sourceSha256": "6f5f2aa85a2fe0c049cb678cd7adc3b37260de20d886631778be4f46ba1e0992",
+    "coverSourcePage": 1,
+    "coverSha256": "e2aa28a3755ae635efda96359706a3eaa655c0a9293d404f3b62f214fc61345f",
+    "stageTestPrice": "4800.00",
+    "currency": "TWD",
+    "unit": "盒",
+    "formalPriceConfirmed": false
+  },
+  {
+    "sku": "TIP-777",
+    "name": "肽時光膠原飲",
+    "sourceFile": "Docs/TIP-777.pdf",
+    "sourceSha256": "fd2794611a15777f3b4b3e8090dfa8dd7b2988c0a541a28d9a478efa303cd9ce",
+    "coverSourcePage": 1,
+    "coverSha256": "2e3571f6a75b7b0332d14ac61c3dc49913de90145a04e0bdb3a947c0cbc204b2",
+    "stageTestPrice": "4800.00",
+    "currency": "TWD",
+    "unit": "盒",
+    "formalPriceConfirmed": false
+  },
+  {
+    "sku": "TIP-999",
+    "name": "禦力源",
+    "sourceFile": "Docs/TIP-999.pdf",
+    "sourceSha256": "8452bbce4b56bb75e4160def23103c6e045002cb8a6a42a6976b61cb1583a985",
+    "coverSourcePage": 1,
+    "coverSha256": "2d927a8e09d85875db56dc714f297977a8e03ccf33b823846acb4bd841f73566",
+    "stageTestPrice": "4800.00",
+    "currency": "TWD",
+    "unit": "盒",
+    "formalPriceConfirmed": false
+  }
+]

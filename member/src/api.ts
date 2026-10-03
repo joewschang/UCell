@@ -28,12 +28,13 @@ export function createApiClient(guard: SessionGuard) {
             if (!res.ok) {
                 if (res.status === 401) guard.expire();
                 let code:string|undefined;try{const body=await res.json();if(typeof body?.code==='string')code=body.code;}catch{/* Status still fails closed for a non-JSON error. */}
-                throw new MemberApiError(res.status === 401 ? expiredMessage :
+                const enrollmentMessages:Record<string,string>={FORMAL_ENROLLMENT_PAYMENT_REQUIRED:'請先完成600元申請費或會員資格套組付款',FORMAL_ENROLLMENT_DOCUMENTS_REQUIRED:'請補齊身分證正反面及存摺封面，感染的檔案需重新上傳',FORMAL_FEE_ALREADY_COVERED_BY_PACKAGE:'已付款的會員資格套組包含申請資格，不需再繳600元',STAGE_PAYMENT_NOT_AVAILABLE:'目前環境尚未開放此付款方式',FORMAL_ENROLLMENT_NOT_AVAILABLE:'目前會員狀態無法申請，請重新確認會員資料'};
+                throw new MemberApiError((code&&enrollmentMessages[code]) || (res.status === 401 ? expiredMessage :
                     res.status === 403 ? '您無權查看此資格資料' :
                     res.status === 404 ? '找不到指定資料，資料可能已移除或您無權查看' :
                     res.status === 409 ? (code==='IDEMPOTENCY_CONFLICT'?'請求識別碼已被不同內容使用，請重新確認資料':'另一筆操作正在處理，請保留原資料重試') :
                     res.status === 422 ? (code==='RULE_PROFILE_CONFIGURATION_PENDING'?'商品制度設定尚未完成，請稍後再試':'資料未通過驗證或必要設定尚未完成，請確認後重試') :
-                    res.status === 400 ? '資料格式不正確，請檢查輸入內容' : '資料暫時無法讀取，請稍後重試',res.status,code);
+                    res.status === 400 ? '資料格式不正確，請檢查輸入內容' : '資料暫時無法讀取，請稍後重試'),res.status,code);
             }
             let result: T;
             try { result = await res.json() as T; }
@@ -171,7 +172,7 @@ export type Ledger = Scoped & {
         sourceId: string;
     }[];
 };
-export type Product = {
+export type Product = { sku?:string;
     id: string;
     name: string;
     price: number | null;

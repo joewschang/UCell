@@ -1,7 +1,7 @@
 import {CompanyLogo} from '@ucell/design-system';
 import React, { useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { BrowserRouter } from 'react-router-dom';
+import { BrowserRouter, useNavigate } from 'react-router-dom';
 import { LineBindingRequired, bootstrapLiff, startWebLineLogin, restartLineLogin, LineReauthenticationRequired } from './liff';
 import { LineBinding } from './LineBindingPage';
 import { QualificationProvider } from './QualificationContext';
@@ -16,6 +16,7 @@ import '@ucell/design-system/styles';
 import './ucell-theme.css';
 initializeUiTheme();
 function Bootstrap() {
+    const navigate=useNavigate();
     const [state, setState] = useState<'loading' | 'ready' | 'redirect' | 'web-login'>('loading');
     const [error, setError] = useState('');
     const [bindingRequired,setBindingRequired]=useState(false);
@@ -30,7 +31,7 @@ function Bootstrap() {
         setReauthRequired(false);setBindingRequired(false);
         setReferralWarning(undefined);
         setState('loading');
-        bootstrapLiff().then(result => {
+        bootstrapLiff(attempt>0).then(result => {
             if (!alive) return;
             setReferralWarning('referralWarning' in result?result.referralWarning:undefined);
             setState(result.mode === 'redirect' ? 'redirect' : result.mode === 'web-login' ? 'web-login' : 'ready');
@@ -58,7 +59,7 @@ function Bootstrap() {
         return <main className="loading" role="alert"><section className="card uc-web-entry"><CompanyLogo className="uc-company-logo-entry"/><h1>UCell 會員中心</h1><p>{error}</p><button disabled={startingWebLogin} onClick={() => reauthRequired?void webLogin(true):setAttempt(n => n + 1)}>{reauthRequired?'重新登入 LINE':'重新連線'}</button></section></main>;
 
     if (state === 'web-login')
-        return <WebMemberEntry onLineLogin={async()=>{await webLogin();}} onAuthenticated={()=>setAttempt(n=>n+1)}/>;
+        return <WebMemberEntry onLineLogin={async()=>{await webLogin();}} onAuthenticated={()=>{navigate('/',{replace:true});setAttempt(n=>n+1)}}/>;
 
     if (state !== 'ready')
         return <main className="loading" role="status">{state === 'redirect' ? '正在前往 LINE 登入…' : 'UCell 會員中心載入中…'}</main>;

@@ -1,0 +1,74 @@
+{
+  "status": "STAGE_MALL_CATALOG_VERIFIED",
+  "offers": [
+    {
+      "code": "STAGE_MALL_CORE_A",
+      "label": "主商品"
+    },
+    {
+      "code": "STAGE_MALL_CORE_B",
+      "label": "主商品"
+    },
+    {
+      "code": "STAGE_MALL_PROMO_AB",
+      "label": "促銷商品組合"
+    }
+  ],
+  "packages": [
+    {
+      "displayName": "啟航（Stage 測試）",
+      "priceAmount": "14400",
+      "selectableProductQuantity": 3,
+      "profile": {
+        "stableCode": "STARTER",
+        "packageClass": "QUALIFICATION"
+      }
+    },
+    {
+      "displayName": "菁英（Stage 測試）",
+      "priceAmount": "43200",
+      "selectableProductQuantity": 9,
+      "profile": {
+        "stableCode": "ELITE",
+        "packageClass": "QUALIFICATION"
+      }
+    },
+    {
+      "displayName": "領袖（Stage 測試）",
+      "priceAmount": "72000",
+      "selectableProductQuantity": 15,
+      "profile": {
+        "stableCode": "LEADER",
+        "packageClass": "QUALIFICATION"
+      }
+    },
+    {
+      "displayName": "季活躍重購方案（Stage 測試）",
+      "priceAmount": "6000",
+      "selectableProductQuantity": 2,
+      "profile": {
+        "stableCode": "ACTIVE_QUARTER",
+        "packageClass": "ACTIVE_DURATION"
+      }
+    },
+    {
+      "displayName": "半年活躍重購方案（Stage 測試）",
+      "priceAmount": "12000",
+      "selectableProductQuantity": 4,
+      "profile": {
+        "stableCode": "ACTIVE_HALF_YEAR",
+        "packageClass": "ACTIVE_DURATION"
+      }
+    },
+    {
+      "displayName": "年活躍重購方案（Stage 測試）",
+      "priceAmount": "24000",
+      "selectableProductQuantity": 8,
+      "profile": {
+        "stableCode": "ACTIVE_YEAR",
+        "packageClass": "ACTIVE_DURATION"
+      }
+    }
+  ],
+  "auditEvents": 12
+}

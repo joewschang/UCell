@@ -1,0 +1,11 @@
+{
+  "running": "Running",
+  "health": "Healthy",
+  "sourceCommit": "ffe6bec3",
+  "memberImage": "ucellstageacr5mafbbsq33mgu.azurecr.io/ucell-member@sha256:b178f799a474528c5f95f8611a5ddf294374d69688519fdaa0719ce0c7d2e967",
+  "typecheckBuild": "PASS",
+  "verifiedAtUtc": "2026-10-02T19:41:50.8020728Z",
+  "assetSha256": "eb497bf3602d0709074dfc08c081fd109363ddfba30c6d29a913ecaf95f71e99",
+  "revision": "ucell-stage-member--gender-20261003",
+  "targetedRegistrationTests": 4
+}

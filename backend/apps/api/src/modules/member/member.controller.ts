@@ -74,7 +74,7 @@ export class FormalMemberDraftDto implements FormalDraftInput {
  @ApiProperty({enum:['NATIONAL_ID','RESIDENCE_PERMIT','PASSPORT','OTHER']}) @IsIn(['NATIONAL_ID','RESIDENCE_PERMIT','PASSPORT','OTHER']) identityDocumentType!:'NATIONAL_ID'|'RESIDENCE_PERMIT'|'PASSPORT'|'OTHER';
  @ApiProperty({maxLength:64,description:'身分證號、居留證號、護照號碼或其他核准身分證明號碼'}) @IsString() @Matches(/\S/) @MaxLength(64) identityDocumentNumber!:string;
 
- @ApiProperty({default:false}) @IsBoolean() hasSpouse:boolean=false;
+ @ApiProperty({description:'是否有配偶，請明確傳入 true 或 false'}) @IsBoolean() hasSpouse:boolean=false;
  @ApiProperty({required:false,maxLength:120}) @ValidateIf(o=>o.hasSpouse===true) @IsString() @Matches(/\S/) @MaxLength(120) spouseName?:string;
  @ApiProperty({required:false,example:'TW'}) @ValidateIf(o=>o.hasSpouse===true) @Matches(/^[A-Z]{2}$/) spouseNationalityCode?:string;
  @ApiProperty({required:false,enum:['NATIONAL_ID','RESIDENCE_PERMIT','PASSPORT','OTHER']}) @ValidateIf(o=>o.hasSpouse===true) @IsIn(['NATIONAL_ID','RESIDENCE_PERMIT','PASSPORT','OTHER']) spouseIdentityDocumentType?:'NATIONAL_ID'|'RESIDENCE_PERMIT'|'PASSPORT'|'OTHER';

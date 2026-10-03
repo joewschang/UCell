@@ -1,0 +1,26 @@
+{
+  "adminTests": 239,
+  "image": "ucellstageacr5mafbbsq33mgu.azurecr.io/ucell-admin@sha256:5b91d466f628f222620f815f9ae2ab2f12e21571584ff95cf194cf47ccd3e158",
+  "duplicateMigrationImported": false,
+  "inactivityDomainCases": 8,
+  "inactivityRuntimeActivated": false,
+  "health": "Healthy",
+  "assets": [
+    {
+      "path": "/assets/index-Dqo4IFxf.js",
+      "sha256": "7b73975d3403e28175460fb6251bf47dfdb2ead0e9b3c67a04204579dd384924"
+    },
+    {
+      "path": "/assets/index-DvaeJgHV.css",
+      "sha256": "6c232062ad29cad01da0b19df3bd9b4b395ecf4152fcb47e5e51ca2b93ca3869"
+    },
+    {
+      "path": "/ucell-logo-transparent.png",
+      "sha256": "e3d6bb9456117bafb3860cd99a5dfab29bb30b0c1a0dca4b7433a5550a1de75c"
+    }
+  ],
+  "running": "Running",
+  "sourceCommit": "c567126f",
+  "revision": "ucell-stage-admin--reconcile-20261003",
+  "verifiedAtUtc": "2026-10-02T19:58:03.4236260Z"
+}

@@ -65,6 +65,7 @@ export class OrderView {
 }
 export class ProductView {
  @ApiProperty({format:'uuid'}) id!:string;
+ @ApiProperty({required:false}) sku?:string;
  @ApiProperty() name!:string;
  @ApiProperty({type:Number,nullable:true,description:'Display only; Create Order revalidates Core price.'}) price!:number|null;
  @ApiProperty({type:Number,nullable:true}) pv!:number|null;

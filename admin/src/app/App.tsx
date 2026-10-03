@@ -1,4 +1,5 @@
 import {EconomicLineagePage} from '../features/economic-lineage/EconomicLineagePage';
+import {OrganizationGeoPage} from '../features/organization-geo/OrganizationGeoPage';
 import {ReservoirCenterPage} from '../features/reservoir/ReservoirCenterPage';
 import {BinaryTreesPage} from '../features/organization/BinaryTreesPage';
 import {Link,Navigate,Route,Routes} from 'react-router-dom';
@@ -59,6 +60,7 @@ export function App(){return <Routes>
   <Route path="/erp-reconciliation" element={<RequirePageRole><ErpReconciliationPage/></RequirePageRole>}/>
   <Route path="/admin/organization/trees/:id?" element={<RequirePageRole><BinaryTreesPage/></RequirePageRole>}/>
   <Route path="/organization" element={<RequirePageRole><OrganizationPage/></RequirePageRole>}/>
+  <Route path="/organization/geo" element={<RequirePageRole><OrganizationGeoPage/></RequirePageRole>}/>
   <Route path="/subscriptions" element={<RequirePageRole><SubscriptionsPage/></RequirePageRole>}/>
   <Route path="/admin/finance/reservoirs" element={<RequirePageRole><ReservoirCenterPage/></RequirePageRole>}/>
   <Route path="/bonuses" element={<RequirePageRole><BonusesPage/></RequirePageRole>}/>

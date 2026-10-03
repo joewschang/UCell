@@ -249,6 +249,7 @@ enum QualificationLifecycleStatus {
 }
 
 enum OrderPurpose {
+  FORMAL_MEMBERSHIP_FEE
   ENTRY
   RETAIL
   REPURCHASE
@@ -758,6 +759,8 @@ enum AuthSessionStatus {
 }
 
 model Person {
+  geoProfile MemberGeoProfile?
+  geoProfileVersions MemberGeoProfileVersion[]
   qualificationOwnerIntervals QualificationOwnerInterval[]
   personId         String                 @id @default(uuid()) @map("person_id") @db.Uuid
   /// Immutable business identifier. Allocated in PostgreSQL using Asia/Taipei YYMM month counters.
@@ -981,6 +984,8 @@ model FormalPaperEvidence {
 }
 
 model FormalMemberApplicationSnapshot {
+  geoProfiles MemberGeoProfile[]
+  geoProfileVersions MemberGeoProfileVersion[]
   formalMemberApplicationSnapshotId String                  @id @default(uuid()) @map("formal_member_application_snapshot_id") @db.Uuid
   formalMemberApplicationId         String                  @map("formal_member_application_id") @db.Uuid
   version                           Int
@@ -993,6 +998,80 @@ model FormalMemberApplicationSnapshot {
   @@unique([formalMemberApplicationId, version])
   @@index([payloadHash])
   @@map("formal_member_application_snapshot")
+  @@schema("identity")
+}
+
+model GeoAdminArea {
+  areaCode String @id @map("area_code")
+  countryCode String @map("country_code")
+  level String
+  parentAreaCode String? @map("parent_area_code")
+  areaNameZh String @map("area_name_zh")
+  areaNameEn String? @map("area_name_en")
+  regionGroup String @map("region_group")
+  sortOrder Int @map("sort_order")
+  isActive Boolean @default(true) @map("is_active")
+  definitionVersion String @map("definition_version")
+  parent GeoAdminArea? @relation("GeoParent",fields:[parentAreaCode],references:[areaCode])
+  children GeoAdminArea[] @relation("GeoParent")
+  cityProfiles MemberGeoProfile[] @relation("GeoCity")
+  districtProfiles MemberGeoProfile[] @relation("GeoDistrict")
+  cityVersions MemberGeoProfileVersion[] @relation("GeoVersionCity")
+  districtVersions MemberGeoProfileVersion[] @relation("GeoVersionDistrict")
+  @@index([parentAreaCode,sortOrder],map:"geo_admin_area_parent_idx")
+  @@map("geo_admin_area")
+  @@schema("organization")
+}
+
+model MemberGeoProfile {
+  memberId String @id @map("member_id") @db.Uuid
+  countryCode String @map("country_code")
+  cityCode String? @map("city_code")
+  districtCode String? @map("district_code")
+  geoStatus String @map("geo_status")
+  geoSource String @map("geo_source")
+  geoConfidence Decimal @map("geo_confidence") @db.Decimal(5,4)
+  reasonCode String? @map("reason_code")
+  addressHash String @map("address_hash")
+  sourceSnapshotId String @map("source_snapshot_id") @db.Uuid
+  sourceEffectiveAt DateTime @map("source_effective_at") @db.Timestamptz
+  sourceRecordedAt DateTime @map("source_recorded_at") @db.Timestamptz
+  normalizedAt DateTime @map("normalized_at") @db.Timestamptz
+  definitionVersion String @map("definition_version")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamptz
+  person Person @relation(fields:[memberId],references:[personId])
+  snapshot FormalMemberApplicationSnapshot @relation(fields:[sourceSnapshotId],references:[formalMemberApplicationSnapshotId])
+  city GeoAdminArea? @relation("GeoCity",fields:[cityCode],references:[areaCode])
+  district GeoAdminArea? @relation("GeoDistrict",fields:[districtCode],references:[areaCode])
+  @@index([cityCode,districtCode,memberId],map:"member_geo_profile_area_idx")
+  @@map("member_geo_profile")
+  @@schema("identity")
+}
+
+model MemberGeoProfileVersion {
+  geoProfileVersionId String @id @map("geo_profile_version_id") @db.Uuid
+  memberId String @map("member_id") @db.Uuid
+  countryCode String @map("country_code")
+  cityCode String? @map("city_code")
+  districtCode String? @map("district_code")
+  geoStatus String @map("geo_status")
+  geoSource String @map("geo_source")
+  geoConfidence Decimal @map("geo_confidence") @db.Decimal(5,4)
+  reasonCode String? @map("reason_code")
+  addressHash String @map("address_hash")
+  sourceSnapshotId String @map("source_snapshot_id") @db.Uuid
+  sourceEffectiveAt DateTime @map("source_effective_at") @db.Timestamptz
+  sourceRecordedAt DateTime @map("source_recorded_at") @db.Timestamptz
+  normalizedAt DateTime @map("normalized_at") @db.Timestamptz
+  definitionVersion String @map("definition_version")
+  person Person @relation(fields:[memberId],references:[personId])
+  snapshot FormalMemberApplicationSnapshot @relation(fields:[sourceSnapshotId],references:[formalMemberApplicationSnapshotId])
+  city GeoAdminArea? @relation("GeoVersionCity",fields:[cityCode],references:[areaCode])
+  district GeoAdminArea? @relation("GeoVersionDistrict",fields:[districtCode],references:[areaCode])
+  @@unique([memberId,sourceSnapshotId,definitionVersion])
+  @@index([memberId,sourceEffectiveAt,sourceRecordedAt],map:"member_geo_profile_version_time_idx")
+  @@map("member_geo_profile_version")
   @@schema("identity")
 }
 

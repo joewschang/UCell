@@ -1,0 +1,44 @@
+{
+  "sourceCommit": "4083cbbedb642f8b4bcec80d4cbca834d2f032d0",
+  "revisions": [
+    {
+      "health": "Healthy",
+      "image": "ucellstageacr5mafbbsq33mgu.azurecr.io/ucell-api@sha256:80a26dc9583e5dd9819ea984767af520431853fcc8870c7c5edd59e382f05b41",
+      "name": "ucell-stage-api--web-login-20261003",
+      "running": "Running"
+    },
+    {
+      "health": "Healthy",
+      "image": "ucellstageacr5mafbbsq33mgu.azurecr.io/ucell-member@sha256:2e392dc59a829f0bf0bd4c146a08d03b3b509273ec0753733f31fec6989f2dc4",
+      "name": "ucell-stage-member--web-login-20261003",
+      "running": "Running"
+    }
+  ],
+  "apiHealthStatus": 200,
+  "memberAssetSha256": "b6c8b39e2d8187c63f1811eef77b20f831162add68bb7237da00f00421670613",
+  "publicAssetMatches": true,
+  "loginNegativeProbes": [
+    {
+      "identifierType": "MEMBER_NO",
+      "status": 401,
+      "code": "MEMBER_LOGIN_INVALID"
+    },
+    {
+      "identifierType": "EMAIL",
+      "status": 401,
+      "code": "MEMBER_LOGIN_INVALID"
+    },
+    {
+      "identifierType": "MOBILE",
+      "status": 401,
+      "code": "MEMBER_LOGIN_INVALID"
+    }
+  ],
+  "apiCIRun": 37059479080,
+  "apiSuitesPassed": 207,
+  "apiTestsPassed": 1441,
+  "memberSuitesPassed": 43,
+  "memberTestsPassed": 237,
+  "productionDeployment": false,
+  "verifiedAtUtc": "2026-10-02T20:24:40.8154384Z"
+}

@@ -22,7 +22,7 @@ it('shows active Web login methods and keeps SMS OTP explicitly deferred',async(
  await act(async()=>{tree=create(<WebMemberEntry onLineLogin={vi.fn()} onAuthenticated={vi.fn()}/>,{createNodeMock:element=>element.type==='div'?{}:null});});
  const text=JSON.stringify(tree!.toJSON());
  expect(text).toContain('使用 LINE 登入');
- expect(text).toContain('會員編號 + 密碼登入');
+ expect(text).toContain('會員編號、Email 或手機號碼');
  expect(text).toContain('Google 登入');
  expect(text).toContain('手機 OTP 登入將於簡訊供應商 API 完成後開放');
  expect(text).not.toContain('取得驗證碼');
@@ -60,8 +60,13 @@ it('registers with Google, contract consent and password without OTP fields',asy
   input('手機號碼').props.onChange({target:{value:'+886912345678'}});
   input('Email').props.onChange({target:{value:'member@example.invalid'}});
   input('設定登入密碼').props.onChange({target:{value:'LongPassword123!'}});
+  input('確認密碼').props.onChange({target:{value:'DifferentPassword123!'}});
   labels.find(l=>l.children.some(c=>typeof c==='string'&&c.includes('我已閱讀')))!.findByType('input').props.onChange({target:{checked:true}});
  });
+ await act(async()=>tree!.root.findByType('form').props.onSubmit({preventDefault(){}}));
+ expect(auth.completeRegistration).not.toHaveBeenCalled();
+ expect(JSON.stringify(tree!.toJSON())).toContain('兩次輸入的密碼不一致');
+ await act(async()=>input('確認密碼').props.onChange({target:{value:'LongPassword123!'}}));
  auth.completeRegistration.mockResolvedValue({accessToken:'opaque',expiresAt:new Date(Date.now()+60000).toISOString()});
  await act(async()=>tree!.root.findByType('form').props.onSubmit({preventDefault(){}}));
  expect(auth.completeRegistration).toHaveBeenCalledWith(expect.objectContaining({
@@ -74,4 +79,15 @@ it('registers with Google, contract consent and password without OTP fields',asy
  expect(payload).not.toHaveProperty('registrationSessionId');
  expect(payload).not.toHaveProperty('otpCode');
  expect(authenticated).toHaveBeenCalledOnce();
+});
+
+it('shows an actionable contract failure, disables registration and allows retry',async()=>{
+ auth.registrationContract.mockRejectedValueOnce(new Error('NETWORK_CONTRACT_NOT_CONFIGURED'));
+ await act(async()=>{tree=create(<WebMemberEntry onLineLogin={vi.fn()} onAuthenticated={vi.fn()}/>,{createNodeMock:element=>element.type==='div'?{}:null});});
+ await act(async()=>tree!.root.findAllByType('button').find(n=>n.children.includes('註冊會員'))!.props.onClick());
+ expect(JSON.stringify(tree!.toJSON())).toContain('會員契約尚未開放');
+ expect(JSON.stringify(tree!.toJSON())).not.toContain('NETWORK_CONTRACT_NOT_CONFIGURED');
+ expect(tree!.root.findAllByType('button').find(n=>n.children.includes('完成登錄並進入會員首頁'))!.props.disabled).toBe(true);
+ await act(async()=>tree!.root.findAllByType('button').find(n=>n.children.includes('重新載入會員契約'))!.props.onClick());
+ expect(JSON.stringify(tree!.toJSON())).toContain('TEST CONTRACT');
 });

@@ -1,0 +1,74 @@
+{
+  "memberSourceCommit": "3af1230ff548bbba2392287bfa69571d68b378e1",
+  "memberRevision": "ucell-stage-member--tip-products-20261003",
+  "member": {
+    "health": "Healthy",
+    "image": "ucellstageacr5mafbbsq33mgu.azurecr.io/ucell-member@sha256:2eafb9eb5c75cc3f4bec3622b2d97077064739731bfac5d7b1a35f973cf2bbf0",
+    "running": "Running"
+  },
+  "apiUnchanged": {
+    "status": "ok",
+    "service": "ucell-api",
+    "database": "ok",
+    "release": "659dbaf72aa5dd7cfa005a9d1aa30c917485e5d3",
+    "timestamp": "2026-10-03T02:11:54.266Z"
+  },
+  "catalogSeedExecution": "ucell-stage-migrate-q1rlnoo",
+  "catalogSeedStatus": "Succeeded",
+  "mainProductCount": 5,
+  "stageTestPrice": "4800.00",
+  "priceAuthorization": "Explicit user response: uniform NT$4800 Stage test price",
+  "formalPriceConfirmed": false,
+  "memberAsset": "/assets/index-BcwdQ3As.js",
+  "memberAssetSha256": "b854cd1f4667f8d9ac8e1a57a2e61c3ae9765b41ff0f586189ad923537ed8dc3",
+  "localAssetSha256": "b854cd1f4667f8d9ac8e1a57a2e61c3ae9765b41ff0f586189ad923537ed8dc3",
+  "images": [
+    {
+      "sku": "TIP-363",
+      "url": "/products/tip-363.png",
+      "contentType": "image/png",
+      "sha256": "c0e1f2199d5977ee2616cd933409ab4a552e49ee75025c946a39f67a82be6625",
+      "matches": true
+    },
+    {
+      "sku": "TIP-580",
+      "url": "/products/tip-580.png",
+      "contentType": "image/png",
+      "sha256": "36e6fd09b1bc973927276516e80b096b77f8436540b1df64e99dd44418987f16",
+      "matches": true
+    },
+    {
+      "sku": "TIP-696",
+      "url": "/products/tip-696.png",
+      "contentType": "image/png",
+      "sha256": "e2aa28a3755ae635efda96359706a3eaa655c0a9293d404f3b62f214fc61345f",
+      "matches": true
+    },
+    {
+      "sku": "TIP-777",
+      "url": "/products/tip-777.png",
+      "contentType": "image/png",
+      "sha256": "2e3571f6a75b7b0332d14ac61c3dc49913de90145a04e0bdb3a947c0cbc204b2",
+      "matches": true
+    },
+    {
+      "sku": "TIP-999",
+      "url": "/products/tip-999.png",
+      "contentType": "image/png",
+      "sha256": "2d927a8e09d85875db56dc714f297977a8e03ccf33b823846acb4bd841f73566",
+      "matches": true
+    }
+  ],
+  "memberTests": {
+    "suites": 46,
+    "tests": 244
+  },
+  "memberCI": {
+    "run": 37088782410,
+    "conclusion": "success"
+  },
+  "browserEvidence": "Isolated real Mall component with configured products; authenticated Stage journey not claimed",
+  "stageOnly": true,
+  "catalogExpiresAt": "2026-10-10T00:00:00Z",
+  "verifiedAtUtc": "2026-10-03T02:11:54.3281652Z"
+}

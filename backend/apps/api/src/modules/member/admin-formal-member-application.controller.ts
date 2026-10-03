@@ -29,7 +29,7 @@ class AdminPaperFormalApplicationDto implements AdminPaperFormalInput {
  @ApiPropertyOptional({enum:['NATIONAL_ID','RESIDENCE_PERMIT','PASSPORT','OTHER']}) @ValidateIf(o=>o.applicantType==='LEGAL_ENTITY') @IsIn(['NATIONAL_ID','RESIDENCE_PERMIT','PASSPORT','OTHER']) representativeIdentityDocumentType?:'NATIONAL_ID'|'RESIDENCE_PERMIT'|'PASSPORT'|'OTHER';
  @ApiPropertyOptional({maxLength:64}) @ValidateIf(o=>o.applicantType==='LEGAL_ENTITY') @IsString() @Matches(/\S/) @MaxLength(64) representativeIdentityDocumentNumber?:string;
 
- @ApiProperty({default:false}) @IsBoolean() hasSpouse:boolean=false;
+ @ApiProperty({description:'是否有配偶，請明確傳入 true 或 false'}) @IsBoolean() hasSpouse:boolean=false;
  @ApiPropertyOptional({maxLength:120}) @ValidateIf(o=>o.hasSpouse===true) @IsString() @Matches(/\S/) @MaxLength(120) spouseName?:string;
  @ApiPropertyOptional({example:'TW'}) @ValidateIf(o=>o.hasSpouse===true) @Matches(/^[A-Z]{2}$/) spouseNationalityCode?:string;
  @ApiPropertyOptional({enum:['NATIONAL_ID','RESIDENCE_PERMIT','PASSPORT','OTHER']}) @ValidateIf(o=>o.hasSpouse===true) @IsIn(['NATIONAL_ID','RESIDENCE_PERMIT','PASSPORT','OTHER']) spouseIdentityDocumentType?:'NATIONAL_ID'|'RESIDENCE_PERMIT'|'PASSPORT'|'OTHER';

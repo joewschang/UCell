@@ -1,0 +1,25 @@
+{
+  "status": "FAIL",
+  "commit": "9d7402a7a423b7e6a5c5312b6178d314edc58296",
+  "executionContext": "github-actions",
+  "gates": {
+    "generated": "PASS",
+    "secretScan": "PASS",
+    "validation": "PASS"
+  },
+  "baselineSha256": "b619d56a1406393eda95f949383b460913bb324aa146a988f387437ab22e56f2",
+  "generated": {
+    "version": "1.1.0",
+    "pathCount": 313,
+    "operationCount": 335,
+    "schemaCount": 209,
+    "artifactSha256": "9a8bc27e22549d54bce6679976dd0a753fbd80360086fda66225e2a185d3064d",
+    "canonicalSha256": "d45bf6e6d9a39c80558f223fe49964a0f95123f2631d7176c9a9b0360ea30fe1"
+  },
+  "comparison": {
+    "normalization": "case-insensitive identical header deduplication; inferred missing URI placeholder declarations",
+    "baselineSha256": "2621a3a08500a18c38e918281624425437e3762abae39f75d1a6793ccdd8bcaf",
+    "candidateSha256": "17b291848aaf2ee440eaa2197897d35a431d734667320cb558655e7a32c7a0ad"
+  },
+  "errorCode": "UNAPPROVED_BREAKING_CHANGE"
+}

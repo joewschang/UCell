@@ -1,7 +1,14 @@
 import {describe,expect,it} from 'vitest';
-import {nav,navGroups} from './nav';
+import {nav,navGroups,activeNavPath} from './nav';
 
 describe('admin navigation terminology',()=>{
+  it('selects the geographic child without also activating organization placement',()=>{
+    expect(activeNavPath('/organization/geo')).toBe('/organization/geo');
+    expect(activeNavPath('/organization')).toBe('/organization');
+    expect(activeNavPath('/people/member-id')).toBe('/people');
+    expect(activeNavPath('/admin/organization/trees/tree-id')).toBe('/admin/organization/trees');
+    expect(activeNavPath('/organization-other')).toBeUndefined();
+  });
   it('places every existing route in exactly one of the eight approved groups',()=>{
     expect(navGroups.map(group=>group.label)).toEqual(['Dashboard','會員管理','組織管理','商務','獎金中心','財務／治理','營運分析','系統治理']);
     const paths=navGroups.flatMap(group=>group.paths);

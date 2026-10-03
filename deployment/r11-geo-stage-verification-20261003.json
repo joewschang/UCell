@@ -1,0 +1,87 @@
+{
+  "verifiedAtUtc": "2026-10-02T19:05:17.9755154Z",
+  "apiHealthStatus": 200,
+  "anonymousGeoSummaryStatus": 401,
+  "anonymousGeoExportStatus": 401,
+  "unauthenticatedMemberStatus": 401,
+  "revisions": [
+    {
+      "name": "ucell-stage-api",
+      "revision": "ucell-stage-api--r11-geo-20261003",
+      "image": "ucellstageacr5mafbbsq33mgu.azurecr.io/ucell-api@sha256:f48dc7c9275f746a1569ae12b34aeff00af5018968ee9d1e89f1c6ec14a4d3c0",
+      "health": "Healthy",
+      "running": "Running"
+    },
+    {
+      "name": "ucell-stage-worker",
+      "revision": "ucell-stage-worker--r11-geo-20261003",
+      "image": "ucellstageacr5mafbbsq33mgu.azurecr.io/ucell-api@sha256:f48dc7c9275f746a1569ae12b34aeff00af5018968ee9d1e89f1c6ec14a4d3c0",
+      "health": "Healthy",
+      "running": "Running"
+    },
+    {
+      "name": "ucell-stage-admin",
+      "revision": "ucell-stage-admin--r11-geo-20261003",
+      "image": "ucellstageacr5mafbbsq33mgu.azurecr.io/ucell-admin@sha256:046097fd71e4d2abe783012a4d7f4dc28086d764fadb21bd40b0b754a1737a63",
+      "health": "Healthy",
+      "running": "Running"
+    },
+    {
+      "name": "ucell-stage-member",
+      "revision": "ucell-stage-member--r10b-integrated-20261003",
+      "image": "ucellstageacr5mafbbsq33mgu.azurecr.io/ucell-member@sha256:0976b4d3316021d1ac4088eadcbb6e9a365673886a4184b086783bf4720d65bf",
+      "health": "Healthy",
+      "running": "Running"
+    }
+  ],
+  "assets": [
+    {
+      "frontend": "admin",
+      "asset": "/assets/index-MU-a0a0H.js",
+      "sha256": "c7de511467c3bc53c3024b4dd3134194474f2595040a583a82063aab4be519fa",
+      "match": true
+    },
+    {
+      "frontend": "admin",
+      "asset": "/assets/index-Crq0dBpw.css",
+      "sha256": "ec62371f8b49557c5685aa46ee81dd9049a34230d42114d2066905773e1fc80c",
+      "match": true
+    },
+    {
+      "frontend": "admin",
+      "asset": "/ucell-logo-transparent.png",
+      "sha256": "e3d6bb9456117bafb3860cd99a5dfab29bb30b0c1a0dca4b7433a5550a1de75c",
+      "match": true
+    },
+    {
+      "frontend": "member",
+      "asset": "/assets/index-B-_Oqp50.js",
+      "sha256": "dbb4eec5772c375ef3e2d069e4306597d0855ffeca9fa466ea960b1a108c1692",
+      "match": true
+    },
+    {
+      "frontend": "member",
+      "asset": "/assets/index-DxR5XhEb.css",
+      "sha256": "66c5ce98d8193b3d364f6e89ef095a037d589bd014a8edd7df5f6b4d98461e18",
+      "match": true
+    },
+    {
+      "frontend": "member",
+      "asset": "/ucell-logo-transparent.png",
+      "sha256": "e3d6bb9456117bafb3860cd99a5dfab29bb30b0c1a0dca4b7433a5550a1de75c",
+      "match": true
+    }
+  ],
+  "authenticatedGeoUat": "PENDING: Entra configuration and desktop/mobile evidence",
+  "externalProviderSetup": "PENDING: native browser safety URL verification blocks interaction",
+  "browserPreview": {
+    "url": "https://admin-stage.ucell.life/organization/geo",
+    "checked": [
+      "Stage DEV Super Admin login preserved",
+      "Geo navigation and historical controls visible",
+      "Demo Geo query disabled with formal Microsoft login explanation"
+    ],
+    "screenshotSha256": "152104a295ce8b3030bf21f2a9d785e71a0722a5d397f46d50a8ace42e82d627",
+    "authenticatedAggregateUat": "NOT_EXECUTED"
+  }
+}

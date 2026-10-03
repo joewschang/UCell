@@ -1,18 +1,18 @@
 import {useRef,useState} from 'react';
 import {ErrorState,LoadingState} from '@ucell/design-system';
-import {consentFormalContract,getFormalRequiredContracts,saveFormalDraft,uploadFormalDocument,type FormalDocumentType} from './memberData';
+import {consentFormalContract,getFormalRequiredContracts,saveFormalDraft,uploadFormalDocument,submitFormalEnrollment,type FormalDocumentType} from './memberData';
 import {useResource} from './useResource';
 import {countryOptions} from './countryOptions';
 
-export default function FormalUpgrade(){
+export default function FormalUpgrade({onSubmitted}:{onSubmitted?:()=>void}={}){
  const contracts=useResource('formal-contracts',getFormalRequiredContracts);
- const [accepted,setAccepted]=useState(false),[busy,setBusy]=useState(false),[error,setError]=useState('');
+ const [accepted,setAccepted]=useState(false),[busy,setBusy]=useState(false),[error,setError]=useState(''),[submitted,setSubmitted]=useState(false);
  const [saved,setSaved]=useState<{id:string;version:number;identityDocumentNumberMasked:string|null;spouseIdentityDocumentNumberMasked:string|null;bankAccountMasked:string;applicantType:string}|null>(null);
  const [files,setFiles]=useState<Partial<Record<FormalDocumentType,File>>>({}),[uploaded,setUploaded]=useState<Partial<Record<FormalDocumentType,string>>>({});
  const key=useRef(crypto.randomUUID());
  const [form,setForm]=useState({
   applicantType:'INDIVIDUAL' as const,
-  legalName:'',gender:'',birthDate:'',nationalityCode:'TW',identityDocumentType:'NATIONAL_ID' as 'NATIONAL_ID'|'RESIDENCE_PERMIT'|'PASSPORT'|'OTHER',identityDocumentNumber:'',
+  legalName:'',gender:'UNDISCLOSED',birthDate:'',nationalityCode:'TW',identityDocumentType:'NATIONAL_ID' as 'NATIONAL_ID'|'RESIDENCE_PERMIT'|'PASSPORT'|'OTHER',identityDocumentNumber:'',
   hasSpouse:false,spouseName:'',spouseNationalityCode:'TW',spouseIdentityDocumentType:'NATIONAL_ID' as 'NATIONAL_ID'|'RESIDENCE_PERMIT'|'PASSPORT'|'OTHER',spouseIdentityDocumentNumber:'',
   communicationAddress:'',phone:'',email:'',bankCode:'',bankAccount:'',accountHolder:''
  });
@@ -24,7 +24,7 @@ export default function FormalUpgrade(){
  const set=(name:keyof typeof form,value:string|boolean)=>setForm(current=>({...current,[name]:value}));
  const setFile=(type:FormalDocumentType,file?:File)=>{setFiles(current=>({...current,[type]:file}));setUploaded(current=>{const next={...current};delete next[type];return next;});};
  async function submit(event:React.FormEvent){
-  event.preventDefault();if(!accepted||busy)return;setBusy(true);setError('');
+  event.preventDefault();if(!(accepted||contract.acceptedAt)||busy)return;setBusy(true);setError('');
   try{
    if(!contract.acceptedAt)await consentFormalContract(contract.id,key.current);
    const common={
@@ -55,7 +55,7 @@ export default function FormalUpgrade(){
 
  <section className="card"><strong>線上申請限自然人</strong><p>法人正式會員目前採紙本申請，由公司後台建立並審查公司登記、代表人、銀行與其他法人文件。</p></section>
  <label>姓名<input required maxLength={120} autoComplete="name" value={form.legalName} onChange={e=>set('legalName',e.target.value)}/></label>
- <label>性別<input required maxLength={32} value={form.gender} onChange={e=>set('gender',e.target.value)}/></label>
+ <label>性別<select required value={form.gender} onChange={e=>set('gender',e.target.value)}><option value="FEMALE">女性</option><option value="MALE">男性</option><option value="OTHER">其他</option><option value="UNDISCLOSED">不揭露</option></select></label>
  <label>出生年月日<input required type="date" value={form.birthDate} onChange={e=>set('birthDate',e.target.value)}/></label>
  <label>國籍<select value={form.nationalityCode} onChange={e=>set('nationalityCode',e.target.value)}>{countryOptions.map(option=><option key={option.code} value={option.code}>{option.label}</option>)}</select></label>
  <label>身分證明文件類型<select value={form.identityDocumentType} onChange={e=>set('identityDocumentType',e.target.value)}><option value="NATIONAL_ID">身分證號</option><option value="RESIDENCE_PERMIT">居留證號</option><option value="PASSPORT">護照號碼</option><option value="OTHER">其他</option></select></label>
@@ -82,5 +82,6 @@ export default function FormalUpgrade(){
  <label>帳戶名<input required maxLength={120} value={form.accountHolder} onChange={e=>set('accountHolder',e.target.value)}/></label>
  <button className="primary" disabled={busy||!(accepted||!!contract.acceptedAt)}>{busy?'儲存／上傳中…':'儲存草稿與上傳文件'}</button>
  {saved&&<p role="status">已保存第 {saved.version} 版自然人草稿；身分證明號碼 {saved.identityDocumentNumberMasked??'未提供'}{saved.spouseIdentityDocumentNumberMasked?'，配偶身分證明號碼 '+saved.spouseIdentityDocumentNumberMasked:''}，帳號 {saved.bankAccountMasked}。</p>}
+ {saved&&<button type="button" disabled={busy||submitted} onClick={async()=>{setBusy(true);setError('');try{await submitFormalEnrollment(saved.id,key.current);setSubmitted(true);onSubmitted?.();}catch(e){setError(e instanceof Error?e.message:'送出失敗');}finally{setBusy(false);}}}>{submitted?'申請已送出，等待審核':'送出正式會員申請'}</button>}
  {error&&<p role="alert">{error}</p>}</form>;
 }

@@ -25,8 +25,20 @@ export class MemberWebAuthService{
  }
  private eligible(person:{status:string;securityStatus?:string}){if(person.status!=='EFFECTIVE')throw new UnauthorizedException({code:'MEMBER_PERSON_DISABLED'});if(person.securityStatus&&person.securityStatus!=='NORMAL')throw new UnauthorizedException({code:'MEMBER_SECURITY_LOCKED'});}
 
- async passwordLogin(memberNo:string,password:string){
-  const person=await this.db.person.findUnique({where:{memberNo},include:{memberPasswordCredential:true}});
+ async passwordLogin(identifier:string,password:string){
+  const value=identifier.trim(),compact=value.replace(/[\s()-]/g,'');
+  let person;
+  if(value.includes('@')){
+   const matches=await this.db.person.findMany({where:{email:{equals:value,mode:'insensitive'}},include:{memberPasswordCredential:true},take:2});
+   person=matches.length===1?matches[0]:undefined;
+  }else if(/^09\d{8}$/.test(compact)||/^\+[1-9]\d{7,14}$/.test(compact)){
+   const mobile=/^09\d{8}$/.test(compact)?'+886'+compact.slice(1):compact;
+   const local=/^\+8869\d{8}$/.test(mobile)?'0'+mobile.slice(4):mobile;
+   const matches=await this.db.person.findMany({where:{OR:[{mobile:{in:[mobile,local]}},{memberNo:value}]},include:{memberPasswordCredential:true},take:2});
+   person=matches.length===1?matches[0]:undefined;
+  }else if(/^\d{10}$/.test(value)){
+   person=await this.db.person.findUnique({where:{memberNo:value},include:{memberPasswordCredential:true}});
+  }
   if(!person||!person.memberPasswordCredential){
     // Equalize the dominant password-derivation cost for unknown/unconfigured accounts.
     derive(password,'ucell-member-login-dummy',32,16384,8,1);

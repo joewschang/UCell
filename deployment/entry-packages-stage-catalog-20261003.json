@@ -1,0 +1,112 @@
+{
+  "status": "STAGE_ENTRY_PACKAGES_PUBLISHED",
+  "packages": [
+    {
+      "code": "STARTER",
+      "name": "啟航會員資格套組",
+      "quantity": 3,
+      "price": "14400",
+      "status": "ACTIVE",
+      "versionId": "cfa9e851-4595-4027-acc3-81781ed29530",
+      "products": [
+        {
+          "sku": "TIP-363",
+          "available": true,
+          "maxQty": 3
+        },
+        {
+          "sku": "TIP-580",
+          "available": true,
+          "maxQty": 3
+        },
+        {
+          "sku": "TIP-696",
+          "available": true,
+          "maxQty": 3
+        },
+        {
+          "sku": "TIP-777",
+          "available": true,
+          "maxQty": 3
+        },
+        {
+          "sku": "TIP-999",
+          "available": true,
+          "maxQty": 3
+        }
+      ]
+    },
+    {
+      "code": "ELITE",
+      "name": "菁英會員資格套組",
+      "quantity": 9,
+      "price": "43200",
+      "status": "ACTIVE",
+      "versionId": "1bf58bac-b54c-4074-b1e9-6eaeb6dc0cbe",
+      "products": [
+        {
+          "sku": "TIP-363",
+          "available": true,
+          "maxQty": 9
+        },
+        {
+          "sku": "TIP-580",
+          "available": true,
+          "maxQty": 9
+        },
+        {
+          "sku": "TIP-696",
+          "available": true,
+          "maxQty": 9
+        },
+        {
+          "sku": "TIP-777",
+          "available": true,
+          "maxQty": 9
+        },
+        {
+          "sku": "TIP-999",
+          "available": true,
+          "maxQty": 9
+        }
+      ]
+    },
+    {
+      "code": "LEADER",
+      "name": "領袖會員資格套組",
+      "quantity": 15,
+      "price": "72000",
+      "status": "ACTIVE",
+      "versionId": "f7a0e8d6-d6dd-468f-8dce-850d62966819",
+      "products": [
+        {
+          "sku": "TIP-363",
+          "available": true,
+          "maxQty": 15
+        },
+        {
+          "sku": "TIP-580",
+          "available": true,
+          "maxQty": 15
+        },
+        {
+          "sku": "TIP-696",
+          "available": true,
+          "maxQty": 15
+        },
+        {
+          "sku": "TIP-777",
+          "available": true,
+          "maxQty": 15
+        },
+        {
+          "sku": "TIP-999",
+          "available": true,
+          "maxQty": 15
+        }
+      ]
+    }
+  ],
+  "stageOnly": true,
+  "expiresAt": "2026-10-10T00:00:00Z"
+}

@@ -21,6 +21,7 @@ async function mount(path:string){await act(async()=>{tree=create(<ThemeProvider
 describe('conditional member journeys',()=>{
  it('offers the first-Qualification package route without issuing Qualification-scoped reads',async()=>{
   const fetch=vi.fn(async(input:string)=>{
+   if(input.includes('represented-legal-entities'))return response([]);
    if(input.includes('/member/qualifications'))return response([]);
    if(input.includes('/member/delivery-profile'))return response(incompleteDelivery);
    if(input.includes('/member/packages?class=QUALIFICATION'))return response([offer]);
@@ -29,19 +30,20 @@ describe('conditional member journeys',()=>{
   vi.stubGlobal('fetch',fetch);
   await mount('/shop');
   const rendered=JSON.stringify(tree!.toJSON());
-  expect(rendered).toContain('取得第一個會員資格');
+  expect(rendered).toContain('會員資格套組');
   expect(rendered).toContain('正式會員啟用套組');
   expect(rendered).toContain('套組價格：');
   expect(rendered).toContain('TWD');
   expect(rendered).toContain('4800');
-  const gated=tree!.root.findAllByType('button').find(node=>node.children.join('')==='請先完成配送資料');
-  expect(gated?.props.disabled).toBe(true);
+  const gated=tree!.root.findAllByType('button').find(node=>node.children.join('')==='選擇套組商品');
+  expect(gated?.props.disabled).toBe(false);
   expect(fetch.mock.calls.every(([url])=>!url.includes('qualificationId'))).toBe(true);
   expect(fetch.mock.calls.every(([,init])=>(init?.method??'GET')==='GET')).toBe(true);
  });
 
  it('shows network registration for an authenticated Person without a Qualification and does not infer one',async()=>{
   const fetch=vi.fn(async(input:string)=>{
+   if(input.includes('represented-legal-entities'))return response([]);
    if(input.includes('/member/qualifications'))return response([]);
    if(input.includes('/member/contracts/required'))return response([contract]);
    if(input.includes('/member/me'))return response(person);
@@ -62,7 +64,8 @@ describe('conditional member journeys',()=>{
 it.each([false,true])('routes person retail history without qualification (%s)',async(hasQualification)=>{
  const q={id:'51000000-0000-4000-8000-000000000101',code:'A000014',rank:'LEADER',active:false,ballLabel:'球1'};
  const fetch=vi.fn(async(input:string)=>{
-  if(input.includes('/member/qualifications'))return response(hasQualification?[q]:[]);
+  if(input.includes('represented-legal-entities'))return response([]);
+   if(input.includes('/member/qualifications'))return response(hasQualification?[q]:[]);
   if(input.includes('/member/me'))return response(person);
   if(input.includes('/member/retail-orders'))return response([{orderNo:'202610010001',status:'CONFIRMED',total:'10000000000000.0001',createdAt:'2026-10-01T00:00:00Z',confirmedAt:null,itemCount:1,itemNames:['本人零售商品']}]);
   if(input.includes('/member/orders?'))return response({qualificationId:q.id,orders:[]});
@@ -74,7 +77,8 @@ it.each([false,true])('routes person retail history without qualification (%s)',
 });
 it('retail history retries failure and renders an empty state',async()=>{
  let failed=true;vi.stubGlobal('fetch',vi.fn(async(input:string)=>{
-  if(input.includes('/member/qualifications'))return response([]);
+  if(input.includes('represented-legal-entities'))return response([]);
+   if(input.includes('/member/qualifications'))return response([]);
   if(input.includes('/member/me'))return response(person);
   if(input.includes('/member/retail-orders'))return failed?new Response(JSON.stringify({error:{message:'unavailable'}}),{status:503}):response([]);
   throw Error('unexpected request '+input);

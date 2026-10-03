@@ -1,0 +1,147 @@
+{
+  "memberSourceCommit": "f70c3cf66b32db2e52db27d282311988e8ca6379",
+  "memberRevision": "ucell-stage-member--entry-packages-20261003",
+  "member": {
+    "health": "Healthy",
+    "image": "ucellstageacr5mafbbsq33mgu.azurecr.io/ucell-member@sha256:10063ad4bc0863c2bc90bf38c7ea85e845e9c8773a1685242b3f999157db5d5b",
+    "running": "Running"
+  },
+  "memberAsset": "/assets/index-DNSWILIT.js",
+  "memberAssetSha256": "0a8e391622d8494ab84183a130d8d3eb650ef8846411bbad443e8046349a0974",
+  "assetMatches": true,
+  "apiUnchanged": {
+    "status": "ok",
+    "service": "ucell-api",
+    "database": "ok",
+    "release": "659dbaf72aa5dd7cfa005a9d1aa30c917485e5d3",
+    "timestamp": "2026-10-03T02:27:48.216Z"
+  },
+  "catalogSeedExecution": "ucell-stage-migrate-2g76qwm",
+  "catalogSeedStatus": "Succeeded",
+  "packages": [
+    {
+      "code": "STARTER",
+      "name": "啟航會員資格套組",
+      "quantity": 3,
+      "price": "14400",
+      "status": "ACTIVE",
+      "versionId": "cfa9e851-4595-4027-acc3-81781ed29530",
+      "products": [
+        {
+          "sku": "TIP-363",
+          "available": true,
+          "maxQty": 3
+        },
+        {
+          "sku": "TIP-580",
+          "available": true,
+          "maxQty": 3
+        },
+        {
+          "sku": "TIP-696",
+          "available": true,
+          "maxQty": 3
+        },
+        {
+          "sku": "TIP-777",
+          "available": true,
+          "maxQty": 3
+        },
+        {
+          "sku": "TIP-999",
+          "available": true,
+          "maxQty": 3
+        }
+      ]
+    },
+    {
+      "code": "ELITE",
+      "name": "菁英會員資格套組",
+      "quantity": 9,
+      "price": "43200",
+      "status": "ACTIVE",
+      "versionId": "1bf58bac-b54c-4074-b1e9-6eaeb6dc0cbe",
+      "products": [
+        {
+          "sku": "TIP-363",
+          "available": true,
+          "maxQty": 9
+        },
+        {
+          "sku": "TIP-580",
+          "available": true,
+          "maxQty": 9
+        },
+        {
+          "sku": "TIP-696",
+          "available": true,
+          "maxQty": 9
+        },
+        {
+          "sku": "TIP-777",
+          "available": true,
+          "maxQty": 9
+        },
+        {
+          "sku": "TIP-999",
+          "available": true,
+          "maxQty": 9
+        }
+      ]
+    },
+    {
+      "code": "LEADER",
+      "name": "領袖會員資格套組",
+      "quantity": 15,
+      "price": "72000",
+      "status": "ACTIVE",
+      "versionId": "f7a0e8d6-d6dd-468f-8dce-850d62966819",
+      "products": [
+        {
+          "sku": "TIP-363",
+          "available": true,
+          "maxQty": 15
+        },
+        {
+          "sku": "TIP-580",
+          "available": true,
+          "maxQty": 15
+        },
+        {
+          "sku": "TIP-696",
+          "available": true,
+          "maxQty": 15
+        },
+        {
+          "sku": "TIP-777",
+          "available": true,
+          "maxQty": 15
+        },
+        {
+          "sku": "TIP-999",
+          "available": true,
+          "maxQty": 15
+        }
+      ]
+    }
+  ],
+  "anonymousPackageListStatus": 401,
+  "memberTests": {
+    "tests": 248,
+    "suites": 48
+  },
+  "isolatedDatabaseTests": {
+    "cleanup": "PASS",
+    "tests": 8,
+    "suites": 1,
+    "cases": "3/9/15 exact selections, payment replay, no second fee, submission with pending scans"
+  },
+  "memberCI": {
+    "conclusion": "success",
+    "run": 37089691400
+  },
+  "stagePaymentMode": "ASSUME_PAID",
+  "automaticFormalApproval": false,
+  "browserEvidence": "Isolated real chooser layout with Stage catalog; authenticated Stage purchase not claimed",
+  "verifiedAtUtc": "2026-10-03T02:27:48.5367801Z"
+}

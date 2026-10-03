@@ -10,6 +10,12 @@ async function request(path:string,init:RequestInit={}){
   const envelope=body&&typeof body==='object'&&!Array.isArray(body)?body as Record<string,unknown>:undefined;
   const code=typeof envelope?.code==='string'?envelope.code:
    typeof (envelope?.error as any)?.code==='string'?(envelope?.error as any).code:undefined;
+  if(code==='DOMAIN_RULE_VIOLATION'&&Array.isArray(envelope?.message)){
+   const messages=envelope.message.filter((value):value is string=>typeof value==='string');
+   const fields:Record<string,string>={mobile:'手機號碼請使用 +國碼格式，台灣可輸入 09 開頭的十碼號碼。',password:'密碼長度須為 12 至 256 字元。',email:'請輸入有效的 Email。',birthDate:'請選擇有效的生日。',gender:'請選擇性別。'};
+   const hint=Object.entries(fields).filter(([field])=>messages.some(message=>message.startsWith(field+' '))).map(([,label])=>label).join(' ');
+   throw new Error(hint||'登錄資料格式不正確，請檢查各欄位後重試。');
+  }
   throw new Error(code||'AUTH_REQUEST_FAILED');
  }
  return unwrapMemberEnvelope(body);
@@ -43,7 +49,15 @@ export async function linkGoogleIdentity(idToken:string){
 export type RegistrationContract={contractVersionId:string;title:string;versionCode:string;contentText:string;contentHash:string};
 export async function registrationContract(){return request('/auth/member/register/contract') as Promise<RegistrationContract>;}
 export async function completeRegistration(input:{contractVersionId:string;legalName:string;alias:string;gender:string;birthDate:string;nationalityCode:string;identityDocumentType:string;identityDocumentNumber:string;mobile:string;email:string;password:string;googleIdToken:string}){
- return storeSession(await request('/auth/member/register/complete',{method:'POST',headers:{'Content-Type':'application/json','Idempotency-Key':crypto.randomUUID()},body:JSON.stringify({...input,accepted:true})}));
+ const mobile=normalizeRegistrationMobile(input.mobile,input.nationalityCode);
+ if(!/^\+[1-9][0-9]{7,14}$/.test(mobile))throw new Error('手機號碼請使用 +國碼格式，台灣可輸入 09 開頭的十碼號碼。');
+ if(input.password.length<12||input.password.length>256)throw new Error('密碼長度須為 12 至 256 字元。');
+ return storeSession(await request('/auth/member/register/complete',{method:'POST',headers:{'Content-Type':'application/json','Idempotency-Key':crypto.randomUUID()},body:JSON.stringify({...input,mobile,email:input.email.trim(),accepted:true})}));
+}
+
+export function normalizeRegistrationMobile(value:string,nationalityCode:string){
+ const mobile=value.trim().replace(/[\s()-]/g,'');
+ return nationalityCode==='TW'&&/^09\d{8}$/.test(mobile)?'+886'+mobile.slice(1):mobile;
 }
 
 declare global{interface Window{google?:any}}

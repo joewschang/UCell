@@ -9991,6 +9991,7 @@
                                   "type": "string",
                                   "enum": [
                                     "MEMBER",
+                                    "LEGAL_ENTITY",
                                     "COMPANY"
                                   ],
                                   "nullable": true
@@ -12246,6 +12247,7 @@
                                     "type": "string",
                                     "enum": [
                                       "MEMBER",
+                                      "LEGAL_ENTITY",
                                       "COMPANY"
                                     ],
                                     "nullable": true
@@ -14043,6 +14045,26 @@
             "type": "string",
             "format": "date"
           },
+          "nationalityCode": {
+            "type": "string",
+            "description": "ISO-style nationality/country code",
+            "example": "TW"
+          },
+          "identityDocumentType": {
+            "type": "string",
+            "enum": [
+              "NATIONAL_ID",
+              "RESIDENCE_PERMIT",
+              "PASSPORT",
+              "OTHER"
+            ]
+          },
+          "identityDocumentNumber": {
+            "type": "string",
+            "description": "Identity document number corresponding to the selected type",
+            "minLength": 2,
+            "maxLength": 64
+          },
           "mobile": {
             "type": "string",
             "example": "+886912345678"
@@ -14060,6 +14082,9 @@
           "alias",
           "gender",
           "birthDate",
+          "nationalityCode",
+          "identityDocumentType",
+          "identityDocumentNumber",
           "mobile",
           "email"
         ]
@@ -15655,6 +15680,13 @@
             "type": "string",
             "format": "uuid"
           },
+          "applicantType": {
+            "type": "string",
+            "enum": [
+              "INDIVIDUAL"
+            ],
+            "description": "Applicant type; omitted input defaults to INDIVIDUAL."
+          },
           "legalName": {
             "type": "string",
             "maxLength": 120
@@ -15667,9 +15699,49 @@
             "type": "string",
             "format": "date"
           },
-          "nationalId": {
+          "nationalityCode": {
             "type": "string",
-            "maxLength": 32
+            "example": "TW",
+            "description": "ISO-style nationality code"
+          },
+          "identityDocumentType": {
+            "type": "string",
+            "enum": [
+              "NATIONAL_ID",
+              "RESIDENCE_PERMIT",
+              "PASSPORT",
+              "OTHER"
+            ]
+          },
+          "identityDocumentNumber": {
+            "type": "string",
+            "maxLength": 64,
+            "description": "身分證號、居留證號、護照號碼或其他核准身分證明號碼"
+          },
+          "hasSpouse": {
+            "type": "boolean",
+            "description": "是否有配偶，請明確傳入 true 或 false"
+          },
+          "spouseName": {
+            "type": "string",
+            "maxLength": 120
+          },
+          "spouseNationalityCode": {
+            "type": "string",
+            "example": "TW"
+          },
+          "spouseIdentityDocumentType": {
+            "type": "string",
+            "enum": [
+              "NATIONAL_ID",
+              "RESIDENCE_PERMIT",
+              "PASSPORT",
+              "OTHER"
+            ]
+          },
+          "spouseIdentityDocumentNumber": {
+            "type": "string",
+            "maxLength": 64
           },
           "communicationAddress": {
             "type": "string",
@@ -15702,7 +15774,10 @@
           "legalName",
           "gender",
           "birthDate",
-          "nationalId",
+          "nationalityCode",
+          "identityDocumentType",
+          "identityDocumentNumber",
+          "hasSpouse",
           "communicationAddress",
           "phone",
           "email",
@@ -16022,10 +16097,22 @@
       "CreateQualificationDto": {
         "type": "object",
         "properties": {
+          "holderType": {
+            "type": "string",
+            "enum": [
+              "PERSON",
+              "LEGAL_ENTITY"
+            ]
+          },
           "personId": {
             "type": "string",
             "format": "uuid",
-            "description": "目前持有人 Person ID"
+            "description": "自然人持有人 Person ID"
+          },
+          "legalEntityId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "法人持有人 LegalEntity ID"
           },
           "planLevelCode": {
             "type": "string",
@@ -16060,7 +16147,7 @@
           }
         },
         "required": [
-          "personId",
+          "holderType",
           "planLevelCode",
           "sponsorQualificationId",
           "binaryParentQualificationId",
@@ -16307,7 +16394,18 @@
       "CreateMembershipApplicationDto": {
         "type": "object",
         "properties": {
+          "holderType": {
+            "type": "string",
+            "enum": [
+              "PERSON",
+              "LEGAL_ENTITY"
+            ]
+          },
           "personId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "legalEntityId": {
             "type": "string",
             "format": "uuid"
           },
@@ -16347,7 +16445,7 @@
           }
         },
         "required": [
-          "personId",
+          "holderType",
           "requestedPlanLevelCode"
         ]
       },

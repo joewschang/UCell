@@ -1,0 +1,22 @@
+[
+  {
+    "image": "ucellstageacr5mafbbsq33mgu.azurecr.io/ucell-api@sha256:324222a587b7f870d3b45bb76fe30a8d03c24fcdd6b48dc230a3cb6c708294f4",
+    "name": "ucell-stage-api",
+    "revision": "ucell-stage-api--r10b-integrated-20261003"
+  },
+  {
+    "image": "ucellstageacr5mafbbsq33mgu.azurecr.io/ucell-api@sha256:324222a587b7f870d3b45bb76fe30a8d03c24fcdd6b48dc230a3cb6c708294f4",
+    "name": "ucell-stage-worker",
+    "revision": "ucell-stage-worker--r10b-integrated-20261003"
+  },
+  {
+    "image": "ucellstageacr5mafbbsq33mgu.azurecr.io/ucell-admin@sha256:3cfab35ff427ec696d26ec8ac9136a9246abd05516aede83b03d5050bd6c257f",
+    "name": "ucell-stage-admin",
+    "revision": "ucell-stage-admin--r10b-integrated-20261003"
+  },
+  {
+    "image": "ucellstageacr5mafbbsq33mgu.azurecr.io/ucell-member@sha256:0976b4d3316021d1ac4088eadcbb6e9a365673886a4184b086783bf4720d65bf",
+    "name": "ucell-stage-member",
+    "revision": "ucell-stage-member--r10b-integrated-20261003"
+  }
+]

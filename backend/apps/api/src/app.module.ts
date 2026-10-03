@@ -1,4 +1,5 @@
 import {ReservoirModule} from './modules/reservoir/reservoir.module';
+import {OrganizationGeoModule} from './modules/organization-geo/organization-geo.module';
 import {SettlementJobsModule} from './modules/settlement-jobs/settlement-jobs.module';
 import { BinaryTreeModule } from './modules/binary-tree/binary-tree.module';
 import { ExplainModule } from './modules/explain/explain.module';
@@ -47,6 +48,7 @@ import {FulfillmentOperationsModule} from './modules/commerce/fulfillment-operat
 
 @Module({
   imports: [
+    OrganizationGeoModule,
     SettlementJobsModule,
     FulfillmentOperationsModule,
     ReservoirModule,

@@ -7,7 +7,9 @@ for(const f of walk('src')){
  const s=fs.readFileSync(f,'utf8');
  for(const m of s.matchAll(/from\s+['"](\.[^'"]+)['"]/g)){
   const p=path.resolve(path.dirname(f),m[1]);
-  if(![p+'.ts',p+'.tsx',path.join(p,'index.ts'),path.join(p,'index.tsx')].some(fs.existsSync)) failures.push(`${f}: missing import ${m[1]}`);
+  const candidates=[p+'.ts',p+'.tsx',path.join(p,'index.ts'),path.join(p,'index.tsx')];
+  if(m[1].endsWith('.json')) candidates.push(p);
+  if(!candidates.some(fs.existsSync)) failures.push(`${f}: missing import ${m[1]}`);
  }
 }
 const app=fs.readFileSync('src/app/App.tsx','utf8');

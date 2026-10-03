@@ -13,7 +13,10 @@ export class AdminAuthenticationGuard implements CanActivate{
     const req=ctx.switchToHttp().getRequest(),url=String(req.originalUrl ?? req.url ?? '');
     const isAdminApi=/(?:^|\/api\/v1)\/admin(?:\/|$)/.test(url);
     if(!isAdminApi) return true;
-    const bypass=this.config.get<string>('ADMIN_AUTH_BYPASS')==='true',env=this.config.get<string>('NODE_ENV') ?? 'development'; if(bypass && env!=='production'){req.user=req.user ?? {sessionId:'DEV_BYPASS',personId:undefined,provider:'ADMIN_LOCAL',subject:'dev-bypass',role:'SUPER_ADMIN'};return true;}
+    // Geo is a historical read model with verified Entra capabilities; Stage demo
+    // bypass must not replace a supplied real session or impersonate its principal.
+    const isGeoApi=/(?:^|\/api\/v1)\/admin\/organization\/geo(?:\/|\?|$)/.test(url);
+    const bypass=this.config.get<string>('ADMIN_AUTH_BYPASS')==='true',env=this.config.get<string>('NODE_ENV') ?? 'development'; if(bypass && env!=='production' && !isGeoApi){req.user=req.user ?? {sessionId:'DEV_BYPASS',personId:undefined,provider:'ADMIN_LOCAL',subject:'dev-bypass',role:'SUPER_ADMIN'};return true;}
     const auth=String(req.headers?.authorization??'');if(!auth.startsWith('Bearer ')){await this.denied(req,'ADMIN_BEARER_REQUIRED');throw new UnauthorizedException({code:'ADMIN_BEARER_REQUIRED'});}
     try{req.user=await this.tokens.authenticate(auth.slice(7));}catch(error){await this.denied(req,'ADMIN_SESSION_INVALID');throw error;}
     if(!req.user?.role){await this.denied(req,'ADMIN_ROLE_REQUIRED');throw new UnauthorizedException({code:'ADMIN_ROLE_REQUIRED'});}return true;

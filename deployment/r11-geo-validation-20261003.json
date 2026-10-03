@@ -1,0 +1,58 @@
+{
+  "recordedAtUtc": "2026-10-02T19:02:52.3065817Z",
+  "apiSourceCommit": "94d0f918514061016e8d40381da8db22ba97b6d8",
+  "adminSourceCommit": "a3270fd32f17cb6cbfff0ec1ac80c606311f0f28",
+  "checks": [
+    {
+      "name": "api-full",
+      "suites": 205,
+      "tests": 1432,
+      "logSha256": "8c90f39d1c48ffecfbb3b2353257b4191420c8a1d139f117aed490a4562afaf6",
+      "status": "PASS"
+    },
+    {
+      "name": "geo-stage-auth-http",
+      "suites": 2,
+      "tests": 7,
+      "logSha256": "a7eec31cba23e48388f76a96bf202d4348f7ee73adae8512fe061bd02a903a27",
+      "status": "PASS"
+    },
+    {
+      "name": "admin",
+      "suites": 65,
+      "tests": 237,
+      "logSha256": "760ff7e19dcc63b413a45a80c2d3eadec37e3252577a09e2925e23b6a9391fd8",
+      "status": "PASS"
+    },
+    {
+      "name": "member",
+      "suites": 41,
+      "tests": 233,
+      "logSha256": "6e3f1d0054d656b7a4ac6f396c413262a4e1aa3d9be64e05fd52ee62bb5f95f9",
+      "status": "PASS"
+    },
+    {
+      "name": "shared",
+      "suites": 5,
+      "tests": 181,
+      "logSha256": "5d23550dde14cbfdde9f61eee67c32c17299cd34fa3b6745733736b13ab70331",
+      "status": "PASS"
+    }
+  ],
+  "openapiPreflight": "PASS",
+  "openapiBaseline": "UNCHANGED_PENDING_CODE_OWNER",
+  "r11Acceptance": "INCOMPLETE",
+  "pending": [
+    "Geo historical GPV return/replay and ownership golden matrix",
+    "Large-tree projection beyond bounded 500 descendants",
+    "Authenticated Entra desktop/mobile UAT and live aggregate validation",
+    "Google OAuth, password-reset mail transport, private KYC storage and trusted scan integration"
+  ],
+  "browserBlocker": "Native Chrome safety check cannot verify current URL; Stage IAB UI is accessible",
+  "sourceReconciliation": {
+    "status": "PASS",
+    "tests": 13,
+    "scope": "Sealed GPV source-reader and Geo aggregation reconciliation; mocked stored source rows; real DB return/ownership matrix remains pending",
+    "logSha256": "22de8aa117d2dee623925d09fff1ab319b59203c05c799e7e8b9ee10cefac057"
+  }
+}

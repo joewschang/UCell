@@ -179,4 +179,7 @@ export async function restartLineLogin(){
 }
 
 let boot: ReturnType<typeof initLiff> | undefined;
-export function bootstrapLiff() { return boot ??= initLiff().catch(error => { boot = undefined; throw error; }); }
+export function bootstrapLiff(refresh=false) {
+ if(refresh)boot=undefined;
+ return boot ??= initLiff().catch(error => { boot = undefined; throw error; });
+}

@@ -252,7 +252,7 @@ export class FormalMemberApplicationService {
    const gate=await this.evidenceGate(applicationId,tx);
    if(!gate.ready)throw new UnprocessableEntityException({code:'FORMAL_REVIEW_GATE_BLOCKED',details:{codes:gate.codes}});
    const now=new Date(),app=await tx.formalMemberApplication.findUnique({where:{formalMemberApplicationId:applicationId}});
-   if(!app||!['DRAFT','NEEDS_MORE_INFO'].includes(app.status))throw new ConflictException({code:'FORMAL_APPLICATION_NOT_REVIEWABLE'});
+   if(!app||!['DRAFT','SUBMITTED','NEEDS_MORE_INFO'].includes(app.status))throw new ConflictException({code:'FORMAL_APPLICATION_NOT_REVIEWABLE'});
    const conflicts=await new FormalMembershipConflictService(tx as PrismaService).evaluate(applicationId,now);
    if(conflicts.status!=='CLEAR')throw new UnprocessableEntityException({code:'FORMAL_REVIEW_GATE_BLOCKED',details:{codes:conflicts.codes}});
    const updated=await tx.formalMemberApplication.update({where:{formalMemberApplicationId:applicationId},data:{status:'UNDER_REVIEW'}});

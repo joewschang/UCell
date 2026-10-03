@@ -1,0 +1,24 @@
+{
+  "adminTests": 238,
+  "image": "ucellstageacr5mafbbsq33mgu.azurecr.io/ucell-admin@sha256:a713a4e248286fb250ebcb2b43ea21b833bfbb25ae059f1c263352683c3c579d",
+  "assets": [
+    {
+      "sha256": "af0c2ee76ebc12663b793d307e6708e5c754254afa9faa2ce22afec17f3ade7c",
+      "path": "/assets/index-BGg22-2p.js"
+    },
+    {
+      "sha256": "ec62371f8b49557c5685aa46ee81dd9049a34230d42114d2066905773e1fc80c",
+      "path": "/assets/index-Crq0dBpw.css"
+    },
+    {
+      "sha256": "e3d6bb9456117bafb3860cd99a5dfab29bb30b0c1a0dca4b7433a5550a1de75c",
+      "path": "/ucell-logo-transparent.png"
+    }
+  ],
+  "revision": "ucell-stage-admin--geo-menu-20261003",
+  "chromeActiveLinks": [
+    "/organization/geo"
+  ],
+  "formalEntraUat": "PENDING",
+  "verifiedAtUtc": "2026-10-02T19:39:21.8828534Z"
+}

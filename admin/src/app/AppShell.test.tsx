@@ -11,6 +11,16 @@ vi.mock('@tanstack/react-query', () => ({useQueryClient:() => ({clear:vi.fn()})}
 afterEach(() => vi.unstubAllGlobals());
 
 describe('grouped navigation access', () => {
+  it('highlights Geo alone while leaving the Organization group expanded',()=>{
+    auth.role='SUPER_ADMIN';vi.stubGlobal('sessionStorage',{getItem:()=>null});
+    let renderer!:ReactTestRenderer;
+    act(()=>{renderer=create(<ThemeProvider><MemoryRouter initialEntries={['/organization/geo']}><AppShell/></MemoryRouter></ThemeProvider>)});
+    try{
+      const navigation=renderer.root.findByProps({'aria-label':'後台主要功能'});
+      expect(navigation.findAllByType('a').filter(node=>node.props['aria-current']==='page').map(node=>node.props.href)).toEqual(['/organization/geo']);
+      expect(navigation.findAllByType('details').find(node=>node.findByType('summary').children.join('')==='組織管理')!.props.open).toBe(true);
+    }finally{act(()=>renderer.unmount())}
+  });
   it.each([
     ['CUSTOMER_SERVICE', ['Dashboard','會員管理'], ['/','/line-links']],
     ['PACKAGE_CONFIG_MANAGE', ['Dashboard','商務'], ['/','/packages']],
