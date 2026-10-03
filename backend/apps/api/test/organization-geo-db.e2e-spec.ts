@@ -124,6 +124,38 @@ describe('Geo authorized historical subtree real DB',()=>{
   expect(current.summary?.leftBalls).toBe(4);expect(current.summary?.rightBalls).toBe(4);
   expect(JSON.stringify(current)).not.toMatch(/TEST ONLY TWO BALL MEMBER|TEST ONLY NEW HOLDER|personId/);
  });
+ it('reads finalized sealed Carry and pairedPv, then only the replay known at each checkpoint',async()=>{
+  const tree=(await trees.create(admin,{treeName:'TEST ONLY CARRY HISTORY',reason:'Isolated sealed Carry reconciliation'},randomUUID())).value;
+  const root=tree.companyQualificationIds[0],periodEnd=new Date(),periodStart=new Date(periodEnd.getTime()-86400000);
+  const batch=await db.settlementBatch.create({data:{settlementType:'BINARY_K1',periodStart,periodEnd,ruleVersionCode:'TEST_ONLY',status:'FINALIZED',finalizedAt:periodEnd}});
+  await db.binaryCarry.create({data:{qualificationId:root,periodEnd,ruleVersionCode:'TEST_ONLY',leftCarryIn:0,rightCarryIn:0,leftPeriodGpv:120,rightPeriodGpv:110,pairedPv:100,leftCarryOut:20,rightCarryOut:10,weeklyCapSnapshot:1000}});
+  const parameters={format:'UCELL_PARAMETER_SNAPSHOT_V1',ruleVersionCode:'TEST_ONLY',effectiveAt:periodEnd.toISOString(),parameters:[]};
+  const content={format:'UCELL_HISTORICAL_REPLAY_V1',kind:'BINARY_K1',sourceId:batch.settlementBatchId,ruleVersionCode:'TEST_ONLY',at:periodEnd.toISOString(),parameters:{...parameters,hash:replayHash(parameters)},recipients:[],evidence:{carryRecipients:[{qualificationId:root,pairedPv:'100',leftCarryOut:'20',rightCarryOut:'10'}]},inputs:{}};
+  await db.historicalReplaySnapshot.create({data:{kind:'BINARY_K1',sourceId:batch.settlementBatchId,ruleVersionCode:'TEST_ONLY',content,hash:replayHash(content)}});
+  await new Promise(resolve=>setTimeout(resolve,5));
+  const originalKnown=new Date();
+  await new Promise(resolve=>setTimeout(resolve,5));
+  const order=await db.order.create({data:{qualificationId:root,grossAmount:100,netAmount:100,ruleVersionCode:'TEST_ONLY'}});
+  const returned=await db.returnCase.create({data:{orderId:order.orderId,status:'POSTED',reasonCode:'TEST_ONLY',occurredAt:periodEnd,postedAt:new Date(),idempotencyKey:randomUUID(),correlationId:randomUUID()}});
+  const request=await db.settlementRecalculationRequest.create({data:{sourceReturnCaseId:returned.returnCaseId,settlementType:'BINARY_K1',periodStart,periodEnd,impactedQualificationId:root}});
+  await new Promise(resolve=>setTimeout(resolve,5));
+  const pendingKnown=new Date();
+  await new Promise(resolve=>setTimeout(resolve,5));
+  const revisedCarry={[root]:{left:'3.5000',right:'0.0000',pairedPv:'42.1250'}};
+  const projection=await db.replayCarryProjection.create({data:{actionKey:randomUUID(),settlementBatchId:batch.settlementBatchId,periodEnd,ruleVersionCode:'TEST_ONLY',carry:revisedCarry,stateHash:replayHash(revisedCarry)}});
+  await db.settlementRecalculationRequest.update({where:{settlementRecalculationRequestId:request.settlementRecalculationRequestId},data:{status:'PROCESSED',processedAt:new Date()}});
+  await new Promise(resolve=>setTimeout(resolve,5));
+  const after=new Date(),query:GeoQuery={rootQualificationId:root,dateFrom:periodStart.toISOString(),dateTo:after.toISOString(),asOf:after.toISOString(),knowledgeCutoff:after.toISOString()};
+  const original=await geo.capture(admin,{...query,knowledgeCutoff:originalKnown.toISOString()});
+  expect(original.carry).toMatchObject({status:'AVAILABLE',value:{left:'20.0000',right:'10.0000',pairedPv:'100.0000'},pairPvStatus:'AVAILABLE',settlementId:batch.settlementBatchId,replaySequence:null});
+  const pending=await geo.capture(admin,{...query,knowledgeCutoff:pendingKnown.toISOString()});
+  expect(pending.carry).toMatchObject({status:'UNAVAILABLE',reason:'CARRY_REPLAY_PENDING',value:null});
+  const revised=await geo.capture(admin,query);
+  expect(revised.carry).toMatchObject({status:'AVAILABLE',value:{left:'3.5000',right:'0.0000',pairedPv:'42.1250'},replaySequence:projection.sequence.toString(),settlementId:batch.settlementBatchId});
+  expect((await geo.capture(admin,query)).carry).toEqual(revised.carry);
+  const stored=await db.binaryCarry.findUniqueOrThrow({where:{qualificationId_periodEnd_ruleVersionCode:{qualificationId:root,periodEnd,ruleVersionCode:'TEST_ONLY'}}});
+  expect(stored.pairedPv.toFixed(4)).toBe('100.0000');
+ });
  it('rejects revoked sessions and does not trust the client role',async()=>{
   await db.authSession.update({where:{authSessionId:admin.sessionId},data:{status:'REVOKED',revokedAt:new Date()}});
   await expect(geo.capture(admin,input)).rejects.toMatchObject({response:{code:'TREE_ACCESS_DENIED'}});

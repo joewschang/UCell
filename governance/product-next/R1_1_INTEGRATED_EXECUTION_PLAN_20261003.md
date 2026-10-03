@@ -17,7 +17,7 @@ Authority: Product Owner request on 2026-10-03 to include R1.1 and continue comp
 - Existing binary-tree-metrics.ts verifies source replay envelopes and sealed settlement/replay values. Geo may factor out shared source reading, but must preserve every existing check and test.
 - Communication address currently exists inside encrypted formal application payloads; delivery profiles are a different purpose. Historical normalization must bind to source snapshot/version and record time, not current mutable application data.
 - Administrative seed source: NLSC county/town code services, https://data.gov.tw/dataset/102011. Pin downloaded bytes/checksum/date. No live external calls per dashboard read.
-- OpenAPI baseline remains unchanged until recorded Code Owner authority; intentional differences must remain visible.
+- OpenAPI: owner authority is recorded and the selective baseline promotion is complete. Source f70c3cf6 passed the normal governance workflow 37089691305. Original differences and baseline bytes remain retained; this resolves the compatibility gate without waiving UAT or changing economic rules.
 - Google OAuth Stage project/client ID is configured and deployed; completed registration/member-homepage UAT remains pending. Email delivery and trusted KYC scanner configuration remain pending; do not invent credentials or claim provider completion.
 
 ## Acceptance
