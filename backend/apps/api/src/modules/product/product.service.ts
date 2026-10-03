@@ -35,11 +35,16 @@ export class ProductService {
       });
 
       const active = await tx.productRuleProfile.findFirst({
-        where: { productId: product.productId, effectiveTo: null },
+        where: { productId: product.productId, effectiveFrom:{lte:new Date()}, OR:[{effectiveTo:null},{effectiveTo:{gt:new Date()}}] },
         orderBy: { effectiveFrom: 'desc' },
       });
 
       if (!active) {
+        const existingProfile = await tx.productRuleProfile.findFirst({where:{productId:product.productId}});
+        if(existingProfile){
+          if(input.gpvRate!==undefined)throw new ConflictException({code:'VERSIONED_PRODUCT_PROFILE_REQUIRED'});
+          return product;
+        }
         const at=new Date(),snapshot=await captureParameters(tx,at,'R1.0B');
         snapshotValue(snapshot,'accounting.timezone');
         await tx.productRuleProfile.create({
@@ -62,7 +67,7 @@ export class ProductService {
   async list() {
     return this.prisma.productReference.findMany({
       where: { isActive: true },
-      include: { ruleProfiles: { where: { effectiveTo: null }, take: 1, orderBy: { effectiveFrom: 'desc' } } },
+      include: { ruleProfiles: { where: { effectiveFrom:{lte:new Date()}, OR:[{effectiveTo:null},{effectiveTo:{gt:new Date()}}] }, take: 1, orderBy: { effectiveFrom: 'desc' } } },
       orderBy: { sku: 'asc' },
     });
   }

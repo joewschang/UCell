@@ -14,12 +14,14 @@ describeDb('isolated qualification package fixture', () => {
   it('persists editable icons, exposes them in package selections, and preserves omitted icons and rule profiles', async () => {
     const f = await createActiveQualificationPackage(db);
     const service = new ProductService(db as any);
+    await db.productRuleProfile.update({where:{productRuleProfileId:f.rule.productRuleProfileId},data:{effectiveTo:new Date(Date.now()+86400000)}});
     const input = {sku:f.product.sku,displayName:f.product.displayName,price:f.product.currentPrice.toString()};
     await service.upsertReference({...input,iconUrl:'/products/tip-363.png'});
     await service.upsertReference(input);
     const read = await new PackageConfigService(db as any).memberProducts(f.version.packageProfileVersionId);
     expect(read.products[0].iconUrl).toBe('/products/tip-363.png');
     expect(read.products[0].productRuleProfileId).toBe(f.rule.productRuleProfileId);
+    expect(await db.productRuleProfile.count({where:{productId:f.product.productId}})).toBe(1);
     await expect(service.upsertReference({...input,iconUrl:'https://tracker.invalid/image.png'})).rejects.toMatchObject({response:{code:'INVALID_PRODUCT_ICON_URL'}});
     await service.upsertReference({...input,iconUrl:''});
     expect((await db.productReference.findUniqueOrThrow({where:{productId:f.product.productId}})).iconUrl).toBeNull();
