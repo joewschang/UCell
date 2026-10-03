@@ -11,7 +11,7 @@ export class ContactVerificationEmailService{
  }
  async send(to:string,code:string){
   const {endpoint,token}=this.assertConfigured();
-  try{const response=await fetch(endpoint,{method:'POST',redirect:'error',signal:AbortSignal.timeout(10000),headers:{'content-type':'application/json',authorization:`Bearer ${token}`},body:JSON.stringify({template:'UCELL_CONTACT_VERIFICATION',to,code,expiresInSeconds:300})});if(!response.ok)throw Error();}
+  try{const response=await fetch(endpoint,{method:'POST',redirect:'error',signal:AbortSignal.timeout(10000),headers:{'content-type':'application/json',authorization:`Bearer ${token}`},body:JSON.stringify({template:'UCELL_CONTACT_VERIFICATION',from:'service@ucell.life',to,code,expiresInSeconds:300})});if(!response.ok)throw Error();}
   catch{throw new ServiceUnavailableException({code:'EMAIL_DELIVERY_FAILED'});}
  }
 }
