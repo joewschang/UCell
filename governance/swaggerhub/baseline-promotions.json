@@ -12,6 +12,19 @@
       "decisionDocument": "governance/swaggerhub/OPENAPI_BASELINE_PROMOTION_DECISION_V1_1_0.md",
       "archivedBaseline": "governance/swaggerhub/baselines/baseline.openapi.1.0.0-4ca2023863cdc12dd767c0e63cf836394d2d12899681e33c7fd635fb26ef674c.json",
       "breakingDiffEvidence": "governance/swaggerhub/evidence/openapi-baseline-promotion-v1.1.0-breaking-diff.json"
+    },
+    {
+      "phase": "PRE_GA",
+      "approvalDate": "2026-10-03",
+      "approvingDecision": "Owner explicitly approved all twelve formal enrollment API corrections at 10:01:08 Asia/Taipei and instructed continuation at 10:13:03",
+      "candidateHead": "bfee94df955a358b86277fde2725904594c25c3b",
+      "previousBaselineVersion": "1.1.0",
+      "previousBaselineSha256": "b619d56a1406393eda95f949383b460913bb324aa146a988f387437ab22e56f2",
+      "newBaselineVersion": "1.1.0",
+      "newBaselineSha256": "3b99a0207611c55c5d85e4e4d743c51c6b7013ac18b19a254942bdc312259ec3",
+      "decisionDocument": "governance/swaggerhub/FORMAL_ENROLLMENT_BASELINE_PROMOTION_20261003.md",
+      "archivedBaseline": "governance/swaggerhub/baselines/baseline.openapi.1.1.0-b619d56a1406393eda95f949383b460913bb324aa146a988f387437ab22e56f2.json",
+      "breakingDiffEvidence": "governance/swaggerhub/evidence/formal-enrollment-openapi-breaking-diff-20261003.json"
     }
   ]
 }
