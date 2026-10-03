@@ -11,7 +11,7 @@ import { useQualification } from './QualificationContext';
 import * as data from './memberData';
 import type { Qualification } from './api';
 import { useResource } from './useResource';
-import Shop from './Shop';
+import Mall from './Mall';
 import { CommerceProvider, useCommerce } from './commerce';
 import Notifications from './Notifications';
 import EndSession from './EndSession';
@@ -174,7 +174,7 @@ function MemberApp() {
         <Route path="/repurchase" element={<RepurchaseDetails key={current.id} q={current}/>}/>
         <Route path="/payouts" element={<MemberPayouts key={current.id} q={current}/>}/>
         <Route path="/bonuses" element={<Bonuses q={current}/>}/>
-        <Route path="/shop" element={<Shop q={current}/>}/>
+        <Route path="/shop" element={<Mall q={current} onCreated={retry}/>}/>
         <Route path="/orders" element={<><Orders q={current}/><WebRetailOrders/></>}/>
         <Route path="/content" element={<ContentList q={current}/>}/>
         <Route path="/content/:id" element={<ContentDetail q={current}/>}/>
@@ -190,7 +190,7 @@ function MemberApp() {
         <Route path="/notifications" element={<MemberMessages/>}/>
         <Route path="/learning" element={<LearningCenter/>}/>
         <Route path="/events" element={<EventCenter/>}/>
-        <Route path="/shop" element={<><WebMemberRetailShop/><QualificationPackageShop onCreated={retry}/></>}/>
+        <Route path="/shop" element={<Mall onCreated={retry}/>}/>
         <Route path="/me" element={<Me/>}/>
         <Route path="*" element={<section className="card"><h2>尚未取得會員資格</h2><p>可先完成正式會員資料，再透過正式套組取得第一個會員資格。</p><Link className="text-link" to="/shop">選擇正式會員套組</Link><button onClick={retry}>重新查詢</button><Link className="text-link" to="/me">查看會員資料</Link><EndSession connected={!data.isMock}/></section>}/>
       </Routes>}</main>

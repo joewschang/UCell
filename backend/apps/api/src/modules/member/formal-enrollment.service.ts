@@ -5,6 +5,7 @@ import {randomUUID} from 'node:crypto';
 import {AuditService} from '../../common/audit/audit.service';
 import {IdempotencyService} from '../../common/idempotency/idempotency.service';
 import {OrderService} from '../order/order.service';
+import {QualificationAccessService} from '../auth/qualification-access.service';
 
 const FEE='600.00',RULE='FORMAL_ENROLLMENT_V1';
 @Injectable()
@@ -57,6 +58,17 @@ export class FormalEnrollmentService{
    await this.audit.write(tx,{actorType:'MEMBER',actorId:personId,action:'FORMAL_ENROLLMENT_FEE_STAGE_PAID',entityType:'ORDER',entityId:order.orderId,afterData:{amount:FEE,currency:'TWD',paymentMode:'STAGE_ASSUME_PAID',qualificationCreated:false,approvalGranted:false},requestId,correlationId});
    return this.receipt(order);
   });
+ }
+ async payCommerce(personId:string,orderId:string,key:string,requestId:string){
+  this.assertStage();
+  const person=await this.db.person.findUnique({where:{personId}});
+  if(!person||person.status!=='EFFECTIVE'||person.securityStatus!=='NORMAL')throw new ForbiddenException({code:'MEMBER_PERSON_DISABLED'});
+  const order=await this.db.order.findUnique({where:{orderId}});
+  if(!order||!['RETAIL','REPURCHASE'].includes(order.purpose))throw new NotFoundException({code:'STAGE_COMMERCE_ORDER_NOT_FOUND'});
+  if(order.qualificationId)await new QualificationAccessService(this.db).assertHolder(personId,order.qualificationId);
+  else if(order.purchaserPersonId!==personId)throw new NotFoundException({code:'STAGE_COMMERCE_ORDER_NOT_FOUND'});
+  if(order.status!=='PAID')await this.orders.confirmPayment(orderId,{amount:order.netAmount.toFixed(2),paymentMethod:'STAGE_SIMULATED',referenceNo:'STAGE-TEST:'+orderId,occurredAt:new Date().toISOString(),note:'Stage-only assumed commerce payment; no real charge'},key,requestId);
+  return this.receipt(await this.db.order.findUniqueOrThrow({where:{orderId}}));
  }
  async payPackage(personId:string,orderId:string,key:string,requestId:string){
   this.assertStage();

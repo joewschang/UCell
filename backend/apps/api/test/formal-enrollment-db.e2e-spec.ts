@@ -14,6 +14,14 @@ describe('Formal enrollment Stage payments in isolated real DB',()=>{
  beforeAll(()=>{const url=new URL(process.env.DATABASE_URL!);if(!['localhost','127.0.0.1'].includes(url.hostname)||!/^\/ucell_jest_[a-f0-9]{32}$/.test(url.pathname))throw Error('Isolated harness required');});
  afterAll(()=>db.$disconnect());
  const person=()=>db.person.create({data:{legalName:'TEST ONLY ENROLLMENT',status:'EFFECTIVE',membershipState:'NETWORK_MEMBER'}});
+ it('pays only the owned retail order once without granting formal membership',async()=>{
+  const p=await person(),other=await person(),order=await db.order.create({data:{purchaserPersonId:p.personId,purpose:'RETAIL',status:'CONFIRMED',grossAmount:'120',netAmount:'120',ruleVersionCode:'R1.0B'}});
+  await expect(service.payCommerce(other.personId,order.orderId,randomUUID(),'TEST_ONLY')).rejects.toMatchObject({response:{code:'STAGE_COMMERCE_ORDER_NOT_FOUND'}});
+  expect(await service.payCommerce(p.personId,order.orderId,randomUUID(),'TEST_ONLY')).toMatchObject({status:'PAID',amount:'120.00'});
+  await service.payCommerce(p.personId,order.orderId,randomUUID(),'TEST_ONLY');
+  expect(await db.paymentEvent.count({where:{orderId:order.orderId}})).toBe(1);
+  expect((await db.person.findUniqueOrThrow({where:{personId:p.personId}})).membershipState).toBe('NETWORK_MEMBER');
+ });
  it('records one fixed 600 payment, enters pending and never creates a Ball or GPV',async()=>{
   const p=await person(),key=randomUUID(),balls=await db.qualification.count(),gpv=await db.pvLedger.count();
   const first=await service.payFee(p.personId,key,'TEST_ONLY'),retry=await service.payFee(p.personId,key,'TEST_ONLY'),again=await service.payFee(p.personId,randomUUID(),'TEST_ONLY');

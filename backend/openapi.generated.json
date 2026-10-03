@@ -8779,6 +8779,51 @@
         ]
       }
     },
+    "/api/v1/member/formal-enrollment/order-payments/{id}": {
+      "post": {
+        "operationId": "memberStageCommercePayment",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "memberBearer": []
+          }
+        ],
+        "summary": "Stage 模擬支付本人的零售或重購訂單",
+        "tags": [
+          "Member - Formal enrollment"
+        ]
+      }
+    },
     "/api/v1/member/formal-enrollment": {
       "get": {
         "operationId": "memberFormalEnrollment",
@@ -23262,6 +23307,9 @@
           "id": {
             "type": "string",
             "format": "uuid"
+          },
+          "sku": {
+            "type": "string"
           },
           "name": {
             "type": "string"

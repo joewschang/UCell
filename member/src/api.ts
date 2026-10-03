@@ -172,7 +172,7 @@ export type Ledger = Scoped & {
         sourceId: string;
     }[];
 };
-export type Product = {
+export type Product = { sku?:string;
     id: string;
     name: string;
     price: number | null;

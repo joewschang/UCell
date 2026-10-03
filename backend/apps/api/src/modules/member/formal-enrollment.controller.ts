@@ -7,6 +7,9 @@ import {FormalEnrollmentService} from './formal-enrollment.service';
 @Controller('member/formal-enrollment')
 export class FormalEnrollmentController{
  constructor(private readonly enrollment:FormalEnrollmentService){}
+ @Post('order-payments/:id') @UseGuards(IdempotencyGuard) @ApiHeader({name:'Idempotency-Key',required:true})
+ @ApiOperation({operationId:'memberStageCommercePayment',summary:'Stage 模擬支付本人的零售或重購訂單'})
+ commerce(@Req() req:any,@Param('id',new ParseUUIDPipe()) id:string,@Headers('idempotency-key') key:string){return this.enrollment.payCommerce(req.user.personId,id,key,req.requestId);}
  @Get() @ApiOperation({operationId:'memberFormalEnrollment',summary:'正式會員升級狀態與申請費'}) status(@Req() req:any){return this.enrollment.status(req.user.personId);}
  @Post('fee-payment') @UseGuards(IdempotencyGuard) @ApiHeader({name:'Idempotency-Key',required:true})
  @ApiOperation({operationId:'memberStageFormalEnrollmentFee',summary:'Stage 模擬支付 600 元正式會員申請費',description:'Stage database/environment allowlist only. Server-fixed fee, one payment per member, no Qualification or approval.'})
