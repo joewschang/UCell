@@ -7,7 +7,7 @@ export const globalRankCodes=['NEW_STAR','EXCELLENCE','GLORY','DIAMOND','CROWN']
 const ranks:Record<string,{label:string;file:string}>={NEW_STAR:{label:'新星勳章',file:'new-star'},EXCELLENCE:{label:'卓越勳章',file:'excellence'},GLORY:{label:'榮耀勳章',file:'glory'},DIAMOND:{label:'鑽石勳章',file:'diamond'},CROWN:{label:'皇冠勳章',file:'crown'}};
 
 function ArtworkEmblem({code,kind,compact=false}:{code:string;kind:'plan'|'rank';compact?:boolean}){
- const meta=(kind==='plan'?plans:ranks)[code],src=meta?`/badges/${meta.file}-v1.jpg`:'';
+ const meta=(kind==='plan'?plans:ranks)[code],src=meta?`/badges/${meta.file}-v2.png`:'';
  const [failed,setFailed]=useState('');
  if(!meta)return null;
  if(failed===src)return kind==='plan'?<QualificationEmblem code={code} compact={compact}/>:<GlobalRankEmblem code={code} compact={compact}/>;
