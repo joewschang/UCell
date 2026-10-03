@@ -1,5 +1,7 @@
 // Execute in the authorized Stage runtime, with its existing secret reference.
 const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto');
+const canonical=value=>JSON.stringify(sort(value));
+function sort(value){if(Array.isArray(value))return value.map(sort);if(value&&typeof value==='object')return Object.fromEntries(Object.keys(value).sort().map(key=>[key,sort(value[key])]));return value;}
 async function main(){
  const token=process.env.LINE_MESSAGING_CHANNEL_ACCESS_TOKEN??process.env.LINE_CHANNEL_ACCESS_TOKEN;
  if(!token)throw new Error('TOKEN_NOT_CONFIGURED');
@@ -14,7 +16,7 @@ async function main(){
  const info=await call('/info');if(info.basicId!=='@258vmvsa')throw new Error('OA_MISMATCH');
  const menus=(await call('/richmenu/list')).richmenus;
  let menu=menus.find(m=>m.name===definition.name),created=false;
- if(menu){for(const field of ['size','selected','chatBarText','areas'])if(JSON.stringify(menu[field])!==JSON.stringify(definition[field]))throw new Error('EXISTING_DEFINITION_MISMATCH');}
+ if(menu){for(const field of ['size','selected','chatBarText','areas'])if(canonical(menu[field])!==canonical(definition[field]))throw new Error('EXISTING_DEFINITION_MISMATCH');}
  else{menu=await call('/richmenu',{method:'POST',data:definition});created=true;}
  const id=menu.richMenuId;
  let uploaded=false;
