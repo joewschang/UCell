@@ -1,0 +1,40 @@
+{
+  "apiHealth": {
+    "status": "ok",
+    "service": "ucell-api",
+    "database": "ok",
+    "release": "659dbaf72aa5dd7cfa005a9d1aa30c917485e5d3",
+    "timestamp": "2026-10-03T02:02:03.647Z"
+  },
+  "memberAsset": "/assets/index-BBJ5BM83.js",
+  "memberAssetSha256": "a95e3f5b92151f8f1e493e48fa59a38e49d3fe203561544c1dacea766cef2de0",
+  "localAssetSha256": "a95e3f5b92151f8f1e493e48fa59a38e49d3fe203561544c1dacea766cef2de0",
+  "assetMatches": true,
+  "anonymousOfferingListStatus": 401,
+  "anonymousStagePaymentStatus": 401,
+  "backend": {
+    "suites": 208,
+    "isolatedDatabaseCleanup": "PASS",
+    "tests": 1446
+  },
+  "member": {
+    "tests": 242,
+    "suites": 45
+  },
+  "memberBrowserCI": {
+    "run": 37088130768,
+    "conclusion": "success"
+  },
+  "browserEvidence": "Isolated real Mall component layout with fixture data; authenticated Stage journey not claimed",
+  "openApiGate": {
+    "run": 37088130838,
+    "conclusion": "failure",
+    "reason": "UNAPPROVED_BREAKING_CHANGE",
+    "waiver": false
+  },
+  "remainingProductionGates": [
+    "Approved contract/privacy documents",
+    "Trusted malware scanner and reviewer UAT",
+    "Recorded OpenAPI baseline approval"
+  ]
+}

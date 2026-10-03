@@ -1,0 +1,24 @@
+{
+  "sourceCommit": "659dbaf72aa5dd7cfa005a9d1aa30c917485e5d3",
+  "apiRevision": "ucell-stage-api--mall-categories-20261003",
+  "memberRevision": "ucell-stage-member--mall-categories-20261003",
+  "api": {
+    "health": "Healthy",
+    "image": "ucellstageacr5mafbbsq33mgu.azurecr.io/ucell-api@sha256:2552e8c5bd1826b6e738be0e3aaa3d58a32bdd06d3f32a61c24dae0ae58f2a11",
+    "running": "Running"
+  },
+  "member": {
+    "health": "Healthy",
+    "image": "ucellstageacr5mafbbsq33mgu.azurecr.io/ucell-member@sha256:f6307dc51ebdd4c409368ef56e932499294731be0ec4b3dd74dd8502ceca48d6",
+    "running": "Running"
+  },
+  "catalogSeedExecution": "ucell-stage-migrate-sq0mmu4",
+  "catalogVerificationExecution": "ucell-stage-migrate-709jsfc",
+  "catalogStatus": "STAGE_MALL_CATALOG_VERIFIED",
+  "stagePaymentMode": "ASSUME_PAID",
+  "realCharge": false,
+  "automaticFormalApproval": false,
+  "stagePreviewOnly": true,
+  "catalogExpiresAt": "2026-10-10T00:00:00Z",
+  "verifiedAtUtc": "2026-10-03T02:02:05.0742465Z"
+}
