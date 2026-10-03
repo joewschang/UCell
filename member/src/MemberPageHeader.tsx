@@ -1,3 +1,4 @@
+import {MembershipPlanEmblem,BallRankBadge} from './MembershipEmblems';
 import { qualificationReferenceLabel } from './terminology';
 import {SectionHeader,QualificationBadge} from '@ucell/design-system';
 import type {Qualification} from './api';
@@ -15,6 +16,6 @@ export function MemberPageHeader({title,q}:{title:string;q?:Qualification}){
    <span>會員編號</span><strong>{memberNoText}</strong>
    {memberNoStatus==='unavailable'&&<small>帳戶資料尚未同步；請前往「我的」重新載入。</small>}
   </div>
-  {q&&<QualificationBadge code={`${qualificationReferenceLabel(q)}`} rank={`方案 ${qualificationPlanLevelLabel(q.rank)}`}/>}
+  {q&&<div className="uc-ball-identity-emblems"><MembershipPlanEmblem code={q.rank} compact/><QualificationBadge code={`${qualificationReferenceLabel(q)}`} rank={`方案 ${qualificationPlanLevelLabel(q.rank)}`}/><BallRankBadge qualificationNo={q.qualificationNo}/></div>}
  </div>;
 }

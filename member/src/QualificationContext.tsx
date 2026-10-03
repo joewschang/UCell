@@ -2,6 +2,7 @@ import { qualificationReferenceLabel } from './terminology';
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import * as data from './memberData';
 import type { Qualification } from './api';
+import {ballRankPresentation} from './ballRankPresentation';
 type State = {
     qualifications: Qualification[];
     current: Qualification | null;
@@ -13,6 +14,8 @@ type State = {
     feedback: string;
     memberNo: string | null;
     memberNoStatus: 'loading' | 'available' | 'unavailable';
+    globalRanks?:Record<string,string>;
+    globalRankStatus?:'loading'|'available'|'unavailable';
 };
 const Context = createContext<State | null>(null);
 export function QualificationProvider({ children }: {
@@ -28,6 +31,19 @@ export function QualificationProvider({ children }: {
     const [memberNo,setMemberNo]=useState<string|null>(null);
     const [memberNoStatus,setMemberNoStatus]=useState<'loading'|'available'|'unavailable'>('loading');
     const selection=useRef<{sequence:number;controller?:AbortController}>({sequence:0});
+    const [globalRanks,setGlobalRanks]=useState<Record<string,string>>({});
+    const [globalRankStatus,setGlobalRankStatus]=useState<'loading'|'available'|'unavailable'>('loading');
+    const rankContext=items.map(q=>q.qualificationNo??'').sort().join(',');
+    useEffect(()=>{
+        const controller=new AbortController();setGlobalRanks({});setGlobalRankStatus('loading');
+        if(!rankContext){setGlobalRankStatus('unavailable');return()=>controller.abort();}
+        try{data.getGrowth(controller.signal).then(growth=>{
+            if(controller.signal.aborted)return;
+            setGlobalRanks(ballRankPresentation(growth,rankContext.split(',')));setGlobalRankStatus('available');
+        }).catch(()=>{if(!controller.signal.aborted){setGlobalRanks({});setGlobalRankStatus('unavailable');}});}
+        catch{setGlobalRankStatus('unavailable');}
+        return()=>controller.abort();
+    },[rankContext,attempt]);
     useEffect(() => {
         let alive = true;
         const controller = new AbortController();
@@ -94,7 +110,7 @@ export function QualificationProvider({ children }: {
         }catch(error){if(sequence===selection.current.sequence&&!controller.signal.aborted)setError(error instanceof Error?error.message:'無法確認資格，請重新查詢');}
         finally{if(sequence===selection.current.sequence&&!controller.signal.aborted)setLoading(false);}
     };
-    return <Context.Provider value={{ qualifications: items, current: items.find(q => q.id === id) ?? null, select, loading, loadingLabel, error, feedback, memberNo, memberNoStatus, retry: () => setAttempt(a => a + 1) }}>{children}</Context.Provider>;
+    return <Context.Provider value={{ qualifications: items, current: items.find(q => q.id === id) ?? null, select, loading, loadingLabel, error, feedback, memberNo, memberNoStatus, globalRanks,globalRankStatus, retry: () => setAttempt(a => a + 1) }}>{children}</Context.Provider>;
 }
 export function useOptionalQualification() { return useContext(Context); }
 export function useQualification() { const value = useOptionalQualification(); if (!value)
