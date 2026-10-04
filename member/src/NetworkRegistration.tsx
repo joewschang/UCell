@@ -4,8 +4,10 @@ import {getRequiredContracts,registerNetworkMember} from './memberData';
 import {useResource} from './useResource';
 import {countryOptions} from './countryOptions';
 import ContactVerifier from './ContactVerifier';
+import {useContactPolicy,deferredSmsMessage} from './useContactPolicy';
 
 export default function NetworkRegistration({person,refresh}:{person:Person;refresh:()=>void}){
+ const {smsRequired}=useContactPolicy();
  const contracts=useResource('network-registration-contracts',getRequiredContracts);
  const [legalName,setLegalName]=useState(''),[alias,setAlias]=useState(person.alias??person.name),[gender,setGender]=useState(''),[birthDate,setBirthDate]=useState(''),[nationalityCode,setNationalityCode]=useState('TW'),[identityDocumentType,setIdentityDocumentType]=useState<'NATIONAL_ID'|'RESIDENCE_PERMIT'|'PASSPORT'|'OTHER'>('NATIONAL_ID'),[identityDocumentNumber,setIdentityDocumentNumber]=useState(''),[mobile,setMobile]=useState(person.phone??''),[email,setEmail]=useState(person.email??''),[accepted,setAccepted]=useState(false),[busy,setBusy]=useState(false),[error,setError]=useState(''),[done,setDone]=useState(false);
  const pending=useRef<{body:string;key:string}|null>(null),flight=useRef(false);
@@ -15,7 +17,7 @@ export default function NetworkRegistration({person,refresh}:{person:Person;refr
   event.preventDefault();if(flight.current||!contract)return;
   const input={contractVersionId:contract.id,accepted:true as const,legalName:legalName.trim(),alias:alias.trim(),gender,birthDate,nationalityCode:nationalityCode.trim().toUpperCase(),identityDocumentType,identityDocumentNumber:identityDocumentNumber.trim(),mobile:mobile.trim(),email:email.trim()};
   if(!accepted){setError('請先閱讀並同意合約與隱私告知');return;}
-  if(!mobileProof||!emailProof){setError('請先完成手機與 Email 驗證。');return;}
+  if((smsRequired&&!mobileProof)||!emailProof){setError(smsRequired?'請先完成手機與 Email 驗證。':'請先完成 Email 驗證。');return;}
   if(!input.legalName||!input.alias||!input.gender||!input.birthDate||!/^\+[1-9][0-9]{7,14}$/.test(input.mobile)||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.email)){setError('請完整填寫姓名、別名、性別、出生日期、手機與 Email');return;}
   const verifiedInput={...input,mobileVerificationProof:mobileProof,emailVerificationProof:emailProof};
   const body=JSON.stringify(verifiedInput);if(pending.current?.body!==body)pending.current={body,key:crypto.randomUUID()};
@@ -38,7 +40,7 @@ export default function NetworkRegistration({person,refresh}:{person:Person;refr
   <label>身分證明號碼<input value={identityDocumentNumber} maxLength={64} autoComplete="off" onChange={e=>setIdentityDocumentNumber(e.target.value)} disabled={busy}/></label>
   <label>手機（含國碼）<input type="tel" value={mobile} placeholder="+886912345678" autoComplete="tel" onChange={e=>setMobile(e.target.value)} disabled={busy}/></label>
   <label>Email<input type="email" value={email} maxLength={254} autoComplete="email" onChange={e=>setEmail(e.target.value)} disabled={busy}/></label>
-  <ContactVerifier channel="SMS" value={mobile} purpose="REGISTRATION" onVerified={setMobileProof} disabled={busy}/>
+  {smsRequired?<ContactVerifier channel="SMS" value={mobile} purpose="REGISTRATION" onVerified={setMobileProof} disabled={busy}/>:<p role="status">{deferredSmsMessage}</p>}
   <ContactVerifier channel="EMAIL" value={email} purpose="REGISTRATION" onVerified={setEmailProof} disabled={busy}/>
   <details><summary>{contract.title}（{contract.version}）</summary><p>{contract.content}</p><small>內容雜湊：{contract.contentHash}</small></details>
   <label><input type="checkbox" checked={accepted} onChange={e=>setAccepted(e.target.checked)} disabled={busy}/>我已閱讀並同意上述合約與隱私告知</label>

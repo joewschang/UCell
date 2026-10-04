@@ -16,6 +16,18 @@ export function normalizeContact(channel:ContactChannel,value:string){
 @Injectable()
 export class ContactVerificationService{
  constructor(private readonly db:PrismaService,private readonly config:ConfigService,private readonly sms:SmsOtpProviderService,private readonly email:ContactVerificationEmailService,private readonly google:GoogleTokenVerifierService,private readonly line:LineTokenVerifierService){}
+ policy(){
+  const setting=this.config.get<string>('CONTACT_VERIFICATION_SMS_REQUIRED');
+  if(setting!==undefined&&!['true','false'].includes(setting))throw new ServiceUnavailableException({code:'CONTACT_POLICY_CONFIGURATION_INVALID'});
+  if(setting==='false'&&this.config.get<string>('UCELL_ENVIRONMENT')!=='STAGE')throw new ServiceUnavailableException({code:'CONTACT_POLICY_CONFIGURATION_INVALID'});
+  return {emailRequired:true as const,smsRequired:setting!=='false'};
+ }
+ async consumeMobile(tx:any,owner:string,purpose:ContactPurpose,destination:string,proof?:string){
+  normalizeContact('SMS',destination);
+  if(this.policy().smsRequired||proof)return this.consume(tx,owner,purpose,'SMS',destination,proof);
+  // Email-first Stage release retains the phone as explicitly unverified.
+  return null;
+ }
  private hash(value:string){const secret=this.config.get<string>('OTP_HASH_SECRET');if(!secret||secret.length<32)throw new ServiceUnavailableException({code:'OTP_CONFIGURATION_PENDING'});return createHmac('sha256',secret).update(value).digest('hex');}
  async registrationOwner(input:{googleIdToken?:string;lineIdToken?:string}){
   if(Boolean(input.googleIdToken)===Boolean(input.lineIdToken))throw new UnprocessableEntityException({code:'REGISTRATION_IDENTITY_REQUIRED'});
@@ -25,6 +37,7 @@ export class ContactVerificationService{
  private context(owner:string,purpose:ContactPurpose,channel:ContactChannel,destination:string){return {subjectHash:this.hash(owner),purpose,channel,destinationHash:this.hash(channel+':'+normalizeContact(channel,destination))};}
  async send(owner:string,purpose:ContactPurpose,channel:ContactChannel,destination:string,requestKey:string){
   if(!/^[a-f0-9]{8}-[a-f0-9]{4}-[1-5][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i.test(requestKey??''))throw new UnprocessableEntityException({code:'OTP_REQUEST_KEY_REQUIRED'});
+  if(channel==='SMS'&&!this.policy().smsRequired)throw new ServiceUnavailableException({code:'SMS_PROVIDER_CONFIGURATION_PENDING'});
   const normalized=normalizeContact(channel,destination),context=this.context(owner,purpose,channel,normalized);
   channel==='SMS'?this.sms.assertConfigured():this.email.assertConfigured();
   const id=randomUUID(),code=String(randomInt(0,1000000)).padStart(6,'0'),now=new Date();

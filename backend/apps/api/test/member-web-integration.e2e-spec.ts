@@ -13,7 +13,7 @@ describe('Integrated Web identity and password lifecycle (real isolated DB, synt
  const db=new PrismaService(),pii=new PiiCryptoService(),fingerprint=new IdentityMatchFingerprintService();
  const sessions=new IdentityTokenService(db),identities=new MemberIdentityService(db);
  const google={verify:jest.fn(async(token:string)=>({subject:token,email:token+'@example.invalid',emailVerified:true,expiresAt:Math.floor(Date.now()/1000)+3600}))};
- const contacts={consume:jest.fn(async()=>new Date())}; // Identity lifecycle fixture; contact enforcement has its own real-DB suite.
+ const contacts={consume:jest.fn(async()=>new Date()),consumeMobile:jest.fn(async()=>new Date())}; // Identity lifecycle fixture; contact enforcement has its own real-DB suite.
  const registration=new MemberWebRegistrationService(db,new IdempotencyService(db),google as any,pii,fingerprint,undefined,contacts as any);
  const line={verify:jest.fn(async(token:string)=>({subject:token,expiresAt:Math.floor(Date.now()/1000)+3600}))};
  const lineRegistration=new MemberWebRegistrationService(db,new IdempotencyService(db),google as any,pii,fingerprint,line as any,contacts as any);

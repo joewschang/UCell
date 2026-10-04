@@ -65,3 +65,14 @@ Apply `20261003090000_contact_verification` with the existing approved migration
 Real UAT must cover Google and LINE new registration, SMS-only/Email-only rejection, wrong code, five-attempt lock, expiry, cooldown/resend, browser retry without duplicate delivery, edited destination invalidation, and verified profile contact changes. Check `mobileVerifiedAt`/`emailVerifiedAt` are stored only after successful registration/change. Confirm existing Google, password and LINE login and identity linking still work. Production additionally requires approved contracts/privacy documents in place of Stage's empty placeholder.
 
 The database suite uses an isolated disposable database and synthetic delivery providers; it does not send SMS/email. Real delivery remains a separate acceptance step.
+
+
+## Stage Email-first release (2026-10-04)
+
+Owner authorized Email-first activation without waiting for Every8D. Set
+`CONTACT_VERIFICATION_SMS_REQUIRED=false` only with `UCELL_ENVIRONMENT=STAGE`.
+Default and Production remain strict. Public contact policy drives registration/profile forms.
+Email proof stays mandatory and is consumed atomically. Collected/changed phones without SMS proof
+retain `mobileVerifiedAt=null`; UI explicitly labels them unverified. SMS send is unavailable,
+not simulated. After Every8D enablement remove the override (or set true) and complete dual-channel UAT.
+Azure secret `m365-mail-client-secret` is ready; never put its value in frontend configuration.
