@@ -116,7 +116,7 @@ describe('Contact verification (real isolated DB; synthetic delivery providers)'
   await expect(stage.consumeMobile({},owner,'PROFILE','invalid')).rejects.toThrow();
   await expect(stage.consumeMobile(db,owner,'PROFILE',phone,'invalid')).rejects.toThrow();
   await expect(stage.send(owner,'PROFILE','SMS',phone,randomUUID())).rejects.toMatchObject({response:{code:'SMS_PROVIDER_CONFIGURATION_PENDING'}});
-  const person=await db.person.create({data:{legalName:'TEST ONLY EMAIL FIRST',mobile:phone,mobileVerifiedAt:new Date()}});
+  const person=await db.person.create({data:{legalName:'TEST ONLY EMAIL FIRST',status:'EFFECTIVE',mobile:phone,mobileVerifiedAt:new Date()}});
   const member=new MemberService(db,{} as any,{} as any,{write:async()=>{}} as any,stage),destination=randomUUID()+'@example.invalid';
   await expect(member.profile(person.personId,{email:destination,phone:fixture().destination},randomUUID(),randomUUID())).rejects.toMatchObject({response:{code:'EMAIL_VERIFICATION_REQUIRED'}});
   const challenge=await stage.send('PERSON:'+person.personId,'PROFILE','EMAIL',destination,randomUUID());
