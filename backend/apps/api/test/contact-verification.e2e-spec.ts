@@ -106,4 +106,24 @@ describe('Contact verification (real isolated DB; synthetic delivery providers)'
   const results=await Promise.all([service.send(owner,'REGISTRATION','SMS',destination,key),service.send(owner,'REGISTRATION','SMS',destination,key)]);
   expect(results[0].challengeId).toBe(results[1].challengeId);expect(sms.send.mock.calls.length-before).toBe(1);
  });
+ it('permits Email-first only in Stage and never marks an unproven phone verified',async()=>{
+  const make=(settings:Record<string,string>)=>new ContactVerificationService(db,new ConfigService({OTP_HASH_SECRET:'TEST_ONLY_CONTACT_SECRET_32_CHARACTERS',...settings}),sms as any,email as any,{} as any,{} as any);
+  expect(make({}).policy()).toEqual({emailRequired:true,smsRequired:true});
+  for(const settings of [{CONTACT_VERIFICATION_SMS_REQUIRED:'false'}, {CONTACT_VERIFICATION_SMS_REQUIRED:'false',UCELL_ENVIRONMENT:'PRODUCTION'}, {CONTACT_VERIFICATION_SMS_REQUIRED:'typo',UCELL_ENVIRONMENT:'STAGE'}])expect(()=>make(settings).policy()).toThrow();
+  const stage=make({CONTACT_VERIFICATION_SMS_REQUIRED:'false',UCELL_ENVIRONMENT:'STAGE'}),owner='PERSON:'+randomUUID(),phone=fixture().destination;
+  expect(stage.policy()).toEqual({emailRequired:true,smsRequired:false});
+  expect(await stage.consumeMobile({},owner,'PROFILE',phone)).toBeNull();
+  await expect(stage.consumeMobile({},owner,'PROFILE','invalid')).rejects.toThrow();
+  await expect(stage.consumeMobile(db,owner,'PROFILE',phone,'invalid')).rejects.toThrow();
+  await expect(stage.send(owner,'PROFILE','SMS',phone,randomUUID())).rejects.toMatchObject({response:{code:'SMS_PROVIDER_CONFIGURATION_PENDING'}});
+  const person=await db.person.create({data:{legalName:'TEST ONLY EMAIL FIRST',status:'EFFECTIVE',mobile:phone,mobileVerifiedAt:new Date()}});
+  const member=new MemberService(db,{} as any,{} as any,{write:async()=>{}} as any,stage),destination=randomUUID()+'@example.invalid';
+  await expect(member.profile(person.personId,{email:destination,phone:fixture().destination},randomUUID(),randomUUID())).rejects.toMatchObject({response:{code:'EMAIL_VERIFICATION_REQUIRED'}});
+  const challenge=await stage.send('PERSON:'+person.personId,'PROFILE','EMAIL',destination,randomUUID());
+  const proof=await stage.verify('PERSON:'+person.personId,'PROFILE','EMAIL',destination,challenge.challengeId,codes.get(destination)!);
+  const result=await member.profile(person.personId,{email:destination,emailVerificationProof:proof.proof,phone:fixture().destination},randomUUID(),randomUUID());
+  expect(result.emailVerifiedAt).toEqual(expect.any(String));expect(result.mobileVerifiedAt).toBeNull();
+  await expect(member.profile(person.personId,{email:randomUUID()+'@example.invalid',emailVerificationProof:proof.proof},randomUUID(),randomUUID())).rejects.toThrow();
+ });
+
 });

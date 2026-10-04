@@ -1,4 +1,4 @@
-import {Body,Controller,Headers,Post,Req,UseGuards} from '@nestjs/common';
+import {Body,Controller,Get,Headers,Post,Req,UseGuards} from '@nestjs/common';
 import {ApiBearerAuth,ApiHeader,ApiOperation,ApiProperty,ApiPropertyOptional,ApiTags} from '@nestjs/swagger';
 import {IsIn,IsOptional,IsString,IsUUID,Matches,MaxLength,MinLength} from 'class-validator';
 import {MemberAuthenticationGuard} from './member-authentication.guard';
@@ -25,6 +25,8 @@ class MemberVerifyDto extends MemberContactDto{
 @ApiTags('Member - Contact Verification') @Controller('auth/member/contact-verification')
 export class RegistrationContactVerificationController{
  constructor(private readonly service:ContactVerificationService){}
+ @Get('policy') @ApiOperation({operationId:'getContactVerificationPolicy',description:'Public contact requirements. Email remains mandatory; SMS deferral is permitted only in Stage and never marks a phone verified.'})
+ policy(){return this.service.policy();}
  @Post('challenges') @ApiHeader({name:'Idempotency-Key',required:true}) @ApiOperation({operationId:'sendRegistrationContactCode',description:'Requires a server-verified Google or LINE identity. Sends contact verification code with persistent destination and subject quotas. No membership is created.'})
  async send(@Body() input:RegistrationContactDto,@Headers('idempotency-key') key:string){return this.service.send(await this.service.registrationOwner(input),'REGISTRATION',input.channel,input.destination,key);}
  @Post('verify') @ApiOperation({operationId:'verifyRegistrationContactCode',description:'Verifies a code bound to identity, destination, channel and purpose; returns a short-lived proof consumed atomically by registration.'})
