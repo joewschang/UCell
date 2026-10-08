@@ -1,0 +1,16 @@
+import {createBankPayoutArtifact,readBankPayoutArtifact,BankExportInput} from '../src/modules/admin-operations/bank-payout-artifact';
+import {writeFileSync,mkdirSync} from 'node:fs';
+const CFB=require('cfb');
+const lines=[{payoutLineId:'line-1',netAmount:'1234.56'}];
+const bulk:BankExportInput={format:'BULK_REMITTANCE',exportReference:'BANK-TEST-1',recipients:[{payoutLineId:'line-1',accountName:'測試會員',accountNumber:'001234567890',bankBranchCode:'1234567',remark:'獎金'}]};
+describe('Bank-native XLS artifacts',()=>{
+ it('retains native workbook, sheets and XLS signature and verifies content hash',()=>{const a=createBankPayoutArtifact(lines,bulk),file=readBankPayoutArtifact({...a,revision:2}),b=Buffer.from(file.contentBase64,'base64');expect(b.subarray(0,8).toString('hex')).toBe('d0cf11e0a1b11ae1');expect(CFB.find(CFB.read(b,{type:'buffer'}),'Workbook')).toBeTruthy();expect(file.purpose).toBe('BANK_SUBMISSION_FILE');});
+ it('exports bonus credits with exact 16-digit account in center template',()=>{const a=createBankPayoutArtifact(lines,{...bulk,format:'CENTER_TRANSFER',recipients:[{...bulk.recipients[0],accountNumber:'0012345678901234'}]});expect(a.adapterCode).toBe('CENTER_TRANSFER');expect(a.payloadSnapshot.totalNet).toBe('1234.56');});
+ it('rejects incomplete, duplicate and foreign recipient mapping',()=>{for(const recipients of [[],[...bulk.recipients,...bulk.recipients],[{...bulk.recipients[0],payoutLineId:'foreign'}]])expect(()=>createBankPayoutArtifact(lines,{...bulk,recipients})).toThrow();});
+ it('rejects sub-cent precision instead of rounding money',()=>{expect(()=>createBankPayoutArtifact([{...lines[0],netAmount:'1.0001'}],bulk)).toThrow('BANK_AMOUNT_PRECISION_EXCEEDS_CENTS');expect(()=>createBankPayoutArtifact([{...lines[0],netAmount:'1.2300'}],bulk)).not.toThrow();});
+ it('enforces conservative 800000 batch limit including fees',()=>{expect(()=>createBankPayoutArtifact([{...lines[0],netAmount:'800000'}],bulk)).toThrow('BANK_BULK_LIMIT_800000');expect(()=>createBankPayoutArtifact([{...lines[0],netAmount:'799970'}],bulk)).not.toThrow();});
+ it('rejects formula-like names, malformed routing and overlength accounts',()=>{for(const r of [{accountName:'=HYPERLINK("x")'},{bankBranchCode:'123'},{accountNumber:'123456789012345'}])expect(()=>createBankPayoutArtifact(lines,{...bulk,recipients:[{...bulk.recipients[0],...r}]})).toThrow();});
+ it('rejects center accounts that cannot be derived from interbank accounts',()=>expect(()=>createBankPayoutArtifact(lines,{...bulk,format:'CENTER_TRANSFER'})).toThrow('BANK_CENTER_ACCOUNT_REQUIRES_16_DIGITS'));
+ it('blocks zero-only batches and center overflow without silently omitting lines',()=>{expect(()=>createBankPayoutArtifact([{...lines[0],netAmount:'0'}],bulk)).toThrow();expect(()=>createBankPayoutArtifact(Array.from({length:32},(_,i)=>({payoutLineId:String(i),netAmount:'1'})),{...bulk,format:'CENTER_TRANSFER'})).toThrow('BANK_TEMPLATE_ROW_LIMIT');});
+ it('detects altered artifact bytes',()=>{const a=createBankPayoutArtifact(lines,bulk);expect(()=>readBankPayoutArtifact({...a,revision:1,payloadSnapshot:{...a.payloadSnapshot,contentBase64:Buffer.from('tampered').toString('base64')}})).toThrow('BANK_ARTIFACT_INTEGRITY_INVALID');});
+});
