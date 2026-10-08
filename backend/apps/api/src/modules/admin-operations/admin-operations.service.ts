@@ -485,6 +485,7 @@ export class AdminOperationsService {
       await tx.$queryRaw`SELECT payout_batch_id FROM ledger.payout_batch WHERE payout_batch_id=${id}::uuid FOR UPDATE`;
       const replay=await tx.payoutExportArtifact.findUnique({where:{exportReference:input.exportReference}});
       if(replay){if(replay.payoutBatchId!==id||(replay.payloadSnapshot as any)?.requestHash!==requestHash)throw new ConflictException('BANK_EXPORT_REFERENCE_CONFLICT');return readBankPayoutArtifact(replay);}
+      if(await tx.payoutExportArtifact.findFirst({where:{payoutBatchId:id,formatVersion:'BANK_XLS_V1'}}))throw new ConflictException('BANK_EXPORT_ALREADY_CREATED_USE_STORED_DOWNLOAD');
       const batch=await tx.payoutBatch.findUniqueOrThrow({where:{payoutBatchId:id},include:{approvals:true,lines:true,paymentResults:true}});
       if(batch.status!=='EXPORTED'||batch.paymentResults.length)throw new ConflictException('BANK_EXPORT_REQUIRES_UNPAID_EXPORTED_BATCH');
       const approvals=batch.approvals.filter(a=>a.decision==='APPROVED'),finance=approvals.find(a=>a.stage==='FINANCE_REVIEW'),compliance=approvals.find(a=>a.stage==='COMPLIANCE_REVIEW');

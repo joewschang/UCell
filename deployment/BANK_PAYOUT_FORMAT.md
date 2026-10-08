@@ -24,6 +24,8 @@ Zero-net lines are excluded; every positive-net line must be mapped exactly once
 Exports use append-only PayoutExportArtifact snapshots and increasing revisions.
 An identical export reference/request returns the same bytes; a changed request
 using the same reference is rejected. No batch payment status is changed.
+Only one bank submission artifact is created per batch. A fresh reference cannot
+silently issue a replacement; subsequent operations download the stored version.
 Historical download uses the same role-protected, audited download endpoint as
 review CSVs. The browser verifies SHA-256 before saving the binary XLS.
 Full account numbers are in the restricted XLS snapshot, not the audit payload.
