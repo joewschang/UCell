@@ -1,0 +1,8 @@
+import React from 'react';
+import {act,create} from 'react-test-renderer';
+import {expect,it,vi} from 'vitest';
+import {BankExportForm} from './BankExportForm';
+import {Field} from '../../components/ui';
+vi.mock('../../components/ConfirmAction',()=>({ConfirmAction:({children,onConfirm,disabled}:any)=><button disabled={disabled} onClick={onConfirm}>{children}</button>}));
+it('maps payout lines to accounts without accepting a browser amount',async()=>{const submit=vi.fn(),view=create(<BankExportForm lines={[{payoutLineId:'positive',netAmount:'100.12'},{payoutLineId:'zero',netAmount:'0'}]} disabled={false} submit={submit}/>);expect(view.root.findAllByType('fieldset')).toHaveLength(1);const set=(label:string,value:string)=>act(()=>view.root.findAllByType(Field).find(f=>f.props.label===label)!.findByType('input').props.onChange({target:{value}}));expect(view.root.findByType('button').props.disabled).toBe(true);set('本次銀行匯出參考','BANK-TEST');set('收款戶名','測試會員');set('銀行＋分行代碼（7 碼）','1234567');set('收款帳號（最多 14 碼）','001234567890');await act(async()=>view.root.findByType('button').props.onClick());expect(submit).toHaveBeenCalledWith({format:'BULK_REMITTANCE',exportReference:'BANK-TEST',recipients:[{payoutLineId:'positive',accountName:'測試會員',accountNumber:'001234567890',bankBranchCode:'1234567'}]});view.unmount();});
+it('shows center account requirements and respects the busy state',()=>{const view=create(<BankExportForm lines={[{payoutLineId:'one',netAmount:'1'}]} disabled={true} submit={vi.fn()}/>);expect(view.root.findByType('button').props.disabled).toBe(true);expect(view.root.findByType('select').props.disabled).toBe(true);view.unmount();});

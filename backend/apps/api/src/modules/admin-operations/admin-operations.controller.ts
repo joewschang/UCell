@@ -171,6 +171,13 @@ export class AdminOperationsController{
   }
 
   @Roles('SUPER_ADMIN','FINANCE')
+  @Post('payout-batches/:id/bank-exports')
+  @ApiOperation({operationId:'adminExportBankPayout',summary:'依銀行原始 XLS 範本產生匯款檔；不執行轉帳'})
+  bankExport(@Param('id') id:string,@Body() body:import('./bank-payout-artifact').BankExportInput,@Req() req:any){
+    return this.service.exportBankPayout(id,body,req.user?.personId,req.user?.role,req.requestId??randomUUID(),req.correlationId??randomUUID()).then(data=>({data}));
+  }
+
+  @Roles('SUPER_ADMIN','FINANCE')
   @Post('payout-batches/:id/payment-results')
   @ApiOperation({operationId:'adminRecordPayoutPaymentResults',summary:'記錄公司銀行付款結果；不觸發銀行轉帳'})
   paymentResults(@Param('id') id:string,@Body() body:{results:Array<{payoutLineId:string;status:'PAID'|'FAILED';paidAmount:string;paymentReference?:string;reasonCode?:string;occurredAt?:string}>},@Req() req:any){

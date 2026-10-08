@@ -8,6 +8,7 @@ import { companyReservoirCandidates } from './company-reservoir-invariants';
 import { periodCloseCandidates } from './period-close-invariants';
 import { orderEconomicEvidence } from './order-economic-evidence';
 import {createFinanceReviewArtifact,readFinanceReviewArtifact} from './payout-review-artifact';
+import {createBankPayoutArtifact,readBankPayoutArtifact,BankExportInput} from './bank-payout-artifact';
 import {lineageSourceSummary} from './lineage-source-summary';
 import {requireOperationalExceptionResolution} from './operational-exception-resolution';
 import {OperationsFinancialHealthService} from './operations-financial-health.service';
@@ -471,11 +472,32 @@ export class AdminOperationsService {
     return this.prisma.$transaction(async tx=>{
       const artifact=await tx.payoutExportArtifact.findUnique({where:{payoutBatchId_revision:{payoutBatchId:id,revision}}});
       if(!artifact)throw new ConflictException('PAYOUT_EXPORT_ARTIFACT_NOT_FOUND');
-      const file=readFinanceReviewArtifact(artifact);
+      const file=artifact.formatVersion==='BANK_XLS_V1'?readBankPayoutArtifact(artifact):readFinanceReviewArtifact(artifact);
       await this.audit.write(tx,{actorType:'USER',actorId,action:'PAYOUT_ARTIFACT_DOWNLOADED',entityType:'PAYOUT_BATCH',entityId:id,afterData:{revision,fileHash:file.fileHash,artifactHash:file.artifactHash},requestId,correlationId});
       return file;
     });
   }
+  async exportBankPayout(id:string,input:BankExportInput,actorId:string|undefined,actorRole:string|undefined,requestId:string,correlationId:string){
+    if(!actorId||!actorRole||!['FINANCE','SUPER_ADMIN'].includes(actorRole))throw new UnprocessableEntityException('FINANCE_ROLE_REQUIRED');
+    if(!input||typeof input.exportReference!=='string'||!input.exportReference.trim()||input.exportReference.length>200||!Array.isArray(input.recipients))throw new UnprocessableEntityException('BANK_EXPORT_INPUT_INVALID');
+    const requestHash=createHash('sha256').update(JSON.stringify(input)).digest('hex');
+    return this.prisma.$transaction(async tx=>{
+      await tx.$queryRaw`SELECT payout_batch_id FROM ledger.payout_batch WHERE payout_batch_id=${id}::uuid FOR UPDATE`;
+      const replay=await tx.payoutExportArtifact.findUnique({where:{exportReference:input.exportReference}});
+      if(replay){if(replay.payoutBatchId!==id||(replay.payloadSnapshot as any)?.requestHash!==requestHash)throw new ConflictException('BANK_EXPORT_REFERENCE_CONFLICT');return readBankPayoutArtifact(replay);}
+      const batch=await tx.payoutBatch.findUniqueOrThrow({where:{payoutBatchId:id},include:{approvals:true,lines:true,paymentResults:true}});
+      if(batch.status!=='EXPORTED'||batch.paymentResults.length)throw new ConflictException('BANK_EXPORT_REQUIRES_UNPAID_EXPORTED_BATCH');
+      const approvals=batch.approvals.filter(a=>a.decision==='APPROVED'),finance=approvals.find(a=>a.stage==='FINANCE_REVIEW'),compliance=approvals.find(a=>a.stage==='COMPLIANCE_REVIEW');
+      if(!finance||!compliance||finance.actorId===compliance.actorId)throw new UnprocessableEntityException('INDEPENDENT_APPROVALS_REQUIRED');
+      const sum=batch.lines.reduce((n,l)=>n.add(l.netAmount),new Prisma.Decimal(0));if(!sum.equals(batch.totalNet))throw new ConflictException('BANK_BATCH_TOTAL_MISMATCH');
+      const file=createBankPayoutArtifact(batch.lines.map(l=>({payoutLineId:l.payoutLineId,netAmount:l.netAmount.toString()})),input);
+      const latest=await tx.payoutExportArtifact.aggregate({where:{payoutBatchId:id},_max:{revision:true}}),revision=(latest._max.revision??0)+1;
+      const artifact=await tx.payoutExportArtifact.create({data:{payoutBatchId:id,exportReference:input.exportReference,revision,...file,payloadSnapshot:{...file.payloadSnapshot,requestHash},generatedByActor:actorId}});
+      await this.audit.write(tx,{actorType:'USER',actorId,action:'PAYOUT_BANK_FILE_CREATED',entityType:'PAYOUT_BATCH',entityId:id,afterData:{revision,adapterCode:file.adapterCode,contentHash:file.contentHash},requestId,correlationId});
+      return readBankPayoutArtifact(artifact);
+    });
+  }
+
   async markPaid(
     id:string,input:{paymentReference:string;paymentMethod:string;paidAt?:Date},
     actorId:string|undefined,actorRole:string|undefined,requestId:string,correlationId:string
