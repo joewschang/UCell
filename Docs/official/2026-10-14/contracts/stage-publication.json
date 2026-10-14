@@ -1,0 +1,17 @@
+{
+  "verifiedOn": "2026-10-14",
+  "networkStatus": "STAGE_DERIVED_DRAFT_COMPANY_REVIEW_REQUIRED_BEFORE_PRODUCTION",
+  "formalVersion": "OFFICIAL-20261014",
+  "environment": "STAGE",
+  "execution": "ucell-stage-migrate-8fsq5wp",
+  "existingConsentChanged": false,
+  "runtimeImagesChanged": false,
+  "formalContentHash": "d302364831ed6b521b8f6b7e7c68132dcaefc97e443dc69ff4b79158f20f1b61",
+  "networkContentHash": "2b89ff643529fd3adf9f60e226d82c152b7f42a8f912d953f317319c7e54da5b",
+  "formalVersionId": "f118b464-501e-4c21-81c1-b2f740ad9239",
+  "status": "SUCCEEDED_AND_READBACK_VERIFIED",
+  "networkVersion": "STAGE-SOURCE-20261014",
+  "productionChanged": false,
+  "driveStatus": "BLOCKED_STORAGE_QUOTA_EXCEEDED",
+  "networkVersionId": "073d380b-a9b7-47fd-9e6c-73d39f580cca"
+}
