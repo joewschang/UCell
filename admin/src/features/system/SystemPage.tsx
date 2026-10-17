@@ -5,15 +5,15 @@ import {Badge,Card,PageHeader} from '../../components/ui';
 
 const gaps=[
 
- ['Entra live tenant login + JWKS verification UAT','RC blocker'],
- ['LINE official token verification','Member/LINE OA phase'],
- ['Automated bank execution / bank API integration','External integration; manual reconciliation now supported'],
+ [uiText("Entra live tenant login + JWKS verification UAT"),uiText("RC blocker")],
+ [uiText("LINE official token verification"),uiText("Member/LINE OA phase")],
+ [uiText("Automated bank execution / bank API integration"),uiText("External integration; manual reconciliation now supported")],
 
- ['Share / Referral Attribution full model & API','Before LINE OA'],
- ['Attachment/original document management','Before paperless production ops'],
- ['Fulfillment/Lot/Serial/Shipment','Before interim logistics without ERP'],
- ['Integration Inbox / External Reference','Before D365 integration'],
- ['Full hierarchical Rule Registry','Before future Rule Version operations'],
+ [uiText("Share / Referral Attribution full model & API"),uiText("Before LINE OA")],
+ [uiText("Attachment/original document management"),uiText("Before paperless production ops")],
+ [uiText("Fulfillment/Lot/Serial/Shipment"),uiText("Before interim logistics without ERP")],
+ [uiText("Integration Inbox / External Reference"),uiText("Before D365 integration")],
+ [uiText("Full hierarchical Rule Registry"),uiText("Before future Rule Version operations")],
 
 ];
 export function SystemPage(){

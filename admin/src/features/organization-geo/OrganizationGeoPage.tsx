@@ -11,7 +11,7 @@ type Row=Measure&{areaCode:string;areaName:string;status:string};
 type Summary=Measure&{descendantBalls:number;uniqueMembers:number;unlocatedBalls:number;districtUnlocatedBalls:number;leftBalls:number;rightBalls:number};
 type Result={status:string;reason:string|null;rootBallNo:string;summary:Summary|null;distribution:Row[];branchComparison:Array<{regionGroup:string;left:Measure;right:Measure}>;time:{asOf:string;knowledgeCutoff:string;periodStart:string;periodEnd:string};carry:{status:string;value:{left:string;right:string;pairedPv:string|null}|null}|null};
 type MetricKey='balls'|'members'|'activeBalls'|'newBalls'|'gpv';
-const labels:Record<MetricKey,string>={balls:'球數',members:'會員人數',activeBalls:uiText("Active 球數"),newBalls:'新安置球數',gpv:'GPV'};
+const labels:Record<MetricKey,string>={balls:'球數',members:'會員人數',activeBalls:uiText("Active 球數"),newBalls:'新安置球數',gpv:uiText("GPV")};
 const regions:Record<string,string>={NORTH:'北部',CENTRAL:'中部',SOUTH:'南部',EAST:'東部',ISLAND:'離島',UNLOCATED:'未定位'};
 const display=(value:unknown)=>value==null?'資料不足':String(value);
 

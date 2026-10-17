@@ -8,16 +8,17 @@
   ],
   "catalog": {
     "domainLabels": 183,
-    "displayTerms": 548
+    "displayTerms": 581
   },
   "presentationFilesChanged": 112,
   "validation": {
     "adminTests": 241,
-    "memberTests": 268,
+    "memberTests": 269,
     "typechecks": [
       "admin/tsconfig.app.json",
       "member/tsconfig.json"
-    ]
+    ],
+    "languageAudit": "PASS: explicit branded terms and identifier formats only"
   },
   "preserved": [
     "API and database codes",

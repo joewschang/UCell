@@ -33,3 +33,9 @@ export function uiValue(value: unknown): string {
 export function uiTemplate(parts: TemplateStringsArray, ...values: unknown[]): string {
   return parts.reduce((result, part, index) => result + uiText(part) + (index < values.length ? String(values[index] ?? '') : ''), '');
 }
+
+export function errorText(value: unknown): string {
+  const raw = value instanceof Error ? value.message : String(value ?? '');
+  const translated = uiText(raw);
+  return /[\u3400-\u9fff]/.test(translated) ? translated : '暫時無法完成操作，請重新載入後再試。';
+}

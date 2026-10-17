@@ -1,4 +1,4 @@
-import {uiText,domainLabel} from "./i18n";
+import {uiText,domainLabel,errorText} from "./i18n";
 import {useCallback,useEffect,useRef,useId,type ReactNode,type KeyboardEvent,type ButtonHTMLAttributes} from 'react';
 function trapDialogFocus(event:KeyboardEvent<HTMLDialogElement>){if(event.key!=='Tab')return;const items=[...event.currentTarget.querySelectorAll<HTMLElement>('button:not(:disabled),a[href],input:not(:disabled),select:not(:disabled),textarea:not(:disabled),[tabindex="0"]')].filter(n=>n.getClientRects().length>0&&n.tabIndex>=0);const first=items[0],last=items.at(-1);if(!first){event.preventDefault();event.currentTarget.focus();return}if(event.shiftKey&&(document.activeElement===first||document.activeElement===event.currentTarget)){event.preventDefault();last?.focus()}else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus()}}
 export type StatusTone='success'|'warning'|'danger'|'info'|'neutral';
@@ -13,7 +13,7 @@ export function MoneyState({amount,status}:{amount:number|string|null;status?:st
 export function PageHeader({title,subtitle,actions}:{title:string;subtitle?:string;actions?:ReactNode}){return <div className="uc-header"><div><h1>{uiText(title)}</h1>{subtitle&&<p>{uiText(subtitle)}</p>}</div>{actions}</div>}
 export function SectionHeader({title,children}:{title:string;children?:ReactNode}){return <div className="uc-header"><h2>{uiText(title)}</h2>{children}</div>}
 export function EmptyState({title='尚無資料',children}:{title?:string;children?:ReactNode}){return <section className="uc-state"><h3>{uiText(title)}</h3>{children}</section>}
-export function ErrorState({message,retry}:{message:string;retry?:()=>void}){return <section className="uc-state" role="alert"><p>{message}</p>{retry&&<UCellButton onClick={retry}>重新載入</UCellButton>}</section>}
+export function ErrorState({message,retry}:{message:string;retry?:()=>void}){return <section className="uc-state" role="alert"><p>{errorText(message)}</p>{retry&&<UCellButton onClick={retry}>重新載入</UCellButton>}</section>}
 export function Skeleton(){return <div className="uc-skeleton" aria-hidden="true"/>}
 export function LoadingState({label='資料載入中…'}:{label?:string}){return <section className="uc-state" role="status" aria-busy="true"><p>{label}</p><Skeleton/><Skeleton/></section>}
 export function QualificationBadge({code,ball,rank}:{code:string;ball?:string;rank?:string}){return <StatusBadge status="INFORMATION" label={[code,rank?domainLabel(rank):rank,ball].filter(Boolean).join('｜')}/>}

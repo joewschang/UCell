@@ -7,7 +7,7 @@ import {get,qs} from '../../lib/api';
 type Selection={periodStart:string;periodEnd:string;ruleVersionCode:string};
 type Item={reference:string;sourceType:string;awardType:string;qualificationNo:string;theory:string|null;originalAward:string;mature:boolean;company:boolean;ownershipLink:string;replay:{count:number;signedAdjustment:string};payable:{reference:string;gross:string;status:string;link:string}|null;recoveries:{reference:string;required:string;applied:string;outstanding:string;link:string}[];payment:{reference:string;status:string;lineReference:string;gross:string;recoveryOffset:string;net:string;bankConfirmed:string;confirmationCount:number;sharedSources:number;amountScope:string;link:string}|null};
 type Page={items:Item[];asOf:string;dataThrough:string;nextCursor:string|null;periodSourceCount:number};
-const labels:Record<string,string>={REFERRAL:'推薦',EQUALIZATION:'平級',BINARY:'雙軌',MATCHING:'對等',GLOBAL:'全球分紅',RPV:'RPV',EPV:'EPV',RETAIL_REFERRAL:'零售推薦'};
+const labels:Record<string,string>={REFERRAL:'推薦',EQUALIZATION:'平級',BINARY:'雙軌',MATCHING:'對等',GLOBAL:'全球分紅',RPV:uiText("RPV"),EPV:uiText("EPV"),RETAIL_REFERRAL:'零售推薦'};
 export function CompensationPeriodSources({selection}:{selection:Selection}){
  const [draft,setDraft]=useState({awardType:'',qualificationNo:''}),[filter,setFilter]=useState(draft),[cursor,setCursor]=useState<string>(),[asOf,setAsOf]=useState<string>();
  const reset=()=>{setCursor(undefined);setAsOf(undefined);};
