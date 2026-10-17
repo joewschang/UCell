@@ -8,7 +8,7 @@
   ],
   "catalog": {
     "domainLabels": 183,
-    "displayTerms": 583
+    "displayTerms": 585
   },
   "presentationFilesChanged": 112,
   "validation": {
@@ -18,7 +18,11 @@
       "admin/tsconfig.app.json",
       "member/tsconfig.json"
     ],
-    "languageAudit": "PASS: explicit branded terms and identifier formats only"
+    "languageAudit": "PASS: explicit branded terms and identifier formats only",
+    "runtimeLanguageAudits": [
+      "STAGE: 5 passed",
+      "PRODUCTION: 5 passed"
+    ]
   },
   "preserved": [
     "API and database codes",
@@ -29,5 +33,8 @@
     "Google, LINE, Microsoft Entra",
     "financial amounts and calculation rules"
   ],
-  "deploymentTarget": "STAGE"
+  "deploymentTarget": [
+    "STAGE",
+    "PRODUCTION"
+  ]
 }
