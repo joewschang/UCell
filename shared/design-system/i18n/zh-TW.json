@@ -766,6 +766,8 @@
     "danger": "異常",
     "info": "資訊",
     "neutral": "一般",
-    "SALE_CONFIRMED": "銷售確認"
+    "SALE_CONFIRMED": "銷售確認",
+    "EVERY8D": "Every8D",
+    "SUPPORT": "客服支援"
   }
 }
