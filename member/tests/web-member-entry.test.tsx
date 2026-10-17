@@ -14,7 +14,7 @@ let tree:ReactTestRenderer|undefined;
 it('authenticates the original Google member before linking current LINE and never creates another member',async()=>{
  const done=vi.fn(),token=vi.fn(()=> 'TEST_LINE_PROOF');
  await act(async()=>{tree=create(<WebMemberEntry onLineLogin={vi.fn()} onAuthenticated={done} lineRegistrationToken={token}/>,{createNodeMock:e=>e.type==='div'?{}:null});});
- await act(async()=>tree!.root.findAllByType('button').find(b=>b.children.includes('已用 Google 或 Web 註冊，登入並連結 LINE'))!.props.onClick());
+ await act(async()=>tree!.root.findAllByType('button').find(b=>b.children.includes("已用 Google 或 網頁 註冊，登入並連結 LINE"))!.props.onClick());
  expect(auth.linkLineIdentity).not.toHaveBeenCalled();
  const callback=auth.renderGoogleButton.mock.calls.at(-1)![1];
  await act(async()=>{callback();});
@@ -24,7 +24,7 @@ it('authenticates the original Google member before linking current LINE and nev
 it('stays on the linking screen on conflict instead of entering the wrong member account',async()=>{
  auth.linkLineIdentity.mockRejectedValueOnce(new Error('此 LINE 已連結其他會員'));
  const done=vi.fn();await act(async()=>{tree=create(<WebMemberEntry onLineLogin={vi.fn()} onAuthenticated={done} lineRegistrationToken={()=>'TEST_LINE_PROOF'}/>,{createNodeMock:e=>e.type==='div'?{}:null});});
- await act(async()=>tree!.root.findAllByType('button').find(b=>b.children.includes('已用 Google 或 Web 註冊，登入並連結 LINE'))!.props.onClick());
+ await act(async()=>tree!.root.findAllByType('button').find(b=>b.children.includes("已用 Google 或 網頁 註冊，登入並連結 LINE"))!.props.onClick());
  await act(async()=>auth.renderGoogleButton.mock.calls.at(-1)![1]());
  expect(done).not.toHaveBeenCalled();expect(JSON.stringify(tree!.toJSON())).toContain('此 LINE 已連結其他會員');
 });
@@ -32,12 +32,12 @@ it('opens new LINE friends directly on profile registration and preserves an exi
  const authenticated=vi.fn(),existing=vi.fn(),token=vi.fn(()=> 'LINE_ID_TOKEN_TEST_ONLY');
  await act(async()=>{tree=create(<WebMemberEntry onLineLogin={vi.fn()} onAuthenticated={authenticated} lineRegistrationToken={token} onExistingMemberBinding={existing}/>,{createNodeMock:element=>element.type==='div'?{}:null});});
  expect(JSON.stringify(tree!.toJSON())).toContain('登錄會員資料');
- expect(JSON.stringify(tree!.toJSON())).toContain('Email（聯絡資料）');
+ expect(JSON.stringify(tree!.toJSON())).toContain("電子郵件（聯絡資料）");
  expect(auth.renderGoogleRegistrationButton).not.toHaveBeenCalled();
  const labels=tree!.root.findAllByType('label');
  const input=(name:string)=>labels.find(l=>l.children.some(c=>typeof c==='string'&&c.includes(name)))!.findByType('input');
  act(()=>{
-  for(const [name,value] of Object.entries({'姓名':'測試新好友','顯示名稱':'新好友','生日':'1990-01-01','身分證明號碼':'TEST-LINE-ID','手機號碼':'+886912345678','Email':'line-friend@example.invalid','設定登入密碼':'LongPassword123!','確認密碼':'LongPassword123!'}))input(name).props.onChange({target:{value}});
+  for(const [name,value] of Object.entries({'姓名':'測試新好友','顯示名稱':'新好友','生日':'1990-01-01','身分證明號碼':'TEST-LINE-ID','手機號碼':'+886912345678','電子郵件':'line-friend@example.invalid','設定登入密碼':'LongPassword123!','確認密碼':'LongPassword123!'}))input(name).props.onChange({target:{value}});
   labels.find(l=>l.children.some(c=>typeof c==='string'&&c.includes('我已閱讀')))!.findByType('input').props.onChange({target:{checked:true}});
  });
  act(()=>tree!.root.findAllByType(ContactVerifier).forEach(v=>v.props.onVerified('a'.repeat(64))));
@@ -60,9 +60,9 @@ it('shows active Web login methods and keeps SMS OTP explicitly deferred',async(
  await act(async()=>{tree=create(<WebMemberEntry onLineLogin={vi.fn()} onAuthenticated={vi.fn()}/>,{createNodeMock:element=>element.type==='div'?{}:null});});
  const text=JSON.stringify(tree!.toJSON());
  expect(text).toContain('使用 LINE 登入');
- expect(text).toContain('會員編號、Email 或手機號碼');
+ expect(text).toContain("會員編號、電子郵件 或手機號碼");
  expect(text).toContain('Google 登入');
- expect(text).toContain('手機 OTP 登入將於簡訊供應商 API 完成後開放');
+ expect(text).toContain("手機 驗證碼 登入將於簡訊供應商 介面 完成後開放");
  expect(text).not.toContain('取得驗證碼');
 });
 
@@ -96,7 +96,7 @@ it('registers with Google, contract consent and password without OTP fields',asy
   input('生日').props.onChange({target:{value:'1990-01-01'}});
   input('身分證明號碼').props.onChange({target:{value:'TEST ONLY ID'}});
   input('手機號碼').props.onChange({target:{value:'+886912345678'}});
-  input('Email').props.onChange({target:{value:'member@example.invalid'}});
+  input('電子郵件').props.onChange({target:{value:'member@example.invalid'}});
   input('設定登入密碼').props.onChange({target:{value:'LongPassword123!'}});
   input('確認密碼').props.onChange({target:{value:'DifferentPassword123!'}});
   labels.find(l=>l.children.some(c=>typeof c==='string'&&c.includes('我已閱讀')))!.findByType('input').props.onChange({target:{checked:true}});

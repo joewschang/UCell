@@ -1,3 +1,4 @@
+import {uiText} from "../../shared/design-system/i18n";
 import { useState, useRef } from 'react';
 import { isMock, updateProfile } from './memberData';
 import ContactVerifier from './ContactVerifier';
@@ -11,7 +12,7 @@ export default function ProfileEditor({refresh}:{refresh:()=>void}){
  if(isMock)return null;
  async function submit(e:React.FormEvent){
   e.preventDefault();if(inFlight.current)return;
-  if(email.trim()&&!emailProof||smsRequired&&phone.trim()&&!mobileProof){setError('請先完成要修改的手機或 Email 驗證。');return;}
+  if(email.trim()&&!emailProof||smsRequired&&phone.trim()&&!mobileProof){setError(uiText("請先完成要修改的手機或 Email 驗證。"));return;}
   const input={...(name.trim()?{name:name.trim()}:{}),...(email.trim()?{email:email.trim(),emailVerificationProof:emailProof}:{}),...(phone.trim()?{phone:phone.trim(),mobileVerificationProof:mobileProof}: {})};
   if(!Object.keys(input).length){setError('請至少填寫一個要更新的欄位');return;}
   const body=JSON.stringify(input);if(pending.current?.body!==body)pending.current={body,key:crypto.randomUUID()};

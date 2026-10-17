@@ -31,7 +31,7 @@ beforeEach(()=>{role='SUPER_ADMIN';vi.clearAllMocks()});
 
 it('renders safe provider fields and exposes governed retry only for super admin',async()=>{
  const tree=await render(),output=JSON.stringify(tree.toJSON());
- expect(output).toContain('Provider Webhook 營運');expect(output).toContain('CRITICAL');expect(output).toContain('Provider 對帳健康狀態');expect(output).toContain('DISCREPANCY');expect(output).toContain('recon-correlation');expect(output).toContain('ACME');expect(output).toContain('TEMPORARY');expect(output).toContain('人工重試');expect(output).not.toMatch(/payloadHash|verificationEvidenceHash|safeEvidenceRef|leaseOwner/);
+ expect(output).toContain("服務商事件通知 營運");expect(output).toContain("緊急");expect(output).toContain("服務商 對帳健康狀態");expect(output).toContain("對帳有差異");expect(output).toContain('recon-correlation');expect(output).toContain('ACME');expect(output).toContain('TEMPORARY');expect(output).toContain('人工重試');expect(output).not.toMatch(/payloadHash|verificationEvidenceHash|safeEvidenceRef|leaseOwner/);
  act(()=>tree.unmount());
  role='COMPLIANCE_AUDIT';const readOnly=await render();expect(JSON.stringify(readOnly.toJSON())).not.toContain('人工重試');act(()=>readOnly.unmount());
 });
@@ -39,7 +39,7 @@ it('renders safe provider fields and exposes governed retry only for super admin
 it('opens a safe operational detail drawer with audit history',async()=>{
  const tree=await render();
  await act(async()=>{tree.root.findAllByType('button').find(node=>node.children.includes('查看'))!.props.onClick();await new Promise(resolve=>setTimeout(resolve,100))});
- const output=JSON.stringify(tree.toJSON());expect(output).toContain('Webhook 營運明細');expect(output).toContain('PROVIDER_WEBHOOK_MANUAL_RETRY_REQUESTED');expect(output).toContain('provider incident reviewed');expect(output).not.toMatch(/payloadHash|safeEvidenceRef|verificationEvidenceHash|leaseOwner/);act(()=>tree.unmount());
+ const output=JSON.stringify(tree.toJSON());expect(output).toContain("事件通知 營運明細");expect(output).toContain('PROVIDER_WEBHOOK_MANUAL_RETRY_REQUESTED');expect(output).toContain("服務商 incident reviewed");expect(output).not.toMatch(/payloadHash|safeEvidenceRef|verificationEvidenceHash|leaseOwner/);act(()=>tree.unmount());
 });
 
 it('requires confirmation reason and submits the governed retry command',async()=>{
@@ -53,8 +53,8 @@ it('requires confirmation reason and submits the governed retry command',async()
 });
 
 it.each([
- [409,'此 webhook 狀態已變更或正在處理，請重新整理後確認。'],
- [422,'此 webhook 不符合人工重試條件，請檢查狀態與必要設定。'],
+ [409,'此 事件通知 狀態已變更或正在處理，請重新整理後確認。'],
+ [422,'此 事件通知 不符合人工重試條件，請檢查狀態與必要設定。'],
  [500,'provider unavailable'],
 ])('shows an actionable retry error for HTTP %s',async(status,message)=>{
  vi.mocked(command).mockRejectedValue(new ApiError(status,null,status===500?'provider unavailable':'failure'));

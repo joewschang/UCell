@@ -1,3 +1,4 @@
+import {uiValue,uiText} from "../../shared/design-system/i18n";
 import {useRef,useState} from 'react';
 import {ErrorState,LoadingState} from '@ucell/design-system';
 import {consentFormalContract,getFormalRequiredContracts,saveFormalDraft,uploadFormalDocument,submitFormalEnrollment,type FormalDocumentType} from './memberData';
@@ -49,7 +50,7 @@ export default function FormalUpgrade({onSubmitted}:{onSubmitted?:()=>void}={}){
  }
 
  return <form className="card" onSubmit={submit}><h3>升級正式會員：加密草稿</h3>
- <p>線上正式會員申請限自然人。草稿不會送審、核准、建立球位或改變會員狀態；配偶與身分資料僅供 KYC 與跨線審查。</p>
+ <p>{uiText("線上正式會員申請限自然人。草稿不會送審、核准、建立球位或改變會員狀態；配偶與身分資料僅供 KYC 與跨線審查。")}</p>
  <details><summary>{contract.title}（{contract.version}）</summary><p>{contract.content}</p><small>內容雜湊：{contract.contentHash}</small></details>
  <label><input type="checkbox" checked={accepted||!!contract.acceptedAt} disabled={!!contract.acceptedAt||busy} onChange={e=>setAccepted(e.target.checked)}/> 我已閱讀並同意上述正式會員合約與隱私告知</label>
 
@@ -57,17 +58,17 @@ export default function FormalUpgrade({onSubmitted}:{onSubmitted?:()=>void}={}){
  <label>姓名<input required maxLength={120} autoComplete="name" value={form.legalName} onChange={e=>set('legalName',e.target.value)}/></label>
  <label>性別<select required value={form.gender} onChange={e=>set('gender',e.target.value)}><option value="FEMALE">女性</option><option value="MALE">男性</option><option value="OTHER">其他</option><option value="UNDISCLOSED">不揭露</option></select></label>
  <label>出生年月日<input required type="date" value={form.birthDate} onChange={e=>set('birthDate',e.target.value)}/></label>
- <label>國籍<select value={form.nationalityCode} onChange={e=>set('nationalityCode',e.target.value)}>{countryOptions.map(option=><option key={option.code} value={option.code}>{option.label}</option>)}</select></label>
+ <label>國籍<select value={form.nationalityCode} onChange={e=>set('nationalityCode',e.target.value)}>{countryOptions.map(option=><option key={option.code} value={option.code}>{uiValue((option.label))}</option>)}</select></label>
  <label>身分證明文件類型<select value={form.identityDocumentType} onChange={e=>set('identityDocumentType',e.target.value)}><option value="NATIONAL_ID">身分證號</option><option value="RESIDENCE_PERMIT">居留證號</option><option value="PASSPORT">護照號碼</option><option value="OTHER">其他</option></select></label>
  <label>身分證明號碼<input required maxLength={64} autoComplete="off" value={form.identityDocumentNumber} onChange={e=>set('identityDocumentNumber',e.target.value)}/></label>
 
  <fieldset><legend>配偶資料／跨線審查</legend>
   <label><input type="checkbox" checked={form.hasSpouse} onChange={e=>set('hasSpouse',e.target.checked)}/> 有配偶</label>
-  {form.hasSpouse&&<><label>配偶姓名<input required maxLength={120} value={form.spouseName} onChange={e=>set('spouseName',e.target.value)}/></label><label>配偶國籍<select value={form.spouseNationalityCode} onChange={e=>set('spouseNationalityCode',e.target.value)}>{countryOptions.map(option=><option key={option.code} value={option.code}>{option.label}</option>)}</select></label><label>配偶身分證明文件類型<select value={form.spouseIdentityDocumentType} onChange={e=>set('spouseIdentityDocumentType',e.target.value)}><option value="NATIONAL_ID">身分證號</option><option value="RESIDENCE_PERMIT">居留證號</option><option value="PASSPORT">護照號碼</option><option value="OTHER">其他</option></select></label><label>配偶身分證明號碼<input required maxLength={64} autoComplete="off" value={form.spouseIdentityDocumentNumber} onChange={e=>set('spouseIdentityDocumentNumber',e.target.value)}/></label></>}
+  {form.hasSpouse&&<><label>配偶姓名<input required maxLength={120} value={form.spouseName} onChange={e=>set('spouseName',e.target.value)}/></label><label>配偶國籍<select value={form.spouseNationalityCode} onChange={e=>set('spouseNationalityCode',e.target.value)}>{countryOptions.map(option=><option key={option.code} value={option.code}>{uiValue((option.label))}</option>)}</select></label><label>配偶身分證明文件類型<select value={form.spouseIdentityDocumentType} onChange={e=>set('spouseIdentityDocumentType',e.target.value)}><option value="NATIONAL_ID">身分證號</option><option value="RESIDENCE_PERMIT">居留證號</option><option value="PASSPORT">護照號碼</option><option value="OTHER">其他</option></select></label><label>配偶身分證明號碼<input required maxLength={64} autoComplete="off" value={form.spouseIdentityDocumentNumber} onChange={e=>set('spouseIdentityDocumentNumber',e.target.value)}/></label></>}
   <small>夫妻於婚姻關係存續期間視為單一正式經營單位；配偶仍可保有一般會員／消費者資格，但不得另行取得獨立正式傳銷經營權。</small>
  </fieldset>
  <fieldset><legend>身分與銀行文件</legend>
-  <p>線上正式會員送審前必須完成身分證明文件正面、反面及存摺封面上傳。JPG/PNG，單檔上限 10 MB。</p>
+  <p>{uiText("線上正式會員送審前必須完成身分證明文件正面、反面及存摺封面上傳。JPG/PNG，單檔上限 10 MB。")}</p>
   <label>身分證明文件正面<input type="file" accept="image/jpeg,image/png" onChange={e=>setFile('IDENTITY_FRONT',e.target.files?.[0])}/>{uploaded.IDENTITY_FRONT&&<small>已上傳 · 安全檢查 {uploaded.IDENTITY_FRONT}</small>}</label>
   <label>身分證明文件反面<input type="file" accept="image/jpeg,image/png" onChange={e=>setFile('IDENTITY_BACK',e.target.files?.[0])}/>{uploaded.IDENTITY_BACK&&<small>已上傳 · 安全檢查 {uploaded.IDENTITY_BACK}</small>}</label>
   <label>存摺封面<input type="file" accept="image/jpeg,image/png" onChange={e=>setFile('BANKBOOK_COVER',e.target.files?.[0])}/>{uploaded.BANKBOOK_COVER&&<small>已上傳 · 安全檢查 {uploaded.BANKBOOK_COVER}</small>}</label>
@@ -76,7 +77,7 @@ export default function FormalUpgrade({onSubmitted}:{onSubmitted?:()=>void}={}){
 
  <label>通訊地址<textarea required maxLength={500} autoComplete="street-address" value={form.communicationAddress} onChange={e=>set('communicationAddress',e.target.value)}/></label>
  <label>電話<input required maxLength={32} autoComplete="tel" value={form.phone} onChange={e=>set('phone',e.target.value)}/></label>
- <label>Email<input required type="email" maxLength={254} autoComplete="email" value={form.email} onChange={e=>set('email',e.target.value)}/></label>
+ <label>{uiText("Email")}<input required type="email" maxLength={254} autoComplete="email" value={form.email} onChange={e=>set('email',e.target.value)}/></label>
  <label>銀行別／代碼<input required maxLength={16} value={form.bankCode} onChange={e=>set('bankCode',e.target.value)}/></label>
  <label>銀行帳號<input required maxLength={34} autoComplete="off" value={form.bankAccount} onChange={e=>set('bankAccount',e.target.value)}/></label>
  <label>帳戶名<input required maxLength={120} value={form.accountHolder} onChange={e=>set('accountHolder',e.target.value)}/></label>

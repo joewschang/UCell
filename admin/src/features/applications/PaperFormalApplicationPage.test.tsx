@@ -25,10 +25,10 @@ async function spouse(enabled:boolean){
 }
 async function common(){
  await selectPerson();
- for(const [label,value] of [['紙本申請編號','TEST-PAPER'],['通訊地址','TEST ONLY ADDRESS'],['電話','TEST ONLY PHONE'],['Email','paper@example.invalid'],['銀行代碼','TEST'],['銀行帳號','TEST ONLY BANK'],['帳戶名','TEST ONLY HOLDER']])await field(label,value);
+ for(const [label,value] of [['紙本申請編號','TEST-PAPER'],['通訊地址','TEST ONLY ADDRESS'],['電話','TEST ONLY PHONE'],['電子郵件','paper@example.invalid'],['銀行代碼','TEST'],['銀行帳號','TEST ONLY BANK'],['帳戶名','TEST ONLY HOLDER']])await field(label,value);
 }
 it('keeps the selected Person as representative and excludes stale individual data after switching to a corporation',async()=>{
- await common();await field('姓名','STALE INDIVIDUAL');await field('身分證明號碼','STALE ID');
+ await common();await field('姓名',"待更新 INDIVIDUAL");await field('身分證明號碼',"待更新 識別碼");
  await field('申請類型','LEGAL_ENTITY');
  for(const [label,value] of [['法人名稱','TEST ONLY CORPORATION'],['統一編號／法人登記號碼','TEST-REGISTRATION'],['法人登記地址','TEST ADDRESS'],['主要經營代表人姓名','TEST REPRESENTATIVE'],['代表人身分證明號碼','TEST REP ID']])await field(label,value);
  await act(async()=>tree.root.findByType('form').props.onSubmit({preventDefault(){}}));
@@ -40,10 +40,10 @@ it('keeps the selected Person as representative and excludes stale individual da
 });
 it('does not transmit a cleared spouse declaration or create an application without a selected Person',async()=>{
  await field('姓名','TEST ONLY APPLICANT');await spouse(true);
- await field('配偶姓名','STALE SPOUSE');await field('配偶身分證明號碼','STALE SPOUSE ID');await spouse(false);
+ await field('配偶姓名',"待更新 SPOUSE");await field('配偶身分證明號碼',"待更新 SPOUSE 識別碼");await spouse(false);
  await act(async()=>tree.root.findByType('form').props.onSubmit({preventDefault(){}}));
  expect(command).not.toHaveBeenCalled();
- await common();await field('性別','UNDISCLOSED');await field('出生日期','1990-01-02');await field('身分證明號碼','TEST ONLY ID');
+ await common();await field('性別','UNDISCLOSED');await field('出生日期','1990-01-02');await field('身分證明號碼',"TEST ONLY ID");
  await act(async()=>tree.root.findByType('form').props.onSubmit({preventDefault(){}}));
  const payload=vi.mocked(command).mock.calls[0][1];
  expect(payload).toMatchObject({applicantType:'INDIVIDUAL',hasSpouse:false,identityDocumentNumber:'TEST ONLY ID'});

@@ -43,10 +43,10 @@ it('fails closed when a Qualification occupies a position but its Ball Number is
  let view:ReturnType<typeof create>;
  act(()=>{view=create(<CanonicalTree positions={[position({positionNo:4,ballNo:null,companyProfile:null,ownerType:null,activeLabel:null})]} onSelect={()=>{}}/>);});
  const button=view!.root.findByType('button'),output=JSON.stringify(view!.toJSON());
- expect(output).toContain('資格已占用 · Ball Number 證據未提供');
- expect(output).toContain('Ball Number 證據未提供');
+ expect(output).toContain("資格已占用 · 球號 證據未提供");
+ expect(output).toContain("球號 證據未提供");
  expect(output).not.toContain('AVAILABLE');
- expect(String(button.props['aria-label'])).toContain('Ball Number 證據未提供');
- expect(button.props.title).toBe('Ball Number 證據未提供');
+ expect(String(button.props['aria-label'])).toContain("球號 證據未提供");
+ expect(button.props.title).toBe("球號 證據未提供");
  act(()=>view!.unmount());
 });

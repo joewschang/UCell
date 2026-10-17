@@ -1,3 +1,4 @@
+import {uiText} from "../../../../shared/design-system/i18n";
 import React,{createContext,useContext,useEffect,useMemo,useState} from 'react';
 import {clearAdminToken,get,post,setAdminToken} from '../../lib/api';
 import {acquireEntraIdToken,entraLogout} from './entra';
@@ -79,7 +80,7 @@ export function AuthProvider({children}:{children:React.ReactNode}){
         };
         setUser(u);persistUser(u);
       }catch(e:any){
-        clear();setError(e?.message??'Microsoft登入失敗');
+        clear();setError(e?.message??uiText("Microsoft登入失敗"));
         throw e;
       }finally{setBusy(false)}
     },

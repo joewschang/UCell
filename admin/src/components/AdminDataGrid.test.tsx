@@ -11,7 +11,7 @@ it('paginates only the explicit loaded result and disables boundary commands',()
 });
 it('sorts with numeric text and exposes direction to assistive technology',()=>{
  let tree:ReturnType<typeof create>;act(()=>{tree=create(<AdminDataGrid rows={rows} columns={columns} rowId={r=>r.id} label="測試名冊"/>)});
- const button=()=>tree!.root.findAllByType('button').find(b=>b.children.join('')==='ID')!;
+ const button=()=>tree!.root.findAllByType('button').find(b=>b.children.join('')==="識別碼")!;
  act(()=>button().props.onClick());expect(tree!.root.findAllByType('th')[1].props['aria-sort']).toBe('ascending');expect(tree!.root.findByType('tbody').findAllByType('tr')[0].findAllByType('td')[1].children).toEqual(['0']);
  act(()=>button().props.onClick());expect(tree!.root.findAllByType('th')[1].props['aria-sort']).toBe('descending');expect(tree!.root.findByType('tbody').findAllByType('tr')[0].findAllByType('td')[1].children).toEqual(['24']);act(()=>tree!.unmount());
 });

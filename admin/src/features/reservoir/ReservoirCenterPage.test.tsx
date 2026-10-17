@@ -18,7 +18,7 @@ it('renders B separately from A and pages using the same server snapshot',async(
 });
 it('requests authoritative Explain with the entry period and renders signed corrections',async()=>{
  const view=await render();vi.mocked(get).mockResolvedValue({status:'AVAILABLE',explainCode:'VERIFIED_SOURCE',result:{amount:'-8000',kind:'CORRECTION',final:'50000',profile:'LEADER'},ruleVersion:'R1.0B',parameterVersion:'pv',evidenceRefs:[{type:'ReservoirBEffect',id:'effect-1'}]});
- const explain=view.root.findAllByType('button').find(b=>b.children.join('')==='Explain Reservoir B')!;
+ const explain=view.root.findAllByType('button').find(b=>b.children.join('')==="公積金計算說明 B")!;
  await act(async()=>explain.props.onClick());expect(get).toHaveBeenLastCalledWith(expect.stringContaining('tool=explainReservoirB'));expect(JSON.stringify(view.toJSON())).toContain('-8000');act(()=>view.unmount());
 });
 it('shows denied/error states without retained ledger figures',async()=>{

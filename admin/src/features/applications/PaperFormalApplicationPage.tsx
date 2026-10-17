@@ -1,3 +1,4 @@
+import {uiValue,uiText} from "../../../../shared/design-system/i18n";
 import {useEffect,useState} from 'react';
 import {command,get,qs} from '../../lib/api';
 import {countryOptions} from '../../lib/countryOptions';
@@ -45,19 +46,19 @@ export function PaperFormalApplicationPage(){
   }catch(err){setError(err)}finally{setBusy(false)}
  }
 
- const countrySelect=(value:string,setter:(v:string)=>void)=><select value={value} onChange={e=>setter(e.target.value)}>{countryOptions.map(x=><option key={x.code} value={x.code}>{x.label}</option>)}</select>;
+ const countrySelect=(value:string,setter:(v:string)=>void)=><select value={value} onChange={e=>setter(e.target.value)}>{countryOptions.map(x=><option key={x.code} value={x.code}>{uiValue((x.label))}</option>)}</select>;
  const docSelect=(value:IdentityDocumentType,setter:(v:IdentityDocumentType)=>void)=><select value={value} onChange={e=>setter(e.target.value as IdentityDocumentType)}><option value="NATIONAL_ID">身分證號</option><option value="RESIDENCE_PERMIT">居留證號</option><option value="PASSPORT">護照號碼</option><option value="OTHER">其他</option></select>;
 
  return <>
-  <PageHeader title="紙本正式會員建檔" subtitle="自然人與法人紙本申請由後台建檔。法人僅接受紙本申請；建檔不會自動建立 Ball。"/>
+  <PageHeader title="紙本正式會員建檔" subtitle={uiText("自然人與法人紙本申請由後台建檔。法人僅接受紙本申請；建檔不會自動建立 Ball。")}/>
   <ErrorBox error={error}/>
-  {created?<Card title="紙本申請已建立"><p>Application ID：<span className="mono">{created.id}</span></p><p>類型：{created.applicantType} · 來源：{created.sourceChannel}</p>{created.memberNo&&<p>會員編號：{created.memberNo}</p>}<p>下一步請回申請待審頁完成文件核對、配偶核驗、跨線審查與正式核准。</p></Card>:
+  {created?<Card title="紙本申請已建立"><p>{uiText("Application ID：")}<span className="mono">{created.id}</span></p><p>類型：{created.applicantType} · 來源：{created.sourceChannel}</p>{created.memberNo&&<p>會員編號：{created.memberNo}</p>}<p>下一步請回申請待審頁完成文件核對、配偶核驗、跨線審查與正式核准。</p></Card>:
   <form onSubmit={submit}>
    <Card title="1. 紙本來源與申請主體">
     <label>紙本申請編號<input required maxLength={120} value={paperApplicationReference} onChange={e=>setPaperApplicationReference(e.target.value)}/></label>
-    <label>正式會員契約版本<select required value={contractVersionId} onChange={e=>setContractVersionId(e.target.value)}>{contracts.map(x=><option key={x.id} value={x.id}>{x.title} · {x.version}</option>)}</select></label>
+    <label>正式會員契約版本<select required value={contractVersionId} onChange={e=>setContractVersionId(e.target.value)}>{contracts.map(x=><option key={x.id} value={x.id}>{uiValue((x.title))} · {uiValue((x.version))}</option>)}</select></label>
     <label>申請類型<select value={applicantType} onChange={e=>setApplicantType(e.target.value as ApplicantType)}><option value="INDIVIDUAL">自然人</option><option value="LEGAL_ENTITY">法人</option></select></label>
-    <SearchSelect label={applicantType==='LEGAL_ENTITY'?'主要經營代表人 Person':'紙本申請人 Person'} value={representative} onChange={setRepresentative} search={personSearch}/>
+    <SearchSelect label={applicantType==='LEGAL_ENTITY'?uiText("主要經營代表人 Person"):uiText("紙本申請人 Person")} value={representative} onChange={setRepresentative} search={personSearch}/>
    </Card>
 
    <Card title={applicantType==='LEGAL_ENTITY'?'2. 法人與代表人身分':'2. 自然人身分'}>
@@ -85,7 +86,7 @@ export function PaperFormalApplicationPage(){
     {hasSpouse&&<><label>配偶姓名<input required value={spouseName} onChange={e=>setSpouseName(e.target.value)}/></label><label>配偶國籍{countrySelect(spouseNationalityCode,setSpouseNationalityCode)}</label><label>配偶身分證明文件類型{docSelect(spouseIdentityDocumentType,setSpouseIdentityDocumentType)}</label><label>配偶身分證明號碼<input required maxLength={64} value={spouseIdentityDocumentNumber} onChange={e=>setSpouseIdentityDocumentNumber(e.target.value)}/></label></>}
     <label>通訊地址<textarea required value={communicationAddress} onChange={e=>setCommunicationAddress(e.target.value)}/></label>
     <label>電話<input required value={phone} onChange={e=>setPhone(e.target.value)}/></label>
-    <label>Email<input required type="email" value={email} onChange={e=>setEmail(e.target.value)}/></label>
+    <label>{uiText("Email")}<input required type="email" value={email} onChange={e=>setEmail(e.target.value)}/></label>
     <label>銀行代碼<input required value={bankCode} onChange={e=>setBankCode(e.target.value)}/></label>
     <label>銀行帳號<input required value={bankAccount} onChange={e=>setBankAccount(e.target.value)}/></label>
     <label>帳戶名<input required value={accountHolder} onChange={e=>setAccountHolder(e.target.value)}/></label>

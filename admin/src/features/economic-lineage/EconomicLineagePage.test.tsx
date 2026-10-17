@@ -54,27 +54,27 @@ it('labels monthly Active context as historical and separate from order totals',
  vi.mocked(get).mockResolvedValue({data:{...fixture,economicEvidence:{consumptionRecognitions:[{basis:'RECORDED_CONSUMPTION_DECISION',monthContext:{basis:'HISTORICAL_MONTH_CONTEXT_NOT_ORDER_TOTAL',cumulativeBefore:'1000',eligibleDelta:'200',cumulativeAfter:'1200',activeThreshold:'1200',thresholdCrossed:true,activeIntervals:[{activeFrom:'2026-09-10T00:00:00Z',activeTo:'2026-09-30T16:00:00Z'}]}},{basis:'RECORDED_CONSUMPTION_DECISION',monthContext:null}]}}});
  const view=await render();await vi.waitFor(()=>expect(JSON.stringify(view.toJSON())).toContain('歷史月累計背景'));
  const output=JSON.stringify(view.toJSON());
- for(const label of ['本筆跨越門檻','歷史資格起始','不能全歸給本單','不代表目前 Active 狀態','缺少對應的歷史月累計證據'])expect(output).toContain(label);
+ for(const label of ['本筆跨越門檻','歷史資格起始','不能全歸給本單','不代表目前符合活躍條件的資格 狀態','缺少對應的歷史月累計證據'])expect(output).toContain(label);
  act(()=>view.unmount());
 });
 it('shows superseded Active evidence without claiming current qualification',async()=>{
  vi.mocked(get).mockResolvedValue({data:{...fixture,economicEvidence:{returnActiveReplays:[{basis:'RETURN_MONTH_REPLAY_NOT_CURRENT_ACTIVE',replacements:[{status:'HISTORICAL_INTERVAL_REMOVED',previousInterval:{activeFrom:'2026-09-01T00:00:00Z',activeTo:'2026-09-30T16:00:00Z'}}]}]}}});
  const view=await render();await vi.waitFor(()=>expect(JSON.stringify(view.toJSON())).toContain('退貨後資格變更'));
- for(const label of ['歷史資格區間已取消','被替代的歷史區間','不代表目前 Active 狀態','月差額不能相加'])expect(JSON.stringify(view.toJSON())).toContain(label);
+ for(const label of ['歷史資格區間已取消','被替代的歷史區間','不代表目前符合活躍條件的資格 狀態','月差額不能相加'])expect(JSON.stringify(view.toJSON())).toContain(label);
  act(()=>view.unmount());
 });
 it('shows zero historical theory and its reason separately from final entitlement',async()=>{
  vi.mocked(get).mockResolvedValue({data:{...fixture,economicEvidence:{theoryCalculations:[{basis:'ORIGINAL_THEORY_NOT_FINAL_ENTITLEMENT',theoryKind:'REFERRAL_MATCHING',generation:2,baseAmount:'150',rate:'0.1',theoryAmount:'0',activeAtRecognition:false,unlockEligible:true,reasonCode:'HISTORICAL_INACTIVE',recipientReference:'PRIVATE-RECIPIENT',occurredAt:'2026-09-01T00:00:00Z'}]}}});
  const view=await render();await vi.waitFor(()=>expect(JSON.stringify(view.toJSON())).toContain('GPV 理論計算依據'));
  const output=JSON.stringify(view.toJSON());
- for(const label of ['平級','當時未符合 Active','當時代數已解鎖','不代表最終可領獎金'])expect(output).toContain(label);
+ for(const label of ['平級','當時未符合 活躍','當時代數已解鎖','不代表最終可領獎金'])expect(output).toContain(label);
  expect(output).not.toContain('PRIVATE-RECIPIENT');expect(output).not.toContain('可得金額');act(()=>view.unmount());
 });
 it('distinguishes sealed period decisions from unavailable historical reasons',async()=>{
  vi.mocked(get).mockResolvedValue({data:{...fixture,economicEvidence:{periodContributions:[{periodContext:{eligibilityEvidenceStatus:'RECORDED',eligibilityDecisions:[{eligibilityType:'BINARY_ELIGIBILITY',reasonCode:'INACTIVE',theoryAmount:'150',entitlementAmount:'0',recipientReference:'PRIVATE-RECIPIENT',calculationDetail:'PRIVATE-DETAIL'}]}},{periodContext:{eligibilityEvidenceStatus:'UNAVAILABLE',eligibilityDecisions:[]}}]}}});
  const view=await render();await vi.waitFor(()=>expect(JSON.stringify(view.toJSON())).toContain('期間資格判定'));
  const output=JSON.stringify(view.toJSON());
- for(const label of ['對碰資格','當時未符合 Active','當時權益金額','不代表本單的獎金分配或目前資格','此快照未保存期間資格判定'])expect(output).toContain(label);
+ for(const label of ['對碰資格','當時未符合 活躍','當時權益金額','不代表本單的獎金分配或目前資格','此快照未保存期間資格判定'])expect(output).toContain(label);
  for(const secret of ['PRIVATE-RECIPIENT','PRIVATE-DETAIL'])expect(output).not.toContain(secret);
  act(()=>view.unmount());
 });
@@ -87,7 +87,7 @@ it('renders the sealed period factor separately from theory and posted entitleme
 });
 it('shows historical Global threshold decisions without inventing entitlement',async()=>{
  vi.mocked(get).mockResolvedValue({data:{...fixture,economicEvidence:{periodContributions:[{periodContext:{eligibilityEvidenceStatus:'RECORDED',eligibilityDecisions:[{eligibilityType:'GLOBAL_ELIGIBILITY',rankLevel:'NEW_STAR',active:true,weakSidePv:'100',weakSideThreshold:'1000',rankAchieved:false,eligible:false,reasonCode:'WEAK_SIDE_BELOW_THRESHOLD',recipientReference:'PRIVATE-GLOBAL'}]}}]}}});
- const view=await render();await vi.waitFor(()=>expect(JSON.stringify(view.toJSON())).toContain('Global 資格'));
+ const view=await render();await vi.waitFor(()=>expect(JSON.stringify(view.toJSON())).toContain("全球分紅 資格"));
  const output=JSON.stringify(view.toJSON());
  for(const label of ['當時弱邊門檻','當時已達成位階','當期弱邊 PV 未達門檻','不提供假設獎金'])expect(output).toContain(label);
  for(const absent of ['PRIVATE-GLOBAL','當時權益金額','理論金額'])expect(output).not.toContain(absent);

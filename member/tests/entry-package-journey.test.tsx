@@ -23,7 +23,7 @@ it.each([[3,'啟航',14400],[9,'菁英',43200],[15,'領袖',72000]])('selects ex
  });vi.stubGlobal('fetch',fetch);
  await act(async()=>{tree=create(<MemoryRouter initialEntries={['/shop']}><Mall onCreated={vi.fn()}/><Location/></MemoryRouter>)});
  await act(async()=>tree.root.findAllByType('button').find(b=>b.children.includes('選擇套組商品'))!.props.onClick());
- const checkout=()=>tree.root.findAllByType('button').find(b=>b.children.includes('選購套組並完成 Stage 付款'))!;
+ const checkout=()=>tree.root.findAllByType('button').find(b=>b.children.includes("選購套組並完成 測試環境 付款"))!;
  expect(checkout().props.disabled).toBe(true);
  for(let i=0;i<count;i++)act(()=>tree.root.findAllByType('button').filter(b=>b.children.includes('增加'))[i%5].props.onClick());
  expect(tree.root.findAllByType('button').filter(b=>b.children.includes('增加')).every(b=>b.props.disabled)).toBe(true);

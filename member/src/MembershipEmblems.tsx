@@ -1,3 +1,4 @@
+import {uiValue,uiText} from "../../shared/design-system/i18n";
 import {useState} from 'react';
 import {QualificationEmblem,GlobalRankEmblem} from '@ucell/design-system';
 import {useOptionalQualification} from './QualificationContext';
@@ -11,7 +12,7 @@ function ArtworkEmblem({code,kind,compact=false}:{code:string;kind:'plan'|'rank'
  const [failed,setFailed]=useState('');
  if(!meta)return null;
  if(failed===src)return kind==='plan'?<QualificationEmblem code={code} compact={compact}/>:<GlobalRankEmblem code={code} compact={compact}/>;
- return <span className="uc-art-emblem" data-kind={kind} data-code={code}><img src={src} width="48" height="48" alt={meta.label+(kind==='plan'?'會員資格':'聘階')} onError={()=>setFailed(src)}/>{!compact&&<span>{meta.label}</span>}</span>;
+ return <span className="uc-art-emblem" data-kind={kind} data-code={code}><img src={src} width="48" height="48" alt={meta.label+(kind==='plan'?'會員資格':'聘階')} onError={()=>setFailed(src)}/>{!compact&&<span>{uiValue((meta.label))}</span>}</span>;
 }
 export function MembershipPlanEmblem({code,compact=false}:{code:string;compact?:boolean}){return <ArtworkEmblem code={code} kind="plan" compact={compact}/>;}
 export function MembershipRankEmblem({code,compact=false}:{code:string;compact?:boolean}){return <ArtworkEmblem code={code} kind="rank" compact={compact}/>;}

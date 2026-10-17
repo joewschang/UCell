@@ -1,3 +1,4 @@
+import {uiText} from "../../shared/design-system/i18n";
 import { demoProducts } from './commerce';
 import * as validate from './validation';
 import { type Dashboard, type Qualification, type Scoped, type Person, type Organization, type Binary, type Performance, type Bonus, type Ledger, type Product, type Orders } from './api';
@@ -10,8 +11,8 @@ export async function payEnrollmentPackage(orderId:string,key:string){return api
 export async function payStageCommerceOrder(orderId:string,key:string){return api(`/member/formal-enrollment/order-payments/${encodeURIComponent(orderId)}`,{method:'POST',headers:{'Idempotency-Key':key}});}
 export async function submitFormalEnrollment(applicationId:string,key:string){return api(`/member/formal-enrollment/applications/${encodeURIComponent(applicationId)}/submit`,{method:'POST',headers:{'Idempotency-Key':key}});}
 const qualifications: Qualification[] = [
-    { id: 'q1', code: 'A000001', rank: 'LEADER', active: true, ballLabel: '球 A000001' },
-    { id: 'q2', code: 'A000002', rank: 'ELITE', active: false, ballLabel: '球 A000002' },
+    { id: 'q1', code: 'A000001', rank: 'LEADER', active: true, ballLabel: uiText("球 A000001") },
+    { id: 'q2', code: 'A000002', rank: 'ELITE', active: false, ballLabel: uiText("球 A000002") },
 ];
 const planLevelNames: Record<string, string> = { STARTER: '啟航', ELITE: '菁英', LEADER: '領袖' };
 /** The transport field is named rank for compatibility, but it is the plan-level code. */
@@ -56,8 +57,8 @@ export async function saveFormalDraft(input:FormalDraftInput,key:string){
 }export type FormalDocumentType='IDENTITY_FRONT'|'IDENTITY_BACK'|'BANKBOOK_COVER';
 export async function uploadFormalDocument(applicationId:string,documentType:FormalDocumentType,file:File){
  if(!uuid.test(applicationId))throw new Error('正式會員申請識別碼異常');
- if(!['image/jpeg','image/png'].includes(file.type))throw new Error('文件僅接受 JPG 或 PNG');
- if(file.size<=0||file.size>10*1024*1024)throw new Error('單一文件大小須介於 1 byte 至 10 MB');
+ if(!['image/jpeg','image/png'].includes(file.type))throw new Error(uiText("文件僅接受 JPG 或 PNG"));
+ if(file.size<=0||file.size>10*1024*1024)throw new Error(uiText("單一文件大小須介於 1 byte 至 10 MB"));
  const bytes=new Uint8Array(await file.arrayBuffer());
  let binary='';const chunk=0x8000;for(let i=0;i<bytes.length;i+=chunk)binary+=String.fromCharCode(...bytes.subarray(i,i+chunk));
  const contentBase64=btoa(binary);

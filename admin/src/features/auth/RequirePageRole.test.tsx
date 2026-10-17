@@ -17,7 +17,7 @@ describe('RequirePageRole',()=>{
       </MemoryRouter>,
     );
     expect(html).toContain('403 · 權限不足');
-    expect(html).toContain('MEMBERSHIP_OPS');
+    expect(html).toContain("會員營運");
     expect(html).toContain('/payouts');
     expect(html).toContain('返回營運總覽');
     expect(html).not.toContain('restricted payout data');

@@ -24,12 +24,12 @@ function TreeRouteSwitcher(){
 async function renderSwitcher(){let view:ReturnType<typeof create>;await act(async()=>{view=create(<MemoryRouter initialEntries={['/admin/organization/trees/'+id]}><TreeRouteSwitcher/></MemoryRouter>);await Promise.resolve();});return view!;}
 it('audit readers see company status and empty positions without write controls',async()=>{
  const view=await render(),output=JSON.stringify(view.toJSON());
- expect(output).toContain('Always Active (Company Rule)');expect(output).toContain('TREE-AX000001');expect(output).toContain('尚未占用');expect(output).toContain('Reservoir Center');expect(output).toContain('領袖 LEADER');expect(output).toContain('AVAILABLE');expect(output).not.toContain('company-0');
+ expect(output).toContain("公司持有期間持續有效");expect(output).toContain('TREE-AX000001');expect(output).toContain('尚未占用');expect(output).toContain("公積金中心");expect(output).toContain("領袖");expect(output).toContain("可提供");expect(output).not.toContain('company-0');
  expect(output).not.toContain('儲存名稱');expect(output).not.toContain('確認公司 Sponsor');expect(output).not.toContain('放置於選定位置');
  expect(get).toHaveBeenCalledWith(expect.stringContaining('knowledgeCutoff='));expect(command).not.toHaveBeenCalled();act(()=>view.unmount());
 });
 it('membership operators can confirm Sponsor but cannot override placement',async()=>{
- role='MEMBERSHIP_OPS';const view=await render(),output=JSON.stringify(view.toJSON());expect(output).toContain('確認公司 Sponsor');expect(output).not.toContain('放置於選定位置');act(()=>view.unmount());
+ role='MEMBERSHIP_OPS';const view=await render(),output=JSON.stringify(view.toJSON());expect(output).toContain("確認公司 推薦");expect(output).not.toContain('放置於選定位置');act(()=>view.unmount());
 });
 it('placement operators receive only their command controls',async()=>{
  role='QUALIFICATION_PLACEMENT_OVERRIDE';const view=await render(),output=JSON.stringify(view.toJSON());expect(output).toContain('放置於選定位置');expect(output).not.toContain('儲存名稱');expect(output).not.toContain('確認公司 Sponsor');act(()=>view.unmount());
@@ -56,11 +56,11 @@ it('renders the complete safe authority preflight review and no internal sponsor
  vi.mocked(get).mockResolvedValueOnce({data:{preflightToken:'p'.repeat(64),treeCode:'TREE-A',ballNo:'UNPLACED-2609000001',parentBallNo:'TREE-AX000001',expectedBinaryPositionNo:'4',expectedPath:'RLL',expectedBallNo:null,expectedVersion:2,actualSponsorSequenceNo:3,sponsorQualificationId:'internal-sponsor-id'}});
  await act(async()=>view.root.findAllByType('button').find(button=>button.children.join('')==='預檢選定位置')!.props.onClick());
  const output=JSON.stringify(view.toJSON());
- expect(output).toContain('預檢可提交');expect(output).toContain('TREE-A');expect(output).toContain('TREE-AX000001');expect(output).toContain('Binary 位置 4');expect(output).toContain('RLL');expect(output).toContain('TREE-A000001');expect(output).toContain('Topology version');expect(output).toContain('這不是位置保留');
+ expect(output).toContain('預檢可提交');expect(output).toContain('TREE-A');expect(output).toContain('TREE-AX000001');expect(output).toContain("二元安置 位置 4");expect(output).toContain('RLL');expect(output).toContain('TREE-A000001');expect(output).toContain("拓樸版本");expect(output).toContain('這不是位置保留');
  expect(output).not.toContain('internal-sponsor-id');
  expect(output).toContain('成功安置後依該樹序號配發');
  const rootBall=view.root.findAllByType('button').find(button=>String(button.props['aria-label']).includes('創始位置 #1'))!;
- expect(rootBall.props['aria-label']).toContain('Ball Number TREE-AX000001');expect(rootBall.props['aria-label']).toContain('Binary 位置 1');expect(rootBall.props['aria-label']).toContain('根位置');
+ expect(rootBall.props['aria-label']).toContain("球號 TREE-AX000001");expect(rootBall.props['aria-label']).toContain("二元安置 位置 1");expect(rootBall.props['aria-label']).toContain('根位置');
  act(()=>view.unmount());
 });
 it('shows a safe receipt after placement and submits the preflight-bound version',async()=>{
@@ -104,7 +104,7 @@ it('does not infer LEADER from a Company position when the approved profile is u
  const positions=result.positions.map(position=>position.positionNo<=3?{...position,companyProfile:{status:'UNAVAILABLE',planCode:null,profileVersion:null}}:position);
  vi.mocked(get).mockResolvedValueOnce({data:{status:'PARTIAL',result:{...result,positions}}});
  const view=await render(),output=JSON.stringify(view.toJSON());
- expect(output).toContain('公司持有 · LEADER Profile 證據未提供');expect(output).toContain('公司球 LEADER Profile 證據尚未提供');expect(output).not.toContain('領袖 LEADER');expect(output).not.toContain('公司球 LEADER Profile 已由伺服器核准');
+ expect(output).toContain("公司持有 · 領袖 規則設定 證據未提供");expect(output).toContain("公司球 領袖 規則設定 證據尚未提供");expect(output).not.toContain('領袖 LEADER');expect(output).not.toContain('公司球 LEADER Profile 已由伺服器核准');
  act(()=>view.unmount());
 });
 it('shows a Company-held non-bootstrap Ball as Always Active without labelling it LEADER',async()=>{
@@ -116,9 +116,9 @@ it('shows a Company-held non-bootstrap Ball as Always Active without labelling i
  const view=await render();
  const fourth=view.root.findAllByType('button').find(button=>String(button.props['aria-label']).includes('創始位置 #4'))!;
  expect(fourth.findAllByType('strong')[0].children.join('')).toContain('公司持有球');
- expect(fourth.findAllByType('div').some(node=>node.children.join('')==='公司持有 · 非 Bootstrap · 保留原 Plan')).toBe(true);
- expect(fourth.findAllByType('span').some(node=>node.children.join('')==='Always Active')).toBe(true);
- expect(String(fourth.props['aria-label'])).toContain('非 Bootstrap，保留原 Plan');
+ expect(fourth.findAllByType('div').some(node=>node.children.join('')==="公司持有 · 非 初始化 · 保留原 方案")).toBe(true);
+ expect(fourth.findAllByType('span').some(node=>node.children.join('')==="持續有效")).toBe(true);
+ expect(String(fourth.props['aria-label'])).toContain("非 初始化，保留原 方案");
  expect(String(fourth.props['aria-label'])).not.toContain('已核准 LEADER Profile');
  act(()=>view.unmount());
 });
@@ -130,14 +130,14 @@ it('treats an occupied position without a Ball Number as unavailable rather than
  vi.mocked(get).mockResolvedValueOnce({data:{status:'PARTIAL',result:{...result,positions}}});
  const view=await render();
  const fourth=view.root.findAllByType('button').find(button=>String(button.props['aria-label']).includes('創始位置 #4'))!;
- expect(fourth.findAllByType('strong')[0].children.join('')).toContain('Member Ball');
+ expect(fourth.findAllByType('strong')[0].children.join('')).toContain("會員球");
  expect(fourth.findAllByType('strong')[0].children.join('')).not.toContain('AVAILABLE');
- expect(String(fourth.props['aria-label'])).toContain('Ball Number 證據未提供');
- expect(view.root.findAllByType('td').some(cell=>cell.children.join('')==='已占用 · Ball Number 證據未提供')).toBe(true);
+ expect(String(fourth.props['aria-label'])).toContain("球號 證據未提供");
+ expect(view.root.findAllByType('td').some(cell=>cell.children.join('')==="已占用 · 球號 證據未提供")).toBe(true);
  await act(async()=>fourth.props.onClick());
  const parentInput=view.root.findAllByType('input').find(input=>input.props.placeholder==='例如 TREE-A000001')!;
  expect(parentInput.props.value).toBe('');
- expect(JSON.stringify(view.toJSON())).toContain('已有資格占用，但 Ball Number 證據未提供，不能作為父球');
+ expect(JSON.stringify(view.toJSON())).toContain("已有資格占用，但 球號 證據未提供，不能作為父球");
  act(()=>view.unmount());
 });
 it('grants only declared tree paths and roles',()=>{
@@ -154,7 +154,7 @@ it('requests and reloads background statistics using the same server query and a
  expect(command).toHaveBeenCalledWith('/admin/analytics/period-projections/jobs',{query,mode:'REBUILD'});
  vi.mocked(get).mockResolvedValueOnce({data:{status:'COMPLETED'}}).mockResolvedValueOnce({data:{status:'PARTIAL',result:{...result,statistics:{...statistics,projectionStatus:'CURRENT',snapshot:id}}}});
  await act(async()=>view.root.findAllByType('button').find(b=>b.children.join('')==='檢查統計工作')!.props.onClick());
- expect(get).toHaveBeenLastCalledWith(originalUrl);expect(JSON.stringify(view.toJSON())).toContain('CURRENT · 最新');act(()=>view.unmount());
+ expect(get).toHaveBeenLastCalledWith(originalUrl);expect(JSON.stringify(view.toJSON())).toContain("最新 · 最新");act(()=>view.unmount());
 });
 
 it('fails closed for unknown tree explain and projection codes',async()=>{
@@ -167,7 +167,7 @@ it('fails closed for unknown tree explain and projection codes',async()=>{
  const statistics={required:true,projectionStatus:'UNRECOGNISED_PROJECTION',snapshot:null,dataThrough:null,projectedAt:null,query:{metrics:['founding.statistics']}};
  vi.mocked(get).mockResolvedValueOnce({data:{status:'PARTIAL',result:{...result,statistics}}});
  const projection=await render(),projectionOutput=JSON.stringify(projection.toJSON());
- expect(projectionOutput).toContain('UNAVAILABLE · 暫不可用');
+ expect(projectionOutput).toContain("尚無資料 · 暫不可用");
  expect(projectionOutput).toContain('伺服器未提供可驗證的投影狀態');
  expect(projectionOutput).not.toContain('UNRECOGNISED_PROJECTION');
  act(()=>projection.unmount());
@@ -185,7 +185,7 @@ it('renders server statistic states and data-through without exposing raw metric
  const statistics={required:true,projectionStatus:'STALE',snapshot:'internal-snapshot-id',dataThrough,projectedAt:dataThrough,query:{metrics:['founding.statistics']}};
  vi.mocked(get).mockResolvedValueOnce({data:{status:'PARTIAL',result:{...result,positions,statistics}}});
  const view=await render(),output=JSON.stringify(view.toJSON());
- expect(output).toContain('AVAILABLE · 可用');expect(output).toContain('PENDING · 等待建立');expect(output).toContain('UNAVAILABLE · 暫不可用');expect(output).toContain('STALE · 待更新');expect(output).toContain('FAILED · 建立失敗');
+ expect(output).toContain("可提供 · 可用");expect(output).toContain("待處理 · 等待建立");expect(output).toContain("尚無資料 · 暫不可用");expect(output).toContain("待更新 · 待更新");expect(output).toContain("失敗 · 建立失敗");
  expect(output).toContain('資料截至 '+dataThrough);expect(output).toContain('統計快照已固定');
  expect(output).not.toContain('HISTORICAL_GPV_EVIDENCE_MISSING');expect(output).not.toContain('CARRY_SEAL_MISMATCH');expect(output).not.toContain('internal-snapshot-id');
  act(()=>view.unmount());
@@ -246,9 +246,9 @@ it('suppresses an older concurrent node-page response after a newer node request
  expect(nodeRequests).toBe(2);
  const page=(ballNo:string)=>({data:{status:'AVAILABLE',total:1,nextCursor:null,items:[{qualificationId:ballNo,ballNo,binaryPositionNo:'8',path:'LLL',parentQualificationId:null,side:'LEFT',depth:1,ownerType:'MEMBER',activeLabel:'ACTIVE'}]}});
  await act(async()=>{second.resolve(page('TREE-A-CURRENT'));await Promise.resolve();});
- expect(JSON.stringify(view.toJSON())).toContain('TREE-A-CURRENT');
+ expect(JSON.stringify(view.toJSON())).toContain("TREE-A-CURRENT");
  await act(async()=>{first.resolve(page('TREE-A-STALE'));await Promise.resolve();});
  const output=JSON.stringify(view.toJSON());
- expect(output).toContain('TREE-A-CURRENT');expect(output).not.toContain('TREE-A-STALE');
+ expect(output).toContain("TREE-A-CURRENT");expect(output).not.toContain('TREE-A-STALE');
  act(()=>view.unmount());
 });

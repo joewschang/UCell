@@ -30,7 +30,7 @@ it('actual Member adapters accept the Admin-configured catalog before and after 
 it('renders reloaded PAID Core detail after Admin payment without claiming shipment',async()=>{
   const b=bundle(),q=qualification(b);serve(b.memberOrderAfter);
   await act(async()=>{tree=create(<ConnectedOrderDetails q={q} id={b.orderCreate.data.id}/>);});
-  const rendered=JSON.stringify(tree!.toJSON());expect(rendered).toContain('PAID');expect(rendered).toContain('799.98');expect(rendered).toContain('不代表付款成功或已出貨');
+  const rendered=JSON.stringify(tree!.toJSON());expect(rendered).toContain("已付款");expect(rendered).toContain('799.98');expect(rendered).toContain('不代表付款成功或已出貨');
   serve(b.memberOrdersAfter);const orders=await getOrders(q,new AbortController().signal),paid=orders.orders.find(o=>o.id===b.orderCreate.data.id)!;
   expect([paid.status,paid.paymentStatus,paid.shipmentStatus]).toEqual(['PAID','PAID','FULFILLMENT_PENDING']);
   expect(b.adminOrderAfter.data.status).toBe(paid.status);
@@ -47,11 +47,11 @@ it('refreshes the current-ball order list after an Admin payment, replacing stal
   const fetch=vi.fn(async(url:string)=>new Response(JSON.stringify(url.includes('/qualifications')?{...b.memberOrderAfter,data:[q]}:url.includes('/member/me')?{...b.memberOrderAfter,data:{name:'Integration Member',alias:null,memberNo:'2609000004',email:null,phone:null,gender:null,birthDate:null,membershipState:'NETWORK_MEMBER',mobileVerifiedAt:null}}:paid?b.memberOrdersAfter:b.memberOrdersBefore)));
   vi.stubGlobal('fetch',fetch);
   await act(async()=>{tree=create(<MemoryRouter initialEntries={['/orders']}><QualificationProvider><App/></QualificationProvider></MemoryRouter>);});
-  expect(JSON.stringify(tree!.toJSON())).toContain('CONFIRMED');expect(JSON.stringify(tree!.toJSON())).not.toContain('PAID');
+  expect(JSON.stringify(tree!.toJSON())).toContain("已確認");expect(JSON.stringify(tree!.toJSON())).not.toContain('PAID');
   paid=true;
   const refresh=tree!.root.findAllByType('button').find(button=>button.children.join('')==='重新整理訂單');expect(refresh).toBeDefined();
   await act(async()=>{refresh!.props.onClick();});
-  const paidCard=tree!.root.findAllByType('article').find(article=>article.findAllByType('p').some(p=>p.children.join('')==='訂單：PAID'))!;
+  const paidCard=tree!.root.findAllByType('article').find(article=>article.findAllByType('p').some(p=>p.children.join('')==="訂單：已付款"))!;
   expect(paidCard).toBeDefined();
   expect(paidCard.findAllByType('p').map(p=>p.children.join(''))).not.toContain('訂單：CONFIRMED');
   expect(JSON.stringify(tree!.toJSON())).not.toContain(b.orderCreate.data.id);

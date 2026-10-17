@@ -1,3 +1,4 @@
+import {uiText} from "../../shared/design-system/i18n";
 import {CompanyLogo} from '@ucell/design-system';
 import React, { useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
@@ -58,13 +59,13 @@ function Bootstrap() {
 
     if(bindingRequired)return existingMemberBinding?<LineBinding onBack={()=>setExistingMemberBinding(false)} onComplete={()=>setAttempt(n=>n+1)} onRecheck={()=>setAttempt(n=>n+1)}/>:<WebMemberEntry lineRegistrationToken={getLineRegistrationIdToken} onExistingMemberBinding={()=>setExistingMemberBinding(true)} onLineLogin={async()=>{await webLogin();}} onAuthenticated={()=>{navigate('/',{replace:true});setAttempt(n=>n+1)}}/>;
     if (error)
-        return <main className="loading" role="alert"><section className="card uc-web-entry"><CompanyLogo className="uc-company-logo-entry"/><h1>UCell 會員中心</h1><p>{error}</p><button disabled={startingWebLogin} onClick={() => reauthRequired?void webLogin(true):setAttempt(n => n + 1)}>{reauthRequired?'重新登入 LINE':'重新連線'}</button></section></main>;
+        return <main className="loading" role="alert"><section className="card uc-web-entry"><CompanyLogo className="uc-company-logo-entry"/><h1>{uiText("UCell 會員中心")}</h1><p>{error}</p><button disabled={startingWebLogin} onClick={() => reauthRequired?void webLogin(true):setAttempt(n => n + 1)}>{reauthRequired?uiText("重新登入 LINE"):'重新連線'}</button></section></main>;
 
     if (state === 'web-login')
         return <WebMemberEntry onLineLogin={async()=>{await webLogin();}} onAuthenticated={()=>{navigate('/',{replace:true});setAttempt(n=>n+1)}}/>;
 
     if (state !== 'ready')
-        return <main className="loading" role="status">{state === 'redirect' ? '正在前往 LINE 登入…' : 'UCell 會員中心載入中…'}</main>;
+        return <main className="loading" role="status">{state === 'redirect' ? uiText("正在前往 LINE 登入…") : uiText("UCell 會員中心載入中…")}</main>;
 
     return <SessionBoundary>{referralWarning&&<p role="alert" className="card">{referralWarning}</p>}<QualificationProvider><App /></QualificationProvider></SessionBoundary>;
 }

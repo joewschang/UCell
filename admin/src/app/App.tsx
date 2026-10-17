@@ -1,3 +1,4 @@
+import {uiText} from "../../../shared/design-system/i18n";
 import {EconomicLineagePage} from '../features/economic-lineage/EconomicLineagePage';
 import {OrganizationGeoPage} from '../features/organization-geo/OrganizationGeoPage';
 import {ReservoirCenterPage} from '../features/reservoir/ReservoirCenterPage';
@@ -40,7 +41,7 @@ import {OperationsControlPage} from '../features/operations-control/OperationsCo
 import {LearningPage} from '../features/learning/LearningPage';
 import {EventsPage} from '../features/events/EventsPage';
 
-function Protected(){const {user,ready}=useAuth();if(!ready)return <div className="app-loading">驗證管理員Session…</div>;return user?<AppShell/>:<Navigate to="/login" replace/>}
+function Protected(){const {user,ready}=useAuth();if(!ready)return <div className="app-loading">{uiText("驗證管理員Session…")}</div>;return user?<AppShell/>:<Navigate to="/login" replace/>}
 export function App(){return <Routes>
  <Route path="/login" element={<LoginPage/>}/>
  <Route element={<Protected/>}>

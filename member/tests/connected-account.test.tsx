@@ -51,5 +51,5 @@ it('queries the selected historical recognition month without treating it as Act
  const fetch=vi.fn(async(url:string)=>response({qualificationId:q.id,period:new URL(url,'http://localhost').searchParams.get('period')??'2026-10',status:'ACTIVE',recognitions:[]}));vi.stubGlobal('fetch',fetch);
  await act(async()=>{tree=create(<MemoryRouter><RepurchaseDetails q={q}/></MemoryRouter>)});
  await act(async()=>tree!.root.findByType('input').props.onChange({target:{value:'2026-09'}}));
- expect(fetch.mock.calls.at(-1)![0]).toContain('period=2026-09');expect(JSON.stringify(tree!.toJSON())).toContain('已有認列紀錄');expect(JSON.stringify(tree!.toJSON())).toContain('不判定 Active');
+ expect(fetch.mock.calls.at(-1)![0]).toContain('period=2026-09');expect(JSON.stringify(tree!.toJSON())).toContain('已有認列紀錄');expect(JSON.stringify(tree!.toJSON())).toContain("不判定 活躍");
 });

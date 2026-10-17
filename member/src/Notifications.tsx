@@ -1,3 +1,4 @@
+import {uiValue,uiText} from "../../shared/design-system/i18n";
 import MemberMessages from './MemberMessages';
 import {MemberPageHeader} from './MemberPageHeader';
 import {EmptyState} from '@ucell/design-system';
@@ -15,9 +16,9 @@ export default function Notifications({ q }: { q: Qualification }) {
   const [expanded, setExpanded] = useState<string | null>(null);
   if (!enabled) return <MemberMessages key={q.id} q={q}/>;
   const filtered = notices.filter(n => (category === 'ALL' || n.category === category) && (!onlyUnread || !readIds.has(n.id)));
-  return <><MemberPageHeader title="通知中心" q={q}/><p>目前顯示全會員示範公告及 {q.code} 的示範通知。</p><p className="muted">已讀狀態只限目前頁面，不同步 LINE 或其他裝置；重新整理後重設。</p>
+  return <><MemberPageHeader title="通知中心" q={q}/><p>目前顯示全會員示範公告及 {q.code} 的示範通知。</p><p className="muted">{uiText("已讀狀態只限目前頁面，不同步 LINE 或其他裝置；重新整理後重設。")}</p>
     <section className="card notice-controls"><p role="status">{unread} 則未讀示範通知</p>
-      <label>通知分類<select value={category} onChange={e => { setCategory(e.target.value as NoticeCategory | 'ALL'); setExpanded(null); }}><option value="ALL">全部分類</option>{Object.entries(categories).map(([key, text]) => <option key={key} value={key}>{text}</option>)}</select></label>
+      <label>通知分類<select value={category} onChange={e => { setCategory(e.target.value as NoticeCategory | 'ALL'); setExpanded(null); }}><option value="ALL">全部分類</option>{Object.entries(categories).map(([key, text]) => <option key={key} value={key}>{uiValue((text))}</option>)}</select></label>
       <button aria-pressed={onlyUnread} onClick={() => { setOnlyUnread(!onlyUnread); setExpanded(null); }}>{onlyUnread ? '顯示全部' : '只看未讀'}</button>
       <button disabled={!unread} onClick={() => markRead(q.id, notices.map(n => n.id))}>目前範圍全部標為已讀（示範）</button>
     </section>
