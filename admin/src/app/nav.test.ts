@@ -10,7 +10,7 @@ describe('admin navigation terminology',()=>{
     expect(activeNavPath('/organization-other')).toBeUndefined();
   });
   it('places every existing route in exactly one of the eight approved groups',()=>{
-    expect(navGroups.map(group=>group.label)).toEqual(['Dashboard','會員管理','組織管理','商務','獎金中心','財務／治理','營運分析','系統治理']);
+    expect(navGroups.map(group=>group.label)).toEqual(['營運總覽','會員管理','組織管理','商務','獎金中心','財務／治理','營運分析','系統治理']);
     const paths=navGroups.flatMap(group=>group.paths);
     expect(paths.sort()).toEqual(nav.map(([,path])=>path).sort());
     expect(new Set(paths).size).toBe(paths.length);
@@ -23,7 +23,7 @@ describe('admin navigation terminology',()=>{
     expect(Object.values(labels)).not.toContain('重銷方案');
     expect(Object.values(labels)).not.toContain('獎金／帳本');
     expect(Object.values(labels)).not.toContain('結算／付款');
-    expect(labels['/provider-operations']).toBe('Provider Webhook 營運');
+    expect(labels['/provider-operations']).toBe("服務商事件通知 營運");
     expect(labels['/erp-reconciliation']).toBe('ERP 對接與對帳');
     expect(labels['/compensation-period-control']).toBe('獎金週期控制');
   });

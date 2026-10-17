@@ -1,3 +1,4 @@
+import {uiText} from "../../shared/design-system/i18n";
 import liff from '@line/liff';
 import { unwrapMemberEnvelope } from './memberApi';
 import { parsePerson } from './validation';
@@ -20,11 +21,11 @@ const sponsorCandidateKey='ucell_sponsor_candidate';
 const sponsorCodePattern=/^[A-Z][A-Z0-9_-]{0,39}(?:X\d{6,}|\d{6,})$/;
 export class LineBindingRequired extends Error {}
 export function lineExchangeFailureMessage(status:number,code:unknown){
- if(status===401&&code==='LINE_ACCOUNT_UNBOUND')return '此 LINE 尚未完成會員帳號綁定，請聯絡客服完成公司核驗。';
+ if(status===401&&code==='LINE_ACCOUNT_UNBOUND')return uiText("此 LINE 尚未完成會員帳號綁定，請聯絡客服完成公司核驗。");
  if(status===401&&code==='MEMBER_SECURITY_LOCKED')return '此會員帳號目前已安全鎖定，請聯絡客服協助重新綁定。';
  if(status===401&&code==='MEMBER_PERSON_DISABLED')return '此會員帳號目前無法登入，請聯絡客服。';
- if(status===503)return 'LINE 登入服務尚未設定或暫時無法使用，請稍後再試。';
- if(status===409)return code==='RETRYABLE_CONFLICT'?'登入遇到操作衝突，請重試':'登入憑證已使用，請重新 LINE 登入';
+ if(status===503)return uiText("LINE 登入服務尚未設定或暫時無法使用，請稍後再試。");
+ if(status===409)return code==='RETRYABLE_CONFLICT'?'登入遇到操作衝突，請重試':uiText("登入憑證已使用，請重新 LINE 登入");
  return '會員登入驗證失敗，請確認帳號已綁定。';
 }
 function intendedDestination(){
@@ -115,7 +116,7 @@ export async function initLiff() {
  if(resumed)return resumed;
 
  const id = import.meta.env.VITE_LIFF_ID;
- if (!id) throw new Error('LINE 登入尚未設定，請聯絡客服');
+ if (!id) throw new Error(uiText("LINE 登入尚未設定，請聯絡客服"));
 
  await liff.init({ liffId: id });
     clearLineCallbackQuery();
@@ -134,13 +135,13 @@ export async function initLiff() {
  }
 
  const idToken=liff.getIDToken();
- if(!idToken)throw new LineReauthenticationRequired('LINE 登入憑證不存在，請重新登入');
+ if(!idToken)throw new LineReauthenticationRequired(uiText("LINE 登入憑證不存在，請重新登入"));
  const response=await request('/auth/member/line/exchange',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({idToken})});
  if(!response.ok){
   const code=(response.body as {code?:string}|undefined)?.code;
-  if((response.status===401&&['LINE_TOKEN_INVALID','LINE_TOKEN_EXPIRED'].includes(code??''))||(response.status===409&&code==='LINE_TOKEN_REPLAYED'))throw new LineReauthenticationRequired('LINE 登入憑證已失效，請重新登入 LINE');
+  if((response.status===401&&['LINE_TOKEN_INVALID','LINE_TOKEN_EXPIRED'].includes(code??''))||(response.status===409&&code==='LINE_TOKEN_REPLAYED'))throw new LineReauthenticationRequired(uiText("LINE 登入憑證已失效，請重新登入 LINE"));
   if(response.status===401&&code==='LINE_ACCOUNT_UNBOUND')throw new LineBindingRequired(lineExchangeFailureMessage(response.status,code));
-  throw new Error(response.status===409?(code==='RETRYABLE_CONFLICT'?'登入遇到操作衝突，請重試':'登入憑證已使用，請重新 LINE 登入'):'會員登入驗證失敗，請確認帳號已綁定');
+  throw new Error(response.status===409?(code==='RETRYABLE_CONFLICT'?'登入遇到操作衝突，請重試':uiText("登入憑證已使用，請重新 LINE 登入")):'會員登入驗證失敗，請確認帳號已綁定');
  }
  const data=unwrapMemberEnvelope(response.body) as {accessToken?:unknown;expiresAt?:unknown};
  if(typeof data.accessToken!=='string'||!data.accessToken||typeof data.expiresAt!=='string'||Date.parse(data.expiresAt)<=Date.now()||!Number.isFinite(Date.parse(data.expiresAt)))throw new Error('會員登入回應格式異常');
@@ -151,7 +152,7 @@ export async function initLiff() {
 
 export async function startWebLineLogin(){
  const id=import.meta.env.VITE_LIFF_ID;
- if(!id)throw new Error('LINE 登入尚未設定，請聯絡客服');
+ if(!id)throw new Error(uiText("LINE 登入尚未設定，請聯絡客服"));
  await liff.init({liffId:id});
  if(liff.isLoggedIn()){
   // Re-run backend exchange rather than reusing the cached Web entry result.
@@ -167,7 +168,7 @@ export async function startWebLineLogin(){
 /** Explicit credential refresh; does not revoke other UCell sessions or lose referral state. */
 export async function restartLineLogin(){
  const id=import.meta.env.VITE_LIFF_ID;
- if(!id)throw new Error('LINE 登入尚未設定，請聯絡客服');
+ if(!id)throw new Error(uiText("LINE 登入尚未設定，請聯絡客服"));
  await liff.init({liffId:id});
  if(liff.isLoggedIn())liff.logout();
  for(const key of ['ucell_member_token','ucell_qualification_id'])sessionStorage.removeItem(key);

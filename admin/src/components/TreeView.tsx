@@ -1,3 +1,4 @@
+import {uiValue,domainLabel} from "../../../shared/design-system/i18n";
 export interface TreeNode{
   qualification_id:string; qualification_no?:string; legal_name?:string; plan_level_code?:string;
   active_flag?:boolean; parent_qualification_id?:string|null; sponsor_sequence_no?:number|null;
@@ -12,7 +13,7 @@ export function TreeView({nodes,mode}:{nodes:TreeNode[];mode:'SPONSOR'|'BINARY'}
     return <div className={`tree-level depth-${depth}`}>{children.map(n=><div className="tree-branch" key={n.qualification_id}>
       <div className={`tree-node ${n.active_flag?'active':'inactive'}`}>
         <div className="tree-node-top"><strong>Q#{n.qualification_no??'—'} · {n.legal_name??'—'}</strong><span className="tree-pill">{n.plan_level_code??'—'}</span></div>
-        <div className="tree-node-meta">{mode==='SPONSOR'&&n.depth>0&&<span>直推序號 #{n.sponsor_sequence_no??'—'}</span>}{mode==='BINARY'&&n.depth>0&&<span>{n.side}</span>}<span>{n.active_flag?'Active':'Inactive'}</span></div>
+        <div className="tree-node-meta">{mode==='SPONSOR'&&n.depth>0&&<span>直推序號 #{n.sponsor_sequence_no??'—'}</span>}{mode==='BINARY'&&n.depth>0&&<span>{domainLabel(n.side)}</span>}<span>{uiValue(n.active_flag?'Active':'Inactive')}</span></div>
       </div>{render(n.qualification_id,depth+1)}
     </div>)}</div>
   }

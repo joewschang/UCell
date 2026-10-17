@@ -1,3 +1,4 @@
+import {uiText} from "../../shared/design-system/i18n";
 import {useRef,useState} from 'react';
 import {useSearchParams} from 'react-router-dom';
 import {MemberPageHeader} from './MemberPageHeader';
@@ -6,7 +7,7 @@ import {memberApi as api} from './memberApi';
 import {useResource} from './useResource';
 import {ErrorState,LoadingState,EmptyState} from '@ucell/design-system';
 const status=(value:string)=>({AVAILABLE:'可報名',ENROLLED:'已報名',STARTED:'學習中',COMPLETED:'已完成',CANCELLED:'已取消'}[value]??'狀態待確認');
-const contentType=(value:string)=>({ARTICLE:'文章',VIDEO_REFERENCE:'影片',DOCUMENT_REFERENCE:'文件／PDF',EXTERNAL_LINK:'外部教材'}[value]??'教材');
+const contentType=(value:string)=>({ARTICLE:'文章',VIDEO_REFERENCE:'影片',DOCUMENT_REFERENCE:uiText("文件／PDF"),EXTERNAL_LINK:'外部教材'}[value]??'教材');
 type Detail={courseCode:string;title:string;summary:string|null;version:number;courseStatus:string;available:boolean;status:string;requiredLessonCount:number;completedRequiredCount:number;canComplete:boolean;completedAt:string|null;lessons:{sequenceNo:number;title:string;contentType:string;contentReference:string;required:boolean;completedAt:string|null}[]};
 export function safeLearningUrl(value:string){try{const url=new URL(value);return url.protocol==='https:'&&!url.username&&!url.password?url.href:null;}catch{return null;}}
 export default function LearningCenter(){

@@ -1,3 +1,4 @@
+import {uiText} from "../../../shared/design-system/i18n";
 /**
  * Curated UI reference captured during the Issue #2 Phase 1 audit.
  *
@@ -18,371 +19,371 @@ export const backendRoutes=[
   {
     "method": "GET",
     "path": "/health",
-    "label": "Health"
+    "label": uiText("Health")
   },
   {
     "method": "GET",
     "path": "/admin/persons",
-    "label": "List persons"
+    "label": uiText("List persons")
   },
   {
     "method": "POST",
     "path": "/admin/persons",
-    "label": "Create person"
+    "label": uiText("Create person")
   },
   {
     "method": "GET",
     "path": "/admin/persons/:personId",
-    "label": "Get person"
+    "label": uiText("Get person")
   },
   {
     "method": "POST",
     "path": "/admin/membership-applications",
-    "label": "Create application"
+    "label": uiText("Create application")
   },
   {
     "method": "GET",
     "path": "/admin/membership-applications/:id",
-    "label": "Get application"
+    "label": uiText("Get application")
   },
   {
     "method": "POST",
     "path": "/admin/membership-applications/:id/submit",
-    "label": "Submit application"
+    "label": uiText("Submit application")
   },
   {
     "method": "POST",
     "path": "/admin/membership-applications/:id/approve",
-    "label": "Approve application"
+    "label": uiText("Approve application")
   },
   {
     "method": "POST",
     "path": "/admin/qualifications",
-    "label": "Create qualification"
+    "label": uiText("Create qualification")
   },
   {
     "method": "GET",
     "path": "/admin/qualifications/:qualificationId",
-    "label": "Get qualification"
+    "label": uiText("Get qualification")
   },
   {
     "method": "GET",
     "path": "/admin/qualifications/:qualificationId/active/at",
-    "label": "Check active"
+    "label": uiText("Check active")
   },
   {
     "method": "POST",
     "path": "/admin/qualifications/:qualificationId/active/periods",
-    "label": "Create active period"
+    "label": uiText("Create active period")
   },
   {
     "method": "POST",
     "path": "/admin/organization/binary-placement",
-    "label": "Place in binary"
+    "label": uiText("Place in binary")
   },
   {
     "method": "GET",
     "path": "/admin/products",
-    "label": "List products"
+    "label": uiText("List products")
   },
   {
     "method": "POST",
     "path": "/admin/products",
-    "label": "Create product"
+    "label": uiText("Create product")
   },
   {
     "method": "POST",
     "path": "/admin/orders",
-    "label": "Create order"
+    "label": uiText("Create order")
   },
   {
     "method": "GET",
     "path": "/admin/orders/:orderId",
-    "label": "Get order"
+    "label": uiText("Get order")
   },
   {
     "method": "POST",
     "path": "/admin/orders/:orderId/payment-confirmations",
-    "label": "Confirm payment"
+    "label": uiText("Confirm payment")
   },
   {
     "method": "POST",
     "path": "/admin/orders/:orderId/returns",
-    "label": "Create return"
+    "label": uiText("Create return")
   },
   {
     "method": "POST",
     "path": "/admin/orders/:orderId/returns/:returnCaseId/process-reversal",
-    "label": "Process reversal"
+    "label": uiText("Process reversal")
   },
   {
     "method": "GET",
     "path": "/admin/subscriptions/plans",
-    "label": "List subscription plans"
+    "label": uiText("List subscription plans")
   },
   {
     "method": "POST",
     "path": "/admin/subscriptions",
-    "label": "Create subscription"
+    "label": uiText("Create subscription")
   },
   {
     "method": "GET",
     "path": "/admin/subscriptions/:id",
-    "label": "Get subscription"
+    "label": uiText("Get subscription")
   },
   {
     "method": "POST",
     "path": "/admin/subscriptions/:id/cancel",
-    "label": "Cancel subscription"
+    "label": uiText("Cancel subscription")
   },
   {
     "method": "GET",
     "path": "/admin/qualifications/:qualificationId/ledger/pv",
-    "label": "PV ledger"
+    "label": uiText("PV ledger")
   },
   {
     "method": "GET",
     "path": "/admin/qualifications/:qualificationId/ledger/balances",
-    "label": "Ledger balances"
+    "label": uiText("Ledger balances")
   },
   {
     "method": "GET",
     "path": "/admin/bonus/qualifications/:qualificationId/awards",
-    "label": "Bonus awards"
+    "label": uiText("Bonus awards")
   },
   {
     "method": "POST",
     "path": "/admin/bonus/settlements/referral",
-    "label": "Referral settlement"
+    "label": uiText("Referral settlement")
   },
   {
     "method": "POST",
     "path": "/admin/bonus/settlements/binary",
-    "label": "Binary settlement"
+    "label": uiText("Binary settlement")
   },
   {
     "method": "POST",
     "path": "/admin/bonus/settlements/matching",
-    "label": "Matching settlement"
+    "label": uiText("Matching settlement")
   },
   {
     "method": "POST",
     "path": "/admin/bonus/lifecycle/mature",
-    "label": "Mature awards"
+    "label": uiText("Mature awards")
   },
   {
     "method": "POST",
     "path": "/admin/epv/orders/:orderId/recognize",
-    "label": "Recognize EPV"
+    "label": uiText("Recognize EPV")
   },
   {
     "method": "POST",
     "path": "/admin/rpv/recognitions/:recognitionId/run",
-    "label": "Run RPV"
+    "label": uiText("Run RPV")
   },
   {
     "method": "GET",
     "path": "/admin/rpv/recognitions/:recognitionId/awards",
-    "label": "RPV awards"
+    "label": uiText("RPV awards")
   },
   {
     "method": "POST",
     "path": "/admin/pools/global/settle",
-    "label": "Settle global pool"
+    "label": uiText("Settle global pool")
   },
   {
     "method": "POST",
     "path": "/admin/pools/welfare/accrue",
-    "label": "Accrue welfare pool"
+    "label": uiText("Accrue welfare pool")
   },
   {
     "method": "POST",
     "path": "/admin/settlement-adjustments/requests/:id/prepare",
-    "label": "Prepare adjustment"
+    "label": uiText("Prepare adjustment")
   },
   {
     "method": "POST",
     "path": "/admin/settlement-adjustments/requests/:id/calculate-and-post",
-    "label": "Calculate/post adjustment"
+    "label": uiText("Calculate/post adjustment")
   },
   {
     "method": "POST",
     "path": "/admin/replays/returns/:returnCaseId",
-    "label": "Carry-chain replay"
+    "label": uiText("Carry-chain replay")
   },
   {
     "method": "POST",
     "path": "/admin/qualification-workflows",
-    "label": "Submit workflow"
+    "label": uiText("Submit workflow")
   },
   {
     "method": "POST",
     "path": "/admin/qualification-workflows/:id/approve",
-    "label": "Approve workflow"
+    "label": uiText("Approve workflow")
   },
   {
     "method": "POST",
     "path": "/admin/payouts/materialize",
-    "label": "Materialize payable"
+    "label": uiText("Materialize payable")
   },
   {
     "method": "POST",
     "path": "/admin/payouts/batches",
-    "label": "Create payout batch"
+    "label": uiText("Create payout batch")
   },
   {
     "method": "GET",
     "path": "/admin/dashboard/summary",
-    "label": "Dashboard summary"
+    "label": uiText("Dashboard summary")
   },
   {
     "method": "GET",
     "path": "/admin/membership-applications",
-    "label": "Application queue"
+    "label": uiText("Application queue")
   },
   {
     "method": "GET",
     "path": "/admin/qualifications",
-    "label": "Qualification search"
+    "label": uiText("Qualification search")
   },
   {
     "method": "GET",
     "path": "/admin/orders",
-    "label": "Order search"
+    "label": uiText("Order search")
   },
   {
     "method": "GET",
     "path": "/admin/organization/placement-preview",
-    "label": "Placement preview"
+    "label": uiText("Placement preview")
   },
   {
     "method": "GET",
     "path": "/admin/observability/organization/sponsor-tree/:rootQualificationId",
-    "label": "Sponsor tree"
+    "label": uiText("Sponsor tree")
   },
   {
     "method": "GET",
     "path": "/admin/observability/organization/binary-tree/:rootQualificationId",
-    "label": "Binary tree"
+    "label": uiText("Binary tree")
   },
   {
     "method": "GET",
     "path": "/admin/observability/qualifications/:qualificationId/operations",
-    "label": "Qualification operations"
+    "label": uiText("Qualification operations")
   },
   {
     "method": "GET",
     "path": "/admin/observability/awards/:bonusAwardId",
-    "label": "Award drill-down"
+    "label": uiText("Award drill-down")
   },
   {
     "method": "GET",
     "path": "/admin/observability/settlements",
-    "label": "Settlement history"
+    "label": uiText("Settlement history")
   },
   {
     "method": "GET",
     "path": "/admin/observability/pools",
-    "label": "Pool history"
+    "label": uiText("Pool history")
   },
   {
     "method": "GET",
     "path": "/admin/observability/compensation/summary",
-    "label": "Compensation summary"
+    "label": uiText("Compensation summary")
   },
   {
     "method": "GET",
     "path": "/admin/operations/returns",
-    "label": "Return queue"
+    "label": uiText("Return queue")
   },
   {
     "method": "GET",
     "path": "/admin/operations/returns/:id",
-    "label": "Return detail"
+    "label": uiText("Return detail")
   },
   {
     "method": "GET",
     "path": "/admin/operations/workflows",
-    "label": "Workflow queue"
+    "label": uiText("Workflow queue")
   },
   {
     "method": "GET",
     "path": "/admin/operations/workflows/:id",
-    "label": "Workflow detail"
+    "label": uiText("Workflow detail")
   },
   {
     "method": "GET",
     "path": "/admin/operations/recoveries",
-    "label": "Recovery aging"
+    "label": uiText("Recovery aging")
   },
   {
     "method": "GET",
     "path": "/admin/operations/payout-batches",
-    "label": "Payout queue"
+    "label": uiText("Payout queue")
   },
   {
     "method": "GET",
     "path": "/admin/operations/payout-batches/:id",
-    "label": "Payout detail"
+    "label": uiText("Payout detail")
   },
   {
     "method": "POST",
     "path": "/admin/operations/payout-batches/:id/approvals/:stage",
-    "label": "Payout dual approval"
+    "label": uiText("Payout dual approval")
   },
   {
     "method": "POST",
     "path": "/admin/operations/payout-batches/:id/export",
-    "label": "Payout export record"
+    "label": uiText("Payout export record")
   },
   {
     "method": "POST",
     "path": "/admin/operations/payout-batches/:id/mark-paid",
-    "label": "Payout reconciliation"
+    "label": uiText("Payout reconciliation")
   },
   {
     "method": "POST",
     "path": "/admin/ops-ready/attachments",
-    "label": "Register attachment metadata"
+    "label": uiText("Register attachment metadata")
   },
   {
     "method": "GET",
     "path": "/admin/ops-ready/attachments",
-    "label": "List attachments"
+    "label": uiText("List attachments")
   },
   {
     "method": "GET",
     "path": "/admin/ops-ready/audit-events",
-    "label": "Audit search"
+    "label": uiText("Audit search")
   },
   {
     "method": "GET",
     "path": "/admin/ops-ready/reports/operations",
-    "label": "Operations report"
+    "label": uiText("Operations report")
   },
   {
     "method": "GET",
     "path": "/admin/ops-ready/integrity-alerts",
-    "label": "Integrity alerts"
+    "label": uiText("Integrity alerts")
   },
   {
     "method": "GET",
     "path": "/admin/ops-ready/exports/:dataset",
-    "label": "CSV export"
+    "label": uiText("CSV export")
   },
   {
     "method": "POST",
     "path": "/auth/admin/entra/exchange",
-    "label": "Admin Entra exchange"
+    "label": uiText("Admin Entra exchange")
   },
   {
     "method": "GET",
     "path": "/auth/admin/me",
-    "label": "Admin session me"
+    "label": uiText("Admin session me")
   },
   {
     "method": "POST",
     "path": "/auth/admin/logout",
-    "label": "Admin logout"
+    "label": uiText("Admin logout")
   }
 ] as const;

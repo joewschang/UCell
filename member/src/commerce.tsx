@@ -1,10 +1,11 @@
+import {uiText} from "../../shared/design-system/i18n";
 import { createContext, useContext, useRef, useState, type ReactNode } from 'react';
 import type { Order, Product } from './api';
 
 // Demo-only catalog. No values from this module may authorize real orders or PV.
 export const demoProducts: Product[] = [
-  { id: 'DEMO-TIP580', name: 'TIP-580（示範商品）', price: 4800, pv: 2880, available: true },
-  { id: 'DEMO-TIP636', name: 'TIP-636（示範商品）', price: 4800, pv: 2880, available: true },
+  { id: 'DEMO-TIP580', name: uiText("TIP-580（示範商品）"), price: 4800, pv: 2880, available: true },
+  { id: 'DEMO-TIP636', name: uiText("TIP-636（示範商品）"), price: 4800, pv: 2880, available: true },
 ];
 export type Cart = Record<string, number>;
 export type Shipping = { name: string; phone: string; address: string };

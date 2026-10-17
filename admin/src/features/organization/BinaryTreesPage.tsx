@@ -1,3 +1,4 @@
+import {uiValue,uiText,domainLabel} from "../../../../shared/design-system/i18n";
 import {useEffect,useRef,useState} from 'react';
 import {Link,useNavigate,useParams} from 'react-router-dom';
 import {EmptyState,LoadingState} from '@ucell/design-system';
@@ -60,17 +61,17 @@ function sideLabel(side:string){return side==='LEFT'?'左側':side==='RIGHT'?'�
 function tableBallNumberLabel(position:Position){
  if(typeof position.ballNo==='string'&&position.ballNo.trim().length>0)return position.ballNo;
  return position.qualificationId!==null&&position.qualificationId!==undefined
-  ?'已占用 · Ball Number 證據未提供'
+  ?uiText("已占用 · Ball Number 證據未提供")
   :'尚未占用';
 }
 
 type StatisticState='AVAILABLE'|'PENDING'|'UNAVAILABLE'|'STALE'|'FAILED';
 const statisticStateCopy:Record<StatisticState,{label:string;tone:'ok'|'warn'|'danger'|'neutral';guidance:string}>={
- AVAILABLE:{label:'AVAILABLE · 可用',tone:'ok',guidance:'此數值由伺服器權威讀模型提供。'},
- PENDING:{label:'PENDING · 等待建立',tone:'warn',guidance:'背景統計仍在建立，完成前不顯示數值。'},
- UNAVAILABLE:{label:'UNAVAILABLE · 暫不可用',tone:'neutral',guidance:'伺服器尚未提供可驗證的權威數值，系統不以零值替代。'},
- STALE:{label:'STALE · 待更新',tone:'warn',guidance:'此統計尚未反映目前資料截點，暫不宣稱為最新正式數字。'},
- FAILED:{label:'FAILED · 建立失敗',tone:'danger',guidance:'背景統計未能完成；請由具權限的管理員重新建立或查核。'}
+ AVAILABLE:{label:uiText("AVAILABLE · 可用"),tone:'ok',guidance:'此數值由伺服器權威讀模型提供。'},
+ PENDING:{label:uiText("PENDING · 等待建立"),tone:'warn',guidance:'背景統計仍在建立，完成前不顯示數值。'},
+ UNAVAILABLE:{label:uiText("UNAVAILABLE · 暫不可用"),tone:'neutral',guidance:'伺服器尚未提供可驗證的權威數值，系統不以零值替代。'},
+ STALE:{label:uiText("STALE · 待更新"),tone:'warn',guidance:'此統計尚未反映目前資料截點，暫不宣稱為最新正式數字。'},
+ FAILED:{label:uiText("FAILED · 建立失敗"),tone:'danger',guidance:'背景統計未能完成；請由具權限的管理員重新建立或查核。'}
 };
 
 function statisticState(status:unknown):StatisticState{
@@ -85,13 +86,13 @@ function statisticState(status:unknown):StatisticState{
 
 type ProjectionState='CURRENT'|'UPDATING'|'REBUILDING'|'STALE'|'FAILED'|'NOT_REQUIRED'|'UNAVAILABLE';
 const projectionStateCopy:Record<ProjectionState,{label:string;tone:'ok'|'warn'|'danger'|'neutral';guidance:string}>={
- CURRENT:{label:'CURRENT · 最新',tone:'ok',guidance:'背景統計已由伺服器完成，且資料截點可用。'},
- UPDATING:{label:'UPDATING · 更新中',tone:'warn',guidance:'背景統計正在更新；完成前不宣稱為最新正式數字。'},
- REBUILDING:{label:'REBUILDING · 重建中',tone:'warn',guidance:'背景統計正在重建；完成前不宣稱為最新正式數字。'},
- STALE:{label:'STALE · 待更新',tone:'warn',guidance:'背景統計尚未反映此資料截點；暫不宣稱為最新正式數字。'},
- FAILED:{label:'FAILED · 建立失敗',tone:'danger',guidance:'背景統計未能完成；請由具權限的管理員重新建立或查核。'},
- NOT_REQUIRED:{label:'NOT_REQUIRED · 不需投影',tone:'neutral',guidance:'此範圍不需要背景統計投影。'},
- UNAVAILABLE:{label:'UNAVAILABLE · 暫不可用',tone:'neutral',guidance:'伺服器未提供可驗證的投影狀態，系統不會以未辨識狀態宣稱資料可用。'}
+ CURRENT:{label:uiText("CURRENT · 最新"),tone:'ok',guidance:'背景統計已由伺服器完成，且資料截點可用。'},
+ UPDATING:{label:uiText("UPDATING · 更新中"),tone:'warn',guidance:'背景統計正在更新；完成前不宣稱為最新正式數字。'},
+ REBUILDING:{label:uiText("REBUILDING · 重建中"),tone:'warn',guidance:'背景統計正在重建；完成前不宣稱為最新正式數字。'},
+ STALE:{label:uiText("STALE · 待更新"),tone:'warn',guidance:'背景統計尚未反映此資料截點；暫不宣稱為最新正式數字。'},
+ FAILED:{label:uiText("FAILED · 建立失敗"),tone:'danger',guidance:'背景統計未能完成；請由具權限的管理員重新建立或查核。'},
+ NOT_REQUIRED:{label:uiText("NOT_REQUIRED · 不需投影"),tone:'neutral',guidance:'此範圍不需要背景統計投影。'},
+ UNAVAILABLE:{label:uiText("UNAVAILABLE · 暫不可用"),tone:'neutral',guidance:'伺服器未提供可驗證的投影狀態，系統不會以未辨識狀態宣稱資料可用。'}
 };
 
 function projectionState(status:unknown):ProjectionState{
@@ -134,7 +135,7 @@ function StatisticCell({label,status,value,dataThrough,projectionStatus}:{label:
  const projectionNote=state==='UNAVAILABLE'?projectionGuidance(projectionStatus):null;
  const dataThroughLabel=dataThrough??'伺服器未提供';
  return <div role="group" aria-label={`${label}：${copy.label}；${hasValue&&state==='AVAILABLE'?`數值 ${value}`:'尚未提供數值'}；資料截至 ${dataThroughLabel}`}>
-  <div><Badge tone={copy.tone}><span>{copy.label}</span></Badge>{hasValue&&state==='AVAILABLE'?<strong> {value}</strong>:<span> 尚未提供數值</span>}</div>
+  <div><Badge tone={copy.tone}><span>{uiValue((copy.label))}</span></Badge>{hasValue&&state==='AVAILABLE'?<strong> {value}</strong>:<span> 尚未提供數值</span>}</div>
   <small>{guidance}</small>
   {projectionNote&&projectionNote!==guidance&&<small>{projectionNote}</small>}
  </div>;
@@ -148,7 +149,7 @@ function canonicalPositionLabel(position:Position|undefined){
  if(!position)return '位置資料未提供';
  return [
   '#'+position.positionNo,
-  position.binaryPositionNo?'Binary 位置 '+position.binaryPositionNo:null,
+  position.binaryPositionNo?uiText("Binary 位置 ")+position.binaryPositionNo:null,
   position.path?'路徑 '+position.path:null,
   position.parentPositionNo?'父位置 #'+position.parentPositionNo+' · '+sideLabel(position.side??''):'根位置'
  ].filter((value):value is string=>Boolean(value)).join(' · ');
@@ -294,7 +295,7 @@ export function BinaryTreesPage(){
    }
    setNotice(response.data.actualSponsorSequenceNo!==undefined
     ?`公司 Sponsor 已確認，實際序號為 ${response.data.actualSponsorSequenceNo}。Binary 放置仍須另行預檢。`
-    :placement?'Binary 放置已完成。下方收據只顯示伺服器回傳的公開營運識別資料；現在重新讀取權威樹資料。':'操作已完成，已重新讀取權威樹資料。');
+    :placement?uiText("Binary 放置已完成。下方收據只顯示伺服器回傳的公開營運識別資料；現在重新讀取權威樹資料。"):'操作已完成，已重新讀取權威樹資料。');
    const context=nowContext();setTime(context);
    if(!id&&response.data.binaryTreeId)navigate('/admin/organization/trees/'+response.data.binaryTreeId);
    else await load(context);
@@ -338,15 +339,15 @@ export function BinaryTreesPage(){
  const preflightParentPosition=preflight?tree?.positions.find(position=>position.ballNo===preflight.parentBallNo):undefined;
  const transitions=(tree?({DRAFT:['ACTIVE','ARCHIVED'],ACTIVE:['CLOSED_TO_NEW'],CLOSED_TO_NEW:['ACTIVE','ARCHIVED']}[tree.status]??[]):[]) as string[];
  return <>
-  <PageHeader title={id?'樹詳情與創始位置':'多樹管理'} subtitle="公司球以公司主體持有；Sponsor 確認與 Binary 放置是兩個分開、可稽核的操作。" actions={id?<Link to="/admin/organization/trees">返回樹清單</Link>:undefined}/>
+  <PageHeader title={id?'樹詳情與創始位置':'多樹管理'} subtitle={uiText("公司球以公司主體持有；Sponsor 確認與 Binary 放置是兩個分開、可稽核的操作。")} actions={id?<Link to="/admin/organization/trees">返回樹清單</Link>:undefined}/>
 
   <Card title="查詢時間">
    <form className="form" aria-describedby="tree-time-context-hint" onSubmit={e=>{e.preventDefault();void load()}}>
-    <Field label="資料時間（UTC ISO）"><input value={time.asOf} onChange={e=>setTime({...time,asOf:e.target.value})}/></Field>
-    <Field label="記錄截點（UTC ISO）"><input value={time.knowledgeCutoff} onChange={e=>setTime({...time,knowledgeCutoff:e.target.value})}/></Field>
-    <Field label="統計期間開始（UTC ISO）"><input value={time.periodStart} onChange={e=>setTime({...time,periodStart:e.target.value})}/></Field>
+    <Field label={uiText("資料時間（UTC ISO）")}><input value={time.asOf} onChange={e=>setTime({...time,asOf:e.target.value})}/></Field>
+    <Field label={uiText("記錄截點（UTC ISO）")}><input value={time.knowledgeCutoff} onChange={e=>setTime({...time,knowledgeCutoff:e.target.value})}/></Field>
+    <Field label={uiText("統計期間開始（UTC ISO）")}><input value={time.periodStart} onChange={e=>setTime({...time,periodStart:e.target.value})}/></Field>
     <Field label="統計期間結束（不含）"><input value={time.periodEnd} onChange={e=>setTime({...time,periodEnd:e.target.value})}/></Field>
-    <p id="tree-time-context-hint" className="muted">時區為 Asia/Taipei。歷史時間只會顯示這個時間與記錄截點可證實的資料。</p>
+    <p id="tree-time-context-hint" className="muted">{uiText("時區為 Asia/Taipei。歷史時間只會顯示這個時間與記錄截點可證實的資料。")}</p>
     <div className="button-row"><button type="submit" disabled={busy}>依指定時間查詢</button><button type="button" disabled={busy} onClick={refreshCurrent}>回到現在</button></div>
    </form>
   </Card>
@@ -354,10 +355,10 @@ export function BinaryTreesPage(){
   <TreeError error={error} onRefresh={refreshCurrent} busy={busy}/>
   {notice&&<p className="tree-notice" role="status" aria-live="polite">{notice}</p>}
   {busy&&<p className="tree-loading" role="status" aria-live="polite">處理中，請勿重複送出相同操作…</p>}
-  {!manage&&<aside className="callout info" aria-label="目前樹操作權限"><strong>目前為受限操作模式</strong><p>角色 {roleLabel} 只會看到已授與的 Sponsor、放置或唯讀功能。未出現的按鈕並不代表可繞過伺服器 RBAC。</p></aside>}
+  {!manage&&<aside className="callout info" aria-label="目前樹操作權限"><strong>目前為受限操作模式</strong><p>角色 {roleLabel} {uiText(" 只會看到已授與的 Sponsor、放置或唯讀功能。未出現的按鈕並不代表可繞過伺服器 RBAC。")}</p></aside>}
 
   {!id&&<Card title="樹清單">
-   {busy&&!loaded?<LoadingState label="正在載入 Binary Tree 清單…"/>:<>{items.length?<div className="table-wrap"><table><caption className="uc-sr-only">Binary Tree 清單；點選代碼開啟樹詳情</caption><thead><tr><th scope="col">代碼</th><th scope="col">名稱</th><th scope="col">生命週期狀態</th></tr></thead><tbody>{items.map(item=><tr key={item.binaryTreeId}><td><Link to={'/admin/organization/trees/'+item.binaryTreeId}>{item.treeCode}</Link></td><td>{item.treeName}</td><td><Badge>{item.status}</Badge></td></tr>)}</tbody></table></div>:loaded&&!error&&<EmptyState title="這個時間範圍沒有可顯示的樹"><p>變更查詢時間，或由具樹設定權限的管理員建立草稿樹。</p></EmptyState>}</>}
+   {busy&&!loaded?<LoadingState label={uiText("正在載入 Binary Tree 清單…")}/>:<>{items.length?<div className="table-wrap"><table><caption className="uc-sr-only">{uiText("Binary Tree 清單；點選代碼開啟樹詳情")}</caption><thead><tr><th scope="col">代碼</th><th scope="col">名稱</th><th scope="col">生命週期狀態</th></tr></thead><tbody>{items.map(item=><tr key={item.binaryTreeId}><td><Link to={'/admin/organization/trees/'+item.binaryTreeId}>{item.treeCode}</Link></td><td>{item.treeName}</td><td><Badge>{domainLabel(item.status)}</Badge></td></tr>)}</tbody></table></div>:loaded&&!error&&<EmptyState title="這個時間範圍沒有可顯示的樹"><p>變更查詢時間，或由具樹設定權限的管理員建立草稿樹。</p></EmptyState>}</>}
    {cursor&&<button type="button" disabled={busy} onClick={()=>void load(time,cursor)}>載入下一頁</button>}
   </Card>}
 
@@ -365,42 +366,42 @@ export function BinaryTreesPage(){
   {id&&detail&&!tree&&<Card title="資料不可用"><p>{unavailableTreeGuidance(detail.explainCode)}</p><p className="muted">系統不會以目前資料替代缺少的歷史證據。</p></Card>}
 
   {tree?.statistics&&projectionState(tree.statistics.projectionStatus)!=='NOT_REQUIRED'&&<Card title="背景統計">
-   {(()=>{const state=projectionState(tree.statistics!.projectionStatus),copy=projectionStateCopy[state];return <p><Badge tone={copy.tone}><span>{copy.label}</span></Badge> · 資料截點 {tree.statistics!.dataThrough??appliedTime.current.knowledgeCutoff}</p>;})()}
+   {(()=>{const state=projectionState(tree.statistics!.projectionStatus),copy=projectionStateCopy[state];return <p><Badge tone={copy.tone}><span>{uiValue((copy.label))}</span></Badge> · 資料截點 {tree.statistics!.dataThrough??appliedTime.current.knowledgeCutoff}</p>;})()}
    {projectionState(tree.statistics.projectionStatus)!=='CURRENT'&&<p>{projectionStateCopy[projectionState(tree.statistics.projectionStatus)].guidance} 樹的位置與操作仍可使用。</p>}
    {['SUPER_ADMIN','COMPLIANCE_AUDIT'].includes(user?.role??'')?<div className="button-row"><button type="button" disabled={busy} onClick={()=>void rebuildStatistics()}>建立此截點的統計</button>{statisticsJob&&<button type="button" disabled={busy} onClick={()=>void rebuildStatistics(true)}>檢查統計工作</button>}</div>:<p>請具統計重建權限的管理員建立此截點的統計。</p>}
    {tree.statistics.snapshot&&<p className="muted">統計快照已固定 · 產生時間 {tree.statistics.projectedAt??'伺服器未提供'}</p>}
   </Card>}
 
   {tree&&<><Card title={tree.treeName}>
-   <div className="tree-summary"><p>{tree.treeCode} · <Badge>{tree.status}</Badge> · Tree version {tree.topologyVersion}</p><p>{leaderProfileAvailable?'公司球 LEADER Profile 已由伺服器核准。':'公司球 LEADER Profile 證據尚未提供；系統不會依創始位置自行推定方案。'} GPV 與 Carry 為來源點數，不代表可領金額；財務內容只由具權限的 Reservoir Center 顯示。</p></div>
+   <div className="tree-summary"><p>{tree.treeCode} · <Badge>{domainLabel(tree.status)}</Badge> {uiText(" · Tree version ")}{tree.topologyVersion}</p><p>{leaderProfileAvailable?uiText("公司球 LEADER Profile 已由伺服器核准。"):uiText("公司球 LEADER Profile 證據尚未提供；系統不會依創始位置自行推定方案。")} {uiText(" GPV 與 Carry 為來源點數，不代表可領金額；財務內容只由具權限的 Reservoir Center 顯示。")}</p></div>
    <CanonicalTree positions={tree.positions} selectedBallNo={parent} onSelect={p=>{
-    if(!p.ballNo){setNotice(p.qualificationId?'#'+p.positionNo+' 已有資格占用，但 Ball Number 證據未提供，不能作為父球。請重新讀取權威樹資料。':'#'+p.positionNo+' 尚未占用，不能作為父球。請選擇已有 Ball Number 的節點。');return;}
+    if(!p.ballNo){setNotice(p.qualificationId?'#'+p.positionNo+uiText(" 已有資格占用，但 Ball Number 證據未提供，不能作為父球。請重新讀取權威樹資料。"):'#'+p.positionNo+uiText(" 尚未占用，不能作為父球。請選擇已有 Ball Number 的節點。"));return;}
     setParent(p.ballNo);setPreflight(null);setPlacementReceipt(null);setNotice('父球已選為 #'+p.positionNo+'：'+p.ballNo+'。請選擇左右側並進行預檢。');
    }}/>
-   <div className="table-wrap"><table><caption className="uc-sr-only">創始位置與伺服器權威統計。每個 GPV 與 Carry 欄位都會顯示伺服器回傳的可用狀態；未提供的數值不以零值替代。後代統計不包含位置自身。</caption><thead><tr><th scope="col">位置／路徑</th><th scope="col">Ball Number</th><th scope="col">持有類型</th><th scope="col">Sponsor 序號</th><th scope="col">後代球數</th><th scope="col">後代會員</th><th scope="col">期間新球</th><th scope="col">左／右後代</th><th scope="col">累積 GPV</th><th scope="col">期間 GPV</th><th scope="col">左 Carry</th><th scope="col">右 Carry</th><th scope="col">持有人狀態</th><th scope="col">Active</th><th scope="col">左／右期間新球</th><th scope="col">左／右期間 GPV</th><th scope="col">Pair PV</th><th scope="col">Last Updated</th><th scope="col">Data Through</th><th scope="col">Evidence Quality</th></tr></thead><tbody>{tree.positions.map(p=>{const active=authoritativeActiveLabel(p);return <tr key={p.positionNo}><td>#{p.positionNo}{p.binaryPositionNo&&<><br/><small>{p.binaryPositionNo}{p.path?' · '+p.path:''}</small></>}<br/><small>{p.parentPositionNo?'父位置 #'+p.parentPositionNo+' · '+sideLabel(p.side??''):'根位置'}</small></td><td>{tableBallNumberLabel(p)}</td><td>{p.ownerType??'—'}{active&&<div>{active}</div>}</td><td>{p.actualSponsorSequenceNo??'—'}</td><td>{p.descendantBalls??'—'}</td><td>{p.distinctMemberPersons??'—'}</td><td>{p.newBallsInPeriod??'—'}</td><td>{p.leftDescendantBalls??'—'} / {p.rightDescendantBalls??'—'}</td><td><StatisticCell label="累積 GPV" status={p.performance?.status} value={p.performance?.value?.cumulative} dataThrough={p.dataThrough} projectionStatus={tree.statistics?.projectionStatus}/></td><td><StatisticCell label="期間 GPV" status={p.performance?.status} value={p.performance?.value?.month} dataThrough={p.dataThrough} projectionStatus={tree.statistics?.projectionStatus}/></td><td><StatisticCell label="左 Carry" status={p.carry?.status} value={p.carry?.value?.left} dataThrough={p.dataThrough} projectionStatus={tree.statistics?.projectionStatus}/></td><td><StatisticCell label="右 Carry" status={p.carry?.status} value={p.carry?.value?.right} dataThrough={p.dataThrough} projectionStatus={tree.statistics?.projectionStatus}/></td><td>{p.holderId?'已綁定（詳情未提供）':'—'}</td><td>{active??'證據不可用'}</td><td>{p.leftNewBallsInPeriod??'—'} / {p.rightNewBallsInPeriod??'—'}</td><td><StatisticCell label="左／右期間 GPV" status={p.performance?.status} value={p.performance?.value?.leftMonth!=null&&p.performance?.value?.rightMonth!=null?`${p.performance.value.leftMonth} / ${p.performance.value.rightMonth}`:null} dataThrough={p.dataThrough} projectionStatus={tree.statistics?.projectionStatus}/></td><td><StatisticCell label="Pair PV" status={p.carry?.pairPvStatus??p.carry?.status} value={p.carry?.value?.pairedPv} dataThrough={p.dataThrough} projectionStatus={tree.statistics?.projectionStatus}/></td><td>{p.lastUpdated??'—'}</td><td><DataThroughCell value={p.dataThrough}/></td><td>{p.evidenceQuality??'PARTIAL'}</td></tr>})}</tbody></table></div>
+   <div className="table-wrap"><table><caption className="uc-sr-only">{uiText("創始位置與伺服器權威統計。每個 GPV 與 Carry 欄位都會顯示伺服器回傳的可用狀態；未提供的數值不以零值替代。後代統計不包含位置自身。")}</caption><thead><tr><th scope="col">位置／路徑</th><th scope="col">{uiText("Ball Number")}</th><th scope="col">持有類型</th><th scope="col">{uiText("Sponsor 序號")}</th><th scope="col">後代球數</th><th scope="col">後代會員</th><th scope="col">期間新球</th><th scope="col">左／右後代</th><th scope="col">{uiText("累積 GPV")}</th><th scope="col">{uiText("期間 GPV")}</th><th scope="col">{uiText("左 Carry")}</th><th scope="col">{uiText("右 Carry")}</th><th scope="col">持有人狀態</th><th scope="col">{uiText("Active")}</th><th scope="col">左／右期間新球</th><th scope="col">{uiText("左／右期間 GPV")}</th><th scope="col">{uiText("Pair PV")}</th><th scope="col">{uiText("Last Updated")}</th><th scope="col">{uiText("Data Through")}</th><th scope="col">{uiText("Evidence Quality")}</th></tr></thead><tbody>{tree.positions.map(p=>{const active=authoritativeActiveLabel(p);return <tr key={p.positionNo}><td>#{p.positionNo}{p.binaryPositionNo&&<><br/><small>{p.binaryPositionNo}{p.path?' · '+p.path:''}</small></>}<br/><small>{p.parentPositionNo?'父位置 #'+p.parentPositionNo+' · '+sideLabel(p.side??''):'根位置'}</small></td><td>{tableBallNumberLabel(p)}</td><td>{uiValue(p.ownerType??'—')}{active&&<div>{uiValue(active)}</div>}</td><td>{p.actualSponsorSequenceNo??'—'}</td><td>{p.descendantBalls??'—'}</td><td>{p.distinctMemberPersons??'—'}</td><td>{p.newBallsInPeriod??'—'}</td><td>{p.leftDescendantBalls??'—'} / {p.rightDescendantBalls??'—'}</td><td><StatisticCell label={uiText("累積 GPV")} status={p.performance?.status} value={p.performance?.value?.cumulative} dataThrough={p.dataThrough} projectionStatus={tree.statistics?.projectionStatus}/></td><td><StatisticCell label={uiText("期間 GPV")} status={p.performance?.status} value={p.performance?.value?.month} dataThrough={p.dataThrough} projectionStatus={tree.statistics?.projectionStatus}/></td><td><StatisticCell label={uiText("左 Carry")} status={p.carry?.status} value={p.carry?.value?.left} dataThrough={p.dataThrough} projectionStatus={tree.statistics?.projectionStatus}/></td><td><StatisticCell label={uiText("右 Carry")} status={p.carry?.status} value={p.carry?.value?.right} dataThrough={p.dataThrough} projectionStatus={tree.statistics?.projectionStatus}/></td><td>{p.holderId?'已綁定（詳情未提供）':'—'}</td><td>{active??'證據不可用'}</td><td>{p.leftNewBallsInPeriod??'—'} / {p.rightNewBallsInPeriod??'—'}</td><td><StatisticCell label={uiText("左／右期間 GPV")} status={p.performance?.status} value={p.performance?.value?.leftMonth!=null&&p.performance?.value?.rightMonth!=null?`${p.performance.value.leftMonth} / ${p.performance.value.rightMonth}`:null} dataThrough={p.dataThrough} projectionStatus={tree.statistics?.projectionStatus}/></td><td><StatisticCell label={uiText("Pair PV")} status={p.carry?.pairPvStatus??p.carry?.status} value={p.carry?.value?.pairedPv} dataThrough={p.dataThrough} projectionStatus={tree.statistics?.projectionStatus}/></td><td>{p.lastUpdated??'—'}</td><td><DataThroughCell value={p.dataThrough}/></td><td>{uiValue(p.evidenceQuality??'PARTIAL')}</td></tr>})}</tbody></table></div>
    <p className="muted">會員人數依指定時間的持有人去重；公司主體不計為會員。新球依首次有效放置時間計算，持有人移轉與公司承接不會形成新球。</p>
   </Card>
 
-  <Card title="完整 Binary 樹節點">
+  <Card title={uiText("完整 Binary 樹節點")}>
    <p>目前資料截點：{appliedTime.current.asOf}；期間 {appliedTime.current.periodStart} 至 {appliedTime.current.periodEnd}。</p>
    <div className="button-row"><button type="button" disabled={busy} onClick={()=>void loadNodes()}>載入節點</button>{nodes&&<button type="button" disabled={busy} onClick={()=>void loadNodes()}>從根節點重新載入</button>}</div>
-   {nodes&&<section aria-live="polite">{nodes.parentQualificationId?<p>目前節點的直接子節點數：{nodes.total??'不可用'}；本頁顯示 {nodes.items.length} 個。</p>:<p>總節點數：{nodes.total??'不可用'}；本頁顯示 {nodes.items.length} 個。統計仍以整棵樹計算。</p>}{nodes.snapshotToken&&<p className="muted">此頁固定於資料時間 {nodes.time?.asOf??appliedTime.current.asOf}；記錄截點 {nodes.time?.knowledgeCutoff??appliedTime.current.knowledgeCutoff}。快照有效至 {nodes.snapshotExpiresAt??'伺服器未提供'}。</p>}{nodes.status==='UNAVAILABLE'?<EmptyState title="此時間的節點證據不可用"/>:nodes.items.length?<div className="table-wrap"><table><caption className="uc-sr-only">Bounded Binary Tree 節點。每次展開與換頁都固定使用同一 server snapshot。</caption><thead><tr><th scope="col">深度</th><th scope="col">Ball Number</th><th scope="col">位置／路徑</th><th scope="col">左右側</th><th scope="col">持有類型</th><th scope="col">下一步</th></tr></thead><tbody>{nodes.items.map(node=>{const active=nodeActiveLabel(node.ownerType,node.activeLabel);return <tr key={node.qualificationId}><td>{node.depth}</td><td>{node.ballNo??'證據未提供'}</td><td>{node.binaryPositionNo??'—'} {node.path??''}</td><td>{sideLabel(node.side??'')}</td><td>{node.ownerType}{active&&<div>{active}</div>}</td><td><button type="button" disabled={busy} aria-label={'展開 Ball Number '+(node.ballNo??'未提供')+' 的子節點；Binary 位置 '+(node.binaryPositionNo??'未提供')+'；路徑 '+(node.path??'未提供')+'；'+sideLabel(node.side??'')} onClick={()=>void loadNodes(undefined,node.qualificationId)}>展開子節點</button></td></tr>})}</tbody></table></div>:<EmptyState title="這個範圍沒有節點"/>}{nodes.nextCursor&&<button type="button" disabled={busy} onClick={()=>void loadNodes(nodes.nextCursor!)}>下一頁節點</button>}</section>}
+   {nodes&&<section aria-live="polite">{nodes.parentQualificationId?<p>目前節點的直接子節點數：{nodes.total??'不可用'}；本頁顯示 {nodes.items.length} 個。</p>:<p>總節點數：{nodes.total??'不可用'}；本頁顯示 {nodes.items.length} 個。統計仍以整棵樹計算。</p>}{nodes.snapshotToken&&<p className="muted">此頁固定於資料時間 {nodes.time?.asOf??appliedTime.current.asOf}；記錄截點 {nodes.time?.knowledgeCutoff??appliedTime.current.knowledgeCutoff}。快照有效至 {nodes.snapshotExpiresAt??'伺服器未提供'}。</p>}{nodes.status==='UNAVAILABLE'?<EmptyState title="此時間的節點證據不可用"/>:nodes.items.length?<div className="table-wrap"><table><caption className="uc-sr-only">{uiText("Bounded Binary Tree 節點。每次展開與換頁都固定使用同一 server snapshot。")}</caption><thead><tr><th scope="col">深度</th><th scope="col">{uiText("Ball Number")}</th><th scope="col">位置／路徑</th><th scope="col">左右側</th><th scope="col">持有類型</th><th scope="col">下一步</th></tr></thead><tbody>{nodes.items.map(node=>{const active=nodeActiveLabel(node.ownerType,node.activeLabel);return <tr key={node.qualificationId}><td>{node.depth}</td><td>{node.ballNo??'證據未提供'}</td><td>{node.binaryPositionNo??'—'} {node.path??''}</td><td>{sideLabel(node.side??'')}</td><td>{domainLabel(node.ownerType)}{active&&<div>{uiValue(active)}</div>}</td><td><button type="button" disabled={busy} aria-label={uiText("展開 Ball Number ")+(node.ballNo??'未提供')+uiText(" 的子節點；Binary 位置 ")+(node.binaryPositionNo??'未提供')+'；路徑 '+(node.path??'未提供')+'；'+sideLabel(node.side??'')} onClick={()=>void loadNodes(undefined,node.qualificationId)}>展開子節點</button></td></tr>})}</tbody></table></div>:<EmptyState title="這個範圍沒有節點"/>}{nodes.nextCursor&&<button type="button" disabled={busy} onClick={()=>void loadNodes(nodes.nextCursor!)}>下一頁節點</button>}</section>}
   </Card></>}
 
   {manage&&(!id||tree&&tree.status!=='ARCHIVED')&&<Card title={id?'樹設定':'建立樹'}><form className="form" onSubmit={e=>{e.preventDefault();void write(id?base+'/settings':base,{treeName:name,reason,...(tree?{expectedVersion:tree.topologyVersion}:{})})}}>
    <Field label="樹名稱"><input required maxLength={120} value={name} onChange={e=>setName(e.target.value)}/></Field>
    <Field label="操作原因" hint="原因會與命令一併由伺服器稽核。"><input required maxLength={500} value={reason} onChange={e=>setReason(e.target.value)}/></Field>
-   <div className="button-row"><button className="primary" type="submit" disabled={busy||!name.trim()||!reason.trim()}>{id?'儲存名稱':'建立草稿樹（3 顆公司球、7 個位置）'}</button>{transitions.map(status=><button type="button" key={status} disabled={busy||!reason.trim()} onClick={()=>void write(base+'/settings',{status,reason,expectedVersion:tree!.topologyVersion})}>切換至 {status}</button>)}</div>
-   {tree&&<p className="muted">生命週期變更會重新驗證 Tree version；封存不會刪除既有位置或歷史證據。</p>}
+   <div className="button-row"><button className="primary" type="submit" disabled={busy||!name.trim()||!reason.trim()}>{id?'儲存名稱':'建立草稿樹（3 顆公司球、7 個位置）'}</button>{transitions.map(status=><button type="button" key={status} disabled={busy||!reason.trim()} onClick={()=>void write(base+'/settings',{status,reason,expectedVersion:tree!.topologyVersion})}>切換至 {domainLabel(status)}</button>)}</div>
+   {tree&&<p className="muted">{uiText("生命週期變更會重新驗證 Tree version；封存不會刪除既有位置或歷史證據。")}</p>}
   </form></Card>}
 
-  {tree?.status==='ACTIVE'&&(confirmSponsor||place)&&<Card title="Sponsor 確認與 Binary 放置"><section className="placement-flow" aria-describedby="placement-flow-hint">
-   <p id="placement-flow-hint">先輸入待放置會員編號，再確認 Sponsor 或對指定父球做預檢。預檢只是當下觀察，不會保留位置。</p>
-   <Field label="待放置會員編號" hint="限十位 Member Number；系統只會接受唯一、尚未放置的資格。"><input required inputMode="numeric" pattern="[0-9]{10}" maxLength={10} aria-invalid={qualification.length>0&&!memberNoValid} placeholder="例如 2609000001" value={qualification} onChange={e=>{setQualification(e.target.value.replace(/\D/g,''));setPreflight(null);setPlacementReceipt(null)}}/></Field>
-   <Field label="操作原因" hint="所有 Sponsor 確認與 Binary 放置都需要原因。"><input required maxLength={500} value={reason} onChange={e=>setReason(e.target.value)}/></Field>
-   {confirmSponsor&&<section className="placement-step"><h3>1. Sponsor 確認</h3><p className="muted">Sponsor 是推薦關係，與下方 Binary 父球不同。</p><button type="button" disabled={busy||!memberNoValid||!reason.trim()} onClick={()=>void write(base+'/company-sponsor-confirmations',{qualificationMemberNo:qualification,reason})}>確認公司 Sponsor</button></section>}
-   {place&&<section className="placement-step"><h3>{confirmSponsor?'2':'1'}. Binary 放置</h3><Field label="父球 Ball Number" hint="可從上方創始位置圖點選已有 Ball Number 的節點。"><input required value={parent} placeholder="例如 TREE-A000001" onChange={e=>{setParent(e.target.value.trim());setPreflight(null);setPlacementReceipt(null)}}/></Field><Field label="位置"><select value={side} onChange={e=>{setSide(e.target.value as PlacementSide);setPreflight(null);setPlacementReceipt(null)}}><option value="LEFT">左側</option><option value="RIGHT">右側</option></select></Field><div className="button-row"><button type="button" disabled={busy||!memberNoValid||!parent} onClick={()=>void preview()}>預檢選定位置</button><button type="button" className="primary" disabled={busy||!preflight||!memberNoValid||!parent||!reason.trim()} onClick={()=>void write(base+'/placements',{qualificationMemberNo:qualification,binaryParentBallNo:parent,side:preflight?.side,expectedVersion:preflight?.expectedVersion,preflightToken:preflight?.preflightToken,reason})}>確認放置於選定位置</button></div>{preflight&&<section className="placement-review" role="status" aria-live="polite"><h4>預檢可提交</h4><dl><dt>Tree Code</dt><dd>{preflight.treeCode}</dd><dt>待放置會員編號</dt><dd>{preflight.qualificationMemberNo}</dd><dt>待放置資格目前 Ball Number</dt><dd>{preflight.ballNo}</dd><dt>父球 Ball Number</dt><dd>{preflight.parentBallNo}</dd><dt>父球位置</dt><dd>{canonicalPositionLabel(preflightParentPosition)}</dd><dt>放置方向</dt><dd>{sideLabel(preflight.side)}</dd><dt>預測 Binary 位置</dt><dd>{preflight.expectedBinaryPositionNo}</dd><dt>預測路徑</dt><dd>{preflight.expectedPath}</dd><dt>Ball Number 配發</dt><dd>{preflight.expectedBallNo??'成功安置後依該樹序號配發'}</dd><dt>實際 Sponsor 序號</dt><dd>{preflight.actualSponsorSequenceNo}</dd><dt>Topology version</dt><dd>{preflight.expectedVersion}</dd></dl><p><strong>這不是位置保留。</strong> 提交時伺服器仍會重新檢查位置、版本與 Sponsor 證據；若出現 409，系統不會改放其他位置，請重新載入後重新檢視與預檢。</p></section>}{placementReceipt&&<section className="placement-review" role="status" aria-live="polite"><h4>放置完成收據</h4><dl><dt>Tree Code</dt><dd>{placementReceipt.treeCode}</dd><dt>父球 Ball Number</dt><dd>{placementReceipt.parentBallNo}</dd><dt>放置後 Ball Number</dt><dd>{placementReceipt.ballNo}</dd><dt>Binary 位置</dt><dd>{placementReceipt.binaryPositionNo}</dd><dt>路徑</dt><dd>{placementReceipt.path}</dd><dt>Topology version</dt><dd>{placementReceipt.topologyVersion}</dd><dt>生效時間</dt><dd>{placementReceipt.effectiveAt}</dd></dl><p>此收據不包含內部識別碼。樹畫面已重新讀取；若需要新操作，請重新選擇並預檢。</p></section>}</section>}
-   <aside className="callout warning"><strong>放置規則</strong><p>第 1 與第 3 位實際直推須位於 Sponsor 左子樹。#4–#7 的位置編號不代表推薦序號。</p></aside>
+  {tree?.status==='ACTIVE'&&(confirmSponsor||place)&&<Card title={uiText("Sponsor 確認與 Binary 放置")}><section className="placement-flow" aria-describedby="placement-flow-hint">
+   <p id="placement-flow-hint">{uiText("先輸入待放置會員編號，再確認 Sponsor 或對指定父球做預檢。預檢只是當下觀察，不會保留位置。")}</p>
+   <Field label="待放置會員編號" hint={uiText("限十位 Member Number；系統只會接受唯一、尚未放置的資格。")}><input required inputMode="numeric" pattern="[0-9]{10}" maxLength={10} aria-invalid={qualification.length>0&&!memberNoValid} placeholder="例如 2609000001" value={qualification} onChange={e=>{setQualification(e.target.value.replace(/\D/g,''));setPreflight(null);setPlacementReceipt(null)}}/></Field>
+   <Field label="操作原因" hint={uiText("所有 Sponsor 確認與 Binary 放置都需要原因。")}><input required maxLength={500} value={reason} onChange={e=>setReason(e.target.value)}/></Field>
+   {confirmSponsor&&<section className="placement-step"><h3>{uiText("1. Sponsor 確認")}</h3><p className="muted">{uiText("Sponsor 是推薦關係，與下方 Binary 父球不同。")}</p><button type="button" disabled={busy||!memberNoValid||!reason.trim()} onClick={()=>void write(base+'/company-sponsor-confirmations',{qualificationMemberNo:qualification,reason})}>{uiText("確認公司 Sponsor")}</button></section>}
+   {place&&<section className="placement-step"><h3>{confirmSponsor?'2':'1'}{uiText(". Binary 放置")}</h3><Field label={uiText("父球 Ball Number")} hint={uiText("可從上方創始位置圖點選已有 Ball Number 的節點。")}><input required value={parent} placeholder={uiText("例如 TREE-A000001")} onChange={e=>{setParent(e.target.value.trim());setPreflight(null);setPlacementReceipt(null)}}/></Field><Field label="位置"><select value={side} onChange={e=>{setSide(e.target.value as PlacementSide);setPreflight(null);setPlacementReceipt(null)}}><option value="LEFT">左側</option><option value="RIGHT">右側</option></select></Field><div className="button-row"><button type="button" disabled={busy||!memberNoValid||!parent} onClick={()=>void preview()}>預檢選定位置</button><button type="button" className="primary" disabled={busy||!preflight||!memberNoValid||!parent||!reason.trim()} onClick={()=>void write(base+'/placements',{qualificationMemberNo:qualification,binaryParentBallNo:parent,side:preflight?.side,expectedVersion:preflight?.expectedVersion,preflightToken:preflight?.preflightToken,reason})}>確認放置於選定位置</button></div>{preflight&&<section className="placement-review" role="status" aria-live="polite"><h4>預檢可提交</h4><dl><dt>{uiText("Tree Code")}</dt><dd>{preflight.treeCode}</dd><dt>待放置會員編號</dt><dd>{preflight.qualificationMemberNo}</dd><dt>{uiText("待放置資格目前 Ball Number")}</dt><dd>{preflight.ballNo}</dd><dt>{uiText("父球 Ball Number")}</dt><dd>{preflight.parentBallNo}</dd><dt>父球位置</dt><dd>{canonicalPositionLabel(preflightParentPosition)}</dd><dt>放置方向</dt><dd>{sideLabel(preflight.side)}</dd><dt>{uiText("預測 Binary 位置")}</dt><dd>{preflight.expectedBinaryPositionNo}</dd><dt>預測路徑</dt><dd>{preflight.expectedPath}</dd><dt>{uiText("Ball Number 配發")}</dt><dd>{preflight.expectedBallNo??'成功安置後依該樹序號配發'}</dd><dt>{uiText("實際 Sponsor 序號")}</dt><dd>{preflight.actualSponsorSequenceNo}</dd><dt>{uiText("Topology version")}</dt><dd>{preflight.expectedVersion}</dd></dl><p><strong>這不是位置保留。</strong> {uiText(" 提交時伺服器仍會重新檢查位置、版本與 Sponsor 證據；若出現 409，系統不會改放其他位置，請重新載入後重新檢視與預檢。")}</p></section>}{placementReceipt&&<section className="placement-review" role="status" aria-live="polite"><h4>放置完成收據</h4><dl><dt>{uiText("Tree Code")}</dt><dd>{placementReceipt.treeCode}</dd><dt>{uiText("父球 Ball Number")}</dt><dd>{placementReceipt.parentBallNo}</dd><dt>{uiText("放置後 Ball Number")}</dt><dd>{placementReceipt.ballNo}</dd><dt>{uiText("Binary 位置")}</dt><dd>{placementReceipt.binaryPositionNo}</dd><dt>路徑</dt><dd>{placementReceipt.path}</dd><dt>{uiText("Topology version")}</dt><dd>{placementReceipt.topologyVersion}</dd><dt>生效時間</dt><dd>{placementReceipt.effectiveAt}</dd></dl><p>此收據不包含內部識別碼。樹畫面已重新讀取；若需要新操作，請重新選擇並預檢。</p></section>}</section>}
+   <aside className="callout warning"><strong>放置規則</strong><p>{uiText("第 1 與第 3 位實際直推須位於 Sponsor 左子樹。#4–#7 的位置編號不代表推薦序號。")}</p></aside>
   </section></Card>}
  </>;
 }

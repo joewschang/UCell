@@ -1,3 +1,4 @@
+import {uiValue,uiText,domainLabel} from "../../../../shared/design-system/i18n";
 import {useMemo,useState} from 'react';
 import {command,get,qs} from '../../lib/api';
 import {LegalEntity,Person,PlacementPreview,PlanLevel,Qualification,SideCode} from '../../types/domain';
@@ -5,9 +6,9 @@ import {Card,ErrorBox,Field,JsonResult,PageHeader,Badge} from '../../components/
 import {SearchOption,SearchSelect} from '../../components/SearchSelect';
 
 const plans:{code:PlanLevel;name:string}[]=[
- {code:'STARTER',name:'啟航 / STARTER'},
- {code:'ELITE',name:'菁英 / ELITE'},
- {code:'LEADER',name:'領袖 / LEADER'},
+ {code:'STARTER',name:uiText("啟航 / STARTER")},
+ {code:'ELITE',name:uiText("菁英 / ELITE")},
+ {code:'LEADER',name:uiText("領袖 / LEADER")},
 ];
 
 export function NewApplicationWizard(){
@@ -63,24 +64,24 @@ export function NewApplicationWizard(){
   }catch(e){setError(e)}finally{setBusy(false)}
  }
 
- const steps=['選權利主體','方案與Sponsor','Binary安置','確認','建立完成'];
+ const steps=['選權利主體',uiText("方案與Sponsor"),uiText("Binary安置"),'確認','建立完成'];
  return <>
-  <PageHeader title="新增會員申請" subtitle="正式Membership Vertical Slice：推薦與Binary資料在Application Draft建立，Submit/Approve再由後端做最終制度檢核。"/>
+  <PageHeader title="新增會員申請" subtitle={uiText("正式Membership Vertical Slice：推薦與Binary資料在Application Draft建立，Submit/Approve再由後端做最終制度檢核。")}/>
   <div className="wizard-steps">{steps.map((x,i)=><span key={x} className={`wizard-step ${step===i+1?'active':''} ${step>i+1?'done':''}`}>{i+1}. {x}</span>)}</div>
   <ErrorBox error={error}/>
   {step===1&&<Card title="1. 選擇資格權利主體">
    <label>權利主體<select value={holderType} onChange={e=>{setHolderType(e.target.value as 'PERSON'|'LEGAL_ENTITY');setPerson(null);setLegalEntity(null)}}><option value="PERSON">自然人會員</option><option value="LEGAL_ENTITY">法人會員</option></select></label>
-   {holderType==='PERSON'?<><SearchSelect label="搜尋 Person" value={person} onChange={setPerson} search={personSearch}/><p className="muted">自然人必須先完成正式會員資格。</p></>:<><SearchSelect label="搜尋正式法人會員" value={legalEntity} onChange={setLegalEntity} search={legalEntitySearch}/><p className="muted">法人必須已完成紙本 KYC 與正式核准。建立 Ball 後，法人本身是權利主體，主要經營代表人只是授權操作人。</p></>}
+   {holderType==='PERSON'?<><SearchSelect label={uiText("搜尋 Person")} value={person} onChange={setPerson} search={personSearch}/><p className="muted">自然人必須先完成正式會員資格。</p></>:<><SearchSelect label="搜尋正式法人會員" value={legalEntity} onChange={setLegalEntity} search={legalEntitySearch}/><p className="muted">{uiText("法人必須已完成紙本 KYC 與正式核准。建立 Ball 後，法人本身是權利主體，主要經營代表人只是授權操作人。")}</p></>}
    <div className="button-row"><button className="primary" disabled={holderType==='PERSON'?!person:!legalEntity} onClick={()=>setStep(2)}>下一步</button></div>
   </Card>}
   {step===2&&<Card title="2. 方案與推薦人">
-   <div className="form"><Field label="申請方案"><select value={plan} onChange={e=>setPlan(e.target.value as PlanLevel)}>{plans.map(p=><option key={p.code} value={p.code}>{p.name}</option>)}</select></Field>
-   <SearchSelect label="Sponsor Qualification" value={sponsor} onChange={x=>{setSponsor(x);setPreview(null)}} search={qualSearch}/>
+   <div className="form"><Field label="申請方案"><select value={plan} onChange={e=>setPlan(e.target.value as PlanLevel)}>{plans.map(p=><option key={p.code} value={p.code}>{uiValue((p.name))}</option>)}</select></Field>
+   <SearchSelect label={uiText("Sponsor Qualification")} value={sponsor} onChange={x=>{setSponsor(x);setPreview(null)}} search={qualSearch}/>
    <div className="button-row"><button onClick={()=>setStep(1)}>上一步</button><button className="primary" disabled={!sponsor} onClick={()=>setStep(3)}>下一步</button></div></div>
   </Card>}
-  {step===3&&<Card title="3. Binary安置">
-   <div className="form"><SearchSelect label="Binary Parent Qualification" value={parent} onChange={x=>{setParent(x);setPreview(null)}} search={qualSearch}/>
-   <Field label="Side"><select value={side} onChange={e=>{setSide(e.target.value as SideCode);setPreview(null)}}><option value="LEFT">LEFT</option><option value="RIGHT">RIGHT</option></select></Field>
+  {step===3&&<Card title={uiText("3. Binary安置")}>
+   <div className="form"><SearchSelect label={uiText("Binary Parent Qualification")} value={parent} onChange={x=>{setParent(x);setPreview(null)}} search={qualSearch}/>
+   <Field label={uiText("Side")}><select value={side} onChange={e=>{setSide(e.target.value as SideCode);setPreview(null)}}><option value="LEFT">{uiText("LEFT")}</option><option value="RIGHT">{uiText("RIGHT")}</option></select></Field>
    <button disabled={!parent||busy} onClick={checkPlacement}>預檢安置合法性</button>
    {preview&&<div className={`callout ${preview.valid?'info':'danger'}`}>
     <strong>{preview.valid?'安置預檢通過':'安置不可用'}</strong>
@@ -89,12 +90,12 @@ export function NewApplicationWizard(){
    </div>}
    <div className="button-row"><button onClick={()=>setStep(2)}>上一步</button><button className="primary" disabled={!preview?.valid} onClick={()=>setStep(4)}>下一步</button></div></div>
   </Card>}
-  {step===4&&<Card title="4. 確認申請Draft">
-   <dl className="detail-grid"><dt>權利主體</dt><dd>{holderType==='PERSON'?person?.primary:legalEntity?.primary}</dd><dt>Plan</dt><dd>{plan}</dd><dt>Sponsor</dt><dd>{sponsor?.primary}</dd><dt>Binary Parent</dt><dd>{parent?.primary}</dd><dt>Side</dt><dd>{side}</dd><dt>預計直推序號</dt><dd>{preview?.nextSponsorSequenceNo}</dd></dl>
+  {step===4&&<Card title={uiText("4. 確認申請Draft")}>
+   <dl className="detail-grid"><dt>權利主體</dt><dd>{holderType==='PERSON'?person?.primary:legalEntity?.primary}</dd><dt>{uiText("Plan")}</dt><dd>{plan}</dd><dt>{uiText("Sponsor")}</dt><dd>{sponsor?.primary}</dd><dt>{uiText("Binary Parent")}</dt><dd>{parent?.primary}</dd><dt>{uiText("Side")}</dt><dd>{domainLabel(side)}</dd><dt>預計直推序號</dt><dd>{preview?.nextSponsorSequenceNo}</dd></dl>
    <Field label="內部備註"><textarea rows={4} value={note} onChange={e=>setNote(e.target.value)}/></Field>
-   <div className="callout warning">預檢不等於核准。Approve時Backend會在Serializable/交易流程再次配置永久Sponsor sequence、檢查Binary slot與第1/3直推左子樹規則。</div>
-   <div className="button-row"><button onClick={()=>setStep(3)}>上一步</button><button className="primary" disabled={busy} onClick={createDraft}>建立Application Draft</button></div>
+   <div className="callout warning">{uiText("預檢不等於核准。Approve時Backend會在Serializable/交易流程再次配置永久Sponsor sequence、檢查Binary slot與第1/3直推左子樹規則。")}</div>
+   <div className="button-row"><button onClick={()=>setStep(3)}>上一步</button><button className="primary" disabled={busy} onClick={createDraft}>{uiText("建立Application Draft")}</button></div>
   </Card>}
-  {step===5&&<div className="success-panel"><h2>Application Draft 已建立</h2><p>Application ID：<span className="mono">{created?.applicationId}</span></p><p>下一步請回「會員申請待審」執行Submit與Approve，不在建立畫面自動核准，以保留營運審查節點。</p><JsonResult value={created}/></div>}
+  {step===5&&<div className="success-panel"><h2>{uiText("Application Draft 已建立")}</h2><p>{uiText("Application ID：")}<span className="mono">{created?.applicationId}</span></p><p>{uiText("下一步請回「會員申請待審」執行Submit與Approve，不在建立畫面自動核准，以保留營運審查節點。")}</p><JsonResult value={created}/></div>}
  </>
 }

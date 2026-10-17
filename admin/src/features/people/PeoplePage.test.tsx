@@ -35,12 +35,12 @@ it('uses Member Number and Ball Number in Person 360 without rendering internal 
  await act(async()=>view.root.findAllByType('button').find(button=>button.children.join('')==='查看會員 360')!.props.onClick());
  await vi.waitFor(()=>expect(JSON.stringify(view.toJSON())).toContain('A000004'));
  output=JSON.stringify(view.toJSON());
- expect(output).toContain('Ball Portfolio');
+ expect(output).toContain("持有球一覽");
  expect(output).toContain('A000004');
  expect(output).toContain('TREE-A');
- expect(output).toContain('全球累積階級 DIAMOND');
+ expect(output).toContain("全球累積階級 鑽石勳章");
  expect(output).toContain('會員持有 · 2609000001');
- expect(output).toContain('STARTER');
+ expect(output).toContain("啟航");
  expect(output).not.toContain('STALE_PLAN_SHOULD_NOT_RENDER');
  expect(output).not.toContain('qualification-internal-uuid');
  act(()=>view.unmount());

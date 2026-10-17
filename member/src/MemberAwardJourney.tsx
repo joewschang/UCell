@@ -1,3 +1,4 @@
+import {uiText} from "../../shared/design-system/i18n";
 import { qualificationReferenceLabel } from './terminology';
 import {AwardLifecycle,MoneyState} from '@ucell/design-system';
 import {useId} from 'react';
@@ -19,16 +20,16 @@ export default function MemberAwardJourney({award,q,period}:{award:Award;q:Quali
  const recovery=award.status==='REVERSED'||award.status==='CLAWBACK'?awardStatusLabels[award.status]:availabilityText.fieldMissing;
  const paid=award.status==='PAID'?'已支付':availabilityText.fieldMissing;
  return <article className="card uc-award-card" aria-labelledby={titleId}>
-  <div className="uc-award-heading"><div><small>AWARD JOURNEY</small><h3 id={titleId}>{award.name}</h3><p className="uc-award-status">{awardStatusLabels[award.status]}</p></div><MoneyState amount={award.finalAmount??null} status={award.finalAmount==null?'PENDING':award.status}/></div>
+  <div className="uc-award-heading"><div><small>{uiText("AWARD JOURNEY")}</small><h3 id={titleId}>{award.name}</h3><p className="uc-award-status">{awardStatusLabels[award.status]}</p></div><MoneyState amount={award.finalAmount??null} status={award.finalAmount==null?'PENDING':award.status}/></div>
   <p className="uc-award-context"><span>目前資格</span> {qualificationReferenceLabel(q)}<span aria-hidden="true"> · </span><span>查詢月份</span> {period}</p>
   <AwardLifecycle status={award.status}/>
   <dl className="uc-award-journey-grid">
    <div><dt>獎項類型</dt><dd>{award.name}</dd></div>
    <div><dt>來源</dt><dd>{availabilityText.fieldMissing}</dd></div>
    <div><dt>結算狀態</dt><dd>{field(award.settlementStatus)}</dd></div>
-   <div><dt>Theory</dt><dd>{formatNullableMoney(award.theoryAmount)}</dd></div>
-   <div><dt>Final</dt><dd>{formatNullableMoney(award.finalAmount)}</dd></div>
-   <div><dt>Payable</dt><dd>{formatNullableMoney(award.payableAmount)}</dd></div>
+   <div><dt>{uiText("Theory")}</dt><dd>{formatNullableMoney(award.theoryAmount)}</dd></div>
+   <div><dt>{uiText("Final")}</dt><dd>{formatNullableMoney(award.finalAmount)}</dd></div>
+   <div><dt>{uiText("Payable")}</dt><dd>{formatNullableMoney(award.payableAmount)}</dd></div>
    <div><dt>已支付</dt><dd>{paid}</dd></div>
    <div><dt>結算日期</dt><dd>{field(award.settlementDate)}</dd></div>
    <div><dt>撥付日期</dt><dd>{field(award.adjustedPayoutDate??award.nominalPayoutDate)}</dd></div>

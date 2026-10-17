@@ -1,3 +1,4 @@
+import {uiValue,uiText,domainLabel} from "../../../../shared/design-system/i18n";
 import {ConfirmAction} from '../../components/ConfirmAction';
 import {AdminTable} from '../../components/AdminTable';
 import {useQuery,useQueryClient} from '@tanstack/react-query';
@@ -65,27 +66,27 @@ export function ReturnsPage(){
     }catch(e){setError(e)}finally{setBusy(false)}
   }
 
-  return <><PageHeader title="退貨／反向／Replay" subtitle="保留原交易；退貨→GPV Reversal→Recovery／Recalculation→Carry-chain Replay，全程可追查。"/>
+  return <><PageHeader title={uiText("退貨／反向／Replay")} subtitle={uiText("保留原交易；退貨→GPV Reversal→Recovery／Recalculation→Carry-chain Replay，全程可追查。")}/>
   <ErrorBox error={error}/><QueryFeedback query={queue} empty={!rows.length}/>{selected&&<QueryFeedback query={detail}/>}
   <div className="grid two">
     <Card title="建立退貨"><div className="form">
       <SearchSelect label="已付款／已出貨訂單" value={order} onChange={chooseOrder} search={orderSearch}/>
-      <Field label="Reason Code"><input value={reason} onChange={e=>setReason(e.target.value)}/></Field>
-      <Field label="Occurred At"><input value={occurredAt} onChange={e=>setOccurredAt(e.target.value)}/></Field>
-      {returnLines.map((x,i)=><div className="order-builder-row" key={x.orderLineId}><div>{x.name}<small className="muted">可退上限 {x.max}</small></div><input value={x.quantity} onChange={e=>setReturnLines(v=>v.map((r,j)=>j===i?{...r,quantity:e.target.value}:r))}/><div>Qty</div><span/></div>)}
-      <button className="primary" disabled={!order||!returnLines.length||busy} onClick={createReturn}>建立Return Case</button>
+      <Field label={uiText("Reason Code")}><input value={reason} onChange={e=>setReason(e.target.value)}/></Field>
+      <Field label={uiText("Occurred At")}><input value={occurredAt} onChange={e=>setOccurredAt(e.target.value)}/></Field>
+      {returnLines.map((x,i)=><div className="order-builder-row" key={x.orderLineId}><div>{x.name}<small className="muted">可退上限 {x.max}</small></div><input value={x.quantity} onChange={e=>setReturnLines(v=>v.map((r,j)=>j===i?{...r,quantity:e.target.value}:r))}/><div>{uiText("Qty")}</div><span/></div>)}
+      <button className="primary" disabled={!order||!returnLines.length||busy} onClick={createReturn}>{uiText("建立Return Case")}</button>
     </div></Card>
-    <Card title="處理原則"><p><Badge tone="warn">不可刪除原訂單／PV／Award</Badge></p><p>Return只新增反向與Recovery事實。Binary/Matching歷史差異以Replay與補償帳處理。</p><p className="muted">Replay 使用封存歷史 period/snapshots；缺少 evidence 時 fail closed。Production calendar/cut-off 仍待核准。</p></Card>
+    <Card title="處理原則"><p><Badge tone="warn">{uiText("不可刪除原訂單／PV／Award")}</Badge></p><p>{uiText("Return只新增反向與Recovery事實。Binary/Matching歷史差異以Replay與補償帳處理。")}</p><p className="muted">{uiText("Replay 使用封存歷史 period/snapshots；缺少 evidence 時 fail closed。Production calendar/cut-off 仍待核准。")}</p></Card>
   </div>
 
-  <div className="toolbar"><select value={status} onChange={e=>setStatus(e.target.value)}><option value="">全部狀態</option><option>POSTED</option><option>VOIDED</option></select><input value={search} onChange={e=>setSearch(e.target.value)} aria-label="會員姓名／手機／Reason" placeholder="會員姓名／手機／Reason"/></div>
+  <div className="toolbar"><select value={status} onChange={e=>setStatus(e.target.value)}><option value="">全部狀態</option><option value={"POSTED"}>{uiText("POSTED")}</option><option value={"VOIDED"}>{uiText("VOIDED")}</option></select><input value={search} onChange={e=>setSearch(e.target.value)} aria-label={uiText("會員姓名／手機／Reason")} placeholder={uiText("會員姓名／手機／Reason")}/></div>
   <div className="split-view">
-    <Card title={`Return Queue (${rows.length})`}>{rows.map((x:any)=><button key={x.returnCaseId} className={`list-row ${selected===x.returnCaseId?'selected':''}`} onClick={()=>setSelected(x.returnCaseId)}><strong>{x.order?.qualification?.currentHolder?.legalName??'—'} · {money(x.returnSummary?.totalAmount)}</strong><span>{x.status} · {x.reasonCode}</span><small>{dateTime(x.occurredAt)} · Recovery outstanding {money(x.recoverySummary?.outstanding)}</small></button>)}</Card>
-    <Card title="Return Detail">{!d?<p className="muted">選擇Return Case。</p>:<>
-      <dl className="detail-grid"><dt>Return ID</dt><dd className="mono">{d.returnCase.returnCaseId}</dd><dt>Order</dt><dd className="mono">{d.returnCase.orderId}</dd><dt>會員</dt><dd>{d.returnCase.order?.qualification?.currentHolder?.legalName}</dd><dt>Reason</dt><dd>{d.returnCase.reasonCode}</dd><dt>Occurred</dt><dd>{dateTime(d.returnCase.occurredAt)}</dd><dt>GPV Reversal Events</dt><dd>{d.reversals?.length??0}</dd><dt>Recovery Events</dt><dd>{d.recoveries?.length??0}</dd><dt>Replay</dt><dd>{d.replay?.status??'尚未執行'}</dd></dl>
-      <div className="button-row sticky-actions"><ConfirmAction disabled={busy} onConfirm={()=>act('reverse')}>Process Reversal</ConfirmAction><ConfirmAction className="primary" disabled={busy} onConfirm={()=>act('replay')}>Carry-chain Replay</ConfirmAction></div>
-      <h3>Recovery</h3><div className="table-wrap"><AdminTable><thead><tr><th>Award</th><th>Status</th><th>Recovery</th><th>Recovered</th><th>Outstanding</th></tr></thead><tbody>{(d.recoveries??[]).map((r:any)=><tr key={r.bonusRecoveryEventId}><td>{r.bonusAward?.awardType} · {r.bonusAward?.recipient?.currentHolder?.legalName}</td><td>{r.status}</td><td>{money(r.recoveryAmount)}</td><td>{money(r.recoveredAmount)}</td><td>{money(r.outstandingAmount)}</td></tr>)}</tbody></AdminTable></div>
-      <h3>Replay Periods</h3><div className="table-wrap"><AdminTable><thead><tr><th>#</th><th>Period</th><th>K1</th><th>K2</th></tr></thead><tbody>{(d.replay?.periods??[]).map((x:any)=><tr key={x.settlementReplayPeriodId}><td>{x.periodNo}</td><td>{dateTime(x.periodEnd)}</td><td>{x.originalK1} → {x.recomputedK1}</td><td>{x.originalK2??'—'} → {x.recomputedK2??'—'}</td></tr>)}</tbody></AdminTable></div>
+    <Card title={`Return Queue (${rows.length})`}>{rows.map((x:any)=><button key={x.returnCaseId} className={`list-row ${selected===x.returnCaseId?'selected':''}`} onClick={()=>setSelected(x.returnCaseId)}><strong>{x.order?.qualification?.currentHolder?.legalName??'—'} · {money(x.returnSummary?.totalAmount)}</strong><span>{domainLabel(x.status)} · {x.reasonCode}</span><small>{dateTime(x.occurredAt)} {uiText(" · Recovery outstanding ")}{money(x.recoverySummary?.outstanding)}</small></button>)}</Card>
+    <Card title={uiText("Return Detail")}>{!d?<p className="muted">{uiText("選擇Return Case。")}</p>:<>
+      <dl className="detail-grid"><dt>{uiText("Return ID")}</dt><dd className="mono">{d.returnCase.returnCaseId}</dd><dt>{uiText("Order")}</dt><dd className="mono">{d.returnCase.orderId}</dd><dt>會員</dt><dd>{d.returnCase.order?.qualification?.currentHolder?.legalName}</dd><dt>{uiText("Reason")}</dt><dd>{d.returnCase.reasonCode}</dd><dt>{uiText("Occurred")}</dt><dd>{dateTime(d.returnCase.occurredAt)}</dd><dt>{uiText("GPV Reversal Events")}</dt><dd>{d.reversals?.length??0}</dd><dt>{uiText("Recovery Events")}</dt><dd>{d.recoveries?.length??0}</dd><dt>{uiText("Replay")}</dt><dd>{uiValue(d.replay?.status??'尚未執行')}</dd></dl>
+      <div className="button-row sticky-actions"><ConfirmAction disabled={busy} onConfirm={()=>act('reverse')}>{uiText("Process Reversal")}</ConfirmAction><ConfirmAction className="primary" disabled={busy} onConfirm={()=>act('replay')}>{uiText("Carry-chain Replay")}</ConfirmAction></div>
+      <h3>{uiText("Recovery")}</h3><div className="table-wrap"><AdminTable><thead><tr><th>{uiText("Award")}</th><th>{uiText("Status")}</th><th>{uiText("Recovery")}</th><th>{uiText("Recovered")}</th><th>{uiText("Outstanding")}</th></tr></thead><tbody>{(d.recoveries??[]).map((r:any)=><tr key={r.bonusRecoveryEventId}><td>{domainLabel(r.bonusAward?.awardType)} · {r.bonusAward?.recipient?.currentHolder?.legalName}</td><td>{domainLabel(r.status)}</td><td>{money(r.recoveryAmount)}</td><td>{money(r.recoveredAmount)}</td><td>{money(r.outstandingAmount)}</td></tr>)}</tbody></AdminTable></div>
+      <h3>{uiText("Replay Periods")}</h3><div className="table-wrap"><AdminTable><thead><tr><th>#</th><th>{uiText("Period")}</th><th>K1</th><th>K2</th></tr></thead><tbody>{(d.replay?.periods??[]).map((x:any)=><tr key={x.settlementReplayPeriodId}><td>{x.periodNo}</td><td>{dateTime(x.periodEnd)}</td><td>{x.originalK1} → {x.recomputedK1}</td><td>{x.originalK2??'—'} → {x.recomputedK2??'—'}</td></tr>)}</tbody></AdminTable></div>
     </>}</Card>
   </div></>
 }

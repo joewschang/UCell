@@ -1,3 +1,4 @@
+import {uiValue,uiText} from "../../shared/design-system/i18n";
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { MemberBottomNav, UCellIcon, type UCellIconName } from '@ucell/design-system';
 
@@ -17,7 +18,7 @@ export function MemberNavigation() {
   const { pathname } = useLocation();
   return <MemberBottomNav>{memberSections.map(section => {
     const active = sectionMatches(pathname, section.paths);
-    return <Link key={section.to} to={section.to} className={active ? 'active' : undefined} aria-current={active ? 'page' : undefined}><UCellIcon name={section.icon}/><span>{section.label}</span></Link>;
+    return <Link key={section.to} to={section.to} className={active ? 'active' : undefined} aria-current={active ? 'page' : undefined}><UCellIcon name={section.icon}/><span>{uiValue((section.label))}</span></Link>;
   })}</MemberBottomNav>;
 }
 

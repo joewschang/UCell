@@ -1,0 +1,32 @@
+{
+  "date": "2026-10-17",
+  "locale": "zh-TW",
+  "scope": [
+    "admin",
+    "member",
+    "shared/design-system"
+  ],
+  "catalog": {
+    "domainLabels": 183,
+    "displayTerms": 548
+  },
+  "presentationFilesChanged": 112,
+  "validation": {
+    "adminTests": 241,
+    "memberTests": 268,
+    "typechecks": [
+      "admin/tsconfig.app.json",
+      "member/tsconfig.json"
+    ]
+  },
+  "preserved": [
+    "API and database codes",
+    "option values",
+    "URLs and interpolated identifiers",
+    "member and ball numbers",
+    "product models",
+    "Google, LINE, Microsoft Entra",
+    "financial amounts and calculation rules"
+  ],
+  "deploymentTarget": "STAGE"
+}

@@ -1,3 +1,4 @@
+import {uiText} from "../../../../shared/design-system/i18n";
 import {PublicClientApplication} from '@azure/msal-browser';
 
 const clientId=import.meta.env.VITE_ENTRA_CLIENT_ID;
@@ -8,7 +9,7 @@ export const entraConfigured=Boolean(clientId&&tenantId);
 
 let instance:PublicClientApplication|undefined;
 export async function entraClient(){
-  if(!entraConfigured)throw new Error('Entra尚未設定');
+  if(!entraConfigured)throw new Error(uiText("Entra尚未設定"));
   if(!instance){
     instance=new PublicClientApplication({
       auth:{
@@ -29,7 +30,7 @@ export async function acquireEntraIdToken(){
     scopes:['openid','profile','email'],
     prompt:'select_account'
   });
-  if(!result.idToken)throw new Error('Microsoft登入未回傳ID Token');
+  if(!result.idToken)throw new Error(uiText("Microsoft登入未回傳ID Token"));
   return result.idToken;
 }
 

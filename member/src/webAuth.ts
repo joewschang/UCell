@@ -1,3 +1,4 @@
+import {uiText} from "../../shared/design-system/i18n";
 import { unwrapMemberEnvelope } from './memberApi';
 
 type SessionData={accessToken:string;expiresAt:string};
@@ -12,7 +13,7 @@ async function request(path:string,init:RequestInit={}){
    typeof (envelope?.error as any)?.code==='string'?(envelope?.error as any).code:undefined;
   if(code==='DOMAIN_RULE_VIOLATION'&&Array.isArray(envelope?.message)){
    const messages=envelope.message.filter((value):value is string=>typeof value==='string');
-   const fields:Record<string,string>={mobile:'手機號碼請使用 +國碼格式，台灣可輸入 09 開頭的十碼號碼。',password:'密碼長度須為 12 至 256 字元。',email:'請輸入有效的 Email。',birthDate:'請選擇有效的生日。',gender:'請選擇性別。'};
+   const fields:Record<string,string>={mobile:'手機號碼請使用 +國碼格式，台灣可輸入 09 開頭的十碼號碼。',password:'密碼長度須為 12 至 256 字元。',email:uiText("請輸入有效的 Email。"),birthDate:'請選擇有效的生日。',gender:'請選擇性別。'};
    const hint=Object.entries(fields).filter(([field])=>messages.some(message=>message.startsWith(field+' '))).map(([,label])=>label).join(' ');
    throw new Error(hint||'登錄資料格式不正確，請檢查各欄位後重試。');
   }
@@ -51,7 +52,7 @@ export async function linkLineIdentity(idToken:string){
  const token=sessionStorage.getItem('ucell_member_token');
  if(!token)throw new Error('請先登入既有會員帳號。');
  try{return await request('/member/identity/line/link',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},body:JSON.stringify({idToken})});}
- catch(e){const code=e instanceof Error?e.message:'';throw new Error(code==='LINE_IDENTITY_ALREADY_LINKED'?'此 LINE 已連結會員或已停用，請聯絡客服；不能合併或轉移帳號。':code==='MEMBER_LINE_ALREADY_LINKED'?'此會員已綁定另一個 LINE，請聯絡客服辦理復原。':code==='LINE_TOKEN_INVALID'?'LINE 驗證已失效，請重新開啟會員中心。':'LINE 連結未完成，請重試或聯絡客服。');}
+ catch(e){const code=e instanceof Error?e.message:'';throw new Error(code==='LINE_IDENTITY_ALREADY_LINKED'?uiText("此 LINE 已連結會員或已停用，請聯絡客服；不能合併或轉移帳號。"):code==='MEMBER_LINE_ALREADY_LINKED'?uiText("此會員已綁定另一個 LINE，請聯絡客服辦理復原。"):code==='LINE_TOKEN_INVALID'?uiText("LINE 驗證已失效，請重新開啟會員中心。"):uiText("LINE 連結未完成，請重試或聯絡客服。"));}
 }
 export async function loginMethods(){
  const token=sessionStorage.getItem('ucell_member_token');
@@ -74,7 +75,7 @@ export function normalizeRegistrationMobile(value:string,nationalityCode:string)
 declare global{interface Window{google?:any}}
 export async function contactVerificationRequest(path:'challenges'|'verify',input:Record<string,string>,registration:boolean,key?:string){
  const token=sessionStorage.getItem('ucell_member_token');
- const hints:Record<string,string>={SMS_PROVIDER_CONFIGURATION_PENDING:'手機簡訊驗證尚未開通，請稍後再試。',EMAIL_PROVIDER_CONFIGURATION_PENDING:'Email 驗證寄信服務尚未開通，請稍後再試。',OTP_CONFIGURATION_PENDING:'驗證服務尚未設定完成，請稍後再試。',OTP_RESEND_COOLDOWN:'請稍候 60 秒後再重送驗證碼。',OTP_RATE_LIMITED:'驗證碼發送次數已達上限，請稍後再試。',OTP_CODE_INVALID:'驗證碼不正確，請重新輸入。',OTP_CHALLENGE_LOCKED:'驗證碼錯誤次數過多，請重新申請。',OTP_CHALLENGE_EXPIRED_OR_UNAVAILABLE:'驗證碼已過期或無法使用，請重新申請。',CONTACT_DESTINATION_INVALID:'請輸入有效的手機號碼或 Email。'};
+ const hints:Record<string,string>={SMS_PROVIDER_CONFIGURATION_PENDING:'手機簡訊驗證尚未開通，請稍後再試。',EMAIL_PROVIDER_CONFIGURATION_PENDING:uiText("Email 驗證寄信服務尚未開通，請稍後再試。"),OTP_CONFIGURATION_PENDING:'驗證服務尚未設定完成，請稍後再試。',OTP_RESEND_COOLDOWN:'請稍候 60 秒後再重送驗證碼。',OTP_RATE_LIMITED:'驗證碼發送次數已達上限，請稍後再試。',OTP_CODE_INVALID:'驗證碼不正確，請重新輸入。',OTP_CHALLENGE_LOCKED:'驗證碼錯誤次數過多，請重新申請。',OTP_CHALLENGE_EXPIRED_OR_UNAVAILABLE:'驗證碼已過期或無法使用，請重新申請。',CONTACT_DESTINATION_INVALID:uiText("請輸入有效的手機號碼或 Email。")};
  try{return await request((registration?'/auth/member':'/member')+'/contact-verification/'+path,{method:'POST',headers:{'Content-Type':'application/json',...(!registration&&token?{Authorization:'Bearer '+token}:{}),...(key?{'Idempotency-Key':key}:{})},body:JSON.stringify(input)});}
  catch(e){const code=e instanceof Error?e.message:'';throw new Error(hints[code]||'驗證服務暫時無法使用，請稍後重試。');}
 }
@@ -92,7 +93,7 @@ function loadGoogle(){
 }
 async function initializeGoogle(callback:(credential:string)=>void,onError:(message:string)=>void){
  const clientId=import.meta.env.VITE_GOOGLE_OIDC_CLIENT_ID;
- if(!clientId){onError('Google 登入尚未設定');return false;}
+ if(!clientId){onError(uiText("Google 登入尚未設定"));return false;}
  try{
   await loadGoogle();
   window.google.accounts.id.initialize({client_id:clientId,callback:(result:{credential?:string})=>{
@@ -100,12 +101,12 @@ async function initializeGoogle(callback:(credential:string)=>void,onError:(mess
    callback(result.credential);
   }});
   return true;
- }catch(e){onError(e instanceof Error?e.message:'Google 登入載入失敗');return false;}
+ }catch(e){onError(e instanceof Error?e.message:uiText("Google 登入載入失敗"));return false;}
 }
 export async function renderGoogleButton(element:HTMLElement,onAuthenticated:()=>void,onUnbound:(idToken:string)=>void,onError:(message:string)=>void){
  const ready=await initializeGoogle(async credential=>{
   try{await googleExchange(credential);onAuthenticated();}
-  catch(e){if(e instanceof Error&&e.message==='GOOGLE_ACCOUNT_UNBOUND'){onUnbound(credential);return;}onError(e instanceof Error?e.message:'Google 登入失敗');}
+  catch(e){if(e instanceof Error&&e.message==='GOOGLE_ACCOUNT_UNBOUND'){onUnbound(credential);return;}onError(e instanceof Error?e.message:uiText("Google 登入失敗"));}
  },onError);
  if(!ready)return;
  element.replaceChildren();

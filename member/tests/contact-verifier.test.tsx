@@ -29,7 +29,7 @@ it('invalidates proof on expiry and shows a recoverable error',async()=>{
  vi.useFakeTimers();request.mockResolvedValueOnce(challenge()).mockResolvedValueOnce({proof:'b'.repeat(64)});const verified=vi.fn();
  await act(async()=>{tree=create(<ContactVerifier channel="EMAIL" value="test@example.invalid" purpose="PROFILE" onVerified={verified}/>);});
  await act(async()=>tree!.root.findByType('button').props.onClick());act(()=>tree!.root.findByType('input').props.onChange({target:{value:'123456'}}));
- await act(async()=>tree!.root.findAllByType('button').find(b=>b.children.join('')==='確認Email驗證碼')!.props.onClick());
+ await act(async()=>tree!.root.findAllByType('button').find(b=>b.children.join('')==="確認電子郵件驗證碼")!.props.onClick());
  await act(async()=>{vi.advanceTimersByTime(301000)});
  expect(verified).toHaveBeenLastCalledWith(undefined);expect(JSON.stringify(tree!.toJSON())).toContain('驗證已過期');
 });

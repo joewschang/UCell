@@ -1,3 +1,4 @@
+import {uiText} from "../../../../shared/design-system/i18n";
 import {CompanyLogo} from '@ucell/design-system';
 import {useState} from 'react';
 import {Navigate} from 'react-router-dom';
@@ -22,31 +23,30 @@ export function LoginPage(){
   return <main className="login-shell">
     <section className="login-card">
       <CompanyLogo className="uc-company-logo-entry"/>
-      <h1>UCell Admin</h1>
-      <p className="muted">R1.0B FROZEN · Admin MVP v0.6.0</p>
+      <h1>{uiText("UCell Admin")}</h1>
+      <p className="muted">{uiText("R1.0B FROZEN · Admin MVP v0.6.0")}</p>
 
       <div className="callout info">
-        正式管理員採 Microsoft Entra 身分驗證。Microsoft Token驗證後，Backend只對有ACTIVE AdminAccessGrant的人員簽發短效UCell Session。
-      </div>
+        {uiText("\r\n        正式管理員採 Microsoft Entra 身分驗證。Microsoft Token驗證後，Backend只對有ACTIVE AdminAccessGrant的人員簽發短效UCell Session。\r\n      ")}</div>
 
       {(error||localError)&&<div className="callout danger">{error||localError}</div>}
 
       <div className="stack">
         <button className="primary" disabled={busy||!entraConfigured} onClick={()=>loginEntra().catch(e=>setLocalError(e.message))}>
-          {busy?'登入中…':'使用 Microsoft 帳號登入'}
+          {busy?'登入中…':uiText("使用 Microsoft 帳號登入")}
         </button>
-        {!entraConfigured&&<small className="muted">尚未設定 VITE_ENTRA_CLIENT_ID / VITE_ENTRA_TENANT_ID。</small>}
+        {!entraConfigured&&<small className="muted">{uiText("尚未設定 VITE_ENTRA_CLIENT_ID / VITE_ENTRA_TENANT_ID。")}</small>}
       </div>
 
       {demo&&<>
         <hr/>
-        <div className="callout warning">Temporary UAT：下列登入不建立正式Backend Session，只能搭配非production的 ADMIN_AUTH_BYPASS。</div>
+        <div className="callout warning">{uiText("Temporary UAT：下列登入不建立正式Backend Session，只能搭配非production的 ADMIN_AUTH_BYPASS。")}</div>
         <div className="stack">
-          {localUat&&<button onClick={loginLocalUat}>DEV：Local UAT Super Admin</button>}
-          <button onClick={()=>loginDemo('SUPER_ADMIN')}>DEV：Super Admin</button>
-          <button onClick={()=>loginDemo('MEMBERSHIP_OPS')}>DEV：Membership Ops</button>
-          <button onClick={()=>loginDemo('FINANCE')}>DEV：Finance</button>
-          <button onClick={()=>loginDemo('COMPLIANCE_AUDIT')}>DEV：Compliance Audit</button>
+          {localUat&&<button onClick={loginLocalUat}>{uiText("DEV：Local UAT Super Admin")}</button>}
+          <button onClick={()=>loginDemo('SUPER_ADMIN')}>{uiText("DEV：Super Admin")}</button>
+          <button onClick={()=>loginDemo('MEMBERSHIP_OPS')}>{uiText("DEV：Membership Ops")}</button>
+          <button onClick={()=>loginDemo('FINANCE')}>{uiText("DEV：Finance")}</button>
+          <button onClick={()=>loginDemo('COMPLIANCE_AUDIT')}>{uiText("DEV：Compliance Audit")}</button>
         </div>
       </>}
     </section>

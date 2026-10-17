@@ -1,21 +1,22 @@
+import {uiText,domainLabel} from "./i18n";
 import {useCallback,useEffect,useRef,useId,type ReactNode,type KeyboardEvent,type ButtonHTMLAttributes} from 'react';
 function trapDialogFocus(event:KeyboardEvent<HTMLDialogElement>){if(event.key!=='Tab')return;const items=[...event.currentTarget.querySelectorAll<HTMLElement>('button:not(:disabled),a[href],input:not(:disabled),select:not(:disabled),textarea:not(:disabled),[tabindex="0"]')].filter(n=>n.getClientRects().length>0&&n.tabIndex>=0);const first=items[0],last=items.at(-1);if(!first){event.preventDefault();event.currentTarget.focus();return}if(event.shiftKey&&(document.activeElement===first||document.activeElement===event.currentTarget)){event.preventDefault();last?.focus()}else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus()}}
 export type StatusTone='success'|'warning'|'danger'|'info'|'neutral';
 const tones:Record<string,StatusTone>={SUCCESS:'success',ACTIVE:'success',EFFECTIVE:'success',PASS:'success',RECOGNIZED:'success',PAID:'success',PENDING:'warning',PROCESSING:'info',PENDING45D:'warning',PENDING_45D:'warning','45D':'warning',SUBMITTED:'warning',SCHEDULED:'warning',DUE:'warning',FAILED:'danger',SUSPENDED:'danger',EXCEPTION:'danger',REVERSED:'danger',CLAWBACK:'danger',DRAFT:'neutral',INACTIVE:'neutral',CANCELLED:'neutral',CLOSED:'neutral',VOIDED:'neutral',EXITED:'neutral',CALCULATED:'info',INFORMATION:'info',PAYABLE:'info'};
 export const statusTone=(status:string):StatusTone=>tones[status]??'neutral';
-export function StatusBadge({status,label}:{status:string;label?:ReactNode}){return <span className="uc-status" data-tone={statusTone(status)}>{label??status}</span>}
+export function StatusBadge({status,label}:{status:string;label?:ReactNode}){return <span className="uc-status" data-tone={statusTone(status)}>{label===undefined?domainLabel(status):typeof label==='string'?uiText(label):label}</span>}
 export function UCellButton({variant='secondary',...props}:ButtonHTMLAttributes<HTMLButtonElement>&{variant?:'primary'|'secondary'}){return <button {...props} type={props.type??'button'} className={`uc-button ${props.className??''}`} data-variant={variant}/>}
-export function MetricCard({label,value,helper}:{label:string;value:ReactNode;helper?:string}){return <article className="uc-metric"><span>{label}</span><strong>{value??'待提供'}</strong>{helper&&<small>{helper}</small>}</article>}
+export function MetricCard({label,value,helper}:{label:string;value:ReactNode;helper?:string}){return <article className="uc-metric"><span>{uiText(label)}</span><strong>{value??'待提供'}</strong>{helper&&<small>{uiText(helper)}</small>}</article>}
 // Presentation aliases only; retain raw domain values in evidence and API payloads.
 const lifecycleStatus=(status?:string)=>status==='PENDING_45D'||status==='PENDING'?'PENDING45D':status;
 export function MoneyState({amount,status}:{amount:number|string|null;status?:string}){return <strong className="uc-money">{amount===null?(status==='PENDING'||status==='CALCULATED'||lifecycleStatus(status)==='PENDING45D'?'結算中':'待提供'):`NT$ ${typeof amount==='number'?amount.toLocaleString('zh-TW'):amount}`}</strong>}
-export function PageHeader({title,subtitle,actions}:{title:string;subtitle?:string;actions?:ReactNode}){return <div className="uc-header"><div><h1>{title}</h1>{subtitle&&<p>{subtitle}</p>}</div>{actions}</div>}
-export function SectionHeader({title,children}:{title:string;children?:ReactNode}){return <div className="uc-header"><h2>{title}</h2>{children}</div>}
-export function EmptyState({title='尚無資料',children}:{title?:string;children?:ReactNode}){return <section className="uc-state"><h3>{title}</h3>{children}</section>}
+export function PageHeader({title,subtitle,actions}:{title:string;subtitle?:string;actions?:ReactNode}){return <div className="uc-header"><div><h1>{uiText(title)}</h1>{subtitle&&<p>{uiText(subtitle)}</p>}</div>{actions}</div>}
+export function SectionHeader({title,children}:{title:string;children?:ReactNode}){return <div className="uc-header"><h2>{uiText(title)}</h2>{children}</div>}
+export function EmptyState({title='尚無資料',children}:{title?:string;children?:ReactNode}){return <section className="uc-state"><h3>{uiText(title)}</h3>{children}</section>}
 export function ErrorState({message,retry}:{message:string;retry?:()=>void}){return <section className="uc-state" role="alert"><p>{message}</p>{retry&&<UCellButton onClick={retry}>重新載入</UCellButton>}</section>}
 export function Skeleton(){return <div className="uc-skeleton" aria-hidden="true"/>}
 export function LoadingState({label='資料載入中…'}:{label?:string}){return <section className="uc-state" role="status" aria-busy="true"><p>{label}</p><Skeleton/><Skeleton/></section>}
-export function QualificationBadge({code,ball,rank}:{code:string;ball?:string;rank?:string}){return <StatusBadge status="INFORMATION" label={[code,rank,ball].filter(Boolean).join('｜')}/>}
+export function QualificationBadge({code,ball,rank}:{code:string;ball?:string;rank?:string}){return <StatusBadge status="INFORMATION" label={[code,rank?domainLabel(rank):rank,ball].filter(Boolean).join('｜')}/>}
 export function PeriodBadge({period}:{period:string}){return <StatusBadge status="INFORMATION" label={period}/>}
 export function FilterBar({children}:{children:ReactNode}){return <div className="uc-filter">{children}</div>}
 function dialogReturnTarget(){if(typeof document==='undefined'||typeof HTMLElement==='undefined')return null;const active=document.activeElement;return active instanceof HTMLElement?active:null}
@@ -44,7 +45,7 @@ export function AdminCommandBar({children}:{children:ReactNode}){return <div cla
 export function AdminAlertPanel({title,children}:{title:string;children:ReactNode}){return <section className="uc-state" aria-label={title}><h2>{title}</h2>{children}</section>}
 /** Original company artwork, cropped in layout without altering its gold U sphere. */
 export function CompanyLogo({className=''}:{className?:string}){
- return <span className={`uc-company-logo ${className}`}><img src="/ucell-logo-transparent.png" alt="UCell 宇生國際股份有限公司" width={2128} height={739}/></span>;
+ return <span className={`uc-company-logo ${className}`}><img src="/ucell-logo-transparent.png" alt={uiText("UCell 宇生國際股份有限公司")} width={2128} height={739}/></span>;
 }
 
 export * from './icons';

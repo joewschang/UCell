@@ -39,9 +39,9 @@ it('sends a canonical Ball Number filter and never renders a Qualification UUID'
   const input=view.root.findByProps({placeholder:'例如 TREE-A000001'});
   await act(async()=>input.props.onChange({target:{value:'tree-a000001'}}));
   await vi.waitFor(()=>expect(vi.mocked(get)).toHaveBeenCalledWith('/admin/subscriptions?ballNo=TREE-A000001&take=100'));
-  const rowButton=view.root.findAllByType('button').find(button=>button.findAllByType('strong').some(label=>label.children.join('')==='YEAR · ACTIVE'))!;
+  const rowButton=view.root.findAllByType('button').find(button=>button.findAllByType('strong').some(label=>label.children.join('')==="年度方案 · 活躍"))!;
   await act(async()=>rowButton.props.onClick());
-  await vi.waitFor(()=>expect(view.root.findAllByType('p').some(item=>item.children.join('')==='Ball Number：TREE-A000001')).toBe(true));
+  await vi.waitFor(()=>expect(view.root.findAllByType('p').some(item=>item.children.join('')==="球號：TREE-A000001")).toBe(true));
   const output=JSON.stringify(view.toJSON());
   expect(view.root.findAllByType('p').some(item=>item.children.join('')==='會員編號：2609000001')).toBe(true);
   expect(output).not.toContain(internalQualificationId);

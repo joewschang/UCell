@@ -1,3 +1,4 @@
+import {uiText} from "../../../shared/design-system/i18n";
 import {createCommandClient} from './commands';
 const API_BASE=import.meta.env.VITE_API_BASE_URL ?? '/api/v1';
 
@@ -25,7 +26,7 @@ export interface RequestOptions extends RequestInit {
 export async function api<T>(path:string,init:RequestOptions={}):Promise<T>{
   if(import.meta.env.DEV && import.meta.env.VITE_ADMIN_DEV_READ_ONLY==='true' &&
     !['GET','HEAD','OPTIONS'].includes((init.method??'GET').toUpperCase())){
-    throw new ApiError(405,null,'本機 Admin DEV 只讀模式：此寫入操作尚未開放。');
+    throw new ApiError(405,null,uiText("本機 Admin DEV 只讀模式：此寫入操作尚未開放。"));
   }
   const headers=new Headers(init.headers);
   if(import.meta.env.DEV && import.meta.env.VITE_ADMIN_DEV_FULL_ACCESS==='true'){
@@ -84,7 +85,7 @@ export async function getBlob(path:string):Promise<Blob>{
   try{
     const res=await fetch(`${API_BASE}${path}`,{headers,signal:controller.signal,cache:'no-store'});
     if(res.status===401)window.dispatchEvent(new CustomEvent('ucell:admin-unauthorized'));
-    if(!res.ok)throw new ApiError(res.status,null,res.status===403?'沒有 KYC 文件檢視權限':'無法讀取 KYC 文件');
+    if(!res.ok)throw new ApiError(res.status,null,res.status===403?uiText("沒有 KYC 文件檢視權限"):uiText("無法讀取 KYC 文件"));
     return await res.blob();
   }finally{clearTimeout(timer);}
 }

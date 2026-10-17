@@ -1,3 +1,4 @@
+import {uiText} from "../../shared/design-system/i18n";
 import {useEffect,useState} from 'react';
 import {unwrapMemberEnvelope} from './memberApi';
 export async function getContactPolicy(){
@@ -12,4 +13,4 @@ export function useContactPolicy(){
  useEffect(()=>{let active=true;getContactPolicy().then(p=>{if(active)setSmsRequired(p.smsRequired)}).catch(()=>{/* Retain strict requirements on failure. */});return()=>{active=false}},[]);
  return {smsRequired};
 }
-export const deferredSmsMessage='Stage 手機簡訊驗證尚未開放；目前先完成 Email 驗證，手機資料仍標示為尚未驗證。';
+export const deferredSmsMessage=uiText("Stage 手機簡訊驗證尚未開放；目前先完成 Email 驗證，手機資料仍標示為尚未驗證。");
