@@ -1,4 +1,4 @@
-import {QUALIFICATION_PACKAGE_GPV_RULE, resolveQualificationPackageGpv} from '../src/package-gpv';
+import {QUALIFICATION_PACKAGE_GPV_RULE, QUALIFICATION_PACKAGE_POLICY, resolveQualificationPackageGpv, resolveQualificationPackagePolicy} from '../src/package-gpv';
 
 const base = {ruleReference: QUALIFICATION_PACKAGE_GPV_RULE, packageClass: 'QUALIFICATION',
   packageCode: 'LEADER', currency: 'TWD', priceAmount: '72000'};
@@ -32,5 +32,25 @@ describe('owner-approved qualification package GPV', () => {
     expect(result).toEqual({status: 'GPV_CANDIDATE_ONLY', ruleReference: QUALIFICATION_PACKAGE_GPV_RULE,
       packageCode: 'LEADER', currency: 'TWD', priceAmount: '72000.00', gpvAmount: '43200.00'});
     expect(base.priceAmount).toBe('72000');
+  });
+});
+
+describe('qualification GPV-only policy', () => {
+  const policyInput = {...base, ruleReference: QUALIFICATION_PACKAGE_POLICY};
+  it.each([
+    ['2026-10-31T15:59:59.999Z', '2026-10-31T16:00:00.000Z'],
+    ['2026-10-31T16:00:00.000Z', '2026-11-30T16:00:00.000Z'],
+    ['2026-12-31T16:00:00.000Z', '2027-01-31T16:00:00.000Z'],
+  ])('ends Active at Taipei calendar-month end for %s', (paid, end) => {
+    const result = resolveQualificationPackagePolicy({...policyInput, paidAt: new Date(paid)});
+    expect(result).toMatchObject({gpvAmount: '43200.00', rpvAmount: '0.00', epvAmount: '0.00',
+      personalConsumptionEligible: false, activeFrom: paid, activeTo: end, status: 'GPV_CANDIDATE_ONLY'});
+    expect(Object.isFrozen(result)).toBe(true);
+  });
+  it('rejects invalid payment time', () => {
+    expect(() => resolveQualificationPackagePolicy({...policyInput, paidAt: new Date(NaN)})).toThrow('PACKAGE_PAYMENT_TIME_INVALID');
+  });
+  it('requires the new explicit policy approval', () => {
+    expect(() => resolveQualificationPackagePolicy({...base, paidAt: new Date()})).toThrow('PACKAGE_POLICY_NOT_APPROVED');
   });
 });

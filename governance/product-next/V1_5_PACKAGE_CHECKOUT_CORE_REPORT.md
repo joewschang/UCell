@@ -71,3 +71,26 @@ merely because its GPV candidate can now be calculated.
 Earlier verification and blocker statements above describe the original
 checkout release, not current deployment status. This dated clarification is
 limited to the GPV rule; it does not re-open previously completed launch gates.
+
+## Product-owner clarification and test reset authorization — 2026-10-19
+
+The owner specified GPV/RPV/EPV rates of sale price × 0.6, with qualification
+packages producing GPV only, zero RPV and zero EPV, and Active for the payment
+calendar month. `resolveQualificationPackagePolicy` records that exception
+under `PO_20261019_QUALIFICATION_GPV_ONLY`; it excludes qualification purchases
+from personal-consumption accumulation. Active starts at payment, ending at
+the next Taipei month boundary, with no pre-payment entitlement inferred.
+The resolver remains a candidate calculation; it is not yet a posted ledger
+handler. Validation now covers 28 tests plus strict TypeScript checking.
+
+Returns must follow linked ledger reversals and upstream recovery. This is
+not permission to overwrite ledger history or invent a partial-return amount.
+
+The owner explicitly declared all current business data to be test data and
+authorized immediate database data reset, including orders, settlement results,
+member records and all LINE member bindings; reconstruction must create tree A,
+company balls, the five main products and all six packages. This supersedes
+the preceding historical-order correction requirement for those discarded test
+records. Retain technical schema/migrations, approved system configuration and
+administrator access. Perform an encrypted backup and transactional rollback
+rehearsal before applying. No Microsoft account secret belongs in this report.

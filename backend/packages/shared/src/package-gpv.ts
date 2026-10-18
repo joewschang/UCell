@@ -4,6 +4,7 @@
  * date decision, an eligible-consumption amount, or a return allocation.
  */
 export const QUALIFICATION_PACKAGE_GPV_RULE = 'PO_20261018_QUALIFICATION_GPV_60' as const;
+export const QUALIFICATION_PACKAGE_POLICY = 'PO_20261019_QUALIFICATION_GPV_ONLY' as const;
 
 const approvedPrices: Readonly<Record<string, string>> = Object.freeze({
   STARTER: '14400.00',
@@ -50,5 +51,28 @@ export function resolveQualificationPackageGpv(input: {
   return Object.freeze({
     status: 'GPV_CANDIDATE_ONLY', ruleReference: QUALIFICATION_PACKAGE_GPV_RULE,
     packageCode: input.packageCode, currency: 'TWD', priceAmount, gpvAmount,
+  });
+}
+
+/** Owner clarification: qualification packages grant GPV and current-month Active only. */
+export function resolveQualificationPackagePolicy(input: {
+  ruleReference: string;
+  packageClass: string;
+  packageCode: string;
+  currency: string;
+  priceAmount: string;
+  paidAt: Date;
+}) {
+  if (input.ruleReference !== QUALIFICATION_PACKAGE_POLICY) throw new Error('PACKAGE_POLICY_NOT_APPROVED');
+  if (!(input.paidAt instanceof Date) || !Number.isFinite(input.paidAt.getTime())) throw new Error('PACKAGE_PAYMENT_TIME_INVALID');
+  const candidate = resolveQualificationPackageGpv({...input, ruleReference: QUALIFICATION_PACKAGE_GPV_RULE});
+  const local = new Date(input.paidAt.getTime() + 8 * 60 * 60 * 1000);
+  const activeTo = new Date(Date.UTC(local.getUTCFullYear(), local.getUTCMonth() + 1, 1) - 8 * 60 * 60 * 1000);
+  return Object.freeze({
+    ...candidate,
+    ruleReference: QUALIFICATION_PACKAGE_POLICY,
+    rpvAmount: '0.00', epvAmount: '0.00', personalConsumptionEligible: false,
+    activeFrom: input.paidAt.toISOString(), activeTo: activeTo.toISOString(),
+    activeTimezone: 'Asia/Taipei',
   });
 }
