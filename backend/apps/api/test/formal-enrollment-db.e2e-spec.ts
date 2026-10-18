@@ -16,6 +16,7 @@ describe('Formal enrollment Stage payments in isolated real DB',()=>{
  const service=new FormalEnrollmentService(db,config,idempotency,audit,orders);
  beforeAll(()=>{process.env.PII_ENCRYPTION_KEY='AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=';process.env.PII_ENCRYPTION_KEY_VERSION='TEST_FORMAL_SPONSOR';const url=new URL(process.env.DATABASE_URL!);if(!['localhost','127.0.0.1'].includes(url.hostname)||!/^\/ucell_jest_[a-f0-9]{32}$/.test(url.pathname))throw Error('Isolated harness required');});
  afterAll(()=>db.$disconnect());
+ const signature=(id:string)=>db.formalApplicationDocument.create({data:{formalMemberApplicationId:id,documentType:'SIGNED_APPLICATION_AGREEMENT',status:'PRESENT',malwareScanStatus:'PENDING',storageObjectKey:'ISOLATED_TEST_ONLY/signature/'+randomUUID(),contentSha256:'b'.repeat(64),mimeType:'image/png',sizeBytes:8,uploadedAt:new Date()}});
  const person=()=>db.person.create({data:{legalName:'TEST ONLY ENROLLMENT',status:'EFFECTIVE',membershipState:'NETWORK_MEMBER'}});
  it.each([['STARTER',3,14400],['ELITE',9,43200],['LEADER',15,72000]] as const)('completes %s exact-quantity checkout, payment and application submission',async(code,quantity,price)=>{
   const p=await person(),config=new PackageConfigService(db),profile=await db.packageProfile.findUniqueOrThrow({where:{stableCode:code}}),rules=[];
@@ -32,6 +33,7 @@ describe('Formal enrollment Stage payments in isolated real DB',()=>{
   expect(await db.qualificationSetup.count({where:{qualifyingOrderId:created.value.orderId}})).toBe(1);
   await expect(service.payFee(p.personId,randomUUID(),'TEST_ONLY')).rejects.toMatchObject({response:{code:'FORMAL_FEE_ALREADY_COVERED_BY_PACKAGE'}});
   const app=await db.formalMemberApplication.create({data:{personId:p.personId,currentSnapshotHash:'a'.repeat(64)}});
+  await signature(app.formalMemberApplicationId);
   for(const documentType of ['IDENTITY_FRONT','IDENTITY_BACK','BANKBOOK_COVER'] as const)await db.formalApplicationDocument.create({data:{formalMemberApplicationId:app.formalMemberApplicationId,documentType,status:'PRESENT',malwareScanStatus:'PENDING',storageObjectKey:'ISOLATED_TEST_ONLY/'+randomUUID(),contentSha256:'a'.repeat(64),mimeType:'image/png',sizeBytes:8,uploadedAt:new Date()}});
   await attachFormalSponsor(db,app.formalMemberApplicationId);
   expect((await service.submit(p.personId,app.formalMemberApplicationId,randomUUID(),'TEST_ONLY')).value.status).toBe('SUBMITTED');
@@ -83,6 +85,7 @@ describe('Formal enrollment Stage payments in isolated real DB',()=>{
  });
  it('accepts own unpaid submission for physical review, creates one unpaid fee and grants no approval',async()=>{
   const p=await person(),other=await person(),app=await db.formalMemberApplication.create({data:{personId:p.personId,currentSnapshotHash:'a'.repeat(64)}});
+  await signature(app.formalMemberApplicationId);
   await expect(service.submit(other.personId,app.formalMemberApplicationId,randomUUID(),'TEST_ONLY')).rejects.toMatchObject({response:{code:'FORMAL_APPLICATION_NOT_FOUND'}});
   await expect(service.submit(p.personId,app.formalMemberApplicationId,randomUUID(),'TEST_ONLY')).rejects.toMatchObject({response:{code:'FORMAL_SPONSOR_BALL_REQUIRED'}});
   expect(await db.order.count({where:{purchaserPersonId:p.personId}})).toBe(0);
@@ -102,6 +105,7 @@ describe('Formal enrollment Stage payments in isolated real DB',()=>{
   const p=await person(),f=await createActiveQualificationPackage(db),member=new MemberService(db,{} as any,{} as any,audit);
   const created=await orders.createMember({packageVersionId:f.version.packageProfileVersionId,selections:[{productRuleProfileId:f.rule.productRuleProfileId,quantity:1}]},randomUUID(),'TEST_ONLY',p.personId);
   const app=await db.formalMemberApplication.create({data:{personId:p.personId,currentSnapshotHash:'a'.repeat(64)}});
+  await signature(app.formalMemberApplicationId);
   await attachFormalSponsor(db,app.formalMemberApplicationId);
   expect(await member.qualifications(p.personId)).toEqual([]);
   await service.submit(p.personId,app.formalMemberApplicationId,randomUUID(),'TEST_ONLY');
