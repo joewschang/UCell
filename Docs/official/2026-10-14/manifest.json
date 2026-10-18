@@ -70,9 +70,12 @@
       "sha256": "e10a6449ea86835208f387ad17347c6fc1314c0f41d41f2503de76276cdd3cfa",
       "receivedOn": "2026-10-14",
       "authority": "USER_DESIGNATED_OFFICIAL_SOURCE",
-      "driveStatus": "BLOCKED_STORAGE_QUOTA_EXCEEDED",
+      "driveStatus": "UPLOADED_SIZE_VERIFIED",
       "pages": 2,
-      "textCharacters": 3414
+      "textCharacters": 3414,
+      "driveFileId": "1pW5xNq-f1FrR3pD3bOhlbEWDQe7rBnLc",
+      "driveUrl": "https://drive.google.com/file/d/1pW5xNq-f1FrR3pD3bOhlbEWDQe7rBnLc/view?usp=drivesdk",
+      "driveVerifiedOn": "2026-10-18"
     },
     {
       "name": "事業手冊1006.pdf",
@@ -94,9 +97,12 @@
       "sha256": "57aade60007aa269f11bf55a2e083c7bfb85653a1478905b5ad0f009169bba51",
       "receivedOn": "2026-10-14",
       "authority": "USER_DESIGNATED_OFFICIAL_SOURCE",
-      "driveStatus": "BLOCKED_STORAGE_QUOTA_EXCEEDED",
+      "driveStatus": "UPLOADED_SIZE_VERIFIED",
       "pages": 1,
-      "textCharacters": 2767
+      "textCharacters": 2767,
+      "driveFileId": "1-49L1QBBUAsdfInDK8jJXDaoMcaUT9YH",
+      "driveUrl": "https://drive.google.com/file/d/1-49L1QBBUAsdfInDK8jJXDaoMcaUT9YH/view?usp=drivesdk",
+      "driveVerifiedOn": "2026-10-18"
     },
     {
       "name": "申請書及協議1014.pdf",
@@ -106,9 +112,12 @@
       "sha256": "d17807eb5d2ef6155b81f85cf0652f7e444f4a9b63d9d47b6e82d7bce95e5b6d",
       "receivedOn": "2026-10-14",
       "authority": "USER_DESIGNATED_OFFICIAL_SOURCE",
-      "driveStatus": "BLOCKED_STORAGE_QUOTA_EXCEEDED",
+      "driveStatus": "UPLOADED_SIZE_VERIFIED",
       "pages": 2,
-      "textCharacters": 7704
+      "textCharacters": 7704,
+      "driveFileId": "14baV8CP1_4lF1Aa9qk1rcWYaqXz1vhSb",
+      "driveUrl": "https://drive.google.com/file/d/14baV8CP1_4lF1Aa9qk1rcWYaqXz1vhSb/view?usp=drivesdk",
+      "driveVerifiedOn": "2026-10-18"
     },
     {
       "name": "商品重銷訂購單1014.pdf",
@@ -118,9 +127,12 @@
       "sha256": "971f42426eca556dadf5a6a9a747f9f37706244c3dc078ee281f66203d164555",
       "receivedOn": "2026-10-14",
       "authority": "USER_DESIGNATED_OFFICIAL_SOURCE",
-      "driveStatus": "BLOCKED_STORAGE_QUOTA_EXCEEDED",
+      "driveStatus": "UPLOADED_SIZE_VERIFIED",
       "pages": 1,
-      "textCharacters": 2717
+      "textCharacters": 2717,
+      "driveFileId": "1bTzf4eChgpsxKwuz6Zk4j2LPAPohpzBh",
+      "driveUrl": "https://drive.google.com/file/d/1bTzf4eChgpsxKwuz6Zk4j2LPAPohpzBh/view?usp=drivesdk",
+      "driveVerifiedOn": "2026-10-18"
     },
     {
       "name": "會員資料異動書1014.pdf",
@@ -130,9 +142,12 @@
       "sha256": "08ced3f98a2f4af5e649274de590522a4ca94608d988d96ac23d9d36c9816402",
       "receivedOn": "2026-10-14",
       "authority": "USER_DESIGNATED_OFFICIAL_SOURCE",
-      "driveStatus": "BLOCKED_STORAGE_QUOTA_EXCEEDED",
+      "driveStatus": "UPLOADED_SIZE_VERIFIED",
       "pages": 2,
-      "textCharacters": 3783
+      "textCharacters": 3783,
+      "driveFileId": "1nrjFG1uCsaD4a5D9CtULHHk1q0ZShJWa",
+      "driveUrl": "https://drive.google.com/file/d/1nrjFG1uCsaD4a5D9CtULHHk1q0ZShJWa/view?usp=drivesdk",
+      "driveVerifiedOn": "2026-10-18"
     },
     {
       "name": "宇生logo.ai",
@@ -142,7 +157,10 @@
       "sha256": "2ee20bbd22960b76f1d6e09296f9f1262fa8e3d12c1aba5287137c7d33ad6c0e",
       "receivedOn": "2026-10-14",
       "authority": "USER_DESIGNATED_OFFICIAL_SOURCE",
-      "driveStatus": "BLOCKED_STORAGE_QUOTA_EXCEEDED"
+      "driveStatus": "UPLOADED_SIZE_VERIFIED",
+      "driveFileId": "1Sfty94kVleDc4ShoCkqV797A971qfmcZ",
+      "driveUrl": "https://drive.google.com/file/d/1Sfty94kVleDc4ShoCkqV797A971qfmcZ/view?usp=drivesdk",
+      "driveVerifiedOn": "2026-10-18"
     }
   ]
 }

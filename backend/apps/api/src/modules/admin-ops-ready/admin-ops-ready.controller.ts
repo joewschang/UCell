@@ -58,7 +58,7 @@ export class AdminOpsReadyController{
   @Roles('SUPER_ADMIN','FINANCE','COMPLIANCE_AUDIT')
   @Get('exports/:dataset')
   @ApiOperation({operationId:'adminCsvExport',summary:'Qualifications/Orders/Payouts CSV匯出'})
-  export(@Param('dataset') dataset:'QUALIFICATIONS'|'ORDERS'|'PAYOUTS',@Query('take') take?:string){
-    return this.service.exportDataset(dataset,Number(take??5000)).then(data=>({data}));
+  export(@Param('dataset') dataset:'QUALIFICATIONS'|'ORDERS'|'PAYOUTS',@Query('take') take?:string,@Query('from') from?:string,@Query('to') to?:string){
+    return this.service.exportDataset(dataset,Number(take??5000),from===undefined?undefined:new Date(from),to===undefined?undefined:new Date(to)).then(data=>({data}));
   }
 }
