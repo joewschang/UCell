@@ -1,4 +1,5 @@
 import {createCommandClient} from './commands';
+import {isRetryableRecognitionResponse} from '../../../shared/recognition-request';
 const API_BASE=import.meta.env.VITE_API_BASE_URL ?? '/api/v1';
 
 export class ApiError extends Error {
@@ -70,7 +71,7 @@ export async function api<T>(path:string,init:RequestOptions={}):Promise<T>{
       409:'資料已變更或位置已被占用；請重新載入後確認',
       422:'資料驗證或必要設定未完成，請依欄位說明修正後重試',
     };
-    throw new ApiError(res.status,body,label[res.status]??'服務暫時無法完成此請求，請稍後重試');
+    throw new ApiError(res.status,body,isRetryableRecognitionResponse({status:res.status,body})?'認列遇到交易衝突，有限次重送仍未完成；請保留同一筆資料稍後再試。':label[res.status]??'服務暫時無法完成此請求，請稍後重試');
   }
   return body as T;
 }

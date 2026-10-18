@@ -2,6 +2,6 @@
   "collection": "@nestjs/schematics",
   "sourceRoot": "src",
   "compilerOptions": {
-    "assets": ["modules/organization-geo/taiwan-areas.json"]
+    "assets": ["modules/organization-geo/taiwan-areas.json", "modules/admin-operations/bank-templates/*.xls"]
   }
 }

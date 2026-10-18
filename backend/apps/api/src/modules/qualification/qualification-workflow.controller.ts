@@ -1,11 +1,11 @@
 import { Roles } from '../auth/roles.decorator';
 import { Body, Controller, Param, Post, Req } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { QualificationWorkflowService } from './qualification-workflow.service';
+import { QualificationWorkflowService, WorkflowPaymentConfirmation } from './qualification-workflow.service';
 
 @ApiTags('Admin - Qualification Workflow')
 @ApiBearerAuth('adminBearer')
-@Roles('SUPER_ADMIN','MEMBERSHIP_OPS','COMPLIANCE_AUDIT')
+@Roles('SUPER_ADMIN','MEMBERSHIP_OPS')
 @Controller('admin/qualification-workflows')
 export class QualificationWorkflowController {
   constructor(private readonly service:QualificationWorkflowService){}
@@ -18,7 +18,7 @@ export class QualificationWorkflowController {
 
   @Post(':id/approve')
   @ApiOperation({summary:'核准Workflow；僅向未來生效'})
-  async approve(@Param('id') id:string,@Body() body:{effectiveAt?:string},@Req() req:any){
-    return {data:await this.service.approve(id,body.effectiveAt?new Date(body.effectiveAt):undefined,req.user)};
+  async approve(@Param('id') id:string,@Body() body:{effectiveAt?:string}&WorkflowPaymentConfirmation,@Req() req:any){
+    return {data:await this.service.approve(id,body.effectiveAt===undefined?undefined:new Date(body.effectiveAt),req.user,{paymentConfirmed:body.paymentConfirmed,erpPaymentVoucher:body.erpPaymentVoucher})};
   }
 }

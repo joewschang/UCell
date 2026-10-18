@@ -1,0 +1,14 @@
+[
+  {
+    "smsUiPresent": true,
+    "status": 200,
+    "asset": "/assets/index-R4WgJmJX.js",
+    "site": "https://stage.ucell.life"
+  },
+  {
+    "smsUiPresent": true,
+    "status": 200,
+    "asset": "/assets/index-Dltv4TJH.js",
+    "site": "https://admin-stage.ucell.life"
+  }
+]

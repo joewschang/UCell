@@ -43,6 +43,8 @@ class AdminPaperFormalApplicationDto implements AdminPaperFormalInput {
  @ApiProperty({maxLength:120}) @IsString() @Matches(/\S/) @MaxLength(120) accountHolder!:string;
 }
 
+class PaperScanUploadDto { @IsIn(['image/jpeg','image/png','application/pdf']) mimeType!:string; @IsString() @MaxLength(13981016) contentBase64!:string; }
+class MoreInfoDto { @IsString() @Matches(/\S/) @MaxLength(200) note!:string; }
 class AdminPaperEvidenceReviewDto {
  @ApiProperty({enum:['SIGNED_APPLICATION_AGREEMENT','IDENTITY_FRONT','IDENTITY_BACK','BANKBOOK_COVER','CORPORATE_REGISTRATION','REPRESENTATIVE_IDENTITY_FRONT','REPRESENTATIVE_IDENTITY_BACK','CORPORATE_BANK_PROOF','TAX_REGISTRATION','OTHER']})
  @IsIn(['SIGNED_APPLICATION_AGREEMENT','IDENTITY_FRONT','IDENTITY_BACK','BANKBOOK_COVER','CORPORATE_REGISTRATION','REPRESENTATIVE_IDENTITY_FRONT','REPRESENTATIVE_IDENTITY_BACK','CORPORATE_BANK_PROOF','TAX_REGISTRATION','OTHER'])
@@ -58,6 +60,8 @@ class AdminPaperEvidenceReviewDto {
 @Controller('admin/formal-member-applications')
 export class AdminFormalMemberApplicationController {
  constructor(private readonly service:FormalMemberApplicationService,private readonly conflicts:FormalMembershipConflictService,private readonly kyc:FormalKycDocumentService){}
+ @Post(':id/request-more-info') @Roles('SUPER_ADMIN','MEMBERSHIP_OPS')
+ requestMoreInfo(@Param('id',new ParseUUIDPipe()) id:string,@Body() body:MoreInfoDto,@Req() req:any){return this.service.requestMoreInfo(id,body.note,req.user?.personId,req.requestId);}
  @Get('legal-entities/search')
  @ApiOperation({operationId:'adminSearchFormalLegalEntities',description:'Search active formal LegalEntity owners for Qualification/Ball application creation.'})
  searchLegalEntities(@Query('q') q?:string,@Query('take') take?:string){return this.service.adminLegalEntities({q:q||undefined,take:Number(take??20)});}
@@ -68,7 +72,7 @@ export class AdminFormalMemberApplicationController {
  @ApiOperation({operationId:'adminCreatePaperFormalMemberApplication',description:'Back-office entry for paper INDIVIDUAL or LEGAL_ENTITY formal applications. Corporate applications are paper-only. Creates no Qualification/Ball.'})
  createPaper(@Body() body:AdminPaperFormalApplicationDto,@Headers('idempotency-key') key:string,@Req() req:any){return this.service.createPaper(body,req.user?.personId,key,req.requestId);}
  @Get() @ApiOperation({operationId:'adminListFormalMemberApplications',description:'Read-only metadata queue. The encrypted application payload is never decrypted or returned.'})
- list(@Query('status') status?:string,@Query('take') take?:string){return this.service.adminList({status:status||undefined,take:Number(take??50)});}
+ list(@Query('status') status?:string,@Query('take') take?:string,@Query('q') q?:string){return this.service.adminList({status:status||undefined,take:Number(take??50),q});}
  @Post(':id/paper-evidence') @Roles('SUPER_ADMIN','MEMBERSHIP_OPS') @UseGuards(IdempotencyGuard) @ApiHeader({name:'Idempotency-Key',required:true})
  @ApiOperation({operationId:'adminReviewPaperFormalEvidence',description:'Record that an authorized operator reviewed a physical paper evidence item. Does not fabricate a digital upload.'})
  reviewPaperEvidence(@Param('id',new ParseUUIDPipe()) id:string,@Body() body:AdminPaperEvidenceReviewDto,@Req() req:any){
@@ -80,6 +84,8 @@ export class AdminFormalMemberApplicationController {
  @Post(':id/approve') @Roles('SUPER_ADMIN','MEMBERSHIP_OPS')
  @ApiOperation({operationId:'adminApproveFormalMember',description:'Approve a fully reviewed Person or LegalEntity as FORMAL_MEMBER. Does not create a Qualification/Ball; packages are purchased separately.'})
  approve(@Param('id',new ParseUUIDPipe()) id:string,@Req() req:any){return this.service.approve(id,req.user?.personId,req.requestId);}
+ @Post(':id/paper-scan') @Roles('SUPER_ADMIN','MEMBERSHIP_OPS')
+ uploadPaperScan(@Param('id',new ParseUUIDPipe()) id:string,@Body() body:PaperScanUploadDto,@Req() req:any){return this.kyc.upload(req.user?.personId,id,'SIGNED_APPLICATION_AGREEMENT',body.mimeType,body.contentBase64,req.requestId,true);}
  @Get(':id/documents') @ApiOperation({operationId:'adminFormalApplicationDocuments',description:'List KYC document metadata for review; private storage object keys/URLs are not returned.'})
  documents(@Param('id',new ParseUUIDPipe()) id:string){return this.kyc.adminList(id);}
  @Get('documents/:documentId/content') @Header('Cache-Control','private, no-store') @Header('X-Content-Type-Options','nosniff') @Header('Referrer-Policy','no-referrer') @ApiOperation({operationId:'adminFormalApplicationDocumentContent',description:'Audited role-restricted read of one private KYC document image.'})

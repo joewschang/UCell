@@ -7,7 +7,7 @@ import ContactVerifier from './ContactVerifier';
 import {useContactPolicy,deferredSmsMessage} from './useContactPolicy';
 
 export default function NetworkRegistration({person,refresh}:{person:Person;refresh:()=>void}){
- const {smsRequired}=useContactPolicy();
+ const {smsRequired,registrationMode}=useContactPolicy();
  const contracts=useResource('network-registration-contracts',getRequiredContracts);
  const [legalName,setLegalName]=useState(''),[alias,setAlias]=useState(person.alias??person.name),[gender,setGender]=useState(''),[birthDate,setBirthDate]=useState(''),[nationalityCode,setNationalityCode]=useState('TW'),[identityDocumentType,setIdentityDocumentType]=useState<'NATIONAL_ID'|'RESIDENCE_PERMIT'|'PASSPORT'|'OTHER'>('NATIONAL_ID'),[identityDocumentNumber,setIdentityDocumentNumber]=useState(''),[mobile,setMobile]=useState(person.phone??''),[email,setEmail]=useState(person.email??''),[accepted,setAccepted]=useState(false),[busy,setBusy]=useState(false),[error,setError]=useState(''),[done,setDone]=useState(false);
  const pending=useRef<{body:string;key:string}|null>(null),flight=useRef(false);
@@ -17,7 +17,7 @@ export default function NetworkRegistration({person,refresh}:{person:Person;refr
   event.preventDefault();if(flight.current||!contract)return;
   const input={contractVersionId:contract.id,accepted:true as const,legalName:legalName.trim(),alias:alias.trim(),gender,birthDate,nationalityCode:nationalityCode.trim().toUpperCase(),identityDocumentType,identityDocumentNumber:identityDocumentNumber.trim(),mobile:mobile.trim(),email:email.trim()};
   if(!accepted){setError('請先閱讀並同意合約與隱私告知');return;}
-  if((smsRequired&&!mobileProof)||!emailProof){setError(smsRequired?'請先完成手機與 Email 驗證。':'請先完成 Email 驗證。');return;}
+  if(registrationMode==='EITHER'?(!mobileProof&&!emailProof):((smsRequired&&!mobileProof)||!emailProof)){setError(registrationMode==='EITHER'?'請完成手機或 Email 任一項驗證。':smsRequired?'請先完成手機與 Email 驗證。':'請先完成 Email 驗證。');return;}
   if(!input.legalName||!input.alias||!input.gender||!input.birthDate||!/^\+[1-9][0-9]{7,14}$/.test(input.mobile)||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.email)){setError('請完整填寫姓名、別名、性別、出生日期、手機與 Email');return;}
   const verifiedInput={...input,mobileVerificationProof:mobileProof,emailVerificationProof:emailProof};
   const body=JSON.stringify(verifiedInput);if(pending.current?.body!==body)pending.current={body,key:crypto.randomUUID()};
@@ -31,19 +31,20 @@ export default function NetworkRegistration({person,refresh}:{person:Person;refr
  if(!contract)return <section className="card" role="alert"><h3>目前無法註冊</h3><p>尚無有效的正式會員合約版本，系統已停止送出。</p></section>;
  if(done)return <section className="card" role="status"><h3>網路會員註冊完成</h3><p>會員資料正在重新載入。此流程不會自動建立經營資格或球位。</p></section>;
  return <form className="card" onSubmit={submit}><h3>完成網路會員註冊</h3><p>目前以 LINE 身分登入。手機與 Email 是聯絡資料，不作為登入或 KYC 證明；本流程不會建立經營資格或球位。</p>
-  <label>姓名<input value={legalName} maxLength={80} autoComplete="name" onChange={e=>setLegalName(e.target.value)} disabled={busy}/></label>
-  <label>別名<input value={alias} maxLength={80} onChange={e=>setAlias(e.target.value)} disabled={busy}/></label>
-  <label>性別<select value={gender} onChange={e=>setGender(e.target.value)} disabled={busy}><option value="">請選擇</option><option value="FEMALE">女性</option><option value="MALE">男性</option><option value="OTHER">其他／自行描述</option><option value="UNDISCLOSED">不揭露</option></select></label>
-  <label>出生年月日<input type="date" value={birthDate} onChange={e=>setBirthDate(e.target.value)} disabled={busy}/></label>
-  <label>國籍<select value={nationalityCode} onChange={e=>setNationalityCode(e.target.value)} disabled={busy}>{countryOptions.map(option=><option key={option.code} value={option.code}>{option.label}</option>)}</select></label>
-  <label>身分證明文件類型<select value={identityDocumentType} onChange={e=>setIdentityDocumentType(e.target.value as typeof identityDocumentType)} disabled={busy}><option value="NATIONAL_ID">身分證號</option><option value="RESIDENCE_PERMIT">居留證號</option><option value="PASSPORT">護照號碼</option><option value="OTHER">其他</option></select></label>
-  <label>身分證明號碼<input value={identityDocumentNumber} maxLength={64} autoComplete="off" onChange={e=>setIdentityDocumentNumber(e.target.value)} disabled={busy}/></label>
-  <label>手機（含國碼）<input type="tel" value={mobile} placeholder="+886912345678" autoComplete="tel" onChange={e=>setMobile(e.target.value)} disabled={busy}/></label>
-  <label>Email<input type="email" value={email} maxLength={254} autoComplete="email" onChange={e=>setEmail(e.target.value)} disabled={busy}/></label>
-  {smsRequired?<ContactVerifier channel="SMS" value={mobile} purpose="REGISTRATION" onVerified={setMobileProof} disabled={busy}/>:<p role="status">{deferredSmsMessage}</p>}
+  <label>姓名<span style={{color:"#e34b59",marginInlineStart:4}} aria-label="必填">*</span><input required value={legalName} maxLength={80} autoComplete="name" onChange={e=>setLegalName(e.target.value)} disabled={busy}/></label>
+  <label>別名<span style={{color:"#e34b59",marginInlineStart:4}} aria-label="必填">*</span><input required value={alias} maxLength={80} onChange={e=>setAlias(e.target.value)} disabled={busy}/></label>
+  <label>性別<span style={{color:"#e34b59",marginInlineStart:4}} aria-label="必填">*</span><select required value={gender} onChange={e=>setGender(e.target.value)} disabled={busy}><option value="">請選擇</option><option value="FEMALE">女性</option><option value="MALE">男性</option><option value="OTHER">其他／自行描述</option><option value="UNDISCLOSED">不揭露</option></select></label>
+  <label>出生年月日<span style={{color:"#e34b59",marginInlineStart:4}} aria-label="必填">*</span><input required type="date" value={birthDate} onChange={e=>setBirthDate(e.target.value)} disabled={busy}/></label>
+  <label>國籍<span style={{color:"#e34b59",marginInlineStart:4}} aria-label="必填">*</span><select required value={nationalityCode} onChange={e=>setNationalityCode(e.target.value)} disabled={busy}>{countryOptions.map(option=><option key={option.code} value={option.code}>{option.label}</option>)}</select></label>
+  <label>身分證明文件類型<span style={{color:"#e34b59",marginInlineStart:4}} aria-label="必填">*</span><select required value={identityDocumentType} onChange={e=>setIdentityDocumentType(e.target.value as typeof identityDocumentType)} disabled={busy}><option value="NATIONAL_ID">身分證號</option><option value="RESIDENCE_PERMIT">居留證號</option><option value="PASSPORT">護照號碼</option><option value="OTHER">其他</option></select></label>
+  <label>身分證明號碼<span style={{color:"#e34b59",marginInlineStart:4}} aria-label="必填">*</span><input required value={identityDocumentNumber} maxLength={64} autoComplete="off" onChange={e=>setIdentityDocumentNumber(e.target.value)} disabled={busy}/></label>
+  <label>手機（含國碼）<span style={{color:"#e34b59",marginInlineStart:4}} aria-label="必填">*</span><input required type="tel" value={mobile} placeholder="+886912345678" autoComplete="tel" onChange={e=>setMobile(e.target.value)} disabled={busy}/></label>
+  <label>Email<span style={{color:"#e34b59",marginInlineStart:4}} aria-label="必填">*</span><input required type="email" value={email} maxLength={254} autoComplete="email" onChange={e=>setEmail(e.target.value)} disabled={busy}/></label>
+  {registrationMode==='EITHER'&&<p>手機或 Email 擇一驗證即可，不需要兩項都驗證。請選擇方便收取驗證碼的方式。</p>}{smsRequired?<ContactVerifier channel="SMS" value={mobile} purpose="REGISTRATION" onVerified={setMobileProof} disabled={busy}/>:<p role="status">{deferredSmsMessage}</p>}
   <ContactVerifier channel="EMAIL" value={email} purpose="REGISTRATION" onVerified={setEmailProof} disabled={busy}/>
   <details><summary>{contract.title}（{contract.version}）</summary><p>{contract.content}</p><small>內容雜湊：{contract.contentHash}</small></details>
   <label><input type="checkbox" checked={accepted} onChange={e=>setAccepted(e.target.checked)} disabled={busy}/>我已閱讀並同意上述合約與隱私告知</label>
   {error&&<p role="alert">{error}</p>}<button disabled={busy}>{busy?'送出中…':'同意並完成註冊'}</button>
  </form>;
 }
+

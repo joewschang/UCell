@@ -7,7 +7,7 @@ import {ContactVerificationEmailService} from './contact-verification-email.serv
 import {GoogleTokenVerifierService} from './google-token-verifier.service';
 import {LineTokenVerifierService} from './line-token-verifier.service';
 export type ContactChannel='SMS'|'EMAIL';
-export type ContactPurpose='REGISTRATION'|'PROFILE';
+export type ContactPurpose='REGISTRATION'|'PROFILE'|'LOGIN';
 export function normalizeContact(channel:ContactChannel,value:string){
  const normalized=channel==='EMAIL'?value.trim().toLowerCase():value.trim().replace(/[\s()-]/g,'').replace(/^09(\d{8})$/,'+8869$1');
  if(channel==='SMS'?!/^\+[1-9][0-9]{7,14}$/.test(normalized):!/^\S+@\S+\.\S+$/.test(normalized)||normalized.length>254)throw new UnprocessableEntityException({code:'CONTACT_DESTINATION_INVALID'});
@@ -20,7 +20,19 @@ export class ContactVerificationService{
   const setting=this.config.get<string>('CONTACT_VERIFICATION_SMS_REQUIRED');
   if(setting!==undefined&&!['true','false'].includes(setting))throw new ServiceUnavailableException({code:'CONTACT_POLICY_CONFIGURATION_INVALID'});
   if(setting==='false'&&this.config.get<string>('UCELL_ENVIRONMENT')!=='STAGE')throw new ServiceUnavailableException({code:'CONTACT_POLICY_CONFIGURATION_INVALID'});
-  return {emailRequired:true as const,smsRequired:setting!=='false'};
+  const mode=this.config.get<string>('CONTACT_REGISTRATION_VERIFICATION_MODE')??'ALL';
+  if(!['ALL','EITHER'].includes(mode))throw new ServiceUnavailableException({code:'CONTACT_POLICY_CONFIGURATION_INVALID'});
+  return {emailRequired:true as const,smsRequired:setting!=='false',registrationMode:mode};
+ }
+ async consumeRegistration(tx:any,owner:string,input:{mobile:string;email:string;mobileVerificationProof?:string;emailVerificationProof?:string}){
+  normalizeContact('SMS',input.mobile);normalizeContact('EMAIL',input.email);
+  if(this.policy().registrationMode==='EITHER'){
+   if(!input.mobileVerificationProof&&!input.emailVerificationProof)throw new UnprocessableEntityException({code:'CONTACT_VERIFICATION_REQUIRED'});
+   const mobileVerifiedAt=input.mobileVerificationProof?await this.consume(tx,owner,'REGISTRATION','SMS',input.mobile,input.mobileVerificationProof):null;
+   const emailVerifiedAt=input.emailVerificationProof?await this.consume(tx,owner,'REGISTRATION','EMAIL',input.email,input.emailVerificationProof):null;
+   return {mobileVerifiedAt,emailVerifiedAt};
+  }
+  return {mobileVerifiedAt:await this.consumeMobile(tx,owner,'REGISTRATION',input.mobile,input.mobileVerificationProof),emailVerifiedAt:await this.consume(tx,owner,'REGISTRATION','EMAIL',input.email,input.emailVerificationProof)};
  }
  async consumeMobile(tx:any,owner:string,purpose:ContactPurpose,destination:string,proof?:string){
   normalizeContact('SMS',destination);
@@ -35,17 +47,25 @@ export class ContactVerificationService{
   return 'GOOGLE:'+(await this.google.verify(input.googleIdToken!)).subject;
  }
  private context(owner:string,purpose:ContactPurpose,channel:ContactChannel,destination:string){return {subjectHash:this.hash(owner),purpose,channel,destinationHash:this.hash(channel+':'+normalizeContact(channel,destination))};}
- async send(owner:string,purpose:ContactPurpose,channel:ContactChannel,destination:string,requestKey:string){
+ async send(owner:string,purpose:ContactPurpose,channel:ContactChannel,destination:string,requestKey:string,deliver=true){
   if(!/^[a-f0-9]{8}-[a-f0-9]{4}-[1-5][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i.test(requestKey??''))throw new UnprocessableEntityException({code:'OTP_REQUEST_KEY_REQUIRED'});
   if(channel==='SMS'&&!this.policy().smsRequired)throw new ServiceUnavailableException({code:'SMS_PROVIDER_CONFIGURATION_PENDING'});
   const normalized=normalizeContact(channel,destination),context=this.context(owner,purpose,channel,normalized);
   channel==='SMS'?this.sms.assertConfigured():this.email.assertConfigured();
   const id=randomUUID(),code=String(randomInt(0,1000000)).padStart(6,'0'),now=new Date();
   const reserved=await this.db.$transaction(async tx=>{
+   if(channel==='SMS'){
+    await tx.$queryRaw`SELECT true AS locked FROM (SELECT pg_advisory_xact_lock(hashtextextended('ucell-sms-daily-budget',0))) AS lock_row`;
+   }
    await tx.$queryRaw`SELECT true AS locked FROM (SELECT pg_advisory_xact_lock(hashtextextended(${context.subjectHash},0))) AS lock_row`;
    await tx.$queryRaw`SELECT true AS locked FROM (SELECT pg_advisory_xact_lock(hashtextextended(${context.destinationHash},0))) AS lock_row`;
    const existing=await tx.contactVerificationChallenge.findUnique({where:{subjectHash_requestKey:{subjectHash:context.subjectHash,requestKey}}});
    if(existing){if(existing.destinationHash!==context.destinationHash||existing.channel!==channel||existing.purpose!==purpose)throw new ConflictException({code:'OTP_REQUEST_KEY_CONFLICT'});return {row:existing,replayed:true};}
+   if(channel==='SMS'){
+    const cap=Number(this.config.get('SMS_OTP_DAILY_LIMIT')??200);
+    const used=await tx.contactVerificationChallenge.count({where:{channel:'SMS',createdAt:{gte:new Date(now.getTime()-86400000)}}});
+    if(!Number.isSafeInteger(cap)||cap<1||used>=cap)throw new UnprocessableEntityException({code:'OTP_RATE_LIMITED'});
+   }
    const latest=await tx.contactVerificationChallenge.findFirst({where:{destinationHash:context.destinationHash},orderBy:{createdAt:'desc'}});
    if(latest&&latest.resendAt>now)throw new UnprocessableEntityException({code:'OTP_RESEND_COOLDOWN'});
    const hour=new Date(now.getTime()-3600000),day=new Date(now.getTime()-86400000);
@@ -55,7 +75,7 @@ export class ContactVerificationService{
    return {row,replayed:false};
   });
   if(!reserved.replayed){
-   try{if(channel==='SMS')await this.sms.send(normalized,code);else await this.email.send(normalized,code);await this.db.contactVerificationChallenge.update({where:{id},data:{status:'SENT'}});reserved.row.status='SENT';}
+   try{if(deliver){if(channel==='SMS')await this.sms.send(normalized,code);else await this.email.send(normalized,code);}const status=deliver?'SENT':'UNAVAILABLE';await this.db.contactVerificationChallenge.update({where:{id},data:{status}});reserved.row.status=status;}
    catch(error){await this.db.contactVerificationChallenge.update({where:{id},data:{status:'FAILED'}});throw error;}
   }
   if(reserved.row.status==='FAILED')throw new ServiceUnavailableException({code:'OTP_DELIVERY_FAILED'});

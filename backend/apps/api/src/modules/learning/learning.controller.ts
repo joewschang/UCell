@@ -23,6 +23,7 @@ class CourseDto{
  @ApiProperty({type:[LessonDto]}) @IsArray() @ArrayMinSize(1) @ArrayMaxSize(100) @ValidateNested({each:true}) @Type(()=>LessonDto) lessons!:LessonDto[];
 }
 class LearningOutreachDto{ @ApiProperty({pattern:'^[0-9]{10}$'}) @Matches(/^\d{10}$/) memberNo!:string; @ApiProperty({enum:['ASSIGN','REMIND']}) @IsIn(['ASSIGN','REMIND']) action!:'ASSIGN'|'REMIND'; @ApiProperty({maxLength:500}) @IsString() @Length(1,500) reason!:string; }
+class LearningCheckInDto{@Matches(/^[A-Za-z0-9_-]{43}$/) checkInToken!:string;}
 class PublishDto{@ApiProperty() @IsString() @Length(1,200) approvalReference!:string;}
 class ArchiveDto{@ApiProperty() @IsString() @Length(1,500) reason!:string;}
 @ApiTags('Admin - Learning') @ApiBearerAuth('adminBearer') @Roles('SUPER_ADMIN','MEMBERSHIP_OPS') @Controller('admin/learning')
@@ -30,6 +31,9 @@ export class AdminLearningController{
  constructor(private s:LearningService){}
  @Post('courses/:courseCode/outreach') @UseGuards(IdempotencyGuard) @ApiHeader({name:'Idempotency-Key',required:true}) @ApiOperation({operationId:'adminLearningOutreach',summary:'個別課程指派或學習提醒，僅存入 UCell 個人訊息中心'})
  outreach(@Param('courseCode') courseCode:string,@Body() body:LearningOutreachDto,@Headers('idempotency-key') key:string,@Req() req:any){return this.s.outreach(courseCode,body.memberNo,body.action,body.reason,req.user?.personId??req.user?.subject,key,req.requestId??randomUUID()).then(data=>({data}));}
+ @Post('check-in') @UseGuards(IdempotencyGuard)
+ checkIn(@Body() b:LearningCheckInDto,@Headers('idempotency-key') key:string,@Req() req:any){return this.s.checkIn(b.checkInToken,req.user?.personId??req.user?.subject,key,req.requestId??randomUUID()).then(data=>({data}));}
+ @Get('courses/:courseCode/registrations') registrations(@Param('courseCode') code:string){return this.s.registrations(code).then(data=>({data}));}
  @Get('courses') list(){return this.s.adminList().then(data=>({data}));}
  @Post('courses') @UseGuards(IdempotencyGuard) @ApiHeader({name:'Idempotency-Key',required:true})
  create(@Body() body:CourseDto,@Headers('idempotency-key') key:string,@Req() req:any){return this.s.create(body,req.user?.personId??req.user?.subject,key,req.requestId??randomUUID()).then(data=>({data}));}
@@ -43,6 +47,8 @@ export class MemberLearningController{
  constructor(private s:LearningService){}
  @Get('courses') @ApiOperation({operationId:'memberLearningCourses'}) list(@Req() req:any){return this.s.memberList(req.user.personId).then(data=>({data}));}
  @Get('courses/:courseCode') detail(@Req() req:any,@Param('courseCode') code:string){return this.s.memberDetail(req.user.personId,code).then(data=>({data}));}
+ @Post('courses/:courseCode/credential') @UseGuards(IdempotencyGuard)
+ credential(@Req() req:any,@Param('courseCode') code:string,@Headers('idempotency-key') key:string){return this.s.credential(req.user.personId,code,key,req.requestId??randomUUID()).then(data=>({data}));}
  @Post('courses/:courseCode/enroll') @UseGuards(IdempotencyGuard) @ApiHeader({name:'Idempotency-Key',required:true})
  enroll(@Req() req:any,@Param('courseCode') code:string,@Headers('idempotency-key') key:string){return this.s.enroll(req.user.personId,code,key,req.requestId??randomUUID()).then(data=>({data}));}
  @Post('courses/:courseCode/lessons/:sequenceNo/complete') @UseGuards(IdempotencyGuard) @ApiHeader({name:'Idempotency-Key',required:true})

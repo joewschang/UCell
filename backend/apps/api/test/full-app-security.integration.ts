@@ -9,6 +9,7 @@ import {promisify} from 'node:util';
 import {resolve} from 'node:path';
 import {IdentityTokenService} from '../src/modules/auth/identity-token.service';
 import {EnvelopeInterceptor} from '../src/common/interceptors/envelope.interceptor';
+import {RequestContextInterceptor} from '../src/common/interceptors/request-context.interceptor';
 import {ApiExceptionFilter} from '../src/common/filters/api-exception.filter';
 const url=process.env.PHASE2_TEST_DATABASE_URL;
 if(!url||!/^ucell_jest_[a-f0-9]{32}$/.test(new URL(url).pathname.slice(1)))throw Error('ISOLATED_DATABASE_REQUIRED');
@@ -19,7 +20,7 @@ it('passes the existing security HTTP gate against the complete App with synthet
  const {AppModule}=await import('../src/app.module');
  const module=await Test.createTestingModule({imports:[AppModule]}).overrideProvider(PrismaService).useValue(db).compile();
  module.get(ConfigService).set('ADMIN_AUTH_BYPASS','false');
- app=module.createNestApplication<NestFastifyApplication>(new FastifyAdapter(),{logger:false});app.setGlobalPrefix('api/v1');app.useGlobalPipes(new ValidationPipe({whitelist:true,forbidNonWhitelisted:true,transform:true}));app.useGlobalInterceptors(new EnvelopeInterceptor());app.useGlobalFilters(new ApiExceptionFilter());await app.listen(0,'127.0.0.1');
+ app=module.createNestApplication<NestFastifyApplication>(new FastifyAdapter(),{logger:false});app.setGlobalPrefix('api/v1');app.useGlobalPipes(new ValidationPipe({whitelist:true,forbidNonWhitelisted:true,transform:true}));app.useGlobalInterceptors(new RequestContextInterceptor(),new EnvelopeInterceptor());app.useGlobalFilters(new ApiExceptionFilter());await app.listen(0,'127.0.0.1');
  const tokens=new IdentityTokenService(db),env={...process.env,UCELL_API_BASE:(await app.getUrl())+'/api/v1'};
  for(const [name,roleCode] of [['UAT_TOKEN_MEMBERSHIP','MEMBERSHIP_OPS'],['UAT_TOKEN_FINANCE','FINANCE'],['UAT_TOKEN_COMPLIANCE','COMPLIANCE_AUDIT']]){
   const person=await db.person.create({data:{legalName:'SYNTHETIC FULL APP SECURITY '+roleCode}}),subject=randomUUID();
@@ -29,4 +30,8 @@ it('passes the existing security HTTP gate against the complete App with synthet
  }
  const result=await promisify(execFile)(process.execPath,[resolve('../../scripts/security-http-e2e.mjs')],{env,timeout:30000});
  expect(result.stdout).toContain('SECURITY_E2E_PASS');expect(result.stdout).not.toContain('PARTIAL');console.log('SECURITY_E2E_PASS (synthetic identity; external Entra credentials not verified)');
+ const audit=await db.auditEvent.findFirst({where:{entityType:'HTTP_REQUEST',action:'HTTP_GET',result:'SUCCESS'}});
+ expect(audit).not.toBeNull();
+ expect(audit!.correlationId).toMatch(/^[0-9a-f]{8}-[0-9a-f-]{27}$/i);
+ expect(audit!.requestId).not.toBe('undefined');
 },120000);

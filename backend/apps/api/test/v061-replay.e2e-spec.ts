@@ -89,9 +89,9 @@ describe('v0.6.1 subscription cancellation',()=>{
 describe('v0.6.1 qualification workflow',()=>{
   const effectiveAt=new Date('2100-01-01T00:00:00Z');
   function harness(workflow:any){
-    const currentPlan={qualificationPlanHistoryId:'plan-old'},currentHolder={holderHistoryId:'holder-old'};
+    const currentPlan={qualificationPlanHistoryId:'plan-old',planCode:'STARTER'},currentHolder={holderHistoryId:'holder-old'};
     const tx:any={...memberEconomicMocks(),
-      $queryRaw:jest.fn(async()=>[]),binaryTreeMembership:{findUnique:jest.fn(async()=>null)},
+      auditEvent:{create:jest.fn()},$queryRaw:jest.fn(async()=>[]),binaryTreeMembership:{findUnique:jest.fn(async()=>null)},
       qualificationWorkflow:{findUniqueOrThrow:jest.fn(async()=>workflow),update:jest.fn(async({data}:any)=>({...workflow,...data}))},
       qualificationPlanHistory:{findFirst:jest.fn(async()=>currentPlan),update:jest.fn(),create:jest.fn(async({data}:any)=>data)},
       qualificationHolderHistory:{findFirst:jest.fn(async()=>currentHolder),update:jest.fn(),create:jest.fn(async({data}:any)=>data)},
@@ -107,7 +107,7 @@ describe('v0.6.1 qualification workflow',()=>{
   }
   it('upgrade creates future plan history and does not alter past awards',async()=>{
     const workflow={qualificationWorkflowId:'workflow-upgrade',qualificationId:'ball-A',workflowType:'UPGRADE',status:'SUBMITTED',targetPlanCode:'LEADER',payload:{reviewFeePaid:true}};
-    const {service,tx}=harness(workflow);await service.approve(workflow.qualificationWorkflowId,effectiveAt);
+    const {service,tx}=harness(workflow);await service.approve(workflow.qualificationWorkflowId,effectiveAt,{personId:'actor',provider:'ENTRA',role:'SUPER_ADMIN'} as any,{paymentConfirmed:true,erpPaymentVoucher:'ERP-TEST'});
     expect(tx.qualificationPlanHistory.update).toHaveBeenCalledWith({where:{qualificationPlanHistoryId:'plan-old'},data:{effectiveTo:effectiveAt}});
     expect(tx.qualificationPlanHistory.create).toHaveBeenCalledWith({data:{qualificationId:'ball-A',planCode:'LEADER',effectiveFrom:effectiveAt,sourceType:'QUALIFICATION_UPGRADE',sourceId:'workflow-upgrade'}});
     expect(tx.qualification.update).toHaveBeenCalledWith({where:{qualificationId:'ball-A'},data:{planLevelCode:'LEADER'}});

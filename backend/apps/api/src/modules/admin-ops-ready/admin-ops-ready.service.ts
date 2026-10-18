@@ -204,6 +204,8 @@ export class AdminOpsReadyService{
       SELECT o.order_id::text AS id,o.paid_at
       FROM commerce."order" o
       WHERE o.status IN ('PAID','FULFILLED','PARTIAL_RETURN','RETURNED')
+        AND o.qualification_id IS NOT NULL
+        AND EXISTS (SELECT 1 FROM commerce.order_line l WHERE l.order_id=o.order_id AND l.gpv_amount_snapshot>0)
         AND o.paid_at < now()-interval '10 minutes'
         AND NOT EXISTS(
           SELECT 1 FROM ledger.pv_ledger p
@@ -218,6 +220,21 @@ export class AdminOpsReadyService{
       entityType:'ORDER',entityId:x.id,detail:x
     }));
 
+    // Package payments do not use retail GPV snapshots. Keep their explicit
+    // configuration hold visible instead of reporting a fictitious lost GPV.
+    const packagePending=await this.prisma.$queryRaw<Array<any>>`
+      SELECT DISTINCT o.order_id::text AS id,o.paid_at,
+        e.payload->>'downstreamStatus' AS downstream_status
+      FROM commerce."order" o JOIN integration.outbox_event e
+        ON e.aggregate_id=o.order_id
+      WHERE e.event_type='PACKAGE_PAYMENT_CONFIRMED'
+        AND e.process_status::text IN ('PENDING','PROCESSING')
+        AND e.payload->>'recognitionStatus'='CONFIGURATION_PENDING'
+        AND o.status IN ('PAID','FULFILLED','PARTIAL_RETURN','RETURNED')
+      LIMIT 100
+    `;
+    packagePending.forEach(x=>alerts.push({severity:'HIGH',code:'PACKAGE_RECOGNITION_CONFIGURATION_PENDING',entityType:'ORDER',entityId:x.id,detail:x}));
+
     return {
       generatedAt:new Date(),
       counts:{
@@ -229,13 +246,18 @@ export class AdminOpsReadyService{
     };
   }
 
-  async exportDataset(dataset:'QUALIFICATIONS'|'ORDERS'|'PAYOUTS',take=5000){
+  async exportDataset(dataset:'QUALIFICATIONS'|'ORDERS'|'PAYOUTS',take=5000,from?:Date,to?:Date){
+    if(!['QUALIFICATIONS','ORDERS','PAYOUTS'].includes(dataset))throw new BadRequestException('EXPORT_DATASET_INVALID');
+    if(!Number.isInteger(take)||take<1)throw new BadRequestException('EXPORT_LIMIT_INVALID');
+    if((from!==undefined||to!==undefined)&&(!from||!to||!Number.isFinite(from.getTime())||!Number.isFinite(to.getTime())||from>to))
+      throw new BadRequestException('REPORT_PERIOD_INVALID: valid from/to dates in chronological order are required');
+    const period=from&&to?{gte:from,lte:to}:undefined;
     const limit=Math.min(Math.max(take,1),10000);
     let headers:string[]=[];let rows:any[][]=[];
 
     if(dataset==='QUALIFICATIONS'){
       const data=await this.prisma.qualification.findMany({
-        include:{currentHolder:true},orderBy:{createdAt:'desc'},take:limit
+        where:period?{createdAt:period}:undefined,include:{currentHolder:true},orderBy:[{createdAt:'desc'},{qualificationId:'asc'}],take:limit+1
       });
       headers=['qualificationId','qualificationNo','holder','plan','status','activeFlag','effectiveAt'];
       rows=data.map(x=>[
@@ -245,7 +267,7 @@ export class AdminOpsReadyService{
     }else if(dataset==='ORDERS'){
       const data=await this.prisma.order.findMany({
         include:{qualification:{include:{currentHolder:true}}},
-        orderBy:{createdAt:'desc'},take:limit
+        where:period?{createdAt:period}:undefined,orderBy:[{createdAt:'desc'},{orderId:'asc'}],take:limit+1
       });
       headers=['orderId','orderNo','holder','qualificationId','purpose','status','netAmount','paidAt','createdAt'];
       rows=data.map(x=>[
@@ -254,7 +276,7 @@ export class AdminOpsReadyService{
       ]);
     }else{
       const data=await this.prisma.payoutBatch.findMany({
-        orderBy:{periodEnd:'desc'},take:limit
+        where:period?{periodEnd:period}:undefined,orderBy:[{periodEnd:'desc'},{payoutBatchId:'asc'}],take:limit+1
       });
       headers=['payoutBatchId','periodStart','periodEnd','status','gross','recovery','net','exportReference','paymentReference'];
       rows=data.map(x=>[
@@ -264,7 +286,8 @@ export class AdminOpsReadyService{
       ]);
     }
 
-    const esc=(v:any)=>`"${String(v??'').replaceAll('"','""')}"`;
+    if(rows.length>limit)throw new BadRequestException('匯出筆數超過上限，請縮小查詢期間後重試。');
+    const esc=(v:any)=>{const value=String(v??'');return `"${(/^[=+@\t\r\n]|^-(?!\d+(?:\.\d+)?$)/.test(value)?"'"+value:value).replaceAll('"','""')}"`;};
     const csv='\uFEFF'+[headers,...rows].map(r=>r.map(esc).join(',')).join('\r\n');
     return {
       filename:`ucell_${dataset.toLowerCase()}_${new Date().toISOString().slice(0,10)}.csv`,

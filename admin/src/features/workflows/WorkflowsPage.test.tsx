@@ -1,0 +1,27 @@
+import React from 'react';
+import {act,create} from 'react-test-renderer';
+import {expect,it,vi} from 'vitest';
+import {WorkflowsPage} from './WorkflowsPage';
+import {command} from '../../lib/api';
+vi.mock('../../components/ConfirmAction',()=>({ConfirmAction:({children,disabled,onConfirm}:any)=><button disabled={disabled} onClick={onConfirm}>{children}</button>}));
+vi.mock('../../lib/api',()=>({command:vi.fn(async()=>({})),get:vi.fn(),qs:()=>''}));
+vi.mock('../../components/SearchSelect',()=>({SearchSelect:()=>null}));
+vi.mock('@tanstack/react-query',()=>({useQueryClient:()=>({invalidateQueries:vi.fn()}),useQuery:({queryKey}:any)=>({data:{data:queryKey[0]==='workflow-queue'?[{qualificationWorkflowId:'one',workflowType:'UPGRADE',status:'SUBMITTED'},{qualificationWorkflowId:'two',workflowType:'UPGRADE',status:'SUBMITTED'}]:queryKey[1]?{qualificationWorkflowId:queryKey[1],workflowType:'UPGRADE',status:'SUBMITTED',payload:{reviewFeePaid:true}}:null}})}));
+it('requires current confirmation and ERP reference, sends trimmed text, and clears both when switching workflows',async()=>{
+ const view=create(<WorkflowsPage/>);
+ const rows=()=>view.root.findAllByType('button').filter(b=>String(b.props.className).includes('list-row'));
+ act(()=>rows()[0].props.onClick());
+ const approve=()=>view.root.findAllByType('button').find(b=>String(b.props.className).includes('sticky-actions'))!;
+ const reference=()=>view.root.findByProps({'aria-label':'ERP 付款憑證號碼／備註'});
+ const check=()=>view.root.findAllByType('input').find(i=>i.props.type==='checkbox')!;
+ expect(approve().props.disabled).toBe(true);
+ act(()=>reference().props.onChange({target:{value:'   '}}));act(()=>check().props.onChange({target:{checked:true}}));
+ expect(approve().props.disabled).toBe(true);
+ act(()=>reference().props.onChange({target:{value:'  ERP-001 合併收款  '}}));
+ expect(approve().props.disabled).toBe(false);
+ await act(async()=>approve().props.onClick());
+ expect(command).toHaveBeenCalledWith('/admin/qualification-workflows/one/approve',{paymentConfirmed:true,erpPaymentVoucher:'ERP-001 合併收款'});
+ act(()=>rows()[1].props.onClick());
+ expect(reference().props.value).toBe('');expect(check().props.checked).toBe(false);expect(approve().props.disabled).toBe(true);
+ view.unmount();
+});

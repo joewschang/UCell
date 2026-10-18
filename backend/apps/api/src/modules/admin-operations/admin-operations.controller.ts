@@ -1,12 +1,26 @@
 import { Roles } from '../auth/roles.decorator';
 import { Body,Controller,Get,Headers,Param,Post,Query,Req,UseGuards } from '@nestjs/common';
 import { ApiBearerAuth,ApiHeader,ApiOperation,ApiTags,ApiProperty,ApiQuery } from '@nestjs/swagger';
-import {IsInt,Min,Max} from 'class-validator';
+import {IsInt,Min,Max,IsString,IsIn,IsArray,ArrayMinSize,ArrayMaxSize,ValidateNested,IsOptional,MaxLength,Matches} from 'class-validator';
+import {Type} from 'class-transformer';
 import { randomUUID } from 'crypto';
 import { AdminOperationsService } from './admin-operations.service';
 import { IdempotencyGuard } from '../../common/guards/idempotency.guard';
 class PayoutArtifactDownloadDto{
   @ApiProperty({minimum:1,maximum:2147483647}) @IsInt() @Min(1) @Max(2147483647) revision!:number;
+}
+class BankRecipientDto{
+  @ApiProperty() @IsString() @MaxLength(100) payoutLineId!:string;
+  @ApiProperty({maxLength:40}) @IsString() @MaxLength(40) accountName!:string;
+  @ApiProperty({description:'Digit string preserving leading zeros'}) @IsString() @Matches(/^\d{1,16}$/) accountNumber!:string;
+  @ApiProperty({required:false}) @IsOptional() @IsString() @Matches(/^\d{7}$/) bankBranchCode?:string;
+  @ApiProperty({required:false}) @IsOptional() @IsString() @Matches(/^[A-Za-z0-9]{4}$/) reference?:string;
+  @ApiProperty({required:false,maxLength:40}) @IsOptional() @IsString() @MaxLength(40) remark?:string;
+}
+class BankExportDto{
+  @ApiProperty({enum:['BULK_REMITTANCE','CENTER_TRANSFER']}) @IsIn(['BULK_REMITTANCE','CENTER_TRANSFER']) format!:'BULK_REMITTANCE'|'CENTER_TRANSFER';
+  @ApiProperty({maxLength:200}) @IsString() @MaxLength(200) exportReference!:string;
+  @ApiProperty({type:[BankRecipientDto]}) @IsArray() @ArrayMinSize(1) @ArrayMaxSize(999) @ValidateNested({each:true}) @Type(()=>BankRecipientDto) recipients!:BankRecipientDto[];
 }
 
 @ApiTags('Admin - Returns / Workflows / Payout Operations')
@@ -165,9 +179,16 @@ export class AdminOperationsController{
 
   @Roles('SUPER_ADMIN','FINANCE')
   @Post('payout-batches/:id/export-downloads')
-  @ApiOperation({operationId:'adminDownloadPayoutReviewArtifact',summary:'稽核並下載固定快照的財務覆核 CSV；非銀行匯款檔'})
+  @ApiOperation({operationId:'adminDownloadPayoutReviewArtifact',summary:'稽核並下載固定快照的財務覆核 CSV 或銀行 XLS'})
   download(@Param('id') id:string,@Body() body:PayoutArtifactDownloadDto,@Req() req:any){
     return this.service.downloadPayoutArtifact(id,body.revision,req.user?.personId,req.user?.role,req.requestId??randomUUID(),req.correlationId??randomUUID()).then(data=>({data}));
+  }
+
+  @Roles('SUPER_ADMIN','FINANCE')
+  @Post('payout-batches/:id/bank-exports')
+  @ApiOperation({operationId:'adminExportBankPayout',summary:'依銀行原始 XLS 範本產生匯款檔；不執行轉帳'})
+  bankExport(@Param('id') id:string,@Body() body:BankExportDto,@Req() req:any){
+    return this.service.exportBankPayout(id,body,req.user?.personId,req.user?.role,req.requestId??randomUUID(),req.correlationId??randomUUID()).then(data=>({data}));
   }
 
   @Roles('SUPER_ADMIN','FINANCE')

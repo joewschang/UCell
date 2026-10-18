@@ -12,11 +12,11 @@ async function request(path:string,init:RequestInit={}){
    typeof (envelope?.error as any)?.code==='string'?(envelope?.error as any).code:undefined;
   if(code==='DOMAIN_RULE_VIOLATION'&&Array.isArray(envelope?.message)){
    const messages=envelope.message.filter((value):value is string=>typeof value==='string');
-   const fields:Record<string,string>={mobile:'手機號碼請使用 +國碼格式，台灣可輸入 09 開頭的十碼號碼。',password:'密碼長度須為 12 至 256 字元。',email:'請輸入有效的 Email。',birthDate:'請選擇有效的生日。',gender:'請選擇性別。'};
+   const fields:Record<string,string>={mobile:'手機號碼請使用 +國碼格式，台灣可輸入 09 開頭的十碼號碼。',password:'密碼至少 6 碼（最多 256 碼），須包含大寫英文、小寫英文與數字。',email:'請輸入有效的 Email。',birthDate:'請選擇有效的生日。',gender:'請選擇性別。'};
    const hint=Object.entries(fields).filter(([field])=>messages.some(message=>message.startsWith(field+' '))).map(([,label])=>label).join(' ');
    throw new Error(hint||'登錄資料格式不正確，請檢查各欄位後重試。');
   }
-  throw new Error(code||'AUTH_REQUEST_FAILED');
+  throw new Error(code==='PASSWORD_POLICY'?'密碼至少 6 碼，須包含大寫英文、小寫英文與數字。':code||'AUTH_REQUEST_FAILED');
  }
  return unwrapMemberEnvelope(body);
 }
@@ -31,6 +31,10 @@ function storeSession(value:unknown){
 export async function passwordLogin(memberNo:string,password:string){
  return storeSession(await request('/auth/member/password/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({memberNo,password})}));
 }
+export async function smsLoginPolicy(){return request('/auth/member/sms/policy') as Promise<{enabled:boolean}>;}
+const smsError=(e:unknown)=>new Error(({OTP_RESEND_COOLDOWN:'請稍候 60 秒再試。',OTP_RATE_LIMITED:'驗證次數已達上限，請稍後再試。',CONTACT_DESTINATION_INVALID:'請輸入有效的手機號碼。',SMS_PROVIDER_CONFIGURATION_PENDING:'簡訊服務尚未開通。'} as Record<string,string>)[e instanceof Error?e.message:'']||'簡訊驗證未完成；請確認驗證碼、手機是否已驗證，或重新申請。');
+export async function smsLoginRequest(mobile:string,key:string){try{return await request('/auth/member/sms/challenges',{method:'POST',headers:{'Content-Type':'application/json','Idempotency-Key':key},body:JSON.stringify({mobile})}) as {challengeId:string;expiresAt:string;resendAt:string};}catch(e){throw smsError(e)}}
+export async function smsLogin(mobile:string,challengeId:string,code:string){try{return storeSession(await request('/auth/member/sms/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({mobile,challengeId,code})}));}catch(e){throw smsError(e)}}
 export async function googleExchange(idToken:string){
  return storeSession(await request('/auth/member/google/exchange',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({idToken})}));
 }
@@ -62,7 +66,7 @@ export async function registrationContract(){return request('/auth/member/regist
 export async function completeRegistration(input:{contractVersionId:string;legalName:string;alias:string;gender:string;birthDate:string;nationalityCode:string;identityDocumentType:string;identityDocumentNumber:string;mobile:string;email:string;password:string;googleIdToken?:string;lineIdToken?:string;mobileVerificationProof?:string;emailVerificationProof?:string}){
  const mobile=normalizeRegistrationMobile(input.mobile,input.nationalityCode);
  if(!/^\+[1-9][0-9]{7,14}$/.test(mobile))throw new Error('手機號碼請使用 +國碼格式，台灣可輸入 09 開頭的十碼號碼。');
- if(input.password.length<12||input.password.length>256)throw new Error('密碼長度須為 12 至 256 字元。');
+ if(input.password.length<6||input.password.length>256||!/[A-Z]/.test(input.password)||!/[a-z]/.test(input.password)||!/[0-9]/.test(input.password))throw new Error('密碼至少 6 碼（最多 256 碼），須包含大寫英文、小寫英文與數字。');
  return storeSession(await request('/auth/member/register/complete',{method:'POST',headers:{'Content-Type':'application/json','Idempotency-Key':crypto.randomUUID()},body:JSON.stringify({...input,mobile,email:input.email.trim(),accepted:true})}));
 }
 
@@ -74,7 +78,7 @@ export function normalizeRegistrationMobile(value:string,nationalityCode:string)
 declare global{interface Window{google?:any}}
 export async function contactVerificationRequest(path:'challenges'|'verify',input:Record<string,string>,registration:boolean,key?:string){
  const token=sessionStorage.getItem('ucell_member_token');
- const hints:Record<string,string>={SMS_PROVIDER_CONFIGURATION_PENDING:'手機簡訊驗證尚未開通，請稍後再試。',EMAIL_PROVIDER_CONFIGURATION_PENDING:'Email 驗證寄信服務尚未開通，請稍後再試。',OTP_CONFIGURATION_PENDING:'驗證服務尚未設定完成，請稍後再試。',OTP_RESEND_COOLDOWN:'請稍候 60 秒後再重送驗證碼。',OTP_RATE_LIMITED:'驗證碼發送次數已達上限，請稍後再試。',OTP_CODE_INVALID:'驗證碼不正確，請重新輸入。',OTP_CHALLENGE_LOCKED:'驗證碼錯誤次數過多，請重新申請。',OTP_CHALLENGE_EXPIRED_OR_UNAVAILABLE:'驗證碼已過期或無法使用，請重新申請。',CONTACT_DESTINATION_INVALID:'請輸入有效的手機號碼或 Email。'};
+ const hints:Record<string,string>={SMS_DELIVERY_FAILED:registration?'簡訊發送失敗，您可以改用 Email 驗證完成註冊，或稍後重試。':'簡訊發送失敗，請稍後重試。',SMS_PROVIDER_CONFIGURATION_PENDING:'手機簡訊驗證尚未開通，請稍後再試。',EMAIL_PROVIDER_CONFIGURATION_PENDING:'Email 驗證寄信服務尚未開通，請稍後再試。',OTP_CONFIGURATION_PENDING:'驗證服務尚未設定完成，請稍後再試。',OTP_RESEND_COOLDOWN:'請稍候 60 秒後再重送驗證碼。',OTP_RATE_LIMITED:'驗證碼發送次數已達上限，請稍後再試。',OTP_CODE_INVALID:'驗證碼不正確，請重新輸入。',OTP_CHALLENGE_LOCKED:'驗證碼錯誤次數過多，請重新申請。',OTP_CHALLENGE_EXPIRED_OR_UNAVAILABLE:'驗證碼已過期或無法使用，請重新申請。',CONTACT_DESTINATION_INVALID:'請輸入有效的手機號碼或 Email。'};
  try{return await request((registration?'/auth/member':'/member')+'/contact-verification/'+path,{method:'POST',headers:{'Content-Type':'application/json',...(!registration&&token?{Authorization:'Bearer '+token}:{}),...(key?{'Idempotency-Key':key}:{})},body:JSON.stringify(input)});}
  catch(e){const code=e instanceof Error?e.message:'';throw new Error(hints[code]||'驗證服務暫時無法使用，請稍後重試。');}
 }

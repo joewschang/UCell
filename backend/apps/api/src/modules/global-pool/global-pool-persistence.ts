@@ -1,1 +1,1 @@
-export { GlobalPoolPersistence, GlobalPoolAwardWrite, GlobalPoolSettlementWrite } from '@ucell/settlement';
+export { GlobalPoolPersistence, type GlobalPoolAwardWrite, type GlobalPoolSettlementWrite } from '@ucell/settlement';

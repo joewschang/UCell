@@ -1,3 +1,5 @@
+import {validateFormalSponsor} from './formal-application-sponsor';
+import {formalFeeCoveredByPackage} from './formal-enrollment-payment';
 import {ConflictException,Injectable,NotFoundException,UnprocessableEntityException} from '@nestjs/common';
 import {Prisma,PrismaService} from '@ucell/database';
 import {FormalMembershipConflictService} from './formal-membership-conflict.service';
@@ -9,6 +11,7 @@ import {IdentityMatchFingerprintService} from '../../common/security/identity-ma
 
 export type FormalDraftInput={
  formalContractVersionId:string;
+ sponsorBallNo?:string;
  applicantType?:'INDIVIDUAL'|'LEGAL_ENTITY';
  communicationAddress:string;phone:string;email:string;bankCode:string;bankAccount:string;accountHolder:string;
  legalName?:string;gender?:string;birthDate?:string;nationalityCode?:string;
@@ -45,6 +48,7 @@ export class FormalMemberApplicationService {
   const applicantType=input.applicantType??'INDIVIDUAL',hasSpouse=input.hasSpouse===true;
   const common={
    formalContractVersionId:input.formalContractVersionId,
+   sponsorBallNo:input.sponsorBallNo?.trim().toUpperCase()||undefined,
    applicantType,
    communicationAddress:this.required(input.communicationAddress,'FORMAL_COMMUNICATION_ADDRESS_REQUIRED'),
    phone:this.required(input.phone,'FORMAL_PHONE_REQUIRED'),
@@ -89,7 +93,7 @@ export class FormalMemberApplicationService {
   return {
    id:application.formalMemberApplicationId,status:application.status,version,
    applicantType:payload.applicantType??'INDIVIDUAL',
-   contractVersionId:payload.formalContractVersionId,
+   contractVersionId:payload.formalContractVersionId,sponsorBallNo:payload.sponsorBallNo??null,
    legalName:payload.legalName??null,gender:payload.gender??null,birthDate:payload.birthDate??null,
    legalEntityName:payload.legalEntityName??null,legalEntityRegistrationNo:payload.legalEntityRegistrationNo??null,
    legalEntityRegisteredAddress:payload.legalEntityRegisteredAddress??null,representativeLegalName:payload.representativeLegalName??null,
@@ -128,6 +132,8 @@ export class FormalMemberApplicationService {
     const current=await tx.formalMemberApplication.findFirst({where:{personId,status:{in:['DRAFT','SUBMITTED','UNDER_REVIEW','NEEDS_MORE_INFO'] as any}},include:{snapshots:{orderBy:{version:'desc'},take:1}}});
     if(current&&current.status!=='DRAFT'&&current.status!=='NEEDS_MORE_INFO')throw new ConflictException({code:'FORMAL_APPLICATION_LOCKED'});
     if(current&&current.applicantType!==normalized.applicantType)throw new ConflictException({code:'FORMAL_APPLICANT_TYPE_LOCKED'});
+    if(normalized.sponsorBallNo)await validateFormalSponsor(tx,personId,normalized.sponsorBallNo);
+    if(current&&current.currentSnapshotHash!==hash)await tx.formalApplicationDocument.updateMany({where:{formalMemberApplicationId:current.formalMemberApplicationId,documentType:'SIGNED_APPLICATION_AGREEMENT',status:'PRESENT'},data:{status:'SUPERSEDED'}});
     const encrypted=this.pii.encrypt(normalized),version=(current?.snapshots[0]?.version??0)+1;
     const metadata={
      applicantType:normalized.applicantType,
@@ -144,6 +150,7 @@ export class FormalMemberApplicationService {
     const application=current
      ?await tx.formalMemberApplication.update({where:{formalMemberApplicationId:current.formalMemberApplicationId},data:{currentSnapshotHash:hash,status:'DRAFT',...metadata}})
      :await tx.formalMemberApplication.create({data:{personId,currentSnapshotHash:hash,status:'DRAFT',...metadata}});
+    if(current)await tx.formalPaperEvidence.updateMany({where:{formalMemberApplicationId:application.formalMemberApplicationId},data:{status:'PENDING',reviewedAt:null,reviewedBy:null}});
     await tx.formalMemberApplicationSnapshot.create({data:{formalMemberApplicationId:application.formalMemberApplicationId,version,payloadCiphertext:encrypted.ciphertext,keyVersion:encrypted.keyVersion,payloadHash:hash}});
     const correlationId=randomUUID();
     await this.audit.write(tx,{actorType:'MEMBER',actorId:personId,action:'FORMAL_APPLICATION_DRAFT_SAVED',entityType:'FormalMemberApplication',entityId:application.formalMemberApplicationId,afterData:{version,payloadHash:hash,formalContractVersionId:normalized.formalContractVersionId,applicantType:normalized.applicantType,hasSpouse:normalized.hasSpouse,fieldsComplete:true},requestId,correlationId});
@@ -210,7 +217,7 @@ export class FormalMemberApplicationService {
   const now=new Date();
   return this.db.$transaction(async tx=>{
    const app=await tx.formalMemberApplication.findUnique({where:{formalMemberApplicationId:applicationId}});
-   if(!app||app.sourceChannel!=='ADMIN_PAPER')throw new NotFoundException({code:'PAPER_FORMAL_APPLICATION_NOT_FOUND'});
+   if(!app||!['ADMIN_PAPER','MEMBER_WEB'].includes(app.sourceChannel)||['APPROVED','REJECTED'].includes(app.status))throw new NotFoundException({code:'PAPER_FORMAL_APPLICATION_NOT_FOUND'});
    const row=await tx.formalPaperEvidence.upsert({
     where:{formalMemberApplicationId_evidenceType:{formalMemberApplicationId:applicationId,evidenceType:evidenceType as any}},
     create:{formalMemberApplicationId:applicationId,evidenceType:evidenceType as any,status:decision,sourceReference,reviewedBy:actorId,reviewedAt:now,note},
@@ -239,10 +246,11 @@ export class FormalMemberApplicationService {
   }
 
   if(app.applicantType!=='INDIVIDUAL')return {ready:false,codes:['LEGAL_ENTITY_PAPER_APPLICATION_REQUIRED']};
-  const required=['IDENTITY_FRONT','IDENTITY_BACK','BANKBOOK_COVER'];
+  const required=['IDENTITY_FRONT','IDENTITY_BACK','BANKBOOK_COVER','SIGNED_APPLICATION_AGREEMENT'];
   const docs=await db.formalApplicationDocument.findMany({where:{formalMemberApplicationId:applicationId,status:'PRESENT',documentType:{in:required as any}}});
+  const physical=await db.formalPaperEvidence.findMany({where:{formalMemberApplicationId:applicationId,status:'REVIEWED'}});
   const status=new Map(docs.map(row=>[row.documentType,row.malwareScanStatus]));
-  const codes=required.flatMap(type=>!status.has(type as any)?[type+'_MISSING']:status.get(type as any)!=='CLEAN'?[type+'_SCAN_CLEAN_REQUIRED']:[]);
+  const codes=required.flatMap(type=>physical.some(p=>p.evidenceType===type)?[]:!status.has(type as any)?[type+'_MISSING']:status.get(type as any)==='INFECTED'?[type+'_DOCUMENT_REJECTED']:[]);
   return {ready:codes.length===0,codes};
  }
 
@@ -271,6 +279,11 @@ export class FormalMemberApplicationService {
    if(!gate.ready)throw new UnprocessableEntityException({code:'FORMAL_APPROVAL_GATE_BLOCKED',details:{codes:gate.codes}});
    const now=new Date(),app=await tx.formalMemberApplication.findUnique({where:{formalMemberApplicationId:applicationId}});
    if(!app||app.status!=='UNDER_REVIEW')throw new ConflictException({code:'FORMAL_APPLICATION_NOT_APPROVABLE'});
+   if(app.applicantType==='INDIVIDUAL'){
+    const fee=await tx.order.findFirst({where:{purchaserPersonId:app.personId,purpose:'FORMAL_MEMBERSHIP_FEE',status:'PAID',netAmount:'600.00'}});
+    const pkg=await formalFeeCoveredByPackage(tx,app.personId);
+    if(!fee&&!pkg)throw new UnprocessableEntityException({code:'FORMAL_ENROLLMENT_PAYMENT_REQUIRED'});
+   }
    if(!app.applicantIdentityFingerprint)throw new UnprocessableEntityException({code:'FORMAL_IDENTITY_FINGERPRINT_REQUIRED'});
    const conflicts=await new FormalMembershipConflictService(tx as PrismaService).evaluate(applicationId,now);
    if(conflicts.status!=='CLEAR')throw new UnprocessableEntityException({code:'FORMAL_APPROVAL_GATE_BLOCKED',details:{codes:conflicts.codes}});
@@ -327,6 +340,15 @@ export class FormalMemberApplicationService {
   return {...result.value,replayed:result.replayed};
  }
 
+ async requestMoreInfo(applicationId:string,note:string,actorId:string,requestId:string){
+  if(!actorId||!note.trim())throw new UnprocessableEntityException({code:'REVIEW_NOTE_REQUIRED'});
+  return this.db.$transaction(async tx=>{
+   const changed=await tx.formalMemberApplication.updateMany({where:{formalMemberApplicationId:applicationId,status:{in:['SUBMITTED','UNDER_REVIEW']}},data:{status:'NEEDS_MORE_INFO',decisionReasonCode:note.trim()}});
+   if(changed.count!==1)throw new ConflictException({code:'FORMAL_APPLICATION_NOT_REVIEWABLE'});
+   await this.audit.write(tx,{actorType:'ADMIN',actorId,action:'FORMAL_APPLICATION_MORE_INFO_REQUESTED',entityType:'FormalMemberApplication',entityId:applicationId,afterData:{note:note.trim()},requestId,correlationId:randomUUID()});
+   return {applicationId,status:'NEEDS_MORE_INFO'};
+  });
+ }
  async current(personId:string){
   const application=await this.db.formalMemberApplication.findFirst({where:{personId,status:{in:['DRAFT','SUBMITTED','UNDER_REVIEW','NEEDS_MORE_INFO'] as any}},include:{snapshots:{orderBy:{version:'desc'},take:1}}});
   if(!application||!application.snapshots[0])throw new NotFoundException({code:'FORMAL_APPLICATION_NOT_FOUND'});
@@ -367,17 +389,21 @@ export class FormalMemberApplicationService {
    id:application.formalMemberApplicationId,status:application.status,applicantType:application.applicantType,sourceChannel:application.sourceChannel,
    paperApplicationReference:application.paperApplicationReference,enteredAt:application.enteredAt?.toISOString()??null,
    person:application.person,
+   feeOrder:await this.db.order.findFirst({where:{purchaserPersonId:application.personId,purpose:'FORMAL_MEMBERSHIP_FEE',status:{in:['CONFIRMED','PAID']}},select:{orderId:true,status:true,netAmount:true,paidAt:true},orderBy:{createdAt:'desc'}}),
+   feeCoveredByPackage:await formalFeeCoveredByPackage(this.db,application.personId),
+   packageOrders:await this.db.$queryRaw`SELECT p.order_id AS "orderId",p.package_name AS "packageName",o.net_amount::text AS amount,o.status::text AS status FROM commerce.package_purchase_snapshot p JOIN commerce."order" o ON o.order_id=p.order_id WHERE p.person_id=${application.personId}::uuid AND p.package_class='QUALIFICATION' AND p.membership_effect='FORMAL_ELIGIBILITY' ORDER BY p.purchased_at DESC LIMIT 20`, 
    legalEntity:application.legalEntity?{legalEntityId:application.legalEntity.legalEntityId,memberNo:application.legalEntity.memberNo,registeredName:application.legalEntity.registeredName,registrationNo:application.legalEntity.registrationNo,registrationCountryCode:application.legalEntity.registrationCountryCode,status:application.legalEntity.status,membershipState:application.legalEntity.membershipState}:null,
    spouseVerificationStatus:application.spouseVerificationStatus,crossLineReviewStatus:application.crossLineReviewStatus,crossLineConflictCode:application.crossLineConflictCode,
    version:snapshot.version,payload,paperEvidence:application.paperEvidence.map(row=>({id:row.formalPaperEvidenceId,type:row.evidenceType,status:row.status,sourceReference:row.sourceReference,reviewedAt:row.reviewedAt?.toISOString()??null,note:row.note}))
   };
  }
 
- async adminList(input:{status?:string;take?:number}={}){
+ async adminList(input:{status?:string;take?:number;q?:string}={}){
   const take=Math.min(Math.max(input.take??50,1),100);
-  const rows=await this.db.formalMemberApplication.findMany({where:input.status?{status:input.status}:undefined,include:{person:{select:{legalName:true,membershipState:true}},snapshots:{select:{version:true,payloadHash:true},orderBy:{version:'desc'},take:1}},orderBy:{updatedAt:'desc'},take});
+  const rows=await this.db.formalMemberApplication.findMany({where:{...(input.status?{status:input.status}:{}),...(input.q?.trim()?{person:{OR:[{memberNo:{contains:input.q.trim()}},{mobile:{contains:input.q.trim()}},{legalName:{contains:input.q.trim()}}]}}:{})},include:{person:{select:{memberNo:true,legalName:true,membershipState:true}},snapshots:{select:{version:true,payloadHash:true},orderBy:{version:'desc'},take:1}},orderBy:{updatedAt:'desc'},take});
   return rows.map(row=>({
    id:row.formalMemberApplicationId,
+   memberNo:row.person.memberNo,
    personNameMasked:row.person.legalName?(row.person.legalName.slice(0,1)+'*'.repeat(Math.max(row.person.legalName.length-1,1))):'**',
    applicantType:row.applicantType,sourceChannel:row.sourceChannel,paperApplicationReference:row.paperApplicationReference,membershipState:row.person.membershipState,status:row.status,
    spouseVerificationStatus:row.spouseVerificationStatus,crossLineReviewStatus:row.crossLineReviewStatus,crossLineConflictCode:row.crossLineConflictCode,

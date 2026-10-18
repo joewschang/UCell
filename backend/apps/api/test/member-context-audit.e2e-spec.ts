@@ -16,3 +16,22 @@ describe('G8 member BOLA denial audit evidence',()=>{
     expect(JSON.stringify(audit.write.mock.calls)).not.toContain('11111111-1111-4111-8111-111111111111');
   });
 });
+
+ describe('Formal application Person scope',()=>{
+  it.each([
+   ['POST','/api/v1/member/formal-applications'],
+   ['GET','/api/v1/member/formal-applications/current'],
+   ['GET','/api/v1/member/represented-legal-entities'],
+   ['GET','/api/v1/member/formal-applications/11111111-1111-4111-8111-111111111111/documents'],
+   ['POST','/api/v1/member/formal-applications/11111111-1111-4111-8111-111111111111/documents'],
+  ])('allows authenticated no-Ball applicant on %s %s',async(method,url)=>{
+   const access={assertHolder:jest.fn()};const guard=new MemberContextGuard(access as any);
+   const context:any={switchToHttp:()=>({getRequest:()=>({url,method,user:{personId:'test-person'},body:{},query:{}})})};
+   await expect(guard.canActivate(context)).resolves.toBe(true);expect(access.assertHolder).not.toHaveBeenCalled();
+  });
+  it.each(['/api/v1/member/orders','/api/v1/member/formal-applications-extra','/api/v1/member/represented-legal-entities','/api/v1/member/formal-applications/11111111-1111-4111-8111-111111111111/approve'])('does not broaden bypass to %s',async(url)=>{
+   const guard=new MemberContextGuard({assertHolder:jest.fn()} as any);
+   const context:any={switchToHttp:()=>({getRequest:()=>({url,method:'POST',user:{personId:'test-person'},body:{},query:{}})})};
+   await expect(guard.canActivate(context)).rejects.toMatchObject({response:{code:'QUALIFICATION_CONTEXT_REQUIRED'}});
+  });
+ });

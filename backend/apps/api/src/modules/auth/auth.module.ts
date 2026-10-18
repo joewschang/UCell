@@ -1,3 +1,5 @@
+import {EngagementNotificationController} from './engagement-notification.controller';
+import {EngagementNotificationService} from './engagement-notification.service';
 import { LineStageWebhookController } from './line-stage-webhook.controller';
 import { AdminAuthController } from './admin-auth.controller';
 import { AdminAuthService } from './admin-auth.service';
@@ -10,6 +12,10 @@ import { MemberIdentityService } from './member-identity.service';
 import { AuthenticationGuard } from './authentication.guard';
 import { MemberAuthenticationGuard } from './member-authentication.guard';
 import { Module } from '@nestjs/common';
+import {SmsLoginService} from './sms-login.service';
+import {SmsLoginController} from './sms-login.controller';
+import {SmsNotificationService} from './sms-notification.service';
+import {SmsNotificationController,SmsNotificationGuard} from './sms-notification.controller';
 import { AdminAuthenticationGuard } from './admin-authentication.guard';
 import { OtpController } from './otp.controller';
 import { OtpService } from './otp.service';
@@ -44,8 +50,8 @@ import {ContactVerificationEmailService} from './contact-verification-email.serv
 import {RegistrationContactVerificationController,MemberContactVerificationController} from './contact-verification.controller';
 @Module({
  imports:[AuditModule,PaymentHubModule],
- controllers:[RegistrationContactVerificationController,MemberContactVerificationController,AdminAuthController,OtpController,NetworkRegistrationController,MemberWebAuthController,MemberWebRegistrationController,MemberIdentityLinkController,LineStageWebhookController,AccountSecurityController,LineMessagingWebhookController,LineIntegrationStatusController,ExistingMemberLineLinkController,AdminExistingMemberLineLinkController],
- providers:[ContactVerificationService,ContactVerificationEmailService,QualificationAccessService,AdminRoleGuard,IdentityTokenService,LineIdentityService,MemberIdentityService,GoogleTokenVerifierService,PasswordResetEmailService,MemberWebAuthService,MemberWebRegistrationService,AuthenticationGuard,MemberAuthenticationGuard,AdminAuthenticationGuard,EntraTokenVerifierService,AdminAuthService,OtpService,OtpCodeService,SmsOtpProviderService,NetworkRegistrationService,PiiCryptoService,IdentityMatchFingerprintService,AccountSecurityService,LineMessagingAdapter,LineMessagingIngressService,NotificationDeliveryService,LineIntegrationStatusService,ExistingMemberLineLinkService,LineTokenVerifierService],
+ controllers:[EngagementNotificationController,SmsLoginController,SmsNotificationController,RegistrationContactVerificationController,MemberContactVerificationController,AdminAuthController,OtpController,NetworkRegistrationController,MemberWebAuthController,MemberWebRegistrationController,MemberIdentityLinkController,LineStageWebhookController,AccountSecurityController,LineMessagingWebhookController,LineIntegrationStatusController,ExistingMemberLineLinkController,AdminExistingMemberLineLinkController],
+ providers:[EngagementNotificationService,SmsLoginService,SmsNotificationService,SmsNotificationGuard,ContactVerificationService,ContactVerificationEmailService,QualificationAccessService,AdminRoleGuard,IdentityTokenService,LineIdentityService,MemberIdentityService,GoogleTokenVerifierService,PasswordResetEmailService,MemberWebAuthService,MemberWebRegistrationService,AuthenticationGuard,MemberAuthenticationGuard,AdminAuthenticationGuard,EntraTokenVerifierService,AdminAuthService,OtpService,OtpCodeService,SmsOtpProviderService,NetworkRegistrationService,PiiCryptoService,IdentityMatchFingerprintService,AccountSecurityService,LineMessagingAdapter,LineMessagingIngressService,NotificationDeliveryService,LineIntegrationStatusService,ExistingMemberLineLinkService,LineTokenVerifierService],
  exports:[ContactVerificationService,QualificationAccessService,AdminRoleGuard,IdentityTokenService,LineIdentityService,MemberIdentityService,AuthenticationGuard,MemberAuthenticationGuard,AdminAuthenticationGuard,EntraTokenVerifierService,AdminAuthService,AccountSecurityService]
 })
 export class AuthModule {}

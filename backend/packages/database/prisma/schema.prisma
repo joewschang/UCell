@@ -3424,6 +3424,12 @@ model Subscription {
 }
 
 model MonthlyRecognitionSchedule {
+  workerFailureCount Int @default(0) @map("worker_failure_count")
+  workerBlocked Boolean @default(false) @map("worker_blocked")
+  workerNextAttemptAt DateTime? @map("worker_next_attempt_at") @db.Timestamptz(6)
+  workerLastFailedAt DateTime? @map("worker_last_failed_at") @db.Timestamptz(6)
+  workerLastErrorCode String? @map("worker_last_error_code")
+  workerLastTraceId String? @map("worker_last_trace_id") @db.Uuid
   retainedEntitlementRatio Decimal? @default(1) @map("retained_entitlement_ratio") @db.Decimal(38, 18)
   recognitionId         String            @id @default(uuid()) @map("recognition_id") @db.Uuid
   subscriptionId        String            @map("subscription_id") @db.Uuid
@@ -3567,6 +3573,7 @@ model BonusAward {
 
   // uq_bonus_award_source is an expression unique index maintained by SQL migration.
   // Matching additionally keys sourceAwardId; Prisma cannot represent CASE/COALESCE indexes.
+  @@index([sourceEventId, awardType], map: "bonus_award_source_event_type_idx")
   @@index([recipientQualificationId, awardType, occurredAt])
   @@index([settlementBatchId, awardType])
   @@map("bonus_award")
@@ -4786,6 +4793,24 @@ model LineMessagingEvent {
   @@index([eventType, occurredAt])
   @@index([status, createdAt])
   @@map("line_messaging_event")
+  @@schema("integration")
+}
+
+model SmsCampaign {
+  id String @id @default(uuid()) @db.Uuid
+  requestKey String @unique @map("request_key") @db.Uuid
+  actorId String @map("actor_id")
+  message String
+  recipients Json
+  status String @default("DRAFT")
+  contentHash String @map("content_hash")
+  providerRef String? @map("provider_ref")
+  failureCode String? @map("failure_code")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  expiresAt DateTime @map("expires_at") @db.Timestamptz(6)
+  submittedAt DateTime? @map("submitted_at") @db.Timestamptz(6)
+  @@index([createdAt(sort: Desc)], map: "sms_campaign_created")
+  @@map("sms_campaign")
   @@schema("integration")
 }
 

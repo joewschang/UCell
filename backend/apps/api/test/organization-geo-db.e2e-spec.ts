@@ -43,7 +43,7 @@ describe('Geo authorized historical subtree real DB',()=>{
  });
  it('batch Active evidence preserves single-ball semantics for active, inactive and unknown qualifications',async()=>{
   const person=await db.person.create({data:{legalName:'TEST ONLY BATCH ACTIVE'}});
-  const qualifications=[];
+  const qualifications:Array<{qualificationId:string}>=[];
   for(let i=0;i<3;i++)qualifications.push(await db.qualification.create({data:{currentHolderPersonId:person.personId,planLevelCode:'STARTER'}}));
   const at=new Date('2026-09-10T00:00:00.000Z');
   for(let i=0;i<2;i++)await db.$transaction(tx=>recognizeConsumption(tx,{qualificationId:qualifications[i].qualificationId,sourceType:'TEST_ORDER',sourceId:randomUUID(),amount:i===0?1400:100,eligible:true,concreteVolumeType:'GPV',productProfileVersion:'TEST',ruleVersionCode:'R1',parameterSnapshotHash:'a'.repeat(64),recognizedAt:at,activeThreshold:1200}));
@@ -97,7 +97,7 @@ describe('Geo authorized historical subtree real DB',()=>{
   const tree=(await trees.create(admin,{treeName:'TEST ONLY OWNER HISTORY',reason:'Isolated ownership fixture'},randomUUID())).value;
   await trees.change(admin,tree.binaryTreeId,{status:'ACTIVE',expectedVersion:1,reason:'TEST ONLY'},randomUUID());
   const first=await db.person.create({data:{legalName:'TEST ONLY TWO BALL MEMBER'}}),second=await db.person.create({data:{legalName:'TEST ONLY NEW HOLDER'}});
-  const balls=[];
+  const balls:string[]=[];
   for(let i=0;i<2;i++){
    const at=new Date(),q=await db.qualification.create({data:{currentHolderPersonId:first.personId,planLevelCode:'STARTER',status:'EFFECTIVE',effectiveAt:at}});
    await db.qualificationPlanHistory.create({data:{qualificationId:q.qualificationId,planCode:'STARTER',effectiveFrom:at,sourceType:'TEST_ONLY'}});

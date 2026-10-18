@@ -49,7 +49,7 @@ export class MemberCreateOrderDto {
  @ApiPropertyOptional({pattern:'^[A-Z][A-Z0-9_]{1,39}$',description:'Optional line purpose. This describes purchase context and never changes Offering category.'}) @IsOptional() @Matches(/^[A-Z][A-Z0-9_]{1,39}$/) linePurpose?:string;
 }
 export class FormalKycUploadDto {
- @ApiProperty({enum:['IDENTITY_FRONT','IDENTITY_BACK','BANKBOOK_COVER']}) @IsIn(['IDENTITY_FRONT','IDENTITY_BACK','BANKBOOK_COVER']) documentType!:'IDENTITY_FRONT'|'IDENTITY_BACK'|'BANKBOOK_COVER';
+ @ApiProperty({enum:['IDENTITY_FRONT','IDENTITY_BACK','BANKBOOK_COVER','SIGNED_APPLICATION_AGREEMENT']}) @IsIn(['IDENTITY_FRONT','IDENTITY_BACK','BANKBOOK_COVER','SIGNED_APPLICATION_AGREEMENT']) documentType!:'IDENTITY_FRONT'|'IDENTITY_BACK'|'BANKBOOK_COVER'|'SIGNED_APPLICATION_AGREEMENT';
  @ApiProperty({enum:['image/jpeg','image/png']}) @IsIn(['image/jpeg','image/png']) mimeType!:'image/jpeg'|'image/png';
  @ApiProperty({description:'Base64-encoded image bytes. Temporary server-mediated upload path; private Blob storage remains authoritative.'}) @IsString() @MinLength(8) contentBase64!:string;
 }
@@ -67,6 +67,7 @@ export class DeliveryProfileDto {
  @ApiProperty({maxLength:300}) @IsString() @Matches(/\S/) @MinLength(5) @MaxLength(300) address!:string;
 }
 export class FormalMemberDraftDto implements FormalDraftInput {
+ @ApiPropertyOptional({description:'推薦球號，正式送出前必填'}) @IsOptional() @IsString() @MaxLength(48) sponsorBallNo?:string;
  @ApiProperty({format:'uuid'}) @IsUUID() formalContractVersionId!:string;
  @ApiPropertyOptional({enum:['INDIVIDUAL'],description:'Applicant type; omitted input defaults to INDIVIDUAL.'}) @IsIn(['INDIVIDUAL']) applicantType:'INDIVIDUAL'='INDIVIDUAL';
  @ApiProperty({maxLength:120}) @IsString() @Matches(/\S/) @MaxLength(120) legalName!:string;

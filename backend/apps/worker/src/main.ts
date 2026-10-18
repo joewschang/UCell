@@ -1,5 +1,6 @@
-import {effectiveSponsorDirectCount, appendRecognitionMemberMessage, emitStructuredOperationalError} from '@ucell/database';
-import { PrismaService, Prisma, companyAlwaysActiveAt, captureParameters, snapshotDecimal, processMemberOrderNotification, processPaymentInventoryReservation, recognizeConsumption, applyGpvImmediateEffects, sealRpvEvent, pending, claimOutboxLease, withOutboxLease, processLeasedReplay, processTreeProjectionEvent, releaseFailedOutboxLease, OutboxLease, matureBonusAward } from '@ucell/database';
+import {pollRecognitionQueue} from './recognition-poll';
+import {effectiveSponsorDirectCount, appendRecognitionMemberMessage, emitStructuredOperationalError, withRecognitionRetry, isRecognitionTransactionConflict} from '@ucell/database';
+import { PrismaService, Prisma, companyAlwaysActiveAt, captureParameters, snapshotDecimal, processMemberOrderNotification, processPaymentInventoryReservation, recognizeConsumption, applyGpvImmediateEffects, sealRpvEvent, pending, claimOutboxLease, withOutboxLease, processLeasedReplay, processTreeProjectionEvent, releaseFailedOutboxLease, OutboxLease, matureDueBonusAwards } from '@ucell/database';
 import * as crypto from 'node:crypto';
 import { pollProviderWebhooks, type ProviderHandlerRegistration } from './provider-runtime';
 import { WorkerLoop, workerPollInterval } from './worker-loop';
@@ -120,7 +121,7 @@ export async function processRetailReferralReturn(db:PrismaService,lease:OutboxL
 }
 
 export async function processRecognition(recognitionId:string,db:PrismaService=prisma){
-  return db.$transaction(async tx=>{
+  return withRecognitionRetry(()=>db.$transaction(async tx=>{
     let schedule=await tx.monthlyRecognitionSchedule.findUnique({
       where:{recognitionId},include:{subscription:true}
     });
@@ -213,10 +214,10 @@ export async function processRecognition(recognitionId:string,db:PrismaService=p
     await sealRpvEvent(tx,pvEvent,schedule);
     await tx.monthlyRecognitionSchedule.update({
       where:{recognitionId},
-      data:{status:'RECOGNIZED',recognizedAt:new Date(),pvLedgerEventId:pvEvent.eventId}
+      data:{status:'RECOGNIZED',recognizedAt:new Date(),pvLedgerEventId:pvEvent.eventId,workerBlocked:false,workerNextAttemptAt:null}
     });
     await appendRecognitionMemberMessage(tx,recognitionId);
-  },{isolationLevel:Prisma.TransactionIsolationLevel.Serializable});
+  },{isolationLevel:Prisma.TransactionIsolationLevel.Serializable}));
 }
 
 
@@ -255,26 +256,12 @@ export async function pollOutbox(
   }
 }
 
-async function pollRecognitions(){
-  const rows=await prisma.monthlyRecognitionSchedule.findMany({
-    where:{status:{in:['SCHEDULED','DUE']},dueAt:{lte:new Date()}},
-    orderBy:{dueAt:'asc'},take:20
-  });
-  for(const row of rows){
-    try{ await processRecognition(row.recognitionId); }
-    catch(e){ emitStructuredOperationalError({service:'worker',operation:'processRecognition',traceId:crypto.randomUUID(),error:e,errorCode:'RECOGNITION_PROCESSING_FAILED',retryable:true}); }
-  }
+export async function pollRecognitions(db:PrismaService=prisma,now=new Date()){
+  return pollRecognitionQueue(db,processRecognition,now);
 }
 
-async function matureBonusAwards(){
-  const now=new Date();
-  const awards=await prisma.bonusAward.findMany({
-    where:{pendingUntil:{lte:now}},
-    take:500
-  });
-  for(const award of awards){
-    await matureBonusAward(prisma,award.bonusAwardId,now);
-  }
+export async function matureBonusAwards(db:PrismaService=prisma,now=new Date()){
+  return matureDueBonusAwards(db,now);
 }
 
 async function tick(){

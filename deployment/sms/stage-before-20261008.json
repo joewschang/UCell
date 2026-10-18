@@ -1,0 +1,17 @@
+[
+  {
+    "image": "ucellstageacr5mafbbsq33mgu.azurecr.io/ucell-api@sha256:d217d52bbd9882176299757f9a33346433dd42cc07aebe0f9ba4fa57ce102b8f",
+    "name": "ucell-stage-api",
+    "revision": "ucell-stage-api--0000002"
+  },
+  {
+    "image": "ucellstageacr5mafbbsq33mgu.azurecr.io/ucell-admin@sha256:a1d7fd90c33abd0313eccc2422e3552d582b32fba5bd81a355538efbc643a882",
+    "name": "ucell-stage-admin",
+    "revision": "ucell-stage-admin--product-icons-20261003"
+  },
+  {
+    "image": "ucellstageacr5mafbbsq33mgu.azurecr.io/ucell-member:oa-chat-only-final-20261004",
+    "name": "ucell-stage-member",
+    "revision": "ucell-stage-member--oa-chat-final-20261004"
+  }
+]

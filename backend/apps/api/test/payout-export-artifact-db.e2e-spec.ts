@@ -33,7 +33,9 @@ describeDb('PAYOUT_EXPORT_ARTIFACT_REVISION',()=>{
     expect(saved.status).toBe('EXPORTED');
     expect(saved.paidAt).toBeNull();
     const download=()=>service.downloadPayoutArtifact(batch.payoutBatchId,1,'00000000-0000-0000-0000-000000000101','FINANCE',randomUUID(),randomUUID());
-    const file=await download();expect(file.purpose).toBe('FINANCE_REVIEW_ONLY');expect(file.content).toContain(person.memberNo);expect(file.content).not.toContain(batch.payoutBatchId);expect(file.content).not.toContain(qualification.qualificationId);
+    const file=await download();expect(file.purpose).toBe('FINANCE_REVIEW_ONLY');
+    if(!('content' in file))throw new Error('Finance review must produce a text artifact');
+    expect(file.content).toContain(person.memberNo);expect(file.content).not.toContain(batch.payoutBatchId);expect(file.content).not.toContain(qualification.qualificationId);
     expect(file.fileHash).toBe(createHash('sha256').update(file.content,'utf8').digest('hex'));expect(file.fileHash).toBe(first.artifact.contentHash);
     const replacement=await db.person.create({data:{legalName:'Synthetic changed holder'}});
     await db.qualification.update({where:{qualificationId:qualification.qualificationId},data:{currentHolderPersonId:replacement.personId}});

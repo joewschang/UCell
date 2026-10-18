@@ -1,3 +1,4 @@
+import {assertQualificationActivation} from './qualification-activation-gate';
 import {ConflictException,ForbiddenException,Injectable,NotFoundException,UnprocessableEntityException} from '@nestjs/common';
 import {PrismaService,SideCode} from '@ucell/database';
 import {createHash,randomUUID} from 'node:crypto';
@@ -58,6 +59,7 @@ export class QualificationPlacementService {
    ]);
    if(!qualification||!sponsor||!parent)throw new NotFoundException({code:'PLACEMENT_RESOURCE_NOT_FOUND'});
    if(existingPlacement)throw new ConflictException({code:'PLACEMENT_CONFLICT'});
+   await assertQualificationActivation(tx,setup);
    if(!sponsorEdge||sponsorEdge.sponsorQualificationId!==setup.finalSponsorQualificationId)throw new ConflictException({code:'SPONSOR_CONFIRMATION_MISSING'});
    if(placedByType==='SPONSOR_OWNER'){if(!actorPersonId)throw new ForbiddenException({code:'PLACEMENT_AUTHORITY_DENIED'});try{await new QualificationAccessService(tx as any).assertHolder(actorPersonId,sponsor.qualificationId);}catch{throw new ForbiddenException({code:'PLACEMENT_AUTHORITY_DENIED'});}}
    if(parent.status!=='EFFECTIVE')throw new UnprocessableEntityException({code:'BINARY_PARENT_NOT_ELIGIBLE'});

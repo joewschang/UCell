@@ -1,3 +1,5 @@
+import {MemberService} from '../src/modules/member/member.service';
+import {attachFormalSponsor} from './helpers/formal-sponsor.fixture';
 import {randomUUID} from 'node:crypto';
 import {ConfigService} from '@nestjs/config';
 import {PrismaService} from '@ucell/database';
@@ -12,7 +14,7 @@ describe('Formal enrollment Stage payments in isolated real DB',()=>{
  const db=new PrismaService(),audit=new AuditService(),idempotency=new IdempotencyService(db),orders=new OrderService(db,idempotency,audit,new OutboxService());
  const config=new ConfigService({UCELL_ENVIRONMENT:'STAGE',STAGE_PAYMENT_MODE:'ASSUME_PAID',NODE_ENV:'test',DATABASE_URL:process.env.DATABASE_URL});
  const service=new FormalEnrollmentService(db,config,idempotency,audit,orders);
- beforeAll(()=>{const url=new URL(process.env.DATABASE_URL!);if(!['localhost','127.0.0.1'].includes(url.hostname)||!/^\/ucell_jest_[a-f0-9]{32}$/.test(url.pathname))throw Error('Isolated harness required');});
+ beforeAll(()=>{process.env.PII_ENCRYPTION_KEY='AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=';process.env.PII_ENCRYPTION_KEY_VERSION='TEST_FORMAL_SPONSOR';const url=new URL(process.env.DATABASE_URL!);if(!['localhost','127.0.0.1'].includes(url.hostname)||!/^\/ucell_jest_[a-f0-9]{32}$/.test(url.pathname))throw Error('Isolated harness required');});
  afterAll(()=>db.$disconnect());
  const person=()=>db.person.create({data:{legalName:'TEST ONLY ENROLLMENT',status:'EFFECTIVE',membershipState:'NETWORK_MEMBER'}});
  it.each([['STARTER',3,14400],['ELITE',9,43200],['LEADER',15,72000]] as const)('completes %s exact-quantity checkout, payment and application submission',async(code,quantity,price)=>{
@@ -31,6 +33,7 @@ describe('Formal enrollment Stage payments in isolated real DB',()=>{
   await expect(service.payFee(p.personId,randomUUID(),'TEST_ONLY')).rejects.toMatchObject({response:{code:'FORMAL_FEE_ALREADY_COVERED_BY_PACKAGE'}});
   const app=await db.formalMemberApplication.create({data:{personId:p.personId,currentSnapshotHash:'a'.repeat(64)}});
   for(const documentType of ['IDENTITY_FRONT','IDENTITY_BACK','BANKBOOK_COVER'] as const)await db.formalApplicationDocument.create({data:{formalMemberApplicationId:app.formalMemberApplicationId,documentType,status:'PRESENT',malwareScanStatus:'PENDING',storageObjectKey:'ISOLATED_TEST_ONLY/'+randomUUID(),contentSha256:'a'.repeat(64),mimeType:'image/png',sizeBytes:8,uploadedAt:new Date()}});
+  await attachFormalSponsor(db,app.formalMemberApplicationId);
   expect((await service.submit(p.personId,app.formalMemberApplicationId,randomUUID(),'TEST_ONLY')).value.status).toBe('SUBMITTED');
   expect((await service.status(p.personId)).membershipState).toBe('FORMAL_PENDING');
   expect(await db.formalApplicationDocument.count({where:{formalMemberApplicationId:app.formalMemberApplicationId,malwareScanStatus:'CLEAN'}})).toBe(0);
@@ -52,6 +55,15 @@ describe('Formal enrollment Stage payments in isolated real DB',()=>{
   expect(await db.qualification.count()).toBe(balls);expect(await db.pvLedger.count()).toBe(gpv);
   expect((await service.status(p.personId)).membershipState).toBe('FORMAL_PENDING');
  });
+ it('records a manually paid core order as pending recognition without creating award events',async()=>{
+  const p=await person(),actor=await person(),product=await db.productReference.create({data:{sku:'TEST-CORE-'+randomUUID(),displayName:'TEST CORE',currentPrice:'4800'}});
+  const order=await db.order.create({data:{purchaserPersonId:p.personId,purpose:'RETAIL',status:'CONFIRMED',grossAmount:'4800',netAmount:'4800',ruleVersionCode:'TEST',lines:{create:{productId:product.productId,skuSnapshot:product.sku,productNameSnapshot:'TEST CORE',quantity:1,unitPrice:4800,lineAmount:4800,gpvRateSnapshot:0,gpvAmountSnapshot:0,ruleProfileSnapshot:{},commercialOfferingSnapshot:{recognitionProfile:{recognitionStatus:'CONFIGURATION_PENDING'}}}}}});
+  const dto={amount:'4800',paymentMethod:'CASH',referenceNo:'TEST',occurredAt:new Date().toISOString()};
+  const result=await orders.confirmPayment(order.orderId,dto,randomUUID(),'TEST',actor.personId);
+  expect(result.value).toMatchObject({status:'PAID',recognitionStatus:'CONFIGURATION_PENDING'});
+  expect(await db.outboxEvent.count({where:{aggregateId:order.orderId}})).toBe(0);
+  expect((await orders.get(order.orderId)).recognitionStatus).toBe('CONFIGURATION_PENDING');
+ });
  it('denies simulated payment in Production before writing money evidence',async()=>{
   const p=await person(),production=new FormalEnrollmentService(db,new ConfigService({UCELL_ENVIRONMENT:'PRODUCTION',STAGE_PAYMENT_MODE:'ASSUME_PAID'}),idempotency,audit,orders);
   await expect(production.payFee(p.personId,randomUUID(),'TEST_ONLY')).rejects.toMatchObject({response:{code:'STAGE_PAYMENT_NOT_AVAILABLE'}});
@@ -69,15 +81,38 @@ describe('Formal enrollment Stage payments in isolated real DB',()=>{
   expect((await service.status(p.personId)).paidPackages).toHaveLength(1);
   await expect(service.payFee(p.personId,randomUUID(),'TEST_ONLY')).rejects.toMatchObject({response:{code:'FORMAL_FEE_ALREADY_COVERED_BY_PACKAGE'}});
  });
- it('requires payment and files for own submission without granting scan clearance or approval',async()=>{
+ it('accepts own unpaid submission for physical review, creates one unpaid fee and grants no approval',async()=>{
   const p=await person(),other=await person(),app=await db.formalMemberApplication.create({data:{personId:p.personId,currentSnapshotHash:'a'.repeat(64)}});
   await expect(service.submit(other.personId,app.formalMemberApplicationId,randomUUID(),'TEST_ONLY')).rejects.toMatchObject({response:{code:'FORMAL_APPLICATION_NOT_FOUND'}});
-  await expect(service.submit(p.personId,app.formalMemberApplicationId,randomUUID(),'TEST_ONLY')).rejects.toMatchObject({response:{code:'FORMAL_ENROLLMENT_PAYMENT_REQUIRED'}});
-  await service.payFee(p.personId,randomUUID(),'TEST_ONLY');
-  await expect(service.submit(p.personId,app.formalMemberApplicationId,randomUUID(),'TEST_ONLY')).rejects.toMatchObject({response:{code:'FORMAL_ENROLLMENT_DOCUMENTS_REQUIRED'}});
+  await expect(service.submit(p.personId,app.formalMemberApplicationId,randomUUID(),'TEST_ONLY')).rejects.toMatchObject({response:{code:'FORMAL_SPONSOR_BALL_REQUIRED'}});
+  expect(await db.order.count({where:{purchaserPersonId:p.personId}})).toBe(0);
+  await attachFormalSponsor(db,app.formalMemberApplicationId);
+  expect((await service.submit(p.personId,app.formalMemberApplicationId,randomUUID(),'TEST_ONLY')).value.status).toBe('SUBMITTED');
+  expect(await db.order.count({where:{purchaserPersonId:p.personId,purpose:'FORMAL_MEMBERSHIP_FEE',status:'CONFIRMED'}})).toBe(1);
+  expect(await db.paymentEvent.count({where:{order:{purchaserPersonId:p.personId}}})).toBe(0);
+
   for(const documentType of ['IDENTITY_FRONT','IDENTITY_BACK','BANKBOOK_COVER'] as const)await db.formalApplicationDocument.create({data:{formalMemberApplicationId:app.formalMemberApplicationId,documentType,status:'PRESENT',malwareScanStatus:'PENDING',storageObjectKey:'TEST_ONLY/'+randomUUID(),contentSha256:'a'.repeat(64),mimeType:'image/png',sizeBytes:8,uploadedAt:new Date()}});
+  await attachFormalSponsor(db,app.formalMemberApplicationId);
   expect((await service.submit(p.personId,app.formalMemberApplicationId,randomUUID(),'TEST_ONLY')).value.status).toBe('SUBMITTED');
   expect((await db.person.findUniqueOrThrow({where:{personId:p.personId}})).membershipState).toBe('FORMAL_PENDING');
   expect(await db.formalApplicationDocument.count({where:{formalMemberApplicationId:app.formalMemberApplicationId,malwareScanStatus:'CLEAN'}})).toBe(0);
+ });
+
+ it('keeps an unpaid package out of qualifications and does not create an extra 600 fee on submission',async()=>{
+  const p=await person(),f=await createActiveQualificationPackage(db),member=new MemberService(db,{} as any,{} as any,audit);
+  const created=await orders.createMember({packageVersionId:f.version.packageProfileVersionId,selections:[{productRuleProfileId:f.rule.productRuleProfileId,quantity:1}]},randomUUID(),'TEST_ONLY',p.personId);
+  const app=await db.formalMemberApplication.create({data:{personId:p.personId,currentSnapshotHash:'a'.repeat(64)}});
+  await attachFormalSponsor(db,app.formalMemberApplicationId);
+  expect(await member.qualifications(p.personId)).toEqual([]);
+  await service.submit(p.personId,app.formalMemberApplicationId,randomUUID(),'TEST_ONLY');
+  expect(await db.order.count({where:{purchaserPersonId:p.personId,purpose:'FORMAL_MEMBERSHIP_FEE'}})).toBe(0);
+  expect((await service.status(p.personId)).packageOrders).toEqual([expect.objectContaining({orderId:created.value.orderId,status:'CONFIRMED'})]);
+  const paid=await service.payPackage(p.personId,created.value.orderId,randomUUID(),'TEST_ONLY');
+  expect(await member.qualifications(p.personId)).toEqual([]);
+  await db.qualification.update({where:{qualificationId:paid.qualificationId!},data:{status:'EFFECTIVE'}});
+  expect(await member.qualifications(p.personId)).toEqual([]);
+  await db.person.update({where:{personId:p.personId},data:{membershipState:'FORMAL_MEMBER'}});
+  expect(await member.qualifications(p.personId)).toEqual([expect.objectContaining({id:paid.qualificationId})]);
+  const other=await person();expect(await member.qualifications(other.personId)).toEqual([]);
  });
 });

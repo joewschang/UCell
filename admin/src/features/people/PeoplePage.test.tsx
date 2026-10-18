@@ -13,6 +13,7 @@ const person={personId:'person-internal-uuid',memberNo:'2609000001',legalName:'�
 beforeEach(()=>{
  vi.mocked(command).mockReset();
  vi.mocked(get).mockReset().mockImplementation(async(path:string)=>{
+  if(path.includes('/account-security'))return {data:{identityLinks:[{identityLinkId:'line-link',providerSubject:'private-line-subject',status:'ACTIVE',displayName:'小明的 LINE'}]}} as any;
   if(path.includes('/qualifications'))return {data:[{qualificationId:'qualification-internal-uuid',ballNo:'A000004',planLevelCode:'STALE_PLAN_SHOULD_NOT_RENDER',status:'EFFECTIVE',activeFlag:true,admin360:{organization:{status:'AVAILABLE',treeCode:'TREE-A'},owner:{status:'AVAILABLE',ownerType:'MEMBER',memberNo:'2609000001'},plan:{status:'AVAILABLE',planCode:'STARTER'},globalRank:{status:'AVAILABLE',highestRank:'DIAMOND'}}}],meta:{total:1}} as any;
   return {data:[person]} as any;
  });
@@ -35,6 +36,9 @@ it('uses Member Number and Ball Number in Person 360 without rendering internal 
  await act(async()=>view.root.findAllByType('button').find(button=>button.children.join('')==='查看會員 360')!.props.onClick());
  await vi.waitFor(()=>expect(JSON.stringify(view.toJSON())).toContain('A000004'));
  output=JSON.stringify(view.toJSON());
+ expect(output).toContain('小明的 LINE');
+ expect(output).toContain('LINE 暱稱');
+ expect(output).not.toContain('private-line-subject');
  expect(output).toContain('Ball Portfolio');
  expect(output).toContain('A000004');
  expect(output).toContain('TREE-A');
@@ -45,3 +49,12 @@ it('uses Member Number and Ball Number in Person 360 without rendering internal 
  expect(output).not.toContain('qualification-internal-uuid');
  act(()=>view.unmount());
 });
+
+ it.each([{links:[],expected:'尚未綁定 LINE'},{links:[{identityLinkId:'old',providerSubject:'old-private',status:'REVOKED',displayName:'舊 LINE'}],expected:'尚未綁定 LINE'},{links:[{identityLinkId:'new',providerSubject:'new-private',status:'ACTIVE',displayName:null}],expected:'尚未取得暱稱，請會員重新使用 LINE 登入'}])('handles missing and revoked LINE nicknames: $expected',async({links,expected})=>{
+ const original=vi.mocked(get).getMockImplementation()!;
+ vi.mocked(get).mockImplementation(async(path:string)=>path.includes('/account-security')?{data:{identityLinks:links}} as any:original(path));
+ const view=await render();
+ await act(async()=>view.root.findAllByType('button').find(button=>button.children.join('')==='查看會員 360')!.props.onClick());
+ await vi.waitFor(()=>expect(JSON.stringify(view.toJSON())).toContain(expected));
+ act(()=>view.unmount());
+ });

@@ -1,6 +1,17 @@
 /** Approved Overlay A: independent calendar-month streak per Qualification. */
 export const INACTIVITY_SCOPE = 'QUALIFICATION' as const;
 export type InactivityMonth = { qualificationId: string; month: string; active: boolean | null; finalized: boolean; revision: string };
+/** LIFE-03: first complete Taipei month covered by BOTH qualification and rule.
+ * This pure helper does not activate a rule or start a recovery workflow.
+ * Callers must supply an explicitly approved business effective time.
+ */
+export function firstApplicableInactivityMonth(qualificationEffectiveAt: Date, ruleEffectiveAt: Date): string {
+  if (!Number.isFinite(qualificationEffectiveAt.getTime()) || !Number.isFinite(ruleEffectiveAt.getTime())) throw new Error('INACTIVITY_EFFECTIVE_TIME_REQUIRED');
+  const local = new Date(Math.max(qualificationEffectiveAt.getTime(), ruleEffectiveAt.getTime()) + 8 * 3600000);
+  const opening = Date.UTC(local.getUTCFullYear(), local.getUTCMonth(), 1);
+  const first = local.getTime() === opening ? local : new Date(Date.UTC(local.getUTCFullYear(), local.getUTCMonth() + 1, 1));
+  return first.toISOString().slice(0, 7);
+}
 function monthNumber(month: string): number {
   if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) throw new Error('INVALID_CALENDAR_MONTH');
   const [year, value] = month.split('-').map(Number); return year * 12 + value - 1;

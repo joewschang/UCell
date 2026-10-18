@@ -19,19 +19,17 @@ async function field(label:string,value:string){
  await act(async()=>control.props.onChange({target:{value}}));
 }
 async function selectPerson(){await act(async()=>tree.root.findByType(SearchSelect).props.onChange({id:'synthetic-person',primary:'TEST ONLY PERSON'}))}
-async function spouse(enabled:boolean){
- const box=tree.root.findAllByType('input').find(x=>x.props.type==='checkbox')!;
- await act(async()=>box.props.onChange({target:{checked:enabled}}));
-}
+async function spouse(enabled:boolean){await field('配偶狀態',enabled?'YES':'NO');}
+async function finish(){await act(async()=>tree.root.findByType('form').props.onSubmit({preventDefault(){}}));}
 async function common(){
  await selectPerson();
- for(const [label,value] of [['紙本申請編號','TEST-PAPER'],['通訊地址','TEST ONLY ADDRESS'],['電話','TEST ONLY PHONE'],['Email','paper@example.invalid'],['銀行代碼','TEST'],['銀行帳號','TEST ONLY BANK'],['帳戶名','TEST ONLY HOLDER']])await field(label,value);
+ for(const [label,value] of [['紙本申請編號','TEST-PAPER'],['通訊地址','TEST ONLY ADDRESS'],['電話','TEST ONLY PHONE'],['Email','paper@example.invalid'],['銀行代碼','013'],['銀行帳號','TEST ONLY BANK'],['帳戶名','TEST ONLY HOLDER']])await field(label,value);
 }
 it('keeps the selected Person as representative and excludes stale individual data after switching to a corporation',async()=>{
  await common();await field('姓名','STALE INDIVIDUAL');await field('身分證明號碼','STALE ID');
  await field('申請類型','LEGAL_ENTITY');
  for(const [label,value] of [['法人名稱','TEST ONLY CORPORATION'],['統一編號／法人登記號碼','TEST-REGISTRATION'],['法人登記地址','TEST ADDRESS'],['主要經營代表人姓名','TEST REPRESENTATIVE'],['代表人身分證明號碼','TEST REP ID']])await field(label,value);
- await act(async()=>tree.root.findByType('form').props.onSubmit({preventDefault(){}}));
+ await finish();
  const [path,payload]=vi.mocked(command).mock.calls[0];
  expect(path).toBe('/admin/formal-member-applications/paper');
  expect(payload).toMatchObject({representativePersonId:'synthetic-person',formalContractVersionId:'synthetic-contract',applicantType:'LEGAL_ENTITY',legalEntityName:'TEST ONLY CORPORATION',representativeIdentityDocumentNumber:'TEST REP ID'});
@@ -44,8 +42,21 @@ it('does not transmit a cleared spouse declaration or create an application with
  await act(async()=>tree.root.findByType('form').props.onSubmit({preventDefault(){}}));
  expect(command).not.toHaveBeenCalled();
  await common();await field('性別','UNDISCLOSED');await field('出生日期','1990-01-02');await field('身分證明號碼','TEST ONLY ID');
- await act(async()=>tree.root.findByType('form').props.onSubmit({preventDefault(){}}));
+ await finish();
  const payload=vi.mocked(command).mock.calls[0][1];
  expect(payload).toMatchObject({applicantType:'INDIVIDUAL',hasSpouse:false,identityDocumentNumber:'TEST ONLY ID'});
  expect(payload).not.toHaveProperty('spouseName');expect(payload).not.toHaveProperty('spouseIdentityDocumentNumber');
+});
+
+it('shows all sections together and uses bank and spouse selects',async()=>{
+ expect(tree.root.findAllByType('fieldset').every(x=>!x.props.hidden&&!x.props.disabled)).toBe(true);
+ expect(tree.root.findAllByType('button').some(x=>x.children.includes('下一步'))).toBe(false);
+ await common();await field('銀行代碼','700');await spouse(true);
+ expect(tree.root.findAllByType('label').some(x=>x.children[0]==='配偶姓名')).toBe(true);
+ await field('銀行代碼','OTHER');await field('其他金融機構代碼','999');
+ await field('銀行代碼','013');
+ expect(tree.root.findAllByType('label').some(x=>x.children[0]==='其他金融機構代碼')).toBe(false);
+ await finish();
+ expect(vi.mocked(command).mock.calls).toHaveLength(1);
+ expect(vi.mocked(command).mock.calls[0][1]).toMatchObject({bankCode:'013'});
 });

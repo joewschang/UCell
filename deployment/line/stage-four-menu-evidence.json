@@ -1,0 +1,75 @@
+{
+  "richMenuId": "richmenu-3904cc584314e7dc50b577a7c59fa625",
+  "previousRichMenuId": "richmenu-e0c748d7465b76699686999dba8f2079",
+  "scope": "PER_USER_ONLY",
+  "verifiedAt": "2026-10-04T05:53:31.5826286Z",
+  "defaultMenuChanged": false,
+  "oa": "@258vmvsa",
+  "imageSha256": "DBA12E250125FA289F023DC30EC5CE665CD5ABCA3FB4E91A544D573435ECB17B",
+  "memberNo": "2609000001",
+  "menu": {
+    "richMenuId": "richmenu-3904cc584314e7dc50b577a7c59fa625",
+    "name": "UCell STAGE Four Services Home 20261004",
+    "size": {
+      "width": 2500,
+      "height": 1686
+    },
+    "chatBarText": "UCell 服務選單",
+    "selected": true,
+    "areas": [
+      {
+        "bounds": {
+          "x": 0,
+          "y": 0,
+          "width": 1250,
+          "height": 843
+        },
+        "action": {
+          "label": "會員中心",
+          "type": "uri",
+          "uri": "https://liff.line.me/2011813061-Qt3d2jmo/"
+        }
+      },
+      {
+        "bounds": {
+          "x": 1250,
+          "y": 0,
+          "width": 1250,
+          "height": 843
+        },
+        "action": {
+          "label": "活動報名",
+          "type": "uri",
+          "uri": "https://liff.line.me/2011813061-Qt3d2jmo/events"
+        }
+      },
+      {
+        "bounds": {
+          "x": 0,
+          "y": 843,
+          "width": 1250,
+          "height": 843
+        },
+        "action": {
+          "label": "線上商城",
+          "type": "uri",
+          "uri": "https://liff.line.me/2011813061-Qt3d2jmo/shop"
+        }
+      },
+      {
+        "bounds": {
+          "x": 1250,
+          "y": 843,
+          "width": 1250,
+          "height": 843
+        },
+        "action": {
+          "label": "常見問答",
+          "type": "uri",
+          "uri": "https://liff.line.me/2011813061-Qt3d2jmo/faq"
+        }
+      }
+    ]
+  },
+  "status": "IMAGE_UPLOADED_AND_USER_LINK_VERIFIED"
+}

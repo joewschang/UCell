@@ -1,0 +1,9 @@
+import React from 'react';import {act,create} from 'react-test-renderer';import {it,expect,vi} from 'vitest';import {MemberSignature} from '../src/MemberSignature';
+it('captures drawn strokes, rejects an empty tap and clears the saved signature on reset',()=>{
+ const ctx={fillRect:vi.fn(),fillText:vi.fn(),drawImage:vi.fn(),beginPath:vi.fn(),moveTo:vi.fn(),lineTo:vi.fn(),stroke:vi.fn()},canvas={width:720,height:240,getContext:()=>ctx,toDataURL:()=> 'data:image/png;base64,aGVsbG8='};
+ vi.stubGlobal('document',{createElement:()=>({...canvas})});const changed=vi.fn();let view:any;const props={name:'測試會員',contract:{title:'會員契約',version:'v1',contentHash:'hash'},resetKey:0,disabled:false,onChange:changed};
+ act(()=>{view=create(<MemberSignature {...props}/>,{createNodeMock:e=>e.type==='canvas'?canvas:null})});const target={getBoundingClientRect:()=>({left:0,top:0,width:360,height:120}),setPointerCapture:vi.fn()};const event=(x:number,y:number)=>({currentTarget:target,clientX:x,clientY:y,pointerId:1,preventDefault:vi.fn()});
+ act(()=>view.root.findByType('canvas').props.onPointerDown(event(5,5)));act(()=>view.root.findByType('canvas').props.onPointerUp());expect(changed.mock.calls.filter(c=>c[0] instanceof File)).toHaveLength(0);
+ act(()=>view.root.findByType('canvas').props.onPointerDown(event(5,5)));act(()=>view.root.findByType('canvas').props.onPointerMove(event(30,20)));act(()=>view.root.findByType('canvas').props.onPointerUp());expect(changed.mock.lastCall![0]).toBeInstanceOf(File);expect(ctx.stroke).toHaveBeenCalled();expect(ctx.drawImage).toHaveBeenCalled();
+ act(()=>view.update(<MemberSignature {...props} resetKey={1}/>));expect(changed.mock.lastCall![0]).toBeUndefined();expect(JSON.stringify(view.toJSON())).toContain('尚未簽名');act(()=>view.unmount());vi.unstubAllGlobals();
+});

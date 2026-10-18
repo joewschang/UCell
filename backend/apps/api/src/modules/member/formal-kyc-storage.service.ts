@@ -1,3 +1,4 @@
+import {parseKycScanTags} from './kyc-scan-result';
 import {Injectable,ServiceUnavailableException} from '@nestjs/common';
 
 @Injectable()
@@ -32,6 +33,11 @@ export class FormalKycStorageService{
       body:new Uint8Array(bytes),
     });
     if(!response.ok)throw new ServiceUnavailableException({code:'KYC_STORAGE_WRITE_FAILED'});
+  }
+  async scanResult(objectKey:string){
+    const response=await fetch(this.url(objectKey)+'?comp=tags',{signal:AbortSignal.timeout(10000),headers:{Authorization:'Bearer '+await this.accessToken(),'x-ms-version':'2023-11-03','x-ms-date':new Date().toUTCString()}});
+    if(!response.ok)throw new ServiceUnavailableException({code:'KYC_SCAN_RESULT_UNAVAILABLE'});
+    return parseKycScanTags(await response.text());
   }
   async get(objectKey:string){
     const response=await fetch(this.url(objectKey),{headers:{Authorization:'Bearer '+await this.accessToken(),'x-ms-version':'2023-11-03','x-ms-date':new Date().toUTCString()}});

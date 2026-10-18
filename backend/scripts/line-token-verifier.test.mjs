@@ -14,7 +14,7 @@ test('posts only to the official endpoint and returns minimal verified identity'
     assert.equal(init.body.has('nonce'), false);
     return new Response(JSON.stringify({ ...claims, email: 'private@example.invalid', name: 'private' }));
   }});
-  assert.equal(calls, 1); assert.deepEqual(result, { subject: 'test-subject', expiresAt: 300 });
+  assert.equal(calls, 1); assert.deepEqual(result, { subject: 'test-subject', expiresAt: 300, displayName: 'private' });
 });
 test('requires server channel configuration and a bounded token before network access', async () => {
   let calls = 0; const fetch = async () => { calls++; throw Error('unexpected'); };

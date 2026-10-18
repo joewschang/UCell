@@ -1,0 +1,10 @@
+{
+  "date": "2026-10-11T05:57:35.988Z",
+  "adminHttp": 200,
+  "asset": "/assets/index-CVGTUKkq.js",
+  "assetHttp": 200,
+  "erpFieldAndConfirmation": "PASS",
+  "apiHttp": 200,
+  "database": "ok",
+  "scope": "Public HTTP and deployed asset verification; no live qualification mutation performed"
+}

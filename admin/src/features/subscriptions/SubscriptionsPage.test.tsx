@@ -4,6 +4,7 @@ import { act,create } from 'react-test-renderer';
 import { beforeEach,expect,it,vi } from 'vitest';
 import { get } from '../../lib/api';
 import { SubscriptionsPage } from './SubscriptionsPage';
+vi.mock('../auth/auth',()=>({useAuth:()=>({user:{role:'COMPLIANCE_AUDIT'}})}));
 
 vi.mock('../../lib/api',()=>({
   get:vi.fn(),

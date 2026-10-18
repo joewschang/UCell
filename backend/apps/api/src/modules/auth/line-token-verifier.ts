@@ -2,7 +2,7 @@
  * It does not issue sessions, bind identities or install public routes.
  * Channel and expected nonce must originate in trusted server configuration/state.
  */
-export type VerifiedLineIdentity = { subject: string; expiresAt: number };
+export type VerifiedLineIdentity = { subject: string; expiresAt: number; displayName?: string };
 export class LineVerificationError extends Error {
   constructor(code: string) { super(code); this.name = 'LineVerificationError'; }
 }
@@ -38,7 +38,7 @@ export async function verifyLineIdToken(
         typeof p.iat !== 'number' || !Number.isSafeInteger(p.iat) || p.iat > now || p.iat > p.exp ||
         (config.expectedNonce !== undefined && p.nonce !== config.expectedNonce))
       throw new LineVerificationError('LINE_CLAIMS_INVALID');
-    return { subject: p.sub, expiresAt: p.exp };
+    return { subject: p.sub, expiresAt: p.exp, ...(typeof p.name === 'string' && p.name.trim() ? {displayName:p.name.trim()} : {}) };
   } catch (error) {
     if (controller.signal.aborted) throw new LineVerificationError('LINE_VERIFICATION_UNAVAILABLE');
     if (error instanceof LineVerificationError) throw error;

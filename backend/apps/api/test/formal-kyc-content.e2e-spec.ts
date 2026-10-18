@@ -50,9 +50,9 @@ describe('Private KYC content validation and scan fail-closed boundaries',()=>{
     expect(h.tx.formalApplicationDocument.create).not.toHaveBeenCalled();
     expect(h.tx.formalApplicationDocument.updateMany).not.toHaveBeenCalled();
   });
-  it.each(['PENDING','FAILED','INFECTED'])('does not stream a document whose malware scan is %s',async status=>{
+  it.each(['INFECTED'])('does not stream a document whose malware scan is %s',async status=>{
     const h=harness();h.record.malwareScanStatus=status;
-    await expect(h.service.adminContent('document','admin','request')).rejects.toMatchObject({response:{code:'FORMAL_KYC_SCAN_CLEAN_REQUIRED'}});
+    await expect(h.service.adminContent('document','admin','request')).rejects.toMatchObject({response:{code:'FORMAL_KYC_DOCUMENT_REJECTED'}});
     expect(h.storage.get).not.toHaveBeenCalled();
   });
   it('rejects bytes changed in object storage before returning any content',async()=>{
@@ -66,3 +66,10 @@ describe('Private KYC content validation and scan fail-closed boundaries',()=>{
     expect(h.audit.write).toHaveBeenCalledWith(h.tx,expect.objectContaining({action:'FORMAL_KYC_DOCUMENT_VIEWED',actorId:'admin'}));
   });
 });
+
+it.each(['PENDING','FAILED'])('allows valid unscanned images (%s) without marking them clean',async status=>{const h=harness();h.record.malwareScanStatus=status;expect((await h.service.adminContent('document','admin','request')).bytes).toEqual(png);expect(h.record.malwareScanStatus).toBe(status);});
+
+it('saves a member signature against the application snapshot and audits it',async()=>{const h=harness();(h.application as any).currentSnapshotHash='snapshot-hash';await h.service.upload('person','app','SIGNED_APPLICATION_AGREEMENT','image/png',png.toString('base64'),'request');expect(h.audit.write).toHaveBeenCalledWith(h.tx,expect.objectContaining({actorType:'MEMBER',afterData:expect.objectContaining({applicationSnapshotHash:'snapshot-hash',documentType:'SIGNED_APPLICATION_AGREEMENT'})}));});
+it('saves a paper PDF and streams its exact verified bytes to an admin',async()=>{const h=harness();h.application.sourceChannel='ADMIN_PAPER';const pdf=Buffer.from('%PDF-1.4\n1 0 obj << /Type /Catalog >> endobj\n%%EOF');const result=await h.service.upload('admin','app','SIGNED_APPLICATION_AGREEMENT','application/pdf',pdf.toString('base64'),'request',true);expect(result.mimeType).toBe('application/pdf');Object.assign(h.record,{documentType:'SIGNED_APPLICATION_AGREEMENT',mimeType:'application/pdf',sizeBytes:pdf.length,contentSha256:createHash('sha256').update(pdf).digest('hex')});h.storage.get.mockResolvedValue({bytes:pdf,mimeType:'application/pdf'});expect((await h.service.adminContent('document','admin','request')).bytes).toEqual(pdf);});
+it('rejects PDF uploads from members and paper uploads against web applications',async()=>{const h=harness();await expect(h.service.upload('person','app','SIGNED_APPLICATION_AGREEMENT','application/pdf','JVBERi0=','request')).rejects.toThrow();await expect(h.service.upload('admin','app','SIGNED_APPLICATION_AGREEMENT','image/png',png.toString('base64'),'request',true)).rejects.toThrow();expect(h.storage.put).not.toHaveBeenCalled();});
+it('rejects paper uploads on approved applications',async()=>{const h=harness();h.application.sourceChannel='ADMIN_PAPER';h.application.status='APPROVED';await expect(h.service.upload('admin','app','SIGNED_APPLICATION_AGREEMENT','image/png',png.toString('base64'),'request',true)).rejects.toMatchObject({response:{code:'FORMAL_APPLICATION_LOCKED'}});expect(h.storage.put).not.toHaveBeenCalled();});

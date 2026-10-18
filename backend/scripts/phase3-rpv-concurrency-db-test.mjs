@@ -35,9 +35,8 @@ try{
   if(++arrived===2)release();await barrier;return row;
  }}}),options)};
  const attempts=await Promise.allSettled([new RpvService(concurrent,{}).recognize(schedule.recognitionId),new RpvService(concurrent,{}).recognize(schedule.recognitionId)]);
- equal(attempts.filter(item=>item.status==='fulfilled').length,1,'one concurrent recognition commits');
- const failed=attempts.find(item=>item.status==='rejected');
- equal(['P2034','P2002'].includes(failed?.reason.code),true,'losing Serializable delivery requires redelivery');
+ equal(attempts.filter(item=>item.status==='fulfilled').length,2,'both concurrent requests complete through production retry');
+ equal(attempts.filter(item=>item.status==='fulfilled'&&item.value?.skipped==='ALREADY_RECOGNIZED').length,1,'one competing request observes the committed recognition');
  const service=new RpvService(db,{});
  equal(await service.recognize(schedule.recognitionId),{skipped:'ALREADY_RECOGNIZED'},'external redelivery returns already recognized');
  equal(await db.pvLedger.count({where:{sourceLineId:schedule.recognitionId,pvType:'RPV'}}),1,'one durable original RPV ledger event');

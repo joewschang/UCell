@@ -1,7 +1,7 @@
 {
   "rootDir": "..",
   "testEnvironment": "node",
-  "testRegex": "test/.*\\.e2e-spec\\.ts$",
+  "testRegex": "test/(.*\\.e2e-spec\\.ts|(?:member-global-economic|company-economic|company-volume-economic|full-app-security)\\.integration\\.ts)$",
   "transform": {
     "^.+\\.ts$": [
       "ts-jest",

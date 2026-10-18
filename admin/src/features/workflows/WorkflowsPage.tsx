@@ -10,6 +10,7 @@ import {dateTime,money} from '../../lib/format';
 export function WorkflowsPage(){
  const qc=useQueryClient();const [status,setStatus]=useState('SUBMITTED'),[type,setType]=useState(''),[search,setSearch]=useState(''),[selected,setSelected]=useState<string|null>(null);
  const [qualification,setQualification]=useState<SearchOption|null>(null),[newType,setNewType]=useState('UPGRADE'),[receiver,setReceiver]=useState<SearchOption|null>(null),[company,setCompany]=useState<SearchOption|null>(null),[target,setTarget]=useState(''),[feePaid,setFeePaid]=useState(false);
+ const [paymentConfirmed,setPaymentConfirmed]=useState(false),[erpPaymentVoucher,setErpPaymentVoucher]=useState('');
  const [error,setError]=useState<unknown>(null),[busy,setBusy]=useState(false);
 
  const queue=useQuery({queryKey:['workflow-queue',status,type,search],queryFn:()=>get<any>('/admin/operations/workflows'+qs({status:status||undefined,type:type||undefined,q:search,take:100}))});
@@ -21,17 +22,17 @@ export function WorkflowsPage(){
  async function submit(){
   if(!qualification)return;setBusy(true);setError(null);
   try{
-   const payload:any={reviewFeePaid:feePaid};
+   const payload:any={reviewFeePaid:newType!=='UPGRADE'&&feePaid};
    if(newType==='EXIT'&&company)payload.companyHolderPersonId=company.id;
    const r:any=await command('/admin/qualification-workflows',{
     qualificationId:qualification.id,workflowType:newType,
     receivingPersonId:['TRANSFER','COMPANY_RETRANSFER'].includes(newType)?receiver?.id:undefined,
     targetPlanCode:newType==='UPGRADE'?target||undefined:undefined,payload
    });
-   setSelected(r.data?.qualificationWorkflowId??null);await qc.invalidateQueries({queryKey:['workflow-queue']});
+   setPaymentConfirmed(false);setErpPaymentVoucher('');setSelected(r.data?.qualificationWorkflowId??null);await qc.invalidateQueries({queryKey:['workflow-queue']});
   }catch(e){setError(e)}finally{setBusy(false)}
  }
- async function approve(){if(!selected)return;setBusy(true);setError(null);try{await command(`/admin/qualification-workflows/${selected}/approve`,{});await qc.invalidateQueries({queryKey:['workflow-queue']});await qc.invalidateQueries({queryKey:['workflow-detail',selected]})}catch(e){setError(e)}finally{setBusy(false)}}
+ async function approve(){if(!selected)return;setBusy(true);setError(null);try{await command(`/admin/qualification-workflows/${selected}/approve`,d?.workflowType==='UPGRADE'?{paymentConfirmed,erpPaymentVoucher:erpPaymentVoucher.trim()}:{});await qc.invalidateQueries({queryKey:['workflow-queue']});await qc.invalidateQueries({queryKey:['workflow-detail',selected]})}catch(e){setError(e)}finally{setBusy(false)}}
 
  return <><PageHeader title="升級／轉讓／退出" subtitle="審核費NT$600；核准後向未來生效。轉讓移轉該 Ball 的全部權利義務，Ball Number 與組織位置不變。"/>
  <ErrorBox error={error}/>
@@ -41,13 +42,13 @@ export function WorkflowsPage(){
   {newType==='UPGRADE'&&<Field label="Target Plan"><select value={target} onChange={e=>setTarget(e.target.value)}><option value="">選擇…</option><option>STARTER</option><option>ELITE</option><option>LEADER</option></select></Field>}
   {['TRANSFER','COMPANY_RETRANSFER'].includes(newType)&&<SearchSelect label="Receiving Person" value={receiver} onChange={setReceiver} search={personSearch}/>}
   {newType==='EXIT'&&<SearchSelect label="Company Holder Person" value={company} onChange={setCompany} search={personSearch}/>}
-  <label className="checkbox"><input type="checkbox" checked={feePaid} onChange={e=>setFeePaid(e.target.checked)}/> 已確認收取審核費 NT$600</label>
-  <ConfirmAction className="primary" disabled={!qualification||!feePaid||busy||(newType==='UPGRADE'&&!target)||(['TRANSFER','COMPANY_RETRANSFER'].includes(newType)&&!receiver)||(newType==='EXIT'&&!company)} onConfirm={submit}>Submit Workflow</ConfirmAction>
+  {newType!=='UPGRADE'&&<label className="checkbox"><input type="checkbox" checked={feePaid} onChange={e=>setFeePaid(e.target.checked)}/> 已確認收取審核費 NT$600</label>}
+  <ConfirmAction className="primary" disabled={!qualification||(newType!=='UPGRADE'&&!feePaid)||busy||(newType==='UPGRADE'&&!target)||(['TRANSFER','COMPANY_RETRANSFER'].includes(newType)&&!receiver)||(newType==='EXIT'&&!company)} onConfirm={submit}>Submit Workflow</ConfirmAction>
  </div></Card>
  <Card title="制度／法務邊界"><p><Badge tone="warn">公司不介入會員間對價</Badge></p><p>轉讓之對價關係由轉讓雙方自行約定；公司只審查會員資格移轉程序。</p><p>退出後Qualification由公司持有，公司可再移轉給其他人。</p><p>升級只向未來生效，不回溯歷史獎金。</p></Card></div>
 
  <div className="toolbar"><select value={status} onChange={e=>setStatus(e.target.value)}><option value="">全部狀態</option><option>SUBMITTED</option><option>EFFECTIVE</option><option>REJECTED</option><option>CANCELLED</option></select><select value={type} onChange={e=>setType(e.target.value)}><option value="">全部類型</option><option>UPGRADE</option><option>TRANSFER</option><option>EXIT</option><option>COMPANY_RETRANSFER</option></select><input value={search} onChange={e=>setSearch(e.target.value)} aria-label="會員／接收人／Qualification" placeholder="會員／接收人／Qualification"/></div>
- <div className="split-view"><Card title={`Workflow Queue (${rows.length})`}>{rows.map((x:any)=><button key={x.qualificationWorkflowId} className={`list-row ${selected===x.qualificationWorkflowId?'selected':''}`} onClick={()=>setSelected(x.qualificationWorkflowId)}><strong>{x.workflowType} · {x.qualification?.ballNo??'Ball evidence 未提供'} · {x.qualification?.currentHolder?.legalName??'—'}</strong><span>{x.qualification?.currentHolder?.memberNo??'會員編號未提供'} · {x.status} · Review Fee {money(x.reviewFee)}</span><small>{dateTime(x.submittedAt??x.createdAt)}</small></button>)}</Card>
- <Card title="Workflow Detail">{!d?<p className="muted">選擇Workflow。</p>:<><dl className="detail-grid"><dt>Type</dt><dd>{d.workflowType}</dd><dt>Status</dt><dd>{d.status}</dd><dt>Ball</dt><dd>{d.qualification?.ballNo??'Ball evidence 未提供'}<br/>{d.qualification?.currentHolder?.memberNo??'會員編號未提供'} · {d.qualification?.currentHolder?.legalName??'—'}</dd><dt>Receiver</dt><dd>{d.receiver?.legalName??'—'}</dd><dt>Target Plan</dt><dd>{d.targetPlanCode??'—'}</dd><dt>Review Fee</dt><dd>{money(d.reviewFee)} · {d.payload?.reviewFeePaid?'已確認':'未確認'}</dd><dt>Submitted</dt><dd>{dateTime(d.submittedAt)}</dd><dt>Effective</dt><dd>{dateTime(d.effectiveAt)}</dd></dl>{d.status==='SUBMITTED'&&<button className="primary sticky-actions" disabled={busy||d.payload?.reviewFeePaid!==true} onClick={approve}>Approve（Server Time，禁止回溯）</button>}</>}</Card></div>
+ <div className="split-view"><Card title={`Workflow Queue (${rows.length})`}>{rows.map((x:any)=><button key={x.qualificationWorkflowId} className={`list-row ${selected===x.qualificationWorkflowId?'selected':''}`} onClick={()=>{setSelected(x.qualificationWorkflowId);setPaymentConfirmed(false);setErpPaymentVoucher('')}}><strong>{x.workflowType} · {x.qualification?.ballNo??'Ball evidence 未提供'} · {x.qualification?.currentHolder?.legalName??'—'}</strong><span>{x.qualification?.currentHolder?.memberNo??'會員編號未提供'} · {x.status} · Review Fee {money(x.reviewFee)}</span><small>{dateTime(x.submittedAt??x.createdAt)}</small></button>)}</Card>
+ <Card title="Workflow Detail">{!d?<p className="muted">選擇Workflow。</p>:<><dl className="detail-grid"><dt>Type</dt><dd>{d.workflowType}</dd><dt>Status</dt><dd>{d.status}</dd><dt>Ball</dt><dd>{d.qualification?.ballNo??'Ball evidence 未提供'}<br/>{d.qualification?.currentHolder?.memberNo??'會員編號未提供'} · {d.qualification?.currentHolder?.legalName??'—'}</dd><dt>Receiver</dt><dd>{d.receiver?.legalName??'—'}</dd><dt>Target Plan</dt><dd>{d.targetPlanCode??'—'}</dd><dt>Review Fee</dt><dd>{money(d.reviewFee)} · {(d.workflowType==='UPGRADE'?d.payload?.manualPayment?.paymentConfirmed:d.payload?.reviewFeePaid)?'已確認':'未確認'}</dd><dt>Submitted</dt><dd>{dateTime(d.submittedAt)}</dd><dt>Effective</dt><dd>{dateTime(d.effectiveAt)}</dd><dt>ERP 付款憑證號碼／備註</dt><dd>{d.payload?.manualPayment?.erpPaymentVoucher??'—'}</dd><dt>收款確認人</dt><dd>{d.payload?.manualPayment?.confirmedByName??'—'}</dd><dt>收款確認時間</dt><dd>{dateTime(d.payload?.manualPayment?.confirmedAt)}</dd></dl>{d.status==='SUBMITTED'&&d.workflowType==='UPGRADE'&&<div className="form"><Field label="ERP 付款憑證號碼／備註"><input aria-label="ERP 付款憑證號碼／備註" maxLength={500} value={erpPaymentVoucher} onChange={e=>setErpPaymentVoucher(e.target.value)} placeholder="請填寫 ERP 憑證號碼；合併收款可在此註明"/></Field><label className="checkbox"><input type="checkbox" checked={paymentConfirmed} onChange={e=>setPaymentConfirmed(e.target.checked)}/> 已確認方案差額及審核費 NT$600 全數收款</label><p className="muted">憑證由 ERP 保管，本系統記錄人工確認結果。</p></div>}{d.status==='SUBMITTED'&&<button className="primary sticky-actions" disabled={busy||(d.workflowType==='UPGRADE'?(!paymentConfirmed||!erpPaymentVoucher.trim()):d.payload?.reviewFeePaid!==true)} onClick={approve}>Approve（Server Time，禁止回溯）</button>}</>}</Card></div>
  </>
 }

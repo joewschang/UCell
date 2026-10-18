@@ -3,6 +3,11 @@ import { Type } from 'class-transformer';
 import { ArrayMinSize, IsArray, IsEnum, IsOptional, IsString, IsUUID, Matches, ValidateNested } from 'class-validator';
 
 export class CreateOrderItemDto {
+  @ApiPropertyOptional({description:'主商品逐項方案代碼'})
+  @IsOptional()
+  @IsString()
+  commercialOfferingCode?: string;
+
   @ApiProperty({ format: 'uuid' })
   @IsUUID()
   productId!: string;

@@ -1,3 +1,4 @@
+import {assertQualificationActivation} from '../qualification/qualification-activation-gate';
 import {ConflictException,ForbiddenException,Injectable,UnprocessableEntityException} from '@nestjs/common';
 import {binaryPath,Prisma,PrismaService,bootstrapBallNoFor,childPosition,bindCompanyLeaderProfile,effectiveCompanyParameters} from '@ucell/database';
 import {randomUUID} from 'node:crypto';
@@ -137,6 +138,7 @@ export class BinaryTreeService {
    }
    const setup=await tx.qualificationSetup.findUnique({where:{qualificationId:input.qualificationId}});
    if(setup && (!['PLACEMENT_PENDING','PLACEMENT_OVERDUE'].includes(setup.setupStatus)||setup.finalSponsorQualificationId!==sponsor.sponsorQualificationId))throw new ConflictException({code:'PLACEMENT_NOT_PENDING'});
+   if(setup)await assertQualificationActivation(tx,setup);
    const edge=await this.organization.createBinaryPlacement(tx,{parentQualificationId:input.binaryParentQualificationId,childQualificationId:input.qualificationId,side:input.side,effectiveFrom:at},{sourceType:'TREE_PLACEMENT_CONSOLE',actorId,reason,correlationId:randomUUID()});
    if(setup){
     const correlationId=randomUUID(),evidenceBody={qualificationId:input.qualificationId,sponsorQualificationId:sponsor.sponsorQualificationId,binaryParentQualificationId:input.binaryParentQualificationId,side:input.side,placedByType:'ADMIN_OVERRIDE',placedByPersonId:actorId,placedAt:at.toISOString(),reasonCode:reason,policyVersion:setup.setupPolicyVersion,previousStatus:setup.setupStatus};
@@ -164,6 +166,7 @@ export class BinaryTreeService {
    if(!sponsor||sponsor.effectiveFrom>now||(sponsor.effectiveTo&&sponsor.effectiveTo<=now))throw new ConflictException({code:'SPONSOR_CONFIRMATION_MISSING'});
    const setup=await tx.qualificationSetup.findUnique({where:{qualificationId:target.qualificationId}});
    if(setup&&(!['PLACEMENT_PENDING','PLACEMENT_OVERDUE'].includes(setup.setupStatus)||setup.finalSponsorQualificationId!==sponsor.sponsorQualificationId))throw new ConflictException({code:'PLACEMENT_NOT_PENDING'});
+   if(setup)await assertQualificationActivation(tx,setup);
    await this.organization.assertBinarySlotAvailable(tx,input.binaryParentQualificationId,input.side);await this.organization.assertNoBinaryCycle(tx,target.qualificationId,input.binaryParentQualificationId);
    await this.organization.assertFirstThirdLeftRule(tx,sponsor.sponsorQualificationId,sponsor.sponsorSequenceNo,input.binaryParentQualificationId,input.side);
    const positions=await tx.treeCanonicalPosition.findMany({where:{binaryTreeId:treeId}}),parentPosition=positions.find(s=>s.occupantQualificationId===input.binaryParentQualificationId);

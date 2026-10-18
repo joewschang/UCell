@@ -1,0 +1,32 @@
+import React from 'react';
+import {act,create,type ReactTestRenderer} from 'react-test-renderer';
+import {afterEach,beforeEach,expect,it,vi} from 'vitest';
+const auth=vi.hoisted(()=>({provider:'ENTRA'}));
+vi.mock('../auth/auth',()=>({useAuth:()=>({user:{provider:auth.provider}})}));
+beforeEach(()=>{auth.provider='ENTRA';});
+const request=vi.hoisted(()=>vi.fn());
+vi.mock('../../lib/api',()=>({api:request}));
+import {SmsPage} from './SmsPage';
+let tree:ReactTestRenderer;
+afterEach(()=>{if(tree)act(()=>tree.unmount());vi.clearAllMocks();});
+it('keeps DEV Super Admin on an explanatory page without protected requests',async()=>{
+ auth.provider='DEV_BYPASS';
+ await act(async()=>{tree=create(<SmsPage/>)});
+ expect(request).not.toHaveBeenCalled();
+ expect(JSON.stringify(tree.toJSON())).toContain('Microsoft 正式管理員');
+ expect(tree.root.findAllByType('textarea')).toHaveLength(0);
+});
+it('previews masked recipients before explicit send and prevents another send after acceptance',async()=>{
+ const draft={id:'campaign',message:'【UCell】服務通知',status:'DRAFT',recipientCount:1,recipients:[{memberNo:'0000000001',mobile:'+886••••678'}],contentHash:'a'.repeat(64)};
+ request.mockImplementation(async(url:string,options?:{method?:string})=>({data:url.endsWith('/send')?{...draft,status:'SUBMITTED'}:options?.method==='POST'?draft:[]}));
+ await act(async()=>{tree=create(<SmsPage/>)});
+ act(()=>{tree.root.findAllByType('textarea')[0].props.onChange({target:{value:'服務通知'}});tree.root.findAllByType('textarea')[1].props.onChange({target:{value:'0000000001'}})});
+ await act(async()=>tree.root.findAllByType('button')[0].props.onClick());
+ expect(request.mock.calls.some(([url])=>url.endsWith('/send'))).toBe(false);
+ expect(JSON.stringify(tree.toJSON())).toContain('+886••••678');
+ const confirm=()=>tree.root.findAllByType('button').find(b=>b.children.some(c=>typeof c==='string'&&c.includes('確認扣點'))) !;
+ await act(async()=>confirm().props.onClick());
+ expect(request).toHaveBeenCalledWith('/admin/sms/campaigns/campaign/send',expect.objectContaining({body:JSON.stringify({contentHash:draft.contentHash,recipientCount:1})}));
+ expect(confirm().props.disabled).toBe(true);
+ expect(JSON.stringify(tree.toJSON())).toContain('尚非送達確認');
+});

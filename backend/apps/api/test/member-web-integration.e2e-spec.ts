@@ -13,7 +13,7 @@ describe('Integrated Web identity and password lifecycle (real isolated DB, synt
  const db=new PrismaService(),pii=new PiiCryptoService(),fingerprint=new IdentityMatchFingerprintService();
  const sessions=new IdentityTokenService(db),identities=new MemberIdentityService(db);
  const google={verify:jest.fn(async(token:string)=>({subject:token,email:token+'@example.invalid',emailVerified:true,expiresAt:Math.floor(Date.now()/1000)+3600}))};
- const contacts={consume:jest.fn(async()=>new Date()),consumeMobile:jest.fn(async()=>new Date())}; // Identity lifecycle fixture; contact enforcement has its own real-DB suite.
+ const contacts={consumeRegistration:jest.fn(async()=>({mobileVerifiedAt:new Date(),emailVerifiedAt:new Date()}))}; // Identity lifecycle fixture; contact enforcement has its own real-DB suite.
  const registration=new MemberWebRegistrationService(db,new IdempotencyService(db),google as any,pii,fingerprint,undefined,contacts as any);
  const line={verify:jest.fn(async(token:string)=>({subject:token,expiresAt:Math.floor(Date.now()/1000)+3600}))};
  const lineRegistration=new MemberWebRegistrationService(db,new IdempotencyService(db),google as any,pii,fingerprint,line as any,contacts as any);
@@ -33,7 +33,10 @@ describe('Integrated Web identity and password lifecycle (real isolated DB, synt
   if(original.version===undefined)delete process.env.PII_ENCRYPTION_KEY_VERSION;else process.env.PII_ENCRYPTION_KEY_VERSION=original.version;
   await db.$disconnect();
  });
- function input(){const token='synthetic-'+randomUUID();return {contractVersionId:contractId,accepted:true as const,legalName:'TEST ONLY APPLICANT',alias:'TEST',gender:'UNDISCLOSED',birthDate:'1990-01-02',nationalityCode:'TW',identityDocumentType:'NATIONAL_ID' as const,identityDocumentNumber:'TEST-ID-'+randomUUID(),mobile:'+8869'+String(Math.floor(Math.random()*1e8)).padStart(8,'0'),email:token+'@example.invalid',password:'TEST_ONLY_PASSWORD_123!',googleIdToken:token};}
+ function input(){const token='synthetic-'+randomUUID();return {contractVersionId:contractId,accepted:true as const,legalName:'TEST ONLY APPLICANT',alias:'TEST',gender:'UNDISCLOSED',birthDate:'1990-01-02',nationalityCode:'TW',identityDocumentType:'NATIONAL_ID' as const,identityDocumentNumber:'TEST-ID-'+randomUUID(),mobile:'+8869'+String(Math.floor(Math.random()*1e8)).padStart(8,'0'),email:token+'@example.invalid',password:'Abc123',googleIdToken:token};}
+ it.each(['abc123','ABC123','Abcdef','Ab12','A1'+'b'.repeat(255)])('rejects invalid new password %s at registration',async password=>{
+  await expect(registration.complete({...input(),password},randomUUID())).rejects.toMatchObject({response:{code:'PASSWORD_POLICY'}});
+ });
  it('links LINE to the same Google member, is retry-safe, preserves member count and refuses transfer or replacement',async()=>{
   const a=input(),b=input();await registration.complete(a,randomUUID());await registration.complete(b,randomUUID());
   const first=await db.identityLink.findUniqueOrThrow({where:{provider_providerSubject:{provider:'GOOGLE',providerSubject:a.googleIdToken}}});
@@ -128,11 +131,12 @@ describe('Integrated Web identity and password lifecycle (real isolated DB, synt
   const person=await db.person.findUniqueOrThrow({where:{memberNo:result.memberNo}});
   const local=await auth.passwordLogin(person.memberNo,payload.password),token=randomUUID();
   await db.passwordResetToken.create({data:{personId:person.personId,tokenHash:createHash('sha256').update(token).digest('hex'),expiresAt:new Date(Date.now()+60000)}});
-  const outcomes=await Promise.allSettled([auth.resetPassword(token,'TEST_ONLY_NEW_PASSWORD_A'),auth.resetPassword(token,'TEST_ONLY_NEW_PASSWORD_B')]);
+  for(const invalid of ['abc123','ABC123','Abcdef','Ab12'])await expect(auth.resetPassword(token,invalid)).rejects.toMatchObject({response:{code:'PASSWORD_POLICY'}});
+  const outcomes=await Promise.allSettled([auth.resetPassword(token,'New123'),auth.resetPassword(token,'New456')]);
   expect(outcomes.filter(x=>x.status==='fulfilled')).toHaveLength(1);
   expect((outcomes.find(x=>x.status==='rejected') as PromiseRejectedResult).reason).toMatchObject({response:{code:'PASSWORD_RESET_TOKEN_INVALID'}});
   await expect(sessions.authenticate(result.accessToken)).rejects.toThrow();await expect(sessions.authenticate(local.accessToken)).rejects.toThrow();
-  const winner=outcomes[0].status==='fulfilled'?'TEST_ONLY_NEW_PASSWORD_A':'TEST_ONLY_NEW_PASSWORD_B';
+  const winner=outcomes[0].status==='fulfilled'?'New123':'New456';
   expect(await auth.passwordLogin(person.memberNo,winner)).toHaveProperty('accessToken');
   await expect(auth.passwordLogin(person.memberNo,payload.password)).rejects.toMatchObject({response:{code:'MEMBER_LOGIN_INVALID'}});
  });

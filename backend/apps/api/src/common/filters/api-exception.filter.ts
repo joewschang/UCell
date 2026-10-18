@@ -22,7 +22,7 @@ export class ApiExceptionFilter implements ExceptionFilter {
     emitStructuredOperationalError({
       service: 'api', operation: `${String(request.method ?? 'UNKNOWN')} ${String(request.routerPath ?? request.url ?? 'UNKNOWN')}`,
       traceId: String(correlationId), error: exception, errorCode: code, statusCode: status,
-      retryable: status >= 500,
+      retryable: status >= 500 || (status === 409 && code === 'RECOGNITION_RETRY_EXHAUSTED'),
     });
 
     response.header?.('x-request-id', String(requestId));

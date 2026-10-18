@@ -1,3 +1,8 @@
+import {attachFormalSponsor} from './helpers/formal-sponsor.fixture';
+import {ConfigService} from '@nestjs/config';
+import {FormalEnrollmentService} from '../src/modules/member/formal-enrollment.service';
+import {OrderService} from '../src/modules/order/order.service';
+import {OutboxService} from '../src/common/outbox/outbox.service';
 import {createHash,randomUUID} from 'node:crypto';
 import {PrismaService} from '@ucell/database';
 import {AuditService} from '../src/common/audit/audit.service';
@@ -45,6 +50,8 @@ describe('Formal approval: fresh operating-unit checks and real DB concurrency',
     return result.value.id;
   }
   async function ready(id:string,hasSpouse=false){
+    const app=await db.formalMemberApplication.findUniqueOrThrow({where:{formalMemberApplicationId:id}});
+    if(app.applicantType==='INDIVIDUAL')await db.order.create({data:{purchaserPersonId:app.personId,purpose:'FORMAL_MEMBERSHIP_FEE',status:'PAID',grossAmount:'600',netAmount:'600',ruleVersionCode:'TEST',paidAt:new Date()}});
     const items=await db.formalPaperEvidence.findMany({where:{formalMemberApplicationId:id}});
     for(const item of items)await service.reviewPaperEvidence(id,item.evidenceType,'REVIEWED','TEST_ONLY_PHYSICAL_EVIDENCE','Synthetic fixture',actorId,'TEST_ONLY_REQUEST');
     if(hasSpouse)await service.verifySpouse(id,actorId,randomUUID(),'TEST_ONLY_REQUEST');
@@ -58,6 +65,34 @@ describe('Formal approval: fresh operating-unit checks and real DB concurrency',
     await ready(idA,true);await ready(idB,true);
     return {a,b,idA,idB};
   }
+  it('supports unpaid online intake, physical evidence, cash receipt, supplement and final approval without a Ball',async()=>{
+    const p=await person('CASH FLOW'),id=await paper(p.personId,'CASH-'+randomUUID());
+    await db.formalMemberApplication.update({where:{formalMemberApplicationId:id},data:{sourceChannel:'MEMBER_WEB'}});
+    const idem=new IdempotencyService(db),orders=new OrderService(db,idem,audit,new OutboxService());
+    const enrollment=new FormalEnrollmentService(db,new ConfigService({UCELL_ENVIRONMENT:'PRODUCTION'}),idem,audit,orders);
+    await attachFormalSponsor(db,id);
+    const balls=await db.qualification.count();
+    await enrollment.submit(p.personId,id,randomUUID(),'TEST');
+    const order=await db.order.findFirstOrThrow({where:{purchaserPersonId:p.personId,purpose:'FORMAL_MEMBERSHIP_FEE'}});
+    expect(order.status).toBe('CONFIRMED');expect((await enrollment.status(p.personId)).feeReceipt).toBeNull();
+    for(const type of ['IDENTITY_FRONT','IDENTITY_BACK','BANKBOOK_COVER'])await service.reviewPaperEvidence(id,type,'REVIEWED','TEST ORIGINAL',undefined,actorId,'TEST');
+    await conflicts.review(id,actorId,'TEST');await service.beginReview(id,actorId,'TEST');
+    await expect(service.approve(id,actorId,'TEST')).rejects.toMatchObject({response:{code:'FORMAL_ENROLLMENT_PAYMENT_REQUIRED'}});
+    const dto={amount:'600.00',paymentMethod:'CASH',referenceNo:'',occurredAt:new Date().toISOString()};
+    await expect(orders.confirmPayment(order.orderId,{...dto,amount:'599'},randomUUID(),'TEST',actorId)).rejects.toThrow();
+    const key=randomUUID();await orders.confirmPayment(order.orderId,dto,key,'TEST',actorId);
+    expect((await orders.confirmPayment(order.orderId,dto,key,'TEST',actorId)).replayed).toBe(true);
+    await expect(orders.confirmPayment(order.orderId,dto,randomUUID(),'TEST',actorId)).rejects.toThrow();
+    await orders.updatePaymentReference(order.orderId,'ERP-TEST-600',actorId,'TEST');
+    expect((await orders.get(order.orderId)).paymentReferenceNo).toBe('ERP-TEST-600');
+    await service.requestMoreInfo(id,'補核對資料',actorId,'TEST');expect((await enrollment.status(p.personId)).feeReceipt).not.toBeNull();
+    await enrollment.submit(p.personId,id,randomUUID(),'TEST');await service.beginReview(id,actorId,'TEST');
+    await service.approve(id,actorId,'TEST');
+    expect((await db.person.findUniqueOrThrow({where:{personId:p.personId}})).membershipState).toBe('FORMAL_MEMBER');
+    expect(await db.paymentEvent.count({where:{orderId:order.orderId}})).toBe(1);
+    expect(await db.outboxEvent.count({where:{aggregateId:order.orderId,eventType:'WEB_MEMBER_RETAIL_PAYMENT_CONFIRMED'}})).toBe(0);
+    expect(await db.qualification.count()).toBe(balls);
+  });
   it('rejects a new spouse conflict after both applications were reviewed CLEAR without partial writes',async()=>{
     const {a,b,idA,idB}=await couple();
     const ballsBefore=await db.qualification.count();

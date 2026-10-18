@@ -1,5 +1,5 @@
 export const lineRichMenuRoutes=Object.freeze({
-  HOME:'/', ORGANIZATION:'/organization', EARNINGS:'/bonuses', SHOP:'/shop', ORDERS:'/orders', SUPPORT:'/me',
+  HOME:'/', ORGANIZATION:'/organization', EARNINGS:'/bonuses', SHOP:'/shop', ORDERS:'/orders', SUPPORT:'/me', EVENTS:'/events', FAQ:'/faq',
 } as const);
 export type LineRichMenuAction=keyof typeof lineRichMenuRoutes;
 /** Only server-owned internal route values may be used as LINE Rich Menu targets. */

@@ -1,6 +1,7 @@
 /** Preserve an unsuccessful command key and coalesce concurrent identical submissions.
  * The cache is scoped to this authenticated page session and cleared on sign-out.
  */
+import {isRecognitionCommand,sendRecognitionRequest} from '../../../shared/recognition-request';
 export function createCommandClient(send:(path:string,data:unknown,key:string)=>Promise<unknown>,identity:()=>string,newKey:()=>string=()=>crypto.randomUUID()) {
   const attempts=new Map<string,{key:string;pending?:Promise<unknown>}>();
   let actor='';
@@ -12,10 +13,12 @@ export function createCommandClient(send:(path:string,data:unknown,key:string)=>
       const attempt=attempts.get(signature)??{key:key??newKey()};
       if(attempt.pending)return attempt.pending as Promise<T>;
       attempts.set(signature,attempt);
-      attempt.pending=Promise.resolve().then(()=>{
+      const frozenData=data===undefined?undefined:JSON.parse(JSON.stringify(data));
+      const dispatch=()=>{
         if(identity()!==nextActor)throw new Error('管理員工作階段已變更，請重新確認操作。');
-        return send(path,data,attempt.key);
-      }).then(result=>{
+        return send(path,frozenData,attempt.key);
+      };
+      attempt.pending=Promise.resolve().then(()=>isRecognitionCommand(path)?sendRecognitionRequest(dispatch):dispatch()).then(result=>{
         if(attempts.get(signature)===attempt)attempts.delete(signature);
         return result;
       }).finally(()=>{attempt.pending=undefined;});

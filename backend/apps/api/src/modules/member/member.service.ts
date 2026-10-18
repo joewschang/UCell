@@ -18,6 +18,7 @@ export class MemberService {
    if(binding.person.status!=='EFFECTIVE')throw new UnauthorizedException({code:'MEMBER_PERSON_DISABLED'});
    if(binding.person.securityStatus!=='NORMAL')throw new UnauthorizedException({code:'MEMBER_SECURITY_LOCKED'});
    await tx.idempotencyRecord.create({data:{actorScope:'member:line:exchange',idempotencyKey:key,requestHash:key,responseBody:{consumed:true},statusCode:200,expiresAt:new Date(identity.expiresAt*1000)}});
+   if(identity.displayName && identity.displayName!==binding.displayName)await tx.identityLink.update({where:{identityLinkId:binding.identityLinkId},data:{displayName:identity.displayName}});
    const ttlSeconds=Math.min(3600,identity.expiresAt-Math.floor(Date.now()/1000));
    if(ttlSeconds<=0)throw new UnauthorizedException({code:'LINE_TOKEN_EXPIRED'});
    return new IdentityTokenService(tx as any).issue({provider:'LINE',subject:identity.subject,personId:binding.personId,ttlSeconds});
@@ -83,6 +84,8 @@ export class MemberService {
  async qualifications(personId:string){
   const now=new Date();
   const rows=await this.db.qualification.findMany({where:{
+   status:'EFFECTIVE',
+   OR:[{currentHolder:{membershipState:'FORMAL_MEMBER'}},{currentHolderLegalEntity:{membershipState:'FORMAL_MEMBER',status:'ACTIVE'}}],
    holderHistory:{some:{
     effectiveFrom:{lte:now},
     OR:[

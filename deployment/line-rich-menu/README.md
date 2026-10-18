@@ -1,5 +1,41 @@
 # LINE Rich Menu operations and UAT
 
+## Production LIFF entry correction — 2026-10-14
+
+Supersedes the direct website entry below. The default menu is now
+`richmenu-4e80a60b66189c4ce28398a608682700`, using
+`https://liff.line.me/2012021712-Dqh6Z8aq/` plus `/events`, `/shop`, `/faq`.
+Direct website links opened LINE's ordinary in-app browser and displayed the web
+login chooser. The LIFF URL launches the intended LIFF flow. Default readback
+and artwork comparison passed; migration from the direct-link per-user menu
+was accepted asynchronously. Check `line-production-liff-menu-verification.json`
+in C:/UCell/releases/production-20261014 for batch status. Real mobile login is
+still user verification, not inferred from the menu API response.
+
+## Production entry cutover — 2026-10-14
+
+The user authorized changing OA `@258vmvsa` to the production member website.
+Production menu: `richmenu-f5ef3a7fc29cd575d7539f29bd7494c4`; four direct HTTPS
+links under `https://member.ucell.life` (`/`, `/events`, `/shop`, `/faq`).
+Stage Worker `LINE_RICH_MENU_ENABLED=false` must be preserved so it cannot
+restore Stage menus on the shared OA. The October 8 IDs below are historical.
+Production LIFF/login and public access are still separate pending work; direct
+website links do not configure LINE authentication. Deployment/readback evidence:
+`C:/UCell/releases/production-20261014/line-production-menu*.json`.
+
+## Historical decision — 2026-10-08
+
+All OA friends must see the same four tiles: 會員中心、活動報名、線上商城、常見問答 (Stage links). Set **both** Worker variables to `richmenu-75ad1b5ee333139d926f12664750f897`:
+
+```text
+LINE_DEFAULT_RICH_MENU_ID=richmenu-75ad1b5ee333139d926f12664750f897
+LINE_MEMBER_RICH_MENU_ID=richmenu-75ad1b5ee333139d926f12664750f897
+```
+
+Changing only the LINE API default is insufficient: Worker reconciliation restores the configured default every minute. This caused the reported three-tile regression despite successful API readback and batch replacement. Keep these values in subsequent deployments. `provision-default.cjs` and `default-v1.*` below are historical three-tile provisioning assets; do not run them for the current four-tile decision. The remaining October 3 behavior/UAT description is historical and superseded by this decision.
+
+Next action: verify an unbound friend's physical LINE client after reopening the OA chat, following healthy Worker rollout and observation across reconciliation cycles. No member binding is required to see the default four-tile menu.
+
 OA: `@258vmvsa`. These definitions point to **Stage**, not Production.
 
 ## Audit and cause (2026-10-03)

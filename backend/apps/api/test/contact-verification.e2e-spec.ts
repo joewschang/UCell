@@ -77,7 +77,7 @@ describe('Contact verification (real isolated DB; synthetic delivery providers)'
    const content='TEST ONLY CONTACT CONTRACT';
    const contract=await db.contractDocumentVersion.create({data:{contractType:'NETWORK_MEMBERSHIP',versionCode:'TEST_'+randomUUID(),title:content,contentText:content,contentHash:createHash('sha256').update(content).digest('hex'),audience:'NETWORK_MEMBER',required:true,effectiveFrom:new Date('2020-01-01'),approvalReference:'TEST_ONLY'}});
    const registration=new MemberWebRegistrationService(db,new IdempotencyService(db),{verify:async()=>({subject,email:emailAddress,emailVerified:true})} as any,pii,fingerprint,undefined,service);
-   const input={contractVersionId:contract.contractDocumentVersionId,accepted:true as const,legalName:'TEST ONLY CONTACT',alias:'TEST',gender:'UNDISCLOSED',birthDate:'1990-01-02',nationalityCode:'TW',identityDocumentType:'NATIONAL_ID' as const,identityDocumentNumber:'TEST-'+randomUUID(),mobile:destination,email:emailAddress,password:'TEST_ONLY_PASSWORD_123!',googleIdToken:subject};
+   const input={contractVersionId:contract.contractDocumentVersionId,accepted:true as const,legalName:'TEST ONLY CONTACT',alias:'TEST',gender:'UNDISCLOSED',birthDate:'1990-01-02',nationalityCode:'TW',identityDocumentType:'NATIONAL_ID' as const,identityDocumentNumber:'TEST-'+randomUUID(),mobile:destination,email:emailAddress,password:'Test_ONLY_PASSWORD_123!',googleIdToken:subject};
    const before=await db.person.count();
    await expect(registration.complete(input,randomUUID())).rejects.toMatchObject({response:{code:'MOBILE_VERIFICATION_REQUIRED'}});
    const smsProof=await verified(owner,destination);
@@ -101,17 +101,28 @@ describe('Contact verification (real isolated DB; synthetic delivery providers)'
    if(originalVersion===undefined)delete process.env.PII_ENCRYPTION_KEY_VERSION;else process.env.PII_ENCRYPTION_KEY_VERSION=originalVersion;
   }
  });
+ it.each(['SMS','EMAIL'] as const)('accepts %s alone for registration and preserves the other contact as unverified',async channel=>{
+  const either=new ContactVerificationService(db,new ConfigService({OTP_HASH_SECRET:'TEST_ONLY_CONTACT_SECRET_32_CHARACTERS',CONTACT_REGISTRATION_VERIFICATION_MODE:'EITHER'}),sms as any,email as any,{} as any,{} as any);
+  const {owner,destination:mobile}=fixture(),emailAddress=randomUUID()+'@example.invalid',destination=channel==='SMS'?mobile:emailAddress;
+  const {proof}=await verified(owner,destination,channel);
+  const input={mobile,email:emailAddress,...(channel==='SMS'?{mobileVerificationProof:proof}:{emailVerificationProof:proof})};
+  await expect(db.$transaction(tx=>either.consumeRegistration(tx,owner,{mobile,email:emailAddress}))).rejects.toMatchObject({response:{code:'CONTACT_VERIFICATION_REQUIRED'}});
+  await expect(db.$transaction(tx=>either.consumeRegistration(tx,owner+'other',input))).rejects.toMatchObject({response:{code:'CONTACT_VERIFICATION_PROOF_INVALID'}});
+  const result=await db.$transaction(tx=>either.consumeRegistration(tx,owner,input));
+  expect(result).toEqual(channel==='SMS'?{mobileVerifiedAt:expect.any(Date),emailVerifiedAt:null}:{mobileVerifiedAt:null,emailVerifiedAt:expect.any(Date)});
+  await expect(db.$transaction(tx=>either.consumeRegistration(tx,owner,input))).rejects.toMatchObject({response:{code:'CONTACT_VERIFICATION_PROOF_INVALID'}});
+ });
  it('serializes concurrent delivery retries so only one message is sent',async()=>{
   const {owner,destination}=fixture(),key=randomUUID(),before=sms.send.mock.calls.length;
   const results=await Promise.all([service.send(owner,'REGISTRATION','SMS',destination,key),service.send(owner,'REGISTRATION','SMS',destination,key)]);
   expect(results[0].challengeId).toBe(results[1].challengeId);expect(sms.send.mock.calls.length-before).toBe(1);
  });
  it('permits Email-first only in Stage and never marks an unproven phone verified',async()=>{
-  const make=(settings:Record<string,string>)=>new ContactVerificationService(db,new ConfigService({OTP_HASH_SECRET:'TEST_ONLY_CONTACT_SECRET_32_CHARACTERS',...settings}),sms as any,email as any,{} as any,{} as any);
-  expect(make({}).policy()).toEqual({emailRequired:true,smsRequired:true});
+  const make=(settings:Record<string,string|undefined>)=>new ContactVerificationService(db,new ConfigService({OTP_HASH_SECRET:'TEST_ONLY_CONTACT_SECRET_32_CHARACTERS',...settings}),sms as any,email as any,{} as any,{} as any);
+  expect(make({}).policy()).toEqual({emailRequired:true,smsRequired:true,registrationMode:'ALL'});
   for(const settings of [{CONTACT_VERIFICATION_SMS_REQUIRED:'false'}, {CONTACT_VERIFICATION_SMS_REQUIRED:'false',UCELL_ENVIRONMENT:'PRODUCTION'}, {CONTACT_VERIFICATION_SMS_REQUIRED:'typo',UCELL_ENVIRONMENT:'STAGE'}])expect(()=>make(settings).policy()).toThrow();
   const stage=make({CONTACT_VERIFICATION_SMS_REQUIRED:'false',UCELL_ENVIRONMENT:'STAGE'}),owner='PERSON:'+randomUUID(),phone=fixture().destination;
-  expect(stage.policy()).toEqual({emailRequired:true,smsRequired:false});
+  expect(stage.policy()).toEqual({emailRequired:true,smsRequired:false,registrationMode:'ALL'});
   expect(await stage.consumeMobile({},owner,'PROFILE',phone)).toBeNull();
   await expect(stage.consumeMobile({},owner,'PROFILE','invalid')).rejects.toThrow();
   await expect(stage.consumeMobile(db,owner,'PROFILE',phone,'invalid')).rejects.toThrow();
@@ -122,8 +133,9 @@ describe('Contact verification (real isolated DB; synthetic delivery providers)'
   const challenge=await stage.send('PERSON:'+person.personId,'PROFILE','EMAIL',destination,randomUUID());
   const proof=await stage.verify('PERSON:'+person.personId,'PROFILE','EMAIL',destination,challenge.challengeId,codes.get(destination)!);
   const result=await member.profile(person.personId,{email:destination,emailVerificationProof:proof.proof,phone:fixture().destination},randomUUID(),randomUUID());
-  expect(result.emailVerifiedAt).toEqual(expect.any(String));expect(result.mobileVerifiedAt).toBeNull();
+  expect(result).toMatchObject({emailVerifiedAt:expect.any(String),mobileVerifiedAt:null});
   await expect(member.profile(person.personId,{email:randomUUID()+'@example.invalid',emailVerificationProof:proof.proof},randomUUID(),randomUUID())).rejects.toThrow();
  });
 
 });
+

@@ -1,0 +1,63 @@
+[
+  {
+    "path": "/health",
+    "status": 200,
+    "body": {
+      "data": {
+        "status": "ok",
+        "service": "ucell-api",
+        "database": "ok",
+        "release": "ab1f9a32305c928dee1b935496d9aea2eae03ea2",
+        "timestamp": "2026-10-08T09:17:01.248Z"
+      },
+      "meta": {
+        "request_id": "bcd46fa7-f95e-4f27-8079-e7ff54634f5b",
+        "timestamp": "2026-10-08T09:17:01.249Z",
+        "api_version": "v1"
+      }
+    }
+  },
+  {
+    "path": "/auth/member/sms/policy",
+    "status": 200,
+    "body": {
+      "data": {
+        "enabled": true
+      },
+      "meta": {
+        "request_id": "362d55bd-67b9-4332-b560-986c0d56a824",
+        "timestamp": "2026-10-08T09:17:01.521Z",
+        "api_version": "v1"
+      }
+    }
+  },
+  {
+    "path": "/auth/member/contact-verification/policy",
+    "status": 200,
+    "body": {
+      "data": {
+        "emailRequired": true,
+        "smsRequired": true
+      },
+      "meta": {
+        "request_id": "ff3e9eca-2f65-479e-a5a9-6b9d86f622d5",
+        "timestamp": "2026-10-08T09:17:01.781Z",
+        "api_version": "v1"
+      }
+    }
+  },
+  {
+    "path": "/admin/sms/campaigns",
+    "status": 401,
+    "body": {
+      "code": "DOMAIN_RULE_VIOLATION",
+      "message": "ADMIN_BEARER_REQUIRED",
+      "request_id": "51a3a652-e6bf-4840-9dda-b1d9d908efa0",
+      "timestamp": "2026-10-08T09:17:02.038Z"
+    }
+  },
+  {
+    "path": "/auth/member/sms/login invalid input",
+    "status": 400
+  }
+]

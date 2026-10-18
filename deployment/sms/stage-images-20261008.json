@@ -1,0 +1,5 @@
+{
+  "admin": "ucellstageacr5mafbbsq33mgu.azurecr.io/ucell-admin@sha256:f0c8568eba3cca83b6fade0bd42d0253da63e30ca195efef315c453fd8bcd330",
+  "member": "ucellstageacr5mafbbsq33mgu.azurecr.io/ucell-member@sha256:72804ac63cff1ace0dfc064cd11e50845b9fc4fca60c7bba168334e611bb29af",
+  "api": "ucellstageacr5mafbbsq33mgu.azurecr.io/ucell-api@sha256:08f61846f2aa4df5cf838aae7db4a9b52abb5a2529cfb07dab009ebf6e22e5cc"
+}

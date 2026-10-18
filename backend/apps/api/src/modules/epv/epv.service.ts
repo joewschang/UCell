@@ -5,6 +5,7 @@ import { RuntimeRuleService } from '../rules/runtime-rule.service';
 import { BonusQueryService } from '../bonus/bonus-query.service';
 import { captureParameters, snapshotDecimal, pending } from '../rules/parameter-snapshot';
 import { EpvMonthService } from './epv-month.service';
+import { runRecognitionCommand } from '../../common/recognition-command';
 
 @Injectable()
 export class EpvService {
@@ -16,7 +17,7 @@ export class EpvService {
   ){}
 
   async recognizeOrder(orderId:string,ruleVersionCode='R1.0B'){
-    return this.prisma.$transaction(async tx=>{
+    return runRecognitionCommand(()=>this.prisma.$transaction(async tx=>{
       const order=await tx.order.findUnique({where:{orderId},include:{lines:true}});
       if(!order || !order.paidAt) return {skipped:'ORDER_NOT_PAID'};
       if(order.purpose!=='REPURCHASE') return {skipped:'NOT_REPURCHASE'};
@@ -100,6 +101,6 @@ export class EpvService {
 
       await sealEpvEvent(tx,ledger,snapshot,month,order);
       return {orderId,excess:excess.toString(),epv:epv.toString(),eventId:ledger.eventId};
-    },{isolationLevel:Prisma.TransactionIsolationLevel.Serializable});
+    },{isolationLevel:Prisma.TransactionIsolationLevel.Serializable}));
   }
 }

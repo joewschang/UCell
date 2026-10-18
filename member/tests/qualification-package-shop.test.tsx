@@ -24,7 +24,7 @@ it('creates the first-qualification order from exact product selections without 
  });vi.stubGlobal('fetch',fetch);
  await act(async()=>{tree=create(<QualificationPackageShop onCreated={onCreated}/>);});
  await act(async()=>{button('選擇套組商品').props.onClick();});
- act(()=>button('增加').props.onClick());act(()=>button('增加').props.onClick());
+ act(()=>button('＋').props.onClick());act(()=>button('＋').props.onClick());
  await act(async()=>{await button('建立待付款套組訂單').props.onClick();});
  const post=fetch.mock.calls.find(([,init])=>init?.method==='POST')!;
  expect(JSON.parse(post[1].body as string)).toEqual({packageVersionId,selections:[{productRuleProfileId,quantity:2}]});
@@ -48,5 +48,28 @@ it('uses the configured icon in a compact product row and retains quantity selec
  await act(async()=>button('選擇套組商品').props.onClick());
  const image=tree.root.findByType('img');expect(image.props.src).toBe('/products/tip-363.png');expect(image.props.width).toBe('48');expect(image.props.className).toBe('package-product-icon');
  expect(tree.root.findAllByProps({className:'mall-product-cover'})).toHaveLength(0);
- act(()=>button('增加').props.onClick());expect(tree.root.findByType('output').children).toEqual(['1']);
+ act(()=>button('＋').props.onClick());expect(tree.root.findByProps({'aria-label':'套組商品 數量'}).props.value).toBe(1);
+});
+
+it('accepts mixed quantities and blocks overflow and fractional boxes',async()=>{
+ const second={...product,productRuleProfileId:'66666666-6666-4666-8666-666666666666',displayName:'第二商品'};
+ vi.stubGlobal('fetch',vi.fn(async(url:string)=>url.includes('legal-entities')?envelope([]):url.endsWith('/delivery-profile')?envelope(completeDelivery):url.endsWith('/products')?envelope({package:offer,products:[product,second]}):envelope([offer])));
+ await act(async()=>{tree=create(<QualificationPackageShop onCreated={()=>undefined}/>);});
+ await act(async()=>button('選擇套組商品').props.onClick());
+ const input=(name:string)=>tree.root.findByProps({'aria-label':name+' 數量'});
+ act(()=>input('套組商品').props.onChange({target:{value:'1'}}));
+ act(()=>input('第二商品').props.onChange({target:{value:'2'}}));expect(input('第二商品').props.value).toBe(0);
+ act(()=>input('第二商品').props.onChange({target:{value:'0.5'}}));expect(input('第二商品').props.value).toBe(0);
+ act(()=>input('第二商品').props.onChange({target:{value:'1'}}));expect(input('第二商品').props.value).toBe(1);
+ expect(button('建立待付款套組訂單').props.disabled).toBe(false);
+});
+
+it('selects a wizard package without creating an order before final confirmation',async()=>{
+ const onSelect=vi.fn(),onCreated=vi.fn(),fetch=vi.fn(async(url:string)=>url.includes('legal-entities')?envelope([]):url.endsWith('/delivery-profile')?envelope(completeDelivery):url.endsWith('/products')?envelope({package:offer,products:[product]}):envelope([offer]));vi.stubGlobal('fetch',fetch);
+ await act(async()=>{tree=create(<QualificationPackageShop onCreated={onCreated} onSelect={onSelect}/>);});
+ await act(async()=>button('選擇套組商品').props.onClick());
+ act(()=>button('＋').props.onClick());act(()=>button('＋').props.onClick());
+ await act(async()=>button('確認商品組合，下一步').props.onClick());
+ expect(onSelect).toHaveBeenCalledWith({offer,selections:[{productRuleProfileId,quantity:2}],products:[{name:'套組商品',quantity:2}],sponsorCode:undefined});
+ expect(onCreated).not.toHaveBeenCalled();expect(fetch.mock.calls.every(call=>!(call as unknown as [string,RequestInit])[1]?.method)).toBe(true);
 });

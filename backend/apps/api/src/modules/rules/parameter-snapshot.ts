@@ -1,1 +1,1 @@
-export { ParameterSnapshot, captureParameters, verifySnapshot, snapshotValue, snapshotDecimal, pending } from '@ucell/database';
+export { type ParameterSnapshot, captureParameters, verifySnapshot, snapshotValue, snapshotDecimal, pending } from '@ucell/database';

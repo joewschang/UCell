@@ -1,0 +1,28 @@
+# Stage build without synthetic member credentials; compatible with ACR classic builder.
+FROM node:24-alpine AS build
+RUN corepack enable && corepack prepare pnpm@12.4.1 --activate
+WORKDIR /app
+COPY member/package.json member/pnpm-workspace.yaml member/pnpm-lock.yaml* ./
+COPY shared /shared
+RUN test -f pnpm-lock.yaml || (echo 'pnpm-lock.yaml is mandatory for Stage build' && exit 1)
+RUN pnpm install --frozen-lockfile
+COPY member/ ./
+ARG VITE_API_BASE_URL
+ARG VITE_LIFF_ID
+ARG VITE_GOOGLE_OIDC_CLIENT_ID
+ARG VITE_STAGE_UAT_MEMBER_ENABLED=false
+ARG VITE_STAGE_UAT_MEMBER_TOKEN
+ENV VITE_API_BASE_URL=$VITE_API_BASE_URL \
+    VITE_LIFF_ID=$VITE_LIFF_ID \
+    VITE_GOOGLE_OIDC_CLIENT_ID=$VITE_GOOGLE_OIDC_CLIENT_ID \
+    VITE_ENABLE_MOCK=false \
+    VITE_STAGE_UAT_MEMBER_ENABLED=$VITE_STAGE_UAT_MEMBER_ENABLED \
+    VITE_STAGE_UAT_MEMBER_TOKEN=$VITE_STAGE_UAT_MEMBER_TOKEN
+RUN test "$VITE_STAGE_UAT_MEMBER_ENABLED" = "false" && pnpm build
+
+FROM nginx:1.27-alpine
+ARG CSP_API_ORIGIN
+COPY deployment/nginx.member.conf /etc/nginx/conf.d/default.conf
+RUN test -n "$CSP_API_ORIGIN" && sed -i "s|__API_ORIGIN__|${CSP_API_ORIGIN}|g" /etc/nginx/conf.d/default.conf
+COPY --from=build /app/dist /usr/share/nginx/html
+EXPOSE 80

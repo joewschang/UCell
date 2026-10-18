@@ -18,7 +18,7 @@ class CompleteWebRegistrationDto{
  @ApiProperty({maxLength:64}) @IsString() @Matches(/\S/) @MaxLength(64) identityDocumentNumber!:string;
  @ApiProperty({example:'+886912345678'}) @Matches(/^\+[1-9][0-9]{7,14}$/) mobile!:string;
  @ApiProperty({format:'email',maxLength:254}) @IsEmail() @MaxLength(254) email!:string;
- @ApiProperty({minLength:12,maxLength:256}) @IsString() @MinLength(12) @MaxLength(256) password!:string;
+ @ApiProperty({minLength:6,maxLength:256}) @IsString() @MinLength(6) @MaxLength(256) password!:string;
  @ApiPropertyOptional({maxLength:16384,description:'Present exactly one Google or LINE ID token; verified server-side before registration.'}) @IsOptional() @IsString() @MinLength(1) @MaxLength(16384) googleIdToken?:string;
  @ApiPropertyOptional({maxLength:16384,description:'LINE ID token from LIFF; server verifies issuer, channel audience, expiry and subject. Cannot link an existing Person via registration.'}) @IsOptional() @IsString() @MinLength(1) @MaxLength(16384) lineIdToken?:string;
 }

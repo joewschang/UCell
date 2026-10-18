@@ -1,0 +1,168 @@
+targetScope = 'resourceGroup'
+
+@description('Azure region for the isolated Production environment.')
+param location string = resourceGroup().location
+
+@secure()
+@minLength(16)
+param postgresAdminPassword string
+
+param postgresAdminUser string = 'ucellprodadmin'
+@allowed(['prod'])
+param environmentName string = 'prod'
+
+var suffix = uniqueString(subscription().subscriptionId, resourceGroup().id, environmentName)
+var compactPrefix = 'ucell${environmentName}'
+
+resource logs 'Microsoft.OperationalInsights/workspaces@2023-09-01' = {
+  name: '${compactPrefix}-logs-${suffix}'
+  location: location
+  properties: {
+    retentionInDays: 30
+    features: { enableLogAccessUsingOnlyResourcePermissions: true }
+  }
+}
+
+resource insights 'Microsoft.Insights/components@2020-02-02' = {
+  name: '${compactPrefix}-appi-${suffix}'
+  location: location
+  kind: 'web'
+  properties: {
+    Application_Type: 'web'
+    WorkspaceResourceId: logs.id
+  }
+}
+
+resource registry 'Microsoft.ContainerRegistry/registries@2023-07-01' = {
+  name: '${compactPrefix}acr${suffix}'
+  location: location
+  sku: { name: 'Basic' }
+  properties: { adminUserEnabled: false }
+}
+
+resource workloadIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' = {
+  name: '${compactPrefix}-workload-${suffix}'
+  location: location
+}
+
+resource registryPull 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(registry.id, workloadIdentity.id, 'AcrPull')
+  scope: registry
+  properties: {
+    principalId: workloadIdentity.properties.principalId
+    principalType: 'ServicePrincipal'
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '7f951dda-4ed3-4680-a7ca-43fe172d538d')
+  }
+}
+
+resource vault 'Microsoft.KeyVault/vaults@2023-07-01' = {
+  name: 'ucellkv${suffix}'
+  location: location
+  properties: {
+    tenantId: subscription().tenantId
+    enableRbacAuthorization: true
+    enableSoftDelete: true
+    softDeleteRetentionInDays: 90
+    enablePurgeProtection: true
+    sku: { family: 'A', name: 'standard' }
+    accessPolicies: []
+  }
+}
+
+resource storage 'Microsoft.Storage/storageAccounts@2023-05-01' = {
+  name: 'ucellst${suffix}'
+  location: location
+  sku: { name: 'Standard_LRS' }
+  kind: 'StorageV2'
+  properties: {
+    allowBlobPublicAccess: false
+    minimumTlsVersion: 'TLS1_2'
+    supportsHttpsTrafficOnly: true
+  }
+}
+
+resource storageBlobDataContributor 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(storage.id, workloadIdentity.id, 'StorageBlobDataContributor')
+  scope: storage
+  properties: {
+    principalId: workloadIdentity.properties.principalId
+    principalType: 'ServicePrincipal'
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'ba92f5b4-2d11-453d-a403-e96b0029c9fe')
+  }
+}
+
+resource blobService 'Microsoft.Storage/storageAccounts/blobServices@2023-05-01' = {
+  parent: storage
+  name: 'default'
+}
+
+resource kycContainer 'Microsoft.Storage/storageAccounts/blobServices/containers@2023-05-01' = {
+  parent: blobService
+  name: 'formal-kyc'
+  properties: {
+    publicAccess: 'None'
+  }
+}
+
+resource databaseServer 'Microsoft.DBforPostgreSQL/flexibleServers@2024-08-01' = {
+  name: '${compactPrefix}-pg-${suffix}'
+  location: location
+  sku: { name: 'Standard_D2s_v3', tier: 'GeneralPurpose' }
+  properties: {
+    version: '16'
+    administratorLogin: postgresAdminUser
+    administratorLoginPassword: postgresAdminPassword
+    availabilityZone: '1'
+    backup: {
+      backupRetentionDays: 35
+      geoRedundantBackup: 'Disabled'
+    }
+    highAvailability: { mode: 'Disabled' }
+    network: { publicNetworkAccess: 'Enabled' }
+    storage: { storageSizeGB: 64 }
+  }
+}
+
+// Database firewall is configured only for verified workload egress addresses.
+
+resource postgresExtensions 'Microsoft.DBforPostgreSQL/flexibleServers/configurations@2024-08-01' = {
+  parent: databaseServer
+  name: 'azure.extensions'
+  properties: {
+    value: 'PGCRYPTO,BTREE_GIST'
+    source: 'user-override'
+  }
+}
+
+resource database 'Microsoft.DBforPostgreSQL/flexibleServers/databases@2024-08-01' = {
+  parent: databaseServer
+  name: 'ucell_production'
+  properties: { charset: 'UTF8', collation: 'en_US.utf8' }
+}
+
+resource containerEnvironment 'Microsoft.App/managedEnvironments@2024-03-01' = {
+  name: '${compactPrefix}-cae-${suffix}'
+  location: location
+  properties: {
+    appLogsConfiguration: {
+      destination: 'log-analytics'
+      logAnalyticsConfiguration: {
+        customerId: logs.properties.customerId
+        sharedKey: logs.listKeys().primarySharedKey
+      }
+    }
+  }
+}
+
+output acrName string = registry.name
+output workloadIdentityId string = workloadIdentity.id
+output workloadIdentityClientId string = workloadIdentity.properties.clientId
+output containerEnvironmentName string = containerEnvironment.name
+output postgresHost string = databaseServer.properties.fullyQualifiedDomainName
+output postgresServerName string = databaseServer.name
+output postgresDatabase string = database.name
+output postgresAdminUser string = postgresAdminUser
+output keyVaultName string = vault.name
+output storageAccountName string = storage.name
+output kycStorageContainerName string = kycContainer.name
+output applicationInsightsConnectionString string = insights.properties.ConnectionString

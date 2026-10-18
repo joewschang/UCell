@@ -1,4 +1,5 @@
 import {CompanyLogo} from '@ucell/design-system';
+import {syncMemberLocation} from './memberRouteSync';
 import React, { useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter, useNavigate } from 'react-router-dom';
@@ -35,6 +36,9 @@ function Bootstrap() {
         setState('loading');
         bootstrapLiff(attempt>0).then(result => {
             if (!alive) return;
+            // LIFF may restore the destination with history.replaceState after
+            // BrowserRouter mounted. Synchronize before showing member content.
+            if(result.mode==='connected'||result.mode==='mock')syncMemberLocation(navigate);
             setReferralWarning('referralWarning' in result?result.referralWarning:undefined);
             setState(result.mode === 'redirect' ? 'redirect' : result.mode === 'web-login' ? 'web-login' : 'ready');
         }).catch(e => {

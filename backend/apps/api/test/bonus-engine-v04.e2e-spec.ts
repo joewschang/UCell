@@ -59,7 +59,7 @@ function lifecycleHarness() {
   const events:any[]=[{bonusAwardId:'award-A',status:'PENDING_45D',occurredAt:new Date('2020-01-01')}];
   const tx={...memberEconomicMocks(),
     $queryRaw:jest.fn(async()=>[{bonus_award_id:'award-A'}]),
-    bonusAwardLifecycleEvent:{findFirst:jest.fn(async()=>events[events.length-1]),create:jest.fn(async({data}:any)=>{events.push(data);return data;})},
+    bonusAwardLifecycleEvent:{count:jest.fn(async()=>events.filter(e=>!['CALCULATED','PENDING_45D'].includes(e.status)).length),findFirst:jest.fn(async()=>events[events.length-1]),create:jest.fn(async({data}:any)=>{events.push(data);return data;})},
     bonusAward:{update:jest.fn(),delete:jest.fn()},
   };
   const prisma={bonusAward:{findMany:jest.fn(async({where}:any)=>pendingUntil<=where.pendingUntil.lte?[award]:[])},$transaction:jest.fn(async(work:any)=>work(tx))};
@@ -452,7 +452,7 @@ describe('Bonus Engine v0.4.0', () => {
       expect(tx.bonusAwardLifecycleEvent.create).not.toHaveBeenCalled();
       expect(await service.matureDueAwards(pendingUntil)).toEqual({matured:1});
       expect(events.map(event=>event.status)).toEqual(['PENDING_45D','EFFECTIVE']);
-      expect(prisma.bonusAward.findMany).toHaveBeenCalledWith({where:{pendingUntil:{lte:pendingUntil}},take:500});
+      expect(prisma.bonusAward.findMany).toHaveBeenCalledWith({where:{pendingUntil:{lte:pendingUntil},lifecycleEvents:{some:{status:'PENDING_45D'},none:{status:{notIn:['CALCULATED','PENDING_45D']}}}},orderBy:[{pendingUntil:'asc'},{bonusAwardId:'asc'}],take:500});
       expect(tx.$queryRaw).toHaveBeenCalledTimes(1);
       expect(await service.matureDueAwards(pendingUntil)).toEqual({matured:0});
       expect(tx.bonusAwardLifecycleEvent.create).toHaveBeenCalledTimes(1);

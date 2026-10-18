@@ -28,7 +28,7 @@ export class MemberWebRegistrationService{
  }
 
  private passwordHash(password:string){
-  if(password.length<12||password.length>256)throw new UnprocessableEntityException({code:'PASSWORD_POLICY'});
+  if(password.length<6||password.length>256||!/[A-Z]/.test(password)||!/[a-z]/.test(password)||!/[0-9]/.test(password))throw new UnprocessableEntityException({code:'PASSWORD_POLICY'});
   const salt=randomBytes(16).toString('base64url');
   const key=scryptSync(password,salt,32,{N:16384,r:8,p:1,maxmem:64*1024*1024});
   return `scrypt$16384$8$1$${salt}$${key.toString('base64url')}`;
@@ -54,8 +54,8 @@ export class MemberWebRegistrationService{
     const now=new Date(),correlationId=randomUUID();
     if(!this.contacts)throw new UnprocessableEntityException({code:'CONTACT_VERIFICATION_REQUIRED'});
     const owner=provider+':'+identity.subject;
-    const mobileVerifiedAt=await this.contacts.consumeMobile(tx,owner,'REGISTRATION',input.mobile,input.mobileVerificationProof);
-    const emailVerifiedAt=await this.contacts.consume(tx,owner,'REGISTRATION','EMAIL',input.email,input.emailVerificationProof);
+    const {mobileVerifiedAt,emailVerifiedAt}=await this.contacts.consumeRegistration(tx,owner,input);
+
     if(await tx.person.findFirst({where:{email:{equals:input.email,mode:'insensitive'}},select:{personId:true}}))throw new ConflictException({code:'EMAIL_ALREADY_REGISTERED'});
     const existingIdentity=await tx.identityLink.findUnique({where:{provider_providerSubject:{provider,providerSubject:identity.subject}}});
     if(existingIdentity)throw new ConflictException({code:`${provider}_IDENTITY_ALREADY_LINKED`});
@@ -78,3 +78,4 @@ export class MemberWebRegistrationService{
   return {...result.value,replayed:result.replayed};
  }
 }
+

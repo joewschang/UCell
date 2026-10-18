@@ -11,6 +11,7 @@ export class RpvController {
   constructor(private readonly service:RpvService){}
 
   @Post('recognitions/:recognitionId/run')
+  @Roles('SUPER_ADMIN','FINANCE')
   @ApiOperation({operationId:'adminRunMonthlyRpvRecognition',summary:'手動執行單月RPV認列'})
   async run(@Param('recognitionId') id:string){ return {data:await this.service.recognize(id)}; }
 

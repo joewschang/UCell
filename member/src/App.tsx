@@ -1,3 +1,7 @@
+import FormalMembershipEntry from './FormalMembershipEntry';
+import MembershipProgress from './MembershipProgress';
+import Faq from './Faq';
+
 import {MembershipPlanEmblem as QualificationEmblem,BallRankBadge} from './MembershipEmblems';
 import MemberPayouts from './MemberPayouts';
 import { qualificationReferenceLabel } from './terminology';
@@ -145,15 +149,15 @@ function Me() {
  const state = useResource('person', data.getPerson);
  const { qualifications } = useQualification();
  return <>
-  <MemberPageHeader title="我的帳戶"/>
+  <MemberPageHeader title="我的帳戶"/><Link to="/orders">我的訂單 →</Link>
   <Result state={state}>{p => <>
-   <section className="card"><h3>{p.name}</h3><p><span>會員編號</span> {p.memberNo}</p><p>會員狀態：{p.membershipState??'尚未完成網路會員註冊'}</p><p>電子郵件：{p.email ?? availabilityText.fieldMissing}（{p.emailVerifiedAt?'已驗證':'尚未驗證'}）</p><p>電話：{p.phone ?? availabilityText.fieldMissing}（{p.mobileVerifiedAt?'已驗證':'尚未驗證'}）</p></section>
+   <section className="card"><h3>{p.name}</h3><p><span>會員編號</span> {p.memberNo}</p><p>會員狀態：{({NETWORK_MEMBER:'網路會員',FORMAL_PENDING:'正式會員申請中',FORMAL_MEMBER:'正式會員'} as Record<string,string>)[p.membershipState??'']??p.membershipState??'尚未完成網路會員註冊'}</p><p>電子郵件：{p.email ?? availabilityText.fieldMissing}（{p.emailVerifiedAt?'已驗證':'尚未驗證'}）</p><p>電話：{p.phone ?? availabilityText.fieldMissing}（{p.mobileVerifiedAt?'已驗證':'尚未驗證'}）</p></section>
    {!data.isMock&&p.membershipState===null&&<NetworkRegistration person={p} refresh={state.retry}/>}
-   {!data.isMock&&['NETWORK_MEMBER','FORMAL_PENDING'].includes(p.membershipState??'')&&<section className="card"><h3>申請正式會員</h3><Link to="/membership/upgrade">選購資格套組或繳交 600 元申請</Link></section>}
+   {!data.isMock&&p.membershipState!==null&&<MembershipProgress/>}
   </>}</Result>
   <ProfileEditor refresh={state.retry}/><section className="card"><h3>顯示設定</h3><ThemePreferenceControl/></section>
   {!data.isMock&&<IdentityLinking/>}
-  <h3>我的經營資格</h3>
+  <h3>已啟用的經營資格</h3>{!qualifications.length&&<p>目前沒有已啟用的經營資格；待付款或待審核的套組請查看上方進度。</p>}
   {qualifications.map(q => <article key={q.id} className="card uc-emblem-card"><QualificationEmblem code={q.rank}/><div><strong>{qualificationReferenceLabel(q)}</strong><p>方案：{data.displayPlanLevel(q.rank)} · {qualificationActiveLabel(q.active)}</p><BallRankBadge qualificationNo={q.qualificationNo}/></div></article>)}
   <EndSession connected={!data.isMock}/>
  </>;
@@ -182,11 +186,12 @@ function MemberApp() {
         <Route path="/content/:id" element={<ContentDetail q={current}/>}/>
         <Route path="/membership/upgrade" element={<FormalEnrollment/>}/>
         <Route path="/me" element={<Me />}/>
+        <Route path="/faq" element={<Faq/>}/>
         <Route path="/notifications" element={<Notifications q={current}/>}/>
         <Route path="*" element={<section className="card"><h2>找不到頁面</h2><Link to="/">返回首頁</Link></section>}/>
       </Routes></div></> : <Routes>
-        <Route path="/" element={<section className="card"><h1>會員首頁</h1><p>{memberIdentityLabel}</p><p>歡迎使用 UCell 會員中心。您可以購物、查看訂單、參與活動及管理會員資料。</p><MobileActionGrid><Link to="/shop">商品商城</Link><Link to="/orders">我的訂單</Link><Link to="/learning">教育訓練</Link><Link to="/events">活動中心</Link><Link to="/me">會員資料</Link><Link to="/membership/upgrade">申請正式會員</Link></MobileActionGrid></section>}/>
-        <Route path="/orders" element={<WebRetailOrders/>}/>
+        <Route path="/" element={<section className="card"><h1>會員首頁</h1><FormalMembershipEntry/><p>{memberIdentityLabel}</p><p>歡迎使用 UCell 會員中心。您可以購物、查看訂單、參與活動及管理會員資料。</p><MobileActionGrid><Link to="/shop">商品商城</Link><Link to="/orders">我的訂單</Link><Link to="/learning">教育訓練</Link><Link to="/events">活動中心</Link><Link to="/me">會員資料</Link><Link to="/membership/upgrade">會員資格與申請進度</Link></MobileActionGrid></section>}/>
+        <Route path="/orders" element={<><MembershipProgress/><WebRetailOrders/></>}/>
         <Route path="/membership/upgrade" element={<FormalEnrollment/>}/>
         <Route path="/growth" element={<GrowthCenter/>}/>
         <Route path="/notifications" element={<MemberMessages/>}/>
@@ -194,7 +199,8 @@ function MemberApp() {
         <Route path="/events" element={<EventCenter/>}/>
         <Route path="/shop" element={<Mall onCreated={retry}/>}/>
         <Route path="/me" element={<Me/>}/>
-        <Route path="*" element={<section className="card"><h2>尚未取得會員資格</h2><p>可先完成正式會員資料，再透過正式套組取得第一個會員資格。</p><Link className="text-link" to="/shop">選擇正式會員套組</Link><button onClick={retry}>重新查詢</button><Link className="text-link" to="/me">查看會員資料</Link><EndSession connected={!data.isMock}/></section>}/>
+        <Route path="/faq" element={<Faq/>}/>
+        <Route path="*" element={<section className="card"><h2>目前沒有已啟用的經營球位</h2><p>經營球位需完成套組收款、正式會員審核及安置。請至會員資料查看申請與付款進度。</p><Link className="text-link" to="/shop">選擇正式會員套組</Link><button onClick={retry}>重新查詢</button><Link className="text-link" to="/me">查看會員資料</Link><EndSession connected={!data.isMock}/></section>}/>
       </Routes>}</main>
       <MemberNavigation/>
     </MemberAppShell>;

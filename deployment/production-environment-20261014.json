@@ -1,0 +1,41 @@
+{
+  "environment": "PRODUCTION",
+  "resourceGroup": "rg-ucell-production",
+  "subscriptionId": "563f9d83-30f0-48db-b3ec-297a2e3d0345",
+  "location": "eastasia",
+  "domains": {
+    "member": "member.ucell.life",
+    "admin": "admin.ucell.life",
+    "api": "api.ucell.life"
+  },
+  "server": {
+    "NODE_ENV": "production",
+    "UCELL_ENVIRONMENT": "PRODUCTION",
+    "ADMIN_AUTH_BYPASS": "false",
+    "SWAGGER_ENABLED": "false",
+    "MEMBER_WEB_PUBLIC_ORIGIN": "https://member.ucell.life",
+    "CORS_ALLOWED_ORIGINS": "https://admin.ucell.life,https://member.ucell.life",
+    "UCELL_DEPLOYMENT_ENVIRONMENT": "PRODUCTION",
+    "LINE_LOGIN_CHANNEL_ID": "2012021712",
+    "CONTACT_REGISTRATION_VERIFICATION_MODE": "EITHER",
+    "CONTACT_VERIFICATION_SMS_REQUIRED": "true",
+    "TRANSACTIONAL_EMAIL_PROVIDER": "microsoft365_graph",
+    "AUTH_CHANNEL_ENABLE_SMS_OTP": "true"
+  },
+  "frontend": {
+    "VITE_API_BASE_URL": "https://api.ucell.life/api/v1",
+    "CSP_API_ORIGIN": "https://api.ucell.life",
+    "VITE_ENABLE_DEMO_LOGIN": "false",
+    "VITE_STAGE_UAT_DEMO_LOGIN": "false",
+    "VITE_STAGE_UAT_MEMBER_ENABLED": "false",
+    "VITE_ENABLE_MOCK": "false",
+    "VITE_LIFF_ID": "2012021712-Dqh6Z8aq"
+  },
+  "pending": [
+    "Actual Microsoft Super Admin sign-in verification",
+    "Production provider credentials and real inventory configuration",
+    "UAT evidence, backup restore and final cutover gate",
+    "Actual LINE member sign-in and binding/registration verification"
+  ],
+  "cutover": false
+}

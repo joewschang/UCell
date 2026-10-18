@@ -1,0 +1,101 @@
+{
+  "menu": {
+    "size": {
+      "height": 864,
+      "width": 1280
+    },
+    "chatBarText": "UCell 服務選單",
+    "name": "UCell Green Gold Four 20261008",
+    "selected": true,
+    "areas": [
+      {
+        "bounds": {
+          "width": 640,
+          "y": 0,
+          "height": 392,
+          "x": 0
+        },
+        "action": {
+          "label": "會員中心",
+          "type": "uri",
+          "uri": "https://liff.line.me/2011813061-Qt3d2jmo/"
+        }
+      },
+      {
+        "bounds": {
+          "width": 640,
+          "y": 0,
+          "height": 392,
+          "x": 640
+        },
+        "action": {
+          "label": "活動報名",
+          "type": "uri",
+          "uri": "https://liff.line.me/2011813061-Qt3d2jmo/events"
+        }
+      },
+      {
+        "bounds": {
+          "width": 640,
+          "y": 392,
+          "height": 398,
+          "x": 0
+        },
+        "action": {
+          "label": "線上商城",
+          "type": "uri",
+          "uri": "https://liff.line.me/2011813061-Qt3d2jmo/shop"
+        }
+      },
+      {
+        "bounds": {
+          "width": 640,
+          "y": 392,
+          "height": 398,
+          "x": 640
+        },
+        "action": {
+          "label": "常見問答",
+          "type": "uri",
+          "uri": "https://liff.line.me/2011813061-Qt3d2jmo/faq"
+        }
+      }
+    ]
+  },
+  "status": "ALL_MENUS_UPDATED_DEFAULT_STABLE",
+  "target": "richmenu-75ad1b5ee333139d926f12664750f897",
+  "previous": "richmenu-3904cc584314e7dc50b577a7c59fa625",
+  "requestId": "b0e9ee01-543f-4681-9942-11a7db57b702",
+  "batchBody": {
+    "resumeRequestKey": "ucell-design-20261008-01",
+    "operations": [
+      {
+        "to": "richmenu-75ad1b5ee333139d926f12664750f897",
+        "type": "link",
+        "from": "richmenu-bbf639a10bd4d578c259985d7f514d03"
+      },
+      {
+        "to": "richmenu-75ad1b5ee333139d926f12664750f897",
+        "type": "link",
+        "from": "richmenu-3904cc584314e7dc50b577a7c59fa625"
+      },
+      {
+        "to": "richmenu-75ad1b5ee333139d926f12664750f897",
+        "type": "link",
+        "from": "richmenu-e0c748d7465b76699686999dba8f2079"
+      },
+      {
+        "to": "richmenu-75ad1b5ee333139d926f12664750f897",
+        "type": "link",
+        "from": "richmenu-e3a198b4d55387801000c80a08b81cf4"
+      }
+    ]
+  },
+  "batchProgress": {
+    "phase": "succeeded",
+    "acceptedTime": "2026-10-08T03:19:08.041Z",
+    "completedTime": "2026-10-08T03:24:38.359Z"
+  },
+  "verifiedDefault": "richmenu-75ad1b5ee333139d926f12664750f897",
+  "verifiedAt": "2026-10-08T03:24:50.1084731Z"
+}

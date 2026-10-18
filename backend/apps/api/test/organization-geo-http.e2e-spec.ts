@@ -13,7 +13,7 @@ import {EnvelopeInterceptor} from '../src/common/interceptors/envelope.intercept
 
 describe('Geo HTTP capability and CSV transport',()=>{
  let app:NestFastifyApplication;
- const capture=jest.fn(async()=>({status:'PARTIAL',reason:null,distribution:[{areaCode:'63000',areaName:'臺北市',balls:2,members:1,activeBalls:0,activeRate:null,newBalls:1,gpv:null,status:'PARTIAL'}]}));
+ const capture=jest.fn(async(..._args:Parameters<OrganizationGeoService['capture']>)=>({status:'PARTIAL',reason:null,distribution:[{areaCode:'63000',areaName:'臺北市',balls:2,members:1,activeBalls:0,activeRate:null,newBalls:1,gpv:null,status:'PARTIAL'}]}));
  const query=new URLSearchParams({rootBallNo:'A000001',dateFrom:'2026-01-01T00:00:00.000Z',dateTo:'2026-02-01T00:00:00.000Z',asOf:'2026-02-01T00:00:00.000Z',knowledgeCutoff:'2026-02-01T00:00:00.000Z'}).toString();
  beforeAll(async()=>{
   const mod=await Test.createTestingModule({controllers:[OrganizationGeoController],providers:[AdminAuthenticationGuard,AdminRoleGuard,{provide:OrganizationGeoService,useValue:{capture}},{provide:GeoProfileService,useValue:{}},{provide:PrismaService,useValue:{}},{provide:ConfigService,useValue:{get:(key:string)=>key==='NODE_ENV'?'production':undefined}},{provide:IdentityTokenService,useValue:{authenticate:async(role:string)=>({role})}}]}).compile();

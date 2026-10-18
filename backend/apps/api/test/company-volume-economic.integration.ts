@@ -24,7 +24,10 @@ it('Core EPV and RPV route Company finals to B; EPV return adds signed effects a
  await db.qualificationStatusHistory.create({data:{qualificationId:q.qualificationId,status:'EFFECTIVE',effectiveFrom:at,sourceType:'SYNTHETIC'}});
  await db.qualificationHolderHistory.create({data:{qualificationId:q.qualificationId,holderPersonId:person.personId,effectiveFrom:at,sourceType:'SYNTHETIC',sourceId:randomUUID()}});
  await trees.confirmCompanySponsor(p,tree.binaryTreeId,{qualificationId:q.qualificationId,reason:'Synthetic'},randomUUID());
- await trees.place(p,tree.binaryTreeId,{qualificationId:q.qualificationId,binaryParentQualificationId:tree.companyQualificationIds[1],side:'LEFT',expectedVersion:2,reason:'Synthetic'},randomUUID());
+ // The approved seven-ball bootstrap already occupies #2's children. Place at
+ // the free left slot below #4, preserving the first/third Sponsor left rule.
+ expect(tree.companyQualificationIds).toHaveLength(7);
+ await trees.place(p,tree.binaryTreeId,{qualificationId:q.qualificationId,binaryParentQualificationId:tree.companyQualificationIds[3],side:'LEFT',expectedVersion:2,reason:'Synthetic'},randomUUID());
  const paidAt=new Date(),snapshot=await captureParameters(db as unknown as Prisma.TransactionClient,paidAt,'R1.0B');
  const product=await db.productReference.create({data:{sku:'COMPANY-VOLUME-'+randomUUID(),displayName:'Synthetic',currentPrice:2000}});
  const order=await db.order.create({data:{qualificationId:q.qualificationId,purpose:'REPURCHASE',status:'PAID',paidAt,grossAmount:10000,netAmount:10000,ruleVersionCode:'R1.0B',parameterSnapshotHash:snapshot.hash,lines:{create:{productId:product.productId,skuSnapshot:product.sku,productNameSnapshot:product.displayName,quantity:5,unitPrice:2000,lineAmount:10000,gpvRateSnapshot:1,gpvAmountSnapshot:10000,ruleProfileSnapshot:{synthetic:true}}}},include:{lines:true}});
@@ -47,12 +50,12 @@ it('Core EPV and RPV route Company finals to B; EPV return adds signed effects a
  const plan=await db.subscriptionPlan.create({data:{planCode:'SYNTHETIC-'+randomUUID(),displayName:'Synthetic RPV',durationMonths:1,prepaidAmount:2000,productBoxQty:1,monthlyRecognizedAmount:2000,monthlyRpv:2000}});
  const subscription=await db.subscription.create({data:{qualificationId:q.qualificationId,subscriptionPlanId:plan.subscriptionPlanId,status:'ACTIVE',startMonth:month,endMonth:month,ruleVersionCode:'R1.0B',parameterSnapshotHash:snapshot.hash,activatedAt:dueAt}});
  const schedule=await db.monthlyRecognitionSchedule.create({data:{subscriptionId:subscription.subscriptionId,installmentNo:1,recognitionMonth:month,recognizedAmount:plan.monthlyRecognizedAmount,rpvAmount:plan.monthlyRpv,dueAt,ruleVersionCode:'R1.0B',parameterSnapshotHash:snapshot.hash}});
- const rpv=new RpvService(db,{} as any);expect(await rpv.recognize(schedule.recognitionId)).toMatchObject({ancestorCount:2});
+ const rpv=new RpvService(db,{} as any);expect(await rpv.recognize(schedule.recognitionId)).toMatchObject({ancestorCount:3});
  const rpvDestinations=await db.awardEconomicDestination.findMany({where:{binaryTreeId:tree.binaryTreeId,awardType:'RPV'},include:{effects:true,sourceRpvAward:true}});
- expect(rpvDestinations).toHaveLength(2);
+ expect(rpvDestinations).toHaveLength(3);
  for(const destination of rpvDestinations){expect(destination.effects).toHaveLength(1);expect(destination.effects[0].amountDelta.eq(destination.sourceRpvAward!.payableAmount)).toBe(true);expect(destination.sourceRpvAward!.activeSnapshot).toBe(true);expect(destination.bindingId).toBeTruthy();}
  expect(await rpv.recognize(schedule.recognitionId)).toMatchObject({skipped:'ALREADY_RECOGNIZED'});
- expect(await db.reservoirBEffect.count({where:{destination:{binaryTreeId:tree.binaryTreeId,awardType:'RPV'}}})).toBe(2);
+ expect(await db.reservoirBEffect.count({where:{destination:{binaryTreeId:tree.binaryTreeId,awardType:'RPV'}}})).toBe(3);
  await new UnifiedPayableService(db,{} as any).materialize(new Date());
  expect(await db.payableEntry.count({where:{qualificationId:{in:tree.companyQualificationIds}}})).toBe(0);
  expect(await db.bonusRecoveryEvent.count({where:{bonusAward:{recipientQualificationId:{in:tree.companyQualificationIds}}}})).toBe(0);

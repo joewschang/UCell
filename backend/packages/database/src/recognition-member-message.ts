@@ -9,7 +9,9 @@ export async function appendRecognitionMemberMessage(tx:Prisma.TransactionClient
  const [pv,stored]=await Promise.all([tx.pvLedger.findUnique({where:{eventId:row.pvLedgerEventId}}),tx.historicalReplaySnapshot.findUnique({where:{kind_sourceId:{kind:'RPV',sourceId:recognitionId}}})]);
  const seal=verifyReplayEnvelope(stored);
  if(!pv||pv.eventType!=='RPV_CREATED'||pv.pvType!=='RPV'||pv.qualificationId!==row.subscription.qualificationId||pv.sourceId!==row.subscriptionId||pv.sourceLineId!==recognitionId||seal.kind!=='RPV'||seal.sourceId!==recognitionId||seal.inputs.eventId!==pv.eventId||seal.inputs.subscriptionId!==row.subscriptionId||seal.at!==pv.occurredAt.toISOString()||pv.occurredAt.getTime()!==row.dueAt.getTime()||pv.ruleVersionCode!==row.ruleVersionCode||seal.ruleVersionCode!==row.ruleVersionCode||seal.inputs.volume!==pv.amount.toString())throw new Error('RECOGNITION_MESSAGE_SOURCE_INVALID');
- await tx.$queryRaw(Prisma.sql`SELECT qualification_id FROM membership.qualification WHERE qualification_id=${row.subscription.qualificationId}::uuid FOR UPDATE`);
+ // Protect the holder read without conflicting with FK KEY SHARE locks held
+ // by concurrent award transactions referencing this qualification.
+ await tx.$queryRaw(Prisma.sql`SELECT qualification_id FROM membership.qualification WHERE qualification_id=${row.subscription.qualificationId}::uuid FOR NO KEY UPDATE`);
  const q=await tx.qualification.findUniqueOrThrow({where:{qualificationId:row.subscription.qualificationId},select:{qualificationNo:true,currentHolderPersonId:true,kind:true}});
  if(q.kind!=='MEMBER_ORIGIN')return null;
  const messageKey=`repurchase:recognized:${recognitionId}`,reference=erpBusinessReference('RECOGNITION',recognitionId),existing=await tx.memberNotification.findUnique({where:{messageKey}});

@@ -1,0 +1,21 @@
+{
+  "environment": "STAGE",
+  "databaseChanged": false,
+  "menuGeometryTest": "PASS",
+  "health": "Healthy",
+  "buildAsset": "index-BNEcu6hf.js",
+  "memberTests": 270,
+  "eventsAvailable": 0,
+  "backendChanged": false,
+  "image": "ucellstageacr5mafbbsq33mgu.azurecr.io/ucell-member@sha256:f090958f22fd0c314a07449d27dab7f09a5fd46688e2dcc401a5e57327765d49",
+  "testSuites": 53,
+  "revision": "ucell-stage-member--oa-four-ui-20261004",
+  "phoneOaDisplay": "USER_CONFIRMATION_PENDING",
+  "sourceWorkspace": "C:/UCell/worktrees/party-spouse-control",
+  "faqSearchAndExpandLocalUi": "PASS",
+  "scope": "Four OA services; existing authentication, event API, shop reused",
+  "date": "2026-10-04",
+  "realLineMemberUi": "PASS: member 2609000001, three active leader qualifications, FAQ search/expand, events empty state, five main products",
+  "qualificationPurchase": "BLOCKED_EXISTING_VALIDATION_ERROR: corporate authority check; reported to Master Task",
+  "finalUiTargetedTests": "6/6 passed after header/navigation style isolation"
+}

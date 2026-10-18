@@ -48,3 +48,13 @@ it('allows Stage Email-first registration only after Email proof and displays an
  expect(JSON.parse(post[1].body as string)).toMatchObject({emailVerificationProof:'b'.repeat(64)});
  expect(JSON.parse(post[1].body as string).mobileVerificationProof).toBeUndefined();
 });
+it.each(['SMS','EMAIL'])('permits registration with only %s proof when policy is EITHER',async(channel)=>{
+ const fetch=vi.fn(async(url:string,init:RequestInit)=>url.endsWith('/contact-verification/policy')?response({emailRequired:true,smsRequired:true,registrationMode:'EITHER'}):init.method==='POST'?response({personId:'person-1',membershipState:'NETWORK_MEMBER',enabledAuthenticationProvider:'LINE',qualificationCreated:false},201):response([contract]));vi.stubGlobal('fetch',fetch);
+ await act(async()=>{tree=create(<NetworkRegistration person={person} refresh={()=>{}}/>);});complete();
+ await act(async()=>submit());expect(fetch.mock.calls.filter(([,init])=>init.method==='POST')).toHaveLength(0);
+ act(()=>tree!.root.findAllByType(ContactVerifier).find(v=>v.props.channel===channel)!.props.onVerified('c'.repeat(64)));
+ await act(async()=>submit());const post=fetch.mock.calls.find(([,init])=>init.method==='POST')!;
+ expect(post).toBeTruthy();const data=JSON.parse(post[1].body as string);
+ expect(data[channel==='SMS'?'mobileVerificationProof':'emailVerificationProof']).toBe('c'.repeat(64));
+ expect(data[channel==='SMS'?'emailVerificationProof':'mobileVerificationProof']).toBeUndefined();
+});

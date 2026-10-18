@@ -3,7 +3,7 @@ import {act,create,type ReactTestRenderer} from 'react-test-renderer';
 import {afterEach,beforeEach,expect,it,vi} from 'vitest';
 
 const auth=vi.hoisted(()=>({
- passwordLogin:vi.fn(),forgotPassword:vi.fn(),resetPassword:vi.fn(),completeRegistration:vi.fn(),
+ smsLoginPolicy:vi.fn(async()=>({enabled:false})),passwordLogin:vi.fn(),forgotPassword:vi.fn(),resetPassword:vi.fn(),completeRegistration:vi.fn(),
  registrationContract:vi.fn(),renderGoogleButton:vi.fn(),renderGoogleRegistrationButton:vi.fn(),linkLineIdentity:vi.fn()
 }));
 vi.mock('../src/webAuth',()=>auth);

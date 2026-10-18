@@ -27,6 +27,7 @@ export function QualificationProvider({ children }: {
     const [loadingLabel, setLoadingLabel] = useState('資格資料載入中…');
     const [error, setError] = useState<string | null>(null);
     const [attempt, setAttempt] = useState(0);
+    useEffect(()=>{const refresh=()=>setAttempt(a=>a+1);window.addEventListener('ucell-membership-refresh',refresh);return()=>window.removeEventListener('ucell-membership-refresh',refresh);},[]);
     const [feedback,setFeedback]=useState('');
     const [memberNo,setMemberNo]=useState<string|null>(null);
     const [memberNoStatus,setMemberNoStatus]=useState<'loading'|'available'|'unavailable'>('loading');

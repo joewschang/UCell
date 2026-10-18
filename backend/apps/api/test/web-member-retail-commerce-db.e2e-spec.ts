@@ -22,7 +22,7 @@ describeDb('WEB_MEMBER_RETAIL_COMMERCE_REAL_DB', () => {
   });
   afterAll(() => db.$disconnect());
 
-  it('creates a zero-Ball retail order only after governed delivery data, preserves referral snapshot and returns safe history', async () => {
+  it.each([false,true])('preserves no-Ball retail and approved core PV/GPV snapshots (core=%s)', async (core) => {
     const person = await db.person.create({ data: { legalName: `Retail member ${randomUUID()}`, status: 'EFFECTIVE' } });
     const idempotency = new IdempotencyService(db as any);
     const audit = new AuditService();
@@ -31,12 +31,12 @@ describeDb('WEB_MEMBER_RETAIL_COMMERCE_REAL_DB', () => {
     const retail = new RetailReferrerAttributionService(db as any, new SponsorResolver(db as any));
     const orderService = new OrderService(db as any, idempotency, audit, outbox, undefined, undefined, undefined, retail);
     const product = await db.productReference.create({
-      data: { sku: `RETAIL-${randomUUID()}`, displayName: 'Retail product', currentPrice: new Prisma.Decimal(100), isActive: true },
+      data: { sku: `RETAIL-${randomUUID()}`, displayName: 'Retail product', currentPrice: new Prisma.Decimal(core?4800:100), isActive: true },
     });
     await db.productRuleProfile.create({
       data: {
         productId: product.productId, effectiveFrom: new Date(Date.now() - 60_000),
-        gpvRate: new Prisma.Decimal(0), ruleVersionCode: 'R1.0B',
+        gpvRate: new Prisma.Decimal(0.6), pvRate: new Prisma.Decimal(0.6), ruleVersionCode: 'R1.0B',
         parameterSnapshotHash: 'a'.repeat(64), retailReferralEnabled: false,
       },
     });
@@ -49,7 +49,13 @@ describeDb('WEB_MEMBER_RETAIL_COMMERCE_REAL_DB', () => {
       postalCode: '100', region: 'Taipei', city: 'Taipei', address: 'Synthetic address',
     }, randomUUID(), randomUUID());
 
-    const request = { items: [{ productId: product.productId, quantity: '2' }], clientReference: 'retail-e2e' };
+    let commercialOfferingCode: string|undefined;
+    if(core){
+      const o=await db.commercialOffering.create({data:{offeringCode:'CORE-'+randomUUID(),offeringType:'CORE_PRODUCT',status:'ACTIVE'}});
+      await db.commercialOfferingVersion.create({data:{commercialOfferingId:o.commercialOfferingId,version:1,status:'ACTIVE',effectiveFrom:new Date(Date.now()-60000),channels:['WEB_MEMBER'],approvalReference:'TEST_CONFIRMED_60_PERCENT',snapshotHash:'b'.repeat(64),recognitionProfile:{recognitionStatus:'USER_CONFIRMED'}}});
+      commercialOfferingCode=o.offeringCode;
+    }
+    const request = { commercialOfferingCode, items: [{ productId: product.productId, quantity: '2' }], clientReference: 'retail-e2e' };
     const key = randomUUID();
     const created: any = await orderService.createMember(request, key, randomUUID(), person.personId);
     const replay: any = await orderService.createMember(request, key, randomUUID(), person.personId);
@@ -57,15 +63,18 @@ describeDb('WEB_MEMBER_RETAIL_COMMERCE_REAL_DB', () => {
     expect(replay.replayed).toBe(true);
     expect(created.value).toMatchObject({ purpose: 'RETAIL', status: 'CONFIRMED', qualificationId: null });
     expect(created.value.lines).toHaveLength(1);
-    expect(created.value.netAmount).toEqual(new Prisma.Decimal(200));
+    expect(created.value.netAmount).toEqual(new Prisma.Decimal(core?9600:200));
 
+    expect(created.value.lines[0].gpvRateSnapshot.toString()).toBe(core?'0.6':'0');
+    expect(created.value.lines[0].pvRateSnapshot.toString()).toBe(core?'0.6':'0');
+    expect(created.value.lines[0].gpvAmountSnapshot.toString()).toBe(core?'5760':'0');
     const snapshot = await db.retailReferralOrderLineSnapshot.findUniqueOrThrow({
       where: { orderLineId: created.value.lines[0].orderLineId },
     });
     expect(snapshot).toMatchObject({ retailReferralEnabled: false, referrerQualificationId: null });
     const history = await orderService.listWebRetailMember(person.personId);
     expect(history).toHaveLength(1);
-    expect(history[0]).toMatchObject({ orderNo: created.value.orderNo.toString(), status: 'CONFIRMED', total: '200', itemCount: 2 });
+    expect(history[0]).toMatchObject({ orderNo: created.value.orderNo.toString(), status: 'CONFIRMED', total: core?'9600':'200', itemCount: 2 });
     expect(JSON.stringify(history)).not.toContain(person.personId);
     expect(JSON.stringify(history)).not.toContain('Synthetic Recipient');
   });

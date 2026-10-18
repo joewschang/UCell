@@ -1,3 +1,4 @@
+import CoreProductShop from './CoreProductShop';
 import {useRef,useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 import {ErrorState,LoadingState,EmptyState} from '@ucell/design-system';
@@ -14,7 +15,8 @@ export default function Mall({q,onCreated}:{q?:Qualification;onCreated:()=>void}
  return <section><h1>商品商城</h1><div className="tabs" role="group" aria-label="商品分類">{mallCategories.map(c=><button key={c} aria-pressed={category===c} onClick={()=>setCategory(c)}>{c}</button>)}</div>
  {category==='會員資格套組'&&<QualificationPackageShop onCreated={qualificationCreated}/>}
  {category==='重購方案套組'&&(q?<ActiveDurationPackages q={q} onCreated={onCreated}/>:<section className="card"><h2>重購方案套組</h2><p>重購方案需指定本人會員資格。請先完成正式會員申請並取得會員資格，再選購重購方案。</p></section>)}
- {(category==='主商品'||category==='促銷商品套組')&&<OfferShop key={category+q?.id} q={q} type={category==='主商品'?'CORE_PRODUCT':'PROMOTIONAL_BUNDLE'}/>}
+ {category==='主商品'&&<CoreProductShop key={q?.id??'web'} q={q}/>}
+ {category==='促銷商品套組'&&<OfferShop key={category+q?.id} q={q} type="PROMOTIONAL_BUNDLE"/>}
  </section>;
 }
 export function OfferShop({q,type}:{q?:Qualification;type:'CORE_PRODUCT'|'PROMOTIONAL_BUNDLE'}){
@@ -32,5 +34,5 @@ export function OfferShop({q,type}:{q?:Qualification;type:'CORE_PRODUCT'|'PROMOT
  if(!offers.data||!products.data||!delivery.data)return <LoadingState label="商品分類載入中…"/>;
  const available=offers.data.filter(o=>o.offeringType===type);
  return <section><h2>{type==='CORE_PRODUCT'?'主商品':'促銷商品套組'}</h2>{!available.length?<EmptyState title="目前沒有上架方案"/>:<div className="mall-offer-grid">{available.map(o=><article className="card" key={o.offeringCode}><h3>{o.displayName}</h3>{o.coverImage&&<img src={o.coverImage} alt={o.displayName+" 商品封面"} loading="lazy" className="mall-product-cover"/>}{o.packaging&&<p>{o.packaging}</p>}{o.priceLabel&&<p>{o.priceLabel}</p>}<p>{o.composition.length?'固定商品組合':`請選擇 ${o.selectionRule?.requiredTotalQuantity??1} 件商品`}</p><button disabled={busy} onClick={()=>choose(o)}>選擇商品細節</button></article>)}</div>}
- {selected&&<section className="card"><h3>{selected.displayName} · 商品細節</h3>{selected.priceLabel&&<p>{selected.priceLabel}</p>}{pool.map(p=><div key={p.id}><h4>{p.name}</h4><p>單價：NT$ {p.price} · {p.available?'可訂購':'暫不可訂購'}</p>{fixed?<p>數量：{quantities[p.sku!]??0}</p>:<label>數量<input type="number" min={0} max={99} value={quantities[p.sku!]??0} disabled={busy} onChange={e=>{const n=Number(e.target.value);if(Number.isInteger(n)&&n>=0&&n<=99){setQuantities(v=>({...v,[p.sku!]:n}));key.current=crypto.randomUUID();setReceipt(null);}}}/></label>}</div>)}{required!==undefined&&<p>已選 {count}／{required} 件</p>}<DeliveryProfileEditor profile={delivery.data} refresh={delivery.retry}/><p>應付金額以訂單確認結果為準。</p><button disabled={busy||!valid||!delivery.data.complete||!!receipt} onClick={submit}>{busy?'處理中…':'確認商品細節並建立訂單'}</button>{receipt&&<p role="status">訂單已建立：{receipt}。{stagePaid?'Stage 付款已通過，不會實際扣款。':'待付款，實際狀態以訂單紀錄為準。'}</p>}{error&&<p role="alert">{error}</p>}</section>}</section>;
+ {selected&&<section className="card"><h3>{selected.displayName} · 商品細節</h3>{selected.priceLabel&&<p>{selected.priceLabel}</p>}{pool.map(p=><div key={p.id}><h4>{p.name}</h4><p>單價：NT$ {p.price} · {p.available?'可訂購':'暫不可訂購'}</p>{fixed?<p>數量：{quantities[p.sku!]??0}</p>:<label>數量<input type="number" min={0} max={99} value={quantities[p.sku!]??0} disabled={busy} onChange={e=>{const n=Number(e.target.value);if(Number.isInteger(n)&&n>=0&&n<=99){setQuantities(v=>({...v,[p.sku!]:n}));key.current=crypto.randomUUID();setReceipt(null);}}}/></label>}</div>)}{required!==undefined&&<p>已選 {count}／{required} 件</p>}<DeliveryProfileEditor profile={delivery.data} refresh={delivery.retry}/><p>應付金額以訂單確認結果為準。</p><button disabled={busy||!valid||!delivery.data.complete||!!receipt} onClick={submit}>{busy?'處理中…':'確認商品細節並建立訂單'}</button>{receipt&&<p role="status">訂單已建立：{receipt}。{stagePaid?'Stage 付款已通過，不會實際扣款。':'請依現場人員指示繳費，提供此訂單編號；後台確認收款後，訂單才會顯示已付款。'}</p>}{error&&<p role="alert">{error}</p>}</section>}</section>;
 }

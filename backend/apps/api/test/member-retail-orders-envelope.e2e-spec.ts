@@ -6,7 +6,7 @@ describe('Member retail-order response envelope', () => {
   const personId = '51000000-0000-4000-8000-000000000001';
   function harness(rows: unknown[]) {
     const orders = { listWebRetailMember: jest.fn(async () => rows) };
-    const controller = new MemberController({} as any, {} as any, {} as any, orders as any, {} as any, {} as any, {} as any, {} as any, {} as any);
+    const controller = new MemberController({} as any, {} as any, {} as any, orders as any, {} as any, {} as any, {} as any, {} as any, {} as any, {} as any);
     const req = { user: { personId }, requestId: 'retail-envelope-regression' };
     const context = { switchToHttp: () => ({ getRequest: () => req }) } as any;
     // Nest resolves only the top-level controller promise before interceptors.

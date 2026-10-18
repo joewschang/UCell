@@ -53,6 +53,7 @@ it('keeps unavailable amounts unknown and offers retry instead of claiming empty
  vi.mocked(get).mockResolvedValue({data:[]});const retry=view!.root.findAllByType('button').find(button=>button.children.join('')==='重新載入')!;
  expect(retry.props.disabled).toBe(false);await act(async()=>retry.props.onClick());
  await vi.waitFor(()=>expect(view!.root.findAllByType(Metric).map(metric=>metric.props.value)).toEqual([0,0]));
+ expect(view!.root.findAllByType(Metric)[0].props.helper).toBe('NT$ 0.00');
  expect(JSON.stringify(view!.toJSON())).toContain('目前沒有符合狀態的付款批次');act(()=>view!.unmount());
 });
 it('retains export input but disables financial actions until stale detail can be refreshed',async()=>{

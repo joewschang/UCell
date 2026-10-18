@@ -12,7 +12,18 @@ describe('Every8D SMS adapter',()=>{
  it.each(['-99,Provider error','0,0,0,1,11111111-1111-4111-8111-111111111111','100,1,1,0,invalid'])('does not mistake provider response %s for success',async text=>{
   global.fetch=jest.fn(async()=>new Response(text)) as any;await expect(provider().send('+886912345678','123456')).rejects.toMatchObject({response:{code:'SMS_DELIVERY_FAILED'}});
  });
+ it('rejects an edge HTTP 403 without accepting or retrying delivery',async()=>{
+  const call=jest.fn(async()=>new Response('<html>CloudFront</html>',{status:403}));global.fetch=call as any;
+  await expect(provider().send('+886912345678','123456')).rejects.toMatchObject({response:{code:'SMS_DELIVERY_FAILED'}});expect(call).toHaveBeenCalledTimes(1);
+ });
  it('fails closed when the account is not configured and does not contact a provider',async()=>{
   global.fetch=jest.fn() as any;await expect(new SmsOtpProviderService(new ConfigService()).send('+886912345678','123456')).rejects.toMatchObject({response:{code:'SMS_PROVIDER_CONFIGURATION_PENDING'}});expect(global.fetch).not.toHaveBeenCalled();
+ });
+ it('uses comma-separated recipients and does not claim partial acceptance as success',async()=>{
+  const call=jest.fn(async()=>new Response('100,2,2,0,11111111-1111-4111-8111-111111111111'));global.fetch=call as any;
+  await provider().sendMessage(['+886912345678','+886912345679'],'UCell 通知');
+  expect((call.mock.calls[0] as any)[1].body.get('DEST')).toBe('+886912345678,+886912345679');
+  global.fetch=jest.fn(async()=>new Response('0,1,1,1,11111111-1111-4111-8111-111111111111')) as any;
+  await expect(provider().sendMessage(['+886912345678','+886912345679'],'UCell 通知')).rejects.toThrow();
  });
 });

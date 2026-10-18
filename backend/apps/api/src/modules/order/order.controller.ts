@@ -1,3 +1,4 @@
+import {IsString,MaxLength,Matches} from 'class-validator';
 import { Roles } from '../auth/roles.decorator';
 import { Body, Controller, Get, Headers, Param, Post, Query, Req, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
@@ -6,6 +7,7 @@ import { CreateOrderDto } from './dto/create-order.dto';
 import { PaymentConfirmationDto } from './dto/payment-confirmation.dto';
 import { OrderService } from './order.service';
 
+class PaymentReferenceDto { @IsString() @Matches(/\S/) @MaxLength(120) referenceNo!:string; }
 @ApiTags('Admin - Commerce')
 @ApiBearerAuth('adminBearer')
 @Roles('SUPER_ADMIN','ORDER_OPS','FINANCE','COMPLIANCE_AUDIT')
@@ -43,6 +45,7 @@ export class OrderController {
   }
 
   @Post(':orderId/payment-confirmations')
+  @Roles('SUPER_ADMIN','ORDER_OPS','FINANCE')
   @UseGuards(IdempotencyGuard)
   @ApiOperation({ operationId: 'adminConfirmPayment', summary: 'Pre-ERP人工確認付款' })
   async confirmPayment(
@@ -55,6 +58,8 @@ export class OrderController {
     return { data: result.value, meta: { replayed: result.replayed } };
   }
 
+  @Post(':orderId/payment-reference') @Roles('SUPER_ADMIN','ORDER_OPS','FINANCE')
+  updateReference(@Param('orderId') id:string,@Body() body:PaymentReferenceDto,@Req() req:any){return this.service.updatePaymentReference(id,body.referenceNo,req.user?.personId,req.requestId);}
   @Get(':orderId')
   @ApiOperation({ operationId: 'adminGetOrder', summary: '取得訂單與付款事件' })
   async get(@Param('orderId') orderId: string) {

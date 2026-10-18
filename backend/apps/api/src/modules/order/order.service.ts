@@ -1,3 +1,4 @@
+import {formalFeeCoveredByPackage} from '../member/formal-enrollment-payment';
 import { ConflictException, Injectable, UnprocessableEntityException } from '@nestjs/common';
 import { Prisma, PrismaService } from '@ucell/database';
 import { randomUUID, createHash } from 'crypto';
@@ -32,6 +33,15 @@ export class OrderService {
   private async resolveOfferingSnapshot(tx: Prisma.TransactionClient, offeringCode: string | undefined, channel: string, at: Date): Promise<CommercialOfferingSnapshot | undefined> {
     if (!offeringCode) return undefined;
     return (this.commercialOfferings ?? new CommercialOfferingService()).resolveEffective(tx, { offeringCode, channel, at });
+  }
+
+  private async resolveLineOffering(tx:Prisma.TransactionClient,item:{commercialOfferingCode?:string},product:{sku:string},root:CommercialOfferingSnapshot|undefined,channel:string,at:Date,purpose:string){
+    if(!item.commercialOfferingCode)return root;
+    if(root||purpose!=='RETAIL')throw new UnprocessableEntityException({code:'LINE_OFFERING_NOT_ALLOWED'});
+    const offer=await this.resolveOfferingSnapshot(tx,item.commercialOfferingCode,channel,at);
+    const rule=offer?.selectionRule as {eligibleSkus?:string[]}|null;
+    if(offer?.offeringType!=='CORE_PRODUCT'||!Array.isArray(rule?.eligibleSkus)||!rule.eligibleSkus.includes(product.sku))throw new UnprocessableEntityException({code:'LINE_OFFERING_SKU_NOT_ELIGIBLE'});
+    return offer;
   }
 
   private assertOfferingPurpose(offering: CommercialOfferingSnapshot | undefined, purpose: string) {
@@ -97,13 +107,14 @@ export class OrderService {
       const lines:any[]=[]; let gross=new Prisma.Decimal(0); let ruleVersionCode='R1.0B'; let parameterSnapshotHash:string|undefined;
       for(const item of dto.items!){
         const product=products.find(row=>row.productId===item.productId)!;
+        const lineOffering=await this.resolveLineOffering(tx,item,product,offering,'WEB_MEMBER',now,'RETAIL');
         const profiles=await tx.productRuleProfile.findMany({where:{productId:product.productId,effectiveFrom:{lte:now},OR:[{effectiveTo:null},{effectiveTo:{gt:now}}]},orderBy:{effectiveFrom:'desc'}});
         if(profiles.length!==1)throw new UnprocessableEntityException({code:'RULE_PROFILE_CONFIGURATION_PENDING'});
         const profile=profiles[0];
         const quantity=new Prisma.Decimal(item.quantity);
         if(!quantity.isInteger()||quantity.lte(0)||quantity.gt(99)||product.currentPrice.lt(0))throw new UnprocessableEntityException({code:'INVALID_PRODUCT_QUANTITY_OR_PRICE'});
         const lineAmount=product.currentPrice.mul(quantity); gross=gross.add(lineAmount); ruleVersionCode=profile.ruleVersionCode; parameterSnapshotHash=profile.parameterSnapshotHash??parameterSnapshotHash;
-        lines.push({productId:product.productId,skuSnapshot:product.sku,productNameSnapshot:product.displayName,quantity,unitPrice:product.currentPrice,lineAmount,gpvRateSnapshot:new Prisma.Decimal(0),gpvAmountSnapshot:new Prisma.Decimal(0),pvRateSnapshot:new Prisma.Decimal(0),ruleProfileSnapshot:{profileId:profile.productRuleProfileId,ruleVersionCode:profile.ruleVersionCode,parameterSnapshotHash:profile.parameterSnapshotHash,pricingContext:'WEB_MEMBER_RETAIL_LIST_PRICE',retailReferral:{enabled:profile.retailReferralEnabled,calculationType:profile.retailReferralCalculationType,rate:profile.retailReferralRate?.toString()??null,baseType:profile.retailReferralBaseType}},commercialOfferingVersionId:offering?.commercialOfferingVersionId,commercialOfferingSnapshot:offering,linePurpose:dto.linePurpose});
+        lines.push({productId:product.productId,skuSnapshot:product.sku,productNameSnapshot:product.displayName,quantity,unitPrice:product.currentPrice,lineAmount,gpvRateSnapshot:lineOffering?.offeringType==='CORE_PRODUCT'?profile.gpvRate:new Prisma.Decimal(0),gpvAmountSnapshot:lineOffering?.offeringType==='CORE_PRODUCT'?lineAmount.mul(profile.gpvRate).toDecimalPlaces(2):new Prisma.Decimal(0),pvRateSnapshot:lineOffering?.offeringType==='CORE_PRODUCT'?profile.pvRate:new Prisma.Decimal(0),ruleProfileSnapshot:{profileId:profile.productRuleProfileId,ruleVersionCode:profile.ruleVersionCode,parameterSnapshotHash:profile.parameterSnapshotHash,pricingContext:'WEB_MEMBER_RETAIL_LIST_PRICE',retailReferral:{enabled:profile.retailReferralEnabled,calculationType:profile.retailReferralCalculationType,rate:profile.retailReferralRate?.toString()??null,baseType:profile.retailReferralBaseType}},commercialOfferingVersionId:lineOffering?.commercialOfferingVersionId,commercialOfferingSnapshot:lineOffering,linePurpose:dto.linePurpose});
       }
       const order=await tx.order.create({data:{purchaserPersonId:personId,purpose:'RETAIL',status:'CONFIRMED',grossAmount:gross,discountAmount:new Prisma.Decimal(0),netAmount:gross,ruleVersionCode,parameterSnapshotHash,clientReference:dto.clientReference,confirmedAt:now,lines:{create:lines}},include:{lines:true}});
       const attribution=await (this.retailAttributions??new RetailReferrerAttributionService(this.prisma,this.sponsors??new SponsorResolver(this.prisma))).resolveForRetailOrder(tx,{personId,candidateCode:dto.retailReferralCode,orderId:order.orderId,at:now,correlationId});
@@ -233,6 +244,7 @@ export class OrderService {
 
       for (const item of dto.items) {
         const product = products.find(p => p.productId === item.productId)!;
+        const lineOffering=await this.resolveLineOffering(tx,item,product,offering,member?'WEB_MEMBER':'ADMIN',now,dto.purpose??'RETAIL');
         const profileQuery:Prisma.ProductRuleProfileFindManyArgs={
           where: {
             productId: item.productId,
@@ -282,8 +294,8 @@ export class OrderService {
             ruleVersionCode: profile.ruleVersionCode,
             parameterSnapshotHash: profile.parameterSnapshotHash,
           },
-          commercialOfferingVersionId: offering?.commercialOfferingVersionId,
-          commercialOfferingSnapshot: offering as Prisma.InputJsonValue | undefined,
+          commercialOfferingVersionId: lineOffering?.commercialOfferingVersionId,
+          commercialOfferingSnapshot: lineOffering as Prisma.InputJsonValue | undefined,
           linePurpose: dto.linePurpose,
         });
       }
@@ -340,6 +352,7 @@ export class OrderService {
   ) {
     const correlationId = randomUUID();
     return this.idempotency.execute(`admin:payment:${orderId}`, key, dto, async (tx) => {
+      if(tx.$queryRaw)await tx.$queryRaw`SELECT order_id FROM commerce."order" WHERE order_id=${orderId}::uuid FOR UPDATE`;
       const order = await tx.order.findUnique({
         where: { orderId },
         include: { lines: true },
@@ -363,6 +376,13 @@ export class OrderService {
         });
       }
 
+      if(order.purpose==='FORMAL_MEMBERSHIP_FEE'){
+        if(!actorId||!order.purchaserPersonId||!amount.equals('600'))throw new ConflictException({code:'FORMAL_FEE_INVALID'});
+        await tx.$queryRaw`SELECT person_id FROM identity.person WHERE person_id=${order.purchaserPersonId}::uuid FOR UPDATE`;
+        const paidFee=await tx.order.findFirst({where:{purchaserPersonId:order.purchaserPersonId,purpose:'FORMAL_MEMBERSHIP_FEE',status:'PAID'}});
+        const covered=await formalFeeCoveredByPackage(tx,order.purchaserPersonId);
+        if(paidFee||covered)throw new ConflictException({code:'FORMAL_FEE_ALREADY_COVERED'});
+      }
       const occurredAt = new Date(dto.occurredAt);
       const payment = await tx.paymentEvent.create({
         data: {
@@ -383,6 +403,10 @@ export class OrderService {
         data: { status: 'PAID', paidAt: occurredAt },
       });
 
+      if(order.purpose==='FORMAL_MEMBERSHIP_FEE'){
+        await this.audit.write(tx,{actorType:'USER',actorId,action:'FORMAL_ENROLLMENT_FEE_PAYMENT_CONFIRMED',entityType:'ORDER',entityId:orderId,afterData:{paymentEventId:payment.paymentEventId,amount:'600.00',referenceNo:dto.referenceNo,paymentMethod:dto.paymentMethod,note:dto.note??null,approvalGranted:false},requestId,correlationId});
+        return {orderId,status:'PAID',paymentEventId:payment.paymentEventId,correlationId};
+      }
       // Legacy unit harnesses predate the additive package delegate; production Prisma always provides it.
       const packageSnapshot=tx.packagePurchaseSnapshot?await tx.packagePurchaseSnapshot.findUnique({where:{orderId}}):null;
       if(packageSnapshot){
@@ -410,6 +434,10 @@ export class OrderService {
         return {orderId,status:'PAID',paymentEventId:payment.paymentEventId,correlationId,packagePurchaseSnapshotId:packageSnapshot.packagePurchaseSnapshotId,downstreamStatus};
       }
 
+      if(order.lines.some(line=>(line.commercialOfferingSnapshot as any)?.recognitionProfile?.recognitionStatus==='CONFIGURATION_PENDING')){
+        await this.audit.write(tx,{actorType:actorId?'USER':'SYSTEM',actorId,action:'MANUAL_ORDER_RECOGNITION_PENDING',entityType:'ORDER',entityId:orderId,afterData:{paymentEventId:payment.paymentEventId,amount:amount.toString(),recognitionStatus:'CONFIGURATION_PENDING',referenceNo:dto.referenceNo},requestId,correlationId});
+        return {orderId,status:'PAID',paymentEventId:payment.paymentEventId,correlationId,recognitionStatus:'CONFIGURATION_PENDING'};
+      }
       if(!order.qualificationId){
         await this.outbox.enqueue(tx,{eventType:'WEB_MEMBER_RETAIL_PAYMENT_CONFIRMED',aggregateType:'ORDER',aggregateId:orderId,correlationId,payload:{schemaVersion:1,orderId,personId:order.purchaserPersonId,amount:order.netAmount.toString(),occurredAt:occurredAt.toISOString(),ruleVersionCode:order.ruleVersionCode,parameterSnapshotHash:order.parameterSnapshotHash,recognitionStatus:'RETAIL_REFERRAL_RECOGNITION_PENDING'}});
         await this.audit.write(tx,{actorType:actorId?'USER':'SYSTEM',actorId,action:'WEB_MEMBER_RETAIL_PAYMENT_CONFIRMED',entityType:'ORDER',entityId:orderId,afterData:{paymentEventId:payment.paymentEventId,amount:amount.toString(),referenceNo:dto.referenceNo},requestId,correlationId});
@@ -469,6 +497,8 @@ export class OrderService {
         ...(q?{
           OR:[
             {clientReference:{contains:q,mode:'insensitive'}},
+            ...(/^[a-f0-9-]{36}$/i.test(q)?[{orderId:q}]:[]),
+            {purchaser:{memberNo:{contains:q}}},{purchaser:{legalName:{contains:q,mode:'insensitive'}}},{purchaser:{mobile:{contains:q}}},
             {qualification:{currentHolder:{legalName:{contains:q,mode:'insensitive'}}}},
             {qualification:{currentHolder:{mobile:{contains:q}}}},
           ]
@@ -476,6 +506,7 @@ export class OrderService {
       },
       include:{
         qualification:{include:{currentHolder:true}},
+        purchaser:{select:{memberNo:true,legalName:true,mobile:true}},
         lines:true,
         paymentEvents:true,
       },
@@ -487,18 +518,32 @@ export class OrderService {
       this.prisma.packagePurchaseSnapshot.findMany({where:{orderId:{in:orderIds}},include:{selections:true}}),
       this.prisma.qualificationSetup.findMany({where:{qualifyingOrderId:{in:orderIds}}}),
     ]);
-    return orders.map(order=>{const snapshot=snapshots.find(row=>row.orderId===order.orderId),setup=setups.find(row=>row.qualifyingOrderId===order.orderId);return {...order,...this.packageReadback(snapshot,setup)};});
+    return orders.map(order=>{const snapshot=snapshots.find(row=>row.orderId===order.orderId),setup=setups.find(row=>row.qualifyingOrderId===order.orderId);return {...order,recognitionStatus:order.lines.some(line=>(line.commercialOfferingSnapshot as any)?.recognitionProfile?.recognitionStatus==='CONFIGURATION_PENDING')?'CONFIGURATION_PENDING':null,...this.packageReadback(snapshot,setup)};});
   }
 
+  async updatePaymentReference(orderId:string,referenceNo:string,actorId:string,requestId:string){
+    if(!actorId||!referenceNo.trim()||referenceNo.length>120)throw new UnprocessableEntityException({code:'PAYMENT_REFERENCE_INVALID'});
+    return this.prisma.$transaction(async tx=>{
+      const order=await tx.order.findUniqueOrThrow({where:{orderId}});
+      if(!['PAID','FULFILLED'].includes(order.status))throw new ConflictException({code:'ORDER_NOT_PAID'});
+      const event=await tx.paymentEvent.findFirst({where:{orderId,eventType:'PAYMENT_CONFIRMED'},orderBy:{occurredAt:'desc'}});
+      if(!event)throw new ConflictException({code:'PAYMENT_EVENT_NOT_FOUND'});
+      // Payment events are append-only. Store an audited reference annotation instead.
+      const prior=await tx.auditEvent.findFirst({where:{entityId:orderId,action:'PAYMENT_REFERENCE_UPDATED'},orderBy:{occurredAt:'desc'}});
+      await this.audit.write(tx,{actorType:'USER',actorId,action:'PAYMENT_REFERENCE_UPDATED',entityType:'ORDER',entityId:orderId,beforeData:{referenceNo:(prior?.afterData as any)?.referenceNo??event.referenceNo},afterData:{referenceNo:referenceNo.trim(),paymentEventId:event.paymentEventId},requestId,correlationId:randomUUID()});
+      return {orderId,referenceNo:referenceNo.trim()};
+    });
+  }
   async get(orderId: string) {
     return this.prisma.$transaction(async tx=>{
     const order=await tx.order.findUniqueOrThrow({
       where: { orderId },
-      include: { lines: true, paymentEvents: true },
+      include: { purchaser:{select:{memberNo:true,legalName:true,mobile:true}},lines: true, paymentEvents: true },
     });
+    const reference=await tx.auditEvent.findFirst({where:{entityId:orderId,action:'PAYMENT_REFERENCE_UPDATED'},orderBy:{occurredAt:'desc'}});
     const returned=await tx.returnLine.groupBy({by:['orderLineId'],where:{returnCase:{orderId,status:'POSTED'}},_sum:{quantity:true}});
     const [snapshot,setup]=await Promise.all([tx.packagePurchaseSnapshot.findUnique({where:{orderId},include:{selections:true}}),tx.qualificationSetup.findFirst({where:{qualifyingOrderId:orderId}})]);
-    return {...order,...this.packageReadback(snapshot,setup),lines:order.lines.map(line=>{
+    return {...order,recognitionStatus:order.lines.some(line=>(line.commercialOfferingSnapshot as any)?.recognitionProfile?.recognitionStatus==='CONFIGURATION_PENDING')?'CONFIGURATION_PENDING':null,paymentReferenceNo:(reference?.afterData as any)?.referenceNo??order.paymentEvents.find(x=>x.eventType==='PAYMENT_CONFIRMED')?.referenceNo??null,...this.packageReadback(snapshot,setup),lines:order.lines.map(line=>{
       const quantity=returned.find(row=>row.orderLineId===line.orderLineId)?._sum.quantity??new Prisma.Decimal(0);
       return {...line,returnedQuantity:quantity.toString(),remainingReversibleQuantity:Prisma.Decimal.max(0,line.quantity.minus(quantity)).toString()};
     })};

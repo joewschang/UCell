@@ -39,9 +39,11 @@ import {CompensationPeriodControlPage} from '../features/compensation-period/Com
 import {OperationsControlPage} from '../features/operations-control/OperationsControlPage';
 import {LearningPage} from '../features/learning/LearningPage';
 import {EventsPage} from '../features/events/EventsPage';
+import {SmsPage} from '../features/sms/SmsPage';
 
 function Protected(){const {user,ready}=useAuth();if(!ready)return <div className="app-loading">驗證管理員Session…</div>;return user?<AppShell/>:<Navigate to="/login" replace/>}
 export function App(){return <Routes>
+ <Route path="/sms" element={<Protected/>}><Route index element={<RequirePageRole><SmsPage/></RequirePageRole>}/></Route>
  <Route path="/login" element={<LoginPage/>}/>
  <Route element={<Protected/>}>
   <Route path="/" element={<DashboardPage/>}/>

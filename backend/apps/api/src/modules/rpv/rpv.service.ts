@@ -3,6 +3,7 @@ import { ConflictException, Injectable } from '@nestjs/common';
 import { Prisma, PrismaService, sealRpvEvent, companyAlwaysActiveAt, captureParameters } from '@ucell/database';
 import { randomUUID } from 'crypto';
 import { ActiveService } from '../active/active.service';
+import { runRecognitionCommand } from '../../common/recognition-command';
 
 @Injectable()
 export class RpvService {
@@ -18,7 +19,7 @@ export class RpvService {
 
   async recognize(recognitionId:string){
     const correlationId=randomUUID();
-    return this.prisma.$transaction(async tx=>{
+    return runRecognitionCommand(()=>this.prisma.$transaction(async tx=>{
       let schedule=await tx.monthlyRecognitionSchedule.findUnique({
         where:{recognitionId},
         include:{subscription:true}
@@ -121,7 +122,7 @@ export class RpvService {
       await sealRpvEvent(tx,pvEvent,schedule);
       await tx.monthlyRecognitionSchedule.update({
         where:{recognitionId},
-        data:{status:'RECOGNIZED',recognizedAt:now,pvLedgerEventId:pvEvent.eventId}
+        data:{status:'RECOGNIZED',recognizedAt:now,pvLedgerEventId:pvEvent.eventId,workerBlocked:false,workerNextAttemptAt:null}
       });
 
       await appendRecognitionMemberMessage(tx,recognitionId);
@@ -130,7 +131,7 @@ export class RpvService {
         pvLedgerEventId:pvEvent.eventId,
         ancestorCount:ancestors.length
       };
-    },{isolationLevel:Prisma.TransactionIsolationLevel.Serializable});
+    },{isolationLevel:Prisma.TransactionIsolationLevel.Serializable}));
   }
 
   async listAwards(recognitionId:string){

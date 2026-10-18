@@ -20,6 +20,8 @@ try{
   await admin.$executeRawUnsafe('CREATE DATABASE "'+database+'"');created=true;
   run([require.resolve('prisma/build/index.js'),'migrate','deploy','--schema','packages/database/prisma/schema.prisma']);
   run(['scripts/db-golden-fixtures.mjs']);
+  if(process.argv.includes('--rpv-concurrency')) run(['scripts/phase3-rpv-concurrency-db-test.mjs']);
+  else {
   run(['-r','ts-node/register','scripts/db-golden-e2e.ts']);
   run(['scripts/phase3-concurrency-db-test.mjs']);
   run(['scripts/phase3-return-outbox-db-test.mjs']);
@@ -34,6 +36,7 @@ try{
   run(['scripts/content-db-test.mjs']);
   run(['scripts/formal-application-db-test.mjs']);
   run(['scripts/replay-pool-delta-db-test.mjs']);
+  }
   console.log('DB_GOLDEN_ISOLATED_PASS: fresh database, deployed migrations, deterministic fixtures');
 }finally{
   // Only this successfully-created random test database is removed.

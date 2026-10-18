@@ -1,0 +1,56 @@
+{
+  "migrationRequired": false,
+  "date": "2026-10-11T05:57:23.7951959+00:00",
+  "environment": "STAGE",
+  "productionChanged": false,
+  "before": [
+    {
+      "image": "ucellstageacr5mafbbsq33mgu.azurecr.io/ucell-api@sha256:08f61846f2aa4df5cf838aae7db4a9b52abb5a2529cfb07dab009ebf6e22e5cc",
+      "name": "ucell-stage-api",
+      "revision": "ucell-stage-api--sms-20261008"
+    },
+    {
+      "image": "ucellstageacr5mafbbsq33mgu.azurecr.io/ucell-worker@sha256:96a05bd972a23e0e7d36b7423b86086dfdb664fe793be5ab3a31643af6badc47",
+      "name": "ucell-stage-worker",
+      "revision": "ucell-stage-worker--0000004"
+    },
+    {
+      "image": "ucellstageacr5mafbbsq33mgu.azurecr.io/ucell-admin@sha256:76532661f252ce31b43e8fcb38e50d9b084188cf2469e34abb7e54bc724fcfd4",
+      "name": "ucell-stage-admin",
+      "revision": "ucell-stage-admin--acceptance-20261010"
+    },
+    {
+      "image": "ucellstageacr5mafbbsq33mgu.azurecr.io/ucell-member@sha256:72804ac63cff1ace0dfc064cd11e50845b9fc4fca60c7bba168334e611bb29af",
+      "name": "ucell-stage-member",
+      "revision": "ucell-stage-member--sms-20261008"
+    }
+  ],
+  "images": {
+    "admin": "ucellstageacr5mafbbsq33mgu.azurecr.io/ucell-admin@sha256:9c3ecbc5973973fdac438307387df66ae17c5750e006485979c7354db1a4ca77",
+    "api": "ucellstageacr5mafbbsq33mgu.azurecr.io/ucell-api@sha256:758c7d62d2925d602b686c465fa6b709cbeb3ee19d81cb5187e64df653d0aa5b"
+  },
+  "sourceManifestHash": "24D60874B390EC243E79191F474E6757D3DBAA2CC280F231DAA459941E4632FA",
+  "health": "PASS",
+  "after": [
+    {
+      "image": "ucellstageacr5mafbbsq33mgu.azurecr.io/ucell-api@sha256:758c7d62d2925d602b686c465fa6b709cbeb3ee19d81cb5187e64df653d0aa5b",
+      "name": "ucell-stage-api",
+      "revision": "ucell-stage-api--erp-ref-20261011"
+    },
+    {
+      "image": "ucellstageacr5mafbbsq33mgu.azurecr.io/ucell-worker@sha256:96a05bd972a23e0e7d36b7423b86086dfdb664fe793be5ab3a31643af6badc47",
+      "name": "ucell-stage-worker",
+      "revision": "ucell-stage-worker--0000004"
+    },
+    {
+      "image": "ucellstageacr5mafbbsq33mgu.azurecr.io/ucell-admin@sha256:9c3ecbc5973973fdac438307387df66ae17c5750e006485979c7354db1a4ca77",
+      "name": "ucell-stage-admin",
+      "revision": "ucell-stage-admin--erp-ref-20261011"
+    },
+    {
+      "image": "ucellstageacr5mafbbsq33mgu.azurecr.io/ucell-member@sha256:72804ac63cff1ace0dfc064cd11e50845b9fc4fca60c7bba168334e611bb29af",
+      "name": "ucell-stage-member",
+      "revision": "ucell-stage-member--sms-20261008"
+    }
+  ]
+}

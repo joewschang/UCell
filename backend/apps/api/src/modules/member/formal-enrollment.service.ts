@@ -1,4 +1,6 @@
-import {ConflictException,ForbiddenException,Injectable,NotFoundException} from '@nestjs/common';
+import {validateFormalSponsor} from './formal-application-sponsor';
+import {PiiCryptoService} from '../../common/security/pii-crypto.service';
+import {UnprocessableEntityException,ConflictException,ForbiddenException,Injectable,NotFoundException} from '@nestjs/common';
 import {ConfigService} from '@nestjs/config';
 import {Prisma,PrismaService} from '@ucell/database';
 import {randomUUID} from 'node:crypto';
@@ -20,26 +22,27 @@ export class FormalEnrollmentService{
   }catch{return false;}
  }
  private assertStage(){if(!this.stagePaymentEnabled())throw new ForbiddenException({code:'STAGE_PAYMENT_NOT_AVAILABLE'});}
- private receipt(order:{orderId:string;netAmount:Prisma.Decimal;status:string;paidAt:Date|null}){return {orderId:order.orderId,amount:order.netAmount.toFixed(2),currency:'TWD',status:order.status,paidAt:order.paidAt?.toISOString()??null,simulation:true};}
+ private receipt(order:{orderId:string;netAmount:Prisma.Decimal;status:string;paidAt:Date|null}){return {orderId:order.orderId,amount:order.netAmount.toFixed(2),currency:'TWD',status:order.status,paidAt:order.paidAt?.toISOString()??null,simulation:this.stagePaymentEnabled()};}
  private paidPackages(db:PrismaService|Prisma.TransactionClient,personId:string){
   return db.$queryRaw<Array<{orderId:string;packageName:string}>>`SELECT p.order_id AS "orderId",p.package_name AS "packageName" FROM commerce.package_purchase_snapshot p JOIN commerce."order" o ON o.order_id=p.order_id WHERE p.person_id=${personId}::uuid AND p.package_class='QUALIFICATION' AND p.membership_effect='FORMAL_ELIGIBILITY' AND o.status='PAID' ORDER BY p.purchased_at DESC LIMIT 20`;
  }
  async status(personId:string){
-  const person=await this.db.person.findUnique({where:{personId},select:{membershipState:true,status:true,securityStatus:true}});
+  const person=await this.db.person.findUnique({where:{personId},select:{membershipState:true,status:true,securityStatus:true,legalName:true,birthDate:true,nationalityCode:true,mobile:true,email:true}});
   if(!person||person.status!=='EFFECTIVE'||person.securityStatus!=='NORMAL')throw new ForbiddenException({code:'MEMBER_PERSON_DISABLED'});
   const [fee,application,packages]=await Promise.all([
-   this.db.order.findFirst({where:{purchaserPersonId:personId,purpose:'FORMAL_MEMBERSHIP_FEE',status:'PAID'},orderBy:{createdAt:'desc'}}),
-   this.db.formalMemberApplication.findFirst({where:{personId,applicantType:'INDIVIDUAL'},select:{formalMemberApplicationId:true,status:true},orderBy:{updatedAt:'desc'}}),
+   this.db.order.findFirst({where:{purchaserPersonId:personId,purpose:'FORMAL_MEMBERSHIP_FEE',status:{in:['CONFIRMED','PAID']}},orderBy:{createdAt:'desc'}}),
+   this.db.formalMemberApplication.findFirst({where:{personId,applicantType:'INDIVIDUAL'},select:{formalMemberApplicationId:true,status:true,decisionReasonCode:true,createdAt:true,updatedAt:true,submittedAt:true,reviewedAt:true},orderBy:{updatedAt:'desc'}}),
    this.paidPackages(this.db,personId),
   ]);
-  return {membershipState:person.membershipState,feeAmount:FEE,currency:'TWD',stagePaymentEnabled:this.stagePaymentEnabled(),feeReceipt:fee?this.receipt(fee):null,application:application?{id:application.formalMemberApplicationId,status:application.status}:null,paidPackages:packages};
+  const packageOrders=await this.db.$queryRaw<Array<{orderId:string;packageName:string;amount:string;status:string}>>`SELECT p.order_id AS "orderId",p.package_name AS "packageName",o.net_amount::text AS amount,o.status::text AS status FROM commerce.package_purchase_snapshot p JOIN commerce."order" o ON o.order_id=p.order_id WHERE p.person_id=${personId}::uuid AND p.package_class='QUALIFICATION' ORDER BY p.purchased_at DESC LIMIT 20`;
+  return {packageOrders,prefill:{legalName:person.legalName??'',gender:'UNDISCLOSED',birthDate:person.birthDate?.toISOString().slice(0,10)??'',nationalityCode:person.nationalityCode??'TW',phone:person.mobile??'',email:person.email??''},membershipState:person.membershipState,feeAmount:FEE,currency:'TWD',stagePaymentEnabled:this.stagePaymentEnabled(),feeReceipt:fee?.status==='PAID'?this.receipt(fee):null,feeOrder:fee?this.receipt(fee):null,application:application?{id:application.formalMemberApplicationId,status:application.status,reviewNote:application.decisionReasonCode,createdAt:application.createdAt.toISOString(),updatedAt:application.updatedAt.toISOString(),submittedAt:application.submittedAt?.toISOString()??null,reviewedAt:application.reviewedAt?.toISOString()??null}:null,paidPackages:packages};
  }
  private async pending(tx:Prisma.TransactionClient,personId:string,sourceId:string){
   const person=await tx.person.findUniqueOrThrow({where:{personId}});
   if(person.status!=='EFFECTIVE'||person.securityStatus!=='NORMAL'||!['NETWORK_MEMBER','FORMAL_PENDING','FORMAL_MEMBER'].includes(person.membershipState??''))throw new ConflictException({code:'NETWORK_MEMBERSHIP_REQUIRED'});
   if(person.membershipState==='NETWORK_MEMBER'){
    await tx.person.update({where:{personId},data:{membershipState:'FORMAL_PENDING'}});
-   await tx.personMembershipStateEvent.create({data:{personId,fromState:'NETWORK_MEMBER',toState:'FORMAL_PENDING',reasonCode:'FORMAL_ENROLLMENT_PAID',sourceType:'ORDER',sourceId,correlationId:randomUUID()}});
+   await tx.personMembershipStateEvent.create({data:{personId,fromState:'NETWORK_MEMBER',toState:'FORMAL_PENDING',reasonCode:'FORMAL_ENROLLMENT_PENDING',sourceType:'ORDER',sourceId,correlationId:randomUUID()}});
   }
  }
  async payFee(personId:string,key:string,requestId:string){
@@ -91,14 +94,27 @@ export class FormalEnrollmentService{
    if(!app||app.personId!==personId||app.sourceChannel!=='MEMBER_WEB')throw new NotFoundException({code:'FORMAL_APPLICATION_NOT_FOUND'});
    if(['SUBMITTED','UNDER_REVIEW','APPROVED'].includes(app.status))return {applicationId,status:app.status};
    if(!['DRAFT','NEEDS_MORE_INFO'].includes(app.status))throw new ConflictException({code:'FORMAL_APPLICATION_NOT_SUBMITTABLE'});
+   const signature=await tx.formalApplicationDocument.findFirst({where:{formalMemberApplicationId:applicationId,documentType:'SIGNED_APPLICATION_AGREEMENT',status:'PRESENT',malwareScanStatus:{not:'INFECTED'}}});
+   if(!signature)throw new UnprocessableEntityException({code:'FORMAL_SIGNATURE_REQUIRED',message:'請先完成會員簽名並儲存，再送出申請。'});
+   const snapshot=await tx.formalMemberApplicationSnapshot.findFirst({where:{formalMemberApplicationId:applicationId},orderBy:{version:'desc'}});
+   const payload=snapshot?new PiiCryptoService().decrypt<any>(snapshot.payloadCiphertext,snapshot.keyVersion):{};
+   await validateFormalSponsor(tx,personId,payload.sponsorBallNo);
    const fee=await tx.order.findFirst({where:{purchaserPersonId:personId,purpose:'FORMAL_MEMBERSHIP_FEE',status:'PAID'}});
    const purchase=(await this.paidPackages(tx,personId))[0];
-   if(!fee&&!purchase)throw new ConflictException({code:'FORMAL_ENROLLMENT_PAYMENT_REQUIRED'});
+   const pendingPackage=(await tx.$queryRaw<Array<{orderId:string}>>`SELECT p.order_id AS "orderId" FROM commerce.package_purchase_snapshot p JOIN commerce."order" o ON o.order_id=p.order_id WHERE p.person_id=${personId}::uuid AND p.package_class='QUALIFICATION' AND p.membership_effect='FORMAL_ELIGIBILITY' AND o.status='CONFIRMED' ORDER BY p.purchased_at DESC LIMIT 1`)[0];
+   await tx.$queryRaw`SELECT person_id FROM identity.person WHERE person_id=${personId}::uuid FOR UPDATE`;
+   const person=await tx.person.findUniqueOrThrow({where:{personId}});
+   if(person.status!=='EFFECTIVE'||person.securityStatus!=='NORMAL'||!['NETWORK_MEMBER','FORMAL_PENDING'].includes(person.membershipState??''))throw new ForbiddenException({code:'FORMAL_ENROLLMENT_NOT_AVAILABLE'});
+   let feeOrder=fee??await tx.order.findFirst({where:{purchaserPersonId:personId,purpose:'FORMAL_MEMBERSHIP_FEE',status:'CONFIRMED'}});
+   if(!feeOrder&&!purchase&&!pendingPackage){
+    feeOrder=await tx.order.create({data:{purchaserPersonId:personId,purpose:'FORMAL_MEMBERSHIP_FEE',status:'CONFIRMED',currency:'TWD',grossAmount:FEE,netAmount:FEE,ruleVersionCode:RULE,clientReference:applicationId,confirmedAt:new Date()}});
+    await this.audit.write(tx,{actorType:'MEMBER',actorId:personId,action:'FORMAL_FEE_ORDER_CREATED',entityType:'ORDER',entityId:feeOrder.orderId,afterData:{applicationId,amount:FEE,status:'CONFIRMED'},requestId,correlationId:randomUUID()});
+   }
    const docs=await tx.formalApplicationDocument.findMany({where:{formalMemberApplicationId:applicationId,status:'PRESENT',documentType:{in:['IDENTITY_FRONT','IDENTITY_BACK','BANKBOOK_COVER']}}});
-   if(['IDENTITY_FRONT','IDENTITY_BACK','BANKBOOK_COVER'].some(type=>!docs.some(d=>d.documentType===type&&d.malwareScanStatus!=='INFECTED')))throw new ConflictException({code:'FORMAL_ENROLLMENT_DOCUMENTS_REQUIRED'});
-   await this.pending(tx,personId,fee?.orderId??purchase!.orderId);
+   // Missing uploads may be checked physically by staff; approval still requires recorded evidence.
+   await this.pending(tx,personId,purchase?.orderId??pendingPackage?.orderId??feeOrder!.orderId);
    await tx.formalMemberApplication.update({where:{formalMemberApplicationId:applicationId},data:{status:'SUBMITTED',submittedAt:new Date()}});
-   await this.audit.write(tx,{actorType:'MEMBER',actorId:personId,action:'FORMAL_ENROLLMENT_SUBMITTED',entityType:'FormalMemberApplication',entityId:applicationId,afterData:{status:'SUBMITTED',paymentOrderId:fee?.orderId??purchase!.orderId,scanApprovalGranted:false},requestId,correlationId:randomUUID()});
+   await this.audit.write(tx,{actorType:'MEMBER',actorId:personId,action:'FORMAL_ENROLLMENT_SUBMITTED',entityType:'FormalMemberApplication',entityId:applicationId,afterData:{status:'SUBMITTED',paymentOrderId:purchase?.orderId??pendingPackage?.orderId??feeOrder!.orderId,scanApprovalGranted:false},requestId,correlationId:randomUUID()});
    return {applicationId,status:'SUBMITTED'};
   });
  }
