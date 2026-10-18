@@ -7,6 +7,8 @@ import {get,qs} from '../../lib/api';
 import {Badge,Card,ErrorBox,Field,Metric,PageHeader} from '../../components/ui';
 import {money} from '../../lib/format';
 
+const alertLabels:Record<string,string>={RECOVERY_BALANCE_MISMATCH:'獎金回收餘額不一致',PAYOUT_NET_MISMATCH:'付款淨額不一致',EFFECTIVE_APPLICATION_WITHOUT_QUALIFICATION:'已生效申請缺少資格',ACTIVE_FLAG_WITHOUT_PERIOD:'啟用資格缺少有效期間',CURRENT_PLAN_HISTORY_MISMATCH:'套組等級與歷史不一致',PAID_ORDER_WITHOUT_GPV:'已付款商品尚未認列業績',PACKAGE_RECOGNITION_CONFIGURATION_PENDING:'套組已付款，認列設定尚待完成'};
+
 export function ReportsPage(){
   const now=new Date();const first=new Date(now.getFullYear(),now.getMonth(),1);
   const [from,setFrom]=useState(first.toISOString()),[to,setTo]=useState(now.toISOString());
@@ -18,7 +20,7 @@ export function ReportsPage(){
     if(exportPending.current)return;exportPending.current=true;setExporting(true);setExportError(null);
     let url:string|undefined;
     try{
-    const x:any=await get('/admin/ops-ready/exports/'+dataset+qs({take:10000}));
+    const x:any=await get('/admin/ops-ready/exports/'+dataset+qs({take:10000,from,to}));
     const blob=new Blob([x.data.content],{type:x.data.contentType});
     url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=x.data.filename;a.click();
     }catch(error){setExportError(error);}finally{if(url)URL.revokeObjectURL(url);exportPending.current=false;setExporting(false);}
@@ -26,10 +28,11 @@ export function ReportsPage(){
   return <><PageHeader title="報表／完整性" subtitle={uiText("營運報表與Integrity Alerts分離：報表看趨勢，Alerts用來抓不可接受的帳務/資料不變量破壞。")}/>
     <div className="grid two"><Card title="期間"><div className="form"><Field label={uiText("From")}><input value={from} onChange={e=>setFrom(e.target.value)}/></Field><Field label={uiText("To")}><input value={to} onChange={e=>setTo(e.target.value)}/></Field><div className="button-row"><button disabled={exporting} onClick={()=>download('QUALIFICATIONS')}>{uiText("Export Qualifications CSV")}</button><button disabled={exporting} onClick={()=>download('ORDERS')}>{uiText("Export Orders CSV")}</button><button disabled={exporting} onClick={()=>download('PAYOUTS')}>{uiText("Export Payouts CSV")}</button></div></div></Card>
     <Card title={uiText("Integrity Status")}><div className="metrics mini"><Metric label={uiText("Critical")} value={i?.counts?.critical??'—'} helper={uiText("must fix")}/><Metric label={uiText("High")} value={i?.counts?.high??'—'} helper={uiText("review")}/><Metric label={uiText("Total")} value={i?.counts?.total??'—'} helper={uiText("alerts")}/></div><p className="muted">{uiText("Integrity Alert不是把資料自動改掉；系統只偵測與提示，由受權人員依Audit/Adjustment流程處理。")}</p></Card></div>
+    <p className="muted">匯出套用上方期間：資格與訂單依建立時間，付款批次依期間結束時間。每次最多 10,000 筆，超過時請縮小期間。完整性警示檢查目前資料，不受期間限制。</p>
     <ErrorBox error={exportError}/><QueryFeedback query={report}/><QueryFeedback query={integrity}/>{exporting&&<p role="status">匯出中…</p>}
     {r&&<><div className="metrics"><Metric label={uiText("新Person")} value={r.persons}/><Metric label={uiText("新Qualification")} value={r.qualifications}/><Metric label={uiText("Orders")} value={r.orders?.count??0} helper={money(r.orders?.netAmount)}/><Metric label={uiText("Payout Net")} value={money(r.payouts?._sum?.totalNet??0)} helper={`${r.payouts?._count??0} batches`}/></div>
     <div className="grid two"><Card title={uiText("Applications")}><div className="table-wrap"><AdminTable><thead><tr><th>{uiText("Status")}</th><th>{uiText("Count")}</th></tr></thead><tbody>{(r.applications??[]).map((x:any)=><tr key={x.status}><td>{domainLabel(x.status)}</td><td>{x._count}</td></tr>)}</tbody></AdminTable></div></Card>
     <Card title={uiText("Awards")}><div className="table-wrap"><AdminTable><thead><tr><th>{uiText("Type")}</th><th>{uiText("Count")}</th><th>{uiText("Theory")}</th><th>{uiText("Payable")}</th></tr></thead><tbody>{(r.awards??[]).map((x:any)=><tr key={x.awardType}><td>{domainLabel(x.awardType)}</td><td>{x._count}</td><td>{money(x._sum?.theoryAmount)}</td><td>{money(x._sum?.payableAmount)}</td></tr>)}</tbody></AdminTable></div></Card></div></>}
-    <Card title={uiText("Integrity Alerts")}><div className="table-wrap"><AdminTable><thead><tr><th>{uiText("Severity")}</th><th>{uiText("Code")}</th><th>{uiText("Entity")}</th><th>{uiText("Detail")}</th></tr></thead><tbody>{(i?.alerts??[]).map((x:any,idx:number)=><tr key={`${x.code}-${x.entityId}-${idx}`}><td><Badge tone={x.severity==='CRITICAL'?'danger':'warn'}>{domainLabel(x.severity)}</Badge></td><td>{x.code}</td><td>{x.entityType}<br/><span className="mono">{x.entityId}</span></td><td className="compact">{JSON.stringify(x.detail??{})}</td></tr>)}</tbody></AdminTable></div></Card>
+    <Card title={uiText("Integrity Alerts")}><div className="table-wrap"><AdminTable><thead><tr><th>{uiText("Severity")}</th><th>{uiText("Code")}</th><th>{uiText("Entity")}</th><th>{uiText("Detail")}</th></tr></thead><tbody>{(i?.alerts??[]).map((x:any,idx:number)=><tr key={`${x.code}-${x.entityId}-${idx}`}><td><Badge tone={x.severity==='CRITICAL'?'danger':'warn'}>{domainLabel(x.severity)}</Badge></td><td>{alertLabels[x.code]??x.code}<br/><small className="mono">{x.code}</small></td><td>{x.entityType}<br/><span className="mono">{x.entityId}</span></td><td className="compact">{JSON.stringify(x.detail??{})}</td></tr>)}</tbody></AdminTable></div></Card>
   </>
 }

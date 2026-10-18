@@ -1,6 +1,6 @@
 import { Roles } from '../auth/roles.decorator';
 import { Body,Controller,Get,Param,Post,Query,Req } from '@nestjs/common';
-import { ApiBearerAuth,ApiOperation,ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth,ApiOperation,ApiQuery,ApiTags } from '@nestjs/swagger';
 import { randomUUID } from 'crypto';
 import { AdminOpsReadyService } from './admin-ops-ready.service';
 
@@ -58,7 +58,9 @@ export class AdminOpsReadyController{
   @Roles('SUPER_ADMIN','FINANCE','COMPLIANCE_AUDIT')
   @Get('exports/:dataset')
   @ApiOperation({operationId:'adminCsvExport',summary:'Qualifications/Orders/Payouts CSV匯出'})
-  export(@Param('dataset') dataset:'QUALIFICATIONS'|'ORDERS'|'PAYOUTS',@Query('take') take?:string){
-    return this.service.exportDataset(dataset,Number(take??5000)).then(data=>({data}));
+  @ApiQuery({name:'from',required:false,type:String,description:'起始時間；與 to 一起提供，使用 ISO 8601 格式'})
+  @ApiQuery({name:'to',required:false,type:String,description:'結束時間；與 from 一起提供，使用 ISO 8601 格式'})
+  export(@Param('dataset') dataset:'QUALIFICATIONS'|'ORDERS'|'PAYOUTS',@Query('take') take?:string,@Query('from') from?:string,@Query('to') to?:string){
+    return this.service.exportDataset(dataset,Number(take??5000),from===undefined?undefined:new Date(from),to===undefined?undefined:new Date(to)).then(data=>({data}));
   }
 }
