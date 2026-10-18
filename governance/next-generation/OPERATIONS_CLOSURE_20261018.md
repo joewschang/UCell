@@ -20,6 +20,8 @@
 
 ## 版本保存
 
-舊 party-spouse-control 工作目錄的未提交檔案已備份至本機 closure-20261018/source-backup，另存 SHA-256 清單。舊 Git 缺少部分物件，已從遠端可驗證提交重建物件，保留原檔案與引用。本次修正於獨立分支記錄，沒有把整批歷史未提交變更直接覆蓋 main。
+舊 party-spouse-control 工作目錄的 313 個未提交檔案已備份至本機 closure-20261018/source-backup，另存 SHA-256 清單。舊 Git 缺少部分物件，已從遠端可驗證提交重建物件，將缺失 pack 的失效索引移至備份並重建 multi-pack-index；git fsck 連通性檢查 exit 0。保留原檔案與引用，另建立 archive/local-production-20261018 本地快照及完整歷史 bundle（已驗證）。本次修正於獨立分支記錄，沒有把整批歷史未提交變更直接覆蓋 main。
+
+補充驗證：簽名／文件／通知後端 25 項與掃碼／通知／文件預覽前端 7 項測試通過。正式完整性回讀為 Critical 0、High 1（套組認列設定待完成），未來空期間訂單匯出為 0 筆。前後台及 API HTTP 200，線上後台包含新版期間說明與套組警示。
 
 正式部署來源為 production-20261014 與 zh-tw-production-20261017 的既有發布快照，僅套用上述修正，保留已上線的會員簽名、掃描檔、通知與 QR 功能。
