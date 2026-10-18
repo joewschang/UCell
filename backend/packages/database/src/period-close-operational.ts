@@ -3,7 +3,7 @@ import {createHash} from 'node:crypto';
 import {verifySnapshot} from './parameter-snapshot';
 import {preparationSourcePeriod,periodBonusAwardWhere} from './payable-materialization';
 
-export const periodCloseSourceEvents=['SALE_CONFIRMED','WEB_MEMBER_RETAIL_PAYMENT_CONFIRMED','RETURN_CONFIRMED','RETURN_DEPENDENCY_REPLAY_REQUIRED','EPV_MONTH_RECALCULATION_REQUIRED','RPV_REVERSAL_REQUIRED'];
+export const periodCloseSourceEvents=['SALE_CONFIRMED','WEB_MEMBER_RETAIL_PAYMENT_CONFIRMED','PACKAGE_PAYMENT_CONFIRMED','RETURN_CONFIRMED','RETURN_DEPENDENCY_REPLAY_REQUIRED','EPV_MONTH_RECALCULATION_REQUIRED','RPV_REVERSAL_REQUIRED'];
 export async function periodCloseInputState(db:Pick<Prisma.TransactionClient,'outboxEvent'|'monthlyRecognitionSchedule'>,job:{periodEnd:Date;ruleVersionCode:string}){
  const sourceEvents=await db.outboxEvent.count({where:{eventType:{in:periodCloseSourceEvents},processStatus:{not:'PROCESSED'}}});
  const recognitions=await db.monthlyRecognitionSchedule.count({where:{ruleVersionCode:job.ruleVersionCode,dueAt:{lt:job.periodEnd},status:{in:['SCHEDULED','DUE']}}});
