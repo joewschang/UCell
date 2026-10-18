@@ -1,4 +1,5 @@
 export const API_VERSION = 'v1';
+export * from './package-gpv';
 
 export * from './calendar/calendar';
 export * from './ai-ready/catalog';
