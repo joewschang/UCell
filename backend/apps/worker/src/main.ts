@@ -129,7 +129,7 @@ export async function processRecognition(recognitionId:string,db:PrismaService=p
 
     await tx.$queryRaw`SELECT subscription_id FROM subscription.subscription WHERE subscription_id=${schedule.subscriptionId}::uuid FOR UPDATE`;
     schedule=await tx.monthlyRecognitionSchedule.findUniqueOrThrow({where:{recognitionId},include:{subscription:true}});
-    if(!['SCHEDULED','DUE'].includes(schedule.status)) return;
+    if(schedule.subscription.status!=='ACTIVE'||!['SCHEDULED','DUE'].includes(schedule.status)) return;
     if(schedule.retainedEntitlementRatio==null){
       const partials=await tx.subscriptionCancellation.count({where:{subscriptionId:schedule.subscriptionId,status:'POSTED',refundAmount:{gt:0},reasonCode:{not:'FULL_RETURN'}}});
       if(partials) pending('SUBSCRIPTION_REFUND_BASIS_MISSING','Legacy schedule needs an explicit refund basis');

@@ -13,4 +13,9 @@ describe('prepaid package EPV boundary',()=>{
   await processRecognition('prepared',{$transaction:async(work:any)=>work(tx)} as any);
   expect(tx.$queryRaw).not.toHaveBeenCalled();expect(tx.pvLedger.upsert).not.toHaveBeenCalled();
  });
+ it('rechecks subscription cancellation after acquiring its lock',async()=>{
+  const tx={monthlyRecognitionSchedule:{findUnique:jest.fn().mockResolvedValue({subscriptionId:'sub',status:'SCHEDULED',dueAt:new Date(0),subscription:{status:'ACTIVE'}}),findUniqueOrThrow:jest.fn().mockResolvedValue({status:'SCHEDULED',subscription:{status:'CANCELLED'}})},$queryRaw:jest.fn(),pvLedger:{upsert:jest.fn()}};
+  await processRecognition('cancelled',{$transaction:async(work:any)=>work(tx)} as any);
+  expect(tx.$queryRaw).toHaveBeenCalledTimes(1);expect(tx.pvLedger.upsert).not.toHaveBeenCalled();
+ });
 });
