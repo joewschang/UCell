@@ -25,6 +25,14 @@ export class ReturnService {
       if(!['PAID','FULFILLED','PARTIAL_RETURN'].includes(order.status))
         throw new ConflictException({code:'ORDER_LOCKED',message:'只有已付款/已出貨訂單可退貨。'});
 
+      // Package selections intentionally have zero allocated money/volume. They
+      // must not be posted as ordinary zero-value returns or acknowledged early.
+      if(order.lines.some(line => (line.ruleProfileSnapshot as any)?.packageSelection === true))
+        throw new UnprocessableEntityException({
+          code:'PACKAGE_RETURN_ALLOCATION_PENDING',
+          message:'套組退貨須依原始認列帳本及分攤規則回沖，目前尚未過帳。'
+        });
+
       if(new Set(dto.lines.map(line=>line.orderLineId)).size!==dto.lines.length)
         throw new UnprocessableEntityException({code:'DUPLICATE_RETURN_LINE',message:'Each original line may appear only once per return event.'});
       const reused=await tx.returnCase.findUnique({where:{idempotencyKey:key}});
