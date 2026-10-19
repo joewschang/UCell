@@ -4,6 +4,7 @@ import {captureParameters} from './parameter-snapshot';
 import {taipeiMonth} from './recognition-active';
 import {applyGpvImmediateEffects} from './gpv-immediate-effects';
 import {OutboxLease, withOutboxLease} from './outbox-lease';
+import {preplacementReturnedGpv} from './qualification-return-review';
 
 export const qualificationPackagePolicy = 'PO_20261019_QUALIFICATION_GPV_ONLY';
 const approved:Record<string,[string,number]>={STARTER:['14400',3],ELITE:['43200',9],LEADER:['72000',15]};
@@ -25,6 +26,7 @@ export async function recognizeQualificationPackage(tx:Prisma.TransactionClient,
  if(!order.qualificationId||!order.paidAt||!['PAID','FULFILLED','PARTIAL_RETURN','RETURNED'].includes(order.status))throw new Error('PACKAGE_PAID_ORDER_REQUIRED');
  const setup=await tx.qualificationSetup.findUniqueOrThrow({where:{qualificationId:order.qualificationId}});
  if(setup.qualifyingOrderId!==orderId||setup.packagePurchaseSnapshotId!==purchase.packagePurchaseSnapshotId)throw new Error('PACKAGE_SETUP_EVIDENCE_MISMATCH');
+ if(setup.setupStatus==='REVERSED'||setup.setupStatus==='CANCELLED')return {status:'CANCELLED',created:0};
  const month=taipeiMonth(order.paidAt);
  const entitlement=await tx.qualificationActiveEntitlementEvidence.findUnique({where:{packagePurchaseSnapshotId:purchase.packagePurchaseSnapshotId}});
  if(!entitlement){
@@ -44,8 +46,12 @@ export async function recognizeQualificationPackage(tx:Prisma.TransactionClient,
  const value=policy[0]?.value as any;
  if(order.ruleVersionCode!=='R1.0B'||policy.length!==1||value?.gpvRate!=='0.6'||value?.qualificationPackage?.gpv!==true||value?.qualificationPackage?.rpv!==false||value?.qualificationPackage?.epv!==false)throw new Error('PACKAGE_RUNTIME_POLICY_CONFLICT');
  let created=0;
+ const beforePlacement=await preplacementReturnedGpv(tx,orderId);
  for(const line of order.lines){
-  const amount=allocation.gpvPerBox.mul(line.quantity);
+  const excluded=beforePlacement.get(line.orderLineId)??new Prisma.Decimal(0);
+  const amount=allocation.gpvPerBox.mul(line.quantity).sub(excluded);
+  if(amount.lt(0))throw new Error('PACKAGE_RETURN_EXCEEDS_ORIGINAL');
+  if(amount.eq(0))continue;
   const existing=await tx.pvLedger.findFirst({where:{sourceType:'ORDER',sourceId:orderId,sourceLineId:line.orderLineId,eventType:'GPV_CREATED',pvType:'GPV'}});
   if(existing){
    if(!existing.amount.eq(amount)||existing.occurredAt.getTime()!==setup.placedAt.getTime()||existing.qualificationId!==order.qualificationId)throw new Error('PACKAGE_VOLUME_EVIDENCE_CONFLICT');
@@ -54,7 +60,7 @@ export async function recognizeQualificationPackage(tx:Prisma.TransactionClient,
   if(order.status==='RETURNED')throw new Error('RETURNED_PACKAGE_ORIGINAL_VOLUME_MISSING');
   const volume=await tx.pvLedger.create({data:{qualificationId:order.qualificationId,pvType:'GPV',amount,sourceType:'ORDER',sourceId:orderId,sourceLineId:line.orderLineId,eventType:'GPV_CREATED',ruleVersionCode:order.ruleVersionCode,parameterSnapshotHash:parameters.hash,occurredAt:setup.placedAt,correlationId}});
   await tx.volumeRecognitionClassification.create({data:{volumeEventId:volume.eventId,volumeClass:'PV',concreteVolumeType:'GPV',classificationVersion:qualificationPackagePolicy,ruleVersionCode:order.ruleVersionCode,evidenceHash:createHash('sha256').update(JSON.stringify({eventId:volume.eventId,policy:qualificationPackagePolicy,personalConsumptionEligible:false})).digest('hex')}});
-  await applyGpvImmediateEffects(tx,volume);
+  await applyGpvImmediateEffects(tx,volume,undefined,excluded.gt(0)?excluded.toString():undefined);
   created++;
  }
  return {status:'RECOGNIZED',created};

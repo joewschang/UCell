@@ -1,5 +1,5 @@
 import {ConflictException,ForbiddenException,Injectable,NotFoundException,UnprocessableEntityException} from '@nestjs/common';
-import {PrismaService,SideCode} from '@ucell/database';
+import {PrismaService,SideCode,Prisma,qualificationReturnReviewPolicy} from '@ucell/database';
 import {createHash,randomUUID} from 'node:crypto';
 import {AuditService} from '../../common/audit/audit.service';
 import {IdempotencyService} from '../../common/idempotency/idempotency.service';
@@ -26,6 +26,36 @@ export class QualificationPlacementService {
  async monitor(input:{status?:string;aging?:string;take?:number}={},now=new Date()){
   const take=Math.min(Math.max(Number.isFinite(input.take)?input.take!:50,1),100),rows=await this.db.qualificationSetup.findMany({where:{setupStatus:{in:['PLACEMENT_PENDING','PLACEMENT_OVERDUE','PLACED']}},orderBy:{placementDueAt:'asc'},take:100});
   return rows.map(x=>this.view(x,now)).filter(x=>(!input.status||x.status===input.status)&&(!input.aging||x.agingBucket===input.aging)).slice(0,take);
+ }
+
+ async returnReviews(){
+  const rows=await this.db.qualificationSetup.findMany({where:{setupStatus:'RETURN_REVIEW_PENDING'},orderBy:{updatedAt:'asc'},take:100});
+  return Promise.all(rows.map(async row=>{
+   const order=await this.db.order.findUniqueOrThrow({where:{orderId:row.qualifyingOrderId}});
+   const returned=await this.db.returnLine.aggregate({where:{returnCase:{orderId:order.orderId,status:'POSTED'}},_sum:{returnAmount:true}});
+   const person=row.ownerPersonId?await this.db.person.findUnique({where:{personId:row.ownerPersonId},select:{memberNo:true}}):null;
+   return {qualificationId:row.qualificationId,orderId:order.orderId,orderNo:order.orderNo.toString(),memberNo:person?.memberNo??null,originalPackageType:row.packageType,remainingAmount:order.netAmount.sub(returned._sum.returnAmount??0).toString(),status:row.setupStatus};
+  }));
+ }
+
+ async approveReturnReview(actorId:string|undefined,qualificationId:string,input:{planLevelCode:string;reasonCode:string},key:string,requestId:string){
+  const prices:Record<string,string>={STARTER:'14400',ELITE:'43200',LEADER:'72000'};
+  if(!actorId||!prices[input.planLevelCode]||!input.reasonCode?.trim())throw new UnprocessableEntityException({code:'QUALIFICATION_RETURN_REVIEW_INPUT_REQUIRED'});
+  return this.idempotency.execute(`admin:qualification-return-review:${qualificationId}`,key,input,async tx=>{
+   await tx.$queryRaw`SELECT true AS locked FROM (SELECT pg_advisory_xact_lock(hashtextextended(${qualificationId},0))) lock_row`;
+   const setup=await tx.qualificationSetup.findUniqueOrThrow({where:{qualificationId}});
+   if(setup.setupStatus!=='RETURN_REVIEW_PENDING'||setup.placedAt)throw new ConflictException({code:'QUALIFICATION_RETURN_REVIEW_NOT_PENDING'});
+   await tx.$queryRaw`SELECT order_id FROM commerce."order" WHERE order_id=${setup.qualifyingOrderId}::uuid FOR UPDATE`;
+   const order=await tx.order.findUniqueOrThrow({where:{orderId:setup.qualifyingOrderId}});
+   const returned=await tx.returnLine.aggregate({where:{returnCase:{orderId:order.orderId,status:'POSTED'}},_sum:{returnAmount:true}});
+   const remaining=order.netAmount.sub(returned._sum.returnAmount??0);
+   if(order.status!=='PARTIAL_RETURN'||remaining.lt(new Prisma.Decimal(prices[input.planLevelCode])))throw new UnprocessableEntityException({code:'QUALIFICATION_RETAINED_AMOUNT_INSUFFICIENT'});
+   const now=new Date(),correlationId=randomUUID(),status=setup.finalSponsorQualificationId?'PLACEMENT_PENDING':'BALL_SETUP_PENDING';
+   await tx.qualification.update({where:{qualificationId},data:{planLevelCode:input.planLevelCode}});
+   await tx.qualificationSetup.update({where:{qualificationId},data:{setupStatus:status,placementRequestedAt:setup.finalSponsorQualificationId?now:null,placementDueAt:setup.finalSponsorQualificationId?new Date(now.getTime()+72*3600000):null}});
+   await this.audit.write(tx,{actorType:'USER',actorId,action:'QUALIFICATION_RETURN_REVIEW_APPROVED',entityType:'Qualification',entityId:qualificationId,afterData:{...input,orderId:order.orderId,remainingAmount:remaining.toString(),policy:qualificationReturnReviewPolicy},requestId,correlationId});
+   return {qualificationId,planLevelCode:input.planLevelCode,status,remainingAmount:remaining.toString()};
+  });
  }
 
  async placeBySponsorOwner(personId:string,input:PlacementInput,key:string,requestId:string){return this.place(personId,'SPONSOR_OWNER',input,key,requestId);}

@@ -1,5 +1,5 @@
 import { ConflictException, Injectable, UnprocessableEntityException } from '@nestjs/common';
-import { Prisma, PrismaService, qualificationPackageAllocation,packageMonthlyPlan,approvedRepurchaseTiming,preparePackageMonthlySchedule,preparePackageMonthlyReturn } from '@ucell/database';
+import { Prisma, PrismaService, qualificationPackageAllocation,packageMonthlyPlan,approvedRepurchaseTiming,preparePackageMonthlySchedule,preparePackageMonthlyReturn,preplacementReturnedGpv,acceptQualificationPreplacementReturn,unplacedReturnStates } from '@ucell/database';
 import { randomUUID } from 'crypto';
 import { AuditService } from '../../common/audit/audit.service';
 import { IdempotencyService } from '../../common/idempotency/idempotency.service';
@@ -27,6 +27,7 @@ export class ReturnService {
 
       let packageAllocation:ReturnType<typeof qualificationPackageAllocation>|undefined;
       let monthlyPackage=false;
+      let preplacementPackage=false;
       let recognitionAt=order.paidAt;
       if(order.lines.some(line => (line.ruleProfileSnapshot as any)?.packageSelection === true)){
         const purchase=await tx.packagePurchaseSnapshot.findUnique({where:{orderId}});
@@ -41,9 +42,15 @@ export class ReturnService {
         }catch{throw new UnprocessableEntityException({code:'PACKAGE_RETURN_ALLOCATION_PENDING'});}
         const originals=await tx.pvLedger.findMany({where:{sourceType:monthlyPackage?'PACKAGE_MONTHLY':'ORDER',sourceId:orderId,eventType:'GPV_CREATED',pvType:'GPV'}});
         if(!monthlyPackage){
-        if(order.lines.some(line=>!originals.some(v=>v.sourceLineId===line.orderLineId&&v.amount.eq(packageAllocation!.gpvPerBox.mul(line.quantity)))))
+        if(!order.qualificationId)throw new UnprocessableEntityException({code:'PACKAGE_SETUP_REQUIRED'});
+        await tx.$queryRaw`SELECT true AS locked FROM (SELECT pg_advisory_xact_lock(hashtextextended(${order.qualificationId},0))) lock_row`;
+        await tx.$queryRaw`SELECT order_id FROM commerce."order" WHERE order_id=${orderId}::uuid FOR UPDATE`;
+        const setup=await tx.qualificationSetup.findUniqueOrThrow({where:{qualificationId:order.qualificationId}});
+        preplacementPackage=!setup.placedAt&&unplacedReturnStates.includes(setup.setupStatus)&&originals.length===0;
+        const excluded=await preplacementReturnedGpv(tx,orderId);
+        if(!preplacementPackage&&order.lines.some(line=>{const expected=packageAllocation!.gpvPerBox.mul(line.quantity).sub(excluded.get(line.orderLineId)??0);return expected.gt(0)&&!originals.some(v=>v.sourceLineId===line.orderLineId&&v.amount.eq(expected));}))
           throw new UnprocessableEntityException({code:'PACKAGE_ORIGINAL_RECOGNITION_PENDING'});
-        recognitionAt=originals.reduce((at,v)=>v.occurredAt<at?v.occurredAt:at,originals[0].occurredAt);
+        if(!preplacementPackage)recognitionAt=originals.reduce((at,v)=>v.occurredAt<at?v.occurredAt:at,originals[0].occurredAt);
         }
         if(!recognitionAt||new Date(dto.occurredAt)<recognitionAt)throw new UnprocessableEntityException({code:'RETURN_BEFORE_RECOGNITION'});
       }
@@ -72,7 +79,7 @@ export class ReturnService {
         },
         select:{settlementType:true,periodStart:true,periodEnd:true}
       });
-      if(affectedSettlements.length) await tx.settlementRecalculationRequest.createMany({
+      if(!preplacementPackage&&affectedSettlements.length) await tx.settlementRecalculationRequest.createMany({
         data:affectedSettlements.map(batch=>({
           sourceReturnCaseId:ret.returnCaseId,settlementType:batch.settlementType,
           periodStart:batch.periodStart,periodEnd:batch.periodEnd,
@@ -124,6 +131,7 @@ export class ReturnService {
         data:{status:fullReturn?'RETURNED':'PARTIAL_RETURN'}
       });
       if(monthlyPackage)await preparePackageMonthlyReturn(tx,ret.returnCaseId);
+      if(preplacementPackage)await acceptQualificationPreplacementReturn(tx,{qualificationId:order.qualificationId!,orderId,returnCaseId:ret.returnCaseId,fullReturn,remainingAmount:order.netAmount.sub(cumulativeReturn),correlationId,actorId,requestId});
 
       if(fullReturn&&order.qualificationId){
         const setup=await tx.qualificationSetup.findUnique({where:{qualificationId:order.qualificationId}});

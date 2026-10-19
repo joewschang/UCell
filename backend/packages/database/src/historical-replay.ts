@@ -415,7 +415,9 @@ export async function effectiveGpv(tx:Prisma.TransactionClient,sources:ReplayEnv
       continue;
     }
     const returns=await tx.returnLine.aggregate({where:{orderLineId:source.inputs.lineId,returnCase:{status:'POSTED'}},_sum:{gpvReversalAmount:true}});
-    const amount=dec(source.inputs.volume).sub(returns._sum.gpvReversalAmount??dec(0));
+    const excluded=dec(source.inputs.preplacementReturnedGpv??0);
+    if(excluded.lt(0)||excluded.gt(returns._sum.gpvReversalAmount??dec(0)))pending('HISTORICAL_SNAPSHOT_CORRUPT','Invalid pre-placement return basis');
+    const amount=dec(source.inputs.volume).sub(returns._sum.gpvReversalAmount??dec(0)).add(excluded);
     if(amount.lt(0)) pending('RETURN_AMOUNT_EXCEEDED','Cumulative reversal exceeds original GPV');
     result.set(source.sourceId,amount);
   }
@@ -699,6 +701,8 @@ export async function processHistoricalReturn(tx:Prisma.TransactionClient,return
   // Validate and replay all dependencies before publishing a successful source-reversal marker.
   const ret=await tx.returnCase.findUniqueOrThrow({where:{returnCaseId},include:{lines:true,order:true}});
   const purchase=await tx.packagePurchaseSnapshot.findUnique({where:{orderId:ret.orderId}});
+  const preplacement=purchase?.packageClass==='QUALIFICATION'?await tx.auditEvent.findFirst({where:{action:'QUALIFICATION_PREPLACEMENT_RETURN_ACCEPTED',entityType:'RETURN',entityId:returnCaseId}}):null;
+  if(preplacement)return {returnCaseId,status:'REPLAYED',noOriginalRecognition:true,createdReversalEvents:[]};
   const monthly=purchase?.packageClass==='ACTIVE_DURATION';
   if(monthly)await preparePackageMonthlyReturn(tx,returnCaseId);
   const monthlyOriginals=monthly?await tx.pvLedger.findMany({where:{sourceType:'PACKAGE_MONTHLY',sourceId:ret.orderId,pvType:'GPV',eventType:'GPV_CREATED'}}):[];
