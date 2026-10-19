@@ -1,6 +1,6 @@
 import {PrismaClient, Prisma} from '@prisma/client';
 import {randomUUID} from 'node:crypto';
-import {captureParameters} from '@ucell/database';
+import {captureParameters, recognizeQualificationPackage, processHistoricalReturn, processQualificationPackageEvent, claimOutboxLease} from '@ucell/database';
 import {PackageConfigService} from '../src/modules/package-config/package-config.service';
 import {OrderService} from '../src/modules/order/order.service';
 import {ReturnService} from '../src/modules/return/return.service';
@@ -15,7 +15,7 @@ describeDb('package Core parameter and return posting boundaries',()=>{
  let db:PrismaClient;
  beforeAll(()=>{db=new PrismaClient({datasources:{db:{url}}});});
  afterAll(()=>db.$disconnect());
- it('persists actual Core snapshot and rejects zero-value package returns atomically',async()=>{
+ it('recognizes at placement across months without consumption and reverses a per-box partial return',async()=>{
   const at=new Date(Date.now()-60000),token=randomUUID();
   const policy={gpvRate:'0.6',rpvRate:'0.6',epvRate:'0.6',qualificationPackage:{gpv:true,rpv:false,epv:false,active:'PAYMENT_CALENDAR_MONTH_ASIA_TAIPEI'}};
   await db.runtimeRuleParameter.create({data:{ruleVersionCode:'R1.0B',parameterCode:'OWNER_VOLUME_POLICY_20261019',scopeKey:'*',valueJson:policy,effectiveFrom:at}});
@@ -43,11 +43,67 @@ describeDb('package Core parameter and return posting boundaries',()=>{
   const before={returns:await db.returnCase.count(),events:await db.outboxEvent.count(),ledger:await db.pvLedger.count()};
   const returns=new ReturnService(db as any,idempotency,audit,outbox);
   for(const quantity of ['1','3']){
-   await expect(returns.post(order.orderId,{lines:[{orderLineId:order.lines[0].orderLineId,quantity}],reasonCode:'ISOLATED_TEST',occurredAt:new Date().toISOString()},randomUUID(),request)).rejects.toMatchObject({response:{code:'PACKAGE_RETURN_ALLOCATION_PENDING'}});
+   await expect(returns.post(order.orderId,{lines:[{orderLineId:order.lines[0].orderLineId,quantity}],reasonCode:'ISOLATED_TEST',occurredAt:new Date().toISOString()},randomUUID(),request)).rejects.toMatchObject({response:{code:'PACKAGE_ORIGINAL_RECOGNITION_PENDING'}});
   }
   expect({returns:await db.returnCase.count(),events:await db.outboxEvent.count(),ledger:await db.pvLedger.count()}).toEqual(before);
   expect((await db.order.findUniqueOrThrow({where:{orderId:order.orderId}})).status).toBe('PAID');
   expect(await db.returnLine.count({where:{orderLineId:order.lines[0].orderLineId}})).toBe(0);
+  const qid=order.qualificationId!;
+  const run=()=>db.$transaction(tx=>recognizeQualificationPackage(tx,order.orderId,request),{isolationLevel:'Serializable'});
+  expect(await run()).toMatchObject({status:'AWAITING_PLACEMENT',created:0});
+  const paymentEvent=await db.outboxEvent.findFirstOrThrow({where:{eventType:'PACKAGE_PAYMENT_CONFIRMED',aggregateId:order.orderId}});
+  const paymentLease=await claimOutboxLease(db,paymentEvent);
+  await processQualificationPackageEvent(db,paymentLease!);
+  expect((await db.outboxEvent.findUniqueOrThrow({where:{outboxEventId:paymentEvent.outboxEventId}})).processStatus).toBe('PROCESSED');
+
+  expect(await db.pvLedger.count({where:{sourceId:order.orderId}})).toBe(0);
+  expect(await db.qualificationActiveEntitlementEvidence.count({where:{qualificationId:qid}})).toBe(1);
+  const paidMonth=new Date(Date.now()+8*3600000);
+  const placedAt=new Date(Date.UTC(paidMonth.getUTCFullYear(),paidMonth.getUTCMonth()+1,2)-8*3600000);
+  const parent=await db.qualification.create({data:{currentHolderPersonId:person.personId,planLevelCode:'STARTER',status:'EFFECTIVE'}});
+  await db.qualificationPlanHistory.create({data:{qualificationId:parent.qualificationId,planCode:'STARTER',effectiveFrom:at,sourceType:'TEST'}});
+  await db.qualificationStatusHistory.create({data:{qualificationId:parent.qualificationId,status:'EFFECTIVE',effectiveFrom:at,sourceType:'TEST'}});
+  await db.activePeriod.create({data:{qualificationId:parent.qualificationId,activeFrom:at,sourceType:'TEST',ruleVersionCode:'R1.0B'}});
+  await db.sponsorRelationship.create({data:{childQualificationId:qid,sponsorQualificationId:parent.qualificationId,sponsorSequenceNo:1,effectiveFrom:placedAt}});
+  await db.binaryPlacement.create({data:{childQualificationId:qid,parentQualificationId:parent.qualificationId,side:'LEFT',effectiveFrom:placedAt}});
+
+  await db.qualificationStatusHistory.updateMany({where:{qualificationId:qid,effectiveTo:null},data:{effectiveTo:placedAt}});
+  await db.qualificationStatusHistory.create({data:{qualificationId:qid,status:'EFFECTIVE',effectiveFrom:placedAt,sourceType:'TEST_PLACEMENT'}});
+  await db.qualificationPlanHistory.create({data:{qualificationId:qid,planCode:'STARTER',effectiveFrom:placedAt,sourceType:'TEST_PLACEMENT'}});
+  await db.qualificationSetup.update({where:{qualificationId:qid},data:{setupStatus:'PLACED',placedAt}});
+  await db.placementEvidence.create({data:{qualificationId:qid,sponsorQualificationId:parent.qualificationId,binaryParentQualificationId:parent.qualificationId,side:'LEFT',placedByType:'ADMIN_OVERRIDE',placedAt,policyVersion:'TEST',previousStatus:'BALL_SETUP_PENDING',correlationId:request,evidenceHash:'test'}});
+  expect((await db.qualificationActiveEntitlementEvidence.findFirstOrThrow({where:{qualificationId:qid}})).periodEnd.getTime()).toBeLessThan(placedAt.getTime());
+  expect(await run()).toMatchObject({status:'RECOGNIZED',created:1});
+  expect(await run()).toMatchObject({status:'RECOGNIZED',created:0});
+  const placedEvent=await db.outboxEvent.create({data:{eventType:'QUALIFICATION_PLACED',aggregateType:'Qualification',aggregateId:qid,correlationId:request,payload:{qualificationId:qid}}});
+  await processQualificationPackageEvent(db,(await claimOutboxLease(db,placedEvent))!);
+  expect((await db.outboxEvent.findUniqueOrThrow({where:{outboxEventId:placedEvent.outboxEventId}})).processStatus).toBe('PROCESSED');
+
+  const ledger=await db.pvLedger.findMany({where:{sourceId:order.orderId}});
+  expect(ledger.map(v=>[v.pvType,v.amount.toString(),v.occurredAt.toISOString()])).toEqual([['GPV','8640',placedAt.toISOString()]]);
+  expect((await db.binaryVolumeLedger.findMany({where:{sourceQualificationId:qid}})).map(v=>v.amount.toString())).toEqual(['8640']);
+  expect(await db.consumptionRecognitionEvent.count({where:{sourceId:order.orderId}})).toBe(0);
+  expect(await db.qualificationMonthAccumulatorEvidence.count({where:{qualificationId:qid}})).toBe(0);
+  expect(await db.activePeriod.count({where:{qualificationId:qid,sourceType:'QUALIFICATION_PACKAGE'}})).toBe(1);
+  const returnedAt=new Date(placedAt.getTime()+1000).toISOString(),returnKey=randomUUID();
+  const returnInput={lines:[{orderLineId:order.lines[0].orderLineId,quantity:'1'}],reasonCode:'TEST',occurredAt:returnedAt};
+  const returned=(await returns.post(order.orderId,returnInput,returnKey,request)).value!;
+  expect(returned.lines[0].returnAmount.toString()).toBe('4800');
+  expect(returned.lines[0].gpvReversalAmount.toString()).toBe('2880');
+  expect((await returns.post(order.orderId,returnInput,returnKey,request)).value!.returnCaseId).toBe(returned.returnCaseId);
+  await db.$transaction(tx=>processHistoricalReturn(tx,returned.returnCaseId),{isolationLevel:'Serializable'});
+  const reversal=await db.pvLedger.findFirstOrThrow({where:{sourceId:returned.returnCaseId,eventType:'GPV_REVERSAL'}});
+  expect(reversal.amount.toString()).toBe('-2880');expect(reversal.reversalOfEventId).toBe(ledger[0].eventId);
+  await expect(returns.post(order.orderId,{...returnInput,lines:[{orderLineId:order.lines[0].orderLineId,quantity:'3'}]},randomUUID(),request)).rejects.toBeDefined();
+  const finalReturn=(await returns.post(order.orderId,{...returnInput,lines:[{orderLineId:order.lines[0].orderLineId,quantity:'2'}]},randomUUID(),request)).value!;
+  await db.$transaction(tx=>processHistoricalReturn(tx,finalReturn.returnCaseId),{isolationLevel:'Serializable'});
+  await db.$transaction(tx=>processHistoricalReturn(tx,finalReturn.returnCaseId),{isolationLevel:'Serializable'});
+  expect((await db.order.findUniqueOrThrow({where:{orderId:order.orderId}})).status).toBe('RETURNED');
+  const reversals=await db.pvLedger.findMany({where:{reversalOfEventId:ledger[0].eventId}});
+  expect(reversals).toHaveLength(2);
+  expect(reversals.reduce((total,v)=>total.add(v.amount),new Prisma.Decimal(0)).toString()).toBe('-8640');
+
+
  });
  it('rejects mixed Core versions and missing historical policy without substituting current configuration',async()=>{
   const version={recognitionConfigRef:'PO_20261019_QUALIFICATION_GPV_ONLY',configHash:'a'.repeat(64)};
