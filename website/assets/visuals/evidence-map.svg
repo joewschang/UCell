@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="800" viewBox="0 0 1400 800">
+<defs>
+<linearGradient id="navyGrad" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#03182B"/><stop offset=".62" stop-color="#082B4A"/><stop offset="1" stop-color="#0D3D61"/></linearGradient>
+<linearGradient id="goldGrad" x1="0" x2="1"><stop stop-color="#8D641D"/><stop offset=".48" stop-color="#F0D18A"/><stop offset="1" stop-color="#B8872D"/></linearGradient>
+<linearGradient id="greenGrad" x1="0" x2="1"><stop stop-color="#2C6258"/><stop offset="1" stop-color="#6D9B82"/></linearGradient>
+<radialGradient id="glow"><stop stop-color="#EACD82" stop-opacity=".55"/><stop offset="1" stop-color="#EACD82" stop-opacity="0"/></radialGradient>
+<filter id="shadow"><feDropShadow dx="0" dy="18" stdDeviation="24" flood-opacity=".18"/></filter>
+
+</defs>
+<rect width="100%" height="100%" fill="#03182B"/>
+
+<rect width="1400" height="800" fill="url(#navyGrad)"/>
+<text x="95" y="105" fill="#E8C978" font-size="22" font-family="sans-serif" letter-spacing="6">SCIENCE CENTER</text>
+<text x="95" y="180" fill="#FFFFFF" font-size="52" font-family="sans-serif" font-weight="700">從成分，到證據</text>
+<text x="95" y="225" fill="#BFD0DE" font-size="20" font-family="sans-serif">每一種證據都有它能回答的問題，也有不能跨越的界線。</text>
+<g font-family="sans-serif" text-anchor="middle">
+
+<circle cx="155" cy="420" r="72" fill="#0A3557" stroke="#D9B667" stroke-width="3"/>
+<text x="155" y="410" fill="#E8C978" font-size="18">01</text>
+<text x="155" y="445" fill="#FFFFFF" font-size="21" font-weight="700">原料資料</text>
+<text x="155" y="540" fill="#D6E0E8" font-size="17">INGREDIENT DATA</text><path d="M237 420 H288" stroke="#C39A47" stroke-width="3"/><path d="M278 409 L292 420 L278 431" fill="none" stroke="#C39A47" stroke-width="3"/>
+<circle cx="370" cy="420" r="72" fill="#0A3557" stroke="#D9B667" stroke-width="3"/>
+<text x="370" y="410" fill="#E8C978" font-size="18">02</text>
+<text x="370" y="445" fill="#FFFFFF" font-size="21" font-weight="700">分析／檢驗</text>
+<text x="370" y="540" fill="#D6E0E8" font-size="17">ANALYTICAL TEST</text><path d="M452 420 H503" stroke="#C39A47" stroke-width="3"/><path d="M493 409 L507 420 L493 431" fill="none" stroke="#C39A47" stroke-width="3"/>
+<circle cx="585" cy="420" r="72" fill="#0A3557" stroke="#D9B667" stroke-width="3"/>
+<text x="585" y="410" fill="#E8C978" font-size="18">03</text>
+<text x="585" y="445" fill="#FFFFFF" font-size="21" font-weight="700">體外研究</text>
+<text x="585" y="540" fill="#D6E0E8" font-size="17">IN-VITRO</text><path d="M667 420 H718" stroke="#C39A47" stroke-width="3"/><path d="M708 409 L722 420 L708 431" fill="none" stroke="#C39A47" stroke-width="3"/>
+<circle cx="800" cy="420" r="72" fill="#0A3557" stroke="#D9B667" stroke-width="3"/>
+<text x="800" y="410" fill="#E8C978" font-size="18">04</text>
+<text x="800" y="445" fill="#FFFFFF" font-size="21" font-weight="700">動物研究</text>
+<text x="800" y="540" fill="#D6E0E8" font-size="17">ANIMAL STUDY</text><path d="M882 420 H933" stroke="#C39A47" stroke-width="3"/><path d="M923 409 L937 420 L923 431" fill="none" stroke="#C39A47" stroke-width="3"/>
+<circle cx="1015" cy="420" r="72" fill="#0A3557" stroke="#D9B667" stroke-width="3"/>
+<text x="1015" y="410" fill="#E8C978" font-size="18">05</text>
+<text x="1015" y="445" fill="#FFFFFF" font-size="21" font-weight="700">人體研究</text>
+<text x="1015" y="540" fill="#D6E0E8" font-size="17">HUMAN STUDY</text><path d="M1097 420 H1148" stroke="#C39A47" stroke-width="3"/><path d="M1138 409 L1152 420 L1138 431" fill="none" stroke="#C39A47" stroke-width="3"/>
+<circle cx="1230" cy="420" r="72" fill="#0A3557" stroke="#D9B667" stroke-width="3"/>
+<text x="1230" y="410" fill="#E8C978" font-size="18">06</text>
+<text x="1230" y="445" fill="#FFFFFF" font-size="21" font-weight="700">同儕文獻</text>
+<text x="1230" y="540" fill="#D6E0E8" font-size="17">PEER-REVIEWED</text></g>
+<text x="95" y="685" fill="#9FB6C8" font-size="18" font-family="sans-serif">研究存在 ≠ 終端食品可直接宣稱相同人體效果。公開內容先做證據分類，再做法遵審查。</text>
+</svg>

@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="800" viewBox="0 0 1400 800">
+<defs>
+<linearGradient id="navyGrad" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#03182B"/><stop offset=".62" stop-color="#082B4A"/><stop offset="1" stop-color="#0D3D61"/></linearGradient>
+<linearGradient id="goldGrad" x1="0" x2="1"><stop stop-color="#8D641D"/><stop offset=".48" stop-color="#F0D18A"/><stop offset="1" stop-color="#B8872D"/></linearGradient>
+<linearGradient id="greenGrad" x1="0" x2="1"><stop stop-color="#2C6258"/><stop offset="1" stop-color="#6D9B82"/></linearGradient>
+<radialGradient id="glow"><stop stop-color="#EACD82" stop-opacity=".55"/><stop offset="1" stop-color="#EACD82" stop-opacity="0"/></radialGradient>
+<filter id="shadow"><feDropShadow dx="0" dy="18" stdDeviation="24" flood-opacity=".18"/></filter>
+
+</defs>
+<rect width="100%" height="100%" fill="#F7F3EA"/>
+
+<rect width="1400" height="800" fill="#F7F3EA"/>
+<circle cx="700" cy="400" r="122" fill="url(#navyGrad)"/>
+<text x="700" y="390" text-anchor="middle" fill="#FFFFFF" font-size="31" font-weight="700" font-family="sans-serif">善的循環</text>
+<text x="700" y="435" text-anchor="middle" fill="#E8C978" font-size="19" font-family="sans-serif">GOOD CYCLE</text>
+<g font-family="sans-serif" text-anchor="middle">
+<circle cx="700" cy="135" r="82" fill="#FFFFFF" stroke="#D6C28F" stroke-width="3"/><text x="700" y="130" font-size="38">♡</text><text x="700" y="165" fill="#082B4A" font-size="20" font-weight="700">守護健康</text>
+<circle cx="1030" cy="260" r="82" fill="#FFFFFF" stroke="#D6C28F" stroke-width="3"/><text x="1030" y="255" font-size="38">↗</text><text x="1030" y="290" fill="#082B4A" font-size="20" font-weight="700">改善生計</text>
+<circle cx="1030" cy="565" r="82" fill="#FFFFFF" stroke="#D6C28F" stroke-width="3"/><text x="1030" y="560" font-size="38">∞</text><text x="1030" y="595" fill="#082B4A" font-size="20" font-weight="700">成就彼此</text>
+<circle cx="370" cy="565" r="82" fill="#FFFFFF" stroke="#D6C28F" stroke-width="3"/><text x="370" y="560" font-size="38">◎</text><text x="370" y="595" fill="#082B4A" font-size="20" font-weight="700">回饋社會</text>
+<circle cx="370" cy="260" r="82" fill="#FFFFFF" stroke="#D6C28F" stroke-width="3"/><text x="370" y="255" font-size="38">♧</text><text x="370" y="290" fill="#082B4A" font-size="20" font-weight="700">永續發展</text>
+</g>
+<path d="M700 220 C900 220 900 330 950 330 M950 480 C900 560 820 560 780 560 M620 560 C510 560 480 500 450 470 M450 330 C490 250 560 220 620 220" fill="none" stroke="#C6A052" stroke-width="4" stroke-dasharray="10 12"/>
+
+</svg>

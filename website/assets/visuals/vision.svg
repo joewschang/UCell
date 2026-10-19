@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="800" viewBox="0 0 1400 800">
+<defs>
+<linearGradient id="navyGrad" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#03182B"/><stop offset=".62" stop-color="#082B4A"/><stop offset="1" stop-color="#0D3D61"/></linearGradient>
+<linearGradient id="goldGrad" x1="0" x2="1"><stop stop-color="#8D641D"/><stop offset=".48" stop-color="#F0D18A"/><stop offset="1" stop-color="#B8872D"/></linearGradient>
+<linearGradient id="greenGrad" x1="0" x2="1"><stop stop-color="#2C6258"/><stop offset="1" stop-color="#6D9B82"/></linearGradient>
+<radialGradient id="glow"><stop stop-color="#EACD82" stop-opacity=".55"/><stop offset="1" stop-color="#EACD82" stop-opacity="0"/></radialGradient>
+<filter id="shadow"><feDropShadow dx="0" dy="18" stdDeviation="24" flood-opacity=".18"/></filter>
+
+</defs>
+<rect width="100%" height="100%" fill="#F7F3EA"/>
+
+<rect x="90" y="85" width="1220" height="630" rx="42" fill="#FFFDF8" filter="url(#shadow)"/>
+<rect x="90" y="85" width="420" height="630" rx="42" fill="url(#navyGrad)"/>
+<circle cx="300" cy="280" r="118" fill="none" stroke="#E8C978" stroke-width="3"/>
+<path d="M240 330 C290 240 330 240 365 195 C405 250 400 335 300 390 C270 372 250 353 240 330Z" fill="url(#goldGrad)" opacity=".95"/>
+<text x="300" y="490" fill="#FFFFFF" text-anchor="middle" font-size="40" font-family="sans-serif" font-weight="700">宇您同行</text>
+<text x="300" y="545" fill="#E8C978" text-anchor="middle" font-size="34" font-family="sans-serif">生生不息</text>
+<text x="580" y="175" fill="#356C5C" font-size="22" font-family="sans-serif" letter-spacing="5">VISION</text>
+<text x="580" y="245" fill="#082B4A" font-size="48" font-family="sans-serif" font-weight="700">成為華人世界最值得信賴的</text>
+<text x="580" y="305" fill="#082B4A" font-size="48" font-family="sans-serif" font-weight="700">生命健康產業領導品牌</text>
+<g font-family="sans-serif" text-anchor="middle">
+<circle cx="650" cy="470" r="66" fill="#EEF5EF"/><text x="650" y="480" font-size="38">✦</text><text x="650" y="565" fill="#234A42" font-size="22">科學創新</text>
+<circle cx="850" cy="470" r="66" fill="#EEF5EF"/><text x="850" y="480" font-size="38">✓</text><text x="850" y="565" fill="#234A42" font-size="22">品質信賴</text>
+<circle cx="1050" cy="470" r="66" fill="#EEF5EF"/><text x="1050" y="480" font-size="38">∞</text><text x="1050" y="565" fill="#234A42" font-size="22">共好共享</text>
+<circle cx="1230" cy="470" r="66" fill="#EEF5EF"/><text x="1230" y="480" font-size="38">◎</text><text x="1230" y="565" fill="#234A42" font-size="22">放眼國際</text>
+</g>
+
+</svg>

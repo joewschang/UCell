@@ -11,6 +11,7 @@ import App from './App';
 import { SessionBoundary } from './SessionBoundary';
 import { AppErrorBoundary } from './AppErrorBoundary';
 import WebMemberEntry from './WebMemberEntry';
+import {memberEntryDestination} from './entryDestination';
 import {ThemeProvider,initializeUiTheme} from '@ucell/design-system';
 import './styles.css';
 import 'bootstrap/dist/css/bootstrap-grid.min.css';
@@ -57,12 +58,12 @@ function Bootstrap() {
         }
     };
 
-    if(bindingRequired)return existingMemberBinding?<LineBinding onBack={()=>setExistingMemberBinding(false)} onComplete={()=>setAttempt(n=>n+1)} onRecheck={()=>setAttempt(n=>n+1)}/>:<WebMemberEntry lineRegistrationToken={getLineRegistrationIdToken} onExistingMemberBinding={()=>setExistingMemberBinding(true)} onLineLogin={async()=>{await webLogin();}} onAuthenticated={()=>{navigate('/',{replace:true});setAttempt(n=>n+1)}}/>;
+    if(bindingRequired)return existingMemberBinding?<LineBinding onBack={()=>setExistingMemberBinding(false)} onComplete={()=>setAttempt(n=>n+1)} onRecheck={()=>setAttempt(n=>n+1)}/>:<WebMemberEntry lineRegistrationToken={getLineRegistrationIdToken} onExistingMemberBinding={()=>setExistingMemberBinding(true)} onLineLogin={async()=>{await webLogin();}} onAuthenticated={()=>{navigate(memberEntryDestination(window.location),{replace:true});setAttempt(n=>n+1)}}/>;
     if (error)
         return <main className="loading" role="alert"><section className="card uc-web-entry"><CompanyLogo className="uc-company-logo-entry"/><h1>{uiText("UCell 會員中心")}</h1><p>{error}</p><button disabled={startingWebLogin} onClick={() => reauthRequired?void webLogin(true):setAttempt(n => n + 1)}>{reauthRequired?uiText("重新登入 LINE"):'重新連線'}</button></section></main>;
 
     if (state === 'web-login')
-        return <WebMemberEntry onLineLogin={async()=>{await webLogin();}} onAuthenticated={()=>{navigate('/',{replace:true});setAttempt(n=>n+1)}}/>;
+        return <WebMemberEntry onLineLogin={async()=>{await webLogin();}} onAuthenticated={()=>{navigate(memberEntryDestination(window.location),{replace:true});setAttempt(n=>n+1)}}/>;
 
     if (state !== 'ready')
         return <main className="loading" role="status">{state === 'redirect' ? uiText("正在前往 LINE 登入…") : uiText("UCell 會員中心載入中…")}</main>;

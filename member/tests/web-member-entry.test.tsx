@@ -11,6 +11,13 @@ import WebMemberEntry from '../src/WebMemberEntry';
 import ContactVerifier from '../src/ContactVerifier';
 
 let tree:ReactTestRenderer|undefined;
+it('opens the official website join link in registration mode without creating a member',async()=>{
+ vi.stubGlobal('window',{location:{search:'?mode=register',pathname:'/'},history:{replaceState:vi.fn()}});
+ await act(async()=>{tree=create(<WebMemberEntry onLineLogin={vi.fn()} onAuthenticated={vi.fn()}/>,{createNodeMock:e=>e.type==='div'?{}:null});});
+ expect(JSON.stringify(tree!.toJSON())).toContain('登錄會員資料');
+ expect(auth.renderGoogleRegistrationButton).toHaveBeenCalled();
+ expect(auth.completeRegistration).not.toHaveBeenCalled();
+});
 it('authenticates the original Google member before linking current LINE and never creates another member',async()=>{
  const done=vi.fn(),token=vi.fn(()=> 'TEST_LINE_PROOF');
  await act(async()=>{tree=create(<WebMemberEntry onLineLogin={vi.fn()} onAuthenticated={done} lineRegistrationToken={token}/>,{createNodeMock:e=>e.type==='div'?{}:null});});

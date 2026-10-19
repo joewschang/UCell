@@ -48,6 +48,7 @@ import {FulfillmentOperationsModule} from './modules/commerce/fulfillment-operat
 
 @Module({
   imports: [
+    PublicWebsiteModule,
     OrganizationGeoModule,
     SettlementJobsModule,
     FulfillmentOperationsModule,
@@ -98,3 +99,4 @@ import {FulfillmentOperationsModule} from './modules/commerce/fulfillment-operat
   ],
 })
 export class AppModule {}
+import {PublicWebsiteModule} from './modules/public-website/public-website.module';
