@@ -8,7 +8,7 @@ const hash=(value:unknown)=>createHash('sha256').update(JSON.stringify(value)).d
 export async function replayPackageMonthlyActive(tx:Prisma.TransactionClient,original:any,delta:Prisma.Decimal,returnCaseId:string){
  const month=taipeiMonth(original.occurredAt),qid=original.qualificationId;
  await tx.$queryRaw`WITH locked AS (SELECT pg_advisory_xact_lock(hashtextextended(${`${qid}:${month.key}`},0))) SELECT 1::integer FROM locked`;
- const source=await tx.consumptionRecognitionEvent.findUniqueOrThrow({where:{idempotencyKey:`recognition:PACKAGE_MONTHLY:${original.sourceId}:${original.sourceLineId}`}});
+ const source=await tx.consumptionRecognitionEvent.findUniqueOrThrow({where:{idempotencyKey:`recognition:${original.sourceType}:${original.sourceId}:${original.sourceLineId??'-'}`}});
  const key=`package-active-return:${returnCaseId}:${original.eventId}`;
  if(await tx.consumptionRecognitionEvent.findUnique({where:{idempotencyKey:key}}))return;
  if(delta.gte(0))throw new Error('PACKAGE_ACTIVE_REVERSAL_MUST_BE_NEGATIVE');

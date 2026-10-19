@@ -1,4 +1,4 @@
-import {processQualificationPackageEvent,recognizePackageMonthlyGpv} from '@ucell/database';
+import {processQualificationPackageEvent,recognizePackageMonthlyGpv,processRepurchasePackageEvent} from '@ucell/database';
 import {effectiveSponsorDirectCount, appendRecognitionMemberMessage, emitStructuredOperationalError} from '@ucell/database';
 import { PrismaService, Prisma, companyAlwaysActiveAt, captureParameters, snapshotDecimal, processMemberOrderNotification, processPaymentInventoryReservation, recognizeConsumption, applyGpvImmediateEffects, sealRpvEvent, pending, claimOutboxLease, withOutboxLease, processLeasedReplay, processTreeProjectionEvent, releaseFailedOutboxLease, OutboxLease, matureBonusAward } from '@ucell/database';
 import * as crypto from 'node:crypto';
@@ -233,7 +233,7 @@ export async function pollOutbox(
   deps={claimOutboxLease,processSaleConfirmed,processRetailReferralPayment,processRetailReferralReturn,processMemberOrderNotification,processPaymentInventoryReservation,processLeasedReplay,processTreeProjectionEvent,releaseFailedOutboxLease}
 ){
   const events=await db.outboxEvent.findMany({
-    where:{eventType:{in:['PACKAGE_PAYMENT_CONFIRMED','QUALIFICATION_PLACED','BINARY_TREE_CHANGED','SALE_CONFIRMED','WEB_MEMBER_RETAIL_PAYMENT_CONFIRMED','MEMBER_ORDER_CREATED','PAYMENT_STATE_TRANSITIONED','RETURN_CONFIRMED','RETURN_DEPENDENCY_REPLAY_REQUIRED','EPV_MONTH_RECALCULATION_REQUIRED','RPV_REVERSAL_REQUIRED']},processStatus:{in:['PENDING','PROCESSING']},availableAt:{lte:new Date()},OR:[{eventType:{not:'PACKAGE_PAYMENT_CONFIRMED'}},{payload:{path:['packageClass'],equals:'QUALIFICATION'}}]},
+    where:{eventType:{in:['PACKAGE_PAYMENT_CONFIRMED','QUALIFICATION_PLACED','BINARY_TREE_CHANGED','SALE_CONFIRMED','WEB_MEMBER_RETAIL_PAYMENT_CONFIRMED','MEMBER_ORDER_CREATED','PAYMENT_STATE_TRANSITIONED','RETURN_CONFIRMED','RETURN_DEPENDENCY_REPLAY_REQUIRED','EPV_MONTH_RECALCULATION_REQUIRED','RPV_REVERSAL_REQUIRED']},processStatus:{in:['PENDING','PROCESSING']},availableAt:{lte:new Date()},OR:[{eventType:{not:'PACKAGE_PAYMENT_CONFIRMED'}},{payload:{path:['packageClass'],equals:'QUALIFICATION'}},{payload:{path:['packageClass'],equals:'ACTIVE_DURATION'}}]},
     orderBy:{createdAt:'asc'},take:20
   });
   for(const event of events){
@@ -241,7 +241,8 @@ export async function pollOutbox(
     try{
       lease=await deps.claimOutboxLease(db,event);
       if(!lease)continue;
-      if(['PACKAGE_PAYMENT_CONFIRMED','QUALIFICATION_PLACED'].includes(event.eventType)) await processQualificationPackageEvent(db,lease);
+      if(event.eventType==='PACKAGE_PAYMENT_CONFIRMED'&&(event.payload as any)?.packageClass==='ACTIVE_DURATION') await processRepurchasePackageEvent(db,lease);
+      else if(['PACKAGE_PAYMENT_CONFIRMED','QUALIFICATION_PLACED'].includes(event.eventType)) await processQualificationPackageEvent(db,lease);
       else if(event.eventType==='BINARY_TREE_CHANGED') await deps.processTreeProjectionEvent(db,lease);
       else if(event.eventType==='SALE_CONFIRMED') await deps.processSaleConfirmed(db,lease);
       else if(event.eventType==='WEB_MEMBER_RETAIL_PAYMENT_CONFIRMED') await deps.processRetailReferralPayment(db,lease);

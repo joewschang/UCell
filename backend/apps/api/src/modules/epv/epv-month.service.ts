@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma } from '@ucell/database';
+import { Prisma,packageEpvBaseCredit } from '@ucell/database';
 import { ParameterSnapshot, snapshotValue, snapshotDecimal, pending } from '../rules/parameter-snapshot';
 import { monthlyEpv, monthlyReturnDelta } from './monthly-epv';
 
@@ -19,7 +19,10 @@ export class EpvMonthService {
     if(!order.paidAt) pending('EPV_PAYMENT_TIME_MISSING','Paid order requires its original payment timestamp');
     const month=await this.bounds(tx,order.paidAt,snapshot);
     const orders=await tx.order.findMany({where:{qualificationId:order.qualificationId,purpose:'REPURCHASE',paidAt:{gte:month.start,lt:month.end,lte:order.paidAt}},orderBy:[{paidAt:'asc'},{orderId:'asc'}]});
-    const prefix=orders.slice(0,orders.findIndex(o=>o.orderId===order.orderId)+1);
+    const packages=await tx.packagePurchaseSnapshot.findMany({where:{orderId:{in:orders.map(row=>row.orderId)}}});
+    const packageIds=new Set(packages.map(row=>row.orderId));
+    const ordinary=orders.filter(row=>!packageIds.has(row.orderId));
+    const prefix=ordinary.slice(0,ordinary.findIndex(o=>o.orderId===order.orderId)+1);
     if(!prefix.length) pending('EPV_ORDER_MISSING','Order is absent from its economic calendar month');
     let before=new Prisma.Decimal(0);
     for(const earlier of prefix.slice(0,-1)) {
@@ -38,8 +41,9 @@ export class EpvMonthService {
     }
     if(before.lt(0)) pending('RETURN_AMOUNT_EXCEEDED','Returned monthly consumption exceeds the original prefix');
     const base=snapshotDecimal(snapshot,'epv.base_amount'),rate=snapshotDecimal(snapshot,'epv.rate');
+    const packageBasis=await packageEpvBaseCredit(tx,order.qualificationId,order.paidAt,month.start,month.end,base);
     const cumulative=before.add(order.netAmount);
-    return {...month,base,rate,before,cumulative,epv:monthlyEpv(cumulative,base,rate).sub(monthlyEpv(before,base,rate))};
+    return {...month,base,rate,before,cumulative,packageBaseCredit:packageBasis.credit,packageBaseSources:packageBasis.sources,epv:monthlyEpv(cumulative.add(packageBasis.credit),base,rate).sub(monthlyEpv(before.add(packageBasis.credit),base,rate))};
   }
 
   async returnProjection(tx:Prisma.TransactionClient,returnCaseId:string,snapshot:ParameterSnapshot) {

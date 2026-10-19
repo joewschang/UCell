@@ -199,7 +199,7 @@ export async function sealEpvEvent(tx:Prisma.TransactionClient,event:any,paramet
   const recipients:HistoricalRecipient[]=[];
   for(const award of awards) recipients.push(await recipientFromAward(tx,award,false,parameters));
   return storeReplaySnapshot(tx,{format:'UCELL_HISTORICAL_REPLAY_V1',kind:'EPV',sourceId:event.eventId,at:event.occurredAt.toISOString(),ruleVersionCode:event.ruleVersionCode,parameters,recipients,
-    evidence:await captureHistoricalGraph(tx,event.qualificationId,event.occurredAt,parameters),inputs:{orderId:order.orderId,qualificationId:order.qualificationId,consumption:order.netAmount.toString(),volume:event.amount.toString(),monthStart:month.start.toISOString(),monthEnd:month.end.toISOString(),timezone:month.timezone,base:month.base.toString(),rate:month.rate.toString()}});
+    evidence:await captureHistoricalGraph(tx,event.qualificationId,event.occurredAt,parameters),inputs:{orderId:order.orderId,qualificationId:order.qualificationId,consumption:order.netAmount.toString(),volume:event.amount.toString(),monthStart:month.start.toISOString(),monthEnd:month.end.toISOString(),timezone:month.timezone,base:month.base.toString(),rate:month.rate.toString(),...(month.packageBaseSources?.length?{packageBaseCredit:month.packageBaseCredit.toString(),packageBaseSources:month.packageBaseSources}:{})}});
 }
 export async function sealRpvEvent(tx:Prisma.TransactionClient,event:any,schedule:any) {
   const subscription=await tx.subscription.findUniqueOrThrow({where:{subscriptionId:schedule.subscriptionId},include:{plan:true}});
@@ -257,7 +257,7 @@ export async function sealSettlement(tx:Prisma.TransactionClient,batch:any) {
     evidence:{sources,carryRecipients,matchingSources,eligibilityEvidence:json(eligibilityEvidence)},inputs:{periodStart:batch.periodStart.toISOString(),periodEnd:batch.periodEnd.toISOString(),totalGpv:batch.totalGpv.toString(),k:batch.kFactor.toString()}});
 }
 
-export function historicalMonthlyEntitlements(events:ReplayEnvelope[],remaining:Map<string,Prisma.Decimal>) {
+export function historicalMonthlyEntitlements(events:ReplayEnvelope[],remaining:Map<string,Prisma.Decimal>,packageCredits=new Map<string,Prisma.Decimal>()) {
   const sorted=[...events].sort((a,b)=>a.at.localeCompare(b.at)||a.inputs.orderId.localeCompare(b.inputs.orderId));
   let cumulative=dec(0);const results=new Map<string,Prisma.Decimal>();
   for(const event of sorted) {
@@ -266,9 +266,11 @@ export function historicalMonthlyEntitlements(events:ReplayEnvelope[],remaining:
       pending('EPV_MONTH_PARAMETER_DECISION_PENDING','Incompatible historical monthly parameters require SA support');
     const amount=remaining.get(event.inputs.orderId);
     if(amount===undefined||amount.lt(0)||amount.gt(event.inputs.consumption)) pending('RETURN_AMOUNT_EXCEEDED','Effective consumption is outside its original amount');
-    const before=Prisma.Decimal.max(dec(0),cumulative.sub(base)).mul(rate);
+    const credit=packageCredits.get(event.sourceId)??dec(event.inputs.packageBaseCredit??0);
+    if(credit.lt(0)||credit.gt(base))pending('HISTORICAL_SNAPSHOT_CORRUPT','Package credit may only satisfy the monthly threshold');
+    const before=Prisma.Decimal.max(dec(0),cumulative.add(credit).sub(base)).mul(rate);
     cumulative=cumulative.add(amount);
-    results.set(event.sourceId,Prisma.Decimal.max(dec(0),cumulative.sub(base)).mul(rate).sub(before));
+    results.set(event.sourceId,Prisma.Decimal.max(dec(0),cumulative.add(credit).sub(base)).mul(rate).sub(before));
   }
   return results;
 }
@@ -438,7 +440,15 @@ export async function replayEpvMonth(tx:Prisma.TransactionClient,orderId:string,
     const returns=await tx.returnLine.aggregate({where:{returnCase:{orderId:loaded.envelope.inputs.orderId,status:'POSTED'}},_sum:{returnAmount:true}});
     remaining.set(loaded.envelope.inputs.orderId,dec(loaded.envelope.inputs.consumption).sub(returns._sum.returnAmount??dec(0)));
   }
-  const increments=historicalMonthlyEntitlements(envelopes,remaining),stateHash=replayHash([...remaining].map(([id,amount])=>[id,amount.toString()]));
+  const credits=new Map<string,Prisma.Decimal>();
+  for(const envelope of envelopes){
+    const sources=envelope.inputs.packageBaseSources as ReplayEnvelope[]|undefined;
+    if(sources?.length){
+      const effective=await effectiveGpv(tx,sources);
+      credits.set(envelope.sourceId,Prisma.Decimal.min(dec(envelope.inputs.base),[...effective.values()].reduce((sum,value)=>sum.add(value.div('0.6')),dec(0))));
+    }
+  }
+  const increments=historicalMonthlyEntitlements(envelopes,remaining,credits),stateHash=replayHash({remaining:[...remaining].map(([id,amount])=>[id,amount.toString()]),credits:[...credits].map(([id,amount])=>[id,amount.toString()])});
   for(let index=0;index<envelopes.length;index++) {
     const envelope=envelopes[index],volume=increments.get(envelope.sourceId)!;
     const payables=new Map(envelope.recipients.map(recipient=>{
@@ -451,7 +461,8 @@ export async function replayEpvMonth(tx:Prisma.TransactionClient,orderId:string,
     if(!delta.eq(0)) await tx.pvLedger.upsert({where:{eventType_sourceType_sourceId_sourceLineId_pvType:{eventType:'EPV_REPLAY_ADJUSTMENT',sourceType:'RETURN',sourceId:returnCaseId!,sourceLineId:envelope.sourceId,pvType:'EPV'}},update:{},create:{qualificationId:marker.qualificationId,pvType:'EPV',amount:delta,
       sourceType:'RETURN',sourceId:returnCaseId!,sourceLineId:envelope.sourceId,eventType:'EPV_REPLAY_ADJUSTMENT',ruleVersionCode:envelope.ruleVersionCode,parameterSnapshotHash:envelope.parameters.hash,occurredAt:new Date(),reversalOfEventId:envelope.sourceId,correlationId:returnCaseId!}});
   }
-  if(returnCaseId) await appendQualificationMonthReplayEvidence(tx,{marker,envelopes,remaining,actionKey,returnCaseId,stateHash});
+  const packageMonth=await tx.pvLedger.count({where:{qualificationId:marker.qualificationId,sourceType:'PACKAGE_MONTHLY',eventType:'GPV_CREATED',occurredAt:{gte:new Date(month.monthStart),lt:new Date(month.monthEnd)}}});
+  if(returnCaseId&&!packageMonth) await appendQualificationMonthReplayEvidence(tx,{marker,envelopes,remaining,actionKey,returnCaseId,stateHash});
   return stateHash;
 }
 
@@ -635,6 +646,13 @@ export async function replayReturnDependencies(tx:Prisma.TransactionClient,retur
   let epvState:string|undefined;
   const packagePurchase=await tx.packagePurchaseSnapshot.findUnique({where:{orderId:ret.orderId}});
   if(ret.order.purpose==='REPURCHASE'&&packagePurchase?.packageClass!=='ACTIVE_DURATION') epvState=await replayEpvMonth(tx,ret.orderId,actionKey,returnCaseId);
+  if(packagePurchase?.packageClass==='ACTIVE_DURATION'){
+    const months=new Map(originalEvents.map(event=>{const month=taipeiMonth(event.occurredAt);return [month.key,month] as const;}));
+    for(const [key,month] of months){
+      const marker=await tx.pvLedger.findFirst({where:{qualificationId:ret.order.qualificationId!,sourceType:'ORDER',pvType:'EPV',eventType:'EPV_CREATED',occurredAt:{gte:month.start,lt:month.end}}});
+      if(marker)await replayEpvMonth(tx,marker.sourceId,actionKey+':EPV:'+key,returnCaseId);
+    }
+  }
   const subscriptions=await tx.subscription.findMany({where:{orderId:ret.orderId},include:{schedules:true}});
   for(const subscription of subscriptions) {
     const cancellations=await tx.subscriptionCancellation.findMany({where:{subscriptionId:subscription.subscriptionId,status:'POSTED'},orderBy:{effectiveAt:'asc'}});
@@ -702,6 +720,8 @@ export async function processHistoricalReturn(tx:Prisma.TransactionClient,return
     const original=await tx.pvLedger.findFirst({where:{sourceType:'ORDER',sourceId:ret.orderId,sourceLineId:line.orderLineId,pvType:'GPV',eventType:'GPV_CREATED'}});
     if(!original) pending('HISTORICAL_SNAPSHOT_MISSING','Original GPV line evidence is missing');
     const source=await loadEnvelope(tx,'GPV',original.eventId);
+    const month=taipeiMonth(original.occurredAt);
+    if(await tx.pvLedger.count({where:{qualificationId:original.qualificationId,sourceType:'PACKAGE_MONTHLY',eventType:'GPV_CREATED',occurredAt:{gte:month.start,lt:month.end}}}))await replayPackageMonthlyActive(tx,original,line.gpvReversalAmount.negated(),returnCaseId);
     const reversal=await tx.pvLedger.upsert({where:{eventType_sourceType_sourceId_sourceLineId_pvType:{eventType:'GPV_REVERSAL',sourceType:'RETURN',sourceId:returnCaseId,sourceLineId:line.returnLineId,pvType:'GPV'}},update:{},create:{qualificationId:original.qualificationId,pvType:'GPV',amount:line.gpvReversalAmount.negated(),sourceType:'RETURN',sourceId:returnCaseId,sourceLineId:line.returnLineId,eventType:'GPV_REVERSAL',ruleVersionCode:original.ruleVersionCode,parameterSnapshotHash:source.envelope.parameters.hash,occurredAt:ret.occurredAt,reversalOfEventId:original.eventId,correlationId:ret.correlationId}});
     createdReversalEvents.push(reversal.eventId);
   }
