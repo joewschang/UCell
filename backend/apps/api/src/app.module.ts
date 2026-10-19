@@ -1,3 +1,4 @@
+import {PublicWebsiteModule} from './modules/public-website/public-website.module';
 import {ReservoirModule} from './modules/reservoir/reservoir.module';
 import {OrganizationGeoModule} from './modules/organization-geo/organization-geo.module';
 import {SettlementJobsModule} from './modules/settlement-jobs/settlement-jobs.module';
@@ -99,4 +100,4 @@ import {FulfillmentOperationsModule} from './modules/commerce/fulfillment-operat
   ],
 })
 export class AppModule {}
-import {PublicWebsiteModule} from './modules/public-website/public-website.module';
+
