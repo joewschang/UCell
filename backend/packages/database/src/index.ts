@@ -56,3 +56,5 @@ export * from './erp-accounting-mapping';
 export * from './member-message';
 
 export * from './recognition-member-message';
+
+export * from './package-recognition';

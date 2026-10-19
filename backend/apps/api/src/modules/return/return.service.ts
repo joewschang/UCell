@@ -1,5 +1,5 @@
 import { ConflictException, Injectable, UnprocessableEntityException } from '@nestjs/common';
-import { Prisma, PrismaService } from '@ucell/database';
+import { Prisma, PrismaService, qualificationPackageAllocation } from '@ucell/database';
 import { randomUUID } from 'crypto';
 import { AuditService } from '../../common/audit/audit.service';
 import { IdempotencyService } from '../../common/idempotency/idempotency.service';
@@ -25,13 +25,20 @@ export class ReturnService {
       if(!['PAID','FULFILLED','PARTIAL_RETURN'].includes(order.status))
         throw new ConflictException({code:'ORDER_LOCKED',message:'只有已付款/已出貨訂單可退貨。'});
 
-      // Package selections intentionally have zero allocated money/volume. They
-      // must not be posted as ordinary zero-value returns or acknowledged early.
-      if(order.lines.some(line => (line.ruleProfileSnapshot as any)?.packageSelection === true))
-        throw new UnprocessableEntityException({
-          code:'PACKAGE_RETURN_ALLOCATION_PENDING',
-          message:'套組退貨須依原始認列帳本及分攤規則回沖，目前尚未過帳。'
-        });
+      let packageAllocation:ReturnType<typeof qualificationPackageAllocation>|undefined;
+      let recognitionAt=order.paidAt;
+      if(order.lines.some(line => (line.ruleProfileSnapshot as any)?.packageSelection === true)){
+        const purchase=await tx.packagePurchaseSnapshot.findUnique({where:{orderId}});
+        try{
+          if(!purchase)throw new Error('PACKAGE_PURCHASE_REQUIRED');
+          packageAllocation=qualificationPackageAllocation(purchase,order.lines,order.netAmount);
+        }catch{throw new UnprocessableEntityException({code:'PACKAGE_RETURN_ALLOCATION_PENDING'});}
+        const originals=await tx.pvLedger.findMany({where:{sourceType:'ORDER',sourceId:orderId,eventType:'GPV_CREATED',pvType:'GPV'}});
+        if(order.lines.some(line=>!originals.some(v=>v.sourceLineId===line.orderLineId&&v.amount.eq(packageAllocation!.gpvPerBox.mul(line.quantity)))))
+          throw new UnprocessableEntityException({code:'PACKAGE_ORIGINAL_RECOGNITION_PENDING'});
+        recognitionAt=originals.reduce((at,v)=>v.occurredAt<at?v.occurredAt:at,originals[0].occurredAt);
+        if(new Date(dto.occurredAt)<recognitionAt)throw new UnprocessableEntityException({code:'RETURN_BEFORE_RECOGNITION'});
+      }
 
       if(new Set(dto.lines.map(line=>line.orderLineId)).size!==dto.lines.length)
         throw new UnprocessableEntityException({code:'DUPLICATE_RETURN_LINE',message:'Each original line may appear only once per return event.'});
@@ -53,7 +60,7 @@ export class ReturnService {
       const affectedSettlements=await tx.settlementBatch.findMany({
         where:{
           settlementType:{in:['BINARY_K1','MATCHING_K2']},status:'FINALIZED',
-          ruleVersionCode:order.ruleVersionCode,periodStart:{lte:order.paidAt},periodEnd:{gt:order.paidAt}
+          ruleVersionCode:order.ruleVersionCode,periodStart:{lte:recognitionAt!},periodEnd:{gt:recognitionAt!}
         },
         select:{settlementType:true,periodStart:true,periodEnd:true}
       });
@@ -72,7 +79,7 @@ export class ReturnService {
           code:'DOMAIN_RULE_VIOLATION',message:'退貨明細不屬於此訂單。'
         });
         const qty=new Prisma.Decimal(input.quantity);
-        if(qty.lte(0) || qty.gt(line.quantity))
+        if(qty.lte(0) || qty.gt(line.quantity) || (packageAllocation && !qty.isInteger()))
           throw new UnprocessableEntityException({
             code:'DOMAIN_RULE_VIOLATION',message:'退貨數量超過原訂單數量。'
           });
@@ -88,8 +95,8 @@ export class ReturnService {
           });
 
         const ratio=qty.div(line.quantity);
-        const returnAmount=line.lineAmount.mul(ratio);
-        const gpvReversal=line.gpvAmountSnapshot.mul(ratio);
+        const returnAmount=packageAllocation?packageAllocation.cashPerBox.mul(qty):line.lineAmount.mul(ratio);
+        const gpvReversal=packageAllocation?packageAllocation.gpvPerBox.mul(qty):line.gpvAmountSnapshot.mul(ratio);
         totalReturn=totalReturn.add(returnAmount);
 
         await tx.returnLine.create({
