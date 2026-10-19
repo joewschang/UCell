@@ -6,3 +6,9 @@ it('retains the event code after login but never follows external return targets
  expect(memberEntryDestination({pathname:'/',search:'?mode=register&next=https://example.com'})).toBe('/');
  expect(memberEntryDestination({pathname:'/shop',search:'?anything=1'})).toBe('/shop');
 });
+it('preserves only allowlisted service paths and validated product intent',()=>{
+ for(const pathname of ['/orders','/me','/learning','/membership/upgrade'])expect(memberEntryDestination({pathname,search:'?next=https://evil.invalid'})).toBe(pathname);
+ expect(memberEntryDestination({pathname:'/shop',search:'?sku=TIP-636&next=//evil.invalid'})).toBe('/shop?sku=TIP-636');
+ expect(memberEntryDestination({pathname:'/shop',search:'?sku=TIP-636%2F..'})).toBe('/shop');
+ expect(memberEntryDestination({pathname:'//evil.invalid',search:''})).toBe('/');
+});

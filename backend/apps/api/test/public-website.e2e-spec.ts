@@ -1,5 +1,24 @@
 import {Prisma} from '@prisma/client';
 import {PublicWebsiteService} from '../src/modules/public-website/public-website.module';
+it('exposes only the current approved public content and never resurrects private or expired versions',async()=>{
+ const now=new Date('2026-10-19T12:00:00Z'),base={audiencePolicy:'PUBLIC',title:'Public video',summary:'Summary',externalUrl:'https://example.com/watch',publishTo:null,approvedAt:now};
+ const read=jest.fn().mockResolvedValue([
+  {contentId:'public',contentType:'VIDEO_EXTERNAL',versions:[{...base,approvalReference:'PRIVATE_APPROVAL'}]},
+  {contentId:'private',contentType:'EXTERNAL_LINK',versions:[{...base,audiencePolicy:'NETWORK_MEMBER'}]},
+  {contentId:'expired',contentType:'EXTERNAL_LINK',versions:[{...base,publishTo:now}]},
+  {contentId:'draft',contentType:'EXTERNAL_LINK',versions:[]},
+  {contentId:'unsafe',contentType:'EXTERNAL_LINK',versions:[{...base,externalUrl:'javascript:alert(1)'}]},
+  {contentId:'credentials',contentType:'EXTERNAL_LINK',versions:[{...base,externalUrl:'https://user:password@example.com'}]}
+ ]);
+ const result=await new PublicWebsiteService({publishedContent:{findMany:read}} as any).content(now);
+ expect(result).toEqual([{id:'public',type:'VIDEO_EXTERNAL',title:'Public video',summary:'Summary',url:'https://example.com/watch',publishedAt:now.toISOString()}]);
+ const query=read.mock.calls[0][0];expect(query.where.status).toBe('PUBLISHED');
+ expect(query.select.versions).toMatchObject({take:1,orderBy:{version:'desc'},where:{status:'PUBLISHED',approvedAt:{not:null},OR:[{publishFrom:null},{publishFrom:{lte:now}}]}});
+ // Select latest effective version BEFORE deciding public visibility.
+ expect(query.select.versions.where).not.toHaveProperty('audiencePolicy');
+ expect(query.select.versions.where).not.toHaveProperty('publishTo');
+ expect(query.select.versions.select).not.toHaveProperty('approvalReference');
+});
 it('returns only public catalog fields and fails closed on ambiguous product rules',async()=>{
  const read=jest.fn().mockResolvedValue([{sku:'TIP-636',displayName:'Product',currentPrice:new Prisma.Decimal(4800),currency:'TWD',ruleProfiles:[{ruleVersionCode:'R1.0B',parameterSnapshotHash:'a'.repeat(64)}],privateField:'secret'},{sku:'TIP-777',displayName:'Unavailable',currentPrice:new Prisma.Decimal(4800),currency:'TWD',ruleProfiles:[]},{sku:'TIP-INTERNAL',displayName:'Internal',currentPrice:new Prisma.Decimal(1),currency:'TWD',ruleProfiles:[]}]);
  const result=await new PublicWebsiteService({productReference:{findMany:read}} as any).products();

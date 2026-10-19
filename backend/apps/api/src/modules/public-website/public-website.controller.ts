@@ -5,6 +5,7 @@ import {PublicWebsiteService} from './public-website.service';
 @Controller('public/website')
 export class PublicWebsiteController{
  constructor(private readonly service:PublicWebsiteService){}
+ @Get('content') @Header('Cache-Control','public, max-age=30') @ApiOperation({operationId:'publicWebsiteContent',summary:'Explicitly approved public videos and resources within their publication period'}) content(){return this.service.content();}
  @Get('products') @Header('Cache-Control','public, max-age=30') @ApiOperation({operationId:'publicWebsiteProducts',summary:'Published TIP product names, prices and order availability'}) @ApiResponse({status:200,description:'Public catalog without member or compensation data'}) products(){return this.service.products();}
  @Get('events') @Header('Cache-Control','public, max-age=30') @ApiOperation({operationId:'publicWebsiteEvents',summary:'Published upcoming member event announcements without meeting credentials'}) @ApiResponse({status:200,description:'Public announcements; registration still requires member authentication'}) events(){return this.service.events();}
 }

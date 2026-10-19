@@ -1,0 +1,19 @@
+{
+  "verifiedAtUtc": "2026-10-19T14:02:24.7252343Z",
+  "googleClientId": "624267916918-10vr4skhkfdtcc9f708sppios9s01tn1.apps.googleusercontent.com",
+  "authorizedOrigin": "https://member.ucell.life",
+  "publishingStatus": "IN_PRODUCTION",
+  "source": "C:/UCell/worktrees/zh-tw-20261017",
+  "buildEnvironment": {
+    "VITE_ENABLE_MOCK": "false",
+    "VITE_API_BASE_URL": "https://api.ucell.life/api/v1",
+    "VITE_LIFF_ID": "2012021712-Dqh6Z8aq",
+    "VITE_GOOGLE_OIDC_CLIENT_ID": "624267916918-10vr4skhkfdtcc9f708sppios9s01tn1.apps.googleusercontent.com"
+  },
+  "memberImage": "ucellprodacrm3z2zx4ohqyui.azurecr.io/ucell-member:google-20261019-v2",
+  "memberRevision": "ucell-prod-member--0000017",
+  "apiRevision": "ucell-prod-api--0000025",
+  "previousMemberImage": "ucellprodacrm3z2zx4ohqyui.azurecr.io/ucell-member:website-20261019-v2",
+  "tests": "11 web entry and registration tests passed; invalid Google token rejected with 401; live Google account chooser reached; login and registration buttons present",
+  "realGoogleAccountUat": "PENDING_USER_ACCOUNT_SELECTION"
+}

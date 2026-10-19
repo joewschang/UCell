@@ -12,7 +12,7 @@ class ContentDto implements ContentInput {
  @ApiPropertyOptional({maxLength:1000}) @IsOptional() @IsString() @MaxLength(1000) summary?:string;
  @ApiProperty() @IsUrl({protocols:['https'],require_protocol:true}) externalUrl!:string;
  @ApiPropertyOptional() @IsOptional() @IsUrl({protocols:['https'],require_protocol:true}) thumbnailUrl?:string;
- @ApiProperty({enum:['NETWORK_MEMBER']}) @IsEnum(['NETWORK_MEMBER']) audiencePolicy!:'NETWORK_MEMBER';
+ @ApiProperty({enum:['NETWORK_MEMBER','PUBLIC']}) @IsEnum(['NETWORK_MEMBER','PUBLIC']) audiencePolicy!:'NETWORK_MEMBER'|'PUBLIC';
  @ApiProperty() @IsBoolean() shareable!:boolean;
  @ApiPropertyOptional({format:'date-time'}) @IsOptional() @IsISO8601() publishFrom?:string;
  @ApiPropertyOptional({format:'date-time'}) @IsOptional() @IsISO8601() publishTo?:string;

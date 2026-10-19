@@ -5,6 +5,16 @@ import {PrismaService} from '@ucell/database';
 @Injectable()
 export class PublicWebsiteService{
  constructor(private readonly db:PrismaService){}
+ async content(now=new Date()){
+  const rows=await this.db.publishedContent.findMany({where:{status:'PUBLISHED'},select:{contentId:true,contentType:true,versions:{where:{status:'PUBLISHED',approvedAt:{not:null},OR:[{publishFrom:null},{publishFrom:{lte:now}}]},orderBy:{version:'desc'},take:1,select:{audiencePolicy:true,title:true,summary:true,externalUrl:true,publishTo:true,approvedAt:true}}},orderBy:{createdAt:'desc'},take:100});
+  return rows.flatMap(row=>{
+   const v=row.versions[0];
+   if(!v||v.audiencePolicy!=='PUBLIC'||v.publishTo&&v.publishTo<=now)return [];
+   let url:URL;try{url=new URL(v.externalUrl)}catch{return []}
+   if(url.protocol!=='https:'||url.username||url.password)return [];
+   return [{id:row.contentId,type:row.contentType,title:v.title,summary:v.summary,url:url.toString(),publishedAt:v.approvedAt!.toISOString()}];
+  });
+ }
  async products(now=new Date()){
   const rows=await this.db.productReference.findMany({where:{isActive:true,sku:{startsWith:'TIP-'}},select:{sku:true,displayName:true,currentPrice:true,currency:true,ruleProfiles:{where:{effectiveFrom:{lte:now},OR:[{effectiveTo:null},{effectiveTo:{gt:now}}]},select:{ruleVersionCode:true,parameterSnapshotHash:true}}},orderBy:{sku:'asc'},take:100});
   return rows.filter(r=>/^TIP-\d{3}$/.test(r.sku)).map(r=>({sku:r.sku,name:r.displayName,price:r.currentPrice.toString(),currency:r.currency,available:r.ruleProfiles.length===1&&r.ruleProfiles[0].ruleVersionCode==='R1.0B'&&/^[a-f0-9]{64}$/.test(r.ruleProfiles[0].parameterSnapshotHash??'')}));
