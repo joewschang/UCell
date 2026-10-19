@@ -2,6 +2,8 @@ import {Prisma} from '@prisma/client';
 import {taipeiMonth} from './recognition-active';
 
 export type PackageMonthlyTiming='PAYMENT_THEN_MONTH_START'|'NEXT_MONTH_START';
+export const approvedRepurchaseTiming:PackageMonthlyTiming='PAYMENT_THEN_MONTH_START';
+export const approvedRepurchaseCalendarReference='PO_20261019_PAYMENT_THEN_TAIPEI_MONTH_START';
 const plans:Record<string,{price:string;boxes:number;months:number}>={
  ACTIVE_QUARTER:{price:'6000',boxes:2,months:3},
  ACTIVE_HALF_YEAR:{price:'12000',boxes:4,months:6},

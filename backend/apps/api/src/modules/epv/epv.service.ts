@@ -20,6 +20,8 @@ export class EpvService {
       const order=await tx.order.findUnique({where:{orderId},include:{lines:true}});
       if(!order || !order.paidAt) return {skipped:'ORDER_NOT_PAID'};
       if(order.purpose!=='REPURCHASE') return {skipped:'NOT_REPURCHASE'};
+      if(order.lines.some(line=>(line.ruleProfileSnapshot as any)?.packageSelection===true))
+        pending('PACKAGE_MONTHLY_RECOGNITION_REQUIRED','Prepaid package volume must follow its immutable monthly schedule.');
       if(!order.qualificationId) return {skipped:'WEB_MEMBER_ORDER'};
       const qualificationId=order.qualificationId;
       if(order.ruleVersionCode!==ruleVersionCode) pending('RULE_VERSION_MISMATCH','Recognition must use the original order rule version');

@@ -125,7 +125,7 @@ export async function processRecognition(recognitionId:string,db:PrismaService=p
     let schedule=await tx.monthlyRecognitionSchedule.findUnique({
       where:{recognitionId},include:{subscription:true}
     });
-    if(!schedule || !['SCHEDULED','DUE'].includes(schedule.status) || schedule.dueAt>new Date()) return;
+    if(!schedule || schedule.subscription.status!=='ACTIVE' || !['SCHEDULED','DUE'].includes(schedule.status) || schedule.dueAt>new Date()) return;
 
     await tx.$queryRaw`SELECT subscription_id FROM subscription.subscription WHERE subscription_id=${schedule.subscriptionId}::uuid FOR UPDATE`;
     schedule=await tx.monthlyRecognitionSchedule.findUniqueOrThrow({where:{recognitionId},include:{subscription:true}});
@@ -259,7 +259,7 @@ export async function pollOutbox(
 
 async function pollRecognitions(){
   const rows=await prisma.monthlyRecognitionSchedule.findMany({
-    where:{status:{in:['SCHEDULED','DUE']},dueAt:{lte:new Date()}},
+    where:{status:{in:['SCHEDULED','DUE']},subscription:{status:'ACTIVE'},dueAt:{lte:new Date()}},
     orderBy:{dueAt:'asc'},take:20
   });
   for(const row of rows){
