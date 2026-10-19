@@ -22,7 +22,7 @@ export async function recognizeQualificationPackage(tx:Prisma.TransactionClient,
  const order=await tx.order.findUniqueOrThrow({where:{orderId},include:{lines:true}});
  const purchase=await tx.packagePurchaseSnapshot.findUniqueOrThrow({where:{orderId}});
  const allocation=qualificationPackageAllocation(purchase,order.lines,order.netAmount);
- if(!order.qualificationId||!order.paidAt||!['PAID','FULFILLED','PARTIAL_RETURN'].includes(order.status))throw new Error('PACKAGE_PAID_ORDER_REQUIRED');
+ if(!order.qualificationId||!order.paidAt||!['PAID','FULFILLED','PARTIAL_RETURN','RETURNED'].includes(order.status))throw new Error('PACKAGE_PAID_ORDER_REQUIRED');
  const setup=await tx.qualificationSetup.findUniqueOrThrow({where:{qualificationId:order.qualificationId}});
  if(setup.qualifyingOrderId!==orderId||setup.packagePurchaseSnapshotId!==purchase.packagePurchaseSnapshotId)throw new Error('PACKAGE_SETUP_EVIDENCE_MISMATCH');
  const month=taipeiMonth(order.paidAt);
@@ -48,6 +48,7 @@ export async function recognizeQualificationPackage(tx:Prisma.TransactionClient,
    if(!existing.amount.eq(amount)||existing.occurredAt.getTime()!==setup.placedAt.getTime()||existing.qualificationId!==order.qualificationId)throw new Error('PACKAGE_VOLUME_EVIDENCE_CONFLICT');
    continue;
   }
+  if(order.status==='RETURNED')throw new Error('RETURNED_PACKAGE_ORIGINAL_VOLUME_MISSING');
   const volume=await tx.pvLedger.create({data:{qualificationId:order.qualificationId,pvType:'GPV',amount,sourceType:'ORDER',sourceId:orderId,sourceLineId:line.orderLineId,eventType:'GPV_CREATED',ruleVersionCode:order.ruleVersionCode,parameterSnapshotHash:parameters.hash,occurredAt:setup.placedAt,correlationId}});
   await tx.volumeRecognitionClassification.create({data:{volumeEventId:volume.eventId,volumeClass:'PV',concreteVolumeType:'GPV',classificationVersion:qualificationPackagePolicy,ruleVersionCode:order.ruleVersionCode,evidenceHash:createHash('sha256').update(JSON.stringify({eventId:volume.eventId,policy:qualificationPackagePolicy,personalConsumptionEligible:false})).digest('hex')}});
   await applyGpvImmediateEffects(tx,volume);

@@ -101,6 +101,7 @@ describeDb('package Core parameter and return posting boundaries',()=>{
   expect((await db.order.findUniqueOrThrow({where:{orderId:order.orderId}})).status).toBe('RETURNED');
   const reversals=await db.pvLedger.findMany({where:{reversalOfEventId:ledger[0].eventId}});
   expect(reversals).toHaveLength(2);
+  expect(await run()).toMatchObject({status:'RECOGNIZED',created:0});
   expect(reversals.reduce((total,v)=>total.add(v.amount),new Prisma.Decimal(0)).toString()).toBe('-8640');
 
 
