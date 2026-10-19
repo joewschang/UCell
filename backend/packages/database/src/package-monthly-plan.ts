@@ -4,6 +4,7 @@ import {taipeiMonth} from './recognition-active';
 export type PackageMonthlyTiming='PAYMENT_THEN_MONTH_START'|'NEXT_MONTH_START';
 export const approvedRepurchaseTiming:PackageMonthlyTiming='PAYMENT_THEN_MONTH_START';
 export const approvedRepurchaseCalendarReference='PO_20261019_PAYMENT_THEN_TAIPEI_MONTH_START';
+export const approvedRepurchaseVolumeReference='PO_20261019_REPURCHASE_NO_EPV';
 const plans:Record<string,{price:string;boxes:number;months:number}>={
  ACTIVE_QUARTER:{price:'6000',boxes:2,months:3},
  ACTIVE_HALF_YEAR:{price:'12000',boxes:4,months:6},
@@ -28,7 +29,9 @@ export function packageMonthlyPlan(input:{packageCode:string;priceAmount:Prisma.
   const cash=index===plan.months-1?totalCash.sub(cashAllocated):totalCash.div(plan.months).toDecimalPlaces(2,Prisma.Decimal.ROUND_HALF_UP);
   const volume=index===plan.months-1?totalVolume.sub(volumeAllocated):cash.mul('0.6').toDecimalPlaces(4,Prisma.Decimal.ROUND_HALF_UP);
   cashAllocated=cashAllocated.add(cash);volumeAllocated=volumeAllocated.add(volume);
-  return {installmentNo:index+1,dueAt,periodStart,periodEnd,cash,gpv:volume,rpv:volume,epv:volume};
+  // The package satisfies the monthly consumption threshold; it does not
+  // itself produce excess-consumption EPV, even if multiple packages coexist.
+  return {installmentNo:index+1,dueAt,periodStart,periodEnd,cash,gpv:volume,rpv:volume,epv:new Prisma.Decimal(0)};
  });
- return {months:plan.months,cashPerBox:input.priceAmount.div(plan.boxes),returnedCash:input.priceAmount.sub(totalCash),totalCash,totalGpv:totalVolume,totalRpv:totalVolume,totalEpv:totalVolume,installments};
+ return {months:plan.months,cashPerBox:input.priceAmount.div(plan.boxes),returnedCash:input.priceAmount.sub(totalCash),totalCash,totalGpv:totalVolume,totalRpv:totalVolume,totalEpv:new Prisma.Decimal(0),installments};
 }

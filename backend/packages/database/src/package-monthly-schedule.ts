@@ -1,7 +1,7 @@
 import {Prisma} from '@prisma/client';
 import {captureParameters} from './parameter-snapshot';
 import {taipeiMonth} from './recognition-active';
-import {approvedRepurchaseTiming,approvedRepurchaseCalendarReference,packageMonthlyPlan} from './package-monthly-plan';
+import {approvedRepurchaseTiming,approvedRepurchaseCalendarReference,approvedRepurchaseVolumeReference,packageMonthlyPlan} from './package-monthly-plan';
 
 /** Caller owns a SERIALIZABLE transaction; this prepares facts, never posts volume. */
 export async function preparePackageMonthlySchedule(tx:Prisma.TransactionClient,orderId:string,correlationId:string){
@@ -24,8 +24,8 @@ export async function preparePackageMonthlySchedule(tx:Prisma.TransactionClient,
  if(plan.durationMonths!==specification.months||!plan.prepaidAmount.eq(purchase.priceAmount)||!plan.monthlyRecognizedAmount.eq(2000)||!plan.monthlyRpv.eq(1200)||plan.productBoxQty!==purchase.selectableProductQuantity)throw new Error('PACKAGE_SUBSCRIPTION_PLAN_CONFLICT');
  const parameters=await captureParameters(tx,order.paidAt,order.ruleVersionCode);
  const subscription=await tx.subscription.create({data:{qualificationId:order.qualificationId,subscriptionPlanId:plan.subscriptionPlanId,orderId,status:'PENDING',startMonth:taipeiMonth(specification.installments[0].dueAt).calendarMonth,endMonth:taipeiMonth(specification.installments.at(-1)!.dueAt).calendarMonth,ruleVersionCode:order.ruleVersionCode,parameterSnapshotHash:parameters.hash}});
- // Blocked until the dedicated three-volume poster and reversal consumer are enabled together.
+ // Blocked until the GPV/RPV poster, Active evidence and reversal consumer are enabled together.
  for(const row of specification.installments)await tx.monthlyRecognitionSchedule.create({data:{subscriptionId:subscription.subscriptionId,installmentNo:row.installmentNo,recognitionMonth:taipeiMonth(row.dueAt).calendarMonth,recognizedAmount:row.cash,rpvAmount:row.rpv,status:'SCHEDULED',dueAt:row.dueAt,ruleVersionCode:order.ruleVersionCode,parameterSnapshotHash:parameters.hash,retainedEntitlementRatio:1}});
- await tx.auditEvent.create({data:{actorType:'SYSTEM',action:'PACKAGE_MONTHLY_SCHEDULE_PREPARED',entityType:'SUBSCRIPTION',entityId:subscription.subscriptionId,requestId:orderId,correlationId,afterData:{orderId,packagePurchaseSnapshotId:purchase.packagePurchaseSnapshotId,calendarReference:approvedRepurchaseCalendarReference,timing:approvedRepurchaseTiming,months:specification.months,cashPerMonth:'2000',gpvPerMonth:'1200',rpvPerMonth:'1200',epvPerMonth:'1200',activationStatus:'POSTER_AND_REVERSAL_PENDING'}}});
+ await tx.auditEvent.create({data:{actorType:'SYSTEM',action:'PACKAGE_MONTHLY_SCHEDULE_PREPARED',entityType:'SUBSCRIPTION',entityId:subscription.subscriptionId,requestId:orderId,correlationId,afterData:{orderId,packagePurchaseSnapshotId:purchase.packagePurchaseSnapshotId,calendarReference:approvedRepurchaseCalendarReference,timing:approvedRepurchaseTiming,months:specification.months,cashPerMonth:'2000',gpvPerMonth:'1200',rpvPerMonth:'1200',epvPerMonth:'0',volumePolicyReference:approvedRepurchaseVolumeReference,activationStatus:'POSTER_AND_REVERSAL_PENDING'}}});
  return {subscription:await tx.subscription.findUniqueOrThrow({where:{subscriptionId:subscription.subscriptionId},include:{schedules:true}}),created:true};
 }

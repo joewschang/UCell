@@ -27,6 +27,8 @@ const url=process.env.PHASE2_TEST_DATABASE_URL;
   expect(await db.pvLedger.count({where:{qualificationId:q.qualificationId}})).toBe(0);
   expect(await db.subscription.count({where:{orderId:order.orderId}})).toBe(1);
   expect(await db.auditEvent.count({where:{entityId:result.subscription.subscriptionId,action:'PACKAGE_MONTHLY_SCHEDULE_PREPARED'}})).toBe(1);
+  const audit=await db.auditEvent.findFirstOrThrow({where:{entityId:result.subscription.subscriptionId,action:'PACKAGE_MONTHLY_SCHEDULE_PREPARED'}});
+  expect(audit.afterData).toMatchObject({gpvPerMonth:'1200',rpvPerMonth:'1200',epvPerMonth:'0',volumePolicyReference:'PO_20261019_REPURCHASE_NO_EPV'});
   const product=await db.productReference.create({data:{sku:randomUUID(),displayName:'Refund fixture',currentPrice:3000}});
   const line=await db.orderLine.create({data:{orderId:order.orderId,productId:product.productId,skuSnapshot:product.sku,productNameSnapshot:product.displayName,quantity:boxes,unitPrice:3000,lineAmount:price,gpvRateSnapshot:'0.6',gpvAmountSnapshot:0,ruleProfileSnapshot:{packageSelection:true}}});
   // Simulate an already posted first month. Refund preparation must preserve

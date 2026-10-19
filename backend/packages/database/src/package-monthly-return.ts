@@ -3,7 +3,7 @@ import {approvedRepurchaseTiming,packageMonthlyPlan} from './package-monthly-pla
 
 /** Prepares refund facts in the caller's SERIALIZABLE transaction.
  * This deliberately does not acknowledge RETURN_CONFIRMED or post awards.
- * The three-volume replay consumer must finish before the return is settled.
+ * GPV/RPV and award replay must finish before the return is settled.
  */
 export async function preparePackageMonthlyReturn(tx:Prisma.TransactionClient,returnCaseId:string){
  const ret=await tx.returnCase.findUniqueOrThrow({where:{returnCaseId},include:{lines:true}});

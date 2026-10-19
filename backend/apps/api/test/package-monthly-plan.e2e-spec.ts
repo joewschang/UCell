@@ -7,10 +7,12 @@ describe('repurchase monthly volume policy',()=>{
    const result=packageMonthlyPlan({packageCode,priceAmount:new Prisma.Decimal(price),boxCount,paidAt:new Date('2026-12-31T15:59:59Z'),timing:'PAYMENT_THEN_MONTH_START',returnedBoxes});
    expect(result.installments).toHaveLength(months);
    expect(result.returnedCash.toString()).toBe(String(returnedBoxes*3000));
-   for(const field of ['gpv','rpv','epv'] as const){
+   for(const field of ['gpv','rpv'] as const){
     expect(result.installments.reduce((n,row)=>n.add(row[field]),new Prisma.Decimal(0)).eq(result.totalCash.mul('0.6'))).toBe(true);
     if(returnedBoxes===0)expect(result.installments.map(row=>row[field].toString())).toEqual(Array(months).fill('1200'));
    }
+   expect(result.totalEpv.toString()).toBe('0');
+   expect(result.installments.every(row=>row.epv.eq(0))).toBe(true);
    expect(result.installments.reduce((n,row)=>n.add(row.cash),new Prisma.Decimal(0)).eq(result.totalCash)).toBe(true);
    expect(result.installments[1].dueAt.toISOString()).toBe('2026-12-31T16:00:00.000Z');
   }
