@@ -137,7 +137,10 @@ export async function processRecognition(recognitionId:string,db:PrismaService=p
     }
 
     const correlationId=crypto.randomUUID();
-    if(schedule.subscription.plan?.planCode.startsWith('PO_20261019_ACTIVE_'))await recognizePackageMonthlyGpv(tx,recognitionId,correlationId);
+    if(schedule.subscription.plan?.planCode.startsWith('PO_20261019_ACTIVE_')){
+      if(await tx.outboxEvent.count({where:{eventType:'PACKAGE_MONTHLY_RETURN_REQUIRED',aggregateId:schedule.subscriptionId,processStatus:{not:'PROCESSED'}}}))return;
+      await recognizePackageMonthlyGpv(tx,recognitionId,correlationId);
+    }
     const pvEvent=await tx.pvLedger.upsert({
       where:{
         eventType_sourceType_sourceId_sourceLineId_pvType:{

@@ -87,6 +87,8 @@ const url=process.env.PHASE2_TEST_DATABASE_URL;
   const remainingRatio=new Prisma.Decimal(boxes-1).div(boxes);
   // Every pending installment is already overdue at the refund date.
   expect(afterPartial.slice(1).every(row=>row.recognizedAmount.eq(new Prisma.Decimal(2000).mul(remainingRatio))&&row.rpvAmount.eq(new Prisma.Decimal(1200).mul(remainingRatio)))).toBe(true);
+  await recognize(1);
+  expect(await db.pvLedger.count({where:{sourceLineId:rows[1].recognitionId}})).toBe(0);
   await db.$transaction(tx=>processHistoricalReturn(tx,partial.returnCaseId),{isolationLevel:'Serializable'});
   await db.$transaction(tx=>processHistoricalReturn(tx,partial.returnCaseId),{isolationLevel:'Serializable'});
   expect(await db.activePeriod.count({where:{qualificationId:q.qualificationId,activeFrom:{lte:extraAt},activeTo:{gt:extraAt}}})).toBe(boxes>=4?1:0);
