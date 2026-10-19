@@ -1,0 +1,94 @@
+{
+  "releasedAtUtc": "2026-10-19T14:51:26.8124658Z",
+  "sourceBase": "d33ec9f5d89e3046fbe638584eca4b864a024330",
+  "features": [
+    "Product SKU purchase intent preserved through authentication",
+    "Homepage upcoming events from existing event service",
+    "Member service shortcuts with destination preservation",
+    "Approved public external videos and resources"
+  ],
+  "migration": "20261019150000_public_content_audience",
+  "verifiedHistoricalMigrations": 145,
+  "temporaryDatabaseFirewallRemoved": true,
+  "apps": [
+    {
+      "image": "ucellprodacrm3z2zx4ohqyui.azurecr.io/ucell-admin:discovery-20261019",
+      "latest": "ucell-prod-admin--0000014",
+      "name": "ucell-prod-admin",
+      "ready": "ucell-prod-admin--0000014"
+    },
+    {
+      "image": "ucellprodacrm3z2zx4ohqyui.azurecr.io/ucell-api:discovery-20261019-v2",
+      "latest": "ucell-prod-api--0000026",
+      "name": "ucell-prod-api",
+      "ready": "ucell-prod-api--0000026"
+    },
+    {
+      "image": "ucellprodacrm3z2zx4ohqyui.azurecr.io/ucell-member:discovery-20261019-v2",
+      "latest": "ucell-prod-member--0000018",
+      "name": "ucell-prod-member",
+      "ready": "ucell-prod-member--0000018"
+    },
+    {
+      "image": "ucellprodacrm3z2zx4ohqyui.azurecr.io/ucell-api@sha256:5d8133b2f846f04a98ba4fb09be71fe31c7c6fe90db7df8c942032c6e88b9087",
+      "latest": "ucell-prod-worker--0000009",
+      "name": "ucell-prod-worker",
+      "ready": "ucell-prod-worker--0000009"
+    },
+    {
+      "image": "ucellprodacrm3z2zx4ohqyui.azurecr.io/ucell-website:discovery-20261019-v2",
+      "latest": "ucell-prod-website--0000002",
+      "name": "ucell-prod-website",
+      "ready": "ucell-prod-website--0000002"
+    }
+  ],
+  "imageDigests": [
+    {
+      "image": "ucell-api:discovery-20261019-v2",
+      "digest": "sha256:5b1c2a15d5ccb4bd6a8dfde2a2b348eb258b20914c2be4750d51dbd293bc152e"
+    },
+    {
+      "image": "ucell-member:discovery-20261019-v2",
+      "digest": "sha256:8919ca85be60b00aaef3ad506e29bebf58c65ca677516e7e3d3ea111af75c223"
+    },
+    {
+      "image": "ucell-admin:discovery-20261019",
+      "digest": "sha256:2d073cea6a1896e7af4f4b34a4c8826d68582fca4a226e9a8bf3ede3b2878b33"
+    },
+    {
+      "image": "ucell-website:discovery-20261019-v2",
+      "digest": "sha256:3af6102f66bb98e51f2b3b856ddbc46233bec2084fe1476999f144c147b3bbe8"
+    }
+  ],
+  "rollbackImages": {
+    "api": "ucellprodacrm3z2zx4ohqyui.azurecr.io/ucell-api:website-20261019-v3",
+    "website": "ucellprodacrm3z2zx4ohqyui.azurecr.io/ucell-website:social-row-cache-20261019",
+    "member": "ucellprodacrm3z2zx4ohqyui.azurecr.io/ucell-member:google-20261019-v2",
+    "admin": "ucellprodacrm3z2zx4ohqyui.azurecr.io/ucell-admin@sha256:c5614af9daddf56a40f6cac2e48a2263cd2992d382b058f9f54695108fbd5fa0"
+  },
+  "validation": {
+    "fullOpenApiGate": "PASS",
+    "adminTests": 1,
+    "memberTests": 16,
+    "localAssetAndLinkChecks": 1670,
+    "liveHttpChecks": 16,
+    "backendFocusedTests": 18,
+    "browser": "Desktop and 390px mobile; filters, search, empty/error/retry states, product intent and registration route",
+    "realContentDatabaseScenarios": 8,
+    "backendSuites": 224,
+    "backendTests": 1561,
+    "databaseRegressionAssertions": 162
+  },
+  "productionPublicData": {
+    "products": 5,
+    "publicContent": 0,
+    "upcomingEvents": 0
+  },
+  "limitations": [
+    "No production test orders or test content were created",
+    "A real member checkout was not submitted",
+    "Authenticated admin browser verification was not completed; admin form behavior covered by component test"
+  ],
+  "evidenceDirectory": "C:/UCell/website-discovery-20261019",
+  "sourceCommit": "64e79a8e62ee4ac3df370c3085ec2a8503438f15"
+}
