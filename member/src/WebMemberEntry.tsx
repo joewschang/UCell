@@ -27,14 +27,14 @@ export default function WebMemberEntry({onLineLogin,onAuthenticated,lineRegistra
  const [legalName,setLegalName]=useState(''),[alias,setAlias]=useState(''),[gender,setGender]=useState('UNDISCLOSED'),[birthDate,setBirthDate]=useState(''),[mobile,setMobile]=useState(''),[email,setEmail]=useState(''),[registerPassword,setRegisterPassword]=useState('');
  const [nationalityCode,setNationalityCode]=useState('TW'),[identityDocumentType,setIdentityDocumentType]=useState('NATIONAL_ID'),[identityDocumentNumber,setIdentityDocumentNumber]=useState('');
 
- useEffect(()=>{if(mode==='login'&&googleRef.current)void renderGoogleButton(googleRef.current,()=>void finishExistingLogin(),(token)=>{if(linkExisting){setError(uiText("此 Google 尚未註冊會員，請使用原先註冊的 Google 帳號或會員密碼。"));return;}setPendingGoogleIdToken(token);setError('');setMessage(uiText("Google 身分驗證完成，請補完登錄資料，即可成為一般網路會員。"));setMode('register');},setError);},[mode,onAuthenticated,linkExisting]);
+ useEffect(()=>{if(import.meta.env.VITE_GOOGLE_OIDC_CLIENT_ID&&mode==='login'&&googleRef.current)void renderGoogleButton(googleRef.current,()=>void finishExistingLogin(),(token)=>{if(linkExisting){setError(uiText("此 Google 尚未註冊會員，請使用原先註冊的 Google 帳號或會員密碼。"));return;}setPendingGoogleIdToken(token);setError('');setMessage(uiText("Google 身分驗證完成，請補完登錄資料，即可成為一般網路會員。"));setMode('register');},setError);},[mode,onAuthenticated,linkExisting]);
  useEffect(()=>{
   if(mode!=='register'||contract)return;
   let active=true;setContractError('');
   registrationContract().then(value=>{if(active)setContract(value)}).catch(e=>{if(active)setContractError(e instanceof Error&&e.message==='NETWORK_CONTRACT_NOT_CONFIGURED'?'會員契約尚未開放，請稍後重試或聯絡客服。':'無法載入會員契約，請重新載入。')});
   return()=>{active=false};
  },[mode,contract,contractAttempt]);
- useEffect(()=>{if(mode==='register'&&!lineRegistrationToken&&!pendingGoogleIdToken&&googleRegisterRef.current)void renderGoogleRegistrationButton(googleRegisterRef.current,(token)=>{setPendingGoogleIdToken(token);setMessage(uiText("Google 身分驗證完成，請填寫會員資料。"));},setError);},[mode,pendingGoogleIdToken,lineRegistrationToken]);
+ useEffect(()=>{if(import.meta.env.VITE_GOOGLE_OIDC_CLIENT_ID&&mode==='register'&&!lineRegistrationToken&&!pendingGoogleIdToken&&googleRegisterRef.current)void renderGoogleRegistrationButton(googleRegisterRef.current,(token)=>{setPendingGoogleIdToken(token);setMessage(uiText("Google 身分驗證完成，請填寫會員資料。"));},setError);},[mode,pendingGoogleIdToken,lineRegistrationToken]);
 
  const run=async(work:()=>Promise<unknown>,success?:string)=>{setBusy(true);setError('');setMessage('');try{await work();if(success)setMessage(success);}catch(e){setError(e instanceof Error?e.message:'操作失敗');}finally{setBusy(false);}};
  const submitPassword=(e:FormEvent)=>{e.preventDefault();void run(async()=>{await passwordLogin(memberNo,password);await finishExistingLogin();});};

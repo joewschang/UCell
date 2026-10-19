@@ -55,7 +55,7 @@ it('opens new LINE friends directly on profile registration and preserves an exi
  const choose=tree!.root.findAllByType('button').find(n=>n.children.includes('我是既有會員，改用安全綁定'))!;
  act(()=>choose.props.onClick());expect(existing).toHaveBeenCalledOnce();
 });
-beforeEach(()=>{
+beforeEach(()=>{vi.stubEnv('VITE_GOOGLE_OIDC_CLIENT_ID','test-client');
  auth.registrationContract.mockResolvedValue({contractVersionId:'11111111-1111-4111-8111-111111111111',title:'會員契約',versionCode:'R1',contentText:'TEST CONTRACT',contentHash:'a'.repeat(64)});
  auth.renderGoogleButton.mockImplementation(async()=>{});
  auth.renderGoogleRegistrationButton.mockImplementation(async()=>{});
@@ -136,4 +136,12 @@ it('shows an actionable contract failure, disables registration and allows retry
  expect(tree!.root.findAllByType('button').find(n=>n.children.includes('完成登錄並進入會員首頁'))!.props.disabled).toBe(true);
  await act(async()=>tree!.root.findAllByType('button').find(n=>n.children.includes('重新載入會員契約'))!.props.onClick());
  expect(JSON.stringify(tree!.toJSON())).toContain('TEST CONTRACT');
+});
+it('offers LINE registration when Google is not configured',async()=>{
+ vi.stubEnv('VITE_GOOGLE_OIDC_CLIENT_ID','');vi.stubGlobal('window',{location:{search:'?mode=register',pathname:'/'},history:{replaceState:vi.fn()}});
+ const line=vi.fn().mockResolvedValue(undefined);
+ await act(async()=>{tree=create(<WebMemberEntry onLineLogin={line} onAuthenticated={vi.fn()}/>,{createNodeMock:e=>e.type==='div'?{}:null});});
+ expect(auth.renderGoogleRegistrationButton).not.toHaveBeenCalled();
+ await act(async()=>tree!.root.findAllByType('button').find(b=>b.children.includes('使用 LINE 註冊'))!.props.onClick());
+ expect(line).toHaveBeenCalledOnce();expect(auth.completeRegistration).not.toHaveBeenCalled();
 });
