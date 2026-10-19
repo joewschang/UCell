@@ -58,6 +58,7 @@ describeDb('package Core parameter and return posting boundaries',()=>{
 
   expect(await db.pvLedger.count({where:{sourceId:order.orderId}})).toBe(0);
   expect(await db.qualificationActiveEntitlementEvidence.count({where:{qualificationId:qid}})).toBe(1);
+  expect((await db.qualification.findUniqueOrThrow({where:{qualificationId:qid}})).activeFlag).toBe(true);
   const paidMonth=new Date(Date.now()+8*3600000);
   const placedAt=new Date(Date.UTC(paidMonth.getUTCFullYear(),paidMonth.getUTCMonth()+1,2)-8*3600000);
   const parent=await db.qualification.create({data:{currentHolderPersonId:person.personId,planLevelCode:'STARTER',status:'EFFECTIVE'}});

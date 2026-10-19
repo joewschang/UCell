@@ -32,6 +32,9 @@ export async function recognizeQualificationPackage(tx:Prisma.TransactionClient,
   await tx.qualificationActiveEntitlementEvidence.create({data:{qualificationId:order.qualificationId,packagePurchaseSnapshotId:purchase.packagePurchaseSnapshotId,entitlementType:'PAYMENT_MONTH_ACTIVE',periodStart:order.paidAt,periodEnd:month.end,policyVersion:qualificationPackagePolicy,evidenceHash,status:'GRANTED'}});
   await tx.activePeriod.create({data:{qualificationId:order.qualificationId,activeFrom:order.paidAt,activeTo:month.end,sourceType:'QUALIFICATION_PACKAGE',sourceId:purchase.packagePurchaseSnapshotId,ruleVersionCode:order.ruleVersionCode}});
  }
+ const now=new Date();
+ const active=await tx.activePeriod.count({where:{qualificationId:order.qualificationId,activeFrom:{lte:now},OR:[{activeTo:null},{activeTo:{gt:now}}]}});
+ await tx.qualification.update({where:{qualificationId:order.qualificationId},data:{activeFlag:active>0}});
  if(setup.setupStatus!=='PLACED')return {status:'AWAITING_PLACEMENT',created:0};
  if(!setup.placedAt||setup.placedAt<order.paidAt)throw new Error('PACKAGE_PLACEMENT_TIMESTAMP_INVALID');
  const placement=await tx.placementEvidence.findFirst({where:{qualificationId:order.qualificationId,placedAt:setup.placedAt}});
