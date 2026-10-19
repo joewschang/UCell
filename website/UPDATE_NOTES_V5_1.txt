@@ -1,0 +1,5 @@
+UCell V5.1 Content Enriched Update
+
+Updated: index.html, ingredients.html, products.html, product-636.html, product-580.html, product-363.html, product-696.html, product-777.html, product-999.html, css/style.css
+Added ingredient photo assets and product photo composites.
+AI-generated/visual mockup imagery is illustrative; actual product packaging and labels prevail.
