@@ -1,4 +1,4 @@
-import {processQualificationPackageEvent} from '@ucell/database';
+import {processQualificationPackageEvent,recognizePackageMonthlyGpv,processRepurchasePackageEvent} from '@ucell/database';
 import {effectiveSponsorDirectCount, appendRecognitionMemberMessage, emitStructuredOperationalError} from '@ucell/database';
 import { PrismaService, Prisma, companyAlwaysActiveAt, captureParameters, snapshotDecimal, processMemberOrderNotification, processPaymentInventoryReservation, recognizeConsumption, applyGpvImmediateEffects, sealRpvEvent, pending, claimOutboxLease, withOutboxLease, processLeasedReplay, processTreeProjectionEvent, releaseFailedOutboxLease, OutboxLease, matureBonusAward } from '@ucell/database';
 import * as crypto from 'node:crypto';
@@ -120,16 +120,16 @@ export async function processRetailReferralReturn(db:PrismaService,lease:OutboxL
  });
 }
 
-export async function processRecognition(recognitionId:string,db:PrismaService=prisma){
+export async function processRecognition(recognitionId:string,db:PrismaService=prisma,now=new Date()){
   return db.$transaction(async tx=>{
     let schedule=await tx.monthlyRecognitionSchedule.findUnique({
-      where:{recognitionId},include:{subscription:true}
+      where:{recognitionId},include:{subscription:{include:{plan:true}}}
     });
-    if(!schedule || !['SCHEDULED','DUE'].includes(schedule.status) || schedule.dueAt>new Date()) return;
+    if(!schedule || schedule.subscription.status!=='ACTIVE' || !['SCHEDULED','DUE'].includes(schedule.status) || schedule.dueAt>now) return;
 
     await tx.$queryRaw`SELECT subscription_id FROM subscription.subscription WHERE subscription_id=${schedule.subscriptionId}::uuid FOR UPDATE`;
-    schedule=await tx.monthlyRecognitionSchedule.findUniqueOrThrow({where:{recognitionId},include:{subscription:true}});
-    if(!['SCHEDULED','DUE'].includes(schedule.status)) return;
+    schedule=await tx.monthlyRecognitionSchedule.findUniqueOrThrow({where:{recognitionId},include:{subscription:{include:{plan:true}}}});
+    if(schedule.subscription.status!=='ACTIVE'||!['SCHEDULED','DUE'].includes(schedule.status)) return;
     if(schedule.retainedEntitlementRatio==null){
       const partials=await tx.subscriptionCancellation.count({where:{subscriptionId:schedule.subscriptionId,status:'POSTED',refundAmount:{gt:0},reasonCode:{not:'FULL_RETURN'}}});
       if(partials) pending('SUBSCRIPTION_REFUND_BASIS_MISSING','Legacy schedule needs an explicit refund basis');
@@ -137,6 +137,10 @@ export async function processRecognition(recognitionId:string,db:PrismaService=p
     }
 
     const correlationId=crypto.randomUUID();
+    if(schedule.subscription.plan?.planCode.startsWith('PO_20261019_ACTIVE_')){
+      if(await tx.outboxEvent.count({where:{eventType:'PACKAGE_MONTHLY_RETURN_REQUIRED',aggregateId:schedule.subscriptionId,processStatus:{not:'PROCESSED'}}}))return;
+      await recognizePackageMonthlyGpv(tx,recognitionId,correlationId);
+    }
     const pvEvent=await tx.pvLedger.upsert({
       where:{
         eventType_sourceType_sourceId_sourceLineId_pvType:{
@@ -232,7 +236,7 @@ export async function pollOutbox(
   deps={claimOutboxLease,processSaleConfirmed,processRetailReferralPayment,processRetailReferralReturn,processMemberOrderNotification,processPaymentInventoryReservation,processLeasedReplay,processTreeProjectionEvent,releaseFailedOutboxLease}
 ){
   const events=await db.outboxEvent.findMany({
-    where:{eventType:{in:['PACKAGE_PAYMENT_CONFIRMED','QUALIFICATION_PLACED','BINARY_TREE_CHANGED','SALE_CONFIRMED','WEB_MEMBER_RETAIL_PAYMENT_CONFIRMED','MEMBER_ORDER_CREATED','PAYMENT_STATE_TRANSITIONED','RETURN_CONFIRMED','RETURN_DEPENDENCY_REPLAY_REQUIRED','EPV_MONTH_RECALCULATION_REQUIRED','RPV_REVERSAL_REQUIRED']},processStatus:{in:['PENDING','PROCESSING']},availableAt:{lte:new Date()},OR:[{eventType:{not:'PACKAGE_PAYMENT_CONFIRMED'}},{payload:{path:['packageClass'],equals:'QUALIFICATION'}}]},
+    where:{eventType:{in:['PACKAGE_PAYMENT_CONFIRMED','QUALIFICATION_PLACED','BINARY_TREE_CHANGED','SALE_CONFIRMED','WEB_MEMBER_RETAIL_PAYMENT_CONFIRMED','MEMBER_ORDER_CREATED','PAYMENT_STATE_TRANSITIONED','RETURN_CONFIRMED','RETURN_DEPENDENCY_REPLAY_REQUIRED','EPV_MONTH_RECALCULATION_REQUIRED','RPV_REVERSAL_REQUIRED']},processStatus:{in:['PENDING','PROCESSING']},availableAt:{lte:new Date()},OR:[{eventType:{not:'PACKAGE_PAYMENT_CONFIRMED'}},{payload:{path:['packageClass'],equals:'QUALIFICATION'}},{payload:{path:['packageClass'],equals:'ACTIVE_DURATION'}}]},
     orderBy:{createdAt:'asc'},take:20
   });
   for(const event of events){
@@ -240,7 +244,8 @@ export async function pollOutbox(
     try{
       lease=await deps.claimOutboxLease(db,event);
       if(!lease)continue;
-      if(['PACKAGE_PAYMENT_CONFIRMED','QUALIFICATION_PLACED'].includes(event.eventType)) await processQualificationPackageEvent(db,lease);
+      if(event.eventType==='PACKAGE_PAYMENT_CONFIRMED'&&(event.payload as any)?.packageClass==='ACTIVE_DURATION') await processRepurchasePackageEvent(db,lease);
+      else if(['PACKAGE_PAYMENT_CONFIRMED','QUALIFICATION_PLACED'].includes(event.eventType)) await processQualificationPackageEvent(db,lease);
       else if(event.eventType==='BINARY_TREE_CHANGED') await deps.processTreeProjectionEvent(db,lease);
       else if(event.eventType==='SALE_CONFIRMED') await deps.processSaleConfirmed(db,lease);
       else if(event.eventType==='WEB_MEMBER_RETAIL_PAYMENT_CONFIRMED') await deps.processRetailReferralPayment(db,lease);
@@ -259,7 +264,7 @@ export async function pollOutbox(
 
 async function pollRecognitions(){
   const rows=await prisma.monthlyRecognitionSchedule.findMany({
-    where:{status:{in:['SCHEDULED','DUE']},dueAt:{lte:new Date()}},
+    where:{status:{in:['SCHEDULED','DUE']},subscription:{status:'ACTIVE'},dueAt:{lte:new Date()}},
     orderBy:{dueAt:'asc'},take:20
   });
   for(const row of rows){

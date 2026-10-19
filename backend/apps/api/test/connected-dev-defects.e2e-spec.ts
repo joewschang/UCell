@@ -46,7 +46,7 @@ describe('Connected DEV implementation regressions', () => {
     const at = new Date('2026-09-01T00:00:00Z');
     const tx = {...memberEconomicMocks(),
       order: { findUnique: jest.fn().mockResolvedValue({ orderId: 'order', status: 'PAID',
-        purpose: 'REPURCHASE', ruleVersionCode:'R1.0B', qualificationId: 'self', paidAt: at, netAmount: new Prisma.Decimal(4800) }) },
+        purpose: 'REPURCHASE', ruleVersionCode:'R1.0B', qualificationId: 'self', paidAt: at, netAmount: new Prisma.Decimal(4800),lines:[] }) },
       pvLedger: { findFirst: jest.fn().mockResolvedValue(null), create: jest.fn().mockResolvedValue({ eventId: 'event',occurredAt:at,qualificationId:'self',amount:new Prisma.Decimal(1680),ruleVersionCode:'R1.0B' }) },
       bonusAward: { create: jest.fn().mockResolvedValue({ bonusAwardId: 'award' }),findMany:jest.fn().mockResolvedValue([]) },
       qualificationPlanHistory:{findMany:jest.fn().mockResolvedValue([{planCode:'STARTER'}])},

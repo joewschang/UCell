@@ -1,5 +1,5 @@
 import { ConflictException, Injectable, UnprocessableEntityException } from '@nestjs/common';
-import { Prisma, PrismaService, qualificationPackageAllocation } from '@ucell/database';
+import { Prisma, PrismaService, qualificationPackageAllocation,packageMonthlyPlan,approvedRepurchaseTiming,preparePackageMonthlySchedule,preparePackageMonthlyReturn } from '@ucell/database';
 import { randomUUID } from 'crypto';
 import { AuditService } from '../../common/audit/audit.service';
 import { IdempotencyService } from '../../common/idempotency/idempotency.service';
@@ -26,18 +26,26 @@ export class ReturnService {
         throw new ConflictException({code:'ORDER_LOCKED',message:'只有已付款/已出貨訂單可退貨。'});
 
       let packageAllocation:ReturnType<typeof qualificationPackageAllocation>|undefined;
+      let monthlyPackage=false;
       let recognitionAt=order.paidAt;
       if(order.lines.some(line => (line.ruleProfileSnapshot as any)?.packageSelection === true)){
         const purchase=await tx.packagePurchaseSnapshot.findUnique({where:{orderId}});
         try{
           if(!purchase)throw new Error('PACKAGE_PURCHASE_REQUIRED');
-          packageAllocation=qualificationPackageAllocation(purchase,order.lines,order.netAmount);
+          if(purchase.packageClass==='ACTIVE_DURATION'){
+            if(!order.paidAt||purchase.currency!=='TWD'||purchase.recognitionConfigRef!=='PO_20261019_REPURCHASE_60'||!order.netAmount.eq(purchase.priceAmount))throw new Error('PACKAGE_POLICY_CONFLICT');
+            const plan=packageMonthlyPlan({packageCode:purchase.packageCode,priceAmount:purchase.priceAmount,boxCount:purchase.selectableProductQuantity,paidAt:order.paidAt,timing:approvedRepurchaseTiming});
+            packageAllocation={cashPerBox:plan.cashPerBox,gpvPerBox:plan.cashPerBox.mul('0.6')};monthlyPackage=true;
+            await preparePackageMonthlySchedule(tx,orderId,correlationId);
+          }else packageAllocation=qualificationPackageAllocation(purchase,order.lines,order.netAmount);
         }catch{throw new UnprocessableEntityException({code:'PACKAGE_RETURN_ALLOCATION_PENDING'});}
-        const originals=await tx.pvLedger.findMany({where:{sourceType:'ORDER',sourceId:orderId,eventType:'GPV_CREATED',pvType:'GPV'}});
+        const originals=await tx.pvLedger.findMany({where:{sourceType:monthlyPackage?'PACKAGE_MONTHLY':'ORDER',sourceId:orderId,eventType:'GPV_CREATED',pvType:'GPV'}});
+        if(!monthlyPackage){
         if(order.lines.some(line=>!originals.some(v=>v.sourceLineId===line.orderLineId&&v.amount.eq(packageAllocation!.gpvPerBox.mul(line.quantity)))))
           throw new UnprocessableEntityException({code:'PACKAGE_ORIGINAL_RECOGNITION_PENDING'});
         recognitionAt=originals.reduce((at,v)=>v.occurredAt<at?v.occurredAt:at,originals[0].occurredAt);
-        if(new Date(dto.occurredAt)<recognitionAt)throw new UnprocessableEntityException({code:'RETURN_BEFORE_RECOGNITION'});
+        }
+        if(!recognitionAt||new Date(dto.occurredAt)<recognitionAt)throw new UnprocessableEntityException({code:'RETURN_BEFORE_RECOGNITION'});
       }
 
       if(new Set(dto.lines.map(line=>line.orderLineId)).size!==dto.lines.length)
@@ -115,6 +123,7 @@ export class ReturnService {
         where:{orderId},
         data:{status:fullReturn?'RETURNED':'PARTIAL_RETURN'}
       });
+      if(monthlyPackage)await preparePackageMonthlyReturn(tx,ret.returnCaseId);
 
       if(fullReturn&&order.qualificationId){
         const setup=await tx.qualificationSetup.findUnique({where:{qualificationId:order.qualificationId}});

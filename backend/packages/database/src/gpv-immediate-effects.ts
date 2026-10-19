@@ -20,7 +20,7 @@ function referralMatchingUnlockDepth(plan:string,directs:number){
  * owns the SERIALIZABLE transaction, so the fact, snapshot, theories and
  * Binary propagation either all commit or all roll back.
  */
-export async function applyGpvImmediateEffects(tx:Prisma.TransactionClient,event:any){
+export async function applyGpvImmediateEffects(tx:Prisma.TransactionClient,event:any,monthlyBasis?:{orderId:string;prepaidAmount:string;retainedRatio:string}){
   if(event.pvType!=='GPV'||event.eventType!=='GPV_CREATED') throw new Error('GPV_CREATED_REQUIRED');
   const parameters=await captureParameters(tx,event.occurredAt,event.ruleVersionCode);
   const evidence:any=await captureHistoricalGraph(tx,event.qualificationId,event.occurredAt);
@@ -28,7 +28,7 @@ export async function applyGpvImmediateEffects(tx:Prisma.TransactionClient,event
     format:'UCELL_HISTORICAL_REPLAY_V1',kind:'GPV',sourceId:event.eventId,
     ruleVersionCode:event.ruleVersionCode,at:event.occurredAt.toISOString(),parameters,recipients:[],evidence,
     inputs:{eventId:event.eventId,qualificationId:event.qualificationId,
-      orderId:event.sourceType==='ORDER'?event.sourceId:null,lineId:event.sourceLineId,volume:event.amount.toString()}
+      orderId:monthlyBasis?.orderId??(event.sourceType==='ORDER'?event.sourceId:null),lineId:event.sourceLineId,volume:event.amount.toString(),...(monthlyBasis?{monthlyRefundBasis:monthlyBasis}:{})}
   });
 
   const sponsorPath=historicalSponsorAncestors(evidence,event.qualificationId,7);

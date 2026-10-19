@@ -43,7 +43,7 @@ describe('SA-20260915-02 monthly EPV regression',()=>{
   test('recognition rejects missing earlier order instead of allocating its EPV to later recipients',async()=>{
     const snapshot=await capture({'epv.calendar.timezone':'Asia/Taipei','epv.base_amount':2000,'epv.rate':'.6'});
     const service=new EpvMonthService();
-    const tx={$queryRaw:async()=>[{start:at,end:new Date('2026-10-01')}],order:{findMany:async()=>[{orderId:'earlier',netAmount:d(1600),ruleVersionCode:'R1.0B'},{orderId:'current',netAmount:d(1600),ruleVersionCode:'R1.0B'}]},pvLedger:{findFirst:async()=>null}};
+    const tx={packagePurchaseSnapshot:{findMany:async()=>[]},$queryRaw:async()=>[{start:at,end:new Date('2026-10-01')}],order:{findMany:async()=>[{orderId:'earlier',netAmount:d(1600),ruleVersionCode:'R1.0B'},{orderId:'current',netAmount:d(1600),ruleVersionCode:'R1.0B'}]},pvLedger:{findFirst:async()=>null}};
     await expect(service.recognition(tx as any,{orderId:'current',qualificationId:'q',paidAt:at,netAmount:d(1600)},snapshot)).rejects.toMatchObject({response:{code:'EPV_PREVIOUS_ORDER_PENDING'}});
   });
 });
