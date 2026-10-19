@@ -8,28 +8,29 @@ import {resolvePackageParameters} from '../src/modules/order/package-parameters'
 import {IdempotencyService} from '../src/common/idempotency/idempotency.service';
 import {AuditService} from '../src/common/audit/audit.service';
 import {OutboxService} from '../src/common/outbox/outbox.service';
+import {QualificationPlacementService} from '../src/modules/qualification/qualification-placement.service';
 
 const url=process.env.PHASE2_TEST_DATABASE_URL;
 const describeDb=url?describe:describe.skip;
 describeDb('package Core parameter and return posting boundaries',()=>{
  let db:PrismaClient;
- beforeAll(()=>{db=new PrismaClient({datasources:{db:{url}}});});
+ beforeAll(()=>{db=new PrismaClient({datasources:{db:{url}},transactionOptions:{timeout:30000}});});
  afterAll(()=>db.$disconnect());
- it('recognizes at placement across months without consumption and reverses a per-box partial return',async()=>{
+ it.each([['STARTER',3,'14400',0],['ELITE',9,'43200',6]] as const)('recognizes retained %s goods at placement and recovers later returns',async(code,boxes,price,preReturned)=>{
   const at=new Date(Date.now()-60000),token=randomUUID();
   const policy={gpvRate:'0.6',rpvRate:'0.6',epvRate:'0.6',qualificationPackage:{gpv:true,rpv:false,epv:false,active:'PAYMENT_CALENDAR_MONTH_ASIA_TAIPEI'}};
-  await db.runtimeRuleParameter.create({data:{ruleVersionCode:'R1.0B',parameterCode:'OWNER_VOLUME_POLICY_20261019',scopeKey:'*',valueJson:policy,effectiveFrom:at}});
+  if(!await db.runtimeRuleParameter.findFirst({where:{parameterCode:'OWNER_VOLUME_POLICY_20261019'}}))await db.runtimeRuleParameter.create({data:{ruleVersionCode:'R1.0B',parameterCode:'OWNER_VOLUME_POLICY_20261019',scopeKey:'*',valueJson:policy,effectiveFrom:at}});
   const person=await db.person.create({data:{legalName:'ISOLATED PACKAGE BOUNDARY',status:'EFFECTIVE',membershipState:'NETWORK_MEMBER'}});
   const product=await db.productReference.create({data:{sku:'PB-'+token,displayName:'Isolated package product',currentPrice:'4800'}});
   const rule=await db.productRuleProfile.create({data:{productId:product.productId,effectiveFrom:at,gpvRate:'0.6',ruleVersionCode:'R1.0B'}});
-  const packages=new PackageConfigService(db as any),profile=await db.packageProfile.findUniqueOrThrow({where:{stableCode:'STARTER'}});
-  const version=await packages.addVersion(profile.packageProfileId,{displayName:'Isolated starter',currency:'TWD',priceAmount:'14400',selectableProductQuantity:3,membershipEffect:'FORMAL_ELIGIBILITY',qualificationEffect:'CREATE_QUALIFICATION',targetQualificationRequired:false,recognitionConfigRef:'PO_20261019_QUALIFICATION_GPV_ONLY'},'fixture-author');
-  await packages.setProducts(version.packageProfileVersionId,[{productRuleProfileId:rule.productRuleProfileId,maxQty:3}]);
+  const packages=new PackageConfigService(db as any),profile=await db.packageProfile.findUniqueOrThrow({where:{stableCode:code}});
+  const version=await packages.addVersion(profile.packageProfileId,{displayName:'Isolated package',currency:'TWD',priceAmount:price,selectableProductQuantity:boxes,membershipEffect:'FORMAL_ELIGIBILITY',qualificationEffect:'CREATE_QUALIFICATION',targetQualificationRequired:false,recognitionConfigRef:'PO_20261019_QUALIFICATION_GPV_ONLY'},'fixture-author');
+  await packages.setProducts(version.packageProfileVersionId,[{productRuleProfileId:rule.productRuleProfileId,maxQty:boxes}]);
   await packages.approve(version.packageProfileVersionId,'ISOLATED_TEST','fixture-approver');
   await packages.activate(version.packageProfileVersionId);
   const idempotency=new IdempotencyService(db as any),audit=new AuditService(),outbox=new OutboxService();
   const orders=new OrderService(db as any,idempotency,audit,outbox,packages);
-  const input={packageVersionId:version.packageProfileVersionId,selections:[{productRuleProfileId:rule.productRuleProfileId,quantity:3}]};
+  const input={packageVersionId:version.packageProfileVersionId,selections:[{productRuleProfileId:rule.productRuleProfileId,quantity:boxes}]};
   const key=randomUUID(),request=randomUUID();
   const order=(await orders.createMember(input,key,request,person.personId)).value;
   expect((await orders.createMember(input,key,request,person.personId)).value.orderId).toBe(order.orderId);
@@ -39,16 +40,20 @@ describeDb('package Core parameter and return posting boundaries',()=>{
   expect(order.parameterSnapshotHash).not.toBe(snapshot.packageConfigHash);
   const parameters=await captureParameters(db as any,order.confirmedAt!,'R1.0B');
   expect(order.parameterSnapshotHash).toBe(parameters.hash);
-  await orders.confirmPayment(order.orderId,{amount:'14400',paymentMethod:'TEST_ONLY',referenceNo:token,occurredAt:new Date().toISOString()},randomUUID(),request);
-  const before={returns:await db.returnCase.count(),events:await db.outboxEvent.count(),ledger:await db.pvLedger.count()};
+  await orders.confirmPayment(order.orderId,{amount:price,paymentMethod:'TEST_ONLY',referenceNo:token,occurredAt:new Date().toISOString()},randomUUID(),request);
   const returns=new ReturnService(db as any,idempotency,audit,outbox);
-  for(const quantity of ['1','3']){
-   await expect(returns.post(order.orderId,{lines:[{orderLineId:order.lines[0].orderLineId,quantity}],reasonCode:'ISOLATED_TEST',occurredAt:new Date().toISOString()},randomUUID(),request)).rejects.toMatchObject({response:{code:'PACKAGE_ORIGINAL_RECOGNITION_PENDING'}});
-  }
-  expect({returns:await db.returnCase.count(),events:await db.outboxEvent.count(),ledger:await db.pvLedger.count()}).toEqual(before);
-  expect((await db.order.findUniqueOrThrow({where:{orderId:order.orderId}})).status).toBe('PAID');
-  expect(await db.returnLine.count({where:{orderLineId:order.lines[0].orderLineId}})).toBe(0);
   const qid=order.qualificationId!;
+  let preReturnId:string|undefined;
+  if(preReturned){
+   const ret=(await returns.post(order.orderId,{lines:[{orderLineId:order.lines[0].orderLineId,quantity:String(preReturned)}],reasonCode:'PRE_PLACEMENT',occurredAt:new Date().toISOString()},randomUUID(),request)).value!;
+   preReturnId=ret.returnCaseId;
+   const placements=new QualificationPlacementService(db as any,idempotency,audit,{} as any);
+   expect((await placements.returnReviews()).find(x=>x.qualificationId===qid)).toMatchObject({remainingAmount:'14400',status:'RETURN_REVIEW_PENDING'});
+   await expect(placements.placeByAdmin(person.personId,{qualificationId:qid,binaryParentQualificationId:qid,side:'LEFT',reasonCode:'TEST'},randomUUID(),request)).rejects.toMatchObject({response:{code:'PLACEMENT_NOT_PENDING'}});
+   await expect(placements.approveReturnReview(person.personId,qid,{planLevelCode:'ELITE',reasonCode:'TEST'},randomUUID(),request)).rejects.toMatchObject({response:{code:'QUALIFICATION_RETAINED_AMOUNT_INSUFFICIENT'}});
+   expect((await placements.approveReturnReview(person.personId,qid,{planLevelCode:'STARTER',reasonCode:'TEST'},randomUUID(),request)).value).toMatchObject({planLevelCode:'STARTER',status:'BALL_SETUP_PENDING'});
+   expect(await db.$transaction(tx=>processHistoricalReturn(tx,ret.returnCaseId))).toMatchObject({noOriginalRecognition:true});
+  }
   const run=()=>db.$transaction(tx=>recognizeQualificationPackage(tx,order.orderId,request),{isolationLevel:'Serializable'});
   expect(await run()).toMatchObject({status:'AWAITING_PLACEMENT',created:0});
   const paymentEvent=await db.outboxEvent.findFirstOrThrow({where:{eventType:'PACKAGE_PAYMENT_CONFIRMED',aggregateId:order.orderId}});
@@ -76,6 +81,7 @@ describeDb('package Core parameter and return posting boundaries',()=>{
   expect((await db.qualificationActiveEntitlementEvidence.findFirstOrThrow({where:{qualificationId:qid}})).periodEnd.getTime()).toBeLessThan(placedAt.getTime());
   expect(await run()).toMatchObject({status:'RECOGNIZED',created:1});
   expect(await run()).toMatchObject({status:'RECOGNIZED',created:0});
+  if(preReturnId)expect(await db.$transaction(tx=>processHistoricalReturn(tx,preReturnId!))).toMatchObject({noOriginalRecognition:true});
   const placedEvent=await db.outboxEvent.create({data:{eventType:'QUALIFICATION_PLACED',aggregateType:'Qualification',aggregateId:qid,correlationId:request,payload:{qualificationId:qid}}});
   await processQualificationPackageEvent(db,(await claimOutboxLease(db,placedEvent))!);
   expect((await db.outboxEvent.findUniqueOrThrow({where:{outboxEventId:placedEvent.outboxEventId}})).processStatus).toBe('PROCESSED');
@@ -104,8 +110,17 @@ describeDb('package Core parameter and return posting boundaries',()=>{
   expect(reversals).toHaveLength(2);
   expect(await run()).toMatchObject({status:'RECOGNIZED',created:0});
   expect(reversals.reduce((total,v)=>total.add(v.amount),new Prisma.Decimal(0)).toString()).toBe('-8640');
-
-
+  const other=await db.person.create({data:{legalName:'FULL PREPLACEMENT RETURN',status:'EFFECTIVE',membershipState:'NETWORK_MEMBER'}});
+  const fullOrder=(await orders.createMember(input,randomUUID(),request,other.personId)).value;
+  await orders.confirmPayment(fullOrder.orderId,{amount:price,paymentMethod:'TEST_ONLY',referenceNo:randomUUID(),occurredAt:new Date().toISOString()},randomUUID(),request);
+  // Cover revoking an already-granted payment entitlement and a payment event arriving after full return.
+  if(preReturned)await db.$transaction(tx=>recognizeQualificationPackage(tx,fullOrder.orderId,request));
+  const fullRet=(await returns.post(fullOrder.orderId,{lines:[{orderLineId:fullOrder.lines[0].orderLineId,quantity:String(boxes)}],reasonCode:'FULL_PRE_PLACEMENT',occurredAt:new Date().toISOString()},randomUUID(),request)).value!;
+  expect(await db.$transaction(tx=>processHistoricalReturn(tx,fullRet.returnCaseId))).toMatchObject({noOriginalRecognition:true});
+  expect(await db.$transaction(tx=>recognizeQualificationPackage(tx,fullOrder.orderId,request))).toMatchObject({status:'CANCELLED',created:0});
+  expect((await db.qualificationSetup.findUniqueOrThrow({where:{qualificationId:fullOrder.qualificationId!}})).setupStatus).toBe('REVERSED');
+  expect((await db.qualification.findUniqueOrThrow({where:{qualificationId:fullOrder.qualificationId!}})).activeFlag).toBe(false);
+  expect(await db.pvLedger.count({where:{sourceId:fullOrder.orderId}})).toBe(0);
  });
  it('rejects mixed Core versions and missing historical policy without substituting current configuration',async()=>{
   const version={recognitionConfigRef:'PO_20261019_QUALIFICATION_GPV_ONLY',configHash:'a'.repeat(64)};

@@ -8,6 +8,7 @@ import {QualificationPlacementService} from './qualification-placement.service';
 
 class PlaceQualificationDto { @ApiProperty({format:'uuid'}) @IsUUID() binaryParentQualificationId!:string; @ApiProperty({enum:['LEFT','RIGHT']}) @IsEnum(['LEFT','RIGHT']) side!:'LEFT'|'RIGHT'; }
 class AdminPlaceQualificationDto extends PlaceQualificationDto { @ApiProperty({maxLength:120}) @IsString() @MinLength(1) @MaxLength(120) reasonCode!:string; }
+class QualificationReturnReviewDto { @ApiProperty({enum:['STARTER','ELITE','LEADER']}) @IsEnum(['STARTER','ELITE','LEADER']) planLevelCode!:string; @ApiProperty({maxLength:120}) @IsString() @MinLength(1) @MaxLength(120) reasonCode!:string; }
 class MemberPlaceQualificationDto { @ApiProperty({pattern:'^[A-Z][A-Z0-9_-]{0,39}(?:X\\d{6}|\\d{6,19})$',description:'Public parent Ball number. UUIDs are not accepted in the member flow.'}) @Matches(/^[A-Z][A-Z0-9_-]{0,39}(?:X\d{6}|\d{6,19})$/) binaryParentBallNo!:string; @ApiProperty({enum:['LEFT','RIGHT']}) @IsEnum(['LEFT','RIGHT']) side!:'LEFT'|'RIGHT'; }
 
 @ApiTags('Member - Qualification Placement') @ApiBearerAuth('memberBearer') @UseGuards(MemberAuthenticationGuard)
@@ -22,6 +23,8 @@ export class MemberQualificationPlacementController {
 @Controller('admin/qualification-placements')
 export class AdminQualificationPlacementController {
  constructor(private readonly service:QualificationPlacementService){}
+ @Get('return-reviews') @ApiOperation({operationId:'adminQualificationReturnReviews'}) returnReviews(){return this.service.returnReviews();}
+ @Post(':id/return-review') @Roles('SUPER_ADMIN','MEMBERSHIP_OPS') @UseGuards(IdempotencyGuard) @ApiHeader({name:'Idempotency-Key',required:true}) @ApiOperation({operationId:'adminApproveQualificationReturnReview'}) approveReturnReview(@Req() req:any,@Param('id',new ParseUUIDPipe()) id:string,@Body() body:QualificationReturnReviewDto,@Headers('idempotency-key') key:string){return this.service.approveReturnReview(req.user?.personId,id,body,key,req.requestId);}
  @Get() @ApiOperation({operationId:'adminQualificationPlacementMonitor'}) monitor(@Query('status') status?:string,@Query('aging') aging?:string,@Query('take') take?:string){return this.service.monitor({status:status||undefined,aging:aging||undefined,take:Number(take??50)});}
  @Post('sweep-overdue') @Roles('SUPER_ADMIN','QUALIFICATION_PLACEMENT_OVERRIDE') @UseGuards(IdempotencyGuard) @ApiHeader({name:'Idempotency-Key',required:true}) @ApiOperation({operationId:'adminSweepOverdueQualificationPlacements'}) sweep(@Req() req:any,@Headers('idempotency-key') key:string){return this.service.sweepOverdue(req.user?.personId,key,req.requestId);}
  @Post(':id/place') @Roles('SUPER_ADMIN','QUALIFICATION_PLACEMENT_OVERRIDE') @UseGuards(IdempotencyGuard) @ApiHeader({name:'Idempotency-Key',required:true}) @ApiOperation({operationId:'adminOverrideQualificationPlacement',description:'Requires explicit placement override role and reason. Same legality/concurrency checks as Sponsor owner placement.'}) place(@Req() req:any,@Param('id',new ParseUUIDPipe()) id:string,@Body() body:AdminPlaceQualificationDto,@Headers('idempotency-key') key:string){return this.service.placeByAdmin(req.user?.personId,{qualificationId:id,...body},key,req.requestId);}
