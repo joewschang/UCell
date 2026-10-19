@@ -6,6 +6,8 @@ import { Prisma } from '@prisma/client';
 import { createHash, randomUUID } from 'node:crypto';
 import { captureParameters, ParameterSnapshot, pending, snapshotDecimal, verifySnapshot } from './parameter-snapshot';
 import { taipeiMonth } from './recognition-active';
+import {preparePackageMonthlyReturn} from './package-monthly-return';
+import {replayPackageMonthlyActive} from './package-monthly-active-return';
 
 const dec=(value:string|number|Prisma.Decimal)=>new Prisma.Decimal(value);
 const money=(value:Prisma.Decimal)=>value.toDecimalPlaces(4,Prisma.Decimal.ROUND_HALF_UP);
@@ -398,6 +400,18 @@ export async function effectiveGpv(tx:Prisma.TransactionClient,sources:ReplayEnv
   const result=new Map<string,Prisma.Decimal>();
   for(const source of sources) {
     if(!source.inputs.orderId||!source.inputs.lineId) pending('HISTORICAL_SNAPSHOT_MISSING','Original GPV transaction/line mapping is required');
+    const monthly=source.inputs.monthlyRefundBasis;
+    if(monthly){
+      const prepaid=dec(monthly.prepaidAmount),retained=dec(monthly.retainedRatio);
+      if(monthly.orderId!==source.inputs.orderId||prepaid.lte(0)||retained.lte(0)||retained.gt(1))pending('HISTORICAL_SNAPSHOT_CORRUPT','Invalid monthly GPV refund basis');
+      const refunds=await tx.returnLine.aggregate({where:{returnCase:{orderId:monthly.orderId,status:'POSTED'}},_sum:{returnAmount:true}});
+      const remaining=prepaid.sub(refunds._sum.returnAmount??dec(0));
+      if(remaining.lt(0))pending('RETURN_AMOUNT_EXCEEDED','Cumulative package refund exceeds purchase price');
+      const targetRatio=remaining.div(prepaid);
+      if(targetRatio.gt(retained))pending('HISTORICAL_SNAPSHOT_CORRUPT','Monthly recognition refund basis exceeds current entitlement');
+      result.set(source.sourceId,money(dec(source.inputs.volume).mul(targetRatio).div(retained)));
+      continue;
+    }
     const returns=await tx.returnLine.aggregate({where:{orderLineId:source.inputs.lineId,returnCase:{status:'POSTED'}},_sum:{gpvReversalAmount:true}});
     const amount=dec(source.inputs.volume).sub(returns._sum.gpvReversalAmount??dec(0));
     if(amount.lt(0)) pending('RETURN_AMOUNT_EXCEEDED','Cumulative reversal exceeds original GPV');
@@ -536,14 +550,15 @@ export async function replayReturnDependencies(tx:Prisma.TransactionClient,retur
   const prior=await tx.replayAction.findUnique({where:{actionKey}});if(prior) return {...prior.result as object,replayed:true};
   const ret=await tx.returnCase.findUnique({where:{returnCaseId},include:{order:true,lines:true}});
   if(!ret||ret.status!=='POSTED') pending('RETURN_NOT_POSTED','Posted return required');
-  const originalEvents=await tx.pvLedger.findMany({where:{sourceType:'ORDER',sourceId:ret.orderId,pvType:'GPV',eventType:'GPV_CREATED'}});
+  const originalEvents=await tx.pvLedger.findMany({where:{sourceType:{in:['ORDER','PACKAGE_MONTHLY']},sourceId:ret.orderId,pvType:'GPV',eventType:'GPV_CREATED'}});
   if(!originalEvents.length) pending('HISTORICAL_SNAPSHOT_MISSING','Original transaction recognition evidence is missing');
   for(const event of originalEvents) await loadEnvelope(tx,'GPV',event.eventId);
   // Reconstruct the cumulative state from original transaction facts, independent of event delivery order.
   const facts=await tx.returnLine.findMany({where:{returnCase:{status:'POSTED',order:{ruleVersionCode:ret.order.ruleVersionCode}}},orderBy:{returnLineId:'asc'},select:{returnLineId:true,orderLineId:true,quantity:true,returnAmount:true,gpvReversalAmount:true}});
   const stateHash=replayHash(json(facts));
   const economicAt=originalEvents.reduce((at,event)=>at<event.occurredAt?at:event.occurredAt,originalEvents[0].occurredAt);
-  const k0Batches=await tx.settlementBatch.findMany({where:{settlementType:'REFERRAL_K0',status:'FINALIZED',ruleVersionCode:ret.order.ruleVersionCode,periodStart:{lte:economicAt},periodEnd:{gt:economicAt}}});
+  const lastEconomicAt=originalEvents.reduce((at,event)=>at>event.occurredAt?at:event.occurredAt,economicAt);
+  const k0Batches=await tx.settlementBatch.findMany({where:{settlementType:'REFERRAL_K0',status:'FINALIZED',ruleVersionCode:ret.order.ruleVersionCode,OR:originalEvents.map(event=>({periodStart:{lte:event.occurredAt},periodEnd:{gt:event.occurredAt}}))}});
   // Start with the original recognition period. Its sealed carry-in is the historical baseline;
   // earlier finalized periods are immutable inputs and cannot be reconstructed from current state.
   const binaries=await tx.settlementBatch.findMany({where:{settlementType:'BINARY_K1',status:'FINALIZED',ruleVersionCode:ret.order.ruleVersionCode,periodEnd:{gt:economicAt}},orderBy:{periodStart:'asc'}});
@@ -594,7 +609,7 @@ export async function replayReturnDependencies(tx:Prisma.TransactionClient,retur
         originalK2:matchingCalculation?.batch.kFactor?.toString()??null,recomputedK2:matchingCalculation?.result.k.toString()??null,impactedQualifications:impacted,carryDeltaSnapshot:carryDelta,awardDeltaSnapshot:{binary:binaryDeltas,matching:matchingDeltas}};
       if(replayHash(savedEvidence)!==replayHash(nextEvidence)) pending('HISTORICAL_SNAPSHOT_CONFLICT','Replay period checkpoint is not deterministic');
     } else await tx.settlementReplayPeriod.create({data:periodData});
-    converged=impacted.length===0;
+    converged=impacted.length===0&&batch.periodEnd>lastEconomicAt;
     incoming=result.carryOut;previousEnd=batch.periodEnd;
     if(converged) break;
   }
@@ -618,7 +633,8 @@ export async function replayReturnDependencies(tx:Prisma.TransactionClient,retur
   }
   await replayGlobalPeriods(tx,economicAt,ret.order.ruleVersionCode,actionKey,stateHash,returnCaseId);
   let epvState:string|undefined;
-  if(ret.order.purpose==='REPURCHASE') epvState=await replayEpvMonth(tx,ret.orderId,actionKey,returnCaseId);
+  const packagePurchase=await tx.packagePurchaseSnapshot.findUnique({where:{orderId:ret.orderId}});
+  if(ret.order.purpose==='REPURCHASE'&&packagePurchase?.packageClass!=='ACTIVE_DURATION') epvState=await replayEpvMonth(tx,ret.orderId,actionKey,returnCaseId);
   const subscriptions=await tx.subscription.findMany({where:{orderId:ret.orderId},include:{schedules:true}});
   for(const subscription of subscriptions) {
     const cancellations=await tx.subscriptionCancellation.findMany({where:{subscriptionId:subscription.subscriptionId,status:'POSTED'},orderBy:{effectiveAt:'asc'}});
@@ -628,7 +644,9 @@ export async function replayReturnDependencies(tx:Prisma.TransactionClient,retur
       // use the latest posted cancellation fact for the same subscription.
       // Both paths use immutable cancellation evidence; replay never derives
       // a cancellation from current subscription state.
-      const cancellation=cancellations.find(c=>c.effectiveAt<=schedule.dueAt)??cancellations.at(-1);
+      const cancellation=packagePurchase?.packageClass==='ACTIVE_DURATION'
+        ?cancellations.find(c=>c.sourceReturnCaseId===returnCaseId)
+        :cancellations.find(c=>c.effectiveAt<=schedule.dueAt)??cancellations.at(-1);
       if(!cancellation) pending('HISTORICAL_SNAPSHOT_MISSING','Affected subscription recognition lacks an explicit historical cancellation/allocation fact');
       await replayRpvCancellation(tx,schedule.recognitionId,cancellation.subscriptionCancellationId,'RPV:'+schedule.recognitionId+':'+cancellation.subscriptionCancellationId,ret.correlationId);
     }
@@ -661,10 +679,26 @@ export async function consumeReplayOutbox(tx:Prisma.TransactionClient,outboxEven
 
 export async function processHistoricalReturn(tx:Prisma.TransactionClient,returnCaseId:string) {
   // Validate and replay all dependencies before publishing a successful source-reversal marker.
-  const result=await replayReturnDependencies(tx,returnCaseId);
   const ret=await tx.returnCase.findUniqueOrThrow({where:{returnCaseId},include:{lines:true,order:true}});
+  const purchase=await tx.packagePurchaseSnapshot.findUnique({where:{orderId:ret.orderId}});
+  const monthly=purchase?.packageClass==='ACTIVE_DURATION';
+  if(monthly)await preparePackageMonthlyReturn(tx,returnCaseId);
+  const monthlyOriginals=monthly?await tx.pvLedger.findMany({where:{sourceType:'PACKAGE_MONTHLY',sourceId:ret.orderId,pvType:'GPV',eventType:'GPV_CREATED'}}):[];
+  const result=monthly&&!monthlyOriginals.length?{returnCaseId,status:'REPLAYED',noRecognizedInstallments:true}:await replayReturnDependencies(tx,returnCaseId);
+  if(result.status==='REPLAY_INCOMPLETE')return {...result,createdReversalEvents:[]};
   const createdReversalEvents:string[]=[];
-  for(const line of ret.lines) {
+  for(const original of monthlyOriginals){
+    const source=await loadEnvelope(tx,'GPV',original.eventId);
+    const target=(await effectiveGpv(tx,[source.envelope])).get(original.eventId)!;
+    const previous=await tx.pvLedger.aggregate({where:{reversalOfEventId:original.eventId,pvType:'GPV'},_sum:{amount:true}});
+    const delta=target.sub(original.amount).sub(previous._sum.amount??dec(0));
+    if(delta.gt(0))pending('RETURN_AMOUNT_EXCEEDED','Monthly GPV already reversed beyond entitlement');
+    if(delta.eq(0))continue;
+    await replayPackageMonthlyActive(tx,original,delta,returnCaseId);
+    const reversal=await tx.pvLedger.create({data:{qualificationId:original.qualificationId,pvType:'GPV',amount:delta,sourceType:'RETURN',sourceId:returnCaseId,sourceLineId:original.eventId,eventType:'GPV_REVERSAL',ruleVersionCode:original.ruleVersionCode,parameterSnapshotHash:source.envelope.parameters.hash,occurredAt:ret.occurredAt,reversalOfEventId:original.eventId,correlationId:ret.correlationId}});
+    createdReversalEvents.push(reversal.eventId);
+  }
+  for(const line of monthly?[]:ret.lines) {
     const original=await tx.pvLedger.findFirst({where:{sourceType:'ORDER',sourceId:ret.orderId,sourceLineId:line.orderLineId,pvType:'GPV',eventType:'GPV_CREATED'}});
     if(!original) pending('HISTORICAL_SNAPSHOT_MISSING','Original GPV line evidence is missing');
     const source=await loadEnvelope(tx,'GPV',original.eventId);
@@ -673,6 +707,7 @@ export async function processHistoricalReturn(tx:Prisma.TransactionClient,return
   }
   const processed=await tx.auditEvent.findFirst({where:{action:'RETURN_REVERSAL_PROCESSED',entityId:returnCaseId}});
   if(!processed) await tx.auditEvent.create({data:{actorType:'SYSTEM',action:'RETURN_REVERSAL_PROCESSED',entityType:'RETURN',entityId:returnCaseId,requestId:returnCaseId,correlationId:ret.correlationId,afterData:json({...result,createdReversalEvents})}});
+  if(monthly)await tx.outboxEvent.updateMany({where:{eventType:'PACKAGE_MONTHLY_RETURN_REQUIRED',payload:{path:['returnCaseId'],equals:returnCaseId},processStatus:'PENDING'},data:{processStatus:'PROCESSED',processedAt:new Date()}});
   return {...result,createdReversalEvents};
 }
 

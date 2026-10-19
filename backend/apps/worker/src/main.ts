@@ -1,4 +1,4 @@
-import {processQualificationPackageEvent} from '@ucell/database';
+import {processQualificationPackageEvent,recognizePackageMonthlyGpv} from '@ucell/database';
 import {effectiveSponsorDirectCount, appendRecognitionMemberMessage, emitStructuredOperationalError} from '@ucell/database';
 import { PrismaService, Prisma, companyAlwaysActiveAt, captureParameters, snapshotDecimal, processMemberOrderNotification, processPaymentInventoryReservation, recognizeConsumption, applyGpvImmediateEffects, sealRpvEvent, pending, claimOutboxLease, withOutboxLease, processLeasedReplay, processTreeProjectionEvent, releaseFailedOutboxLease, OutboxLease, matureBonusAward } from '@ucell/database';
 import * as crypto from 'node:crypto';
@@ -120,15 +120,15 @@ export async function processRetailReferralReturn(db:PrismaService,lease:OutboxL
  });
 }
 
-export async function processRecognition(recognitionId:string,db:PrismaService=prisma){
+export async function processRecognition(recognitionId:string,db:PrismaService=prisma,now=new Date()){
   return db.$transaction(async tx=>{
     let schedule=await tx.monthlyRecognitionSchedule.findUnique({
-      where:{recognitionId},include:{subscription:true}
+      where:{recognitionId},include:{subscription:{include:{plan:true}}}
     });
-    if(!schedule || schedule.subscription.status!=='ACTIVE' || !['SCHEDULED','DUE'].includes(schedule.status) || schedule.dueAt>new Date()) return;
+    if(!schedule || schedule.subscription.status!=='ACTIVE' || !['SCHEDULED','DUE'].includes(schedule.status) || schedule.dueAt>now) return;
 
     await tx.$queryRaw`SELECT subscription_id FROM subscription.subscription WHERE subscription_id=${schedule.subscriptionId}::uuid FOR UPDATE`;
-    schedule=await tx.monthlyRecognitionSchedule.findUniqueOrThrow({where:{recognitionId},include:{subscription:true}});
+    schedule=await tx.monthlyRecognitionSchedule.findUniqueOrThrow({where:{recognitionId},include:{subscription:{include:{plan:true}}}});
     if(schedule.subscription.status!=='ACTIVE'||!['SCHEDULED','DUE'].includes(schedule.status)) return;
     if(schedule.retainedEntitlementRatio==null){
       const partials=await tx.subscriptionCancellation.count({where:{subscriptionId:schedule.subscriptionId,status:'POSTED',refundAmount:{gt:0},reasonCode:{not:'FULL_RETURN'}}});
@@ -137,6 +137,7 @@ export async function processRecognition(recognitionId:string,db:PrismaService=p
     }
 
     const correlationId=crypto.randomUUID();
+    if(schedule.subscription.plan?.planCode.startsWith('PO_20261019_ACTIVE_'))await recognizePackageMonthlyGpv(tx,recognitionId,correlationId);
     const pvEvent=await tx.pvLedger.upsert({
       where:{
         eventType_sourceType_sourceId_sourceLineId_pvType:{
