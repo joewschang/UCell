@@ -2,7 +2,8 @@
   "name": "ucell-public-website",
   "private": true,
   "scripts": {
-    "test": "node --test tests/*.test.cjs"
+    "build:content": "node scripts/build-faq.cjs",
+    "test": "node scripts/build-faq.cjs --check && node --test tests/*.test.cjs"
   },
   "devDependencies": {
     "linkedom": "0.18.13"
