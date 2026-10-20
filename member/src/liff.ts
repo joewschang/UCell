@@ -1,3 +1,4 @@
+import {shareDestination} from './entryDestination';
 import {uiText} from "../../shared/design-system/i18n";
 import liff from '@line/liff';
 import { unwrapMemberEnvelope } from './memberApi';
@@ -58,7 +59,7 @@ export async function recordReferralLanding(token:string){
  if(typeof data.anonymousId!=='string'||!uuid(data.anonymousId)||typeof data.transitionState!=='string'||!data.transitionState||typeof data.transitionExpiresAt!=='string'||!Number.isFinite(Date.parse(data.transitionExpiresAt))||Date.parse(data.transitionExpiresAt)<=Date.now())throw new Error('推薦連結回應格式異常');
  try{localStorage.setItem(anonymousKey,data.anonymousId);}catch{/* Transition remains usable without durable anonymous storage. */}
  sessionStorage.setItem(transitionKey,data.transitionState);sessionStorage.setItem(bindingKey,crypto.randomUUID());
- return {destination:typeof data.destination==='string'&&(/^\/content\/[0-9a-f-]{36}$/i.test(data.destination)||data.destination==='/')?data.destination:'/',accepted:data.accepted!==false};
+ return {destination:shareDestination(data.destination),accepted:data.accepted!==false};
 }
 export async function prepareReferralLanding(){
  if(typeof window==='undefined')return;

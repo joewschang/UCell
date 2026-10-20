@@ -1,7 +1,7 @@
 import {MemberShareLinkService} from '../member/member-share-link.service';
 import {Controller,Get,Query,Req,UseGuards,Post,Body,Param,ParseUUIDPipe} from '@nestjs/common';
 import {ApiBearerAuth,ApiProperty,ApiTags} from '@nestjs/swagger';
-import {IsUUID,IsOptional} from 'class-validator';
+import {IsUUID,IsOptional,Matches} from 'class-validator';
 import {MemberAuthenticationGuard} from '../auth/member-authentication.guard';
 import {Roles} from '../auth/roles.decorator';
 import {ContentInsightsService} from './content-insights.service';
@@ -19,11 +19,11 @@ export class AdminContentInsightsController{
  @Get() get(){return this.service.read();}
 }
 
-class ShareDto extends InsightsQuery { @ApiProperty({format:'uuid',required:false}) @IsOptional() @IsUUID() contentId?:string; }
+class ShareDto extends InsightsQuery { @ApiProperty({format:'uuid',required:false}) @IsOptional() @IsUUID() contentId?:string; @ApiProperty({required:false}) @IsOptional() @Matches(/^TIP-\d{3}$/) productSku?:string; @ApiProperty({required:false}) @IsOptional() @Matches(/^[A-Z][A-Z0-9_-]{2,39}$/) eventCode?:string; }
 @ApiTags('Member - Content') @ApiBearerAuth('memberBearer') @UseGuards(MemberAuthenticationGuard)
 @Controller('member/content-share-links')
 export class MemberContentShareController {
  constructor(private readonly links:MemberShareLinkService){}
- @Post() create(@Req() req:any,@Body() body:ShareDto){return this.links.create(req.user.personId,body.qualificationId,new Date(),body.contentId);}
+ @Post() create(@Req() req:any,@Body() body:ShareDto){return this.links.create(req.user.personId,body.qualificationId,new Date(),body.contentId,{productSku:body.productSku,eventCode:body.eventCode});}
  @Post(':id/revoke') revoke(@Req() req:any,@Param('id',new ParseUUIDPipe()) id:string,@Body() body:InsightsQuery){return this.links.revoke(req.user.personId,body.qualificationId,id);}
 }

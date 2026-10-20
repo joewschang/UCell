@@ -173,7 +173,7 @@ function MemberApp() {
         <Route path="/organization" element={<Organization q={current}/>}/>
         <Route path="/growth" element={<GrowthCenter/>}/>
         <Route path="/learning" element={<LearningCenter/>}/>
-        <Route path="/events" element={<EventCenter/>}/>
+        <Route path="/events" element={<EventCenter q={current}/>}/>
         <Route path="/performance" element={<Performance q={current}/>}/>
         <Route path="/repurchase" element={<RepurchaseDetails key={current.id} q={current}/>}/>
         <Route path="/payouts" element={<MemberPayouts key={current.id} q={current}/>}/>

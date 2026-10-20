@@ -1,0 +1,4 @@
+import {expect,it} from 'vitest';
+import {shareDestination,shareRegistrationDestination,memberEntryDestination} from '../src/entryDestination';
+it.each(['/shop?sku=TIP-363','/events?event=EVENT_123'])('preserves %s through registration without a second question mark',path=>{expect(shareDestination(path)).toBe(path);const result=shareRegistrationDestination(path),url=new URL(result,'https://member.ucell.life');expect(url.searchParams.get('mode')).toBe('register');expect(memberEntryDestination(url)).toBe(path);expect(result.split('?')).toHaveLength(2);});
+it.each(['https://evil.invalid','//evil.invalid','/shop?sku=INTERNAL','/events?event=BAD/../PATH','/shop?sku=TIP-363&next=https://evil.invalid','/\\evil.invalid'])('rejects unsafe or unsupported destination %s',path=>expect(shareDestination(path)).toBe('/'));

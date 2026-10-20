@@ -1,10 +1,12 @@
+import {shareDestination,shareRegistrationDestination} from './entryDestination';
 import {useEffect,useRef,useState} from 'react';
 import {CompanyLogo} from '@ucell/design-system';
 import {unwrapMemberEnvelope} from './memberApi';
 import {recordReferralLanding} from './liff';
 import type {MemberContent} from './memberData';
 import {ContentMedia} from './ContentMedia';
-type Preview={content:MemberContent|null;requiresLogin:boolean;destination:string;expiresAt?:string;notice?:string};
+type Resource={kind:'PRODUCT'|'EVENT';reference:string;title:string;summary:string|null;thumbnailUrl:string|null;price?:string;currency?:string;available?:boolean;eventType?:string;startsAt?:string;endsAt?:string;registrationStatus?:string};
+type Preview={resource?:Resource;content:MemberContent|null;requiresLogin:boolean;destination:string;expiresAt?:string;notice?:string};
 async function read(path:string){
  const response=await fetch((import.meta.env.VITE_API_BASE_URL||'/api/v1')+path,{credentials:'omit',cache:'no-store',signal:AbortSignal.timeout(15000)});
  if(!response.ok)throw new Error('內容或分享連結已失效、下架，或目前無法讀取。');
@@ -24,17 +26,19 @@ export default function PublicContentLanding({token,contentId}:{token?:string;co
    }
    return result;
   })();
-  flight.current.then(result=>{if(alive){setPreview(result);setNotice(result.notice??'');setReady(true);document.title=(result.content?.title??'朋友與您分享')+'｜UCell';}}).catch(e=>{if(alive)setError(e instanceof Error?e.message:'無法載入內容');});
+  flight.current.then(result=>{if(alive){setPreview(result);setNotice(result.notice??'');setReady(true);document.title=(result.resource?.title??result.content?.title??'朋友與您分享')+'｜UCell';}}).catch(e=>{if(alive)setError(e instanceof Error?e.message:'無法載入內容');});
   return()=>{alive=false;};
  },[token,contentId,attempt]);
  const retry=()=>{flight.current=undefined;setAttempt(n=>n+1);};
- const destination=preview?.destination&&/^\/(?:content\/[0-9a-f-]{36})?$/i.test(preview.destination)?preview.destination:'/';
+ const destination=shareDestination(preview?.destination);
  return <div className="uc-public-content"><header><a href="https://ucell.life" aria-label="UCell 官網"><CompanyLogo/></a><a href="https://ucell.life/resources.html">探索更多影音 →</a></header><main>
  {error?<section className="card"><h1>這份分享暫時無法開啟</h1><p role="alert">{error}</p><button onClick={retry}>重新載入</button><a className="button" href="https://ucell.life/resources.html">探索其他內容</a></section>:!ready?<p role="status">正在準備內容…</p>:<>
- <article className="card uc-content-detail"><small className="uc-eyebrow">{token?'朋友與您分享':'UCELL STORIES'}</small><h1>{preview?.content?.title??(preview?.requiresLogin?'為會員準備的精彩內容':'歡迎認識 UCell')}</h1>
- <p className="uc-content-summary">{preview?.content?.summary??(preview?.requiresLogin?'登入或註冊後即可查看這份會員內容，完成後會回到這裡。':'探索品牌、商品與活動，開啟更好的生活體驗。')}</p>
+ <article className="card uc-content-detail"><small className="uc-eyebrow">{token?'朋友與您分享':'UCELL STORIES'}</small><h1>{preview?.resource?.title??preview?.content?.title??(preview?.requiresLogin?'為會員準備的精彩內容':'歡迎認識 UCell')}</h1>
+ <p className="uc-content-summary">{preview?.resource?.summary??preview?.content?.summary??(preview?.requiresLogin?'登入或註冊後即可查看這份會員內容，完成後會回到這裡。':'探索品牌、商品與活動，開啟更好的生活體驗。')}</p>
+ {preview?.resource?.kind==='PRODUCT'&&<div className="uc-shared-product">{preview.resource.thumbnailUrl&&<img src={preview.resource.thumbnailUrl} alt={preview.resource.title}/>}<div><small>目前商品售價</small><p className="uc-share-number">{preview.resource.currency} {Number(preview.resource.price).toLocaleString('zh-TW')}</p><p>{preview.resource.available?'登入後選擇商品方案與配送資料。':'此商品目前暫不可訂購，您仍可瀏覽其他商品。'}</p><small>商品價格與可訂購狀態會更新，實際金額以訂單確認為準。</small></div></div>}
+ {preview?.resource?.kind==='EVENT'&&<section className="uc-shared-event"><h2>活動資訊</h2><p>{{ONLINE:'線上活動',OFFLINE:'實體活動',HYBRID:'線上及實體活動'}[preview.resource.eventType??'']??'會員活動'}</p><p>{new Date(preview.resource.startsAt!).toLocaleString('zh-TW',{timeZone:'Asia/Taipei'})} 至 {new Date(preview.resource.endsAt!).toLocaleString('zh-TW',{timeZone:'Asia/Taipei'})}（臺北時間）</p><strong>{preview.resource.registrationStatus==='FULL'?'目前名額已滿':preview.resource.registrationStatus==='STARTED'?'活動已開始，報名已截止':'開放會員報名'}</strong><p>登入後查看最新名額與報名資格。分享連結不保留名額；參加資訊及私人報到憑證請於報名後至活動中心查看。</p></section>}
  {preview?.content&&<ContentMedia url={preview.content.url} title={preview.content.title} thumbnailUrl={preview.content.thumbnailUrl}/>}
- <div className="uc-content-actions"><a className="button primary" href={destination}>{preview?.requiresLogin?'登入查看內容':'登入會員繼續探索'}</a><a className="button" href={destination+'?mode=register'}>註冊會員</a></div></article>
+ <div className="uc-content-actions"><a className="button primary" href={destination}>{preview?.resource?.kind==='PRODUCT'?'查看商品與購買方案':preview?.resource?.kind==='EVENT'?'查看活動與報名狀態':preview?.requiresLogin?'登入查看內容':'登入會員繼續探索'}</a><a className="button" href={shareRegistrationDestination(destination)}>註冊會員</a></div></article>
  {notice&&<aside className="card"><p role="status">{notice}</p><small>首次有效推薦來源保留 30 天；換裝置或清除瀏覽資料可能無法延續。</small><button onClick={retry}>重新確認推薦來源</button></aside>}
  <section className="card"><h2>繼續探索</h2><div className="uc-content-actions"><a className="button" href="/shop">商品商城</a><a className="button" href="/events">近期活動</a><a className="button" href="https://ucell.life/resources.html">更多影音</a></div></section></>}
  </main><footer>UCell · 分享生活的美好 <a href="https://ucell.life/privacy.html">隱私權政策</a></footer></div>;

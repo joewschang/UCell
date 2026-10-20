@@ -1279,6 +1279,7 @@ model ReferralLink {
   expiresAt               DateTime              @map("expires_at") @db.Timestamptz(6)
   referrerQualification   Qualification         @relation(fields: [referrerQualificationId], references: [qualificationId])
   contentShare            ContentShareLink?
+  resourceShare           ResourceShareLink?
   attributions            ReferralAttribution[]
 
   @@index([referrerQualificationId, createdAt])
@@ -5230,5 +5231,16 @@ model ContentShareLink {
  version ContentVersion @relation(fields:[contentVersionId],references:[contentVersionId],onDelete:NoAction,onUpdate:NoAction)
  @@index([contentId,createdAt],map:"content_share_link_content_idx")
  @@map("content_share_link")
+ @@schema("integration")
+}
+
+model ResourceShareLink {
+ referralLinkId String @id @map("referral_link_id") @db.Uuid
+ targetType String @map("target_type")
+ targetReference String @map("target_reference")
+ createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+ link ReferralLink @relation(fields:[referralLinkId],references:[referralLinkId],onDelete:NoAction,onUpdate:NoAction)
+ @@index([targetType,targetReference,createdAt],map:"resource_share_target_idx")
+ @@map("resource_share_link")
  @@schema("integration")
 }

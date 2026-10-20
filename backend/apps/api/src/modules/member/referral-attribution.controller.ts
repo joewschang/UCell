@@ -21,7 +21,7 @@ export class ReferralAttributionController {
  constructor(private readonly service:ReferralAttributionService,private readonly links:MemberShareLinkService){}
  @Get('card/:token') @Header('Cache-Control','no-store') async card(@Param('token') token:string,@Res({passthrough:true}) res:any){
   let content:{title:string;summary:string|null;thumbnailUrl:string|null}|null=null;
-  try{content=(await this.links.preview(token)).content;}
+  try{const preview=await this.links.preview(token);content=preview.content??('resource' in preview?preview.resource:null)??null;}
   catch{res.code(410);}
   return new StreamableFile(Buffer.from(shareCardHtml(content)),{type:'text/html; charset=utf-8'});
  }
