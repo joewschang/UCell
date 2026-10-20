@@ -28,7 +28,8 @@ export class MemberWebAuthService{
    if(existing&&(existing.personId!==personId||existing.status!=='ACTIVE'))throw new ConflictException({code:'LINE_IDENTITY_ALREADY_LINKED'});
    const other=await tx.identityLink.findFirst({where:{personId,provider:'LINE',providerSubject:{not:verified.subject}}});
    if(other)throw new ConflictException({code:'MEMBER_LINE_ALREADY_LINKED'});
-   if(!existing)await tx.identityLink.create({data:{personId,provider:'LINE',providerSubject:verified.subject}});
+   if(!existing)await tx.identityLink.create({data:{personId,provider:'LINE',providerSubject:verified.subject,displayName:verified.displayName}});
+   else if(verified.displayName)await tx.identityLink.update({where:{identityLinkId:existing.identityLinkId},data:{displayName:verified.displayName}});
    return {provider:'LINE',linked:true};
   });}catch(error){
    if(error&&typeof error==='object'&&'code' in error&&error.code==='P2002')throw new ConflictException({code:'LINE_IDENTITY_ALREADY_LINKED'});

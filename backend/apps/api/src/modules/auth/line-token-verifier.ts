@@ -2,7 +2,7 @@
  * It does not issue sessions, bind identities or install public routes.
  * Channel and expected nonce must originate in trusted server configuration/state.
  */
-export type VerifiedLineIdentity = { subject: string; expiresAt: number };
+export type VerifiedLineIdentity = { subject: string; expiresAt: number; displayName?: string };
 export class LineVerificationError extends Error {
   constructor(code: string) { super(code); this.name = 'LineVerificationError'; }
 }

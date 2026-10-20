@@ -37,8 +37,7 @@ export class NetworkRegistrationService {
    if(!person||person.status!=='EFFECTIVE')throw new UnprocessableEntityException({code:'LINE_PERSON_REQUIRED'});
    if(person.membershipState)throw new ConflictException({code:'MEMBERSHIP_STATE_CONFLICT'});
    if(!this.contacts)throw new UnprocessableEntityException({code:'CONTACT_VERIFICATION_REQUIRED'});
-   const mobileVerifiedAt=await this.contacts.consumeMobile(tx,'PERSON:'+personId,'REGISTRATION',input.mobile,input.mobileVerificationProof);
-   const emailVerifiedAt=await this.contacts.consume(tx,'PERSON:'+personId,'REGISTRATION','EMAIL',input.email,input.emailVerificationProof);
+   const {mobileVerifiedAt,emailVerifiedAt}=await this.contacts.consumeRegistration(tx,'PERSON:'+personId,input);
    await tx.$queryRaw`SELECT true AS locked FROM (SELECT pg_advisory_xact_lock(hashtextextended(${identityDocumentFingerprint},0))) AS lock_row`;
    if(await tx.person.findFirst({where:{identityDocumentFingerprint,personId:{not:personId}},select:{personId:true}}))throw new ConflictException({code:'IDENTITY_DOCUMENT_ALREADY_REGISTERED'});
    await tx.$queryRaw`SELECT true AS locked FROM (SELECT pg_advisory_xact_lock(hashtextextended(${input.mobile},0))) AS lock_row`;

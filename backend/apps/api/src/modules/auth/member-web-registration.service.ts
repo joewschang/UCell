@@ -54,8 +54,7 @@ export class MemberWebRegistrationService{
     const now=new Date(),correlationId=randomUUID();
     if(!this.contacts)throw new UnprocessableEntityException({code:'CONTACT_VERIFICATION_REQUIRED'});
     const owner=provider+':'+identity.subject;
-    const mobileVerifiedAt=await this.contacts.consumeMobile(tx,owner,'REGISTRATION',input.mobile,input.mobileVerificationProof);
-    const emailVerifiedAt=await this.contacts.consume(tx,owner,'REGISTRATION','EMAIL',input.email,input.emailVerificationProof);
+    const {mobileVerifiedAt,emailVerifiedAt}=await this.contacts.consumeRegistration(tx,owner,input);
     if(await tx.person.findFirst({where:{email:{equals:input.email,mode:'insensitive'}},select:{personId:true}}))throw new ConflictException({code:'EMAIL_ALREADY_REGISTERED'});
     const existingIdentity=await tx.identityLink.findUnique({where:{provider_providerSubject:{provider,providerSubject:identity.subject}}});
     if(existingIdentity)throw new ConflictException({code:`${provider}_IDENTITY_ALREADY_LINKED`});

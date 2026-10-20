@@ -9,14 +9,15 @@ import {MemberWebAuthService} from '../src/modules/auth/member-web-auth.service'
 import {IdentityTokenService} from '../src/modules/auth/identity-token.service';
 import {MemberIdentityService} from '../src/modules/auth/member-identity.service';
 import {ContactVerificationService} from '../src/modules/auth/contact-verification.service';
+import {NetworkRegistrationService} from '../src/modules/auth/network-registration.service';
 
 describe('Integrated Web identity and password lifecycle (real isolated DB, synthetic Google verifier)',()=>{
  const db=new PrismaService(),pii=new PiiCryptoService(),fingerprint=new IdentityMatchFingerprintService();
  const sessions=new IdentityTokenService(db),identities=new MemberIdentityService(db);
  const google={verify:jest.fn(async(token:string)=>({subject:token,email:token+'@example.invalid',emailVerified:true,expiresAt:Math.floor(Date.now()/1000)+3600}))};
- const contacts={consume:jest.fn(async()=>new Date()),consumeMobile:jest.fn(async()=>new Date())}; // Identity lifecycle fixture; contact enforcement has its own real-DB suite.
+ const contacts={consumeRegistration:jest.fn(async()=>({mobileVerifiedAt:new Date(),emailVerifiedAt:new Date()})), consume:jest.fn(async()=>new Date()),consumeMobile:jest.fn(async()=>new Date())}; // Identity lifecycle fixture; contact enforcement has its own real-DB suite.
  const registration=new MemberWebRegistrationService(db,new IdempotencyService(db),google as any,pii,fingerprint,undefined,contacts as any);
- const line={verify:jest.fn(async(token:string)=>({subject:token,expiresAt:Math.floor(Date.now()/1000)+3600}))};
+ const line={verify:jest.fn(async(token:string)=>({subject:token,expiresAt:Math.floor(Date.now()/1000)+3600,displayName:'TEST LINE NAME'}))};
  const lineRegistration=new MemberWebRegistrationService(db,new IdempotencyService(db),google as any,pii,fingerprint,line as any,contacts as any);
  const auth=new MemberWebAuthService(db,sessions,google as any,{} as any,new ConfigService({MEMBER_SESSION_TTL_SECONDS:3600}));
  const linking=new MemberWebAuthService(db,sessions,google as any,{} as any,new ConfigService({MEMBER_SESSION_TTL_SECONDS:3600}),line as any);
@@ -47,6 +48,14 @@ describe('Integrated Web identity and password lifecycle (real isolated DB, synt
   await expect(deferred.consume(db,'PERSON:'+person.personId,'PROFILE','EMAIL',data.email)).rejects.toMatchObject({response:{code:'EMAIL_VERIFICATION_REQUIRED'}});
   await expect(deferred.consume(db,'PERSON:'+person.personId,'REGISTRATION','EMAIL','invalid')).rejects.toThrow();
  });
+ it('completes existing LINE Person registration with deferred contacts through the shared production entry point',async()=>{
+  const deferred=new ContactVerificationService(db,new ConfigService({REGISTRATION_CONTACT_VERIFICATION_REQUIRED:'false',CONTACT_REGISTRATION_VERIFICATION_MODE:'EITHER'}),{} as any,{} as any,google as any,line as any);
+  const signup=new NetworkRegistrationService(db,new IdempotencyService(db),{write:async()=>{}} as any,pii,fingerprint,deferred);
+  const person=await db.person.create({data:{legalName:'TEST LINE PERSON',status:'EFFECTIVE'}});
+  const result=await signup.registerLinePerson(person.personId,input(),randomUUID(),randomUUID());
+  expect(result).toMatchObject({personId:person.personId,membershipState:'NETWORK_MEMBER',qualificationCreated:false});
+  expect(await db.person.findUniqueOrThrow({where:{personId:person.personId}})).toMatchObject({mobileVerifiedAt:null,emailVerifiedAt:null});
+ });
  it.each(['abc12','abcdef','123456','ABCDEF','密碼1234','a1'.repeat(129)])('rejects invalid new password %s without creating a person',async password=>{
   const data={...input(),password};const before=await db.person.count();
   await expect(registration.complete(data,randomUUID())).rejects.toMatchObject({response:{code:'PASSWORD_POLICY'}});
@@ -58,6 +67,7 @@ describe('Integrated Web identity and password lifecycle (real isolated DB, synt
   const second=await db.identityLink.findUniqueOrThrow({where:{provider_providerSubject:{provider:'GOOGLE',providerSubject:b.googleIdToken}}});
   const count=await db.person.count(),subject='link-'+randomUUID();
   await expect(linking.linkLine(first.personId,subject)).resolves.toMatchObject({linked:true});
+  expect((await db.identityLink.findUniqueOrThrow({where:{provider_providerSubject:{provider:'LINE',providerSubject:subject}}})).displayName).toBe('TEST LINE NAME');
   await expect(linking.linkLine(first.personId,subject)).resolves.toMatchObject({linked:true});
   expect(await db.person.count()).toBe(count);
   expect(await linking.loginMethods(first.personId)).toEqual({google:true,line:true});
