@@ -106,6 +106,19 @@ describe('Contact verification (real isolated DB; synthetic delivery providers)'
   const results=await Promise.all([service.send(owner,'REGISTRATION','SMS',destination,key),service.send(owner,'REGISTRATION','SMS',destination,key)]);
   expect(results[0].challengeId).toBe(results[1].challengeId);expect(sms.send.mock.calls.length-before).toBe(1);
  });
+ it('defers registration only with valid explicit configuration and still validates supplied proofs',async()=>{
+  const make=(setting:string)=>new ContactVerificationService(db,new ConfigService({REGISTRATION_CONTACT_VERIFICATION_REQUIRED:setting,OTP_HASH_SECRET:'TEST_ONLY_CONTACT_SECRET_32_CHARACTERS'}),sms as any,email as any,{} as any,{} as any);
+  const deferred=make('false'),owner='PERSON:'+randomUUID(),phone=fixture().destination;
+  expect(deferred.policy('REGISTRATION')).toEqual({emailRequired:false,smsRequired:false});
+  expect(deferred.policy('PROFILE')).toEqual({emailRequired:true,smsRequired:true});
+  expect(make('true').policy('REGISTRATION')).toEqual({emailRequired:true,smsRequired:true});
+  expect(()=>make('typo').policy('REGISTRATION')).toThrow();
+  expect(await deferred.consumeMobile(db,owner,'REGISTRATION',phone)).toBeNull();
+  expect(await deferred.consume(db,owner,'REGISTRATION','EMAIL','valid@example.invalid')).toBeNull();
+  await expect(deferred.consumeMobile(db,owner,'REGISTRATION','invalid')).rejects.toThrow();
+  await expect(deferred.consume(db,owner,'REGISTRATION','EMAIL','invalid')).rejects.toThrow();
+  await expect(deferred.consume(db,owner,'REGISTRATION','EMAIL','valid@example.invalid','a'.repeat(64))).rejects.toMatchObject({response:{code:'CONTACT_VERIFICATION_PROOF_INVALID'}});
+ });
  it('permits Email-first only in Stage and never marks an unproven phone verified',async()=>{
   const make=(settings:Record<string,string>)=>new ContactVerificationService(db,new ConfigService({OTP_HASH_SECRET:'TEST_ONLY_CONTACT_SECRET_32_CHARACTERS',...settings}),sms as any,email as any,{} as any,{} as any);
   expect(make({}).policy()).toEqual({emailRequired:true,smsRequired:true});

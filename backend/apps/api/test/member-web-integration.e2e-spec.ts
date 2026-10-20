@@ -8,6 +8,7 @@ import {MemberWebRegistrationService} from '../src/modules/auth/member-web-regis
 import {MemberWebAuthService} from '../src/modules/auth/member-web-auth.service';
 import {IdentityTokenService} from '../src/modules/auth/identity-token.service';
 import {MemberIdentityService} from '../src/modules/auth/member-identity.service';
+import {ContactVerificationService} from '../src/modules/auth/contact-verification.service';
 
 describe('Integrated Web identity and password lifecycle (real isolated DB, synthetic Google verifier)',()=>{
  const db=new PrismaService(),pii=new PiiCryptoService(),fingerprint=new IdentityMatchFingerprintService();
@@ -34,6 +35,23 @@ describe('Integrated Web identity and password lifecycle (real isolated DB, synt
   await db.$disconnect();
  });
  function input(){const token='synthetic-'+randomUUID();return {contractVersionId:contractId,accepted:true as const,legalName:'TEST ONLY APPLICANT',alias:'TEST',gender:'UNDISCLOSED',birthDate:'1990-01-02',nationalityCode:'TW',identityDocumentType:'NATIONAL_ID' as const,identityDocumentNumber:'TEST-ID-'+randomUUID(),mobile:'+8869'+String(Math.floor(Math.random()*1e8)).padStart(8,'0'),email:token+'@example.invalid',password:'TEST_ONLY_PASSWORD_123!',googleIdToken:token};}
+ it('registers with six-character mixed password and deferred contacts, then logs in without claiming verification',async()=>{
+  const deferred=new ContactVerificationService(db,new ConfigService({REGISTRATION_CONTACT_VERIFICATION_REQUIRED:'false'}),{} as any,{} as any,google as any,line as any);
+  const signup=new MemberWebRegistrationService(db,new IdempotencyService(db),google as any,pii,fingerprint,line as any,deferred);
+  const data={...input(),password:'abc123'};
+  const result=await signup.complete(data,randomUUID());
+  const person=await db.person.findUniqueOrThrow({where:{memberNo:result.memberNo}});
+  expect(person.mobileVerifiedAt).toBeNull();expect(person.emailVerifiedAt).toBeNull();
+  expect(await auth.passwordLogin(result.memberNo,'abc123')).toMatchObject({accessToken:expect.any(String)});
+  await expect(deferred.consumeMobile(db,'PERSON:'+person.personId,'PROFILE',data.mobile)).rejects.toMatchObject({response:{code:'MOBILE_VERIFICATION_REQUIRED'}});
+  await expect(deferred.consume(db,'PERSON:'+person.personId,'PROFILE','EMAIL',data.email)).rejects.toMatchObject({response:{code:'EMAIL_VERIFICATION_REQUIRED'}});
+  await expect(deferred.consume(db,'PERSON:'+person.personId,'REGISTRATION','EMAIL','invalid')).rejects.toThrow();
+ });
+ it.each(['abc12','abcdef','123456','ABCDEF','密碼1234','a1'.repeat(129)])('rejects invalid new password %s without creating a person',async password=>{
+  const data={...input(),password};const before=await db.person.count();
+  await expect(registration.complete(data,randomUUID())).rejects.toMatchObject({response:{code:'PASSWORD_POLICY'}});
+  expect(await db.person.count()).toBe(before);
+ });
  it('links LINE to the same Google member, is retry-safe, preserves member count and refuses transfer or replacement',async()=>{
   const a=input(),b=input();await registration.complete(a,randomUUID());await registration.complete(b,randomUUID());
   const first=await db.identityLink.findUniqueOrThrow({where:{provider_providerSubject:{provider:'GOOGLE',providerSubject:a.googleIdToken}}});
@@ -128,11 +146,11 @@ describe('Integrated Web identity and password lifecycle (real isolated DB, synt
   const person=await db.person.findUniqueOrThrow({where:{memberNo:result.memberNo}});
   const local=await auth.passwordLogin(person.memberNo,payload.password),token=randomUUID();
   await db.passwordResetToken.create({data:{personId:person.personId,tokenHash:createHash('sha256').update(token).digest('hex'),expiresAt:new Date(Date.now()+60000)}});
-  const outcomes=await Promise.allSettled([auth.resetPassword(token,'TEST_ONLY_NEW_PASSWORD_A'),auth.resetPassword(token,'TEST_ONLY_NEW_PASSWORD_B')]);
+  const outcomes=await Promise.allSettled([auth.resetPassword(token,'abc123'),auth.resetPassword(token,'ABC456')]);
   expect(outcomes.filter(x=>x.status==='fulfilled')).toHaveLength(1);
   expect((outcomes.find(x=>x.status==='rejected') as PromiseRejectedResult).reason).toMatchObject({response:{code:'PASSWORD_RESET_TOKEN_INVALID'}});
   await expect(sessions.authenticate(result.accessToken)).rejects.toThrow();await expect(sessions.authenticate(local.accessToken)).rejects.toThrow();
-  const winner=outcomes[0].status==='fulfilled'?'TEST_ONLY_NEW_PASSWORD_A':'TEST_ONLY_NEW_PASSWORD_B';
+  const winner=outcomes[0].status==='fulfilled'?'abc123':'ABC456';
   expect(await auth.passwordLogin(person.memberNo,winner)).toHaveProperty('accessToken');
   await expect(auth.passwordLogin(person.memberNo,payload.password)).rejects.toMatchObject({response:{code:'MEMBER_LOGIN_INVALID'}});
  });

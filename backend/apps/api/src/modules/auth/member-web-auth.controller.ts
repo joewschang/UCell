@@ -6,12 +6,12 @@ import { MemberWebAuthService } from './member-web-auth.service';
 class GoogleExchangeDto{ @ApiProperty() @IsString() @MinLength(1) @MaxLength(16384) idToken!:string; }
 class PasswordLoginDto{
  @ApiProperty({description:'Member number, email or mobile login identifier; field name retained for existing clients'}) @IsString() @MinLength(3) @MaxLength(254) memberNo!:string;
- @ApiProperty({minLength:12,maxLength:256}) @IsString() @MinLength(12) @MaxLength(256) password!:string;
+ @ApiProperty({minLength:6,maxLength:256}) @IsString() @MinLength(6) @MaxLength(256) password!:string;
 }
 class ForgotPasswordDto{ @ApiProperty() @IsString() @MinLength(3) @MaxLength(254) identifier!:string; }
 class ResetPasswordDto{
  @ApiProperty() @IsString() @MinLength(20) @MaxLength(256) token!:string;
- @ApiProperty({minLength:12,maxLength:256}) @IsString() @MinLength(12) @MaxLength(256) newPassword!:string;
+ @ApiProperty({minLength:6,maxLength:256}) @IsString() @MinLength(6) @Matches(/[A-Za-z]/) @Matches(/[0-9]/) @MaxLength(256) newPassword!:string;
 }
 
 @ApiTags('Member - Web Authentication') @Controller('auth/member')

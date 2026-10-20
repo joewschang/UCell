@@ -44,7 +44,7 @@ it('opens new LINE friends directly on profile registration and preserves an exi
  const labels=tree!.root.findAllByType('label');
  const input=(name:string)=>labels.find(l=>l.children.some(c=>typeof c==='string'&&c.includes(name)))!.findByType('input');
  act(()=>{
-  for(const [name,value] of Object.entries({'姓名':'測試新好友','顯示名稱':'新好友','生日':'1990-01-01','身分證明號碼':'TEST-LINE-ID','手機號碼':'+886912345678','電子郵件':'line-friend@example.invalid','設定登入密碼':'LongPassword123!','確認密碼':'LongPassword123!'}))input(name).props.onChange({target:{value}});
+  for(const [name,value] of Object.entries({'姓名':'測試新好友','顯示名稱':'新好友','生日':'1990-01-01','身分證明號碼':'TEST-LINE-ID','手機號碼':'+886912345678','電子郵件':'line-friend@example.invalid','設定登入密碼':'abc123','確認密碼':'abc123'}))input(name).props.onChange({target:{value}});
   labels.find(l=>l.children.some(c=>typeof c==='string'&&c.includes('我已閱讀')))!.findByType('input').props.onChange({target:{checked:true}});
  });
  act(()=>tree!.root.findAllByType(ContactVerifier).forEach(v=>v.props.onVerified('a'.repeat(64))));
@@ -84,7 +84,8 @@ it('requires Google identity before Web registration and submits no OTP fields',
  expect(auth.completeRegistration).not.toHaveBeenCalled();
 });
 
-it('registers with Google, contract consent and password without OTP fields',async()=>{
+it.each([true,false])('registers with Google and contract consent with contact verification required=%s',async(required)=>{
+ vi.stubGlobal('fetch',vi.fn(async()=>new Response(JSON.stringify({emailRequired:required,smsRequired:required}))));
  let googleCredential:(token:string)=>void=()=>{};
  auth.renderGoogleRegistrationButton.mockImplementation(async(_el:any,onCredential:(token:string)=>void)=>{googleCredential=onCredential;});
  const authenticated=vi.fn();
@@ -104,21 +105,21 @@ it('registers with Google, contract consent and password without OTP fields',asy
   input('身分證明號碼').props.onChange({target:{value:'TEST ONLY ID'}});
   input('手機號碼').props.onChange({target:{value:'+886912345678'}});
   input('電子郵件').props.onChange({target:{value:'member@example.invalid'}});
-  input('設定登入密碼').props.onChange({target:{value:'LongPassword123!'}});
+  input('設定登入密碼').props.onChange({target:{value:'abc123'}});
   input('確認密碼').props.onChange({target:{value:'DifferentPassword123!'}});
   labels.find(l=>l.children.some(c=>typeof c==='string'&&c.includes('我已閱讀')))!.findByType('input').props.onChange({target:{checked:true}});
  });
  await act(async()=>tree!.root.findByType('form').props.onSubmit({preventDefault(){}}));
  expect(auth.completeRegistration).not.toHaveBeenCalled();
  expect(JSON.stringify(tree!.toJSON())).toContain('兩次輸入的密碼不一致');
- await act(async()=>input('確認密碼').props.onChange({target:{value:'LongPassword123!'}}));
+ await act(async()=>input('確認密碼').props.onChange({target:{value:'abc123'}}));
  auth.completeRegistration.mockResolvedValue({accessToken:'opaque',expiresAt:new Date(Date.now()+60000).toISOString()});
  act(()=>tree!.root.findAllByType(ContactVerifier).forEach(v=>v.props.onVerified('a'.repeat(64))));
  await act(async()=>tree!.root.findByType('form').props.onSubmit({preventDefault(){}}));
  expect(auth.completeRegistration).toHaveBeenCalledWith(expect.objectContaining({
   contractVersionId:'11111111-1111-4111-8111-111111111111',
   legalName:'王小明',alias:'小明',mobile:'+886912345678',email:'member@example.invalid',
-  password:'LongPassword123!',googleIdToken:'GOOGLE_ID_TOKEN_TEST_ONLY',nationalityCode:'TW',identityDocumentType:'NATIONAL_ID',identityDocumentNumber:'TEST ONLY ID'
+  password:'abc123',googleIdToken:'GOOGLE_ID_TOKEN_TEST_ONLY',nationalityCode:'TW',identityDocumentType:'NATIONAL_ID',identityDocumentNumber:'TEST ONLY ID'
  }));
  const payload=auth.completeRegistration.mock.calls[0][0];
  expect(payload).not.toHaveProperty('challengeId');

@@ -4,7 +4,7 @@ import { isMock, updateProfile } from './memberData';
 import ContactVerifier from './ContactVerifier';
 import {useContactPolicy,deferredSmsMessage} from './useContactPolicy';
 export default function ProfileEditor({refresh}:{refresh:()=>void}){
- const {smsRequired}=useContactPolicy();
+ const {smsRequired}=useContactPolicy('PROFILE');
  const [name,setName]=useState(''),[email,setEmail]=useState(''),[phone,setPhone]=useState('');
  const [mobileProof,setMobileProof]=useState<string>(),[emailProof,setEmailProof]=useState<string>();
  const [busy,setBusy]=useState(false),[message,setMessage]=useState(''),[error,setError]=useState('');

@@ -7,7 +7,7 @@ import { IdentityTokenService } from './identity-token.service';
 import { GoogleTokenVerifierService } from './google-token-verifier.service';
 import { PasswordResetEmailService } from './password-reset-email.service';
 
-const PASSWORD_MIN=12,MAX_ATTEMPTS=5,LOCK_MS=15*60*1000;
+const PASSWORD_MIN=6,MAX_ATTEMPTS=5,LOCK_MS=15*60*1000;
 function derive(password:string,salt:string,length:number,N:number,r:number,p:number){return scryptSync(password,salt,length,{N,r,p,maxmem:64*1024*1024});}
 
 @Injectable()
@@ -41,7 +41,7 @@ export class MemberWebAuthService{
  }
 
  private async hashPassword(password:string,salt=randomBytes(16).toString('base64url')){
-  if(password.length<PASSWORD_MIN||password.length>256)throw new UnprocessableEntityException({code:'PASSWORD_POLICY'});
+  if(password.length<PASSWORD_MIN||password.length>256||!/[A-Za-z]/.test(password)||!/[0-9]/.test(password))throw new UnprocessableEntityException({code:'PASSWORD_POLICY'});
   const key=derive(password,salt,32,16384,8,1);
   return `scrypt$16384$8$1$${salt}$${key.toString('base64url')}`;
  }

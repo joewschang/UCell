@@ -16,7 +16,12 @@ export function normalizeContact(channel:ContactChannel,value:string){
 @Injectable()
 export class ContactVerificationService{
  constructor(private readonly db:PrismaService,private readonly config:ConfigService,private readonly sms:SmsOtpProviderService,private readonly email:ContactVerificationEmailService,private readonly google:GoogleTokenVerifierService,private readonly line:LineTokenVerifierService){}
- policy(){
+ policy(purpose:ContactPurpose='PROFILE'){
+  if(purpose==='REGISTRATION'){
+   const registration=this.config.get<string>('REGISTRATION_CONTACT_VERIFICATION_REQUIRED');
+   if(registration!==undefined&&!['true','false'].includes(registration))throw new ServiceUnavailableException({code:'CONTACT_POLICY_CONFIGURATION_INVALID'});
+   if(registration==='false')return {emailRequired:false,smsRequired:false};
+  }
   const setting=this.config.get<string>('CONTACT_VERIFICATION_SMS_REQUIRED');
   if(setting!==undefined&&!['true','false'].includes(setting))throw new ServiceUnavailableException({code:'CONTACT_POLICY_CONFIGURATION_INVALID'});
   if(setting==='false'&&this.config.get<string>('UCELL_ENVIRONMENT')!=='STAGE')throw new ServiceUnavailableException({code:'CONTACT_POLICY_CONFIGURATION_INVALID'});
@@ -24,7 +29,7 @@ export class ContactVerificationService{
  }
  async consumeMobile(tx:any,owner:string,purpose:ContactPurpose,destination:string,proof?:string){
   normalizeContact('SMS',destination);
-  if(this.policy().smsRequired||proof)return this.consume(tx,owner,purpose,'SMS',destination,proof);
+  if(this.policy(purpose).smsRequired||proof)return this.consume(tx,owner,purpose,'SMS',destination,proof);
   // Email-first Stage release retains the phone as explicitly unverified.
   return null;
  }
@@ -78,6 +83,11 @@ export class ContactVerificationService{
   if('error' in result)throw new UnprocessableEntityException({code:result.error});return result;
  }
  async consume(tx:any,owner:string,purpose:ContactPurpose,channel:ContactChannel,destination:string,proof?:string){
+  normalizeContact(channel,destination);
+  if(purpose==='REGISTRATION'&&!proof){
+   const policy=this.policy(purpose);
+   if(!(channel==='SMS'?policy.smsRequired:policy.emailRequired))return null;
+  }
   if(!proof)throw new UnprocessableEntityException({code:channel==='SMS'?'MOBILE_VERIFICATION_REQUIRED':'EMAIL_VERIFICATION_REQUIRED'});
   const context=this.context(owner,purpose,channel,destination),proofHash=this.hash(proof);
   const changed=await tx.contactVerificationChallenge.updateMany({where:{...context,proofHash,status:'VERIFIED',consumedAt:null,expiresAt:{gt:new Date()}},data:{consumedAt:new Date()}});

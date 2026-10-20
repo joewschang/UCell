@@ -11,3 +11,9 @@ it('shows server validation guidance without exposing generic codes or raw respo
  const input={contractVersionId:'test',legalName:'Test',alias:'Test',gender:'UNDISCLOSED',birthDate:'1990-01-01',nationalityCode:'TW',identityDocumentType:'OTHER',identityDocumentNumber:'TEST',mobile:'0912345678',email:'test@example.invalid',password:'TEST-password-1234',googleIdToken:'TEST'};
  await expect(completeRegistration(input)).rejects.toThrow('手機號碼請使用');
 });
+
+it.each(['abc12','abcdef','123456','密碼1234','a1'.repeat(129)])('rejects password outside mixed six-character policy: %s',async password=>{
+ const fetch=vi.fn();vi.stubGlobal('fetch',fetch);
+ await expect(completeRegistration({contractVersionId:'test',legalName:'Test',alias:'Test',gender:'UNDISCLOSED',birthDate:'1990-01-01',nationalityCode:'TW',identityDocumentType:'OTHER',identityDocumentNumber:'TEST',mobile:'0912345678',email:'test@example.invalid',password,googleIdToken:'TEST'})).rejects.toThrow('6 至 256');
+ expect(fetch).not.toHaveBeenCalled();
+});

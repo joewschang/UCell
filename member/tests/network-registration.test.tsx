@@ -37,6 +37,16 @@ it('requires explicit consent before sending registration',async()=>{
  await act(async()=>submit());expect(fetch.mock.calls.filter(([,init])=>init.method==='POST')).toHaveLength(0);expect(JSON.stringify(tree!.toJSON())).toContain('請先閱讀並同意');
 });
 
+it('submits registration without proofs when both channels are deferred',async()=>{
+ const fetch=vi.fn(async(url:string,init:RequestInit)=>url.endsWith('/contact-verification/policy')?response({emailRequired:false,smsRequired:false}):init.method==='POST'?response({personId:'person-1',membershipState:'NETWORK_MEMBER',enabledAuthenticationProvider:'LINE',qualificationCreated:false,replayed:false},201):response([contract]));vi.stubGlobal('fetch',fetch);
+ const refresh=vi.fn();await act(async()=>{tree=create(<NetworkRegistration person={person} refresh={refresh}/>);});complete();
+ expect(tree!.root.findAllByType(ContactVerifier)).toHaveLength(0);
+ expect(JSON.stringify(tree!.toJSON())).toContain('尚未驗證');
+ await act(async()=>submit());
+ const post=fetch.mock.calls.find(([,init])=>init.method==='POST')!;
+ expect(post).toBeTruthy();expect(JSON.parse(post[1].body as string)).not.toHaveProperty('emailVerificationProof');expect(JSON.parse(post[1].body as string)).not.toHaveProperty('mobileVerificationProof');expect(refresh).toHaveBeenCalledOnce();
+});
+
 it('allows Stage Email-first registration only after Email proof and displays an unverified phone',async()=>{
  const fetch=vi.fn(async(url:string,init:RequestInit)=>url.endsWith('/contact-verification/policy')?response({emailRequired:true,smsRequired:false}):init.method==='POST'?response({personId:'person-1',membershipState:'NETWORK_MEMBER',enabledAuthenticationProvider:'LINE',qualificationCreated:false},201):response([contract]));vi.stubGlobal('fetch',fetch);
  await act(async()=>{tree=create(<NetworkRegistration person={person} refresh={()=>{}}/>);});complete();

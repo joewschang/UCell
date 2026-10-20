@@ -28,7 +28,7 @@ export class MemberWebRegistrationService{
  }
 
  private passwordHash(password:string){
-  if(password.length<12||password.length>256)throw new UnprocessableEntityException({code:'PASSWORD_POLICY'});
+  if(password.length<6||password.length>256||!/[A-Za-z]/.test(password)||!/[0-9]/.test(password))throw new UnprocessableEntityException({code:'PASSWORD_POLICY'});
   const salt=randomBytes(16).toString('base64url');
   const key=scryptSync(password,salt,32,{N:16384,r:8,p:1,maxmem:64*1024*1024});
   return `scrypt$16384$8$1$${salt}$${key.toString('base64url')}`;
