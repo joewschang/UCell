@@ -12,8 +12,9 @@ export class ReferralAttributionService {
  constructor(private readonly db:PrismaService,private readonly links:MemberShareLinkService,private readonly idempotency:IdempotencyService,private readonly audit:AuditService){}
 
  async land(token:string,anonymousId:string=randomUUID(),now=new Date()){
+  const preview=await this.links.preview(token,now);
   const payload=this.links.verify(token,now),tokenHash=this.links.hash(token),correlationId=randomUUID();
-  try{return await this.db.$transaction(async tx=>{
+  try{const result=await this.db.$transaction(async tx=>{
    await tx.$queryRaw`SELECT true AS locked FROM (SELECT pg_advisory_xact_lock(hashtextextended(${anonymousId},0))) AS lock_row`;
    const link=await tx.referralLink.findUnique({where:{tokenHash}});
    if(!link||link.status!=='ACTIVE'||link.expiresAt<=now||link.referrerQualificationId!==payload.qualificationId)throw new ServiceUnavailableException({code:'MEMBER_SHARE_TOKEN_INVALID'});
@@ -24,7 +25,7 @@ export class ReferralAttributionService {
     await tx.referralAttributionHistory.create({data:{referralAttributionId:created.referralAttributionId,action:'CREATED',newReferrerQualificationId:link.referrerQualificationId,reasonCode:'FIRST_VALID_TOUCH',referralLinkId:link.referralLinkId,correlationId,occurredAt:now}});
     return this.view(created,true,false,'FIRST_VALID_TOUCH',link.policyVersion);
    }
-   if(current.referrerQualificationId===link.referrerQualificationId){
+   if(current.referrerQualificationId===link.referrerQualificationId&&now<current.lockedUntil){
     const updated=await tx.referralAttribution.update({where:{referralAttributionId:current.referralAttributionId},data:{lastTouchAt:now,referralLinkId:link.referralLinkId,version:{increment:1}}});
     await tx.referralAttributionHistory.create({data:{referralAttributionId:current.referralAttributionId,action:'TOUCH_RECORDED',previousReferrerQualificationId:current.referrerQualificationId,newReferrerQualificationId:link.referrerQualificationId,reasonCode:'SAME_REFERRER_LOCK_UNCHANGED',referralLinkId:link.referralLinkId,correlationId,occurredAt:now}});
     return this.view(updated,true,false,'SAME_REFERRER_LOCK_UNCHANGED',link.policyVersion);
@@ -37,7 +38,7 @@ export class ReferralAttributionService {
    const replaced=await tx.referralAttribution.update({where:{referralAttributionId:current.referralAttributionId},data:{referrerQualificationId:link.referrerQualificationId,referralLinkId:link.referralLinkId,firstTouchAt:now,lastTouchAt:now,lockedUntil,version:{increment:1}}});
    await tx.referralAttributionHistory.create({data:{referralAttributionId:current.referralAttributionId,action:'REPLACED',previousReferrerQualificationId:current.referrerQualificationId,newReferrerQualificationId:link.referrerQualificationId,reasonCode:'ATTRIBUTION_LOCK_EXPIRED',referralLinkId:link.referralLinkId,correlationId,occurredAt:now}});
    return this.view(replaced,true,true,'ATTRIBUTION_LOCK_EXPIRED',link.policyVersion);
-  },{isolationLevel:Prisma.TransactionIsolationLevel.Serializable});}
+  },{isolationLevel:Prisma.TransactionIsolationLevel.Serializable});return {...result,destination:preview.destination};}
   catch(error){if((error as any).code==='P2034')throw new ConflictException({code:'RETRYABLE_CONFLICT'});throw error;}
  }
 
@@ -54,7 +55,7 @@ export class ReferralAttributionService {
    const other=await tx.referralAttribution.findFirst({where:{personId,status:'ACTIVE',lockedUntil:{gt:now},NOT:{referralAttributionId:attribution.referralAttributionId}}});
    if(other)throw new ConflictException({code:'PERSON_REFERRAL_ATTRIBUTION_CONFLICT'});
    const updated=await tx.referralAttribution.update({where:{referralAttributionId:attribution.referralAttributionId},data:{personId,version:{increment:1}}}),correlationId=randomUUID();
-   await tx.referralAttributionHistory.create({data:{referralAttributionId:updated.referralAttributionId,action:'BOUND_TO_PERSON',previousReferrerQualificationId:updated.referrerQualificationId,newReferrerQualificationId:updated.referrerQualificationId,reasonCode:'AUTHENTICATED_LINE_PERSON_BOUND',referralLinkId:updated.referralLinkId,boundPersonId:personId,correlationId,occurredAt:now}});
+   await tx.referralAttributionHistory.create({data:{referralAttributionId:updated.referralAttributionId,action:'BOUND_TO_PERSON',previousReferrerQualificationId:updated.referrerQualificationId,newReferrerQualificationId:updated.referrerQualificationId,reasonCode:'AUTHENTICATED_PERSON_BOUND',referralLinkId:updated.referralLinkId,boundPersonId:personId,correlationId,occurredAt:now}});
    await this.audit.write(tx,{actorType:'MEMBER',actorId:personId,action:'REFERRAL_ATTRIBUTION_BOUND',entityType:'ReferralAttribution',entityId:updated.referralAttributionId,beforeData:{personBound:false},afterData:{personBound:true,referrerQualificationId:updated.referrerQualificationId},requestId,correlationId});
    await tx.outboxEvent.create({data:{eventType:'REFERRAL_ATTRIBUTION_BOUND',aggregateType:'ReferralAttribution',aggregateId:updated.referralAttributionId,payload:{schemaVersion:1,referralAttributionId:updated.referralAttributionId,personId,referrerQualificationId:updated.referrerQualificationId},correlationId}});
    return {referralAttributionId:updated.referralAttributionId,referrerQualificationId:updated.referrerQualificationId,status:'BOUND' as const,boundAt:now.toISOString()};

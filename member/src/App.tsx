@@ -1,3 +1,4 @@
+import SharingCenter from './SharingCenter';
 import {uiValue,uiText,domainLabel} from "../../shared/design-system/i18n";
 import {MembershipPlanEmblem as QualificationEmblem,BallRankBadge} from './MembershipEmblems';
 import MemberPayouts from './MemberPayouts';
@@ -179,6 +180,7 @@ function MemberApp() {
         <Route path="/bonuses" element={<Bonuses q={current}/>}/>
         <Route path="/shop" element={data.isMock?<Shop q={current}/>:<Mall q={current} onCreated={retry}/>}/>
         <Route path="/orders" element={<><Orders q={current}/><WebRetailOrders/></>}/>
+        <Route path="/sharing" element={<SharingCenter q={current}/>}/>
         <Route path="/content" element={<ContentList q={current}/>}/>
         <Route path="/content/:id" element={<ContentDetail q={current}/>}/>
         <Route path="/membership/upgrade" element={<FormalEnrollment/>}/>
@@ -186,7 +188,8 @@ function MemberApp() {
         <Route path="/notifications" element={<Notifications q={current}/>}/>
         <Route path="*" element={<section className="card"><h2>找不到頁面</h2><Link to="/">返回首頁</Link></section>}/>
       </Routes></div></> : <Routes>
-        <Route path="/" element={<section className="card"><h1>會員首頁</h1><p>{memberIdentityLabel}</p><p>{uiText("歡迎使用 UCell 會員中心。您可以購物、查看訂單、參與活動及管理會員資料。")}</p><MobileActionGrid><Link to="/shop">商品商城</Link><Link to="/orders">我的訂單</Link><Link to="/learning">教育訓練</Link><Link to="/events">活動中心</Link><Link to="/me">會員資料</Link><Link to="/membership/upgrade">申請正式會員</Link></MobileActionGrid></section>}/>
+        <Route path="/" element={<section className="card"><h1>會員首頁</h1><p>{memberIdentityLabel}</p><p>{uiText("歡迎使用 UCell 會員中心。您可以購物、查看訂單、參與活動及管理會員資料。")}</p><MobileActionGrid><Link to="/shop">商品商城</Link><Link to="/orders">我的訂單</Link><Link to="/content">影音中心</Link><Link to="/learning">教育訓練</Link><Link to="/events">活動中心</Link><Link to="/me">會員資料</Link><Link to="/membership/upgrade">申請正式會員</Link></MobileActionGrid></section>}/>
+        <Route path="/content" element={<ContentList/>}/><Route path="/content/:id" element={<ContentDetail/>}/>
         <Route path="/orders" element={<WebRetailOrders/>}/>
         <Route path="/membership/upgrade" element={<FormalEnrollment/>}/>
         <Route path="/growth" element={<GrowthCenter/>}/>

@@ -1,3 +1,4 @@
+import {safeContentUrl} from '../content/content-visibility';
 import {Injectable} from '@nestjs/common';
 import {PrismaService} from '@ucell/database';
 /** Public projections deliberately exclude member identity, bonus parameters,
@@ -6,13 +7,13 @@ import {PrismaService} from '@ucell/database';
 export class PublicWebsiteService{
  constructor(private readonly db:PrismaService){}
  async content(now=new Date()){
-  const rows=await this.db.publishedContent.findMany({where:{status:'PUBLISHED'},select:{contentId:true,contentType:true,versions:{where:{status:'PUBLISHED',approvedAt:{not:null},OR:[{publishFrom:null},{publishFrom:{lte:now}}]},orderBy:{version:'desc'},take:1,select:{audiencePolicy:true,title:true,summary:true,externalUrl:true,publishTo:true,approvedAt:true}}},orderBy:{createdAt:'desc'},take:100});
+  const rows=await this.db.publishedContent.findMany({where:{status:'PUBLISHED'},select:{contentId:true,contentType:true,versions:{where:{status:'PUBLISHED',approvedAt:{not:null},OR:[{publishFrom:null},{publishFrom:{lte:now}}]},orderBy:{version:'desc'},take:1,select:{audiencePolicy:true,title:true,summary:true,externalUrl:true,thumbnailUrl:true,shareable:true,publishTo:true,approvedAt:true}}},orderBy:{createdAt:'desc'},take:100});
   return rows.flatMap(row=>{
    const v=row.versions[0];
    if(!v||v.audiencePolicy!=='PUBLIC'||v.publishTo&&v.publishTo<=now)return [];
    let url:URL;try{url=new URL(v.externalUrl)}catch{return []}
    if(url.protocol!=='https:'||url.username||url.password)return [];
-   return [{id:row.contentId,type:row.contentType,title:v.title,summary:v.summary,url:url.toString(),publishedAt:v.approvedAt!.toISOString()}];
+   return [{id:row.contentId,type:row.contentType,title:v.title,summary:v.summary,url:url.toString(),thumbnailUrl:safeContentUrl(v.thumbnailUrl),shareable:v.shareable,publishedAt:v.approvedAt!.toISOString()}];
   });
  }
  async products(now=new Date()){

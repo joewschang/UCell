@@ -1,4 +1,6 @@
-import {Body,Controller,Headers,Post,Req,UseGuards} from '@nestjs/common';
+import {shareCardHtml} from '../content/share-card-html';
+import {MemberShareLinkService} from './member-share-link.service';
+import {Body,Controller,Headers,Post,Get,Param,Req,UseGuards,Res,Header,StreamableFile} from '@nestjs/common';
 import {ApiBearerAuth,ApiHeader,ApiOperation,ApiProperty,ApiResponse,ApiTags} from '@nestjs/swagger';
 import {IsOptional,IsString,IsUUID,MaxLength,MinLength} from 'class-validator';
 import {ReferralAttributionService} from './referral-attribution.service';
@@ -16,7 +18,14 @@ export class ReferralBindingDto {
 @ApiTags('Referral - Public')
 @Controller('referrals')
 export class ReferralAttributionController {
- constructor(private readonly service:ReferralAttributionService){}
+ constructor(private readonly service:ReferralAttributionService,private readonly links:MemberShareLinkService){}
+ @Get('card/:token') @Header('Cache-Control','no-store') async card(@Param('token') token:string,@Res({passthrough:true}) res:any){
+  let content:{title:string;summary:string|null;thumbnailUrl:string|null}|null=null;
+  try{content=(await this.links.preview(token)).content;}
+  catch{res.code(410);}
+  return new StreamableFile(Buffer.from(shareCardHtml(content)),{type:'text/html; charset=utf-8'});
+ }
+ @Get('preview/:token') preview(@Param('token') token:string){return this.links.preview(token);}
  @Post('landing')
  @ApiOperation({operationId:'referralLanding',description:'Record provisional referral attribution using server time. A 30-day lock does not create or rewrite a Sponsor relationship.'})
  @ApiResponse({status:201,description:'Attribution recorded, retained, or replaced according to the approved 30-day policy.'})
@@ -30,7 +39,7 @@ export class ReferralAttributionController {
 export class MemberReferralAttributionController {
  constructor(private readonly service:ReferralAttributionService){}
  @Post('bind') @UseGuards(IdempotencyGuard) @ApiHeader({name:'Idempotency-Key',required:true})
- @ApiOperation({operationId:'memberBindReferralAttribution',description:'Explicitly bind an eligible anonymous attribution to the authenticated LINE Person. Never creates or rewrites Sponsor.'})
+ @ApiOperation({operationId:'memberBindReferralAttribution',description:'Explicitly bind an eligible anonymous attribution to the authenticated Person. Never creates or rewrites Sponsor.'})
  @ApiResponse({status:201,description:'Bound or idempotently already bound to the authenticated Person.'})
  @ApiResponse({status:409,description:'Stale attribution, different Person, existing active Person attribution, or retryable concurrency conflict.'})
  bind(@Req() req:any,@Body() body:ReferralBindingDto,@Headers('idempotency-key') key:string){return this.service.bind(req.user.personId,body.transitionState,key,req.requestId);}

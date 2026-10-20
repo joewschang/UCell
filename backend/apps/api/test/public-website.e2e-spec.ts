@@ -11,7 +11,7 @@ it('exposes only the current approved public content and never resurrects privat
   {contentId:'credentials',contentType:'EXTERNAL_LINK',versions:[{...base,externalUrl:'https://user:password@example.com'}]}
  ]);
  const result=await new PublicWebsiteService({publishedContent:{findMany:read}} as any).content(now);
- expect(result).toEqual([{id:'public',type:'VIDEO_EXTERNAL',title:'Public video',summary:'Summary',url:'https://example.com/watch',publishedAt:now.toISOString()}]);
+ expect(result).toEqual([{id:'public',type:'VIDEO_EXTERNAL',title:'Public video',summary:'Summary',url:'https://example.com/watch',thumbnailUrl:null,shareable:undefined,publishedAt:now.toISOString()}]);
  const query=read.mock.calls[0][0];expect(query.where.status).toBe('PUBLISHED');
  expect(query.select.versions).toMatchObject({take:1,orderBy:{version:'desc'},where:{status:'PUBLISHED',approvedAt:{not:null},OR:[{publishFrom:null},{publishFrom:{lte:now}}]}});
  // Select latest effective version BEFORE deciding public visibility.

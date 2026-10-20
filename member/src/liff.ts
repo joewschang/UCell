@@ -48,19 +48,22 @@ export function pendingSponsorCandidate(){
  return sponsorCandidateFromSearch(window.location.search)??sessionStorage.getItem(sponsorCandidateKey)??undefined;
 }
 function uuid(value:string|null){return value&&/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)?value:undefined;}
-export async function prepareReferralLanding(){
- if(typeof window==='undefined')return;
- const match=window.location.pathname.match(/^\/r\/([A-Za-z0-9_-]+)$/);if(!match)return;
+export async function recordReferralLanding(token:string){
+ if(!/^[A-Za-z0-9_-]{1,4096}$/.test(token))throw new Error('推薦連結格式不正確');
  let anonymousId:string|undefined;
  try{anonymousId=uuid(localStorage.getItem(anonymousKey));}catch{/* Browser persistence is optional; backend can issue a new anonymous ID. */}
- const response=await request('/referrals/landing',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:match[1],...(anonymousId?{anonymousId}:{})})});
+ const response=await request('/referrals/landing',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token,...(anonymousId?{anonymousId}:{})})});
  if(!response.ok)throw new Error('推薦連結無效或已過期');
- const data=unwrapMemberEnvelope(response.body) as {anonymousId?:unknown;transitionState?:unknown;transitionExpiresAt?:unknown};
+ const data=unwrapMemberEnvelope(response.body) as {anonymousId?:unknown;transitionState?:unknown;transitionExpiresAt?:unknown;destination?:unknown;accepted?:boolean};
  if(typeof data.anonymousId!=='string'||!uuid(data.anonymousId)||typeof data.transitionState!=='string'||!data.transitionState||typeof data.transitionExpiresAt!=='string'||!Number.isFinite(Date.parse(data.transitionExpiresAt))||Date.parse(data.transitionExpiresAt)<=Date.now())throw new Error('推薦連結回應格式異常');
  try{localStorage.setItem(anonymousKey,data.anonymousId);}catch{/* Transition remains usable without durable anonymous storage. */}
  sessionStorage.setItem(transitionKey,data.transitionState);sessionStorage.setItem(bindingKey,crypto.randomUUID());
- const query=new URLSearchParams(window.location.search),contentId=uuid(query.get('content'));query.delete('content');const suffix=query.toString()?'?'+query.toString():'';
- window.history.replaceState({},'',(contentId?'/content/'+encodeURIComponent(contentId):'/')+suffix);
+ return {destination:typeof data.destination==='string'&&(/^\/content\/[0-9a-f-]{36}$/i.test(data.destination)||data.destination==='/')?data.destination:'/',accepted:data.accepted!==false};
+}
+export async function prepareReferralLanding(){
+ if(typeof window==='undefined')return;
+ const match=window.location.pathname.match(/^\/r\/([A-Za-z0-9_-]+)$/);if(!match)return;
+ const result=await recordReferralLanding(match[1]);window.history.replaceState({},'',result.destination);
 }
 
 async function bindPendingReferral(accessToken:string){

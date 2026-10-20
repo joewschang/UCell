@@ -24,6 +24,8 @@ class PublishDto { @ApiProperty({maxLength:200}) @IsString() @MinLength(1) @MaxL
 export class AdminContentController {
  constructor(private readonly service:ContentService){}
  @Get() list(){return this.service.adminList();}
+ @Post(':id/archive') @Roles('SUPER_ADMIN','ORDER_OPS') @UseGuards(IdempotencyGuard)
+ archive(@Param('id',new ParseUUIDPipe()) id:string,@Headers('idempotency-key') key:string,@Req() req:any){return this.service.archive(id,key,req.requestId,req.user?.personId??req.user?.subject);}
  @Post() @Roles('SUPER_ADMIN','ORDER_OPS') @UseGuards(IdempotencyGuard)
  create(@Body() body:ContentDto,@Headers('idempotency-key') key:string,@Req() req:any){return this.service.create(body,key,req.requestId,req.user?.personId??req.user?.subject);}
  @Post(':id/versions') @Roles('SUPER_ADMIN','ORDER_OPS') @UseGuards(IdempotencyGuard)
@@ -39,3 +41,6 @@ export class MemberContentController {
  @Get() list(@Req() req:any){return this.service.list(req.user.personId);}
  @Get(':id') get(@Req() req:any,@Param('id',new ParseUUIDPipe()) id:string){return this.service.get(req.user.personId,id);}
 }
+
+@ApiTags('Public - Content') @Controller('public/content')
+export class PublicContentController {constructor(private readonly service:ContentService){} @Get(':id') get(@Param('id',new ParseUUIDPipe()) id:string){return this.service.publicDetail(id);}}

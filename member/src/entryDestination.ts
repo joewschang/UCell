@@ -1,5 +1,6 @@
 /** Preserve only the public website destinations after authentication. */
 export function memberEntryDestination(location:{pathname:string;search:string}){
+ if(location.pathname==='/content'||/^\/content\/[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(location.pathname)||location.pathname==='/sharing')return location.pathname;
  if(location.pathname==='/shop'){
   const sku=new URLSearchParams(location.search).get('sku');
   return sku&&/^TIP-\d{3}$/.test(sku)?`/shop?sku=${sku}`:'/shop';

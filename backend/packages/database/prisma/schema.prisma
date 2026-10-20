@@ -1278,6 +1278,7 @@ model ReferralLink {
   createdAt               DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
   expiresAt               DateTime              @map("expires_at") @db.Timestamptz(6)
   referrerQualification   Qualification         @relation(fields: [referrerQualificationId], references: [qualificationId])
+  contentShare            ContentShareLink?
   attributions            ReferralAttribution[]
 
   @@index([referrerQualificationId, createdAt])
@@ -1402,6 +1403,7 @@ model PublishedContent {
   status         String           @default("DRAFT")
   createdByActor String           @map("created_by_actor")
   createdAt      DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  shares         ContentShareLink[]
   versions       ContentVersion[]
 
   @@index([status, createdAt])
@@ -1427,6 +1429,7 @@ model ContentVersion {
   contentHash       String           @map("content_hash")
   status            String           @default("DRAFT")
   createdAt         DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  shares            ContentShareLink[]
   content           PublishedContent @relation(fields: [contentId], references: [contentId])
 
   @@unique([contentId, version])
@@ -5215,4 +5218,17 @@ model BallNoAllocation {
   @@unique([binaryTreeId, sequenceNo], map: "ball_no_allocation_binary_tree_id_sequence_no_key")
   @@map("ball_no_allocation")
   @@schema("organization")
+}
+
+model ContentShareLink {
+ referralLinkId String @id @map("referral_link_id") @db.Uuid
+ contentId String @map("content_id") @db.Uuid
+ contentVersionId String @map("content_version_id") @db.Uuid
+ createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+ link ReferralLink @relation(fields:[referralLinkId],references:[referralLinkId],onDelete:NoAction,onUpdate:NoAction)
+ content PublishedContent @relation(fields:[contentId],references:[contentId],onDelete:NoAction,onUpdate:NoAction)
+ version ContentVersion @relation(fields:[contentVersionId],references:[contentVersionId],onDelete:NoAction,onUpdate:NoAction)
+ @@index([contentId,createdAt],map:"content_share_link_content_idx")
+ @@map("content_share_link")
+ @@schema("integration")
 }

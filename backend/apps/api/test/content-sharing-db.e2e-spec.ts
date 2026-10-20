@@ -1,0 +1,47 @@
+import {PrismaClient} from '@prisma/client';
+import {randomUUID} from 'node:crypto';
+import {ContentInsightsService} from '../src/modules/content/content-insights.service';
+import {MemberShareLinkService} from '../src/modules/member/member-share-link.service';
+import {ReferralAttributionService} from '../src/modules/member/referral-attribution.service';
+const url=process.env.DATABASE_URL;
+const local=url&&['localhost','127.0.0.1'].includes(new URL(url).hostname);
+(local?describe:describe.skip)('Content sharing real PostgreSQL rollback checks',()=>{
+ let db:PrismaClient;
+ beforeAll(()=>{db=new PrismaClient();process.env.MEMBER_SHARE_TOKEN_SECRET='TEST_ONLY_CONTENT_SHARING_32_CHAR_SECRET';process.env.MEMBER_REFERRAL_BASE_URL='https://member.test.invalid';process.env.MEMBER_SHARE_TOKEN_TTL_SECONDS='7776000';});
+ afterAll(()=>db.$disconnect());
+ it('deduplicates accepted visits and counts new member bindings without exposing identities or rewriting Sponsor',async()=>{
+  await expect(db.$transaction(async tx=>{
+   const proxy:any=new Proxy(tx,{get(target,key){return key==='$transaction'?(work:any)=>work(proxy):Reflect.get(target,key);}});
+   const now=new Date(),created=new Date(now.getTime()-20000),touch=new Date(now.getTime()-10000);
+   const owner=await tx.person.create({data:{legalName:'LOCAL SHARE OWNER',status:'EFFECTIVE'}});
+   const q=await tx.qualification.create({data:{currentHolderPersonId:owner.personId,planLevelCode:'STARTER',status:'EFFECTIVE'}});
+   const content=await tx.publishedContent.create({data:{contentType:'VIDEO_EXTERNAL',createdByActor:owner.personId,status:'PUBLISHED'}});
+   await tx.contentVersion.create({data:{contentId:content.contentId,version:1,title:'Local public video',externalUrl:'https://example.com/watch',audiencePolicy:'PUBLIC',shareable:true,status:'PUBLISHED',approvedAt:created,approvalReference:'LOCAL_TEST',approvedByActor:owner.personId,contentHash:'a'.repeat(64)}});
+   const access:any={assertHolder:async()=>({ownerType:'PERSON'})},links=new MemberShareLinkService(access,proxy);
+   const link=await links.create(owner.personId,q.qualificationId,created,content.contentId),token=new URL(link.shareUrl).pathname.split('/').pop()!;
+   const idempotency:any={execute:async(_s:any,_k:any,_i:any,work:any)=>({value:await work(proxy),replayed:false})};
+   const attribution=new ReferralAttributionService(proxy,links,idempotency,{write:async()=>{}} as any);
+   const first=await attribution.land(token,randomUUID(),touch);
+   const competingQ=await tx.qualification.create({data:{currentHolderPersonId:owner.personId,planLevelCode:'STARTER',status:'EFFECTIVE'}});
+   const competingLink=await links.create(owner.personId,competingQ.qualificationId,created);
+   const competing=await attribution.land(new URL(competingLink.shareUrl).pathname.split('/').pop()!,first.anonymousId,touch);
+   expect(competing.accepted).toBe(false);expect(competing.referrerQualificationId).toBe(q.qualificationId);
+   const second=await attribution.land(token,first.anonymousId,new Date(touch.getTime()+1000));
+   expect(second.lockedUntil).toBe(first.lockedUntil);
+   const visitor=await tx.person.create({data:{legalName:'LOCAL SHARE VISITOR',status:'EFFECTIVE',createdAt:new Date(touch.getTime()+2000)}});
+   await expect(attribution.bind(visitor.personId,first.transitionState,randomUUID(),randomUUID(),now)).rejects.toThrow();
+   await attribution.bind(visitor.personId,second.transitionState,randomUUID(),randomUUID(),now);
+   await tx.contentVersion.create({data:{contentId:content.contentId,version:2,title:'NOT_AVAILABLE_YET',externalUrl:'https://example.com/future',audiencePolicy:'PUBLIC',shareable:true,status:'PUBLISHED',approvedAt:created,approvalReference:'LOCAL_TEST',approvedByActor:owner.personId,publishFrom:new Date(now.getTime()+86400000),contentHash:'b'.repeat(64)}});
+   const report=await new ContentInsightsService(proxy,access).read(owner.personId,q.qualificationId,now);
+   expect(report.rows).toEqual([expect.objectContaining({contentId:content.contentId,title:'Local public video',links:1,visitors:1,boundMembers:1,registrations:1})]);
+   expect(report.officialPaidOrders).toBe(0);
+   expect(JSON.stringify(report)).not.toContain(visitor.personId);expect(JSON.stringify(report)).not.toContain(visitor.legalName);
+   expect(await tx.sponsorRelationship.count({where:{childQualificationId:q.qualificationId}})).toBe(0);
+   const renewed=await attribution.land(token,first.anonymousId,new Date(now.getTime()+31*86400000));
+   expect(renewed.replaced).toBe(true);expect(Date.parse(renewed.lockedUntil)).toBeGreaterThan(Date.parse(first.lockedUntil));
+   await links.revoke(owner.personId,q.qualificationId,report.links[0].id);
+   await expect(links.preview(token,now)).rejects.toThrow();
+   throw new Error('ROLLBACK_CONTENT_SHARING');
+  },{timeout:30000})).rejects.toThrow('ROLLBACK_CONTENT_SHARING');
+ });
+});

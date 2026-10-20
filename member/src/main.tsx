@@ -1,8 +1,9 @@
+import PublicContentLanding from './PublicContentLanding';
 import {uiText} from "../../shared/design-system/i18n";
 import {CompanyLogo} from '@ucell/design-system';
 import React, { useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { BrowserRouter, useNavigate } from 'react-router-dom';
+import { BrowserRouter, useNavigate, useLocation } from 'react-router-dom';
 import { LineBindingRequired, bootstrapLiff, startWebLineLogin, restartLineLogin, LineReauthenticationRequired } from './liff';
 import { LineBinding } from './LineBindingPage';
 import {getLineRegistrationIdToken} from './lineBinding';
@@ -17,6 +18,7 @@ import './styles.css';
 import 'bootstrap/dist/css/bootstrap-grid.min.css';
 import '@ucell/design-system/styles';
 import './ucell-theme.css';
+import './content.css';
 initializeUiTheme();
 function Bootstrap() {
     const navigate=useNavigate();
@@ -70,4 +72,5 @@ function Bootstrap() {
 
     return <SessionBoundary>{referralWarning&&<p role="alert" className="card">{referralWarning}</p>}<QualificationProvider><App /></QualificationProvider></SessionBoundary>;
 }
-createRoot(document.getElementById('root')!).render(<React.StrictMode><ThemeProvider><AppErrorBoundary><BrowserRouter><Bootstrap /></BrowserRouter></AppErrorBoundary></ThemeProvider></React.StrictMode>);
+function EntryRouter(){const location=useLocation();const share=location.pathname.match(/^\/r\/([A-Za-z0-9_-]+)$/),content=location.pathname.match(/^\/watch\/([0-9a-f-]{36})$/i);return share||content?<PublicContentLanding key={location.pathname} token={share?.[1]} contentId={content?.[1]}/>:<Bootstrap/>;}
+createRoot(document.getElementById('root')!).render(<React.StrictMode><ThemeProvider><AppErrorBoundary><BrowserRouter><EntryRouter /></BrowserRouter></AppErrorBoundary></ThemeProvider></React.StrictMode>);
