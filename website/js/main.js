@@ -15,6 +15,7 @@ document.addEventListener('DOMContentLoaded',()=>{
  }
  const page=window.location.pathname.split('/').pop()||'index.html';
  const groups={
+   'life.html':['guide-products.html','guide-membership.html','guide-sharing.html'],
    'about.html':['vision.html','values.html','sustainability.html'],
    'science.html':['ingredients.html','evidence.html','quality.html','research-policy.html'],
    'products.html':['product-363.html','product-580.html','product-636.html','product-696.html','product-777.html','product-999.html'],

@@ -1,0 +1,43 @@
+UCell 官網架構、功能與內容管理審查（2026-10-20）
+
+結論
+官網應定位為公開品牌／產品／知識與活動入口，會員系統承接登入、訂單、報名與分享，管理後台作為唯一營運資料來源。頻繁更新的內容不應散落在 HTML；公開官網只取核准可公開欄位，避免直接暴露會員、交易或內部研究資料。
+
+現況與建議（依實際原始碼盤點，非假設已有 CMS）
+1. 商品：已有後台商品主檔與官網公開 API，品名、SKU、圖片、售價、上架與可購狀態已串接。產品詳細介紹、規格、成分與包裝標示仍多在靜態產品頁；應補上與 SKU 關聯的版本化內容，不能另建一份售價。優先 P0。
+2. 活動：已有後台建立／核准／發布與會員報名，官網公開精簡資訊。應在後台增設明確「官網公開」開關、公開摘要／封面；目前公開 API 從已發布且未結束的 NETWORK_MEMBER 活動投影，不能將其誤認為獨立 PUBLIC 活動政策。會議憑證、出席名單保持會員權限。優先 P0。
+3. 影音與外部閱讀素材：已有 content 管理、不可變版本、PUBLIC／NETWORK_MEMBER、縮圖、排程、核准、下架及分享開關。本次首頁與 UCell Life 沿用此公開 API，依發布時間顯示最多 3 筆，仍保留會員品牌內容頁與分享體系。無資料不製造假活動或假影片。已落地。
+4. 首頁主視覺與推薦區塊：目前靜態。建議後台管理桌面／手機圖、替代文字、標題、副標、CTA、排序、公開期間、草稿預覽與發布版本。活動／商品推薦應引用 ID，不複製資料。優先 P1。
+5. UCell Life／知識文章：現有 content 只有 VIDEO_EXTERNAL、EXTERNAL_LINK 與外部網址，沒有原生文章全文編輯。本次 3 篇文章為版本控管的官網頁面；後續增加 ARTICLE 內容型別及安全結構化區塊（段落、標題、圖片、引用、CTA）、slug、分類、作者、更新日、來源與相關商品 ID。優先 P1。
+6. FAQ／客服：目前靜態；適合後台維護分類、問題、答案、聯絡管道、服務時間及公司資訊，供官網與會員端共用。只發布已啟用的真實電話／Email／社群網址。優先 P1。
+7. 品牌故事、領導介紹、永續紀錄：目前靜態；適合後台版本化編輯，人物與案例需有授權、可證明資料及圖片來源。沒有真實成果時不生成數字或成功故事。優先 P2。
+8. 研究／原料／品質：目前公開科普與原則說明較多；建議文獻、研究類型、來源、適用界線、檢驗文件、關聯商品與審核人分欄管理。研究存在不等於產品功效；本次未新增醫療或研究結論。優先 P2。
+9. 契約、隱私、網站條款、退換貨：應採核准版本、生效日與歷史查閱；會員簽署證據對應原版本，網站 CMS 不得直接覆寫契約原文。優先 P1，與既有契約管理服務整合。
+10. 全站 SEO／導航／社群：集中管理 title、description、OG 圖、canonical、頁尾公司資訊、導覽與重新導向。導覽與路由需限制有效目的地；不要開放任意 JavaScript／HTML。優先 P2。
+
+建議後台工作區（尚未新增）
+「官網內容」下分：首頁版位、文章專題、FAQ／聯絡資訊、媒體庫、品牌頁、SEO。商品／活動／契約沿用原模組，從官網工作區提供捷徑。
+共用流程：草稿 → 預覽（桌面／手機）→ 審核 → 排程／發布 → 下架或新版本。記錄操作人、時間與變更摘要；媒體庫保留授權來源／AI 標記／替代文字／尺寸。公開 API 僅輸出已發布且有效的公開投影；後台 RBAC、稽核與 idempotency 沿用既有機制。
+遷移方式：先建內容模型與權限測試，再搬遷 FAQ／聯絡／首頁版位，保留既有網址；最後遷移文章與產品詳情。未發布或來源讀取失敗必須有清楚狀態，不以舊版敏感資料作 fallback。
+
+本次已完成
+- 全新首頁主視覺、UCell Life 封面與三篇可完整閱讀的專題頁。
+- 2 張原創 AI 情境圖，WebP 合計 266502 bytes；不冒充實際產品／設施／成果。
+- 文章目錄、閱讀層級、相關閱讀、實際服務 CTA、獨立 SEO 與 sitemap。
+- 首頁與 UCell Life 串接既有後台公開內容，首頁最多 3 筆；完整素材庫保留搜尋／分類。
+- FAQ 補充站內帳號與分享說明，修正會員系統未上線的過時文案，客服分類加上可操作入口。
+- 本次未建立後台 CMS、未搬遷文章全文到資料庫、未變更活動公開政策；上述列為明確建議項目。
+
+圖片生成紀錄
+使用內建 image_gen 工具，未使用 CLI/API fallback。
+儲存：website/assets/editorial/clarity.webp、daily-notes.webp；原始 PNG 保存在 Codex generated_images。
+Prompt 1: Create a premium editorial still-life photograph for UCell's science-and-daily-life brand website, landscape wide 3:2. Quiet luxury art direction: warm ivory limestone pedestal, clear sculptural glass sphere and slender transparent glass vessel with a single fresh green leaf, delicate water caustics and restrained champagne-gold reflections, deep forest teal background fading into soft daylight. Tangible natural materials, highly realistic sophisticated studio photography, generous negative space upper left for HTML text overlay but NO text in image. Botanical and optical metaphor for curiosity, transparency and daily choices, NOT a medical illustration or scientific proof. No products, no packaging, no logos, no text, no people, no laboratory, no capsules, no certificates. Restrained museum-like composition, editorial lifestyle brand, soft shadows, fine detail, not glossy CGI.
+Prompt 2: Premium editorial photograph for a Taiwanese lifestyle brand journal, horizontal 3:2. A quiet sunlit reading table by a window: open blank cream notebook, a simple clear glass of water, linen napkin, one leafy branch, soft ivory ceramic bowl and warm natural oak. Sophisticated understated hospitality magazine aesthetic, subtle forest-green accents, tactile paper, afternoon shadows, calm thoughtful daily ritual. Composition carefully balanced with notebook at left and water glass toward right, enough breathing space, realistic fine-grain photography. No people, no food claims, no products or packaging, no medicine, no text, no logos. This is a generic AI-created lifestyle illustration, not a real company's location.
+
+審查依據
+- website/*.html、website/js/integration.js、website/deploy/default.conf：頁面結構、靜態內容與公開 API 代理。
+- backend/apps/api/src/modules/public-website/public-website.service.ts：產品、活動與公開內容投影。
+- backend/apps/api/src/modules/content/content.service.ts、content.controller.ts：內容型別、版本、發布範圍、排程、核准與下架。
+- admin/src/features/content/ContentPage.tsx：既有管理表單與操作權限。
+- member/src/ReferralShare.tsx、member/src/WebMemberEntry.tsx：分享方式與站內帳號註冊流程。
+驗證：17 項自動化測試通過；所有 HTML 內部頁面連結、文章目錄／SEO、公開內容排序與顯示上限、素材庫篩選／搜尋、空資料與失敗重試。瀏覽器完成桌面首頁／UCell Life、390px 手機首頁與 820px 平板文章／目錄定位；手機可視內容寬 375px 與 scrollWidth 一致。
