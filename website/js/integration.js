@@ -6,16 +6,34 @@
  async function read(kind){const response=await fetch(`/api/public/${kind}`,{credentials:'omit',signal:AbortSignal.timeout(12000)});if(!response.ok)throw Error('讀取失敗');const body=await response.json();if(!Array.isArray(body.data))throw Error('資料格式錯誤');return body.data;}
  function status(node,title,description,action){const box=element('div','discovery-state');box.append(element('span','state-symbol','○'),element('h3','',title),element('p','',description));if(action)box.append(action);node.replaceChildren(box);}
  function failure(node,retry){const button=element('button','btn btn-line','重新載入');button.type='button';button.onclick=retry;status(node,'資料暫時無法載入','請檢查網路連線，或稍後再試。',button);}
+ const productPages=new Set(['TIP-363','TIP-580','TIP-636','TIP-696','TIP-777','TIP-999']);
+ const productImage=path=>typeof path==='string'&&/^\/products\/[a-zA-Z0-9_-]+\.(png|jpe?g|webp)$/.test(path)?path:null;
+ function productCard(p){
+  const card=element('article','catalog-card');card.dataset.catalogSku=p.sku;
+  const visual=element('div','catalog-visual'),fallback=element('div','catalog-image-fallback');fallback.append(element('span','','UCELL'),element('small','','商品圖片準備中'));visual.append(fallback);
+  const path=productImage(p.iconUrl);
+  if(path){const image=element('img','catalog-image');image.alt=p.name+' 商品圖片';image.setAttribute('width','1200');image.setAttribute('height','900');image.setAttribute('loading','lazy');image.setAttribute('decoding','async');image.addEventListener('load',()=>{fallback.hidden=true;image.classList.add('is-loaded')},{once:true});image.addEventListener('error',()=>{image.remove();fallback.hidden=false},{once:true});image.src=path;visual.append(image);}
+  const body=element('div','catalog-body'),meta=element('div','catalog-card-meta');meta.append(element('span','catalog-sku',p.sku),element('span',p.available?'catalog-availability':'catalog-availability is-pending',p.available?'開放選購':'暫未開放選購'));
+  body.append(meta,element('h3','',p.name),element('p','catalog-price',money(p.price,p.currency)));
+  const actions=element('div','catalog-actions');if(productPages.has(p.sku)){const details=link('產品介紹','product-'+p.sku.slice(4)+'.html','btn btn-line');details.setAttribute('aria-label',p.name+'：產品介紹');actions.append(details);}
+  if(p.available){const buy=link('會員選購',member+'/shop?sku='+encodeURIComponent(p.sku));buy.setAttribute('aria-label',p.name+'：前往會員商城選購');actions.append(buy);}
+  if(actions.childElementCount)body.append(actions);card.append(visual,body);return card;
+ }
+ let productsLoading=false;
  async function products(){
-  const nodes=[...document.querySelectorAll('[data-product-sku]')];if(!nodes.length)return;
-  try{const catalog=new Map((await read('products')).map(p=>[p.sku,p]));
+  const nodes=[...document.querySelectorAll('[data-product-sku]')],lists=[...document.querySelectorAll('[data-product-list]')],counts=[...document.querySelectorAll('[data-product-count]')];if((!nodes.length&&!lists.length)||productsLoading)return;
+  productsLoading=true;lists.forEach(n=>{n.setAttribute('aria-busy','true');status(n,'正在載入商品…','為您取得最新商品與售價。')});counts.forEach(n=>n.textContent='');
+  try{const rows=await read('products');if(!rows.every(p=>p&&/^TIP-\d{3}$/.test(p.sku)&&typeof p.name==='string'&&p.name.trim()&&typeof p.available==='boolean'&&typeof p.price==='string'&&/^[A-Z]{3}$/.test(p.currency)&&Number.isFinite(Number(p.price))&&Number(p.price)>=0)||new Set(rows.map(p=>p.sku)).size!==rows.length)throw Error('商品資料格式錯誤');
+   const catalog=new Map(rows.map(p=>[p.sku,p]));
+   lists.forEach(list=>{list.replaceChildren();if(!rows.length)status(list,'新品準備中，敬請期待','目前尚無上架商品，歡迎稍後再來看看。',link('聯絡我們','contact.html','btn btn-line'));else rows.forEach(p=>list.append(productCard(p)));});counts.forEach(n=>n.textContent=rows.length?rows.length+' 項上架商品':'目前尚無上架商品');
    for(const node of nodes){const p=catalog.get(node.dataset.productSku),price=node.querySelector('[data-product-price]'),buy=node.querySelector('[data-product-buy]'),title=node.querySelector('h3,h1');
     if(p&&title)title.textContent=p.name;
-    if(price)price.textContent=p?`${money(p.price,p.currency)} / 盒${p.available?'':' · 暫未開放購買'}`:'目前未上架';
-    if(buy){buy.hidden=!p?.available;buy.href=`${member}/shop?sku=${encodeURIComponent(node.dataset.productSku)}`;buy.textContent='選購此商品';}
+    if(price)price.textContent=p?money(p.price,p.currency)+(p.available?'':' · 暫未開放購買'):'目前未上架';
+    if(buy){buy.hidden=!p?.available;buy.href=member+'/shop?sku='+encodeURIComponent(node.dataset.productSku);buy.textContent='選購此商品';}
     node.classList.toggle('is-unavailable',!p?.available);
    }
-  }catch{for(const node of nodes){const price=node.querySelector('[data-product-price]'),buy=node.querySelector('[data-product-buy]');if(price){price.textContent='暫時無法取得最新價格 ';const retry=element('button','link','重新載入');retry.type='button';retry.onclick=products;price.append(retry);}if(buy)buy.hidden=true;}}
+  }catch{lists.forEach(n=>failure(n,products));counts.forEach(n=>n.textContent='');for(const node of nodes){const price=node.querySelector('[data-product-price]'),buy=node.querySelector('[data-product-buy]');if(price){price.textContent='暫時無法取得最新價格 ';const retry=element('button','link','重新載入');retry.type='button';retry.onclick=products;price.append(retry);}if(buy)buy.hidden=true;}}
+  finally{productsLoading=false;lists.forEach(n=>n.setAttribute('aria-busy','false'));}
  }
  async function events(){
   const lists=[...document.querySelectorAll('[data-event-list]')];if(!lists.length)return;

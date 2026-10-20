@@ -20,9 +20,9 @@ it('exposes only the current approved public content and never resurrects privat
  expect(query.select.versions.select).not.toHaveProperty('approvalReference');
 });
 it('returns only public catalog fields and fails closed on ambiguous product rules',async()=>{
- const read=jest.fn().mockResolvedValue([{sku:'TIP-636',displayName:'Product',currentPrice:new Prisma.Decimal(4800),currency:'TWD',ruleProfiles:[{ruleVersionCode:'R1.0B',parameterSnapshotHash:'a'.repeat(64)}],privateField:'secret'},{sku:'TIP-777',displayName:'Unavailable',currentPrice:new Prisma.Decimal(4800),currency:'TWD',ruleProfiles:[]},{sku:'TIP-INTERNAL',displayName:'Internal',currentPrice:new Prisma.Decimal(1),currency:'TWD',ruleProfiles:[]}]);
+ const read=jest.fn().mockResolvedValue([{sku:'TIP-636',displayName:'Product',iconUrl:'/products/tip-636.png',currentPrice:new Prisma.Decimal(4800),currency:'TWD',ruleProfiles:[{ruleVersionCode:'R1.0B',parameterSnapshotHash:'a'.repeat(64)}],privateField:'secret'},{sku:'TIP-777',displayName:'Unavailable',currentPrice:new Prisma.Decimal(4800),currency:'TWD',ruleProfiles:[]},{sku:'TIP-INTERNAL',displayName:'Internal',currentPrice:new Prisma.Decimal(1),currency:'TWD',ruleProfiles:[]}]);
  const result=await new PublicWebsiteService({productReference:{findMany:read}} as any).products();
- expect(result).toEqual([{sku:'TIP-636',name:'Product',price:'4800',currency:'TWD',available:true},{sku:'TIP-777',name:'Unavailable',price:'4800',currency:'TWD',available:false}]);
+ expect(result).toEqual([{sku:'TIP-636',name:'Product',iconUrl:'/products/tip-636.png',price:'4800',currency:'TWD',available:true},{sku:'TIP-777',name:'Unavailable',iconUrl:null,price:'4800',currency:'TWD',available:false}]);
  expect(read.mock.calls[0][0].where).toEqual({isActive:true,sku:{startsWith:'TIP-'}});
  expect(read.mock.calls[0][0].select).not.toHaveProperty('productId');
 });
@@ -33,4 +33,8 @@ it('publishes only approved event projections, removes ended events and never ex
  expect(result).toHaveLength(1);expect(result[0]).toMatchObject({eventCode:'FUTURE',canRegister:true});expect(result[0]).not.toHaveProperty('onlineJoinReference');
  const query=read.mock.calls[0][0];expect(query.where).toEqual({status:'PUBLISHED'});expect(query.select.versions.where).toEqual({status:'PUBLISHED',audiencePolicy:'NETWORK_MEMBER',approvedAt:{not:null}});
  expect(query.select).not.toHaveProperty('registrations');
+});
+
+it.each(['https://evil.example/image.png','//evil.example/x.png','/products/../private.png','/products/x.svg','data:image/png;base64,x','/products/x.png?token=secret'])('does not publish unsafe product artwork URL %s',async iconUrl=>{
+ const result=await new PublicWebsiteService({productReference:{findMany:async()=>[{sku:'TIP-363',displayName:'Product',iconUrl,currentPrice:new Prisma.Decimal(4800),currency:'TWD',ruleProfiles:[]}]}} as any).products();expect(result[0].iconUrl).toBeNull();
 });
