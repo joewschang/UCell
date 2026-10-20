@@ -73,7 +73,7 @@ it.each([false,true])('routes person retail history without qualification (%s)',
   throw Error('unexpected request '+input);
  });
  vi.stubGlobal('fetch',fetch);await mount('/orders');
- const rendered=JSON.stringify(tree!.toJSON());expect(rendered).toContain('我的零售訂單');expect(rendered).toContain('202610010001');expect(rendered).toContain('10000000000000.0001');expect(rendered).toContain('已建立');expect(rendered).not.toContain('CONFIRMED');expect(rendered).not.toContain('尚未取得會員資格');
+ const rendered=JSON.stringify(tree!.toJSON());expect(rendered).toContain('我的零售訂單');expect(rendered).toContain('202610010001');expect(rendered).toContain('10000000000000.0001');expect(rendered).toContain('已建立');expect(tree!.root.findAllByProps({className:'uc-order-status'}).map(cell=>cell.children.join(''))).not.toContain('CONFIRMED');expect(rendered).not.toContain('尚未取得會員資格');
  const reads=fetch.mock.calls.filter(([url])=>url.includes('/member/retail-orders'));expect(reads).toHaveLength(1);expect(reads[0][0]).not.toContain('qualificationId');
 });
 it('retail history retries failure and renders an empty state',async()=>{

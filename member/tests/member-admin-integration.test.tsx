@@ -1,3 +1,4 @@
+import OrderList from '../src/OrderList';
 import React from 'react';
 import {readFileSync} from 'node:fs';
 import {act,create,type ReactTestRenderer} from 'react-test-renderer';
@@ -51,9 +52,8 @@ it('refreshes the current-ball order list after an Admin payment, replacing stal
   paid=true;
   const refresh=tree!.root.findAllByType('button').find(button=>button.children.join('')==='重新整理訂單');expect(refresh).toBeDefined();
   await act(async()=>{refresh!.props.onClick();});
-  const paidCard=tree!.root.findAllByType('article').find(article=>article.findAllByType('p').some(p=>p.children.join('')==="訂單：已付款"))!;
-  expect(paidCard).toBeDefined();
-  expect(paidCard.findAllByType('p').map(p=>p.children.join(''))).not.toContain('訂單：CONFIRMED');
+  const statusCells=tree!.root.findAllByProps({className:'uc-order-status'}).map(cell=>cell.children.join(''));
+  expect(statusCells).toContain('已付款');expect(tree!.root.findByType(OrderList).props.rows.find((row:any)=>row.id===b.orderCreate.data.id).status).toBe('PAID');
   expect(JSON.stringify(tree!.toJSON())).not.toContain(b.orderCreate.data.id);
   const reads=fetch.mock.calls.filter(([url])=>url.includes('/member/orders?'));expect(reads).toHaveLength(2);
   expect(reads.every(([url])=>url.includes('qualificationId='+q.id))).toBe(true);

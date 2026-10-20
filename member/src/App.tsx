@@ -1,3 +1,4 @@
+import OrderList from './OrderList';
 import {ExploreHub,BusinessHub,MemberWelcome} from './MemberHubs';
 import SharingCenter from './SharingCenter';
 import {uiValue,uiText,domainLabel} from "../../shared/design-system/i18n";
@@ -70,12 +71,12 @@ function Home({ q }: {
     return <Result state={state}>{d => <div className="uc-dashboard uc-home-refresh">
         <section className="hero uc-home-greeting"><div><small>我的會員生活</small><h1>您好，{d.memberName}</h1><p>先處理今天的事，再探索更多可能。</p></div><Link className="button" to="/me">我的帳戶 →</Link></section>
         <section className="card uc-home-task"><div><small>本月重購</small><h2>{{ACTIVE:'本月重購已完成',PENDING:'重購認列確認中',INACTIVE:'本月重購尚未完成'}[d.monthlyRepurchaseStatus]}</h2><p>{d.monthReference??'當期資料'} · {qualificationActiveLabel(q.active)}</p></div><Link className="button" to="/repurchase">查看重購詳情</Link></section>
-        <div className="uc-section-heading"><h2>常用服務</h2><Link to="/explore">更多探索 →</Link></div>
+        <div className="uc-home-columns"><section className="uc-home-services"><div className="uc-section-heading"><h2>常用服務</h2><Link to="/explore">更多探索 →</Link></div>
         <MobileActionGrid>{([['/shop','商品商城','shop'],['/orders','我的訂單','orders'],['/events','活動中心','notification'],['/sharing','推薦分享','content']] as const).map(([path,title,icon])=><Link key={path} to={path}><UCellIcon name={icon}/><span>{title}</span></Link>)}</MobileActionGrid>
-        <div className="uc-section-heading"><h2>本期經營摘要</h2><Link to="/business">我的經營 →</Link></div>
+        </section><section className="uc-home-business"><div className="uc-section-heading"><h2>本期經營摘要</h2><Link to="/business">我的經營 →</Link></div>
         <Metrics items={[["PV",d.pv],["RPV",d.rpv],["EPV",d.epv]]}/>
         <section className="card uc-bonus-summary"><div><span>本期獎金</span><small>{awardStatusLabels[d.bonusStatus]}</small></div><h2><MoneyState amount={d.bonusAmount} status={d.bonusAmount===null?'PENDING':d.bonusStatus}/></h2><Link to="/bonuses">查看結算明細</Link></section>
-        <details id="repurchase-details" className="uc-repurchase-expander" open={repurchaseDetailsOpen} onToggle={event=>setRepurchaseDetailsOpen(event.currentTarget.open)}><summary>展開重購認列詳情</summary>{repurchaseDetailsOpen&&<RepurchaseDetails q={q}/>}</details>
+        </section></div><details id="repurchase-details" className="uc-repurchase-expander" open={repurchaseDetailsOpen} onToggle={event=>setRepurchaseDetailsOpen(event.currentTarget.open)}><summary>展開重購認列詳情</summary>{repurchaseDetailsOpen&&<RepurchaseDetails q={q}/>}</details>
     </div>}</Result>;
 }
 
@@ -137,9 +138,10 @@ function Bonuses({ q }: {
     const ledger = useResource(`ledger:${q.id}:${period}`, s => data.getLedger(q, period, s));
     return <div className="uc-bonuses"><MemberPageHeader title="獎金明細" q={q}/><IncomeNavigation/><p className="uc-page-intro">每筆紀錄都屬於目前球編號；金額、結算與撥付只顯示伺服器已提供的結果。</p><Period value={period} onChange={setPeriod}/><Result state={awards}>{d => d.awards.length ? <section className="uc-award-list" aria-label="獎金項目">{d.awards.map(a => <MemberAwardJourney key={a.id} award={a} q={q} period={period}/>)}</section> : <EmptyState title="此月份尚無獎金紀錄"><p>尚無資料不等同金額為零。</p></EmptyState>}</Result><div className="uc-section-heading"><div><small>{uiText("ACCOUNT LEDGER")}</small><h3>入帳與調整紀錄</h3></div></div><Result state={ledger}>{d => d.entries.length ? <section className="uc-ledger-list" aria-label="入帳與調整紀錄">{d.entries.map(e => <article className="card uc-ledger-card" key={e.id}><div><small>{e.postedAt}</small><h3>{uiValue((e.label))}</h3><span>系統已記錄此筆入帳來源</span></div><strong>{money(e.amount)}</strong></article>)}</section> : <EmptyState title="此月份尚無入帳紀錄"><p>尚無資料不等同沒有後續結算或調整。</p></EmptyState>}</Result></div>;
 }
-function Orders({ q }: {
-    q: Qualification;
-}) { const { orders } = useCommerce(); const state = useResource(`orders:${q.id}`, s => data.getOrders(q, s)); const [expanded, setExpanded] = useState<string | null>(null); return <><MemberPageHeader title="我的訂單" q={q}/><button disabled={state.data === undefined && !state.error} onClick={() => {setExpanded(null);state.retry();}}>重新整理訂單</button><Result state={state}>{d => { const visible = [...(data.isMock ? orders.filter(o => o.qualificationId === q.id) : []), ...d.orders]; return visible.length ? visible.map(o => <article className="card" key={o.id}><h3>訂單紀錄</h3><p>{o.createdAt} · {money(o.total)}</p><p>訂單：{domainLabel(o.status)}</p><button aria-expanded={expanded === o.id} onClick={() => setExpanded(expanded === o.id ? null : o.id)}>付款與配送狀態</button>{expanded === o.id && <div><p>付款：{domainLabel(o.paymentStatus)}</p><p>配送：{domainLabel(o.shipmentStatus)}</p>{!data.isMock&&<ConnectedOrderDetails q={q} id={o.id}/>}</div>}</article>) : <EmptyState title="此資格目前沒有訂單"/>; }}</Result></>; }
+function Orders({q}:{q:Qualification}){
+ const {orders}=useCommerce();const state=useResource(`orders:${q.id}`,s=>data.getOrders(q,s));
+ return <><MemberPageHeader title="我的訂單" q={q}/><p className="muted">以下為目前資格的訂單；本人零售訂單列於下方。</p><button disabled={state.data===undefined&&!state.error} onClick={state.retry}>重新整理訂單</button><Result state={state}>{d=>{const visible=[...(data.isMock?orders.filter(o=>o.qualificationId===q.id):[]),...d.orders];return visible.length?<OrderList key={q.id} label="資格訂單" searchHint="輸入建立日期" rows={visible.map(o=>({id:o.id,reference: data.isMock?o.id:"訂單紀錄",createdAt:o.createdAt,amount:money(o.total),status:o.status,statusLabel:domainLabel(o.status),details:<><p>付款：{domainLabel(o.paymentStatus)}</p><p>配送：{domainLabel(o.shipmentStatus)}</p>{!data.isMock&&<ConnectedOrderDetails q={q} id={o.id}/>}</>}))}/>:<EmptyState title="此資格目前沒有訂單"/>}}</Result></>;
+}
 function Me() {
  const state = useResource('person', data.getPerson);
  const { qualifications } = useQualification();

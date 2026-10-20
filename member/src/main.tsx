@@ -76,3 +76,4 @@ function EntryRouter(){const location=useLocation();const share=location.pathnam
 createRoot(document.getElementById('root')!).render(<React.StrictMode><ThemeProvider><AppErrorBoundary><BrowserRouter><EntryRouter /></BrowserRouter></AppErrorBoundary></ThemeProvider></React.StrictMode>);
 
 import './member-experience.css';
+import './member-desktop.css';
