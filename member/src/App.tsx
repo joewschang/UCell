@@ -1,3 +1,4 @@
+import {ExploreHub,BusinessHub,MemberWelcome} from './MemberHubs';
 import SharingCenter from './SharingCenter';
 import {uiValue,uiText,domainLabel} from "../../shared/design-system/i18n";
 import {MembershipPlanEmblem as QualificationEmblem,BallRankBadge} from './MembershipEmblems';
@@ -66,22 +67,18 @@ function Home({ q }: {
 }) {
     const state = useResource(`dashboard:${q.id}`, s => data.getDashboard(q, s));
     const [repurchaseDetailsOpen,setRepurchaseDetailsOpen] = useState(false);
-    return <Result state={state}>{d => <div className="uc-dashboard">
-        <section className="hero uc-member-identity" aria-labelledby="member-today-title">
-            <div className="uc-orbit" aria-hidden="true"/>
-            <div className="uc-identity-copy"><small>{uiText("MY UCELL TODAY")}</small><h1 id="member-today-title">您好，{d.memberName}</h1><p><span>會員編號</span> {d.memberNo}</p></div>
-            <div className="uc-identity-badge"><QualificationEmblem code={q.rank}/><span>目前資格</span><strong>{qualificationReferenceLabel(q)}</strong><small>方案 {data.displayPlanLevel(q.rank)}</small><BallRankBadge qualificationNo={q.qualificationNo}/></div>
-        </section>
-        <section className="card uc-member-status"><div className="uc-status-block"><span>目前經營資格</span><strong>{qualificationActiveLabel(q.active)}</strong><small>{d.monthReference??'月份尚未提供'} · {d.activeInterval?`${d.activeInterval.activeFrom} ～ ${d.activeInterval.activeTo}`:uiText("Active 區間尚未提供")}</small></div><div className="uc-status-block"><span>本月重購狀態</span><strong>{{ ACTIVE: '已完成', PENDING: '確認中', INACTIVE: '未完成' }[d.monthlyRepurchaseStatus]}</strong><i className="uc-status-signal" data-state={d.monthlyRepurchaseStatus} aria-hidden="true"/></div></section>
-        <div className="uc-section-heading"><div><small>{uiText("LIVE READ MODEL")}</small><h2>業績摘要</h2></div><span>{d.monthReference??'當期資料'}</span></div>
-        <Metrics items={[["PV", d.pv], ["RPV", d.rpv], ["EPV", d.epv]]}/>
-        <MemberTodaySummary q={q} monthlyRepurchaseStatus={d.monthlyRepurchaseStatus} repurchaseDetailsOpen={repurchaseDetailsOpen} onShowRepurchaseDetails={()=>setRepurchaseDetailsOpen(true)}/>
+    return <Result state={state}>{d => <div className="uc-dashboard uc-home-refresh">
+        <section className="hero uc-home-greeting"><div><small>我的會員生活</small><h1>您好，{d.memberName}</h1><p>先處理今天的事，再探索更多可能。</p></div><Link className="button" to="/me">我的帳戶 →</Link></section>
+        <section className="card uc-home-task"><div><small>本月重購</small><h2>{{ACTIVE:'本月重購已完成',PENDING:'重購認列確認中',INACTIVE:'本月重購尚未完成'}[d.monthlyRepurchaseStatus]}</h2><p>{d.monthReference??'當期資料'} · {qualificationActiveLabel(q.active)}</p></div><Link className="button" to="/repurchase">查看重購詳情</Link></section>
+        <div className="uc-section-heading"><h2>常用服務</h2><Link to="/explore">更多探索 →</Link></div>
+        <MobileActionGrid>{([['/shop','商品商城','shop'],['/orders','我的訂單','orders'],['/events','活動中心','notification'],['/sharing','推薦分享','content']] as const).map(([path,title,icon])=><Link key={path} to={path}><UCellIcon name={icon}/><span>{title}</span></Link>)}</MobileActionGrid>
+        <div className="uc-section-heading"><h2>本期經營摘要</h2><Link to="/business">我的經營 →</Link></div>
+        <Metrics items={[["PV",d.pv],["RPV",d.rpv],["EPV",d.epv]]}/>
         <section className="card uc-bonus-summary"><div><span>本期獎金</span><small>{awardStatusLabels[d.bonusStatus]}</small></div><h2><MoneyState amount={d.bonusAmount} status={d.bonusAmount===null?'PENDING':d.bonusStatus}/></h2><Link to="/bonuses">查看結算明細</Link></section>
-        <details id="repurchase-details" className="uc-repurchase-expander" open={repurchaseDetailsOpen} onToggle={event=>setRepurchaseDetailsOpen(event.currentTarget.open)}><summary>查看重購認列詳情</summary><RepurchaseDetails q={q}/></details>
-        <div className="uc-section-heading"><div><small>{uiText("MEMBER SERVICES")}</small><h2>快速服務</h2></div></div>
-        <MobileActionGrid>{([['/growth','我的成長','me'],['/learning','教育訓練','content'],['/events','活動中心','notification'],['/organization','我的組織','organization'],['/performance','我的業績','income'],['/bonuses','獎金明細','bonuses'],['/shop','商品商城','shop'],['/orders','我的訂單','orders'],['/content','影音內容','content'],['/me','會員資料','me']] as const).map(([path,title,icon]) => <Link key={path} to={path}><UCellIcon name={icon}/><span>{title}</span></Link>)}</MobileActionGrid>
+        <details id="repurchase-details" className="uc-repurchase-expander" open={repurchaseDetailsOpen} onToggle={event=>setRepurchaseDetailsOpen(event.currentTarget.open)}><summary>展開重購認列詳情</summary>{repurchaseDetailsOpen&&<RepurchaseDetails q={q}/>}</details>
     </div>}</Result>;
 }
+
 function Organization({ q }: {
     q: Qualification;
 }) {
@@ -173,7 +170,7 @@ function MemberApp() {
         <Route path="/organization" element={<Organization q={current}/>}/>
         <Route path="/growth" element={<GrowthCenter/>}/>
         <Route path="/learning" element={<LearningCenter/>}/>
-        <Route path="/events" element={<EventCenter q={current}/>}/>
+        <Route path="/explore" element={<ExploreHub/>}/><Route path="/business" element={<BusinessHub q={current}/>}/><Route path="/events" element={<EventCenter q={current}/>}/>
         <Route path="/performance" element={<Performance q={current}/>}/>
         <Route path="/repurchase" element={<RepurchaseDetails key={current.id} q={current}/>}/>
         <Route path="/payouts" element={<MemberPayouts key={current.id} q={current}/>}/>
@@ -188,7 +185,7 @@ function MemberApp() {
         <Route path="/notifications" element={<Notifications q={current}/>}/>
         <Route path="*" element={<section className="card"><h2>找不到頁面</h2><Link to="/">返回首頁</Link></section>}/>
       </Routes></div></> : <Routes>
-        <Route path="/" element={<section className="card"><h1>會員首頁</h1><p>{memberIdentityLabel}</p><p>{uiText("歡迎使用 UCell 會員中心。您可以購物、查看訂單、參與活動及管理會員資料。")}</p><MobileActionGrid><Link to="/shop">商品商城</Link><Link to="/orders">我的訂單</Link><Link to="/content">影音中心</Link><Link to="/learning">教育訓練</Link><Link to="/events">活動中心</Link><Link to="/me">會員資料</Link><Link to="/membership/upgrade">申請正式會員</Link></MobileActionGrid></section>}/>
+        <Route path="/" element={<MemberWelcome/>}/><Route path="/explore" element={<ExploreHub/>}/>
         <Route path="/content" element={<ContentList/>}/><Route path="/content/:id" element={<ContentDetail/>}/>
         <Route path="/orders" element={<WebRetailOrders/>}/>
         <Route path="/membership/upgrade" element={<FormalEnrollment/>}/>
@@ -200,7 +197,7 @@ function MemberApp() {
         <Route path="/me" element={<Me/>}/>
         <Route path="*" element={<section className="card"><h2>尚未取得會員資格</h2><p>可先完成正式會員資料，再透過正式套組取得第一個會員資格。</p><Link className="text-link" to="/shop">選擇正式會員套組</Link><button onClick={retry}>重新查詢</button><Link className="text-link" to="/me">查看會員資料</Link><EndSession connected={!data.isMock}/></section>}/>
       </Routes>}</main>
-      <MemberNavigation/>
+      <MemberNavigation hasQualification={!!current||loading||!!error}/>
     </MemberAppShell>;
 }
 

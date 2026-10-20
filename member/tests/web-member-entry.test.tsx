@@ -14,7 +14,7 @@ let tree:ReactTestRenderer|undefined;
 it('opens the official website join link in registration mode without creating a member',async()=>{
  vi.stubGlobal('window',{location:{search:'?mode=register',pathname:'/'},history:{replaceState:vi.fn()}});
  await act(async()=>{tree=create(<WebMemberEntry onLineLogin={vi.fn()} onAuthenticated={vi.fn()}/>,{createNodeMock:e=>e.type==='div'?{}:null});});
- expect(JSON.stringify(tree!.toJSON())).toContain('登錄會員資料');
+ expect(JSON.stringify(tree!.toJSON())).toContain('選擇註冊方式');
  expect(auth.renderGoogleRegistrationButton).toHaveBeenCalled();
  expect(auth.completeRegistration).not.toHaveBeenCalled();
 });
@@ -45,9 +45,13 @@ it('opens new LINE friends directly on profile registration and preserves an exi
  const input=(name:string)=>labels.find(l=>l.children.some(c=>typeof c==='string'&&c.includes(name)))!.findByType('input');
  act(()=>{
   for(const [name,value] of Object.entries({'姓名':'測試新好友','顯示名稱':'新好友','生日':'1990-01-01','身分證明號碼':'TEST-LINE-ID','手機號碼':'+886912345678','電子郵件':'line-friend@example.invalid','設定登入密碼':'abc123','確認密碼':'abc123'}))input(name).props.onChange({target:{value}});
-  labels.find(l=>l.children.some(c=>typeof c==='string'&&c.includes('我已閱讀')))!.findByType('input').props.onChange({target:{checked:true}});
+
  });
  act(()=>tree!.root.findAllByType(ContactVerifier).forEach(v=>v.props.onVerified('a'.repeat(64))));
+ await act(async()=>tree!.root.findByType('form').props.onSubmit({preventDefault(){}}));
+ expect(auth.completeRegistration).not.toHaveBeenCalled();
+ expect(JSON.stringify(tree!.toJSON())).toContain('確認會員資料');
+ act(()=>tree!.root.findAllByType('label').find(l=>l.children.some(c=>typeof c==='string'&&c.includes('我已閱讀')))!.findByType('input').props.onChange({target:{checked:true}}));
  await act(async()=>tree!.root.findByType('form').props.onSubmit({preventDefault(){}}));
  expect(auth.completeRegistration).toHaveBeenCalledWith(expect.objectContaining({lineIdToken:'LINE_ID_TOKEN_TEST_ONLY'}));
  expect(auth.completeRegistration.mock.calls[0][0]).not.toHaveProperty('googleIdToken');
@@ -69,7 +73,7 @@ it('shows active Web login methods and keeps SMS OTP explicitly deferred',async(
  expect(text).toContain('使用 LINE 登入');
  expect(text).toContain("會員編號、電子郵件 或手機號碼");
  expect(text).toContain('Google 登入');
- expect(text).toContain("手機 驗證碼 登入將於簡訊供應商 介面 完成後開放");
+ expect(text).toContain("手機驗證碼登入尚未開放");
  expect(text).not.toContain('取得驗證碼');
 });
 
@@ -80,7 +84,7 @@ it('requires Google identity before Web registration and submits no OTP fields',
  expect(auth.registrationContract).toHaveBeenCalledOnce();
  const form=tree!.root.findByType('form');
  await act(async()=>form.props.onSubmit({preventDefault(){}}));
- expect(JSON.stringify(tree!.toJSON())).toContain('請先完成 Google 身分驗證');
+ expect(JSON.stringify(tree!.toJSON())).toContain('請先選擇登入方式並完成身分驗證');
  expect(auth.completeRegistration).not.toHaveBeenCalled();
 });
 
@@ -107,7 +111,7 @@ it.each([true,false])('registers with Google and contract consent with contact v
   input('電子郵件').props.onChange({target:{value:'member@example.invalid'}});
   input('設定登入密碼').props.onChange({target:{value:'abc123'}});
   input('確認密碼').props.onChange({target:{value:'DifferentPassword123!'}});
-  labels.find(l=>l.children.some(c=>typeof c==='string'&&c.includes('我已閱讀')))!.findByType('input').props.onChange({target:{checked:true}});
+
  });
  await act(async()=>tree!.root.findByType('form').props.onSubmit({preventDefault(){}}));
  expect(auth.completeRegistration).not.toHaveBeenCalled();
@@ -115,6 +119,10 @@ it.each([true,false])('registers with Google and contract consent with contact v
  await act(async()=>input('確認密碼').props.onChange({target:{value:'abc123'}}));
  auth.completeRegistration.mockResolvedValue({accessToken:'opaque',expiresAt:new Date(Date.now()+60000).toISOString()});
  act(()=>tree!.root.findAllByType(ContactVerifier).forEach(v=>v.props.onVerified('a'.repeat(64))));
+ await act(async()=>tree!.root.findByType('form').props.onSubmit({preventDefault(){}}));
+ expect(auth.completeRegistration).not.toHaveBeenCalled();
+ expect(JSON.stringify(tree!.toJSON())).toContain('確認會員資料');
+ act(()=>tree!.root.findAllByType('label').find(l=>l.children.some(c=>typeof c==='string'&&c.includes('我已閱讀')))!.findByType('input').props.onChange({target:{checked:true}}));
  await act(async()=>tree!.root.findByType('form').props.onSubmit({preventDefault(){}}));
  expect(auth.completeRegistration).toHaveBeenCalledWith(expect.objectContaining({
   contractVersionId:'11111111-1111-4111-8111-111111111111',
@@ -134,9 +142,9 @@ it('shows an actionable contract failure, disables registration and allows retry
  await act(async()=>tree!.root.findAllByType('button').find(n=>n.children.includes('註冊會員'))!.props.onClick());
  expect(JSON.stringify(tree!.toJSON())).toContain('會員契約尚未開放');
  expect(JSON.stringify(tree!.toJSON())).not.toContain('NETWORK_CONTRACT_NOT_CONFIGURED');
- expect(tree!.root.findAllByType('button').find(n=>n.children.includes('完成登錄並進入會員首頁'))!.props.disabled).toBe(true);
+ expect(tree!.root.findAllByType('button').find(n=>n.children.includes('下一步'))!.props.disabled).toBe(true);
  await act(async()=>tree!.root.findAllByType('button').find(n=>n.children.includes('重新載入會員契約'))!.props.onClick());
- expect(JSON.stringify(tree!.toJSON())).toContain('TEST CONTRACT');
+ expect(auth.registrationContract).toHaveBeenCalledTimes(2);expect(JSON.stringify(tree!.toJSON())).not.toContain('會員契約尚未開放');
 });
 it('offers LINE registration when Google is not configured',async()=>{
  vi.stubEnv('VITE_GOOGLE_OIDC_CLIENT_ID','');vi.stubGlobal('window',{location:{search:'?mode=register',pathname:'/'},history:{replaceState:vi.fn()}});
@@ -145,4 +153,22 @@ it('offers LINE registration when Google is not configured',async()=>{
  expect(auth.renderGoogleRegistrationButton).not.toHaveBeenCalled();
  await act(async()=>tree!.root.findAllByType('button').find(b=>b.children.includes('使用 LINE 註冊'))!.props.onClick());
  expect(line).toHaveBeenCalledOnce();expect(auth.completeRegistration).not.toHaveBeenCalled();
+});
+it('preserves profile fields on back navigation and requires fresh consent after editing',async()=>{
+ await act(async()=>{tree=create(<WebMemberEntry onLineLogin={vi.fn()} onAuthenticated={vi.fn()} lineRegistrationToken={()=>'TEST_LINE_PROOF'}/>,{createNodeMock:e=>e.type==='div'?{}:null});});
+ const input=(name:string)=>tree!.root.findAllByType('label').find(l=>l.children.some(c=>typeof c==='string'&&c.includes(name)))!.findByType('input');
+ act(()=>{input('姓名').props.onChange({target:{value:'測試會員'}});input('設定登入密碼').props.onChange({target:{value:'abc123'}});input('確認密碼').props.onChange({target:{value:'abc123'}});tree!.root.findAllByType(ContactVerifier).forEach(v=>v.props.onVerified('a'.repeat(64)));});
+ await act(async()=>tree!.root.findByType('form').props.onSubmit({preventDefault(){}}));
+ expect(JSON.stringify(tree!.toJSON())).toContain('確認會員資料');act(()=>input('我已閱讀').props.onChange({target:{checked:true}}));
+ act(()=>tree!.root.findAllByType('button').find(b=>b.children.includes('上一步'))!.props.onClick());expect(input('姓名').props.value).toBe('測試會員');expect(input('設定登入密碼').props.type).toBe('password');act(()=>tree!.root.findAllByType(ContactVerifier).forEach(v=>v.props.onVerified('a'.repeat(64))));
+ await act(async()=>tree!.root.findByType('form').props.onSubmit({preventDefault(){}}));expect(input('我已閱讀').props.checked).toBe(false);expect(auth.completeRegistration).not.toHaveBeenCalled();
+});
+it('toggles both registration passwords without changing their values',async()=>{
+ await act(async()=>{tree=create(<WebMemberEntry onLineLogin={vi.fn()} onAuthenticated={vi.fn()} lineRegistrationToken={()=>'TEST_LINE_PROOF'}/>);});
+ const field=(name:string)=>tree!.root.findAllByType('label').find(l=>l.children.some(c=>typeof c==='string'&&c.includes(name)))!.findByType('input');
+ act(()=>field('設定登入密碼').props.onChange({target:{value:'abc123'}}));
+ expect(field('設定登入密碼').props.type).toBe('password');
+ act(()=>field('顯示密碼').props.onChange({target:{checked:true}}));
+ expect(field('設定登入密碼').props.type).toBe('text');expect(field('確認密碼').props.type).toBe('text');expect(field('設定登入密碼').props.value).toBe('abc123');
+ act(()=>field('顯示密碼').props.onChange({target:{checked:false}}));expect(field('設定登入密碼').props.type).toBe('password');
 });

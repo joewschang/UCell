@@ -22,6 +22,7 @@ it.each([[3,'啟航',14400],[9,'菁英',43200],[15,'領袖',72000]])('selects ex
   return envelope([offer]);
  });vi.stubGlobal('fetch',fetch);
  await act(async()=>{tree=create(<MemoryRouter initialEntries={['/shop']}><Mall onCreated={vi.fn()}/><Location/></MemoryRouter>)});
+ await act(async()=>tree.root.findAllByType('button').find(b=>b.children.includes('會員資格套組'))!.props.onClick());
  await act(async()=>tree.root.findAllByType('button').find(b=>b.children.includes('選擇套組商品'))!.props.onClick());
  const checkout=()=>tree.root.findAllByType('button').find(b=>b.children.includes("選購套組並完成 測試環境 付款"))!;
  expect(checkout().props.disabled).toBe(true);

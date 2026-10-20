@@ -1,0 +1,17 @@
+import React from 'react';
+import {act,create,type ReactTestRenderer} from 'react-test-renderer';
+import {MemoryRouter} from 'react-router-dom';
+import {afterEach,expect,it,vi} from 'vitest';
+import {MemberNavigation} from '../src/MemberNavigation';
+import Mall,{OfferShop} from '../src/Mall';
+const fixture=vi.hoisted(()=>({deliveryState:'error',calls:[] as any[],retry:vi.fn(),order:vi.fn()}));
+vi.mock('../src/memberData',()=>({getCommercialOffers:vi.fn(),getProducts:vi.fn(),getDeliveryProfile:vi.fn(),getFormalEnrollment:vi.fn(),createConnectedOrder:fixture.order,createWebRetailOrder:fixture.order,payStageCommerceOrder:vi.fn()}));
+vi.mock('../src/DeliveryProfileEditor',()=>({default:()=> <p>配送資料編輯</p>}));
+vi.mock('../src/QualificationPackageShop',()=>({default:()=> <p>資格套組區</p>}));
+vi.mock('../src/ActiveDurationPackages',()=>({default:()=>null}));
+vi.mock('../src/useResource',()=>({useResource:(key:string,_load:any,enabled=true)=>{fixture.calls.push({key,enabled});return key==='mall-offers'?{data:[{offeringCode:'TIP363',offeringType:'CORE_PRODUCT',displayName:'商品名稱',composition:[{sku:'TIP-363',quantity:1}]}],retry:vi.fn()}:key==='mall-products'?{data:[{id:'p1',sku:'TIP-363',name:'商品名稱',price:'4800',available:true}],retry:vi.fn()}:fixture.deliveryState==='error'?{error:enabled?'配送資料暫時無法讀取':undefined,retry:fixture.retry}:{data:{complete:true},retry:fixture.retry};}}));
+let tree:ReactTestRenderer;
+afterEach(()=>{act(()=>tree?.unmount());fixture.calls=[];fixture.deliveryState='error';vi.clearAllMocks();});
+it('keeps non-qualified navigation focused on usable services and selects discovery for activities',()=>{act(()=>{tree=create(<MemoryRouter initialEntries={['/events']}><MemberNavigation hasQualification={false}/></MemoryRouter>)});expect(tree.root.findAllByType('a')).toHaveLength(4);expect(JSON.stringify(tree.toJSON())).not.toContain('經營');expect(tree.root.findAllByType('a').find(a=>a.props['aria-current']==='page')?.props.href).toBe('/explore');});
+it('starts with products and defers delivery reads until a product is selected',()=>{act(()=>{tree=create(<MemoryRouter><Mall onCreated={vi.fn()}/></MemoryRouter>)});expect(tree.root.findAllByType('button').find(b=>b.children.includes('主商品'))?.props['aria-pressed']).toBe(true);expect(JSON.stringify(tree.toJSON())).toContain('商品名稱');expect(fixture.calls.filter(c=>c.key==='mall-delivery').every(c=>c.enabled===false)).toBe(true);});
+it('keeps product browsing available on delivery failure and recovers checkout without selecting again',async()=>{await act(async()=>{tree=create(<MemoryRouter><OfferShop type="CORE_PRODUCT"/></MemoryRouter>)});await act(async()=>tree.root.findAllByType('button').find(b=>b.children.includes('選擇商品細節'))!.props.onClick());expect(fixture.calls.some(c=>c.key==='mall-delivery'&&c.enabled)).toBe(true);expect(JSON.stringify(tree.toJSON())).toContain('配送資料暫時無法讀取');expect(tree.root.findAllByType('button').find(b=>b.children.includes('選擇商品細節'))).toBeTruthy();const submit=()=>tree.root.findAllByType('button').find(b=>b.children.includes('確認商品細節並建立訂單'))!;expect(submit().props.disabled).toBe(true);expect(fixture.order).not.toHaveBeenCalled();fixture.deliveryState='ready';act(()=>tree.update(<MemoryRouter><OfferShop type="CORE_PRODUCT"/></MemoryRouter>));expect(submit().props.disabled).toBe(false);expect(fixture.order).not.toHaveBeenCalled();});

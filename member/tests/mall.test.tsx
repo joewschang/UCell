@@ -15,12 +15,14 @@ it.each(['NETWORK_MEMBER','FORMAL_PENDING'])('redirects %s after package selecti
  fixture.membershipState=state;
  await act(async()=>{tree=create(<MemoryRouter initialEntries={['/shop']}><Mall onCreated={vi.fn()}/><Location/></MemoryRouter>)});
  for(const category of mallCategories)expect(JSON.stringify(tree.toJSON())).toContain(category);
+ await act(async()=>tree.root.findAllByType('button').find(b=>b.children.includes('會員資格套組'))!.props.onClick());
  await act(async()=>tree.root.findAllByType('button').find(b=>b.children.includes('完成套組商品選擇'))!.props.onClick());
  expect(tree.root.findByType('output').children).toEqual(['/membership/upgrade']);
 });
 it('keeps formal members in the mall and explains the qualification requirement for repurchase',async()=>{
  fixture.membershipState='FORMAL_MEMBER';const refresh=vi.fn();
  await act(async()=>{tree=create(<MemoryRouter initialEntries={['/shop']}><Mall onCreated={refresh}/><Location/></MemoryRouter>)});
+ await act(async()=>tree.root.findAllByType('button').find(b=>b.children.includes('會員資格套組'))!.props.onClick());
  await act(async()=>tree.root.findAllByType('button').find(b=>b.children.includes('完成套組商品選擇'))!.props.onClick());expect(refresh).toHaveBeenCalledOnce();expect(tree.root.findByType('output').children).toEqual(['/shop']);
  await act(async()=>tree.root.findAllByType('button').find(b=>b.children.includes('重購方案套組'))!.props.onClick());expect(JSON.stringify(tree.toJSON())).toContain('需指定本人會員資格');
 });

@@ -4,19 +4,19 @@ import { MemberBottomNav, UCellIcon, type UCellIconName } from '@ucell/design-sy
 
 export const memberSections: Array<{label:string;to:string;paths:string[];icon:UCellIconName}> = [
   { label: '首頁', to: '/', paths: ['/'], icon:'home' },
-  { label: '組織', to: '/organization', paths: ['/organization'], icon:'organization' },
-  { label: '收益', to: '/bonuses', paths: ['/bonuses', '/performance', '/payouts'], icon:'income' },
+  { label: '探索', to: '/explore', paths: ['/explore','/content','/events','/learning'], icon:'content' },
+  { label: '經營', to: '/business', paths: ['/business','/organization','/bonuses','/performance','/payouts','/sharing','/growth','/repurchase'], icon:'organization' },
   { label: '商城', to: '/shop', paths: ['/shop', '/orders'], icon:'shop' },
-  { label: '我的', to: '/me', paths: ['/me', '/content', '/notifications', '/repurchase'], icon:'me' },
+  { label: '我的', to: '/me', paths: ['/me', '/notifications', '/membership/upgrade'], icon:'me' },
 ];
 
 export function sectionMatches(pathname: string, paths: string[]) {
   return paths.some(path => pathname === path || (path !== '/' && pathname.startsWith(`${path}/`)));
 }
 
-export function MemberNavigation() {
+export function MemberNavigation({hasQualification=true}:{hasQualification?:boolean}) {
   const { pathname } = useLocation();
-  return <MemberBottomNav>{memberSections.map(section => {
+  return <MemberBottomNav>{[memberSections[0],memberSections[3],memberSections[1],...(hasQualification?[memberSections[2]]:[]),memberSections[4]].map(section => {
     const active = sectionMatches(pathname, section.paths);
     return <Link key={section.to} to={section.to} className={active ? 'active' : undefined} aria-current={active ? 'page' : undefined}><UCellIcon name={section.icon}/><span>{uiValue((section.label))}</span></Link>;
   })}</MemberBottomNav>;

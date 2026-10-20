@@ -29,6 +29,7 @@ describe('conditional member journeys',()=>{
   });
   vi.stubGlobal('fetch',fetch);
   await mount('/shop');
+  await act(async()=>tree!.root.findAllByType('button').find(b=>b.children.includes('會員資格套組'))!.props.onClick());
   const rendered=JSON.stringify(tree!.toJSON());
   expect(rendered).toContain('會員資格套組');
   expect(rendered).toContain('正式會員啟用套組');
