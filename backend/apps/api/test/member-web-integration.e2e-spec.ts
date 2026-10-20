@@ -48,6 +48,34 @@ describe('Integrated Web identity and password lifecycle (real isolated DB, synt
   await expect(deferred.consume(db,'PERSON:'+person.personId,'PROFILE','EMAIL',data.email)).rejects.toMatchObject({response:{code:'EMAIL_VERIFICATION_REQUIRED'}});
   await expect(deferred.consume(db,'PERSON:'+person.personId,'REGISTRATION','EMAIL','invalid')).rejects.toThrow();
  });
+
+ it('registers a local account without social identity, authenticates case-insensitively and preserves unverified contacts',async()=>{
+  const deferred=new ContactVerificationService(db,new ConfigService({REGISTRATION_CONTACT_VERIFICATION_REQUIRED:'false'}),{} as any,{} as any,google as any,line as any);
+  const signup=new MemberWebRegistrationService(db,new IdempotencyService(db),google as any,pii,fingerprint,line as any,deferred);
+  const localAccount='Local_'+randomUUID().replaceAll('-','').slice(0,16),data={...input(),googleIdToken:undefined,localAccount,password:'abc123'};
+  const googleCalls=google.verify.mock.calls.length,lineCalls=line.verify.mock.calls.length;
+  const result=await signup.complete(data,randomUUID());const person=await db.person.findUniqueOrThrow({where:{memberNo:result.memberNo}});
+  expect(person).toMatchObject({membershipState:'NETWORK_MEMBER',mobileVerifiedAt:null,emailVerifiedAt:null});
+  expect(google.verify.mock.calls.length).toBe(googleCalls);expect(line.verify.mock.calls.length).toBe(lineCalls);
+  expect(await db.identityLink.findMany({where:{personId:person.personId}})).toMatchObject([{provider:'MEMBER_LOCAL',providerSubject:localAccount.toLowerCase()}]);
+  const principal=await sessions.authenticate(result.accessToken);expect(await identities.resolve(principal as any)).toMatchObject({personId:person.personId});
+  for(const identifier of [localAccount.toUpperCase(),localAccount.toLowerCase(),person.memberNo,data.email,data.mobile])expect(await auth.passwordLogin(identifier,'abc123')).toHaveProperty('accessToken');
+  await expect(auth.passwordLogin(localAccount,'wrong1')).rejects.toMatchObject({response:{code:'MEMBER_LOGIN_INVALID'}});
+  await expect(signup.complete({...input(),googleIdToken:undefined,localAccount:localAccount.toUpperCase()},randomUUID())).rejects.toMatchObject({response:{code:'LOCAL_ACCOUNT_ALREADY_REGISTERED'}});
+  await expect(signup.complete({...input(),localAccount},randomUUID())).rejects.toMatchObject({response:{code:'REGISTRATION_IDENTITY_AMBIGUOUS'}});
+  await expect(signup.complete({...input(),googleIdToken:undefined,localAccount:'1234'},randomUUID())).rejects.toMatchObject({response:{code:'LOCAL_ACCOUNT_INVALID'}});
+  const send=jest.fn(async(_input:{to:string;resetUrl:string})=>{}),resetAuth=new MemberWebAuthService(db,sessions,google as any,{assertConfigured(){},send} as any,new ConfigService({MEMBER_WEB_PUBLIC_ORIGIN:'https://example.invalid'}));
+  await resetAuth.forgotPassword(localAccount.toUpperCase());expect(send).toHaveBeenCalledWith(expect.objectContaining({to:data.email}));
+  const resetToken=new URL(send.mock.calls[0][0].resetUrl).searchParams.get('token')!;
+  await resetAuth.resetPassword(resetToken,'new123');expect(await auth.passwordLogin(localAccount,'new123')).toHaveProperty('accessToken');await expect(sessions.authenticate(result.accessToken)).rejects.toThrow();
+ });
+ it('enforces contact requirements for local registration when policy is enabled',async()=>{
+  const required=new ContactVerificationService(db,new ConfigService({REGISTRATION_CONTACT_VERIFICATION_REQUIRED:'true'}),{} as any,{} as any,google as any,line as any);
+  const signup=new MemberWebRegistrationService(db,new IdempotencyService(db),google as any,pii,fingerprint,line as any,required);
+  const localAccount='required_'+randomUUID().slice(0,8);const before=await db.person.count();
+  await expect(signup.complete({...input(),googleIdToken:undefined,localAccount},randomUUID())).rejects.toThrow();expect(await db.person.count()).toBe(before);
+  expect(await required.registrationOwner({localAccount:localAccount.toUpperCase()})).toBe('MEMBER_LOCAL:'+localAccount);
+ });
  it('completes existing LINE Person registration with deferred contacts through the shared production entry point',async()=>{
   const deferred=new ContactVerificationService(db,new ConfigService({REGISTRATION_CONTACT_VERIFICATION_REQUIRED:'false',CONTACT_REGISTRATION_VERIFICATION_MODE:'EITHER'}),{} as any,{} as any,google as any,line as any);
   const signup=new NetworkRegistrationService(db,new IdempotencyService(db),{write:async()=>{}} as any,pii,fingerprint,deferred);

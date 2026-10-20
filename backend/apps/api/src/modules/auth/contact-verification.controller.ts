@@ -8,6 +8,7 @@ class ContactDto{
  @ApiProperty({maxLength:254}) @IsString() @MinLength(1) @MaxLength(254) destination!:string;
 }
 class RegistrationContactDto extends ContactDto{
+ @ApiPropertyOptional() @IsOptional() @Matches(/^[A-Za-z][A-Za-z0-9_]{3,31}$/) localAccount?:string;
  @ApiPropertyOptional() @IsOptional() @IsString() @MinLength(1) @MaxLength(16384) googleIdToken?:string;
  @ApiPropertyOptional() @IsOptional() @IsString() @MinLength(1) @MaxLength(16384) lineIdToken?:string;
 }
@@ -28,7 +29,7 @@ export class RegistrationContactVerificationController{
  @Get('policy') @ApiOperation({operationId:'getContactVerificationPolicy',description:'Public contact requirements by purpose. Registration may defer contact verification by explicit configuration; deferred contacts remain unverified. Profile requirements are unchanged.'})
  @ApiQuery({name:'purpose',required:false,enum:['REGISTRATION','PROFILE']})
  policy(@Query('purpose') purpose?:string){return this.service.policy(purpose==='PROFILE'?'PROFILE':'REGISTRATION');}
- @Post('challenges') @ApiHeader({name:'Idempotency-Key',required:true}) @ApiOperation({operationId:'sendRegistrationContactCode',description:'Requires a server-verified Google or LINE identity. Sends contact verification code with persistent destination and subject quotas. No membership is created.'})
+ @Post('challenges') @ApiHeader({name:'Idempotency-Key',required:true}) @ApiOperation({operationId:'sendRegistrationContactCode',description:'Requires a local account identifier or server-verified Google or LINE identity. Sends contact verification code with persistent destination and subject quotas. No membership is created.'})
  async send(@Body() input:RegistrationContactDto,@Headers('idempotency-key') key:string){return this.service.send(await this.service.registrationOwner(input),'REGISTRATION',input.channel,input.destination,key);}
  @Post('verify') @ApiOperation({operationId:'verifyRegistrationContactCode',description:'Verifies a code bound to identity, destination, channel and purpose; returns a short-lived proof consumed atomically by registration.'})
  async verify(@Body() input:RegistrationVerifyDto){return this.service.verify(await this.service.registrationOwner(input),'REGISTRATION',input.channel,input.destination,input.challengeId,input.code);}

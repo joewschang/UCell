@@ -67,6 +67,10 @@ export class MemberWebAuthService{
   }else if(/^\d{10}$/.test(value)){
    person=await this.db.person.findUnique({where:{memberNo:value},include:{memberPasswordCredential:true}});
   }
+  else if(/^[A-Za-z][A-Za-z0-9_]{3,31}$/.test(value)){
+   const link=await this.db.identityLink.findUnique({where:{provider_providerSubject:{provider:'MEMBER_LOCAL',providerSubject:value.toLowerCase()}},include:{person:{include:{memberPasswordCredential:true}}}});
+   person=link?.status==='ACTIVE'?link.person:undefined;
+  }
   if(!person||!person.memberPasswordCredential){
     // Equalize the dominant password-derivation cost for unknown/unconfigured accounts.
     derive(password,'ucell-member-login-dummy',32,16384,8,1);
@@ -112,6 +116,9 @@ export class MemberWebAuthService{
   if(normalized.includes('@')){
     const matches=await this.db.person.findMany({where:{email:{equals:normalized,mode:'insensitive'},status:'EFFECTIVE'},take:2});
     person=matches.length===1?matches[0]:undefined;
+  }else if(/^[A-Za-z][A-Za-z0-9_]{3,31}$/.test(normalized)){
+   const link=await this.db.identityLink.findUnique({where:{provider_providerSubject:{provider:'MEMBER_LOCAL',providerSubject:normalized.toLowerCase()}},include:{person:true}});
+   person=link?.status==='ACTIVE'&&link.person.status==='EFFECTIVE'?link.person:undefined;
   }else{
     person=await this.db.person.findFirst({where:{memberNo:normalized,status:'EFFECTIVE'}});
   }

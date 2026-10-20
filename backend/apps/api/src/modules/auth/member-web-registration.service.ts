@@ -1,3 +1,4 @@
+import {normalizeLocalAccount} from './local-account';
 import { ConflictException,Injectable,UnauthorizedException,UnprocessableEntityException } from '@nestjs/common';
 import { PrismaService } from '@ucell/database';
 import { createHash,randomBytes,randomUUID,scryptSync } from 'node:crypto';
@@ -11,7 +12,7 @@ import {IdentityMatchFingerprintService} from '../../common/security/identity-ma
 
 export type WebRegistrationInput={
  contractVersionId:string;accepted:true;legalName:string;alias:string;gender:string;
- birthDate:string;mobile:string;email:string;password:string;googleIdToken?:string;lineIdToken?:string;
+ birthDate:string;mobile:string;email:string;password:string;localAccount?:string;googleIdToken?:string;lineIdToken?:string;
  nationalityCode:string;identityDocumentType:'NATIONAL_ID'|'RESIDENCE_PERMIT'|'PASSPORT'|'OTHER';identityDocumentNumber:string;
  mobileVerificationProof?:string;emailVerificationProof?:string;
 };
@@ -35,11 +36,11 @@ export class MemberWebRegistrationService{
  }
 
  async complete(input:WebRegistrationInput,key:string){
-  if(!input.googleIdToken&&!input.lineIdToken)throw new UnauthorizedException({code:'GOOGLE_REGISTRATION_REQUIRED'});
-  if(input.googleIdToken&&input.lineIdToken)throw new UnauthorizedException({code:'REGISTRATION_IDENTITY_AMBIGUOUS'});
-  const provider=input.lineIdToken?'LINE' as const:'GOOGLE' as const;
+  if(!input.googleIdToken&&!input.lineIdToken&&!input.localAccount)throw new UnauthorizedException({code:'GOOGLE_REGISTRATION_REQUIRED'});
+  if([input.googleIdToken,input.lineIdToken,input.localAccount].filter(Boolean).length!==1)throw new UnauthorizedException({code:'REGISTRATION_IDENTITY_AMBIGUOUS'});
+  const provider=input.localAccount?'MEMBER_LOCAL' as const:input.lineIdToken?'LINE' as const:'GOOGLE' as const;
   if(provider==='LINE'&&!this.line)throw new UnauthorizedException({code:'LINE_TOKEN_INVALID'});
-  const identity:{subject:string;email?:string;emailVerified?:boolean;displayName?:string}=provider==='LINE'?await this.line!.verify(input.lineIdToken!):await this.google.verify(input.googleIdToken!);
+  const identity:{subject:string;email?:string;emailVerified?:boolean;displayName?:string}=provider==='MEMBER_LOCAL'?{subject:normalizeLocalAccount(input.localAccount!)}:provider==='LINE'?await this.line!.verify(input.lineIdToken!):await this.google.verify(input.googleIdToken!);
   if(provider==='GOOGLE'){
    if(!identity.email||identity.emailVerified!==true)throw new UnauthorizedException({code:'GOOGLE_VERIFIED_EMAIL_REQUIRED'});
    if(identity.email.trim().toLowerCase()!==input.email.trim().toLowerCase())throw new UnprocessableEntityException({code:'GOOGLE_EMAIL_MISMATCH'});
@@ -57,7 +58,7 @@ export class MemberWebRegistrationService{
     const {mobileVerifiedAt,emailVerifiedAt}=await this.contacts.consumeRegistration(tx,owner,input);
     if(await tx.person.findFirst({where:{email:{equals:input.email,mode:'insensitive'}},select:{personId:true}}))throw new ConflictException({code:'EMAIL_ALREADY_REGISTERED'});
     const existingIdentity=await tx.identityLink.findUnique({where:{provider_providerSubject:{provider,providerSubject:identity.subject}}});
-    if(existingIdentity)throw new ConflictException({code:`${provider}_IDENTITY_ALREADY_LINKED`});
+    if(existingIdentity)throw new ConflictException({code:provider==='MEMBER_LOCAL'?'LOCAL_ACCOUNT_ALREADY_REGISTERED':`${provider}_IDENTITY_ALREADY_LINKED`});
     if(await tx.person.findFirst({where:{identityDocumentFingerprint},select:{personId:true}}))throw new ConflictException({code:'IDENTITY_DOCUMENT_ALREADY_REGISTERED'});
     if(await tx.person.findFirst({where:{mobile:input.mobile},select:{personId:true}}))throw new ConflictException({code:'MOBILE_ALREADY_REGISTERED'});
     const contract=await tx.contractDocumentVersion.findFirst({where:{contractDocumentVersionId:input.contractVersionId,required:true,audience:{in:['NETWORK_MEMBER','ALL_MEMBERS']},effectiveFrom:{lte:now},OR:[{effectiveTo:null},{effectiveTo:{gt:now}}]}});
@@ -68,7 +69,7 @@ export class MemberWebRegistrationService{
     const evidenceHash=createHash('sha256').update(JSON.stringify({personId:person.personId,contractVersionId:contract.contractDocumentVersionId,contentHash:contract.contentHash,channel:'MEMBER_WEB',correlationId})).digest('hex');
     await tx.consentEvidence.create({data:{personId:person.personId,contractDocumentVersionId:contract.contractDocumentVersionId,contentHashSnapshot:contract.contentHash,channel:'MEMBER_WEB',requestId:correlationId,correlationId,evidenceHash}});
     await tx.personMembershipStateEvent.create({data:{personId:person.personId,toState:'NETWORK_MEMBER',reasonCode:`WEB_${provider}_NETWORK_REGISTRATION_COMPLETED`,sourceType:`WEB_${provider}_REGISTRATION`,correlationId}});
-    const session=await new IdentityTokenService(tx as any).issue({provider,subject:identity.subject,personId:person.personId,ttlSeconds:3600});
+    const session=await new IdentityTokenService(tx as any).issue({provider,subject:provider==='MEMBER_LOCAL'?person.memberNo:identity.subject,personId:person.personId,ttlSeconds:3600});
     return {memberNo:person.memberNo,membershipState:'NETWORK_MEMBER',qualificationCreated:false,...session};
   }).catch(error=>{
     if(['P2034','P2002'].includes(error?.code))throw new ConflictException({code:'RETRYABLE_CONFLICT'});

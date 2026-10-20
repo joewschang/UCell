@@ -172,3 +172,22 @@ it('toggles both registration passwords without changing their values',async()=>
  expect(field('設定登入密碼').props.type).toBe('text');expect(field('確認密碼').props.type).toBe('text');expect(field('設定登入密碼').props.value).toBe('abc123');
  act(()=>field('顯示密碼').props.onChange({target:{checked:false}}));expect(field('設定登入密碼').props.type).toBe('password');
 });
+it('completes local account registration without invoking a social provider and preserves account on back navigation',async()=>{
+ const done=vi.fn();await act(async()=>{tree=create(<WebMemberEntry onLineLogin={vi.fn()} onAuthenticated={done}/>);});
+ const button=(name:string)=>tree!.root.findAllByType('button').find(b=>b.children.includes(name))!;
+ const input=(name:string)=>tree!.root.findAllByType('label').find(l=>l.children.some(c=>typeof c==='string'&&c.includes(name)))!.findByType('input');
+ act(()=>button('註冊會員').props.onClick());await act(async()=>{});act(()=>button('使用站內帳號註冊').props.onClick());
+ act(()=>{input('站內帳號').props.onChange({target:{value:'My_User'}});input('設定登入密碼').props.onChange({target:{value:'abc123'}});input('確認密碼').props.onChange({target:{value:'abc123'}})});
+ await act(async()=>tree!.root.findByType('form').props.onSubmit({preventDefault(){}}));expect(JSON.stringify(tree!.toJSON())).toContain('登錄會員資料');expect(auth.completeRegistration).not.toHaveBeenCalled();
+ act(()=>button('上一步').props.onClick());expect(input('站內帳號').props.value).toBe('My_User');await act(async()=>tree!.root.findByType('form').props.onSubmit({preventDefault(){}}));
+ act(()=>{for(const [name,value] of Object.entries({'姓名':'測試會員','顯示名稱':'測試','生日':'1990-01-01','身分證明號碼':'TEST-LOCAL-ID','手機號碼':'0912345678','電子郵件':'local@example.invalid'}))input(name).props.onChange({target:{value}});});
+ act(()=>tree!.root.findAllByType(ContactVerifier).forEach(v=>{expect(v.props.registrationTokens()).toEqual({localAccount:'my_user'});v.props.onVerified('a'.repeat(64))}));
+ await act(async()=>tree!.root.findByType('form').props.onSubmit({preventDefault(){}}));expect(JSON.stringify(tree!.toJSON())).toContain('my_user');expect(auth.completeRegistration).not.toHaveBeenCalled();
+ act(()=>input('我已閱讀').props.onChange({target:{checked:true}}));await act(async()=>tree!.root.findByType('form').props.onSubmit({preventDefault(){}}));
+ expect(auth.completeRegistration).toHaveBeenCalledWith(expect.objectContaining({localAccount:'my_user',password:'abc123'}));expect(auth.completeRegistration.mock.calls[0][0]).not.toHaveProperty('googleIdToken');expect(auth.completeRegistration.mock.calls[0][0]).not.toHaveProperty('lineIdToken');expect(done).toHaveBeenCalledOnce();
+});
+it('restores the Google registration button after switching back from a local account',async()=>{
+ await act(async()=>{tree=create(<WebMemberEntry onLineLogin={vi.fn()} onAuthenticated={vi.fn()}/>,{createNodeMock:e=>e.type==='div'?{}:null});});
+ const click=async(name:string)=>act(async()=>tree!.root.findAllByType('button').find(b=>b.children.includes(name))!.props.onClick());
+ await click('註冊會員');expect(auth.renderGoogleRegistrationButton).toHaveBeenCalledTimes(1);await click('使用站內帳號註冊');await click('改用 LINE 或 Google');expect(auth.renderGoogleRegistrationButton).toHaveBeenCalledTimes(2);expect(auth.completeRegistration).not.toHaveBeenCalled();
+});

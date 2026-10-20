@@ -1,3 +1,4 @@
+import {normalizeLocalAccount} from './local-account';
 import {ConflictException,Injectable,ServiceUnavailableException,UnprocessableEntityException} from '@nestjs/common';
 import {ConfigService} from '@nestjs/config';
 import {PrismaService} from '@ucell/database';
@@ -45,8 +46,9 @@ export class ContactVerificationService{
   return null;
  }
  private hash(value:string){const secret=this.config.get<string>('OTP_HASH_SECRET');if(!secret||secret.length<32)throw new ServiceUnavailableException({code:'OTP_CONFIGURATION_PENDING'});return createHmac('sha256',secret).update(value).digest('hex');}
- async registrationOwner(input:{googleIdToken?:string;lineIdToken?:string}){
-  if(Boolean(input.googleIdToken)===Boolean(input.lineIdToken))throw new UnprocessableEntityException({code:'REGISTRATION_IDENTITY_REQUIRED'});
+ async registrationOwner(input:{localAccount?:string;googleIdToken?:string;lineIdToken?:string}){
+  if([input.googleIdToken,input.lineIdToken,input.localAccount].filter(Boolean).length!==1)throw new UnprocessableEntityException({code:'REGISTRATION_IDENTITY_REQUIRED'});
+  if(input.localAccount)return 'MEMBER_LOCAL:'+normalizeLocalAccount(input.localAccount);
   if(input.lineIdToken)return 'LINE:'+(await this.line.verify(input.lineIdToken)).subject;
   return 'GOOGLE:'+(await this.google.verify(input.googleIdToken!)).subject;
  }

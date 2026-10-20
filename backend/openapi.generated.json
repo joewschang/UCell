@@ -5361,7 +5361,7 @@
     },
     "/api/v1/auth/member/password/login": {
       "post": {
-        "description": "Login using member number, email or mobile plus a dedicated Member password credential. Ambiguous identifiers and invalid credentials fail without selecting an arbitrary account.",
+        "description": "Login using local account, member number, email or mobile plus a dedicated Member password credential. Ambiguous identifiers and invalid credentials fail without selecting an arbitrary account.",
         "operationId": "memberPasswordLogin",
         "parameters": [],
         "requestBody": {
@@ -5455,7 +5455,7 @@
     },
     "/api/v1/auth/member/register/complete": {
       "post": {
-        "description": "Complete Google-verified Web Network Member registration. Creates Person/memberNo and local password credential only; no Qualification/Ball.",
+        "description": "Complete local account, Google- or LINE-verified Network Member registration. Creates Person/memberNo and local password credential only; no Qualification/Ball. Existing identities cannot be reassigned.",
         "operationId": "memberWebRegistrationComplete",
         "parameters": [
           {
@@ -20409,6 +20409,104 @@
           "Admin - UAT Evidence"
         ]
       }
+    },
+    "/api/v1/auth/member/contact-verification/policy": {
+      "get": {
+        "description": "Public contact requirements by purpose. Registration may defer contact verification by explicit configuration; deferred contacts remain unverified. Profile requirements are unchanged.",
+        "operationId": "getContactVerificationPolicy",
+        "parameters": [
+          {
+            "name": "purpose",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "REGISTRATION",
+                "PROFILE"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "",
+        "tags": [
+          "Member - Contact Verification"
+        ]
+      }
+    },
+    "/api/v1/auth/member/contact-verification/challenges": {
+      "post": {
+        "description": "Requires a local account identifier or server-verified Google or LINE identity. Sends contact verification code with persistent destination and subject quotas. No membership is created.",
+        "operationId": "sendRegistrationContactCode",
+        "parameters": [
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegistrationContactDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "summary": "",
+        "tags": [
+          "Member - Contact Verification"
+        ]
+      }
+    },
+    "/api/v1/auth/member/contact-verification/verify": {
+      "post": {
+        "description": "Verifies a code bound to identity, destination, channel and purpose; returns a short-lived proof consumed atomically by registration.",
+        "operationId": "verifyRegistrationContactCode",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegistrationVerifyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "summary": "",
+        "tags": [
+          "Member - Contact Verification"
+        ]
+      }
     }
   },
   "info": {
@@ -22456,11 +22554,11 @@
         "properties": {
           "memberNo": {
             "type": "string",
-            "description": "Member number, email or mobile login identifier; field name retained for existing clients"
+            "description": "Local account, member number, email or mobile login identifier; field name retained for existing clients"
           },
           "password": {
             "type": "string",
-            "minLength": 12,
+            "minLength": 6,
             "maxLength": 256
           }
         },
@@ -22500,6 +22598,17 @@
       "CompleteWebRegistrationDto": {
         "type": "object",
         "properties": {
+          "localAccount": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9_]{3,31}$",
+            "description": "Case-insensitive local account. Supply exactly one localAccount, Google token or LINE token."
+          },
+          "mobileVerificationProof": {
+            "type": "string"
+          },
+          "emailVerificationProof": {
+            "type": "string"
+          },
           "contractVersionId": {
             "type": "string",
             "format": "uuid"
@@ -22554,13 +22663,18 @@
           },
           "password": {
             "type": "string",
-            "minLength": 12,
+            "minLength": 6,
             "maxLength": 256
           },
           "googleIdToken": {
             "type": "string",
             "maxLength": 16384,
-            "description": "Google ID token explicitly presented for Web registration; verified server-side and linked to the newly created Person only after all registration checks pass."
+            "description": "Present exactly one localAccount, Google or LINE ID token; verified server-side before registration."
+          },
+          "lineIdToken": {
+            "type": "string",
+            "maxLength": 16384,
+            "description": "LINE ID token from LIFF; server verifies issuer, channel audience, expiry and subject. Cannot link an existing Person via registration."
           }
         },
         "required": [
@@ -22575,8 +22689,7 @@
           "identityDocumentNumber",
           "mobile",
           "email",
-          "password",
-          "googleIdToken"
+          "password"
         ]
       },
       "LinkGoogleDto": {
@@ -26926,6 +27039,74 @@
           "evidenceHash",
           "artifactReference",
           "executedAt"
+        ]
+      },
+      "RegistrationContactDto": {
+        "type": "object",
+        "properties": {
+          "channel": {
+            "type": "string",
+            "enum": [
+              "SMS",
+              "EMAIL"
+            ]
+          },
+          "destination": {
+            "type": "string",
+            "maxLength": 254
+          },
+          "localAccount": {
+            "type": "string"
+          },
+          "googleIdToken": {
+            "type": "string"
+          },
+          "lineIdToken": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "channel",
+          "destination"
+        ]
+      },
+      "RegistrationVerifyDto": {
+        "type": "object",
+        "properties": {
+          "channel": {
+            "type": "string",
+            "enum": [
+              "SMS",
+              "EMAIL"
+            ]
+          },
+          "destination": {
+            "type": "string",
+            "maxLength": 254
+          },
+          "localAccount": {
+            "type": "string"
+          },
+          "googleIdToken": {
+            "type": "string"
+          },
+          "lineIdToken": {
+            "type": "string"
+          },
+          "challengeId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "code": {
+            "type": "string",
+            "pattern": "^[0-9]{6}$"
+          }
+        },
+        "required": [
+          "channel",
+          "destination",
+          "challengeId",
+          "code"
         ]
       }
     }

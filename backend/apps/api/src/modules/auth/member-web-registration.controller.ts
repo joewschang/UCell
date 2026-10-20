@@ -5,6 +5,7 @@ import { IdempotencyGuard } from '../../common/guards/idempotency.guard';
 import { MemberWebRegistrationService } from './member-web-registration.service';
 
 class CompleteWebRegistrationDto{
+ @ApiPropertyOptional({pattern:'^[A-Za-z][A-Za-z0-9_]{3,31}$',description:'Case-insensitive local account. Supply exactly one localAccount, Google token or LINE token.'}) @IsOptional() @Matches(/^[A-Za-z][A-Za-z0-9_]{3,31}$/) localAccount?:string;
  @ApiPropertyOptional() @IsOptional() @Matches(/^[a-f0-9]{64}$/) mobileVerificationProof?:string;
  @ApiPropertyOptional() @IsOptional() @Matches(/^[a-f0-9]{64}$/) emailVerificationProof?:string;
  @ApiProperty({format:'uuid'}) @IsUUID() contractVersionId!:string;
@@ -19,7 +20,7 @@ class CompleteWebRegistrationDto{
  @ApiProperty({example:'+886912345678'}) @Matches(/^\+[1-9][0-9]{7,14}$/) mobile!:string;
  @ApiProperty({format:'email',maxLength:254}) @IsEmail() @MaxLength(254) email!:string;
  @ApiProperty({minLength:6,maxLength:256}) @IsString() @MinLength(6) @Matches(/[A-Za-z]/) @Matches(/[0-9]/) @MaxLength(256) password!:string;
- @ApiPropertyOptional({maxLength:16384,description:'Present exactly one Google or LINE ID token; verified server-side before registration.'}) @IsOptional() @IsString() @MinLength(1) @MaxLength(16384) googleIdToken?:string;
+ @ApiPropertyOptional({maxLength:16384,description:'Present exactly one localAccount, Google or LINE ID token; verified server-side before registration.'}) @IsOptional() @IsString() @MinLength(1) @MaxLength(16384) googleIdToken?:string;
  @ApiPropertyOptional({maxLength:16384,description:'LINE ID token from LIFF; server verifies issuer, channel audience, expiry and subject. Cannot link an existing Person via registration.'}) @IsOptional() @IsString() @MinLength(1) @MaxLength(16384) lineIdToken?:string;
 }
 
@@ -32,6 +33,6 @@ export class MemberWebRegistrationController{
  contract(){return this.service.requiredContract();}
 
  @Post('complete') @UseGuards(IdempotencyGuard) @ApiHeader({name:'Idempotency-Key',required:true})
- @ApiOperation({operationId:'memberWebRegistrationComplete',description:'Complete Google- or LINE-verified Network Member registration. Creates Person/memberNo and local password credential only; no Qualification/Ball. Existing identities cannot be reassigned.'})
+ @ApiOperation({operationId:'memberWebRegistrationComplete',description:'Complete local account, Google- or LINE-verified Network Member registration. Creates Person/memberNo and local password credential only; no Qualification/Ball. Existing identities cannot be reassigned.'})
  complete(@Body() body:CompleteWebRegistrationDto,@Headers('idempotency-key') key:string){return this.service.complete(body,key);}
 }

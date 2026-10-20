@@ -17,6 +17,8 @@ async function request(path:string,init:RequestInit={}){
    const hint=Object.entries(fields).filter(([field])=>messages.some(message=>message.startsWith(field+' '))).map(([,label])=>label).join(' ');
    throw new Error(hint||'登錄資料格式不正確，請檢查各欄位後重試。');
   }
+  const registrationHints:Record<string,string>={LOCAL_ACCOUNT_ALREADY_REGISTERED:'此站內帳號已被使用，請換一個帳號。',LOCAL_ACCOUNT_INVALID:'帳號須為英文字母開頭，4 至 32 碼，可含數字與底線。',EMAIL_ALREADY_REGISTERED:'此電子郵件已註冊，請登入原有帳號。',MOBILE_ALREADY_REGISTERED:'此手機號碼已註冊，請登入原有帳號。',IDENTITY_DOCUMENT_ALREADY_REGISTERED:'此身分資料已註冊，請登入原有帳號或聯絡客服。',RETRYABLE_CONFLICT:'資料可能已被使用，請確認帳號與聯絡資料後重試。'};
+  if(code&&registrationHints[code])throw new Error(registrationHints[code]);
   throw new Error(code==='PASSWORD_POLICY'?'密碼須為 6 至 256 字元，並包含英文字母與數字。':code||'AUTH_REQUEST_FAILED');
  }
  return unwrapMemberEnvelope(body);
@@ -60,7 +62,7 @@ export async function loginMethods(){
  return request('/member/identity',{headers:{Authorization:'Bearer '+token}}) as Promise<{google:boolean;line:boolean}>;
 }
 export async function registrationContract(){return request('/auth/member/register/contract') as Promise<RegistrationContract>;}
-export async function completeRegistration(input:{contractVersionId:string;legalName:string;alias:string;gender:string;birthDate:string;nationalityCode:string;identityDocumentType:string;identityDocumentNumber:string;mobile:string;email:string;password:string;googleIdToken?:string;lineIdToken?:string;mobileVerificationProof?:string;emailVerificationProof?:string}){
+export async function completeRegistration(input:{contractVersionId:string;legalName:string;alias:string;gender:string;birthDate:string;nationalityCode:string;identityDocumentType:string;identityDocumentNumber:string;mobile:string;email:string;password:string;localAccount?:string;googleIdToken?:string;lineIdToken?:string;mobileVerificationProof?:string;emailVerificationProof?:string}){
  const mobile=normalizeRegistrationMobile(input.mobile,input.nationalityCode);
  if(!/^\+[1-9][0-9]{7,14}$/.test(mobile))throw new Error('手機號碼請使用 +國碼格式，台灣可輸入 09 開頭的十碼號碼。');
  if(input.password.length<6||input.password.length>256||!/[A-Za-z]/.test(input.password)||!/[0-9]/.test(input.password))throw new Error('密碼須為 6 至 256 字元，並包含英文字母與數字。');

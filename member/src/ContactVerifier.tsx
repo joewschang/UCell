@@ -1,7 +1,7 @@
 import {uiValue,uiText} from "../../shared/design-system/i18n";
 import {useEffect,useRef,useState} from 'react';
 import {contactVerificationRequest} from './webAuth';
-type Tokens={googleIdToken?:string;lineIdToken?:string};
+type Tokens={localAccount?:string;googleIdToken?:string;lineIdToken?:string};
 export default function ContactVerifier({channel,value,purpose,onVerified,registrationTokens,disabled=false}:{channel:'SMS'|'EMAIL';value:string;purpose:'REGISTRATION'|'PROFILE';onVerified:(proof:string|undefined)=>void;registrationTokens?:()=>Tokens;disabled?:boolean}){
  const [challenge,setChallenge]=useState<{challengeId:string;expiresAt:string;resendAt:string}>(),[code,setCode]=useState(''),[proof,setProof]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState(''),[now,setNow]=useState(Date.now());
  const request=useRef<{body:string;key:string}>(),valueRef=useRef(value);valueRef.current=value;
@@ -9,7 +9,7 @@ export default function ContactVerifier({channel,value,purpose,onVerified,regist
  useEffect(()=>{const timer=setInterval(()=>setNow(Date.now()),1000);return()=>clearInterval(timer)},[]);
  useEffect(()=>{if(proof&&challenge&&Date.parse(challenge.expiresAt)<=now){setProof('');onVerified(undefined);setError('驗證已過期，請重新申請。');}},[now,proof,challenge]);
  const label=channel==='SMS'?'手機':'Email';
- function payload(){const identity=registrationTokens?.();if(identity&&!identity.googleIdToken&&!identity.lineIdToken)throw new Error(uiText("請先完成 Google 或 LINE 登入驗證。"));return {channel,destination:value,...(identity??{purpose})} as Record<string,string>;}
+ function payload(){const identity=registrationTokens?.();if(identity&&!identity.googleIdToken&&!identity.lineIdToken&&!identity.localAccount)throw new Error(uiText("請先完成 Google 或 LINE 登入驗證。"));return {channel,destination:value,...(identity??{purpose})} as Record<string,string>;}
  async function send(){
   if(busy||disabled||!value.trim())return;const requestedValue=value;setBusy(true);setError('');
   try{const body=payload(),serialized=JSON.stringify(body);if(request.current?.body!==serialized||challenge&&now>=Date.parse(challenge.resendAt))request.current={body:serialized,key:crypto.randomUUID()};
