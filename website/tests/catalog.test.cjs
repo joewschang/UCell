@@ -77,3 +77,11 @@ test('invalid prices fail closed instead of displaying misleading prices or purc
  assert.equal(document.querySelectorAll('.catalog-card').length,0);
  assert.match(document.querySelector('[data-product-list]').textContent,/資料暫時無法載入/);
 });
+test('catalog search matches name or SKU, handles no results, and clears without refetching',async()=>{
+ const {document,window,calls}=await render('products.html',[product('TIP-363',{name:'晶萃源力飲'}),product('TIP-580')]);
+ const search=document.querySelector('[data-catalog-search]');assert.equal(search.disabled,false);
+ search.value=' tip-363 ';search.dispatchEvent(new window.Event('input'));assert.equal(document.querySelectorAll('.catalog-card').length,1);
+ search.value='晶萃';search.dispatchEvent(new window.Event('input'));assert.equal(document.querySelectorAll('.catalog-card').length,1);
+ search.value='沒有這個產品';search.dispatchEvent(new window.Event('input'));assert.equal(document.querySelectorAll('.catalog-card').length,0);assert.match(document.querySelector('[data-product-list]').textContent,/沒有符合的產品/);
+ document.querySelector('[data-catalog-clear]').click();assert.equal(search.value,'');assert.equal(document.querySelectorAll('.catalog-card').length,2);assert.equal(calls(),1);
+});

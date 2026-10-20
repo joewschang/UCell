@@ -20,12 +20,26 @@
   if(actions.childElementCount)body.append(actions);card.append(visual,body);return card;
  }
  let productsLoading=false;
+ let catalogRows=null;
+ function renderCatalog(){
+  if(!catalogRows)return;
+  const search=document.querySelector('[data-catalog-search]'),query=(search?.value||'').trim().toLowerCase();
+  const visible=catalogRows.filter(p=>`${p.sku} ${p.name}`.toLowerCase().includes(query));
+  document.querySelectorAll('[data-product-list]').forEach(list=>{
+   list.replaceChildren();
+   if(!catalogRows.length)status(list,'新品準備中，敬請期待','目前尚無上架商品，歡迎稍後再來看看。',link('聯絡我們','contact.html','btn btn-line'));
+   else if(!visible.length)status(list,'沒有符合的產品','試試產品名稱或編號，或清除搜尋查看所有上架商品。');
+   else visible.forEach(p=>list.append(productCard(p)));
+  });
+  document.querySelectorAll('[data-product-count]').forEach(n=>n.textContent=query?`找到 ${visible.length} / ${catalogRows.length} 項商品`:catalogRows.length?catalogRows.length+' 項上架商品':'目前尚無上架商品');
+  const clear=document.querySelector('[data-catalog-clear]');if(clear)clear.hidden=!query;
+ }
  async function products(){
   const nodes=[...document.querySelectorAll('[data-product-sku]')],lists=[...document.querySelectorAll('[data-product-list]')],counts=[...document.querySelectorAll('[data-product-count]')];if((!nodes.length&&!lists.length)||productsLoading)return;
   productsLoading=true;lists.forEach(n=>{n.setAttribute('aria-busy','true');status(n,'正在載入商品…','為您取得最新商品與售價。')});counts.forEach(n=>n.textContent='');
   try{const rows=await read('products');if(!rows.every(p=>p&&/^TIP-\d{3}$/.test(p.sku)&&typeof p.name==='string'&&p.name.trim()&&typeof p.available==='boolean'&&typeof p.price==='string'&&/^[A-Z]{3}$/.test(p.currency)&&Number.isFinite(Number(p.price))&&Number(p.price)>=0)||new Set(rows.map(p=>p.sku)).size!==rows.length)throw Error('商品資料格式錯誤');
    const catalog=new Map(rows.map(p=>[p.sku,p]));
-   lists.forEach(list=>{list.replaceChildren();if(!rows.length)status(list,'新品準備中，敬請期待','目前尚無上架商品，歡迎稍後再來看看。',link('聯絡我們','contact.html','btn btn-line'));else rows.forEach(p=>list.append(productCard(p)));});counts.forEach(n=>n.textContent=rows.length?rows.length+' 項上架商品':'目前尚無上架商品');
+   catalogRows=rows;renderCatalog();const search=document.querySelector('[data-catalog-search]');if(search)search.disabled=false;
    for(const node of nodes){const p=catalog.get(node.dataset.productSku),price=node.querySelector('[data-product-price]'),buy=node.querySelector('[data-product-buy]'),title=node.querySelector('h3,h1');
     if(p&&title)title.textContent=p.name;
     if(price)price.textContent=p?money(p.price,p.currency)+(p.available?'':' · 暫未開放購買'):'目前未上架';
@@ -57,5 +71,9 @@
    buttons.forEach(b=>b.onclick=()=>{filter=b.dataset.contentFilter;buttons.forEach(x=>x.setAttribute('aria-pressed',String(x===b)));render()});if(search)search.oninput=render;render();
   }catch{if(count)count.textContent='';failure(list,load);}finally{list.setAttribute('aria-busy','false');}};await load();
  }
- document.addEventListener('DOMContentLoaded',()=>{void products();void events();void content();const button=document.querySelector('.burger');button?.setAttribute('aria-expanded','false');button?.addEventListener('click',()=>button.setAttribute('aria-expanded',String(document.querySelector('.menu')?.classList.contains('open'))));});
+ document.addEventListener('DOMContentLoaded',()=>{
+  document.querySelector('[data-catalog-search]')?.addEventListener('input',renderCatalog);
+  document.querySelector('[data-catalog-clear]')?.addEventListener('click',()=>{const search=document.querySelector('[data-catalog-search]');search.value='';renderCatalog();search.focus();});
+  void products();void events();void content();
+ });
 })();
