@@ -1,0 +1,26 @@
+官網情境影像更新 — 2026-10-20
+
+已完成：新增四組主題影像（含 840px 行動版），配置於科學／原料、自然／健康／永續、會員／交流、品質／資料閱讀頁面；延續現有 clarity 與 daily-notes 的深綠、暖白與金色視覺。
+網站圖片路徑：website/assets/editorial/
+- botanical-observation.webp / botanical-observation-mobile.webp
+- nature-path.webp / nature-path-mobile.webp
+- member-gathering.webp / member-gathering-mobile.webp
+- quality-reading.webp / quality-reading-mobile.webp
+商品資料 API、商城商品圖與首頁品牌領導人物照片保留。示意產品包裝情境改為閱讀情境，避免與實際商品照片混淆。
+發現並修正舊有 --hero-image 相對 URL 在 CSS 引用時解析成 /css/assets/ 的問題，統一使用 /assets/。替代文字、情境標示與圖片尺寸一併更新。
+範圍：此次完成影像替換與前台視覺；完整官網 CMS 的建議範圍仍見 CONTENT_ARCHITECTURE_REVIEW_20261020.txt。
+驗證：18 項測試通過，涵蓋背景路徑、檔案存在、替代文字、srcset 變體、既有商品與內容串接。瀏覽器檢查桌面科學頁、390px 手機科學頁、820px 平板會員頁。
+
+生成工具：內建 image_gen，未使用 CLI/API fallback。下列為最終生成提示詞。
+
+1. botanical-observation
+Premium editorial botanical science still-life photograph for a Taiwanese life-science brand website. Wide landscape 3:2. A fresh green leaf with finely visible veins laid beside a clear optical magnifying lens and two elegant transparent glass dishes containing clear water, on warm ivory limestone. Forest green soft-focus background and delicate champagne daylight, tactile realistic macro detail, quiet sophisticated composition. Objects concentrated in right two thirds, darker soft negative space at left suitable for white HTML headings. Concept of careful observation and ingredient literacy. No text, no logos, no products, no packaging, no certificates, no human, no laboratory building, no scientific claim. Photorealistic editorial art direction, believable optics, restrained luxurious natural materials.
+
+2. nature-path
+High-end editorial landscape photograph for a nature, everyday wellbeing and sustainability website. Wide 3:2 composition. A peaceful winding stone path through lush subtropical green woodland, distant layered hills and soft morning mist, warm sunlight filtering through canopy, subtle dew, exceptionally realistic natural textures. No people, no identifiable landmark, no buildings, no company facilities, no logos, no text. Sophisticated travel magazine photography, deep emerald greens with warm ivory light, quiet hopeful mood. Clear visual journey into the distance, main path toward center-right, darker foliage on left for white HTML text overlay. This is generic illustrative scenery, not a documented company project.
+
+3. member-gathering
+Premium hospitality editorial photograph conveying welcoming community and thoughtful conversation for a member services and events website. Wide 3:2. An intimate round oak table set for three with handmade ivory tea cups, clear water carafe, blank cream notebooks and one small vase of leafy greenery. Comfortable forest-green upholstered chairs, natural linen curtains, warm diffuse window light, soft champagne highlights. No people, no branding, no text, no logos, no signboards, no recognizable venue. Sophisticated quiet luxury, inviting realistic interior detail, objects centered right with darker uncluttered space left for HTML titles. Generic illustrative gathering scene, not a photograph of a real company's office or actual event.
+
+4. quality-reading
+High-end editorial still-life photograph about careful reading, transparency and quality documentation for a brand website. Wide landscape 3:2. A beautifully bound unmarked cream notebook open to entirely blank pages, slender brushed brass pen, crystal-clear glass paperweight and neatly aligned ivory document folders on a pale limestone desk; subtle forest-green fabric in background. Gentle side daylight, precise shadows, tactile paper and stone, museum-like quiet elegance. Objects mainly right side, clean darker green gradient left for HTML heading. No readable text, no logos, no stamps, no certificates, no fake data or lab equipment, no product packaging, no people. Realistic sophisticated photography, generic illustrative scene not actual compliance evidence.
