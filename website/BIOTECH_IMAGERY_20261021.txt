@@ -1,0 +1,24 @@
+UCell 官網科技影像更新 — 2026-10-21
+
+範圍：36 個 HTML 頁面與共用 editorial.css。保留真實商品圖片、人物照片與既有資料接口。
+生成模式：內建 image_gen，9 張獨立生成影像。不是實際 UCell 設施、設備或研究證據；頁面保留 AI 情境示意說明。
+輸出：website/assets/biotech/，每張包含 1536px WebP 與 840px mobile WebP。
+逐頁配置：BIOTECH_IMAGE_MAP.json。首頁 9 張主體各不相同；各頁面內不重複使用情境圖。同一文章跨入口保留封面一致性。
+
+提示詞方向（各張獨立生成，非裁切同一圖片）：
+共同：Premium photorealistic editorial technology photography, landscape 3:2, cool white and cyan illumination, deep navy shadows, credible near-present technology. No logos, readable text, certification marks or product claims. Generic illustrative scene.
+research-campus：Glass-walled advanced biotechnology R&D laboratory corridor, equipment on right, dark uncluttered left third for heading.
+microscopy：Close-up optical microscope objective turret and glass slide, precise machined metal, shallow depth of field.
+cell-culture：Mechanical pipette above clear multiwell culture plate, culture flasks in biosafety workspace, no human hands.
+analytical-testing：Autosampler carousel with clear blue-capped vials and chromatography-style modular analytical equipment.
+bioprocess：Glass benchtop bioreactor with stainless top plate and realistic tubing, clear aqueous liquid, clean pilot research laboratory.
+computational-research：Physical workstation with two monitors, abstract unlabeled molecular geometry and non-numeric curves, no floating holograms.
+tech-exchange：Empty contemporary innovation presentation room, curved navy seats, display with abstract cyan connected nodes.
+digital-service：Silver laptop and smartphone on cool white desk, abstract blue interface panels, no personal data.
+material-analysis：Unlabelled sample jars with botanical powder and plant fragments, stainless spatula, quartz weighing dish and precision balance.
+
+驗證：
+19 項自動化測試通過，涵蓋素材存在、不同圖片檔案雜湊、逐頁圖片不重複、替代文字、響應式資源、導覽、內部連結與公開資料處理。
+桌面首頁及手機 390px／平板 820px 嵌入視窗檢查：標題可讀，無頁面水平溢出。
+上線檔案雜湊、公開 API 與健康狀態記錄另存 C:/UCell/website-biotech-20261021/live-checks.json。
+發佈使用既有官網映像為基礎，只替換 HTML、editorial.css 與新圖片；後台與會員服務未重新部署。

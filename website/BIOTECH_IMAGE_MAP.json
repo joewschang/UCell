@@ -1,0 +1,288 @@
+[
+  {
+    "page": "404.html",
+    "hero": "digital-service",
+    "images": [
+      "digital-service"
+    ]
+  },
+  {
+    "page": "about.html",
+    "hero": "research-campus",
+    "images": [
+      "research-campus"
+    ]
+  },
+  {
+    "page": "compliance.html",
+    "hero": "computational-research",
+    "images": [
+      "computational-research"
+    ]
+  },
+  {
+    "page": "contact.html",
+    "hero": "digital-service",
+    "images": [
+      "digital-service"
+    ]
+  },
+  {
+    "page": "cookies.html",
+    "hero": "digital-service",
+    "images": [
+      "digital-service"
+    ]
+  },
+  {
+    "page": "events.html",
+    "hero": "tech-exchange",
+    "images": [
+      "tech-exchange"
+    ]
+  },
+  {
+    "page": "evidence.html",
+    "hero": "computational-research",
+    "images": [
+      "computational-research"
+    ]
+  },
+  {
+    "page": "faq.html",
+    "hero": "digital-service",
+    "images": [
+      "digital-service"
+    ]
+  },
+  {
+    "page": "guide-membership.html",
+    "hero": null,
+    "images": [
+      "digital-service",
+      "material-analysis",
+      "tech-exchange"
+    ]
+  },
+  {
+    "page": "guide-products.html",
+    "hero": null,
+    "images": [
+      "material-analysis",
+      "digital-service",
+      "tech-exchange"
+    ]
+  },
+  {
+    "page": "guide-sharing.html",
+    "hero": null,
+    "images": [
+      "tech-exchange",
+      "material-analysis",
+      "digital-service"
+    ]
+  },
+  {
+    "page": "health.html",
+    "hero": "microscopy",
+    "images": [
+      "microscopy",
+      "tech-exchange",
+      "material-analysis"
+    ]
+  },
+  {
+    "page": "index.html",
+    "hero": "research-campus",
+    "images": [
+      "research-campus",
+      "material-analysis",
+      "digital-service",
+      "tech-exchange",
+      "bioprocess",
+      "microscopy",
+      "analytical-testing",
+      "cell-culture",
+      "computational-research"
+    ]
+  },
+  {
+    "page": "ingredients.html",
+    "hero": "material-analysis",
+    "images": [
+      "material-analysis",
+      "bioprocess",
+      "analytical-testing",
+      "computational-research",
+      "cell-culture"
+    ]
+  },
+  {
+    "page": "join.html",
+    "hero": "digital-service",
+    "images": [
+      "digital-service"
+    ]
+  },
+  {
+    "page": "legal.html",
+    "hero": "computational-research",
+    "images": [
+      "computational-research"
+    ]
+  },
+  {
+    "page": "life.html",
+    "hero": null,
+    "images": [
+      "computational-research",
+      "material-analysis",
+      "digital-service",
+      "tech-exchange"
+    ]
+  },
+  {
+    "page": "membership.html",
+    "hero": "digital-service",
+    "images": [
+      "digital-service"
+    ]
+  },
+  {
+    "page": "opportunity.html",
+    "hero": "tech-exchange",
+    "images": [
+      "tech-exchange"
+    ]
+  },
+  {
+    "page": "privacy.html",
+    "hero": "digital-service",
+    "images": [
+      "digital-service"
+    ]
+  },
+  {
+    "page": "product-363.html",
+    "hero": "material-analysis",
+    "images": [
+      "material-analysis",
+      "analytical-testing"
+    ]
+  },
+  {
+    "page": "product-580.html",
+    "hero": "material-analysis",
+    "images": [
+      "material-analysis",
+      "analytical-testing"
+    ]
+  },
+  {
+    "page": "product-636.html",
+    "hero": "material-analysis",
+    "images": [
+      "material-analysis",
+      "analytical-testing"
+    ]
+  },
+  {
+    "page": "product-696.html",
+    "hero": "material-analysis",
+    "images": [
+      "material-analysis",
+      "analytical-testing"
+    ]
+  },
+  {
+    "page": "product-777.html",
+    "hero": "material-analysis",
+    "images": [
+      "material-analysis",
+      "analytical-testing"
+    ]
+  },
+  {
+    "page": "product-999.html",
+    "hero": "material-analysis",
+    "images": [
+      "material-analysis",
+      "analytical-testing"
+    ]
+  },
+  {
+    "page": "products.html",
+    "hero": "material-analysis",
+    "images": [
+      "material-analysis",
+      "analytical-testing"
+    ]
+  },
+  {
+    "page": "quality.html",
+    "hero": "analytical-testing",
+    "images": [
+      "analytical-testing",
+      "bioprocess",
+      "computational-research"
+    ]
+  },
+  {
+    "page": "research-policy.html",
+    "hero": "computational-research",
+    "images": [
+      "computational-research"
+    ]
+  },
+  {
+    "page": "resources.html",
+    "hero": null,
+    "images": []
+  },
+  {
+    "page": "returns.html",
+    "hero": "digital-service",
+    "images": [
+      "digital-service"
+    ]
+  },
+  {
+    "page": "science.html",
+    "hero": "research-campus",
+    "images": [
+      "research-campus",
+      "cell-culture",
+      "microscopy",
+      "material-analysis",
+      "analytical-testing"
+    ]
+  },
+  {
+    "page": "sustainability.html",
+    "hero": "bioprocess",
+    "images": [
+      "bioprocess"
+    ]
+  },
+  {
+    "page": "terms.html",
+    "hero": "computational-research",
+    "images": [
+      "computational-research"
+    ]
+  },
+  {
+    "page": "values.html",
+    "hero": "tech-exchange",
+    "images": [
+      "tech-exchange"
+    ]
+  },
+  {
+    "page": "vision.html",
+    "hero": "computational-research",
+    "images": [
+      "computational-research"
+    ]
+  }
+]
