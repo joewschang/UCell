@@ -49,7 +49,7 @@ export const navGroups=[
  {label:uiText("Dashboard"),paths:['/']},
  {label:'會員管理',paths:['/people','/qualifications','/applications','/paper-intake','/line-links','/workflows','/learning','/events']},
  {label:'組織管理',paths:['/organization','/organization/geo','/admin/organization/trees']},
- {label:'商務',paths:['/products','/packages','/orders','/fulfillment','/erp-reconciliation','/subscriptions','/returns']},
+ {label:'商務',paths:['/products','/coupons','/packages','/orders','/fulfillment','/erp-reconciliation','/subscriptions','/returns']},
  {label:'獎金中心',paths:['/bonuses','/settlement-jobs','/compensation-period-control','/economic-lineage']},
  {label:'財務／治理',paths:['/payouts','/admin/finance/reservoirs']},
  {label:'營運分析',paths:['/operations-control','/reports','/analytics']},
