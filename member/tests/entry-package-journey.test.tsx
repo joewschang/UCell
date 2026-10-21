@@ -15,6 +15,7 @@ it.each([[3,'啟航',14400],[9,'菁英',43200],[15,'領袖',72000]])('selects ex
  const fetch=vi.fn(async(url:string,init:RequestInit={})=>{
   if(url.includes('/package-payments/')){paid=true;return envelope({status:'PAID'});}
   if(url.endsWith('/formal-enrollment'))return envelope({membershipState:paid?'FORMAL_PENDING':'NETWORK_MEMBER',stagePaymentEnabled:true,paidPackages:paid?[{orderId:'ORDER',packageName:offer.displayName}]:[],feeReceipt:null});
+  if(url.endsWith('/package-quote'))return envelope({packageVersionId:offer.packageVersionId,originalAmount:offer.priceAmount,goodsAmount:offer.priceAmount,discountAmount:'0',qualificationFee:offer.packageClass==='QUALIFICATION'?'600':'0',total:String(Number(offer.priceAmount)+(offer.packageClass==='QUALIFICATION'?600:0)),selectableProductQuantity:offer.selectableProductQuantity,couponCode:null,quoteHash:'a'.repeat(64)});
   if(url.includes('legal-entities'))return envelope([]);
   if(url.endsWith('/delivery-profile'))return envelope({recipientName:'TEST',phone:'0900000000',countryCode:'TW',postalCode:'100',region:'TEST',city:'TEST',address:'TEST ONLY ROAD',complete:true,updatedAt:null});
   if(url.endsWith('/products'))return envelope({package:offer,products});
@@ -24,14 +25,15 @@ it.each([[3,'啟航',14400],[9,'菁英',43200],[15,'領袖',72000]])('selects ex
  await act(async()=>{tree=create(<MemoryRouter initialEntries={['/shop']}><Mall onCreated={vi.fn()}/><Location/></MemoryRouter>)});
  await act(async()=>tree.root.findAllByType('button').find(b=>b.children.includes('會員資格套組'))!.props.onClick());
  await act(async()=>tree.root.findAllByType('button').find(b=>b.children.includes('選擇套組商品'))!.props.onClick());
- const checkout=()=>tree.root.findAllByType('button').find(b=>b.children.includes("選購套組並完成 測試環境 付款"))!;
+ const checkout=()=>tree.root.findAllByType('button').find(b=>b.children.includes("確認商品與費用 →"))!;
  expect(checkout().props.disabled).toBe(true);
  for(let i=0;i<count;i++)act(()=>tree.root.findAllByType('button').filter(b=>b.children.includes('增加'))[i%5].props.onClick());
  expect(tree.root.findAllByType('button').filter(b=>b.children.includes('增加')).every(b=>b.props.disabled)).toBe(true);
  expect(checkout().props.disabled).toBe(false);
  await act(async()=>checkout().props.onClick());
+ await act(async()=>tree.root.findAllByType('button').find(b=>b.children.includes('建立訂單並執行測試付款'))!.props.onClick());
  expect(tree.root.findAllByType('output').find(o=>o.props['aria-label']==='目前頁面')!.children).toEqual(['/membership/upgrade']);
- const writes=fetch.mock.calls.filter(([,init])=>init?.method==='POST');expect(writes).toHaveLength(2);
+ const writes=fetch.mock.calls.filter(([url,init])=>init?.method==='POST'&&!url.endsWith('/package-quote'));expect(writes).toHaveLength(2);
  const body=JSON.parse(writes[0][1].body as string);expect(body.selections.reduce((n:number,p:any)=>n+p.quantity,0)).toBe(count);
  expect(body).not.toHaveProperty('price');expect(writes[1][0]).toContain('/package-payments/');
  expect((writes[0][1].headers as Headers).get('Idempotency-Key')).toBe((writes[1][1].headers as Headers).get('Idempotency-Key'));

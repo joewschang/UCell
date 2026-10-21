@@ -14,6 +14,7 @@ import {NewApplicationWizard} from '../features/applications/NewApplicationWizar
 import {PaperFormalApplicationPage} from '../features/applications/PaperFormalApplicationPage';
 import {QualificationsPage} from '../features/qualifications/QualificationsPage';
 import {ProductsPage} from '../features/products/ProductsPage';
+import {CouponsPage} from '../features/coupons/CouponsPage';
 import {PackagesPage} from '../features/packages/PackagesPage';
 import {OrdersPage} from '../features/orders/OrdersPage';
 import {OrganizationPage} from '../features/organization/OrganizationPage';
@@ -54,6 +55,7 @@ export function App(){return <Routes>
   <Route path="/applications/formal-paper" element={<RequirePageRole><PaperFormalApplicationPage/></RequirePageRole>}/>
   <Route path="/qualifications" element={<RequirePageRole><QualificationsPage/></RequirePageRole>}/>
   <Route path="/products" element={<RequirePageRole><ProductsPage/></RequirePageRole>}/>
+  <Route path="/coupons" element={<RequirePageRole><CouponsPage/></RequirePageRole>}/>
   <Route path="/packages" element={<RequirePageRole><PackagesPage/></RequirePageRole>}/>
   <Route path="/orders" element={<RequirePageRole><OrdersPage/></RequirePageRole>}/>
   <Route path="/economic-lineage" element={<RequirePageRole><EconomicLineagePage/></RequirePageRole>}/>

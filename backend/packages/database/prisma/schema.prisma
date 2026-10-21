@@ -1800,6 +1800,7 @@ model CommercialOfferingVersion {
   @@schema("commerce")
 }
 model Order {
+  couponRedemption CouponRedemption?
   orderId                 String       @id @default(uuid()) @map("order_id") @db.Uuid
   orderNo                 BigInt       @unique @default(autoincrement()) @map("order_no")
   qualificationId         String?      @map("qualification_id") @db.Uuid
@@ -4603,6 +4604,10 @@ model PackageSelectableProduct {
 }
 
 model PackagePurchaseSnapshot {
+  qualificationFee Decimal @default(0) @map("qualification_fee") @db.Decimal(18, 2)
+  discountAmount Decimal @default(0) @map("discount_amount") @db.Decimal(18, 2)
+  couponCode String? @map("coupon_code")
+  paymentDeadline DateTime? @map("payment_deadline") @db.Timestamptz(6)
   packagePurchaseSnapshotId String                     @id @default(uuid()) @map("package_purchase_snapshot_id") @db.Uuid
   orderId                   String                     @unique @map("order_id") @db.Uuid
   personId                  String?                    @map("person_id") @db.Uuid
@@ -5243,4 +5248,48 @@ model ResourceShareLink {
  @@index([targetType,targetReference,createdAt],map:"resource_share_target_idx")
  @@map("resource_share_link")
  @@schema("integration")
+}
+
+model CouponDefinition {
+  id String @id @default(uuid()) @db.Uuid
+  code String @unique
+  name String
+  category String @default("QUALIFICATION")
+  ruleCode String @map("rule_code")
+  description String
+  packageCodes String[] @map("package_codes")
+  startsAt DateTime @map("starts_at") @db.Timestamptz(6)
+  endsAt DateTime @map("ends_at") @db.Timestamptz(6)
+  maxUses Int @default(0) @map("max_uses")
+  perPersonLimit Int @default(0) @map("per_person_limit")
+  enabled Boolean @default(false)
+  revision Int @default(1)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  redemptions CouponRedemption[]
+  @@map("coupon_definition")
+  @@schema("commerce")
+}
+model CouponRedemption {
+  id String @id @default(uuid()) @db.Uuid
+  couponId String @map("coupon_id") @db.Uuid
+  orderId String @unique @map("order_id") @db.Uuid
+  personId String @map("person_id") @db.Uuid
+  snapshot Json
+  reservedAt DateTime @default(now()) @map("reserved_at") @db.Timestamptz(6)
+  expiresAt DateTime @map("expires_at") @db.Timestamptz(6)
+  redeemedAt DateTime? @map("redeemed_at") @db.Timestamptz(6)
+  coupon CouponDefinition @relation(fields:[couponId],references:[id])
+  order Order @relation(fields:[orderId],references:[orderId])
+  @@index([couponId,personId])
+  @@map("coupon_redemption")
+  @@schema("commerce")
+}
+model CouponUsageEvent {
+  id String @id @default(uuid()) @db.Uuid
+  orderId String @map("order_id") @db.Uuid
+  kind String
+  occurredAt DateTime @default(now()) @map("occurred_at") @db.Timestamptz(6)
+  @@index([orderId,occurredAt])
+  @@map("coupon_usage_event")
+  @@schema("commerce")
 }

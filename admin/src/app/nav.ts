@@ -9,6 +9,7 @@ export const nav=[
   [uiText("紙本申請 Intake"),'/paper-intake','paper-intake'],
   ['會員資格（球）','/qualifications','qualifications'],
   ['商品參照','/products','products'],
+  ['優惠碼管理','/coupons','packages'],
   ['套組與資格商品','/packages','packages'],
   ['訂單與收款','/orders','orders'],
   ['出貨與序號核對','/fulfillment','shipment'],

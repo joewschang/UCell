@@ -36,11 +36,11 @@ describeDb('package Core parameter and return posting boundaries',()=>{
   expect((await orders.createMember(input,key,request,person.personId)).value.orderId).toBe(order.orderId);
   expect(order.ruleVersionCode).toBe('R1.0B');
   const snapshot=await db.packagePurchaseSnapshot.findUniqueOrThrow({where:{orderId:order.orderId}});
-  expect(snapshot.recognitionConfigRef).toBe('PO_20261019_QUALIFICATION_GPV_ONLY');
+  expect(snapshot.recognitionConfigRef).toBe('PO_20261021_ENTRY_V2');
   expect(order.parameterSnapshotHash).not.toBe(snapshot.packageConfigHash);
   const parameters=await captureParameters(db as any,order.confirmedAt!,'R1.0B');
   expect(order.parameterSnapshotHash).toBe(parameters.hash);
-  await orders.confirmPayment(order.orderId,{amount:price,paymentMethod:'TEST_ONLY',referenceNo:token,occurredAt:new Date().toISOString()},randomUUID(),request);
+  await orders.confirmPayment(order.orderId,{amount:new Prisma.Decimal(price).add(600).toString(),paymentMethod:'TEST_ONLY',referenceNo:token,occurredAt:new Date().toISOString()},randomUUID(),request);
   const returns=new ReturnService(db as any,idempotency,audit,outbox);
   const qid=order.qualificationId!;
   let preReturnId:string|undefined;
@@ -62,8 +62,8 @@ describeDb('package Core parameter and return posting boundaries',()=>{
   expect((await db.outboxEvent.findUniqueOrThrow({where:{outboxEventId:paymentEvent.outboxEventId}})).processStatus).toBe('PROCESSED');
 
   expect(await db.pvLedger.count({where:{sourceId:order.orderId}})).toBe(0);
-  expect(await db.qualificationActiveEntitlementEvidence.count({where:{qualificationId:qid}})).toBe(1);
-  expect((await db.qualification.findUniqueOrThrow({where:{qualificationId:qid}})).activeFlag).toBe(true);
+  expect(await db.qualificationActiveEntitlementEvidence.count({where:{qualificationId:qid}})).toBe(0);
+  expect((await db.qualification.findUniqueOrThrow({where:{qualificationId:qid}})).activeFlag).toBe(false);
   const paidMonth=new Date(Date.now()+8*3600000);
   const placedAt=new Date(Date.UTC(paidMonth.getUTCFullYear(),paidMonth.getUTCMonth()+1,2)-8*3600000);
   const parent=await db.qualification.create({data:{currentHolderPersonId:person.personId,planLevelCode:'STARTER',status:'EFFECTIVE'}});
@@ -78,7 +78,7 @@ describeDb('package Core parameter and return posting boundaries',()=>{
   await db.qualificationPlanHistory.create({data:{qualificationId:qid,planCode:'STARTER',effectiveFrom:placedAt,sourceType:'TEST_PLACEMENT'}});
   await db.qualificationSetup.update({where:{qualificationId:qid},data:{setupStatus:'PLACED',placedAt}});
   await db.placementEvidence.create({data:{qualificationId:qid,sponsorQualificationId:parent.qualificationId,binaryParentQualificationId:parent.qualificationId,side:'LEFT',placedByType:'ADMIN_OVERRIDE',placedAt,policyVersion:'TEST',previousStatus:'BALL_SETUP_PENDING',correlationId:request,evidenceHash:'test'}});
-  expect((await db.qualificationActiveEntitlementEvidence.findFirstOrThrow({where:{qualificationId:qid}})).periodEnd.getTime()).toBeLessThan(placedAt.getTime());
+  expect(await db.qualificationActiveEntitlementEvidence.count({where:{qualificationId:qid}})).toBe(0);
   expect(await run()).toMatchObject({status:'RECOGNIZED',created:1});
   expect(await run()).toMatchObject({status:'RECOGNIZED',created:0});
   if(preReturnId)expect(await db.$transaction(tx=>processHistoricalReturn(tx,preReturnId!))).toMatchObject({noOriginalRecognition:true});
@@ -91,7 +91,7 @@ describeDb('package Core parameter and return posting boundaries',()=>{
   expect((await db.binaryVolumeLedger.findMany({where:{sourceQualificationId:qid}})).map(v=>v.amount.toString())).toEqual(['8640']);
   expect(await db.consumptionRecognitionEvent.count({where:{sourceId:order.orderId}})).toBe(0);
   expect(await db.qualificationMonthAccumulatorEvidence.count({where:{qualificationId:qid}})).toBe(0);
-  expect(await db.activePeriod.count({where:{qualificationId:qid,sourceType:'QUALIFICATION_PACKAGE'}})).toBe(1);
+  expect(await db.activePeriod.count({where:{qualificationId:qid,sourceType:'QUALIFICATION_PACKAGE'}})).toBe(0);
   const returnedAt=new Date(placedAt.getTime()+1000).toISOString(),returnKey=randomUUID();
   const returnInput={lines:[{orderLineId:order.lines[0].orderLineId,quantity:'1'}],reasonCode:'TEST',occurredAt:returnedAt};
   const returned=(await returns.post(order.orderId,returnInput,returnKey,request)).value!;
@@ -112,7 +112,7 @@ describeDb('package Core parameter and return posting boundaries',()=>{
   expect(reversals.reduce((total,v)=>total.add(v.amount),new Prisma.Decimal(0)).toString()).toBe('-8640');
   const other=await db.person.create({data:{legalName:'FULL PREPLACEMENT RETURN',status:'EFFECTIVE',membershipState:'NETWORK_MEMBER'}});
   const fullOrder=(await orders.createMember(input,randomUUID(),request,other.personId)).value;
-  await orders.confirmPayment(fullOrder.orderId,{amount:price,paymentMethod:'TEST_ONLY',referenceNo:randomUUID(),occurredAt:new Date().toISOString()},randomUUID(),request);
+  await orders.confirmPayment(fullOrder.orderId,{amount:new Prisma.Decimal(price).add(600).toString(),paymentMethod:'TEST_ONLY',referenceNo:randomUUID(),occurredAt:new Date().toISOString()},randomUUID(),request);
   // Cover revoking an already-granted payment entitlement and a payment event arriving after full return.
   if(preReturned)await db.$transaction(tx=>recognizeQualificationPackage(tx,fullOrder.orderId,request));
   const fullRet=(await returns.post(fullOrder.orderId,{lines:[{orderLineId:fullOrder.lines[0].orderLineId,quantity:String(boxes)}],reasonCode:'FULL_PRE_PLACEMENT',occurredAt:new Date().toISOString()},randomUUID(),request)).value!;

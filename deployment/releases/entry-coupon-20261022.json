@@ -1,0 +1,128 @@
+{
+  "feature": "Formal enrollment and UCELL888",
+  "date": "2026-10-22",
+  "coupon": {
+    "code": "UCELL888",
+    "endsExclusive": "2027-01-31T16:00:00Z",
+    "timeZone": "Asia/Taipei",
+    "maxUses": 0,
+    "perPersonLimit": 0,
+    "discountTWD": 14400,
+    "mainProductsReduction": 3,
+    "feePerNewQualificationTWD": 600,
+    "upgradeFeeTWD": 0
+  },
+  "policy": "PO_20261021_ENTRY_V2",
+  "tests": {
+    "backendIsolated": 35,
+    "member": 310,
+    "adminFocused": 10,
+    "releaseImageIntegration": "PASS",
+    "databasePriorAssertions": 162,
+    "adminFullSuite": "3 failures in unchanged UatPage tests; focused coupon and permissions tests pass"
+  },
+  "deployment": {
+    "baseApi": "sha256:d74aa83b389cc2a36a5ba7b92ca8b3eaae47fe7120ce030f8980a72dcdf219c7",
+    "apiAndWorker": "sha256:6b84a6a5c72c3b9e335cbc67415405072a881d3cf764f4ff842416d5ee913bf8",
+    "member": "sha256:a23e0dd1e09ddf0ba917eed17a66e4bcc475aacfc12db03d43d482dc617105d4",
+    "admin": "sha256:2e410d0647a8e6c28975b0d16c3eeedc77deea32deff52021f10a7b590ba10b8",
+    "state": "verified-live",
+    "services": [
+      {
+        "image": "ucellprodacrm3z2zx4ohqyui.azurecr.io/ucell-admin@sha256:2e410d0647a8e6c28975b0d16c3eeedc77deea32deff52021f10a7b590ba10b8",
+        "latest": "ucell-prod-admin--0000017",
+        "name": "ucell-prod-admin",
+        "ready": "ucell-prod-admin--0000017"
+      },
+      {
+        "image": "ucellprodacrm3z2zx4ohqyui.azurecr.io/ucell-api@sha256:6b84a6a5c72c3b9e335cbc67415405072a881d3cf764f4ff842416d5ee913bf8",
+        "latest": "ucell-prod-api--0000035",
+        "name": "ucell-prod-api",
+        "ready": "ucell-prod-api--0000035"
+      },
+      {
+        "image": "ucellprodacrm3z2zx4ohqyui.azurecr.io/ucell-member@sha256:a23e0dd1e09ddf0ba917eed17a66e4bcc475aacfc12db03d43d482dc617105d4",
+        "latest": "ucell-prod-member--0000026",
+        "name": "ucell-prod-member",
+        "ready": "ucell-prod-member--0000026"
+      },
+      {
+        "image": "ucellprodacrm3z2zx4ohqyui.azurecr.io/ucell-api@sha256:6b84a6a5c72c3b9e335cbc67415405072a881d3cf764f4ff842416d5ee913bf8",
+        "latest": "ucell-prod-worker--0000010",
+        "name": "ucell-prod-worker",
+        "ready": "ucell-prod-worker--0000010"
+      }
+    ]
+  },
+  "preservedProductionBehavior": [
+    "worker recognition retry and polling",
+    "manual ERP upgrade payment evidence",
+    "member profile prefill",
+    "retail per-line offering and financial guards"
+  ],
+  "payment": "Existing manual collection confirmation; no simulated production payment or new gateway",
+  "refund": "Goods refund and qualification fee refund are separate. Fee confirmation records an already-completed refund; it does not send money.",
+  "evidenceDirectory": "C:/UCell/coupon-20261021",
+  "live": {
+    "checkedAt": "2026-10-21T16:15:09.016Z",
+    "rows": [
+      {
+        "app": "member",
+        "status": 200,
+        "asset": "/assets/index-dx1uOabb.js",
+        "bundleVerified": true
+      },
+      {
+        "app": "admin",
+        "status": 200,
+        "asset": "/assets/index-C_uOIwZn.js",
+        "bundleVerified": true
+      },
+      {
+        "path": "/api/v1/admin/coupons",
+        "unauthenticatedStatus": 401
+      },
+      {
+        "path": "/api/v1/member/package-quote",
+        "unauthenticatedStatus": 401
+      }
+    ],
+    "apiHealth": 200
+  },
+  "databaseReadback": {
+    "code": "UCELL888",
+    "enabled": true,
+    "endsAt": "2027-01-31T16:00:00.000Z",
+    "maxUses": 0,
+    "perPersonLimit": 0,
+    "quotes": [
+      {
+        "code": "STARTER",
+        "goods": "0.00",
+        "fee": "600.00",
+        "total": "600.00",
+        "boxes": 0
+      },
+      {
+        "code": "ELITE",
+        "goods": "28800.00",
+        "fee": "600.00",
+        "total": "29400.00",
+        "boxes": 6
+      },
+      {
+        "code": "LEADER",
+        "goods": "57600.00",
+        "fee": "600.00",
+        "total": "58200.00",
+        "boxes": 12
+      }
+    ],
+    "readOnly": true
+  },
+  "cleanup": {
+    "temporaryDatabaseFirewallRules": 0,
+    "taskTestContainersRemoved": true
+  },
+  "completedAt": "2026-10-21T16:15:55.409Z"
+}

@@ -33,8 +33,9 @@ export class QualificationPlacementService {
   return Promise.all(rows.map(async row=>{
    const order=await this.db.order.findUniqueOrThrow({where:{orderId:row.qualifyingOrderId}});
    const returned=await this.db.returnLine.aggregate({where:{returnCase:{orderId:order.orderId,status:'POSTED'}},_sum:{returnAmount:true}});
+   const purchase=await this.db.packagePurchaseSnapshot.findUniqueOrThrow({where:{orderId:order.orderId}});
    const person=row.ownerPersonId?await this.db.person.findUnique({where:{personId:row.ownerPersonId},select:{memberNo:true}}):null;
-   return {qualificationId:row.qualificationId,orderId:order.orderId,orderNo:order.orderNo.toString(),memberNo:person?.memberNo??null,originalPackageType:row.packageType,remainingAmount:order.netAmount.sub(returned._sum.returnAmount??0).toString(),status:row.setupStatus};
+   return {qualificationId:row.qualificationId,orderId:order.orderId,orderNo:order.orderNo.toString(),memberNo:person?.memberNo??null,originalPackageType:row.packageType,remainingAmount:purchase.priceAmount.sub(returned._sum.returnAmount??0).toString(),status:row.setupStatus};
   }));
  }
 
@@ -48,8 +49,9 @@ export class QualificationPlacementService {
    await tx.$queryRaw`SELECT order_id FROM commerce."order" WHERE order_id=${setup.qualifyingOrderId}::uuid FOR UPDATE`;
    const order=await tx.order.findUniqueOrThrow({where:{orderId:setup.qualifyingOrderId}});
    const returned=await tx.returnLine.aggregate({where:{returnCase:{orderId:order.orderId,status:'POSTED'}},_sum:{returnAmount:true}});
-   const remaining=order.netAmount.sub(returned._sum.returnAmount??0);
-   if(order.status!=='PARTIAL_RETURN'||remaining.lt(new Prisma.Decimal(prices[input.planLevelCode])))throw new UnprocessableEntityException({code:'QUALIFICATION_RETAINED_AMOUNT_INSUFFICIENT'});
+   const purchase=await tx.packagePurchaseSnapshot.findUniqueOrThrow({where:{orderId:order.orderId}});
+   const remaining=purchase.priceAmount.sub(returned._sum.returnAmount??0);
+   if(order.status!=='PARTIAL_RETURN'||remaining.lt(new Prisma.Decimal(prices[input.planLevelCode]).sub(purchase.discountAmount)))throw new UnprocessableEntityException({code:'QUALIFICATION_RETAINED_AMOUNT_INSUFFICIENT'});
    const now=new Date(),correlationId=randomUUID(),status=setup.finalSponsorQualificationId?'PLACEMENT_PENDING':'BALL_SETUP_PENDING';
    await tx.qualification.update({where:{qualificationId},data:{planLevelCode:input.planLevelCode}});
    await tx.qualificationSetup.update({where:{qualificationId},data:{setupStatus:status,placementRequestedAt:setup.finalSponsorQualificationId?now:null,placementDueAt:setup.finalSponsorQualificationId?new Date(now.getTime()+72*3600000):null}});

@@ -3,24 +3,23 @@ import {act,create,type ReactTestRenderer} from 'react-test-renderer';
 import {MemoryRouter} from 'react-router-dom';
 import {afterEach,expect,it,vi} from 'vitest';
 import FormalEnrollment from '../src/FormalEnrollment';
-import {payFormalEnrollmentFee} from '../src/memberData';
-const fixture=vi.hoisted(()=>({state:{membershipState:'NETWORK_MEMBER',feeAmount:'600.00',currency:'TWD',stagePaymentEnabled:true,feeReceipt:null as any,application:null,paidPackages:[] as any[]},retry:vi.fn()}));
+import {submitFormalEnrollment} from '../src/memberData';
+const fixture=vi.hoisted(()=>({state:{membershipState:'NETWORK_MEMBER',feeAmount:'600.00',currency:'TWD',stagePaymentEnabled:false,feeReceipt:null as any,application:null as any,paidPackages:[] as any[],pendingPackages:[] as any[]},retry:vi.fn()}));
 vi.mock('../src/useResource',()=>({useResource:()=>({data:fixture.state,retry:fixture.retry})}));
-vi.mock('../src/memberData',()=>({getFormalEnrollment:vi.fn(),payFormalEnrollmentFee:vi.fn(async()=>({}))}));
-vi.mock('../src/FormalUpgrade',()=>({default:()=> <p>正式會員資料表</p>}));
+vi.mock('../src/memberData',()=>({getFormalEnrollment:vi.fn(),submitFormalEnrollment:vi.fn(async()=>({}))}));
+vi.mock('../src/FormalUpgrade',()=>({default:({onSaved}:any)=> <button onClick={()=>onSaved('APP')}>儲存測試資料</button>}));
 vi.mock('../src/QualificationPackageShop',()=>({default:()=> <p>資格套組選擇</p>}));
-let tree:ReactTestRenderer|undefined;
-afterEach(()=>{if(tree)act(()=>tree!.unmount());tree=undefined;vi.clearAllMocks();fixture.state.stagePaymentEnabled=true;fixture.state.feeReceipt=null;fixture.state.paidPackages=[];});
+let tree:ReactTestRenderer;
+afterEach(()=>{act(()=>tree?.unmount());vi.clearAllMocks();fixture.state.application=null;fixture.state.paidPackages=[];fixture.state.pendingPackages=[];});
 const render=async()=>{await act(async()=>{tree=create(<MemoryRouter><FormalEnrollment/></MemoryRouter>)});};
-it('offers both routes, submits the fixed fee endpoint and retains explicit Stage/review wording',async()=>{
- await render();expect(JSON.stringify(tree!.toJSON())).toContain('方式一：選購會員資格套組');
- const pay=tree!.root.findAllByType('button').find(n=>n.children.includes('繳交 600 元並開始申請'))!;
- await act(async()=>pay.props.onClick());expect(payFormalEnrollmentFee).toHaveBeenCalledOnce();expect(fixture.retry).toHaveBeenCalledOnce();
- expect(JSON.stringify(tree!.toJSON())).toContain('不會扣款');expect(JSON.stringify(tree!.toJSON())).toContain('審核');
+const button=(text:string)=>tree.root.findAllByType('button').find(b=>b.children.includes(text))!;
+it('requires saved data before package selection and has no fee-only membership route',async()=>{
+ await render();expect(button('資格套組').props.disabled).toBe(true);expect(button('送出審核').props.disabled).toBe(true);
+ await act(async()=>button('儲存測試資料').props.onClick());expect(button('資格套組').props.disabled).toBe(false);
+ await act(async()=>button('資格套組').props.onClick());expect(JSON.stringify(tree.toJSON())).toContain('每資格 600 元');expect(JSON.stringify(tree.toJSON())).not.toContain('繳交 600 元並開始申請');
 });
-it('does not offer a second fee after package payment and does not enable simulated Production payment',async()=>{
- fixture.state.paidPackages=[{orderId:'TEST',packageName:'TEST ONLY PACKAGE'}];await render();
- expect(JSON.stringify(tree!.toJSON())).toContain('不需另繳 600 元');expect(tree!.root.findAllByType('button').some(n=>n.children.includes('繳交 600 元並開始申請'))).toBe(false);
- act(()=>tree!.unmount());tree=undefined;fixture.state.paidPackages=[];fixture.state.stagePaymentEnabled=false;await render();
- expect(tree!.root.findAllByType('button').find(n=>n.children.includes('繳交 600 元並開始申請'))!.props.disabled).toBe(true);
+it('keeps unpaid packages pending and submits paid applications once with explicit review',async()=>{
+ fixture.state.application={id:'APP',status:'DRAFT'};fixture.state.pendingPackages=[{orderId:'ORDER',packageName:'啟航',total:'600',goodsAmount:'0',qualificationFee:'600',selectableProductQuantity:0,couponCode:'UCELL888',paymentDeadline:'2027-01-31T16:00:00Z'}];await render();
+ await act(async()=>button('付款確認').props.onClick());expect(JSON.stringify(tree.toJSON())).toContain('UCELL888');expect(button('送出審核').props.disabled).toBe(true);
+ act(()=>tree.unmount());fixture.state.paidPackages=[{orderId:'ORDER',packageName:'啟航'}];await render();await act(async()=>button('送出審核').props.onClick());await act(async()=>button('確認送出正式會員申請').props.onClick());expect(submitFormalEnrollment).toHaveBeenCalledOnce();expect(JSON.stringify(tree.toJSON())).toContain('各資格須符合活躍');
 });

@@ -25,6 +25,7 @@ export class ReturnService {
       if(!['PAID','FULFILLED','PARTIAL_RETURN'].includes(order.status))
         throw new ConflictException({code:'ORDER_LOCKED',message:'只有已付款/已出貨訂單可退貨。'});
 
+      let qualificationGoodsAmount:Prisma.Decimal|undefined;
       let packageAllocation:ReturnType<typeof qualificationPackageAllocation>|undefined;
       let monthlyPackage=false;
       let preplacementPackage=false;
@@ -38,7 +39,7 @@ export class ReturnService {
             const plan=packageMonthlyPlan({packageCode:purchase.packageCode,priceAmount:purchase.priceAmount,boxCount:purchase.selectableProductQuantity,paidAt:order.paidAt,timing:approvedRepurchaseTiming});
             packageAllocation={cashPerBox:plan.cashPerBox,gpvPerBox:plan.cashPerBox.mul('0.6')};monthlyPackage=true;
             await preparePackageMonthlySchedule(tx,orderId,correlationId);
-          }else packageAllocation=qualificationPackageAllocation(purchase,order.lines,order.netAmount);
+          }else {packageAllocation=qualificationPackageAllocation(purchase,order.lines,order.netAmount);qualificationGoodsAmount=purchase.priceAmount;}
         }catch{throw new UnprocessableEntityException({code:'PACKAGE_RETURN_ALLOCATION_PENDING'});}
         const originals=await tx.pvLedger.findMany({where:{sourceType:monthlyPackage?'PACKAGE_MONTHLY':'ORDER',sourceId:orderId,eventType:'GPV_CREATED',pvType:'GPV'}});
         if(!monthlyPackage){
@@ -125,13 +126,13 @@ export class ReturnService {
       const cumulativeReturn=previouslyReturned.add(totalReturn);
       if(cumulativeReturn.gt(order.netAmount))
         throw new UnprocessableEntityException({code:'RETURN_AMOUNT_EXCEEDED',message:'Cumulative returns exceed the original effective transaction amount.'});
-      const fullReturn=cumulativeReturn.eq(order.netAmount);
+      const fullReturn=cumulativeReturn.eq(qualificationGoodsAmount??order.netAmount);
       await tx.order.update({
         where:{orderId},
         data:{status:fullReturn?'RETURNED':'PARTIAL_RETURN'}
       });
       if(monthlyPackage)await preparePackageMonthlyReturn(tx,ret.returnCaseId);
-      if(preplacementPackage)await acceptQualificationPreplacementReturn(tx,{qualificationId:order.qualificationId!,orderId,returnCaseId:ret.returnCaseId,fullReturn,remainingAmount:order.netAmount.sub(cumulativeReturn),correlationId,actorId,requestId});
+      if(preplacementPackage)await acceptQualificationPreplacementReturn(tx,{qualificationId:order.qualificationId!,orderId,returnCaseId:ret.returnCaseId,fullReturn,remainingAmount:(qualificationGoodsAmount??order.netAmount).sub(cumulativeReturn),correlationId,actorId,requestId});
 
       if(fullReturn&&order.qualificationId){
         const setup=await tx.qualificationSetup.findUnique({where:{qualificationId:order.qualificationId}});

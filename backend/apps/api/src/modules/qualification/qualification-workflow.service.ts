@@ -36,7 +36,7 @@ export class QualificationWorkflowService {
         applicantPersonId:input.applicantPersonId,
         receivingPersonId:input.receivingPersonId,
         targetPlanCode:input.targetPlanCode,
-        reviewFee:new Prisma.Decimal(600),
+        reviewFee:new Prisma.Decimal(input.workflowType==='UPGRADE'?0:600),
         submittedAt:new Date(),
         payload:input.payload ?? {}
       }
@@ -59,7 +59,7 @@ export class QualificationWorkflowService {
       const tracked=!!qualification.currentCompanyPrincipalId || !!membership;
       const actorId=tracked?await authorizeTreePrincipal(this.prisma,principal,['SUPER_ADMIN','MEMBERSHIP_OPS'],tx):undefined;
       const payload=(wf.payload ?? {}) as any;
-      if(payload.reviewFeePaid !== true)
+      if(wf.workflowType!=='UPGRADE'&&wf.reviewFee.gt(0)&&payload.reviewFeePaid !== true)
         throw new UnprocessableEntityException('NT$600 review fee must be confirmed before approval');
 
       const approvedAt=new Date();

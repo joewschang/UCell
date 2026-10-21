@@ -5,7 +5,7 @@ import {consentFormalContract,getFormalRequiredContracts,saveFormalDraft,uploadF
 import {useResource} from './useResource';
 import {countryOptions} from './countryOptions';
 
-export default function FormalUpgrade({onSubmitted}:{onSubmitted?:()=>void}={}){
+export default function FormalUpgrade({onSubmitted,onSaved,draftOnly=false}:{onSubmitted?:()=>void;onSaved?:(id:string)=>void;draftOnly?:boolean}={}){
  const contracts=useResource('formal-contracts',getFormalRequiredContracts);
  const [accepted,setAccepted]=useState(false),[busy,setBusy]=useState(false),[error,setError]=useState(''),[submitted,setSubmitted]=useState(false);
  const [saved,setSaved]=useState<{id:string;version:number;identityDocumentNumberMasked:string|null;spouseIdentityDocumentNumberMasked:string|null;bankAccountMasked:string;applicantType:string}|null>(null);
@@ -44,12 +44,12 @@ export default function FormalUpgrade({onSubmitted}:{onSubmitted?:()=>void}={}){
     const doc=await uploadFormalDocument(result.id,type,file);
     nextUploaded[type]=doc.scanStatus;
    }
-   setUploaded(nextUploaded);key.current=crypto.randomUUID();contracts.retry();
+   setUploaded(nextUploaded);onSaved?.(result.id);key.current=crypto.randomUUID();contracts.retry();
   }catch(reason){setError(reason instanceof Error?reason.message:'草稿儲存失敗');}
   finally{setBusy(false);}
  }
 
- return <form className="card" onSubmit={submit}><h3>升級正式會員：加密草稿</h3>
+ return <form className="card" onSubmit={submit}><h3>會員資料與文件</h3>
  <p>{uiText("線上正式會員申請限自然人。草稿不會送審、核准、建立球位或改變會員狀態；配偶與身分資料僅供 KYC 與跨線審查。")}</p>
  <details><summary>{contract.title}（{contract.version}）</summary><p>{contract.content}</p><small>內容雜湊：{contract.contentHash}</small></details>
  <label><input type="checkbox" checked={accepted||!!contract.acceptedAt} disabled={!!contract.acceptedAt||busy} onChange={e=>setAccepted(e.target.checked)}/> 我已閱讀並同意上述正式會員合約與隱私告知</label>
@@ -81,8 +81,8 @@ export default function FormalUpgrade({onSubmitted}:{onSubmitted?:()=>void}={}){
  <label>銀行別／代碼<input required maxLength={16} value={form.bankCode} onChange={e=>set('bankCode',e.target.value)}/></label>
  <label>銀行帳號<input required maxLength={34} autoComplete="off" value={form.bankAccount} onChange={e=>set('bankAccount',e.target.value)}/></label>
  <label>帳戶名<input required maxLength={120} value={form.accountHolder} onChange={e=>set('accountHolder',e.target.value)}/></label>
- <button className="primary" disabled={busy||!(accepted||!!contract.acceptedAt)}>{busy?'儲存／上傳中…':'儲存草稿與上傳文件'}</button>
+ <button className="primary" disabled={busy||!(accepted||!!contract.acceptedAt)}>{busy?'儲存／上傳中…':'儲存資料與文件'}</button>
  {saved&&<p role="status">已保存第 {saved.version} 版自然人草稿；身分證明號碼 {saved.identityDocumentNumberMasked??'未提供'}{saved.spouseIdentityDocumentNumberMasked?'，配偶身分證明號碼 '+saved.spouseIdentityDocumentNumberMasked:''}，帳號 {saved.bankAccountMasked}。</p>}
- {saved&&<button type="button" disabled={busy||submitted} onClick={async()=>{setBusy(true);setError('');try{await submitFormalEnrollment(saved.id,key.current);setSubmitted(true);onSubmitted?.();}catch(e){setError(e instanceof Error?e.message:'送出失敗');}finally{setBusy(false);}}}>{submitted?'申請已送出，等待審核':'送出正式會員申請'}</button>}
+ {saved&&!draftOnly&&<button type="button" disabled={busy||submitted} onClick={async()=>{setBusy(true);setError('');try{await submitFormalEnrollment(saved.id,key.current);setSubmitted(true);onSubmitted?.();}catch(e){setError(e instanceof Error?e.message:'送出失敗');}finally{setBusy(false);}}}>{submitted?'申請已送出，等待審核':'送出正式會員申請'}</button>}
  {error&&<p role="alert">{error}</p>}</form>;
 }

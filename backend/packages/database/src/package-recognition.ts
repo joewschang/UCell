@@ -10,14 +10,17 @@ export const qualificationPackagePolicy = 'PO_20261019_QUALIFICATION_GPV_ONLY';
 const approved:Record<string,[string,number]>={STARTER:['14400',3],ELITE:['43200',9],LEADER:['72000',15]};
 
 /** Immutable purchase facts, never today's product/catalog prices. */
-export function qualificationPackageAllocation(purchase:{packageCode:string;packageClass:string;recognitionConfigRef:string;currency:string;priceAmount:Prisma.Decimal;selectableProductQuantity:number},lines:Array<{quantity:Prisma.Decimal;ruleProfileSnapshot:unknown}>,netAmount:Prisma.Decimal){
+export function qualificationPackageAllocation(purchase:{packageCode:string;packageClass:string;recognitionConfigRef:string;currency:string;priceAmount:Prisma.Decimal;selectableProductQuantity:number;qualificationFee?:Prisma.Decimal;discountAmount?:Prisma.Decimal},lines:Array<{quantity:Prisma.Decimal;ruleProfileSnapshot:unknown}>,netAmount:Prisma.Decimal){
  const basis=approved[purchase.packageCode];
- if(purchase.packageClass!=='QUALIFICATION'||purchase.recognitionConfigRef!==qualificationPackagePolicy||purchase.currency!=='TWD'||!basis||!purchase.priceAmount.eq(basis[0])||purchase.selectableProductQuantity!==basis[1]||!netAmount.eq(purchase.priceAmount))throw new Error('PACKAGE_RECOGNITION_POLICY_MISMATCH');
- if(!lines.length||lines.some(l=>!(l.ruleProfileSnapshot as any)?.packageSelection||!l.quantity.isInteger()||l.quantity.lte(0))||!lines.reduce((sum,l)=>sum.add(l.quantity),new Prisma.Decimal(0)).eq(basis[1]))throw new Error('PACKAGE_SELECTION_QUANTITY_MISMATCH');
- return {cashPerBox:netAmount.div(basis[1]),gpvPerBox:netAmount.div(basis[1]).mul('0.6')};
+ const modern=purchase.recognitionConfigRef==='PO_20261021_ENTRY_V2';
+ const discount=new Prisma.Decimal(purchase.discountAmount??0),fee=new Prisma.Decimal(purchase.qualificationFee??0);
+ const boxes=basis?basis[1]-(discount.eq(14400)?3:0):-1;
+ if(purchase.packageClass!=='QUALIFICATION'||![qualificationPackagePolicy,'PO_20261021_ENTRY_V2'].includes(purchase.recognitionConfigRef)||purchase.currency!=='TWD'||!basis||modern&&(!fee.eq(600)||!discount.eq(0)&&!discount.eq(14400))||!modern&&(!fee.eq(0)||!discount.eq(0))||!purchase.priceAmount.eq(new Prisma.Decimal(basis[0]).sub(discount))||purchase.selectableProductQuantity!==boxes||!netAmount.eq(purchase.priceAmount.add(fee)))throw new Error('PACKAGE_RECOGNITION_POLICY_MISMATCH');
+ if(lines.some(l=>!(l.ruleProfileSnapshot as any)?.packageSelection||!l.quantity.isInteger()||l.quantity.lte(0))||!lines.reduce((sum,l)=>sum.add(l.quantity),new Prisma.Decimal(0)).eq(boxes))throw new Error('PACKAGE_SELECTION_QUANTITY_MISMATCH');
+ return {cashPerBox:boxes?purchase.priceAmount.div(boxes):new Prisma.Decimal(0),gpvPerBox:boxes?purchase.priceAmount.div(boxes).mul('0.6'):new Prisma.Decimal(0)};
 }
 
-/** Payment grants Active; placement supplies the authoritative GPV time and graph. */
+/** Legacy purchases retain their Active policy; new entry purchases require independent Active eligibility. */
 export async function recognizeQualificationPackage(tx:Prisma.TransactionClient,orderId:string,correlationId:string){
  await tx.$queryRaw`SELECT order_id FROM commerce."order" WHERE order_id=${orderId}::uuid FOR UPDATE`;
  const order=await tx.order.findUniqueOrThrow({where:{orderId},include:{lines:true}});
@@ -29,7 +32,7 @@ export async function recognizeQualificationPackage(tx:Prisma.TransactionClient,
  if(setup.setupStatus==='REVERSED'||setup.setupStatus==='CANCELLED')return {status:'CANCELLED',created:0};
  const month=taipeiMonth(order.paidAt);
  const entitlement=await tx.qualificationActiveEntitlementEvidence.findUnique({where:{packagePurchaseSnapshotId:purchase.packagePurchaseSnapshotId}});
- if(!entitlement){
+ if(!entitlement&&purchase.recognitionConfigRef===qualificationPackagePolicy){
   const evidenceHash=createHash('sha256').update(JSON.stringify({orderId,paidAt:order.paidAt.toISOString(),end:month.end.toISOString(),policy:qualificationPackagePolicy})).digest('hex');
   await tx.qualificationActiveEntitlementEvidence.create({data:{qualificationId:order.qualificationId,packagePurchaseSnapshotId:purchase.packagePurchaseSnapshotId,entitlementType:'PAYMENT_MONTH_ACTIVE',periodStart:order.paidAt,periodEnd:month.end,policyVersion:qualificationPackagePolicy,evidenceHash,status:'GRANTED'}});
   await tx.activePeriod.create({data:{qualificationId:order.qualificationId,activeFrom:order.paidAt,activeTo:month.end,sourceType:'QUALIFICATION_PACKAGE',sourceId:purchase.packagePurchaseSnapshotId,ruleVersionCode:order.ruleVersionCode}});

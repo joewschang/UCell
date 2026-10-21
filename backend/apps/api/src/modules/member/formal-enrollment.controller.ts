@@ -12,10 +12,10 @@ export class FormalEnrollmentController{
  commerce(@Req() req:any,@Param('id',new ParseUUIDPipe()) id:string,@Headers('idempotency-key') key:string){return this.enrollment.payCommerce(req.user.personId,id,key,req.requestId);}
  @Get() @ApiOperation({operationId:'memberFormalEnrollment',summary:'正式會員升級狀態與申請費'}) status(@Req() req:any){return this.enrollment.status(req.user.personId);}
  @Post('fee-payment') @UseGuards(IdempotencyGuard) @ApiHeader({name:'Idempotency-Key',required:true})
- @ApiOperation({operationId:'memberStageFormalEnrollmentFee',summary:'Stage 模擬支付 600 元正式會員申請費',description:'Stage database/environment allowlist only. Server-fixed fee, one payment per member, no Qualification or approval.'})
+ @ApiOperation({operationId:'memberStageFormalEnrollmentFee',summary:'已停用：單獨繳費加入正式會員',description:'Always rejects with QUALIFICATION_PACKAGE_REQUIRED.'})
  fee(@Req() req:any,@Headers('idempotency-key') key:string){return this.enrollment.payFee(req.user.personId,key,req.requestId);}
  @Post('package-payments/:id') @UseGuards(IdempotencyGuard) @ApiHeader({name:'Idempotency-Key',required:true})
- @ApiOperation({operationId:'memberStageFormalEnrollmentPackagePayment',summary:'Stage 模擬支付本人資格套組',description:'Owned formal-eligibility package only. Uses canonical order payment writer; no extra 600 fee and no automatic formal approval.'})
+ @ApiOperation({operationId:'memberStageFormalEnrollmentPackagePayment',summary:'Stage 模擬支付本人資格套組',description:'Owned formal-eligibility package only. Uses canonical order payment writer; separate qualification fee included in order total; no automatic formal approval.'})
  package(@Req() req:any,@Param('id',new ParseUUIDPipe()) id:string,@Headers('idempotency-key') key:string){return this.enrollment.payPackage(req.user.personId,id,key,req.requestId);}
  @Post('applications/:id/submit') @UseGuards(IdempotencyGuard) @ApiHeader({name:'Idempotency-Key',required:true})
  @ApiOperation({operationId:'memberSubmitFormalEnrollment',summary:'送出已付款且附文件的正式會員申請',description:'Own encrypted application only. Payment and required files must exist. Submission grants neither malware clearance, formal approval nor Qualification.'})

@@ -1,0 +1,11 @@
+import React from 'react';
+import {act,create} from 'react-test-renderer';
+import {expect,it,vi} from 'vitest';
+import {CouponsPage} from './CouponsPage';
+import {command} from '../../lib/api';
+const f=vi.hoisted(()=>({role:'SUPER_ADMIN',mutation:null as any,row:{id:'ID',code:'UCELL888',name:'初期優惠',category:'QUALIFICATION',ruleCode:'ENTRY_MINUS_14400_3_V1',description:'RULE',packageCodes:['STARTER'],startsAt:'2026-10-21T00:00:00Z',endsAt:'2027-01-31T16:00:00Z',maxUses:0,perPersonLimit:0,enabled:true,revision:2,_count:{redemptions:3}}}));
+vi.mock('../auth/auth',()=>({useAuth:()=>({user:{role:f.role}})}));
+vi.mock('../../lib/api',()=>({get:vi.fn(),command:vi.fn(async()=>({}))}));
+vi.mock('@tanstack/react-query',()=>({useQueryClient:()=>({invalidateQueries:vi.fn()}),useQuery:()=>({data:{data:[f.row]}}),useMutation:(options:any)=>{f.mutation=options;return {mutate:()=>options.mutationFn(),isPending:false};}}));
+it('edits only permitted fields with Taiwan cutoff and revision protection',async()=>{let tree:any;act(()=>{tree=create(<CouponsPage/>)});act(()=>tree.root.findAllByType('button').find((b:any)=>b.children.includes('編輯')).props.onClick());await act(async()=>{await f.mutation.mutationFn()});expect(command).toHaveBeenLastCalledWith('/admin/coupons/ID',{code:'UCELL888',name:'初期優惠',packageCodes:['STARTER'],startsAt:'2026-10-21T00:00:00.000Z',endsAt:'2027-01-31T16:00:00.000Z',maxUses:0,perPersonLimit:0,enabled:true,revision:2});act(()=>tree.unmount());});
+it('gives compliance read access without mutation controls',()=>{f.role='COMPLIANCE_AUDIT';let tree:any;act(()=>{tree=create(<CouponsPage/>)});expect(tree.root.findAllByType('form')).toHaveLength(0);expect(JSON.stringify(tree.toJSON())).toContain('使用紀錄');act(()=>tree.unmount());});
