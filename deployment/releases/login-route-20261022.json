@@ -1,0 +1,46 @@
+{
+  "date": "2026-10-22",
+  "issue": "LINE login showed an unbound-account message after release",
+  "rootCause": "The web bundles were built with relative /api/v1 while their static Nginx hosts do not proxy /api/v1. LINE exchange POST reached the static member host and returned HTTP 405.",
+  "fix": "Build member and admin with https://api.ucell.life/api/v1; preserve LINE, Google and Entra client settings. Report infrastructure failures without claiming an account is unbound.",
+  "prevention": "deployment/build-production-web.ps1 sets and verifies the production API endpoint.",
+  "tests": {
+    "member": 316,
+    "liveCrossOriginPreflight": "PASS for member and admin origins",
+    "invalidDiagnosticLineToken": "API returns JSON LINE_TOKEN_INVALID / 401 with expected CORS origin",
+    "personalLineLogin": "Not impersonated or tested with user credentials"
+  },
+  "live": {
+    "checkedAt": "2026-10-21T16:20:26.878Z",
+    "result": [
+      {
+        "app": "member",
+        "asset": "/assets/index-CatYIDzt.js",
+        "status": 200,
+        "apiEndpoint": "https://api.ucell.life/api/v1",
+        "bundleVerified": true
+      },
+      {
+        "app": "admin",
+        "asset": "/assets/index-DPw2X12q.js",
+        "status": 200,
+        "apiEndpoint": "https://api.ucell.life/api/v1",
+        "bundleVerified": true
+      }
+    ]
+  },
+  "services": [
+    {
+      "image": "ucellprodacrm3z2zx4ohqyui.azurecr.io/ucell-admin@sha256:46524c73381909aa44f0b610ee95b56cd7b273d1c38de3491d86f622fe0c6fab",
+      "latest": "ucell-prod-admin--0000018",
+      "name": "ucell-prod-admin",
+      "ready": "ucell-prod-admin--0000018"
+    },
+    {
+      "image": "ucellprodacrm3z2zx4ohqyui.azurecr.io/ucell-member@sha256:6e580ee23739afa120e454907d51592ab430bde4ad32868aabe8ebcf38566fbb",
+      "latest": "ucell-prod-member--0000027",
+      "name": "ucell-prod-member",
+      "ready": "ucell-prod-member--0000027"
+    }
+  ]
+}

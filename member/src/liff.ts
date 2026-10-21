@@ -26,8 +26,9 @@ export function lineExchangeFailureMessage(status:number,code:unknown){
  if(status===401&&code==='MEMBER_SECURITY_LOCKED')return '此會員帳號目前已安全鎖定，請聯絡客服協助重新綁定。';
  if(status===401&&code==='MEMBER_PERSON_DISABLED')return '此會員帳號目前無法登入，請聯絡客服。';
  if(status===503)return uiText("LINE 登入服務尚未設定或暫時無法使用，請稍後再試。");
+ if(status>=500||status===404||status===405)return '會員登入服務連線異常，請稍後重新連線；若持續發生，請聯絡客服。';
  if(status===409)return code==='RETRYABLE_CONFLICT'?'登入遇到操作衝突，請重試':uiText("登入憑證已使用，請重新 LINE 登入");
- return '會員登入驗證失敗，請確認帳號已綁定。';
+ return '會員登入驗證未通過，請重新登入或聯絡客服協助。';
 }
 function intendedDestination(){
  const value=window.location.pathname+window.location.search+window.location.hash;
@@ -145,7 +146,7 @@ export async function initLiff() {
   const code=(response.body as {code?:string}|undefined)?.code;
   if((response.status===401&&['LINE_TOKEN_INVALID','LINE_TOKEN_EXPIRED'].includes(code??''))||(response.status===409&&code==='LINE_TOKEN_REPLAYED'))throw new LineReauthenticationRequired(uiText("LINE 登入憑證已失效，請重新登入 LINE"));
   if(response.status===401&&code==='LINE_ACCOUNT_UNBOUND')throw new LineBindingRequired(lineExchangeFailureMessage(response.status,code));
-  throw new Error(response.status===409?(code==='RETRYABLE_CONFLICT'?'登入遇到操作衝突，請重試':uiText("登入憑證已使用，請重新 LINE 登入")):'會員登入驗證失敗，請確認帳號已綁定');
+  throw new Error(lineExchangeFailureMessage(response.status,code));
  }
  const data=unwrapMemberEnvelope(response.body) as {accessToken?:unknown;expiresAt?:unknown};
  if(typeof data.accessToken!=='string'||!data.accessToken||typeof data.expiresAt!=='string'||Date.parse(data.expiresAt)<=Date.now()||!Number.isFinite(Date.parse(data.expiresAt)))throw new Error('會員登入回應格式異常');

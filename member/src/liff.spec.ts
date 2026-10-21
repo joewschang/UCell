@@ -13,4 +13,8 @@ describe('LINE login states',()=>{
   expect(sponsorCandidateFromSearch('?ref=MEMBER-0001')).toBeUndefined();
   expect(sponsorCandidateFromSearch('?ref=550e8400-e29b-41d4-a716-446655440000')).toBeUndefined();
  });
+ it.each([404,405,500,502])('does not mislabel infrastructure errors as unbound accounts (%s)',status=>{
+  expect(lineExchangeFailureMessage(status,undefined)).toContain('服務連線異常');
+  expect(lineExchangeFailureMessage(status,undefined)).not.toContain('綁定');
+ });
 });

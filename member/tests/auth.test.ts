@@ -55,7 +55,7 @@ it('fails closed when the backend rejects an ID token',async()=>{
  vi.stubEnv('VITE_ENABLE_MOCK','false');vi.stubEnv('VITE_LIFF_ID','TEST_ONLY');
  liff.isLoggedIn.mockReturnValue(true);liff.getIDToken.mockReturnValue('INVALID_TEST_ONLY');
  vi.stubGlobal('fetch',vi.fn(async()=>new Response('',{status:401})));
- await expect(initLiff()).rejects.toThrow('驗證失敗');expect(storage.setItem).not.toHaveBeenCalled();
+ await expect(initLiff()).rejects.toThrow('驗證未通過');expect(storage.setItem).not.toHaveBeenCalled();
 });
 it('keeps redirect separate from an authenticated result', async () => {
     vi.stubGlobal('sessionStorage', { removeItem: vi.fn(),getItem:vi.fn(()=>null) });
@@ -167,4 +167,18 @@ it('leaves SDK callback/referral URL untouched when SDK authorization fails',asy
  vi.stubGlobal('sessionStorage',{getItem:()=>null,removeItem:vi.fn()});vi.stubEnv('VITE_ENABLE_MOCK','false');vi.stubEnv('VITE_LIFF_ID','TEST_ONLY');
  const replaceState=vi.fn(),fetcher=vi.fn();vi.stubGlobal('fetch',fetcher);vi.stubGlobal('window',{location:{pathname:'/r/share',search:'?code=untrusted&state=wrong&liffClientId=2011813061&liffRedirectUri=https%3A%2F%2Fstage.example.test%2F',hash:''},history:{replaceState}});
  liff.init.mockRejectedValueOnce(new Error('SDK authorization rejected'));await expect(initLiff()).rejects.toThrow('SDK authorization rejected');expect(fetcher).not.toHaveBeenCalled();expect(replaceState).not.toHaveBeenCalled();
+});
+
+it('reports a misrouted HTML exchange response without claiming an unbound account',async()=>{
+ vi.stubGlobal('sessionStorage',{removeItem:vi.fn(),getItem:vi.fn()});vi.stubEnv('VITE_ENABLE_MOCK','false');vi.stubEnv('VITE_LIFF_ID','TEST_ONLY');
+ liff.isLoggedIn.mockReturnValue(true);liff.getIDToken.mockReturnValue('TEST_ONLY');
+ vi.stubGlobal('fetch',vi.fn().mockResolvedValue(new Response('<html>405 Not Allowed</html>',{status:405})));
+ await expect(initLiff()).rejects.toThrow('會員登入服務連線異常');
+});
+
+it('sends production LINE exchange to the configured API host, not the static member host',async()=>{
+ vi.stubGlobal('sessionStorage',{removeItem:vi.fn(),getItem:vi.fn()});vi.stubEnv('VITE_ENABLE_MOCK','false');vi.stubEnv('VITE_LIFF_ID','TEST_ONLY');vi.stubEnv('VITE_API_BASE_URL','https://api.ucell.life/api/v1');
+ liff.isLoggedIn.mockReturnValue(true);liff.getIDToken.mockReturnValue('TEST_ONLY');const fetcher=vi.fn().mockResolvedValue(new Response(JSON.stringify({code:'LINE_TOKEN_INVALID'}),{status:401}));vi.stubGlobal('fetch',fetcher);
+ await expect(initLiff()).rejects.toBeInstanceOf(LineReauthenticationRequired);
+ expect(fetcher.mock.calls[0][0]).toBe('https://api.ucell.life/api/v1/auth/member/line/exchange');
 });
