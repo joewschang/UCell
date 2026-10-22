@@ -51,7 +51,8 @@ export class MemberCreateOrderDto {
  @ApiPropertyOptional({pattern:'^[A-Z][A-Z0-9_]{1,39}$',description:'Optional line purpose. This describes purchase context and never changes Offering category.'}) @IsOptional() @Matches(/^[A-Z][A-Z0-9_]{1,39}$/) linePurpose?:string;
 }
 export class FormalKycUploadDto {
- @ApiProperty({enum:['IDENTITY_FRONT','IDENTITY_BACK','BANKBOOK_COVER']}) @IsIn(['IDENTITY_FRONT','IDENTITY_BACK','BANKBOOK_COVER']) documentType!:'IDENTITY_FRONT'|'IDENTITY_BACK'|'BANKBOOK_COVER';
+ @ApiProperty({enum:['IDENTITY_FRONT','IDENTITY_BACK','BANKBOOK_COVER','SIGNED_APPLICATION_AGREEMENT']}) @IsIn(['IDENTITY_FRONT','IDENTITY_BACK','BANKBOOK_COVER','SIGNED_APPLICATION_AGREEMENT']) documentType!:'IDENTITY_FRONT'|'IDENTITY_BACK'|'BANKBOOK_COVER'|'SIGNED_APPLICATION_AGREEMENT';
+ @IsOptional() @Matches(/^[a-f0-9]{64}$/) expectedSnapshotHash?:string;
  @ApiProperty({enum:['image/jpeg','image/png']}) @IsIn(['image/jpeg','image/png']) mimeType!:'image/jpeg'|'image/png';
  @ApiProperty({description:'Base64-encoded image bytes. Temporary server-mediated upload path; private Blob storage remains authoritative.'}) @IsString() @MinLength(8) contentBase64!:string;
 }
@@ -135,7 +136,7 @@ export class MemberController {
  @Get('formal-applications/:id/documents') @ApiOperation({operationId:'memberFormalApplicationDocuments',description:'List only the authenticated Person formal-application KYC document metadata; no private object URLs are returned.'})
  formalDocuments(@Req() req:any,@Param('id',new ParseUUIDPipe()) id:string){return this.formalKyc.listOwn(req.user.personId,id);}
  @Post('formal-applications/:id/documents') @ApiOperation({operationId:'memberUploadFormalApplicationDocument',description:'Upload required natural-person formal KYC image into private storage. Application must remain editable; malware scan starts PENDING.'})
- uploadFormalDocument(@Req() req:any,@Param('id',new ParseUUIDPipe()) id:string,@Body() body:FormalKycUploadDto){return this.formalKyc.upload(req.user.personId,id,body.documentType,body.mimeType,body.contentBase64,req.requestId);}
+ uploadFormalDocument(@Req() req:any,@Param('id',new ParseUUIDPipe()) id:string,@Body() body:FormalKycUploadDto){return this.formalKyc.upload(req.user.personId,id,body.documentType,body.mimeType,body.contentBase64,req.requestId,body.expectedSnapshotHash);}
  @Get('formal-applications/current') @ApiOperation({operationId:'memberCurrentFormalApplication',description:'Own current Formal Member application with masked national ID and bank account.'}) currentFormalApplication(@Req() req:any){return this.formalApplications.current(req.user.personId);}
  @Post('formal-applications') @UseGuards(IdempotencyGuard) @ApiHeader({name:'Idempotency-Key',required:true}) @ApiOperation({operationId:'memberSaveFormalApplicationDraft',description:'Encrypt and append a Formal Member application draft snapshot. Does not submit, approve, create Qualification, or change membership state.'}) saveFormalApplication(@Req() req:any,@Body() body:FormalMemberDraftDto,@Headers('idempotency-key') key:string){return this.formalApplications.save(req.user.personId,body,key,req.requestId);}
  @Get('notifications') @ApiResponse({status:200,schema:views.memberEnvelope(views.NoticesView)}) @ApiOperation({operationId:'memberNotifications',description:'Person-addressed notices plus selected owned Qualification notices, newest first, bounded 100. No LINE push or server read-state mutation.'}) notifications(@Req() req:any,@Query() q:MemberContextDto){return this.service.notifications(req.user.personId,q.qualificationId);}

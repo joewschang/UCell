@@ -66,3 +66,13 @@ describe('Private KYC content validation and document availability boundaries',(
     expect(h.audit.write).toHaveBeenCalledWith(h.tx,expect.objectContaining({action:'FORMAL_KYC_DOCUMENT_VIEWED',actorId:'admin'}));
   });
 });
+it('stores signature tied to current snapshot and rejects stale signature versions',async()=>{
+ const png=readFileSync(join(__dirname,'fixtures/kyc-valid-1x1.png')),app={personId:'member',sourceChannel:'MEMBER_WEB',applicantType:'INDIVIDUAL',status:'DRAFT',currentSnapshotHash:'a'.repeat(64)};
+ const tx:any={formalMemberApplication:{findFirst:async()=>app},formalApplicationDocument:{updateMany:jest.fn(),create:jest.fn(async({data})=>({formalApplicationDocumentId:'sig',...data}))}};
+ const db:any={formalMemberApplication:{findFirst:async()=>app},$transaction:async(fn:any)=>fn(tx)},audit={write:jest.fn()},storage={put:jest.fn()};
+ const service=new FormalKycDocumentService(db,storage as any,audit as any);
+ await expect(service.upload('member','app','SIGNED_APPLICATION_AGREEMENT','image/png',png.toString('base64'),'req','b'.repeat(64))).rejects.toMatchObject({response:{code:'FORMAL_SIGNATURE_VERSION_CHANGED'}});
+ expect(tx.formalApplicationDocument.create).not.toHaveBeenCalled();
+ await service.upload('member','app','SIGNED_APPLICATION_AGREEMENT','image/png',png.toString('base64'),'req','a'.repeat(64));
+ expect(audit.write).toHaveBeenCalledWith(tx,expect.objectContaining({afterData:expect.objectContaining({documentType:'SIGNED_APPLICATION_AGREEMENT',applicationSnapshotHash:'a'.repeat(64)})}));
+});

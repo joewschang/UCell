@@ -8,6 +8,7 @@ const fixture=vi.hoisted(()=>({state:{membershipState:'NETWORK_MEMBER',feeAmount
 vi.mock('../src/useResource',()=>({useResource:()=>({data:fixture.state,retry:fixture.retry})}));
 vi.mock('../src/memberData',()=>({getFormalEnrollment:vi.fn(),submitFormalEnrollment:vi.fn(async()=>({}))}));
 vi.mock('../src/FormalUpgrade',()=>({default:({onSaved}:any)=> <button onClick={()=>onSaved('APP')}>儲存測試資料</button>}));
+vi.mock('../src/MembershipSignature',()=>({default:({onReady}:any)=>{React.useEffect(()=>onReady(true),[onReady]);return <p>會員簽名已保存</p>;}}));
 vi.mock('../src/QualificationPackageShop',()=>({default:()=> <p>資格套組選擇</p>}));
 let tree:ReactTestRenderer;
 afterEach(()=>{act(()=>tree?.unmount());vi.clearAllMocks();fixture.state.application=null;fixture.state.paidPackages=[];fixture.state.pendingPackages=[];});

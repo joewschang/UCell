@@ -3,9 +3,10 @@ import {Prisma,PrismaService} from '@ucell/database';
 import {createHash,randomUUID} from 'node:crypto';
 import {AuditService} from '../../common/audit/audit.service';
 import {FormalKycStorageService} from './formal-kyc-storage.service';
+import {PiiCryptoService} from '../../common/security/pii-crypto.service';
 import {validKycImage} from './kyc-image-validation';
 
-const REQUIRED_WEB=['IDENTITY_FRONT','IDENTITY_BACK','BANKBOOK_COVER'] as const;
+const REQUIRED_WEB=['IDENTITY_FRONT','IDENTITY_BACK','BANKBOOK_COVER','SIGNED_APPLICATION_AGREEMENT'] as const;
 const ALLOWED_MIME=new Set(['image/jpeg','image/png']);
 const MAX_BYTES=10*1024*1024;
 
@@ -17,10 +18,13 @@ export class FormalKycDocumentService{
     const app=await this.db.formalMemberApplication.findFirst({where:{formalMemberApplicationId:applicationId,personId}});
     if(!app)throw new NotFoundException({code:'FORMAL_APPLICATION_NOT_FOUND'});
     const rows=await this.db.formalApplicationDocument.findMany({where:{formalMemberApplicationId:applicationId,status:{not:'SUPERSEDED'}},orderBy:{createdAt:'desc'}});
-    return {applicationId,required:app.sourceChannel==='MEMBER_WEB'&&app.applicantType==='INDIVIDUAL'?[...REQUIRED_WEB]:[],documents:rows.map(r=>({id:r.formalApplicationDocumentId,type:r.documentType,status:r.status,scanStatus:r.malwareScanStatus,scanRequired:false,mimeType:r.mimeType,sizeBytes:r.sizeBytes,uploadedAt:r.uploadedAt?.toISOString()??null}))};
+    const snapshot=await this.db.formalMemberApplicationSnapshot.findFirst({where:{formalMemberApplicationId:applicationId},orderBy:{version:'desc'}});
+    const payload=snapshot?new PiiCryptoService().decrypt<any>(snapshot.payloadCiphertext,snapshot.keyVersion):null;
+    const contract=payload?.formalContractVersionId?await this.db.contractDocumentVersion.findUnique({where:{contractDocumentVersionId:payload.formalContractVersionId}}):null;
+    return {applicationId,signingContext:contract?{name:payload.legalName,snapshotHash:app.currentSnapshotHash,version:snapshot!.version,contract:{title:contract.title,version:contract.versionCode,contentHash:contract.contentHash}}:null,required:app.sourceChannel==='MEMBER_WEB'&&app.applicantType==='INDIVIDUAL'?[...REQUIRED_WEB]:[],documents:rows.map(r=>({id:r.formalApplicationDocumentId,type:r.documentType,status:r.status,scanStatus:r.malwareScanStatus,scanRequired:false,mimeType:r.mimeType,sizeBytes:r.sizeBytes,uploadedAt:r.uploadedAt?.toISOString()??null}))};
   }
 
-  async upload(personId:string,applicationId:string,type:string,mimeType:string,contentBase64:string,requestId:string){
+  async upload(personId:string,applicationId:string,type:string,mimeType:string,contentBase64:string,requestId:string,expectedSnapshotHash?:string){
     if(!REQUIRED_WEB.includes(type as any))throw new UnprocessableEntityException({code:'FORMAL_KYC_DOCUMENT_TYPE_NOT_ALLOWED'});
     if(!ALLOWED_MIME.has(mimeType))throw new BadRequestException({code:'FORMAL_KYC_DOCUMENT_MIME_NOT_ALLOWED'});
     if(typeof contentBase64!=='string'||contentBase64.length>4*Math.ceil(MAX_BYTES/3))throw new BadRequestException({code:'FORMAL_KYC_DOCUMENT_SIZE_INVALID'});
@@ -42,9 +46,10 @@ export class FormalKycDocumentService{
     try{row=await this.db.$transaction(async tx=>{
       const current=await tx.formalMemberApplication.findFirst({where:{formalMemberApplicationId:applicationId,personId}});
       if(!current||!['DRAFT','NEEDS_MORE_INFO'].includes(current.status))throw new ForbiddenException({code:'FORMAL_APPLICATION_LOCKED'});
+      if(type==='SIGNED_APPLICATION_AGREEMENT'&&(!expectedSnapshotHash||expectedSnapshotHash!==current.currentSnapshotHash))throw new ConflictException({code:'FORMAL_SIGNATURE_VERSION_CHANGED'});
       await tx.formalApplicationDocument.updateMany({where:{formalMemberApplicationId:applicationId,documentType:type as any,status:'PRESENT'},data:{status:'SUPERSEDED'}});
       const created=await tx.formalApplicationDocument.create({data:{formalMemberApplicationId:applicationId,documentType:type as any,status:'PRESENT',storageObjectKey:objectKey,contentSha256:sha,mimeType,sizeBytes:bytes.length,malwareScanStatus:'PENDING',uploadedByPersonId:personId,uploadedAt:now}});
-      await this.audit.write(tx,{actorType:'MEMBER',actorId:personId,action:'FORMAL_KYC_DOCUMENT_UPLOADED',entityType:'FormalApplicationDocument',entityId:created.formalApplicationDocumentId,afterData:{applicationId,documentType:type,mimeType,sizeBytes:bytes.length,contentSha256:sha},requestId,correlationId:randomUUID()});
+      await this.audit.write(tx,{actorType:'MEMBER',actorId:personId,action:'FORMAL_KYC_DOCUMENT_UPLOADED',entityType:'FormalApplicationDocument',entityId:created.formalApplicationDocumentId,afterData:{applicationId,documentType:type,mimeType,sizeBytes:bytes.length,contentSha256:sha,applicationSnapshotHash:current.currentSnapshotHash},requestId,correlationId:randomUUID()});
       return created;
     },{isolationLevel:Prisma.TransactionIsolationLevel.Serializable});}catch(error){
       if((error as any).code==='P2034')throw new ConflictException({code:'RETRYABLE_CONFLICT'});

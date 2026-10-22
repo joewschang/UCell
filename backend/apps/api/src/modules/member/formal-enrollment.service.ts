@@ -47,7 +47,7 @@ export class FormalEnrollmentService{
   if(person.status!=='EFFECTIVE'||person.securityStatus!=='NORMAL'||!['NETWORK_MEMBER','FORMAL_PENDING','FORMAL_MEMBER'].includes(person.membershipState??''))throw new ConflictException({code:'NETWORK_MEMBERSHIP_REQUIRED'});
   if(person.membershipState==='NETWORK_MEMBER'){
    await tx.person.update({where:{personId},data:{membershipState:'FORMAL_PENDING'}});
-   await tx.personMembershipStateEvent.create({data:{personId,fromState:'NETWORK_MEMBER',toState:'FORMAL_PENDING',reasonCode:'FORMAL_ENROLLMENT_PAID',sourceType:'ORDER',sourceId,correlationId:randomUUID()}});
+   await tx.personMembershipStateEvent.create({data:{personId,fromState:'NETWORK_MEMBER',toState:'FORMAL_PENDING',reasonCode:'FORMAL_ENROLLMENT_PENDING',sourceType:'ORDER',sourceId,correlationId:randomUUID()}});
   }
  }
  async payFee(personId:string,key:string,requestId:string){
@@ -90,11 +90,11 @@ export class FormalEnrollmentService{
    if(!purchase){
     if(!input.orderId||!['BANK_TRANSFER','CASH'].includes(input.paymentMethod??''))throw new ConflictException({code:'FORMAL_ENROLLMENT_PAYMENT_METHOD_REQUIRED'});
     const pending=await tx.packagePurchaseSnapshot.findUnique({where:{orderId:input.orderId}});
-    const order=await tx.order.findFirst({where:{orderId:input.orderId,purchaserPersonId:personId,status:'CONFIRMED'}});
+    const order=await tx.order.findFirst({where:{orderId:input.orderId,status:'CONFIRMED',OR:[{purchaserPersonId:personId},{purchaserPersonId:null}]}});
     if(!pending||!order||pending.personId!==personId||pending.packageClass!=='QUALIFICATION'||pending.membershipEffect!=='FORMAL_ELIGIBILITY'||!pending.paymentDeadline||pending.paymentDeadline<=new Date())throw new ConflictException({code:'FORMAL_ENROLLMENT_ORDER_NOT_AVAILABLE'});
     purchase={orderId:order.orderId,packageName:pending.packageName};
    }
-   const docs=await tx.formalApplicationDocument.findMany({where:{formalMemberApplicationId:applicationId,status:'PRESENT',documentType:{in:['IDENTITY_FRONT','IDENTITY_BACK','BANKBOOK_COVER']}}});
+   const docs=await tx.formalApplicationDocument.findMany({where:{formalMemberApplicationId:applicationId,status:'PRESENT',documentType:{in:['IDENTITY_FRONT','IDENTITY_BACK','BANKBOOK_COVER','SIGNED_APPLICATION_AGREEMENT']}}});
    if(['IDENTITY_FRONT','IDENTITY_BACK','BANKBOOK_COVER'].some(type=>!docs.some(d=>d.documentType===type)))throw new ConflictException({code:'FORMAL_ENROLLMENT_DOCUMENTS_REQUIRED'});
    await this.pending(tx,personId,purchase!.orderId);
    await tx.formalMemberApplication.update({where:{formalMemberApplicationId:applicationId},data:{status:'SUBMITTED',submittedAt:new Date()}});

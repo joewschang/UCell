@@ -28,7 +28,7 @@ export function createApiClient(guard: SessionGuard) {
             if (!res.ok) {
                 if (res.status === 401) guard.expire();
                 let code:string|undefined;try{const body=await res.json();if(typeof body?.code==='string')code=body.code;}catch{/* Status still fails closed for a non-JSON error. */}
-                const enrollmentMessages:Record<string,string>={FORMAL_ENROLLMENT_PAYMENT_REQUIRED:'請先完成600元申請費或會員資格套組付款',FORMAL_ENROLLMENT_DOCUMENTS_REQUIRED:'請補齊身分證正反面及存摺封面，感染的檔案需重新上傳',FORMAL_FEE_ALREADY_COVERED_BY_PACKAGE:'已付款的會員資格套組包含申請資格，不需再繳600元',STAGE_PAYMENT_NOT_AVAILABLE:'目前環境尚未開放此付款方式',FORMAL_ENROLLMENT_NOT_AVAILABLE:'目前會員狀態無法申請，請重新確認會員資料'};
+                const enrollmentMessages:Record<string,string>={FORMAL_ENROLLMENT_PAYMENT_REQUIRED:'請先完成資格套組付款',FORMAL_SIGNATURE_VERSION_CHANGED:'申請資料已有更新，請重新載入並再次簽名',FORMAL_ENROLLMENT_ORDER_NOT_AVAILABLE:'這筆訂單已到期、取消或無法用於申請，請重新查詢訂單',FORMAL_ENROLLMENT_PAYMENT_METHOD_REQUIRED:'請先選擇匯款或現金付款方式',FORMAL_ENROLLMENT_DOCUMENTS_REQUIRED:'請補齊身分證正反面、存摺封面及會員簽名',FORMAL_FEE_ALREADY_COVERED_BY_PACKAGE:'已付款的會員資格套組包含申請資格，不需再繳600元',STAGE_PAYMENT_NOT_AVAILABLE:'目前環境尚未開放此付款方式',FORMAL_ENROLLMENT_NOT_AVAILABLE:'目前會員狀態無法申請，請重新確認會員資料'};
                 throw new MemberApiError((code&&enrollmentMessages[code]) || (res.status === 401 ? expiredMessage :
                     res.status === 403 ? '您無權查看此資格資料' :
                     res.status === 404 ? '找不到指定資料，資料可能已移除或您無權查看' :

@@ -1,0 +1,43 @@
+{
+  "release": "member-signature-20261022",
+  "rootCause": "Valid qualification ENTRY order had null purchaserPersonId while package purchase snapshot correctly identified the member. Prior submission check incorrectly required both ownership fields.",
+  "fix": "Verify package snapshot owner, qualification class, membership effect and expiry; accept matching/null order purchaser on the same confirmed order; reject another purchaser. No payment writes.",
+  "signature": {
+    "type": "SIGNED_APPLICATION_AGREEMENT",
+    "storage": "Existing private KYC blob store and document metadata",
+    "binding": "Expected current snapshot hash checked in upload transaction; audit includes snapshot hash and server timestamp",
+    "image": "Handwriting with applicant name, application/version, contract version/hash and Taipei time",
+    "review": "Existing role restricted and audited document view"
+  },
+  "images": {
+    "api": "sha256:03794bdbd86edb679fae7b6d28e5a031cbfc788fcd7de31ac5c701bf1ee0465b",
+    "member": "sha256:31a66d6f2b53de204af783329a72df1ed9c14cc8ad1aa64744fc4eeec1839d1e",
+    "admin": "sha256:a34b956f66f817b776bd9805cb236a25520220ec9a86643fbb990e2fb8ff2aed"
+  },
+  "validation": {
+    "backendTests": 24,
+    "memberTests": 322,
+    "adminTests": 250,
+    "builds": true,
+    "browser": "390px mobile: blank/consent gating, draw, save, version hash payload and no overflow; generated PNG passes server image validator",
+    "health": "All three revisions Healthy, traffic 100%",
+    "targetReadOnly": {
+      "signingContextReady": true,
+      "validOwnedPendingOrder": true,
+      "signaturePresent": false
+    },
+    "live": {
+      "member": {
+        "asset": "/assets/index-CFbJJDhc.js",
+        "match": true,
+        "sha256": "d9c895c5a92118f2e3f6f32c49afa6c642f958a70ed11b7b945353377778ba90"
+      },
+      "admin": {
+        "asset": "/assets/index-lCN64pFq.js",
+        "match": true,
+        "sha256": "b53ac64a667ad8882f774e0ae454a7fb37836ad15a36794046463470327f698f"
+      }
+    }
+  },
+  "noRealMemberMutation": true
+}
