@@ -23,6 +23,14 @@ Only the checksum-verified additive migration `20261022010000_ai_stage_assistant
 
 Artifacts, image hashes and further rollout verification are recorded under `C:/UCell/ai-production-20261022` and the release manifest. Human Microsoft/LINE/Google sign-in is not impersonated by release tests.
 
+## Completed rollout
+
+Source commit `f636f6ed` was fast-forward integrated into remote `main`, including the 26 existing branch commits. All three production components are on `ai-production-20261022-v1`, Healthy with 100% traffic. API health is 200; unauthenticated admin/member AI requests are 401. Production frontend desktop/mobile checks passed against the exact API image with isolated local identities/data; all production API-origin browser requests in that test were intercepted to the local runtime. Separate direct production read-only SQL/model checks passed. Live production Microsoft login initiation uses one tab, the registered production callback, PKCE/state/nonce. Actual human credential/MFA completion remains user verification.
+
+The existing Joe Chang Entra SUPER_ADMIN grant was valid, but its person record was DRAFT, which the AI security policy rejects. The explicitly requested administrator's existing person status was corrected to EFFECTIVE in a guarded transaction and recorded as `EXISTING_ADMIN_ACTIVATED` in AI audit. Membership state remains null, no membership/qualification was created, and no role was changed. The existing UCell Service identity was already EFFECTIVE. `ai-production-activate-existing-admin.cjs` records the scoped correction.
+
+The nine FAQ drafts remain IN_REVIEW. Production model capacity and the initial reservation ceiling are recorded in `releases/ai-production-20261022.json`. Website and worker image digests were confirmed unchanged.
+
 ## Deployment and rollback
 
 Use `prepare-ai-production.cjs` after production builds. Build/push the three component contexts; `deploy-ai-production.ps1` guards each current image against the recorded baseline and deploys a digest. Apply `ai-production-migrate.cjs` through the secret-safe runner before the API rollout. Deploy API first, verify healthy readiness, then admin and member. Inspect the three ready revisions, public endpoints and authentication denials after deployment.

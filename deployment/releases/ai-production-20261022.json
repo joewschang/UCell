@@ -1,0 +1,344 @@
+{
+  "baseline": {
+    "api": "ucellprodacrm3z2zx4ohqyui.azurecr.io/ucell-api@sha256:6b84a6a5c72c3b9e335cbc67415405072a881d3cf764f4ff842416d5ee913bf8",
+    "admin": "ucellprodacrm3z2zx4ohqyui.azurecr.io/ucell-admin@sha256:46ea4e82e4b8f758448c4b481d359fcde5f43fcb5026f4f5db8b951e5be995ae",
+    "member": "ucellprodacrm3z2zx4ohqyui.azurecr.io/ucell-member@sha256:6e580ee23739afa120e454907d51592ab430bde4ad32868aabe8ebcf38566fbb"
+  },
+  "files": [
+    {
+      "path": "api/Dockerfile",
+      "sha256": "c2f4c9f472e605fdc59168eeaba236427be3afc1422993da20007383c471d2f6"
+    },
+    {
+      "path": "api/overlay/app.module.js",
+      "sha256": "8d9a88c524bd7e76e38c43bdecbc6ad971b9eb33d7b19915b70ffa52471e1c5c"
+    },
+    {
+      "path": "api/overlay/modules/ai/ai-cache.interceptor.js",
+      "sha256": "7a99d646e6ebddee1ca4f18ebe97979b446ecd7a9e7993bedd15f232dbc606fe"
+    },
+    {
+      "path": "api/overlay/modules/ai/ai-cache.interceptor.js.map",
+      "sha256": "618a9f53ea27ec065bab8ef33491244e3a0aab0c28414eff0c470dc4bf8d39a1"
+    },
+    {
+      "path": "api/overlay/modules/ai/ai-contract.js",
+      "sha256": "49aaecc5cddc663c1996f3803ebf2c08a0ce641b61d0074cbb5055325a325102"
+    },
+    {
+      "path": "api/overlay/modules/ai/ai-contract.js.map",
+      "sha256": "7172532fde1d7468a30d061b78a5a4785ed8e49a118c5231d551547399e71bd1"
+    },
+    {
+      "path": "api/overlay/modules/ai/ai-data.js",
+      "sha256": "ef0c5e8431034e2dad0dd228747684dc37c7757265caa1f22e5656a2c006e860"
+    },
+    {
+      "path": "api/overlay/modules/ai/ai-data.js.map",
+      "sha256": "770460c858b036dfc103dd60c96eb68a918e9c2b101cbefb0b0ae2b05561e9cd"
+    },
+    {
+      "path": "api/overlay/modules/ai/ai-provider.js",
+      "sha256": "dd724f42b0b4badeb677f6fc99736dfac3029b417da7b4781f42d07b403ff972"
+    },
+    {
+      "path": "api/overlay/modules/ai/ai-provider.js.map",
+      "sha256": "226bb9920b593fdb4a8f89f4d21b531449d2b00481ab7e832228986b63972fbd"
+    },
+    {
+      "path": "api/overlay/modules/ai/ai.controller.js",
+      "sha256": "e97773659dd4288f7851c7afc29480fbd9eda50aeef45c392998410592e9531d"
+    },
+    {
+      "path": "api/overlay/modules/ai/ai.controller.js.map",
+      "sha256": "6f845884d9b7f49e7788607a224ce15a465789b4f11df6bd64c72bbd103adf53"
+    },
+    {
+      "path": "api/overlay/modules/ai/ai.module.js",
+      "sha256": "c315e8a04c4198db77b7681292ebf6aa3e566ebdb5211dbac9e78864c74e166d"
+    },
+    {
+      "path": "api/overlay/modules/ai/ai.module.js.map",
+      "sha256": "08791190f2e96087b1d3dccc22e50c158879c238ce1ee5e7446113cf6f5dc9a5"
+    },
+    {
+      "path": "api/overlay/modules/ai/ai.service.js",
+      "sha256": "1664f4087f2462cfefe339e780e781b6d004d6671ce44313b09cde1176f6bdec"
+    },
+    {
+      "path": "api/overlay/modules/ai/ai.service.js.map",
+      "sha256": "ae43573e378a35e6221490dde7f67156a01fd5c00dba150df0bd57dc4eb6ba87"
+    },
+    {
+      "path": "api/overlay/modules/auth/admin-authentication.guard.js",
+      "sha256": "3d4f4a7a162ea26b07f981d6f953b450799e6ce2caf9e952d248155f3cd983d2"
+    },
+    {
+      "path": "admin/dist/.htaccess",
+      "sha256": "4edb95772a4ac8bffc9f45ad17cd60df833a9c01b59cd482063fc264145a288f"
+    },
+    {
+      "path": "admin/dist/assets/index-DW7Kwj7V.js",
+      "sha256": "f40e59d5f9241b241c526f626132d3207ffca8df016a43abae3aff80bd939ed8"
+    },
+    {
+      "path": "admin/dist/assets/index-re1CKR_T.css",
+      "sha256": "8a1c72004af86453c40eaf64c1d789c0bc4f5e4a03cd19ac231d7e2d4e82afb0"
+    },
+    {
+      "path": "admin/dist/index.html",
+      "sha256": "409a9c23535b6c86c3dc705e77fbaac158c701b43d560ca2cc9e5bfee5b57a54"
+    },
+    {
+      "path": "admin/dist/ucell-logo-transparent.png",
+      "sha256": "e3d6bb9456117bafb3860cd99a5dfab29bb30b0c1a0dca4b7433a5550a1de75c"
+    },
+    {
+      "path": "admin/dist/ucell-logo.jpg",
+      "sha256": "6fddd8537625cc8c611fce5bfebffbeaa33ce3e4c55dbac235dcdd698c6432b5"
+    },
+    {
+      "path": "admin/Dockerfile",
+      "sha256": "4caf46dd0eac771b85ad779fc4d22be64426165c4355a2c475fdc13fd84f8c5b"
+    },
+    {
+      "path": "member/dist/assets/browser-BXdiCFWD.js",
+      "sha256": "7e89b6da537b2218d27aa5c1a028b57eea8f852d2cdaaa1d29f5db76fdff9d3c"
+    },
+    {
+      "path": "member/dist/assets/index-C8iUp5tc.js",
+      "sha256": "9d2974e13833793992886c007d72f3e185ed401755c80894db66038c18ec34a0"
+    },
+    {
+      "path": "member/dist/assets/index-INBWqCoF.css",
+      "sha256": "b9b924c2c61f7ea6ff1ca2966b528a605779480fa29ce77bf191fbc17dcc5ee8"
+    },
+    {
+      "path": "member/dist/badges/crown-v1.jpg",
+      "sha256": "4ff3c51a96da8a7489ab6a95bdb98abedca0067e9b70e76b8444c0307117bd55"
+    },
+    {
+      "path": "member/dist/badges/crown-v1.png",
+      "sha256": "7b9b6cdb809c45448ff5ceeb69da53fbcadac5e2ac181e211c865dca2d88ed47"
+    },
+    {
+      "path": "member/dist/badges/crown-v2.png",
+      "sha256": "ee59db390a0cce27e8bd56d6debceb5a3737f68262cdfff07a5658adec17cd62"
+    },
+    {
+      "path": "member/dist/badges/diamond-v1.jpg",
+      "sha256": "1a0f86d3978a6e199428df30b747fcf1770eed00c855e3e54bdedb4164720246"
+    },
+    {
+      "path": "member/dist/badges/diamond-v1.png",
+      "sha256": "3d570f06ffb3c2742742e6b868cd7adbb6d2d80f37395f3829a61808910b61f2"
+    },
+    {
+      "path": "member/dist/badges/diamond-v2.png",
+      "sha256": "ea67b24a4993c4311ffb161023a2f5920883a84e658a766a6591c64a78e3c6ff"
+    },
+    {
+      "path": "member/dist/badges/elite-v1.jpg",
+      "sha256": "420ba463944d758dfb7f2064823508f421b545e138fe9ad6ebd22323480e9eb3"
+    },
+    {
+      "path": "member/dist/badges/elite-v1.png",
+      "sha256": "888201d8a130eeaec634a71d9bd864b7c858141be8ad715c62e66bb4faa129bb"
+    },
+    {
+      "path": "member/dist/badges/elite-v2.png",
+      "sha256": "dc352463215b19b663a62ceb771d11802729167081978071c1932059563300d6"
+    },
+    {
+      "path": "member/dist/badges/excellence-v1.jpg",
+      "sha256": "0d1a8ae0e6d76cb78e06a9186f0d527e1a5296a35df7b0926716e4ef0d3f4988"
+    },
+    {
+      "path": "member/dist/badges/excellence-v1.png",
+      "sha256": "8832002104390dc646329c4035e519184d25f10d80dc86b4198abd1803acda71"
+    },
+    {
+      "path": "member/dist/badges/excellence-v2.png",
+      "sha256": "8128d0b2690bb187a9452f9c72b20e01112a4ce034018617e8bc38da4fd0fde8"
+    },
+    {
+      "path": "member/dist/badges/glory-v1.jpg",
+      "sha256": "6e60c9593481bacffa5761b7c5a9c1b91c8998736db9860fdb844a2fb76f6362"
+    },
+    {
+      "path": "member/dist/badges/glory-v1.png",
+      "sha256": "c4a85b013332b58dfcba42c0503c4adf9f027e1d3d809f23c2036182077c138d"
+    },
+    {
+      "path": "member/dist/badges/glory-v2.png",
+      "sha256": "ab311badfc5fc8792907f484178981ca33e09c2d116f686ad470d54f07279148"
+    },
+    {
+      "path": "member/dist/badges/leader-v1.jpg",
+      "sha256": "84fce899bce7292d6eed5641df2956843c93bd0be8805ee3ec79ea7ca5ef1dfe"
+    },
+    {
+      "path": "member/dist/badges/leader-v1.png",
+      "sha256": "57c608e71b2de336b39885a9d08524eef99b9e66b590036afe0041545846be95"
+    },
+    {
+      "path": "member/dist/badges/leader-v2.png",
+      "sha256": "b4fc91473d325dd31cf419c5936bad4a02bbb117c1a1c0d3d3d37dd40758c1e9"
+    },
+    {
+      "path": "member/dist/badges/new-star-v1.jpg",
+      "sha256": "93741239a12fe19416773824e069133f77d82491317d3f80e528779af4c76fa4"
+    },
+    {
+      "path": "member/dist/badges/new-star-v1.png",
+      "sha256": "e3b90199b6392d46f4f4e0de36ae16dafbc13b6f587d7574549fc8f145ff99b4"
+    },
+    {
+      "path": "member/dist/badges/new-star-v2.png",
+      "sha256": "bed74f631629ca300cf61f2bc9b0e83dbd011ec620f4868218951e7f74c59ede"
+    },
+    {
+      "path": "member/dist/badges/starter-v1.jpg",
+      "sha256": "b82c5c4627bb327d591e8fbd0d16b032dbaf0caa692b64e99d6578ac607d9e02"
+    },
+    {
+      "path": "member/dist/badges/starter-v1.png",
+      "sha256": "8164270fd6b6cc6d50fee0d8178d17a8a264540b4ad61b9427db9434480a757c"
+    },
+    {
+      "path": "member/dist/badges/starter-v2.png",
+      "sha256": "fb936ce542125720b0d5428bcc5fabd9c89d551fdab7c08f4b96e6125bd98368"
+    },
+    {
+      "path": "member/dist/index.html",
+      "sha256": "182423cc421cd75b6faee6444bf9b3c9849a14d802b1ee853959ec7b8fbc1a62"
+    },
+    {
+      "path": "member/dist/products/tip-363-icon-v2.jpg",
+      "sha256": "2cd490c24fb1aee54d6f12c9ed3406815c3e68a9b2b259a4fc8813efbd73f523"
+    },
+    {
+      "path": "member/dist/products/tip-363-icon-v2.png",
+      "sha256": "281daccde90739446186d135aa1dd7193e80c22d5a115018f4965610bcf6067a"
+    },
+    {
+      "path": "member/dist/products/tip-363.png",
+      "sha256": "c0e1f2199d5977ee2616cd933409ab4a552e49ee75025c946a39f67a82be6625"
+    },
+    {
+      "path": "member/dist/products/tip-580-icon-v2.jpg",
+      "sha256": "5de6229e071920b2006759f30a16cf407948bdc15ced794d488d2175f799eabb"
+    },
+    {
+      "path": "member/dist/products/tip-580-icon-v2.png",
+      "sha256": "ddcffb8042d1d07c713cb440c90cd2eb3131a38ed6ecd00f33094d332733d2df"
+    },
+    {
+      "path": "member/dist/products/tip-580.png",
+      "sha256": "36e6fd09b1bc973927276516e80b096b77f8436540b1df64e99dd44418987f16"
+    },
+    {
+      "path": "member/dist/products/tip-696-icon-v2.jpg",
+      "sha256": "e04b0ae997b50f3f1ef8fe70c919abbd0b5da2fbe709403114215e85d7ed7d7f"
+    },
+    {
+      "path": "member/dist/products/tip-696-icon-v2.png",
+      "sha256": "b942a6f5e81c1b1342410e4d83ded2212fd0bfadbbb82f5f270ac7240271c6c5"
+    },
+    {
+      "path": "member/dist/products/tip-696.png",
+      "sha256": "e2aa28a3755ae635efda96359706a3eaa655c0a9293d404f3b62f214fc61345f"
+    },
+    {
+      "path": "member/dist/products/tip-777-icon-v2.jpg",
+      "sha256": "edcd07189921850cdd1e239acbc0200a6bb8fdda366e60e8baff2573a0e31f2e"
+    },
+    {
+      "path": "member/dist/products/tip-777-icon-v2.png",
+      "sha256": "b8a091d41e589e0881ef9574f31a99ca90a1beb5ecd0768cdf6d82908780c1d9"
+    },
+    {
+      "path": "member/dist/products/tip-777.png",
+      "sha256": "2e3571f6a75b7b0332d14ac61c3dc49913de90145a04e0bdb3a947c0cbc204b2"
+    },
+    {
+      "path": "member/dist/products/tip-999-icon-v2.jpg",
+      "sha256": "10ddb80e68e147fae7c28e9fd4fb6b59acd23e5ddcd0b684f11c562fea3cf36b"
+    },
+    {
+      "path": "member/dist/products/tip-999-icon-v2.png",
+      "sha256": "384d73077a312fe95f6e9e0b43720cbedffe5b065fe5730b436af698124d3175"
+    },
+    {
+      "path": "member/dist/products/tip-999.png",
+      "sha256": "2d927a8e09d85875db56dc714f297977a8e03ccf33b823846acb4bd841f73566"
+    },
+    {
+      "path": "member/dist/share-entry.js",
+      "sha256": "c9e7631b5de96188823255f6e2a16517da96f445cc70d1538d94773a7148939b"
+    },
+    {
+      "path": "member/dist/ucell-logo-transparent.png",
+      "sha256": "e3d6bb9456117bafb3860cd99a5dfab29bb30b0c1a0dca4b7433a5550a1de75c"
+    },
+    {
+      "path": "member/dist/ucell-logo.jpg",
+      "sha256": "6fddd8537625cc8c611fce5bfebffbeaa33ce3e4c55dbac235dcdd698c6432b5"
+    },
+    {
+      "path": "member/Dockerfile",
+      "sha256": "017375a3beb5348cf85139cb5beecc7dfb7e490d84289b86b81ead142ffcd7f1"
+    }
+  ],
+  "date": "2026-10-22",
+  "sourceCommit": "f636f6ed",
+  "images": {
+    "api": "ucellprodacrm3z2zx4ohqyui.azurecr.io/ucell-api@sha256:7322e5bd6626775d7d6df3c1b59e52e93c99976b7648d18e0e32d92809cbb6f0",
+    "admin": "ucellprodacrm3z2zx4ohqyui.azurecr.io/ucell-admin@sha256:f3c7b51f7ea90fd38ad8331b88debb8450586d1e4a15ef68776466d880a4cde4",
+    "member": "ucellprodacrm3z2zx4ohqyui.azurecr.io/ucell-member@sha256:53f9c7fbfb13e8c0e5fcb98921df3d2eb70996ddac9a69fabd4121c2ea8d993c"
+  },
+  "validation": {
+    "adminTests": 249,
+    "memberTests": 316,
+    "websiteTests": 25,
+    "serviceAssertions": 66,
+    "financeAssertions": 8,
+    "productionAccessAssertions": 18,
+    "localRuntimeHttpAssertions": 15,
+    "liveFrontendWithIsolatedData": {
+      "adminDesktop": true,
+      "adminMobile": true,
+      "memberDesktop": true,
+      "memberMobile": true
+    },
+    "productionHealth": "All three revisions Healthy / 100% traffic",
+    "productionUnauthorizedAi": "401 for both audiences",
+    "productionReadAndModelPreflight": "PASS",
+    "humanLoginImpersonated": false
+  },
+  "model": {
+    "resource": "ucell-prod-ai-20261022",
+    "deployment": "ucell-prod-planner",
+    "model": "gpt-4.1-mini",
+    "version": "2025-04-14",
+    "region": "eastus2",
+    "sku": "Standard",
+    "capacity": 10
+  },
+  "knowledge": {
+    "review": 9,
+    "published": 0
+  },
+  "access": {
+    "mode": "PRODUCTION_ROLES",
+    "admin": "Existing verified SUPER_ADMIN",
+    "member": "Authenticated registered member, own scope only",
+    "existingJoeStatusCorrection": {
+      "from": "DRAFT",
+      "to": "EFFECTIVE",
+      "membershipChanged": false,
+      "roleChanged": false,
+      "audited": true
+    }
+  }
+}

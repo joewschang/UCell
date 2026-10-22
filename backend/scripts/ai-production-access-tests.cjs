@@ -23,4 +23,3 @@ async function actor(role){const p=await db.person.create({data:{legalName:'LOCA
  config.set('AI_ENABLED','false');await deny(()=>service.assertActor(finance));config.set('AI_ENABLED','true');config.set('NODE_ENV','staging');await deny(()=>service.assertActor(finance));
  console.log(JSON.stringify({result:'PASS',checks,environment:'LOCAL_PRODUCTION_POLICY'}));
 }finally{await db.$disconnect()}})().catch(e=>{console.error(e.message);process.exitCode=1});
-
