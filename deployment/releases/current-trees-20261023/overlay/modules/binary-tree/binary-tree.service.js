@@ -1,0 +1,279 @@
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.BinaryTreeService = void 0;
+const qualification_activation_gate_1 = require("../qualification/qualification-activation-gate");
+const current_tree_1 = require("./current-tree");
+const common_1 = require("@nestjs/common");
+const database_1 = require("@ucell/database");
+const node_crypto_1 = require("node:crypto");
+const idempotency_service_1 = require("../../common/idempotency/idempotency.service");
+const organization_service_1 = require("../organization/organization.service");
+const tree_placement_1 = require("../organization/tree-placement");
+const tree_authorization_1 = require("./tree-authorization");
+const manageRoles = ['SUPER_ADMIN'];
+const sponsorRoles = ['SUPER_ADMIN', 'MEMBERSHIP_OPS'];
+const placementRoles = ['SUPER_ADMIN', 'QUALIFICATION_PLACEMENT_OVERRIDE'];
+const writeRoles = [...new Set([...manageRoles, ...sponsorRoles, ...placementRoles])];
+const readRoles = [...writeRoles, 'COMPLIANCE_AUDIT'];
+let BinaryTreeService = class BinaryTreeService {
+    db;
+    idempotency;
+    organization;
+    constructor(db, idempotency, organization) {
+        this.db = db;
+        this.idempotency = idempotency;
+        this.organization = organization;
+    }
+    async authorize(p, write = false, tx) { return (0, tree_authorization_1.authorizeTreePrincipal)(this.db, p, write ? writeRoles : readRoles, tx); }
+    async resolveTreeBall(p, treeId, ballNo) {
+        await this.authorize(p);
+        const ball = await this.db.qualification.findUnique({ where: { ballNo }, include: { binaryTreeMembership: true } });
+        if (!ball?.binaryTreeMembership || ball.binaryTreeMembership.binaryTreeId !== treeId)
+            throw new common_1.ConflictException({ code: 'BINARY_TREE_SCOPE_MISMATCH' });
+        return ball.qualificationId;
+    }
+    async resolveUnplacedMemberQualification(p, memberNo) {
+        await this.authorize(p, true);
+        const matches = await this.db.qualification.findMany({ where: { kind: 'MEMBER_ORIGIN', currentHolder: { memberNo }, binaryTreeMembership: null }, select: { qualificationId: true }, take: 2 });
+        if (matches.length !== 1)
+            throw new common_1.ConflictException({ code: matches.length ? 'MEMBER_NO_QUALIFICATION_AMBIGUOUS' : 'UNPLACED_MEMBER_QUALIFICATION_REQUIRED' });
+        return matches[0].qualificationId;
+    }
+    async command(p, scope, key, body, work) {
+        const actor = await this.authorize(p, true);
+        if (!(scope.startsWith('place:') ? placementRoles : scope.startsWith('confirm-sponsor:') ? sponsorRoles : manageRoles).includes(p.role))
+            throw new common_1.ForbiddenException({ code: 'TREE_COMMAND_ROLE_DENIED' });
+        if (typeof key !== 'string' || key.length < 8 || key.length > 128)
+            throw new common_1.UnprocessableEntityException({ code: 'IDEMPOTENCY_KEY_REQUIRED' });
+        for (let attempt = 0;; attempt++)
+            try {
+                return await this.idempotency.execute(`tree:${scope}:${actor}`, key, body, async (tx) => { await this.authorize(p, true, tx); const result = await work(tx, actor); await this.authorize(p, true, tx); return result; });
+            }
+            catch (error) {
+                if (['P2034', 'P2002'].includes(error.code) && attempt < 2)
+                    continue;
+                if (['P2034', 'P2002'].includes(error.code))
+                    throw new common_1.ConflictException({ code: 'TREE_COMMAND_CONFLICT' });
+                throw error;
+            }
+    }
+    effective(value) { const now = new Date(); if (value !== undefined && (!Number.isFinite(Date.parse(value)) || Math.abs(Date.parse(value) - now.getTime()) > 10000))
+        throw new common_1.UnprocessableEntityException({ code: 'TREE_EFFECTIVE_TIME_UNSUPPORTED' }); return now; }
+    reason(value) { if (typeof value !== 'string' || !value.trim() || value.length > 500)
+        throw new common_1.UnprocessableEntityException({ code: 'TREE_REASON_REQUIRED' }); return value.trim(); }
+    async create(p, input, key) {
+        return this.command(p, 'create', key, input, async (tx, actorId) => {
+            const reason = this.reason(input.reason), at = this.effective(input.effectiveAt);
+            if (typeof input.treeName !== 'string' || !input.treeName.trim() || input.treeName.trim().length > 120)
+                throw new common_1.UnprocessableEntityException({ code: 'TREE_NAME_INVALID' });
+            const treeCode = input.treeCode ?? 'TREE-' + (0, node_crypto_1.randomUUID)().slice(0, 8).toUpperCase();
+            if (!/^[A-Z][A-Z0-9_-]{0,39}$/.test(treeCode))
+                throw new common_1.UnprocessableEntityException({ code: 'TREE_CODE_INVALID' });
+            const company = await tx.companyPrincipal.findUnique({ where: { code: 'UCELL_COMPANY' } });
+            if (company?.status !== 'ACTIVE')
+                throw new common_1.ConflictException({ code: 'COMPANY_PRINCIPAL_UNAVAILABLE' });
+            if (await tx.binaryTree.findUnique({ where: { treeCode } }))
+                throw new common_1.ConflictException({ code: 'TREE_CODE_ALREADY_USED' });
+            const profile = await tx.binaryTreeBootstrapProfile.findFirst({ where: { profileCode: 'STANDARD_LEADER_72000_7', status: 'PUBLISHED', effectiveFrom: { lte: at }, OR: [{ effectiveTo: null }, { effectiveTo: { gt: at } }] }, orderBy: { version: 'desc' } });
+            if (!profile)
+                throw new common_1.ConflictException({ code: 'TREE_BOOTSTRAP_PROFILE_UNAVAILABLE' });
+            const profileSnapshot = { profileCode: profile.profileCode, version: profile.version, companyBallCount: profile.companyBallCount, companyPlanCode: profile.companyPlanCode, companyActivePolicy: profile.companyActivePolicy, companyAwardPolicy: profile.companyAwardPolicy, economicDestination: profile.economicDestination, approvalReference: profile.approvalReference, snapshotHash: profile.snapshotHash };
+            const treeId = (0, node_crypto_1.randomUUID)(), correlationId = (0, node_crypto_1.randomUUID)(), balls = Array.from({ length: profile.companyBallCount }, () => (0, node_crypto_1.randomUUID)());
+            const tree = await tx.binaryTree.create({ data: { binaryTreeId: treeId, treeCode, treeName: input.treeName.trim(), companyPrincipalId: company.companyPrincipalId, bootstrapProfileId: profile.bootstrapProfileId, bootstrapProfileCode: profile.profileCode, bootstrapProfileVersion: String(profile.version), bootstrapCompanyBallCount: profile.companyBallCount, bootstrapProfileSnapshot: profileSnapshot, economicActivation: 'APPROVED_LEADER_BINDING', createdByActorId: actorId, effectiveAt: at } });
+            for (let i = 0; i < balls.length; i++) {
+                const position = i + 1, binaryPositionNo = BigInt(position), ballNo = (0, database_1.bootstrapBallNoFor)(treeCode, binaryPositionNo), parentIndex = position === 1 ? null : Math.floor(position / 2) - 1;
+                const parentQualificationId = parentIndex === null ? null : balls[parentIndex], side = position === 1 ? null : position % 2 === 0 ? 'LEFT' : 'RIGHT';
+                await tx.qualification.create({ data: { qualificationId: balls[i], kind: 'COMPANY_BOOTSTRAP', currentCompanyPrincipalId: company.companyPrincipalId, currentHolderPersonId: null, planLevelCode: null, status: 'EFFECTIVE', activeFlag: false, effectiveAt: at } });
+                const hash = (0, tree_placement_1.treeHash)({ treeId, qualificationId: balls[i], owner: company.companyPrincipalId, effectiveAt: at.toISOString(), kind: 'COMPANY_BOOTSTRAP', profile: profileSnapshot });
+                await tx.qualificationOwnerInterval.create({ data: { qualificationId: balls[i], ownerType: 'COMPANY', companyPrincipalId: company.companyPrincipalId, effectiveFrom: at, sourceType: 'TREE_BOOTSTRAP', sourceId: treeId, evidenceHash: hash } });
+                const evidenceId = (0, node_crypto_1.randomUUID)();
+                await tx.placementTreeEvidence.create({ data: { placementTreeEvidenceId: evidenceId, binaryTreeId: treeId, qualificationId: balls[i], parentQualificationId, side, binaryPositionNo, placementKind: position === 1 ? 'BOOTSTRAP_ROOT' : 'BOOTSTRAP', sourceType: 'TREE_BOOTSTRAP', actorType: 'ADMIN', actorId, reason, effectiveAt: at, topologyVersion: 1, correlationId, evidenceHash: hash } });
+                await tx.binaryTreeMembership.create({ data: { qualificationId: balls[i], binaryTreeId: treeId, binaryPositionNo, effectiveFrom: at, placementTreeEvidenceId: evidenceId } });
+                await tx.qualification.update({ where: { qualificationId: balls[i] }, data: { ballNo } });
+                await tx.binaryTreeAncestry.create({ data: { binaryTreeId: treeId, ancestorQualificationId: balls[i], descendantQualificationId: balls[i], depth: 0, effectiveFrom: at } });
+                if (parentQualificationId) {
+                    const ancestors = await tx.binaryTreeAncestry.findMany({ where: { binaryTreeId: treeId, descendantQualificationId: parentQualificationId } });
+                    await tx.binaryTreeAncestry.createMany({ data: ancestors.map(edge => ({ binaryTreeId: treeId, ancestorQualificationId: edge.ancestorQualificationId, descendantQualificationId: balls[i], depth: edge.depth + 1, firstSide: edge.depth === 0 ? side : edge.firstSide, effectiveFrom: at })) });
+                }
+            }
+            const canonicalPositionCount = profile.companyBallCount * 2 + 1;
+            for (let positionNo = 1; positionNo <= canonicalPositionCount; positionNo++)
+                await tx.treeCanonicalPosition.create({ data: { binaryTreeId: treeId, positionNo, parentPositionNo: positionNo === 1 ? null : Math.floor(positionNo / 2), side: positionNo === 1 ? null : positionNo % 2 === 0 ? 'LEFT' : 'RIGHT', occupantQualificationId: positionNo <= profile.companyBallCount ? balls[positionNo - 1] : null, occupiedAt: positionNo <= profile.companyBallCount ? at : null } });
+            // The approved Company profile is an immutable, effective Core snapshot.  Bind it
+            // inside the bootstrap transaction only after the canonical positions and owner
+            // intervals exist, so a missing or ambiguous registry rolls the whole tree back.
+            const parameters = await (0, database_1.effectiveCompanyParameters)(tx, at);
+            for (const ball of balls)
+                await (0, database_1.bindCompanyLeaderProfile)(tx, ball, parameters);
+            await tx.companySponsorDesignation.create({ data: { binaryTreeId: treeId, qualificationId: balls[0], effectiveAt: at, evidenceHash: (0, tree_placement_1.treeHash)({ treeId, qualificationId: balls[0], effectiveAt: at.toISOString() }) } });
+            for (let i = 1; i < balls.length; i++) {
+                const position = i + 1, parentIndex = Math.floor(position / 2) - 1, side = position % 2 === 0 ? 'LEFT' : 'RIGHT';
+                // Only the root's historical #2/#3 sponsor records establish its direct
+                // sponsor chronology. Profile-added Company Balls are topology-only and
+                // must not consume the first/third Member sponsor sequence.
+                if (i < 3)
+                    await tx.sponsorRelationship.create({ data: { sponsorQualificationId: balls[0], childQualificationId: balls[i], sponsorSequenceNo: i, effectiveFrom: at } });
+                await tx.binaryPlacement.create({ data: { parentQualificationId: balls[parentIndex], childQualificationId: balls[i], side, effectiveFrom: at } });
+            }
+            const evidenceHash = (0, tree_placement_1.treeHash)({ treeId, treeCode, balls, positions: canonicalPositionCount, profile: profileSnapshot, version: 1 });
+            await tx.binaryTreeStatusEvent.create({ data: { binaryTreeId: treeId, status: 'DRAFT', topologyVersion: 1, treeName: tree.treeName, actorId, reason, effectiveAt: at, correlationId, evidenceHash } });
+            await tx.binaryTreeProjectionCheckpoint.create({ data: { binaryTreeId: treeId, sourceVersion: 1, generation: (0, node_crypto_1.randomUUID)(), status: 'READY', dataThrough: at } });
+            await this.audit(tx, actorId, treeId, 'BINARY_TREE_CREATED', { treeCode, balls, topologyVersion: 1, evidenceHash }, correlationId);
+            return { binaryTreeId: treeId, treeCode, treeName: tree.treeName, status: 'DRAFT', topologyVersion: 1, companyQualificationIds: balls, companyBallNos: balls.map((_, index) => (0, database_1.bootstrapBallNoFor)(treeCode, BigInt(index + 1))), positions: canonicalPositionCount, bootstrapProfile: profileSnapshot, economicActivation: 'APPROVED_LEADER_BINDING', effectiveAt: at.toISOString(), evidenceHash };
+        });
+    }
+    async change(p, treeId, input, key) {
+        return this.command(p, 'change:' + treeId, key, input, async (tx, actorId) => {
+            const reason = this.reason(input.reason), at = this.effective(input.effectiveAt);
+            await tx.$queryRaw `SELECT binary_tree_id FROM organization.binary_tree WHERE binary_tree_id=${treeId}::uuid FOR UPDATE`;
+            const tree = await tx.binaryTree.findUnique({ where: { binaryTreeId: treeId } });
+            if (!tree)
+                throw new common_1.ConflictException({ code: 'TREE_NOT_FOUND' });
+            if (tree.topologyVersion !== input.expectedVersion)
+                throw new common_1.ConflictException({ code: 'TREE_VERSION_CONFLICT' });
+            if (tree.status === 'ARCHIVED')
+                throw new common_1.ConflictException({ code: 'TREE_ARCHIVED' });
+            const status = input.status ?? tree.status, allowed = { DRAFT: ['ACTIVE', 'ARCHIVED'], ACTIVE: ['CLOSED_TO_NEW'], CLOSED_TO_NEW: ['ACTIVE', 'ARCHIVED'], ARCHIVED: [] };
+            if (status !== tree.status && !allowed[tree.status].includes(status))
+                throw new common_1.ConflictException({ code: 'TREE_TRANSITION_INVALID' });
+            const name = input.treeName?.trim() ?? tree.treeName;
+            if (!name || name.length > 120)
+                throw new common_1.UnprocessableEntityException({ code: 'TREE_NAME_INVALID' });
+            if (status === 'ARCHIVED') {
+                // Outstanding non-final settlements/payables/replays cannot disappear behind archive.
+                const members = await tx.binaryTreeMembership.findMany({ where: { binaryTreeId: treeId }, select: { qualificationId: true } }), ids = members.map(m => m.qualificationId);
+                if (await tx.payableEntry.findFirst({ where: { qualificationId: { in: ids }, status: { notIn: ['PAID', 'VOIDED'] } } })
+                    || await tx.settlementRecalculationRequest.findFirst({ where: { impactedQualificationId: { in: ids }, status: { not: 'PROCESSED' } } }))
+                    throw new common_1.ConflictException({ code: 'TREE_UNRESOLVED_OBLIGATIONS' });
+                if (tree.status === 'DRAFT' && members.length !== 3)
+                    throw new common_1.ConflictException({ code: 'TREE_DRAFT_NOT_UNUSED' });
+            }
+            const version = tree.topologyVersion + 1, evidenceHash = (0, tree_placement_1.treeHash)({ treeId, previousStatus: tree.status, status, treeName: name, version, effectiveAt: at.toISOString() }), correlationId = (0, node_crypto_1.randomUUID)();
+            await tx.binaryTree.update({ where: { binaryTreeId: treeId }, data: { status, treeName: name, topologyVersion: version } });
+            await tx.binaryTreeStatusEvent.create({ data: { binaryTreeId: treeId, previousStatus: tree.status, status, treeName: name, topologyVersion: version, actorId, reason, effectiveAt: at, correlationId, evidenceHash } });
+            await tx.binaryTreeProjectionCheckpoint.update({ where: { binaryTreeId: treeId }, data: { sourceVersion: version, dataThrough: at, recordedAt: new Date() } });
+            await this.audit(tx, actorId, treeId, 'BINARY_TREE_CHANGED', { status, treeName: name, topologyVersion: version, evidenceHash }, correlationId);
+            return { binaryTreeId: treeId, status, treeName: name, topologyVersion: version, effectiveAt: at.toISOString(), evidenceHash };
+        });
+    }
+    async confirmCompanySponsor(p, treeId, input, key) {
+        return this.command(p, 'confirm-sponsor:' + treeId, key, input, async (tx, actorId) => {
+            const reason = this.reason(input.reason), designation = await tx.companySponsorDesignation.findUnique({ where: { binaryTreeId: treeId } });
+            if (!designation)
+                throw new common_1.ConflictException({ code: 'TREE_NOT_FOUND' });
+            const sequence = await this.organization.allocateSponsorSequence(tx, designation.qualificationId);
+            await tx.$queryRaw `SELECT binary_tree_id FROM organization.binary_tree WHERE binary_tree_id=${treeId}::uuid FOR UPDATE`;
+            const tree = await tx.binaryTree.findUniqueOrThrow({ where: { binaryTreeId: treeId } }), q = await tx.qualification.findUnique({ where: { qualificationId: input.qualificationId } });
+            if (tree.status !== 'ACTIVE')
+                throw new common_1.ConflictException({ code: 'TREE_NOT_OPEN_TO_PLACEMENT' });
+            if (!q || q.kind !== 'MEMBER_ORIGIN' || !q.currentHolderPersonId || await tx.binaryPlacement.findUnique({ where: { childQualificationId: q.qualificationId } }))
+                throw new common_1.ConflictException({ code: 'UNPLACED_MEMBER_QUALIFICATION_REQUIRED' });
+            if (await tx.sponsorRelationship.findUnique({ where: { childQualificationId: q.qualificationId } }))
+                throw new common_1.ConflictException({ code: 'SPONSOR_ALREADY_CONFIRMED' });
+            const at = new Date(), edge = await tx.sponsorRelationship.create({ data: { sponsorQualificationId: designation.qualificationId, childQualificationId: q.qualificationId, sponsorSequenceNo: sequence, effectiveFrom: at } }), correlationId = (0, node_crypto_1.randomUUID)();
+            await this.audit(tx, actorId, treeId, 'FOUNDING_COMPANY_SPONSOR_CONFIRMED', { qualificationId: q.qualificationId, sponsorRelationshipId: edge.sponsorRelationshipId, actualSponsorSequenceNo: sequence, reason, topologyVersion: tree.topologyVersion }, correlationId);
+            return { qualificationId: q.qualificationId, sponsorQualificationId: designation.qualificationId, actualSponsorSequenceNo: sequence, sponsorRelationshipId: edge.sponsorRelationshipId };
+        });
+    }
+    async place(p, treeId, input, key) {
+        return this.command(p, 'place:' + treeId, key, input, async (tx, actorId) => {
+            const reason = this.reason(input.reason), at = this.effective(input.effectiveAt);
+            await tx.$queryRaw `SELECT binary_tree_id FROM organization.binary_tree WHERE binary_tree_id=${treeId}::uuid FOR UPDATE`;
+            const tree = await tx.binaryTree.findUnique({ where: { binaryTreeId: treeId } });
+            if (!tree || tree.topologyVersion !== input.expectedVersion)
+                throw new common_1.ConflictException({ code: 'TREE_VERSION_CONFLICT' });
+            const parent = await tx.binaryTreeMembership.findUnique({ where: { qualificationId: input.binaryParentQualificationId } });
+            if (parent?.binaryTreeId !== treeId)
+                throw new common_1.ConflictException({ code: 'BINARY_TREE_SCOPE_MISMATCH' });
+            const sponsor = await tx.sponsorRelationship.findUnique({ where: { childQualificationId: input.qualificationId } });
+            if (!sponsor)
+                throw new common_1.ConflictException({ code: 'SPONSOR_CONFIRMATION_MISSING' });
+            await (0, current_tree_1.assertCurrentPlacement)(tx, treeId, input.qualificationId, input.binaryParentQualificationId);
+            await this.organization.assertBinarySlotAvailable(tx, input.binaryParentQualificationId, input.side);
+            await this.organization.assertNoBinaryCycle(tx, input.qualificationId, input.binaryParentQualificationId);
+            await this.organization.assertFirstThirdLeftRule(tx, sponsor.sponsorQualificationId, sponsor.sponsorSequenceNo, input.binaryParentQualificationId, input.side);
+            if (input.preflightToken) {
+                const target = await tx.qualification.findUniqueOrThrow({ where: { qualificationId: input.qualificationId } });
+                const expected = (0, tree_placement_1.treeHash)({ treeId, version: tree.topologyVersion, qualificationId: target.qualificationId, holder: target.currentHolderPersonId, parent: input.binaryParentQualificationId, side: input.side, sponsorId: sponsor.sponsorRelationshipId, sequence: sponsor.sponsorSequenceNo });
+                if (input.preflightToken !== expected)
+                    throw new common_1.ConflictException({ code: 'PLACEMENT_PREFLIGHT_STALE' });
+            }
+            const setup = await tx.qualificationSetup.findUnique({ where: { qualificationId: input.qualificationId } });
+            if (setup && (!['PLACEMENT_PENDING', 'PLACEMENT_OVERDUE'].includes(setup.setupStatus) || setup.finalSponsorQualificationId !== sponsor.sponsorQualificationId))
+                throw new common_1.ConflictException({ code: 'PLACEMENT_NOT_PENDING' });
+            if (setup)
+                await (0, qualification_activation_gate_1.assertQualificationActivation)(tx, setup);
+            const edge = await this.organization.createBinaryPlacement(tx, { parentQualificationId: input.binaryParentQualificationId, childQualificationId: input.qualificationId, side: input.side, effectiveFrom: at }, { sourceType: 'TREE_PLACEMENT_CONSOLE', actorId, reason, correlationId: (0, node_crypto_1.randomUUID)() });
+            if (setup) {
+                const correlationId = (0, node_crypto_1.randomUUID)(), evidenceBody = { qualificationId: input.qualificationId, sponsorQualificationId: sponsor.sponsorQualificationId, binaryParentQualificationId: input.binaryParentQualificationId, side: input.side, placedByType: 'ADMIN_OVERRIDE', placedByPersonId: actorId, placedAt: at.toISOString(), reasonCode: reason, policyVersion: setup.setupPolicyVersion, previousStatus: setup.setupStatus };
+                const evidence = await tx.placementEvidence.create({ data: { ...evidenceBody, placedAt: at, correlationId, evidenceHash: (0, tree_placement_1.treeHash)(evidenceBody) } });
+                await tx.qualificationSetup.update({ where: { qualificationId: input.qualificationId }, data: { setupStatus: 'PLACED', placedAt: at } });
+                await tx.qualification.update({ where: { qualificationId: input.qualificationId }, data: { status: 'EFFECTIVE', effectiveAt: at } });
+                await tx.qualificationStatusHistory.create({ data: { qualificationId: input.qualificationId, status: 'EFFECTIVE', effectiveFrom: at, sourceType: 'QUALIFICATION_PLACEMENT', sourceId: evidence.placementEvidenceId } });
+                await tx.auditEvent.create({ data: { actorType: 'USER', actorId, action: 'QUALIFICATION_PLACED', entityType: 'Qualification', entityId: input.qualificationId, afterData: evidenceBody, requestId: correlationId, correlationId } });
+                await tx.outboxEvent.create({ data: { eventType: 'QUALIFICATION_PLACED', aggregateType: 'Qualification', aggregateId: input.qualificationId, payload: { schemaVersion: 1, ...evidenceBody, evidenceHash: evidence.evidenceHash }, correlationId } });
+            }
+            const placed = await tx.qualification.findUniqueOrThrow({ where: { qualificationId: input.qualificationId } }), parentBall = await tx.qualification.findUniqueOrThrow({ where: { qualificationId: input.binaryParentQualificationId } }), membership = await tx.binaryTreeMembership.findUniqueOrThrow({ where: { qualificationId: input.qualificationId } });
+            return { binaryTreeId: treeId, treeCode: tree.treeCode, ballNo: placed.ballNo, parentBallNo: parentBall.ballNo, binaryPositionNo: membership.binaryPositionNo.toString(), path: (0, database_1.binaryPath)(membership.binaryPositionNo), binaryPlacementId: edge.binaryPlacementId, topologyVersion: tree.topologyVersion + 1, effectiveAt: at.toISOString() };
+        });
+    }
+    async preview(p, treeId, input) {
+        await this.authorize(p);
+        const result = await this.db.$transaction(async (tx) => {
+            const tree = await tx.binaryTree.findUnique({ where: { binaryTreeId: treeId } }), target = await tx.qualification.findUnique({ where: { qualificationId: input.qualificationId } }), parent = await tx.binaryTreeMembership.findUnique({ where: { qualificationId: input.binaryParentQualificationId } });
+            if (!tree || tree.topologyVersion !== input.expectedVersion)
+                throw new common_1.ConflictException({ code: 'TREE_VERSION_CONFLICT' });
+            if (tree.status !== 'ACTIVE')
+                throw new common_1.ConflictException({ code: 'TREE_NOT_OPEN_TO_PLACEMENT' });
+            if (parent?.binaryTreeId !== treeId)
+                throw new common_1.ConflictException({ code: 'BINARY_TREE_SCOPE_MISMATCH' });
+            if (!target || target.kind !== 'MEMBER_ORIGIN' || !target.currentHolderPersonId || !target.planLevelCode)
+                throw new common_1.ConflictException({ code: 'MEMBER_OWNER_EVIDENCE_REQUIRED' });
+            if (await tx.binaryPlacement.findUnique({ where: { childQualificationId: target.qualificationId } }) || await tx.binaryTreeMembership.findUnique({ where: { qualificationId: target.qualificationId } }))
+                throw new common_1.ConflictException({ code: 'QUALIFICATION_ALREADY_PLACED' });
+            const sponsor = await tx.sponsorRelationship.findUnique({ where: { childQualificationId: target.qualificationId } }), now = new Date();
+            if (!sponsor || sponsor.effectiveFrom > now || (sponsor.effectiveTo && sponsor.effectiveTo <= now))
+                throw new common_1.ConflictException({ code: 'SPONSOR_CONFIRMATION_MISSING' });
+            const setup = await tx.qualificationSetup.findUnique({ where: { qualificationId: target.qualificationId } });
+            if (setup && (!['PLACEMENT_PENDING', 'PLACEMENT_OVERDUE'].includes(setup.setupStatus) || setup.finalSponsorQualificationId !== sponsor.sponsorQualificationId))
+                throw new common_1.ConflictException({ code: 'PLACEMENT_NOT_PENDING' });
+            if (setup)
+                await (0, qualification_activation_gate_1.assertQualificationActivation)(tx, setup);
+            await (0, current_tree_1.assertCurrentPlacement)(tx, treeId, input.qualificationId, input.binaryParentQualificationId);
+            await this.organization.assertBinarySlotAvailable(tx, input.binaryParentQualificationId, input.side);
+            await this.organization.assertNoBinaryCycle(tx, target.qualificationId, input.binaryParentQualificationId);
+            await this.organization.assertFirstThirdLeftRule(tx, sponsor.sponsorQualificationId, sponsor.sponsorSequenceNo, input.binaryParentQualificationId, input.side);
+            const positions = await tx.treeCanonicalPosition.findMany({ where: { binaryTreeId: treeId } }), parentPosition = positions.find(s => s.occupantQualificationId === input.binaryParentQualificationId);
+            const canonical = parentPosition && positions.find(s => s.parentPositionNo === parentPosition.positionNo && s.side === input.side);
+            if (canonical) {
+                const designation = await tx.companySponsorDesignation.findUniqueOrThrow({ where: { binaryTreeId: treeId } });
+                if (sponsor.sponsorQualificationId !== designation.qualificationId)
+                    throw new common_1.ConflictException({ code: 'FOUNDING_COMPANY_SPONSOR_REQUIRED' });
+            }
+            const proposedPosition = (0, database_1.childPosition)(parent.binaryPositionNo, input.side);
+            return { valid: true, binaryTreeId: treeId, treeCode: tree.treeCode, ballNo: target.ballNo, parentBallNo: (await tx.qualification.findUniqueOrThrow({ where: { qualificationId: input.binaryParentQualificationId } })).ballNo, expectedBinaryPositionNo: proposedPosition.toString(), expectedPath: (0, database_1.binaryPath)(proposedPosition), expectedBallNo: null, expectedVersion: tree.topologyVersion, sponsorQualificationId: sponsor.sponsorQualificationId, actualSponsorSequenceNo: sponsor.sponsorSequenceNo,
+                preflightToken: (0, tree_placement_1.treeHash)({ treeId, version: tree.topologyVersion, qualificationId: target.qualificationId, holder: target.currentHolderPersonId, parent: input.binaryParentQualificationId, side: input.side, sponsorId: sponsor.sponsorRelationshipId, sequence: sponsor.sponsorSequenceNo }) };
+        }, { isolationLevel: database_1.Prisma.TransactionIsolationLevel.RepeatableRead });
+        await this.authorize(p);
+        return result;
+    }
+    async audit(tx, actorId, treeId, action, afterData, correlationId) {
+        await tx.auditEvent.create({ data: { actorType: 'USER', actorId, action, entityType: 'BinaryTree', entityId: treeId, afterData, requestId: correlationId, correlationId } });
+        await tx.outboxEvent.create({ data: { eventType: 'BINARY_TREE_CHANGED', aggregateType: 'BinaryTree', aggregateId: treeId, payload: { schemaVersion: 1, binaryTreeId: treeId, action, ...afterData }, correlationId } });
+    }
+};
+exports.BinaryTreeService = BinaryTreeService;
+exports.BinaryTreeService = BinaryTreeService = __decorate([
+    (0, common_1.Injectable)(),
+    __metadata("design:paramtypes", [database_1.PrismaService, idempotency_service_1.IdempotencyService, organization_service_1.OrganizationService])
+], BinaryTreeService);
+//# sourceMappingURL=binary-tree.service.js.map
