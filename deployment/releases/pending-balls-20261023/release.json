@@ -1,0 +1,11 @@
+{
+  "release": "pending-balls-20261023",
+  "adminDigest": "sha256:86ae5a9058ca35e9c1180e649a9157ac61e1461fd3650f0590e8dd69575ac922",
+  "changes": [
+    "Default qualification list to all statuses so unplaced qualifications are visible",
+    "Add explicit DRAFT filter and Chinese pending/unnumbered labels",
+    "Show lifecycle status separately from activity status"
+  ],
+  "validation": {"adminTests": 273, "productionBuild": "passed"},
+  "scope": "Admin display only; no placement, qualification or ledger mutations"
+}
