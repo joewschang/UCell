@@ -163,6 +163,7 @@ export class OrderService {
       let qualificationId=dto.targetQualificationId;
       let sponsorEvidence:Awaited<ReturnType<SponsorResolver['resolveWithin']>>|undefined;
       if(v.profile.packageClass==='QUALIFICATION'){
+        if(!paper&&!dto.sponsorCode?.trim())throw new UnprocessableEntityException({code:'QUALIFICATION_SPONSOR_REQUIRED'});
         if(dto.sponsorCode)sponsorEvidence=await (this.sponsors??new SponsorResolver(this.prisma)).resolveWithin(tx as any,{code:dto.sponsorCode,effectiveAt:now,ruleVersion:'R1.0B'});
         const qualification=await tx.qualification.create({data:{currentHolderPersonId:dto.legalEntityId?null:personId,currentHolderLegalEntityId:dto.legalEntityId??null,planLevelCode:v.profile.stableCode,status:'DRAFT',activeFlag:false}});qualificationId=qualification.qualificationId;
         await tx.qualificationHolderHistory.create({data:{qualificationId,holderPersonId:dto.legalEntityId?null:personId,holderLegalEntityId:dto.legalEntityId??null,effectiveFrom:now,sourceType:'PACKAGE_CHECKOUT'}});

@@ -1,0 +1,9 @@
+{
+ "release":"sponsor-required-20261023",
+ "apiDigest":"sha256:519e8052850efc8b8e1facf5e92b972560233f496467112cd649f52beb0c7b79",
+ "memberDigest":"sha256:59ab4429df2b251aaf93edf60f690fd1cd3c601a4a273c1e40ab815d0835f63c",
+ "changes":["Prominent required and validated sponsor qualification field for new online qualification checkout","Sponsor repeated on order review","Server rejects missing sponsor before creating qualification/order"],
+ "validation":{"memberTests":329,"apiTests":5,"runtime":"Exact deployed-base missing-sponsor gate rejects before writes","browser":"Missing sponsor, person member number and ineligible ball blocked; verified sponsor persists in checkout body"},
+ "authorizedDataCorrection":{"memberNo":"2610000010","sponsorBallNo":"AX000001","from":"BALL_SETUP_PENDING","to":"PLACEMENT_PENDING","authority":"Explicit user instruction","auditAction":"QUALIFICATION_SPONSOR_CONFIRMED_BY_USER_INSTRUCTION","actorType":"SYSTEM","binaryPlacementCreated":false,"verifiedByIdempotentRead":true},
+ "apiStrategy":"One-line guard inserted into exact previous production runtime; existing behavior preserved"
+}
