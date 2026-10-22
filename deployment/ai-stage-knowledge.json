@@ -1,0 +1,11 @@
+[
+ {"topic":"privacy","title":"AI 助理會查詢哪些資料？","body":"Stage AI 助理僅供已授權帳號測試。會員只能查詢本人的訂單與目前持有資格的相關資料；公司端須另外取得 AI 查詢授權。模型只解析問題，資料與金額由系統查詢產生，不能修改付款、資格或獎金。請勿輸入密碼、身分證號或銀行帳號。","sourceRef":"release:ai-stage-v1/privacy-and-scope"},
+ {"topic":"login","title":"如何登入與取得 AI 測試權限？","body":"請先透過既有會員或管理員登入流程登入 Stage，再開啟 AI 助理。登入成功不代表已取得 AI 權限；若顯示尚未加入測試名單，請由管理者安排授權。管理員示範登入不能存取 AI 公司資料。","sourceRef":"release:ai-stage-v1/session-and-capability"},
+ {"topic":"enrollment","title":"資格建立、轉移與升級的 600 元費用","body":"依本次確認的制度，每建立或轉移一個會員資格，需另外收取 600 元；資格升級不再收取此費用。會員資格套組的商品款與 600 元費用應分開顯示。優惠碼不減免這筆 600 元費用。Stage 舊版套組畫面可能尚未同步此制度，測試時請核對原訂單與政策版本。","sourceRef":"policy:user-confirmed-20261021/qualification-fee"},
+ {"topic":"coupon","title":"UCELL888 優惠內容與付款期限","body":"UCELL888 適用對應的啟航、菁英與領袖會員資格套組；套組商品款減少 14,400 元，同時可選主商品總數減少 3 盒。每個資格另收 600 元費用。優惠使用及付款須在台北時間 2027 年 1 月 31 日結束前完成，總使用次數不限。每月活躍及領獎條件仍須另外符合。Stage 尚未導入優惠碼資料表時，AI 不會提供優惠碼付款成效數字。","sourceRef":"policy:user-confirmed-20261021/UCELL888"},
+ {"topic":"gpv","title":"資格套組 GPV 如何計算？","body":"依本次確認的制度，資格套組 GPV 以優惠後實際支付的套組商品款乘以 0.6 計算；另外收取的 600 元資格費不計入。例如商品款為 0 元時，該商品款 GPV 為 0。個人 AI 查詢顯示的是系統已保存的認列結果，不會用訂單金額臨時計算替代；資料不足時會請你回原功能核對。","sourceRef":"policy:user-confirmed-20261021/gpv-qualification-price"},
+ {"topic":"active","title":"使用優惠碼後仍要符合活躍資格嗎？","body":"需要。優惠僅調整套組商品款與主商品數量，不免除每月活躍及領獎條件。請選擇正確的會員資格，再查詢目前的活躍狀態。不同資格應分別判定；若系統缺少完整認列證據，AI 會顯示資料尚未齊備，不能視為已符合或未符合。","sourceRef":"policy:user-confirmed-20261021/active-requirement"},
+ {"topic":"orders","title":"AI 訂單查詢可以看到什麼？","body":"可查詢指定期間內本人購買的最近 20 筆訂單；選擇正式資格時會進一步限定該資格。訂單狀態不等於物流即時狀態，出貨與配送請查看原訂單明細。0 盒主商品套組無需寄送主商品。清單超過上限時會提醒回訂單頁查看完整資料。","sourceRef":"release:ai-stage-v1/member-orders"},
+ {"topic":"bonus","title":"已核定獎金等於已匯款嗎？","body":"不等於。AI 分別呈現已保存的獎金生命週期與結算狀態，未核定時不提供確定金額。已核定金額仍不代表已實際匯款；付款、回收及更正請回原獎金或付款明細核對。查不到本期獎金證據時，也不能解讀為獎金為零。","sourceRef":"release:ai-stage-v1/bonus-finality"},
+ {"topic":"returns","title":"退貨過帳是否代表已收到退款？","body":"退貨過帳與實際退款完成是不同事件。目前 AI 測試版尚未統一退款現金完成證據，因此不提供退款總額或淨收款報表。請至原退貨與收款功能查看案件及實際付款紀錄；AI 不會代為執行退款。","sourceRef":"release:ai-stage-v1/refund-evidence-limit"}
+]

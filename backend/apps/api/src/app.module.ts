@@ -1,3 +1,4 @@
+import {AiModule} from './modules/ai/ai.module';
 import {PublicWebsiteModule} from './modules/public-website/public-website.module';
 import {ReservoirModule} from './modules/reservoir/reservoir.module';
 import {OrganizationGeoModule} from './modules/organization-geo/organization-geo.module';
@@ -49,6 +50,7 @@ import {FulfillmentOperationsModule} from './modules/commerce/fulfillment-operat
 
 @Module({
   imports: [
+    AiModule,
     PublicWebsiteModule,
     OrganizationGeoModule,
     SettlementJobsModule,

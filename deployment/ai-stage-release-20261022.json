@@ -1,0 +1,127 @@
+{
+  "date": "2026-10-22",
+  "branch": "feat/ai-assistant-stage-20261022",
+  "baselineSourceManifestSha256": "4928ff2c2200cc58539a70b82b83c772351eda6662229d9c5a46faef2882ddc5",
+  "frontendFiles": [
+    {
+      "path": "admin/src/app/App.tsx",
+      "sha256": "bf6b58df4c8f9cd539fc6f6402fadfdeca1f63019172bc49e3d6763449fbcbfa"
+    },
+    {
+      "path": "admin/src/app/nav.ts",
+      "sha256": "8459f8cc1b7dddb6a8c3b50064530899c1a848fb3c40793a09417e40b828a915"
+    },
+    {
+      "path": "admin/src/features/auth/permissions.ts",
+      "sha256": "6d6bbc11258780b84802329fa480323785779245413d4c36205178436d519af5"
+    },
+    {
+      "path": "admin/src/features/ai/AiPages.tsx",
+      "sha256": "0d07b135105b49a9d3b630749f1c31b38bcf55eae393e74a288e91347f9d84ea"
+    },
+    {
+      "path": "admin/tsconfig.app.json",
+      "sha256": "0899d1bcbb98f03d066821e1a6c52b4321f37299e7a34bd3a8954c3397c8ba5b"
+    },
+    {
+      "path": "member/src/App.tsx",
+      "sha256": "834a16b5660ab7a9a97cabd3eb9f76740d84d2dd4f56dfd8018d62a86aff8180"
+    },
+    {
+      "path": "member/src/AiAssistant.tsx",
+      "sha256": "245e7d164a2e1e06f858700be402a9707f8a5fbfeedfb0b756424d57ee997186"
+    },
+    {
+      "path": "member/tsconfig.json",
+      "sha256": "6d39d1fd5d70b6ee9635f50e1c306c6e4579531e4b173d245f258290ded68cc8"
+    },
+    {
+      "path": "member/vite.config.ts",
+      "sha256": "c6f116d61910d375efd2c199fba8f42b47bf120a7f57bd5f05da0894df747c14"
+    },
+    {
+      "path": "shared/ai-assistant/Assistant.tsx",
+      "sha256": "9fb83da7e60ea1feb0de065ab0010e413c0363cab60e73d9275f4f5b66322032"
+    },
+    {
+      "path": "shared/ai-assistant/assistant.css",
+      "sha256": "7f55cb3d048a0bc012bd137208b230c387e8217e4771a24295b8c59aa281a9c2"
+    }
+  ],
+  "apiOverlayFiles": [
+    {
+      "path": "modules/ai/ai-cache.interceptor.js",
+      "sha256": "7a99d646e6ebddee1ca4f18ebe97979b446ecd7a9e7993bedd15f232dbc606fe"
+    },
+    {
+      "path": "modules/ai/ai-contract.js",
+      "sha256": "6dfb6fd022314d78e085a380ed7dc5b878bc7537b7f8b8c2043e79afde94c012"
+    },
+    {
+      "path": "modules/ai/ai-data.js",
+      "sha256": "0b6e15676d8c382ac2a80465ffb10f47d621146de72e7a0bccee1d16d154f3c4"
+    },
+    {
+      "path": "modules/ai/ai-provider.js",
+      "sha256": "32cf663e8a7356becbc41fc2e50165b703d2d27ff3d098a2ea1e347d4fc932ca"
+    },
+    {
+      "path": "modules/ai/ai.controller.js",
+      "sha256": "1425abf6fbcdf7b1a57ab1af13636df25d4919bd07df469105a02a5e0a7f5b34"
+    },
+    {
+      "path": "modules/ai/ai.module.js",
+      "sha256": "c315e8a04c4198db77b7681292ebf6aa3e566ebdb5211dbac9e78864c74e166d"
+    },
+    {
+      "path": "modules/ai/ai.service.js",
+      "sha256": "87c9c6a3fc3e463246846dd3102093bff056d64b011a58743695016eb4fcfcc5"
+    }
+  ],
+  "images": {
+    "member": "ucellstageacr5mafbbsq33mgu.azurecr.io/ucell-member@sha256:6b6af27a6c0a45950d5e3db70d6223244a46143546b1e956e5374542d1a3d598",
+    "admin": "ucellstageacr5mafbbsq33mgu.azurecr.io/ucell-admin@sha256:9f39ae9d903cc91fb4386f48bef6a5a37b58862520893b6f2086d15503290405",
+    "api": "ucellstageacr5mafbbsq33mgu.azurecr.io/ucell-backend@sha256:386b638ee94d3ea7971dd6f345d76fbdb5db743c519a5e6b1ed8bade0804d6dc"
+  },
+  "browser": [
+    {
+      "audience": "admin",
+      "desktop": true,
+      "mobile": true,
+      "noOverflow": true,
+      "noPageErrors": true
+    },
+    {
+      "audience": "member",
+      "desktop": true,
+      "mobile": true,
+      "noOverflow": true,
+      "noPageErrors": true
+    }
+  ],
+  "authorizedTesters": {
+    "accounts": ["joewschang@gmail.com", "service@ucell.life", "Existing Stage Super Admin test identity"],
+    "capabilities": ["AI_EXEC_READ", "AI_REPORT_EXPORT", "AI_KB_EDIT", "AI_KB_APPROVE", "AI_AUDIT_READ"],
+    "expiresAt": "2026-11-22T00:00:00Z",
+    "verifiedCapabilityRows": 15,
+    "humanSignInTested": false
+  },
+  "validation": {
+    "localServiceAssertions": 66,
+    "localFinanceAssertions": 8,
+    "localRuntimeHttpAssertions": 15,
+    "stageHttpAssertions": 37,
+    "modelIntentChecks": 10,
+    "knowledge": {
+      "review": 9,
+      "published": 0
+    },
+    "syntheticTestActorsRevoked": 18,
+    "stageReservationTokens": 172032,
+    "stageRecordedModelTokens": 6147,
+    "stageMonthlyReservationCeiling": 500000,
+    "frontendHealth": "Healthy / 100% traffic",
+    "apiHealth": "Healthy / 100% traffic",
+    "workerUnchanged": true
+  }
+}

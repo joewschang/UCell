@@ -10,6 +10,9 @@ export const nav=[
   ['會員資格（球）','/qualifications','qualifications'],
   ['商品參照','/products','products'],
   ['優惠碼管理','/coupons','packages'],
+  ['AI 營運助理','/ai-assistant','analytics'],
+  ['AI 知識庫','/ai-knowledge','content'],
+  ['AI 治理與稽核','/ai-governance','audit'],
   ['套組與資格商品','/packages','packages'],
   ['訂單與收款','/orders','orders'],
   ['出貨與序號核對','/fulfillment','shipment'],
@@ -52,6 +55,6 @@ export const navGroups=[
  {label:'商務',paths:['/products','/coupons','/packages','/orders','/fulfillment','/erp-reconciliation','/subscriptions','/returns']},
  {label:'獎金中心',paths:['/bonuses','/settlement-jobs','/compensation-period-control','/economic-lineage']},
  {label:'財務／治理',paths:['/payouts','/admin/finance/reservoirs']},
- {label:'營運分析',paths:['/operations-control','/reports','/analytics']},
- {label:'系統治理',paths:['/content','/documents','/audit','/uat','/system','/provider-operations']},
+ {label:'營運分析',paths:['/operations-control','/reports','/analytics','/ai-assistant']},
+ {label:'系統治理',paths:['/content','/documents','/audit','/uat','/system','/provider-operations','/ai-knowledge','/ai-governance']},
 ];

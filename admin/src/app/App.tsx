@@ -15,6 +15,7 @@ import {PaperFormalApplicationPage} from '../features/applications/PaperFormalAp
 import {QualificationsPage} from '../features/qualifications/QualificationsPage';
 import {ProductsPage} from '../features/products/ProductsPage';
 import {CouponsPage} from '../features/coupons/CouponsPage';
+import {AiAssistantPage,AiKnowledgePage,AiAuditPage} from '../features/ai/AiPages';
 import {PackagesPage} from '../features/packages/PackagesPage';
 import {OrdersPage} from '../features/orders/OrdersPage';
 import {OrganizationPage} from '../features/organization/OrganizationPage';
@@ -56,6 +57,9 @@ export function App(){return <Routes>
   <Route path="/qualifications" element={<RequirePageRole><QualificationsPage/></RequirePageRole>}/>
   <Route path="/products" element={<RequirePageRole><ProductsPage/></RequirePageRole>}/>
   <Route path="/coupons" element={<RequirePageRole><CouponsPage/></RequirePageRole>}/>
+  <Route path="/ai-assistant" element={<RequirePageRole><AiAssistantPage/></RequirePageRole>}/>
+  <Route path="/ai-knowledge" element={<RequirePageRole><AiKnowledgePage/></RequirePageRole>}/>
+  <Route path="/ai-governance" element={<RequirePageRole><AiAuditPage/></RequirePageRole>}/>
   <Route path="/packages" element={<RequirePageRole><PackagesPage/></RequirePageRole>}/>
   <Route path="/orders" element={<RequirePageRole><OrdersPage/></RequirePageRole>}/>
   <Route path="/economic-lineage" element={<RequirePageRole><EconomicLineagePage/></RequirePageRole>}/>

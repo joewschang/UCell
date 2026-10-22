@@ -1,0 +1,23 @@
+// Overlay the exact Stage frontend source and API runtime, preserving unrelated patches.
+const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
+const root=path.resolve(__dirname,'..'),baseline=process.env.AI_STAGE_BASELINE||'C:/UCell/releases/zh-tw-stage-20261017',out=process.env.AI_STAGE_OUTPUT||'C:/UCell/ai-stage-20261022/release';
+const manifest=JSON.parse(fs.readFileSync(path.join(baseline,'source-manifest.json')));
+const sha=s=>require('node:crypto').createHash('sha256').update(s).digest('hex');
+for(const item of manifest.files){const f=path.join(baseline,item.path);assert.equal(sha(fs.readFileSync(f)),item.sha256,'Baseline drift: '+item.path)}
+fs.mkdirSync(out,{recursive:true});
+for(const dir of ['admin','member','shared','deployment'])fs.cpSync(path.join(baseline,dir),path.join(out,dir),{recursive:true,filter:s=>!s.split(/[\\/]/).some(x=>['node_modules','dist','.git'].includes(x))});
+for(const dir of ['admin/src/features/ai','shared/ai-assistant'])fs.cpSync(path.join(root,dir),path.join(out,dir),{recursive:true});
+fs.copyFileSync(path.join(root,'member/src/AiAssistant.tsx'),path.join(out,'member/src/AiAssistant.tsx'));
+function edit(file,fn){const f=path.join(out,file),s=fs.readFileSync(f,'utf8'),n=fn(s);assert.notEqual(s,n,'No patch: '+file);fs.writeFileSync(f,n)}
+edit('admin/src/app/App.tsx',s=>"import {AiAssistantPage,AiKnowledgePage,AiAuditPage} from '../features/ai/AiPages';\n"+s.replace('<Route path="/packages"',`<Route path="/ai-assistant" element={<RequirePageRole><AiAssistantPage/></RequirePageRole>}/><Route path="/ai-knowledge" element={<RequirePageRole><AiKnowledgePage/></RequirePageRole>}/><Route path="/ai-governance" element={<RequirePageRole><AiAuditPage/></RequirePageRole>}/><Route path="/packages"`));
+edit('admin/src/app/nav.ts',s=>s.replace('export const nav=[',"export const nav=[\n ['AI 營運助理','/ai-assistant','analytics'],['AI 知識庫','/ai-knowledge','content'],['AI 治理與稽核','/ai-governance','audit'],").replace("'/analytics']","'/analytics','/ai-assistant']").replace("'/provider-operations']","'/provider-operations','/ai-knowledge','/ai-governance']"));
+edit('admin/src/features/auth/permissions.ts',s=>s.replace('pageRoles:Record<string,AdminRole[]>={',"pageRoles:Record<string,AdminRole[]>={\n '/ai-assistant':['SUPER_ADMIN','FINANCE','COMPLIANCE_AUDIT','ORDER_OPS','MEMBERSHIP_OPS'],'/ai-knowledge':['SUPER_ADMIN','ORDER_OPS','MEMBERSHIP_OPS'],'/ai-governance':['SUPER_ADMIN','COMPLIANCE_AUDIT'],"));
+edit('member/src/App.tsx',s=>"import AiAssistant from './AiAssistant';\n"+s.replace('<Route path="/" element={<Home q={current}/>}/>','<Route path="/ai-assistant" element={<AiAssistant q={current}/>}/><Route path="/" element={<><section className="card"><h2>我的 AI 助理</h2><Link to="/ai-assistant">查詢本人資料與常見問題 →</Link></section><Home q={current}/></>}/>').replace('<Route path="/" element={<section className="card"><h1>會員首頁</h1>','<Route path="/ai-assistant" element={<AiAssistant/>}/><Route path="/" element={<section className="card"><h1>會員首頁</h1><Link to="/ai-assistant">我的 AI 助理 →</Link>'));
+for(const file of ['admin/tsconfig.app.json','member/tsconfig.json'])edit(file,s=>{const j=JSON.parse(s);j.compilerOptions.baseUrl='.';j.compilerOptions.paths={react:['./node_modules/@types/react'],'react/*':['./node_modules/@types/react/*']};return JSON.stringify(j,null,2)});
+edit('member/vite.config.ts',s=>s.replace('plugins:[react()],',"plugins:[react()],resolve:{dedupe:['react','react-dom']},"));
+const baseDist=path.join(out,'..','base-dist'),apiOut=path.join(out,'api-overlay');fs.mkdirSync(path.join(apiOut,'modules/auth'),{recursive:true});
+fs.cpSync(path.join(root,'backend/apps/api/dist/modules/ai'),path.join(apiOut,'modules/ai'),{recursive:true});
+let app=fs.readFileSync(path.join(baseDist,'app.module.js'),'utf8');assert.equal(app.split('imports: [').length,2);app='const ai_module_1 = require("./modules/ai/ai.module");\n'+app.replace('imports: [','imports: [ai_module_1.AiModule,');fs.writeFileSync(path.join(apiOut,'app.module.js'),app);
+let guard=fs.readFileSync(path.join(baseDist,'modules/auth/admin-authentication.guard.js'),'utf8');assert.equal(guard.split('\\/organization\\/geo(?:').length,2);guard=guard.replace('\\/organization\\/geo(?:','\\/(?:organization\\/geo|ai)(?:');fs.writeFileSync(path.join(apiOut,'modules/auth/admin-authentication.guard.js'),guard);
+fs.writeFileSync(path.join(out,'Dockerfile.api'),`FROM ucellstageacr5mafbbsq33mgu.azurecr.io/ucell-backend@sha256:466af564544b54b356fb623eadc2f66a5105b4de0e1fca1b721ff248ec710eab\nCOPY api-overlay/ /app/apps/api/dist/\n`);
+console.log(JSON.stringify({out,baselineFilesVerified:manifest.files.length}));

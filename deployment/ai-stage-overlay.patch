@@ -1,0 +1,236 @@
+diff --git a/admin/src/app/App.tsx b/admin/src/app/App.tsx
+index 135b6fdf..d4463833 100644
+--- a/admin/src/app/App.tsx
++++ b/admin/src/app/App.tsx
+@@ -1,3 +1,4 @@
++import {AiAssistantPage,AiKnowledgePage,AiAuditPage} from '../features/ai/AiPages';
+ import {uiText} from "../../../shared/design-system/i18n";
+ import {EconomicLineagePage} from '../features/economic-lineage/EconomicLineagePage';
+ import {OrganizationGeoPage} from '../features/organization-geo/OrganizationGeoPage';
+@@ -56,7 +57,7 @@ export function App(){return <Routes>
+   <Route path="/applications/formal-paper" element={<RequirePageRole><PaperFormalApplicationPage/></RequirePageRole>}/>
+   <Route path="/qualifications" element={<RequirePageRole><QualificationsPage/></RequirePageRole>}/>
+   <Route path="/products" element={<RequirePageRole><ProductsPage/></RequirePageRole>}/>
+-  <Route path="/packages" element={<RequirePageRole><PackagesPage/></RequirePageRole>}/>
++  <Route path="/ai-assistant" element={<RequirePageRole><AiAssistantPage/></RequirePageRole>}/><Route path="/ai-knowledge" element={<RequirePageRole><AiKnowledgePage/></RequirePageRole>}/><Route path="/ai-governance" element={<RequirePageRole><AiAuditPage/></RequirePageRole>}/><Route path="/packages" element={<RequirePageRole><PackagesPage/></RequirePageRole>}/>
+   <Route path="/orders" element={<RequirePageRole><OrdersPage/></RequirePageRole>}/>
+   <Route path="/economic-lineage" element={<RequirePageRole><EconomicLineagePage/></RequirePageRole>}/>
+   <Route path="/fulfillment" element={<RequirePageRole><FulfillmentPage/></RequirePageRole>}/>
+diff --git a/admin/src/app/nav.ts b/admin/src/app/nav.ts
+index d0e0e910..4418e863 100644
+--- a/admin/src/app/nav.ts
++++ b/admin/src/app/nav.ts
+@@ -2,6 +2,7 @@ import {uiText} from "../../../shared/design-system/i18n";
+ import type {UCellIconName} from '@ucell/design-system';
+ 
+ export const nav=[
++ ['AI 營運助理','/ai-assistant','analytics'],['AI 知識庫','/ai-knowledge','content'],['AI 治理與稽核','/ai-governance','audit'],
+   ['總覽','/','dashboard'],
+   ['會員／自然人','/people','people'],
+   ['會員申請','/applications','applications'],
+@@ -52,6 +53,6 @@ export const navGroups=[
+  {label:'商務',paths:['/products','/packages','/orders','/fulfillment','/erp-reconciliation','/subscriptions','/returns']},
+  {label:'獎金中心',paths:['/bonuses','/settlement-jobs','/compensation-period-control','/economic-lineage']},
+  {label:'財務／治理',paths:['/payouts','/admin/finance/reservoirs']},
+- {label:'營運分析',paths:['/operations-control','/reports','/analytics']},
+- {label:'系統治理',paths:['/content','/documents','/audit','/uat','/system','/provider-operations']},
++ {label:'營運分析',paths:['/operations-control','/reports','/analytics','/ai-assistant']},
++ {label:'系統治理',paths:['/content','/documents','/audit','/uat','/system','/provider-operations','/ai-knowledge','/ai-governance']},
+ ];
+diff --git a/admin/src/features/auth/permissions.ts b/admin/src/features/auth/permissions.ts
+index 81309cb7..520b05ed 100644
+--- a/admin/src/features/auth/permissions.ts
++++ b/admin/src/features/auth/permissions.ts
+@@ -1,6 +1,7 @@
+ export type AdminRole='ORG_GEO_VIEW'|'ORG_GEO_DRILLDOWN'|'ORG_GEO_EXPORT'|'QUALIFICATION_PLACEMENT_OVERRIDE'|'SUPER_ADMIN'|'MEMBERSHIP_OPS'|'ORDER_OPS'|'FINANCE'|'COMPLIANCE_AUDIT'|'CUSTOMER_SERVICE'|'PACKAGE_CONFIG_MANAGE'|'PACKAGE_CONFIG_APPROVE';
+ 
+ export const pageRoles:Record<string,AdminRole[]>={
++ '/ai-assistant':['SUPER_ADMIN','FINANCE','COMPLIANCE_AUDIT','ORDER_OPS','MEMBERSHIP_OPS'],'/ai-knowledge':['SUPER_ADMIN','ORDER_OPS','MEMBERSHIP_OPS'],'/ai-governance':['SUPER_ADMIN','COMPLIANCE_AUDIT'],
+   '/organization/geo':['SUPER_ADMIN','ORG_GEO_VIEW','ORG_GEO_DRILLDOWN','ORG_GEO_EXPORT'],
+   '/':['SUPER_ADMIN','MEMBERSHIP_OPS','ORDER_OPS','FINANCE','COMPLIANCE_AUDIT','CUSTOMER_SERVICE','PACKAGE_CONFIG_MANAGE','PACKAGE_CONFIG_APPROVE'],
+   '/people':['SUPER_ADMIN','MEMBERSHIP_OPS','COMPLIANCE_AUDIT'],
+diff --git a/admin/src/features/ai/AiPages.tsx b/admin/src/features/ai/AiPages.tsx
+new file mode 100644
+index 00000000..e7aa21d8
+--- /dev/null
++++ b/admin/src/features/ai/AiPages.tsx
+@@ -0,0 +1,10 @@
++import {useEffect,useState} from 'react';
++import {Assistant} from '../../../../shared/ai-assistant/Assistant';
++import {api as rawApi,getBlob} from '../../lib/api';
++const api=async<T,>(path:string,init?:RequestInit):Promise<T>=>(await rawApi<{data:T}>(path,init)).data;
++export function AiAssistantPage(){return <Assistant audience="admin" request={api} download={async id=>{const blob=await getBlob('/admin/ai/report-jobs/'+id+'/download'),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='UCell-Stage-AI.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}}/>}
++export function AiKnowledgePage(){const [rows,setRows]=useState<any[]>([]),[error,setError]=useState(''),[busy,setBusy]=useState(false),[notice,setNotice]=useState('');async function refresh(){try{setRows(await api<any[]>('/admin/ai/knowledge'))}catch(e:any){setError(e.message)}}useEffect(()=>{void refresh()},[]);
++ async function action(row:any,name:string){setBusy(true);setError('');try{await api('/admin/ai/knowledge/'+row.id+'/'+name,{method:'POST',body:JSON.stringify({revision:row.revision})});setNotice('狀態已更新');await refresh()}catch(e:any){setError(e?.body?.code==='AI_KNOWLEDGE_WORKFLOW'?'作者不能核准自己的版本，或狀態已變更。':e?.body?.code==='AI_KNOWLEDGE_OVERLAP'?'此主題有重疊的有效版本，請先停用或調整版本。':e.message)}finally{setBusy(false)}}
++ async function create(e:React.FormEvent<HTMLFormElement>){e.preventDefault();const form=e.currentTarget,data=new FormData(form);setBusy(true);setError('');try{await api('/admin/ai/knowledge',{method:'POST',body:JSON.stringify({topic:data.get('topic'),title:data.get('title'),body:data.get('body'),audience:data.get('audience'),sourceRef:data.get('sourceRef'),effectiveFrom:new Date(String(data.get('from'))+'T00:00:00+08:00').toISOString(),effectiveTo:new Date(String(data.get('to'))+'T00:00:00+08:00').toISOString()})});form.reset();setNotice('已建立草稿，尚未發布');await refresh()}catch(e:any){setError(e.message)}finally{setBusy(false)}}
++ return <section className="uc-ai"><div className="uc-ai-hero"><div><small>UCELL AI · KNOWLEDGE</small><h1>AI 知識庫</h1><p>核准版本與來源，讓答案有正式依據。</p></div></div>{error&&<p role="alert" className="uc-ai-warning">{error}</p>}{notice&&<p role="status">{notice}</p>}<div className="uc-ai-panel"><h2>知識版本</h2><div className="uc-ai-table"><table><thead><tr><th>主題</th><th>版本</th><th>狀態</th><th>有效時間 台北</th><th>操作</th></tr></thead><tbody>{rows.map(r=><tr key={r.id}><td><details><summary>{r.title}</summary><p style={{whiteSpace:'pre-wrap'}}>{r.body}</p><small>{r.source_ref}</small></details></td><td>{r.version}</td><td>{{DRAFT:'草稿',IN_REVIEW:'待審核',PUBLISHED:'已核准',DISABLED:'已停用'}[r.status as string]??r.status}</td><td>{new Date(r.effective_from).toLocaleDateString('zh-TW',{timeZone:'Asia/Taipei'})} 至 {new Date(r.effective_to).toLocaleDateString('zh-TW',{timeZone:'Asia/Taipei'})}（不含）</td><td>{r.status==='DRAFT'&&<button disabled={busy} onClick={()=>void action(r,'submit')}>送審</button>}{r.status==='IN_REVIEW'&&<button disabled={busy} onClick={()=>void action(r,'approve')}>核准發布</button>}{r.status==='PUBLISHED'&&<button disabled={busy} onClick={()=>void action(r,'disable')}>停用</button>}</td></tr>)}</tbody></table></div></div><form className="uc-ai-panel uc-ai-compose" onSubmit={create}><h2>建立新版本</h2><label>主題<select name="topic">{['enrollment','coupon','gpv','active','orders','bonus','privacy','login','returns'].map(x=><option key={x}>{x}</option>)}</select></label><label>標題<input name="title" required maxLength={100}/></label><label>答案<textarea name="body" required minLength={10} maxLength={4000}/></label><label>適用對象<select name="audience"><option value="MEMBER">會員</option><option value="ADMIN">管理端</option><option value="ALL">兩端</option></select></label><label>來源參照<input name="sourceRef" required maxLength={300}/></label><label>生效日 台北<input type="date" name="from" required/></label><label>失效日 台北 不含當日<input type="date" name="to" required/></label><button disabled={busy}>儲存草稿</button><small>新版本不會覆寫舊版；必須由另一位有權審核者核准。</small></form></section>}
++export function AiAuditPage(){const [rows,setRows]=useState<any[]>([]),[error,setError]=useState('');useEffect(()=>{void api<any[]>('/admin/ai/audit').then(setRows).catch(e=>setError(e.message))},[]);return <section className="uc-ai"><div className="uc-ai-hero"><div><small>UCELL AI · GOVERNANCE</small><h1>AI 治理與稽核</h1><p>只顯示執行中繼資料，不保存問題原文或秘密。</p></div></div>{error&&<p role="alert">{error}</p>}<div className="uc-ai-panel uc-ai-table"><table><thead><tr><th>時間 台北</th><th>對象</th><th>動作</th><th>結果</th><th>詳情</th></tr></thead><tbody>{rows.map(r=><tr key={r.id}><td>{new Date(r.created_at).toLocaleString('zh-TW',{timeZone:'Asia/Taipei'})}</td><td>{r.audience}</td><td>{r.action}</td><td>{r.outcome}</td><td><details><summary>追蹤資料</summary><pre>{JSON.stringify(r.details,null,2)}</pre></details></td></tr>)}</tbody></table></div></section>}
+diff --git a/admin/tsconfig.app.json b/admin/tsconfig.app.json
+index c857b698..796a4fdb 100644
+--- a/admin/tsconfig.app.json
++++ b/admin/tsconfig.app.json
+@@ -1,10 +1,37 @@
+ {
+   "compilerOptions": {
+-    "target":"ES2022","useDefineForClassFields":true,"lib":["ES2022","DOM","DOM.Iterable"],
+-    "allowJs":false,"skipLibCheck":true,"esModuleInterop":true,"allowSyntheticDefaultImports":true,
+-    "strict":true,"forceConsistentCasingInFileNames":true,"module":"ESNext","moduleResolution":"Bundler",
+-    "resolveJsonModule":true,"isolatedModules":true,"noEmit":true,"jsx":"react-jsx",
+-    "noUnusedLocals":false,"noUnusedParameters":false
++    "target": "ES2022",
++    "useDefineForClassFields": true,
++    "lib": [
++      "ES2022",
++      "DOM",
++      "DOM.Iterable"
++    ],
++    "allowJs": false,
++    "skipLibCheck": true,
++    "esModuleInterop": true,
++    "allowSyntheticDefaultImports": true,
++    "strict": true,
++    "forceConsistentCasingInFileNames": true,
++    "module": "ESNext",
++    "moduleResolution": "Bundler",
++    "resolveJsonModule": true,
++    "isolatedModules": true,
++    "noEmit": true,
++    "jsx": "react-jsx",
++    "noUnusedLocals": false,
++    "noUnusedParameters": false,
++    "baseUrl": ".",
++    "paths": {
++      "react": [
++        "./node_modules/@types/react"
++      ],
++      "react/*": [
++        "./node_modules/@types/react/*"
++      ]
++    }
+   },
+-  "include":["src"]
++  "include": [
++    "src"
++  ]
+ }
+\ No newline at end of file
+diff --git a/member/src/App.tsx b/member/src/App.tsx
+index e5afb168..34162041 100644
+--- a/member/src/App.tsx
++++ b/member/src/App.tsx
+@@ -1,3 +1,4 @@
++import AiAssistant from './AiAssistant';
+ import {uiValue,uiText,domainLabel} from "../../shared/design-system/i18n";
+ import Faq from './Faq';
+ 
+@@ -170,7 +171,7 @@ function MemberApp() {
+       <header><div className="uc-member-brand"><CompanyLogo/><small>{memberIdentityLabel}</small></div>{(!data.isMock||current) && <Link className="notification-link" to="/notifications" aria-label={data.isMock ? `通知中心，${unread} 則未讀` : '通知中心'}>通知{data.isMock ? ` ${unread}` : ''}</Link>}</header>
+       {data.isMock && <aside className="demo-banner" data-environment="mock-visual-only"><strong>{uiText("DEV 示範模式 · ")}</strong><span>目前為示範資料，不代表真實業績、獎金或訂單。</span></aside>}
+       <main ref={mainRef} id="member-main" tabIndex={-1}>{loading ? <LoadingState label={loadingLabel}/> : error ? <ErrorState message={error} retry={()=>{begin();retry()}}/> : current ? <><ContextBar beforeSelect={begin}/><div key={current.id}><Routes>
+-        <Route path="/" element={<Home q={current}/>}/>
++        <Route path="/ai-assistant" element={<AiAssistant q={current}/>}/><Route path="/" element={<><section className="card"><h2>我的 AI 助理</h2><Link to="/ai-assistant">查詢本人資料與常見問題 →</Link></section><Home q={current}/></>}/>
+         <Route path="/organization" element={<Organization q={current}/>}/>
+         <Route path="/growth" element={<GrowthCenter/>}/>
+         <Route path="/learning" element={<LearningCenter/>}/>
+@@ -189,7 +190,7 @@ function MemberApp() {
+         <Route path="/notifications" element={<Notifications q={current}/>}/>
+         <Route path="*" element={<section className="card"><h2>找不到頁面</h2><Link to="/">返回首頁</Link></section>}/>
+       </Routes></div></> : <Routes>
+-        <Route path="/" element={<section className="card"><h1>會員首頁</h1><p>{memberIdentityLabel}</p><p>{uiText("歡迎使用 UCell 會員中心。您可以購物、查看訂單、參與活動及管理會員資料。")}</p><MobileActionGrid><Link to="/shop">商品商城</Link><Link to="/orders">我的訂單</Link><Link to="/learning">教育訓練</Link><Link to="/events">活動中心</Link><Link to="/me">會員資料</Link><Link to="/membership/upgrade">申請正式會員</Link></MobileActionGrid></section>}/>
++        <Route path="/ai-assistant" element={<AiAssistant/>}/><Route path="/" element={<section className="card"><h1>會員首頁</h1><Link to="/ai-assistant">我的 AI 助理 →</Link><p>{memberIdentityLabel}</p><p>{uiText("歡迎使用 UCell 會員中心。您可以購物、查看訂單、參與活動及管理會員資料。")}</p><MobileActionGrid><Link to="/shop">商品商城</Link><Link to="/orders">我的訂單</Link><Link to="/learning">教育訓練</Link><Link to="/events">活動中心</Link><Link to="/me">會員資料</Link><Link to="/membership/upgrade">申請正式會員</Link></MobileActionGrid></section>}/>
+         <Route path="/orders" element={<WebRetailOrders/>}/>
+         <Route path="/membership/upgrade" element={<FormalEnrollment/>}/>
+         <Route path="/growth" element={<GrowthCenter/>}/>
+diff --git a/member/src/AiAssistant.tsx b/member/src/AiAssistant.tsx
+new file mode 100644
+index 00000000..23ecf710
+--- /dev/null
++++ b/member/src/AiAssistant.tsx
+@@ -0,0 +1,5 @@
++import {Assistant} from '../../shared/ai-assistant/Assistant';
++import {api as rawApi} from './api';
++const api=async<T,>(path:string,init?:RequestInit):Promise<T>=>(await rawApi<{data:T}>(path,init)).data;
++import type {Qualification} from './api';
++export default function AiAssistant({q}:{q?:Qualification}){return <Assistant key={q?.id??'self'} audience="member" qualificationId={q?.id} qualificationLabel={q?`${q.code} · ${q.rank}`:undefined} request={api}/>}
+diff --git a/member/tsconfig.json b/member/tsconfig.json
+index 4ba7b053..465c484f 100644
+--- a/member/tsconfig.json
++++ b/member/tsconfig.json
+@@ -18,9 +18,18 @@
+     "resolveJsonModule": true,
+     "isolatedModules": true,
+     "noEmit": true,
+-    "jsx": "react-jsx"
++    "jsx": "react-jsx",
++    "baseUrl": ".",
++    "paths": {
++      "react": [
++        "./node_modules/@types/react"
++      ],
++      "react/*": [
++        "./node_modules/@types/react/*"
++      ]
++    }
+   },
+   "include": [
+     "src"
+   ]
+-}
++}
+\ No newline at end of file
+diff --git a/member/vite.config.ts b/member/vite.config.ts
+index c0eb88b3..d6c29e66 100644
+--- a/member/vite.config.ts
++++ b/member/vite.config.ts
+@@ -1,3 +1,3 @@
+ import { defineConfig } from 'vite';
+ import react from '@vitejs/plugin-react';
+-export default defineConfig({ plugins:[react()], optimizeDeps:{exclude:['@ucell/design-system']}, server:{ port:5174,proxy:{'/api':{target:'http://127.0.0.1:3001',changeOrigin:true}} }, build:{ outDir:'dist' } });
++export default defineConfig({ plugins:[react()],resolve:{dedupe:['react','react-dom']}, optimizeDeps:{exclude:['@ucell/design-system']}, server:{ port:5174,proxy:{'/api':{target:'http://127.0.0.1:3001',changeOrigin:true}} }, build:{ outDir:'dist' } });
+diff --git a/shared/ai-assistant/Assistant.tsx b/shared/ai-assistant/Assistant.tsx
+new file mode 100644
+index 00000000..4bf119a0
+--- /dev/null
++++ b/shared/ai-assistant/Assistant.tsx
+@@ -0,0 +1,34 @@
++import {useEffect,useRef,useState} from 'react';
++import './assistant.css';
++export type AiRequest=<T>(path:string,init?:RequestInit)=>Promise<T>;
++type Answer={status:'AVAILABLE'|'UNAVAILABLE'|'CLARIFY'|'DENIED';title:string;text:string;facts:{label:string;value:string;unit?:string}[];columns?:string[];rows?:string[][];sources:{label:string;ref:string}[];definitionVersion:string;period?:{start:string;end:string};updatedAt:string;notice?:string;exportable?:boolean};
++type Turn={turnId:string;status:string;answer?:Answer;snapshotId?:string;code?:string;requestId?:string};
++const errorText=(e:any)=>{const c=e?.code??e?.body?.code;return ({AI_CAPABILITY_REQUIRED:'此帳號尚未加入 AI Stage 測試名單，請由管理者授權。',AI_MODEL_NOT_CONFIGURED:'模型服務尚未設定，請稍後再試。',AI_QUOTA_EXCEEDED:'已達測試用量上限，請稍後再試。',AI_CONTEXT_CHANGED:'資格範圍已變更，請重新查詢。',AI_VERIFIED_SESSION_REQUIRED:'AI 功能需要有效登入，不能使用略過驗證的管理員示範模式。'} as Record<string,string>)[c]??e?.message??'查詢暫時無法完成，請稍後再試。';};
++const friendly=(code?:string)=>({AI_PROVIDER_QUOTA:'模型服務忙碌或配額已滿，請稍後重試。',AI_PROVIDER_UNAVAILABLE:'模型服務暫時無法連線。',AI_WORK_INTERRUPTED:'查詢中斷，請重新提出問題。',AI_MODEL_NOT_CONFIGURED:'模型服務尚未設定。',AI_PERIOD_INVALID:'查詢日期不正確，請指定一年內的有效期間。',AI_SESSION_REVOKED:'登入已失效，請重新登入。'} as Record<string,string>)[code??'']??'查詢服務暫時無法取得完整資料，請稍後重試。';
++export function Assistant({audience,qualificationId,qualificationLabel,request,download}:{audience:'admin'|'member';qualificationId?:string;qualificationLabel?:string;request:AiRequest;download?:(id:string)=>Promise<void>}){
++ const [question,setQuestion]=useState(''),[asked,setAsked]=useState(''),[result,setResult]=useState<Turn|null>(null),[busy,setBusy]=useState(false),[error,setError]=useState(''),[info,setInfo]=useState<any>(),[notice,setNotice]=useState('');
++ const run=useRef(0),abort=useRef<AbortController|null>(null),turn=useRef<string|null>(null);const base='/'+audience+'/ai';
++ useEffect(()=>{const c=new AbortController();void request<any>(base+'/capabilities',{signal:c.signal}).then(setInfo).catch(e=>{if(!c.signal.aborted)setError(errorText(e))});return()=>c.abort()},[base,request]);
++ useEffect(()=>{run.current++;abort.current?.abort();setResult(null);setAsked('');setBusy(false);setQuestion('');if(turn.current)void request(base+'/turns/'+turn.current+'/cancel',{method:'POST',body:'{}'}).catch(()=>{});turn.current=null;return()=>{run.current++;abort.current?.abort();if(turn.current)void request(base+'/turns/'+turn.current+'/cancel',{method:'POST',body:'{}'}).catch(()=>{});}},[qualificationId,base,request]);
++ async function ask(text:string){if(!text.trim()||busy||!info)return;const gen=++run.current,c=new AbortController();abort.current=c;setBusy(true);setError('');setNotice('');setResult(null);setAsked(text);setQuestion('');
++  try{const conversation=await request<any>(base+'/conversations',{method:'POST',signal:c.signal,body:JSON.stringify({qualificationId:qualificationId??null})});const queued=await request<any>(base+'/conversations/'+conversation.id+'/turns',{method:'POST',signal:c.signal,headers:{'Idempotency-Key':crypto.randomUUID()},body:JSON.stringify({message:text,contextVersion:conversation.contextVersion})});turn.current=queued.turnId;
++   for(let n=0;n<32;n++){if(gen!==run.current)return;const answer=await request<Turn>(base+'/turns/'+queued.turnId,{signal:c.signal});if(gen!==run.current)return;if(!['QUEUED','RUNNING'].includes(answer.status)){setResult(answer);if(answer.status==='FAILED')setError(friendly(answer.code));return;}await new Promise<void>((resolve,reject)=>{const timer=setTimeout(()=>{c.signal.removeEventListener('abort',stop);resolve()},900);function stop(){clearTimeout(timer);reject(new Error('cancelled'))}c.signal.addEventListener('abort',stop,{once:true})});}throw new Error('查詢尚未完成，請稍後重試。');
++  }catch(e){if(gen===run.current&&!c.signal.aborted)setError(errorText(e));}finally{if(gen===run.current){setBusy(false);turn.current=null;}}
++ }
++ function cancel(){run.current++;abort.current?.abort();if(turn.current)void request(base+'/turns/'+turn.current+'/cancel',{method:'POST',body:'{}'}).catch(()=>{});turn.current=null;setBusy(false);setNotice('已停止查詢。');}
++ async function exportReport(){try{const job=await request<any>(base+'/report-jobs',{method:'POST',body:JSON.stringify({snapshotId:result?.snapshotId})});await download?.(job.id);setNotice('已下載目前快照的 CSV 報表。')}catch(e){setError(errorText(e))}}
++ async function feedback(rating:string){try{await request(base+'/turns/'+result?.turnId+'/feedback',{method:'POST',body:JSON.stringify({rating})});setNotice('謝謝，已記錄回饋。')}catch(e){setError(errorText(e))}}
++ const examples=audience==='admin'?['本月付款入帳總額多少？','UCELL888 本月付款成效','GPV 與資格費如何計算？']:['我有哪些會員資格？','我的本月訂單','我目前符合活躍資格嗎？','我的本月 GPV','我的本月獎金','UCELL888 如何使用？'];
++ const a=result?.answer;const time=(s:string)=>new Date(s).toLocaleString('zh-TW',{timeZone:'Asia/Taipei',hour12:false});
++ return <section className="uc-ai"><div className="uc-ai-hero"><div><small>UCELL AI · STAGE</small><h1>{audience==='admin'?'AI 營運助理':'我的 AI 助理'}</h1><p>{audience==='admin'?'用自然語言查詢營運資料，數字與來源一起呈現。':'查詢自己的資料，了解資格與常見問題。'}</p></div><span className="uc-ai-badge">唯讀測試</span></div>
++ <p className="uc-ai-scope">查詢範圍：{audience==='admin'?'公司彙總':qualificationLabel??'本人資料，尚未選擇正式資格'} · 台北時間</p>
++ <div className="uc-ai-grid"><div className="uc-ai-panel"><h2>你想了解什麼？</h2><div className="uc-ai-questions">{examples.map(q=><button key={q} disabled={busy||!info} onClick={()=>void ask(q)}>{q}</button>)}</div>
++ {asked&&<p className="uc-ai-question">{asked}</p>}{busy&&<div role="status" className="uc-ai-status">正在確認範圍並查詢資料… <button onClick={cancel}>停止查詢</button></div>}
++ {error&&<div role="alert" className="uc-ai-warning"><strong>目前無法完成查詢</strong><p>{error}</p>{asked&&<button disabled={busy} onClick={()=>void ask(asked)}>重新查詢</button>}</div>}
++ {a&&<article aria-live="polite"><span className="uc-ai-badge">{{AVAILABLE:'資料已取得',UNAVAILABLE:'資料尚未齊備',CLARIFY:'需要確認',DENIED:'範圍限制'}[a.status]??a.status}</span><h2>{a.title}</h2><p className="uc-ai-answer-text">{a.text}</p><div className="uc-ai-facts">{a.facts.map(f=><div key={f.label}><small>{f.label}</small><strong>{f.value}</strong><span>{f.unit}</span></div>)}</div>
++ {!!a.columns&&<div className="uc-ai-table" tabIndex={0} aria-label="查詢結果表格"><table><thead><tr>{a.columns.map((x,i)=><th key={i}>{x}</th>)}</tr></thead><tbody>{a.rows?.map((r,i)=><tr key={i}>{r.map((x,j)=><td key={j}>{x}</td>)}</tr>)}</tbody></table></div>}
++ {a.notice&&<p className="uc-ai-warning">{a.notice}</p>}<details className="uc-ai-source"><summary>查看資料來源與查詢期間</summary><p>更新：{time(a.updatedAt)}</p>{a.period&&<p>期間：{time(a.period.start)} 至 {time(a.period.end)}（不含迄時）</p>}<p>口徑：{a.definitionVersion}</p>{a.sources.map((s,i)=><p key={i}>{s.label}<br/><code>{s.ref}</code></p>)}<small>追蹤碼：{result?.requestId}</small></details>
++ <div className="uc-ai-actions">{a.exportable&&info?.capabilities?.includes('AI_REPORT_EXPORT')&&<button onClick={()=>void exportReport()}>下載 CSV 報表</button>}<button onClick={()=>void feedback('HELPFUL')}>有幫助</button><button onClick={()=>void feedback('INCORRECT')}>回報答案問題</button></div></article>}
++ <form className="uc-ai-compose" onSubmit={e=>{e.preventDefault();void ask(question)}}><label htmlFor="ai-question">輸入問題</label><textarea id="ai-question" maxLength={2000} rows={2} value={question} onChange={e=>setQuestion(e.target.value)} placeholder="請勿輸入密碼、身分證號或銀行帳號"/><button className="primary" disabled={busy||!info||!question.trim()}>送出查詢</button></form>{notice&&<p role="status">{notice}</p>}</div>
++ <aside className="uc-ai-panel uc-ai-help"><h2>答案有依據</h2><p>模型只解析問題，數字取自系統查詢。資料不足時會明確說明。</p><h3>資料與權限</h3><p>僅限已授權範圍，不修改訂單、資格或獎金。</p><h3>目前測試範圍</h3><p>{info?.notice??'請以已授權的 Stage 測試帳號登入。'}</p><small>此版本使用單次問題查詢；每次問題都是獨立範圍，不保留自由對話記憶。</small></aside></div></section>;
++}
+diff --git a/shared/ai-assistant/assistant.css b/shared/ai-assistant/assistant.css
+new file mode 100644
+index 00000000..149aaaef
+--- /dev/null
++++ b/shared/ai-assistant/assistant.css
+@@ -0,0 +1 @@
++.uc-ai{--ai-ink:#183c36;--ai-line:#d5e3db;--ai-green:#08685c;color:var(--uc-text,#17352f);max-width:1280px;margin:auto}.uc-ai-hero{background:linear-gradient(120deg,#0e2f36,#126451);color:#fff;border-radius:20px;padding:28px;display:flex;justify-content:space-between;align-items:start;gap:20px}.uc-ai-hero h1{color:#fff!important;margin:6px 0;font-size:clamp(24px,3vw,34px)}.uc-ai-hero small{color:#e7c985;letter-spacing:2px}.uc-ai-badge{display:inline-block;border:1px solid #a7cabd;border-radius:20px;padding:4px 12px;font-size:13px;white-space:nowrap}.uc-ai-scope{margin:18px 0;color:var(--uc-muted,#526b64)}.uc-ai-grid{display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:22px}.uc-ai-panel{background:var(--uc-surface,#fff);padding:24px;border:1px solid var(--ai-line);border-radius:18px;min-width:0}.uc-ai h2{font-size:21px;margin:12px 0}.uc-ai h3{font-size:17px}.uc-ai button{min-height:44px;border:1px solid #aac9ba;border-radius:10px;padding:10px 14px;background:var(--uc-surface,#fff);color:var(--uc-text,#173b32);cursor:pointer}.uc-ai button:disabled{opacity:.5;cursor:not-allowed}.uc-ai button.primary{background:var(--ai-green);color:white}.uc-ai-questions,.uc-ai-actions{display:flex;flex-wrap:wrap;gap:8px}.uc-ai-question{padding:14px;background:#e5f1ea;color:#1a4338;border-radius:12px;margin:24px 0}.uc-ai-facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:12px}.uc-ai-facts>div{padding:16px;border-left:3px solid #49856f;background:#eff7f2;color:#173b32;border-radius:8px}.uc-ai-facts strong{display:block;font-size:25px;overflow-wrap:anywhere}.uc-ai-facts small{display:block}.uc-ai-facts span{font-size:12px}.uc-ai-table{overflow:auto}.uc-ai table{width:100%;border-collapse:collapse;margin:18px 0}.uc-ai th,.uc-ai td{padding:10px;border-bottom:1px solid var(--ai-line);text-align:left;white-space:nowrap}.uc-ai-source{border-block:1px solid var(--ai-line);padding:14px 0;margin:16px 0;font-size:13px}.uc-ai-source code{overflow-wrap:anywhere;white-space:normal}.uc-ai-source summary{cursor:pointer}.uc-ai-compose{display:grid;gap:10px;margin-top:24px}.uc-ai textarea{font:inherit;width:100%;padding:14px;border:1px solid #8eb7a5;border-radius:10px;background:var(--uc-surface,#fff);color:inherit}.uc-ai-warning{background:#fff3d9;color:#724e19;padding:14px;border-radius:10px;margin:14px 0}.uc-ai-status{padding:18px}.uc-ai-help{align-self:start;line-height:1.8}.uc-ai-answer-text{white-space:pre-wrap}.uc-ai :focus-visible{outline:3px solid #c9a74d;outline-offset:3px}@media(max-width:850px){.uc-ai-grid{grid-template-columns:1fr}.uc-ai-panel{padding:17px}.uc-ai-hero{padding:20px}.uc-ai-help{font-size:14px}.uc-ai-facts{grid-template-columns:1fr 1fr}.uc-ai-hero{flex-wrap:wrap}}

@@ -1,4 +1,5 @@
 import OrderList from './OrderList';
+import AiAssistant from './AiAssistant';
 import {ExploreHub,BusinessHub,MemberWelcome} from './MemberHubs';
 import SharingCenter from './SharingCenter';
 import {uiValue,uiText,domainLabel} from "../../shared/design-system/i18n";
@@ -168,7 +169,8 @@ function MemberApp() {
       <header><div className="uc-member-brand"><CompanyLogo/><small>{memberIdentityLabel}</small></div>{(!data.isMock||current) && <Link className="notification-link" to="/notifications" aria-label={data.isMock ? `通知中心，${unread} 則未讀` : '通知中心'}>通知{data.isMock ? ` ${unread}` : ''}</Link>}</header>
       {data.isMock && <aside className="demo-banner" data-environment="mock-visual-only"><strong>{uiText("DEV 示範模式 · ")}</strong><span>目前為示範資料，不代表真實業績、獎金或訂單。</span></aside>}
       <main ref={mainRef} id="member-main" tabIndex={-1}>{loading ? <LoadingState label={loadingLabel}/> : error ? <ErrorState message={error} retry={()=>{begin();retry()}}/> : current ? <><ContextBar beforeSelect={begin}/><div key={current.id}><Routes>
-        <Route path="/" element={<Home q={current}/>}/>
+        <Route path="/" element={<><section className="card"><h2>我的 AI 助理</h2><p>查詢本人資格、訂單、業績及常見問題。</p><Link to="/ai-assistant">開啟 AI 助理 →</Link></section><Home q={current}/></>}/>
+        <Route path="/ai-assistant" element={<AiAssistant q={current}/>}/>
         <Route path="/organization" element={<Organization q={current}/>}/>
         <Route path="/growth" element={<GrowthCenter/>}/>
         <Route path="/learning" element={<LearningCenter/>}/>
@@ -187,7 +189,8 @@ function MemberApp() {
         <Route path="/notifications" element={<Notifications q={current}/>}/>
         <Route path="*" element={<section className="card"><h2>找不到頁面</h2><Link to="/">返回首頁</Link></section>}/>
       </Routes></div></> : <Routes>
-        <Route path="/" element={<MemberWelcome/>}/><Route path="/explore" element={<ExploreHub/>}/>
+        <Route path="/" element={<><section className="card"><h2>我的 AI 助理</h2><p>查詢本人訂單與常見問題。</p><Link to="/ai-assistant">開啟 AI 助理 →</Link></section><MemberWelcome/></>}/><Route path="/explore" element={<ExploreHub/>}/>
+        <Route path="/ai-assistant" element={<AiAssistant/>}/>
         <Route path="/content" element={<ContentList/>}/><Route path="/content/:id" element={<ContentDetail/>}/>
         <Route path="/orders" element={<WebRetailOrders/>}/>
         <Route path="/membership/upgrade" element={<FormalEnrollment/>}/>
