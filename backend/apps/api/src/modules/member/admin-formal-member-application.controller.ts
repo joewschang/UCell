@@ -1,11 +1,11 @@
 import {Body,Controller,Get,Header,Headers,Param,ParseUUIDPipe,Post,Query,Req,StreamableFile,UseGuards} from '@nestjs/common';
-import {ApiBearerAuth,ApiHeader,ApiOperation,ApiProperty,ApiPropertyOptional,ApiTags} from '@nestjs/swagger';
+import {OmitType,ApiBearerAuth,ApiHeader,ApiOperation,ApiProperty,ApiPropertyOptional,ApiTags} from '@nestjs/swagger';
 import {Roles} from '../auth/roles.decorator';
 import {FormalMemberApplicationService,type AdminPaperFormalInput} from './formal-member-application.service';
 import {FormalMembershipConflictService} from './formal-membership-conflict.service';
 import {FormalKycDocumentService} from './formal-kyc-document.service';
 import {IdempotencyGuard} from '../../common/guards/idempotency.guard';
-import {IsBoolean,IsDateString,IsEmail,IsIn,IsOptional,IsString,IsUUID,Matches,MaxLength,ValidateIf} from 'class-validator';
+import {IsInt,Min,IsBoolean,IsDateString,IsEmail,IsIn,IsOptional,IsString,IsUUID,Matches,MaxLength,ValidateIf} from 'class-validator';
 
 class AdminPaperFormalApplicationDto implements AdminPaperFormalInput {
  @ApiProperty({format:'uuid'}) @IsUUID() representativePersonId!:string;
@@ -43,6 +43,12 @@ class AdminPaperFormalApplicationDto implements AdminPaperFormalInput {
  @ApiProperty({maxLength:120}) @IsString() @Matches(/\S/) @MaxLength(120) accountHolder!:string;
 }
 
+class AdminFormalUpdateDto extends OmitType(AdminPaperFormalApplicationDto,['representativePersonId','paperApplicationReference'] as const){
+ @ApiProperty() @IsInt() @Min(1) expectedVersion!:number;
+ @ApiProperty({maxLength:500}) @IsString() @Matches(/\S/) @MaxLength(500) reason!:string;
+ @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(48) sponsorBallNo?:string;
+ @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(120) paperApplicationReference?:string;
+}
 class AdminPaperEvidenceReviewDto {
  @ApiProperty({enum:['SIGNED_APPLICATION_AGREEMENT','IDENTITY_FRONT','IDENTITY_BACK','BANKBOOK_COVER','CORPORATE_REGISTRATION','REPRESENTATIVE_IDENTITY_FRONT','REPRESENTATIVE_IDENTITY_BACK','CORPORATE_BANK_PROOF','TAX_REGISTRATION','OTHER']})
  @IsIn(['SIGNED_APPLICATION_AGREEMENT','IDENTITY_FRONT','IDENTITY_BACK','BANKBOOK_COVER','CORPORATE_REGISTRATION','REPRESENTATIVE_IDENTITY_FRONT','REPRESENTATIVE_IDENTITY_BACK','CORPORATE_BANK_PROOF','TAX_REGISTRATION','OTHER'])
@@ -58,6 +64,9 @@ class AdminPaperEvidenceReviewDto {
 @Controller('admin/formal-member-applications')
 export class AdminFormalMemberApplicationController {
  constructor(private readonly service:FormalMemberApplicationService,private readonly conflicts:FormalMembershipConflictService,private readonly kyc:FormalKycDocumentService){}
+ @Post(':id/update') @Roles('SUPER_ADMIN','MEMBERSHIP_OPS') @UseGuards(IdempotencyGuard) @ApiHeader({name:'Idempotency-Key',required:true})
+ @ApiOperation({operationId:'adminUpdateFormalApplication',description:'Correct pending application data using encrypted versioned snapshots and optimistic concurrency. Does not impersonate member consent or approve membership.'})
+ update(@Param('id',new ParseUUIDPipe()) id:string,@Body() body:AdminFormalUpdateDto,@Headers('idempotency-key') key:string,@Req() req:any){return this.service.adminUpdate(id,body,req.user?.personId,key,req.requestId);}
  @Get('legal-entities/search')
  @ApiOperation({operationId:'adminSearchFormalLegalEntities',description:'Search active formal LegalEntity owners for Qualification/Ball application creation.'})
  searchLegalEntities(@Query('q') q?:string,@Query('take') take?:string){return this.service.adminLegalEntities({q:q||undefined,take:Number(take??20)});}

@@ -83,7 +83,7 @@ export class FormalEnrollmentService{
    const purchase=(await this.paidPackages(tx,personId))[0];
    if(!purchase)throw new ConflictException({code:'FORMAL_ENROLLMENT_PAYMENT_REQUIRED'});
    const docs=await tx.formalApplicationDocument.findMany({where:{formalMemberApplicationId:applicationId,status:'PRESENT',documentType:{in:['IDENTITY_FRONT','IDENTITY_BACK','BANKBOOK_COVER']}}});
-   if(['IDENTITY_FRONT','IDENTITY_BACK','BANKBOOK_COVER'].some(type=>!docs.some(d=>d.documentType===type&&d.malwareScanStatus!=='INFECTED')))throw new ConflictException({code:'FORMAL_ENROLLMENT_DOCUMENTS_REQUIRED'});
+   if(['IDENTITY_FRONT','IDENTITY_BACK','BANKBOOK_COVER'].some(type=>!docs.some(d=>d.documentType===type)))throw new ConflictException({code:'FORMAL_ENROLLMENT_DOCUMENTS_REQUIRED'});
    await this.pending(tx,personId,purchase!.orderId);
    await tx.formalMemberApplication.update({where:{formalMemberApplicationId:applicationId},data:{status:'SUBMITTED',submittedAt:new Date()}});
    await this.audit.write(tx,{actorType:'MEMBER',actorId:personId,action:'FORMAL_ENROLLMENT_SUBMITTED',entityType:'FormalMemberApplication',entityId:applicationId,afterData:{status:'SUBMITTED',paymentOrderId:purchase!.orderId,scanApprovalGranted:false},requestId,correlationId:randomUUID()});

@@ -15,7 +15,7 @@ function harness(){
   const audit={write:jest.fn()};
   return {application,record,tx,db,storage,audit,service:new FormalKycDocumentService(db,storage as any,audit as any)};
 }
-describe('Private KYC content validation and scan fail-closed boundaries',()=>{
+describe('Private KYC content validation and document availability boundaries',()=>{
   it.each([[png,'image/png'],[jpeg,'image/jpeg']] as const)('accepts the actual %s fixture under its MIME without treating validation as malware scanning',(bytes,mime)=>{
     expect(validKycImage(bytes,mime)).toBe(true);
   });
@@ -50,11 +50,11 @@ describe('Private KYC content validation and scan fail-closed boundaries',()=>{
     expect(h.tx.formalApplicationDocument.create).not.toHaveBeenCalled();
     expect(h.tx.formalApplicationDocument.updateMany).not.toHaveBeenCalled();
   });
-  it.each(['PENDING','FAILED','INFECTED'])('does not stream a document whose malware scan is %s',async status=>{
+  it.each(['PENDING','FAILED','INFECTED'])('streams PRESENT documents without waiting for malware scan %s',async status=>{
     const h=harness();h.record.malwareScanStatus=status;
-    await expect(h.service.adminContent('document','admin','request')).rejects.toMatchObject({response:{code:'FORMAL_KYC_SCAN_CLEAN_REQUIRED'}});
-    expect(h.storage.get).not.toHaveBeenCalled();
+    expect((await h.service.adminContent('document','admin','request')).bytes).toEqual(png);
   });
+  it.each(['REJECTED','SUPERSEDED'])('does not stream unavailable documents: %s',async status=>{const h=harness();h.record.status=status;await expect(h.service.adminContent('document','admin','request')).rejects.toMatchObject({response:{code:status==='SUPERSEDED'?'FORMAL_KYC_DOCUMENT_NOT_FOUND':'FORMAL_KYC_DOCUMENT_NOT_PRESENT'}});expect(h.storage.get).not.toHaveBeenCalled();});
   it('rejects bytes changed in object storage before returning any content',async()=>{
     const h=harness();h.storage.get.mockResolvedValueOnce({bytes:Buffer.from('changed'),mimeType:'image/png'});
     await expect(h.service.adminContent('document','admin','request')).rejects.toMatchObject({response:{code:'FORMAL_KYC_DOCUMENT_INTEGRITY_FAILED'}});

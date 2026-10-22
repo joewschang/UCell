@@ -80,10 +80,10 @@ export default function FormalUpgrade({onSubmitted,onSaved,draftOnly=false}:{onS
  </fieldset>
  <fieldset><legend>身分與銀行文件</legend>
   <p>{uiText("線上正式會員送審前必須完成身分證明文件正面、反面及存摺封面上傳。JPG/PNG，單檔上限 10 MB。")}</p>
-  <label>身分證明文件正面<input type="file" accept="image/jpeg,image/png" onChange={e=>setFile('IDENTITY_FRONT',e.target.files?.[0])}/>{uploaded.IDENTITY_FRONT&&<small>已上傳 · 安全檢查 {uploaded.IDENTITY_FRONT}</small>}</label>
-  <label>身分證明文件反面<input type="file" accept="image/jpeg,image/png" onChange={e=>setFile('IDENTITY_BACK',e.target.files?.[0])}/>{uploaded.IDENTITY_BACK&&<small>已上傳 · 安全檢查 {uploaded.IDENTITY_BACK}</small>}</label>
-  <label>存摺封面<input type="file" accept="image/jpeg,image/png" onChange={e=>setFile('BANKBOOK_COVER',e.target.files?.[0])}/>{uploaded.BANKBOOK_COVER&&<small>已上傳 · 安全檢查 {uploaded.BANKBOOK_COVER}</small>}</label>
-  <small>上傳後由後台進行文件與資料比對；在安全檢查與審核完成前不會核准正式會員。</small>
+  <label>身分證明文件正面<input type="file" accept="image/jpeg,image/png" onChange={e=>setFile('IDENTITY_FRONT',e.target.files?.[0])}/>{uploaded.IDENTITY_FRONT&&<small>已上傳</small>}</label>
+  <label>身分證明文件反面<input type="file" accept="image/jpeg,image/png" onChange={e=>setFile('IDENTITY_BACK',e.target.files?.[0])}/>{uploaded.IDENTITY_BACK&&<small>已上傳</small>}</label>
+  <label>存摺封面<input type="file" accept="image/jpeg,image/png" onChange={e=>setFile('BANKBOOK_COVER',e.target.files?.[0])}/>{uploaded.BANKBOOK_COVER&&<small>已上傳</small>}</label>
+  <small>上傳後由後台進行文件與資料比對；審核完成後才會核准正式會員。</small>
  </fieldset>
 
  <label>通訊地址<textarea required maxLength={500} autoComplete="street-address" value={form.communicationAddress} onChange={e=>set('communicationAddress',e.target.value)}/></label>

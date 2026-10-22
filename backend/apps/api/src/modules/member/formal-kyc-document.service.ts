@@ -17,7 +17,7 @@ export class FormalKycDocumentService{
     const app=await this.db.formalMemberApplication.findFirst({where:{formalMemberApplicationId:applicationId,personId}});
     if(!app)throw new NotFoundException({code:'FORMAL_APPLICATION_NOT_FOUND'});
     const rows=await this.db.formalApplicationDocument.findMany({where:{formalMemberApplicationId:applicationId,status:{not:'SUPERSEDED'}},orderBy:{createdAt:'desc'}});
-    return {applicationId,required:app.sourceChannel==='MEMBER_WEB'&&app.applicantType==='INDIVIDUAL'?[...REQUIRED_WEB]:[],documents:rows.map(r=>({id:r.formalApplicationDocumentId,type:r.documentType,status:r.status,scanStatus:r.malwareScanStatus,mimeType:r.mimeType,sizeBytes:r.sizeBytes,uploadedAt:r.uploadedAt?.toISOString()??null}))};
+    return {applicationId,required:app.sourceChannel==='MEMBER_WEB'&&app.applicantType==='INDIVIDUAL'?[...REQUIRED_WEB]:[],documents:rows.map(r=>({id:r.formalApplicationDocumentId,type:r.documentType,status:r.status,scanStatus:r.malwareScanStatus,scanRequired:false,mimeType:r.mimeType,sizeBytes:r.sizeBytes,uploadedAt:r.uploadedAt?.toISOString()??null}))};
   }
 
   async upload(personId:string,applicationId:string,type:string,mimeType:string,contentBase64:string,requestId:string){
@@ -50,21 +50,21 @@ export class FormalKycDocumentService{
       if((error as any).code==='P2034')throw new ConflictException({code:'RETRYABLE_CONFLICT'});
       throw error;
     }
-    return {id:row.formalApplicationDocumentId,type:row.documentType,status:row.status,scanStatus:row.malwareScanStatus,mimeType:row.mimeType,sizeBytes:row.sizeBytes,uploadedAt:row.uploadedAt?.toISOString()??null};
+    return {id:row.formalApplicationDocumentId,type:row.documentType,status:row.status,scanStatus:row.malwareScanStatus,scanRequired:false,mimeType:row.mimeType,sizeBytes:row.sizeBytes,uploadedAt:row.uploadedAt?.toISOString()??null};
   }
 
   async adminList(applicationId:string){
     const app=await this.db.formalMemberApplication.findUnique({where:{formalMemberApplicationId:applicationId}});
     if(!app)throw new NotFoundException({code:'FORMAL_APPLICATION_NOT_FOUND'});
     const rows=await this.db.formalApplicationDocument.findMany({where:{formalMemberApplicationId:applicationId},orderBy:{createdAt:'desc'}});
-    return rows.map(r=>({id:r.formalApplicationDocumentId,type:r.documentType,status:r.status,scanStatus:r.malwareScanStatus,mimeType:r.mimeType,sizeBytes:r.sizeBytes,uploadedAt:r.uploadedAt?.toISOString()??null,reviewedAt:r.reviewedAt?.toISOString()??null}));
+    return rows.map(r=>({id:r.formalApplicationDocumentId,type:r.documentType,status:r.status,scanStatus:r.malwareScanStatus,scanRequired:false,mimeType:r.mimeType,sizeBytes:r.sizeBytes,uploadedAt:r.uploadedAt?.toISOString()??null,reviewedAt:r.reviewedAt?.toISOString()??null}));
   }
 
   async adminContent(documentId:string,actorId:string,requestId:string){
     if(!actorId)throw new ForbiddenException({code:'ADMIN_PERSON_ID_REQUIRED'});
     const row=await this.db.formalApplicationDocument.findUnique({where:{formalApplicationDocumentId:documentId}});
     if(!row||!row.storageObjectKey||row.status==='SUPERSEDED')throw new NotFoundException({code:'FORMAL_KYC_DOCUMENT_NOT_FOUND'});
-    if(row.status!=='PRESENT'||row.malwareScanStatus!=='CLEAN')throw new UnprocessableEntityException({code:'FORMAL_KYC_SCAN_CLEAN_REQUIRED'});
+    if(row.status!=='PRESENT')throw new UnprocessableEntityException({code:'FORMAL_KYC_DOCUMENT_NOT_PRESENT'});
     const blob=await this.storage.get(row.storageObjectKey);
     if(!row.mimeType||blob.bytes.length!==row.sizeBytes||createHash('sha256').update(blob.bytes).digest('hex')!==row.contentSha256||!validKycImage(blob.bytes,row.mimeType))throw new UnprocessableEntityException({code:'FORMAL_KYC_DOCUMENT_INTEGRITY_FAILED'});
     await this.db.$transaction(tx=>this.audit.write(tx,{actorType:'ADMIN',actorId,action:'FORMAL_KYC_DOCUMENT_VIEWED',entityType:'FormalApplicationDocument',entityId:documentId,afterData:{applicationId:row.formalMemberApplicationId,documentType:row.documentType},requestId,correlationId:randomUUID()}));
