@@ -1,0 +1,8 @@
+{
+  "image": "ucellprodacrm3z2zx4ohqyui.azurecr.io/ucell-member@sha256:53eda267879c1773d13eaa8bcaac17a689f23f45ff0c0e7597cedccb17223d8e",
+  "revision": "ucell-prod-member--enrollment-upload-20261022",
+  "previousImage": "sha256:22b3c2796c2b95601eb83efb88c86d46dcaf1ba373093be69840be5d24b8ffb0",
+  "buildRun": "ck4e",
+  "changes": ["120-second document upload timeout; other requests remain 15 seconds", "Per-document progress and retained successes on retry", "Rotate draft idempotency key after confirmed save", "Native validation and missing-consent feedback"],
+  "validation": {"memberTests": 324, "productionBuild": "passed", "focusedRegressionTests": 12}
+}

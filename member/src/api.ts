@@ -3,8 +3,10 @@ const base = import.meta.env.VITE_API_BASE_URL || '/api/v1';
 const expiredMessage = '登入已失效，請重新登入';
 export class MemberApiError extends Error { constructor(message:string,public readonly status:number,public readonly code?:string){super(message);this.name='MemberApiError';} }
 export const REQUEST_TIMEOUT_MS = 15_000;
+export type ApiRequestInit = RequestInit & { timeoutMs?: number };
 export function createApiClient(guard: SessionGuard) {
-    return async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
+    return async function api<T>(path: string, init: ApiRequestInit = {}): Promise<T> {
+        const { timeoutMs = REQUEST_TIMEOUT_MS, ...requestInit } = init;
         if (guard.getSnapshot()) throw new Error(expiredMessage);
         const token = sessionStorage.getItem('ucell_member_token');
         const headers = new Headers(init.headers);
@@ -15,13 +17,13 @@ export function createApiClient(guard: SessionGuard) {
         const abort = () => controller.abort();
         const unregister = guard.register(controller);
         let timedOut = false;
-        const timer = setTimeout(() => { timedOut = true; controller.abort(); }, REQUEST_TIMEOUT_MS);
+        const timer = setTimeout(() => { timedOut = true; controller.abort(); }, timeoutMs);
         init.signal?.addEventListener('abort', abort, { once: true });
         if (init.signal?.aborted) controller.abort();
         try {
             if (controller.signal.aborted) throw new DOMException('Aborted', 'AbortError');
             const res = await fetch(`${base}${path}`, {
-                ...init, signal: controller.signal, headers,
+                ...requestInit, signal: controller.signal, headers,
                 credentials: 'same-origin', cache: 'no-store',
             });
             if (guard.getSnapshot()) throw new Error(expiredMessage);

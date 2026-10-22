@@ -13,6 +13,7 @@ export default function FormalUpgrade({onSubmitted,onSaved,draftOnly=false,initi
  const [saved,setSaved]=useState<{id:string;version:number;identityDocumentNumberMasked:string|null;spouseIdentityDocumentNumberMasked:string|null;bankAccountMasked:string;applicantType:string}|null>(null);
  const [files,setFiles]=useState<Partial<Record<FormalDocumentType,File>>>({}),[uploaded,setUploaded]=useState<Partial<Record<FormalDocumentType,string>>>({});
  const key=useRef(crypto.randomUUID()),hydrated=useRef(false);
+ const [progress,setProgress]=useState('');
  const [form,setForm]=useState({
   applicantType:'INDIVIDUAL' as const,
   legalName:'',gender:'UNDISCLOSED',birthDate:'',nationalityCode:'TW',identityDocumentType:'NATIONAL_ID' as 'NATIONAL_ID'|'RESIDENCE_PERMIT'|'PASSPORT'|'OTHER',identityDocumentNumber:'',
@@ -37,7 +38,8 @@ export default function FormalUpgrade({onSubmitted,onSaved,draftOnly=false,initi
   const documentTypes:FormalDocumentType[]=['IDENTITY_FRONT','IDENTITY_BACK','BANKBOOK_COVER'];
   if(draftOnly&&documentTypes.some(type=>!files[type]&&!uploaded[type])){setError('請備妥身分證明文件正面、反面及存摺封面，再前往下一步');return;}
   if(Object.values(files).some(file=>file&&(!['image/jpeg','image/png'].includes(file.type)||file.size>10*1024*1024))){setError('證件檔案須為 JPG 或 PNG，且每份不超過 10 MB');return;}
-  setBusy(true);setError('');
+  setBusy(true);setError('');setProgress('正在儲存會員資料…');
+  let uploadingLabel='';
   try{
    if(!contract.acceptedAt)await consentFormalContract(contract.id,key.current);
    const common={
@@ -50,18 +52,22 @@ export default function FormalUpgrade({onSubmitted,onSaved,draftOnly=false,initi
    const identity={legalName:form.legalName,gender:form.gender,birthDate:form.birthDate,nationalityCode:form.nationalityCode,identityDocumentType:form.identityDocumentType,identityDocumentNumber:form.identityDocumentNumber};
    const result=await saveFormalDraft({...common,...identity},key.current);
    setSaved(result);
+   key.current=crypto.randomUUID();
    const nextUploaded:Partial<Record<FormalDocumentType,string>>={...uploaded};
    for(const type of ['IDENTITY_FRONT','IDENTITY_BACK','BANKBOOK_COVER'] as FormalDocumentType[]){
-    const file=files[type];if(!file)continue;
+    const file=files[type];if(!file||nextUploaded[type])continue;
+    uploadingLabel=type==='IDENTITY_FRONT'?'身分證明文件正面':type==='IDENTITY_BACK'?'身分證明文件反面':'存摺封面';
+    setProgress(`資料已儲存，正在上傳${uploadingLabel}（${documentTypes.indexOf(type)+1}/3）…請稍候，完成後會自動前往下一步。`);
     const doc=await uploadFormalDocument(result.id,type,file);
     nextUploaded[type]=doc.scanStatus;
+    setUploaded({...nextUploaded});
    }
    setUploaded(nextUploaded);onSaved?.(result.id);key.current=crypto.randomUUID();contracts.retry();
-  }catch(reason){setError(reason instanceof Error?reason.message:'草稿儲存失敗');}
-  finally{setBusy(false);}
+  }catch(reason){setError(uploadingLabel?`${uploadingLabel}上傳未完成。會員資料與已完成的文件已保留，請確認網路後再次按「儲存資料並前往下一步」重試。`:(reason instanceof Error?reason.message:'草稿儲存失敗'));}
+  finally{setBusy(false);setProgress('');}
  }
 
- return <form className="card formal-profile" onSubmit={submit}><h3>會員資料與文件</h3>{error&&<p role="alert">{error}</p>}
+ return <form className="card formal-profile" onSubmit={submit} onInvalid={()=>setError('請檢查必填欄位與 Email 格式，並依提示修正後再繼續。')} aria-busy={busy}><fieldset disabled={busy} style={{border:0,padding:0,margin:0,minWidth:0}}><h3>會員資料與文件</h3>{error&&<p role="alert">{error}</p>}
  <p>{uiText("線上正式會員申請限自然人。草稿不會送審、核准、建立球位或改變會員狀態；配偶與身分資料僅供 KYC 與跨線審查。")}</p>
  <details><summary>{contract.title}（{contract.version}）</summary><p>{contract.content}</p><small>內容雜湊：{contract.contentHash}</small></details>
  <label><input type="checkbox" checked={accepted||!!contract.acceptedAt} disabled={!!contract.acceptedAt||busy} onChange={e=>setAccepted(e.target.checked)}/> 我已閱讀並同意上述正式會員合約與隱私告知</label>
@@ -94,7 +100,9 @@ export default function FormalUpgrade({onSubmitted,onSaved,draftOnly=false,initi
  <label>銀行帳號<input required maxLength={34} autoComplete="off" value={form.bankAccount} onChange={e=>set('bankAccount',e.target.value)}/></label>
  <label>帳戶名<input required maxLength={120} value={form.accountHolder} onChange={e=>set('accountHolder',e.target.value)}/></label>
  <button className="primary" disabled={busy||!(accepted||!!contract.acceptedAt)}>{busy?'儲存／上傳中…':draftOnly?'儲存資料並前往下一步':'儲存資料與文件'}</button>
+ {busy&&<p role="status" aria-live="polite">{progress}</p>}
+ {!(accepted||contract.acceptedAt)&&<p>請先勾選上方的正式會員合約與隱私告知同意欄位。</p>}
  {saved&&<p role="status">已保存第 {saved.version} 版自然人草稿；身分證明號碼 {saved.identityDocumentNumberMasked??'未提供'}{saved.spouseIdentityDocumentNumberMasked?'，配偶身分證明號碼 '+saved.spouseIdentityDocumentNumberMasked:''}，帳號 {saved.bankAccountMasked}。</p>}
  {saved&&!draftOnly&&<button type="button" disabled={busy||submitted} onClick={async()=>{setBusy(true);setError('');try{await submitFormalEnrollment(saved.id,key.current);setSubmitted(true);onSubmitted?.();}catch(e){setError(e instanceof Error?e.message:'送出失敗');}finally{setBusy(false);}}}>{submitted?'申請已送出，等待審核':'送出正式會員申請'}</button>}
- {error&&<p role="alert">{error}</p>}</form>;
+ {error&&<p role="alert">{error}</p>}</fieldset></form>;
 }

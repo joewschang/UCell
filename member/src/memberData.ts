@@ -62,7 +62,7 @@ export async function uploadFormalDocument(applicationId:string,documentType:For
  const bytes=new Uint8Array(await file.arrayBuffer());
  let binary='';const chunk=0x8000;for(let i=0;i<bytes.length;i+=chunk)binary+=String.fromCharCode(...bytes.subarray(i,i+chunk));
  const contentBase64=btoa(binary);
- return api<{id:string;type:FormalDocumentType;status:string;scanStatus:string;mimeType:string;sizeBytes:number;uploadedAt:string|null}>(`/member/formal-applications/${encodeURIComponent(applicationId)}/documents`,{method:'POST',body:JSON.stringify({documentType,mimeType:file.type,contentBase64,expectedSnapshotHash})});
+ return api<{id:string;type:FormalDocumentType;status:string;scanStatus:string;mimeType:string;sizeBytes:number;uploadedAt:string|null}>(`/member/formal-applications/${encodeURIComponent(applicationId)}/documents`,{method:'POST',timeoutMs:120_000,body:JSON.stringify({documentType,mimeType:file.type,contentBase64,expectedSnapshotHash})});
 }
 export async function getFormalDocuments(applicationId:string,signal?:AbortSignal){
  return api<{applicationId:string;signingContext?:{name:string;snapshotHash:string;version:number;contract:{title:string;version:string;contentHash:string}};required:FormalDocumentType[];documents:{id:string;type:FormalDocumentType;status:string;scanStatus:string;mimeType:string|null;sizeBytes:number|null;uploadedAt:string|null}[]}>(`/member/formal-applications/${encodeURIComponent(applicationId)}/documents`,{signal});
