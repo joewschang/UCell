@@ -205,7 +205,7 @@ function MemberApp() {
         <Route path="/me" element={<Me/>}/>
         <Route path="*" element={<section className="card"><h2>尚未取得會員資格</h2><p>可先完成正式會員資料，再透過正式套組取得第一個會員資格。</p><Link className="text-link" to="/shop">選擇正式會員套組</Link><button onClick={retry}>重新查詢</button><Link className="text-link" to="/me">查看會員資料</Link><EndSession connected={!data.isMock}/></section>}/>
       </Routes>}</main>
-      <MemberNavigation hasQualification={!!current||loading||!!error}/>
+      <p className="card"><a href="https://ucell.life/faq.html">常見問答</a> · 不限會員資格，皆可瀏覽</p><MemberNavigation hasQualification={!!current||loading||!!error}/>
     </MemberAppShell>;
 }
 

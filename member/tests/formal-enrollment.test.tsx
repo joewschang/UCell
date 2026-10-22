@@ -32,3 +32,4 @@ it('allows bank transfer intent to advance and submit while payment stays pendin
  await act(async()=>button('確認送出正式會員申請').props.onClick());
  expect(submitFormalEnrollment).toHaveBeenCalledWith('APP',expect.any(String),{orderId:'ORDER',paymentMethod:'BANK_TRANSFER'});
 });
+it('shows correction instructions and starts on the editable profile even when a package exists',async()=>{fixture.state.application={id:'APP',status:'NEEDS_MORE_INFO',reviewNote:'請補傳清晰的存摺封面'};fixture.state.paidPackages=[{orderId:'ORDER',packageName:'啟航'}];await render();expect(JSON.stringify(tree.toJSON())).toContain('請補傳清晰的存摺封面');expect(tree.root.findAllByType('li').find(x=>x.props['aria-current']==='step')?.findByType('button').children).toContain('會員資料');});

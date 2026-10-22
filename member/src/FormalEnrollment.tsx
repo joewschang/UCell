@@ -13,14 +13,14 @@ export default function FormalEnrollment(){
  const [paymentMethod,setPaymentMethod]=useState(''),[paymentOrder,setPaymentOrder]=useState('');
  const [step,setStep]=useState(1),[saved,setSaved]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState('');
  const key=useRef(crypto.randomUUID()),heading=useRef<HTMLHeadingElement>(null),initialized=useRef(false);
- useEffect(()=>{if(!state.data||initialized.current)return;initialized.current=true;const e=state.data;if(e.application)setStep(e.paidPackages.length?4:e.pendingPackages?.length?3:2);},[state.data]);
+ useEffect(()=>{if(!state.data||initialized.current)return;initialized.current=true;const e=state.data;if(e.application?.status==='NEEDS_MORE_INFO')setStep(1);else if(e.application)setStep(e.paidPackages.length?4:e.pendingPackages?.length?3:2);},[state.data]);
  useEffect(()=>{heading.current?.focus();heading.current?.scrollIntoView?.({block:'start'});},[step]);
  if(state.error&&!state.data)return <ErrorState message={state.error} retry={state.retry}/>;
  if(!state.data)return <LoadingState label="申請進度載入中…"/>;
  const e=state.data,paid=e.paidPackages.length>0,appId=saved||e.application?.id,pending=e.pendingPackages??[],canSubmit=paid||!!paymentMethod&&pending.some(p=>p.orderId===paymentOrder),submitted=e.application&&['SUBMITTED','UNDER_REVIEW','APPROVED'].includes(e.application.status);
  if(e.membershipState==='FORMAL_MEMBER')return <section><h1>新增會員資格</h1><p>每個新資格另收建立費 600 元；資格升級不收此費用。活躍與領獎條件另行判定。</p><QualificationPackageShop onCreated={state.retry}/></section>;
  return <section className="enrollment"><h1 ref={heading} tabIndex={-1}>申請正式會員</h1>{state.error&&<p role="alert">進度更新失敗，已保留資料。請重新查詢。</p>}<p>先準備資料，再選擇適合的資格套組。付款與審核完成前，資格不會自動生效。</p>
- <ol className="enrollment-steps" aria-label="申請步驟">{['會員資料','資格套組','付款確認','送出審核'].map((label,i)=><li key={label} aria-current={step===i+1?'step':undefined}><button disabled={busy||i>0&&!appId||i===2&&!paid&&!pending.length||i===3&&!canSubmit} onClick={()=>setStep(i+1)}><span>{i+1}</span>{label}</button></li>)}</ol>
+ {e.application?.status==='NEEDS_MORE_INFO'&&<section className="card" role="alert"><h2>申請待補件</h2><p>{e.application.reviewNote||'請依通知補正會員資料與文件，再重新送出審核。'}</p></section>}<ol className="enrollment-steps" aria-label="申請步驟">{['會員資料','資格套組','付款確認','送出審核'].map((label,i)=><li key={label} aria-current={step===i+1?'step':undefined}><button disabled={busy||i>0&&!appId||i===2&&!paid&&!pending.length||i===3&&!canSubmit} onClick={()=>setStep(i+1)}><span>{i+1}</span>{label}</button></li>)}</ol>
  {submitted?<section className="card" role="status"><h2>申請已送出</h2><p>目前等待資料與文件審核，您可以返回會員首頁查看進度。</p>{!paid&&<p>付款狀態：待收款確認。送審不代表已付款，完成收款與審核後才會取得正式會員資格。</p>}</section>:<>
  {step===1&&<p>資料以加密草稿保存；請備妥身分文件與收款帳戶資料。選擇套組前需先儲存。</p>}
  <div hidden={step!==1}><FormalUpgrade initial={e} draftOnly onSaved={id=>{setSaved(id);setStep(paid?4:pending.length?3:2);state.retry();}}/>{appId&&<button className="primary" onClick={()=>setStep(paid?4:pending.length?3:2)}>資料已儲存，繼續 →</button>}</div>

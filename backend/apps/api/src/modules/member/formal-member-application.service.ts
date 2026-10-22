@@ -404,11 +404,26 @@ export class FormalMemberApplicationService {
   };
  }
 
+
+ async requestMoreInfo(applicationId:string,note:string,actorId:string,requestId:string){
+  if(!actorId||typeof note!=='string'||!note.trim()||note.trim().length>500)throw new UnprocessableEntityException({code:'REVIEW_NOTE_REQUIRED'});
+  return this.db.$transaction(async tx=>{
+   const app=await tx.formalMemberApplication.findUnique({where:{formalMemberApplicationId:applicationId}});
+   if(app?.status==='NEEDS_MORE_INFO'&&app.decisionReasonCode===note.trim())return {applicationId,status:'NEEDS_MORE_INFO',replayed:true};
+   const changed=await tx.formalMemberApplication.updateMany({where:{formalMemberApplicationId:applicationId,status:{in:['SUBMITTED','UNDER_REVIEW']}},data:{status:'NEEDS_MORE_INFO',decisionReasonCode:note.trim()}});
+   if(!app||changed.count!==1)throw new ConflictException({code:'FORMAL_APPLICATION_NOT_REVIEWABLE'});
+   await tx.memberNotification.create({data:{personId:app.personId,category:'ACCOUNT',title:'正式會員申請待補件',body:'請至「我的帳戶 → 申請正式會員」補正資料或文件：'+note.trim(),sourceType:'FORMAL_APPLICATION',sourceReference:'FORMAL-'+applicationId}});
+   await this.audit.write(tx,{actorType:'ADMIN',actorId,action:'FORMAL_APPLICATION_MORE_INFO_REQUESTED',entityType:'FormalMemberApplication',entityId:applicationId,afterData:{note:note.trim(),notificationChannel:'UCELL_PERSONAL'},requestId,correlationId:randomUUID()});
+   return {applicationId,status:'NEEDS_MORE_INFO',notificationChannel:'UCELL_PERSONAL'};
+  });
+ }
+
  async adminList(input:{status?:string;take?:number}={}){
   const take=Math.min(Math.max(input.take??50,1),100);
   const rows=await this.db.formalMemberApplication.findMany({where:input.status?{status:input.status}:undefined,include:{person:{select:{legalName:true,membershipState:true}},snapshots:{select:{version:true,payloadHash:true},orderBy:{version:'desc'},take:1}},orderBy:{updatedAt:'desc'},take});
   return rows.map(row=>({
    id:row.formalMemberApplicationId,
+   personName:row.person.legalName,
    personNameMasked:row.person.legalName?(row.person.legalName.slice(0,1)+'*'.repeat(Math.max(row.person.legalName.length-1,1))):'**',
    applicantType:row.applicantType,sourceChannel:row.sourceChannel,paperApplicationReference:row.paperApplicationReference,membershipState:row.person.membershipState,status:row.status,
    spouseVerificationStatus:row.spouseVerificationStatus,crossLineReviewStatus:row.crossLineReviewStatus,crossLineConflictCode:row.crossLineConflictCode,

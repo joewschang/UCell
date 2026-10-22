@@ -49,6 +49,7 @@ class AdminFormalUpdateDto extends OmitType(AdminPaperFormalApplicationDto,['rep
  @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(48) sponsorBallNo?:string;
  @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(120) paperApplicationReference?:string;
 }
+class MoreInfoDto { @IsString() @Matches(/\S/) @MaxLength(500) note!:string; }
 class AdminPaperEvidenceReviewDto {
  @ApiProperty({enum:['SIGNED_APPLICATION_AGREEMENT','IDENTITY_FRONT','IDENTITY_BACK','BANKBOOK_COVER','CORPORATE_REGISTRATION','REPRESENTATIVE_IDENTITY_FRONT','REPRESENTATIVE_IDENTITY_BACK','CORPORATE_BANK_PROOF','TAX_REGISTRATION','OTHER']})
  @IsIn(['SIGNED_APPLICATION_AGREEMENT','IDENTITY_FRONT','IDENTITY_BACK','BANKBOOK_COVER','CORPORATE_REGISTRATION','REPRESENTATIVE_IDENTITY_FRONT','REPRESENTATIVE_IDENTITY_BACK','CORPORATE_BANK_PROOF','TAX_REGISTRATION','OTHER'])
@@ -64,6 +65,8 @@ class AdminPaperEvidenceReviewDto {
 @Controller('admin/formal-member-applications')
 export class AdminFormalMemberApplicationController {
  constructor(private readonly service:FormalMemberApplicationService,private readonly conflicts:FormalMembershipConflictService,private readonly kyc:FormalKycDocumentService){}
+ @Post(':id/request-more-info') @Roles('SUPER_ADMIN','MEMBERSHIP_OPS')
+ requestMoreInfo(@Param('id',new ParseUUIDPipe()) id:string,@Body() body:MoreInfoDto,@Req() req:any){return this.service.requestMoreInfo(id,body.note,req.user?.personId,req.requestId);}
  @Post(':id/update') @Roles('SUPER_ADMIN','MEMBERSHIP_OPS') @UseGuards(IdempotencyGuard) @ApiHeader({name:'Idempotency-Key',required:true})
  @ApiOperation({operationId:'adminUpdateFormalApplication',description:'Correct pending application data using encrypted versioned snapshots and optimistic concurrency. Does not impersonate member consent or approve membership.'})
  update(@Param('id',new ParseUUIDPipe()) id:string,@Body() body:AdminFormalUpdateDto,@Headers('idempotency-key') key:string,@Req() req:any){return this.service.adminUpdate(id,body,req.user?.personId,key,req.requestId);}

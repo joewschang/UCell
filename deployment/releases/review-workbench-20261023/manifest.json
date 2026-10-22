@@ -1,0 +1,30 @@
+{
+  "release": "review-workbench-20261023",
+  "images": {
+    "api": "sha256:c7232c3e0f4ec03ebca447230ed23feb21c84a828f13f0adc1ae7d6113f27237",
+    "admin": "sha256:5c3bc0b4911a1e81213de34a9f8550da969f76ffa696455f5bf74e2e6e93bb2f",
+    "member": "sha256:a64358d6dabc602b386f98b2fa8a5df29d5163bed2f5fe18e1c754b8ec1d6904"
+  },
+  "validation": {
+    "adminTests": 253,
+    "memberTestsBeforeLocalizationFix": "323 passed; localization failure corrected and targeted suite passed",
+    "memberFocusedTests": 5,
+    "notificationTests": 3,
+    "realBrowserOcr": "passed: inline image, expected identity match, mismatched fields highlighted, mobile width"
+  },
+  "notificationChannel": "UCELL_PERSONAL",
+  "ocr": {
+    "engine": "tesseract.js 7.0.0",
+    "execution": "browser; self-hosted worker, WASM and language models; no images sent to an external OCR provider",
+    "chi_tra_sha256": "529C5B5797D64B126065CD55F2BB4C7FD7B15790798091B1FF259941A829330B",
+    "eng_sha256": "7D4322BD2A7749724879683FC3912CB542F19906C83BCC1A52132556427170B2"
+  },
+  "apiOverlay": "Only requestMoreInfo and administrator list personName changed; based on exact production registration-prefill image. Existing runtime features preserved.",
+  "liveValidation": {
+    "assets": "admin and member JS byte-for-byte verified; OCR worker and models verified",
+    "revisions": "api, admin, member Healthy / Running / 100%",
+    "authorization": "anonymous administrator list request returns 401",
+    "csp": "real browser WASM compilation and worker allowed",
+    "faq": "fresh unauthenticated browser redirects /faq to public FAQ"
+  }
+}
