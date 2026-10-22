@@ -24,10 +24,10 @@ export function LoginPage(){
     <section className="login-card">
       <CompanyLogo className="uc-company-logo-entry"/>
       <h1>{uiText("UCell Admin")}</h1>
-      <p className="muted">{uiText("R1.0B FROZEN · Admin MVP v0.6.0")}</p>
+      <p className="muted">安全登入管理後台</p>
 
       <div className="callout info">
-        {uiText("\r\n        正式管理員採 Microsoft Entra 身分驗證。Microsoft Token驗證後，Backend只對有ACTIVE AdminAccessGrant的人員簽發短效UCell Session。\r\n      ")}</div>
+        使用已獲授權的 Microsoft 帳號登入。驗證會在同一分頁完成，請勿中途切換瀏覽器或複製 Microsoft 驗證網址。</div>
 
       {(error||localError)&&<div className="callout danger">{error||localError}</div>}
 

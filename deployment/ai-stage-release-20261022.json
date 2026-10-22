@@ -46,6 +46,18 @@
     {
       "path": "shared/ai-assistant/assistant.css",
       "sha256": "7f55cb3d048a0bc012bd137208b230c387e8217e4771a24295b8c59aa281a9c2"
+    },
+    {
+      "path": "admin/src/features/auth/entra.ts",
+      "sha256": "34f618448507810c35c630d47b86256f09f6ab2a335b47f7a6bef48251d73c4c"
+    },
+    {
+      "path": "admin/src/features/auth/auth.tsx",
+      "sha256": "327e5b71220fc543de90867326a3cebbd5712dbb06a9669ba06c0b8be85f6483"
+    },
+    {
+      "path": "admin/src/features/auth/LoginPage.tsx",
+      "sha256": "956d1ef1e80cd1215b1fa2a6264a41082aca78c3f6da30be7682a13b9411030a"
     }
   ],
   "apiOverlayFiles": [
@@ -80,7 +92,7 @@
   ],
   "images": {
     "member": "ucellstageacr5mafbbsq33mgu.azurecr.io/ucell-member@sha256:6b6af27a6c0a45950d5e3db70d6223244a46143546b1e956e5374542d1a3d598",
-    "admin": "ucellstageacr5mafbbsq33mgu.azurecr.io/ucell-admin@sha256:9f39ae9d903cc91fb4386f48bef6a5a37b58862520893b6f2086d15503290405",
+    "admin": "ucellstageacr5mafbbsq33mgu.azurecr.io/ucell-admin@sha256:507f8812e31fa50b6c245ddd042d7af803c8abea7bca058fd0b3536311cdd245",
     "api": "ucellstageacr5mafbbsq33mgu.azurecr.io/ucell-backend@sha256:386b638ee94d3ea7971dd6f345d76fbdb5db743c519a5e6b1ed8bade0804d6dc"
   },
   "browser": [
@@ -100,8 +112,18 @@
     }
   ],
   "authorizedTesters": {
-    "accounts": ["joewschang@gmail.com", "service@ucell.life", "Existing Stage Super Admin test identity"],
-    "capabilities": ["AI_EXEC_READ", "AI_REPORT_EXPORT", "AI_KB_EDIT", "AI_KB_APPROVE", "AI_AUDIT_READ"],
+    "accounts": [
+      "joewschang@gmail.com",
+      "service@ucell.life",
+      "Existing Stage Super Admin test identity"
+    ],
+    "capabilities": [
+      "AI_EXEC_READ",
+      "AI_REPORT_EXPORT",
+      "AI_KB_EDIT",
+      "AI_KB_APPROVE",
+      "AI_AUDIT_READ"
+    ],
     "expiresAt": "2026-11-22T00:00:00Z",
     "verifiedCapabilityRows": 15,
     "humanSignInTested": false

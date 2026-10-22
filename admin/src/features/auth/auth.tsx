@@ -1,7 +1,7 @@
 import {uiText} from "../../../../shared/design-system/i18n";
 import React,{createContext,useContext,useEffect,useMemo,useState} from 'react';
 import {clearAdminToken,get,post,setAdminToken} from '../../lib/api';
-import {acquireEntraIdToken,entraLogout} from './entra';
+import {completeEntraRedirect,startEntraLogin,entraLogout} from './entra';
 import type {AdminRole} from './permissions';
 import {useQueryClient} from '@tanstack/react-query';
 
@@ -13,6 +13,16 @@ interface AuthState{
   loginEntra:()=>Promise<void>;loginDemo:(role:AdminRole)=>void;logout:()=>Promise<void>;
 }
 const C=createContext<AuthState|null>(null);
+// React StrictMode can mount the provider twice. Exchange each callback only once.
+let redirectExchange:Promise<any>|undefined;
+function finishMicrosoftLogin(){
+  return redirectExchange??=(async()=>{
+    const idToken=await completeEntraRedirect();
+    if(!idToken)return null;
+    const r:any=await post('/auth/admin/entra/exchange',{idToken},{skipUnauthorizedEvent:true});
+    return r.data;
+  })();
+}
 
 function savedUser():User|null{
   const raw=sessionStorage.getItem('ucell_admin_user');
@@ -43,6 +53,17 @@ export function AuthProvider({children}:{children:React.ReactNode}){
 
   useEffect(()=>{
     (async()=>{
+      try{
+        const d=await finishMicrosoftLogin();
+        if(d){
+          setAdminToken(d.accessToken,d.expiresAt);
+          queryClient.clear();
+          const u:User={name:d.user?.preferredName||d.user?.legalName||'Admin',role:d.user.role,personId:d.user.personId,provider:d.user.provider,expiresAt:d.expiresAt};
+          setUser(u);persistUser(u);setReady(true);return;
+        }
+      }catch{
+        clear();setError('Microsoft 登入未完成。請重新按下登入，並在同一分頁完成驗證；若持續失敗，請從 Safari 或 Chrome 開啟本頁重試。');setReady(true);return;
+      }
       const token=sessionStorage.getItem('ucell_admin_token');
       if(!token){
         const cached=savedUser();
@@ -68,17 +89,7 @@ export function AuthProvider({children}:{children:React.ReactNode}){
     loginEntra:async()=>{
       setBusy(true);setError(null);
       try{
-        const idToken=await acquireEntraIdToken();
-        const r:any=await post('/auth/admin/entra/exchange',{idToken},{skipUnauthorizedEvent:true});
-        const d=r.data;
-        setAdminToken(d.accessToken,d.expiresAt);
-        queryClient.clear();
-        const u:User={
-          name:d.user?.preferredName||d.user?.legalName||'Admin',
-          role:d.user.role,personId:d.user.personId,
-          provider:d.user.provider,expiresAt:d.expiresAt
-        };
-        setUser(u);persistUser(u);
+        await startEntraLogin();
       }catch(e:any){
         clear();setError(e?.message??uiText("Microsoft登入失敗"));
         throw e;
@@ -97,6 +108,7 @@ export function AuthProvider({children}:{children:React.ReactNode}){
         if(sessionStorage.getItem('ucell_admin_token')){
           await post('/auth/admin/logout',{}, {skipUnauthorizedEvent:true}).catch(()=>undefined);
         }
+        clear();
         await entraLogout().catch(()=>undefined);
       }finally{clear();setBusy(false)}
     }

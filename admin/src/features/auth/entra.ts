@@ -8,6 +8,8 @@ const redirectUri=import.meta.env.VITE_ENTRA_REDIRECT_URI || `${window.location.
 export const entraConfigured=Boolean(clientId&&tenantId);
 
 let instance:PublicClientApplication|undefined;
+let initializing:Promise<void>|undefined;
+let redirectResult:ReturnType<PublicClientApplication['handleRedirectPromise']>|undefined;
 export async function entraClient(){
   if(!entraConfigured)throw new Error(uiText("Entra尚未設定"));
   if(!instance){
@@ -16,26 +18,39 @@ export async function entraClient(){
         clientId,
         authority:`https://login.microsoftonline.com/${tenantId}`,
         redirectUri,
+        navigateToLoginRequestUrl:false,
       },
       cache:{cacheLocation:'sessionStorage'}
     });
-    await instance.initialize();
+    initializing=instance.initialize();
   }
+  await initializing;
   return instance;
 }
 
-export async function acquireEntraIdToken(){
+export async function completeEntraRedirect(){
+  if(!entraConfigured)return null;
   const client=await entraClient();
-  const result=await client.loginPopup({
+  redirectResult??=client.handleRedirectPromise();
+  const result=await redirectResult;
+  if(!result)return null;
+  if(!result.idToken)throw new Error(uiText("Microsoft登入未回傳ID Token"));
+  client.setActiveAccount(result.account);
+  return result.idToken;
+}
+
+export async function startEntraLogin(){
+  const client=await entraClient();
+  // Complete callback processing before starting a new interaction.
+  await completeEntraRedirect().catch(()=>null);
+  await client.loginRedirect({
     scopes:['openid','profile','email'],
     prompt:'select_account'
   });
-  if(!result.idToken)throw new Error(uiText("Microsoft登入未回傳ID Token"));
-  return result.idToken;
 }
 
 export async function entraLogout(){
   if(!instance)return;
   const account=instance.getActiveAccount()??instance.getAllAccounts()[0];
-  if(account)await instance.logoutPopup({account,postLogoutRedirectUri:`${window.location.origin}/login`});
+  if(account)await instance.logoutRedirect({account,postLogoutRedirectUri:`${window.location.origin}/login`});
 }
