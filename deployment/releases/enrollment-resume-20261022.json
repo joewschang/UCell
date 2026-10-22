@@ -1,0 +1,25 @@
+{
+  "release": "enrollment-resume-20261022",
+  "images": {
+    "api": "sha256:af0fe0458d78deba70a86bb032eb4a90f96df6bccbd79fc309dfd33a21965df8",
+    "member": "sha256:29bbaabb53b5a674d74b0cf9ce51cabecf64a7c6db596868d6f991e6fb265760"
+  },
+  "validation": {
+    "apiTests": 6,
+    "memberTests": 322,
+    "productionBuilds": true,
+    "health": "API/member Healthy, traffic 100%",
+    "live": {
+      "asset": "/assets/index-BwZrqsL1.js",
+      "match": true,
+      "sha256": "3907fdfa3e3bc1d71f7e11a3c53bce4b4d630f22b1e2d4667836f7f39d17b4e4"
+    },
+    "targetMemberReadOnly": "Existing encrypted draft fields and 3 PRESENT documents restored; one pending order, zero paid orders. No mutation performed."
+  },
+  "behavior": [
+    "Restore own encrypted draft into form without overwriting in-progress edits on refresh",
+    "Allow explicit bank-transfer/cash intent and owned unexpired confirmed qualification order to submit for review",
+    "Record chosen method/order and paymentConfirmed=false in submission audit; do not write payment events or approve membership"
+  ],
+  "runtime": "Selective service overlay and controller update preserve production-only behavior"
+}

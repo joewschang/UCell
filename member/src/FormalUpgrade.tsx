@@ -1,24 +1,25 @@
 import './enrollment-forms.css';
 import {validTaiwanNationalId,validEmail} from './enrollmentValidation';
 import {uiValue,uiText} from "../../shared/design-system/i18n";
-import {useRef,useState} from 'react';
+import {useRef,useState,useEffect} from 'react';
 import {ErrorState,LoadingState} from '@ucell/design-system';
-import {consentFormalContract,getFormalRequiredContracts,saveFormalDraft,uploadFormalDocument,submitFormalEnrollment,type FormalDocumentType} from './memberData';
+import {consentFormalContract,getFormalRequiredContracts,saveFormalDraft,uploadFormalDocument,submitFormalEnrollment,type FormalEnrollmentState,type FormalDocumentType} from './memberData';
 import {useResource} from './useResource';
 import {countryOptions} from './countryOptions';
 
-export default function FormalUpgrade({onSubmitted,onSaved,draftOnly=false}:{onSubmitted?:()=>void;onSaved?:(id:string)=>void;draftOnly?:boolean}={}){
+export default function FormalUpgrade({onSubmitted,onSaved,draftOnly=false,initial}:{initial?:FormalEnrollmentState;onSubmitted?:()=>void;onSaved?:(id:string)=>void;draftOnly?:boolean}={}){
  const contracts=useResource('formal-contracts',getFormalRequiredContracts,true,true);
  const [accepted,setAccepted]=useState(false),[busy,setBusy]=useState(false),[error,setError]=useState(''),[submitted,setSubmitted]=useState(false);
  const [saved,setSaved]=useState<{id:string;version:number;identityDocumentNumberMasked:string|null;spouseIdentityDocumentNumberMasked:string|null;bankAccountMasked:string;applicantType:string}|null>(null);
  const [files,setFiles]=useState<Partial<Record<FormalDocumentType,File>>>({}),[uploaded,setUploaded]=useState<Partial<Record<FormalDocumentType,string>>>({});
- const key=useRef(crypto.randomUUID());
+ const key=useRef(crypto.randomUUID()),hydrated=useRef(false);
  const [form,setForm]=useState({
   applicantType:'INDIVIDUAL' as const,
   legalName:'',gender:'UNDISCLOSED',birthDate:'',nationalityCode:'TW',identityDocumentType:'NATIONAL_ID' as 'NATIONAL_ID'|'RESIDENCE_PERMIT'|'PASSPORT'|'OTHER',identityDocumentNumber:'',
   hasSpouse:false,spouseName:'',spouseNationalityCode:'TW',spouseIdentityDocumentType:'NATIONAL_ID' as 'NATIONAL_ID'|'RESIDENCE_PERMIT'|'PASSPORT'|'OTHER',spouseIdentityDocumentNumber:'',
   communicationAddress:'',phone:'',email:'',bankCode:'',bankAccount:'',accountHolder:''
  });
+ useEffect(()=>{if(!initial||hydrated.current)return;hydrated.current=true;setForm(current=>({...current,...(initial.draft?.payload??initial.prefill??{})}));if(initial.draft)setUploaded(Object.fromEntries(initial.draft.documents.map(type=>[type,'PRESENT'])));},[initial]);
  if(contracts.error)return <ErrorState message={contracts.error} retry={contracts.retry}/>;
  if(!contracts.data)return <LoadingState/>;
  const contract=contracts.data[0];

@@ -23,3 +23,11 @@ it('keeps unpaid packages pending and submits paid applications once with explic
  await act(async()=>button('付款確認').props.onClick());expect(JSON.stringify(tree.toJSON())).toContain('UCELL888');expect(button('送出審核').props.disabled).toBe(true);
  act(()=>tree.unmount());fixture.state.paidPackages=[{orderId:'ORDER',packageName:'啟航'}];await render();await act(async()=>button('送出審核').props.onClick());await act(async()=>button('確認送出正式會員申請').props.onClick());expect(submitFormalEnrollment).toHaveBeenCalledOnce();expect(JSON.stringify(tree.toJSON())).toContain('各資格須符合活躍');
 });
+it('allows bank transfer intent to advance and submit while payment stays pending',async()=>{
+ fixture.state.application={id:'APP',status:'DRAFT'};fixture.state.pendingPackages=[{orderId:'ORDER',packageName:'啟航',total:'15000',goodsAmount:'14400',qualificationFee:'600',selectableProductQuantity:3,paymentDeadline:'2099-01-01'}];await render();
+ await act(async()=>tree.root.findByType('select').props.onChange({target:{value:'BANK_TRANSFER'}}));
+ await act(async()=>button('繼續下一步：送出審核 →').props.onClick());
+ expect(JSON.stringify(tree.toJSON())).toContain('銀行匯款／待收款確認');
+ await act(async()=>button('確認送出正式會員申請').props.onClick());
+ expect(submitFormalEnrollment).toHaveBeenCalledWith('APP',expect.any(String),{orderId:'ORDER',paymentMethod:'BANK_TRANSFER'});
+});
