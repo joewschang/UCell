@@ -1,0 +1,8 @@
+{
+ "image":"ucellprodacrm3z2zx4ohqyui.azurecr.io/ucell-member@sha256:50feb056fbd3822d990d8d06e50f92172ecd079513f9198f493e839a59a1ee1b",
+ "previousImage":"sha256:a64358d6dabc602b386f98b2fa8a5df29d5163bed2f5fe18e1c754b8ec1d6904",
+ "build":"ck4j",
+ "changes":["Explicit unmet prerequisites for enrollment steps, package checkout, payment, registration and signature","Per-document recognition/upload/success/failure states with partial saving","Required front/back/bankbook upload gate without saved-draft bypass","Local OCR tries four right-angle rotations and rejects missing identifying fields; bounded 90-second recognition with cancellation","Self-hosted OCR assets and WASM-specific CSP allowance"],
+ "validation":{"memberTests":329,"typecheck":"passed","productionBuild":"passed","browser":"Real rotated Chinese synthetic ID corrected; partial front upload saved; remaining documents block next step; blank back image rejected; mobile layout has no horizontal overflow"},
+ "ocrScope":"Preliminary field presence only, not authenticity verification. Existing stored documents remain usable. No live member uploads or notifications were generated during testing."
+}

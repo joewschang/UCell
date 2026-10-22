@@ -1,0 +1,12 @@
+import {useEffect,useRef,useState} from 'react';
+import {inspectDocument} from './documentOcr';
+import {documentNames,type RequiredDocument} from './documentCheck';
+export function EnrollmentDocument({type,identityType,uploaded,uploading,uploadError,disabled,onSelect,onReady}:{type:RequiredDocument;identityType:string;uploaded:boolean;uploading?:boolean;uploadError?:string;disabled:boolean;onSelect:()=>void;onReady:(file:File)=>void}){
+ const [message,setMessage]=useState(''),[working,setWorking]=useState(false),[preview,setPreview]=useState(''),[valid,setValid]=useState(false),[failed,setFailed]=useState(false);
+ const original=useRef<File>(),controller=useRef<AbortController>(),version=useRef(0),url=useRef('');
+ useEffect(()=>()=>{version.current++;controller.current?.abort();if(url.current)URL.revokeObjectURL(url.current);},[]);
+ async function select(file?:File){if(!file)return;original.current=file;const current=++version.current;controller.current?.abort();const abort=new AbortController();controller.current=abort;onSelect();setWorking(true);setValid(false);setFailed(false);setMessage('等待文件辨識…');
+ if(url.current)URL.revokeObjectURL(url.current);url.current='';setPreview('');
+ try{const result=await inspectDocument(file,type,identityType,abort.signal,text=>{if(version.current===current)setMessage(text);});if(version.current!==current)return;url.current=URL.createObjectURL(result.file);setPreview(url.current);setValid(true);setMessage(result.rotation?`已旋轉 ${result.rotation}° 並辨識到必要欄位，尚未上傳。`:'已辨識到必要欄位，尚未上傳。');onReady(result.file);}catch(e){if(version.current===current){setFailed(true);setMessage(e instanceof Error?e.message:'辨識失敗，請重新拍攝或上傳。');}}finally{if(version.current===current)setWorking(false);}}
+ return <section className="enrollment-document"><label>{documentNames[type]}（必傳）<input type="file" accept="image/jpeg,image/png" disabled={disabled} onChange={e=>{void select(e.target.files?.[0]);e.target.value='';}}/></label>{preview&&<img src={preview} alt={documentNames[type]+'上傳前預覽'} style={{maxWidth:'100%',maxHeight:260}}/>}<p role={failed||uploadError?'alert':'status'} aria-live="polite">{uploaded?'已上傳成功，系統已保存。':uploading?'正在上傳至系統，請稍候…':uploadError||message||'尚未上傳，請選取清晰且完整的文件照片。'}</p>{!uploaded&&valid&&!uploadError&&<p>請按下方「儲存資料」按鈕完成上傳；辨識完成不代表已上傳。</p>}{failed&&<button type="button" disabled={disabled||working} onClick={()=>void select(original.current)}>重新辨識</button>}{working&&<p>辨識中可繼續填寫資料；每份最長等待 90 秒。</p>}</section>;
+}

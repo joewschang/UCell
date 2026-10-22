@@ -1,0 +1,5 @@
+import {expect,it} from 'vitest';import {checkDocumentText} from '../src/documentCheck';
+it('requires front-side identifying fields and rejects blank/wrong-side photos',()=>{expect(checkDocumentText('IDENTITY_FRONT','姓名 王小明 出生日期 90年1月1日 A123456789').ok).toBe(true);expect(checkDocumentText('IDENTITY_FRONT','住址 臺北市 父 王大明 母 林小花').ok).toBe(false);expect(checkDocumentText('IDENTITY_FRONT','').missing).toHaveLength(3);});
+it('requires rear-side fields rather than any ID-looking text',()=>{expect(checkDocumentText('IDENTITY_BACK','住址 臺北市 父 王大明 配偶 林小花').ok).toBe(true);expect(checkDocumentText('IDENTITY_BACK','姓名 王小明 出生日期 A123456789').ok).toBe(false);});
+it('requires financial institution, account field and account digits for bankbook',()=>{expect(checkDocumentText('BANKBOOK_COVER','台灣銀行 戶名 王小明 帳號 012-123456789').ok).toBe(true);expect(checkDocumentText('BANKBOOK_COVER','台灣銀行 廣告').ok).toBe(false);});
+it('uses alternative document markers for passport and residence permits',()=>{expect(checkDocumentText('IDENTITY_FRONT','PASSPORT 123456789','PASSPORT').ok).toBe(true);expect(checkDocumentText('IDENTITY_FRONT','123456789','PASSPORT').ok).toBe(false);});
