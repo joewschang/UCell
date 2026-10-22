@@ -14,7 +14,7 @@ import { MemberNavigation, IncomeNavigation } from './MemberNavigation';
 import {MemberPageHeader} from './MemberPageHeader';
 import {CompanyLogo,MemberAppShell,ThemePreferenceControl,QualificationSwitcher,MobileActionGrid,MetricCard,MoneyState,LoadingState,ErrorState,EmptyState,UCellIcon} from '@ucell/design-system';
 import { Link, Route, Routes } from 'react-router-dom';
-import { useState, type KeyboardEvent, type ReactNode } from 'react';
+import { useEffect, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { useQualification } from './QualificationContext';
 import * as data from './memberData';
 import type { Qualification } from './api';
@@ -146,14 +146,15 @@ function Orders({q}:{q:Qualification}){
  return <><MemberPageHeader title="我的訂單" q={q}/><p className="muted">以下為目前資格的訂單；本人零售訂單列於下方。</p><button disabled={state.data===undefined&&!state.error} onClick={state.retry}>重新整理訂單</button><Result state={state}>{d=>{const visible=[...(data.isMock?orders.filter(o=>o.qualificationId===q.id):[]),...d.orders];return visible.length?<OrderList key={q.id} label="資格訂單" searchHint="輸入建立日期" rows={visible.map(o=>({id:o.id,reference: data.isMock?o.id:"訂單紀錄",createdAt:o.createdAt,amount:money(o.total),status:o.status,statusLabel:domainLabel(o.status),details:<><p>付款：{domainLabel(o.paymentStatus)}</p><p>配送：{domainLabel(o.shipmentStatus)}</p>{!data.isMock&&<ConnectedOrderDetails q={q} id={o.id}/>}</>}))}/>:<EmptyState title="此資格目前沒有訂單"/>}}</Result></>;
 }
 function Me() {
- const state = useResource('person', data.getPerson);
+ const state = useResource('person', data.getPerson,true,true);
+ useEffect(()=>{if(typeof window==='undefined'||typeof document==='undefined')return;const refresh=()=>{if(document.visibilityState==='visible')state.retry();};window.addEventListener('focus',refresh);document.addEventListener('visibilitychange',refresh);return()=>{window.removeEventListener('focus',refresh);document.removeEventListener('visibilitychange',refresh);};},[state.retry]);
  const { qualifications } = useQualification();
  return <>
   <MemberPageHeader title="我的帳戶"/>
   <Result state={state}>{p => <>
-   <section className="card"><h3>{p.name}</h3><p><span>會員編號</span> {p.memberNo}</p><p>會員狀態：{p.membershipState??'尚未完成網路會員註冊'}</p><p>電子郵件：{p.email ?? availabilityText.fieldMissing}（{p.emailVerifiedAt?'已驗證':'尚未驗證'}）</p><p>電話：{p.phone ?? availabilityText.fieldMissing}（{p.mobileVerifiedAt?'已驗證':'尚未驗證'}）</p></section>
+   <section className="card"><h3>{p.name}</h3><p><span>會員編號</span> {p.memberNo}</p><p>會員狀態：{p.membershipState==='FORMAL_MEMBER'?'正式會員':p.membershipState==='FORMAL_PENDING'?'正式會員申請中':p.membershipState==='NETWORK_MEMBER'?'網路會員':'尚未完成網路會員註冊'}</p><p>電子郵件：{p.email ?? availabilityText.fieldMissing}（{p.emailVerifiedAt?'已驗證':'尚未驗證'}）</p><p>電話：{p.phone ?? availabilityText.fieldMissing}（{p.mobileVerifiedAt?'已驗證':'尚未驗證'}）</p><button onClick={state.retry}>更新會員狀態</button></section>
    {!data.isMock&&p.membershipState===null&&<NetworkRegistration person={p} refresh={state.retry}/>}
-   {!data.isMock&&['NETWORK_MEMBER','FORMAL_PENDING'].includes(p.membershipState??'')&&<section className="card"><h3>申請正式會員</h3><Link to="/membership/upgrade">選購資格套組或繳交 600 元申請</Link></section>}
+   {!data.isMock&&['NETWORK_MEMBER','FORMAL_PENDING'].includes(p.membershipState??'')&&<section className="card"><h3>{p.membershipState==='FORMAL_PENDING'?'正式會員申請進度':'申請正式會員'}</h3><Link to="/membership/upgrade">{p.membershipState==='FORMAL_PENDING'?'查看申請進度':'填寫資料並選購資格套組'}</Link></section>}
   </>}</Result>
   <ProfileEditor refresh={state.retry}/><section className="card"><h3>顯示設定</h3><ThemePreferenceControl/></section>
   {!data.isMock&&<IdentityLinking/>}

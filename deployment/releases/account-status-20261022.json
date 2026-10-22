@@ -1,0 +1,15 @@
+{
+  "release": "account-status-20261022",
+  "image": "ucellprodacrm3z2zx4ohqyui.azurecr.io/ucell-member@sha256:fc97863271c6dbb392c840bba852222488be794516970b446a99d5c4e3d7b977",
+  "baseImage": "sha256:31a66d6f2b53de204af783329a72df1ed9c14cc8ad1aa64744fc4eeec1839d1e",
+  "changes": [
+    "Chinese member state labels",
+    "Formal members do not render account enrollment block",
+    "Refresh account status on window focus/visibility and explicit refresh button",
+    "Remove obsolete fee-only enrollment copy"
+  ],
+  "validation": {
+    "memberTests": 322,
+    "productionBuild": true
+  }
+}
