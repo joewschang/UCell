@@ -1,0 +1,42 @@
+{
+  "release": "org-review-20261023",
+  "scope": "Geographic analysis and current organization browsing UX and query correctness",
+  "api": {
+    "image": "ucell-api:org-review-20261023",
+    "digest": "sha256:3db97ff0978c35de73e6c98313257108c08bc919278ba46ba62cfb4036b5c4ea",
+    "baseDigest": "sha256:47556a46776f364c4faf0a0117e8d3997877f62e3f242a45e3efe64a1b781158",
+    "revision": "ucell-prod-api--org-geo-refresh-20261023",
+    "strategy": "Exact production base with scoped compiled overlay; preserve unrelated production behavior",
+    "environmentChanges": { "GEO_PROFILE_REFRESH_ENABLED": "true" }
+  },
+  "admin": {
+    "image": "ucell-admin:org-review-20261023",
+    "digest": "sha256:b6c72d42871b08e784afd6b5c7dc60cb7640a4cc245363f33106fec9469a3e72",
+    "revision": "ucell-prod-admin--org-review-20261023"
+  },
+  "validation": {
+    "adminTests": 271,
+    "memberRegressionTests": 332,
+    "apiTargetedTests": 25,
+    "adminTypecheck": "passed",
+    "apiBuild": "passed",
+    "adminProductionBuild": "passed",
+    "desktopAndMobileBrowserQA": "passed using fixture API and production bundle; no page errors or horizontal overflow",
+    "publicAssetsMatchBuild": true,
+    "liveAuthorizedReads": "passed: geographic city/district, sponsor/binary organization, invalid query rejection and clock skew normalization",
+    "liveSubtreeScope": "matched independent placement edges; deep integer precision verified",
+    "actualMemberPlacementPerformed": false,
+    "databaseMigration": false
+  },
+  "geoProfiles": {
+    "backfillSource": "Approved immutable membership application snapshots",
+    "created": 1,
+    "refreshIntervalSeconds": 60,
+    "liveRefreshEnabled": true,
+    "liveDescendants": 7,
+    "liveMembers": 1,
+    "liveUnlocatedBalls": 6,
+    "liveStatus": "PARTIAL",
+    "note": "Company/nonpersonal balls may lack geography; missing evidence is not fabricated. No financial mutation."
+  }
+}

@@ -1,12 +1,13 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable,UnprocessableEntityException } from '@nestjs/common';
 import { Prisma,PrismaService } from '@ucell/database';
 
 @Injectable()
 export class AdminObservabilityService {
   constructor(private readonly prisma:PrismaService){}
 
-  async sponsorTree(rootQualificationId:string,depth=4,at=new Date()){
-    const maxDepth=Math.min(Math.max(depth,1),10);
+  async sponsorTree(rootQualificationId:string,depth=2,at=new Date()){
+    if(!/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(rootQualificationId)||!Number.isInteger(depth)||depth<1||depth>3||!Number.isFinite(at.getTime())||at.getTime()>Date.now()+5000)throw new UnprocessableEntityException({code:'INVALID_ORGANIZATION_QUERY'});
+    const maxDepth=depth;
     return this.prisma.$queryRaw<Array<any>>`
       WITH RECURSIVE tree AS (
         SELECT
@@ -61,12 +62,13 @@ export class AdminObservabilityService {
         sponsor_sequence_no,
         depth
       FROM tree
-      ORDER BY depth,parent_qualification_id,sponsor_sequence_no,qualification_no
+      ORDER BY depth,parent_qualification_id,sponsor_sequence_no,qualification_no LIMIT 1001
     `;
   }
 
-  async binaryTree(rootQualificationId:string,depth=5,at=new Date()){
-    const maxDepth=Math.min(Math.max(depth,1),12);
+  async binaryTree(rootQualificationId:string,depth=2,at=new Date()){
+    if(!/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(rootQualificationId)||!Number.isInteger(depth)||depth<1||depth>3||!Number.isFinite(at.getTime())||at.getTime()>Date.now()+5000)throw new UnprocessableEntityException({code:'INVALID_ORGANIZATION_QUERY'});
+    const maxDepth=depth;
     return this.prisma.$queryRaw<Array<any>>`
       WITH RECURSIVE tree AS (
         SELECT
@@ -121,7 +123,7 @@ export class AdminObservabilityService {
         side::text,
         depth
       FROM tree
-      ORDER BY depth,parent_qualification_id,side,qualification_no
+      ORDER BY depth,parent_qualification_id,side,qualification_no LIMIT 1001
     `;
   }
 
