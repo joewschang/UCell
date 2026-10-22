@@ -1,3 +1,4 @@
+import {FormalApprovalAction} from './FormalApprovalAction';
 import {ReviewDocument} from './ReviewDocument';
 import {currentDocuments,documentLabel} from './reviewDocuments';
 import {FormalApplicationEditor} from './FormalApplicationEditor';
@@ -26,7 +27,7 @@ export function ApplicationsPage(){
  const formalDetail=useQuery({queryKey:['formal-application-detail',selectedFormal],queryFn:()=>get<any>(`/admin/formal-member-applications/${selectedFormal}/detail`),enabled:!!selectedFormal});
  const formalDocuments=useQuery({queryKey:['formal-application-documents',selectedFormal],queryFn:()=>get<any>(`/admin/formal-member-applications/${selectedFormal}/documents`),enabled:!!selectedFormal});
  const rows:MembershipApplication[]=list.data?.data??[];const formalRows=formalList.data?.data??[];const a:MembershipApplication|undefined=detail.data?.data;
- async function formalAction(kind:'spouse-verification'|'cross-line-review'|'begin-review'|'approve'){
+ async function formalAction(kind:'spouse-verification'|'cross-line-review'|'begin-review'){
   if(!selectedFormal||editingFormal)return;setBusy(true);setError(null);
   try{await command(`/admin/formal-member-applications/${selectedFormal}/${kind}`);await qc.invalidateQueries({queryKey:['formal-applications']});await qc.invalidateQueries({queryKey:['formal-application-detail',selectedFormal]});await qc.invalidateQueries({queryKey:['formal-application-documents',selectedFormal]});}
   catch(e){setError(e)}finally{setBusy(false)}
@@ -71,7 +72,7 @@ export function ApplicationsPage(){
    <p className="muted">{uiText("清單顯示申請人姓名；選取後可核對證件、修正資料及通知補件。核准正式會員不自動建立球位。")}</p>
    <div className="toolbar"><select aria-label="正式會員申請狀態" value={formalStatus} onChange={e=>setFormalStatus(e.target.value)}><option value="">全部狀態</option><option value={"DRAFT"}>{uiText("DRAFT")}</option><option value={"SUBMITTED"}>{uiText("SUBMITTED")}</option><option value={"UNDER_REVIEW"}>{uiText("UNDER_REVIEW")}</option><option value={"NEEDS_MORE_INFO"}>{uiText("NEEDS_MORE_INFO")}</option><option value={"APPROVED"}>{uiText("APPROVED")}</option></select></div>
    <ErrorBox error={formalList.error}/>
-   <div className="table-wrap"><AdminTable><thead><tr><th>申請人</th><th>類型／來源</th><th>會員狀態</th><th>申請狀態</th><th>配偶／跨線</th><th>更新時間</th></tr></thead><tbody>{formalRows.map(row=><tr key={row.id}><td><button className="text-link" onClick={()=>{setSelectedFormal(row.id);setEditingFormal(false);setMoreInfoNote('');setMoreInfoNotice('');}}>{row.personName??row.personNameMasked}</button><br/><small className="mono">{row.id}</small></td><td>{row.applicantType}<br/><small>{row.sourceChannel??'—'}</small></td><td>{row.membershipState??'—'}</td><td><Badge tone={row.status==='APPROVED'?'ok':row.status==='DRAFT'?'neutral':'warn'}>{domainLabel(row.status)}</Badge></td><td>{uiValue(row.spouseVerificationStatus??'—')}<br/><small>{uiValue(row.crossLineReviewStatus??'—')}</small></td><td>{dateTime(row.updatedAt)}</td></tr>)}</tbody></AdminTable></div>
+   <div className="table-wrap"><AdminTable><thead><tr><th>申請人</th><th>類型／來源</th><th>會員狀態</th><th>申請狀態</th><th>配偶／跨線</th><th>更新時間</th></tr></thead><tbody>{formalRows.map(row=><tr key={row.id}><td><button className="text-link" disabled={busy} onClick={()=>{setSelectedFormal(row.id);setEditingFormal(false);setMoreInfoNote('');setMoreInfoNotice('');}}>{row.personName??row.personNameMasked}</button><br/><small className="mono">{row.id}</small></td><td>{row.applicantType}<br/><small>{row.sourceChannel??'—'}</small></td><td>{row.membershipState??'—'}</td><td><Badge tone={row.status==='APPROVED'?'ok':row.status==='DRAFT'?'neutral':'warn'}>{domainLabel(row.status)}</Badge></td><td>{uiValue(row.spouseVerificationStatus??'—')}<br/><small>{uiValue(row.crossLineReviewStatus??'—')}</small></td><td>{dateTime(row.updatedAt)}</td></tr>)}</tbody></AdminTable></div>
    {!formalList.isLoading&&!formalRows.length&&<p>目前沒有正式會員申請。</p>}
   </Card>
   {selectedFormal&&<Card title="正式會員審查詳情">
@@ -96,7 +97,13 @@ export function ApplicationsPage(){
      {p.hasSpouse&&d.spouseVerificationStatus!=='VERIFIED'&&<button disabled={busy||editingFormal} onClick={()=>formalAction('spouse-verification')}>確認配偶資料</button>}
      {d.crossLineReviewStatus!=='CLEAR'&&<button disabled={busy||editingFormal} onClick={()=>formalAction('cross-line-review')}>執行跨線審查</button>}
      {['DRAFT','SUBMITTED','NEEDS_MORE_INFO'].includes(d.status)&&<button className="primary" disabled={busy||editingFormal} onClick={()=>formalAction('begin-review')}>開始正式審查</button>}
-     {d.status==='UNDER_REVIEW'&&<ConfirmAction className="primary" disabled={busy||editingFormal} onConfirm={()=>formalAction('approve')}>核准正式會員</ConfirmAction>}
+     {['UNDER_REVIEW','APPROVED'].includes(d.status)&&<FormalApprovalAction key={selectedFormal} applicationId={selectedFormal!} status={d.status} disabled={busy||editingFormal} onBusy={setBusy} onApproved={()=>{
+      qc.setQueryData(['formal-application-detail',selectedFormal],(old:any)=>old?{...old,data:{...old.data,status:'APPROVED'}}:old);
+      qc.setQueriesData({queryKey:['formal-applications']},(old:any)=>old?{...old,data:old.data.map((row:any)=>row.id===selectedFormal?{...row,status:'APPROVED',membershipState:'FORMAL_MEMBER'}:row)}:old);
+      void qc.invalidateQueries({queryKey:['formal-applications']});
+      void qc.invalidateQueries({queryKey:['formal-application-detail',selectedFormal]});
+     }}/>}
+     {editingFormal&&d.status==='UNDER_REVIEW'&&<p>請先儲存或還原修改資料，再核准正式會員。</p>}
     </div>
     <p className="muted">{uiText("核准只建立／更新正式會員身分。法人或自然人要取得新 Ball，仍必須另行購買核准的資格套組並完成 Sponsor／Binary 流程。")}</p>
    </>})()}
