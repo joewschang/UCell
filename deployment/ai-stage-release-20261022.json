@@ -41,7 +41,7 @@
     },
     {
       "path": "shared/ai-assistant/Assistant.tsx",
-      "sha256": "9fb83da7e60ea1feb0de065ab0010e413c0363cab60e73d9275f4f5b66322032"
+      "sha256": "89a6d57b355c8491fc8108293e748c7f9c95cfe6c1eceb502d120d3602ced53d"
     },
     {
       "path": "shared/ai-assistant/assistant.css",
@@ -67,15 +67,15 @@
     },
     {
       "path": "modules/ai/ai-contract.js",
-      "sha256": "6dfb6fd022314d78e085a380ed7dc5b878bc7537b7f8b8c2043e79afde94c012"
+      "sha256": "e8fb357e94972b383347b3694358f11886396289da0420818afafdfbcb4bc66d"
     },
     {
       "path": "modules/ai/ai-data.js",
-      "sha256": "0b6e15676d8c382ac2a80465ffb10f47d621146de72e7a0bccee1d16d154f3c4"
+      "sha256": "89ae2cdd1762bac4aa22601ba493f99af579566145fb884e06d29d9b38030e11"
     },
     {
       "path": "modules/ai/ai-provider.js",
-      "sha256": "32cf663e8a7356becbc41fc2e50165b703d2d27ff3d098a2ea1e347d4fc932ca"
+      "sha256": "dd724f42b0b4badeb677f6fc99736dfac3029b417da7b4781f42d07b403ff972"
     },
     {
       "path": "modules/ai/ai.controller.js",
@@ -92,8 +92,8 @@
   ],
   "images": {
     "member": "ucellstageacr5mafbbsq33mgu.azurecr.io/ucell-member@sha256:6b6af27a6c0a45950d5e3db70d6223244a46143546b1e956e5374542d1a3d598",
-    "admin": "ucellstageacr5mafbbsq33mgu.azurecr.io/ucell-admin@sha256:507f8812e31fa50b6c245ddd042d7af803c8abea7bca058fd0b3536311cdd245",
-    "api": "ucellstageacr5mafbbsq33mgu.azurecr.io/ucell-backend@sha256:386b638ee94d3ea7971dd6f345d76fbdb5db743c519a5e6b1ed8bade0804d6dc"
+    "admin": "ucellstageacr5mafbbsq33mgu.azurecr.io/ucell-admin@sha256:d3322c4fe5886b0bd14d962723b220779daeb6cec4b9f531788158a53e8ee1ee",
+    "api": "ucellstageacr5mafbbsq33mgu.azurecr.io/ucell-backend@sha256:3197aa6600d1a8c0c0e7fae42aa931f688f45a237f7e2d3f169df401e7bd02ac"
   },
   "browser": [
     {
@@ -144,6 +144,7 @@
     "stageMonthlyReservationCeiling": 500000,
     "frontendHealth": "Healthy / 100% traffic",
     "apiHealth": "Healthy / 100% traffic",
-    "workerUnchanged": true
+    "workerUnchanged": true,
+    "membershipCountsHttpAssertions": 46
   }
 }

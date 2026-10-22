@@ -1,8 +1,8 @@
 import {BadRequestException} from '@nestjs/common';
 import {createHash} from 'node:crypto';
 export type Audience='ADMIN'|'MEMBER';
-export type Intent='SUMMARY'|'COUPON'|'QUALIFICATIONS'|'ORDERS'|'ACTIVE'|'PERFORMANCE'|'BONUS'|'FAQ'|'CLARIFY'|'DENIED';
-export const intents:Intent[]=['SUMMARY','COUPON','QUALIFICATIONS','ORDERS','ACTIVE','PERFORMANCE','BONUS','FAQ','CLARIFY','DENIED'];
+export type Intent='MEMBERSHIP_COUNTS'|'SUMMARY'|'COUPON'|'QUALIFICATIONS'|'ORDERS'|'ACTIVE'|'PERFORMANCE'|'BONUS'|'FAQ'|'CLARIFY'|'DENIED';
+export const intents:Intent[]=['MEMBERSHIP_COUNTS','SUMMARY','COUPON','QUALIFICATIONS','ORDERS','ACTIVE','PERFORMANCE','BONUS','FAQ','CLARIFY','DENIED'];
 export type Actor={id:string;audience:Audience;sessionId:string;provider:string;subject:string;role?:string};
 export type Plan={intent:Intent;start?:string;end?:string;couponCode?:string;topic?:string};
 export type Answer={status:'AVAILABLE'|'UNAVAILABLE'|'DENIED'|'CLARIFY';title:string;text:string;facts:Array<{label:string;value:string;unit?:string}>;columns?:string[];rows?:string[][];sources:Array<{label:string;ref:string}>;definitionVersion:string;period?:{start:string;end:string};updatedAt:string;scope?:string;finality?:string;notice?:string;exportable?:boolean};
@@ -18,7 +18,7 @@ export function period(plan:Plan,now=new Date()){
  for(const [v,d] of [[plan.start,s],[plan.end,e]] as const)if(v&&new Date(d.getTime()+8*3600000).toISOString().slice(0,10)!==v)throw new BadRequestException({code:'AI_PERIOD_INVALID'});
  return{start:s,end:e>now?now:e};
 }
-export function validatePlan(raw:any,audience:Audience):Plan{strict(raw,['intent','start','end','couponCode','topic']);if(!intents.includes(raw.intent))throw new BadRequestException({code:'AI_INVALID_PLAN'});if(audience==='MEMBER'&&['SUMMARY','COUPON'].includes(raw.intent))return{intent:'DENIED'};if(audience==='ADMIN'&&['QUALIFICATIONS','ORDERS','ACTIVE','PERFORMANCE','BONUS'].includes(raw.intent))return{intent:'CLARIFY'};for(const k of ['start','end'])if(raw[k]!=null&&!/^\d{4}-\d{2}-\d{2}$/.test(raw[k]))throw new BadRequestException({code:'AI_INVALID_PLAN'});if(raw.couponCode!=null&&!/^[A-Z0-9_-]{3,40}$/.test(raw.couponCode))throw new BadRequestException({code:'AI_INVALID_PLAN'});if(raw.topic!=null&&!/^[a-z-]{2,40}$/.test(raw.topic))throw new BadRequestException({code:'AI_INVALID_PLAN'});return Object.fromEntries(Object.entries(raw).filter(([,v])=>v!==null)) as Plan;}
+export function validatePlan(raw:any,audience:Audience):Plan{strict(raw,['intent','start','end','couponCode','topic']);if(!intents.includes(raw.intent))throw new BadRequestException({code:'AI_INVALID_PLAN'});if(audience==='MEMBER'&&['MEMBERSHIP_COUNTS','SUMMARY','COUPON'].includes(raw.intent))return{intent:'DENIED'};if(audience==='ADMIN'&&['QUALIFICATIONS','ORDERS','ACTIVE','PERFORMANCE','BONUS'].includes(raw.intent))return{intent:'CLARIFY'};for(const k of ['start','end'])if(raw[k]!=null&&!/^\d{4}-\d{2}-\d{2}$/.test(raw[k]))throw new BadRequestException({code:'AI_INVALID_PLAN'});if(raw.couponCode!=null&&!/^[A-Z0-9_-]{3,40}$/.test(raw.couponCode))throw new BadRequestException({code:'AI_INVALID_PLAN'});if(raw.topic!=null&&!/^[a-z-]{2,40}$/.test(raw.topic))throw new BadRequestException({code:'AI_INVALID_PLAN'});return Object.fromEntries(Object.entries(raw).filter(([,v])=>v!==null)) as Plan;}
 export function protectQuestion(s:string){return /(?:完整|全部).{0,8}(?:銀行|身分證|身份证|密碼)|(?:其他|別人|别人|所有).{0,5}會員.{0,8}(?:獎金|資料|訂單)|\b(?:password|secret|api[_ -]?key|system prompt|sql)\b|忽略.{0,8}(?:指令|規則)|執行.{0,6}(?:付款|退款|轉帳)/i.test(s);}
 /** Mask identifiers before any provider call. No operational facts are ever sent to the planner. */
 export function redact(s:string){return s.replace(/[A-Z][12]\d{8}\b/gi,'[證件已遮罩]').replace(/[\w.+-]+@[\w.-]+\.[a-z]{2,}/gi,'[電子郵件已遮罩]').replace(/\b\d{8,}\b/g,'[號碼已遮罩]').replace(/\b[a-f0-9]{8}-[a-f0-9-]{27,}\b/gi,'[識別碼已遮罩]').replace(/Bearer\s+\S+/gi,'[憑證已遮罩]');}

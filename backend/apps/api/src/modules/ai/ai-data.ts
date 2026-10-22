@@ -25,6 +25,19 @@ export class AiData{
     return{...base(rows[0].title,rows[0].body),sources:[{label:'核准知識 v'+rows[0].version,ref:rows[0].source_ref}],definitionVersion:'knowledge-'+rows[0].id};
    }
    if(actor.audience==='ADMIN'){
+    if(plan.intent==='MEMBERSHIP_COUNTS'){
+     if(plan.start||plan.end||plan.couponCode||plan.topic)return{...base('目前僅支援即時會員統計','請問「目前會員數與會員資格數」。歷史時點及條件篩選尚未開放。'),status:'CLARIFY'};
+     const people=await tx.$queryRaw<any[]>`SELECT membership_state::text AS state,count(*)::text AS total,count(*) FILTER(WHERE status='EFFECTIVE')::text AS effective FROM identity.person WHERE membership_state IS NOT NULL GROUP BY membership_state ORDER BY membership_state`;
+     const qualifications=await tx.$queryRaw<any[]>`SELECT q.status::text AS status,count(*)::text AS total,count(*) FILTER(WHERE q.current_holder_person_id IS NOT NULL AND q.current_holder_legal_entity_id IS NULL)::text AS personal,count(*) FILTER(WHERE q.current_holder_legal_entity_id IS NOT NULL AND q.current_holder_person_id IS NULL)::text AS corporate,count(*) FILTER(WHERE (q.current_holder_person_id IS NULL AND q.current_holder_legal_entity_id IS NULL) OR (q.current_holder_person_id IS NOT NULL AND q.current_holder_legal_entity_id IS NOT NULL))::text AS unresolved FROM membership.qualification q WHERE q.kind='MEMBER_ORIGIN' AND q.current_company_principal_id IS NULL AND NOT EXISTS(SELECT 1 FROM rules.system_assignment_pool_entry pool WHERE pool.qualification_id=q.qualification_id AND pool.enabled_from<=${now} AND (pool.enabled_to IS NULL OR pool.enabled_to>${now})) GROUP BY q.status ORDER BY q.status`;
+     const total=(rows:any[],key:string)=>rows.reduce((s,r)=>s+BigInt(r[key]),0n).toString();
+     const states:Record<string,string>={NETWORK_MEMBER:'網路會員',FORMAL_PENDING:'正式會員申請中',FORMAL_MEMBER:'正式會員'};
+     const a=base('目前會員與資格統計','會員人數按自然人會員紀錄計算，一人只計一次；會員資格按資格紀錄計算，一人可持有多個資格。法人資格另列，不加進自然人人數。');
+     delete a.period;a.definitionVersion='membership-counts-v1';
+     a.facts=[{label:'已登錄自然人會員（所有狀態）',value:total(people,'total'),unit:'人'},{label:'有效自然人會員',value:total(people,'effective'),unit:'人'},...['NETWORK_MEMBER','FORMAL_PENDING','FORMAL_MEMBER'].map(state=>({label:'有效'+states[state],value:people.find(r=>r.state===state)?.effective??'0',unit:'人'})),{label:'會員來源資格（所有狀態）',value:total(qualifications,'total'),unit:'個'},{label:'有效會員來源資格',value:qualifications.find(r=>r.status==='EFFECTIVE')?.total??'0',unit:'個'}];
+     a.columns=['資格狀態','資格總數','個人持有','法人持有','持有人待核對'];a.rows=qualifications.map(r=>[label(r.status),r.total,r.personal,r.corporate,r.unresolved]);
+     a.sources=[{label:'會員狀態登錄',ref:'identity.person/membership_state'},{label:'會員來源資格與系統池排除',ref:'membership.qualification/rules.system_assignment_pool_entry'}];
+     a.notice='僅為 Stage 測試資料，可能包含測試會員，不能視為正式站營運數字。未登錄會員狀態的人員不計入會員人數；公司建置資格、公司主體及目前系統池資格不計入。有效指紀錄狀態 EFFECTIVE，不代表當月符合領獎活躍條件。持有人待核對資格仍列入總數並單獨揭露。';a.exportable=true;return a;
+    }
     if(!['SUMMARY','COUPON'].includes(plan.intent))return unavailable();
     if(plan.intent==='COUPON'&&!plan.couponCode)return{...base('請指定優惠碼','例如：UCELL888 本月付款成效。'),status:'CLARIFY'};
     let couponJoin=Prisma.empty;

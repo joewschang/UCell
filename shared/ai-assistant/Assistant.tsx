@@ -18,7 +18,7 @@ export function Assistant({audience,qualificationId,qualificationLabel,request,d
  function cancel(){run.current++;abort.current?.abort();if(turn.current)void request(base+'/turns/'+turn.current+'/cancel',{method:'POST',body:'{}'}).catch(()=>{});turn.current=null;setBusy(false);setNotice('已停止查詢。');}
  async function exportReport(){try{const job=await request<any>(base+'/report-jobs',{method:'POST',body:JSON.stringify({snapshotId:result?.snapshotId})});await download?.(job.id);setNotice('已下載目前快照的 CSV 報表。')}catch(e){setError(errorText(e))}}
  async function feedback(rating:string){try{await request(base+'/turns/'+result?.turnId+'/feedback',{method:'POST',body:JSON.stringify({rating})});setNotice('謝謝，已記錄回饋。')}catch(e){setError(errorText(e))}}
- const examples=audience==='admin'?['本月付款入帳總額多少？','UCELL888 本月付款成效','GPV 與資格費如何計算？']:['我有哪些會員資格？','我的本月訂單','我目前符合活躍資格嗎？','我的本月 GPV','我的本月獎金','UCELL888 如何使用？'];
+ const examples=audience==='admin'?['目前會員數有多少？','目前會員資格數有多少？','本月付款入帳總額多少？','UCELL888 本月付款成效','GPV 與資格費如何計算？']:['我有哪些會員資格？','我的本月訂單','我目前符合活躍資格嗎？','我的本月 GPV','我的本月獎金','UCELL888 如何使用？'];
  const a=result?.answer;const time=(s:string)=>new Date(s).toLocaleString('zh-TW',{timeZone:'Asia/Taipei',hour12:false});
  return <section className="uc-ai"><div className="uc-ai-hero"><div><small>UCELL AI · STAGE</small><h1>{audience==='admin'?'AI 營運助理':'我的 AI 助理'}</h1><p>{audience==='admin'?'用自然語言查詢營運資料，數字與來源一起呈現。':'查詢自己的資料，了解資格與常見問題。'}</p></div><span className="uc-ai-badge">唯讀測試</span></div>
  <p className="uc-ai-scope">查詢範圍：{audience==='admin'?'公司彙總':qualificationLabel??'本人資料，尚未選擇正式資格'} · 台北時間</p>
