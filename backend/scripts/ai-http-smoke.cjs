@@ -6,7 +6,7 @@ const db=new PrismaClient(),stage=process.env.UCELL_ENVIRONMENT==='STAGE'&&new U
 const base=stage?'https://api-stage.ucell.life/api/v1':'http://127.0.0.1:55300/api/v1';
 assert.ok(stage||['localhost','127.0.0.1'].includes(new URL(process.env.DATABASE_URL).hostname));
 const actors=[];let checks=0;const eq=(a,b)=>{assert.deepEqual(a,b);checks++};
-async function actor(audience){const p=await db.person.create({data:{legalName:'SYNTHETIC AI RELEASE TEST',status:'EFFECTIVE'}}),provider=audience==='ADMIN'?'ADMIN_LOCAL':'MEMBER_LOCAL',subject=audience==='ADMIN'?'AI-SYNTHETIC-'+randomUUID():p.memberNo;
+async function actor(audience){const p=await db.person.create({data:{legalName:'SYNTHETIC AI RELEASE TEST',status:'EFFECTIVE',membershipState:'NETWORK_MEMBER'}}),provider=audience==='ADMIN'?'ADMIN_LOCAL':'MEMBER_LOCAL',subject=audience==='ADMIN'?'AI-SYNTHETIC-'+randomUUID():p.memberNo;
  const s=await new IdentityTokenService(db).issue({provider,subject,personId:p.personId,roleCode:audience==='ADMIN'?'SUPER_ADMIN':undefined,ttlSeconds:900});
  if(audience==='ADMIN')await db.adminAccessGrant.create({data:{personId:p.personId,provider,providerSubject:subject,roleCode:'SUPER_ADMIN',validTo:new Date(Date.now()+900000)}});
  for(const cap of audience==='ADMIN'?['AI_EXEC_READ','AI_REPORT_EXPORT','AI_AUDIT_READ']:['AI_MEMBER_SELF'])await db.$executeRaw`INSERT INTO ai.capability_grant(id,actor_id,capability,valid_to,granted_by,reason) VALUES(${randomUUID()}::uuid,${p.personId}::uuid,${cap},now()+interval '15 minutes','RELEASE_TEST','Ephemeral synthetic HTTP verification')`;

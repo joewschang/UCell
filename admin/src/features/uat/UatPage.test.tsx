@@ -56,7 +56,7 @@ it('shows empty, loading, and error feedback for the governed evidence query',as
   await act(async()=>{resolveRequest({data:[]});});
   await waitForEvidence(tree!);expect(JSON.stringify(tree!.toJSON())).toContain('目前沒有符合條件的資料');act(()=>tree!.unmount());
 
-  vi.mocked(get).mockRejectedValue(new Error('evidence service unavailable'));tree=await render();expect(JSON.stringify(tree.toJSON())).toContain("evidence service unavailable");act(()=>tree.unmount());
+  vi.mocked(get).mockRejectedValue(new Error('證據服務暫時無法使用'));tree=await render();expect(JSON.stringify(tree.toJSON())).toContain("證據服務暫時無法使用");act(()=>tree.unmount());
 });
 
 it('filters API evidence independently from browser-local scenario status',async()=>{

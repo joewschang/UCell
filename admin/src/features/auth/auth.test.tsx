@@ -4,7 +4,7 @@ import {MemoryRouter,Navigate,Route,Routes} from 'react-router-dom';
 import {act,create,type ReactTestRenderer} from 'react-test-renderer';
 import {afterEach,beforeEach,expect,it,vi} from 'vitest';
 import {api} from '../../lib/api';
-vi.mock('./entra',()=>({acquireEntraIdToken:vi.fn(),entraLogout:vi.fn()}));
+vi.mock('./entra',()=>({completeEntraRedirect:vi.fn().mockResolvedValue(null),startEntraLogin:vi.fn(),entraLogout:vi.fn()}));
 import {AuthProvider,useAuth} from './auth';
 
 const stored=new Map<string,string>();

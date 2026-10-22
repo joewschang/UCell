@@ -1,0 +1,12 @@
+const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict'),crypto=require('node:crypto');
+const root=path.resolve(__dirname,'..'),out='C:/UCell/ai-production-20261022';
+const baseline={api:'ucellprodacrm3z2zx4ohqyui.azurecr.io/ucell-api@sha256:6b84a6a5c72c3b9e335cbc67415405072a881d3cf764f4ff842416d5ee913bf8',admin:'ucellprodacrm3z2zx4ohqyui.azurecr.io/ucell-admin@sha256:46ea4e82e4b8f758448c4b481d359fcde5f43fcb5026f4f5db8b951e5be995ae',member:'ucellprodacrm3z2zx4ohqyui.azurecr.io/ucell-member@sha256:6e580ee23739afa120e454907d51592ab430bde4ad32868aabe8ebcf38566fbb'};
+const api=path.join(out,'api');fs.mkdirSync(path.join(api,'overlay/modules/auth'),{recursive:true});
+fs.cpSync(path.join(root,'backend/apps/api/dist/modules/ai'),path.join(api,'overlay/modules/ai'),{recursive:true});
+let app=fs.readFileSync(path.join(out,'base-dist/app.module.js'),'utf8');assert.equal(app.split('imports: [').length,2);app='const ai_module_1 = require("./modules/ai/ai.module");\n'+app.replace('imports: [','imports: [ai_module_1.AiModule,');fs.writeFileSync(path.join(api,'overlay/app.module.js'),app);
+let guard=fs.readFileSync(path.join(out,'base-dist/modules/auth/admin-authentication.guard.js'),'utf8');assert.equal(guard.split('\\/organization\\/geo(?:').length,2);guard=guard.replace('\\/organization\\/geo(?:','\\/(?:organization\\/geo|ai)(?:');fs.writeFileSync(path.join(api,'overlay/modules/auth/admin-authentication.guard.js'),guard);
+fs.writeFileSync(path.join(api,'Dockerfile'),`FROM ${baseline.api}\nCOPY overlay/ /app/apps/api/dist/\n`);
+for(const component of ['admin','member']){const dir=path.join(out,component);fs.mkdirSync(dir,{recursive:true});fs.cpSync(path.join(root,component,'dist'),path.join(dir,'dist'),{recursive:true});fs.writeFileSync(path.join(dir,'Dockerfile'),`FROM ${baseline[component]}\nRUN rm -rf /usr/share/nginx/html/*\nCOPY dist/ /usr/share/nginx/html/\n`);}
+const files=[];function walk(dir){for(const ent of fs.readdirSync(dir,{withFileTypes:true})){const p=path.join(dir,ent.name);if(ent.isDirectory())walk(p);else files.push({path:path.relative(out,p).replaceAll('\\','/'),sha256:crypto.createHash('sha256').update(fs.readFileSync(p)).digest('hex')});}}
+for(const component of ['api','admin','member'])walk(path.join(out,component));
+fs.writeFileSync(path.join(out,'manifest.json'),JSON.stringify({baseline,files},null,2));console.log(JSON.stringify({prepared:true,files:files.length,baseline}));

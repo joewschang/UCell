@@ -13,8 +13,8 @@ const db=new PrismaClient();let checks=0;const eq=(a,b)=>{assert.deepEqual(a,b);
  const paid=async(o,amount=o.netAmount)=>tx.paymentEvent.create({data:{orderId:o.orderId,eventType:'PAYMENT_CONFIRMED',amount,paymentMethod:'TEST',referenceNo:randomUUID(),idempotencyKey:randomUUID(),occurredAt:new Date('2026-09-01T02:00:00Z'),correlationId:randomUUID()}});
  const zero=await order(0,600);await paid(zero);const six=await order(28800,600);await paid(six);await order(57600,600); // unpaid must not count
  let a=await data.execute(admin,plan,null);eq(a.status,'AVAILABLE');eq(a.facts.map(f=>f.value),['30000.00','2','1200.00','28800.00']);
- const [coupon]=await tx.$queryRaw`SELECT id FROM commerce.coupon_definition WHERE code='UCELL888'`;
- await tx.$executeRaw`INSERT INTO commerce.coupon_redemption(coupon_id,order_id,person_id,snapshot,expires_at) VALUES(${coupon.id}::uuid,${zero.orderId}::uuid,${person.personId}::uuid,'{}',now()+interval '1 day')`;
+ const coupon=await tx.couponDefinition.upsert({where:{code:'UCELL888'},update:{},create:{code:'UCELL888',name:'LOCAL TEST',ruleCode:'ENTRY_MINUS_14400_3_V1',description:'Local financial fixture',packageCodes:['STARTER'],startsAt:new Date('2026-01-01'),endsAt:new Date('2027-02-01')}});
+ await tx.couponRedemption.create({data:{couponId:coupon.id,orderId:zero.orderId,personId:person.personId,snapshot:{},expiresAt:new Date(Date.now()+86400000)}});
  a=await data.execute(admin,{...plan,intent:'COUPON',couponCode:'UCELL888'},null);eq(a.facts.map(f=>f.value),['600.00','1','600.00','0.00']);
  const own=await data.execute({id:person.personId,audience:'MEMBER'},{...plan,intent:'ORDERS'},null);eq(own.rows.length,3);eq(own.rows.some(r=>r[4]==='0 盒，無需寄送商品'),true);
  eq((await data.execute({id:randomUUID(),audience:'MEMBER'},{...plan,intent:'ORDERS'},null)).rows.length,0);

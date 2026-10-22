@@ -29,7 +29,7 @@ export class AdminAiController{
  @Post('turns/:id/cancel') async cancel(@Req() r:any,@Param('id') id:string){return this.ai.cancel(await this.actor(r),id);}
  @Post('turns/:id/feedback') async feedback(@Req() r:any,@Param('id') id:string,@Body() b:any){return this.ai.feedback(await this.actor(r),id,b);}
  @Post('report-jobs') async report(@Req() r:any,@Body() b:any){return this.ai.createReport(await this.actor(r,'AI_REPORT_EXPORT'),b);}
- @Get('report-jobs/:id/download') async download(@Req() r:any,@Param('id') id:string,@Res() res:any){const csv=await this.ai.download(await this.actor(r,'AI_REPORT_EXPORT'),id);res.header('Content-Type','text/csv; charset=utf-8').header('Cache-Control','no-store').header('Content-Disposition','attachment; filename="ucell-stage-ai.csv"').send(csv);}
+ @Get('report-jobs/:id/download') async download(@Req() r:any,@Param('id') id:string,@Res() res:any){const csv=await this.ai.download(await this.actor(r,'AI_REPORT_EXPORT'),id);res.header('Content-Type','text/csv; charset=utf-8').header('Cache-Control','no-store').header('Content-Disposition','attachment; filename="ucell-ai.csv"').send(csv);}
  @Get('knowledge') async knowledge(@Req() r:any){return this.ai.knowledge(await this.actor(r,'AI_KB_EDIT'));}
  @Post('knowledge') async createKnowledge(@Req() r:any,@Body() b:any){return this.ai.createKnowledge(await this.actor(r,'AI_KB_EDIT'),b);}
  @Post('knowledge/:id/:action') async knowledgeAction(@Req() r:any,@Param('id') id:string,@Param('action') action:string,@Body() b:any){return this.ai.knowledgeAction(await this.actor(r,action==='submit'?'AI_KB_EDIT':'AI_KB_APPROVE'),id,action,b);}

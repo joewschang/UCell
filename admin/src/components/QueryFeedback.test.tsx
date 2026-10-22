@@ -8,5 +8,5 @@ it('distinguishes loading, an empty successful result and a denied request',()=>
  expect(loading).toContain('資料載入中');expect(loading).not.toContain('目前沒有');
  const empty=renderToStaticMarkup(<QueryFeedback query={{isPending:false,error:null,refetch}} empty/>);expect(empty).toContain('目前沒有符合條件');
  const denied=renderToStaticMarkup(<QueryFeedback query={{isPending:false,error:Error('403 denied'),refetch}} empty/>);
- expect(denied).toContain('403 denied');expect(denied).toContain('重新載入');expect(denied).not.toContain('目前沒有符合條件');
+ expect(denied).toContain('暫時無法完成操作');expect(denied).not.toContain('403 denied');expect(denied).toContain('重新載入');expect(denied).not.toContain('目前沒有符合條件');
 });

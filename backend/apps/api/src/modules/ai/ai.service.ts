@@ -10,33 +10,38 @@ const cap=(audience:Audience)=>audience==='ADMIN'?'AI_EXEC_READ':'AI_MEMBER_SELF
 export class AiService implements OnModuleInit,OnModuleDestroy{
  private running=new Map<string,AbortController>();private timer?:ReturnType<typeof setInterval>;
  constructor(private readonly db:PrismaService,private readonly config:ConfigService,private readonly provider:AiProvider,private readonly data:AiData){}
+ private enabled(){const env=this.config.get('UCELL_ENVIRONMENT');return this.config.get('AI_ENABLED')==='true'&&(env==='STAGE'||env==='PRODUCTION'&&this.config.get('NODE_ENV')==='production');}
+ private roleCapabilities(actor:Actor){if(this.config.get('UCELL_ENVIRONMENT')!=='PRODUCTION'||this.config.get('AI_ACCESS_MODE')!=='PRODUCTION_ROLES')return [];return actor.audience==='MEMBER'?['AI_MEMBER_SELF']:actor.role==='SUPER_ADMIN'?['AI_EXEC_READ','AI_REPORT_EXPORT','AI_KB_EDIT','AI_KB_APPROVE','AI_AUDIT_READ']:[];}
  onModuleInit(){if(this.config.get('AI_ENABLED')==='true'){this.timer=setInterval(()=>void this.cleanup().catch(()=>undefined),60000);this.timer.unref();}}
  onModuleDestroy(){if(this.timer)clearInterval(this.timer);for(const c of this.running.values())c.abort();}
  async cleanup(){await this.db.$executeRaw`UPDATE ai.turn SET status='FAILED',result='{"code":"AI_WORK_INTERRUPTED"}'::jsonb,completed_at=now() WHERE status IN ('QUEUED','RUNNING') AND created_at<now()-interval '2 minutes'`;await this.db.$executeRaw`DELETE FROM ai.report_job WHERE expires_at<now()`;await this.db.$executeRaw`DELETE FROM ai.snapshot WHERE expires_at<now()`;await this.db.$executeRaw`UPDATE ai.turn SET result=NULL WHERE created_at<now()-interval '30 days' AND result IS NOT NULL`;await this.db.$executeRaw`DELETE FROM ai.audit_event WHERE created_at<now()-interval '180 days'`;}
  async authorize(user:any,audience:Audience,capability=cap(audience)):Promise<Actor>{
-  if(this.config.get('UCELL_ENVIRONMENT')!=='STAGE'||this.config.get('AI_ENABLED')!=='true')throw new HttpException({code:'AI_DISABLED'},503);
+  if(!this.enabled())throw new HttpException({code:'AI_DISABLED'},503);
   if(!user||!uuid(user.personId)||!user.sessionId)throw new ForbiddenException({code:'AI_VERIFIED_SESSION_REQUIRED'});
   const actor:Actor={id:user.personId,audience,sessionId:user.sessionId,provider:user.provider,subject:user.subject,role:user.role};
   await this.assertActor(actor,capability);return actor;
  }
  async assertActor(actor:Actor,capability=cap(actor.audience)){
-  if(this.config.get('UCELL_ENVIRONMENT')!=='STAGE'||this.config.get('AI_ENABLED')!=='true')throw new HttpException({code:'AI_DISABLED'},503);
+  if(!this.enabled())throw new HttpException({code:'AI_DISABLED'},503);
   const stageMember=actor.audience==='MEMBER'&&actor.sessionId==='STAGE_UAT_MEMBER'&&actor.id==='51000000-0000-4000-8000-000000000001'&&this.config.get('UCELL_ENVIRONMENT')==='STAGE'&&this.config.get('NODE_ENV')==='staging';
   if(!stageMember){
    if(!uuid(actor.sessionId))throw new ForbiddenException({code:'AI_VERIFIED_SESSION_REQUIRED'});
    const session=await this.db.authSession.findUnique({where:{authSessionId:actor.sessionId}});
    if(!session||session.personId!==actor.id||session.status!=='ACTIVE'||session.revokedAt||session.expiresAt<=new Date()||session.provider!==actor.provider||session.subject!==actor.subject||(actor.audience==='ADMIN'?!session.roleCode:!!session.roleCode))throw new ForbiddenException({code:'AI_SESSION_REVOKED'});
    if(actor.audience==='ADMIN'){
+    if(actor.role!==session.roleCode)throw new ForbiddenException({code:'AI_SCOPE_DENIED'});
     const grant=await this.db.adminAccessGrant.findFirst({where:{personId:actor.id,provider:actor.provider as any,providerSubject:actor.subject,status:'ACTIVE',roleCode:session.roleCode!,validFrom:{lte:new Date()},OR:[{validTo:null},{validTo:{gt:new Date()}}]}});if(!grant)throw new ForbiddenException({code:'AI_SCOPE_DENIED'});
    }
   }
-  const person=await this.db.person.findUnique({where:{personId:actor.id},select:{status:true,securityStatus:true}});
+  const person=await this.db.person.findUnique({where:{personId:actor.id},select:{status:true,securityStatus:true,membershipState:true}});
   if(person?.status!=='EFFECTIVE'||person.securityStatus!=='NORMAL')throw new ForbiddenException({code:'AI_SCOPE_DENIED'});
+  if(this.config.get('UCELL_ENVIRONMENT')==='PRODUCTION'&&actor.audience==='MEMBER'&&!person.membershipState)throw new ForbiddenException({code:'AI_SCOPE_DENIED'});
+  if(this.roleCapabilities(actor).includes(capability))return;
   const grants=await this.db.$queryRaw<any[]>`SELECT id FROM ai.capability_grant WHERE actor_id=${actor.id}::uuid AND capability=${capability} AND valid_from<=now() AND valid_to>now()`;
   if(!grants.length)throw new ForbiddenException({code:'AI_CAPABILITY_REQUIRED'});
  }
  async audit(actor:Actor,action:string,id:string|null,outcome:string,details:any={}){await this.db.$executeRaw`INSERT INTO ai.audit_event(id,actor_id,audience,action,entity_id,outcome,details) VALUES(${randomUUID()}::uuid,${actor.id}::uuid,${actor.audience},${action},${id}::uuid,${outcome},${JSON.stringify(details)}::jsonb)`;}
- async capabilities(actor:Actor){const grants=await this.db.$queryRaw<any[]>`SELECT capability FROM ai.capability_grant WHERE actor_id=${actor.id}::uuid AND valid_from<=now() AND valid_to>now()`;return{stageOnly:true,modelConfigured:this.provider.configured(),mode:'MODEL_PLANNER_GROUNDED_FACTS',capabilities:grants.map(x=>x.capability),maxMessageLength:2000,timezone:'Asia/Taipei',notice:'Stage 測試版：模型只解析問題，資料與數字由系統產生。退款淨額與同期比較尚未開放。'};}
+ async capabilities(actor:Actor){await this.assertActor(actor);const grants=await this.db.$queryRaw<any[]>`SELECT capability FROM ai.capability_grant WHERE actor_id=${actor.id}::uuid AND valid_from<=now() AND valid_to>now()`;const stage=this.config.get('UCELL_ENVIRONMENT')==='STAGE';return{stageOnly:stage,environment:stage?'STAGE':'PRODUCTION',modelConfigured:this.provider.configured(),mode:'MODEL_PLANNER_GROUNDED_FACTS',capabilities:[...new Set([...grants.map(x=>x.capability),...this.roleCapabilities(actor)])],maxMessageLength:2000,timezone:'Asia/Taipei',notice:(stage?'Stage 測試版：':'')+'模型只解析問題，資料與數字由系統產生。退款淨額與同期比較尚未開放。'};}
  async createConversation(actor:Actor,input:any){strict(input,['qualificationId']);const q=input.qualificationId??null;if(q!==null&&(!uuid(q)||actor.audience!=='MEMBER'))throw new HttpException({code:'AI_INVALID_CONTEXT'},400);if(q)await this.data.own(this.db as any,actor,q);const id=randomUUID();await this.db.$executeRaw`INSERT INTO ai.conversation(id,actor_id,audience,qualification_id,expires_at) VALUES(${id}::uuid,${actor.id}::uuid,${actor.audience},${q}::uuid,now()+interval '30 days')`;await this.audit(actor,'CONVERSATION_CREATED',id,'CREATED');return{id,contextVersion:1,qualificationId:q};}
  async conversation(actor:Actor,id:string){if(!uuid(id))throw new NotFoundException();const [c]=await this.db.$queryRaw<any[]>`SELECT * FROM ai.conversation WHERE id=${id}::uuid AND actor_id=${actor.id}::uuid AND audience=${actor.audience} AND expires_at>now()`;if(!c)throw new NotFoundException();if(c.qualification_id)await this.data.own(this.db as any,actor,c.qualification_id);return c;}
  async turn(actor:Actor,conversationId:string,input:any,key:string){

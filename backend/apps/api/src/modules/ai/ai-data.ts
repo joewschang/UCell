@@ -1,4 +1,5 @@
-import {Injectable,ForbiddenException} from '@nestjs/common';
+import {Injectable,ForbiddenException,Optional} from '@nestjs/common';
+import {ConfigService} from '@nestjs/config';
 import {PrismaService,Prisma} from '@ucell/database';
 import {Actor,Answer,Plan,period,unavailable} from './ai-contract';
 import {readStructuredExplanation} from '../explain/structured-explain-source';
@@ -7,7 +8,7 @@ const stateLabels:Record<string,string>={DRAFT:'草稿',CONFIRMED:'待付款',PA
 const label=(s:string)=>stateLabels[s]??s;
 @Injectable()
 export class AiData{
- constructor(private readonly db:PrismaService){}
+ constructor(private readonly db:PrismaService,@Optional() private readonly config?:ConfigService){}
  async own(tx:Tx,actor:Actor,qid:string){
   const rows=await tx.$queryRaw<any[]>`SELECT h.effective_from AS "from" FROM membership.qualification_holder_history h JOIN membership.qualification q USING(qualification_id) WHERE h.qualification_id=${qid}::uuid AND h.holder_person_id=${actor.id}::uuid AND q.current_holder_person_id=${actor.id}::uuid AND q.current_holder_legal_entity_id IS NULL AND q.kind='MEMBER_ORIGIN' AND q.current_company_principal_id IS NULL AND NOT EXISTS(SELECT 1 FROM rules.system_assignment_pool_entry pool WHERE pool.qualification_id=q.qualification_id AND pool.enabled_from<=now() AND (pool.enabled_to IS NULL OR pool.enabled_to>now())) AND h.effective_from<=now() AND (h.effective_to IS NULL OR h.effective_to>now())`;
   if(rows.length!==1)throw new ForbiddenException({code:'AI_SCOPE_DENIED'});return rows[0].from as Date;
@@ -36,14 +37,14 @@ export class AiData{
      a.facts=[{label:'已登錄自然人會員（所有狀態）',value:total(people,'total'),unit:'人'},{label:'有效自然人會員',value:total(people,'effective'),unit:'人'},...['NETWORK_MEMBER','FORMAL_PENDING','FORMAL_MEMBER'].map(state=>({label:'有效'+states[state],value:people.find(r=>r.state===state)?.effective??'0',unit:'人'})),{label:'會員來源資格（所有狀態）',value:total(qualifications,'total'),unit:'個'},{label:'有效會員來源資格',value:qualifications.find(r=>r.status==='EFFECTIVE')?.total??'0',unit:'個'}];
      a.columns=['資格狀態','資格總數','個人持有','法人持有','持有人待核對'];a.rows=qualifications.map(r=>[label(r.status),r.total,r.personal,r.corporate,r.unresolved]);
      a.sources=[{label:'會員狀態登錄',ref:'identity.person/membership_state'},{label:'會員來源資格與系統池排除',ref:'membership.qualification/rules.system_assignment_pool_entry'}];
-     a.notice='僅為 Stage 測試資料，可能包含測試會員，不能視為正式站營運數字。未登錄會員狀態的人員不計入會員人數；公司建置資格、公司主體及目前系統池資格不計入。有效指紀錄狀態 EFFECTIVE，不代表當月符合領獎活躍條件。持有人待核對資格仍列入總數並單獨揭露。';a.exportable=true;return a;
+     a.notice=(this.config?.get('UCELL_ENVIRONMENT')==='PRODUCTION'?'正式環境目前資料快照。':'僅為 Stage 測試資料，可能包含測試會員，不能視為正式站營運數字。')+'未登錄會員狀態的人員不計入會員人數；公司建置資格、公司主體及目前系統池資格不計入。有效指紀錄狀態 EFFECTIVE，不代表當月符合領獎活躍條件。持有人待核對資格仍列入總數並單獨揭露。';a.exportable=true;return a;
     }
     if(!['SUMMARY','COUPON'].includes(plan.intent))return unavailable();
     if(plan.intent==='COUPON'&&!plan.couponCode)return{...base('請指定優惠碼','例如：UCELL888 本月付款成效。'),status:'CLARIFY'};
     let couponJoin=Prisma.empty;
     if(plan.intent==='COUPON'){
      const [schema]=await tx.$queryRaw<any[]>`SELECT to_regclass('commerce.coupon_redemption')::text AS name`;
-     if(!schema?.name)return unavailable('Stage 尚無優惠碼資料來源','優惠碼資料表尚未導入此 Stage 版本；不會以正式站資料或示範數字代替。');
+     if(!schema?.name)return unavailable('尚無優惠碼資料來源','目前環境尚無優惠碼資料表；不會以其他環境資料或示範數字代替。');
      couponJoin=Prisma.sql`JOIN commerce.coupon_redemption cr ON cr.order_id=o.order_id JOIN commerce.coupon_definition cd ON cd.id=cr.coupon_id AND cd.code=${plan.couponCode}`;
     }
     const rows=await tx.$queryRaw<any[]>(Prisma.sql`SELECT COALESCE(ps.package_code,'RETAIL') AS package,
