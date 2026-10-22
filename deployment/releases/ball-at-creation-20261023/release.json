@@ -1,0 +1,24 @@
+{
+  "release": "ball-at-creation-20261023",
+  "apiDigest": "sha256:cb34890861806d5d09772d4121ee691140e25950b30c739a7ea2922a7aaf8b16",
+  "adminDigest": "sha256:8c0d7fc6aa6c381afe96370f7825fd02f3b0823e98bd2afe5595e9b7ec814f72",
+  "memberDigest": "sha256:2b4d445907fbaf2eed3e382a34c58fb543703d6217ca5e237515e026652ba7d9",
+  "migration": "20261023020000_ball_number_before_placement",
+  "changes": [
+    "Allocate immutable per-tree ball sequence in qualification package checkout transaction before payment and placement",
+    "Use sponsor tree, or the unique active tree for paper checkout without a sponsor; reject ambiguous scope",
+    "Allow allocated ordinary ball identities without a binary position, retaining company bootstrap position and identity immutability checks",
+    "Add direct placement console link to qualification list and show the existing ball number in placement preview",
+    "Explain missing tree configuration in member checkout"
+  ],
+  "backfill": {"memberNo":"2610000010","ballNo":"A000001","status":"DRAFT","setupStatus":"PLACEMENT_PENDING","placed":false},
+  "validation": {
+    "apiTests":13,
+    "adminTests":273,
+    "memberTests":329,
+    "builds":"API TypeScript and production web builds passed",
+    "database":"Rollback-only migration validation: allocation without placement, same number on retries, rejection of fabricated/changed/cleared ball number; applied migration and idempotent audited backfill",
+    "production":"API and admin healthy, web asset bytes verified, deployed API helper syntax checked"
+  },
+  "deployment":"Exact previous API image plus one checkout call and standalone allocation helper; all other compiled runtime preserved"
+}

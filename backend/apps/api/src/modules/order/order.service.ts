@@ -1,3 +1,4 @@
+import {allocateCreatedBall} from '../qualification/allocate-created-ball';
 import {ENTRY_POLICY} from '../coupon/entry-pricing';
 import { ConflictException, Injectable, UnprocessableEntityException } from '@nestjs/common';
 import { Prisma, PrismaService } from '@ucell/database';
@@ -166,6 +167,7 @@ export class OrderService {
         if(!paper&&!dto.sponsorCode?.trim())throw new UnprocessableEntityException({code:'QUALIFICATION_SPONSOR_REQUIRED'});
         if(dto.sponsorCode)sponsorEvidence=await (this.sponsors??new SponsorResolver(this.prisma)).resolveWithin(tx as any,{code:dto.sponsorCode,effectiveAt:now,ruleVersion:'R1.0B'});
         const qualification=await tx.qualification.create({data:{currentHolderPersonId:dto.legalEntityId?null:personId,currentHolderLegalEntityId:dto.legalEntityId??null,planLevelCode:v.profile.stableCode,status:'DRAFT',activeFlag:false}});qualificationId=qualification.qualificationId;
+        await allocateCreatedBall(tx,qualificationId,sponsorEvidence?.sponsorQualificationId);
         await tx.qualificationHolderHistory.create({data:{qualificationId,holderPersonId:dto.legalEntityId?null:personId,holderLegalEntityId:dto.legalEntityId??null,effectiveFrom:now,sourceType:'PACKAGE_CHECKOUT'}});
         await tx.qualificationOwnerInterval.create({data:{qualificationId,ownerType:dto.legalEntityId?'LEGAL_ENTITY':'MEMBER',personId:dto.legalEntityId?null:personId,legalEntityId:dto.legalEntityId??null,companyPrincipalId:null,effectiveFrom:now,sourceType:'PACKAGE_CHECKOUT',sourceId:qualificationId,evidenceHash:createHash('sha256').update(JSON.stringify({qualificationId,personId:dto.legalEntityId?null:personId,legalEntityId:dto.legalEntityId??null,packageVersionId:dto.packageVersionId,at:now.toISOString()})).digest('hex')}});
         await tx.qualificationStatusHistory.create({data:{qualificationId,status:'DRAFT',effectiveFrom:now,sourceType:'PACKAGE_CHECKOUT'}});
