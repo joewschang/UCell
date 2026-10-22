@@ -1,0 +1,811 @@
+{
+  "baseline": {
+    "admin": "ucellprodacrm3z2zx4ohqyui.azurecr.io/ucell-admin@sha256:f3c7b51f7ea90fd38ad8331b88debb8450586d1e4a15ef68776466d880a4cde4",
+    "member": "ucellprodacrm3z2zx4ohqyui.azurecr.io/ucell-member@sha256:53f9c7fbfb13e8c0e5fcb98921df3d2eb70996ddac9a69fabd4121c2ea8d993c",
+    "website": "ucellprodacrm3z2zx4ohqyui.azurecr.io/ucell-website@sha256:43918968282d15ead37e5aa1ed426eef6ae72294dbf0a880f0eaec94c1ac64f0"
+  },
+  "observed": {
+    "admin": "ucellprodacrm3z2zx4ohqyui.azurecr.io/ucell-admin@sha256:f3c7b51f7ea90fd38ad8331b88debb8450586d1e4a15ef68776466d880a4cde4",
+    "member": "ucellprodacrm3z2zx4ohqyui.azurecr.io/ucell-member@sha256:53f9c7fbfb13e8c0e5fcb98921df3d2eb70996ddac9a69fabd4121c2ea8d993c",
+    "website": "ucellprodacrm3z2zx4ohqyui.azurecr.io/ucell-website:support-20261021"
+  },
+  "files": [
+    {
+      "path": "admin\\dist\\.htaccess",
+      "sha256": "4edb95772a4ac8bffc9f45ad17cd60df833a9c01b59cd482063fc264145a288f"
+    },
+    {
+      "path": "admin\\dist\\assets\\index-CtWx2Hut.js",
+      "sha256": "f261a32985ea9933965c199fb19a00a1050870ab039ff4d6fb6c0fd4d215aab2"
+    },
+    {
+      "path": "admin\\dist\\assets\\index-DfEVI9cE.js",
+      "sha256": "a37fa281892af656a2c9fb0a44d71a77b3aedb3ed96259a79bed755ee9c82256"
+    },
+    {
+      "path": "admin\\dist\\assets\\index-Ni29iOxK.css",
+      "sha256": "ed6b3428e80c8b963bedc262898fc42f0c86b306049ee5407ed4d476b07ceeb5"
+    },
+    {
+      "path": "admin\\dist\\assets\\virtual-agent\\avatar.webp",
+      "sha256": "1c78536967eeefb7d7da79338102ad088f6a853682f631a23b6b5cb3f6a31886"
+    },
+    {
+      "path": "admin\\dist\\assets\\virtual-agent\\portrait.webp",
+      "sha256": "a6f5e2c565d3cfd0ea8f73c85692d033d4d0d75820610cffb31c8e5df6a63b52"
+    },
+    {
+      "path": "admin\\dist\\assets\\virtual-agent\\welcome.webp",
+      "sha256": "a35ace6c2a400627796f772fe4e016cbfab78cdf015255a3fef0ab2cc50198ff"
+    },
+    {
+      "path": "admin\\dist\\index.html",
+      "sha256": "b1a91ca4524ce9f69208a1cc6335216abbe34eff1a3e97be54459915c213aaa8"
+    },
+    {
+      "path": "admin\\dist\\ucell-logo-transparent.png",
+      "sha256": "e3d6bb9456117bafb3860cd99a5dfab29bb30b0c1a0dca4b7433a5550a1de75c"
+    },
+    {
+      "path": "admin\\dist\\ucell-logo.jpg",
+      "sha256": "6fddd8537625cc8c611fce5bfebffbeaa33ce3e4c55dbac235dcdd698c6432b5"
+    },
+    {
+      "path": "admin\\Dockerfile",
+      "sha256": "e7508b007bf2a168c80aa19ab87903aae091de23236d9cae32de867fedd956a9"
+    },
+    {
+      "path": "member\\dist\\assets\\browser-BXdiCFWD.js",
+      "sha256": "7e89b6da537b2218d27aa5c1a028b57eea8f852d2cdaaa1d29f5db76fdff9d3c"
+    },
+    {
+      "path": "member\\dist\\assets\\index-BaVsm0FT.css",
+      "sha256": "7664d21e1b2fbcc46e8bd82e214265098b1534f0169ff1f4eabb3bdc17493e65"
+    },
+    {
+      "path": "member\\dist\\assets\\index-Cfsosk5y.js",
+      "sha256": "bccc299f1a748a707bb002a98505f9fe103357b7b2b4ef346f788b3f5dca2354"
+    },
+    {
+      "path": "member\\dist\\assets\\virtual-agent\\avatar.webp",
+      "sha256": "1c78536967eeefb7d7da79338102ad088f6a853682f631a23b6b5cb3f6a31886"
+    },
+    {
+      "path": "member\\dist\\assets\\virtual-agent\\portrait.webp",
+      "sha256": "a6f5e2c565d3cfd0ea8f73c85692d033d4d0d75820610cffb31c8e5df6a63b52"
+    },
+    {
+      "path": "member\\dist\\assets\\virtual-agent\\welcome.webp",
+      "sha256": "a35ace6c2a400627796f772fe4e016cbfab78cdf015255a3fef0ab2cc50198ff"
+    },
+    {
+      "path": "member\\dist\\badges\\crown-v1.jpg",
+      "sha256": "4ff3c51a96da8a7489ab6a95bdb98abedca0067e9b70e76b8444c0307117bd55"
+    },
+    {
+      "path": "member\\dist\\badges\\crown-v1.png",
+      "sha256": "7b9b6cdb809c45448ff5ceeb69da53fbcadac5e2ac181e211c865dca2d88ed47"
+    },
+    {
+      "path": "member\\dist\\badges\\crown-v2.png",
+      "sha256": "ee59db390a0cce27e8bd56d6debceb5a3737f68262cdfff07a5658adec17cd62"
+    },
+    {
+      "path": "member\\dist\\badges\\diamond-v1.jpg",
+      "sha256": "1a0f86d3978a6e199428df30b747fcf1770eed00c855e3e54bdedb4164720246"
+    },
+    {
+      "path": "member\\dist\\badges\\diamond-v1.png",
+      "sha256": "3d570f06ffb3c2742742e6b868cd7adbb6d2d80f37395f3829a61808910b61f2"
+    },
+    {
+      "path": "member\\dist\\badges\\diamond-v2.png",
+      "sha256": "ea67b24a4993c4311ffb161023a2f5920883a84e658a766a6591c64a78e3c6ff"
+    },
+    {
+      "path": "member\\dist\\badges\\elite-v1.jpg",
+      "sha256": "420ba463944d758dfb7f2064823508f421b545e138fe9ad6ebd22323480e9eb3"
+    },
+    {
+      "path": "member\\dist\\badges\\elite-v1.png",
+      "sha256": "888201d8a130eeaec634a71d9bd864b7c858141be8ad715c62e66bb4faa129bb"
+    },
+    {
+      "path": "member\\dist\\badges\\elite-v2.png",
+      "sha256": "dc352463215b19b663a62ceb771d11802729167081978071c1932059563300d6"
+    },
+    {
+      "path": "member\\dist\\badges\\excellence-v1.jpg",
+      "sha256": "0d1a8ae0e6d76cb78e06a9186f0d527e1a5296a35df7b0926716e4ef0d3f4988"
+    },
+    {
+      "path": "member\\dist\\badges\\excellence-v1.png",
+      "sha256": "8832002104390dc646329c4035e519184d25f10d80dc86b4198abd1803acda71"
+    },
+    {
+      "path": "member\\dist\\badges\\excellence-v2.png",
+      "sha256": "8128d0b2690bb187a9452f9c72b20e01112a4ce034018617e8bc38da4fd0fde8"
+    },
+    {
+      "path": "member\\dist\\badges\\glory-v1.jpg",
+      "sha256": "6e60c9593481bacffa5761b7c5a9c1b91c8998736db9860fdb844a2fb76f6362"
+    },
+    {
+      "path": "member\\dist\\badges\\glory-v1.png",
+      "sha256": "c4a85b013332b58dfcba42c0503c4adf9f027e1d3d809f23c2036182077c138d"
+    },
+    {
+      "path": "member\\dist\\badges\\glory-v2.png",
+      "sha256": "ab311badfc5fc8792907f484178981ca33e09c2d116f686ad470d54f07279148"
+    },
+    {
+      "path": "member\\dist\\badges\\leader-v1.jpg",
+      "sha256": "84fce899bce7292d6eed5641df2956843c93bd0be8805ee3ec79ea7ca5ef1dfe"
+    },
+    {
+      "path": "member\\dist\\badges\\leader-v1.png",
+      "sha256": "57c608e71b2de336b39885a9d08524eef99b9e66b590036afe0041545846be95"
+    },
+    {
+      "path": "member\\dist\\badges\\leader-v2.png",
+      "sha256": "b4fc91473d325dd31cf419c5936bad4a02bbb117c1a1c0d3d3d37dd40758c1e9"
+    },
+    {
+      "path": "member\\dist\\badges\\new-star-v1.jpg",
+      "sha256": "93741239a12fe19416773824e069133f77d82491317d3f80e528779af4c76fa4"
+    },
+    {
+      "path": "member\\dist\\badges\\new-star-v1.png",
+      "sha256": "e3b90199b6392d46f4f4e0de36ae16dafbc13b6f587d7574549fc8f145ff99b4"
+    },
+    {
+      "path": "member\\dist\\badges\\new-star-v2.png",
+      "sha256": "bed74f631629ca300cf61f2bc9b0e83dbd011ec620f4868218951e7f74c59ede"
+    },
+    {
+      "path": "member\\dist\\badges\\starter-v1.jpg",
+      "sha256": "b82c5c4627bb327d591e8fbd0d16b032dbaf0caa692b64e99d6578ac607d9e02"
+    },
+    {
+      "path": "member\\dist\\badges\\starter-v1.png",
+      "sha256": "8164270fd6b6cc6d50fee0d8178d17a8a264540b4ad61b9427db9434480a757c"
+    },
+    {
+      "path": "member\\dist\\badges\\starter-v2.png",
+      "sha256": "fb936ce542125720b0d5428bcc5fabd9c89d551fdab7c08f4b96e6125bd98368"
+    },
+    {
+      "path": "member\\dist\\index.html",
+      "sha256": "8fad3478adcf288072fc9d84ec10e34ef0cc559f7642e092b9494be88881ec3e"
+    },
+    {
+      "path": "member\\dist\\products\\tip-363-icon-v2.jpg",
+      "sha256": "2cd490c24fb1aee54d6f12c9ed3406815c3e68a9b2b259a4fc8813efbd73f523"
+    },
+    {
+      "path": "member\\dist\\products\\tip-363-icon-v2.png",
+      "sha256": "281daccde90739446186d135aa1dd7193e80c22d5a115018f4965610bcf6067a"
+    },
+    {
+      "path": "member\\dist\\products\\tip-363.png",
+      "sha256": "c0e1f2199d5977ee2616cd933409ab4a552e49ee75025c946a39f67a82be6625"
+    },
+    {
+      "path": "member\\dist\\products\\tip-580-icon-v2.jpg",
+      "sha256": "5de6229e071920b2006759f30a16cf407948bdc15ced794d488d2175f799eabb"
+    },
+    {
+      "path": "member\\dist\\products\\tip-580-icon-v2.png",
+      "sha256": "ddcffb8042d1d07c713cb440c90cd2eb3131a38ed6ecd00f33094d332733d2df"
+    },
+    {
+      "path": "member\\dist\\products\\tip-580.png",
+      "sha256": "36e6fd09b1bc973927276516e80b096b77f8436540b1df64e99dd44418987f16"
+    },
+    {
+      "path": "member\\dist\\products\\tip-696-icon-v2.jpg",
+      "sha256": "e04b0ae997b50f3f1ef8fe70c919abbd0b5da2fbe709403114215e85d7ed7d7f"
+    },
+    {
+      "path": "member\\dist\\products\\tip-696-icon-v2.png",
+      "sha256": "b942a6f5e81c1b1342410e4d83ded2212fd0bfadbbb82f5f270ac7240271c6c5"
+    },
+    {
+      "path": "member\\dist\\products\\tip-696.png",
+      "sha256": "e2aa28a3755ae635efda96359706a3eaa655c0a9293d404f3b62f214fc61345f"
+    },
+    {
+      "path": "member\\dist\\products\\tip-777-icon-v2.jpg",
+      "sha256": "edcd07189921850cdd1e239acbc0200a6bb8fdda366e60e8baff2573a0e31f2e"
+    },
+    {
+      "path": "member\\dist\\products\\tip-777-icon-v2.png",
+      "sha256": "b8a091d41e589e0881ef9574f31a99ca90a1beb5ecd0768cdf6d82908780c1d9"
+    },
+    {
+      "path": "member\\dist\\products\\tip-777.png",
+      "sha256": "2e3571f6a75b7b0332d14ac61c3dc49913de90145a04e0bdb3a947c0cbc204b2"
+    },
+    {
+      "path": "member\\dist\\products\\tip-999-icon-v2.jpg",
+      "sha256": "10ddb80e68e147fae7c28e9fd4fb6b59acd23e5ddcd0b684f11c562fea3cf36b"
+    },
+    {
+      "path": "member\\dist\\products\\tip-999-icon-v2.png",
+      "sha256": "384d73077a312fe95f6e9e0b43720cbedffe5b065fe5730b436af698124d3175"
+    },
+    {
+      "path": "member\\dist\\products\\tip-999.png",
+      "sha256": "2d927a8e09d85875db56dc714f297977a8e03ccf33b823846acb4bd841f73566"
+    },
+    {
+      "path": "member\\dist\\share-entry.js",
+      "sha256": "c9e7631b5de96188823255f6e2a16517da96f445cc70d1538d94773a7148939b"
+    },
+    {
+      "path": "member\\dist\\ucell-logo-transparent.png",
+      "sha256": "e3d6bb9456117bafb3860cd99a5dfab29bb30b0c1a0dca4b7433a5550a1de75c"
+    },
+    {
+      "path": "member\\dist\\ucell-logo.jpg",
+      "sha256": "6fddd8537625cc8c611fce5bfebffbeaa33ce3e4c55dbac235dcdd698c6432b5"
+    },
+    {
+      "path": "member\\Dockerfile",
+      "sha256": "dbf845aea5fb36d32192f5622548ad4019c5944a9112b71774c23cf6111c624c"
+    },
+    {
+      "path": "website\\dist\\404.html",
+      "sha256": "56fd56ab8f5e8bea1ac2073183035ff4649e1124ee5878b0f1f969dcb9c712de"
+    },
+    {
+      "path": "website\\dist\\about.html",
+      "sha256": "041f7b8e8290bf0f6cc5f8fad00743e37ef79b07e09010e1c590670b71002fef"
+    },
+    {
+      "path": "website\\dist\\assets\\biotech\\analytical-testing-mobile.webp",
+      "sha256": "3d1b7ecfec0937c0e22f8f8acb30d839b4b6021880d63a1ca7ec3c57dc5802a5"
+    },
+    {
+      "path": "website\\dist\\assets\\biotech\\analytical-testing.webp",
+      "sha256": "64a715b411da2d42deb037a9d04278da68edb41ae739821ab1505386eb2b94cd"
+    },
+    {
+      "path": "website\\dist\\assets\\biotech\\bioprocess-mobile.webp",
+      "sha256": "689dce84c98c74ea62415c42eab7ec8351cc6fe46e228b1472ed62d78d96666a"
+    },
+    {
+      "path": "website\\dist\\assets\\biotech\\bioprocess.webp",
+      "sha256": "15dc8badc449a741edc3d678d11f3ad7eb7f7292633a74098b1c1b0edb58a56d"
+    },
+    {
+      "path": "website\\dist\\assets\\biotech\\cell-culture-mobile.webp",
+      "sha256": "0f5256fa985f204255deb1c87fbd1db9b11ccd681efd0ce0e34578df13285b5b"
+    },
+    {
+      "path": "website\\dist\\assets\\biotech\\cell-culture.webp",
+      "sha256": "2e882f3bb8ff7eb50468d2ae2285c9f0cae403190d5fb6f24af9aaf9f6a13ae1"
+    },
+    {
+      "path": "website\\dist\\assets\\biotech\\computational-research-mobile.webp",
+      "sha256": "ec9e2fb7996ae9995154fa889e2e13b4b06b9ffd909a6945262123b3a938b1ca"
+    },
+    {
+      "path": "website\\dist\\assets\\biotech\\computational-research.webp",
+      "sha256": "2f01139edaac4836a16fcd2d6f59e4ff34a652f76cb5ccd3721716aaaeff0b07"
+    },
+    {
+      "path": "website\\dist\\assets\\biotech\\digital-service-mobile.webp",
+      "sha256": "f437587bef6ed473a2c042bd0cdb55a201f23a4120a3feb343e8f70a7d98cd50"
+    },
+    {
+      "path": "website\\dist\\assets\\biotech\\digital-service.webp",
+      "sha256": "e58e04ada33bf5429dc99d98b91788b00ba8b3069561fe23248c7d5c85f8ea62"
+    },
+    {
+      "path": "website\\dist\\assets\\biotech\\material-analysis-mobile.webp",
+      "sha256": "4226f2c2c349bb717c4b98a6ee6bafa635ca6d4a87967b5a1a82817796559575"
+    },
+    {
+      "path": "website\\dist\\assets\\biotech\\material-analysis.webp",
+      "sha256": "6f2a966e9c53b9e16cdc5e1da296c9dd0ac68e2b3d4eca1cf5cbe74da3663886"
+    },
+    {
+      "path": "website\\dist\\assets\\biotech\\microscopy-mobile.webp",
+      "sha256": "5dec5083d293e62d32ee4558138c8be0473226216c31c7a6e7b175506b700cad"
+    },
+    {
+      "path": "website\\dist\\assets\\biotech\\microscopy.webp",
+      "sha256": "3c08951ad61cbce73b62ea14905445e103219b6f38825019e19f5e3a10d08f4f"
+    },
+    {
+      "path": "website\\dist\\assets\\biotech\\research-campus-mobile.webp",
+      "sha256": "e8c192012812f7240b3d91b8206268d2811ea026ceeef1397ee5478ac2370502"
+    },
+    {
+      "path": "website\\dist\\assets\\biotech\\research-campus.webp",
+      "sha256": "def7d4680317ea4301a16ed53d10c93d4514682f39b16a5617185a6f507cd2ad"
+    },
+    {
+      "path": "website\\dist\\assets\\biotech\\tech-exchange-mobile.webp",
+      "sha256": "ee12b009af52ba52c2c6e43fdf9123e6941b504905c2679fc8ce306e3d97094e"
+    },
+    {
+      "path": "website\\dist\\assets\\biotech\\tech-exchange.webp",
+      "sha256": "f4597b6eee24a784c53823328efa22a5063f313769afce6d656a4aff689c8250"
+    },
+    {
+      "path": "website\\dist\\assets\\editorial\\botanical-observation-mobile.webp",
+      "sha256": "cb649ca98e61e53311981cf46689a47610e129f027b117ae4019c7fac36d00fb"
+    },
+    {
+      "path": "website\\dist\\assets\\editorial\\botanical-observation.webp",
+      "sha256": "720c3812d8be87f143f063076a5714d057cb04299f1337a23c62baa4b1b2bf0e"
+    },
+    {
+      "path": "website\\dist\\assets\\editorial\\clarity.webp",
+      "sha256": "57d9f38ef808d308b014fe5265c5c990e1b0993bc1bc8632fdd6872fd6abf062"
+    },
+    {
+      "path": "website\\dist\\assets\\editorial\\daily-notes.webp",
+      "sha256": "ee4b725cd99d3ce8b998c2236f080dcaf1e94a8d2ae94b9bfb6470c9e39bf09c"
+    },
+    {
+      "path": "website\\dist\\assets\\editorial\\member-gathering-mobile.webp",
+      "sha256": "67baf658f63bc31130baa12bd340abf519edeb395827597d7312a9b11b8f56e4"
+    },
+    {
+      "path": "website\\dist\\assets\\editorial\\member-gathering.webp",
+      "sha256": "8ba20d98224064d6bdffdc8ab3464f81f4fe9b47c92e4e32d06f8afdafa9ba5f"
+    },
+    {
+      "path": "website\\dist\\assets\\editorial\\nature-path-mobile.webp",
+      "sha256": "18f6ebf22833dc6c151cdd68334879f840545841637e07b202d1f3caea99ee96"
+    },
+    {
+      "path": "website\\dist\\assets\\editorial\\nature-path.webp",
+      "sha256": "5e65e6ba49caf07ba12a50217fe729f0b94b70fd6b0099dd16f512ab749aecf5"
+    },
+    {
+      "path": "website\\dist\\assets\\editorial\\quality-reading-mobile.webp",
+      "sha256": "a0a08d0fb90bcfd181e87a05d6609456d8f0f130288d84709ee10d8f4fd5df12"
+    },
+    {
+      "path": "website\\dist\\assets\\editorial\\quality-reading.webp",
+      "sha256": "42364ef2c8774e758da50c67e0be208e723bb560eb55dcf79a03e2137bdada31"
+    },
+    {
+      "path": "website\\dist\\assets\\favicon.svg",
+      "sha256": "82304521606e839fcab6ba02299bb1e8c8d97ce1f045cc5729912af346f3a269"
+    },
+    {
+      "path": "website\\dist\\assets\\images\\brand-uniform-concept.jpg",
+      "sha256": "d5ab3eb928dfb361a37bc6e8381af416e7cceb0116397a27c422ec24f2b831f1"
+    },
+    {
+      "path": "website\\dist\\assets\\images\\og-ucell-biotech.jpg",
+      "sha256": "eac37c9869f655e74d062c7b2efa46dd84b40e468f7843ad413ec6868022a47d"
+    },
+    {
+      "path": "website\\dist\\assets\\images\\ucell-logo.jpg",
+      "sha256": "9716537cd68c17269653e7568cbcceb0fef4ef9405570be4ce72cd718bee90d1"
+    },
+    {
+      "path": "website\\dist\\assets\\photos\\biotech-plant.jpg",
+      "sha256": "be06352ec9407507a6b7587176d6702d02c06d8a758e69bc4824b217abb5d736"
+    },
+    {
+      "path": "website\\dist\\assets\\photos\\facility.jpg",
+      "sha256": "c7b889d973f64983f8f3d49dd0a4961fd0f3cd9ee2f092ba1f5b85c3c3f85a17"
+    },
+    {
+      "path": "website\\dist\\assets\\photos\\general-manager.jpg",
+      "sha256": "c87b8a7f83b3945c2da4ea7eab74a9f5040a9ee9250d273960e8da4df2083467"
+    },
+    {
+      "path": "website\\dist\\assets\\photos\\hero-biotech.jpg",
+      "sha256": "3cc48dd38253639a804eae4c0f3e9569bb1a104224829ec49d3680492212cf38"
+    },
+    {
+      "path": "website\\dist\\assets\\photos\\hero-lab.jpg",
+      "sha256": "7522e0903675988a3a1d0539cd11154c1c71d9e87bf4d0bd36c342800716ac8a"
+    },
+    {
+      "path": "website\\dist\\assets\\photos\\ingredients\\berry-botanicals.jpg",
+      "sha256": "4383632902c9b75f30252bf1700b0b266f99eefb7db7f4dd560c0e681226930c"
+    },
+    {
+      "path": "website\\dist\\assets\\photos\\ingredients\\bitter-melon.jpg",
+      "sha256": "f4db3220a01bfdd54dd2192a1515e9b99e0e175d671037f025fe114b276c057e"
+    },
+    {
+      "path": "website\\dist\\assets\\photos\\ingredients\\botanical-collage.jpg",
+      "sha256": "45f02726bcef15741e5119ae5121fc59de26cd678c174d0c7c16d0ebbef22070"
+    },
+    {
+      "path": "website\\dist\\assets\\photos\\ingredients\\ginger.jpg",
+      "sha256": "b13f859b2d68d5942a6dc5852367500ea364b43cb8a139b4494307bed7dbdd84"
+    },
+    {
+      "path": "website\\dist\\assets\\photos\\ingredients\\licorice.jpg",
+      "sha256": "e60862c49737d89c3961ea79ea9415a1d91fc07833bdec2edca3571bfebfae38"
+    },
+    {
+      "path": "website\\dist\\assets\\photos\\ingredients\\mycogerm-mushroom.jpg",
+      "sha256": "cc1b775c44372c75afa5acf4bbf6837508c2626ee84b0caa4b1d51d689674137"
+    },
+    {
+      "path": "website\\dist\\assets\\photos\\ingredients\\mycogerm-truffle.jpg",
+      "sha256": "eb0565c522c5678b7adea803abae34eb62674dfeab5666168baba1341f0caa3b"
+    },
+    {
+      "path": "website\\dist\\assets\\photos\\ingredients\\omega-softgel.jpg",
+      "sha256": "ce1b6af2e62601db863879f0efd796e1ae0b4a2fab5188becbb42c7f9a42faa6"
+    },
+    {
+      "path": "website\\dist\\assets\\photos\\ingredients\\truffle-exosome.jpg",
+      "sha256": "55ea09d67751d4e4b9afa29132c22d487559f8a691fd91a808731bdf29791f50"
+    },
+    {
+      "path": "website\\dist\\assets\\photos\\laboratory.jpg",
+      "sha256": "335c008251e7d4eb51ba66f743723ae781e13fa533193b6ee65f53df12b4c2ff"
+    },
+    {
+      "path": "website\\dist\\assets\\photos\\meeting.jpg",
+      "sha256": "74e78074f2b94168bd9842ba0bd9da26bdd7784eb4262fd2421bd894e99ce8b9"
+    },
+    {
+      "path": "website\\dist\\assets\\photos\\microscope.jpg",
+      "sha256": "27e216e1ea9a2de28a494cddb3f78bd0f4496deda4b8811a0c49e89b3867d282"
+    },
+    {
+      "path": "website\\dist\\assets\\photos\\outdoor.jpg",
+      "sha256": "a334f8b37e65371a5768461e681ea368f2206d7b3139249b814fe7c9eba03a05"
+    },
+    {
+      "path": "website\\dist\\assets\\photos\\product-packaging.jpg",
+      "sha256": "448d237dfe3d63f00363645d943c6e4cc8c4417e6f618f6f636f7985edcd092b"
+    },
+    {
+      "path": "website\\dist\\assets\\photos\\products\\product-363-photo.jpg",
+      "sha256": "950658ac686673f21228cf1a165c30de9e460525c21b84b025e51c9ad0c4954d"
+    },
+    {
+      "path": "website\\dist\\assets\\photos\\products\\product-580-photo.jpg",
+      "sha256": "d30cca6e21fa9d3ac25425248f013374a8aed33f1279f2fb0fed9f11db8cabf9"
+    },
+    {
+      "path": "website\\dist\\assets\\photos\\products\\product-636-photo.jpg",
+      "sha256": "15be9eb1758a1e93008e0d39040de07c23a661ecd15f2954a52e30ec23fb180c"
+    },
+    {
+      "path": "website\\dist\\assets\\photos\\products\\product-696-photo.jpg",
+      "sha256": "97e8e8db7a0ea49e5f7f5356ae514c84e08734b8258150784fa1dae5797e94f2"
+    },
+    {
+      "path": "website\\dist\\assets\\photos\\products\\product-777-photo.jpg",
+      "sha256": "f75985b2e7298248a850bbec485f1b9cc2dc56604542eb7ca568d3bf9f017ffa"
+    },
+    {
+      "path": "website\\dist\\assets\\photos\\products\\product-999-photo.jpg",
+      "sha256": "8cd27ee854577501e88662c2f9b7d336417aee78d6efa5e5be910584feefafde"
+    },
+    {
+      "path": "website\\dist\\assets\\photos\\products\\product-family.jpg",
+      "sha256": "bf00321a471d9fad79afec3c68f49a243fdd728916a8cade24a2be0161920556"
+    },
+    {
+      "path": "website\\dist\\assets\\photos\\reception.jpg",
+      "sha256": "793632de61725e1f1a05319079878aa614f322db5592b83c43eeedbcfae8cc23"
+    },
+    {
+      "path": "website\\dist\\assets\\photos\\team.jpg",
+      "sha256": "a2f67714599a6be77cbe0619cf5776271f6edcb6cd159bb20d651a7eac075bd4"
+    },
+    {
+      "path": "website\\dist\\assets\\products\\tip-363.png",
+      "sha256": "c0e1f2199d5977ee2616cd933409ab4a552e49ee75025c946a39f67a82be6625"
+    },
+    {
+      "path": "website\\dist\\assets\\products\\tip-580.png",
+      "sha256": "36e6fd09b1bc973927276516e80b096b77f8436540b1df64e99dd44418987f16"
+    },
+    {
+      "path": "website\\dist\\assets\\products\\tip-696.png",
+      "sha256": "e2aa28a3755ae635efda96359706a3eaa655c0a9293d404f3b62f214fc61345f"
+    },
+    {
+      "path": "website\\dist\\assets\\products\\tip-777.png",
+      "sha256": "2e3571f6a75b7b0332d14ac61c3dc49913de90145a04e0bdb3a947c0cbc204b2"
+    },
+    {
+      "path": "website\\dist\\assets\\products\\tip-999.png",
+      "sha256": "2d927a8e09d85875db56dc714f297977a8e03ccf33b823846acb4bd841f73566"
+    },
+    {
+      "path": "website\\dist\\assets\\social\\facebook.png",
+      "sha256": "2adfd474d91fd20c51084309ed000c1ae6cc7f5f70af14d375930f5a71301308"
+    },
+    {
+      "path": "website\\dist\\assets\\social\\SOURCES.txt",
+      "sha256": "6c4889c27e9381bd234b2bf5bd1da17aea701768ecd70340d43c7f03fc6b6fac"
+    },
+    {
+      "path": "website\\dist\\assets\\social\\youtube.png",
+      "sha256": "1027b1b0517727adb9697155a270744381c3ce9b047b1c8bd8a9389dc7d07a83"
+    },
+    {
+      "path": "website\\dist\\assets\\virtual-agent\\avatar.webp",
+      "sha256": "1c78536967eeefb7d7da79338102ad088f6a853682f631a23b6b5cb3f6a31886"
+    },
+    {
+      "path": "website\\dist\\assets\\virtual-agent\\portrait.webp",
+      "sha256": "a6f5e2c565d3cfd0ea8f73c85692d033d4d0d75820610cffb31c8e5df6a63b52"
+    },
+    {
+      "path": "website\\dist\\assets\\virtual-agent\\welcome.webp",
+      "sha256": "a35ace6c2a400627796f772fe4e016cbfab78cdf015255a3fef0ab2cc50198ff"
+    },
+    {
+      "path": "website\\dist\\assets\\visuals\\evidence-map.svg",
+      "sha256": "9c2a8476179c39647004b417265bef06120ef1452a9e19745952927552af70f5"
+    },
+    {
+      "path": "website\\dist\\assets\\visuals\\good-cycle.svg",
+      "sha256": "632dd6838d6a222aef4c2fca4908e5a47f3d235627455e09e6a44a703d4b9b67"
+    },
+    {
+      "path": "website\\dist\\assets\\visuals\\health-life.svg",
+      "sha256": "39fe1d53b5f83127ed401fd1cc20f2ab6f6a055ad6f5058fdde21305deac19ca"
+    },
+    {
+      "path": "website\\dist\\assets\\visuals\\home-hero.svg",
+      "sha256": "c8fb1dba348d1a2433347bb591a3bd3b5e475f77e60f8b358388dd9cc95dae62"
+    },
+    {
+      "path": "website\\dist\\assets\\visuals\\member-transparency.svg",
+      "sha256": "6038861e64d8119b7bf646a066b629eb4d8bfb921617b6cac8c2ba73938f16ac"
+    },
+    {
+      "path": "website\\dist\\assets\\visuals\\product-363.svg",
+      "sha256": "a4b35a8c9c6ffc7b413832341ff9d0d0054aa30d010cbc65fd0957571afc070b"
+    },
+    {
+      "path": "website\\dist\\assets\\visuals\\product-580.svg",
+      "sha256": "5d94504a4aae4c315344091997cefebdbc3d2d47acd1e3b3711ab48f20fb63ac"
+    },
+    {
+      "path": "website\\dist\\assets\\visuals\\product-636.svg",
+      "sha256": "c48ed41d371546d5bca0e9ef7076fec37eb3eb92fcde0011952fbc434f41f322"
+    },
+    {
+      "path": "website\\dist\\assets\\visuals\\product-696.svg",
+      "sha256": "0ee1b952a5a2f8041a7d71d28912fa9b3c74309e9f018a1172e9cbcd824f1838"
+    },
+    {
+      "path": "website\\dist\\assets\\visuals\\product-777.svg",
+      "sha256": "f8e8d78afe1ecca6d2931fbe0c74b76f281cd0cd13a9be1371959eeae6a7607f"
+    },
+    {
+      "path": "website\\dist\\assets\\visuals\\product-999.svg",
+      "sha256": "2154df3edeeea619b951d76a32dc26566d9d79baf662e28c29a43d5cec997544"
+    },
+    {
+      "path": "website\\dist\\assets\\visuals\\quality-chain.svg",
+      "sha256": "e58d9d82cd27a6d8337e492a06c08d83d2d8f7c40b48f64ab3fd8b4c1e377015"
+    },
+    {
+      "path": "website\\dist\\assets\\visuals\\vision.svg",
+      "sha256": "339c648936f8cfa5aa1af699c7657652d11dc2e9897b6aa3df90bc1900b8eeda"
+    },
+    {
+      "path": "website\\dist\\compliance.html",
+      "sha256": "31a31819573692b2496007bdf9c7c0ca440f0428cd993c0d80894f9a0ca6d0e1"
+    },
+    {
+      "path": "website\\dist\\contact.html",
+      "sha256": "6875ac3090885d56808505101d76f168d8018291e293051452941b80dfab1845"
+    },
+    {
+      "path": "website\\dist\\cookies.html",
+      "sha256": "450571519aa311c4c24248e0607dbae1b8f2e11cd082c966db54eb53a3b5aa2f"
+    },
+    {
+      "path": "website\\dist\\css\\editorial.css",
+      "sha256": "91b5fd8598d78a23fa97b18ec63e1a37aba8b35f0818bed17ad00d9fd9a57ee4"
+    },
+    {
+      "path": "website\\dist\\css\\integration.css",
+      "sha256": "62bbce217568e77dbed359fab4cb3ef0add9d41feee21f2eaf622d7c717e8f8c"
+    },
+    {
+      "path": "website\\dist\\css\\style.css",
+      "sha256": "99f74d2f65f658ee297a42c82e9b65f360d6b187abf37c1815cf8cf655e5cee9"
+    },
+    {
+      "path": "website\\dist\\css\\support.css",
+      "sha256": "605bdf0258b0d2e06e7b0d5c7e61b4500e1ff5d5f033c9b2bcd856859419562a"
+    },
+    {
+      "path": "website\\dist\\css\\virtual-agent.css",
+      "sha256": "0ef853612c3b31797f3e726b084031ea2b504140ded230cee08c2ddb31edb1a8"
+    },
+    {
+      "path": "website\\dist\\events.html",
+      "sha256": "b0f14debf4b087f9f6e3830f693d3bd5f445b188c831f275dae21f63ff4de196"
+    },
+    {
+      "path": "website\\dist\\evidence.html",
+      "sha256": "0312811ee8a393f3b3061e87f0b8331442ce1862d09cfe3193934b229f7eb3cc"
+    },
+    {
+      "path": "website\\dist\\faq.html",
+      "sha256": "a9971f1dfe1ea93f20325f1825dabf99d5ff79de4c40600546133838b5b4d3cf"
+    },
+    {
+      "path": "website\\dist\\guide-membership.html",
+      "sha256": "618be634cc881028480f32992267799da7c488a7a7b26a11cde909792734931e"
+    },
+    {
+      "path": "website\\dist\\guide-products.html",
+      "sha256": "6f7b456a430f30ab53b3291775985321a093643e5f4e60b418611d75517e0c11"
+    },
+    {
+      "path": "website\\dist\\guide-sharing.html",
+      "sha256": "fc0b8c0a09bddba1fde40916364bcbdf3d8da651915ec84097b2a127cbd40005"
+    },
+    {
+      "path": "website\\dist\\health.html",
+      "sha256": "0afd184720aefcadf905a77a4a757d25bc169d006667e13e5b8b087e9a54a928"
+    },
+    {
+      "path": "website\\dist\\index.html",
+      "sha256": "1a9061ada727b0eaf2d531413a83da3d2526ec2906d4c7f41355cc37f2709989"
+    },
+    {
+      "path": "website\\dist\\ingredients.html",
+      "sha256": "b1445487898abfd2857c1430cf54bad3e895ff674e2c0c3a6be9c40a27874039"
+    },
+    {
+      "path": "website\\dist\\join.html",
+      "sha256": "d089579de2470928468b5afbdc2f6f2919f5d9d510ca6634dbc1f1bccc8e882f"
+    },
+    {
+      "path": "website\\dist\\js\\integration.js",
+      "sha256": "9b0dbb8da0392dd29af9f69b538b50b911cd48b955a33060020208ec5d76e569"
+    },
+    {
+      "path": "website\\dist\\js\\main.js",
+      "sha256": "2daf0c38a4ef8f2423b83e861ea676101c7fba304d7b7403e2f6ab49ddbb1c5f"
+    },
+    {
+      "path": "website\\dist\\js\\support.js",
+      "sha256": "561356f57440303372e84f279d516e02e469654560d1290121d2067f1042e6dd"
+    },
+    {
+      "path": "website\\dist\\js\\virtual-agent.js",
+      "sha256": "0eca1d009582a11449bcfef50cc788aa44496c7868220e8aa35451a711030960"
+    },
+    {
+      "path": "website\\dist\\legal.html",
+      "sha256": "8821e94942ffbf66270ad7aa546b0d679cdcc0ac9164c1d3121f5d357a4e84e8"
+    },
+    {
+      "path": "website\\dist\\life.html",
+      "sha256": "9aaccf642ac63baaeba9aaa0abc7314d5c0884f1331d5a486d47a0fb94665300"
+    },
+    {
+      "path": "website\\dist\\membership.html",
+      "sha256": "dc7191efb538b65fa08326c3d2377db1097c0f8e90c72c48eda9ef41ddbef3d4"
+    },
+    {
+      "path": "website\\dist\\opportunity.html",
+      "sha256": "c6eed835c7a7332909e3c54d4dad7ba65152d780f7a9e96bb7e914f1d8e740f9"
+    },
+    {
+      "path": "website\\dist\\privacy.html",
+      "sha256": "532e435f16b407315c53c3eceb3cceeb0fbd0d3a1b68f45ad8ae1c73f1f93888"
+    },
+    {
+      "path": "website\\dist\\product-363.html",
+      "sha256": "d48287b71606182f05c082bf38b5e6453da0b4c68b4cc2dad02ee5c934295ec1"
+    },
+    {
+      "path": "website\\dist\\product-580.html",
+      "sha256": "3b00034cd648baa218059125b506f40bedd322838e206c6aca91edf05449d1bb"
+    },
+    {
+      "path": "website\\dist\\product-636.html",
+      "sha256": "63c9307df0fc37cfb5b8c547ed668f69967ef22a963fabe3f69977438ea273ad"
+    },
+    {
+      "path": "website\\dist\\product-696.html",
+      "sha256": "942d4840fa1c89c660eff0f33a16c9901097bbc0cf89f1ac55b60c48ebc13cc1"
+    },
+    {
+      "path": "website\\dist\\product-777.html",
+      "sha256": "fe72c0609ff0feab1aed25c7c3f6a3d8b737ccaeb8529abcf157f4cb86300518"
+    },
+    {
+      "path": "website\\dist\\product-999.html",
+      "sha256": "17993453a8d950178eeb0a437b20a3dfa93972e4094ae8a65082e04b3b22cbce"
+    },
+    {
+      "path": "website\\dist\\products.html",
+      "sha256": "33e727376b0b8b54b247e397f50146c743f81a03ab2f1bd7725c06eed250652e"
+    },
+    {
+      "path": "website\\dist\\quality.html",
+      "sha256": "de8e6c7f7d4ec7cc7b4b0b4ce3c577f4690eedb6e7c6f95dd3b2d203c5fcca1f"
+    },
+    {
+      "path": "website\\dist\\research-policy.html",
+      "sha256": "e8b60e9663b3fd4105d031bc552afc6708d9fbb0af942be5bb44c7ad51c243f9"
+    },
+    {
+      "path": "website\\dist\\resources.html",
+      "sha256": "9c8e86624ff0da90dae66d0600d080fd058ca01ddfd08f0ea82b855f46390c42"
+    },
+    {
+      "path": "website\\dist\\returns.html",
+      "sha256": "65d1bc95a0cbcd7f3b11e759d95072206986889032d80404c264cd817dab9f79"
+    },
+    {
+      "path": "website\\dist\\science.html",
+      "sha256": "9196bd4562d7cb9ee0794581cdefb9348c0672e63f0ac7ca6831b38a889230de"
+    },
+    {
+      "path": "website\\dist\\sustainability.html",
+      "sha256": "ea5d6a9f255516186dfa72cf9413c0ad9e90bad8d11ede80f45ad302d6f35891"
+    },
+    {
+      "path": "website\\dist\\terms.html",
+      "sha256": "1a678318f3b82f1228081567832fc1ab311aa0d493f3fa6db4e754fa87cba0c2"
+    },
+    {
+      "path": "website\\dist\\values.html",
+      "sha256": "c8736f3acfe428aa277f8e8cf04f245bc7ee9175b5913b21c074345cb7462632"
+    },
+    {
+      "path": "website\\dist\\vision.html",
+      "sha256": "e8d74f10830d5a6a051afd0001099d21d0e12b2e0a802349fa86665811fe4b09"
+    },
+    {
+      "path": "website\\Dockerfile",
+      "sha256": "a9905c6b57e695f5284673023279c17c79f1bf28ed83a20bcf86f4925a9fd9ca"
+    }
+  ],
+  "releaseCommit": "a1fcc7d7",
+  "revision": "virtual-agent-20261022-v1",
+  "tests": {
+    "admin": 249,
+    "member": 316,
+    "website": 25,
+    "browser": "1440 and 390: synthetic AI queries, images, overflow, website close/Escape; production website browser passed",
+    "productionPublic": [
+      {
+        "app": "website",
+        "healthy": true,
+        "assets": "SHA-256 matched",
+        "frontend": "updated"
+      },
+      {
+        "app": "admin",
+        "healthy": true,
+        "assets": "SHA-256 matched",
+        "frontend": "updated"
+      },
+      {
+        "app": "member",
+        "healthy": true,
+        "assets": "SHA-256 matched",
+        "frontend": "updated"
+      }
+    ]
+  },
+  "deployed": {
+    "admin": "sha256:444b960c83a33d257fa0e2a48c473ff023c39de55d96ff443be438522ecaac15",
+    "member": "sha256:bf18c4a89154215d98e111c277cfb6e338a282b4b1b3d60106dd1b94fc061400",
+    "website": "sha256:6c2707cd920534d5847c352ad5d400d2f38ffd12da0e243e4b14d3a7db32a3b5"
+  }
+}
