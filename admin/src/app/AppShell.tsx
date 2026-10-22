@@ -6,6 +6,7 @@ import {useAuth} from '../features/auth/auth';
 import {canOpen} from '../features/auth/permissions';
 import {adminRoleLabel} from '../features/auth/role-label';
 import {useState} from 'react';
+import {PersonaAvatar} from '../../../shared/ai-assistant/Persona';
 import {useQueryClient} from '@tanstack/react-query';
 
 export function AppShell(){
@@ -22,7 +23,7 @@ export function AppShell(){
       {import.meta.env.DEV && import.meta.env.VITE_ADMIN_DEV_FULL_ACCESS==='true' && <label>{uiText("DEV Actor Person ID（空白使用 ROOT fixture）")}<input value={devActor} onChange={e=>{setDevActor(e.target.value);sessionStorage.setItem('ucell_dev_actor_id',e.target.value.trim());queryClient.clear()}}/></label>}
     </AdminSidebar>
     <main className="content" id="admin-main" tabIndex={-1}>
-      <AdminHeader><strong>{uiText("UCell 營運後台")}</strong><span>{adminRoleLabel(user?.role)} · {import.meta.env.DEV?'本機開發環境':'營運管理'}</span><ThemePreferenceControl/></AdminHeader>
+      <AdminHeader><strong>{uiText("UCell 營運後台")}</strong><span>{adminRoleLabel(user?.role)} · {import.meta.env.DEV?'本機開發環境':'營運管理'}</span>{canOpen(user?.role,'/ai-assistant')&&<Link to="/ai-assistant" className="uc-ai-header-link" aria-label="開啟 AI 智慧秘書"><PersonaAvatar/><span>AI 智慧秘書</span></Link>}<ThemePreferenceControl/></AdminHeader>
       {import.meta.env.DEV && import.meta.env.VITE_ADMIN_DEV_FULL_ACCESS==='true' &&
         <div className="callout warning" role="status">{uiText("本機 Super Admin 完整操作測試：資料寫入獨立 ucell_admin_test；legacy settlement adjustment 未完成。Production / RC Gate 仍 BLOCKED。")}</div>}
       {import.meta.env.DEV && import.meta.env.VITE_ADMIN_DEV_READ_ONLY==='true' &&
