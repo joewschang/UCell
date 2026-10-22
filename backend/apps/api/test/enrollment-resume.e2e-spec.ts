@@ -17,3 +17,12 @@ it('loads only the current member application and decrypts saved fields with upl
  expect(db.formalMemberApplication.findFirst).toHaveBeenCalledWith(expect.objectContaining({where:{personId:'member',formalMemberApplicationId:'app'}}));
  decrypt.mockRestore();
 });
+it('prefills registered gender and decrypts only the document number without exposing storage metadata',async()=>{
+ const {PiiCryptoService}=await import('../src/common/security/pii-crypto.service');
+ const decrypt=jest.spyOn(PiiCryptoService.prototype,'decrypt').mockReturnValue('A123456789');
+ const svc=new FormalEnrollmentService({} as any,{} as any,{} as any,{} as any,{} as any);
+ const result=svc.registrationPrefill({legalName:'測試',genderCode:'FEMALE',identityDocumentType:'NATIONAL_ID',identityDocumentNumberCiphertext:'encrypted-value',identityDocumentKeyVersion:'1'});
+ expect(result).toMatchObject({gender:'FEMALE',identityDocumentType:'NATIONAL_ID',identityDocumentNumber:'A123456789'});
+ expect(JSON.stringify(result)).not.toContain('encrypted-value');
+ expect(decrypt).toHaveBeenCalledWith('encrypted-value','1');decrypt.mockRestore();
+});

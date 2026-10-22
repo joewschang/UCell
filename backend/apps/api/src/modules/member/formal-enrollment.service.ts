@@ -30,8 +30,12 @@ export class FormalEnrollmentService{
   const snapshot=app?.snapshots[0];if(!snapshot)return null;
   return {payload:new PiiCryptoService().decrypt<Record<string,unknown>>(snapshot.payloadCiphertext,snapshot.keyVersion),version:snapshot.version,documents:app!.documents.map(d=>d.documentType)};
  }
+ registrationPrefill(person:any){
+  const identityDocumentNumber=person.identityDocumentNumberCiphertext&&person.identityDocumentKeyVersion?new PiiCryptoService().decrypt<string>(person.identityDocumentNumberCiphertext,person.identityDocumentKeyVersion):'';
+  return {legalName:person.legalName??'',gender:person.genderCode??'UNDISCLOSED',birthDate:person.birthDate?.toISOString().slice(0,10)??'',nationalityCode:person.nationalityCode??'TW',identityDocumentType:person.identityDocumentType??'NATIONAL_ID',identityDocumentNumber,phone:person.mobile??'',email:person.email??''};
+ }
  async status(personId:string){
-  const person=await this.db.person.findUnique({where:{personId},select:{membershipState:true,status:true,securityStatus:true}});
+  const person=await this.db.person.findUnique({where:{personId},select:{membershipState:true,status:true,securityStatus:true,legalName:true,birthDate:true,nationalityCode:true,mobile:true,email:true,genderCode:true,identityDocumentType:true,identityDocumentNumberCiphertext:true,identityDocumentKeyVersion:true}});
   if(!person||person.status!=='EFFECTIVE'||person.securityStatus!=='NORMAL')throw new ForbiddenException({code:'MEMBER_PERSON_DISABLED'});
   const [fee,application,packages]=await Promise.all([
    this.db.order.findFirst({where:{purchaserPersonId:personId,purpose:'FORMAL_MEMBERSHIP_FEE',status:'PAID'},orderBy:{createdAt:'desc'}}),
@@ -40,7 +44,7 @@ export class FormalEnrollmentService{
   ]);
   const pendingPackages=await this.db.packagePurchaseSnapshot.findMany({where:{personId,packageClass:'QUALIFICATION',paymentDeadline:{gt:new Date()}},orderBy:{purchasedAt:'desc'},take:20});
   const pendingOrders=await this.db.order.findMany({where:{orderId:{in:pendingPackages.map(p=>p.orderId)},status:'CONFIRMED'},select:{orderId:true,netAmount:true}});
-  return {draft:application?await this.draft(personId,application.formalMemberApplicationId):null,pendingPackages:pendingPackages.filter(p=>pendingOrders.some(o=>o.orderId===p.orderId)).map(p=>({orderId:p.orderId,packageName:p.packageName,total:pendingOrders.find(o=>o.orderId===p.orderId)!.netAmount.toString(),paymentDeadline:p.paymentDeadline!.toISOString(),couponCode:p.couponCode,qualificationFee:p.qualificationFee.toString(),goodsAmount:p.priceAmount.toString(),selectableProductQuantity:p.selectableProductQuantity})),membershipState:person.membershipState,feeAmount:FEE,currency:'TWD',stagePaymentEnabled:this.stagePaymentEnabled(),feeReceipt:fee?this.receipt(fee):null,application:application?{id:application.formalMemberApplicationId,status:application.status}:null,paidPackages:packages};
+  return {prefill:this.registrationPrefill(person),draft:application?await this.draft(personId,application.formalMemberApplicationId):null,pendingPackages:pendingPackages.filter(p=>pendingOrders.some(o=>o.orderId===p.orderId)).map(p=>({orderId:p.orderId,packageName:p.packageName,total:pendingOrders.find(o=>o.orderId===p.orderId)!.netAmount.toString(),paymentDeadline:p.paymentDeadline!.toISOString(),couponCode:p.couponCode,qualificationFee:p.qualificationFee.toString(),goodsAmount:p.priceAmount.toString(),selectableProductQuantity:p.selectableProductQuantity})),membershipState:person.membershipState,feeAmount:FEE,currency:'TWD',stagePaymentEnabled:this.stagePaymentEnabled(),feeReceipt:fee?this.receipt(fee):null,application:application?{id:application.formalMemberApplicationId,status:application.status}:null,paidPackages:packages};
  }
  private async pending(tx:Prisma.TransactionClient,personId:string,sourceId:string){
   const person=await tx.person.findUniqueOrThrow({where:{personId}});
