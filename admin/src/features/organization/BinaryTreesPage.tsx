@@ -24,6 +24,7 @@ type NodePage={
  items:Array<{qualificationId:string;ballNo?:string|null;binaryPositionNo?:string;path?:string;parentQualificationId:string|null;side:string|null;depth:number;ownerType:string;activeLabel:string|null}>;
 };
 type Detail={
+ time?:ReturnType<typeof nowContext>;
  status:string;
  result:(Tree&{positions:Position[];statistics?:{query:unknown;required:boolean;projectionStatus:unknown;snapshot:string|null;dataThrough:string|null;projectedAt:string|null}})|null;
  explainCode?:unknown;
@@ -208,12 +209,12 @@ export function BinaryTreesPage(){
    if(id){
     const response=await get<{data:Detail}>(`/admin/organization/trees/${id}`+qs(context));
     if(view.current!==target||serial!==requestSerial.current)return;
-    appliedTime.current=context;
+    appliedTime.current=response.data.time??context;setTime(appliedTime.current);
     setDetail(response.data);setName(response.data.result?.treeName??'');
    }else{
-    const response=await get<{data:{items:Tree[];nextCursor:string|null}}>('/admin/organization/trees'+qs({...context,after}));
+    const response=await get<{data:{items:Tree[];nextCursor:string|null;time?:ReturnType<typeof nowContext>}}>('/admin/organization/trees'+qs({...context,after}));
     if(view.current!==target||serial!==requestSerial.current)return;
-    appliedTime.current=context;setItems(response.data.items);setCursor(response.data.nextCursor);
+    appliedTime.current=response.data.time??context;setTime(appliedTime.current);setItems(response.data.items);setCursor(response.data.nextCursor);
    }
    setLoaded(true);
   }catch(e){

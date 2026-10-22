@@ -12,6 +12,8 @@ export class AdminObservabilityService {
         SELECT
           q.qualification_id,
           q.qualification_no,
+          q.ball_no,
+          q.kind AS qualification_kind,
           q.plan_level_code,
           q.active_flag,
           p.legal_name,
@@ -20,7 +22,7 @@ export class AdminObservabilityService {
           0::int AS depth,
           ARRAY[q.qualification_id]::uuid[] AS path
         FROM membership.qualification q
-        JOIN identity.person p ON p.person_id=q.current_holder_person_id
+        LEFT JOIN identity.person p ON p.person_id=q.current_holder_person_id
         WHERE q.qualification_id=${rootQualificationId}::uuid
 
         UNION ALL
@@ -28,6 +30,8 @@ export class AdminObservabilityService {
         SELECT
           child.qualification_id,
           child.qualification_no,
+          child.ball_no,
+          child.kind,
           child.plan_level_code,
           child.active_flag,
           holder.legal_name,
@@ -41,13 +45,15 @@ export class AdminObservabilityService {
          AND sr.effective_from <= ${at}
          AND (sr.effective_to IS NULL OR sr.effective_to > ${at})
         JOIN membership.qualification child ON child.qualification_id=sr.child_qualification_id
-        JOIN identity.person holder ON holder.person_id=child.current_holder_person_id
+        LEFT JOIN identity.person holder ON holder.person_id=child.current_holder_person_id
         WHERE tree.depth < ${maxDepth}
           AND NOT child.qualification_id=ANY(tree.path)
       )
       SELECT
         qualification_id::text,
         qualification_no::text,
+        ball_no,
+        qualification_kind,
         plan_level_code,
         active_flag,
         legal_name,
@@ -66,6 +72,8 @@ export class AdminObservabilityService {
         SELECT
           q.qualification_id,
           q.qualification_no,
+          q.ball_no,
+          q.kind AS qualification_kind,
           q.plan_level_code,
           q.active_flag,
           p.legal_name,
@@ -74,7 +82,7 @@ export class AdminObservabilityService {
           0::int AS depth,
           ARRAY[q.qualification_id]::uuid[] AS path
         FROM membership.qualification q
-        JOIN identity.person p ON p.person_id=q.current_holder_person_id
+        LEFT JOIN identity.person p ON p.person_id=q.current_holder_person_id
         WHERE q.qualification_id=${rootQualificationId}::uuid
 
         UNION ALL
@@ -82,6 +90,8 @@ export class AdminObservabilityService {
         SELECT
           child.qualification_id,
           child.qualification_no,
+          child.ball_no,
+          child.kind,
           child.plan_level_code,
           child.active_flag,
           holder.legal_name,
@@ -95,13 +105,15 @@ export class AdminObservabilityService {
          AND bp.effective_from <= ${at}
          AND (bp.effective_to IS NULL OR bp.effective_to > ${at})
         JOIN membership.qualification child ON child.qualification_id=bp.child_qualification_id
-        JOIN identity.person holder ON holder.person_id=child.current_holder_person_id
+        LEFT JOIN identity.person holder ON holder.person_id=child.current_holder_person_id
         WHERE tree.depth < ${maxDepth}
           AND NOT child.qualification_id=ANY(tree.path)
       )
       SELECT
         qualification_id::text,
         qualification_no::text,
+        ball_no,
+        qualification_kind,
         plan_level_code,
         active_flag,
         legal_name,

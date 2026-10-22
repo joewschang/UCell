@@ -25,7 +25,7 @@ export async function readCompanyProfileStatus(tx:Pick<Prisma.TransactionClient,
 @Injectable()
 export class BinaryTreeReadService {
  constructor(private readonly db:PrismaService,private readonly commands:BinaryTreeService){}
- private time(raw:unknown){try{const time=parseAsOfContext(raw),now=new Date().toISOString();if(time.asOf>now||time.knowledgeCutoff>now)throw new Error();return time;}catch{throw new UnprocessableEntityException({code:'INVALID_AS_OF_CONTEXT'});}}
+ private time(raw:unknown){try{const time=parseAsOfContext(raw),now=Date.now();if(Date.parse(time.asOf)>now+5000||Date.parse(time.knowledgeCutoff)>now+5000)throw new Error();return parseAsOfContext({...time,asOf:new Date(Math.min(Date.parse(time.asOf),now)).toISOString(),knowledgeCutoff:new Date(Math.min(Date.parse(time.knowledgeCutoff),now)).toISOString()});}catch{throw new UnprocessableEntityException({code:'INVALID_AS_OF_CONTEXT'});}}
  async list(p:TreePrincipal,raw:unknown,after?:string){
   const time=this.time(raw);await this.commands.authorize(p);
   const data=await this.db.$transaction(async tx=>{
