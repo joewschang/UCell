@@ -1,3 +1,4 @@
+import MyOrders from './MyOrders';
 import OrderList from './OrderList';
 import AiAssistant from './AiAssistant';
 import {ServiceWelcome} from '../../shared/ai-assistant/Persona';
@@ -181,7 +182,7 @@ function MemberApp() {
         <Route path="/payouts" element={<MemberPayouts key={current.id} q={current}/>}/>
         <Route path="/bonuses" element={<Bonuses q={current}/>}/>
         <Route path="/shop" element={data.isMock?<Shop q={current}/>:<Mall q={current} onCreated={retry}/>}/>
-        <Route path="/orders" element={<><Orders q={current}/><WebRetailOrders/></>}/>
+        <Route path="/orders" element={<MyOrders/>}/>
         <Route path="/sharing" element={<SharingCenter q={current}/>}/>
         <Route path="/content" element={<ContentList q={current}/>}/>
         <Route path="/content/:id" element={<ContentDetail q={current}/>}/>
@@ -193,7 +194,7 @@ function MemberApp() {
         <Route path="/" element={<><ServiceWelcome/><MemberWelcome/></>}/><Route path="/explore" element={<ExploreHub/>}/>
         <Route path="/ai-assistant" element={<AiAssistant/>}/>
         <Route path="/content" element={<ContentList/>}/><Route path="/content/:id" element={<ContentDetail/>}/>
-        <Route path="/orders" element={<WebRetailOrders/>}/>
+        <Route path="/orders" element={<MyOrders/>}/>
         <Route path="/membership/upgrade" element={<FormalEnrollment/>}/>
         <Route path="/growth" element={<GrowthCenter/>}/>
         <Route path="/notifications" element={<MemberMessages/>}/>

@@ -1,3 +1,5 @@
+import './enrollment-forms.css';
+import {validTaiwanNationalId,validEmail} from './enrollmentValidation';
 import {uiValue,uiText} from "../../shared/design-system/i18n";
 import {useRef,useState} from 'react';
 import {ErrorState,LoadingState} from '@ucell/design-system';
@@ -6,7 +8,7 @@ import {useResource} from './useResource';
 import {countryOptions} from './countryOptions';
 
 export default function FormalUpgrade({onSubmitted,onSaved,draftOnly=false}:{onSubmitted?:()=>void;onSaved?:(id:string)=>void;draftOnly?:boolean}={}){
- const contracts=useResource('formal-contracts',getFormalRequiredContracts);
+ const contracts=useResource('formal-contracts',getFormalRequiredContracts,true,true);
  const [accepted,setAccepted]=useState(false),[busy,setBusy]=useState(false),[error,setError]=useState(''),[submitted,setSubmitted]=useState(false);
  const [saved,setSaved]=useState<{id:string;version:number;identityDocumentNumberMasked:string|null;spouseIdentityDocumentNumberMasked:string|null;bankAccountMasked:string;applicantType:string}|null>(null);
  const [files,setFiles]=useState<Partial<Record<FormalDocumentType,File>>>({}),[uploaded,setUploaded]=useState<Partial<Record<FormalDocumentType,string>>>({});
@@ -25,12 +27,21 @@ export default function FormalUpgrade({onSubmitted,onSaved,draftOnly=false}:{onS
  const set=(name:keyof typeof form,value:string|boolean)=>setForm(current=>({...current,[name]:value}));
  const setFile=(type:FormalDocumentType,file?:File)=>{setFiles(current=>({...current,[type]:file}));setUploaded(current=>{const next={...current};delete next[type];return next;});};
  async function submit(event:React.FormEvent){
-  event.preventDefault();if(!(accepted||contract.acceptedAt)||busy)return;setBusy(true);setError('');
+  event.preventDefault();if(!(accepted||contract.acceptedAt)||busy)return;
+  const required=['legalName','birthDate','communicationAddress','phone','email','bankCode','bankAccount','accountHolder','identityDocumentNumber'] as const;
+  if(required.some(k=>!form[k].trim())){setError('請完整填寫會員、聯絡與銀行資料');return;}
+  if(form.identityDocumentType==='NATIONAL_ID'&&!validTaiwanNationalId(form.identityDocumentNumber)){setError('身分證號碼格式或檢查碼不正確，請確認後再試');return;}
+  if(form.hasSpouse&&(!form.spouseName.trim()||!form.spouseIdentityDocumentNumber.trim()||form.spouseIdentityDocumentType==='NATIONAL_ID'&&!validTaiwanNationalId(form.spouseIdentityDocumentNumber))){setError('請檢查配偶姓名及身分證明號碼');return;}
+  if(!validEmail(form.email)){setError('請輸入正確的 Email，例如 name@example.com');return;}
+  const documentTypes:FormalDocumentType[]=['IDENTITY_FRONT','IDENTITY_BACK','BANKBOOK_COVER'];
+  if(draftOnly&&documentTypes.some(type=>!files[type]&&!uploaded[type])){setError('請備妥身分證明文件正面、反面及存摺封面，再前往下一步');return;}
+  if(Object.values(files).some(file=>file&&(!['image/jpeg','image/png'].includes(file.type)||file.size>10*1024*1024))){setError('證件檔案須為 JPG 或 PNG，且每份不超過 10 MB');return;}
+  setBusy(true);setError('');
   try{
    if(!contract.acceptedAt)await consentFormalContract(contract.id,key.current);
    const common={
     formalContractVersionId:contract.id,applicantType:form.applicantType,
-    communicationAddress:form.communicationAddress,phone:form.phone,email:form.email,
+    communicationAddress:form.communicationAddress,phone:form.phone,email:form.email.trim(),
     bankCode:form.bankCode,bankAccount:form.bankAccount,accountHolder:form.accountHolder,
     hasSpouse:form.hasSpouse,
     ...(form.hasSpouse?{spouseName:form.spouseName,spouseNationalityCode:form.spouseNationalityCode,spouseIdentityDocumentType:form.spouseIdentityDocumentType,spouseIdentityDocumentNumber:form.spouseIdentityDocumentNumber}:{})
@@ -49,7 +60,7 @@ export default function FormalUpgrade({onSubmitted,onSaved,draftOnly=false}:{onS
   finally{setBusy(false);}
  }
 
- return <form className="card" onSubmit={submit}><h3>會員資料與文件</h3>
+ return <form className="card formal-profile" onSubmit={submit}><h3>會員資料與文件</h3>{error&&<p role="alert">{error}</p>}
  <p>{uiText("線上正式會員申請限自然人。草稿不會送審、核准、建立球位或改變會員狀態；配偶與身分資料僅供 KYC 與跨線審查。")}</p>
  <details><summary>{contract.title}（{contract.version}）</summary><p>{contract.content}</p><small>內容雜湊：{contract.contentHash}</small></details>
  <label><input type="checkbox" checked={accepted||!!contract.acceptedAt} disabled={!!contract.acceptedAt||busy} onChange={e=>setAccepted(e.target.checked)}/> 我已閱讀並同意上述正式會員合約與隱私告知</label>
@@ -60,11 +71,11 @@ export default function FormalUpgrade({onSubmitted,onSaved,draftOnly=false}:{onS
  <label>出生年月日<input required type="date" value={form.birthDate} onChange={e=>set('birthDate',e.target.value)}/></label>
  <label>國籍<select value={form.nationalityCode} onChange={e=>set('nationalityCode',e.target.value)}>{countryOptions.map(option=><option key={option.code} value={option.code}>{uiValue((option.label))}</option>)}</select></label>
  <label>身分證明文件類型<select value={form.identityDocumentType} onChange={e=>set('identityDocumentType',e.target.value)}><option value="NATIONAL_ID">身分證號</option><option value="RESIDENCE_PERMIT">居留證號</option><option value="PASSPORT">護照號碼</option><option value="OTHER">其他</option></select></label>
- <label>身分證明號碼<input required maxLength={64} autoComplete="off" value={form.identityDocumentNumber} onChange={e=>set('identityDocumentNumber',e.target.value)}/></label>
+ <label>身分證明號碼<input required maxLength={64} autoComplete="off" value={form.identityDocumentNumber} onChange={e=>set('identityDocumentNumber',e.target.value.toUpperCase())}/></label>
 
  <fieldset><legend>配偶資料／跨線審查</legend>
   <label><input type="checkbox" checked={form.hasSpouse} onChange={e=>set('hasSpouse',e.target.checked)}/> 有配偶</label>
-  {form.hasSpouse&&<><label>配偶姓名<input required maxLength={120} value={form.spouseName} onChange={e=>set('spouseName',e.target.value)}/></label><label>配偶國籍<select value={form.spouseNationalityCode} onChange={e=>set('spouseNationalityCode',e.target.value)}>{countryOptions.map(option=><option key={option.code} value={option.code}>{uiValue((option.label))}</option>)}</select></label><label>配偶身分證明文件類型<select value={form.spouseIdentityDocumentType} onChange={e=>set('spouseIdentityDocumentType',e.target.value)}><option value="NATIONAL_ID">身分證號</option><option value="RESIDENCE_PERMIT">居留證號</option><option value="PASSPORT">護照號碼</option><option value="OTHER">其他</option></select></label><label>配偶身分證明號碼<input required maxLength={64} autoComplete="off" value={form.spouseIdentityDocumentNumber} onChange={e=>set('spouseIdentityDocumentNumber',e.target.value)}/></label></>}
+  {form.hasSpouse&&<><label>配偶姓名<input required maxLength={120} value={form.spouseName} onChange={e=>set('spouseName',e.target.value)}/></label><label>配偶國籍<select value={form.spouseNationalityCode} onChange={e=>set('spouseNationalityCode',e.target.value)}>{countryOptions.map(option=><option key={option.code} value={option.code}>{uiValue((option.label))}</option>)}</select></label><label>配偶身分證明文件類型<select value={form.spouseIdentityDocumentType} onChange={e=>set('spouseIdentityDocumentType',e.target.value)}><option value="NATIONAL_ID">身分證號</option><option value="RESIDENCE_PERMIT">居留證號</option><option value="PASSPORT">護照號碼</option><option value="OTHER">其他</option></select></label><label>配偶身分證明號碼<input required maxLength={64} autoComplete="off" value={form.spouseIdentityDocumentNumber} onChange={e=>set('spouseIdentityDocumentNumber',e.target.value.toUpperCase())}/></label></>}
   <small>夫妻於婚姻關係存續期間視為單一正式經營單位；配偶仍可保有一般會員／消費者資格，但不得另行取得獨立正式傳銷經營權。</small>
  </fieldset>
  <fieldset><legend>身分與銀行文件</legend>
@@ -81,7 +92,7 @@ export default function FormalUpgrade({onSubmitted,onSaved,draftOnly=false}:{onS
  <label>銀行別／代碼<input required maxLength={16} value={form.bankCode} onChange={e=>set('bankCode',e.target.value)}/></label>
  <label>銀行帳號<input required maxLength={34} autoComplete="off" value={form.bankAccount} onChange={e=>set('bankAccount',e.target.value)}/></label>
  <label>帳戶名<input required maxLength={120} value={form.accountHolder} onChange={e=>set('accountHolder',e.target.value)}/></label>
- <button className="primary" disabled={busy||!(accepted||!!contract.acceptedAt)}>{busy?'儲存／上傳中…':'儲存資料與文件'}</button>
+ <button className="primary" disabled={busy||!(accepted||!!contract.acceptedAt)}>{busy?'儲存／上傳中…':draftOnly?'儲存資料並前往下一步':'儲存資料與文件'}</button>
  {saved&&<p role="status">已保存第 {saved.version} 版自然人草稿；身分證明號碼 {saved.identityDocumentNumberMasked??'未提供'}{saved.spouseIdentityDocumentNumberMasked?'，配偶身分證明號碼 '+saved.spouseIdentityDocumentNumberMasked:''}，帳號 {saved.bankAccountMasked}。</p>}
  {saved&&!draftOnly&&<button type="button" disabled={busy||submitted} onClick={async()=>{setBusy(true);setError('');try{await submitFormalEnrollment(saved.id,key.current);setSubmitted(true);onSubmitted?.();}catch(e){setError(e instanceof Error?e.message:'送出失敗');}finally{setBusy(false);}}}>{submitted?'申請已送出，等待審核':'送出正式會員申請'}</button>}
  {error&&<p role="alert">{error}</p>}</form>;

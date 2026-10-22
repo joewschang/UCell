@@ -1,3 +1,4 @@
+import {validTaiwanNationalId,validEmail} from '../../common/security/taiwan-national-id';
 import {ConflictException,Injectable,NotFoundException,UnprocessableEntityException} from '@nestjs/common';
 import {Prisma,PrismaService} from '@ucell/database';
 import {FormalMembershipConflictService} from './formal-membership-conflict.service';
@@ -43,6 +44,10 @@ export class FormalMemberApplicationService {
 
  private normalize(input:FormalDraftInput){
   const applicantType=input.applicantType??'INDIVIDUAL',hasSpouse=input.hasSpouse===true;
+  if(!validEmail(input.email??''))throw new UnprocessableEntityException({code:'FORMAL_EMAIL_INVALID',message:'Email 格式不正確'});
+  const identities=applicantType==='INDIVIDUAL'?[[input.identityDocumentType,input.identityDocumentNumber]]:[[input.representativeIdentityDocumentType,input.representativeIdentityDocumentNumber]];
+  if(hasSpouse)identities.push([input.spouseIdentityDocumentType,input.spouseIdentityDocumentNumber]);
+  if(identities.some(([type,value])=>type==='NATIONAL_ID'&&!validTaiwanNationalId(value??'')))throw new UnprocessableEntityException({code:'FORMAL_NATIONAL_ID_INVALID',message:'身分證號碼格式或檢查碼不正確'});
   const common={
    formalContractVersionId:input.formalContractVersionId,
    applicantType,

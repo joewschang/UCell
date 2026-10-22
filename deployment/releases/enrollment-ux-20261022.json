@@ -1,0 +1,39 @@
+{
+  "date": "2026-10-22",
+  "apiImage": "ucell-api:enrollment-ux-20261022",
+  "memberImage": "ucell-member:enrollment-ux-20261022-final",
+  "baselineApiDigest": "sha256:7322e5bd6626775d7d6df3c1b59e52e93c99976b7648d18e0e32d92809cbb6f0",
+  "baselineMemberDigest": "sha256:bf18c4a89154215d98e111c277cfb6e338a282b4b1b3d60106dd1b94fc061400",
+  "tests": {
+    "member": 320,
+    "backend": 2,
+    "browser": "Isolated fixtures: invalid ID blocked, saved form advances and retains data, postcode autofill, shipment detail, 1440/390 widths"
+  },
+  "limitations": [
+    "No real purchase/payment/shipment was created for verification.",
+    "Kerry public page uses sessionStorage and requires user consent; no supported prefilled URL found. Expose recorded tracking number, copy action and official inquiry page."
+  ],
+  "postalSource": "https://www.post.gov.tw/post/download/County_h_10906.xml",
+  "runtimeFiles": [
+    {
+      "path": "api/overlay/common/security/taiwan-national-id.js",
+      "sha256": "07dd1207d2cc56f5bcb17d3c4031ee46de986901f3e5edcfe1b13fc19611d415"
+    },
+    {
+      "path": "api/overlay/modules/member/formal-member-application.service.js",
+      "sha256": "1a5cc76049204dc014d09e6c2989b5bc6850060019c69495e5461566e81ba13e"
+    },
+    {
+      "path": "api/overlay/modules/member/member-context.guard.js",
+      "sha256": "71503704451b8bd6588746e50e89474f53dc397fedc2e9f81425463653b47ad3"
+    },
+    {
+      "path": "api/overlay/modules/member/member-read.service.js",
+      "sha256": "9e3189c5c320724a0b4c3cfe04da43c2e7fa0d07f86a80b79aa81ad4b9429356"
+    },
+    {
+      "path": "api/overlay/modules/member/member.controller.js",
+      "sha256": "5104c60dc13b0a0cbdb9fea5043b293d8b1e0c824fa90f8a87b2c29d921f6a6d"
+    }
+  ]
+}

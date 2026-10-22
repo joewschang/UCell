@@ -15,7 +15,7 @@ const render=async()=>{await act(async()=>{tree=create(<MemoryRouter><FormalEnro
 const button=(text:string)=>tree.root.findAllByType('button').find(b=>b.children.includes(text))!;
 it('requires saved data before package selection and has no fee-only membership route',async()=>{
  await render();expect(button('資格套組').props.disabled).toBe(true);expect(button('送出審核').props.disabled).toBe(true);
- await act(async()=>button('儲存測試資料').props.onClick());expect(button('資格套組').props.disabled).toBe(false);
+ await act(async()=>button('儲存測試資料').props.onClick());expect(button('資格套組').props.disabled).toBe(false);expect(JSON.stringify(tree.toJSON())).toContain('選擇會員資格套組');
  await act(async()=>button('資格套組').props.onClick());expect(JSON.stringify(tree.toJSON())).toContain('每資格 600 元');expect(JSON.stringify(tree.toJSON())).not.toContain('繳交 600 元並開始申請');
 });
 it('keeps unpaid packages pending and submits paid applications once with explicit review',async()=>{
