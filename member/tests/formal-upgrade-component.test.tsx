@@ -1,4 +1,3 @@
-vi.mock('../src/documentOcr',()=>({inspectDocument:vi.fn(async()=>({file:new File(['mock'],'mock.png',{type:'image/png'}),rotation:0}))}));
 import React from 'react';
 import {act,create} from 'react-test-renderer';
 import {expect,it,vi} from 'vitest';
@@ -22,7 +21,7 @@ it('retains completed documents on failure and proceeds after retrying only the 
  vi.mocked(uploadFormalDocument).mockResolvedValueOnce({scanStatus:'PENDING'} as any).mockRejectedValueOnce(new Error('連線逾時')).mockResolvedValue({scanStatus:'PENDING'} as any);
  const onSaved=vi.fn();let tree:any;
  await act(async()=>{tree=create(<FormalUpgrade draftOnly onSaved={onSaved} initial={{prefill:{legalName:'測試',birthDate:'1990-01-01',identityDocumentNumber:'A123456789',communicationAddress:'測試地址',phone:'0912345678',email:'test@example.com',bankCode:'012',bankAccount:'12345678',accountHolder:'測試'}} as any}/>)});
- for(const input of tree.root.findAllByType('input').filter((x:any)=>x.props.type==='file'))await act(async()=>input.props.onChange({target:{files:[{type:'image/png',size:100}]}}));
+ for(const input of tree.root.findAllByType('input').filter((x:any)=>x.props.type==='file'))await act(async()=>input.props.onChange({target:{files:[new File(['test image'],'test.png',{type:'image/png'})]}}));
  await act(async()=>tree.root.findByType('form').props.onSubmit({preventDefault:vi.fn()}));
  expect(onSaved).not.toHaveBeenCalled();expect(uploadFormalDocument).toHaveBeenCalledTimes(3);
  expect(JSON.stringify(tree.toJSON())).toContain('身分證明文件反面上傳失敗');

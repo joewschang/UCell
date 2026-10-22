@@ -65,7 +65,7 @@ export default function FormalUpgrade({onSubmitted,onSaved,onReadyChange,draftOn
     setProgress(`資料已儲存，正在上傳${uploadingLabel}（${documentTypes.indexOf(type)+1}/3）…請稍候，完成後會自動前往下一步。`);
     try{const doc=await uploadFormalDocument(result.id,type,file);nextUploaded[type]=doc.scanStatus;setUploaded({...nextUploaded});setUploadErrors(current=>({...current,[type]:''}));}catch(e){setUploadErrors(current=>({...current,[type]:`${documentNames[type as keyof typeof documentNames]}上傳失敗：${e instanceof Error?e.message:'連線異常'}。請保留資料，再按儲存重試。`}));}
    }
-   setUploaded(nextUploaded);const remaining=requiredDocuments.filter(type=>!nextUploaded[type]);if(draftOnly&&remaining.length)setError('資料與已成功上傳的文件已保存。尚未上傳成功：'+remaining.map(type=>documentNames[type]).join('、')+'。請完成辨識及上傳後，再前往下一步。');else onSaved?.(result.id);key.current=crypto.randomUUID();contracts.retry();
+   setUploaded(nextUploaded);const remaining=requiredDocuments.filter(type=>!nextUploaded[type]);if(draftOnly&&remaining.length)setError('資料與已成功上傳的文件已保存。尚未上傳成功：'+remaining.map(type=>documentNames[type]).join('、')+'。請完成上傳後，再前往下一步。');else onSaved?.(result.id);key.current=crypto.randomUUID();contracts.retry();
   }catch(reason){setError(uploadingLabel?`${uploadingLabel}上傳未完成。會員資料與已完成的文件已保留，請確認網路後再次按「儲存資料並前往下一步」重試。`:(reason instanceof Error?reason.message:'草稿儲存失敗'));}
   finally{setBusy(false);setProgress('');setUploadingType('');}
  }
@@ -90,7 +90,7 @@ export default function FormalUpgrade({onSubmitted,onSaved,onReadyChange,draftOn
  </fieldset>
  <fieldset><legend>身分與銀行文件</legend>
   <p>{uiText("線上正式會員送審前必須完成身分證明文件正面、反面及存摺封面上傳。JPG/PNG，單檔上限 10 MB。")}</p>
-  {requiredDocuments.map(type=><EnrollmentDocument applicationId={saved?.id??initial?.application?.id} key={type+form.identityDocumentType} type={type} identityType={form.identityDocumentType} uploaded={!!uploaded[type]} uploading={uploadingType===type&&busy} uploadError={uploadErrors[type]} disabled={busy} onSelect={()=>setFile(type)} onReady={file=>setFile(type,file)}/>)}
+  {requiredDocuments.map(type=><EnrollmentDocument applicationId={saved?.id??initial?.application?.id} key={type+form.identityDocumentType} type={type} uploaded={!!uploaded[type]} uploading={uploadingType===type&&busy} uploadError={uploadErrors[type]} disabled={busy} onSelect={()=>setFile(type)} onReady={file=>setFile(type,file)}/>)}
   <small>上傳後由後台進行文件與資料比對；審核完成後才會核准正式會員。</small>
  </fieldset>
 
