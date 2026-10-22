@@ -65,6 +65,19 @@ export class FormalKycDocumentService{
     return rows.map(r=>({id:r.formalApplicationDocumentId,type:r.documentType,status:r.status,scanStatus:r.malwareScanStatus,scanRequired:false,mimeType:r.mimeType,sizeBytes:r.sizeBytes,uploadedAt:r.uploadedAt?.toISOString()??null,reviewedAt:r.reviewedAt?.toISOString()??null}));
   }
 
+  async ownContent(personId:string,applicationId:string,documentId:string,requestId:string){
+    if(!personId)throw new ForbiddenException({code:'MEMBER_PERSON_ID_REQUIRED'});
+    const app=await this.db.formalMemberApplication.findFirst({where:{formalMemberApplicationId:applicationId,personId}});
+    if(!app)throw new NotFoundException({code:'FORMAL_APPLICATION_NOT_FOUND'});
+    const row=await this.db.formalApplicationDocument.findUnique({where:{formalApplicationDocumentId:documentId}});
+    if(!row||row.formalMemberApplicationId!==applicationId||!row.storageObjectKey||row.status==='SUPERSEDED')throw new NotFoundException({code:'FORMAL_KYC_DOCUMENT_NOT_FOUND'});
+    if(row.status!=='PRESENT')throw new UnprocessableEntityException({code:'FORMAL_KYC_DOCUMENT_NOT_PRESENT'});
+    const blob=await this.storage.get(row.storageObjectKey);
+    if(!row.mimeType||blob.bytes.length!==row.sizeBytes||createHash('sha256').update(blob.bytes).digest('hex')!==row.contentSha256||!validKycImage(blob.bytes,row.mimeType))throw new UnprocessableEntityException({code:'FORMAL_KYC_DOCUMENT_INTEGRITY_FAILED'});
+    await this.db.$transaction(tx=>this.audit.write(tx,{actorType:'MEMBER',actorId:personId,action:'FORMAL_KYC_DOCUMENT_VIEWED',entityType:'FormalApplicationDocument',entityId:documentId,afterData:{applicationId,documentType:row.documentType},requestId,correlationId:randomUUID()}));
+    return {bytes:blob.bytes,mimeType:row.mimeType};
+  }
+
   async adminContent(documentId:string,actorId:string,requestId:string){
     if(!actorId)throw new ForbiddenException({code:'ADMIN_PERSON_ID_REQUIRED'});
     const row=await this.db.formalApplicationDocument.findUnique({where:{formalApplicationDocumentId:documentId}});

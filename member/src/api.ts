@@ -3,14 +3,14 @@ const base = import.meta.env.VITE_API_BASE_URL || '/api/v1';
 const expiredMessage = '登入已失效，請重新登入';
 export class MemberApiError extends Error { constructor(message:string,public readonly status:number,public readonly code?:string){super(message);this.name='MemberApiError';} }
 export const REQUEST_TIMEOUT_MS = 15_000;
-export type ApiRequestInit = RequestInit & { timeoutMs?: number };
+export type ApiRequestInit = RequestInit & { timeoutMs?: number; responseType?: 'json' | 'blob' };
 export function createApiClient(guard: SessionGuard) {
     return async function api<T>(path: string, init: ApiRequestInit = {}): Promise<T> {
-        const { timeoutMs = REQUEST_TIMEOUT_MS, ...requestInit } = init;
+        const { timeoutMs = REQUEST_TIMEOUT_MS, responseType = 'json', ...requestInit } = init;
         if (guard.getSnapshot()) throw new Error(expiredMessage);
         const token = sessionStorage.getItem('ucell_member_token');
         const headers = new Headers(init.headers);
-        headers.set('Accept', 'application/json');
+        headers.set('Accept', responseType === 'blob' ? 'image/png,image/jpeg' : 'application/json');
         if (init.body) headers.set('Content-Type', 'application/json');
         if (token) headers.set('Authorization', `Bearer ${token}`);
         const controller = new AbortController();
@@ -39,7 +39,7 @@ export function createApiClient(guard: SessionGuard) {
                     res.status === 400 ? '資料格式不正確，請檢查輸入內容' : '資料暫時無法讀取，請稍後重試'),res.status,code);
             }
             let result: T;
-            try { result = await res.json() as T; }
+            try { result = (responseType === 'blob' ? await res.blob() : await res.json()) as T; }
             catch { throw new Error('資料格式異常，請稍後重試'); }
             if (guard.getSnapshot()) throw new Error(expiredMessage);
             if (controller.signal.aborted) throw new DOMException('Aborted', 'AbortError');

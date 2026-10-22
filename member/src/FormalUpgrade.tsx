@@ -90,7 +90,7 @@ export default function FormalUpgrade({onSubmitted,onSaved,onReadyChange,draftOn
  </fieldset>
  <fieldset><legend>身分與銀行文件</legend>
   <p>{uiText("線上正式會員送審前必須完成身分證明文件正面、反面及存摺封面上傳。JPG/PNG，單檔上限 10 MB。")}</p>
-  {requiredDocuments.map(type=><EnrollmentDocument key={type+form.identityDocumentType} type={type} identityType={form.identityDocumentType} uploaded={!!uploaded[type]} uploading={uploadingType===type&&busy} uploadError={uploadErrors[type]} disabled={busy} onSelect={()=>setFile(type)} onReady={file=>setFile(type,file)}/>)}
+  {requiredDocuments.map(type=><EnrollmentDocument applicationId={saved?.id??initial?.application?.id} key={type+form.identityDocumentType} type={type} identityType={form.identityDocumentType} uploaded={!!uploaded[type]} uploading={uploadingType===type&&busy} uploadError={uploadErrors[type]} disabled={busy} onSelect={()=>setFile(type)} onReady={file=>setFile(type,file)}/>)}
   <small>上傳後由後台進行文件與資料比對；審核完成後才會核准正式會員。</small>
  </fieldset>
 

@@ -16,6 +16,26 @@ function harness(){
   return {application,record,tx,db,storage,audit,service:new FormalKycDocumentService(db,storage as any,audit as any)};
 }
 describe('Private KYC content validation and document availability boundaries',()=>{
+  it('allows only the owner to view a current document and records a MEMBER audit',async()=>{
+    const h=harness();
+    expect(await h.service.ownContent('person','app','document','request')).toEqual({bytes:png,mimeType:'image/png'});
+    expect(h.db.formalMemberApplication.findFirst).toHaveBeenCalledWith({where:{formalMemberApplicationId:'app',personId:'person'}});
+    expect(h.audit.write).toHaveBeenCalledWith(h.tx,expect.objectContaining({actorType:'MEMBER',actorId:'person',action:'FORMAL_KYC_DOCUMENT_VIEWED'}));
+  });
+  it('denies another member application before reading storage',async()=>{
+    const h=harness();h.db.formalMemberApplication.findFirst.mockResolvedValueOnce(null);
+    await expect(h.service.ownContent('stranger','app','document','request')).rejects.toMatchObject({response:{code:'FORMAL_APPLICATION_NOT_FOUND'}});
+    expect(h.storage.get).not.toHaveBeenCalled();
+  });
+  it.each(['wrong-application','SUPERSEDED','REJECTED','corrupt'])('denies invalid member document reads: %s',async kind=>{
+    const h=harness();
+    if(kind==='wrong-application')h.record.formalMemberApplicationId='another-app';
+    else if(kind==='corrupt')h.record.contentSha256='invalid';
+    else h.record.status=kind;
+    await expect(h.service.ownContent('person','app','document','request')).rejects.toThrow();
+    expect(h.audit.write).not.toHaveBeenCalled();
+    if(kind!=='corrupt')expect(h.storage.get).not.toHaveBeenCalled();
+  });
   it.each([[png,'image/png'],[jpeg,'image/jpeg']] as const)('accepts the actual %s fixture under its MIME without treating validation as malware scanning',(bytes,mime)=>{
     expect(validKycImage(bytes,mime)).toBe(true);
   });

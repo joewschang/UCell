@@ -8,7 +8,7 @@ it('restores saved identity, contact and bank fields and existing uploads withou
  await act(async()=>{t=create(<FormalUpgrade initial={initial} draftOnly/>);});
  const name=()=>t.root.findAllByType('input').find((x:any)=>x.props.autoComplete==='name');
  expect(name().props.value).toBe('原填姓名');expect(t.root.findAllByType('input').some((x:any)=>x.props.value==='12345678')).toBe(true);
- expect(JSON.stringify(t.toJSON()).match(/已上傳/g)?.length).toBe(3);
+ expect(JSON.stringify(t.toJSON()).match(/已上傳成功，系統已保存。/g)?.length).toBe(3);
  await act(async()=>name().props.onChange({target:{value:'新修改姓名'}}));
  await act(async()=>t.update(<FormalUpgrade initial={{...initial}} draftOnly/>));
  expect(name().props.value).toBe('新修改姓名');act(()=>t.unmount());
