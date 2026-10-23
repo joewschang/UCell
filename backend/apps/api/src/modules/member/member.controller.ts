@@ -37,7 +37,13 @@ export class MemberPackageSelectionDto {
  @ApiProperty({format:'uuid'}) @IsUUID() productRuleProfileId!:string;
  @ApiProperty({minimum:1,maximum:10000}) @Type(()=>Number) @IsInt() @Min(1) @Max(10000) quantity!:number;
 }
+class MemberCheckoutDto {
+ @IsIn(['BANK_TRANSFER','CASH']) paymentMethod!:'BANK_TRANSFER'|'CASH';
+ @IsDateString() deliveryUpdatedAt!:string;
+ @Matches(/^\d+(\.\d{1,2})?$/) expectedTotal!:string;
+}
 export class MemberCreateOrderDto {
+ @IsOptional() @ValidateNested() @Type(()=>MemberCheckoutDto) checkout?:MemberCheckoutDto;
  @ApiProperty({required:false}) @IsOptional() @IsString() @Matches(/^[A-Z0-9_-]{3,40}$/) couponCode?:string;
  @ApiProperty({required:false}) @IsOptional() @IsString() @Matches(/^[a-f0-9]{64}$/) quoteHash?:string;
  @ApiProperty({required:false,format:'uuid',description:'Required for retail orders; for active packages this must match targetQualificationId.'}) @IsOptional() @IsUUID() qualificationId?:string;

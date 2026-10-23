@@ -1,3 +1,5 @@
+import CoreProductShop from './CoreProductShop';
+import ProductShareButton from './ProductShareButton';
 import ReferralShare from './ReferralShare';
 import {uiText} from "../../shared/design-system/i18n";
 import {useEffect,useRef,useState} from 'react';
@@ -13,16 +15,17 @@ export const mallCategories=['會員資格套組','重購方案套組','主商�
 export default function Mall({q,onCreated}:{q?:Qualification;onCreated:()=>void}){
  const [search]=useSearchParams(),rawSku=search.get('sku');
  const requestedSku=rawSku&&/^TIP-\d{3}$/.test(rawSku)?rawSku:undefined;
- const [category,setCategory]=useState<string>('主商品'),navigate=useNavigate();
+ const [category,setCategory]=useState<string>(mallCategories.find(c=>c===search.get('category'))??'主商品'),navigate=useNavigate();
  useEffect(()=>{if(requestedSku)setCategory('主商品')},[requestedSku]);
  async function qualificationCreated(){try{const state=await getFormalEnrollment();if(state.membershipState!=='FORMAL_MEMBER'){navigate('/membership/upgrade');return;}}catch{navigate('/membership/upgrade');return;}onCreated();}
  return <section><h1>商品商城</h1><div className="tabs" role="group" aria-label="商品分類">{mallCategories.map(c=><button key={c} aria-pressed={category===c} onClick={()=>setCategory(c)}>{c}</button>)}</div>
  {category==='會員資格套組'&&<QualificationPackageShop onCreated={qualificationCreated}/>}
  {category==='重購方案套組'&&(q?<ActiveDurationPackages q={q} onCreated={onCreated}/>:<section className="card"><h2>重購方案套組</h2><p>重購方案需指定本人會員資格。請先完成正式會員申請並取得會員資格，再選購重購方案。</p></section>)}
- {(category==='主商品'||category==='促銷商品套組')&&<OfferShop key={category+q?.id+requestedSku} q={q} requestedSku={category==='主商品'?requestedSku:undefined} type={category==='主商品'?'CORE_PRODUCT':'PROMOTIONAL_BUNDLE'}/>}
+ <div hidden={category!=='主商品'}><CoreProductShop key={q?.id??'retail'} q={q} requestedSku={requestedSku}/></div>{category==='促銷商品套組'&&<OfferShop q={q} type='PROMOTIONAL_BUNDLE'/>}
  </section>;
 }
-export function OfferShop({q,type,requestedSku}:{q?:Qualification;type:'CORE_PRODUCT'|'PROMOTIONAL_BUNDLE';requestedSku?:string}){
+export function OfferShop(props:{q?:Qualification;type:'CORE_PRODUCT'|'PROMOTIONAL_BUNDLE';requestedSku?:string}){return props.type==='CORE_PRODUCT'?<CoreProductShop q={props.q} requestedSku={props.requestedSku}/>:<LegacyOfferShop {...props}/>;}
+function LegacyOfferShop({q,type,requestedSku}:{q?:Qualification;type:'CORE_PRODUCT'|'PROMOTIONAL_BUNDLE';requestedSku?:string}){
  const offers=useResource('mall-offers',getCommercialOffers),products=useResource('mall-products',getProducts);
  const [selected,setSelected]=useState<CommercialOffer|null>(null),[quantities,setQuantities]=useState<Record<string,number>>({}),[busy,setBusy]=useState(false),[error,setError]=useState(''),[receipt,setReceipt]=useState<string|null>(null),[stagePaid,setStagePaid]=useState(false);
  const delivery=useResource('mall-delivery',getDeliveryProfile,!!selected);
@@ -47,6 +50,6 @@ export function OfferShop({q,type,requestedSku}:{q?:Qualification;type:'CORE_PRO
  if(!offers.data||!products.data)return <LoadingState label="商品分類載入中…"/>;
  const available=offers.data.filter(o=>o.offeringType===type);
  return <section className={"mall-product-flow"+(selected?" has-selection":"")}>{requestedSku&&<div className="mall-intent"><span>您正在查看的商品</span><strong>{products.data.find(p=>p.sku===requestedSku)?.name??requestedSku}</strong><p>請確認商品、數量與配送資料，再建立訂單。</p></div>}{error&&!selected&&<p role="alert">{error}</p>}<h2>{type==='CORE_PRODUCT'?'主商品':'促銷商品套組'}</h2> {selected&&<section className="card mall-selected-detail" aria-label="已選商品細節"><h3>{selected.displayName} · 商品細節</h3>{selected.priceLabel&&<p>{selected.priceLabel}</p>}{pool.map(p=><div key={p.id}><h4>{p.name}</h4><p>{uiText("單價：NT$ ")}{p.price} · {p.available?'可訂購':'暫不可訂購'}</p>{fixed?<p>數量：{quantities[p.sku!]??0}</p>:<label>數量<input type="number" min={0} max={99} value={quantities[p.sku!]??0} disabled={busy} onChange={e=>{const n=Number(e.target.value);if(Number.isInteger(n)&&n>=0&&n<=99){setQuantities(v=>({...v,[p.sku!]:n}));key.current=crypto.randomUUID();setReceipt(null);}}}/></label>}</div>)}{required!==undefined&&<p>已選 {count}／{required} 件</p>}{delivery.error?<ErrorState message={delivery.error} retry={delivery.retry}/>:!delivery.data?<LoadingState label="正在載入配送資料…"/>:<DeliveryProfileEditor profile={delivery.data} refresh={delivery.retry}/>}<p>應付金額以訂單確認結果為準。</p>{(!valid||!delivery.data?.complete)&&<p className="uc-checkout-hint" role="status">{!valid?'請先確認商品與數量。':'完成配送資料後即可建立訂單。'}</p>}<button className="primary" disabled={busy||!valid||!delivery.data?.complete||!!receipt} onClick={submit}>{busy?'處理中…':'確認商品細節並建立訂單'}</button>{receipt&&<p role="status">訂單已建立：{receipt}。{stagePaid?uiText("Stage 付款已通過，不會實際扣款。"):'待付款，實際狀態以訂單紀錄為準。'}</p>}{error&&<p role="alert">{error}</p>}</section>}
-{!available.length?<EmptyState title="目前沒有上架方案"/>:<div className="mall-offer-grid">{available.map(o=><article className="card" key={o.offeringCode}><h3>{o.displayName}</h3>{o.coverImage&&<img src={o.coverImage} alt={o.displayName+" 商品封面"} loading="lazy" className="mall-product-cover"/>}{o.packaging&&<p>{o.packaging}</p>}{o.priceLabel&&<p>{o.priceLabel}</p>}<p>{o.composition.length?'固定商品組合':`請選擇 ${o.selectionRule?.requiredTotalQuantity??1} 件商品`}</p><button disabled={busy} onClick={()=>choose(o)}>選擇商品細節</button>{q&&type==='CORE_PRODUCT'&&o.composition.length===1&&/^TIP-\d{3}$/.test(o.composition[0].sku)&&<details className="uc-product-share"><summary>分享商品給朋友</summary><ReferralShare q={q} productSku={o.composition[0].sku} title={o.displayName}/></details>}</article>)}</div>}
+{!available.length?<EmptyState title="目前沒有上架方案"/>:<div className="mall-offer-grid">{available.map(o=><article className="card" key={o.offeringCode}><h3>{o.displayName}</h3>{o.coverImage&&<img src={o.coverImage} alt={o.displayName+" 商品封面"} loading="lazy" className="mall-product-cover"/>}{o.packaging&&<p>{o.packaging}</p>}{o.priceLabel&&<p>{o.priceLabel}</p>}<p>{o.composition.length?'固定商品組合':`請選擇 ${o.selectionRule?.requiredTotalQuantity??1} 件商品`}</p><button disabled={busy} onClick={()=>choose(o)}>選擇商品細節</button><ProductShareButton q={type==='CORE_PRODUCT'?q:undefined} sku={type==='CORE_PRODUCT'?o.composition[0]?.sku:undefined} title={o.displayName} category='促銷商品套組'/></article>)}</div>}
 </section>;
 }

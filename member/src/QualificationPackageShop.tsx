@@ -1,3 +1,4 @@
+import ProductShareButton from './ProductShareButton';
 import {uiValue,uiText} from "../../shared/design-system/i18n";
 import {MembershipPlanEmblem} from './MembershipEmblems';
 import {EmptyState,ErrorState,LoadingState} from '@ucell/design-system';
@@ -15,7 +16,7 @@ export default function QualificationPackageShop({onCreated}:{onCreated:()=>void
  if(selected)return <PackageSelection offer={selected} legalEntityId={legalEntityId||undefined} onCancel={()=>setSelected(null)} onCreated={onCreated}/>;
  return <><h2>會員資格套組</h2><p>選擇套組 → 套用優惠碼 → 選擇商品 → 確認訂單。</p><p>可混選或重複選購五項主商品；啟航 3 盒、菁英 9 盒、領袖 15 盒。每個新資格另收建立費 600 元；優惠後盒數以確認明細為準。</p>
  {legalEntities.error?<ErrorState message={legalEntities.error} retry={legalEntities.retry}/>:!legalEntities.data?<LoadingState label="法人代表權載入中…"/>:<section className="card"><h3>購買資格主體</h3><label>以何者名義取得新球<select value={legalEntityId} onChange={e=>setLegalEntityId(e.target.value)}><option value="">本人</option>{legalEntities.data.map(entity=><option key={entity.legalEntityId} value={entity.legalEntityId}>{uiValue((entity.registeredName))} · {uiValue((entity.memberNo))}</option>)}</select></label>{legalEntityId&&<p className="muted">此球與後續組織權利將屬於所選法人；您是目前授權代表人，不是法人球位的個人持有人。</p>}</section>}
- {packages.error?<ErrorState message={packages.error} retry={packages.retry}/>:!packages.data?<LoadingState label="套組載入中…"/>:!packages.data.length?<EmptyState title="目前沒有可申請的正式會員套組"/>:<div className="mall-offer-grid">{packages.data.map(item=><article className="card" key={item.packageVersionId}><MembershipPlanEmblem code={item.packageCode}/><h3>{item.displayName}</h3><p>套組價格：{item.currency} {item.priceAmount}</p><p>可選 {item.selectableProductQuantity} 盒主商品</p><p>資格建立費另計 NT$ 600</p><button disabled={!legalEntities.data||!!legalEntities.error} onClick={()=>setSelected(item)}>選擇套組商品</button></article>)}</div>}
+ {packages.error?<ErrorState message={packages.error} retry={packages.retry}/>:!packages.data?<LoadingState label="套組載入中…"/>:!packages.data.length?<EmptyState title="目前沒有可申請的正式會員套組"/>:<div className="mall-offer-grid">{packages.data.map(item=><article className="card" key={item.packageVersionId}><MembershipPlanEmblem code={item.packageCode}/><h3>{item.displayName}</h3><p>套組價格：{item.currency} {item.priceAmount}</p><p>可選 {item.selectableProductQuantity} 盒主商品</p><p>資格建立費另計 NT$ 600</p><button disabled={!legalEntities.data||!!legalEntities.error} onClick={()=>setSelected(item)}>選擇套組商品</button><ProductShareButton title={item.displayName} category="會員資格套組"/></article>)}</div>}
  </>;
 }
 
