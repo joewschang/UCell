@@ -1,3 +1,4 @@
+import {MarketingPage} from '../features/marketing/MarketingPage';
 import {uiText} from "../../../shared/design-system/i18n";
 import {EconomicLineagePage} from '../features/economic-lineage/EconomicLineagePage';
 import {OrganizationGeoPage} from '../features/organization-geo/OrganizationGeoPage';
@@ -83,6 +84,7 @@ export function App(){return <Routes>
   <Route path="/documents" element={<RequirePageRole><DocumentsPage/></RequirePageRole>}/>
   <Route path="/audit" element={<RequirePageRole><AuditPage/></RequirePageRole>}/>
   <Route path="/reports" element={<RequirePageRole><ReportsPage/></RequirePageRole>}/>
+  <Route path="/marketing" element={<RequirePageRole><MarketingPage/></RequirePageRole>}/>
   <Route path="/analytics" element={<RequirePageRole><AnalyticsPage/></RequirePageRole>}/>
   <Route path="/uat" element={<RequirePageRole><UatPage/></RequirePageRole>}/>
   <Route path="/system" element={<RequirePageRole><SystemPage/></RequirePageRole>}/>
