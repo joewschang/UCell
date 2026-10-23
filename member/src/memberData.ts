@@ -127,6 +127,8 @@ export async function getWebRetailOrders(signal?:AbortSignal):Promise<WebRetailO
 
 export type PendingPlacement={pendingBallNo:string|null;placementReference:string;pendingMemberNo:string|null;packageType:string;sponsorBallNo:string|null;paymentState:'CONFIRMED';requestedAt:string|null;dueAt:string|null;placedAt:string|null;status:'PLACEMENT_PENDING'|'PLACEMENT_OVERDUE';agingBucket:'0_24H'|'24_48H'|'48_72H'|'OVERDUE';policyVersion:string};
 const ballNo=/^[A-Z][A-Z0-9_-]{0,39}(?:X\d{6}|\d{6,19})$/;
+export type PlacementBranch={observedAt:string;ballNo:string;sponsorBallNo:string;sequence:number;blocked:string|null;breadcrumbs:{ballNo:string}[];nodes:{ballNo:string;position:string;slots:{side:'LEFT'|'RIGHT';reason:string|null}[]}[]};
+export async function getPlacementBranch(reference:string,ballNo:string,signal:AbortSignal){return api<PlacementBranch>(`/member/placements/pending/${encodeURIComponent(reference)}/branch${ballNo?'?'+new URLSearchParams({ballNo}):''}`,{signal});}
 export async function getPendingPlacements(signal:AbortSignal):Promise<PendingPlacement[]>{
  if(isMock)return [];
  const rows=await api<unknown>('/member/placements/pending',{signal});

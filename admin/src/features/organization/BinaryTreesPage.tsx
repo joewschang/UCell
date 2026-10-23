@@ -1,5 +1,6 @@
+import {PlacementMonitor} from './PlacementMonitor';
 import {useEffect,useRef,useState,type ReactNode} from 'react';
-import {useNavigate,useParams} from 'react-router-dom';
+import {useNavigate,useParams,useSearchParams} from 'react-router-dom';
 import {ApiError,command,get,qs} from '../../lib/api';
 import {useAuth} from '../auth/auth';
 import './current-trees.css';
@@ -19,7 +20,7 @@ function message(error:unknown){
 const statusName=(s:string)=>({ACTIVE:'開放安置',DRAFT:'草稿',CLOSED_TO_NEW:'暫停新增',ARCHIVED:'已封存'}[s]??'狀態待確認');
 
 export function BinaryTreesPage(){
- const {id}=useParams(),navigate=useNavigate(),{user}=useAuth();
+ const {id}=useParams(),navigate=useNavigate(),{user}=useAuth(),[params]=useSearchParams();
  const [trees,setTrees]=useState<Tree[]>([]),[treeCursor,setTreeCursor]=useState<string|null>(null),[state,setState]=useState<State|null>(null);
  const [tab,setTab]=useState<'tree'|'pending'>('tree'),[ball,setBall]=useState(''),[focus,setFocus]=useState(''),[candidate,setCandidate]=useState('');
  const [busy,setBusy]=useState(false),[error,setError]=useState(''),[notice,setNotice]=useState(''),[revision,setRevision]=useState(0);
@@ -28,7 +29,7 @@ export function BinaryTreesPage(){
  const epoch=useRef(0),writeLock=useRef(false),currentId=useRef(id),attemptReason=useRef<string|null>(null);currentId.current=id;
  const canManage=user?.role==='SUPER_ADMIN',canPlace=['SUPER_ADMIN','QUALIFICATION_PLACEMENT_OVERRIDE'].includes(user?.role??'');
  useEffect(()=>{const c=new AbortController();void get<{data:{items:Tree[];nextCursor:string|null}}>(base+'/current',{signal:c.signal}).then(r=>{setTrees(r.data.items);setTreeCursor(r.data.nextCursor)}).catch(e=>{if(!c.signal.aborted)setError(message(e))});return ()=>c.abort()},[revision]);
- useEffect(()=>{setFocus('');setCandidate('');setPreview(null);setBall('');setState(null);setTab('tree');setError('');setNotice('');setReason('');epoch.current++;},[id]);
+ useEffect(()=>{setFocus(params.get('ballNo')??'');setCandidate(params.get('candidateBallNo')??'');setPreview(null);setBall('');setState(null);setTab('tree');setError('');setNotice('');setReason('');epoch.current++;},[id,params]);
  useEffect(()=>{
   if(!id)return;
   const c=new AbortController(),serial=++epoch.current;setBusy(true);setError('');setPreview(null);
@@ -68,7 +69,7 @@ export function BinaryTreesPage(){
    {canPlace&&node.slots.length>0&&<div className="ct-slots">{node.slots.map(slot=><div key={slot.side}><button disabled={busy||!!slot.reason||preview!==null} onClick={()=>void check(node,slot.side)}>{slot.side==='LEFT'?'＋ 左側':'＋ 右側'}</button>{slot.reason&&<small>{reasons[slot.reason]??'此位置目前不符合安置規則。'}</small>}</div>)}</div>}
   </article>{depth<2&&children.length>0&&<div className="ct-children">{children.map(child=><div className="ct-child" key={child.ballNo}><span>{BigInt(child.position)%2n===0n?'左側':'右側'}</span>{renderNode(child,depth+1)}</div>)}</div>}</div>;
  }
- return <section className="current-trees"><header className="ct-heading"><div><span className="ct-eyebrow">組織與安置</span><h1>多樹管理</h1><p>選擇樹查看目前組織，或從待安置球開始安排位置。</p></div><button disabled={busy||preview!==null} onClick={refresh}>重新整理</button></header>
+ return <section className="current-trees"><PlacementMonitor/><header className="ct-heading"><div><span className="ct-eyebrow">組織與安置</span><h1>多樹管理</h1><p>選擇樹查看目前組織，或從待安置球開始安排位置。</p></div><button disabled={busy||preview!==null} onClick={refresh}>重新整理</button></header>
   {error&&<div className="ct-error" role="alert">{error}{!preview&&<button disabled={busy} onClick={()=>{setFocus('' );setCandidate('' );refresh()}}>返回樹根並重新載入</button>}</div>}{notice&&<div className="ct-notice" role="status">{notice}</div>}{busy&&<p role="status">正在處理，請稍候…</p>}
   <div className="ct-layout"><aside className="ct-sidebar" aria-label="樹清單"><h2>樹清單</h2>{trees.map(tree=><button key={tree.binaryTreeId} disabled={busy||preview!==null} aria-current={id===tree.binaryTreeId?'page':undefined} onClick={()=>navigate(base+'/'+tree.binaryTreeId)}><strong>{tree.treeCode}</strong><span>{tree.treeName}</span><small>{statusName(tree.status)}</small></button>)}{treeCursor&&<button disabled={busy} onClick={()=>void moreTrees()}>載入更多樹</button>}{canManage&&<button disabled={busy||preview!==null} onClick={()=>{navigate(base);setTreeName('');setTreeCode('')}}>＋ 新增樹</button>}</aside>
   <main className="ct-main">{!id&&<div className="ct-welcome"><h2>請選擇一棵樹</h2><p>點選左側樹編號，展開目前組織及待安置球。</p></div>}

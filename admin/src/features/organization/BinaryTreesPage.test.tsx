@@ -1,3 +1,4 @@
+vi.mock('./PlacementMonitor',()=>({PlacementMonitor:()=>null}));
 import React from 'react';
 import {MemoryRouter,Route,Routes} from 'react-router-dom';
 import {act,create,type ReactTestRenderer} from 'react-test-renderer';

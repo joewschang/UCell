@@ -1,0 +1,14 @@
+import React from 'react';
+import {act,create,type ReactTestRenderer} from 'react-test-renderer';
+import {beforeEach,it,expect,vi} from 'vitest';
+import PlacementWorkbench from '../src/PlacementWorkbench';
+import {getPendingPlacements,getPlacementBranch,placePendingQualification} from '../src/memberData';
+import {MemberApiError} from '../src/api';
+vi.mock('../src/memberData',()=>({getPendingPlacements:vi.fn(),getPlacementBranch:vi.fn(),placePendingQualification:vi.fn()}));
+const row={pendingBallNo:'A000002',placementReference:'P2',pendingMemberNo:'2610000011',sponsorBallNo:'A000001',packageType:'STARTER',status:'PLACEMENT_PENDING'};
+beforeEach(()=>{vi.resetAllMocks();vi.mocked(getPendingPlacements).mockResolvedValue([row] as any);vi.mocked(getPlacementBranch).mockResolvedValue({observedAt:new Date().toISOString(),ballNo:'A000002',sponsorBallNo:'A000001',sequence:1,blocked:null,breadcrumbs:[{ballNo:'A000001'}],nodes:[{ballNo:'A000001',position:'8',slots:[{side:'LEFT',reason:null},{side:'RIGHT',reason:'BINARY_LEFT_SUBTREE_REQUIRED'}]}]})});
+const button=(v:ReactTestRenderer,s:string)=>v.root.findAllByType('button').find(b=>b.children.join('')===s)!;
+async function open(){let v!:ReactTestRenderer;await act(async()=>{v=create(<PlacementWorkbench/>)});await act(async()=>button(v,'選擇安置位置').props.onClick());return v}
+it('explains denied slots, requires confirmation and keeps completion receipt',async()=>{const v=await open();expect(button(v,'選擇右側').props.disabled).toBe(true);await act(async()=>button(v,'選擇左側').props.onClick());expect(placePendingQualification).not.toHaveBeenCalled();vi.mocked(placePendingQualification).mockResolvedValue({ballNo:'A000002',placedAt:new Date().toISOString()});await act(async()=>button(v,'確認並完成安置').props.onClick());expect(JSON.stringify(v.toJSON())).toContain('安置完成：A000002');act(()=>v.unmount())});
+it('retains identical command after uncertain network outcome',async()=>{const v=await open();await act(async()=>button(v,'選擇左側').props.onClick());vi.mocked(placePendingQualification).mockRejectedValueOnce(new MemberApiError('offline',0)).mockResolvedValue({ballNo:'A000002',placedAt:new Date().toISOString()});await act(async()=>button(v,'確認並完成安置').props.onClick());expect(button(v,'返回選位置').props.disabled).toBe(true);await act(async()=>button(v,'安全重試').props.onClick());expect(vi.mocked(placePendingQualification).mock.calls[0]).toEqual(vi.mocked(placePendingQualification).mock.calls[1]);act(()=>v.unmount())});
+it('explains slot conflict and reloads branch rather than claiming success',async()=>{const v=await open();await act(async()=>button(v,'選擇左側').props.onClick());vi.mocked(placePendingQualification).mockRejectedValue(new MemberApiError('conflict',409,'BINARY_SLOT_OCCUPIED'));await act(async()=>button(v,'確認並完成安置').props.onClick());expect(JSON.stringify(v.toJSON())).toContain('這個位置已被使用');expect(getPlacementBranch).toHaveBeenCalledTimes(2);act(()=>v.unmount())});

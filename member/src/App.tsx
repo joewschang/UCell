@@ -103,6 +103,7 @@ function Organization({ q }: {
     return <div className="uc-organization">
         <MemberPageHeader title="我的組織" q={q}/>
         <p className="uc-page-intro">推薦組織與二元安置組織使用不同關係與資料範圍，請分開查看。</p>
+        <PlacementWorkbench/>
         <div className="tabs uc-segmented" role="tablist" aria-label="組織檢視" onKeyDown={moveTab}>
             <button type="button" id="org-sponsor-tab" role="tab" aria-selected={tab === 'sponsor'} aria-controls="org-sponsor-panel" tabIndex={tab === 'sponsor' ? 0 : -1} onClick={() => setTab('sponsor')}>推薦組織</button>
             <button type="button" id="org-binary-tab" role="tab" aria-selected={tab === 'binary'} aria-controls="org-binary-panel" tabIndex={tab === 'binary' ? 0 : -1} onClick={() => setTab('binary')}>二元組織</button>
@@ -112,7 +113,7 @@ function Organization({ q }: {
                 <section className="card uc-sponsor-card"><small>{uiText("UPLINE NODE")}</small><h3>我的推薦人</h3><div className="uc-person-node"><i aria-hidden="true"/><div><strong>{d.sponsor?.name || d.sponsor?.code || '目前沒有推薦人資料'}</strong>{d.sponsor && <span>球編號 {d.sponsor.code}</span>}</div></div></section>
                 <section className="card uc-referral-card"><div className="uc-card-heading"><div><small>{uiText("DIRECT NETWORK")}</small><h3>直推會員</h3></div><strong>{d.referrals.length}</strong></div><p className="uc-system-note">{uiText("本次 API 回傳 ")}{d.referrals.length} 位直推會員</p>{d.referrals.length ? <div className="uc-node-list">{d.referrals.map((r, index) => <div className="uc-person-node" key={r.code}><i aria-hidden="true"/><div><strong>{r.name || r.code}</strong><span>球編號 {r.code}</span></div><small>{String(index + 1).padStart(2, '0')}</small></div>)}</div> : <p>目前沒有直推會員</p>}</section>
             </div>
-            <ReferralShare q={q}/><PlacementWorkbench/>
+            <ReferralShare q={q}/>
         </>}</Result></section> : <section id="org-binary-panel" role="tabpanel" aria-labelledby="org-binary-tab"><Result state={binary}>{d => <>
             <div className="uc-network-note"><span aria-hidden="true"/><p>{uiText("左、右區屬二元安置組織，與推薦組織分別呈現。業績與 Carry 只有在權威結算資料可用時才會顯示。")}</p></div>
             <div className="uc-binary-summary">{[['左區', d.left], ['右區', d.right]].map(([label, side], index) => <section className="card uc-binary-card" data-side={index === 0 ? 'left' : 'right'} key={String(label)}><div className="uc-card-heading"><div><small>{index === 0 ? 'LEFT NETWORK' : 'RIGHT NETWORK'}</small><h3>{String(label)}</h3></div><span className="uc-node-pulse" aria-hidden="true"/></div><dl><div><dt>{String(label)}球數</dt><dd>{number((side as typeof d.left).count)}</dd></div><div><dt>{String(label)}業績</dt><dd>{uiValue(d.settlementMetrics.status === 'AVAILABLE' ? number((side as typeof d.left).volume) : availabilityText.readModelMissing)}</dd></div><div><dt>{uiText("Carry")}</dt><dd>{uiValue(d.settlementMetrics.status === 'AVAILABLE' ? number((side as typeof d.left).carry) : availabilityText.readModelMissing)}</dd></div></dl></section>)}</div>
