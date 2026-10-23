@@ -1,0 +1,4 @@
+import {expect,it} from 'vitest';
+import {parseEventQr,checkInError} from './checkIn';
+it('accepts a private activity code and rejects another event before submission',()=>{const token='a'.repeat(43);expect(parseEventQr('ucell:event:EVENT_1:'+token,'EVENT_1')).toBe(token);expect(parseEventQr(token,'EVENT_1')).toBe(token);expect(()=>parseEventQr('ucell:event:EVENT_2:'+token,'EVENT_1')).toThrow('其他活動');for(const value of ['https://example.com','ucell:event:EVENT_1:short','javascript:alert(1)'])expect(()=>parseEventQr(value,'EVENT_1')).toThrow('不是活動報到');});
+it('maps expected domain failures to actionable local messages',()=>{expect(checkInError({body:{message:'EVENT_CAPACITY_FULL'}})).toContain('名額已滿');expect(checkInError({body:{message:'EVENT_CHECKIN_OUTSIDE_WINDOW'}})).toContain('報到期間');expect(checkInError({body:{message:'sensitive unexpected detail'}})).not.toContain('sensitive');});

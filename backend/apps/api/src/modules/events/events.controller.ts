@@ -1,7 +1,7 @@
 import {randomUUID} from 'node:crypto';
-import {Body,Controller,Get,Headers,Header,Param,Post,Req,UseGuards,StreamableFile} from '@nestjs/common';
+import {Body,Controller,Get,Headers,Header,Param,Post,Req,UseGuards,StreamableFile,Query} from '@nestjs/common';
 import {ApiBearerAuth,ApiHeader,ApiOperation,ApiProperty,ApiPropertyOptional,ApiTags} from '@nestjs/swagger';
-import {IsDateString,IsIn,IsInt,IsObject,IsOptional,IsString,Length,Matches,Max,MaxLength,Min} from 'class-validator';
+import {IsDateString,IsIn,IsInt,IsObject,IsOptional,IsString,IsBoolean,Length,Matches,Max,MaxLength,Min} from 'class-validator';
 import {EventMedia} from './event-media';
 import {Roles} from '../auth/roles.decorator';
 import {MemberAuthenticationGuard} from '../auth/member-authentication.guard';
@@ -22,12 +22,17 @@ class PublishDto{@ApiProperty() @IsString() @Length(1,200) approvalReference!:st
 class EventEditDto{@IsInt() @Min(1) baseVersion!:number;@Matches(/^[a-f0-9]{64}$/) baseHash!:string;@IsString() @Length(1,160) title!:string;@IsOptional() @IsString() @MaxLength(4000) description?:string;@IsObject() media!:EventMedia;}
 class EventImageDto{@IsIn(['image/jpeg','image/png','image/webp']) mimeType!:string;@IsString() @MaxLength(699052) contentBase64!:string;}
 class ArchiveDto{@ApiProperty() @IsString() @Length(1,500) reason!:string;}
-class CheckInDto{@ApiProperty() @Matches(/^[A-Za-z0-9_-]{43}$/) checkInToken!:string;}
+class CheckInDto{@ApiProperty() @Matches(/^[A-Za-z0-9_-]{43}$/) checkInToken!:string;@IsOptional() @Matches(/^[A-Z][A-Z0-9_-]{2,39}$/) eventCode?:string;}
+class MemberCheckInDto{@Matches(/^\d{10}$/) memberNo!:string;@IsBoolean() addMissing!:boolean;@IsOptional() @IsString() @MaxLength(500) reason?:string;}
 class EventReminderDto{ @ApiProperty({pattern:'^[0-9]{10}$'}) @Matches(/^\d{10}$/) memberNo!:string; @ApiProperty({maxLength:500}) @IsString() @Length(1,500) reason!:string; }
 class AttendanceDto{@ApiProperty() @Matches(/^\d{10}$/) memberNo!:string;}
 @ApiTags('Admin - Events') @ApiBearerAuth('adminBearer') @Roles('SUPER_ADMIN','MEMBERSHIP_OPS','ORDER_OPS') @Controller('admin/events')
 export class AdminEventsController{
  constructor(private s:MemberEventsService){}
+ @Get(':eventCode/check-in-member')
+ candidate(@Param('eventCode') eventCode:string,@Query('memberNo') memberNo:string){return this.s.checkInCandidate(eventCode,memberNo);}
+ @Post(':eventCode/check-in-member') @UseGuards(IdempotencyGuard)
+ memberCheckIn(@Param('eventCode') eventCode:string,@Body() body:MemberCheckInDto,@Headers('idempotency-key') key:string,@Req() req:any){return this.s.checkInMember(eventCode,body.memberNo,body.addMissing,body.reason,req.user?.personId??req.user?.subject,key,req.requestId??randomUUID());}
  @Post('images') @UseGuards(IdempotencyGuard)
  upload(@Body() body:EventImageDto,@Headers('idempotency-key') key:string,@Req() req:any){return this.s.uploadImage(body.mimeType,body.contentBase64,req.user?.personId??req.user?.subject,key,req.requestId??randomUUID());}
  @Get('images/:id') @Header('Cache-Control','no-store')
@@ -45,7 +50,7 @@ export class AdminEventsController{
  @Post(':eventCode/archive') @UseGuards(IdempotencyGuard) @ApiHeader({name:'Idempotency-Key',required:true})
  archive(@Param('eventCode') eventCode:string,@Body() body:ArchiveDto,@Headers('idempotency-key') key:string,@Req() req:any){return this.s.archive(eventCode,body?.reason,req.user?.personId??req.user?.subject,key,req.requestId??randomUUID()).then(data=>({data}));}
  @Post('check-in') @UseGuards(IdempotencyGuard) @ApiHeader({name:'Idempotency-Key',required:true})
- checkIn(@Body() body:CheckInDto,@Headers('idempotency-key') key:string,@Req() req:any){return this.s.checkIn(body?.checkInToken,req.user?.personId??req.user?.subject,key,req.requestId??randomUUID()).then(data=>({data}));}
+ checkIn(@Body() body:CheckInDto,@Headers('idempotency-key') key:string,@Req() req:any){return this.s.checkIn(body?.checkInToken,req.user?.personId??req.user?.subject,key,req.requestId??randomUUID(),body.eventCode).then(data=>({data}));}
  @Post(':eventCode/attend') @UseGuards(IdempotencyGuard) @ApiHeader({name:'Idempotency-Key',required:true})
  attend(@Param('eventCode') eventCode:string,@Body() body:AttendanceDto,@Headers('idempotency-key') key:string,@Req() req:any){return this.s.attend(eventCode,body.memberNo,req.user?.personId??req.user?.subject,key,req.requestId??randomUUID()).then(data=>({data}));}
 }
