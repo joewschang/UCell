@@ -68,21 +68,21 @@ it.each([false,true])('routes person retail history without qualification (%s)',
   if(input.includes('represented-legal-entities'))return response([]);
    if(input.includes('/member/qualifications'))return response(hasQualification?[q]:[]);
   if(input.includes('/member/me'))return response(person);
-  if(input.includes('/member/retail-orders'))return response([{orderNo:'202610010001',status:'CONFIRMED',total:'10000000000000.0001',createdAt:'2026-10-01T00:00:00Z',confirmedAt:null,itemCount:1,itemNames:['本人零售商品']}]);
+  if(input.includes('/member/my-orders'))return response([{orderNo:'202610010001',status:'CONFIRMED',total:'10000000000000.0001',createdAt:'2026-10-01T00:00:00Z',purpose:'RETAIL',paymentStatus:'PENDING',paidAt:null,fulfillments:[],items:[{name:'本人零售商品',quantity:'1',amount:'10000000000000.0001'}]}]);
   if(input.includes('/member/orders?'))return response({qualificationId:q.id,orders:[]});
   throw Error('unexpected request '+input);
  });
  vi.stubGlobal('fetch',fetch);await mount('/orders');
- const rendered=JSON.stringify(tree!.toJSON());expect(rendered).toContain('我的零售訂單');expect(rendered).toContain('202610010001');expect(rendered).toContain('10000000000000.0001');expect(rendered).toContain('已建立');expect(tree!.root.findAllByProps({className:'uc-order-status'}).map(cell=>cell.children.join(''))).not.toContain('CONFIRMED');expect(rendered).not.toContain('尚未取得會員資格');
- const reads=fetch.mock.calls.filter(([url])=>url.includes('/member/retail-orders'));expect(reads).toHaveLength(1);expect(reads[0][0]).not.toContain('qualificationId');
+ const rendered=JSON.stringify(tree!.toJSON());expect(rendered).toContain('我的訂單');expect(rendered).toContain('202610010001');expect(rendered).toContain('10000000000000.0001');expect(rendered).toContain('已建立');expect(tree!.root.findAllByProps({className:'uc-order-status'}).map(cell=>cell.children.join(''))).not.toContain('CONFIRMED');expect(rendered).not.toContain('尚未取得會員資格');
+ const reads=fetch.mock.calls.filter(([url])=>url.includes('/member/my-orders'));expect(reads).toHaveLength(1);expect(reads[0][0]).not.toContain('qualificationId');
 });
 it('retail history retries failure and renders an empty state',async()=>{
  let failed=true;vi.stubGlobal('fetch',vi.fn(async(input:string)=>{
   if(input.includes('represented-legal-entities'))return response([]);
    if(input.includes('/member/qualifications'))return response([]);
   if(input.includes('/member/me'))return response(person);
-  if(input.includes('/member/retail-orders'))return failed?new Response(JSON.stringify({error:{message:'unavailable'}}),{status:503}):response([]);
+  if(input.includes('/member/my-orders'))return failed?new Response(JSON.stringify({error:{message:'unavailable'}}),{status:503}):response([]);
   throw Error('unexpected request '+input);
- }));await mount('/orders');expect(JSON.stringify(tree!.toJSON())).not.toContain('尚無零售訂單');failed=false;
- const refresh=tree!.root.findAllByType('button').find(button=>button.children.join('')==='重新整理零售訂單');expect(refresh).toBeDefined();await act(async()=>refresh!.props.onClick());expect(JSON.stringify(tree!.toJSON())).toContain('尚無零售訂單');
+ }));await mount('/orders');expect(JSON.stringify(tree!.toJSON())).not.toContain('尚無訂單');failed=false;
+ const refresh=tree!.root.findAllByType('button').find(button=>button.children.join('')==='重新整理訂單狀態');expect(refresh).toBeDefined();await act(async()=>refresh!.props.onClick());expect(JSON.stringify(tree!.toJSON())).toContain('尚無訂單');
 });

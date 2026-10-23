@@ -1,6 +1,7 @@
 import { Prisma } from '@ucell/database';
 import { ServiceUnavailableException } from '@nestjs/common';
 import { Facts, ActivityFact } from './analytics.policy';
+import {captureProspectFacts} from './analytics.prospects';
 
 const LIMIT=25_000, EVENT_LIMIT=100_000;
 function bounded<T>(rows:T[],limit:number,name:string):T[]{
@@ -33,10 +34,11 @@ export async function captureAnalyticsFacts(tx:Prisma.TransactionClient,at:Date)
   };
   for(const o of paid)if(o.qualificationId)push(`ORDER_PAID:${o.orderId}`,o.qualificationId,o.paidAt!,o.purpose==='REPURCHASE');
   for(const r of recognized)push(`REPURCHASE_RECOGNIZED:${r.recognitionId}`,r.subscription.qualificationId,r.recognizedAt!,true);
-  return {persons:persons.map(p=>({id:p.personId,joinedAt:p.createdAt.toISOString(),closed:p.status==='CLOSED',registered:p.membershipState!==null})),
+  const prospectPersons=await captureProspectFacts(tx,persons,at);
+  return {persons:prospectPersons,
     qualifications:qs.flatMap(q=>q.currentHolderPersonId===null||q.currentHolderLegalEntityId!==null?[]:[{id:q.qualificationId,personId:q.currentHolderPersonId,createdAt:q.createdAt.toISOString(),system:systemIds.has(q.qualificationId),active:q.status==='EFFECTIVE'&&activeIds.has(q.qualificationId)}]),
     activities:activities.sort((a,b)=>a.id.localeCompare(b.id)),
     sponsor:sponsor.map(e=>({parent:e.sponsorQualificationId,child:e.childQualificationId})),
     binary:binary.map(e=>({parent:e.parentQualificationId,child:e.childQualificationId,side:e.side})),
-    issues:['REGISTRATION_DATE_USES_PERSON_CREATED_AT','SYSTEM_SCOPE_USES_EXPLICIT_POOL','ENGAGEMENT_EVENTS_NOT_CONNECTED','VOLUME_REQUIRES_SEPARATE_ROOT_PROJECTION','LEGAL_ENTITY_ANALYTICS_REQUIRES_PARTY_PROJECTION']};
+    issues:['FORMAL_APPROVAL_STARTS_N','ANONYMOUS_VISITORS_ARE_BROWSER_IDENTITIES','SYSTEM_SCOPE_USES_EXPLICIT_POOL','ENGAGEMENT_EVENTS_NOT_CONNECTED','VOLUME_REQUIRES_SEPARATE_ROOT_PROJECTION','LEGAL_ENTITY_ANALYTICS_REQUIRES_PARTY_PROJECTION',...(prospectPersons.some(p=>p.excludeFromLifecycle)?['FORMAL_APPROVAL_DATE_MISSING']:[])]};
 }

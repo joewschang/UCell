@@ -8,10 +8,10 @@ const now=new Date('2026-10-20T00:00:00Z'),id='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaa
 function harness(){
  const version={contentVersionId:'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',title:'Published',summary:'Summary',externalUrl:'https://example.com/video',thumbnailUrl:null,audiencePolicy:'PUBLIC',shareable:true,approvedAt:now,publishTo:null};
  const content={contentId:id,contentType:'VIDEO_EXTERNAL',versions:[version]};
- const links=new Map<string,any>();
+ const links=new Map<string,any>(),shorts=new Map<string,string>();
  const db:any={publishedContent:{findFirst:jest.fn(async()=>content),findMany:jest.fn(async()=>[content])},person:{findUnique:jest.fn(async()=>({membershipState:'NETWORK_MEMBER'}))},
  referralLink:{create:jest.fn(async({data}:any)=>{const row={referralLinkId:id,status:'ACTIVE',...data};links.set(data.tokenHash,row);return row}),findUnique:jest.fn(async({where}:any)=>links.get(where.tokenHash)),updateMany:jest.fn(async()=>({count:1}))},
- $executeRaw:jest.fn(),$queryRaw:jest.fn(async()=>[])};
+ $executeRaw:jest.fn(async(sql:any,...args:any[])=>{if(sql.join('').includes('referral_short_link'))shorts.set(args[0],args[2]);return 1;}),$queryRaw:jest.fn(async(sql:any,...args:any[])=>shorts.has(args[0])?[{encrypted_token:shorts.get(args[0])}]:[])};
  db.$transaction=(work:any)=>work(db);
  const access={assertHolder:jest.fn(async()=>({ownerType:'PERSON'}))},service=new MemberShareLinkService(access as any,db);
  return {version,content,db,access,service,links};
@@ -19,8 +19,10 @@ function harness(){
 beforeAll(()=>{process.env.MEMBER_SHARE_TOKEN_SECRET='TEST_ONLY_CONTENT_SHARING_32_CHAR_SECRET';process.env.MEMBER_REFERRAL_BASE_URL='https://member.test.invalid';process.env.MEMBER_SHARE_TOKEN_TTL_SECONDS='86400';});
 it('binds the content/version inside the encrypted token and atomically saves metadata',async()=>{
  const h=harness(),result=await h.service.create('person','ball',now,id),token=new URL(result.shareUrl).pathname.split('/').pop()!;
- expect(h.service.verify(token,now)).toMatchObject({contentId:id,contentVersionId:h.version.contentVersionId,qualificationId:'ball'});
- expect(result.shareUrl).not.toContain(id);expect(h.db.$executeRaw).toHaveBeenCalledTimes(1);
+ expect(token).toMatch(/^s_[A-Za-z0-9_-]{22}$/);
+ const legacy=await h.service.resolveToken(token);expect(h.service.verify(legacy,now)).toMatchObject({contentId:id,contentVersionId:h.version.contentVersionId,qualificationId:'ball'});
+ expect(await h.service.preview(legacy,now)).toMatchObject({content:{title:'Published'}});
+ expect(result.shareUrl).not.toContain(id);expect(h.db.$executeRaw).toHaveBeenCalledTimes(2);
  expect(await h.service.preview(token,now)).toMatchObject({content:{title:'Published'},requiresLogin:false,destination:'/content/'+id});
 });
 it.each(['NETWORK_MEMBER','PUBLIC'])('refuses sharing disabled %s content',async audiencePolicy=>{
@@ -38,8 +40,8 @@ it('rejects revoked, expired, tampered and archived links without creating attri
  const h=harness(),link=await h.service.create('person','ball',now,id),token=new URL(link.shareUrl).pathname.split('/').pop()!;
  await expect(h.service.preview(token,new Date(now.getTime()+86400001))).rejects.toThrow();
  await expect(h.service.preview((token[0]==='A'?'B':'A')+token.slice(1),now)).rejects.toThrow();
- h.links.get(h.service.hash(token)).status='REVOKED';await expect(h.service.preview(token,now)).rejects.toThrow();
- h.links.get(h.service.hash(token)).status='ACTIVE';h.db.publishedContent.findFirst.mockResolvedValue(null);await expect(h.service.preview(token,now)).rejects.toThrow();
+ const legacy=await h.service.resolveToken(token);h.links.get(h.service.hash(legacy)).status='REVOKED';await expect(h.service.preview(token,now)).rejects.toThrow();
+ h.links.get(h.service.hash(legacy)).status='ACTIVE';h.db.publishedContent.findFirst.mockResolvedValue(null);await expect(h.service.preview(token,now)).rejects.toThrow();
 });
 it('authorizes ownership before both creation and revocation',async()=>{
  const h=harness();h.access.assertHolder.mockRejectedValue(new ForbiddenException());

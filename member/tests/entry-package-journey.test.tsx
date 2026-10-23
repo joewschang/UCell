@@ -15,6 +15,7 @@ it.each([[3,'啟航',14400],[9,'菁英',43200],[15,'領袖',72000]])('selects ex
  const fetch=vi.fn(async(url:string,init:RequestInit={})=>{
   if(url.includes('/package-payments/')){paid=true;return envelope({status:'PAID'});}
   if(url.endsWith('/formal-enrollment'))return envelope({membershipState:paid?'FORMAL_PENDING':'NETWORK_MEMBER',stagePaymentEnabled:true,paidPackages:paid?[{orderId:'ORDER',packageName:offer.displayName}]:[],feeReceipt:null});
+  if(url.includes('/onboarding/sponsor/candidate'))return envelope({kind:'BALL',sponsorBallNo:'A000001',planLevelCode:'STARTER',effectiveAt:'2026-01-01T00:00:00Z',ruleVersion:'R1.0B'});
   if(url.endsWith('/package-quote'))return envelope({packageVersionId:offer.packageVersionId,originalAmount:offer.priceAmount,goodsAmount:offer.priceAmount,discountAmount:'0',qualificationFee:offer.packageClass==='QUALIFICATION'?'600':'0',total:String(Number(offer.priceAmount)+(offer.packageClass==='QUALIFICATION'?600:0)),selectableProductQuantity:offer.selectableProductQuantity,couponCode:null,quoteHash:'a'.repeat(64)});
   if(url.includes('legal-entities'))return envelope([]);
   if(url.endsWith('/delivery-profile'))return envelope({recipientName:'TEST',phone:'0900000000',countryCode:'TW',postalCode:'100',region:'TEST',city:'TEST',address:'TEST ONLY ROAD',complete:true,updatedAt:null});
@@ -29,6 +30,7 @@ it.each([[3,'啟航',14400],[9,'菁英',43200],[15,'領袖',72000]])('selects ex
  expect(checkout().props.disabled).toBe(true);
  for(let i=0;i<count;i++)act(()=>tree.root.findAllByType('button').filter(b=>b.children.includes('增加'))[i%5].props.onClick());
  expect(tree.root.findAllByType('button').filter(b=>b.children.includes('增加')).every(b=>b.props.disabled)).toBe(true);
+ await act(async()=>tree.root.findByProps({'aria-label':'推薦會員資格編號（球號，必填）'}).props.onChange({target:{value:'A000001'}}));
  expect(checkout().props.disabled).toBe(false);
  await act(async()=>checkout().props.onClick());
  await act(async()=>tree.root.findAllByType('button').find(b=>b.children.includes('建立訂單並執行測試付款'))!.props.onClick());

@@ -4,9 +4,9 @@ import {treeHash} from '../organization/tree-placement';
 const LIMIT=2000;
 const unavailable=(reason:string)=>({status:'UNAVAILABLE' as const,reason,value:null,unit:'GPV_POINT',basisVersion:'TREE_GPV_SOURCE_V1'});
 /** Report stored GPV once per source; never run entitlement or settlement calculators. */
-export async function readFoundingPerformance(tx:Prisma.TransactionClient,treeId:string,root:string,time:AsOfContext,includeSourceFacts=false){
+export async function readFoundingPerformance(tx:Prisma.TransactionClient,treeId:string,root:string,time:AsOfContext,includeSourceFacts=false,sourceIds?:Array<{event_id:string;first_side:string}>){
  const known=new Date(time.knowledgeCutoff),at=new Date(time.asOf);
- const ids=await tx.$queryRaw<Array<{event_id:string;first_side:string}>>`
+ const ids=sourceIds??await tx.$queryRaw<Array<{event_id:string;first_side:string}>>`
   SELECT e.event_id,a.first_side FROM ledger.pv_ledger e
   JOIN organization.binary_tree_ancestry a ON a.descendant_qualification_id=e.qualification_id AND a.binary_tree_id=${treeId}::uuid AND a.ancestor_qualification_id=${root}::uuid
   WHERE a.depth>0 AND a.effective_from<=e.occurred_at AND a.recorded_at<=${known}

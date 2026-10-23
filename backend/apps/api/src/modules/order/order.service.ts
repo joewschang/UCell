@@ -1,3 +1,5 @@
+import {resolveCheckoutSnapshot,type CheckoutInput} from './checkout-snapshot';
+import {allocateCreatedBall} from '../qualification/allocate-created-ball';
 import {ENTRY_POLICY} from '../coupon/entry-pricing';
 import { ConflictException, Injectable, UnprocessableEntityException } from '@nestjs/common';
 import { Prisma, PrismaService } from '@ucell/database';
@@ -15,7 +17,7 @@ import { RetailReferrerAttributionService } from './retail-referrer-attribution.
 import { CommercialOfferingService, CommercialOfferingSnapshot } from './commercial-offering.service';
 import {resolvePackageParameters} from './package-parameters';
 
-type MemberOrderInput=Partial<CreateOrderDto>&{packageVersionId?:string;couponCode?:string;quoteHash?:string;targetQualificationId?:string;legalEntityId?:string;sponsorCode?:string;retailReferralCode?:string;selections?:Array<{productRuleProfileId:string;quantity:number}>};
+type MemberOrderInput=Partial<CreateOrderDto>&{checkout?:CheckoutInput;packageVersionId?:string;couponCode?:string;quoteHash?:string;targetQualificationId?:string;legalEntityId?:string;sponsorCode?:string;retailReferralCode?:string;selections?:Array<{productRuleProfileId:string;quantity:number}>};
 
 @Injectable()
 export class OrderService {
@@ -36,6 +38,15 @@ export class OrderService {
     return (this.commercialOfferings ?? new CommercialOfferingService()).resolveEffective(tx, { offeringCode, channel, at });
   }
 
+  private async lineOffering(tx:Prisma.TransactionClient,item:{commercialOfferingCode?:string;quantity:string},product:{sku:string},fallback:CommercialOfferingSnapshot|undefined,channel:string,now:Date){
+    if(!item.commercialOfferingCode)return fallback;
+    const value=await this.resolveOfferingSnapshot(tx,item.commercialOfferingCode,channel,now);
+    const composition=value?.composition as Array<{sku:string;quantity:number}>|undefined;
+    const rule=value?.selectionRule as {eligibleSkus?:string[];requiredTotalQuantity?:number}|undefined;
+    const single=composition?.length===1&&composition[0].quantity===1&&composition[0].sku===product.sku||!composition?.length&&rule?.eligibleSkus?.length===1&&rule.requiredTotalQuantity===1&&rule.eligibleSkus[0]===product.sku;
+    if(!value||value.offeringType!=='CORE_PRODUCT'||!single)throw new UnprocessableEntityException({code:'CHECKOUT_PRODUCT_CHANGED',message:'商品方案已變更，請重新整理商城後再結帳。'});
+    return value;
+  }
   private assertOfferingPurpose(offering: CommercialOfferingSnapshot | undefined, purpose: string) {
     if (!offering) return;
     const allowed: Record<string, string[]> = {
@@ -77,7 +88,7 @@ export class OrderService {
     if(!dto.items?.length||dto.selections?.length)throw new UnprocessableEntityException({code:'INVALID_ORDER_SHAPE'});
     if(!dto.qualificationId)return this.createWebRetailMember(dto,key,requestId,personId);
     await new QualificationAccessService(this.prisma).assertHolder(personId,dto.qualificationId);
-    try{return await this.create({qualificationId:dto.qualificationId,items:dto.items,purpose:'RETAIL',sourceReferralToken:dto.sourceReferralToken,clientReference:dto.clientReference,commercialOfferingCode:dto.commercialOfferingCode,linePurpose:dto.linePurpose},key,requestId,personId,true);}
+    try{return await this.create({qualificationId:dto.qualificationId,items:dto.items,checkout:dto.checkout,purpose:'RETAIL',sourceReferralToken:dto.sourceReferralToken,clientReference:dto.clientReference,commercialOfferingCode:dto.commercialOfferingCode,linePurpose:dto.linePurpose},key,requestId,personId,true);}
     catch(error){if(['P2002','P2034'].includes((error as any).code))throw new ConflictException({code:'RETRYABLE_CONFLICT',message:'Concurrent operation; retry the identical request with the same Idempotency-Key.'});throw error;}
   }
 
@@ -102,11 +113,13 @@ export class OrderService {
         const profiles=await tx.productRuleProfile.findMany({where:{productId:product.productId,effectiveFrom:{lte:now},OR:[{effectiveTo:null},{effectiveTo:{gt:now}}]},orderBy:{effectiveFrom:'desc'}});
         if(profiles.length!==1)throw new UnprocessableEntityException({code:'RULE_PROFILE_CONFIGURATION_PENDING'});
         const profile=profiles[0];
+        const lineOffering=await this.lineOffering(tx,item,product,offering,'WEB_MEMBER',now);
         const quantity=new Prisma.Decimal(item.quantity);
         if(!quantity.isInteger()||quantity.lte(0)||quantity.gt(99)||product.currentPrice.lt(0))throw new UnprocessableEntityException({code:'INVALID_PRODUCT_QUANTITY_OR_PRICE'});
         const lineAmount=product.currentPrice.mul(quantity); gross=gross.add(lineAmount); ruleVersionCode=profile.ruleVersionCode; parameterSnapshotHash=profile.parameterSnapshotHash??parameterSnapshotHash;
-        lines.push({productId:product.productId,skuSnapshot:product.sku,productNameSnapshot:product.displayName,quantity,unitPrice:product.currentPrice,lineAmount,gpvRateSnapshot:new Prisma.Decimal(0),gpvAmountSnapshot:new Prisma.Decimal(0),pvRateSnapshot:new Prisma.Decimal(0),ruleProfileSnapshot:{profileId:profile.productRuleProfileId,ruleVersionCode:profile.ruleVersionCode,parameterSnapshotHash:profile.parameterSnapshotHash,pricingContext:'WEB_MEMBER_RETAIL_LIST_PRICE',retailReferral:{enabled:profile.retailReferralEnabled,calculationType:profile.retailReferralCalculationType,rate:profile.retailReferralRate?.toString()??null,baseType:profile.retailReferralBaseType}},commercialOfferingVersionId:offering?.commercialOfferingVersionId,commercialOfferingSnapshot:offering,linePurpose:dto.linePurpose});
+        lines.push({productId:product.productId,skuSnapshot:product.sku,productNameSnapshot:product.displayName,quantity,unitPrice:product.currentPrice,lineAmount,gpvRateSnapshot:new Prisma.Decimal(0),gpvAmountSnapshot:new Prisma.Decimal(0),pvRateSnapshot:new Prisma.Decimal(0),ruleProfileSnapshot:{profileId:profile.productRuleProfileId,ruleVersionCode:profile.ruleVersionCode,parameterSnapshotHash:profile.parameterSnapshotHash,pricingContext:'WEB_MEMBER_RETAIL_LIST_PRICE',retailReferral:{enabled:profile.retailReferralEnabled,calculationType:profile.retailReferralCalculationType,rate:profile.retailReferralRate?.toString()??null,baseType:profile.retailReferralBaseType}},commercialOfferingVersionId:lineOffering?.commercialOfferingVersionId,commercialOfferingSnapshot:lineOffering,linePurpose:dto.linePurpose});
       }
+      const checkout=await resolveCheckoutSnapshot(tx,personId,dto.checkout,gross);if(checkout)for(const line of lines)line.ruleProfileSnapshot={...line.ruleProfileSnapshot,checkout};
       const order=await tx.order.create({data:{purchaserPersonId:personId,purpose:'RETAIL',status:'CONFIRMED',grossAmount:gross,discountAmount:new Prisma.Decimal(0),netAmount:gross,ruleVersionCode,parameterSnapshotHash,clientReference:dto.clientReference,confirmedAt:now,lines:{create:lines}},include:{lines:true}});
       const attribution=await (this.retailAttributions??new RetailReferrerAttributionService(this.prisma,this.sponsors??new SponsorResolver(this.prisma))).resolveForRetailOrder(tx,{personId,candidateCode:dto.retailReferralCode,orderId:order.orderId,at:now,correlationId});
       const profileById=new Map<string,any>();
@@ -163,8 +176,10 @@ export class OrderService {
       let qualificationId=dto.targetQualificationId;
       let sponsorEvidence:Awaited<ReturnType<SponsorResolver['resolveWithin']>>|undefined;
       if(v.profile.packageClass==='QUALIFICATION'){
+        if(!paper&&!dto.sponsorCode?.trim())throw new UnprocessableEntityException({code:'QUALIFICATION_SPONSOR_REQUIRED'});
         if(dto.sponsorCode)sponsorEvidence=await (this.sponsors??new SponsorResolver(this.prisma)).resolveWithin(tx as any,{code:dto.sponsorCode,effectiveAt:now,ruleVersion:'R1.0B'});
         const qualification=await tx.qualification.create({data:{currentHolderPersonId:dto.legalEntityId?null:personId,currentHolderLegalEntityId:dto.legalEntityId??null,planLevelCode:v.profile.stableCode,status:'DRAFT',activeFlag:false}});qualificationId=qualification.qualificationId;
+        await allocateCreatedBall(tx,qualificationId,sponsorEvidence?.sponsorQualificationId);
         await tx.qualificationHolderHistory.create({data:{qualificationId,holderPersonId:dto.legalEntityId?null:personId,holderLegalEntityId:dto.legalEntityId??null,effectiveFrom:now,sourceType:'PACKAGE_CHECKOUT'}});
         await tx.qualificationOwnerInterval.create({data:{qualificationId,ownerType:dto.legalEntityId?'LEGAL_ENTITY':'MEMBER',personId:dto.legalEntityId?null:personId,legalEntityId:dto.legalEntityId??null,companyPrincipalId:null,effectiveFrom:now,sourceType:'PACKAGE_CHECKOUT',sourceId:qualificationId,evidenceHash:createHash('sha256').update(JSON.stringify({qualificationId,personId:dto.legalEntityId?null:personId,legalEntityId:dto.legalEntityId??null,packageVersionId:dto.packageVersionId,at:now.toISOString()})).digest('hex')}});
         await tx.qualificationStatusHistory.create({data:{qualificationId,status:'DRAFT',effectiveFrom:now,sourceType:'PACKAGE_CHECKOUT'}});
@@ -181,7 +196,7 @@ export class OrderService {
       return {...order,packagePurchaseSnapshotId:snapshot.packagePurchaseSnapshotId,packageClass:v.profile.packageClass};
     });}catch(error){if(['P2002','P2034'].includes((error as any).code))throw new ConflictException({code:'RETRYABLE_CONFLICT',message:'Concurrent operation; retry the identical request with the same Idempotency-Key.'});throw error;}
   }
-  async create(dto: CreateOrderDto, key: string, requestId: string, actorId?: string, member=false) {
+  async create(dto: CreateOrderDto & {checkout?:CheckoutInput}, key: string, requestId: string, actorId?: string, member=false) {
     const correlationId = randomUUID();
 
     return this.idempotency.execute(`${member?'member':'admin'}:order:create:${actorId ?? 'system'}`, key, dto, async (tx) => {
@@ -259,6 +274,7 @@ export class OrderService {
           });
         }
 
+        const lineOffering=await this.lineOffering(tx,item,product,offering,member?'WEB_MEMBER':'ADMIN',now);
         const quantity = new Prisma.Decimal(item.quantity);
         if(member&&(!quantity.isInteger()||quantity.lte(0)||quantity.gt(99)||product.currentPrice.lt(0)))throw new UnprocessableEntityException({code:'INVALID_PRODUCT_QUANTITY_OR_PRICE'});
         const lineAmount = product.currentPrice.mul(quantity);
@@ -287,12 +303,13 @@ export class OrderService {
             ruleVersionCode: profile.ruleVersionCode,
             parameterSnapshotHash: profile.parameterSnapshotHash,
           },
-          commercialOfferingVersionId: offering?.commercialOfferingVersionId,
-          commercialOfferingSnapshot: offering as Prisma.InputJsonValue | undefined,
+          commercialOfferingVersionId: lineOffering?.commercialOfferingVersionId,
+          commercialOfferingSnapshot: lineOffering as Prisma.InputJsonValue | undefined,
           linePurpose: dto.linePurpose,
         });
       }
 
+      if(member&&dto.checkout){const checkout=await resolveCheckoutSnapshot(tx,actorId!,dto.checkout,gross);for(const line of lines)line.ruleProfileSnapshot={...(line.ruleProfileSnapshot as object),checkout};}
       const sourceReferralTokenHash = dto.sourceReferralToken
         ? createHash('sha256').update(dto.sourceReferralToken).digest('hex')
         : undefined;

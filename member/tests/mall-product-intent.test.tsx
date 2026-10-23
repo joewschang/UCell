@@ -13,7 +13,7 @@ let tree:ReactTestRenderer;
 afterEach(()=>{act(()=>tree?.unmount());state.available=true;vi.clearAllMocks()});
 it('opens the requested product detail without creating an order',async()=>{
  await act(async()=>{tree=create(<MemoryRouter initialEntries={['/shop?sku=TIP-636']}><Mall onCreated={vi.fn()}/></MemoryRouter>)});
- expect(tree.root.findAllByProps({'aria-label':'已選商品細節'})).toHaveLength(1);
+ expect(JSON.stringify(tree.toJSON())).toContain('已為您標示分享連結中的商品');
  expect(JSON.stringify(tree.toJSON())).toContain('測試商品636');expect(state.createOrder).not.toHaveBeenCalled();
 });
 it('does not select an unavailable requested product',async()=>{

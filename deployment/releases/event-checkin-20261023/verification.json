@@ -1,0 +1,13 @@
+{
+  "release": "event-checkin-20261023",
+  "images": {
+    "api": "sha256:992d3a7a4b31b31d8ef012de3efe4a4702f4d14438d2060a390ef0a9d9029da1",
+    "admin": "sha256:5d57611803f231656dd569424932ea8b575e61e54538f36fae3de33fb2d91645",
+    "member": "sha256:76b86505f5a998391a48e93701af9f70546bc0909bb3e292714c5ea635f8cffc"
+  },
+  "production": {"api":"Healthy / Running / 100%", "admin":"Healthy / Running / 100%", "member":"Healthy / Running / 100%"},
+  "rollbackDatabaseChecks": {"qrAndDuplicate":true,"manualAndRosterDuplicate":true,"immutableEvidence":true,"rolledBack":true},
+  "browserChecks": {"registrationQr":true,"retrieveQr":true,"wrongEventRejected":true,"imageScan":true,"duplicate":true,"cameraDeniedFallback":true,"manual":true,"roster":true,"pageErrors":0,"realWrites":0},
+  "publicChecks": {"admin":{"http":200,"assetsVerified":2},"cameraPolicy":true,"member":{"http":200,"assetsVerified":2},"unauthenticatedAccessRejected":true},
+  "limitations": ["Physical camera hardware not exercised; browser QR-image decoding and permission-denied fallback verified.","Existing startsAt <= now < endsAt check-in window retained."]
+}

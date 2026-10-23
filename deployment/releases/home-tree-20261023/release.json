@@ -1,0 +1,21 @@
+{
+  "release":"home-tree-20261023",
+  "apiDigest":"sha256:0beffc1b3054c0fd55159e2b105cb2a189f032b1f09beb729a790a4154b054e6",
+  "adminDigest":"sha256:4c52cb7fb0c3bb1f05471753f0b7cd442f484b4bebcf1c16134b15d3ed2cff5f",
+  "memberDigest":"sha256:ed295fed91fe70db9413a47642306d2679e46b8ec8ede85ea120e099caa0e20d",
+  "changes":[
+    "Place AI assistant after home content and remove separate footer FAQ block; FAQ remains available through assistant links and public route",
+    "Hide membership invitation for formal members even when no effective qualification is selected",
+    "Clamp up to five seconds of browser clock lead to server time; preserve historical context and reject material future queries",
+    "Reuse returned normalized time for tree navigation and snapshot requests",
+    "Search organization roots by public ball number and display public ball numbers in nodes",
+    "Preserve company nodes through LEFT JOIN on optional personal holders; separate placement console link"
+  ],
+  "validation":{
+    "memberTests":332,"adminTests":275,"apiTests":4,
+    "bootstrap":"Existing A tree has seven company balls. Rollback-only create through existing seven-ball profile produced seven unique company ball numbers and passed all deferred database constraints; no test tree persisted.",
+    "production":"All three revisions Healthy/Running/100% traffic. Served web assets match builds. Authenticated service read accepts 700ms clock lead and returns A tree with seven company positions; binary tree returns seven numbered company nodes and sponsor tree four nodes.",
+    "builds":"API TypeScript and production member/admin builds passed"
+  },
+  "deployment":"Only time normalization and two organization read methods overlaid onto exact previous API image; bootstrap writes unchanged"
+}

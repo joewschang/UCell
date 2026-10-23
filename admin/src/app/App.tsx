@@ -1,3 +1,5 @@
+import {ProductContentPage} from '../features/products/ProductContentPage';
+import {MarketingPage} from '../features/marketing/MarketingPage';
 import {uiText} from "../../../shared/design-system/i18n";
 import {EconomicLineagePage} from '../features/economic-lineage/EconomicLineagePage';
 import {OrganizationGeoPage} from '../features/organization-geo/OrganizationGeoPage';
@@ -17,6 +19,8 @@ import {ProductsPage} from '../features/products/ProductsPage';
 import {CouponsPage} from '../features/coupons/CouponsPage';
 import {AiAssistantPage,AiKnowledgePage,AiAuditPage} from '../features/ai/AiPages';
 import {PackagesPage} from '../features/packages/PackagesPage';
+import {ProductReviewsPage} from '../features/orders/ProductReviewsPage';
+import {OrderTrackingPage} from '../features/orders/OrderTrackingPage';
 import {OrdersPage} from '../features/orders/OrdersPage';
 import {OrganizationPage} from '../features/organization/OrganizationPage';
 import {SubscriptionsPage} from '../features/subscriptions/SubscriptionsPage';
@@ -55,12 +59,15 @@ export function App(){return <Routes>
   <Route path="/applications/new" element={<RequirePageRole><NewApplicationWizard/></RequirePageRole>}/>
   <Route path="/applications/formal-paper" element={<RequirePageRole><PaperFormalApplicationPage/></RequirePageRole>}/>
   <Route path="/qualifications" element={<RequirePageRole><QualificationsPage/></RequirePageRole>}/>
+  <Route path="/product-content" element={<RequirePageRole><ProductContentPage/></RequirePageRole>}/>
   <Route path="/products" element={<RequirePageRole><ProductsPage/></RequirePageRole>}/>
   <Route path="/coupons" element={<RequirePageRole><CouponsPage/></RequirePageRole>}/>
   <Route path="/ai-assistant" element={<RequirePageRole><AiAssistantPage/></RequirePageRole>}/>
   <Route path="/ai-knowledge" element={<RequirePageRole><AiKnowledgePage/></RequirePageRole>}/>
   <Route path="/ai-governance" element={<RequirePageRole><AiAuditPage/></RequirePageRole>}/>
   <Route path="/packages" element={<RequirePageRole><PackagesPage/></RequirePageRole>}/>
+  <Route path="/product-reviews" element={<RequirePageRole><ProductReviewsPage/></RequirePageRole>}/>
+  <Route path="/order-tracking" element={<RequirePageRole><OrderTrackingPage/></RequirePageRole>}/>
   <Route path="/orders" element={<RequirePageRole><OrdersPage/></RequirePageRole>}/>
   <Route path="/economic-lineage" element={<RequirePageRole><EconomicLineagePage/></RequirePageRole>}/>
   <Route path="/fulfillment" element={<RequirePageRole><FulfillmentPage/></RequirePageRole>}/>
@@ -83,6 +90,7 @@ export function App(){return <Routes>
   <Route path="/documents" element={<RequirePageRole><DocumentsPage/></RequirePageRole>}/>
   <Route path="/audit" element={<RequirePageRole><AuditPage/></RequirePageRole>}/>
   <Route path="/reports" element={<RequirePageRole><ReportsPage/></RequirePageRole>}/>
+  <Route path="/marketing" element={<RequirePageRole><MarketingPage/></RequirePageRole>}/>
   <Route path="/analytics" element={<RequirePageRole><AnalyticsPage/></RequirePageRole>}/>
   <Route path="/uat" element={<RequirePageRole><UatPage/></RequirePageRole>}/>
   <Route path="/system" element={<RequirePageRole><SystemPage/></RequirePageRole>}/>

@@ -32,14 +32,23 @@ export class MemberShareLinkService {
   const cipher=createCipheriv('aes-256-gcm',key,iv),encrypted=Buffer.concat([cipher.update(JSON.stringify(payload),'utf8'),cipher.final()]),tag=cipher.getAuthTag();
   const token=Buffer.concat([iv,tag,encrypted]).toString('base64url');
   const data={tokenHash:this.hash(token),referrerQualificationId:qualificationId,policyVersion:'NR-DEC-003-V1',createdAt:now,expiresAt};
-  if(content||resource)await this.db.$transaction(async tx=>{
+  const shortCode='s_'+randomBytes(16).toString('base64url');
+  await this.db.$transaction(async tx=>{
    const link=await tx.referralLink.create({data});
+
    if(content)await tx.$executeRaw`INSERT INTO integration.content_share_link (referral_link_id,content_id,content_version_id) VALUES (${link.referralLinkId}::uuid,${content.id}::uuid,${content.versionId}::uuid)`;
   if(resource)await tx.$executeRaw`INSERT INTO integration.resource_share_link (referral_link_id,target_type,target_reference) VALUES (${link.referralLinkId}::uuid,${resource.kind},${resource.reference})`;
-  });else await this.db.referralLink.create({data});
-  return {qualificationId,shareUrl:new URL(`/r/${token}`,url).toString(),expiresAt:expiresAt.toISOString()};
+  await tx.$executeRaw`INSERT INTO integration.referral_short_link(short_code,referral_link_id,encrypted_token) VALUES (${shortCode},${link.referralLinkId}::uuid,${token})`;
+  });
+  return {qualificationId,shareUrl:new URL(`/r/${shortCode}`,url).toString(),expiresAt:expiresAt.toISOString()};
+ }
+ async resolveToken(token:string){
+  if(!token.startsWith('s_')||token.length!==24)return token;
+  const rows=await this.db.$queryRaw<Array<{encrypted_token:string}>>`SELECT encrypted_token FROM integration.referral_short_link WHERE short_code=${token}`;
+  if(!rows[0])throw new NotFoundException({code:'SHARE_LINK_UNAVAILABLE'});return rows[0].encrypted_token;
  }
  async preview(token:string,now=new Date()){
+  token=await this.resolveToken(token);
   const payload=this.verify(token,now),link=await this.db.referralLink.findUnique({where:{tokenHash:this.hash(token)}});
   if(!link||link.status!=='ACTIVE'||link.expiresAt<=now||link.referrerQualificationId!==payload.qualificationId)throw new NotFoundException({code:'SHARE_LINK_UNAVAILABLE'});
   if(payload.productSku||payload.eventCode){const resource=await currentShareTarget(this.db,payload,now);if(!resource)throw new NotFoundException({code:'SHARE_TARGET_UNAVAILABLE'});return {content:null,resource,requiresLogin:false,expiresAt:link.expiresAt.toISOString(),destination:resource.destination};}

@@ -36,7 +36,7 @@ export function cohortRetention(observations:CohortObservation[],range:ReturnTyp
   const rows=[];
   for(let month=range.fromDate.slice(0,7);month<=lastMonth;month=addMonths(month,1)){
     const baseline=month<currentMonth?monthly.get(month):undefined;
-    const ids=baseline?Object.keys(baseline.states).filter(id=>baseline.states[id].joinedMonth===month):[];
+    const ids=baseline?Object.keys(baseline.states).filter(id=>baseline.states[id].joinedMonth===month&&baseline.states[id].state!=='P'):[];
     const activeIds=ids.filter(id=>baseline!.states[id].state==='A');
     const cells=Array.from({length:13},(_,age)=>{
       const observationMonth=addMonths(month,age),observation=monthly.get(observationMonth);

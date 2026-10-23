@@ -1,0 +1,48 @@
+{
+  "release": "formal-review-20261022",
+  "date": "2026-10-22",
+  "scope": [
+    "Admin full pending application data editing with encrypted versioned snapshots and audit reason",
+    "Remove scan gating for document viewing and review; preserve format, integrity, authorization and availability checks"
+  ],
+  "deployment": {
+    "api": "sha256:2923addd5c6ee5c4c39defa5540b1fa1844299538cd5d9573c68327ec0c5f364",
+    "admin": "sha256:62bd0815bf7776f89ee2beb8a27cdc9dbcbd9e02490c3e8679d55a77a912cfa1",
+    "member": "sha256:58c84ff9320ed4c87d17266e01ff5673b6eadf5a6a476fb7ef77616a747865e4",
+    "revisionSuffix": "formal-review-20261022",
+    "health": "All three Healthy / Running / traffic 100%"
+  },
+  "validation": {
+    "backendTargeted": 22,
+    "admin": 250,
+    "member": 320,
+    "builds": [
+      "API",
+      "admin",
+      "member"
+    ],
+    "mobile": {
+      "viewportWidth": 390,
+      "validForm": true,
+      "horizontalOverflow": false
+    },
+    "live": {
+      "admin": {
+        "asset": "/assets/index-Ct13OLTp.js",
+        "match": true,
+        "sha256": "f0e6e9a817917c92bf549396f83c0f508ec98546f96fbb0a4e509ac5c23f9042"
+      },
+      "member": {
+        "asset": "/assets/index-BH8ykNkG.js",
+        "match": true,
+        "sha256": "db8a6fdd4ff8f6467d97b1dd3d64072a21de0c996e3cdc075a12f12293fb9b7d"
+      },
+      "protectedUpdateStatus": 401
+    }
+  },
+  "limitations": [
+    "Approved/rejected application snapshots remain immutable",
+    "No real member application changed as a deployment test"
+  ],
+  "runtimePreservation": "Selective four-file overlay of exact current API image; existing production signing, sponsor, payment and paper-scan routes retained"
+}

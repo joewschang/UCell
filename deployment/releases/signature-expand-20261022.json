@@ -1,0 +1,23 @@
+{
+  "release": "signature-expand-20261022",
+  "image": "ucellprodacrm3z2zx4ohqyui.azurecr.io/ucell-member@sha256:22b3c2796c2b95601eb83efb88c86d46dcaf1ba373093be69840be5d24b8ffb0",
+  "base": "sha256:fc97863271c6dbb392c840bba852222488be794516970b446a99d5c4e3d7b977",
+  "behavior": [
+    "Expand icon opens native modal with full-screen request and optional landscape lock",
+    "Portrait guidance when orientation lock is unavailable",
+    "Done transfers strokes back without implying server persistence",
+    "Clear resets both canvases, ink and consent; redraw then save through existing endpoint",
+    "Native modal focus containment, Escape returns with strokes, background scroll locked"
+  ],
+  "validation": {
+    "memberTests": 322,
+    "productionBuild": true,
+    "isolatedBrowser": [
+      "390px portrait and 844x390 landscape",
+      "Exact canvas bitmap retained on open and Done",
+      "Clear invalidates ink and consent; redraw can save",
+      "Version-bound PNG upload still works",
+      "No horizontal overflow"
+    ]
+  }
+}

@@ -1,0 +1,6 @@
+const {PrismaClient}=require('/app/packages/database/node_modules/@prisma/client');
+const {PiiCryptoService}=require('/app/apps/api/node_modules/@ucell/database');
+const {GeoProfileService}=require('/app/apps/api/dist/modules/organization-geo/geo-profile.service');
+const {authorizeTreePrincipal}=require('/app/apps/api/dist/modules/binary-tree/tree-authorization');
+const db=new PrismaClient();
+(async()=>{const s=await db.authSession.findFirst({where:{provider:'ENTRA',roleCode:'SUPER_ADMIN',status:'ACTIVE',revokedAt:null,expiresAt:{gt:new Date()}},orderBy:{issuedAt:'desc'}});if(!s)throw Error('ACTIVE_ADMIN_REQUIRED');const p={personId:s.personId,provider:s.provider,subject:s.subject,role:s.roleCode,sessionId:s.authSessionId};await authorizeTreePrincipal(db,p,['SUPER_ADMIN']);const service=new GeoProfileService(db,new PiiCryptoService());let after,created=0,skipped=0;do{const r=await service.refresh(after);created+=r.created;skipped+=r.skipped;after=r.nextCursor}while(after);console.log(JSON.stringify({created,skipped,source:'approved application snapshots',currentProfiles:await db.memberGeoProfile.count()}))})().catch(e=>{console.error(e.response||e.code||e.message);process.exitCode=1}).finally(()=>db.$disconnect());

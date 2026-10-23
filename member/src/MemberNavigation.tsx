@@ -6,8 +6,8 @@ export const memberSections: Array<{label:string;to:string;paths:string[];icon:U
   { label: '首頁', to: '/', paths: ['/'], icon:'home' },
   { label: '探索', to: '/explore', paths: ['/explore','/content','/events','/learning'], icon:'content' },
   { label: '經營', to: '/business', paths: ['/business','/organization','/bonuses','/performance','/payouts','/sharing','/growth','/repurchase'], icon:'organization' },
-  { label: '商城', to: '/shop', paths: ['/shop', '/orders'], icon:'shop' },
-  { label: '我的', to: '/me', paths: ['/me', '/notifications', '/membership/upgrade'], icon:'me' },
+  { label: '商城', to: '/shop', paths: ['/shop'], icon:'shop' },
+  { label: '我的', to: '/me', paths: ['/me', '/orders', '/notifications', '/membership/upgrade'], icon:'me' },
 ];
 
 export function sectionMatches(pathname: string, paths: string[]) {

@@ -12,7 +12,7 @@ export class MemberContentInsightsController{
  constructor(private readonly service:ContentInsightsService){}
  @Get() get(@Req() req:any,@Query() query:InsightsQuery){return this.service.read(req.user.personId,query.qualificationId);}
 }
-@ApiTags('Admin - Content') @ApiBearerAuth('adminBearer') @Roles('SUPER_ADMIN','ORDER_OPS','COMPLIANCE_AUDIT')
+@ApiTags('Admin - Content') @ApiBearerAuth('adminBearer') @Roles('SUPER_ADMIN','MEMBERSHIP_OPS','ORDER_OPS','COMPLIANCE_AUDIT')
 @Controller('admin/content-insights')
 export class AdminContentInsightsController{
  constructor(private readonly service:ContentInsightsService){}

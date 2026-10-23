@@ -1,4 +1,4 @@
-param([ValidateSet('member','admin')][string]$App)
+param([ValidateSet('member','admin')][string]$App,[switch]$AssetsOnly)
 $ErrorActionPreference='Stop'
 if(!$App){throw 'Specify -App member or admin'}
 $repo=Split-Path $PSScriptRoot -Parent
@@ -17,10 +17,16 @@ if($App -eq 'member'){
 }
 Push-Location (Join-Path $repo $App)
 try{
- pnpm build
+ if($AssetsOnly){
+  pnpm exec tsc --noEmit
+  if($LASTEXITCODE -ne 0){throw 'Type check failed'}
+  node ../deployment/build-web-assets.cjs $App
+ }else{pnpm build}
  if($LASTEXITCODE -ne 0){throw 'Production web build failed'}
  $bundles=Get-ChildItem -LiteralPath 'dist/assets' -Filter '*.js'
  $matched=$bundles | Where-Object {[IO.File]::ReadAllText($_.FullName).Contains('https://api.ucell.life/api/v1')}
  if(!$matched){throw 'Production API endpoint missing from generated bundle'}
+ node ../deployment/verify-web-login-config.cjs $App
+ if($LASTEXITCODE -ne 0){throw 'Production login configuration missing'}
  Write-Output 'PRODUCTION_API_ENDPOINT_VERIFIED'
 }finally{Pop-Location}

@@ -1,0 +1,45 @@
+{
+  "release": "placement-ux-20261023",
+  "scope": "Sponsor-owner placement navigation, confirmation and reliable retry; administrative placement monitoring",
+  "api": {
+    "image": "ucell-api:placement-ux-20261023",
+    "digest": "sha256:00c50f8a040806d00419236f76747844b1a81827409f0cb5bdf9024199140e67",
+    "baseDigest": "sha256:3db97ff0978c35de73e6c98313257108c08bc919278ba46ba62cfb4036b5c4ea",
+    "revision": "ucell-prod-api--placement-ux-20261023",
+    "strategy": "Add two read endpoints and enforce existing current-placement scope guard in legacy member/admin command. Preserve exact production activation and unrelated runtime behavior."
+  },
+  "admin": {
+    "image": "ucell-admin:placement-ux-20261023",
+    "digest": "sha256:166e553fa055b3582705034f7428dd5bd85b943dff8a199537bfb921320ac3bd",
+    "revision": "ucell-prod-admin--placement-ux-20261023"
+  },
+  "member": {
+    "image": "ucell-member:placement-ux-ready-20261023",
+    "digest": "sha256:cdbc1d83ed50cf467ee6a847a17f9259f2b688634eb723c8cecbe20d5329e401",
+    "revision": "ucell-prod-member--placement-ux-20261023"
+  },
+  "validation": {
+    "memberTests": 335,
+    "adminFullSuiteTests": 271,
+    "adminAdditionalMonitorAndTreeTests": 9,
+    "apiTargetedTests": 20,
+    "typechecksAndBuilds": "passed",
+    "browserQA": "Member actual component with fixture API and admin production bundle with fixture API; mobile and desktop checked, no page errors, no horizontal overflow, zero writes",
+    "liveServiceRead": "Production monitor totals and completed filter validated; routes and activation/subtree guards present",
+    "liveAuthenticatedSessionTest": "Not run; prior admin session expired. No substitute session created.",
+    "unauthenticatedHTTP": "Both new read routes reject with 401",
+    "liveWebAssets": "Both public indexes and JS/CSS match builds",
+    "deployments": "All three revisions Healthy/Running with 100 percent traffic",
+    "actualMemberPlacementPerformed": false,
+    "databaseMigration": false
+  },
+  "observedCounts": {"pending": 0, "overdue": 0, "placed": 1},
+  "behavior": [
+    "Member workbench independent of sponsor organization read errors and visible in both organization tabs",
+    "Sponsor-owned pending list, public-ball navigation, allowed slots and Chinese restriction reasons",
+    "Explicit confirmation, receipt and same idempotency key when transport outcome is unknown",
+    "Admin monitoring filters in database before pagination; ball/member/sponsor numbers and deadlines shown",
+    "Monitor refreshes every minute while active; links carry candidate or placed ball into current tree",
+    "No automatic arbitrary placement or unsolicited member messages"
+  ]
+}

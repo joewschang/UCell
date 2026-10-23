@@ -1,0 +1,38 @@
+{
+  "release": "marketing-20261023",
+  "scope": {
+    "admin": "/marketing",
+    "member": "/sharing",
+    "cohortDays": 30,
+    "segments": ["START", "REACH", "CONNECT", "CELEBRATE"],
+    "recipientCooldownDays": 7,
+    "encouragementChannel": "UCELL_PERSONAL",
+    "automaticBroadcast": false,
+    "schemaMigration": false,
+    "dataScope": "Currently effective MEMBER_ORIGIN balls held by formal natural-person members; company and legal-entity balls excluded. Ball history remains attributed to the ball after transfer.",
+    "metrics": "Distinct attribution browsers and distinct bound/new people across links. Content rows may overlap. Link creation is not sending; visits and registration are not orders or settled rewards."
+  },
+  "tests": {
+    "adminExisting": 272,
+    "adminMarketing": 3,
+    "memberExisting": 340,
+    "memberProgress": 2,
+    "backendSharingAndMarketing": 34,
+    "typecheckAndBuild": ["api", "admin", "member"],
+    "browserFixtures": ["desktop admin", "mobile admin", "mobile member", "explicit encouragement preview and confirmation", "no viewport overflow", "no page errors"],
+    "liveRuntime": ["summary read", "search filter", "personal holder scope", "foreign holder rejection"],
+    "realMessagesSentDuringTesting": 0,
+    "productionDataMutationsDuringTesting": 0,
+    "limitation": "Authenticated visual and send-flow tests use isolated fixtures; no real encouragement was sent. Production service reads were checked directly without minting member/admin sessions."
+  },
+  "images": {
+    "api": "sha256:8f01bcc5fb467b294a4fe79445d2f7969c72c0d43cf1b4821bc638d968c1250c",
+    "admin": "sha256:b0fa937e750b1c9fe125221e97faef4f452baa6dec91f93ee54f165e31d407c3",
+    "member": "sha256:be97c906c33c8e72ec806a645b25325ad736b6be71d1cb6fb440b652220e90ce"
+  },
+  "rollbackImages": {
+    "api": "ucellprodacrm3z2zx4ohqyui.azurecr.io/ucell-api@sha256:00c50f8a040806d00419236f76747844b1a81827409f0cb5bdf9024199140e67",
+    "admin": "ucellprodacrm3z2zx4ohqyui.azurecr.io/ucell-admin@sha256:7340317c833d14b82c36be010e01523dc1e3e5a096387951cb719ae872de94dd",
+    "member": "ucellprodacrm3z2zx4ohqyui.azurecr.io/ucell-member@sha256:10981fac1655c1ca242f81768924da9f79fd536a0b94bdc2ee9c134f8b626d32"
+  }
+}

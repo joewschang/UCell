@@ -12,16 +12,19 @@ describe('Paper qualification package order',()=>{
   const tx:any={
    person:{findUnique:jest.fn().mockResolvedValue({status:'DRAFT'})},
    paperApplication:{findUnique:jest.fn().mockResolvedValue({personId:'person',orderId:null,status:'OPEN'}),update:jest.fn()},
-   qualification:{create:jest.fn().mockResolvedValue({qualificationId:'qualification'}),findUnique:jest.fn()},
+   qualification:{create:jest.fn().mockResolvedValue({qualificationId:'qualification'}),findUnique:jest.fn(),update:jest.fn()},
+   binaryTree:{findMany:jest.fn(async()=>[{binaryTreeId:'tree-a'}]),findUnique:jest.fn(async()=>({status:'ACTIVE'}))},
+   $queryRaw:jest.fn(async()=>[{ballNo:'A000001'}]),
    qualificationOwnerInterval:{create:jest.fn()},qualificationHolderHistory:{create:jest.fn()},qualificationStatusHistory:{create:jest.fn()},
    order:{create:jest.fn().mockImplementation(async({data}:any)=>({orderId:'order',qualificationId:data.qualificationId,lines:[]}))},
    packagePurchaseSnapshot:{create:jest.fn().mockResolvedValue({packagePurchaseSnapshotId:'snapshot'})},
   };
   const idempotency={execute:jest.fn(async(_scope:string,_key:string,_body:any,work:any)=>({value:await work(tx),replayed:false}))};
-  const packages:any={checkoutData:jest.fn().mockResolvedValue({version:{profile:{packageClass:'QUALIFICATION',stableCode:'STARTER'},currency:'TWD',priceAmount:{toString:()=> '14400'},displayName:'Starter',selectableProductQuantity:1,membershipEffect:'FORMAL_ELIGIBILITY',qualificationEffect:'CREATE_QUALIFICATION',activeDurationUnit:null,activeDurationValue:null,recognitionConfigRef:'R1.0B',configHash:'a'.repeat(64),packageProfileVersionId:'version'},selections:[{productRuleProfileId:'profile',quantity:1,profile:{productRuleProfileId:'profile'},product:{productId:'product',sku:'SKU',displayName:'Product'},productConfigHash:'b'.repeat(64)}]})};
+  const packages:any={checkoutData:jest.fn().mockResolvedValue({pricing:{goodsAmount:'14400',qualificationFee:'0',discountAmount:'0',total:'14400',selectableProductQuantity:1,recognitionPolicy:'R1.0B'},version:{profile:{packageClass:'QUALIFICATION',stableCode:'STARTER'},currency:'TWD',priceAmount:new Prisma.Decimal('14400'),displayName:'Starter',selectableProductQuantity:1,membershipEffect:'FORMAL_ELIGIBILITY',qualificationEffect:'CREATE_QUALIFICATION',activeDurationUnit:null,activeDurationValue:null,recognitionConfigRef:'R1.0B',configHash:'a'.repeat(64),packageProfileVersionId:'version'},selections:[{productRuleProfileId:'profile',quantity:1,profile:{productRuleProfileId:'profile'},product:{productId:'product',sku:'SKU',displayName:'Product'},productConfigHash:'b'.repeat(64)}]})};
   const service=new OrderService({paperApplication:{findUnique:jest.fn().mockResolvedValue({personId:'person'})}} as any,idempotency as any,{write:jest.fn()} as any,{enqueue:jest.fn()} as any,packages);
   const result:any=await service.createPaperQualification({packageVersionId:'version',selections:[{productRuleProfileId:'profile',quantity:1}]},'key','request','operator','paper');
   expect(result.value.qualificationId).toBe('qualification');
+  expect(tx.qualification.update).toHaveBeenCalledWith({where:{qualificationId:'qualification'},data:{ballNo:'A000001'}});
   expect(tx.qualification.create).toHaveBeenCalledWith({data:expect.objectContaining({status:'DRAFT',activeFlag:false})});
   expect(tx.paperApplication.update).toHaveBeenCalledWith({where:{paperApplicationId:'paper'},data:{orderId:'order',status:'ORDER_CREATED'}});
   expect(idempotency.execute.mock.calls[0][0]).toBe('admin:paper-package-order:create:paper');
@@ -29,6 +32,7 @@ describe('Paper qualification package order',()=>{
  it('revalidates the selected sponsor and creates PLACEMENT_PENDING after paper package payment without activating the Ball',async()=>{
   const occurredAt='2026-09-26T08:00:00.000Z';
   const tx:any={
+   $queryRaw:jest.fn(async()=>[]),
    order:{findUnique:jest.fn().mockResolvedValue({orderId:'order',status:'CONFIRMED',qualificationId:'qualification',netAmount:new Prisma.Decimal('14400'),lines:[]}),update:jest.fn()},
    paymentEvent:{create:jest.fn().mockResolvedValue({paymentEventId:'payment'})},
    packagePurchaseSnapshot:{findUnique:jest.fn().mockResolvedValue({packagePurchaseSnapshotId:'snapshot',personId:'person',packageClass:'QUALIFICATION',packageCode:'STARTER'})},
@@ -51,7 +55,7 @@ describe('Paper qualification package order',()=>{
  });
  it('fails closed when the effective offering selection group does not match the checked-out package selection',async()=>{
   const tx:any={person:{findUnique:jest.fn().mockResolvedValue({status:'EFFECTIVE'})}};
-  const packages:any={checkoutData:jest.fn().mockResolvedValue({version:{profile:{packageClass:'QUALIFICATION'},currency:'TWD',priceAmount:new Prisma.Decimal(1),recognitionConfigRef:'R1',configHash:'a'.repeat(64)},selections:[{quantity:3,product:{sku:'TIP-363'}}]})};
+  const packages:any={checkoutData:jest.fn().mockResolvedValue({pricing:{goodsAmount:'14400',qualificationFee:'0',discountAmount:'0',total:'14400',selectableProductQuantity:1,recognitionPolicy:'R1.0B'},version:{profile:{packageClass:'QUALIFICATION'},currency:'TWD',priceAmount:new Prisma.Decimal(1),recognitionConfigRef:'R1',configHash:'a'.repeat(64)},selections:[{quantity:3,product:{sku:'TIP-363'}}]})};
   const offerings:any={resolveEffective:jest.fn().mockResolvedValue({offeringType:'QUALIFICATION_PACKAGE',selectionRule:{selectionGroup:'POOL',requiredTotalQuantity:3,eligibleSkus:['TIP-999']}})};
   const idem={execute:jest.fn(async(_s:string,_k:string,_b:any,work:any)=>({value:await work(tx)}))};
   const service=new OrderService({} as any,idem as any,{} as any,{} as any,packages,undefined,undefined,undefined,offerings);

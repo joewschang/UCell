@@ -1,5 +1,5 @@
 import {uiText} from "../../shared/design-system/i18n";
-import { api } from './api';
+import { api, type ApiRequestInit } from './api';
 
 /** Matches the backend global EnvelopeInterceptor; DTO validation follows this step. */
 export function unwrapMemberEnvelope(value: unknown): unknown {
@@ -16,6 +16,6 @@ export function unwrapMemberEnvelope(value: unknown): unknown {
   return envelope.data;
 }
 
-export async function memberApi<T>(path: string, init: RequestInit = {}): Promise<T> {
+export async function memberApi<T>(path: string, init: ApiRequestInit = {}): Promise<T> {
   return unwrapMemberEnvelope(await api<unknown>(path, init)) as T;
 }

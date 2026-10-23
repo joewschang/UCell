@@ -1,0 +1,3 @@
+/public/ocr/worker.min.js
+/public/ocr/tesseract-*.wasm
+/public/ocr/tesseract-*.wasm.js

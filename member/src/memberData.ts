@@ -4,12 +4,12 @@ import * as validate from './validation';
 import { type Dashboard, type Qualification, type Scoped, type Person, type Organization, type Binary, type Performance, type Bonus, type Ledger, type Product, type Orders } from './api';
 import { memberApi as api } from './memberApi';
 export const isMock = import.meta.env.VITE_ENABLE_MOCK === 'true';
-export type FormalEnrollmentState={pendingPackages?:{orderId:string;packageName:string;total:string;paymentDeadline:string;couponCode:string|null;qualificationFee:string;goodsAmount:string;selectableProductQuantity:number}[];membershipState:string|null;feeAmount:string;currency:string;stagePaymentEnabled:boolean;feeReceipt:{orderId:string;amount:string;paidAt:string|null}|null;application:{id:string;status:string}|null;paidPackages:{orderId:string;packageName:string}[]};
+export type FormalEnrollmentState={draft?:{payload:Record<string,any>;version:number;documents:FormalDocumentType[]}|null;prefill?:Record<string,any>;pendingPackages?:{orderId:string;packageName:string;total:string;paymentDeadline:string;couponCode:string|null;qualificationFee:string;goodsAmount:string;selectableProductQuantity:number}[];membershipState:string|null;feeAmount:string;currency:string;stagePaymentEnabled:boolean;feeReceipt:{orderId:string;amount:string;paidAt:string|null}|null;application:{id:string;status:string;reviewNote?:string|null}|null;paidPackages:{orderId:string;packageName:string}[]};
 export async function getFormalEnrollment(signal?:AbortSignal){return api<FormalEnrollmentState>('/member/formal-enrollment',{signal});}
 export async function payFormalEnrollmentFee(key:string){return api('/member/formal-enrollment/fee-payment',{method:'POST',headers:{'Idempotency-Key':key}});}
 export async function payEnrollmentPackage(orderId:string,key:string){return api(`/member/formal-enrollment/package-payments/${encodeURIComponent(orderId)}`,{method:'POST',headers:{'Idempotency-Key':key}});}
 export async function payStageCommerceOrder(orderId:string,key:string){return api(`/member/formal-enrollment/order-payments/${encodeURIComponent(orderId)}`,{method:'POST',headers:{'Idempotency-Key':key}});}
-export async function submitFormalEnrollment(applicationId:string,key:string){return api(`/member/formal-enrollment/applications/${encodeURIComponent(applicationId)}/submit`,{method:'POST',headers:{'Idempotency-Key':key}});}
+export async function submitFormalEnrollment(applicationId:string,key:string,input?:{orderId:string;paymentMethod:string}){return api(`/member/formal-enrollment/applications/${encodeURIComponent(applicationId)}/submit`,{method:'POST',body:input?JSON.stringify(input):undefined,headers:{'Idempotency-Key':key}});}
 const qualifications: Qualification[] = [
     { id: 'q1', code: 'A000001', rank: 'LEADER', active: true, ballLabel: uiText("球 A000001") },
     { id: 'q2', code: 'A000002', rank: 'ELITE', active: false, ballLabel: uiText("球 A000002") },
@@ -54,18 +54,18 @@ export async function saveFormalDraft(input:FormalDraftInput,key:string){
  const result=await api<{id:string;status:string;version:number;applicantType:string;nationalityCode:string|null;identityDocumentType:string|null;identityDocumentNumberMasked:string|null;spouseIdentityDocumentNumberMasked:string|null;bankAccountMasked:string;replayed:boolean}>('/member/formal-applications',{method:'POST',headers:{'Idempotency-Key':key},body:JSON.stringify(input)});
  if(!result||typeof result.id!=='string'||result.status!=='DRAFT'||!Number.isInteger(result.version)||result.applicantType!=='INDIVIDUAL'||!(result.identityDocumentNumberMasked===null||result.identityDocumentNumberMasked.startsWith('***'))||!(result.spouseIdentityDocumentNumberMasked===null||result.spouseIdentityDocumentNumberMasked.startsWith('***'))||!result.bankAccountMasked.startsWith('***'))throw new Error('正式會員草稿結果異常');
  return result;
-}export type FormalDocumentType='IDENTITY_FRONT'|'IDENTITY_BACK'|'BANKBOOK_COVER';
-export async function uploadFormalDocument(applicationId:string,documentType:FormalDocumentType,file:File){
+}export type FormalDocumentType='IDENTITY_FRONT'|'IDENTITY_BACK'|'BANKBOOK_COVER'|'SIGNED_APPLICATION_AGREEMENT';
+export async function uploadFormalDocument(applicationId:string,documentType:FormalDocumentType,file:File,expectedSnapshotHash?:string){
  if(!uuid.test(applicationId))throw new Error('正式會員申請識別碼異常');
  if(!['image/jpeg','image/png'].includes(file.type))throw new Error(uiText("文件僅接受 JPG 或 PNG"));
  if(file.size<=0||file.size>10*1024*1024)throw new Error(uiText("單一文件大小須介於 1 byte 至 10 MB"));
  const bytes=new Uint8Array(await file.arrayBuffer());
  let binary='';const chunk=0x8000;for(let i=0;i<bytes.length;i+=chunk)binary+=String.fromCharCode(...bytes.subarray(i,i+chunk));
  const contentBase64=btoa(binary);
- return api<{id:string;type:FormalDocumentType;status:string;scanStatus:string;mimeType:string;sizeBytes:number;uploadedAt:string|null}>(`/member/formal-applications/${encodeURIComponent(applicationId)}/documents`,{method:'POST',body:JSON.stringify({documentType,mimeType:file.type,contentBase64})});
+ return api<{id:string;type:FormalDocumentType;status:string;scanStatus:string;mimeType:string;sizeBytes:number;uploadedAt:string|null}>(`/member/formal-applications/${encodeURIComponent(applicationId)}/documents`,{method:'POST',timeoutMs:120_000,body:JSON.stringify({documentType,mimeType:file.type,contentBase64,expectedSnapshotHash})});
 }
 export async function getFormalDocuments(applicationId:string,signal?:AbortSignal){
- return api<{applicationId:string;required:FormalDocumentType[];documents:{id:string;type:FormalDocumentType;status:string;scanStatus:string;mimeType:string|null;sizeBytes:number|null;uploadedAt:string|null}[]}>(`/member/formal-applications/${encodeURIComponent(applicationId)}/documents`,{signal});
+ return api<{applicationId:string;signingContext?:{name:string;snapshotHash:string;version:number;contract:{title:string;version:string;contentHash:string}};required:FormalDocumentType[];documents:{id:string;type:FormalDocumentType;status:string;scanStatus:string;mimeType:string|null;sizeBytes:number|null;uploadedAt:string|null}[]}>(`/member/formal-applications/${encodeURIComponent(applicationId)}/documents`,{signal});
 }
 export type NetworkRegistrationInput={contractVersionId:string;accepted:true;legalName:string;alias:string;gender:string;birthDate:string;nationalityCode:string;identityDocumentType:'NATIONAL_ID'|'RESIDENCE_PERMIT'|'PASSPORT'|'OTHER';identityDocumentNumber:string;mobile:string;email:string;mobileVerificationProof?:string;emailVerificationProof?:string};
 export async function registerNetworkMember(input:NetworkRegistrationInput,key:string){
@@ -106,13 +106,14 @@ function parseConnectedOrder(value:unknown,q:Qualification):ConnectedOrder{
  if(!row||row.qualificationId!==q.id||typeof row.id!=='string'||!/^\d+$/.test(row.orderNo)||typeof row.total!=='string'||!/^\d+(\.\d+)?$/.test(row.total)||typeof row.status!=='string'||!Array.isArray(row.lines)||!row.lines.every(line=>typeof line.name==='string'&&typeof line.quantity==='string'&&typeof line.amount==='string'))throw new Error('訂單格式或資格不符，已停止顯示');
  return row;
 }
-export async function createConnectedOrder(q:Qualification,items:{productId:string;quantity:string}[],key:string,commercialOfferingCode?:string){
- return parseConnectedOrder(await api('/member/orders',{method:'POST',headers:{'Idempotency-Key':key},body:JSON.stringify({qualificationId:q.id,items,commercialOfferingCode})}),q);
+export type CartCheckout={paymentMethod:"BANK_TRANSFER"|"CASH";deliveryUpdatedAt:string;expectedTotal:string};
+export async function createConnectedOrder(q:Qualification,items:{productId:string;quantity:string;commercialOfferingCode?:string}[],key:string,commercialOfferingCode?:string,checkout?:CartCheckout){
+ return parseConnectedOrder(await api('/member/orders',{method:'POST',headers:{'Idempotency-Key':key},body:JSON.stringify({qualificationId:q.id,items,commercialOfferingCode,...(checkout?{checkout}:{})})}),q);
 }
 export type RetailReferrer={ballNo:string;effectiveFrom:string;locked:true};
 export async function getRetailReferrer(signal:AbortSignal):Promise<RetailReferrer|null>{const row=await api<unknown>('/member/retail-referrer',{signal});if(row===null)return null;const value=row as RetailReferrer;if(!value||typeof value.ballNo!=='string'||!Number.isFinite(Date.parse(value.effectiveFrom))||value.locked!==true)throw new Error('商品推薦資料格式異常');return value;}
 export async function validateRetailReferrerCandidate(code:string,key:string){if(!/^[A-Z][A-Z0-9_-]{0,39}(?:X\d{6,}|\d{6,})$/.test(code))throw new Error('商品推薦碼格式不正確');const row=await api<{ballNo:string;planLevelCode:string;effectiveAt:string;ruleVersion:string}>('/member/retail-referrer/candidate',{method:'POST',headers:{'Idempotency-Key':key},body:JSON.stringify({code})});if(!row||row.ballNo!==code||typeof row.planLevelCode!=='string'||row.ruleVersion!=='R1.0B'||!Number.isFinite(Date.parse(row.effectiveAt)))throw new Error('商品推薦碼無法核驗');return row;}
-export async function createWebRetailOrder(items:{productId:string;quantity:string}[],key:string,retailReferralCode?:string,commercialOfferingCode?:string){const row=await api<unknown>('/member/orders',{method:'POST',headers:{'Idempotency-Key':key},body:JSON.stringify({items,commercialOfferingCode,...(retailReferralCode?{retailReferralCode}:{})})}) as ConnectedOrder;if(!row||row.qualificationId!==null||typeof row.id!=='string'||!/^\d+$/.test(row.orderNo)||row.status!=='CONFIRMED'||!decimal.test(row.total)||!Array.isArray(row.lines))throw new Error('零售訂單回應異常');return row;}
+export async function createWebRetailOrder(items:{productId:string;quantity:string;commercialOfferingCode?:string}[],key:string,retailReferralCode?:string,commercialOfferingCode?:string,checkout?:CartCheckout){const row=await api<unknown>('/member/orders',{method:'POST',headers:{'Idempotency-Key':key},body:JSON.stringify({items,commercialOfferingCode,...(checkout?{checkout}:{}),...(retailReferralCode?{retailReferralCode}:{})})}) as ConnectedOrder;if(!row||row.qualificationId!==null||typeof row.id!=='string'||!/^\d+$/.test(row.orderNo)||row.status!=='CONFIRMED'||!decimal.test(row.total)||!Array.isArray(row.lines))throw new Error('零售訂單回應異常');return row;}
 export type WebRetailOrder={orderNo:string;status:string;total:string;createdAt:string;confirmedAt:string|null;itemCount:number;itemNames:string[]};
 export function parseWebRetailOrders(rows:unknown):WebRetailOrder[]{
  const statuses=new Set(['DRAFT','CONFIRMED','PAID','FULFILLED','PARTIAL_RETURN','RETURNED','VOIDED']),seen=new Set<string>();
@@ -127,6 +128,8 @@ export async function getWebRetailOrders(signal?:AbortSignal):Promise<WebRetailO
 
 export type PendingPlacement={pendingBallNo:string|null;placementReference:string;pendingMemberNo:string|null;packageType:string;sponsorBallNo:string|null;paymentState:'CONFIRMED';requestedAt:string|null;dueAt:string|null;placedAt:string|null;status:'PLACEMENT_PENDING'|'PLACEMENT_OVERDUE';agingBucket:'0_24H'|'24_48H'|'48_72H'|'OVERDUE';policyVersion:string};
 const ballNo=/^[A-Z][A-Z0-9_-]{0,39}(?:X\d{6}|\d{6,19})$/;
+export type PlacementBranch={observedAt:string;ballNo:string;sponsorBallNo:string;sequence:number;blocked:string|null;breadcrumbs:{ballNo:string}[];nodes:{ballNo:string;position:string;slots:{side:'LEFT'|'RIGHT';reason:string|null}[]}[]};
+export async function getPlacementBranch(reference:string,ballNo:string,signal:AbortSignal){return api<PlacementBranch>(`/member/placements/pending/${encodeURIComponent(reference)}/branch${ballNo?'?'+new URLSearchParams({ballNo}):''}`,{signal});}
 export async function getPendingPlacements(signal:AbortSignal):Promise<PendingPlacement[]>{
  if(isMock)return [];
  const rows=await api<unknown>('/member/placements/pending',{signal});

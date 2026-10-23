@@ -20,7 +20,7 @@ export class AdminObservabilityController{
     @Query('depth') depth?:string,
     @Query('at') at?:string
   ){
-    return this.service.sponsorTree(id,Number(depth??4),at?new Date(at):new Date())
+    return this.service.sponsorTree(id,Number(depth??2),at?new Date(at):new Date())
       .then(data=>({data}));
   }
 
@@ -32,7 +32,7 @@ export class AdminObservabilityController{
     @Query('depth') depth?:string,
     @Query('at') at?:string
   ){
-    return this.service.binaryTree(id,Number(depth??5),at?new Date(at):new Date())
+    return this.service.binaryTree(id,Number(depth??2),at?new Date(at):new Date())
       .then(data=>({data}));
   }
 

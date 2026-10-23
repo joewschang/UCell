@@ -1,8 +1,13 @@
-import {Controller,Get,Post,Param,ParseUUIDPipe,Req,Headers,UseGuards} from '@nestjs/common';
+import {Body,Header,Controller,Get,Post,Param,ParseUUIDPipe,Req,Headers,UseGuards} from '@nestjs/common';
 import {ApiBearerAuth,ApiHeader,ApiOperation,ApiTags} from '@nestjs/swagger';
 import {MemberAuthenticationGuard} from '../auth/member-authentication.guard';
 import {IdempotencyGuard} from '../../common/guards/idempotency.guard';
 import {FormalEnrollmentService} from './formal-enrollment.service';
+import {IsIn,IsOptional,IsUUID} from 'class-validator';
+class SubmitEnrollmentDto{
+ @IsOptional() @IsUUID() orderId?:string;
+ @IsOptional() @IsIn(['BANK_TRANSFER','CASH']) paymentMethod?:string;
+}
 @ApiTags('Member - Formal enrollment') @ApiBearerAuth('memberBearer') @UseGuards(MemberAuthenticationGuard)
 @Controller('member/formal-enrollment')
 export class FormalEnrollmentController{
@@ -10,7 +15,7 @@ export class FormalEnrollmentController{
  @Post('order-payments/:id') @UseGuards(IdempotencyGuard) @ApiHeader({name:'Idempotency-Key',required:true})
  @ApiOperation({operationId:'memberStageCommercePayment',summary:'Stage 模擬支付本人的零售或重購訂單'})
  commerce(@Req() req:any,@Param('id',new ParseUUIDPipe()) id:string,@Headers('idempotency-key') key:string){return this.enrollment.payCommerce(req.user.personId,id,key,req.requestId);}
- @Get() @ApiOperation({operationId:'memberFormalEnrollment',summary:'正式會員升級狀態與申請費'}) status(@Req() req:any){return this.enrollment.status(req.user.personId);}
+ @Get() @Header('Cache-Control','no-store') @ApiOperation({operationId:'memberFormalEnrollment',summary:'正式會員升級狀態與申請費'}) status(@Req() req:any){return this.enrollment.status(req.user.personId);}
  @Post('fee-payment') @UseGuards(IdempotencyGuard) @ApiHeader({name:'Idempotency-Key',required:true})
  @ApiOperation({operationId:'memberStageFormalEnrollmentFee',summary:'已停用：單獨繳費加入正式會員',description:'Always rejects with QUALIFICATION_PACKAGE_REQUIRED.'})
  fee(@Req() req:any,@Headers('idempotency-key') key:string){return this.enrollment.payFee(req.user.personId,key,req.requestId);}
@@ -18,6 +23,6 @@ export class FormalEnrollmentController{
  @ApiOperation({operationId:'memberStageFormalEnrollmentPackagePayment',summary:'Stage 模擬支付本人資格套組',description:'Owned formal-eligibility package only. Uses canonical order payment writer; separate qualification fee included in order total; no automatic formal approval.'})
  package(@Req() req:any,@Param('id',new ParseUUIDPipe()) id:string,@Headers('idempotency-key') key:string){return this.enrollment.payPackage(req.user.personId,id,key,req.requestId);}
  @Post('applications/:id/submit') @UseGuards(IdempotencyGuard) @ApiHeader({name:'Idempotency-Key',required:true})
- @ApiOperation({operationId:'memberSubmitFormalEnrollment',summary:'送出已付款且附文件的正式會員申請',description:'Own encrypted application only. Payment and required files must exist. Submission grants neither malware clearance, formal approval nor Qualification.'})
- submit(@Req() req:any,@Param('id',new ParseUUIDPipe()) id:string,@Headers('idempotency-key') key:string){return this.enrollment.submit(req.user.personId,id,key,req.requestId);}
+ @ApiOperation({operationId:'memberSubmitFormalEnrollment',summary:'送出附文件的正式會員申請',description:'Paid or owned unexpired qualification order with explicit cash/bank transfer intent. Submission does not confirm payment or grant membership.'})
+ submit(@Body() body:SubmitEnrollmentDto,@Req() req:any,@Param('id',new ParseUUIDPipe()) id:string,@Headers('idempotency-key') key:string){return this.enrollment.submit(req.user.personId,id,key,req.requestId,body);}
 }

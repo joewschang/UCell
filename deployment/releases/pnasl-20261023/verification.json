@@ -1,0 +1,25 @@
+{
+  "release": "pnasl-20261023",
+  "policy": "UCELL-MGMT-2026-10-PNASL-v2",
+  "rules": {
+    "P": "Valid share landing browser or network member; merge only recorded person identity links",
+    "N": "Recorded formal approval; pre-approval payments do not activate membership",
+    "A_S_L": "Existing post-approval qualifying events and rolling 30/90 day boundaries",
+    "conversion": "Same acquisition cohort approved by snapshot, 7/30/90 day windows; separate fully observed 30-day conversion",
+    "firstAcquisition": "Earliest recorded attribution creation or touch; renewing referral attribution never reacquires an existing prospect",
+    "historicalSnapshots": "Policy-version isolated; no synthetic historical backfill"
+  },
+  "tests": {"backendAnalytics":65,"adminFullSuite":277,"adminAnalyticsFinal":14,"memberLocalization":1,"browser":{"fiveStages":true,"windowSwitch":true,"mobileOverflow":false,"darkTheme":true,"pageErrors":0,"fixtureData":true}},
+  "publicVerification":{"indexMatches":true,"assetsMatch":true,"unauthenticatedAnalyticsStatus":401},
+  "images": {
+    "api":"ucell-api:pnasl-20261023-final",
+    "apiDigest":"sha256:04e91a4ca37b83d880e9903d34a3c83ce12f9cc2146a3c3bcb5ed71b0c9ed980",
+    "admin":"ucell-admin:pnasl-20261023",
+    "adminDigest":"sha256:7a734216f0b3d262b961713c6663ecfac63adb244c5e01209ce3207eff7ea505"
+  },
+  "rollback":{"api":"ucell-api:marketing-20261023","admin":"ucell-admin:marketing-20261023","analyticsRefreshPreviouslyEnabled":false},
+  "automaticRefresh":{"enabled":true,"seconds":300,"scopes":["GLOBAL"]},
+  "initialProductionSnapshot":{"asOf":"2026-10-23T04:10:51.490Z","P":3,"N":1,"A":0,"S":0,"L":0,"acquired30d":4,"converted30d":1,"conversion30d":0.25},
+  "memberImageChanged":false,
+  "memberNotificationsSent":0
+}

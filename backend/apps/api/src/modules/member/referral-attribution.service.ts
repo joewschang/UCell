@@ -12,6 +12,7 @@ export class ReferralAttributionService {
  constructor(private readonly db:PrismaService,private readonly links:MemberShareLinkService,private readonly idempotency:IdempotencyService,private readonly audit:AuditService){}
 
  async land(token:string,anonymousId:string=randomUUID(),now=new Date()){
+  token=await this.links.resolveToken(token);
   const preview=await this.links.preview(token,now);
   const payload=this.links.verify(token,now),tokenHash=this.links.hash(token),correlationId=randomUUID();
   try{const result=await this.db.$transaction(async tx=>{

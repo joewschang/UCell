@@ -1,17 +1,20 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable,UnprocessableEntityException } from '@nestjs/common';
 import { Prisma,PrismaService } from '@ucell/database';
 
 @Injectable()
 export class AdminObservabilityService {
   constructor(private readonly prisma:PrismaService){}
 
-  async sponsorTree(rootQualificationId:string,depth=4,at=new Date()){
-    const maxDepth=Math.min(Math.max(depth,1),10);
+  async sponsorTree(rootQualificationId:string,depth=2,at=new Date()){
+    if(!/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(rootQualificationId)||!Number.isInteger(depth)||depth<1||depth>3||!Number.isFinite(at.getTime())||at.getTime()>Date.now()+5000)throw new UnprocessableEntityException({code:'INVALID_ORGANIZATION_QUERY'});
+    const maxDepth=depth;
     return this.prisma.$queryRaw<Array<any>>`
       WITH RECURSIVE tree AS (
         SELECT
           q.qualification_id,
           q.qualification_no,
+          q.ball_no,
+          q.kind AS qualification_kind,
           q.plan_level_code,
           q.active_flag,
           p.legal_name,
@@ -20,7 +23,7 @@ export class AdminObservabilityService {
           0::int AS depth,
           ARRAY[q.qualification_id]::uuid[] AS path
         FROM membership.qualification q
-        JOIN identity.person p ON p.person_id=q.current_holder_person_id
+        LEFT JOIN identity.person p ON p.person_id=q.current_holder_person_id
         WHERE q.qualification_id=${rootQualificationId}::uuid
 
         UNION ALL
@@ -28,6 +31,8 @@ export class AdminObservabilityService {
         SELECT
           child.qualification_id,
           child.qualification_no,
+          child.ball_no,
+          child.kind,
           child.plan_level_code,
           child.active_flag,
           holder.legal_name,
@@ -41,13 +46,15 @@ export class AdminObservabilityService {
          AND sr.effective_from <= ${at}
          AND (sr.effective_to IS NULL OR sr.effective_to > ${at})
         JOIN membership.qualification child ON child.qualification_id=sr.child_qualification_id
-        JOIN identity.person holder ON holder.person_id=child.current_holder_person_id
+        LEFT JOIN identity.person holder ON holder.person_id=child.current_holder_person_id
         WHERE tree.depth < ${maxDepth}
           AND NOT child.qualification_id=ANY(tree.path)
       )
       SELECT
         qualification_id::text,
         qualification_no::text,
+        ball_no,
+        qualification_kind,
         plan_level_code,
         active_flag,
         legal_name,
@@ -55,17 +62,20 @@ export class AdminObservabilityService {
         sponsor_sequence_no,
         depth
       FROM tree
-      ORDER BY depth,parent_qualification_id,sponsor_sequence_no,qualification_no
+      ORDER BY depth,parent_qualification_id,sponsor_sequence_no,qualification_no LIMIT 1001
     `;
   }
 
-  async binaryTree(rootQualificationId:string,depth=5,at=new Date()){
-    const maxDepth=Math.min(Math.max(depth,1),12);
+  async binaryTree(rootQualificationId:string,depth=2,at=new Date()){
+    if(!/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(rootQualificationId)||!Number.isInteger(depth)||depth<1||depth>3||!Number.isFinite(at.getTime())||at.getTime()>Date.now()+5000)throw new UnprocessableEntityException({code:'INVALID_ORGANIZATION_QUERY'});
+    const maxDepth=depth;
     return this.prisma.$queryRaw<Array<any>>`
       WITH RECURSIVE tree AS (
         SELECT
           q.qualification_id,
           q.qualification_no,
+          q.ball_no,
+          q.kind AS qualification_kind,
           q.plan_level_code,
           q.active_flag,
           p.legal_name,
@@ -74,7 +84,7 @@ export class AdminObservabilityService {
           0::int AS depth,
           ARRAY[q.qualification_id]::uuid[] AS path
         FROM membership.qualification q
-        JOIN identity.person p ON p.person_id=q.current_holder_person_id
+        LEFT JOIN identity.person p ON p.person_id=q.current_holder_person_id
         WHERE q.qualification_id=${rootQualificationId}::uuid
 
         UNION ALL
@@ -82,6 +92,8 @@ export class AdminObservabilityService {
         SELECT
           child.qualification_id,
           child.qualification_no,
+          child.ball_no,
+          child.kind,
           child.plan_level_code,
           child.active_flag,
           holder.legal_name,
@@ -95,13 +107,15 @@ export class AdminObservabilityService {
          AND bp.effective_from <= ${at}
          AND (bp.effective_to IS NULL OR bp.effective_to > ${at})
         JOIN membership.qualification child ON child.qualification_id=bp.child_qualification_id
-        JOIN identity.person holder ON holder.person_id=child.current_holder_person_id
+        LEFT JOIN identity.person holder ON holder.person_id=child.current_holder_person_id
         WHERE tree.depth < ${maxDepth}
           AND NOT child.qualification_id=ANY(tree.path)
       )
       SELECT
         qualification_id::text,
         qualification_no::text,
+        ball_no,
+        qualification_kind,
         plan_level_code,
         active_flag,
         legal_name,
@@ -109,7 +123,7 @@ export class AdminObservabilityService {
         side::text,
         depth
       FROM tree
-      ORDER BY depth,parent_qualification_id,side,qualification_no
+      ORDER BY depth,parent_qualification_id,side,qualification_no LIMIT 1001
     `;
   }
 

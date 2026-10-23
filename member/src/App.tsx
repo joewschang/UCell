@@ -1,3 +1,6 @@
+import ProductDetail from './ProductDetail';
+import {OrderTrackingStrip} from './OrderHub';
+import MyOrders from './MyOrders';
 import OrderList from './OrderList';
 import AiAssistant from './AiAssistant';
 import {ServiceWelcome} from '../../shared/ai-assistant/Persona';
@@ -13,7 +16,7 @@ import { MemberNavigation, IncomeNavigation } from './MemberNavigation';
 import {MemberPageHeader} from './MemberPageHeader';
 import {CompanyLogo,MemberAppShell,ThemePreferenceControl,QualificationSwitcher,MobileActionGrid,MetricCard,MoneyState,LoadingState,ErrorState,EmptyState,UCellIcon} from '@ucell/design-system';
 import { Link, Route, Routes } from 'react-router-dom';
-import { useState, type KeyboardEvent, type ReactNode } from 'react';
+import { useEffect, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { useQualification } from './QualificationContext';
 import * as data from './memberData';
 import type { Qualification } from './api';
@@ -102,6 +105,7 @@ function Organization({ q }: {
     return <div className="uc-organization">
         <MemberPageHeader title="我的組織" q={q}/>
         <p className="uc-page-intro">推薦組織與二元安置組織使用不同關係與資料範圍，請分開查看。</p>
+        <PlacementWorkbench/>
         <div className="tabs uc-segmented" role="tablist" aria-label="組織檢視" onKeyDown={moveTab}>
             <button type="button" id="org-sponsor-tab" role="tab" aria-selected={tab === 'sponsor'} aria-controls="org-sponsor-panel" tabIndex={tab === 'sponsor' ? 0 : -1} onClick={() => setTab('sponsor')}>推薦組織</button>
             <button type="button" id="org-binary-tab" role="tab" aria-selected={tab === 'binary'} aria-controls="org-binary-panel" tabIndex={tab === 'binary' ? 0 : -1} onClick={() => setTab('binary')}>二元組織</button>
@@ -111,7 +115,7 @@ function Organization({ q }: {
                 <section className="card uc-sponsor-card"><small>{uiText("UPLINE NODE")}</small><h3>我的推薦人</h3><div className="uc-person-node"><i aria-hidden="true"/><div><strong>{d.sponsor?.name || d.sponsor?.code || '目前沒有推薦人資料'}</strong>{d.sponsor && <span>球編號 {d.sponsor.code}</span>}</div></div></section>
                 <section className="card uc-referral-card"><div className="uc-card-heading"><div><small>{uiText("DIRECT NETWORK")}</small><h3>直推會員</h3></div><strong>{d.referrals.length}</strong></div><p className="uc-system-note">{uiText("本次 API 回傳 ")}{d.referrals.length} 位直推會員</p>{d.referrals.length ? <div className="uc-node-list">{d.referrals.map((r, index) => <div className="uc-person-node" key={r.code}><i aria-hidden="true"/><div><strong>{r.name || r.code}</strong><span>球編號 {r.code}</span></div><small>{String(index + 1).padStart(2, '0')}</small></div>)}</div> : <p>目前沒有直推會員</p>}</section>
             </div>
-            <ReferralShare q={q}/><PlacementWorkbench/>
+            <ReferralShare q={q}/>
         </>}</Result></section> : <section id="org-binary-panel" role="tabpanel" aria-labelledby="org-binary-tab"><Result state={binary}>{d => <>
             <div className="uc-network-note"><span aria-hidden="true"/><p>{uiText("左、右區屬二元安置組織，與推薦組織分別呈現。業績與 Carry 只有在權威結算資料可用時才會顯示。")}</p></div>
             <div className="uc-binary-summary">{[['左區', d.left], ['右區', d.right]].map(([label, side], index) => <section className="card uc-binary-card" data-side={index === 0 ? 'left' : 'right'} key={String(label)}><div className="uc-card-heading"><div><small>{index === 0 ? 'LEFT NETWORK' : 'RIGHT NETWORK'}</small><h3>{String(label)}</h3></div><span className="uc-node-pulse" aria-hidden="true"/></div><dl><div><dt>{String(label)}球數</dt><dd>{number((side as typeof d.left).count)}</dd></div><div><dt>{String(label)}業績</dt><dd>{uiValue(d.settlementMetrics.status === 'AVAILABLE' ? number((side as typeof d.left).volume) : availabilityText.readModelMissing)}</dd></div><div><dt>{uiText("Carry")}</dt><dd>{uiValue(d.settlementMetrics.status === 'AVAILABLE' ? number((side as typeof d.left).carry) : availabilityText.readModelMissing)}</dd></div></dl></section>)}</div>
@@ -145,14 +149,15 @@ function Orders({q}:{q:Qualification}){
  return <><MemberPageHeader title="我的訂單" q={q}/><p className="muted">以下為目前資格的訂單；本人零售訂單列於下方。</p><button disabled={state.data===undefined&&!state.error} onClick={state.retry}>重新整理訂單</button><Result state={state}>{d=>{const visible=[...(data.isMock?orders.filter(o=>o.qualificationId===q.id):[]),...d.orders];return visible.length?<OrderList key={q.id} label="資格訂單" searchHint="輸入建立日期" rows={visible.map(o=>({id:o.id,reference: data.isMock?o.id:"訂單紀錄",createdAt:o.createdAt,amount:money(o.total),status:o.status,statusLabel:domainLabel(o.status),details:<><p>付款：{domainLabel(o.paymentStatus)}</p><p>配送：{domainLabel(o.shipmentStatus)}</p>{!data.isMock&&<ConnectedOrderDetails q={q} id={o.id}/>}</>}))}/>:<EmptyState title="此資格目前沒有訂單"/>}}</Result></>;
 }
 function Me() {
- const state = useResource('person', data.getPerson);
+ const state = useResource('person', data.getPerson,true,true);
+ useEffect(()=>{if(typeof window==='undefined'||typeof document==='undefined')return;const refresh=()=>{if(document.visibilityState==='visible')state.retry();};window.addEventListener('focus',refresh);document.addEventListener('visibilitychange',refresh);return()=>{window.removeEventListener('focus',refresh);document.removeEventListener('visibilitychange',refresh);};},[state.retry]);
  const { qualifications } = useQualification();
  return <>
-  <MemberPageHeader title="我的帳戶"/>
+  <MemberPageHeader title="我的帳戶"/><OrderTrackingStrip/>
   <Result state={state}>{p => <>
-   <section className="card"><h3>{p.name}</h3><p><span>會員編號</span> {p.memberNo}</p><p>會員狀態：{p.membershipState??'尚未完成網路會員註冊'}</p><p>電子郵件：{p.email ?? availabilityText.fieldMissing}（{p.emailVerifiedAt?'已驗證':'尚未驗證'}）</p><p>電話：{p.phone ?? availabilityText.fieldMissing}（{p.mobileVerifiedAt?'已驗證':'尚未驗證'}）</p></section>
+   <section className="card"><h3>{p.name}</h3><p><span>會員編號</span> {p.memberNo}</p><p>會員狀態：{p.membershipState==='FORMAL_MEMBER'?'正式會員':p.membershipState==='FORMAL_PENDING'?'正式會員申請中':p.membershipState==='NETWORK_MEMBER'?'網路會員':'尚未完成網路會員註冊'}</p><p>電子郵件：{p.email ?? availabilityText.fieldMissing}（{p.emailVerifiedAt?'已驗證':'尚未驗證'}）</p><p>電話：{p.phone ?? availabilityText.fieldMissing}（{p.mobileVerifiedAt?'已驗證':'尚未驗證'}）</p><button onClick={state.retry}>更新會員狀態</button></section>
    {!data.isMock&&p.membershipState===null&&<NetworkRegistration person={p} refresh={state.retry}/>}
-   {!data.isMock&&['NETWORK_MEMBER','FORMAL_PENDING'].includes(p.membershipState??'')&&<section className="card"><h3>申請正式會員</h3><Link to="/membership/upgrade">選購資格套組或繳交 600 元申請</Link></section>}
+   {!data.isMock&&['NETWORK_MEMBER','FORMAL_PENDING'].includes(p.membershipState??'')&&<section className="card"><h3>{p.membershipState==='FORMAL_PENDING'?'正式會員申請進度':'申請正式會員'}</h3><Link to="/membership/upgrade">{p.membershipState==='FORMAL_PENDING'?'查看申請進度':'填寫資料並選購資格套組'}</Link></section>}
   </>}</Result>
   <ProfileEditor refresh={state.retry}/><section className="card"><h3>顯示設定</h3><ThemePreferenceControl/></section>
   {!data.isMock&&<IdentityLinking/>}
@@ -170,7 +175,7 @@ function MemberApp() {
       <header><div className="uc-member-brand"><CompanyLogo/><small>{memberIdentityLabel}</small></div>{(!data.isMock||current) && <Link className="notification-link" to="/notifications" aria-label={data.isMock ? `通知中心，${unread} 則未讀` : '通知中心'}>通知{data.isMock ? ` ${unread}` : ''}</Link>}</header>
       {data.isMock && <aside className="demo-banner" data-environment="mock-visual-only"><strong>{uiText("DEV 示範模式 · ")}</strong><span>目前為示範資料，不代表真實業績、獎金或訂單。</span></aside>}
       <main ref={mainRef} id="member-main" tabIndex={-1}>{loading ? <LoadingState label={loadingLabel}/> : error ? <ErrorState message={error} retry={()=>{begin();retry()}}/> : current ? <><ContextBar beforeSelect={begin}/><div key={current.id}><Routes>
-        <Route path="/" element={<><ServiceWelcome/><Home q={current}/></>}/>
+        <Route path="/" element={<><Home q={current}/><ServiceWelcome/></>}/>
         <Route path="/ai-assistant" element={<AiAssistant q={current}/>}/>
         <Route path="/organization" element={<Organization q={current}/>}/>
         <Route path="/growth" element={<GrowthCenter/>}/>
@@ -180,8 +185,9 @@ function MemberApp() {
         <Route path="/repurchase" element={<RepurchaseDetails key={current.id} q={current}/>}/>
         <Route path="/payouts" element={<MemberPayouts key={current.id} q={current}/>}/>
         <Route path="/bonuses" element={<Bonuses q={current}/>}/>
+        <Route path="/shop/products/:sku" element={<ProductDetail q={current}/>}/>
         <Route path="/shop" element={data.isMock?<Shop q={current}/>:<Mall q={current} onCreated={retry}/>}/>
-        <Route path="/orders" element={<><Orders q={current}/><WebRetailOrders/></>}/>
+        <Route path="/orders" element={<MyOrders/>}/>
         <Route path="/sharing" element={<SharingCenter q={current}/>}/>
         <Route path="/content" element={<ContentList q={current}/>}/>
         <Route path="/content/:id" element={<ContentDetail q={current}/>}/>
@@ -190,15 +196,16 @@ function MemberApp() {
         <Route path="/notifications" element={<Notifications q={current}/>}/>
         <Route path="*" element={<section className="card"><h2>找不到頁面</h2><Link to="/">返回首頁</Link></section>}/>
       </Routes></div></> : <Routes>
-        <Route path="/" element={<><ServiceWelcome/><MemberWelcome/></>}/><Route path="/explore" element={<ExploreHub/>}/>
+        <Route path="/" element={<><MemberWelcome/><ServiceWelcome/></>}/><Route path="/explore" element={<ExploreHub/>}/>
         <Route path="/ai-assistant" element={<AiAssistant/>}/>
         <Route path="/content" element={<ContentList/>}/><Route path="/content/:id" element={<ContentDetail/>}/>
-        <Route path="/orders" element={<WebRetailOrders/>}/>
+        <Route path="/orders" element={<MyOrders/>}/>
         <Route path="/membership/upgrade" element={<FormalEnrollment/>}/>
         <Route path="/growth" element={<GrowthCenter/>}/>
         <Route path="/notifications" element={<MemberMessages/>}/>
         <Route path="/learning" element={<LearningCenter/>}/>
         <Route path="/events" element={<EventCenter/>}/>
+        <Route path="/shop/products/:sku" element={<ProductDetail/>}/>
         <Route path="/shop" element={<Mall onCreated={retry}/>}/>
         <Route path="/me" element={<Me/>}/>
         <Route path="*" element={<section className="card"><h2>尚未取得會員資格</h2><p>可先完成正式會員資料，再透過正式套組取得第一個會員資格。</p><Link className="text-link" to="/shop">選擇正式會員套組</Link><button onClick={retry}>重新查詢</button><Link className="text-link" to="/me">查看會員資料</Link><EndSession connected={!data.isMock}/></section>}/>

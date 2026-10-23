@@ -5,6 +5,11 @@ import {IsIn,IsOptional,IsString,IsUUID,IsInt,Matches,Min} from 'class-validator
 import {Roles} from '../auth/roles.decorator';
 import {BinaryTreeReadService} from './binary-tree-read.service';
 import {TreePrincipal,BinaryTreeService} from './binary-tree.service';
+class CurrentTreeQuery {
+ @IsOptional() @IsUUID() after?:string;
+ @IsOptional() @Matches(/^[A-Z][A-Z0-9_-]{0,70}$/) ballNo?:string;
+ @IsOptional() @Matches(/^[A-Z][A-Z0-9_-]{0,70}$/) candidateBallNo?:string;
+}
 class TreeTimeQuery {
  @ApiProperty({enum:['Asia/Taipei']}) @IsIn(['Asia/Taipei']) timezone!:'Asia/Taipei';
  @ApiProperty({format:'date-time'}) @IsString() asOf!:string;
@@ -32,6 +37,10 @@ class TreePreviewQuery {
 @Controller('admin/organization/trees')
 export class BinaryTreeReadController {
  constructor(private readonly service:BinaryTreeReadService,private readonly commands:BinaryTreeService){}
+ @Get('current') @Header('Cache-Control','no-store')
+ async currentList(@Req() req:{user:TreePrincipal},@Query() query:CurrentTreeQuery){return {data:await this.service.currentList(req.user,query.after)};}
+ @Get(':id/current-state') @Header('Cache-Control','no-store')
+ async currentState(@Req() req:{user:TreePrincipal},@Param('id',ParseUUIDPipe) id:string,@Query() query:CurrentTreeQuery){return {data:await this.service.currentState(req.user,id,query)};}
  @Get() @Header('Cache-Control','no-store') @ApiOperation({operationId:'adminListBinaryTrees',summary:'依指定時間與記錄截點列出樹'})
  async list(@Req() req:{user:TreePrincipal},@Query() input:TreeListQuery){const {after,...time}=input;return {data:await this.service.list(req.user,time,after)};}
  @Get(':id') @Header('Cache-Control','no-store') @ApiOperation({operationId:'adminReadBinaryTree',summary:'讀取樹與七個標準位置的非金額歷史統計',description:'Company position LEADER presentation is returned only from a sealed effective profile binding. Missing or ambiguous evidence is UNAVAILABLE; clients must not infer LEADER from a position number or Company ownership.'})

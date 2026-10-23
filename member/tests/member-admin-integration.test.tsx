@@ -45,16 +45,16 @@ it('refuses a foreign-ball detail even when the returned order is otherwise vali
 it('refreshes the current-ball order list after an Admin payment, replacing stale status',async()=>{
   const b=bundle(),q=qualification(b);expect(b.memberOrdersBefore?.data).toBeTruthy();let paid=false;
   serve(b.memberOrdersBefore);
-  const fetch=vi.fn(async(url:string)=>new Response(JSON.stringify(url.includes('/qualifications')?{...b.memberOrderAfter,data:[q]}:url.includes('/member/me')?{...b.memberOrderAfter,data:{name:'Integration Member',alias:null,memberNo:'2609000004',email:null,phone:null,gender:null,birthDate:null,membershipState:'NETWORK_MEMBER',mobileVerifiedAt:null}}:paid?b.memberOrdersAfter:b.memberOrdersBefore)));
+  const fetch=vi.fn(async(url:string)=>new Response(JSON.stringify(url.includes('/qualifications')?{...b.memberOrderAfter,data:[q]}:url.includes('/member/me')?{...b.memberOrderAfter,data:{name:'Integration Member',alias:null,memberNo:'2609000004',email:null,phone:null,gender:null,birthDate:null,membershipState:'NETWORK_MEMBER',mobileVerifiedAt:null}}:{...b.memberOrdersBefore,data:[{orderNo:b.orderCreate.data.orderNo??'123',status:paid?'PAID':'CONFIRMED',paymentStatus:paid?'PAID':'PENDING',total:'799.98',createdAt:'2026-10-22T00:00:00Z',purpose:'RETAIL',paidAt:null,items:[],fulfillments:[]}]})));
   vi.stubGlobal('fetch',fetch);
   await act(async()=>{tree=create(<MemoryRouter initialEntries={['/orders']}><QualificationProvider><App/></QualificationProvider></MemoryRouter>);});
-  expect(JSON.stringify(tree!.toJSON())).toContain("已確認");expect(JSON.stringify(tree!.toJSON())).not.toContain('PAID');
+  expect(JSON.stringify(tree!.toJSON())).toContain("已建立");expect(JSON.stringify(tree!.toJSON())).not.toContain('PAID');
   paid=true;
-  const refresh=tree!.root.findAllByType('button').find(button=>button.children.join('')==='重新整理訂單');expect(refresh).toBeDefined();
+  const refresh=tree!.root.findAllByType('button').find(button=>button.children.join('')==='重新整理訂單狀態');expect(refresh).toBeDefined();
   await act(async()=>{refresh!.props.onClick();});
   const statusCells=tree!.root.findAllByProps({className:'uc-order-status'}).map(cell=>cell.children.join(''));
-  expect(statusCells).toContain('已付款');expect(tree!.root.findByType(OrderList).props.rows.find((row:any)=>row.id===b.orderCreate.data.id).status).toBe('PAID');
+  expect(statusCells).toContain('已付款');expect(tree!.root.findByType(OrderList).props.rows.find((row:any)=>row.id===(b.orderCreate.data.orderNo??'123')).status).toBe('PAID');
   expect(JSON.stringify(tree!.toJSON())).not.toContain(b.orderCreate.data.id);
-  const reads=fetch.mock.calls.filter(([url])=>url.includes('/member/orders?'));expect(reads).toHaveLength(2);
-  expect(reads.every(([url])=>url.includes('qualificationId='+q.id))).toBe(true);
+  const reads=fetch.mock.calls.filter(([url])=>url.includes('/member/my-orders'));expect(reads).toHaveLength(2);
+  expect(reads.every(([url])=>!url.includes('qualificationId'))).toBe(true);
 });

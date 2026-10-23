@@ -1,0 +1,38 @@
+{
+  "release": "recommendation-ux-20261023",
+  "scope": "Product, event and content recommendation UX, share ownership isolation, public landing and administration visibility",
+  "admin": {
+    "image": "ucell-admin:recommendation-ux-20261023",
+    "digest": "sha256:7340317c833d14b82c36be010e01523dc1e3e5a096387951cb719ae872de94dd",
+    "revision": "ucell-prod-admin--recommendation-ux-20261023"
+  },
+  "member": {
+    "image": "ucell-member:recommendation-ux-20261023",
+    "digest": "sha256:10981fac1655c1ca242f81768924da9f79fd536a0b94bdc2ee9c134f8b626d32",
+    "revision": "ucell-prod-member--recommendation-ux-20261023"
+  },
+  "api": {"changed": false, "revision": "ucell-prod-api--placement-ux-20261023"},
+  "changes": [
+    "Share panel resets on ball or target change; late QR results cannot replace a newer link",
+    "Share expiry refresh, subject and step explanations, management link and mobile action layout",
+    "Public preview identity isolation and referral-recording status before login or registration",
+    "Sharing center discovery remains usable during insight failures; type filters and revoke receipt",
+    "Admin product/event/content workflow explanations, member preview entries, role-gated product/event insights",
+    "Product thumbnails and SKU-specific preview links",
+    "Activity cancellation confirmation and explanations for unavailable registration or sharing"
+  ],
+  "validation": {
+    "memberFullSuite": 339,
+    "memberAdditionalRecoveryTest": 1,
+    "adminFullSuite": 272,
+    "backendExistingSharingAndHTTPTests": 23,
+    "typechecksAndProductionBuilds": "passed",
+    "browserQA": "Actual share component plus production public/admin bundles with intercepted fixture API; QR, ball switch, login/registration SKU preservation, all three admin pages and mobile overflow passed",
+    "liveReadOnlyAudit": {"activeProducts": 5, "shareableProductTargets": 5, "productImages": 5, "eligibleEventTargets": 0, "insightRows": 0, "officialPaidOrders": 0},
+    "eventLimitation": "No currently eligible live event target. Event scenarios validated with fixtures and backend tests; no production registration performed.",
+    "deployments": "Both web revisions Healthy/Running, 100 percent traffic",
+    "messagesSent": 0,
+    "financialRulesChanged": false,
+    "databaseMigration": false
+  }
+}

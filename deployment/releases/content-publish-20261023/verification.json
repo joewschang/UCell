@@ -1,0 +1,9 @@
+{
+ "change":"Inline per-version approval reference, validation, pending, failure/retry and success state for external content publication",
+ "image":"ucell-admin:content-publish-20261023",
+ "digest":"sha256:4f0e13b51ed9dc207a4480eb72644563438122f2fd540924ffa4c7e8f3b7b19e",
+ "baseAndRollback":"ucell-admin:pnasl-20261023",
+ "tests":{"contentTests":5,"typecheck":"passed","productionBuild":"passed","browser":{"missingReferenceExplained":true,"errorBesideRow":true,"retry":true,"publishedState":true,"pageErrors":0,"fixtureData":true}},
+ "realContentPublishedByVerification":0,
+ "backendChanged":false
+}
