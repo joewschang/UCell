@@ -1,0 +1,162 @@
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.MemberEventsService = void 0;
+const common_1 = require("@nestjs/common");
+const database_1 = require("@ucell/database");
+const node_crypto_1 = require("node:crypto");
+const audit_service_1 = require("../../common/audit/audit.service");
+const idempotency_service_1 = require("../../common/idempotency/idempotency.service");
+const event_media_1 = require("./event-media");
+const code = /^[A-Z][A-Z0-9_-]{2,39}$/;
+const active = ['REGISTERED', 'CHECKED_IN', 'ATTENDED'];
+let MemberEventsService = class MemberEventsService {
+    db;
+    idempotency;
+    audit;
+    constructor(db, idempotency, audit) {
+        this.db = db;
+        this.idempotency = idempotency;
+        this.audit = audit;
+    }
+    async uploadImage(mimeType, contentBase64, actor, key, requestId) { const content = (0, event_media_1.decodeEventImage)(mimeType, contentBase64), hash = (0, node_crypto_1.createHash)('sha256').update(content).digest('hex'); return (await this.execute(`admin:event:image:${actor}`, key, { hash, mimeType }, async (tx) => { const id = (0, node_crypto_1.randomUUID)(); await tx.$executeRaw `INSERT INTO learning.event_image(image_id,mime_type,content,created_by) VALUES (${id}::uuid,${mimeType},${content},${actor})`; await this.audit.write(tx, { actorType: 'USER', actorId: actor, action: 'EVENT_IMAGE_UPLOADED', entityType: 'EventImage', entityId: id, afterData: { mimeType, hash, size: content.length }, requestId, correlationId: (0, node_crypto_1.randomUUID)() }); return { id }; })).value; }
+    image(id, admin = false) { return (0, event_media_1.readEventImage)(this.db, id, admin); }
+    async edit(eventCode, input, actor, key, requestId) {
+        if (!code.test(eventCode) || !input.title?.trim() || input.title.length > 160 || (input.description?.length ?? 0) > 4000)
+            throw new common_1.UnprocessableEntityException('EVENT_CONTENT_INVALID');
+        const media = (0, event_media_1.validateEventMedia)(input.media);
+        return (await this.execute(`admin:event:edit:${eventCode}:${actor}`, key, input, async (tx) => {
+            const e = await tx.memberEvent.findUnique({ where: { eventCode } });
+            if (!e)
+                throw new common_1.NotFoundException('EVENT_NOT_FOUND');
+            const locked = await this.lockEvent(tx, e.memberEventId);
+            if (locked.status === 'ARCHIVED')
+                throw new common_1.ConflictException('EVENT_ARCHIVED');
+            const latest = await tx.memberEventVersion.findFirstOrThrow({ where: { memberEventId: e.memberEventId }, orderBy: { version: 'desc' } });
+            if (latest.version !== input.baseVersion || latest.contentHash !== input.baseHash)
+                throw new common_1.ConflictException('EVENT_VERSION_CHANGED');
+            const data = { title: input.title.trim(), description: input.description?.trim() || null, eventType: latest.eventType, startsAt: latest.startsAt, endsAt: latest.endsAt, capacity: latest.capacity, locationReference: latest.locationReference, onlineJoinReference: latest.onlineJoinReference, audiencePolicy: latest.audiencePolicy };
+            const hash = (0, node_crypto_1.createHash)('sha256').update(JSON.stringify({ ...data, media })).digest('hex');
+            const v = latest.status === 'DRAFT' ? await tx.memberEventVersion.update({ where: { memberEventVersionId: latest.memberEventVersionId }, data: { ...data, contentHash: hash } }) : await tx.memberEventVersion.create({ data: { memberEventId: e.memberEventId, version: latest.version + 1, ...data, contentHash: hash } });
+            await (0, event_media_1.saveEventMedia)(tx, v.memberEventVersionId, media);
+            await this.audit.write(tx, { actorType: 'USER', actorId: actor, action: 'MEMBER_EVENT_CONTENT_EDITED', entityType: 'MemberEventVersion', entityId: v.memberEventVersionId, afterData: { eventCode, version: v.version, contentHash: hash }, requestId, correlationId: (0, node_crypto_1.randomUUID)() });
+            return { eventCode, version: v.version, status: 'DRAFT' };
+        })).value;
+    }
+    async remind(eventCode, memberNo, reason, actor, key, requestId) {
+        if (!code.test(eventCode) || !/^\d{10}$/.test(memberNo) || typeof reason !== 'string' || !reason.trim() || reason.length > 500)
+            throw new common_1.UnprocessableEntityException('EVENT_REMINDER_INVALID');
+        return (await this.execute(`admin:event:reminder:${actor}`, key, { eventCode, memberNo, reason }, async (tx) => {
+            const event = await tx.memberEvent.findUnique({ where: { eventCode } });
+            if (!event)
+                throw new common_1.NotFoundException('EVENT_NOT_FOUND');
+            const current = await this.lockEvent(tx, event.memberEventId);
+            const r = await tx.memberEventRegistration.findFirst({ where: { memberEventId: event.memberEventId, person: { memberNo } }, include: { eventVersion: true, person: { select: { membershipState: true } } } });
+            if (!r)
+                throw new common_1.NotFoundException('EVENT_REGISTRATION_NOT_FOUND');
+            await this.lockRegistration(tx, r.memberEventRegistrationId);
+            const now = this.now();
+            if (current.status !== 'PUBLISHED' || r.eventVersion.status !== 'PUBLISHED' || r.status !== 'REGISTERED' || r.eventVersion.startsAt <= now || !['NETWORK_MEMBER', 'FORMAL_PENDING', 'FORMAL_MEMBER'].includes(r.person.membershipState ?? ''))
+                throw new common_1.ConflictException('EVENT_REMINDER_NOT_APPLICABLE');
+            const day = new Date(now.getTime() + 8 * 3600000).toISOString().slice(0, 10), messageKey = `event:reminder:${r.registrationCycleId}:${day}`;
+            if (await tx.memberNotification.findUnique({ where: { messageKey } }))
+                return { eventCode, memberNo, status: 'ALREADY_NOTIFIED', replayed: true };
+            await (0, database_1.appendMemberMessage)(tx, { messageKey, personId: r.personId, category: 'EVENT', title: '活動參加提醒', body: `您已報名活動 ${eventCode}，請至活動中心查看時間與參加資訊。`, sourceType: 'MEMBER_EVENT', sourceReference: `EVENT:${eventCode}`, deepLink: `/events?event=${eventCode}`, expiresAt: r.eventVersion.startsAt });
+            await this.audit.write(tx, { actorType: 'USER', actorId: actor, action: 'MEMBER_EVENT_REMINDER_CREATED', entityType: 'MemberEventRegistration', entityId: r.memberEventRegistrationId, afterData: { eventCode, memberNo, reason, version: r.eventVersion.version, channel: 'UCELL_PERSONAL' }, requestId, correlationId: (0, node_crypto_1.randomUUID)() });
+            return { eventCode, memberNo, status: 'REMINDER_CREATED', replayed: false };
+        })).value;
+    }
+    now() { return new Date(); }
+    async execute(scope, key, input, work) { for (let attempt = 0;; attempt++) {
+        try {
+            return await this.idempotency.execute(scope, key, input, work);
+        }
+        catch (error) {
+            if (attempt < 3 && ['P2034', 'P2002'].includes(error?.code))
+                continue;
+            throw error;
+        }
+    } }
+    async lockEvent(tx, id) { await tx.$queryRaw(database_1.Prisma.sql `SELECT member_event_id FROM learning.member_event WHERE member_event_id=${id}::uuid FOR UPDATE`); return tx.memberEvent.findUniqueOrThrow({ where: { memberEventId: id } }); }
+    async lockRegistration(tx, id) { await tx.$queryRaw(database_1.Prisma.sql `SELECT member_event_registration_id FROM learning.member_event_registration WHERE member_event_registration_id=${id}::uuid FOR UPDATE`); }
+    async archive(eventCode, reason, actor, key, requestId) { if (!code.test(eventCode) || typeof reason !== 'string' || !reason.trim() || reason.length > 500)
+        throw new common_1.UnprocessableEntityException('EVENT_ARCHIVE_INVALID'); return (await this.execute(`admin:event:archive:${eventCode}:${actor}`, key, { reason }, async (tx) => { const event = await tx.memberEvent.findUnique({ where: { eventCode } }); if (!event)
+        throw new common_1.NotFoundException('EVENT_NOT_FOUND'); const current = await this.lockEvent(tx, event.memberEventId); if (current.status === 'ARCHIVED')
+        return { eventCode, status: 'ARCHIVED', replayed: true }; await tx.memberEvent.update({ where: { memberEventId: event.memberEventId }, data: { status: 'ARCHIVED' } }); await tx.memberNotification.updateMany({ where: { sourceReference: `EVENT:${eventCode}`, messageKey: { startsWith: 'event:reminder:' }, retiredAt: null }, data: { retiredAt: new Date() } }); await this.audit.write(tx, { actorType: 'USER', actorId: actor, action: 'MEMBER_EVENT_ARCHIVED', entityType: 'MemberEvent', entityId: event.memberEventId, afterData: { eventCode, status: 'ARCHIVED', reason }, requestId, correlationId: (0, node_crypto_1.randomUUID)() }); return { eventCode, status: 'ARCHIVED', replayed: false }; })).value; }
+    async credential(personId, eventCode, key, requestId) { if (!await this.allowed(personId))
+        throw new common_1.NotFoundException('EVENT_NOT_FOUND'); const result = (await this.execute(`member:event:credential:${personId}`, key, { eventCode }, async (tx) => { const event = await tx.memberEvent.findUnique({ where: { eventCode } }); if (!event)
+        throw new common_1.NotFoundException('EVENT_NOT_FOUND'); const current = await this.lockEvent(tx, event.memberEventId), r = await tx.memberEventRegistration.findUnique({ where: { memberEventId_personId: { memberEventId: event.memberEventId, personId } }, include: { eventVersion: true } }); if (!r)
+        throw new common_1.NotFoundException('EVENT_REGISTRATION_NOT_FOUND'); await this.lockRegistration(tx, r.memberEventRegistrationId); if (current.status !== 'PUBLISHED' || r.status !== 'REGISTERED' || r.eventVersion.endsAt <= this.now())
+        throw new common_1.ConflictException('EVENT_CREDENTIAL_NOT_AVAILABLE'); const token = (0, node_crypto_1.randomBytes)(32).toString('base64url'); await tx.memberEventRegistration.update({ where: { memberEventRegistrationId: r.memberEventRegistrationId }, data: { checkInTokenHash: (0, node_crypto_1.createHash)('sha256').update(token).digest('hex') } }); await this.audit.write(tx, { actorType: 'MEMBER', actorId: personId, action: 'MEMBER_EVENT_CREDENTIAL_REISSUED', entityType: 'MemberEventRegistration', entityId: r.memberEventRegistrationId, afterData: { eventCode }, requestId, correlationId: (0, node_crypto_1.randomUUID)() }); return { eventCode, checkInToken: token }; })).value; const current = await this.db.memberEventRegistration.findFirst({ where: { personId, event: { eventCode } }, include: { event: true, eventVersion: true } }); if (!current || current.status !== 'REGISTERED' || current.event.status !== 'PUBLISHED' || current.eventVersion.endsAt <= this.now() || current.checkInTokenHash !== (0, node_crypto_1.createHash)('sha256').update(result.checkInToken).digest('hex'))
+        throw new common_1.ConflictException('EVENT_CREDENTIAL_REPLACED_OR_CLOSED'); return result; }
+    async attend(eventCode, memberNo, actor, key, requestId) { if (!code.test(eventCode) || !/^\d{10}$/.test(memberNo))
+        throw new common_1.UnprocessableEntityException('EVENT_ATTENDANCE_INVALID'); return (await this.execute(`admin:event:attend:${actor}`, key, { eventCode, memberNo }, async (tx) => { const r = await tx.memberEventRegistration.findFirst({ where: { event: { eventCode }, person: { memberNo } }, include: { eventVersion: true } }); if (!r)
+        throw new common_1.NotFoundException('EVENT_REGISTRATION_NOT_FOUND'); const event = await this.lockEvent(tx, r.memberEventId); await this.lockRegistration(tx, r.memberEventRegistrationId); if (r.status === 'ATTENDED')
+        return { eventCode, memberNo, status: 'ATTENDED', replayed: true }; if (event.status !== 'PUBLISHED' || r.status !== 'CHECKED_IN' || r.eventVersion.startsAt > this.now())
+        throw new common_1.ConflictException('EVENT_ATTENDANCE_NOT_READY'); const now = this.now(); await tx.memberEventRegistration.update({ where: { memberEventRegistrationId: r.memberEventRegistrationId }, data: { status: 'ATTENDED', attendedAt: now } }); await this.audit.write(tx, { actorType: 'USER', actorId: actor, action: 'MEMBER_EVENT_ATTENDED', entityType: 'MemberEventRegistration', entityId: r.memberEventRegistrationId, afterData: { eventCode, memberNo, status: 'ATTENDED' }, requestId, correlationId: (0, node_crypto_1.randomUUID)() }); await (0, database_1.appendMemberMessage)(tx, { messageKey: `event:attended:${r.registrationCycleId}`, personId: r.personId, category: 'EVENT', title: '活動出席已確認', body: `活動 ${eventCode} 已確認您的出席紀錄。`, sourceType: 'MEMBER_EVENT', sourceReference: `EVENT:${eventCode}`, deepLink: `/events?event=${eventCode}` }); return { eventCode, memberNo, status: 'ATTENDED', replayed: false }; })).value; }
+    input(input) { if (!code.test(input?.eventCode ?? '') || typeof input.title !== 'string' || !input.title.trim() || !['ONLINE', 'OFFLINE', 'HYBRID'].includes(input.eventType))
+        throw new common_1.UnprocessableEntityException('EVENT_INVALID'); const startsAt = new Date(input.startsAt), endsAt = new Date(input.endsAt); if (!Number.isFinite(startsAt.getTime()) || !Number.isFinite(endsAt.getTime()) || endsAt <= startsAt || input.capacity !== undefined && (!Number.isInteger(input.capacity) || input.capacity < 1))
+        throw new common_1.UnprocessableEntityException('EVENT_WINDOW_OR_CAPACITY_INVALID'); const locationReference = input.locationReference?.trim() || null, onlineJoinReference = input.onlineJoinReference?.trim() || null; if ((input.eventType === 'OFFLINE' && !locationReference) || (input.eventType === 'ONLINE' && !onlineJoinReference) || (input.eventType === 'HYBRID' && (!locationReference || !onlineJoinReference)))
+        throw new common_1.UnprocessableEntityException('EVENT_LOCATION_INVALID'); if (onlineJoinReference) {
+        try {
+            if (new URL(onlineJoinReference).protocol !== 'https:' || new URL(onlineJoinReference).username || new URL(onlineJoinReference).password)
+                throw 0;
+        }
+        catch {
+            throw new common_1.UnprocessableEntityException('EVENT_ONLINE_REFERENCE_INVALID');
+        }
+    } return { eventCode: input.eventCode, title: input.title.trim(), description: input.description?.trim() || null, eventType: input.eventType, startsAt, endsAt, locationReference, onlineJoinReference, capacity: input.capacity ?? null }; }
+    async create(input, actor, key, requestId) { const value = this.input(input); return (await this.execute(`admin:event:create:${actor}`, key, input, async (tx) => { const { eventCode, ...versionData } = value; const event = await tx.memberEvent.create({ data: { eventCode, createdByActor: actor } }); const hash = (0, node_crypto_1.createHash)('sha256').update(JSON.stringify(value)).digest('hex'); await tx.memberEventVersion.create({ data: { memberEventId: event.memberEventId, version: 1, ...versionData, contentHash: hash } }); await this.audit.write(tx, { actorType: 'USER', actorId: actor, action: 'MEMBER_EVENT_CREATED', entityType: 'MemberEvent', entityId: event.memberEventId, afterData: { eventCode, version: 1, contentHash: hash }, requestId, correlationId: (0, node_crypto_1.randomUUID)() }); return { eventCode, version: 1, status: 'DRAFT' }; })).value; }
+    async publish(eventCode, approvalReference, actor, key, requestId) { if (!code.test(eventCode) || !approvalReference?.trim())
+        throw new common_1.UnprocessableEntityException('EVENT_PUBLISH_INVALID'); return (await this.execute(`admin:event:publish:${eventCode}:${actor}`, key, { approvalReference }, async (tx) => { await tx.$queryRaw(database_1.Prisma.sql `SELECT member_event_id FROM learning.member_event WHERE event_code=${eventCode} FOR UPDATE`); const event = await tx.memberEvent.findUnique({ where: { eventCode }, include: { versions: { where: { status: 'DRAFT' }, orderBy: { version: 'desc' }, take: 1 } } }); const version = event?.versions[0]; if (!event || !version || event.status === 'ARCHIVED')
+        throw new common_1.ConflictException('EVENT_NOT_PUBLISHABLE'); const now = this.now(); await tx.memberEventVersion.update({ where: { memberEventVersionId: version.memberEventVersionId }, data: { status: 'PUBLISHED', approvalReference: approvalReference.trim(), approvedByActor: actor, approvedAt: now } }); await tx.memberEvent.update({ where: { memberEventId: event.memberEventId }, data: { status: 'PUBLISHED' } }); await this.audit.write(tx, { actorType: 'USER', actorId: actor, action: 'MEMBER_EVENT_PUBLISHED', entityType: 'MemberEventVersion', entityId: version.memberEventVersionId, afterData: { eventCode, version: version.version, contentHash: version.contentHash }, requestId, correlationId: (0, node_crypto_1.randomUUID)() }); return { eventCode, version: version.version, status: 'PUBLISHED' }; })).value; }
+    async adminList() { const rows = await this.db.memberEvent.findMany({ include: { versions: { orderBy: { version: 'desc' } }, _count: { select: { registrations: true } } }, orderBy: [{ createdAt: 'desc' }, { eventCode: 'asc' }], take: 100 }); const media = await (0, event_media_1.readEventMediaMap)(this.db, rows.flatMap(e => e.versions.map(v => v.memberEventVersionId))); return rows.map(e => ({ eventCode: e.eventCode, status: e.status, registrationCount: e._count.registrations, versions: e.versions.map(v => ({ contentHash: v.contentHash, media: media.get(v.memberEventVersionId) ?? { images: [], videos: [] }, version: v.version, title: v.title, description: v.description, eventType: v.eventType, status: v.status, startsAt: v.startsAt.toISOString(), endsAt: v.endsAt.toISOString(), capacity: v.capacity, locationReference: v.locationReference, onlineJoinReference: v.onlineJoinReference, audiencePolicy: v.audiencePolicy, approvedAt: v.approvedAt?.toISOString() ?? null })) })); }
+    async adminRegistrations(eventCode) { if (!code.test(eventCode))
+        throw new common_1.NotFoundException('EVENT_NOT_FOUND'); const event = await this.db.memberEvent.findUnique({ where: { eventCode }, select: { memberEventId: true, eventCode: true } }); if (!event)
+        throw new common_1.NotFoundException('EVENT_NOT_FOUND'); const rows = await this.db.memberEventRegistration.findMany({ where: { memberEventId: event.memberEventId }, include: { person: { select: { memberNo: true } }, eventVersion: { select: { title: true } }, participationEvidence: { include: { eventVersion: { select: { version: true } } }, orderBy: { occurredAt: 'asc' } } }, orderBy: { registeredAt: 'asc' }, take: 500 }); return { eventCode: event.eventCode, registrations: rows.map(row => ({ memberNo: row.person.memberNo, status: row.status, registeredAt: row.registeredAt.toISOString(), cancelledAt: row.cancelledAt?.toISOString() ?? null, checkedInAt: row.checkedInAt?.toISOString() ?? null, attendedAt: row.attendedAt?.toISOString() ?? null, eventTitle: row.eventVersion.title, history: row.participationEvidence.map(e => ({ eventType: e.eventType, occurredAt: e.occurredAt.toISOString(), version: e.eventVersion.version, origin: e.origin })) })) }; }
+    async allowed(personId) { const p = await this.db.person.findUnique({ where: { personId }, select: { membershipState: true } }); return !!p && ['NETWORK_MEMBER', 'FORMAL_PENDING', 'FORMAL_MEMBER'].includes(p.membershipState ?? ''); }
+    async visible(eventCode, now = new Date()) { const version = await this.db.memberEventVersion.findFirst({ where: { event: { eventCode, status: 'PUBLISHED' }, status: 'PUBLISHED', audiencePolicy: 'NETWORK_MEMBER', startsAt: { gt: now } }, include: { event: true }, orderBy: { version: 'desc' } }); if (!version)
+        throw new common_1.NotFoundException('EVENT_NOT_FOUND'); return version; }
+    async memberList(personId) { if (!await this.allowed(personId))
+        return []; const now = this.now(), rows = await this.db.memberEvent.findMany({ where: { OR: [{ status: 'PUBLISHED', versions: { some: { status: 'PUBLISHED', audiencePolicy: 'NETWORK_MEMBER', endsAt: { gt: now } } } }, { registrations: { some: { personId } } }] }, include: { versions: { where: { status: 'PUBLISHED' }, orderBy: { version: 'desc' }, take: 1 }, registrations: { where: { personId }, take: 1, include: { eventVersion: true } } }, orderBy: [{ createdAt: 'desc' }, { eventCode: 'asc' }], take: 100 }); const media = await (0, event_media_1.readEventMediaMap)(this.db, rows.flatMap(e => e.versions.map(v => v.memberEventVersionId))); return rows.flatMap(e => { const r = e.registrations[0], v = r?.eventVersion ?? e.versions[0], presentation = e.versions[0] ?? v; if (!v || !r && (e.status !== 'PUBLISHED' || v.audiencePolicy !== 'NETWORK_MEMBER' || v.endsAt <= now))
+        return []; return [{ eventCode: e.eventCode, title: presentation.title, description: presentation.description, media: media.get(presentation.memberEventVersionId) ?? { images: [], videos: [] }, eventType: v.eventType, startsAt: v.startsAt.toISOString(), endsAt: v.endsAt.toISOString(), capacity: v.capacity, status: r?.status ?? 'AVAILABLE', eventStatus: e.status }]; }); }
+    async memberDetail(personId, eventCode) { if (!await this.allowed(personId))
+        throw new common_1.NotFoundException('EVENT_NOT_FOUND'); return this.db.$transaction(async (tx) => { const e = await tx.memberEvent.findUnique({ where: { eventCode }, include: { versions: { where: { status: 'PUBLISHED' }, orderBy: { version: 'desc' }, take: 1 }, registrations: { where: { personId }, take: 1, include: { eventVersion: true, participationEvidence: { include: { eventVersion: { select: { version: true } } }, orderBy: [{ occurredAt: 'asc' }, { participationEvidenceId: 'asc' }] } } } } }); if (!e)
+        throw new common_1.NotFoundException('EVENT_NOT_FOUND'); const r = e.registrations[0], latest = e.versions[0], v = r?.status === 'CANCELLED' ? (latest ?? r.eventVersion) : (r?.eventVersion ?? latest), now = this.now(); if (!v || !r && (e.status !== 'PUBLISHED' || v.audiencePolicy !== 'NETWORK_MEMBER' || v.endsAt <= now))
+        throw new common_1.NotFoundException('EVENT_NOT_FOUND'); const open = e.status === 'PUBLISHED' && v.status === 'PUBLISHED', registered = !!r && active.includes(r.status); return { eventCode, title: (latest ?? v).title, description: (latest ?? v).description, media: await (0, event_media_1.readEventMedia)(tx, (latest ?? v).memberEventVersionId), contentVersion: (latest ?? v).version, eventType: v.eventType, version: v.version, eventStatus: e.status, startsAt: v.startsAt.toISOString(), endsAt: v.endsAt.toISOString(), locationReference: v.locationReference, onlineJoinReference: registered && open && v.endsAt > now ? v.onlineJoinReference : null, capacity: v.capacity, status: r?.status ?? 'AVAILABLE', canRegister: open && v.startsAt > now && (!r || r.status === 'CANCELLED'), canCancel: open && v.startsAt > now && r?.status === 'REGISTERED', canIssueCredential: open && v.endsAt > now && r?.status === 'REGISTERED', history: r?.participationEvidence.map(x => ({ eventType: x.eventType, occurredAt: x.occurredAt.toISOString(), version: x.eventVersion.version, origin: x.origin })) ?? [] }; }, { isolationLevel: database_1.Prisma.TransactionIsolationLevel.RepeatableRead }); }
+    async register(personId, eventCode, key, requestId) { if (!await this.allowed(personId))
+        throw new common_1.NotFoundException('EVENT_NOT_FOUND'); const visible = await this.visible(eventCode); return (await this.execute(`member:event:register:${personId}`, key, { eventCode }, async (tx) => { await tx.$executeRaw(database_1.Prisma.sql `SELECT member_event_id FROM learning.member_event WHERE member_event_id=${visible.memberEventId}::uuid FOR UPDATE`); const v = await tx.memberEventVersion.findUniqueOrThrow({ where: { memberEventVersionId: visible.memberEventVersionId }, include: { event: true } }); const now = this.now(); if (v.status !== 'PUBLISHED' || v.event.status !== 'PUBLISHED' || v.startsAt <= now)
+        throw new common_1.NotFoundException('EVENT_NOT_FOUND'); const existing = await tx.memberEventRegistration.findUnique({ where: { memberEventId_personId: { memberEventId: v.memberEventId, personId } } }); if (existing && existing.status !== 'CANCELLED')
+        return { eventCode, status: existing.status, replayed: true }; const count = await tx.memberEventRegistration.count({ where: { memberEventId: v.memberEventId, status: { in: [...active] } } }); if (v.capacity !== null && count >= v.capacity)
+        throw new common_1.ConflictException('EVENT_CAPACITY_FULL'); const token = (0, node_crypto_1.randomBytes)(32).toString('base64url'), hash = (0, node_crypto_1.createHash)('sha256').update(token).digest('hex'); if (existing)
+        await tx.memberEventRegistration.update({ where: { memberEventRegistrationId: existing.memberEventRegistrationId }, data: { memberEventVersionId: v.memberEventVersionId, status: 'REGISTERED', checkInTokenHash: hash, registrationCycleId: (0, node_crypto_1.randomUUID)(), registeredAt: now, cancelledAt: null, checkedInAt: null, attendedAt: null } });
+    else
+        await tx.memberEventRegistration.create({ data: { memberEventId: v.memberEventId, memberEventVersionId: v.memberEventVersionId, personId, checkInTokenHash: hash } }); await this.audit.write(tx, { actorType: 'MEMBER', actorId: personId, action: 'MEMBER_EVENT_REGISTERED', entityType: 'MemberEventRegistration', afterData: { eventCode, status: 'REGISTERED' }, requestId, correlationId: (0, node_crypto_1.randomUUID)() }); await (0, database_1.appendMemberMessage)(tx, { messageKey: `event:registered:${hash}`, personId, category: 'EVENT', title: '活動報名完成', body: `您已報名活動 ${eventCode}。`, sourceType: 'MEMBER_EVENT', sourceReference: `EVENT:${eventCode}`, deepLink: `/events?event=${eventCode}` }); return { eventCode, status: 'REGISTERED', checkInToken: token, replayed: false }; })).value; }
+    async cancel(personId, eventCode, key, requestId) { if (!await this.allowed(personId))
+        throw new common_1.NotFoundException('EVENT_NOT_FOUND'); const v = await this.visible(eventCode); return (await this.execute(`member:event:cancel:${personId}`, key, { eventCode }, async (tx) => { await this.lockEvent(tx, v.memberEventId); const currentVersion = await tx.memberEventVersion.findUniqueOrThrow({ where: { memberEventVersionId: v.memberEventVersionId } }); if (currentVersion.startsAt <= this.now())
+        throw new common_1.ConflictException('EVENT_REGISTRATION_CLOSED'); const r = await tx.memberEventRegistration.findUnique({ where: { memberEventId_personId: { memberEventId: v.memberEventId, personId } } }); if (!r)
+        throw new common_1.ConflictException('EVENT_REGISTRATION_REQUIRED'); await this.lockRegistration(tx, r.memberEventRegistrationId); if (r.status === 'CANCELLED')
+        return { eventCode, status: 'CANCELLED', replayed: true }; if (r.status !== 'REGISTERED')
+        throw new common_1.ConflictException('EVENT_REGISTRATION_NOT_CANCELLABLE'); await tx.memberEventRegistration.update({ where: { memberEventRegistrationId: r.memberEventRegistrationId }, data: { status: 'CANCELLED', cancelledAt: new Date() } }); await tx.memberNotification.updateMany({ where: { personId: r.personId, messageKey: { startsWith: `event:reminder:${r.registrationCycleId}:` }, retiredAt: null }, data: { retiredAt: new Date() } }); await this.audit.write(tx, { actorType: 'MEMBER', actorId: personId, action: 'MEMBER_EVENT_CANCELLED', entityType: 'MemberEventRegistration', afterData: { eventCode, status: 'CANCELLED' }, requestId, correlationId: (0, node_crypto_1.randomUUID)() }); await (0, database_1.appendMemberMessage)(tx, { messageKey: `event:cancelled:${r.memberEventRegistrationId}:${r.checkInTokenHash}`, personId, category: 'EVENT', title: '活動報名已取消', body: `您已取消活動 ${eventCode} 的報名。`, sourceType: 'MEMBER_EVENT', sourceReference: `EVENT:${eventCode}`, deepLink: `/events?event=${eventCode}` }); return { eventCode, status: 'CANCELLED', replayed: false }; })).value; }
+    async checkIn(token, actor, key, requestId) { if (typeof token !== 'string' || token.length < 32)
+        throw new common_1.NotFoundException('EVENT_CHECKIN_NOT_FOUND'); const hash = (0, node_crypto_1.createHash)('sha256').update(token).digest('hex'); return (await this.execute(`admin:event:checkin:${actor}`, key, { tokenHash: hash }, async (tx) => { const r = await tx.memberEventRegistration.findUnique({ where: { checkInTokenHash: hash }, include: { event: true, eventVersion: true } }); if (!r)
+        throw new common_1.NotFoundException('EVENT_CHECKIN_NOT_FOUND'); const currentEvent = await this.lockEvent(tx, r.memberEventId); await this.lockRegistration(tx, r.memberEventRegistrationId); if (currentEvent.status !== 'PUBLISHED')
+        throw new common_1.ConflictException('EVENT_NOT_OPEN'); const now = this.now(); if (r.eventVersion.startsAt > now || r.eventVersion.endsAt <= now)
+        throw new common_1.ConflictException('EVENT_CHECKIN_OUTSIDE_WINDOW'); if (['CHECKED_IN', 'ATTENDED'].includes(r.status))
+        return { eventCode: r.event.eventCode, status: r.status, replayed: true }; if (r.status !== 'REGISTERED')
+        throw new common_1.ConflictException('EVENT_REGISTRATION_NOT_CHECKINABLE'); await tx.memberEventRegistration.update({ where: { memberEventRegistrationId: r.memberEventRegistrationId }, data: { status: 'CHECKED_IN', checkedInAt: now } }); await this.audit.write(tx, { actorType: 'USER', actorId: actor, action: 'MEMBER_EVENT_CHECKED_IN', entityType: 'MemberEventRegistration', afterData: { eventCode: r.event.eventCode, status: 'CHECKED_IN' }, requestId, correlationId: (0, node_crypto_1.randomUUID)() }); await (0, database_1.appendMemberMessage)(tx, { messageKey: `event:checked-in:${r.memberEventRegistrationId}:${hash}`, personId: r.personId, category: 'EVENT', title: '活動報到完成', body: `您已完成活動 ${r.event.eventCode} 的報到。`, sourceType: 'MEMBER_EVENT', sourceReference: `EVENT:${r.event.eventCode}`, deepLink: `/events?event=${r.event.eventCode}` }); return { eventCode: r.event.eventCode, status: 'CHECKED_IN', replayed: false }; })).value; }
+};
+exports.MemberEventsService = MemberEventsService;
+exports.MemberEventsService = MemberEventsService = __decorate([
+    (0, common_1.Injectable)(),
+    __metadata("design:paramtypes", [database_1.PrismaService, idempotency_service_1.IdempotencyService, audit_service_1.AuditService])
+], MemberEventsService);
+//# sourceMappingURL=events.service.js.map

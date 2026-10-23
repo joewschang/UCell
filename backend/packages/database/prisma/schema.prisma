@@ -1280,11 +1280,32 @@ model ReferralLink {
   referrerQualification   Qualification         @relation(fields: [referrerQualificationId], references: [qualificationId])
   contentShare            ContentShareLink?
   resourceShare           ResourceShareLink?
+  shortLink               ReferralShortLink?
   attributions            ReferralAttribution[]
 
   @@index([referrerQualificationId, createdAt])
   @@map("referral_link")
   @@schema("identity")
+}
+
+model ReferralShortLink {
+  shortCode String @id @map("short_code") @db.VarChar(24)
+  referralLinkId String @unique @map("referral_link_id") @db.Uuid
+  encryptedToken String @map("encrypted_token")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  referralLink ReferralLink @relation(fields:[referralLinkId],references:[referralLinkId])
+  @@map("referral_short_link")
+  @@schema("integration")
+}
+
+model EventImage {
+  imageId String @id @default(dbgenerated("gen_random_uuid()")) @map("image_id") @db.Uuid
+  mimeType String @map("mime_type")
+  content Bytes
+  createdBy String @map("created_by")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  @@map("event_image")
+  @@schema("learning")
 }
 
 model ReferralAttribution {
@@ -1550,6 +1571,7 @@ model MemberEvent {
 }
 
 model MemberEventVersion {
+  presentation Json @default("{\"images\":[],\"videos\":[]}")
   memberEventVersionId String            @id @default(uuid()) @map("member_event_version_id") @db.Uuid
   memberEventId        String            @map("member_event_id") @db.Uuid
   version              Int

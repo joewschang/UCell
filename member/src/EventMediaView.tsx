@@ -1,0 +1,4 @@
+import {safeLearningUrl} from './LearningCenter';
+export function EventMediaView({media,coverOnly=false}:{media?:{images:string[];videos:string[]};coverOnly?:boolean}){
+ if(!media)return null;return <section aria-label="活動圖片與影音"><div style={{display:'grid',gap:12,gridTemplateColumns:'repeat(auto-fit,minmax(min(100%,260px),1fr))'}}>{(coverOnly?media.images.slice(0,1):media.images).filter(id=>/^[0-9a-f-]{36}$/i.test(id)).map((id,i)=><a key={id} href={`https://api.ucell.life/api/v1/event-images/${id}`} target="_blank" rel="noopener noreferrer"><img loading="lazy" src={`https://api.ucell.life/api/v1/event-images/${id}`} alt={`活動圖片 ${i+1}，點選放大`} style={{width:'100%',maxHeight:480,objectFit:'contain',borderRadius:12}}/></a>)}</div>{!coverOnly&&media.videos.map((url,i)=>{const safe=safeLearningUrl(url);return safe?<p key={url}><a className="button" href={safe} target="_blank" rel="noopener noreferrer">▶ 觀看活動影音 {i+1}（另開視窗）</a></p>:null})}</section>;
+}
