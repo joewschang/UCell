@@ -1,0 +1,746 @@
+[
+  {
+    "sku": "TIP-363",
+    "name": "晶萃源力飲",
+    "english": "THE CORE NEXUS · MitoChrono",
+    "pages": [
+      1,
+      2,
+      4
+    ],
+    "intro": "以 MycoGerm™ 米蕈真菌培養技術為核心的瓶裝飲品。從玄米培養基底、真菌栽培到固態發酵，呈現 UCell 對原料與製程的重視。",
+    "heading": "MycoGerm™ 配方特色",
+    "items": [
+      "以 MycoGerm™ 米蕈真菌為配方核心。",
+      "採第二代米蕈培養技術與固態發酵方式。",
+      "原料培養採台灣花東地區玄米作為基底，結合真菌栽培製程。"
+    ],
+    "spec": "10 mL × 10 瓶／盒",
+    "document": {
+      "blocks": [
+        {
+          "type": "heading",
+          "runs": [
+            {
+              "text": "晶萃源力飲｜TIP-363"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "runs": [
+            {
+              "text": "THE CORE NEXUS · MitoChrono"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "runs": [
+            {
+              "text": "以 MycoGerm™ 米蕈真菌培養技術為核心的瓶裝飲品。從玄米培養基底、真菌栽培到固態發酵，呈現 UCell 對原料與製程的重視。"
+            }
+          ]
+        },
+        {
+          "type": "heading",
+          "runs": [
+            {
+              "text": "MycoGerm™ 配方特色"
+            }
+          ]
+        },
+        {
+          "type": "bullet",
+          "runs": [
+            {
+              "text": "以 MycoGerm™ 米蕈真菌為配方核心。"
+            }
+          ]
+        },
+        {
+          "type": "bullet",
+          "runs": [
+            {
+              "text": "採第二代米蕈培養技術與固態發酵方式。"
+            }
+          ]
+        },
+        {
+          "type": "bullet",
+          "runs": [
+            {
+              "text": "原料培養採台灣花東地區玄米作為基底，結合真菌栽培製程。"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "runs": [
+            {
+              "text": "以上為配方重點介紹，完整成分、含量及過敏原資訊請依實際產品包裝標示。"
+            }
+          ]
+        },
+        {
+          "type": "heading",
+          "runs": [
+            {
+              "text": "包裝規格"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "runs": [
+            {
+              "text": "10 mL × 10 瓶／盒"
+            }
+          ]
+        },
+        {
+          "type": "heading",
+          "runs": [
+            {
+              "text": "食用與保存"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "runs": [
+            {
+              "text": "請依產品外盒標示的食用方法、每日建議量與保存條件使用；有效日期及批號請見實際包裝。"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "runs": [
+            {
+              "text": "如需確認完整成分或食用資訊，請洽 UCell 客服。"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "sku": "TIP-580",
+    "name": "淨衡順",
+    "english": "THE BALANCE · MetaClear",
+    "pages": [
+      1,
+      3,
+      4
+    ],
+    "intro": "以 MycoGerm™ 米蕈真菌搭配沖繩山苦瓜、甘草與乾薑，將真菌培養原料與植物素材結合於同一款配方。",
+    "heading": "四項配方重點",
+    "items": [
+      "MycoGerm™ 米蕈真菌：使用玄米基底與固態培養技術。",
+      "沖繩山苦瓜。",
+      "甘草。",
+      "乾薑。"
+    ],
+    "spec": "30 包／盒",
+    "document": {
+      "blocks": [
+        {
+          "type": "heading",
+          "runs": [
+            {
+              "text": "淨衡順｜TIP-580"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "runs": [
+            {
+              "text": "THE BALANCE · MetaClear"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "runs": [
+            {
+              "text": "以 MycoGerm™ 米蕈真菌搭配沖繩山苦瓜、甘草與乾薑，將真菌培養原料與植物素材結合於同一款配方。"
+            }
+          ]
+        },
+        {
+          "type": "heading",
+          "runs": [
+            {
+              "text": "四項配方重點"
+            }
+          ]
+        },
+        {
+          "type": "bullet",
+          "runs": [
+            {
+              "text": "MycoGerm™ 米蕈真菌：使用玄米基底與固態培養技術。"
+            }
+          ]
+        },
+        {
+          "type": "bullet",
+          "runs": [
+            {
+              "text": "沖繩山苦瓜。"
+            }
+          ]
+        },
+        {
+          "type": "bullet",
+          "runs": [
+            {
+              "text": "甘草。"
+            }
+          ]
+        },
+        {
+          "type": "bullet",
+          "runs": [
+            {
+              "text": "乾薑。"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "runs": [
+            {
+              "text": "以上為配方重點介紹，完整成分、含量及過敏原資訊請依實際產品包裝標示。"
+            }
+          ]
+        },
+        {
+          "type": "heading",
+          "runs": [
+            {
+              "text": "包裝規格"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "runs": [
+            {
+              "text": "30 包／盒"
+            }
+          ]
+        },
+        {
+          "type": "heading",
+          "runs": [
+            {
+              "text": "食用與保存"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "runs": [
+            {
+              "text": "請依產品外盒標示的食用方法、每日建議量與保存條件使用；有效日期及批號請見實際包裝。"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "runs": [
+            {
+              "text": "如需確認完整成分或食用資訊，請洽 UCell 客服。"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "sku": "TIP-696",
+    "name": "活力芯",
+    "english": "THE ESSENTIAL · CoreSurge",
+    "pages": [
+      1,
+      3,
+      4
+    ],
+    "intro": "結合 MycoGerm™ 米蕈真菌、植物素材與鹿茸粉的複方設計。六項關鍵原料，讓您從配方組成認識活力芯。",
+    "heading": "六項關鍵原料",
+    "items": [
+      "MycoGerm™ 米蕈真菌。",
+      "肉蓯蓉。",
+      "葛根。",
+      "丹參。",
+      "紅景天。",
+      "鹿茸粉。"
+    ],
+    "spec": "30 包／盒",
+    "document": {
+      "blocks": [
+        {
+          "type": "heading",
+          "runs": [
+            {
+              "text": "活力芯｜TIP-696"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "runs": [
+            {
+              "text": "THE ESSENTIAL · CoreSurge"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "runs": [
+            {
+              "text": "結合 MycoGerm™ 米蕈真菌、植物素材與鹿茸粉的複方設計。六項關鍵原料，讓您從配方組成認識活力芯。"
+            }
+          ]
+        },
+        {
+          "type": "heading",
+          "runs": [
+            {
+              "text": "六項關鍵原料"
+            }
+          ]
+        },
+        {
+          "type": "bullet",
+          "runs": [
+            {
+              "text": "MycoGerm™ 米蕈真菌。"
+            }
+          ]
+        },
+        {
+          "type": "bullet",
+          "runs": [
+            {
+              "text": "肉蓯蓉。"
+            }
+          ]
+        },
+        {
+          "type": "bullet",
+          "runs": [
+            {
+              "text": "葛根。"
+            }
+          ]
+        },
+        {
+          "type": "bullet",
+          "runs": [
+            {
+              "text": "丹參。"
+            }
+          ]
+        },
+        {
+          "type": "bullet",
+          "runs": [
+            {
+              "text": "紅景天。"
+            }
+          ]
+        },
+        {
+          "type": "bullet",
+          "runs": [
+            {
+              "text": "鹿茸粉。"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "runs": [
+            {
+              "text": "以上為配方重點介紹，完整成分、含量及過敏原資訊請依實際產品包裝標示。"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "runs": [
+            {
+              "text": "配方含鹿茸粉，選購前請確認是否符合個人飲食需求。"
+            }
+          ]
+        },
+        {
+          "type": "heading",
+          "runs": [
+            {
+              "text": "包裝規格"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "runs": [
+            {
+              "text": "30 包／盒"
+            }
+          ]
+        },
+        {
+          "type": "heading",
+          "runs": [
+            {
+              "text": "食用與保存"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "runs": [
+            {
+              "text": "請依產品外盒標示的食用方法、每日建議量與保存條件使用；有效日期及批號請見實際包裝。"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "runs": [
+            {
+              "text": "如需確認完整成分或食用資訊，請洽 UCell 客服。"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "sku": "TIP-777",
+    "name": "肽時光膠原飲",
+    "english": "THE COLLAGEN · Luxbeauté",
+    "pages": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11
+    ],
+    "intro": "以魚膠原蛋白為配方重點，搭配米蕈真菌蛋白、植物萃取及其他特色原料，組成九項美顏配方。採單包飲品設計，方便依包裝指示食用。",
+    "heading": "九項美顏配方",
+    "items": [
+      "MycoGerm™ 米蕈真菌蛋白。",
+      "金頂側耳萃取。",
+      "冰晶番茄萃取。",
+      "法國紅酒萃取。",
+      "金絲燕窩萃取。",
+      "穀胱甘肽。",
+      "HyaPoly™ 發酵物（含透明質酸鈉）。",
+      "德國魚膠原蛋白。",
+      "余甘子萃取。"
+    ],
+    "spec": "30 mL × 30 包／盒",
+    "document": {
+      "blocks": [
+        {
+          "type": "heading",
+          "runs": [
+            {
+              "text": "肽時光膠原飲｜TIP-777"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "runs": [
+            {
+              "text": "THE COLLAGEN · Luxbeauté"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "runs": [
+            {
+              "text": "以魚膠原蛋白為配方重點，搭配米蕈真菌蛋白、植物萃取及其他特色原料，組成九項美顏配方。採單包飲品設計，方便依包裝指示食用。"
+            }
+          ]
+        },
+        {
+          "type": "heading",
+          "runs": [
+            {
+              "text": "九項美顏配方"
+            }
+          ]
+        },
+        {
+          "type": "bullet",
+          "runs": [
+            {
+              "text": "MycoGerm™ 米蕈真菌蛋白。"
+            }
+          ]
+        },
+        {
+          "type": "bullet",
+          "runs": [
+            {
+              "text": "金頂側耳萃取。"
+            }
+          ]
+        },
+        {
+          "type": "bullet",
+          "runs": [
+            {
+              "text": "冰晶番茄萃取。"
+            }
+          ]
+        },
+        {
+          "type": "bullet",
+          "runs": [
+            {
+              "text": "法國紅酒萃取。"
+            }
+          ]
+        },
+        {
+          "type": "bullet",
+          "runs": [
+            {
+              "text": "金絲燕窩萃取。"
+            }
+          ]
+        },
+        {
+          "type": "bullet",
+          "runs": [
+            {
+              "text": "穀胱甘肽。"
+            }
+          ]
+        },
+        {
+          "type": "bullet",
+          "runs": [
+            {
+              "text": "HyaPoly™ 發酵物（含透明質酸鈉）。"
+            }
+          ]
+        },
+        {
+          "type": "bullet",
+          "runs": [
+            {
+              "text": "德國魚膠原蛋白。"
+            }
+          ]
+        },
+        {
+          "type": "bullet",
+          "runs": [
+            {
+              "text": "余甘子萃取。"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "runs": [
+            {
+              "text": "以上為配方重點介紹，完整成分、含量及過敏原資訊請依實際產品包裝標示。"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "runs": [
+            {
+              "text": "配方含魚來源膠原蛋白及燕窩萃取，選購前請確認個人飲食需求與產品過敏原標示。"
+            }
+          ]
+        },
+        {
+          "type": "heading",
+          "runs": [
+            {
+              "text": "包裝規格"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "runs": [
+            {
+              "text": "30 mL × 30 包／盒"
+            }
+          ]
+        },
+        {
+          "type": "heading",
+          "runs": [
+            {
+              "text": "食用與保存"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "runs": [
+            {
+              "text": "請依產品外盒標示的食用方法、每日建議量與保存條件使用；有效日期及批號請見實際包裝。"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "runs": [
+            {
+              "text": "如需確認完整成分或食用資訊，請洽 UCell 客服。"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "sku": "TIP-999",
+    "name": "禦力源",
+    "english": "THE VITAL SHIELD · ImmunoFlex",
+    "pages": [
+      1,
+      3,
+      4
+    ],
+    "intro": "以 MycoGerm™ 米蕈真菌為核心，結合玄米培養基底與固態培養技術。從原料培養到配方設計，聚焦米蕈真菌的特色。",
+    "heading": "原料與培養特色",
+    "items": [
+      "MycoGerm™ 米蕈真菌培養技術。",
+      "採台灣花東地區玄米作為固態培養基底。",
+      "經真菌與玄米共同培養的製程，形成米蕈真菌原料。"
+    ],
+    "spec": "30 包／盒",
+    "document": {
+      "blocks": [
+        {
+          "type": "heading",
+          "runs": [
+            {
+              "text": "禦力源｜TIP-999"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "runs": [
+            {
+              "text": "THE VITAL SHIELD · ImmunoFlex"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "runs": [
+            {
+              "text": "以 MycoGerm™ 米蕈真菌為核心，結合玄米培養基底與固態培養技術。從原料培養到配方設計，聚焦米蕈真菌的特色。"
+            }
+          ]
+        },
+        {
+          "type": "heading",
+          "runs": [
+            {
+              "text": "原料與培養特色"
+            }
+          ]
+        },
+        {
+          "type": "bullet",
+          "runs": [
+            {
+              "text": "MycoGerm™ 米蕈真菌培養技術。"
+            }
+          ]
+        },
+        {
+          "type": "bullet",
+          "runs": [
+            {
+              "text": "採台灣花東地區玄米作為固態培養基底。"
+            }
+          ]
+        },
+        {
+          "type": "bullet",
+          "runs": [
+            {
+              "text": "經真菌與玄米共同培養的製程，形成米蕈真菌原料。"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "runs": [
+            {
+              "text": "以上為配方重點介紹，完整成分、含量及過敏原資訊請依實際產品包裝標示。"
+            }
+          ]
+        },
+        {
+          "type": "heading",
+          "runs": [
+            {
+              "text": "包裝規格"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "runs": [
+            {
+              "text": "30 包／盒"
+            }
+          ]
+        },
+        {
+          "type": "heading",
+          "runs": [
+            {
+              "text": "食用與保存"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "runs": [
+            {
+              "text": "請依產品外盒標示的食用方法、每日建議量與保存條件使用；有效日期及批號請見實際包裝。"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "runs": [
+            {
+              "text": "如需確認完整成分或食用資訊，請洽 UCell 客服。"
+            }
+          ]
+        }
+      ]
+    }
+  }
+]
