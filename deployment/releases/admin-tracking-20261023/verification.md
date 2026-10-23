@@ -31,4 +31,3 @@ Rollback bases: API `sha256:8f8157f3bf51b88d40c18bba1be1ea15f2970eccfe0cb8d34edb
 No real external shipping file was supplied or imported. Actual imports must reference registered shipments and use the documented codes; unknown mappings are rejected with a preview explanation.
 
 Final public checks: admin route, CSV template, format guide, and XLSX preparation workbook all return HTTP 200. The served HTML references the new bundle, which includes the tracking endpoints. Both final API and admin revisions are Healthy/Running and receive 100% traffic.
-
