@@ -1,3 +1,4 @@
+import {RecommendationFlow} from '../../components/RecommendationFlow';
 import {uiValue,uiText,domainLabel} from "../../../../shared/design-system/i18n";
 import {useMemo,useState} from 'react';
 import {useMutation,useQuery,useQueryClient} from '@tanstack/react-query';
@@ -26,7 +27,7 @@ export function ContentPage(){
  const create=useMutation({mutationFn:()=>command('/admin/content',payload()),onSuccess:()=>{setForm(initial);refresh()},onError:setError});
  const version=useMutation({mutationFn:()=>command(`/admin/content/${encodeURIComponent(target)}/versions`,{...payload(),contentType:selected?.type??form.contentType}),onSuccess:()=>{setForm(initial);refresh()},onError:setError});
  const publish=useMutation({mutationFn:(input:{contentId:string;versionId:string})=>command(`/admin/content/${encodeURIComponent(input.contentId)}/versions/${encodeURIComponent(input.versionId)}/publish`,{approvalReference:approval}),onSuccess:()=>{setApproval('');refresh()},onError:setError});
- return <><PageHeader title="影音／連結內容" subtitle={uiText("外部 HTTPS 內容採版本化審核發布；已發布版本不可覆寫。")}/>
+ return <><PageHeader title="影音／連結內容" subtitle={uiText("外部 HTTPS 內容採版本化審核發布；已發布版本不可覆寫。")}/><RecommendationFlow kind="CONTENT"/>
   <div className="callout info"><strong>目前儲存邊界：</strong>{uiText("只接受 HTTPS 外部影音或連結。請提供影片或素材網址及封面，先建立草稿再核准發布。")}</div>
   <ErrorBox error={error??query.error??insights.error}/>
   <Card title="分享成效"><p>近 30 天建立的連結累積成效；有效造訪不是觀看完成，已連結會員包含原會員登入。不同內容的人數不可直接相加。</p>{insights.isLoading?<p>正在載入…</p>:<div className="table-wrap"><AdminTable><thead><tr><th>內容</th><th>連結</th><th>有效造訪</th><th>已連結會員</th><th>新註冊會員</th></tr></thead><tbody>{(insights.data?.data?.rows??[]).map((r:any)=><tr key={(r.targetType??'CONTENT')+':'+(r.targetReference??r.contentId??'invite')}><td><small>{{PRODUCT:'商品',EVENT:'活動',CONTENT:'影音',INVITE:'會員邀請'}[r.targetType as string]??'分享'}</small><br/>{r.title??'一般邀請'}</td><td>{r.links}</td><td>{r.visitors}</td><td>{r.boundMembers}</td><td>{r.registrations}</td></tr>)}</tbody></AdminTable>{!insights.data?.data?.rows?.length&&<p>目前沒有分享成效紀錄。</p>}</div>}<button onClick={()=>insights.refetch()}>更新成效</button></Card>
