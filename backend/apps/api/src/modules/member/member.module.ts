@@ -1,3 +1,5 @@
+import {ProductReviewService} from './product-review.service';
+import {MemberProductReviewController,AdminProductReviewController,PublicProductReviewController} from './product-review.controller';
 import {OrderHubController} from './order-hub.controller';
 import {OrderHubService} from './order-hub.service';
 import {MemberPayoutController} from './member-payout.controller';
@@ -33,7 +35,7 @@ import {FormalEnrollmentService} from './formal-enrollment.service';
 import {FormalEnrollmentController} from './formal-enrollment.controller';
 @Module({
  imports:[AuthModule,OrderModule],
- controllers:[OrderHubController,FormalEnrollmentController,MemberExplainController,MemberAuthController,MemberController,ReferralAttributionController,MemberReferralAttributionController,AdminFormalMemberApplicationController,MemberPayoutController,MemberMessagesController,MemberRetailReferrerController],
- providers:[OrderHubService,FormalEnrollmentService,MemberExplainService,MemberService,MemberReadService,MemberTreeReadService,MemberShareLinkService,ReferralAttributionService,FormalMemberApplicationService,FormalMembershipConflictService,FormalKycStorageService,FormalKycDocumentService,MemberContractService,DeliveryProfileService,PiiCryptoService,IdentityMatchFingerprintService,MemberContextGuard,LineTokenVerifierService,MemberMessagesService,IdempotencyService,MemberGrowthService]
+ controllers:[MemberProductReviewController,AdminProductReviewController,PublicProductReviewController,OrderHubController,FormalEnrollmentController,MemberExplainController,MemberAuthController,MemberController,ReferralAttributionController,MemberReferralAttributionController,AdminFormalMemberApplicationController,MemberPayoutController,MemberMessagesController,MemberRetailReferrerController],
+ providers:[ProductReviewService,OrderHubService,FormalEnrollmentService,MemberExplainService,MemberService,MemberReadService,MemberTreeReadService,MemberShareLinkService,ReferralAttributionService,FormalMemberApplicationService,FormalMembershipConflictService,FormalKycStorageService,FormalKycDocumentService,MemberContractService,DeliveryProfileService,PiiCryptoService,IdentityMatchFingerprintService,MemberContextGuard,LineTokenVerifierService,MemberMessagesService,IdempotencyService,MemberGrowthService]
 })
 export class MemberModule {}

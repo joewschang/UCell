@@ -16,6 +16,7 @@ export const pageRoles:Record<string,AdminRole[]>={
   '/coupons':['SUPER_ADMIN','ORDER_OPS','COMPLIANCE_AUDIT'],
   '/packages':['SUPER_ADMIN','ORDER_OPS','COMPLIANCE_AUDIT','PACKAGE_CONFIG_MANAGE','PACKAGE_CONFIG_APPROVE'],
   '/economic-lineage':['SUPER_ADMIN','ORDER_OPS','FINANCE','COMPLIANCE_AUDIT'],
+  '/product-reviews':['SUPER_ADMIN','ORDER_OPS','COMPLIANCE_AUDIT'],
   '/order-tracking':['SUPER_ADMIN','ORDER_OPS','FINANCE','COMPLIANCE_AUDIT'],
   '/orders':['SUPER_ADMIN','ORDER_OPS','FINANCE','COMPLIANCE_AUDIT'],
   '/fulfillment':['SUPER_ADMIN','ORDER_OPS','COMPLIANCE_AUDIT'],

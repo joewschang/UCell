@@ -13,9 +13,10 @@ export class AdminOrderTrackingService{
   return this.db.$transaction(async tx=>{
    const orders=await tx.order.findMany({include:{lines:true,payments:{orderBy:{createdAt:'desc'}},fulfillments:{include:{shipments:true}}},orderBy:[{createdAt:'desc'},{orderId:'desc'}]});
    const reviews=await tx.$queryRaw<{order_id:string;rating:number;comment:string}[]>`SELECT order_id,rating,comment FROM commerce.member_order_review`;
+   const productReviews=await tx.$queryRaw<{order_id:string;product_id:string;status:string}[]>`SELECT order_id,product_id,status FROM commerce.product_review`;
    const counts:Record<string,number>={ALL:orders.length,PAYMENT:0,SHIPPING:0,RECEIVING:0,REVIEW:0,COMPLETED:0,EXCEPTION:0,OTHER:0};
    const mapped=orders.map(o=>{
-    const review=reviews.filter(r=>r.order_id===o.orderId),base=orderTab(o,review.length>0);
+    const review=reviews.filter(r=>r.order_id===o.orderId),base=orderTab(o,o.lines.length>0&&o.lines.every(l=>productReviews.some(r=>r.order_id===o.orderId&&r.product_id===l.productId&&r.status!=='REJECTED')));
     const tab=o.fulfillments.some(f=>f.status!=='CANCELLED'&&f.shipments.some(s=>['DELIVERY_FAILED','RETURNING'].includes(s.status)))?'EXCEPTION':base;
     counts[tab]++;return {orderId:o.orderId,orderNo:String(o.orderNo),tab,total:String(o.netAmount),createdAt:o.createdAt.toISOString(),status:o.status,paymentStatus:o.payments.find(p=>['REFUND_PENDING','REFUNDED','PARTIALLY_REFUNDED'].includes(p.status))?.status??(o.paidAt?'PAID':o.payments[0]?.status??'PENDING'),items:o.lines.map(l=>({name:l.productNameSnapshot,sku:l.skuSnapshot,quantity:String(l.quantity)})),fulfillments:o.fulfillments.map(f=>({key:f.fulfillmentKey,status:f.status,shipments:f.shipments.map(s=>({carrier:s.carrier,trackingNo:s.trackingNo,status:s.status}))})),reviews:review.map(r=>({rating:r.rating,comment:r.comment}))};
    });

@@ -18,6 +18,7 @@ import {ProductsPage} from '../features/products/ProductsPage';
 import {CouponsPage} from '../features/coupons/CouponsPage';
 import {AiAssistantPage,AiKnowledgePage,AiAuditPage} from '../features/ai/AiPages';
 import {PackagesPage} from '../features/packages/PackagesPage';
+import {ProductReviewsPage} from '../features/orders/ProductReviewsPage';
 import {OrderTrackingPage} from '../features/orders/OrderTrackingPage';
 import {OrdersPage} from '../features/orders/OrdersPage';
 import {OrganizationPage} from '../features/organization/OrganizationPage';
@@ -63,6 +64,7 @@ export function App(){return <Routes>
   <Route path="/ai-knowledge" element={<RequirePageRole><AiKnowledgePage/></RequirePageRole>}/>
   <Route path="/ai-governance" element={<RequirePageRole><AiAuditPage/></RequirePageRole>}/>
   <Route path="/packages" element={<RequirePageRole><PackagesPage/></RequirePageRole>}/>
+  <Route path="/product-reviews" element={<RequirePageRole><ProductReviewsPage/></RequirePageRole>}/>
   <Route path="/order-tracking" element={<RequirePageRole><OrderTrackingPage/></RequirePageRole>}/>
   <Route path="/orders" element={<RequirePageRole><OrdersPage/></RequirePageRole>}/>
   <Route path="/economic-lineage" element={<RequirePageRole><EconomicLineagePage/></RequirePageRole>}/>

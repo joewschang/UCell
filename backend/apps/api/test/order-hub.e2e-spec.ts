@@ -20,8 +20,8 @@ it('checks ownership before any review write and rejects undelivered orders',asy
  tx.order.findFirst.mockResolvedValue({orderId:'o'});await expect(service.review('person','123',{rating:5},'key','request')).rejects.toThrow('尚未全數送達');expect(tx.$queryRaw).toHaveBeenCalledTimes(1);
 });
 it('counts the complete history while returning a page; reviews remove pending badge',async()=>{
- const rows=Array.from({length:121},(_,i)=>({...order(),orderId:String(i),orderNo:BigInt(i+1),netAmount:{toString:()=> '4800'},createdAt:new Date(),purpose:'RETAIL',lines:[],fulfillments:i===0?[batch('DELIVERED')]:[]}));
- const tx:any={packagePurchaseSnapshot:{findMany:async()=>[]},order:{findMany:async()=>rows},$queryRaw:async()=>[{order_id:'0',rating:5,comment:'良好',created_at:new Date()}]};
+ const rows=Array.from({length:121},(_,i)=>({...order(),orderId:String(i),orderNo:BigInt(i+1),netAmount:{toString:()=> '4800'},createdAt:new Date(),purpose:'RETAIL',lines:[{productId:'p1',productNameSnapshot:'商品',skuSnapshot:'TIP-999',quantity:1,lineAmount:4800}],fulfillments:i===0?[batch('DELIVERED')]:[]}));
+ const tx:any={packagePurchaseSnapshot:{findMany:async()=>[]},order:{findMany:async()=>rows},$queryRaw:async(sql:any)=>String(sql).includes('commerce.product_review')?[{order_id:'0',product_id:'p1',status:'PENDING'}]:[{order_id:'0',rating:5,comment:'良好',created_at:new Date()}]};
  const service=new OrderHubService({$transaction:(f:any)=>f(tx)} as any,{qualifications:async()=>[]} as any,{} as any,{} as any);
  const result=await service.list('person',{tab:'ALL',page:1});expect(result.counts).toMatchObject({ALL:121,PAYMENT:120,REVIEW:0});expect(result.orders).toHaveLength(20);expect(result.pages).toBe(7);
 });
