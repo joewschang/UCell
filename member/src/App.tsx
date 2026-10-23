@@ -1,3 +1,4 @@
+import {OrderTrackingStrip} from './OrderHub';
 import MyOrders from './MyOrders';
 import OrderList from './OrderList';
 import AiAssistant from './AiAssistant';
@@ -151,7 +152,7 @@ function Me() {
  useEffect(()=>{if(typeof window==='undefined'||typeof document==='undefined')return;const refresh=()=>{if(document.visibilityState==='visible')state.retry();};window.addEventListener('focus',refresh);document.addEventListener('visibilitychange',refresh);return()=>{window.removeEventListener('focus',refresh);document.removeEventListener('visibilitychange',refresh);};},[state.retry]);
  const { qualifications } = useQualification();
  return <>
-  <MemberPageHeader title="我的帳戶"/>
+  <MemberPageHeader title="我的帳戶"/><OrderTrackingStrip/>
   <Result state={state}>{p => <>
    <section className="card"><h3>{p.name}</h3><p><span>會員編號</span> {p.memberNo}</p><p>會員狀態：{p.membershipState==='FORMAL_MEMBER'?'正式會員':p.membershipState==='FORMAL_PENDING'?'正式會員申請中':p.membershipState==='NETWORK_MEMBER'?'網路會員':'尚未完成網路會員註冊'}</p><p>電子郵件：{p.email ?? availabilityText.fieldMissing}（{p.emailVerifiedAt?'已驗證':'尚未驗證'}）</p><p>電話：{p.phone ?? availabilityText.fieldMissing}（{p.mobileVerifiedAt?'已驗證':'尚未驗證'}）</p><button onClick={state.retry}>更新會員狀態</button></section>
    {!data.isMock&&p.membershipState===null&&<NetworkRegistration person={p} refresh={state.retry}/>}

@@ -759,6 +759,7 @@ enum AuthSessionStatus {
 }
 
 model Person {
+  orderReviews MemberOrderReview[]
   geoProfile MemberGeoProfile?
   geoProfileVersions MemberGeoProfileVersion[]
   qualificationOwnerIntervals QualificationOwnerInterval[]
@@ -1822,6 +1823,7 @@ model CommercialOfferingVersion {
   @@schema("commerce")
 }
 model Order {
+  memberReviews MemberOrderReview[]
   couponRedemption CouponRedemption?
   orderId                 String       @id @default(uuid()) @map("order_id") @db.Uuid
   orderNo                 BigInt       @unique @default(autoincrement()) @map("order_no")
@@ -5314,4 +5316,18 @@ model CouponUsageEvent {
   @@index([orderId,occurredAt])
   @@map("coupon_usage_event")
   @@schema("commerce")
+}
+
+model MemberOrderReview {
+ orderId String @map("order_id") @db.Uuid
+ personId String @map("person_id") @db.Uuid
+ rating Int
+ comment String @default("") @db.Text
+ createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+ order Order @relation(fields:[orderId],references:[orderId])
+ person Person @relation(fields:[personId],references:[personId])
+ @@id([orderId,personId])
+ @@index([personId,createdAt],map:"member_order_review_person_idx")
+ @@map("member_order_review")
+ @@schema("commerce")
 }

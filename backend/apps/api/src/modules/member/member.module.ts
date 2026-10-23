@@ -1,3 +1,5 @@
+import {OrderHubController} from './order-hub.controller';
+import {OrderHubService} from './order-hub.service';
 import {MemberPayoutController} from './member-payout.controller';
 import {MemberMessagesController} from './member-messages.controller';
 import {MemberMessagesService} from './member-messages.service';
@@ -31,7 +33,7 @@ import {FormalEnrollmentService} from './formal-enrollment.service';
 import {FormalEnrollmentController} from './formal-enrollment.controller';
 @Module({
  imports:[AuthModule,OrderModule],
- controllers:[FormalEnrollmentController,MemberExplainController,MemberAuthController,MemberController,ReferralAttributionController,MemberReferralAttributionController,AdminFormalMemberApplicationController,MemberPayoutController,MemberMessagesController,MemberRetailReferrerController],
- providers:[FormalEnrollmentService,MemberExplainService,MemberService,MemberReadService,MemberTreeReadService,MemberShareLinkService,ReferralAttributionService,FormalMemberApplicationService,FormalMembershipConflictService,FormalKycStorageService,FormalKycDocumentService,MemberContractService,DeliveryProfileService,PiiCryptoService,IdentityMatchFingerprintService,MemberContextGuard,LineTokenVerifierService,MemberMessagesService,IdempotencyService,MemberGrowthService]
+ controllers:[OrderHubController,FormalEnrollmentController,MemberExplainController,MemberAuthController,MemberController,ReferralAttributionController,MemberReferralAttributionController,AdminFormalMemberApplicationController,MemberPayoutController,MemberMessagesController,MemberRetailReferrerController],
+ providers:[OrderHubService,FormalEnrollmentService,MemberExplainService,MemberService,MemberReadService,MemberTreeReadService,MemberShareLinkService,ReferralAttributionService,FormalMemberApplicationService,FormalMembershipConflictService,FormalKycStorageService,FormalKycDocumentService,MemberContractService,DeliveryProfileService,PiiCryptoService,IdentityMatchFingerprintService,MemberContextGuard,LineTokenVerifierService,MemberMessagesService,IdempotencyService,MemberGrowthService]
 })
 export class MemberModule {}
