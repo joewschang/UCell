@@ -21,6 +21,7 @@ class EventDto{
 class PublishDto{@ApiProperty() @IsString() @Length(1,200) approvalReference!:string;}
 class EventEditDto{@IsInt() @Min(1) baseVersion!:number;@Matches(/^[a-f0-9]{64}$/) baseHash!:string;@IsString() @Length(1,160) title!:string;@IsOptional() @IsString() @MaxLength(4000) description?:string;@IsObject() media!:EventMedia;}
 class EventImageDto{@IsIn(['image/jpeg','image/png','image/webp']) mimeType!:string;@IsString() @MaxLength(699052) contentBase64!:string;}
+class DeleteEventDto{@Matches(/^[A-Z][A-Z0-9_-]{2,39}$/) confirmCode!:string;@IsString() @Length(1,500) reason!:string;}
 class ArchiveDto{@ApiProperty() @IsString() @Length(1,500) reason!:string;}
 class CheckInDto{@ApiProperty() @Matches(/^[A-Za-z0-9_-]{43}$/) checkInToken!:string;@IsOptional() @Matches(/^[A-Z][A-Z0-9_-]{2,39}$/) eventCode?:string;}
 class MemberCheckInDto{@Matches(/^\d{10}$/) memberNo!:string;@IsBoolean() addMissing!:boolean;@IsOptional() @IsString() @MaxLength(500) reason?:string;}
@@ -47,6 +48,8 @@ export class AdminEventsController{
  create(@Body() body:EventDto,@Headers('idempotency-key') key:string,@Req() req:any){return this.s.create(body,req.user?.personId??req.user?.subject,key,req.requestId??randomUUID()).then(data=>({data}));}
  @Post(':eventCode/publish') @UseGuards(IdempotencyGuard) @ApiHeader({name:'Idempotency-Key',required:true})
  publish(@Param('eventCode') eventCode:string,@Body() body:PublishDto,@Headers('idempotency-key') key:string,@Req() req:any){return this.s.publish(eventCode,body?.approvalReference,req.user?.personId??req.user?.subject,key,req.requestId??randomUUID()).then(data=>({data}));}
+ @Post(':eventCode/delete') @UseGuards(IdempotencyGuard)
+ remove(@Param('eventCode') eventCode:string,@Body() body:DeleteEventDto,@Headers('idempotency-key') key:string,@Req() req:any){return this.s.remove(eventCode,body,req.user?.personId??req.user?.subject,key,req.requestId??randomUUID()).then(data=>({data}));}
  @Post(':eventCode/archive') @UseGuards(IdempotencyGuard) @ApiHeader({name:'Idempotency-Key',required:true})
  archive(@Param('eventCode') eventCode:string,@Body() body:ArchiveDto,@Headers('idempotency-key') key:string,@Req() req:any){return this.s.archive(eventCode,body?.reason,req.user?.personId??req.user?.subject,key,req.requestId??randomUUID()).then(data=>({data}));}
  @Post('check-in') @UseGuards(IdempotencyGuard) @ApiHeader({name:'Idempotency-Key',required:true})
