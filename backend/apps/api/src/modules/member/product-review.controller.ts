@@ -12,7 +12,8 @@ class ProductParam{@Matches(/^[A-Za-z0-9][A-Za-z0-9_-]{0,99}$/) sku!:string;}
 class UploadInput{@IsUUID() productId!:string;@IsIn(REVIEW_MIMES) mimeType!:string;@IsInt() @Min(1) @Max(20971520) size!:number;@Matches(/^[a-f0-9]{64}$/) sha256!:string;}
 class PartInput{@IsInt() @Min(0) @Max(79) part!:number;@IsString() @MaxLength(349528) content!:string;}
 class SubmitInput{@IsUUID() productId!:string;@IsInt() @Min(1) @Max(5) rating!:number;@IsString() @MaxLength(1000) comment!:string;@IsArray() @ArrayMaxSize(6) @IsUUID('all',{each:true}) mediaIds!:string[];@IsInt() @Min(0) @Max(100000) expectedVersion!:number;@IsBoolean() publishConsent!:boolean;}
-class PageQuery{@IsOptional() @Type(()=>Number) @IsInt() @Min(1) @Max(100000) page?:number;@IsOptional() @Type(()=>Number) @IsInt() @Min(1) @Max(5) rating?:number;}
+class FeatureInput{@IsBoolean() featured!:boolean;@IsInt() @Min(1) version!:number;}
+class PageQuery{@IsOptional() @IsIn(['true','false']) featured?:string;@IsOptional() @Type(()=>Number) @IsInt() @Min(1) @Max(100000) page?:number;@IsOptional() @Type(()=>Number) @IsInt() @Min(1) @Max(5) rating?:number;}
 class AdminQuery{@IsOptional() @IsIn(['ALL','PENDING','APPROVED','REJECTED','HIDDEN']) status?:string;@IsOptional() @Type(()=>Number) @IsInt() @Min(1) @Max(100000) page?:number;}
 class ModerateInput{@IsIn(['APPROVED','REJECTED','HIDDEN']) action!:'APPROVED'|'REJECTED'|'HIDDEN';@IsInt() @Min(1) version!:number;@IsString() @MaxLength(500) reason!:string;}
 export function reviewMediaResponse(file:{bytes:Buffer;mimeType:string},range:string|undefined,res:any){
@@ -36,6 +37,7 @@ export class MemberProductReviewController{
 @Roles('SUPER_ADMIN','ORDER_OPS','COMPLIANCE_AUDIT') @Controller('admin/product-reviews')
 export class AdminProductReviewController{
  constructor(private readonly service:ProductReviewService){}
+ @Roles('SUPER_ADMIN','ORDER_OPS') @Post(':id/featured') feature(@Req() req:any,@Param() p:IdParam,@Body() b:FeatureInput){if(!req.user?.personId)throw new UnauthorizedException();return this.service.feature(p.id,b.featured,b.version,req.user.personId,req.requestId??randomUUID()).then(data=>({data}));}
  @Get() list(@Query() q:AdminQuery){return this.service.adminList(q.status??'PENDING',q.page??1).then(data=>({data}));}
  @Get('media/:id') async media(@Req() req:any,@Param() p:IdParam,@Res({passthrough:true}) res:any){return reviewMediaResponse(await this.service.media(p.id,{admin:true}),req.headers.range,res);}
  @Roles('SUPER_ADMIN','ORDER_OPS') @Post(':id/moderate') moderate(@Req() req:any,@Param() p:IdParam,@Body() body:ModerateInput){if(!req.user?.personId)throw new UnauthorizedException();return this.service.moderate(p.id,body.action,body.version,body.reason,req.user.personId,req.requestId??randomUUID()).then(data=>({data}));}
@@ -43,6 +45,6 @@ export class AdminProductReviewController{
 @Controller('public/product-reviews')
 export class PublicProductReviewController{
  constructor(private readonly service:ProductReviewService){}
- @Get('products/:sku') list(@Param() p:ProductParam,@Query() q:PageQuery){return this.service.publicList(p.sku,q.page,q.rating).then(data=>({data}));}
+ @Get('products/:sku') list(@Param() p:ProductParam,@Query() q:PageQuery){return this.service.publicList(p.sku,q.page,q.rating,q.featured==='true').then(data=>({data}));}
  @Get('media/:id') async media(@Req() req:any,@Param() p:IdParam,@Res({passthrough:true}) res:any){return reviewMediaResponse(await this.service.media(p.id,{public:true}),req.headers.range,res);}
 }

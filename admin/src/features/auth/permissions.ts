@@ -12,6 +12,7 @@ export const pageRoles:Record<string,AdminRole[]>={
   '/line-links':['SUPER_ADMIN','MEMBERSHIP_OPS','CUSTOMER_SERVICE'],
   '/paper-intake':['SUPER_ADMIN','MEMBERSHIP_OPS','ORDER_OPS'],
   '/qualifications':['SUPER_ADMIN','MEMBERSHIP_OPS','COMPLIANCE_AUDIT'],
+  '/product-content':['SUPER_ADMIN','ORDER_OPS','COMPLIANCE_AUDIT'],
   '/products':['SUPER_ADMIN','ORDER_OPS','COMPLIANCE_AUDIT'],
   '/coupons':['SUPER_ADMIN','ORDER_OPS','COMPLIANCE_AUDIT'],
   '/packages':['SUPER_ADMIN','ORDER_OPS','COMPLIANCE_AUDIT','PACKAGE_CONFIG_MANAGE','PACKAGE_CONFIG_APPROVE'],

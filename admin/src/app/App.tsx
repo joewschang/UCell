@@ -1,3 +1,4 @@
+import {ProductContentPage} from '../features/products/ProductContentPage';
 import {MarketingPage} from '../features/marketing/MarketingPage';
 import {uiText} from "../../../shared/design-system/i18n";
 import {EconomicLineagePage} from '../features/economic-lineage/EconomicLineagePage';
@@ -58,6 +59,7 @@ export function App(){return <Routes>
   <Route path="/applications/new" element={<RequirePageRole><NewApplicationWizard/></RequirePageRole>}/>
   <Route path="/applications/formal-paper" element={<RequirePageRole><PaperFormalApplicationPage/></RequirePageRole>}/>
   <Route path="/qualifications" element={<RequirePageRole><QualificationsPage/></RequirePageRole>}/>
+  <Route path="/product-content" element={<RequirePageRole><ProductContentPage/></RequirePageRole>}/>
   <Route path="/products" element={<RequirePageRole><ProductsPage/></RequirePageRole>}/>
   <Route path="/coupons" element={<RequirePageRole><CouponsPage/></RequirePageRole>}/>
   <Route path="/ai-assistant" element={<RequirePageRole><AiAssistantPage/></RequirePageRole>}/>

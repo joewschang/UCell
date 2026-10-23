@@ -1,0 +1,3 @@
+export function cartKey(qualificationId?:string){return 'ucell-shop-cart-v1:'+(qualificationId??'retail');}
+export function readCart(qualificationId?:string):Record<string,number>{try{const v=JSON.parse(sessionStorage.getItem(cartKey(qualificationId))??'{}');if(!v||Array.isArray(v)||typeof v!=='object')return {};return Object.fromEntries(Object.entries(v).filter(([k,n])=>/^[\w-]{1,100}$/.test(k)&&Number.isInteger(n)&&Number(n)>=0&&Number(n)<=99)) as Record<string,number>;}catch{return {};}}
+export function saveCart(cart:Record<string,number>,qualificationId?:string){try{sessionStorage.setItem(cartKey(qualificationId),JSON.stringify(cart));return true;}catch{return false;}}

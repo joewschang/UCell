@@ -8,7 +8,7 @@ import {orderTab} from './order-hub-state';
 import {MEDIA_PART_SIZE,REVIEW_MIMES,decodeReviewPart,reviewMediaLimit,validReviewMedia} from './product-review-media';
 const digest=(bytes:Buffer)=>createHash('sha256').update(bytes).digest('hex');
 type Media={media_id:string;order_id:string;person_id:string;product_id:string;mime_type:string;byte_size:number;sha256:string;object_key:string;status:string;created_at:Date};
-type Review={review_id:string;order_id:string;person_id:string;product_id:string;rating:number;comment:string;media_ids:string[];status:string;version:number;moderation_reason:string;created_at:Date;updated_at:Date};
+type Review={featured:boolean;review_id:string;order_id:string;person_id:string;product_id:string;rating:number;comment:string;media_ids:string[];status:string;version:number;moderation_reason:string;created_at:Date;updated_at:Date};
 export type ReviewInput={productId:string;rating:number;comment:string;mediaIds:string[];expectedVersion:number;publishConsent:boolean};
 @Injectable()
 export class ProductReviewService{
@@ -21,7 +21,7 @@ export class ProductReviewService{
  }
  private eligible(order:any){if(orderTab(order)!=='REVIEW')throw new ConflictException({code:'REVIEW_NOT_DELIVERED'});}
  private mediaValue(m:Media){return {id:m.media_id,mimeType:m.mime_type,size:m.byte_size};}
- private reviewValue(r:Review,media:Media[]){return {id:r.review_id,rating:r.rating,comment:r.comment,status:r.status,version:r.version,reason:r.moderation_reason,createdAt:r.created_at.toISOString(),media:r.media_ids.map(id=>media.find(m=>m.media_id===id)).filter((m):m is Media=>!!m).map(m=>this.mediaValue(m))};}
+ private reviewValue(r:Review,media:Media[]){return {id:r.review_id,featured:r.featured,rating:r.rating,comment:r.comment,status:r.status,version:r.version,reason:r.moderation_reason,createdAt:r.created_at.toISOString(),media:r.media_ids.map(id=>media.find(m=>m.media_id===id)).filter((m):m is Media=>!!m).map(m=>this.mediaValue(m))};}
  async own(personId:string,orderNo:string){
   const order=await this.owned(this.db,personId,orderNo),reviews=await this.db.$queryRaw<Review[]>`SELECT * FROM commerce.product_review WHERE order_id=${order.orderId}::uuid AND person_id=${personId}::uuid`,media=await this.db.$queryRaw<Media[]>`SELECT * FROM commerce.product_review_media WHERE order_id=${order.orderId}::uuid AND person_id=${personId}::uuid AND status='READY' ORDER BY created_at`;
   const products=[...new Map<string,any>(order.lines.map((l:any)=>[l.productId,l])).values()];return {eligible:orderTab(order)==='REVIEW',products:products.map(l=>({id:l.productId,name:l.productNameSnapshot,sku:l.skuSnapshot,review:reviews.find(r=>r.product_id===l.productId)?this.reviewValue(reviews.find(r=>r.product_id===l.productId)!,media):null,uploads:media.filter(m=>m.product_id===l.productId).map(m=>this.mediaValue(m))}))};
@@ -82,11 +82,12 @@ export class ProductReviewService{
    await this.audit.write(tx,{actorType:'MEMBER',actorId:personId,action:'PRODUCT_REVIEW_SUBMITTED',entityType:'ProductReview',entityId:id,afterData:{rating:input.rating,attachmentCount:ids.length,version:(old?.version??0)+1,publishConsent:true},requestId,correlationId:randomUUID()});return {id,status:'PENDING',version:(old?.version??0)+1};
   },{timeout:15000});
  }
- async publicList(sku:string,page=1,rating?:number){
+ async publicList(sku:string,page=1,rating?:number,featured=false){
   const product=await this.db.productReference.findUnique({where:{sku}});if(!product?.isActive)throw new NotFoundException();
   return this.db.$transaction(async tx=>{
-   const filter=rating?Prisma.sql`AND rating=${rating}`:Prisma.empty;
-   const distribution=await tx.$queryRaw<{rating:number;count:number}[]>`SELECT rating,count(*)::int AS count FROM commerce.product_review WHERE product_id=${product.productId}::uuid AND status='APPROVED' GROUP BY rating ORDER BY rating DESC`;
+   const feature=featured?Prisma.sql`AND featured=true`:Prisma.empty;
+   const filter=Prisma.sql`${feature} ${rating?Prisma.sql`AND rating=${rating}`:Prisma.empty}`;
+   const distribution=await tx.$queryRaw<{rating:number;count:number}[]>`SELECT rating,count(*)::int AS count FROM commerce.product_review WHERE product_id=${product.productId}::uuid AND status='APPROVED' ${feature} GROUP BY rating ORDER BY rating DESC`;
    const total=distribution.reduce((n,r)=>n+r.count,0),filtered=rating?distribution.find(r=>r.rating===rating)?.count??0:total,pages=Math.max(1,Math.ceil(filtered/10)),current=Math.min(page,pages);
    const rows=await tx.$queryRaw<Review[]>(Prisma.sql`SELECT * FROM commerce.product_review WHERE product_id=${product.productId}::uuid AND status='APPROVED' ${filter} ORDER BY created_at DESC,review_id LIMIT 10 OFFSET ${(current-1)*10}`);
    const allIds=rows.flatMap(r=>r.media_ids),media=allIds.length?await tx.$queryRaw<Media[]>(Prisma.sql`SELECT * FROM commerce.product_review_media WHERE media_id IN (${Prisma.join(allIds.map(id=>Prisma.sql`${id}::uuid`))}) AND status='READY'`):[];
@@ -110,10 +111,16 @@ export class ProductReviewService{
    if(!review)throw new NotFoundException();if(review.version!==version)throw new ConflictException({code:'REVIEW_VERSION_CHANGED'});
    if(review.status===action)return {status:action,version};
    if(action==='HIDDEN'?review.status!=='APPROVED':review.status!=='PENDING')throw new ConflictException({code:'REVIEW_VERSION_CHANGED'});
-   await tx.$executeRaw`UPDATE commerce.product_review SET status=${action},moderation_reason=${reason.trim()},moderated_by=${actor}::uuid,moderated_at=now(),updated_at=now() WHERE review_id=${id}::uuid`;
+   await tx.$executeRaw`UPDATE commerce.product_review SET status=${action},featured=CASE WHEN ${action}='APPROVED' THEN featured ELSE false END,moderation_reason=${reason.trim()},moderated_by=${actor}::uuid,moderated_at=now(),updated_at=now() WHERE review_id=${id}::uuid`;
    await this.audit.write(tx,{actorType:'ADMIN',actorId:actor,action:'PRODUCT_REVIEW_MODERATED',entityType:'ProductReview',entityId:id,beforeData:{status:review.status},afterData:{status:action,version,reason:reason.trim()},requestId,correlationId:randomUUID()});return {status:action,version};
   });
  }
+ async feature(id:string,featured:boolean,version:number,actor:string,requestId:string){return this.db.$transaction(async tx=>{
+  const [r]=await tx.$queryRaw<Review[]>`SELECT * FROM commerce.product_review WHERE review_id=${id}::uuid FOR UPDATE`;
+  if(!r)throw new NotFoundException();if(r.version!==version||r.status!=='APPROVED')throw new ConflictException({code:'REVIEW_FEATURE_REQUIRES_APPROVED'});
+  await tx.$executeRaw`UPDATE commerce.product_review SET featured=${featured},updated_at=now() WHERE review_id=${id}::uuid`;
+  await this.audit.write(tx,{actorType:'ADMIN',actorId:actor,action:'PRODUCT_REVIEW_FEATURED',entityType:'ProductReview',entityId:id,beforeData:{featured:r.featured},afterData:{featured},requestId,correlationId:randomUUID()});return {featured};
+ });}
  async media(id:string,scope:{personId?:string;admin?:boolean;public?:boolean}){
   const [m]=await this.db.$queryRaw<Media[]>`SELECT * FROM commerce.product_review_media WHERE media_id=${id}::uuid AND status='READY'`;if(!m)throw new NotFoundException();
   if(scope.public){const [{count}]=await this.db.$queryRaw<{count:number}[]>`SELECT count(*)::int AS count FROM commerce.product_review WHERE status='APPROVED' AND ${id}::uuid=ANY(media_ids)`;if(!count)throw new NotFoundException();}
