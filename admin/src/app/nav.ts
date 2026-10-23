@@ -37,7 +37,7 @@ export const nav=[
   ['文件／附件','/documents','documents'],
   ['稽核紀錄','/audit','audit'],
   ['報表／完整性','/reports','reports'],
-  [uiText("NASL／十二代健康雷達"),'/analytics','analytics'],
+  [uiText("P・N・A・S・L／十二代健康雷達"),'/analytics','analytics'],
   [uiText("UAT／上線驗證"),'/uat','uat'],
   ['系統就緒度','/system','system'],
   [uiText("Provider Webhook 營運"),'/provider-operations','provider-operations'],

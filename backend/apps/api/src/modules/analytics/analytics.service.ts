@@ -6,6 +6,7 @@ import { ANALYTICS_POLICY, buildNasl, buildSonar, DAY, Sonar } from './analytics
 import { captureAnalyticsFacts } from './analytics.source';
 import { cohortRetention, HistoryInput, historyRange } from './analytics.history';
 import { captureVolumeProjection } from './analytics.volume';
+import {prospectConversion} from './analytics.prospects';
 
 type Payload={nasl:ReturnType<typeof buildNasl>;sonar:{sponsor:Sonar;binary:Sonar}|null;volumes?:Awaited<ReturnType<typeof captureVolumeProjection>>|null;issues:string[];comparisonAsOf:string|null;policy:typeof ANALYTICS_POLICY};
 type Snapshot={snapshot_id:string;actor_key:string;scope_key:string;as_of:Date;policy_version:string;source_hash:string;payload:Payload};
@@ -30,9 +31,9 @@ export class AnalyticsService {
   async overview(){const row=await this.latest();return row?{...this.metadata(row),scope:'ALL_COMPANY_PERSONS',...row.payload.nasl.summary,policy:row.payload.policy}
     :{status:'UNAVAILABLE',reason:'PROJECTION_NOT_BUILT',asOf:null,policy:ANALYTICS_POLICY};}
   async roots(q?:string){
-    if(q&&!/^\d{1,18}$/.test(q))throw new BadRequestException('QUALIFICATION_NUMBER_REQUIRED');
-    const rows=await this.prisma.qualification.findMany({where:q?{qualificationNo:BigInt(q)}:{},take:30,orderBy:{qualificationNo:'asc'},select:{qualificationId:true,qualificationNo:true}});
-    return rows.map(row=>({id:row.qualificationId,label:`Q#${row.qualificationNo}`}));
+    if(q&&!/^[A-Za-z0-9]{1,24}$/.test(q))throw new BadRequestException('BALL_NUMBER_REQUIRED');
+    const rows=await this.prisma.qualification.findMany({where:q?(/^\d{1,18}$/.test(q)?{qualificationNo:BigInt(q)}:{ballNo:{startsWith:q.toUpperCase()}}):{},take:30,orderBy:{qualificationNo:'asc'},select:{qualificationId:true,qualificationNo:true,ballNo:true}});
+    return rows.map(row=>({id:row.qualificationId,label:row.ballNo??`尚未編號 #${row.qualificationNo}`}));
   }
   async sonar(tree:'sponsor'|'binary',root:string){requireUuid(root);const row=await this.latest(root);
     if(!row?.payload.sonar)return {status:'UNAVAILABLE',reason:'ROOT_PROJECTION_NOT_BUILT',root,tree};
@@ -97,7 +98,9 @@ export class AnalyticsService {
       const at=clock.at, previous=(await tx.$queryRaw<Snapshot[]>`SELECT * FROM integration.management_analytics_snapshot WHERE policy_version=${ANALYTICS_POLICY.version} ORDER BY as_of DESC,snapshot_id DESC LIMIT 1`)[0];
       const facts=await captureAnalyticsFacts(tx,at);
       if(root&&!facts.qualifications.some(q=>q.id===root))throw new NotFoundException('QUALIFICATION_NOT_FOUND');
-      const nasl=buildNasl(facts,at.toISOString(),previous?.payload.nasl.states);
+      const base=buildNasl(facts,at.toISOString(),previous?.payload.nasl.states);
+      const included=facts.persons.filter(p=>base.states[p.id]);
+      const nasl={...base,summary:{...base.summary,prospectWindows:Object.fromEntries([7,30,90].map(days=>[days,prospectConversion(included,at.toISOString(),days)])),excludedMissingFormalDates:facts.persons.filter(p=>p.excludeFromLifecycle).length}};
       let sonar:Payload['sonar']=null;
       if(root){
         const before=new Date(at.getTime()-30*DAY),after=new Date(at.getTime()-31*DAY);
