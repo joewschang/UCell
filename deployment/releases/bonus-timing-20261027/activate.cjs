@@ -41,7 +41,7 @@ const firstStart=new Date('2026-10-18T16:00:00Z'),firstEnd=new Date('2026-10-25T
   await tx.runtimeRuleParameter.update({where:{runtimeRuleParameterId:row.runtimeRuleParameterId},data:{effectiveTo:firstStart}});
   await tx.runtimeRuleParameter.create({data:{ruleVersionCode:'R1.0B',parameterCode:row.parameterCode,scopeKey:row.scopeKey,valueJson:{unit:'WEEK',count:1,anchorLocal:'2026-10-19T00:00:00'},effectiveFrom:firstStart}});
  }
- for(const [parameterCode,valueJson] of [['bonus.timing.policy',BONUS_TIMING_POLICY],['global.weekly.firstClose',firstEnd.toISOString()]])await tx.runtimeRuleParameter.create({data:{ruleVersionCode:'R1.0B',parameterCode,scopeKey:'*',valueJson,effectiveFrom:activationAt}});
+ for(const [parameterCode,valueJson] of [['bonus.timing.policy',BONUS_TIMING_POLICY],['global.weekly.firstClose',firstEnd.toISOString()]])await tx.runtimeRuleParameter.create({data:{ruleVersionCode:'R1.0B',parameterCode,scopeKey:'*',valueJson,effectiveFrom:parameterCode==='global.weekly.firstClose'?firstStart:activationAt}});
  for(const job of jobs)await tx.outboxEvent.update({where:{outboxEventId:job.outboxEventId},data:{processStatus:'DEAD',lastError:'SUPERSEDED_BY_'+actor}});
  const client=new Proxy(tx,{get:(t,k)=>k==='$transaction'?fn=>fn(tx):t[k]});
  const calendar=new SettlementCalendarService(client);

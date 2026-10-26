@@ -24,5 +24,7 @@ export function firstGlobalWeekClose(snapshot:ParameterSnapshot):string|undefine
  const value=snapshot.parameters.find(p=>p.code==='global.weekly.firstClose'&&p.scope==='*')?.value;
  if(value===undefined)return undefined;
  if(typeof value!=='string'||!Number.isFinite(new Date(value).getTime()))throw Error('GLOBAL_FIRST_WEEK_INVALID');
+ const local=new Date(new Date(value).getTime()+8*3600000);
+ if(local.getUTCDay()!==1||local.getUTCHours()||local.getUTCMinutes()||local.getUTCSeconds()||local.getUTCMilliseconds())throw Error('GLOBAL_FIRST_WEEK_INVALID');
  return value;
 }

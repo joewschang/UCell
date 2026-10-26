@@ -51,7 +51,7 @@ export async function applyGpvImmediateEffects(tx:Prisma.TransactionClient,event
         recipientQualificationId:g1.qualification_id,fixedGenerationNo:1,baseAmount:event.amount,
         rateSnapshot:rate,theoryAmount:g1Theory,activeSnapshot:state.active,unlockEligibleSnapshot:true,
         reasonCode:state.active?'ELIGIBLE':'HISTORICAL_INACTIVE',historicalSponsorPathHash:sponsorPathHash,
-        ruleVersionCode:event.ruleVersionCode,parameterSnapshotHash:parameters.hash,occurredAt:event.occurredAt,
+        ruleVersionCode:event.ruleVersionCode,parameterSnapshotHash:referralParameters.hash,occurredAt:event.occurredAt,
         idempotencyKey:`gpv:${event.eventId}:referral:g1`
       }});
   }
@@ -73,7 +73,7 @@ export async function applyGpvImmediateEffects(tx:Prisma.TransactionClient,event
         rateSnapshot:rate,theoryAmount:theory,activeSnapshot:state.active,unlockEligibleSnapshot:unlocked,
         reasonCode:!state.active?'HISTORICAL_INACTIVE':(!unlocked?'FIXED_GENERATION_LOCKED':(g1Base.eq(0)?'G1_REFERRAL_THEORY_ZERO':'ELIGIBLE')),
         historicalSponsorPathHash:sponsorPathHash,ruleVersionCode:event.ruleVersionCode,
-        parameterSnapshotHash:parameters.hash,occurredAt:event.occurredAt,
+        parameterSnapshotHash:referralParameters.hash,occurredAt:event.occurredAt,
         idempotencyKey:`gpv:${event.eventId}:referral-matching:g${ancestor.generation}`
       }});
   }

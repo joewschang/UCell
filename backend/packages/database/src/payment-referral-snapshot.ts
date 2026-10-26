@@ -31,6 +31,6 @@ export async function paymentReferralForGpv(tx:Prisma.TransactionClient,event:an
  const parameters=await captureParameters(tx,order.paidAt,event.ruleVersionCode);
  if(!bonusTimingEnabled(parameters))return null;
  const snapshot=verifyReplayEnvelope(await tx.historicalReplaySnapshot.findUnique({where:{kind_sourceId:{kind:'PAYMENT_REFERRAL',sourceId:event.sourceId}}}));
- if(snapshot.at!==order.paidAt.toISOString()||snapshot.inputs.qualificationId!==event.qualificationId)pending('PAYMENT_REFERRAL_MISMATCH','Payment qualification snapshot does not match GPV source');
+ if(snapshot.kind!=='PAYMENT_REFERRAL'||snapshot.sourceId!==event.sourceId||snapshot.ruleVersionCode!==event.ruleVersionCode||snapshot.parameters.effectiveAt!==snapshot.at||snapshot.at!==order.paidAt.toISOString()||snapshot.inputs.qualificationId!==event.qualificationId)pending('PAYMENT_REFERRAL_MISMATCH','Payment qualification snapshot does not match GPV source');
  return snapshot;
 }

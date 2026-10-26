@@ -104,6 +104,7 @@ export class ReferralBonusService {
             occurredAt:event.occurredAt,
             pendingUntil:this.query.pendingUntil(event.occurredAt,pendingDays),
             calculationDetail:{
+              eligibilityAt:source.evidence.referralEligibilityAt??event.occurredAt.toISOString(),
               parameterSnapshot:sourceSnapshot,
               sourceGpv:effective.get(event.eventId)!.toString(),
               originalCalculationSourceVolume:effective.get(event.eventId)!.toString(),
@@ -161,6 +162,7 @@ export class ReferralBonusService {
             occurredAt:event.occurredAt,
             pendingUntil:this.query.pendingUntil(event.occurredAt,pendingDays),
             calculationDetail:{
+              eligibilityAt:source.evidence.referralEligibilityAt??event.occurredAt.toISOString(),
               parameterSnapshot:sourceSnapshot,
               baseG1ReferralTheory:g1ReferralTheory.toString(),
               originalCalculationSourceVolume:effective.get(event.eventId)!.toString(),

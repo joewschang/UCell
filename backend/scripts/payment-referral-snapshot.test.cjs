@@ -27,3 +27,11 @@ test('qualification payment without a verified sponsor fails atomically',async()
  const f=setup(),original=history.captureHistoricalGraph;history.captureHistoricalGraph=async()=>({sponsor:[]});
  try{await assert.rejects(capturePaymentReferral(f.tx,'order','q',paid,'R1.0B'));assert.equal(f.saved.size,0)}finally{history.captureHistoricalGraph=original}
 });
+test('new member payment records the purchased plan before capturing eligibility',async()=>{
+ const f=setup(),original=history.captureHistoricalGraph,plans=[];
+ f.tx.qualification.findUniqueOrThrow=async()=>({kind:'MEMBER_ORIGIN'});
+ f.tx.packagePurchaseSnapshot.findUniqueOrThrow=async()=>({packageClass:'QUALIFICATION',packageCode:'STARTER'});
+ f.tx.qualificationPlanHistory={findFirst:async()=>null,count:async()=>0,create:async({data})=>plans.push(data)};
+ history.captureHistoricalGraph=async()=>{assert.equal(plans.length,1);return {sponsor:[{childQualificationId:'q',sponsorQualificationId:'s'}]}};
+ try{await capturePaymentReferral(f.tx,'order','q',paid,'R1.0B');assert.equal(plans[0].planCode,'STARTER');assert.equal(plans[0].sourceId,'order');assert.equal(plans[0].effectiveFrom,paid)}finally{history.captureHistoricalGraph=original}
+});
