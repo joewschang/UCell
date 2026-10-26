@@ -1,0 +1,20 @@
+{
+  "policy": "WEEK_CLOSE_PAYMENT_SNAPSHOT_20261027",
+  "activatedAt": "2026-10-26T15:25:16.495Z",
+  "apiRevision": "ucell-prod-api--bonus-time-v4-20261027",
+  "workerRevision": "ucell-prod-worker--bonus-time-v4-20261027",
+  "apiImage": "sha256:39a1c20c67e583d44d28a32caaac22d750e37f8f7fa4b9446cddcd690a9ce848",
+  "workerImage": "sha256:08062105541215d82b024a70fb6b6b00ff4fc75f945aaaf3ae637de1d70cf7fd",
+  "dryRun": "BINARY_MATCHING_GLOBAL_PAYMENT_SNAPSHOT_VALIDATED_AND_ROLLED_BACK",
+  "automatedTests": {"newPolicy": 19, "existingCalendar": 13, "existingPoolRetailAndWorker": 11, "allPassed": true},
+  "firstWeek": {"start": "2026-10-18T16:00:00.000Z", "end": "2026-10-25T16:00:00.000Z"},
+  "firstWeekDelivery": [
+    {"kind": "BINARY_K1", "status": "PROCESSED", "receiptVerified": true, "error": null},
+    {"kind": "MATCHING_K2", "status": "PROCESSED", "receiptVerified": true, "error": null}
+  ],
+  "unresolvedEconomicSourceEvents": [],
+  "repairedBall": {"ballNo": "A000001", "effectivePlanHistoryCount": 1, "effectiveStatusHistoryCount": 1},
+  "supersededUnexecutedJobs": 2,
+  "faq": {"total": 46, "added": 3, "memberVerified": true, "websiteVerified": true},
+  "globalMonthClose": "NOT_DUE; weekly inputs and replay verified; no premature monthly settlement or bank payout performed"
+}
