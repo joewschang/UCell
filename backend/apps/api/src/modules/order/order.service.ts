@@ -2,7 +2,7 @@ import {resolveCheckoutSnapshot,type CheckoutInput} from './checkout-snapshot';
 import {allocateCreatedBall} from '../qualification/allocate-created-ball';
 import {ENTRY_POLICY} from '../coupon/entry-pricing';
 import { ConflictException, Injectable, UnprocessableEntityException } from '@nestjs/common';
-import { Prisma, PrismaService } from '@ucell/database';
+import { Prisma, PrismaService, capturePaymentReferral } from '@ucell/database';
 import { randomUUID, createHash } from 'crypto';
 import { AuditService } from '../../common/audit/audit.service';
 import { IdempotencyService } from '../../common/idempotency/idempotency.service';
@@ -429,6 +429,7 @@ export class OrderService {
           const placementDueAt=sponsorQualificationId?new Date(occurredAt.getTime()+72*60*60*1000):undefined;
           await tx.qualificationSetup.create({data:{qualificationId:packageQualificationId,ownerPersonId:packageSnapshot.personId,ownerLegalEntityId:packageSnapshot.legalEntityId,qualifyingOrderId:orderId,packagePurchaseSnapshotId:packageSnapshot.packagePurchaseSnapshotId,packageType:packageSnapshot.packageCode,setupStatus:sponsorQualificationId?'PLACEMENT_PENDING':'BALL_SETUP_PENDING',finalSponsorQualificationId:sponsorQualificationId,placementRequestedAt:sponsorQualificationId?occurredAt:undefined,placementDueAt,setupPolicyVersion:'NR-DEC-004-V1'}});
           downstreamStatus=sponsorQualificationId?'PLACEMENT_PENDING':'BALL_SETUP_PENDING';
+          await capturePaymentReferral(tx,orderId,packageQualificationId,occurredAt,order.ruleVersionCode);
         }
         await this.outbox.enqueue(tx,{eventType:'PACKAGE_PAYMENT_CONFIRMED',aggregateType:'ORDER',aggregateId:orderId,correlationId,payload:{schemaVersion:1,eventType:'PACKAGE_PAYMENT_CONFIRMED',orderId,qualificationId:order.qualificationId,packagePurchaseSnapshotId:packageSnapshot.packagePurchaseSnapshotId,packageClass:packageSnapshot.packageClass,occurredAt:occurredAt.toISOString(),recognitionStatus:'CONFIGURATION_PENDING',downstreamStatus}});
         await this.audit.write(tx,{actorType:actorId?'USER':'SYSTEM',actorId,action:'PACKAGE_PAYMENT_CONFIRMED',entityType:'ORDER',entityId:orderId,afterData:{paymentEventId:payment.paymentEventId,packagePurchaseSnapshotId:packageSnapshot.packagePurchaseSnapshotId,downstreamStatus},requestId,correlationId});

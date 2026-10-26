@@ -104,14 +104,14 @@ export function resolveSettlementWindow(at: Date): SettlementWindow {
 }
 
 /** Assigns an atomic completed Binary week to the first 10th/25th batch after its close. */
-export function resolveBinaryWeekBatch(binaryWeekEnd: Date): Date {
+export function resolveBinaryWeekBatch(binaryWeekEnd: Date, closingDay: 0 | 1 = 0): Date {
   assertFiniteDate(binaryWeekEnd);
   const local = new Date(binaryWeekEnd.getTime() + TAIPEI_OFFSET_MS);
-  if (local.getUTCDay() !== 0 || local.getUTCHours() !== 0 || local.getUTCMinutes() !== 0 ||
+  if (local.getUTCDay() !== closingDay || local.getUTCHours() !== 0 || local.getUTCMinutes() !== 0 ||
       local.getUTCSeconds() !== 0 || local.getUTCMilliseconds() !== 0) {
     throw new CalendarResolutionError(
       'NON_CANONICAL_BINARY_WEEK_CLOSE',
-      'Binary week close must be Sunday 00:00:00 Asia/Taipei',
+      'Binary week close must match its approved Sunday/Monday 00:00 Asia/Taipei boundary',
     );
   }
   const year = local.getUTCFullYear();

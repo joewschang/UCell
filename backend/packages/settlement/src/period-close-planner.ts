@@ -1,3 +1,4 @@
+import {firstGlobalWeekClose,bonusTimingEnabled,globalWeekEnds} from '@ucell/database';
 import {PeriodCloseKind,captureParameters,enqueuePeriodCloseJob} from '@ucell/database';
 import {SettlementCalendarService} from './settlement/settlement-calendar.service';
 
@@ -36,8 +37,9 @@ export async function planDuePeriodJobs(db:Parameters<typeof enqueuePeriodCloseJ
         // Validate the real approved cutoff even when a caller supplies an older discovery horizon.
         const parameters=await calendar.captureForPeriod(db,period.start,period.end,kind,input.ruleVersionCode);
         if(new Date(parameters.effectiveAt)>through){result.waiting++;break;}
-        const required=kind==='MATCHING_K2'?['BINARY_K1']:kind==='WELFARE'?['GLOBAL']:kind==='PAYABLE_PREPARATION'?kinds.filter(row=>row!=='PAYABLE_PREPARATION'):[];
-        const windows=kind==='PAYABLE_PREPARATION'?await calendar.preparationWindows(db,period.start,period.end,parameters):null;
+        const weeklyGlobal=kind==='GLOBAL'&&bonusTimingEnabled(parameters);
+        const required=kind==='MATCHING_K2'||weeklyGlobal?['BINARY_K1']:kind==='WELFARE'?['GLOBAL']:kind==='PAYABLE_PREPARATION'?kinds.filter(row=>row!=='PAYABLE_PREPARATION'):[];
+        const windows=weeklyGlobal?globalWeekEnds(period.start,period.end,firstGlobalWeekClose(parameters)).map(close=>({kind:'BINARY_K1',periodStart:new Date(close.getTime()-7*86400000),periodEnd:close})):kind==='PAYABLE_PREPARATION'?await calendar.preparationWindows(db,period.start,period.end,parameters):null;
         const dependencies=required.length?await db.periodCloseJob.findMany({where:{ruleVersionCode:input.ruleVersionCode,...(windows?{OR:windows}:{kind:{in:required},periodStart:{gte:period.start},periodEnd:{lte:period.end}})},orderBy:[{kind:'asc'},{periodStart:'asc'}]}):[];
         await enqueuePeriodCloseJob(db,{...identity,prerequisiteIds:dependencies.map(row=>row.periodCloseJobId),requestedBy:'WORKER_PERIOD_PLANNER',approvalReference:input.approvalReference},tx=>calendar.captureForPeriod(tx,period.start,period.end,kind,input.ruleVersionCode),undefined,(tx,request,pinned,parents)=>calendar.validatePreparationDependencies(tx,request,pinned,parents));
         result.admitted++;
@@ -49,7 +51,7 @@ export async function planDuePeriodJobs(db:Parameters<typeof enqueuePeriodCloseJ
     }
   }catch(error){
     const code=errorCode(error);
-    if(['SETTLEMENT_CUTOFF_NOT_REACHED','PERIOD_CLOSE_BINARY_REQUIRED','PERIOD_CLOSE_GLOBAL_REQUIRED','PERIOD_CLOSE_PAYABLE_COVERAGE_REQUIRED'].includes(code))result.waiting++;
+    if(['SETTLEMENT_CUTOFF_NOT_REACHED','PERIOD_CLOSE_BINARY_REQUIRED','GLOBAL_WEEK_NOT_FINALIZED','PERIOD_CLOSE_GLOBAL_REQUIRED','PERIOD_CLOSE_PAYABLE_COVERAGE_REQUIRED'].includes(code))result.waiting++;
     else result.failures.push({kind,code});
   }
   return result;

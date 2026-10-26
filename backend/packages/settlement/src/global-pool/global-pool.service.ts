@@ -1,3 +1,4 @@
+import {closingEligibilityAt} from '@ucell/database';
 import { SettlementCalendarService } from '../settlement/settlement-calendar.service';
 import { snapshotDecimal } from '../rules/parameter-snapshot';
 import { Injectable } from '@nestjs/common';
@@ -33,6 +34,7 @@ export class GlobalPoolService {
       const parameterSnapshot=await this.calendar.captureForPeriod(tx,periodStart,periodEnd,'GLOBAL',ruleVersionCode);
 
       const periodFacts=await captureGlobalPeriod(tx,periodStart,periodEnd,ruleVersionCode);
+      const eligibilityAt=closingEligibilityAt(periodEnd,parameterSnapshot);
       const totalGpv=periodFacts.total;
       const poolRate=snapshotDecimal(parameterSnapshot,'pool.global.rate','*');
       const poolAvailable=totalGpv.mul(poolRate);
@@ -74,7 +76,7 @@ export class GlobalPoolService {
 
         const eligible:string[]=[];
         for(const q of qs){
-          const active=await this.query.isActiveAt(tx,q.qualificationId,periodEnd);
+          const active=await this.query.isActiveAt(tx,q.qualificationId,eligibilityAt);
           const weak=weakMap.get(q.qualificationId)!;
           const achieved=await tx.qualificationGlobalRankHistory.findUnique({
             where:{qualificationId_rankCode:{qualificationId:q.qualificationId,rankCode:level}}

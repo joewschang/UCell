@@ -1,3 +1,4 @@
+import {bonusTimingEnabled} from '@ucell/database';
 import { Injectable } from '@nestjs/common';
 import { Prisma, PrismaService } from '@ucell/database';
 import { captureParameters, ParameterSnapshot, pending, snapshotValue } from '../rules/parameter-snapshot';
@@ -73,7 +74,7 @@ export class SettlementCalendarService {
       while(period.end<end){
         if(++count>366)pending('PERIOD_CLOSE_PAYABLE_CALENDAR_REQUIRED','Too many prerequisite periods');
         if(period.end>=start){
-          if(['BINARY_K1','MATCHING_K2'].includes(kind)&&resolveBinaryWeekBatch(period.end).getTime()!==end.getTime())pending('PERIOD_CLOSE_PAYABLE_CALENDAR_REQUIRED','Weekly close does not map to this approved batch');
+          if(['BINARY_K1','MATCHING_K2'].includes(kind)&&resolveBinaryWeekBatch(period.end,bonusTimingEnabled(parameters)?1:0).getTime()!==end.getTime())pending('PERIOD_CLOSE_PAYABLE_CALENDAR_REQUIRED','Weekly close does not map to this approved batch');
           result.push({kind,periodStart:period.start,periodEnd:period.end});
         }
         period=await this.periodFor(tx,period.end,parameters,kind);

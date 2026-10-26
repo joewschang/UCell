@@ -1,3 +1,4 @@
+import {firstGlobalWeekClose,bonusTimingEnabled,globalWeekEnds} from './bonus-timing-policy';
 import {Prisma,PrismaClient,PeriodCloseJob} from '@prisma/client';
 import {randomUUID} from 'node:crypto';
 import {ParameterSnapshot,verifySnapshot,snapshotValue} from './parameter-snapshot';
@@ -27,8 +28,13 @@ export async function enqueuePeriodCloseJob(db:PrismaClient,input:PeriodCloseReq
     const parameters=verifySnapshot(await prepare(tx));
     if(parameters.ruleVersionCode!==input.ruleVersionCode)throw new Error('PERIOD_CLOSE_RULE_MISMATCH');
     const dependencies=await tx.periodCloseJob.findMany({where:{periodCloseJobId:{in:prerequisiteIds}}});
+    const weeklyGlobal=input.kind==='GLOBAL'&&bonusTimingEnabled(parameters);
     const canonicalPreparation=input.kind==='PAYABLE_PREPARATION'&&(snapshotValue(parameters,'settlement.period','PAYABLE_PREPARATION') as any)?.unit==='SETTLEMENT_10_25';
-    if(dependencies.length!==prerequisiteIds.length||dependencies.some(row=>row.ruleVersionCode!==input.ruleVersionCode||(!canonicalPreparation&&(row.periodStart<input.periodStart||row.periodEnd>input.periodEnd))))throw new Error('PERIOD_CLOSE_PREREQUISITE_INVALID');
+    if(dependencies.length!==prerequisiteIds.length||dependencies.some(row=>row.ruleVersionCode!==input.ruleVersionCode||(!canonicalPreparation&&!weeklyGlobal&&(row.periodStart<input.periodStart||row.periodEnd>input.periodEnd))))throw new Error('PERIOD_CLOSE_PREREQUISITE_INVALID');
+    if(weeklyGlobal){
+      const expected=globalWeekEnds(input.periodStart,input.periodEnd,firstGlobalWeekClose(parameters)).map(d=>d.getTime()).sort();
+      if(dependencies.length!==expected.length||dependencies.some(row=>row.kind!=='BINARY_K1'||row.periodEnd.getTime()-row.periodStart.getTime()!==7*86400000)||JSON.stringify(dependencies.map(row=>row.periodEnd.getTime()).sort())!==JSON.stringify(expected))throw new Error('GLOBAL_WEEK_NOT_FINALIZED');
+    }
     if(canonicalPreparation&&!validateDependencies)throw new Error('PERIOD_CLOSE_PAYABLE_CALENDAR_REQUIRED');
     if(validateDependencies)await validateDependencies(tx,input,parameters,dependencies);
     if(input.kind==='MATCHING_K2'&&!dependencies.some(row=>row.kind==='BINARY_K1'&&row.periodStart.getTime()===input.periodStart.getTime()&&row.periodEnd.getTime()===input.periodEnd.getTime()))throw new Error('PERIOD_CLOSE_BINARY_REQUIRED');

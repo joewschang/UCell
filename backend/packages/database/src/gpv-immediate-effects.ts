@@ -1,3 +1,4 @@
+import {paymentReferralForGpv} from './payment-referral-snapshot';
 import {Prisma} from '@prisma/client';
 import {captureParameters, pending, snapshotDecimal} from './parameter-snapshot';
 import {
@@ -24,6 +25,9 @@ export async function applyGpvImmediateEffects(tx:Prisma.TransactionClient,event
   if(event.pvType!=='GPV'||event.eventType!=='GPV_CREATED') throw new Error('GPV_CREATED_REQUIRED');
   const parameters=await captureParameters(tx,event.occurredAt,event.ruleVersionCode);
   const evidence:any=await captureHistoricalGraph(tx,event.qualificationId,event.occurredAt);
+  const payment=await paymentReferralForGpv(tx,event);
+  const referralEvidence=payment?.evidence??evidence,referralParameters=payment?.parameters??parameters;
+  if(payment){evidence.referralEvidence=payment.evidence;evidence.referralParameters=payment.parameters;evidence.referralEligibilityAt=payment.at;}
   const snapshot=await storeReplaySnapshot(tx,{
     format:'UCELL_HISTORICAL_REPLAY_V1',kind:'GPV',sourceId:event.eventId,
     ruleVersionCode:event.ruleVersionCode,at:event.occurredAt.toISOString(),parameters,recipients:[],evidence,
@@ -31,14 +35,14 @@ export async function applyGpvImmediateEffects(tx:Prisma.TransactionClient,event
       orderId:monthlyBasis?.orderId??(event.sourceType==='ORDER'?event.sourceId:null),lineId:event.sourceLineId,volume:event.amount.toString(),...(monthlyBasis?{monthlyRefundBasis:monthlyBasis}:{}),...(preplacementReturnedGpv?{preplacementReturnedGpv}:{})}
   });
 
-  const sponsorPath=historicalSponsorAncestors(evidence,event.qualificationId,7);
+  const sponsorPath=historicalSponsorAncestors(referralEvidence,event.qualificationId,7);
   const sponsorPathHash=replayHash(sponsorPath);
   const g1=sponsorPath.find(a=>a.generation===1);
-  let g1Theory=new Prisma.Decimal(0);
+  let g1Theory=new Prisma.Decimal(0),g1Base=new Prisma.Decimal(0);
   if(g1){
-    const state=historicalRecipientState(evidence,g1.qualification_id);
-    const rate=snapshotDecimal(parameters,'referral.g1.rate',state.plan);
-    g1Theory=state.active?event.amount.mul(rate):new Prisma.Decimal(0);
+    const state=historicalRecipientState(referralEvidence,g1.qualification_id);
+    const rate=snapshotDecimal(referralParameters,'referral.g1.rate',state.plan);
+    g1Base=event.amount.mul(rate);g1Theory=state.active?g1Base:new Prisma.Decimal(0);
     await tx.theoryCalculationEvidence.upsert({
       where:{theoryKind_sourceVolumeEventId_recipientQualificationId_fixedGenerationNo:{
         theoryKind:'REFERRAL',sourceVolumeEventId:event.eventId,
@@ -55,19 +59,19 @@ export async function applyGpvImmediateEffects(tx:Prisma.TransactionClient,event
   // Fixed Sponsor generations are recorded even when Active or unlock fails.
   // A zero row is evidence that the generation was evaluated without compression.
   for(const ancestor of sponsorPath.filter(a=>a.generation>=2)){
-    const state=historicalRecipientState(evidence,ancestor.qualification_id);
+    const state=historicalRecipientState(referralEvidence,ancestor.qualification_id);
     const unlockDepth=referralMatchingUnlockDepth(state.plan,state.directs);
     const unlocked=ancestor.generation<=unlockDepth;
-    const rate=snapshotDecimal(parameters,'equalization.rate',`${state.plan}:G${ancestor.generation}`);
-    const theory=state.active&&unlocked?g1Theory.mul(rate):new Prisma.Decimal(0);
+    const rate=snapshotDecimal(referralParameters,'equalization.rate',`${state.plan}:G${ancestor.generation}`);
+    const theory=state.active&&unlocked?g1Base.mul(rate):new Prisma.Decimal(0);
     await tx.theoryCalculationEvidence.upsert({
       where:{theoryKind_sourceVolumeEventId_recipientQualificationId_fixedGenerationNo:{
         theoryKind:'REFERRAL_MATCHING',sourceVolumeEventId:event.eventId,
         recipientQualificationId:ancestor.qualification_id,fixedGenerationNo:ancestor.generation}},update:{},create:{
         theoryKind:'REFERRAL_MATCHING',sourceVolumeEventId:event.eventId,sourceQualificationId:event.qualificationId,
-        recipientQualificationId:ancestor.qualification_id,fixedGenerationNo:ancestor.generation,baseAmount:g1Theory,
+        recipientQualificationId:ancestor.qualification_id,fixedGenerationNo:ancestor.generation,baseAmount:g1Base,
         rateSnapshot:rate,theoryAmount:theory,activeSnapshot:state.active,unlockEligibleSnapshot:unlocked,
-        reasonCode:!state.active?'HISTORICAL_INACTIVE':(!unlocked?'FIXED_GENERATION_LOCKED':(g1Theory.eq(0)?'G1_REFERRAL_THEORY_ZERO':'ELIGIBLE')),
+        reasonCode:!state.active?'HISTORICAL_INACTIVE':(!unlocked?'FIXED_GENERATION_LOCKED':(g1Base.eq(0)?'G1_REFERRAL_THEORY_ZERO':'ELIGIBLE')),
         historicalSponsorPathHash:sponsorPathHash,ruleVersionCode:event.ruleVersionCode,
         parameterSnapshotHash:parameters.hash,occurredAt:event.occurredAt,
         idempotencyKey:`gpv:${event.eventId}:referral-matching:g${ancestor.generation}`

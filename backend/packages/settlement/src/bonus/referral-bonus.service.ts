@@ -75,13 +75,14 @@ export class ReferralBonusService {
 
       for(const event of gpvEvents){
         const source=verifyReplayEnvelope(await tx.historicalReplaySnapshot.findUnique({where:{kind_sourceId:{kind:'GPV',sourceId:event.eventId}}}));
-        const sourceSnapshot=source.parameters;
-        const ancestors=historicalSponsorAncestors(source.evidence,event.qualificationId,7);
+        const sourceSnapshot=source.evidence.referralParameters?verifySnapshot(source.evidence.referralParameters):source.parameters;
+        const referralEvidence=source.evidence.referralEvidence??source.evidence;
+        const ancestors=historicalSponsorAncestors(referralEvidence,event.qualificationId,7);
         const g1=ancestors.find(a=>a.generation===1);
         if(!g1) continue;
 
-        const g1Active=historicalRecipientState(source.evidence,g1.qualification_id).active;
-        const g1Plan=historicalRecipientState(source.evidence,g1.qualification_id).plan;
+        const g1Active=historicalRecipientState(referralEvidence,g1.qualification_id).active;
+        const g1Plan=historicalRecipientState(referralEvidence,g1.qualification_id).plan;
         const g1Rate=snapshotDecimal(sourceSnapshot,'referral.g1.rate',g1Plan);
         // Matching generations are fixed historical sponsor positions.  Their
         // base is the G1 referral theory for this source, independent of
@@ -123,10 +124,10 @@ export class ReferralBonusService {
         }
 
         for(const anc of ancestors.filter(a=>a.generation>=2)){
-          const plan=historicalRecipientState(source.evidence,anc.qualification_id).plan;
-          const directCount=historicalRecipientState(source.evidence,anc.qualification_id).directs;
+          const plan=historicalRecipientState(referralEvidence,anc.qualification_id).plan;
+          const directCount=historicalRecipientState(referralEvidence,anc.qualification_id).directs;
           const unlock=this.equalizationUnlockDepth(plan,directCount);
-          const active=historicalRecipientState(source.evidence,anc.qualification_id).active;
+          const active=historicalRecipientState(referralEvidence,anc.qualification_id).active;
 
           // A plan has no rate outside its configured fixed generation range.
           if(anc.generation>this.equalizationMaximumDepth(plan)) continue;
