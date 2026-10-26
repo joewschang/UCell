@@ -1,0 +1,26 @@
+{
+  "verifiedAt": "2026-10-26T14:13:54.337Z",
+  "contentCommit": "c84edc9e4f946f538e15057dd7fbf470d4650288",
+  "databaseDryRun": "ROLLED_BACK_VALIDATION",
+  "publish": "PUBLISHED",
+  "publicContent": "43 exact question/answer matches",
+  "anonymousAdminStatus": 401,
+  "pages": [
+    {
+      "url": "https://member.ucell.life/faq",
+      "questions": 43,
+      "categories": 9,
+      "filterSearchExpand": "PASS",
+      "mobileWidth": 390,
+      "horizontalOverflow": false
+    },
+    {
+      "url": "https://www.ucell.life/faq.html",
+      "questions": 43,
+      "categories": 9,
+      "filterSearchExpand": "PASS",
+      "mobileWidth": 390,
+      "horizontalOverflow": false
+    }
+  ]
+}
