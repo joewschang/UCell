@@ -1,0 +1,23 @@
+const {PrismaClient}=require('/app/packages/database/node_modules/@prisma/client');
+const {BinaryTreeService}=require('/app/apps/api/dist/modules/binary-tree/binary-tree.service');
+const {OrganizationService}=require('/app/apps/api/dist/modules/organization/organization.service');
+const {currentTreeList,currentTreeState,assertCurrentPlacement}=require(process.env.CURRENT_TREE_MODULE||'/tmp/current-tree.js');
+const assert=require('assert/strict'),db=new PrismaClient();
+(async()=>{
+ const s=await db.authSession.findFirst({where:{provider:'ENTRA',roleCode:'SUPER_ADMIN',status:'ACTIVE',revokedAt:null,expiresAt:{gt:new Date()}},orderBy:{issuedAt:'desc'}});assert(s,'active admin session required');
+ const p={personId:s.personId,provider:s.provider,subject:s.subject,role:s.roleCode,sessionId:s.authSessionId};
+ const commands=new BinaryTreeService(db,{},new OrganizationService(db));
+ const list=await currentTreeList(db,commands,p),tree=list.items.find(t=>t.treeCode==='A');assert(tree);
+ const view=await currentTreeState(db,commands,p,tree.binaryTreeId,{});assert.equal(view.nodes.length,7);assert(view.nodes.every(n=>n.slots.length===0));
+ const q=await db.qualification.findUniqueOrThrow({where:{ballNo:'A000001'}}),before=await db.binaryTreeMembership.count({where:{qualificationId:q.qualificationId}});assert.equal(before,0);
+ assert(view.pending.items.some(n=>n.ballNo==='A000001'));
+ const selected=await currentTreeState(db,commands,p,tree.binaryTreeId,{candidateBallNo:'A000001'});assert.equal(selected.candidate.blocked,null);assert.equal(selected.candidate.sponsorBallNo,'AX000001');
+ const allowed=selected.nodes.flatMap(n=>n.slots.filter(s=>!s.reason).map(s=>({node:n,side:s.side})));assert(allowed.length>0);
+ const denied=selected.nodes.flatMap(n=>n.slots.filter(s=>s.reason).map(s=>({node:n,side:s.side})));assert(denied.length>0);
+ const a=allowed[0];await assertCurrentPlacement(db,tree.binaryTreeId,q.qualificationId,a.node.qualificationId);
+ const preview=await commands.preview(p,tree.binaryTreeId,{qualificationId:q.qualificationId,binaryParentQualificationId:a.node.qualificationId,side:a.side,expectedVersion:tree.topologyVersion});assert(preview.valid);
+ const d=denied[0];await assert.rejects(()=>commands.preview(p,tree.binaryTreeId,{qualificationId:q.qualificationId,binaryParentQualificationId:d.node.qualificationId,side:d.side,expectedVersion:tree.topologyVersion}));
+ const drill=await currentTreeState(db,commands,p,tree.binaryTreeId,{candidateBallNo:'A000001',ballNo:a.node.ballNo});assert(drill.breadcrumbs.length>=2);
+ assert.equal(await db.binaryTreeMembership.count({where:{qualificationId:q.qualificationId}}),0);
+ console.log(JSON.stringify({currentList:true,companyBalls:7,pendingBall:'A000001',sponsor:'AX000001',allowedSlots:allowed.length,deniedSlots:denied.length,preview:true,drillDown:true,placementPersisted:false}));
+})().catch(e=>{console.error(e.response||e.code||e.message);process.exitCode=1}).finally(()=>db.$disconnect());

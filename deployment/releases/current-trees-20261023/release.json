@@ -1,0 +1,35 @@
+{
+  "release": "current-trees-20261023",
+  "date": "2026-10-23",
+  "scope": "Current-only multi-tree browsing and sponsor-rooted placement UX",
+  "api": {
+    "image": "ucell-api:current-trees-20261023",
+    "digest": "sha256:47556a46776f364c4faf0a0117e8d3997877f62e3f242a45e3efe64a1b781158",
+    "baseDigest": "sha256:0beffc1b3054c0fd55159e2b105cb2a189f032b1f09beb729a790a4154b054e6",
+    "revision": "ucell-prod-api--current-trees-20261023",
+    "strategy": "Exact production base; add current read helper/routes, shared scope/readiness checks in preview/place. Preserve production activation gate and all unrelated compiled behavior."
+  },
+  "admin": {
+    "image": "ucell-admin:current-trees-final-20261023",
+    "digest": "sha256:2de5356cf7f68ddd69f7311b8d93fc8c8e59ee6dd2e45d29a785eb01758816c9",
+    "revision": "ucell-prod-admin--current-trees-20261023"
+  },
+  "validation": {
+    "adminTests": 263,
+    "memberRegressionTests": 332,
+    "apiTargetedTests": 19,
+    "adminTypecheck": "passed",
+    "productionBuild": "passed",
+    "desktopAndMobileBrowserQA": "passed; fixture API, real production bundle; no writes",
+    "liveAuthorizedReadAndPreflight": "passed; current tree list, seven company balls, pending list, sponsor selection, allowed and denied slots, drill-down",
+    "actualMemberPlacementPerformed": false,
+    "databaseMigration": false
+  },
+  "behavior": [
+    "Tree list and bounded three-level current branch; no historical inputs or empty browse slots",
+    "Paginated per-tree unplaced list and exact public ball-number search",
+    "Sponsor-rooted navigation; first/third-left and founding-company constraints explained",
+    "Confirmation, reason, server preflight, stable idempotency key and clear receipt/errors",
+    "Create-tree and lifecycle controls retained for SUPER_ADMIN; creation remains seven company balls"
+  ]
+}

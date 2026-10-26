@@ -1,0 +1,31 @@
+const assert=require('node:assert/strict'),{randomUUID,createHash}=require('node:crypto');
+const {PrismaClient}=require('/app/packages/database/node_modules/@prisma/client');
+const {ProductReviewService}=require('/app/apps/api/dist/modules/member/product-review.service');
+const {AuditService}=require('/app/apps/api/dist/common/audit/audit.service');
+const {OrderHubService}=require('/app/apps/api/dist/modules/member/order-hub.service');
+const {AdminOrderTrackingService}=require('/app/apps/api/dist/modules/order/admin-order-tracking.service');
+const db=new PrismaClient();
+(async()=>{let orderId;try{await db.$transaction(async tx=>{
+ const person=await tx.person.findFirstOrThrow(),product=await tx.productReference.findFirstOrThrow({where:{isActive:true}});
+ const order=await tx.order.create({data:{purchaserPersonId:person.personId,status:'PAID',paidAt:new Date(),purpose:'RETAIL',grossAmount:4800,netAmount:4800,ruleVersionCode:'R1.0B'}});orderId=order.orderId;
+ await tx.orderLine.create({data:{orderId,productId:product.productId,skuSnapshot:product.sku,productNameSnapshot:product.displayName,quantity:1,unitPrice:4800,lineAmount:4800,gpvRateSnapshot:0.6,gpvAmountSnapshot:2880,ruleProfileSnapshot:{}}});
+ const wrapped=new Proxy(tx,{get:(t,p)=>p==='$transaction'?(fn)=>fn(tx):t[p]}),objects=new Map(),storage={put:async(k,b)=>objects.set(k,b),get:async k=>({bytes:objects.get(k)})};
+ const svc=new ProductReviewService(wrapped,{qualifications:async()=>[]},storage,new AuditService()),pid=person.personId,no=String(order.orderNo),input={productId:product.productId,rating:2,comment:'QA rollback review',mediaIds:[],expectedVersion:0,publishConsent:true};
+ await assert.rejects(()=>svc.submit(pid,no,input,randomUUID()),e=>e.getResponse().code==='REVIEW_NOT_DELIVERED');
+ await assert.rejects(()=>svc.own(randomUUID(),no));
+ await tx.fulfillment.create({data:{orderId,fulfillmentKey:'QA-REVIEW',status:'DELIVERED',allocationSnapshotRef:'QA_ROLLBACK',fulfillmentPolicySnapshotRef:'QA_ROLLBACK'}});
+ const before=await svc.publicList(product.sku),png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aX1sAAAAASUVORK5CYII=','base64');
+ // Use a freshly generated PNG with valid CRCs.
+ const zlib=require('zlib');function crc(b){let c=0xffffffff;for(const n of b){c^=n;for(let k=0;k<8;k++)c=(c>>>1)^((c&1)?0xedb88320:0)}return(c^0xffffffff)>>>0}function chunk(t,b){const x=Buffer.concat([Buffer.from(t),b]),n=Buffer.alloc(4),c=Buffer.alloc(4);n.writeUInt32BE(b.length);c.writeUInt32BE(crc(x));return Buffer.concat([n,x,c])}const h=Buffer.alloc(13);h.writeUInt32BE(1);h.writeUInt32BE(1,4);h[8]=8;h[9]=2;const image=Buffer.concat([png.subarray(0,8),chunk('IHDR',h),chunk('IDAT',zlib.deflateSync(Buffer.from([0,0,0,0]))),chunk('IEND',Buffer.alloc(0))]);
+ const upload=await svc.startUpload(pid,no,{productId:product.productId,mimeType:'image/png',size:image.length,sha256:createHash('sha256').update(image).digest('hex')});
+ await assert.rejects(()=>svc.finishUpload(pid,upload.id));await assert.rejects(()=>svc.uploadPart(randomUUID(),upload.id,0,image.toString('base64')));
+ await svc.uploadPart(pid,upload.id,0,image.toString('base64'));await svc.uploadPart(pid,upload.id,0,image.toString('base64'));await svc.finishUpload(pid,upload.id);await svc.finishUpload(pid,upload.id);
+ assert.deepEqual((await svc.media(upload.id,{personId:pid})).bytes,image);await assert.rejects(()=>svc.media(upload.id,{public:true}));
+ input.mediaIds=[upload.id];const review=await svc.submit(pid,no,input,randomUUID());assert.equal(review.status,'PENDING');assert.equal((await new OrderHubService(wrapped,{qualifications:async()=>[]},null,new AuditService()).list(pid,{search:no})).orders[0].tab,'COMPLETED');assert.equal((await new AdminOrderTrackingService(wrapped,new AuditService()).list({search:no})).orders[0].tab,'COMPLETED');assert.equal((await svc.submit(pid,no,input,randomUUID())).id,review.id);assert.equal((await svc.publicList(product.sku)).total,before.total);
+ await assert.rejects(()=>svc.moderate(review.id,'REJECTED',1,'',pid,randomUUID()));await svc.moderate(review.id,'REJECTED',1,'請移除個資',pid,randomUUID());
+ await assert.rejects(()=>svc.submit(pid,no,input,randomUUID()));input.expectedVersion=1;input.comment='QA revised';const revised=await svc.submit(pid,no,input,randomUUID());assert.equal(revised.version,2);
+ await assert.rejects(()=>svc.moderate(review.id,'APPROVED',1,'',pid,randomUUID()));await svc.moderate(review.id,'APPROVED',2,'',pid,randomUUID());
+ const published=await svc.publicList(product.sku);assert.equal(published.total,before.total+1);const row=published.reviews.find(r=>r.id===review.id);assert(row);assert.equal(row.rating,2);assert.equal(row.author,'已驗證購買會員');assert(!('personId' in row));assert.deepEqual((await svc.media(upload.id,{public:true})).bytes,image);
+ assert((await svc.adminList('APPROVED')).reviews.some(r=>r.id===review.id));await svc.moderate(review.id,'HIDDEN',2,'QA hide',pid,randomUUID());assert.equal((await svc.publicList(product.sku)).total,before.total);await assert.rejects(()=>svc.media(upload.id,{public:true}));
+ assert.equal(await tx.paymentEvent.count({where:{orderId}}),0);throw Error('ROLLBACK_REVIEW_QA_SUCCESS');
+ },{timeout:45000});}catch(e){if(e.message!=='ROLLBACK_REVIEW_QA_SUCCESS')throw e}assert.equal(await db.order.count({where:{orderId}}),0);console.log('PRODUCT_REVIEW_ROLLBACK_QA_PASSED: ownership,delivery,chunkRetry,privateMedia,submit,reject,resubmit,version,approve,publicStars,hide,noPaymentWrites');})().catch(e=>{console.error(e.stack);process.exitCode=1}).finally(()=>db.$disconnect());

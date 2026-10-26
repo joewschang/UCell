@@ -1,3 +1,4 @@
+import {currentTreeList,currentTreeState} from './current-tree';
 import {readBallActiveEvidence} from './tree-active-evidence';
 import {treeAncestryCompleteness} from './tree-ancestry-integrity';
 import {treeStatisticsProjection} from './tree-statistics-projection';
@@ -25,7 +26,9 @@ export async function readCompanyProfileStatus(tx:Pick<Prisma.TransactionClient,
 @Injectable()
 export class BinaryTreeReadService {
  constructor(private readonly db:PrismaService,private readonly commands:BinaryTreeService){}
- private time(raw:unknown){try{const time=parseAsOfContext(raw),now=new Date().toISOString();if(time.asOf>now||time.knowledgeCutoff>now)throw new Error();return time;}catch{throw new UnprocessableEntityException({code:'INVALID_AS_OF_CONTEXT'});}}
+ async currentList(p:TreePrincipal,after?:string){return currentTreeList(this.db,this.commands,p,after);}
+ async currentState(p:TreePrincipal,id:string,input:{ballNo?:string;candidateBallNo?:string;after?:string}){return currentTreeState(this.db,this.commands,p,id,input);}
+ private time(raw:unknown){try{const time=parseAsOfContext(raw),now=Date.now();if(Date.parse(time.asOf)>now+5000||Date.parse(time.knowledgeCutoff)>now+5000)throw new Error();return parseAsOfContext({...time,asOf:new Date(Math.min(Date.parse(time.asOf),now)).toISOString(),knowledgeCutoff:new Date(Math.min(Date.parse(time.knowledgeCutoff),now)).toISOString()});}catch{throw new UnprocessableEntityException({code:'INVALID_AS_OF_CONTEXT'});}}
  async list(p:TreePrincipal,raw:unknown,after?:string){
   const time=this.time(raw);await this.commands.authorize(p);
   const data=await this.db.$transaction(async tx=>{

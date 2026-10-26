@@ -1,0 +1,9 @@
+const assert=require('node:assert/strict'),path=require('path'),root=path.resolve(__dirname,'../../..');
+const {decodeReviewPart,validReviewMedia,MEDIA_PART_SIZE}=require(root+'/backend/apps/api/dist/modules/member/product-review-media');
+const {reviewMediaResponse}=require(root+'/backend/apps/api/dist/modules/member/product-review.controller');
+assert.equal(decodeReviewPart(Buffer.alloc(MEDIA_PART_SIZE).toString('base64')).length,MEDIA_PART_SIZE);
+for(const bad of ['', 'not base64',Buffer.alloc(MEDIA_PART_SIZE+1).toString('base64')])assert.throws(()=>decodeReviewPart(bad));
+for(const mime of ['image/png','image/jpeg','image/webp','video/mp4','video/webm','audio/mpeg','audio/mp4','image/svg+xml'])assert.equal(validReviewMedia(Buffer.from('<svg onload="alert(1)"></svg>'),mime),false);
+function box(kind,data=Buffer.alloc(0)){const b=Buffer.alloc(data.length+8);b.writeUInt32BE(b.length);b.write(kind,4);data.copy(b,8);return b;}const mp4=Buffer.concat([box('ftyp',Buffer.from('isom0000')),box('moov'),box('mdat',Buffer.from([1,2,3]))]);assert(validReviewMedia(mp4,'video/mp4'));assert(validReviewMedia(mp4,'audio/mp4'));assert(!validReviewMedia(mp4.subarray(0,-1),'video/mp4'));
+for(const [range,status,length,cr] of [['bytes=2-4',206,3,'bytes 2-4/10'],['bytes=-3',206,3,'bytes 7-9/10'],['bytes=8-',206,2,'bytes 8-9/10'],['bytes=99-',416,0,'bytes */10'],['bytes=0-1,3-4',416,0,'bytes */10']]){const res={headers:{},status:200,header(k,v){this.headers[k]=v},code(n){this.status=n}};const file=reviewMediaResponse({bytes:Buffer.alloc(10),mimeType:'video/mp4'},range,res);assert.equal(res.status,status);assert.equal(res.headers['Content-Range'],cr);assert.match(res.headers['Cache-Control'],/no-store/);if(status===206)assert.equal(file.getHeaders().length,length);}
+console.log('PRODUCT_REVIEW_UNIT_QA_PASSED: chunkBoundaries,strictBase64,rejectWrongFormats,mp4Container,rangePlayback,noCache');

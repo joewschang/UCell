@@ -2,6 +2,14 @@ import { ForbiddenException } from '@nestjs/common';
 import { MemberContextGuard } from '../src/modules/member/member-context.guard';
 
 describe('G8 member BOLA denial audit evidence',()=>{
+  it('allows authenticated network members into the own-document service without a qualification',async()=>{
+    const access={assertHolder:jest.fn()},guard=new MemberContextGuard(access as any);
+    const url='/api/v1/member/formal-applications/11111111-1111-4111-8111-111111111111/documents/22222222-2222-4222-8222-222222222222/content';
+    const context=(method:string):any=>({switchToHttp:()=>({getRequest:()=>({url,method,user:{personId:'owner'}})})});
+    expect(await guard.canActivate(context('GET'))).toBe(true);
+    expect(access.assertHolder).not.toHaveBeenCalled();
+    await expect(guard.canActivate(context('POST'))).rejects.toMatchObject({response:{code:'QUALIFICATION_CONTEXT_REQUIRED'}});
+  });
   it('records only a controlled path and denial code for a non-holder',async()=>{
     const tx:any={};
     const audit={write:jest.fn(async()=>({}))};

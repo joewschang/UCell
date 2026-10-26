@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Patch, Headers, Req, UseGuards, Query, Param, ParseUUIDPipe, UnprocessableEntityException } from '@nestjs/common';
+import { Body, Header, StreamableFile, Controller, Get, Post, Patch, Headers, Req, UseGuards, Query, Param, ParseUUIDPipe, UnprocessableEntityException } from '@nestjs/common';
 import { ApiBearerAuth, ApiExtraModels, ApiHeader, ApiOperation, ApiProperty, ApiPropertyOptional, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { CreateOrderItemDto } from '../order/dto/create-order.dto';
 import { OrderService } from '../order/order.service';
@@ -37,7 +37,13 @@ export class MemberPackageSelectionDto {
  @ApiProperty({format:'uuid'}) @IsUUID() productRuleProfileId!:string;
  @ApiProperty({minimum:1,maximum:10000}) @Type(()=>Number) @IsInt() @Min(1) @Max(10000) quantity!:number;
 }
+class MemberCheckoutDto {
+ @IsIn(['BANK_TRANSFER','CASH']) paymentMethod!:'BANK_TRANSFER'|'CASH';
+ @IsDateString() deliveryUpdatedAt!:string;
+ @Matches(/^\d+(\.\d{1,2})?$/) expectedTotal!:string;
+}
 export class MemberCreateOrderDto {
+ @IsOptional() @ValidateNested() @Type(()=>MemberCheckoutDto) checkout?:MemberCheckoutDto;
  @ApiProperty({required:false}) @IsOptional() @IsString() @Matches(/^[A-Z0-9_-]{3,40}$/) couponCode?:string;
  @ApiProperty({required:false}) @IsOptional() @IsString() @Matches(/^[a-f0-9]{64}$/) quoteHash?:string;
  @ApiProperty({required:false,format:'uuid',description:'Required for retail orders; for active packages this must match targetQualificationId.'}) @IsOptional() @IsUUID() qualificationId?:string;
@@ -51,7 +57,8 @@ export class MemberCreateOrderDto {
  @ApiPropertyOptional({pattern:'^[A-Z][A-Z0-9_]{1,39}$',description:'Optional line purpose. This describes purchase context and never changes Offering category.'}) @IsOptional() @Matches(/^[A-Z][A-Z0-9_]{1,39}$/) linePurpose?:string;
 }
 export class FormalKycUploadDto {
- @ApiProperty({enum:['IDENTITY_FRONT','IDENTITY_BACK','BANKBOOK_COVER']}) @IsIn(['IDENTITY_FRONT','IDENTITY_BACK','BANKBOOK_COVER']) documentType!:'IDENTITY_FRONT'|'IDENTITY_BACK'|'BANKBOOK_COVER';
+ @ApiProperty({enum:['IDENTITY_FRONT','IDENTITY_BACK','BANKBOOK_COVER','SIGNED_APPLICATION_AGREEMENT']}) @IsIn(['IDENTITY_FRONT','IDENTITY_BACK','BANKBOOK_COVER','SIGNED_APPLICATION_AGREEMENT']) documentType!:'IDENTITY_FRONT'|'IDENTITY_BACK'|'BANKBOOK_COVER'|'SIGNED_APPLICATION_AGREEMENT';
+ @IsOptional() @Matches(/^[a-f0-9]{64}$/) expectedSnapshotHash?:string;
  @ApiProperty({enum:['image/jpeg','image/png']}) @IsIn(['image/jpeg','image/png']) mimeType!:'image/jpeg'|'image/png';
  @ApiProperty({description:'Base64-encoded image bytes. Temporary server-mediated upload path; private Blob storage remains authoritative.'}) @IsString() @MinLength(8) contentBase64!:string;
 }
@@ -132,10 +139,13 @@ export class MemberController {
  @Patch('profile') @ApiResponse({status:200,schema:views.memberEnvelope(views.PersonView)}) @UseGuards(IdempotencyGuard) @ApiHeader({name:'Idempotency-Key',required:true}) @ApiOperation({operationId:'memberUpdateProfile',description:'Own display/contact fields only. No legal identity, status, qualification or monetary mutation. Audited idempotent transaction.'}) profile(@Req() req:any,@Body() body:MemberProfileDto,@Headers('idempotency-key') key:string){if(!Object.values(body).some(v=>typeof v==='string'&&v.trim()))throw new UnprocessableEntityException({code:'PROFILE_FIELDS_REQUIRED'});return this.service.profile(req.user.personId,body,req.requestId,key);}
  @Get('delivery-profile') @ApiOperation({operationId:'memberDeliveryProfile',description:'Reads only the authenticated Person current encrypted delivery profile. No Qualification context required.'}) deliveryProfile(@Req() req:any){return this.delivery.get(req.user.personId);}
  @Patch('delivery-profile') @UseGuards(IdempotencyGuard) @ApiHeader({name:'Idempotency-Key',required:true}) @ApiOperation({operationId:'memberUpdateDeliveryProfile',description:'Creates a new encrypted delivery-profile version and closes the prior version. Audit/outbox contain no address or phone.'}) updateDeliveryProfile(@Req() req:any,@Body() body:DeliveryProfileDto,@Headers('idempotency-key') key:string){return this.delivery.update(req.user.personId,body,key,req.requestId);}
+ @Get('formal-applications/:id/documents/:documentId/content') @Header('Cache-Control','private, no-store') @Header('X-Content-Type-Options','nosniff') @Header('Referrer-Policy','no-referrer')
+ @ApiOperation({operationId:'memberFormalApplicationDocumentContent',description:'Audited authenticated read of a current document belonging to this member application.'})
+ async formalDocumentContent(@Req() req:any,@Param('id',new ParseUUIDPipe()) id:string,@Param('documentId',new ParseUUIDPipe()) documentId:string){const blob=await this.formalKyc.ownContent(req.user.personId,id,documentId,req.requestId);return new StreamableFile(blob.bytes,{type:blob.mimeType});}
  @Get('formal-applications/:id/documents') @ApiOperation({operationId:'memberFormalApplicationDocuments',description:'List only the authenticated Person formal-application KYC document metadata; no private object URLs are returned.'})
  formalDocuments(@Req() req:any,@Param('id',new ParseUUIDPipe()) id:string){return this.formalKyc.listOwn(req.user.personId,id);}
  @Post('formal-applications/:id/documents') @ApiOperation({operationId:'memberUploadFormalApplicationDocument',description:'Upload required natural-person formal KYC image into private storage. Application must remain editable; malware scan starts PENDING.'})
- uploadFormalDocument(@Req() req:any,@Param('id',new ParseUUIDPipe()) id:string,@Body() body:FormalKycUploadDto){return this.formalKyc.upload(req.user.personId,id,body.documentType,body.mimeType,body.contentBase64,req.requestId);}
+ uploadFormalDocument(@Req() req:any,@Param('id',new ParseUUIDPipe()) id:string,@Body() body:FormalKycUploadDto){return this.formalKyc.upload(req.user.personId,id,body.documentType,body.mimeType,body.contentBase64,req.requestId,body.expectedSnapshotHash);}
  @Get('formal-applications/current') @ApiOperation({operationId:'memberCurrentFormalApplication',description:'Own current Formal Member application with masked national ID and bank account.'}) currentFormalApplication(@Req() req:any){return this.formalApplications.current(req.user.personId);}
  @Post('formal-applications') @UseGuards(IdempotencyGuard) @ApiHeader({name:'Idempotency-Key',required:true}) @ApiOperation({operationId:'memberSaveFormalApplicationDraft',description:'Encrypt and append a Formal Member application draft snapshot. Does not submit, approve, create Qualification, or change membership state.'}) saveFormalApplication(@Req() req:any,@Body() body:FormalMemberDraftDto,@Headers('idempotency-key') key:string){return this.formalApplications.save(req.user.personId,body,key,req.requestId);}
  @Get('notifications') @ApiResponse({status:200,schema:views.memberEnvelope(views.NoticesView)}) @ApiOperation({operationId:'memberNotifications',description:'Person-addressed notices plus selected owned Qualification notices, newest first, bounded 100. No LINE push or server read-state mutation.'}) notifications(@Req() req:any,@Query() q:MemberContextDto){return this.service.notifications(req.user.personId,q.qualificationId);}
@@ -155,6 +165,7 @@ export class MemberController {
  @Get('bonuses/ledger') @ApiResponse({status:200,schema:views.memberEnvelope(views.LedgerView)}) ledger(@Req() req:any,@Query() q:MemberQueryDto){return this.reads.read(req.user.personId,q.qualificationId,'ledger',q.period);}
  @Get('repurchase/status') @ApiResponse({status:200,schema:views.memberEnvelope(views.RepurchaseView)}) repurchase(@Req() req:any,@Query() q:MemberQueryDto){return this.reads.read(req.user.personId,q.qualificationId,'repurchase',q.period);}
  @Get('products') @ApiResponse({status:200,schema:views.memberEnvelope(views.ProductView,true)}) products(){return this.reads.products();}
+ @Get('my-orders') @ApiOperation({operationId:'memberOwnOrderHistory',description:'Own purchases and currently authorized qualification orders, including payment and recorded ERP/logistics shipment facts. No recipient or internal provider credentials.'}) myOrders(@Req() req:any){return this.reads.myOrders(req.user.personId);}
  @Get('retail-orders') @ApiOperation({operationId:'memberWebRetailOrders',description:'Returns only the authenticated WEB_MEMBER retail-order history, using business order numbers and excluding Qualification, recipient, referrer, payout, and UUID fields.'}) retailOrders(@Req() req:any){return this.orderService.listWebRetailMember(req.user.personId);}
  @Get('orders') @ApiResponse({status:200,schema:views.memberEnvelope(views.OrdersView)}) orders(@Req() req:any,@Query() q:MemberQueryDto){return this.reads.read(req.user.personId,q.qualificationId,'orders',q.period);}
  @Post('orders') @ApiResponse({status:201,schema:views.memberEnvelope(views.OrderView)}) @UseGuards(IdempotencyGuard) @ApiHeader({name:'Idempotency-Key',required:true}) @ApiOperation({operationId:'memberCreateOrder',description:'Core-authoritative RETAIL order, pending payment/fulfillment; no PV/BV recognition. Missing/overlapping product profile fails closed 422. Retry conflicts with identical key/body. Reject client monetary results.'})

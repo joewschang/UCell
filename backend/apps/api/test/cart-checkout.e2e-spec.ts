@@ -1,0 +1,7 @@
+import {Prisma} from '@ucell/database';
+import {resolveCheckoutSnapshot} from '../src/modules/order/checkout-snapshot';
+const date='2026-10-23T00:00:00.000Z',input={paymentMethod:'BANK_TRANSFER' as const,deliveryUpdatedAt:date,expectedTotal:'9600.00'};
+const setup=()=>({$queryRaw:jest.fn(),deliveryProfile:{findFirst:jest.fn(async()=>({deliveryProfileId:'profile',effectiveFrom:new Date(date)}))}});
+it('pins the selected method and exact saved address version without storing plaintext contacts',async()=>{const tx=setup();expect(await resolveCheckoutSnapshot(tx as any,'person',input,new Prisma.Decimal(9600))).toMatchObject({paymentMethod:'BANK_TRANSFER',deliveryProfileId:'profile',deliveryUpdatedAt:date});expect(tx.$queryRaw).toHaveBeenCalledTimes(1);});
+it('rejects changed price or address before an order is written',async()=>{const tx=setup();await expect(resolveCheckoutSnapshot(tx as any,'person',input,new Prisma.Decimal(4800))).rejects.toThrow('商品價格已更新');await expect(resolveCheckoutSnapshot(tx as any,'person',{...input,deliveryUpdatedAt:'2026-10-22T00:00:00Z'},new Prisma.Decimal(9600))).rejects.toThrow('配送資料已變更');});
+it('does not invent a payment method or address for old checkout clients',async()=>{expect(await resolveCheckoutSnapshot(setup() as any,'person',undefined,new Prisma.Decimal(10))).toBeUndefined();await expect(resolveCheckoutSnapshot(setup() as any,'person',{...input,paymentMethod:'PAID' as any},new Prisma.Decimal(9600))).rejects.toThrow();});

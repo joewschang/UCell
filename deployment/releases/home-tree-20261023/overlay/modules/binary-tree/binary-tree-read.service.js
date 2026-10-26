@@ -1,0 +1,147 @@
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.BinaryTreeReadService = void 0;
+exports.readCompanyProfileStatus = readCompanyProfileStatus;
+const tree_active_evidence_1 = require("./tree-active-evidence");
+const tree_ancestry_integrity_1 = require("./tree-ancestry-integrity");
+const tree_statistics_projection_1 = require("./tree-statistics-projection");
+const tree_node_snapshot_1 = require("./tree-node-snapshot");
+const binary_tree_metrics_1 = require("./binary-tree-metrics");
+const common_1 = require("@nestjs/common");
+const database_1 = require("@ucell/database");
+const shared_1 = require("@ucell/shared");
+const binary_tree_service_1 = require("./binary-tree.service");
+/** Read an already-sealed Company profile binding. This never creates a binding during an Admin read. */
+async function readCompanyProfileStatus(tx, input) {
+    const unavailable = { status: 'UNAVAILABLE', planCode: null, profileVersion: null };
+    if (input.positionNo < 1 || input.positionNo > input.bootstrapCompanyBallCount || input.qualificationKind !== 'COMPANY_BOOTSTRAP' || input.ownerType !== 'COMPANY' || input.ownerCompanyPrincipalId !== input.treeCompanyPrincipalId)
+        return unavailable;
+    const bindings = await tx.companyBootstrapProfileBinding.findMany({ where: { qualificationId: input.qualificationId, binaryTreeId: input.binaryTreeId, companyPosition: input.positionNo,
+            effectiveAt: { lte: input.at }, effectiveFrom: { lte: input.at }, recordedAt: { lte: input.known }, OR: [{ effectiveTo: null }, { effectiveTo: { gt: input.at } }] }, take: 2,
+        select: { profileVersion: true, planCode: true, ruleVersion: true, parameterVersion: true, snapshotHash: true } });
+    if (bindings.length !== 1)
+        return unavailable;
+    const binding = bindings[0];
+    if (binding.profileVersion !== database_1.COMPANY_PROFILE || binding.planCode !== 'LEADER' || !binding.ruleVersion || !/^[a-f0-9]{64}$/i.test(binding.parameterVersion) || !/^[a-f0-9]{64}$/i.test(binding.snapshotHash))
+        return unavailable;
+    return { status: 'AVAILABLE', planCode: 'LEADER', profileVersion: binding.profileVersion };
+}
+let BinaryTreeReadService = class BinaryTreeReadService {
+    db;
+    commands;
+    constructor(db, commands) {
+        this.db = db;
+        this.commands = commands;
+    }
+    time(raw) { try {
+        const time = (0, shared_1.parseAsOfContext)(raw), now = Date.now();
+        if (Date.parse(time.asOf) > now + 5000 || Date.parse(time.knowledgeCutoff) > now + 5000)
+            throw new Error();
+        return (0, shared_1.parseAsOfContext)({ ...time, asOf: new Date(Math.min(Date.parse(time.asOf), now)).toISOString(), knowledgeCutoff: new Date(Math.min(Date.parse(time.knowledgeCutoff), now)).toISOString() });
+    }
+    catch {
+        throw new common_1.UnprocessableEntityException({ code: 'INVALID_AS_OF_CONTEXT' });
+    } }
+    async list(p, raw, after) {
+        const time = this.time(raw);
+        await this.commands.authorize(p);
+        const data = await this.db.$transaction(async (tx) => {
+            const trees = await tx.binaryTree.findMany({ where: { effectiveAt: { lte: new Date(time.asOf) }, createdAt: { lte: new Date(time.knowledgeCutoff) }, ...(after ? { binaryTreeId: { gt: after } } : {}) }, orderBy: { binaryTreeId: 'asc' }, take: 51 });
+            const items = [];
+            for (const tree of trees.slice(0, 50)) {
+                const event = await tx.binaryTreeStatusEvent.findFirst({ where: { binaryTreeId: tree.binaryTreeId, effectiveAt: { lte: new Date(time.asOf) }, recordedAt: { lte: new Date(time.knowledgeCutoff) } }, orderBy: { topologyVersion: 'desc' } });
+                if (event)
+                    items.push({ binaryTreeId: tree.binaryTreeId, treeCode: tree.treeCode, treeName: event.treeName, status: event.status, statusVersion: event.topologyVersion, economicActivation: 'APPROVED_LEADER_BINDING' });
+            }
+            return { items, nextCursor: trees.length > 50 ? trees[49].binaryTreeId : null, time };
+        }, { isolationLevel: database_1.Prisma.TransactionIsolationLevel.RepeatableRead });
+        await this.commands.authorize(p);
+        return data;
+    }
+    async detail(p, id, raw) {
+        const time = this.time(raw);
+        await this.commands.authorize(p);
+        const data = await this.db.$transaction(async (tx) => this.snapshot(tx, id, time), { isolationLevel: database_1.Prisma.TransactionIsolationLevel.RepeatableRead, timeout: 15000 });
+        await this.commands.authorize(p);
+        return data;
+    }
+    async nodes(p, id, raw, after, snapshotToken, parentQualificationId) {
+        const time = this.time(raw);
+        await this.commands.authorize(p);
+        const result = await (0, tree_node_snapshot_1.readTreeNodeSnapshot)(this.db, p, id, time, after, snapshotToken, parentQualificationId);
+        await this.commands.authorize(p);
+        return result;
+    }
+    async snapshot(tx, id, time) {
+        const at = new Date(time.asOf), known = new Date(time.knowledgeCutoff);
+        const tree = await tx.binaryTree.findFirst({ where: { binaryTreeId: id, effectiveAt: { lte: at }, createdAt: { lte: known } } });
+        const status = await tx.binaryTreeStatusEvent.findFirst({ where: { binaryTreeId: id, effectiveAt: { lte: at }, recordedAt: { lte: known } }, orderBy: { topologyVersion: 'desc' } });
+        if (!tree || !status)
+            return { status: 'UNAVAILABLE', explainCode: 'HISTORICAL_UNAVAILABLE', time, result: null };
+        const evidence = await tx.placementTreeEvidence.findMany({ where: { binaryTreeId: id, effectiveAt: { lte: at }, recordedAt: { lte: known } }, orderBy: { topologyVersion: 'desc' }, take: 1 });
+        const version = Math.max(status.topologyVersion, evidence[0]?.topologyVersion ?? 0);
+        const slots = await tx.treeCanonicalPosition.findMany({ where: { binaryTreeId: id }, orderBy: { positionNo: 'asc' } });
+        const statistics = await (0, tree_statistics_projection_1.treeStatisticsProjection)(tx, id, time);
+        if (!statistics.required && await (0, tree_ancestry_integrity_1.treeAncestryCompleteness)(tx, id, time) !== '0')
+            return { status: 'UNAVAILABLE', explainCode: 'CANONICAL_ANCESTRY_EVIDENCE_INCOMPLETE', time, result: null };
+        const positions = [];
+        const numberOrNull = (value) => value == null ? null : Number(value);
+        for (const slot of slots) {
+            const membership = slot.occupantQualificationId ? await tx.binaryTreeMembership.findFirst({ where: { qualificationId: slot.occupantQualificationId, binaryTreeId: id, effectiveFrom: { lte: at }, recordedAt: { lte: known } } }) : null;
+            if (!membership) {
+                positions.push({ positionNo: slot.positionNo, parentPositionNo: slot.parentPositionNo, side: slot.side, qualificationId: null, ownerType: null, activeLabel: null, descendantBalls: null, distinctMemberPersons: null, newBallsInPeriod: null, leftDescendantBalls: null, rightDescendantBalls: null, leftNewBallsInPeriod: null, rightNewBallsInPeriod: null, performance: null, carry: null });
+                continue;
+            }
+            const qualification = await tx.qualification.findUnique({ where: { qualificationId: membership.qualificationId }, select: { ballNo: true, kind: true } });
+            const owners = await tx.qualificationOwnerInterval.findMany({ where: { qualificationId: membership.qualificationId, effectiveFrom: { lte: at }, recordedAt: { lte: known }, OR: [{ effectiveTo: null }, { effectiveTo: { gt: at } }, { closedRecordedAt: { gt: known } }] }, take: 2 });
+            if (owners.length !== 1)
+                return { status: 'UNAVAILABLE', explainCode: 'OWNER_EVIDENCE_UNAVAILABLE', time, result: null };
+            const owner = owners[0];
+            const companyProfile = await readCompanyProfileStatus(tx, { binaryTreeId: id, qualificationId: membership.qualificationId, positionNo: slot.positionNo, qualificationKind: qualification?.kind ?? 'UNKNOWN', ownerType: owner.ownerType, ownerCompanyPrincipalId: owner.companyPrincipalId, treeCompanyPrincipalId: tree.companyPrincipalId, bootstrapCompanyBallCount: tree.bootstrapCompanyBallCount, at, known });
+            const activeEvidence = owner.ownerType === 'COMPANY' ? { state: 'ALWAYS_ACTIVE', lastUpdated: owner.recordedAt } : await (0, tree_active_evidence_1.readBallActiveEvidence)(tx, membership.qualificationId, time);
+            const active = activeEvidence.state;
+            const projected = statistics.rows.find(r => r.row_key === String(slot.positionNo));
+            const m = projected?.measures;
+            const counts = projected ? [{ balls: m.descendantBalls, persons: null, new_balls: m.monthlyNewBalls, left_balls: m.leftBalls, right_balls: m.rightBalls, left_new: m.leftMonthlyNewBalls, right_new: m.rightMonthlyNewBalls }] : statistics.required ? [{ balls: null, persons: null, new_balls: null, left_balls: null, right_balls: null, left_new: null, right_new: null }] : await tx.$queryRaw `
+    SELECT max(greatest(a.recorded_at,m.recorded_at,o.recorded_at)) AS updated,count(DISTINCT a.descendant_qualification_id) AS balls,
+      count(DISTINCT CASE WHEN a.first_side='LEFT' THEN a.descendant_qualification_id END) AS left_balls,
+      count(DISTINCT CASE WHEN a.first_side='RIGHT' THEN a.descendant_qualification_id END) AS right_balls,
+      count(DISTINCT CASE WHEN a.first_side='LEFT' AND m.effective_from>=${new Date(time.periodStart)} AND m.effective_from<${new Date(time.periodEnd)} AND m.effective_from<${at} THEN m.qualification_id END) AS left_new,
+      count(DISTINCT CASE WHEN a.first_side='RIGHT' AND m.effective_from>=${new Date(time.periodStart)} AND m.effective_from<${new Date(time.periodEnd)} AND m.effective_from<${at} THEN m.qualification_id END) AS right_new,
+      count(DISTINCT CASE WHEN o.owner_type='MEMBER' THEN o.person_id END) AS persons,
+      count(DISTINCT CASE WHEN m.effective_from>=${new Date(time.periodStart)} AND m.effective_from<${new Date(time.periodEnd)} AND m.effective_from<${at} THEN m.qualification_id END) AS new_balls
+    FROM organization.binary_tree_ancestry a
+    JOIN organization.binary_tree_membership m ON m.binary_tree_id=a.binary_tree_id AND m.qualification_id=a.descendant_qualification_id
+    LEFT JOIN membership.qualification_owner_interval o ON o.qualification_id=m.qualification_id AND o.effective_from<=${at} AND o.recorded_at<=${known}
+      AND (o.effective_to IS NULL OR o.effective_to>${at} OR o.closed_recorded_at>${known})
+    WHERE a.binary_tree_id=${id}::uuid AND a.ancestor_qualification_id=${membership.qualificationId}::uuid AND a.depth>0
+      AND a.effective_from<=${at} AND a.recorded_at<=${known} AND m.effective_from<=${at} AND m.recorded_at<=${known}`;
+            const founding = await tx.foundingOccupationEvidence.findFirst({ where: { qualificationId: membership.qualificationId, effectiveAt: { lte: at }, recordedAt: { lte: known } } });
+            const performance = projected ? { status: m.cumulativeGpv === null ? 'UNAVAILABLE' : 'AVAILABLE', reason: null, value: m.cumulativeGpv === null ? null : { cumulative: String(m.cumulativeGpv), month: String(m.monthlyGpv), leftMonth: String(m.leftMonthlyGpv), rightMonth: String(m.rightMonthlyGpv) } } : slot.positionNo > tree.bootstrapCompanyBallCount ? (statistics.required ? { status: 'UNAVAILABLE', reason: 'BACKGROUND_PROJECTION_REQUIRED', value: null } : await (0, binary_tree_metrics_1.readFoundingPerformance)(tx, id, membership.qualificationId, time)) : null;
+            const carry = projected?.evidence.carry ?? (slot.positionNo > tree.bootstrapCompanyBallCount ? await (0, binary_tree_metrics_1.readFoundingCarry)(tx, membership.qualificationId, time) : null);
+            const lastUpdated = [membership.recordedAt, owner.recordedAt, activeEvidence.lastUpdated, counts[0].updated, performance?.lastUpdated, carry?.lastUpdated, projected?.evidence.lastUpdated].filter(v => v != null).map(v => new Date(v).toISOString()).sort().at(-1);
+            positions.push({ performance, carry, companyProfile, holderId: owner.personId ?? owner.companyPrincipalId, occupationStatus: 'OCCUPIED', lastUpdated, dataThrough: statistics.dataThrough ?? time.knowledgeCutoff, evidenceQuality: slot.positionNo <= tree.bootstrapCompanyBallCount ? 'AUTHORITATIVE' : performance?.status === 'AVAILABLE' && carry?.status === 'AVAILABLE' && active !== 'UNKNOWN' ? 'AUTHORITATIVE' : 'PARTIAL', leftDescendantBalls: numberOrNull(counts[0].left_balls), rightDescendantBalls: numberOrNull(counts[0].right_balls), leftNewBallsInPeriod: numberOrNull(counts[0].left_new), rightNewBallsInPeriod: numberOrNull(counts[0].right_new), positionNo: slot.positionNo, binaryPositionNo: membership.binaryPositionNo.toString(), path: (0, database_1.binaryPath)(membership.binaryPositionNo), ballNo: qualification?.ballNo ?? null, parentPositionNo: slot.parentPositionNo, side: slot.side, qualificationId: membership.qualificationId, ownerType: owner.ownerType,
+                activeLabel: active === 'ALWAYS_ACTIVE' ? 'Always Active (Company Rule)' : m?.active ?? active, actualSponsorSequenceNo: founding?.actualSponsorSequenceNo ?? (slot.positionNo === 2 ? 1 : slot.positionNo === 3 ? 2 : null),
+                descendantBalls: numberOrNull(counts[0].balls), distinctMemberPersons: numberOrNull(counts[0].persons), newBallsInPeriod: numberOrNull(counts[0].new_balls) });
+        }
+        return { status: 'PARTIAL', quality: 'PARTIAL', finality: 'NOT_APPLICABLE', time, scope: { binaryTreeId: id }, definitionVersion: 'TREE_FOUNDATION_V1',
+            result: { binaryTreeId: id, treeCode: tree.treeCode, treeName: status.treeName, status: status.status, topologyVersion: version, economicActivation: 'APPROVED_LEADER_BINDING', positions, statistics: { ...statistics, rows: undefined },
+                monetaryMetrics: null, monetaryExplainCode: 'TREE_MONETARY_READ_NOT_AVAILABLE' },
+            evidenceRefs: [{ type: 'BinaryTreeStatusEvent', id: status.binaryTreeStatusEventId, revision: String(status.topologyVersion) }, ...evidence.map(e => ({ type: 'PlacementTreeEvidence', id: e.placementTreeEvidenceId, revision: String(e.topologyVersion) }))] };
+    }
+};
+exports.BinaryTreeReadService = BinaryTreeReadService;
+exports.BinaryTreeReadService = BinaryTreeReadService = __decorate([
+    (0, common_1.Injectable)(),
+    __metadata("design:paramtypes", [database_1.PrismaService, binary_tree_service_1.BinaryTreeService])
+], BinaryTreeReadService);
+//# sourceMappingURL=binary-tree-read.service.js.map

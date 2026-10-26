@@ -15,7 +15,27 @@ function harness(){
   const audit={write:jest.fn()};
   return {application,record,tx,db,storage,audit,service:new FormalKycDocumentService(db,storage as any,audit as any)};
 }
-describe('Private KYC content validation and scan fail-closed boundaries',()=>{
+describe('Private KYC content validation and document availability boundaries',()=>{
+  it('allows only the owner to view a current document and records a MEMBER audit',async()=>{
+    const h=harness();
+    expect(await h.service.ownContent('person','app','document','request')).toEqual({bytes:png,mimeType:'image/png'});
+    expect(h.db.formalMemberApplication.findFirst).toHaveBeenCalledWith({where:{formalMemberApplicationId:'app',personId:'person'}});
+    expect(h.audit.write).toHaveBeenCalledWith(h.tx,expect.objectContaining({actorType:'MEMBER',actorId:'person',action:'FORMAL_KYC_DOCUMENT_VIEWED'}));
+  });
+  it('denies another member application before reading storage',async()=>{
+    const h=harness();h.db.formalMemberApplication.findFirst.mockResolvedValueOnce(null);
+    await expect(h.service.ownContent('stranger','app','document','request')).rejects.toMatchObject({response:{code:'FORMAL_APPLICATION_NOT_FOUND'}});
+    expect(h.storage.get).not.toHaveBeenCalled();
+  });
+  it.each(['wrong-application','SUPERSEDED','REJECTED','corrupt'])('denies invalid member document reads: %s',async kind=>{
+    const h=harness();
+    if(kind==='wrong-application')h.record.formalMemberApplicationId='another-app';
+    else if(kind==='corrupt')h.record.contentSha256='invalid';
+    else h.record.status=kind;
+    await expect(h.service.ownContent('person','app','document','request')).rejects.toThrow();
+    expect(h.audit.write).not.toHaveBeenCalled();
+    if(kind!=='corrupt')expect(h.storage.get).not.toHaveBeenCalled();
+  });
   it.each([[png,'image/png'],[jpeg,'image/jpeg']] as const)('accepts the actual %s fixture under its MIME without treating validation as malware scanning',(bytes,mime)=>{
     expect(validKycImage(bytes,mime)).toBe(true);
   });
@@ -50,11 +70,11 @@ describe('Private KYC content validation and scan fail-closed boundaries',()=>{
     expect(h.tx.formalApplicationDocument.create).not.toHaveBeenCalled();
     expect(h.tx.formalApplicationDocument.updateMany).not.toHaveBeenCalled();
   });
-  it.each(['PENDING','FAILED','INFECTED'])('does not stream a document whose malware scan is %s',async status=>{
+  it.each(['PENDING','FAILED','INFECTED'])('streams PRESENT documents without waiting for malware scan %s',async status=>{
     const h=harness();h.record.malwareScanStatus=status;
-    await expect(h.service.adminContent('document','admin','request')).rejects.toMatchObject({response:{code:'FORMAL_KYC_SCAN_CLEAN_REQUIRED'}});
-    expect(h.storage.get).not.toHaveBeenCalled();
+    expect((await h.service.adminContent('document','admin','request')).bytes).toEqual(png);
   });
+  it.each(['REJECTED','SUPERSEDED'])('does not stream unavailable documents: %s',async status=>{const h=harness();h.record.status=status;await expect(h.service.adminContent('document','admin','request')).rejects.toMatchObject({response:{code:status==='SUPERSEDED'?'FORMAL_KYC_DOCUMENT_NOT_FOUND':'FORMAL_KYC_DOCUMENT_NOT_PRESENT'}});expect(h.storage.get).not.toHaveBeenCalled();});
   it('rejects bytes changed in object storage before returning any content',async()=>{
     const h=harness();h.storage.get.mockResolvedValueOnce({bytes:Buffer.from('changed'),mimeType:'image/png'});
     await expect(h.service.adminContent('document','admin','request')).rejects.toMatchObject({response:{code:'FORMAL_KYC_DOCUMENT_INTEGRITY_FAILED'}});
@@ -65,4 +85,14 @@ describe('Private KYC content validation and scan fail-closed boundaries',()=>{
     expect(content).toEqual({bytes:png,mimeType:'image/png'});
     expect(h.audit.write).toHaveBeenCalledWith(h.tx,expect.objectContaining({action:'FORMAL_KYC_DOCUMENT_VIEWED',actorId:'admin'}));
   });
+});
+it('stores signature tied to current snapshot and rejects stale signature versions',async()=>{
+ const png=readFileSync(join(__dirname,'fixtures/kyc-valid-1x1.png')),app={personId:'member',sourceChannel:'MEMBER_WEB',applicantType:'INDIVIDUAL',status:'DRAFT',currentSnapshotHash:'a'.repeat(64)};
+ const tx:any={formalMemberApplication:{findFirst:async()=>app},formalApplicationDocument:{updateMany:jest.fn(),create:jest.fn(async({data})=>({formalApplicationDocumentId:'sig',...data}))}};
+ const db:any={formalMemberApplication:{findFirst:async()=>app},$transaction:async(fn:any)=>fn(tx)},audit={write:jest.fn()},storage={put:jest.fn()};
+ const service=new FormalKycDocumentService(db,storage as any,audit as any);
+ await expect(service.upload('member','app','SIGNED_APPLICATION_AGREEMENT','image/png',png.toString('base64'),'req','b'.repeat(64))).rejects.toMatchObject({response:{code:'FORMAL_SIGNATURE_VERSION_CHANGED'}});
+ expect(tx.formalApplicationDocument.create).not.toHaveBeenCalled();
+ await service.upload('member','app','SIGNED_APPLICATION_AGREEMENT','image/png',png.toString('base64'),'req','a'.repeat(64));
+ expect(audit.write).toHaveBeenCalledWith(tx,expect.objectContaining({afterData:expect.objectContaining({documentType:'SIGNED_APPLICATION_AGREEMENT',applicationSnapshotHash:'a'.repeat(64)})}));
 });

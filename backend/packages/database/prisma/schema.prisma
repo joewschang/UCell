@@ -6,7 +6,41 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
-  schemas  = ["identity", "membership", "organization", "commerce", "ledger", "audit", "integration", "rules", "subscription", "learning"]
+  schemas  = ["identity", "membership", "organization", "commerce", "ledger", "audit", "integration", "rules", "subscription", "learning", "content"]
+}
+
+model FaqCategory {
+ id String @id
+ label String
+ sortOrder Int @default(0) @map("sort_order")
+ published Boolean @default(false)
+ version Int @default(1)
+ items FaqItem[]
+ @@map("faq_category")
+ @@schema("content")
+}
+model FaqItem {
+ id String @id
+ category String
+ categoryRecord FaqCategory @relation(fields:[category],references:[id])
+ question String
+ answer String
+ keywords String @default("")
+ sortOrder Int @default(0) @map("sort_order")
+ published Boolean @default(false)
+ version Int @default(1)
+ @@map("faq_item")
+ @@schema("content")
+}
+model FaqChange {
+ id BigInt @id @default(autoincrement())
+ actorId String @map("actor_id")
+ entityId String @map("entity_id")
+ action String
+ payload Json
+ createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+ @@map("faq_change")
+ @@schema("content")
 }
 
 enum RecordStatus {
@@ -759,6 +793,7 @@ enum AuthSessionStatus {
 }
 
 model Person {
+  orderReviews MemberOrderReview[]
   geoProfile MemberGeoProfile?
   geoProfileVersions MemberGeoProfileVersion[]
   qualificationOwnerIntervals QualificationOwnerInterval[]
@@ -1280,11 +1315,32 @@ model ReferralLink {
   referrerQualification   Qualification         @relation(fields: [referrerQualificationId], references: [qualificationId])
   contentShare            ContentShareLink?
   resourceShare           ResourceShareLink?
+  shortLink               ReferralShortLink?
   attributions            ReferralAttribution[]
 
   @@index([referrerQualificationId, createdAt])
   @@map("referral_link")
   @@schema("identity")
+}
+
+model ReferralShortLink {
+  shortCode String @id @map("short_code") @db.VarChar(24)
+  referralLinkId String @unique @map("referral_link_id") @db.Uuid
+  encryptedToken String @map("encrypted_token")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  referralLink ReferralLink @relation(fields:[referralLinkId],references:[referralLinkId])
+  @@map("referral_short_link")
+  @@schema("integration")
+}
+
+model EventImage {
+  imageId String @id @default(dbgenerated("gen_random_uuid()")) @map("image_id") @db.Uuid
+  mimeType String @map("mime_type")
+  content Bytes
+  createdBy String @map("created_by")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  @@map("event_image")
+  @@schema("learning")
 }
 
 model ReferralAttribution {
@@ -1550,6 +1606,7 @@ model MemberEvent {
 }
 
 model MemberEventVersion {
+  presentation Json @default("{\"images\":[],\"videos\":[]}")
   memberEventVersionId String            @id @default(uuid()) @map("member_event_version_id") @db.Uuid
   memberEventId        String            @map("member_event_id") @db.Uuid
   version              Int
@@ -1800,6 +1857,7 @@ model CommercialOfferingVersion {
   @@schema("commerce")
 }
 model Order {
+  memberReviews MemberOrderReview[]
   couponRedemption CouponRedemption?
   orderId                 String       @id @default(uuid()) @map("order_id") @db.Uuid
   orderNo                 BigInt       @unique @default(autoincrement()) @map("order_no")
@@ -5292,4 +5350,18 @@ model CouponUsageEvent {
   @@index([orderId,occurredAt])
   @@map("coupon_usage_event")
   @@schema("commerce")
+}
+
+model MemberOrderReview {
+ orderId String @map("order_id") @db.Uuid
+ personId String @map("person_id") @db.Uuid
+ rating Int
+ comment String @default("") @db.Text
+ createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+ order Order @relation(fields:[orderId],references:[orderId])
+ person Person @relation(fields:[personId],references:[personId])
+ @@id([orderId,personId])
+ @@index([personId,createdAt],map:"member_order_review_person_idx")
+ @@map("member_order_review")
+ @@schema("commerce")
 }

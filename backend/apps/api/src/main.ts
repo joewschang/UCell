@@ -6,6 +6,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from '@fastify/helmet';
 import cors from '@fastify/cors';
 import { memberEntryCors } from './member-entry-cors';
+import { HTTP_OPTIONS } from './http-options';
 import { AppModule } from './app.module';
 import { ApiExceptionFilter } from './common/filters/api-exception.filter';
 import { EnvelopeInterceptor } from './common/interceptors/envelope.interceptor';
@@ -15,7 +16,7 @@ import { configureLineWebhookTransport } from './modules/auth/line-webhook-trans
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
-    new FastifyAdapter({ logger: true }),
+    new FastifyAdapter(HTTP_OPTIONS),
   );
 
   const config = app.get(ConfigService);

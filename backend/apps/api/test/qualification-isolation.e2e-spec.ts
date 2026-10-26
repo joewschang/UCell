@@ -33,12 +33,12 @@ describe('Qualification isolation (P0)', () => {
     try{
       const assertHolder=jest.fn(async(personId:string,qualificationId:string)=>{if(personId!=='A'||qualificationId!=='ballA')throw new ForbiddenException('QUALIFICATION_ACCESS_DENIED');});
       const referralLinkCreate=jest.fn(async()=>({referralLinkId:'TEST_ONLY'}));
-      const service=new MemberShareLinkService({assertHolder} as any,{referralLink:{create:referralLinkCreate}} as any),now=new Date('2026-09-16T00:00:00.000Z');
+      let encrypted='';const db:any={referralLink:{create:referralLinkCreate},$executeRaw:async(_s:any,...args:any[])=>{encrypted=args[2]},$queryRaw:async()=>[{encrypted_token:encrypted}]};db.$transaction=(fn:any)=>fn(db);const service=new MemberShareLinkService({assertHolder} as any,db),now=new Date('2026-09-16T00:00:00.000Z');
       const link=await service.create('A','ballA',now),token=new URL(link.shareUrl).pathname.split('/').pop()!;
       expect(link).toMatchObject({qualificationId:'ballA',expiresAt:'2026-09-16T01:00:00.000Z'});
       expect(link.shareUrl).not.toContain('ballA');
       expect(referralLinkCreate).toHaveBeenCalledTimes(1);
-      expect(service.verify(token,now)).toMatchObject({version:1,qualificationId:'ballA'});
+      expect(service.verify(await service.resolveToken(token),now)).toMatchObject({version:1,qualificationId:'ballA'});
       await expect(service.create('A','ballB',now)).rejects.toBeInstanceOf(ForbiddenException);
       expect(assertHolder).toHaveBeenNthCalledWith(1,'A','ballA',now);expect(assertHolder).toHaveBeenNthCalledWith(2,'A','ballB',now);
     }finally{

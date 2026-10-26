@@ -1,3 +1,4 @@
+import PublicFaq from './PublicFaq';
 import PublicContentLanding from './PublicContentLanding';
 import {uiText} from "../../shared/design-system/i18n";
 import {CompanyLogo} from '@ucell/design-system';
@@ -72,7 +73,7 @@ function Bootstrap() {
 
     return <SessionBoundary>{referralWarning&&<p role="alert" className="card">{referralWarning}</p>}<QualificationProvider><App /></QualificationProvider></SessionBoundary>;
 }
-function EntryRouter(){const location=useLocation();const share=location.pathname.match(/^\/r\/([A-Za-z0-9_-]+)$/),content=location.pathname.match(/^\/watch\/([0-9a-f-]{36})$/i);return share||content?<PublicContentLanding key={location.pathname} token={share?.[1]} contentId={content?.[1]}/>:<Bootstrap/>;}
+function EntryRouter(){const location=useLocation();if(['/faq','/faq.html','/help','/help/faq'].includes(location.pathname))return <PublicFaq/>;const share=location.pathname.match(/^\/r\/([A-Za-z0-9_-]+)$/),content=location.pathname.match(/^\/watch\/([0-9a-f-]{36})$/i);return share||content?<PublicContentLanding key={location.pathname} token={share?.[1]} contentId={content?.[1]}/>:<Bootstrap/>;}
 createRoot(document.getElementById('root')!).render(<React.StrictMode><ThemeProvider><AppErrorBoundary><BrowserRouter><EntryRouter /></BrowserRouter></AppErrorBoundary></ThemeProvider></React.StrictMode>);
 
 import './member-experience.css';

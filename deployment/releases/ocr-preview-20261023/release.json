@@ -1,0 +1,18 @@
+{
+  "release": "ocr-preview-20261023",
+  "changes": ["Readable original input values in OCR warning fields on both themes", "Authenticated owner-only current application photo viewing with audit and no-store", "Network members may view their own application documents without a qualification"],
+  "images": {
+    "api": "sha256:e699200918f2128334e88c214f3ea2493a4da3cd3d3fb00dba377c980e4ccd25",
+    "admin": "sha256:ac024ad3306ecc1b05c6df2a265dff9f54e4c1c832875c110943e39fc820f952",
+    "member": "sha256:debe540c1869f602c46b2de175d1de2818db9dc264a4390db2e8ca636d64efaf"
+  },
+  "validation": {
+    "memberTests": 331,
+    "adminTests": 254,
+    "targetedApiTests": 26,
+    "browser": "Real OCR with synthetic image; seven original mismatch values preserved and readable in light/dark themes; mobile stored photo view, close and reopen after reload",
+    "runtime": "Exact deployed-base overlay owner read/foreign denial/audit/context guard and controller route/no-store metadata checked"
+  },
+  "apiBase": "sha256:c7232c3e0f4ec03ebca447230ed23feb21c84a828f13f0adc1ae7d6113f27237",
+  "apiStrategy": "Additive methods, route decorators and precise GET allowlist only; retain existing runtime features"
+}

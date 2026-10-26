@@ -1,37 +1,41 @@
 /** Management policy, independent of the frozen compensation rules. Change by new version. */
 export const ANALYTICS_POLICY = {
-  version: 'UCELL-MGMT-2026-09-v1', projectionVersion: 'analytics-v1', timezone: 'Asia/Taipei',
+  version: 'UCELL-MGMT-2026-10-PNASL-v2', projectionVersion: 'analytics-pnasl-v2', timezone: 'Asia/Taipei',
   activeDays: 30, lostDays: 90, generations: 12, freshnessSeconds: 900,
   smallSample: 5, elevatedRisk: .5, materialDecline: .10, growingImprovement: .05,
   growthTarget: .10,
   weights: { active: 25, repurchase: 20, growth: 15, risk: 15, balance: 10, depth: 10, engagement: 5 },
   qualifyingEvents: ['ORDER_PAID', 'REPURCHASE_RECOGNIZED'],
   denominatorZero: 'UNAVAILABLE',
-  registrationBasis: 'Person.createdAt (record creation proxy; not legal enrollment date)',
-  suspendNeverActivated: 'S / NEVER_ACTIVATED between >30 and <=90 days since record creation',
+  registrationBasis: 'N begins at recorded formal membership approval; P begins at valid share landing or network registration',
+  suspendNeverActivated: 'S / NEVER_ACTIVATED between >30 and <=90 days since formal approval',
+  activityEligibility: 'Only qualifying events at or after formal approval affect N/A/S/L; pre-approval purchases do not activate prospects',
   repurchaseBasis: 'REPURCHASE order paid or subscription installment recognized in rolling 30 days',
   refundSemantics: 'A historical payment is engagement evidence even after a return; no net-sales inference',
 } as const;
 
 export const DAY = 86_400_000;
-export type NaslState = 'N'|'A'|'S'|'L';
-export type PersonFact = { id:string; joinedAt:string; closed:boolean; registered:boolean };
+export type NaslState = 'P'|'N'|'A'|'S'|'L';
+export type PersonFact = { id:string; joinedAt:string; closed:boolean; registered:boolean; formalAt?:string|null;prospectAt?:string|null;prospectSource?:'SHARE'|'DIRECT'|null;anonymous?:boolean;aliases?:string[];excludeFromLifecycle?:boolean };
 export type QualificationFact = { id:string; personId:string; createdAt:string; system:boolean; active:boolean };
 export type ActivityFact = { id:string; personId:string; qualificationId:string; at:string; repurchase:boolean };
 export type EdgeFact = { parent:string; child:string; side?:'LEFT'|'RIGHT' };
 export type Facts = { persons:PersonFact[]; qualifications:QualificationFact[]; activities:ActivityFact[]; sponsor:EdgeFact[]; binary:EdgeFact[]; issues:string[] };
 export type PersonState = { state:NaslState; reason:string; joinedMonth:string };
 export const ratio = (n:number,d:number):number|null => d===0?null:n/d;
-export const emptyCounts = ():Record<NaslState,number> => ({N:0,A:0,S:0,L:0});
+export const emptyCounts = ():Record<NaslState,number> => ({P:0,N:0,A:0,S:0,L:0});
 export function monthKey(date:string):string {
   const parts = new Intl.DateTimeFormat('en', {timeZone:ANALYTICS_POLICY.timezone,year:'numeric',month:'2-digit'}).formatToParts(new Date(date));
   return `${parts.find(x=>x.type==='year')!.value}-${parts.find(x=>x.type==='month')!.value}`;
 }
 export function classifyNasl(person:PersonFact,lastActivity:string|undefined,asOf:string):PersonState {
-  const age = (Date.parse(asOf)-Date.parse(person.joinedAt))/DAY;
+  if(person.formalAt===null)return {state:'P',reason:person.anonymous?'ANONYMOUS_SHARE_VISITOR':'NETWORK_PROSPECT',joinedMonth:monthKey(person.prospectAt??person.joinedAt)};
+  if(person.formalAt&&lastActivity&&lastActivity<person.formalAt)lastActivity=undefined;
+  const joinedAt=person.formalAt??person.joinedAt;
+  const age = (Date.parse(asOf)-Date.parse(joinedAt))/DAY;
   const idle = lastActivity===undefined?age:(Date.parse(asOf)-Date.parse(lastActivity))/DAY;
   if(!Number.isFinite(age)||age<0||!Number.isFinite(idle)||idle<0)throw new Error('INVALID_ANALYTICS_TIME');
-  const result=(state:NaslState,reason:string):PersonState=>({state,reason,joinedMonth:monthKey(person.joinedAt)});
+  const result=(state:NaslState,reason:string):PersonState=>({state,reason,joinedMonth:monthKey(joinedAt)});
   if(person.closed)return result('L','RELATIONSHIP_CLOSED');
   if(lastActivity!==undefined&&idle<=30)return result('A','QUALIFYING_ACTIVITY_30D');
   if(age<=30)return result('N','NEW_NOT_YET_ACTIVE');
@@ -111,12 +115,16 @@ export function buildNasl(facts:Facts,asOf:string,previous?:Record<string,Person
   for(const activity of facts.activities){if(Date.parse(activity.at)>Date.parse(asOf))continue;const prev=last.get(activity.personId);if(!prev||activity.at>prev)last.set(activity.personId,activity.at);}
   const humanOwners=new Set(facts.qualifications.filter(q=>!q.system).map(q=>q.personId));
   const systemOwners=new Set(facts.qualifications.filter(q=>q.system).map(q=>q.personId));
-  const included=facts.persons.filter(p=>(p.registered||humanOwners.has(p.id))&&(!systemOwners.has(p.id)||humanOwners.has(p.id)));
+  const included=facts.persons.filter(p=>!p.excludeFromLifecycle&&(p.registered||humanOwners.has(p.id))&&(!systemOwners.has(p.id)||humanOwners.has(p.id)));
+  // A formerly anonymous visitor may now have a bound identity. Collapse its old
+  // snapshot aliases before comparing, so registration is not a removal + entrant.
+  let identityMerges=0;
+  if(previous){const original=Object.keys(previous).length;previous={...previous};for(const p of included){for(const alias of p.aliases??[]){if(previous[alias]){previous[p.id]??=previous[alias];delete previous[alias];}}}identityMerges=original-Object.keys(previous).length;}
   const states:Record<string,PersonState>={},counts=emptyCounts(),cohorts:Record<string,{total:number;counts:Record<NaslState,number>}>= {};
   let neverActivated=0;
   for(const p of included){const state=classifyNasl(p,last.get(p.id),asOf);states[p.id]=state;counts[state.state]++;
     if(state.reason==='NEVER_ACTIVATED')neverActivated++;
-    const cohort=cohorts[state.joinedMonth]??={total:0,counts:emptyCounts()};cohort.total++;cohort.counts[state.state]++;}
+    if(state.state!=='P'){const cohort=cohorts[state.joinedMonth]??={total:0,counts:emptyCounts()};cohort.total++;cohort.counts[state.state]++;}}
   const transitions:Record<string,number>={};let newEntrants=0,reactivated=0,becameLost=0,comparable=0,previousActive=0,retainedActive=0;
   const removed=previous?Object.keys(previous).filter(id=>!states[id]).length:0;
   if(previous)for(const [id,state] of Object.entries(states)){
@@ -127,7 +135,7 @@ export function buildNasl(facts:Facts,asOf:string,previous?:Record<string,Person
     if(old.state==='A'){previousActive++;if(state.state==='A')retainedActive++;}
   }
   return {states,summary:{counts,total:included.length,excludedPersonRecords:facts.persons.length-included.length,neverActivated,
-    rates:{N:ratio(counts.N,included.length),A:ratio(counts.A,included.length),S:ratio(counts.S,included.length),L:ratio(counts.L,included.length)},
+    rates:{P:ratio(counts.P,included.length),N:ratio(counts.N,included.length),A:ratio(counts.A,included.length),S:ratio(counts.S,included.length),L:ratio(counts.L,included.length)},
     cohorts:Object.entries(cohorts).sort(([a],[b])=>a.localeCompare(b)).map(([month,c])=>({month,...c,activeRate:ratio(c.counts.A,c.total)})),
-    transitions:previous?{matrix:transitions,comparable,newEntrants,removed,reactivated,becameLost,activeRetention:ratio(retainedActive,previousActive)}:null}};
+    transitions:previous?{matrix:transitions,comparable,newEntrants,removed,identityMerges,reactivated,becameLost,activeRetention:ratio(retainedActive,previousActive)}:null}};
 }

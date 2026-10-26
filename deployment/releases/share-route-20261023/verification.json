@@ -1,0 +1,11 @@
+{
+ "issue":"Fastify default route parameter limit rejected existing encrypted referral URLs before token validation with HTTP 414",
+ "fix":"Bounded maxParamLength 4096 consistent with existing token validation; preserve deployed bootstrap/KYC upload transport",
+ "image":"ucell-api:share-route-20261023",
+ "digest":"sha256:f954ed26d468aaa1e2761b7c2eafd7cb5f0797a9072739a6f7d3b65f5e11be1f",
+ "rollback":"ucell-api:pnasl-20261023-final",
+ "tests":{"passed":19,"suites":3,"build":"passed","acceptedLengths":[430,4096],"rejectedLength":4097},
+ "originalUserLink":{"before":{"card":414,"preview":414},"after":{"card":200,"preview":200,"landing":201,"mobilePageTitle":"TIP-363","pageErrors":0}},
+ "browserCheck":"Real public share visit at mobile viewport; one test visitor attribution recorded, no membership or orders created",
+ "deployment":{"health":"Healthy","running":"Running","traffic":100}
+}

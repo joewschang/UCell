@@ -3,32 +3,34 @@ const base = import.meta.env.VITE_API_BASE_URL || '/api/v1';
 const expiredMessage = '登入已失效，請重新登入';
 export class MemberApiError extends Error { constructor(message:string,public readonly status:number,public readonly code?:string){super(message);this.name='MemberApiError';} }
 export const REQUEST_TIMEOUT_MS = 15_000;
+export type ApiRequestInit = RequestInit & { timeoutMs?: number; responseType?: 'json' | 'blob' };
 export function createApiClient(guard: SessionGuard) {
-    return async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
+    return async function api<T>(path: string, init: ApiRequestInit = {}): Promise<T> {
+        const { timeoutMs = REQUEST_TIMEOUT_MS, responseType = 'json', ...requestInit } = init;
         if (guard.getSnapshot()) throw new Error(expiredMessage);
         const token = sessionStorage.getItem('ucell_member_token');
         const headers = new Headers(init.headers);
-        headers.set('Accept', 'application/json');
+        headers.set('Accept', responseType === 'blob' ? 'image/png,image/jpeg' : 'application/json');
         if (init.body) headers.set('Content-Type', 'application/json');
         if (token) headers.set('Authorization', `Bearer ${token}`);
         const controller = new AbortController();
         const abort = () => controller.abort();
         const unregister = guard.register(controller);
         let timedOut = false;
-        const timer = setTimeout(() => { timedOut = true; controller.abort(); }, REQUEST_TIMEOUT_MS);
+        const timer = setTimeout(() => { timedOut = true; controller.abort(); }, timeoutMs);
         init.signal?.addEventListener('abort', abort, { once: true });
         if (init.signal?.aborted) controller.abort();
         try {
             if (controller.signal.aborted) throw new DOMException('Aborted', 'AbortError');
             const res = await fetch(`${base}${path}`, {
-                ...init, signal: controller.signal, headers,
+                ...requestInit, signal: controller.signal, headers,
                 credentials: 'same-origin', cache: 'no-store',
             });
             if (guard.getSnapshot()) throw new Error(expiredMessage);
             if (!res.ok) {
                 if (res.status === 401) guard.expire();
                 let code:string|undefined;try{const body=await res.json();if(typeof body?.code==='string')code=body.code;}catch{/* Status still fails closed for a non-JSON error. */}
-                const enrollmentMessages:Record<string,string>={FORMAL_ENROLLMENT_PAYMENT_REQUIRED:'請先完成600元申請費或會員資格套組付款',FORMAL_ENROLLMENT_DOCUMENTS_REQUIRED:'請補齊身分證正反面及存摺封面，感染的檔案需重新上傳',FORMAL_FEE_ALREADY_COVERED_BY_PACKAGE:'已付款的會員資格套組包含申請資格，不需再繳600元',STAGE_PAYMENT_NOT_AVAILABLE:'目前環境尚未開放此付款方式',FORMAL_ENROLLMENT_NOT_AVAILABLE:'目前會員狀態無法申請，請重新確認會員資料'};
+                const enrollmentMessages:Record<string,string>={BALL_NUMBER_TREE_REQUIRED:'無法確認資格球所屬的有效組織樹，請洽公司確認推薦資格後重試',QUALIFICATION_SPONSOR_REQUIRED:'請先填寫推薦會員資格編號（球號）並完成驗證',SPONSOR_CODE_INVALID:'推薦資格編號格式不正確，請向推薦人確認球號',SPONSOR_CODE_INELIGIBLE:'此推薦資格目前無法使用，請確認球號是否有效或洽公司協助',FORMAL_EMAIL_INVALID:'電子郵件格式不正確，請修正後重新儲存',FORMAL_NATIONAL_ID_INVALID:'身分證字號格式或檢查碼不正確，請核對證件後修正',FORMAL_APPLICATION_LOCKED:'申請已送審或結案，目前無法修改；請查看申請進度，需更正時請聯絡客服退回補件',FORMAL_APPLICATION_NOT_SUBMITTABLE:'此申請目前不是可送審狀態，請重新查詢申請進度',FORMAL_KYC_DOCUMENT_CONTENT_INVALID:'圖片無法讀取或內容不完整，請重新拍攝並上傳 JPG／PNG',FORMAL_KYC_DOCUMENT_SIZE_INVALID:'文件大小不符合限制，請上傳 10 MB 以內的圖片',FORMAL_KYC_DOCUMENT_MIME_NOT_ALLOWED:'文件格式不支援，請轉存 JPG 或 PNG 後重新上傳',KYC_STORAGE_WRITE_FAILED:'文件儲存服務暫時失敗，請保留目前資料並重試',KYC_STORAGE_TOKEN_FAILED:'文件儲存服務暫時無法連線，請稍後重試或聯絡客服',FORMAL_ENROLLMENT_PAYMENT_REQUIRED:'請先完成資格套組付款',FORMAL_SIGNATURE_VERSION_CHANGED:'申請資料已有更新，請重新載入並再次簽名',FORMAL_ENROLLMENT_ORDER_NOT_AVAILABLE:'這筆訂單已到期、取消或無法用於申請，請重新查詢訂單',FORMAL_ENROLLMENT_PAYMENT_METHOD_REQUIRED:'請先選擇匯款或現金付款方式',FORMAL_ENROLLMENT_DOCUMENTS_REQUIRED:'請補齊身分證正反面、存摺封面及會員簽名',FORMAL_FEE_ALREADY_COVERED_BY_PACKAGE:'已付款的會員資格套組包含申請資格，不需再繳600元',STAGE_PAYMENT_NOT_AVAILABLE:'目前環境尚未開放此付款方式',FORMAL_ENROLLMENT_NOT_AVAILABLE:'目前會員狀態無法申請，請重新確認會員資料'};
                 throw new MemberApiError((code&&enrollmentMessages[code]) || (res.status === 401 ? expiredMessage :
                     res.status === 403 ? '您無權查看此資格資料' :
                     res.status === 404 ? '找不到指定資料，資料可能已移除或您無權查看' :
@@ -37,7 +39,7 @@ export function createApiClient(guard: SessionGuard) {
                     res.status === 400 ? '資料格式不正確，請檢查輸入內容' : '資料暫時無法讀取，請稍後重試'),res.status,code);
             }
             let result: T;
-            try { result = await res.json() as T; }
+            try { result = (responseType === 'blob' ? await res.blob() : await res.json()) as T; }
             catch { throw new Error('資料格式異常，請稍後重試'); }
             if (guard.getSnapshot()) throw new Error(expiredMessage);
             if (controller.signal.aborted) throw new DOMException('Aborted', 'AbortError');

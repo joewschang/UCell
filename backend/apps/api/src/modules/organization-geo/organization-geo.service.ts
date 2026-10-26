@@ -1,3 +1,4 @@
+import {geoDescendants,geoGpvSources} from './geo-membership-scope';
 import {Injectable,NotFoundException,UnprocessableEntityException} from '@nestjs/common';
 import {Prisma,PrismaService} from '@ucell/database';
 import {AsOfContext,parseAsOfContext} from '@ucell/shared';
@@ -17,7 +18,7 @@ export class OrganizationGeoService {
  private time(input:GeoQuery):AsOfContext{
   try{
    const time=parseAsOfContext({timezone:'Asia/Taipei',asOf:input.asOf,knowledgeCutoff:input.knowledgeCutoff,periodStart:input.dateFrom,periodEnd:input.dateTo});
-   const now=new Date().toISOString();if(time.asOf>now||time.knowledgeCutoff>now)throw new Error();return time;
+   const now=Date.now();if(Date.parse(time.asOf)>now+5000||Date.parse(time.knowledgeCutoff)>now+5000)throw new Error();return {...time,asOf:new Date(Math.min(Date.parse(time.asOf),now)).toISOString(),knowledgeCutoff:new Date(Math.min(Date.parse(time.knowledgeCutoff),now)).toISOString()};
   }catch{throw new UnprocessableEntityException({code:'INVALID_GEO_TIME_CONTEXT'});}
  }
  async capture(p:TreePrincipal,input:GeoQuery,exporting=false){
@@ -34,7 +35,7 @@ export class OrganizationGeoService {
    const base={rootBallNo:root.ballNo,time,definitionVersion:GEO_DEFINITION_VERSION,areaVersion:GEO_AREA_VERSION,sourceWatermark:time.knowledgeCutoff,geographyBasis:'APPROVED_COMMUNICATION_ADDRESS_AT_CHECKPOINT',gpvUnit:'GPV_POINT'};
    const unavailable=(reason:string)=>({...base,status:'UNAVAILABLE' as const,reason,summary:null,distribution:[],branchComparison:[],carry:null,lastUpdated:null});
    if(await treeAncestryCompleteness(tx,treeId,time)!=='0')return unavailable('CANONICAL_ANCESTRY_EVIDENCE_INCOMPLETE');
-   const descendants=await tx.binaryTreeAncestry.findMany({where:{binaryTreeId:treeId,ancestorQualificationId:root.qualificationId,depth:{gt:0},effectiveFrom:{lte:at},recordedAt:{lte:known}},take:BOUND+1,orderBy:{descendantQualificationId:'asc'}});
+   const descendants=await geoDescendants(tx,treeId,membership.binaryPositionNo,time);
    if(descendants.length>BOUND)return unavailable('GEO_SCALE_PROJECTION_REQUIRED');
    const ids=descendants.map(d=>d.descendantQualificationId);
    const members=await tx.binaryTreeMembership.findMany({where:{binaryTreeId:treeId,qualificationId:{in:ids},effectiveFrom:{lte:at},recordedAt:{lte:known}}});
@@ -53,7 +54,7 @@ export class OrganizationGeoService {
     const active=owner.ownerType==='MEMBER'?activeEvidence.get(descendant.descendantQualificationId)?.state??'UNKNOWN':'UNKNOWN';
     facts.push({qualificationId:descendant.descendantQualificationId,personId,ownerType:owner.ownerType,firstSide:descendant.firstSide as 'LEFT'|'RIGHT',placedAt:memberRows[0].effectiveFrom.toISOString(),active,cityCode:profile?.cityCode??null,districtCode:profile?.districtCode??null});
    }
-   const performance=await readFoundingPerformance(tx,treeId,root.qualificationId,time,true);
+   const performance=await readFoundingPerformance(tx,treeId,root.qualificationId,time,true,await geoGpvSources(tx,treeId,membership.binaryPositionNo,time));
    const aggregate=aggregateGeo(facts,performance.status==='AVAILABLE'?performance.sourceFacts??[]:[],{side:input.side??'ALL',level:input.level??'CITY',parentAreaCode:input.parentAreaCode,periodStart:time.periodStart,periodEnd:time.periodEnd,gpvAvailable:performance.status==='AVAILABLE'});
    const carry=await readFoundingCarry(tx,root.qualificationId,time);
    return {...base,...aggregate,status:performance.status==='AVAILABLE'&&aggregate.summary.unknownActiveBalls===0?'AVAILABLE':'PARTIAL',reason:performance.reason??(aggregate.summary.unknownActiveBalls?'GEO_ACTIVE_EVIDENCE_INCOMPLETE':null),carry,lastUpdated:performance.status==='AVAILABLE'?performance.lastUpdated:null,gpvSourceHash:performance.status==='AVAILABLE'?performance.sourceHash:null};

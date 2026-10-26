@@ -1,0 +1,10 @@
+{
+  "release": "no-member-ocr-20261023",
+  "changes": ["Remove member OCR, keyword gate, image rotation, worker/model build and dependency", "Keep original images, required uploads, private previews and upload success/failure feedback", "Compare ROC and Gregorian birthdays with numeric date components including padded/full-width forms"],
+  "images": {
+    "member": "sha256:8a34b5f2dedee56ccdcbb4094883bc26993e88d431c2ab46f9e01a79c268a411",
+    "admin": "sha256:0c9d69067236b8d7b645e3f089c423d4a449db3c2fa365ef1a79fc9b6ed005e3"
+  },
+  "api": "Unchanged",
+  "validation": {"memberTests":329,"adminTests":267,"browser":"Blank PNG accepted immediately; original bytes preserved; no OCR requests; clear not-yet-uploaded status"}
+}

@@ -18,6 +18,26 @@ const activeMember={qualificationId:'member-active',ballNo:'A000005',kind:'MEMBE
 
 beforeEach(()=>{vi.mocked(get).mockReset().mockResolvedValue({data:[companyBootstrap,memberOriginCompanyHeld,activeMember]});});
 
+it('includes pending qualifications by default and allows explicitly filtering drafts',async()=>{
+ const pending={...activeMember,qualificationId:'pending-member',ballNo:null,status:'DRAFT',activeFlag:false};
+ vi.mocked(get).mockImplementation(async(url:string)=>({data:new URL(url,'https://test.invalid').searchParams.get('status')==='EFFECTIVE'?[activeMember]:[pending,activeMember]}));
+ const client=new QueryClient({defaultOptions:{queries:{retry:false}}});
+ let view:ReturnType<typeof create>;
+ await act(async()=>{view=create(<MemoryRouter><QueryClientProvider client={client}><QualificationsPage/></QueryClientProvider></MemoryRouter>);});
+ await vi.waitFor(()=>expect(JSON.stringify(view!.toJSON())).toContain('尚未編配球號'));
+ expect(get).toHaveBeenCalledWith('/admin/qualifications?q=&take=100');
+ const filter=view!.root.findAllByType('select').find(node=>node.findAllByType('option').some(option=>option.props.value==='DRAFT'))!;
+ expect(filter.props.value).toBe('');
+ expect(filter.findAllByType('option').some(option=>option.props.value==='DRAFT')).toBe(true);
+ await act(async()=>filter.props.onChange({target:{value:'EFFECTIVE'}}));
+ await vi.waitFor(()=>expect(JSON.stringify(view!.toJSON())).not.toContain('尚未編配球號'));
+ await act(async()=>filter.props.onChange({target:{value:'DRAFT'}}));
+ await vi.waitFor(()=>expect(JSON.stringify(view!.toJSON())).toContain('尚未編配球號'));
+ expect(get).toHaveBeenCalledWith('/admin/qualifications?q=&status=DRAFT&take=100');
+ act(()=>view!.unmount());
+ client.clear();
+});
+
 it('keeps list Company Active and bootstrap LEADER claims neutral until Ball 360 supplies binding evidence',()=>{
  expect(listPlanLabel(companyBootstrap)).toBe("方案請於 球 360 確認");
  expect(listActivityLabel(companyBootstrap)).toEqual({label:'活躍 狀態請於 球 360 確認',tone:'neutral'});

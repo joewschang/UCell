@@ -1,0 +1,161 @@
+{
+  "categories": [
+    {
+      "id": "membership",
+      "label": "註冊與會員",
+      "sortOrder": 0,
+      "published": true,
+      "version": 1
+    },
+    {
+      "id": "products",
+      "label": "商品資訊",
+      "sortOrder": 10,
+      "published": true,
+      "version": 1
+    },
+    {
+      "id": "orders",
+      "label": "訂單與售後",
+      "sortOrder": 20,
+      "published": true,
+      "version": 1
+    },
+    {
+      "id": "science",
+      "label": "科學與素材",
+      "sortOrder": 30,
+      "published": true,
+      "version": 1
+    },
+    {
+      "id": "brand",
+      "label": "關於品牌",
+      "sortOrder": 40,
+      "published": true,
+      "version": 1
+    }
+  ],
+  "items": [
+    {
+      "id": "register",
+      "category": "membership",
+      "question": "一定要使用 LINE 或 Google 才能註冊嗎？",
+      "answer": "不需要。您可以直接設定站內帳號與密碼，繼續填寫會員資料；也可選擇 Google 或 LINE。",
+      "keywords": "帳號 密碼 LINE Google 註冊 登入",
+      "sortOrder": 0,
+      "published": true,
+      "version": 1
+    },
+    {
+      "id": "share",
+      "category": "membership",
+      "question": "如何分享商品、影片或活動？",
+      "answer": "登入會員中心後，於支援分享的頁面使用建立分享連結功能。請完整保留系統產生的連結。",
+      "keywords": "推薦碼 推薦 分享 影片 活動 商品",
+      "sortOrder": 10,
+      "published": true,
+      "version": 1
+    },
+    {
+      "id": "brand",
+      "category": "brand",
+      "question": "UCell 是什麼？",
+      "answer": "UCell 是宇生國際股份有限公司營運之生命健康品牌，品牌主軸為 Science × Health × Alliance。",
+      "keywords": "",
+      "sortOrder": 20,
+      "published": true,
+      "version": 1
+    },
+    {
+      "id": "food",
+      "category": "products",
+      "question": "UCell 的一般食品可以治療疾病嗎？",
+      "answer": "不可以這樣宣稱。食品不等同藥品；有疾病、症狀、用藥或治療需求時，應由合格醫療專業人員評估。",
+      "keywords": "",
+      "sortOrder": 30,
+      "published": true,
+      "version": 1
+    },
+    {
+      "id": "research",
+      "category": "science",
+      "question": "為什麼 Science Center 不把所有研究結果都寫在產品頁？",
+      "answer": "因為體外、動物、原料與人體研究的證據意義不同；公開產品頁還必須符合食品廣告法規。",
+      "keywords": "",
+      "sortOrder": 40,
+      "published": true,
+      "version": 1
+    },
+    {
+      "id": "price",
+      "category": "products",
+      "question": "每項產品售價是多少？",
+      "answer": "請至產品頁查看即時售價與上架狀態；實際交易金額以會員商城結帳頁為準。",
+      "keywords": "價格 售價 費用",
+      "sortOrder": 50,
+      "published": true,
+      "version": 1
+    },
+    {
+      "id": "ingredients",
+      "category": "products",
+      "question": "產品完整成分與食用方式要看哪裡？",
+      "answer": "以實際商品包裝與公司正式商品主檔為準。網站不自行推定尚未取得的規格、用量或警語。",
+      "keywords": "",
+      "sortOrder": 60,
+      "published": true,
+      "version": 1
+    },
+    {
+      "id": "evidence",
+      "category": "science",
+      "question": "專利、研究、ISO 或第三方檢驗代表主管機關核准功效嗎？",
+      "answer": "不代表。這些資訊各有不同用途，不能等同主管機關對產品療效背書。",
+      "keywords": "",
+      "sortOrder": 70,
+      "published": true,
+      "version": 1
+    },
+    {
+      "id": "income",
+      "category": "membership",
+      "question": "加入會員一定有收入嗎？",
+      "answer": "不一定。收入取決於真實有效交易、制度條件、資格狀態與結算結果，可能為零；公司不應保證固定收入、回本或獲利。",
+      "keywords": "",
+      "sortOrder": 80,
+      "published": true,
+      "version": 1
+    },
+    {
+      "id": "stock",
+      "category": "membership",
+      "question": "為了取得權益可以大量囤貨嗎？",
+      "answer": "不應。購買應基於合理消費或真實銷售需求，不以超出合理需求的囤貨作為取得利益的方法。",
+      "keywords": "",
+      "sortOrder": 90,
+      "published": true,
+      "version": 1
+    },
+    {
+      "id": "returns",
+      "category": "orders",
+      "question": "如何退出或退貨？",
+      "answer": "依交易類型、現行法律與正式契約／退貨辦法辦理；可先到會員中心查看相關訂單，或透過聯絡我們頁面尋求協助。",
+      "keywords": "退貨 退款 退出 售後 訂單",
+      "sortOrder": 100,
+      "published": true,
+      "version": 1
+    },
+    {
+      "id": "approved-sharing",
+      "category": "science",
+      "question": "會員可以自行轉貼研究資料宣傳產品嗎？",
+      "answer": "應使用公司核准之公開素材，不自行將研究改寫成疾病療效、人體效果保證或主管機關背書。",
+      "keywords": "",
+      "sortOrder": 110,
+      "published": true,
+      "version": 1
+    }
+  ]
+}

@@ -1,3 +1,4 @@
+import {closingEligibilityAt} from '@ucell/database';
 import { SettlementCalendarService } from '../settlement/settlement-calendar.service';
 import { snapshotDecimal, verifySnapshot, captureParameters } from '../rules/parameter-snapshot';
 import { Injectable } from '@nestjs/common';
@@ -48,6 +49,7 @@ export class BinaryBonusService {
         data:{settlementType:'BINARY_K1',periodStart,periodEnd,ruleVersionCode,parameterSnapshot:parameterSnapshot as unknown as Prisma.InputJsonValue}
       });
 
+      const eligibilityAt=closingEligibilityAt(periodEnd,parameterSnapshot);
       const pendingDays=Number(snapshotDecimal(parameterSnapshot,'award.pending.days').toString());
       const poolRate=snapshotDecimal(parameterSnapshot,'pool.binary.rate','*');
       const pairRate=snapshotDecimal(parameterSnapshot,'binary.pair.rate','*');
@@ -63,10 +65,10 @@ export class BinaryBonusService {
 
       const theoryRows:Array<any>=[];
       for(const q of qualifications){
-        const effective=await this.query.isQualificationEffectiveAt(tx,q.qualificationId,periodEnd);
+        const effective=await this.query.isQualificationEffectiveAt(tx,q.qualificationId,eligibilityAt);
         if(!effective) continue;
-        const active=await this.query.isActiveAt(tx,q.qualificationId,periodEnd);
-        const planLevelCode=await this.query.qualificationPlanAt(tx,q.qualificationId,periodEnd,parameterSnapshot);
+        const active=await this.query.isActiveAt(tx,q.qualificationId,eligibilityAt);
+        const planLevelCode=await this.query.qualificationPlanAt(tx,q.qualificationId,eligibilityAt,parameterSnapshot);
         const previous=await tx.binaryCarry.findFirst({
           where:{qualificationId:q.qualificationId,periodEnd:{lt:periodEnd},ruleVersionCode},
           orderBy:{periodEnd:'desc'}
@@ -110,6 +112,7 @@ export class BinaryBonusService {
             occurredAt:periodEnd,
             pendingUntil:this.query.pendingUntil(periodEnd,pendingDays),
             calculationDetail:{
+              eligibilityAt:eligibilityAt.toISOString(),
               leftCarryIn:leftIn.toString(),rightCarryIn:rightIn.toString(),
               leftPeriodGpv:leftPeriod.toString(),rightPeriodGpv:rightPeriod.toString(),
               pairedPv:paired.toString(),pairRate:pairRate.toString(),
@@ -199,6 +202,7 @@ export class BinaryBonusService {
         data:{settlementType:'MATCHING_K2',periodStart,periodEnd,ruleVersionCode,parameterSnapshot:parameterSnapshot as unknown as Prisma.InputJsonValue}
       });
 
+      const eligibilityAt=closingEligibilityAt(periodEnd,parameterSnapshot);
       const pendingDays=Number(snapshotDecimal(parameterSnapshot,'award.pending.days').toString());
       const poolRate=snapshotDecimal(parameterSnapshot,'pool.matching.rate','*');
       const originals=await tx.pvLedger.findMany({where:{pvType:'GPV',eventType:'GPV_CREATED',ruleVersionCode,occurredAt:{gte:periodStart,lt:periodEnd}}});
@@ -212,11 +216,11 @@ export class BinaryBonusService {
 
       const rows:Array<any>=[];
       for(const source of binaryAwards){
-        const uplines=await this.query.sponsorAncestors(tx,source.recipientQualificationId,periodEnd,5);
+        const uplines=await this.query.sponsorAncestors(tx,source.recipientQualificationId,eligibilityAt,5);
         for(const u of uplines){
-          const directCount=await this.query.effectiveDirectCountAt(tx,u.qualification_id,periodEnd);
+          const directCount=await this.query.effectiveDirectCountAt(tx,u.qualification_id,eligibilityAt);
           const unlock=this.matchingUnlockDepth(directCount);
-          const active=await this.query.isActiveAt(tx,u.qualification_id,periodEnd);
+          const active=await this.query.isActiveAt(tx,u.qualification_id,eligibilityAt);
 
 
           const rate=snapshotDecimal(parameterSnapshot,'matching.rate',String(u.generation));
@@ -235,10 +239,11 @@ export class BinaryBonusService {
             eligible,
             activeSnapshot:active,
             effectiveDirectCountSnapshot:directCount,
-            planLevelSnapshot:await this.query.qualificationPlanAt(tx,u.qualification_id,periodEnd,parameterSnapshot),
+            planLevelSnapshot:await this.query.qualificationPlanAt(tx,u.qualification_id,eligibilityAt,parameterSnapshot),
             occurredAt:periodEnd,
             pendingUntil:this.query.pendingUntil(periodEnd,pendingDays),
             calculationDetail:{
+              eligibilityAt:eligibilityAt.toISOString(),
               sourceBinaryPaid:source.payableAmount.toString(),
               rate:rate.toString(),generation:u.generation,
               unlockDepth:unlock,effectiveDirectCount:directCount
@@ -261,7 +266,8 @@ export class BinaryBonusService {
             reasonCode:!row.activeSnapshot?'INACTIVE':'LOCKED',
             theoreticalAmount:row.theoreticalAmount,entitlementAmount:new Prisma.Decimal(0),
             ruleVersionCode,parameterSnapshotHash:parameterSnapshot.hash,occurredAt:periodEnd,
-            calculationDetail:{...row.calculationDetail,sourceAwardId:row.sourceAwardId,sourceQualificationId:row.sourceQualificationId}
+            calculationDetail:{
+              eligibilityAt:eligibilityAt.toISOString(),...row.calculationDetail,sourceAwardId:row.sourceAwardId,sourceQualificationId:row.sourceQualificationId}
           }],skipDuplicates:true});
           continue;
         }

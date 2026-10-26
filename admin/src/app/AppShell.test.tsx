@@ -22,10 +22,10 @@ describe('grouped navigation access', () => {
     }finally{act(()=>renderer.unmount())}
   });
   it.each([
-    ['CUSTOMER_SERVICE', ['營運總覽','會員管理'], ['/','/line-links']],
+    ['CUSTOMER_SERVICE', ['營運總覽','會員管理','系統治理'], ['/','/line-links','/faq']],
     ['PACKAGE_CONFIG_MANAGE', ['營運總覽','商務'], ['/','/packages']],
     ['PACKAGE_CONFIG_APPROVE', ['營運總覽','商務'], ['/','/packages']],
-    ['MEMBERSHIP_OPS', ['營運總覽','會員管理','組織管理','營運分析','系統治理'], ['/', '/people','/applications','/qualifications','/paper-intake','/line-links','/workflows','/organization','/admin/organization/trees','/analytics','/documents','/learning','/events']],
+    ['MEMBERSHIP_OPS', ['營運總覽','會員管理','組織管理','營運分析','系統治理'], ['/', '/people','/applications','/qualifications','/paper-intake','/line-links','/workflows','/organization','/admin/organization/trees','/analytics','/marketing','/documents','/learning','/events','/faq']],
   ])('renders only allowed links and nonempty groups for %s', (role, groups, paths) => {
     auth.role = role;
     vi.stubGlobal('sessionStorage', {getItem:() => null});

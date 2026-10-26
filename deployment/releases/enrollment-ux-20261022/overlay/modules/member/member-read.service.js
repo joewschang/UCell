@@ -1,0 +1,205 @@
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.MemberReadService = void 0;
+exports.memberSafeAnonymousNode = memberSafeAnonymousNode;
+exports.readBinarySettlement = readBinarySettlement;
+exports.unavailableBinaryView = unavailableBinaryView;
+const database_1 = require("@ucell/database");
+const common_1 = require("@nestjs/common");
+const common_2 = require("@nestjs/common");
+const database_2 = require("@ucell/database");
+const qualification_access_service_1 = require("../auth/qualification-access.service");
+const member_service_1 = require("./member.service");
+function memberSafeAnonymousNode(q) { return { code: q.ballNo ?? 'UNAVAILABLE', name: '', nodeKind: 'AnonymousBallNode' }; }
+async function readBinarySettlement(tx, qualificationId, settlementBatchId) {
+    const batch = await tx.settlementBatch.findUnique({ where: { settlementBatchId } });
+    if (!batch || batch.settlementType !== 'BINARY_K1')
+        throw new common_2.NotFoundException({ code: 'BINARY_SETTLEMENT_NOT_FOUND' });
+    if (batch.status !== 'FINALIZED' || !batch.finalizedAt || !batch.calculationHash || !/^[a-f0-9]{64}$/.test(batch.calculationHash))
+        (0, database_2.pending)('SETTLEMENT_NOT_FINALIZED', 'Finalized Binary settlement evidence is required');
+    const snapshotRow = await tx.historicalReplaySnapshot.findUnique({ where: { kind_sourceId: { kind: 'BINARY_K1', sourceId: settlementBatchId } } });
+    const evidence = (0, database_2.verifyReplayEnvelope)(snapshotRow);
+    if (evidence.kind !== 'BINARY_K1' || evidence.sourceId !== settlementBatchId || evidence.ruleVersionCode !== batch.ruleVersionCode)
+        (0, database_2.pending)('HISTORICAL_SNAPSHOT_MISSING', 'Binary settlement replay evidence does not match the requested batch');
+    if (evidence.inputs?.periodStart !== batch.periodStart.toISOString() || evidence.inputs?.periodEnd !== batch.periodEnd.toISOString())
+        (0, database_2.pending)('HISTORICAL_SNAPSHOT_MISSING', 'Binary settlement period evidence does not match the requested batch');
+    if (!evidence.parameters?.hash || !/^[a-f0-9]{64}$/.test(evidence.parameters.hash))
+        (0, database_2.pending)('HISTORICAL_SNAPSHOT_MISSING', 'Binary settlement Parameter snapshot hash is required');
+    const carries = Array.isArray(evidence.evidence?.carryRecipients) ? evidence.evidence.carryRecipients.filter((row) => row?.qualificationId === qualificationId) : [];
+    if (carries.length !== 1)
+        (0, database_2.pending)('HISTORICAL_SNAPSHOT_MISSING', 'Unique historical Binary carry evidence is required for the selected Qualification');
+    const carry = carries[0];
+    const metric = (name) => { const value = Number(carry[name]); if (!Number.isFinite(value) || value < 0 || value > Number.MAX_SAFE_INTEGER)
+        (0, database_2.pending)('HISTORICAL_SNAPSHOT_MISSING', `Historical Binary ${name} evidence is invalid`); return value; };
+    return { qualificationId, left: { count: null, volume: metric('leftPeriodGpv'), carry: metric('leftCarryOut') }, right: { count: null, volume: metric('rightPeriodGpv'), carry: metric('rightCarryOut') }, settlementMetrics: { status: 'AVAILABLE', reason: null }, settlementScope: { settlementBatchId, periodStart: batch.periodStart.toISOString(), periodEnd: batch.periodEnd.toISOString(), ruleVersion: batch.ruleVersionCode, parameterSnapshotHash: evidence.parameters.hash, calculationHash: batch.calculationHash, finalizedAt: batch.finalizedAt.toISOString() }, fullTree: { status: 'UNAVAILABLE', reason: 'BINARY_TREE_READ_MODEL_NOT_AVAILABLE' } };
+}
+function unavailableBinaryView(qualificationId, counts) {
+    return {
+        qualificationId,
+        left: { count: Number(counts.find(row => row.side === 'LEFT')?.count ?? 0), volume: null, carry: null },
+        right: { count: Number(counts.find(row => row.side === 'RIGHT')?.count ?? 0), volume: null, carry: null },
+        settlementMetrics: { status: 'UNAVAILABLE', reason: 'SETTLEMENT_METRICS_READ_MODEL_NOT_AVAILABLE' },
+        settlementScope: null,
+        fullTree: { status: 'UNAVAILABLE', reason: 'BINARY_TREE_READ_MODEL_NOT_AVAILABLE' },
+    };
+}
+let MemberReadService = class MemberReadService {
+    db;
+    identity;
+    access;
+    constructor(db, identity, access) {
+        this.db = db;
+        this.identity = identity;
+        this.access = access;
+    }
+    async read(personId, id, kind, period, settlementBatchId) {
+        await this.identity.context(personId, id);
+        return this.db.$transaction(async (tx) => {
+            await new qualification_access_service_1.QualificationAccessService(tx).assertHolder(personId, id);
+            if (kind === 'binary' && settlementBatchId)
+                return readBinarySettlement(tx, id, settlementBatchId);
+            const now = new Date(), snapshot = await (0, database_2.captureParameters)(tx, now, 'R1.0B'), timezone = (0, database_2.snapshotValue)(snapshot, 'accounting.timezone');
+            if (typeof timezone !== 'string')
+                (0, database_2.pending)('HISTORICAL_SNAPSHOT_MISSING', 'Versioned accounting timezone evidence required');
+            const current = new Intl.DateTimeFormat('en-CA', { timeZone: timezone, year: 'numeric', month: '2-digit' }).format(now);
+            const month = period ?? current;
+            if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month))
+                throw new common_2.UnprocessableEntityException({ code: 'INVALID_PERIOD' });
+            const [bounds] = await tx.$queryRaw `SELECT (${month + '-01'}::date::timestamp AT TIME ZONE ${timezone}) AS start, ((${month + '-01'}::date+interval '1 month')::timestamp AT TIME ZONE ${timezone}) AS end`;
+            const at = { gte: bounds.start, lt: bounds.end };
+            const repurchase = async () => {
+                const rows = await tx.monthlyRecognitionSchedule.findMany({ where: { subscription: { qualificationId: id }, recognitionMonth: new Date(month + '-01') }, orderBy: { installmentNo: 'asc' } });
+                return { qualificationId: id, period: month, status: rows.some(row => row.status === 'RECOGNIZED') ? 'ACTIVE' : rows.some(row => ['SCHEDULED', 'DUE'].includes(row.status)) ? 'PENDING' : 'INACTIVE', recognitions: rows.map(row => ({ id: row.recognitionId, status: row.status, dueAt: row.dueAt })) };
+            };
+            const volumes = async () => {
+                const totals = {};
+                for (const pvType of ['PV', 'RPV', 'EPV']) {
+                    const events = await tx.pvLedger.findMany({ where: { qualificationId: id, pvType, occurredAt: at, reversalOfEventId: null } });
+                    if (!events.length) {
+                        totals[pvType.toLowerCase()] = null;
+                        continue;
+                    }
+                    if (pvType !== 'PV')
+                        for (const event of events) {
+                            const sourceId = pvType === 'RPV' ? event.sourceLineId : event.eventId;
+                            if (!sourceId)
+                                (0, database_2.pending)('HISTORICAL_SNAPSHOT_MISSING', 'Original event evidence required');
+                            const row = await tx.historicalReplaySnapshot.findUnique({ where: { kind_sourceId: { kind: pvType, sourceId } } });
+                            const evidence = (0, database_2.verifyReplayEnvelope)(row);
+                            if ((0, database_2.snapshotValue)(evidence.parameters, 'accounting.timezone') !== timezone)
+                                (0, database_2.pending)('HISTORICAL_SNAPSHOT_MISSING', 'Historical month timezone does not match query configuration');
+                        }
+                    const originalIds = events.map(event => event.eventId);
+                    const sum = await tx.pvLedger.aggregate({ where: { qualificationId: id, pvType, OR: [{ eventId: { in: originalIds } }, { reversalOfEventId: { in: originalIds } }] }, _sum: { amount: true } });
+                    totals[pvType.toLowerCase()] = sum._sum.amount?.toNumber() ?? null;
+                }
+                return totals;
+            };
+            if (kind === 'sponsor' || kind === 'referrals') {
+                const links = await tx.sponsorRelationship.findMany({ where: { sponsorQualificationId: id, effectiveFrom: { lte: now }, OR: [{ effectiveTo: null }, { effectiveTo: { gt: now } }] }, include: { child: { include: { currentHolder: true, binaryTreeMembership: true } } }, orderBy: { sponsorSequenceNo: 'asc' }, take: 100 });
+                const parent = await tx.sponsorRelationship.findFirst({ where: { childQualificationId: id, effectiveFrom: { lte: now }, OR: [{ effectiveTo: null }, { effectiveTo: { gt: now } }] }, include: { sponsor: { include: { currentHolder: true, binaryTreeMembership: true } } } });
+                // A Member projection is constructed here, not masked in React. Bootstrap #1-#3
+                // never cross this boundary; non-direct nodes omit every holder PII field.
+                const hiddenBootstrap = (q) => q.binaryTreeMembership && q.binaryTreeMembership.binaryPositionNo <= 3n;
+                const direct = (q) => ({ code: q.ballNo ?? 'UNAVAILABLE', name: (q.currentHolder?.preferredName ?? q.currentHolder?.legalName ?? '').slice(0, 1) + '＊', nodeKind: 'DirectSponsoredIdentity' });
+                // The legacy field stays an empty display label for contract compatibility; it
+                // never carries a holder name outside a direct-sponsored relationship.
+                const anonymous = memberSafeAnonymousNode;
+                const safeChildren = links.map(row => row.child).filter(q => !hiddenBootstrap(q)).map(direct);
+                // A sponsor is upstream, therefore never a direct-sponsored identity for this viewer.
+                const safeParent = parent && !hiddenBootstrap(parent.sponsor) ? anonymous(parent.sponsor) : null;
+                return { qualificationId: id, sponsor: safeParent, referrals: safeChildren, pagination: { limit: 100, truncated: links.length === 100 } };
+            }
+            if (kind === 'binary') {
+                const counts = await tx.$queryRaw `WITH RECURSIVE tree AS (SELECT child_qualification_id AS id,side FROM organization.binary_placement WHERE parent_qualification_id=${id}::uuid AND effective_from<=${now} AND (effective_to IS NULL OR effective_to>${now}) UNION ALL SELECT p.child_qualification_id,t.side FROM organization.binary_placement p JOIN tree t ON p.parent_qualification_id=t.id WHERE p.effective_from<=${now} AND (p.effective_to IS NULL OR p.effective_to>${now})) SELECT side::text,COUNT(*)::text AS count FROM tree GROUP BY side`;
+                return unavailableBinaryView(id, counts);
+            }
+            if (kind === 'repurchase') {
+                return repurchase();
+            }
+            if (kind === 'bonuses' || kind === 'ledger') {
+                const awards = await tx.bonusAward.findMany({ where: { recipientQualificationId: id, occurredAt: at }, include: { settlementBatch: true, lifecycleEvents: { orderBy: [{ occurredAt: 'desc' }, { createdAt: 'desc' }, { lifecycleEventId: 'desc' }] } }, orderBy: [{ occurredAt: 'asc' }, { bonusAwardId: 'asc' }], take: 100 });
+                const state = (row) => {
+                    const first = row.lifecycleEvents[0];
+                    if (!first)
+                        return null;
+                    const statuses = new Set(row.lifecycleEvents.filter(event => event.occurredAt.getTime() === first.occurredAt.getTime() && event.createdAt.getTime() === first.createdAt.getTime()).map(event => event.status));
+                    if (statuses.size === 1)
+                        return first.status;
+                    // Core emits this confirmed initial transition in one createMany batch.
+                    // Random UUID order cannot reverse CALCULATED -> PENDING_45D.
+                    if ([...statuses].every(status => ['CALCULATED', 'PENDING_45D'].includes(status)))
+                        return 'PENDING_45D';
+                    return (0, database_2.pending)('LIFECYCLE_EVIDENCE_AMBIGUOUS', 'Conflicting lifecycle timestamps require explicit chronology evidence');
+                };
+                const disclosed = (row) => !!state(row) && state(row) !== 'CALCULATED' && (!row.settlementBatchId || row.settlementBatch?.status === 'FINALIZED');
+                if (kind === 'bonuses') {
+                    const ids = awards.map(row => row.bonusAwardId);
+                    const anchors = ids.length ? await tx.$queryRaw `SELECT a.bonus_award_id AS "bonusAwardId",a.settlement_date AS "settlementDate",a.nominal_payout_date AS "nominalPayoutDate",a.adjusted_payout_date AS "adjustedPayoutDate",v.version_code AS "versionCode" FROM ledger.award_payout_anchor a JOIN rules.business_calendar_version v ON v.business_calendar_version_id=a.business_calendar_version_id WHERE a.bonus_award_id=ANY(${ids}::uuid[])` : [];
+                    const byAward = new Map(anchors.map(anchor => [anchor.bonusAwardId, anchor]));
+                    const date = (value) => value.toISOString().slice(0, 10);
+                    return { qualificationId: id, period: month, awards: awards.length ? awards.map(row => { const finalized = row.settlementBatch?.status === 'FINALIZED', anchor = byAward.get(row.bonusAwardId), current = state(row); return { id: row.bonusAwardId, name: row.awardType, status: finalized && current ? (current === 'PENDING_45D' ? 'PENDING45D' : current) : 'PENDING', amount: finalized ? row.payableAmount.toNumber() : null, theoryAmount: row.theoryAmount?.toNumber() ?? null, finalAmount: finalized ? row.payableAmount.toNumber() : null, payableAmount: finalized ? row.payableAmount.toNumber() : null, settlementStatus: finalized ? 'FINALIZED' : 'PENDING', pendingReason: finalized ? null : row.settlementBatchId ? 'SETTLEMENT_NOT_FINALIZED' : 'SETTLEMENT_NOT_ASSIGNED', settlementDate: anchor ? date(anchor.settlementDate) : null, nominalPayoutDate: anchor ? date(anchor.nominalPayoutDate) : null, adjustedPayoutDate: anchor ? date(anchor.adjustedPayoutDate) : null, businessCalendarVersion: anchor?.versionCode ?? null, ruleVersion: row.ruleVersionCode, parameterSnapshotHash: row.parameterSnapshotHash }; }) : [{ id: 'settlement-pending', name: '獎金結算', status: 'PENDING', amount: null, theoryAmount: null, finalAmount: null, payableAmount: null, settlementStatus: 'PENDING', pendingReason: 'SETTLEMENT_NOT_AVAILABLE', settlementDate: null, nominalPayoutDate: null, adjustedPayoutDate: null, businessCalendarVersion: null, ruleVersion: null, parameterSnapshotHash: null }], pagination: { limit: 100, truncated: awards.length === 100 } };
+                }
+                const recoveries = await tx.bonusRecoveryEvent.findMany({ where: { bonusAward: { recipientQualificationId: id }, occurredAt: at }, orderBy: [{ occurredAt: 'asc' }, { bonusRecoveryEventId: 'asc' }], take: 100 });
+                return { qualificationId: id, period: month, entries: [...awards.filter(disclosed).map(row => ({ id: row.bonusAwardId, label: row.awardType, amount: row.payableAmount.toNumber(), postedAt: row.createdAt.toISOString(), sourceId: row.sourceEventId ?? row.bonusAwardId })), ...recoveries.map(row => ({ id: row.bonusRecoveryEventId, label: 'CLAWBACK', amount: row.recoveryAmount.negated().toNumber(), postedAt: row.occurredAt.toISOString(), sourceId: row.bonusAwardId }))], pagination: { limit: 100, truncated: awards.length === 100 || recoveries.length === 100 } };
+            }
+            if (kind === 'performance') {
+                return { qualificationId: id, period: month, ...await volumes(), left: null, right: null, asOf: now.toISOString(), timezone, parameterSnapshotHash: snapshot.hash, view: 'EFFECTIVE_ORIGINAL_EVENT_MONTH', settlementStatus: 'PENDING' };
+            }
+            if (kind === 'dashboard') {
+                const qualification = (await this.identity.qualifications(personId)).find(row => row.id === id);
+                const person = await this.identity.me(personId);
+                const interval = await tx.activeIntervalEvidence.findFirst({ where: { qualificationId: id, calendarMonth: new Date(month + '-01') }, orderBy: { createdAt: 'desc' } });
+                const activeInterval = interval ? { activeFrom: interval.activeFrom.toISOString(), activeTo: interval.activeTo.toISOString() } : null;
+                return { qualificationId: id, qualification: { ...qualification, monthReference: month, active: !!interval && interval.activeFrom <= now && interval.activeTo > now, activeInterval }, memberName: person.name, memberNo: person.memberNo, monthReference: month, activeInterval, monthlyRepurchaseStatus: (await repurchase()).status, ...await volumes(), bonusAmount: null, bonusStatus: 'PENDING', status: 'PENDING', reason: 'SETTLEMENT_NOT_FINALIZED', view: 'EFFECTIVE_ORIGINAL_EVENT_MONTH' };
+            }
+            if (kind === 'orders') {
+                const rows = await tx.order.findMany({ where: { qualificationId: id }, orderBy: [{ createdAt: 'desc' }, { orderId: 'desc' }], take: 100 });
+                return { qualificationId: id, orders: rows.map(row => ({ id: row.orderId, createdAt: row.createdAt.toISOString(), total: row.netAmount.toNumber(), status: row.status, paymentStatus: row.paidAt ? 'PAID' : 'PENDING', shipmentStatus: 'FULFILLMENT_PENDING' })), pagination: { limit: 100, truncated: rows.length === 100 } };
+            }
+            throw new common_2.NotFoundException();
+        }, { isolationLevel: 'RepeatableRead' });
+    }
+    async myOrders(personId) {
+        const owned = await this.identity.qualifications(personId);
+        const packages = await this.db.packagePurchaseSnapshot.findMany({ where: { personId }, select: { orderId: true, packageName: true, paymentDeadline: true }, orderBy: { purchasedAt: 'desc' }, take: 100 });
+        const rows = await this.db.order.findMany({ where: { OR: [{ orderId: { in: packages.map(p => p.orderId) } }, { purchaserPersonId: personId }, { qualificationId: { in: owned.map(q => q.id) } }] }, include: { lines: true, payments: { orderBy: { createdAt: 'desc' } }, fulfillments: { include: { shipments: { orderBy: { createdAt: 'asc' } } } } }, orderBy: [{ createdAt: 'desc' }, { orderId: 'desc' }], take: 100 });
+        return rows.map(order => ({ orderNo: order.orderNo.toString(), status: order.status, total: order.netAmount.toString(), createdAt: order.createdAt.toISOString(), purpose: order.purpose, packageName: packages.find(p => p.orderId === order.orderId)?.packageName ?? null, paymentDeadline: packages.find(p => p.orderId === order.orderId)?.paymentDeadline?.toISOString() ?? null,
+            paymentStatus: order.payments.find(p => ['REFUND_PENDING', 'PARTIALLY_REFUNDED', 'REFUNDED'].includes(p.status))?.status ?? (order.paidAt ? 'PAID' : order.payments[0]?.status ?? (order.status === 'VOIDED' ? 'CANCELLED' : 'PENDING')),
+            paidAt: order.paidAt?.toISOString() ?? null, items: order.lines.map(line => ({ name: line.productNameSnapshot, quantity: line.quantity.toString(), amount: line.lineAmount.toString() })),
+            fulfillments: order.fulfillments.map(f => ({ status: f.status, shipments: f.shipments.map(sh => ({ carrier: sh.carrier, trackingNo: sh.trackingNo, status: sh.status, updatedAt: sh.updatedAt.toISOString() })) })) }));
+    }
+    async products() { const now = new Date(); const rows = await this.db.productReference.findMany({ where: { isActive: true }, include: { ruleProfiles: { where: { effectiveFrom: { lte: now }, OR: [{ effectiveTo: null }, { effectiveTo: { gt: now } }] } } }, orderBy: { sku: 'asc' }, take: 100 }); return rows.map(row => { const profile = row.ruleProfiles[0], available = row.ruleProfiles.length === 1 && profile.ruleVersionCode === 'R1.0B' && !!profile.parameterSnapshotHash && /^[a-f0-9]{64}$/.test(profile.parameterSnapshotHash); return { id: row.productId, sku: row.sku, name: row.displayName, price: row.currentPrice.toNumber(), pv: null, available, reason: available ? null : 'RULE_PROFILE_CONFIGURATION_PENDING', fulfillmentStatus: 'ERP_PENDING', availabilityMeaning: 'ORDERABLE_NOT_STOCK_CONFIRMATION' }; }); }
+    async payouts(personId, id, input = {}) {
+        await this.identity.context(personId, id);
+        const now = new Date(), asOf = input.asOf ? new Date(input.asOf) : now, offset = input.offset ?? 0;
+        if (!Number.isInteger(offset) || offset < 0 || offset > 1000000 || !Number.isFinite(asOf.getTime()) || asOf > now)
+            throw new common_1.BadRequestException({ code: 'PAYOUT_PAGE_INVALID' });
+        return this.db.$transaction(async (tx) => {
+            await new qualification_access_service_1.QualificationAccessService(tx).assertHolder(personId, id);
+            const q = await tx.qualification.findUniqueOrThrow({ where: { qualificationId: id }, select: { qualificationNo: true, currentHolderPersonId: true } });
+            if (q.currentHolderPersonId !== personId)
+                throw new common_1.ForbiddenException({ code: 'PAYOUT_CONTEXT_DENIED' });
+            const where = { payoutLine: { recipientQualificationId: id }, createdAt: { lte: asOf } };
+            const [total, rows] = await Promise.all([tx.payoutPaymentResult.count({ where }), tx.payoutPaymentResult.findMany({ where, include: { payoutLine: true, payoutBatch: true }, orderBy: [{ createdAt: 'desc' }, { payoutPaymentResultId: 'desc' }], skip: offset, take: 50 })]);
+            return { qualificationNo: q.qualificationNo.toString(), total, offset, nextOffset: offset + rows.length < total ? offset + rows.length : null, asOf: asOf.toISOString(), items: rows.map(row => ({ reference: (0, database_1.erpBusinessReference)('PAYMENT_RESULT', row.payoutPaymentResultId), status: row.resultStatus, paidAmount: row.paidAmount.toString(), grossAmount: row.payoutLine.grossAmount.toString(), recoveryOffset: row.payoutLine.recoveryOffset.toString(), netAmount: row.payoutLine.netAmount.toString(), occurredAt: row.occurredAt.toISOString(), recordedAt: row.createdAt.toISOString(), periodStart: row.payoutBatch.periodStart.toISOString(), periodEnd: row.payoutBatch.periodEnd.toISOString(), batchStatus: row.payoutBatch.status })) };
+        }, { isolationLevel: database_1.Prisma.TransactionIsolationLevel.RepeatableRead });
+    }
+    async order(personId, id, orderId) { await this.identity.context(personId, id); const order = await this.db.order.findFirst({ where: { orderId, qualificationId: id }, include: { lines: true } }); if (!order)
+        throw new common_2.NotFoundException({ code: 'ORDER_NOT_FOUND' }); return { qualificationId: id, id: order.orderId, orderNo: order.orderNo.toString(), status: order.status, total: order.netAmount.toString(), createdAt: order.createdAt, lines: order.lines.map(line => ({ productId: line.productId, name: line.productNameSnapshot, quantity: line.quantity.toString(), amount: line.lineAmount.toString() })) }; }
+};
+exports.MemberReadService = MemberReadService;
+exports.MemberReadService = MemberReadService = __decorate([
+    (0, common_2.Injectable)(),
+    __metadata("design:paramtypes", [database_2.PrismaService, member_service_1.MemberService, qualification_access_service_1.QualificationAccessService])
+], MemberReadService);
+//# sourceMappingURL=member-read.service.js.map

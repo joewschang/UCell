@@ -49,3 +49,14 @@ it('removes timers after HTTP failures and does not retry a write', async () => 
   await expect(createApiClient(new SessionGuard())('/future-write', { method: 'POST', body: '{}' })).rejects.toThrow('暫時無法讀取');
   expect(fetch).toHaveBeenCalledOnce(); expect(vi.getTimerCount()).toBe(0);
 });
+
+it('allows document uploads longer than the normal timeout but still bounds them', async () => {
+  const pending = pendingFetch();
+  const result = expect(createApiClient(new SessionGuard())('/documents', { method: 'POST', timeoutMs: 120_000 })).rejects.toThrow('連線逾時');
+  await vi.advanceTimersByTimeAsync(REQUEST_TIMEOUT_MS);
+  expect(pending.signal().aborted).toBe(false);
+  expect(pending.fetch.mock.calls[0][1]).not.toHaveProperty('timeoutMs');
+  await vi.advanceTimersByTimeAsync(120_000 - REQUEST_TIMEOUT_MS);
+  await result;
+  expect(vi.getTimerCount()).toBe(0);
+});

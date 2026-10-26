@@ -1,0 +1,7 @@
+{
+ "release":"approval-feedback-20261023",
+ "adminDigest":"sha256:d02e657dedc838c57148e0580befe131df7633d28c300a958ff10192bcd2d874",
+ "changes":["Inline approval pending/failure/success state and duplicate click guard","Immediate confirmed approval cache updates and persisted completed button","Safe business error explanations; query uncertain outcomes before retry"],
+ "validation":{"adminTests":272,"browser":"Full ApplicationsPage and confirmation dialog with synthetic API: payment failure, retry, pending button, approved status/cache, reload completion"},
+ "api":"Unchanged; no actual membership approvals performed during validation"
+}

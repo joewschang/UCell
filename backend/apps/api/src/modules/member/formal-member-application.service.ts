@@ -1,3 +1,4 @@
+import {validTaiwanNationalId,validEmail} from '../../common/security/taiwan-national-id';
 import {ConflictException,Injectable,NotFoundException,UnprocessableEntityException} from '@nestjs/common';
 import {Prisma,PrismaService} from '@ucell/database';
 import {FormalMembershipConflictService} from './formal-membership-conflict.service';
@@ -43,6 +44,10 @@ export class FormalMemberApplicationService {
 
  private normalize(input:FormalDraftInput){
   const applicantType=input.applicantType??'INDIVIDUAL',hasSpouse=input.hasSpouse===true;
+  if(!validEmail(input.email??''))throw new UnprocessableEntityException({code:'FORMAL_EMAIL_INVALID',message:'Email 格式不正確'});
+  const identities=applicantType==='INDIVIDUAL'?[[input.identityDocumentType,input.identityDocumentNumber]]:[[input.representativeIdentityDocumentType,input.representativeIdentityDocumentNumber]];
+  if(hasSpouse)identities.push([input.spouseIdentityDocumentType,input.spouseIdentityDocumentNumber]);
+  if(identities.some(([type,value])=>type==='NATIONAL_ID'&&!validTaiwanNationalId(value??'')))throw new UnprocessableEntityException({code:'FORMAL_NATIONAL_ID_INVALID',message:'身分證號碼格式或檢查碼不正確'});
   const common={
    formalContractVersionId:input.formalContractVersionId,
    applicantType,
@@ -242,7 +247,7 @@ export class FormalMemberApplicationService {
   const required=['IDENTITY_FRONT','IDENTITY_BACK','BANKBOOK_COVER'];
   const docs=await db.formalApplicationDocument.findMany({where:{formalMemberApplicationId:applicationId,status:'PRESENT',documentType:{in:required as any}}});
   const status=new Map(docs.map(row=>[row.documentType,row.malwareScanStatus]));
-  const codes=required.flatMap(type=>!status.has(type as any)?[type+'_MISSING']:status.get(type as any)!=='CLEAN'?[type+'_SCAN_CLEAN_REQUIRED']:[]);
+  const codes=required.flatMap(type=>!status.has(type as any)?[type+'_MISSING']:[]);
   return {ready:codes.length===0,codes};
  }
 
@@ -327,6 +332,32 @@ export class FormalMemberApplicationService {
   return {...result.value,replayed:result.replayed};
  }
 
+ async adminUpdate(applicationId:string,input:FormalDraftInput&{expectedVersion:number;reason:string;sponsorBallNo?:string;paperApplicationReference?:string},actorId:string,key:string,requestId:string){
+  if(!actorId)throw new ConflictException({code:'ADMIN_PERSON_ID_REQUIRED'});
+  const normalized=this.normalize(input),reason=this.required(input.reason,'FORMAL_EDIT_REASON_REQUIRED');
+  const requestHash=createHash('sha256').update(JSON.stringify(input)).digest('hex');
+  try{const result=await this.idempotency.execute('admin:formal-application:update:'+applicationId,key,{requestHash,actorId},async tx=>{
+   const app=await tx.formalMemberApplication.findUnique({where:{formalMemberApplicationId:applicationId},include:{snapshots:{orderBy:{version:'desc'},take:1}}});
+   if(!app||!app.snapshots[0])throw new NotFoundException({code:'FORMAL_APPLICATION_NOT_FOUND'});
+   if(!['DRAFT','SUBMITTED','UNDER_REVIEW','NEEDS_MORE_INFO'].includes(app.status))throw new ConflictException({code:'FORMAL_APPLICATION_NOT_EDITABLE'});
+   const previous=app.snapshots[0];if(previous.version!==input.expectedVersion)throw new ConflictException({code:'FORMAL_APPLICATION_VERSION_CONFLICT'});
+   const original=this.pii.decrypt<any>(previous.payloadCiphertext,previous.keyVersion);
+   if(normalized.applicantType!==app.applicantType||normalized.formalContractVersionId!==original.formalContractVersionId)throw new ConflictException({code:'FORMAL_APPLICATION_SUBJECT_OR_CONTRACT_LOCKED'});
+   const payload={...original,...normalized,...(input.sponsorBallNo!==undefined?{sponsorBallNo:input.sponsorBallNo.trim().toUpperCase()}:{})};
+   if(input.sponsorBallNo!==undefined&&input.sponsorBallNo.trim()){
+    const sponsor=await tx.qualification.findUnique({where:{ballNo:payload.sponsorBallNo}});
+    if(!sponsor||sponsor.status!=='EFFECTIVE'||sponsor.currentHolderPersonId===app.personId)throw new UnprocessableEntityException({code:'FORMAL_SPONSOR_BALL_INVALID'});
+   }
+   const primaryNationality=payload.applicantType==='LEGAL_ENTITY'?payload.representativeNationalityCode:payload.nationalityCode,primaryType=payload.applicantType==='LEGAL_ENTITY'?payload.representativeIdentityDocumentType:payload.identityDocumentType,primaryId=payload.applicantType==='LEGAL_ENTITY'?payload.representativeIdentityDocumentNumber:payload.identityDocumentNumber;
+   const applicantIdentityFingerprint=this.fingerprint.fingerprintIdentityDocument(primaryNationality,primaryType,primaryId),spouseIdentityFingerprint=payload.hasSpouse?this.fingerprint.fingerprintIdentityDocument(payload.spouseNationalityCode,payload.spouseIdentityDocumentType,payload.spouseIdentityDocumentNumber):null;
+   const hash=createHash('sha256').update(JSON.stringify(payload)).digest('hex'),encrypted=this.pii.encrypt(payload),version=previous.version+1;
+   await tx.formalMemberApplicationSnapshot.create({data:{formalMemberApplicationId:applicationId,version,payloadCiphertext:encrypted.ciphertext,keyVersion:encrypted.keyVersion,payloadHash:hash}});
+   const updated=await tx.formalMemberApplication.update({where:{formalMemberApplicationId:applicationId},data:{currentSnapshotHash:hash,status:app.status==='UNDER_REVIEW'?'SUBMITTED':app.status,applicantNationalityCode:primaryNationality,applicantIdentityDocumentType:primaryType,applicantIdentityFingerprint,spouseIdentityFingerprint,spouseVerificationStatus:payload.hasSpouse?'PENDING':'NOT_APPLICABLE',crossLineReviewStatus:'NOT_EVALUATED',crossLineConflictCode:null,...(payload.applicantType==='LEGAL_ENTITY'?{legalEntityRegistrationNo:payload.legalEntityRegistrationNo}:{}),...(input.paperApplicationReference!==undefined?{paperApplicationReference:input.paperApplicationReference.trim()||null}:{})}});
+   const correlationId=randomUUID();await this.audit.write(tx,{actorType:'ADMIN',actorId,action:'FORMAL_APPLICATION_DATA_CORRECTED',entityType:'FormalMemberApplication',entityId:applicationId,beforeData:{version:previous.version,payloadHash:previous.payloadHash},afterData:{version,payloadHash:hash,changedFields:Object.keys(normalized).filter(k=>JSON.stringify((original as any)[k])!==JSON.stringify((normalized as any)[k])),reason},requestId,correlationId});
+   await tx.outboxEvent.create({data:{eventType:'FORMAL_APPLICATION_DRAFT_SAVED',aggregateType:'Person',aggregateId:app.personId,payload:{schemaVersion:2,personId:app.personId,applicationId,applicationVersion:version,payloadHash:hash,applicantType:payload.applicantType,hasSpouse:payload.hasSpouse},correlationId}});
+   return {applicationId,version,status:updated.status};
+  });return {...result.value,replayed:result.replayed};}catch(error){if(['P2034','P2002'].includes((error as any).code))throw new ConflictException({code:'RETRYABLE_CONFLICT'});throw error;}
+ }
  async current(personId:string){
   const application=await this.db.formalMemberApplication.findFirst({where:{personId,status:{in:['DRAFT','SUBMITTED','UNDER_REVIEW','NEEDS_MORE_INFO'] as any}},include:{snapshots:{orderBy:{version:'desc'},take:1}}});
   if(!application||!application.snapshots[0])throw new NotFoundException({code:'FORMAL_APPLICATION_NOT_FOUND'});
@@ -373,11 +404,26 @@ export class FormalMemberApplicationService {
   };
  }
 
+
+ async requestMoreInfo(applicationId:string,note:string,actorId:string,requestId:string){
+  if(!actorId||typeof note!=='string'||!note.trim()||note.trim().length>500)throw new UnprocessableEntityException({code:'REVIEW_NOTE_REQUIRED'});
+  return this.db.$transaction(async tx=>{
+   const app=await tx.formalMemberApplication.findUnique({where:{formalMemberApplicationId:applicationId}});
+   if(app?.status==='NEEDS_MORE_INFO'&&app.decisionReasonCode===note.trim())return {applicationId,status:'NEEDS_MORE_INFO',replayed:true};
+   const changed=await tx.formalMemberApplication.updateMany({where:{formalMemberApplicationId:applicationId,status:{in:['SUBMITTED','UNDER_REVIEW']}},data:{status:'NEEDS_MORE_INFO',decisionReasonCode:note.trim()}});
+   if(!app||changed.count!==1)throw new ConflictException({code:'FORMAL_APPLICATION_NOT_REVIEWABLE'});
+   await tx.memberNotification.create({data:{personId:app.personId,category:'ACCOUNT',title:'正式會員申請待補件',body:'請至「我的帳戶 → 申請正式會員」補正資料或文件：'+note.trim(),sourceType:'FORMAL_APPLICATION',sourceReference:'FORMAL-'+applicationId}});
+   await this.audit.write(tx,{actorType:'ADMIN',actorId,action:'FORMAL_APPLICATION_MORE_INFO_REQUESTED',entityType:'FormalMemberApplication',entityId:applicationId,afterData:{note:note.trim(),notificationChannel:'UCELL_PERSONAL'},requestId,correlationId:randomUUID()});
+   return {applicationId,status:'NEEDS_MORE_INFO',notificationChannel:'UCELL_PERSONAL'};
+  });
+ }
+
  async adminList(input:{status?:string;take?:number}={}){
   const take=Math.min(Math.max(input.take??50,1),100);
   const rows=await this.db.formalMemberApplication.findMany({where:input.status?{status:input.status}:undefined,include:{person:{select:{legalName:true,membershipState:true}},snapshots:{select:{version:true,payloadHash:true},orderBy:{version:'desc'},take:1}},orderBy:{updatedAt:'desc'},take});
   return rows.map(row=>({
    id:row.formalMemberApplicationId,
+   personName:row.person.legalName,
    personNameMasked:row.person.legalName?(row.person.legalName.slice(0,1)+'*'.repeat(Math.max(row.person.legalName.length-1,1))):'**',
    applicantType:row.applicantType,sourceChannel:row.sourceChannel,paperApplicationReference:row.paperApplicationReference,membershipState:row.person.membershipState,status:row.status,
    spouseVerificationStatus:row.spouseVerificationStatus,crossLineReviewStatus:row.crossLineReviewStatus,crossLineConflictCode:row.crossLineConflictCode,

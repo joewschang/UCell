@@ -129,6 +129,15 @@ export class MemberReadService {
    throw new NotFoundException();
   },{isolationLevel:'RepeatableRead'});
  }
+ async myOrders(personId:string){
+  const owned=await this.identity.qualifications(personId);
+  const packages=await this.db.packagePurchaseSnapshot.findMany({where:{personId},select:{orderId:true,packageName:true,paymentDeadline:true},orderBy:{purchasedAt:'desc'},take:100});
+  const rows=await this.db.order.findMany({where:{OR:[{orderId:{in:packages.map(p=>p.orderId)}},{purchaserPersonId:personId},{qualificationId:{in:owned.map(q=>q.id)}}]},include:{lines:true,payments:{orderBy:{createdAt:'desc'}},fulfillments:{include:{shipments:{orderBy:{createdAt:'asc'}}}}},orderBy:[{createdAt:'desc'},{orderId:'desc'}],take:100});
+  return rows.map(order=>({orderNo:order.orderNo.toString(),status:order.status,total:order.netAmount.toString(),createdAt:order.createdAt.toISOString(),purpose:order.purpose,packageName:packages.find(p=>p.orderId===order.orderId)?.packageName??null,paymentDeadline:packages.find(p=>p.orderId===order.orderId)?.paymentDeadline?.toISOString()??null,
+   paymentStatus:order.payments.find(p=>['REFUND_PENDING','PARTIALLY_REFUNDED','REFUNDED'].includes(p.status))?.status??(order.paidAt?'PAID':order.payments[0]?.status??(order.status==='VOIDED'?'CANCELLED':'PENDING')),
+   paidAt:order.paidAt?.toISOString()??null,items:order.lines.map(line=>({name:line.productNameSnapshot,quantity:line.quantity.toString(),amount:line.lineAmount.toString()})),
+   fulfillments:order.fulfillments.map(f=>({status:f.status,shipments:f.shipments.map(sh=>({carrier:sh.carrier,trackingNo:sh.trackingNo,status:sh.status,updatedAt:sh.updatedAt.toISOString()}))}))}));
+ }
  async products(){const now=new Date();const rows=await this.db.productReference.findMany({where:{isActive:true},include:{ruleProfiles:{where:{effectiveFrom:{lte:now},OR:[{effectiveTo:null},{effectiveTo:{gt:now}}]}}},orderBy:{sku:'asc'},take:100});return rows.map(row=>{const profile=row.ruleProfiles[0],available=row.ruleProfiles.length===1&&profile.ruleVersionCode==='R1.0B'&&!!profile.parameterSnapshotHash&&/^[a-f0-9]{64}$/.test(profile.parameterSnapshotHash);return {id:row.productId,sku:row.sku,name:row.displayName,price:row.currentPrice.toNumber(),pv:null,available,reason:available?null:'RULE_PROFILE_CONFIGURATION_PENDING',fulfillmentStatus:'ERP_PENDING',availabilityMeaning:'ORDERABLE_NOT_STOCK_CONFIRMATION'};});}
  async payouts(personId:string,id:string,input:{offset?:number;asOf?:string}={}):Promise<MemberPayoutView>{
   await this.identity.context(personId,id);const now=new Date(),asOf=input.asOf?new Date(input.asOf):now,offset=input.offset??0;

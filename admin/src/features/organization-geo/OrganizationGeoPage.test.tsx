@@ -24,3 +24,9 @@ it('discards an in-flight response when the root filter changes',async()=>{
  await act(async()=>tree.root.findAllByType('input')[0].props.onChange({target:{value:'A000002'}}));
  await act(async()=>{resolve(response);await pending!;});expect(JSON.stringify(tree.toJSON())).not.toContain('球號 A000001');tree.unmount();
 });
+it('recovers from invalid custom dates without leaving a permanent loading state',async()=>{
+ const tree=await render();await act(async()=>tree.root.findAllByType('input')[0].props.onChange({target:{value:'A000001'}}));
+ await act(async()=>tree.root.findAllByType('select')[1].props.onChange({target:{value:'CUSTOM'}}));
+ await act(async()=>tree.root.findByType('form').props.onSubmit({preventDefault(){}}));
+ expect(get).not.toHaveBeenCalled();const output=JSON.stringify(tree.toJSON());expect(output).toContain('有效期間');expect(output).not.toContain('查詢中');act(()=>tree.unmount());
+});

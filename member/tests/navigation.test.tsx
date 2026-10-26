@@ -11,7 +11,7 @@ const labelText = (node: ReactTestInstance | string): string => typeof node === 
 describe('Member navigation', () => {
   it.each([
     ['/', '首頁'], ['/organization', '經營'], ['/bonuses', '經營'],
-    ['/performance', '經營'], ['/shop', '商城'], ['/orders', '商城'],
+    ['/performance', '經營'], ['/shop', '商城'], ['/orders', '我的'],
     ['/me', '我的'], ['/content/article-1', '探索'], ['/events', '探索'], ['/learning','探索'], ['/sharing','經營'], ['/growth','經營'], ['/repurchase','經營'], ['/notifications', '我的'],
   ])('keeps %s under %s', (path, label) => {
     const renderer = create(<MemoryRouter initialEntries={[path]}><MemberNavigation/></MemoryRouter>);

@@ -30,14 +30,17 @@ export class ContactVerificationService{
   if(!['ALL','EITHER'].includes(mode))throw new ServiceUnavailableException({code:'CONTACT_POLICY_CONFIGURATION_INVALID'});
   return {emailRequired:true as const,smsRequired:setting!=='false',registrationMode:mode};
  }
- async consumeRegistration(tx:any,owner:string,input:{mobile:string;email:string;mobileVerificationProof?:string;emailVerificationProof?:string}){
-  normalizeContact('SMS',input.mobile);normalizeContact('EMAIL',input.email);
+ async consumeRegistration(tx:any,owner:string,input:{mobile?:string;email?:string;mobileVerificationProof?:string;emailVerificationProof?:string}){
+  const mobile=input.mobile?.trim(),email=input.email?.trim();
+  if(!mobile&&!email)throw new UnprocessableEntityException({code:'CONTACT_REQUIRED'});
+  if(mobile)normalizeContact('SMS',mobile);if(email)normalizeContact('EMAIL',email);
+  if((input.mobileVerificationProof&&!mobile)||(input.emailVerificationProof&&!email))throw new UnprocessableEntityException({code:'CONTACT_DESTINATION_INVALID'});
   const policy=this.policy('REGISTRATION');
-  if(policy.registrationMode==='EITHER'){
-   if(!input.mobileVerificationProof&&!input.emailVerificationProof)throw new UnprocessableEntityException({code:'CONTACT_VERIFICATION_REQUIRED'});
-   return {mobileVerifiedAt:input.mobileVerificationProof?await this.consume(tx,owner,'REGISTRATION','SMS',input.mobile,input.mobileVerificationProof):null,emailVerifiedAt:input.emailVerificationProof?await this.consume(tx,owner,'REGISTRATION','EMAIL',input.email,input.emailVerificationProof):null};
-  }
-  return {mobileVerifiedAt:await this.consumeMobile(tx,owner,'REGISTRATION',input.mobile,input.mobileVerificationProof),emailVerifiedAt:await this.consume(tx,owner,'REGISTRATION','EMAIL',input.email,input.emailVerificationProof)};
+  if(policy.registrationMode==='EITHER'&&(policy.smsRequired||policy.emailRequired)&&!input.mobileVerificationProof&&!input.emailVerificationProof)throw new UnprocessableEntityException({code:'CONTACT_VERIFICATION_REQUIRED'});
+  return {
+   mobileVerifiedAt:mobile&&(input.mobileVerificationProof||policy.smsRequired&&policy.registrationMode!=='EITHER')?await this.consume(tx,owner,'REGISTRATION','SMS',mobile,input.mobileVerificationProof):null,
+   emailVerifiedAt:email&&(input.emailVerificationProof||policy.emailRequired&&policy.registrationMode!=='EITHER')?await this.consume(tx,owner,'REGISTRATION','EMAIL',email,input.emailVerificationProof):null,
+  };
  }
  async consumeMobile(tx:any,owner:string,purpose:ContactPurpose,destination:string,proof?:string){
   normalizeContact('SMS',destination);

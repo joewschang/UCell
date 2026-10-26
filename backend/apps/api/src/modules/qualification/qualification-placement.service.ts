@@ -1,3 +1,5 @@
+import {assertCurrentPlacement} from '../binary-tree/current-tree';
+import {memberPlacementBranch,placementMonitor} from './placement-workbench';
 import {ConflictException,ForbiddenException,Injectable,NotFoundException,UnprocessableEntityException} from '@nestjs/common';
 import {PrismaService,SideCode,Prisma,qualificationReturnReviewPolicy} from '@ucell/database';
 import {createHash,randomUUID} from 'node:crypto';
@@ -13,6 +15,9 @@ const publicBallNo=/^[A-Z][A-Z0-9_-]{0,39}(?:X\d{6}|\d{6,19})$/;
 @Injectable()
 export class QualificationPlacementService {
  constructor(private readonly db:PrismaService,private readonly idempotency:IdempotencyService,private readonly audit:AuditService,private readonly organization:OrganizationService){}
+
+ async branch(personId:string,reference:string,ballNo?:string){return memberPlacementBranch(this.db,personId,reference,ballNo);}
+ async dashboard(input:{status?:string;after?:string;take?:number}){return placementMonitor(this.db,input);}
 
  async pendingForSponsorOwner(personId:string,now=new Date()){
   const owned=await this.db.qualification.findMany({where:{OR:[
@@ -93,6 +98,9 @@ export class QualificationPlacementService {
    if(!sponsorEdge||sponsorEdge.sponsorQualificationId!==setup.finalSponsorQualificationId)throw new ConflictException({code:'SPONSOR_CONFIRMATION_MISSING'});
    if(placedByType==='SPONSOR_OWNER'){if(!actorPersonId)throw new ForbiddenException({code:'PLACEMENT_AUTHORITY_DENIED'});try{await new QualificationAccessService(tx as any).assertHolder(actorPersonId,sponsor.qualificationId);}catch{throw new ForbiddenException({code:'PLACEMENT_AUTHORITY_DENIED'});}}
    if(parent.status!=='EFFECTIVE')throw new UnprocessableEntityException({code:'BINARY_PARENT_NOT_ELIGIBLE'});
+   const allocation=await tx.ballNoAllocation.findUnique({where:{qualificationId:input.qualificationId}});
+   if(!allocation)throw new ConflictException({code:'BINARY_TREE_SCOPE_MISMATCH'});
+   await assertCurrentPlacement(tx,allocation.binaryTreeId,input.qualificationId,input.binaryParentQualificationId);
    const side=input.side as SideCode;await this.organization.assertBinarySlotAvailable(tx,input.binaryParentQualificationId,side);await this.organization.assertNoBinaryCycle(tx,input.qualificationId,input.binaryParentQualificationId);await this.organization.assertFirstThirdLeftRule(tx,setup.finalSponsorQualificationId,sponsorEdge.sponsorSequenceNo,input.binaryParentQualificationId,side);
    const placedAt=new Date(),correlationId=randomUUID(),evidenceBody={qualificationId:input.qualificationId,sponsorQualificationId:setup.finalSponsorQualificationId,binaryParentQualificationId:input.binaryParentQualificationId,side,placedByType,placedByPersonId:actorPersonId??null,placedAt:placedAt.toISOString(),reasonCode:input.reasonCode??null,policyVersion:setup.setupPolicyVersion,previousStatus:setup.setupStatus},evidenceHash=createHash('sha256').update(JSON.stringify(evidenceBody)).digest('hex');
    await this.organization.createBinaryPlacement(tx,{parentQualificationId:input.binaryParentQualificationId,childQualificationId:input.qualificationId,side,effectiveFrom:placedAt},{sourceType:'DEFERRED_PLACEMENT',actorId:actorPersonId,actorType:placedByType==='SPONSOR_OWNER'?'MEMBER':'ADMIN',correlationId,reason:input.reasonCode??placedByType});

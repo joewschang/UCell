@@ -1,6 +1,7 @@
 export type AdminRole='ORG_GEO_VIEW'|'ORG_GEO_DRILLDOWN'|'ORG_GEO_EXPORT'|'QUALIFICATION_PLACEMENT_OVERRIDE'|'SUPER_ADMIN'|'MEMBERSHIP_OPS'|'ORDER_OPS'|'FINANCE'|'COMPLIANCE_AUDIT'|'CUSTOMER_SERVICE'|'PACKAGE_CONFIG_MANAGE'|'PACKAGE_CONFIG_APPROVE';
 
 export const pageRoles:Record<string,AdminRole[]>={
+  '/faq':['SUPER_ADMIN','MEMBERSHIP_OPS','CUSTOMER_SERVICE'],
   '/ai-assistant':['SUPER_ADMIN'],
   '/ai-knowledge':['SUPER_ADMIN'],
   '/ai-governance':['SUPER_ADMIN'],
@@ -12,10 +13,13 @@ export const pageRoles:Record<string,AdminRole[]>={
   '/line-links':['SUPER_ADMIN','MEMBERSHIP_OPS','CUSTOMER_SERVICE'],
   '/paper-intake':['SUPER_ADMIN','MEMBERSHIP_OPS','ORDER_OPS'],
   '/qualifications':['SUPER_ADMIN','MEMBERSHIP_OPS','COMPLIANCE_AUDIT'],
+  '/product-content':['SUPER_ADMIN','ORDER_OPS','COMPLIANCE_AUDIT'],
   '/products':['SUPER_ADMIN','ORDER_OPS','COMPLIANCE_AUDIT'],
   '/coupons':['SUPER_ADMIN','ORDER_OPS','COMPLIANCE_AUDIT'],
   '/packages':['SUPER_ADMIN','ORDER_OPS','COMPLIANCE_AUDIT','PACKAGE_CONFIG_MANAGE','PACKAGE_CONFIG_APPROVE'],
   '/economic-lineage':['SUPER_ADMIN','ORDER_OPS','FINANCE','COMPLIANCE_AUDIT'],
+  '/product-reviews':['SUPER_ADMIN','ORDER_OPS','COMPLIANCE_AUDIT'],
+  '/order-tracking':['SUPER_ADMIN','ORDER_OPS','FINANCE','COMPLIANCE_AUDIT'],
   '/orders':['SUPER_ADMIN','ORDER_OPS','FINANCE','COMPLIANCE_AUDIT'],
   '/fulfillment':['SUPER_ADMIN','ORDER_OPS','COMPLIANCE_AUDIT'],
   '/erp-reconciliation':['SUPER_ADMIN','ORDER_OPS','FINANCE','COMPLIANCE_AUDIT'],
@@ -36,6 +40,7 @@ export const pageRoles:Record<string,AdminRole[]>={
   '/documents':['SUPER_ADMIN','MEMBERSHIP_OPS','ORDER_OPS','COMPLIANCE_AUDIT'],
   '/audit':['SUPER_ADMIN','COMPLIANCE_AUDIT'],
   '/reports':['SUPER_ADMIN','FINANCE','COMPLIANCE_AUDIT'],
+  '/marketing':['SUPER_ADMIN','MEMBERSHIP_OPS','ORDER_OPS','COMPLIANCE_AUDIT'],
   '/analytics':['SUPER_ADMIN','MEMBERSHIP_OPS','FINANCE','COMPLIANCE_AUDIT'],
   '/uat':['SUPER_ADMIN','COMPLIANCE_AUDIT'],
   '/system':['SUPER_ADMIN','COMPLIANCE_AUDIT'],

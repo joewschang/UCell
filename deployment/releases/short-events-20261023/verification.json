@@ -1,0 +1,13 @@
+{
+ "release":"short-events-20261023",
+ "features":{"shortUrls":"24-character random alias on existing /r/ route; canonical encrypted-token attribution, expiry and revocation retained; legacy URLs supported","eventEditing":"Versioned title, description, images and HTTPS video links; approval required; pinned registration schedules and evidence retained","images":"Up to 8, client resize/compression to 512 KiB each; authenticated draft preview; public access only after publication","videos":"Up to 5 HTTPS links"},
+ "migration":"20261023140000_share_short_event_media",
+ "migrationApplied":true,
+ "images":{"api":"sha256:86a5f87e4a9e5fde931f2446179ac0bf90c3f7e2f66ac840aa45b7f97e26349b","admin":"sha256:f67466d30dd2866285c64c41a78da38907fe2597986fc528fc9b2faa0e10ad3c","member":"sha256:ca2ef4145bd8552c0dd3152b1e2b041816fff6bab004c826f756f45883d12795"},
+ "rollback":{"api":"ucell-api:share-route-20261023","admin":"ucell-admin:content-publish-20261023","member":"ucell-member:marketing-20261023-final","schema":"Additive; preserve new tables and column on rollback"},
+ "tests":{"backendFocused":35,"admin":281,"member":342,"schemaValidation":"passed","builds":"passed","browserFixtures":{"upload":true,"edit":true,"publish":true,"memberMedia":true,"mobileOverflow":false,"pageErrors":0},"productionTransaction":{"eventDraftPublishAndImageAccess":true,"shortAndLegacyAndRevoke":true,"rolledBack":true}},
+ "additionalProductLandingTransaction":"Not run: Azure exec returned HTTP 429. Canonical landing covered by unit test; short resolution and revocation covered by successful production rollback test.",
+ "publicChecks":{"adminAssetsMatch":true,"memberAssetsMatch":true,"adminEventsUnauthenticated":401,"unknownImage":404,"unknownShortLink":410,"existingUserLongUrl":200},
+ "deployment":{"api":"Healthy/Running/100%","admin":"Healthy/Running/100%","member":"Healthy/Running/100%"},
+ "notificationsSent":0
+}

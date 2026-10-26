@@ -15,6 +15,7 @@ class MemberPlaceQualificationDto { @ApiProperty({pattern:'^[A-Z][A-Z0-9_-]{0,39
 @Controller('member')
 export class MemberQualificationPlacementController {
  constructor(private readonly service:QualificationPlacementService){}
+ @Get('placements/pending/:placementReference/branch') branch(@Req() req:any,@Param('placementReference') reference:string,@Query('ballNo') ballNo?:string){return this.service.branch(req.user.personId,reference,ballNo);}
  @Get('placements/pending') @ApiOperation({operationId:'memberPendingQualificationPlacements',description:'Balls awaiting placement for which the authenticated Person owns the confirmed Sponsor Ball.'}) pending(@Req() req:any){return this.service.pendingForSponsorOwner(req.user.personId);}
  @Post('placements/pending/:placementReference/place') @UseGuards(IdempotencyGuard) @ApiHeader({name:'Idempotency-Key',required:true}) @ApiOperation({operationId:'memberPlaceQualification',description:'Serializable placement commit using a pending-placement reference and public parent Ball number; Sponsor owner authorization and Binary legality are revalidated server-side.'}) place(@Req() req:any,@Param('placementReference') placementReference:string,@Body() body:MemberPlaceQualificationDto,@Headers('idempotency-key') key:string){return this.service.placeBySponsorOwnerReference(req.user.personId,{placementReference,...body},key,req.requestId);}
 }
@@ -23,6 +24,7 @@ export class MemberQualificationPlacementController {
 @Controller('admin/qualification-placements')
 export class AdminQualificationPlacementController {
  constructor(private readonly service:QualificationPlacementService){}
+ @Get('dashboard') @Roles('SUPER_ADMIN','MEMBERSHIP_OPS','COMPLIANCE_AUDIT','QUALIFICATION_PLACEMENT_OVERRIDE') dashboard(@Query('status') status?:string,@Query('after') after?:string){return this.service.dashboard({status:status||undefined,after:after||undefined});}
  @Get('return-reviews') @ApiOperation({operationId:'adminQualificationReturnReviews'}) returnReviews(){return this.service.returnReviews();}
  @Post(':id/return-review') @Roles('SUPER_ADMIN','MEMBERSHIP_OPS') @UseGuards(IdempotencyGuard) @ApiHeader({name:'Idempotency-Key',required:true}) @ApiOperation({operationId:'adminApproveQualificationReturnReview'}) approveReturnReview(@Req() req:any,@Param('id',new ParseUUIDPipe()) id:string,@Body() body:QualificationReturnReviewDto,@Headers('idempotency-key') key:string){return this.service.approveReturnReview(req.user?.personId,id,body,key,req.requestId);}
  @Get() @ApiOperation({operationId:'adminQualificationPlacementMonitor'}) monitor(@Query('status') status?:string,@Query('aging') aging?:string,@Query('take') take?:string){return this.service.monitor({status:status||undefined,aging:aging||undefined,take:Number(take??50)});}

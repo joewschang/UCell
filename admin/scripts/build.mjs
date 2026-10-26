@@ -1,3 +1,4 @@
+import './prepare-ocr.mjs';
 import { spawnSync } from 'node:child_process';
 
 // An inherited NODE_ENV=development must not enable demo login in build output.
