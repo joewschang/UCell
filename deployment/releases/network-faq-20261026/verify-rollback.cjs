@@ -1,0 +1,42 @@
+const assert=require('node:assert/strict'),{randomUUID}=require('node:crypto');
+const {PrismaClient}=require('/app/packages/database/node_modules/@prisma/client');
+const {ConfigService}=require('/app/apps/api/node_modules/@nestjs/config');
+const {MemberWebRegistrationService}=require('./modules/auth/member-web-registration.service');
+const {NetworkRegistrationService}=require('./modules/auth/network-registration.service');
+const {ContactVerificationService}=require('./modules/auth/contact-verification.service');
+const {IdempotencyService}=require('./common/idempotency/idempotency.service');
+const {AuditService}=require('./common/audit/audit.service');
+const {AdminFaqController,faqList}=require('./modules/public-website/faq.controller');
+const db=new PrismaClient();
+(async()=>{
+ const prefix='qa'+Date.now();
+ try{await db.$transaction(async tx=>{
+  const wrapped=new Proxy(tx,{get:(t,k)=>k==='$transaction'?fn=>fn(tx):t[k]});
+  const contacts=new ContactVerificationService(wrapped,new ConfigService({REGISTRATION_CONTACT_VERIFICATION_REQUIRED:'false'}),{},{},{},{});
+  const service=new MemberWebRegistrationService(wrapped,new IdempotencyService(wrapped),{},{},{},{},contacts);
+  const contract=await service.requiredContract();
+  const base={contractVersionId:contract.contractVersionId,accepted:true,alias:'QA display',password:'Test123456'};
+  const first=await service.complete({...base,localAccount:prefix,email:prefix+'@example.invalid'},randomUUID());
+  const person=await tx.person.findUniqueOrThrow({where:{memberNo:first.memberNo}});
+  assert.equal(person.legalName,'');assert.equal(person.mobile,null);assert.equal(person.birthDate,null);assert.equal(person.identityDocumentFingerprint,null);assert.equal(person.genderCode,'UNDISCLOSED');assert.equal(person.emailVerifiedAt,null);assert.equal(await tx.qualification.count({where:{currentHolderPersonId:person.personId}}),0);
+  await assert.rejects(()=>service.complete({...base,localAccount:prefix+'missing'},randomUUID()));
+  const linePerson=await tx.person.create({data:{legalName:'',status:'EFFECTIVE'}});
+  const line=new NetworkRegistrationService(wrapped,new IdempotencyService(wrapped),new AuditService(),{},{},contacts);
+  await line.registerLinePerson(linePerson.personId,{...base,mobile:'+8869'+String(Date.now()).slice(-8)},randomUUID(),randomUUID());
+  const lp=await tx.person.findUniqueOrThrow({where:{personId:linePerson.personId}});assert.equal(lp.email,null);assert.equal(lp.membershipState,'NETWORK_MEMBER');
+  const faq=new AdminFaqController(wrapped),req={user:{personId:person.personId}};
+  await faq.category(prefix,{label:'QA category',sortOrder:999,published:false,version:0},req);
+  await faq.item(prefix,{category:prefix,question:'QA?',answer:'<script>plain text</script>',keywords:'QA',sortOrder:1,published:true,version:0},req);
+  assert(!(await faqList(wrapped)).items.some(i=>i.id===prefix));
+  await faq.category(prefix,{label:'QA category',sortOrder:999,published:true,version:1},req);
+  assert((await faqList(wrapped)).items.some(i=>i.id===prefix));
+  await assert.rejects(()=>faq.category(prefix,{label:'stale',sortOrder:999,published:true,version:1},req));
+  await faq.item(prefix,{category:prefix,question:'QA?',answer:'hidden',keywords:'QA',sortOrder:1,published:false,version:1},req);
+  assert(!(await faqList(wrapped)).items.some(i=>i.id===prefix));
+  assert((await faqList(wrapped,true)).items.some(i=>i.id===prefix));
+  throw Error('NETWORK_FAQ_QA_SUCCESS');
+ },{timeout:45000});}catch(e){if(e.message!=='NETWORK_FAQ_QA_SUCCESS')throw e;}
+ assert.equal(await db.person.count({where:{email:prefix+'@example.invalid'}}),0);
+ assert.equal((await db.$queryRaw`SELECT id FROM content.faq_category WHERE id=${prefix}`).length,0);
+ console.log('NETWORK_FAQ_ROLLBACK_QA_PASSED');
+})().catch(e=>{console.error(e.stack);process.exitCode=1}).finally(()=>db.$disconnect());

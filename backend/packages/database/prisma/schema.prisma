@@ -6,7 +6,41 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
-  schemas  = ["identity", "membership", "organization", "commerce", "ledger", "audit", "integration", "rules", "subscription", "learning"]
+  schemas  = ["identity", "membership", "organization", "commerce", "ledger", "audit", "integration", "rules", "subscription", "learning", "content"]
+}
+
+model FaqCategory {
+ id String @id
+ label String
+ sortOrder Int @default(0) @map("sort_order")
+ published Boolean @default(false)
+ version Int @default(1)
+ items FaqItem[]
+ @@map("faq_category")
+ @@schema("content")
+}
+model FaqItem {
+ id String @id
+ category String
+ categoryRecord FaqCategory @relation(fields:[category],references:[id])
+ question String
+ answer String
+ keywords String @default("")
+ sortOrder Int @default(0) @map("sort_order")
+ published Boolean @default(false)
+ version Int @default(1)
+ @@map("faq_item")
+ @@schema("content")
+}
+model FaqChange {
+ id BigInt @id @default(autoincrement())
+ actorId String @map("actor_id")
+ entityId String @map("entity_id")
+ action String
+ payload Json
+ createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+ @@map("faq_change")
+ @@schema("content")
 }
 
 enum RecordStatus {

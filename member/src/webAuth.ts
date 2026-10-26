@@ -1,3 +1,4 @@
+import {registrationContactError} from './networkRegistrationFields';
 import {uiText} from "../../shared/design-system/i18n";
 import { unwrapMemberEnvelope } from './memberApi';
 
@@ -62,11 +63,12 @@ export async function loginMethods(){
  return request('/member/identity',{headers:{Authorization:'Bearer '+token}}) as Promise<{google:boolean;line:boolean}>;
 }
 export async function registrationContract(){return request('/auth/member/register/contract') as Promise<RegistrationContract>;}
-export async function completeRegistration(input:{contractVersionId:string;legalName:string;alias:string;gender:string;birthDate:string;nationalityCode:string;identityDocumentType:string;identityDocumentNumber:string;mobile:string;email:string;password:string;localAccount?:string;googleIdToken?:string;lineIdToken?:string;mobileVerificationProof?:string;emailVerificationProof?:string}){
- const mobile=normalizeRegistrationMobile(input.mobile,input.nationalityCode);
- if(!/^\+[1-9][0-9]{7,14}$/.test(mobile))throw new Error('手機號碼請使用 +國碼格式，台灣可輸入 09 開頭的十碼號碼。');
+export async function completeRegistration(input:{contractVersionId:string;legalName?:string;alias:string;gender?:string;birthDate?:string;nationalityCode?:string;identityDocumentType?:string;identityDocumentNumber?:string;mobile?:string;email?:string;password:string;localAccount?:string;googleIdToken?:string;lineIdToken?:string;mobileVerificationProof?:string;emailVerificationProof?:string}){
+ const contactError=registrationContactError(input.mobile||'',input.email||'');if(contactError)throw new Error(contactError);
+ const mobile=normalizeRegistrationMobile(input.mobile||'',input.nationalityCode||'TW');
+ if(mobile&&!/^\+[1-9][0-9]{7,14}$/.test(mobile))throw new Error('手機號碼請使用 +國碼格式，台灣可輸入 09 開頭的十碼號碼。');
  if(input.password.length<6||input.password.length>256||!/[A-Za-z]/.test(input.password)||!/[0-9]/.test(input.password))throw new Error('密碼須為 6 至 256 字元，並包含英文字母與數字。');
- return storeSession(await request('/auth/member/register/complete',{method:'POST',headers:{'Content-Type':'application/json','Idempotency-Key':crypto.randomUUID()},body:JSON.stringify({...input,mobile,email:input.email.trim(),accepted:true})}));
+ return storeSession(await request('/auth/member/register/complete',{method:'POST',headers:{'Content-Type':'application/json','Idempotency-Key':crypto.randomUUID()},body:JSON.stringify({...input,mobile:mobile||undefined,email:input.email?.trim()||undefined,accepted:true})}));
 }
 
 export function normalizeRegistrationMobile(value:string,nationalityCode:string){

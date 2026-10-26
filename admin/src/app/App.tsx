@@ -1,3 +1,4 @@
+import {FaqPage} from '../features/faq/FaqPage';
 import {ProductContentPage} from '../features/products/ProductContentPage';
 import {MarketingPage} from '../features/marketing/MarketingPage';
 import {uiText} from "../../../shared/design-system/i18n";
@@ -86,6 +87,7 @@ export function App(){return <Routes>
   <Route path="/payouts" element={<RequirePageRole><PayoutsPage/></RequirePageRole>}/>
   <Route path="/content" element={<RequirePageRole><ContentPage/></RequirePageRole>}/>
   <Route path="/learning" element={<RequirePageRole><LearningPage/></RequirePageRole>}/>
+  <Route path="/faq" element={<RequirePageRole><FaqPage/></RequirePageRole>}/>
   <Route path="/events" element={<RequirePageRole><EventsPage/></RequirePageRole>}/>
   <Route path="/documents" element={<RequirePageRole><DocumentsPage/></RequirePageRole>}/>
   <Route path="/audit" element={<RequirePageRole><AuditPage/></RequirePageRole>}/>

@@ -37,6 +37,7 @@ export const nav=[
   ['影音／連結內容','/content','content'],
   ['教育訓練','/learning','learning'],
   ['活動管理','/events','events'],
+  ['常見問答管理','/faq','content'],
   ['文件／附件','/documents','documents'],
   ['稽核紀錄','/audit','audit'],
   ['報表／完整性','/reports','reports'],
@@ -60,5 +61,5 @@ export const navGroups=[
  {label:'獎金中心',paths:['/bonuses','/settlement-jobs','/compensation-period-control','/economic-lineage']},
  {label:'財務／治理',paths:['/payouts','/admin/finance/reservoirs']},
  {label:'營運分析',paths:['/marketing','/operations-control','/reports','/analytics','/ai-assistant']},
- {label:'系統治理',paths:['/content','/documents','/audit','/uat','/system','/provider-operations','/ai-knowledge','/ai-governance']},
+ {label:'系統治理',paths:['/content','/faq','/documents','/audit','/uat','/system','/provider-operations','/ai-knowledge','/ai-governance']},
 ];
