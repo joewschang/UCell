@@ -5,7 +5,7 @@ const {BONUS_TIMING_POLICY}=require('../packages/database/dist/bonus-timing-poli
 const paid=new Date('2026-10-27T01:00:00Z');
 function setup(enabled=true){
  const calls=[],saved=new Map();
- const tx={runtimeRuleParameter:{findMany:async()=>enabled?[{runtimeRuleParameterId:'policy',parameterCode:'bonus.timing.policy',scopeKey:'*',valueJson:BONUS_TIMING_POLICY,effectiveFrom:new Date('2026-10-27'),effectiveTo:null}]:[]},historicalReplaySnapshot:{findUnique:async({where})=>saved.get(where.kind_sourceId.sourceId)??null,create:async({data})=>{saved.set(data.sourceId,data);return data}},packagePurchaseSnapshot:{findUnique:async()=>({packageClass:'QUALIFICATION'})},order:{findUniqueOrThrow:async()=>({paidAt:paid})}};
+ const tx={qualification:{findUniqueOrThrow:async()=>({kind:'COMPANY_BOOTSTRAP'})},runtimeRuleParameter:{findMany:async()=>enabled?[{runtimeRuleParameterId:'policy',parameterCode:'bonus.timing.policy',scopeKey:'*',valueJson:BONUS_TIMING_POLICY,effectiveFrom:new Date('2026-10-27'),effectiveTo:null}]:[]},historicalReplaySnapshot:{findUnique:async({where})=>saved.get(where.kind_sourceId.sourceId)??null,create:async({data})=>{saved.set(data.sourceId,data);return data}},packagePurchaseSnapshot:{findUnique:async()=>({packageClass:'QUALIFICATION'})},order:{findUniqueOrThrow:async()=>({paidAt:paid})}};
  return {tx,calls,saved};
 }
 test('payment snapshot uses payment time and later GPV reads the original frozen state',async()=>{

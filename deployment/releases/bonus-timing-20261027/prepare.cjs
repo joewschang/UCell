@@ -13,6 +13,8 @@ for(const [app,digest] of Object.entries(bases)){
   assert.equal(code.split(needle).length,2);
   code=code.replace(needle,needle+'\n                    await require("@ucell/database").capturePaymentReferral(tx, orderId, packageQualificationId, occurredAt, order.ruleVersionCode);');
   fs.writeFileSync(target+'/order.service.js',code);docker+='COPY order.service.js /app/apps/api/dist/modules/order/order.service.js\n';
+  fs.writeFileSync(target+'/patch-placement.cjs',`const fs=require('fs'),assert=require('assert/strict');const p='/app/apps/api/dist/modules/qualification/qualification-placement.service.js';let s=fs.readFileSync(p,'utf8');if(!s.includes('qualificationPlanHistory.create')){const needle='await tx.qualificationStatusHistory.create(';assert.equal(s.split(needle).length,2);s=s.replace(needle,\`await tx.qualificationStatusHistory.updateMany({where:{qualificationId:input.qualificationId,effectiveTo:null},data:{effectiveTo:placedAt}});\nconst plan=await tx.qualificationPlanHistory.findFirst({where:{qualificationId:input.qualificationId,effectiveTo:null}});\nif(!plan)await tx.qualificationPlanHistory.create({data:{qualificationId:input.qualificationId,planCode:qualification.planLevelCode,effectiveFrom:placedAt,sourceType:'QUALIFICATION_PLACEMENT',sourceId:evidence.placementEvidenceId}});\n\`+needle);fs.writeFileSync(p,s);}`);
+  docker+='COPY patch-placement.cjs /app/patch-placement.cjs\nRUN node /app/patch-placement.cjs\n';
  }
  fs.writeFileSync(target+'/Dockerfile',docker);
 }

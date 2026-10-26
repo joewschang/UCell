@@ -14,6 +14,21 @@ const firstStart=new Date('2026-10-18T16:00:00Z'),firstEnd=new Date('2026-10-25T
  assert.equal(await tx.pvLedger.count({where:{pvType:'GPV',eventType:'GPV_CREATED'}}),0,'LIVE_GPV_REQUIRES_REVIEWED_TRANSITION');
  assert.equal(await tx.settlementBatch.count({where:{settlementType:{in:['BINARY_K1','MATCHING_K2']}}}),0,'BINARY_HISTORY_REQUIRES_REVIEWED_TRANSITION');
  assert.equal(await tx.globalPoolSettlement.count(),0,'GLOBAL_HISTORY_REQUIRES_REVIEWED_TRANSITION');
+ const candidates=await tx.qualification.findMany({where:{kind:'MEMBER_ORIGIN',status:'EFFECTIVE'}});
+ for(const q of candidates){
+  const setup=await tx.qualificationSetup.findUniqueOrThrow({where:{qualificationId:q.qualificationId}});
+  assert.equal(setup.setupStatus,'PLACED');assert.equal(setup.placedAt?.getTime(),q.effectiveAt?.getTime());
+  const purchase=await tx.packagePurchaseSnapshot.findUniqueOrThrow({where:{orderId:setup.qualifyingOrderId}});
+  assert.equal(purchase.packageCode,setup.packageType);assert.equal(purchase.packageCode,q.planLevelCode);
+  const placement=await tx.placementEvidence.findFirstOrThrow({where:{qualificationId:q.qualificationId,placedAt:setup.placedAt}});
+  const history=await tx.qualificationStatusHistory.findMany({where:{qualificationId:q.qualificationId}});
+  assert(history.some(h=>h.status==='EFFECTIVE'&&h.sourceId===placement.placementEvidenceId&&h.effectiveFrom.getTime()===q.effectiveAt.getTime()));
+  const plans=await tx.qualificationPlanHistory.findMany({where:{qualificationId:q.qualificationId}});
+  if(!plans.length)await tx.qualificationPlanHistory.create({data:{qualificationId:q.qualificationId,planCode:purchase.packageCode,effectiveFrom:setup.placedAt,sourceType:'QUALIFICATION_PLACEMENT',sourceId:placement.placementEvidenceId}});
+  const overlaps=history.filter(h=>h.status==='DRAFT'&&!h.effectiveTo&&h.effectiveFrom<setup.placedAt);
+  for(const h of overlaps)await tx.qualificationStatusHistory.update({where:{qualificationStatusHistoryId:h.qualificationStatusHistoryId},data:{effectiveTo:setup.placedAt}});
+  if(!plans.length||overlaps.length)await tx.auditEvent.create({data:{actorType:'SYSTEM',action:'PLACEMENT_HISTORY_REPAIRED',entityType:'QUALIFICATION',entityId:q.qualificationId,requestId:actor,correlationId:require('crypto').randomUUID(),afterData:JSON.parse(JSON.stringify({placementEvidenceId:placement.placementEvidenceId,packageCode:purchase.packageCode,placedAt:setup.placedAt,previousPlans:plans,previousStatus:history}))}});
+ }
  const beforeParameters=await tx.runtimeRuleParameter.findMany({where:{parameterCode:'settlement.period',scopeKey:{in:['BINARY_K1','MATCHING_K2']},effectiveTo:null}});
  assert.equal(beforeParameters.length,2);
  const jobs=await tx.periodCloseJob.findMany({where:{kind:{in:['BINARY_K1','MATCHING_K2']}},include:{receipt:true,outbox:true}});
@@ -42,7 +57,7 @@ const firstStart=new Date('2026-10-18T16:00:00Z'),firstEnd=new Date('2026-10-25T
   for(const batch of [b,m])verifyReplayEnvelope(await tx.historicalReplaySnapshot.findUnique({where:{kind_sourceId:{kind:batch.settlementType,sourceId:batch.settlementBatchId}}}));
   const global=await captureGlobalPeriod(tx,new Date('2026-09-30T16:00:00Z'),new Date('2026-10-31T16:00:00Z'),'R1.0B');
   assert.equal(global.weeks.length,1);assert(global.total.eq(0));
-  const sponsor=await tx.sponsorRelationship.findFirst({where:{effectiveTo:null}});
+  const sponsor=await tx.sponsorRelationship.findFirst({where:{effectiveTo:null,child:{kind:'COMPANY_BOOTSTRAP'}}});
   assert(sponsor,'PAYMENT_TEST_SPONSOR_REQUIRED');
   const orderId=require('crypto').randomUUID();
   await capturePaymentReferral(tx,orderId,sponsor.childQualificationId,new Date(),'R1.0B');
