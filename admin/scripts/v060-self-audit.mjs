@@ -12,7 +12,8 @@ if(read(files.api).includes("localStorage.getItem('ucell_admin_token')"))failure
 if(!read(files.api).includes("sessionStorage.getItem('ucell_admin_token')"))failures.push('session-scoped bearer missing');
 if(!read(files.api).includes('ucell:admin-unauthorized'))failures.push('401 session invalidation missing');
 
-for(const x of ['PublicClientApplication','loginPopup','openid','profile']){
+// The approved Entra flow uses redirects, including completion of the callback.
+for(const x of ['PublicClientApplication','loginRedirect','handleRedirectPromise','openid','profile']){
   if(!read(files.entra).includes(x))failures.push(`MSAL integration missing ${x}`);
 }
 for(const x of ['entra/exchange','auth/admin/me','auth/admin/logout']){
