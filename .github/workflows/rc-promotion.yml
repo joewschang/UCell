@@ -71,4 +71,3 @@ jobs:
 
       - name: Human approval reminder
         run: echo "Production deployment is allowed only after all R6 gate evidence is PASS and backup/restore drill is signed off."
-

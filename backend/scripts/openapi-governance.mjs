@@ -199,4 +199,3 @@ export async function main(mode){
  throw Error('UNKNOWN_GOVERNANCE_MODE');
 }
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url))main(process.argv[2]).catch(e=>{console.error(/^[A-Z0-9_]+$/.test(e.message)?e.message:'OPENAPI_GOVERNANCE_FAIL');process.exitCode=1;});
-
