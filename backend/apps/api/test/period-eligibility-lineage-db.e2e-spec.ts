@@ -34,6 +34,7 @@ describeDb('sealed period eligibility writer-to-order lineage',()=>{
       const person=await tx.person.create({data:{legalName:'PRIVATE-REFERRAL-HOLDER'}}),qualifications=[];
       for(let generation=0;generation<=4;generation++){
         const q=await tx.qualification.create({data:{currentHolderPersonId:person.personId,planLevelCode:'STARTER',status:'EFFECTIVE',effectiveAt:effectiveFrom}});
+        await tx.qualificationHolderHistory.create({data:{qualificationId:q.qualificationId,holderPersonId:person.personId,effectiveFrom,sourceType:'LINEAGE_TEST'}});
         qualifications.push(q);
         await tx.qualificationPlanHistory.create({data:{qualificationId:q.qualificationId,planCode:'STARTER',effectiveFrom,sourceType:'TEST_REFERRAL'}});
         await tx.qualificationStatusHistory.create({data:{qualificationId:q.qualificationId,status:'EFFECTIVE',effectiveFrom,sourceType:'TEST_REFERRAL'}});
@@ -109,6 +110,7 @@ describeDb('sealed period eligibility writer-to-order lineage',()=>{
       const person=await tx.person.create({data:{legalName:'PRIVATE-PERIOD-HOLDER'}});
       const makeQualification=async()=>{
         const q=await tx.qualification.create({data:{currentHolderPersonId:person.personId,planLevelCode:'STARTER',status:'EFFECTIVE',effectiveAt:effectiveFrom}});
+        await tx.qualificationHolderHistory.create({data:{qualificationId:q.qualificationId,holderPersonId:person.personId,effectiveFrom,sourceType:'LINEAGE_TEST'}});
         await tx.qualificationPlanHistory.create({data:{qualificationId:q.qualificationId,planCode:'STARTER',effectiveFrom,sourceType:'TEST_PERIOD'}});
         await tx.qualificationStatusHistory.create({data:{qualificationId:q.qualificationId,status:'EFFECTIVE',effectiveFrom,sourceType:'TEST_PERIOD'}});
         return q;

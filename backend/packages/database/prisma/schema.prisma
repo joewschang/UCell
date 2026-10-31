@@ -759,6 +759,7 @@ enum AuthSessionStatus {
 }
 
 model Person {
+  bonusOpportunities BonusOpportunity[]
   geoProfile MemberGeoProfile?
   geoProfileVersions MemberGeoProfileVersion[]
   qualificationOwnerIntervals QualificationOwnerInterval[]
@@ -1207,6 +1208,7 @@ model ConsentEvidence {
 }
 
 model Qualification {
+  bonusOpportunities BonusOpportunity[]
  economicDestinations AwardEconomicDestination[]
  companyProfileBindings CompanyBootstrapProfileBinding[]
   kind QualificationKind @default(MEMBER_ORIGIN)
@@ -3492,6 +3494,7 @@ model RuntimeRuleParameter {
 }
 
 model SettlementBatch {
+  bonusOpportunities BonusOpportunity[]
   parameterSnapshot Json?            @map("parameter_snapshot")
   settlementBatchId String           @id @default(uuid()) @map("settlement_batch_id") @db.Uuid
   settlementType    SettlementType   @map("settlement_type")
@@ -5292,4 +5295,34 @@ model CouponUsageEvent {
   @@index([orderId,occurredAt])
   @@map("coupon_usage_event")
   @@schema("commerce")
+}
+
+model BonusOpportunity {
+  reviewRequired Boolean @default(false) @map("review_required")
+  person Person @relation(fields:[personId],references:[personId],onDelete:Restrict,onUpdate:Cascade)
+  qualification Qualification @relation(fields:[qualificationId],references:[qualificationId],onDelete:Restrict,onUpdate:Cascade)
+  settlementBatch SettlementBatch? @relation(fields:[settlementBatchId],references:[settlementBatchId],onDelete:Restrict,onUpdate:Cascade)
+  bonusOpportunityId String @id @default(uuid()) @map("bonus_opportunity_id") @db.Uuid
+  opportunityKey String @unique @map("opportunity_key")
+  settlementBatchId String? @map("settlement_batch_id") @db.Uuid
+  personId String @map("person_id") @db.Uuid
+  qualificationId String @map("qualification_id") @db.Uuid
+  sourceKey String @map("source_key")
+  awardType String @map("award_type")
+  generation Int
+  theoreticalAmount Decimal @map("theoretical_amount") @db.Decimal(18,4)
+  estimatedAmount Decimal @map("estimated_amount") @db.Decimal(18,4)
+  reasons Json
+  occurredAt DateTime @map("occurred_at") @db.Timestamptz(6)
+  ruleVersionCode String @map("rule_version_code")
+  parameterSnapshotHash String @map("parameter_snapshot_hash")
+  calculationDetail Json @map("calculation_detail")
+  message String
+  outboxEventId String @unique @map("outbox_event_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([personId, qualificationId, occurredAt])
+  @@index([settlementBatchId])
+  @@map("bonus_opportunity")
+  @@schema("ledger")
 }

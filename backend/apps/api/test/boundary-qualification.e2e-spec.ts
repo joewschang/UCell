@@ -1,3 +1,4 @@
+import {Prisma} from '@ucell/database';
 import { UnauthorizedException } from '@nestjs/common';
 import { AdminAuthenticationGuard } from '../src/modules/auth/admin-authentication.guard';
 import { OrderService } from '../src/modules/order/order.service';
@@ -5,7 +6,7 @@ import { QualificationWorkflowService } from '../src/modules/qualification/quali
 
 const packageVersion={
   packageProfileVersionId:'package-version',profile:{packageClass:'QUALIFICATION',stableCode:'STARTER'},
-  currency:'TWD',priceAmount:{toString:()=> '14400'},displayName:'Starter',selectableProductQuantity:1,
+  currency:'TWD',priceAmount:new Prisma.Decimal('14400'),displayName:'Starter',selectableProductQuantity:1,
   membershipEffect:'FORMAL_ELIGIBILITY',qualificationEffect:'CREATE_QUALIFICATION',activeDurationUnit:null,
   activeDurationValue:null,recognitionConfigRef:'R1.0B',configHash:'a'.repeat(64),
 };
@@ -13,6 +14,7 @@ const packageVersion={
 function packageHarness(){
   let sequence=0;
   const tx:any={
+    $queryRaw:jest.fn(async()=>[]),
       $queryRaw:jest.fn(async()=>[]),binaryTreeMembership:{findUnique:jest.fn(async()=>null)},
     person:{findUnique:jest.fn(async()=>({status:'EFFECTIVE'}))},
     qualification:{create:jest.fn(async({data}:any)=>({qualificationId:`ball-${++sequence}`,...data}))},
@@ -29,7 +31,7 @@ function packageHarness(){
   })};
   const audit={write:jest.fn()},outbox={enqueue:jest.fn()};
   const product={productId:'product',sku:'SKU',displayName:'Product'};
-  const packages={checkoutData:jest.fn(async()=>({version:packageVersion,selections:[{productRuleProfileId:'profile',quantity:1,profile:{productRuleProfileId:'profile'},product,productConfigHash:'b'.repeat(64)}]}))};
+  const packages={checkoutData:jest.fn(async()=>({pricing:{goodsAmount:'14400',qualificationFee:'0',discountAmount:'0',total:'14400',endsAt:null,couponId:null,couponCode:null,selectableProductQuantity:1,recognitionPolicy:'R1.0B'},version:packageVersion,selections:[{productRuleProfileId:'profile',quantity:1,profile:{productRuleProfileId:'profile'},product,productConfigHash:'b'.repeat(64)}]}))};
   return {tx,service:new OrderService({} as any,idempotency as any,audit as any,outbox as any,packages as any)};
 }
 
@@ -61,8 +63,9 @@ describe('Boundary Golden B15-B17 package-created Qualifications',()=>{
 
 describe('Boundary Golden B18-B19 company-held exit',()=>{
   it('preserves Qualification identity, trees, carry and historical monetary rows',async()=>{
-    const workflow={qualificationWorkflowId:'exit',qualificationId:'ball-stable',workflowType:'EXIT',status:'SUBMITTED',payload:{reviewFeePaid:true,companyHolderPersonId:'company'}};
+    const workflow={reviewFee:new Prisma.Decimal(600),qualificationWorkflowId:'exit',qualificationId:'ball-stable',workflowType:'EXIT',status:'SUBMITTED',payload:{reviewFeePaid:true,companyHolderPersonId:'company'}};
     const tx:any={
+    $queryRaw:jest.fn(async()=>[]),
       $queryRaw:jest.fn(async()=>[]),binaryTreeMembership:{findUnique:jest.fn(async()=>null)},
       qualificationWorkflow:{findUniqueOrThrow:jest.fn(async()=>workflow),update:jest.fn()},
       qualificationHolderHistory:{findFirst:jest.fn(async()=>({holderHistoryId:'holder-old'})),update:jest.fn(),create:jest.fn()},

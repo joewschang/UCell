@@ -34,6 +34,7 @@ describe('v3 GPV immediate economic evidence',()=>{
       const person=await tx.person.create({data:{legalName:'GPV immediate owner',status:'EFFECTIVE'}});
       const makeQualification=async(planCode:string,active:boolean)=>{
         const q=await tx.qualification.create({data:{currentHolderPersonId:person.personId,planLevelCode:planCode,status:'EFFECTIVE'}});
+        await tx.qualificationHolderHistory.create({data:{qualificationId:q.qualificationId,holderPersonId:person.personId,effectiveFrom,sourceType:'GPV_IMMEDIATE_TEST'}});
         await tx.qualificationPlanHistory.create({data:{qualificationId:q.qualificationId,planCode,effectiveFrom,sourceType:'GPV_IMMEDIATE_TEST'}});
         await tx.qualificationStatusHistory.create({data:{qualificationId:q.qualificationId,status:'EFFECTIVE',effectiveFrom,sourceType:'GPV_IMMEDIATE_TEST'}});
         if(active) await tx.activePeriod.create({data:{qualificationId:q.qualificationId,activeFrom:effectiveFrom,activeTo:new Date('2041-10-01T00:00:00.000Z'),sourceType:'GPV_IMMEDIATE_TEST',ruleVersionCode:rule}});

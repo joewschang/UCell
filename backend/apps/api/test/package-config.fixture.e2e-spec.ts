@@ -33,7 +33,7 @@ describeDb('isolated qualification package fixture', () => {
     const read: any = await new PackageConfigService(db as any).checkoutData(
       db as any,
       person.personId,
-      { packageVersionId: f.version.packageProfileVersionId, selections: [{ productRuleProfileId: f.rule.productRuleProfileId, quantity: 1 }] },
+      { packageVersionId: f.version.packageProfileVersionId, selections: [{ productRuleProfileId: f.rule.productRuleProfileId, quantity: 3 }] },
       new Date(),
     );
     expect(read.version.status).toBe('ACTIVE');
