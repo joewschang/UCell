@@ -126,3 +126,8 @@ jobs:
           if-no-files-found: error
           retention-days: 90
           overwrite: true
+      - name: Report documentation follow-up
+        if: failure()
+        run: |
+          echo "::warning::SwaggerHub documentation publication failed. API validation and application promotion remain independent; retry this documentation job after fixing its credentials or service error."
+          echo "SwaggerHub documentation needs follow-up. This failure does not replace or fail the required API contract verify job." >> "$GITHUB_STEP_SUMMARY"

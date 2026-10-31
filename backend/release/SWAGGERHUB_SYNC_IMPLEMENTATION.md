@@ -1,11 +1,9 @@
-# SwaggerHub Release/RC evidence
+# SwaggerHub documentation and application release
 
-Implementation/local and hosted OpenAPI verification: PASS. Hosted publication: NOT RUN; activation pending.
+User-authorized change, 2026-10-31: SwaggerHub cloud documentation publication is independent of production promotion.
 
-Required marker: SWAGGERHUB_SYNC_PASS in R6_RELEASE_GATE.json. RC promotion retrieves successful swaggerhub-sync.yml artifacts for the exact release commit, verifies the generated artifact receipt and private cloud readback hashes/version, and fails for missing/stale/failed evidence. A local PASS snapshot is not accepted for publishing.
+Required: OPENAPI_CONTRACT_GATES_PASS. RC retrieves the same-commit/default-branch verify job's gated specification and gates.json, validates all existing contract/security gates and commit/baseline/artifact hashes. Failed or pending publish jobs do not invalidate a successful verify job. Missing/failed verification still blocks promotion.
 
-The CI publisher writes backend/release/SWAGGERHUB_SYNC_EVIDENCE.json and governance/swaggerhub/evidence/OPENAPI_CONTRACT_REPORT.md after upload verification, including a failure receipt if publication fails. Artifacts are retained for 90 days; signed long-term releases should archive them under existing release evidence retention policy before expiration.
+Advisory for application release: SWAGGERHUB_SYNC_PASS. The publish job still fails on missing credentials or cloud verification errors; its receipt, failure artifacts and job warning are retained. Re-run the failed publish job to repair documentation. Do not make the publish job a required branch protection check.
 
-See [contract report](../../OPENAPI_CONTRACT_REPORT.md) and [governance runbook](../../governance/swaggerhub/README.md). No application deployment is included.
-
-Hosted PR validation run: https://github.com/joewschang/UCell/actions/runs/35329872016 for implementation f1e0fc10c216c3547a1a1b30aeaf1cad9f1e9a3e. The generated artifact was downloaded and verified byte-for-byte against local source. See governance/swaggerhub/hosted-verification.json. This verification receipt cannot substitute for SWAGGERHUB_SYNC_PASS: the private publishing job has not run.
+No UAT, security, database, backup or human-approval requirements were removed. The release-check command remains a strict SwaggerHub documentation receipt check; contract-check is the independent application gate.

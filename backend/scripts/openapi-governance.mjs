@@ -163,7 +163,7 @@ export async function main(mode){
    save('breaking-diff.json',JSON.parse(diff.stdout||'[]'));
    assertSecurityCompatibility(JSON.parse(baseline),JSON.parse(bytes));
    if(diff.status!==0)throw Error('UNAPPROVED_BREAKING_CHANGE');report.gates.breakingDiff='PASS';
-   command(process.execPath,['--test','scripts/openapi-governance.test.mjs','scripts/matured-payable-openapi.test.mjs']);report.gates.publisherTests='PASS';
+   command(process.execPath,['--test','scripts/openapi-governance.test.mjs','scripts/release-docs-decoupling.test.mjs','scripts/matured-payable-openapi.test.mjs']);report.gates.publisherTests='PASS';
    command(process.execPath,['scripts/test-todo-gate.mjs']);
    command(process.execPath,['scripts/security-policy-preflight.mjs']);
    command(process.execPath,['scripts/api-jest-isolated.mjs']);
@@ -186,6 +186,10 @@ export async function main(mode){
    fs.writeFileSync(path.join(out,'OPENAPI_CONTRACT_REPORT.md'),'# OpenAPI contract publication\n\n'+JSON.stringify(result,null,2)+'\n');
   }
   return;
+ }
+ if(mode==='contract-check'){
+  verifyGates(json('governance/swaggerhub/evidence/gates.json'),load('backend/openapi.generated.json'),baseline,commit);
+  console.log('OPENAPI_CONTRACT_GATES_PASS');return;
  }
  if(mode==='release-check'){
   const r=json('backend/release/SWAGGERHUB_SYNC_EVIDENCE.json'),bytes=load('backend/openapi.generated.json');
