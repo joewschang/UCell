@@ -18,6 +18,7 @@ function fixture() {
   const identity = (where: any) => JSON.stringify(where.actorScope_idempotencyKey);
   let order: any = { orderId: 'order', qualificationId: 'ball', status: 'CONFIRMED', netAmount: new Prisma.Decimal('2400'), ruleVersionCode: 'TEST_ONLY', parameterSnapshotHash: 'sealed-hash', lines: [] };
   const tx = {
+    $queryRaw:jest.fn(async()=>[]),
     idempotencyRecord: {
       findUnique: jest.fn(async ({where}: any) => records.get(identity(where)) ?? null),
       create: jest.fn(async ({data}: any) => records.set(identity({actorScope_idempotencyKey: {actorScope: data.actorScope, idempotencyKey: data.idempotencyKey}}), {...data, responseBody: null, statusCode: null})),
