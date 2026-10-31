@@ -1,3 +1,4 @@
+import { recordBonusOpportunities, OpportunityCandidate, opportunityReasons, equalizationRequirement } from '@ucell/database';
 import { SettlementCalendarService } from '../settlement/settlement-calendar.service';
 import { snapshotDecimal, verifySnapshot, captureParameters } from '../rules/parameter-snapshot';
 import { Injectable } from '@nestjs/common';
@@ -72,6 +73,7 @@ export class ReferralBonusService {
       const effective=await effectiveGpv(tx,sources);
       const totalGpv=[...effective.values()].reduce((sum,value)=>sum.add(value),new Prisma.Decimal(0));
       const theoryRows:Array<any>=[];
+      const opportunities:OpportunityCandidate[]=[];
 
       for(const event of gpvEvents){
         const source=verifyReplayEnvelope(await tx.historicalReplaySnapshot.findUnique({where:{kind_sourceId:{kind:'GPV',sourceId:event.eventId}}}));
@@ -113,6 +115,7 @@ export class ReferralBonusService {
         }
 
         if(!g1Active && g1ReferralTheory.gt(0)){
+          opportunities.push({recipientQualificationId:g1.qualification_id,sourceKey:event.eventId,awardType:'REFERRAL',generation:1,theoreticalAmount:g1ReferralTheory,occurredAt:event.occurredAt,reasons:opportunityReasons(false,g1Plan,g1Plan,0,0),parameterSnapshotHash:sourceSnapshot.hash,detail:{sourceGpv:effective.get(event.eventId)!.toString(),rate:g1Rate.toString()}});
           await tx.bonusCalculationEvidence.createMany({data:[{
             settlementBatchId:batch.settlementBatchId,evidenceType:'REFERRAL_ELIGIBILITY',
             recipientQualificationId:g1.qualification_id,reasonCode:'INACTIVE',
@@ -129,11 +132,18 @@ export class ReferralBonusService {
           const active=historicalRecipientState(source.evidence,anc.qualification_id).active;
 
           // A plan has no rate outside its configured fixed generation range.
-          if(anc.generation>this.equalizationMaximumDepth(plan)) continue;
+          if(anc.generation>this.equalizationMaximumDepth(plan)) {
+            const required=equalizationRequirement(plan,anc.generation);
+            const rate=snapshotDecimal(sourceSnapshot,'equalization.rate',required.requiredPlan+':G'+anc.generation);
+            opportunities.push({recipientQualificationId:anc.qualification_id,sourceKey:event.eventId,awardType:'EQUALIZATION',generation:anc.generation,theoreticalAmount:g1ReferralTheory.mul(rate),occurredAt:event.occurredAt,reasons:opportunityReasons(active,plan,required.requiredPlan,directCount,required.requiredDirects),parameterSnapshotHash:sourceSnapshot.hash,detail:{baseG1ReferralTheory:g1ReferralTheory.toString(),rate:rate.toString(),plan,effectiveDirectCount:directCount}});
+            continue;
+          }
 
           const rate=snapshotDecimal(sourceSnapshot,'equalization.rate',`${plan}:G${anc.generation}`);
           const theoreticalAmount=g1ReferralTheory.mul(rate);
           if(!active || anc.generation>unlock){
+            const required=equalizationRequirement(plan,anc.generation);
+            opportunities.push({recipientQualificationId:anc.qualification_id,sourceKey:event.eventId,awardType:'EQUALIZATION',generation:anc.generation,theoreticalAmount,occurredAt:event.occurredAt,reasons:opportunityReasons(active,plan,required.requiredPlan,directCount,required.requiredDirects),parameterSnapshotHash:sourceSnapshot.hash,detail:{baseG1ReferralTheory:g1ReferralTheory.toString(),rate:rate.toString(),plan,effectiveDirectCount:directCount}});
             await tx.bonusCalculationEvidence.createMany({data:[{
               settlementBatchId:batch.settlementBatchId,evidenceType:'REFERRAL_MATCHING_ELIGIBILITY',
               recipientQualificationId:anc.qualification_id,reasonCode:!active?'INACTIVE':'LOCKED',
@@ -221,6 +231,7 @@ export class ReferralBonusService {
           calculationHash:hash,finalizedAt:new Date()
         }
       });
+      await recordBonusOpportunities(tx,batch,opportunities,totalTheory,poolAvailable,theoryRows);
       await sealSettlement(tx,finalized);
       return finalized;
     },{isolationLevel:Prisma.TransactionIsolationLevel.Serializable});

@@ -1,3 +1,4 @@
+import {invalidateBonusOpportunities} from './bonus-opportunity';
 import {calculateGlobalPool} from './global-pool-calculation';
 import {appendReplayPoolDeltas} from './replay-pool-delta';
 import {companyOwnerAt,companyAlwaysActiveAt,routeCompanyFinal} from './reservoir-b';
@@ -644,6 +645,7 @@ export async function replayReturnDependencies(tx:Prisma.TransactionClient,retur
     if(calculation.matching)await recordReplayMetric(tx,calculation.matching.batch.settlementBatchId,calculation.matching.row.snapshotId,actionKey,stateHash,calculation.matching.result);
     await tx.replayCarryProjection.create({data:{actionKey,settlementBatchId:calculation.batch.settlementBatchId,periodEnd:calculation.batch.periodEnd,ruleVersionCode:calculation.batch.ruleVersionCode,carry:calculation.carry,stateHash}});
   }
+  await invalidateBonusOpportunities(tx,{batchIds:[...k0Batches.map(b=>b.settlementBatchId),...calculations.flatMap(c=>[c.batch.settlementBatchId,...(c.matching?[c.matching.batch.settlementBatchId]:[])])],sourceKeys:originalEvents.map(e=>e.eventId),actionKey});
   await replayGlobalPeriods(tx,economicAt,ret.order.ruleVersionCode,actionKey,stateHash,returnCaseId);
   let epvState:string|undefined;
   const packagePurchase=await tx.packagePurchaseSnapshot.findUnique({where:{orderId:ret.orderId}});

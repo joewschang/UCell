@@ -1,3 +1,4 @@
+import { recordBonusOpportunities, OpportunityCandidate, opportunityReasons } from '@ucell/database';
 import { SettlementCalendarService } from '../settlement/settlement-calendar.service';
 import { snapshotDecimal, verifySnapshot, captureParameters } from '../rules/parameter-snapshot';
 import { Injectable } from '@nestjs/common';
@@ -62,6 +63,7 @@ export class BinaryBonusService {
       });
 
       const theoryRows:Array<any>=[];
+      const opportunities:OpportunityCandidate[]=[];
       for(const q of qualifications){
         const effective=await this.query.isQualificationEffectiveAt(tx,q.qualificationId,periodEnd);
         if(!effective) continue;
@@ -127,6 +129,7 @@ export class BinaryBonusService {
 
       for(const row of theoryRows){
         if(!row.activeSnapshot){
+          opportunities.push({recipientQualificationId:row.recipientQualificationId,sourceKey:batch.settlementBatchId,awardType:'BINARY',generation:0,theoreticalAmount:row.theoreticalAmount,occurredAt:periodEnd,reasons:opportunityReasons(false,row.planLevelSnapshot,row.planLevelSnapshot,0,0),parameterSnapshotHash:parameterSnapshot.hash,detail:row.calculationDetail});
           await tx.bonusCalculationEvidence.create({data:{
             settlementBatchId:batch.settlementBatchId,evidenceType:'BINARY_ELIGIBILITY',
             recipientQualificationId:row.recipientQualificationId,reasonCode:'INACTIVE',
@@ -168,6 +171,7 @@ export class BinaryBonusService {
           calculationHash:hash,finalizedAt:new Date()
         }
       });
+      await recordBonusOpportunities(tx,batch,opportunities,totalTheory,poolAvailable,theoryRows);
       await sealSettlement(tx,finalized);
       return finalized;
     },{isolationLevel:Prisma.TransactionIsolationLevel.Serializable});
@@ -211,6 +215,7 @@ export class BinaryBonusService {
       });
 
       const rows:Array<any>=[];
+      const opportunities:OpportunityCandidate[]=[];
       for(const source of binaryAwards){
         const uplines=await this.query.sponsorAncestors(tx,source.recipientQualificationId,periodEnd,5);
         for(const u of uplines){
@@ -255,6 +260,8 @@ export class BinaryBonusService {
 
       for(const row of rows){
         if(!row.eligible){
+          const requiredDirects=Math.max(1,row.generationNo-1);
+          opportunities.push({recipientQualificationId:row.recipientQualificationId,sourceKey:row.sourceAwardId,awardType:'MATCHING',generation:row.generationNo,theoreticalAmount:row.theoreticalAmount,occurredAt:periodEnd,reasons:opportunityReasons(row.activeSnapshot,row.planLevelSnapshot,row.planLevelSnapshot,row.effectiveDirectCountSnapshot,requiredDirects),parameterSnapshotHash:parameterSnapshot.hash,detail:row.calculationDetail});
           await tx.bonusCalculationEvidence.createMany({data:[{
             settlementBatchId:batch.settlementBatchId,evidenceType:'BINARY_MATCHING_ELIGIBILITY',
             recipientQualificationId:row.recipientQualificationId,
@@ -299,6 +306,7 @@ export class BinaryBonusService {
           calculationHash:hash,finalizedAt:new Date()
         }
       });
+      await recordBonusOpportunities(tx,batch,opportunities,totalTheory,poolAvailable,rows);
       await sealSettlement(tx,finalized);
       return finalized;
     },{isolationLevel:Prisma.TransactionIsolationLevel.Serializable});

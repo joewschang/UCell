@@ -1,3 +1,4 @@
+import {pollBonusOpportunities} from './bonus-opportunity-notification';
 import {processQualificationPackageEvent,recognizePackageMonthlyGpv,processRepurchasePackageEvent} from '@ucell/database';
 import {effectiveSponsorDirectCount, appendRecognitionMemberMessage, emitStructuredOperationalError} from '@ucell/database';
 import { PrismaService, Prisma, companyAlwaysActiveAt, captureParameters, snapshotDecimal, processMemberOrderNotification, processPaymentInventoryReservation, recognizeConsumption, applyGpvImmediateEffects, sealRpvEvent, pending, claimOutboxLease, withOutboxLease, processLeasedReplay, processTreeProjectionEvent, releaseFailedOutboxLease, OutboxLease, matureBonusAward } from '@ucell/database';
@@ -304,6 +305,7 @@ async function tick(){
   await pollPeriodCloseJobs(prisma);
   await matureBonusAwards();
   await expireNotificationDeliveries();
+  await pollBonusOpportunities(prisma);
   const providerStartedAt=Date.now();
   try{
     const provider=await pollProviderWebhooks(prisma,providerHandlers);

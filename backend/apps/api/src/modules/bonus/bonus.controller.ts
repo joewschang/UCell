@@ -1,5 +1,5 @@
 import { Roles } from '../auth/roles.decorator';
-import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query, ParseUUIDPipe } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { PrismaService } from '@ucell/database';
 import { BinaryBonusService } from './binary-bonus.service';
@@ -34,6 +34,16 @@ export class BonusController {
   @ApiOperation({operationId:'adminSettleMatchingK2',summary:'依Binary實際Paid結算Matching K2'})
   async matchingSettle(@Body() body:{periodStart:string;periodEnd:string}){
     return {data:await this.binary.settleMatching(new Date(body.periodStart),new Date(body.periodEnd))};
+  }
+
+  @Get('qualifications/:qualificationId/opportunities')
+  @ApiOperation({operationId:'adminListBonusOpportunities',summary:'未取得獎金機會與 LINE 發送證據'})
+  async opportunities(@Param('qualificationId',new ParseUUIDPipe()) id:string){
+    const rows=await this.prisma.bonusOpportunity.findMany({where:{qualificationId:id},orderBy:[{occurredAt:'desc'},{bonusOpportunityId:'desc'}],take:200});
+    const corrections=await this.prisma.outboxEvent.findMany({where:{eventType:'BONUS_OPPORTUNITY_CORRECTED',aggregateId:{in:rows.map(r=>r.bonusOpportunityId)}},select:{aggregateId:true,payload:true,createdAt:true,processStatus:true},orderBy:{createdAt:'desc'}});
+    const correctionKeys=corrections.map(c=>(c.payload as {evidenceHash:string}).evidenceHash);
+    const deliveries=await this.prisma.notificationDelivery.findMany({where:{notificationType:'BONUS_OPPORTUNITY',evidenceHash:{in:[...rows.map(r=>r.opportunityKey),...correctionKeys]}},select:{evidenceHash:true,status:true,attemptCount:true,sentAt:true,failureCode:true,providerCorrelation:true}});
+    return {data:rows.map(row=>({...row,corrections:corrections.filter(c=>c.aggregateId===row.bonusOpportunityId).map(c=>({...c,delivery:deliveries.find(d=>d.evidenceHash===(c.payload as {evidenceHash:string}).evidenceHash)??null})),delivery:deliveries.find(d=>d.evidenceHash===row.opportunityKey)??null})),limit:200,truncated:rows.length===200};
   }
 
   @Post('lifecycle/mature')

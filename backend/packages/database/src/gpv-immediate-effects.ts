@@ -1,4 +1,5 @@
 import {Prisma} from '@prisma/client';
+import {OpportunityCandidate, equalizationRequirement, opportunityReasons, recordBonusOpportunities} from './bonus-opportunity';
 import {captureParameters, pending, snapshotDecimal} from './parameter-snapshot';
 import {
   captureHistoricalGraph,
@@ -58,7 +59,8 @@ export async function applyGpvImmediateEffects(tx:Prisma.TransactionClient,event
     const state=historicalRecipientState(evidence,ancestor.qualification_id);
     const unlockDepth=referralMatchingUnlockDepth(state.plan,state.directs);
     const unlocked=ancestor.generation<=unlockDepth;
-    const rate=snapshotDecimal(parameters,'equalization.rate',`${state.plan}:G${ancestor.generation}`);
+    const maximum=({STARTER:4,ELITE:6,LEADER:7} as Record<string,number>)[state.plan]??0;
+    const rate=ancestor.generation>maximum?new Prisma.Decimal(0):snapshotDecimal(parameters,'equalization.rate',`${state.plan}:G${ancestor.generation}`);
     const theory=state.active&&unlocked?g1Theory.mul(rate):new Prisma.Decimal(0);
     await tx.theoryCalculationEvidence.upsert({
       where:{theoryKind_sourceVolumeEventId_recipientQualificationId_fixedGenerationNo:{
@@ -97,5 +99,22 @@ export async function applyGpvImmediateEffects(tx:Prisma.TransactionClient,event
       }});
     seen.add(ancestor);child=ancestor;
   }
+  // Opportunity evidence uses the source's immutable graph and does not alter
+  // existing theory rows. G1 entitlement does not suppress other generations.
+  const opportunities:OpportunityCandidate[]=[];
+  if(g1){
+    const first=historicalRecipientState(evidence,g1.qualification_id);
+    const base=event.amount.mul(snapshotDecimal(parameters,'referral.g1.rate',first.plan));
+    if(!first.active)opportunities.push({recipientQualificationId:g1.qualification_id,sourceKey:event.eventId,awardType:'REFERRAL',generation:1,theoreticalAmount:base,occurredAt:event.occurredAt,reasons:opportunityReasons(false,first.plan,first.plan,0,0),parameterSnapshotHash:parameters.hash,detail:{sourceGpv:event.amount.toString()}});
+    for(const ancestor of sponsorPath.filter(a=>a.generation>=2)){
+      const state=historicalRecipientState(evidence,ancestor.qualification_id);
+      const required=equalizationRequirement(state.plan,ancestor.generation);
+      const reasons=opportunityReasons(state.active,state.plan,required.requiredPlan,state.directs,required.requiredDirects);
+      if(!reasons.length)continue;
+      const rate=snapshotDecimal(parameters,'equalization.rate',`${required.requiredPlan}:G${ancestor.generation}`);
+      opportunities.push({recipientQualificationId:ancestor.qualification_id,sourceKey:event.eventId,awardType:'EQUALIZATION',generation:ancestor.generation,theoreticalAmount:base.mul(rate),occurredAt:event.occurredAt,reasons,parameterSnapshotHash:parameters.hash,detail:{baseG1ReferralTheory:base.toString(),rate:rate.toString()}});
+    }
+  }
+  await recordBonusOpportunities(tx,{settlementBatchId:null,sourceEventId:event.eventId,ruleVersionCode:event.ruleVersionCode},opportunities,new Prisma.Decimal(0),new Prisma.Decimal(0),[]);
   return snapshot;
 }
