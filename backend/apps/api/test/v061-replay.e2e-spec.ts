@@ -89,6 +89,7 @@ describe('v0.6.1 subscription cancellation',()=>{
 describe('v0.6.1 qualification workflow',()=>{
   const effectiveAt=new Date('2100-01-01T00:00:00Z');
   function harness(workflow:any){
+    workflow={reviewFee:d(600),...workflow};
     const currentPlan={qualificationPlanHistoryId:'plan-old'},currentHolder={holderHistoryId:'holder-old'};
     const tx:any={...memberEconomicMocks(),
       $queryRaw:jest.fn(async()=>[]),binaryTreeMembership:{findUnique:jest.fn(async()=>null)},
