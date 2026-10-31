@@ -1,3 +1,4 @@
+import {Prisma} from '@ucell/database';
 import { execFileSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -14,6 +15,7 @@ beforeAll(() => {
 },30000);
 function actual(label:string){const row=evidence.find(item=>item.label===label);expect(row).toBeDefined();expect(row.result).toBe('PASS');expect(row.actual).toEqual(row.expected);return row.actual;}
 function workflowHarness(workflow:any){
+ workflow={reviewFee:new Prisma.Decimal(600),...workflow};
  const effectiveAt=new Date('2100-01-01T00:00:00Z'),currentPlan={qualificationPlanHistoryId:'plan-old'},currentHolder={holderHistoryId:'holder-old'};
  const tx:any={
       $queryRaw:jest.fn(async()=>[]),binaryTreeMembership:{findUnique:jest.fn(async()=>null)},qualificationWorkflow:{findUniqueOrThrow:jest.fn(async()=>workflow),update:jest.fn(async({data}:any)=>({...workflow,...data}))},qualificationPlanHistory:{findFirst:jest.fn(async()=>currentPlan),update:jest.fn(),create:jest.fn(async({data}:any)=>data)},qualificationHolderHistory:{findFirst:jest.fn(async()=>currentHolder),update:jest.fn(),create:jest.fn(async({data}:any)=>data)},qualification:{findUniqueOrThrow:jest.fn(async()=>({kind:'MEMBER_ORIGIN'})),update:jest.fn(async({data}:any)=>({qualificationId:workflow.qualificationId,...data}))},person:{findUnique:jest.fn(async({where}:any)=>({personId:where.personId}))},sponsorRelationship:{update:jest.fn(),create:jest.fn(),delete:jest.fn()},binaryPlacement:{update:jest.fn(),create:jest.fn(),delete:jest.fn()},bonusAward:{update:jest.fn(),delete:jest.fn()}};
