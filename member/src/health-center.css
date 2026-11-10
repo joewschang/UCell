@@ -1,0 +1,12 @@
+.uc-health { max-width: 54rem; margin: auto; }
+.uc-health h1, .uc-health h2 { margin-block: .8rem; }
+.uc-health .card, .uc-health fieldset { padding: 1.25rem; margin-block: 1rem; }
+.uc-health progress { width: 100%; accent-color: #007c68; }
+.health-map { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,14rem),1fr)); gap:.75rem; margin-block:1rem; }
+.health-map button,.health-choices button { text-align:start; padding:1rem; min-height:3rem; border-radius:.85rem; }
+.health-map strong,.health-map span,.health-map small { display:block; }
+.health-map strong { font-size:1.2rem; margin-block:.35rem; }
+.health-map span { font-size:.92rem; }
+.health-choices,.uc-health fieldset { display:grid; gap:.75rem; }
+.uc-health fieldset label { display:grid; gap:.25rem; }
+.health-memory { font-size:1.5rem; font-weight:bold; }

@@ -1,3 +1,4 @@
+import { HealthCenter } from './HealthCenter';
 import OrderList from './OrderList';
 import AiAssistant from './AiAssistant';
 import {ServiceWelcome} from '../../shared/ai-assistant/Persona';
@@ -175,7 +176,7 @@ function MemberApp() {
         <Route path="/organization" element={<Organization q={current}/>}/>
         <Route path="/growth" element={<GrowthCenter/>}/>
         <Route path="/learning" element={<LearningCenter/>}/>
-        <Route path="/explore" element={<ExploreHub/>}/><Route path="/business" element={<BusinessHub q={current}/>}/><Route path="/events" element={<EventCenter q={current}/>}/>
+        <Route path="/explore" element={<ExploreHub/>}/><Route path="/explore/health" element={<HealthCenter key={memberNo} memberNo={memberNo}/>}/><Route path="/business" element={<BusinessHub q={current}/>}/><Route path="/events" element={<EventCenter q={current}/>}/>
         <Route path="/performance" element={<Performance q={current}/>}/>
         <Route path="/repurchase" element={<RepurchaseDetails key={current.id} q={current}/>}/>
         <Route path="/payouts" element={<MemberPayouts key={current.id} q={current}/>}/>
@@ -190,7 +191,7 @@ function MemberApp() {
         <Route path="/notifications" element={<Notifications q={current}/>}/>
         <Route path="*" element={<section className="card"><h2>找不到頁面</h2><Link to="/">返回首頁</Link></section>}/>
       </Routes></div></> : <Routes>
-        <Route path="/" element={<><ServiceWelcome/><MemberWelcome/></>}/><Route path="/explore" element={<ExploreHub/>}/>
+        <Route path="/" element={<><ServiceWelcome/><MemberWelcome/></>}/><Route path="/explore" element={<ExploreHub/>}/><Route path="/explore/health" element={<HealthCenter key={memberNo} memberNo={memberNo}/>}/>
         <Route path="/ai-assistant" element={<AiAssistant/>}/>
         <Route path="/content" element={<ContentList/>}/><Route path="/content/:id" element={<ContentDetail/>}/>
         <Route path="/orders" element={<WebRetailOrders/>}/>
