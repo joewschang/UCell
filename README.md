@@ -5,6 +5,10 @@ Rule version: **R1.0B FROZEN**
 Backend source baseline: **v0.6.10-R6 UAT/Security/Release Preparation**  
 Admin source baseline: **v0.6.0 UAT/Security/Release Preparation**
 
+## 現行正式機部署
+
+修改完成後執行相關測試，建置有變更的元件，直接發布到 Azure 正式環境。發布與回復請見[正式機部署說明](deployment/PRODUCTION.md)。以下 RC 資訊保留作為版本沿革。
+
 ## Release meaning
 
 This repository is the consolidated **Production Release Candidate source package** for UCell R1.0B. It contains the Admin frontend, Backend API/Worker, database migrations, security/UAT/release gates and production deployment scaffolding.
