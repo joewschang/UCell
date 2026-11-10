@@ -3,7 +3,7 @@
 1. 在對應的工作目錄執行型別檢查、受影響的測試與建置。需要資料庫的測試使用本機或 CI 臨時 PostgreSQL。正式站的冒煙測試使用唯讀入口。
 2. 比對正式機目前 revision 與程式來源，只建置變更元件。以該次通過測試的程式建立映像，在正式 ACR 取得 sha256 digest。正式機已有個別修正版時，沿用已驗證基底或先整合差異。
 3. 以現有 Azure 發布身分執行下列命令。先填入真實的元件、映像 digest 與目前 revision。加上 `-WhatIf` 可預覽更新。一次只發布一個元件，同一元件請依序發布。
-   
+
    ```powershell
    ./deployment/publish-production.ps1 -Component member -Digest $digest -ExpectedRevision $currentRevision
    ```
