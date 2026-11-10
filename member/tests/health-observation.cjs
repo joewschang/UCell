@@ -29,7 +29,7 @@ const server=http.createServer(async(req,res)=>{
  await p.getByRole('button',{name:'開始計時'}).click();await p.getByRole('button',{name:'停止計時'}).click();await p.getByText('自行完成五次',{exact:true}).click();await next.click();
  await p.getByText('後腦可輕鬆靠牆',{exact:true}).click();assert(await next.isDisabled());await p.getByText('比先前實測矮',{exact:true}).click();await next.click();
  await p.getByRole('button',{name:/我是停經後/}).click();await p.getByLabel('足歲').fill('65');await p.getByLabel('體重（公斤）').fill('60');
- const preview=await p.getByText(/OSTAi -1 ·/).innerText();await p.getByText('完成觀察，查看紀錄').click();await p.getByText(preview,{exact:true}).waitFor();assert.equal(finished,1);
+ const preview=await p.getByText(/OSTAi -1 ·/).innerText();await p.getByText('完成觀察，查看紀錄').click();await p.getByText(preview,{exact:true}).waitFor();assert.equal(finished,1);await p.getByRole('heading',{name:'給你的健康建議'}).waitFor();await p.getByText(/記下兩次量測的日期與身高/).waitFor();
  const dl=p.waitForEvent('download');await p.getByText('下載我的完成卡').click();assert((await dl).suggestedFilename().endsWith('.png'));
  const invitation=await p.getByText('用 LINE 邀請家人').getAttribute('href');assert(!invitation.includes('65')&&!invitation.includes('OSTAi'));
  await p.getByText('#腿力',{exact:true}).click();await p.getByRole('link',{name:/商品 · 測試商品/}).waitFor();

@@ -1,3 +1,4 @@
+import { observationReport } from './results.js';
 import {el,box,btn,link,apiFor,page,show} from './ui.js';
 const member=!!sessionStorage.getItem('ucell_member_token');
 const api=apiFor(member?'member':'public');
@@ -75,12 +76,15 @@ async function finish(){
  try{if(member){await api('/finish','POST');data=await api('');}report();}catch(e){error(e,finish);}finally{pending=false;}
 }
 function report(){
+ const summary=observationReport(answers,score(),seconds);
  const lines=[options[0][answers[0]],options[1][answers[1]]+(seconds!==null&&answers[1]===0?'（'+seconds+' 秒）':''),options[2][answers[2]]+'；'+options[3][answers[3]],scoreLabel()];
  const message='一起來 UCell 玩四站居家腿力與骨骼觀察！ '+location.origin+'/health/';
  const save=btn('下載我的完成卡',()=>{
  const canvas=document.createElement('canvas');canvas.width=960;canvas.height=620;const c=canvas.getContext('2d');c.fillStyle='#173f35';c.fillRect(0,0,960,620);c.fillStyle='#edd48c';c.font='bold 46px sans-serif';c.fillText('UCell　健康中心',64,105);c.fillStyle='white';c.font='bold 60px sans-serif';c.fillText('居家觀察家',64,280);c.font='34px sans-serif';c.fillText('我完成了腿力與骨骼四站觀察',64,385);c.fillText('邀你也來完成自己的健康任務',64,455);const a=link('',canvas.toDataURL('image/png'));a.download='UCell-居家觀察完成卡.png';a.click();});
- present(box('section','hero',el('small','四站任務完成'),el('h1','你的居家觀察紀錄'),el('p',member?'本週印章已收進會員護照。同週重玩仍保留一枚。':'你已完成訪客體驗。'),el('span','✦ 居家觀察家','badge')),
- box('section','',el('h2','這一次，你觀察到'),...lines.map((v,i)=>box('div','',el('h3',titles[i]),el('p',v))),el('p','若起身變得吃力、身高改變或持續背痛，可把變化與發生時間帶去看診。','notice')),
+ present(box('section','hero',el('small','四站任務完成'),el('h1','你的居家檢測結果'),el('p',member?'本週印章已收進會員護照。同週重玩仍保留一枚。':'你已完成訪客體驗。'),el('span','✦ 居家觀察家','badge')),
+ box('section','',el('h2',summary.heading),...(summary.findings.length?[box('ul','',...summary.findings.map(t=>el('li',t)))]:[]),el('p','這是本次自我觀察。略過的項目不納入判讀；肌力或骨密度仍需專業評估。')),
+ box('section','',el('h2','給你的健康建議'),box('ul','',...summary.advice.map(t=>el('li',t))),link('骨鬆試算依據',source)),
+ box('section','',el('h2','四站檢測明細'),...lines.map((v,i)=>box('div','',el('h3',titles[i]),el('p',v)))),
  box('section','',el('h2','邀家人一起觀察'),el('p','邀請與完成卡只包含任務名稱。你的答案、體重與試算值留在這次畫面。'),box('div','row',link('用 LINE 邀請家人','https://line.me/R/msg/text/?'+encodeURIComponent(message),'action'),save)),
  related('game'),btn('回健康護照',home));
 }

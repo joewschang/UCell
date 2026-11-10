@@ -5,11 +5,12 @@ export type UCellIconName =
   | 'products'|'packages'|'orders'|'binary-trees'|'organization'|'subscriptions'
   | 'bonuses'|'returns'|'workflows'|'reservoirs'|'payouts'|'content'|'documents'
   | 'audit'|'reports'|'analytics'|'uat'|'system'|'provider-operations'
-  | 'home'|'income'|'shop'|'me'|'notification'|'scan'|'shipment'
+  | 'health'|'home'|'income'|'shop'|'me'|'notification'|'scan'|'shipment'
   | 'geo'|'reconciliation'|'lineage'|'settlement'|'calendar'|'control'|'learning'|'events';
 
 type PathDef={d:string;fill?:boolean};
 const P:Record<UCellIconName,PathDef[]>={
+ health:[{d:'M20.8 4.8a5.4 5.4 0 0 0-7.6 0L12 6l-1.2-1.2a5.4 5.4 0 0 0-7.6 7.6L12 21l8.8-8.6a5.4 5.4 0 0 0 0-7.6Z M6 12h3l1.4-3 2.7 6 1.5-3H18'}],
  dashboard:[{d:'M4 4h6v6H4z M14 4h6v6h-6z M4 14h6v6H4z M14 14h6v6h-6z'}],
  people:[{d:'M8 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm8-1a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5ZM3 20v-2c0-3 2-5 5-5s5 2 5 5v2m1-6c3 0 5 1.6 5 4v2'}],
  applications:[{d:'M6 3h9l4 4v14H6z M14 3v5h5 M9 12h6 M9 16h6'}],
