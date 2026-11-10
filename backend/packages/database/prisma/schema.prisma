@@ -4461,7 +4461,8 @@ model QualificationSponsorSelectionEvidence {
   attributionReferrerPersonId             String?  @map("attribution_referrer_person_id") @db.Uuid
   attributionReferrerQualificationId      String?  @map("attribution_referrer_qualification_id") @db.Uuid
   selectedSponsorQualificationId          String   @map("selected_sponsor_qualification_id") @db.Uuid
-  selectedSponsorOwnerPersonId            String   @map("selected_sponsor_owner_person_id") @db.Uuid
+  selectedSponsorOwnerLegalEntityId       String?  @map("selected_sponsor_owner_legal_entity_id") @db.Uuid
+  selectedSponsorOwnerPersonId            String?  @map("selected_sponsor_owner_person_id") @db.Uuid
   selectedByPersonId                      String   @map("selected_by_person_id") @db.Uuid
   selectedAt                              DateTime @map("selected_at") @db.Timestamptz(6)
   source                                  String
@@ -5052,7 +5053,8 @@ model FoundingOccupationEvidence {
   binaryTreeId String @map("binary_tree_id") @db.Uuid
   positionNo Int @map("position_no")
   qualificationId String @unique @map("qualification_id") @db.Uuid
-  initialPersonId String @map("initial_person_id") @db.Uuid
+  initialLegalEntityId String? @map("initial_legal_entity_id") @db.Uuid
+  initialPersonId String? @map("initial_person_id") @db.Uuid
   companySponsorQualificationId String @map("company_sponsor_qualification_id") @db.Uuid
   sponsorRelationshipId String @unique @map("sponsor_relationship_id") @db.Uuid
   actualSponsorSequenceNo Int @map("actual_sponsor_sequence_no")
