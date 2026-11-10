@@ -31,7 +31,17 @@ async function verify(ballNo) {
       try {
         const preview = await service.preview(null,tree.binaryTreeId,{qualificationId:q.qualificationId,binaryParentQualificationId:parent.qualificationId,side,expectedVersion:tree.topologyVersion});
         assert.equal(preview.valid,true);
-        console.log(JSON.stringify({ballNo,queue:true,ownerChecks:true,placementPreview:true,actualPlacement:false}));
+        const rollback = Error('verification complete');
+        await assert.rejects(db.$transaction(async tx => {
+          await service.organization.createBinaryPlacement(tx,{
+            parentQualificationId:parent.qualificationId,childQualificationId:q.qualificationId,side,effectiveFrom:new Date()
+          },{actorType:'SYSTEM',reason:'rollback verification',sourceType:'TREE_PLACEMENT_CONSOLE',correlationId:require('node:crypto').randomUUID()});
+          await tx.$executeRawUnsafe('SET CONSTRAINTS ALL IMMEDIATE');
+          assert.ok(await tx.binaryTreeMembership.findUnique({where:{qualificationId:q.qualificationId}}));
+          throw rollback;
+        }), e => e === rollback);
+        assert.equal(await db.binaryTreeMembership.findUnique({where:{qualificationId:q.qualificationId}}),null);
+        console.log(JSON.stringify({ballNo,queue:true,ownerChecks:true,placementPreview:true,writeRolledBack:true}));
         return;
       } catch(e) {errors.add(e.response?.code ?? e.message);}
     }
