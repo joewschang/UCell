@@ -93,6 +93,8 @@ change(workflow,"current.ownerType !== expected","(current.ownerType !== expecte
 change(workflow,'currentHolderPersonId: null, currentCompanyPrincipalId: companyId','currentHolderLegalEntityId:null, currentHolderPersonId: null, currentCompanyPrincipalId: companyId')
 change(workflow,'currentHolderPersonId: wf.receivingPersonId','currentHolderLegalEntityId:null, currentHolderPersonId: wf.receivingPersonId')
 change(workflow,'currentHolderPersonId: companyHolderPersonId','currentHolderLegalEntityId:null, currentHolderPersonId: companyHolderPersonId')
+change('binary-tree/current-tree','ballAllocation: true, currentHolder: true, sponsorRelation:', 'ballAllocation: true, currentHolder: true, currentHolderLegalEntity:{select:{membershipState:true,status:true}}, sponsorRelation:')
+change('binary-tree/current-tree',"target.currentHolder?.membershipState !== 'FORMAL_MEMBER'", "(target.currentHolder?.membershipState !== 'FORMAL_MEMBER' && !(target.currentHolderLegalEntity?.membershipState === 'FORMAL_MEMBER' && target.currentHolderLegalEntity.status === 'ACTIVE'))")
 for key,s in files.items():
     f=out/key;f.parent.mkdir(parents=True,exist_ok=True);f.write_text(s,encoding='utf-8')
 shutil.copyfile(Path(__file__).with_name('entity-payee.js'),out/modules/'nhi-payout/entity-payee.js')
