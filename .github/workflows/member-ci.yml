@@ -1,7 +1,7 @@
 name: Member frontend checks
 on:
   push:
-    branches: [feature/member-liff-mvp]
+    branches: [main, feature/member-liff-mvp]
     paths: ['member/**', '.github/workflows/member-ci.yml', 'backend/apps/api/src/modules/auth/**', 'backend/scripts/line-token-verifier.test.mjs', 'backend/scripts/member-authentication.test.mjs']
   pull_request:
     paths: ['member/**', '.github/workflows/member-ci.yml', 'backend/apps/api/src/modules/auth/**', 'backend/scripts/line-token-verifier.test.mjs', 'backend/scripts/member-authentication.test.mjs']
