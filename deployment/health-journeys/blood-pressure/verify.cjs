@@ -1,7 +1,7 @@
 const assert = require('node:assert/strict');
 const path = require('node:path');
 const {chromium} = require('playwright-core');
-const game = require('../games.json').at(-1);
+const game = require('../games.json').find(g=>g.id==='blood-pressure');
 const live=process.argv.includes('--live');
 (async()=>{
  const browser=await chromium.launch({executablePath:process.env.CHROME});

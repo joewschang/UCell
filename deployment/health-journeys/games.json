@@ -50,5 +50,18 @@
       "居家量測"
     ],
     "invite": "邀你一起讀懂血壓計，練習在家量血壓。"
+  },
+  {
+    "id": "cognition",
+    "name": "失智/輕度認知障礙評估",
+    "description": "透過八張生活圖卡，回想自己或家人在記憶、判斷與日常活動上的變化。",
+    "href": "/health/cognition/",
+    "cover": "/health/cognition/images/3.jpg",
+    "interest": "認識認知變化",
+    "tags": [
+      "認知健康",
+      "家庭照護"
+    ],
+    "invite": "邀你用八張生活圖卡，一起留意日常記憶與判斷的變化。"
   }
 ]
