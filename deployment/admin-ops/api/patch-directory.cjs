@@ -17,7 +17,7 @@ update("formal-member-application.service.js",[["async adminList(input = {}) {",
 update("admin-formal-member-application.controller.js",[
  ["list(status, take, sourceChannel) { return this.service.adminList(", 'list(status, take, sourceChannel, page, q) { if(page!==undefined||q!==undefined)return this.service.directory({page:page??"1",take,status,sourceChannel,q}); return this.service.adminList('],
  ["__param(0, (0, common_2.Query)('status')),\n    __param(1, (0, common_2.Query)('take')),\n    __param(2, (0, common_2.Query)('sourceChannel')),",
-  "(0, common_2.Header)('Cache-Control','private, no-store'),\n    __param(0, (0, common_2.Query)('status')),\n    __param(1, (0, common_2.Query)('take')),\n    __param(2, (0, common_2.Query)('sourceChannel')),\n    __param(3, (0, common_2.Query)('page')),\n    __param(4, (0, common_2.Query)('q')),"],
+  "(0, swagger_1.ApiQuery)({name:'page',required:false,description:'主檔搜尋頁次，從 1 開始。'}),\n    (0, swagger_1.ApiQuery)({name:'q',required:false,description:'依正式會員主檔條件搜尋。'}),\n    (0, common_2.Header)('Cache-Control','private, no-store'),\n    __param(0, (0, common_2.Query)('status')),\n    __param(1, (0, common_2.Query)('take')),\n    __param(2, (0, common_2.Query)('sourceChannel')),\n    __param(3, (0, common_2.Query)('page')),\n    __param(4, (0, common_2.Query)('q')),"],
  ['[String, String, String]),\n    __metadata("design:returntype", void 0)\n], AdminFormalMemberApplicationController.prototype, "list", null);',
   '[String, String, String, String, String]),\n    __metadata("design:returntype", void 0)\n], AdminFormalMemberApplicationController.prototype, "list", null);']
 ]);

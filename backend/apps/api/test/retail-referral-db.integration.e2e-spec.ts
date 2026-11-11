@@ -29,6 +29,7 @@ describeDb('Retail Referral rollback integration harness',()=>{
    const referrerPerson=await tx.person.create({data:{legalName:`${marker}_REFERRER`,status:'EFFECTIVE'}});
    const purchaser=await tx.person.create({data:{legalName:`${marker}_PURCHASER`,status:'EFFECTIVE'}});
    const referrer=await tx.qualification.create({data:{currentHolderPersonId:referrerPerson.personId,planLevelCode:'STARTER',status:'EFFECTIVE',effectiveAt:effectiveFrom}});
+   await tx.qualificationHolderHistory.create({data:{qualificationId:referrer.qualificationId,holderPersonId:referrerPerson.personId,effectiveFrom,sourceType:'RETAIL_REFERRAL_TEST'}});
    await tx.qualificationPlanHistory.create({data:{qualificationId:referrer.qualificationId,planCode:'STARTER',effectiveFrom,sourceType:'RETAIL_REFERRAL_TEST'}});
    await tx.qualificationStatusHistory.create({data:{qualificationId:referrer.qualificationId,status:'EFFECTIVE',effectiveFrom,sourceType:'RETAIL_REFERRAL_TEST'}});
    await tx.activePeriod.create({data:{qualificationId:referrer.qualificationId,activeFrom:effectiveFrom,activeTo:new Date('2045-01-01T00:00:00.000Z'),sourceType:'RETAIL_REFERRAL_TEST',ruleVersionCode:rule}});

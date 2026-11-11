@@ -4,7 +4,11 @@ describe('operations CSV export',()=>{
  const from=new Date('2026-10-01T00:00:00Z'),to=new Date('2026-10-18T00:00:00Z');
  function setup(rows:any[]=[]){const findMany=jest.fn().mockResolvedValue(rows);return {findMany,service:new AdminOpsReadyService({qualification:{findMany},order:{findMany},payoutBatch:{findMany}} as any,{} as any)};}
  test.each([['QUALIFICATIONS','createdAt'],['ORDERS','createdAt'],['PAYOUTS','periodEnd']] as const)('%s matches report date semantics',async(dataset,field)=>{const {service,findMany}=setup();await service.exportDataset(dataset,10,from,to);expect(findMany).toHaveBeenCalledWith(expect.objectContaining({where:{[field]:{gte:from,lte:to}},take:11}));});
- test('controller forwards selected dates',async()=>{const exportDataset=jest.fn().mockResolvedValue({});await new AdminOpsReadyController({exportDataset} as any).export('ORDERS','50',from.toISOString(),to.toISOString());expect(exportDataset).toHaveBeenCalledWith('ORDERS',50,from,to);});
+ test.each([[undefined,false],['true',true]] as const)('controller forwards the selected date boundary %s',async(query,exclusive)=>{
+   const exportDataset=jest.fn().mockResolvedValue({});
+   await new AdminOpsReadyController({exportDataset} as any).export('ORDERS','50',from.toISOString(),to.toISOString(),query);
+   expect(exportDataset).toHaveBeenCalledWith('ORDERS',50,from,to,exclusive);
+ });
  test('rejects unknown dataset and invalid limits before querying',async()=>{const {service,findMany}=setup();await expect(service.exportDataset('BAD' as any)).rejects.toThrow();for(const limit of [NaN,0,1.5])await expect(service.exportDataset('ORDERS',limit)).rejects.toThrow();expect(findMany).not.toHaveBeenCalled();});
  test('rejects partial, invalid and reversed periods',async()=>{const {service,findMany}=setup();for(const dates of [[from,undefined],[new Date('bad'),to],[to,from]] as const)await expect(service.exportDataset('ORDERS',10,...dates)).rejects.toThrow();expect(findMany).not.toHaveBeenCalled();});
  test('never silently truncates an export',async()=>{const rows=Array.from({length:3},(_,i)=>({qualificationId:String(i),qualificationNo:i,planLevelCode:'X',status:'DRAFT',activeFlag:false}));await expect(setup(rows).service.exportDataset('QUALIFICATIONS',2,from,to)).rejects.toThrow('匯出筆數超過上限');});

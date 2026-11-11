@@ -15,7 +15,10 @@ const url=process.env.PHASE2_TEST_DATABASE_URL;
  beforeAll(()=>{db=new PrismaClient({datasources:{db:{url}}});service=new OperationsFinancialHealthService(db as any);ops=new AdminOperationsService(db as any,new AuditService());});afterAll(()=>db?.$disconnect());
  async function fixture(){
   const rule='OPS-FIN-'+randomUUID(),person=await db.person.create({data:{legalName:'PRIVATE FINANCIAL NAME'}}),q=await db.qualification.create({data:{currentHolderPersonId:person.personId,planLevelCode:'STARTER'}}),at=new Date('1889-01-01Z');
-  const bonus=await db.bonusAward.create({data:{recipientQualificationId:q.qualificationId,awardType:'REFERRAL',sourceEventId:randomUUID(),theoryAmount:100,payableAmount:100,activeSnapshot:true,planLevelSnapshot:'STARTER',ruleVersionCode:rule,parameterSnapshotHash:'a'.repeat(64),occurredAt:at,pendingUntil:at,calculationDetail:{private:'PRIVATE CALCULATION'}}});await db.bonusAwardLifecycleEvent.create({data:{bonusAwardId:bonus.bonusAwardId,status:'EFFECTIVE',occurredAt:at}});
+  await db.qualificationHolderHistory.create({data:{qualificationId:q.qualificationId,holderPersonId:person.personId,effectiveFrom:at,sourceType:'SYNTHETIC_TEST',sourceId:q.qualificationId}});
+  const order=await db.order.create({data:{purchaserPersonId:person.personId,qualificationId:q.qualificationId,purpose:'RETAIL',status:'PAID',grossAmount:100,netAmount:100,ruleVersionCode:rule,createdAt:at,confirmedAt:at,paidAt:at}});
+  const volume=await db.pvLedger.create({data:{qualificationId:q.qualificationId,pvType:'GPV',amount:100,sourceType:'ORDER',sourceId:order.orderId,eventType:'GPV_CREATED',ruleVersionCode:rule,occurredAt:at,correlationId:randomUUID()}});
+  const bonus=await db.bonusAward.create({data:{recipientQualificationId:q.qualificationId,awardType:'REFERRAL',sourceEventId:volume.eventId,theoryAmount:100,payableAmount:100,activeSnapshot:true,planLevelSnapshot:'STARTER',ruleVersionCode:rule,parameterSnapshotHash:'a'.repeat(64),occurredAt:at,pendingUntil:at,calculationDetail:{private:'PRIVATE CALCULATION'}}});await db.bonusAwardLifecycleEvent.create({data:{bonusAwardId:bonus.bonusAwardId,status:'EFFECTIVE',occurredAt:at}});
   const payable=new UnifiedPayableService(db as any,new RecoveryBalanceService(db as any));
   return {rule,person,q,bonus,at,payable};
  }

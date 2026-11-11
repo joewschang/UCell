@@ -1,3 +1,4 @@
+import {attachPayoutAward} from './helpers/payout-award-fixture';
 import {PrismaClient,Prisma} from '@prisma/client';
 import {AdminOperationsService} from '../src/modules/admin-operations/admin-operations.service';
 import {AuditService} from '../src/common/audit/audit.service';
@@ -13,7 +14,8 @@ describeDb('PAYOUT_EXPORT_ARTIFACT_REVISION',()=>{
     const person=await db.person.create({data:{legalName:'Payout Export Recipient'}});
     const qualification=await db.qualification.create({data:{currentHolderPersonId:person.personId,planLevelCode:'STARTER',status:'EFFECTIVE',effectiveAt:new Date()}});
     const batch=await db.payoutBatch.create({data:{periodStart:new Date('2026-09-01T00:00:00Z'),periodEnd:new Date('2026-09-30T00:00:00Z'),status:'READY',totalGross:new Prisma.Decimal(100),totalRecovery:new Prisma.Decimal(0),totalNet:new Prisma.Decimal(100)}});
-    await db.payoutLine.create({data:{payoutBatchId:batch.payoutBatchId,recipientQualificationId:qualification.qualificationId,grossAmount:new Prisma.Decimal(100),netAmount:new Prisma.Decimal(100),detailJson:{source:'isolated-test'}}});
+    const line=await db.payoutLine.create({data:{payoutBatchId:batch.payoutBatchId,recipientQualificationId:qualification.qualificationId,grossAmount:new Prisma.Decimal(100),netAmount:new Prisma.Decimal(100),detailJson:{source:'isolated-test'}}});
+    await attachPayoutAward(db,line,person.personId,batch.periodStart,'ISOLATED_TEST');
     const service=new AdminOperationsService(db as any,new AuditService());
     const finance=await service.approvePayout(batch.payoutBatchId,'FINANCE_REVIEW','00000000-0000-0000-0000-000000000101','FINANCE','Finance verified','00000000-0000-0000-0000-000000000201','00000000-0000-0000-0000-000000000202');
     expect(finance.stage).toBe('FINANCE_REVIEW');
@@ -54,7 +56,7 @@ describeDb('PAYOUT_EXPORT_ARTIFACT_REVISION',()=>{
     const qualification=await db.qualification.create({data:{currentHolderPersonId:person.personId,planLevelCode:'STARTER',status:'EFFECTIVE',effectiveAt:new Date()}});
     const batch=await db.payoutBatch.create({data:{periodStart:new Date('2026-10-01T00:00:00Z'),periodEnd:new Date('2026-10-31T00:00:00Z'),status:'READY',totalGross:new Prisma.Decimal(100),totalRecovery:new Prisma.Decimal(0),totalNet:new Prisma.Decimal(100)}});
     const line=await db.payoutLine.create({data:{payoutBatchId:batch.payoutBatchId,recipientQualificationId:qualification.qualificationId,grossAmount:new Prisma.Decimal(100),netAmount:new Prisma.Decimal(100),detailJson:{source:'partial-result-isolated-test'}}});
-    const payable=await db.payableEntry.create({data:{qualificationId:qualification.qualificationId,sourceType:'MANUAL_TEST',sourceId:line.payoutLineId,awardType:'REFERRAL',grossAmount:new Prisma.Decimal(100),availableAt:new Date(),status:'ALLOCATED',payoutLineId:line.payoutLineId,ruleVersionCode:'ISOLATED_TEST'}});
+    const payable=await attachPayoutAward(db,line,person.personId,batch.periodStart,'ISOLATED_TEST');
     const service=new AdminOperationsService(db as any,new AuditService());
     await service.approvePayout(batch.payoutBatchId,'FINANCE_REVIEW','00000000-0000-0000-0000-000000000111','FINANCE',undefined,'00000000-0000-0000-0000-000000000221','00000000-0000-0000-0000-000000000222');
     await service.approvePayout(batch.payoutBatchId,'COMPLIANCE_REVIEW','00000000-0000-0000-0000-000000000112','COMPLIANCE_AUDIT',undefined,'00000000-0000-0000-0000-000000000223','00000000-0000-0000-0000-000000000224');

@@ -98,6 +98,7 @@ describeDb('repurchase cumulative partial returns',()=>{
   async function recognitionFixture(){
     const f=await fixture(),at=new Date('2026-09-01');
     const parent=await db.qualification.create({data:{currentHolderPersonId:f.qualification.currentHolderPersonId,planLevelCode:'STARTER',status:'EFFECTIVE',effectiveAt:at}});
+    await db.qualificationHolderHistory.create({data:{qualificationId:parent.qualificationId,holderPersonId:f.qualification.currentHolderPersonId,effectiveFrom:at,sourceType:'TEST'}});
     await db.qualification.update({where:{qualificationId:f.qualification.qualificationId},data:{status:'EFFECTIVE',effectiveAt:at}});
     for(const q of [f.qualification,parent]){
       await db.qualificationPlanHistory.create({data:{qualificationId:q.qualificationId,planCode:'STARTER',effectiveFrom:at,sourceType:'TEST'}});

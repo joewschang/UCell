@@ -311,7 +311,7 @@ describeDb('ORDER_ECONOMIC_EVIDENCE_REAL_DB',()=>{
     const start=new Date(envelope.inputs.periodStart),end=new Date(envelope.inputs.periodEnd),stateHash='c'.repeat(64);
     const batch=await db.settlementBatch.create({data:{settlementType:'BINARY_K1',periodStart:start,periodEnd:end,ruleVersionCode:'R1.0B'}});
     envelope.sourceId=batch.settlementBatchId;
-    const original=await db.bonusAward.create({data:{recipientQualificationId:f.q.qualificationId,awardType:'BINARY',sourceEventId:randomUUID(),theoryAmount:10,payableAmount:10,activeSnapshot:true,ruleVersionCode:'R1.0B',occurredAt:start,pendingUntil:start,calculationDetail:{}}});
+    const original=await db.bonusAward.create({data:{recipientQualificationId:f.q.qualificationId,awardType:'BINARY',settlementBatchId:batch.settlementBatchId,theoryAmount:10,payableAmount:10,activeSnapshot:true,ruleVersionCode:'R1.0B',occurredAt:start,pendingUntil:start,calculationDetail:{}}});
     const recipient={key:original.bonusAwardId,awardId:original.bonusAwardId,awardType:'BINARY' as const,qualificationId:f.q.qualificationId,generation:0,active:true,eligible:true,theory:'10',posted:'10',pendingUntil:start.toISOString(),detail:{},qualification:{at:envelope.at,plan:{planCode:'STARTER'},status:{status:'EFFECTIVE'},activeIntervals:[{activeFrom:start.toISOString()}]}};
     const snapshot=await db.$transaction(tx=>storeReplaySnapshot(tx,{...envelope,recipients:[recipient]}));
     const ret=await db.returnCase.create({data:{orderId:f.order.orderId,status:'POSTED',reasonCode:'TEST',occurredAt:start,idempotencyKey:randomUUID(),correlationId:randomUUID()}});
@@ -339,10 +339,11 @@ describeDb('ORDER_ECONOMIC_EVIDENCE_REAL_DB',()=>{
     if(mode==='positive'){
       const initial=(await f.read()).economicEvidence.returnReplays[0].recordedEffects.periods[0].postings[0].correctionAward as any;
       expect(initial.payables).toEqual([]);
+      await db.qualificationHolderHistory.create({data:{qualificationId:f.q.qualificationId,holderPersonId:f.person.personId,effectiveFrom:start,sourceType:'SYNTHETIC_TEST',sourceId:f.q.qualificationId}});
       const payout=await db.payoutBatch.create({data:{periodStart:start,periodEnd:end,status:'READY',totalGross:12,totalRecovery:0,totalNet:12}});
       const payoutLine=await db.payoutLine.create({data:{payoutBatchId:payout.payoutBatchId,recipientQualificationId:f.q.qualificationId,grossAmount:12,netAmount:12,detailJson:{privateBankDetail:'hidden'}}});
       await db.payableEntry.create({data:{qualificationId:f.q.qualificationId,sourceType:'BONUS_AWARD',sourceId:before[0].correctionAwardId!,awardType:'BINARY',grossAmount:2,availableAt:start,status:'ALLOCATED',payoutLineId:payoutLine.payoutLineId,ruleVersionCode:'R1.0B'}});
-      await db.payableEntry.create({data:{qualificationId:f.q.qualificationId,sourceType:'MANUAL_TEST',sourceId:randomUUID(),awardType:'BINARY',grossAmount:10,availableAt:start,status:'ALLOCATED',payoutLineId:payoutLine.payoutLineId,ruleVersionCode:'R1.0B'}});
+      await db.payableEntry.create({data:{qualificationId:f.q.qualificationId,sourceType:'BONUS_AWARD',sourceId:original.bonusAwardId,awardType:original.awardType,grossAmount:original.payableAmount,availableAt:original.pendingUntil,status:'ALLOCATED',payoutLineId:payoutLine.payoutLineId,ruleVersionCode:original.ruleVersionCode}});
       const service=new AdminOperationsService(db as any,new AuditService()),actor=randomUUID();
       await service.approvePayout(payout.payoutBatchId,'FINANCE_REVIEW',actor,'FINANCE',undefined,randomUUID(),randomUUID());
       await service.approvePayout(payout.payoutBatchId,'COMPLIANCE_REVIEW',randomUUID(),'COMPLIANCE_AUDIT',undefined,randomUUID(),randomUUID());

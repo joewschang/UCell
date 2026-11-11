@@ -58,7 +58,33 @@ export async function pollCompensationAudits(db:PrismaClient) {
 
 export async function verifyPayoutSources(tx:Tx,batchId:string) {
   const batch=await tx.payoutBatch.findUniqueOrThrow({where:{payoutBatchId:batchId}});
-  const entries=await tx.payableEntry.findMany({where:{payoutLine:{payoutBatchId:batchId}}});
+  // Start with every exported line. Starting from payable entries would omit a
+  // positive line that has no entries, and cannot establish the line's recipient.
+  const lines=await tx.payoutLine.findMany({where:{payoutBatchId:batchId},include:{
+    payableEntries:true,
+    recoveryApplications:{select:{amount:true,recoveryEvent:{select:{bonusAward:{select:{recipientQualificationId:true}}}}}}
+  }});
+  let totalGross=new Prisma.Decimal(0),totalRecovery=new Prisma.Decimal(0),totalNet=new Prisma.Decimal(0);
+  for(const line of lines) {
+    let gross=new Prisma.Decimal(0),recovery=new Prisma.Decimal(0);
+    for(const entry of line.payableEntries) {
+      if(entry.qualificationId!==line.recipientQualificationId || entry.status!=='ALLOCATED' || entry.grossAmount.lt(0))
+        throw new ConflictException('付款明細與應付分錄的受領資格、分配狀態或金額不符');
+      gross=gross.add(entry.grossAmount);
+    }
+    for(const application of line.recoveryApplications) {
+      if(application.recoveryEvent.bonusAward.recipientQualificationId!==line.recipientQualificationId || application.amount.lt(0))
+        throw new ConflictException('付款明細與追回沖抵的受領資格或金額不符');
+      recovery=recovery.add(application.amount);
+    }
+    if(!gross.eq(line.grossAmount) || !recovery.eq(line.recoveryOffset) || recovery.gt(gross) || !gross.sub(recovery).eq(line.netAmount))
+      throw new ConflictException('付款明細的來源總額、追回沖抵或淨額無法核對');
+    totalGross=totalGross.add(gross);totalRecovery=totalRecovery.add(recovery);totalNet=totalNet.add(line.netAmount);
+  }
+  if(!totalGross.eq(batch.totalGross)||!totalRecovery.eq(batch.totalRecovery)||!totalNet.eq(batch.totalNet))
+    throw new ConflictException('付款批次與明細加總不符');
+
+  const entries=lines.flatMap(line=>line.payableEntries);
   const batches=new Set<string>();
   for(const entry of entries) {
     let at:Date, qid:string, amount:Prisma.Decimal;
@@ -79,9 +105,11 @@ export async function verifyPayoutSources(tx:Tx,batchId:string) {
     const q=await tx.qualification.findUniqueOrThrow({where:{qualificationId:qid}});
     const holders=await tx.qualificationHolderHistory.findMany({where:{qualificationId:qid,effectiveFrom:{lte:at},OR:[{effectiveTo:null},{effectiveTo:{gt:at}}]}});
     const owners=await tx.qualificationOwnerInterval.findMany({where:{qualificationId:qid,effectiveFrom:{lte:at},OR:[{effectiveTo:null},{effectiveTo:{gt:at}}]}});
-    const person=owners[0]?.personId??holders[0]?.holderPersonId;
-    const entity=owners[0]?.legalEntityId??holders[0]?.holderLegalEntityId;
-    if(owners.length>1||holders.length>1||(!person&&!entity)||owners[0]?.ownerType==='COMPANY'||(person??null)!==q.currentHolderPersonId||(entity??null)!==q.currentHolderLegalEntityId)
+    const owner=owners[0],holder=holders[0];
+    const person=(owner?owner.personId:holder?.holderPersonId)??null;
+    const entity=(owner?owner.legalEntityId:holder?.holderLegalEntityId)??null;
+    const conflictingHistory=owner&&holder&&(person!==holder.holderPersonId||entity!==holder.holderLegalEntityId);
+    if(owners.length>1||holders.length>1||(!person&&!entity)||owner?.ownerType==='COMPANY'||q.currentCompanyPrincipalId||conflictingHistory||person!==q.currentHolderPersonId||entity!==q.currentHolderLegalEntityId)
       throw new ConflictException('受領身分需要覆核，請核對獎金發生時的持有人與撥款對象');
   }
   const periods=await tx.settlementBatch.findMany({where:{status:'FINALIZED',OR:[{settlementBatchId:{in:[...batches]}},{periodEnd:{gt:batch.periodStart,lte:batch.periodEnd},ruleVersionCode:{in:[...new Set(entries.map(e=>e.ruleVersionCode))]}}]}});

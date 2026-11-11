@@ -1,5 +1,5 @@
 import {Body,Controller,Get,Header,Headers,Param,ParseUUIDPipe,Post,Query,Req,StreamableFile,UseGuards} from '@nestjs/common';
-import {ApiBearerAuth,ApiHeader,ApiOperation,ApiProperty,ApiPropertyOptional,ApiTags} from '@nestjs/swagger';
+import {ApiBearerAuth,ApiHeader,ApiOperation,ApiProperty,ApiPropertyOptional,ApiQuery,ApiTags} from '@nestjs/swagger';
 import {Roles} from '../auth/roles.decorator';
 import {FormalMemberApplicationService,type AdminPaperFormalInput} from './formal-member-application.service';
 import {FormalMembershipConflictService} from './formal-membership-conflict.service';
@@ -68,6 +68,8 @@ export class AdminFormalMemberApplicationController {
  @ApiOperation({operationId:'adminCreatePaperFormalMemberApplication',description:'Back-office entry for paper INDIVIDUAL or LEGAL_ENTITY formal applications. Corporate applications are paper-only. Creates no Qualification/Ball.'})
  createPaper(@Body() body:AdminPaperFormalApplicationDto,@Headers('idempotency-key') key:string,@Req() req:any){return this.service.createPaper(body,req.user?.personId,key,req.requestId);}
  @Get() @ApiOperation({operationId:'adminListFormalMemberApplications',description:'Read-only metadata queue. The encrypted application payload is never decrypted or returned.'})
+ @ApiQuery({name:'page',required:false,description:'主檔搜尋頁次，從 1 開始。'})
+ @ApiQuery({name:'q',required:false,description:'依正式會員主檔條件搜尋。'})
  @Header('Cache-Control','private, no-store')
  list(@Query('status') status?:string,@Query('take') take?:string,@Query('sourceChannel') sourceChannel?:string,
       @Query('page') page?:string,@Query('q') q?:string){

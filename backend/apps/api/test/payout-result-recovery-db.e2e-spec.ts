@@ -1,3 +1,4 @@
+import {attachPayoutAward} from './helpers/payout-award-fixture';
 import {Test} from '@nestjs/testing';
 import {ValidationPipe} from '@nestjs/common';
 import {FastifyAdapter,NestFastifyApplication} from '@nestjs/platform-fastify';
@@ -26,12 +27,15 @@ const url=process.env.PHASE2_TEST_DATABASE_URL;
  afterAll(async()=>db?.$disconnect());
  async function fixture(extraLine=false,periodStart=new Date('2026-01-01Z'),periodEnd=new Date('2026-02-01Z')){
   const person=await db.person.create({data:{legalName:'Synthetic payment recovery',status:'EFFECTIVE'}}),actor=randomUUID();
-  const qualification=await db.qualification.create({data:{currentHolderPersonId:person.personId,planLevelCode:'STARTER',status:'EFFECTIVE',effectiveAt:new Date()}});
-  await db.qualificationHolderHistory.create({data:{qualificationId:qualification.qualificationId,holderPersonId:person.personId,effectiveFrom:new Date(0),sourceType:'TEST'}});
+  const qualification=await db.qualification.create({data:{currentHolderPersonId:person.personId,planLevelCode:'STARTER',status:'EFFECTIVE',effectiveAt:periodStart}});
   const batch=await db.payoutBatch.create({data:{periodStart,periodEnd,status:'READY',totalGross:extraLine?200:100,totalRecovery:0,totalNet:extraLine?200:100}});
   const line=await db.payoutLine.create({data:{payoutBatchId:batch.payoutBatchId,recipientQualificationId:qualification.qualificationId,grossAmount:100,netAmount:100,detailJson:{source:'synthetic'}}});
-  const payable=await db.payableEntry.create({data:{qualificationId:qualification.qualificationId,sourceType:'MANUAL_TEST',sourceId:line.payoutLineId,awardType:'REFERRAL',grossAmount:100,availableAt:new Date(),status:'ALLOCATED',payoutLineId:line.payoutLineId,ruleVersionCode:'SYNTHETIC'}});
-  if(extraLine){const recipient=await db.qualification.create({data:{currentHolderPersonId:person.personId,planLevelCode:'STARTER',status:'EFFECTIVE',effectiveAt:new Date()}});await db.payoutLine.create({data:{payoutBatchId:batch.payoutBatchId,recipientQualificationId:recipient.qualificationId,grossAmount:100,netAmount:100,detailJson:{source:'synthetic-second'}}});}
+  const payable=await attachPayoutAward(db,line,person.personId,periodStart);
+  if(extraLine){
+    const recipient=await db.qualification.create({data:{currentHolderPersonId:person.personId,planLevelCode:'STARTER',status:'EFFECTIVE',effectiveAt:periodStart}});
+    const second=await db.payoutLine.create({data:{payoutBatchId:batch.payoutBatchId,recipientQualificationId:recipient.qualificationId,grossAmount:100,netAmount:100,detailJson:{source:'synthetic-second'}}});
+    await attachPayoutAward(db,second,person.personId,periodStart);
+  }
   await service.approvePayout(batch.payoutBatchId,'FINANCE_REVIEW',actor,'FINANCE',undefined,randomUUID(),randomUUID());
   await service.approvePayout(batch.payoutBatchId,'COMPLIANCE_REVIEW',randomUUID(),'COMPLIANCE_AUDIT',undefined,randomUUID(),randomUUID());
   await service.exportPayout(batch.payoutBatchId,randomUUID(),actor,'FINANCE',randomUUID(),randomUUID());
@@ -65,7 +69,12 @@ const url=process.env.PHASE2_TEST_DATABASE_URL;
  it('locks shared recipients in stable order across opposite-order concurrent batches',async()=>{
   const f=await fixture(true),lines=await db.payoutLine.findMany({where:{payoutBatchId:f.batch.payoutBatchId},orderBy:{recipientQualificationId:'asc'}});
   const batch=await db.payoutBatch.create({data:{periodStart:f.batch.periodStart,periodEnd:f.batch.periodEnd,status:'READY',totalGross:200,totalRecovery:0,totalNet:200}});
-  const other=[];for(const line of lines)other.push(await db.payoutLine.create({data:{payoutBatchId:batch.payoutBatchId,recipientQualificationId:line.recipientQualificationId,grossAmount:100,netAmount:100,detailJson:{source:'concurrent-fixture'}}}));
+  const other=[];
+  for(const line of lines){
+    const next=await db.payoutLine.create({data:{payoutBatchId:batch.payoutBatchId,recipientQualificationId:line.recipientQualificationId,grossAmount:100,netAmount:100,detailJson:{source:'concurrent-fixture'}}});
+    await attachPayoutAward(db,next,f.person.personId,batch.periodStart);
+    other.push(next);
+  }
   await service.approvePayout(batch.payoutBatchId,'FINANCE_REVIEW',f.actor,'FINANCE',undefined,randomUUID(),randomUUID());
   await service.approvePayout(batch.payoutBatchId,'COMPLIANCE_REVIEW',randomUUID(),'COMPLIANCE_AUDIT',undefined,randomUUID(),randomUUID());
   await service.exportPayout(batch.payoutBatchId,randomUUID(),f.actor,'FINANCE',randomUUID(),randomUUID());
@@ -209,6 +218,7 @@ const url=process.env.PHASE2_TEST_DATABASE_URL;
   const f=await fixture();
   const batch=await db.payoutBatch.create({data:{periodStart:new Date('2026-03-01Z'),periodEnd:new Date('2026-04-01Z'),status:'READY',totalGross:100,totalRecovery:0,totalNet:100}});
   const line=await db.payoutLine.create({data:{payoutBatchId:batch.payoutBatchId,recipientQualificationId:f.line.recipientQualificationId,grossAmount:100,netAmount:100,detailJson:{source:'concurrency'}}});
+  await attachPayoutAward(db,line,f.person.personId,batch.periodStart);
   let ready!:()=>void,release!:()=>void;const locked=new Promise<void>(resolve=>{ready=resolve;}),hold=new Promise<void>(resolve=>{release=resolve;});
   const approval=db.$transaction(async tx=>{await tx.$queryRaw`SELECT payout_batch_id FROM ledger.payout_batch WHERE payout_batch_id=${batch.payoutBatchId}::uuid FOR UPDATE`;ready();await hold;await tx.payoutApproval.create({data:{payoutBatchId:batch.payoutBatchId,stage:'FINANCE_REVIEW',decision:'APPROVED',actorId:randomUUID()}});await tx.payoutBatch.update({where:{payoutBatchId:batch.payoutBatchId},data:{status:'REVIEWED'}});});
   await locked;
