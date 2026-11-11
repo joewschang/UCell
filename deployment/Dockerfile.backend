@@ -12,6 +12,7 @@ RUN pnpm --filter @ucell/database exec prisma generate
 RUN pnpm -r build
 
 FROM node:24-alpine AS runtime
+RUN apk add --no-cache font-noto-cjk
 RUN corepack enable && corepack prepare pnpm@12.4.1 --activate
 WORKDIR /app
 COPY --from=build /app /app

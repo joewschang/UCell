@@ -34,6 +34,7 @@ jobs:
       - name: Run isolated mock browser smoke
         env:
           VITE_ENABLE_MOCK: 'true'
+          VITE_API_BASE_URL: https://api.ucell.life/api/v1
           SMOKE_SCREENSHOT: test-artifacts/member-mobile.png
         run: |
           mkdir -p test-artifacts
@@ -50,6 +51,7 @@ jobs:
           done
           curl --fail --silent http://127.0.0.1:5174/ > /dev/null
           timeout 180s corepack pnpm run test:browser
+          SCREENSHOT_DIR=test-artifacts/daily-greeting timeout 180s node tests/daily-greeting-smoke.cjs
       - name: Preserve mock browser evidence
         if: always()
         uses: actions/upload-artifact@v4

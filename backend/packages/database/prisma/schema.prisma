@@ -5326,3 +5326,22 @@ model BonusOpportunity {
   @@map("bonus_opportunity")
   @@schema("ledger")
 }
+
+model DailyGreetingPublication {
+ id String @id @db.Uuid
+ greetingDate String @map("greeting_date")
+ title String
+ message String
+ image Bytes @db.ByteA
+ imageHash String @map("image_hash")
+ status String @default("DRAFT")
+ createdBy String @map("created_by")
+ createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+ approvedBy String? @map("approved_by")
+ approvedAt DateTime? @map("approved_at") @db.Timestamptz(6)
+ approvalReference String? @map("approval_reference")
+ publishAt DateTime @map("publish_at") @db.Timestamptz(6)
+ @@index([status,publishAt],map:"daily_greeting_release")
+ @@map("daily_greeting_publication")
+ @@schema("learning")
+}
