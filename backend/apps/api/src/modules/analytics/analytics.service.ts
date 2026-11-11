@@ -29,10 +29,19 @@ export class AnalyticsService {
   }
   async overview(){const row=await this.latest();return row?{...this.metadata(row),scope:'ALL_COMPANY_PERSONS',...row.payload.nasl.summary,policy:row.payload.policy}
     :{status:'UNAVAILABLE',reason:'PROJECTION_NOT_BUILT',asOf:null,policy:ANALYTICS_POLICY};}
-  async roots(q?:string){
-    if(q&&!/^\d{1,18}$/.test(q))throw new BadRequestException('QUALIFICATION_NUMBER_REQUIRED');
-    const rows=await this.prisma.qualification.findMany({where:q?{qualificationNo:BigInt(q)}:{},take:30,orderBy:{qualificationNo:'asc'},select:{qualificationId:true,qualificationNo:true}});
-    return rows.map(row=>({id:row.qualificationId,label:`Q#${row.qualificationNo}`}));
+  async roots(q?: string) {
+    const query = q?.trim().toUpperCase() ?? '';
+    if (query && !/^[A-Z0-9][A-Z0-9-]{0,23}$/.test(query)) {
+      throw new BadRequestException('BALL_NUMBER_REQUIRED');
+    }
+    const where: Prisma.QualificationWhereInput = /^\d{1,18}$/.test(query)
+      ? { qualificationNo: BigInt(query) }
+      : query ? { ballNo: { startsWith: query } } : {};
+    const rows = await this.prisma.qualification.findMany({
+      where, take: 30, orderBy: { qualificationNo: 'asc' },
+      select: { qualificationId: true, qualificationNo: true, ballNo: true },
+    });
+    return rows.map(row => ({ id: row.qualificationId, label: row.ballNo ?? `尚未編號 #${row.qualificationNo}` }));
   }
   async sonar(tree:'sponsor'|'binary',root:string){requireUuid(root);const row=await this.latest(root);
     if(!row?.payload.sonar)return {status:'UNAVAILABLE',reason:'ROOT_PROJECTION_NOT_BUILT',root,tree};

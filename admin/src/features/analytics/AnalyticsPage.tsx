@@ -48,7 +48,7 @@ export function AnalyticsPage(){
     catch(e){setError(e)}finally{setPending(false);lock.current=false;}}
   const n=overview.error?undefined:overview.data?.data,s=sonar.error?undefined:sonar.data?.data;
   return <div className="analytics-page"><PageHeader title={uiText("NASL／十二代組織健康雷達")} subtitle="用已發生的經營活動辨識成長與關懷機會。管理指標不影響會員資格、獎金或結算。"/>
-    <Card title="分析範圍"><div className="analytics-controls"><form onSubmit={e=>{e.preventDefault();setFind(search);setRoot('');setGeneration(null);}}><Field label="依球號搜尋"><input inputMode="numeric" pattern="[0-9]*" value={search} onChange={e=>setSearch(e.target.value)} placeholder="例如 1001"/></Field><button type="submit">搜尋</button></form>
+    <Card title="分析範圍"><div className="analytics-controls"><form onSubmit={e=>{e.preventDefault();setFind(search);setRoot('');setGeneration(null);}}><Field label="依球號搜尋"><input maxLength={24} value={search} onChange={e=>setSearch(e.target.value)} placeholder="請輸入球號或前綴"/></Field><button type="submit">搜尋</button></form>
       <Field label="組織起點（不包含起點本身）"><select value={root} onChange={e=>{setRoot(e.target.value);setGeneration(null);}}><option value="">{uiText("全公司 NASL；選擇球號可看雷達")}</option>{roots.data?.data.map(q=><option key={q.id} value={q.id}>{uiValue((q.label))}</option>)}</select></Field>
       <Field label="組織關係"><select value={tree} onChange={e=>{setTree(e.target.value as 'sponsor'|'binary');setGeneration(null);}}><option value="sponsor">推薦組織</option><option value="binary">雙軌組織</option></select></Field>
       {canRebuild&&<button onClick={rebuild} disabled={pending}>{pending?'建立快照中…':root?uiText("更新 NASL 與此組織雷達"):uiText("更新 NASL 快照")}</button>}</div><p className="muted">一次選擇一個組織起點。新快照保留歷史；第一次建立時，趨勢與轉換資料尚不足。</p><QueryFeedback query={roots}/><ErrorBox error={error}/></Card>
