@@ -1,6 +1,6 @@
 {
   "sourceBase": "abd8ce7415016b60571d1946f08ca8eacdd40d27",
-  "productionBase": "ucellprodacrm3z2zx4ohqyui.azurecr.io/ucell-api@sha256:14f9aa19be7e4d5aaf5efbf95ecb3534fed450fd5c0d97fa8c7e8dcb334b536f",
+  "productionBase": "ucellprodacrm3z2zx4ohqyui.azurecr.io/ucell-api@sha256:530f0bfec2ec6541666745f5043c98a29925bae8c521b2ed7a9e70638f073966",
   "deployed": false,
   "build": "PASS",
   "focusedTests": {
@@ -15,7 +15,7 @@
     "greetingModulesPresent": true,
     "healthGamePreserved": true
   },
-  "preservedApiFiles": 1866,
+  "preservedApiFiles": 1869,
   "changedExistingFiles": [
     "/app/apps/api/dist/modules/daily-greetings/daily-greeting.js",
     "/app/apps/api/dist/modules/daily-greetings/daily-greeting.js.map"
