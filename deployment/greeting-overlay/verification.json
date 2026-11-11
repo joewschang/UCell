@@ -2,8 +2,8 @@
   "source": "0da4e75b7e21f4045d99614a068401c4d77612f5",
   "deployed": false,
   "apiTests": {
-    "suites": 4,
-    "tests": 25,
+    "suites": 6,
+    "tests": 37,
     "databaseAssertions": 162
   },
   "memberTests": 18,
@@ -23,7 +23,7 @@
   "localRestore": "PASS publication id/status/PNG md5/audit count; synthetic local database only",
   "productionRestore": "BLOCKED: direct workstation connection refused; temporary single-IP rule awaiting user authorization",
   "fullCandidateBoot": "BLOCKED on local main-only schema: existing production notification-hub-migrate.cjs expects integration.member_transaction_notice; production restore required",
-  "schedule": "NOT_CREATED: paid job/database access awaiting user authorization",
+  "schedule": "IMPLEMENTED_AND_ISOLATED_TESTED: existing API; activation and live Taipei 07:00 verification pending release gates",
   "preservation": {
     "api": {
       "baseDigest": "91271538f78d1e337bc980c2c6a32d567da868f91cb89a058b67b006e631a82e",
@@ -48,6 +48,8 @@
         "/app/apps/api/dist/modules/daily-greetings/daily-greeting.module.js.map",
         "/app/apps/api/dist/modules/daily-greetings/greeting-upload.js.map",
         "/app/apps/api/dist/modules/daily-greetings/greeting-publication.module.js.map",
+        "/app/apps/api/dist/modules/daily-greetings/daily-greeting.scheduler.js",
+        "/app/apps/api/dist/modules/daily-greetings/daily-greeting.scheduler.js.map",
         "/app/apps/api/dist/modules/daily-greetings/render-greeting.js.map",
         "/app/apps/api/dist/modules/daily-greetings/daily-greeting.service.js.map",
         "/app/apps/api/dist/modules/daily-greetings/assets/ucell-official-logo.jpeg",
@@ -129,5 +131,19 @@
         "/usr/share/nginx/html/greetings/.htaccess"
       ]
     }
+  },
+  "apiScheduler": {
+    "candidateImage": "sha256:8583e6953b7a06e62cdc89c5ddbbc857a45c88d3528b11b11db7fabf20b369f4",
+    "twoProcesses": "PASS same publication b59708c6-e937-4e29-9816-e263831ca4e0",
+    "publishedRows": 1,
+    "uploadAuditRows": 1,
+    "publishAuditRows": 1,
+    "heartbeatTicks": [
+      63,
+      107
+    ],
+    "newCloudResources": false,
+    "newSecretHolders": false,
+    "productionEnabled": false
   }
 }

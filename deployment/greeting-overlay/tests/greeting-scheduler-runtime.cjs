@@ -1,0 +1,11 @@
+const assert=require('node:assert/strict');
+require('/app/apps/api/node_modules/reflect-metadata');
+const {PrismaService}=require('/app/packages/database/dist');
+const {AuditService}=require('/app/apps/api/dist/common/audit/audit.service');
+const {IdempotencyService}=require('/app/apps/api/dist/common/idempotency/idempotency.service');
+const {DailyGreetingService}=require('/app/apps/api/dist/modules/daily-greetings/daily-greeting.service');
+const {GreetingPublicationService}=require('/app/apps/api/dist/modules/daily-greetings/greeting-publication.service');
+const {DailyGreetingScheduler}=require('/app/apps/api/dist/modules/daily-greetings/daily-greeting.scheduler');
+const u=new URL(process.env.DATABASE_URL);assert.equal(u.hostname,'host.docker.internal');assert.equal(u.pathname,'/greeting_scheduler_runtime');
+const db=new PrismaService(),publications=new GreetingPublicationService(db,new IdempotencyService(db),new AuditService()),renderer=new DailyGreetingService(publications),scheduler=new DailyGreetingScheduler(renderer,publications);
+(async()=>{let heartbeat=0;const timer=setInterval(()=>heartbeat++,10);try{await db.$connect();assert.equal(scheduler.onApplicationBootstrap(),undefined);const deadline=Date.now()+60000;let row;while(Date.now()<deadline){row=await publications.released();if(row)break;await new Promise(r=>setTimeout(r,100))}assert(row);assert(heartbeat>0);const png=await publications.publicImage(row.id,row.image_hash);assert.equal(png.readUInt32BE(16),1080);console.log(JSON.stringify({test:'exact-image-api-scheduler',passed:true,id:row.id,date:row.greeting_date,heartbeat}));}finally{clearInterval(timer);scheduler.onModuleDestroy();renderer.onModuleDestroy();await db.$disconnect()}})().catch(e=>{console.error(e.message);process.exitCode=1});
