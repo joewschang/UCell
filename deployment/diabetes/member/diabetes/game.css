@@ -1,0 +1,34 @@
+:root{--ink:#17344a;--paper:#fff;--wash:#eff5f8;--line:#b9cbd5;--blue:#135784;--pale:#dfeff8;--muted:#476476}
+html[data-season-dark=yes]{--ink:#e3f0f8;--paper:#142938;--wash:#0b1d29;--line:#526b7d;--blue:#a1d6ff;--pale:#203f56;--muted:#b4cad7;color-scheme:dark}
+body.diabetes,body:has(.hub-game){background:var(--wash);color:var(--ink);min-height:100vh}
+.diabetes header{background:#103956;color:white;gap:.5rem}
+.diabetes main{max-width:47rem}
+.diabetes section,.hub-game{background:var(--paper);border:1px solid var(--line);color:var(--ink)}
+.diabetes a:not(header a,.action),.hub-game h2{color:var(--blue)}
+.diabetes header button{background:transparent;color:white;border-color:#a5c4d7}
+.diabetes .intro{background:#103956;color:#fff;border:0;overflow:hidden;padding:0}
+.intro-content{padding:clamp(1.2rem,4vw,2.3rem)}
+.intro-content small{color:#a6def4}
+.intro img,.photo img,.hub-game img{display:block;width:100%;height:auto}
+.diabetes button:not(header button){color:var(--ink);background:var(--paper);border-color:var(--line)}
+.diabetes button.primary,.diabetes .action,.hub-game .action{background:#155c88;color:white;border-color:#155c88}
+.diabetes .intro .primary{background:#f3d693;color:#18384c;border:0}
+.diabetes progress{accent-color:#2881a7;display:block;margin:.55rem 0 1.2rem}
+.diabetes .photo{padding:0;overflow:hidden;width:100%}
+.photo span{display:block;padding:.3rem;font-size:.87rem}
+.diabetes small,.diabetes .note{color:var(--muted)}
+.diabetes .intro small{color:#a6def4}
+.diabetes .choices button[aria-pressed=true]{background:var(--pale);border:2px solid var(--blue);color:var(--ink)}
+.diabetes .choices button[aria-pressed=true]::before{content:'✓ ';font-weight:bold}
+.diabetes .row{margin-top:.9rem;justify-content:space-between}
+.diabetes button:focus-visible,.diabetes a:focus-visible{outline:3px solid #d18422;outline-offset:2px}
+.diabetes dialog{width:min(96vw,75rem);max-height:95dvh;overflow:auto;padding:.65rem;color:var(--ink);background:var(--paper);border:1px solid var(--line);border-radius:.8rem}
+.diabetes dialog::backdrop{background:rgba(0,17,30,.8)}
+.diabetes dialog img{width:100%;height:auto;display:block;margin-top:.6rem}
+.diabetes .record{display:grid;gap:.55rem;padding:0;list-style:none}
+.record li{border-bottom:1px solid var(--line);padding:.5rem 0}
+.record li strong,.record li span{display:block}
+.diabetes .route{columns:2;padding-left:1.5rem}
+.hub-game{display:grid;grid-template-columns:minmax(10rem,40%) 1fr;align-items:center;gap:1.2rem}
+.hub-game img{border-radius:.5rem}
+@media(max-width:34rem){.hub-game{grid-template-columns:1fr}.diabetes .route{columns:1}}

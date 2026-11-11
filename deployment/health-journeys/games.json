@@ -1,0 +1,41 @@
+[
+  {
+    "id": "game",
+    "name": "肌少症自我檢測",
+    "description": "準備一張穩固的椅子，從六個生活情境觀察腿部肌力。",
+    "href": "/health/?game=sarcopenia",
+    "cover": "/health/images/station-1.jpg",
+    "interest": "在家安全活動",
+    "tags": [
+      "腿部肌力",
+      "居家活動"
+    ],
+    "invite": "邀你一起觀察起身與走路的變化。"
+  },
+  {
+    "id": "diabetes",
+    "name": "糖尿病自我檢測",
+    "description": "從腰圍到日常活動，用六張圖整理生活觀察。",
+    "href": "/health/diabetes/",
+    "cover": "/health/diabetes/images/station-1.jpg",
+    "interest": "安排日常活動",
+    "tags": [
+      "血糖健康",
+      "身體活動"
+    ],
+    "invite": "邀你一起用六張圖認識日常習慣。"
+  },
+  {
+    "id": "egfr",
+    "name": "腎絲球過濾率計算小程式",
+    "description": "用成人健檢報告換算 eGFR，沒有報告也可以用範例體驗。",
+    "href": "/health/egfr/",
+    "cover": "/health/egfr/kidney.jpg",
+    "interest": "讀懂健檢報告",
+    "tags": [
+      "腎臟健康",
+      "讀懂健檢報告"
+    ],
+    "invite": "邀你一起讀懂健檢報告上的 eGFR。"
+  }
+]

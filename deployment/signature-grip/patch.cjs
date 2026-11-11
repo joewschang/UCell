@@ -1,0 +1,15 @@
+const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto');
+const root=process.argv[2], index=path.join(root,'index.html'), html=fs.readFileSync(index,'utf8');
+const asset=html.match(/src="(\/assets\/[^"]+\.js)"/)[1];
+const js=fs.readFileSync(path.join(root,asset),'utf8');
+const pad='r.jsx("div",{className:"signature-large-pad"';
+if(js.split(pad).length!==2)throw Error('Unexpected fullscreen signature markup');
+const hint='r.jsx("aside",{className:"signature-grip",onPointerDown:event=>event.preventDefault(),children:"請用左手按住左側，可以防止畫面移動跳脫"}),';
+const output=js.replace(pad,hint+pad);
+const hash=data=>crypto.createHash('sha256').update(data).digest('hex').slice(0,12);
+const next='/assets/signature-grip-'+hash(output)+'.js';
+const css=fs.readFileSync(path.join(__dirname,'grip.css'));
+const style='/assets/signature-grip-'+hash(css)+'.css';
+fs.writeFileSync(path.join(root,next),output);
+fs.writeFileSync(path.join(root,style),css);
+fs.writeFileSync(index,html.replace(asset,next).replace('</head>','<link rel="stylesheet" href="'+style+'"></head>'));

@@ -1,0 +1,3 @@
+FROM ucellprodacrm3z2zx4ohqyui.azurecr.io/ucell-api@sha256:8e2a405fed674083e894b09d821d0a5455723a867b28735bdff4e46ab02cb0ea
+COPY tree-directory.cjs /app/apps/api/dist/tree-directory.cjs
+RUN cd /app/apps/api/dist && printf '\nrequire("../../tree-directory.cjs").register(exports.AdminObservabilityController);\n' >> modules/admin-observability/admin-observability.controller.js && node -e "require('./modules/admin-observability/admin-observability.controller.js')"

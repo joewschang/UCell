@@ -1,0 +1,10 @@
+FROM ucellprodacrm3z2zx4ohqyui.azurecr.io/ucell-admin@sha256:adbf49fd24babfc8f9f891da8606b8e42bd89ac72a89a08c142dc73588f0e7e5 AS original
+FROM node:22-alpine AS patch
+WORKDIR /patch
+RUN npm install --no-audit --no-fund --no-save typescript@5.8.3
+COPY --from=original /usr/share/nginx/html /site
+COPY tree-greetings/tree-picker.jsx tree-greetings/tree-picker.jsx
+COPY geo-directory/patch.cjs geo-directory/patch.cjs
+RUN node geo-directory/patch.cjs /site
+FROM original
+COPY --from=patch /site/ /usr/share/nginx/html/

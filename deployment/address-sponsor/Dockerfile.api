@@ -1,0 +1,5 @@
+FROM ucellprodacrm3z2zx4ohqyui.azurecr.io/ucell-api@sha256:f8f0087439e494026b186a1c4cf945ae82ddd8d3dbed0103debc47e0359c756c
+COPY address.cjs /app/apps/api/dist/modules/document-intake/address.cjs
+COPY controllers.cjs /app/apps/api/dist/modules/qualification/address-sponsor.cjs
+COPY patch-api.cjs /tmp/address-sponsor.cjs
+RUN node /tmp/address-sponsor.cjs /app/apps/api/dist

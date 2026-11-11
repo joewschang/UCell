@@ -1,0 +1,16 @@
+.identity-editor,.identity-summary { color:var(--ucell-text-primary) }
+.identity-editor { display:grid; gap:1rem }
+.identity-summary { margin:.8rem 0; padding:1rem 1.2rem; background:var(--ucell-surface); border:1px solid var(--ucell-border); border-inline-start:4px solid var(--ucell-primary); border-radius:.65rem }
+.identity-summary h3 { margin:0 0 .3rem }
+.identity-summary dl { display:grid; grid-template-columns:max-content 1fr; gap:.4rem 1rem; margin:.8rem 0 }
+.identity-summary dd { margin:0; min-width:0; overflow-wrap:anywhere }
+.identity-summary dt,.identity-editor small { color:var(--ucell-text-secondary) }
+.identity-editor fieldset { display:grid; gap:.75rem; min-width:0; padding:1rem; border:1px solid var(--ucell-border); border-radius:.65rem }
+.identity-editor legend { padding:0 .35rem; font-weight:700 }
+.identity-editor fieldset>div:not([hidden]):has(.field) { display:grid; gap:.75rem }
+.identity-editor .field { display:grid; gap:.3rem; min-width:0 }
+.identity-editor :is(input,select,textarea),.corporate-summary select { width:100%; box-sizing:border-box; min-width:0; font:inherit; color:var(--ucell-text-primary); background:var(--ucell-surface); border:1px solid var(--ucell-border); border-radius:.45rem; padding:.55rem .65rem; min-height:44px }
+.identity-editor input[type=file] { white-space:normal; overflow:hidden }
+.identity-editor :is(.identity-note,.identity-notice),.corporate-summary p { padding:.7rem .85rem; background:var(--ucell-info-bg); border-radius:.45rem; color:var(--ucell-text-primary); margin:.5rem 0 }
+.identity-editor button,.corporate-summary button { min-height:42px }
+@media(max-width:600px){.identity-editor fieldset,.identity-summary { padding:.8rem }.identity-editor :is(select,input,textarea){font-size:16px}}

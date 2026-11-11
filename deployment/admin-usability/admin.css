@@ -1,0 +1,25 @@
+.app[data-app=admin] .list-row,
+.app[data-app=admin] :is(.search-menu,.tree-node,.composition,.sticky-actions,.dashboard-stat-grid>div,.dashboard-unavailable){
+ background:var(--ucell-surface);color:var(--ucell-text-primary);border-color:var(--ucell-border);
+}
+.app[data-app=admin] :is(.list-row:hover,.list-row.selected,.list-row[aria-pressed=true],.click-row:hover,.search-option:hover,.ux-ball-option:hover){
+ background:var(--ucell-info-bg);color:var(--ucell-text-primary);
+}
+.app[data-app=admin] .list-row[aria-pressed=true]{box-shadow:inset 4px 0 var(--ucell-primary)}
+.app[data-app=admin] .list-row>strong{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;color:inherit}
+.app[data-app=admin] .list-row>span{display:flex;align-items:center;gap:.35rem;flex-wrap:wrap}
+.app[data-app=admin] :is(.list-row>span,.list-row small,.search-option span){color:var(--ucell-text-secondary)}
+.app[data-app=admin] .search-menu{top:100%;max-height:min(18rem,45vh);overflow:auto}
+.app[data-app=admin] :is(button,a,input,select,summary,textarea):focus-visible{outline:2px solid var(--ucell-primary);outline-offset:2px}
+.sidebar .ux-nav-search{display:block;width:100%;min-width:0;box-sizing:border-box;padding:.65rem .8rem;margin:.4rem 0 .65rem;border-radius:8px;border:1px solid #76979e;background:#102e3c;color:#fff}
+.sidebar .ux-nav-search::placeholder{color:#d2e1e5}
+.sidebar .ux-nav-empty{margin:4px;color:#fff}
+.ux-ball-dialog{width:min(27rem,calc(100vw - 2rem));max-height:75dvh;box-sizing:border-box;border:1px solid var(--ucell-border);border-radius:12px;padding:1rem;background:var(--ucell-surface);color:var(--ucell-text-primary)}
+.ux-ball-dialog::backdrop{background:#091a24a8}
+.ux-ball-dialog header,.ux-ball-option{display:flex;justify-content:space-between;align-items:center;gap:.6rem}
+.ux-ball-dialog header{margin-bottom:.7rem}
+.ux-ball-dialog input,.ux-ball-option{width:100%;box-sizing:border-box}
+.ux-ball-dialog input{margin:0 0 .5rem}
+.ux-ball-option{min-height:44px;text-align:left;margin:3px 0}
+.ux-pick{margin:.25rem;min-height:36px}
+@media(max-width:650px){.app[data-app=admin] .uc-master-detail{grid-template-columns:minmax(0,1fr)}.app[data-app=admin] .uc-master-detail>*{min-width:0}.app[data-app=admin] .form-grid>*{min-width:0}}

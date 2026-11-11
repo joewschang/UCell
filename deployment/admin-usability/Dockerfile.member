@@ -1,0 +1,7 @@
+FROM ucellprodacrm3z2zx4ohqyui.azurecr.io/ucell-member@sha256:43b72871681f5f518222f418f7a2ad4b449e8e2c1e5330f081d26514508b3866 AS original
+FROM node:22-alpine AS patch
+COPY --from=original /usr/share/nginx/html /site
+COPY address.cjs /patch.cjs
+RUN node /patch.cjs /site
+FROM original
+COPY --from=patch /site/ /usr/share/nginx/html/

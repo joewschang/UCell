@@ -1371,9 +1371,9 @@ Pricing, PV/BV and product rules remain server-authoritative from current SKU/ru
 ### CR2-4 Subscription plans
 
 Approved initial subscription plan selection quantities:
-- QUARTERLY / 季重銷: 2 units
-- SEMI_ANNUAL / 半年重銷: 4 units
-- ANNUAL / 年重銷: 8 units
+- QUARTERLY / 重銷（三個月）: 2 units
+- SEMI_ANNUAL / 重銷（六個月）: 4 units
+- ANNUAL / 重銷（十二個月）: 8 units
 
 Subscription product selection uses the same controlled five-product pool unless a versioned subscription rule later narrows eligibility.
 
@@ -3156,9 +3156,9 @@ This section closes the remaining business/design ambiguities discussed on 2026-
 
 The approved plans are prepaid **Repurchase Plans / 重銷方案**, not recurring subscriptions:
 
-- 季重銷：2盒
-- 半年重銷：4盒
-- 年重銷：8盒
+- 重銷（三個月）：2盒
+- 重銷（六個月）：4盒
+- 重銷（十二個月）：8盒
 
 Each plan:
 - is purchased with one payment;
@@ -3177,9 +3177,9 @@ The existing technical Subscription/RPV runtime may be reused or migrated intern
 Although payment and physical shipment occur once, the purchased Repurchase Plan creates a fixed monthly recognition schedule across the plan term.
 
 Approved default interpretation for implementation:
-- 季重銷：3 monthly recognition periods;
-- 半年重銷：6 monthly recognition periods;
-- 年重銷：12 monthly recognition periods.
+- 重銷（三個月）：3 monthly recognition periods;
+- 重銷（六個月）：6 monthly recognition periods;
+- 重銷（十二個月）：12 monthly recognition periods.
 
 The plan's approved total recognition entitlement is allocated across those monthly periods using a deterministic schedule captured at purchase time.
 
@@ -3236,7 +3236,7 @@ For new CR-BATCH-01 UI/domain presentation, use:
 - 加購商品 / ADDITIONAL_PURCHASE
 - 重銷方案 / REPURCHASE_PLAN
 
-Do not present the approved 季/半年/年 plans to users as 訂閱/Subscription.
+Do not present the approved 重銷（三個月）、重銷（六個月）、重銷（十二個月） plans to users as 訂閱/Subscription.
 
 If existing internal schema/enums still use `SUBSCRIPTION`, implementation must assess a backward-compatible migration/adapter strategy rather than blindly renaming historical records.
 
@@ -3414,7 +3414,7 @@ Production remains untouched.
 The current approved commercial offering categories are:
 
 1. **會員資格套組（可自選）** — `QUALIFICATION_PACKAGE`
-2. **季／半年／年重銷套組（可自選）** — `REPURCHASE_PLAN`
+2. **重銷（三個月）、重銷（六個月）、重銷（十二個月）套組（可自選）** — `REPURCHASE_PLAN`
 3. **主商品** — `CORE_PRODUCT`
 4. **普銷商品** — `RETAIL_PRODUCT`
 5. **促銷商品組合** — `PROMOTIONAL_BUNDLE`
@@ -3457,9 +3457,9 @@ Qualification selection must be preserved as a business snapshot and must not be
 `REPURCHASE_PLAN` is a selectable prepaid Commercial Offering and is **not a recurring subscription**.
 
 Current approved plans:
-- 季重銷 = 2 units, one payment, one shipment, 3 monthly accounting/Active recognition periods;
-- 半年重銷 = 4 units, one payment, one shipment, 6 monthly accounting/Active recognition periods;
-- 年重銷 = 8 units, one payment, one shipment, 12 monthly accounting/Active recognition periods.
+- 重銷（三個月） = 2 units, one payment, one shipment, 3 monthly accounting/Active recognition periods;
+- 重銷（六個月） = 4 units, one payment, one shipment, 6 monthly accounting/Active recognition periods;
+- 重銷（十二個月） = 8 units, one payment, one shipment, 12 monthly accounting/Active recognition periods.
 
 The selected physical composition is fixed in the confirmed Order snapshot. Monthly recognition operates on the captured economic entitlement/schedule and does not create new physical shipments.
 
@@ -3586,7 +3586,7 @@ Add batch verification covering at minimum:
 
 ### CO-16 Supersession
 
-Any earlier CR-BATCH-01 text that describes `SUBSCRIPTION` as the approved 季／半年／年 customer-facing commercial category is superseded by `REPURCHASE_PLAN`.
+Any earlier CR-BATCH-01 text that describes `SUBSCRIPTION` as the approved 重銷（三個月）、重銷（六個月）、重銷（十二個月） customer-facing commercial category is superseded by `REPURCHASE_PLAN`.
 
 Existing technical Subscription/RPV structures remain subject to implementation assessment and may be reused internally only where they preserve the approved Repurchase Plan business meaning.
 
@@ -5211,7 +5211,7 @@ The system still retains the original allocation evidence for audit/explain.
 Admin/Warehouse return receiving must show:
 - ReturnCase business reference;
 - member;
-- economic return source/purpose, e.g. 季重銷退貨;
+- economic return source/purpose, e.g. 重銷（三個月）退貨;
 - required SKU/quantity;
 - received quantity;
 - candidate serial scan result;
@@ -5221,7 +5221,7 @@ Admin/Warehouse return receiving must show:
 
 Example:
 
-季重銷退貨
+重銷（三個月）退貨
 TIP-777 應收 2
 已收 1 / 2
 

@@ -1,0 +1,26 @@
+.membership-signature canvas, .signature-dialog {
+  touch-action: none;
+  overscroll-behavior: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+.signature-dialog[open] .signature-dialog-content {
+  display: grid;
+  grid-template-rows: auto minmax(0,1fr) auto;
+  gap: 8px;
+  padding: max(12px,env(safe-area-inset-top)) max(24px,env(safe-area-inset-right)) max(18px,env(safe-area-inset-bottom)) max(24px,env(safe-area-inset-left));
+  background: #edf6f4;
+}
+.signature-dialog[open] .signature-dialog-content header,
+.signature-dialog[open] .signature-dialog-content footer,
+.signature-dialog[open] .signature-large-pad {
+  position: static;
+  pointer-events: auto;
+}
+.signature-dialog[open] .signature-large-pad {
+  overflow: hidden;
+  border: 1px solid #789591;
+  border-radius: 8px;
+  background: white;
+}

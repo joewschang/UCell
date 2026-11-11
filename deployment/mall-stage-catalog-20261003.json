@@ -43,7 +43,7 @@
       }
     },
     {
-      "displayName": "季活躍重購方案（Stage 測試）",
+      "displayName": "重銷（三個月）（Stage 測試）",
       "priceAmount": "6000",
       "selectableProductQuantity": 2,
       "profile": {
@@ -52,7 +52,7 @@
       }
     },
     {
-      "displayName": "半年活躍重購方案（Stage 測試）",
+      "displayName": "重銷（六個月）（Stage 測試）",
       "priceAmount": "12000",
       "selectableProductQuantity": 4,
       "profile": {
@@ -61,7 +61,7 @@
       }
     },
     {
-      "displayName": "年活躍重購方案（Stage 測試）",
+      "displayName": "重銷（十二個月）（Stage 測試）",
       "priceAmount": "24000",
       "selectableProductQuantity": 8,
       "profile": {

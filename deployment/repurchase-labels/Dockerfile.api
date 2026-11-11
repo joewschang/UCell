@@ -1,0 +1,5 @@
+FROM ucellprodacrm3z2zx4ohqyui.azurecr.io/ucell-api@sha256:84c376ab37732dd44669bdb7c3c94a6a713aeece51d41bf299352761c76122ad
+COPY repurchase-display.js /app/apps/api/dist/common/utils/repurchase-display.js
+COPY migration.sql /app/apps/api/dist/repurchase-labels.sql
+COPY patch-api.cjs /tmp/repurchase-labels.cjs
+RUN node /tmp/repurchase-labels.cjs /app/apps/api/dist

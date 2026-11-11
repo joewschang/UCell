@@ -15,7 +15,7 @@ Current auth: LINE enabled; SMS OTP/Google future Web/App.
 | Package Management | READY_AFTER_GATE0 | Admin RBAC/version migration/UAT |
 | Member Product Picker | READY_AFTER_GATE0 | package/product seed + checkout UAT |
 | 啟航/菁英/領袖 qualification purchase | READY_AFTER_GATE0 | recognition config + payment + KYC/contract gates |
-| 季/半年/年活躍 | READY_AFTER_GATE0 | Active-policy entitlement semantics + recognition config |
+| 重銷（三個月）、重銷（六個月）、重銷（十二個月） | READY_AFTER_GATE0 | Active-policy entitlement semantics + recognition config |
 | Ball Sponsor setup/manual change | READY_AFTER_GATE0 | Sponsor eligibility/cycle tests |
 | Sponsor-owner Binary placement | READY_AFTER_GATE0 | placement RBAC/concurrency/UAT |
 | 72h Placement Monitor/Admin override | READY_AFTER_GATE0 | Admin permission/operational owner |

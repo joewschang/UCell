@@ -1,0 +1,49 @@
+/* Use the member palette on both the home shortcut and assistant conversation. */
+.uc-service-welcome,
+.uc-ai {
+  --uc-surface: var(--ucell-surface);
+  --uc-text: var(--ucell-text-primary);
+  --uc-muted: var(--ucell-text-secondary);
+  color: var(--uc-text);
+}
+
+.uc-service-welcome {
+  background: var(--uc-surface);
+  border-color: var(--ucell-border);
+}
+
+.uc-service-links a,
+.uc-ai .uc-ai-service-links a {
+  color: var(--ucell-primary);
+}
+
+.uc-ai {
+  --ai-line: var(--ucell-border);
+}
+
+.uc-ai .uc-ai-question,
+.uc-ai .uc-ai-facts > div {
+  background: var(--ucell-surface-secondary);
+  color: var(--uc-text);
+}
+
+.uc-ai .uc-ai-warning {
+  background: var(--ucell-warning-bg);
+  color: var(--ucell-warning);
+}
+
+.uc-ai .uc-ai-compose textarea::placeholder {
+  color: var(--uc-muted);
+  opacity: 1;
+}
+
+.uc-ai .uc-ai-compose button.primary:enabled {
+  background: var(--ucell-primary);
+  color: var(--ucell-on-primary);
+}
+
+.uc-ai button:disabled {
+  background: var(--ucell-surface-secondary);
+  color: var(--uc-muted);
+  opacity: 1;
+}

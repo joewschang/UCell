@@ -1,0 +1,3 @@
+FROM ucellprodacrm3z2zx4ohqyui.azurecr.io/ucell-api@sha256:a341ece7d787e19fdfc6b2a0878bf7f2241208474bc7445914f0d41717620c6f
+COPY rename.cjs /tmp/rename-game.cjs
+RUN node /tmp/rename-game.cjs api /app/apps/api/dist/modules/content/health-game.controller.js

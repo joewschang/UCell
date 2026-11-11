@@ -1,0 +1,34 @@
+.signature-grip { display: none; }
+
+@media (orientation: landscape) {
+  .signature-dialog[open] .signature-dialog-content {
+    grid-template-columns: clamp(64px, 11vw, 100px) minmax(0, 1fr);
+    grid-template-areas: "head head" "grip pad" "foot foot";
+  }
+  .signature-dialog[open] header { grid-area: head; }
+  .signature-dialog[open] footer { grid-area: foot; }
+  .signature-dialog[open] .signature-large-pad { grid-area: pad; }
+  .signature-dialog[open] .signature-rotate-hint,
+  .signature-dialog[open] .signature-dialog-help { display: none; }
+  .signature-dialog[open] .signature-grip {
+    display: flex;
+    grid-area: grip;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    padding: 4px;
+    border-radius: 8px;
+    border-inline-end: 3px solid #965400;
+    background: #ffe3a0;
+    color: #402600;
+    font: 700 clamp(14px, 4.2dvh, 20px)/1.35 system-ui, sans-serif;
+    writing-mode: vertical-rl;
+    text-orientation: upright;
+    text-align: center;
+    text-wrap: balance;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+  }
+}

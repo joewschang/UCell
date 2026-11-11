@@ -66,7 +66,7 @@ it('keeps the Explore destinations available during greeting failure and support
   expect(tree!.root.findAllByType('a').map(link => link.props.href)).toEqual(['/content', '/events', '/learning']);
   await act(async () => tree!.root.findByProps({children: '重新載入每日問候'}).props.onClick());
   expect(tree!.root.findByType('img').props.src).toContain(data.date);
-  expect(output().indexOf('uc-daily-greeting')).toBeLessThan(output().indexOf('uc-hub-grid'));
+  expect(output().indexOf('uc-daily-greeting')).toBeGreaterThan(output().indexOf('uc-hub-grid'));
 });
 
 it('disables sharing and saving until the poster loads, and keeps failed images unshareable', async () => {
@@ -235,9 +235,9 @@ it('bounds expiry retries to one and does not retry future availability or inval
 it('offers link composers and an explicit Instagram manual flow without automatic posting',async()=>{
  await renderReady();const greeting=parseDailyGreeting(data);
  for(const platform of ['facebook','threads','x'] as const){const url=new URL(dailyGreetingSocialUrl(platform,greeting));expect(decodeURIComponent(url.href)).toContain(greeting.shareUrl);expect(url.searchParams.has('access_token')).toBe(false);}
- for(const name of ['Facebook 連結分享','Threads 連結分享','X 連結分享']){const link=tree!.root.findAllByType('a').find(a=>a.children.join('')===name)!;expect(link.props.target).toBe('_blank');expect(link.props.rel).toContain('noopener');act(()=>link.props.onClick({preventDefault:vi.fn()}));}
+ for(const name of ['Facebook 連結分享','Threads 連結分享','X 連結分享']){const link=tree!.root.findAllByType('a').find(a=>a.props['aria-label']===name)!;expect(link.props.target).toBe('_blank');expect(link.props.rel).toContain('noopener');act(()=>link.props.onClick({preventDefault:vi.fn()}));}
  expect(output()).toContain('自行發布');expect(output()).not.toContain('已發布成功');expect(liff.shareTargetPicker).not.toHaveBeenCalled();
- act(()=>tree!.root.findByProps({children:'Instagram 圖片發布步驟'}).props.onClick());expect(output()).toContain('不會自動帶入圖片');
+ act(()=>tree!.root.findByProps({'aria-label':'Instagram 圖片發布步驟'}).props.onClick());expect(output()).toContain('不會自動帶入圖片');
 });
 it('accepts only matching immutable publication URLs on the trusted origin',()=>{
  const version='publications/00000000-0000-0000-0000-000000000001/'+ 'a'.repeat(64),base='/api/v1/public/daily-greetings/'+version;

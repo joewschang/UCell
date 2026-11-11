@@ -1,0 +1,2 @@
+FROM ucellprodacrm3z2zx4ohqyui.azurecr.io/ucell-member@sha256:333c9601b94c49c807c62aecfc88212582a28cb2712f79071955e3bcb8e0aac8
+COPY entry.js season.css art/menu-*.jpg /usr/share/nginx/html/seasons/v1/

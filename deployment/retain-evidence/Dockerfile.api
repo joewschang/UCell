@@ -1,0 +1,4 @@
+FROM ucellprodacrm3z2zx4ohqyui.azurecr.io/ucell-api@sha256:1aab196c64936c9e270e847f232e1453b00f10c7d0a28afd107e95a549de7c0d
+COPY evidence-link.cjs /app/apps/api/dist/modules/member/
+COPY patch-api.cjs /tmp/retain-patch.cjs
+RUN node /tmp/retain-patch.cjs /app/apps/api/dist/modules/member && node --check /app/apps/api/dist/modules/member/formal-kyc-document.service.js

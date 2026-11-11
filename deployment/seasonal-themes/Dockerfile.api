@@ -1,0 +1,3 @@
+FROM ucellprodacrm3z2zx4ohqyui.azurecr.io/ucell-api@sha256:dcd35d69b9d0f76c869eef17138b6b53d164b4f058bbe6acb45dc5d5ce24258e
+COPY provision.cjs /app/apps/api/dist/season/provision.cjs
+COPY art/menu-*.jpg /app/apps/api/dist/season/art/

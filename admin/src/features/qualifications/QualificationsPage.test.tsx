@@ -41,3 +41,21 @@ it('does not render raw Company ownership as Always Active or bootstrap LEADER i
  expect(output).not.toContain('company-principal');
  act(()=>view!.unmount());
 });
+it('keeps the selected ball and filters when collapsing and reopening the list',async()=>{
+ vi.mocked(get).mockImplementation(async route=>({data:route==='/admin/qualifications/member-active'?activeMember:[activeMember]}));
+ const client=new QueryClient({defaultOptions:{queries:{retry:false}}});
+ let view:ReturnType<typeof create>;
+ await act(async()=>{view=create(<MemoryRouter><QueryClientProvider client={client}><QualificationsPage/></QueryClientProvider></MemoryRouter>)});
+ const row=()=>view.root.findByProps({'aria-controls':'ball-detail'});
+ await vi.waitFor(()=>expect(row()).toBeDefined());
+ act(()=>row().props.onClick());
+ const detail=()=>view.root.findByProps({id:'ball-detail'});
+ await vi.waitFor(()=>expect(JSON.stringify(detail().findAllByType('strong').map(x=>x.children))).toContain('測試會員'));
+ for(const expanded of [false,true]){
+  act(()=>view.root.findByProps({'aria-controls':'qualification-ball-list'}).props.onClick());
+  expect(view.root.findByProps({id:'qualification-ball-list'}).props.hidden).toBe(!expanded);
+  expect(row().props['aria-pressed']).toBe(true);
+  expect(detail().findAllByProps({role:'tablist'})).toHaveLength(1);
+ }
+ act(()=>view.unmount());
+});

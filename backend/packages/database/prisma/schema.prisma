@@ -4535,6 +4535,7 @@ model MemberReferralRelationship {
 }
 
 model PackageProfile {
+  catalogDisplayName String? @map("catalog_display_name")
   packageProfileId String                  @id @default(uuid()) @map("package_profile_id") @db.Uuid
   stableCode       String                  @unique @map("stable_code")
   packageClass     String                  @map("package_class")

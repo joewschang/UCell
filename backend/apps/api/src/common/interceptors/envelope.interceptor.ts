@@ -1,3 +1,4 @@
+import { formatRepurchaseNames } from '../utils/repurchase-display';
 import { CallHandler, ExecutionContext, Injectable, NestInterceptor, StreamableFile } from '@nestjs/common';
 import { map, Observable } from 'rxjs';
 import { toJsonSafe } from '../utils/json-safe';
@@ -10,6 +11,7 @@ export class EnvelopeInterceptor implements NestInterceptor {
       // Preserve native streaming; serializing a StreamableFile destroys CSV bytes/backpressure.
       if (raw instanceof StreamableFile) return raw;
       const body = toJsonSafe(raw);
+      formatRepurchaseNames(body);
       if (body?.meta) {
         body.meta = {
           ...body.meta,

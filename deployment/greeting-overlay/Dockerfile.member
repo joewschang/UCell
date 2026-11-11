@@ -1,3 +1,3 @@
-FROM ucellprodacrm3z2zx4ohqyui.azurecr.io/ucell-member@sha256:79db9d06fd52989109d0a8b69860049ad0d5d4ff9a3ed3353a12a53a3452c8eb
-COPY greetings/ /usr/share/nginx/html/greetings/
-RUN sed -i 's|</body>|<script src="/greetings/entry.js"></script></body>|' /usr/share/nginx/html/index.html
+FROM ucellprodacrm3z2zx4ohqyui.azurecr.io/ucell-member@sha256:5676755ff9a63861cdb75a105d4649082ecd344d7537ffad011459543aef93bd
+COPY greetings/entry.js greetings/style.css /usr/share/nginx/html/greetings/
+RUN sed -i 's|src="/greetings/entry.js"|src="/greetings/entry.js?v=social-logos"|' /usr/share/nginx/html/index.html
