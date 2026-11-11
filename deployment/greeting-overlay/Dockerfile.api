@@ -1,0 +1,7 @@
+FROM ucellprodacrm3z2zx4ohqyui.azurecr.io/ucell-api@sha256:91271538f78d1e337bc980c2c6a32d567da868f91cb89a058b67b006e631a82e
+RUN apk add --no-cache font-noto-cjk && npm install --prefix /opt/greeting --omit=dev @resvg/resvg-js@2.6.2
+ENV NODE_PATH=/opt/greeting/node_modules
+COPY daily-greetings /app/apps/api/dist/modules/daily-greetings/
+COPY daily-greeting-job.js /app/apps/api/dist/
+COPY register-api.cjs /tmp/register-greeting.cjs
+RUN node /tmp/register-greeting.cjs

@@ -1,0 +1,10 @@
+const assert=require('node:assert/strict'),fs=require('node:fs');
+require('/app/apps/api/node_modules/reflect-metadata');
+const {AppModule}=require('/app/apps/api/dist/app.module');
+const names=Reflect.getMetadata('imports',AppModule).map(m=>m.name||m.module?.name);
+assert(names.includes('DailyGreetingModule'));assert(names.includes('GreetingPublicationModule'));assert(names.includes('ContentModule'));
+const content=require('/app/apps/api/dist/modules/content/content.module').ContentModule;
+assert(Reflect.getMetadata('controllers',content).some(c=>c.name==='PublicHealthGame'));
+const {DailyGreetingService}=require('/app/apps/api/dist/modules/daily-greetings/daily-greeting.service');
+const renderer=new DailyGreetingService();
+(async()=>{try{const data=await renderer.current();const image=await renderer.image(data.date);assert.equal(image.readUInt32BE(16),1080);assert.equal(image.readUInt32BE(20),1080);fs.writeFileSync('/evidence/runtime-poster.png',image);fs.writeFileSync('/evidence/runtime-smoke.json',JSON.stringify({passed:true,date:data.date,bytes:image.length,greetingModulesPresent:true,healthGamePreserved:true},null,2));console.log('PASS pinned production runtime, greeting modules, preserved health-game controller, CJK PNG 1080x1080');}finally{renderer.onModuleDestroy()}})().catch(e=>{console.error(e);process.exitCode=1});

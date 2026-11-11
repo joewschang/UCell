@@ -1,0 +1,133 @@
+{
+  "source": "0da4e75b7e21f4045d99614a068401c4d77612f5",
+  "deployed": false,
+  "apiTests": {
+    "suites": 4,
+    "tests": 25,
+    "databaseAssertions": 162
+  },
+  "memberTests": 18,
+  "adminTests": 2,
+  "browserWidths": [
+    320,
+    390,
+    768,
+    1280
+  ],
+  "adminBrowser": "PASS mocked upload/preview/approval and role boundaries",
+  "runtimePNG": "PASS 1080x1080 CJK and official logo, network disabled",
+  "localJob": [
+    "PUBLISHED",
+    "ALREADY_PUBLISHED"
+  ],
+  "localRestore": "PASS publication id/status/PNG md5/audit count; synthetic local database only",
+  "productionRestore": "BLOCKED: direct workstation connection refused; temporary single-IP rule awaiting user authorization",
+  "fullCandidateBoot": "BLOCKED on local main-only schema: existing production notification-hub-migrate.cjs expects integration.member_transaction_notice; production restore required",
+  "schedule": "NOT_CREATED: paid job/database access awaiting user authorization",
+  "preservation": {
+    "api": {
+      "baseDigest": "91271538f78d1e337bc980c2c6a32d567da868f91cb89a058b67b006e631a82e",
+      "preservedFiles": 1815,
+      "changedExistingFiles": [
+        "/app/apps/api/dist/app.module.js"
+      ],
+      "newFiles": [
+        "/app/apps/api/dist/modules/daily-greetings/greeting-publication.module.js",
+        "/app/apps/api/dist/modules/daily-greetings/daily-greeting.module.js",
+        "/app/apps/api/dist/modules/daily-greetings/greeting-publication.controller.js",
+        "/app/apps/api/dist/modules/daily-greetings/daily-greeting.controller.js.map",
+        "/app/apps/api/dist/modules/daily-greetings/greeting-publication.controller.js.map",
+        "/app/apps/api/dist/modules/daily-greetings/daily-greeting.js.map",
+        "/app/apps/api/dist/modules/daily-greetings/greeting-upload.js",
+        "/app/apps/api/dist/modules/daily-greetings/greeting-publication.service.js",
+        "/app/apps/api/dist/modules/daily-greetings/daily-greeting.service.js",
+        "/app/apps/api/dist/modules/daily-greetings/greeting-publication.service.js.map",
+        "/app/apps/api/dist/modules/daily-greetings/daily-greeting.controller.js",
+        "/app/apps/api/dist/modules/daily-greetings/daily-greeting.js",
+        "/app/apps/api/dist/modules/daily-greetings/render-greeting.js",
+        "/app/apps/api/dist/modules/daily-greetings/daily-greeting.module.js.map",
+        "/app/apps/api/dist/modules/daily-greetings/greeting-upload.js.map",
+        "/app/apps/api/dist/modules/daily-greetings/greeting-publication.module.js.map",
+        "/app/apps/api/dist/modules/daily-greetings/render-greeting.js.map",
+        "/app/apps/api/dist/modules/daily-greetings/daily-greeting.service.js.map",
+        "/app/apps/api/dist/modules/daily-greetings/assets/ucell-official-logo.jpeg",
+        "/app/apps/api/dist/daily-greeting-job.js"
+      ]
+    },
+    "member": {
+      "baseDigest": "32d7287c3a00160cb98127c58c95584761c484b7db5adfe01135c30410c92218",
+      "preservedFiles": 306,
+      "changedExistingFiles": [
+        "/usr/share/nginx/html/index.html"
+      ],
+      "newFiles": [
+        "/usr/share/nginx/html/greetings/ucell-logo.jpg",
+        "/usr/share/nginx/html/greetings/share-entry.js",
+        "/usr/share/nginx/html/greetings/ucell-logo-transparent.png",
+        "/usr/share/nginx/html/greetings/style.css",
+        "/usr/share/nginx/html/greetings/products/tip-777.png",
+        "/usr/share/nginx/html/greetings/products/tip-580-icon-v2.png",
+        "/usr/share/nginx/html/greetings/products/tip-999-icon-v2.png",
+        "/usr/share/nginx/html/greetings/products/tip-696.png",
+        "/usr/share/nginx/html/greetings/products/tip-696-icon-v2.jpg",
+        "/usr/share/nginx/html/greetings/products/tip-999.png",
+        "/usr/share/nginx/html/greetings/products/tip-777-icon-v2.jpg",
+        "/usr/share/nginx/html/greetings/products/tip-999-icon-v2.jpg",
+        "/usr/share/nginx/html/greetings/products/tip-363-icon-v2.png",
+        "/usr/share/nginx/html/greetings/products/tip-580.png",
+        "/usr/share/nginx/html/greetings/products/tip-363-icon-v2.jpg",
+        "/usr/share/nginx/html/greetings/products/tip-777-icon-v2.png",
+        "/usr/share/nginx/html/greetings/products/tip-363.png",
+        "/usr/share/nginx/html/greetings/products/tip-580-icon-v2.jpg",
+        "/usr/share/nginx/html/greetings/products/tip-696-icon-v2.png",
+        "/usr/share/nginx/html/greetings/entry.js",
+        "/usr/share/nginx/html/greetings/badges/leader-v2.png",
+        "/usr/share/nginx/html/greetings/badges/glory-v1.png",
+        "/usr/share/nginx/html/greetings/badges/new-star-v1.jpg",
+        "/usr/share/nginx/html/greetings/badges/glory-v1.jpg",
+        "/usr/share/nginx/html/greetings/badges/elite-v1.jpg",
+        "/usr/share/nginx/html/greetings/badges/diamond-v2.png",
+        "/usr/share/nginx/html/greetings/badges/starter-v2.png",
+        "/usr/share/nginx/html/greetings/badges/starter-v1.jpg",
+        "/usr/share/nginx/html/greetings/badges/diamond-v1.png",
+        "/usr/share/nginx/html/greetings/badges/glory-v2.png",
+        "/usr/share/nginx/html/greetings/badges/crown-v2.png",
+        "/usr/share/nginx/html/greetings/badges/excellence-v2.png",
+        "/usr/share/nginx/html/greetings/badges/excellence-v1.png",
+        "/usr/share/nginx/html/greetings/badges/leader-v1.png",
+        "/usr/share/nginx/html/greetings/badges/leader-v1.jpg",
+        "/usr/share/nginx/html/greetings/badges/elite-v2.png",
+        "/usr/share/nginx/html/greetings/badges/new-star-v1.png",
+        "/usr/share/nginx/html/greetings/badges/crown-v1.jpg",
+        "/usr/share/nginx/html/greetings/badges/new-star-v2.png",
+        "/usr/share/nginx/html/greetings/badges/starter-v1.png",
+        "/usr/share/nginx/html/greetings/badges/diamond-v1.jpg",
+        "/usr/share/nginx/html/greetings/badges/crown-v1.png",
+        "/usr/share/nginx/html/greetings/badges/elite-v1.png",
+        "/usr/share/nginx/html/greetings/badges/excellence-v1.jpg",
+        "/usr/share/nginx/html/greetings/assets/virtual-agent/welcome.webp",
+        "/usr/share/nginx/html/greetings/assets/virtual-agent/avatar.webp",
+        "/usr/share/nginx/html/greetings/assets/virtual-agent/portrait.webp"
+      ]
+    },
+    "admin": {
+      "baseDigest": "88b859842d24b1aa7d3fe2ae3f77ffab93cfc54ed4181e6f84dc3ad85e45af4c",
+      "preservedFiles": 485,
+      "changedExistingFiles": [
+        "/usr/share/nginx/html/index.html"
+      ],
+      "newFiles": [
+        "/usr/share/nginx/html/greetings/ucell-logo.jpg",
+        "/usr/share/nginx/html/greetings/admin.css",
+        "/usr/share/nginx/html/greetings/link.js",
+        "/usr/share/nginx/html/greetings/ucell-logo-transparent.png",
+        "/usr/share/nginx/html/greetings/entry.js",
+        "/usr/share/nginx/html/greetings/index.html",
+        "/usr/share/nginx/html/greetings/assets/virtual-agent/welcome.webp",
+        "/usr/share/nginx/html/greetings/assets/virtual-agent/avatar.webp",
+        "/usr/share/nginx/html/greetings/assets/virtual-agent/portrait.webp",
+        "/usr/share/nginx/html/greetings/.htaccess"
+      ]
+    }
+  }
+}
