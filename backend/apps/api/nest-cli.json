@@ -2,6 +2,10 @@
   "collection": "@nestjs/schematics",
   "sourceRoot": "src",
   "compilerOptions": {
-    "assets": ["modules/organization-geo/taiwan-areas.json", "modules/admin-operations/bank-templates/*.xls"]
+    "assets": [
+      "modules/organization-geo/taiwan-areas.json",
+      "modules/admin-operations/bank-templates/*.xls",
+      "modules/daily-greetings/assets/*.jpeg"
+    ]
   }
 }

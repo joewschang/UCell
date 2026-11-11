@@ -23,6 +23,7 @@
     "@nestjs/jwt": "*",
     "@nestjs/platform-fastify": "*",
     "@nestjs/swagger": "*",
+    "@resvg/resvg-js": "2.6.2",
     "@ucell/database": "workspace:*",
     "@ucell/settlement": "workspace:*",
     "@ucell/shared": "workspace:*",
