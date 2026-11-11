@@ -1,6 +1,6 @@
-# Greeting publishing and social sharing — release draft
+# Greeting publishing and social sharing — production release
 
-Tracking: #53. Base feature PR #55 is merged at `0da4e75b`; production-preserving overlay and API scheduler are tracked in PR #56. Production deployment, schedule activation and dot authorization remain incomplete. See `greeting-overlay/verification.json` for current evidence.
+Tracking: #53. PRs #55 and #56 are merged. The API, member and admin services are live on revision greetings-261111 with the API scheduler enabled. See greeting-overlay/verification.json for release checks and pending external verifications.
 
 ## Implemented
 
@@ -28,7 +28,7 @@ It uses the existing database configuration, CJK font and official logo packaged
 
 The preferred host is the existing always-on API, with `DAILY_GREETING_API_SCHEDULER_ENABLED=true` and publication enabled after backup, restore and UAT gates pass. Keep API minReplicas at least 1. This creates no separate resource and uses the API's existing identity and database connection. Bootstrap returns immediately and queues current-date catch-up; native image work runs on the existing bounded worker-thread queue. The scheduler uses Asia/Taipei release dates (07:00 boundary), retries failures from 30 seconds up to 15 minutes, and shares version/date idempotency keys and PostgreSQL publication locks across replicas. A manually approved publication wins. Restart or lost acknowledgments do not duplicate publication or audit records. It does not backfill unlimited missed dates. Disabling the scheduler flag and restarting stops future dispatches.
 
-The one-shot command remains available for an authorized manual catch-up; no separate Container Apps Job is required or provisioned. Production activation and the next actual Taipei 07:00 run remain unverified.
+The one-shot command remains available for an authorized manual catch-up; no separate Container Apps Job is required or provisioned. Production startup catch-up published the current template. The next actual Taipei 07:00 run remains unverified.
 
 By default either entry point creates a draft requiring human review. To automatically publish the fixed reviewed template only, the operator must separately configure both `DAILY_GREETING_TEMPLATE_AUTO_APPROVAL=true` and a nonempty `DAILY_GREETING_TEMPLATE_APPROVAL_REFERENCE` identifying the approved template/content policy. These are not configured here. Never use this switch to bypass review for arbitrary AI-generated uploads. Changing template/brand content requires a renderer version change and new review.
 

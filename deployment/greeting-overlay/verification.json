@@ -1,6 +1,6 @@
 {
   "source": "0da4e75b7e21f4045d99614a068401c4d77612f5",
-  "deployed": false,
+  "deployed": true,
   "apiTests": {
     "suites": 6,
     "tests": 37,
@@ -145,5 +145,23 @@
     "newCloudResources": false,
     "newSecretHolders": false,
     "productionEnabled": false
+  },
+  "production": {
+    "date": "2026-11-11",
+    "timezone": "Asia/Taipei",
+    "integrationCommit": "0064d8152941de7a9030720dcf2570caf42a9a19",
+    "revisionSuffix": "greetings-261111",
+    "services": [
+      "member",
+      "admin",
+      "api"
+    ],
+    "restoreVerification": "Completed disposable PostgreSQL 16 restore from production and tested additive migration.",
+    "publicVerification": "Startup scheduler published 2026-11-11, 1080 x 1080 PNG and share metadata verified. Browser downloaded matching PNG at 390px width. Admin login gate verified.",
+    "pending": [
+      "Next scheduled 07:00 boundary on production",
+      "Native social app handoff on physical devices",
+      "Dot service authorization"
+    ]
   }
 }
