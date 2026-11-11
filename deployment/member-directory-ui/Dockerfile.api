@@ -1,0 +1,3 @@
+FROM ucellprodacrm3z2zx4ohqyui.azurecr.io/ucell-api@sha256:3fc38bcb3e93066462ac0af95e44a2e4f0ca8dab5e37c2a30e1527907f2cafd1
+COPY api.cjs /tmp/member-directory.cjs
+RUN node /tmp/member-directory.cjs /app/apps/api/dist/modules/person && node --check /app/apps/api/dist/modules/person/person.controller.js
