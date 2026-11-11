@@ -1,0 +1,5 @@
+FROM ucellprodacrm3z2zx4ohqyui.azurecr.io/ucell-api@sha256:f427ae5ccdcd279198d1a52010be4bbc90d9ac5168426377fec0a8ab7ffabc3c
+COPY api/ /app/apps/api/dist/modules/content/journeys/
+COPY games.json /app/apps/api/dist/modules/content/journeys/games.json
+COPY patch.cjs /tmp/journey-patch.cjs
+RUN node /tmp/journey-patch.cjs api /app/apps/api/dist/modules/content

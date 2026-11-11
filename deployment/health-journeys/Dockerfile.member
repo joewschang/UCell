@@ -1,0 +1,9 @@
+FROM ucellprodacrm3z2zx4ohqyui.azurecr.io/ucell-member@sha256:3d98d08bb8751c236395950f13458158df723d293936dba4b7f08b09597eedeb AS original
+FROM node:22-alpine AS patch
+COPY --from=original /usr/share/nginx/html /site
+COPY patch.cjs /patch.cjs
+RUN node /patch.cjs member /site
+FROM original
+COPY --from=patch /site/ /usr/share/nginx/html/
+COPY member/ /usr/share/nginx/html/health/journey/
+COPY theme.css /usr/share/nginx/html/health/journey/theme.css
