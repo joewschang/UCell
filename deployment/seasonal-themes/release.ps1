@@ -5,7 +5,7 @@ $file="$PSScriptRoot/Dockerfile.$part"
 $base=(Get-Content $file -First 1).Split(' ')[1]
 $tag='season-art-261111'
 $digest=az acr repository show -n $reg --image "ucell-${part}:$tag" --query digest -o tsv
-if($digest -notmatch '^sha256:[a-f0-9]{64}$'){throw 'No build'}
+if($LASTEXITCODE -or !$digest -or $digest -notmatch '^sha256:[a-f0-9]{64}$'){throw 'No build'}
 $current=az containerapp show -g rg-ucell-production -n "ucell-prod-$part" --query properties.template.containers[0].image -o tsv
 if($current -eq "$reg.azurecr.io/ucell-$part@$digest"){Write-Output 'Image already active';return}
 if($base -ne $current){throw 'Base changed'}
