@@ -62,6 +62,7 @@ async function listing(s,person){
  const stamps=person?(await s.db.$queryRaw`SELECT count(*)::int n,max(completed_at AT TIME ZONE 'Asia/Taipei')::date::text latest FROM integration.health_egfr_stamp WHERE person_id=${person}::uuid`)[0]:null;
  const passport=person?await s.db.$queryRaw`SELECT 'game' id,count(*)::int n,max(completed_at AT TIME ZONE 'Asia/Taipei')::date::text latest FROM integration.health_game_week WHERE person_id=${person}::uuid AND completed_at IS NOT NULL
  UNION ALL SELECT 'diabetes',count(*)::int,max(completed_at AT TIME ZONE 'Asia/Taipei')::date::text FROM integration.health_diabetes_week WHERE person_id=${person}::uuid AND completed_at IS NOT NULL`:[];
+ if(person){const [bp]=await s.db.$queryRaw`SELECT count(*)::int n,max(completed_at AT TIME ZONE 'Asia/Taipei')::date::text latest FROM integration.health_bp_stamp WHERE person_id=${person}::uuid`;passport.push({id:'blood-pressure',...bp});}
  if(stamps)passport.push({id:'egfr',...stamps});
  return {games,version:v.version,passport};
 }
@@ -94,7 +95,7 @@ async function save(s,b,user){
    let games=d.games;
    if(b.action==='restore'){
      if(!Number.isInteger(b.version))invalid();
-     const [old]=await tx.$queryRaw`SELECT games FROM integration.health_journey_version WHERE version=${b.version}`;if(!old)invalid();games=old.games;
+     const [old]=await tx.$queryRaw`SELECT games FROM integration.health_journey_version WHERE version=${b.version}`;if(!old)invalid();games=[...old.games,...d.games.filter(g=>!old.games.some(previous=>previous.id===g.id)).map(g=>({...g,enabled:false}))];
    }else if(b.action!=='revoke') games=validate(b.games,items);
    if(b.action==='publish'){
      const v=await current(tx);await tx.$executeRaw`INSERT INTO integration.health_journey_version(version,games,actor) VALUES(${v.version+1},${JSON.stringify(games)}::jsonb,${actor})`;
@@ -135,6 +136,7 @@ async function event(s,b,person){
    const buyer=b.action==='click'&&/^(sku|event|course):/.test(id)?person:null;
    await tx.$executeRaw`INSERT INTO integration.health_journey_event(attempt,game,action,resource,visitor,invite,person_id,campaign,version)
    VALUES(${b.attempt}::uuid,${g.id},${b.action},${id},${b.visitor}::uuid,${source?.id||null}::uuid,${buyer||null}::uuid,${g.campaign},${v.version}) ON CONFLICT DO NOTHING`;
+   if(person&&g.id==='blood-pressure'&&b.action==='finish')await tx.$executeRaw`INSERT INTO integration.health_bp_stamp(person_id,week) VALUES(${person}::uuid,date_trunc('week',now() AT TIME ZONE 'Asia/Taipei')::date) ON CONFLICT DO NOTHING`;
    if(person&&g.id==='egfr'&&b.action==='finish')await tx.$executeRaw`INSERT INTO integration.health_egfr_stamp(person_id,week) VALUES(${person}::uuid,date_trunc('week',now() AT TIME ZONE 'Asia/Taipei')::date) ON CONFLICT DO NOTHING`;
    return {ok:true};
  });
@@ -162,7 +164,7 @@ module.exports=function install({HealthGameService,PublicHealthGame,MemberHealth
    if(!valid)throw new ConflictException('體驗已過期');
    const added=await tx.$executeRaw`INSERT INTO integration.health_journey_claim(attempt) VALUES(${b.attempt}::uuid) ON CONFLICT DO NOTHING`;
    if(!added)throw new ConflictException('這次體驗已領取');
-   const table={game:'health_game_week',diabetes:'health_diabetes_week',egfr:'health_egfr_stamp'}[b.game];
+   const table={game:'health_game_week',diabetes:'health_diabetes_week',egfr:'health_egfr_stamp','blood-pressure':'health_bp_stamp'}[b.game];
    await tx.$executeRawUnsafe("INSERT INTO integration."+table+"(person_id,week,completed_at) VALUES($1::uuid,date_trunc('week',now() AT TIME ZONE 'Asia/Taipei')::date,now()) ON CONFLICT(person_id,week) DO UPDATE SET completed_at=coalesce("+table+".completed_at,excluded.completed_at)",person);
    return {ok:true};
   });

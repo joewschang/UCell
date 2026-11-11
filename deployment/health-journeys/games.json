@@ -37,5 +37,18 @@
       "讀懂健檢報告"
     ],
     "invite": "邀你一起讀懂健檢報告上的 eGFR。"
+  },
+  {
+    "id": "blood-pressure",
+    "name": "血壓監測",
+    "description": "跟著六張圖讀懂血壓計，算出脈壓差，練習在家量血壓。",
+    "href": "/health/blood-pressure/",
+    "cover": "/health/blood-pressure/images/posture.jpg",
+    "interest": "練習居家量測",
+    "tags": [
+      "血壓監測",
+      "居家量測"
+    ],
+    "invite": "邀你一起讀懂血壓計，練習在家量血壓。"
   }
 ]

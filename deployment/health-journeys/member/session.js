@@ -82,7 +82,7 @@ export async function session(id){
          send('impression',r.id);
        }
        if(!rows.length){
-         const fallback={game:['在家觀察前的準備','/health/?read=guide'],diabetes:['查看血糖健康主題','/topics/?tag='+encodeURIComponent('血糖健康')],egfr:['重看腎臟過濾圖解','/health/egfr/#kidney']};
+         const fallback={'blood-pressure':['看居家量測圖卡','/health/blood-pressure/images/posture.jpg'],game:['在家觀察前的準備','/health/?read=guide'],diabetes:['查看血糖健康主題','/topics/?tag='+encodeURIComponent('血糖健康')],egfr:['重看腎臟過濾圖解','/health/egfr/#kidney']};
          list.append(el('p','目前沒有精選項目，可先閱讀這份資料。'),link(...fallback[id]));
        }
        if(!member)list.append(login('/health/journey/resources/?game='+id));
