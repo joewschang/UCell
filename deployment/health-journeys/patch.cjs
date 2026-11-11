@@ -46,13 +46,4 @@ if(part==='member'){
  edit('index.html',file,next);
  edit('index.html','</body>','<script type="module" src="/health/journey/resume.js"></script></body>');
 }
-if(part==='admin'){
- const file=entry();const next=file.replace('.js','-journeys.js');fs.copyFileSync(path.join(root,file),path.join(root,next));
- edit(next,'["標籤管理","/topics/","content"]','["健康中心","/health/journey/","content"],["標籤管理","/topics/","content"]');
- edit(next,'"/content/greetings","/topics/","/faq"','"/content/greetings","/health/journey/","/topics/","/faq"');
- edit(next,'"/topics/":["SUPER_ADMIN","MEMBERSHIP_OPS","ORDER_OPS"]','"/health/journey/":["SUPER_ADMIN","MEMBERSHIP_OPS","ORDER_OPS"],"/topics/":["SUPER_ADMIN","MEMBERSHIP_OPS","ORDER_OPS"]');
- edit(next,'reloadDocument:m==="/topics/"','reloadDocument:m==="/topics/"||m==="/health/journey/"');
- edit('index.html',file,next);
- edit('health/index.html','<strong>健康中心管理</strong>','<strong>健康中心管理</strong><a href="./journey/">遊戲上架與成效</a>');
- edit('topics/topics.js',"search='',itemId=''","search=new URL(location.href).searchParams.get('q')||'',itemId=new URL(location.href).searchParams.get('item')||''");
-}
+if(part==='admin')require('./admin-inline.cjs')(root);

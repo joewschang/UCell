@@ -1,9 +1,6 @@
-import {apiFor,el,box,btn,link,show} from '../ui.js';
-const api=apiFor('admin'),root=document.documentElement;
+export function mountEditor(page,{apiFor,el,box,btn,link,show},draftState){
+const api=apiFor('admin');
 let model,id='game',busy=false,dirty=false,reason='';
-const localTheme=localStorage.getItem('ucell.ui-theme-preference.v1');
-root.dataset.jTheme=localTheme==='DARK'||localTheme!=='LIGHT'&&matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';
-document.querySelector('#theme').onclick=()=>{root.dataset.jTheme=root.dataset.jTheme==='dark'?'light':'dark';};
 const status=el('p','','j-notice');status.setAttribute('role','status');
 const panel=(heading,...items)=>box('section','j-panel',el('h2',heading),...items);
 const label=(name,input)=>box('label','',el('span',name),input);
@@ -18,18 +15,26 @@ function numberTable(headings,values){
  const body=t.createTBody();for(const valuesRow of values){const row=body.insertRow();for(const value of valuesRow)row.append(el('td',String(value)));}
  return box('div','j-scroll',t);
 }
-async function reload(message=''){
- model=await api('/journey');dirty=false;reason='';render();status.textContent=message;
+async function reload(message='',restore=false){
+ model=await api('/journey');if(!page.isConnected)return;
+ dirty=false;reason='';
+ if(restore&&draftState.value){
+  const prior=draftState.value;
+  id=prior.id;
+  if(prior.revision===model.revision){model.draft=prior.games;reason=prior.reason;dirty=true;message='已保留尚未儲存的草稿。';}
+  else message='草稿已有新版，已載入最新設定。';
+ }
+ draftState.value=null;render();status.textContent=message;
 }
 async function save(action,extras={}){
  if(busy)return;
  if(action==='publish'&&!confirm('將這份草稿上架？會員會依設定的開放時間看到更新。'))return;
  if(action==='restore'&&!confirm('將選定版本載入草稿？目前草稿會被取代。'))return;
  if(action==='revoke'&&!confirm('撤銷這個檔期現有的邀請連結？'))return;
- busy=true;document.querySelector('main').inert=true;
+ busy=true;page.inert=true;
  try{await api('/journey','POST',{action,revision:model.revision,games:model.draft,reason,...extras});await reload(({draft:'已儲存草稿。',publish:'已上架。',restore:'已還原到草稿，可預覽後上架。',revoke:'已撤銷現有邀請。'})[action]);}
  catch(e){status.textContent=e.message+' 可重新載入以取得最新版本。';}
- finally{busy=false;document.querySelector('main').inert=false;status.scrollIntoView({block:'nearest'});}
+ finally{busy=false;page.inert=false;if(page.isConnected)status.scrollIntoView({block:'nearest'});}
 }
 function move(arr,i,d){if(i+d<0||i+d>=arr.length)return;[arr[i],arr[i+d]]=[arr[i+d],arr[i]];dirty=true;render();}
 function updown(arr,i){const a=btn('上移',()=>move(arr,i,-1)),b=btn('下移',()=>move(arr,i,1));a.disabled=i===0;b.disabled=i===arr.length-1;return [a,b];}
@@ -58,7 +63,7 @@ function render(){
  const add=btn('加入精選',()=>{if(!options.value)return;if(g.pinned.length>=12){status.textContent='每支遊戲最多可指定 12 項。';return;}g.pinned.push(options.value);change();render();});
  const tags=model.tags.find(t=>t.id===id)?.tags||[];
  const ai=panel('AI 標籤與關聯',el('p',tags.length?tags.map(t=>'#'+t).join('　'):'尚無已採用標籤。'),el('p',model.edges.filter(e=>tags.includes(e.a)||tags.includes(e.b)).slice(0,8).map(e=>e.a+' '+e.kind+' '+e.b).join(' ／ ')),
- link('查看原文、產生或審核 AI 建議','/topics/?item='+id+'&q='+encodeURIComponent(src.name)));
+ link('查看原文、產生或審核 AI 建議','/health/journey/?view=tags&item='+id+'&q='+encodeURIComponent(src.name)));
  const proposal=model.suggestions?.find(j=>j.id===id&&j.state==='review')?.proposal;
  if(proposal){const detail=box('details','',el('summary','待審 AI 建議與原文依據'));
  for(const t of proposal.tags)detail.append(el('p','#'+t.name+'　「'+t.evidence+'」'));
@@ -74,7 +79,7 @@ function render(){
  const hist=select(model.history.map(v=>[String(v.version),'第 '+v.version+' 版 · '+new Date(v.created_at).toLocaleString('zh-TW')]),String(model.version));
  const note=el('input');note.maxLength=200;note.value=reason;note.oninput=()=>{reason=note.value;};
  const history=box('details','',el('summary','異動紀錄'),numberTable(['修訂','操作','原因','時間','操作者'],model.changes.map(c=>[c.revision,({draft:'儲存',publish:'上架',revoke:'撤銷',restore:'還原'})[c.action],c.reason||'—',new Date(c.created_at).toLocaleString('zh-TW'),c.actor])));
- const snapshots=panel('發布與版本',el('p','目前上架第 '+model.version+' 版。草稿第 '+model.revision+' 次修訂。'),label('本次異動原因',note),history,actions(btn('儲存草稿',()=>save('draft')),model.canPublish?btn('審核並上架',()=>save('publish'),'j-primary'):el('span','儲存後由會員營運或系統管理員審核上架。')),label('歷史版本',hist),actions(btn('回復此版至草稿',()=>save('restore',{version:Number(hist.value)})),model.canPublish?btn('撤銷此遊戲本檔期的邀請',()=>save('revoke',{game:id,campaign:g.campaign})):null),link('全站健康遊戲開關','/health/'));
+ const snapshots=panel('發布與版本',el('p','目前上架第 '+model.version+' 版。草稿第 '+model.revision+' 次修訂。'),label('本次異動原因',note),history,actions(btn('儲存草稿',()=>save('draft')),model.canPublish?btn('審核並上架',()=>save('publish'),'j-primary'):el('span','儲存後由會員營運或系統管理員審核上架。')),label('歷史版本',hist),actions(btn('回復此版至草稿',()=>save('restore',{version:Number(hist.value)})),model.canPublish?btn('撤銷此遊戲本檔期的邀請',()=>save('revoke',{game:id,campaign:g.campaign})):null),link('全站健康遊戲開關','/health/journey/?view=settings'));
  const rows=model.metrics.filter(m=>m.game===id);
  const liveGame=model.live.find(x=>x.id===id);
  const scope=select([['game','這支遊戲'],['all','通用健康中心邀請']],'game');
@@ -95,6 +100,12 @@ function render(){
  el('h3','邀請通路'),numberTable(['檔期','版本','通路','建立連結','分享者','到訪人數','開局人數'],model.channels.filter(x=>x.game===id).map(x=>[x.campaign,x.version,x.channel,x.shares,x.sharers,x.arrivals,x.starts])));
  show(box('div','j-heading',el('small','內容與客服'),el('h1','健康中心'),el('p','管理遊戲、編排會員可探索的資源，並查看分享與成效。')),status,editor,panel('編排延伸資源',el('p','精選優先顯示。商品需要手動加入，會員選擇延伸主題後才會顯示。'),...pinned,box('div','j-form',label('搜尋資源',query),label('類型',kind)),options,add),ai,panel('預覽草稿',actions(btn('預覽訪客',()=>previewFor(false)),btn('預覽會員',()=>previewFor(true))),preview),snapshots,campaign,analytics,btn('重新載入',()=>{if(!dirty||confirm('放棄尚未儲存的異動？'))initial();}));
 }
-async function initial(){try{await reload();}catch(e){show(el('h1','健康中心管理'),el('p',e.message),link('返回後台登入','/'),btn('重新載入',initial));}}
-window.addEventListener('beforeunload',e=>{if(dirty){e.preventDefault();e.returnValue='';}});
-initial();
+async function initial(restore=false){try{await reload('',restore===true);}catch(e){show(el('h1','健康中心管理'),el('p',e.message),link('返回後台登入','/'),btn('重新載入',initial));}}
+const beforeUnload=e=>{if(dirty){e.preventDefault();e.returnValue='';}};
+window.addEventListener('beforeunload',beforeUnload);
+initial(true);
+return ()=>{
+ window.removeEventListener('beforeunload',beforeUnload);
+ if(dirty&&model)draftState.value={revision:model.revision,games:model.draft,id,reason};
+};
+}

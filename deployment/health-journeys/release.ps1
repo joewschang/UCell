@@ -3,7 +3,7 @@ $ErrorActionPreference='Stop'
 $reg='ucellprodacrm3z2zx4ohqyui'
 $file="$PSScriptRoot/Dockerfile.$part"
 $base=(Get-Content $file -First 1).Split(' ')[1]
-$tag='journey-261111'
+$tag=if($part -eq 'admin'){'health-inline-261111'}else{'journey-261111'}
 $digest=az acr repository show -n $reg --image "ucell-${part}:$tag" --query digest -o tsv
 if($LASTEXITCODE -or !$digest -or $digest -notmatch '^sha256:[a-f0-9]{64}$'){throw 'No build'}
 $current=az containerapp show -g rg-ucell-production -n "ucell-prod-$part" --query properties.template.containers[0].image -o tsv
