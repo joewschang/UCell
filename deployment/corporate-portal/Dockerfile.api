@@ -1,0 +1,4 @@
+FROM ucellprodacrm3z2zx4ohqyui.azurecr.io/ucell-api@sha256:4e2af2904946fa035562a6b414fb46cf1eb9b76c01324aa5709b33b2f171d9e4
+COPY entity.cjs /app/apps/api/dist/portal-entity.cjs
+COPY api.cjs /tmp/portal-patch.cjs
+RUN node /tmp/portal-patch.cjs /app/apps/api/dist
