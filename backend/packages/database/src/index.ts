@@ -66,3 +66,4 @@ export * from './package-epv-credit';
 export * from './qualification-return-review';
 
 export * from './bonus-opportunity';
+export * from './compensation-audit-runner';

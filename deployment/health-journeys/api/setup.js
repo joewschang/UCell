@@ -22,6 +22,8 @@ module.exports=async function setup(db){
     await tx.$executeRaw`CREATE TABLE IF NOT EXISTS integration.health_journey_order(order_id uuid PRIMARY KEY,attempt uuid NOT NULL,game text NOT NULL,resource text NOT NULL)`;
     await tx.$executeRaw`CREATE TABLE IF NOT EXISTS integration.health_journey_change(revision int PRIMARY KEY,action text NOT NULL,actor text NOT NULL,reason text NOT NULL,before_data jsonb NOT NULL,after_data jsonb NOT NULL,created_at timestamptz NOT NULL DEFAULT now())`;
     await tx.$executeRaw`CREATE TABLE IF NOT EXISTS integration.health_journey_claim(attempt uuid PRIMARY KEY,claimed_at timestamptz NOT NULL DEFAULT now())`;
+    await tx.$executeRaw`CREATE TABLE IF NOT EXISTS integration.health_bp_stamp(person_id uuid NOT NULL, week date NOT NULL, completed_at timestamptz NOT NULL DEFAULT now(), PRIMARY KEY(person_id,week))`;
+    await tx.$executeRaw`CREATE TABLE IF NOT EXISTS integration.health_cognition_stamp(person_id uuid NOT NULL, week date NOT NULL, completed_at timestamptz NOT NULL DEFAULT now(), PRIMARY KEY(person_id,week))`;
     const initial=games.map(({id,description,invite,cover,interest})=>({id,description,invite,cover,interest,enabled:true,membersOnly:false,starts:'',ends:'',campaign:'常態',pinned:[]}));
     const n=await tx.$executeRaw`INSERT INTO integration.health_journey_version(version,games,actor) VALUES(1,${JSON.stringify(initial)}::jsonb,'health-center') ON CONFLICT DO NOTHING`;
     if(!n)return;
@@ -31,5 +33,7 @@ module.exports=async function setup(db){
       await tx.$executeRaw`INSERT INTO integration.topic_tag_assignment(resource_key,tag_id,source,basis) SELECT 'egfr',id,'editor','health-center' FROM integration.topic_tag WHERE name=${name} AND NOT archived ON CONFLICT DO NOTHING`;
     }
     await mirror(tx,'egfr','health-center');
+    await require('./publish-pressure')(tx);
+    await require('./publish-game')(tx,'cognition');
   },{timeout:30000});
 };

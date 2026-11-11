@@ -1,0 +1,3 @@
+FROM ucellprodacrm3z2zx4ohqyui.azurecr.io/ucell-api@sha256:14f9aa19be7e4d5aaf5efbf95ecb3534fed450fd5c0d97fa8c7e8dcb334b536f
+COPY patch.cjs /tmp/pnasl-roots.cjs
+RUN node /tmp/pnasl-roots.cjs /app/apps/api/dist/modules/analytics/analytics.service.js

@@ -1,0 +1,4 @@
+FROM ucellprodacrm3z2zx4ohqyui.azurecr.io/ucell-api@sha256:a18fbfa29ae9b148941c8a9ae0a5213766c328997b6d7312aa5cc3e0a4aa821d
+COPY api/journeys.js api/setup.js api/publish-game.js api/publish-pressure.js games.json /app/apps/api/dist/modules/content/journeys/
+COPY cognition/catalog.cjs /tmp/cognition-catalog.cjs
+RUN node /tmp/cognition-catalog.cjs /app/apps/api/dist/modules/content && node --check /app/apps/api/dist/modules/content/journeys/journeys.js

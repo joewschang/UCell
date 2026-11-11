@@ -1,0 +1,2 @@
+FROM ucellprodacrm3z2zx4ohqyui.azurecr.io/ucell-admin@sha256:93996b8c062775f3d094b6f39f52a522d329a9f9830b1edcfea2dfa220451da1
+COPY admin/panel.css admin/manage.js /usr/share/nginx/html/health/journey/

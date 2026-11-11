@@ -1,0 +1,5 @@
+FROM ucellprodacrm3z2zx4ohqyui.azurecr.io/ucell-member@sha256:ead7dd4f08402030ca45ab22f990c8891d4caa771b26f99a896ab939b0c5b861
+COPY blood-pressure/site/ /usr/share/nginx/html/health/blood-pressure/
+COPY member/invite/blood-pressure /usr/share/nginx/html/health/journey/invite/blood-pressure
+COPY member/session.js member/hub.js /usr/share/nginx/html/health/journey/
+RUN sed -i "s@path.startsWith('/health/egfr/')?'egfr'@path.startsWith('/health/blood-pressure/')?'blood-pressure':path.startsWith('/health/egfr/')?'egfr'@" /usr/share/nginx/html/topics/entry.js

@@ -22,10 +22,11 @@ async function home(){
     const img=el('img');img.src=g.cover;img.width=640;img.height=360;img.alt='';
     const url=new URL(g.href,location.origin);if(params.get('invite'))url.searchParams.set('invite',params.get('invite'));
     const a=g.membersOnly&&!member?login(url.pathname+url.search):link(g.id==='egfr'?'開始換算':'開始觀察',url.href,'j-primary');
+    a.setAttribute('aria-label',a.textContent+'：'+g.name);
     return box('article','j-tile',img,box('div','j-pad',g.id===featured?el('small','本週任務','j-week'):null,el('h2',g.name),el('p',g.description),a));
   });
   const records=(passport||[]).filter(p=>p.n);
-  const names={game:'肌少症',diabetes:'糖尿病',egfr:'eGFR'};
+  const names={game:'肌少症',diabetes:'糖尿病',egfr:'eGFR','blood-pressure':'血壓監測',cognition:'認知觀察'};
   const topics=el('nav');topics.id='journey-topics';topics.setAttribute('aria-label','依標籤探索');
   show(box('div','j-heading',el('small','會員探索 ／ 健康中心'),el('h1','今天想了解什麼？'),el('p','選一個生活主題開始，也可以邀家人一起體驗。')),
     cards.length?box('div','j-grid',...cards):el('p','目前沒有開放的健康任務。'),

@@ -1,0 +1,4 @@
+FROM ucellprodacrm3z2zx4ohqyui.azurecr.io/ucell-api@sha256:2c544f2c0bcb8cdffd70160efb6da91b03cb58dd62ca981f31eeb798c83c6989
+COPY api/journeys.js api/setup.js api/publish-pressure.js api/publish-game.js games.json /app/apps/api/dist/modules/content/journeys/
+COPY blood-pressure/catalog.cjs /tmp/bp-catalog.cjs
+RUN node /tmp/bp-catalog.cjs /app/apps/api/dist/modules/content

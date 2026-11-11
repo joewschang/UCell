@@ -53,7 +53,7 @@ it('keeps the selected ball and filters when collapsing and reopening the list',
  await vi.waitFor(()=>expect(JSON.stringify(detail().findAllByType('strong').map(x=>x.children))).toContain('測試會員'));
  for(const expanded of [false,true]){
   act(()=>view.root.findByProps({'aria-controls':'qualification-ball-list'}).props.onClick());
-  expect(view.root.findByProps({id:'qualification-ball-list'}).props.hidden).toBe(!expanded);
+  expect(view!.root.findByProps({id:'qualification-ball-list'}).props.hidden).toBe(!expanded);
   expect(row().props['aria-pressed']).toBe(true);
   expect(detail().findAllByProps({role:'tablist'})).toHaveLength(1);
  }

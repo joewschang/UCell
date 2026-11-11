@@ -11,8 +11,8 @@ async function check(policy,line){
   window.soundTest={attempts:0,plays:0};
   const Original=window.Audio;
   window.Audio=class extends Original{
-   constructor(url){super(url);this.addEventListener('playing',()=>{if(this.src.includes('ucell-welcome'))window.soundTest.plays++;});}
-   play(){if(this.src.includes('ucell-welcome'))window.soundTest.attempts++;return super.play();}
+   constructor(url){super(url);this.addEventListener('playing',()=>{if(this.src.endsWith('/welcome-sound/app_entry_heavenly.mp3'))window.soundTest.plays++;});}
+   play(){if(this.src.endsWith('/welcome-sound/app_entry_heavenly.mp3'))window.soundTest.attempts++;return super.play();}
   };
  });
  await page.route('**/api/v1/**',r=>{

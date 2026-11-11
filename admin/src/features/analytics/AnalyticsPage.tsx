@@ -35,11 +35,12 @@ function Evidence({data}:{data:Pick<Summary,'status'|'asOf'|'policyVersion'>}){r
 export function AnalyticsPage(){
   const {user}=useAuth(),client=useQueryClient();const canRebuild=user?.role==='SUPER_ADMIN';
   const canDrill=['SUPER_ADMIN','MEMBERSHIP_OPS','COMPLIANCE_AUDIT'].includes(user?.role??'');
-  const [root,setRoot]=useState(''),[tree,setTree]=useState<'sponsor'|'binary'>('sponsor'),[search,setSearch]=useState(''),[find,setFind]=useState('');
+  const [rootChoice,setRoot]=useState<string|null>(''),[tree,setTree]=useState<'sponsor'|'binary'>('sponsor'),[search,setSearch]=useState(''),[find,setFind]=useState('');
   const [pending,setPending]=useState(false),[error,setError]=useState<unknown>(null),lock=useRef(false);
   const [generation,setGeneration]=useState<number|null>(null);
   const overview=useQuery({queryKey:['analytics','overview'],queryFn:()=>get<{data:Summary}>(`${endpoint}/overview`),refetchInterval:60_000});
   const roots=useQuery({queryKey:['analytics','roots',find],queryFn:()=>get<{data:Array<{id:string;label:string}>}>(`${endpoint}/roots`+qs({q:find}))});
+  const root=rootChoice??roots.data?.data.find(row=>row.label===find)?.id??'';
   const sonar=useQuery({queryKey:['analytics','sonar',tree,root],queryFn:()=>get<{data:Sonar}>(`${endpoint}/sonar/${tree}/${root}`),enabled:!!root,refetchInterval:60_000});
   const history=useQuery({queryKey:['analytics','history'],queryFn:()=>get<{data:{rows:Summary[]}}>(`${endpoint}/nasl/history`)});
   const contributors=useQuery({queryKey:['analytics','contributors',root,tree,generation],queryFn:()=>get<{data:{qualificationIds:string[];total:number;truncated:boolean}}>(`${endpoint}/sonar/${tree}/${root}/contributors`+qs({generation})),enabled:canDrill&&!!root&&generation!==null});
@@ -48,10 +49,10 @@ export function AnalyticsPage(){
     catch(e){setError(e)}finally{setPending(false);lock.current=false;}}
   const n=overview.error?undefined:overview.data?.data,s=sonar.error?undefined:sonar.data?.data;
   return <div className="analytics-page"><PageHeader title={uiText("NASL／十二代組織健康雷達")} subtitle="用已發生的經營活動辨識成長與關懷機會。管理指標不影響會員資格、獎金或結算。"/>
-    <Card title="分析範圍"><div className="analytics-controls"><form onSubmit={e=>{e.preventDefault();setFind(search);setRoot('');setGeneration(null);}}><Field label="依球號搜尋"><input inputMode="numeric" pattern="[0-9]*" value={search} onChange={e=>setSearch(e.target.value)} placeholder="例如 1001"/></Field><button type="submit">搜尋</button></form>
-      <Field label="組織起點（不包含起點本身）"><select value={root} onChange={e=>{setRoot(e.target.value);setGeneration(null);}}><option value="">{uiText("全公司 NASL；選擇球號可看雷達")}</option>{roots.data?.data.map(q=><option key={q.id} value={q.id}>{uiValue((q.label))}</option>)}</select></Field>
+    <Card title="分析範圍"><div className="analytics-controls"><form onSubmit={e=>{e.preventDefault();setFind(search.trim().toUpperCase());setRoot(null);setError(null);setGeneration(null);}}><Field label="依球號搜尋"><input maxLength={24} value={search} onChange={e=>setSearch(e.target.value)} placeholder="請輸入球號或前綴"/></Field><button type="submit">搜尋</button></form>
+      <Field label="組織起點（不包含起點本身）"><select value={root} onChange={e=>{setRoot(e.target.value);setError(null);setGeneration(null);}}><option value="">全公司PNASL；選擇球號可看雷達</option>{roots.data?.data.map(q=><option key={q.id} value={q.id}>{uiValue((q.label))}</option>)}</select></Field>
       <Field label="組織關係"><select value={tree} onChange={e=>{setTree(e.target.value as 'sponsor'|'binary');setGeneration(null);}}><option value="sponsor">推薦組織</option><option value="binary">雙軌組織</option></select></Field>
-      {canRebuild&&<button onClick={rebuild} disabled={pending}>{pending?'建立快照中…':root?uiText("更新 NASL 與此組織雷達"):uiText("更新 NASL 快照")}</button>}</div><p className="muted">一次選擇一個組織起點。新快照保留歷史；第一次建立時，趨勢與轉換資料尚不足。</p><QueryFeedback query={roots}/><ErrorBox error={error}/></Card>
+      {canRebuild&&<button onClick={rebuild} disabled={pending}>{pending?'建立快照中…':root?uiText("更新 PNASL 與此組織雷達"):uiText("更新 PNASL 快照")}</button>}</div><p className="muted">一次選擇一個組織起點。新快照保留歷史；第一次建立時，趨勢與轉換資料尚不足。</p><QueryFeedback query={roots}/>{find&&roots.isSuccess&&!roots.data?.data.length&&<p role="status">查無符合的球號，請確認號碼或縮短搜尋前綴。</p>}<ErrorBox error={error}/></Card>
     <QueryFeedback query={overview}/>{n&&<Evidence data={n}/>}
     {n?.counts&&<><NaslOverview counts={n.counts} total={n.total??0} asOf={n.asOf} comparisonAsOf={n.comparisonAsOf} matrix={n.transitions?.matrix} newEntrants={n.transitions?.newEntrants}/>
       <p>分析涵蓋 {n.total} 位自然人；排除 {n.excludedPersonRecords} 筆未建立會員身分／系統專用紀錄。待關懷中有 {n.neverActivated} 位尚未啟動。</p>

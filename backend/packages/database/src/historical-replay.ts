@@ -1,3 +1,4 @@
+import {binaryCalculationEnvelope} from './award-rebase-topology';
 import {invalidateBonusOpportunities} from './bonus-opportunity';
 import {calculateGlobalPool} from './global-pool-calculation';
 import {appendReplayPoolDeltas} from './replay-pool-delta';
@@ -594,7 +595,8 @@ export async function replayReturnDependencies(tx:Prisma.TransactionClient,retur
     if(index>=maxPeriods) break;
     if(previousEnd&&previousEnd.getTime()!==batch.periodStart.getTime()) pending('HISTORICAL_SNAPSHOT_MISSING','Historical Binary continuation is not contiguous');
     const {row,envelope}=await loadEnvelope(tx,'BINARY_K1',batch.settlementBatchId);
-    const result=periodBinary(envelope,await effectiveGpv(tx,envelope.evidence.sources),incoming);
+    const calculationEnvelope=await binaryCalculationEnvelope(tx,envelope);
+    const result=periodBinary(calculationEnvelope,await effectiveGpv(tx,envelope.evidence.sources),incoming);
     const matching=await tx.settlementBatch.findFirst({where:{settlementType:'MATCHING_K2',status:'FINALIZED',periodStart:batch.periodStart,periodEnd:batch.periodEnd,ruleVersionCode:batch.ruleVersionCode}});
     let matchingCalculation:typeof calculations[number]['matching'];
     if(matching) {
