@@ -1,0 +1,4 @@
+FROM ucellprodacrm3z2zx4ohqyui.azurecr.io/ucell-api@sha256:25263784eaac9c16521c70e66c58abdd86c22acbe28f5e95d2496c6c85d61b7a
+COPY api/*.js /app/apps/api/dist/modules/content/
+RUN echo "require('./register')(module.exports);" >> /app/apps/api/dist/modules/content/health-game.controller.js
+RUN sed -i 's/body.tags.length > 50/body.tags.length > 2000/g' /app/apps/api/dist/modules/content/health-game.controller.js

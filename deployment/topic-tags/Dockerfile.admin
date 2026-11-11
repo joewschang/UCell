@@ -1,0 +1,4 @@
+FROM ucellprodacrm3z2zx4ohqyui.azurecr.io/ucell-admin@sha256:63d1d6fd0e17cdc51dcabe472a99ed5cfd02e30b21f054f50b25425d30f497e9
+COPY web /usr/share/nginx/html/topics/
+RUN sed -i 's|</body>|<script type="module" src="/topics/entry.js"></script></body>|' /usr/share/nginx/html/index.html /usr/share/nginx/html/health/index.html
+RUN sed -i 's|<body>|<body data-role="admin">|' /usr/share/nginx/html/topics/index.html
