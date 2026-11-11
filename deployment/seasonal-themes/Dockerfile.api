@@ -1,0 +1,6 @@
+FROM ucellprodacrm3z2zx4ohqyui.azurecr.io/ucell-api@sha256:2ad7b5672ee00ef259367183e1cb1555c691f66f382ca9d770d4181bb6c13f39
+COPY season.cjs provision.cjs /app/apps/api/dist/season/
+COPY art/menu-*.jpg /app/apps/api/dist/season/art/
+RUN cd /app/apps/api/dist && printf '\nrequire("../../season/season.cjs").register(exports.MemberController);\n' >> modules/member/member.controller.js && node -e "require('./modules/member/member.controller.js')"
+COPY patch-guard.cjs /tmp/season-patch-guard.cjs
+RUN node /tmp/season-patch-guard.cjs /app/apps/api/dist/modules/member/member-context.guard.js

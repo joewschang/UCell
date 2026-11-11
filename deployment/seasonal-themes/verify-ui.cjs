@@ -1,0 +1,14 @@
+// Browser checks with a simulated member. Run against the assembled webroot.
+const {chromium}=require('playwright-core'),fs=require('fs'),path=require('path'),http=require('http'),assert=require('assert/strict');
+const site=path.resolve(process.argv[2]),themes=['christmas','newyear','lunar','classic'];
+const srv=http.createServer((req,res)=>{let name=new URL(req.url,'http://local').pathname;if(name==='/fixture'){res.setHeader('Content-Type','text/html;charset=utf-8');return res.end('<link rel="stylesheet" href="/seasons/v1/season.css"><script defer src="/seasons/v1/entry.js"></script><header><div class="uc-member-brand"><small>會員中心</small></div></header><uc-season-picker></uc-season-picker>')}
+ const file=path.join(site,name.endsWith('/')?name+'index.html':name);if(!fs.existsSync(file)){res.statusCode=404;return res.end()}res.setHeader('Content-Type',({'.html':'text/html; charset=utf-8','.js':'text/javascript','.css':'text/css','.jpg':'image/jpeg'})[path.extname(file)]||'application/octet-stream');fs.createReadStream(file).pipe(res)});
+(async()=>{await new Promise(a=>srv.listen(0,'127.0.0.1',a));const base='http://127.0.0.1:'+srv.address().port,b=await chromium.launch({executablePath:process.env.CHROME});
+try{for(const mode of ['light','dark']){const p=await b.newPage({viewport:{width:375,height:720},colorScheme:mode});let saved='classic',line='default',fail=false;
+ await p.addInitScript(()=>{sessionStorage.setItem('ucell_member_token','fixture');});
+ await p.route('**/api/v1/member/season-theme',async r=>{if(r.request().method()==='POST'){if(fail){fail=false;return r.fulfill({status:503})}saved=r.request().postDataJSON().theme||saved;line=saved==='classic'?'default':'synced'}
+ await r.fulfill({json:{data:{theme:saved,lineState:line,needsSync:false}}})});
+ await p.goto(base+'/fixture');for(const t of themes){await p.locator('[data-id='+t+']').click();await p.waitForFunction(t=>document.documentElement.dataset.season===t,t);assert.equal(await p.locator('[aria-pressed=true]').getAttribute('data-id'),t)}
+ fail=true;await p.locator('[data-id=lunar]').click();await p.locator('.us-retry:visible').click();await p.waitForFunction(()=>document.documentElement.dataset.season==='lunar');await p.reload();await p.waitForFunction(()=>document.documentElement.dataset.season==='lunar');
+ for(const url of ['/health/','/topics/','/']){await p.goto(base+url,{waitUntil:'domcontentloaded'});await p.waitForSelector('html[data-season=lunar]');assert.equal(await p.locator('html').getAttribute('data-season-dark'),mode==='dark'?'yes':'no')}
+ await p.goto(base+'/fixture');assert.equal(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);await p.close()}}finally{await b.close();srv.close()}})().catch(e=>{console.error(e);srv.close();process.exitCode=1});

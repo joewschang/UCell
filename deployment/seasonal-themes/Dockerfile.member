@@ -1,0 +1,8 @@
+FROM ucellprodacrm3z2zx4ohqyui.azurecr.io/ucell-member@sha256:053e6b8c2237a5fba8b4f6e20b6e4f98883443ec3d9635ad06faab3fac47d5fb AS original
+FROM node:22-alpine AS patch
+COPY --from=original /usr/share/nginx/html /site
+COPY patch.cjs /patch.cjs
+RUN node /patch.cjs /site
+FROM original
+COPY --from=patch /site/ /usr/share/nginx/html/
+COPY entry.js season.css art/banner-*.jpg /usr/share/nginx/html/seasons/v1/
