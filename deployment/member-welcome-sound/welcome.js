@@ -1,5 +1,5 @@
 const preference='ucell.line-welcome-sound.v1',playedKey='ucell.line-welcome-played.v1';
-const clip='/welcome-sound/ucell-welcome.wav';
+const clip='/welcome-sound/app_entry_heavenly.mp3';
 let muted=false,initialized=false,pending=false,played=false,player,preview,revision=0;
 try{muted=localStorage.getItem(preference)==='off';}catch{}
 function stopPending(){

@@ -1,9 +1,8 @@
 FROM ucellprodacrm3z2zx4ohqyui.azurecr.io/ucell-member@sha256:6d7b23519bab64d3e36ab898f1bb15d46e9409a603e1484c4dbc1bbb96cf92b4 AS original
 FROM node:22-alpine AS build
 COPY --from=original /usr/share/nginx/html /site
-COPY compose.cjs patch.cjs /
-RUN node /patch.cjs /site && node /compose.cjs /ucell-welcome.wav
+COPY patch.cjs /
+RUN node /patch.cjs /site
 FROM original
 COPY --from=build /site/ /usr/share/nginx/html/
-COPY --from=build /ucell-welcome.wav /usr/share/nginx/html/welcome-sound/ucell-welcome.wav
-COPY welcome.js style.css /usr/share/nginx/html/welcome-sound/
+COPY app_entry_heavenly.mp3 welcome.js style.css /usr/share/nginx/html/welcome-sound/
