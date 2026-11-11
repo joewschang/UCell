@@ -1,0 +1,4 @@
+FROM ucellprodacrm3z2zx4ohqyui.azurecr.io/ucell-member@sha256:7c16381789cd871cbac8457a331576e885ec7bf15d54ce922693cb88b4f34867
+COPY member/src/assistant-theme.css /usr/share/nginx/html/assets/assistant-theme-261111.css
+RUN sed -i 's|</head>|<link rel="stylesheet" href="/assets/assistant-theme-261111.css"></head>|' /usr/share/nginx/html/index.html \
+    && grep -q '/assets/assistant-theme-261111.css' /usr/share/nginx/html/index.html

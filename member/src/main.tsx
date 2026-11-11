@@ -77,3 +77,4 @@ createRoot(document.getElementById('root')!).render(<React.StrictMode><ThemeProv
 
 import './member-experience.css';
 import './member-desktop.css';
+import './assistant-theme.css';
