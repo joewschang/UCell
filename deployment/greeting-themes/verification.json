@@ -1,7 +1,7 @@
 {
   "sourceBase": "abd8ce7415016b60571d1946f08ca8eacdd40d27",
   "productionBase": "ucellprodacrm3z2zx4ohqyui.azurecr.io/ucell-api@sha256:530f0bfec2ec6541666745f5043c98a29925bae8c521b2ed7a9e70638f073966",
-  "deployed": false,
+  "deployed": true,
   "build": "PASS",
   "focusedTests": {
     "suites": 4,
@@ -28,5 +28,17 @@
   "newResources": false,
   "newCredentials": false,
   "dailyNewAIImage": false,
-  "liveWeather": false
+  "liveWeather": false,
+  "production": {
+    "verifiedAtUTC": "2026-11-12T01:46:46.070886+08:00",
+    "mergeCommit": "07c0a7ea5ab9fd24cb96b180f8129e5bdcec00a7",
+    "digest": "sha256:6f601725778c23372dc76c108b38bc297f3e42d7f11b51612dbf7646622b025c",
+    "previousRevision": "ucell-prod-api--cognition-261112",
+    "existingApprovedImageUnchanged": true,
+    "existingPNGHash": "aedce69d7ae0d1bc7ee9d90e3c3e0d1a4ceb231adea03c79e70a274f13d3693b",
+    "liveThemeMatchesCandidate": true,
+    "publicHealthMemberAdmin": "HTTP 200",
+    "pending": "Next 07:00 Asia/Taipei automatic publication; current approved image intentionally retained",
+    "revision": "ucell-prod-api--rel-261111174549-6f6017"
+  }
 }
