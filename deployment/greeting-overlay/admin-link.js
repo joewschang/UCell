@@ -1,0 +1,2 @@
+function add(){const nav=document.querySelector('nav');if(nav&&!nav.querySelector('[data-greeting-entry]')){const a=document.createElement('a');a.dataset.greetingEntry='true';a.href='/greetings/';a.textContent='每日問候圖上稿';nav.append(a)}}
+let pending=false;new MutationObserver(()=>{if(!pending){pending=true;queueMicrotask(()=>{pending=false;add()})}}).observe(document.body,{childList:true,subtree:true});add();
