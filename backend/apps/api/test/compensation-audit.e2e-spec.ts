@@ -32,11 +32,27 @@ describe('repurchase audit coverage',()=>{
     const packages=Array.from({length:203},(_,index)=>({orderId:String(index),activeDurationValue:duration,targetQualificationId:'ball'}));
     const tx={
       qualificationSetup:{findMany:async()=>[]},order:{findMany:async()=>packages},
-      packagePurchaseSnapshot:{findMany:async()=>packages},monthlyRecognitionSchedule:{findMany:async()=>[]},
+      subscriptionCancellation:{findMany:async()=>[]},packagePurchaseSnapshot:{findMany:async()=>packages},monthlyRecognitionSchedule:{findMany:async()=>[]},
       subscription:{findMany:async({where}:{where:{orderId:string}})=>[{qualificationId:'ball',schedules:Array.from({length:where.orderId==='202'?duration-1:duration},(_,index)=>({installmentNo:index+1}))}]},
     };
     const result=await auditOrderVolume(tx as any,{periodStart:new Date(0),periodEnd:new Date(1),ruleVersionCode:'test'} as any);
     expect(result.issues).toHaveLength(1);
     expect(result.issues[0]).toMatchObject({reason:'INSTALLMENT',order:'202',qid:'ball'});
+  });
+});
+
+describe('sealed repurchase calendar and volume policy',()=>{
+  it.each([['0',0],['1200',1]])('checks the saved monthly GPV amount %s and the reserved start month',async(gpv,count)=>{
+    const dueAt=new Date('2020-11-30T16:00:00Z');
+    const row={subscriptionId:'s',subscription:{orderId:'o',qualificationId:'q',status:'ACTIVE'},recognitionId:'r',status:'RECOGNIZED',installmentNo:1,recognizedAmount:d(2000),rpvAmount:d(1200),dueAt};
+    const events=['RPV',...(count?['GPV']:[])].map(pvType=>({pvType,amount:d(1200),qualificationId:'q'}));
+    const tx={qualificationSetup:{findMany:async()=>[]},subscriptionCancellation:{findMany:async()=>[]},
+      order:{findMany:async()=>[],findUniqueOrThrow:async()=>({paidAt:new Date('2020-11-08T13:00:00Z')})},
+      packagePurchaseSnapshot:{findMany:async()=>[],findUnique:async()=>({packageClass:'ACTIVE_DURATION',packageCode:'ACTIVE_QUARTER',priceAmount:d(6000),selectableProductQuantity:2})},
+      monthlyRecognitionSchedule:{findMany:async()=>[row]},auditEvent:{findFirst:async()=>({afterData:{timing:'PAYMENT_THEN_MONTH_START',startMonth:'2020-12-01T00:00:00Z',gpvPerMonth:gpv}})},pvLedger:{findMany:async()=>events}};
+    const batch={periodStart:new Date(0),periodEnd:new Date('2020-12-02'),ruleVersionCode:'test'};
+    expect((await auditOrderVolume(tx as any,batch as any)).issues).toHaveLength(0);
+    events.push({pvType:'GPV',amount:d(1200),qualificationId:'q'});
+    expect((await auditOrderVolume(tx as any,batch as any)).issues[0].reason).toBe('INSTALLMENT');
   });
 });

@@ -1,7 +1,7 @@
 import {Prisma, SettlementBatch} from '@prisma/client';
 import {qualificationPackageAllocation} from './package-recognition';
 import {preplacementReturnedGpv} from './qualification-return-review';
-import {packageMonthlyPlan,approvedRepurchaseTiming} from './package-monthly-plan';
+import {packageMonthlyPlan,approvedRepurchaseTiming,PackageMonthlyTiming} from './package-monthly-plan';
 
 export async function auditOrderVolume(tx:Prisma.TransactionClient,batch:SettlementBatch) {
   const issues:Array<{key:string;reason:string;qid?:string;order:string;evidence:object}>=[];
@@ -25,8 +25,10 @@ export async function auditOrderVolume(tx:Prisma.TransactionClient,batch:Settlem
   // Start from payment so an absent subscription or an entirely missing installment is visible.
   const payments=await tx.order.findMany({where:{paidAt:window,ruleVersionCode:batch.ruleVersionCode},select:{orderId:true,qualificationId:true}});
   const packages=await tx.packagePurchaseSnapshot.findMany({where:{orderId:{in:payments.map(o=>o.orderId)},packageClass:'ACTIVE_DURATION'}});
+  const replaced=await tx.subscriptionCancellation.findMany({where:{reasonCode:'TIMING_RESEQUENCE',status:'POSTED'},select:{subscriptionId:true}});
+  const replacedIds=replaced.map(row=>row.subscriptionId);
   for(const purchase of packages) {
-    const subscriptions=await tx.subscription.findMany({where:{orderId:purchase.orderId},include:{schedules:{select:{installmentNo:true}}}});
+    const subscriptions=await tx.subscription.findMany({where:{orderId:purchase.orderId,subscriptionId:{notIn:replacedIds}},include:{schedules:{select:{installmentNo:true}}}});
     const term=purchase.activeDurationValue;
     const sub=subscriptions[0];
     const numbers=new Set(sub?.schedules.map(row=>row.installmentNo));
@@ -35,18 +37,31 @@ export async function auditOrderVolume(tx:Prisma.TransactionClient,batch:Settlem
       issues.push({key:'subscription/'+purchase.orderId,reason:'INSTALLMENT',order:purchase.orderId,qid:purchase.targetQualificationId??undefined,
         evidence:{duration:term,subscriptions:subscriptions.length,installments:[...numbers].sort((a,b)=>a-b)}});
   }
-  const scheduled=await tx.monthlyRecognitionSchedule.findMany({where:{dueAt:window,ruleVersionCode:batch.ruleVersionCode,subscription:{orderId:{not:null}}},include:{subscription:true}});
+  const scheduled=await tx.monthlyRecognitionSchedule.findMany({where:{subscriptionId:{notIn:replacedIds},dueAt:window,ruleVersionCode:batch.ruleVersionCode,subscription:{orderId:{not:null}}},include:{subscription:true}});
   for(const row of scheduled) {
     const id=row.subscription.orderId!;
     const purchase=await tx.packagePurchaseSnapshot.findUnique({where:{orderId:id}});
     if(purchase?.packageClass!=='ACTIVE_DURATION'||row.status==='CANCELLED'||row.status==='REVERSED')continue;
     const order=await tx.order.findUniqueOrThrow({where:{orderId:id}});
     if(!order.paidAt)throw Error('PACKAGE_PAYMENT_TIME_MISSING');
-    const plan=packageMonthlyPlan({packageCode:purchase.packageCode,priceAmount:purchase.priceAmount,boxCount:purchase.selectableProductQuantity,paidAt:order.paidAt,timing:approvedRepurchaseTiming});
+    const sealed=await tx.auditEvent.findFirst({where:{entityType:'SUBSCRIPTION',entityId:row.subscriptionId,action:'PACKAGE_MONTHLY_SCHEDULE_PREPARED'},orderBy:{occurredAt:'asc'}});
+    const facts=sealed?.afterData as {timing?:PackageMonthlyTiming;startMonth?:string;gpvPerMonth?:string}|null;
+    const plan=packageMonthlyPlan({packageCode:purchase.packageCode,priceAmount:purchase.priceAmount,boxCount:purchase.selectableProductQuantity,paidAt:order.paidAt,timing:facts?.timing??approvedRepurchaseTiming});
     const expected=plan.installments[row.installmentNo-1];
+    let dueAt=expected?.dueAt;
+    if(facts?.startMonth) {
+      const start=new Date(facts.startMonth);
+      const monthStart=new Date(Date.UTC(start.getUTCFullYear(),start.getUTCMonth()+row.installmentNo-1,1)-8*3600000);
+      dueAt=row.installmentNo===1&&facts.timing==='PAYMENT_THEN_MONTH_START'&&monthStart<=order.paidAt?order.paidAt:monthStart;
+    }
     const ratio=row.retainedEntitlementRatio??new Prisma.Decimal(1);
     const events=await tx.pvLedger.findMany({where:{sourceLineId:row.recognitionId,eventType:{in:['GPV_CREATED','RPV_CREATED']}}});
-    if(!expected||+expected.dueAt!==+row.dueAt||!row.recognizedAmount.eq(expected.cash.mul(ratio))||!row.rpvAmount.eq(expected.rpv.mul(ratio))||row.subscription.status==='ACTIVE'&&(row.status!=='RECOGNIZED'||!['GPV','RPV'].every(type=>events.some(e=>e.pvType===type&&e.amount.eq(row.rpvAmount)&&e.qualificationId===row.subscription.qualificationId))))
+    const expectedGpv=facts?.gpvPerMonth!=null?new Prisma.Decimal(facts.gpvPerMonth).mul(ratio):expected?.gpv.mul(ratio);
+    const volumesMatch=([['GPV',expectedGpv],['RPV',expected?.rpv.mul(ratio)]] as const).every(([type,value])=>{
+      const matches=events.filter(e=>e.pvType===type);
+      return value?.isZero()?matches.length===0:!!value&&matches.length===1&&matches[0].amount.eq(value)&&matches[0].qualificationId===row.subscription.qualificationId;
+    });
+    if(!expected||!dueAt||+dueAt!==+row.dueAt||!row.recognizedAmount.eq(expected.cash.mul(ratio))||!row.rpvAmount.eq(expected.rpv.mul(ratio))||row.dueAt<=new Date()&&(row.status!=='RECOGNIZED'||!volumesMatch))
       issues.push({key:'installment/'+row.recognitionId,reason:'INSTALLMENT',order:id,qid:row.subscription.qualificationId,evidence:{duration:plan.months,installment:row.installmentNo,due:row.dueAt,status:row.status}});
   }
   return {issues,orders:new Set([...setups.map(q=>q.qualifyingOrderId),...scheduled.map(r=>r.subscription.orderId)]).size};
