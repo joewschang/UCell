@@ -16,8 +16,8 @@ export const ANALYTICS_POLICY = {
 export const DAY = 86_400_000;
 export type NaslState = 'N'|'A'|'S'|'L';
 export type PersonFact = { id:string; joinedAt:string; closed:boolean; registered:boolean };
-export type QualificationFact = { id:string; personId:string; createdAt:string; system:boolean; active:boolean };
-export type ActivityFact = { id:string; personId:string; qualificationId:string; at:string; repurchase:boolean };
+export type QualificationFact = { id:string; personId:string|null; createdAt:string; system:boolean; active:boolean };
+export type ActivityFact = { id:string; personId:string|null; qualificationId:string; at:string; repurchase:boolean };
 export type EdgeFact = { parent:string; child:string; side?:'LEFT'|'RIGHT' };
 export type Facts = { persons:PersonFact[]; qualifications:QualificationFact[]; activities:ActivityFact[]; sponsor:EdgeFact[]; binary:EdgeFact[]; issues:string[] };
 export type PersonState = { state:NaslState; reason:string; joinedMonth:string };
@@ -59,7 +59,7 @@ export function health(components:Record<keyof typeof ANALYTICS_POLICY.weights,n
 
 export type Generation = ReturnType<typeof generationMetrics>;
 function generationMetrics(generation:number,qualifications:QualificationFact[],states:Record<string,PersonState>,recent:Set<string>,asOf:string) {
-  const human=qualifications.filter(q=>!q.system), persons=[...new Set(human.map(q=>q.personId))];
+  const human=qualifications.filter(q=>!q.system), persons=[...new Set(human.flatMap(q=>q.personId?[q.personId]:[]))];
   const known=persons.filter(p=>states[p]), counts=emptyCounts();for(const p of known)counts[states[p].state]++;
   const active=human.filter(q=>q.active).length, repurchase=human.filter(q=>recent.has(q.id)).length;
   const fresh=human.filter(q=>Date.parse(q.createdAt)>Date.parse(asOf)-30*DAY).length;
@@ -108,7 +108,7 @@ export function buildSonar(root:string,tree:'sponsor'|'binary',facts:Facts,state
 
 export function buildNasl(facts:Facts,asOf:string,previous?:Record<string,PersonState>) {
   const last=new Map<string,string>();
-  for(const activity of facts.activities){if(Date.parse(activity.at)>Date.parse(asOf))continue;const prev=last.get(activity.personId);if(!prev||activity.at>prev)last.set(activity.personId,activity.at);}
+  for(const activity of facts.activities){if(!activity.personId||Date.parse(activity.at)>Date.parse(asOf))continue;const prev=last.get(activity.personId);if(!prev||activity.at>prev)last.set(activity.personId,activity.at);}
   const humanOwners=new Set(facts.qualifications.filter(q=>!q.system).map(q=>q.personId));
   const systemOwners=new Set(facts.qualifications.filter(q=>q.system).map(q=>q.personId));
   const included=facts.persons.filter(p=>(p.registered||humanOwners.has(p.id))&&(!systemOwners.has(p.id)||humanOwners.has(p.id)));

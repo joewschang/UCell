@@ -1,0 +1,3 @@
+FROM ucellprodacrm3z2zx4ohqyui.azurecr.io/ucell-api@sha256:f080f21670fcf843c011024742b2e73154a656d49bb70c332b5ce0a4781169e5
+COPY patch.cjs /tmp/radar.cjs
+RUN node /tmp/radar.cjs api /app/apps/api/dist/modules/analytics
