@@ -32,4 +32,23 @@ const url=process.env.PHASE2_TEST_DATABASE_URL;
  it('keeps an approved future version private until 07:00 Taipei',async()=>{
   const tomorrow=new Date(Date.parse(date+'T12:00:00Z')+86400000).toISOString().slice(0,10),future=await service.draft({...input,date:tomorrow},randomUUID(),requestId,actor);await service.transition(future.data.id,'publish','TEST future',randomUUID(),requestId,actor);await expect(service.publicImage(future.data.id,future.data.imageHash)).rejects.toThrow();expect((await service.released())?.id).toBe(id);
  });
+ it('publishes only the approved template and records a system actor without a fake user UUID',async()=>{
+  const approval=process.env.DAILY_GREETING_TEMPLATE_APPROVAL_REFERENCE,automatic=process.env.DAILY_GREETING_TEMPLATE_AUTO_APPROVAL;
+  try{
+   process.env.DAILY_GREETING_TEMPLATE_AUTO_APPROVAL='true';process.env.DAILY_GREETING_TEMPLATE_APPROVAL_REFERENCE='TEST reviewed template';
+   const futureDate=new Date(Date.parse(date+'T12:00:00Z')+2*86400000).toISOString().slice(0,10);
+   const result=await service.generateTemplate({date:futureDate,title:'TEST automatic template',message:'TEST reviewed copy'},await service.preview(id),'TEST-system-v1');
+   expect(result.status).toBe('PUBLISHED');const events=await db.auditEvent.findMany({where:{entityId:result.id,action:{in:['GREETING_UPLOADED','GREETING_PUBLISHED']}}});
+   expect(events).toHaveLength(2);expect(events.every(event=>event.actorType==='SYSTEM'&&event.actorId===null)).toBe(true);
+  }finally{if(approval===undefined)delete process.env.DAILY_GREETING_TEMPLATE_APPROVAL_REFERENCE;else process.env.DAILY_GREETING_TEMPLATE_APPROVAL_REFERENCE=approval;if(automatic===undefined)delete process.env.DAILY_GREETING_TEMPLATE_AUTO_APPROVAL;else process.env.DAILY_GREETING_TEMPLATE_AUTO_APPROVAL=automatic;}
+ });
+ it('keeps one published version under concurrent approvals and permits safe retry',async()=>{
+  const drafts=await Promise.all(['A','B'].map(label=>service.draft({...input,title:'TEST parallel '+label},randomUUID(),requestId,actor))),keys=[randomUUID(),randomUUID()];
+  const publish=(index:number)=>service.transition(drafts[index].data.id,'publish','TEST concurrent approval',keys[index],requestId,actor);
+  const results=await Promise.allSettled([publish(0),publish(1)]);expect(results.some(result=>result.status==='fulfilled')).toBe(true);
+  for(let index=0;index<results.length;index++)if(results[index].status==='rejected')await publish(index);
+  const active=await db.$queryRaw<{id:string}[]>`SELECT id FROM learning.daily_greeting_publication WHERE greeting_date=${date} AND status='PUBLISHED'`;
+  expect(active).toHaveLength(1);expect(drafts.map(draft=>draft.data.id)).toContain(active[0].id);
+ });
+
 });
