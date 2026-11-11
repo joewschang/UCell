@@ -1,0 +1,8 @@
+html[data-theme=dark] { background:#091822; color:#ecf4f5 }
+html[data-theme=dark] :is(.card,details,input,select,button,.chip) { background:#132c37; color:#ecf4f5; border-color:#53707b }
+html[data-theme=dark] .card small { color:#c1d2d5 }
+html[data-theme=dark] a { color:#81e0cf }
+html[data-theme=dark] :is(.selected,.primary) { background:#09665a; color:white }
+html[data-theme=dark] #status { background:#203b48 }
+#tools .row:has(#review-only) label { cursor:pointer }
+#review-only { min-height:1.2rem; width:1.2rem; margin:0 }
