@@ -32,6 +32,7 @@ const {join} = require('node:path');
         }, meta: {request_id: 'browser-daily-test', api_version: 'v1', timestamp: new Date().toISOString()}})});
       }
       if (url === api + '/' + date + '/image.png') return failImage ? route.fulfill({status: 503, headers: {'access-control-allow-origin': origin}, body: 'unavailable'}) : route.fulfill({contentType: 'image/png', headers: {'access-control-allow-origin': origin}, body: png});
+      if (['www.facebook.com','www.threads.net','x.com','www.instagram.com'].includes(new URL(url).hostname)) return route.fulfill({contentType:'text/html',body:'<p>Isolated social destination. No post was sent.</p>'});
       if (url.startsWith('https://social-plugins.line.me/lineit/share?')) return route.fulfill({contentType: 'text/html', body: '<p>Isolated LINE link destination. Nothing was sent.</p>'});
       if (new URL(url).origin === origin) return route.continue();
       return route.abort();
@@ -46,6 +47,9 @@ const {join} = require('node:path');
       const poster = page.getByRole('region', {name: '每日問候'});
       await page.waitForFunction(() => {const image = document.querySelector('.uc-daily-art img'); return image?.complete && image.naturalWidth > 0;});
       assert.equal(await poster.getByRole('button', {name: '儲存圖片'}).isEnabled(), true);
+      for(const name of ['Facebook 連結分享','Threads 連結分享','X 連結分享'])assert.equal(await poster.getByRole('link',{name,exact:true}).isVisible(),true);
+      await poster.getByRole('button',{name:'Instagram 圖片發布步驟'}).click();
+      assert.equal(await poster.getByRole('link',{name:'開啟 Instagram（不會自動帶入圖片）'}).isVisible(),true);
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, width + 'px overflow');
       assert.equal(await page.getByRole('link', {name: /影音中心/}).isVisible(), true);
       if (process.env.SCREENSHOT_DIR) {

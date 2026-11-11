@@ -2,6 +2,8 @@
 
 Tracking: https://github.com/joewschang/UCell/issues/53
 
+This is the phase-one baseline handoff. Subsequent implementation and current release limits: [publishing and social sharing](DAILY-GREETINGS-PUBLISHING.md).
+
 ## Latest user direction
 
 The system must support both automatic publishing and manual publishing in the management backend. A cloud schedule must continue when the Codex/developer computer is off. The user also wants dot to generate a greeting image and publish it through the backend when authorized. Every outward-facing image must use the supplied official gold UCell logo, with its original proportions.

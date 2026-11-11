@@ -10,7 +10,7 @@ export type DailyGreeting = {
   availableAt: string;
   nextRefreshAt: string;
   timeZone: 'Asia/Taipei';
-  renderer: 'template-v1';
+  renderer: 'template-v1' | 'reviewed-upload-v1';
 };
 
 const apiBase = import.meta.env.VITE_API_BASE_URL || '/api/v1';
@@ -35,14 +35,20 @@ export function parseDailyGreeting(value: unknown, pageUrl = window.location.hre
       typeof data.title !== 'string' || !data.title.trim() || data.title.length > 200 ||
       typeof data.message !== 'string' || !data.message.trim() || data.message.length > 2000 ||
       !['早安', '問好', '祝福', '提醒', '節慶'].includes(String(data.category)) ||
-      data.timeZone !== 'Asia/Taipei' || data.renderer !== 'template-v1' ||
+      data.timeZone !== 'Asia/Taipei' || !['template-v1','reviewed-upload-v1'].includes(String(data.renderer)) ||
       typeof data.availableAt !== 'string' || !Number.isFinite(Date.parse(data.availableAt)) ||
       typeof data.nextRefreshAt !== 'string' || !Number.isFinite(Date.parse(data.nextRefreshAt))) throw new Error(invalid);
   if (Date.parse(data.availableAt) > now || Date.parse(data.nextRefreshAt) <= Date.parse(data.availableAt))
     throw new Error('今日問候正在更新，請稍後重新載入。');
   if (Date.parse(data.nextRefreshAt) <= now) throw new ExpiredDailyGreetingError();
   const api = trustedApiBase(pageUrl, base);
-  const prefix = api.pathname.replace(/\/$/, '') + '/public/daily-greetings/' + data.date;
+  let version=data.date;
+  if(data.renderer==='reviewed-upload-v1'){
+    const match=typeof data.imageUrl==='string'&&new URL(data.imageUrl,api.origin).pathname.match(/\/publications\/([0-9a-f-]{36})\/([0-9a-f]{64})\/image.png$/);
+    if(!match||! /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(match[1]))throw new Error(invalid);
+    version=`publications/${match[1]}/${match[2]}`;
+  }
+  const prefix = api.pathname.replace(/\/$/, '') + '/public/daily-greetings/' + version;
   function asset(value: unknown, suffix: string) {
     if (typeof value !== 'string') throw new Error(invalid);
     const url = new URL(value, api.origin);
@@ -91,4 +97,12 @@ export async function getDailyGreeting(signal: AbortSignal): Promise<DailyGreeti
 export function dailyGreetingLineUrl(greeting: DailyGreeting) {
   return 'https://social-plugins.line.me/lineit/share?url=' + encodeURIComponent(greeting.shareUrl) +
     '&text=' + encodeURIComponent('UCell 每日問候｜' + greeting.title);
+}
+
+/** These composers carry a public link, never an uploaded image or a posting token. */
+export function dailyGreetingSocialUrl(platform:'facebook'|'threads'|'x',greeting:DailyGreeting){
+ const text='UCell 每日問候｜'+greeting.title;
+ if(platform==='facebook')return 'https://www.facebook.com/sharer/sharer.php?u='+encodeURIComponent(greeting.shareUrl);
+ if(platform==='threads')return 'https://www.threads.net/intent/post?text='+encodeURIComponent(text+'\n'+greeting.shareUrl);
+ return 'https://x.com/intent/tweet?text='+encodeURIComponent(text)+'&url='+encodeURIComponent(greeting.shareUrl);
 }

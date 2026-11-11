@@ -5,7 +5,7 @@ import {afterEach, beforeEach, expect, it, vi} from 'vitest';
 import liff from '@line/liff';
 import DailyGreetingCard from '../src/DailyGreetingCard';
 import {ExploreHub} from '../src/MemberHubs';
-import {dailyGreetingLineUrl, getDailyGreeting, parseDailyGreeting} from '../src/dailyGreeting';
+import {dailyGreetingLineUrl, dailyGreetingSocialUrl, getDailyGreeting, parseDailyGreeting} from '../src/dailyGreeting';
 
 vi.mock('@line/liff', () => ({default: {isLoggedIn: vi.fn(), isApiAvailable: vi.fn(), shareTargetPicker: vi.fn()}}));
 const now = '2026-11-11T02:00:00Z';
@@ -230,4 +230,17 @@ it('bounds expiry retries to one and does not retry future availability or inval
   vi.mocked(fetch).mockClear().mockImplementation(() => Promise.resolve(envelope({...data, availableAt: '2026-11-11T03:00:00Z', nextRefreshAt: now})));
   await expect(getDailyGreeting(new AbortController().signal)).rejects.toThrow('今日問候正在更新');
   expect(fetch).toHaveBeenCalledTimes(1);
+});
+
+it('offers link composers and an explicit Instagram manual flow without automatic posting',async()=>{
+ await renderReady();const greeting=parseDailyGreeting(data);
+ for(const platform of ['facebook','threads','x'] as const){const url=new URL(dailyGreetingSocialUrl(platform,greeting));expect(decodeURIComponent(url.href)).toContain(greeting.shareUrl);expect(url.searchParams.has('access_token')).toBe(false);}
+ for(const name of ['Facebook 連結分享','Threads 連結分享','X 連結分享']){const link=tree!.root.findAllByType('a').find(a=>a.children.join('')===name)!;expect(link.props.target).toBe('_blank');expect(link.props.rel).toContain('noopener');act(()=>link.props.onClick({preventDefault:vi.fn()}));}
+ expect(output()).toContain('自行發布');expect(output()).not.toContain('已發布成功');expect(liff.shareTargetPicker).not.toHaveBeenCalled();
+ act(()=>tree!.root.findByProps({children:'Instagram 圖片發布步驟'}).props.onClick());expect(output()).toContain('不會自動帶入圖片');
+});
+it('accepts only matching immutable publication URLs on the trusted origin',()=>{
+ const version='publications/00000000-0000-0000-0000-000000000001/'+ 'a'.repeat(64),base='/api/v1/public/daily-greetings/'+version;
+ const reviewed={...data,renderer:'reviewed-upload-v1',imageUrl:base+'/image.png',shareUrl:base+'/share'};expect(parseDailyGreeting(reviewed).renderer).toBe('reviewed-upload-v1');
+ expect(()=>parseDailyGreeting({...reviewed,shareUrl:base.replace('aaaa','bbbb')+'/share'})).toThrow();expect(()=>parseDailyGreeting({...reviewed,imageUrl:'https://evil.invalid'+base+'/image.png'})).toThrow();
 });

@@ -1,3 +1,4 @@
+import {GreetingPublicationModule} from './modules/daily-greetings/greeting-publication.module';
 import {DailyGreetingModule} from './modules/daily-greetings/daily-greeting.module';
 import {AiModule} from './modules/ai/ai.module';
 import {PublicWebsiteModule} from './modules/public-website/public-website.module';
@@ -93,6 +94,7 @@ import {FulfillmentOperationsModule} from './modules/commerce/fulfillment-operat
     AdjustmentModule,
     ContentModule,
     DailyGreetingModule,
+    GreetingPublicationModule,
     LearningModule,
     MemberEventsModule,
     PackageConfigModule,
