@@ -87,38 +87,57 @@ export class AdminOpsReadyService{
     });
   }
 
-  async operationsReport(from:Date,to:Date){
+  async operationsReport(from:Date,to:Date,endExclusive=false){
     if(!Number.isFinite(from.getTime()) || !Number.isFinite(to.getTime()) || from>to)
       throw new BadRequestException('REPORT_PERIOD_INVALID: valid from/to dates in chronological order are required');
-    const [persons,qualifications,applications,orders,returns,awards,payouts,recoveries]=await Promise.all([
-      this.prisma.person.count({where:{createdAt:{gte:from,lte:to}}}),
-      this.prisma.qualification.count({where:{createdAt:{gte:from,lte:to}}}),
+    const period=endExclusive?{gte:from,lt:to}:{gte:from,lte:to};
+    const [persons,qualifications,applications,orders,returns,awards,payouts,recoveries,createdOrders,paidOrders,returnsByCurrency]=await this.prisma.$transaction([
+      this.prisma.person.count({where:{createdAt:period}}),
+      this.prisma.qualification.count({where:{createdAt:period}}),
       this.prisma.membershipApplication.groupBy({
-        by:['status'],where:{createdAt:{gte:from,lte:to}},_count:true
+        by:['status'],where:{createdAt:period},_count:true,orderBy:{status:'asc'}
       }),
       this.prisma.order.aggregate({
-        where:{createdAt:{gte:from,lte:to}},
+        where:{createdAt:period},
         _count:true,_sum:{netAmount:true}
       }),
       this.prisma.returnLine.aggregate({
-        where:{returnCase:{occurredAt:{gte:from,lte:to}}},
+        where:{returnCase:{occurredAt:period}},
         _sum:{returnAmount:true,gpvReversalAmount:true},_count:true
       }),
       this.prisma.bonusAward.groupBy({
-        by:['awardType'],where:{occurredAt:{gte:from,lte:to}},
+        by:['awardType'],where:{occurredAt:period},orderBy:{awardType:'asc'},
         _count:true,_sum:{theoryAmount:true,payableAmount:true}
       }),
       this.prisma.payoutBatch.aggregate({
-        where:{periodEnd:{gte:from,lte:to}},
+        where:{periodEnd:period},
         _count:true,_sum:{totalGross:true,totalRecovery:true,totalNet:true}
       }),
       this.prisma.bonusRecoveryEvent.aggregate({
-        where:{occurredAt:{gte:from,lte:to}},
+        where:{occurredAt:period},
         _count:true,_sum:{recoveryAmount:true,recoveredAmount:true,outstandingAmount:true}
       }),
-    ]);
+
+      this.prisma.order.groupBy({
+        by:['currency'], where:{createdAt:period}, _count:true, _sum:{netAmount:true}, orderBy:{currency:'asc'}
+      }),
+      this.prisma.order.groupBy({
+        by:['currency'], where:{paidAt:period,netAmount:{gt:0}}, _count:true, _sum:{netAmount:true}, orderBy:{currency:'asc'}
+      }),
+      this.prisma.$queryRaw<Array<{currency:string;count:number;amount:string}>>`
+        SELECT o.currency AS currency, count(*)::int AS count, sum(l.return_amount)::text AS amount
+        FROM commerce.return_line l
+        JOIN commerce.return_case c ON c.return_case_id = l.return_case_id
+        JOIN commerce."order" o ON o.order_id = c.order_id
+        WHERE c.occurred_at >= ${from} AND c.occurred_at ${endExclusive ? Prisma.sql`<` : Prisma.sql`<=`} ${to}
+        GROUP BY o.currency ORDER BY o.currency
+      `,
+    ],{isolationLevel:Prisma.TransactionIsolationLevel.RepeatableRead});
     return {
       from,to,generatedAt:new Date(),
+      ordersByCurrency:createdOrders.map(row=>({currency:row.currency,count:row._count,amount:row._sum?.netAmount?.toString()??null})),
+      paidOrdersByCurrency:paidOrders.map(row=>({currency:row.currency,count:row._count,amount:row._sum?.netAmount?.toString()??null})),
+      returnsByCurrency,
       persons,qualifications,applications,
       orders:{count:orders._count,netAmount:orders._sum.netAmount??new Prisma.Decimal(0)},
       returns:{
@@ -246,12 +265,12 @@ export class AdminOpsReadyService{
     };
   }
 
-  async exportDataset(dataset:'QUALIFICATIONS'|'ORDERS'|'PAYOUTS',take=5000,from?:Date,to?:Date){
+  async exportDataset(dataset:'QUALIFICATIONS'|'ORDERS'|'PAYOUTS',take=5000,from?:Date,to?:Date,endExclusive=false){
     if(!['QUALIFICATIONS','ORDERS','PAYOUTS'].includes(dataset))throw new BadRequestException('EXPORT_DATASET_INVALID');
     if(!Number.isInteger(take)||take<1)throw new BadRequestException('EXPORT_LIMIT_INVALID');
     if((from!==undefined||to!==undefined)&&(!from||!to||!Number.isFinite(from.getTime())||!Number.isFinite(to.getTime())||from>to))
       throw new BadRequestException('REPORT_PERIOD_INVALID: valid from/to dates in chronological order are required');
-    const period=from&&to?{gte:from,lte:to}:undefined;
+    const period=from&&to?(endExclusive?{gte:from,lt:to}:{gte:from,lte:to}):undefined;
     const limit=Math.min(Math.max(take,1),10000);
     let headers:string[]=[];let rows:any[][]=[];
 

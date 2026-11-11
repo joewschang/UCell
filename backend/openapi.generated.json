@@ -12391,6 +12391,24 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "page",
+            "description": "主檔搜尋頁次，從 1 開始。",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "q",
+            "description": "依正式會員主檔條件搜尋。",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -17187,6 +17205,19 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "endExclusive",
+            "in": "query",
+            "required": false,
+            "description": "傳 true 時，結束時間採不含上界。",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "true",
+                "false"
+              ]
+            }
           }
         ],
         "responses": {
@@ -17243,6 +17274,37 @@
             "in": "query",
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "endExclusive",
+            "in": "query",
+            "required": false,
+            "description": "傳 true 時，結束時間採不含上界。",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "true",
+                "false"
+              ]
             }
           }
         ],

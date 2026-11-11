@@ -43,6 +43,7 @@ export class OrderController {
   }
 
   @Post(':orderId/payment-confirmations')
+  @Roles('SUPER_ADMIN', 'ORDER_OPS', 'FINANCE')
   @UseGuards(IdempotencyGuard)
   @ApiOperation({ operationId: 'adminConfirmPayment', summary: 'Pre-ERP人工確認付款' })
   async confirmPayment(
@@ -51,7 +52,7 @@ export class OrderController {
     @Headers('idempotency-key') key: string,
     @Req() req: any,
   ) {
-    const result = await this.service.confirmPayment(orderId, dto, key, req.requestId, req.user?.personId);
+    const result = await this.service.confirmPayment(orderId, dto, key, req.requestId, req.user?.personId, 'MANUAL_ADMIN');
     return { data: result.value, meta: { replayed: result.replayed } };
   }
 

@@ -68,7 +68,12 @@ export class AdminFormalMemberApplicationController {
  @ApiOperation({operationId:'adminCreatePaperFormalMemberApplication',description:'Back-office entry for paper INDIVIDUAL or LEGAL_ENTITY formal applications. Corporate applications are paper-only. Creates no Qualification/Ball.'})
  createPaper(@Body() body:AdminPaperFormalApplicationDto,@Headers('idempotency-key') key:string,@Req() req:any){return this.service.createPaper(body,req.user?.personId,key,req.requestId);}
  @Get() @ApiOperation({operationId:'adminListFormalMemberApplications',description:'Read-only metadata queue. The encrypted application payload is never decrypted or returned.'})
- list(@Query('status') status?:string,@Query('take') take?:string){return this.service.adminList({status:status||undefined,take:Number(take??50)});}
+ @Header('Cache-Control','private, no-store')
+ list(@Query('status') status?:string,@Query('take') take?:string,@Query('sourceChannel') sourceChannel?:string,
+      @Query('page') page?:string,@Query('q') q?:string){
+  if(page!==undefined||q!==undefined)return this.service.directory({page:page??'1',take,status,sourceChannel,q});
+  return this.service.adminList({status:status||undefined,take:Number(take??50)});
+ }
  @Post(':id/paper-evidence') @Roles('SUPER_ADMIN','MEMBERSHIP_OPS') @UseGuards(IdempotencyGuard) @ApiHeader({name:'Idempotency-Key',required:true})
  @ApiOperation({operationId:'adminReviewPaperFormalEvidence',description:'Record that an authorized operator reviewed a physical paper evidence item. Does not fabricate a digital upload.'})
  reviewPaperEvidence(@Param('id',new ParseUUIDPipe()) id:string,@Body() body:AdminPaperEvidenceReviewDto,@Req() req:any){

@@ -1,10 +1,11 @@
 import {domainLabel,uiText} from "../../../../shared/design-system/i18n";
 import {useQuery} from '@tanstack/react-query';
+import {Link} from 'react-router-dom';
 import {get} from '../../lib/api';
 import {Card,Metric,PageHeader,Badge,ErrorBox} from '../../components/ui';
 import {QueryFeedback} from '../../components/QueryFeedback';
 import {useAuth} from '../auth/auth';
-import type {AdminRole} from '../auth/permissions';
+import {canOpen,type AdminRole} from '../auth/permissions';
 
 type UnavailableMetric={availability:'UNAVAILABLE';value:null;reasonCode:string};
 type DashboardSummary={generatedAt:string;persons:number;qualifications:number;activeQualifications:number;applications:{draft:number;submitted:number};orders:{today:number;month:number};recoveries:{open:number};payable:{open:number};memberLifecycle?:{nasl:{new:UnavailableMetric;active:UnavailableMetric;suspended:UnavailableMetric;lost:UnavailableMetric};currentPersonRecordStatus:{availability:'AVAILABLE';source:string;counts:Record<string,number>};currentQualificationLifecycleStatus:{availability:'AVAILABLE';source:string;counts:Record<string,number>}};ruleVersionCode:string};
@@ -51,5 +52,5 @@ export function DashboardPage(){
  const {user}=useAuth();const allowed=canReadDashboardCompensation(user?.role);
  const dashboard=useQuery({queryKey:['dashboard-summary'],queryFn:()=>get<{data:DashboardSummary}>('/admin/dashboard/summary'),refetchInterval:30_000});
  const compensation=useQuery({queryKey:['dashboard-compensation-summary'],queryFn:()=>get<{data:CompensationSummary}>('/admin/observability/compensation/summary'),refetchInterval:30_000,enabled:allowed});
- return <><PageHeader title="營運總覽" subtitle={uiText("R1.0B 管理後台 Read Model；數字皆來自 Backend，不使用假資料。")}/><QueryFeedback query={dashboard}/>{allowed&&<ErrorBox error={compensation.error}/>}<DashboardContent summary={dashboard.error?undefined:dashboard.data?.data} compensation={allowed&&!compensation.error?compensation.data?.data:undefined} canReadCompensation={allowed}/></>
+ return <><PageHeader title="營運總覽" subtitle={uiText("R1.0B 管理後台 Read Model；數字皆來自 Backend，不使用假資料。")} actions={canOpen(user?.role,'/reports')&&<Link to="/reports">查看已付款與退貨報表</Link>}/><QueryFeedback query={dashboard}/>{allowed&&<ErrorBox error={compensation.error}/>}<DashboardContent summary={dashboard.error?undefined:dashboard.data?.data} compensation={allowed&&!compensation.error?compensation.data?.data:undefined} canReadCompensation={allowed}/></>
 }

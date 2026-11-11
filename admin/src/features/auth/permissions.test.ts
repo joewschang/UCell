@@ -2,6 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { canOpen } from './permissions';
 
 describe('Admin page access boundaries', () => {
+  it('matches the paper application command roles', () => {
+    expect(canOpen('SUPER_ADMIN', '/applications/formal-paper')).toBe(true);
+    expect(canOpen('MEMBERSHIP_OPS', '/applications/formal-paper')).toBe(true);
+    expect(canOpen('COMPLIANCE_AUDIT', '/applications/formal-paper')).toBe(false);
+  });
   it('denies unauthenticated and unknown route access', () => {
     expect(canOpen(undefined, '/payouts')).toBe(false);
     expect(canOpen('SUPER_ADMIN', '/unregistered-route')).toBe(false);

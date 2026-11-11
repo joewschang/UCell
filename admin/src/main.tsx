@@ -9,6 +9,8 @@ import './styles/main.css';
 import 'bootstrap/dist/css/bootstrap-grid.min.css';
 import '@ucell/design-system/styles';
 import './styles/ucell-theme.css';
+import './app/navigation.css';
+import './app/contrast.css';
 
 initializeUiTheme();
 const client=new QueryClient({defaultOptions:{queries:{retry:1,staleTime:10_000}}});

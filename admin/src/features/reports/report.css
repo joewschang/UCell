@@ -1,0 +1,22 @@
+.ops-report { display: grid; gap: 1rem; min-width: 0; }
+.ops-report > .uc-header, .ops-report .card { margin-block: 0; }
+.ops-report-presets, .ops-report-period { display: flex; align-items: end; flex-wrap: wrap; gap: .65rem; }
+.ops-report-presets { margin: .4rem 0 1rem; }
+.ops-report-presets button, .ops-report-period button, .ops-report .button-row button { min-height: 44px; }
+.ops-report-period .field { flex: 1 1 10rem; min-width: 0; max-width: 18rem; margin: 0; }
+.ops-report-period input { display: block; width: 100%; min-width: 0; box-sizing: border-box; min-height: 44px; }
+.ops-report-applied, .ops-report-draft, .ops-report-amount p { margin: .65rem 0 0; line-height: 1.55; }
+.ops-report-draft, .ops-report-missing { color: var(--ucell-warning); }
+.ops-report-amounts { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,16rem),1fr)); gap: .75rem; }
+.ops-report-amount { padding: 1rem; min-width: 0; border: 1px solid var(--ucell-border); border-radius: .6rem; }
+.ops-report-amount h3 { font-size: 1rem; margin: 0; color: var(--ucell-text-primary); }
+.ops-report-amount p { color: var(--ucell-text-secondary); font-size: .9rem; }
+.ops-report-amount table { width: 100%; min-width: 0; border-collapse: collapse; margin-top: .7rem; }
+.ops-report-amount th, .ops-report-amount td { padding: .5rem .25rem; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+.ops-report-amount th:first-child { text-align: left; }
+.ops-report-amount th:not(:first-child), .ops-report-amount td { text-align: right; }
+@media (max-width: 520px) {
+  .ops-report-period { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,8rem),1fr)); }
+  .ops-report-period button { grid-column: 1 / -1; }
+  .ops-report-period .field { max-width: none; }
+}

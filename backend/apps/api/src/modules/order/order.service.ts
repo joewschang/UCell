@@ -7,6 +7,7 @@ import { IdempotencyService } from '../../common/idempotency/idempotency.service
 import { OutboxService } from '../../common/outbox/outbox.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { PaymentConfirmationDto } from './dto/payment-confirmation.dto';
+import { validateManualPaymentReview } from './manual-payment-review';
 import { QualificationAccessService } from '../auth/qualification-access.service';
 import { PackageConfigService } from '../package-config/package-config.service';
 import { SponsorResolver } from '../qualification/sponsor-resolver.service';
@@ -342,6 +343,7 @@ export class OrderService {
     key: string,
     requestId: string,
     actorId?: string,
+    reviewMode?: 'MANUAL_ADMIN',
   ) {
     const correlationId = randomUUID();
     return this.idempotency.execute(`admin:payment:${orderId}`, key, dto, async (tx) => {
@@ -370,6 +372,9 @@ export class OrderService {
       }
 
       const occurredAt = new Date(dto.occurredAt);
+      if (reviewMode === 'MANUAL_ADMIN') {
+        validateManualPaymentReview(dto, amount.eq(0), order.createdAt, occurredAt);
+      }
       const entrySnapshot=tx.packagePurchaseSnapshot?await tx.packagePurchaseSnapshot.findUnique({where:{orderId}}):null;
       if(entrySnapshot?.paymentDeadline&&(new Date()>=entrySnapshot.paymentDeadline||occurredAt>=entrySnapshot.paymentDeadline||occurredAt<order.createdAt||occurredAt.getTime()>Date.now()+60000))throw new ConflictException({code:"PACKAGE_PAYMENT_DEADLINE_EXCEEDED",message:"付款期限已過或付款時間不符，請勿確認此筆收款，應進行款項核對與退款處理。"});
       const payment = await tx.paymentEvent.create({

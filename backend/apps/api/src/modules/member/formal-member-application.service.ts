@@ -1,5 +1,6 @@
 import {ConflictException,Injectable,NotFoundException,UnprocessableEntityException} from '@nestjs/common';
 import {Prisma,PrismaService} from '@ucell/database';
+import {formalReviewDirectory} from './formal-review-directory';
 import {FormalMembershipConflictService} from './formal-membership-conflict.service';
 import {createHash,randomUUID} from 'node:crypto';
 import {AuditService} from '../../common/audit/audit.service';
@@ -373,6 +374,9 @@ export class FormalMemberApplicationService {
   };
  }
 
+ directory(input:Parameters<typeof formalReviewDirectory>[1]){
+  return formalReviewDirectory(this.db,input);
+ }
  async adminList(input:{status?:string;take?:number}={}){
   const take=Math.min(Math.max(input.take??50,1),100);
   const rows=await this.db.formalMemberApplication.findMany({where:input.status?{status:input.status}:undefined,include:{person:{select:{legalName:true,membershipState:true}},snapshots:{select:{version:true,payloadHash:true},orderBy:{version:'desc'},take:1}},orderBy:{updatedAt:'desc'},take});

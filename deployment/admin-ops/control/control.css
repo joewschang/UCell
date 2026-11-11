@@ -1,0 +1,25 @@
+.uc-review-picker,.uc-review-context { margin-block:1rem; background:var(--ucell-surface); border:1px solid var(--ucell-border); border-radius:12px; padding:clamp(.75rem,2vw,1rem); color:var(--ucell-text-primary); }
+.uc-review-picker label { display:block; font-weight:650; margin-bottom:.35rem; }
+.uc-review-picker p { color:var(--ucell-text-secondary); margin:.45rem 0 0; }
+.uc-review-inputs { display:flex; align-items:center; gap:.5rem; }
+.uc-review-inputs input { min-width:0; flex:1; }
+.uc-review-modes,.uc-review-pages { display:flex; flex-wrap:wrap; align-items:center; gap:.5rem; margin-block:.4rem .75rem; }
+.uc-review-modes button,.uc-review-pages button { min-height:44px; }
+.uc-review-modes button[aria-pressed=true] { border:2px solid var(--ucell-primary); font-weight:bold; }
+.uc-review-context { display:flex; align-items:baseline; flex-wrap:wrap; gap:.35rem .7rem; border-inline-start:4px solid var(--ucell-primary); }
+.uc-review-context strong { font-size:1.12rem; overflow-wrap:anywhere; }
+.uc-review-context span,.uc-review-context small { color:var(--ucell-text-secondary); }
+.uc-review-context nav { display:flex; flex-wrap:wrap; gap:.45rem; width:100%; margin-top:.35rem; }
+.uc-review-context button,.uc-review-inputs button,.uc-review-inputs input { min-height:44px; }
+#uc-review-documents,#uc-review-profile { scroll-margin-top:5rem; }
+.uc-review-empty { padding:.75rem 0; }
+@media(max-width:640px) {
+  #formal-applications-list .table-wrap { overflow:visible; }
+  #formal-applications-list table,#formal-applications-list tbody { display:block; width:100%; min-width:0; }
+  #formal-applications-list thead { position:absolute; width:1px; height:1px; clip-path:inset(50%); overflow:hidden; }
+  #formal-applications-list tbody tr { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:.35rem .65rem; padding:.8rem; margin-block:.5rem; border:1px solid var(--ucell-border); border-radius:10px; background:var(--ucell-surface); }
+  #formal-applications-list tbody td { padding:0; border:0; white-space:normal; min-width:0; overflow-wrap:anywhere; }
+  #formal-applications-list tbody td:first-child { grid-column:1/-1; }
+  #formal-applications-list tbody td:first-child button { min-height:44px; text-align:start; }
+  #formal-applications-list tbody td [data-uc-label]::before { content:attr(data-uc-label); display:block; color:var(--ucell-text-secondary); font-size:.78rem; }
+}

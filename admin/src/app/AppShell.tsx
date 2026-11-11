@@ -1,7 +1,8 @@
-import {uiValue,uiText} from "../../../shared/design-system/i18n";
-import {CompanyLogo,AdminAppShell,AdminSidebar,AdminHeader,UCellIcon,ThemePreferenceControl} from '@ucell/design-system';
+import {uiText} from "../../../shared/design-system/i18n";
+import {CompanyLogo,AdminAppShell,AdminSidebar,AdminHeader,ThemePreferenceControl} from '@ucell/design-system';
 import {Link,Outlet,useLocation} from 'react-router-dom';
-import {nav,navGroups,activeNavPath} from './nav';
+import {activeNavPath} from './nav';
+import {OperationsDirectory} from './OperationsDirectory';
 import {useAuth} from '../features/auth/auth';
 import {canOpen} from '../features/auth/permissions';
 import {adminRoleLabel} from '../features/auth/role-label';
@@ -18,7 +19,7 @@ export function AppShell(){
     <a className="uc-skip-link" href="#admin-main">跳至主要內容</a>
     <AdminSidebar>
       <div className="brand"><CompanyLogo/><div><span>管理後台</span></div></div>
-      <nav aria-label="後台主要功能">{navGroups.map(group=>{const links=nav.filter(([,to])=>group.paths.includes(to)&&canOpen(user?.role,to));return links.length?<details className="uc-nav-group" key={group.label} open={group.paths.includes(selectedPath??'')}><summary>{uiValue((group.label))}</summary>{links.map(([label,to,icon])=><Link key={to} to={to} className={selectedPath===to?'uc-nav-link active':'uc-nav-link'} aria-current={selectedPath===to?'page':undefined}><UCellIcon name={icon} className="uc-nav-icon"/><span>{uiValue((label))}</span></Link>)}</details>:null})}</nav>
+      <OperationsDirectory role={user?.role} current={selectedPath} pathname={pathname}/>
       <div className="sidebar-foot"><span>{user?.name}</span><small>{adminRoleLabel(user?.role)}</small><button onClick={logout}>登出</button></div>
       {import.meta.env.DEV && import.meta.env.VITE_ADMIN_DEV_FULL_ACCESS==='true' && <label>{uiText("DEV Actor Person ID（空白使用 ROOT fixture）")}<input value={devActor} onChange={e=>{setDevActor(e.target.value);sessionStorage.setItem('ucell_dev_actor_id',e.target.value.trim());queryClient.clear()}}/></label>}
     </AdminSidebar>

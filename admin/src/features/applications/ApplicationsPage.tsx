@@ -7,17 +7,24 @@ import {MembershipApplication} from '../../types/domain';
 import {Badge,Card,ErrorBox,PageHeader} from '../../components/ui';
 import {dateTime,holderName} from '../../lib/format';
 import {Link} from 'react-router-dom';
+import {useAuth} from '../auth/auth';
+import {canOpen} from '../auth/permissions';
 import {AdminTable} from '../../components/AdminTable';
 import {openPrivateDocument} from '../../lib/privateDocument';
 
 function tone(s:string){return s==='EFFECTIVE'?'ok':s==='SUBMITTED'?'warn':s==='DRAFT'?'neutral':'danger'}
 
 export function ApplicationsPage(){
+ const {user}=useAuth();
  const qc=useQueryClient();const [status,setStatus]=useState('SUBMITTED'),[search,setSearch]=useState('');
  const [formalStatus,setFormalStatus]=useState(''),[selectedFormal,setSelectedFormal]=useState<string|null>(null);
+ const [directory,setDirectory]=useState(true),[formalQuery,setFormalQuery]=useState(''),[appliedQuery,setAppliedQuery]=useState(''),[formalPage,setFormalPage]=useState(1);
  const [selected,setSelected]=useState<string|null>(null);const [error,setError]=useState<unknown>(null);const [busy,setBusy]=useState(false);
  const list=useQuery({queryKey:['applications',status,search],queryFn:()=>get<any>('/admin/membership-applications'+qs({status:status||undefined,q:search,take:100}))});
- const formalList=useQuery({queryKey:['formal-applications',formalStatus],queryFn:()=>get<{data:any[]}>('/admin/formal-member-applications'+qs({status:formalStatus||undefined,take:100}))});
+ const formalList=useQuery({queryKey:['formal-applications',formalStatus,directory,appliedQuery,formalPage],
+  queryFn:()=>get<{data:any[];meta?:{hasNext?:boolean}}>('/admin/formal-member-applications'+qs(directory
+    ? {status:formalStatus||undefined,page:formalPage,q:appliedQuery||undefined,take:20}
+    : {status:formalStatus||undefined,take:100}))});
  const detail=useQuery({queryKey:['application',selected],queryFn:()=>get<any>(`/admin/membership-applications/${selected}`),enabled:!!selected});
  const formalDetail=useQuery({queryKey:['formal-application-detail',selectedFormal],queryFn:()=>get<any>(`/admin/formal-member-applications/${selectedFormal}/detail`),enabled:!!selectedFormal});
  const formalDocuments=useQuery({queryKey:['formal-application-documents',selectedFormal],queryFn:()=>get<any>(`/admin/formal-member-applications/${selectedFormal}/documents`),enabled:!!selectedFormal});
@@ -44,7 +51,7 @@ export function ApplicationsPage(){
   catch(e){setError(e)}finally{setBusy(false)}
  }
  return <>
-  <PageHeader title="會員申請待審" subtitle={uiText("Draft → Submitted → Effective；Approve時才正式建立Qualification、Sponsor Relationship與Binary Placement。")} actions={<div className="button-row"><Link className="button-link" to="/applications/new">＋ 新增球位申請</Link><Link className="button-link" to="/applications/formal-paper">＋ 紙本正式會員建檔</Link></div>}/>
+  <PageHeader title="會員申請待審" subtitle={uiText("Draft → Submitted → Effective；Approve時才正式建立Qualification、Sponsor Relationship與Binary Placement。")} actions={canOpen(user?.role, '/applications/formal-paper') && <div className="button-row"><Link className="button-link" to="/applications/new">＋ 新增球位申請</Link><Link className="button-link" to="/applications/formal-paper">＋ 紙本正式會員建檔</Link></div>}/>
   <div className="toolbar"><select aria-label="申請狀態" value={status} onChange={e=>setStatus(e.target.value)}><option value="">全部狀態</option><option value={"DRAFT"}>{uiText("DRAFT")}</option><option value={"SUBMITTED"}>{uiText("SUBMITTED")}</option><option value={"EFFECTIVE"}>{uiText("EFFECTIVE")}</option></select><input value={search} onChange={e=>setSearch(e.target.value)} aria-label={uiText("姓名／手機／Email")} placeholder={uiText("姓名／手機／Email")}/></div>
   <ErrorBox error={list.error}/><ErrorBox error={error}/>
   <div className="split-view"><Card title={`申請佇列 (${rows.length})`}><div>{rows.map(x=><button className={`list-row ${selected===x.applicationId?'selected':''}`} key={x.applicationId} onClick={()=>setSelected(x.applicationId)}><strong>{x.legalEntity?.registeredName??x.person?.legalName??x.legalEntityId??x.personId??'—'}</strong><span>{x.requestedPlanLevelCode} · <Badge tone={tone(x.status) as any}>{domainLabel(x.status)}</Badge></span><small>{dateTime(x.createdAt)} · {x.applicationId}</small></button>)}</div></Card>
@@ -64,11 +71,17 @@ export function ApplicationsPage(){
    </div>
   </>}</Card></div>
   <Card title={uiText("正式會員 KYC／紙本審查")}>
-   <p className="muted">{uiText("佇列只顯示遮罩與證據狀態；只有選取單筆後，才透過受權限與 Audit 控制的 KYC Detail 讀取申請資料。核准正式會員不自動建立 Ball。")}</p>
-   <div className="toolbar"><select aria-label="正式會員申請狀態" value={formalStatus} onChange={e=>setFormalStatus(e.target.value)}><option value="">全部狀態</option><option value={"DRAFT"}>{uiText("DRAFT")}</option><option value={"SUBMITTED"}>{uiText("SUBMITTED")}</option><option value={"UNDER_REVIEW"}>{uiText("UNDER_REVIEW")}</option><option value={"NEEDS_MORE_INFO"}>{uiText("NEEDS_MORE_INFO")}</option><option value={"APPROVED"}>{uiText("APPROVED")}</option></select></div>
+   <div className="button-row" role="group" aria-label="搜尋範圍">{[true,false].map(mode=><button key={String(mode)} type="button" aria-pressed={directory===mode} onClick={()=>{if(directory!==mode){setDirectory(mode);setFormalPage(1);setFormalQuery('');setAppliedQuery('');}}}>{mode?'全部會員主檔':'最近申請'}</button>)}</div>
+   {directory&&<form className="toolbar" onSubmit={event=>{event.preventDefault();setAppliedQuery(formalQuery.trim());setFormalPage(1);}}>
+    <label>搜尋正式會員申請<input type="search" value={formalQuery} maxLength={120} onChange={e=>setFormalQuery(e.target.value)} placeholder="姓名、法人、代表人或會員編號"/></label>
+    <button type="submit">搜尋</button>{(appliedQuery||formalQuery)&&<button type="button" onClick={()=>{setAppliedQuery('');setFormalQuery('');setFormalPage(1);}}>清除</button>}
+   </form>}
+   <p className="muted">{directory?'可搜尋所有頁面的會員主檔。':'此清單顯示目前狀態下最近更新的 100 筆。'}</p>
+   <div className="toolbar"><select aria-label="正式會員申請狀態" value={formalStatus} onChange={e=>{setFormalStatus(e.target.value);setFormalPage(1)}}><option value="">全部狀態</option><option value={"DRAFT"}>{uiText("DRAFT")}</option><option value={"SUBMITTED"}>{uiText("SUBMITTED")}</option><option value={"UNDER_REVIEW"}>{uiText("UNDER_REVIEW")}</option><option value={"NEEDS_MORE_INFO"}>{uiText("NEEDS_MORE_INFO")}</option><option value={"APPROVED"}>{uiText("APPROVED")}</option></select></div>
    <ErrorBox error={formalList.error}/>
-   <div className="table-wrap"><AdminTable><thead><tr><th>申請人</th><th>類型／來源</th><th>會員狀態</th><th>申請狀態</th><th>配偶／跨線</th><th>更新時間</th></tr></thead><tbody>{formalRows.map(row=><tr key={row.id}><td><button className="text-link" onClick={()=>setSelectedFormal(row.id)}>{row.personNameMasked}</button><br/><small className="mono">{row.id}</small></td><td>{row.applicantType}<br/><small>{row.sourceChannel??'—'}</small></td><td>{row.membershipState??'—'}</td><td><Badge tone={row.status==='APPROVED'?'ok':row.status==='DRAFT'?'neutral':'warn'}>{domainLabel(row.status)}</Badge></td><td>{uiValue(row.spouseVerificationStatus??'—')}<br/><small>{uiValue(row.crossLineReviewStatus??'—')}</small></td><td>{dateTime(row.updatedAt)}</td></tr>)}</tbody></AdminTable></div>
-   {!formalList.isLoading&&!formalRows.length&&<p>目前沒有正式會員申請。</p>}
+   <div className="table-wrap"><AdminTable><thead><tr><th>申請人</th><th>類型／來源</th><th>會員狀態</th><th>申請狀態</th>{!directory&&<th>配偶／跨線</th>}<th>更新時間</th></tr></thead><tbody>{formalRows.map(row=><tr key={row.id}><td><button className="text-link" onClick={()=>setSelectedFormal(row.id)}>{row.personName||row.personNameMasked}</button>{row.representativeName&&<div>代表人 {row.representativeName}</div>}<br/><small className="mono">{row.displayMemberNo||row.id}</small></td><td>{row.applicantType}<br/><small>{row.sourceChannel??'—'}</small></td><td>{row.membershipState??'—'}</td><td><Badge tone={row.status==='APPROVED'?'ok':row.status==='DRAFT'?'neutral':'warn'}>{domainLabel(row.status)}</Badge></td>{!directory&&<td>{uiValue(row.spouseVerificationStatus??'—')}<br/><small>{uiValue(row.crossLineReviewStatus??'—')}</small></td>}<td>{dateTime(row.updatedAt)}</td></tr>)}</tbody></AdminTable></div>
+   <nav className="button-row" aria-label="正式會員申請分頁">{directory&&(formalPage>1||formalList.data?.meta?.hasNext)&&<><button type="button" disabled={formalList.isFetching||formalPage<=1} onClick={()=>setFormalPage(formalPage-1)}>上一頁</button><span>第 {formalPage} 頁</span><button type="button" disabled={formalList.isFetching||!formalList.data?.meta?.hasNext} onClick={()=>setFormalPage(formalPage+1)}>下一頁</button></>}</nav>
+   {!formalList.isLoading&&!formalRows.length&&<p>{formalList.error?null:appliedQuery?"沒有符合條件的會員主檔申請。":"本頁目前沒有正式會員申請。"}</p>}
   </Card>
   {selectedFormal&&<Card title="正式會員審查詳情">
    <ErrorBox error={formalDetail.error}/><ErrorBox error={formalDocuments.error}/>

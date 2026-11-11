@@ -1,0 +1,122 @@
+.opsw-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 23rem), 1fr));
+  gap: 1rem;
+  margin-block: 0 1.25rem;
+}
+.opsw-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  min-width: 0;
+  padding: clamp(1rem, 2vw, 1.5rem);
+  background: var(--ucell-surface);
+  color: var(--ucell-text-primary);
+  border: 1px solid var(--ucell-border);
+  border-block-start: .22rem solid var(--ucell-primary);
+  border-radius: var(--ucell-radius-md, 12px);
+}
+.opsw-head, .opsw-feedback, .opsw-shortcuts {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: .35rem .9rem;
+}
+.opsw-head { justify-content: space-between; }
+.opsw-head h2 { color: inherit; font-size: 1.2rem; margin: 0; }
+.opsw-head time, .opsw-muted, .opsw-queue-title small, .opsw-stats dt {
+  color: var(--ucell-text-secondary);
+}
+.opsw-head time, .opsw-queue-title small { font-size: .82rem; }
+.opsw-muted { margin: .65rem 0 .875rem; line-height: 1.55; }
+.opsw-empty, .opsw-feedback { margin-block: 1.1rem; }
+.opsw-queue { list-style: none; margin: 0 0 .75rem; padding: 0; }
+.opsw-queue li { margin: 0; border-block-start: 1px solid var(--ucell-border); }
+.opsw-queue li:last-child { border-block-end: 1px solid var(--ucell-border); }
+.opsw-queue-link, .opsw-action, .opsw-more, .opsw-shortcuts a {
+  color: var(--ucell-primary);
+  min-height: 44px;
+  align-items: center;
+  line-height: 1.45;
+}
+.opsw-queue-link {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: .65rem;
+  padding: .6rem .2rem;
+  text-decoration: none;
+  border-radius: .3rem;
+}
+.opsw-queue-link:hover, .opsw-queue-link:focus-visible, .opsw-action:hover {
+  background: var(--ucell-surface-secondary);
+}
+.opsw-queue-title { color: var(--ucell-text-primary); font-weight: 650; overflow-wrap: anywhere; }
+.opsw-queue-title small, .opsw-queue-value small { display: block; font-weight: 400; }
+.opsw-queue-value { text-align: end; color: var(--ucell-text-primary); font-variant-numeric: tabular-nums; }
+.opsw-queue-value strong { font-size: 1.2rem; }
+.opsw-overdue { color: var(--ucell-danger); font-size: .85rem; }
+.opsw-arrow { flex: none; margin-inline-start: .3em; font-size: 1.1em; }
+.opsw-stats { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: .45rem; margin: 0 0 .8rem; }
+.opsw-stats div { padding: .72rem .6rem; border-radius: .45rem; background: var(--ucell-surface-secondary); }
+.opsw-stats dt { margin-bottom: .4rem; font-size: .9rem; }
+.opsw-stats dd { margin: 0; font-size: clamp(1.25rem,2vw,1.65rem); font-weight: 700; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.opsw-action, .opsw-more, .opsw-shortcuts a {
+  display: inline-flex;
+  gap: .3rem;
+  align-self: flex-start;
+  text-underline-offset: .22em;
+  font-weight: 600;
+}
+.opsw-more { margin-top: auto; }
+.opsw-shortcuts { margin-bottom: .8rem; }
+.opsw-detail { margin: .8rem 0; }
+.opsw-detail > summary {
+  cursor: pointer;
+  color: var(--ucell-text-primary);
+  font-weight: 650;
+  padding: .85rem .3rem;
+  border-block: 1px solid var(--ucell-border);
+}
+.opsw-detail[open] > summary { margin-bottom: 1rem; }
+@media (max-width: 850px) {
+  #admin-main[data-page="/"] .uc-header:has(.opsw-jump) {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    gap: .65rem;
+  }
+  .opsw-jump {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: 0 .6rem;
+    border-radius: .45rem;
+    color: var(--ucell-primary);
+    text-underline-offset: .22em;
+    font-weight: 600;
+  }
+}
+@media (max-width: 370px) {
+  .opsw-panel { padding: .85rem; }
+  .opsw-queue-link { gap: .35rem; }
+  .opsw-stats { gap: .25rem; }
+  .opsw-stats div { padding: .6rem .35rem; }
+}
+@media (min-width: 851px) {
+  .opsw-jump { display: none; }
+}
+#admin-main[data-page="/"] .uc-header:has(+ .opsw-grid) {
+  align-items: center;
+  margin-block: .8rem 1rem;
+  padding-block: .25rem;
+}
+#admin-main[data-page="/"] .uc-header:has(+ .opsw-grid) h1 {
+  margin: 0;
+}
+#opsw-growth-title { scroll-margin-top: 1.5rem; }
+.opsw-jump:focus-visible, #opsw-growth-title:focus-visible {
+  outline: 3px solid var(--ucell-primary);
+  outline-offset: 3px;
+}

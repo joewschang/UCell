@@ -1,0 +1,101 @@
+.app[data-app="admin"] .sidebar .uc-ops-menu-toggle {
+  display: none;
+}
+.uc-ops-directory {
+  min-width: 0;
+}
+.sidebar .uc-ops-directory .ux-nav-search {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  box-sizing: border-box;
+  padding: .65rem .8rem;
+  margin: .4rem 0 .65rem;
+  border-radius: 8px;
+  border: 1px solid #76979e;
+  background: #102e3c;
+  color: #fff;
+}
+.sidebar .uc-ops-directory .ux-nav-search::placeholder {
+  color: #d2e1e5;
+}
+.sidebar .uc-ops-nav-status {
+  margin: 0 0 .55rem;
+  padding-inline: .2rem;
+  color: #dbe6e9;
+  font-size: .875rem;
+  line-height: 1.5;
+}
+.sidebar .uc-ops-nav-status:empty {
+  margin: 0;
+}
+.sidebar .ux-nav-search:focus-visible,
+.sidebar .uc-ops-menu-toggle:focus-visible {
+  outline: 3px solid #84e4c8;
+  outline-offset: 2px;
+}
+@media (max-width: 1023px) {
+  .app[data-app="admin"] .sidebar:has(> .uc-ops-directory) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0 .65rem;
+    align-items: center;
+  }
+  .app[data-app="admin"] .sidebar:has(> .uc-ops-directory) > .brand {
+    margin: 0;
+    padding: 0;
+    min-width: 0;
+  }
+  .app[data-app="admin"] .sidebar .uc-ops-menu-toggle {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    gap: .55rem;
+    padding: .48rem .75rem;
+    min-height: 44px;
+    background: transparent;
+    color: #edf8f5;
+    border: 1px solid #8ca9ae;
+    border-radius: .6rem;
+  }
+  .uc-ops-menu-toggle::after {
+    content: "";
+    width: .45rem;
+    height: .45rem;
+    border: solid currentColor;
+    border-width: 0 2px 2px 0;
+    transform: translateY(-.12rem) rotate(45deg);
+  }
+  .uc-ops-menu-toggle[aria-expanded="true"]::after {
+    transform: translateY(.12rem) rotate(225deg);
+  }
+  .app[data-app="admin"] .uc-ops-directory {
+    grid-column: 1 / -1;
+    padding-top: .65rem;
+  }
+  .uc-ops-directory[data-open="false"],
+  .app[data-app="admin"] .sidebar:has(.uc-ops-directory[data-open="false"]) > .sidebar-foot {
+    display: none;
+  }
+  .app[data-app="admin"] .sidebar:has(.uc-ops-directory[data-open="true"]) > .sidebar-foot {
+    display: flex;
+    flex-wrap: wrap;
+    grid-column: 1 / -1;
+  }
+  .app[data-app="admin"] .sidebar .uc-ops-directory nav {
+    margin: 0;
+  }
+}
+@media (max-width: 600px) {
+  .app[data-app="admin"] .sidebar .uc-ops-directory nav {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .app[data-app="admin"] .sidebar .uc-ops-directory summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 44px;
+    box-sizing: border-box;
+  }
+}

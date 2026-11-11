@@ -46,8 +46,9 @@ export class AdminOpsReadyController{
   @Roles('SUPER_ADMIN','FINANCE','COMPLIANCE_AUDIT')
   @Get('reports/operations')
   @ApiOperation({operationId:'adminOperationsReport',summary:'營運彙總報表'})
-  report(@Query('from') from:string,@Query('to') to:string){
-    return this.service.operationsReport(new Date(from),new Date(to)).then(data=>({data}));
+  @ApiQuery({name:'endExclusive',required:false,description:'true 表示排除結束時間'})
+  report(@Query('from') from:string,@Query('to') to:string,@Query('endExclusive') endExclusive?:string){
+    return this.service.operationsReport(new Date(from),new Date(to),endExclusive==='true').then(data=>({data}));
   }
 
   @Roles('SUPER_ADMIN','COMPLIANCE_AUDIT')
@@ -57,10 +58,11 @@ export class AdminOpsReadyController{
 
   @Roles('SUPER_ADMIN','FINANCE','COMPLIANCE_AUDIT')
   @Get('exports/:dataset')
+  @ApiQuery({name:'endExclusive',required:false,description:'true 表示排除結束時間'})
   @ApiOperation({operationId:'adminCsvExport',summary:'Qualifications/Orders/Payouts CSV匯出'})
   @ApiQuery({name:'from',required:false,type:String,description:'起始時間；與 to 一起提供，使用 ISO 8601 格式'})
   @ApiQuery({name:'to',required:false,type:String,description:'結束時間；與 from 一起提供，使用 ISO 8601 格式'})
-  export(@Param('dataset') dataset:'QUALIFICATIONS'|'ORDERS'|'PAYOUTS',@Query('take') take?:string,@Query('from') from?:string,@Query('to') to?:string){
-    return this.service.exportDataset(dataset,Number(take??5000),from===undefined?undefined:new Date(from),to===undefined?undefined:new Date(to)).then(data=>({data}));
+  export(@Param('dataset') dataset:'QUALIFICATIONS'|'ORDERS'|'PAYOUTS',@Query('take') take?:string,@Query('from') from?:string,@Query('to') to?:string,@Query('endExclusive') endExclusive?:string){
+    return this.service.exportDataset(dataset,Number(take??5000),from===undefined?undefined:new Date(from),to===undefined?undefined:new Date(to),endExclusive==='true').then(data=>({data}));
   }
 }

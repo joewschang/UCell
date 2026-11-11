@@ -1,0 +1,25 @@
+/* The history disclosure sits on a pale surface in both themes. */
+.content .analytics-page .nasl-history-panel details > summary {
+  color: inherit;
+}
+:root[data-theme="dark"] .analytics-page .analytics-radar svg text {
+  fill: var(--ucell-text-secondary);
+}
+:root[data-theme="dark"] .analytics-page .analytics-radar {
+  color: var(--ucell-primary);
+}
+:root[data-theme="dark"] .analytics-page .analytics-radar circle {
+  fill: var(--ucell-primary);
+}
+:root[data-theme="dark"] .analytics-page .analytics-repurchase {
+  color: var(--ucell-warning);
+}
+:root[data-theme="dark"] .analytics-page .analytics-radar rect {
+  fill: var(--ucell-warning);
+}
+:root[data-theme="dark"] .analytics-page .analytics-components dt small {
+  color: var(--ucell-text-secondary);
+}
+:root[data-theme="dark"] .app[data-app="admin"] .content .uc-state[role="alert"] p {
+  color: var(--ucell-danger);
+}
