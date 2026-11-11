@@ -1,0 +1,32 @@
+{
+  "sourceBase": "abd8ce7415016b60571d1946f08ca8eacdd40d27",
+  "productionBase": "ucellprodacrm3z2zx4ohqyui.azurecr.io/ucell-api@sha256:14f9aa19be7e4d5aaf5efbf95ecb3534fed450fd5c0d97fa8c7e8dcb334b536f",
+  "deployed": false,
+  "build": "PASS",
+  "focusedTests": {
+    "suites": 4,
+    "tests": 25
+  },
+  "preview": "PASS seven original 1080x1080 PNGs visually inspected",
+  "runtime": {
+    "passed": true,
+    "date": "2026-11-11",
+    "bytes": 196141,
+    "greetingModulesPresent": true,
+    "healthGamePreserved": true
+  },
+  "preservedApiFiles": 1866,
+  "changedExistingFiles": [
+    "/app/apps/api/dist/modules/daily-greetings/daily-greeting.js",
+    "/app/apps/api/dist/modules/daily-greetings/daily-greeting.js.map"
+  ],
+  "addedFiles": [
+    "/app/apps/api/dist/modules/daily-greetings/greeting-art.js",
+    "/app/apps/api/dist/modules/daily-greetings/greeting-art.js.map"
+  ],
+  "schemaChanged": false,
+  "newResources": false,
+  "newCredentials": false,
+  "dailyNewAIImage": false,
+  "liveWeather": false
+}

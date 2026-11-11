@@ -1,5 +1,6 @@
+import {greetingTheme,greetingArtwork,THEME_LABELS} from './greeting-art';
 /** Versioned, reviewed copy. No member data, health claims or monetary rules. */
-export const GREETING_VERSION='template-v1';
+export const GREETING_VERSION='template-v2-themes';
 export const TIME_ZONE='Asia/Taipei';
 const DAY=86_400_000;
 export function greetingDate(now=new Date()) { return new Date(now.getTime()+8*3_600_000-7*3_600_000).toISOString().slice(0,10); }
@@ -49,14 +50,16 @@ export function greetingCopy(date:string):GreetingCopy {
  if(lunar==='lantern')return holiday('元宵佳節，團圓美好','一盞燈，一份祝福','願你與家人平安喜樂');
  if(lunar==='dragon')return holiday('端午安康，幸福相伴','把關心包進祝福裡','願你與家人平安順心');
  if(lunar==='moon')return holiday('中秋團圓，月滿人安','明月寄相思，問候送溫暖','願你與所愛之人幸福相伴');
- return ordinary[Math.floor(Date.parse(date+'T00:00:00Z')/DAY)%ordinary.length];
+ if(day.getUTCDay()===0||day.getUTCDay()===6)return {category:'問好',title:'週末愉快，平安自在',lines:['留點時間，陪伴在乎的人','歇一歇，讓心也放個假']};
+ const index=Math.floor(Date.parse(date+'T00:00:00Z')/DAY);
+ if(greetingTheme(date,false)==='weather')return {category:'提醒',title:'早安，晴雨都要照顧自己',lines:['出門前，留意所在地氣象預報','帶上關心，從容度過每一天']};
+ if(index%5===0)return {category:'問好',title:'日安，願你心有暖陽',lines:['一聲問候，把牽掛送給你','願平安與好心情，一路相伴']};
+ return ordinary[index%ordinary.length];
 }
 export const escapeHtml=(value:string)=>value.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]!));
 export function greetingSvg(date:string,logoDataUri:string):string {
  if(!logoDataUri.startsWith('data:image/jpeg;base64,'))throw new Error('GREETING_OFFICIAL_LOGO_REQUIRED');
- const copy=greetingCopy(date),index=Math.floor(Date.parse(date+'T00:00:00Z')/DAY);
- const palettes=[['#eff8f3','#143f3e','#97b5a3','#e5b76b'],['#fff5e4','#624a34','#d2a678','#eecf85'],['#eef3fa','#284763','#94b0be','#e6bd80'],['#fcf0ee','#704849','#c9999a','#e8b983']];
- const [bg,ink,leaf,sun]=palettes[index%palettes.length];
- const font='Noto Sans CJK TC';
- return `<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1080" viewBox="0 0 1080 1080"><defs><linearGradient id="sky" x2="0" y2="1"><stop stop-color="${bg}"/><stop offset="1" stop-color="#ffffff"/></linearGradient></defs><rect width="1080" height="1080" fill="url(#sky)"/><circle cx="860" cy="245" r="110" fill="${sun}" opacity=".65"/><circle cx="860" cy="245" r="144" fill="none" stroke="${sun}" opacity=".25" stroke-width="2"/><path d="M0 790 Q240 640 480 795 T1080 755 V1080 H0Z" fill="${leaf}" opacity=".24"/><path d="M0 890 Q270 760 560 880 T1080 830 V1080 H0Z" fill="${leaf}" opacity=".4"/><path d="M0 990 Q290 865 610 960 T1080 930 V1080 H0Z" fill="${ink}" opacity=".10"/><g transform="translate(0 180)" fill="none" stroke="${ink}" stroke-width="4" opacity=".45"><path d="M85 880 Q175 750 105 580"/><path d="M108 747 Q68 705 65 653 Q127 677 108 747Z" fill="${leaf}"/><path d="M122 797 Q181 756 187 713 Q125 724 122 797Z" fill="${leaf}"/><path d="M1010 920 Q918 814 960 700"/><path d="M957 805 Q1015 775 1018 736 Q959 748 957 805Z" fill="${leaf}"/></g><g font-family="${font}" fill="${ink}"><image href="${logoDataUri}" x="60" y="10" width="560" height="315" preserveAspectRatio="xMidYMid meet"/><rect x="80" y="350" width="116" height="43" rx="21" fill="${ink}" opacity=".08"/><text x="138" y="380" font-size="24" text-anchor="middle">${escapeHtml(copy.category)}</text><text x="80" y="474" font-size="60" font-weight="700">${escapeHtml(copy.title)}</text>${copy.lines.map((line,i)=>`<text x="84" y="${560+i*58}" font-size="33">${escapeHtml(line)}</text>`).join('')}<path d="M84 683 H184" stroke="${ink}" stroke-width="3" opacity=".4"/><text x="84" y="744" font-size="24" letter-spacing="2">${date.replaceAll('-',' . ')}</text><text x="540" y="1008" font-size="25" text-anchor="middle" letter-spacing="3">UCell｜每日一份溫暖</text></g></svg>`;
+ const copy=greetingCopy(date),theme=greetingTheme(date,copy.category==='節慶');
+ const ink=theme==='festival'?'#8d3038':'#214e49';
+ return `<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1080" viewBox="0 0 1080 1080"><defs><linearGradient id="art-sky" x2="0" y2="1"><stop stop-color="#f8f1df"/><stop offset="1" stop-color="#aed5cf"/></linearGradient></defs>${greetingArtwork(theme)}<rect x="48" y="40" width="984" height="600" rx="32" fill="#fffdf7"/><g font-family="Noto Sans CJK TC" fill="${ink}"><image href="${logoDataUri}" x="60" y="48" width="400" height="225" preserveAspectRatio="xMidYMid meet"/><text x="960" y="158" text-anchor="end" font-size="28" letter-spacing="3">${THEME_LABELS[theme]}</text><path d="M100 285H980" stroke="${ink}" stroke-width="2" opacity=".18"/><text x="100" y="380" font-size="${copy.title.length>14?52:58}" font-weight="700">${escapeHtml(copy.title)}</text>${copy.lines.map((line,i)=>`<text x="104" y="${465+i*59}" font-size="36">${escapeHtml(line)}</text>`).join('')}<text x="104" y="590" font-size="25" letter-spacing="2">${date.replaceAll('-',' . ')}</text><text x="976" y="590" text-anchor="end" font-size="24">${theme==='weather'?'晴雨意象・非即時預報':'UCell・每日一份溫暖'}</text></g></svg>`;
 }
