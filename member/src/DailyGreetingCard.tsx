@@ -1,4 +1,5 @@
 import {useCallback, useEffect, useRef, useState, type MouseEvent} from 'react';
+import GreetingShareIcon from './GreetingShareIcon';
 import liff from '@line/liff';
 import {dailyGreetingLineUrl, dailyGreetingSocialUrl, getDailyGreeting, type DailyGreeting} from './dailyGreeting';
 import './daily-greeting.css';
@@ -180,9 +181,9 @@ function GreetingPoster({greeting, refresh}: {greeting: DailyGreeting; refresh: 
         <a className="uc-daily-line" href={imageState === 'ready' && secure ? dailyGreetingLineUrl(greeting) : undefined} aria-disabled={!ready || !secure} role={!ready || !secure ? 'link' : undefined} target="_blank" rel="noopener noreferrer" onClick={shareLine}>{busy === 'share' ? '正在開啟 LINE…' : pickerAvailable ? 'LINE 圖片分享' : 'LINE 連結分享'}</a>
         <button onClick={() => void saveImage()} disabled={!ready}>{busy === 'save' ? '正在準備圖片…' : '儲存圖片'}</button>
       </div>
-      <div className="uc-daily-actions" aria-label="其他平台分享">
-        {(['facebook','threads','x'] as const).map(platform=><a key={platform} href={ready&&secure?dailyGreetingSocialUrl(platform,greeting):undefined} aria-disabled={!ready||!secure} target="_blank" rel="noopener noreferrer" onClick={event=>{if(!secure||!canAct()){event.preventDefault();return;}setNotice('請在平台確認內容後自行發布；UCell 不會代替您發文。');}}>{{facebook:'Facebook',threads:'Threads',x:'X'}[platform]} 連結分享</a>)}
-        <button disabled={!ready} onClick={()=>{if(canAct())setManualShare(value=>!value)}}>Instagram 圖片發布步驟</button>
+      <div className="uc-daily-actions uc-social-logos" role="group" aria-label="其他平台分享">
+        {(['facebook','threads','x'] as const).map(platform=><a key={platform} aria-label={{facebook:"Facebook 連結分享",threads:"Threads 連結分享",x:"X 連結分享"}[platform]} href={ready&&secure?dailyGreetingSocialUrl(platform,greeting):undefined} aria-disabled={!ready||!secure} target="_blank" rel="noopener noreferrer" onClick={event=>{if(!secure||!canAct()){event.preventDefault();return;}setNotice('請在平台確認內容後自行發布；UCell 不會代替您發文。');}}><GreetingShareIcon platform={platform}/></a>)}
+        <button aria-label="Instagram 圖片發布步驟" aria-expanded={manualShare} disabled={!ready} onClick={()=>{if(canAct())setManualShare(value=>!value)}}><GreetingShareIcon platform="instagram"/></button>
       </div>
       <p className="uc-daily-note">Facebook、Threads、X 分享的是公開連結，預覽圖由平台決定。若無法開啟，請複製下方連結到平台，或先儲存圖片再自行發布。</p>
       {imageState==='ready'&&secure&&<label className="uc-daily-note">公開分享連結（可選取複製）<input aria-label="公開分享連結" readOnly value={greeting.shareUrl} onFocus={event=>event.currentTarget.select()} style={{width:'100%'}}/></label>}
