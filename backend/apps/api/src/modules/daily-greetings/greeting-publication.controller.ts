@@ -5,7 +5,7 @@ import {Roles} from '../auth/roles.decorator';
 import {IdempotencyGuard} from '../../common/guards/idempotency.guard';
 import {GreetingPublicationService} from './greeting-publication.service';
 class GreetingDraftDto {
- @ApiProperty({example:"2026-11-11"}) @IsString() @MinLength(10) @MaxLength(10) date!:string;
+ @ApiProperty({format:"date",description:"Publication date in Asia/Taipei"}) @IsString() @MinLength(10) @MaxLength(10) date!:string;
  @ApiProperty({maxLength:160}) @IsString() @MinLength(1) @MaxLength(160) title!:string;
  @ApiProperty({maxLength:1000}) @IsString() @MinLength(1) @MaxLength(1000) message!:string;
  @ApiProperty({description:"RGB/RGBA PNG bytes, base64, at most 600000 decoded bytes"}) @IsString() @MinLength(32) @MaxLength(800000) contentBase64!:string;
