@@ -6,7 +6,9 @@ async function main(){
   const db=new PGlite();
   try {
     await db.exec(`
-      CREATE SCHEMA membership; CREATE SCHEMA identity;
+      CREATE SCHEMA membership; CREATE SCHEMA identity; CREATE SCHEMA organization;
+      CREATE TABLE organization.binary_tree_membership(qualification_id int,effective_from timestamptz,recorded_at timestamptz);
+      INSERT INTO organization.binary_tree_membership VALUES(2,now(),now()),(5,now(),now());
       CREATE TABLE membership.qualification(qualification_id int,ball_no text,created_at timestamptz,qualification_no int,current_holder_person_id int,current_holder_legal_entity_id int,current_company_principal_id int);
       CREATE TABLE identity.person(person_id int,legal_name text,preferred_name text,mobile text);
       CREATE TABLE identity.legal_entity(legal_entity_id int,registered_name text);
@@ -28,6 +30,9 @@ async function main(){
       const sql=parts.reduce((a,s,i)=>a+(i?'$'+i:'')+s,'');
       return (await db.query(sql,values)).rows;
     }}};
+    const geo=(q)=>modules.exports.findRoots(instance.service.prisma,{q},true);
+    assert.deepEqual(Array.from((await geo('')).data,r=>r.ballNo),['BALL-2','BALL-5']);
+    assert.equal((await geo('0912000111')).data.length,2);
     const query=(q,page)=>instance.treeRoots({q,page});
     const page1=await query('');assert.equal(page1.data[0].ballNo,'BALL-1');assert.equal(page1.data.length,10);assert(page1.meta.hasNext);
     const page2=await query('',2);assert.deepEqual(Array.from(page2.data,r=>r.ballNo),['BALL-11','BALL-12','ORG-1']);assert(!page2.meta.hasNext);

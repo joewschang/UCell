@@ -1,0 +1,4 @@
+FROM ucellprodacrm3z2zx4ohqyui.azurecr.io/ucell-api@sha256:74852fb7d6b43b063e4dcb9707071e1c90d04bf6bd0339efed82ee6381ca8345
+COPY tree-greetings/tree-directory.cjs /app/apps/api/dist/tree-directory.cjs
+COPY geo-directory/register.cjs /app/apps/api/dist/geo-directory.cjs
+RUN cd /app/apps/api/dist && printf '\nrequire("../../geo-directory.cjs").register(exports.OrganizationGeoController);\n' >> modules/organization-geo/organization-geo.controller.js && node -e "require('./modules/organization-geo/organization-geo.controller.js')"
