@@ -1,0 +1,16 @@
+const fs = require('node:fs');
+const path = require('node:path');
+const crypto = require('node:crypto');
+const assert = require('node:assert/strict');
+const root = process.argv[2];
+const index = path.join(root, 'index.html');
+const html = fs.readFileSync(index, 'utf8');
+const asset = html.match(/src="(\/assets\/[^"]+\.js)"/)[1];
+const bundle = fs.readFileSync(path.join(root, asset), 'utf8');
+const old = '((i=n==null?void 0:n.currentHolder)==null?void 0:i.memberNo)??(n==null?void 0:n.memberNo)??Ws(n)';
+const display = '[n?.currentHolderLegalEntity?.memberNo??n?.currentHolder?.memberNo??n?.memberNo,Ws(n)].filter(Boolean).join(" · ")';
+assert.equal(bundle.split(old).length, 2);
+const updated = bundle.replace(old,display);
+const filename = '/assets/sponsor-' + crypto.createHash('sha256').update(updated).digest('hex').slice(0,12) + '.js';
+fs.writeFileSync(path.join(root,filename),updated);
+fs.writeFileSync(index,html.replace(asset,filename));
