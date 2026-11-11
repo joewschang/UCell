@@ -1,0 +1,4 @@
+FROM ucellprodacrm3z2zx4ohqyui.azurecr.io/ucell-api@sha256:45a7cf5a5f4aa1b5c0539ea68d950471a623dcc9834a303acb1b70b4beb6d0df
+COPY patch.cjs /tmp/diabetes-patch.cjs
+COPY diabetes-game.js /app/apps/api/dist/modules/content/
+RUN node /tmp/diabetes-patch.cjs api /app/apps/api/dist/modules/content
