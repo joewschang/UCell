@@ -1,0 +1,10 @@
+const fs=require('node:fs');
+const [index,bundle,out]=process.argv.slice(2);
+let js=fs.readFileSync(bundle,'utf8');
+const m='label:"會員清單",columns:[';
+if(js.split(m).length!==2)throw Error('directory baseline mismatch');
+js=js.replace(m,m+'{key:"memberTypeMaintenance",label:"身分維護",value:()=>"",render:D=>e.jsx("a",{href:"/member-type/?type="+encodeURIComponent(D.memberType)+"&id="+encodeURIComponent(D.memberType==="LEGAL_ENTITY"?D.legalEntityId:D.personId),children:"會員身分維護"})},');
+fs.writeFileSync(out,js);
+const path=require('node:path');
+let html=fs.readFileSync(index,'utf8');if(!html.includes(path.basename(bundle)))throw Error('index baseline');
+fs.writeFileSync(index,html.replace(path.basename(bundle),path.basename(out)));

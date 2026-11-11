@@ -1,0 +1,5 @@
+FROM ucellprodacrm3z2zx4ohqyui.azurecr.io/ucell-api@sha256:054f2681c68f887f7f798eb5586fa3b22f4bdd045649807bc3a7a163763f3482
+COPY *.cjs schema.sql /app/apps/api/dist/modules/person/
+RUN node /app/apps/api/dist/modules/person/patch-api.cjs /app/apps/api/dist/modules
+RUN node --check /app/apps/api/dist/modules/nhi-payout/entity-payee.js && node --check /app/apps/api/dist/modules/nhi-payout/nhi-payout.service.js && node --check /app/apps/api/dist/modules/member/member.service.js
+

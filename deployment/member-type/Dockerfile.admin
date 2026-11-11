@@ -1,0 +1,11 @@
+FROM ucellprodacrm3z2zx4ohqyui.azurecr.io/ucell-admin@sha256:88b859842d24b1aa7d3fe2ae3f77ffab93cfc54ed4181e6f84dc3ad85e45af4c AS baseline
+FROM ucellprodacrm3z2zx4ohqyui.azurecr.io/ucell-api@sha256:054f2681c68f887f7f798eb5586fa3b22f4bdd045649807bc3a7a163763f3482 AS prepare
+WORKDIR /tmp/member-type
+COPY --from=baseline /usr/share/nginx/html/index.html ./index.html
+COPY --from=baseline /usr/share/nginx/html/assets/index-health-61c4483ae13b.js ./assets/index-health-61c4483ae13b.js
+COPY patch-admin.cjs ./
+RUN node patch-admin.cjs index.html assets/index-health-61c4483ae13b.js assets/index-type-261111.js
+FROM baseline
+COPY --from=prepare /tmp/member-type/index.html /usr/share/nginx/html/index.html
+COPY --from=prepare /tmp/member-type/assets/index-type-261111.js /usr/share/nginx/html/assets/
+COPY form.js index.html /usr/share/nginx/html/member-type/
