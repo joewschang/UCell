@@ -1,3 +1,4 @@
+import {verifyPayoutSources} from '@ucell/database';
 import {appendMemberMessage,erpBusinessReference} from '@ucell/database';
 import { ConflictException,Injectable,UnprocessableEntityException } from '@nestjs/common';
 import { Prisma,PrismaService } from '@ucell/database';
@@ -453,6 +454,7 @@ export class AdminOperationsService {
         throw new ConflictException('Payout batch is already exported; create a governed replacement revision before another export');
       }
       if(!['READY','APPROVED'].includes(batch.status))throw new ConflictException('Only APPROVED payout batch can be exported');
+      await verifyPayoutSources(tx,id);
       const approved=new Set(batch.approvals.filter(x=>x.decision==='APPROVED').map(x=>x.stage));
       if(!approved.has('FINANCE_REVIEW')||!approved.has('COMPLIANCE_REVIEW'))
         throw new UnprocessableEntityException('Finance and Compliance approvals are both required');
@@ -488,6 +490,7 @@ export class AdminOperationsService {
       if(await tx.payoutExportArtifact.findFirst({where:{payoutBatchId:id,formatVersion:'BANK_XLS_V1'}}))throw new ConflictException('BANK_EXPORT_ALREADY_CREATED_USE_STORED_DOWNLOAD');
       const batch=await tx.payoutBatch.findUniqueOrThrow({where:{payoutBatchId:id},include:{approvals:true,lines:true,paymentResults:true}});
       if(batch.status!=='EXPORTED'||batch.paymentResults.length)throw new ConflictException('BANK_EXPORT_REQUIRES_UNPAID_EXPORTED_BATCH');
+      await verifyPayoutSources(tx,id);
       const approvals=batch.approvals.filter(a=>a.decision==='APPROVED'),finance=approvals.find(a=>a.stage==='FINANCE_REVIEW'),compliance=approvals.find(a=>a.stage==='COMPLIANCE_REVIEW');
       if(!finance||!compliance||finance.actorId===compliance.actorId)throw new UnprocessableEntityException('INDEPENDENT_APPROVALS_REQUIRED');
       const sum=batch.lines.reduce((n,l)=>n.add(l.netAmount),new Prisma.Decimal(0));if(!sum.equals(batch.totalNet))throw new ConflictException('BANK_BATCH_TOTAL_MISMATCH');

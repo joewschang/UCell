@@ -19,6 +19,7 @@ const url=process.env.PHASE2_TEST_DATABASE_URL;
  async function fixture(shared=false){
   const ruleVersionCode='FINANCE_'+randomUUID(),period={periodStart:new Date('1891-01-01Z'),periodEnd:new Date('1891-02-01Z'),ruleVersionCode};
   const person=await db.person.create({data:{legalName:'Synthetic financial control'}}),q=await db.qualification.create({data:{currentHolderPersonId:person.personId,planLevelCode:'STARTER'}});
+  await db.qualificationHolderHistory.create({data:{qualificationId:q.qualificationId,holderPersonId:person.personId,effectiveFrom:new Date('1890-01-01Z'),sourceType:'TEST_ISSUANCE'}});
   const award=async(at:Date,value:number)=>{const a=await db.bonusAward.create({data:{recipientQualificationId:q.qualificationId,awardType:'REFERRAL',sourceEventId:randomUUID(),theoryAmount:value,payableAmount:value,activeSnapshot:true,planLevelSnapshot:'STARTER',ruleVersionCode,parameterSnapshotHash:'a'.repeat(64),occurredAt:at,pendingUntil:at,calculationDetail:{}}});await db.bonusAwardLifecycleEvent.create({data:{bonusAwardId:a.bonusAwardId,status:'EFFECTIVE',occurredAt:at}});return a;};
   const original=await award(new Date('1891-01-10Z'),100);if(shared)await award(new Date('1890-12-10Z'),50);
   const payable=new UnifiedPayableService(db as any,new RecoveryBalanceService(db as any)),ops=new AdminOperationsService(db as any,new AuditService());

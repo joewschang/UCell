@@ -3494,6 +3494,8 @@ model RuntimeRuleParameter {
 }
 
 model SettlementBatch {
+  auditPeriod CompensationAuditPeriod?
+  auditCases CompensationAuditCase[]
   bonusOpportunities BonusOpportunity[]
   parameterSnapshot Json?            @map("parameter_snapshot")
   settlementBatchId String           @id @default(uuid()) @map("settlement_batch_id") @db.Uuid
@@ -5345,4 +5347,37 @@ model DailyGreetingPublication {
  @@index([status,publishAt],map:"daily_greeting_release")
  @@map("daily_greeting_publication")
  @@schema("learning")
+}
+
+model CompensationAuditPeriod {
+  settlementBatchId String @id @map("settlement_batch_id") @db.Uuid
+  checkedAt DateTime @map("checked_at") @db.Timestamptz(6)
+  checkedSources Int @map("checked_sources")
+  checkedAwards Int @map("checked_awards")
+  expectedAmount Decimal @map("expected_amount") @db.Decimal(18,4)
+  recordedAmount Decimal @map("recorded_amount") @db.Decimal(18,4)
+  openCases Int @map("open_cases")
+  evidenceHash String @map("evidence_hash")
+  settlement SettlementBatch @relation(fields:[settlementBatchId], references:[settlementBatchId], onDelete: NoAction, onUpdate: NoAction)
+  @@index([checkedAt],map:"compensation_audit_checked")
+  @@map("compensation_audit_period")
+  @@schema("ledger")
+}
+
+model CompensationAuditCase {
+  settlementBatchId String @map("settlement_batch_id") @db.Uuid
+  caseKey String @map("case_key")
+  reason String
+  qualificationId String? @map("qualification_id") @db.Uuid
+  sourceOrderId String? @map("source_order_id") @db.Uuid
+  expectedAmount Decimal? @map("expected_amount") @db.Decimal(18,4)
+  recordedAmount Decimal? @map("recorded_amount") @db.Decimal(18,4)
+  evidence Json
+  openedAt DateTime @default(now()) @map("opened_at") @db.Timestamptz(6)
+  verifiedAt DateTime? @map("verified_at") @db.Timestamptz(6)
+  settlement SettlementBatch @relation(fields:[settlementBatchId], references:[settlementBatchId], onDelete: NoAction, onUpdate: NoAction)
+  @@id([settlementBatchId,caseKey])
+  @@index([settlementBatchId,verifiedAt],map:"compensation_audit_pending")
+  @@map("compensation_audit_case")
+  @@schema("ledger")
 }

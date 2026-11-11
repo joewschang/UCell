@@ -1,3 +1,4 @@
+import {pollCompensationAudits} from '@ucell/database';
 import {pollBonusOpportunities} from './bonus-opportunity-notification';
 import {processQualificationPackageEvent,recognizePackageMonthlyGpv,processRepurchasePackageEvent} from '@ucell/database';
 import {effectiveSponsorDirectCount, appendRecognitionMemberMessage, emitStructuredOperationalError} from '@ucell/database';
@@ -22,6 +23,7 @@ const trackingAdapters:readonly VerifiedShipmentTrackingAdapter[]=Object.freeze(
 
 const prisma = new PrismaService();
 const richMenus=process.env.LINE_RICH_MENU_ENABLED==='true'?new LineRichMenuReconciler(prisma as any,new LineRichMenuClient({token:process.env.LINE_MESSAGING_CHANNEL_ACCESS_TOKEN??process.env.LINE_CHANNEL_ACCESS_TOKEN??'',basicId:process.env.LINE_EXPECTED_BASIC_ID??'',defaultMenuId:process.env.LINE_DEFAULT_RICH_MENU_ID??'',memberMenuId:process.env.LINE_MEMBER_RICH_MENU_ID??''}),process.env.LINE_MEMBER_RICH_MENU_ID??''):undefined;
+let nextAuditScan=0;
 let nextRichMenuScan=0;
 let richMenuFlight:Promise<void>|undefined;
 // Follow/unblock requests the next maintenance pass, without extending a
@@ -303,6 +305,10 @@ async function tick(){
     if(planned.enabled&&('failures' in planned)&&planned.failures.length)console.error(JSON.stringify({event:'PERIOD_CLOSE_PLANNER_ATTENTION',failures:planned.failures}));
   }catch(error){emitStructuredOperationalError({service:'worker',operation:'planPeriodClose',traceId:crypto.randomUUID(),error,errorCode:'PERIOD_CLOSE_PLANNER_FAILED',retryable:true});}
   await pollPeriodCloseJobs(prisma);
+  if(Date.now()>=nextAuditScan){
+    nextAuditScan=Date.now()+60_000;
+    try{await pollCompensationAudits(prisma);}catch(error){emitStructuredOperationalError({service:'worker',operation:'compensationAudit',error,errorCode:'COMPENSATION_AUDIT_FAILED',traceId:crypto.randomUUID(),retryable:true});}
+  }
   await matureBonusAwards();
   await expireNotificationDeliveries();
   await pollBonusOpportunities(prisma);
