@@ -1,0 +1,4 @@
+FROM ucellprodacrm3z2zx4ohqyui.azurecr.io/ucell-api@sha256:91271538f78d1e337bc980c2c6a32d567da868f91cb89a058b67b006e631a82e
+COPY agreement.cjs /app/apps/api/dist/modules/member/agreement.cjs
+COPY patch-api.cjs /tmp/enrollment-patch.cjs
+RUN node /tmp/enrollment-patch.cjs /app/apps/api/dist/modules/member
