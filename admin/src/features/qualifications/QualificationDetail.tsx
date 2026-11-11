@@ -73,7 +73,7 @@ function RelationshipSummary({relation,kind}:{relation:any;kind:'SPONSOR'|'BINAR
  const party=kind==='SPONSOR'?(relation.sponsor??relation.sponsorQualification):(relation.parent??relation.binaryParent);
  return <dl className="detail-grid">
   <dt>{uiValue(kind==='SPONSOR'?uiText("推薦 Ball"):uiText("父 Ball"))}</dt><dd>{party?.ballNo??relation.parentBallNo??relation.sponsorBallNo??'證據未提供'}</dd>
-  <dt>{uiValue(kind==='SPONSOR'?'推薦人':'左右側')}</dt><dd>{kind==='SPONSOR'?([party?.currentHolderLegalEntity?.memberNo ?? party?.currentHolder?.memberNo ?? party?.memberNo, holderName(party)].filter(Boolean).join(' · ')):(relation.side==='LEFT'?'左側':relation.side==='RIGHT'?'右側':'證據未提供')}</dd>
+  <dt>{uiValue(kind==='SPONSOR'?'推薦人':'左右側')}</dt><dd>{kind==='SPONSOR'?([party?.currentHolderLegalEntity?.memberNo ?? party?.currentHolder?.memberNo ?? party?.memberNo, party?.currentCompanyPrincipalId ? holderName(party) : party?.currentHolderLegalEntity?.registeredName?.trim() || holderName(party)].filter(Boolean).join(' · ')):(relation.side==='LEFT'?'左側':relation.side==='RIGHT'?'右側':'證據未提供')}</dd>
   {kind==='SPONSOR'?<><dt>{uiText("實際 Sponsor 序號")}</dt><dd>{relation.actualSponsorSequenceNo??relation.sponsorSequenceNo??'證據未提供'}</dd></>:<><dt>{uiText("Binary Tree")}</dt><dd>{relation.tree?.treeCode??relation.binaryTree?.treeCode??'證據未提供'}</dd><dt>放置時間</dt><dd>{relation.effectiveAt?dateTime(relation.effectiveAt):'證據未提供'}</dd></>}
  </dl>;
 }
