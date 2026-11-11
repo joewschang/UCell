@@ -9,3 +9,17 @@
 .uc-health-panel .j-preview{max-width:26rem;background:var(--ucell-surface-secondary);padding:1rem;border-radius:.65rem;margin-top:1rem}.uc-health-panel img{max-width:100%;height:auto}
 .uc-health-panel details>summary{cursor:pointer;padding:.55rem 0}.uc-health-panel h2{margin:.2rem 0 .7rem}.uc-health-panel .j-primary{background:var(--ucell-primary);color:var(--ucell-on-primary)}.uc-health-panel a{overflow-wrap:anywhere}
 @media(max-width:700px){.uc-health-panel .j-form{grid-template-columns:1fr}}
+.uc-health-panel :is(.j-form>*,.j-form label,.j-panel,.j-scroll,.j-preview,.j-actions>*) { min-inline-size:0; max-inline-size:100%; box-sizing:border-box }
+.uc-health-panel .j-form label:has(input[type=checkbox]) { min-block-size:44px; justify-content:space-between; padding:.5rem .75rem; border:1px solid var(--ucell-border); border-radius:.5rem }
+.uc-health-panel input[type=checkbox] { flex:0 0 auto; width:1.2em; height:1.2em; min-height:0; margin:0; padding:0 }
+.uc-health-panel .j-scroll { overscroll-behavior-inline:contain; border:1px solid var(--ucell-border); border-radius:.6rem; margin:.65rem 0 1rem }
+.uc-health-panel .j-scroll :is(th,td) { text-align:end; font-variant-numeric:tabular-nums }
+.uc-health-panel .j-scroll :is(th,td):first-child { position:sticky; inset-inline-start:0; text-align:start; max-width:12rem; white-space:normal; overflow-wrap:anywhere; background:var(--ucell-surface); box-shadow:1px 0 var(--ucell-border) }
+.uc-health-panel .j-scroll th { background:var(--ucell-surface-secondary) }
+.uc-health-panel h2 { scroll-margin-top:5rem }
+.uc-health-panel .j-actions button,.uc-health-panel summary { min-height:44px }
+@media(max-width:700px) {
+  .uc-health-panel .j-panel { padding:.85rem }
+  .uc-health-panel .j-actions { align-items:stretch }
+  .uc-health-panel .j-scroll :is(th,td):first-child { max-width:8rem }
+}

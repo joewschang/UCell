@@ -1,0 +1,3 @@
+FROM ucellprodacrm3z2zx4ohqyui.azurecr.io/ucell-member@sha256:561bf517f19e5141ccf5badc6e6268cd0e1f7a27777690a93071e70c5cbd2700
+COPY theme.css member/hub.js /usr/share/nginx/html/health/journey/
+COPY cognition/site/style.css /usr/share/nginx/html/health/cognition/style.css

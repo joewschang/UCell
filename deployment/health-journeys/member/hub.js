@@ -22,6 +22,7 @@ async function home(){
     const img=el('img');img.src=g.cover;img.width=640;img.height=360;img.alt='';
     const url=new URL(g.href,location.origin);if(params.get('invite'))url.searchParams.set('invite',params.get('invite'));
     const a=g.membersOnly&&!member?login(url.pathname+url.search):link(g.id==='egfr'?'開始換算':'開始觀察',url.href,'j-primary');
+    a.setAttribute('aria-label',a.textContent+'：'+g.name);
     return box('article','j-tile',img,box('div','j-pad',g.id===featured?el('small','本週任務','j-week'):null,el('h2',g.name),el('p',g.description),a));
   });
   const records=(passport||[]).filter(p=>p.n);

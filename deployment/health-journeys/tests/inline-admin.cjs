@@ -18,7 +18,7 @@ const base=process.argv.includes('--live')?'https://admin.ucell.life':'http://12
   if(path.endsWith('/auth/admin/me'))data={role,subject:'UI fixture'};
   if(path.endsWith('/health-game/journey')){
     if(r.method()==='POST')writes++;
-    data={draft:games,live:games,history:[{version:1,created_at:new Date()}],revision:1,version:1,canPublish:true,registry,tags:[],edges:[],resources:[],changes:[],channels:[],metrics:[]};
+    data={draft:games,live:games,history:[{version:1,created_at:new Date()}],revision:1,version:1,canPublish:true,registry,tags:[],edges:[],resources:[],changes:[{revision:1,action:'draft',reason:'活動說明'.repeat(15),actor:'test-user',created_at:new Date()}],channels:[],metrics:[{game:'game',campaign:'健康任務回顧',starts:100,finishes:80}]};
   }
   if(path.endsWith('/health-game'))data={open:true,tags:[],resources:[],stats:{started:0,finished:0},diabetesStats:{started:0,finished:0}};
   if(path.endsWith('/topics'))data={rows:[],tags:[],edges:[],jobs:[],archived:[]};
@@ -31,6 +31,15 @@ const base=process.argv.includes('--live')?'https://admin.ucell.life':'http://12
  await menu.click();
  const heading=page.locator('.uc-health-panel h1');
  await heading.waitFor();assert.equal(await heading.textContent(),'健康中心');
+ const jump=page.getByLabel('前往管理區塊');
+ const options=jump.locator('option');
+ await jump.selectOption(await options.last().getAttribute('value'));
+ await page.waitForFunction(()=>document.activeElement?.tagName==='H2');
+ const scroll=page.locator('.uc-health-panel .j-scroll').filter({has:page.locator('tbody')}).last();
+ await scroll.waitFor();
+ assert(await scroll.evaluate(n=>{const r=n.getBoundingClientRect(),parent=n.parentElement.getBoundingClientRect();return r.right<=parent.right+1 && r.width<=parent.width+1 && n.tabIndex===0;}));
+ if(width<700)assert(await scroll.evaluate(n=>{n.scrollLeft=100;return n.scrollLeft>0 && document.documentElement.scrollWidth<=innerWidth+1;}));
+ await jump.selectOption('0');
  await page.getByLabel('列表介紹').fill('保留草稿測試');
  await page.getByRole('link',{name:'全站健康遊戲開關'}).click();await page.getByText('健康中心遊戲開放設定',{exact:true}).waitFor();
  await page.goBack();await page.getByLabel('列表介紹').waitFor();assert.equal(await page.getByLabel('列表介紹').inputValue(),'保留草稿測試');

@@ -13,7 +13,9 @@ function numberTable(headings,values){
  if(!values.length)return el('p','目前沒有符合的紀錄。');
  const t=el('table');const head=t.createTHead().insertRow();for(const h of headings)head.append(el('th',h));
  const body=t.createTBody();for(const valuesRow of values){const row=body.insertRow();for(const value of valuesRow)row.append(el('td',String(value)));}
- return box('div','j-scroll',t);
+ const region=box('div','j-scroll',t);
+ region.tabIndex=0;region.setAttribute('role','region');region.setAttribute('aria-label',headings.slice(0,3).join('、')+'等資料');
+ return region;
 }
 async function reload(message='',restore=false){
  model=await api('/journey');if(!page.isConnected)return;
@@ -98,7 +100,12 @@ function render(){
  numberTable(['檔期','開局','完成','完成率','試算','受邀開局人數','每百位完成者帶來開局人數','曝光','點擊','詳情','加入購物車','開始報名'],rows.map(m=>[m.campaign,m.starts,m.finishes,pct(m.finishes,m.starts),m.calculations,m.invited,m.finishers?(100*m.invited/m.finishers).toFixed(1):'—',m.impressions,m.clicks,m.details,m.carts,m.registration_starts])),
  numberTable(['檔期','點商品人數','買家','付款率','訂單','直接成交','輔助成交','付款金額','退款','淨額','活動報名','課程報名'],rows.map(m=>[m.campaign,m.shoppers,m.buyers,pct(m.buyers,m.shoppers),m.orders,m.direct_orders,m.orders-m.direct_orders,m.gross,m.refunds,m.gross-m.refunds,m.bookings,m.courses])),
  el('h3','邀請通路'),numberTable(['檔期','版本','通路','建立連結','分享者','到訪人數','開局人數'],model.channels.filter(x=>x.game===id).map(x=>[x.campaign,x.version,x.channel,x.shares,x.sharers,x.arrivals,x.starts])));
- show(box('div','j-heading',el('small','內容與客服'),el('h1','健康中心'),el('p','管理遊戲、編排會員可探索的資源，並查看分享與成效。')),status,editor,panel('編排延伸資源',el('p','精選優先顯示。商品需要手動加入，會員選擇延伸主題後才會顯示。'),...pinned,box('div','j-form',label('搜尋資源',query),label('類型',kind)),options,add),ai,panel('預覽草稿',actions(btn('預覽訪客',()=>previewFor(false)),btn('預覽會員',()=>previewFor(true))),preview),snapshots,campaign,analytics,btn('重新載入',()=>{if(!dirty||confirm('放棄尚未儲存的異動？'))initial();}));
+ const jump=select([['','選擇管理區塊']],'');
+ const sectionJump=label('前往管理區塊',jump);
+ show(box('div','j-heading',el('small','內容與客服'),el('h1','健康中心'),el('p','管理遊戲、編排會員可探索的資源，並查看分享與成效。')),sectionJump,status,editor,panel('編排延伸資源',el('p','精選優先顯示。商品需要手動加入，會員選擇延伸主題後才會顯示。'),...pinned,box('div','j-form',label('搜尋資源',query),label('類型',kind)),options,add),ai,panel('預覽草稿',actions(btn('預覽訪客',()=>previewFor(false)),btn('預覽會員',()=>previewFor(true))),preview),snapshots,campaign,analytics,btn('重新載入',()=>{if(!dirty||confirm('放棄尚未儲存的異動？'))initial();}));
+ const headings=[...page.querySelectorAll('.j-panel>h2')];
+ headings.forEach((heading,i)=>{const option=el('option',heading.textContent);option.value=String(i);jump.append(option);});
+ jump.onchange=()=>{if(jump.value==='')return;const heading=headings[Number(jump.value)];heading.tabIndex=-1;heading.focus({preventScroll:true});heading.scrollIntoView({block:'start'});jump.value='';};
 }
 async function initial(restore=false){try{await reload('',restore===true);}catch(e){show(el('h1','健康中心管理'),el('p',e.message),link('返回後台登入','/'),btn('重新載入',initial));}}
 const beforeUnload=e=>{if(dirty){e.preventDefault();e.returnValue='';}};

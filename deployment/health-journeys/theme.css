@@ -11,8 +11,8 @@ main.j-wrap{max-width:73rem;margin:0 auto;padding:clamp(1rem,3.5vw,3.25rem) clam
 .j-tile{display:flex;flex-direction:column}.j-tile img,.j-invite img,.j-preview img{width:100%;height:auto;aspect-ratio:16 / 9;object-fit:cover;display:block}
 .j-pad,.j-panel,.j-next{padding:clamp(1rem,2.4vw,1.6rem)}.j-pad{flex:1;display:flex;flex-direction:column;align-items:start}.j-pad .j-primary{margin-top:auto}
 .j-page h2{line-height:1.35;font-size:1.35rem;margin:.2rem 0 .6rem}.j-week{margin-bottom:.4rem}.j-panel,.j-next{margin:1.25rem 0}
-.j-page a,.j-related a{color:var(--j-accent);text-underline-offset:.2em}.j-page button,.j-share button,.j-next button,.j-page input,.j-page select,.j-share select,.j-share input,.j-page textarea{font:inherit;min-height:44px;border:1px solid var(--j-line);border-radius:.55rem;background:var(--j-card);color:var(--j-ink);padding:.46rem .8rem}
-.j-page button,.j-share button,.j-next button{cursor:pointer;font-weight:650}.j-page :is(input,textarea,select):not([type=checkbox]){width:100%}
+.j-page a,.j-related a{color:var(--j-accent);text-underline-offset:.2em}.j-page button,.j-share button,.j-next button,.j-page input:where(:not([type=radio],[type=checkbox])),.j-page select,.j-share select,.j-share input,.j-page textarea{font:inherit;min-height:44px;border:1px solid var(--j-line);border-radius:.55rem;background:var(--j-card);color:var(--j-ink);padding:.46rem .8rem}
+.j-page button,.j-share button,.j-next button{cursor:pointer;font-weight:650}.j-page :where(input:not([type=radio],[type=checkbox]),textarea,select){width:100%;max-width:100%;min-width:0}
 .j-page :is(a,button,input,textarea,select,summary):focus-visible,.j-share :focus-visible,.j-next :focus-visible{outline:3px solid #df9c33;outline-offset:3px}
 .j-page a.j-primary,.j-page button.j-primary,.j-share a.j-primary{background:#155b48;color:white;border:1px solid #387e6b;border-radius:.6rem;text-decoration:none;padding:.65rem 1.2rem;min-height:44px;display:inline-block}
 .j-actions{display:flex;gap:.55rem;flex-wrap:wrap;align-items:center}.j-share{width:100%;display:grid;gap:.75rem}.j-share select,.j-share input{width:100%;max-width:100%}.j-share-output img{display:block;max-width:100%;width:240px}
@@ -26,3 +26,61 @@ main.j-wrap{max-width:73rem;margin:0 auto;padding:clamp(1rem,3.5vw,3.25rem) clam
 html[data-season]:not([data-season=classic])[data-season-dark=no]{--j-accent:var(--us-ink);--j-tint:var(--us-tint)}
 html[data-season]:not([data-season=classic])[data-season-dark=yes]{--j-bg:var(--us-night);--j-card:var(--us-panel);--j-accent:var(--us-accent)}
 html[data-season]:not([data-season=classic]) .j-page header,html[data-season]:not([data-season=classic]) .j-page .j-primary{background:var(--us-ink);color:white}
+/* Keep the card layout readable under browser zoom and the member's large-text setting. */
+.j-grid { grid-template-columns: repeat(auto-fit,minmax(min(100%,18rem),1fr)); align-items:stretch }
+.j-grid > *, .j-form > *, .j-pad, .j-actions > *, .j-share-output, .j-next, .j-related { min-inline-size:0; max-inline-size:100% }
+.j-heading { border-inline-start:.25rem solid var(--j-accent); padding-inline-start:1rem }
+.j-tile { box-shadow:0 .2rem .85rem #0629230d }
+.j-tile h2, .j-resource a, .j-stamps li { overflow-wrap:anywhere }
+.j-tile .j-pad p { margin:.3rem 0 1rem; line-height:1.55 }
+.j-page .j-tile .j-primary { text-align:center }
+.j-share { margin-block:1rem; padding-block:.9rem; border-block:1px solid var(--j-line) }
+.j-share select, .j-share-output input { inline-size:100%; min-inline-size:0; box-sizing:border-box }
+.j-share-output img { margin:.6rem auto; padding:.4rem; background:white; border-radius:.5rem }
+.j-share-output a { display:inline-block; margin-bottom:.6rem }
+.j-related .j-resource:last-child { border-bottom:0 }
+.j-page details summary, .j-stamps li { line-height:1.5 }
+.j-page .j-form label:has(input[type=checkbox]) { display:flex; align-items:center; gap:.6rem; min-block-size:44px }
+.j-page input[type=checkbox], .j-page input[type=radio] { accent-color:var(--j-accent) }
+body:has(.station-nav) .choices, .diabetes .choices, .wrap .choices { grid-template-columns:minmax(0,1fr) }
+body:has(.station-nav) .choices button, .diabetes .choices button, .wrap .choices button {
+  white-space:normal; overflow-wrap:break-word; min-inline-size:0; line-height:1.45
+}
+:where(.j-page, .diabetes, body:has(.station-nav)) :is(button,summary,a):focus-visible { outline-offset:2px }
+.j-page main:focus { outline:none }
+@media (max-width:38rem) {
+  main.j-wrap { padding:1rem .8rem 3.5rem }
+  .j-grid { grid-template-columns:minmax(0,1fr); gap:.75rem }
+  .j-grid .j-tile { display:grid; grid-template-columns:minmax(5.5rem,30%) minmax(0,1fr); align-items:start }
+  .j-tile > img { border-radius:.5rem; margin:.9rem 0 .9rem .75rem; width:calc(100% - .75rem); aspect-ratio:4/3; object-fit:cover }
+  .j-tile .j-pad { padding:.85rem; gap:.12rem }
+  .j-tile .j-pad h2 { font-size:1.12em }
+  .j-tile .j-week { margin:0 }
+  .j-share .j-actions { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,6.5rem),1fr)); align-items:stretch }
+  .j-actions button { white-space:normal }
+  .j-page header { gap:.45rem }
+}
+@media (max-width:25rem) {
+  .j-page .wrap .actions, .j-page .content .actions { align-items:stretch }
+  .j-page .wrap .actions > button, .j-page .content .actions > button { flex:1 1 9rem }
+  #calc .pair { flex-wrap:wrap }
+  #calc .pair > input { flex:2 1 7rem }
+  #calc .pair > select { flex:1 1 6.4rem }
+}
+/* The original muscle-strength game shares the hub document, including its reading and topic views. */
+html[data-season-dark=yes] body:not(.j-page):not(.diabetes):has(#page) { color:var(--j-ink); background:var(--j-bg) }
+html[data-season-dark=yes] #page :is(section:not(.hero),fieldset,dialog,.station-photo,button:not(.primary)) {
+  color:var(--j-ink); background:var(--j-card); border-color:var(--j-line)
+}
+html[data-season-dark=yes] #page :is(.step,.result-score,.station-photo span,a:not(.action)) { color:var(--j-accent) }
+html[data-season-dark=yes] #page :is(.pill,.notice,.badge,.choices button[aria-pressed=true]) { color:var(--j-ink); background:var(--j-tint) }
+.large .j-pad :is(h2,p),.large .j-share :is(input,select,button) { font-size:inherit }
+
+@media(max-width:38rem) {
+  body:has(main#page) > header { flex-wrap:wrap; gap:.4rem .75rem }
+  body:has(main#page) > header > :is(a,button,strong) { flex-shrink:0; white-space:nowrap }
+  body:has(main#page) > header > a[href="/topics/"] { order:1; font-size:.9em }
+}
+.j-page .art:has(img) { padding:0; overflow:hidden }
+.j-page .art span { min-block-size:32px; display:grid; place-items:center }
+.j-page .choices button[aria-pressed=true] { border-color:var(--j-accent) }
