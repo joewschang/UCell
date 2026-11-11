@@ -19,7 +19,7 @@ uc-season-picker{display:block;margin-top:1.35rem;border-top:1px solid var(--uce
 .us-options strong,.us-options small{display:block;margin:.3rem .75rem 0}.us-options small{color:var(--ucell-text-secondary,#405b56)}
 .us-cover{display:block;position:relative;height:clamp(50px,12vw,88px);background-size:cover;background-position:right center}
 .us-cover.classic{background:radial-gradient(ellipse at 85% 140%,transparent 55%,#ddc08087 56%,transparent 58%),linear-gradient(120deg,#133c38,#33776d)}
-.us-cover.christmas{background-image:url(./banner-christmas.jpg)}.us-cover.newyear{background-image:url(./banner-newyear.jpg)}.us-cover.lunar{background-image:url(./banner-lunar.jpg)}
+.us-cover.christmas{background-image:url(./menu-christmas.jpg)}.us-cover.newyear{background-image:url(./menu-newyear.jpg)}.us-cover.lunar{background-image:url(./menu-lunar.jpg)}
 .us-cover i{display:none}.us-options [aria-pressed=true] i{position:absolute;left:8px;top:8px;display:grid;place-items:center;width:24px;height:24px;border-radius:50%;color:#193a30;background:#fff6df;font:bold 16px system-ui}.us-status{margin:.85rem 0 .25rem}.us-retry[hidden]{display:none}
 @media(min-width:760px){.us-options{grid-template-columns:repeat(4,minmax(0,1fr))}}
 @media screen{
@@ -31,3 +31,5 @@ html[data-season]:not([data-season=classic]) body>main :is(.card small,.step){co
 html[data-season]:not([data-season=classic]) body>main a:not(.primary,.action,.chip){color:var(--us-page-link)}
 html[data-season]:not([data-season=classic])[data-season-dark=yes] body>main :is(#status,.notice,.badge){background:#483923;color:#fff2d2}
 }
+.us-cover{height:auto;aspect-ratio:1280/864;background-position:center;background-size:contain;background-repeat:no-repeat}
+.us-menu-preview{margin-top:1rem}.us-menu-preview[hidden]{display:none}.us-menu-preview summary{cursor:pointer;min-height:44px;align-content:center;color:var(--ucell-primary);font-weight:600}.us-menu-preview img{display:block;width:100%;max-width:850px;height:auto;margin:.35rem auto;border-radius:10px}

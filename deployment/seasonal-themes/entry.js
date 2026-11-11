@@ -1,6 +1,6 @@
 (()=>{
 'use strict';
-const root=document.documentElement, names={classic:['經典','UCell 原色'],christmas:['聖誕','松林星夜'],newyear:['新年','跨年煙火'],lunar:['中國年','燈映春梅']},endpoint=(location.hostname==='member.ucell.life'?'https://api.ucell.life':'')+'/api/v1/member/season-theme';
+const root=document.documentElement, names={classic:['經典','UCell 原色'],christmas:['聖誕','聖誕繽紛'],newyear:['新年（元旦）','煙火迎曙光'],lunar:['中國年','金紅迎新春']},endpoint=(location.hostname==='member.ucell.life'?'https://api.ucell.life':'')+'/api/v1/member/season-theme';
 let token=null,theme='classic',state='',busy=false,failed=false,controller,ready=false,lastChoice=null;
 function session(key){try{return sessionStorage.getItem(key)}catch{return null}}
 function cacheKey(s){let h=2166136261;for(const c of s)h=Math.imul(h^c.charCodeAt(0),16777619);return h.toString(36)}
@@ -33,12 +33,12 @@ function auth(){
 }
 class Picker extends HTMLElement{
  connectedCallback(){if(this.children.length)return;
- this.innerHTML='<div class="us-heading"><span>SEASONAL COLLECTION</span><h4>節慶主題</h4><p>選一款喜歡的風景，會員頁面與已連結的 LINE 選單會一起換裝。</p></div><div class="us-options" role="group" aria-label="選擇節慶主題"></div><p class="us-status" role="status"></p><button type="button" class="us-retry" hidden>重新嘗試</button>';
+ this.innerHTML='<div class="us-heading"><span>SEASONAL COLLECTION</span><h4>節慶主題</h4><p>選一款喜歡的風景，會員頁面與已連結的 LINE 選單會一起換裝。</p></div><div class="us-options" role="group" aria-label="選擇節慶主題"></div><details class="us-menu-preview" hidden><summary>查看這款 LINE 圖文選單大圖</summary><img width="1280" height="864" loading="lazy" alt=""></details><p class="us-status" role="status"></p><button type="button" class="us-retry" hidden>重新嘗試</button>';
  for(const [id,[label,detail]] of Object.entries(names)){const b=document.createElement('button');b.type='button';b.dataset.id=id;b.innerHTML='<span class="us-cover '+id+'" aria-hidden="true"><i>✓</i></span><strong>'+label+'</strong><small>'+detail+'</small>';b.onclick=()=>save({theme:id});this.querySelector('.us-options').append(b)}
  this.querySelector('.us-retry').onclick=()=>{if(ready)save(failed&&lastChoice?lastChoice:{sync:true});else{failed=false;state='loading';update();read()}};
  this.refresh();
  }
- refresh(){for(const b of this.querySelectorAll('[data-id]')){b.setAttribute('aria-pressed',String(b.dataset.id===theme));b.disabled=!ready||busy;}let s=this.querySelector('.us-status');if(s)s.textContent=statusText();let r=this.querySelector('.us-retry');if(r)r.hidden=busy||(!failed&&state!=='pending');}
+ refresh(){const preview=this.querySelector('.us-menu-preview');if(preview){preview.hidden=theme==='classic';const img=preview.querySelector('img');if(!preview.hidden){const src='/seasons/v1/menu-'+theme+'.jpg';if(img.getAttribute('src')!==src)img.setAttribute('src',src);img.alt=names[theme][0]+'圖文選單：左上會員中心、右上活動報名、左下線上商城、右下常見問答。'}}for(const b of this.querySelectorAll('[data-id]')){b.setAttribute('aria-pressed',String(b.dataset.id===theme));b.disabled=!ready||busy;}let s=this.querySelector('.us-status');if(s)s.textContent=statusText();let r=this.querySelector('.us-retry');if(r)r.hidden=busy||(!failed&&state!=='pending');}
 }
 customElements.define('uc-season-picker',Picker);auth();setInterval(auth,1300);addEventListener('pageshow',auth);document.addEventListener('visibilitychange',()=>{if(!document.hidden)auth()});
 })();

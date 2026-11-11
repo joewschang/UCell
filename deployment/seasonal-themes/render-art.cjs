@@ -64,5 +64,5 @@ function render({theme,menu}) {
   }else{backdrop(0,0,1280,392);illustration(1040,0,1.64);illustration(505,-88,.88);}
   return c.toDataURL('image/jpeg',.90).split(',')[1];
 }
-(async()=>{const out=path.join(__dirname,'art');fs.mkdirSync(out,{recursive:true});const b=await chromium.launch({executablePath:process.env.CHROME});try{const p=await b.newPage();for(const theme of ['christmas','newyear','lunar'])for(const menu of [false,true]){
+(async()=>{const out=path.join(__dirname,'art');fs.mkdirSync(out,{recursive:true});const b=await chromium.launch({executablePath:process.env.CHROME});try{const p=await b.newPage();for(const theme of ['christmas','newyear','lunar'])for(const menu of [false]){
   const bytes=Buffer.from(await p.evaluate(render,{theme,menu}),'base64');if(menu&&bytes.length>1000000)throw Error('Menu exceeds LINE image limit');fs.writeFileSync(path.join(out,(menu?'menu-':'banner-')+theme+'.jpg'),bytes);}}finally{await b.close()}})().catch(e=>{console.error(e);process.exitCode=1});
