@@ -5,15 +5,15 @@ Scope: membership qualification packages and active-duration packages. Monetary 
 
 ## 1. Package classes
 QUALIFICATION packages: 啟航, 菁英, 領袖. A qualifying purchase may support Formal Member eligibility and create a new Qualification/Ball setup according to Batch 3.
-ACTIVE_DURATION packages: 季活躍, 半年活躍, 年活躍. These apply an approved active-duration entitlement to a target existing Qualification and do not create a new Ball or change Person referrer.
+ACTIVE_DURATION packages: 重銷（三個月）, 重銷（六個月）, 重銷（十二個月）. These apply an approved active-duration entitlement to a target existing Qualification and do not create a new Ball or change Person referrer.
 
 ## 2. Initial approved commercial parameters
 啟航: price NTD 14,400; selectable main-product quantity 3.
 菁英: price NTD 43,200; selectable main-product quantity 9.
 領袖: price NTD 72,000; selectable main-product quantity 15.
-季活躍: price NTD 6,000; selectable main-product quantity 2; duration candidate/semantic = quarter according to approved active policy.
-半年活躍: price NTD 12,000; selectable main-product quantity 4; duration = half-year according to approved active policy.
-年活躍: price NTD 24,000; selectable main-product quantity 8; duration = year according to approved active policy.
+重銷（三個月）: price NTD 6,000; selectable main-product quantity 2; duration candidate/semantic = quarter according to approved active policy.
+重銷（六個月）: price NTD 12,000; selectable main-product quantity 4; duration = half-year according to approved active policy.
+重銷（十二個月）: price NTD 24,000; selectable main-product quantity 8; duration = year according to approved active policy.
 
 Package display name is 啟航 (not 啟帆).
 
@@ -39,7 +39,7 @@ Order/line must preserve PackagePurchaseSnapshot: packageVersionId/code/name/cla
 The stated NTD 4,800 is the main product retail/display price, but package payment amounts and selectable product retail totals differ for Active-duration packages. Therefore DO NOT infer PV/BV/eligible-consumption from product retail sum or package price. Each package/product version must reference explicit approved recognition configuration. If missing, affected monetary recognition FAILS CLOSED while order/package evidence remains intact.
 
 ## 8. Active-duration targeting
-季/半年/年活躍 requires selecting/confirming the target Qualification owned by the member unless policy uniquely determines it. Purchase does not create a new Qualification and does not modify Person.referrerMemberId or Sponsor/Binary history. Exact stacking/start-date/renewal semantics remain governed by the active-policy SSOT and must be versioned.
+重銷（三個月）、重銷（六個月）、重銷（十二個月） requires selecting/confirming the target Qualification owned by the member unless policy uniquely determines it. Purchase does not create a new Qualification and does not modify Person.referrerMemberId or Sponsor/Binary history. Exact stacking/start-date/renewal semantics remain governed by the active-policy SSOT and must be versioned.
 
 ## 9. Admin UI
 Add Package Management: list/status/version/effective window; create new version; set class/price/selectable qty/effects; configure selectable products and per-SKU limits; preview Member view; schedule/activate/retire; view usage/order history; diff versions; audit approval. Production changes require appropriate permission (e.g. PACKAGE_CONFIG_MANAGE + PACKAGE_CONFIG_APPROVE separation where feasible).

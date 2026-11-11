@@ -27,7 +27,7 @@ POST /api/v1/admin/package-versions/:id/retire -> future/no-new-sales; historica
 GET /api/v1/admin/package-versions/:id/diff?against= -> version diff.
 GET /api/v1/admin/package-versions/:id/usage -> order/selection usage read model.
 
-Initial configured data: 啟航 14,400/3; 菁英 43,200/9; 領袖 72,000/15; 季活躍 6,000/2; 半年活躍 12,000/4; 年活躍 24,000/8.
+Initial configured data: 啟航 14,400/3; 菁英 43,200/9; 領袖 72,000/15; 重銷（三個月） 6,000/2; 重銷（六個月） 12,000/4; 重銷（十二個月） 24,000/8.
 
 ## Ball setup/placement
 Qualification setup, Sponsor selection/confirmation, Sponsor-owner placement, 72h overdue and Admin override APIs remain Batch 3. Ball #2+ own-Ball sponsorship allowed without Person referrer mutation.

@@ -17,8 +17,8 @@ If no SKU max blocks it, member may choose three different eligible products or 
 ## Golden P5 — Admin changes future package
 After historical orders exist, Admin cannot edit their PackageProfileVersion. Create new version with new price/product pool/effectiveFrom. Old order continues to display original package/product selections. New purchases after boundary use new version only.
 
-## Golden P6 — 季活躍
-Existing Formal Member chooses 季活躍 price 6,000, target owned Ball Q1, and exactly 2 eligible products. Purchase snapshot preserves price 6,000 and product selections. System creates QualificationActiveEntitlementEvidence under approved active policy. It creates no new Ball and changes no Person referrer, Sponsor or Binary relationship.
+## Golden P6 — 重銷（三個月）
+Existing Formal Member chooses 重銷（三個月） price 6,000, target owned Ball Q1, and exactly 2 eligible products. Purchase snapshot preserves price 6,000 and product selections. System creates QualificationActiveEntitlementEvidence under approved active policy. It creates no new Ball and changes no Person referrer, Sponsor or Binary relationship.
 
 ## Golden P7 — Active package product retail total differs from payment
 Two selected main products may each have retail/display price 4,800 while package payment is 6,000. System never calculates PV/BV/eligible consumption by multiplying retail price or assuming package price. It uses explicit recognitionConfigRef. Missing config blocks monetary recognition with CONFIGURATION_PENDING; historical order/package evidence remains.
@@ -30,7 +30,7 @@ Member loads package version V1. Admin publishes/switches to V2 before checkout.
 PACKAGE_CONFIG_MANAGE can edit DRAFT but cannot approve if separation-of-duties policy forbids self-approval. Unauthorized Admin cannot mutate. Every publish/approve/retire action audited with before/after hash/version.
 
 ## Golden P10 — Six initial packages
-Seed/config verification: 啟航 14,400/3; 菁英 43,200/9; 領袖 72,000/15; 季活躍 6,000/2; 半年活躍 12,000/4; 年活躍 24,000/8. Display name exactly 啟航. These values come from DB version configuration, not frontend constants.
+Seed/config verification: 啟航 14,400/3; 菁英 43,200/9; 領袖 72,000/15; 重銷（三個月） 6,000/2; 重銷（六個月） 12,000/4; 重銷（十二個月） 24,000/8. Display name exactly 啟航. These values come from DB version configuration, not frontend constants.
 
 ## Required UI behavior
 Package cards show server price and selectable count. Product picker shows eligible products only, +/- quantity, selected/required counter, validation messages and review summary. Qualification active packages prompt target Ball when needed. Checkout review shows package, selected products and total payable package price. Do not show inferred PV/BV unless authoritative API provides it under approved policy.

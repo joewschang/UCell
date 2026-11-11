@@ -33,7 +33,7 @@ export class SubscriptionController {
 
   @Post()
   @UseGuards(IdempotencyGuard)
-  @ApiOperation({operationId:'adminCreateSubscription',summary:'建立季/半年/年預付重銷方案與逐月認列排程；不建立自動續訂'})
+  @ApiOperation({operationId:'adminCreateSubscription',summary:'建立重銷（三個月）、重銷（六個月）、重銷（十二個月）方案與逐月認列排程；不建立自動續訂'})
   async create(@Body() dto:CreateSubscriptionDto,@Headers('idempotency-key') key:string,@Req() req:any){
     const r=await this.service.create(dto,key,req.requestId,req.user?.personId);
     return {data:r.value,meta:{replayed:r.replayed}};

@@ -41,3 +41,8 @@ Historical note: source documents named Backend v0.6.0 as an earlier baseline; l
 The 2026-10-03 amendment is approved as a specification. Business effectiveFrom is not set by the commit: contract/filing/announcement alignment, required policy parameters, implementation, UAT and normal release gates remain prerequisites. RPV A-profile applicability and higher-authority single-organization wording remain explicit alignment items, not implicitly repealed rules. Specification approval, implementation, deployment and business effectiveness must be tracked independently.
 
 R1.0B frozen originals remain historical baselines. Product-next 72-hour/BFS placement and future package configuration remain next-release design scope unless separately activated. No deployment, production parameter activation or retrospective twelve-month count is authorized by this specification update.
+
+## 重銷套組名稱（2026-11-11）
+
+會員和管理後台、商品目錄與訂單使用「重銷（三個月）」、「重銷（六個月）」、「重銷（十二個月）」。三種名稱依序對應 ACTIVE_QUARTER、ACTIVE_HALF_YEAR、ACTIVE_YEAR。
+現行[會員制度與獎金計算說明手冊](../Docs/current/UCell_R1_0_會員制度與獎金計算說明手冊_多資格獨立經營版_v1_5.docx)、[後台系統規格書](../Docs/current/UCell_R1_0B_後台MVP細部系統規格書_v1_0.docx)與[獎金引擎規格書](../Docs/current/UCell_R1_0B_獎金引擎與核心邏輯規格書_v4_2_20261003.docx)均採用上述名稱。

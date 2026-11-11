@@ -18,7 +18,7 @@ id; stableCode; packageClass QUALIFICATION|ACTIVE_DURATION|FUTURE; createdAt; st
 ### PackageProfileVersion
 id; packageProfileId; version; displayName; currency; priceAmount; selectableProductQuantity; selectionMode EXACT_QUANTITY (initial); membershipEffect; qualificationEffect; activeDurationUnit?; activeDurationValue?; targetQualificationRequired; memberEligibilityPolicyRef?; salesFrom?; salesTo?; effectiveFrom; effectiveTo?; status DRAFT|SCHEDULED|ACTIVE|RETIRED; recognitionConfigRef?; configHash; createdBy; approvedBy?; approvedAt?. Published/used versions immutable.
 
-Initial configured versions: 啟航 14,400/3; 菁英 43,200/9; 領袖 72,000/15; 季活躍 6,000/2; 半年活躍 12,000/4; 年活躍 24,000/8. These are seed/config facts, not hardcoded enum parameters.
+Initial configured versions: 啟航 14,400/3; 菁英 43,200/9; 領袖 72,000/15; 重銷（三個月） 6,000/2; 重銷（六個月） 12,000/4; 重銷（十二個月） 24,000/8. These are seed/config facts, not hardcoded enum parameters.
 
 ### PackageSelectableProduct
 id; packageVersionId; productProfileId/productVersionPolicyRef; enabledFrom; enabledTo?; minQty?; maxQty?; selectionIncrement default 1; sortOrder; status. Defines server-authoritative product pool.

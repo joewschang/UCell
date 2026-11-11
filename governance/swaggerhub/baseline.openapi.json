@@ -13004,7 +13004,7 @@
             "adminBearer": []
           }
         ],
-        "summary": "建立季/半年/年重銷訂閱與逐月排程",
+        "summary": "建立重銷（三個月）、重銷（六個月）、重銷（十二個月）訂閱與逐月排程",
         "tags": [
           "Admin - Subscription"
         ]

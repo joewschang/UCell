@@ -9,7 +9,7 @@ Current Core Codex remains priority owner. Next-release schema changes require a
 A1 shared contracts/event seams and LINE-first identity.
 A2 Network Member registration + consent.
 A3 Formal application/KYC/bank evidence.
-A4 Configurable Package Management + Member Product Picker (啟航/菁英/領袖/季/半年/年活躍).
+A4 Configurable Package Management + Member Product Picker (啟航/菁英/領袖/重銷（三個月）、重銷（六個月）、重銷（十二個月）).
 A5 Qualifying purchase -> Ball setup; Referral prefill/manual Sponsor selection; first Ball establishes Person referrer.
 A6 Sponsor-owner manual Binary placement + 72h monitor/Admin override + system-auto no-referral path.
 A7 Referral attribution/share/LIFF bridge.
