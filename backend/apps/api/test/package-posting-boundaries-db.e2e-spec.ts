@@ -82,8 +82,10 @@ describeDb('package Core parameter and return posting boundaries',()=>{
   expect(await run()).toMatchObject({status:'RECOGNIZED',created:1});
   expect(await run()).toMatchObject({status:'RECOGNIZED',created:0});
   if(preReturnId)expect(await db.$transaction(tx=>processHistoricalReturn(tx,preReturnId!))).toMatchObject({noOriginalRecognition:true});
-  const placedEvent=await db.outboxEvent.create({data:{eventType:'QUALIFICATION_PLACED',aggregateType:'Qualification',aggregateId:qid,correlationId:request,payload:{qualificationId:qid}}});
-  await processQualificationPackageEvent(db,(await claimOutboxLease(db,placedEvent))!);
+  const placedEvent=await db.outboxEvent.create({data:{eventType:'QUALIFICATION_PLACED',aggregateType:'Qualification',aggregateId:qid,correlationId:request,availableAt:new Date(0),payload:{qualificationId:qid}}});
+  const placedLease=await claimOutboxLease(db,placedEvent);
+  expect(placedLease).not.toBeNull();
+  await processQualificationPackageEvent(db,placedLease!);
   expect((await db.outboxEvent.findUniqueOrThrow({where:{outboxEventId:placedEvent.outboxEventId}})).processStatus).toBe('PROCESSED');
 
   const ledger=await db.pvLedger.findMany({where:{sourceId:order.orderId}});

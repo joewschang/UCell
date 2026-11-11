@@ -49,8 +49,10 @@ const url=process.env.PHASE2_TEST_DATABASE_URL;
   await db.sponsorRelationship.create({data:{childQualificationId:q.qualificationId,sponsorQualificationId:parent.qualificationId,sponsorSequenceNo:1,effectiveFrom:paidAt}});
   await db.binaryPlacement.create({data:{childQualificationId:q.qualificationId,parentQualificationId:parent.qualificationId,side:'LEFT',effectiveFrom:paidAt}});
   const deliverPayment=async()=>{
-   const event=await db.outboxEvent.create({data:{eventType:'PACKAGE_PAYMENT_CONFIRMED',aggregateType:'ORDER',aggregateId:order.orderId,correlationId:randomUUID(),payload:{orderId:order.orderId,packageClass:'ACTIVE_DURATION'}}});
-   await processRepurchasePackageEvent(db,(await claimOutboxLease(db,event))!);
+   const event=await db.outboxEvent.create({data:{eventType:'PACKAGE_PAYMENT_CONFIRMED',aggregateType:'ORDER',aggregateId:order.orderId,correlationId:randomUUID(),availableAt:new Date(0),payload:{orderId:order.orderId,packageClass:'ACTIVE_DURATION'}}});
+   const lease=await claimOutboxLease(db,event);
+   expect(lease).not.toBeNull();
+   await processRepurchasePackageEvent(db,lease!);
    expect((await db.outboxEvent.findUniqueOrThrow({where:{outboxEventId:event.outboxEventId}})).processStatus).toBe('PROCESSED');
   };
   await deliverPayment();await deliverPayment();
