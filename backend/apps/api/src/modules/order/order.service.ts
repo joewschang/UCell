@@ -438,7 +438,7 @@ export class OrderService {
         if(!packageQualificationId)throw new UnprocessableEntityException({code:'PACKAGE_ORDER_QUALIFICATION_MISSING'});
         let downstreamStatus='RECOGNITION_CONFIGURATION_PENDING';
         if(packageSnapshot.packageClass==='QUALIFICATION'){
-          const selected=tx.qualificationSponsorSelectionEvidence?await tx.qualificationSponsorSelectionEvidence.findFirst({where:{qualificationId:packageQualificationId},orderBy:{selectedAt:'desc'}}):null;
+          const selected=tx.qualificationSponsorSelectionEvidence?await tx.qualificationSponsorSelectionEvidence.findFirst({where:{qualificationId:packageQualificationId},orderBy:{selectedAt:'desc'},select:{selectedSponsorQualificationId:true}}):null;
           let sponsorQualificationId:string|undefined;
           const internal=await internalSponsorAtPayment(tx,packageQualificationId,orderId,occurredAt,!!selected);
           if(internal){
