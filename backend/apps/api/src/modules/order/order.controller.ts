@@ -1,6 +1,6 @@
 import { Roles } from '../auth/roles.decorator';
-import { Body, Controller, Get, Headers, Param, Post, Query, Req, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { Body, Controller, Get, Headers, Param, ParseUUIDPipe, Post, Query, Req, UseGuards } from '@nestjs/common';
+import { ApiBearerAuth, ApiHeader, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { IdempotencyGuard } from '../../common/guards/idempotency.guard';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { PaymentConfirmationDto } from './dto/payment-confirmation.dto';
@@ -54,6 +54,14 @@ export class OrderController {
   ) {
     const result = await this.service.confirmPayment(orderId, dto, key, req.requestId, req.user?.personId, 'MANUAL_ADMIN');
     return { data: result.value, meta: { replayed: result.replayed } };
+  }
+
+  @Post(':orderId/bundle-payment-confirmations')
+  @Roles('SUPER_ADMIN','ORDER_OPS','FINANCE') @UseGuards(IdempotencyGuard) @ApiHeader({name:'Idempotency-Key',required:true})
+  @ApiOperation({operationId:'adminConfirmEnrollmentBundlePayment',summary:'核對整組資格款，依訂單分攤並記錄單一收款憑證'})
+  async confirmBundle(@Param('orderId',new ParseUUIDPipe()) orderId:string,@Body() dto:PaymentConfirmationDto,@Headers('idempotency-key') key:string,@Req() req:any) {
+    const result=await this.service.confirmEnrollmentPayment(orderId,dto,key,req.requestId,req.user?.personId);
+    return {data:result.value,meta:{replayed:result.replayed}};
   }
 
   @Get(':orderId')

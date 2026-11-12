@@ -759,6 +759,7 @@ enum AuthSessionStatus {
 }
 
 model Person {
+  enrollmentBundles EnrollmentBundle[]
   bonusOpportunities BonusOpportunity[]
   geoProfile MemberGeoProfile?
   geoProfileVersions MemberGeoProfileVersion[]
@@ -902,6 +903,7 @@ model FormalIdentityIndex {
 }
 
 model FormalMemberApplication {
+  enrollmentBundles EnrollmentBundle[]
   formalMemberApplicationId String                            @id @default(uuid()) @map("formal_member_application_id") @db.Uuid
   personId                  String                            @map("person_id") @db.Uuid
   applicantType             FormalApplicantType               @default(INDIVIDUAL) @map("applicant_type")
@@ -1208,6 +1210,7 @@ model ConsentEvidence {
 }
 
 model Qualification {
+  enrollmentBundleBall EnrollmentBundleBall?
   bonusOpportunities BonusOpportunity[]
  economicDestinations AwardEconomicDestination[]
  companyProfileBindings CompanyBootstrapProfileBinding[]
@@ -1802,6 +1805,8 @@ model CommercialOfferingVersion {
   @@schema("commerce")
 }
 model Order {
+  bundleQualificationOrder EnrollmentBundleBall? @relation("BundleQualificationOrder")
+  bundleRepurchaseOrder EnrollmentBundleBall? @relation("BundleRepurchaseOrder")
   couponRedemption CouponRedemption?
   orderId                 String       @id @default(uuid()) @map("order_id") @db.Uuid
   orderNo                 BigInt       @unique @default(autoincrement()) @map("order_no")
@@ -4463,7 +4468,7 @@ model QualificationSponsorSelectionEvidence {
   attributionReferrerPersonId             String?  @map("attribution_referrer_person_id") @db.Uuid
   attributionReferrerQualificationId      String?  @map("attribution_referrer_qualification_id") @db.Uuid
   selectedSponsorQualificationId          String   @map("selected_sponsor_qualification_id") @db.Uuid
-  selectedSponsorOwnerPersonId            String   @map("selected_sponsor_owner_person_id") @db.Uuid
+  selectedSponsorOwnerPersonId            String?  @map("selected_sponsor_owner_person_id") @db.Uuid
   selectedByPersonId                      String   @map("selected_by_person_id") @db.Uuid
   selectedAt                              DateTime @map("selected_at") @db.Timestamptz(6)
   source                                  String
@@ -5380,4 +5385,62 @@ model CompensationAuditCase {
   @@index([settlementBatchId,verifiedAt],map:"compensation_audit_pending")
   @@map("compensation_audit_case")
   @@schema("ledger")
+}
+
+model EnrollmentBundle {
+  bundleId String @id @map("bundle_id") @db.Uuid
+  applicationId String @map("application_id") @db.Uuid
+  personId String @map("person_id") @db.Uuid
+  requestHash String @map("request_hash")
+  supersededAt DateTime? @map("superseded_at") @db.Timestamptz(6)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  application FormalMemberApplication @relation(fields:[applicationId],references:[formalMemberApplicationId],onDelete:Restrict,onUpdate:NoAction)
+  person Person @relation(fields:[personId],references:[personId],onDelete:Restrict,onUpdate:NoAction)
+  balls EnrollmentBundleBall[]
+  payment EnrollmentBundlePayment?
+  transferReport EnrollmentBundlePaymentReport?
+  @@index([personId],map:"enrollment_bundle_person_id_idx")
+  @@map("enrollment_bundle")
+  @@schema("membership")
+}
+
+model EnrollmentBundleBall {
+  bundleId String @map("bundle_id") @db.Uuid
+  position Int
+  qualificationId String @unique @map("qualification_id") @db.Uuid
+  qualificationOrderId String @unique @map("qualification_order_id") @db.Uuid
+  repurchaseOrderId String? @unique @map("repurchase_order_id") @db.Uuid
+  bundle EnrollmentBundle @relation(fields:[bundleId],references:[bundleId],onDelete:Restrict,onUpdate:NoAction)
+  qualification Qualification @relation(fields:[qualificationId],references:[qualificationId],onDelete:Restrict,onUpdate:NoAction)
+  qualificationOrder Order @relation("BundleQualificationOrder",fields:[qualificationOrderId],references:[orderId],onDelete:Restrict,onUpdate:NoAction)
+  repurchaseOrder Order? @relation("BundleRepurchaseOrder",fields:[repurchaseOrderId],references:[orderId],onDelete:Restrict,onUpdate:NoAction)
+  @@id([bundleId,position])
+  @@map("enrollment_bundle_ball")
+  @@schema("membership")
+}
+
+model EnrollmentBundlePayment {
+  bundleId String @id @map("bundle_id") @db.Uuid
+  receiptId String @unique @map("receipt_id") @db.Uuid
+  amount Decimal @db.Decimal(18,2)
+  paymentMethod String @map("payment_method")
+  referenceNo String @map("reference_no")
+  receivedAt DateTime @map("received_at") @db.Timestamptz(6)
+  recordedAt DateTime @default(now()) @map("recorded_at") @db.Timestamptz(6)
+  actorId String @map("actor_id") @db.Uuid
+  requestId String @map("request_id")
+  bundle EnrollmentBundle @relation(fields:[bundleId],references:[bundleId],onDelete:Restrict,onUpdate:NoAction)
+  @@map("enrollment_bundle_payment")
+  @@schema("commerce")
+}
+
+model EnrollmentBundlePaymentReport {
+  bundleId String @id @map("bundle_id") @db.Uuid
+  amount Decimal @db.Decimal(18,2)
+  accountLastFive String @map("account_last_five")
+  paidAt DateTime @map("paid_at") @db.Timestamptz(6)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  bundle EnrollmentBundle @relation(fields:[bundleId],references:[bundleId],onDelete:Restrict,onUpdate:NoAction)
+  @@map("enrollment_bundle_payment_report")
+  @@schema("commerce")
 }

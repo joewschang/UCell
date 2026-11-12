@@ -1,8 +1,8 @@
 import { Controller, Get, Query } from '@nestjs/common';
 import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { IsString, Matches } from 'class-validator';
-import { SponsorResolver } from './sponsor-resolver.service';
-class SponsorCodeQuery { @IsString() @Matches(/^[A-Z][A-Z0-9_-]{1,39}$/) code!:string; }
+import { SponsorResolver, SPONSOR_CODE } from './sponsor-resolver.service';
+class SponsorCodeQuery { @IsString() @Matches(SPONSOR_CODE) code!:string; }
 @ApiTags('Onboarding - Sponsor')
 @Controller('onboarding/sponsor')
 export class SponsorResolverController {

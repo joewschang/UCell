@@ -4,7 +4,7 @@ import * as validate from './validation';
 import { type Dashboard, type Qualification, type Scoped, type Person, type Organization, type Binary, type Performance, type Bonus, type Ledger, type Product, type Orders } from './api';
 import { memberApi as api } from './memberApi';
 export const isMock = import.meta.env.VITE_ENABLE_MOCK === 'true';
-export type FormalEnrollmentState={pendingPackages?:{orderId:string;packageName:string;total:string;paymentDeadline:string;couponCode:string|null;qualificationFee:string;goodsAmount:string;selectableProductQuantity:number}[];membershipState:string|null;feeAmount:string;currency:string;stagePaymentEnabled:boolean;feeReceipt:{orderId:string;amount:string;paidAt:string|null}|null;application:{id:string;status:string}|null;paidPackages:{orderId:string;packageName:string}[]};
+export type FormalEnrollmentState={bundlePayment?:import('./enrollment-bundle/api').BundlePaymentSummary|null;pendingPackages?:{orderId:string;packageName:string;total:string;paymentDeadline:string;couponCode:string|null;qualificationFee:string;goodsAmount:string;selectableProductQuantity:number}[];membershipState:string|null;feeAmount:string;currency:string;stagePaymentEnabled:boolean;feeReceipt:{orderId:string;amount:string;paidAt:string|null}|null;application:{id:string;status:string;sourceChannel?:string;applicantType?:string}|null;paidPackages:{orderId:string;packageName:string}[]};
 export async function getFormalEnrollment(signal?:AbortSignal){return api<FormalEnrollmentState>('/member/formal-enrollment',{signal});}
 export async function payFormalEnrollmentFee(key:string){return api('/member/formal-enrollment/fee-payment',{method:'POST',headers:{'Idempotency-Key':key}});}
 export async function payEnrollmentPackage(orderId:string,key:string){return api(`/member/formal-enrollment/package-payments/${encodeURIComponent(orderId)}`,{method:'POST',headers:{'Idempotency-Key':key}});}
@@ -125,7 +125,7 @@ export function parseWebRetailOrders(rows:unknown):WebRetailOrder[]{
 }
 export async function getWebRetailOrders(signal?:AbortSignal):Promise<WebRetailOrder[]>{return parseWebRetailOrders(await api<unknown>('/member/retail-orders',{signal}));}
 
-export type PendingPlacement={pendingBallNo:string|null;placementReference:string;pendingMemberNo:string|null;packageType:string;sponsorBallNo:string|null;paymentState:'CONFIRMED';requestedAt:string|null;dueAt:string|null;placedAt:string|null;status:'PLACEMENT_PENDING'|'PLACEMENT_OVERDUE';agingBucket:'0_24H'|'24_48H'|'48_72H'|'OVERDUE';policyVersion:string};
+export type PendingPlacement={bundleBallCount?:number;pendingBallNo:string|null;placementReference:string;pendingMemberNo:string|null;packageType:string;sponsorBallNo:string|null;paymentState:'CONFIRMED';requestedAt:string|null;dueAt:string|null;placedAt:string|null;status:'PLACEMENT_PENDING'|'PLACEMENT_OVERDUE';agingBucket:'0_24H'|'24_48H'|'48_72H'|'OVERDUE';policyVersion:string};
 const ballNo=/^[A-Z][A-Z0-9_-]{0,39}(?:X\d{6}|\d{6,19})$/;
 export async function getPendingPlacements(signal:AbortSignal):Promise<PendingPlacement[]>{
  if(isMock)return [];

@@ -1,7 +1,8 @@
-import {Controller,Get,Post,Param,ParseUUIDPipe,Req,Headers,UseGuards} from '@nestjs/common';
+import {Body,Controller,Get,Post,Param,ParseUUIDPipe,Req,Headers,UseGuards} from '@nestjs/common';
 import {ApiBearerAuth,ApiHeader,ApiOperation,ApiTags} from '@nestjs/swagger';
 import {MemberAuthenticationGuard} from '../auth/member-authentication.guard';
 import {IdempotencyGuard} from '../../common/guards/idempotency.guard';
+import {EnrollmentBundleTransferDto} from './enrollment-bundle-report';
 import {FormalEnrollmentService} from './formal-enrollment.service';
 @ApiTags('Member - Formal enrollment') @ApiBearerAuth('memberBearer') @UseGuards(MemberAuthenticationGuard)
 @Controller('member/formal-enrollment')
@@ -10,6 +11,11 @@ export class FormalEnrollmentController{
  @Post('order-payments/:id') @UseGuards(IdempotencyGuard) @ApiHeader({name:'Idempotency-Key',required:true})
  @ApiOperation({operationId:'memberStageCommercePayment',summary:'Stage 模擬支付本人的零售或重購訂單'})
  commerce(@Req() req:any,@Param('id',new ParseUUIDPipe()) id:string,@Headers('idempotency-key') key:string){return this.enrollment.payCommerce(req.user.personId,id,key,req.requestId);}
+ @Get('applications/:id/bundle/payment-report') @ApiOperation({operationId:'memberReadEnrollmentBundleTransfer',summary:'查詢本人多球資格合併匯款回報'})
+ bundleReport(@Req() req:any,@Param('id',new ParseUUIDPipe()) id:string){return this.enrollment.bundleReport(req.user.personId,id);}
+ @Post('applications/:id/bundle/payment-report') @UseGuards(IdempotencyGuard) @ApiHeader({name:'Idempotency-Key',required:true})
+ @ApiOperation({operationId:'memberReportEnrollmentBundleTransfer',summary:'回報本人多球資格合計匯款，等待財務確認'})
+ reportBundle(@Req() req:any,@Param('id',new ParseUUIDPipe()) id:string,@Body() dto:EnrollmentBundleTransferDto,@Headers('idempotency-key') key:string){return this.enrollment.reportBundle(req.user.personId,id,dto,key);}
  @Get() @ApiOperation({operationId:'memberFormalEnrollment',summary:'正式會員升級狀態與申請費'}) status(@Req() req:any){return this.enrollment.status(req.user.personId);}
  @Post('fee-payment') @UseGuards(IdempotencyGuard) @ApiHeader({name:'Idempotency-Key',required:true})
  @ApiOperation({operationId:'memberStageFormalEnrollmentFee',summary:'已停用：單獨繳費加入正式會員',description:'Always rejects with QUALIFICATION_PACKAGE_REQUIRED.'})

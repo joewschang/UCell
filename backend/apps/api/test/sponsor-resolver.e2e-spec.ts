@@ -1,5 +1,15 @@
 import { SponsorResolver } from '../src/modules/qualification/sponsor-resolver.service';
 describe('SponsorResolver',()=>{
+ it.each([
+   ['TW0912345678-02','MEMBER_ORIGIN','person',null,null],
+   ['TW8888888888-07','COMPANY_BOOTSTRAP',null,null,'company'],
+   ['0012345678-01','MEMBER_ORIGIN',null,'corporation',null],
+ ])('accepts current ball number %s for its effective owner',async(ballNo,kind,currentHolderPersonId,currentHolderLegalEntityId,currentCompanyPrincipalId)=>{
+   const findFirst=jest.fn().mockResolvedValue({qualificationId:'q',ballNo,kind,currentHolderPersonId,currentHolderLegalEntityId,currentCompanyPrincipalId});
+   const result=await new SponsorResolver({qualification:{findFirst}} as any).resolve({code:ballNo!});
+   expect(result).toMatchObject({kind:'BALL',sponsorBallNo:ballNo});
+   expect(findFirst).toHaveBeenCalledWith(expect.objectContaining({where:expect.objectContaining({ballNo,status:'EFFECTIVE'})}));
+ });
  it('resolves only an effective member Ball without PII',async()=>{const findFirst=jest.fn().mockResolvedValue({qualificationId:'q',ballNo:'A001286',planLevelCode:'R1',effectiveAt:new Date(),kind:'MEMBER_ORIGIN',currentHolderPersonId:'owner'});const value=await new SponsorResolver({qualification:{findFirst}} as any).resolve({code:'A001286'});expect(value).toMatchObject({kind:'BALL',sponsorQualificationId:'q',sponsorBallNo:'A001286'});expect(value).not.toHaveProperty('sponsorOwnerPersonId');await expect(new SponsorResolver({qualification:{findFirst}} as any).resolve({code:'memberNo'})).rejects.toMatchObject({response:{code:'SPONSOR_CODE_INVALID'}});});
  it('fails closed for hidden Company bootstrap Balls',async()=>{const resolver=new SponsorResolver({qualification:{findFirst:jest.fn().mockResolvedValue({qualificationId:'company',ballNo:'AX000001',planLevelCode:'LEADER',effectiveAt:new Date(),kind:'COMPANY_BOOTSTRAP',currentHolderPersonId:'company-owner'})}} as any);await expect(resolver.resolve({code:'AX000001'})).rejects.toMatchObject({response:{code:'SPONSOR_CODE_INELIGIBLE'}});});
  it('returns only a neutral label for an effective governed Company Alias',async()=>{const companySponsorAlias={findFirst:jest.fn().mockResolvedValue({targetQualificationId:'hidden-bootstrap',displayLabel:'UCell 公司推薦',policyVersion:'COMPANY_ALIAS_V1',effectiveFrom:new Date('2026-01-01T00:00:00Z'),targetQualification:{currentHolderPersonId:'internal-company-owner'}})};const resolver=new SponsorResolver({qualification:{findFirst:jest.fn()},companySponsorAlias} as any),value=await resolver.resolve({code:'ucell_company'}),internal=await resolver.resolveWithin({qualification:{findFirst:jest.fn()},companySponsorAlias} as any,{code:'ucell_company'});expect(value).toEqual(expect.objectContaining({kind:'COMPANY_ALIAS',displayLabel:'UCell 公司推薦',policyVersion:'COMPANY_ALIAS_V1'}));expect(value).not.toHaveProperty('sponsorQualificationId');expect(value).not.toHaveProperty('sponsorBallNo');expect(value).not.toHaveProperty('sponsorOwnerPersonId');expect(internal).toMatchObject({sponsorQualificationId:'hidden-bootstrap',sponsorOwnerPersonId:'internal-company-owner'});});

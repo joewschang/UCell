@@ -1,5 +1,7 @@
 /** Ordinary-member persistence fixture; economic amounts and original assertions stay unchanged. */
 export function memberEconomicMocks(){return {
+ // Ordinary fixtures have no audited GPV reattribution; use the sealed source graph.
+ auditEvent:{findFirst:jest.fn(async()=>null)},
  qualificationHolderHistory:{findFirst:jest.fn(async()=>({holderPersonId:'historical-member'}))},
  bonusOpportunity:{findUnique:jest.fn(async()=>null),findMany:jest.fn(async()=>[]),create:jest.fn(async({data}:any)=>({...data,bonusOpportunityId:'test-opportunity'}))},
  memberNotification:{upsert:jest.fn(async({create}:any)=>create)},
