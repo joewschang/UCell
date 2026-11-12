@@ -8,6 +8,7 @@ import {IdempotencyGuard} from '../../common/guards/idempotency.guard';
 import {IsBoolean,IsDateString,IsEmail,IsIn,IsOptional,IsString,IsUUID,Matches,MaxLength,ValidateIf} from 'class-validator';
 
 class AdminPaperFormalApplicationDto implements AdminPaperFormalInput {
+ @ApiPropertyOptional({enum:['BANK_TRANSFER','COMPANY_CASH']}) @IsOptional() @IsIn(['BANK_TRANSFER','COMPANY_CASH']) payoutMethod?:'BANK_TRANSFER'|'COMPANY_CASH';
  @ApiProperty({format:'uuid'}) @IsUUID() representativePersonId!:string;
  @ApiProperty({maxLength:120}) @IsString() @Matches(/\S/) @MaxLength(120) paperApplicationReference!:string;
  @ApiProperty({format:'uuid'}) @IsUUID() formalContractVersionId!:string;
@@ -38,9 +39,9 @@ class AdminPaperFormalApplicationDto implements AdminPaperFormalInput {
  @ApiProperty({maxLength:500}) @IsString() @Matches(/\S/) @MaxLength(500) communicationAddress!:string;
  @ApiProperty({maxLength:32}) @IsString() @Matches(/\S/) @MaxLength(32) phone!:string;
  @ApiProperty({format:'email',maxLength:254}) @IsEmail() @MaxLength(254) email!:string;
- @ApiProperty({maxLength:16}) @IsString() @Matches(/\S/) @MaxLength(16) bankCode!:string;
- @ApiProperty({maxLength:34}) @IsString() @Matches(/\S/) @MaxLength(34) bankAccount!:string;
- @ApiProperty({maxLength:120}) @IsString() @Matches(/\S/) @MaxLength(120) accountHolder!:string;
+ @ValidateIf((_o,v)=>v!=null&&v!=='') @ApiPropertyOptional({maxLength:16}) @IsString() @Matches(/\S/) @MaxLength(16) bankCode!:string;
+ @ValidateIf((_o,v)=>v!=null&&v!=='') @ApiPropertyOptional({maxLength:34}) @IsString() @Matches(/\S/) @MaxLength(34) bankAccount!:string;
+ @ValidateIf((_o,v)=>v!=null&&v!=='') @ApiPropertyOptional({maxLength:120}) @IsString() @Matches(/\S/) @MaxLength(120) accountHolder!:string;
 }
 
 class AdminPaperEvidenceReviewDto {

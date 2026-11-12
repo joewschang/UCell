@@ -1,3 +1,4 @@
+import {renderMeta} from '../time-sort/pages.mjs';
 import {Children,isValidElement,type ReactNode,type ReactElement} from 'react';
 import {AdminDataGrid,type GridColumn} from './AdminDataGrid';
 import {UCellButton} from '@ucell/design-system';
@@ -8,8 +9,9 @@ export function AdminTable({children}:{children:ReactNode}){
  const header=sections.find(n=>n.type==='thead');const body=sections.find(n=>n.type==='tbody');
  const headerRow=Children.toArray(header?.props.children).find(isValidElement) as ReactElement<any>|undefined;
  const labels=Children.toArray(headerRow?.props.children).filter(isValidElement).map(n=>text((n as ReactElement<any>).props.children));
- const rows=(Children.toArray(body?.props.children).filter(isValidElement) as ReactElement<any>[]).map((row,index)=>({id:String(row.key??index),row,cells:Children.toArray(row.props.children).filter(isValidElement) as ReactElement<any>[]}));
+ const adaptTimeRow=(row:ReactElement<any>,index:number)=>({id:String(row.key??index),row,cells:Children.toArray(row.props.children).filter(isValidElement) as ReactElement<any>[]});
+ const rows=(Children.toArray(body?.props.children).filter(isValidElement) as ReactElement<any>[]).map(adaptTimeRow);
  const columns:GridColumn<typeof rows[number]>[]=labels.map((label,i)=>({key:String(i),label,value:(r:typeof rows[number])=>text(r.cells[i]?.props.children),render:(r:typeof rows[number])=><span className={r.cells[i]?.props.className}>{r.cells[i]?.props.children}</span>}));
  if(rows.some(r=>r.row.props.onClick))columns.push({key:'detail',label:'詳情',value:()=>'',render:r=>r.row.props.onClick?<UCellButton onClick={e=>{e.stopPropagation();r.row.props.onClick(e)}}>查看</UCellButton>:null});
- return <AdminDataGrid rows={rows} rowId={r=>r.id} columns={columns} rowProps={r=>({onClick:r.row.props.onClick,className:r.row.props.className})} label={'資料清單：'+labels.join('／')} searchable/>;
+ return <AdminDataGrid rows={rows} timeSource={renderMeta(body?.props.children)} adaptTimeRow={adaptTimeRow} rowId={r=>r.id} columns={columns} rowProps={r=>({onClick:r.row.props.onClick,className:r.row.props.className})} label={'資料清單：'+labels.join('／')} searchable/>;
 }

@@ -19,5 +19,5 @@ it('does not allow publication before preview and explicit approval reference',a
  await act(async()=>publish().props.onClick());expect(command).toHaveBeenCalledWith(`/admin/daily-greetings/${row.id}/publish`,{approvalReference:'APPROVAL-TEST'});
 });
 it('keeps audit-only users read-only',async()=>{
- state.role='COMPLIANCE_AUDIT';await render();expect(tree.root.findAllByType('input')).toHaveLength(0);expect(tree.root.findAllByType('button').map(b=>b.children.join(''))).toEqual(['預覽']);expect(command).not.toHaveBeenCalled();
+ state.role='COMPLIANCE_AUDIT';await render();expect(tree.root.findAllByType('input')).toHaveLength(0);const actions=tree.root.findAllByType('button').filter(b=>b.props.className!=='admin-time-sort-button');expect(actions.map(b=>b.children.join(''))).toEqual(['預覽']);expect(command).not.toHaveBeenCalled();
 });

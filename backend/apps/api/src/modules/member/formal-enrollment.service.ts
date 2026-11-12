@@ -1,3 +1,4 @@
+import { lockChoice, payoutChoice, requiredEvidence, snapshotBankErrors } from './formal-payout-method';
 import { checkContract } from './contract-renewal';
 import {ConflictException,ForbiddenException,Injectable,NotFoundException} from '@nestjs/common';
 import {ConfigService} from '@nestjs/config';
@@ -45,7 +46,7 @@ export class FormalEnrollmentService{
   const pendingPackages=await this.db.packagePurchaseSnapshot.findMany({where:{personId,packageClass:'QUALIFICATION',paymentDeadline:{gt:new Date()}},orderBy:{purchasedAt:'desc'},take:20});
   const pendingOrders=await this.db.order.findMany({where:{orderId:{in:pendingPackages.map(p=>p.orderId)},status:'CONFIRMED'},select:{orderId:true,netAmount:true}});
   const bundlePayment=application?await enrollmentBundlePayment(this.db,application.formalMemberApplicationId,personId):null;
-  return {bundlePayment,pendingPackages:pendingPackages.filter(p=>pendingOrders.some(o=>o.orderId===p.orderId)).map(p=>({orderId:p.orderId,packageName:p.packageName,total:pendingOrders.find(o=>o.orderId===p.orderId)!.netAmount.toString(),paymentDeadline:p.paymentDeadline!.toISOString(),couponCode:p.couponCode,qualificationFee:p.qualificationFee.toString(),goodsAmount:p.priceAmount.toString(),selectableProductQuantity:p.selectableProductQuantity})),membershipState:person.membershipState,feeAmount:FEE,currency:'TWD',stagePaymentEnabled:this.stagePaymentEnabled(),feeReceipt:fee?this.receipt(fee):null,application:application?{id:application.formalMemberApplicationId,status:application.status,sourceChannel:application.sourceChannel,applicantType:application.applicantType}:null,paidPackages:packages};
+  return {bundlePayment,pendingPackages:pendingPackages.filter(p=>pendingOrders.some(o=>o.orderId===p.orderId)).map(p=>({orderId:p.orderId,packageName:p.packageName,total:pendingOrders.find(o=>o.orderId===p.orderId)!.netAmount.toString(),paymentDeadline:p.paymentDeadline!.toISOString(),couponCode:p.couponCode,qualificationFee:p.qualificationFee.toString(),goodsAmount:p.priceAmount.toString(),selectableProductQuantity:p.selectableProductQuantity})),membershipState:person.membershipState,feeAmount:FEE,currency:'TWD',stagePaymentEnabled:this.stagePaymentEnabled(),feeReceipt:fee?this.receipt(fee):null,application:application?{payoutMethod:(await payoutChoice(this.db,application.formalMemberApplicationId)).method,id:application.formalMemberApplicationId,status:application.status,sourceChannel:application.sourceChannel,applicantType:application.applicantType}:null,paidPackages:packages};
  }
  private async pending(tx:Prisma.TransactionClient,personId:string,sourceId:string){
   const person=await tx.person.findUniqueOrThrow({where:{personId}});
@@ -96,8 +97,10 @@ export class FormalEnrollmentService{
    if(!bundle?.paymentReported)requirePaidBundleRoot(bundle);
    const purchase=bundle?{orderId:bundle.rootOrderId}:(await this.paidPackages(tx,personId))[0];
    if(!purchase)throw new ConflictException({code:'FORMAL_ENROLLMENT_PAYMENT_REQUIRED'});
+   const choice=await lockChoice(tx,applicationId);const fields=await snapshotBankErrors(tx,applicationId,choice);
+   if(fields.length)throw new ConflictException({code:fields[0]});
    const docs=await tx.formalApplicationDocument.findMany({where:{formalMemberApplicationId:applicationId,status:'PRESENT',documentType:{in:['IDENTITY_FRONT','IDENTITY_BACK','BANKBOOK_COVER']}}});
-   if(['IDENTITY_FRONT','IDENTITY_BACK','BANKBOOK_COVER'].some(type=>!docs.some(d=>d.documentType===type&&d.malwareScanStatus!=='INFECTED')))throw new ConflictException({code:'FORMAL_ENROLLMENT_DOCUMENTS_REQUIRED'});
+   if(requiredEvidence(['IDENTITY_FRONT','IDENTITY_BACK','BANKBOOK_COVER'],choice.method).some(type=>!docs.some(d=>d.documentType===type&&d.malwareScanStatus!=='INFECTED')))throw new ConflictException({code:'FORMAL_ENROLLMENT_DOCUMENTS_REQUIRED'});
    await this.pending(tx,personId,purchase!.orderId);
    await tx.formalMemberApplication.update({where:{formalMemberApplicationId:applicationId},data:{status:'SUBMITTED',submittedAt:new Date()}});
    await this.audit.write(tx,{actorType:'MEMBER',actorId:personId,action:'FORMAL_ENROLLMENT_SUBMITTED',entityType:'FormalMemberApplication',entityId:applicationId,afterData:{status:'SUBMITTED',paymentOrderId:purchase!.orderId,scanApprovalGranted:false},requestId,correlationId:randomUUID()});

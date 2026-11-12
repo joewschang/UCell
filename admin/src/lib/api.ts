@@ -1,3 +1,4 @@
+import {trackRead} from '../time-sort/pages.mjs';
 import {uiText} from "../../../shared/design-system/i18n";
 import {createCommandClient} from './commands';
 const API_BASE=import.meta.env.VITE_API_BASE_URL ?? '/api/v1';
@@ -76,7 +77,7 @@ export async function api<T>(path:string,init:RequestOptions={}):Promise<T>{
   return body as T;
 }
 
-export const get=<T>(p:string,options:RequestOptions={})=>api<T>(p,options);
+export const get=async <T>(p:string,options:RequestOptions={})=>trackRead(p,await api<T>(p,options),api);
 
 export async function getBlob(path:string):Promise<Blob>{
   const headers=new Headers();headers.set('x-request-id',crypto.randomUUID());

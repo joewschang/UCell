@@ -1,3 +1,4 @@
+import { payoutChoice, requiredEvidence } from './formal-payout-method';
 import { signingRenewalView,checkContract } from './contract-renewal';
 import {BadRequestException,ConflictException,ForbiddenException,Injectable,NotFoundException,UnprocessableEntityException} from '@nestjs/common';
 import {Prisma,PrismaService} from '@ucell/database';
@@ -19,7 +20,8 @@ export class FormalKycDocumentService{
     if(!app)throw new NotFoundException({code:'FORMAL_APPLICATION_NOT_FOUND'});
     const rows=await this.db.formalApplicationDocument.findMany({where:{formalMemberApplicationId:applicationId,status:{not:'SUPERSEDED'}},orderBy:{createdAt:'desc'}});
     const contractRenewal=await signingRenewalView(this.db,applicationId,personId);
-    return {applicationId,contractRenewal,required:app.sourceChannel==='MEMBER_WEB'&&app.applicantType==='INDIVIDUAL'?[...REQUIRED_WEB]:[],documents:rows.map(r=>({id:r.formalApplicationDocumentId,type:r.documentType,status:r.status,scanStatus:r.malwareScanStatus,mimeType:r.mimeType,sizeBytes:r.sizeBytes,uploadedAt:r.uploadedAt?.toISOString()??null}))};
+    const {method}=await payoutChoice(this.db,applicationId);
+    return {applicationId,payoutMethod:method,contractRenewal,required:app.sourceChannel==='MEMBER_WEB'&&app.applicantType==='INDIVIDUAL'?requiredEvidence(REQUIRED_WEB,method):[],documents:rows.map(r=>({id:r.formalApplicationDocumentId,type:r.documentType,status:r.status,scanStatus:r.malwareScanStatus,mimeType:r.mimeType,sizeBytes:r.sizeBytes,uploadedAt:r.uploadedAt?.toISOString()??null}))};
   }
 
   async upload(personId:string,applicationId:string,type:string,mimeType:string,contentBase64:string,requestId:string){

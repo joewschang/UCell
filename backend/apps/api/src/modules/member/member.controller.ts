@@ -87,9 +87,9 @@ export class FormalMemberDraftDto implements FormalDraftInput {
  @ApiProperty({maxLength:500}) @IsString() @Matches(/\S/) @MaxLength(500) communicationAddress!:string;
  @ApiProperty({maxLength:32}) @Matches(/^(?=.*[0-9])\+?[0-9 ()-]{6,32}$/) phone!:string;
  @ApiProperty({format:'email',maxLength:254}) @IsEmail() @MaxLength(254) email!:string;
- @ApiProperty({maxLength:16}) @Matches(/^[A-Za-z0-9-]{2,16}$/) bankCode!:string;
- @ApiProperty({maxLength:34}) @Matches(/^[A-Za-z0-9 -]{4,34}$/) bankAccount!:string;
- @ApiProperty({maxLength:120}) @IsString() @Matches(/\S/) @MaxLength(120) accountHolder!:string;
+ @ValidateIf((_o,v)=>v!=null&&v!=='') @ApiPropertyOptional({maxLength:16}) @Matches(/^[A-Za-z0-9-]{2,16}$/) bankCode!:string;
+ @ValidateIf((_o,v)=>v!=null&&v!=='') @ApiPropertyOptional({maxLength:34}) @Matches(/^[A-Za-z0-9 -]{4,34}$/) bankAccount!:string;
+ @ValidateIf((_o,v)=>v!=null&&v!=='') @ApiPropertyOptional({maxLength:120}) @IsString() @Matches(/\S/) @MaxLength(120) accountHolder!:string;
 }
 export class MemberQueryDto extends MemberContextDto {
  @ApiProperty({required:false,pattern:'^\\d{4}-(0[1-9]|1[0-2])$',description:'Posted-event month filter using versioned accounting timezone; not an operational settlement cut-off'}) @IsOptional() @Matches(/^\d{4}-(0[1-9]|1[0-2])$/) period?:string;
