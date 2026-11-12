@@ -1,0 +1,35 @@
+{
+  "deployed": false,
+  "base": "ucellprodacrm3z2zx4ohqyui.azurecr.io/ucell-member@sha256:813733a516347c8b682607158375416cf5cc8297c2cabc049d913d9c7848ed2a",
+  "typecheck": "PASS",
+  "focusedTests": {
+    "suites": 6,
+    "tests": 57
+  },
+  "browser": {
+    "passed": true,
+    "sdk": {
+      "version": "2.31.1",
+      "init": "function",
+      "login": "function",
+      "share": "function"
+    },
+    "oldTab": "Loaded 2.31.0 stayed old until reload; reload fetched new entry and 2.31.1",
+    "login": "mocked LINE SDK network/auth; actual patched SDK loaded and fixed same-origin login redirect asserted",
+    "sharing": "actual shareTargetPicker present; source unit tests cover send/cancel/fallback; no real recipient messages",
+    "cache": "HTML no-store, new entry immutable, old main redirects and old classic greeting loader imports safe module, both no-store, retired URL 410",
+    "device": "desktop Edge at 390px; physical LINE app not tested"
+  },
+  "preservedOriginalFiles": 445,
+  "changedExistingFiles": [
+    "/usr/share/nginx/html/index.html"
+  ],
+  "newFiles": [
+    "/usr/share/nginx/html/assets/health-center-28a52303d75e89-af1876ea6f32e9-journey-sound-liff-1989c5a6e04e1747.js",
+    "/usr/share/nginx/html/assets/liff-2.31.1-5c19bee4642ecbb0.js",
+    "/usr/share/nginx/html/greetings/entry-liff-49f39ccad27068de.js"
+  ],
+  "sourceScope": "@line/liff and @liff subpackages only",
+  "realLineAccountAndPhysicalDevices": "NOT TESTED",
+  "incidentEvidence": "No compromise investigation performed; vulnerable SDK presence is not evidence of exploitation"
+}
