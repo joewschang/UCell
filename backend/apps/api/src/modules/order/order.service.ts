@@ -1,3 +1,5 @@
+import {qualificationFilter,qualificationRows} from '../qualification/qualification-directory';
+import type {DirectoryPage} from '../../common/utils/directory-page';
 import {internalSponsorAtPayment} from '../qualification/enrollment-bundle-placement';
 import {activateEnrollmentBundleIfReady} from '../member-bundle/excellence-activation';
 import {adminBundlePayment,bundleForQualificationOrder,confirmBundlePayment,guardSinglePayment} from './enrollment-bundle-receipt';
@@ -523,7 +525,18 @@ export class OrderService {
   }
 
 
-  async search(input:{status?:string;qualificationId?:string;q?:string;take?:number}={}){
+  qualificationOptions(window:DirectoryPage,q?:string,id?:string) {
+    return qualificationRows(this.prisma,window,qualificationFilter(q,'EFFECTIVE'),id);
+  }
+
+  productOptions() {
+    const now=new Date();
+    return this.prisma.productReference.findMany({where:{isActive:true,ruleProfiles:{some:{
+      effectiveFrom:{lte:now},OR:[{effectiveTo:null},{effectiveTo:{gt:now}}]
+    }}},select:{productId:true,sku:true,displayName:true,currentPrice:true,currency:true},orderBy:{sku:'asc'}});
+  }
+
+  async search(input:{status?:string;qualificationId?:string;q?:string;take?:number}={},window?:DirectoryPage){
     const take=Math.min(Math.max(input.take ?? 50,1),100);
     const q=input.q?.trim();
 
@@ -544,8 +557,9 @@ export class OrderService {
         lines:true,
         paymentEvents:true,
       },
-      orderBy:{createdAt:'desc'},
-      take,
+      orderBy:[{createdAt:'desc'},{orderId:'desc'}],
+      skip:window?.skip,
+      take:window ? window.take+1 : take,
     });
     if(!orders.length)return orders;
     const orderIds=orders.map(row=>row.orderId),[snapshots,setups]=await Promise.all([

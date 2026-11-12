@@ -1,3 +1,4 @@
+import {directoryPage,directoryResult} from '../../common/utils/directory-page';
 import { Roles } from '../auth/roles.decorator';
 import { Body, Controller, Get, Headers, Param, ParseUUIDPipe, Post, Query, Req, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiHeader, ApiOperation, ApiTags } from '@nestjs/swagger';
@@ -21,16 +22,33 @@ export class OrderController {
     @Query('qualificationId') qualificationId?: string,
     @Query('q') q?: string,
     @Query('take') take?: string,
+    @Query('page') page?: string,
   ){
-    return {data:await this.service.search({
+    const window=directoryPage(page,take);
+    const rows=await this.service.search({
       status:status || undefined,
       qualificationId:qualificationId || undefined,
       q:q || undefined,
       take:Number(take ?? 50),
-    })};
+    },window);
+    return directoryResult(rows,window);
   }
 
+  @Get('qualification-options')
+  @Roles('SUPER_ADMIN','ORDER_OPS','FINANCE')
+  @ApiOperation({operationId:'adminOrderQualificationOptions',summary:'搜尋可用於建單的有效球位'})
+  async qualificationOptions(@Query('q') q?:string,@Query('page') page?:string,@Query('take') take?:string,@Query('id') id?:string){
+    const window=directoryPage(page??'1',take??'8')!;
+    return directoryResult(await this.service.qualificationOptions(window,q,id),window);
+  }
+
+  @Get('product-options')
+  @Roles('SUPER_ADMIN','ORDER_OPS','FINANCE')
+  @ApiOperation({operationId:'adminOrderProductOptions',summary:'列出可建單的當期商品'})
+  async productOptions(){return {data:await this.service.productOptions()};}
+
   @Post()
+  @Roles('SUPER_ADMIN','ORDER_OPS','FINANCE')
   @UseGuards(IdempotencyGuard)
   @ApiOperation({ operationId: 'adminCreateOrder', summary: '建立並確認會員訂單' })
   async create(

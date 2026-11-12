@@ -1,3 +1,5 @@
+import {qualificationFilter,qualificationRows} from './qualification-directory';
+import type {DirectoryPage} from '../../common/utils/directory-page';
 import { ConflictException, Injectable } from '@nestjs/common';
 import { Prisma, PrismaService, SideCode } from '@ucell/database';
 import { createHash, randomUUID } from 'crypto';
@@ -152,35 +154,18 @@ export class QualificationService {
   }
 
 
-  async search(input:{q?:string;status?:string;take?:number}={}){
+  async search(input:{q?:string;status?:string;take?:number}={},window?:DirectoryPage){
     const take=Math.min(Math.max(input.take ?? 50,1),100);
-    const q=input.q?.trim();
-
-    return this.prisma.qualification.findMany({
-      where:{
-        ...(input.status?{status:input.status as any}:{}),
-        ...(q?{
-          OR:[
-            {qualificationId:q.match(/^[0-9a-f-]{36}$/i)?q:undefined},
-            {ballNo:{contains:q,mode:'insensitive'}},
-            {currentHolder:{memberNo:{contains:q}}},
-            {currentHolder:{legalName:{contains:q,mode:'insensitive'}}},
-            {currentHolder:{preferredName:{contains:q,mode:'insensitive'}}},
-            {currentHolder:{mobile:{contains:q}}},
-            {currentHolder:{email:{contains:q,mode:'insensitive'}}},
-            {currentHolderLegalEntity:{memberNo:{contains:q}}},
-            {currentHolderLegalEntity:{registeredName:{contains:q,mode:'insensitive'}}},
-            {currentHolderLegalEntity:{registrationNo:{contains:q,mode:'insensitive'}}},
-          ].filter(Boolean) as any
-        }:{})
-      },
+    const where=qualificationFilter(input.q,input.status as Prisma.QualificationWhereInput['status']);
+    if(window)return qualificationRows(this.prisma,window,where);
+    return this.prisma.qualification.findMany({where,
       include:{
         currentHolder:true,
         currentHolderLegalEntity:true,
         sponsorRelation:{include:{sponsor:{include:{currentHolder:true,currentHolderLegalEntity:true}}}},
         binaryPlacement:{include:{parent:{include:{currentHolder:true,currentHolderLegalEntity:true}}}},
       },
-      orderBy:{createdAt:'desc'},
+      orderBy:[{createdAt:'desc'},{qualificationId:'desc'}],
       take,
     });
   }

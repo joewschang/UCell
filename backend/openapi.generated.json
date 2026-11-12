@@ -13110,7 +13110,7 @@
         "parameters": [
           {
             "name": "status",
-            "required": true,
+            "required": false,
             "in": "query",
             "schema": {
               "type": "string"
@@ -13118,7 +13118,7 @@
           },
           {
             "name": "qualificationId",
-            "required": true,
+            "required": false,
             "in": "query",
             "schema": {
               "type": "string"
@@ -13126,7 +13126,7 @@
           },
           {
             "name": "q",
-            "required": true,
+            "required": false,
             "in": "query",
             "schema": {
               "type": "string"
@@ -13134,11 +13134,20 @@
           },
           {
             "name": "take",
-            "required": true,
+            "required": false,
             "in": "query",
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "從第 1 頁起，回應 meta.page、meta.take 及 meta.hasNext。"
           }
         ],
         "responses": {
@@ -13189,6 +13198,79 @@
           }
         ],
         "summary": "建立並確認會員訂單",
+        "tags": [
+          "Admin - Commerce"
+        ]
+      }
+    },
+    "/api/v1/admin/orders/qualification-options": {
+      "get": {
+        "operationId": "adminOrderQualificationOptions",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "take",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功"
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "搜尋可用於建單的有效球位",
+        "tags": [
+          "Admin - Commerce"
+        ]
+      }
+    },
+    "/api/v1/admin/orders/product-options": {
+      "get": {
+        "operationId": "adminOrderProductOptions",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "成功"
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "列出可建單的當期商品",
         "tags": [
           "Admin - Commerce"
         ]
@@ -14328,7 +14410,7 @@
         "parameters": [
           {
             "name": "q",
-            "required": true,
+            "required": false,
             "in": "query",
             "schema": {
               "type": "string"
@@ -14336,7 +14418,7 @@
           },
           {
             "name": "status",
-            "required": true,
+            "required": false,
             "in": "query",
             "schema": {
               "type": "string"
@@ -14344,11 +14426,20 @@
           },
           {
             "name": "take",
-            "required": true,
+            "required": false,
             "in": "query",
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "從第 1 頁起，回應 meta.page、meta.take 及 meta.hasNext。"
           }
         ],
         "responses": {
