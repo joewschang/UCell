@@ -20,12 +20,12 @@ export class SponsorResolver {
    const row=await db.qualification.findFirst({where:{ballNo:code,status:'EFFECTIVE',effectiveAt:{lte:at}},select:{qualificationId:true,ballNo:true,planLevelCode:true,effectiveAt:true,kind:true,currentHolderPersonId:true,currentHolderLegalEntityId:true,currentCompanyPrincipalId:true}});
    if(!row?.ballNo||(!row.currentHolderPersonId&&!row.currentHolderLegalEntityId&&!row.currentCompanyPrincipalId)||
      (row.kind==='COMPANY_BOOTSTRAP'&&!ACCOUNT_BALL.test(code)))throw new UnprocessableEntityException({code:'SPONSOR_CODE_INELIGIBLE'});
-   return {kind:'BALL',sponsorQualificationId:row.qualificationId,sponsorBallNo:row.ballNo,planLevelCode:row.planLevelCode,effectiveAt:row.effectiveAt,ruleVersion,sponsorOwnerPersonId:row.currentHolderPersonId};
+   return {kind:'BALL',sponsorQualificationId:row.qualificationId,sponsorBallNo:row.ballNo,planLevelCode:row.planLevelCode,effectiveAt:row.effectiveAt,ruleVersion,sponsorOwnerPersonId:row.kind==='COMPANY_BOOTSTRAP'?null:row.currentHolderPersonId};
   }
   if(!db.companySponsorAlias)throw new UnprocessableEntityException({code:'SPONSOR_CODE_INVALID'});
-  const alias=await db.companySponsorAlias.findFirst({where:{aliasNormalized:code,effectiveFrom:{lte:at},OR:[{effectiveTo:null},{effectiveTo:{gt:at}}],targetQualification:{status:'EFFECTIVE',kind:'COMPANY_BOOTSTRAP'}},orderBy:{effectiveFrom:'desc'},select:{targetQualificationId:true,displayLabel:true,policyVersion:true,effectiveFrom:true,targetQualification:{select:{currentHolderPersonId:true}}}});
+  const alias=await db.companySponsorAlias.findFirst({where:{aliasNormalized:code,effectiveFrom:{lte:at},OR:[{effectiveTo:null},{effectiveTo:{gt:at}}],targetQualification:{status:'EFFECTIVE',kind:'COMPANY_BOOTSTRAP'}},orderBy:{effectiveFrom:'desc'},select:{targetQualificationId:true,displayLabel:true,policyVersion:true,effectiveFrom:true,targetQualification:{select:{currentHolderPersonId:true,currentCompanyPrincipalId:true}}}});
   if(!alias)throw new UnprocessableEntityException({code:'SPONSOR_CODE_INELIGIBLE'});
-  return {kind:'COMPANY_ALIAS',sponsorQualificationId:alias.targetQualificationId,displayLabel:alias.displayLabel,effectiveAt:alias.effectiveFrom,ruleVersion,policyVersion:alias.policyVersion,sponsorOwnerPersonId:alias.targetQualification.currentHolderPersonId};
+  return {kind:'COMPANY_ALIAS',sponsorQualificationId:alias.targetQualificationId,displayLabel:alias.displayLabel,effectiveAt:alias.effectiveFrom,ruleVersion,policyVersion:alias.policyVersion,sponsorOwnerPersonId:alias.targetQualification.currentCompanyPrincipalId?null:alias.targetQualification.currentHolderPersonId};
  }
 }
 
