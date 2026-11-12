@@ -1,5 +1,6 @@
 import {ConflictException,NotFoundException} from '@nestjs/common';
 import {Prisma} from '@ucell/database';
+import {formatRepurchaseNames} from '../../common/utils/repurchase-display';
 
 export async function ownedApplication(tx:Prisma.TransactionClient,personId:string,applicationId:string,lock=false) {
   const [app]=await tx.$queryRaw<{status:string,membershipState:string,personStatus:string,securityStatus:string}[]>`
@@ -53,24 +54,27 @@ export async function sponsorLabel(tx:Prisma.TransactionClient,qualification:Pri
 }
 
 export async function bundleReceipt(tx:Prisma.TransactionClient,bundleId:string,applicationId:string) {
+  const [policy]=await tx.$queryRaw<{planCode:'EXCELLENCE'|'CUSTOM';paymentPolicy:'COMBINED'|'QUALIFICATION_ONLY'}[]>`
+    SELECT plan_code AS "planCode",payment_policy AS "paymentPolicy" FROM membership.enrollment_bundle WHERE bundle_id=${bundleId}::uuid`;
   const rows=await tx.$queryRaw<Row[]>`
     SELECT b.position,b.qualification_id::text AS "qualificationId",q.ball_no AS "ballNo",q.status::text AS "qualificationStatus",
       setup.setup_status AS "placementStatus",o.currency,o.order_id::text AS "orderId",o.order_no::text AS "orderNo",
       to_jsonb(o)->>'public_order_no' AS "publicOrderNo",
-      snap.package_name AS "packageName",o.net_amount AS amount,o.status::text AS status,snap.payment_deadline AS deadline,o.purpose::text AS kind
+      snap.package_name AS "packageName",snap.package_code AS "packageCode",o.net_amount AS amount,o.status::text AS status,snap.payment_deadline AS deadline,o.purpose::text AS kind
     FROM membership.enrollment_bundle_ball b JOIN membership.qualification q ON q.qualification_id=b.qualification_id
     LEFT JOIN membership.qualification_setup setup ON setup.qualification_id=b.qualification_id
     JOIN commerce."order" o ON o.order_id IN (b.qualification_order_id,b.repurchase_order_id)
     JOIN commerce.package_purchase_snapshot snap ON snap.order_id=o.order_id
     WHERE b.bundle_id=${bundleId}::uuid ORDER BY b.position,o.purpose`;
   if(!rows.length)throw new ConflictException({code:'ENROLLMENT_BUNDLE_INCOMPLETE'});
+  for(const row of rows)if(row.kind==='REPURCHASE')formatRepurchaseNames(row);
   const purchase=(r:Row):Purchase=>({orderId:r.orderId,orderNo:r.orderNo,publicOrderNo:r.publicOrderNo,packageName:r.packageName,total:r.amount.toFixed(2),status:r.status,paymentDeadline:r.deadline?.toISOString()??null});
   const reps=new Map(rows.filter(r=>r.kind==='REPURCHASE').map(r=>[r.position,purchase(r)]));
   const entries=rows.filter(r=>r.kind==='ENTRY');
   const balls=entries.map(r=>({position:r.position,parentPosition:r.position===1?null:Math.floor(r.position/2),side:r.position===1?null:r.position%2?'RIGHT':'LEFT',
     qualificationId:r.qualificationId,ballNo:r.ballNo,qualificationStatus:r.qualificationStatus,placementStatus:r.placementStatus,
     qualification:purchase(r),repurchase:reps.get(r.position)??null,
-    repurchasePayable:r.qualificationStatus==='EFFECTIVE'&&reps.get(r.position)?.status==='CONFIRMED'}));
+    repurchasePayable:policy.paymentPolicy==='QUALIFICATION_ONLY'&&r.qualificationStatus==='EFFECTIVE'&&reps.get(r.position)?.status==='CONFIRMED'}));
   const root=balls[0];
   const sponsor=await sponsorLabel(tx,Prisma.sql`coalesce(
       (SELECT sponsor_qualification_id FROM organization.sponsor_relationship WHERE child_qualification_id=${root.qualificationId}::uuid AND effective_to IS NULL),
@@ -82,6 +86,7 @@ export async function bundleReceipt(tx:Prisma.TransactionClient,bundleId:string,
   const expired=entries.some(r=>r.status==='VOIDED'||r.deadline&&r.deadline.getTime()<=Date.now());
   const mayRestart=expired&&balls.every(b=>['DRAFT','VOIDED'].includes(b.qualificationStatus))&&
     await restartEligible(tx,bundleId,rows.map(r=>r.orderId),balls.map(b=>b.qualificationId));
-  return {bundleId,applicationId,currency:rows[0].currency,qualificationTotal:qualification.toFixed(2),repurchaseTotal:repurchase.toFixed(2),
+  return {bundleId,applicationId,...policy,payableTotal:(policy.paymentPolicy==='COMBINED'?qualification.plus(repurchase):qualification).toFixed(2),
+    currency:rows[0].currency,qualificationTotal:qualification.toFixed(2),repurchaseTotal:repurchase.toFixed(2),
     total:qualification.plus(repurchase).toFixed(2),rootSponsor:sponsor??null,mayRestart,balls};
 }

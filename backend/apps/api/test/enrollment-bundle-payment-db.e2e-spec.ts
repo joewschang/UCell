@@ -3,7 +3,7 @@ import {PrismaClient} from '@prisma/client';
 import {enrollmentBundlePayment, requirePaidBundleRoot} from '../src/modules/member/enrollment-bundle-payment';
 import {readBundleTransfer, reportBundleTransfer} from '../src/modules/member/enrollment-bundle-report';
 import {adminBundlePayment, confirmBundlePayment} from '../src/modules/order/enrollment-bundle-receipt';
-import {createEnrollmentBundleFixture} from './helpers/enrollment-bundle.fixture';
+import {createEnrollmentBundleFixture,markPreexistingCheckout} from './helpers/enrollment-bundle.fixture';
 import {createEffectiveMemberSponsorFixture} from './helpers/member-sponsor.fixture';
 
 const url = process.env.PHASE2_TEST_DATABASE_URL;
@@ -14,6 +14,7 @@ const url = process.env.PHASE2_TEST_DATABASE_URL;
   it('reports once, reconciles the entry total atomically and defers the selected repurchase', async () => {
     const sponsor = await createEffectiveMemberSponsorFixture(db);
     const f = await createEnrollmentBundleFixture(db, sponsor.qualification.ballNo!);
+    await markPreexistingCheckout(db,f.applicationId);
     const group = (await f.service.create(f.personId, f.applicationId, f.input, randomUUID(), randomUUID())).value;
     const entryIds = group.balls.map(b => b.qualification.orderId);
     const repurchase = group.balls[1].repurchase!;
@@ -74,6 +75,7 @@ const url = process.env.PHASE2_TEST_DATABASE_URL;
     const sponsor = await createEffectiveMemberSponsorFixture(db);
     const f = await createEnrollmentBundleFixture(db, sponsor.qualification.ballNo!);
     const balls = Array.from({length:63}, () => ({qualification:f.qualification, repurchase:f.repurchase}));
+    await markPreexistingCheckout(db,f.applicationId);
     const group = (await f.service.create(f.personId, f.applicationId, {...f.input,balls}, randomUUID(), randomUUID())).value;
     expect(group.balls).toHaveLength(63);
     expect(group.balls[62]).toMatchObject({position:63,parentPosition:31,side:'RIGHT'});

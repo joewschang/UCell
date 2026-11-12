@@ -27731,6 +27731,12 @@
       "EnrollmentBundleInput": {
         "type": "object",
         "properties": {
+          "planCode": {
+            "type": "string",
+            "enum": [
+              "EXCELLENCE"
+            ]
+          },
           "sponsorCode": {
             "type": "string"
           },
