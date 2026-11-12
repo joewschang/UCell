@@ -1,6 +1,7 @@
 import {readBallActiveEvidence} from './tree-active-evidence';
 import {treeAncestryCompleteness} from './tree-ancestry-integrity';
 import {treeStatisticsProjection} from './tree-statistics-projection';
+import {currentTreeState,currentTreeList} from './current-tree';
 import {readTreeNodeSnapshot} from './tree-node-snapshot';
 import {readFoundingPerformance,readFoundingCarry} from './binary-tree-metrics';
 import {Injectable,UnprocessableEntityException} from '@nestjs/common';
@@ -25,6 +26,8 @@ export async function readCompanyProfileStatus(tx:Pick<Prisma.TransactionClient,
 @Injectable()
 export class BinaryTreeReadService {
  constructor(private readonly db:PrismaService,private readonly commands:BinaryTreeService){}
+ async currentList(p:TreePrincipal,after?:string){return currentTreeList(this.db,this.commands,p,after);}
+ async currentState(p:TreePrincipal,id:string,input:{ballNo?:string;candidateBallNo?:string;after?:string}){return currentTreeState(this.db,this.commands,p,id,input,true);}
  private time(raw:unknown){try{const time=parseAsOfContext(raw),now=new Date().toISOString();if(time.asOf>now||time.knowledgeCutoff>now)throw new Error();return time;}catch{throw new UnprocessableEntityException({code:'INVALID_AS_OF_CONTEXT'});}}
  async list(p:TreePrincipal,raw:unknown,after?:string){
   const time=this.time(raw);await this.commands.authorize(p);

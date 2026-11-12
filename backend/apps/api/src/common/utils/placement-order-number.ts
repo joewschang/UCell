@@ -1,0 +1,6 @@
+import {Prisma} from '@ucell/database';
+export async function attachPlacementOrders(db:any,items:any[],viewerPersonId?:string){
+ const ids=[...new Set(items.map(i=>i.qualificationId).filter(Boolean))];if(!ids.length)return;
+ const rows=await db.$queryRaw(Prisma.sql`SELECT q.qualification_id AS id,o.order_no::text AS n,o.public_order_no AS code FROM membership.qualification q LEFT JOIN membership.qualification_setup s ON s.qualification_id=q.qualification_id JOIN commerce."order" o ON o.order_id=COALESCE(s.qualifying_order_id,(SELECT (array_agg(e.order_id))[1] FROM commerce."order" e WHERE e.qualification_id=q.qualification_id AND e.purpose='ENTRY' AND e.status<>'VOIDED' HAVING count(*)=1)) WHERE ${viewerPersonId?Prisma.sql`(o.purchaser_person_id=${viewerPersonId}::uuid OR o.qualification_id=q.qualification_id OR EXISTS(SELECT 1 FROM commerce.package_purchase_snapshot p WHERE p.order_id=o.order_id AND p.person_id=${viewerPersonId}::uuid)) AND`:Prisma.empty} q.qualification_id IN (${Prisma.join(ids.map(id=>Prisma.sql`${id}::uuid`))})`);
+ const map=new Map(rows.map((r:any)=>[r.id,r]));for(const i of items){const o:any=map.get(i.qualificationId);if(o){i.orderNo=o.n;i.displayOrderNo=o.code;}}
+}

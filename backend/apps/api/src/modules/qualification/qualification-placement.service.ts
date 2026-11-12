@@ -3,6 +3,7 @@ import {PrismaService,Prisma,qualificationReturnReviewPolicy} from '@ucell/datab
 import {randomUUID} from 'node:crypto';
 import {AuditService} from '../../common/audit/audit.service';
 import {IdempotencyService} from '../../common/idempotency/idempotency.service';
+import {placementMonitor} from './placement-monitor';
 import {bundleDescendantsForPlacement} from './enrollment-bundle-placement';
 import {placeDeferredQualification,placePlannedDescendants} from './place-deferred-qualification';
 import {OrganizationService} from '../organization/organization.service';
@@ -34,6 +35,7 @@ export class QualificationPlacementService {
   const personIds=[...new Set(rows.map(x=>x.ownerPersonId).filter((id):id is string=>!!id))],qualificationIds=[...new Set(rows.flatMap(x=>[x.qualificationId,x.finalSponsorQualificationId].filter((id):id is string=>!!id)))]; const [people,qualifications]=await Promise.all([this.db.person.findMany({where:{personId:{in:personIds}},select:{personId:true,memberNo:true}}),this.db.qualification.findMany({where:{qualificationId:{in:qualificationIds}},select:{qualificationId:true,qualificationNo:true,ballNo:true}})]); const memberNoByPerson=new Map(people.map(x=>[x.personId,x.memberNo])),qualificationById=new Map(qualifications.map(x=>[x.qualificationId,x])); return rows.map(x=>{const pending=qualificationById.get(x.qualificationId);return {...this.view(x,now,{memberNo:(x.ownerPersonId?memberNoByPerson.get(x.ownerPersonId):null)??null,pendingBallNo:pending?.ballNo??null,placementReference:pending?`P${pending.qualificationNo}`:null,sponsorBallNo:x.finalSponsorQualificationId?qualificationById.get(x.finalSponsorQualificationId)?.ballNo??null:null}),...(groupSizes.has(x.qualificationId)?{bundleBallCount:groupSizes.get(x.qualificationId)}:{})};});
  }
 
+ async dashboard(input:{status?:string;after?:string;take?:number}){return placementMonitor(this.db,input);}
  async monitor(input:{status?:string;aging?:string;take?:number}={},now=new Date()){
   const take=Math.min(Math.max(Number.isFinite(input.take)?input.take!:50,1),100),rows=await this.db.qualificationSetup.findMany({where:{setupStatus:{in:['PLACEMENT_PENDING','PLACEMENT_OVERDUE','PLACED']}},orderBy:{placementDueAt:'asc'},take:100});
   return rows.map(x=>this.view(x,now)).filter(x=>(!input.status||x.status===input.status)&&(!input.aging||x.agingBucket===input.aging)).slice(0,take);

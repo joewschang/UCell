@@ -1,0 +1,3 @@
+FROM ucellprodacrm3z2zx4ohqyui.azurecr.io/ucell-api@sha256:BASE_DIGEST
+COPY install-api.cjs placement-monitor.js placement-time-page.js /tmp/placement-time-release/
+RUN node /tmp/placement-time-release/install-api.cjs

@@ -1,0 +1,5 @@
+/** Eligible pending queue; retained placed history is handled by the caller. */
+export async function placementReadyIds(db:any):Promise<string[]>{
+ const rows=await db.$queryRaw`SELECT q.qualification_id AS id FROM membership.qualification q LEFT JOIN identity.person p ON p.person_id=q.current_holder_person_id LEFT JOIN identity.legal_entity entity ON entity.legal_entity_id=q.current_holder_legal_entity_id JOIN membership.qualification_setup s ON s.qualification_id=q.qualification_id JOIN commerce."order" o ON o.order_id=s.qualifying_order_id WHERE q.kind='MEMBER_ORIGIN' AND q.status IN ('DRAFT','EFFECTIVE') AND (p.membership_state='FORMAL_MEMBER' OR (entity.membership_state='FORMAL_MEMBER' AND entity.status='ACTIVE')) AND s.setup_status IN ('PLACEMENT_PENDING','PLACEMENT_OVERDUE') AND o.status IN ('PAID','FULFILLED','PARTIAL_RETURN') AND o.paid_at IS NOT NULL AND NOT EXISTS(SELECT 1 FROM membership.enrollment_bundle_ball b WHERE b.qualification_id=q.qualification_id AND b.position>1)`;
+ return rows.map((r:{id:string})=>r.id);
+}
