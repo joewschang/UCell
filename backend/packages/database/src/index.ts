@@ -3,6 +3,7 @@ export * from './database.module';
 export * from './parameter-snapshot';
 export * from './company-profile';
 export * from './historical-replay';
+export * from './gpv-attribution';
 export * from './outbox-lease';
 export {
   Prisma,

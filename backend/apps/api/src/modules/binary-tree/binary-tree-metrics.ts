@@ -1,4 +1,4 @@
-import {Prisma,verifyReplayEnvelope} from '@ucell/database';
+import {Prisma,verifyReplayEnvelope,applyGpvAttribution,gpvAttributionsAt} from '@ucell/database';
 import {AsOfContext} from '@ucell/shared';
 import {treeHash} from '../organization/tree-placement';
 const LIMIT=2000;
@@ -7,13 +7,25 @@ const unavailable=(reason:string)=>({status:'UNAVAILABLE' as const,reason,value:
 export async function readFoundingPerformance(tx:Prisma.TransactionClient,treeId:string,root:string,time:AsOfContext,includeSourceFacts=false){
  const known=new Date(time.knowledgeCutoff),at=new Date(time.asOf);
  const ids=await tx.$queryRaw<Array<{event_id:string;first_side:string}>>`
-  SELECT e.event_id,a.first_side FROM ledger.pv_ledger e
-  JOIN organization.binary_tree_ancestry a ON a.descendant_qualification_id=e.qualification_id AND a.binary_tree_id=${treeId}::uuid AND a.ancestor_qualification_id=${root}::uuid
-  WHERE a.depth>0 AND a.effective_from<=e.occurred_at AND a.recorded_at<=${known}
-   AND e.pv_type='GPV' AND e.event_type='GPV_CREATED' AND e.reversal_of_event_id IS NULL AND e.occurred_at<${at} AND e.recorded_at<=${known}
-  ORDER BY e.event_id LIMIT 2001`;
+  WITH revisions AS (
+    SELECT DISTINCT ON (entity_id) entity_id,after_data FROM audit.audit_event
+    WHERE action='GPV_ATTRIBUTION_REBASE' AND entity_type='PV_LEDGER' AND occurred_at<=${known}
+    ORDER BY entity_id,occurred_at DESC,audit_event_id DESC
+  ), sources AS (
+    SELECT event_id,qualification_id,occurred_at FROM ledger.pv_ledger
+    WHERE pv_type='GPV' AND event_type='GPV_CREATED' AND reversal_of_event_id IS NULL AND occurred_at<${at} AND recorded_at<=${known}
+  )
+  SELECT e.event_id,a.first_side::text FROM sources e
+    JOIN organization.binary_tree_ancestry a ON a.descendant_qualification_id=e.qualification_id AND a.binary_tree_id=${treeId}::uuid AND a.ancestor_qualification_id=${root}::uuid
+    WHERE a.depth>0 AND a.effective_from<=e.occurred_at AND a.recorded_at<=${known} AND NOT EXISTS (SELECT 1 FROM revisions r WHERE r.entity_id=e.event_id)
+  UNION ALL
+  SELECT e.event_id,line->>'side' AS first_side FROM sources e JOIN revisions r ON r.entity_id=e.event_id
+    CROSS JOIN LATERAL jsonb_array_elements(r.after_data->'binary') line
+    WHERE r.after_data->>'treeId'=${treeId} AND line->>'ancestorQualificationId'=${root}
+  ORDER BY event_id LIMIT 2001`;
  if(ids.length>LIMIT)return unavailable('SOURCE_LIMIT_REQUIRES_PROJECTION');
  const rows=await tx.pvLedger.findMany({where:{eventId:{in:ids.map(x=>x.event_id)}}});
+ const revisions=await gpvAttributionsAt(tx,ids.map(x=>x.event_id),known);
  const snapshots=await tx.historicalReplaySnapshot.findMany({where:{kind:'GPV',sourceId:{in:ids.map(x=>x.event_id)},createdAt:{lte:known}}});
  const corrections=await tx.pvLedger.findMany({where:{reversalOfEventId:{in:ids.map(x=>x.event_id)},recordedAt:{lte:known}},take:20001});
  if(corrections.length>20000)return unavailable('SOURCE_LIMIT_REQUIRES_PROJECTION');
@@ -22,7 +34,7 @@ export async function readFoundingPerformance(tx:Prisma.TransactionClient,treeId
  const sourceFacts:Array<{eventId:string;qualificationId:string;firstSide:string;occurredAt:string;netGpv:string}>=[];
  for(const row of rows){
   const stored=snapshots.find(s=>s.sourceId===row.eventId);if(!stored)return unavailable('HISTORICAL_GPV_EVIDENCE_MISSING');
-  let envelope:ReturnType<typeof verifyReplayEnvelope>;try{envelope=verifyReplayEnvelope(stored);}catch{return unavailable('HISTORICAL_GPV_EVIDENCE_INVALID');}
+  let envelope:ReturnType<typeof verifyReplayEnvelope>;try{envelope=applyGpvAttribution(verifyReplayEnvelope(stored),revisions.get(row.eventId));}catch{return unavailable('HISTORICAL_GPV_EVIDENCE_INVALID');}
   if(envelope.kind!=='GPV'||envelope.sourceId!==row.eventId||envelope.ruleVersionCode!==row.ruleVersionCode||envelope.at!==row.occurredAt.toISOString()||envelope.evidence.sourceQualification?.qualificationId!==row.qualificationId
    ||!new Prisma.Decimal(envelope.inputs.volume).eq(row.amount)||!Array.isArray(envelope.evidence.binary))return unavailable('HISTORICAL_GPV_EVIDENCE_MISMATCH');
   let child=row.qualificationId,capturedSide:string|null=null;const visited=new Set<string>();

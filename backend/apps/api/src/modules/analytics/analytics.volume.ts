@@ -1,4 +1,4 @@
-import {Prisma,verifyReplayEnvelope,historicalSponsorAncestors,historicalBinaryAncestors,ReplayEnvelope} from '@ucell/database';
+import {Prisma,verifyReplayEnvelope,historicalSponsorAncestors,historicalBinaryAncestors,ReplayEnvelope,applyGpvAttribution,gpvAttributionsAt} from '@ucell/database';
 import {createHash} from 'crypto';
 import {DAY} from './analytics.policy';
 
@@ -54,6 +54,8 @@ export async function captureVolumeProjection(tx:Prisma.TransactionClient,root:s
   const byId=new Map(events.map(e=>[e.eventId,e]));
   for(const row of adjustments){const original=byId.get(row.reversalOfEventId!)!;if(row.pvType!==original.pvType||row.qualificationId!==original.qualificationId||row.ruleVersionCode!==original.ruleVersionCode)throw Error('VOLUME_ADJUSTMENT_MISMATCH');sums.set(original.eventId,(sums.get(original.eventId)??0n)+units(row.amount.toFixed(4)));}
   const facts:VolumeFact[]=events.map(event=>({id:event.eventId,qualificationId:event.qualificationId,type:event.pvType as VolumeType,original:event.amount.toFixed(4),adjustment:decimal(sums.get(event.eventId)??0n),envelope:verifySource(event,rows.get(`${event.pvType}:${event.pvType==='RPV'?event.sourceLineId:event.eventId}`))}));
+  const revisions=await gpvAttributionsAt(tx,facts.filter(f=>f.type==='GPV').map(f=>f.id),at);
+  for(const fact of facts) fact.envelope=applyGpvAttribution(fact.envelope,revisions.get(fact.id));
   const sponsor=aggregateVolumes(root,'sponsor',facts),binary=aggregateVolumes(root,'binary',facts);
   const evidenceHash=createHash('sha256').update(JSON.stringify({events,adjustments,snapshotHashes:snapshots.map(s=>s.hash).sort()})).digest('hex');
   return {...meta,status:'AVAILABLE',reason:null,sponsor,binary,carry,evidenceHash,sourceEvents:events.length};

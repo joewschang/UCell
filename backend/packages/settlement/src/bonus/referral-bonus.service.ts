@@ -2,7 +2,7 @@ import { recordBonusOpportunities, OpportunityCandidate, opportunityReasons, equ
 import { SettlementCalendarService } from '../settlement/settlement-calendar.service';
 import { snapshotDecimal, verifySnapshot, captureParameters } from '../rules/parameter-snapshot';
 import { Injectable } from '@nestjs/common';
-import { Prisma, PrismaService, routeCompanyBonus, sealSettlement, effectiveGpv, verifyReplayEnvelope, historicalSponsorAncestors, historicalRecipientState } from '@ucell/database';
+import { Prisma, PrismaService, routeCompanyBonus, sealSettlement, effectiveGpv, verifyReplayEnvelope, historicalSponsorAncestors, historicalRecipientState,attributedGpvEnvelope } from '@ucell/database';
 import { createHash } from 'crypto';
 import { RuntimeRuleService } from '../rules/runtime-rule.service';
 import { BonusQueryService } from './bonus-query.service';
@@ -69,14 +69,18 @@ export class ReferralBonusService {
       });
 
       const sources=[];
-      for(const event of gpvEvents) sources.push(verifyReplayEnvelope(await tx.historicalReplaySnapshot.findUnique({where:{kind_sourceId:{kind:'GPV',sourceId:event.eventId}}})));
+      for(const event of gpvEvents) {
+        const record=await tx.historicalReplaySnapshot.findUnique({where:{kind_sourceId:{kind:'GPV',sourceId:event.eventId}}});
+        sources.push(await attributedGpvEnvelope(tx,verifyReplayEnvelope(record)));
+      }
+      const sourceById=new Map(sources.map(source=>[source.sourceId,source]));
       const effective=await effectiveGpv(tx,sources);
       const totalGpv=[...effective.values()].reduce((sum,value)=>sum.add(value),new Prisma.Decimal(0));
       const theoryRows:Array<any>=[];
       const opportunities:OpportunityCandidate[]=[];
 
       for(const event of gpvEvents){
-        const source=verifyReplayEnvelope(await tx.historicalReplaySnapshot.findUnique({where:{kind_sourceId:{kind:'GPV',sourceId:event.eventId}}}));
+        const source=sourceById.get(event.eventId)!;
         const sourceSnapshot=source.parameters;
         const ancestors=historicalSponsorAncestors(source.evidence,event.qualificationId,7);
         const g1=ancestors.find(a=>a.generation===1);

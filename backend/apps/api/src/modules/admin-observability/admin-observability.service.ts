@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma,PrismaService } from '@ucell/database';
+import { Prisma,PrismaService,currentTheoryForBall } from '@ucell/database';
 
 @Injectable()
 export class AdminObservabilityService {
@@ -142,7 +142,7 @@ export class AdminObservabilityService {
         where:{qualificationId},orderBy:{periodEnd:'desc'},take:52
       }),
       this.prisma.activeIntervalEvidence.findMany({where:{qualificationId},orderBy:{createdAt:'desc'},take:100}),
-      this.prisma.theoryCalculationEvidence.findMany({where:{recipientQualificationId:qualificationId},orderBy:{occurredAt:'desc'},take:200}),
+      currentTheoryForBall(this.prisma,qualificationId),
     ]);
 
     const balances=await this.prisma.pvLedger.groupBy({

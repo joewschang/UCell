@@ -1,4 +1,6 @@
 import {binaryCalculationEnvelope} from './award-rebase-topology';
+import {attributedGpvEnvelope} from './gpv-attribution';
+import {settlementRebaseBaseline} from './settlement-rebase-baseline';
 import {invalidateBonusOpportunities} from './bonus-opportunity';
 import {calculateGlobalPool} from './global-pool-calculation';
 import {appendReplayPoolDeltas} from './replay-pool-delta';
@@ -238,7 +240,7 @@ export async function sealSettlement(tx:Prisma.TransactionClient,batch:any) {
   const sources:any[]=[];
   for(const event of originals) {
     const row=await tx.historicalReplaySnapshot.findUnique({where:{kind_sourceId:{kind:'GPV',sourceId:event.eventId}}});
-    sources.push(verifyReplayEnvelope(row));
+    sources.push(await attributedGpvEnvelope(tx,verifyReplayEnvelope(row)));
   }
   if(batch.settlementType==='REFERRAL_K0')for(const recipient of recipients) {
     const source=sources.find(item=>item.sourceId===recipient.sourceEventId);
@@ -427,7 +429,10 @@ export async function effectiveGpv(tx:Prisma.TransactionClient,sources:ReplayEnv
 }
 async function loadEnvelope(tx:Prisma.TransactionClient,kind:string,sourceId:string) {
   const row=await tx.historicalReplaySnapshot.findUnique({where:{kind_sourceId:{kind,sourceId}}});
-  return {row:row!,envelope:verifyReplayEnvelope(row)};
+  if(!row) pending('HISTORICAL_SNAPSHOT_MISSING','Original calculation evidence was not captured; current state cannot substitute');
+  if(kind==='REFERRAL_K0'||kind==='MATCHING_K2') return settlementRebaseBaseline(tx,row);
+  const original=verifyReplayEnvelope(row);
+  return {row,envelope:kind==='GPV'?await attributedGpvEnvelope(tx,original):original};
 }
 async function postPayables(tx:Prisma.TransactionClient,row:any,envelope:ReplayEnvelope,payables:Map<string,Prisma.Decimal>,actionKey:string,stateHash:string,returnId?:string) {
   for(const recipient of envelope.recipients) await appendEntitlementDelta(tx,row,recipient,payables.get(recipient.key)??pending('HISTORICAL_SNAPSHOT_MISSING','Historical entitlement result absent'),actionKey,stateHash,returnId);

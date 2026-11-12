@@ -1,0 +1,172 @@
+{
+  "environment": "production",
+  "operation": "current-tree-rebase:20261112:six-company-balls",
+  "correlationId": "a366c524-a064-4593-bedf-9c842233fcd3",
+  "effectiveFrom": "2026-11-12T02:29:37.456Z",
+  "snapshotAsOf": "2026-11-12T02:29:37.631Z",
+  "independentCheckAsOf": "2026-11-12T02:30:06.940Z",
+  "relationships": [
+    {
+      "ball": "TW8888888888-02",
+      "directSponsor": "TW8888888888-01",
+      "sponsorSequenceNo": 5
+    },
+    {
+      "ball": "TW8888888888-03",
+      "directSponsor": "TW8888888888-01",
+      "sponsorSequenceNo": 6
+    },
+    {
+      "ball": "TW8888888888-04",
+      "directSponsor": "TW8888888888-02",
+      "sponsorSequenceNo": 1
+    },
+    {
+      "ball": "TW8888888888-05",
+      "directSponsor": "TW8888888888-02",
+      "sponsorSequenceNo": 2
+    },
+    {
+      "ball": "TW8888888888-06",
+      "directSponsor": "TW8888888888-03",
+      "sponsorSequenceNo": 4
+    },
+    {
+      "ball": "TW8888888888-07",
+      "directSponsor": "TW8888888888-03",
+      "sponsorSequenceNo": 5
+    }
+  ],
+  "volumes": {
+    "gpv": "259200",
+    "GPVEvents": 39,
+    "RPVEvents": 0,
+    "EPVEvents": 0,
+    "futureCount": 36,
+    "futureRPV": "43200",
+    "sourceLineHash": "173b40995742714a69101ebadcef9f58b568cbad057f0648fadba90d9d133977",
+    "ownerVolumeHash": "d676c246db114c4f5246b5523d11dd8ee2132c5b5ae4610b4ad5e9ce55097665",
+    "binaryVolumeHash": "0ebc8aa895699e1a28fdb69ff35ef926698d110694d4bc431b8d39eff993ac24",
+    "carryHash": "1b898995dedff9f8ae8af976f4633842d4df9e6eaf622169d24710c601dcc372",
+    "futureHash": "0065d324b31007f6fcc933275a8a83df8c26a6cb21bb206de74730fd83580310"
+  },
+  "binaryAncestorSideAllocations": 298,
+  "referralCalculationEntries": 106,
+  "overdueRecognitionCount": 0,
+  "unclosedSettlementSourceWindows": {
+    "BINARY_K1": {
+      "count": 27,
+      "amount": "190080"
+    },
+    "MATCHING_K2": {
+      "count": 27,
+      "amount": "190080"
+    },
+    "REFERRAL_K0": {
+      "count": 18,
+      "amount": "112320"
+    }
+  },
+  "settledAwards": {
+    "currency": "TWD",
+    "periodsChecked": [
+      {
+        "type": "BINARY_K1",
+        "periodEnd": "2026-11-01T16:00:00.000Z",
+        "count": 7,
+        "net": "0"
+      },
+      {
+        "type": "MATCHING_K2",
+        "periodEnd": "2026-11-01T16:00:00.000Z",
+        "count": 10,
+        "net": "0"
+      },
+      {
+        "type": "BINARY_K1",
+        "periodEnd": "2026-11-08T16:00:00.000Z",
+        "count": 17,
+        "net": "3110.4"
+      },
+      {
+        "type": "MATCHING_K2",
+        "periodEnd": "2026-11-08T16:00:00.000Z",
+        "count": 26,
+        "net": "466.56"
+      },
+      {
+        "type": "REFERRAL_K0",
+        "periodEnd": "2026-11-09T16:00:00.000Z",
+        "count": 46,
+        "net": "30628.8"
+      }
+    ],
+    "before": "32564.16",
+    "after": "34205.76",
+    "delta": "1641.6",
+    "byOwner": {
+      "COMPANY": {
+        "before": "12346.56",
+        "after": "13988.16"
+      },
+      "MEMBER": {
+        "before": "20217.6",
+        "after": "20217.6"
+      }
+    },
+    "byAwardType": {
+      "BINARY": {
+        "before": "3110.4",
+        "after": "3110.4"
+      },
+      "MATCHING": {
+        "before": "466.56",
+        "after": "466.56"
+      },
+      "EQUALIZATION": {
+        "before": "3499.2",
+        "after": "5140.8"
+      },
+      "REFERRAL": {
+        "before": "25488",
+        "after": "25488"
+      }
+    },
+    "beneficiaryOfIncrease": "TW8888888888-01",
+    "newPositiveEntries": 6,
+    "newZeroValueEntries": 20,
+    "priorAwardEntriesPreserved": 80,
+    "priorAdjustmentEntriesPreserved": 1,
+    "validatedEconomicEntries": 106,
+    "payoff": {
+      "payables": 0,
+      "recoveries": 0,
+      "payoutLines": 0,
+      "bankResults": 0
+    }
+  },
+  "checks": {
+    "trial": "VERIFIED_ROLLBACK",
+    "result": "COMMITTED",
+    "retry": "ALREADY_COMMITTED",
+    "independentMismatches": 0,
+    "asOfRead": "RUNTIME_READ_ONLY_VERIFIED",
+    "asOfReadAt": "2026-11-12T02:32:10.824Z",
+    "asOfReadBeneficiariesChecked": 19,
+    "expectedEntitlementsFingerprint": "40fde84f9edf1d772cc015bbc528bf0d245ea23f9e3049f7e153d510699218f6",
+    "observedEntitlementsFingerprint": "40fde84f9edf1d772cc015bbc528bf0d245ea23f9e3049f7e153d510699218f6",
+    "topologyFingerprint": "dde32eeca7dbe003508f82478cd9f1564e95623bf738bcfac9ee77346fa117ac",
+    "financialFingerprint": "fdace4a2f161507b6951c02cff865d42b467c7433e5a243d3e8e2ed6b1cd4420",
+    "sourceAllocationFingerprint": "f58709d40aa8ac7961f7e74899fadd3abeee899f6b1c03ebb0a6c0a63f7305c6"
+  },
+  "deployment": {
+    "api": {
+      "revision": "ucell-prod-api--rel-261112022457-b7bec1",
+      "imageDigest": "sha256:b7bec1e5ed474f4ff8678ca138dc2c307c2c5e55f2bc6ee1e773563753d664d7"
+    },
+    "worker": {
+      "revision": "ucell-prod-worker--rel-261112022458-f03a4f",
+      "imageDigest": "sha256:f03a4f9d1ef20030ae18909e19a44954448b3a8bfd96e3e1165e4812866675c4"
+    }
+  }
+}

@@ -3,6 +3,7 @@ import {auditOrderVolume} from './compensation-audit-orders';
 import { Prisma, SettlementBatch } from '@prisma/client';
 import { ConflictException } from '@nestjs/common';
 import { binaryCalculationEnvelope } from './award-rebase-topology';
+import { settlementRebaseBaseline } from './settlement-rebase-baseline';
 import { effectiveGpv, historicalRecipientState, historicalSponsorAncestors, periodBinary, replayHash, ReplayEnvelope, verifyReplayEnvelope } from './historical-replay';
 import { snapshotDecimal } from './parameter-snapshot';
 import { effectiveSponsorDirectCount } from './reservoir-b';
@@ -16,7 +17,9 @@ type Finding = {key:string; reason:string; qid?:string; order?:string; expected?
 const lineKey = (r:Line) => [r.kind,r.source,r.generation,r.qid].join('/');
 const range = (at:Date) => ({effectiveFrom:{lte:at},OR:[{effectiveTo:null},{effectiveTo:{gt:at}}]});
 
-function referralLines(sources:ReplayEnvelope[], volumes:Map<string,Decimal>) {
+function referralLines(envelope:ReplayEnvelope, volumes:Map<string,Decimal>) {
+  const sources:ReplayEnvelope[]=envelope.evidence.sources;
+  const sealedKeys=new Set(envelope.recipients.map(r=>[r.awardType,r.sourceEventId,r.generation,r.qualificationId].join('/')));
   const rows:Line[]=[];
   for(const s of sources) {
     const ancestors=historicalSponsorAncestors(s.evidence,s.inputs.qualificationId,7);
@@ -34,7 +37,8 @@ function referralLines(sources:ReplayEnvelope[], volumes:Map<string,Decimal>) {
         if(generation>depths[state.plan][Math.min(4,state.directs)]) continue;
         value=base.mul(snapshotDecimal(s.parameters,'equalization.rate',state.plan+':G'+generation));
       }
-      if(value.gt(0)) rows.push({kind:generation===1?'REFERRAL':'EQUALIZATION',qid,generation,source:s.sourceId,order:s.inputs.orderId,value});
+      const line={kind:generation===1?'REFERRAL':'EQUALIZATION',qid,generation,source:s.sourceId,order:s.inputs.orderId,value};
+      if(value.gt(0)||sealedKeys.has(lineKey(line))) rows.push(line);
     }
   }
   return rows;
@@ -54,7 +58,7 @@ async function binaryResult(tx:Tx, batch:SettlementBatch, envelope:ReplayEnvelop
   return periodBinary(basis,volumes,incoming);
 }
 
-async function expectedLines(tx:Tx,batch:SettlementBatch,envelope:ReplayEnvelope,volumes:Map<string,Decimal>,findings:Finding[]) {
+async function expectedLines(tx:Tx,batch:SettlementBatch,envelope:ReplayEnvelope,volumes:Map<string,Decimal>,findings:Finding[],rebased:boolean) {
   const volume=total([...volumes.values()]);
   if(batch.settlementType==='BINARY_K1') {
     // A missing carry and a missing award can agree with each other. Start with the eligible balls.
@@ -88,16 +92,18 @@ async function expectedLines(tx:Tx,batch:SettlementBatch,envelope:ReplayEnvelope
   let rows:Line[];
   let pool:string;
   if(batch.settlementType==='REFERRAL_K0') {
-    rows=referralLines(envelope.evidence.sources,volumes);
+    rows=referralLines(envelope,volumes);
     pool='pool.referral.rate';
   } else if(batch.settlementType==='MATCHING_K2') {
     const binary=await tx.settlementBatch.findFirstOrThrow({where:{settlementType:'BINARY_K1',periodStart:batch.periodStart,periodEnd:batch.periodEnd,ruleVersionCode:batch.ruleVersionCode,status:'FINALIZED'}});
     const prior=verifyReplayEnvelope(await tx.historicalReplaySnapshot.findUnique({where:{kind_sourceId:{kind:'BINARY_K1',sourceId:binary.settlementBatchId}}}));
     const computed=await binaryResult(tx,binary,prior,volumes);
-    const sponsor=await tx.sponsorRelationship.findMany({where:range(batch.periodEnd)});
+    const sponsor=rebased?[]:await tx.sponsorRelationship.findMany({where:range(batch.periodEnd)});
     rows=[];pool='pool.matching.rate';
     for(const source of prior.recipients) {
-      const sealed=envelope.evidence.matchingSources?.find((s:{sourceAwardId:string})=>s.sourceAwardId===source.awardId)?.evidence;
+      const sealedSource=envelope.evidence.matchingSources?.find((s:{sourceAwardId:string})=>s.sourceAwardId===source.awardId);
+      if(rebased&&(!sealedSource?.evidence||sealedSource.sourceQualificationId!==source.qualificationId)) throw Error('MATCHING_REBASE_SOURCE_MISSING');
+      const sealed=sealedSource?.evidence;
       const ancestors=historicalSponsorAncestors(sealed??{sponsor},source.qualificationId,5);
       for(const a of ancestors) {
         const qid=a.qualification_id;
@@ -118,7 +124,7 @@ async function expectedLines(tx:Tx,batch:SettlementBatch,envelope:ReplayEnvelope
 export async function inspectCompensationBatch(tx:Tx,batch:SettlementBatch) {
   const id=batch.settlementBatchId;
   const snap=await tx.historicalReplaySnapshot.findUniqueOrThrow({where:{kind_sourceId:{kind:batch.settlementType,sourceId:id}}});
-  const envelope=verifyReplayEnvelope(snap);
+  const {row:baseline,envelope,postingSnapshotIds,retiredAwardIds}=await settlementRebaseBaseline(tx,snap);
   const sources:ReplayEnvelope[]=envelope.evidence.sources;
   const volumes=await effectiveGpv(tx,sources);
   const orders=await auditOrderVolume(tx,batch);
@@ -131,9 +137,11 @@ export async function inspectCompensationBatch(tx:Tx,batch:SettlementBatch) {
       findings.push({key:'volume/'+event.eventId,reason:'SOURCE',order:event.sourceId,qid:event.qualificationId,evidence:{source:event.eventId}});
   }
   if(sources.length!==originals.length||sourceById.size!==sources.length)findings.push({key:'cohort',reason:'SOURCE',evidence:{snapshot:sources.length,ledger:originals.length}});
-  const expected:Line[]=await expectedLines(tx,batch,envelope,volumes,findings);
+  const expected:Line[]=await expectedLines(tx,batch,envelope,volumes,findings,baseline.snapshotId!==snap.snapshotId);
   const awards=await tx.bonusAward.findMany({where:{settlementBatchId:id},include:{economicDestination:true}});
-  const postings=await tx.entitlementReplayPosting.findMany({where:{snapshotId:snap.snapshotId}});
+  const postings=await tx.entitlementReplayPosting.findMany({where:{snapshotId:{in:postingSnapshotIds}}});
+  const currentAwardIds=new Set(awards.map(a=>a.bonusAwardId));
+  for(const id of retiredAwardIds) if(!currentAwardIds.has(id)) findings.push({key:'retired/'+id,reason:'MISSING',evidence:{award:id}});
   const actual=new Map<string,Line>();
   for(const a of awards) {
     const source=a.sourceAwardId??a.sourceEventId??'',qid=a.recipientQualificationId;
@@ -151,6 +159,8 @@ export async function inspectCompensationBatch(tx:Tx,batch:SettlementBatch) {
       const effects=await tx.reservoirBEffect.aggregate({where:{destinationId:d.destinationId},_sum:{amountDelta:true}});
       if(!effects._sum.amountDelta?.eq(value))findings.push({key:'reservoir/'+a.bonusAwardId,reason:'COMPANY_BALANCE',qid,expected:value,actual:effects._sum.amountDelta??zero,evidence:{award:a.bonusAwardId}});
     }
+    // A superseded entitlement remains visible in its period and must reconcile to zero.
+    if(retiredAwardIds.has(a.bonusAwardId)&&value.eq(0)) continue;
     actual.set(key,{...line,value:value.add(actual.get(key)?.value??zero)});
   }
   const expectedTotal=total(expected.map(r=>r.value)),recordedTotal=total([...actual.values()].map(r=>r.value));
@@ -160,5 +170,5 @@ export async function inspectCompensationBatch(tx:Tx,batch:SettlementBatch) {
     actual.delete(key);
   }
   for(const [key,r] of actual)findings.push({key,reason:'UNEXPECTED',qid:r.qid,order:r.order,expected:zero,actual:r.value,evidence:{source:r.source,awardType:r.kind}});
-  return {findings,checkedSources:sources.length,checkedAwards:awards.length,expectedTotal,recordedTotal,hash:replayHash(JSON.parse(JSON.stringify({input:snap.hash,expected,postings:postings.map(p=>p.postingId).sort(),findings})))};
+  return {findings,checkedSources:sources.length,checkedAwards:awards.length,expectedTotal,recordedTotal,hash:replayHash(JSON.parse(JSON.stringify({input:baseline.hash,expected,postings:postings.map(p=>p.postingId).sort(),findings})))};
 }
