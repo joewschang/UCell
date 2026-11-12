@@ -224,6 +224,9 @@ export class OrderService {
         });
       }
 
+      if (!member && dto.items.some(item=>!/^\d+(?:\.\d{1,4})?$/.test(item.quantity)||new Prisma.Decimal(item.quantity).lte(0))) {
+        throw new UnprocessableEntityException({code:'INVALID_ORDER_QUANTITY',message:'數量須大於零，最多可填四位小數。'});
+      }
       const productIds = [...new Set(dto.items.map(i => i.productId))];
       const products = await tx.productReference.findMany({
         where: { productId: { in: productIds }, isActive: true },
@@ -236,6 +239,9 @@ export class OrderService {
         });
       }
 
+      if (!member && products.some(product=>product.currency!=='TWD')) {
+        throw new UnprocessableEntityException({code:'UNSUPPORTED_ORDER_CURRENCY',message:'人工訂單以新台幣計價，請重新選擇商品。'});
+      }
       const now = new Date();
       const offering = await this.resolveOfferingSnapshot(tx, dto.commercialOfferingCode, member ? 'WEB_MEMBER' : 'ADMIN', now);
       this.assertOfferingPurpose(offering, dto.purpose ?? 'RETAIL');
@@ -531,7 +537,7 @@ export class OrderService {
 
   productOptions() {
     const now=new Date();
-    return this.prisma.productReference.findMany({where:{isActive:true,ruleProfiles:{some:{
+    return this.prisma.productReference.findMany({where:{isActive:true,currency:'TWD',ruleProfiles:{some:{
       effectiveFrom:{lte:now},OR:[{effectiveTo:null},{effectiveTo:{gt:now}}]
     }}},select:{productId:true,sku:true,displayName:true,currentPrice:true,currency:true},orderBy:{sku:'asc'}});
   }

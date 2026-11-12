@@ -47,6 +47,12 @@ function prepare(root,out) {
       const prev=slice(original,'    async search(input','    async get(orderId');
       const revision=slice(source,'    qualificationOptions(', '    async search(input')+once(once(prev,'async search(input = {})','async search(input = {}, window)'),"orderBy: { createdAt: 'desc' },\n            take,","orderBy: [{createdAt:'desc'},{orderId:'desc'}],\n            skip:window?.skip,\n            take:window?window.take+1:take,");
       original=once(original,prev,revision);
+      const create=slice(original,'    async create(dto, key, requestId, actorId, member = false)', '        const offering = await this.resolveOfferingSnapshot');
+      const reference=slice(source,'    async create(dto, key, requestId, actorId, member = false)', '        const offering = await this.resolveOfferingSnapshot');
+      const quantity=slice(reference,'            if (!member && dto.items.some','            const productIds =');
+      const currency=slice(reference,'            if (!member && products.some','            const now = new Date();');
+      original=once(original,create,once(once(create,'            const productIds =',quantity+'            const productIds ='),
+        '            const now = new Date();',currency+'            const now = new Date();'));
     }
     save(rel,original);compiled[rel+'.js']=sha;
   }

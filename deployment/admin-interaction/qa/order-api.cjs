@@ -31,6 +31,12 @@ async function run() {
  assert((await oc.productOptions()).data.some(p=>p.productId===prod.productId));
  const req={user:{personId:holder.personId},requestId:randomUUID()},key=randomUUID();
  const body={qualificationId:ids[0],purpose:'RETAIL',items:[{productId:prod.productId,quantity:'2'}]};
+ const euros=await db.productReference.create({data:{sku:tag+'-eur',displayName:'外幣測試',currentPrice:15,currency:'EUR'}});
+ await db.productRuleProfile.create({data:{productId:euros.productId,effectiveFrom:new Date(+at-60000),ruleVersionCode:'R1.0B'}});
+ assert(!(await oc.productOptions()).data.some(p=>p.productId===euros.productId));
+ for(const [productId,quantity,expectedCode] of [[prod.productId,'0.0000','INVALID_ORDER_QUANTITY'],[euros.productId,'1','UNSUPPORTED_ORDER_CURRENCY']]){
+   await assert.rejects(()=>oc.create({...body,items:[{productId,quantity}]},randomUUID(),req),e=>e.response?.code===expectedCode);
+ }
  const fresh=await oc.create(body,key,req),id=fresh.data.orderId;
  assert.equal((await oc.create(body,key,req)).data.orderId,id);
  assert.equal(Number((await oc.get(id)).data.netAmount),340);
