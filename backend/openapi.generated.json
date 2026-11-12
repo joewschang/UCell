@@ -20682,6 +20682,370 @@
           "Member - Contact Verification"
         ]
       }
+    },
+    "/api/v1/member/formal-enrollment/applications/{id}/bundle/payment-report": {
+      "get": {
+        "operationId": "memberReadEnrollmentBundleTransfer",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "memberBearer": []
+          }
+        ],
+        "summary": "查詢本人多球資格合併匯款回報",
+        "tags": [
+          "Member - Formal enrollment"
+        ]
+      },
+      "post": {
+        "operationId": "memberReportEnrollmentBundleTransfer",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EnrollmentBundleTransferDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "memberBearer": []
+          }
+        ],
+        "summary": "回報本人多球資格合計匯款，等待財務確認",
+        "tags": [
+          "Member - Formal enrollment"
+        ]
+      }
+    },
+    "/api/v1/member/formal-enrollment/applications/{applicationId}/bundle/sponsor-candidate": {
+      "get": {
+        "operationId": "memberEnrollmentSponsorCandidate",
+        "parameters": [
+          {
+            "name": "applicationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "code",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "memberBearer": []
+          }
+        ],
+        "summary": "依完整推薦代碼核對此申請的推薦球與名稱",
+        "tags": [
+          "Member - Formal enrollment"
+        ]
+      }
+    },
+    "/api/v1/member/formal-enrollment/applications/{applicationId}/bundle": {
+      "get": {
+        "operationId": "memberReadEnrollmentBundle",
+        "parameters": [
+          {
+            "name": "applicationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "memberBearer": []
+          }
+        ],
+        "summary": "讀取本次申請的多球訂單與安置狀態",
+        "tags": [
+          "Member - Formal enrollment"
+        ]
+      },
+      "post": {
+        "operationId": "memberCreateEnrollmentBundle",
+        "parameters": [
+          {
+            "name": "applicationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EnrollmentBundleInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "memberBearer": []
+          }
+        ],
+        "summary": "一次建立多個資格及逐球重銷訂單",
+        "tags": [
+          "Member - Formal enrollment"
+        ]
+      }
+    },
+    "/api/v1/member/formal-enrollment/applications/{applicationId}/bundle/root-sponsor": {
+      "post": {
+        "operationId": "memberSetEnrollmentBundleRootSponsor",
+        "parameters": [
+          {
+            "name": "applicationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BundleRootSponsorInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "memberBearer": []
+          }
+        ],
+        "summary": "為待核款的多球申請補填第一顆球的推薦球號",
+        "tags": [
+          "Member - Formal enrollment"
+        ]
+      }
+    },
+    "/api/v1/member/formal-enrollment/applications/{applicationId}/bundle/{bundleId}/release-expired": {
+      "post": {
+        "operationId": "memberReleaseExpiredEnrollmentBundle",
+        "parameters": [
+          {
+            "name": "applicationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "bundleId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "memberBearer": []
+          }
+        ],
+        "summary": "作廢未收款且已逾期的整組訂單以重新選購",
+        "tags": [
+          "Member - Formal enrollment"
+        ]
+      }
+    },
+    "/api/v1/admin/orders/{orderId}/bundle-payment-confirmations": {
+      "post": {
+        "operationId": "adminConfirmEnrollmentBundlePayment",
+        "parameters": [
+          {
+            "name": "orderId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PaymentConfirmationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "核對整組資格款，依訂單分攤並記錄單一收款憑證",
+        "tags": [
+          "Admin - Commerce"
+        ]
+      }
     }
   },
   "info": {
@@ -25468,6 +25832,12 @@
             "type": "string",
             "pattern": "^[A-Z][A-Z0-9_]{1,39}$",
             "description": "Optional line purpose. This describes purchase context and never changes Offering category."
+          },
+          "couponCode": {
+            "type": "string"
+          },
+          "quoteHash": {
+            "type": "string"
           }
         },
         "additionalProperties": false
@@ -27282,6 +27652,120 @@
           "destination",
           "challengeId",
           "code"
+        ]
+      },
+      "EnrollmentBundleTransferDto": {
+        "type": "object",
+        "properties": {
+          "amount": {
+            "type": "string"
+          },
+          "paidAt": {
+            "type": "string"
+          },
+          "accountLastFive": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "amount",
+          "paidAt",
+          "accountLastFive"
+        ]
+      },
+      "SelectedProduct": {
+        "type": "object",
+        "properties": {
+          "productRuleProfileId": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "number",
+            "minimum": 1
+          }
+        },
+        "required": [
+          "productRuleProfileId",
+          "quantity"
+        ]
+      },
+      "BundlePackage": {
+        "type": "object",
+        "properties": {
+          "packageVersionId": {
+            "type": "string"
+          },
+          "quoteHash": {
+            "type": "string"
+          },
+          "couponCode": {
+            "type": "string"
+          },
+          "selections": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SelectedProduct"
+            }
+          }
+        },
+        "required": [
+          "packageVersionId",
+          "quoteHash",
+          "selections"
+        ]
+      },
+      "BundleBallInput": {
+        "type": "object",
+        "properties": {
+          "qualification": {
+            "$ref": "#/components/schemas/BundlePackage"
+          },
+          "repurchase": {
+            "$ref": "#/components/schemas/BundlePackage"
+          }
+        },
+        "required": [
+          "qualification"
+        ]
+      },
+      "EnrollmentBundleInput": {
+        "type": "object",
+        "properties": {
+          "sponsorCode": {
+            "type": "string"
+          },
+          "fulfillmentMethod": {
+            "type": "string",
+            "enum": [
+              "DELIVERY",
+              "COMPANY_PICKUP"
+            ]
+          },
+          "deliveryUpdatedAt": {
+            "type": "string"
+          },
+          "balls": {
+            "minItems": 2,
+            "maxItems": 63,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BundleBallInput"
+            }
+          }
+        },
+        "required": [
+          "balls"
+        ]
+      },
+      "BundleRootSponsorInput": {
+        "type": "object",
+        "properties": {
+          "sponsorCode": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "sponsorCode"
         ]
       }
     }

@@ -7,6 +7,42 @@ const assert = require('node:assert/strict');
 const {readFileSync, mkdirSync} = require('node:fs');
 const {join} = require('node:path');
 
+// Compile the deployed overlay entry against the member dependencies, entirely in memory.
+async function checkOverlayPlacement(context, origin, apiBase, widths) {
+  const {build} = await import('vite');
+  const root = join(__dirname, '..');
+  const [{output}] = await build({
+    root, configFile: false, logLevel: 'error',
+    resolve: {alias: {react: join(root, 'node_modules/react'), 'react-dom': join(root, 'node_modules/react-dom')}},
+    define: {'process.env.NODE_ENV': '"production"', 'import.meta.env.VITE_API_BASE_URL': JSON.stringify(apiBase)},
+    esbuild: {jsx: 'automatic'},
+    build: {write: false, lib: {entry: join(root, '../deployment/greeting-overlay/member-entry.tsx'), name: 'UCellGreeting', formats: ['iife']}},
+  });
+  const bundle = output.find(asset => asset.type === 'chunk' && asset.isEntry);
+  const css = output.find(asset => asset.type === 'asset' && asset.fileName.endsWith('.css'));
+  assert.ok(bundle && css, 'production greeting overlay must build with its stylesheet');
+
+  const page = await context.newPage();
+  try {
+    // The deployed overlay attaches to a host page that has no React greeting of its own.
+    await page.route(origin + '/explore', route => route.fulfill({contentType: 'text/html', body: '<main><section>探索</section></main>'}));
+    await page.route('**/greetings/style.css*', route => route.fulfill({contentType: 'text/css', body: css.source}));
+    await page.goto(origin + '/explore');
+    await page.addScriptTag({content: bundle.code});
+    await page.locator('#ucell-greeting-overlay .uc-daily-greeting').waitFor();
+    for (const width of widths) {
+      await page.setViewportSize({width, height: 960});
+      assert.equal(await page.evaluate(() => {
+        const main = document.querySelector('main');
+        const extra = document.createElement('section');
+        main.append(extra);
+        return main.lastElementChild === extra;
+      }), true);
+      await page.waitForFunction(() => document.querySelector('main').lastElementChild.contains(document.querySelector('.uc-daily-greeting')));
+    }
+  } finally {await page.close();}
+}
+
 (async () => {
   const browser = await chromium.launch({headless: true, ...(process.env.PLAYWRIGHT_EXECUTABLE_PATH ? {executablePath: process.env.PLAYWRIGHT_EXECUTABLE_PATH} : {})});
   const context = await browser.newContext({viewport: {width: 390, height: 844}, acceptDownloads: true});
@@ -40,7 +76,8 @@ const {join} = require('node:path');
     const page = await context.newPage();
     page.setDefaultTimeout(10_000);
     page.on('pageerror', error => errors.push(error.message));
-    for (const width of [320, 390, 768, 1280]) {
+    const widths = [320, 390, 768, 1280];
+    for (const width of widths) {
       await page.setViewportSize({width, height: 960});
       await page.goto(origin + '/explore');
       await page.getByRole('heading', {name: '心有暖陽，歲月有光'}).waitFor();
@@ -50,8 +87,7 @@ const {join} = require('node:path');
       for(const name of ['Facebook 連結分享','Threads 連結分享','X 連結分享'])assert.equal(await poster.getByRole('link',{name,exact:true}).isVisible(),true);
       assert.equal(await poster.locator('.uc-social-logos svg').count(),4);
       assert.equal(await poster.locator('.uc-social-logos').innerText(),'');
-      await page.evaluate(()=>document.querySelector('main').append(document.createElement('section')));
-      await page.waitForFunction(()=>document.querySelector('main').lastElementChild.contains(document.querySelector('.uc-daily-greeting')));
+      assert.equal(await poster.evaluate(card => card.parentElement.lastElementChild === card), true, 'greeting follows the Explore content');
       await poster.getByRole('button',{name:'Instagram 圖片發布步驟'}).click();
       assert.equal(await poster.getByRole('link',{name:'開啟 Instagram（不會自動帶入圖片）'}).isVisible(),true);
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, width + 'px overflow');
@@ -64,10 +100,10 @@ const {join} = require('node:path');
     const download = page.waitForEvent('download');
     await page.getByRole('button', {name: '儲存圖片'}).click();
     assert.equal((await download).suggestedFilename(), `UCell-每日問候-${date}.png`);
-    const popupPromise = context.waitForEvent('page');
+    const popupPromise = page.waitForEvent('popup');
     await page.getByRole('link', {name: 'LINE 連結分享', exact: true}).click();
     const popup = await popupPromise;
-    await popup.waitForLoadState();
+    await popup.waitForURL(url => url.hostname === 'social-plugins.line.me' && url.pathname === '/lineit/share');
     assert.equal(new URL(popup.url()).searchParams.get('url'), api + '/' + date + '/share');
     await popup.close();
     failImage = true;
@@ -89,6 +125,7 @@ const {join} = require('node:path');
     await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
     await page.waitForFunction(() => {const button = document.querySelector('.uc-daily-actions button'); return button && !button.disabled;});
     assert.ok(reads > previousReads, 'visible resume refreshes the greeting');
+    await checkOverlayPlacement(context, origin, new URL(api).origin + '/api/v1', widths);
     assert.deepEqual(errors, []);
     assert.deepEqual(blockedWrites, []);
     console.log('Daily greeting browser smoke passed: 320/390/768/1280px, real PNG download, LINE link activation, failures, retries and visibility resume.');

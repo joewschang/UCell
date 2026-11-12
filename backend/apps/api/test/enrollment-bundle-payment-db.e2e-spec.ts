@@ -69,4 +69,17 @@ const url = process.env.PHASE2_TEST_DATABASE_URL;
     await expect(f.orders.confirmPayment(repurchase.orderId, {...bank, amount:repurchase.total}, randomUUID(), randomUUID(), actor))
       .rejects.toMatchObject({response:{code:'BUNDLE_RECEIPT_ALREADY_USED'}});
   }, 120000);
+
+  it('reconciles every entry at the 63-ball checkout limit and leaves every repurchase open', async () => {
+    const sponsor = await createEffectiveMemberSponsorFixture(db);
+    const f = await createEnrollmentBundleFixture(db, sponsor.qualification.ballNo!);
+    const balls = Array.from({length:63}, () => ({qualification:f.qualification, repurchase:f.repurchase}));
+    const group = (await f.service.create(f.personId, f.applicationId, {...f.input,balls}, randomUUID(), randomUUID())).value;
+    expect(group.balls).toHaveLength(63);
+    expect(group.balls[62]).toMatchObject({position:63,parentPosition:31,side:'RIGHT'});
+    const payment = {amount:group.qualificationTotal, paymentMethod:'BANK_TRANSFER', referenceNo:randomUUID(), occurredAt:new Date().toISOString()};
+    await f.orders.confirmEnrollmentPayment(group.balls[62].qualification.orderId, payment, randomUUID(), randomUUID(), sponsor.actor.personId!);
+    expect(await enrollmentBundlePayment(db as any, f.applicationId, f.personId)).toMatchObject({qualificationCount:63, paidQualifications:63});
+    expect(await db.order.count({where:{orderId:{in:group.balls.map(b=>b.repurchase!.orderId)},status:'CONFIRMED'}})).toBe(63);
+  }, 180000);
 });
