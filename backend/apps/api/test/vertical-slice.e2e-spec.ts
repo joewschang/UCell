@@ -75,7 +75,7 @@ describe('UCell first vertical slice', () => {
     const second=await f.service.create({...dto,binaryParentQualificationId:'separate-parent'},'second','request');
     expect(second.value).toMatchObject({sponsor:{sponsorQualificationId:'sponsor',sponsorSequenceNo:2},binary:{parentQualificationId:'separate-parent',side:'LEFT'}});
     f.relationships[1].effectiveTo=new Date('2020-02-01'); // TEST_ONLY interval closure, not an exit workflow.
-    expect((await f.service.create(dto,'third','request')).value.sponsor.sponsorSequenceNo).toBe(3);
+    expect((await f.service.create({...dto,binarySide:'RIGHT'},'third','request')).value.sponsor.sponsorSequenceNo).toBe(3);
     expect(f.relationships.map(row=>row.sponsorSequenceNo)).toEqual([1,2,3]);
     expect(f.tx.qualification.create).toHaveBeenCalledTimes(3);
     expect(f.tx.sponsorRelationship.aggregate).toHaveBeenCalledWith({where:{sponsorQualificationId:'sponsor'},_max:{sponsorSequenceNo:true}});
@@ -83,12 +83,10 @@ describe('UCell first vertical slice', () => {
     expect(f.tx.qualificationPlanHistory.create.mock.calls[0][0].data).toMatchObject({qualificationId:first.value.qualification.qualificationId,planCode:'STARTER',effectiveFrom:new Date(dto.effectiveAt)});
     expect(f.audit.write.mock.calls[0][0]).toBe(f.tx);
   });
-  it('rejects 1st direct placed on RIGHT', async () => {
+  it('allows the first direct on the right', async () => {
     const f=qualificationFixture();
-    await expect(f.service.create({holderType:'PERSON' as const,personId:'person',planLevelCode:'STARTER',sponsorQualificationId:'sponsor',binaryParentQualificationId:'sponsor',binarySide:'RIGHT'},'invalid','request')).rejects.toMatchObject({response:{code:'BINARY_LEFT_SUBTREE_REQUIRED'}});
-    for(const model of [f.tx.qualification,f.tx.qualificationHolderHistory,f.tx.qualificationPlanHistory,f.tx.sponsorRelationship,f.tx.binaryPlacement])expect(model.create).not.toHaveBeenCalled();
-    expect(f.audit.write).not.toHaveBeenCalled();
-    expect(f.tx.idempotencyRecord.update).not.toHaveBeenCalled();
+    const result=await f.service.create({holderType:'PERSON',personId:'person',planLevelCode:'STARTER',sponsorQualificationId:'sponsor',binaryParentQualificationId:'sponsor',binarySide:'RIGHT'},'first-right','request');
+    expect(result.value).toMatchObject({sponsor:{sponsorSequenceNo:1},binary:{side:'RIGHT'}});
   });
   it('creates order using server-side Product Rule Profile snapshot', async () => {
     const f = fixture();

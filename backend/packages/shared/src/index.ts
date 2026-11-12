@@ -9,6 +9,8 @@ export const ErrorCodes = {
   QualificationNotOwned: 'QUALIFICATION_NOT_OWNED',
   IdempotencyConflict: 'IDEMPOTENCY_CONFLICT',
   BinarySlotOccupied: 'BINARY_SLOT_OCCUPIED',
+  SponsorSubtreeRequired: 'SPONSOR_SUBTREE_REQUIRED',
+  /** Recorded by older placement policies. */
   BinaryLeftSubtreeRequired: 'BINARY_LEFT_SUBTREE_REQUIRED',
   RuleVersionImmutable: 'RULE_VERSION_IMMUTABLE',
 } as const;

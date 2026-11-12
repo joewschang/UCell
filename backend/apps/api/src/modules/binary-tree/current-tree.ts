@@ -76,7 +76,6 @@ export async function currentTreeState(db:PrismaService,commands:BinaryTreeServi
      const pos=r.binaryPositionNo*2n+(side==='RIGHT'?1n:0n);
      if(pos>maxPosition||occupied.has(pos.toString()))return [];
      let reason=blocked||(tree.status!=='ACTIVE'?'TREE_NOT_OPEN_TO_PLACEMENT':null);
-     if(!reason&&!companySponsor&&sequence===3&&!inSubtree(pos,sponsor!.binaryTreeMembership!.binaryPositionNo*2n))reason='BINARY_LEFT_SUBTREE_REQUIRED';
      if(!reason&&canonical.some(c=>BigInt(c.positionNo)===pos)&&!companySponsor)reason='FOUNDING_COMPANY_SPONSOR_REQUIRED';
      return [{side,reason}];
     }):[]}))};

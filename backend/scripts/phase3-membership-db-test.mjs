@@ -70,7 +70,7 @@ try{
   equal(firstSponsor.sponsorQualificationId,sponsor,'first sponsor stored');
   equal(firstSponsor.sponsorSequenceNo,1,'first sponsor sequence');
   equal(firstBinary.parentQualificationId,sponsor,'first binary parent');
-  equal(firstBinary.side,'LEFT','first recruit left enforced');
+  equal(firstBinary.side,'LEFT','first recruit takes selected left slot');
   const duplicate=await service.approve(first,'approve-first',randomUUID());
   equal(duplicate.replayed,true,'duplicate approval replays');
   equal(duplicate.value.qualification.qualificationId,q,'duplicate preserves qualification');
@@ -83,15 +83,15 @@ try{
   equal((await db.binaryPlacement.findUniqueOrThrow({where:{childQualificationId:secondQ}})).parentQualificationId,parent,'second places under binary B');
   equal((await db.sponsorRelationship.findUniqueOrThrow({where:{childQualificationId:secondQ}})).sponsorSequenceNo,2,'independent binary placement retains sponsor sequence');
 
-  const third=await submitted(sponsor,'RIGHT');
+  const third=await submitted(parent,'RIGHT');
   const before=await db.qualification.count();
-  await rejected(service.approve(third,'approve-third-invalid',randomUUID()),'BINARY_LEFT_SUBTREE_REQUIRED');
+  await rejected(service.approve(third,'approve-third-invalid',randomUUID()),'SPONSOR_SUBTREE_REQUIRED');
   equal(await db.qualification.count(),before,'invalid third creates no qualification');
   equal((await db.membershipApplication.findUniqueOrThrow({where:{applicationId:third}})).status,'SUBMITTED','invalid third does not change application');
   equal(await db.idempotencyRecord.count({where:{actorScope:'admin:membership-application:approve:'+third}}),0,'failed approval rolls back idempotency');
   equal(await db.sponsorRelationship.count({where:{sponsorQualificationId:sponsor}}),2,'failed third consumes no sequence');
 
-  const validThird=await submitted(q,'LEFT');
+  const validThird=await submitted(sponsor,'RIGHT');
   const failingAudit={write:async(tx,input)=>{await audit.write(tx,input);throw new Error('MEMBERSHIP_INJECTED_AFTER_ALL_WRITES');}};
   const failing=new MembershipApplicationService(db,idempotency,failingAudit,organization);
   const models=['qualification','qualificationHolderHistory','qualificationPlanHistory','qualificationStatusHistory','sponsorRelationship','binaryPlacement','auditEvent'];
@@ -102,7 +102,8 @@ try{
   equal(await db.idempotencyRecord.count({where:{actorScope:'admin:membership-application:approve:'+validThird}}),0,'late failure rolls back key');
   const retry=(await service.approve(validThird,'approval-retry',randomUUID())).value.qualification.qualificationId;
   equal((await db.sponsorRelationship.findUniqueOrThrow({where:{childQualificationId:retry}})).sponsorSequenceNo,3,'retry allocates original third sequence');
-  equal((await db.binaryPlacement.findUniqueOrThrow({where:{childQualificationId:retry}})).parentQualificationId,q,'third in sponsor left descendant');
+  const thirdPlacement=await db.binaryPlacement.findUniqueOrThrow({where:{childQualificationId:retry}});
+  equal([thirdPlacement.parentQualificationId,thirdPlacement.side],[sponsor,'RIGHT'],'third can take the sponsor right slot');
   equal(await db.sponsorRelationship.count({where:{sponsorQualificationId:sponsor}}),3,'retry creates one sponsor relationship');
   // Explicit TEST_ONLY holder intervals exercise temporal authorization, not workflow fees or policy.
   const receiver=await db.person.create({data:{legalName:'TEMPORAL ACCESS TEST ONLY'}});
@@ -177,17 +178,14 @@ try{
     equal(created.value.schedules[0].dueAt.toISOString(),'2026-08-31T16:00:00.000Z',planCode+' first dueAt is Asia/Taipei local month start');
     equal(created.value.schedules.every(row=>row.parameterSnapshotHash===created.value.parameterSnapshotHash),true,planCode+' schedule retains calendar snapshot hash');
   }
-  const directDto={holderType:'PERSON',personId:owner.personId,planLevelCode:'STARTER',sponsorQualificationId:directRoot.qualificationId,binaryParentQualificationId:directRoot.qualificationId,binarySide:'LEFT',effectiveAt:'2020-01-01T00:00:00.000Z'};
-  const directCount=await db.qualification.count();
-  await rejected(direct.create({...directDto,binarySide:'RIGHT'},'direct-invalid',randomUUID()),'BINARY_LEFT_SUBTREE_REQUIRED');
-  equal(await db.qualification.count(),directCount,'direct invalid first RIGHT creates no qualification');
+  const directDto={holderType:'PERSON',personId:owner.personId,planLevelCode:'STARTER',sponsorQualificationId:directRoot.qualificationId,binaryParentQualificationId:directRoot.qualificationId,binarySide:'RIGHT',effectiveAt:'2020-01-01T00:00:00.000Z'};
   const directFirst=await direct.create(directDto,'direct-first',randomUUID()),firstId=directFirst.value.qualification.qualificationId;
   equal(directFirst.value.sponsor.sponsorSequenceNo,1,'direct first sequence one');
   const repeated=await direct.create(directDto,'direct-first',randomUUID());
   equal(repeated.replayed,true,'direct duplicate replays');
   equal(repeated.value.qualification.qualificationId,firstId,'direct duplicate retains qualification');
   equal(await db.sponsorRelationship.count({where:{childQualificationId:firstId}}),1,'direct duplicate retains one sponsor relationship');
-  const directSecond=await direct.create({...directDto,binaryParentQualificationId:firstId},'direct-second',randomUUID());
+  const directSecond=await direct.create({...directDto,binaryParentQualificationId:firstId,binarySide:'LEFT'},'direct-second',randomUUID());
   equal(directSecond.value.sponsor.sponsorSequenceNo,2,'direct second sequence two');
   equal((await db.binaryPlacement.findUniqueOrThrow({where:{childQualificationId:directSecond.value.qualification.qualificationId}})).parentQualificationId,firstId,'direct second Binary differs from Sponsor');
   const closed=await db.sponsorRelationship.findUniqueOrThrow({where:{childQualificationId:directSecond.value.qualification.qualificationId}});

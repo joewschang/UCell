@@ -17,8 +17,8 @@ Record actual actor, candidate commit, database migration count, browser, timest
 | U06 | Activate tree and inspect lifecycle | Allowed transition only; historical state still readable | PENDING |
 | U07 | Confirm founding member Sponsor | Company sponsor designation and actual Sponsor sequence visible; no unconfirmed placement | PENDING |
 | U08 | Preflight valid #4/#5/#6/#7 placements, then confirm | Expected parent/side and reserved position shown; atomic confirmation and evidence | PENDING |
-| U09 | Try first actual Sponsor referral outside its Sponsor left subtree | Explicit rejection with reason; no placement/owner mutation | PENDING |
-| U10 | Try third actual Sponsor referral outside its Sponsor left subtree | Explicit rejection per approved left/right rule; no partial placement | PENDING |
+| U09 | Place the first referral in a free right slot under its Sponsor | Placement succeeds and records permanent Sponsor sequence 1 | PENDING |
+| U10 | Preview the third referral in both branches under its member Sponsor, then attempt a slot outside that Sponsor's subtree | Both free branches are available. The out-of-scope placement is rejected. Committing a valid right slot records Sponsor sequence 3 and the selected Binary parent and side. | PENDING |
 | U11 | Place same ball twice / retry identical request | No duplicate membership, position or evidence | PENDING |
 | U12 | Use stale expectedVersion from another browser | HTTP 409; actionable refresh; unsaved input retained where applicable | PENDING |
 | U13 | Invalid payload/time/placement | HTTP 422; field/domain reason visible; no write | PENDING |

@@ -77,7 +77,7 @@ export class BinaryTreeService {
     const position=i+1,parentIndex=Math.floor(position/2)-1,side=position%2===0?'LEFT':'RIGHT';
     // Only the root's historical #2/#3 sponsor records establish its direct
     // sponsor chronology. Profile-added Company Balls are topology-only and
-    // must not consume the first/third Member sponsor sequence.
+    // must not consume the permanent Member sponsor sequence.
     if(i<3)await tx.sponsorRelationship.create({data:{sponsorQualificationId:balls[0],childQualificationId:balls[i],sponsorSequenceNo:i,effectiveFrom:at}});
     await tx.binaryPlacement.create({data:{parentQualificationId:balls[parentIndex],childQualificationId:balls[i],side,effectiveFrom:at}});
    }
@@ -133,7 +133,7 @@ export class BinaryTreeService {
    const parent=await tx.binaryTreeMembership.findUnique({where:{qualificationId:input.binaryParentQualificationId}});if(parent?.binaryTreeId!==treeId)throw new ConflictException({code:'BINARY_TREE_SCOPE_MISMATCH'});
    const sponsor=await tx.sponsorRelationship.findUnique({where:{childQualificationId:input.qualificationId}});if(!sponsor)throw new ConflictException({code:'SPONSOR_CONFIRMATION_MISSING'});
    await this.organization.assertBinarySlotAvailable(tx,input.binaryParentQualificationId,input.side);await this.organization.assertNoBinaryCycle(tx,input.qualificationId,input.binaryParentQualificationId);
-   await this.organization.assertFirstThirdLeftRule(tx,sponsor.sponsorQualificationId,sponsor.sponsorSequenceNo,input.binaryParentQualificationId,input.side);
+   await this.organization.assertSponsorPlacementScope(tx,sponsor.sponsorQualificationId,sponsor.sponsorSequenceNo,input.binaryParentQualificationId,at);
    if(input.preflightToken){
     const target=await tx.qualification.findUniqueOrThrow({where:{qualificationId:input.qualificationId}});
     const expected=treeHash({treeId,version:tree.topologyVersion,qualificationId:target.qualificationId,holder:target.currentHolderPersonId,parent:input.binaryParentQualificationId,side:input.side,sponsorId:sponsor.sponsorRelationshipId,sequence:sponsor.sponsorSequenceNo});
@@ -180,7 +180,7 @@ export class BinaryTreeService {
    if(descendants&&setup)await assertQualificationActivation(tx,setup);
    if(setup&&(!['PLACEMENT_PENDING','PLACEMENT_OVERDUE'].includes(setup.setupStatus)||setup.finalSponsorQualificationId!==sponsor.sponsorQualificationId))throw new ConflictException({code:'PLACEMENT_NOT_PENDING'});
    await this.organization.assertBinarySlotAvailable(tx,input.binaryParentQualificationId,input.side);await this.organization.assertNoBinaryCycle(tx,target.qualificationId,input.binaryParentQualificationId);
-   await this.organization.assertFirstThirdLeftRule(tx,sponsor.sponsorQualificationId,sponsor.sponsorSequenceNo,input.binaryParentQualificationId,input.side);
+   await this.organization.assertSponsorPlacementScope(tx,sponsor.sponsorQualificationId,sponsor.sponsorSequenceNo,input.binaryParentQualificationId);
    const positions=await tx.treeCanonicalPosition.findMany({where:{binaryTreeId:treeId}}),parentPosition=positions.find(s=>s.occupantQualificationId===input.binaryParentQualificationId);
    const canonical=parentPosition&&positions.find(s=>s.parentPositionNo===parentPosition.positionNo&&s.side===input.side);
    if(canonical){const designation=await tx.companySponsorDesignation.findUniqueOrThrow({where:{binaryTreeId:treeId}});if(sponsor.sponsorQualificationId!==designation.qualificationId)throw new ConflictException({code:'FOUNDING_COMPANY_SPONSOR_REQUIRED'});}

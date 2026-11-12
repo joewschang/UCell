@@ -163,15 +163,9 @@ describe('Founding occupation follows actual Sponsor chronology',()=>{
    const sponsor=await service.confirmCompanySponsor(admin,treeId,{qualificationId:ball.qualificationId,reason:'Confirm real chronology'},randomUUID());
    expect(sponsor.value.actualSponsorSequenceNo).toBe(i+3);
    const command=()=>service.place(admin,treeId,{qualificationId:ball.qualificationId,binaryParentQualificationId:position<12?roots[3]:roots[5],side:position%2===0?'LEFT':'RIGHT',expectedVersion:version,reason:'Explicit founding position'},randomUUID());
-   if(i===0 && position>=12){
-    await expect(command()).rejects.toMatchObject({response:{code:'BINARY_LEFT_SUBTREE_REQUIRED'}});
-    expect(await db.binaryTreeMembership.findUnique({where:{qualificationId:ball.qualificationId}})).toBeNull();
-    expect((await db.sponsorRelationship.findUniqueOrThrow({where:{childQualificationId:ball.qualificationId}})).sponsorSequenceNo).toBe(3);
-   }else{
     await command();version++;occupied++;
     const evidence=await db.foundingOccupationEvidence.findUnique({where:{qualificationId:ball.qualificationId}});
     expect(evidence).toMatchObject({positionNo:position,actualSponsorSequenceNo:i+3,companySponsorQualificationId:roots[0]});
-   }
   }
   expect(await db.foundingOccupationEvidence.count({where:{binaryTreeId:treeId}})).toBe(occupied);
   expect(await db.binaryTreeMembership.count({where:{binaryTreeId:treeId}})).toBe(7+occupied);

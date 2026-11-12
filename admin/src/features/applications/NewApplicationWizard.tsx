@@ -2,7 +2,7 @@ import {uiValue,uiText,domainLabel} from "../../../../shared/design-system/i18n"
 import {useMemo,useState} from 'react';
 import {command,get,qs} from '../../lib/api';
 import {LegalEntity,Person,PlacementPreview,PlanLevel,Qualification,SideCode} from '../../types/domain';
-import {Card,ErrorBox,Field,JsonResult,PageHeader,Badge} from '../../components/ui';
+import {Card,ErrorBox,Field,JsonResult,PageHeader} from '../../components/ui';
 import {SearchOption,SearchSelect} from '../../components/SearchSelect';
 
 const plans:{code:PlanLevel;name:string}[]=[
@@ -85,7 +85,7 @@ export function NewApplicationWizard(){
    <button disabled={!parent||busy} onClick={checkPlacement}>預檢安置合法性</button>
    {preview&&<div className={`callout ${preview.valid?'info':'danger'}`}>
     <strong>{preview.valid?'安置預檢通過':'安置不可用'}</strong>
-    <p>下一直推序號：{preview.nextSponsorSequenceNo ?? '—'} {preview.firstThirdLeftRequired&&<Badge tone="warn">第1/3直推左子樹限制</Badge>}</p>
+    <p>下一直推序號：{preview.nextSponsorSequenceNo ?? '—'}</p>
     {!preview.valid&&<p>{preview.message}</p>}
    </div>}
    <div className="button-row"><button onClick={()=>setStep(2)}>上一步</button><button className="primary" disabled={!preview?.valid} onClick={()=>setStep(4)}>下一步</button></div></div>
@@ -93,7 +93,7 @@ export function NewApplicationWizard(){
   {step===4&&<Card title={uiText("4. 確認申請Draft")}>
    <dl className="detail-grid"><dt>權利主體</dt><dd>{holderType==='PERSON'?person?.primary:legalEntity?.primary}</dd><dt>{uiText("Plan")}</dt><dd>{plan}</dd><dt>{uiText("Sponsor")}</dt><dd>{sponsor?.primary}</dd><dt>{uiText("Binary Parent")}</dt><dd>{parent?.primary}</dd><dt>{uiText("Side")}</dt><dd>{domainLabel(side)}</dd><dt>預計直推序號</dt><dd>{preview?.nextSponsorSequenceNo}</dd></dl>
    <Field label="內部備註"><textarea rows={4} value={note} onChange={e=>setNote(e.target.value)}/></Field>
-   <div className="callout warning">{uiText("預檢不等於核准。Approve時Backend會在Serializable/交易流程再次配置永久Sponsor sequence、檢查Binary slot與第1/3直推左子樹規則。")}</div>
+   <div className="callout warning">{uiText("核准時會重新確認推薦序號、推薦範圍與安置位置是否仍可用。")}</div>
    <div className="button-row"><button onClick={()=>setStep(3)}>上一步</button><button className="primary" disabled={busy} onClick={createDraft}>{uiText("建立Application Draft")}</button></div>
   </Card>}
   {step===5&&<div className="success-panel"><h2>{uiText("Application Draft 已建立")}</h2><p>{uiText("Application ID：")}<span className="mono">{created?.applicationId}</span></p><p>{uiText("下一步請回「會員申請待審」執行Submit與Approve，不在建立畫面自動核准，以保留營運審查節點。")}</p><JsonResult value={created}/></div>}

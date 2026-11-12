@@ -1,11 +1,18 @@
 import {Body,Controller,Get,Headers,Param,ParseUUIDPipe,Post,Query,Req,UseGuards} from '@nestjs/common';
 import {ApiBearerAuth,ApiHeader,ApiOperation,ApiProperty,ApiPropertyOptional,ApiTags} from '@nestjs/swagger';
-import {IsEnum,IsOptional,IsString,IsUUID,Matches,MaxLength,MinLength} from 'class-validator';
+import {IsIn,IsInt,IsEnum,IsOptional,IsString,IsUUID,Matches,MaxLength,MinLength} from 'class-validator';
 import {IdempotencyGuard} from '../../common/guards/idempotency.guard';
 import {MemberAuthenticationGuard} from '../auth/member-authentication.guard';
 import {Roles} from '../auth/roles.decorator';
 import {QualificationPlacementService} from './qualification-placement.service';
 
+class LeafCorrectionDto {
+ @IsString() @MaxLength(48) parentBallNo!:string;
+ @IsIn(['LEFT','RIGHT']) side!:'LEFT'|'RIGHT';
+ @IsString() @Matches(/\S/) @MaxLength(300) reason!:string;
+ @Matches(/^[1-9][0-9]{0,18}$/) expectedPosition!:string;
+ @IsInt() expectedVersion!:number;
+}
 class PlaceQualificationDto { @ApiProperty({format:'uuid'}) @IsUUID() binaryParentQualificationId!:string; @ApiProperty({enum:['LEFT','RIGHT']}) @IsEnum(['LEFT','RIGHT']) side!:'LEFT'|'RIGHT'; }
 class AdminPlaceQualificationDto extends PlaceQualificationDto { @ApiProperty({maxLength:120}) @IsString() @MinLength(1) @MaxLength(120) reasonCode!:string; }
 class QualificationReturnReviewDto { @ApiProperty({enum:['STARTER','ELITE','LEADER']}) @IsEnum(['STARTER','ELITE','LEADER']) planLevelCode!:string; @ApiProperty({maxLength:120}) @IsString() @MinLength(1) @MaxLength(120) reasonCode!:string; }
@@ -23,6 +30,8 @@ export class MemberQualificationPlacementController {
 @Controller('admin/qualification-placements')
 export class AdminQualificationPlacementController {
  constructor(private readonly service:QualificationPlacementService){}
+ @Post(':id/correct-leaf') @Roles('SUPER_ADMIN','QUALIFICATION_PLACEMENT_OVERRIDE') @UseGuards(IdempotencyGuard)
+ correct(@Req() req:any,@Param('id',new ParseUUIDPipe()) id:string,@Body() input:LeafCorrectionDto,@Headers('idempotency-key') key:string){return this.service.correct(req.user.personId,id,input,key,req.requestId);}
  @Get('dashboard') @Roles('SUPER_ADMIN','MEMBERSHIP_OPS','COMPLIANCE_AUDIT','QUALIFICATION_PLACEMENT_OVERRIDE') dashboard(@Query('status') status?:string,@Query('after') after?:string){return this.service.dashboard({status:status||undefined,after:after||undefined});}
  @Get('return-reviews') @ApiOperation({operationId:'adminQualificationReturnReviews'}) returnReviews(){return this.service.returnReviews();}
  @Post(':id/return-review') @Roles('SUPER_ADMIN','MEMBERSHIP_OPS') @UseGuards(IdempotencyGuard) @ApiHeader({name:'Idempotency-Key',required:true}) @ApiOperation({operationId:'adminApproveQualificationReturnReview'}) approveReturnReview(@Req() req:any,@Param('id',new ParseUUIDPipe()) id:string,@Body() body:QualificationReturnReviewDto,@Headers('idempotency-key') key:string){return this.service.approveReturnReview(req.user?.personId,id,body,key,req.requestId);}

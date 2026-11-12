@@ -87,7 +87,7 @@ export interface Order {
   qualification?:Qualification; lines:OrderLine[]; paymentEvents?:any[];
 }
 export interface PlacementPreview {
-  valid:boolean; nextSponsorSequenceNo?:number; firstThirdLeftRequired?:boolean;
+  valid:boolean; nextSponsorSequenceNo?:number;
   code?:string;message?:string;side?:SideCode;
   sponsor?:any;binaryParent?:any;
 }
