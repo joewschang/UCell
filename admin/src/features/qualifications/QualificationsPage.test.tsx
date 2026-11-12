@@ -59,3 +59,32 @@ it('keeps the selected ball and filters when collapsing and reopening the list',
  }
  act(()=>view.unmount());
 });
+
+it('requests separate server pages, keeps selected details across pages and restarts filters at page one', async () => {
+ const calls: URLSearchParams[] = [];
+ vi.mocked(get).mockImplementation(async route => {
+   if (route.startsWith('/admin/qualifications?')) {
+     const query = new URL(route, 'https://test.local').searchParams;
+     calls.push(query);
+     const isSecond = query.get('page') === '2';
+     return {data: [isSecond ? companyBootstrap : activeMember], meta: {page: isSecond ? 2 : 1, take: 8, hasNext: !isSecond}};
+   }
+   return {data: activeMember};
+ });
+ const client = new QueryClient({defaultOptions: {queries: {retry: false}}});
+ let view!: ReturnType<typeof create>;
+ await act(async () => {view = create(<MemoryRouter initialEntries={['/admin/qualifications?qualificationId=member-active']}><QueryClientProvider client={client}><QualificationsPage/></QueryClientProvider></MemoryRouter>);});
+ const pageButton = (name: string) => view.root.findAllByType('button').find(button => button.children[0] === name)!;
+ await vi.waitFor(() => expect(view.root.findByProps({'aria-controls':'ball-detail'}).props['aria-pressed']).toBe(true));
+ expect(calls[0].get('page')).toBe('1'); expect(calls[0].get('take')).toBe('8');
+ expect(pageButton('上一頁').props.disabled).toBe(true);
+ act(() => pageButton('下一頁').props.onClick());
+ await vi.waitFor(() => expect(JSON.stringify(view.toJSON())).toContain('A000001'));
+ expect(calls.at(-1)?.get('page')).toBe('2'); expect(pageButton('下一頁').props.disabled).toBe(true);
+ expect(view.root.findByProps({id:'ball-detail'}).findAllByProps({role:'tablist'})).toHaveLength(1);
+ act(() => view.root.findByProps({type:'search'}).props.onChange({target:{value:'  測試  '}}));
+ await vi.waitFor(() => expect(calls.at(-1)?.get('q')).toBe('測試'));
+ expect(calls.at(-1)?.get('page')).toBe('1');
+ await vi.waitFor(() => expect(view.root.findByProps({'aria-controls':'ball-detail'}).props['aria-pressed']).toBe(true));
+ act(() => view.unmount());
+});

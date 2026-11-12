@@ -39,6 +39,10 @@ function Bootstrap() {
         setState('loading');
         bootstrapLiff(attempt>0).then(result => {
             if (!alive) return;
+            // LINE restores its saved URL with replaceState. Notify the router before rendering the inbox.
+            if(result.mode==='connected'&&memberEntryDestination(window.location)==='/notifications'){
+                navigate('/notifications',{replace:true});
+            }
             setReferralWarning('referralWarning' in result?result.referralWarning:undefined);
             setState(result.mode === 'redirect' ? 'redirect' : result.mode === 'web-login' ? 'web-login' : 'ready');
         }).catch(e => {

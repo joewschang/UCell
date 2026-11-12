@@ -1,0 +1,48 @@
+.ow-workbench { --ow-surface:var(--ucell-surface,#fff); --ow-ink:var(--ucell-text-primary,#132d38); --ow-muted:var(--ucell-text-secondary,#405e68); --ow-tint:var(--ucell-surface-secondary,#e9f3f2); --ow-line:var(--ucell-border,#c9d9dc); --ow-accent:var(--ucell-primary,#087b66); color:var(--ow-ink); }
+.ow-heading,.ow-pages,.ow-step-actions { display:flex; justify-content:space-between; align-items:center; gap:.65rem; flex-wrap:wrap; }
+.ow-heading { margin-bottom:1rem; }
+.ow-heading h1 { margin:0; }
+.ow-heading h1:focus { outline:none; }
+.ow-card { padding:clamp(.85rem,2vw,1.4rem); border:1px solid var(--ow-line); border-radius:.9rem; background:var(--ow-surface); }
+.ow-card h2 { margin-block:.85rem; }
+.ow-directory-tools { display:grid; grid-template-columns:minmax(0,1fr) minmax(8rem,12rem); gap:.7rem; }
+.ow-card label { display:grid; gap:.3rem; min-width:0; font-weight:600; }
+.ow-card :is(select,input) { width:100%; min-width:0; max-width:100%; }
+.ow-card :is(button,select,input),.ow-heading button,.ow-workbench .order-sections button { min-height:2.75rem; }
+.ow-card :is(ul,ol) { list-style:none; padding:0; }
+.ow-orders { margin:.8rem 0; }
+.ow-orders li,.ow-ball-options li,.ow-lines li { list-style:none; margin:0; }
+.ow-card .ow-order { display:grid; grid-template-columns:minmax(9rem,1.35fr) minmax(8rem,1fr) minmax(6.5rem,.8fr); width:100%; text-align:start; gap:.65rem; align-items:start; padding:.8rem; border:0; border-bottom:1px solid var(--ow-line); border-radius:.3rem; background:var(--ow-surface); color:var(--ow-ink); }
+.ow-order > span,.ow-lines > li > span { display:grid; gap:.18rem; overflow-wrap:anywhere; }
+.ow-order small,.ow-lines small { color:var(--ow-muted); }
+.ow-card .ow-order:is(:hover,:focus-visible,:active),.ow-card .ow-ball-options button:is(:hover,:focus-visible,:active),.ow-card .ow-ball-options button[aria-pressed=true] { background:var(--ow-tint); color:var(--ow-ink); }
+.ow-card button:focus-visible,.ow-heading button:focus-visible { outline:2px solid var(--ow-accent); outline-offset:-2px; }
+.ow-summary { text-align:end; }
+.ow-pages { justify-content:center; gap:.9rem; margin:.7rem 0; font-size:.92rem; }
+.ow-create { max-width:54rem; }
+.ow-steps { display:flex; margin:0; gap:.4rem; }
+.ow-steps li { flex:1; color:var(--ow-muted); border-bottom:2px solid var(--ow-line); padding:.3rem .1rem; font-size:.9rem; }
+.ow-steps li[aria-current=step] { color:var(--ow-ink); border-color:var(--ow-accent); font-weight:700; }
+.ow-ball-options { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,13rem),1fr)); gap:.4rem; margin:.7rem 0; }
+.ow-card .ow-ball-options button { width:100%; text-align:start; border:1px solid var(--ow-line); background:var(--ow-surface); color:var(--ow-ink); overflow-wrap:anywhere; }
+.ow-card .ow-ball-options button[aria-pressed=true] { border-color:var(--ow-accent); box-shadow:inset .2rem 0 var(--ow-accent); }
+.ow-selection { padding:.65rem; background:var(--ow-tint); font-weight:600; }
+.ow-lines { margin:1rem 0; }
+.ow-lines > li { display:flex; align-items:center; gap:.7rem; flex-wrap:wrap; min-width:0; border-bottom:1px solid var(--ow-line); padding:.65rem 0; }
+.ow-lines > li > :first-child { flex:1 1 10rem; }
+.ow-lines label { max-width:6rem; font-size:.88rem; }
+.ow-subtotal { text-align:end; font-variant-numeric:tabular-nums; }
+.ow-estimate { display:flex; flex-wrap:wrap; align-items:baseline; justify-content:space-between; gap:.5rem 1rem; padding:.8rem 1rem; border:1px solid var(--ow-line); border-radius:.5rem; background:var(--ow-tint); font-weight:600; }
+.ow-estimate strong { font-size:1.24rem; font-variant-numeric:tabular-nums; overflow-wrap:anywhere; }
+.ow-create dl { display:grid; grid-template-columns:auto 1fr; gap:.55rem; }
+.ow-create dd { margin:0; }
+.ow-step-actions { justify-content:flex-end; margin-top:1rem; }
+.ow-workbench .order-sections { display:flex; flex-wrap:wrap; gap:.4rem; }
+.ow-workbench .ow-next { margin-block:.55rem; }
+@media(max-width:650px){
+  .ow-card .ow-order { grid-template-columns:minmax(0,1fr) auto; gap:.3rem .55rem; padding:.75rem .35rem; }
+  .ow-order > span:nth-child(2) { grid-column:1; font-size:.88rem; }
+  .ow-order > .ow-summary { grid-column:2; grid-row:1/span 2; max-width:8.5rem; }
+  .ow-workbench .order-sections { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); }
+}
+@media(max-width:430px){ .ow-directory-tools { grid-template-columns:minmax(0,1fr); } }
