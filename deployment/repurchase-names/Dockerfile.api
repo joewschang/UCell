@@ -1,0 +1,3 @@
+FROM ucellprodacrm3z2zx4ohqyui.azurecr.io/ucell-api@sha256:8a2c70e0bdf4a617a7b8bd2bb1fc256bf79bd4365b3626a10a6ab11452354c6e
+COPY patch-api-image.cjs tracking-members.cjs tracking-member-names.js /tmp/order-names-release/
+RUN node /tmp/order-names-release/patch-api-image.cjs

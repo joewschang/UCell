@@ -22,7 +22,7 @@ const assert=require('node:assert/strict');
   await page.getByRole('heading',{name:'您好，示範會員'}).waitFor();
   await page.getByText('目前為示範資料，不代表真實業績、獎金或訂單。',{exact:true}).waitFor();
   await page.getByLabel('目前資格').selectOption('q2');
-  await page.getByRole('heading',{name:'本月重購尚未完成',exact:true}).waitFor();
+  await page.getByRole('heading',{name:'本月重銷尚未完成',exact:true}).waitFor();
   for(const route of ['organization','performance','bonuses','shop','orders','me','notifications']) {
    await page.goto(`http://127.0.0.1:5174/${route}`);
    await page.getByLabel('目前資格').waitFor();

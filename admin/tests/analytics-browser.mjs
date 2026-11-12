@@ -30,7 +30,7 @@ await page.route('**/api/v1/**',async route=>{
 try{
   await page.goto('http://127.0.0.1:4191/analytics');await page.getByRole('heading',{name:'NASL／十二代組織健康雷達',exact:true}).waitFor();
   await page.getByLabel('組織起點（不包含起點本身）').selectOption(fixture.root);
-  await page.getByRole('img',{name:/十二代活躍與重購比例雷達/}).waitFor();
+  await page.getByRole('img',{name:/十二代活躍與重銷比例雷達/}).waitFor();
   await page.getByLabel('業績量類型',{exact:true}).selectOption('EPV');
   await page.getByLabel('業績量類型',{exact:true}).selectOption('GPV');
   await page.getByRole('meter',{name:'第 1 代 GPV 淨量 80.1234',exact:true}).waitFor();

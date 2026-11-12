@@ -9,7 +9,7 @@ import {FormalEnrollmentService} from './formal-enrollment.service';
 export class FormalEnrollmentController{
  constructor(private readonly enrollment:FormalEnrollmentService){}
  @Post('order-payments/:id') @UseGuards(IdempotencyGuard) @ApiHeader({name:'Idempotency-Key',required:true})
- @ApiOperation({operationId:'memberStageCommercePayment',summary:'Stage 模擬支付本人的零售或重購訂單'})
+ @ApiOperation({operationId:'memberStageCommercePayment',summary:'Stage 模擬支付本人的零售或重銷訂單'})
  commerce(@Req() req:any,@Param('id',new ParseUUIDPipe()) id:string,@Headers('idempotency-key') key:string){return this.enrollment.payCommerce(req.user.personId,id,key,req.requestId);}
  @Get('applications/:id/bundle/payment-report') @ApiOperation({operationId:'memberReadEnrollmentBundleTransfer',summary:'查詢本人多球資格合併匯款回報'})
  bundleReport(@Req() req:any,@Param('id',new ParseUUIDPipe()) id:string){return this.enrollment.bundleReport(req.user.personId,id);}

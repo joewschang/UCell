@@ -16,7 +16,7 @@ try{
  page.on('response',response=>{if(response.url().includes('/api/v1/'))requests.push({url:response.url(),status:response.status()});});
  await page.goto('http://127.0.0.1:4173/login');await page.getByRole('button',{name:'DEV：Super Admin',exact:true}).click();
  await page.getByRole('heading',{name:'營運總覽',exact:true}).waitFor();
- for(const [path,title] of [['subscriptions','重購訂閱與認列排程'],['orders','訂單與收款'],['products','商品參照'],['returns','退貨／反向／Replay'],['reports','報表／完整性']]){
+ for(const [path,title] of [['subscriptions','重銷訂閱一覽'],['orders','訂單與收款'],['products','商品參照'],['returns','退貨／反向／Replay'],['reports','報表／完整性']]){
   await page.goto('http://127.0.0.1:4173/'+path);await page.getByRole('heading',{name:title,exact:true}).waitFor();
   await assert.doesNotReject(()=>page.waitForFunction(()=>!Array.from(document.querySelectorAll('[role="status"]')).some(el=>el.textContent.includes('載入中'))));
  }

@@ -1,0 +1,11 @@
+'use strict';
+const fs=require('node:fs'),path=require('node:path');
+const {createHash}=require('node:crypto');
+const {buildTrackingHelper}=require('./tracking-members.cjs');
+const out=path.resolve(process.argv[2]);
+fs.mkdirSync(out,{recursive:true});
+const helper=buildTrackingHelper();
+fs.writeFileSync(path.join(out,'tracking-member-names.js'),helper);
+for(const file of ['patch-api-image.cjs','tracking-members.cjs'])fs.copyFileSync(path.join(__dirname,file),path.join(out,file));
+fs.copyFileSync(path.join(__dirname,'Dockerfile.api'),path.join(out,'Dockerfile'));
+console.log('Tracking helper SHA-256',createHash('sha256').update(helper).digest('hex'));

@@ -9,16 +9,18 @@ import {getFormalEnrollment,payStageCommerceOrder,getProducts,getDeliveryProfile
 import QualificationPackageShop from './QualificationPackageShop';
 import ActiveDurationPackages from './ActiveDurationPackages';
 import DeliveryProfileEditor from './DeliveryProfileEditor';
-export const mallCategories=['會員資格套組','重購方案套組','主商品','促銷商品套組'] as const;
+import {mallCategories, mallCategoryFromLink, type MallCategory} from './mall-category';
+export {mallCategories};
 export default function Mall({q,onCreated}:{q?:Qualification;onCreated:()=>void}){
  const [search]=useSearchParams(),rawSku=search.get('sku');
  const requestedSku=rawSku&&/^TIP-\d{3}$/.test(rawSku)?rawSku:undefined;
- const [category,setCategory]=useState<string>('主商品'),navigate=useNavigate();
- useEffect(()=>{if(requestedSku)setCategory('主商品')},[requestedSku]);
+ const requestedCategory=mallCategoryFromLink(search.get('category'));
+ const [category,setCategory]=useState<MallCategory>(requestedCategory??'主商品'),navigate=useNavigate();
+ useEffect(()=>{if(requestedSku)setCategory('主商品');else if(requestedCategory)setCategory(requestedCategory)},[requestedCategory,requestedSku]);
  async function qualificationCreated(){try{const state=await getFormalEnrollment();if(state.membershipState!=='FORMAL_MEMBER'){navigate('/membership/upgrade');return;}}catch{navigate('/membership/upgrade');return;}onCreated();}
  return <section><h1>商品商城</h1><div className="tabs" role="group" aria-label="商品分類">{mallCategories.map(c=><button key={c} aria-pressed={category===c} onClick={()=>setCategory(c)}>{c}</button>)}</div>
  {category==='會員資格套組'&&<QualificationPackageShop onCreated={qualificationCreated}/>}
- {category==='重購方案套組'&&(q?<ActiveDurationPackages q={q} onCreated={onCreated}/>:<section className="card"><h2>重購方案套組</h2><p>重購方案需指定本人會員資格。請先完成正式會員申請並取得會員資格，再選購重購方案。</p></section>)}
+ {category==='重銷方案套組'&&(q?<ActiveDurationPackages q={q} onCreated={onCreated}/>:<section className="card"><h2>重銷方案套組</h2><p>重銷方案需指定本人會員資格。請先完成正式會員申請並取得會員資格，再選購重銷方案。</p></section>)}
  {(category==='主商品'||category==='促銷商品套組')&&<OfferShop key={category+q?.id+requestedSku} q={q} requestedSku={category==='主商品'?requestedSku:undefined} type={category==='主商品'?'CORE_PRODUCT':'PROMOTIONAL_BUNDLE'}/>}
  </section>;
 }

@@ -11,6 +11,6 @@ export class EpvController {
   constructor(private readonly service:EpvService){}
 
   @Post('orders/:orderId/recognize')
-  @ApiOperation({operationId:'adminRecognizeOrderEpv',summary:'認列重購超額EPV'})
+  @ApiOperation({operationId:'adminRecognizeOrderEpv',summary:'認列重銷超額EPV'})
   async run(@Param('orderId') id:string){ return {data:await this.service.recognizeOrder(id)}; }
 }
