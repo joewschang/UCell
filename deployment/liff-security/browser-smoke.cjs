@@ -1,0 +1,21 @@
+const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
+const {chromium}=require('../../member/node_modules/playwright');const m=require('./manifest.json');
+(async()=>{const browser=await chromium.launch({headless:true,channel:'msedge'}),context=await browser.newContext({viewport:{width:390,height:844}});const origin=process.env.LIFF_TEST_ORIGIN||'http://127.0.0.1:18086';
+try{const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.stack));
+ let oldTab=true;await page.route('**/*',route=>{const u=new URL(route.request().url());if(u.origin!==origin)return route.abort();
+  if(oldTab&&(u.pathname==='/'||m.changes.some(c=>c.old===u.pathname))){const f=path.join(__dirname,'site',u.pathname==='/'?'index.html':u.pathname);return route.fulfill({contentType:u.pathname==='/'?'text/html':'application/javascript',body:fs.readFileSync(f)});}if(u.pathname===m.sdkPath&&!u.search)return route.fulfill({contentType:'application/javascript',body:`import liff from '${m.sdkPath}?real=1';liff.init=async()=>{window.liff=liff};liff.isLoggedIn=()=>false;liff.isInClient=()=>false;liff.login=(arg)=>{window.__loginCalls=(window.__loginCalls||[]).concat([arg])};export default liff;`});return route.continue();});
+ await page.goto(origin+'/');await page.waitForFunction(()=>window.liff?.getVersion()==='2.31.0');oldTab=false;assert.equal(await page.evaluate(()=>window.liff.getVersion()),'2.31.0');await page.reload();await page.waitForFunction(()=>window.liff?.getVersion()==='2.31.1');
+ const lineButton=page.getByRole('button',{name:/LINE/}).first();await lineButton.waitFor();await lineButton.click();await page.waitForFunction(()=>window.__loginCalls?.length===1);
+ assert.equal(await page.evaluate(()=>window.__loginCalls[0].redirectUri),origin+'/');
+ const sdk=await page.evaluate(async url=>{const s=(await import(url+'?real=1')).default;return {version:s.getVersion(),init:typeof s.init,login:typeof s.login,share:typeof s.shareTargetPicker}},m.sdkPath);
+ assert.deepEqual(sdk,{version:'2.31.1',init:'function',login:'function',share:'function'});
+ assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);assert.deepEqual(errors,[]);
+ fs.mkdirSync(path.join(__dirname,'evidence'),{recursive:true});await page.screenshot({path:path.join(__dirname,'evidence/login-390.png')});
+ const request=context.request;const html=await request.get(origin+'/');assert.match(html.headers()['cache-control'],/no-store/);
+ const fresh=await request.get(origin+m.changes[0].new);assert.match(fresh.headers()['cache-control'],/immutable/);assert(!(await fresh.text()).includes('2.31.0'));
+ for(const c of m.changes){const old=await request.get(origin+c.old,{maxRedirects:0});if(c.old==='/greetings/entry.js'){assert.equal(old.status(),200);assert((await old.text()).includes(c.new));}else{assert.equal(old.status(),302);assert.equal(new URL(old.headers().location,origin).href,origin+c.new);}assert.match(old.headers()['cache-control'],/no-store/);}
+ const retired=m.retiredPaths.find(p=>!m.changes.some(c=>c.old===p));assert.equal((await request.get(origin+retired)).status(),410);
+ const greeting=await request.get(origin+m.changes[1].new);assert((await greeting.text()).includes(m.sdkPath));assert(!(await greeting.text()).includes('2.31.0'));
+ const result={passed:true,sdk,oldTab:'Loaded 2.31.0 stayed old until reload; reload fetched new entry and 2.31.1',login:'mocked LINE SDK network/auth; actual patched SDK loaded and fixed same-origin login redirect asserted',sharing:'actual shareTargetPicker present; source unit tests cover send/cancel/fallback; no real recipient messages',cache:'HTML no-store, new entry immutable, old main redirects and old classic greeting loader imports safe module, both no-store, retired URL 410',device:'desktop Edge at 390px; physical LINE app not tested'};
+ fs.writeFileSync(path.join(__dirname,'evidence/browser.json'),JSON.stringify(result,null,2));console.log(JSON.stringify(result));
+}finally{await browser.close()}})().catch(e=>{console.error(e);process.exitCode=1});
