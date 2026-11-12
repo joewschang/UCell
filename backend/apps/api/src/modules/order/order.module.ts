@@ -1,6 +1,8 @@
 import {EnrollmentBundleController} from '../member-bundle/enrollment-bundle.controller';
 import {EnrollmentBundleService} from '../member-bundle/enrollment-bundle.service';
 import { Module } from '@nestjs/common';
+import {AdminOrderTrackingController} from './admin-order-tracking.controller';
+import {AdminOrderTrackingService} from './admin-order-tracking.service';
 import { OrderController } from './order.controller';
 import { OrderService } from './order.service';
 import { PackageConfigModule } from '../package-config/package-config.module';
@@ -19,7 +21,7 @@ import { CommercialOfferingConfigService } from './commercial-offering-config.se
 import { AdminCommercialOfferingController, MemberCommercialOfferingController } from './commercial-offering.controller';
 import { AuthModule } from '../auth/auth.module';
 
-@Module({ imports:[AuthModule,PackageConfigModule,QualificationModule,OrganizationModule], controllers: [EnrollmentBundleController,OrderController,AdminRetailReferrerController,PaperReceiptController,PaperIntakeController,AdminCommercialOfferingController,MemberCommercialOfferingController], providers: [EnrollmentBundleService,OrderService,RetailReferrerAttributionService,PaperReceiptService,PaperIntakeService,PaperPersonIdentityService,RetailReferralExplainService,CommercialOfferingService,CommercialOfferingConfigService], exports:[OrderService,RetailReferrerAttributionService,CommercialOfferingService] })
+@Module({ imports:[AuthModule,PackageConfigModule,QualificationModule,OrganizationModule], controllers: [AdminOrderTrackingController,EnrollmentBundleController,OrderController,AdminRetailReferrerController,PaperReceiptController,PaperIntakeController,AdminCommercialOfferingController,MemberCommercialOfferingController], providers: [AdminOrderTrackingService,EnrollmentBundleService,OrderService,RetailReferrerAttributionService,PaperReceiptService,PaperIntakeService,PaperPersonIdentityService,RetailReferralExplainService,CommercialOfferingService,CommercialOfferingConfigService], exports:[OrderService,RetailReferrerAttributionService,CommercialOfferingService] })
 export class OrderModule {}
 
 

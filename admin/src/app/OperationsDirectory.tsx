@@ -28,7 +28,7 @@ const ucOpsNavTerms:Record<string,string> = {
   "/events": "報名 活動名單",
   "/order-tracking": "查單 訂單查詢 物流",
   "/fulfillment": "寄送 配送 出貨",
-  "/subscriptions": "重銷 重購 續訂",
+  "/subscriptions": "重銷 訂閱 續訂",
   "/packages": "入會套組 重銷 組合",
   "/products": "產品 商品目錄 SKU",
   "/product-content": "商品介紹 產品說明",

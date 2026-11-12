@@ -9,9 +9,9 @@ import {availabilityText,formatNullableNumber,qualificationActiveLabel} from './
 type RepurchaseState='ACTIVE'|'PENDING'|'INACTIVE';
 
 const taskCopy:Record<RepurchaseState,{title:string;detail:string}>={
- ACTIVE:{title:'本月重購已完成',detail:'目前資格的本月重購狀態已由系統回傳。'},
- PENDING:{title:'重購認列確認中',detail:'系統尚在確認本月重購認列；不以畫面自行推算完成時間。'},
- INACTIVE:{title:'本月重購尚未完成',detail:'請查看重購認列詳情，確認目前球的有效資格資訊。'},
+ ACTIVE:{title:'本月重銷已完成',detail:'目前資格的本月重銷狀態已由系統回傳。'},
+ PENDING:{title:'重銷認列確認中',detail:'系統尚在確認本月重銷認列；不以畫面自行推算完成時間。'},
+ INACTIVE:{title:'本月重銷尚未完成',detail:'請查看重銷認列詳情，確認目前球的有效資格資訊。'},
 };
 
 /** Displays only authoritative member facts; no binary pairing, Carry or payout is calculated in the browser. */
@@ -37,6 +37,6 @@ export default function MemberTodaySummary({q,monthlyRepurchaseStatus,repurchase
    </dl>}
    {binary.data?.settlementMetrics.status==='UNAVAILABLE'&&<p className="uc-binary-unavailable" role="status">{uiText("二元結算讀取模型尚未提供，Carry 不顯示為零。")}</p>}
   </div>
-  <div className="uc-today-task"><div><small>目前待辦</small><strong>{task.title}</strong><p>{task.detail}</p></div><UCellButton className="uc-today-task-link" aria-expanded={repurchaseDetailsOpen} aria-controls="repurchase-details" onClick={onShowRepurchaseDetails}>查看重購詳情</UCellButton></div>
+  <div className="uc-today-task"><div><small>目前待辦</small><strong>{task.title}</strong><p>{task.detail}</p></div><UCellButton className="uc-today-task-link" aria-expanded={repurchaseDetailsOpen} aria-controls="repurchase-details" onClick={onShowRepurchaseDetails}>查看重銷詳情</UCellButton></div>
  </section>;
 }

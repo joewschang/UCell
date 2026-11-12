@@ -74,13 +74,13 @@ function Home({ q }: {
     const [repurchaseDetailsOpen,setRepurchaseDetailsOpen] = useState(false);
     return <Result state={state}>{d => <div className="uc-dashboard uc-home-refresh">
         <section className="hero uc-home-greeting"><div><small>我的會員生活</small><h1>您好，{d.memberName}</h1><p>先處理今天的事，再探索更多可能。</p></div><Link className="button" to="/me">我的帳戶 →</Link></section>
-        <section className="card uc-home-task"><div><small>本月重購</small><h2>{{ACTIVE:'本月重購已完成',PENDING:'重購認列確認中',INACTIVE:'本月重購尚未完成'}[d.monthlyRepurchaseStatus]}</h2><p>{d.monthReference??'當期資料'} · {qualificationActiveLabel(q.active)}</p></div><Link className="button" to="/repurchase">查看重購詳情</Link></section>
+        <section className="card uc-home-task"><div><small>本月重銷</small><h2>{{ACTIVE:'本月重銷已完成',PENDING:'重銷認列確認中',INACTIVE:'本月重銷尚未完成'}[d.monthlyRepurchaseStatus]}</h2><p>{d.monthReference??'當期資料'} · {qualificationActiveLabel(q.active)}</p></div><Link className="button" to="/repurchase">查看重銷詳情</Link></section>
         <div className="uc-home-columns"><section className="uc-home-services"><div className="uc-section-heading"><h2>常用服務</h2><Link to="/explore">更多探索 →</Link></div>
         <MobileActionGrid>{([['/shop','商品商城','shop'],['/orders','我的訂單','orders'],['/events','活動中心','notification'],['/sharing','推薦分享','content']] as const).map(([path,title,icon])=><Link key={path} to={path}><UCellIcon name={icon}/><span>{title}</span></Link>)}</MobileActionGrid>
         </section><section className="uc-home-business"><div className="uc-section-heading"><h2>本期經營摘要</h2><Link to="/business">我的經營 →</Link></div>
         <Metrics items={[["PV",d.pv],["RPV",d.rpv],["EPV",d.epv]]}/>
         <section className="card uc-bonus-summary"><div><span>本期獎金</span><small>{awardStatusLabels[d.bonusStatus]}</small></div><h2><MoneyState amount={d.bonusAmount} status={d.bonusAmount===null?'PENDING':d.bonusStatus}/></h2><Link to="/bonuses">查看結算明細</Link></section>
-        </section></div><details id="repurchase-details" className="uc-repurchase-expander" open={repurchaseDetailsOpen} onToggle={event=>setRepurchaseDetailsOpen(event.currentTarget.open)}><summary>展開重購認列詳情</summary>{repurchaseDetailsOpen&&<RepurchaseDetails q={q}/>}</details>
+        </section></div><details id="repurchase-details" className="uc-repurchase-expander" open={repurchaseDetailsOpen} onToggle={event=>setRepurchaseDetailsOpen(event.currentTarget.open)}><summary>展開重銷認列詳情</summary>{repurchaseDetailsOpen&&<RepurchaseDetails q={q}/>}</details>
     </div>}</Result>;
 }
 

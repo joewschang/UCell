@@ -8818,7 +8818,7 @@
             "memberBearer": []
           }
         ],
-        "summary": "Stage 模擬支付本人的零售或重購訂單",
+        "summary": "Stage 模擬支付本人的零售或重銷訂單",
         "tags": [
           "Member - Formal enrollment"
         ]
@@ -19271,7 +19271,7 @@
             "adminBearer": []
           }
         ],
-        "summary": "認列重購超額EPV",
+        "summary": "認列重銷超額EPV",
         "tags": [
           "Admin - EPV"
         ]

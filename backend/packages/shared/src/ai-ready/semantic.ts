@@ -15,7 +15,7 @@ const terms = [
   ['PV', 'PV 類別', 'Abstract volume class; GPV/RPV/EPV are its concrete types, not four peer amounts.', 'CLASS', 'SA-20260917-13'],
   ['BV', 'BV 類別', 'Reserved abstract class with no active R1.0B monetary formula.', 'CLASS', 'SA-20260917-13'],
   ['GPV', '一般業績', 'Concrete general performance volume; preserve original recognition identity.', 'EVENT', 'PvLedger/VolumeRecognitionClassification'],
-  ['RPV', '重購業績', 'Concrete repurchase performance; not eligible-consumption currency.', 'EVENT', 'PvLedger/VolumeRecognitionClassification'],
+  ['RPV', '重銷業績', 'Concrete repurchase performance; not eligible-consumption currency.', 'EVENT', 'PvLedger/VolumeRecognitionClassification'],
   ['EPV', '超額業績', 'Concrete excess performance from authoritative monthly recognition; not accumulator epvAfter.', 'EVENT', 'PvLedger/VolumeRecognitionClassification'],
   ['Carry', '結算結轉', 'Stored/replayed left/right volume belongs to a Qualification, not its holder.', 'QUALIFICATION', 'BinaryCarry/ReplayCarryProjection'],
   ['PairPV', '配對業績', 'Stored paired general-performance volume at the authoritative weekly close.', 'QUALIFICATION', 'HistoricalReplaySnapshot'],
