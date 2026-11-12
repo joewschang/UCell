@@ -15440,6 +15440,119 @@
         ]
       }
     },
+    "/api/v1/admin/observability/organization/sponsor-map": {
+      "get": {
+        "description": "SUPER_ADMIN、MEMBERSHIP_OPS、COMPLIANCE_AUDIT 可檢視。同一截點包含已發球號且未作廢、未關閉的球，以及所有有效推薦邊的兩端。包括無上下線與未活躍的球。依建檔時間與資格 UUID 排序。回傳完整森林，資料缺漏或矛盾時整筆失敗。",
+        "operationId": "adminSponsorMap",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "完整推薦森林，沒有資料時 data 為空陣列。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "id",
+                          "parentId",
+                          "ballNo",
+                          "name",
+                          "plan",
+                          "active",
+                          "sponsorSequenceNo",
+                          "createdAt"
+                        ],
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "parentId": {
+                            "type": "string",
+                            "format": "uuid",
+                            "nullable": true
+                          },
+                          "ballNo": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "plan": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "active": {
+                            "type": "boolean"
+                          },
+                          "sponsorSequenceNo": {
+                            "type": "integer",
+                            "nullable": true
+                          },
+                          "createdAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          }
+                        }
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "required": [
+                        "asOf",
+                        "complete",
+                        "total"
+                      ],
+                      "properties": {
+                        "asOf": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "complete": {
+                          "type": "boolean",
+                          "enum": [
+                            true
+                          ]
+                        },
+                        "total": {
+                          "type": "integer",
+                          "minimum": 0
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "角色無權檢視公司推薦全貌。"
+          },
+          "409": {
+            "description": "SPONSOR_MAP_INCONSISTENT。存在缺失端點、重複上線或循環，未回傳部分樹。"
+          }
+        },
+        "security": [
+          {
+            "adminBearer": []
+          }
+        ],
+        "summary": "全公司推薦樹全貌",
+        "tags": [
+          "Admin - Observability"
+        ]
+      }
+    },
     "/api/v1/admin/observability/qualifications/{qualificationId}/operations": {
       "get": {
         "operationId": "adminQualificationOperations",

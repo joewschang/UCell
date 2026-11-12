@@ -5,6 +5,8 @@ import {Qualification} from '../../types/domain';
 import {Card,ErrorBox,Field,PageHeader,Badge} from '../../components/ui';
 import {SearchOption,SearchSelect} from '../../components/SearchSelect';
 import {TreeNode,TreeView} from '../../components/TreeView';
+import {QualificationDetail} from '../qualifications/QualificationDetail';
+import {SponsorOverview} from './SponsorOverview';
 
 export function OrganizationPage(){
   const [root,setRoot]=useState<SearchOption|null>(null);const [mode,setMode]=useState<'SPONSOR'|'BINARY'>('SPONSOR');
@@ -20,6 +22,7 @@ export function OrganizationPage(){
     catch(e){setError(e)}finally{setLoading(false)}
   }
   return <><PageHeader title="組織視圖" subtitle={uiText("Sponsor Tree 與 Binary Tree 永遠分離呈現；可依歷史時間點檢視有效組織。")}/>
+  {mode==='SPONSOR'&&<SponsorOverview selectedRootId={root?.id} selection={root} renderBall360={id=><QualificationDetail key={id} id={id}/>}/>}
   <div className="grid two"><Card title="查詢條件"><div className="form">
     <SearchSelect label={uiText("Root Qualification")} value={root} onChange={x=>{setRoot(x);setNodes([])}} search={qualSearch}/>
     <Field label="樹別"><select value={mode} onChange={e=>{setMode(e.target.value as any);setNodes([])}}><option value="SPONSOR">{uiText("Sponsor Tree")}</option><option value="BINARY">{uiText("Binary Tree")}</option></select></Field>
