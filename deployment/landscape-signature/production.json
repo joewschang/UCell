@@ -1,0 +1,37 @@
+{
+  "source": "485a0e42de69388c743da23a5b5b00c4eaa77baf",
+  "component": "ucell-prod-member",
+  "previous": {
+    "revision": "ucell-prod-member--rel-261112024245-323df4",
+    "digest": "sha256:323df44079366b43646abe75bf7e3f96acb6d1e82845554794d8d04e7bfc61e3"
+  },
+  "published": {
+    "revision": "ucell-prod-member--rel-261112035504-c9073c",
+    "digest": "sha256:c9073caecd7bf787ebedac0a861939b9769db0c86e6d8e8172393111284aa481",
+    "site": "https://member.ucell.life/",
+    "indexSha256": "8c9400805b8066adb7a16a345533854c3e1fd24c534cd8a070da13ed5d943e0d",
+    "entry": "/assets/member-signature-1f28f34eda608068.js",
+    "stylesheet": "/assets/member-signature-7692fa4d03953140.css"
+  },
+  "verification": {
+    "inputs": "Synthetic signatures using the program and styles fetched from the published member site",
+    "originalEqualArmPixels": [
+      398,
+      67
+    ],
+    "landscapeEqualArmPixels": [
+      134,
+      134
+    ],
+    "orientationLockedEqualArmPixels": [
+      134,
+      134
+    ],
+    "approvedResignReplayedRatio": 0.9954545454545455,
+    "engines": [
+      "Chromium",
+      "WebKit 26.0"
+    ],
+    "physicalLineDeviceTest": false
+  }
+}
