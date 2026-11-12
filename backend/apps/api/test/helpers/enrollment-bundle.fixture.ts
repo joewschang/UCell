@@ -1,5 +1,6 @@
-import {randomUUID} from 'node:crypto';
+import {createHash,randomBytes,randomUUID} from 'node:crypto';
 import {PrismaClient} from '@prisma/client';
+import {PiiCryptoService} from '@ucell/database';
 import {AuditService} from '../../src/common/audit/audit.service';
 import {OutboxService} from '../../src/common/outbox/outbox.service';
 import {IdempotencyService} from '../../src/common/idempotency/idempotency.service';
@@ -9,6 +10,37 @@ import {OrderService} from '../../src/modules/order/order.service';
 import {EnrollmentBundleService} from '../../src/modules/member-bundle/enrollment-bundle.service';
 import {EnrollmentBundleInput} from '../../src/modules/member-bundle/enrollment-bundle.dto';
 import {createActiveQualificationPackage} from './package-config.fixture';
+
+export async function prepareEnrollmentReview(db:PrismaClient,applicationId:string,actorId:string,pii:PiiCryptoService){
+  const legalName='合成群組審核會員';
+  const payload={legalName,hasSpouse:false};
+  const payloadHash=createHash('sha256').update(JSON.stringify(payload)).digest('hex');
+  const snapshot=pii.encrypt(payload);
+  const documentTypes=['IDENTITY_FRONT','IDENTITY_BACK','BANKBOOK_COVER','SIGNED_APPLICATION_AGREEMENT'] as const;
+  await db.$transaction([
+    db.formalMemberApplicationSnapshot.create({data:{formalMemberApplicationId:applicationId,version:1,payloadHash,
+      payloadCiphertext:snapshot.ciphertext,keyVersion:snapshot.keyVersion}}),
+    db.formalMemberApplication.update({where:{formalMemberApplicationId:applicationId},data:{status:'SUBMITTED',crossLineReviewStatus:'CLEAR',
+      currentSnapshotHash:payloadHash,applicantIdentityFingerprint:randomBytes(32).toString('hex')}}),
+    db.formalApplicationDocument.createMany({data:documentTypes.map(documentType=>({
+      formalMemberApplicationId:applicationId,documentType,storageObjectKey:'fixture/'+applicationId+'/'+documentType,
+      contentSha256:createHash('sha256').update(applicationId+documentType).digest('hex'),mimeType:'image/png',sizeBytes:150,
+      uploadedAt:new Date(),status:'PRESENT',malwareScanStatus:'CLEAN',reviewedBy:actorId,reviewedAt:new Date()
+    }))})
+  ]);
+  return legalName;
+}
+
+/** Emulate an old checkout writer omitting payment_policy for the named fixture only.
+ * Production rows created before the migration receive this identical column default. */
+export async function markPreexistingCheckout(db:PrismaClient,applicationId:string){
+  await db.$executeRawUnsafe('CREATE TABLE IF NOT EXISTS public.legacy_checkout_fixture(id uuid PRIMARY KEY)');
+  await db.$executeRawUnsafe(`CREATE OR REPLACE FUNCTION public.legacy_checkout_fixture_policy() RETURNS trigger LANGUAGE plpgsql AS $$
+    BEGIN IF EXISTS(SELECT 1 FROM public.legacy_checkout_fixture WHERE id=NEW.application_id) THEN NEW.payment_policy:='QUALIFICATION_ONLY'; END IF; RETURN NEW; END $$`);
+  await db.$executeRawUnsafe(`CREATE OR REPLACE TRIGGER legacy_checkout_fixture BEFORE INSERT ON membership.enrollment_bundle
+    FOR EACH ROW EXECUTE FUNCTION public.legacy_checkout_fixture_policy()`);
+  await db.$executeRaw`INSERT INTO public.legacy_checkout_fixture VALUES(${applicationId}::uuid) ON CONFLICT DO NOTHING`;
+}
 
 export async function createEnrollmentBundleFixture(db:PrismaClient,sponsorCode?:string) {
   const person=await db.person.create({data:{legalName:'Multi qualification fixture',status:'EFFECTIVE',membershipState:'NETWORK_MEMBER'}});

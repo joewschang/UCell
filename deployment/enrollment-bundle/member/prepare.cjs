@@ -5,8 +5,8 @@ const repo=path.resolve(__dirname,'../../..');
 const member=path.join(repo,'member'),memberRequire=createRequire(path.join(member,'package.json'));
 const esbuild=createRequire(memberRequire.resolve('vite/package.json'))('esbuild');
 const hash=value=>crypto.createHash('sha256').update(value).digest('hex');
-const original='1989c5a6e04e174775a1897b8fa27caecd8c2506ce43d9cc40cb3fa8458fc74e';
-const baseDigest='sha256:323df44079366b43646abe75bf7e3f96acb6d1e82845554794d8d04e7bfc61e3';
+const original='1f28f34eda608068e0fb622f2402356cf22bbf359b1cfcd605e4585f802d9aac';
+const baseDigest='sha256:c9073caecd7bf787ebedac0a861939b9769db0c86e6d8e8172393111284aa481';
 const aliases={
   react:'export const {useState,useRef,useEffect}=UCellGroupHost.React',
   'react/jsx-runtime':'export const {jsx,jsxs,Fragment}=UCellGroupHost.jsx',
@@ -21,7 +21,7 @@ const aliases={
 };
 async function compile(){
   const output=await esbuild.build({
-    stdin:{contents:"export {default as Editor} from './src/enrollment-bundle/EnrollmentBundle'; export {default as Progress} from './src/enrollment-bundle/BundleProgress';",resolveDir:member,loader:'tsx'},
+    stdin:{contents:"export {default as Editor, BundleLaunch as Launch} from './src/enrollment-bundle/EnrollmentBundle'; export {default as Progress, GroupOrderPaymentNote as PaymentNote} from './src/enrollment-bundle/BundleProgress';",resolveDir:member,loader:'tsx'},
     jsx:'automatic',bundle:true,format:'iife',globalName:'UCellEnrollmentBundle',target:'es2020',write:false,minify:true,loader:{'.css':'empty'},
     plugins:[{name:'reuse-live-member-services',setup(build){
       build.onResolve({filter:/.*/},args=>Object.hasOwn(aliases,args.path)?{path:args.path,namespace:'live'}:undefined);
@@ -39,6 +39,7 @@ function integrate(source,extension){
   assert(begin>0&&end>begin);
   let form=source.slice(begin,end);
   const updates=[
+    ['w.current=!0;const T=e.data;', 'w.current=!0;const T=e.data;if(T.bundlePayment&&T.application?.id===new URLSearchParams(window.location.search).get("bundlePayment")){p(4);return}'],
     ['function Xm(){const [pdfKey','function Xm(){const [bundleEditor,setBundleEditor]=h.useState(false),[bundleReceipt,setBundleReceipt]=h.useState(null);const [pdfKey'],
     ['const S=e.data,C=S.paidPackages.length>0','const S=e.data,BP=S.bundlePayment,BM=BP||bundleReceipt,C=BP?BP.rootPaid:S.paidPackages.length>0'],
     ['N=C||!!l&&R.some(T=>T.orderId===u)','N=BM?!!(BP?.rootPaid||BP?.paymentReported):C||!!l&&R.some(T=>T.orderId===u)'],
@@ -47,18 +48,20 @@ function integrate(source,extension){
     [':P?r.jsx(el,{}):',':P?r.jsxs(r.Fragment,{children:[groupPanel,r.jsx(el,{})]}):'],
     ['D===4&&!C&&!R.length?', 'D===4&&!C&&!R.length&&!BM?'],
     ['onClick:()=>p(C?5:R.length?4:3),children:C?"繼續確認送審":R.length?', 'onClick:()=>p(C||BM&&N?5:BM||R.length?4:3),children:C||BM&&N?"繼續確認送審":BM||R.length?'],
-    [':f===3&&r.jsxs(r.Fragment,{children:[r.jsx("h2",{children:"選擇會員資格套組"})',':f===3&&BM?r.jsx(A,{onClick:()=>p(4),children:"查看整組訂單與付款"}):f===3&&bundleEditor?r.jsx(UCellEnrollmentBundle.Editor,{applicationId:I,onClose:()=>setBundleEditor(false),onCreated:receipt=>{setBundleReceipt(receipt);setBundleEditor(false);p(4);e.retry()}}):f===3&&r.jsxs(r.Fragment,{children:[r.jsx("h2",{children:"選擇會員資格套組"})'],
-    [':r.jsx(dd,{enrollmentFlow:!0,onCreated:()=>{e.retry(),p(4)}})',':r.jsxs(r.Fragment,{children:[I&&S.application?.sourceChannel==="MEMBER_WEB"&&(S.application?.applicantType??S.draft?.payload?.applicantType)==="INDIVIDUAL"&&["DRAFT","NEEDS_MORE_INFO"].includes(S.application?.status)&&r.jsxs("section",{className:"card eb-launch",children:[r.jsx("h3",{children:"同時申購多顆球"}),r.jsx("p",{children:"為每顆球選擇資格與重銷，預覽組織後合併支付資格款。"}),r.jsx(A,{onClick:()=>setBundleEditor(true),children:"開始多球申購"})]}),r.jsx(dd,{enrollmentFlow:!0,onCreated:()=>{e.retry(),p(4)}})]})'],
+    [':f===3&&r.jsxs(r.Fragment,{children:[r.jsx("h2",{children:"選擇會員資格套組"})',':f===3&&BM?r.jsx(A,{onClick:()=>p(4),children:"查看整組訂單與付款"}):f===3&&bundleEditor?r.jsx(UCellEnrollmentBundle.Editor,{plan:bundleEditor,applicationId:I,onClose:()=>setBundleEditor(false),onCreated:receipt=>{setBundleReceipt(receipt);setBundleEditor(false);p(4);e.retry()}}):f===3&&r.jsxs(r.Fragment,{children:[r.jsx("h2",{children:"選擇會員資格套組"})'],
+    [':r.jsx(dd,{enrollmentFlow:!0,onCreated:()=>{e.retry(),p(4)}})',':r.jsxs(r.Fragment,{children:[I&&S.application?.sourceChannel==="MEMBER_WEB"&&(S.application?.applicantType??S.draft?.payload?.applicantType)==="INDIVIDUAL"&&["DRAFT","NEEDS_MORE_INFO"].includes(S.application?.status)&&r.jsx(UCellEnrollmentBundle.Launch,{choose:setBundleEditor}),r.jsx(dd,{enrollmentFlow:!0,onCreated:()=>{e.retry(),p(4)}})]})'],
     ['f===4&&r.jsxs("section",{className:"card",children:[r.jsx("h2",{children:"付款與訂單確認"})','f===4&&BM?r.jsxs(r.Fragment,{children:[groupPanel,N&&r.jsx(A,{className:"primary",onClick:()=>p(5),children:"繼續送出申請 →"})]}):f===4&&r.jsxs("section",{className:"card",children:[r.jsx("h2",{children:"付款與訂單確認"})'],
-    ['"申請套組：",C?','"申請套組：",BP?BP.qualificationCount+" 顆資格合併付款":C?'],
+    ['"申請套組：",C?','"申請套組：",BP?BP.qualificationCount+" 顆球，同組送審":C?'],
     ['"付款狀態：",C?', '"付款狀態：",BP?(BP.rootPaid?"合併款項已確認":"已回報合併款項，待核對"):C?'],
     ['ME(I,v.current,C?void 0:', 'ME(I,v.current,BM||C?void 0:'],
   ];
   for(const [key,value] of updates)form=replace(form,key,value);
-  form=form.replaceAll('"請先選擇有效訂單與付款方式。"', '(BM?"請先完成資格合併付款並回報。":"請先選擇有效訂單與付款方式。")');
+  form=form.replaceAll('"請先選擇有效訂單與付款方式。"', '(BM?"請先回報這組訂單的合併匯款。":"請先選擇有效訂單與付款方式。")');
   let merged=source.slice(0,begin)+extension+'\n'+form+source.slice(end);
   merged=replace(merged,'function lo({method:e})','function lo({method:e,grouped=false})');
   merged=replace(merged,'r.jsx("p",{children:"請先建立訂單，再依訂單金額匯款。','grouped?r.jsx("p",{children:"匯款後請在本頁回報一次。"}):r.jsx("p",{children:"請先建立訂單，再依訂單金額匯款。');
+  const orderAnchor='o&&r.jsxs(r.Fragment,{children:[r.jsxs("p",{children:["會員編號：",((w=o.member)';
+  merged=replace(merged,orderAnchor,'o?.enrollmentBundle&&(o.enrollmentBundle.combinedPayment||o.enrollmentBundle.isEntry)?r.jsx(UCellEnrollmentBundle.PaymentNote,{applicationId:o.enrollmentBundle.applicationId}):'+orderAnchor);
   const guidance='),r.jsxs("ol",{className:"pw-steps",children:[';
   return replace(replace(merged,guidance,'),e.bundleBallCount&&r.jsx("p",{children:"本組共 "+e.bundleBallCount+" 球。選定第 1 球的位置後，其餘球會依預排一起安置。"}'+'),r.jsxs("ol",{className:"pw-steps",children:['),
     'children:"選擇安置位置"})]},d.placementReference','children:d.bundleBallCount?"選擇整組 "+d.bundleBallCount+" 球的位置":"選擇安置位置"})]},d.placementReference');

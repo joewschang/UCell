@@ -1807,6 +1807,7 @@ model CommercialOfferingVersion {
 model Order {
   bundleQualificationOrder EnrollmentBundleBall? @relation("BundleQualificationOrder")
   bundleRepurchaseOrder EnrollmentBundleBall? @relation("BundleRepurchaseOrder")
+  bundlePaymentAllocation EnrollmentBundleAllocation?
   couponRedemption CouponRedemption?
   orderId                 String       @id @default(uuid()) @map("order_id") @db.Uuid
   orderNo                 BigInt       @unique @default(autoincrement()) @map("order_no")
@@ -5389,6 +5390,8 @@ model CompensationAuditCase {
 
 model EnrollmentBundle {
   bundleId String @id @map("bundle_id") @db.Uuid
+  planCode String @default("CUSTOM") @map("plan_code")
+  paymentPolicy String @default("QUALIFICATION_ONLY") @map("payment_policy")
   applicationId String @map("application_id") @db.Uuid
   personId String @map("person_id") @db.Uuid
   requestHash String @map("request_hash")
@@ -5430,7 +5433,19 @@ model EnrollmentBundlePayment {
   actorId String @map("actor_id") @db.Uuid
   requestId String @map("request_id")
   bundle EnrollmentBundle @relation(fields:[bundleId],references:[bundleId],onDelete:Restrict,onUpdate:NoAction)
+  allocations EnrollmentBundleAllocation[]
   @@map("enrollment_bundle_payment")
+  @@schema("commerce")
+}
+
+model EnrollmentBundleAllocation {
+  orderId String @id @map("order_id") @db.Uuid
+  bundleId String @map("bundle_id") @db.Uuid
+  amount Decimal @db.Decimal(18,2)
+  order Order @relation(fields:[orderId],references:[orderId],onDelete:NoAction,onUpdate:NoAction)
+  payment EnrollmentBundlePayment @relation(fields:[bundleId],references:[bundleId],onDelete:NoAction,onUpdate:NoAction)
+  @@index([bundleId],map:"enrollment_bundle_allocation_bundle_idx")
+  @@map("enrollment_bundle_allocation")
   @@schema("commerce")
 }
 

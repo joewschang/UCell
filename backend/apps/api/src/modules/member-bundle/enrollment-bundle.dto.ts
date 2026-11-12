@@ -29,6 +29,7 @@ class BundleBallInput {
 }
 
 export class EnrollmentBundleInput {
+  @ApiPropertyOptional({enum:['EXCELLENCE']}) @IsOptional() @IsIn(['EXCELLENCE']) planCode?:'EXCELLENCE';
   @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(80) sponsorCode?:string;
   @ApiPropertyOptional({enum:['DELIVERY','COMPANY_PICKUP']}) @IsOptional() @IsIn(['DELIVERY','COMPANY_PICKUP']) fulfillmentMethod?:'DELIVERY'|'COMPANY_PICKUP';
   @ApiPropertyOptional() @IsOptional() @IsISO8601() deliveryUpdatedAt?:string;

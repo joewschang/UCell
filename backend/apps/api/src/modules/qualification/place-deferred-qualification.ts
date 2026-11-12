@@ -4,6 +4,7 @@ import {createHash,randomUUID} from 'node:crypto';
 import {AuditService} from '../../common/audit/audit.service';
 import {OrganizationService} from '../organization/organization.service';
 import {assertQualificationActivation} from './qualification-activation-gate';
+import {activateBundleForQualification} from '../member-bundle/excellence-activation';
 type PlacementInput={qualificationId:string;binaryParentQualificationId:string;side:'LEFT'|'RIGHT';reasonCode?:string};
 
 export async function placeDeferredQualification(tx:Prisma.TransactionClient,organization:OrganizationService,audit:AuditService,actorPersonId:string|undefined,placedByType:'SPONSOR_OWNER'|'ADMIN_OVERRIDE'|'SYSTEM_AUTO',input:PlacementInput,requestId:string,bundle:boolean){
@@ -40,4 +41,5 @@ export async function placePlannedDescendants(tx:Prisma.TransactionClient,organi
   for (const child of descendants??[]) {
     await placeDeferredQualification(tx,organization,audit,undefined,'SYSTEM_AUTO',{...child,reasonCode:'ENROLLMENT_BUNDLE_LEVEL_ORDER'},requestId,true);
   }
+  if(descendants?.length)await activateBundleForQualification(tx,descendants[0].qualificationId,requestId);
 }

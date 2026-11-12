@@ -48,7 +48,7 @@ const url=process.env.PHASE2_TEST_DATABASE_URL;
     const select=(personId:string,code:string,key=randomUUID())=>f.service.setRootSponsor(personId,f.applicationId,code,key,randomUUID());
     await db.formalMemberApplication.update({where:{formalMemberApplicationId:f.applicationId},data:{status:'SUBMITTED',submittedAt:new Date()}});
     await db.$executeRaw`INSERT INTO commerce.enrollment_bundle_payment_report(bundle_id,amount,account_last_five,paid_at)
-      VALUES(${replacement.bundleId}::uuid,45000,'12345',now())`;
+      VALUES(${replacement.bundleId}::uuid,${replacement.payableTotal}::numeric,'12345',now())`;
     await expect(select(other.personId,sponsor.qualification.ballNo)).rejects.toMatchObject({response:{code:'FORMAL_APPLICATION_NOT_FOUND'}});
     expect(await f.service.sponsorCandidate(f.personId,f.applicationId,sponsor.qualification.ballNo!)).toEqual({ballNo:sponsor.qualification.ballNo,name:sponsor.holder.legalName});
     await expect(f.service.sponsorCandidate(other.personId,f.applicationId,sponsor.qualification.ballNo!)).rejects.toMatchObject({response:{code:'FORMAL_APPLICATION_NOT_FOUND'}});
@@ -57,8 +57,9 @@ const url=process.env.PHASE2_TEST_DATABASE_URL;
     expect((await select(f.personId,sponsor.qualification.ballNo)).value.rootSponsor).toEqual(selected.value.rootSponsor);
     expect(await db.qualificationSponsorSelectionEvidence.count({where:{qualificationId:replacement.balls[0].qualificationId}})).toBe(1);
     await expect(select(f.personId,second.qualification.ballNo)).rejects.toMatchObject({response:{code:'BUNDLE_ROOT_SPONSOR_EXISTS'}});
-    await f.orders.confirmEnrollmentPayment(replacement.balls[0].qualification.orderId,{amount:replacement.qualificationTotal,
+    expect(replacement).toMatchObject({planCode:'CUSTOM',paymentPolicy:'COMBINED',payableTotal:'51000.00'});
+    await f.orders.confirmEnrollmentPayment(replacement.balls[0].qualification.orderId,{amount:replacement.payableTotal,
       paymentMethod:'BANK_TRANSFER',referenceNo:randomUUID(),occurredAt:new Date().toISOString()},randomUUID(),randomUUID(),sponsor.actor.personId!);
-    await expect(select(f.personId,sponsor.qualification.ballNo)).rejects.toMatchObject({response:{code:'BUNDLE_SPONSOR_UNAVAILABLE'}});
+    expect((await select(f.personId,sponsor.qualification.ballNo)).value.rootSponsor).toEqual(selected.value.rootSponsor);
   },60000);
 });

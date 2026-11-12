@@ -2,7 +2,7 @@ import {useRef,useState} from 'react';
 import {Link} from 'react-router-dom';
 import {useResource} from '../useResource';
 import {bundleError,getBundle,releaseExpired,type BundleOrder,type BundlePaymentSummary,type BundleReceipt} from './api';
-import {money,placementLabel} from './model';
+import {money,packageLabel,placementLabel} from './model';
 import BankTransferDetails from '../BankTransferDetails';
 import RootSponsor from './SponsorField';
 import BundlePayment from './BundlePayment';
@@ -13,20 +13,25 @@ const paidStates=['PAID','FULFILLED','PARTIAL_RETURN'];
 const closedStates=['CANCELLED','CANCELED','EXPIRED','VOIDED','RETURNED','REFUNDED'];
 const placementLabels:Record<string,string>={PLACED:'已安置',EFFECTIVE:'已生效',PLACEMENT_PENDING:'待安置',PLACEMENT_OVERDUE:'安置待處理',BALL_SETUP_PENDING:'待設定推薦球',RETURN_REVIEW_PENDING:'退貨審查中',DRAFT:'已預排',PENDING:'已預排',PLANNED:'已預排',AWAITING_APPROVAL:'待審核',AWAITING_PAYMENT:'待付款'};
 function Order({order,label}:{order:BundleOrder;label:string}) {
-  return <div className="eb-order"><div><span>{label} · {order.packageName}</span><small>訂單 {order.publicOrderNo||order.orderNo||order.orderId}</small></div>
+  return <div className="eb-order"><div><span>{label} · {packageLabel(order.packageName)}</span><small>訂單 {order.publicOrderNo||order.orderNo||order.orderId}</small></div>
     <div><strong>NT$ {money(order.total)}</strong><small>{orderLabels[order.status]??'請查看訂單進度'}</small></div></div>;
 }
 export function ReceiptDetails({receipt,paymentLink}:{receipt:BundleReceipt;paymentLink?:(order:BundleOrder)=>string}) {
-  return <><p>重銷預選合計 NT$ {money(receipt.repurchaseTotal)}，各球生效後另行付款。</p>
+  const combined=receipt.paymentPolicy==='COMBINED';
+  return <><p>{combined?'本次合併款項已包含所選重銷 NT$ '+money(receipt.repurchaseTotal)+'。完成審核、核帳及安置後，資格與其重銷一併生效。':'重銷預選合計 NT$ '+money(receipt.repurchaseTotal)+'，各球生效後另行付款。'}</p>
     {receipt.balls.map(ball=><details key={ball.position} className="eb-receipt-line">
       <summary><span>第 {ball.position} 球　{ball.ballNo??placementLabel(ball.position)}</span><small>{ball.qualificationStatus==='EFFECTIVE'?'已生效':placementLabels[ball.placementStatus??'']??'待完成安置'}</small></summary>
-      <p>{ball.position===1?'組外推薦　'+([receipt.rootSponsor?.ballNo,receipt.rootSponsor?.name].filter(Boolean).join(' · ')||'待核對'):
+      <p>{ball.position===1?'組外推薦　'+([receipt.rootSponsor?.ballNo,receipt.rootSponsor?.name].filter(Boolean).join(' · ')||'尚未指定'):
         '推薦球為第 '+ball.parentPosition+' 球 · '+placementLabel(ball.position)}</p>
       <Order label="資格（合併付款）" order={ball.qualification}/>
-      {ball.repurchase&&<><Order label="本球重銷" order={ball.repurchase}/>
-        {ball.repurchasePayable?<div><p>本球重銷付款請使用訂單號 {ball.repurchase.publicOrderNo||ball.repurchase.orderNo||ball.repurchase.orderId}。</p>{paymentLink?<Link to={paymentLink(ball.repurchase)}>前往第 {ball.position} 球的重銷付款 →</Link>:<details><summary>查看本球重銷收款資料</summary><BankTransferDetails method="BANK_TRANSFER"/></details>}</div>:
-         !paidStates.includes(ball.repurchase.status)&&!closedStates.includes(ball.repurchase.status)&&<p>待本球生效後開放重銷付款。</p>}</>}
+      {ball.repurchase&&<><Order label={combined?'本球重銷（合併付款）':'本球重銷'} order={ball.repurchase}/>
+        {!combined&&(ball.repurchasePayable?<div><p>本球重銷付款請使用訂單號 {ball.repurchase.publicOrderNo||ball.repurchase.orderNo||ball.repurchase.orderId}。</p>{paymentLink?<Link to={paymentLink(ball.repurchase)}>前往第 {ball.position} 球的重銷付款 →</Link>:<details><summary>查看本球重銷收款資料</summary><BankTransferDetails method="BANK_TRANSFER"/></details>}</div>:
+         !paidStates.includes(ball.repurchase.status)&&!closedStates.includes(ball.repurchase.status)&&<p>待本球生效後開放重銷付款。</p>)}</>}
     </details>)}</>;
+}
+export function GroupOrderPaymentNote({applicationId}:{applicationId:string}) {
+  return <div className="eb-payment"><p>這筆訂單已納入整組付款。請到整組訂單查看應付總額與匯款進度。</p>
+    <Link to={'/membership/upgrade?bundlePayment='+encodeURIComponent(applicationId)}>查看整組付款</Link></div>;
 }
 export default function BundleProgress({applicationId,payment,initial,onRefresh,onReleased,paymentLink}:{applicationId:string;payment?:BundlePaymentSummary|null;
   initial?:BundleReceipt;paymentLink?:(order:BundleOrder)=>string;onRefresh?:()=>void;onReleased?:()=>void}) {
@@ -42,13 +47,21 @@ export default function BundleProgress({applicationId,payment,initial,onRefresh,
     try{await releaseExpired(applicationId,receipt.bundleId,releaseKey.current);setConfirm(false);refresh();onReleased?.();}
     catch(e){setError(bundleError(e));refresh();}finally{flight.current=false;setBusy(false);}
   }
-  const confirmed=!!receipt&&receipt.balls.every(b=>paidStates.includes(b.qualification.status));
-  const payable=!!receipt&&receipt.balls.every(b=>!closedStates.includes(b.qualification.status)&&
-    (!b.qualification.paymentDeadline||new Date(b.qualification.paymentDeadline).getTime()>Date.now()));
-  return <section className="eb eb-progress" aria-label="多球訂單進度"><h2>多球訂單進度</h2>
+  const combined=receipt?.paymentPolicy==='COMBINED';
+  const confirmed=!!receipt&&(combined&&payment?.bundleId===receipt.bundleId?payment.rootPaid:
+    receipt.balls.every(b=>paidStates.includes(b.qualification.status)&&(!combined||!b.repurchase||paidStates.includes(b.repurchase.status))));
+  const payable=!!receipt&&receipt.balls.every(b=>(combined&&b.repurchase?[b.qualification,b.repurchase]:[b.qualification]).every(order=>
+    !closedStates.includes(order.status)&&(!order.paymentDeadline||new Date(order.paymentDeadline).getTime()>Date.now())));
+  // A reconciled combined payment stays valid after the original order deadline.
+  // The sponsor is attached directly to the draft root, before setup or placement.
+  const root=receipt?.balls.find(b=>b.position===1);
+  const afterCollection=combined&&confirmed&&root?.qualificationStatus==='DRAFT';
+  const canAssign=receipt&&!receipt.rootSponsor&&!receipt.mayRestart&&(afterCollection||!confirmed&&payable);
+  return <section className="eb eb-progress" aria-label="多球訂單進度"><h2>{receipt?.planCode==='EXCELLENCE'?'卓越方案訂單進度':'多球訂單進度'}</h2>
     {payment&&<p role="status">{payment.paidQualifications}／{payment.qualificationCount} 筆資格訂單已確認款項。</p>}
     {state.error&&<p role="alert">{state.error}</p>}{!receipt&&!state.error&&<p role="status">{state.data===null?'尚未找到這組訂單。':'正在查詢訂單…'}</p>}
-    {receipt&&<>{!receipt.rootSponsor&&!confirmed&&payable&&!receipt.mayRestart&&<RootSponsor applicationId={applicationId} onSaved={refresh}/>}<BundlePayment key={receipt.bundleId} receipt={receipt} confirmed={confirmed} canTransfer={payable&&!receipt.mayRestart} onReported={refresh}/>
+    {receipt&&<>{receipt.rootSponsor&&<p role="status">第 1 球組外推薦　{[receipt.rootSponsor.ballNo,receipt.rootSponsor.name].filter(Boolean).join(' · ')}</p>}
+      {canAssign&&<RootSponsor applicationId={applicationId} onSaved={refresh} afterCollection={afterCollection}/>}<BundlePayment key={receipt.bundleId} receipt={receipt} confirmed={confirmed} canTransfer={payable&&!receipt.mayRestart} onReported={refresh}/>
       <ReceiptDetails receipt={receipt} paymentLink={paymentLink}/></>}
     {receipt?.mayRestart&&(confirm?<div className="eb-restart"><p>這組訂單已逾期。若曾匯款，請先聯繫公司核對。作廢後，這組球位及預選重銷須重新選擇。</p>
       <button disabled={busy} type="button" onClick={restart}>作廢這組未付款訂單並重新選購</button>

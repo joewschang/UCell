@@ -36,8 +36,8 @@ export async function reportBundleTransfer(tx:Prisma.TransactionClient,applicati
   const amount=new Prisma.Decimal(body.amount);
   // The member reports the minute shown on the transfer slip. Finance records the actual receipt separately.
   const firstReportableMinute=Math.floor(window.start.getTime()/60000)*60000;
-  if(!amount.isPositive()||!amount.eq(summary.qualificationTotal)||!Number.isFinite(at.getTime())||at.getTime()<firstReportableMinute||at>=window.deadline||at.getTime()>Date.now()+60000)
-    throw new UnprocessableEntityException({code:'BUNDLE_TRANSFER_INVALID',message:'請核對整組資格應付金額及實際匯款時間。'});
+  if(!amount.isPositive()||!amount.eq(summary.payableTotal)||!Number.isFinite(at.getTime())||at.getTime()<firstReportableMinute||at>=window.deadline||at.getTime()>Date.now()+60000)
+    throw new UnprocessableEntityException({code:'BUNDLE_TRANSFER_INVALID',message:'請核對整組應付金額及實際匯款時間。'});
   await tx.$executeRaw`INSERT INTO commerce.enrollment_bundle_payment_report(bundle_id,amount,account_last_five,paid_at)
     VALUES (${group.id}::uuid,${amount},${body.accountLastFive},${at})`;
   return readBundleTransfer(tx,applicationId,personId);

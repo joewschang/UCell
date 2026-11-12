@@ -1,3 +1,4 @@
+import {EnrollmentReview} from './EnrollmentReview';
 import {uiValue,uiText,domainLabel} from "../../../../shared/design-system/i18n";
 import {ConfirmAction} from '../../components/ConfirmAction';
 import {useQuery,useQueryClient} from '@tanstack/react-query';
@@ -87,6 +88,7 @@ export function ApplicationsPage(){
    <ErrorBox error={formalDetail.error}/><ErrorBox error={formalDocuments.error}/>
    {!formalDetail.data?.data?<p className="muted">{uiText("正在載入受保護 KYC 詳情…")}</p>:(()=>{const d=formalDetail.data.data,p=d.payload??{},docs=formalDocuments.data?.data??[];return <>
     <div className="status-strip"><Badge tone={d.status==='APPROVED'?'ok':d.status==='UNDER_REVIEW'?'warn':'neutral'}>{domainLabel(d.status)}</Badge><span>{d.applicantType} · {d.sourceChannel}</span></div>
+    {d.enrollmentBundle&&<EnrollmentReview group={d.enrollmentBundle} status={d.status} blocked={busy} onBusy={setBusy} refresh={()=>formalDetail.refetch()}/>}
     <dl className="detail-grid">
      <dt>會員編號</dt><dd>{d.legalEntity?.memberNo??d.person?.memberNo??'—'}</dd>
      <dt>申請主體</dt><dd>{d.legalEntity?.registeredName??p.legalName??d.person?.legalName??'—'}</dd>
@@ -103,9 +105,9 @@ export function ApplicationsPage(){
      {p.hasSpouse&&d.spouseVerificationStatus!=='VERIFIED'&&<button disabled={busy} onClick={()=>formalAction('spouse-verification')}>確認配偶資料</button>}
      {d.crossLineReviewStatus!=='CLEAR'&&<button disabled={busy} onClick={()=>formalAction('cross-line-review')}>執行跨線審查</button>}
      {['DRAFT','NEEDS_MORE_INFO'].includes(d.status)&&<button className="primary" disabled={busy} onClick={()=>formalAction('begin-review')}>開始正式審查</button>}
-     {d.status==='UNDER_REVIEW'&&<ConfirmAction className="primary" disabled={busy} onConfirm={()=>formalAction('approve')}>核准正式會員</ConfirmAction>}
+     {d.status==='UNDER_REVIEW'&&<ConfirmAction className="primary" disabled={busy} onConfirm={()=>formalAction('approve')}>{d.enrollmentBundle?'核准整組 '+d.enrollmentBundle.balls.length+' 顆資格':'核准正式會員'}</ConfirmAction>}
     </div>
-    <p className="muted">{uiText("核准只建立／更新正式會員身分。法人或自然人要取得新 Ball，仍必須另行購買核准的資格套組並完成 Sponsor／Binary 流程。")}</p>
+    {!d.enrollmentBundle&&<p className="muted">{uiText("核准只建立／更新正式會員身分。法人或自然人要取得新 Ball，仍必須另行購買核准的資格套組並完成 Sponsor／Binary 流程。")}</p>}
    </>})()}
   </Card>}
  </>

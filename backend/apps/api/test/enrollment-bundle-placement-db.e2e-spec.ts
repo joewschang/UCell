@@ -12,7 +12,7 @@ import {internalSponsorAtPayment} from '../src/modules/qualification/enrollment-
 import {QualificationPlacementService} from '../src/modules/qualification/qualification-placement.service';
 import {SponsorResolver} from '../src/modules/qualification/sponsor-resolver.service';
 import {createEffectiveMemberSponsorFixture} from './helpers/member-sponsor.fixture';
-import {createEnrollmentBundleFixture} from './helpers/enrollment-bundle.fixture';
+import {createEnrollmentBundleFixture,markPreexistingCheckout} from './helpers/enrollment-bundle.fixture';
 import {quoteEntry} from '../src/modules/coupon/entry-pricing';
 
 const url=process.env.PHASE2_TEST_DATABASE_URL;
@@ -39,6 +39,7 @@ describeDb('Formal enrollment group placement on PostgreSQL',()=>{
     const rp=await db.packageProfileVersion.findUniqueOrThrow({where:{packageProfileVersionId:sample.repurchase.packageVersionId},include:{profile:true}});
     const rpQuote=await quoteEntry(db as any,rp,undefined,person.personId);
     const repurchase={...sample.repurchase,quoteHash:rpQuote.quoteHash};
+    await markPreexistingCheckout(db,app.formalMemberApplicationId);
     const group=(await checkout.create(person.personId,app.formalMemberApplicationId,{sponsorCode:fixture.qualification.ballNo!,fulfillmentMethod:'COMPANY_PICKUP',
       balls:Array.from({length:4},(_,index)=>({qualification:{...input,quoteHash:pricing.quoteHash},...(index===1?{repurchase}:{})}))},randomUUID(),randomUUID())).value;
     const ids=group.balls.map(ball=>ball.qualificationId);

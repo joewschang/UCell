@@ -11,7 +11,7 @@ export function useSponsor(applicationId:string,code:string) {
 export function sponsorDescription(candidate:NonNullable<ReturnType<typeof useSponsor>['data']>){
   return candidate.ballNo+' · '+candidate.name;
 }
-export default function RootSponsor({applicationId,onSaved}:{applicationId:string;onSaved:()=>void}){
+export default function RootSponsor({applicationId,onSaved,afterCollection=false}:{applicationId:string;onSaved:()=>void;afterCollection?:boolean}){
   const [code,setCode]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState('');
   const candidate=useSponsor(applicationId,code),last=useRef({code:'',key:''}),lock=useRef(false);
   async function save(){
@@ -25,7 +25,7 @@ export default function RootSponsor({applicationId,onSaved}:{applicationId:strin
     <label className="eb-label">第 1 球推薦球號<input value={code} maxLength={40} autoCapitalize="characters" onChange={e=>setCode(e.target.value.trim().toUpperCase())}/></label>
     {candidate.data&&<p role="status">推薦球已核對　{sponsorDescription(candidate.data)}</p>}
     {candidate.error&&<p role="alert">{candidate.error}</p>}{error&&<p role="alert">{error}</p>}
-    <p>請在公司確認收款前核對推薦人，設定後如需更正請洽承辦人。</p>
+    <p>{afterCollection?'整組款項已核對。請補填第 1 球的組外推薦球，讓承辦人員接續安置。':'請核對第 1 球的組外推薦球。'}設定後如需更正，請洽承辦人。</p>
     <button type="button" disabled={!candidate.data||busy} onClick={save}>確認第 1 球推薦人</button>
   </div></section>;
 }

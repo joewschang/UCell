@@ -1,4 +1,5 @@
 import {internalSponsorAtPayment} from '../qualification/enrollment-bundle-placement';
+import {activateEnrollmentBundleIfReady} from '../member-bundle/excellence-activation';
 import {adminBundlePayment,bundleForQualificationOrder,confirmBundlePayment,guardSinglePayment} from './enrollment-bundle-receipt';
 import {packageFulfillment} from './package-fulfillment';
 import {assertSingleApplicationCheckout, assertRepurchaseBallEffective} from '../member-bundle/bundle-order-guards';
@@ -376,10 +377,23 @@ export class OrderService {
     const bundleId=await bundleForQualificationOrder(this.prisma,orderId);
     if(!bundleId)throw new ConflictException({code:'ENROLLMENT_BUNDLE_NOT_FOUND'});
     return this.idempotency.execute('admin:enrollment-bundle:payment:'+bundleId,key,dto,
-      tx=>confirmBundlePayment(tx,bundleId,dto,actorId,requestId,this.confirmPaymentInTransaction.bind(this)),{timeout:120000,retryOnConflict:true});
+      async tx=>{
+        const receipt=await confirmBundlePayment(tx,bundleId,dto,actorId,requestId,this.confirmPaymentInTransaction.bind(this));
+        const [bundle]=await tx.$queryRaw<{id:string}[]>`SELECT application_id AS id FROM membership.enrollment_bundle
+          WHERE bundle_id=${bundleId}::uuid AND payment_policy='COMBINED'`;
+        if(bundle)await activateEnrollmentBundleIfReady(tx,bundle.id,requestId);
+        return receipt;
+      },{timeout:120000,retryOnConflict:true});
   }
 
-  private async confirmPaymentInTransaction(tx:Prisma.TransactionClient,orderId:string,dto:PaymentConfirmationDto,key:string,requestId:string,actorId?:string,reviewMode?:'MANUAL_ADMIN') {
+  static applyEnrollmentAllocation(tx:Prisma.TransactionClient,orderId:string,dto:PaymentConfirmationDto,key:string,requestId:string,actorId:string) {
+    // This call stays inside the caller's locked transaction. It never starts an independent payment.
+    const db=tx as PrismaService;
+    return new OrderService(db,new IdempotencyService(db),new AuditService(),new OutboxService())
+      .confirmPaymentInTransaction(tx,orderId,dto,key,requestId,actorId,'BUNDLE_ALLOCATION');
+  }
+
+  private async confirmPaymentInTransaction(tx:Prisma.TransactionClient,orderId:string,dto:PaymentConfirmationDto,key:string,requestId:string,actorId?:string,reviewMode?:'MANUAL_ADMIN'|'BUNDLE_ALLOCATION') {
       const correlationId = randomUUID();
       await tx.$queryRaw`SELECT order_id FROM commerce."order" WHERE order_id=${orderId}::uuid FOR UPDATE`;
       const order = await tx.order.findUnique({
@@ -411,7 +425,7 @@ export class OrderService {
       }
       const entrySnapshot=tx.packagePurchaseSnapshot?await tx.packagePurchaseSnapshot.findUnique({where:{orderId}}):null;
       if(entrySnapshot?.packageClass==='ACTIVE_DURATION')await assertRepurchaseBallEffective(tx,orderId,occurredAt);
-      if(entrySnapshot?.paymentDeadline&&(new Date()>=entrySnapshot.paymentDeadline||occurredAt>=entrySnapshot.paymentDeadline||occurredAt<order.createdAt||occurredAt.getTime()>Date.now()+60000))throw new ConflictException({code:"PACKAGE_PAYMENT_DEADLINE_EXCEEDED",message:"付款期限已過或付款時間不符，請勿確認此筆收款，應進行款項核對與退款處理。"});
+      if(reviewMode!=='BUNDLE_ALLOCATION'&&entrySnapshot?.paymentDeadline&&(new Date()>=entrySnapshot.paymentDeadline||occurredAt>=entrySnapshot.paymentDeadline||occurredAt<order.createdAt||occurredAt.getTime()>Date.now()+60000))throw new ConflictException({code:"PACKAGE_PAYMENT_DEADLINE_EXCEEDED",message:"付款期限已過或付款時間不符，請勿確認此筆收款，應進行款項核對與退款處理。"});
       const payment = await tx.paymentEvent.create({
         data: {
           orderId,
@@ -549,7 +563,7 @@ export class OrderService {
     });
     const returned=await tx.returnLine.groupBy({by:['orderLineId'],where:{returnCase:{orderId,status:'POSTED'}},_sum:{quantity:true}});
     const [snapshot,setup]=await Promise.all([tx.packagePurchaseSnapshot.findUnique({where:{orderId},include:{selections:true}}),tx.qualificationSetup.findFirst({where:{qualifyingOrderId:orderId}})]);
-    const enrollmentBundlePayment=snapshot?.packageClass==='QUALIFICATION'?await adminBundlePayment(tx,orderId):null;
+    const enrollmentBundlePayment=snapshot?await adminBundlePayment(tx,orderId):null;
     return {...order,enrollmentBundlePayment,...this.packageReadback(snapshot,setup),lines:order.lines.map(line=>{
       const quantity=returned.find(row=>row.orderLineId===line.orderLineId)?._sum.quantity??new Prisma.Decimal(0);
       return {...line,returnedQuantity:quantity.toString(),remainingReversibleQuantity:Prisma.Decimal.max(0,line.quantity.minus(quantity)).toString()};

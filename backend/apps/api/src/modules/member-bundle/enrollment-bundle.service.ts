@@ -7,6 +7,8 @@ import {requestHash} from '../../common/utils/hash';
 import {OrderService} from '../order/order.service';
 import {SponsorResolver,saveSponsorSelection} from '../qualification/sponsor-resolver.service';
 import {EnrollmentBundleInput} from './enrollment-bundle.dto';
+import {validateExcellencePlan} from './excellence-plan';
+import {activateEnrollmentBundleIfReady} from './excellence-activation';
 import {activeBundle,bundleReceipt,ownedApplication,sponsorLabel} from './bundle-read';
 
 function assertMutable(app:Awaited<ReturnType<typeof ownedApplication>>) {
@@ -40,6 +42,7 @@ export class EnrollmentBundleService {
           return bundleReceipt(tx,existing.bundleId,applicationId);
         }
         assertMutable(app);
+        if(input.planCode==='EXCELLENCE')await validateExcellencePlan(tx,input);
         const [prior]=await tx.$queryRaw<{orderId:string}[]>`
           SELECT o.order_id AS "orderId" FROM commerce.package_purchase_snapshot s
           JOIN commerce."order" o ON o.order_id=s.order_id
@@ -49,8 +52,8 @@ export class EnrollmentBundleService {
           LIMIT 1`;
         if(prior)throw new ConflictException({code:'FORMAL_ENROLLMENT_ORDER_EXISTS',message:'此申請已有資格套組訂單，請先處理原訂單。'});
         const bundleId=randomUUID();
-        await tx.$executeRaw`INSERT INTO membership.enrollment_bundle(bundle_id,application_id,person_id,request_hash)
-          VALUES(${bundleId}::uuid,${applicationId}::uuid,${personId}::uuid,${hash})`;
+        await tx.$executeRaw`INSERT INTO membership.enrollment_bundle(bundle_id,application_id,person_id,request_hash,plan_code,payment_policy)
+          VALUES(${bundleId}::uuid,${applicationId}::uuid,${personId}::uuid,${hash},${input.planCode??'CUSTOM'},'COMBINED')`;
         const shipping={fulfillmentMethod:input.fulfillmentMethod,deliveryUpdatedAt:input.deliveryUpdatedAt};
         let rootTree:string|undefined;
         for (const [index,ball] of input.balls.entries()){
@@ -85,7 +88,7 @@ export class EnrollmentBundleService {
   sponsorCandidate(personId:string,applicationId:string,code:string) {
     return this.db.$transaction(async tx=>{
       const app=await ownedApplication(tx,personId,applicationId);
-      if(!['DRAFT','NEEDS_MORE_INFO','SUBMITTED','UNDER_REVIEW'].includes(app.status)||app.personStatus!=='EFFECTIVE'||app.securityStatus!=='NORMAL')
+      if(!['DRAFT','NEEDS_MORE_INFO','SUBMITTED','UNDER_REVIEW','APPROVED'].includes(app.status)||app.personStatus!=='EFFECTIVE'||app.securityStatus!=='NORMAL')
         throw new ConflictException({code:'BUNDLE_SPONSOR_UNAVAILABLE'});
       const evidence=await new SponsorResolver(this.db).resolveWithin(tx,{code});
       const label=await sponsorLabel(tx,Prisma.sql`${evidence.sponsorQualificationId}::uuid`);
@@ -97,23 +100,24 @@ export class EnrollmentBundleService {
     const code=sponsorCode.trim().toUpperCase();
     return this.idem.execute('member:enrollment-bundle:sponsor:'+personId,key,{applicationId,code},async tx=>{
       const app=await ownedApplication(tx,personId,applicationId,true);
-      if(!['DRAFT','NEEDS_MORE_INFO','SUBMITTED','UNDER_REVIEW'].includes(app.status)||
+      if(!['DRAFT','NEEDS_MORE_INFO','SUBMITTED','UNDER_REVIEW','APPROVED'].includes(app.status)||
         app.personStatus!=='EFFECTIVE'||app.securityStatus!=='NORMAL')throw new ConflictException({code:'FORMAL_APPLICATION_NOT_EDITABLE'});
-      const [root]=await tx.$queryRaw<{bundleId:string;qualificationId:string;reportedAt:Date|null}[]>`
-        SELECT b.bundle_id AS "bundleId",r.qualification_id AS "qualificationId",report.paid_at AS "reportedAt"
+      const [root]=await tx.$queryRaw<{bundleId:string;qualificationId:string;reportedAt:Date|null;policy:string}[]>`
+        SELECT b.bundle_id AS "bundleId",r.qualification_id AS "qualificationId",report.paid_at AS "reportedAt",b.payment_policy AS policy
         FROM membership.enrollment_bundle b JOIN membership.enrollment_bundle_ball r ON r.bundle_id=b.bundle_id AND r.position=1
         JOIN membership.qualification q ON q.qualification_id=r.qualification_id
         LEFT JOIN commerce.enrollment_bundle_payment_report report ON report.bundle_id=b.bundle_id
         WHERE b.application_id=${applicationId}::uuid AND b.superseded_at IS NULL AND q.status='DRAFT'
-          AND NOT EXISTS (SELECT 1 FROM commerce.enrollment_bundle_payment p WHERE p.bundle_id=b.bundle_id)
-          AND NOT EXISTS (SELECT 1 FROM membership.enrollment_bundle_ball row JOIN commerce."order" o ON o.order_id=row.qualification_order_id
+          AND (b.payment_policy='COMBINED' OR NOT EXISTS (SELECT 1 FROM commerce.enrollment_bundle_payment p WHERE p.bundle_id=b.bundle_id))
+          AND (b.payment_policy='COMBINED' AND EXISTS(SELECT 1 FROM commerce.enrollment_bundle_payment p WHERE p.bundle_id=b.bundle_id) OR
+          NOT EXISTS (SELECT 1 FROM membership.enrollment_bundle_ball row JOIN commerce."order" o ON o.order_id=row.qualification_order_id
             JOIN commerce.package_purchase_snapshot s ON s.order_id=o.order_id
-            WHERE row.bundle_id=b.bundle_id AND (o.status<>'CONFIRMED' OR o.paid_at IS NOT NULL OR s.payment_deadline<=coalesce(report.paid_at,now())))
+            WHERE row.bundle_id=b.bundle_id AND (o.status<>'CONFIRMED' OR o.paid_at IS NOT NULL OR s.payment_deadline<=coalesce(report.paid_at,now()))))
         FOR UPDATE OF b,q`;
-      if(!root)throw new ConflictException({code:'BUNDLE_SPONSOR_UNAVAILABLE',message:'本組訂單已收款、失效或已安置，無法補填推薦球。'});
+      if(!root||app.status==='APPROVED'&&root.policy!=='COMBINED')throw new ConflictException({code:'BUNDLE_SPONSOR_UNAVAILABLE',message:'目前無法補填推薦球，請聯絡承辦人核對。'});
       const at=new Date(),resolver=new SponsorResolver(this.db);
       const sponsor=await resolver.resolveWithin(tx,{code,effectiveAt:at});
-      if(root.reportedAt){
+      if(root.reportedAt && root.policy!=='COMBINED'){
         const asOfTransfer=await resolver.resolveWithin(tx,{code,effectiveAt:root.reportedAt});
         if(asOfTransfer.sponsorQualificationId!==sponsor.sponsorQualificationId)throw new ConflictException({code:'SPONSOR_CODE_INELIGIBLE'});
       }
@@ -135,6 +139,7 @@ export class EnrollmentBundleService {
       await this.audit.write(tx,{actorType:'MEMBER',actorId:personId,action:'ENROLLMENT_BUNDLE_ROOT_SPONSOR_SET',
         entityType:'ENROLLMENT_BUNDLE',entityId:root.bundleId,requestId,correlationId:root.bundleId,
         afterData:{applicationId,qualificationId:root.qualificationId,sponsorKind:sponsor.kind}});
+      if(root.policy==='COMBINED')await activateEnrollmentBundleIfReady(tx,applicationId,requestId);
       return bundleReceipt(tx,root.bundleId,applicationId);
     },{retryOnConflict:true});
   }

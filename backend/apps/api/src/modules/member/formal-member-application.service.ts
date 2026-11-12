@@ -1,3 +1,5 @@
+import {adminEnrollmentReview} from '../member-bundle/admin-bundle-review';
+import {activateEnrollmentBundleIfReady} from '../member-bundle/excellence-activation';
 import {ConflictException,Injectable,NotFoundException,UnprocessableEntityException} from '@nestjs/common';
 import {Prisma,PrismaService} from '@ucell/database';
 import {enrollmentBundlePayment,requirePaidBundleRoot} from './enrollment-bundle-payment';
@@ -273,7 +275,9 @@ export class FormalMemberApplicationService {
    if(!gate.ready)throw new UnprocessableEntityException({code:'FORMAL_APPROVAL_GATE_BLOCKED',details:{codes:gate.codes}});
    const now=new Date(),app=await tx.formalMemberApplication.findUnique({where:{formalMemberApplicationId:applicationId}});
    if(!app||app.status!=='UNDER_REVIEW')throw new ConflictException({code:'FORMAL_APPLICATION_NOT_APPROVABLE'});
-   if(app.applicantType==='INDIVIDUAL'&&app.personId)requirePaidBundleRoot(await enrollmentBundlePayment(tx,applicationId,app.personId));
+   const group=app.applicantType==='INDIVIDUAL' && app.sourceChannel==='MEMBER_WEB'
+     ? await enrollmentBundlePayment(tx,applicationId,app.personId) : null;
+   requirePaidBundleRoot(group);
    if(!app.applicantIdentityFingerprint)throw new UnprocessableEntityException({code:'FORMAL_IDENTITY_FINGERPRINT_REQUIRED'});
    const conflicts=await new FormalMembershipConflictService(tx as PrismaService).evaluate(applicationId,now);
    if(conflicts.status!=='CLEAR')throw new UnprocessableEntityException({code:'FORMAL_APPROVAL_GATE_BLOCKED',details:{codes:conflicts.codes}});
@@ -297,8 +301,9 @@ export class FormalMemberApplicationService {
 
    const updated=await tx.formalMemberApplication.update({where:{formalMemberApplicationId:applicationId},data:{status:'APPROVED',reviewedAt:now,reviewerId:actorId}});
    const correlationId=randomUUID();
-   await this.audit.write(tx,{actorType:'ADMIN',actorId,action:'FORMAL_APPLICATION_APPROVED',entityType:'FormalMemberApplication',entityId:applicationId,afterData:{status:'APPROVED',applicantType:app.applicantType,personId:app.personId,legalEntityId:app.legalEntityId},requestId,correlationId});
-   return {applicationId,status:updated.status,applicantType:app.applicantType,personId:app.personId,legalEntityId:app.legalEntityId,qualificationCreated:false};
+   const activation=group?await activateEnrollmentBundleIfReady(tx,applicationId,requestId):null;
+   await this.audit.write(tx,{actorType:'ADMIN',actorId,action:'FORMAL_APPLICATION_APPROVED',entityType:'FormalMemberApplication',entityId:applicationId,afterData:{status:'APPROVED',applicantType:app.applicantType,personId:app.personId,legalEntityId:app.legalEntityId,...(group?{bundleId:group.bundleId,qualificationCount:group.qualificationCount,activationStatus:activation?.status}:{})},requestId,correlationId});
+   return {applicationId,status:updated.status,applicantType:app.applicantType,personId:app.personId,legalEntityId:app.legalEntityId,qualificationCreated:false,...(group?{bundleId:group.bundleId,approvedQualifications:group.qualificationCount,activationStatus:activation?.status}:{})};
   },{isolationLevel:Prisma.TransactionIsolationLevel.Serializable});}catch(error){
    if(['P2034','P2002'].includes((error as any).code))throw new ConflictException({code:'RETRYABLE_CONFLICT'});
    throw error;
@@ -368,6 +373,7 @@ export class FormalMemberApplicationService {
   await this.db.$transaction(tx=>this.audit.write(tx,{actorType:'ADMIN',actorId,action:'FORMAL_APPLICATION_PII_VIEWED',entityType:'FormalMemberApplication',entityId:applicationId,afterData:{version:snapshot.version,applicantType:application.applicantType,sourceChannel:application.sourceChannel},requestId,correlationId:randomUUID()}));
   return {
    id:application.formalMemberApplicationId,status:application.status,applicantType:application.applicantType,sourceChannel:application.sourceChannel,
+   enrollmentBundle:application.applicantType==='INDIVIDUAL'&&application.sourceChannel==='MEMBER_WEB'?await adminEnrollmentReview(this.db,applicationId,application.personId):null,
    paperApplicationReference:application.paperApplicationReference,enteredAt:application.enteredAt?.toISOString()??null,
    person:application.person,
    legalEntity:application.legalEntity?{legalEntityId:application.legalEntity.legalEntityId,memberNo:application.legalEntity.memberNo,registeredName:application.legalEntity.registeredName,registrationNo:application.legalEntity.registrationNo,registrationCountryCode:application.legalEntity.registrationCountryCode,status:application.legalEntity.status,membershipState:application.legalEntity.membershipState}:null,

@@ -4,10 +4,11 @@ import {ErrorBox,Field} from '../../components/ui';
 import {command} from '../../lib/api';
 import {dateTime} from '../../lib/format';
 
-interface Bundle {
+export interface BundlePayment {
+  paymentPolicy?:string;
   bundleId:string;
   total:string;
-  lines:{position:number;orderId:string;orderNo:string;publicOrderNo?:string|null;amount:string;status:string;createdAt?:string;paymentDeadline?:string|null}[];
+  lines:{kind?:string;position:number;orderId:string;orderNo:string;publicOrderNo?:string|null;amount:string;status:string;createdAt?:string;paymentDeadline?:string|null}[];
   report:{amount:string;accountLastFive:string;paidAt:string}|null;
   receipt:{referenceNo:string;amount:string;receivedAt:string}|null;
 }
@@ -27,7 +28,7 @@ function cents(amount:string) {
   return BigInt(whole+fraction.padEnd(2,'0'));
 }
 
-export function EnrollmentBundleReceipt({bundle,orderId,canConfirm,reload}:{bundle:Bundle;orderId:string;canConfirm:boolean;reload:()=>Promise<unknown>}) {
+export function EnrollmentBundleReceipt({bundle,orderId,canConfirm,reload,onBusy}:{bundle:BundlePayment;onBusy?:(busy:boolean)=>void;orderId:string;canConfirm:boolean;reload:()=>Promise<unknown>}) {
   const [amount,setAmount]=useState(Number(bundle.total)===0?'0':'');
   const [reference,setReference]=useState('');
   const [method,setMethod]=useState(Number(bundle.total)===0?'COUPON_WAIVER':'BANK_TRANSFER');
@@ -39,22 +40,25 @@ export function EnrollmentBundleReceipt({bundle,orderId,canConfirm,reload}:{bund
   const received=new Date(at).getTime();
   const validTime=Number.isFinite(received) && received<=Date.now()+60000 && bundle.lines.every(line=>
     (!line.createdAt || received>=new Date(line.createdAt).getTime()) && (!line.paymentDeadline || received<new Date(line.paymentDeadline).getTime()));
+  const combined=bundle.paymentPolicy==='COMBINED';
+  const count=new Set(bundle.lines.map(line=>line.position)).size;
+  const name=combined?'整組資格與重銷收款':'整組資格收款';
   const ready=canConfirm && !expired && !busy && exactAmount && !!reference.trim() && validTime;
   async function confirm(){
     if(!ready)return;
-    setBusy(true);setError(undefined);
+    setBusy(true);onBusy?.(true);setError(undefined);
     try {
       const body={amount,paymentMethod:method,referenceNo:reference.trim(),occurredAt:new Date(at).toISOString()};
       const serialized=JSON.stringify(body);
       if(attempt.current?.body!==serialized)attempt.current={body:serialized,key:crypto.randomUUID()};
       await command('/admin/orders/'+orderId+'/bundle-payment-confirmations',body,attempt.current.key);
       await reload();
-    } catch(e){setError(e);} finally {setBusy(false);}
+    } catch(e){setError(e);} finally {setBusy(false);onBusy?.(false);}
   }
-  return <section className="form" aria-label="整組資格收款">
-    <h3>整組資格收款</h3>
-    <p>{bundle.lines.length} 顆球的資格套組與建立費合計 <strong>{money(bundle.total)}</strong>。重銷款於各球生效後另行收取。</p>
-    <details><summary>查看逐球分攤金額</summary><ul>{bundle.lines.map(line=><li key={line.orderId}>第 {line.position} 球 · 訂單 {line.publicOrderNo||line.orderNo} · {money(line.amount)}</li>)}</ul></details>
+  return <section className="form" aria-label={name}>
+    <h3>{name}</h3>
+    <p>{count} 顆球{combined?'的資格、建立費與所選重銷合併收款':'的資格套組與建立費合計'} <strong>{money(bundle.total)}</strong>。{!combined&&'重銷款於各球生效後另行收取。'}</p>
+    <details><summary>查看逐球分攤金額</summary><ul>{bundle.lines.map(line=><li key={line.orderId}>第 {line.position} 球 · {line.kind==='REPURCHASE'?'重銷':'資格'}訂單 {line.publicOrderNo||line.orderNo} · {money(line.amount)}</li>)}</ul></details>
     {bundle.report&&<p>會員回報匯款 {money(bundle.report.amount)}，帳號末五碼 {bundle.report.accountLastFive}，時間 {dateTime(bundle.report.paidAt)}。</p>}
     {bundle.receipt?<p role="status">整組已收款 {money(bundle.receipt.amount)} · 憑證 {bundle.receipt.referenceNo} · {dateTime(bundle.receipt.receivedAt)}</p>:
       expired?<p role="status">資格付款期限已過。如會員已匯款，請依原始訂單號與收款憑證辦理逾期款項核對。</p>:
@@ -66,7 +70,7 @@ export function EnrollmentBundleReceipt({bundle,orderId,canConfirm,reload}:{bund
         <Field label="實際收款時間"><input type="datetime-local" step="1" max={localDateTime(new Date())} value={at} onChange={e=>setAt(e.target.value)}/></Field>
         {amount&&!exactAmount&&<p role="status">請填寫與整組應付金額相符的數字，最多保留兩位小數。</p>}
         {at&&!validTime&&<p role="status">請核對實際收款時間，應在整組訂單成立後及付款期限內。</p>}
-        <ConfirmAction disabled={!ready} onConfirm={confirm}>確認整組資格收款</ConfirmAction>
+        <ConfirmAction disabled={!ready} onConfirm={confirm}>{combined?'確認整組資格與重銷收款':'確認整組資格收款'}</ConfirmAction>
       </>}
     <ErrorBox error={error}/>
   </section>;
