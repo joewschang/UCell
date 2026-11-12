@@ -5,7 +5,7 @@ import {SponsorMapController} from '../src/modules/admin-observability/sponsor-m
 const url=process.env.PHASE2_TEST_DATABASE_URL;
 (url?describe:describe.skip)('full sponsor forest across issued and legacy balls',()=>{
   let db:PrismaService;
-  beforeAll(()=>{db=new PrismaService();});
+  beforeAll(()=>{db=new PrismaService({datasources:{db:{url}}});});
   afterAll(async()=>db?.$disconnect());
 
   it('reads over a thousand live referrals, effective edges without binary positions, and excludes future/ended edges',async()=>{

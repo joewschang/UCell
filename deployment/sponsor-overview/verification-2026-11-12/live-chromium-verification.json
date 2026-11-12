@@ -1,0 +1,27 @@
+{
+  "mode": "live",
+  "engine": "chromium",
+  "entry": "/assets/sponsor-overview-7a0befe1b3beabf6.js",
+  "passed": [
+    "SUPER_ADMIN 1366 light binary map + sponsor overview + legacy sponsor",
+    "COMPLIANCE_AUDIT 390 dark binary map + sponsor overview + legacy sponsor",
+    "MEMBERSHIP_OPS 390 light binary map + sponsor overview + legacy sponsor",
+    "SUPER_ADMIN 1366 dark binary map + sponsor overview + legacy sponsor",
+    "FINANCE: route denied without organization API data",
+    "sponsor map loading",
+    "sponsor map empty",
+    "sponsor map error",
+    "sponsor map conflict",
+    "sponsor map incomplete",
+    "sponsor map wrong-total",
+    "sponsor map invalid-parent",
+    "sponsor map duplicate",
+    "sponsor map cycle",
+    "270 balls, 203 direct referrals, 63 roots, last-page root selection"
+  ],
+  "minimumTextContrast": {
+    "light": 6.96,
+    "dark": 7.64
+  },
+  "verifiedAt": "2026-11-12T02:01:37.861Z"
+}

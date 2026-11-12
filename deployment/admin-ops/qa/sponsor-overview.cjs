@@ -19,7 +19,7 @@ const fixture = [
 const ball = n => fixture.find(row=>row.n===n);
 const children = row => fixture.filter(candidate=>candidate.parentNo===row.n);
 function sponsorReply(route,state,headers,meta){
-  if(state.scenario==='loading')return new Promise(resolve=>{state.release=()=>resolve(sponsorReply(route,{scenario:'normal'},headers,meta));});
+  if(state.scenario==='loading')return state.responseGate.then(()=>sponsorReply(route,{scenario:'normal'},headers,meta));
   if(state.scenario==='error')return route.fulfill({headers,status:503,json:{error:{code:'SERVICE_UNAVAILABLE',message:'組織暫無法讀取'},meta}});
   if(state.scenario==='conflict')return route.fulfill({headers,status:409,json:{error:{code:'SPONSOR_MAP_INTEGRITY_ERROR',message:'資料不一致'},meta}});
   const rows = state.scenario==='empty'?[]:[4,1,2,9,5,6,7,8,3].map(n=>{
@@ -62,6 +62,7 @@ async function open(browser,{width,theme,role='SUPER_ADMIN',scenario='normal'}) 
   page.setDefaultTimeout(10000);
   const requests=[],writes=[],errors=[];
   const state={scenario};
+  if(scenario==='loading')state.responseGate=new Promise(resolve=>{state.release=resolve;});
   page.on('pageerror',error=>{errors.push(error.message);console.error('Browser error:',error.message);});
   if(process.env.QA_DEBUG){
     page.on('console',message=>{if(message.type()==='error')console.error('Browser console:',message.text());});
@@ -276,9 +277,7 @@ async function testStates(browser){
     if(scenario==='loading'){
       await map.getByText(/載入/).first().waitFor();
       assert.equal(await memberNode(map,1).count(),0);
-      if(!ui.state.release)await ui.page.waitForRequest(request=>new URL(request.url()).pathname===prefix+'sponsor-map');
-      assert.equal(typeof ui.state.release,'function');
-      await ui.state.release();
+      ui.state.release();
       await memberNode(map,1).waitFor();
     }else if(scenario==='empty'){
       await map.getByText(/尚無|沒有|無推薦/).first().waitFor();

@@ -1,0 +1,16 @@
+{
+  "productCommit": "6a627d369ac98bc2ed1cbe9c3d2e18327b3c9ac8",
+  "route": "https://admin.ucell.life/organization",
+  "apiRevision": "ucell-prod-api--rel-261112015622-4a1ed8",
+  "adminRevision": "ucell-prod-admin--rel-261112015924-84f606",
+  "apiDigest": "sha256:4a1ed8349a0c48e8a9ccdf7a78215deacc438239c68f8e6b933f6cd4cd4f4127",
+  "adminDigest": "sha256:84f606da3a18c445aea94f59c37dfa2493fdf109ac91afb36488c6869984a5ec",
+  "productionReadOnlyComparison": {
+    "at": "2026-11-12T09:58:43+08:00",
+    "method": "Deployed Nest controller and independent SQL in a read-only transaction; compared every qualification ID, parent and sponsor sequence.",
+    "matches": true, "balls": 72, "activeRelationships": 63, "roots": 9, "isolatedBalls": 7, "ballsWithMoreThanTwoDirectReferrals": 7,
+    "anonymousApiStatus": 401
+  },
+  "browserChecks": "The companion Chromium and WebKit receipts used production static files with synthetic API responses, without submitting writes. Both engines tested the sponsor and binary views.",
+  "candidateShellRegression": { "routes": 54, "screens": 216, "failures": 0 }
+}
