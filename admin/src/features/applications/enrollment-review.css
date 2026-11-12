@@ -1,0 +1,12 @@
+.enrollment-review {display:grid;gap:.8rem;min-width:0;scroll-margin-top:5rem}
+.enrollment-review>header {display:flex;align-items:center;justify-content:space-between;gap:.6rem;flex-wrap:wrap}
+.enrollment-review>header h3,.enrollment-review>p,.enrollment-review dl {margin:0}
+.enrollment-review>header strong {color:var(--ucell-primary,currentColor)}
+.enrollment-review .enroll-facts {display:grid;grid-template-columns:repeat(auto-fit,minmax(8rem,1fr));gap:.5rem}
+.enrollment-review .enroll-facts>div,.enrollment-review details li {padding:.65rem .8rem;border:1px solid var(--ucell-border,#75928e);border-radius:.5rem}
+.enrollment-review dd {margin:0;font-weight:700}
+.enrollment-review ol {display:grid;gap:.45rem;padding:0;list-style:none}
+.enrollment-review li {display:grid;gap:.15rem;overflow-wrap:anywhere}
+.enrollment-review summary {cursor:pointer}
+.enrollment-review>button {justify-self:start}
+

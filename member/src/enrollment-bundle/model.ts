@@ -9,10 +9,18 @@ export type PackageDraft = {
 export type BallDraft = {qualification:PackageDraft; repurchase?:PackageDraft};
 export type OrderedPackage = {packageVersionId:string; quoteHash:string; couponCode?:string; selections:Pick[]};
 export type BundleRequest = {
+  planCode?:'EXCELLENCE';
   sponsorCode?:string; fulfillmentMethod?:'DELIVERY'|'COMPANY_PICKUP'; deliveryUpdatedAt?:string;
   balls:Array<{qualification:OrderedPackage; repurchase?:OrderedPackage}>;
 };
 
+const repurchaseMonths:Record<string,string>={ACTIVE_QUARTER:'三',ACTIVE_HALF_YEAR:'六',ACTIVE_YEAR:'十二',
+  '季活躍':'三','半年活躍':'六','年活躍':'十二','季重銷':'三','半年重銷':'六','年重銷':'十二'};
+export function packageLabel(name:string,code?:string) {
+  const key=code??name;
+  const months=Object.hasOwn(repurchaseMonths,key)?repurchaseMonths[key]:undefined;
+  return months?'重銷（'+months+'個月）':name;
+}
 export function emptyPackage(version='', name=''):PackageDraft {
   return {version,name,coupon:'',quotedCoupon:'',quantities:{}};
 }

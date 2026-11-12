@@ -6,7 +6,7 @@ export type BundleOrder = {orderId:string;orderNo:string;publicOrderNo?:string|n
 export type BundleLine = {position:number;parentPosition:number|null;side:'LEFT'|'RIGHT'|null;
   qualificationId:string;ballNo:string|null;qualificationStatus:string|null;placementStatus:string|null;
   qualification:BundleOrder;repurchase:BundleOrder|null;repurchasePayable:boolean};
-export type BundleReceipt = {bundleId:string;applicationId:string;currency:string;qualificationTotal:string;repurchaseTotal:string;total:string;mayRestart:boolean;rootSponsor:null|{ballNo:string|null;name:string|null};balls:BundleLine[]};
+export type BundleReceipt = {planCode?:'EXCELLENCE'|'CUSTOM';paymentPolicy?:'COMBINED'|'QUALIFICATION_ONLY';payableTotal?:string;bundleId:string;applicationId:string;currency:string;qualificationTotal:string;repurchaseTotal:string;total:string;mayRestart:boolean;rootSponsor:null|{ballNo:string|null;name:string|null};balls:BundleLine[]};
 const bundlePath=(id:string)=>'/member/formal-enrollment/applications/'+encodeURIComponent(id)+'/bundle';
 export function getBundle(id:string,signal?:AbortSignal) {
   return memberApi<BundleReceipt|null>(bundlePath(id),{signal});
@@ -44,5 +44,5 @@ export function bundleError(error:unknown) {
   }
   return error instanceof Error?error.message:'暫時無法連線，請重新查詢。';
 }
-export type BundlePaymentSummary = {bundleId:string;qualificationCount:number;paidQualifications:number;
+export type BundlePaymentSummary = {paymentPolicy?:'COMBINED'|'QUALIFICATION_ONLY';payableTotal?:string;bundleId:string;qualificationCount:number;paidQualifications:number;
   qualificationTotal:string;outstandingQualificationTotal:string;rootOrderId:string;rootPaid:boolean;paymentReported:boolean;currency:'TWD'};

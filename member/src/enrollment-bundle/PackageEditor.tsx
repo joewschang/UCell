@@ -2,21 +2,21 @@ import {useEffect,useState} from 'react';
 import type {PackageOffer} from '../memberData';
 import {getPackageProducts,getPackageQuote} from '../memberData';
 import {useResource} from '../useResource';
-import {emptyPackage,money,quantityStep,quantityTotal,type PackageDraft} from './model';
+import {emptyPackage,money,packageLabel,quantityStep,quantityTotal,type PackageDraft} from './model';
 
-export default function PackageEditor({title,offers,choice,change,optional=false}:{title:string;offers:PackageOffer[];
-  choice:PackageDraft|undefined;change:(value:PackageDraft|undefined)=>void;optional?:boolean}) {
+export default function PackageEditor({title,offers,choice,change,optional=false,fixed=false}:{title:string;offers:PackageOffer[];
+  choice:PackageDraft|undefined;change:(value:PackageDraft|undefined)=>void;optional?:boolean;fixed?:boolean}) {
   const offer=offers.find(item=>item.packageVersionId===choice?.version);
   return <section className="eb-package">
-    <label className="eb-label">{title}
+    {fixed&&offer?<div className="eb-fixed-offer"><small>{title}</small><strong>{packageLabel(offer.displayName,offer.packageCode)}</strong></div>:<label className="eb-label">{title}
       <select aria-label={title} value={choice?.version??''} onChange={event=>{
         const next=offers.find(item=>item.packageVersionId===event.target.value);
-        change(next?emptyPackage(next.packageVersionId,next.displayName):optional?undefined:emptyPackage());
+        change(next?emptyPackage(next.packageVersionId,packageLabel(next.displayName,next.packageCode)):optional?undefined:emptyPackage());
       }}>
         <option value="">{optional?'本球不加購重銷':'請選擇資格套組'}</option>
-        {offers.map(item=><option key={item.packageVersionId} value={item.packageVersionId}>{item.displayName} · NT$ {money(item.priceAmount)}</option>)}
+        {offers.map(item=><option key={item.packageVersionId} value={item.packageVersionId}>{packageLabel(item.displayName,item.packageCode)} · NT$ {money(item.priceAmount)}</option>)}
       </select>
-    </label>
+    </label>}
     {choice&&offer&&<PackageItems key={offer.packageVersionId} offer={offer} choice={choice} update={change}/>}
   </section>;
 }
