@@ -19,7 +19,8 @@ export const nav=[
   [uiText("ERP 對接與對帳"),'/erp-reconciliation','reconciliation'],
   ['多樹管理','/admin/organization/trees','binary-trees'],
   ['地理組織分析','/organization/geo','geo'],
-  ['組織／安置','/organization','organization'],
+  ['推薦樹','/organization','organization'],
+  ['二元樹','/organization/binary','binary-trees'],
   ['重購訂閱','/subscriptions','subscriptions'],
   ['交易影響追蹤','/economic-lineage','lineage'],
   ['獎金與結算證據','/bonuses','bonuses'],
@@ -51,7 +52,7 @@ export function activeNavPath(pathname:string):string|undefined{
 export const navGroups=[
  {label:uiText("Dashboard"),paths:['/']},
  {label:'會員管理',paths:['/people','/qualifications','/applications','/paper-intake','/line-links','/workflows','/learning','/events']},
- {label:'組織管理',paths:['/organization','/organization/geo','/admin/organization/trees']},
+ {label:'組織管理',paths:['/organization','/organization/binary','/organization/geo','/admin/organization/trees']},
  {label:'商務',paths:['/products','/coupons','/packages','/orders','/fulfillment','/erp-reconciliation','/subscriptions','/returns']},
  {label:'獎金中心',paths:['/bonuses','/settlement-jobs','/compensation-period-control','/economic-lineage']},
  {label:'財務／治理',paths:['/payouts','/admin/finance/reservoirs']},

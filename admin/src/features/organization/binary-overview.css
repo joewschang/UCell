@@ -1,0 +1,120 @@
+.card.bm {
+  min-width: 0;
+  margin-block: 1rem;
+  color: var(--ucell-text-primary);
+  background: var(--ucell-surface);
+  border-color: var(--ucell-border);
+}
+
+.bm > header, .bm-tools, .bm-legend, .bm-zoom {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: .5rem .75rem;
+}
+.bm > header, .bm-tools { justify-content: space-between; }
+.bm > header { margin-bottom: .75rem; }
+.bm > header h2 { margin: 0; color: var(--ucell-text-primary); }
+.bm > header label { min-width: 0; max-width: 100%; }
+.bm > header select { max-width: 100%; }
+.bm .bm-note, .bm .bm-legend { color: var(--ucell-text-secondary); }
+.bm .bm-note { font-size: .9rem; margin: .65rem 0; }
+.bm .bm-legend span { display: inline-flex; align-items: center; gap: .3rem; }
+.bm .bm-legend svg { width: 19px; height: 19px; fill: currentColor; }
+.bm .bm-on { color: var(--ucell-success); }
+.bm .bm-off { color: var(--ucell-danger); }
+.bm .bm-legend .bm-on, .bm .bm-legend .bm-off {
+  padding: 2px 7px;
+  border-radius: var(--ucell-radius-sm);
+}
+.bm .bm-legend .bm-on { background: var(--ucell-success-bg); }
+.bm .bm-legend .bm-off { background: var(--ucell-danger-bg); }
+
+.bm .bm-zoom button, .bm > header select, .bm > [role="alert"] button {
+  min-width: 44px;
+  min-height: 44px;
+  color: var(--ucell-text-primary);
+  background: var(--ucell-surface);
+  border: 1px solid var(--ucell-text-muted);
+  border-radius: var(--ucell-radius-sm);
+}
+.bm .bm-zoom button:not(:disabled):hover, .bm > [role="alert"] button:hover {
+  background: var(--ucell-surface-secondary);
+  border-color: var(--ucell-primary);
+}
+.bm .bm-zoom button:disabled {
+  color: var(--ucell-text-muted);
+  background: var(--ucell-surface-secondary);
+  border-color: var(--ucell-border);
+  cursor: not-allowed;
+}
+
+.bm .bm-viewport {
+  box-sizing: border-box;
+  position: relative;
+  height: clamp(320px, 66vh, 900px);
+  overflow: auto;
+  overscroll-behavior: contain;
+  border: 1px solid var(--ucell-border);
+  border-radius: var(--ucell-radius-md);
+  background-color: var(--ucell-surface-secondary);
+  background-image: radial-gradient(var(--ucell-border) 1px, transparent 1px);
+  background-size: 18px 18px;
+  cursor: grab;
+}
+.bm .bm-viewport:active { cursor: grabbing; }
+.bm .bm-size { position: relative; margin-inline: auto; overflow: hidden; }
+.bm .bm-paper { position: absolute; transform-origin: top left; }
+.bm .bm-lines { position: absolute; inset: 0; pointer-events: none; }
+.bm .bm-lines path { fill: none; stroke: var(--ucell-text-secondary); stroke-width: 2; }
+.bm button.bm-ball {
+  position: absolute;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  box-sizing: border-box;
+  width: 184px;
+  height: 96px;
+  padding: 4px 6px;
+  background: var(--ucell-surface);
+  border: 1px solid var(--ucell-text-muted);
+  border-radius: 10px;
+  box-shadow: var(--ucell-shadow-sm);
+  cursor: pointer;
+}
+.bm .bm-ball svg { width: 32px; height: 30px; fill: currentColor; }
+.bm .bm-ball.bm-off { border-style: dashed; }
+.bm .bm-ball:hover { background: var(--ucell-surface-elevated); border-color: currentColor; }
+.bm .bm-ball strong, .bm .bm-ball span {
+  max-width: 100%;
+  font-size: 14px;
+  line-height: 1.25;
+  color: var(--ucell-text-primary);
+}
+.bm .bm-ball strong { font-variant-numeric: tabular-nums; }
+.bm .bm-ball span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ucell-text-secondary); }
+.bm :is(button, select, .bm-viewport):focus-visible {
+  outline: 3px solid var(--ucell-info);
+  outline-offset: 2px;
+}
+.bm .bm-ball:focus-visible { z-index: 1; }
+
+.canonical-tree button.canonical-slot {
+  padding: 12px;
+  text-align: center;
+  color: var(--ucell-text-primary);
+  background: var(--ucell-info-bg);
+  border: 2px solid var(--ucell-info);
+  border-radius: 12px;
+}
+.canonical-tree .canonical-slot.is-leader { background: var(--ucell-warning-bg); border-color: var(--ucell-warning); }
+.canonical-tree .canonical-slot.is-empty {
+  background: var(--ucell-surface-secondary);
+  border-color: var(--ucell-text-muted);
+  border-style: dashed;
+}
+.canonical-tree .canonical-slot[aria-pressed="true"] { outline: 2px solid var(--ucell-info); outline-offset: 2px; }
+.canonical-tree .canonical-slot:focus-visible { outline: 3px solid var(--ucell-info); outline-offset: 3px; }

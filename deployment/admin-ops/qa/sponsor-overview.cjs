@@ -91,8 +91,14 @@ async function open(browser,{width,theme,role='SUPER_ADMIN',scenario='normal'}) 
         const rows=fixture.filter(row=>!term||row.name.includes(term)||row.ballNo.includes(term)||term==='0912000111'&&row.n===1);
         return reply(rows.map(row=>({id:row.id,name:row.name,ballNo:row.ballNo})),{page:1,hasNext:false});
       }
-      if(p===prefix+'binary-map')return reply([{binaryTreeId:'binary-subject',treeName:'測試對碰樹',treeCode:'B',status:'ACTIVE'}]);
-      if(p===prefix+'binary-map/binary-subject')return reply([1,2,3].map(n=>({...ball(n),position:String(n),plan:'STARTER',active:true})));
+      if(p===prefix+'binary-map')return reply([
+        {binaryTreeId:'binary-subject',treeName:'測試二元樹',treeCode:'B',status:'ACTIVE'},
+        {binaryTreeId:'empty',treeName:'空樹',treeCode:'E',status:'ACTIVE'}
+      ]);
+      if(p===prefix+'binary-map/empty')return reply([]);
+      if(p===prefix+'binary-map/binary-subject')return reply(fixture.map(row=>({
+        ...row,position:String(row.n),plan:['LEADER','ELITE','STARTER'][row.n%3],active:row.n%2===1
+      })));
       if(p.startsWith(prefix+'sponsor-tree/')){
         const root=fixture.find(row=>row.id===p.split('/').pop());
         assert(root,'Unexpected sponsor root '+p);
@@ -320,7 +326,9 @@ function finish(ui){
   return ui.context.close();
 }
 
-(async()=>{
+module.exports={open,newPageAt,finish};
+
+if(require.main===module)(async()=>{
   const browser=process.env.ENGINE==='webkit'?await webkit.launch():await chromium.launch({executablePath:process.env.CHROME});
   try{
     for(const [width,theme,role] of [[1366,'light','SUPER_ADMIN'],[390,'dark','COMPLIANCE_AUDIT'],[390,'light','MEMBERSHIP_OPS'],[1366,'dark','SUPER_ADMIN']]){

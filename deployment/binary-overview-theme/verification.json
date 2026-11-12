@@ -1,0 +1,72 @@
+{
+  "route": "https://admin.ucell.life/organization/binary",
+  "adminRevision": "ucell-prod-admin--rel-261112024043-d12151",
+  "adminImage": "sha256:d1215119f92b8a88b468cb7417ac51324a2f6e0468b62c73c7382f74e919d3f7",
+  "entry": "/assets/binary-overview-57ff8afcc7cbfc3c.js",
+  "stylesheet": "/assets/binary-overview-41ef8def60ecf553.css",
+  "publicHttpStatus": 200,
+  "anonymousApiStatus": 401,
+  "method": "Production HTML, JavaScript and CSS with synthetic organization API records. Each engine exercised the light and dark themes at desktop and mobile widths.",
+  "checks": {
+    "chromium": [
+      {
+        "width": 1366,
+        "theme": "light",
+        "minimumTextContrast": 6.416,
+        "connectorContrast": 6.15,
+        "horizontalPageOverflow": 0
+      },
+      {
+        "width": 1366,
+        "theme": "dark",
+        "minimumTextContrast": 6.681,
+        "connectorContrast": 9.452,
+        "horizontalPageOverflow": 0
+      },
+      {
+        "width": 390,
+        "theme": "light",
+        "minimumTextContrast": 6.416,
+        "connectorContrast": 6.15,
+        "horizontalPageOverflow": 0
+      },
+      {
+        "width": 390,
+        "theme": "dark",
+        "minimumTextContrast": 6.681,
+        "connectorContrast": 9.452,
+        "horizontalPageOverflow": 0
+      }
+    ],
+    "webkit": [
+      {
+        "width": 1366,
+        "theme": "light",
+        "minimumTextContrast": 6.416,
+        "connectorContrast": 6.15,
+        "horizontalPageOverflow": 0
+      },
+      {
+        "width": 1366,
+        "theme": "dark",
+        "minimumTextContrast": 6.681,
+        "connectorContrast": 9.452,
+        "horizontalPageOverflow": 0
+      },
+      {
+        "width": 390,
+        "theme": "light",
+        "minimumTextContrast": 6.416,
+        "connectorContrast": 6.15,
+        "horizontalPageOverflow": 0
+      },
+      {
+        "width": 390,
+        "theme": "dark",
+        "minimumTextContrast": 6.681,
+        "connectorContrast": 9.452,
+        "horizontalPageOverflow": 0
+      }
+    ]
+  }
+}

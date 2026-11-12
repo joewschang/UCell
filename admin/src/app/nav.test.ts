@@ -4,6 +4,7 @@ import {nav,navGroups,activeNavPath} from './nav';
 describe('admin navigation terminology',()=>{
   it('selects the geographic child without also activating organization placement',()=>{
     expect(activeNavPath('/organization/geo')).toBe('/organization/geo');
+    expect(activeNavPath('/organization/binary')).toBe('/organization/binary');
     expect(activeNavPath('/organization')).toBe('/organization');
     expect(activeNavPath('/people/member-id')).toBe('/people');
     expect(activeNavPath('/admin/organization/trees/tree-id')).toBe('/admin/organization/trees');
@@ -17,6 +18,7 @@ describe('admin navigation terminology',()=>{
   });
   it('uses the approved operational terms without conflating subscriptions, evidence and payout',()=>{
     const labels=Object.fromEntries(nav.map(([label,path])=>[path,label]));
+    expect(labels['/organization/binary']).toBe('二元樹');
     expect(labels['/subscriptions']).toBe('重購訂閱');
     expect(labels['/bonuses']).toBe('獎金與結算證據');
     expect(labels['/payouts']).toBe('付款批次與對帳');

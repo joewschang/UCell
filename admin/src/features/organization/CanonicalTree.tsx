@@ -1,5 +1,6 @@
 import {uiValue,uiText} from "../../../../shared/design-system/i18n";
 import {Badge} from '../../components/ui';
+import './binary-overview.css';
 export type CanonicalPosition={positionNo:number;ballNo?:string|null;binaryPositionNo?:string;path?:string;qualificationId:string|null;ownerType:string|null;activeLabel:string|null;companyProfile?:{status?:unknown;planCode?:unknown;profileVersion?:unknown}|null;parentPositionNo:number|null;side:string|null};
 
 /**
@@ -47,10 +48,11 @@ export function CanonicalTree({positions,onSelect,selectedBallNo}:{positions:Can
      p.parentPositionNo?'父位置 #'+p.parentPositionNo+' · '+(p.side==='LEFT'?'左側':p.side==='RIGHT'?'右側':'側別未提供'):'根位置'
     ].join('；');
     return <button key={p.positionNo} type="button" onClick={()=>onSelect(p)}
+     className={'canonical-slot'+(leader?' is-leader':empty?' is-empty':'')}
      aria-pressed={occupied&&hasBallNumber&&selectedBallNo===p.ballNo}
      aria-label={accessibleLabel}
      title={hasBallNumber?'球編號 '+p.ballNo:empty?'尚未占用':uiText("Ball Number 證據未提供")}
-     style={{gridColumn:start+' / span 2',gridRow:p.positionNo===1?1:p.positionNo<=3?2:3,textAlign:'center',padding:12,borderRadius:12,border:empty?'2px dashed #64748b':'2px solid '+(leader?'#a16207':'#0369a1'),background:leader?'#fffbeb':empty?'#f8fafc':'#f0f9ff',color:'#172033'}}>
+     style={{gridColumn:start+' / span 2',gridRow:p.positionNo===1?1:p.positionNo<=3?2:3}}>
      <strong>#{p.positionNo} {leader?'公司球':empty?'可用':companyHeld?'公司持有球':'會員球'}</strong>
      {leader?<div>{uiText("領袖 LEADER")}</div>:<div>{empty?'尚未占用':!hasBallNumber?uiText("資格已占用 · Ball Number 證據未提供"):companyHeld?(bootstrapSlot?uiText("公司持有 · LEADER Profile 證據未提供"):uiText("公司持有 · 非 Bootstrap · 保留原 Plan")):'會員球'}</div>}
      {alwaysActive&&<Badge>{uiText("Always Active")}</Badge>}

@@ -7,9 +7,13 @@ import {SearchOption,SearchSelect} from '../../components/SearchSelect';
 import {TreeNode,TreeView} from '../../components/TreeView';
 import {QualificationDetail} from '../qualifications/QualificationDetail';
 import {SponsorOverview} from './SponsorOverview';
+import {BinaryMap} from './BinaryMap';
 
-export function OrganizationPage(){
-  const [root,setRoot]=useState<SearchOption|null>(null);const [mode,setMode]=useState<'SPONSOR'|'BINARY'>('SPONSOR');
+type OrganizationTreeMode = 'SPONSOR'|'BINARY';
+
+export function OrganizationPage({initialMode='SPONSOR'}:{initialMode?:OrganizationTreeMode}){
+  const [root,setRoot]=useState<SearchOption|null>(null);const [mode,setMode]=useState<OrganizationTreeMode>(initialMode);
+  const treeName=mode==='SPONSOR'?'推薦樹':'二元樹';
   const [depth,setDepth]=useState(4);const [at,setAt]=useState(new Date().toISOString());const [nodes,setNodes]=useState<TreeNode[]>([]);
   const [error,setError]=useState<unknown>(null);const [loading,setLoading]=useState(false);
   async function qualSearch(q:string){
@@ -21,8 +25,8 @@ export function OrganizationPage(){
     try{const path=mode==='SPONSOR'?`/admin/observability/organization/sponsor-tree/${root.id}`:`/admin/observability/organization/binary-tree/${root.id}`;const r:any=await get(path+qs({depth,at}));setNodes(r.data??[])}
     catch(e){setError(e)}finally{setLoading(false)}
   }
-  return <><PageHeader title="組織視圖" subtitle={uiText("Sponsor Tree 與 Binary Tree 永遠分離呈現；可依歷史時間點檢視有效組織。")}/>
-  {mode==='SPONSOR'&&<SponsorOverview selectedRootId={root?.id} selection={root} renderBall360={id=><QualificationDetail key={id} id={id}/>}/>}
+  return <><PageHeader title={treeName} subtitle={uiText("Sponsor Tree 與 Binary Tree 永遠分離呈現；可依歷史時間點檢視有效組織。")}/>
+  {mode==='BINARY'?<BinaryMap/>:<SponsorOverview selectedRootId={root?.id} selection={root} renderBall360={id=><QualificationDetail key={id} id={id}/>}/>}
   <div className="grid two"><Card title="查詢條件"><div className="form">
     <SearchSelect label={uiText("Root Qualification")} value={root} onChange={x=>{setRoot(x);setNodes([])}} search={qualSearch}/>
     <Field label="樹別"><select value={mode} onChange={e=>{setMode(e.target.value as any);setNodes([])}}><option value="SPONSOR">{uiText("Sponsor Tree")}</option><option value="BINARY">{uiText("Binary Tree")}</option></select></Field>
@@ -31,5 +35,5 @@ export function OrganizationPage(){
     <button className="primary" disabled={!root||loading} onClick={load}>{loading?'讀取中…':'載入組織'}</button><ErrorBox error={error}/>
   </div></Card>
   <Card title="制度提醒"><p><Badge tone="ok">{uiText("Sponsor Tree")}</Badge>{uiText("：推薦／推薦對等／EPV。")}</p><p><Badge tone="ok">{uiText("Binary Tree")}</Badge>{uiText("：左右區GPV、Pair、Carry、K1與RPV。")}</p><p className="muted">不得互相推導或混用。</p></Card></div>
-  <Card title={`${mode==='SPONSOR'?'Sponsor':'Binary'} Tree`}><TreeView nodes={nodes} mode={mode}/></Card></>
+  <Card title={treeName}><TreeView nodes={nodes} mode={mode}/></Card></>
 }

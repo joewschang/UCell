@@ -22,7 +22,7 @@ const ucOpsNavTerms:Record<string,string> = {
   "/document-intake": "文件收件夾 文件收件箱 OCR 身分證 上傳",
   "/line-links": "LINE OA 綁定 補綁",
   "/organization": "推薦人 推薦組織 上下線 組織樹 推薦樹全貌圖",
-  "/organization/binary": "二元樹 雙軌 組織樹 左右線",
+  "/organization/binary": "對碰樹 雙軌 組織樹 左右線",
   "/organization/geo": "地圖 區域 分布 分佈",
   "/learning": "課程 教材 培訓",
   "/events": "報名 活動名單",

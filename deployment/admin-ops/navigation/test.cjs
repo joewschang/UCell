@@ -68,7 +68,7 @@ const live = process.argv.includes('--live');
       if (role === 'SUPER_ADMIN') {
         assert(paths.length > 35);
         for (const [query, expected] of [
-          ['ＰＮＡＳＬ','/analytics'], ['組織 二元樹','/organization/binary'],
+          ['ＰＮＡＳＬ','/analytics'], ['組織 二元樹','/organization/binary'], ['對碰樹','/organization/binary'],
           ['會員 ＯＣＲ','/document-intake'], ['法人','/people'],
           ['早安圖','/content/greetings'], ['Tag','/topics/'], ['獎金驗算','/bonuses']
         ]) {
